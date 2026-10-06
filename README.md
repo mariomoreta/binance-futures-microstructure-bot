@@ -30,10 +30,10 @@ python -m pip install -e .
 
 ## Verificacion
 
-Primero ejecutar tests sin red:
+Primero ejecutar tests sin red (comando canonico desde la raiz del repo):
 
 ```powershell
-python -m unittest discover -s tests -v
+python run_tests.py
 ```
 
 Mostrar las conexiones sin abrirlas:
