@@ -27,9 +27,16 @@ before raw-feature dashboard validation.
 
 ## ACTIVE_TASK
 
-- `P1-01` SHORT TRANSPORT VALIDATION — 30–60 min observe-only run; measure WS
-  connectivity, latency, gaps, staleness, reconnects, data quality. NOT the 6h
-  soak. Status: NOT STARTED.
+- `P1-02` PERSISTENCE FOUNDATION — local observe-only store for raw market
+  data/features feeding the dashboard. No trading data, no keys, no private APIs.
+  Status: NOT STARTED. (Network-independent; NOT blocked by P1-01 PARTIAL.)
+
+## NEXT_TASKS (ordered, all Phase 1)
+
+- `P1-01R` TRANSPORT RE-VALIDATION (follow-up, before P1-10): repeat the 30–60
+  min observe-only run in a healthy network; must show stable connections
+  (reconnects ≈ 0 unexplained), delivery lags in the low-second range, and
+  skew-rejections back to rare outliers before soak/calibration gates can pass.
 
 ## NEXT_TASKS (ordered, all Phase 1)
 
@@ -75,15 +82,27 @@ strategies (P3), paper engine/positions (P4), execution (P5).
   (new root runner only, prepends `src/` to `sys.path`).
 - `ORDER-01` (2026-10-06) PHASE1_ORDER_REFINED: P1-00…P1-14 dependency order
   adopted (dashboard-progressive, classifier-after-validation).
+- `P1-01` (2026-10-06) SHORT TRANSPORT VALIDATION: **PARTIAL**. 1805s
+  observe-only run, exit 0, 11/11 streams, uptime 98.5%/95.0%, but 58
+  reconnects (`ConnectionClosedError`, no close frame), corrected delivery
+  lags p50 15–38s / p95 45–76s, 147417 skew-rejections (~85%), depth gaps
+  50/49/49, 26 funding events judged sampling artifacts (not signals).
+  Evidence: `logs/p1-01/probe-1800s.log` (local, git-ignored). Tests 28/28
+  before and after. Gates G2–G4 cannot pass on this evidence.
 
 ## LAST_VERIFICATION
 
-- 2026-10-06: `python run_tests.py` → 28/28 OK. `--show-streams` → correct
-  routed `/public` + `/market` URLs. Port candidates 8091/8092/8093/18091/18765
-  probed FREE on 127.0.0.1 (dashboard port policy evidence).
-- No dashboard running yet (first visible at P1-03). No soak run yet (P1-01).
+- 2026-10-06 (P1-01): `python run_tests.py` → 28/28 OK before and after the
+  live run. 1805s observe-only probe: exit 0, safety 0/0/0 throughout;
+  transport unhealthy in this environment (58 reconnects, p50 lags 15–38s,
+  85% skew-rejected). Full evidence in `docs/CURRENT_STATE.md`.
+- Port candidates 8091/8092/8093/18091/18765 probed FREE on 127.0.0.1
+  (dashboard port policy evidence).
+- No dashboard running yet (first visible at P1-03).
 
 ## LAST_COMMIT
 
-- `157e85e` Phase 1 baseline (pre-brain). Brain files + `run_tests.py`
-  staged, uncommitted — commit blocked: no git identity configured.
+- Branch `phase1/market-intelligence-dashboard` published to private
+  `mariomoreta/binance-futures-microstructure-bot` (origin in sync).
+  Prior: `d6801a5` brain checkpoint on top of `157e85e` baseline.
+  P1-01 evidence/docs commit follows on this branch.
