@@ -14,7 +14,17 @@ import websockets
 from .clock import ClockSynchronizer, corrected_lag_ms
 from .config import ProbeConfig
 from .detectors import EventDetectors
+from .discovery import (
+    CORE_SYMBOLS,
+    TIER_CORE,
+    TIER_DISCOVERY,
+    TIER_HOT,
+    DiscoveryClient,
+    select_hot,
+    top_movers,
+)
 from .metrics import order_book_imbalance, spread_bps
+from .momentum import RANK_METRICS, VELOCITY_HORIZONS, RankTracker
 from .persistence import PersistenceStore, get_persistence_store
 from .returns import ReturnEngine, SymbolPriceSeries
 from .telemetry import RunningDistribution
@@ -23,6 +33,9 @@ from .persistence import PersistenceStore, get_persistence_store
 
 LOGGER = logging.getLogger("microstructure_probe")
 BASE_URL = "wss://fstream.binance.com"
+# Streams whose silence is normal (event-driven, no cadence): never reported
+# as missing, never stale. forceOrder publishes only when liquidations occur.
+EVENT_DRIVEN_STREAMS = frozenset({"!forceOrder@arr"})
 
 
 def expected_stream_names(config: ProbeConfig) -> tuple[str, ...]:
@@ -118,6 +131,21 @@ class MarketProbe:
         )
         self._returns = ReturnEngine(symbols=config.symbols)
         self._restore_attempted = False
+        # P1-05: discovery + momentum/rank state. Core symbols are pinned
+        # benchmarks; the HOT set is proposed only (no dynamic WS resubscribe
+        # in this task — see docs).
+        self._rank_tracker = RankTracker()
+        self._hot_dynamic: tuple = ()
+        self._hot_state: dict = {"appear": {}, "absent": {}}
+        self._discovery_info: dict = {
+            "enabled": bool(config.discovery.enabled),
+            "last_scan_ms": None,
+            "eligible": 0,
+            "filtered": 0,
+            "seen": 0,
+            "error": None,
+        }
+        self._discovery_client: DiscoveryClient | None = None
 
     @property
     def persistence(self) -> PersistenceStore:
@@ -187,6 +215,10 @@ class MarketProbe:
         tasks.append(
             asyncio.create_task(self.clock_sync.run(self._stop), name="clock-sync")
         )
+        if self.config.discovery.enabled:
+            tasks.append(
+                asyncio.create_task(self._discovery_loop(), name="discovery")
+            )
         if duration_seconds is not None:
             tasks.append(
                 asyncio.create_task(self._stop_after(duration_seconds), name="duration-stop")
@@ -551,11 +583,96 @@ class MarketProbe:
             await asyncio.sleep(self.config.summary_interval_seconds)
             self.log_summary(final=False)
 
+    @property
+    def discovery_client(self) -> DiscoveryClient:
+        """Lazily created public-REST client (injectable for tests)."""
+        if self._discovery_client is None:
+            self._discovery_client = DiscoveryClient()
+        return self._discovery_client
+
+    def set_discovery_client(self, client: DiscoveryClient) -> None:
+        """Inject a fake discovery client (tests only — never live traffic)."""
+        self._discovery_client = client
+
+    async def run_discovery_scan(self) -> dict:
+        """One bounded discovery scan: fetch, filter, select HOT, persist.
+
+        Public REST only; failures are recorded and never break the probe.
+        Returns the compact snapshot dict (also persisted + logged).
+        """
+        cfg = self.config.discovery
+        info = self._discovery_info
+        try:
+            candidates, counts = await asyncio.to_thread(
+                self.discovery_client.scan, cfg.min_quote_volume_usdt)
+            dynamic, events, self._hot_state = select_hot(
+                candidates,
+                core=tuple(self.universe.active_symbols()) or CORE_SYMBOLS,
+                dynamic_slots=cfg.hot_dynamic_slots,
+                prior_dynamic=self._hot_dynamic,
+                state=self._hot_state,
+                min_votes=cfg.min_votes,
+            )
+            self._hot_dynamic = tuple(dynamic)
+            tops = top_movers(candidates, cfg.top_n)
+            now_ms = int(self._wall_clock_ms())
+            snapshot = {
+                "generated_at_ms": now_ms,
+                "eligible_count": counts["eligible"],
+                "seen_count": counts["symbols_seen"],
+                "filtered_count": counts["symbols_seen"] - counts["eligible"],
+                "core": list(self.universe.active_symbols()),
+                "hot_dynamic": list(dynamic),
+                "hot_full": list(self.universe.active_symbols()) + list(dynamic),
+                "tops": tops,
+                "top_n": cfg.top_n,
+                "min_quote_volume_usdt": cfg.min_quote_volume_usdt,
+            }
+            try:
+                self.persistence.store_discovery_snapshot(snapshot)
+                for event in events:
+                    self.persistence.log_universe_event(
+                        event["kind"], event["symbol"], event.get("reason", ""))
+            except Exception as exc:
+                LOGGER.warning(json.dumps(
+                    {"kind": "persistence_error", "error": str(exc)}))
+            info.update({"last_scan_ms": now_ms,
+                         "eligible": counts["eligible"],
+                         "filtered": counts["symbols_seen"] - counts["eligible"],
+                         "seen": counts["symbols_seen"],
+                         "error": None})
+            LOGGER.info(json.dumps({"kind": "discovery_scan",
+                                    "eligible": counts["eligible"],
+                                    "hot_dynamic": list(dynamic),
+                                    "events": events}))
+            return snapshot
+        except Exception as exc:
+            info["error"] = f"{type(exc).__name__}: {exc}"
+            LOGGER.warning(json.dumps(
+                {"kind": "discovery_error", "error": str(exc)}))
+            return {"error": str(exc)}
+
+    async def _discovery_loop(self) -> None:
+        # First scan immediately so the dashboard has discovery state early.
+        await self.run_discovery_scan()
+        while not self._stop.is_set():
+            try:
+                await asyncio.wait_for(
+                    self._stop.wait(),
+                    timeout=self.config.discovery.interval_seconds)
+            except asyncio.TimeoutError:
+                pass
+            if not self._stop.is_set():
+                await self.run_discovery_scan()
+
     def build_summary(self, *, final: bool) -> dict[str, object]:
         now = self._monotonic()
         runtime = max(0.0, now - self.stats.started_monotonic)
         expected = expected_stream_names(self.config)
         active = [stream for stream in expected if stream in self.stats.last_seen_monotonic]
+        # Event-driven streams (forceOrder: liquidations only) are NEVER
+        # missing: silence is their normal state, not absence.
+        missing = sorted(set(expected) - set(active) - EVENT_DRIVEN_STREAMS)
         silent = sorted(
             stream
             for stream in active
@@ -635,7 +752,7 @@ class MarketProbe:
             "dataQuality": {
                 "expectedStreams": len(expected),
                 "activeStreams": len(active),
-                "missingStreams": sorted(set(expected) - set(active)),
+                "missingStreams": missing,
                 "staleStreams": stale,
                 "silentStreams": silent,
                 "stalenessCadenceStreams": sorted(cadence_streams),
@@ -678,6 +795,17 @@ class MarketProbe:
             # None-guarded callers break: defaults on any persistence gap.
             "returns": self._returns.stats(),
             "persistence": self._persistence_stats(),
+            # P1-05 additive block: discovery scan state (HOT proposal only;
+            # websocket subscriptions are unchanged — see docs).
+            "discovery": {
+                "enabled": self._discovery_info["enabled"],
+                "last_scan_ms": self._discovery_info["last_scan_ms"],
+                "seen": self._discovery_info["seen"],
+                "eligible": self._discovery_info["eligible"],
+                "filtered": self._discovery_info["filtered"],
+                "hot_dynamic": list(self._hot_dynamic),
+                "error": self._discovery_info["error"],
+            },
         }
 
     @staticmethod
@@ -710,13 +838,37 @@ class MarketProbe:
         # persistence failures are logged there and never break logging).
         # P1-04: also persist dirty price buckets + latest return features
         # so the dashboard and restarts observe feature state.
+        # P1-05: enrich rows with tier + momentum + ranks (additive only;
+        # P1-04 return/anchor keys untouched) and persist rank vectors.
         try:
             self.persistence.store_telemetry_snapshot(summary)
             dirty = self._returns.drain_dirty_buckets()
             if dirty:
                 self.persistence.store_price_samples(dirty)
-            self.persistence.store_return_features(
-                self._returns.snapshot_all(self._wall_clock_ms()))
+            as_of_ms = self._wall_clock_ms()
+            rows = self._returns.snapshot_all(as_of_ms)
+            momentum_rows = []
+            for row in rows:
+                symbol = str(row.get("symbol", "UNKNOWN"))
+                momentum = self._returns.momentum(symbol, as_of_ms)
+                row["momentum"] = momentum
+                row["tier"] = (TIER_CORE if symbol in self.universe.active_symbols()
+                               else TIER_HOT if symbol in self._hot_dynamic
+                               else TIER_DISCOVERY)
+                momentum_rows.append((symbol, {
+                    "velocity_1m": momentum["velocity"].get("1m"),
+                    "velocity_5m": momentum["velocity"].get("5m"),
+                    "acceleration_1m": momentum["acceleration"].get("1m"),
+                }))
+            ranks = self._rank_tracker.evaluate(as_of_ms, momentum_rows)
+            for row in rows:
+                symbol = str(row.get("symbol", "UNKNOWN"))
+                row["ranks"] = {metric: vec.get(symbol, {})
+                                for metric, vec in ranks.items()}
+            for metric, vec in ranks.items():
+                if vec:
+                    self.persistence.store_rank_snapshot(metric, vec)
+            self.persistence.store_return_features(rows)
         except Exception as exc:
             LOGGER.warning(json.dumps({"kind": "persistence_error", "error": str(exc)}))
         LOGGER.info(json.dumps(summary, sort_keys=True, allow_nan=False))

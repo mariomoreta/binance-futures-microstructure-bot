@@ -50,7 +50,16 @@ signal engine → position manager → risk engine → execution engine
 | Detectors (liq/funding/volume) | `detectors.py` | Implemented (hypothesis thresholds) |
 | Metrics (spread, imbalance, z-score, percentile) | `metrics.py` | Implemented |
 | Telemetry/distributions | `telemetry.py` | Implemented |
-| Feature engine (multi-TF returns, rank, VWAP, vol, OI, flow) | `returns.py` + `universe.py` | Returns P1-04 DONE (mark-price log returns, 7 TFs); rank/VWAP/vol/OI/flow pending (P1-05…) |
+| Feature engine (multi-TF returns, rank, VWAP, vol, OI, flow) | `returns.py` + `universe.py` + `momentum.py` | Returns P1-04 DONE; velocity/accel/live-ranks P1-05 DONE; VWAP/vol/OI/flow pending (P1-06…) |
+| Discovery layer (public REST scan → HOT proposal) | `discovery.py` | P1-05 DONE (exchangeInfo + 24hr tickers, filters, hysteresis selection; no WS changes) |
 | State classifier | — | NOT BUILT until P1-12, BLOCKED on P1-11 validation (`docs/MARKET_STATES.md`) |
-| Persistence foundation | `persistence.py` | v2 (snapshots/observations/rejections + price_samples/return_features); sampling gate + dedicated snapshot writer |
-| Dashboard | `dashboard.py` | LIVE (P1-03 + P1-04 returns section + `/api/features/returns`); staged P1-09 → P1-13 |
+| Persistence foundation | `persistence.py` | v3 (snapshots/observations/rejections + price/return + discovery/events/ranks); sampling gate + dedicated snapshot writer |
+| Dashboard | `dashboard.py` | LIVE (P1-03 + P1-04 returns + P1-05 intel/momentum/discovery APIs); staged P1-09 → P1-13 |
+
+## Subscription posture (P1-05)
+
+Only CORE symbols are subscribed to websocket streams. The HOT set is
+computed from cheap REST scans and exposed (dashboard/API/logs) but NOT
+subscribed: integrating dynamic stream rebuild on HOT change is the next
+explicit step (owned by P1-09 planning, requires P1-01R transport headroom).
+No live features are ever shown for unsubscribed symbols.

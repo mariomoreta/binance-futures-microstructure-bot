@@ -32,11 +32,10 @@ the dashboard exists. No classifier before raw-feature dashboard validation.
 
 ## ACTIVE_TASK
 
-- `P1-05` PRICE VELOCITY / ACCELERATION + RANKING (rank velocity/acceleration).
+- `P1-06` VOLUME + AGGRESSIVE TRADE FLOW (multi-bucket z, delta, imbalance).
   Status: NOT STARTED. (Queued only — do not begin without a new instruction.)
 
 ## NEXT_TASKS (ordered, all Phase 1)
-- `P1-05` PRICE VELOCITY / ACCELERATION + RANKING (rank velocity/acceleration).
 - `P1-06` VOLUME + AGGRESSIVE TRADE FLOW (multi-bucket z, delta, imbalance).
 - `P1-07` ORDER BOOK + OPEN INTEREST (depth slope, microprice, OI delta/accel).
 - `P1-08` VWAP + VOLATILITY + MARKET STRUCTURE (displacement, realized vol,
@@ -104,15 +103,24 @@ strategies (P3), paper engine/positions (P4), execution (P5).
   Live 240s clean run (exit 0, final_summary): 11/11 streams, 5 reconnects,
   11448 skew-rejects (~93% degraded env), engine 46 samples/symbol, 0 invalid,
   inflight high-water 345 drained to 0, safety 0/0/0. 106/106 tests.
+- `P1-05` (2026-10-06) DISCOVERY + VELOCITY/ACCEL/RANKING: **PASS**. REST
+  discovery (924 seen → 449 eligible → 475 filtered; core pinned); HOT 6
+  small sharp movers (USUSDT +41%, 龙虾USDT +35%, BR/ORCA/NMR/GRIFFAIN),
+  vote/dwell hysteresis, no WS changes; velocity/accel/ranks live on trio
+  (accel honestly warming); intel UI + `/api/discovery` +
+  `/api/features/momentum`; persistence v3 + tested migrations; forceOrder
+  never-missing; health blocks separated. Clean 240s run (exit 0): 11/11,
+  0 reconnects, 0 rejects, 143659 msgs, engine 91 samples/symbol, sampling
+  accepted 1888/dropped 141k, high-water 6 → 0, safety 0/0/0. 144/144 tests.
 
 ## LAST_VERIFICATION
 
-- 2026-10-06 (P1-04): `python run_tests.py` → 106/106 OK. Live 240s clean
-  run (exit 0, final_summary evidence in `logs/p1-04/probe-240s-clean.log`):
-  mid-run API showed real prices + 1m warming first; dashboard `ok` while
-  fed, DEGRADED/STALE honestly after. Full evidence in `docs/CURRENT_STATE.md`.
-- 2026-10-06 (P1-03): dashboard live at http://127.0.0.1:8091
-  (PID 8452, still running), `/api/health`, `/overview` + `/system` 200.
+- 2026-10-06 (P1-05): `python run_tests.py` → 144/144 OK. Discovery live
+  (449 eligible, HOT 6 small movers, promotions logged); momentum/ranks live
+  on trio; clean 240s run exit 0 with final_summary
+  (`logs/p1-05/probe-240s-clean.log`); dashboard `ok`-while-fed,
+  STALE/DEGRADED honestly after. Full evidence in `docs/CURRENT_STATE.md`.
+- 2026-10-06 (P1-04): 106/106 OK; dashboard live at http://127.0.0.1:8091.
 - 2026-10-06 (P1-01): 1805s observe-only probe: exit 0, safety 0/0/0
   throughout; transport unhealthy in this environment (58 reconnects, p50 lags
   15–38s, 85% skew-rejected). Full evidence in `docs/CURRENT_STATE.md`.
@@ -125,4 +133,4 @@ strategies (P3), paper engine/positions (P4), execution (P5).
 
 - Branch `phase1/market-intelligence-dashboard` published to private
   `mariomoreta/binance-futures-microstructure-bot` (origin in sync).
-  P1-04 implementation/docs commit follows on this branch.
+  P1-05 implementation/docs commit follows on this branch.

@@ -32,12 +32,29 @@ serve|pick-port` (repo root, `PYTHONPATH=src` unless installed).
 
 ### P1-04 progressive visibility — IMPLEMENTED (PASS)
 
-`/overview` gained a read-only **Symbol Returns** section (per active symbol:
+/overview gained a read-only **Symbol Returns** section (per active symbol:
 price, 1m/3m/5m/15m/1h/4h/24h as signed %, freshness age, n/7 warmup chip;
 unavailable horizons show "—" with an insufficient-history note, never 0%).
 Machine-readable `GET /api/features/returns` (`generated_at`, `source`,
 `semantics`, `features[]`; 404 when empty). Still no `/movers`, no ranking,
 no states, no controls.
+
+### P1-05 terminal evolution + intelligence — IMPLEMENTED (PASS)
+
+`/overview` reorganized into three separated blocks — **Dashboard server
+health** (process uptime, version, persistence reachability, rows, snapshot
+age), **Market feed health** (per-endpoint connections, streams, messages,
+gaps, this-run vs retained rejections), **Persistence health** (retained
+rows, discovery scan state) — followed by Symbol Returns, **Market
+intelligence** (universe tiers, live momentum with tier/velocity/accel/rank/
+rank-Δ/freshness/warmup, discovery gainers/losers/most-active labeled
+discovery-only, promotion/demotion history), then detector telemetry.
+`/system` stays technical ("Rejections / skew" now labeled run-counter vs
+retained rows). Machine-readable `GET /api/features/momentum` (velocity/
+accel semantics, ranks, per-symbol rows) and `GET /api/discovery`
+(architecture note, subscription note, snapshot, events). Health JSON adds
+explicit `server` vs `feed` blocks. Dashboard staleness reflects market-data
+freshness only — server health stays independently visible.
 
 ### Stage 2 — P1-09 MARKET-INTELLIGENCE DASHBOARD
 

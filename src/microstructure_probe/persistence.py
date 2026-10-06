@@ -246,17 +246,28 @@ class PersistenceStore:
             row = cursor.fetchone()
             current_version = int(row[0]) if row else 0
             
-            if current_version >= 2:
+            if current_version >= 3:
+                self._initialized = True
+                return
+
+            if current_version == 2:
+                # Migrate v2 -> v3: keep existing rows, add P1-05 tables.
+                self._create_schema_v3(cursor)
+                cursor.execute(
+                    "INSERT OR REPLACE INTO persistence_meta (key, value) VALUES (?, ?)",
+                    ("schema_version", "3")
+                )
                 self._initialized = True
                 return
 
             if current_version == 1:
-                # Migrate v1 -> v2: keep existing rows, add P1-04 tables.
+                # Migrate v1 -> v3: keep existing rows, add P1-04 + P1-05 tables.
                 self._ensure_snapshot_columns(cursor)
                 self._create_schema_v2(cursor)
+                self._create_schema_v3(cursor)
                 cursor.execute(
                     "INSERT OR REPLACE INTO persistence_meta (key, value) VALUES (?, ?)",
-                    ("schema_version", "2")
+                    ("schema_version", "3")
                 )
                 self._initialized = True
                 return
@@ -265,11 +276,13 @@ class PersistenceStore:
             self._create_schema_v1(cursor)
             # Create tables for schema v2
             self._create_schema_v2(cursor)
+            # Create tables for schema v3
+            self._create_schema_v3(cursor)
 
             # Set schema version
             cursor.execute(
                 "INSERT OR REPLACE INTO persistence_meta (key, value) VALUES (?, ?)",
-                ("schema_version", "2")
+                ("schema_version", "3")
             )
             
             self._initialized = True
@@ -311,6 +324,45 @@ class PersistenceStore:
         cursor.execute("""
             CREATE INDEX IF NOT EXISTS idx_price_samples_symbol_ts
             ON price_samples(symbol, bucket_ms DESC)
+        """)
+
+    def _create_schema_v3(self, cursor: sqlite3.Cursor) -> None:
+        """P1-05 discovery/ranking tables: compact snapshot + event log + ranks.
+
+        Full discovery REST responses are NEVER stored: only the compact
+        selection snapshot (counts + HOT set + top lists). Promotion/demotion
+        history is an append-only bounded log. Rank vectors are REPLACE-per-
+        metric rows (a handful of rows, inherently bounded).
+        """
+        cursor.execute("""
+            CREATE TABLE IF NOT EXISTS discovery_snapshots (
+                id INTEGER PRIMARY KEY CHECK (id = 0),
+                updated_ms INTEGER NOT NULL,
+                payload_json TEXT NOT NULL
+            )
+        """)
+
+        cursor.execute("""
+            CREATE TABLE IF NOT EXISTS universe_events (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                timestamp REAL NOT NULL,
+                kind TEXT NOT NULL,
+                symbol TEXT NOT NULL,
+                detail TEXT
+            )
+        """)
+
+        cursor.execute("""
+            CREATE TABLE IF NOT EXISTS rank_snapshots (
+                metric TEXT PRIMARY KEY,
+                updated_ms INTEGER NOT NULL,
+                ranks_json TEXT NOT NULL
+            )
+        """)
+
+        cursor.execute("""
+            CREATE INDEX IF NOT EXISTS idx_universe_events_ts
+            ON universe_events(timestamp DESC)
         """)
 
     def _create_schema_v1(self, cursor: sqlite3.Cursor) -> None:
@@ -834,6 +886,92 @@ class PersistenceStore:
                 if isinstance(parsed, dict):
                     out.append(parsed)
             return out
+
+    def store_discovery_snapshot(self, payload: Dict[str, Any]) -> None:
+        """Replace the singleton compact discovery snapshot (P1-05).
+
+        Only counts + HOT set + top-mover lists are stored — never full
+        REST responses. Synchronous; scans run every few minutes.
+        """
+        if not self._initialized:
+            self.init_db()
+        with self._get_cursor() as cursor:
+            cursor.execute(
+                "INSERT OR REPLACE INTO discovery_snapshots (id, updated_ms, payload_json)"
+                " VALUES (0, ?, ?)",
+                (int(time.time() * 1000), _safe_json(payload)),
+            )
+
+    def latest_discovery(self) -> Optional[Dict[str, Any]]:
+        """Latest compact discovery snapshot, or None before the first scan."""
+        if not self._initialized:
+            self.init_db()
+        with self._get_cursor() as cursor:
+            cursor.execute(
+                "SELECT payload_json FROM discovery_snapshots WHERE id = 0")
+            row = cursor.fetchone()
+            if row is None:
+                return None
+            try:
+                parsed = json.loads(row[0])
+            except (json.JSONDecodeError, TypeError):
+                return None
+            return parsed if isinstance(parsed, dict) else None
+
+    def log_universe_event(self, kind: str, symbol: str,
+                           detail: str = "") -> None:
+        """Append a promotion/demotion/scan event (bounded log, 500 rows)."""
+        if not self._initialized:
+            self.init_db()
+        with self._get_cursor() as cursor:
+            cursor.execute(
+                "INSERT INTO universe_events (timestamp, kind, symbol, detail)"
+                " VALUES (?, ?, ?, ?)",
+                (time.time(), str(kind), str(symbol).upper(), str(detail or "")),
+            )
+            self._apply_retention_policy(cursor, "universe_events", 500)
+
+    def universe_events(self, limit: int = 50) -> List[Dict[str, Any]]:
+        """Recent universe events, newest first."""
+        if not self._initialized:
+            self.init_db()
+        with self._get_cursor() as cursor:
+            cursor.execute(
+                "SELECT timestamp, kind, symbol, detail FROM universe_events"
+                " ORDER BY id DESC LIMIT ?",
+                (max(int(limit), 1),),
+            )
+            return [{"timestamp": row[0], "kind": row[1],
+                     "symbol": row[2], "detail": row[3] or ""}
+                    for row in cursor.fetchall()]
+
+    def store_rank_snapshot(self, metric: str,
+                            ranks: Dict[str, Dict[str, Any]]) -> None:
+        """Replace the rank vector for one metric (a handful of rows total)."""
+        if not self._initialized:
+            self.init_db()
+        with self._get_cursor() as cursor:
+            cursor.execute(
+                "INSERT OR REPLACE INTO rank_snapshots (metric, updated_ms, ranks_json)"
+                " VALUES (?, ?, ?)",
+                (str(metric), int(time.time() * 1000), _safe_json(ranks)),
+            )
+
+    def latest_ranks(self) -> Dict[str, Dict[str, Any]]:
+        """Latest rank vector per metric, or {} before the first evaluation."""
+        if not self._initialized:
+            self.init_db()
+        out: Dict[str, Dict[str, Any]] = {}
+        with self._get_cursor() as cursor:
+            cursor.execute("SELECT metric, ranks_json FROM rank_snapshots")
+            for metric, blob in cursor.fetchall():
+                try:
+                    parsed = json.loads(blob)
+                except (json.JSONDecodeError, TypeError):
+                    continue
+                if isinstance(parsed, dict):
+                    out[str(metric)] = parsed
+        return out
     
     def _apply_retention_policy(
         self, 
@@ -1006,7 +1144,8 @@ class PersistenceStore:
             with self._get_cursor() as cursor:
                 for table in ("telemetry_snapshots", "market_observations",
                               "rejected_observations", "price_samples",
-                              "return_features"):
+                              "return_features", "discovery_snapshots",
+                              "universe_events", "rank_snapshots"):
                     cursor.execute(f"SELECT COUNT(*) FROM {table}")
                     info["rows"][table] = cursor.fetchone()[0]
         except Exception:

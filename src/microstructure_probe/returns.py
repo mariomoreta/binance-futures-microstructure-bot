@@ -195,6 +195,34 @@ class ReturnEngine:
     def snapshot_all(self, as_of_ms: int) -> List[Dict[str, object]]:
         return [self.feature(symbol, as_of_ms) for symbol in sorted(self._series)]
 
+    def momentum(self, symbol: str, as_of_ms: float,
+                 horizons: tuple = ("1m", "3m", "5m", "15m")) -> Dict[str, object]:
+        """Velocity/acceleration per horizon (P1-05; feature() untouched).
+
+        Values are log-return rates (velocity) and their change rate
+        (acceleration); unavailable horizons are None, never fabricated.
+        """
+        from .momentum import acceleration_at, velocity_at
+
+        key = symbol.upper()
+        series = self._series.get(key)
+        out: Dict[str, object] = {
+            "symbol": key, "as_of_ms": as_of_ms,
+            "velocity": {}, "acceleration": {},
+        }
+        if series is None:
+            out["velocity"] = {h: None for h in horizons}
+            out["acceleration"] = {h: None for h in horizons}
+            return out
+        h_ms = {h: TIMEFRAMES_MS[h] for h in horizons if h in TIMEFRAMES_MS}
+        out["velocity"] = {
+            h: (v["value"] if (v := velocity_at(series, as_of_ms, ms)) else None)
+            for h, ms in h_ms.items()}
+        out["acceleration"] = {
+            h: (a["value"] if (a := acceleration_at(series, as_of_ms, ms)) else None)
+            for h, ms in h_ms.items()}
+        return out
+
     def stats(self) -> Dict[str, Dict[str, object]]:
         out = {}
         for symbol, series in sorted(self._series.items()):

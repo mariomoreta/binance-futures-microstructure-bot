@@ -32,8 +32,8 @@ Factual state as of 2026-10-06 (order refinement). Historical evidence:
 
 ## Verification (2026-10-06)
 
-- Canonical: `python run_tests.py` from repo root → **106/106 PASS** (28 baseline
-  + 32 persistence/sampling/v2 + 22 universe/returns + 24 dashboard).
+- Canonical: `python run_tests.py` from repo root → **144/144 PASS** (28 baseline
+  + 32 persistence/sampling/v2 + 22 universe/returns + 24 dashboard + 38 P1-05).
 - `--show-streams` → correct routed `/public` + `/market` URLs.
 - Port candidates 8091/8092/8093/18091/18765 probed FREE on 127.0.0.1
   (dashboard port-policy evidence; selection happens at P1-03 startup).
@@ -101,11 +101,6 @@ Superseded: the earlier "soak first, persist nothing in Phase 1" sketch.
 Persistence foundation is now explicitly a Phase 1 task (local, observe-only,
 dashboard-feeding) — see `docs/DECISIONS.md`.
 
-## Project brain
-
-- `AGENTS.md` + 20 docs under `docs/`. No strategy, engine, or safety code
-  touched. `docs/PHASE_1_REPORT.md` preserved as-is.
-
 ## P1-02 persistence foundation — RESULT: PASS (2026-10-06)
 
 - Tech: stdlib SQLite (`sqlite3`), no new dependencies. Store:
@@ -142,6 +137,8 @@ dashboard-feeding) — see `docs/DECISIONS.md`.
   bookTicker rates the 10k observation cap retains only recent minutes —
   sufficient for dashboard/P1-04 bootstrap, not archival history (Phase 2
   owns that).
+
+## Project brain
 
 - Live corrigendum (found during P1-03): snapshot writes starved behind bulk
   observation traffic on the shared executor (0 snapshot rows vs 9260
@@ -208,23 +205,61 @@ dashboard-feeding) — see `docs/DECISIONS.md`.
 - Dashboard: Symbol Returns on `/overview` + `/api/features/returns` live;
   partial warmup renders values + "—", no movers/rank/states/controls.
 
+## P1-05 dynamic discovery + velocity/acceleration/ranking — RESULT: PASS (2026-10-06)
+
+- Discovery (`discovery.py`, public REST only, no keys): exchangeInfo +
+  24hr tickers on `fapi.binance.com` (docs site unfetchable — behavior
+  verified live instead). Live scan: 924 seen → 449 eligible → 475 filtered
+  (PERPETUAL + TRADING + USDT + ≥1M quote-vol floor). Core trio preserved.
+- HOT: 6 dynamic (USUSDT +41%, 龙虾USDT +35%, BR/ORCA/NMR/GRIFFAIN +31–41% —
+  small sharp movers, not large caps) promoted after 2 votes, stable after;
+  losers LYN −25%, MINA −24%; most-active BTC/ETH/SOL by volume (movement ≠
+  volume demonstrated). No WS subscription changes (trio only); HOT proposed
+  via API/dashboard/logs; dynamic resubscribe is a documented next step.
+- Momentum (`momentum.py` on P1-04 series, `feature()` untouched): velocity =
+  return-change per second (flat trends ≈ 0 — not renamed returns),
+  timestamp-aware acceleration, None until warmed; live velocity_1m values
+  (e.g. ETH +3.2e-6/s) with accel honestly None until 3 evaluations;
+  ranks ±/ties/change/velocity/accel across the trio (ETH #1 climbing).
+- Dashboard: three separated health blocks, Symbol Returns kept, new
+  intelligence area (tiers, live momentum, discovery movers, event history),
+  `/api/discovery` + `/api/features/momentum`; forceOrder never missing;
+  reject labels split run-vs-retained; no movers route, no states, no controls.
+- Persistence v3 (discovery snapshot REPLACE, universe_events ≤500, rank
+  vectors REPLACE-per-metric; tested v1→v3 and v2→v3 migrations).
+- Live windows: 360s detached run killed by tool-session end (~330s, lesson
+  recorded — detached children die with the harness session) + clean 240s
+  blocking run (exit 0, final_summary): 11/11 streams, 0 reconnects,
+  0 skew-rejects (healthy window!), 143659 msgs, engine 91 samples/symbol
+  over 89-min span, sampling accepted 1888/dropped 141k counted, inflight
+  high-water 6 → 0, safety 0/0/0. Dashboard `ok` while fed, STALE/DEGRADED
+  honestly after. 30 funding crossings judged non-signal artifacts as before.
+- Tests: 144/144 (38 new). Unicode HOT symbol (龙虾USDT) flows through
+  JSON/DB/HTML correctly; only legacy Windows-console display needed UTF-8.
+
+- `AGENTS.md` + 20 docs under `docs/`. No strategy, engine, or safety code
+  touched. `docs/PHASE_1_REPORT.md` preserved as-is.
+
 ## Known gaps (Phase 1 work ahead, in order)
 
 Minimal dashboard: DONE (P1-03 PASS, live at http://127.0.0.1:8091).
 Returns engine: DONE (P1-04 PASS — universe + 7-TF mark-price log returns).
-Remaining: open interest, multi-timeframe
-return engine, velocity/acceleration, ranking + rank velocity/acceleration,
-VWAP + displacement, realized volatility/range expansion, structure primitives,
-richer aggressive-flow metrics, state classifier, intelligence + signal UI,
-soak + calibration evidence. (Persistence foundation DONE — P1-02 PASS.)
+Discovery + velocity/acceleration/ranking: DONE (P1-05 PASS — 449-eligible
+scan, 6-HOT proposal, live momentum + ranks, intel UI + APIs).
+Remaining: open interest, VWAP + displacement, realized volatility/range
+expansion, structure primitives, richer aggressive-flow metrics (P1-06…),
+state classifier (P1-12, still blocked on P1-11), signal UI (P1-13),
+soak + calibration evidence (P1-10/P1-14, need P1-01R first).
 
 ## Blockers / issues
 
-- Transport unhealthy in this environment (P1-01 PARTIAL): reconnect storm +
-  15–75s delivery lags. Re-validation in a healthy network (`P1-01R`) required
-  before P1-10 soak / P1-14 calibration gates. P1-02/P1-03 (local builds) NOT
-  blocked.
-- Dashboard RUNNING at http://127.0.0.1:8091 (read-only, localhost — safe to
-  keep). Snapshot goes STALE without a running probe feed (honest chip);
-  continuous freshness arrives with the P1-10 soak.
+- Transport flaky in this environment (P1-01 PARTIAL; P1-05 windows saw both
+  degraded runs and one healthy 0-reconnect run). Re-validation in a healthy
+  network (`P1-01R`) still required before P1-10 soak / P1-14 calibration
+  gates. P1-06 local feature work NOT blocked.
+- Detached probe processes die with the harness tool session (observed twice):
+  use blocking bounded runs for evidence windows.
+- Dashboard RUNNING at http://127.0.0.1:8091 (PID 31820; read-only, localhost
+  — safe to keep). Snapshot goes STALE without a running probe feed (honest
+  chip); continuous freshness arrives with the P1-10 soak.
 - No secrets, keys, or account access exist or are needed.

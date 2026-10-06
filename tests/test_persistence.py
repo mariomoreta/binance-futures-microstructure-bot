@@ -53,14 +53,14 @@ class PersistenceStoreTest(unittest.TestCase):
                 self.assertIsNotNone(cursor.fetchone(), f"Table {table} should exist")
 
     def test_schema_version_tracking(self) -> None:
-        """Schema version is tracked in persistence_meta (currently v2)."""
+        """Schema version is tracked in persistence_meta (currently v3)."""
         with self.store._get_cursor() as cursor:
             cursor.execute(
                 "SELECT value FROM persistence_meta WHERE key = 'schema_version'"
             )
             row = cursor.fetchone()
             self.assertIsNotNone(row)
-            self.assertEqual(int(row[0]), 2)
+            self.assertEqual(int(row[0]), 3)
 
     def test_telemetry_snapshot_round_trip(self) -> None:
         """Telemetry snapshot can be stored and retrieved."""
@@ -499,8 +499,8 @@ class ObservationSamplingTest(unittest.TestCase):
         self.assertEqual(stats["inflight"], 0)
 
 
-class SchemaV2Test(unittest.TestCase):
-    """P1-04 feature tables: version gate, price samples, return features."""
+class SchemaV3Test(unittest.TestCase):
+    """P1-04+P1-05 tables: version gate, samples, features, discovery, ranks."""
 
     def setUp(self) -> None:
         self.temp_dir = tempfile.mkdtemp(prefix="v2_test_")
@@ -517,18 +517,20 @@ class SchemaV2Test(unittest.TestCase):
         except OSError:
             pass
 
-    def test_schema_version_is_2_with_feature_tables(self) -> None:
+    def test_schema_version_is_3_with_feature_tables(self) -> None:
         with self.store._get_cursor() as cursor:
             cursor.execute(
                 "SELECT value FROM persistence_meta WHERE key='schema_version'")
-            self.assertEqual(int(cursor.fetchone()[0]), 2)
-            for table in ("price_samples", "return_features"):
+            self.assertEqual(int(cursor.fetchone()[0]), 3)
+            for table in ("price_samples", "return_features",
+                          "discovery_snapshots", "universe_events",
+                          "rank_snapshots"):
                 cursor.execute(
                     "SELECT name FROM sqlite_master WHERE type='table' AND name=?",
                     (table,))
                 self.assertIsNotNone(cursor.fetchone(), table)
 
-    def test_v1_database_migrates_to_v2(self) -> None:
+    def test_v1_database_migrates_to_v3(self) -> None:
         # Simulate a pre-P1-04 database: v1 tables only, version marker 1.
         legacy = Path(self.temp_dir) / "legacy.db"
         conn = __import__("sqlite3").connect(str(legacy))
@@ -542,9 +544,12 @@ class SchemaV2Test(unittest.TestCase):
         with migrated._get_cursor() as cursor:
             cursor.execute(
                 "SELECT value FROM persistence_meta WHERE key='schema_version'")
-            self.assertEqual(int(cursor.fetchone()[0]), 2)
+            self.assertEqual(int(cursor.fetchone()[0]), 3)
             cursor.execute(
                 "SELECT name FROM sqlite_master WHERE type='table' AND name='price_samples'")
+            self.assertIsNotNone(cursor.fetchone())
+            cursor.execute(
+                "SELECT name FROM sqlite_master WHERE type='table' AND name='discovery_snapshots'")
             self.assertIsNotNone(cursor.fetchone())
         # Legacy column repair still applied on the v1 path.
         with migrated._get_cursor() as cursor:
@@ -552,6 +557,49 @@ class SchemaV2Test(unittest.TestCase):
             columns = {row[1] for row in cursor.fetchall()}
             self.assertIn("spread_bps_json", columns)
         migrated.close()
+
+    def test_v2_database_migrates_to_v3_preserving_rows(self) -> None:
+        import time as _time
+
+        base = (int(_time.time() * 1000) // 10_000) * 10_000 - 30_000
+        self.store.store_price_samples([("BTCUSDT", base, 99.0)])
+        self.store.close()
+        with self.store._get_cursor() as cursor:
+            cursor.execute(
+                "INSERT OR REPLACE INTO persistence_meta (key, value) VALUES ('schema_version', '2')")
+        reopened = PersistenceStore(db_path=self.db_path)
+        reopened.init_db()
+        with reopened._get_cursor() as cursor:
+            cursor.execute(
+                "SELECT value FROM persistence_meta WHERE key='schema_version'")
+            self.assertEqual(int(cursor.fetchone()[0]), 3)
+        self.assertEqual(reopened.load_price_samples("BTCUSDT"),
+                         [("BTCUSDT", base, 99.0)])
+        reopened.close()
+
+    def test_discovery_snapshot_replace_and_read(self) -> None:
+        self.assertIsNone(self.store.latest_discovery())
+        payload = {"eligible_count": 500, "hot_dynamic": ["XRPUSDT"]}
+        self.store.store_discovery_snapshot(payload)
+        self.assertEqual(self.store.latest_discovery(), payload)
+        payload2 = {"eligible_count": 501, "hot_dynamic": []}
+        self.store.store_discovery_snapshot(payload2)
+        self.assertEqual(self.store.latest_discovery(), payload2)
+
+    def test_universe_events_bounded_log(self) -> None:
+        for i in range(505):
+            self.store.log_universe_event("promoted", f"S{i}USDT", "test")
+        events = self.store.universe_events(limit=600)
+        self.assertEqual(len(events), 500)
+        self.assertEqual(events[0]["symbol"], "S504USDT")
+        self.assertEqual(events[0]["kind"], "promoted")
+
+    def test_rank_snapshots_replace_per_metric(self) -> None:
+        self.assertEqual(self.store.latest_ranks(), {})
+        self.store.store_rank_snapshot("velocity_1m", {"A": {"rank": 1}})
+        self.store.store_rank_snapshot("velocity_1m", {"A": {"rank": 2}})
+        ranks = self.store.latest_ranks()
+        self.assertEqual(ranks, {"velocity_1m": {"A": {"rank": 2}}})
 
     def test_price_samples_round_trip_and_restart(self) -> None:
         import time as _time

@@ -4,6 +4,14 @@
   "stale_after_seconds": 10,
   "max_event_clock_skew_ms": 5000,
   "telemetry_max_samples": 20000,
+  "discovery": {
+    "enabled": true,
+    "interval_seconds": 600,
+    "hot_dynamic_slots": 6,
+    "min_quote_volume_usdt": 1000000.0,
+    "top_n": 10,
+    "min_votes": 2
+  },
   "clock_sync": {
     "interval_seconds": 600,
     "samples": 5,

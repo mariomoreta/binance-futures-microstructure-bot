@@ -18,12 +18,25 @@ Routed endpoints (`probe.py::build_stream_urls`, base `wss://fstream.binance.com
 Current symbols: BTCUSDT, ETHUSDT, SOLUSDT. Universe expansion (full Futures
 gainer/loser coverage) is a Phase 1 task — required for ranking features.
 
-## REST (minimal)
+## REST (public only — verified live 2026-10-06)
 
 - `GET /fapi/v1/time` — clock sync only (5 samples, midpoint, median offset/RTT).
-- Future Phase 1 candidates (public only): exchangeInfo (symbol universe),
-  open-interest endpoint, funding history, klines for multi-timeframe returns
-  bootstrap. Each addition needs a task in `docs/TASK_QUEUE.md` first.
+- `GET /fapi/v1/exchangeInfo` — P1-05 discovery: contract status/type/quote
+  asset per symbol (live: 924 symbols; TRADING 789; PERPETUAL 703).
+- `GET /fapi/v1/ticker/24hr` — P1-05 discovery: lastPrice, priceChangePercent,
+  quoteVolume, count per symbol (live: 789 rows). No key, ~15s timeout,
+  failures logged and never break the probe.
+- (Official docs site was unfetchable from this environment; endpoint paths
+  match the documented USD-M Futures market-data REST API on the same host
+  family as the existing clock sync. Behavior verified against live responses
+  instead — shapes recorded in `docs/DECISIONS.md`.)
+
+## Event-driven stream semantics (finalized P1-05)
+
+- `!forceOrder@arr` publishes only on liquidations: silence is normal. It is
+  NEVER listed as missing and NEVER stale; it appears under silent streams
+  with that semantic. Probe enforces this in `build_summary` (missing set
+  excludes event-driven streams); dashboard health does not penalize it.
 
 ## Timestamp semantics (audited, Phase 1B)
 

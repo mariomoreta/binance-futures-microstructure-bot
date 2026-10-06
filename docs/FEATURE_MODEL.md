@@ -27,6 +27,29 @@ Thresholds are HYPOTHESIS until Phase 2–3 statistics exist.
 - Velocity/acceleration (first/second return derivatives) belong to P1-05 —
   not implemented. Rank velocity/acceleration likewise P1-05.
 
+## Velocity / acceleration / ranking — IMPLEMENTED P1-05
+
+- velocity(h;b) = [R_h(t) − R_h(t−b)] / b_seconds (default b = h), computed
+  from the P1-04 bucketed series via timestamped return evaluations — no
+  grid assumption, no lookahead (each evaluation uses samples ≤ its as-of).
+  Preferred horizons 1m/3m/5m/15m. A flat high return yields ~zero velocity
+  (return-momentum, not renamed return). Unavailable until two evaluations
+  span h+b (+tolerances) — else None, never 0.
+- acceleration(h;b;c) = [v(t) − v(t−c)] / c_seconds (defaults b = c = h;
+  1m acceleration needs ~3min of span). Timestamp-aware, deterministic,
+  unavailable until three evaluations exist — else None.
+- Ranking per metric (velocity_1m, velocity_5m, acceleration_1m): value
+  descending, ties by (value desc, symbol asc). rank_change = prev − rank
+  (+ = climbed); rank_velocity = change/elapsed_s (≥2 evals);
+  rank_acceleration = Δrank_velocity/elapsed_s (≥3 evals). Missing values
+  excluded, never zero-filled.
+- Live ranks cover subscribed symbols (n=3 today — honest, grows with HOT
+  subscriptions); broad discovery movers (top gainers/losers/most-active)
+  come from 24h REST stats and are labeled discovery-only.
+- Tiers: CORE (pinned trio) / DISCOVERY (eligible scan) / HOT (core + ≤N
+  dynamic by movement score with vote/dwell hysteresis). HOT is proposed
+  only in P1-05 — no dynamic websocket resubscription yet.
+
 ## Cross-sectional rank
 
 - Gainer/loser ranking over the monitored universe per timeframe.

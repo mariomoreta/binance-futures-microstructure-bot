@@ -125,3 +125,26 @@ symbol) — bookTicker/aggTrade/depth at most 1/s (code defaults, operator
 overridable via `observation_sample_ms`, empty disables); markPrice arrays
 and forceOrder ungated. Dropped writes are counted in `sample_stats()`
 (surfaced in summaries), never hidden. No retention-limit increase.
+
+## 2026-10-06 — P1-05 discovery + momentum architecture
+
+Discovery uses public REST only (`GET /fapi/v1/exchangeInfo` for
+status/contractType/quoteAsset, `GET /fapi/v1/ticker/24hr` for price/24h
+change/quote volume) on the same `fapi.binance.com` host family as the
+existing clock sync; verified live (924 symbols, TRADING/PERPETUAL/USDT
+filtering) after the docs site proved unfetchable from this environment.
+Eligible = PERPETUAL + TRADING + USDT + 24h quote volume floor (operator
+`min_quote_volume_usdt`, default 1M); unknowns are ineligible with explicit
+reasons, never fabricated. No CoinMarketCap, no market-cap ranking (Binance
+provides none). Universe tiers: CORE pinned benchmarks, DISCOVERY broad scan,
+HOT = core + ≤N dynamic by movement score (|24h%| desc, volume desc, symbol
+asc) with vote/dwell hysteresis (enter after 2 consecutive scans, leave after
+2 absences, immediate on proven breach). No dynamic websocket resubscription
+in P1-05: HOT is proposed and exposed; integration is a documented next step.
+Velocity(h;b) = [R_h(t) − R_h(t−b)]/b (default b=h; a flat high return has
+~zero velocity — deliberately NOT a renamed return); acceleration is the
+timestamp-aware change in velocity (default span h; 1m needs ~3min span).
+Ranks per metric descending with (value, symbol) tie-breaks; change/velocity/
+acceleration need 2/2/3 evaluations. Live ranks cover subscribed symbols;
+broad movers come from 24h REST stats labeled discovery-only — no fake live
+features for unsubscribed symbols, no signals anywhere.

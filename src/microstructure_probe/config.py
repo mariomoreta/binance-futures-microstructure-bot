@@ -31,6 +31,16 @@ class VolumeConfig:
 
 
 @dataclass(frozen=True)
+class DiscoveryConfig:
+    enabled: bool
+    interval_seconds: int
+    hot_dynamic_slots: int
+    min_quote_volume_usdt: float
+    top_n: int
+    min_votes: int
+
+
+@dataclass(frozen=True)
 class ClockSyncConfig:
     interval_seconds: int
     samples: int
@@ -49,6 +59,9 @@ class ProbeConfig:
     funding: FundingConfig
     volume: VolumeConfig
     observation_sample_ms: dict = field(default_factory=dict)
+    discovery: DiscoveryConfig = field(default_factory=lambda: DiscoveryConfig(
+        enabled=True, interval_seconds=600, hot_dynamic_slots=6,
+        min_quote_volume_usdt=1_000_000.0, top_n=10, min_votes=2))
 
 
 def _positive(name: str, value: Any) -> float:
@@ -73,6 +86,30 @@ def _observation_sample_ms(raw: Any) -> dict:
     for kind, value in raw.items():
         out[str(kind)] = int(_positive(f"observation_sample_ms.{kind}", value))
     return out
+
+
+def _discovery_config(raw: Any) -> DiscoveryConfig:
+    """Optional discovery section; absent means code defaults (enabled)."""
+    raw = raw if isinstance(raw, dict) else {}
+    enabled = raw.get("enabled", True)
+    hot_slots = int(raw.get("hot_dynamic_slots", 6))
+    top_n = int(raw.get("top_n", 10))
+    min_votes = int(raw.get("min_votes", 2))
+    if hot_slots < 0 or top_n < 1 or min_votes < 1:
+        raise ValueError(
+            "discovery requires hot_dynamic_slots >= 0, top_n >= 1, min_votes >= 1")
+    floor = raw.get("min_quote_volume_usdt", 1_000_000.0)
+    if float(floor) < 0:
+        raise ValueError("discovery.min_quote_volume_usdt must be >= 0")
+    return DiscoveryConfig(
+        enabled=bool(enabled),
+        interval_seconds=int(_positive(
+            "discovery.interval_seconds", raw.get("interval_seconds", 600))),
+        hot_dynamic_slots=hot_slots,
+        min_quote_volume_usdt=float(floor),
+        top_n=top_n,
+        min_votes=min_votes,
+    )
 
 
 def load_config(path: str | Path) -> ProbeConfig:
@@ -108,6 +145,7 @@ def load_config(path: str | Path) -> ProbeConfig:
 
     return ProbeConfig(
         symbols=symbols,
+        discovery=_discovery_config(raw.get("discovery", {})),
         observation_sample_ms=_observation_sample_ms(
             raw.get("observation_sample_ms", {})
         ),

@@ -5,7 +5,7 @@ visualization only: nothing here can trade, and the engine never consumes
 anything rendered here.
 
 Routes: / (→ /overview), /overview, /system, /api/health, /api/snapshot,
-/api/features/returns.
+/api/features/returns, /api/features/momentum, /api/discovery.
 
 Lifecycle CLI (operator commands, Binance dashboard only):
     python -m microstructure_probe.dashboard start [--port N] [--db PATH]
@@ -235,6 +235,27 @@ class DashboardState:
         except (OSError, sqlite3.Error):
             return []
 
+    def discovery(self) -> Optional[Dict[str, Any]]:
+        """Latest compact discovery snapshot (P1-05), or None before scans."""
+        try:
+            return self.store.latest_discovery()
+        except (OSError, sqlite3.Error):
+            return None
+
+    def universe_events(self, limit: int = 20) -> List[Dict[str, Any]]:
+        """Recent promotion/demotion history (P1-05)."""
+        try:
+            return self.store.universe_events(limit=limit)
+        except (OSError, sqlite3.Error):
+            return []
+
+    def ranks(self) -> Dict[str, Dict[str, Any]]:
+        """Latest rank vectors per metric (P1-05), or {} before evaluation."""
+        try:
+            return self.store.latest_ranks()
+        except (OSError, sqlite3.Error):
+            return {}
+
     def storage(self) -> Dict[str, Any]:
         try:
             return self.store.storage_info()
@@ -327,7 +348,9 @@ def _page(title: str, banner_html: str, body: str) -> str:
             f"<body><nav><a href='/overview'>/overview</a>"
             f"<a href='/system'>/system</a><a href='/api/health'>/api/health</a>"
             f"<a href='/api/snapshot'>/api/snapshot</a>"
-            f"<a href='/api/features/returns'>/api/features/returns</a></nav>"
+            f"<a href='/api/features/returns'>/api/features/returns</a>"
+            f"<a href='/api/features/momentum'>/api/features/momentum</a>"
+            f"<a href='/api/discovery'>/api/discovery</a></nav>"
             f"<h1>{html.escape(title)}</h1>{banner_html}{body}"
             f"<p class='note'>{html.escape(BANNER_NOTE)} Auto-refresh 10s.</p>"
             f"</body></html>")
@@ -396,6 +419,119 @@ def render_returns_section(features: List[Dict[str, Any]]) -> str:
     return body + "</table>"
 
 
+def _format_scientific(value: Any, suffix: str = "/s") -> str:
+    if value is None:
+        return "<span title='insufficient history'>—</span>"
+    try:
+        return f"{float(value):.3g}{suffix}"
+    except (TypeError, ValueError):
+        return "<span title='insufficient history'>—</span>"
+
+
+def render_intel_sections(state: DashboardState) -> str:
+    """P1-05 market-intelligence area: tiers, live momentum, discovery movers.
+
+    Read-only. Discovery metrics and live-feature metrics are visually
+    separated; nothing here is a signal, entry, or classifier output.
+    """
+    body = "<h2>Market intelligence (read-only, NOT signals)</h2>"
+    features = state.return_features()
+    discovery = state.discovery()
+    live_by_symbol = {f.get("symbol"): f for f in features
+                      if isinstance(f, dict)}
+    core = (discovery or {}).get("core") or sorted(live_by_symbol)
+    hot = (discovery or {}).get("hot_dynamic") or []
+    body += "<h2>Universe tiers</h2>" + _kv_table([
+        ("CORE benchmarks", ", ".join(core) or "—"),
+        ("HOT dynamic", ", ".join(hot) or "none selected"),
+        ("DISCOVERY",
+         f"{(discovery or {}).get('eligible_count', '?')} eligible of "
+         f"{(discovery or {}).get('seen_count', '?')} seen "
+         f"(scan: {_format_age_ms(time.time() * 1000 - ((discovery or {}).get('generated_at_ms') or 0)) if discovery else 'never'})"),
+    ])
+    body += "<h2>Live momentum (subscribed symbols only)</h2>"
+    if not features:
+        body += "<p class='note'>No live features yet — insufficient history.</p>"
+    else:
+        body += "<table><tr><th>symbol</th><th>tier</th><th>price</th>" \
+                "<th>1m</th><th>3m</th><th>5m</th><th>15m</th>" \
+                "<th>velocity 1m</th><th>accel 1m</th>" \
+                "<th>rank (vel 1m)</th><th>rank Δ</th>" \
+                "<th>freshness</th><th>warmup</th></tr>"
+        for feat in features:
+            if not isinstance(feat, dict):
+                continue
+            returns = feat.get("returns") if isinstance(
+                feat.get("returns"), dict) else {}
+            momentum = feat.get("momentum") if isinstance(
+                feat.get("momentum"), dict) else {}
+            velocity = momentum.get("velocity") if isinstance(
+                momentum.get("velocity"), dict) else {}
+            accel = momentum.get("acceleration") if isinstance(
+                momentum.get("acceleration"), dict) else {}
+            ranks = feat.get("ranks") if isinstance(
+                feat.get("ranks"), dict) else {}
+            rank_vel = ranks.get("velocity_1m") if isinstance(
+                ranks.get("velocity_1m"), dict) else {}
+            try:
+                price = f"{float(feat.get('current_price')):.4f}" \
+                    if feat.get("current_price") is not None else "—"
+            except (TypeError, ValueError):
+                price = "—"
+            available = feat.get("available_tfs") if isinstance(
+                feat.get("available_tfs"), list) else []
+            rank_n = rank_vel.get("rank")
+            rank_d = rank_vel.get("change")
+            rank_cell = (f"{rank_n} ({rank_d:+d})" if isinstance(rank_n, int)
+                         and isinstance(rank_d, int)
+                         else (str(rank_n) if rank_n is not None else "—"))
+            cells = "".join(f"<td>{_format_return(returns.get(tf))}</td>"
+                            for tf in ("1m", "3m", "5m", "15m"))
+            body += (f"<tr><td>{html.escape(str(feat.get('symbol', '?')))}</td>"
+                     f"<td>{html.escape(str(feat.get('tier', '?')))}</td>"
+                     f"<td>{price}</td>{cells}"
+                     f"<td>{_format_scientific(velocity.get('1m'))}</td>"
+                     f"<td>{_format_scientific(accel.get('1m'))}</td>"
+                     f"<td>{html.escape(rank_cell)}</td>"
+                     f"<td>{_format_age_ms(feat.get('sample_age_ms'))}</td>"
+                     f"<td>{len(available)}/7"
+                     f"{' READY' if feat.get('warmup_complete') else ' WARMING'}</td></tr>")
+        body += "</table>"
+    body += "<h2>Discovery movers (24h REST metrics — discovery only, NOT live)</h2>"
+    tops = (discovery or {}).get("tops") or {}
+    if not tops:
+        body += "<p class='note'>No discovery scan yet.</p>"
+    else:
+        for title, rows in (("Top gainers 24h", tops.get("gainers", [])),
+                            ("Top losers 24h", tops.get("losers", [])),
+                            ("Most active 24h (quote volume)", tops.get("most_active", []))):
+            body += f"<h2>{html.escape(title)}</h2>"
+            if not rows:
+                body += "<p class='note'>none</p>"
+                continue
+            body += "<table><tr><th>symbol</th><th>24h %</th><th>price</th>" \
+                    "<th>quote vol 24h</th></tr>"
+            for row in rows:
+                chg = row.get("change_24h_pct")
+                chg_cell = (f"{float(chg):+.2f}%" if chg is not None else "—")
+                body += (f"<tr><td>{html.escape(str(row.get('symbol', '?')))}</td>"
+                         f"<td>{chg_cell}</td>"
+                         f"<td>{html.escape(str(row.get('price', '—')))}</td>"
+                         f"<td>{html.escape(str(row.get('quote_volume_24h', '—')))}</td></tr>")
+            body += "</table>"
+    events = state.universe_events(limit=10)
+    if events:
+        body += "<h2>Universe events (promotion/demotion history)</h2><table>" \
+                "<tr><th>time UTC</th><th>kind</th><th>symbol</th><th>detail</th></tr>"
+        for event in events:
+            body += (f"<tr><td>{html.escape(time.strftime('%Y-%m-%d %H:%M:%S', time.gmtime(event.get('timestamp', 0))))}</td>"
+                     f"<td>{html.escape(str(event.get('kind', '?')))}</td>"
+                     f"<td>{html.escape(str(event.get('symbol', '?')))}</td>"
+                     f"<td>{html.escape(str(event.get('detail', '')))}</td></tr>")
+        body += "</table>"
+    return body
+
+
 def render_overview(state: DashboardState) -> str:
     snap = state.snapshot()
     health = state.health()
@@ -409,39 +545,84 @@ def render_overview(state: DashboardState) -> str:
     safety = _safe_dict(snap.get("safety"))
     dq = _safe_dict(snap.get("dataQuality"))
     rj = state.rejection_stats()
+    storage = state.storage()
     messages = _safe_dict(dq.get("messagesByStream"))
     total_messages = sum(int(v) for v in messages.values())
     runtime = float(snap.get("runtimeSeconds") or 0.0)
     gaps = _safe_dict(dq.get("depthSequenceGapsBySymbol"))
     recon = _safe_dict(dq.get("reconnections"))
     snap_ts = snap.get("snapshotTimestamp")
-    body = f"<h2>Status</h2>"
+    attempts = _safe_dict(dq.get("connectionAttempts"))
+    successes = _safe_dict(dq.get("connectionSuccesses"))
+    uptime = _safe_dict(dq.get("observedUptimePercentByEndpoint"))
+    rows = storage.get("rows") if isinstance(storage.get("rows"), dict) else {}
+
+    def _conn_table() -> str:
+        endpoints = sorted(set(attempts) | set(successes) | set(recon) | set(uptime))
+        if not endpoints:
+            return "<p class='note'>no connection data</p>"
+        out = "<table><tr><th>endpoint</th><th>attempts</th><th>successes</th>" \
+              "<th>reconnects</th><th>uptime %</th></tr>"
+        for endpoint in endpoints:
+            out += (f"<tr><td>{html.escape(endpoint)}</td>"
+                    f"<td>{attempts.get(endpoint, '?')}</td>"
+                    f"<td>{successes.get(endpoint, '?')}</td>"
+                    f"<td>{_safe_dict(dq.get('reconnections')).get(endpoint, '?')}</td>"
+                    f"<td>{uptime.get(endpoint, '?')}</td></tr>")
+        return out + "</table>"
+
+    body = "<h2>Dashboard server health</h2>"
     body += _kv_table([
-        ("dashboard status", STATUS_LABELS.get(status, status)),
-        ("reasons", "; ".join(health["reasons"]) or "—"),
-        ("runtime (probe)", f"{runtime:.1f}s"),
-        ("total messages", f"{total_messages} ({total_messages / max(runtime, 1):.1f}/s)"),
+        ("server", f"UP (v{DASHBOARD_VERSION}, "
+         f"{state.server_uptime_seconds():.0f}s uptime)"),
+        ("persistence reachable", storage.get("exists", "?")),
+        ("database", f"{storage.get('db_path', '?')} "
+         f"({storage.get('size_bytes', '?')} bytes)"),
+        ("stored rows", json.dumps(rows)),
+        ("snapshot age",
+         f"{time.time() - snap_ts:.0f}s" if snap_ts else "unknown"),
+    ])
+    body += "<h2>Market feed health</h2>"
+    body += _conn_table()
+    body += _kv_table([
         ("streams active/expected",
          f"{dq.get('activeStreams', '?')}/{dq.get('expectedStreams', '?')}"),
-        ("missing streams", ", ".join(_safe_list(dq.get("missingStreams"))) or "none"),
+        ("missing streams (event-driven excluded)",
+         ", ".join(_safe_list(dq.get("missingStreams"))) or "none"),
         ("stale streams", ", ".join(_safe_list(dq.get("staleStreams"))) or "none"),
-        ("silent streams", ", ".join(_safe_list(dq.get("silentStreams"))) or "none"),
-        ("reconnects", json.dumps(recon)),
+        ("silent streams (event-driven silence is normal)",
+         ", ".join(_safe_list(dq.get("silentStreams"))) or "none"),
+        ("total messages", f"{total_messages} ({total_messages / max(runtime, 1):.1f}/s)"),
         ("depth sequence gaps", json.dumps(gaps)),
-        ("timestamp rejected", f"{dq.get('timestampRejected', '?')} "
-         f"(rate {float(rj.get('rejection_rate', 0.0)):.1%} over retained rows)"),
-        ("snapshot timestamp",
-         f"{time.strftime('%Y-%m-%d %H:%M:%S UTC', time.gmtime(snap_ts)) if snap_ts else '?'} "
-         f"({time.time() - snap_ts:.0f}s ago)" if snap_ts else "unknown"),
-        ("data quality", "DEGRADED — see reasons" if status == "degraded" else status.upper()),
+        ("timestamp rejected (this run)",
+         f"{dq.get('timestampRejected', '?')}"),
+        ("retained rejected rows / rate (persistence)",
+         f"{rj.get('total_rejected', '?')} / "
+         f"{float(rj.get('rejection_rate', 0.0)):.1%}"),
+        ("probe runtime", f"{runtime:.1f}s"),
+        ("feed status", "DEGRADED — see reasons" if status == "degraded" else status.upper()),
     ])
+    body += "<h2>Persistence health</h2>"
+    discovery = state.discovery()
+    body += _kv_table([
+        ("telemetry snapshots retained", rows.get("telemetry_snapshots", "?")),
+        ("return feature rows", rows.get("return_features", "?")),
+        ("last discovery scan",
+         time.strftime("%Y-%m-%d %H:%M:%S UTC",
+                       time.gmtime((discovery or {}).get("generated_at_ms", 0) / 1000))
+         if discovery else "never"),
+        ("discovery eligible/filtered",
+         f"{(discovery or {}).get('eligible_count', '?')}/"
+         f"{(discovery or {}).get('filtered_count', '?')}" if discovery else "—"),
+    ])
+    body += render_returns_section(state.return_features())
+    body += render_intel_sections(state)
     body += "<h2>Detector telemetry (NOT trade signals)</h2>"
     events = _safe_dict(snap.get("eventsByType"))
     if events:
         body += _kv_table([(k, v) for k, v in sorted(events.items())])
     else:
         body += "<p class='note'>No detector threshold crossings in this snapshot window.</p>"
-    body += render_returns_section(state.return_features())
     return _page("Overview — Binance Futures", _banner(safety, status), body)
 
 
@@ -491,9 +672,9 @@ def render_system(state: DashboardState) -> str:
         ("syncs ok/failed",
          f"{clock.get('clockSyncSuccessful', '?')}/{clock.get('clockSyncFailed', '?')}"),
     ])
-    body += "<h2>Rejections / skew</h2>" + _kv_table([
-        ("timestamp rejected (probe counter)", dq.get("timestampRejected", "?")),
-        ("retained rejected rows", rj.get("total_rejected", "?")),
+    body += "<h2>Rejections / skew (run counter vs retained rows)</h2>" + _kv_table([
+        ("timestamp rejected — this run (probe counter)", dq.get("timestampRejected", "?")),
+        ("retained rejected rows (persistence)", rj.get("total_rejected", "?")),
         ("rejection rate (retained)", f"{float(rj.get('rejection_rate', 0.0)):.1%}"),
         ("by reason", json.dumps(rj.get("by_reason", {}))),
         ("by stream", json.dumps(rj.get("by_stream", {}))),
@@ -547,6 +728,16 @@ class DashboardHandler(BaseHTTPRequestHandler):
             "status": health["status"],
             "version": DASHBOARD_VERSION,
             "uptime_seconds": round(self.state.server_uptime_seconds(), 1),
+            "server": {
+                "status": "ok",
+                "uptime_seconds": round(self.state.server_uptime_seconds(), 1),
+                "version": DASHBOARD_VERSION,
+            },
+            "feed": {
+                "status": health["status"],
+                "snapshot_age_seconds": round(time.time() - snap_ts, 1) if snap_ts else None,
+                "reasons": health["reasons"],
+            },
             "host": HOST,
             "persistence_reachable": bool(self.state.storage().get("exists", False)),
             "latest_snapshot_timestamp": (
@@ -602,6 +793,40 @@ class DashboardHandler(BaseHTTPRequestHandler):
                     "source": "markPrice",
                     "semantics": "log returns; unavailable horizons are null (never 0)",
                     "features": features,
+                })
+        elif path == "/api/features/momentum":
+            features = self.state.return_features()
+            if not features:
+                self._send_json(404, {"error": "no momentum features persisted yet"})
+            else:
+                self._send_json(200, {
+                    "generated_at": time.strftime(
+                        "%Y-%m-%dT%H:%M:%SZ", time.gmtime(time.time())),
+                    "source": "markPrice",
+                    "velocity_semantics": "change in h-return over basis window, per second",
+                    "acceleration_semantics": "timestamp-aware change in velocity, per second",
+                    "ranks": self.state.ranks(),
+                    "features": [
+                        {"symbol": f.get("symbol"), "tier": f.get("tier"),
+                         "current_price": f.get("current_price"),
+                         "sample_age_ms": f.get("sample_age_ms"),
+                         "warmup_complete": f.get("warmup_complete"),
+                         "momentum": f.get("momentum"),
+                         "ranks": f.get("ranks")}
+                        for f in features if isinstance(f, dict)],
+                })
+        elif path == "/api/discovery":
+            discovery = self.state.discovery()
+            if discovery is None:
+                self._send_json(404, {"error": "no discovery scan persisted yet"})
+            else:
+                self._send_json(200, {
+                    "universe_architecture": "CORE pinned benchmarks + "
+                                             "DISCOVERY scan + bounded HOT set",
+                    "subscription_note": "only CORE symbols subscribed to "
+                                         "websocket streams; HOT is proposed only",
+                    "discovery": discovery,
+                    "events": self.state.universe_events(limit=20),
                 })
         else:
             self._send_json(404, {"error": f"unknown route {path}"})

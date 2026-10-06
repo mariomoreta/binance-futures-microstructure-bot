@@ -361,5 +361,158 @@ class PidfileTest(unittest.TestCase):
         self.assertEqual(args.port, 8099)
 
 
+def _return_feature(symbol="BTCUSDT", price=100.0, returns=None,
+                    momentum=None, tier="CORE"):
+    all_none = {tf: None for tf in
+                ("1m", "3m", "5m", "15m", "1h", "4h", "24h")}
+    if returns:
+        all_none.update(returns)
+    return {
+        "symbol": symbol,
+        "current_price": price,
+        "source": "markPrice",
+        "source_timestamp_ms": 1_700_000_000_000,
+        "sample_age_ms": 5_000,
+        "history_span_ms": 120_000,
+        "returns": all_none,
+        "anchor_ms": {tf: None for tf in all_none},
+        "available_tfs": [tf for tf, v in all_none.items() if v is not None],
+        "warmup_complete": all(v is not None for v in all_none.values()),
+        "tier": tier,
+        "momentum": momentum or {"velocity": {}, "acceleration": {}},
+        "ranks": {},
+    }
+
+
+class IntelSectionTest(unittest.TestCase):
+    """P1-05 market-intelligence area + health separation + reject labels."""
+
+    def setUp(self) -> None:
+        self.store = _temp_store(self)
+        self.server = DashboardServer(host="127.0.0.1", port=0,
+                                      db_path=self.store.db_path).start()
+        self.addCleanup(self.server.stop)
+        self.base = f"http://127.0.0.1:{self.server.bound_port()}"
+
+    def _get(self, path: str):
+        with urllib.request.urlopen(self.base + path, timeout=10) as resp:
+            return resp.status, resp.read().decode("utf-8")
+
+    def test_health_sections_separated(self) -> None:
+        self.store.store_telemetry_snapshot(_summary())
+        _, body = self._get("/overview")
+        for section in ("Dashboard server health", "Market feed health",
+                        "Persistence health", "Market intelligence"):
+            self.assertIn(section, body)
+
+    def test_server_ok_while_feed_unknown(self) -> None:
+        code, body = self._get("/api/health")
+        payload = json.loads(body)
+        self.assertEqual(code, 200)
+        self.assertEqual(payload["server"]["status"], "ok")
+        self.assertEqual(payload["status"], "unknown")
+
+    def test_reject_labels_current_vs_retained(self) -> None:
+        summary = _summary()
+        summary["dataQuality"]["timestampRejected"] = 7
+        self.store.store_telemetry_snapshot(summary)
+        self.store.store_rejection_record(
+            symbol="BTCUSDT", stream_type="btcusdt@aggTrade",
+            payload={"s": "BTCUSDT"}, rejection_reason="timestamp_skew")
+        _, overview = self._get("/overview")
+        self.assertIn("this run", overview)
+        self.assertIn("retained", overview)
+        _, system = self._get("/system")
+        self.assertIn("run counter vs retained rows", system)
+
+    def test_intel_tiers_and_momentum_rendered(self) -> None:
+        self.store.store_telemetry_snapshot(_summary())
+        self.store.store_return_features([
+            _return_feature("BTCUSDT", 100.0, {"1m": 0.005},
+                            {"velocity": {"1m": 1e-05},
+                             "acceleration": {"1m": 2e-09}})])
+        self.store.store_discovery_snapshot({
+            "generated_at_ms": 1_700_000_000_000,
+            "eligible_count": 500, "seen_count": 520, "filtered_count": 20,
+            "core": ["BTCUSDT", "ETHUSDT", "SOLUSDT"],
+            "hot_dynamic": ["XRPUSDT"],
+            "tops": {
+                "gainers": [{"symbol": "XRPUSDT", "change_24h_pct": 25.0,
+                             "price": 2.5, "quote_volume_24h": 5e6}],
+                "losers": [{"symbol": "DOGEUSDT", "change_24h_pct": -18.0,
+                            "price": 0.2, "quote_volume_24h": 4e6}],
+                "most_active": []},
+        })
+        _, body = self._get("/overview")
+        for marker in ("Universe tiers", "CORE", "HOT", "XRPUSDT",
+                       "Live momentum", "Discovery movers",
+                       "Top gainers 24h", "Top losers 24h",
+                       "discovery only, NOT live", "DOGEUSDT"):
+            self.assertIn(marker, body)
+        for forbidden in ("IGNITION", "place_order", "<button", "/movers"):
+            self.assertNotIn(forbidden, body)
+
+    def test_momentum_api_shape(self) -> None:
+        self.store.store_return_features([
+            _return_feature("BTCUSDT", 100.0, {"1m": 0.005},
+                            {"velocity": {"1m": 1e-05},
+                             "acceleration": {"1m": None}})])
+        code, body = self._get("/api/features/momentum")
+        self.assertEqual(code, 200)
+        payload = json.loads(body)
+        self.assertIn("velocity_semantics", payload)
+        self.assertIn("ranks", payload)
+        row = payload["features"][0]
+        self.assertEqual(row["tier"], "CORE")
+        self.assertEqual(row["momentum"]["velocity"]["1m"], 1e-05)
+
+    def test_momentum_api_empty_is_404(self) -> None:
+        try:
+            self._get("/api/features/momentum")
+            self.fail("expected HTTPError")
+        except Exception as exc:
+            self.assertIn("404", str(exc))
+
+    def test_discovery_api_shape_and_empty(self) -> None:
+        try:
+            self._get("/api/discovery")
+            self.fail("expected HTTPError")
+        except Exception as exc:
+            self.assertIn("404", str(exc))
+        self.store.store_discovery_snapshot({
+            "generated_at_ms": 1, "eligible_count": 10, "seen_count": 12,
+            "filtered_count": 2, "core": ["BTCUSDT"], "hot_dynamic": [],
+            "tops": {}})
+        self.store.log_universe_event("promoted", "XRPUSDT", "top_mover_2_votes")
+        code, body = self._get("/api/discovery")
+        self.assertEqual(code, 200)
+        payload = json.loads(body)
+        self.assertIn("CORE pinned benchmarks", payload["universe_architecture"])
+        self.assertIn("only CORE symbols subscribed",
+                      payload["subscription_note"])
+        self.assertEqual(payload["discovery"]["eligible_count"], 10)
+        self.assertEqual(payload["events"][0]["symbol"], "XRPUSDT")
+
+
+class ProbeHealthSemanticsTest(unittest.TestCase):
+    """forceOrder silence is normal: never missing, never stale."""
+
+    def test_forceorder_never_missing(self) -> None:
+        from microstructure_probe.probe import MarketProbe
+        from test_detectors import test_config
+
+        probe = MarketProbe(test_config(), wall_clock_ms=lambda: 11_000.0,
+                            monotonic=lambda: 11.0)
+        # Only forceOrder seen; everything else absent.
+        probe.stats.last_seen_monotonic["!forceOrder@arr"] = 10.0
+        probe.stats.first_seen_monotonic["!forceOrder@arr"] = 10.0
+        summary = probe.build_summary(final=False)
+        dq = summary["dataQuality"]
+        self.assertNotIn("!forceOrder@arr", dq["missingStreams"])
+        self.assertNotIn("!forceOrder@arr", dq["staleStreams"])
+        # Genuinely absent cadenced streams are still reported missing.
+        self.assertIn("!markPrice@arr@1s", dq["missingStreams"])
+
+
 if __name__ == "__main__":
     unittest.main()
