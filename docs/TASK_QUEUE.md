@@ -32,12 +32,11 @@ the dashboard exists. No classifier before raw-feature dashboard validation.
 
 ## ACTIVE_TASK
 
-- `P1-03` MINIMAL DASHBOARD — routes `/overview`, `/system` on the persisted
-  state (`latest_telemetry`). Status: NOT STARTED.
+- `P1-04` SYMBOL UNIVERSE + MULTI-TIMEFRAME RETURNS (1m/3m/5m/15m/1h/4h/24h).
+  Status: NOT STARTED. Reads the live dashboard as it builds (dashboard stays
+  up at http://127.0.0.1:8091).
 
 ## NEXT_TASKS (ordered, all Phase 1)
-
-- `P1-04` SYMBOL UNIVERSE + MULTI-TIMEFRAME RETURNS (1m/3m/5m/15m/1h/4h/24h).
 - `P1-05` PRICE VELOCITY / ACCELERATION + RANKING (rank velocity/acceleration).
 - `P1-06` VOLUME + AGGRESSIVE TRADE FLOW (multi-bucket z, delta, imbalance).
 - `P1-07` ORDER BOOK + OPEN INTEREST (depth slope, microprice, OI delta/accel).
@@ -91,22 +90,33 @@ strategies (P3), paper engine/positions (P4), execution (P5).
   (schedule p50 0.021ms/p95 0.039ms; 2000-row drain 9.2s off-loop).
   47/47 tests green (19 persistence incl. probe write-path integration).
   P1-03 may read via `latest_telemetry()` / `latest_observations()`.
+- `P1-03` (2026-10-06) MINIMAL LIVE DASHBOARD: **PASS**. Stdlib-only server
+  (`dashboard.py`, v0.3.0, no new deps); routes `/overview`, `/system`,
+  `/api/health`, `/api/snapshot` on P1-02 reads. Live at
+  http://127.0.0.1:8091 (PID file `logs/dashboard.pid`), health `ok` at
+  startup, all routes 200. Live-verified fix: dedicated snapshot writer
+  (executor starvation → 0 snapshot rows; +regression test). 66/66 tests
+  (18 dashboard). Seeded with real 40s probe data (no mocks).
 
 ## LAST_VERIFICATION
 
-- 2026-10-06 (P1-02): `python run_tests.py` → 47/47 OK in ~2s (28 baseline +
-  19 persistence). Smoke: 2000 mixed messages, schedule p50/p95 0.021/0.039ms,
-  full drain 9.2s, safety 0/0/0. No private APIs/keys/orders in new code
-  (keyword scan + static test green). DB project-local, git-ignored.
+- 2026-10-06 (P1-03): `python run_tests.py` → 66/66 OK. Dashboard live at
+  http://127.0.0.1:8091, `/api/health` status `ok`, `/overview` + `/system`
+  200, unknown route 404, safety 0/0/0, no controls, no mocks. PID + health
+  verified via `dashboard status`.
+- 2026-10-06 (P1-02): 47/47 OK; smoke 2000 msgs schedule p50/p95
+  0.021/0.039ms, drain 9.2s. Starvation fix re-proven live (2 snapshots in
+  a 40s run after 0 before).
 - 2026-10-06 (P1-01): 1805s observe-only probe: exit 0, safety 0/0/0
   throughout; transport unhealthy in this environment (58 reconnects, p50 lags
   15–38s, 85% skew-rejected). Full evidence in `docs/CURRENT_STATE.md`.
 - Port candidates 8091/8092/8093/18091/18765 probed FREE on 127.0.0.1
   (dashboard port policy evidence).
-- No dashboard running yet (first visible at P1-03).
+- Dashboard RUNNING at http://127.0.0.1:8091 (PID tracked in
+  `logs/dashboard.pid`); snapshot STALEs honestly without a live probe feed.
 
 ## LAST_COMMIT
 
 - Branch `phase1/market-intelligence-dashboard` published to private
   `mariomoreta/binance-futures-microstructure-bot` (origin in sync).
-  P1-02 implementation/docs commit follows on this branch.
+  P1-03 implementation/docs commit follows on this branch.

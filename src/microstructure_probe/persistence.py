@@ -21,6 +21,7 @@ import logging
 import sqlite3
 import threading
 import time
+from concurrent.futures import ThreadPoolExecutor
 from contextlib import contextmanager
 from dataclasses import asdict, is_dataclass
 from pathlib import Path
@@ -29,6 +30,26 @@ from typing import Any, Dict, List, Optional, Union
 from . import models
 
 LOGGER = logging.getLogger("microstructure_probe.persistence")
+
+# Dedicated single-thread writer for telemetry snapshots. Rationale (found
+# during P1-03 live verification): observation writes share the default
+# executor; under message floods their per-insert retention DELETEs saturate
+# all default workers and snapshot tasks starve behind thousands of queued
+# observation writes — the dashboard feed would stay empty forever during
+# live runs. Snapshots are rare (every ~30s) and must never wait behind
+# bulk observation traffic.
+_SNAPSHOT_EXECUTOR: Optional[ThreadPoolExecutor] = None
+_SNAPSHOT_EXECUTOR_LOCK = threading.Lock()
+
+
+def _snapshot_executor() -> ThreadPoolExecutor:
+    global _SNAPSHOT_EXECUTOR
+    if _SNAPSHOT_EXECUTOR is None:
+        with _SNAPSHOT_EXECUTOR_LOCK:
+            if _SNAPSHOT_EXECUTOR is None:
+                _SNAPSHOT_EXECUTOR = ThreadPoolExecutor(
+                    max_workers=1, thread_name_prefix="snapshot-writer")
+    return _SNAPSHOT_EXECUTOR
 
 
 def _safe_json(value: Any) -> str:
@@ -322,8 +343,11 @@ class PersistenceStore:
             asyncio.run(self._store_telemetry_snapshot_async(summary_dict))
 
     async def _store_telemetry_snapshot_async(self, summary_dict: Dict[str, Any]) -> None:
-        """Async wrapper: run the blocking SQLite write off the event loop."""
-        await asyncio.to_thread(self._insert_telemetry_snapshot, summary_dict)
+        """Async wrapper: snapshot insert on the DEDICATED writer, never
+        queued behind bulk observation traffic (see module docstring)."""
+        loop = asyncio.get_running_loop()
+        await loop.run_in_executor(
+            _snapshot_executor(), self._insert_telemetry_snapshot, summary_dict)
 
     def _insert_telemetry_snapshot(self, summary_dict: Dict[str, Any]) -> None:
         """Synchronous SQLite insert (runs on a worker thread or test thread)."""
@@ -666,11 +690,11 @@ class PersistenceStore:
             result["spreadBps"] = result.pop("spread_bps_json", {})
             result["bookImbalance"] = result.pop("book_imbalance_json", {})
             
-            # Remove internal fields
+            # Remove internal fields (keep snapshotTimestamp for freshness checks)
+            result["snapshotTimestamp"] = result.pop("timestamp", None)
             result.pop("id", None)
-            result.pop("timestamp", None)
             result.pop("legacy_global_clamped_lag_ms", None)
-            
+
             return result
     
     def latest_observations(self, limit: int = 100) -> List[Dict[str, Any]]:
@@ -725,6 +749,26 @@ class PersistenceStore:
             
             return observations
     
+    def storage_info(self) -> Dict[str, Any]:
+        """Storage facts for the dashboard system page (path, size, row counts)."""
+        info: Dict[str, Any] = {
+            "db_path": str(self.db_path),
+            "exists": self.db_path.exists(),
+            "size_bytes": self.db_path.stat().st_size if self.db_path.exists() else 0,
+            "rows": {},
+        }
+        if not self._initialized:
+            return info
+        try:
+            with self._get_cursor() as cursor:
+                for table in ("telemetry_snapshots", "market_observations",
+                              "rejected_observations"):
+                    cursor.execute(f"SELECT COUNT(*) FROM {table}")
+                    info["rows"][table] = cursor.fetchone()[0]
+        except Exception:
+            info["rows"] = {}
+        return info
+
     def get_rejection_stats(self) -> Dict[str, Any]:
         """Get rejection statistics for telemetry.
         

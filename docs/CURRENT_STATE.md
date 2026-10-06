@@ -32,8 +32,8 @@ Factual state as of 2026-10-06 (order refinement). Historical evidence:
 
 ## Verification (2026-10-06)
 
-- Canonical: `python run_tests.py` from repo root → **47/47 PASS** (28 baseline
-  + 19 persistence; P1-02 fixed 5 as-found errors, suite now runs in ~2s).
+- Canonical: `python run_tests.py` from repo root → **66/66 PASS** (28 baseline
+  + 20 persistence + 18 dashboard).
 - `--show-streams` → correct routed `/public` + `/market` URLs.
 - Port candidates 8091/8092/8093/18091/18765 probed FREE on 127.0.0.1
   (dashboard port-policy evidence; selection happens at P1-03 startup).
@@ -137,6 +137,40 @@ dashboard-feeding) — see `docs/DECISIONS.md`.
   bookTicker rates the 10k observation cap retains only recent minutes —
   sufficient for dashboard/P1-04 bootstrap, not archival history (Phase 2
   owns that).
+- Live corrigendum (found during P1-03): snapshot writes starved behind bulk
+  observation traffic on the shared executor (0 snapshot rows vs 9260
+  observations in a live run). Fixed with a dedicated single-thread snapshot
+  writer + regression test; 2 snapshots landed on the very next live run.
+  See `docs/DECISIONS.md`.
+
+## P1-03 minimal live dashboard — RESULT: PASS (2026-10-06)
+
+- Stack: stdlib only (`src/microstructure_probe/dashboard.py`,
+  `ThreadingHTTPServer`, server-rendered dark HTML, no new dependencies,
+  version 0.3.0). Data only via P1-02 reads (`latest_telemetry`,
+  `latest_observations`, `get_rejection_stats`, `storage_info`).
+- Routes live: `/overview` (safety banner, connections, uptime, message
+  activity, stale/silent, reconnects, gaps, rejections, snapshot age,
+  detector counts labeled NOT trade signals), `/system` (per-stream table,
+  rates, raw/corrected p50/p95, processing latency, clock, rejections,
+  persistence, safety), `/api/health` (status/version/uptime/reachability/
+  snapshot time/streams/BOT_MODE/safety/reasons), `/api/snapshot`.
+  No buttons, no trading controls, no private-account data.
+- Live instance: http://127.0.0.1:8091 (first candidate, was free),
+  PID 10796, `logs/dashboard.pid`, health `ok` at startup, all routes
+  HTTP 200, unknown route 404. Started via
+  `python -m microstructure_probe.dashboard start`; left running (read-only,
+  localhost — safe).
+- Seed: 40s observe-only probe (exit 0) wrote 10k observations + 2 snapshots
+  of real market data — no mock data anywhere. Seed window itself was healthy
+  (0 reconnects, 0 skew-rejections), so the pages currently show HEALTHY;
+  the model reports DEGRADED/STALE/UNKNOWN from persisted evidence when
+  present (proven by tests, and P1-01-style degradation would surface the
+  same way). Snapshot ages without a running probe — STALE chip after 120s
+  is honest; continuous freshness arrives with the P1-10 soak feed.
+- Found and fixed live: snapshot executor starvation (see DECISIONS).
+- Tests: 66/66 (18 dashboard: health ok/degraded/stale/unknown, routes,
+  empty-DB, banner values, no-controls, port skip/busy, PID live/dead/stale).
 
 ## Project brain
 
@@ -145,7 +179,8 @@ dashboard-feeding) — see `docs/DECISIONS.md`.
 
 ## Known gaps (Phase 1 work ahead, in order)
 
-Minimal dashboard, open interest, multi-timeframe
+Minimal dashboard: DONE (P1-03 PASS, live at http://127.0.0.1:8091).
+Remaining: open interest, multi-timeframe
 return engine, velocity/acceleration, ranking + rank velocity/acceleration,
 VWAP + displacement, realized volatility/range expansion, structure primitives,
 richer aggressive-flow metrics, state classifier, intelligence + signal UI,
@@ -157,5 +192,7 @@ soak + calibration evidence. (Persistence foundation DONE — P1-02 PASS.)
   15–75s delivery lags. Re-validation in a healthy network (`P1-01R`) required
   before P1-10 soak / P1-14 calibration gates. P1-02/P1-03 (local builds) NOT
   blocked.
-- No dashboard running yet (first visible at P1-03). No secrets, keys, or
-  account access exist or are needed.
+- Dashboard RUNNING at http://127.0.0.1:8091 (read-only, localhost — safe to
+  keep). Snapshot goes STALE without a running probe feed (honest chip);
+  continuous freshness arrives with the P1-10 soak.
+- No secrets, keys, or account access exist or are needed.

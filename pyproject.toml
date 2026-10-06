@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "binance-futures-microstructure-probe"
-version = "0.2.0"
+version = "0.3.0"
 description = "Probe de observacion para microestructura de Binance USD-M Futures"
 readme = "README.md"
 requires-python = ">=3.11"
@@ -14,6 +14,7 @@ dependencies = [
 
 [project.scripts]
 microstructure-probe = "microstructure_probe.__main__:main"
+microstructure-dashboard = "microstructure_probe.dashboard:main"
 
 [tool.setuptools.packages.find]
 where = ["src"]

@@ -67,4 +67,45 @@ the valid-write code path, so invalid data cannot become valid records by
 construction. During verification this decision also fixed: missing
 `spread_bps_json` column, INSERT arity, sync-context rejection crash, legacy
 dict-vs-REAL binding, dropped markPrice arrays (now `MULTI` records), unwired
-snapshot persistence.
+  snapshot persistence.
+
+## 2026-10-06 — Phase 1 execution order supersedes the data-dependency sketch
+
+The older binding chain (RAW MARKET DATA → RAW FEATURES → PERSISTENCE →
+DASHBOARD VISIBILITY → LIVE FEATURE VALIDATION → STATE CLASSIFIER, recorded
+above) is explicitly SUPERSEDED as a build order — it is preserved above for
+history, not deleted. It described logical data-dependency, but building in
+that order would force prolonged blind observation before any dashboard
+exists. The binding execution order is now:
+
+transport validation → persistence foundation → minimal live dashboard →
+progressive raw features → live feature validation → classifier.
+
+Persistence therefore lands before raw features so the dashboard becomes
+useful progressively (P1-03 reads P1-02 state from day one); raw features must
+still be dashboard-validated (P1-11) before any classifier (P1-12) consumes
+them. No classifier before validation remains in force.
+
+## 2026-10-06 — P1-03 dashboard stack (stdlib only, no framework)
+
+`src/microstructure_probe/dashboard.py`: stdlib `ThreadingHTTPServer` +
+server-rendered HTML (dark, auto-refresh 10s) + JSON API; zero new
+dependencies. Rationale: the minimal dashboard needs tables and health JSON,
+not a framework; API/data layer (`DashboardState` over P1-02 read paths) is
+separate from presentation so P1-04+ metrics extend models, never the server.
+Lifecycle is a Python CLI (`start/stop/restart/status/serve/pick-port`) with
+PID file `logs/dashboard.pid` (pid + port + process creation time; stale or
+foreign PIDs are never killed). Health model (display heuristics, not
+signals): ok/degraded/stale/unknown from snapshot age (>120s = stale),
+stale streams, reconnect count, retained rejection rate (>50% = degraded).
+
+## 2026-10-06 — Dedicated snapshot writer (executor-starvation fix)
+
+Live verification showed 0 snapshot rows while 9260 observations landed:
+snapshot tasks starved behind thousands of queued observation writes on the
+shared default executor (per-insert retention DELETEs saturate all workers
+under floods). Fix: snapshots run on a dedicated single-thread executor, so
+the dashboard feed can never wait behind bulk observation traffic; backed by
+a regression test (flood + snapshot). Observation backpressure itself remains
+a known risk owned by P1-04 sampling (queued tasks grow memory under extreme
+sustained rates; the WS loop itself never blocks).

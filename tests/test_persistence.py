@@ -302,6 +302,34 @@ class PersistenceStoreTest(unittest.TestCase):
             count = cursor.fetchone()[0]
         self.assertLessEqual(count, 10)
 
+    def test_snapshot_not_starved_by_observation_flood(self) -> None:
+        """Snapshots use a dedicated writer: a bulk observation backlog must
+        not delay the dashboard feed (P1-03 live-verification finding)."""
+        import asyncio
+
+        async def flood_then_snapshot() -> None:
+            for i in range(300):
+                self.store.store_market_observation(
+                    symbol="BTCUSDT", stream_type="btcusdt@bookTicker",
+                    payload={"s": "BTCUSDT", "E": i}, is_valid=True)
+            self.store.store_telemetry_snapshot({
+                "runtimeSeconds": 1.0,
+                "safety": {"BOT_MODE": "observe", "apiKeysUsed": 0,
+                           "realOrdersSent": 0, "realCapitalAtRisk": 0.0,
+                           "maxDrawdownKillSwitchActive": False,
+                           "authenticatedClientsPresent": False,
+                           "orderExecutionPathPresent": False},
+                "clock": {}, "latency": {"legacyGlobalClampedLagMs": 0.0},
+                "processing": {}, "detectors": {}, "dataQuality": {},
+                "eventsByType": {}, "spreadBps": {}, "bookImbalance": {},
+            })
+            await asyncio.sleep(5)
+
+        asyncio.run(flood_then_snapshot())
+        latest = self.store.latest_telemetry()
+        self.assertIsNotNone(latest)
+        self.assertEqual(latest["runtimeSeconds"], 1.0)
+
     def test_default_path_is_project_local_and_ignored(self) -> None:
         """Default DB lives under project data/ which the repo git-ignores."""
         from microstructure_probe.persistence import PersistenceStore as PS

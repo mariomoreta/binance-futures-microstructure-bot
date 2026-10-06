@@ -9,13 +9,26 @@ decisions from frontend-rendered state.
 
 ## Staged delivery (binding order)
 
-### Stage 1 — P1-03 MINIMAL DASHBOARD, first visible here
+### Stage 1 — P1-03 MINIMAL DASHBOARD, first visible here — IMPLEMENTED (PASS)
 
-Routes: `/overview`, `/system`.
+Stack: stdlib only (`src/microstructure_probe/dashboard.py`, v0.3.0).
+
+Routes: `/overview`, `/system`, plus `/api/health` and `/api/snapshot`
+(machine-readable latest snapshot for P1-04 consumers).
 
 Must expose: connection health, stream health, message rates, latency p50/p95,
 stale symbols, sequence gaps, reconnects, last update, runtime duration —
-plus the safety banner (`BOT_MODE`, keys=0, orders=0).
+plus the safety banner (`BOT_MODE`, keys=0, orders=0). All present and
+live-verified; detector counts are labeled telemetry, never signals; no
+buttons, controls, or account data.
+
+Health model (display heuristics): `ok` / `degraded` (stale streams, any
+reconnects, retained rejection rate >50%) / `stale` (snapshot age >120s) /
+`unknown` (no snapshot). Chips shown as HEALTHY / DEGRADED / STALE / UNKNOWN.
+
+Live instance: http://127.0.0.1:8091 (PID in `logs/dashboard.pid`).
+CLI: `python -m microstructure_probe.dashboard start|stop|restart|status|
+serve|pick-port` (repo root, `PYTHONPATH=src` unless installed).
 
 ### Stage 2 — P1-09 MARKET-INTELLIGENCE DASHBOARD
 

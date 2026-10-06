@@ -15,10 +15,10 @@ phase's authorization unless stated.
 | `CHECKPOINT` | Selective commit of completed coherent work with evidence message. |
 | `WORK PHASE <n>` | One meaningful verified unit of work in phase n (audit→commit). Stop at boundary. |
 | `LOOP PHASE <n>` | Multiple verified units until gate/blocker/authorization boundary. Stop rules in `docs/WORKFLOW.md`. |
-| `DASHBOARD STATUS` | PID-alive + health-endpoint check + route spot-check for the Binance dashboard only. No changes. |
-| `DASHBOARD START` | First-free-port startup on 127.0.0.1, PID file, health verify, report URL block. Binance dashboard only. |
-| `DASHBOARD STOP` | Terminate only the tracked Binance-dashboard PID, remove PID file. Never touch unrelated processes. |
-| `DASHBOARD RESTART` | `DASHBOARD STOP` + `DASHBOARD START`. Must never start trading or need private credentials. |
+| `DASHBOARD STATUS` | `python -m microstructure_probe.dashboard status` — PID-alive + health-endpoint check + route spot-check. Binance dashboard only. No changes. |
+| `DASHBOARD START` | `python -m microstructure_probe.dashboard start [--port N] [--db PATH]` — first-free-port startup on 127.0.0.1, PID file, health verify, report URL block. Binance dashboard only. |
+| `DASHBOARD STOP` | `python -m microstructure_probe.dashboard stop` — terminate only the tracked Binance-dashboard PID, remove PID file. Never touch unrelated processes. |
+| `DASHBOARD RESTART` | `python -m microstructure_probe.dashboard restart` — STOP + START. Must never start trading or need private credentials. |
 
 ## Canonical test command (binding for autonomous loops)
 
