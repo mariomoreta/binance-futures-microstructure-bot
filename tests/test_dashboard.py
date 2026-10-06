@@ -218,6 +218,89 @@ class DashboardRoutesTest(unittest.TestCase):
             self.assertIn("404", str(exc))
 
 
+def _return_feature(symbol="BTCUSDT", price=100.0, returns=None):
+    all_none = {tf: None for tf in
+                ("1m", "3m", "5m", "15m", "1h", "4h", "24h")}
+    if returns:
+        all_none.update(returns)
+    return {
+        "symbol": symbol,
+        "current_price": price,
+        "source": "markPrice",
+        "source_timestamp_ms": 1_700_000_000_000,
+        "sample_age_ms": 5_000,
+        "history_span_ms": 120_000,
+        "returns": all_none,
+        "anchor_ms": {tf: None for tf in all_none},
+        "available_tfs": [tf for tf, v in all_none.items() if v is not None],
+        "warmup_complete": all(v is not None for v in all_none.values()),
+    }
+
+
+class ReturnsSectionTest(unittest.TestCase):
+    """P1-04 progressive dashboard: Symbol Returns section + feature API."""
+
+    def setUp(self) -> None:
+        self.store = _temp_store(self)
+        self.server = DashboardServer(host="127.0.0.1", port=0,
+                                      db_path=self.store.db_path).start()
+        self.addCleanup(self.server.stop)
+        self.base = f"http://127.0.0.1:{self.server.bound_port()}"
+
+    def _get(self, path: str):
+        with urllib.request.urlopen(self.base + path, timeout=10) as resp:
+            return resp.status, resp.read().decode("utf-8")
+
+    def test_no_features_yet_honest_note(self) -> None:
+        self.store.store_telemetry_snapshot(_summary())
+        code, body = self._get("/overview")
+        self.assertEqual(code, 200)
+        self.assertIn("Symbol Returns", body)
+        self.assertIn("insufficient history", body)
+
+    def test_partial_warmup_renders_values_and_gaps(self) -> None:
+        self.store.store_telemetry_snapshot(_summary())
+        self.store.store_return_features([
+            _return_feature("BTCUSDT", 100.0, {"1m": 0.001234, "3m": -0.002})])
+        code, body = self._get("/overview")
+        self.assertEqual(code, 200)
+        self.assertIn("BTCUSDT", body)
+        self.assertIn("+0.123%", body)
+        self.assertIn("-0.200%", body)
+        self.assertIn("insufficient history", body)  # unavailable horizons
+        self.assertIn("WARMING", body)
+        for forbidden in ("IGNITION", "EXPANSION", "place_order", "<button"):
+            self.assertNotIn(forbidden, body)
+
+    def test_no_movers_no_ranking_yet(self) -> None:
+        try:
+            self._get("/movers")
+            self.fail("expected HTTPError")
+        except Exception as exc:
+            self.assertIn("404", str(exc))
+
+    def test_features_api_shape(self) -> None:
+        self.store.store_return_features([
+            _return_feature("BTCUSDT", 100.0, {"1m": 0.01}),
+            _return_feature("ETHUSDT", 50.0, {})])
+        code, body = self._get("/api/features/returns")
+        self.assertEqual(code, 200)
+        payload = json.loads(body)
+        self.assertIn("generated_at", payload)
+        self.assertEqual(payload["source"], "markPrice")
+        by_symbol = {f["symbol"]: f for f in payload["features"]}
+        self.assertEqual(by_symbol["BTCUSDT"]["returns"]["1m"], 0.01)
+        self.assertIsNone(by_symbol["ETHUSDT"]["returns"]["1m"])
+        self.assertIsNone(by_symbol["BTCUSDT"]["returns"]["24h"])
+
+    def test_features_api_empty_is_404(self) -> None:
+        try:
+            self._get("/api/features/returns")
+            self.fail("expected HTTPError")
+        except Exception as exc:
+            self.assertIn("404", str(exc))
+
+
 class PortSelectionTest(unittest.TestCase):
     def test_skips_occupied_port(self) -> None:
         import socket
@@ -270,6 +353,12 @@ class PidfileTest(unittest.TestCase):
                 self.assertIsNone(read_pidfile())
             finally:
                 dashboard.pidfile_path = real  # type: ignore
+
+    def test_restart_parser_accepts_port_args(self) -> None:
+        """Regression: restart must parse like start (AttributeError once)."""
+        args = dashboard.build_parser().parse_args(["restart", "--port", "8099"])
+        self.assertEqual(args.command, "restart")
+        self.assertEqual(args.port, 8099)
 
 
 if __name__ == "__main__":

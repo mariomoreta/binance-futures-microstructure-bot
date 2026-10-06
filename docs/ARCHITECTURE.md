@@ -50,7 +50,7 @@ signal engine → position manager → risk engine → execution engine
 | Detectors (liq/funding/volume) | `detectors.py` | Implemented (hypothesis thresholds) |
 | Metrics (spread, imbalance, z-score, percentile) | `metrics.py` | Implemented |
 | Telemetry/distributions | `telemetry.py` | Implemented |
-| Feature engine (multi-TF returns, rank, VWAP, vol, OI, flow) | — | NOT BUILT (Phase 1 tasks) |
+| Feature engine (multi-TF returns, rank, VWAP, vol, OI, flow) | `returns.py` + `universe.py` | Returns P1-04 DONE (mark-price log returns, 7 TFs); rank/VWAP/vol/OI/flow pending (P1-05…) |
 | State classifier | — | NOT BUILT until P1-12, BLOCKED on P1-11 validation (`docs/MARKET_STATES.md`) |
-| Persistence foundation | — | Phase 1 P1-02 (local, observe-only, dashboard-feeding); full labeling is Phase 2 |
-| Dashboard | — | NOT BUILT; staged P1-03 → P1-09 → P1-13 (`docs/DASHBOARD_SPEC.md`) |
+| Persistence foundation | `persistence.py` | v2 (snapshots/observations/rejections + price_samples/return_features); sampling gate + dedicated snapshot writer |
+| Dashboard | `dashboard.py` | LIVE (P1-03 + P1-04 returns section + `/api/features/returns`); staged P1-09 → P1-13 |

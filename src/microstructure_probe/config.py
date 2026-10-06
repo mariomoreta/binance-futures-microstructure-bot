@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import json
 import os
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
 
@@ -48,6 +48,7 @@ class ProbeConfig:
     liquidation: LiquidationConfig
     funding: FundingConfig
     volume: VolumeConfig
+    observation_sample_ms: dict = field(default_factory=dict)
 
 
 def _positive(name: str, value: Any) -> float:
@@ -55,6 +56,23 @@ def _positive(name: str, value: Any) -> float:
     if number <= 0:
         raise ValueError(f"{name} debe ser mayor que cero")
     return number
+
+
+def _observation_sample_ms(raw: Any) -> dict:
+    """Optional per-kind observation sampling intervals (ms).
+
+    Absent section means "no operator override": the persistence code
+    defaults apply. Present values must be positive integers; 0 or
+    negative is rejected here (disable per kind via configure_sampling).
+    """
+    if raw is None:
+        return {}
+    if not isinstance(raw, dict):
+        raise ValueError("observation_sample_ms debe ser un objeto kind->ms")
+    out = {}
+    for kind, value in raw.items():
+        out[str(kind)] = int(_positive(f"observation_sample_ms.{kind}", value))
+    return out
 
 
 def load_config(path: str | Path) -> ProbeConfig:
@@ -90,6 +108,9 @@ def load_config(path: str | Path) -> ProbeConfig:
 
     return ProbeConfig(
         symbols=symbols,
+        observation_sample_ms=_observation_sample_ms(
+            raw.get("observation_sample_ms", {})
+        ),
         summary_interval_seconds=int(
             _positive("summary_interval_seconds", raw["summary_interval_seconds"])
         ),

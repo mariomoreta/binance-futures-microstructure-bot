@@ -32,9 +32,8 @@ the dashboard exists. No classifier before raw-feature dashboard validation.
 
 ## ACTIVE_TASK
 
-- `P1-04` SYMBOL UNIVERSE + MULTI-TIMEFRAME RETURNS (1m/3m/5m/15m/1h/4h/24h).
-  Status: NOT STARTED. Reads the live dashboard as it builds (dashboard stays
-  up at http://127.0.0.1:8091).
+- `P1-05` PRICE VELOCITY / ACCELERATION + RANKING (rank velocity/acceleration).
+  Status: NOT STARTED. (Queued only — do not begin without a new instruction.)
 
 ## NEXT_TASKS (ordered, all Phase 1)
 - `P1-05` PRICE VELOCITY / ACCELERATION + RANKING (rank velocity/acceleration).
@@ -97,16 +96,23 @@ strategies (P3), paper engine/positions (P4), execution (P5).
   startup, all routes 200. Live-verified fix: dedicated snapshot writer
   (executor starvation → 0 snapshot rows; +regression test). 66/66 tests
   (18 dashboard). Seeded with real 40s probe data (no mocks).
+- `P1-04` (2026-10-06) SYMBOL UNIVERSE + MULTI-TIMEFRAME RETURNS: **PASS**.
+  Universe trio preserved with explicit metadata; mark-price log returns
+  (7 TFs, 10s buckets, tolerance max(60s, tf/20), UNKNOWN never 0);
+  sampling gate (accepted 36/dropped 858 counted in run); schema v2 + tested
+  migration; dashboard Symbol Returns + `/api/features/returns` live.
+  Live 240s clean run (exit 0, final_summary): 11/11 streams, 5 reconnects,
+  11448 skew-rejects (~93% degraded env), engine 46 samples/symbol, 0 invalid,
+  inflight high-water 345 drained to 0, safety 0/0/0. 106/106 tests.
 
 ## LAST_VERIFICATION
 
-- 2026-10-06 (P1-03): `python run_tests.py` → 66/66 OK. Dashboard live at
-  http://127.0.0.1:8091, `/api/health` status `ok`, `/overview` + `/system`
-  200, unknown route 404, safety 0/0/0, no controls, no mocks. PID + health
-  verified via `dashboard status`.
-- 2026-10-06 (P1-02): 47/47 OK; smoke 2000 msgs schedule p50/p95
-  0.021/0.039ms, drain 9.2s. Starvation fix re-proven live (2 snapshots in
-  a 40s run after 0 before).
+- 2026-10-06 (P1-04): `python run_tests.py` → 106/106 OK. Live 240s clean
+  run (exit 0, final_summary evidence in `logs/p1-04/probe-240s-clean.log`):
+  mid-run API showed real prices + 1m warming first; dashboard `ok` while
+  fed, DEGRADED/STALE honestly after. Full evidence in `docs/CURRENT_STATE.md`.
+- 2026-10-06 (P1-03): dashboard live at http://127.0.0.1:8091
+  (PID 8452, still running), `/api/health`, `/overview` + `/system` 200.
 - 2026-10-06 (P1-01): 1805s observe-only probe: exit 0, safety 0/0/0
   throughout; transport unhealthy in this environment (58 reconnects, p50 lags
   15–38s, 85% skew-rejected). Full evidence in `docs/CURRENT_STATE.md`.
@@ -119,4 +125,4 @@ strategies (P3), paper engine/positions (P4), execution (P5).
 
 - Branch `phase1/market-intelligence-dashboard` published to private
   `mariomoreta/binance-futures-microstructure-bot` (origin in sync).
-  P1-03 implementation/docs commit follows on this branch.
+  P1-04 implementation/docs commit follows on this branch.

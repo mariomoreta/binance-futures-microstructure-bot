@@ -15,7 +15,10 @@ from .clock import ClockSynchronizer, corrected_lag_ms
 from .config import ProbeConfig
 from .detectors import EventDetectors
 from .metrics import order_book_imbalance, spread_bps
+from .persistence import PersistenceStore, get_persistence_store
+from .returns import ReturnEngine, SymbolPriceSeries
 from .telemetry import RunningDistribution
+from .universe import SymbolUniverse
 from .persistence import PersistenceStore, get_persistence_store
 
 LOGGER = logging.getLogger("microstructure_probe")
@@ -107,6 +110,14 @@ class MarketProbe:
         self._latency: dict[str, dict[str, RunningDistribution]] = defaultdict(dict)
         self._processing: dict[str, dict[str, RunningDistribution]] = defaultdict(dict)
         self._persistence: PersistenceStore | None = None
+        # P1-04: explicit symbol universe + mark-price return engine.
+        # The engine ingests VALID observations only (see _handle_message).
+        self.universe = SymbolUniverse.from_config(
+            config,
+            reason="P1-04 validated baseline trio; expansion needs transport headroom",
+        )
+        self._returns = ReturnEngine(symbols=config.symbols)
+        self._restore_attempted = False
 
     @property
     def persistence(self) -> PersistenceStore:
@@ -114,11 +125,35 @@ class MarketProbe:
         if self._persistence is None:
             self._persistence = get_persistence_store()
             self._persistence.init_db()
+            self._persistence.configure_sampling(
+                dict(self.config.observation_sample_ms))
+            self._restore_return_history()
         return self._persistence
 
     def set_persistence(self, store: PersistenceStore) -> None:
         """Set a custom persistence store (for testing)."""
         self._persistence = store
+        self._restore_attempted = False
+
+    @property
+    def returns(self) -> ReturnEngine:
+        """The mark-price return engine (P1-04)."""
+        return self._returns
+
+    def _restore_return_history(self) -> None:
+        """Best-effort restart continuity: reload persisted price buckets."""
+        if self._restore_attempted or self._persistence is None:
+            return
+        self._restore_attempted = True
+        try:
+            for symbol in self.universe.active_symbols():
+                samples = self._persistence.load_price_samples(symbol)
+                series = self._returns._series.get(symbol)
+                if series is None:
+                    self._returns._series[symbol] = series = SymbolPriceSeries()
+                series.restore([(bucket, price) for _, bucket, price in samples])
+        except Exception as exc:
+            LOGGER.warning(json.dumps({"kind": "persistence_error", "error": str(exc)}))
 
     def _distribution(
         self, container: dict[str, dict[str, RunningDistribution]], metric: str, key: str
@@ -332,6 +367,14 @@ class MarketProbe:
                             rate=float(item["r"]),
                         )
                     )
+                    # P1-04 return engine: VALID mark prices only. This code
+                    # runs strictly after the skew guard above, so rejected
+                    # observations can never reach the engine.
+                    try:
+                        self._returns.ingest(
+                            str(item["s"]), int(item["E"]), float(item["p"]))
+                    except (KeyError, TypeError, ValueError):
+                        pass
             else:
                 events = []
             detector_end_ns = self._perf_counter_ns()
@@ -630,6 +673,11 @@ class MarketProbe:
             "bookImbalance": {
                 key: round(value, 6) for key, value in self.stats.book_imbalance.items()
             },
+            # P1-04 additive blocks: return-engine stats + persistence write
+            # stats (sampling accepted/dropped, in-flight high-water). Never
+            # None-guarded callers break: defaults on any persistence gap.
+            "returns": self._returns.stats(),
+            "persistence": self._persistence_stats(),
         }
 
     @staticmethod
@@ -644,12 +692,31 @@ class MarketProbe:
             for metric, values in sorted(container.items())
         }
 
+    def _persistence_stats(self) -> dict[str, object]:
+        """Sampling + queue stats without ever creating the store as a side
+        effect (build_summary must stay side-effect free for tests)."""
+        if self._persistence is None:
+            return {"sample_stats": {"accepted": {}, "dropped": {},
+                                     "gate_ms": {},
+                                     "inflight": 0, "inflight_high_water": 0}}
+        try:
+            return {"sample_stats": self._persistence.sample_stats()}
+        except Exception:
+            return {"sample_stats": {}}
+
     def log_summary(self, *, final: bool) -> None:
         summary = self.build_summary(final=final)
         # Persist the snapshot for the P1-03 dashboard (fire-and-forget;
         # persistence failures are logged there and never break logging).
+        # P1-04: also persist dirty price buckets + latest return features
+        # so the dashboard and restarts observe feature state.
         try:
             self.persistence.store_telemetry_snapshot(summary)
+            dirty = self._returns.drain_dirty_buckets()
+            if dirty:
+                self.persistence.store_price_samples(dirty)
+            self.persistence.store_return_features(
+                self._returns.snapshot_all(self._wall_clock_ms()))
         except Exception as exc:
             LOGGER.warning(json.dumps({"kind": "persistence_error", "error": str(exc)}))
         LOGGER.info(json.dumps(summary, sort_keys=True, allow_nan=False))

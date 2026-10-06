@@ -25,7 +25,7 @@ from concurrent.futures import ThreadPoolExecutor
 from contextlib import contextmanager
 from dataclasses import asdict, is_dataclass
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, Dict, List, Optional, Tuple, Union
 
 from . import models
 
@@ -35,7 +35,7 @@ LOGGER = logging.getLogger("microstructure_probe.persistence")
 # during P1-03 live verification): observation writes share the default
 # executor; under message floods their per-insert retention DELETEs saturate
 # all default workers and snapshot tasks starve behind thousands of queued
-# observation writes — the dashboard feed would stay empty forever during
+# observation writes â€” the dashboard feed would stay empty forever during
 # live runs. Snapshots are rare (every ~30s) and must never wait behind
 # bulk observation traffic.
 _SNAPSHOT_EXECUTOR: Optional[ThreadPoolExecutor] = None
@@ -61,6 +61,16 @@ def _safe_json(value: Any) -> str:
             return json.dumps({"unserializable": str(value)})
         except (TypeError, ValueError):
             return "{}"
+
+
+# Default observation sampling intervals (P1-04): persist at most one
+# observation per kind/symbol per interval. markPrice arrays and forceOrder
+# are ungated (already ~1/s and rare respectively).
+DEFAULT_SAMPLE_INTERVAL_MS: Dict[str, int] = {
+    "bookTicker": 1000,
+    "aggTrade": 1000,
+    "depth": 1000,
+}
 
 
 def _log_write_error(task: "asyncio.Task[None]") -> None:
@@ -102,6 +112,83 @@ class PersistenceStore:
         self.max_snapshots = 1000  # telemetry snapshots
         self.max_observations = 10000  # market observations
         self.max_rejections = 1000  # rejection telemetry records
+        self.max_price_samples_per_symbol = 9200  # ~25.5h of 10s buckets
+
+        # Observation sampling gate (P1-04 backpressure remedy): minimum
+        # event-time gap between two persisted observations of the same
+        # (stream kind, symbol). First sighting always accepted. Empty dict
+        # disables the gate (used by unit tests needing full fidelity).
+        self.sample_interval_ms: Dict[str, int] = dict(DEFAULT_SAMPLE_INTERVAL_MS)
+        self._sample_last_ms: Dict[str, int] = {}
+        self._sample_accepted: Dict[str, int] = {}
+        self._sample_dropped: Dict[str, int] = {}
+
+        # In-flight fire-and-forget write tracking (queue high-water mark).
+        self._inflight = 0
+        self._inflight_high_water = 0
+
+    def configure_sampling(self, overrides: Dict[str, int]) -> None:
+        """Merge operator sampling overrides over the code defaults.
+
+        A value <= 0 disables the gate for that stream kind.
+        """
+        for kind, interval in overrides.items():
+            if interval is not None and int(interval) <= 0:
+                self.sample_interval_ms.pop(str(kind), None)
+            elif interval is not None:
+                self.sample_interval_ms[str(kind)] = int(interval)
+
+    @staticmethod
+    def _sample_kind(stream_type: str) -> Optional[str]:
+        """Bucket a full stream name to its sampling kind, if gated."""
+        name = stream_type.lower()
+        if "bookticker" in name:
+            return "bookTicker"
+        if "depth" in name:
+            return "depth"
+        if "aggtrade" in name:
+            return "aggTrade"
+        return None  # markPrice arrays, forceOrder, unknown: always persist
+
+    def _sample_accept(self, stream_type: str, symbol: str,
+                       event_time_ms: Optional[int]) -> bool:
+        """Decide + record whether an observation write goes through."""
+        kind = self._sample_kind(stream_type)
+        if kind is None:
+            return True
+        interval = self.sample_interval_ms.get(kind)
+        if interval is None or interval <= 0:
+            return True
+        now_ms = event_time_ms if event_time_ms is not None else int(time.time() * 1000)
+        key = f"{kind}|{symbol.upper()}"
+        last = self._sample_last_ms.get(key)
+        if last is None or now_ms - last >= interval:
+            self._sample_last_ms[key] = now_ms
+            self._sample_accepted[kind] = self._sample_accepted.get(kind, 0) + 1
+            return True
+        self._sample_dropped[kind] = self._sample_dropped.get(kind, 0) + 1
+        return False
+
+    def sample_stats(self) -> Dict[str, Any]:
+        """Accepted/dropped counts per stream kind (reported, never hidden)."""
+        with self._lock:
+            return {
+                "accepted": dict(self._sample_accepted),
+                "dropped": dict(self._sample_dropped),
+                "gate_ms": dict(self.sample_interval_ms),
+                "inflight": self._inflight,
+                "inflight_high_water": self._inflight_high_water,
+            }
+
+    def _track_schedule(self) -> None:
+        with self._lock:
+            self._inflight += 1
+            if self._inflight > self._inflight_high_water:
+                self._inflight_high_water = self._inflight
+
+    def _track_done(self) -> None:
+        with self._lock:
+            self._inflight = max(0, self._inflight - 1)
     
     def _get_connection(self) -> sqlite3.Connection:
         """Get or create SQLite connection."""
@@ -159,18 +246,30 @@ class PersistenceStore:
             row = cursor.fetchone()
             current_version = int(row[0]) if row else 0
             
-            if current_version >= 1:
-                self._ensure_snapshot_columns(cursor)
+            if current_version >= 2:
                 self._initialized = True
                 return
-            
+
+            if current_version == 1:
+                # Migrate v1 -> v2: keep existing rows, add P1-04 tables.
+                self._ensure_snapshot_columns(cursor)
+                self._create_schema_v2(cursor)
+                cursor.execute(
+                    "INSERT OR REPLACE INTO persistence_meta (key, value) VALUES (?, ?)",
+                    ("schema_version", "2")
+                )
+                self._initialized = True
+                return
+
             # Create tables for schema v1
             self._create_schema_v1(cursor)
-            
+            # Create tables for schema v2
+            self._create_schema_v2(cursor)
+
             # Set schema version
             cursor.execute(
                 "INSERT OR REPLACE INTO persistence_meta (key, value) VALUES (?, ?)",
-                ("schema_version", "1")
+                ("schema_version", "2")
             )
             
             self._initialized = True
@@ -182,6 +281,37 @@ class PersistenceStore:
         existing = {row[1] for row in cursor.fetchall()}
         if "spread_bps_json" not in existing:
             cursor.execute("ALTER TABLE telemetry_snapshots ADD COLUMN spread_bps_json TEXT")
+
+    def _create_schema_v2(self, cursor: sqlite3.Cursor) -> None:
+        """P1-04 feature tables: sampled price buckets + latest return features."""
+
+        # Sampled 10s event-time price buckets (restart continuity for the
+        # return engine, P1-05 velocity input). One row per symbol/bucket;
+        # INSERT OR REPLACE makes rewrites idempotent. Bounded by timestamp
+        # retention (~25.5h covers the 24h horizon + tolerance).
+        cursor.execute("""
+            CREATE TABLE IF NOT EXISTS price_samples (
+                symbol TEXT NOT NULL,
+                bucket_ms INTEGER NOT NULL,
+                price REAL NOT NULL,
+                PRIMARY KEY (symbol, bucket_ms)
+            )
+        """)
+
+        # Latest return feature record per symbol (dashboard reads). One row
+        # per symbol, replaced on every feature persist — inherently bounded.
+        cursor.execute("""
+            CREATE TABLE IF NOT EXISTS return_features (
+                symbol TEXT PRIMARY KEY,
+                updated_ms INTEGER NOT NULL,
+                feature_json TEXT NOT NULL
+            )
+        """)
+
+        cursor.execute("""
+            CREATE INDEX IF NOT EXISTS idx_price_samples_symbol_ts
+            ON price_samples(symbol, bucket_ms DESC)
+        """)
 
     def _create_schema_v1(self, cursor: sqlite3.Cursor) -> None:
         """Create initial database schema."""
@@ -327,6 +457,19 @@ class PersistenceStore:
             self._connection.close()
             self._connection = None
     
+    def _done_callback(self, task: "asyncio.Task[None]") -> None:
+        """Task done-callback: close in-flight tracking, then log failures."""
+        self._track_done()
+        _log_write_error(task)
+
+    def _run_sync_fallback(self, coro) -> None:
+        """Execute a write coroutine with no running loop (sync contexts)."""
+        self._track_schedule()
+        try:
+            asyncio.run(coro)
+        finally:
+            self._track_done()
+
     def store_telemetry_snapshot(self, summary_dict: Dict[str, Any]) -> None:
         """Store a telemetry snapshot from probe.build_summary().
 
@@ -336,11 +479,12 @@ class PersistenceStore:
         """
         try:
             loop = asyncio.get_running_loop()
+            self._track_schedule()
             task = loop.create_task(self._store_telemetry_snapshot_async(summary_dict))
-            task.add_done_callback(_log_write_error)
+            task.add_done_callback(self._done_callback)
         except RuntimeError:
             # No event loop running (e.g., sync tests); execute synchronously
-            asyncio.run(self._store_telemetry_snapshot_async(summary_dict))
+            self._run_sync_fallback(self._store_telemetry_snapshot_async(summary_dict))
 
     async def _store_telemetry_snapshot_async(self, summary_dict: Dict[str, Any]) -> None:
         """Async wrapper: snapshot insert on the DEDICATED writer, never
@@ -434,16 +578,22 @@ class PersistenceStore:
             transaction_time_ms: Transaction time from payload (T field) if available
             is_valid: Whether this observation passed validation (not skew-rejected)
         """
+        # Sampling gate first: high-rate streams persist at most one
+        # observation per (kind, symbol) per interval. Dropped writes are
+        # counted in sample_stats(), never hidden.
+        if not self._sample_accept(stream_type, symbol, event_time_ms):
+            return
         try:
             loop = asyncio.get_running_loop()
+            self._track_schedule()
             task = loop.create_task(self._store_market_observation_async(
                 symbol, stream_type, payload, normalized,
                 event_time_ms, transaction_time_ms, is_valid
             ))
-            task.add_done_callback(_log_write_error)
+            task.add_done_callback(self._done_callback)
         except RuntimeError:
             # No event loop running (e.g., sync tests); execute synchronously
-            asyncio.run(self._store_market_observation_async(
+            self._run_sync_fallback(self._store_market_observation_async(
                 symbol, stream_type, payload, normalized,
                 event_time_ms, transaction_time_ms, is_valid
             ))
@@ -529,14 +679,15 @@ class PersistenceStore:
         """
         try:
             loop = asyncio.get_running_loop()
+            self._track_schedule()
             task = loop.create_task(self._store_rejection_record_async(
                 symbol, stream_type, payload, rejection_reason,
                 event_time_ms, transaction_time_ms
             ))
-            task.add_done_callback(_log_write_error)
+            task.add_done_callback(self._done_callback)
         except RuntimeError:
             # No event loop running (e.g., sync tests); execute synchronously
-            asyncio.run(self._store_rejection_record_async(
+            self._run_sync_fallback(self._store_rejection_record_async(
                 symbol, stream_type, payload, rejection_reason,
                 event_time_ms, transaction_time_ms
             ))
@@ -591,6 +742,98 @@ class PersistenceStore:
 
             # Apply retention policy (keep fewer rejection records)
             self._apply_retention_policy(cursor, "rejected_observations", self.max_rejections)
+
+    def store_price_samples(self, rows: List[Tuple[str, int, float]]) -> None:
+        """Persist sampled (symbol, 10s-bucket, price) rows (restart continuity).
+
+        Idempotent per primary key; keeps the last ~25.5h per symbol so the
+        24h return horizon plus tolerance always fits. Synchronous: the probe
+        calls this from the summary path, which already runs infrequently.
+        """
+        if not rows:
+            return
+        if not self._initialized:
+            self.init_db()
+        cutoff_ms = int(time.time() * 1000) - (25 * 3600 + 1800) * 1000
+        with self._get_cursor() as cursor:
+            cursor.executemany(
+                "INSERT OR REPLACE INTO price_samples (symbol, bucket_ms, price)"
+                " VALUES (?, ?, ?)",
+                [(symbol.upper(), int(bucket_ms), float(price))
+                 for symbol, bucket_ms, price in rows],
+            )
+            cursor.execute("DELETE FROM price_samples WHERE bucket_ms < ?",
+                           (cutoff_ms,))
+
+    def load_price_samples(self, symbol: Optional[str] = None
+                           ) -> List[Tuple[str, int, float]]:
+        """Load persisted buckets as (symbol, bucket_ms, price), oldest first."""
+        if not self._initialized:
+            self.init_db()
+        with self._get_cursor() as cursor:
+            if symbol is None:
+                cursor.execute(
+                    "SELECT symbol, bucket_ms, price FROM price_samples"
+                    " ORDER BY symbol, bucket_ms")
+            else:
+                cursor.execute(
+                    "SELECT symbol, bucket_ms, price FROM price_samples"
+                    " WHERE symbol = ? ORDER BY bucket_ms",
+                    (symbol.upper(),))
+            return [(row[0], int(row[1]), float(row[2]))
+                    for row in cursor.fetchall()]
+
+    def store_return_features(self, features: List[Dict[str, Any]]) -> None:
+        """Replace the latest return feature record per symbol (dashboard feed).
+
+        One row per symbol: inherently bounded, no retention sweep needed.
+        Same fire-and-forget contract as the other store methods.
+        """
+        if not features:
+            return
+        try:
+            loop = asyncio.get_running_loop()
+            self._track_schedule()
+            task = loop.create_task(
+                self._store_return_features_async(features))
+            task.add_done_callback(self._done_callback)
+        except RuntimeError:
+            self._run_sync_fallback(self._store_return_features_async(features))
+
+    async def _store_return_features_async(
+            self, features: List[Dict[str, Any]]) -> None:
+        """Async wrapper: run the blocking SQLite write off the event loop."""
+        await asyncio.to_thread(self._insert_return_features, features)
+
+    def _insert_return_features(self, features: List[Dict[str, Any]]) -> None:
+        """Synchronous SQLite upsert (runs on a worker thread or test thread)."""
+        if not self._initialized:
+            self.init_db()
+        now_ms = int(time.time() * 1000)
+        with self._get_cursor() as cursor:
+            cursor.executemany(
+                "INSERT OR REPLACE INTO return_features (symbol, updated_ms, feature_json)"
+                " VALUES (?, ?, ?)",
+                [(str(f.get("symbol", "UNKNOWN")).upper(), now_ms,
+                  _safe_json(f)) for f in features],
+            )
+
+    def latest_return_features(self) -> List[Dict[str, Any]]:
+        """Latest return feature per symbol, ordered by symbol (dashboard/API)."""
+        if not self._initialized:
+            self.init_db()
+        with self._get_cursor() as cursor:
+            cursor.execute(
+                "SELECT feature_json FROM return_features ORDER BY symbol")
+            out = []
+            for (blob,) in cursor.fetchall():
+                try:
+                    parsed = json.loads(blob)
+                except (json.JSONDecodeError, TypeError):
+                    continue
+                if isinstance(parsed, dict):
+                    out.append(parsed)
+            return out
     
     def _apply_retention_policy(
         self, 
@@ -762,7 +1005,8 @@ class PersistenceStore:
         try:
             with self._get_cursor() as cursor:
                 for table in ("telemetry_snapshots", "market_observations",
-                              "rejected_observations"):
+                              "rejected_observations", "price_samples",
+                              "return_features"):
                     cursor.execute(f"SELECT COUNT(*) FROM {table}")
                     info["rows"][table] = cursor.fetchone()[0]
         except Exception:

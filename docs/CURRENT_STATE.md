@@ -32,8 +32,8 @@ Factual state as of 2026-10-06 (order refinement). Historical evidence:
 
 ## Verification (2026-10-06)
 
-- Canonical: `python run_tests.py` from repo root → **66/66 PASS** (28 baseline
-  + 20 persistence + 18 dashboard).
+- Canonical: `python run_tests.py` from repo root → **106/106 PASS** (28 baseline
+  + 32 persistence/sampling/v2 + 22 universe/returns + 24 dashboard).
 - `--show-streams` → correct routed `/public` + `/market` URLs.
 - Port candidates 8091/8092/8093/18091/18765 probed FREE on 127.0.0.1
   (dashboard port-policy evidence; selection happens at P1-03 startup).
@@ -101,6 +101,11 @@ Superseded: the earlier "soak first, persist nothing in Phase 1" sketch.
 Persistence foundation is now explicitly a Phase 1 task (local, observe-only,
 dashboard-feeding) — see `docs/DECISIONS.md`.
 
+## Project brain
+
+- `AGENTS.md` + 20 docs under `docs/`. No strategy, engine, or safety code
+  touched. `docs/PHASE_1_REPORT.md` preserved as-is.
+
 ## P1-02 persistence foundation — RESULT: PASS (2026-10-06)
 
 - Tech: stdlib SQLite (`sqlite3`), no new dependencies. Store:
@@ -137,6 +142,7 @@ dashboard-feeding) — see `docs/DECISIONS.md`.
   bookTicker rates the 10k observation cap retains only recent minutes —
   sufficient for dashboard/P1-04 bootstrap, not archival history (Phase 2
   owns that).
+
 - Live corrigendum (found during P1-03): snapshot writes starved behind bulk
   observation traffic on the shared executor (0 snapshot rows vs 9260
   observations in a live run). Fixed with a dedicated single-thread snapshot
@@ -172,14 +178,40 @@ dashboard-feeding) — see `docs/DECISIONS.md`.
 - Tests: 66/66 (18 dashboard: health ok/degraded/stale/unknown, routes,
   empty-DB, banner values, no-controls, port skip/busy, PID live/dead/stale).
 
-## Project brain
+## P1-04 symbol universe + multi-timeframe returns — RESULT: PASS (2026-10-06)
 
-- `AGENTS.md` + 20 docs under `docs/`. No strategy, engine, or safety code
-  touched. `docs/PHASE_1_REPORT.md` preserved as-is.
+- Universe: `universe.py`, active trio preserved (BTC/ETH/SOLUSDT, explicit
+  enabled/source/reason/activated_at metadata); no expansion, no ranking.
+  No new REST endpoint introduced (static-config source; exchangeInfo remains
+  future work) — no Binance-docs verification owed.
+- Engine: `returns.py` — mark-price log returns, 7 TFs, 10s buckets (≤9180),
+  tolerance max(60s, tf/20), UNKNOWN never 0, no lookahead, late/invalid
+  refused. Valid-path-only ingestion (rejected messages return before it).
+- Backpressure: sampling gate (bookTicker/aggTrade/depth ≤1/s per symbol;
+  markPrice/forceOrder ungated; counts in `sample_stats()`); dedicated
+  snapshot writer kept; schema v2 (`price_samples`, `return_features`,
+  migration tested). 106/106 tests.
+- Live 360s attempt: harness session-end killed the detached probe at ~330s
+  (11 periodic summaries, no final) — lesson: detached children die with the
+  tool session; reran 240s blocking → clean exit 0 + `final_summary`.
+  Mid-run API: all 3 symbols with real prices, 1m warmed first, longer
+  horizons honestly unavailable; dashboard `ok` while fed, STALE/DEGRADED
+  honestly after (DEGRADED currently live from persisted reconnects +
+  rejection rate — P1-01 degradation surfacing as required).
+- Clean-run evidence (244s, 11/11 streams, 0 stale, safety 0/0/0):
+  5 reconnects, 11448 skew-rejects (~93%, lags p50 22–85s — degraded env);
+  engine 46 samples/symbol over 25-min restored+live span, 0 invalid, 0 late,
+  0 unknown-symbol; sampling accepted 36/dropped 858 counted;
+  inflight high-water 345, drained to 0 — no unbounded queue growth.
+  Rejects went to `rejected_observations` only (cap 1000); returns contain
+  no rejected input by construction + unit test.
+- Dashboard: Symbol Returns on `/overview` + `/api/features/returns` live;
+  partial warmup renders values + "—", no movers/rank/states/controls.
 
 ## Known gaps (Phase 1 work ahead, in order)
 
 Minimal dashboard: DONE (P1-03 PASS, live at http://127.0.0.1:8091).
+Returns engine: DONE (P1-04 PASS — universe + 7-TF mark-price log returns).
 Remaining: open interest, multi-timeframe
 return engine, velocity/acceleration, ranking + rank velocity/acceleration,
 VWAP + displacement, realized volatility/range expansion, structure primitives,

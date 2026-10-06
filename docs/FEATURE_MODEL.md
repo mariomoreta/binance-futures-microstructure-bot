@@ -4,13 +4,28 @@ Features to develop in Phase 1. Each needs: exact definition, update cadence,
 warm-up rule, normalization, and telemetry — before any threshold is trusted.
 Thresholds are HYPOTHESIS until Phase 2–3 statistics exist.
 
-## Price
+## Price — IMPLEMENTED P1-04 (returns only; velocity/acceleration → P1-05)
 
-- Returns: 1m / 3m / 5m / 15m / 1h / 4h / 24h (log returns; source: aggTrade /
-  klines bootstrap; track staleness per timeframe).
-- Velocity: first derivative of returns (e.g. Δ 1m-return over trailing window).
-- Acceleration: second derivative (Δ velocity). Noise-sensitive — smooth first,
-  document smoothing.
+- Canonical source: **mark price** (`markPrice` stream, field `p`).
+  Deviation from the earlier aggTrade/klines sketch recorded in
+  `docs/DECISIONS.md` (regularity + boundedness rationale).
+- Semantics: **log returns** r = ln(current/anchor) for
+  1m / 3m / 5m / 15m / 1h / 4h / 24h on 10s event-time buckets (last wins).
+- Anchor policy: latest sample at-or-before (current − tf) within
+  max(60s, tf/20); otherwise UNKNOWN (`null`, shown as "—", never 0%).
+- No lookahead (queries never see samples newer than as-of); no interpolation;
+  out-of-order samples dropped and counted; invalid prices refused.
+- Engine: `src/microstructure_probe/returns.py` (`ReturnEngine`,
+  per-symbol `SymbolPriceSeries`, ≤9180 buckets ≈ 25.5h); universe:
+  `src/microstructure_probe/universe.py` (active trio BTC/ETH/SOLUSDT,
+  explicit metadata, no silent expansion, no ranking yet).
+- Record per symbol: current_price, source_timestamp_ms, sample_age_ms,
+  history_span_ms, returns/anchor_ms per TF, available_tfs, warmup_complete.
+- 24h stays unavailable until ~24h of real bucketed history exists (or a
+  justified public bootstrap — none implemented; short runs honestly show it
+  unavailable).
+- Velocity/acceleration (first/second return derivatives) belong to P1-05 —
+  not implemented. Rank velocity/acceleration likewise P1-05.
 
 ## Cross-sectional rank
 

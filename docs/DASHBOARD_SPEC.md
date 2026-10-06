@@ -30,6 +30,15 @@ Live instance: http://127.0.0.1:8091 (PID in `logs/dashboard.pid`).
 CLI: `python -m microstructure_probe.dashboard start|stop|restart|status|
 serve|pick-port` (repo root, `PYTHONPATH=src` unless installed).
 
+### P1-04 progressive visibility — IMPLEMENTED (PASS)
+
+`/overview` gained a read-only **Symbol Returns** section (per active symbol:
+price, 1m/3m/5m/15m/1h/4h/24h as signed %, freshness age, n/7 warmup chip;
+unavailable horizons show "—" with an insufficient-history note, never 0%).
+Machine-readable `GET /api/features/returns` (`generated_at`, `source`,
+`semantics`, `features[]`; 404 when empty). Still no `/movers`, no ranking,
+no states, no controls.
+
 ### Stage 2 — P1-09 MARKET-INTELLIGENCE DASHBOARD
 
 Add: `/movers`, `/symbol/:symbol`. Show raw features BEFORE classifier scores.

@@ -4,7 +4,8 @@ Reads the P1-02 persistence store and renders operator pages. This module is
 visualization only: nothing here can trade, and the engine never consumes
 anything rendered here.
 
-Routes: / (→ /overview), /overview, /system, /api/health, /api/snapshot.
+Routes: / (→ /overview), /overview, /system, /api/health, /api/snapshot,
+/api/features/returns.
 
 Lifecycle CLI (operator commands, Binance dashboard only):
     python -m microstructure_probe.dashboard start [--port N] [--db PATH]
@@ -35,7 +36,7 @@ from typing import Any, Dict, List, Optional, Tuple
 
 from .persistence import PersistenceStore
 
-DASHBOARD_VERSION = "0.3.0"
+DASHBOARD_VERSION = "0.4.0"
 HOST = "127.0.0.1"
 PORT_CANDIDATES = [8091, 8092, 8093, 8094, 8095, 18091, 18765]
 PIDFILE_NAME = "dashboard.pid"
@@ -227,6 +228,13 @@ class DashboardState:
             return {"total_rejected": 0, "rejection_rate": 0.0,
                     "by_reason": {}, "by_stream": {}}
 
+    def return_features(self) -> List[Dict[str, Any]]:
+        """Latest return feature per symbol (P1-04 dashboard section + API)."""
+        try:
+            return self.store.latest_return_features()
+        except (OSError, sqlite3.Error):
+            return []
+
     def storage(self) -> Dict[str, Any]:
         try:
             return self.store.storage_info()
@@ -318,7 +326,8 @@ def _page(title: str, banner_html: str, body: str) -> str:
             f"<title>{html.escape(title)}</title><style>{CSS}</style></head>"
             f"<body><nav><a href='/overview'>/overview</a>"
             f"<a href='/system'>/system</a><a href='/api/health'>/api/health</a>"
-            f"<a href='/api/snapshot'>/api/snapshot</a></nav>"
+            f"<a href='/api/snapshot'>/api/snapshot</a>"
+            f"<a href='/api/features/returns'>/api/features/returns</a></nav>"
             f"<h1>{html.escape(title)}</h1>{banner_html}{body}"
             f"<p class='note'>{html.escape(BANNER_NOTE)} Auto-refresh 10s.</p>"
             f"</body></html>")
@@ -336,6 +345,55 @@ def _kv_table(rows: List[Tuple[str, Any]]) -> str:
     body = "".join(f"<tr><th>{html.escape(k)}</th><td>{html.escape(str(v))}</td></tr>"
                    for k, v in rows)
     return f"<table>{body}</table>"
+
+
+def _format_return(value: Any) -> str:
+    """Log-return fraction -> '+0.123%' or an insufficient-history marker."""
+    if value is None:
+        return "<span title='insufficient history'>—</span>"
+    try:
+        return f"{float(value) * 100:+.3f}%"
+    except (TypeError, ValueError):
+        return "<span title='insufficient history'>—</span>"
+
+
+def _format_age_ms(age_ms: Any) -> str:
+    if age_ms is None:
+        return "—"
+    try:
+        return f"{float(age_ms) / 1000:.0f}s ago"
+    except (TypeError, ValueError):
+        return "—"
+
+
+def render_returns_section(features: List[Dict[str, Any]]) -> str:
+    """Read-only Symbol Returns table (P1-04). No ranking, no states."""
+    body = "<h2>Symbol Returns (mark-price log returns, read-only)</h2>"
+    if not features:
+        return body + "<p class='note'>No return features persisted yet — " \
+            "insufficient history (engine warming up or probe not running).</p>"
+    body += "<table><tr><th>symbol</th><th>price</th><th>1m</th><th>3m</th>" \
+            "<th>5m</th><th>15m</th><th>1h</th><th>4h</th><th>24h</th>" \
+            "<th>freshness</th><th>warmup</th></tr>"
+    for feat in features:
+        if not isinstance(feat, dict):
+            continue
+        returns = feat.get("returns") if isinstance(feat.get("returns"), dict) else {}
+        available = feat.get("available_tfs") if isinstance(
+            feat.get("available_tfs"), list) else []
+        try:
+            price = f"{float(feat.get('current_price')):.4f}" \
+                if feat.get("current_price") is not None else "—"
+        except (TypeError, ValueError):
+            price = "—"
+        cells = "".join(f"<td>{_format_return(returns.get(tf))}</td>"
+                        for tf in ("1m", "3m", "5m", "15m", "1h", "4h", "24h"))
+        body += (f"<tr><td>{html.escape(str(feat.get('symbol', '?')))}</td>"
+                 f"<td>{price}</td>{cells}"
+                 f"<td>{_format_age_ms(feat.get('sample_age_ms'))}</td>"
+                 f"<td>{len(available)}/7"
+                 f"{' READY' if feat.get('warmup_complete') else ' WARMING'}</td></tr>")
+    return body + "</table>"
 
 
 def render_overview(state: DashboardState) -> str:
@@ -383,6 +441,7 @@ def render_overview(state: DashboardState) -> str:
         body += _kv_table([(k, v) for k, v in sorted(events.items())])
     else:
         body += "<p class='note'>No detector threshold crossings in this snapshot window.</p>"
+    body += render_returns_section(state.return_features())
     return _page("Overview — Binance Futures", _banner(safety, status), body)
 
 
@@ -532,6 +591,18 @@ class DashboardHandler(BaseHTTPRequestHandler):
                 self._send_json(404, {"error": "no snapshot persisted yet"})
             else:
                 self._send_json(200, snap)
+        elif path == "/api/features/returns":
+            features = self.state.return_features()
+            if not features:
+                self._send_json(404, {"error": "no return features persisted yet"})
+            else:
+                self._send_json(200, {
+                    "generated_at": time.strftime(
+                        "%Y-%m-%dT%H:%M:%SZ", time.gmtime(time.time())),
+                    "source": "markPrice",
+                    "semantics": "log returns; unavailable horizons are null (never 0)",
+                    "features": features,
+                })
         else:
             self._send_json(404, {"error": f"unknown route {path}"})
 
@@ -726,7 +797,7 @@ def cmd_restart(args: argparse.Namespace) -> int:
     return cmd_start(args)
 
 
-def main(argv: Optional[List[str]] = None) -> int:
+def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description="Binance Futures operator dashboard")
     sub = parser.add_subparsers(dest="command", required=True)
     p_serve = sub.add_parser("serve", help="run the HTTP server in the foreground")
@@ -736,9 +807,16 @@ def main(argv: Optional[List[str]] = None) -> int:
     p_start.add_argument("--port", type=int, default=None)
     p_start.add_argument("--db", default=None)
     sub.add_parser("stop", help="stop only the tracked dashboard process")
-    sub.add_parser("restart", help="stop + start")
+    p_restart = sub.add_parser("restart", help="stop + start")
+    p_restart.add_argument("--port", type=int, default=None)
+    p_restart.add_argument("--db", default=None)
     sub.add_parser("status", help="PID + health + route check")
     sub.add_parser("pick-port", help="print first free candidate port")
+    return parser
+
+
+def main(argv: Optional[List[str]] = None) -> int:
+    parser = build_parser()
     args = parser.parse_args(argv)
     if args.command == "serve":
         return cmd_serve(args)

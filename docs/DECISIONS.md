@@ -109,3 +109,19 @@ the dashboard feed can never wait behind bulk observation traffic; backed by
 a regression test (flood + snapshot). Observation backpressure itself remains
 a known risk owned by P1-04 sampling (queued tasks grow memory under extreme
 sustained rates; the WS loop itself never blocks).
+
+## 2026-10-06 — P1-04 canonical return source + sampling architecture
+
+Canonical return input is Binance USD-M **mark price** (`markPrice` field `p`),
+not aggTrade: it is the only regular (~1s), per-symbol, event-time-stamped
+series, hence the only one fittable in a bounded sampled store. aggTrade
+remains the future flow source (P1-06); bookTicker mid stays microstructure.
+Semantics: log returns on 10s event-time buckets (last price wins, coalescing
+counted), anchor = latest sample at-or-before (current − tf) within
+max(60s, tf/20), else UNKNOWN (never 0, never interpolated, never lookahead).
+Out-of-order/late samples are dropped, never rewrite history.
+Backpressure: observation persistence is time-decimated per (stream kind,
+symbol) — bookTicker/aggTrade/depth at most 1/s (code defaults, operator
+overridable via `observation_sample_ms`, empty disables); markPrice arrays
+and forceOrder ungated. Dropped writes are counted in `sample_stats()`
+(surfaced in summaries), never hidden. No retention-limit increase.

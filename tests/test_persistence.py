@@ -23,6 +23,8 @@ class PersistenceStoreTest(unittest.TestCase):
         self.temp_dir = tempfile.mkdtemp(prefix="persist_test_")
         self.db_path = Path(self.temp_dir) / "test.db"
         self.store = PersistenceStore(db_path=self.db_path)
+        # Full fidelity by default here: sampling has dedicated tests below.
+        self.store.sample_interval_ms = {}
         self.store.init_db()
 
     def tearDown(self) -> None:
@@ -51,14 +53,14 @@ class PersistenceStoreTest(unittest.TestCase):
                 self.assertIsNotNone(cursor.fetchone(), f"Table {table} should exist")
 
     def test_schema_version_tracking(self) -> None:
-        """Schema version is tracked in persistence_meta."""
+        """Schema version is tracked in persistence_meta (currently v2)."""
         with self.store._get_cursor() as cursor:
             cursor.execute(
                 "SELECT value FROM persistence_meta WHERE key = 'schema_version'"
             )
             row = cursor.fetchone()
             self.assertIsNotNone(row)
-            self.assertEqual(int(row[0]), 1)
+            self.assertEqual(int(row[0]), 2)
 
     def test_telemetry_snapshot_round_trip(self) -> None:
         """Telemetry snapshot can be stored and retrieved."""
@@ -411,6 +413,170 @@ class ProbePersistenceTest(unittest.TestCase):
         self.assertEqual(latest["safety"]["BOT_MODE"], "observe")
         self.assertEqual(latest["safety"]["apiKeysUsed"], 0)
         self.assertIn("dataQuality", latest)
+
+
+class ObservationSamplingTest(unittest.TestCase):
+    """P1-04 bounded sampling gate: backpressure remedy with visible counts."""
+
+    def setUp(self) -> None:
+        self.temp_dir = tempfile.mkdtemp(prefix="sample_test_")
+        self.db_path = Path(self.temp_dir) / "sample.db"
+        self.store = PersistenceStore(db_path=self.db_path)
+        self.store.init_db()
+
+    def tearDown(self) -> None:
+        self.store.close()
+        try:
+            self.db_path.unlink(missing_ok=True)
+            self.db_path.parent.rmdir()
+        except OSError:
+            pass
+
+    def _obs(self, event_ms: int, symbol: str = "BTCUSDT",
+             stream: str = "btcusdt@bookTicker") -> None:
+        self.store.store_market_observation(
+            symbol=symbol, stream_type=stream,
+            payload={"s": symbol, "E": event_ms}, event_time_ms=event_ms,
+            is_valid=True)
+
+    def _count_obs(self) -> int:
+        with self.store._get_cursor() as cursor:
+            cursor.execute("SELECT COUNT(*) FROM market_observations")
+            return cursor.fetchone()[0]
+
+    def test_first_sighting_always_accepted(self) -> None:
+        self._obs(1_000_000)
+        self.assertEqual(self._count_obs(), 1)
+
+    def test_within_interval_dropped_and_counted(self) -> None:
+        self._obs(1_000_000)
+        self._obs(1_000_100)  # +100ms < 1000ms gate
+        self._obs(1_000_200)
+        self.assertEqual(self._count_obs(), 1)
+        stats = self.store.sample_stats()
+        self.assertEqual(stats["accepted"]["bookTicker"], 1)
+        self.assertEqual(stats["dropped"]["bookTicker"], 2)
+
+    def test_after_interval_accepted(self) -> None:
+        self._obs(1_000_000)
+        self._obs(1_001_000)  # exactly one interval later
+        self.assertEqual(self._count_obs(), 2)
+
+    def test_per_symbol_independence(self) -> None:
+        self._obs(1_000_000, symbol="BTCUSDT")
+        self._obs(1_000_100, symbol="ETHUSDT")  # other symbol: accepted
+        self.assertEqual(self._count_obs(), 2)
+
+    def test_ungated_kinds_always_persist(self) -> None:
+        for i in range(5):
+            self.store.store_market_observation(
+                symbol="MULTI", stream_type="!markPrice@arr@1s",
+                payload={"items": []}, event_time_ms=1_000_000 + i,
+                is_valid=True)
+        with self.store._get_cursor() as cursor:
+            cursor.execute("SELECT COUNT(*) FROM market_observations")
+            self.assertEqual(cursor.fetchone()[0], 5)
+
+    def test_gate_disabled_by_empty_map(self) -> None:
+        self.store.sample_interval_ms = {}
+        for i in range(5):
+            self._obs(2_000_000 + i)
+        self.assertEqual(self._count_obs(), 5)
+
+    def test_configure_sampling_override_and_disable(self) -> None:
+        self.store.configure_sampling({"bookTicker": 5000})
+        self.assertEqual(self.store.sample_interval_ms["bookTicker"], 5000)
+        self.store.configure_sampling({"bookTicker": 0})
+        self.assertNotIn("bookTicker", self.store.sample_interval_ms)
+        for i in range(5):
+            self._obs(3_000_000 + i)
+        self.assertEqual(self._count_obs(), 5)
+
+    def test_inflight_high_water_tracked(self) -> None:
+        self._obs(4_000_000)
+        stats = self.store.sample_stats()
+        self.assertGreaterEqual(stats["inflight_high_water"], 1)
+        self.assertEqual(stats["inflight"], 0)
+
+
+class SchemaV2Test(unittest.TestCase):
+    """P1-04 feature tables: version gate, price samples, return features."""
+
+    def setUp(self) -> None:
+        self.temp_dir = tempfile.mkdtemp(prefix="v2_test_")
+        self.db_path = Path(self.temp_dir) / "v2.db"
+        self.store = PersistenceStore(db_path=self.db_path)
+        self.store.sample_interval_ms = {}
+        self.store.init_db()
+
+    def tearDown(self) -> None:
+        self.store.close()
+        try:
+            self.db_path.unlink(missing_ok=True)
+            self.db_path.parent.rmdir()
+        except OSError:
+            pass
+
+    def test_schema_version_is_2_with_feature_tables(self) -> None:
+        with self.store._get_cursor() as cursor:
+            cursor.execute(
+                "SELECT value FROM persistence_meta WHERE key='schema_version'")
+            self.assertEqual(int(cursor.fetchone()[0]), 2)
+            for table in ("price_samples", "return_features"):
+                cursor.execute(
+                    "SELECT name FROM sqlite_master WHERE type='table' AND name=?",
+                    (table,))
+                self.assertIsNotNone(cursor.fetchone(), table)
+
+    def test_v1_database_migrates_to_v2(self) -> None:
+        # Simulate a pre-P1-04 database: v1 tables only, version marker 1.
+        legacy = Path(self.temp_dir) / "legacy.db"
+        conn = __import__("sqlite3").connect(str(legacy))
+        conn.execute("CREATE TABLE persistence_meta (key TEXT PRIMARY KEY, value TEXT NOT NULL)")
+        conn.execute("INSERT INTO persistence_meta VALUES ('schema_version', '1')")
+        conn.execute("CREATE TABLE telemetry_snapshots (id INTEGER PRIMARY KEY AUTOINCREMENT, timestamp REAL NOT NULL)")
+        conn.commit()
+        conn.close()
+        migrated = PersistenceStore(db_path=legacy)
+        migrated.init_db()
+        with migrated._get_cursor() as cursor:
+            cursor.execute(
+                "SELECT value FROM persistence_meta WHERE key='schema_version'")
+            self.assertEqual(int(cursor.fetchone()[0]), 2)
+            cursor.execute(
+                "SELECT name FROM sqlite_master WHERE type='table' AND name='price_samples'")
+            self.assertIsNotNone(cursor.fetchone())
+        # Legacy column repair still applied on the v1 path.
+        with migrated._get_cursor() as cursor:
+            cursor.execute("PRAGMA table_info(telemetry_snapshots)")
+            columns = {row[1] for row in cursor.fetchall()}
+            self.assertIn("spread_bps_json", columns)
+        migrated.close()
+
+    def test_price_samples_round_trip_and_restart(self) -> None:
+        import time as _time
+
+        base = (int(_time.time() * 1000) // 10_000) * 10_000 - 30_000
+        rows = [("BTCUSDT", base, 100.5), ("BTCUSDT", base + 10_000, 101.0)]
+        self.store.store_price_samples(rows)
+        self.assertEqual(self.store.load_price_samples("BTCUSDT"), rows)
+        self.store.close()
+        reopened = PersistenceStore(db_path=self.db_path)
+        reopened.init_db()
+        self.assertEqual(reopened.load_price_samples("BTCUSDT"), rows)
+        reopened.close()
+
+    def test_return_features_replace_per_symbol(self) -> None:
+        self.store.store_return_features([
+            {"symbol": "BTCUSDT", "current_price": 100.0, "returns": {"1m": 0.01}}])
+        self.store.store_return_features([
+            {"symbol": "BTCUSDT", "current_price": 101.0, "returns": {"1m": 0.02}},
+            {"symbol": "ETHUSDT", "current_price": 50.0, "returns": {"1m": None}}])
+        latest = self.store.latest_return_features()
+        by_symbol = {f["symbol"]: f for f in latest}
+        self.assertEqual(set(by_symbol), {"BTCUSDT", "ETHUSDT"})
+        self.assertEqual(by_symbol["BTCUSDT"]["current_price"], 101.0)
+        self.assertIsNone(by_symbol["ETHUSDT"]["returns"]["1m"])
 
 
 if __name__ == "__main__":
