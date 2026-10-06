@@ -1,0 +1,37 @@
+{
+  "symbols": ["BTCUSDT", "ETHUSDT", "SOLUSDT"],
+  "summary_interval_seconds": 30,
+  "stale_after_seconds": 10,
+  "max_event_clock_skew_ms": 5000,
+  "telemetry_max_samples": 20000,
+  "clock_sync": {
+    "interval_seconds": 600,
+    "samples": 5,
+    "request_timeout_seconds": 5
+  },
+  "liquidation": {
+    "window_seconds": 10,
+    "individual_notional_usdt": {
+      "BTCUSDT": 250000,
+      "ETHUSDT": 100000,
+      "SOLUSDT": 50000
+    },
+    "window_notional_usdt": {
+      "BTCUSDT": 1000000,
+      "ETHUSDT": 500000,
+      "SOLUSDT": 250000
+    }
+  },
+  "funding": {
+    "history_size": 1000,
+    "minimum_samples": 30,
+    "lower_percentile": 0.05,
+    "upper_percentile": 0.95
+  },
+  "volume": {
+    "bucket_seconds": 10,
+    "history_buckets": 120,
+    "minimum_buckets": 30,
+    "z_score_threshold": 3.0
+  }
+}
