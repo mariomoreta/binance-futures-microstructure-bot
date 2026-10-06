@@ -32,8 +32,8 @@ Factual state as of 2026-10-06 (order refinement). Historical evidence:
 
 ## Verification (2026-10-06)
 
-- Canonical: `python run_tests.py` from repo root → **28/28 PASS** (before and
-  after P1-01; no code changes).
+- Canonical: `python run_tests.py` from repo root → **47/47 PASS** (28 baseline
+  + 19 persistence; P1-02 fixed 5 as-found errors, suite now runs in ~2s).
 - `--show-streams` → correct routed `/public` + `/market` URLs.
 - Port candidates 8091/8092/8093/18091/18765 probed FREE on 127.0.0.1
   (dashboard port-policy evidence; selection happens at P1-03 startup).
@@ -101,6 +101,43 @@ Superseded: the earlier "soak first, persist nothing in Phase 1" sketch.
 Persistence foundation is now explicitly a Phase 1 task (local, observe-only,
 dashboard-feeding) — see `docs/DECISIONS.md`.
 
+## P1-02 persistence foundation — RESULT: PASS (2026-10-06)
+
+- Tech: stdlib SQLite (`sqlite3`), no new dependencies. Store:
+  `data/microprobe.db` (project-local, git-ignored via `data/` + `*.db`).
+- Schema v1 + version gate + column migration: `persistence_meta`,
+  `telemetry_snapshots` (periodic `build_summary` output for the P1-03
+  dashboard), `market_observations` (valid only, `is_valid` + symbol/stream
+  indexes), `rejected_observations` (skew/parse rejects, reason + stream
+  indexes). 9 indexes total.
+- Write path (probe.py, all fire-and-forget with `persistence_error` logging,
+  never breaking the probe): valid dict payloads → observations with
+  normalized price/qty/E/T; markPrice arrays → single `MULTI` record (no
+  longer dropped); skew-rejected payloads (dict or list) → rejections only;
+  every summary (30s + final) → snapshot row.
+- Invalid-data guarantee: the skew guard returns before the valid-write code,
+  so rejected messages can only reach `rejected_observations`;
+  `latest_observations()` hard-filters `is_valid = 1` (both proven by tests,
+  including a probe-level skew test).
+- Retention: snapshots ≤1000, observations ≤10000, rejections ≤1000 rows
+  (instance-overridable); steady-state storage bounded (~10–20MB worst case).
+- Non-blocking: writes run via `asyncio.to_thread` under a lock (single
+  shared connection); smoke (2000 mixed msgs): schedule p50/p95
+  0.021/0.039ms, full drain 9.2s off-loop. Per-insert retention DELETE is the
+  dominant cost (~4.6ms) — fine at current rates; see risks.
+- Restart: close() is idempotent; reopen replays schema gate and all rows
+  survive (tested).
+- Found and fixed during verification (were failing, 5 errors): missing
+  `spread_bps_json` column + 19-vs-18 INSERT mismatch; `store_rejection_record`
+  crashed with no running loop; real-summary legacy-lag dict vs REAL column;
+  markPrice arrays never persisted; snapshots never wired to the probe.
+- Known risks: (1) no write backpressure — sustained rates far above ~200/s
+  queue tasks in memory (dashboard freshness lags, WS never blocks); P1-04
+  sampling/aggregation is the planned remedy. (2) At full healthy-network
+  bookTicker rates the 10k observation cap retains only recent minutes —
+  sufficient for dashboard/P1-04 bootstrap, not archival history (Phase 2
+  owns that).
+
 ## Project brain
 
 - `AGENTS.md` + 20 docs under `docs/`. No strategy, engine, or safety code
@@ -108,11 +145,11 @@ dashboard-feeding) — see `docs/DECISIONS.md`.
 
 ## Known gaps (Phase 1 work ahead, in order)
 
-Persistence foundation, minimal dashboard, open interest, multi-timeframe
+Minimal dashboard, open interest, multi-timeframe
 return engine, velocity/acceleration, ranking + rank velocity/acceleration,
 VWAP + displacement, realized volatility/range expansion, structure primitives,
 richer aggressive-flow metrics, state classifier, intelligence + signal UI,
-soak + calibration evidence.
+soak + calibration evidence. (Persistence foundation DONE — P1-02 PASS.)
 
 ## Blockers / issues
 

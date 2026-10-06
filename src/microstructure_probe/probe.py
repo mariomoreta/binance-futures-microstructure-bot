@@ -16,6 +16,7 @@ from .config import ProbeConfig
 from .detectors import EventDetectors
 from .metrics import order_book_imbalance, spread_bps
 from .telemetry import RunningDistribution
+from .persistence import PersistenceStore, get_persistence_store
 
 LOGGER = logging.getLogger("microstructure_probe")
 BASE_URL = "wss://fstream.binance.com"
@@ -105,6 +106,19 @@ class MarketProbe:
         self._legacy_latency = RunningDistribution(config.telemetry_max_samples)
         self._latency: dict[str, dict[str, RunningDistribution]] = defaultdict(dict)
         self._processing: dict[str, dict[str, RunningDistribution]] = defaultdict(dict)
+        self._persistence: PersistenceStore | None = None
+
+    @property
+    def persistence(self) -> PersistenceStore:
+        """Get or create the persistence store (lazy initialization)."""
+        if self._persistence is None:
+            self._persistence = get_persistence_store()
+            self._persistence.init_db()
+        return self._persistence
+
+    def set_persistence(self, store: PersistenceStore) -> None:
+        """Set a custom persistence store (for testing)."""
+        self._persistence = store
 
     def _distribution(
         self, container: dict[str, dict[str, RunningDistribution]], metric: str, key: str
@@ -243,6 +257,20 @@ class MarketProbe:
             ):
                 self.stats.rejected_timestamp += 1
                 self.stats.rejected_timestamp_by_stream[stream] += 1
+                # Persist rejection telemetry (not as valid feature input).
+                # Payloads pass through untouched (dict or markPrice list);
+                # the store serializes safely and failures never break the probe.
+                try:
+                    self.persistence.store_rejection_record(
+                        symbol=str(payload.get("s", "UNKNOWN")) if isinstance(payload, dict) else "UNKNOWN",
+                        stream_type=stream,
+                        payload=payload,
+                        rejection_reason="timestamp_skew",
+                        event_time_ms=int(payload["E"]) if isinstance(payload, dict) and "E" in payload else None,
+                        transaction_time_ms=int(payload["T"]) if isinstance(payload, dict) and "T" in payload else None,
+                    )
+                except Exception as exc:
+                    LOGGER.warning(json.dumps({"kind": "persistence_error", "error": str(exc)}))
                 rejected_end_ns = self._perf_counter_ns()
                 self._record_processing(
                     processing_key,
@@ -317,6 +345,46 @@ class MarketProbe:
         for event in events:
             self.stats.events_by_type[event.event_type] += 1
             LOGGER.info(json.dumps({"kind": "detected_event", **event.as_log_record()}))
+        
+        # Persist valid market observation for P1-04+ feature engineering.
+        # Runs only for messages that passed the skew guard above; rejected
+        # messages return early and can only reach rejected_observations.
+        # Dict payloads (aggTrade/bookTicker/depth/forceOrder) carry their
+        # symbol; markPrice arrays (list) are stored as one MULTI record.
+        try:
+            if isinstance(payload, dict):
+                symbol = str(payload.get("s", "UNKNOWN"))
+                event_time_ms = int(payload["E"]) if "E" in payload else None
+                transaction_time_ms = int(payload["T"]) if "T" in payload else None
+                self.persistence.store_market_observation(
+                    symbol=symbol,
+                    stream_type=stream,
+                    payload=payload,
+                    normalized={
+                        "symbol": symbol,
+                        "stream": stream,
+                        "price": payload.get("p") or payload.get("ap"),
+                        "quantity": payload.get("q"),
+                        "event_time_ms": event_time_ms,
+                        "transaction_time_ms": transaction_time_ms,
+                    },
+                    event_time_ms=event_time_ms,
+                    transaction_time_ms=transaction_time_ms,
+                    is_valid=True,
+                )
+            elif isinstance(payload, list):
+                self.persistence.store_market_observation(
+                    symbol="MULTI",
+                    stream_type=stream,
+                    payload={"items": payload},
+                    normalized={"symbol": "MULTI", "stream": stream, "count": len(payload)},
+                    event_time_ms=None,
+                    transaction_time_ms=None,
+                    is_valid=True,
+                )
+        except Exception as exc:
+            LOGGER.warning(json.dumps({"kind": "persistence_error", "error": str(exc)}))
+        
         processing_end_ns = self._perf_counter_ns()
         self._record_processing(
             processing_key,
@@ -577,6 +645,11 @@ class MarketProbe:
         }
 
     def log_summary(self, *, final: bool) -> None:
-        LOGGER.info(
-            json.dumps(self.build_summary(final=final), sort_keys=True, allow_nan=False)
-        )
+        summary = self.build_summary(final=final)
+        # Persist the snapshot for the P1-03 dashboard (fire-and-forget;
+        # persistence failures are logged there and never break logging).
+        try:
+            self.persistence.store_telemetry_snapshot(summary)
+        except Exception as exc:
+            LOGGER.warning(json.dumps({"kind": "persistence_error", "error": str(exc)}))
+        LOGGER.info(json.dumps(summary, sort_keys=True, allow_nan=False))

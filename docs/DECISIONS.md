@@ -52,3 +52,19 @@ snapshots + forward outcomes remain Phase 2 (`docs/EVENT_LABELING.md`).
 no application behavior changed. Dashboard port policy set: ordered candidates
 from 8091, first-free at startup, bind 127.0.0.1, health endpoint, PID file;
 8091/8092/8093/18091/18765 probed FREE.
+
+## 2026-10-06 — P1-02 persistence architecture (SQLite, 3-table split)
+
+Stdlib SQLite at `data/microprobe.db`, no new dependencies. Three tables with
+distinct contracts: `telemetry_snapshots` (periodic summaries for the
+dashboard), `market_observations` (valid-only, `is_valid` filter enforced at
+read), `rejected_observations` (skew/parse rejects as telemetry, never feature
+input). Writes are fire-and-forget via `asyncio.to_thread` under a lock so the
+websocket loop only pays scheduling cost (~0.02ms); failures log
+`persistence_error` and never break the probe. Retention bounds
+(1000/10000/1000) cap steady-state storage. Rejected messages return before
+the valid-write code path, so invalid data cannot become valid records by
+construction. During verification this decision also fixed: missing
+`spread_bps_json` column, INSERT arity, sync-context rejection crash, legacy
+dict-vs-REAL binding, dropped markPrice arrays (now `MULTI` records), unwired
+snapshot persistence.
