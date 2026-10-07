@@ -276,6 +276,111 @@ class MoversTest(_ServerCase):
         self.assertIn("/symbol/ORCAUSDT", body)
 
 
+class MoversIntegrityTest(_ServerCase):
+    """P1-11A: every movers category must render its OWN source field.
+
+    Regression for the shared-`_v` contamination bug (a symbol present in
+    several categories displayed the last-assigned value in every table,
+    mixing velocity/acceleration/volume-z/flow scales). Fixture numbers are
+    deliberately unique per field so any cross-category leak is visible.
+    """
+
+    VEL = 1.1e-6
+    ACC = 2.2e-8
+    FLOW = 333333
+    VOLZ = 4.4
+    QVOL = 55555555
+    CHG = 6.6
+
+    def _seed(self):
+        self.store.store_telemetry_snapshot(_snapshot())
+        feat = _return_feature("INTUSDT", 100.0, {"1m": 0.001})
+        feat["momentum"] = {"velocity": {"1m": self.VEL},
+                            "acceleration": {"1m": self.ACC}}
+        self.store.store_return_features([feat])
+        self.store.store_flow_features([{
+            "symbol": "INTUSDT",
+            "horizons": {"1m": {"signed_delta": float(self.FLOW)}},
+            "baselines": {"1m": {"z_score": self.VOLZ}},
+        }])
+        tops_row = {"symbol": "INTUSDT", "change_24h_pct": self.CHG,
+                    "price": 100.0, "quote_volume_24h": self.QVOL}
+        disc = _discovery()
+        disc["core"] = ["BTCUSDT", "ETHUSDT", "SOLUSDT"]
+        disc["hot_dynamic"] = ["INTUSDT"]
+        disc["hot_full"] = ["INTUSDT"]
+        disc["tops"] = {
+            "gainers": [tops_row],
+            "losers": [{"symbol": "ZZZUSDT", "change_24h_pct": -1.5,
+                        "price": 1.0, "quote_volume_24h": 10}],
+            "most_active": [tops_row],
+        }
+        self.store.store_discovery_snapshot(disc)
+
+    def _section(self, body, title):
+        for part in body.split("<h2>"):
+            if part.startswith(title):
+                return part.split("</table>")[0]
+        self.fail(f"movers section missing: {title}")
+
+    def test_gainers_shows_24h_pct_not_live_fields(self) -> None:
+        self._seed()
+        _, body, _ = self._get("/movers")
+        sec = self._section(body, "Top gainers 24h (discovery)")
+        self.assertIn("INTUSDT", sec)
+        self.assertIn(f"{self.CHG:+.2f}%", sec)
+        for leak in ("1.1e-06/s", "2.2e-08", "+4.40 z", "+333333.00",
+                     str(self.QVOL), "proposed"):
+            self.assertNotIn(leak, sec, f"gainers leaked {leak}")
+
+    def test_live_velocity_and_accel_use_own_fields(self) -> None:
+        self._seed()
+        _, body, _ = self._get("/movers")
+        vel = self._section(body, "Fastest positive velocity (live)")
+        self.assertIn("INTUSDT", vel)
+        self.assertIn(f"{self.VEL:.3g}/s", vel)
+        acc = self._section(body, "Acceleration leaders (live)")
+        self.assertIn("INTUSDT", acc)
+        self.assertIn(f"{self.ACC:.3g}/s", acc)
+        # Velocity table must not show the acceleration value and vice versa.
+        self.assertNotIn(f"{self.ACC:.3g}/s", vel)
+        self.assertNotIn(f"{self.VEL:.3g}/s", acc)
+
+    def test_volume_expansion_and_flow_use_own_fields(self) -> None:
+        self._seed()
+        _, body, _ = self._get("/movers")
+        volx = self._section(body, "Volume expansion (live z-score)")
+        self.assertIn("INTUSDT", volx)
+        self.assertIn(f"{self.VOLZ:+.2f} z", volx)
+        flow = self._section(body, "Aggressive-flow leaders (live)")
+        self.assertIn("INTUSDT", flow)
+        self.assertIn(f"{float(self.FLOW):+.2f}", flow)
+        self.assertNotIn(f"{float(self.FLOW):+.2f}", volx)
+        self.assertNotIn(f"{self.VOLZ:+.2f} z", flow)
+
+    def test_hot_and_activity_values(self) -> None:
+        self._seed()
+        _, body, _ = self._get("/movers")
+        hot = self._section(body, "HOT proposals")
+        self.assertIn("INTUSDT", hot)
+        self.assertIn("proposed", hot)
+        active = self._section(body,
+                               "Highest 24h activity / quote volume (discovery)")
+        self.assertIn("INTUSDT", active)
+        self.assertIn(str(self.QVOL), active)
+        self.assertNotIn(f"{self.CHG:+.2f}%", active)
+
+    def test_velocity_sort_key_unchanged(self) -> None:
+        self._seed()
+        faster = _return_feature("SRTUSDT", 50.0, {"1m": 0.002})
+        faster["momentum"] = {"velocity": {"1m": 9.9e-6},
+                              "acceleration": {"1m": None}}
+        self.store.store_return_features([faster])
+        _, body, _ = self._get("/movers")
+        vel = self._section(body, "Fastest positive velocity (live)")
+        self.assertLess(vel.index("SRTUSDT"), vel.index("INTUSDT"))
+
+
 class TokenDetailTest(_ServerCase):
     def _seed_live(self):
         from microstructure_probe.flow import FlowEngine

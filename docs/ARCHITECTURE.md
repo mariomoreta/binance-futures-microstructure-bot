@@ -63,3 +63,28 @@ computed from cheap REST scans and exposed (dashboard/API/logs) but NOT
 subscribed: integrating dynamic stream rebuild on HOT change is the next
 explicit step (owned by P1-09 planning, requires P1-01R transport headroom).
 No live features are ever shown for unsubscribed symbols.
+
+## Future research pipeline (P1-11B → P1-16, design only — NOT BUILT)
+
+```text
+history (P1-11B multi-resolution REST bootstrap: 1m 30–90d, 5m/15m 6–12mo,
+         1h 1–2y, 4h/1d full contract life; Binance USD-M docs verified first)
+  → event studies (P1-11C: 1m/3m/5m/15m/30m/1h outcomes + MFE/MAE/time-to-MFE/
+                   time-to-MAE/invalidation, no lookahead in event formation)
+  → validated ≥6h soak re-run (P1-10R, gate still closed after P1-10 FAIL)
+  → market-state classifier (P1-12) → dynamic live universe (P1-12B)
+  → opportunity/setup engine (P1-13A: DISCOVERED→WATCH→DEVELOPING→CONFIRMED→
+     PAPER ENTRY→HOLD→DETERIORATING→INVALIDATED/EXIT with direction,
+     historical confidence, sample size, entry zone, stop, targets, horizon,
+     reasons, risks)
+  → professional UX (P1-13B) → historical backtester (P1-14, replay without
+     future leakage) → forward paper trading (P1-15, simulated live entry)
+  → paper portfolio / dynamic exit (P1-16)
+```
+
+Forward/paper simulation must eventually account for spread, fees,
+slippage, latency, funding where relevant, entry price, stop, target, and
+dynamic exit. No real orders at any stage without explicit human
+authorization. Detail: `docs/SIGNAL_RESEARCH_PLAN.md` (setups, BTC
+context, exhaustion/absorption) and `docs/HISTORICAL_RESEARCH_PLAN.md`
+(resolutions, event studies).

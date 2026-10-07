@@ -355,7 +355,12 @@ def render_movers(state) -> str:
             f"<td>{C.capability_chip(r.get('capability', 'UNKNOWN'))}</td></tr>")
     body += "</table></div>"
 
-    def _cat(title: str, cat_rows: List[Dict[str, Any]], note: str) -> str:
+    def _cat(title: str, cat_rows: List[Dict[str, Any]], note: str,
+             vkey: str) -> str:
+        # P1-11A: each category renders its OWN display-value key. A shared
+        # key across categories let a symbol present in several tables show
+        # the last-assigned value everywhere (velocity/accel/vol-z/flow
+        # scales mixed). Per-category keys make that class impossible.
         out = f"<h2>{html.escape(title)}</h2><p class='note'>{html.escape(note)}</p>"
         if not cat_rows:
             return out + "<p class='note'>none (insufficient data).</p>"
@@ -363,42 +368,45 @@ def render_movers(state) -> str:
         for r in cat_rows:
             out += (f"<tr><td>{C.symbol_link(r['symbol'])}</td>"
                     f"<td>{C.tier_chip(r['tier'])}</td>"
-                    f"<td>{html.escape(str(r.get('_v', '—')))}</td>"
+                    f"<td>{html.escape(str(r.get(vkey, '—')))}</td>"
                     f"<td>{C.capability_chip(r.get('capability', 'UNKNOWN'))}</td></tr>")
         return out + "</table>"
 
     for r in gainers:
-        r["_v"] = f"{float(r['change_24h_pct']):+.2f}%"
+        r["_v_pct"] = f"{float(r['change_24h_pct']):+.2f}%"
     for r in losers:
-        r["_v"] = f"{float(r['change_24h_pct']):+.2f}%"
+        r["_v_pct"] = f"{float(r['change_24h_pct']):+.2f}%"
     for r in active:
-        r["_v"] = str(r["quote_volume_24h"])
+        r["_v_qvol"] = str(r["quote_volume_24h"])
     for r in hot_rows:
-        r["_v"] = "proposed"
+        r["_v_hot"] = "proposed"
     for r in vel_pos + vel_neg:
-        r["_v"] = f"{float(r['velocity_1m']):.3g}/s"
+        r["_v_vel"] = f"{float(r['velocity_1m']):.3g}/s"
     for r in acc:
-        r["_v"] = f"{float(r['accel_1m']):.3g}/s²"
+        r["_v_acc"] = f"{float(r['accel_1m']):.3g}/s²"
     for r in volx:
-        r["_v"] = f"{float(r['vol_z_1m']):+.2f} z"
+        r["_v_volz"] = f"{float(r['vol_z_1m']):+.2f} z"
     for r in flowl:
-        r["_v"] = f"{float(r['flow_delta']):+.2f}"
-    body += _cat("Top gainers 24h (discovery)", gainers, "REST 24h change — discovery metric.")
-    body += _cat("Top losers 24h (discovery)", losers, "REST 24h change — discovery metric.")
+        r["_v_flow"] = f"{float(r['flow_delta']):+.2f}"
+    body += _cat("Top gainers 24h (discovery)", gainers,
+                 "REST 24h change — discovery metric.", "_v_pct")
+    body += _cat("Top losers 24h (discovery)", losers,
+                 "REST 24h change — discovery metric.", "_v_pct")
     body += _cat("Highest 24h activity / quote volume (discovery)", active,
-                "REST 24h quote volume — discovery metric.")
+                 "REST 24h quote volume — discovery metric.", "_v_qvol")
     body += _cat("HOT proposals", hot_rows,
-                "Dynamic discovery candidates (proposed only; may be DISCOVERY ONLY).")
+                 "Dynamic discovery candidates (proposed only; may be DISCOVERY ONLY).",
+                 "_v_hot")
     body += _cat("Fastest positive velocity (live)", vel_pos,
-                "Live 1m return-velocity — subscribed symbols only.")
+                 "Live 1m return-velocity — subscribed symbols only.", "_v_vel")
     body += _cat("Fastest negative velocity (live)", vel_neg,
-                "Live 1m return-velocity — subscribed symbols only.")
+                 "Live 1m return-velocity — subscribed symbols only.", "_v_vel")
     body += _cat("Acceleration leaders (live)", acc,
-                "Live 1m acceleration magnitude — subscribed symbols only.")
+                 "Live 1m acceleration magnitude — subscribed symbols only.", "_v_acc")
     body += _cat("Volume expansion (live z-score)", volx,
-                "Live 1m volume z-score — subscribed symbols only.")
+                 "Live 1m volume z-score — subscribed symbols only.", "_v_volz")
     body += _cat("Aggressive-flow leaders (live)", flowl,
-                "Live signed flow delta magnitude — subscribed symbols only.")
+                 "Live signed flow delta magnitude — subscribed symbols only.", "_v_flow")
     return C.page("Movers — Binance Futures", "MOVERS", _banner(state), body)
 
 

@@ -107,6 +107,15 @@ universe: tops + CORE + HOT + live symbols; deterministic; escaped).
   most-active (discovery), HOT proposals, live velocity ±, acceleration,
   volume-expansion, aggressive-flow leaders. Discovery vs live metrics never
   mixed without labels.
+- `/movers` category-value contract (P1-11A FIX): each category renders its
+  OWN display key (`_v_pct` 24h change `+%.2f%%` / `_v_qvol` quote volume /
+  `_v_hot` "proposed" / `_v_vel` `%.3g/s` / `_v_acc` `%.3g/s²` /
+  `_v_volz` `%+.2f z` / `_v_flow` `%+.2f`). Source field, sort key, display
+  field, unit and formatter are per-category; a shared key across loops is
+  forbidden (it mixed scales for symbols present in several tables).
+  Regression: `MoversIntegrityTest` (unique fixtures velocity 1.1e-6,
+  acceleration 2.2e-8, flow 333333, vol-z 4.4, quote-vol 55555555,
+  24h +6.6%; fails 4/5 on the old code, passes 5/5 fixed).
 - `/symbol/:symbol`: header (price, 24h %, tier, capability, freshness, feed
   state) + mark-price SVG line chart (5m/15m/1h/4h/24h, honest partial/
   warming) + Momentum + Trade flow (aggressor side only) + Order book
@@ -131,6 +140,15 @@ universe: tops + CORE + HOT + live symbols; deterministic; escaped).
 
 Add: `/signals`, `/extreme-moves`. States shown with evidence vectors;
 extreme moves shown with context — never as an entry list.
+
+### Future professional UX (P1-13B plan, NOT implemented)
+
+Navigation: OVERVIEW / MOVERS / OPPORTUNITIES / PAPER LAB / BACKTEST /
+SYSTEM. Opportunities rank setup candidates dynamically (never an entry
+list). Token page grows (chart, momentum, aggressive-flow split, OI,
+liquidity/book, VWAP/volatility/structure, BTC context, historical context,
+research setup card) without redesigning the Phase-1 IA. Full plan:
+`docs/SIGNAL_RESEARCH_PLAN.md`. No UI rebuilt in P1-11A.
 
 ### Later (Phases 2–4)
 

@@ -149,3 +149,67 @@ Thresholds are HYPOTHESIS until Phase 2–3 statistics exist.
 - Near-miss + warm-up telemetry for every detector (follow `detectors.py` pattern).
 - Repeated stream samples are not independent evidence (funding caveat applies
   generally).
+
+## P1-11A validation — MEASURED 2026-10-07 (P1-10 4.91h evidence, END state)
+
+All families below are mathematically and operationally trustworthy as RAW
+inputs for research. No threshold was tuned; categorical states were not
+percentiled. n=3 symbols throughout (percentiles across symbols are
+illustrative, not statistical).
+
+- Returns (log, mark-price 10s buckets): 1m/3m/5m/4h available at END
+  (15m/1h/24h honestly UNKNOWN — degraded final hour starved fresh buckets
+  past the max(60s,tf/20) anchor tolerance; warmup_complete=False overall).
+  Scales sane: 1m −8.8e-4…−2.0e-4, 4h −1.05e-2…−3.1e-3. Signs mixed across
+  horizons (1m/3m/4h negative, 5m positive) — consistent with a down-drift
+  afternoon, not a sign bug. No lookahead (queries ≤ as-of), late =
+  strictly-older dropped + counted (0 late), restored history extends span
+  (58.83M ms / 16.34h) without fabrication. Grid fill 31.7% (degraded-env
+  starvation, counted) — longer horizons go UNKNOWN instead of interpolating.
+- Momentum: velocity_1m −2.4e-5…−4.4e-6 /s, acceleration_1m −8.2e-7…−9.3e-8
+  /s² (return-change-per-second scales, NOT renamed returns — flat trends
+  ≈ 0 proven by unit test). velocity_5m+ and accel_3m+ honestly None until
+  3 evaluations. Ranks ±/ties/change/velocity/accel deterministic; missing
+  excluded, never zero.
+- Flow (every valid aggTrade pre-sampling): all 6 horizons + 4 baselines +
+  1m accel present. 1m notionals BTC $12.7M / ETH $5.8M / SOL $1.3M
+  (ordering BTC>ETH>SOL correct). Ratios inside [−1,+1]; END state
+  sell-dominated on all horizons (10s ratio −0.43…−0.72) — market condition,
+  not a bug. z-scores finite (no zero-variance fabrication). Rule preserved:
+  aggressive BUY 70% does NOT mean 70% LONG probability.
+- Book (every valid depth snapshot): spread 0.012/0.039/0.862 bps,
+  imbalances in [−1,+1], microprice ≈ mid, live, freshness ~1.2s, 0 crossed,
+  33/32/32 gaps all recovered (degraded:false). Recovered gaps vs active
+  degradation are distinguished by the gap→DEGRADED-until-chained flag.
+- OI (60s bounded polls, WS isolated): current BTC 95703.6 / ETH 2425831.8
+  / SOL 8487893.6 base units; 1m/5m/15m deltas + rates + 1m accel all
+  present with mixed signs (1m positive, 5m/15m negative — not stuck);
+  anchors 62s/315s/922s back within tolerance; stale=false; timestamps
+  coherent (exchange/fetch/last-fetch). Units verified: base units, NOT
+  notional.
+- VWAP: 1m/3m/5m/15m displacement −4.5…+4.6 bps, sane, sign-mixed.
+- Volatility (raw sqrt(sum(r²)), non-annualized): 1m 4.4e-4…6.5e-4,
+  5m 1.5e-3…2.1e-3, warmed=true; 15m/1h honestly UNKNOWN (warmed=false) —
+  UNKNOWN vs true zero is distinguished (flat zero stays 0.0).
+- Range: 5m/15m position in [0,1], expansion 0.57…1.76; 1h UNKNOWN (needs
+  10 prior blocks). No impossible values.
+- Structure: 1659 evals, pivots/HH-LH/HL-LL/breakout tags evaluating on the
+  16.34h span; availability inherited, never fabricated.
+- Freshness/missingness: LIVE/WARMING/DISCOVERY ONLY/STALE/DEGRADED/UNKNOWN
+  vocabulary holds end-to-end (dashboard renders "—", never 0).
+- Transport impact (healthy T+2h→T+3h vs degraded T+4h→END): healthy
+  918 msg/s, 0% rejects, 0 reconnects, 0 gaps; degraded 867 msg/s, 12.9%
+  rejects, 29 reconnects, 64 new gaps. Feature effect: returns span kept
+  growing (+360 vs +129 samples); flow −6.5%; book ingest −64%
+  (depth starved by rejects, integrity still HEALTHY); structure −19%;
+  OI ISOLATED (0 failures both windows — REST path independent of WS
+  degradation). Degradation starves features honestly; it does not corrupt
+  them. Classifiers must treat UNKNOWN/staleness as first-class input.
+- Constant/near-constant flags (expected, not bugs): funding rate series
+  (175–176 valueChanges / 13519 samples → 16.5k artifact crossings, same
+  hypothesis class as P1-01/P1-05); no other family is constant.
+- No unit mismatches, no malformed state transitions, no suspicious spikes
+  beyond absorbed processing maxima (queues stayed 0/0).
+- BTC-context / exhaustion / absorption / historical designs live in
+  `docs/SIGNAL_RESEARCH_PLAN.md` and `docs/HISTORICAL_RESEARCH_PLAN.md`
+  (design only — nothing implemented in P1-11A beyond the Movers fix).

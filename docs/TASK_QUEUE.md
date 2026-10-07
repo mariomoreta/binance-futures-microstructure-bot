@@ -32,26 +32,28 @@ the dashboard exists. No classifier before raw-feature dashboard validation.
 
 ## ACTIVE_TASK
 
-- `P1-10R` PROLONGED ≥6H SOAK RE-RUN — P1-10 FAIL closed truncated at
-  4.91h/6h (17677.9s, externally killed, no final_summary). Re-run with
-  dashboard live, blocking launch that survives the full window, merged
-  stdout+stderr captured as UTF-8 (see `docs/DECISIONS.md` launch rule).
+- `P1-11B` HISTORICAL DATA FOUNDATION — multi-resolution history plan in
+  `docs/HISTORICAL_RESEARCH_PLAN.md` (verify current official Binance USD-M
+  docs before any implementation; no backfill yet run).
   Status: NOT STARTED. (Queued only — do not begin without a new
   instruction.)
 
 ## NEXT_TASKS (ordered, all Phase 1)
-- `P1-10R` PROLONGED ≥6H SOAK RE-RUN — as above; the valid 4.91h of P1-10
-  evidence is retained for P1-11 auditing but the soak gate stays closed.
-- `P1-11` RAW FEATURE VALIDATION — distributions, missingness, freshness,
-  obvious measurement errors. Classifier is BLOCKED until this passes.
-  Includes recorded P1-11A item: Movers shared-`_v` category-value anomaly
-  (a symbol in several categories shows the last-assigned value in every
-  table — velocity/accel/vol-z/flow scales mixed; confirmed by code
-  inspection during P1-10 closure, not fixed).
-- `P1-11` RAW FEATURE VALIDATION — distributions, missingness, freshness,
-  obvious measurement errors. Classifier is BLOCKED until this passes.
+- `P1-11B` HISTORICAL DATA FOUNDATION — as above.
+- `P1-11C` HISTORICAL EVENT STUDIES — outcomes + MFE/MAE, no lookahead.
+- `P1-10R` PROLONGED ≥6H SOAK RE-RUN — P1-10 FAIL stays FAIL (truncated at
+  4.91h); re-run with dashboard live, blocking survivable launch, merged
+  stdout+stderr as UTF-8 (see `docs/DECISIONS.md` launch rule).
+- Intended full sequence (binding order, nothing beyond P1-11A executed):
+  P1-11A Raw Feature + Movers Integrity (DONE) → P1-11B Historical Data
+  Foundation → P1-11C Historical Event Studies → P1-10R Formal ≥6h soak
+  re-run → P1-12 Market State Classifier → P1-12B Dynamic Live Universe →
+  P1-13A Opportunity / Setup Engine → P1-13B Professional Opportunities UX
+  → P1-14 Historical Backtester → P1-15 Forward Paper Trading → P1-16 Paper
+  Portfolio / Dynamic Exit.
 - `P1-12` STATE CLASSIFIER V0 (NORMAL/IGNITION/EXPANSION/EXHAUSTION/REVERSAL).
-  All thresholds explicitly HYPOTHESIS. Allowed only after P1-11.
+  All thresholds explicitly HYPOTHESIS. Allowed only after the P1-11A/B/C
+  evidence chain and the P1-10R gate.
 - `P1-13` SIGNAL / EXTREME-MOVE UI — add `/signals`, `/extreme-moves`.
 - `P1-14` 24H CALIBRATION REVIEW — thresholds vs real crossings + Phase 1 gate
   evaluation per `docs/SUCCESS_GATES.md`.
@@ -61,8 +63,9 @@ strategies (P3), paper engine/positions (P4), execution (P5).
 
 ## BLOCKED
 
-- `P1-12` (classifier) blocked until `P1-11` passes. All other P1 tasks sequenced
-  above; each starts after its predecessor's evidence is recorded.
+- `P1-12` (classifier) blocked until the P1-11A/B/C evidence chain and the
+  `P1-10R` gate. All other P1 tasks sequenced above; each starts after its
+  predecessor's evidence is recorded.
 
 ## COMPLETED
 
@@ -164,9 +167,23 @@ strategies (P3), paper engine/positions (P4), execution (P5).
   55 min) regressed to P1-01-grade. Engines/persistence/dashboard/safety
   all behaved (details in `docs/CURRENT_STATE.md`). Evidence:
   `logs/p1-10/probe-21600s.log` (local, git-ignored). Requires `P1-10R`.
+- `P1-11A` (2026-10-07) RAW FEATURE + MOVERS INTEGRITY AUDIT: **PASS**.
+  Used the valid 4.91h of P1-10 evidence (P1-10 stays FAIL). Movers
+  shared-`_v` contamination bug found, root-caused, fixed narrowly
+  (per-category display keys; sources/sorts/units/formatters unchanged;
+  5 new `MoversIntegrityTest` tests fail 4/5 on old code, pass 5/5 fixed).
+  All feature families measured trustworthy as raw research inputs
+  (scales/availability in `docs/FEATURE_MODEL.md`; healthy-vs-degraded
+  comparison: degradation starves honestly, OI isolated, no corruption).
+  Design-only plans added: `docs/SIGNAL_RESEARCH_PLAN.md` (BTC context,
+  exhaustion, absorption, opportunity lifecycle, backtest/paper sim),
+  `docs/HISTORICAL_RESEARCH_PLAN.md` (P1-11B/C). 317/317 tests.
 
 ## LAST_VERIFICATION
 
+- 2026-10-07 (P1-11A): `python run_tests.py` → 317/317 OK (312 + 5 new
+  `MoversIntegrityTest`). Movers fix + full feature validation recorded in
+  `docs/CURRENT_STATE.md` + `docs/FEATURE_MODEL.md`; P1-10 stays FAIL.
 - 2026-10-07 (P1-10 closure): `python run_tests.py` → 312/312 OK (no app
   code changed during the soak; HEAD still `cca1b78`). Soak FAIL closed
   (17677.9s/21600s, truncated, evidence in `docs/CURRENT_STATE.md` +

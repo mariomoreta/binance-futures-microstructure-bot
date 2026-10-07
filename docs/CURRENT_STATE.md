@@ -577,6 +577,52 @@ VALID for P1-11 raw-feature auditing (monotonic, gap-free summaries), but
 P1-10 itself must be re-run (P1-10R) with a survivable launch before any
 gate may pass. `docs/PHASE_1_REPORT.md` untouched.
 
+## P1-11A raw feature + Movers integrity audit — RESULT: PASS (2026-10-07)
+
+Used the valid P1-10 4.91h evidence (554 gap-free summaries, 15.34M msgs;
+P1-10 stays FAIL on duration — not marked PASS). Baseline before work:
+312/312 PASS. No strategy/backfill/classifier/subscription/signal/paper
+work started.
+
+Movers bug — FOUND, ROOT-CAUSED, FIXED NARROWLY: `render_movers`
+(`dashboard_views.py`) shared one per-row `_v` across all 9 category loops
+(last write won: symbols in several tables showed e.g. the flow value in
+the gainers table). Source→render audited per category (DISCOVERY: 24h
+gainers/losers → `change_24h_pct` sorted by signed 24h %, shown `+%.2f%%`;
+quote-volume leaders → `quote_volume_24h`; HOT → "proposed". LIVE,
+subscribed-only: velocity ± → `velocity_1m` (`%.3g/s`); acceleration →
+`accel_1m` (`%.3g/s²`, sorted by |accel|); volume expansion →
+`vol_z_1m` (`%+.2f z`); aggressive-flow → `flow_delta` (`%+.2f`, sorted by
+|delta|)). Fix: per-category display keys passed to the renderer; sources,
+sorts, units, formatters unchanged. Proven: new `MoversIntegrityTest`
+(5 tests, unique fixtures) fails 4/5 on old code, passes 5/5 fixed.
+
+Feature verdicts (END-state rows + START/END summaries; full scales in
+`docs/FEATURE_MODEL.md`): returns 1m/3m/5m/4h live with sane log scales
+(15m/1h/24h honestly UNKNOWN after the degraded finale); velocity/accel
+scales 1e-6–1e-5 /s and 1e-7–1e-8 /s² with correct warming gates; flow all
+6 horizons + baselines + accel present (ratios in [−1,+1], units USD
+notional, BTC>ETH>SOL ordering); book spreads 0.012–0.86bps, imbalances in
+[−1,+1], 0 crossed, gaps recovered; OI base-unit units verified with mixed
+horizon signs and coherent anchors; VWAP ±4.6bps; vol warmed flags honest
+(UNKNOWN ≠ 0); range positions in [0,1]; structure evaluating on 16.34h
+span. No impossible values, no unit mismatches, no malformed transitions.
+Funding crossings re-confirmed artifact-class (near-constant series).
+
+Transport impact (healthy T+2h→T+3h vs degraded T+4h→END): 918 msg/s 0%
+rejects 0 reconnects 0 gaps vs 867 msg/s 12.9% rejects 29 reconnects 64
+gaps. Feature effect: returns span still grew (+360 vs +129 samples); flow
+−6.5%; book ingest −64% (depth starved, integrity HEALTHY); structure
+−19%; OI ISOLATED (0 failures both). Degradation starves honestly, never
+corrupts — classifiers must take UNKNOWN/staleness as first-class input.
+
+Design-only plans added (nothing implemented): BTC context + relative/
+correlation/beta/lead-lag, exhaustion/absorption research, opportunity
+lifecycle, backtest/paper sim costs (`docs/SIGNAL_RESEARCH_PLAN.md`);
+P1-11B resolutions + P1-11C event studies with MFE/MAE/no-lookahead
+(`docs/HISTORICAL_RESEARCH_PLAN.md`); roadmap P1-11A→…→P1-16 in TASK_QUEUE.
+Tests after: 317/317 (312 + 5 new). `docs/PHASE_1_REPORT.md` untouched.
+
 ## Known gaps (Phase 1 work ahead, in order)
 
 Minimal dashboard: DONE (P1-03 PASS) → terminal DONE (P1-09 PASS,
@@ -584,6 +630,8 @@ v0.8.0 live at http://127.0.0.1:8091).
 Returns engine: DONE (P1-04 PASS — universe + 7-TF mark-price log returns).
 Discovery + velocity/acceleration/ranking: DONE (P1-05 PASS — 449-eligible
 scan, 6-HOT proposal, live momentum + ranks, intel UI + APIs).
+Movers integrity + raw-feature validation: DONE (P1-11A PASS — per-category
+display keys, 5 regression tests, all families measured trustworthy).
 Volume + aggressive flow: DONE (P1-06 PASS — 6-horizon flow, baselines,
 acceleration, v0.5.0 dashboard + APIs, healthy 363s validation).
 Order book + open interest: DONE (P1-07 PASS — snapshot book intel, OI

@@ -320,3 +320,35 @@ fragment). P1-10R must capture merged streams explicitly as UTF-8
 Audit cadence stands: 30s periodic summaries + per-event detector lines
 proved sufficient to reconstruct START/MID/END behavior without any
 sidecar files.
+
+## 2026-10-07 — P1-11A Movers category-value fix + validation conclusions
+
+Movers bug (confirmed, fixed narrowly): `render_movers` in
+`dashboard_views.py` wrote every category's display text into one shared
+per-row key `_v`, so a symbol present in several tables showed the
+last-assigned value everywhere (velocity/accel/vol-z/flow scales mixed).
+Fix: per-category display keys (`_v_pct`, `_v_qvol`, `_v_hot`, `_v_vel`,
+`_v_acc`, `_v_volz`, `_v_flow`) with the renderer taking the key as a
+parameter — the bug class cannot recur. Source fields, sort keys, units
+and formatters unchanged. Proven by `MoversIntegrityTest` (unique
+fixtures: velocity 1.1e-6, accel 2.2e-8, flow 333333, vol-z 4.4,
+quote-vol 55555555, 24h +6.6): 4/5 fail on old code, 5/5 pass fixed.
+
+Durable validation conclusions from the P1-10 4.91h evidence (see
+`docs/FEATURE_MODEL.md` for measured scales):
+
+1. Tolerance-anchored UNKNOWN is the right degradation behavior: the
+   degraded final hour starved fresh mark buckets (grid fill 31.7%) and
+   15m/1h/24h returns went UNKNOWN instead of interpolating. Classifiers
+   must consume UNKNOWN/staleness as first-class input.
+2. OI is transport-isolated by construction (REST polls vs WS): 0 failures
+   in both the healthy (T+2h→T+3h) and degraded (T+4h→END) windows while
+   book ingest fell 64%. Keep the poller off the WS path permanently.
+3. Funding-rate crossings re-confirmed as a hypothesis-artifact class
+   (175–176 valueChanges / 13519 samples → 16.5k crossings); no threshold
+   conclusion may ever be drawn from near-constant percentile series.
+4. Book resilience and per-trade flow history remain the two retention
+   gaps (latest snapshot + 600 bounded buckets only) — owned by P1-11B
+   history design, not by live-engine changes.
+5. Roadmap order fixed: P1-11A → P1-11B → P1-11C → P1-10R → P1-12 →
+   P1-12B → P1-13A → P1-13B → P1-14 → P1-15 → P1-16 (see TASK_QUEUE).
