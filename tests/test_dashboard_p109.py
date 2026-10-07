@@ -381,6 +381,84 @@ class MoversIntegrityTest(_ServerCase):
         self.assertLess(vel.index("SRTUSDT"), vel.index("INTUSDT"))
 
 
+class MoversVelocitySemanticsTest(_ServerCase):
+    """P1-11A.1: velocity leader tables are sign-filtered.
+
+    Positive takes ONLY finite velocity_1m > 0; negative ONLY finite
+    velocity_1m < 0. Exact zero and UNKNOWN/None (incl. NaN/inf) belong in
+    neither table; an empty side renders an honest note instead of
+    wrong-signed rows.
+    """
+
+    def _seed_velocities(self, mapping):
+        self.store.store_telemetry_snapshot(_snapshot())
+        feats = []
+        for sym, vel in mapping.items():
+            feat = _return_feature(sym, 100.0, {"1m": 0.001})
+            feat["momentum"] = {"velocity": {"1m": vel},
+                                "acceleration": {"1m": None}}
+            feats.append(feat)
+        self.store.store_return_features(feats)
+        self.store.store_discovery_snapshot(_discovery())
+
+    def _section(self, body, title):
+        for part in body.split("<h2>"):
+            if part.startswith(title):
+                return part.split("</table>")[0]
+        self.fail(f"movers section missing: {title}")
+
+    def test_mixed_signs_split_correctly(self) -> None:
+        self._seed_velocities({"PSTUSDT": 5.0e-6, "NGTUSDT": -3.0e-6})
+        _, body, _ = self._get("/movers")
+        pos = self._section(body, "Fastest positive velocity (live)")
+        neg = self._section(body, "Fastest negative velocity (live)")
+        self.assertIn("PSTUSDT", pos)
+        self.assertNotIn("NGTUSDT", pos)
+        self.assertIn("5e-06/s", pos)
+        self.assertIn("NGTUSDT", neg)
+        self.assertNotIn("PSTUSDT", neg)
+
+    def test_all_negative_positive_table_empty(self) -> None:
+        self._seed_velocities({"AAAUSDT": -1.0e-6, "BBBUSDT": -2.0e-6})
+        _, body, _ = self._get("/movers")
+        pos = self._section(body, "Fastest positive velocity (live)")
+        neg = self._section(body, "Fastest negative velocity (live)")
+        self.assertIn("No positive live velocity currently.", pos)
+        self.assertNotIn("AAAUSDT", pos)
+        self.assertNotIn("BBBUSDT", pos)
+        self.assertLess(neg.index("BBBUSDT"), neg.index("AAAUSDT"))
+
+    def test_all_positive_negative_table_empty(self) -> None:
+        self._seed_velocities({"AAAUSDT": 1.0e-6, "BBBUSDT": 2.0e-6})
+        _, body, _ = self._get("/movers")
+        pos = self._section(body, "Fastest positive velocity (live)")
+        neg = self._section(body, "Fastest negative velocity (live)")
+        self.assertIn("No negative live velocity currently.", neg)
+        self.assertNotIn("AAAUSDT", neg)
+        self.assertNotIn("BBBUSDT", neg)
+        self.assertLess(pos.index("BBBUSDT"), pos.index("AAAUSDT"))
+
+    def test_exact_zero_excluded_from_both(self) -> None:
+        self._seed_velocities({"ZROUTDT": 0.0, "PSTUSDT": 1.0e-6})
+        _, body, _ = self._get("/movers")
+        pos = self._section(body, "Fastest positive velocity (live)")
+        neg = self._section(body, "Fastest negative velocity (live)")
+        self.assertIn("PSTUSDT", pos)
+        self.assertNotIn("ZROUTDT", pos)
+        self.assertNotIn("ZROUTDT", neg)
+
+    def test_none_and_nonfinite_excluded_from_both(self) -> None:
+        self._seed_velocities({"NULUSDT": None, "INFUSDT": float("inf"),
+                               "NANUSDT": float("nan"), "PSTUSDT": 1.0e-6})
+        _, body, _ = self._get("/movers")
+        pos = self._section(body, "Fastest positive velocity (live)")
+        neg = self._section(body, "Fastest negative velocity (live)")
+        self.assertIn("PSTUSDT", pos)
+        for sym in ("NULUSDT", "INFUSDT", "NANUSDT"):
+            self.assertNotIn(sym, pos)
+            self.assertNotIn(sym, neg)
+
+
 class TokenDetailTest(_ServerCase):
     def _seed_live(self):
         from microstructure_probe.flow import FlowEngine

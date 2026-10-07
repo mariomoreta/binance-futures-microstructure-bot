@@ -352,3 +352,16 @@ Durable validation conclusions from the P1-10 4.91h evidence (see
    history design, not by live-engine changes.
 5. Roadmap order fixed: P1-11A → P1-11B → P1-11C → P1-10R → P1-12 →
    P1-12B → P1-13A → P1-13B → P1-14 → P1-15 → P1-16 (see TASK_QUEUE).
+
+## 2026-10-07 — P1-11A.1 velocity leader sign filter (narrow correctness)
+
+The P1-11A per-category fix exposed the next layer: both velocity tables
+drew from the same unfiltered subscribed population, so an all-negative
+afternoon rendered negatives under "Fastest POSITIVE velocity". Now the
+positive table admits only finite velocity_1m > 0 and the negative table
+only finite velocity_1m < 0 (exact zero, None, NaN/inf in neither; empty
+side renders an honest note). Membership filter only — velocity formula,
+units, momentum engine and rank methodology untouched. Proven by
+`MoversVelocitySemanticsTest` (5/5 fail on old code, 5/5 pass fixed) and
+live-verified after restart (positive table honestly empty while all CORE
+velocities are negative).

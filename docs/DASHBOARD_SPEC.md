@@ -116,6 +116,14 @@ universe: tops + CORE + HOT + live symbols; deterministic; escaped).
   Regression: `MoversIntegrityTest` (unique fixtures velocity 1.1e-6,
   acceleration 2.2e-8, flow 333333, vol-z 4.4, quote-vol 55555555,
   24h +6.6%; fails 4/5 on the old code, passes 5/5 fixed).
+- `/movers` velocity semantics (P1-11A.1 FIX): positive leaders take ONLY
+  finite velocity_1m > 0 (largest first); negative leaders ONLY finite
+  velocity_1m < 0 (most negative first). Exact zero and UNKNOWN/None
+  (incl. NaN/inf) belong in neither table; an empty side renders an honest
+  note ("No positive/negative live velocity currently.") instead of
+  wrong-signed rows. Velocity formula, units and ranking untouched.
+  Regression: `MoversVelocitySemanticsTest` (5 tests: mixed, all-negative,
+  all-positive, zero, None/NaN/inf; fail 5/5 on old code).
 - `/symbol/:symbol`: header (price, 24h %, tier, capability, freshness, feed
   state) + mark-price SVG line chart (5m/15m/1h/4h/24h, honest partial/
   warming) + Momentum + Trade flow (aggressor side only) + Order book

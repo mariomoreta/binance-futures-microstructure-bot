@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import html
 import json
+import math
 import time
 from typing import Any, Dict, List, Optional
 
@@ -31,6 +32,17 @@ def _safe_dict(value: Any) -> Dict[str, Any]:
 
 def _safe_list(value: Any) -> List[Any]:
     return value if isinstance(value, list) else []
+
+
+def _finite(value: Any) -> Optional[float]:
+    """Finite float or None (P1-11A.1: NaN/inf/None/str never enter leaders)."""
+    if isinstance(value, bool):
+        return None
+    try:
+        f = float(value)
+    except (TypeError, ValueError):
+        return None
+    return f if math.isfinite(f) else None
 
 
 def _banner(state) -> str:
@@ -313,11 +325,16 @@ def render_movers(state) -> str:
     active = sorted([r for r in rows if r.get("quote_volume_24h") is not None],
                     key=lambda r: (-float(r["quote_volume_24h"]), r["symbol"]))[:15]
     hot_rows = [r for r in rows if r.get("tier") == "HOT"]
-    vel_pos = sorted([r for r in rows
-                      if r.get("subscribed") and r.get("velocity_1m") is not None],
+    # P1-11A.1: velocity leader tables are sign-filtered. Positive takes
+    # ONLY finite velocity_1m > 0 (largest first); negative takes ONLY finite
+    # velocity_1m < 0 (most negative first). Exact zero and UNKNOWN/None
+    # (incl. NaN/inf) belong in neither table — never backfill a leader
+    # table with wrong-signed rows merely because they rank highest.
+    vel_live = [(r, _finite(r.get("velocity_1m"))) for r in rows
+                if r.get("subscribed")]
+    vel_pos = sorted([r for r, v in vel_live if v is not None and v > 0],
                      key=lambda r: (-float(r["velocity_1m"]), r["symbol"]))[:10]
-    vel_neg = sorted([r for r in rows
-                      if r.get("subscribed") and r.get("velocity_1m") is not None],
+    vel_neg = sorted([r for r, v in vel_live if v is not None and v < 0],
                      key=lambda r: (float(r["velocity_1m"]), r["symbol"]))[:10]
     live_acc = [r for r in rows
                 if r.get("subscribed") and r.get("accel_1m") is not None]
@@ -356,14 +373,16 @@ def render_movers(state) -> str:
     body += "</table></div>"
 
     def _cat(title: str, cat_rows: List[Dict[str, Any]], note: str,
-             vkey: str) -> str:
+             vkey: str,
+             empty: str = "none (insufficient data).") -> str:
         # P1-11A: each category renders its OWN display-value key. A shared
         # key across categories let a symbol present in several tables show
         # the last-assigned value everywhere (velocity/accel/vol-z/flow
         # scales mixed). Per-category keys make that class impossible.
+        # P1-11A.1: empty leader tables render an honest per-category note.
         out = f"<h2>{html.escape(title)}</h2><p class='note'>{html.escape(note)}</p>"
         if not cat_rows:
-            return out + "<p class='note'>none (insufficient data).</p>"
+            return out + f"<p class='note'>{html.escape(empty)}</p>"
         out += "<table><tr><th>symbol</th><th>tier</th><th>value</th><th>data state</th></tr>"
         for r in cat_rows:
             out += (f"<tr><td>{C.symbol_link(r['symbol'])}</td>"
@@ -398,9 +417,11 @@ def render_movers(state) -> str:
                  "Dynamic discovery candidates (proposed only; may be DISCOVERY ONLY).",
                  "_v_hot")
     body += _cat("Fastest positive velocity (live)", vel_pos,
-                 "Live 1m return-velocity — subscribed symbols only.", "_v_vel")
+                 "Live 1m return-velocity — subscribed symbols only.", "_v_vel",
+                 empty="No positive live velocity currently.")
     body += _cat("Fastest negative velocity (live)", vel_neg,
-                 "Live 1m return-velocity — subscribed symbols only.", "_v_vel")
+                 "Live 1m return-velocity — subscribed symbols only.", "_v_vel",
+                 empty="No negative live velocity currently.")
     body += _cat("Acceleration leaders (live)", acc,
                  "Live 1m acceleration magnitude — subscribed symbols only.", "_v_acc")
     body += _cat("Volume expansion (live z-score)", volx,
