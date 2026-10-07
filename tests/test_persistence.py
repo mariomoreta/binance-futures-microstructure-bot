@@ -53,14 +53,14 @@ class PersistenceStoreTest(unittest.TestCase):
                 self.assertIsNotNone(cursor.fetchone(), f"Table {table} should exist")
 
     def test_schema_version_tracking(self) -> None:
-        """Schema version is tracked in persistence_meta (currently v5)."""
+        """Schema version is tracked in persistence_meta (currently v6)."""
         with self.store._get_cursor() as cursor:
             cursor.execute(
                 "SELECT value FROM persistence_meta WHERE key = 'schema_version'"
             )
             row = cursor.fetchone()
             self.assertIsNotNone(row)
-            self.assertEqual(int(row[0]), 5)
+            self.assertEqual(int(row[0]), 6)
 
     def test_telemetry_snapshot_round_trip(self) -> None:
         """Telemetry snapshot can be stored and retrieved."""
@@ -517,21 +517,22 @@ class SchemaV3Test(unittest.TestCase):
         except OSError:
             pass
 
-    def test_schema_version_is_5_with_feature_tables(self) -> None:
+    def test_schema_version_is_6_with_feature_tables(self) -> None:
         with self.store._get_cursor() as cursor:
             cursor.execute(
                 "SELECT value FROM persistence_meta WHERE key='schema_version'")
-            self.assertEqual(int(cursor.fetchone()[0]), 5)
+            self.assertEqual(int(cursor.fetchone()[0]), 6)
             for table in ("price_samples", "return_features",
                           "discovery_snapshots", "universe_events",
                           "rank_snapshots", "flow_features", "flow_buckets",
-                          "book_features", "oi_samples", "oi_features"):
+                          "book_features", "oi_samples", "oi_features",
+                          "structure_features"):
                 cursor.execute(
                     "SELECT name FROM sqlite_master WHERE type='table' AND name=?",
                     (table,))
                 self.assertIsNotNone(cursor.fetchone(), table)
 
-    def test_v1_database_migrates_to_v5(self) -> None:
+    def test_v1_database_migrates_to_v6(self) -> None:
         # Simulate a pre-P1-04 database: v1 tables only, version marker 1.
         legacy = Path(self.temp_dir) / "legacy.db"
         conn = __import__("sqlite3").connect(str(legacy))
@@ -545,7 +546,7 @@ class SchemaV3Test(unittest.TestCase):
         with migrated._get_cursor() as cursor:
             cursor.execute(
                 "SELECT value FROM persistence_meta WHERE key='schema_version'")
-            self.assertEqual(int(cursor.fetchone()[0]), 5)
+            self.assertEqual(int(cursor.fetchone()[0]), 6)
             cursor.execute(
                 "SELECT name FROM sqlite_master WHERE type='table' AND name='price_samples'")
             self.assertIsNotNone(cursor.fetchone())
@@ -567,6 +568,9 @@ class SchemaV3Test(unittest.TestCase):
             cursor.execute(
                 "SELECT name FROM sqlite_master WHERE type='table' AND name='oi_features'")
             self.assertIsNotNone(cursor.fetchone())
+            cursor.execute(
+                "SELECT name FROM sqlite_master WHERE type='table' AND name='structure_features'")
+            self.assertIsNotNone(cursor.fetchone())
         # Legacy column repair still applied on the v1 path.
         with migrated._get_cursor() as cursor:
             cursor.execute("PRAGMA table_info(telemetry_snapshots)")
@@ -574,7 +578,7 @@ class SchemaV3Test(unittest.TestCase):
             self.assertIn("spread_bps_json", columns)
         migrated.close()
 
-    def test_v2_database_migrates_to_v5_preserving_rows(self) -> None:
+    def test_v2_database_migrates_to_v6_preserving_rows(self) -> None:
         import time as _time
 
         base = (int(_time.time() * 1000) // 10_000) * 10_000 - 30_000
@@ -588,12 +592,12 @@ class SchemaV3Test(unittest.TestCase):
         with reopened._get_cursor() as cursor:
             cursor.execute(
                 "SELECT value FROM persistence_meta WHERE key='schema_version'")
-            self.assertEqual(int(cursor.fetchone()[0]), 5)
+            self.assertEqual(int(cursor.fetchone()[0]), 6)
         self.assertEqual(reopened.load_price_samples("BTCUSDT"),
                          [("BTCUSDT", base, 99.0)])
         reopened.close()
 
-    def test_v3_database_migrates_to_v5_preserving_rows(self) -> None:
+    def test_v3_database_migrates_to_v6_preserving_rows(self) -> None:
         # Simulate a P1-05 database: full v3 tables, version marker 3.
         self.store.store_return_features([{"symbol": "BTCUSDT"}])
         self.store.close()
@@ -605,9 +609,10 @@ class SchemaV3Test(unittest.TestCase):
         with reopened._get_cursor() as cursor:
             cursor.execute(
                 "SELECT value FROM persistence_meta WHERE key='schema_version'")
-            self.assertEqual(int(cursor.fetchone()[0]), 5)
+            self.assertEqual(int(cursor.fetchone()[0]), 6)
             for table in ("flow_features", "flow_buckets",
-                          "book_features", "oi_samples", "oi_features"):
+                          "book_features", "oi_samples", "oi_features",
+                          "structure_features"):
                 cursor.execute(
                     "SELECT name FROM sqlite_master WHERE type='table' AND name=?",
                     (table,))
@@ -616,7 +621,7 @@ class SchemaV3Test(unittest.TestCase):
         self.assertEqual(len(reopened.latest_return_features()), 1)
         reopened.close()
 
-    def test_v4_database_migrates_to_v5_preserving_rows(self) -> None:
+    def test_v4_database_migrates_to_v6_preserving_rows(self) -> None:
         # Simulate a P1-06 database: v4 tables with flow rows, marker 4.
         self.store.store_flow_features([{"symbol": "BTCUSDT"}])
         self.store.close()
@@ -628,14 +633,36 @@ class SchemaV3Test(unittest.TestCase):
         with reopened._get_cursor() as cursor:
             cursor.execute(
                 "SELECT value FROM persistence_meta WHERE key='schema_version'")
-            self.assertEqual(int(cursor.fetchone()[0]), 5)
-            for table in ("book_features", "oi_samples", "oi_features"):
+            self.assertEqual(int(cursor.fetchone()[0]), 6)
+            for table in ("book_features", "oi_samples", "oi_features",
+                          "structure_features"):
                 cursor.execute(
                     "SELECT name FROM sqlite_master WHERE type='table' AND name=?",
                     (table,))
                 self.assertIsNotNone(cursor.fetchone(), table)
         # P1-06 rows survive the migration.
         self.assertEqual(len(reopened.latest_flow_features()), 1)
+        reopened.close()
+
+    def test_v5_database_migrates_to_v6_preserving_rows(self) -> None:
+        # Simulate a P1-07 database: v5 tables with book rows, marker 5.
+        self.store.store_book_features([{"symbol": "BTCUSDT"}])
+        self.store.close()
+        with self.store._get_cursor() as cursor:
+            cursor.execute(
+                "INSERT OR REPLACE INTO persistence_meta (key, value) VALUES ('schema_version', '5')")
+        reopened = PersistenceStore(db_path=self.db_path)
+        reopened.init_db()
+        with reopened._get_cursor() as cursor:
+            cursor.execute(
+                "SELECT value FROM persistence_meta WHERE key='schema_version'")
+            self.assertEqual(int(cursor.fetchone()[0]), 6)
+            cursor.execute(
+                "SELECT name FROM sqlite_master WHERE type='table' AND name=?",
+                ("structure_features",))
+            self.assertIsNotNone(cursor.fetchone())
+        # P1-07 rows survive the migration.
+        self.assertEqual(len(reopened.latest_book_features()), 1)
         reopened.close()
 
     def test_discovery_snapshot_replace_and_read(self) -> None:

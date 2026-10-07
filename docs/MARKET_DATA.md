@@ -84,6 +84,17 @@ Primary source: current official USD-M Futures market-data REST docs
   REST OI endpoint about every 6s per instrument — our 60s cadence is
   conservative by comparison.
 
+## P1-08 source reuse (verified 2026-10-09 — no new endpoints)
+
+VWAP, realized volatility, range, and structure introduce NO new data
+source: VWAP reads P1-06 flow aggregates (`notional/base`, same
+pre-sampling provenance); volatility/range/structure read the P1-04 10s
+mark-price buckets (persisted `price_samples`, ~25.5h coverage — a 1h
+volatility horizon fits with margin); reference price is P1-04
+`current_price`. aggTrade price/qty, mark-price, and depth semantics are
+the P1-06/P1-07 verified ones above. No kline endpoint, no bootstrap,
+no new dependency was necessary — documented here instead of added.
+
 ## REST (public only — verified live 2026-10-06)
 
 - `GET /fapi/v1/time` — clock sync only (5 samples, midpoint, median offset/RTT).

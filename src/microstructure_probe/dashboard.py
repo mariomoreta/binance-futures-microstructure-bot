@@ -7,6 +7,7 @@ anything rendered here.
 Routes: / (→ /overview), /overview, /system, /api/health, /api/snapshot,
 /api/features/returns, /api/features/momentum, /api/features/flow,
 /api/features/volume, /api/features/book, /api/features/open-interest,
+/api/features/vwap, /api/features/volatility, /api/features/structure,
 /api/discovery.
 
 Lifecycle CLI (operator commands, Binance dashboard only):
@@ -38,7 +39,7 @@ from typing import Any, Dict, List, Optional, Tuple
 
 from .persistence import PersistenceStore
 
-DASHBOARD_VERSION = "0.6.0"
+DASHBOARD_VERSION = "0.7.0"
 HOST = "127.0.0.1"
 PORT_CANDIDATES = [8091, 8092, 8093, 8094, 8095, 18091, 18765]
 PIDFILE_NAME = "dashboard.pid"
@@ -279,6 +280,13 @@ class DashboardState:
         except (OSError, sqlite3.Error):
             return []
 
+    def structure_features(self) -> List[Dict[str, Any]]:
+        """Latest structure record per symbol (P1-08), or [] before eval."""
+        try:
+            return self.store.latest_structure_features()
+        except (OSError, sqlite3.Error):
+            return []
+
     def storage(self) -> Dict[str, Any]:
         try:
             return self.store.storage_info()
@@ -379,6 +387,9 @@ def _page(title: str, banner_html: str, body: str) -> str:
             f"<a href='/api/features/volume'>/api/features/volume</a>"
             f"<a href='/api/features/book'>/api/features/book</a>"
             f"<a href='/api/features/open-interest'>/api/features/open-interest</a>"
+            f"<a href='/api/features/vwap'>/api/features/vwap</a>"
+            f"<a href='/api/features/volatility'>/api/features/volatility</a>"
+            f"<a href='/api/features/structure'>/api/features/structure</a>"
             f"<a href='/api/discovery'>/api/discovery</a></nav>"
             f"<h1>{html.escape(title)}</h1>{banner_html}{body}"
             f"<p class='note'>{html.escape(BANNER_NOTE)} Auto-refresh 10s.</p>"
@@ -680,6 +691,93 @@ def render_oi_section(oi_features: List[Dict[str, Any]]) -> str:
     return body + "</table>"
 
 
+def _format_bps(value: Any) -> str:
+    """Signed displacement cell in bps, or an insufficient-data marker."""
+    if value is None:
+        return "<span title='no data'>—</span>"
+    try:
+        number = float(value)
+    except (TypeError, ValueError):
+        return "<span title='no data'>—</span>"
+    cls = "pos" if number > 0 else ("neg" if number < 0 else "")
+    text = f"{number:+.1f}"
+    return f"<span class='{cls}'>{html.escape(text)}</span>" if cls else html.escape(text)
+
+
+def _format_vol(value: Any) -> str:
+    """Realized-vol cell (raw horizon fraction), or a warmup marker."""
+    if value is None:
+        return "<span title='insufficient history'>—</span>"
+    try:
+        return f"{float(value):.4f}"
+    except (TypeError, ValueError):
+        return "<span title='insufficient history'>—</span>"
+
+
+def render_structure_section(structure_features: List[Dict[str, Any]]
+                             ) -> str:
+    """P1-08 compact VWAP/volatility/structure table (subscribed only).
+
+    Read-only description: 1m VWAP + displacement, realized vol, range
+    position/expansion, swing relations, prior-range state. Nothing here
+    is a signal, entry, or classifier output.
+    """
+    body = "<h2>VWAP / volatility / structure (subscribed only — read-only, NOT signals)</h2>"
+    body += ("<p class='note'>VWAP from trade flow (mark reference). "
+             "Vol = raw horizon sqrt-sum-squared log returns. "
+             "States are descriptive range tags only.</p>")
+    live = [f for f in structure_features
+            if isinstance(f, dict) and f.get("subscribed")]
+    if not live:
+        return body + "<p class='note'>No structure features yet — peer " \
+            "engines warming up or probe not running.</p>"
+    body += "<table><tr><th>symbol</th><th>1m VWAP</th><th>displ bps</th>" \
+            "<th>rv 1m</th><th>rv 5m</th><th>range pos</th><th>expand ×</th>" \
+            "<th>swings HH/HL</th><th>prior range</th><th>freshness</th></tr>"
+    for feat in sorted(live, key=lambda f: str(f.get("symbol", ""))):
+        vwap = feat.get("vwap") if isinstance(feat.get("vwap"), dict) else {}
+        vol = feat.get("volatility") if isinstance(
+            feat.get("volatility"), dict) else {}
+        ranges = feat.get("ranges") if isinstance(
+            feat.get("ranges"), dict) else {}
+        structure = feat.get("structure") if isinstance(
+            feat.get("structure"), dict) else {}
+        v1 = vwap.get("1m") if isinstance(vwap.get("1m"), dict) else {}
+        rv1 = vol.get("1m") if isinstance(vol.get("1m"), dict) else {}
+        rv5 = vol.get("5m") if isinstance(vol.get("5m"), dict) else {}
+        r5 = ranges.get("5m") if isinstance(ranges.get("5m"), dict) else {}
+        swing_rel = ("HH" if structure.get("higher_high")
+                     else ("LH" if structure.get("lower_high") else "—"))
+        swing_rel += (" / HL" if structure.get("higher_low")
+                      else (" / LL" if structure.get("lower_low") else " / —"))
+        try:
+            vwap_cell = f"{float(v1.get('vwap')):.4f}" \
+                if v1.get("vwap") is not None else "—"
+        except (TypeError, ValueError):
+            vwap_cell = "—"
+        try:
+            expand = r5.get("expansion_ratio")
+            expand_cell = f"{float(expand):.2f}×" if expand is not None else "—"
+        except (TypeError, ValueError):
+            expand_cell = "—"
+        try:
+            pos = r5.get("range_position")
+            pos_cell = f"{float(pos):.2f}" if pos is not None else "—"
+        except (TypeError, ValueError):
+            pos_cell = "—"
+        body += (f"<tr><td>{html.escape(str(feat.get('symbol', '?')))}</td>"
+                 f"<td>{vwap_cell}</td>"
+                 f"<td>{_format_bps(v1.get('displacement_bps'))}</td>"
+                 f"<td>{_format_vol(rv1.get('realized_vol'))}</td>"
+                 f"<td>{_format_vol(rv5.get('realized_vol'))}</td>"
+                 f"<td>{pos_cell}</td>"
+                 f"<td>{expand_cell}</td>"
+                 f"<td>{html.escape(swing_rel)}</td>"
+                 f"<td>{html.escape(str(structure.get('breakout_state', 'UNKNOWN')))}</td>"
+                 f"<td>{_format_age_ms(feat.get('price_age_ms'))}</td></tr>")
+    return body + "</table>"
+
+
 def render_intel_sections(state: DashboardState) -> str:
     """P1-05 market-intelligence area: tiers, live momentum, discovery movers.
 
@@ -754,6 +852,7 @@ def render_intel_sections(state: DashboardState) -> str:
     books = state.book_features()
     body += render_book_section(books)
     body += render_oi_section(state.oi_features())
+    body += render_structure_section(state.structure_features())
     body += "<h2>Discovery movers (24h REST metrics — discovery only, NOT live)</h2>"
     tops = (discovery or {}).get("tops") or {}
     live_symbols = {f.get("symbol") for f in list(flow) + list(books)
@@ -881,6 +980,7 @@ def render_overview(state: DashboardState) -> str:
         ("book feature rows", rows.get("book_features", "?")),
         ("OI samples retained", rows.get("oi_samples", "?")),
         ("OI feature rows", rows.get("oi_features", "?")),
+        ("structure feature rows", rows.get("structure_features", "?")),
         ("last discovery scan",
          time.strftime("%Y-%m-%d %H:%M:%S UTC",
                        time.gmtime((discovery or {}).get("generated_at_ms", 0) / 1000))
@@ -1179,6 +1279,72 @@ class DashboardHandler(BaseHTTPRequestHandler):
                     "context_note": "price_oi_context labels are descriptive "
                                     "regime tags only, never trade signals",
                     "symbols": features,
+                })
+        elif path == "/api/features/vwap":
+            features = self.state.structure_features()
+            if not features:
+                self._send_json(404, {"error": "no vwap features persisted yet"})
+            else:
+                self._send_json(200, {
+                    "generated_at": time.strftime(
+                        "%Y-%m-%dT%H:%M:%SZ", time.gmtime(time.time())),
+                    "source": "aggTrade via flow aggregates",
+                    "semantics": "vwap = sum(price*qty)/sum(qty) per trailing "
+                                 "window; markPrice reference; displacement "
+                                 "is raw description, never bullish/bearish",
+                    "horizons": ["1m", "3m", "5m", "15m"],
+                    "symbols": [
+                        {"symbol": f.get("symbol"),
+                         "subscribed": f.get("subscribed"),
+                         "as_of_ms": f.get("as_of_ms"),
+                         "reference_price": f.get("reference_price"),
+                         "reference_source": f.get("reference_source"),
+                         "price_age_ms": f.get("price_age_ms"),
+                         "vwap": f.get("vwap")}
+                        for f in features if isinstance(f, dict)],
+                })
+        elif path == "/api/features/volatility":
+            features = self.state.structure_features()
+            if not features:
+                self._send_json(404, {"error": "no volatility features persisted yet"})
+            else:
+                self._send_json(200, {
+                    "generated_at": time.strftime(
+                        "%Y-%m-%dT%H:%M:%SZ", time.gmtime(time.time())),
+                    "source": "markPrice 10s buckets",
+                    "semantics": "raw horizon sqrt-sum-squared log returns "
+                                 "(not annualized); null until >=5 returns "
+                                 "and full-span coverage",
+                    "horizons": ["1m", "5m", "15m", "1h"],
+                    "symbols": [
+                        {"symbol": f.get("symbol"),
+                         "subscribed": f.get("subscribed"),
+                         "as_of_ms": f.get("as_of_ms"),
+                         "price_age_ms": f.get("price_age_ms"),
+                         "volatility": f.get("volatility"),
+                         "ranges": f.get("ranges")}
+                        for f in features if isinstance(f, dict)],
+                })
+        elif path == "/api/features/structure":
+            features = self.state.structure_features()
+            if not features:
+                self._send_json(404, {"error": "no structure features persisted yet"})
+            else:
+                self._send_json(200, {
+                    "generated_at": time.strftime(
+                        "%Y-%m-%dT%H:%M:%SZ", time.gmtime(time.time())),
+                    "source": "markPrice 10s buckets",
+                    "semantics": "confirmed pivots (3-bucket each side, 30s "
+                                 "explicit delay); breakout vs prior completed "
+                                 "15m block; descriptive tags only, never "
+                                 "trade signals",
+                    "symbols": [
+                        {"symbol": f.get("symbol"),
+                         "subscribed": f.get("subscribed"),
+                         "as_of_ms": f.get("as_of_ms"),
+                         "price_age_ms": f.get("price_age_ms"),
+                         "structure": f.get("structure")}
+                        for f in features if isinstance(f, dict)],
                 })
         else:
             self._send_json(404, {"error": f"unknown route {path}"})

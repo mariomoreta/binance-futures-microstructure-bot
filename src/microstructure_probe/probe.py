@@ -13,6 +13,7 @@ import websockets
 
 from .book import BookEngine
 from .clock import ClockSynchronizer, corrected_lag_ms
+from .market_structure import MarketStructureEngine
 from .config import ProbeConfig
 from .detectors import EventDetectors
 from .discovery import (
@@ -161,6 +162,14 @@ class MarketProbe:
             wall_clock_ms=self._wall_clock_ms,
             latency_max_samples=config.telemetry_max_samples,
         )
+        # P1-08: VWAP/volatility/range/structure over peer-engine state.
+        # Stateless compute (no new ingest path, no new endpoint): VWAP
+        # from flow aggregates, vol/range/structure from the persisted
+        # 10s mark-price buckets. Only subscribed symbols are evaluated.
+        self._structure = MarketStructureEngine(
+            symbols=config.symbols,
+            latency_max_samples=config.telemetry_max_samples,
+        )
         # P1-05: discovery + momentum/rank state. Core symbols are pinned
         # benchmarks; the HOT set is proposed only (no dynamic WS resubscribe
         # in this task — see docs).
@@ -219,6 +228,11 @@ class MarketProbe:
     def oi_poller(self) -> OpenInterestPoller:
         """The bounded OI REST scheduler (P1-07)."""
         return self._oi_poller
+
+    @property
+    def structure(self) -> MarketStructureEngine:
+        """VWAP/volatility/range/structure compute (P1-08)."""
+        return self._structure
 
     def set_oi_fetcher(self, fetch_fn) -> None:
         """Replace the OI REST fetcher (tests only — never live traffic)."""
@@ -990,6 +1004,10 @@ class MarketProbe:
                 "tracker": self._oi.stats(),
                 "poll": self._oi_poller.stats(),
             },
+            # P1-08 additive block: structure compute counters + latency
+            # (stateless evaluation over flow + return state). Full
+            # per-symbol records persist via store_structure_features.
+            "structure": self._structure.stats(),
         }
 
     @staticmethod
@@ -1037,8 +1055,8 @@ class MarketProbe:
             flow_buckets = self._flow.drain_completed_buckets()
             if flow_buckets:
                 self.persistence.store_flow_buckets(flow_buckets)
-            self.persistence.store_flow_features(
-                self._flow.snapshot_all(as_of_ms))
+            flow_rows_list = self._flow.snapshot_all(as_of_ms)
+            self.persistence.store_flow_features(flow_rows_list)
             rows = self._returns.snapshot_all(as_of_ms)
             momentum_rows = []
             for row in rows:
@@ -1080,6 +1098,23 @@ class MarketProbe:
                     returns.get("1m") if isinstance(returns, dict) else None)
             self.persistence.store_oi_features(
                 self._oi.snapshot_all(as_of_ms, price_returns_1m))
+            # P1-08 (additive): evaluate VWAP/volatility/range/structure
+            # over peer-engine state (flow rows + return rows + 10s
+            # buckets) and persist one compact record per symbol. No new
+            # ingest path, no new endpoint; restart continuity is inherited
+            # (buckets restore, flow windows warm live).
+            flow_rows = {str(f.get("symbol", "UNKNOWN")): f
+                         for f in flow_rows_list
+                         if isinstance(f, dict)}
+            price_rows = {str(r.get("symbol", "UNKNOWN")): r
+                          for r in rows if isinstance(r, dict)}
+            structure_rows = []
+            for symbol in sorted(set(flow_rows) | set(price_rows)):
+                structure_rows.append(self._structure.snapshot_symbol(
+                    symbol, as_of_ms,
+                    flow_rows.get(symbol), price_rows.get(symbol),
+                    self._returns.buckets(symbol)))
+            self.persistence.store_structure_features(structure_rows)
         except Exception as exc:
             LOGGER.warning(json.dumps({"kind": "persistence_error", "error": str(exc)}))
         LOGGER.info(json.dumps(summary, sort_keys=True, allow_nan=False))

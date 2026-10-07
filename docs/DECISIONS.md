@@ -228,3 +228,29 @@ v4→v5 adds `book_features` (REPLACE-per-symbol latest snapshot),
 preserved. Restart rule: OI history restores (timestamps stay valid, gaps
 age out via tolerance); the book NEVER restores as live — the latest row
 persists for continuity but only fresh depth marks it live.
+
+## 2026-10-09 — P1-08 VWAP-from-flow + mark-price structure methods
+
+No new endpoint: VWAP = flow `notional/base` per trailing window (exact,
+same provenance, no second trade ingest); 30m/1h VWAP refused — provenance
+ends at 15m and P1-08 invents no window beyond its sources. Reference
+price is P1-04 mark `current_price` (labeled `markPrice`, never mixed).
+Volatility = raw `sqrt(sum(r²))` over consecutive 10s-bucket log returns
+(non-annualized; value needs ≥5 returns spanning window−10s, `warmed`
+adds full grid coverage; measured flat zero stays 0.0, distinct from
+missing). Range position in [0,1] (null on flat); expansion = current /
+trailing median of ≤10 prior completed blocks (+z when ≥10 blocks with
+variance, else null). Structure = confirmed pivots, L=R=3 buckets (30s
+explicit confirmation delay, no future bars); breakout vs prior completed
+15m grid block (`ABOVE/BELOW/INSIDE_PRIOR_RANGE`, else `UNKNOWN`) —
+descriptive tags only. Book resilience DEFERRED: spread/depth event
+history is retained nowhere, so any recovery-time metric would need a new
+retained series — that is P1-11 modeling scope, not a P1-08 freebie.
+
+## 2026-10-09 — P1-08 persistence schema v6 (additive migration)
+
+v5→v6 adds `structure_features` (REPLACE-per-symbol full record:
+vwap + volatility + ranges + structure). Tested v1/v2/v3/v4/v5→v6 with
+rows preserved. No raw history stored here: inputs recompute each summary
+from flow aggregates + persisted buckets, so restart continuity is
+inherited (buckets restore, flow windows warm live) — never fabricated.

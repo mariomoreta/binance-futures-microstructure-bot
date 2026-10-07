@@ -32,13 +32,10 @@ the dashboard exists. No classifier before raw-feature dashboard validation.
 
 ## ACTIVE_TASK
 
-- `P1-08` VWAP + VOLATILITY + MARKET STRUCTURE (displacement, realized vol,
-  range expansion, swings/breakouts, no lookahead).
+- `P1-09` MARKET-INTELLIGENCE DASHBOARD — add `/movers`, `/symbol/:symbol`.
   Status: NOT STARTED. (Queued only — do not begin without a new instruction.)
 
 ## NEXT_TASKS (ordered, all Phase 1)
-- `P1-08` VWAP + VOLATILITY + MARKET STRUCTURE (displacement, realized vol,
-  range expansion, swings/breakouts, no lookahead).
 - `P1-09` MARKET-INTELLIGENCE DASHBOARD — add `/movers`, `/symbol/:symbol`;
   show raw features BEFORE classifier scores. Operator keeps working browser
   access through this and all later live stages.
@@ -130,10 +127,22 @@ strategies (P3), paper engine/positions (P4), execution (P5).
   `/api/features/book` + `/open-interest`). Live 363s run (exit 0):
   11/11, 1 reconnect, book 7309/7309 valid (1 gap/symbol recovered),
   OI 18/18 polls ok, flow 5684 intact, sampling lossless, safety 0/0/0.
-  239/239 tests (49 new). Evidence: `logs/p1-07/` (local, git-ignored).
+   239/239 tests (49 new). Evidence: `logs/p1-07/` (local, git-ignored).
+- `P1-08` (2026-10-09) VWAP + VOLATILITY + STRUCTURE: **PASS**. Zero new
+  sources (flow-VWAP, bucket vol/range/structure, mark reference);
+  `market_structure.py` (stateless over peer state; displacement, raw
+  `sqrt(sum(r²))`, median/z expansion, confirmed pivots, breakout tags;
+  resilience deferred); schema v6 + tested migrations; dashboard v0.7.0
+  (structure table + vwap/volatility/structure APIs, P1-09-ready
+  contracts). Live 372s run (exit 0): 11/11, 2 reconnects, STRUCT 27
+  evals p50 0.84ms, flow/book/OI intact, sampling lossless, safety 0/0/0.
+  277/277 tests (38 new). Evidence: `logs/p1-08/` (local, git-ignored).
 
 ## LAST_VERIFICATION
 
+- 2026-10-09 (P1-08): `python run_tests.py` → 277/277 OK. Structure
+  eval live (27 evals, p50 0.84ms); dashboard v0.7.0 with structure
+  table + APIs (200). Full evidence in `docs/CURRENT_STATE.md`.
 - 2026-10-08 (P1-07): `python run_tests.py` → 239/239 OK. Book engine live
   (7309/7309, p50 0.15ms); OI 18/18 polls; dashboard v0.6.0 with book/OI
   tables + APIs (200). Full evidence in `docs/CURRENT_STATE.md`.

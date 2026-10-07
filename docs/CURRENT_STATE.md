@@ -307,6 +307,33 @@ dashboard-feeding) — see `docs/DECISIONS.md`.
 - Tests: 239/239 (49 new: 48 book/OI + v4→v5 migration). Five v4
   assertions updated to v5 (migration, expected).
 
+## P1-08 VWAP + volatility + structure — RESULT: PASS (2026-10-09)
+
+- Zero new sources: VWAP from flow aggregates, vol/range/structure from
+  persisted 10s mark buckets, mark reference (MARKET_DATA §P1-08).
+- Engine (`market_structure.py`, NEW, stateless over peer state): VWAP
+  1m/3m/5m/15m + displacement; raw `sqrt(sum(r²))` vol 1m/5m/15m/1h
+  (≥5 returns + window−10s span, grid-coverage `warmed`); range + position
+  + median/z expansion over completed blocks; confirmed pivots (30s delay),
+  HH/LH/HL/LL, swing distances, prior-15m-block breakout tags. Resilience
+  deferred (DECISIONS).
+- Persistence v6 (additive, tested v1..v5→v6): `structure_features`
+  REPLACE-per-symbol; continuity inherited, never fabricated.
+- Live 372s blocking run (exit 0, dashboard live): 11/11 streams, 2 public
+  reconnects, 57954 skew-rejects (degraded bookTicker window — honest).
+  STRUCT 27 evals (9 summaries × 3), latency p50 0.84ms/p95 1.26, queue
+  0/0. FLOW 4111 + BOOK 1737 + OI 15/15 intact (peer regressions green).
+  Sampling lossless (aggTrade 172 vs 4111). Safety 0/0/0. Live: VWAP disp
+  +0.7..+1.1bps (raw only); 1m vol UNKNOWN — fresh mark buckets starved
+  by rejects, reported honestly; swings (incl. ETH HH) from restored
+  history proving continuity; breakouts UNKNOWN (thin prior block).
+  11 funding crossings — same hypothesis class, no conclusions.
+- Dashboard v0.7.0 at http://127.0.0.1:8091 (restarted, PID 30344):
+  structure table + `/api/features/vwap|volatility|structure` live (200),
+  health DEGRADED honestly; no buttons/controls/signals.
+- Tests: 277/277 (38 new: 37 structure + v5→v6 migration). Five v5
+  assertions updated to v6 (migration, expected).
+
 ## Known gaps (Phase 1 work ahead, in order)
 
 Minimal dashboard: DONE (P1-03 PASS, live at http://127.0.0.1:8091).
@@ -317,10 +344,10 @@ Volume + aggressive flow: DONE (P1-06 PASS — 6-horizon flow, baselines,
 acceleration, v0.5.0 dashboard + APIs, healthy 363s validation).
 Order book + open interest: DONE (P1-07 PASS — snapshot book intel, OI
 polls/deltas/contexts, v0.6.0 dashboard + APIs, 363s validation).
-Remaining: VWAP + displacement, realized volatility/range expansion,
-structure primitives (P1-08), state classifier (P1-12, still blocked on
-P1-11), signal UI (P1-13), soak + calibration evidence (P1-10/P1-14, need
-P1-01R first).
+VWAP + volatility + structure: DONE (P1-08 PASS — flow-VWAP, raw vol,
+range expansion, confirmed pivots, v0.7.0 dashboard + APIs, 372s run).
+Remaining: state classifier (P1-12, still blocked on P1-11), signal UI
+(P1-13), soak + calibration evidence (P1-10/P1-14, need P1-01R first).
 
 ## Blockers / issues
 
@@ -330,7 +357,7 @@ P1-01R first).
   gates. P1-06 local feature work NOT blocked.
 - Detached probe processes die with the harness tool session (observed twice):
   use blocking bounded runs for evidence windows.
-- Dashboard RUNNING at http://127.0.0.1:8091 (PID 27296, v0.6.0; read-only,
+- Dashboard RUNNING at http://127.0.0.1:8091 (PID 30344, v0.7.0; read-only,
   localhost — safe to keep). Snapshot goes STALE without a running probe
   feed (honest chip); continuous freshness arrives with the P1-10 soak.
 - No secrets, keys, or account access exist or are needed.

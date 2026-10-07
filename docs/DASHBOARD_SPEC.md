@@ -82,6 +82,17 @@ semantics + integrity; 404 when empty) and `GET /api/features/open-interest`
 (poll source + deltas + contexts). No signal labels, no buttons, no
 controls; `/system` and health separations kept.
 
+### P1-08 structure terminal evolution — IMPLEMENTED (PASS)
+
+`/overview` market-intelligence area gained **VWAP / volatility /
+structure** (subscribed symbols only): 1m VWAP + displacement bps,
+realized vol 1m/5m, 5m range position + expansion multiple, swing HH/HL
+relations, prior-range state, price-data freshness. Machine-readable
+`GET /api/features/vwap`, `/api/features/volatility`, `/api/features/
+structure` (per-symbol projections of the stored record, ready for
+P1-09 `/symbol/:symbol`; 404 when empty). No signal labels, no buttons,
+no controls; `/system` and health separations kept.
+
 ### Stage 2 — P1-09 MARKET-INTELLIGENCE DASHBOARD
 
 Add: `/movers`, `/symbol/:symbol`. Show raw features BEFORE classifier scores.

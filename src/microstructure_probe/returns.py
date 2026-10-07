@@ -195,6 +195,17 @@ class ReturnEngine:
     def snapshot_all(self, as_of_ms: int) -> List[Dict[str, object]]:
         return [self.feature(symbol, as_of_ms) for symbol in sorted(self._series)]
 
+    def buckets(self, symbol: str) -> List[Tuple[int, float]]:
+        """Event-time buckets for one symbol, oldest first (P1-08 reuse).
+
+        Read-only copy for structure/volatility computation; the engine
+        owns the series and no caller can mutate it through this.
+        """
+        series = self._series.get(str(symbol).upper())
+        if series is None:
+            return []
+        return series.buckets()
+
     def momentum(self, symbol: str, as_of_ms: float,
                  horizons: tuple = ("1m", "3m", "5m", "15m")) -> Dict[str, object]:
         """Velocity/acceleration per horizon (P1-05; feature() untouched).

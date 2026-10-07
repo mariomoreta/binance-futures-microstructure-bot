@@ -114,13 +114,28 @@ Thresholds are HYPOTHESIS until Phase 2–3 statistics exist.
 - Basis (spot vs futures) where useful; needs spot feed — optional Phase 1
   stretch, default OFF unless a task authorizes it.
 
-## Volatility / structure
+## Volatility / structure — IMPLEMENTED P1-08 (descriptive only, no signals)
 
-- Realized volatility (multi-horizon), range expansion (current range vs
-  trailing baseline).
-- VWAP (session/rolling) + VWAP displacement (z or % dev).
-- Local highs/lows, breakouts, structure breaks (define swing lookback
-  explicitly; no будущего — no lookahead).
+- Engine: `src/microstructure_probe/market_structure.py`
+  (`MarketStructureEngine`, stateless compute over peer-engine state —
+  no new ingest path, no new endpoint, no kline bootstrap).
+- VWAP from P1-06 flow aggregates (`notional/base` per trailing window
+  1m/3m/5m/15m; 30m/1h not offered — provenance ends at 15m). Reference
+  price is P1-04 mark-price `current_price` (labeled, never mixed);
+  displacement abs/%/bps; zero base volume → UNKNOWN.
+- Realized volatility (raw, non-annualized `sqrt(sum(r²))` over
+  consecutive 10s-bucket log returns) for 1m/5m/15m/1h; value needs
+  ≥5 returns spanning window−10s; `warmed` adds full grid coverage;
+  otherwise UNKNOWN (measured flat zero stays 0.0 — distinct from missing).
+- Range 1m/5m/15m: high/low, abs/%, position in [0,1] (null on flat);
+  expansion = current range / trailing median of ≤10 prior completed
+  blocks (+z when ≥10 blocks and variance > 0, else null).
+- Structure (method A, confirmed pivots, L=R=3 buckets = 30s delay):
+  strict local max/min, last-two swing relations (HH/LH/HL/LL, null
+  until two pivots), signed distance bps, breakout vs prior completed
+  15m block (`ABOVE/BELOW/INSIDE_PRIOR_RANGE`, else `UNKNOWN`).
+- Book resilience from P1-07: DEFERRED — spread/depth event history is
+  not retained; a P1-11 modeling task, not a freebie (see DECISIONS).
 
 ## Feature discipline
 
