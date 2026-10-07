@@ -272,12 +272,10 @@ class ReturnsSectionTest(unittest.TestCase):
         for forbidden in ("IGNITION", "EXPANSION", "place_order", "<button"):
             self.assertNotIn(forbidden, body)
 
-    def test_no_movers_no_ranking_yet(self) -> None:
-        try:
-            self._get("/movers")
-            self.fail("expected HTTPError")
-        except Exception as exc:
-            self.assertIn("404", str(exc))
+    def test_movers_route_exists_p109(self) -> None:
+        code, body = self._get("/movers")
+        self.assertEqual(code, 200)
+        self.assertIn("MOVERS", body)
 
     def test_features_api_shape(self) -> None:
         self.store.store_return_features([
@@ -449,7 +447,7 @@ class IntelSectionTest(unittest.TestCase):
                        "Top gainers 24h", "Top losers 24h",
                        "discovery only, NOT live", "DOGEUSDT"):
             self.assertIn(marker, body)
-        for forbidden in ("IGNITION", "place_order", "<button", "/movers"):
+        for forbidden in ("IGNITION", "place_order", "<button"):
             self.assertNotIn(forbidden, body)
 
     def test_momentum_api_shape(self) -> None:

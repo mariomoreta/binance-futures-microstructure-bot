@@ -1,14 +1,19 @@
-"""P1-03 minimal live operator dashboard (stdlib only, no new dependencies).
+"""P1-09 market-intelligence terminal (stdlib only, no new dependencies).
 
 Reads the P1-02 persistence store and renders operator pages. This module is
 visualization only: nothing here can trade, and the engine never consumes
 anything rendered here.
 
-Routes: / (→ /overview), /overview, /system, /api/health, /api/snapshot,
-/api/features/returns, /api/features/momentum, /api/features/flow,
-/api/features/volume, /api/features/book, /api/features/open-interest,
-/api/features/vwap, /api/features/volatility, /api/features/structure,
-/api/discovery.
+Routes: / (→ /overview), /overview, /movers, /search, /symbol/:symbol,
+/system, /api/health, /api/snapshot, /api/features/returns,
+/api/features/momentum, /api/features/flow, /api/features/volume,
+/api/features/book, /api/features/open-interest, /api/features/vwap,
+/api/features/volatility, /api/features/structure, /api/discovery,
+/api/search, /api/symbol/:symbol/price[.csv].
+
+Presentation lives in dashboard_views.py / dashboard_components.py;
+composition helpers live in dashboard_data.py. This module keeps routing,
+lifecycle CLI, health model, and backwards-compatible render entry points.
 
 Lifecycle CLI (operator commands, Binance dashboard only):
     python -m microstructure_probe.dashboard start [--port N] [--db PATH]
@@ -32,6 +37,7 @@ import subprocess
 import sys
 import threading
 import time
+import urllib.parse
 import urllib.request
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
@@ -39,7 +45,7 @@ from typing import Any, Dict, List, Optional, Tuple
 
 from .persistence import PersistenceStore
 
-DASHBOARD_VERSION = "0.7.0"
+DASHBOARD_VERSION = "0.8.0"
 HOST = "127.0.0.1"
 PORT_CANDIDATES = [8091, 8092, 8093, 8094, 8095, 18091, 18765]
 PIDFILE_NAME = "dashboard.pid"
@@ -286,6 +292,11 @@ class DashboardState:
             return self.store.latest_structure_features()
         except (OSError, sqlite3.Error):
             return []
+
+    def price_points(self, symbol: str, range_name: str):
+        """Bounded mark-price chart points (P1-09, persisted price_samples)."""
+        from .dashboard_data import price_history_points
+        return price_history_points(self.store, symbol, range_name)
 
     def storage(self) -> Dict[str, Any]:
         try:
@@ -1133,8 +1144,23 @@ class DashboardHandler(BaseHTTPRequestHandler):
             "reasons": health["reasons"],
         }
 
+    def _send_csv(self, code: int, filename: str, text: str) -> None:
+        raw = text.encode("utf-8")
+        self.send_response(code)
+        self.send_header("Content-Type", "text/csv; charset=utf-8")
+        self.send_header("Content-Disposition",
+                         f"attachment; filename={filename}")
+        self.send_header("Content-Length", str(len(raw)))
+        self.end_headers()
+        self.wfile.write(raw)
+
     def do_GET(self) -> None:
-        path = self.path.split("?", 1)[0]
+        from . import dashboard_views as views
+        from .dashboard_data import (VALID_RANGES, movers_table,
+                                     normalize_symbol, search_symbols)
+        split = urllib.parse.urlsplit(self.path)
+        path = split.path
+        query = urllib.parse.parse_qs(split.query or "")
         if path == "/":
             body = b'<a href="/overview">/overview</a>'
             self.send_response(302)
@@ -1144,10 +1170,86 @@ class DashboardHandler(BaseHTTPRequestHandler):
             self.wfile.write(body)
         elif path == "/overview":
             self._send(200, "text/html; charset=utf-8",
-                       render_overview(self.state).encode("utf-8"))
+                       views.render_overview(self.state).encode("utf-8"))
+        elif path == "/movers":
+            self._send(200, "text/html; charset=utf-8",
+                       views.render_movers(self.state).encode("utf-8"))
+        elif path == "/search":
+            q = (query.get("q") or [""])[0]
+            self._send(200, "text/html; charset=utf-8",
+                       views.render_search(self.state, q).encode("utf-8"))
         elif path == "/system":
             self._send(200, "text/html; charset=utf-8",
-                       render_system(self.state).encode("utf-8"))
+                       views.render_system(self.state).encode("utf-8"))
+        elif path.startswith("/symbol/"):
+            raw = urllib.parse.unquote(path[len("/symbol/"):]).split("/")[0]
+            if normalize_symbol(raw) is None:
+                self._send(400, "text/html; charset=utf-8",
+                           b"<h1>400 invalid symbol</h1>")
+                return
+            rng = (query.get("range") or ["1h"])[0]
+            if rng not in VALID_RANGES:
+                self._send(400, "text/html; charset=utf-8",
+                           b"<h1>400 invalid range</h1>")
+                return
+            page = views.render_symbol(self.state, raw, rng)
+            if page is None:
+                self._send(404, "text/html; charset=utf-8",
+                           b"<h1>404 unknown symbol</h1>")
+            else:
+                self._send(200, "text/html; charset=utf-8",
+                           page.encode("utf-8"))
+        elif path == "/api/search":
+            q = (query.get("q") or [""])[0]
+            results = search_symbols(q or "", movers_table(self.state))
+            self._send_json(200, {"query": q or "", "results": results})
+        elif path.startswith("/api/symbol/"):
+            rest = path[len("/api/symbol/"):]
+            parts = rest.split("/")
+            if len(parts) == 2 and parts[1] in ("price", "price.csv"):
+                raw_sym, leaf = parts
+                if normalize_symbol(raw_sym) is None:
+                    self._send_json(400, {"error": "invalid symbol"})
+                    return
+                rng = (query.get("range") or ["1h"])[0]
+                if rng not in VALID_RANGES:
+                    self._send_json(400, {
+                        "error": f"invalid range; valid: {sorted(VALID_RANGES)}"})
+                    return
+                try:
+                    points, meta = self.state.price_points(raw_sym, rng)
+                except ValueError as exc:
+                    self._send_json(400, {"error": str(exc)})
+                    return
+                sym_norm = (meta.get("symbol") or raw_sym).upper()
+                # Unknown symbol (no persisted rows anywhere) -> 404.
+                from .dashboard_data import compose_universe
+                uni = compose_universe(self.state)
+                known = (set(uni["live_symbols"]) | set(uni["disc_rows"])
+                         | set(uni["core"]) | set(uni["hot"]))
+                if sym_norm not in known:
+                    self._send_json(404, {"error": f"unknown symbol {sym_norm}"})
+                    return
+                if leaf == "price.csv":
+                    lines = ["timestamp,price"]
+                    lines += [f"{p['timestamp']},{p['price']}"
+                              for p in points]
+                    self._send_csv(200, f"{sym_norm}-{rng}.csv",
+                                   "\n".join(lines) + "\n")
+                else:
+                    self._send_json(200, {
+                        "symbol": sym_norm,
+                        "source": meta.get("source", "markPrice"),
+                        "range": rng,
+                        "generated_at": meta.get("generated_at"),
+                        "points": points,
+                        "points_total": meta.get("points_total"),
+                        "points_returned": meta.get("points_returned"),
+                        "truncated": meta.get("truncated", False),
+                        "point_limit": meta.get("point_limit"),
+                    })
+                return
+            self._send_json(404, {"error": f"unknown route {path}"})
         elif path == "/api/health":
             self._send_json(200, self._health_payload())
         elif path == "/api/snapshot":

@@ -32,7 +32,10 @@ the dashboard exists. No classifier before raw-feature dashboard validation.
 
 ## ACTIVE_TASK
 
-- `P1-09` MARKET-INTELLIGENCE DASHBOARD — add `/movers`, `/symbol/:symbol`.
+- `P1-01R` TRANSPORT RE-VALIDATION (before P1-10): repeat the 30–60 min
+  observe-only run in a healthy network; must show stable connections
+  (reconnects ≈ 0 unexplained), delivery lags in the low-second range, and
+  skew-rejections back to rare outliers before soak/calibration gates can pass.
   Status: NOT STARTED. (Queued only — do not begin without a new instruction.)
 
 ## NEXT_TASKS (ordered, all Phase 1)
@@ -137,9 +140,21 @@ strategies (P3), paper engine/positions (P4), execution (P5).
   contracts). Live 372s run (exit 0): 11/11, 2 reconnects, STRUCT 27
   evals p50 0.84ms, flow/book/OI intact, sampling lossless, safety 0/0/0.
   277/277 tests (38 new). Evidence: `logs/p1-08/` (local, git-ignored).
+- `P1-09` (2026-10-09) MARKET-INTELLIGENCE DASHBOARD: **PASS**. Terminal IA
+  (OVERVIEW/MOVERS/`/symbol/:symbol`/SYSTEM + search), capability/tier
+  vocabulary, mark-price chart + CSV APIs (bounded, no new source), book
+  integrity copy, code split (data/components/views). Dashboard v0.8.0
+  live at http://127.0.0.1:8091. Live 360s run (exit 0): 11/11, 0
+  reconnects, 0 rejects, lags p50 ~180–260ms, all engines green, safety
+  0/0/0; 22 routes 200; discovery-only honesty verified (龙虾USDT).
+  312/312 tests (35 new). Evidence: `logs/p1-09/` (local, git-ignored).
+  P1-10 NOT started; P1-01R still owed before it.
 
 ## LAST_VERIFICATION
 
+- 2026-10-09 (P1-09): `python run_tests.py` → 312/312 OK. Terminal live
+  (v0.8.0, 22 routes 200, chart + CSV + search verified, safety 0/0/0).
+  Full evidence in `docs/CURRENT_STATE.md` + `logs/p1-09/`.
 - 2026-10-09 (P1-08): `python run_tests.py` → 277/277 OK. Structure
   eval live (27 evals, p50 0.84ms); dashboard v0.7.0 with structure
   table + APIs (200). Full evidence in `docs/CURRENT_STATE.md`.

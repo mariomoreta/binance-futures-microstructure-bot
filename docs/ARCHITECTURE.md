@@ -54,7 +54,7 @@ signal engine → position manager → risk engine → execution engine
 | Discovery layer (public REST scan → HOT proposal) | `discovery.py` | P1-05 DONE (exchangeInfo + 24hr tickers, filters, hysteresis selection; no WS changes) |
 | State classifier | — | NOT BUILT until P1-12, BLOCKED on P1-11 validation (`docs/MARKET_STATES.md`) |
 | Persistence foundation | `persistence.py` | v6 (v5 + structure_features REPLACE-per-symbol, tested migrations); sampling gate + dedicated snapshot writer |
-| Dashboard | `dashboard.py` | LIVE v0.7.0 (P1-03 + P1-04 returns + P1-05 intel/momentum/discovery + P1-06 flow table + flow/volume APIs + P1-07 book/OI tables + book/OI APIs + P1-08 structure table + vwap/volatility/structure APIs); staged P1-09 → P1-13 |
+| Dashboard | `dashboard.py` + `dashboard_data.py` + `dashboard_components.py` + `dashboard_views.py` | LIVE v0.8.0 terminal (P1-09 PASS: OVERVIEW/MOVERS/SYSTEM + `/symbol/:symbol` + search + mark-price chart/CSV APIs; P1-03…P1-08 diagnostics kept under `/system`; `dashboard.py` keeps routing/health/lifecycle, views/components/data split by responsibility); staged P1-13 |
 
 ## Subscription posture (P1-05)
 

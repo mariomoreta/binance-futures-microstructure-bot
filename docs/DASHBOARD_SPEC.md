@@ -93,12 +93,39 @@ structure` (per-symbol projections of the stored record, ready for
 P1-09 `/symbol/:symbol`; 404 when empty). No signal labels, no buttons,
 no controls; `/system` and health separations kept.
 
-### Stage 2 — P1-09 MARKET-INTELLIGENCE DASHBOARD
+### Stage 2 — P1-09 MARKET-INTELLIGENCE DASHBOARD — IMPLEMENTED (PASS)
 
-Add: `/movers`, `/symbol/:symbol`. Show raw features BEFORE classifier scores.
-Per-symbol: price, returns, velocity, rank, volume/flow, book, OI, funding,
-VWAP displacement, volatility. Operator keeps working browser access through
-this and all later live stages.
+Live v0.8.0. Information architecture: `OVERVIEW` (market summary cards,
+top activity, compact live-core rows with token links) → `MOVERS`
+(discovery + live workbench) → `/symbol/:symbol` (per-token intelligence)
+→ `SYSTEM` (all P1-03…P1-08 diagnostics + machine API index). Search box
+in the top bar (`/search`, case-insensitive partial over the persisted
+universe: tops + CORE + HOT + live symbols; deterministic; escaped).
+
+- `/movers`: market table (tier + LIVE/DISCOVERY ONLY/WARMING/STALE/DEGRADED
+  per row, clickable → `/symbol/:symbol`) + categories: 24h gainers/losers/
+  most-active (discovery), HOT proposals, live velocity ±, acceleration,
+  volume-expansion, aggressive-flow leaders. Discovery vs live metrics never
+  mixed without labels.
+- `/symbol/:symbol`: header (price, 24h %, tier, capability, freshness, feed
+  state) + mark-price SVG line chart (5m/15m/1h/4h/24h, honest partial/
+  warming) + Momentum + Trade flow (aggressor side only) + Order book
+  (integrity copy: HEALTHY / Recovered N gaps / DEGRADED — gap active) +
+  Open interest (descriptive contexts with help text) + VWAP/volatility/
+  structure (UNKNOWN/WARMING, never blank). Discovery-only symbols show
+  REST metrics + DISCOVERY ONLY — NO LIVE DEEP FEATURES; flow/book/OI/
+  VWAP/vol/structure never fabricated.
+- Machine: `GET /api/symbol/:symbol/price?range=` (bounded ≤1000 points,
+  oldest-first, no future samples, downsampled with endpoints kept;
+  400 on bad symbol/range, 404 on unknown symbol) + CSV twin
+  (`price.csv`, `timestamp,price`) + `GET /api/search?q=`.
+- Capability vocabulary (UI-wide, tier orthogonal): LIVE / WARMING /
+  DISCOVERY ONLY / STALE / DEGRADED / UNKNOWN. Tiers CORE/HOT/DISCOVERY
+  use neutral chips; green/red reserved for signed values; amber for
+  warming; stale/degraded warnings separated across server/feed/
+  persistence health. No signals, no controls, no private data.
+
+### Stage 3 — P1-13 SIGNAL / EXTREME-MOVE UI
 
 ### Stage 3 — P1-13 SIGNAL / EXTREME-MOVE UI
 

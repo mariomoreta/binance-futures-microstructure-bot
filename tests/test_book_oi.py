@@ -628,6 +628,8 @@ class DashboardBookOITest(unittest.TestCase):
         self.assertIn("freshness_ms", symbol)
 
     def test_overview_renders_book_oi_and_no_live_book(self) -> None:
+        # P1-09 IA: full book/OI detail lives on /symbol/:symbol; /overview
+        # stays compact but keeps DISCOVERY ONLY honesty labels.
         self._seed()
         self.store.store_discovery_snapshot({
             "generated_at_ms": int(time.time() * 1000),
@@ -641,13 +643,16 @@ class DashboardBookOITest(unittest.TestCase):
         })
         code, body = self._get("/overview")
         self.assertEqual(code, 200)
-        self.assertIn("Live order book", body)
-        self.assertIn("Live open interest", body)
         self.assertIn("NO LIVE FLOW/BOOK", body)
         self.assertNotIn("<button", body.lower())
-        for forbidden in ("entry", "place_order", "BUY SIGNAL",
-                          "SELL SIGNAL", "bullish", "bearish"):
-            self.assertNotIn(forbidden, body)
+        code, detail = self._get("/symbol/BTCUSDT")
+        self.assertEqual(code, 200)
+        self.assertIn("Order book", detail)
+        self.assertIn("Open interest", detail)
+        for page in (body, detail):
+            for forbidden in ("entry", "place_order", "BUY SIGNAL",
+                              "SELL SIGNAL", "bullish", "bearish"):
+                self.assertNotIn(forbidden, page)
 
     def test_render_sections_empty_are_honest(self) -> None:
         self.assertIn("No live book yet", render_book_section([]))

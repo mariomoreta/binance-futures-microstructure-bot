@@ -498,16 +498,22 @@ class DashboardStructureTest(unittest.TestCase):
         self.assertTrue(symbol["structure"]["higher_high"])
 
     def test_overview_renders_section_cleanly(self) -> None:
+        # P1-09 IA: VWAP/volatility/structure detail lives on
+        # /symbol/:symbol; /overview links there.
         self._seed()
         code, body = self._get("/overview")
         self.assertEqual(code, 200)
-        self.assertIn("VWAP / volatility / structure", body)
-        self.assertIn("INSIDE_PRIOR_RANGE", body)
-        self.assertNotIn("<button", body.lower())
-        for forbidden in ("entry", "place_order", "BUY SIGNAL",
-                          "SELL SIGNAL", "bullish", "bearish",
-                          "BREAKOUT SIGNAL", "LONG", "SHORT"):
-            self.assertNotIn(forbidden, body)
+        self.assertIn("/symbol/BTCUSDT", body)
+        code, detail = self._get("/symbol/BTCUSDT")
+        self.assertEqual(code, 200)
+        self.assertIn("VWAP / volatility / structure", detail)
+        self.assertIn("INSIDE_PRIOR_RANGE", detail)
+        for page in (body, detail):
+            self.assertNotIn("<button", page.lower())
+            for forbidden in ("entry", "place_order", "BUY SIGNAL",
+                               "SELL SIGNAL", "bullish", "bearish",
+                               "BREAKOUT SIGNAL", "LONG", "SHORT"):
+                self.assertNotIn(forbidden, page)
 
     def test_render_empty_is_honest(self) -> None:
         self.assertIn("No structure features yet",

@@ -26,6 +26,10 @@ Thresholds are HYPOTHESIS until Phase 2–3 statistics exist.
   unavailable).
 - Velocity/acceleration (first/second return derivatives) belong to P1-05 —
   not implemented. Rank velocity/acceleration likewise P1-05.
+- P1-09 UI read contract (no engine change): token charts/CSV read the same
+  persisted 10s mark-price buckets (`price_samples`) via bounded,
+  oldest-first, window-filtered (never future) queries (≤1000 points,
+  endpoints kept on downsample). Ranges 5m/15m/1h/4h/24h only.
 
 ## Velocity / acceleration / ranking — IMPLEMENTED P1-05
 

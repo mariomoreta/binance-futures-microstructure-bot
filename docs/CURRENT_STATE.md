@@ -334,9 +334,50 @@ dashboard-feeding) — see `docs/DECISIONS.md`.
 - Tests: 277/277 (38 new: 37 structure + v5→v6 migration). Five v5
   assertions updated to v6 (migration, expected).
 
+## P1-09 market-intelligence terminal — RESULT: PASS (2026-10-09)
+
+- IA: `OVERVIEW` (market summary cards, top activity, compact live-core
+  rows linking to token pages) → `MOVERS` (market table + 8 categories:
+  24h gainers/losers/most-active, HOT, live velocity ±, acceleration,
+  volume expansion, aggressive-flow leaders) → `/symbol/:symbol`
+  (header + mark-price SVG chart + momentum/flow/book/OI/VWAP-vol-
+  structure panels) → `SYSTEM` (all P1-03…P1-08 diagnostics + API index).
+  Search (`/search` + `/api/search`, case-insensitive partial over the
+  persisted universe, escaped, deterministic). Capability vocabulary
+  LIVE/WARMING/DISCOVERY ONLY/STALE/DEGRADED/UNKNOWN UI-wide, tier
+  orthogonal (neutral chips). No signals, no controls, no private data.
+- Code: `dashboard.py` (routing/health/lifecycle, v0.8.0) +
+  `dashboard_data.py` + `dashboard_components.py` + `dashboard_views.py`.
+  Chart/CSV: `GET /api/symbol/:symbol/price[?range][.csv]` over P1-04
+  `price_samples` (5m/15m/1h/4h/24h, ≤1000 pts, oldest-first, no futures,
+  400/404 semantics). Book integrity copy: HEALTHY / Recovered N gaps /
+  DEGRADED — gap active (no more `OK (1 gaps)`).
+- Tests: 312/312 (35 new P1-09: routing/search/movers/token/chart-CSV/
+  UI-regressions/unicode/escaping; 3 old overview-table assertions moved
+  to `/symbol/:symbol` as intentional IA evolution; P1-04…P1-08 APIs green).
+- Live 360s blocking run (exit 0, dashboard live, BOT_MODE=observe):
+  11/11 streams, 0 reconnects, 0 skew-rejects (healthy window), uptime
+  99.7%, corrected lags p50 ~180–260ms, clock 1/1 ok (−137ms/356ms RTT).
+  FLOW 11086 events p50 0.03ms; BOOK 10274, 0 gaps; OI 18/18 polls ok;
+  STRUCT 33 evals p50 ~1.05ms; returns 236 samples/symbol over 18.38M ms
+  span, 0 invalid/late; discovery 924→481 eligible, HOT [] (one interval,
+  votes 1/2 — honest); 140 funding crossings (same hypothesis-artifact
+  class, no conclusions); safety 0/0/0. Evidence: `logs/p1-09/`
+  (local, git-ignored).
+- Dashboard live at http://127.0.0.1:8091 (restarted, PID 7564, v0.8.0):
+  health `ok` while fed; all 22 routes 200 (pages 9–49ms, APIs 2–30ms);
+  BTC chart 1h=44pts/5m=26pts; search `btc`→BTCUSDT; discovery-only
+  龙虾USDT (+54.08%) page 200 with DISCOVERY ONLY — NO LIVE DEEP FEATURES
+  and no fake panels; BTC page WARMING + HEALTHY integrity; CSV
+  `text/csv timestamp,price`; forbidden-language scan clean on
+  overview/movers/token pages. P1-01R transport re-validation still owed
+  before P1-10 (this window was healthy but is not the gated 30–60 min
+  P1-01R run).
+
 ## Known gaps (Phase 1 work ahead, in order)
 
-Minimal dashboard: DONE (P1-03 PASS, live at http://127.0.0.1:8091).
+Minimal dashboard: DONE (P1-03 PASS) → terminal DONE (P1-09 PASS,
+v0.8.0 live at http://127.0.0.1:8091).
 Returns engine: DONE (P1-04 PASS — universe + 7-TF mark-price log returns).
 Discovery + velocity/acceleration/ranking: DONE (P1-05 PASS — 449-eligible
 scan, 6-HOT proposal, live momentum + ranks, intel UI + APIs).
@@ -357,7 +398,7 @@ Remaining: state classifier (P1-12, still blocked on P1-11), signal UI
   gates. P1-06 local feature work NOT blocked.
 - Detached probe processes die with the harness tool session (observed twice):
   use blocking bounded runs for evidence windows.
-- Dashboard RUNNING at http://127.0.0.1:8091 (PID 30344, v0.7.0; read-only,
+- Dashboard RUNNING at http://127.0.0.1:8091 (PID 7564, v0.8.0; read-only,
   localhost — safe to keep). Snapshot goes STALE without a running probe
   feed (honest chip); continuous freshness arrives with the P1-10 soak.
 - No secrets, keys, or account access exist or are needed.

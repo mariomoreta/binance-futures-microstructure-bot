@@ -254,3 +254,41 @@ vwap + volatility + ranges + structure). Tested v1/v2/v3/v4/v5→v6 with
 rows preserved. No raw history stored here: inputs recompute each summary
 from flow aggregates + persisted buckets, so restart continuity is
 inherited (buckets restore, flow windows warm live) — never fabricated.
+
+## 2026-10-09 — P1-09 terminal information architecture (no new sources)
+
+`/overview` becomes a market summary (cards + top activity + compact
+live-core rows with token links); full P1-04…P1-08 detail moves to
+`/symbol/:symbol` and `/system`. Rationale: the operator's questions are
+what-is-moving → which-deserve-inspection → why-interesting → inside-one-
+symbol → data-state → scan-to-detail path; a diagnostics console of
+disconnected tables answers none of them directly. Three old overview
+assertions (flow/book-OI/structure tables on `/overview`) were updated to
+assert the same content on `/symbol/:symbol` — intentional IA evolution,
+not coverage loss (312/312 green, incl. 35 new P1-09 tests).
+
+## 2026-10-09 — P1-09 dashboard code split (presentation out of routing)
+
+`dashboard.py` (was ~72KB single file) keeps routing + health model +
+lifecycle CLI + backwards-compatible render entry points; new
+`dashboard_data.py` (capability/tier vocabulary, universe composition,
+movers rows, search, bounded chart points), `dashboard_components.py`
+(terminal theme, nav, chips, formatters), `dashboard_views.py`
+(overview/movers/symbol/search/system renderers). Rationale: the file was
+already the largest in the tree and P1-09 triples its renders; the split
+follows data-access / presentation / HTTP-routing separation without a
+framework or over-engineering.
+
+## 2026-10-09 — P1-09 capability model + bounded chart contract
+
+Tier (CORE/HOT/DISCOVERY) and data state (LIVE/WARMING/DISCOVERY ONLY/
+STALE/DEGRADED/UNKNOWN) are orthogonal dimensions with one shared
+definition (`dashboard_data.py`); subscribed = symbol present in ANY live
+feature set (returns/flow/book/OI/structure), so partially-warmed symbols
+still show their honest panels. Chart/CSV read P1-04 `price_samples`
+(mark-price 10s buckets, no new source): window-filtered
+(now−range…now, future samples excluded), oldest-first, even-downsampled
+to ≤1000 points keeping endpoints. Search covers the persisted universe
+only (tops + CORE + HOT + live symbols) — the full exchange list is
+deliberately not persisted (P1-05 compact-snapshot contract), and the
+dashboard never hits Binance REST (read-only over persistence).

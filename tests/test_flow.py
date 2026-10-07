@@ -590,26 +590,32 @@ class DashboardFlowTest(unittest.TestCase):
         self.assertNotIn("horizons", symbol)
 
     def test_overview_renders_flow_split_and_no_signals(self) -> None:
+        # P1-09 IA: full flow detail lives on /symbol/:symbol; /overview
+        # stays a compact market summary with links to token detail.
         self.store.store_telemetry_snapshot({
             "runtimeSeconds": 10.0,
             "safety": {"BOT_MODE": "observe", "apiKeysUsed": 0,
-                       "realOrdersSent": 0, "realCapitalAtRisk": 0,
-                       "maxDrawdownKillSwitchActive": False,
-                       "authenticatedClientsPresent": False,
-                       "orderExecutionPathPresent": False},
+                        "realOrdersSent": 0, "realCapitalAtRisk": 0,
+                        "maxDrawdownKillSwitchActive": False,
+                        "authenticatedClientsPresent": False,
+                        "orderExecutionPathPresent": False},
             "dataQuality": {"expectedStreams": 11, "activeStreams": 11},
         })
         self.store.store_flow_features([self._flow_record()])
         code, body = self._get("/overview")
         self.assertEqual(code, 200)
-        self.assertIn("Live trade flow", body)
-        self.assertIn("BUY", body)
-        self.assertIn("SELL", body)
-        self.assertIn("75%", body)
-        self.assertNotIn("<button", body.lower())
-        for forbidden in ("entry", "place_order", " signal ", "BUY SIGNAL",
-                          "SELL SIGNAL"):
-            self.assertNotIn(forbidden, body)
+        self.assertIn("/symbol/BTCUSDT", body)
+        code, detail = self._get("/symbol/BTCUSDT")
+        self.assertEqual(code, 200)
+        self.assertIn("Trade flow", detail)
+        self.assertIn("BUY", detail)
+        self.assertIn("SELL", detail)
+        self.assertIn("75%", detail)
+        for page in (body, detail):
+            self.assertNotIn("<button", page.lower())
+            for forbidden in ("entry", "place_order", " signal ",
+                              "BUY SIGNAL", "SELL SIGNAL"):
+                self.assertNotIn(forbidden, page)
 
     def test_discovery_table_labels_unsubscribed(self) -> None:
         self.store.store_telemetry_snapshot({
