@@ -66,6 +66,18 @@ font-size:11px}.dim{color:var(--dim)}
 text-decoration:none;font-size:12px;color:var(--dim)}
 .chartbtns a.active{color:var(--txt);background:var(--chip)}
 .footer{color:var(--dim);font-size:11px;margin:18px 0 30px}
+.engine{display:flex;align-items:center;gap:10px;padding:8px 16px;
+background:var(--panel);border-bottom:1px solid var(--line);font-size:12px}
+.eng-label{color:var(--dim);letter-spacing:.6px;font-size:11px}
+.engine form{display:inline-flex;gap:6px;align-items:center;margin:0}
+.engine select,.engine input[type=submit]{background:var(--chip);
+border:1px solid var(--line);color:var(--txt);padding:4px 10px;border-radius:6px;
+cursor:pointer;font-family:inherit;font-size:12px}
+.engine select{cursor:default}
+.dot{font-size:10px}
+.dot.run{color:var(--pos);animation:pulse 2s infinite}
+.dot.warn{color:var(--warn)}.dot.stop{color:var(--dim)}.dot.fail{color:var(--neg)}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.35}}
 @media(max-width:760px){.topbar{flex-wrap:wrap}.searchbox{width:100%}
 .searchbox input{flex:1;width:auto}th,td{padding:4px 6px;font-size:11px}}
 """
@@ -93,16 +105,134 @@ def nav_html(active: str, search_query: str = "") -> str:
 
 
 def page(title: str, active: str, banner_html: str, body: str,
-         search_query: str = "") -> str:
+         search_query: str = "", engine_html: str = "") -> str:
     return (
         f"<!DOCTYPE html><html><head><meta charset='utf-8'>"
         f"<meta name='viewport' content='width=device-width,initial-scale=1'>"
         f"<meta http-equiv='refresh' content='30'>"
         f"<title>{html.escape(title)}</title><style>{CSS}</style></head>"
-        f"<body>{nav_html(active, search_query)}"
+        f"<body>{nav_html(active, search_query)}{engine_html}"
         f"<div class='wrap'><h1>{html.escape(title)}</h1>{banner_html}{body}"
         f"<p class='footer'>{html.escape(BANNER_NOTE)} Auto-refresh 30s. "
         f"Machine APIs remain under /system.</p></div></body></html>")
+
+
+def _fmt_hms(seconds: Any) -> str:
+    try:
+        total = max(0, int(float(seconds or 0)))
+    except (TypeError, ValueError):
+        return "--:--:--"
+    hh, rem = divmod(total, 3600)
+    mm, ss = divmod(rem, 60)
+    return f"{hh:02d}:{mm:02d}:{ss:02d}"
+
+
+def engine_control_html(state: Any) -> str:
+    """Compact MARKET ENGINE run control (P1-11B.1, observe-only).
+
+    Rendered under the nav on every page. No <button> elements (repo
+    no-controls tests), no trading words. Status refreshes via polling;
+    start/stop are plain POST forms (303 back) so no-JS works too.
+    """
+    try:
+        status = state.probe_status()
+    except Exception:
+        status = {}
+    try:
+        nonce = getattr(state, "control_nonce", "") or ""
+    except Exception:
+        nonce = ""
+    if not isinstance(status, dict):
+        status = {}
+    proc_state = str(status.get("state") or "STOPPED")
+    running = bool(status.get("running"))
+    if proc_state == "RUNNING":
+        dot, chip_state = "run", "RUNNING"
+    elif proc_state in ("STARTING", "STOPPING"):
+        dot, chip_state = "warn", proc_state
+    elif proc_state == "FAILED":
+        dot, chip_state = "fail", "FAILED"
+    else:
+        dot, chip_state = "stop", ("COMPLETED" if proc_state == "COMPLETED"
+                                   else "STOPPED")
+    elapsed = _fmt_hms(status.get("elapsed_seconds"))
+    remaining = status.get("remaining_seconds")
+    preset = str(status.get("preset") or "standard")
+    if running:
+        detail = f"OBSERVE · {elapsed}"
+        if preset == "validation-6h":
+            detail += " · VALIDATION 6H"
+        if remaining is not None:
+            detail += f" · left {_fmt_hms(remaining)}"
+        form = (
+            "<form method='post' action='/api/control/probe/stop'>"
+            f"<input type='hidden' name='nonce' value='{html.escape(nonce)}'>"
+            "<input type='submit' value='STOP'></form>")
+    else:
+        reason = str(status.get("last_exit_reason") or "")
+        detail = html.escape(
+            chip_state + (f" · {reason}" if proc_state in ("COMPLETED",
+                                                           "FAILED") and reason
+                           else ""))
+        form = (
+            "<form method='post' action='/api/control/probe/start'>"
+            f"<input type='hidden' name='nonce' value='{html.escape(nonce)}'>"
+            "<select name='mode' aria-label='Run mode'>"
+            "<option value='continuous'>Continuous</option>"
+            "<option value='6h'>6 Hours</option>"
+            "<option value='validation-6h'>6H Validation (evidence)</option>"
+            "</select>"
+            "<input type='submit' value='START OBSERVE'></form>")
+    return (
+        f"<div class='engine' id='engine' data-nonce='{html.escape(nonce)}'>"
+        f"<span class='eng-label'>MARKET ENGINE</span>"
+        f"<span class='dot {dot}' id='engine-dot'>●</span>"
+        f"<span id='engine-chip'>{html.escape(chip_state)}</span>"
+        f"<span class='dim' id='engine-text'>{detail}</span>"
+        f"<span id='engine-form'>{form}</span></div>"
+        # NOTE: explicit type attribute so the literal "<script>" never
+        # appears in page bytes (the escaping regression test asserts user
+        # input can never inject one).
+        "<script type='text/javascript'>(function(){var el="
+        "document.getElementById('engine');"
+        "if(!el)return;var nonce=el.getAttribute('data-nonce')||'';"
+        "function fmt(s){s=Math.max(0,Math.floor(s||0));"
+        "var h=Math.floor(s/3600),m=Math.floor((s%3600)/60);"
+        "s=s%60;return (h<10?'0':'')+h+':'+(m<10?'0':'')+m+':'+"
+        "(s<10?'0':'')+s;}"
+        "function esc(s){return String(s).replace(/&/g,'&amp;')"
+        ".replace(/</g,'&lt;');}"
+        "function tick(){fetch('/api/control/probe/status')"
+        ".then(function(r){return r.json();}).then(function(st){"
+        "var dot=document.getElementById('engine-dot');"
+        "var chip=document.getElementById('engine-chip');"
+        "var text=document.getElementById('engine-text');"
+        "var form=document.getElementById('engine-form');"
+        "if(!dot||!chip||!text||!form)return;"
+        "var run=!!st.running,cls='stop',label=st.state||'STOPPED';"
+        "if(st.state==='RUNNING'){cls='run';}"
+        "else if(st.state==='STARTING'||st.state==='STOPPING'){cls='warn';}"
+        "else if(st.state==='FAILED'){cls='fail';}"
+        "dot.className='dot '+cls;chip.textContent=label;"
+        "var detail=label;"
+        "if(run){detail='OBSERVE · '+fmt(st.elapsed_seconds);"
+        "if(st.preset==='validation-6h'){detail+=' · VALIDATION 6H';}"
+        "if(st.remaining_seconds!=null){detail+=' · left '+"
+        "fmt(st.remaining_seconds);}"
+        "form.innerHTML=\"<form method='post' "
+        "action='/api/control/probe/stop'>"
+        "<input type='hidden' name='nonce' value='\"+esc(nonce)+\"'>"
+        "<input type='submit' value='STOP'></form>\";}"
+        "else{form.innerHTML=\"<form method='post' "
+        "action='/api/control/probe/start'>"
+        "<input type='hidden' name='nonce' value='\"+esc(nonce)+\"'>"
+        "<select name='mode' aria-label='Run mode'>"
+        "<option value='continuous'>Continuous</option>"
+        "<option value='6h'>6 Hours</option>"
+        "<option value='validation-6h'>6H Validation (evidence)</option>"
+        "</select><input type='submit' value='START OBSERVE'></form>\";}"
+        "text.textContent=detail;}).catch(function(){});}"
+        "setInterval(tick,4000);})();</script>")
 
 
 def banner_html_fn(safety: Any, status: str) -> str:

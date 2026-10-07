@@ -191,13 +191,25 @@ strategies (P3), paper engine/positions (P4), execution (P5).
   only; gaps stay UNKNOWN. Pilot 13 series ratio 1.0 (OI capped at 500
   rows/~41.6h served; aggTrades recent-only; no book reconstruction).
   CLI + `/api/history/*` + token coverage card live. 353/353 tests.
+- `P1-11B.1` (2026-10-07) PROBE LIFECYCLE + DASHBOARD RUN CONTROL: **PASS**.
+  Canonical `control.py` + registry + probe self-registration (direct
+  launches converge); single-instance refusal; verified-PID-only stop;
+  merged UTF-8 run logs; POST-only localhost control API (nonce+Origin);
+  MARKET ENGINE header UI with polling (Continuous/6h/6H-Validation).
+  Live roundtrip proven (dashboard start→RUNNING→STALE→ok→stop; external
+  start auto-discovered; 90s run COMPLETED; dashboard survived).
+  376/376 tests (23 new).
 
 ## LAST_VERIFICATION
 
+- 2026-10-07 (P1-11B.1): `python run_tests.py` → 376/376 OK (353 + 23 new
+  lifecycle/API tests). Live roundtrip verified (dashboard + external
+  starts, feed transitions honest, dashboard survived all stops). Next:
+  P1-11C (queued). P1-10R still pending (6H-Validation preset mechanics
+  ready; audit decides PASS).
 - 2026-10-07 (P1-11B): `python run_tests.py` → 353/353 OK (322 + 31 new
   mocked-HTTP history tests). Pilot 13 series ratio 1.0 in
   `data/historical/historical.db`; CLI + history APIs live-verified.
-  Next: P1-11C (queued). P1-10R still pending.
 
 - 2026-10-07 (P1-11A): `python run_tests.py` → 317/317 OK (312 + 5 new
   `MoversIntegrityTest`). Movers fix + full feature validation recorded in

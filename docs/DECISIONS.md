@@ -388,3 +388,25 @@ velocities are negative).
    418 aborts; CLI has no bulk mode (explicit symbols, 7d/25 defaults).
 7. Docs-site fallback rule re-applied: developers.binance.com unfetchable
    here → contracts verified live + recorded exactly (MARKET_DATA.md).
+
+## 2026-10-07 — P1-11B.1 probe run-control decisions
+
+1. One registry (`logs/probe_runtime.json`), three launchers (agent CLI,
+   direct terminal, dashboard API) — the probe self-registers in
+   `__main__`, so all paths converge; dashboard holds no separate truth.
+2. Identity = PID + python image + recorded creation time (reused the
+   dashboard's own tasklist/wmic model, same trust class). STOP kills only
+   the verified PID (SIGTERM POSIX / TerminateProcess Windows — no reliable
+   graceful stdlib path exists there for detached children; documented).
+   Stale records recover to FAILED, never kill.
+3. Mutations are POST-only, localhost Host + local Origin + per-process
+   nonce (403 otherwise); fixed argv, forced BOT_MODE=observe, no shell —
+   browser input can never become a command.
+4. Every control-started probe gets merged UTF-8 file logging
+   (`logs/probe-runs/`, validation preset `logs/p1-10r/`) — keeps agent
+   harnesses non-blocking and makes P1-10R evidence mechanics default, not
+   special. A dashboard 6h run is NOT a validated P1-10R run; only the
+   audit decides PASS.
+5. UI uses `<input type=submit>`, never `<button` (repo no-controls tests),
+   and carries no signal/trading words; process state and feed health are
+   rendered side by side, never conflated.

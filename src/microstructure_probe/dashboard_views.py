@@ -198,7 +198,8 @@ def render_overview(state) -> str:
                       "<p class='warn'>No telemetry snapshot persisted yet. "
                       "Run the probe to generate persistence state.</p>"
                       f"<p class='note'>Reasons: "
-                      f"{html.escape('; '.join(health['reasons']))}</p>")
+                      f"{html.escape('; '.join(health['reasons']))}</p>",
+                      engine_html=C.engine_control_html(state))
     safety = _safe_dict(snap.get("safety"))
     dq = _safe_dict(snap.get("dataQuality"))
     rj = state.rejection_stats()
@@ -288,7 +289,8 @@ def render_overview(state) -> str:
     else:
         body += "<p class='note'>No detector threshold crossings in this snapshot window.</p>"
     return C.page("Overview — Binance Futures", "OVERVIEW",
-                  C.banner_html_fn(safety, health["status"]), body)
+                  C.banner_html_fn(safety, health["status"]), body,
+                  engine_html=C.engine_control_html(state))
 
 
 def _dashboard_version() -> str:
@@ -428,7 +430,8 @@ def render_movers(state) -> str:
                  "Live 1m volume z-score — subscribed symbols only.", "_v_volz")
     body += _cat("Aggressive-flow leaders (live)", flowl,
                  "Live signed flow delta magnitude — subscribed symbols only.", "_v_flow")
-    return C.page("Movers — Binance Futures", "MOVERS", _banner(state), body)
+    return C.page("Movers — Binance Futures", "MOVERS", _banner(state), body,
+                  engine_html=C.engine_control_html(state))
 
 
 def render_search(state, query: str) -> str:
@@ -458,7 +461,8 @@ def render_search(state, query: str) -> str:
                 f"<td>{C.capability_chip(r.get('capability', 'UNKNOWN'))}</td></tr>")
         body += "</table>"
     return C.page(f"Search — {query or ''}", "MOVERS", _banner(state), body,
-                  search_query=query or "")
+                  search_query=query or "",
+                  engine_html=C.engine_control_html(state))
 
 
 def _svg_chart(points: List[Dict[str, Any]], symbol: str,
@@ -788,7 +792,8 @@ def render_symbol(state, symbol: str, range_name: str = "1h") -> Optional[str]:
     else:
         body += ("<h2>Historical coverage</h2>"
                  "<p class='note'>No historical research coverage yet.</p>")
-    return C.page(f"{sym} — token intelligence", "MOVERS", _banner(state), body)
+    return C.page(f"{sym} — token intelligence", "MOVERS", _banner(state), body,
+                  engine_html=C.engine_control_html(state))
 
 
 def render_system(state) -> str:
@@ -798,7 +803,8 @@ def render_system(state) -> str:
     if snap is None:
         return C.page("System — Binance Futures", "SYSTEM",
                       C.banner_html_fn({}, health["status"]),
-                      "<p class='warn'>No telemetry snapshot persisted yet.</p>")
+                      "<p class='warn'>No telemetry snapshot persisted yet.</p>",
+                      engine_html=C.engine_control_html(state))
     safety = _safe_dict(snap.get("safety"))
     dq = _safe_dict(snap.get("dataQuality"))
     latency = _safe_dict(snap.get("latency"))
@@ -882,8 +888,9 @@ def render_system(state) -> str:
              f"<tr><th>realCapitalAtRisk</th><td>{html.escape(str(safety.get('realCapitalAtRisk', '?')))}</td></tr>"
              f"<tr><th>authenticatedClientsPresent</th>"
              f"<td>{html.escape(str(safety.get('authenticatedClientsPresent', '?')))}</td></tr>"
-             f"<tr><th>orderExecutionPathPresent</th>"
-             f"<td>{html.escape(str(safety.get('orderExecutionPathPresent', '?')))}</td></tr>"
-             "</table>")
+              f"<tr><th>orderExecutionPathPresent</th>"
+              f"<td>{html.escape(str(safety.get('orderExecutionPathPresent', '?')))}</td></tr>"
+              "</table>")
     return C.page("System — Binance Futures", "SYSTEM",
-                  C.banner_html_fn(safety, health["status"]), body)
+                  C.banner_html_fn(safety, health["status"]), body,
+                  engine_html=C.engine_control_html(state))

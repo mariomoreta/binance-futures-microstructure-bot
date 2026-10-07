@@ -30,6 +30,7 @@ import argparse
 import html
 import json
 import os
+import secrets
 import signal
 import socket
 import sqlite3
@@ -44,6 +45,9 @@ from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
 
 from .persistence import PersistenceStore
+
+CONTROL_NONCE_BYTES = 16
+LOCAL_HOSTS = ("127.0.0.1", "localhost")
 
 DASHBOARD_VERSION = "0.8.0"
 HOST = "127.0.0.1"
@@ -215,6 +219,10 @@ class DashboardState:
 
     def __init__(self, store: PersistenceStore) -> None:
         self.store = store
+        # Local control nonce for probe start/stop POSTs (P1-11B.1). Set by
+        # the server at startup; empty in bare unit-test states (mutations
+        # then fail closed with 403).
+        self.control_nonce: str = ""
         # Idempotent: creates the schema on a fresh DB, no-op otherwise.
         # Without this, a store instance that never wrote would report
         # "no snapshot" even when rows exist in the file.
@@ -304,6 +312,34 @@ class DashboardState:
             return rows
         sym = str(symbol).upper()
         return [r for r in rows if r.get("symbol") == sym]
+
+    def probe_status(self) -> Dict[str, Any]:
+        """Live probe process status + feed health (P1-11B.1, read-only).
+
+        Process state (STOPPED/STARTING/RUNNING/STOPPING/COMPLETED/FAILED)
+        never implies feed health (HEALTHY/DEGRADED/STALE/UNKNOWN) — both
+        are reported side by side.
+        """
+        from . import control
+        try:
+            health = self.health()
+            snap = self.snapshot()
+            snap_ts = (snap or {}).get("snapshotTimestamp")
+            try:
+                age = round(time.time() - snap_ts, 1) if snap_ts else None
+            except TypeError:
+                age = None
+            feed_label = {"ok": "HEALTHY", "degraded": "DEGRADED",
+                          "stale": "STALE"}.get(health["status"], "UNKNOWN")
+            feed = {"feed_health": feed_label, "latest_snapshot_age": age}
+        except Exception:
+            feed = {"feed_health": "UNKNOWN", "latest_snapshot_age": None}
+        try:
+            return control.status(feed_provider=lambda: dict(feed))
+        except Exception:
+            out = control.status()
+            out.update(feed)
+            return out
 
     def price_points(self, symbol: str, range_name: str):
         """Bounded mark-price chart points (P1-09, persisted price_samples)."""
@@ -1099,6 +1135,7 @@ def render_system(state: DashboardState) -> str:
 
 class DashboardHandler(BaseHTTPRequestHandler):
     state: DashboardState
+    control_nonce: str = ""
     server_version = f"BinanceDash/{DASHBOARD_VERSION}"
 
     def log_message(self, fmt: str, *args: Any) -> None:  # keep logs quiet
@@ -1165,6 +1202,150 @@ class DashboardHandler(BaseHTTPRequestHandler):
         self.send_header("Content-Length", str(len(raw)))
         self.end_headers()
         self.wfile.write(raw)
+
+    # ------------------------------------------------------------------
+    # Local operator control (P1-11B.1): probe start/stop ONLY. POST-only,
+    # localhost-only, nonce + Origin checked. No trading surface exists.
+    # ------------------------------------------------------------------
+
+    def _control_allowed(self, data: Dict[str, Any]) -> bool:
+        host = (self.headers.get("Host") or "").split(":")[0].strip().lower()
+        if host not in LOCAL_HOSTS:
+            return False
+        origin = (self.headers.get("Origin") or "").strip()
+        if origin:
+            try:
+                parts = urllib.parse.urlsplit(origin)
+                if parts.hostname not in LOCAL_HOSTS:
+                    return False
+                if parts.scheme not in ("http", "https"):
+                    return False
+            except ValueError:
+                return False
+        token = str(data.get("nonce") or
+                    self.headers.get("X-Control-Nonce") or "")
+        expected = getattr(self, "control_nonce", "") or ""
+        return bool(expected) and token == expected
+
+    def _read_post_data(self) -> Optional[Dict[str, Any]]:
+        try:
+            length = int(self.headers.get("Content-Length") or 0)
+        except (TypeError, ValueError):
+            return None
+        if length < 0 or length > 4096:
+            return None
+        try:
+            raw = self.rfile.read(length) if length else b""
+        except OSError:
+            return None
+        ctype = self.headers.get("Content-Type") or ""
+        try:
+            if "json" in ctype:
+                parsed = json.loads(raw.decode("utf-8") or "{}")
+                return parsed if isinstance(parsed, dict) else None
+            qs = urllib.parse.parse_qs(raw.decode("utf-8"))
+            return {k: v[0] for k, v in qs.items() if v}
+        except (ValueError, UnicodeDecodeError):
+            return None
+
+    def _redirect_back(self) -> None:
+        referer = self.headers.get("Referer") or ""
+        target = "/overview"
+        try:
+            parts = urllib.parse.urlsplit(referer)
+            if not parts.netloc and (parts.path or "").startswith("/") \
+                    and not (parts.path or "").startswith("//"):
+                target = parts.path
+        except ValueError:
+            pass
+        body = b""
+        self.send_response(303)
+        self.send_header("Location", target)
+        self.send_header("Content-Length", "0")
+        self.end_headers()
+        self.wfile.write(body)
+
+    def _respond_post(self, code: int, payload: Dict[str, Any]) -> None:
+        ctype = self.headers.get("Content-Type") or ""
+        if "json" in ctype:
+            self._send_json(code, payload)
+        elif 200 <= code < 300:
+            self._redirect_back()
+        else:
+            self._send_json(code, payload)
+
+    def do_POST(self) -> None:
+        from . import control
+        split = urllib.parse.urlsplit(self.path)
+        path = split.path
+        if path not in ("/api/control/probe/start", "/api/control/probe/stop"):
+            self._send_json(404, {"error": f"unknown route {path}"})
+            return
+        data = self._read_post_data()
+        if data is None:
+            self._send_json(400, {"error": "unreadable request body"})
+            return
+        if not self._control_allowed(data):
+            self._send_json(403, {"error": "forbidden (host/origin/nonce)"})
+            return
+        if path == "/api/control/probe/start":
+            # Only two inputs are ever read: duration_seconds (validated
+            # number|null) and preset (allowlist). No command strings, no
+            # shell, no passthrough arguments — injection is impossible.
+            preset = str(data.get("preset") or "standard")
+            if preset not in ("standard", "validation-6h"):
+                self._send_json(400, {"error": "invalid preset"})
+                return
+            if preset == "validation-6h" and "duration_seconds" in data \
+                    and data.get("duration_seconds") not in (None, "", 21600):
+                self._send_json(400, {"error": "validation-6h preset"
+                                      " requires duration 21600 or omitted"})
+                return
+            try:
+                if "duration_seconds" in data:
+                    duration = control.validate_duration(
+                        data.get("duration_seconds"))
+                else:
+                    mode = str(data.get("mode") or "continuous")
+                    if mode == "continuous":
+                        duration = None
+                    elif mode in ("6h", "validation-6h"):
+                        duration = control.SIX_HOURS
+                        if mode == "validation-6h":
+                            preset = "validation-6h"
+                    else:
+                        duration = control.validate_duration(mode)
+            except ValueError as exc:
+                self._send_json(400, {"error": str(exc)})
+                return
+            result = control.start_probe(duration, launcher="dashboard",
+                                               preset=preset)
+            if result.get("started"):
+                self._respond_post(200, {"started": True,
+                                         "pid": result.get("pid"),
+                                         "mode": result.get("mode"),
+                                         "duration_seconds": result.get(
+                                             "duration_seconds"),
+                                         "preset": result.get("preset"),
+                                         "evidence": result.get("evidence")})
+            elif result.get("already_running"):
+                self._respond_post(409, {
+                    "error": "already_running", "pid": result.get("pid"),
+                    "uptime_seconds": result.get("uptime_seconds"),
+                    "mode": result.get("mode"),
+                    "state": result.get("state")})
+            else:
+                self._respond_post(500, {"error": result.get(
+                    "error", "start failed")})
+            return
+        result = control.stop_probe(requester="dashboard")
+        if result.get("stopped"):
+            self._respond_post(200, {"stopped": True,
+                                     "pid": result.get("pid")})
+        elif result.get("error") == "no-active-probe":
+            self._respond_post(404, result)
+        else:
+            self._respond_post(409, result)
 
     def do_GET(self) -> None:
         from . import dashboard_views as views
@@ -1264,6 +1445,10 @@ class DashboardHandler(BaseHTTPRequestHandler):
             self._send_json(404, {"error": f"unknown route {path}"})
         elif path == "/api/health":
             self._send_json(200, self._health_payload())
+        elif path == "/api/control/probe/status":
+            self._send_json(200, self.state.probe_status())
+        elif path in ("/api/control/probe/start", "/api/control/probe/stop"):
+            self._send_json(405, {"error": "POST required"})
         elif path == "/api/history/status":
             cov = self.state.history_coverage()
             if not cov:
@@ -1507,8 +1692,11 @@ class DashboardServer:
         return self.port
 
     def start(self) -> "DashboardServer":
+        nonce = secrets.token_hex(CONTROL_NONCE_BYTES)
+        state = DashboardState(self.store)
+        state.control_nonce = nonce
         handler = type("BoundHandler", (DashboardHandler,),
-                       {"state": DashboardState(self.store)})
+                       {"state": state, "control_nonce": nonce})
         self._httpd = ThreadingHTTPServer((self.host, self.port), handler)
         self._thread = threading.Thread(target=self._httpd.serve_forever,
                                         kwargs={"poll_interval": 0.2},

@@ -656,6 +656,31 @@ flow/book retention + fidelity contract in HISTORICAL_RESEARCH_PLAN.md /
 FEATURE_MODEL.md. Tests after: 353/353 (322 + 31 new mocked-HTTP history
 tests). `docs/PHASE_1_REPORT.md` untouched.
 
+## P1-11B.1 probe lifecycle + dashboard run control — RESULT: PASS (2026-10-07)
+
+Canonical manager `control.py` (registry `logs/probe_runtime.json` with
+pid/ctime/started/mode/duration/expected-end/launcher/preset/evidence/
+last-exit; CLI status/start/stop). Probe self-registers on EVERY direct
+launch (`__main__`; refuses with exit 2 when another probe holds the
+registry; COMPLETED/FAILED/STOPPED marked on exit; registry failures never
+break collection). Single-instance refusal; stale-PID recovery to FAILED;
+stop kills only the verified PID (bounded 10s wait). All control-started
+probes get merged UTF-8 file logs (`logs/probe-runs/`, validation preset
+`logs/p1-10r/`). Dashboard: `GET /api/control/probe/status` (process +
+feed separated) + POST-only start/stop (localhost Host + local Origin +
+per-process nonce; GET mutations 405; fixed argv, BOT_MODE forced observe,
+no shell) + MARKET ENGINE header block on all pages (no `<button>`, 4s
+polling, green/gray/amber/red). Modes: Continuous, 6 Hours, 6H Validation
+(evidence mechanics — NOT an automatic P1-10R PASS).
+
+Live-verified (short bounded only, no 6h started): dashboard START →
+RUNNING PID 16336 (tasklist-confirmed) → feed STALE→ok honestly →
+dashboard STOP killed only the probe (dashboard survived); external CLI
+start (--duration 90/75) auto-discovered as RUNNING/launcher=agent in UI;
+90s run self-marked COMPLETED duration-reached; CLI stop → STOPPED.
+Tests after: 376/376 (353 + 23 new mocked lifecycle/API tests).
+`docs/PHASE_1_REPORT.md` untouched.
+
 ## Known gaps (Phase 1 work ahead, in order)
 
 Minimal dashboard: DONE (P1-03 PASS) → terminal DONE (P1-09 PASS,

@@ -22,6 +22,9 @@ phase's authorization unless stated.
 | `HISTORY STATUS` | `python -m microstructure_probe.history status [--db PATH]` — historical research coverage summary (series, bars, ratios). Read-only. |
 | `HISTORY FETCH` | `python -m microstructure_probe.history fetch --symbol X [--interval 1h] [--source klines\|mark_klines\|oi_hist] [--days 7] [--max-requests 25] [--dry-run]` — bounded, resumable, listing-aware fetch. Explicit symbols only; no all-symbols mode exists. Public REST only. |
 | `HISTORY VERIFY` | `python -m microstructure_probe.history verify --symbol X ...` — re-validate stored series (gaps, malformed, duplicates, partials). |
+| `PROBE STATUS` | `python -m microstructure_probe.control status` — canonical probe state (read-only; JSON with process + feed separation). |
+| `PROBE START` | `python -m microstructure_probe.control start [--duration N] [--preset standard\|validation-6h]` — one observe-only probe; refuses when one runs; merged UTF-8 log per run. Public data only. |
+| `PROBE STOP` | `python -m microstructure_probe.control stop` — terminate ONLY the verified canonical probe PID (bounded wait); stale records recovered, never unrelated processes. |
 
 ## Canonical test command (binding for autonomous loops)
 

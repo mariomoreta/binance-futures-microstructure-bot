@@ -5,6 +5,7 @@ import asyncio
 import json
 import logging
 import signal
+import time
 from pathlib import Path
 
 from .config import load_config
@@ -40,6 +41,22 @@ async def async_main(args: argparse.Namespace) -> None:
     if args.duration is not None and args.duration <= 0:
         raise ValueError("--duration debe ser mayor que cero")
 
+    # P1-11B.1: EVERY canonical launch self-registers (direct terminal /
+    # agent launches included) so the dashboard discovers the probe
+    # without having launched it. Registry failures never break the probe.
+    from . import control
+    started_wall = time.time()
+    try:
+        reg = control.try_register(args.duration)
+    except Exception as exc:  # never break data collection on registry IO
+        logging.getLogger(__name__).warning(
+            json.dumps({"kind": "registry_error", "error": str(exc)}))
+        reg = {"registered": True, "degraded": "registry-exception"}
+    if not reg.get("registered"):
+        print(json.dumps({"kind": "already_running",
+                          "detail": reg.get("already_running")}))
+        raise SystemExit(2)
+
     probe = MarketProbe(config)
     loop = asyncio.get_running_loop()
     for signal_name in (signal.SIGINT, signal.SIGTERM):
@@ -47,7 +64,22 @@ async def async_main(args: argparse.Namespace) -> None:
             loop.add_signal_handler(signal_name, probe.stop)
         except (NotImplementedError, RuntimeError):
             pass
-    await probe.run(args.duration)
+    try:
+        await probe.run(args.duration)
+    except KeyboardInterrupt:
+        control.mark_stopped("keyboard-interrupt", exit_code=0)
+        raise
+    except asyncio.CancelledError:
+        control.mark_stopped("cancelled", exit_code=0)
+        raise
+    except Exception as exc:
+        control.mark_failed(f"exception: {type(exc).__name__}: {exc}")
+        raise
+    elapsed = time.time() - started_wall
+    if args.duration is not None and elapsed >= float(args.duration):
+        control.mark_completed(exit_code=0)
+    else:
+        control.mark_stopped("run-returned", exit_code=0)
 
 
 def main() -> None:

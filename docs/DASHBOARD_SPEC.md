@@ -158,6 +158,27 @@ liquidity/book, VWAP/volatility/structure, BTC context, historical context,
 research setup card) without redesigning the Phase-1 IA. Full plan:
 `docs/SIGNAL_RESEARCH_PLAN.md`. No UI rebuilt in P1-11A.
 
+### P1-11B.1 MARKET ENGINE run control — IMPLEMENTED (PASS)
+
+Compact `MARKET ENGINE` block under the nav on every page (observe-only
+operator surface, NOT trading): process state chip (RUNNING green /
+STOPPED-COMPLETED gray / STARTING-STOPPING amber / FAILED red, subtle
+pulse while running) + elapsed/remaining + START OBSERVE (Continuous /
+6 Hours / 6H Validation-evidence selector) + STOP. No `<button>` elements
+(repo no-controls tests); start/stop are POST forms (303 back) so no-JS
+works; status text refreshes every 4s against
+`GET /api/control/probe/status` without full reload. Process state and
+feed health stay separate (ENGINE RUNNING + FEED DEGRADED is valid).
+Machine: `GET /api/control/probe/status` (read-only),
+`POST /api/control/probe/start` (duration_seconds null|60–86400 or mode,
+preset standard|validation-6h), `POST /api/control/probe/stop`; GET on
+mutations → 405. Mutations require localhost Host + local Origin +
+per-process nonce (403 otherwise); fixed module/argv only
+(`-m microstructure_probe [--duration N]`, BOT_MODE forced observe, no
+shell). A dashboard 6h run is ordinary observe runtime; only the
+validation-6h preset (merged UTF-8 evidence log + dir + natural
+final_summary) is P1-10R mechanics — the audit still decides PASS.
+
 ### Later (Phases 2–4)
 
 `/paper`, `/performance`, `/strategies`, `/risk` arrive with their engines.
