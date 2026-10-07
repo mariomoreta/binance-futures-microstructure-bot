@@ -141,6 +141,22 @@ Thresholds are HYPOTHESIS until Phase 2–3 statistics exist.
 - Book resilience from P1-07: DEFERRED — spread/depth event history is
   not retained; a P1-11 modeling task, not a freebie (see DECISIONS).
 
+## P1-11B historical/live fidelity contract (binding for research)
+
+- Mark-price klines ↔ live mark-price returns: BEST match (same source
+  semantics; historical counterpart of the P1-04 engine).
+- Regular-klines taker-buy volume: flow PROXY/context only — NOT identical
+  to the live aggTrade flow engine (different aggregation, no RPI split).
+- OHLC bars: CANNOT reconstruct order books (no historical book exists;
+  depth REST is present-only — documented limitation, not a gap to fill
+  speculatively).
+- 5m historical OI: CANNOT recreate 1m live OI contexts; only ~42h of 5m
+  history is served (500-row cap measured) — store only what is served.
+- aggTrades REST: most-recent only (probe: 0.1-min-old) — no multi-year
+  flow backfill is designed around it; bounded recent capability only.
+- Gaps stay UNKNOWN/GAP in both worlds; P1-11C excludes events spanning
+  invalid gaps (ranges persisted in `historical_gaps`).
+
 ## Feature discipline
 
 - Every feature: pure function + unit test on known values (follow

@@ -761,6 +761,33 @@ def render_symbol(state, symbol: str, range_name: str = "1h") -> Optional[str]:
         else:
             body += ("<h2>VWAP / volatility / structure</h2>"
                      "<p class='note'>No structure features yet — UNKNOWN / WARMING.</p>")
+    hist = []
+    try:
+        hist_fn = getattr(state, "history_coverage", None)
+        hist = hist_fn(sym) if callable(hist_fn) else []
+    except Exception:
+        hist = []
+    if hist:
+        rows = []
+        for h in sorted(hist, key=lambda r: str(r.get("interval"))):
+            last = h.get("last_open")
+            try:
+                last_s = time.strftime("%Y-%m-%d", time.gmtime(int(last) / 1000)) \
+                    if last else "—"
+            except (TypeError, ValueError, OverflowError):
+                last_s = "—"
+            rows.append(
+                f"<tr><th>{html.escape(str(h.get('interval')))} "
+                f"{html.escape(str(h.get('source')))}</th>"
+                f"<td>{h.get('actual_bars')}/{h.get('expected_bars')} bars "
+                f"(ratio {h.get('coverage_ratio')}) · through {last_s} UTC</td></tr>")
+        body += ("<h2>Historical coverage (research store)</h2>"
+                 "<table class='kv'>" + "".join(rows) + "</table>"
+                 "<p class='note'>REST bootstrap history for research; "
+                 "live features above remain the current feed.</p>")
+    else:
+        body += ("<h2>Historical coverage</h2>"
+                 "<p class='note'>No historical research coverage yet.</p>")
     return C.page(f"{sym} — token intelligence", "MOVERS", _banner(state), body)
 
 

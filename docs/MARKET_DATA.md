@@ -108,6 +108,48 @@ no new dependency was necessary — documented here instead of added.
   family as the existing clock sync. Behavior verified against live responses
   instead — shapes recorded in `docs/DECISIONS.md`.)
 
+## Historical REST contracts (verified live P1-11B, 2026-10-07)
+
+developers.binance.com stayed unfetchable (empty responses, same as P1-05),
+so every contract below was verified live against `https://fapi.binance.com`
+(public, no keys, ~30 tiny probe requests) and cross-checked with the public
+OpenAPI enum mirror for the interval list. Recorded exactly:
+
+- `GET /fapi/v1/klines` — params symbol (required), interval (required:
+  1m,3m,5m,15m,30m,1h,2h,4h,6h,8h,12h,1d,3d,1w,1M), startTime/endTime ms
+  (optional), limit (default 500, max 1500). Returns 12-field arrays:
+  [openTime, open, high, low, close, baseVolume, closeTime, quoteVolume,
+  tradeCount, takerBuyBase, takerBuyQuote, ignore]. Measured weight ~1 per
+  small page (limit=2); limiter assumes conservative 10/page and reads the
+  live `x-mbx-used-weight-1m` header adaptively (pool 2400/min per
+  exchangeInfo `rateLimits`; hard pause at 2000).
+- `GET /fapi/v1/markPriceKlines` — same params/shape, but volume fields
+  are served as zeros (`"0"`/0; tradeCount nonzero but meaningless) —
+  mark klines carry NO volume by schema in our store. Measured weight ~1;
+  assumed 10. Canonical historical counterpart of the live mark-price
+  return engine.
+- `GET /fapi/v1/aggTrades` — fromId-based paging (NOT time-based), limit
+  max 1000; shape {a,p,q,nq,f,l,T,m} identical to the live engine's
+  semantics. Serves most-recent trades only (probe: oldest returned bar
+  0.1 min old) — NO multi-year flow backfill is designed around it.
+  Measured weight ~20; assumed 20.
+- `GET /futures/data/openInterestHist` — params symbol, period
+  (5m,15m,30m,1h,2h,4h,6h,12h,1d), startTime/endTime, limit (default 30,
+  max 500). Serves {symbol, sumOpenInterest, sumOpenInterestValue,
+  timestamp} (+ extra CMCCirculatingSupply, ignored). Availability LIMITED:
+  pilot shows only the most-recent ~500 rows (~41.6h at 5m) — store only
+  what is served, never pretend deeper history exists. No weight header on
+  this host path; assumed 5. Does NOT replace the live OI tracker.
+- `GET /fapi/v1/exchangeInfo` — symbol status (`TRADING`), contractType
+  (`PERPETUAL`), rateLimits. Pilot: 924 symbols (matches discovery
+  seen=924); BTC/ETH/SOL/MINA/ORCA/NMR/AIOT/RLC all TRADING PERPETUAL.
+- startTime/endTime behavior: startTime=0 with no endTime returns the
+  earliest available bars (listing-aware probe); a near-epoch endTime
+  correctly returns []. Pages advance by last_open + interval (no
+  duplicate boundary bars); first bar of a page strictly after the
+  previous last bar or the client raises. Kline weight tiers by limit are
+  NOT relied upon — the adaptive header read is the real limiter.
+
 ## Event-driven stream semantics (finalized P1-05)
 
 - `!forceOrder@arr` publishes only on liquidations: silence is normal. It is

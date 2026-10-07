@@ -32,9 +32,9 @@ the dashboard exists. No classifier before raw-feature dashboard validation.
 
 ## ACTIVE_TASK
 
-- `P1-11B` HISTORICAL DATA FOUNDATION — multi-resolution history plan in
-  `docs/HISTORICAL_RESEARCH_PLAN.md` (verify current official Binance USD-M
-  docs before any implementation; no backfill yet run).
+- `P1-11C` HISTORICAL EVENT STUDIES — definitions + outcomes/MFE/MAE with
+  no lookahead, per `docs/HISTORICAL_RESEARCH_PLAN.md` (P1-11B foundation
+  DONE: separate DB, 13 pilot series ratio 1.0, CLI + APIs live).
   Status: NOT STARTED. (Queued only — do not begin without a new
   instruction.)
 
@@ -178,8 +178,26 @@ strategies (P3), paper engine/positions (P4), execution (P5).
   Design-only plans added: `docs/SIGNAL_RESEARCH_PLAN.md` (BTC context,
   exhaustion, absorption, opportunity lifecycle, backtest/paper sim),
   `docs/HISTORICAL_RESEARCH_PLAN.md` (P1-11B/C). 317/317 tests.
+- `P1-11A.1` (2026-10-07) MOVERS VELOCITY SEMANTICS: **PASS**. Sign-filtered
+  leader tables (positive only >0, negative only <0; zero/None/NaN/inf in
+  neither; honest empty notes). 5 new `MoversVelocitySemanticsTest` tests
+  fail 5/5 on old code. Live-verified after restart. 322/322 tests.
+- `P1-11B` (2026-10-07) HISTORICAL DATA FOUNDATION: **PASS**. Docs site
+  unfetchable → 7 contracts verified live (klines/mark/aggTrades/OI-hist/
+  exchangeInfo/weights/limits in `docs/MARKET_DATA.md`). Separate research
+  DB schema v1 (mark table structurally volume-free); bounded pagination +
+  resume + idempotency + adaptive limiter + 429/418 policy; listing-aware
+  ingest (BTC Sep-2019 … ORCA Dec-2024 geneses recorded); CLOSED candles
+  only; gaps stay UNKNOWN. Pilot 13 series ratio 1.0 (OI capped at 500
+  rows/~41.6h served; aggTrades recent-only; no book reconstruction).
+  CLI + `/api/history/*` + token coverage card live. 353/353 tests.
 
 ## LAST_VERIFICATION
+
+- 2026-10-07 (P1-11B): `python run_tests.py` → 353/353 OK (322 + 31 new
+  mocked-HTTP history tests). Pilot 13 series ratio 1.0 in
+  `data/historical/historical.db`; CLI + history APIs live-verified.
+  Next: P1-11C (queued). P1-10R still pending.
 
 - 2026-10-07 (P1-11A): `python run_tests.py` → 317/317 OK (312 + 5 new
   `MoversIntegrityTest`). Movers fix + full feature validation recorded in

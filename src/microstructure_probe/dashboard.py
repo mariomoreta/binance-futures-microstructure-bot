@@ -293,6 +293,18 @@ class DashboardState:
         except (OSError, sqlite3.Error):
             return []
 
+    def history_coverage(self, symbol: Optional[str] = None) -> List[Dict[str, Any]]:
+        """Historical research coverage (P1-11B separate DB), [] when absent."""
+        try:
+            from .history_store import HistoryStore
+            rows = HistoryStore().coverage_summary()
+        except (OSError, sqlite3.Error, ValueError):
+            return []
+        if symbol is None:
+            return rows
+        sym = str(symbol).upper()
+        return [r for r in rows if r.get("symbol") == sym]
+
     def price_points(self, symbol: str, range_name: str):
         """Bounded mark-price chart points (P1-09, persisted price_samples)."""
         from .dashboard_data import price_history_points
@@ -1252,6 +1264,27 @@ class DashboardHandler(BaseHTTPRequestHandler):
             self._send_json(404, {"error": f"unknown route {path}"})
         elif path == "/api/health":
             self._send_json(200, self._health_payload())
+        elif path == "/api/history/status":
+            cov = self.state.history_coverage()
+            if not cov:
+                self._send_json(404, {"error": "no historical coverage yet"})
+            else:
+                self._send_json(200, {
+                    "generated_at": time.strftime(
+                        "%Y-%m-%dT%H:%M:%SZ", time.gmtime(time.time())),
+                    "source": "historical research store (REST bootstrap)",
+                    "series": cov,
+                })
+        elif path.startswith("/api/history/"):
+            raw = urllib.parse.unquote(path[len("/api/history/"):]).split("/")[0]
+            if normalize_symbol(raw) is None:
+                self._send_json(400, {"error": "invalid symbol"})
+                return
+            cov = self.state.history_coverage(raw)
+            if not cov:
+                self._send_json(404, {"error": f"no historical coverage for {raw.upper()}"})
+            else:
+                self._send_json(200, {"symbol": raw.upper(), "series": cov})
         elif path == "/api/snapshot":
             snap = self.state.snapshot()
             if snap is None:

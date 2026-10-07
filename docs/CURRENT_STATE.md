@@ -623,6 +623,39 @@ P1-11B resolutions + P1-11C event studies with MFE/MAE/no-lookahead
 (`docs/HISTORICAL_RESEARCH_PLAN.md`); roadmap P1-11A→…→P1-16 in TASK_QUEUE.
 Tests after: 317/317 (312 + 5 new). `docs/PHASE_1_REPORT.md` untouched.
 
+## P1-11B historical data foundation — RESULT: PASS (2026-10-07)
+
+Official docs first: developers.binance.com unfetchable here (empty
+responses, same as P1-05) → all seven contracts verified LIVE against
+fapi.binance.com (public, no keys, ~35 tiny requests) + OpenAPI enum
+cross-check; recorded exactly in `docs/MARKET_DATA.md` (params, limits
+1500/500/1000, weights measured ~1/1/20, intervals, startTime/endTime
+edge behavior, 2400/min pool).
+
+Built (stdlib only): `history_client.py` (conservative weights + adaptive
+weight-header hard pause 2000/2400; retries budget 5 exp-backoff+jitter;
+429 honors Retry-After budget 2 then abort; 418 aborts; forward pagination
+with overlap-raise + skip-record; OI timestamp pagination; aggTrades fromId
+helper) + `history_store.py` (separate `data/historical/historical.db`,
+schema v1: klines WITH volume / mark klines WITHOUT volume columns /
+OI as-served / coverage / run ledger / gaps) + `history.py` CLI (status /
+fetch / verify; explicit symbols, 7d/25 defaults, no bulk mode).
+Listing-aware (geneses recorded: BTC Sep-2019, MINA Feb-2023, ORCA
+Dec-2024); CLOSED candles only; gaps stay UNKNOWN/GAP (no fill).
+
+Pilot (bounded): 1h×30d klines ×5 syms (719 each), 15m×30d ×3 (2879),
+1m×3d BTC (4319), 1h×30d mark ×3 (719) — all ratio 1.0, 0 gaps, 0 malformed;
+5m×7d OI BTC hit the 500-row availability cap (~41.6h — documented
+limitation); aggTrades confirmed recent-only (0.1 min). Resume re-run: 0
+rows, 1 request (idempotent). 13 series stored. No backfill beyond pilot.
+
+Minimal exposure: `/api/history/status` + `/api/history/:symbol`
+(404-empty/unknown, 400-malformed) + HISTORICAL COVERAGE token card; no
+Opportunities/Signals/Paper/Backtest UI. Storage tiers + prospective
+flow/book retention + fidelity contract in HISTORICAL_RESEARCH_PLAN.md /
+FEATURE_MODEL.md. Tests after: 353/353 (322 + 31 new mocked-HTTP history
+tests). `docs/PHASE_1_REPORT.md` untouched.
+
 ## Known gaps (Phase 1 work ahead, in order)
 
 Minimal dashboard: DONE (P1-03 PASS) → terminal DONE (P1-09 PASS,

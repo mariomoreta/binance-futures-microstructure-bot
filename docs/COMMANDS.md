@@ -19,6 +19,9 @@ phase's authorization unless stated.
 | `DASHBOARD START` | `python -m microstructure_probe.dashboard start [--port N] [--db PATH]` — first-free-port startup on 127.0.0.1, PID file, health verify, report URL block. Binance dashboard only. |
 | `DASHBOARD STOP` | `python -m microstructure_probe.dashboard stop` — terminate only the tracked Binance-dashboard PID, remove PID file. Never touch unrelated processes. |
 | `DASHBOARD RESTART` | `python -m microstructure_probe.dashboard restart` — STOP + START. Must never start trading or need private credentials. |
+| `HISTORY STATUS` | `python -m microstructure_probe.history status [--db PATH]` — historical research coverage summary (series, bars, ratios). Read-only. |
+| `HISTORY FETCH` | `python -m microstructure_probe.history fetch --symbol X [--interval 1h] [--source klines\|mark_klines\|oi_hist] [--days 7] [--max-requests 25] [--dry-run]` — bounded, resumable, listing-aware fetch. Explicit symbols only; no all-symbols mode exists. Public REST only. |
+| `HISTORY VERIFY` | `python -m microstructure_probe.history verify --symbol X ...` — re-validate stored series (gaps, malformed, duplicates, partials). |
 
 ## Canonical test command (binding for autonomous loops)
 

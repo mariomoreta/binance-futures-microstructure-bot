@@ -365,3 +365,26 @@ units, momentum engine and rank methodology untouched. Proven by
 `MoversVelocitySemanticsTest` (5/5 fail on old code, 5/5 pass fixed) and
 live-verified after restart (positive table honestly empty while all CORE
 velocities are negative).
+
+## 2026-10-07 — P1-11B historical foundation decisions
+
+1. Separate research DB, not the live one: `data/historical/historical.db`
+   (schema v1) — backfill must never disturb dashboard state; the store
+   constructor refuses the live path. No manifests/checkpoints sidecar dirs:
+   coverage + run ledger + gaps are DB tables (repo convention: SQLite
+   stores, `data/` + `logs/` git-ignored).
+2. Mark vs regular klines separated BY SCHEMA (mark table has no volume
+   columns — verified live that the API serves zeros there), not by comment.
+3. OI history: store only the served ~42h (500-row cap measured at 5m);
+   never pretend deeper history exists; live tracker untouched.
+4. aggTrades REST is most-recent-only (0.1-min-old probe) — no backfill
+   designed around it; bounded recent capability only; archives deferred
+   until provenance/semantics verified.
+5. No historical book reconstruction — depth REST is present-only;
+   documented limitation; prospective compact-bucket recorder designed but
+   NOT enabled (estimates first).
+6. Rate safety by construction: conservative assumed weights + adaptive
+   live-weight hard pause (2000/2400), Retry-After honored with budget,
+   418 aborts; CLI has no bulk mode (explicit symbols, 7d/25 defaults).
+7. Docs-site fallback rule re-applied: developers.binance.com unfetchable
+   here → contracts verified live + recorded exactly (MARKET_DATA.md).
