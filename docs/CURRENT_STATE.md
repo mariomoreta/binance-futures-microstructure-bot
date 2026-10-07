@@ -374,6 +374,66 @@ dashboard-feeding) — see `docs/DECISIONS.md`.
   before P1-10 (this window was healthy but is not the gated 30–60 min
   P1-01R run).
 
+## P1-01R transport re-validation — RESULT: PASS (2026-10-07)
+
+Run: `python -m microstructure_probe --duration 2700`, BOT_MODE=observe,
+`runtimeSeconds: 2702.262`, exit 0, attached blocking (no detached child).
+Evidence (local, git-ignored): `logs/p1-01r/probe-2700s.log` (4.5MB raw
+console) + `logs/p1-01r/transport-summary.json` (extracted final_summary)
++ `logs/p1-01r/dashboard-health.json`. No keys, no orders, no capital, no
+private APIs. No application-code changes in this phase.
+
+Measured (from `final_summary`):
+
+- Coverage: 11/11 streams active, `missingStreams: []`, `staleStreams: []`,
+  `silentStreams: ["!forceOrder@arr"]` only (event-driven, correctly
+  not-stale).
+- Uptime: market 99.964765% (2699.097s), public 99.965575% (2699.119s).
+  Attempts 1/1 per endpoint, 0 failures.
+- Reconnects: 0 total (market 0, public 0); websocket errors 0.
+- Messages: 2,259,664 total. bookTicker 958k/773k/375k (BTC/ETH/SOL);
+  depth ~26k/symbol; markPrice 2699 updates; forceOrder 519; aggTrade
+  30457/31289/9179.
+- Delivery lag (corrected event lag): p50 171–251ms across all streams
+  (aggTrade ~171–174ms, bookTicker 175–216ms, depth ~175ms, forceOrder
+  174ms, markPrice 251ms); p95 199–390ms; max ~3.2–3.4s rare outliers
+  simultaneous across streams (one transient ~3.3s stall, auto-recovered,
+  no reconnect). Exchange-side E−T is milliseconds (bookTicker p50 0ms,
+  depth p50 1–4ms), so the sub-second path delay is the delivery path to
+  this host, not Binance.
+- Skew guard: `timestampRejected: 0` (0.0% — vs 85% in P1-01).
+- Gaps/silence: depth sequence gaps 0/0/0. Max cadenced silence 2.85s;
+  forceOrder silent up to 66.9s — event-driven, correctly NOT stale.
+- Errors: parse 0, payload 0. Processing p50 sub-ms (parse/metrics/
+  detector); full-processing p50 ≤2.4ms, p95 ≤22ms; isolated max spikes
+  (one 464ms aggTrade) with all queues 0/0 — no backlog, probe CPU fine.
+- Clock sync 5/5 ok (25/25 samples); offset −254ms; RTT 340ms.
+- Engines (regression watch only, no semantic changes): returns 507
+  samples/symbol over 21.58M ms span, 0 invalid, 0 late; FLOW 70925
+  events p50 0.043ms queue 0/0; BOOK 77081 msgs 0 gaps 0 crossed p50
+  0.19ms; OI 132/132 polls ok 0 failures; STRUCT 267 evals p50 1.93ms
+  queue 0/0; persistence inflight high-water 43, drained to 0.
+- Discovery: 924 seen → 482 eligible; HOT 6 promoted over multiple scans
+  with votes (multi-scan hysteresis working as designed).
+- Detectors: 3701 `extreme_funding_rate` (same hypothesis-artifact class
+  as P1-01/P1-05 — near-constant series, NOT signal validation),
+  2 `large_liquidation_individual` (ETH SELL, real counted observations),
+  22 `volume_spike` (real hypothesis-threshold crossings). No threshold
+  conclusion drawn from any of these.
+- Safety block in final summary: observe, 0 keys, 0 orders, 0 capital,
+  no authenticated clients, no order paths.
+- Dashboard (v0.8.0, PID 7564, left running): `ok` while fed (53.7s
+  snapshot age at check); post-run `/overview`, `/movers`, `/system`,
+  `/symbol/BTCUSDT`, `/api/health` all 200 (20–51ms); health transitioned
+  honestly to `stale` 134s after probe exit (snapshot age >120s chip).
+
+Verdict reasoning: every P1-01R gate passes on the full 45-minute window
+— full coverage, 0 reconnects, sub-second p50/p95 delivery lag, 0%
+rejections, sub-ms-typical processing with drained queues, 5/5 clock sync.
+The single ~3.3s transient stall is rare-outlier grade (p99 ≤1.1s worst
+stream), not P1-01-grade degradation. Therefore PASS: transport is healthy
+enough for the P1-10 ≥6h soak. `docs/PHASE_1_REPORT.md` untouched.
+
 ## Known gaps (Phase 1 work ahead, in order)
 
 Minimal dashboard: DONE (P1-03 PASS) → terminal DONE (P1-09 PASS,
@@ -387,15 +447,18 @@ Order book + open interest: DONE (P1-07 PASS — snapshot book intel, OI
 polls/deltas/contexts, v0.6.0 dashboard + APIs, 363s validation).
 VWAP + volatility + structure: DONE (P1-08 PASS — flow-VWAP, raw vol,
 range expansion, confirmed pivots, v0.7.0 dashboard + APIs, 372s run).
-Remaining: state classifier (P1-12, still blocked on P1-11), signal UI
-(P1-13), soak + calibration evidence (P1-10/P1-14, need P1-01R first).
+Transport re-validation: DONE (P1-01R PASS — 45min healthy window, soak
+gate unblocked).
+Remaining: ≥6h soak (P1-10, may start on instruction), state classifier
+(P1-12, still blocked on P1-11), signal UI (P1-13), calibration evidence
+(P1-14).
 
 ## Blockers / issues
 
-- Transport flaky in this environment (P1-01 PARTIAL; P1-05 windows saw both
-  degraded runs and one healthy 0-reconnect run). Re-validation in a healthy
-  network (`P1-01R`) still required before P1-10 soak / P1-14 calibration
-  gates. P1-06 local feature work NOT blocked.
+- Transport was flaky in this environment (P1-01 PARTIAL: 58 reconnects,
+  85% rejects), but P1-01R (45min, 0 reconnects, 0% rejects, sub-second
+  lags) now PASSES the soak gate. If a future run shows P1-01-grade
+  degradation again, re-validate before trusting soak/calibration gates.
 - Detached probe processes die with the harness tool session (observed twice):
   use blocking bounded runs for evidence windows.
 - Dashboard RUNNING at http://127.0.0.1:8091 (PID 7564, v0.8.0; read-only,

@@ -32,20 +32,11 @@ the dashboard exists. No classifier before raw-feature dashboard validation.
 
 ## ACTIVE_TASK
 
-- `P1-01R` TRANSPORT RE-VALIDATION (before P1-10): repeat the 30–60 min
-  observe-only run in a healthy network; must show stable connections
-  (reconnects ≈ 0 unexplained), delivery lags in the low-second range, and
-  skew-rejections back to rare outliers before soak/calibration gates can pass.
+- `P1-10` PROLONGED ≥6H SOAK — run with dashboard live so the operator can
+  inspect it and take screenshots while data flows.
   Status: NOT STARTED. (Queued only — do not begin without a new instruction.)
 
 ## NEXT_TASKS (ordered, all Phase 1)
-- `P1-09` MARKET-INTELLIGENCE DASHBOARD — add `/movers`, `/symbol/:symbol`;
-  show raw features BEFORE classifier scores. Operator keeps working browser
-  access through this and all later live stages.
-- `P1-01R` TRANSPORT RE-VALIDATION (before P1-10): repeat the 30–60 min
-  observe-only run in a healthy network; must show stable connections
-  (reconnects ≈ 0 unexplained), delivery lags in the low-second range, and
-  skew-rejections back to rare outliers before soak/calibration gates can pass.
 - `P1-10` PROLONGED ≥6H SOAK — run with dashboard live so the operator can
   inspect it and take screenshots while data flows.
 - `P1-11` RAW FEATURE VALIDATION — distributions, missingness, freshness,
@@ -149,9 +140,19 @@ strategies (P3), paper engine/positions (P4), execution (P5).
   0/0/0; 22 routes 200; discovery-only honesty verified (龙虾USDT).
   312/312 tests (35 new). Evidence: `logs/p1-09/` (local, git-ignored).
   P1-10 NOT started; P1-01R still owed before it.
+- `P1-01R` (2026-10-07) TRANSPORT RE-VALIDATION: **PASS**. Attached
+  2700s observe-only run (exit 0): 11/11 streams, 0 reconnects, 0 rejects,
+  corrected lags p50 171–251ms / p95 ≤390ms, gaps 0, clock 5/5 ok,
+  engines green, persistence drained, safety 0/0/0; dashboard `ok`
+  while fed, honest `stale` after. Evidence: `logs/p1-01r/`
+  (local, git-ignored). P1-10 soak gate unblocked; P1-10 NOT started.
 
 ## LAST_VERIFICATION
 
+- 2026-10-07 (P1-01R): `python run_tests.py` → 312/312 OK (before run;
+  no code changed). 2700s transport run PASS (0 reconnects, 0% rejects,
+  sub-second lags). Full evidence in `docs/CURRENT_STATE.md` +
+  `logs/p1-01r/`.
 - 2026-10-09 (P1-09): `python run_tests.py` → 312/312 OK. Terminal live
   (v0.8.0, 22 routes 200, chart + CSV + search verified, safety 0/0/0).
   Full evidence in `docs/CURRENT_STATE.md` + `logs/p1-09/`.

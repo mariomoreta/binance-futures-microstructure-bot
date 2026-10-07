@@ -292,3 +292,13 @@ to ≤1000 points keeping endpoints. Search covers the persisted universe
 only (tops + CORE + HOT + live symbols) — the full exchange list is
 deliberately not persisted (P1-05 compact-snapshot contract), and the
 dashboard never hits Binance REST (read-only over persistence).
+
+## 2026-10-07 — P1-01R PASS unblocks the P1-10 soak (transport precedent)
+
+A 45-minute attached observe-only run (0 reconnects, 0% skew-rejections,
+sub-second p50/p95 delivery lag, 5/5 clock sync) is recorded as PASS and
+unblocks the P1-10 soak gate. Precedent: transport health in this
+environment is variable (P1-01 PARTIAL vs P1-01R PASS), so any future run
+showing P1-01-grade degradation (reconnect storm, tens-of-seconds lags,
+mass rejection) must trigger a fresh re-validation before soak or
+calibration gates may be trusted. No code or threshold changed.
