@@ -30,6 +30,7 @@ from .metrics import order_book_imbalance, spread_bps
 from .momentum import RANK_METRICS, VELOCITY_HORIZONS, RankTracker
 from .open_interest import OpenInterestPoller, OpenInterestTracker
 from .persistence import PersistenceStore, get_persistence_store
+from .research_recorder import ResearchRecorder
 from .returns import ReturnEngine, SymbolPriceSeries
 from .telemetry import RunningDistribution
 from .universe import SymbolUniverse
@@ -176,6 +177,10 @@ class MarketProbe:
         self._rank_tracker = RankTracker()
         self._hot_dynamic: tuple = ()
         self._hot_state: dict = {"appear": {}, "absent": {}}
+        # P1-11C: prospective research recorder (probe-owned, same process).
+        # Starts with MarketProbe, drains on exit. Never a second process /
+        # registry / launcher. Failures degrade the recorder only.
+        self._research = ResearchRecorder(enabled=True)
         self._discovery_info: dict = {
             "enabled": bool(config.discovery.enabled),
             "last_scan_ms": None,
@@ -233,6 +238,11 @@ class MarketProbe:
     def structure(self) -> MarketStructureEngine:
         """VWAP/volatility/range/structure compute (P1-08)."""
         return self._structure
+
+    @property
+    def research(self) -> ResearchRecorder:
+        """Prospective flow/book recorder (P1-11C, probe-owned)."""
+        return self._research
 
     def set_oi_fetcher(self, fetch_fn) -> None:
         """Replace the OI REST fetcher (tests only — never live traffic)."""
@@ -307,6 +317,11 @@ class MarketProbe:
 
     async def run(self, duration_seconds: float | None = None) -> None:
         urls = build_stream_urls(self.config)
+        # P1-11C: research recorder starts naturally with MarketProbe.
+        try:
+            self._research.start()
+        except Exception:
+            pass
         LOGGER.info(
             json.dumps(
                 {
@@ -345,6 +360,11 @@ class MarketProbe:
         try:
             await self._stop.wait()
         finally:
+            # P1-11C: recorder drains on exit (partials marked, never complete).
+            try:
+                self._research.stop_and_drain(timeout=10.0)
+            except Exception:
+                pass
             self.log_summary(final=True)
             for task in tasks:
                 task.cancel()
@@ -504,6 +524,16 @@ class MarketProbe:
                     )
                 except (KeyError, TypeError, ValueError):
                     pass
+                # P1-11C research hook (read-only reuse, never alters engine).
+                try:
+                    _bk = self._book._books.get(str(payload["s"]).upper())  # type: ignore[attr-defined]
+                    if _bk is not None and _bk.features is not None:
+                        self._research.record_book(
+                            str(payload["s"]), int(payload["E"]),
+                            _bk.features, _bk.degraded, False,
+                            bool(_bk.features.get("crossed")))
+                except Exception:
+                    pass
             metrics_end_ns = self._perf_counter_ns()
 
             if stream.endswith("@aggTrade"):
@@ -530,6 +560,14 @@ class MarketProbe:
                         normal_quantity=payload.get("nq"),
                     )
                 except (KeyError, TypeError, ValueError):
+                    pass
+                # P1-11C research hook (validated P1-06 semantics reused).
+                try:
+                    self._research.record_trade(
+                        str(payload["s"]), int(payload["E"]),
+                        float(payload["p"]), float(payload["q"]),
+                        payload.get("m"))
+                except Exception:
                     pass
             elif stream == "!forceOrder@arr":
                 order = payload["o"]
@@ -1008,6 +1046,9 @@ class MarketProbe:
             # (stateless evaluation over flow + return state). Full
             # per-symbol records persist via store_structure_features.
             "structure": self._structure.stats(),
+            # P1-11C additive block: prospective recorder health (never
+            # conflated with engine/feed health). Failure-isolated.
+            "research": self._research.status(),
         }
 
     @staticmethod

@@ -101,3 +101,9 @@ size before any confidence is quoted.
 - Book depth history (latest snapshot only) â€” resilience/recovery-time
   metrics need a new retained series (prospective recorder designed
   above, not enabled).
+
+## P1-11C implementation (2026-10-07, PASS)
+
+- Engine src/microstructure_probe/events.py: T-formation / T+outcome split, mark-vs-regular labeling, fixed 1m–1h horizons, direction-oriented MFE/MAE + time-to, predeclared invalidation, COMPLETE/PARTIAL/INVALID_GAP/INSUFFICIENT_HISTORY, BTC sync + relative return, as-of 30d levels, HISTORICAL_TAKER_BUY_PROXY + ABSORPTION_PROXY labels, quantity-only sample tiers.
+- Six versioned HYPOTHESIS families; CLI events definitions|run|summary; 38 bounded pilot runs stored (see CURRENT_STATE for counts; sub-1h-on-1h resolution limit documented).
+- Prospective recorder esearch_recorder.py ENABLED inside MarketProbe (flow 10s/1m, book 1m; 7d/90d/90d retention; ~200B/row estimate); replaces the 'not enabled' design note above — the retention-gap items (per-trade flow, depth history) are now covered prospectively, never historically fabricated.

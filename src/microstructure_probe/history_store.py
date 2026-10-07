@@ -30,9 +30,12 @@ import time
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
 
-SCHEMA_VERSION = 1
+SCHEMA_VERSION = 2
 
 DEFAULT_HISTORICAL_PATH = Path("data") / "historical" / "historical.db"
+
+# P1-11C prospective research retention defaults (days; configurable).
+RESEARCH_RETENTION_DAYS = {"flow_10s": 7, "flow_1m": 90, "book_1m": 90}
 
 
 def default_path() -> Path:
@@ -126,10 +129,112 @@ class HistoryStore:
                 " ('schema_version', ?)",
                 (str(SCHEMA_VERSION),),
             )
+            # P1-11C migration v1 -> v2 (additive; existing rows preserved).
+            self._ensure_v2(con)
+            con.execute(
+                "UPDATE history_meta SET value=? WHERE key='schema_version'",
+                (str(SCHEMA_VERSION),),
+            )
             con.commit()
         finally:
             con.close()
         self._initialized = True
+
+    @staticmethod
+    def _ensure_v2(con: sqlite3.Connection) -> None:
+        """P1-11C event-study + prospective research tables (idempotent)."""
+        con.execute(
+            "CREATE TABLE IF NOT EXISTS event_definitions"
+            " (definition_name TEXT NOT NULL, definition_version INTEGER NOT NULL,"
+            "  parameters_json TEXT NOT NULL, required_features_json TEXT,"
+            "  source_requirements_json TEXT, research_status TEXT NOT NULL,"
+            "  created_at INTEGER NOT NULL,"
+            "  PRIMARY KEY (definition_name, definition_version))"
+        )
+        con.execute(
+            "CREATE TABLE IF NOT EXISTS event_study_runs"
+            " (run_id INTEGER PRIMARY KEY AUTOINCREMENT,"
+            "  started_at INTEGER NOT NULL, definition_name TEXT NOT NULL,"
+            "  definition_version INTEGER NOT NULL, params_json TEXT NOT NULL,"
+            "  symbols_json TEXT, requested_start INTEGER, requested_end INTEGER,"
+            "  input_source_versions_json TEXT, code_version TEXT,"
+            "  event_count INTEGER DEFAULT 0, usable_count INTEGER DEFAULT 0,"
+            "  excluded_count INTEGER DEFAULT 0, status TEXT DEFAULT 'running')"
+        )
+        con.execute(
+            "CREATE TABLE IF NOT EXISTS event_instances"
+            " (event_id TEXT PRIMARY KEY, run_id INTEGER,"
+            "  definition_name TEXT NOT NULL, definition_version INTEGER NOT NULL,"
+            "  symbol TEXT NOT NULL, event_time INTEGER NOT NULL,"
+            "  direction TEXT, context TEXT, source_interval TEXT,"
+            "  reference_price REAL, reference_source TEXT,"
+            "  reference_timestamp INTEGER, features_json TEXT,"
+            "  btc_context_json TEXT, formation_start INTEGER,"
+            "  formation_end INTEGER, data_quality TEXT, provenance_json TEXT)"
+        )
+        con.execute(
+            "CREATE INDEX IF NOT EXISTS idx_event_instances_def_sym"
+            " ON event_instances(definition_name, definition_version, symbol)"
+        )
+        con.execute(
+            "CREATE TABLE IF NOT EXISTS event_feature_snapshots"
+            " (event_id TEXT PRIMARY KEY, snapshot_json TEXT NOT NULL)"
+        )
+        con.execute(
+            "CREATE TABLE IF NOT EXISTS event_outcomes"
+            " (event_id TEXT NOT NULL, horizon TEXT NOT NULL,"
+            "  forward_return REAL, mfe REAL, mae REAL,"
+            "  time_to_mfe_ms INTEGER, time_to_mae_ms INTEGER,"
+            "  invalidation_time INTEGER, path TEXT, path_complete INTEGER,"
+            "  gap_crossed INTEGER, usable_for_statistics INTEGER,"
+            "  label TEXT, PRIMARY KEY (event_id, horizon))"
+        )
+        con.execute(
+            "CREATE INDEX IF NOT EXISTS idx_event_outcomes_horizon"
+            " ON event_outcomes(horizon, usable_for_statistics)"
+        )
+        # Prospective research buckets (compact; retention-bounded).
+        con.execute(
+            "CREATE TABLE IF NOT EXISTS research_flow_10s"
+            " (symbol TEXT NOT NULL, bucket_start INTEGER NOT NULL,"
+            "  bucket_end INTEGER NOT NULL, bucket_size_s INTEGER NOT NULL,"
+            "  buy_notional REAL NOT NULL, sell_notional REAL NOT NULL,"
+            "  delta REAL NOT NULL, delta_ratio REAL,"
+            "  buy_base REAL NOT NULL, sell_base REAL NOT NULL,"
+            "  base_volume REAL NOT NULL, notional_volume REAL NOT NULL,"
+            "  trade_count INTEGER NOT NULL, buy_trades INTEGER NOT NULL,"
+            "  sell_trades INTEGER NOT NULL, price_open REAL, price_high REAL,"
+            "  price_low REAL, price_close REAL, first_event_ms INTEGER,"
+            "  last_event_ms INTEGER, data_quality TEXT,"
+            "  PRIMARY KEY (symbol, bucket_start))"
+        )
+        con.execute(
+            "CREATE TABLE IF NOT EXISTS research_flow_1m"
+            " (symbol TEXT NOT NULL, bucket_start INTEGER NOT NULL,"
+            "  bucket_end INTEGER NOT NULL, bucket_size_s INTEGER NOT NULL,"
+            "  buy_notional REAL NOT NULL, sell_notional REAL NOT NULL,"
+            "  delta REAL NOT NULL, delta_ratio REAL,"
+            "  buy_base REAL NOT NULL, sell_base REAL NOT NULL,"
+            "  base_volume REAL NOT NULL, notional_volume REAL NOT NULL,"
+            "  trade_count INTEGER NOT NULL, buy_trades INTEGER NOT NULL,"
+            "  sell_trades INTEGER NOT NULL, price_open REAL, price_high REAL,"
+            "  price_low REAL, price_close REAL, first_event_ms INTEGER,"
+            "  last_event_ms INTEGER, data_quality TEXT,"
+            "  PRIMARY KEY (symbol, bucket_start))"
+        )
+        con.execute(
+            "CREATE TABLE IF NOT EXISTS research_book_1m"
+            " (symbol TEXT NOT NULL, bucket_start INTEGER NOT NULL,"
+            "  bucket_end INTEGER NOT NULL, sample_count INTEGER NOT NULL,"
+            "  spread_min REAL, spread_mean REAL, spread_max REAL,"
+            "  imb_min REAL, imb_mean REAL, imb_max REAL,"
+            "  micro_min REAL, micro_mean REAL, micro_max REAL,"
+            "  bid5_mean REAL, ask5_mean REAL, bid20_mean REAL, ask20_mean REAL,"
+            "  depth_gaps INTEGER DEFAULT 0, degraded INTEGER DEFAULT 0,"
+            "  crossed INTEGER DEFAULT 0, first_event_ms INTEGER,"
+            "  last_event_ms INTEGER,"
+            "  PRIMARY KEY (symbol, bucket_start))"
+        )
 
     def _ensure(self) -> None:
         if not self._initialized:
@@ -365,3 +470,267 @@ class HistoryStore:
 
     def close(self) -> None:
         self._initialized = True
+
+    # ---------------- P1-11C event studies ----------------
+
+    def upsert_event_definition(self, definition: Dict[str, Any]) -> None:
+        self._ensure()
+        con = _connect(self.db_path)
+        try:
+            self._ensure_v2(con)
+            con.execute(
+                "INSERT OR REPLACE INTO event_definitions"
+                " (definition_name, definition_version, parameters_json,"
+                "  required_features_json, source_requirements_json,"
+                "  research_status, created_at) VALUES (?,?,?,?,?,?,?)",
+                (str(definition["definition_name"]),
+                 int(definition.get("definition_version", 1)),
+                 json.dumps(definition.get("parameters", {})),
+                 json.dumps(definition.get("required_features", [])),
+                 json.dumps(definition.get("source_requirements", {})),
+                 str(definition.get("research_status",
+                                    "DESCRIPTIVE_RESEARCH_ONLY_HYPOTHESIS")),
+                 int(definition.get("created_at", int(time.time() * 1000)))))
+            con.commit()
+        finally:
+            con.close()
+
+    def start_event_run(self, params: Dict[str, Any]) -> int:
+        self._ensure()
+        con = _connect(self.db_path)
+        try:
+            self._ensure_v2(con)
+            cur = con.execute(
+                "INSERT INTO event_study_runs (started_at, definition_name,"
+                " definition_version, params_json, symbols_json,"
+                " requested_start, requested_end, input_source_versions_json,"
+                " code_version, status) VALUES (?,?,?,?,?,?,?,?,?,?)",
+                (int(time.time() * 1000),
+                 str(params.get("definition", params.get("definition_name", "?"))),
+                 int(params.get("version", params.get("definition_version", 1))),
+                 json.dumps(params),
+                 json.dumps(params.get("symbols",
+                                       [params.get("symbol")] if params.get("symbol") else [])),
+                 params.get("start"), params.get("end"),
+                 json.dumps({"history_schema": 2}),
+                 params.get("code_version", "p1-11c"),
+                 "running"))
+            run_id = int(cur.lastrowid)
+            con.commit()
+        finally:
+            con.close()
+        return run_id
+
+    def store_event_instances(self, run_id: int, definition: Dict[str, Any],
+                              events: List[Dict[str, Any]]) -> int:
+        self._ensure()
+        if not events:
+            return 0
+        con = _connect(self.db_path)
+        try:
+            self._ensure_v2(con)
+            payload = []
+            for e in events:
+                feat = e.get("features", {})
+                payload.append((
+                    str(e["event_id"]), int(run_id),
+                    str(e.get("definition_name")), int(e.get("definition_version", 1)),
+                    str(e.get("symbol")).upper(), int(e.get("event_time")),
+                    str(e.get("direction", "")), str(e.get("context", "")),
+                    str(e.get("source_interval", "")),
+                    float(e["reference_price"]) if e.get("reference_price") is not None else None,
+                    str(e.get("reference_source", "")),
+                    int(e.get("reference_timestamp")) if e.get("reference_timestamp") is not None else None,
+                    json.dumps(feat),
+                    json.dumps(feat.get("btc_context", {})),
+                    int(e.get("formation_window_start")) if e.get("formation_window_start") is not None else None,
+                    int(e.get("formation_window_end")) if e.get("formation_window_end") is not None else None,
+                    "FORMATION_GAP" if e.get("formation_gap") else "OK",
+                    json.dumps(e.get("provenance", {})),
+                ))
+            con.executemany(
+                "INSERT OR REPLACE INTO event_instances (event_id, run_id,"
+                " definition_name, definition_version, symbol, event_time,"
+                " direction, context, source_interval, reference_price,"
+                " reference_source, reference_timestamp, features_json,"
+                " btc_context_json, formation_start, formation_end,"
+                " data_quality, provenance_json)"
+                " VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)", payload)
+            con.executemany(
+                "INSERT OR REPLACE INTO event_feature_snapshots"
+                " (event_id, snapshot_json) VALUES (?,?)",
+                [(str(e["event_id"]), json.dumps(e.get("features", {}))) for e in events])
+            con.commit()
+        finally:
+            con.close()
+        return len(payload)
+
+    def store_event_outcomes(self, run_id: int, outcomes: List[Dict[str, Any]],
+                             horizon: str) -> int:
+        del run_id
+        self._ensure()
+        if not outcomes:
+            return 0
+        con = _connect(self.db_path)
+        try:
+            self._ensure_v2(con)
+            con.executemany(
+                "INSERT OR REPLACE INTO event_outcomes (event_id, horizon,"
+                " forward_return, mfe, mae, time_to_mfe_ms, time_to_mae_ms,"
+                " invalidation_time, path, path_complete, gap_crossed,"
+                " usable_for_statistics, label) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)",
+                [(str(o.get("event_id")), str(horizon),
+                  o.get("forward_return"), o.get("mfe"), o.get("mae"),
+                  o.get("time_to_mfe_ms"), o.get("time_to_mae_ms"),
+                  o.get("invalidation_time"), str(o.get("path", "UNKNOWN")),
+                  1 if o.get("path_complete") else 0,
+                  1 if o.get("gap_crossed") else 0,
+                  1 if o.get("usable_for_statistics") else 0,
+                  o.get("label"))
+                 for o in outcomes])
+            con.commit()
+        finally:
+            con.close()
+        return len(outcomes)
+
+    def finish_event_run(self, run_id: int, event_count: int,
+                         usable_count: int) -> None:
+        self._ensure()
+        con = _connect(self.db_path)
+        try:
+            self._ensure_v2(con)
+            con.execute(
+                "UPDATE event_study_runs SET event_count=?, usable_count=?,"
+                " excluded_count=?, status='done' WHERE run_id=?",
+                (int(event_count), int(usable_count),
+                 max(int(event_count) - int(usable_count), 0), int(run_id)))
+            con.commit()
+        finally:
+            con.close()
+
+    def event_summary(self, definition: str,
+                      version: int = 1) -> List[Dict[str, Any]]:
+        self._ensure()
+        con = sqlite3.connect(str(self.db_path))
+        try:
+            try:
+                rows = con.execute(
+                    "SELECT o.horizon, COUNT(*) n_total,"
+                    " SUM(o.usable_for_statistics) n_usable,"
+                    " AVG(o.forward_return) mean_fwd"
+                    " FROM event_outcomes o JOIN event_instances e"
+                    " ON o.event_id=e.event_id"
+                    " WHERE e.definition_name=? AND e.definition_version=?"
+                    " GROUP BY o.horizon",
+                    (str(definition), int(version))).fetchall()
+            except sqlite3.OperationalError:
+                return []
+        finally:
+            con.close()
+        return [{"horizon": r[0], "n_total": r[1], "n_usable": r[2],
+                 "mean_forward_return": r[3]} for r in rows]
+
+    # ---------------- P1-11C prospective research buckets ----------------
+
+    def store_research_flow(self, table: str,
+                            rows: List[Dict[str, Any]]) -> int:
+        if table not in ("research_flow_10s", "research_flow_1m"):
+            raise ValueError(f"bad research table {table}")
+        self._ensure()
+        if not rows:
+            return 0
+        con = _connect(self.db_path)
+        try:
+            self._ensure_v2(con)
+            con.executemany(
+                f"INSERT OR REPLACE INTO {table} (symbol, bucket_start,"
+                " bucket_end, bucket_size_s, buy_notional, sell_notional, delta,"
+                " delta_ratio, buy_base, sell_base, base_volume, notional_volume,"
+                " trade_count, buy_trades, sell_trades, price_open, price_high,"
+                " price_low, price_close, first_event_ms, last_event_ms,"
+                " data_quality) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
+                [(str(r["symbol"]).upper(), int(r["bucket_start"]),
+                  int(r["bucket_end"]), int(r.get("bucket_size_s", 10)),
+                  float(r.get("buy_notional", 0.0)), float(r.get("sell_notional", 0.0)),
+                  float(r.get("delta", 0.0)), r.get("delta_ratio"),
+                  float(r.get("buy_base", 0.0)), float(r.get("sell_base", 0.0)),
+                  float(r.get("base_volume", 0.0)), float(r.get("notional_volume", 0.0)),
+                  int(r.get("trade_count", 0)), int(r.get("buy_trades", 0)),
+                  int(r.get("sell_trades", 0)), r.get("price_open"),
+                  r.get("price_high"), r.get("price_low"), r.get("price_close"),
+                  r.get("first_event_ms"), r.get("last_event_ms"),
+                  str(r.get("data_quality", "OK")))
+                 for r in rows])
+            con.commit()
+        finally:
+            con.close()
+        return len(rows)
+
+    def store_research_book(self, rows: List[Dict[str, Any]]) -> int:
+        self._ensure()
+        if not rows:
+            return 0
+        con = _connect(self.db_path)
+        try:
+            self._ensure_v2(con)
+            con.executemany(
+                "INSERT OR REPLACE INTO research_book_1m (symbol, bucket_start,"
+                " bucket_end, sample_count, spread_min, spread_mean, spread_max,"
+                " imb_min, imb_mean, imb_max, micro_min, micro_mean, micro_max,"
+                " bid5_mean, ask5_mean, bid20_mean, ask20_mean, depth_gaps,"
+                " degraded, crossed, first_event_ms, last_event_ms)"
+                " VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
+                [(str(r["symbol"]).upper(), int(r["bucket_start"]),
+                  int(r["bucket_end"]), int(r.get("sample_count", 0)),
+                  r.get("spread_min"), r.get("spread_mean"), r.get("spread_max"),
+                  r.get("imb_min"), r.get("imb_mean"), r.get("imb_max"),
+                  r.get("micro_min"), r.get("micro_mean"), r.get("micro_max"),
+                  r.get("bid5_mean"), r.get("ask5_mean"),
+                  r.get("bid20_mean"), r.get("ask20_mean"),
+                  int(r.get("depth_gaps", 0)), int(r.get("degraded", 0)),
+                  int(r.get("crossed", 0)), r.get("first_event_ms"),
+                  r.get("last_event_ms")) for r in rows])
+            con.commit()
+        finally:
+            con.close()
+        return len(rows)
+
+    def research_counts(self) -> Dict[str, int]:
+        self._ensure()
+        con = sqlite3.connect(str(self.db_path))
+        try:
+            out = {}
+            for t in ("research_flow_10s", "research_flow_1m", "research_book_1m"):
+                try:
+                    out[t] = con.execute(f"SELECT COUNT(*) FROM {t}").fetchone()[0]
+                except sqlite3.OperationalError:
+                    out[t] = 0
+        finally:
+            con.close()
+        return out
+
+    def research_retention_cleanup(self,
+                                   retention_days: Optional[Dict[str, int]] = None,
+                                   now_ms: Optional[int] = None) -> Dict[str, int]:
+        from .history_store import RESEARCH_RETENTION_DAYS as _DEF
+        ret = retention_days or dict(_DEF)
+        now = int(now_ms) if now_ms is not None else int(time.time() * 1000)
+        self._ensure()
+        con = _connect(self.db_path)
+        out: Dict[str, int] = {}
+        try:
+            self._ensure_v2(con)
+            for table, key in (("research_flow_10s", "flow_10s"),
+                               ("research_flow_1m", "flow_1m"),
+                               ("research_book_1m", "book_1m")):
+                cutoff = now - int(ret.get(key, 90)) * 86_400_000
+                try:
+                    cur = con.execute(f"DELETE FROM {table} WHERE bucket_start < ?",
+                                      (cutoff,))
+                    out[table] = cur.rowcount or 0
+                except sqlite3.OperationalError:
+                    out[table] = 0
+            con.commit()
+        finally:
+            con.close()
+        return out

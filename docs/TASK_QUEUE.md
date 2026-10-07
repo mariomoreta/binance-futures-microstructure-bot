@@ -32,22 +32,21 @@ the dashboard exists. No classifier before raw-feature dashboard validation.
 
 ## ACTIVE_TASK
 
-- `P1-11C` HISTORICAL EVENT STUDIES — definitions + outcomes/MFE/MAE with
-  no lookahead, per `docs/HISTORICAL_RESEARCH_PLAN.md` (P1-11B foundation
-  DONE: separate DB, 13 pilot series ratio 1.0, CLI + APIs live).
-  Status: NOT STARTED. (Queued only — do not begin without a new
-  instruction.)
+- `P1-10R` FORMAL ≥6H SOAK RE-RUN — next task (starts only on explicit
+  instruction; never automatically). `P1-11C` is PASS (see COMPLETED).
+  The 6H-Validation preset runs MarketProbe WITH the prospective recorder
+  enabled (same process/registry/evidence logging). Do NOT start yet.
 
 ## NEXT_TASKS (ordered, all Phase 1)
-- `P1-11B` HISTORICAL DATA FOUNDATION — as above.
-- `P1-11C` HISTORICAL EVENT STUDIES — outcomes + MFE/MAE, no lookahead.
 - `P1-10R` PROLONGED ≥6H SOAK RE-RUN — P1-10 FAIL stays FAIL (truncated at
   4.91h); re-run with dashboard live, blocking survivable launch, merged
   stdout+stderr as UTF-8 (see `docs/DECISIONS.md` launch rule).
-- Intended full sequence (binding order, nothing beyond P1-11A executed):
+- Intended full sequence (binding order):
   P1-11A Raw Feature + Movers Integrity (DONE) → P1-11B Historical Data
-  Foundation → P1-11C Historical Event Studies → P1-10R Formal ≥6h soak
-  re-run → P1-12 Market State Classifier → P1-12B Dynamic Live Universe →
+  Foundation (DONE) → P1-11B.1 Probe Lifecycle + Run Control (DONE) →
+  P1-11C Historical Event Studies (DONE) → P1-10R Formal ≥6h soak
+  re-run (NEXT, needs instruction) → P1-12 Market State Classifier
+  (BLOCKED until P1-11C + P1-10R PASS) → P1-12B Dynamic Live Universe →
   P1-13A Opportunity / Setup Engine → P1-13B Professional Opportunities UX
   → P1-14 Historical Backtester → P1-15 Forward Paper Trading → P1-16 Paper
   Portfolio / Dynamic Exit.
@@ -199,14 +198,30 @@ strategies (P3), paper engine/positions (P4), execution (P5).
   Live roundtrip proven (dashboard start→RUNNING→STALE→ok→stop; external
   start auto-discovered; 90s run COMPLETED; dashboard survived).
   376/376 tests (23 new).
+- `P1-11C` (2026-10-07) HISTORICAL EVENT STUDIES + PROSPECTIVE CAPTURE:
+  **PASS**. No-lookahead engine (`events.py`, 6 versioned HYPOTHESIS
+  families) + schema-v2 event tables in the historical DB + probe-owned
+  async flow-10s/1m + book-1m recorder (starts/drains with MarketProbe;
+  drops-with-telemetry; failure-isolated; idempotent; bounded retention).
+  Pilot 38 runs (6 families × pilot symbols on stored 1h/15m bars; NMR
+  added via 2-request bounded extension, 719 bars ratio 1.0). Short live
+  verification 153s COMPLETED via the canonical control plane (writes 60,
+  drops 0, errors 0). Dashboard `/api/research/status` + `/api/events/*`
+  + token research card live. 408/408 tests (32 new).
 
 ## LAST_VERIFICATION
 
+- 2026-10-07 (P1-11C): `python run_tests.py` → 408/408 OK (376 + 32 new
+  event/recorder tests). Pilot 38 bounded runs stored (NMR extension:
+  2 requests, 719 bars, ratio 1.0). Short live verification 150s →
+  COMPLETED naturally (research writes 60, drops 0, errors 0). New
+  research/event APIs live-verified (200). Next: P1-10R (queued — needs
+  explicit instruction; 6H-Validation preset carries the recorder).
 - 2026-10-07 (P1-11B.1): `python run_tests.py` → 376/376 OK (353 + 23 new
   lifecycle/API tests). Live roundtrip verified (dashboard + external
-  starts, feed transitions honest, dashboard survived all stops). Next:
-  P1-11C (queued). P1-10R still pending (6H-Validation preset mechanics
-  ready; audit decides PASS).
+  starts, feed transitions honest, dashboard survived all stops). P1-11C
+  DONE. P1-10R still pending (6H-Validation preset mechanics ready;
+  audit decides PASS).
 - 2026-10-07 (P1-11B): `python run_tests.py` → 353/353 OK (322 + 31 new
   mocked-HTTP history tests). Pilot 13 series ratio 1.0 in
   `data/historical/historical.db`; CLI + history APIs live-verified.

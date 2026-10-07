@@ -313,6 +313,75 @@ class DashboardState:
         sym = str(symbol).upper()
         return [r for r in rows if r.get("symbol") == sym]
 
+    def research_status(self) -> Dict[str, Any]:
+        """Prospective recorder health (P1-11C, read-only, failure-isolated)."""
+        try:
+            from .history_store import HistoryStore
+            counts = HistoryStore().research_counts()
+        except Exception:
+            counts = {"research_flow_10s": 0, "research_flow_1m": 0,
+                      "research_book_1m": 0}
+        # Live recorder state lives in the probe process; the dashboard
+        # surfaces persisted capture depth + latest snapshot research block.
+        live: Dict[str, Any] = {}
+        try:
+            snap = self.snapshot()
+            if isinstance(snap, dict) and isinstance(snap.get("research"), dict):
+                live = dict(snap["research"])
+        except Exception:
+            live = {}
+        out = {"enabled": True,
+               "state": str(live.get("state", "UNKNOWN")),
+               "writes": live.get("writes", 0),
+               "drops": live.get("drops", 0),
+               "errors": live.get("errors", 0),
+               "inflight": live.get("inflight", 0),
+               "high_water": live.get("high_water", 0),
+               "flow_10s_rows": counts.get("research_flow_10s", 0),
+               "flow_1m_rows": counts.get("research_flow_1m", 0),
+               "book_1m_rows": counts.get("research_book_1m", 0),
+               "last_write_at": live.get("last_write_at")}
+        return out
+
+    def event_studies(self) -> List[Dict[str, Any]]:
+        """Stored event-study summaries per definition (P1-11C, read-only)."""
+        try:
+            from .events import EVENT_FAMILIES
+            from .history_store import HistoryStore
+            store = HistoryStore()
+            out = []
+            for fam in EVENT_FAMILIES:
+                rows = store.event_summary(fam, 1)
+                out.append({"definition": fam, "version": 1,
+                            "horizons": rows})
+            return out
+        except Exception:
+            return []
+
+    def event_symbol(self, symbol: str, limit: int = 50) -> List[Dict[str, Any]]:
+        """Recent event instances for one symbol (bounded, read-only)."""
+        try:
+            from .history_store import HistoryStore
+            import sqlite3 as _sq
+            store = HistoryStore()
+            store._ensure()
+            con = _sq.connect(str(store.db_path))
+            try:
+                rows = con.execute(
+                    "SELECT event_id, definition_name, definition_version,"
+                    " event_time, direction, context, reference_price,"
+                    " reference_source FROM event_instances"
+                    " WHERE symbol=? ORDER BY event_time DESC LIMIT ?",
+                    (str(symbol).upper(), max(int(limit), 1))).fetchall()
+            finally:
+                con.close()
+            return [{"event_id": r[0], "definition": r[1], "version": r[2],
+                     "event_time": r[3], "direction": r[4], "context": r[5],
+                     "reference_price": r[6], "reference_source": r[7]}
+                    for r in rows]
+        except Exception:
+            return []
+
     def probe_status(self) -> Dict[str, Any]:
         """Live probe process status + feed health (P1-11B.1, read-only).
 
@@ -340,6 +409,9 @@ class DashboardState:
             out = control.status()
             out.update(feed)
             return out
+        # NOTE: P1-11C research health is exposed via /api/research/status
+        # (persisted capture depth + latest snapshot block), never merged
+        # into process/feed state: ENGINE vs FEED vs RESEARCH stay distinct.
 
     def price_points(self, symbol: str, range_name: str):
         """Bounded mark-price chart points (P1-09, persisted price_samples)."""
@@ -1666,6 +1738,41 @@ class DashboardHandler(BaseHTTPRequestHandler):
                          "structure": f.get("structure")}
                         for f in features if isinstance(f, dict)],
                 })
+        elif path == "/api/research/status":
+            self._send_json(200, {
+                "generated_at": time.strftime(
+                    "%Y-%m-%dT%H:%M:%SZ", time.gmtime(time.time())),
+                "source": "prospective research store (same-process capture)",
+                "note": "ENGINE vs FEED vs RESEARCH CAPTURE stay distinct",
+                "research": self.state.research_status(),
+            })
+        elif path == "/api/events/studies":
+            self._send_json(200, {
+                "generated_at": time.strftime(
+                    "%Y-%m-%dT%H:%M:%SZ", time.gmtime(time.time())),
+                "note": "RESEARCH ONLY — NOT A SIGNAL",
+                "studies": self.state.event_studies(),
+            })
+        elif path.startswith("/api/events/studies/"):
+            raw = urllib.parse.unquote(
+                path[len("/api/events/studies/"):]).split("/")[0].upper()
+            try:
+                from .history_store import HistoryStore
+                rows = HistoryStore().event_summary(raw, 1)
+            except Exception:
+                rows = []
+            self._send_json(200, {"definition": raw, "version": 1,
+                                  "horizons": rows,
+                                  "note": "RESEARCH ONLY — NOT A SIGNAL"})
+        elif path.startswith("/api/events/symbol/"):
+            raw = urllib.parse.unquote(
+                path[len("/api/events/symbol/"):]).split("/")[0]
+            if normalize_symbol(raw) is None:
+                self._send_json(400, {"error": "invalid symbol"})
+                return
+            self._send_json(200, {"symbol": raw.upper(),
+                                  "events": self.state.event_symbol(raw),
+                                  "note": "RESEARCH ONLY — NOT A SIGNAL"})
         else:
             self._send_json(404, {"error": f"unknown route {path}"})
 

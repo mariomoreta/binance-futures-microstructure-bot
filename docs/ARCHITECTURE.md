@@ -90,3 +90,11 @@ dynamic exit. No real orders at any stage without explicit human
 authorization. Detail: `docs/SIGNAL_RESEARCH_PLAN.md` (setups, BTC
 context, exhaustion/absorption) and `docs/HISTORICAL_RESEARCH_PLAN.md`
 (resolutions, event studies).
+
+## P1-11C prospective path (2026-10-07)
+
+`	ext
+MarketProbe -> validated engine state -> ResearchRecorder (bounded queue, worker thread) -> data/historical/historical.db (research_flow_10s/1m, research_book_1m)
+`
+
+Single process, single registry (logs/probe_runtime.json), single launcher family. Dashboard reads research depth via /api/research/status and studies via /api/events/*; ENGINE/FEED/RESEARCH states are reported separately and never conflated.

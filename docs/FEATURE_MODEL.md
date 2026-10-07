@@ -229,3 +229,9 @@ illustrative, not statistical).
 - BTC-context / exhaustion / absorption / historical designs live in
   `docs/SIGNAL_RESEARCH_PLAN.md` and `docs/HISTORICAL_RESEARCH_PLAN.md`
   (design only — nothing implemented in P1-11A beyond the Movers fix).
+
+## P1-11C research features (2026-10-07)
+
+- Event formation features (T-known only): prior 1h/4h/24h log returns, trailing-96 range position + high/low distances, as-of 30d high/low, volume percentile, realized |return| vol + percentile, HISTORICAL_TAKER_BUY_PROXY (+ implied sell share), HISTORICAL_MOMENTUM_PROXY accel, BTC 5m/15m/1h sync + 1h relative return.
+- Outcome features per horizon: forward return, direction-oriented MFE/MAE, time-to-MFE/MAE, predeclared invalidation time, path state + gap flags + usability, continuation/reversal label (CONTINUED_UP/REVERSED_DOWN/CONTINUED_DOWN/REVERSED_UP/MIXED/INSUFFICIENT_DATA).
+- Prospective capture schemas: flow buckets (buy/sell notional+base, delta/ratio, OHLC, trade counts, quality) and book 1m summaries (spread/imbalance/microprice min-mean-max, top5/20 notionals, gap/degraded/crossed counts).

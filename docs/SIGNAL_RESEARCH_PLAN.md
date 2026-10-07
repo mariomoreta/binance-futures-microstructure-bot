@@ -83,3 +83,8 @@ entry list.
 - Both must eventually account for spread, fees, slippage, latency,
   funding where relevant, entry price, stop, target, and dynamic exit.
   No real orders at any stage without explicit human authorization.
+
+## P1-11C readiness (2026-10-07, no classifier/signals)
+
+- Event/outcome tables persist everything the future P1-12+ needs for expected-horizon work (time_to_MFE percentiles, time-to-invalidation), dynamic-exit research (MFE-before-reversal, MAE-before-recovery), and stop/target research (MAE/MFE percentile context). No live recommendations are generated.
+- Exhaustion/absorption questions are now answerable historically (proxy-labeled) and will become answerable with true microstructure once the prospective recorder accumulates flow/book history (starts with every MarketProbe run, incl. the coming P1-10R 6h window).

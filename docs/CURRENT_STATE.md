@@ -681,6 +681,58 @@ start (--duration 90/75) auto-discovered as RUNNING/launcher=agent in UI;
 Tests after: 376/376 (353 + 23 new mocked lifecycle/API tests).
 `docs/PHASE_1_REPORT.md` untouched.
 
+## P1-11C historical event studies + prospective capture — RESULT: PASS (2026-10-07)
+
+- Engine (`events.py`, NEW, research-only, no signals): formation uses
+  bars with open_time <= T only; outcomes use open_time > T only (proven
+  by no-lookahead tests incl. poisoned-future reruns). Reference price =
+  closed bar close at/preceding T, labeled mark_close vs regular_close
+  (never silently mixed). Fixed horizons 1m/3m/5m/15m/30m/1h; LONG-up
+  MFE/MAE + SHORT-down mirror; time_to_MFE/MAE; predeclared invalidation
+  only; path COMPLETE/PARTIAL/INVALID_GAP/INSUFFICIENT_HISTORY (never
+  filled); formation/outcome gap exclusions; BTC synchronized lookup +
+  relative_return = token − BTC; 30d as-of levels; HISTORICAL_TAKER_BUY_
+  PROXY + ABSORPTION_PROXY labels; sample tiers
+  INSUFFICIENT/EXPLORATORY/PRELIMINARY/LARGER_SAMPLE (quantity only).
+- Definitions: 6 versioned HYPOTHESIS families (EXTENDED_GAINER/LOSER,
+  MOMENTUM_ACCELERATION_UP/DOWN as HISTORICAL_MOMENTUM_PROXY, FAILED_
+  HIGH/LOW_CANDIDATE); changing a threshold creates a new version; runs
+  recorded with params/symbols/ranges/sources (deterministic reruns).
+- Storage: historical DB schema v2 (additive over v1): event_definitions,
+  event_study_runs, event_instances, event_feature_snapshots,
+  event_outcomes + research_flow_10s/1m + research_book_1m (idempotent
+  keys; retention cleanup batched/hourly, never per-tick).
+- Recorder (`research_recorder.py`, NEW, probe-owned): starts with
+  MarketProbe, drains (partials marked) on exit; same process/registry/
+  launcher — no second manager. Bounded queue (drops counted, engine
+  never stalls); DB failures degrade the recorder only (probe survives,
+  tested). Flow semantics reuse validated P1-06 m-mapping read-only.
+  Retention 7d/90d/90d configurable; measured estimate ~200B/row →
+  ~66KB/day/symbol flow-10s + ~288KB/day/symbol each 1m table (~35MB for
+  15 symbols at full retention).
+- Live verification (canonical control plane, 150s → COMPLETED
+  duration-reached, evidence `logs/probe-runs/probe-20261007T224304Z.log`):
+  runtime 153.15s, flow 1722 events, book 4042 msgs, research writes 60
+  (flow_10s 45 + flow_1m 9 + book_1m 6 rows), drops 0, errors 0,
+  inflight 0, high_water 2, final_summary present. Dashboard restarted
+  (PID 30984): /api/research/status + /api/events/studies +
+  /api/events/studies/:def + /api/events/symbol/:sym all 200; control
+  status/start/stop/external-detection intact; 6H-Validation preset
+  verified compatible (forces 21600s, same registry/evidence path —
+  NOT started).
+- Pilot (bounded, stored bars only): 38 runs — 1h × (BTC/ETH/SOL/MINA/
+  ORCA/NMR) × 6 families + 15m × trio GAINER/LOSER. NMR added by a
+  justified 2-request extension (719 bars, ratio 1.0, ~144KB). Counts:
+  GAINER 168 usable (mean fwd −0.04bps), LOSER 67 (−25.8bps), ACCEL_UP
+  1170/1203 (+8.7bps), ACCEL_DOWN 1147/1184 (+4.4bps), FAILED_HIGH 18/19,
+  FAILED_LOW 8/10. Sub-1h horizons on 1h bars share the next-bar outcome
+  (resolution limitation, documented). No profitability/edge claim; small
+  samples flagged INSUFFICIENT/EXPLORATORY.
+- Tests: 408/408 (376 + 32 new: 18 events incl. no-lookahead/MFE-MAE/
+  gaps/BTC/relativity/as-of/proxy/versioning/idempotency/no-autotune +
+  14 recorder incl. buckets/quality/retention/queue-drops/isolation/
+  lifecycle/no-second-process). `docs/PHASE_1_REPORT.md` untouched.
+
 ## Known gaps (Phase 1 work ahead, in order)
 
 Minimal dashboard: DONE (P1-03 PASS) → terminal DONE (P1-09 PASS,
@@ -699,8 +751,10 @@ range expansion, confirmed pivots, v0.7.0 dashboard + APIs, 372s run).
 Transport re-validation: DONE (P1-01R PASS — 45min healthy window, soak
 gate unblocked).
 Remaining: P1-10R ≥6h soak re-run (P1-10 FAIL was truncated at 4.91h —
-may start on instruction, blocking launch with merged-stream UTF-8 logging),
-then state classifier (P1-12, still blocked on P1-11), signal UI (P1-13),
+may start ONLY on instruction; the 6H-Validation preset carries the
+P1-11C recorder, so the soak will also validate research-capture
+stability), then state classifier (P1-12, BLOCKED until P1-11C PASS +
+P1-10R PASS — P1-11C is now PASS), signal UI (P1-13),
 calibration evidence (P1-14). P1-11 raw-feature validation may use the valid
 4.91h P1-10 evidence; the Movers shared-`_v` category-value anomaly is a
 recorded P1-11A audit item (not fixed).

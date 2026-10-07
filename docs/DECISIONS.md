@@ -410,3 +410,11 @@ velocities are negative).
 5. UI uses `<input type=submit>`, never `<button` (repo no-controls tests),
    and carries no signal/trading words; process state and feed health are
    rendered side by side, never conflated.
+
+## 2026-10-07 — P1-11C event studies + prospective recorder decisions
+
+1. Historical DB schema v2 (additive): event_definitions / event_study_runs / event_instances / event_feature_snapshots / event_outcomes + research_flow_10s / research_flow_1m / research_book_1m. Research tables live with history (never microprobe.db); retention cleanup runs at most hourly, never per-tick (executor-starvation lesson).
+2. The recorder is probe-owned (MarketProbe._research): starts on run() entry, drains (partials marked PARTIAL, book partials discarded) before final_summary. No second process/registry/launcher by construction (tested by source-absence + lifecycle tests).
+3. Bounded-queue drops with telemetry (writes/drops/errors/inflight/high_water) instead of backpressure into the WS loop; any DB exception degrades the recorder only (probe never crashes — tested with an impossible path).
+4. Sub-1h outcome horizons evaluated on 1h bars honestly share the next-bar outcome (resolution limit, not interpolated precision); 15m pilots added for the trio where stored. No threshold auto-tuning exists anywhere (tested by surface-absence).
+5. NMR added by a justified 2-request bounded extension (719 1h bars, ratio 1.0); no bulk fetch. Dashboard research surface is read-only (/api/research/status, /api/events/*, token HISTORICAL RESEARCH card labeled RESEARCH ONLY — NOT A SIGNAL); ENGINE/FEED/RESEARCH states stay distinct; DASHBOARD_VERSION stays 0.8.0 (no IA redesign).

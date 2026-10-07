@@ -792,6 +792,28 @@ def render_symbol(state, symbol: str, range_name: str = "1h") -> Optional[str]:
     else:
         body += ("<h2>Historical coverage</h2>"
                  "<p class='note'>No historical research coverage yet.</p>")
+    try:
+        studies_fn = getattr(state, "event_studies", None)
+        studies = studies_fn() if callable(studies_fn) else []
+    except Exception:
+        studies = []
+    if studies:
+        srows = []
+        for s in studies[:6]:
+            hs = s.get("horizons") or []
+            tot = sum(int(h.get("n_total", 0) or 0) for h in hs)
+            srows.append(
+                f"<tr><th>{html.escape(str(s.get('definition')))}</th>"
+                f"<td>events {tot} · sample/n displayed per horizon "
+                f"in /api/events/studies/{html.escape(str(s.get('definition')))}</td></tr>")
+        body += ("<h2>Historical research</h2>"
+                 "<p class='note'>RESEARCH ONLY — NOT A SIGNAL. "
+                 "Descriptive event outcomes; no confidence badge.</p>"
+                 "<table class='kv'>" + "".join(srows) + "</table>")
+    else:
+        body += ("<h2>Historical research</h2>"
+                 "<p class='note'>RESEARCH ONLY — NOT A SIGNAL. "
+                 "No event studies stored yet.</p>")
     return C.page(f"{sym} — token intelligence", "MOVERS", _banner(state), body,
                   engine_html=C.engine_control_html(state))
 

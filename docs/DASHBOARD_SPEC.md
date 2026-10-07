@@ -222,3 +222,9 @@ Every money-like number before Phase 4 is labeled hypothetical/simulated.
   dashboard output.
 - Stack/tech choice is a P1-03 task decision (record in `docs/DECISIONS.md`);
   no framework pre-committed here.
+
+## P1-11C research surface (additive, no redesign)
+
+- /api/research/status: recorder health + persisted capture depth (ENGINE vs FEED vs RESEARCH stay distinct).
+- /api/events/studies, /api/events/studies/:definition, /api/events/symbol/:symbol: machine-readable study summaries (RESEARCH ONLY — NOT A SIGNAL).
+- Token page: small HISTORICAL RESEARCH card (family sample sizes, no confidence badge, no trading language). No <button> elements added; version stays 0.8.0.

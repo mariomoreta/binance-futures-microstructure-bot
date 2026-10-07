@@ -46,3 +46,9 @@ evaluate gate â†’ continue only if safe and still within the approved phase.
 STOP on: authorization needed, account/trade mutation, methodology change,
 contradictory evidence, unresolved test failure, blocked dependency,
 destructive migration, secrets needed, gate reached.
+
+## P1-11C event-study CLI
+
+- python -m microstructure_probe.events definitions — list the 6 versioned research families (read-only).
+- python -m microstructure_probe.events run --definition EXTENDED_GAINER --symbol MINAUSDT --interval 1h [--mark] [--start MS] [--end MS] — bounded deterministic study (writes research tables only; never trades).
+- python -m microstructure_probe.events summary --definition EXTENDED_GAINER — per-horizon N/usable/mean (machine-readable).
