@@ -57,14 +57,28 @@ Thresholds are HYPOTHESIS until Phase 2–3 statistics exist.
 - Rank acceleration: Δ rank velocity.
 - Requires universe expansion beyond 3 symbols; rank is meaningless on n=3.
 
-## Volume / flow
+## Volume / flow — IMPLEMENTED P1-06 (detector thresholds still HYPOTHESIS)
 
-- Volume acceleration, volume z-score (10s-bucket detector exists; extend to
-  multiple bucket sizes).
-- Aggressive buy/sell imbalance, trade delta (taker-side proxy from aggTrade;
-  document approximation limits).
+- Engine: `src/microstructure_probe/flow.py` (`FlowEngine`, per-symbol
+  `SymbolFlowSeries`), fed by every VALID aggTrade pre-sampling (post-skew
+  guard only). Aggressor from `m` (true→SELL, false→BUY); per-trade base +
+  notional split; RPI transparency via `nq`.
+- Horizons (trailing event-time windows): 10s/30s/1m/3m/5m/15m, each with
+  trades, base/notional totals, buy/sell base+notional, signed delta,
+  delta_ratio ([−1,+1], null on zero), buy/sell %, trade/notional rate,
+  freshness, warmup. No lookahead (completed-buckets-only baselines;
+  strictly-older drops, same-E accepted in arrival order).
+- Volume baselines 10s/30s/1m/5m on completed-bucket notionals: current,
+  mean, std, z, sample count, warmup; skipped buckets counted, never
+  fabricated; insufficient history or zero variance → UNKNOWN (null).
+- Acceleration (canonical 1m, timestamp-aware): notional/trade/delta rate
+  changes vs last completed bucket; null until one bucket closes.
+- Live scope: subscribed symbols only (BTC/ETH/SOLUSDT today); HOT and
+  discovery symbols show REST 24h metrics labeled DISCOVERY ONLY.
+- Pre-existing 10s volume-spike detector (`detectors.py`) unchanged; its
+  z-threshold stays HYPOTHESIS until P1-11/P1-14.
 - Liquidations: individual + window notionals exist; add cascade rate,
-  long-vs-short liquidation imbalance.
+  long-vs-short liquidation imbalance (still pending).
 
 ## Book
 

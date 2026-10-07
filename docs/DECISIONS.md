@@ -148,3 +148,38 @@ Ranks per metric descending with (value, symbol) tie-breaks; change/velocity/
 acceleration need 2/2/3 evaluations. Live ranks cover subscribed symbols;
 broad movers come from 24h REST stats labeled discovery-only — no fake live
 features for unsubscribed symbols, no signals anywhere.
+
+## 2026-10-07 — P1-06 aggressive trade-flow architecture
+
+Aggressor semantics (official USD-M docs + live payload verified, recorded
+in `docs/MARKET_DATA.md`): `m=true` → aggressive SELL, `m=false` →
+aggressive BUY; `q` totals (RPI-inclusive), `nq` tracked for transparency;
+bucketing/ordering on `E`. Signed delta = buy − sell notional;
+delta_ratio = delta/(buy+sell) in [−1,+1], null on zero denominator —
+raw feature, never a signal.
+Critical path: VALID raw aggTrade → in-memory incremental `FlowEngine`
+(`src/microstructure_probe/flow.py`: per-symbol trailing windows
+10s/30s/1m/3m/5m with exact per-horizon expiry, volume baselines
+10s/30s/1m/5m on COMPLETED buckets only, 1m-referenced acceleration) →
+compact persistence (schema v4: `flow_features` REPLACE-per-symbol +
+`flow_buckets` bounded history) → dashboard/API. The P1-04 sampling gate
+still throttles raw observation writes only; the engine ingests pre-gate,
+synchronously, with its own latency distribution (no per-trade tasks, no
+queue — queue metrics honestly 0/0).
+Late policy: strictly-older `E` dropped+counted; identical `E` accepted in
+arrival order (one 100ms push holds several distinct aggregates — the first
+live run proved `<=` undercounts ~35% of BTC flow). Baselines: skipped
+buckets counted, never zero-fabricated; z null on insufficient history or
+zero variance (never fake 0). Only subscribed CORE symbols get live flow;
+HOT/discovery rows are labeled DISCOVERY ONLY — NO LIVE FLOW. Existing
+volume-spike detector thresholds stay HYPOTHESIS, untouched.
+
+## 2026-10-07 — P1-06 persistence schema v4 (additive migration)
+
+v3→v4 adds `flow_features` + `flow_buckets` (600-per-(symbol,size)
+retention, INSERT OR REPLACE keys); v1/v2 paths extended to land on v4
+with rows preserved (tested v1→v4, v2→v4, v3→v4). Only CLOSED buckets
+persist/restore, so restarts cannot double-count; live trailing windows
+restart empty by design. Telemetry snapshots intentionally carry no flow
+block (fixed-column subset, as with returns/discovery) — counters live in
+summaries/logs, features in `flow_features`.

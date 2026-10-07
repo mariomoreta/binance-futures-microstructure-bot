@@ -23,6 +23,7 @@ from .discovery import (
     select_hot,
     top_movers,
 )
+from .flow import FlowEngine
 from .metrics import order_book_imbalance, spread_bps
 from .momentum import RANK_METRICS, VELOCITY_HORIZONS, RankTracker
 from .persistence import PersistenceStore, get_persistence_store
@@ -131,6 +132,15 @@ class MarketProbe:
         )
         self._returns = ReturnEngine(symbols=config.symbols)
         self._restore_attempted = False
+        # P1-06: aggressive trade-flow engine. Ingests EVERY valid aggTrade
+        # on the post-skew-guard path (see _handle_message), independent of
+        # the raw-observation sampling gate — sampling never defines flow
+        # accuracy. Only subscribed (allowed) symbols are tracked.
+        self._flow = FlowEngine(
+            symbols=config.symbols,
+            min_baseline_buckets=config.volume.minimum_buckets,
+            latency_max_samples=config.telemetry_max_samples,
+        )
         # P1-05: discovery + momentum/rank state. Core symbols are pinned
         # benchmarks; the HOT set is proposed only (no dynamic WS resubscribe
         # in this task — see docs).
@@ -156,6 +166,7 @@ class MarketProbe:
             self._persistence.configure_sampling(
                 dict(self.config.observation_sample_ms))
             self._restore_return_history()
+            self._restore_flow_history()
         return self._persistence
 
     def set_persistence(self, store: PersistenceStore) -> None:
@@ -167,6 +178,30 @@ class MarketProbe:
     def returns(self) -> ReturnEngine:
         """The mark-price return engine (P1-04)."""
         return self._returns
+
+    @property
+    def flow(self) -> FlowEngine:
+        """The aggressive trade-flow engine (P1-06)."""
+        return self._flow
+
+    def _restore_flow_history(self) -> None:
+        """Best-effort restart continuity: reload completed flow buckets.
+
+        Only CLOSED buckets restore (live trailing windows restart empty by
+        design); bucket primary keys make re-emission idempotent, so a
+        restart can never double-count.
+        """
+        if self._persistence is None:
+            return
+        try:
+            all_rows = []
+            for symbol in self.config.symbols:
+                all_rows.extend(
+                    self._persistence.load_flow_buckets(
+                        symbol=symbol, limit=2400))
+            self._flow.restore_buckets(all_rows)
+        except Exception as exc:
+            LOGGER.warning(json.dumps({"kind": "persistence_error", "error": str(exc)}))
 
     def _restore_return_history(self) -> None:
         """Best-effort restart continuity: reload persisted price buckets."""
@@ -377,6 +412,24 @@ class MarketProbe:
                     price=float(payload["p"]),
                     quantity=float(payload["q"]),
                 )
+                # P1-06 flow engine: EVERY valid aggTrade lands here, BEFORE
+                # and INDEPENDENT of the raw-observation sampling gate below.
+                # This code runs strictly after the skew guard, so rejected
+                # observations can never reach the engine. Missing/non-bool
+                # `m` is counted invalid-side inside the engine and never
+                # guessed; the message still flows to detectors/persistence
+                # untouched. Engine failures must never break that path.
+                try:
+                    self._flow.ingest(
+                        symbol=str(payload["s"]),
+                        event_time_ms=int(payload["E"]),
+                        price=float(payload["p"]),
+                        quantity=float(payload["q"]),
+                        buyer_is_maker=payload.get("m"),
+                        normal_quantity=payload.get("nq"),
+                    )
+                except (KeyError, TypeError, ValueError):
+                    pass
             elif stream == "!forceOrder@arr":
                 order = payload["o"]
                 events = self.detectors.liquidation(
@@ -806,6 +859,11 @@ class MarketProbe:
                 "hot_dynamic": list(self._hot_dynamic),
                 "error": self._discovery_info["error"],
             },
+            # P1-06 additive block: flow engine counters + latency (the
+            # engine consumed every valid aggTrade pre-sampling). Full
+            # per-symbol features persist via store_flow_features for the
+            # dashboard; the summary carries counters only.
+            "flow": self._flow.stats(),
         }
 
     @staticmethod
@@ -840,12 +898,21 @@ class MarketProbe:
         # so the dashboard and restarts observe feature state.
         # P1-05: enrich rows with tier + momentum + ranks (additive only;
         # P1-04 return/anchor keys untouched) and persist rank vectors.
+        # P1-06 (additive): persist compact flow state — latest features per
+        # symbol for the dashboard plus completed buckets for restart
+        # continuity. Raw trades are NEVER persisted per-trade; the engine
+        # already consumed every valid event pre-sampling in _handle_message.
         try:
             self.persistence.store_telemetry_snapshot(summary)
             dirty = self._returns.drain_dirty_buckets()
             if dirty:
                 self.persistence.store_price_samples(dirty)
             as_of_ms = self._wall_clock_ms()
+            flow_buckets = self._flow.drain_completed_buckets()
+            if flow_buckets:
+                self.persistence.store_flow_buckets(flow_buckets)
+            self.persistence.store_flow_features(
+                self._flow.snapshot_all(as_of_ms))
             rows = self._returns.snapshot_all(as_of_ms)
             momentum_rows = []
             for row in rows:

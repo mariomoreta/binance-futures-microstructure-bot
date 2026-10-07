@@ -240,16 +240,52 @@ dashboard-feeding) — see `docs/DECISIONS.md`.
 - `AGENTS.md` + 20 docs under `docs/`. No strategy, engine, or safety code
   touched. `docs/PHASE_1_REPORT.md` preserved as-is.
 
+## P1-06 volume + aggressive trade flow — RESULT: PASS (2026-10-07)
+
+- Semantics verified against CURRENT official USD-M docs + live payloads:
+  same-price/same-side 100ms aggregation (insurance/ADL excluded), `m`
+  (true→aggressive SELL, false→aggressive BUY), `q` RPI-inclusive vs `nq`
+  normal, `E` ordering key, `st: 1` live. Recorded in `docs/MARKET_DATA.md`.
+- Engine (`flow.py`, NEW): every valid aggTrade ingested pre-sampling;
+  trailing windows 10s/30s/1m/3m/5m/15m with exact per-horizon expiry;
+  baselines 10s/30s/1m/5m on completed buckets (skips counted, z null on
+  thin/zero-variance history); 1m-referenced acceleration; same-E accepted
+  in arrival order (first live run proved `<=` undercounts ~35% BTC flow —
+  fixed, re-validated to 4027/4027 accepted, 0 late, 0 invalid).
+- Persistence v4 (additive, tested v1/v2/v3→v4): `flow_features` per symbol
+  + bounded `flow_buckets` (168 rows/run); restarts restore closed buckets
+  only — returns span grew across runs (9340s → 9970s), no double-count.
+- Live windows (blocking, BOT_MODE=observe, exit 0, dashboard live):
+  (a) 363s degraded-transport lesson run (2403 processed, 35% same-E lesson);
+  (b) 363s HEALTHY run — 11/11 streams, 0 reconnects, 0 skew-rejects,
+  clock 5/5: 4027/4027 valid aggTrades into the engine (BTC 2035 / ETH 1317
+  / SOL 675), raw persistence kept 746 aggTrade (3281 sampled away — flow
+  totals provably unaffected), 168/168 buckets persisted, engine latency
+  p50 0.030ms / p95 0.069 / max 0.19, queue 0/0, inflight 6→0, safety 0/0/0.
+  Snapshot BTC 1m: 408 trades, $2.61M notional, 85.9% aggressive buy,
+  delta +$1.88M, ratio +0.72 (raw feature, no conclusion). Baselines
+  honestly warming (6/30 samples → z null). HOT [] (one scan < 600s
+  interval → votes 1/2, hysteresis honest). 37 funding crossings — same
+  hypothesis-artifact class as before, no threshold conclusions (P1-11).
+- Dashboard v0.5.0 live at http://127.0.0.1:8091 (restarted, PID 31436):
+  flow table + BUY/SELL bars on /overview, DISCOVERY ONLY labels,
+  `/api/features/flow` + `/api/features/volume` live (200), health `ok`
+  while fed; no buttons/controls/signals.
+- Tests: 190/190 (46 new: 44 flow + v3→v4 migration + same-E arrival).
+  Two pre-existing version-3 assertions updated to v4 (migration, expected).
+
 ## Known gaps (Phase 1 work ahead, in order)
 
 Minimal dashboard: DONE (P1-03 PASS, live at http://127.0.0.1:8091).
 Returns engine: DONE (P1-04 PASS — universe + 7-TF mark-price log returns).
 Discovery + velocity/acceleration/ranking: DONE (P1-05 PASS — 449-eligible
 scan, 6-HOT proposal, live momentum + ranks, intel UI + APIs).
-Remaining: open interest, VWAP + displacement, realized volatility/range
-expansion, structure primitives, richer aggressive-flow metrics (P1-06…),
-state classifier (P1-12, still blocked on P1-11), signal UI (P1-13),
-soak + calibration evidence (P1-10/P1-14, need P1-01R first).
+Volume + aggressive flow: DONE (P1-06 PASS — 6-horizon flow, baselines,
+acceleration, v0.5.0 dashboard + APIs, healthy 363s validation).
+Remaining: open interest (P1-07), VWAP + displacement, realized
+volatility/range expansion, structure primitives (P1-08), state classifier
+(P1-12, still blocked on P1-11), signal UI (P1-13), soak + calibration
+evidence (P1-10/P1-14, need P1-01R first).
 
 ## Blockers / issues
 

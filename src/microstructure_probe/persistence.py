@@ -246,28 +246,40 @@ class PersistenceStore:
             row = cursor.fetchone()
             current_version = int(row[0]) if row else 0
             
-            if current_version >= 3:
+            if current_version >= 4:
+                self._initialized = True
+                return
+
+            if current_version == 3:
+                # Migrate v3 -> v4: keep existing rows, add P1-06 tables.
+                self._create_schema_v4(cursor)
+                cursor.execute(
+                    "INSERT OR REPLACE INTO persistence_meta (key, value) VALUES (?, ?)",
+                    ("schema_version", "4")
+                )
                 self._initialized = True
                 return
 
             if current_version == 2:
-                # Migrate v2 -> v3: keep existing rows, add P1-05 tables.
+                # Migrate v2 -> v4: keep existing rows, add P1-05 + P1-06 tables.
                 self._create_schema_v3(cursor)
+                self._create_schema_v4(cursor)
                 cursor.execute(
                     "INSERT OR REPLACE INTO persistence_meta (key, value) VALUES (?, ?)",
-                    ("schema_version", "3")
+                    ("schema_version", "4")
                 )
                 self._initialized = True
                 return
 
             if current_version == 1:
-                # Migrate v1 -> v3: keep existing rows, add P1-04 + P1-05 tables.
+                # Migrate v1 -> v4: keep existing rows, add P1-04..P1-06 tables.
                 self._ensure_snapshot_columns(cursor)
                 self._create_schema_v2(cursor)
                 self._create_schema_v3(cursor)
+                self._create_schema_v4(cursor)
                 cursor.execute(
                     "INSERT OR REPLACE INTO persistence_meta (key, value) VALUES (?, ?)",
-                    ("schema_version", "3")
+                    ("schema_version", "4")
                 )
                 self._initialized = True
                 return
@@ -278,13 +290,15 @@ class PersistenceStore:
             self._create_schema_v2(cursor)
             # Create tables for schema v3
             self._create_schema_v3(cursor)
+            # Create tables for schema v4
+            self._create_schema_v4(cursor)
 
             # Set schema version
             cursor.execute(
                 "INSERT OR REPLACE INTO persistence_meta (key, value) VALUES (?, ?)",
-                ("schema_version", "3")
+                ("schema_version", "4")
             )
-            
+
             self._initialized = True
     
     @staticmethod
@@ -363,6 +377,44 @@ class PersistenceStore:
         cursor.execute("""
             CREATE INDEX IF NOT EXISTS idx_universe_events_ts
             ON universe_events(timestamp DESC)
+        """)
+
+    def _create_schema_v4(self, cursor: sqlite3.Cursor) -> None:
+        """P1-06 flow tables: latest compact flow features + bucket history.
+
+        The engine computes flow from EVERY valid aggTrade in memory; only
+        compact aggregates land here. ``flow_features`` is one REPLACE row
+        per symbol (dashboard/API feed). ``flow_buckets`` keeps completed
+        volume/flow buckets per (symbol, size) for baseline restart
+        continuity — INSERT OR REPLACE per primary key makes rewrites
+        idempotent, so restarts can never double-count. Retention keeps the
+        last 600 buckets per (symbol, size) — bounded by construction.
+        """
+        cursor.execute("""
+            CREATE TABLE IF NOT EXISTS flow_features (
+                symbol TEXT PRIMARY KEY,
+                updated_ms INTEGER NOT NULL,
+                feature_json TEXT NOT NULL
+            )
+        """)
+
+        cursor.execute("""
+            CREATE TABLE IF NOT EXISTS flow_buckets (
+                symbol TEXT NOT NULL,
+                size_s INTEGER NOT NULL,
+                bucket_ms INTEGER NOT NULL,
+                notional REAL NOT NULL,
+                base_qty REAL NOT NULL,
+                buy_notional REAL NOT NULL,
+                sell_notional REAL NOT NULL,
+                trades INTEGER NOT NULL,
+                PRIMARY KEY (symbol, size_s, bucket_ms)
+            )
+        """)
+
+        cursor.execute("""
+            CREATE INDEX IF NOT EXISTS idx_flow_buckets_symbol_size_ts
+            ON flow_buckets(symbol, size_s, bucket_ms DESC)
         """)
 
     def _create_schema_v1(self, cursor: sqlite3.Cursor) -> None:
@@ -972,6 +1024,111 @@ class PersistenceStore:
                 if isinstance(parsed, dict):
                     out[str(metric)] = parsed
         return out
+
+    def store_flow_features(self, features: List[Dict[str, Any]]) -> None:
+        """Replace the latest flow feature record per symbol (dashboard feed).
+
+        One row per symbol: inherently bounded, no retention sweep needed.
+        Synchronous; the probe calls this from the infrequent summary path.
+        """
+        if not features:
+            return
+        if not self._initialized:
+            self.init_db()
+        now_ms = int(time.time() * 1000)
+        with self._get_cursor() as cursor:
+            cursor.executemany(
+                "INSERT OR REPLACE INTO flow_features (symbol, updated_ms, feature_json)"
+                " VALUES (?, ?, ?)",
+                [(str(f.get("symbol", "UNKNOWN")).upper(), now_ms,
+                  _safe_json(f)) for f in features],
+            )
+
+    def latest_flow_features(self) -> List[Dict[str, Any]]:
+        """Latest flow feature per symbol, ordered by symbol (dashboard/API)."""
+        if not self._initialized:
+            self.init_db()
+        with self._get_cursor() as cursor:
+            cursor.execute(
+                "SELECT feature_json FROM flow_features ORDER BY symbol")
+            out = []
+            for (blob,) in cursor.fetchall():
+                try:
+                    parsed = json.loads(blob)
+                except (json.JSONDecodeError, TypeError):
+                    continue
+                if isinstance(parsed, dict):
+                    out.append(parsed)
+            return out
+
+    def store_flow_buckets(self, rows: List[Dict[str, Any]]) -> None:
+        """Persist completed flow buckets (baseline restart continuity).
+
+        Idempotent per (symbol, size_s, bucket_ms); retention keeps the last
+        600 buckets per (symbol, size) so storage stays bounded. Synchronous;
+        the probe calls this from the infrequent summary path.
+        """
+        if not rows:
+            return
+        if not self._initialized:
+            self.init_db()
+        with self._get_cursor() as cursor:
+            cursor.executemany(
+                "INSERT OR REPLACE INTO flow_buckets"
+                " (symbol, size_s, bucket_ms, notional, base_qty,"
+                " buy_notional, sell_notional, trades)"
+                " VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+                [(str(r.get("symbol", "UNKNOWN")).upper(),
+                  int(r.get("size_s", 0)), int(r.get("bucket_ms", 0)),
+                  float(r.get("notional", 0.0)), float(r.get("base", 0.0)),
+                  float(r.get("buy_notional", 0.0)),
+                  float(r.get("sell_notional", 0.0)),
+                  int(r.get("trades", 0)))
+                 for r in rows],
+            )
+            cursor.execute("""
+                DELETE FROM flow_buckets
+                WHERE (symbol, size_s, bucket_ms) NOT IN (
+                    SELECT symbol, size_s, bucket_ms FROM (
+                        SELECT symbol, size_s, bucket_ms,
+                               ROW_NUMBER() OVER (
+                                   PARTITION BY symbol, size_s
+                                   ORDER BY bucket_ms DESC) AS rn
+                        FROM flow_buckets
+                    ) WHERE rn <= 600
+                )
+            """)
+
+    def load_flow_buckets(self, symbol: Optional[str] = None,
+                          size_s: Optional[int] = None,
+                          limit: int = 600) -> List[Dict[str, Any]]:
+        """Load persisted completed buckets, oldest first (engine restore)."""
+        if not self._initialized:
+            self.init_db()
+        clauses = []
+        params: List[Any] = []
+        if symbol is not None:
+            clauses.append("symbol = ?")
+            params.append(str(symbol).upper())
+        if size_s is not None:
+            clauses.append("size_s = ?")
+            params.append(int(size_s))
+        where = f"WHERE {' AND '.join(clauses)}" if clauses else ""
+        with self._get_cursor() as cursor:
+            cursor.execute(
+                "SELECT symbol, size_s, bucket_ms, notional, base_qty,"
+                " buy_notional, sell_notional, trades FROM flow_buckets"
+                f" {where} ORDER BY symbol, size_s, bucket_ms DESC"
+                f" LIMIT {max(int(limit), 1)}",
+                params)
+            rows = [{
+                "symbol": row[0], "size_s": int(row[1]),
+                "bucket_ms": int(row[2]), "notional": float(row[3]),
+                "base": float(row[4]), "buy_notional": float(row[5]),
+                "sell_notional": float(row[6]), "trades": int(row[7]),
+            } for row in cursor.fetchall()]
+        rows.reverse()
+        return rows
     
     def _apply_retention_policy(
         self, 
@@ -1145,7 +1302,8 @@ class PersistenceStore:
                 for table in ("telemetry_snapshots", "market_observations",
                               "rejected_observations", "price_samples",
                               "return_features", "discovery_snapshots",
-                              "universe_events", "rank_snapshots"):
+                              "universe_events", "rank_snapshots",
+                              "flow_features", "flow_buckets"):
                     cursor.execute(f"SELECT COUNT(*) FROM {table}")
                     info["rows"][table] = cursor.fetchone()[0]
         except Exception:

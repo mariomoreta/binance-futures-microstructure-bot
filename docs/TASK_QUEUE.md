@@ -32,11 +32,10 @@ the dashboard exists. No classifier before raw-feature dashboard validation.
 
 ## ACTIVE_TASK
 
-- `P1-06` VOLUME + AGGRESSIVE TRADE FLOW (multi-bucket z, delta, imbalance).
+- `P1-07` ORDER BOOK + OPEN INTEREST (depth slope, microprice, OI delta/accel).
   Status: NOT STARTED. (Queued only — do not begin without a new instruction.)
 
 ## NEXT_TASKS (ordered, all Phase 1)
-- `P1-06` VOLUME + AGGRESSIVE TRADE FLOW (multi-bucket z, delta, imbalance).
 - `P1-07` ORDER BOOK + OPEN INTEREST (depth slope, microprice, OI delta/accel).
 - `P1-08` VWAP + VOLATILITY + MARKET STRUCTURE (displacement, realized vol,
   range expansion, swings/breakouts, no lookahead).
@@ -111,10 +110,23 @@ strategies (P3), paper engine/positions (P4), execution (P5).
   `/api/features/momentum`; persistence v3 + tested migrations; forceOrder
   never-missing; health blocks separated. Clean 240s run (exit 0): 11/11,
   0 reconnects, 0 rejects, 143659 msgs, engine 91 samples/symbol, sampling
-  accepted 1888/dropped 141k, high-water 6 → 0, safety 0/0/0. 144/144 tests.
+   accepted 1888/dropped 141k, high-water 6 → 0, safety 0/0/0. 144/144 tests.
+- `P1-06` (2026-10-07) VOLUME + AGGRESSIVE TRADE FLOW: **PASS**. Official
+  aggTrade docs + live payload verified (`m`/RPI-`nq`/`E`/`st`);
+  `flow.py` engine (6 trailing horizons, 4 baselines, acceleration,
+  same-E arrival fix after run 1 proved `<=` undercounts); schema v4 +
+  tested migrations; dashboard v0.5.0 (flow table, split bars, DISCOVERY
+  ONLY labels, `/api/features/flow` + `/volume`). Healthy 363s run
+  (exit 0): 11/11, 0 reconnects, 0 rejects, 4027/4027 aggTrades into the
+  engine (746 persisted raw — sampling provably lossless to flow),
+  168/168 buckets, latency p50 0.030ms/p95 0.069, queue 0/0, safety 0/0/0.
+  190/190 tests (46 new). Evidence: `logs/p1-06/` (local, git-ignored).
 
 ## LAST_VERIFICATION
 
+- 2026-10-07 (P1-06): `python run_tests.py` → 190/190 OK. Flow engine live
+  (4027/4027 accepted, 0 late, 0 invalid); dashboard v0.5.0 `ok`-while-fed
+  with flow table + APIs (200). Full evidence in `docs/CURRENT_STATE.md`.
 - 2026-10-06 (P1-05): `python run_tests.py` → 144/144 OK. Discovery live
   (449 eligible, HOT 6 small movers, promotions logged); momentum/ranks live
   on trio; clean 240s run exit 0 with final_summary

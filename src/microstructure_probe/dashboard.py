@@ -5,7 +5,8 @@ visualization only: nothing here can trade, and the engine never consumes
 anything rendered here.
 
 Routes: / (→ /overview), /overview, /system, /api/health, /api/snapshot,
-/api/features/returns, /api/features/momentum, /api/discovery.
+/api/features/returns, /api/features/momentum, /api/features/flow,
+/api/features/volume, /api/discovery.
 
 Lifecycle CLI (operator commands, Binance dashboard only):
     python -m microstructure_probe.dashboard start [--port N] [--db PATH]
@@ -36,7 +37,7 @@ from typing import Any, Dict, List, Optional, Tuple
 
 from .persistence import PersistenceStore
 
-DASHBOARD_VERSION = "0.4.0"
+DASHBOARD_VERSION = "0.5.0"
 HOST = "127.0.0.1"
 PORT_CANDIDATES = [8091, 8092, 8093, 8094, 8095, 18091, 18765]
 PIDFILE_NAME = "dashboard.pid"
@@ -256,6 +257,13 @@ class DashboardState:
         except (OSError, sqlite3.Error):
             return {}
 
+    def flow_features(self) -> List[Dict[str, Any]]:
+        """Latest flow feature per symbol (P1-06), or [] before summaries."""
+        try:
+            return self.store.latest_flow_features()
+        except (OSError, sqlite3.Error):
+            return []
+
     def storage(self) -> Dict[str, Any]:
         try:
             return self.store.storage_info()
@@ -334,6 +342,8 @@ th{background:#161b22;color:#8b949e}
 .stale{background:#da3633;color:#fff}.unknown{background:#6e7681;color:#fff}
 nav{margin-bottom:12px;font-size:13px}nav a{color:#58a6ff;margin-right:12px}
 .warn{color:#e3b341}.note{color:#8b949e;font-size:11px}
+.pos{color:#3fb950}.neg{color:#f85149}
+.bar{letter-spacing:1px;white-space:nowrap}
 """
 
 BANNER_NOTE = ("Observe-only market-intelligence dashboard. "
@@ -350,6 +360,8 @@ def _page(title: str, banner_html: str, body: str) -> str:
             f"<a href='/api/snapshot'>/api/snapshot</a>"
             f"<a href='/api/features/returns'>/api/features/returns</a>"
             f"<a href='/api/features/momentum'>/api/features/momentum</a>"
+            f"<a href='/api/features/flow'>/api/features/flow</a>"
+            f"<a href='/api/features/volume'>/api/features/volume</a>"
             f"<a href='/api/discovery'>/api/discovery</a></nav>"
             f"<h1>{html.escape(title)}</h1>{banner_html}{body}"
             f"<p class='note'>{html.escape(BANNER_NOTE)} Auto-refresh 10s.</p>"
@@ -428,6 +440,117 @@ def _format_scientific(value: Any, suffix: str = "/s") -> str:
         return "<span title='insufficient history'>—</span>"
 
 
+def _format_usdt(value: Any) -> str:
+    """Signed quote-notional cell, or an insufficient-data marker."""
+    if value is None:
+        return "<span title='no data'>—</span>"
+    try:
+        number = float(value)
+    except (TypeError, ValueError):
+        return "<span title='no data'>—</span>"
+    cls = "pos" if number > 0 else ("neg" if number < 0 else "")
+    text = f"{number:+.2f}"
+    return f"<span class='{cls}'>{html.escape(text)}</span>" if cls else html.escape(text)
+
+
+def _format_ratio(value: Any) -> str:
+    """Signed delta-ratio cell in [-1, +1], or an insufficient-data marker."""
+    if value is None:
+        return "<span title='no directional volume yet'>—</span>"
+    try:
+        number = float(value)
+    except (TypeError, ValueError):
+        return "<span title='no directional volume yet'>—</span>"
+    cls = "pos" if number > 0 else ("neg" if number < 0 else "")
+    text = f"{number:+.3f}"
+    return f"<span class='{cls}'>{html.escape(text)}</span>" if cls else html.escape(text)
+
+
+def _format_z(value: Any) -> str:
+    """Volume z-score cell, or an insufficient-baseline marker (never fake 0)."""
+    if value is None:
+        return "<span title='baseline warming up or zero variance'>—</span>"
+    try:
+        return f"{float(value):+.2f}"
+    except (TypeError, ValueError):
+        return "<span title='baseline warming up or zero variance'>—</span>"
+
+
+def _flow_bar(buy_pct: Any, sell_pct: Any) -> str:
+    """Compact aggressive split bar (text blocks, no frontend framework)."""
+    try:
+        buy = float(buy_pct) if buy_pct is not None else None
+        sell = float(sell_pct) if sell_pct is not None else None
+    except (TypeError, ValueError):
+        buy = sell = None
+    if buy is None or sell is None:
+        return "<span title='no directional volume yet'>—</span>"
+    buy_blocks = "█" * max(int(round(buy / 5.0)), 1) if buy > 0 else ""
+    sell_blocks = "█" * max(int(round(sell / 5.0)), 1) if sell > 0 else ""
+    return (f"<span class='bar'><span class='pos'>BUY {buy_blocks} {buy:.0f}%</span>"
+            f"<br><span class='neg'>SELL {sell_blocks} {sell:.0f}%</span></span>")
+
+
+def render_flow_section(flow_features: List[Dict[str, Any]],
+                        return_features: List[Dict[str, Any]]) -> str:
+    """P1-06 live trade-flow table (subscribed symbols only).
+
+    Read-only market description: aggressive buy/sell split, signed delta,
+    delta ratio, trade rate, volume z-score, freshness, warmup. Nothing here
+    is a signal, entry, or classifier output.
+    """
+    body = "<h2>Live trade flow (subscribed symbols only — read-only, NOT signals)</h2>"
+    body += ("<p class='note'>Aggressor: buyer-is-maker=true → aggressive SELL; "
+             "false → aggressive BUY. Totals use q (includes RPI fills). "
+             "Delta = buy − sell notional. Unsubscribed symbols never appear here.</p>")
+    live = [f for f in flow_features
+            if isinstance(f, dict) and f.get("subscribed")]
+    if not live:
+        return body + "<p class='note'>No live flow yet — insufficient history " \
+            "(engine warming up or probe not running).</p>"
+    prices = {f.get("symbol"): f.get("current_price") for f in return_features
+              if isinstance(f, dict)}
+    body += "<table><tr><th>symbol</th><th>price</th>" \
+            "<th>1m notional</th><th>aggr. split</th>" \
+            "<th>signed Δ</th><th>Δ ratio</th>" \
+            "<th>trade rate</th><th>vol z (1m)</th>" \
+            "<th>freshness</th><th>warmup</th></tr>"
+    for feat in sorted(live, key=lambda f: str(f.get("symbol", ""))):
+        horizons = feat.get("horizons") if isinstance(
+            feat.get("horizons"), dict) else {}
+        hour1 = horizons.get("1m") if isinstance(
+            horizons.get("1m"), dict) else {}
+        baselines = feat.get("baselines") if isinstance(
+            feat.get("baselines"), dict) else {}
+        base1m = baselines.get("1m") if isinstance(
+            baselines.get("1m"), dict) else {}
+        try:
+            price = f"{float(prices.get(feat.get('symbol'))):.4f}" \
+                if prices.get(feat.get("symbol")) is not None else "—"
+        except (TypeError, ValueError):
+            price = "—"
+        try:
+            notional = f"{float(hour1.get('notional')):.2f}" \
+                if hour1.get("notional") is not None else "—"
+        except (TypeError, ValueError):
+            notional = "—"
+        complete = sum(1 for h in ("10s", "30s", "1m", "3m", "5m", "15m")
+                       if isinstance(horizons.get(h), dict)
+                       and horizons[h].get("warmup_complete"))
+        body += (f"<tr><td>{html.escape(str(feat.get('symbol', '?')))}</td>"
+                 f"<td>{price}</td>"
+                 f"<td>{notional}</td>"
+                 f"<td>{_flow_bar(hour1.get('buy_pct'), hour1.get('sell_pct'))}</td>"
+                 f"<td>{_format_usdt(hour1.get('signed_delta'))}</td>"
+                 f"<td>{_format_ratio(hour1.get('delta_ratio'))}</td>"
+                 f"<td>{_format_scientific(hour1.get('trade_rate'))}</td>"
+                 f"<td>{_format_z(base1m.get('z_score'))}</td>"
+                 f"<td>{_format_age_ms(feat.get('freshness_ms'))}</td>"
+                 f"<td>{complete}/6"
+                 f"{' READY' if complete == 6 else ' WARMING'}</td></tr>")
+    return body + "</table>"
+
+
 def render_intel_sections(state: DashboardState) -> str:
     """P1-05 market-intelligence area: tiers, live momentum, discovery movers.
 
@@ -497,8 +620,14 @@ def render_intel_sections(state: DashboardState) -> str:
                      f"<td>{len(available)}/7"
                      f"{' READY' if feat.get('warmup_complete') else ' WARMING'}</td></tr>")
         body += "</table>"
+    flow = state.flow_features()
+    body += render_flow_section(flow, features)
     body += "<h2>Discovery movers (24h REST metrics — discovery only, NOT live)</h2>"
     tops = (discovery or {}).get("tops") or {}
+    live_symbols = {f.get("symbol") for f in flow
+                    if isinstance(f, dict) and f.get("subscribed")}
+    hot_set = set(hot or [])
+    core_set = set(core or [])
     if not tops:
         body += "<p class='note'>No discovery scan yet.</p>"
     else:
@@ -509,15 +638,23 @@ def render_intel_sections(state: DashboardState) -> str:
             if not rows:
                 body += "<p class='note'>none</p>"
                 continue
-            body += "<table><tr><th>symbol</th><th>24h %</th><th>price</th>" \
-                    "<th>quote vol 24h</th></tr>"
+            body += "<table><tr><th>symbol</th><th>tier</th><th>24h %</th><th>price</th>" \
+                    "<th>quote vol 24h</th><th>eligibility</th><th>live feed</th></tr>"
             for row in rows:
                 chg = row.get("change_24h_pct")
                 chg_cell = (f"{float(chg):+.2f}%" if chg is not None else "—")
-                body += (f"<tr><td>{html.escape(str(row.get('symbol', '?')))}</td>"
+                symbol = str(row.get("symbol", "?"))
+                tier = ("CORE" if symbol in core_set
+                        else "HOT" if symbol in hot_set else "DISCOVERY")
+                live_cell = ("LIVE (subscribed)" if symbol in live_symbols
+                             else "DISCOVERY ONLY — NO LIVE FLOW")
+                body += (f"<tr><td>{html.escape(symbol)}</td>"
+                         f"<td>{tier}</td>"
                          f"<td>{chg_cell}</td>"
                          f"<td>{html.escape(str(row.get('price', '—')))}</td>"
-                         f"<td>{html.escape(str(row.get('quote_volume_24h', '—')))}</td></tr>")
+                         f"<td>{html.escape(str(row.get('quote_volume_24h', '—')))}</td>"
+                         f"<td>eligible</td>"
+                         f"<td>{live_cell}</td></tr>")
             body += "</table>"
     events = state.universe_events(limit=10)
     if events:
@@ -607,6 +744,8 @@ def render_overview(state: DashboardState) -> str:
     body += _kv_table([
         ("telemetry snapshots retained", rows.get("telemetry_snapshots", "?")),
         ("return feature rows", rows.get("return_features", "?")),
+        ("flow feature rows", rows.get("flow_features", "?")),
+        ("flow buckets retained", rows.get("flow_buckets", "?")),
         ("last discovery scan",
          time.strftime("%Y-%m-%d %H:%M:%S UTC",
                        time.gmtime((discovery or {}).get("generated_at_ms", 0) / 1000))
@@ -827,6 +966,49 @@ class DashboardHandler(BaseHTTPRequestHandler):
                                          "websocket streams; HOT is proposed only",
                     "discovery": discovery,
                     "events": self.state.universe_events(limit=20),
+                })
+        elif path == "/api/features/flow":
+            features = self.state.flow_features()
+            if not features:
+                self._send_json(404, {"error": "no flow features persisted yet"})
+            else:
+                self._send_json(200, {
+                    "generated_at": time.strftime(
+                        "%Y-%m-%dT%H:%M:%SZ", time.gmtime(time.time())),
+                    "source": "aggTrade",
+                    "aggressor_semantics": "buyer-is-maker=true -> aggressive "
+                                           "SELL; false -> aggressive BUY "
+                                           "(maker side is never the aggressor)",
+                    "quantity_semantics": "q includes RPI fills; nq excludes "
+                                          "RPI; totals use q",
+                    "horizons": ["10s", "30s", "1m", "3m", "5m", "15m"],
+                    "baselines": ["10s", "30s", "1m", "5m"],
+                    "delta_semantics": "signed_delta = buy_notional - "
+                                       "sell_notional; delta_ratio in [-1, +1], "
+                                       "null when no directional volume",
+                    "symbols": features,
+                })
+        elif path == "/api/features/volume":
+            features = self.state.flow_features()
+            if not features:
+                self._send_json(404, {"error": "no volume features persisted yet"})
+            else:
+                self._send_json(200, {
+                    "generated_at": time.strftime(
+                        "%Y-%m-%dT%H:%M:%SZ", time.gmtime(time.time())),
+                    "source": "aggTrade",
+                    "semantics": "trailing completed-bucket quote notionals; "
+                                 "z_score null when baseline insufficient or "
+                                 "zero-variance (never fake 0)",
+                    "symbols": [
+                        {"symbol": f.get("symbol"),
+                         "subscribed": f.get("subscribed"),
+                         "as_of_ms": f.get("as_of_ms"),
+                         "freshness_ms": f.get("freshness_ms"),
+                         "trades_total": f.get("trades_total"),
+                         "baselines": f.get("baselines"),
+                         "acceleration": f.get("acceleration")}
+                        for f in features if isinstance(f, dict)],
                 })
         else:
             self._send_json(404, {"error": f"unknown route {path}"})

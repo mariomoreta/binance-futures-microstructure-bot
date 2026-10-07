@@ -56,6 +56,19 @@ accel semantics, ranks, per-symbol rows) and `GET /api/discovery`
 explicit `server` vs `feed` blocks. Dashboard staleness reflects market-data
 freshness only — server health stays independently visible.
 
+### P1-06 terminal evolution — IMPLEMENTED (PASS)
+
+`/overview` market-intelligence area gained a **Live trade flow** table
+(subscribed symbols only): price, 1m notional, aggressive BUY/SELL split
+bar (text blocks, green/red, no heavy framework), signed delta, delta
+ratio, trade rate, 1m volume z-score, freshness, n/6 horizon warmup.
+Discovery movers tables gained tier (CORE/HOT/DISCOVERY), eligibility, and
+live-feed columns — unsubscribed rows read DISCOVERY ONLY — NO LIVE FLOW.
+Machine-readable `GET /api/features/flow` (semantics + per-symbol
+horizons/baselines/acceleration; 404 when empty) and
+`GET /api/features/volume` (baselines + acceleration subset). No signal
+labels, no buttons, no controls; `/system` and health separations kept.
+
 ### Stage 2 — P1-09 MARKET-INTELLIGENCE DASHBOARD
 
 Add: `/movers`, `/symbol/:symbol`. Show raw features BEFORE classifier scores.

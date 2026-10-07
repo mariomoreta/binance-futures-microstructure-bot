@@ -53,14 +53,14 @@ class PersistenceStoreTest(unittest.TestCase):
                 self.assertIsNotNone(cursor.fetchone(), f"Table {table} should exist")
 
     def test_schema_version_tracking(self) -> None:
-        """Schema version is tracked in persistence_meta (currently v3)."""
+        """Schema version is tracked in persistence_meta (currently v4)."""
         with self.store._get_cursor() as cursor:
             cursor.execute(
                 "SELECT value FROM persistence_meta WHERE key = 'schema_version'"
             )
             row = cursor.fetchone()
             self.assertIsNotNone(row)
-            self.assertEqual(int(row[0]), 3)
+            self.assertEqual(int(row[0]), 4)
 
     def test_telemetry_snapshot_round_trip(self) -> None:
         """Telemetry snapshot can be stored and retrieved."""
@@ -517,20 +517,20 @@ class SchemaV3Test(unittest.TestCase):
         except OSError:
             pass
 
-    def test_schema_version_is_3_with_feature_tables(self) -> None:
+    def test_schema_version_is_4_with_feature_tables(self) -> None:
         with self.store._get_cursor() as cursor:
             cursor.execute(
                 "SELECT value FROM persistence_meta WHERE key='schema_version'")
-            self.assertEqual(int(cursor.fetchone()[0]), 3)
+            self.assertEqual(int(cursor.fetchone()[0]), 4)
             for table in ("price_samples", "return_features",
                           "discovery_snapshots", "universe_events",
-                          "rank_snapshots"):
+                          "rank_snapshots", "flow_features", "flow_buckets"):
                 cursor.execute(
                     "SELECT name FROM sqlite_master WHERE type='table' AND name=?",
                     (table,))
                 self.assertIsNotNone(cursor.fetchone(), table)
 
-    def test_v1_database_migrates_to_v3(self) -> None:
+    def test_v1_database_migrates_to_v4(self) -> None:
         # Simulate a pre-P1-04 database: v1 tables only, version marker 1.
         legacy = Path(self.temp_dir) / "legacy.db"
         conn = __import__("sqlite3").connect(str(legacy))
@@ -544,12 +544,18 @@ class SchemaV3Test(unittest.TestCase):
         with migrated._get_cursor() as cursor:
             cursor.execute(
                 "SELECT value FROM persistence_meta WHERE key='schema_version'")
-            self.assertEqual(int(cursor.fetchone()[0]), 3)
+            self.assertEqual(int(cursor.fetchone()[0]), 4)
             cursor.execute(
                 "SELECT name FROM sqlite_master WHERE type='table' AND name='price_samples'")
             self.assertIsNotNone(cursor.fetchone())
             cursor.execute(
                 "SELECT name FROM sqlite_master WHERE type='table' AND name='discovery_snapshots'")
+            self.assertIsNotNone(cursor.fetchone())
+            cursor.execute(
+                "SELECT name FROM sqlite_master WHERE type='table' AND name='flow_features'")
+            self.assertIsNotNone(cursor.fetchone())
+            cursor.execute(
+                "SELECT name FROM sqlite_master WHERE type='table' AND name='flow_buckets'")
             self.assertIsNotNone(cursor.fetchone())
         # Legacy column repair still applied on the v1 path.
         with migrated._get_cursor() as cursor:
@@ -558,7 +564,7 @@ class SchemaV3Test(unittest.TestCase):
             self.assertIn("spread_bps_json", columns)
         migrated.close()
 
-    def test_v2_database_migrates_to_v3_preserving_rows(self) -> None:
+    def test_v2_database_migrates_to_v4_preserving_rows(self) -> None:
         import time as _time
 
         base = (int(_time.time() * 1000) // 10_000) * 10_000 - 30_000
@@ -572,9 +578,31 @@ class SchemaV3Test(unittest.TestCase):
         with reopened._get_cursor() as cursor:
             cursor.execute(
                 "SELECT value FROM persistence_meta WHERE key='schema_version'")
-            self.assertEqual(int(cursor.fetchone()[0]), 3)
+            self.assertEqual(int(cursor.fetchone()[0]), 4)
         self.assertEqual(reopened.load_price_samples("BTCUSDT"),
                          [("BTCUSDT", base, 99.0)])
+        reopened.close()
+
+    def test_v3_database_migrates_to_v4_preserving_rows(self) -> None:
+        # Simulate a P1-05 database: full v3 tables, version marker 3.
+        self.store.store_return_features([{"symbol": "BTCUSDT"}])
+        self.store.close()
+        with self.store._get_cursor() as cursor:
+            cursor.execute(
+                "INSERT OR REPLACE INTO persistence_meta (key, value) VALUES ('schema_version', '3')")
+        reopened = PersistenceStore(db_path=self.db_path)
+        reopened.init_db()
+        with reopened._get_cursor() as cursor:
+            cursor.execute(
+                "SELECT value FROM persistence_meta WHERE key='schema_version'")
+            self.assertEqual(int(cursor.fetchone()[0]), 4)
+            for table in ("flow_features", "flow_buckets"):
+                cursor.execute(
+                    "SELECT name FROM sqlite_master WHERE type='table' AND name=?",
+                    (table,))
+                self.assertIsNotNone(cursor.fetchone(), table)
+        # P1-05 rows survive the migration.
+        self.assertEqual(len(reopened.latest_return_features()), 1)
         reopened.close()
 
     def test_discovery_snapshot_replace_and_read(self) -> None:

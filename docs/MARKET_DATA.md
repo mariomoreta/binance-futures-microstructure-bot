@@ -18,6 +18,35 @@ Routed endpoints (`probe.py::build_stream_urls`, base `wss://fstream.binance.com
 Current symbols: BTCUSDT, ETHUSDT, SOLUSDT. Universe expansion (full Futures
 gainer/loser coverage) is a Phase 1 task — required for ranking features.
 
+## aggTrade payload semantics (verified P1-06, 2026-10-07)
+
+Primary source: current official USD-M Futures docs ("Aggregate Trade
+Streams", copyright 2026) + live WS/REST payloads captured from
+`fstream.binance.com` / `fapi.binance.com` in this environment.
+
+- Aggregation: fills with the SAME price and SAME taking side, pushed every
+  100ms. Only market trades are aggregated — insurance-fund and ADL trades
+  are excluded.
+- Fields (WS `data` object): `e`="aggTrade", `E` event time, `s` symbol,
+  `a` aggregate trade ID, `p` price, `q` quantity, `nq` normal quantity,
+  `f` first trade ID, `l` last trade ID, `T` trade time, `m` buyer-is-maker,
+  `st` symbol type (1 = UM after CM migration; observed live `st: 1`).
+- `m` ("Is the buyer the market maker?"): `true` → buyer is maker, so the
+  aggressive (taker) side is SELL; `false` → buyer is taker, aggressive BUY.
+  The maker side is never the aggressor.
+- `q` = base quantity WITH all market trades INCLUDING RPI fills;
+  `nq` = normal quantity WITHOUT RPI fills (observed live, usually `nq=q`).
+  Per docs, RPI orders are aggregated into `q` without distinguishing tags.
+  Flow totals use `q`; `rpi_qty = q − nq` is tracked for transparency when
+  `nq` is present and sane.
+- Ordering/bucketing key is `E` (event time); `T` is trade time. Observed
+  live E−T deltas were ~150–350ms. Skew-guard semantics unchanged
+  (|received − E| > 5000ms → reject).
+- One 100ms push carries several distinct aggregates with identical `E`;
+  the stream never redelivers, so same-E messages are new volume.
+  The P1-06 engine accepts them in arrival order (strictly-older `E` is
+  late-dropped, never revises history).
+
 ## REST (public only — verified live 2026-10-06)
 
 - `GET /fapi/v1/time` — clock sync only (5 samples, midpoint, median offset/RTT).
