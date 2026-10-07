@@ -302,3 +302,21 @@ environment is variable (P1-01 PARTIAL vs P1-01R PASS), so any future run
 showing P1-01-grade degradation (reconnect storm, tens-of-seconds lags,
 mass rejection) must trigger a fresh re-validation before soak or
 calibration gates may be trusted. No code or threshold changed.
+
+## 2026-10-07 — P1-10 soak launch + log-capture rule (durable, from FAIL)
+
+The P1-10 soak (`--duration 21600`) died externally at 4.91h with no
+`final_summary` and unknown exit — same failure shape as the earlier
+detached-children lesson (tool-session end kills the run). Rule for P1-10R
+and any future multi-hour run: launch attached/blocking from a session
+that demonstrably survives the full window; never detached without a
+surviving parent. Logging rule: the probe logs to stderr
+(`logging.basicConfig`), so a PowerShell `> file` redirect captures only
+stdout and PowerShell decorates stderr chunks as UTF-16 error records with
+wrapped long lines (P1-10's 52MB log had to be reconstructed fragment by
+fragment). P1-10R must capture merged streams explicitly as UTF-8
+(e.g. `2>&1` with `$OutputEncoding`/UTF-8, or in-app file logging) so
+`startup` / periodic `summary` / `final_summary` records stay greppable.
+Audit cadence stands: 30s periodic summaries + per-event detector lines
+proved sufficient to reconstruct START/MID/END behavior without any
+sidecar files.

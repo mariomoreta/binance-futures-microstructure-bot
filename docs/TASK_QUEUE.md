@@ -32,13 +32,22 @@ the dashboard exists. No classifier before raw-feature dashboard validation.
 
 ## ACTIVE_TASK
 
-- `P1-10` PROLONGED ≥6H SOAK — run with dashboard live so the operator can
-  inspect it and take screenshots while data flows.
-  Status: NOT STARTED. (Queued only — do not begin without a new instruction.)
+- `P1-10R` PROLONGED ≥6H SOAK RE-RUN — P1-10 FAIL closed truncated at
+  4.91h/6h (17677.9s, externally killed, no final_summary). Re-run with
+  dashboard live, blocking launch that survives the full window, merged
+  stdout+stderr captured as UTF-8 (see `docs/DECISIONS.md` launch rule).
+  Status: NOT STARTED. (Queued only — do not begin without a new
+  instruction.)
 
 ## NEXT_TASKS (ordered, all Phase 1)
-- `P1-10` PROLONGED ≥6H SOAK — run with dashboard live so the operator can
-  inspect it and take screenshots while data flows.
+- `P1-10R` PROLONGED ≥6H SOAK RE-RUN — as above; the valid 4.91h of P1-10
+  evidence is retained for P1-11 auditing but the soak gate stays closed.
+- `P1-11` RAW FEATURE VALIDATION — distributions, missingness, freshness,
+  obvious measurement errors. Classifier is BLOCKED until this passes.
+  Includes recorded P1-11A item: Movers shared-`_v` category-value anomaly
+  (a symbol in several categories shows the last-assigned value in every
+  table — velocity/accel/vol-z/flow scales mixed; confirmed by code
+  inspection during P1-10 closure, not fixed).
 - `P1-11` RAW FEATURE VALIDATION — distributions, missingness, freshness,
   obvious measurement errors. Classifier is BLOCKED until this passes.
 - `P1-12` STATE CLASSIFIER V0 (NORMAL/IGNITION/EXPANSION/EXHAUSTION/REVERSAL).
@@ -146,8 +155,22 @@ strategies (P3), paper engine/positions (P4), execution (P5).
   engines green, persistence drained, safety 0/0/0; dashboard `ok`
   while fed, honest `stale` after. Evidence: `logs/p1-01r/`
   (local, git-ignored). P1-10 soak gate unblocked; P1-10 NOT started.
+- `P1-10` (2026-10-07) PROLONGED SOAK: **FAIL** (truncated). Requested
+  21600s, one continuous process, but killed externally at 17677.9s
+  (4.91h, 81.8%) with no `final_summary` and unknown exit. 554 gap-free
+  periodic summaries fully audited: bookTicker core stayed P1-01R-grade
+  (p50 ~190–200ms) while aggTrade ETH/SOL (p50 90–152s), depth/markPrice
+  tails and a final-hour reconnect storm (29 reconnects + 366k rejects in
+  55 min) regressed to P1-01-grade. Engines/persistence/dashboard/safety
+  all behaved (details in `docs/CURRENT_STATE.md`). Evidence:
+  `logs/p1-10/probe-21600s.log` (local, git-ignored). Requires `P1-10R`.
 
 ## LAST_VERIFICATION
+
+- 2026-10-07 (P1-10 closure): `python run_tests.py` → 312/312 OK (no app
+  code changed during the soak; HEAD still `cca1b78`). Soak FAIL closed
+  (17677.9s/21600s, truncated, evidence in `docs/CURRENT_STATE.md` +
+  `logs/p1-10/`).
 
 - 2026-10-07 (P1-01R): `python run_tests.py` → 312/312 OK (before run;
   no code changed). 2700s transport run PASS (0 reconnects, 0% rejects,

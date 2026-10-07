@@ -434,6 +434,149 @@ The single ~3.3s transient stall is rare-outlier grade (p99 ≤1.1s worst
 stream), not P1-01-grade degradation. Therefore PASS: transport is healthy
 enough for the P1-10 ≥6h soak. `docs/PHASE_1_REPORT.md` untouched.
 
+## P1-10 prolonged soak — RESULT: FAIL, truncated at 4.91h (2026-10-07)
+
+Run: `python -u -m microstructure_probe --duration 21600` (requested
+21600s), BOT_MODE=observe, started 2026-10-07 05:15:41 local. Evidence
+(local, git-ignored): `logs/p1-10/probe-21600s.log` (52MB, UTF-16 —
+PowerShell stdout-redirect capture, long JSON lines wrapped; reconstructed
+by rejoining wrapped fragments, proven by 0 runtime drops). No
+checkpoint/final-summary sidecar files were written; all metrics below come
+from the 554 periodic summaries (every ~30–32s) parsed out of the raw log.
+
+Continuity: ONE process (`startup` × 1, no restart). Last periodic summary
+`runtimeSeconds: 17677.917` (81.8% of 21600); log wall span 05:15:41 →
+10:10:37 (~17696s); NO `final_summary`; tail ends mid-stream on detector
+lines with no shutdown/traceback and the process is gone — externally
+killed between summaries, exit code UNKNOWN. Max inter-summary gap 62s, no
+gap >120s: no evidence gap *within* the run, but the run itself is
+truncated. Duration gate (≥21600s continuous) NOT met → FAIL per
+docs/SUCCESS_GATES procedure (duration invalid). Dashboard was NOT
+restarted (PID 7564, v0.8.0, uptime 63283s spanning the whole run).
+
+Full-window (END, rt=17677.9s) transport:
+- Coverage 11/11, missing [], stale [], silent `!forceOrder@arr` only
+  (event-driven, correct). Uptime market 99.65% (17613.6s), public 97.08%.
+- Reconnects 43 total (public 38, market 5); attempts 45 (public 39,
+  market 6); websocket errors 43 (= reconnects). Jump +29 reconnects in the
+  final 55 min (14 → 43) — closing-phase reconnect storm, nearly all public.
+- Messages 15,341,473. bookTicker p50 ~190–200ms / p95 ~321–465ms
+  (HEALTHY, P1-01R-grade); depth p50 ~182ms but p95 ~45–47s; aggTrade SPLIT:
+  BTC p50 214ms vs ETH p50 152s / SOL p50 90s (P1-01-grade); markPrice p50
+  253ms but p95 132s; forceOrder p50 205ms–1.2s, p95 ~158–159s; max ~265s.
+  Exchange-side E−T stays milliseconds (bookTicker p50 0–1ms), so the delay
+  is delivery-path, not Binance. Mixed verdict: bookTicker core stayed
+  P1-01R-grade while aggTrade (ETH/SOL), depth-tail, markPrice-tail and the
+  final hour regressed to P1-01-grade. Prolonged stalls: max observed
+  silence 51–133s incl. 132.5s on cadenced bookTicker/depth — real stall
+  episodes, not sampling noise.
+- Skew guard: `timestampRejected: 742182` (~4.8% of messages; rejects by
+  stream worst on bookTicker/aggTrade). Far better than P1-01's 85%, worse
+  than P1-01R's 0%. +366k rejects landed in the final 55 min (376k → 742k).
+- Depth gaps 33/32/32 (reconnect-driven, all recovered, `degraded: false`
+  at END, crossed books 0 — final book integrity HEALTHY).
+- Clock 30/30 syncs ok (150/150 samples), offset −413ms at END, RTT
+  338ms; full-run offsets min −1001.6 / max +47.1 / median −241.6ms, RTT
+  319.6–376.2ms (median 336.3). One ~1050ms offset discontinuity between
+  sync 6 (−1001.6) and sync 7 (+47.1), then steady drift to −413 — sync
+  never failed, recorded as drift, not a gate break.
+- Processing sub-ms typical (parse/detector/metrics p50 ≤0.03ms); isolated
+  max spikes (941ms bookTicker metrics, 1660ms SOL aggTrade processing,
+  1098ms markPrice) with all engine queues 0/0 — absorbed, no backlog.
+
+Engines (all alive at END, 0 invalid / 0 late everywhere):
+- Returns: 1867 samples/symbol over 58,830,000ms span (16.34h incl.
+  restored history), 0 invalid, 0 late. 1m/3m/5m/15m/1h/4h mature; 24h
+  partial (16.34h/24h, honest).
+- Flow: 502,191 events (BTC 222513 / ETH 228183 / SOL 51495 trades),
+  latency p50 0.017ms / p95 0.085 / max 64.6, queue 0/0, 2103 completed
+  10s-buckets/symbol (~5.8h live) — 15m maturity + volume baselines mature.
+- Book: 388,570 msgs (130853/131465/126252), p50 0.19ms / p95 0.33,
+  gaps 33/32/32 all recovered, crossed 0, integrity HEALTHY.
+- OI: 813/813 polls ok (0 failures), latency p50 341ms / p95 3028 /
+  max 10190 (slow polls absorbed); tracker 332 samples/symbol (271 total);
+  1m/5m/15m + acceleration mature.
+- Structure: 1659 evals, p50 5.9ms / p95 10.2, queue 0/0; pivots/HH-LH/
+  HL-LL/breakout/range all evaluating (maturity inherited from 16.34h span).
+- VWAP 1m/3m/5m/15m + volatility 1m/5m/15m/1h available (zero stays 0.0,
+  distinct from unknown, per P1-08 contract).
+
+Discovery/HOT (proposal/discovery only — no WS resubscribe, trio intact):
+30 scans (600s cadence × 4.91h), seen 924 constant, eligible 486 → 496.
+HOT 6-slot rotation with vote/dwell hysteresis working (26 promote/demote
+events embedded in scan records; END set: AIN/MINA/AIOT/RLC/CAP/龙虾USDT;
+earlier windows held NMR/GRIFFAIN/LYN/PHA — rotation, not flapping).
+
+Dashboard long-run: all routes 200 during post-mortem
+(`/overview` 49.6ms, `/movers` 12ms, `/system` 6.4ms, token pages 9–22ms,
+`/api/health` 21.5ms, `/api/snapshot` 3.7ms, search 7.2ms). Health `stale`
+honestly (snapshot 22520s old — probe dead, expected); was `ok`-while-fed
+per 749 persisted snapshots. 9/9 movers categories render; discovery-only
+honesty holds (AINUSDT page: DISCOVERY ONLY + NO LIVE DEEP FEATURES).
+Chart: 4h MATURED during soak (16.34h span); 24h PARTIAL (16.34h/24h,
+capped 1000 pts, restored-history dependent). Post-mortem trailing-4h
+query returns 0 pts — honest staleness artifact (feed 6.25h old), not a bug.
+Movers anomaly CONFIRMED by code inspection (`dashboard_views.py`
+movers section: shared per-row `_v` overwritten by each later category
+loop, so a symbol in several categories shows the last-assigned value in
+every table — velocity/accel/vol-z/flow scales mixed). Recorded as a
+P1-11A audit item; NOT fixed during closure.
+
+Persistence (DB `data/microprobe.db`, schema v6, ~197MB at END; start size
+not captured — unavailable, not guessed): snapshots 749 (cap 1000, holds;
+min rt 32.19 / max rt 17677.917 — this run's 554 + prior runs retained),
+observations 10000 (cap holds), rejections 1000 (cap holds), price_samples
+5601 (16.34h span), flow_buckets 4710 bounded (600/597/304/69 per
+size/symbol), oi_samples 996, return/flow/book/OI/structure features 3
+each (REPLACE latest-only), discovery snapshot 1 (REPLACE), universe_events
+46 (cap 500), rank snapshots 3. Write errors 0, lock errors 0, no snapshot
+starvation (dedicated writer held), persistence inflight high-water 5063 →
+final 0, drained to 0. Sampling gate intact (accepted 34k/40k/39k vs
+dropped 468k/13.6M/349k aggTrade/bookTicker/depth; markPrice/forceOrder
+ungated and fully ingested).
+
+Resources: RSS/CPU NOT captured by the probe (UNAVAILABLE — do not infer
+from DB size). Backpressure bounded everywhere (engine queues 0/0,
+inflight 0, dashboard ms-grade post-mortem).
+
+Errors (full 4.91h): websocket 43 (38 public + 5 market) CONCERNING in the
+final hour (storm) / RECOVERED earlier; parse 0, payload 0, invalid engine
+events 0, late events 0; timestamp rejects 742182 (~4.8%) CONCERNING
+(final-hour concentration); persistence errors 0; SQLite errors 0; OI REST
+failures 0/813; depth gaps 97 total, all recovered (RECOVERED); dashboard
+HTTP errors 0 (post-mortem 200s); reconnects 43 CONCERNING. None BLOCKING
+except the duration gate itself.
+
+Detectors (telemetry only, NOT signals): `extreme_funding_rate` 16512 log
+lines (crossings BTC 5417 / ETH 4960 / SOL 6095 — near-constant series:
+175–176 valueChanges over 13519 samples; same hypothesis-artifact class,
+no conclusions); `large_liquidation_individual` 25 (all SELL: 8/12/5);
+`large_liquidation_window` 8 (1/4/3); `volume_spike` 102 (36/35/31). No
+threshold tuned.
+
+Safety: BOT_MODE=observe in startup + all 554 summaries; apiKeysUsed 0,
+authenticated clients false, realOrdersSent 0, cancels 0, leverage changes
+0, private/account endpoints 0, capital at risk 0, order paths absent
+(static test green). NO VIOLATION.
+
+Checkpoints (reconnects / rejects / msgs / gaps / flow / HOT):
+START rt32: 0 / 0 / 16k / 0s / 349 / [] → T+1h: 6 / 125k / 3.07M / 3s /
+108895 / 5 HOT → T+2h: 10 / 231k / 5.90M / 7s / 192706 / 6 HOT → T+3h:
+10 / 231k (flat — healthy middle third) / 9.20M / 7s / 292131 → T+4h:
+14 / 376k / 12.51M / 11s / 409250 → END rt17678: 43 / 742k / 15.34M /
+33s / 502191. Drift story: healthy middle (T+2h→T+3h: 0 new reconnects,
+0 new rejects over 3600s), degraded bookends, collapsing final hour.
+
+Verdict reasoning: gate A (one continuous run ≥21600s) fails — 17677.9s
+is the proven maximum, no final_summary, unclean externally-killed exit.
+Per the closure rubric FAIL is forced ("duration invalid"); PARTIAL does
+not apply (the run did not complete). Safety is clean, engines/persistence
+/dashboard all behaved, but transport showed sustained P1-01-grade episodes
+(aggTrade ETH/SOL p50 90–152s, final-hour storm). The 4.91h of evidence is
+VALID for P1-11 raw-feature auditing (monotonic, gap-free summaries), but
+P1-10 itself must be re-run (P1-10R) with a survivable launch before any
+gate may pass. `docs/PHASE_1_REPORT.md` untouched.
+
 ## Known gaps (Phase 1 work ahead, in order)
 
 Minimal dashboard: DONE (P1-03 PASS) → terminal DONE (P1-09 PASS,
@@ -449,12 +592,20 @@ VWAP + volatility + structure: DONE (P1-08 PASS — flow-VWAP, raw vol,
 range expansion, confirmed pivots, v0.7.0 dashboard + APIs, 372s run).
 Transport re-validation: DONE (P1-01R PASS — 45min healthy window, soak
 gate unblocked).
-Remaining: ≥6h soak (P1-10, may start on instruction), state classifier
-(P1-12, still blocked on P1-11), signal UI (P1-13), calibration evidence
-(P1-14).
+Remaining: P1-10R ≥6h soak re-run (P1-10 FAIL was truncated at 4.91h —
+may start on instruction, blocking launch with merged-stream UTF-8 logging),
+then state classifier (P1-12, still blocked on P1-11), signal UI (P1-13),
+calibration evidence (P1-14). P1-11 raw-feature validation may use the valid
+4.91h P1-10 evidence; the Movers shared-`_v` category-value anomaly is a
+recorded P1-11A audit item (not fixed).
 
 ## Blockers / issues
 
+- P1-10 FAIL (2026-10-07): soak killed externally at 4.91h/6h (17677.9s),
+  no final_summary, exit unknown. P1-10R re-run required before any soak
+  gate passes; launch must survive the full window (see DECISIONS) and
+  capture merged stdout+stderr as UTF-8 (the P1-10 UTF-16 PowerShell `>`
+  capture wrapped every long JSON line and had to be reconstructed).
 - Transport was flaky in this environment (P1-01 PARTIAL: 58 reconnects,
   85% rejects), but P1-01R (45min, 0 reconnects, 0% rejects, sub-second
   lags) now PASSES the soak gate. If a future run shows P1-01-grade
