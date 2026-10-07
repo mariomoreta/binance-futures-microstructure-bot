@@ -12,6 +12,12 @@
     "top_n": 10,
     "min_votes": 2
   },
+  "open_interest": {
+    "enabled": true,
+    "interval_seconds": 60,
+    "request_timeout_seconds": 15.0,
+    "stale_after_seconds": 180
+  },
   "clock_sync": {
     "interval_seconds": 600,
     "samples": 5,

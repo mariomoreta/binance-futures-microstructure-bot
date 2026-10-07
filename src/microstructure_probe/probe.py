@@ -11,6 +11,7 @@ from typing import Any, Callable
 
 import websockets
 
+from .book import BookEngine
 from .clock import ClockSynchronizer, corrected_lag_ms
 from .config import ProbeConfig
 from .detectors import EventDetectors
@@ -26,6 +27,7 @@ from .discovery import (
 from .flow import FlowEngine
 from .metrics import order_book_imbalance, spread_bps
 from .momentum import RANK_METRICS, VELOCITY_HORIZONS, RankTracker
+from .open_interest import OpenInterestPoller, OpenInterestTracker
 from .persistence import PersistenceStore, get_persistence_store
 from .returns import ReturnEngine, SymbolPriceSeries
 from .telemetry import RunningDistribution
@@ -141,6 +143,24 @@ class MarketProbe:
             min_baseline_buckets=config.volume.minimum_buckets,
             latency_max_samples=config.telemetry_max_samples,
         )
+        # P1-07: order-book engine (every valid depth snapshot, pre-sampling)
+        # + open-interest tracker/poller (bounded public REST, own cadence).
+        # Only subscribed (allowed) symbols are tracked; HOT stays proposed.
+        self._book = BookEngine(
+            symbols=config.symbols,
+            latency_max_samples=config.telemetry_max_samples,
+        )
+        self._oi = OpenInterestTracker(
+            symbols=config.symbols,
+            stale_after_ms=config.open_interest.stale_after_seconds * 1000,
+        )
+        self._oi_poller = OpenInterestPoller(
+            symbols=config.symbols,
+            interval_seconds=config.open_interest.interval_seconds,
+            timeout_seconds=config.open_interest.request_timeout_seconds,
+            wall_clock_ms=self._wall_clock_ms,
+            latency_max_samples=config.telemetry_max_samples,
+        )
         # P1-05: discovery + momentum/rank state. Core symbols are pinned
         # benchmarks; the HOT set is proposed only (no dynamic WS resubscribe
         # in this task — see docs).
@@ -167,6 +187,7 @@ class MarketProbe:
                 dict(self.config.observation_sample_ms))
             self._restore_return_history()
             self._restore_flow_history()
+            self._restore_oi_history()
         return self._persistence
 
     def set_persistence(self, store: PersistenceStore) -> None:
@@ -183,6 +204,51 @@ class MarketProbe:
     def flow(self) -> FlowEngine:
         """The aggressive trade-flow engine (P1-06)."""
         return self._flow
+
+    @property
+    def book(self) -> BookEngine:
+        """The order-book intelligence engine (P1-07)."""
+        return self._book
+
+    @property
+    def oi(self) -> OpenInterestTracker:
+        """The open-interest tracker (P1-07)."""
+        return self._oi
+
+    @property
+    def oi_poller(self) -> OpenInterestPoller:
+        """The bounded OI REST scheduler (P1-07)."""
+        return self._oi_poller
+
+    def set_oi_fetcher(self, fetch_fn) -> None:
+        """Replace the OI REST fetcher (tests only — never live traffic)."""
+        self._oi_poller = OpenInterestPoller(
+            symbols=self.config.symbols,
+            interval_seconds=self.config.open_interest.interval_seconds,
+            timeout_seconds=self.config.open_interest.request_timeout_seconds,
+            wall_clock_ms=self._wall_clock_ms,
+            latency_max_samples=self.config.telemetry_max_samples,
+            fetch_fn=fetch_fn,
+        )
+
+    def _restore_oi_history(self) -> None:
+        """Best-effort restart continuity: reload timestamped OI samples.
+
+        Anchors honor actual fetch times, so a restart gap simply ages
+        history out via tolerance — never fabricated, never double-counted
+        (samples are idempotent per symbol+fetch_ms).
+        """
+        if self._persistence is None:
+            return
+        try:
+            all_rows = []
+            for symbol in self.config.symbols:
+                all_rows.extend(
+                    self._persistence.load_oi_samples(
+                        symbol=symbol, limit=2000))
+            self._oi.restore_samples(all_rows)
+        except Exception as exc:
+            LOGGER.warning(json.dumps({"kind": "persistence_error", "error": str(exc)}))
 
     def _restore_flow_history(self) -> None:
         """Best-effort restart continuity: reload completed flow buckets.
@@ -253,6 +319,10 @@ class MarketProbe:
         if self.config.discovery.enabled:
             tasks.append(
                 asyncio.create_task(self._discovery_loop(), name="discovery")
+            )
+        if self.config.open_interest.enabled:
+            tasks.append(
+                asyncio.create_task(self._oi_loop(), name="open-interest")
             )
         if duration_seconds is not None:
             tasks.append(
@@ -403,6 +473,23 @@ class MarketProbe:
                 ):
                     self.stats.depth_sequence_gaps[symbol] += 1
                 self.stats.depth_last_update_id[symbol] = int(payload["u"])
+                # P1-07 book engine: EVERY valid depth snapshot lands here,
+                # BEFORE and INDEPENDENT of the raw-observation sampling gate.
+                # Post-skew-guard only (rejected messages return early above).
+                # Invalid books are counted inside the engine and never
+                # guessed; the message still flows to stats/persistence
+                # untouched. Engine failures must never break that path.
+                try:
+                    self._book.ingest(
+                        symbol=str(payload["s"]),
+                        event_time_ms=int(payload["E"]),
+                        update_id=payload.get("u"),
+                        prev_update_id=payload.get("pu"),
+                        bids=payload.get("b"),
+                        asks=payload.get("a"),
+                    )
+                except (KeyError, TypeError, ValueError):
+                    pass
             metrics_end_ns = self._perf_counter_ns()
 
             if stream.endswith("@aggTrade"):
@@ -718,6 +805,36 @@ class MarketProbe:
             if not self._stop.is_set():
                 await self.run_discovery_scan()
 
+    async def _oi_loop(self) -> None:
+        """Bounded OI poll scheduler: one round per tick, off the WS loop.
+
+        REST runs in a worker thread (never blocks websocket processing);
+        failures are counted in the poller and logged, then the loop
+        continues on cadence. Stops with the probe.
+        """
+        # First round immediately so OI state exists early in the run.
+        await self._oi_poll_round()
+        while not self._stop.is_set():
+            try:
+                await asyncio.wait_for(
+                    self._stop.wait(),
+                    timeout=self._oi_poller.interval_seconds)
+            except asyncio.TimeoutError:
+                pass
+            if not self._stop.is_set():
+                await self._oi_poll_round()
+
+    async def _oi_poll_round(self) -> None:
+        try:
+            outcome = await asyncio.to_thread(
+                self._oi_poller.poll_once, self._oi)
+        except Exception as exc:
+            LOGGER.warning(json.dumps(
+                {"kind": "oi_poll_error", "error": str(exc)}))
+            return
+        LOGGER.info(json.dumps({"kind": "oi_poll", **outcome,
+                                "failures": self._oi_poller.failures}))
+
     def build_summary(self, *, final: bool) -> dict[str, object]:
         now = self._monotonic()
         runtime = max(0.0, now - self.stats.started_monotonic)
@@ -864,6 +981,15 @@ class MarketProbe:
             # per-symbol features persist via store_flow_features for the
             # dashboard; the summary carries counters only.
             "flow": self._flow.stats(),
+            # P1-07 additive blocks: book engine counters + latency (every
+            # valid depth snapshot pre-sampling) and OI poll/tracker state.
+            # Full per-symbol records persist via store_book_features /
+            # store_oi_features for the dashboard.
+            "book": self._book.stats(),
+            "openInterest": {
+                "tracker": self._oi.stats(),
+                "poll": self._oi_poller.stats(),
+            },
         }
 
     @staticmethod
@@ -936,6 +1062,24 @@ class MarketProbe:
                 if vec:
                     self.persistence.store_rank_snapshot(metric, vec)
             self.persistence.store_return_features(rows)
+            # P1-07 (additive): persist compact book + OI state. Latest
+            # book snapshot per symbol for the dashboard (never restored
+            # as live — the book restarts empty until fresh depth lands);
+            # OI samples (bounded, timestamped) + latest OI features with
+            # 1m price returns for joint context.
+            self.persistence.store_book_features(
+                self._book.snapshot_all(as_of_ms))
+            oi_new = self._oi.drain_new_samples()
+            if oi_new:
+                self.persistence.store_oi_samples(oi_new)
+            price_returns_1m = {}
+            for row in rows:
+                symbol = str(row.get("symbol", "UNKNOWN"))
+                returns = row.get("returns")
+                price_returns_1m[symbol] = (
+                    returns.get("1m") if isinstance(returns, dict) else None)
+            self.persistence.store_oi_features(
+                self._oi.snapshot_all(as_of_ms, price_returns_1m))
         except Exception as exc:
             LOGGER.warning(json.dumps({"kind": "persistence_error", "error": str(exc)}))
         LOGGER.info(json.dumps(summary, sort_keys=True, allow_nan=False))

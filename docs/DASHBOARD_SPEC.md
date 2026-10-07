@@ -69,6 +69,19 @@ horizons/baselines/acceleration; 404 when empty) and
 `GET /api/features/volume` (baselines + acceleration subset). No signal
 labels, no buttons, no controls; `/system` and health separations kept.
 
+### P1-07 book + OI terminal evolution — IMPLEMENTED (PASS)
+
+`/overview` market-intelligence area gained **Live order book** (subscribed
+symbols only): bid/ask, spread bps, visible bid/ask notionals, notional
+imbalance, microprice displacement, slope asymmetry, 10bps concentration,
+integrity (OK/DEGRADED + gaps), freshness — and **Live open interest**:
+current OI, 1m/5m deltas, acceleration, descriptive 1m price/OI context,
+freshness (+STALE flag). Discovery live-feed cells now read DISCOVERY ONLY
+— NO LIVE FLOW/BOOK. Machine-readable `GET /api/features/book` (snapshot
+semantics + integrity; 404 when empty) and `GET /api/features/open-interest`
+(poll source + deltas + contexts). No signal labels, no buttons, no
+controls; `/system` and health separations kept.
+
 ### Stage 2 — P1-09 MARKET-INTELLIGENCE DASHBOARD
 
 Add: `/movers`, `/symbol/:symbol`. Show raw features BEFORE classifier scores.

@@ -50,11 +50,11 @@ signal engine → position manager → risk engine → execution engine
 | Detectors (liq/funding/volume) | `detectors.py` | Implemented (hypothesis thresholds) |
 | Metrics (spread, imbalance, z-score, percentile) | `metrics.py` | Implemented |
 | Telemetry/distributions | `telemetry.py` | Implemented |
-| Feature engine (multi-TF returns, rank, VWAP, vol, OI, flow) | `returns.py` + `universe.py` + `momentum.py` + `flow.py` | Returns P1-04 DONE; velocity/accel/live-ranks P1-05 DONE; aggressive flow + volume baselines P1-06 DONE; VWAP/realized-vol/OI pending (P1-07…) |
+| Feature engine (multi-TF returns, rank, VWAP, vol, OI, flow) | `returns.py` + `universe.py` + `momentum.py` + `flow.py` + `book.py` + `open_interest.py` | Returns P1-04 DONE; velocity/accel/live-ranks P1-05 DONE; aggressive flow + volume baselines P1-06 DONE; order-book + OI P1-07 DONE; VWAP/realized-vol pending (P1-08) |
 | Discovery layer (public REST scan → HOT proposal) | `discovery.py` | P1-05 DONE (exchangeInfo + 24hr tickers, filters, hysteresis selection; no WS changes) |
 | State classifier | — | NOT BUILT until P1-12, BLOCKED on P1-11 validation (`docs/MARKET_STATES.md`) |
-| Persistence foundation | `persistence.py` | v4 (v3 + flow_features REPLACE-per-symbol + flow_buckets bounded history, tested migrations); sampling gate + dedicated snapshot writer |
-| Dashboard | `dashboard.py` | LIVE v0.5.0 (P1-03 + P1-04 returns + P1-05 intel/momentum/discovery + P1-06 flow table + flow/volume APIs); staged P1-09 → P1-13 |
+| Persistence foundation | `persistence.py` | v5 (v4 + book_features REPLACE-per-symbol + oi_samples bounded history + oi_features, tested migrations); sampling gate + dedicated snapshot writer |
+| Dashboard | `dashboard.py` | LIVE v0.6.0 (P1-03 + P1-04 returns + P1-05 intel/momentum/discovery + P1-06 flow table + flow/volume APIs + P1-07 book/OI tables + book/OI APIs); staged P1-09 → P1-13 |
 
 ## Subscription posture (P1-05)
 

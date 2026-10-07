@@ -41,6 +41,14 @@ class DiscoveryConfig:
 
 
 @dataclass(frozen=True)
+class OpenInterestConfig:
+    enabled: bool
+    interval_seconds: int
+    request_timeout_seconds: float
+    stale_after_seconds: int
+
+
+@dataclass(frozen=True)
 class ClockSyncConfig:
     interval_seconds: int
     samples: int
@@ -62,6 +70,10 @@ class ProbeConfig:
     discovery: DiscoveryConfig = field(default_factory=lambda: DiscoveryConfig(
         enabled=True, interval_seconds=600, hot_dynamic_slots=6,
         min_quote_volume_usdt=1_000_000.0, top_n=10, min_votes=2))
+    open_interest: OpenInterestConfig = field(
+        default_factory=lambda: OpenInterestConfig(
+            enabled=True, interval_seconds=60,
+            request_timeout_seconds=15.0, stale_after_seconds=180))
 
 
 def _positive(name: str, value: Any) -> float:
@@ -143,9 +155,58 @@ def load_config(path: str | Path) -> ProbeConfig:
     if not 0 < lower < upper < 1:
         raise ValueError("Los percentiles de funding deben cumplir 0 < lower < upper < 1")
 
+def _open_interest_config(raw: Any) -> OpenInterestConfig:
+    """Optional OI section; absent means code defaults (enabled, 60s)."""
+    raw = raw if isinstance(raw, dict) else {}
+    return OpenInterestConfig(
+        enabled=bool(raw.get("enabled", True)),
+        interval_seconds=int(_positive(
+            "open_interest.interval_seconds",
+            raw.get("interval_seconds", 60))),
+        request_timeout_seconds=_positive(
+            "open_interest.request_timeout_seconds",
+            raw.get("request_timeout_seconds", 15.0)),
+        stale_after_seconds=int(_positive(
+            "open_interest.stale_after_seconds",
+            raw.get("stale_after_seconds", 180))),
+    )
+
+
+def load_config(path: str | Path) -> ProbeConfig:
+    bot_mode = os.environ.get("BOT_MODE", "observe").strip().lower()
+    if bot_mode != "observe":
+        raise RuntimeError(
+            f"BOT_MODE={bot_mode!r} no esta permitido en Fase 1; use BOT_MODE=observe"
+        )
+
+    raw = json.loads(Path(path).read_text(encoding="utf-8"))
+    symbols = tuple(dict.fromkeys(str(item).strip().upper() for item in raw["symbols"]))
+    if not symbols or any(not symbol.endswith("USDT") for symbol in symbols):
+        raise ValueError("symbols debe contener al menos un contrato USD-M terminado en USDT")
+
+    liquidation_raw = raw["liquidation"]
+    individual = {
+        str(key).upper(): _positive(f"individual_notional_usdt.{key}", value)
+        for key, value in liquidation_raw["individual_notional_usdt"].items()
+    }
+    window = {
+        str(key).upper(): _positive(f"window_notional_usdt.{key}", value)
+        for key, value in liquidation_raw["window_notional_usdt"].items()
+    }
+    missing = set(symbols) - (individual.keys() & window.keys())
+    if missing:
+        raise ValueError(f"Faltan umbrales de liquidacion para: {sorted(missing)}")
+
+    funding_raw = raw["funding"]
+    lower = float(funding_raw["lower_percentile"])
+    upper = float(funding_raw["upper_percentile"])
+    if not 0 < lower < upper < 1:
+        raise ValueError("Los percentiles de funding deben cumplir 0 < lower < upper < 1")
+
     return ProbeConfig(
         symbols=symbols,
         discovery=_discovery_config(raw.get("discovery", {})),
+        open_interest=_open_interest_config(raw.get("open_interest", {})),
         observation_sample_ms=_observation_sample_ms(
             raw.get("observation_sample_ms", {})
         ),

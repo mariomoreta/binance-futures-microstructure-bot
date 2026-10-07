@@ -80,16 +80,36 @@ Thresholds are HYPOTHESIS until Phase 2–3 statistics exist.
 - Liquidations: individual + window notionals exist; add cascade rate,
   long-vs-short liquidation imbalance (still pending).
 
-## Book
+## Book — IMPLEMENTED P1-07 (no thresholds, no composite score)
 
-- Spread (bps, exists), depth totals, book imbalance (exists).
-- Extend: depth slope/concentration, microprice, book resilience after sweeps.
+- Engine: `src/microstructure_probe/book.py` (`BookEngine`, per-symbol
+  `SymbolBookState`), fed by every VALID depth20@100ms snapshot
+  pre-sampling (post-skew guard only). Full-snapshot semantics verified
+  (docs + live `pu`-chain).
+- Per snapshot: best bid/ask, mid, spread abs/bps, top-1/5/10/20 base +
+  notional sums per side (level counts exposed), qty/notional imbalance
+  ([−1,+1], null on zero), microprice + displacement bps (null on zero
+  top qty), LS-through-origin depth slope per side + asymmetry,
+  concentration within 5/10/25bps (null when the book does not span the
+  band, coverage exposed), crossed-top flag, sequence integrity
+  (gap count, last `u`, DEGRADED-until-chained), freshness.
+- Invalid books dropped + counted (previous retained); strictly-older `E`
+  dropped, same-E accepted; only subscribed symbols tracked.
+- Still pending: book resilience after sweeps (P1-08 territory).
 
-## Positioning / carry
+## Positioning / carry — OI IMPLEMENTED P1-07 (descriptive only)
 
-- Open interest, OI delta, OI acceleration (NOT YET SOURCED — needs public
-  OI endpoint task). Price-up + OI-up vs price-up + OI-down distinguish very
-  different regimes; do not model ignition without it long-term.
+- Source: public `GET /fapi/v1/openInterest`, 60s bounded poller
+  (`OpenInterestPoller`: one sequential round/tick, worker thread,
+  failures counted, WS never blocked). `openInterestHist` deferred.
+- Tracker (`OpenInterestTracker`, 2000 samples/symbol): current OI +
+  exchange/fetch timestamps, deltas abs/% + rates over 1m/5m/15m vs
+  actual-timestamp anchors (tolerance max(60s,h/20)), 1m acceleration;
+  UNKNOWN until warmed, never 0; staleness flagged, never hidden.
+- Price/OI context per horizon (`PRICE_UP_OI_UP` etc., `MIXED`,
+  `UNKNOWN`) — descriptive regime tags only, no signal/bullish/bearish
+  claims. Price-up + OI-up vs price-up + OI-down regimes are now
+  observable raw inputs for P1-11/P1-12.
 - Funding rate extremes (exists, percentile-based) + funding momentum.
 - Basis (spot vs futures) where useful; needs spot feed — optional Phase 1
   stretch, default OFF unless a task authorizes it.

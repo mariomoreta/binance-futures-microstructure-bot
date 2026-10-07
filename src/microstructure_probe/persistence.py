@@ -246,40 +246,53 @@ class PersistenceStore:
             row = cursor.fetchone()
             current_version = int(row[0]) if row else 0
             
-            if current_version >= 4:
+            if current_version >= 5:
+                self._initialized = True
+                return
+
+            if current_version == 4:
+                # Migrate v4 -> v5: keep existing rows, add P1-07 tables.
+                self._create_schema_v5(cursor)
+                cursor.execute(
+                    "INSERT OR REPLACE INTO persistence_meta (key, value) VALUES (?, ?)",
+                    ("schema_version", "5")
+                )
                 self._initialized = True
                 return
 
             if current_version == 3:
-                # Migrate v3 -> v4: keep existing rows, add P1-06 tables.
+                # Migrate v3 -> v5: keep existing rows, add P1-06 + P1-07 tables.
                 self._create_schema_v4(cursor)
+                self._create_schema_v5(cursor)
                 cursor.execute(
                     "INSERT OR REPLACE INTO persistence_meta (key, value) VALUES (?, ?)",
-                    ("schema_version", "4")
+                    ("schema_version", "5")
                 )
                 self._initialized = True
                 return
 
             if current_version == 2:
-                # Migrate v2 -> v4: keep existing rows, add P1-05 + P1-06 tables.
+                # Migrate v2 -> v5: keep existing rows, add P1-05..P1-07 tables.
                 self._create_schema_v3(cursor)
                 self._create_schema_v4(cursor)
+                self._create_schema_v5(cursor)
                 cursor.execute(
                     "INSERT OR REPLACE INTO persistence_meta (key, value) VALUES (?, ?)",
-                    ("schema_version", "4")
+                    ("schema_version", "5")
                 )
                 self._initialized = True
                 return
 
             if current_version == 1:
-                # Migrate v1 -> v4: keep existing rows, add P1-04..P1-06 tables.
+                # Migrate v1 -> v5: keep existing rows, add P1-04..P1-07 tables.
                 self._ensure_snapshot_columns(cursor)
                 self._create_schema_v2(cursor)
                 self._create_schema_v3(cursor)
                 self._create_schema_v4(cursor)
+                self._create_schema_v5(cursor)
                 cursor.execute(
                     "INSERT OR REPLACE INTO persistence_meta (key, value) VALUES (?, ?)",
-                    ("schema_version", "4")
+                    ("schema_version", "5")
                 )
                 self._initialized = True
                 return
@@ -292,11 +305,13 @@ class PersistenceStore:
             self._create_schema_v3(cursor)
             # Create tables for schema v4
             self._create_schema_v4(cursor)
+            # Create tables for schema v5
+            self._create_schema_v5(cursor)
 
             # Set schema version
             cursor.execute(
                 "INSERT OR REPLACE INTO persistence_meta (key, value) VALUES (?, ?)",
-                ("schema_version", "4")
+                ("schema_version", "5")
             )
 
             self._initialized = True
@@ -415,6 +430,47 @@ class PersistenceStore:
         cursor.execute("""
             CREATE INDEX IF NOT EXISTS idx_flow_buckets_symbol_size_ts
             ON flow_buckets(symbol, size_s, bucket_ms DESC)
+        """)
+
+    def _create_schema_v5(self, cursor: sqlite3.Cursor) -> None:
+        """P1-07 book + OI tables: latest compact features + OI history.
+
+        ``book_features`` is one REPLACE row per symbol (latest snapshot
+        only — the book restarts empty by design and must NOT be restored
+        as live without fresh depth data). ``oi_samples`` keeps timestamped
+        poll samples per symbol (bounded: last 2000 per symbol) so OI
+        deltas survive restarts while timestamps stay valid.
+        ``oi_features`` is one REPLACE row per symbol (dashboard/API feed).
+        """
+        cursor.execute("""
+            CREATE TABLE IF NOT EXISTS book_features (
+                symbol TEXT PRIMARY KEY,
+                updated_ms INTEGER NOT NULL,
+                feature_json TEXT NOT NULL
+            )
+        """)
+
+        cursor.execute("""
+            CREATE TABLE IF NOT EXISTS oi_samples (
+                symbol TEXT NOT NULL,
+                fetch_ms INTEGER NOT NULL,
+                exchange_time_ms INTEGER,
+                oi REAL NOT NULL,
+                PRIMARY KEY (symbol, fetch_ms)
+            )
+        """)
+
+        cursor.execute("""
+            CREATE TABLE IF NOT EXISTS oi_features (
+                symbol TEXT PRIMARY KEY,
+                updated_ms INTEGER NOT NULL,
+                feature_json TEXT NOT NULL
+            )
+        """)
+
+        cursor.execute("""
+            CREATE INDEX IF NOT EXISTS idx_oi_samples_symbol_ts
+            ON oi_samples(symbol, fetch_ms DESC)
         """)
 
     def _create_schema_v1(self, cursor: sqlite3.Cursor) -> None:
@@ -1127,9 +1183,143 @@ class PersistenceStore:
                 "base": float(row[4]), "buy_notional": float(row[5]),
                 "sell_notional": float(row[6]), "trades": int(row[7]),
             } for row in cursor.fetchall()]
+            rows.reverse()
+        return rows
+
+    def store_book_features(self, features: List[Dict[str, Any]]) -> None:
+        """Replace the latest book record per symbol (dashboard feed).
+
+        One row per symbol: inherently bounded. Synchronous; the probe
+        calls this from the infrequent summary path. The book is never
+        restored as live on restart (see load contract below).
+        """
+        if not features:
+            return
+        if not self._initialized:
+            self.init_db()
+        now_ms = int(time.time() * 1000)
+        with self._get_cursor() as cursor:
+            cursor.executemany(
+                "INSERT OR REPLACE INTO book_features (symbol, updated_ms, feature_json)"
+                " VALUES (?, ?, ?)",
+                [(str(f.get("symbol", "UNKNOWN")).upper(), now_ms,
+                  _safe_json(f)) for f in features],
+            )
+
+    def latest_book_features(self) -> List[Dict[str, Any]]:
+        """Latest book record per symbol, ordered by symbol (dashboard/API)."""
+        if not self._initialized:
+            self.init_db()
+        with self._get_cursor() as cursor:
+            cursor.execute(
+                "SELECT feature_json FROM book_features ORDER BY symbol")
+            out = []
+            for (blob,) in cursor.fetchall():
+                try:
+                    parsed = json.loads(blob)
+                except (json.JSONDecodeError, TypeError):
+                    continue
+                if isinstance(parsed, dict):
+                    out.append(parsed)
+            return out
+
+    def store_oi_samples(self, rows: List[Dict[str, Any]]) -> None:
+        """Persist timestamped OI poll samples (restart continuity).
+
+        Idempotent per (symbol, fetch_ms); retention keeps the last 2000
+        samples per symbol (~33h at 60s cadence — covers all OI horizons).
+        Synchronous; the probe calls this from the infrequent summary path.
+        """
+        if not rows:
+            return
+        if not self._initialized:
+            self.init_db()
+        with self._get_cursor() as cursor:
+            cursor.executemany(
+                "INSERT OR REPLACE INTO oi_samples"
+                " (symbol, fetch_ms, exchange_time_ms, oi)"
+                " VALUES (?, ?, ?, ?)",
+                [(str(r.get("symbol", "UNKNOWN")).upper(),
+                  int(r.get("fetch_ms", 0)),
+                  (int(r["exchange_time_ms"])
+                   if r.get("exchange_time_ms") is not None else None),
+                  float(r.get("oi", 0.0)))
+                 for r in rows],
+            )
+            cursor.execute("""
+                DELETE FROM oi_samples
+                WHERE (symbol, fetch_ms) NOT IN (
+                    SELECT symbol, fetch_ms FROM (
+                        SELECT symbol, fetch_ms,
+                               ROW_NUMBER() OVER (
+                                   PARTITION BY symbol
+                                   ORDER BY fetch_ms DESC) AS rn
+                        FROM oi_samples
+                    ) WHERE rn <= 2000
+                )
+            """)
+
+    def load_oi_samples(self, symbol: Optional[str] = None,
+                        limit: int = 2000) -> List[Dict[str, Any]]:
+        """Load persisted OI samples, oldest first (tracker restore)."""
+        if not self._initialized:
+            self.init_db()
+        params: List[Any] = []
+        where = ""
+        if symbol is not None:
+            where = "WHERE symbol = ?"
+            params.append(str(symbol).upper())
+        with self._get_cursor() as cursor:
+            cursor.execute(
+                "SELECT symbol, fetch_ms, exchange_time_ms, oi FROM oi_samples"
+                f" {where} ORDER BY symbol, fetch_ms DESC"
+                f" LIMIT {max(int(limit), 1)}",
+                params)
+            rows = [{
+                "symbol": row[0], "fetch_ms": int(row[1]),
+                "exchange_time_ms": (int(row[2]) if row[2] is not None
+                                     else None),
+                "oi": float(row[3]),
+            } for row in cursor.fetchall()]
         rows.reverse()
         return rows
-    
+
+    def store_oi_features(self, features: List[Dict[str, Any]]) -> None:
+        """Replace the latest OI record per symbol (dashboard feed).
+
+        One row per symbol: inherently bounded. Synchronous; the probe
+        calls this from the infrequent summary path.
+        """
+        if not features:
+            return
+        if not self._initialized:
+            self.init_db()
+        now_ms = int(time.time() * 1000)
+        with self._get_cursor() as cursor:
+            cursor.executemany(
+                "INSERT OR REPLACE INTO oi_features (symbol, updated_ms, feature_json)"
+                " VALUES (?, ?, ?)",
+                [(str(f.get("symbol", "UNKNOWN")).upper(), now_ms,
+                  _safe_json(f)) for f in features],
+            )
+
+    def latest_oi_features(self) -> List[Dict[str, Any]]:
+        """Latest OI record per symbol, ordered by symbol (dashboard/API)."""
+        if not self._initialized:
+            self.init_db()
+        with self._get_cursor() as cursor:
+            cursor.execute(
+                "SELECT feature_json FROM oi_features ORDER BY symbol")
+            out = []
+            for (blob,) in cursor.fetchall():
+                try:
+                    parsed = json.loads(blob)
+                except (json.JSONDecodeError, TypeError):
+                    continue
+                if isinstance(parsed, dict):
+                    out.append(parsed)
+            return out
+
     def _apply_retention_policy(
         self, 
         cursor: sqlite3.Cursor, 
@@ -1303,7 +1493,8 @@ class PersistenceStore:
                               "rejected_observations", "price_samples",
                               "return_features", "discovery_snapshots",
                               "universe_events", "rank_snapshots",
-                              "flow_features", "flow_buckets"):
+                              "flow_features", "flow_buckets",
+                              "book_features", "oi_samples", "oi_features"):
                     cursor.execute(f"SELECT COUNT(*) FROM {table}")
                     info["rows"][table] = cursor.fetchone()[0]
         except Exception:

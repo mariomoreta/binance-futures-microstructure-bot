@@ -183,3 +183,48 @@ persist/restore, so restarts cannot double-count; live trailing windows
 restart empty by design. Telemetry snapshots intentionally carry no flow
 block (fixed-column subset, as with returns/discovery) — counters live in
 summaries/logs, features in `flow_features`.
+
+## 2026-10-08 — P1-07 order-book intelligence architecture
+
+Depth pushes are FULL top-20 snapshots (verified docs + live payloads, see
+`docs/MARKET_DATA.md`). Engine: `src/microstructure_probe/book.py`
+(`SymbolBookState` per LIVE symbol, `BookEngine` multi-symbol) ingests
+every valid depth message pre-sampling, synchronously, with its own
+latency distribution. Features per snapshot: best bid/ask (explicit
+max/min, never wire order), mid, spread abs/bps, top-1/5/10/20
+base+notional sums, qty/notional imbalance in [-1,+1] (null on zero),
+microprice `(Pa*Qb+Pb*Qa)/(Qb+Qa)` + displacement bps, LS-through-origin
+slope of cumulative notional vs distance-bps per side + asymmetry,
+concentration within 5/10/25bps (null when the visible book does not span
+the band, coverage exposed). Crossed tops kept + counted (real transient
+data). Invalid books (empty side, bad numbers) dropped + counted, previous
+snapshot retained. Late = strictly-older `E` (never regresses); same-E
+accepted. Gap policy: `pu != last u` → gap counted, state DEGRADED but the
+current full snapshot still featured, until a chained update recovers
+(proven live: 1 gap/symbol after a reconnect, all recovered). No composite
+quality score (P1-11/P1-12 own modeling). No thresholds anywhere.
+
+## 2026-10-08 — P1-07 open-interest source + polling architecture
+
+Source: public `GET /fapi/v1/openInterest` only (verified live shape
+`{symbol, openInterest base units, time}`; 3 req/min at 60s cadence is
+negligible under the 1000/5min IP limit). `openInterestHist` evaluated and
+DEFERRED: one provenance (our timestamped polls) keeps delta math exact
+and scope bounded; revisit as a bootstrap option later. Engine:
+`src/microstructure_probe/open_interest.py` — `OpenInterestPoller` (one
+sequential round per tick in a worker thread, failures counted, never
+breaks WS) + `OpenInterestTracker` (bounded 2000-sample deque/symbol;
+deltas vs actual-timestamp anchors with max(60s,h/20) tolerance over
+1m/5m/15m; 1m acceleration; UNKNOWN until warmed). Price/OI context labels
+(`PRICE_UP_OI_UP` etc., `MIXED` on exact zero, `UNKNOWN` on missing) are
+descriptive regime tags only — no long/short/squeeze/bullish/bearish
+claims without validated methodology.
+
+## 2026-10-08 — P1-07 persistence schema v5 (additive migration)
+
+v4→v5 adds `book_features` (REPLACE-per-symbol latest snapshot),
+`oi_samples` (timestamped polls, 2000/symbol retention, idempotent keys),
+`oi_features` (REPLACE-per-symbol). Tested v1/v2/v3/v4→v5 with rows
+preserved. Restart rule: OI history restores (timestamps stay valid, gaps
+age out via tolerance); the book NEVER restores as live — the latest row
+persists for continuity but only fresh depth marks it live.

@@ -47,6 +47,43 @@ Streams", copyright 2026) + live WS/REST payloads captured from
   The P1-06 engine accepts them in arrival order (strictly-older `E` is
   late-dropped, never revises history).
 
+## Depth stream semantics (verified P1-07, 2026-10-08)
+
+Primary source: current official USD-M Futures docs (Partial Book Depth
+Streams page + catalog schema, copyright 2026) + live WS captures from
+`fstream.binance.com` in this environment.
+
+- `{symbol}@depth20@100ms` pushes a FULL top-20 snapshot every 100ms
+  (not diffs). Valid levels are 5/10/20; `/public` endpoint.
+- Fields: `e`="depthUpdate", `E` event time, `T` transaction time,
+  `s` symbol, `ps` pair symbol, `U` first update ID in event, `u` final
+  update ID, `pu` previous final update ID (continuity: `pu` must equal
+  the last seen `u`), `b`/`a` bid/ask levels as [price, qty] strings,
+  `st` symbol type (1 = UM; observed live `st: 1`).
+- Live continuity confirmed: consecutive pushes chain `pu == last u`.
+  A mismatch means intermediate snapshots were missed (gap) — the
+  current push is still a complete picture.
+- After CM migration the payload also carries `ps` (observed live).
+
+## Open Interest endpoints (verified P1-07, 2026-10-08)
+
+Primary source: current official USD-M Futures market-data REST docs
+(copyright 2026) + live responses from `fapi.binance.com`.
+
+- `GET /fapi/v1/openInterest?symbol=<SYM>` — present OI. Public, no key.
+  Response: `{"symbol", "openInterest" (base-asset units, string),
+  "time" (exchange ms)}`. Verified live (BTCUSDT → 95643.451 base).
+  Request weight 1 (legacy page; current page excerpt omits it — our
+  cadence of 3 req/min is negligible under the 1000 req/5min IP limit
+  either way).
+- `GET /futures/data/openInterestHist` — OI statistics history
+  (periods 5m/15m/30m/1h/2h/4h/6h/12h/1d, default limit 30, max 500,
+  latest 1 month). Evaluated and deliberately DEFERRED in P1-07
+  (single-provenance polled history; see `docs/DECISIONS.md`).
+- Futures historical-data note: third-party collectors poll the same
+  REST OI endpoint about every 6s per instrument — our 60s cadence is
+  conservative by comparison.
+
 ## REST (public only — verified live 2026-10-06)
 
 - `GET /fapi/v1/time` — clock sync only (5 samples, midpoint, median offset/RTT).

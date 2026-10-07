@@ -32,11 +32,11 @@ the dashboard exists. No classifier before raw-feature dashboard validation.
 
 ## ACTIVE_TASK
 
-- `P1-07` ORDER BOOK + OPEN INTEREST (depth slope, microprice, OI delta/accel).
+- `P1-08` VWAP + VOLATILITY + MARKET STRUCTURE (displacement, realized vol,
+  range expansion, swings/breakouts, no lookahead).
   Status: NOT STARTED. (Queued only — do not begin without a new instruction.)
 
 ## NEXT_TASKS (ordered, all Phase 1)
-- `P1-07` ORDER BOOK + OPEN INTEREST (depth slope, microprice, OI delta/accel).
 - `P1-08` VWAP + VOLATILITY + MARKET STRUCTURE (displacement, realized vol,
   range expansion, swings/breakouts, no lookahead).
 - `P1-09` MARKET-INTELLIGENCE DASHBOARD — add `/movers`, `/symbol/:symbol`;
@@ -120,10 +120,23 @@ strategies (P3), paper engine/positions (P4), execution (P5).
   (exit 0): 11/11, 0 reconnects, 0 rejects, 4027/4027 aggTrades into the
   engine (746 persisted raw — sampling provably lossless to flow),
   168/168 buckets, latency p50 0.030ms/p95 0.069, queue 0/0, safety 0/0/0.
-  190/190 tests (46 new). Evidence: `logs/p1-06/` (local, git-ignored).
+   190/190 tests (46 new). Evidence: `logs/p1-06/` (local, git-ignored).
+- `P1-07` (2026-10-08) ORDER BOOK + OPEN INTEREST: **PASS**. Depth/OI docs
+  + live payloads verified (full-snapshot `pu`-chain, OI shape);
+  `book.py` (spreads, top-N sums, imbalances, microprice, slopes,
+  concentration, gap→DEGRADED recovery) + `open_interest.py` (60s bounded
+  poller, 1m/5m/15m deltas, accel, descriptive contexts); schema v5 +
+  tested migrations; dashboard v0.6.0 (book/OI tables, NO LIVE FLOW/BOOK,
+  `/api/features/book` + `/open-interest`). Live 363s run (exit 0):
+  11/11, 1 reconnect, book 7309/7309 valid (1 gap/symbol recovered),
+  OI 18/18 polls ok, flow 5684 intact, sampling lossless, safety 0/0/0.
+  239/239 tests (49 new). Evidence: `logs/p1-07/` (local, git-ignored).
 
 ## LAST_VERIFICATION
 
+- 2026-10-08 (P1-07): `python run_tests.py` → 239/239 OK. Book engine live
+  (7309/7309, p50 0.15ms); OI 18/18 polls; dashboard v0.6.0 with book/OI
+  tables + APIs (200). Full evidence in `docs/CURRENT_STATE.md`.
 - 2026-10-07 (P1-06): `python run_tests.py` → 190/190 OK. Flow engine live
   (4027/4027 accepted, 0 late, 0 invalid); dashboard v0.5.0 `ok`-while-fed
   with flow table + APIs (200). Full evidence in `docs/CURRENT_STATE.md`.

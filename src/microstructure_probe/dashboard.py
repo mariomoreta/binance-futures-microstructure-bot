@@ -6,7 +6,8 @@ anything rendered here.
 
 Routes: / (→ /overview), /overview, /system, /api/health, /api/snapshot,
 /api/features/returns, /api/features/momentum, /api/features/flow,
-/api/features/volume, /api/discovery.
+/api/features/volume, /api/features/book, /api/features/open-interest,
+/api/discovery.
 
 Lifecycle CLI (operator commands, Binance dashboard only):
     python -m microstructure_probe.dashboard start [--port N] [--db PATH]
@@ -37,7 +38,7 @@ from typing import Any, Dict, List, Optional, Tuple
 
 from .persistence import PersistenceStore
 
-DASHBOARD_VERSION = "0.5.0"
+DASHBOARD_VERSION = "0.6.0"
 HOST = "127.0.0.1"
 PORT_CANDIDATES = [8091, 8092, 8093, 8094, 8095, 18091, 18765]
 PIDFILE_NAME = "dashboard.pid"
@@ -264,6 +265,20 @@ class DashboardState:
         except (OSError, sqlite3.Error):
             return []
 
+    def book_features(self) -> List[Dict[str, Any]]:
+        """Latest book record per symbol (P1-07), or [] before depth."""
+        try:
+            return self.store.latest_book_features()
+        except (OSError, sqlite3.Error):
+            return []
+
+    def oi_features(self) -> List[Dict[str, Any]]:
+        """Latest OI record per symbol (P1-07), or [] before polls."""
+        try:
+            return self.store.latest_oi_features()
+        except (OSError, sqlite3.Error):
+            return []
+
     def storage(self) -> Dict[str, Any]:
         try:
             return self.store.storage_info()
@@ -362,6 +377,8 @@ def _page(title: str, banner_html: str, body: str) -> str:
             f"<a href='/api/features/momentum'>/api/features/momentum</a>"
             f"<a href='/api/features/flow'>/api/features/flow</a>"
             f"<a href='/api/features/volume'>/api/features/volume</a>"
+            f"<a href='/api/features/book'>/api/features/book</a>"
+            f"<a href='/api/features/open-interest'>/api/features/open-interest</a>"
             f"<a href='/api/discovery'>/api/discovery</a></nav>"
             f"<h1>{html.escape(title)}</h1>{banner_html}{body}"
             f"<p class='note'>{html.escape(BANNER_NOTE)} Auto-refresh 10s.</p>"
@@ -551,6 +568,118 @@ def render_flow_section(flow_features: List[Dict[str, Any]],
     return body + "</table>"
 
 
+def _format_book_num(value: Any, decimals: int = 2) -> str:
+    """Book notional/price cell, or an insufficient-data marker."""
+    if value is None:
+        return "<span title='no book data yet'>—</span>"
+    try:
+        return f"{float(value):,.{decimals}f}"
+    except (TypeError, ValueError):
+        return "<span title='no book data yet'>—</span>"
+
+
+def _format_integrity(degraded: Any, gaps: Any) -> str:
+    """Sequence-integrity cell: OK vs DEGRADED with gap count."""
+    try:
+        gap_count = int(gaps or 0)
+    except (TypeError, ValueError):
+        gap_count = 0
+    if degraded:
+        return f"<span class='neg'>DEGRADED ({gap_count} gaps)</span>"
+    return f"<span class='pos'>OK ({gap_count} gaps)</span>"
+
+
+def render_book_section(book_features: List[Dict[str, Any]]) -> str:
+    """P1-07 live order-book table (subscribed symbols only).
+
+    Read-only liquidity description: spread, visible depth, imbalance,
+    microprice displacement, slope, concentration, integrity. Nothing here
+    is a signal, entry, or classifier output.
+    """
+    body = "<h2>Live order book (subscribed symbols only — read-only, NOT signals)</h2>"
+    body += ("<p class='note'>Full top-20 snapshots @100ms. Imbalance = "
+             "(bid − ask)/(bid + ask) notionals. Microprice from top-of-book. "
+             "DEGRADED = sequence gap seen since last chained update.</p>")
+    live = [f for f in book_features
+            if isinstance(f, dict) and f.get("subscribed")]
+    if not live:
+        return body + "<p class='note'>No live book yet — no depth snapshots " \
+            "processed (probe not running or feed silent).</p>"
+    body += "<table><tr><th>symbol</th><th>bid/ask</th><th>spread bps</th>" \
+            "<th>bid depth</th><th>ask depth</th><th>imbalance</th>" \
+            "<th>micro Δ bps</th><th>slope asym</th><th>conc 10bps</th>" \
+            "<th>integrity</th><th>freshness</th></tr>"
+    for feat in sorted(live, key=lambda f: str(f.get("symbol", ""))):
+        book = feat.get("book") if isinstance(feat.get("book"), dict) else {}
+        depth = book.get("depth") if isinstance(book.get("depth"), dict) else {}
+        top20 = depth.get("top20") if isinstance(depth.get("top20"), dict) else {}
+        slopes = book.get("slopes") if isinstance(book.get("slopes"), dict) else {}
+        conc = book.get("concentration") if isinstance(
+            book.get("concentration"), dict) else {}
+        conc_bid = conc.get("bid") if isinstance(conc.get("bid"), dict) else {}
+        conc_ask = conc.get("ask") if isinstance(conc.get("ask"), dict) else {}
+        pair = (f"{_format_book_num(book.get('best_bid'), 2)} / "
+                f"{_format_book_num(book.get('best_ask'), 2)}"
+                if book.get("best_bid") is not None
+                and book.get("best_ask") is not None else "—")
+        c10 = conc_bid.get("within_10bps")
+        if c10 is None:
+            c10 = conc_ask.get("within_10bps")
+        try:
+            c10_cell = f"{float(c10) * 100:.0f}%" if c10 is not None else "—"
+        except (TypeError, ValueError):
+            c10_cell = "—"
+        body += (f"<tr><td>{html.escape(str(feat.get('symbol', '?')))}</td>"
+                 f"<td>{pair}</td>"
+                 f"<td>{_format_book_num(book.get('spread_bps'))}</td>"
+                 f"<td>{_format_book_num(top20.get('bid_notional'), 0)}</td>"
+                 f"<td>{_format_book_num(top20.get('ask_notional'), 0)}</td>"
+                 f"<td>{_format_ratio(book.get('imbalance_notional'))}</td>"
+                 f"<td>{_format_ratio(book.get('microprice_displacement_bps'))}</td>"
+                 f"<td>{_format_ratio(slopes.get('asymmetry'))}</td>"
+                 f"<td>{c10_cell}</td>"
+                 f"<td>{_format_integrity(feat.get('degraded'), feat.get('sequence_gaps'))}</td>"
+                 f"<td>{_format_age_ms(feat.get('freshness_ms'))}</td></tr>")
+    return body + "</table>"
+
+
+def render_oi_section(oi_features: List[Dict[str, Any]]) -> str:
+    """P1-07 live open-interest table (subscribed symbols only).
+
+    Read-only positioning description: current OI, horizon deltas, rate,
+    acceleration, descriptive price/OI context, freshness. Context labels
+    are regime descriptions, never trade signals.
+    """
+    body = "<h2>Live open interest (subscribed symbols only — read-only, NOT signals)</h2>"
+    body += ("<p class='note'>Public REST polls (60s cadence). "
+             "Deltas vs actual-timestamp anchors; UNKNOWN until history warms. "
+             "Context labels describe joint price/OI direction only.</p>")
+    live = [f for f in oi_features
+            if isinstance(f, dict) and f.get("subscribed")]
+    if not live:
+        return body + "<p class='note'>No live OI yet — no poll samples " \
+            "stored (probe not running or polls failing).</p>"
+    body += "<table><tr><th>symbol</th><th>OI (base)</th>" \
+            "<th>Δ 1m</th><th>Δ 5m</th><th>accel</th>" \
+            "<th>context 1m</th><th>freshness</th></tr>"
+    for feat in sorted(live, key=lambda f: str(f.get("symbol", ""))):
+        horizons = feat.get("horizons") if isinstance(
+            feat.get("horizons"), dict) else {}
+        contexts = feat.get("price_oi_context") if isinstance(
+            feat.get("price_oi_context"), dict) else {}
+        h1 = horizons.get("1m") if isinstance(horizons.get("1m"), dict) else {}
+        h5 = horizons.get("5m") if isinstance(horizons.get("5m"), dict) else {}
+        stale = " STALE" if feat.get("stale") else ""
+        body += (f"<tr><td>{html.escape(str(feat.get('symbol', '?')))}</td>"
+                 f"<td>{_format_book_num(feat.get('current_oi'), 3)}</td>"
+                 f"<td>{_format_usdt(h1.get('delta'))}</td>"
+                 f"<td>{_format_usdt(h5.get('delta'))}</td>"
+                 f"<td>{_format_scientific(feat.get('acceleration_per_s2'), '/s²')}</td>"
+                 f"<td>{html.escape(str(contexts.get('1m', 'UNKNOWN')))}</td>"
+                 f"<td>{_format_age_ms(feat.get('freshness_ms'))}{stale}</td></tr>")
+    return body + "</table>"
+
+
 def render_intel_sections(state: DashboardState) -> str:
     """P1-05 market-intelligence area: tiers, live momentum, discovery movers.
 
@@ -622,9 +751,12 @@ def render_intel_sections(state: DashboardState) -> str:
         body += "</table>"
     flow = state.flow_features()
     body += render_flow_section(flow, features)
+    books = state.book_features()
+    body += render_book_section(books)
+    body += render_oi_section(state.oi_features())
     body += "<h2>Discovery movers (24h REST metrics — discovery only, NOT live)</h2>"
     tops = (discovery or {}).get("tops") or {}
-    live_symbols = {f.get("symbol") for f in flow
+    live_symbols = {f.get("symbol") for f in list(flow) + list(books)
                     if isinstance(f, dict) and f.get("subscribed")}
     hot_set = set(hot or [])
     core_set = set(core or [])
@@ -647,7 +779,7 @@ def render_intel_sections(state: DashboardState) -> str:
                 tier = ("CORE" if symbol in core_set
                         else "HOT" if symbol in hot_set else "DISCOVERY")
                 live_cell = ("LIVE (subscribed)" if symbol in live_symbols
-                             else "DISCOVERY ONLY — NO LIVE FLOW")
+                             else "DISCOVERY ONLY — NO LIVE FLOW/BOOK")
                 body += (f"<tr><td>{html.escape(symbol)}</td>"
                          f"<td>{tier}</td>"
                          f"<td>{chg_cell}</td>"
@@ -746,6 +878,9 @@ def render_overview(state: DashboardState) -> str:
         ("return feature rows", rows.get("return_features", "?")),
         ("flow feature rows", rows.get("flow_features", "?")),
         ("flow buckets retained", rows.get("flow_buckets", "?")),
+        ("book feature rows", rows.get("book_features", "?")),
+        ("OI samples retained", rows.get("oi_samples", "?")),
+        ("OI feature rows", rows.get("oi_features", "?")),
         ("last discovery scan",
          time.strftime("%Y-%m-%d %H:%M:%S UTC",
                        time.gmtime((discovery or {}).get("generated_at_ms", 0) / 1000))
@@ -1008,7 +1143,42 @@ class DashboardHandler(BaseHTTPRequestHandler):
                          "trades_total": f.get("trades_total"),
                          "baselines": f.get("baselines"),
                          "acceleration": f.get("acceleration")}
-                        for f in features if isinstance(f, dict)],
+                         for f in features if isinstance(f, dict)],
+                })
+        elif path == "/api/features/book":
+            features = self.state.book_features()
+            if not features:
+                self._send_json(404, {"error": "no book features persisted yet"})
+            else:
+                self._send_json(200, {
+                    "generated_at": time.strftime(
+                        "%Y-%m-%dT%H:%M:%SZ", time.gmtime(time.time())),
+                    "source": "depth20@100ms",
+                    "semantics": "full top-20 snapshots; imbalance = "
+                                 "(bid - ask)/(bid + ask); microprice from "
+                                 "top-of-book; slope = LS-through-origin of "
+                                 "cumulative notional vs distance-bps; "
+                                 "concentration null when the book does not "
+                                 "span the band",
+                    "integrity_note": "degraded=true after a sequence gap "
+                                      "until a chained update arrives",
+                    "symbols": features,
+                })
+        elif path == "/api/features/open-interest":
+            features = self.state.oi_features()
+            if not features:
+                self._send_json(404, {"error": "no open-interest features persisted yet"})
+            else:
+                self._send_json(200, {
+                    "generated_at": time.strftime(
+                        "%Y-%m-%dT%H:%M:%SZ", time.gmtime(time.time())),
+                    "source": "GET /fapi/v1/openInterest",
+                    "semantics": "public REST polls; deltas vs "
+                                 "actual-timestamp anchors; null until "
+                                 "history warms",
+                    "context_note": "price_oi_context labels are descriptive "
+                                    "regime tags only, never trade signals",
+                    "symbols": features,
                 })
         else:
             self._send_json(404, {"error": f"unknown route {path}"})

@@ -274,6 +274,39 @@ dashboard-feeding) — see `docs/DECISIONS.md`.
 - Tests: 190/190 (46 new: 44 flow + v3→v4 migration + same-E arrival).
   Two pre-existing version-3 assertions updated to v4 (migration, expected).
 
+## P1-07 order book + open interest — RESULT: PASS (2026-10-08)
+
+- Docs verified (current USD-M pages + live payloads): depth20@100ms = FULL
+  top-20 snapshots (`U`/`u`/`pu` chain, `st: 1`, `ps` live); OI = public
+  `GET /fapi/v1/openInterest` (`{symbol, openInterest base, time}` live);
+  `openInterestHist` evaluated + deferred (single provenance). In MARKET_DATA.
+- Book (`book.py`, NEW): every valid depth snapshot pre-sampling; best/mid/
+  spread, top-1/5/10/20 sums, imbalances, microprice + displacement,
+  LS-origin slopes + asymmetry, 5/10/25bps concentration (null when
+  unspanned), crossed kept+counted, gap→DEGRADED-until-chained, no score.
+- OI (`open_interest.py`, NEW): 60s bounded poller (worker thread, failures
+  counted, WS untouched) + tracker (2000/symbol; 1m/5m/15m deltas+rug rates,
+  1m accel, descriptive price/OI contexts, staleness honest).
+- Persistence v5 (additive, tested v1/v2/v3/v4→v5): `book_features` latest
+  only (never restored live), `oi_samples` + `oi_features`.
+- Live 363s blocking run (exit 0, dashboard live): 11/11 streams, 1 public
+  reconnect, 15992 skew-rejects (degraded bookTicker window — recorded
+  honestly). BOOK 7309/7309 valid processed (0 invalid/late), latency p50
+  0.15ms/p95 0.30/max 1.07, 1 gap/symbol all recovered, queue 0/0.
+  OI 18/18 polls ok (0 failures, p50 380ms/max 7.6s absorbed). FLOW intact
+  (5684 processed — P1-06 regression green). Sampling lossless to engines
+  (depth persisted 739 vs 7309). Safety 0/0/0. Live book: spreads
+  0.012/0.037/0.834bps, ask-heavy imbalances, micro ~0, SOL 55% conc@10bps
+  (BTC/ETH honestly null — band unspanned). Live OI: BTC 96105.2 (+9.4/1m,
+  +69.7/5m), ETH 2323727.6, SOL 8287311.7 with descriptive contexts only.
+  99 funding crossings — same hypothesis-artifact class, no conclusions.
+- Dashboard v0.6.0 at http://127.0.0.1:8091 (restarted, PID 27296): book +
+  OI tables, NO LIVE FLOW/BOOK labels, `/api/features/book` +
+  `/api/features/open-interest` live (200), health DEGRADED honestly
+  (reconnect + retained rejects); no buttons/controls/signals.
+- Tests: 239/239 (49 new: 48 book/OI + v4→v5 migration). Five v4
+  assertions updated to v5 (migration, expected).
+
 ## Known gaps (Phase 1 work ahead, in order)
 
 Minimal dashboard: DONE (P1-03 PASS, live at http://127.0.0.1:8091).
@@ -282,10 +315,12 @@ Discovery + velocity/acceleration/ranking: DONE (P1-05 PASS — 449-eligible
 scan, 6-HOT proposal, live momentum + ranks, intel UI + APIs).
 Volume + aggressive flow: DONE (P1-06 PASS — 6-horizon flow, baselines,
 acceleration, v0.5.0 dashboard + APIs, healthy 363s validation).
-Remaining: open interest (P1-07), VWAP + displacement, realized
-volatility/range expansion, structure primitives (P1-08), state classifier
-(P1-12, still blocked on P1-11), signal UI (P1-13), soak + calibration
-evidence (P1-10/P1-14, need P1-01R first).
+Order book + open interest: DONE (P1-07 PASS — snapshot book intel, OI
+polls/deltas/contexts, v0.6.0 dashboard + APIs, 363s validation).
+Remaining: VWAP + displacement, realized volatility/range expansion,
+structure primitives (P1-08), state classifier (P1-12, still blocked on
+P1-11), signal UI (P1-13), soak + calibration evidence (P1-10/P1-14, need
+P1-01R first).
 
 ## Blockers / issues
 
@@ -295,7 +330,7 @@ evidence (P1-10/P1-14, need P1-01R first).
   gates. P1-06 local feature work NOT blocked.
 - Detached probe processes die with the harness tool session (observed twice):
   use blocking bounded runs for evidence windows.
-- Dashboard RUNNING at http://127.0.0.1:8091 (PID 31820; read-only, localhost
-  — safe to keep). Snapshot goes STALE without a running probe feed (honest
-  chip); continuous freshness arrives with the P1-10 soak.
+- Dashboard RUNNING at http://127.0.0.1:8091 (PID 27296, v0.6.0; read-only,
+  localhost — safe to keep). Snapshot goes STALE without a running probe
+  feed (honest chip); continuous freshness arrives with the P1-10 soak.
 - No secrets, keys, or account access exist or are needed.
