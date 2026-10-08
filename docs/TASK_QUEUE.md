@@ -32,10 +32,17 @@ the dashboard exists. No classifier before raw-feature dashboard validation.
 
 ## ACTIVE_TASK
 
-- `P1-10R` FORMAL ≥6H SOAK RE-RUN — next task (starts only on explicit
-  instruction; never automatically). `P1-11C` is PASS (see COMPLETED).
-  The 6H-Validation preset runs MarketProbe WITH the prospective recorder
-  enabled (same process/registry/evidence logging). Do NOT start yet.
+- `P1-10R` FORMAL ≥6H SOAK RE-RUN — **RUNNING** since 2026-10-08T00:48:20Z
+  (PID 19084, WMI-detached parent chain via WmiPrvSE Session 0 — survives
+  agent sessions; proof: a 90s run on the same mechanism COMPLETED with
+  exit 0). Expected end 2026-10-08T06:48:20Z (21600s, preset
+  validation-6h, launcher scheduler-6h-validation, BOT_MODE=observe).
+  Evidence: `logs/p1-10r/probe-20261008T0048Z.log` (merged UTF-8);
+  handoff: `logs/p1-10r/P1-10R_HANDOFF.md` (local, git-ignored).
+  Start window T+124s is P1-01R-grade healthy (11/11 streams, 0
+  reconnects, 0 rejects, research RUNNING 48/0/0). Audit hourly, decide
+  PASS/FAIL only at natural completion. `P1-11C` is PASS. Do NOT launch
+  a second probe. Do NOT start P1-12.
 
 ## NEXT_TASKS (ordered, all Phase 1)
 - `P1-10R` PROLONGED ≥6H SOAK RE-RUN — P1-10 FAIL stays FAIL (truncated at
