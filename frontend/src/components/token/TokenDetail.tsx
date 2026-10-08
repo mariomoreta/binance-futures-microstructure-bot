@@ -30,8 +30,9 @@ export function TokenDetail({data}:{data:Detail}) {
       <div><h3>Supporting evidence</h3>{data.evidence.length?<ul>{data.evidence.map(x=><li key={x}>{x}</li>)}</ul>:<p>No verified supporting evidence</p>}</div>
       <div><h3>Counterevidence</h3>{data.counterevidence.length?<ul>{data.counterevidence.map(x=><li key={x}>{x}</li>)}</ul>:<p>Not evaluated</p>}</div>
       <div><h3>Data gaps</h3><ul>{data.missing.map(x=><li key={x}>{x}</li>)}</ul></div>
+      <div className={styles.auditCard}><h3>Observation audit</h3><dl><dt>Previous state</dt><dd>{data.previousState??"UNKNOWN"}</dd><dt>Last authoritative evaluation</dt><dd>UNKNOWN</dd></dl></div>
     </div>
-    <div className={styles.stateFoot}><span>Previous: {data.previousState??"UNKNOWN"}</span><span>Last authoritative evaluation: UNKNOWN</span><span>No probability or trade recommendation</span></div>
+    <div className={styles.stateFoot}><span>Research only · No probability or trade recommendation</span><span>Classifier source: NOT CONNECTED</span></div>
   </section>
   <section className={styles.panel}><div className={styles.panelTop}><div><h2>Microstructure Snapshot</h2><p>Static design examples only · NOT LIVE</p></div><span className={styles.count}>{validInputs}/{data.metrics.length} demo fields populated</span></div>
     <div className={styles.metricGrid}>{data.metrics.map(x=><div className={styles.metric} key={x.label}><div><b>{x.label}</b><small>{x.context}</small></div><strong>{x.value??"—"}</strong></div>)}</div>

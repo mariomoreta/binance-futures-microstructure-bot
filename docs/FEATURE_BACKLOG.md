@@ -394,3 +394,7 @@ features VERIFIED without evidence.
 ### DASH-V2-08 evidence update (2026-10-08)
 
 F-STATE-V2-TK-01 remains PARTIAL (DEMO UI only). Added explicit historical fixture as-of, no-observation fallback and classifier-not-connected state. Evidence: 39/39 frontend tests and `design/qa/v2-08/` browser captures. F-OPP-UI-01 remains PARTIAL; F-V2-BFF-01 remains NOT IMPLEMENTED. Corrected target assets have not yet been installed in the Windows worktree; image parity is not verified.
+
+### DASH-V2-09 evidence update (2026-10-08)
+
+F-STATE-V2-TK-01 remains **PARTIAL (DEMO UI only)**. Observation audit card now displays UNKNOWN previous state and last authoritative evaluation in a fourth desktop evidence panel, rather than implying verified classifier history. Evidence: 40/40 frontend tests, `design/qa/v2-09/` four Chrome captures, and `docs/DASHBOARD_V2_PROGRESS.md`. F-OPP-UI-01 remains PARTIAL; F-V2-BFF-01 NOT IMPLEMENTED. Visual reference correction and GitHub publication are not verified.

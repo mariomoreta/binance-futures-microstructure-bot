@@ -71,3 +71,13 @@
 .provenance strong{color:#f8cf8a;font:700 11px var(--font-mono);letter-spacing:.02em}
 .provenance span:last-child{margin-left:auto;color:#9abed5;font:10px var(--font-mono)}
 @media(max-width:700px){.provenance{align-items:flex-start;flex-direction:column;gap:5px}.provenance span:last-child{margin-left:0}}
+
+/* DASH-V2-09: four-column research evidence row follows the approved Token Detail composition. */
+@media (min-width: 1150px) {
+  .stateEvidence { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+}
+.auditCard { border-top: 2px solid #2a86d2 !important; }
+.auditCard dl { margin: 0; display: grid; gap: 4px; }
+.auditCard dt { font-size: 10px; color: #80a9c7; }
+.auditCard dd { margin: 0 0 5px; color: #e4f3ff; font: 600 11px var(--font-mono); overflow-wrap: anywhere; }
+.stateFoot { font-size: 10px; }

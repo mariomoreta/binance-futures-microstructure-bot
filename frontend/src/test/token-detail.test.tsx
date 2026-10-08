@@ -40,3 +40,15 @@ describe("DASH-V2-08 token detail provenance", () => {
     expect(screen.getByText(/Classifier not connected/)).toBeInTheDocument();
   });
 });
+
+
+describe("DASH-V2-09 observation audit card", () => {
+  it("shows unknown observation provenance rather than inventing classifier history", () => {
+    render(<TokenDetail data={getDemoTokenDetail("BTCUSDT")} />);
+    expect(screen.getByText("Observation audit")).toBeInTheDocument();
+    expect(screen.getByText("Previous state")).toBeInTheDocument();
+    expect(screen.getByText("Last authoritative evaluation")).toBeInTheDocument();
+    expect(screen.getByText(/Classifier source: NOT CONNECTED/)).toBeInTheDocument();
+    expect(screen.getByText(/No probability or trade recommendation/)).toBeInTheDocument();
+  });
+});

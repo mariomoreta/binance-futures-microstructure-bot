@@ -183,3 +183,13 @@ architecture + static foundation (DASH-V2-00); no integration.
 - Safety: read-only DEMO UI; no API integration, backend/DB/probe modification, execution, orders, account keys or capital.
 - Publication: local commit/push state to be verified after checkpoint; do not mark remote synced without GitHub SHA evidence.
 - Next: install corrected visual assets only when available on the Windows worktree; independently verify GitHub publication and continue pixel comparison against matching approved images.
+
+## DASH-V2-09 — 2026-10-08 (Token Detail observation audit and four-column parity)
+
+- Scope: isolated V2 worktree, no Python/backend/Muse Spark changes. Starting HEAD `64276fd` (DASH-V2-07/08 locally committed). Remote publication remained behind local HEAD; push operation blocked by tool safety checks.
+- Token Detail: moved previous-state and last-authoritative-evaluation fields from dense footer into a fourth dedicated Observation audit card. Desktop evidence layout now has four balanced panels, matching the approved Token Detail composition more closely. On mobile it stacks without global overflow. UNKNOWN and NOT CONNECTED remain explicit; no fabricated classifier history.
+- Tests: TypeScript PASS; ESLint PASS; Vitest **40/40 PASS** (1 new observation audit test); Next.js production build PASS.
+- Chrome CDP preview :3014; screenshots in `design/qa/v2-09/`: Token Detail and Opportunities desktop 1440x1000 (document/body 1425), mobile 390x850 (document/body 390). No global horizontal overflow in any capture; Opportunities remains DEMO-only and unchanged.
+- Visual parity: PARTIAL for Token Detail, NOT VERIFIED for Opportunities because corrected reference package is not yet installed. Do not claim pixel parity or live API integration.
+- Publication: local commit may be created, but remote push remains blocked by safety checks; do not claim synced until verified by remote SHA.
+- Next: install corrected approved assets through an authorized transfer, compare screenshots against matching targets, and publish local branch when allowed. F-STATE-V2-TK-01 and F-OPP-UI-01 remain PARTIAL, F-V2-BFF-01 remains NOT IMPLEMENTED.
