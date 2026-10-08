@@ -64,3 +64,20 @@
 .inspectorGrid strong{display:block;color:#e5f5ff;font:600 12px var(--font-mono);overflow-wrap:anywhere}
 .inspectorGrid strong[data-freshness="STALE"]{color:#ffc26e}
 @media(max-width:420px){.inspectorGrid{grid-template-columns:minmax(0,1fr)}}
+
+/* DASH-V2-07: visual semantics and explicit provenance, never a live feed. */
+.chip[data-lifecycle="ACTIVE_RESEARCH"],.inspectorGrid strong[data-lifecycle="ACTIVE_RESEARCH"]{color:#2be4aa;border-color:#166f64}
+.chip[data-lifecycle="WATCHING"],.inspectorGrid strong[data-lifecycle="WATCHING"]{color:#80c9ff;border-color:#235b88}
+.chip[data-lifecycle="DETECTED"],.inspectorGrid strong[data-lifecycle="DETECTED"]{color:#f4ca7a;border-color:#775c27}
+.chip[data-lifecycle="EXPIRED"],.chip[data-lifecycle="INVALIDATED"],.inspectorGrid strong[data-lifecycle="EXPIRED"],.inspectorGrid strong[data-lifecycle="INVALIDATED"]{color:#d7a6ae;border-color:#664450}
+.direction{font:700 10px var(--font-mono);letter-spacing:.035em}
+.direction[data-direction="UP"]{color:#35ddb0}
+.direction[data-direction="DOWN"]{color:#f58b9d}
+.direction[data-direction="NONE"],.direction[data-direction="UNKNOWN"]{color:var(--text-3)}
+.provenance{border-top:1px solid #183e58;margin-top:19px;padding-top:17px}
+.provenance h3{margin:0 0 11px;color:#e2f2ff;font-size:13px}
+.provenanceBadges{display:flex;flex-wrap:wrap;gap:7px}
+.provenanceBadges span{padding:6px 9px;border:1px solid #315471;border-radius:5px;background:#0b2438;color:#9ecae9;font:10px var(--font-mono)}
+.provenanceBadges span:nth-child(2){border-color:#77571d;color:#f5c47b}
+.provenance p{color:#a3bed2;font-size:11px;line-height:1.65;margin:11px 0 0;max-width:68ch}
+@media(max-width:700px){.provenance{margin-top:13px;padding-top:14px}.provenanceBadges span{font-size:9px}}

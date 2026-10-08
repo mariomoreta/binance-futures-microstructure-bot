@@ -65,3 +65,9 @@
 @media (max-width: 390px) {
   .metricGrid { grid-template-columns: 1fr; }
 }
+
+/* DASH-V2-08: explicit provenance and fixture timestamp, independent of live market state. */
+.provenance{display:flex;align-items:center;flex-wrap:wrap;gap:8px 15px;padding:12px 15px;border:1px solid #6a4d27;border-left:3px solid #dba147;border-radius:8px;background:linear-gradient(90deg,#302719,#11283a);color:#d5e5f0;font-size:11px;line-height:1.5}
+.provenance strong{color:#f8cf8a;font:700 11px var(--font-mono);letter-spacing:.02em}
+.provenance span:last-child{margin-left:auto;color:#9abed5;font:10px var(--font-mono)}
+@media(max-width:700px){.provenance{align-items:flex-start;flex-direction:column;gap:5px}.provenance span:last-child{margin-left:0}}

@@ -21,8 +21,8 @@ function DataRow({ item, selected, onPick }: { item: Opportunity; selected: bool
         <div className={s.sub}>{item.tier}</div>
       </td>
       <td>{fmt(item.family)}</td>
-      <td><span className={s.chip}>{fmt(item.lifecycle)}</span></td>
-      <td>{item.marketState} · {item.direction}</td>
+      <td><span className={s.chip} data-lifecycle={item.lifecycle}>{fmt(item.lifecycle)}</span></td>
+      <td>{item.marketState} · <span className={s.direction} data-direction={item.direction}>{item.direction}</span></td>
       <td>{item.priority === null ? "—" : item.priority.toFixed(1)}<div className={s.sub}>research priority</div></td>
       <td><span className={s.stale}>{item.freshness}</span></td>
     </tr>
@@ -41,6 +41,7 @@ export function OpportunitiesDashboard() {
   const set = <K extends keyof Filters>(key: K, value: Filters[K]) =>
     setFilters(previous => ({ ...previous, [key]: value }));
   const count = (lifecycle: string) => DEMO_OPPORTUNITIES.filter(item => item.lifecycle === lifecycle).length;
+  const staleCount = DEMO_OPPORTUNITIES.filter(item => item.freshness === "STALE").length;
   const reset = () => { setFilters(DEFAULT_FILTERS); setSelected("a"); };
 
   return (
@@ -101,6 +102,14 @@ export function OpportunitiesDashboard() {
             </table>
             {!rows.length && <div className={s.empty}>No setups match these filters. <button type="button" onClick={reset}>Clear filters</button></div>}
           </div>
+          <div className={s.provenance} aria-label="Dataset provenance">
+            <h3>Dataset provenance</h3>
+            <div className={s.provenanceBadges}>
+              <span>DEMO FIXTURE</span><span>{staleCount}/{DEMO_OPPORTUNITIES.length} STALE</span>
+              <span>0 VERIFIED OUTCOMES</span><span>API NOT CONNECTED</span>
+            </div>
+            <p>These examples demonstrate research workflow only. Neither their lifecycle labels nor their priority rankings are current market observations.</p>
+          </div>
         </section>
 
         <section className={s.panel} id="candidate-evidence" aria-label="Candidate evidence">
@@ -113,8 +122,8 @@ export function OpportunitiesDashboard() {
               <span className={s.chip}>{fmt(active.family)}</span>
             </div>
             <div className={s.inspectorGrid} role="region" aria-label="Selected candidate summary">
-              <div><small>Lifecycle</small><strong>{fmt(active.lifecycle)}</strong></div>
-              <div><small>Observed state</small><strong>{active.marketState} · {active.direction}</strong></div>
+              <div><small>Lifecycle</small><strong data-lifecycle={active.lifecycle}>{fmt(active.lifecycle)}</strong></div>
+              <div><small>Observed state</small><strong>{active.marketState} · <span className={s.direction} data-direction={active.direction}>{active.direction}</span></strong></div>
               <div><small>Priority score</small><strong>{active.priority === null ? "—" : active.priority.toFixed(1)}</strong></div>
               <div><small>Freshness</small><strong data-freshness={active.freshness}>{active.freshness}</strong></div>
             </div>

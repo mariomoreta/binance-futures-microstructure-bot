@@ -159,3 +159,27 @@ architecture + static foundation (DASH-V2-00); no integration.
 - Chrome CDP captured Opportunities 1440x1000 and 390x850 plus Token Detail regression; no global horizontal overflow in verified viewports. Evidence: `design/qa/v2-06/`.
 - Visual parity **NOT VERIFIED**: approved Opportunities PNG absent/misnamed. Token Detail screenshot regression captured but not pixel-parity approved.
 - Backend, main, Muse Spark P1-14A, and BFF untouched. Git remote sync must be checked independently; do not claim published until SHA matches.
+
+## DASH-V2-07 — 2026-10-08 (Opportunities provenance and lifecycle semantics)
+
+- Starting local HEAD: `0f6110f`; branch `dash-v2-03-token-detail`, worktree isolated from backend. Remote HEAD before slice: `91a64f7` (two earlier commits not yet published).
+- Scope: Opportunities DEMO presentation only. Added lifecycle-specific color semantics and UP/DOWN direction treatment; a dedicated dataset provenance panel now exposes fixture mode, stale count, zero verified outcomes and disconnected API. No backend requests or contract changes.
+- Tests: TypeScript PASS, ESLint PASS, Vitest **37/37 PASS** (two new tests), Next.js production build PASS.
+- Browser QA: Chrome CDP captures `design/qa/v2-07/opportunities-desktop.png` at 1440x960 and `opportunities-mobile.png` at 390x844. Document/body widths: desktop 1425/1425 within 1440; mobile 390/390 within 390. Reviewed both images: readable badges, no global horizontal overflow; candidates table remains independently scrollable on mobile.
+- Token Detail: no source changes this slice; prior v2-06 desktop/mobile evidence retained, not reclassified as a new capture.
+- Visual parity: PARTIAL. Approved Opportunities target remains absent/mislabeled in original bundle; do not claim image parity PASS. Approved Token Detail target is present under wrong filename.
+- Safety: no live data integration, trading, execution, account or backend changes. All displayed candidate values remain explicitly illustrative.
+- Publication: local commit pending at time of writing; GitHub push attempt blocked by tool safety check. Do not mark remote synced without independent SHA confirmation.
+- Next: reconcile approved image assets without losing originals; continue approved visual parity and independently publish local commits when allowed.
+
+## DASH-V2-08 — 2026-10-08 (Token Detail provenance + two-page regression)
+
+- Worktree/branch: isolated `C:\proyectos\binance-futures-dashboard-v2-worktree` / `dash-v2-03-token-detail`. Baseline HEAD `0f6110f`, two earlier local commits ahead of remote `91a64f7`; previous DASH-V2-07 changes were still uncommitted at slice start.
+- Token Detail: added explicit as-of UTC provenance strip for the BTCUSDT static fixture, NOT LIVE and classifier API NOT CONNECTED labels; unknown symbols state no fixture/timestamp available. Clarified that displayed rules version is an illustrative label, not an authoritative classifier result. Coverage badge now explicitly DEMO. No data model or backend changes.
+- Opportunities: retained DASH-V2-07 lifecycle/direction semantics and provenance panel, without promoting research priority to probability or trading signal.
+- Validation: TypeScript PASS; ESLint PASS; Vitest **39/39 PASS** (2 new Token Detail provenance tests); Next.js production build PASS. No Python suite run (separate Muse Spark backend lane).
+- Browser: independent production preview :3012; Chrome CDP 1440x1000 and 390x850 for both Opportunities and Token Detail. Four captures + widths in `design/qa/v2-08/`; no global horizontal overflow. Screens inspected for label readability and truthful data states.
+- Visual parity: PARTIAL/ASSET_MISMATCH. Original on-disk approved ZIP misnames two references and lacks correctly named Opportunities artwork; corrected bundle exists in ChatGPT working files but has not been transferred into this Windows worktree. Do not claim target-image parity or remote publication.
+- Safety: read-only DEMO UI; no API integration, backend/DB/probe modification, execution, orders, account keys or capital.
+- Publication: local commit/push state to be verified after checkpoint; do not mark remote synced without GitHub SHA evidence.
+- Next: install corrected visual assets only when available on the Windows worktree; independently verify GitHub publication and continue pixel comparison against matching approved images.

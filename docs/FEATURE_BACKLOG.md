@@ -384,3 +384,13 @@ seven fields in its final report (verbatim names):
 If a new material decision needs user approval, record it as PROPOSED
 here and request approval before treating it as binding. Never mark
 features VERIFIED without evidence.
+
+### DASH-V2-07 UI evidence addendum (2026-10-08)
+
+- F-OPP-UI-01 remains **PARTIAL (DEMO UI only; no BFF)**. Opportunities now distinguishes lifecycle/direction visually and explicitly identifies fixture provenance, all stale records and zero validated outcomes. Evidence: `frontend/src/test/opportunities.test.tsx` (8 tests), 37/37 frontend suite, `design/qa/v2-07/` screenshots, and `docs/DASHBOARD_V2_PROGRESS.md`.
+- F-V2-BFF-01 remains **NOT IMPLEMENTED**. F-STATE-V2-TK-01 remains **PARTIAL**. No live API, outcome validation, or trading capability was introduced.
+- Image parity remains **ASSET_MISMATCH** for Opportunities until the correct approved PNG is installed and audited.
+
+### DASH-V2-08 evidence update (2026-10-08)
+
+F-STATE-V2-TK-01 remains PARTIAL (DEMO UI only). Added explicit historical fixture as-of, no-observation fallback and classifier-not-connected state. Evidence: 39/39 frontend tests and `design/qa/v2-08/` browser captures. F-OPP-UI-01 remains PARTIAL; F-V2-BFF-01 remains NOT IMPLEMENTED. Corrected target assets have not yet been installed in the Windows worktree; image parity is not verified.

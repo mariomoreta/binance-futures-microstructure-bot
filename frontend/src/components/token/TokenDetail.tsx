@@ -7,15 +7,21 @@ const STATE_SEQUENCE = ["NORMAL", "IGNITION", "EXPANSION", "EXHAUSTION", "REVERS
 export function TokenDetail({data}:{data:Detail}) {
  const ch=data.change24h;
  const validInputs=data.metrics.filter(x=>x.value!==null).length;
+ const fixtureTime = data.asOf === null ? null : new Date(data.asOf).toLocaleString("en-US", { timeZone: "UTC", dateStyle: "medium", timeStyle: "short" });
  return <div className={styles.page}>
   <header className={styles.header}><div><Link href="/movers">← Market Movers</Link><h1>{data.symbol}</h1><p>Binance USD-M Futures · Research Workspace</p></div></header>
+  <aside className={styles.provenance} aria-label="Token dataset provenance">
+    <strong>{fixtureTime ? "STATIC DEMO FIXTURE" : "NO SYMBOL FIXTURE"} · NOT LIVE</strong>
+    <span>{fixtureTime ? `Example as-of: ${fixtureTime} UTC · historical fixture, not current market data` : "No symbol-specific observation or timestamp available"}</span>
+    <span>Classifier API: NOT CONNECTED</span>
+  </aside>
   <div className={styles.hero}>
    <div><small>Reference price · DEMO</small><strong>{data.price===null?"—":data.price.toLocaleString("en-US")} USDT</strong></div>
    <div><small>24h change · DEMO</small><strong data-tone={ch === null ? "unknown" : ch > 0 ? "positive" : ch < 0 ? "negative" : "neutral"}>{ch===null?"—":`${ch>0?"+":""}${ch.toFixed(2)}%`}</strong></div>
-   <div><small>Coverage</small><TierBadge tier={data.tier}/><DataStateBadge capability={data.capability}/></div>
+   <div><small>Coverage · DEMO</small><TierBadge tier={data.tier}/><DataStateBadge capability={data.capability}/></div>
   </div>
   <section className={styles.statePanel} aria-label="Market State Intelligence">
-    <div className={styles.stateHeader}><div><h2>Market State Intelligence</h2><p>Observable classification · Python rules v{data.ruleVersion?.replace(/^v/,"")??"UNKNOWN"}</p></div><div className={styles.status}><span className={styles.statusLabel}>Observed state</span><StatusChip label={data.state}/><span className={styles.statusLabel}>Direction</span><StatusChip label={data.direction}/></div></div>
+    <div className={styles.stateHeader}><div><h2>Market State Intelligence</h2><p>Classifier not connected · illustrative rules label {data.ruleVersion??"UNKNOWN"}</p></div><div className={styles.status}><span className={styles.statusLabel}>Observed state</span><StatusChip label={data.state}/><span className={styles.statusLabel}>Direction</span><StatusChip label={data.direction}/></div></div>
     <div className={styles.stateFlow} aria-label="Possible research states, not a mandatory progression">
       {STATE_SEQUENCE.map(state=><span key={state} className={state===data.state?styles.currentState:styles.inactiveState}>{state}</span>)}
     </div>
