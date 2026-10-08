@@ -296,3 +296,20 @@ a { color: var(--accent); }
   .v2-nav a { font-size: 12px; padding: 9px; }
   .v2-nav .v2-nav-icon { width: 16px; margin-right: 5px; }
 }
+
+/* DASH-V2-18 — desktop-first terminal shell aligned to approved visual reference.
+   Shared architecture change: no fictional metrics or data-source state. */
+@media (min-width: 1025px) {
+  .v2-shell { display:block;min-height:100vh;overflow-x:clip }
+  .v2-nav {position:sticky;top:0;z-index:30;display:flex;flex-direction:row;align-items:center;gap:4px;min-height:58px;width:100%;padding:5px clamp(18px,1.5vw,30px);border-right:0;border-bottom:1px solid #174263;background:#06131f;box-shadow:0 4px 20px #0003}
+  .v2-nav>div:first-child{padding:0 20px 0 0;margin:0 25px 0 0;min-width:340px;border-bottom:0;border-right:1px solid #1e3c56;display:flex;align-items:center;gap:14px}
+  .v2-nav>div:first-child strong{font-size:17px;white-space:nowrap;letter-spacing:.02em;color:#f4c840}
+  .v2-nav>div:first-child .v2-muted{font-size:11px!important;white-space:nowrap;color:#79b8d2}
+  .v2-nav .v2-nav-group{display:none}
+  .v2-nav a{min-height:39px;white-space:nowrap;padding:10px 14px;border-radius:4px;font-size:12px}
+  .v2-nav a[aria-current="page"]{background:linear-gradient(180deg,#102e48,#082239);border-color:transparent;border-bottom:2px solid #21b9ff;box-shadow:none}
+  .v2-nav .v2-nav-icon{display:none}
+  .v2-nav a:hover{background:#102b43}
+  .v2-nav a[href="/backtest"],.v2-nav a[href="/paper-lab"]{font-size:11px;color:#859cac}
+  .v2-main{max-width:none;padding:14px clamp(18px,1.45vw,28px) 40px;width:100%;min-width:0}
+}

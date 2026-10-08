@@ -20,9 +20,9 @@ export function TopNav() {
   return (
     <nav className="v2-nav" aria-label="Primary navigation">
       <div>
-        <strong>Dashboard V2</strong>
+        <strong>◆ BINANCE FUTURES</strong>
         <div className="v2-muted" style={{ fontSize: 11 }}>
-          Binance USD-M Futures
+          market intelligence · read-only
         </div>
       </div>
       <div className="v2-nav-group" aria-hidden="true">

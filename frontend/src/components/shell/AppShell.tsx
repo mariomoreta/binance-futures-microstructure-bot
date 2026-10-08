@@ -12,7 +12,7 @@ export function AppShell({ children }: { children: ReactNode }) {
         <div style={{ marginBottom: 12 }} data-testid="shell-demo-strip">
           <DemoPill />{" "}
           <span className="v2-muted" style={{ fontSize: 12 }}>
-            Static shell — no API integration, no live data.
+            UI preview — each screen labels its own DEMO or read-only source.
           </span>
         </div>
         {children}
