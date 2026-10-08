@@ -60,6 +60,7 @@ class UniverseConfig:
     max_discovery_age_seconds: int
     demote_after_missed_scans: int
     max_hot_reconnects_per_hour: int
+    clock_skew_tolerance_ms: int
 
 
 @dataclass(frozen=True)
@@ -102,7 +103,8 @@ class ProbeConfig:
             max_streams_per_connection=50, max_connections=6,
             promotion_interval_seconds=600, min_dwell_seconds=1800,
             demotion_cooldown_seconds=3600, max_discovery_age_seconds=1800,
-            demote_after_missed_scans=2, max_hot_reconnects_per_hour=10))
+            demote_after_missed_scans=2, max_hot_reconnects_per_hour=10,
+            clock_skew_tolerance_ms=60_000))
 
 
 def _positive(name: str, value: Any) -> float:
@@ -207,6 +209,8 @@ def _universe_config(raw: Any) -> UniverseConfig:
         demote_after_missed_scans=_int("demote_after_missed_scans", 2, 1),
         max_hot_reconnects_per_hour=_int(
             "max_hot_reconnects_per_hour", 10, 1),
+        clock_skew_tolerance_ms=_int(
+            "clock_skew_tolerance_ms", 60_000, 0),
     )
 
 

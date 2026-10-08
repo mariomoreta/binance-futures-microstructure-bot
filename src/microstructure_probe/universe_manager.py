@@ -54,6 +54,15 @@ LIFECYCLE_STATES = (
 # already carried by the canonical market connection — never duplicated.
 STREAMS_PER_SYMBOL = 3
 
+# Global array feeds on the canonical market connection (single streams,
+# not per-symbol — never double-counted, never duplicated onto HOT).
+GLOBAL_ARRAY_STREAMS = 2
+
+# Timestamps below this (ms) cannot be millisecond Unix times: the Unix
+# epoch in seconds today is ~1.8e9, so anything under 1e11 ms is either
+# seconds-confusion or garbage. Rejected, never interpreted as zero.
+MIN_PLAUSIBLE_MS = 100_000_000_000
+
 DEFAULT_BUDGET: Dict[str, Any] = {
     "max_hot_slots": 3,
     "max_total_streams": 60,
@@ -65,6 +74,7 @@ DEFAULT_BUDGET: Dict[str, Any] = {
     "max_discovery_age_seconds": 1800,
     "demote_after_missed_scans": 2,
     "max_hot_reconnects_per_hour": 10,
+    "clock_skew_tolerance_ms": 60_000,
 }
 
 
@@ -86,6 +96,71 @@ def movement_key(change_24h_pct: Optional[float],
 def streams_for_symbols(symbols: Tuple[str, ...]) -> int:
     """Deep-observation streams needed for a symbol set (deterministic)."""
     return len({str(s).upper() for s in symbols}) * STREAMS_PER_SYMBOL
+
+
+def account_streams(core_count: int,
+                    hot_desired: Tuple[str, ...]) -> Dict[str, Any]:
+    """Single authoritative connection/stream inventory (P1-12B.1).
+
+    Connections and streams are separate resource units: connections are
+    counted as connections, streams as streams, global array feeds exactly
+    once. Enforcement (_budget_ok) and telemetry (slot_usage) both derive
+    from this function — one calculation, no drift.
+    """
+    hot = tuple(sorted({str(s).upper() for s in hot_desired}))
+    core_n = max(int(core_count), 0)
+    core_per_symbol = core_n * STREAMS_PER_SYMBOL
+    canonical_streams = core_per_symbol + GLOBAL_ARRAY_STREAMS
+    hot_streams = len(hot) * STREAMS_PER_SYMBOL
+    # Per-connection layout: canonical public carries 2/symbol, canonical
+    # market carries 1/symbol + the 2 globals; hot-public 2/symbol,
+    # hot-market 1/symbol.
+    per_connection = {
+        "canonical-public": core_n * 2,
+        "canonical-market": core_n * 1 + GLOBAL_ARRAY_STREAMS,
+        "hot-public": len(hot) * 2 if hot else 0,
+        "hot-market": len(hot) * 1 if hot else 0,
+    }
+    connections = 2 + (2 if hot else 0)
+    return {
+        "core_symbols": core_n,
+        "hot_symbols": list(hot),
+        "canonical_streams": canonical_streams,
+        "hot_streams": hot_streams,
+        "total_streams": canonical_streams + hot_streams,
+        "connections": connections,
+        "per_connection": per_connection,
+    }
+
+
+def check_timestamp_fresh(close_ms: Any, scan_ms: int,
+                          max_age_ms: int,
+                          skew_tolerance_ms: int = 60_000
+                          ) -> Tuple[bool, str]:
+    """Strict ticker-timestamp gate (P1-12B.1, fail-closed).
+
+    Returns (fresh, reason). Missing, malformed, implausible-unit,
+    excessively old, and excessively future timestamps all reject —
+    missing values are never interpreted as zero and malformed values
+    never abort the whole update (the caller skips just that candidate).
+    A small future skew within tolerance is permitted: exchange and local
+    clocks can legitimately disagree by seconds, and the probe already
+    synchronizes and records its own offset for the same reason.
+    """
+    if close_ms is None:
+        return False, "ticker_close_ms missing"
+    try:
+        stamp = int(close_ms)
+    except (TypeError, ValueError):
+        return False, "ticker_close_ms malformed"
+    if isinstance(close_ms, bool) or stamp < MIN_PLAUSIBLE_MS:
+        return False, "ticker_close_ms implausible unit (seconds?)"
+    age_ms = int(scan_ms) - stamp
+    if age_ms > int(max_age_ms):
+        return False, "discovery data too old"
+    if age_ms < -int(skew_tolerance_ms):
+        return False, "timestamp in future beyond skew tolerance"
+    return True, "fresh"
 
 
 class UniverseManager:
@@ -122,18 +197,25 @@ class UniverseManager:
         return {s: dict(r) for s, r in sorted(self._symbols.items())}
 
     def slot_usage(self, core_count: Optional[int] = None) -> Dict[str, Any]:
-        """Slot/stream budget accounting (fail-closed inputs for update)."""
+        """Slot/stream budget accounting (fail-closed inputs for update).
+
+        Totals come from account_streams() — the same calculation the
+        budget gate enforces — so telemetry can never drift from policy.
+        """
         hot = self.desired_hot()
         core_n = len(self.core) if core_count is None else int(core_count)
-        hot_streams = streams_for_symbols(hot)
+        acct = account_streams(core_n, hot)
         return {
             "core_symbols": list(self.core),
             "core_count": core_n,
             "hot_desired": list(hot),
             "hot_used": len(hot),
             "hot_free": max(int(self.budget["max_hot_slots"]) - len(hot), 0),
-            "hot_streams": hot_streams,
-            "total_streams": hot_streams,  # caller adds canonical streams
+            "hot_streams": acct["hot_streams"],
+            "canonical_streams": acct["canonical_streams"],
+            "total_streams": acct["total_streams"],
+            "connections": acct["connections"],
+            "per_connection": acct["per_connection"],
             "max_hot_slots": int(self.budget["max_hot_slots"]),
             "max_total_streams": int(self.budget["max_total_streams"]),
         }
@@ -177,14 +259,14 @@ class UniverseManager:
             info = candidates.get(sym, {})
             if not info.get("eligible"):
                 continue
-            close_ms = info.get("ticker_close_ms")
-            age_ok = (close_ms is None or
-                      (scan - int(close_ms)) <= int(
-                          cfg["max_discovery_age_seconds"]) * 1000)
-            if not age_ok:
+            fresh, fresh_reason = check_timestamp_fresh(
+                info.get("ticker_close_ms"), scan,
+                int(cfg["max_discovery_age_seconds"]) * 1000,
+                int(cfg.get("clock_skew_tolerance_ms", 60_000)))
+            if not fresh:
                 decisions["events"].append(
                     {"kind": "skipped", "symbol": sym,
-                     "reason": "discovery data too old"})
+                     "reason": fresh_reason})
                 continue
             ranked.append((movement_key(info.get("change_24h_pct"),
                                         info.get("quote_volume_24h"), sym),
@@ -300,23 +382,22 @@ class UniverseManager:
         return decisions
 
     def _budget_ok(self, desired: Tuple[str, ...]) -> bool:
-        """Fail-closed budget gate for a candidate desired set."""
+        """Fail-closed budget gate for a candidate desired set.
+
+        Enforces the account_streams() inventory against policy: slot cap,
+        total-stream cap, per-connection cap, connection cap. Connections
+        and streams are checked as separate units (P1-12B.1 correction).
+        """
         cfg = self.budget
         if len(desired) > int(cfg["max_hot_slots"]):
             return False
-        hot_streams = streams_for_symbols(desired)
-        # Canonical CORE streams: 3 symbols x (bookTicker+depth+aggTrade)
-        # + 2 global array feeds, plus 2 HOT connections when active.
-        canonical = len(self.core) * 3 + 2
-        total = canonical + hot_streams + (2 if desired else 0)
-        if total > int(cfg["max_total_streams"]):
+        acct = account_streams(len(self.core), desired)
+        if acct["total_streams"] > int(cfg["max_total_streams"]):
             return False
-        conns = 2 + (2 if desired else 0)
-        if conns > int(cfg["max_connections"]):
+        if acct["connections"] > int(cfg["max_connections"]):
             return False
-        per_conn = max(hot_streams // 2 if desired else 0,
-                       len(desired) * 2)
-        if per_conn > int(cfg["max_streams_per_connection"]):
+        if max(acct["per_connection"].values()) > int(
+                cfg["max_streams_per_connection"]):
             return False
         return True
 

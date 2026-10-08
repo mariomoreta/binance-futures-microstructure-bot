@@ -67,6 +67,15 @@ strategies (P3), paper engine/positions (P4), execution (P5).
 
 ## COMPLETED
 
+- `P1-12B.1` (2026-10-08) DYNAMIC UNIVERSE INTEGRITY AUDIT: **PASS**.
+  Both review concerns reproduced and fixed: fail-closed ticker-
+  timestamp gate (missing/malformed/unit/old/future reject; 60s skew
+  tolerance) and single authoritative stream accounting (canonical 11,
+  connections≠streams, globals once). Docs re-fetch empty — caps stay
+  UNVERIFIED. 496/496 tests (18 new). 240s observe COMPLETED: strict
+  gate blocks nothing healthy (3 promotions all LIVE, 0 skips).
+  P1-12B PASS record preserved (append-only correction).
+
 - `P1-12B` (2026-10-08) DYNAMIC LIVE UNIVERSE V0: **PASS**.
   Bounded HOT selection + lifecycle (`universe_manager.py`, v0) on two
   managed connections (canonical pair untouched): 3 HOT slots default,
@@ -255,6 +264,11 @@ strategies (P3), paper engine/positions (P4), execution (P5).
   + token research card live. 408/408 tests (32 new).
 
 ## LAST_VERIFICATION
+
+- 2026-10-08 (P1-12B.1): `python run_tests.py` → 496/496 OK (478 + 18
+  new freshness/accounting tests; toy-epoch fixtures migrated to
+  realistic ms epochs). 240s observe COMPLETED (strict gate live-proven).
+  Next: P1-13A candidate (needs explicit instruction).
 
 - 2026-10-08 (P1-12B): `python run_tests.py` → 478/478 OK (447 + 31 new
   universe/manager/transport/recorder/classifier tests). 300s observe

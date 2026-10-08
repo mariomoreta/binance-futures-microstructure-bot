@@ -177,13 +177,15 @@ it does not replace them. Authority stays where it was recorded
   All met (31 tests + 300s live run: 3 promotions all LIVE).
 - **Evidence:** `tests/test_universe.py` + `tests/test_universe_probe.py`
   (31 tests), 478/478 suite, `logs/probe-runs/p12b-300s.log`
-  (git-ignored, preserved), `docs/UNIVERSE_SPEC.md`.
+  (git-ignored, preserved), `docs/UNIVERSE_SPEC.md`. P1-12B.1 audit
+  (2026-10-08): timestamp gate + accounting corrected, 496/496 suite,
+  240s observe re-validation (`logs/probe-runs/p12b1-240s.log`).
 - **Docs:** `docs/ROADMAP.md`, `docs/TASK_QUEUE.md`, P1-05 decision record,
   `docs/UNIVERSE_SPEC.md`.
 - **Open questions:** transport caps stay UNVERIFIED (re-check against
   official docs before raising budgets); resubscribe cadence beyond
   scan-driven sync unevaluated.
-- **Last update:** 2026-10-08.
+- **Last update:** 2026-10-08 (P1-12B.1 corrections applied).
 
 ## F-OPP-01 — Research-based opportunity engine (P1-13A)
 

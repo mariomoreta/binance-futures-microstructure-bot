@@ -225,7 +225,8 @@ class MarketProbe:
                 "promotion_interval_seconds", "min_dwell_seconds",
                 "demotion_cooldown_seconds", "max_discovery_age_seconds",
                 "demote_after_missed_scans",
-                "max_hot_reconnects_per_hour")})
+                "max_hot_reconnects_per_hour",
+                "clock_skew_tolerance_ms")})
         self._hot_active: tuple = ()
         self._hot_tasks: dict = {}
         self._hot_seen: dict = {}

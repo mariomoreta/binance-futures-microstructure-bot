@@ -872,7 +872,7 @@ decay, ineligibility bypasses dwell (proven breach), CORE never evicted
 or shadowed. Budgets (fail-closed, conservative local policy — official
 WS docs unfetchable here, all caps UNVERIFIED): 3 HOT slots, 60 total
 streams, 50/connection, 6 connections; actual footprint 4 connections /
-≤32 streams. HOT rides `hot-public` (bookTicker+depth) + `hot-market`
+≤26 streams. HOT rides `hot-public` (bookTicker+depth) + `hot-market`
 (aggTrade); global markPrice/forceOrder arrays never duplicated.
 `_connection_loop` accepts a URL callable so reconnects restore exactly
 the desired set; resync (cancel exactly the 2 managed tasks + respawn)
@@ -895,6 +895,34 @@ COMPLETED naturally: 465 eligible → 6 proposals → 3 promotions
 0 rejects, 259k msgs, HOT research buckets 24/4/3 per symbol,
 6 symbols classified, safety 0/0/0. Dashboard verified live
 (subscribed row, lifecycle table, OGN token panel).
+
+## P1-12B.1 dynamic universe integrity audit — RESULT: PASS (2026-10-08)
+
+Independent review of P1-12B raised two concerns; both reproduced, both
+fixed minimally with no architecture change:
+
+A. Candidate freshness (CONFIRMED): `ticker_close_ms=None` promoted,
+future timestamps passed the one-sided comparison, and malformed values
+aborted the whole update. Fix: per-candidate fail-closed
+`check_timestamp_fresh()` (missing/malformed/implausible-unit/too-old/
+too-future reject with reasons; ≤60s future skew tolerated and
+documented). Upstream passes None through, so the manager gate is the
+enforcement point; trusted clock is local wall time.
+
+B. Stream accounting (CONFIRMED, conservative direction): `+2`
+connections leaked into a stream total, and reports claimed `17
+canonical` vs measured **11** (9 per-symbol + 2 global arrays). Fix:
+single authoritative `account_streams()` shared by enforcement and
+telemetry (connections and streams separate units; globals counted
+once). No over-budget promotion ever occurred (errors over-counted).
+
+Provider docs re-fetched 2026-10-08: empty again — all caps stay
+UNVERIFIED/LOCAL_POLICY, nothing raised. Validation: 18 new tests;
+full suite 496/496; 240s observe run COMPLETED (3 promotions AIOT/MET/
+OGNUSDT all LIVE, 0 staleness skips — real closeTime is fresh ms,
+400k msgs, 0 reconnects/rejects, 6 symbols classified, safety clean);
+dashboard shows subscribed row + lifecycle + token panels; Next.js
+unaffected. P1-12B PASS record stands (append-only correction).
 
 ## Known gaps (Phase 1 work ahead, in order)
 

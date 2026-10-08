@@ -38,7 +38,7 @@ Defaults: 3 HOT slots; 60 total streams; 50 streams/connection
 (UNVERIFIED); 6 connections; promotion cadence = discovery interval
 (600s); min dwell 1800s; demotion cooldown 3600s; demote after 2 missed
 scans; â‰¤10 HOT reconnects/hour. Actual footprint at defaults: 4
-connections, â‰¤32 streams (17 canonical + 15 HOT). CORE streams: 3
+connections, â‰¤26 streams (11 canonical + 15 HOT). CORE streams: 3
 symbols Ã— (bookTicker + depth + aggTrade) + 2 global array feeds.
 HOT streams: 3/symbol (bookTicker + depth + aggTrade); markPrice (!arr)
 and forceOrder (!arr) are global and never duplicated.
@@ -102,3 +102,28 @@ No redesign, no Next.js changes, CREATE_NO_WINDOW fix intact.
   inheritance); demoted rows persist STALE until retention caps.
 - Transport caps remain UNVERIFIED â€” re-check against official docs when
   reachable before raising any budget.
+
+## P1-12B.1 integrity corrections (2026-10-08)
+
+### A. Ticker-timestamp gate (defect CONFIRMED and fixed)
+
+The review was right: 	icker_close_ms=None promoted, future timestamps passed (scan - close <= max is trivially true when negative), and a malformed value aborted the whole update via uncaught int(). Fix: check_timestamp_fresh() fail-closed per candidate — missing/malformed/implausible-unit (<1e11 ms, i.e. seconds-confusion)/too-old/too-future all reject with logged reasons; small future skew within clock_skew_tolerance_ms (default 60s) is permitted and documented. Upstream (discovery.build_candidates) passes None through for rows without closeTime, so the manager-side gate is the enforcement point. Trusted clock: local wall clock (same source the probe uses for all timing). Validated live: real ticker rows carry fresh ms closeTime — 3 promotions, 0 staleness skips in the 240s validation run.
+
+### B. Stream accounting (partially confirmed, corrected)
+
+Two real errors, both erring conservative so no over-budget promotion ever occurred: (1) 	otal = canonical + hot + 2 added two *connections* into a *stream* total; (2) reports/docs claimed 17 canonical — the measured canonical footprint is **11 streams** (9 per-symbol + 2 global arrays) on 2 connections (public 6, market 5). Fix: single authoritative ccount_streams() (canonical 11 + 3/HOT; connections counted separately: 2 + 2-if-HOT; per-connection layout explicit) shared by _budget_ok enforcement and slot_usage telemetry. At defaults: 4 connections, 20 streams with 3 HOT.
+
+### Provider documentation
+
+Official USD-M websocket docs re-fetched 2026-10-08 (developers.binance.com/.../websocket-market-streams): empty response, same as P1-05/P1-11B. All transport caps remain UNVERIFIED assumptions / LOCAL_POLICY; no limit was raised. Source URLs + retrieval date recorded here; re-check before raising any budget.
+
+### Connection/stream inventory (measured, P1-12B.1)
+
+| Connection | Endpoint path | Streams | Count | Coverage | Purpose | Code |
+|---|---|---|---|---|---|---|
+| canonical-public | /public/stream | bookTicker+depth20 per CORE | 6 | CORE | book + depth | uild_stream_urls |
+| canonical-market | /market/stream | aggTrade per CORE + !markPrice@arr + !forceOrder@arr | 5 | CORE + global | trades + mark + liquidations | uild_stream_urls |
+| hot-public | /public/stream | bookTicker+depth20 per HOT | 2N | HOT | book + depth | uild_hot_stream_urls |
+| hot-market | /market/stream | aggTrade per HOT | 1N | HOT | trades | uild_hot_stream_urls |
+
+Global array feeds appear exactly once (canonical-market). Per-connection maxima at defaults: 6 (canonical-public), 5 (canonical-market), 6 (hot-public at 3 HOT), 3 (hot-market at 3 HOT) — all within the 50 local policy.
