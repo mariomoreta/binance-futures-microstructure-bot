@@ -733,6 +733,76 @@ Tests after: 376/376 (353 + 23 new mocked lifecycle/API tests).
   14 recorder incl. buckets/quality/retention/queue-drops/isolation/
   lifecycle/no-second-process). `docs/PHASE_1_REPORT.md` untouched.
 
+## P1-10R formal ≥6h soak re-run — RESULT: PASS (2026-10-08)
+
+Run: ONE continuous WMI-detached process (PID 19084; parent chain
+python → cmd → WmiPrvSE Session 0, independent of all agent shells),
+`--duration 21600`, preset validation-6h, launcher
+scheduler-6h-validation, BOT_MODE=observe. Started 2026-10-08T00:48:20Z,
+final summary 2026-10-08T06:48:23Z: **21603.9s ≥ 21600s**. Registry
+COMPLETED + duration-reached + exit 0; process exited (no orphan); 1
+startup; 699 periodic summaries, max inter-summary gap 49.7s, 0 gaps
+>120s. Evidence (local, git-ignored):
+`logs/p1-10r/probe-20261008T0048Z.log` (33.3MB merged UTF-8) +
+`logs/p1-10r/P1-10R_HANDOFF.md`. No app-code changes during the run
+(proven: empty `git log` on src/tests/config since launch baseline).
+
+Transport (vs P1-01R healthy precedent and P1-10 degraded finale):
+- Coverage 11/11 all 6h, missing [], stale []. 19,004,903 messages
+  (bookTicker 17.77M, depth 590k, aggTrade 595k, markPrice 42k,
+  forceOrder 8.8k).
+- Reconnects 10 total (public 4 × ConnectionClosed, market 6: 1
+  ConnectionClosed + 5 opening-handshake TimeoutErrors with 2→30s
+  backoff); attempts 12, parse 0, payload 0.
+- Skew-rejects 143,624 (0.76%); uptime market 99.10% (21406s),
+  public 99.95%.
+- Corrected delivery lag p50 ~170–250ms every stream (P1-01R-grade);
+  p95 sub-second except sparse forceOrder; p99 ≤0.66s (forceOrder
+  excluded: event-driven). Rare single-message max outliers (~311–510s)
+  with steady neighboring throughput — isolated, not episodes.
+- Episodes (all auto-recovered, none hidden in averages): ~01:29–01:32Z
+  (public reconnect, ~24k rejects); ~02:31–02:35Z (public reconnect,
+  ~37k rejects); ~04:20–04:29Z (~9.5min: market handshake timeouts,
+  6 market + 1 public reconnects, ~82k rejects, market-stream silence
+  ≤192s). Final hour rt 18007→21590: 0 reconnects, 0 rejects, 3.07M
+  msgs — NO P1-10-style final-hour collapse.
+- Depth gaps 5/5/5 total (reconnect-driven), all recovered
+  (degraded=false, crossed 0 at END). Clock 36/36 syncs ok, 0 failures
+  (offset −582ms → −208ms, RTT ~343ms).
+
+Engines (all monotonic, 0 invalid / 0 late everywhere): returns 3886
+samples/symbol over 31.5h span (restored + live); flow 566,244 events;
+book 587,330 msgs; OI 1029/1029 polls ok (p50 347ms, slow polls
+absorbed); discovery 36 scans (924 seen → 467 eligible, HOT 6 with
+hysteresis); structure evaluating (symbols_evaluated). Detectors are
+telemetry only: 22622 funding crossings (same hypothesis-artifact
+class), 11 individual + 1 window liquidations, 181 volume spikes — no
+threshold conclusions.
+
+Research recorder (P1-11C validation): RUNNING all 6h → drained STOPPED;
+writes 8273, drops 0, errors 0, inflight 0, high-water 6. Rows added:
+flow_10s +6191 (vs ~6480 est, 95.5%), flow_1m +1041 (~96%), book_1m
++1041 (~96%) — shortfall is the documented stall episode plus edge
+partials, no unexplained loss. Historical DB +1.58MB (16.47 → 18.05MB),
+integrity ok; operational DB 206.9 → 238.9MB (retention caps hold:
+snapshots at 1000), integrity ok; persistence errors 0, locks 0.
+
+Dashboard: alive throughout and after (PID 30984); feed/health states
+independent and truthful (STALE chip after completion is honest — last
+snapshot is the 06:48:23Z final). No phantom RUNNING. The known
+tasklist/wmic popup defect (P1-10R-FIX-01) stayed cosmetic: 2 spawns
+per 4s poll, negligible overhead, no evidence impact; fix deferred to a
+separate post-soak change (CREATE_NO_WINDOW), NOT applied here.
+
+Safety: BOT_MODE=observe in startup + final; apiKeysUsed 0,
+authenticated clients false, realOrdersSent 0, capital 0, no order
+paths (static tests green). NO VIOLATION.
+
+P1-10 failure mode eliminated: the old run died externally at 4.91h
+with an unhealthy finale; P1-10R survived its full window in a
+session-independent process AND its worst transport episode (~9.5min)
+self-recovered with 3.5 clean hours after it.
+
 ## Known gaps (Phase 1 work ahead, in order)
 
 Minimal dashboard: DONE (P1-03 PASS) → terminal DONE (P1-09 PASS,
@@ -750,12 +820,9 @@ VWAP + volatility + structure: DONE (P1-08 PASS — flow-VWAP, raw vol,
 range expansion, confirmed pivots, v0.7.0 dashboard + APIs, 372s run).
 Transport re-validation: DONE (P1-01R PASS — 45min healthy window, soak
 gate unblocked).
-Remaining: P1-10R ≥6h soak re-run (P1-10 FAIL was truncated at 4.91h —
-may start ONLY on instruction; the 6H-Validation preset carries the
-P1-11C recorder, so the soak will also validate research-capture
-stability), then state classifier (P1-12, BLOCKED until P1-11C PASS +
-P1-10R PASS — P1-11C is now PASS), signal UI (P1-13),
-calibration evidence (P1-14). P1-11 raw-feature validation may use the valid
+Remaining: P1-12 state classifier v0 (READY — P1-11C PASS + P1-10R PASS;
+starts only on explicit instruction; thresholds stay HYPOTHESIS), then
+signal UI (P1-13), calibration evidence (P1-14). P1-11 raw-feature validation may use the valid
 4.91h P1-10 evidence; the Movers shared-`_v` category-value anomaly is a
 recorded P1-11A audit item (not fixed).
 

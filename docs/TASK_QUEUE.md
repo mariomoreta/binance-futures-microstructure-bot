@@ -32,17 +32,10 @@ the dashboard exists. No classifier before raw-feature dashboard validation.
 
 ## ACTIVE_TASK
 
-- `P1-10R` FORMAL ≥6H SOAK RE-RUN — **RUNNING** since 2026-10-08T00:48:20Z
-  (PID 19084, WMI-detached parent chain via WmiPrvSE Session 0 — survives
-  agent sessions; proof: a 90s run on the same mechanism COMPLETED with
-  exit 0). Expected end 2026-10-08T06:48:20Z (21600s, preset
-  validation-6h, launcher scheduler-6h-validation, BOT_MODE=observe).
-  Evidence: `logs/p1-10r/probe-20261008T0048Z.log` (merged UTF-8);
-  handoff: `logs/p1-10r/P1-10R_HANDOFF.md` (local, git-ignored).
-  Start window T+124s is P1-01R-grade healthy (11/11 streams, 0
-  reconnects, 0 rejects, research RUNNING 48/0/0). Audit hourly, decide
-  PASS/FAIL only at natural completion. `P1-11C` is PASS. Do NOT launch
-  a second probe. Do NOT start P1-12.
+- `P1-12` MARKET STATE CLASSIFIER V0 — READY (P1-11C PASS + P1-10R PASS;
+  starts only on explicit instruction; thresholds stay HYPOTHESIS).
+  `P1-10R` is PASS (see COMPLETED). Do NOT launch another soak.
+  Do NOT start P1-12 automatically.
 
 ## NEXT_TASKS (ordered, all Phase 1)
 - `P1-10R` PROLONGED ≥6H SOAK RE-RUN — P1-10 FAIL stays FAIL (truncated at
@@ -52,8 +45,8 @@ the dashboard exists. No classifier before raw-feature dashboard validation.
   P1-11A Raw Feature + Movers Integrity (DONE) → P1-11B Historical Data
   Foundation (DONE) → P1-11B.1 Probe Lifecycle + Run Control (DONE) →
   P1-11C Historical Event Studies (DONE) → P1-10R Formal ≥6h soak
-  re-run (NEXT, needs instruction) → P1-12 Market State Classifier
-  (BLOCKED until P1-11C + P1-10R PASS) → P1-12B Dynamic Live Universe →
+  re-run (DONE — PASS) → P1-12 Market State Classifier
+  (READY — needs instruction) → P1-12B Dynamic Live Universe →
   P1-13A Opportunity / Setup Engine → P1-13B Professional Opportunities UX
   → P1-14 Historical Backtester → P1-15 Forward Paper Trading → P1-16 Paper
   Portfolio / Dynamic Exit.
@@ -69,9 +62,9 @@ strategies (P3), paper engine/positions (P4), execution (P5).
 
 ## BLOCKED
 
-- `P1-12` (classifier) blocked until the P1-11A/B/C evidence chain and the
-  `P1-10R` gate. All other P1 tasks sequenced above; each starts after its
-  predecessor's evidence is recorded.
+- Nothing currently blocked on P1-10R (PASS). `P1-12` is READY pending
+  explicit instruction. Later tasks remain sequenced; each starts after
+  its predecessor's evidence is recorded.
 
 ## COMPLETED
 
@@ -205,6 +198,22 @@ strategies (P3), paper engine/positions (P4), execution (P5).
   Live roundtrip proven (dashboard start→RUNNING→STALE→ok→stop; external
   start auto-discovered; 90s run COMPLETED; dashboard survived).
   376/376 tests (23 new).
+- `P1-10R` (2026-10-08) FORMAL ≥6H SOAK RE-RUN: **PASS**. One continuous
+  WMI-detached process (PID 19084, 00:48:20Z → 06:48:23Z, 21603.9s ≥
+  21600s), registry COMPLETED + duration-reached + exit 0, final_summary
+  present, 699 gap-free summaries. Transport: 11/11 streams, 19.0M msgs,
+  10 reconnects (all auto-recovered), 0.76% skew-rejects, uptime
+  99.10%/99.95%, p50 170–250ms; worst episode ~04:20–04:29Z (~9.5min,
+  market handshake timeouts, self-recovered); final hour perfectly clean
+  (0 reconnects, 0 rejects) — no P1-10-style collapse. Engines all
+  monotonic (flow 566k, book 587k, returns 3886/symbol over 31.5h, OI
+  1029/1029, discovery 36 scans). Research recorder drained STOPPED:
+  8273 writes, 0 drops, 0 errors (+6191/+1041/+1041 rows, ~96% of
+  estimate). DBs bounded (microprobe +32MB at retention caps;
+  historical +1.6MB) and integrity-ok. Dashboard alive and truthful;
+  popup defect stayed cosmetic. Safety 0/0/0. 408/408 tests.
+  Evidence: `logs/p1-10r/probe-20261008T0048Z.log` (local, git-ignored).
+   Full analysis in `docs/CURRENT_STATE.md`.
 - `P1-11C` (2026-10-07) HISTORICAL EVENT STUDIES + PROSPECTIVE CAPTURE:
   **PASS**. No-lookahead engine (`events.py`, 6 versioned HYPOTHESIS
   families) + schema-v2 event tables in the historical DB + probe-owned
@@ -218,12 +227,16 @@ strategies (P3), paper engine/positions (P4), execution (P5).
 
 ## LAST_VERIFICATION
 
+- 2026-10-08 (P1-10R): **PASS**. `python run_tests.py` → 408/408 OK
+  (no app changes). 21603.9s continuous, COMPLETED + duration-reached +
+  exit 0, final_summary present. Transport/honest-episode analysis,
+  research drain (8273/0/0), and gate matrix in `docs/CURRENT_STATE.md`.
+  Next: P1-12 READY (needs explicit instruction; thresholds HYPOTHESIS).
 - 2026-10-07 (P1-11C): `python run_tests.py` → 408/408 OK (376 + 32 new
   event/recorder tests). Pilot 38 bounded runs stored (NMR extension:
   2 requests, 719 bars, ratio 1.0). Short live verification 150s →
   COMPLETED naturally (research writes 60, drops 0, errors 0). New
-  research/event APIs live-verified (200). Next: P1-10R (queued — needs
-  explicit instruction; 6H-Validation preset carries the recorder).
+  research/event APIs live-verified (200). P1-10R now PASS (see above).
 - 2026-10-07 (P1-11B.1): `python run_tests.py` → 376/376 OK (353 + 23 new
   lifecycle/API tests). Live roundtrip verified (dashboard + external
   starts, feed transitions honest, dashboard survived all stops). P1-11C
