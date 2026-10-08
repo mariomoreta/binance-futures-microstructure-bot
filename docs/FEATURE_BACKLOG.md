@@ -25,11 +25,11 @@ it does not replace them. Authority stays where it was recorded
 | F-STATE-PY-01 | Market State Intelligence — Python presentation | DECIDED | VERIFIED (token panel) | P1-12A DONE |
 | F-STATE-V2-OV-01 | V2 Overview: state distribution + transitions | DECIDED | NOT IMPLEMENTED | DASH-V2 future |
 | F-STATE-V2-MV-01 | V2 Movers: state/direction columns + filters | DECIDED | NOT IMPLEMENTED | DASH-V2 future |
-| F-STATE-V2-TK-01 | V2 Token Detail: state explanation panel | DECIDED | NOT IMPLEMENTED | DASH-V2 future |
+| F-STATE-V2-TK-01 | V2 Token Detail: state explanation panel | DECIDED | PARTIAL (DEMO UI only; no BFF) | DASH-V2-03/05 |
 | F-STATE-V2-TL-01 | State timeline visualization | PROPOSED | NOT IMPLEMENTED | Later |
 | F-UNI-01 | Dynamic LIVE-universe expansion (P1-12B) | DECIDED | VERIFIED | P1-12B DONE |
 | F-OPP-01 | Research-based opportunity engine (P1-13A) | DECIDED | NOT IMPLEMENTED | P1-13A |
-| F-OPP-UI-01 | Opportunities dashboard (P1-13B) | DECIDED | NOT IMPLEMENTED | P1-13B |
+| F-OPP-UI-01 | Opportunities dashboard (P1-13B) | DECIDED | PARTIAL (DEMO UI only; no BFF) | DASH-V2-04/05 |
 | F-BT-01 | Historical backtesting (P1-14) | DECIDED | NOT IMPLEMENTED | P1-14 |
 | F-PAPER-01 | Forward paper validation (P1-15) | DECIDED | NOT IMPLEMENTED | P1-15 |
 | F-PORT-01 | Paper portfolio (P1-16) | DECIDED | NOT IMPLEMENTED | P1-16 |
@@ -123,8 +123,8 @@ it does not replace them. Authority stays where it was recorded
   transitions, and rule version — mirroring F-STATE-PY-01 content.
 - **Origin / decision date:** V2 design review 2026-10-07.
 - **Approval status:** DECIDED (design). **Implementation status:**
-  NOT IMPLEMENTED.
-- **Target phase:** DASH-V2-03 or later BFF-backed slice.
+  PARTIAL — DEMO-only state explanation, UNKNOWN until verified BFF data.
+- **Target phase:** DASH-V2-03/05; live-data integration remains deferred.
 - **Dependencies:** F-V2-BFF-01, F-STATE-PY-01.
 - **Affected subsystems:** `frontend/src/app/symbol/[symbol]/`, BFF routes.
 - **Required UI locations:** `/symbol/[symbol]` state panel.
@@ -218,7 +218,7 @@ it does not replace them. Authority stays where it was recorded
 - **Origin / decision date:** `docs/ROADMAP.md`; V2 Opportunities section
   `docs/DASHBOARD_V2_DESIGN_SPEC.md` (empty-shell-first rule).
 - **Approval status:** DECIDED (sequenced/designed).
-- **Implementation status:** NOT IMPLEMENTED (V2 has nav/blocked explanation only).
+- **Implementation status:** PARTIAL (V2 DEMO screener with filters and inspector; no real-data BFF).
 - **Target phase:** P1-13B.
 - **Dependencies:** F-OPP-01.
 - **Affected subsystems:** Python dashboard routes; `frontend/src/app/

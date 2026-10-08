@@ -1,1 +1,67 @@
 .page{display:grid;gap:14px;max-width:1500px}.header{display:flex;justify-content:space-between;align-items:center;gap:16px}.header h1{font-size:27px;margin:5px 0 2px;letter-spacing:-.04em}.header p,.panel p,.statePanel p,.statePanel li{font-size:12px;color:var(--text-2)}.hero{display:grid;grid-template-columns:1.3fr 1fr 1fr;background:var(--surface-1);border:1px solid var(--border);border-radius:10px}.hero>div{padding:18px;display:flex;flex-wrap:wrap;align-items:center;gap:8px;border-right:1px solid var(--border)}.hero>div:last-child{border:0}.hero small{display:block;width:100%;color:var(--text-3);text-transform:uppercase;font-size:11px}.hero strong{font:600 22px var(--font-mono)}.columns{display:grid;grid-template-columns:1.2fr 1fr;gap:14px}.panel,.statePanel{min-width:0;background:var(--surface-1);border:1px solid var(--border);border-radius:10px;padding:18px}.panel h2,.statePanel h2{font-size:15px;margin:0 0 6px}.panel h3,.statePanel h3{font-size:12px;color:var(--text-2);margin:0 0 7px}.stateHeader,.panelTop,.stateFoot{display:flex;align-items:center;justify-content:space-between;gap:15px;flex-wrap:wrap}.stateHeader p,.panelTop p{margin:0}.status{display:flex;align-items:center;gap:8px;flex-wrap:wrap}.stateFlow{display:flex;gap:7px;flex-wrap:wrap;margin:16px 0 10px}.stateFlow span{padding:7px 10px;border:1px solid var(--border);border-radius:5px;font:11px var(--font-mono)}.inactiveState{color:var(--text-3);background:var(--bg-1)}.currentState{color:var(--accent);border-color:var(--accent)!important}.notice{padding:10px 12px;background:var(--bg-1);border-left:2px solid var(--warning);margin:8px 0 14px}.stateEvidence{display:grid;grid-template-columns:1fr 1fr 1.2fr;gap:12px}.stateEvidence>div{padding:13px;background:var(--bg-1);border:1px solid var(--border);border-radius:7px;min-height:96px}.stateEvidence ul{padding-left:16px;margin:4px 0}.stateEvidence p{margin:0}.stateFoot{margin-top:13px;border-top:1px solid var(--border);padding-top:12px;color:var(--text-3);font:11px var(--font-mono)}.count{color:var(--text-3);font:11px var(--font-mono)}.metricGrid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin-top:14px}.metric{padding:12px;background:var(--bg-1);border:1px solid var(--border);border-radius:7px;min-width:0}.metric b,.metric small{display:block;font-size:11px}.metric small{color:var(--text-3);margin:4px 0 10px}.metric strong{font:600 13px var(--font-mono);overflow-wrap:anywhere}.empty{min-height:130px;border:1px dashed var(--border);border-radius:8px;background:var(--bg-1);padding:20px;text-align:center;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:9px;color:var(--text-3);font-size:12px}.empty strong{color:var(--text-2);font-size:13px}.emptyBadge{color:var(--warning);font:10px var(--font-mono)}.page footer{font-size:11px;color:var(--text-3)}@media(max-width:1050px){.columns{grid-template-columns:1fr}.metricGrid{grid-template-columns:repeat(2,minmax(0,1fr))}}@media(max-width:700px){.hero{grid-template-columns:1fr}.hero>div{border-right:0;border-bottom:1px solid var(--border)}.stateEvidence,.metricGrid{grid-template-columns:1fr}.panel,.statePanel{padding:14px}}
+/* DASH-V2-05: Token Detail visual hierarchy against approved terminal target. */
+.page { gap: 16px; min-width: 0; }
+.header { min-height: 75px; }
+.header h1 { font-size: clamp(25px, 2.4vw, 34px); }
+.header a { font-size: 12px; text-decoration: none; }
+.header a:hover { text-decoration: underline; }
+.hero {
+  overflow: hidden;
+  background: linear-gradient(115deg, #102840 0%, #0c1e31 60%, #0b1a2b 100%);
+  border-color: #205074;
+  box-shadow: inset 0 1px 0 #1b3d55;
+}
+.hero > div { min-width: 0; padding: 20px; }
+.hero strong { font-size: clamp(17px, 1.7vw, 24px); overflow-wrap: anywhere; }
+.hero strong[data-tone="positive"] { color: var(--positive); }
+.hero strong[data-tone="negative"] { color: var(--negative); }
+.hero strong[data-tone="unknown"] { color: var(--text-3); }
+.panel, .statePanel {
+  background: linear-gradient(180deg, #102338, #0a1929);
+  border-color: #1b425e;
+  border-radius: 10px;
+  box-shadow: inset 0 1px 0 #1b3449;
+}
+.statePanel { border-top: 2px solid #2379b4; }
+.statePanel h2 { font-size: 18px; letter-spacing: -.02em; }
+.stateHeader { align-items: flex-start; }
+.statusLabel { font-size: 10px; color: #83abc8; text-transform: uppercase; letter-spacing: .04em; }
+.stateFlow { margin: 18px 0 15px; }
+.stateFlow span { padding: 9px 13px; background: #0a1a2a; border-radius: 7px; }
+.notice {
+  background: #182538;
+  border-left: 3px solid #e4a536;
+  border-radius: 4px;
+  line-height: 1.55;
+  padding: 12px 14px;
+}
+.stateEvidence > div {
+  min-width: 0;
+  background: #091b2c;
+  border-color: #1a405d;
+  border-radius: 8px;
+  min-height: 110px;
+}
+.stateEvidence > div:first-child { border-top: 2px solid #13b991; }
+.stateEvidence > div:nth-child(2) { border-top: 2px solid #d66c82; }
+.stateEvidence > div:nth-child(3) { border-top: 2px solid #dda343; }
+.stateFoot { border-top-color: #1a405d; }
+.metric {
+  background: #091b2c;
+  border-color: #1b3f59;
+  border-radius: 8px;
+  min-height: 106px;
+}
+.metric b { font-size: 12px; color: #d5eafa; }
+.metric strong { font-size: 15px; color: #e5f7ff; }
+.empty { border-color: #31506a; min-height: 160px; }
+@media (max-width: 700px) {
+  .header { align-items: flex-start; }
+  .hero > div { padding: 15px; }
+  .stateHeader .status { gap: 6px; }
+  .stateEvidence { gap: 9px; }
+  .metricGrid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@media (max-width: 390px) {
+  .metricGrid { grid-template-columns: 1fr; }
+}

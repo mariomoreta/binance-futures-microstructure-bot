@@ -137,3 +137,16 @@ architecture + static foundation (DASH-V2-00); no integration.
 - Updated AGENTS.md, dashboard-v2 skill, and handoff to make approved visual targets binding with actual-data truth constraints.
 - Opportunities DEMO screen CSS refined for professional terminal treatment: accent/contrast, metric hierarchy, clearer selected rows, inspector/evidence emphasis, focus outlines and narrow layout; no change to business rules, backend, Python or API.
 - Local TypeScript, ESLint, Vitest (30/30), and production build passed. Live browser visual comparison of this new CSS still required after an isolated preview starts; do not claim screenshot parity yet.
+
+## DASH-V2-05 — shared shell, accessible research views, reproducible QA (2026-10-08)
+
+- Isolated worktree: `C:\\proyectos\\binance-futures-dashboard-v2-worktree`, branch `dash-v2-03-token-detail`. Started at `91a64f7`; no backend, DB, probe, Python, main, or Muse Spark worktree changes.
+- Shared shell: single semantic main landmark with keyboard skip link; responsive scrollable horizontal navigation below 1024px; current-page navigation semantics including future routes; min-width/overflow guards to prevent whole-page horizontal scrolling.
+- Opportunities: selection buttons expose `aria-pressed` and inspector relationship; candidate table has keyboard-focusable named scroll region; summary decoration no longer empty squares; duplicate in-page DEMO badge removed (persistent shell indicator remains).
+- Token Detail: removed nested main landmark and duplicate DEMO badge, added explicit observed-state/direction labels, signed demo change tone, stronger evidence/metric hierarchy and mobile layout. Authoritative classifier remains UNKNOWN.
+- Verification: TypeScript PASS; ESLint PASS; Vitest **33/33** (3 new accessibility tests); Next production build PASS (10 generated pages including dynamic token route). Chrome CDP 1440x1000 desktop and 390x850 mobile screenshot evidence in `design/qa/v2-05/`.
+- Browser viewport check: Opportunities mobile 390/390 document width, Token Detail mobile 390/390; desktop 1440/1440 or narrower. No global horizontal overflow. The Opportunities candidate table scrolls within its own panel.
+- Visual reference: Token Detail PARTIAL design match; Opportunities **ASSET_MISMATCH** (correct approved image not present under its name). No pixel-perfect claim. Mockup values remain illustrative and never represented as real data.
+- Feature ledger: F-OPP-UI-01 and F-STATE-V2-TK-01 marked PARTIAL (DEMO UI only) on this V2 branch. F-V2-BFF-01 remains NOT IMPLEMENTED. Backend P1-14A belongs to the other agent.
+- Python suite deliberately not rerun here because backend P1-14A is concurrently owned; no Python source modified.
+- Next: reconcile approved Opportunities image filename/content, further parity refinements, then design and verify versioned read-only BFF contract before live data integration. No strategy/execution authorization implied.

@@ -18,7 +18,7 @@ const FUTURE = [
 export function TopNav() {
   const pathname = usePathname();
   return (
-    <nav className="v2-nav" aria-label="Primary">
+    <nav className="v2-nav" aria-label="Primary navigation">
       <div>
         <strong>Dashboard V2</strong>
         <div className="v2-muted" style={{ fontSize: 11 }}>
@@ -44,7 +44,7 @@ export function TopNav() {
         Future
       </div>
       {FUTURE.map((item) => (
-        <Link key={item.href} href={item.href}>
+        <Link key={item.href} href={item.href} aria-current={pathname === item.href ? "page" : undefined}>
           <span className="v2-nav-icon" aria-hidden="true">
             {item.icon}
           </span>

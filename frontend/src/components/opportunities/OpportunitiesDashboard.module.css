@@ -32,3 +32,29 @@
 .historical{border-color:#75551e;border-radius:7px;background:linear-gradient(90deg,#30291744,#0c2132)}
 .disclaimer{border-top:1px solid #14344b;padding:10px 2px}
 @media(max-width:700px){.header h1{font-size:22px}.summary>div{min-height:94px}.tableWrap td{padding:12px 8px}}
+
+/* DASH-V2-05: keyboard-scrollable candidate table and responsive inspector. */
+.tableWrap { border-radius: 6px; }
+.tableWrap:focus-visible { outline: 2px solid #60caff; outline-offset: 2px; }
+.rowPick[aria-pressed="true"] { color: #a4e7ff; }
+.detailHead h3 { overflow-wrap: anywhere; }
+@media (max-width: 700px) {
+  .controls { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
+  .controls label:first-child { grid-column: 1 / -1; }
+  .columns { gap: 12px; }
+}
+@media (max-width: 360px) {
+  .controls { grid-template-columns: minmax(0, 1fr); }
+  .controls label:first-child { grid-column: auto; }
+}
+
+.summary > div::before {
+  content: "01";
+  display: grid;
+  place-items: center;
+  color: #69c9ff;
+  font: 600 20px var(--font-ui);
+}
+.summary > div:nth-child(2)::before { content: "02"; color: #2be4aa; }
+.summary > div:nth-child(3)::before { content: "03"; color: #70b9ff; }
+.summary > div:nth-child(4)::before { content: "04"; color: #b1a0f8; }
