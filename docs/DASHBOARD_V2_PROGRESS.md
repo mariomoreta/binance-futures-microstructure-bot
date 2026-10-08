@@ -105,3 +105,14 @@ architecture + static foundation (DASH-V2-00); no integration.
 - Recovery fixes applied: removed both route templates (root CSS-hack banner suppressor + movers children-ignoring override); /movers now composes MoversDashboard directly in page.tsx; AppShell foundation banner replaced by a compact demo strip; fixed summary double-% unit bug. Rankings scope note kept as designed (filtered dataset, explicitly labeled).
 - Python backend, databases, runtime registry and formal P1-10R evidence: unchanged.
 - P1-10R last observed RUNNING (PID 19084, read-only checks); no PASS/FAIL conclusion made.
+
+
+## DASH-V2-03 — Token Detail isolated preview slice (2026-10-08)
+
+- Implementation lane: dedicated Git worktree `C:\proyectos\binance-futures-dashboard-v2-worktree`, branch `dash-v2-03-token-detail`, segregated from P1-13A backend agent. No Python changes.
+- Implemented `/symbol/[symbol]` research workspace: contract identity, demo price and 24h change, tier/capability, Market State Intelligence panel (state/direction/rule version/support/counterevidence/missing/previous), structured microstructure metrics, honest chart/history placeholders.
+- Demo contract: BTCUSDT supplies explicitly static fixture values but state remains UNKNOWN (no authoritative Python response); other symbols default to null/UNKNOWN and do not borrow BTC evidence. No API integration, no expected returns, no signals.
+- Governance traceability: F-STATE-V2-TK-01 is **PARTIALLY IMPLEMENTED DESIGN ONLY**, not VERIFIED with live classifier data. F-STATE-V2-TL-01 remains PROPOSED. BFF remains NOT IMPLEMENTED.
+- Typecheck, ESLint, Vitest (26/26, including 2 token-detail tests) and Next production build passed locally in isolated worktree; browser pixel comparison not yet verified.
+- Existing preview `127.0.0.1:3000` is the original worktree and is deliberately NOT restarted or replaced. New worktree preview requires its own independent port.
+- Next: optional isolated browser QA/preview on 3001, then review/merge after P1-13A status reconciliation. Do not claim this is live-data-ready.

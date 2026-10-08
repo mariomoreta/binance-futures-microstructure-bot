@@ -1,22 +1,9 @@
-import { SectionHeader } from "@/components/shell/SectionHeader";
-import { WarmingState } from "@/components/notices/states";
-import { Placeholder } from "@/components/shell/AppShell";
+import { notFound } from "next/navigation";
+import { TokenDetail } from "@/components/token/TokenDetail";
+import { getDemoTokenDetail } from "@/lib/token-detail";
 
-export default async function SymbolPage({
-  params,
-}: {
-  params: Promise<{ symbol: string }>;
-}) {
+export default async function SymbolPage({ params }: { params: Promise<{ symbol: string }> }) {
   const { symbol } = await params;
-  const display = decodeURIComponent(symbol).toUpperCase();
-  return (
-    <div>
-      <SectionHeader title={display} />
-      <WarmingState what={`Live features for ${display}`} />
-      <Placeholder
-        title="Detail contract (future)"
-        what="Chart, returns/momentum, flow, book, OI, VWAP/vol/structure, coverage, events, and identity arrive with the normalized detail contract in DASH-V2-03 — including history-only routes."
-      />
-    </div>
-  );
+  if (!/^[A-Za-z0-9_-]{2,32}$/.test(symbol)) notFound();
+  return <TokenDetail data={getDemoTokenDetail(symbol)} />;
 }
