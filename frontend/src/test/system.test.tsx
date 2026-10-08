@@ -1,0 +1,2 @@
+import {describe,expect,it} from "vitest";import {render,screen} from "@testing-library/react";import SystemPage from "@/app/system/page";
+describe("System V2 truthful shell",()=>{it("shows unknown, not invented operational health",()=>{render(<SystemPage/>);expect(screen.getByTestId("system-v2")).toBeInTheDocument();expect(screen.getAllByText("UNKNOWN").length).toBeGreaterThan(4);expect(screen.getByText(/No real events loaded/)).toBeInTheDocument();expect(screen.queryByText("99.98%")).not.toBeInTheDocument();});});

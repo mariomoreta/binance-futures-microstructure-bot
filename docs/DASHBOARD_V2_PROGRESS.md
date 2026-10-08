@@ -193,3 +193,11 @@ architecture + static foundation (DASH-V2-00); no integration.
 - Visual parity: PARTIAL for Token Detail, NOT VERIFIED for Opportunities because corrected reference package is not yet installed. Do not claim pixel parity or live API integration.
 - Publication: local commit may be created, but remote push remains blocked by safety checks; do not claim synced until verified by remote SHA.
 - Next: install corrected approved assets through an authorized transfer, compare screenshots against matching targets, and publish local branch when allowed. F-STATE-V2-TK-01 and F-OPP-UI-01 remain PARTIAL, F-V2-BFF-01 remains NOT IMPLEMENTED.
+
+## DASH-V2-10 — System research diagnostics DEMO shell (2026-10-08)
+
+- Existing four locally pending DASH-V2-05..09 commits published to GitHub before this slice; branch remains independent from Muse Spark P1-14A backend.
+- Replaced System placeholder with professional terminal structure based on approved System target: 4 operational overview cards, 6 subsystem diagnostics panels, visible no-data warning and audit-log empty state.
+- All operational values remain UNKNOWN / NOT CONNECTED / NOT CHECKED; no manufactured HEALTHY status, uptime, stream counts, integrity claims or fake events. No process start/stop controls implemented. No backend or BFF integration.
+- Verified locally: TypeScript PASS, ESLint PASS, Vitest 41/41 PASS (new System honesty test), Next production build PASS. Browser QA and remote publication must be reported independently.
+- Do not build new production preview over the same `.next` directory while multiple old ports use it; prefer a new isolated port or independent build output and verify every CSS asset returns 200.
