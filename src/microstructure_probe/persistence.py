@@ -246,67 +246,82 @@ class PersistenceStore:
             row = cursor.fetchone()
             current_version = int(row[0]) if row else 0
             
-            if current_version >= 6:
+            if current_version >= 7:
+                self._initialized = True
+                return
+
+            if current_version == 6:
+                # Migrate v6 -> v7: keep existing rows, add P1-12A tables.
+                self._create_schema_v7(cursor)
+                cursor.execute(
+                    "INSERT OR REPLACE INTO persistence_meta (key, value) VALUES (?, ?)",
+                    ("schema_version", "7")
+                )
                 self._initialized = True
                 return
 
             if current_version == 5:
-                # Migrate v5 -> v6: keep existing rows, add P1-08 tables.
+                # Migrate v5 -> v7: keep existing rows, add P1-08 + P1-12A tables.
                 self._create_schema_v6(cursor)
+                self._create_schema_v7(cursor)
                 cursor.execute(
                     "INSERT OR REPLACE INTO persistence_meta (key, value) VALUES (?, ?)",
-                    ("schema_version", "6")
+                    ("schema_version", "7")
                 )
                 self._initialized = True
                 return
 
             if current_version == 4:
-                # Migrate v4 -> v6: keep existing rows, add P1-07 + P1-08 tables.
+                # Migrate v4 -> v7: keep existing rows, add P1-07 + P1-08 + P1-12A tables.
                 self._create_schema_v5(cursor)
                 self._create_schema_v6(cursor)
+                self._create_schema_v7(cursor)
                 cursor.execute(
                     "INSERT OR REPLACE INTO persistence_meta (key, value) VALUES (?, ?)",
-                    ("schema_version", "6")
+                    ("schema_version", "7")
                 )
                 self._initialized = True
                 return
 
             if current_version == 3:
-                # Migrate v3 -> v6: keep existing rows, add P1-06..P1-08 tables.
+                # Migrate v3 -> v7: keep existing rows, add P1-06..P1-08 + P1-12A tables.
                 self._create_schema_v4(cursor)
                 self._create_schema_v5(cursor)
                 self._create_schema_v6(cursor)
+                self._create_schema_v7(cursor)
                 cursor.execute(
                     "INSERT OR REPLACE INTO persistence_meta (key, value) VALUES (?, ?)",
-                    ("schema_version", "6")
+                    ("schema_version", "7")
                 )
                 self._initialized = True
                 return
 
             if current_version == 2:
-                # Migrate v2 -> v6: keep existing rows, add P1-05..P1-08 tables.
+                # Migrate v2 -> v7: keep existing rows, add P1-05..P1-08 + P1-12A tables.
                 self._create_schema_v3(cursor)
                 self._create_schema_v4(cursor)
                 self._create_schema_v5(cursor)
                 self._create_schema_v6(cursor)
+                self._create_schema_v7(cursor)
                 cursor.execute(
                     "INSERT OR REPLACE INTO persistence_meta (key, value) VALUES (?, ?)",
-                    ("schema_version", "6")
+                    ("schema_version", "7")
                 )
                 self._initialized = True
                 return
 
             if current_version == 1:
-                # Migrate v1 -> v6: keep existing rows, add P1-04..P1-08 tables.
+                # Migrate v1 -> v7: keep existing rows, add P1-04..P1-08 + P1-12A tables.
                 self._ensure_snapshot_columns(cursor)
                 self._create_schema_v2(cursor)
                 self._create_schema_v3(cursor)
                 self._create_schema_v4(cursor)
                 self._create_schema_v5(cursor)
                 self._create_schema_v6(cursor)
+                self._create_schema_v7(cursor)
                 cursor.execute(
                     "INSERT OR REPLACE INTO persistence_meta (key, value) VALUES (?, ?)",
-                    ("schema_version", "6")
+                    ("schema_version", "7")
                 )
                 self._initialized = True
                 return
@@ -323,11 +338,13 @@ class PersistenceStore:
             self._create_schema_v5(cursor)
             # Create tables for schema v6
             self._create_schema_v6(cursor)
+            # Create tables for schema v7
+            self._create_schema_v7(cursor)
 
             # Set schema version
             cursor.execute(
                 "INSERT OR REPLACE INTO persistence_meta (key, value) VALUES (?, ?)",
-                ("schema_version", "6")
+                ("schema_version", "7")
             )
 
             self._initialized = True
@@ -503,6 +520,42 @@ class PersistenceStore:
                 updated_ms INTEGER NOT NULL,
                 feature_json TEXT NOT NULL
             )
+        """)
+
+    def _create_schema_v7(self, cursor: sqlite3.Cursor) -> None:
+        """P1-12A state tables: latest classifier output + transition log.
+
+        ``state_features`` is one REPLACE row per symbol (dashboard/API
+        feed — observed states with evidence, never signals). Restarts
+        recompute from fresh features; memory (dwell/confirmation) restarts
+        cold by design and says so in transition reasons.
+        ``state_transitions`` is an append-only bounded log (500 rows) of
+        actual state changes for audit.
+        """
+        cursor.execute("""
+            CREATE TABLE IF NOT EXISTS state_features (
+                symbol TEXT PRIMARY KEY,
+                updated_ms INTEGER NOT NULL,
+                feature_json TEXT NOT NULL
+            )
+        """)
+
+        cursor.execute("""
+            CREATE TABLE IF NOT EXISTS state_transitions (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                timestamp REAL NOT NULL,
+                symbol TEXT NOT NULL,
+                from_state TEXT,
+                to_state TEXT NOT NULL,
+                from_direction TEXT,
+                to_direction TEXT NOT NULL,
+                reason TEXT
+            )
+        """)
+
+        cursor.execute("""
+            CREATE INDEX IF NOT EXISTS idx_state_transitions_symbol_ts
+            ON state_transitions(symbol, timestamp DESC)
         """)
 
     def _create_schema_v1(self, cursor: sqlite3.Cursor) -> None:
@@ -1388,6 +1441,78 @@ class PersistenceStore:
                     out.append(parsed)
             return out
 
+    def store_state_features(self, states: List[Dict[str, Any]]) -> None:
+        """Replace the latest classifier record per symbol (dashboard feed).
+
+        One row per symbol: inherently bounded. Synchronous; the probe
+        calls this from the infrequent summary path. Records are observed
+        states with evidence — never signals, entries, or orders.
+        """
+        if not states:
+            return
+        if not self._initialized:
+            self.init_db()
+        now_ms = int(time.time() * 1000)
+        with self._get_cursor() as cursor:
+            cursor.executemany(
+                "INSERT OR REPLACE INTO state_features (symbol, updated_ms, feature_json)"
+                " VALUES (?, ?, ?)",
+                [(str(s.get("symbol", "UNKNOWN")).upper(), now_ms,
+                  _safe_json(s)) for s in states],
+            )
+
+    def latest_state_features(self) -> List[Dict[str, Any]]:
+        """Latest classifier record per symbol, ordered by symbol."""
+        if not self._initialized:
+            self.init_db()
+        with self._get_cursor() as cursor:
+            cursor.execute(
+                "SELECT feature_json FROM state_features ORDER BY symbol")
+            out = []
+            for (blob,) in cursor.fetchall():
+                try:
+                    parsed = json.loads(blob)
+                except (json.JSONDecodeError, TypeError):
+                    continue
+                if isinstance(parsed, dict):
+                    out.append(parsed)
+            return out
+
+    def log_state_transition(self, symbol: str, from_state: Optional[str],
+                             to_state: str, from_direction: Optional[str],
+                             to_direction: str, reason: str = "") -> None:
+        """Append one real state change (bounded log, 500 rows)."""
+        if not self._initialized:
+            self.init_db()
+        with self._get_cursor() as cursor:
+            cursor.execute(
+                "INSERT INTO state_transitions (timestamp, symbol, from_state,"
+                " to_state, from_direction, to_direction, reason)"
+                " VALUES (?, ?, ?, ?, ?, ?, ?)",
+                (time.time(), str(symbol).upper(),
+                 str(from_state) if from_state else None, str(to_state),
+                 str(from_direction) if from_direction else None,
+                 str(to_direction), str(reason or "")),
+            )
+            self._apply_retention_policy(cursor, "state_transitions", 500)
+
+    def state_transitions(self, limit: int = 50) -> List[Dict[str, Any]]:
+        """Recent state changes, newest first."""
+        if not self._initialized:
+            self.init_db()
+        with self._get_cursor() as cursor:
+            cursor.execute(
+                "SELECT timestamp, symbol, from_state, to_state,"
+                " from_direction, to_direction, reason FROM state_transitions"
+                " ORDER BY id DESC LIMIT ?",
+                (max(int(limit), 1),),
+            )
+            return [{"timestamp": row[0], "symbol": row[1],
+                     "from_state": row[2], "to_state": row[3],
+                     "from_direction": row[4], "to_direction": row[5],
+                     "reason": row[6] or ""}
+                    for row in cursor.fetchall()]
+
     def _apply_retention_policy(
         self, 
         cursor: sqlite3.Cursor, 
@@ -1563,7 +1688,8 @@ class PersistenceStore:
                               "universe_events", "rank_snapshots",
                               "flow_features", "flow_buckets",
                               "book_features", "oi_samples", "oi_features",
-                              "structure_features"):
+                              "structure_features", "state_features",
+                              "state_transitions"):
                     cursor.execute(f"SELECT COUNT(*) FROM {table}")
                     info["rows"][table] = cursor.fetchone()[0]
         except Exception:

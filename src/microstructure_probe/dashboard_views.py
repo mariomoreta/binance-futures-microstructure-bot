@@ -516,6 +516,57 @@ _OI_CONTEXT_HELP = {
 }
 
 
+def _render_state_section(record: Any, subscribed: bool) -> str:
+    """P1-12A market-state panel (observed HYPOTHESIS state, never a signal).
+
+    Shows state + direction + as-of + top evidence + coverage. No LONG/
+    SHORT wording, no entries, no recommendations. Discovery-only symbols
+    get an honest no-state note instead of a fabricated classification.
+    """
+    head = ("<h2>Market state v0 (observed, HYPOTHESIS — NOT signals, "
+            "NOT entries)</h2>")
+    if not subscribed:
+        return head + ("<p class='note'>DISCOVERY ONLY — no deep state is "
+                        "computed for unsubscribed symbols.</p>")
+    if not isinstance(record, dict) or not record:
+        return head + ("<p class='note'>No state classification yet — "
+                        "classifier warming up or probe not running.</p>")
+    trans = record.get("transition") if isinstance(
+        record.get("transition"), dict) else {}
+    reasons = trans.get("reasons") if isinstance(
+        trans.get("reasons"), list) else []
+    validity = record.get("validity") if isinstance(
+        record.get("validity"), dict) else {}
+    missing = record.get("missing_features") if isinstance(
+        record.get("missing_features"), list) else []
+    try:
+        observed = int(record.get("observed_at_ms") or 0)
+        age_s = max(0, int(time.time() * 1000 - observed) // 1000) \
+            if observed > 0 else None
+        age = f"{age_s}s ago" if age_s is not None else "—"
+    except (TypeError, ValueError):
+        age = "—"
+    rows = [
+        ("state", record.get("state", "UNKNOWN")),
+        ("direction", record.get("direction", "UNKNOWN")),
+        ("observed", age),
+        ("rules", record.get("rules_version", "?")),
+        ("previous", "%s / %s" % (trans.get("previous_state"),
+                                  trans.get("previous_direction"))),
+        ("transition reasons",
+         "; ".join(str(r) for r in reasons[:3]) or "—"),
+        ("features used",
+         ", ".join(str(f) for f in (
+             record.get("features_used") or [])[:6]) or "—"),
+        ("missing", ", ".join(str(f) for f in missing[:6]) or "none"),
+        ("valid", "; ".join(str(r) for r in (
+            validity.get("reasons") or [])) or "—"),
+    ]
+    return head + "<table class='kv'>" + "".join(
+        f"<tr><th>{html.escape(k)}</th><td>{html.escape(str(v))}</td></tr>"
+        for k, v in rows) + "</table>"
+
+
 def render_symbol(state, symbol: str, range_name: str = "1h") -> Optional[str]:
     """Per-token intelligence page. None when the symbol is unknown."""
     sym = normalize_symbol(symbol)
@@ -532,6 +583,13 @@ def render_symbol(state, symbol: str, range_name: str = "1h") -> Optional[str]:
              if isinstance(f, dict)}
     struct_by = {f.get("symbol"): f for f in state.structure_features()
                  if isinstance(f, dict)}
+    try:
+        _state_fn = getattr(state, "state_features", None)
+        _state_rows = _state_fn() if callable(_state_fn) else []
+    except Exception:
+        _state_rows = []
+    state_by = {f.get("symbol"): f for f in _state_rows
+                if isinstance(f, dict)}
     disc_rows = discovery_rows(uni["discovery"])
     any_live = (set(feat_by) | set(flow_by) | set(book_by) | set(oi_by)
                 | set(struct_by))
@@ -765,6 +823,7 @@ def render_symbol(state, symbol: str, range_name: str = "1h") -> Optional[str]:
         else:
             body += ("<h2>VWAP / volatility / structure</h2>"
                      "<p class='note'>No structure features yet — UNKNOWN / WARMING.</p>")
+    body += _render_state_section(state_by.get(sym), subscribed)
     hist = []
     try:
         hist_fn = getattr(state, "history_coverage", None)

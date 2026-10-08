@@ -230,6 +230,20 @@ illustrative, not statistical).
   `docs/SIGNAL_RESEARCH_PLAN.md` and `docs/HISTORICAL_RESEARCH_PLAN.md`
   (design only — nothing implemented in P1-11A beyond the Movers fix).
 
+## P1-12A classifier outputs (2026-10-08, rules v0.1.0 HYPOTHESIS)
+
+- Observed states NORMAL/IGNITION/EXPANSION/EXHAUSTION/REVERSAL + UNKNOWN,
+  directions UP/DOWN/NONE/UNKNOWN, per symbol per ~30s summary; every
+  record carries evidence_for/against, missing_features, validity, rules
+  version, and transition {previous, changed, since, duration, reasons}.
+- Rule inputs and units: velocity_1m (1/s), accel_1m (1/s²), log returns
+  (15m/1h), 1m flow signed_delta (USDT) + delta_ratio, 1m vol z,
+  15m expansion_ratio + range_position, breakout_state, 15m realized vol,
+  book imbalance, 1m OI delta. UNKNOWN/stale/discovery-only short-circuit
+  before any rule; missing never becomes zero.
+- Measured live cost 0.16–0.20ms per 3-symbol batch; cold-restart memory;
+  no probabilities anywhere; full spec in `docs/CLASSIFIER_SPEC.md`.
+
 ## P1-11C research features (2026-10-07)
 
 - Event formation features (T-known only): prior 1h/4h/24h log returns, trailing-96 range position + high/low distances, as-of 30d high/low, volume percentile, realized |return| vol + percentile, HISTORICAL_TAKER_BUY_PROXY (+ implied sell share), HISTORICAL_MOMENTUM_PROXY accel, BTC 5m/15m/1h sync + 1h relative return.

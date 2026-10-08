@@ -32,10 +32,9 @@ the dashboard exists. No classifier before raw-feature dashboard validation.
 
 ## ACTIVE_TASK
 
-- `P1-12` MARKET STATE CLASSIFIER V0 — READY (P1-11C PASS + P1-10R PASS;
-  starts only on explicit instruction; thresholds stay HYPOTHESIS).
-  `P1-10R` is PASS (see COMPLETED). Do NOT launch another soak.
-  Do NOT start P1-12 automatically.
+- `P1-12B` DYNAMIC LIVE UNIVERSE — next candidate (starts only on explicit
+  instruction). `P1-12A` is PASS (see COMPLETED). Do NOT start P1-12B,
+  P1-13, or any soak automatically.
 
 ## NEXT_TASKS (ordered, all Phase 1)
 - `P1-10R` PROLONGED ≥6H SOAK RE-RUN — P1-10 FAIL stays FAIL (truncated at
@@ -45,14 +44,12 @@ the dashboard exists. No classifier before raw-feature dashboard validation.
   P1-11A Raw Feature + Movers Integrity (DONE) → P1-11B Historical Data
   Foundation (DONE) → P1-11B.1 Probe Lifecycle + Run Control (DONE) →
   P1-11C Historical Event Studies (DONE) → P1-10R Formal ≥6h soak
-  re-run (DONE — PASS) → P1-12 Market State Classifier
-  (READY — needs instruction) → P1-12B Dynamic Live Universe →
+  re-run (DONE — PASS) → P1-12A Market State Classifier v0
+  (DONE — PASS) → P1-12B Dynamic Live Universe (NEXT candidate) →
   P1-13A Opportunity / Setup Engine → P1-13B Professional Opportunities UX
   → P1-14 Historical Backtester → P1-15 Forward Paper Trading → P1-16 Paper
   Portfolio / Dynamic Exit.
-- `P1-12` STATE CLASSIFIER V0 (NORMAL/IGNITION/EXPANSION/EXHAUSTION/REVERSAL).
-  All thresholds explicitly HYPOTHESIS. Allowed only after the P1-11A/B/C
-  evidence chain and the P1-10R gate.
+- `P1-12B` DYNAMIC LIVE UNIVERSE — next candidate (needs instruction).
 - `P1-13` SIGNAL / EXTREME-MOVE UI — add `/signals`, `/extreme-moves`.
 - `P1-14` 24H CALIBRATION REVIEW — thresholds vs real crossings + Phase 1 gate
   evaluation per `docs/SUCCESS_GATES.md`.
@@ -62,7 +59,7 @@ strategies (P3), paper engine/positions (P4), execution (P5).
 
 ## BLOCKED
 
-- Nothing currently blocked on P1-10R (PASS). `P1-12` is READY pending
+- Nothing currently blocked. `P1-12B` is the next candidate pending
   explicit instruction. Later tasks remain sequenced; each starts after
   its predecessor's evidence is recorded.
 
@@ -198,6 +195,18 @@ strategies (P3), paper engine/positions (P4), execution (P5).
   Live roundtrip proven (dashboard start→RUNNING→STALE→ok→stop; external
   start auto-discovered; 90s run COMPLETED; dashboard survived).
   376/376 tests (23 new).
+- `P1-12A` (2026-10-08) MARKET STATE CLASSIFIER V0: **PASS**.
+  Deterministic explainable classifier (`classifier.py`, rules v0.1.0,
+  all-HYPOTHESIS): NORMAL/IGNITION/EXPANSION/EXHAUSTION/REVERSAL +
+  UNKNOWN, UP/DOWN/NONE/UNKNOWN, evidence for/against, missing list,
+  validity, transitions with hysteresis (2-eval dwell) + 2-eval reversal
+  confirmation, cold-restart memory, no forced sequence, no probabilities.
+  Schema v7 (`state_features` + `state_transitions` ≤500); probe
+  evaluates per summary (~0.2ms); token-page state panel (no new HTTP
+  contract; no Next.js changes). 120s observe run COMPLETED: 9 evals,
+  states + 4 transitions persisted, 0 rejects/reconnects, 0 orders.
+   447/447 tests (25 new classifier + 2 new persistence). Spec:
+   `docs/CLASSIFIER_SPEC.md`.
 - `P1-10R-FIX-01` (2026-10-08) WINDOWS CONSOLE POPUPS: **FIXED**.
   `dashboard.no_window_flags()` (CREATE_NO_WINDOW, POSIX-neutral) applied
   to tasklist/wmic identity checks + probe spawn; semantics preserved.
@@ -233,6 +242,11 @@ strategies (P3), paper engine/positions (P4), execution (P5).
 
 ## LAST_VERIFICATION
 
+- 2026-10-08 (P1-12A): `python run_tests.py` → 447/447 OK (420 + 25 new
+  classifier + 2 new persistence). 120s observe run COMPLETED via the
+  canonical plane (9 evals ~0.2ms, states + transitions persisted, token
+  pages render, dashboard restarted for the new panel). Next: P1-12B
+  candidate (needs explicit instruction).
 - 2026-10-08 (P1-10R-FIX-01): `python run_tests.py` → 420/420 OK (408 +
   12 new mocked identity tests; one pre-existing Popen fake extended for
   the new kwarg). Dashboard 30984 → 28440; 75s observe run COMPLETED;

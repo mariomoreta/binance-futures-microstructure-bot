@@ -426,3 +426,7 @@ Single continuous WMI-detached process (PID 19084, 21603.9s, COMPLETED + duratio
 ## 2026-10-08 — P1-10R-FIX-01 console suppression
 
 Dashboard PID-identity subprocesses (tasklist/wmic) and probe spawns now pass CREATE_NO_WINDOW on Windows via a single dashboard.no_window_flags() helper (0 on POSIX, so non-Windows behavior is byte-identical). No caching, no WMIC removal, no registry-schema change, no validation weakening — the smallest change that removes the popup mechanism. Proven by mocked regression tests asserting the flag on every spawn path plus a live 75s observe lifecycle; dashboard-only restart (30984 -> 28440) with no probe active.
+
+## 2026-10-08 — P1-12A classifier v0 architecture
+
+New classifier.py module (ClassifierEngine + pure classify_symbol): versioned HYPOTHESIS rules (v0.1.0), evidence for/against + missing + validity on every record, priority REVERSAL > EXHAUSTION > EXPANSION > IGNITION > NORMAL, 2-eval dwell hysteresis with immediate UNKNOWN exit, 2-eval reversal confirmation, cold-restart memory, no forced cycle, no probabilities. Consumes already-built peer-engine rows (no duplicate math, no new endpoints); evaluated once per summary (~0.2ms measured). Persistence schema v7 additive (state_features REPLACE + state_transitions <=500). Dashboard shows a token-page observed-state panel via existing store reads (no new HTTP contract, no Next.js changes). Validated by 25 fixture tests + a 120s observe-only COMPLETED run (9 evals, transitions persisted, 0 orders).

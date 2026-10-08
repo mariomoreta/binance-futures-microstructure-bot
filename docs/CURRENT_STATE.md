@@ -823,6 +823,42 @@ Next.js :3000 unaffected. Popup suppression is proven at code level
 flash absence — user-side confirmation still welcome. P1-10R PASS and
 P1-12 READINESS unchanged.
 
+## P1-12A market state classifier v0 — RESULT: PASS (2026-10-08)
+
+Deterministic explainable classifier (`classifier.py`, rules v0.1.0,
+all-HYPOTHESIS): NORMAL / IGNITION / EXPANSION / EXHAUSTION / REVERSAL +
+UNKNOWN (missing/stale/discovery-only), directions UP/DOWN/NONE/UNKNOWN.
+Every record carries symbol, state, direction, observed_at_ms,
+features_used, evidence_for/against, missing_features, validity,
+rules_version, and transition {previous, changed, since, duration,
+reasons}. No probabilities, no LONG/SHORT wording, no entries — observed
+states only. Priority REVERSAL > EXHAUSTION > EXPANSION > IGNITION >
+NORMAL with contradictions stored, never hidden; hysteresis holds
+energetic states 2 evals (UNKNOWN exits at once); REVERSAL needs 2
+consecutive confirmations; no forced sequence; memory restarts cold and
+says so. Inputs are the already-built peer-engine rows (returns +
+momentum, 1m flow, book imbalance, 1m OI, 15m range/structure/vol) —
+no new ingest/endpoint, no lookahead possible by construction.
+
+Persistence schema v7 (additive, tested v1..v6→v7 with rows preserved):
+`state_features` REPLACE/symbol + `state_transitions` append ≤500.
+Probe evaluates once per ~30s summary (measured 0.16–0.20ms/batch —
+negligible) and logs real transitions; summary carries a `states`
+census block. Dashboard: token-page "Market state v0" panel
+(state/direction/as-of/rules/previous/reasons/features/missing/validity)
+with honest discovery-only/warming notes — no new HTTP contract, no
+Next.js changes.
+
+Validation: 25 deterministic fixture tests (all states × directions,
+UNKNOWN paths, contradictions, transitions, hysteresis, gaps, cold
+restart, no-lookahead incl. future-key injection, timestamps,
+discovery-only, serialization, determinism). Controlled 120s
+observe-only run via canonical plane COMPLETED naturally: 9 evaluations
+(3 symbols × 3 summaries), states + 4 transitions persisted (incl.
+BTC NORMAL→REVERSAL with flip evidence), token pages render the panel,
+0 rejects, 0 reconnects, 0 orders, both frontends 200. No predictive
+accuracy claimed (prospective evaluation is P1-14 territory).
+
 ## Known gaps (Phase 1 work ahead, in order)
 
 Minimal dashboard: DONE (P1-03 PASS) → terminal DONE (P1-09 PASS,
@@ -840,9 +876,8 @@ VWAP + volatility + structure: DONE (P1-08 PASS — flow-VWAP, raw vol,
 range expansion, confirmed pivots, v0.7.0 dashboard + APIs, 372s run).
 Transport re-validation: DONE (P1-01R PASS — 45min healthy window, soak
 gate unblocked).
-Remaining: P1-12 state classifier v0 (READY — P1-11C PASS + P1-10R PASS;
-starts only on explicit instruction; thresholds stay HYPOTHESIS), then
-signal UI (P1-13), calibration evidence (P1-14). P1-11 raw-feature validation may use the valid
+Remaining: P1-12B dynamic live universe (NEXT candidate — needs explicit
+instruction), then signal UI (P1-13), calibration evidence (P1-14). P1-11 raw-feature validation may use the valid
 4.91h P1-10 evidence; the Movers shared-`_v` category-value anomaly is a
 recorded P1-11A audit item (not fixed).
 

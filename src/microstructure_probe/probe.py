@@ -12,6 +12,7 @@ from typing import Any, Callable
 import websockets
 
 from .book import BookEngine
+from .classifier import ClassifierEngine
 from .clock import ClockSynchronizer, corrected_lag_ms
 from .market_structure import MarketStructureEngine
 from .config import ProbeConfig
@@ -181,6 +182,10 @@ class MarketProbe:
         # Starts with MarketProbe, drains on exit. Never a second process /
         # registry / launcher. Failures degrade the recorder only.
         self._research = ResearchRecorder(enabled=True)
+        # P1-12A: market-state classifier v0 (observed states with evidence,
+        # never signals). Pure evaluation over peer-engine rows each summary;
+        # memory (dwell/confirmation) restarts cold by design.
+        self._classifier = ClassifierEngine(symbols=config.symbols)
         self._discovery_info: dict = {
             "enabled": bool(config.discovery.enabled),
             "last_scan_ms": None,
@@ -243,6 +248,11 @@ class MarketProbe:
     def research(self) -> ResearchRecorder:
         """Prospective flow/book recorder (P1-11C, probe-owned)."""
         return self._research
+
+    @property
+    def classifier(self) -> ClassifierEngine:
+        """Market-state classifier v0 (P1-12A, observed states only)."""
+        return self._classifier
 
     def set_oi_fetcher(self, fetch_fn) -> None:
         """Replace the OI REST fetcher (tests only — never live traffic)."""
@@ -1046,6 +1056,9 @@ class MarketProbe:
             # (stateless evaluation over flow + return state). Full
             # per-symbol records persist via store_structure_features.
             "structure": self._structure.stats(),
+            # P1-12A additive block: classifier eval counts + state census
+            # (observed HYPOTHESIS states with evidence — never signals).
+            "states": self._classifier.stats(),
             # P1-11C additive block: prospective recorder health (never
             # conflated with engine/feed health). Failure-isolated.
             "research": self._research.status(),
@@ -1126,8 +1139,8 @@ class MarketProbe:
             # as live — the book restarts empty until fresh depth lands);
             # OI samples (bounded, timestamped) + latest OI features with
             # 1m price returns for joint context.
-            self.persistence.store_book_features(
-                self._book.snapshot_all(as_of_ms))
+            book_rows_list = self._book.snapshot_all(as_of_ms)
+            self.persistence.store_book_features(book_rows_list)
             oi_new = self._oi.drain_new_samples()
             if oi_new:
                 self.persistence.store_oi_samples(oi_new)
@@ -1138,7 +1151,7 @@ class MarketProbe:
                 price_returns_1m[symbol] = (
                     returns.get("1m") if isinstance(returns, dict) else None)
             self.persistence.store_oi_features(
-                self._oi.snapshot_all(as_of_ms, price_returns_1m))
+                oi_rows_list := self._oi.snapshot_all(as_of_ms, price_returns_1m))
             # P1-08 (additive): evaluate VWAP/volatility/range/structure
             # over peer-engine state (flow rows + return rows + 10s
             # buckets) and persist one compact record per symbol. No new
@@ -1156,6 +1169,60 @@ class MarketProbe:
                     flow_rows.get(symbol), price_rows.get(symbol),
                     self._returns.buckets(symbol)))
             self.persistence.store_structure_features(structure_rows)
+            # P1-12A (additive): evaluate the market-state classifier over
+            # the same peer-engine rows (no new ingest, no new endpoint).
+            # Observed states with evidence only — never signals. Restart
+            # restarts dwell/confirmation memory cold by design.
+            book_rows = {str(b.get("symbol", "UNKNOWN")): b
+                         for b in book_rows_list
+                         if isinstance(b, dict)}
+            oi_rows = {str(o.get("symbol", "UNKNOWN")): o
+                       for o in oi_rows_list
+                       if isinstance(o, dict)}
+            struct_rows = {str(s.get("symbol", "UNKNOWN")): s
+                           for s in structure_rows
+                           if isinstance(s, dict)}
+            state_inputs: dict[str, dict[str, Any]] = {}
+            for symbol in sorted(set(flow_rows) | set(price_rows)):
+                prow = price_rows.get(symbol) or {}
+                frow = flow_rows.get(symbol) or {}
+                tier = str(prow.get("tier", "DISCOVERY"))
+                state_inputs[symbol] = {
+                    "subscribed": bool(frow.get("subscribed", False))
+                    or tier in ("CORE", "HOT"),
+                    "live": bool(frow.get("live", False))
+                    and tier in ("CORE", "HOT"),
+                    "tier": tier,
+                    "price": prow,
+                    "returns": prow,
+                    "momentum": prow.get("momentum")
+                    if isinstance(prow.get("momentum"), dict) else {},
+                    "flow": frow,
+                    "book": (book_rows.get(symbol) or {}).get("book")
+                    if isinstance((book_rows.get(symbol) or {}).get("book"),
+                                  dict) else {},
+                    "oi": oi_rows.get(symbol)
+                    if isinstance(oi_rows.get(symbol), dict) else {},
+                    "structure": struct_rows.get(symbol)
+                    if isinstance(struct_rows.get(symbol), dict) else {},
+                }
+            eval_start_ns = self._perf_counter_ns()
+            states = self._classifier.evaluate(state_inputs, as_of_ms)
+            eval_ms = (self._perf_counter_ns() - eval_start_ns) / 1_000_000
+            self._classifier.note_eval_ms(eval_ms)
+            self.persistence.store_state_features(
+                [dict(s) for s in states])
+            for st in states:
+                trans = st.get("transition") or {}
+                if trans.get("changed") and trans.get("previous_state") \
+                        is not None:
+                    reasons = trans.get("reasons") or []
+                    self.persistence.log_state_transition(
+                        str(st.get("symbol", "UNKNOWN")),
+                        trans.get("previous_state"), str(st.get("state")),
+                        trans.get("previous_direction"),
+                        str(st.get("direction")),
+                        "; ".join(str(r) for r in reasons[:3]))
         except Exception as exc:
             LOGGER.warning(json.dumps({"kind": "persistence_error", "error": str(exc)}))
         LOGGER.info(json.dumps(summary, sort_keys=True, allow_nan=False))

@@ -313,6 +313,17 @@ class DashboardState:
         except (OSError, sqlite3.Error):
             return []
 
+    def state_features(self) -> List[Dict[str, Any]]:
+        """Latest classifier record per symbol (P1-12A), or [] before eval.
+
+        Observed HYPOTHESIS states with evidence — never signals, entries,
+        or recommendations.
+        """
+        try:
+            return self.store.latest_state_features()
+        except (OSError, sqlite3.Error):
+            return []
+
     def history_coverage(self, symbol: Optional[str] = None) -> List[Dict[str, Any]]:
         """Historical research coverage (P1-11B separate DB), [] when absent."""
         try:

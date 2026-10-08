@@ -2,11 +2,12 @@
 
 States: `NORMAL`, `IGNITION`, `EXPANSION`, `EXHAUSTION`, `REVERSAL`.
 
-Status: **classifier NOT BUILT. Initial thresholds below are HYPOTHESIS only**
-and must never be presented as statistically validated.
+Status: **classifier v0 BUILT in P1-12A (rules v0.1.0, HYPOTHESIS — see
+`docs/CLASSIFIER_SPEC.md`). Thresholds below remain sketches, not the
+implemented rule values; the code + spec are authoritative.**
 
-Gating (binding): the classifier is task `P1-12` and is BLOCKED until raw
-feature validation `P1-11` (distributions, missingness, freshness) passes.
+Gating (binding): the classifier was task `P1-12` (first part P1-12A DONE
+2026-10-08 after P1-11A/B/C + P1-10R PASS).
 Raw features must be visible on the dashboard (`/movers`, `/symbol/:symbol`,
 P1-09) before any classifier score is shown or trusted.
 
