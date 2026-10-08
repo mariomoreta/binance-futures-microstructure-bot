@@ -210,3 +210,9 @@ architecture + static foundation (DASH-V2-00); no integration.
 - Local contract test with Python backend: HTTP 200, schema 1, source python-marketprobe, 3 persisted candidates, freshness STALE with `PERSISTED_DATA_STALE`; frontend `/opportunities` remains explicitly DEMO and does not consume BFF yet.
 - TypeScript PASS, ESLint PASS, Vitest **45/45** (4 adapter tests added), Next production build PASS. Isolated preview port 3016 HTTP 200 for BFF/page and both CSS assets. No claim of verified predictive validity or live connectivity.
 - Next: security and compatibility hardening of BFF, browser evidence, optional explicit source-toggle based on reviewed UI schema, and API contract update. Do not interpret BFF existence as live-data-ready Opportunities UX.
+
+## DASH-V2-12 — Persisted opportunity observation inspector (2026-10-08)
+
+- Added isolated `/opportunities/observations` view consuming same-origin read-only `/api/v1/opportunities`; existing `/opportunities` DEMO UI unchanged, no live signal claims. Displays source/as-of, stale status, quality flags, stored candidates and observed lifecycle; never presents persisted records as actionable current signals.
+- Reuses existing bounded Python BFF adapter. No mutation APIs, no backend/P1-14B changes, no fabricated outcomes. TypeScript PASS, ESLint PASS, Vitest 46/46 PASS, production build PASS. Actual browser/CSS QA performed separately.
+- Feature status: F-OPP-UI-01 PARTIAL; F-V2-BFF-01 PARTIAL READ ONLY, no full verified live model. Historical-validation and probability remain unavailable.
