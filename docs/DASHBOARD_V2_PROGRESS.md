@@ -1,7 +1,7 @@
 # Dashboard V2 Progress
 
 **Purpose:** factual slice ledger for Dashboard V2.  
-**Status:** DASH-V2-ARCH IN PROGRESS at document creation.  
+**Status:** DASH-V2-00 COMPLETE 2026-10-07 (isolated static foundation; no API integration).  
 **Rule:** update after every slice; never describe planned code as implemented.
 
 ## DASH-V2-ARCH — 2026-10-07
@@ -36,7 +36,29 @@ COMMIT / REMOTE STATUS
 NEXT AUTHORIZED SLICE
 ```
 
+## DASH-V2-00 — 2026-10-07 (isolated frontend foundation)
+
+- Starting SHA: `8be06aa8824126785bdc10734a97f0e3adff5d63`.
+- Scope: `frontend/` only (Next 16.4.0 + React 19.3.0 + TS strict
+  `react-jsx`, eslint flat, vitest+jsdom+testing-library). Tokens,
+  15 foundation components, 7 static routes + dynamic `/symbol/[symbol]`
+  (singular, matching the Python backend; architecture folder plan shows
+  plural — resolved in slice decision, see DASHBOARD_V2_DECISIONS.md).
+- No API integration: zero fetch/Binance/CMC/127.0.0.1 references in
+  `frontend/src`; fixtures labeled DEMO DATA — NOT LIVE; no Start/Stop
+  wiring; no chart library.
+- Tests: `tsc --noEmit` clean; `eslint src` clean; `vitest run` 10/10;
+  `next build` 9 routes prerendered; ephemeral `next start :3000`
+  served 7/7 routes HTTP 200 then stopped (no persistent server).
+- Visual: /overview + /movers screenshots captured from the ephemeral
+  server; NO visual PASS claimed (four reference mockups absent).
+- Python suite: 408/408 green (untouched backend, verification only).
+- P1-10R: running probe (PID 19084) undisturbed; no DB/registry/config
+  contact; `node_modules/` + `.next/` local-only, never committed.
+- Next authorized slice: DASH-V2-01 only on explicit instruction.
+
 ## Gate status
 
-P1-10R: pending, starts only on explicit instruction. P1-12: blocked pending
-P1-10R PASS. P1-12B: not implemented. Dashboard V2: architecture/docs only.
+P1-10R: RUNNING since 2026-10-08T00:48:20Z (do not disturb). P1-12:
+blocked pending P1-10R PASS. P1-12B: not implemented. Dashboard V2:
+architecture + static foundation (DASH-V2-00); no integration.

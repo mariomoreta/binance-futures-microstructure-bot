@@ -21,10 +21,13 @@ when it does not.
 
 ## Current truth
 
-Python SSR and all engines remain intact. Next.js does not exist. No CMC or
+Python SSR and all engines remain intact. Next.js exists only as the
+DASH-V2-00 static foundation under `frontend/` (no API integration, no
+BFF, no live data). No CMC or
 CoinGecko adapter exists. No state classifier, opportunity engine, backtester
-or paper engine exists. P1-10R is the next operational gate and must not start
-without explicit instruction. P1-12/P1-12B remain blocked.
+or paper engine exists. P1-10R is RUNNING (PID 19084, since
+2026-10-08T00:48:20Z) — do not touch the probe, dashboard, databases,
+registry, or evidence. P1-12/P1-12B remain blocked.
 
 ## Required workflow
 
@@ -59,3 +62,7 @@ Stop for missing material product choice, unavailable reference mockups needed
 for visual acceptance, security weakening, engine methodology change, secrets,
 paid provider/billing, unresolved tests, runtime interruption or any request
 that crosses observe-only boundaries.
+
+## DASH-V2-00 landed (2026-10-07)
+
+Isolated static foundation exists under rontend/ (Next 16.4 + React 19.3, strict TS, tokens, 15 components, 7 static routes + /symbol/[symbol], labeled demo fixtures, no API calls). Python backend untouched (408/408). Next: DASH-V2-01 only on explicit authorization. P1-10R probe (PID 19084) must not be disturbed.

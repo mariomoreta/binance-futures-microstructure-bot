@@ -23,4 +23,9 @@ data/
 dist/
 build/
 *.egg-info/
+# DASH-V2-00 isolated frontend (local-only artifacts, never committed)
+frontend/node_modules/
+frontend/.next/
+frontend/out/
+*.tsbuildinfo
 

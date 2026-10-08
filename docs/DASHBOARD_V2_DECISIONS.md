@@ -67,3 +67,15 @@ table fallbacks. TanStack Table is recommended for Movers, also not installed.
 - CMC legal review and measured keyless stability.
 - Any provider credentials, paid tier or public deployment.
 - Python SSR retirement/cutover.
+
+## 2026-10-07 — DASH-V2-00 slice decisions
+
+- tsconfig jsx: react-jsx (not preserve): required so standalone vitest transforms TSX; Next build unaffected (tsc + build verified).
+- vitest esolve.alias @ -> src mirrors tsconfig paths (vite does not read them).
+- Token-detail route is singular /symbol/[symbol], matching the Python backend; the architecture folder plan sketch shows plural symbols/ — singular wins unless a later slice justifies otherwise.
+- eslint flat config (eslint.config.mjs + eslint-config-next); 
+ext lint is gone in Next 16, so the lint script is eslint src.
+- Minimal icon.svg added to silence favicon 404 (only console error seen).
+- No chart/table libraries installed; hand-rolled DataTable/FilterTabs suffice for the foundation.
+- Ephemeral 
+ext start :3000 used for render/screenshot checks only, then stopped; screenshots recorded without reference comparison (mockups absent).
