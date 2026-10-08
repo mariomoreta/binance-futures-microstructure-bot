@@ -201,3 +201,12 @@ architecture + static foundation (DASH-V2-00); no integration.
 - All operational values remain UNKNOWN / NOT CONNECTED / NOT CHECKED; no manufactured HEALTHY status, uptime, stream counts, integrity claims or fake events. No process start/stop controls implemented. No backend or BFF integration.
 - Verified locally: TypeScript PASS, ESLint PASS, Vitest 41/41 PASS (new System honesty test), Next production build PASS. Browser QA and remote publication must be reported independently.
 - Do not build new production preview over the same `.next` directory while multiple old ports use it; prefer a new isolated port or independent build output and verify every CSS asset returns 200.
+
+## DASH-V2-11 — Opportunity read-only BFF foundation (2026-10-08)
+
+- Independent frontend worktree and branch only. Python backend and active P1-14A agent files untouched.
+- Added Next same-origin GET `/api/v1/opportunities`, fixed allowlisted Python loopback GET `/api/opportunities` target, timeout 2500ms, maximum response body, no-store, fail-closed 503 errors, and explicit schema v1 adapter. No mutations, runtime controls or private access.
+- Output includes provenance source `python-marketprobe`, observed timestamp, bounded candidate rows, raw evidence, missing fields, ranking score (research-only), and quality flags. Missing scores remain null. Time-aged persisted records are STALE, never auto-labeled LIVE; near-time records remain UNKNOWN until feed health semantics can establish freshness.
+- Local contract test with Python backend: HTTP 200, schema 1, source python-marketprobe, 3 persisted candidates, freshness STALE with `PERSISTED_DATA_STALE`; frontend `/opportunities` remains explicitly DEMO and does not consume BFF yet.
+- TypeScript PASS, ESLint PASS, Vitest **45/45** (4 adapter tests added), Next production build PASS. Isolated preview port 3016 HTTP 200 for BFF/page and both CSS assets. No claim of verified predictive validity or live connectivity.
+- Next: security and compatibility hardening of BFF, browser evidence, optional explicit source-toggle based on reviewed UI schema, and API contract update. Do not interpret BFF existence as live-data-ready Opportunities UX.
