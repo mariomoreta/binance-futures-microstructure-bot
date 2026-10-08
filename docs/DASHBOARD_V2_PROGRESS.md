@@ -116,3 +116,9 @@ architecture + static foundation (DASH-V2-00); no integration.
 - Typecheck, ESLint, Vitest (26/26, including 2 token-detail tests) and Next production build passed locally in isolated worktree; browser pixel comparison not yet verified.
 - Existing preview `127.0.0.1:3000` is the original worktree and is deliberately NOT restarted or replaced. New worktree preview requires its own independent port.
 - Next: optional isolated browser QA/preview on 3001, then review/merge after P1-13A status reconciliation. Do not claim this is live-data-ready.
+
+## DASH-V2-03B — Token Detail visual refinement (2026-10-08)
+
+- Following user browser screenshot review, reorganized the detail page: market-state category strip (explicitly nonsequential), concise three-column support/counterevidence/missing panel, metric-card grid, smaller no-data modules for chart and research.
+- No invented price series, transitions or market-state claims. Classifier remains UNKNOWN until versioned backend connection, timeline remains proposed. The displayed count describes populated DEMO metrics only.
+- Independent worktree and branch; P1-13A backend lane untouched. Local typecheck PASS, ESLint PASS, Vitest 26/26 PASS, production build PASS. Screenshot/browser pixel QA pending user review of updated preview.
