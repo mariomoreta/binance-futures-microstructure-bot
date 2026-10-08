@@ -233,3 +233,11 @@ architecture + static foundation (DASH-V2-00); no integration.
 
 - Added consistent responsive navigation among setup explorer DEMO, saved Python observations READ ONLY, and prospective outcome research READ ONLY. Explicitly distinguish sources; each view marks the active route accessibly.
 - Backend P1-14B untouched; no execution routes or invented outcomes. TypeScript PASS, ESLint PASS, Vitest 49/49 PASS, Next build PASS. Browser/CSS preview smoke to verify separately.
+
+## DASH-V2-16 — Movers visual parity round 1 (2026-10-08)
+
+- True target asset: `design/references/v2-approved/movers.png` (1672x941). Actual browser before/after captured at 1672x941 using Chrome: `movers-before-parity.png` and `movers-after-parity.png` (untracked local QA evidence).
+- Comparison BEFORE: market table was pushed below rankings and coverage, partially off first viewport. AFTER: table follows filters and precedes rankings; tighter card/panel/table spacing; table now visible in first viewport with 8 paginated rows.
+- Visual parity remains PARTIAL. Major gaps: approved mockup uses top horizontal terminal navigation rather than shared side shell, richer column set/sparklines and multiple four-column research leaderboards; current DEMO source does not supply real price series. Preserve data integrity, do not draw invented sparklines or mix discovery/live metrics.
+- Provenance: all metric values remain DEMO-only; no new backend reads. Responsive table remains horizontally scrollable. TypeScript, ESLint, Vitest 49/49 and Next build PASS; preview `http://127.0.0.1:3022/movers` and both CSS assets HTTP 200.
+- Asset blocker: approved `opportunities.png` is mislabeled Token Detail; exact Opportunities visual target missing. Resolve official asset manifest before claiming Opportunities visual parity.
