@@ -23,7 +23,7 @@
 
 1. **Prefer Evidence over Assumptions:** if a fact isn't verifiable, mark it as `UNKNOWN`.
 2. **Document Decisions:** record significant methodology/strategy decisions in `docs/DECISIONS.md` (append-only).
-3. **Workflow Compliance:** follow `docs/WORKFLOW.md` for every task (AUDIT → IMPLEMENT → VERIFY → DOCUMENT → CHECKPOINT → GATE → NEXT).
+3. **Workflow Compliance:** follow `docs/WORKFLOW.md` for every task. Dashboard V2 slices use the stricter `AUDIT → PLAN → IMPLEMENT → TEST → VISUAL VERIFY → DOCUMENT → CHECKPOINT → NEXT` loop.
 4. **Documentation Rule:** after meaningful work, docs must reflect reality. Never describe intended functionality as implemented.
    - `docs/MASTER_PLAN.md` = stable strategic direction
    - `docs/CURRENT_STATE.md` = current factual state
@@ -48,6 +48,16 @@ Read before acting (in this order for a new session):
 7. `docs/PHASE_1_REPORT.md` (existing) — historical Phase 1 connectivity/detection evidence. Do not rewrite history.
 
 Detailed references: `docs/ARCHITECTURE.md`, `docs/MARKET_DATA.md`, `docs/FEATURE_MODEL.md`, `docs/MARKET_STATES.md`, `docs/EVENT_LABELING.md`, `docs/PAPER_TRADING.md`, `docs/POSITION_MANAGEMENT.md`, `docs/RISK_RULES.md`, `docs/DASHBOARD_SPEC.md`, `docs/ROADMAP.md`, `docs/SAFETY_RULES.md`, `docs/WORKFLOW.md`, `docs/COMMANDS.md`.
+
+Dashboard V2 reference set (planned architecture; not an implemented frontend):
+`docs/DASHBOARD_V2_AGENT_HANDOFF.md`,
+`docs/DASHBOARD_V2_PROGRESS.md`,
+`docs/DASHBOARD_V2_DECISIONS.md`,
+`docs/DASHBOARD_V2_DESIGN_SPEC.md`,
+`docs/DASHBOARD_V2_FRONTEND_ARCHITECTURE.md`,
+`docs/DASHBOARD_V2_API_CONTRACTS.md`, and
+`docs/DASHBOARD_V2_MIGRATION_PLAN.md`. Use the project-local
+`.agents/skills/dashboard-v2/SKILL.md` for Dashboard V2 work.
 
 ## Autonomous Loop Boundaries
 

@@ -91,6 +91,21 @@ authorization. Detail: `docs/SIGNAL_RESEARCH_PLAN.md` (setups, BTC
 context, exhaustion/absorption) and `docs/HISTORICAL_RESEARCH_PLAN.md`
 (resolutions, event studies).
 
+## Dashboard V2 parallel frontend — planned, not implemented (2026-10-07)
+
+The current Python SSR dashboard remains the verified production surface.
+Dashboard V2 is a staged parallel frontend proposal: Next.js App Router with
+strict TypeScript consumes versioned Python JSON contracts through a
+same-origin server-side BFF. Python remains the only market/research/control
+backend and SQLite remains server-side. The browser never opens the database,
+starts a second engine, or becomes a decision source.
+
+The boundary, folders, security posture, schemas, migration stages, and
+rollback gates are defined in `docs/DASHBOARD_V2_FRONTEND_ARCHITECTURE.md`,
+`docs/DASHBOARD_V2_API_CONTRACTS.md`, and
+`docs/DASHBOARD_V2_MIGRATION_PLAN.md`. No V2 application code exists at this
+checkpoint.
+
 ## P1-11C prospective path (2026-10-07)
 
 `	ext

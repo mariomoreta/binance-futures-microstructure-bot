@@ -10,6 +10,20 @@ AUDIT → IMPLEMENT (minimal) → targeted tests → static/type checks
   → evaluate phase gate → choose next authorized task
 ```
 
+For every Dashboard V2 slice, the binding expansion is:
+
+```text
+AUDIT → PLAN → IMPLEMENT → TEST → VISUAL VERIFY
+  → DOCUMENT → CHECKPOINT → NEXT
+```
+
+`VISUAL VERIFY` means a fresh render/capture compared with the approved
+reference at the required viewport(s). It is mandatory for visual changes and
+may be marked `NOT APPLICABLE` only for documentation-only or nonvisual work.
+Tests do not substitute for visual evidence. See
+`docs/DASHBOARD_V2_MIGRATION_PLAN.md` and
+`.agents/skills/dashboard-v2/SKILL.md`.
+
 ## Step details
 
 1. **AUDIT** — read the actual files/config/tests involved. State what exists
@@ -31,6 +45,11 @@ AUDIT → IMPLEMENT (minimal) → targeted tests → static/type checks
 8. **Gate** — check `docs/SUCCESS_GATES.md`: did this move a gate? Say which,
    with evidence link.
 9. **Next** — pick the next authorized task in the current phase only.
+
+For Dashboard V2, `PLAN` records the bounded slice, contracts, acceptance
+criteria, and rollback boundary before implementation. `TEST` includes
+contract and regression checks. `VISUAL VERIFY` follows those checks and
+precedes factual documentation.
 
 ## Autonomous loop
 

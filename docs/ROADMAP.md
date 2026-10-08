@@ -30,6 +30,15 @@ RAW MARKET DATA → RAW FEATURES → PERSISTENCE → DASHBOARD VISIBILITY
 14. `P1-13` Signal / extreme-move UI (`/signals`, `/extreme-moves`).
 15. `P1-14` 24h calibration review → Phase 1 gate evaluation.
 
+### Parallel Dashboard V2 lane (architecture foundation complete)
+
+Dashboard V2 does not reorder the market-intelligence dependencies above and
+does not unblock P1-12. Its implementation is a reversible parallel lane:
+contract normalization → frontend shell → Overview → Movers → token detail →
+System/control → parity and cutover. Each slice must pass the gates in
+`docs/DASHBOARD_V2_MIGRATION_PLAN.md`; the Python SSR dashboard remains the
+rollback surface until parity is evidenced.
+
 ## Phase 2 — Persistent Dataset + Event Labeling
 
 Builds on the P1-02 foundation: snapshot schema → outcome calculator
