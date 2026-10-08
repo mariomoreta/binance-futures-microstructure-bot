@@ -803,6 +803,26 @@ with an unhealthy finale; P1-10R survived its full window in a
 session-independent process AND its worst transport episode (~9.5min)
 self-recovered with 3.5 clean hours after it.
 
+## P1-10R-FIX-01 console-popup fix — APPLIED (2026-10-08, post-PASS)
+
+Root cause (confirmed earlier): every 4s browser poll of
+`/api/control/probe/status` ran `dashboard.process_info()` →
+`subprocess.run(tasklist)` + `subprocess.run(wmic)` with no
+`CREATE_NO_WINDOW`, flashing visible consoles; probe launches via
+`control.start_probe` had the same gap. Fix: new
+`dashboard.no_window_flags()` helper (CREATE_NO_WINDOW on Windows, 0
+elsewhere — POSIX unchanged) applied to both `process_info` calls and
+the `start_probe` Popen. Identity semantics untouched (image +
+creation-time checks, honest UNKNOWN on failure). Verified: 420/420
+tests (12 new, mocked — no real consoles opened); dashboard restarted
+(PID 30984 → 28440, no probe active at the time); 75s observe-only
+lifecycle via the canonical plane went STARTING → RUNNING (feed
+HEALTHY) → COMPLETED naturally; /overview /movers /system 200;
+Next.js :3000 unaffected. Popup suppression is proven at code level
+(flags asserted in tests); headless agents cannot visually confirm
+flash absence — user-side confirmation still welcome. P1-10R PASS and
+P1-12 READINESS unchanged.
+
 ## Known gaps (Phase 1 work ahead, in order)
 
 Minimal dashboard: DONE (P1-03 PASS) → terminal DONE (P1-09 PASS,

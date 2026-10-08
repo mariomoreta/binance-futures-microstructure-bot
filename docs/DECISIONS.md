@@ -422,3 +422,7 @@ velocities are negative).
 ## 2026-10-08 — P1-10R PASS (formal 6h soak)
 
 Single continuous WMI-detached process (PID 19084, 21603.9s, COMPLETED + duration-reached + exit 0, final_summary present). The session-survival problem that killed P1-10 at 4.91h is solved by service-tree parentage (python -> cmd -> WmiPrvSE Session 0), proven first by a 90s proof run on the identical mechanism. Transport verdict: 11/11 streams, 19M msgs, 10 auto-recovered reconnects, 0.76% rejects, p50 170-250ms; three bounded auto-recovered episodes (worst ~9.5min market handshake timeouts ~04:20-04:29Z) and a perfectly clean final hour — P1-10-style collapse did not recur. Research recorder drained STOPPED with 8273/0/0 and ~96% of row estimates. Gate consequence: P1-12 moves from BLOCKED to READY (instruction still required; no auto-start). The tasklist/wmic popup defect stays a documented cosmetic issue (P1-10R-FIX-01); its CREATE_NO_WINDOW fix is explicitly a separate post-soak change, not part of this verdict.
+
+## 2026-10-08 — P1-10R-FIX-01 console suppression
+
+Dashboard PID-identity subprocesses (tasklist/wmic) and probe spawns now pass CREATE_NO_WINDOW on Windows via a single dashboard.no_window_flags() helper (0 on POSIX, so non-Windows behavior is byte-identical). No caching, no WMIC removal, no registry-schema change, no validation weakening — the smallest change that removes the popup mechanism. Proven by mocked regression tests asserting the flag on every spawn path plus a live 75s observe lifecycle; dashboard-only restart (30984 -> 28440) with no probe active.

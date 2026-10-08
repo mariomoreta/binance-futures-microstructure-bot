@@ -314,9 +314,11 @@ def start_probe(duration_seconds: Optional[int] = None,
     env["MICROPROBE_PRESET"] = preset
     stdout_fh = open(str(log_path), "w", encoding="utf-8")
     try:
+        from .dashboard import no_window_flags
         proc = subprocess.Popen(argv, cwd=str(repo_root()), env=env,
                                 stdout=stdout_fh,
-                                stderr=subprocess.STDOUT)
+                                stderr=subprocess.STDOUT,
+                                creationflags=no_window_flags())
     except OSError as exc:
         try:
             stdout_fh.close()

@@ -103,12 +103,23 @@ def find_free_port(candidates: List[int] = PORT_CANDIDATES,
 # Process identity (safe PID handling — never touch unrelated processes)
 # --------------------------------------------------------------------------
 
+def no_window_flags() -> int:
+    """Windows console-suppression flags for child diagnostics (P1-10R-FIX-01).
+
+    Returns ``subprocess.CREATE_NO_WINDOW`` on Windows so tasklist/wmic and
+    spawned probes never flash a visible console; 0 elsewhere (POSIX
+    ignores process windows — behavior there is unchanged).
+    """
+    return int(getattr(subprocess, "CREATE_NO_WINDOW", 0) or 0)
+
+
 def process_info(pid: int) -> Tuple[Optional[str], Optional[str]]:
     """(image_name, creation_time) for pid, or (None, None) if not present."""
     try:
         out = subprocess.run(
             ["tasklist", "/FI", f"PID eq {pid}", "/FO", "CSV", "/NH"],
             capture_output=True, text=True, timeout=10,
+            creationflags=no_window_flags(),
         ).stdout.strip().splitlines()
     except (OSError, subprocess.SubprocessError):
         return None, None
@@ -126,6 +137,7 @@ def process_info(pid: int) -> Tuple[Optional[str], Optional[str]]:
             ["wmic", "process", "where", f"ProcessId={pid}",
              "get", "CreationDate", "/VALUE"],
             capture_output=True, text=True, timeout=10,
+            creationflags=no_window_flags(),
         ).stdout
         for line in wmic.splitlines():
             if line.strip().startswith("CreationDate="):

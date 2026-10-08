@@ -198,6 +198,12 @@ strategies (P3), paper engine/positions (P4), execution (P5).
   Live roundtrip proven (dashboard start→RUNNING→STALE→ok→stop; external
   start auto-discovered; 90s run COMPLETED; dashboard survived).
   376/376 tests (23 new).
+- `P1-10R-FIX-01` (2026-10-08) WINDOWS CONSOLE POPUPS: **FIXED**.
+  `dashboard.no_window_flags()` (CREATE_NO_WINDOW, POSIX-neutral) applied
+  to tasklist/wmic identity checks + probe spawn; semantics preserved.
+  420/420 tests (12 new, mocked). Dashboard restarted 30984 → 28440;
+  75s observe lifecycle COMPLETED naturally with feed HEALTHY while fed.
+  P1-10R PASS and P1-12 READINESS unchanged.
 - `P1-10R` (2026-10-08) FORMAL ≥6H SOAK RE-RUN: **PASS**. One continuous
   WMI-detached process (PID 19084, 00:48:20Z → 06:48:23Z, 21603.9s ≥
   21600s), registry COMPLETED + duration-reached + exit 0, final_summary
@@ -227,6 +233,10 @@ strategies (P3), paper engine/positions (P4), execution (P5).
 
 ## LAST_VERIFICATION
 
+- 2026-10-08 (P1-10R-FIX-01): `python run_tests.py` → 420/420 OK (408 +
+  12 new mocked identity tests; one pre-existing Popen fake extended for
+  the new kwarg). Dashboard 30984 → 28440; 75s observe run COMPLETED;
+  both frontends 200. P1-10R PASS / P1-12 READY unchanged.
 - 2026-10-08 (P1-10R): **PASS**. `python run_tests.py` → 408/408 OK
   (no app changes). 21603.9s continuous, COMPLETED + duration-reached +
   exit 0, final_summary present. Transport/honest-episode analysis,

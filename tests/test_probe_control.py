@@ -178,9 +178,10 @@ class StartStopTest(unittest.TestCase):
         class FakeProc:
             pid = 31337
 
-        def fake_popen(argv, cwd=None, env=None, stdout=None, stderr=None):
+        def fake_popen(argv, cwd=None, env=None, stdout=None, stderr=None,
+                       **kwargs):
             captured.update(argv=argv, cwd=cwd, env=env, stdout=stdout,
-                            stderr=stderr)
+                            stderr=stderr, kwargs=kwargs)
             return FakeProc()
 
         with mock.patch.object(pc, "status",
@@ -202,6 +203,10 @@ class StartStopTest(unittest.TestCase):
         # Merged UTF-8 file logging (never inherits the console).
         self.assertIs(captured["stderr"], __import__("subprocess").STDOUT)
         self.assertTrue(str(out["evidence"]["log"]).endswith(".log"))
+        # P1-10R-FIX-01: spawned probe hides its console on Windows.
+        import microstructure_probe.dashboard as _dash
+        self.assertEqual(captured["kwargs"].get("creationflags"),
+                         _dash.no_window_flags())
         pc._close_log_handles(31337)
         try:
             os.unlink(out["evidence"]["log"])
