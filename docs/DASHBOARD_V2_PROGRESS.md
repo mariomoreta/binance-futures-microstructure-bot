@@ -150,3 +150,12 @@ architecture + static foundation (DASH-V2-00); no integration.
 - Feature ledger: F-OPP-UI-01 and F-STATE-V2-TK-01 marked PARTIAL (DEMO UI only) on this V2 branch. F-V2-BFF-01 remains NOT IMPLEMENTED. Backend P1-14A belongs to the other agent.
 - Python suite deliberately not rerun here because backend P1-14A is concurrently owned; no Python source modified.
 - Next: reconcile approved Opportunities image filename/content, further parity refinements, then design and verify versioned read-only BFF contract before live data integration. No strategy/execution authorization implied.
+
+## DASH-V2-06 — Opportunities inspector clarity and QA (2026-10-08)
+
+- On isolated `dash-v2-03-token-detail` worktree only, refactored Opportunities component and added a compact responsive candidate evidence summary: lifecycle, observed state/direction, priority and freshness. All values are explicit DEMO fixture data, not authoritative live opportunities.
+- Improved table semantics (column scopes), filter-result announcement and evidence selection/empty-state accessibility.
+- TypeScript PASS, ESLint PASS, Vitest **35/35 PASS** (2 added tests), production build PASS.
+- Chrome CDP captured Opportunities 1440x1000 and 390x850 plus Token Detail regression; no global horizontal overflow in verified viewports. Evidence: `design/qa/v2-06/`.
+- Visual parity **NOT VERIFIED**: approved Opportunities PNG absent/misnamed. Token Detail screenshot regression captured but not pixel-parity approved.
+- Backend, main, Muse Spark P1-14A, and BFF untouched. Git remote sync must be checked independently; do not claim published until SHA matches.
