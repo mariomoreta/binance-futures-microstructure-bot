@@ -69,4 +69,12 @@ Isolated static foundation exists under rontend/ (Next 16.4 + React 19.3, stric
 
 ## DASH-V2-01 landed (2026-10-07)
 
-/overview is now a professional terminal composition (TopBar, metric grid, pulse, movers snapshot, extreme watch, research health, market context) on labeled fixtures. Preview: http://127.0.0.1:3000/overview (server PID 28552). Next: DASH-V2-02 only on explicit authorization. P1-10R still RUNNING — do not disturb.
+/overview is now a professional terminal composition (TopBar, metric grid, pulse, movers snapshot, extreme watch, research health, market context) on labeled fixtures. Preview: http://127.0.0.1:3000/overview (server PID 28552). Next: DASH-V2-02 only on explicit authorization. P1-10R still RUNNING ï¿½ do not disturb.
+
+## DASH-V2-02 landed (2026-10-07)
+
+/movers is a professional, fixture-isolated screener: 16 records, summary, combined filters/search, stable nulls-last sorting, filtered rankings, coverage/data-quality aggregation, empty/reset states and 8-row pagination. All values remain visibly DEMO - NOT LIVE; no API/BFF exists. TypeScript, ESLint, 24/24 Vitest and production build pass (re-verified by the recovery agent after removing the staged route templates and fixing a summary unit bug). Browser QA covers desktop 1440 + mobile 390 with interactive checks; reference comparison is NOT EVALUABLE because mockups are absent. Next: DASH-V2-03 only on explicit authorization.
+
+Keep PID 19084 and all P1-10R evidence untouched. Before any future preview restart, reverify the exact Node PID/command/creation time. Current production preview URL remains http://127.0.0.1:3000/movers.
+
+Future live integration needs a versioned Movers view model carrying raw numbers, source, observed_at, freshness, tier, capability, nullability and pagination metadata.

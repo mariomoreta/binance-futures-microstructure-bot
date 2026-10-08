@@ -92,3 +92,16 @@ NEXT AUTHORIZED SLICE
 P1-10R: RUNNING since 2026-10-08T00:48:20Z (do not disturb). P1-12:
 blocked pending P1-10R PASS. P1-12B: not implemented. Dashboard V2:
 architecture + static foundation (DASH-V2-00); no integration.
+
+## DASH-V2-02 - Professional Futures Market Movers (2026-10-07)
+
+- Implementation: professional DEMO screener with summary cards, combined search/direction/coverage/state/research-interest filters, stable numeric sorting with nulls last, ranked gainers/losers, coverage/data-quality counts, resettable empty state and 8-row pagination.
+- Fixture contract: 16 centralized records with raw numeric values, explicit source/as-of, tier, capability and nulls. Criteria are UI exercise boundaries, not validated economic thresholds.
+- Semantics: zero is neither gainer nor loser; missing fields never become zero; rankings use only comparable observations; all symbol links use /symbol/[symbol].
+- Verification: typecheck PASS; ESLint PASS; Vitest 24/24 PASS; Next production build PASS.
+- Responsive/browser QA (recovery agent, live preview :3000): desktop 1440 overview + movers screenshots, 390 mobile overview + movers screenshots, interactive filter/search/sort/pagination/empty/reset checks all correct, overview regression clean, console errors/warnings 0. Table overflow stays table-local on narrow widths.
+- Visual reference comparison: NOT EVALUABLE because the reference mockups remain unavailable; no visual-comparison PASS claimed.
+- Preview: http://127.0.0.1:3000/movers (production server; PID renewed with identity verification, see decisions).
+- Recovery fixes applied: removed both route templates (root CSS-hack banner suppressor + movers children-ignoring override); /movers now composes MoversDashboard directly in page.tsx; AppShell foundation banner replaced by a compact demo strip; fixed summary double-% unit bug. Rankings scope note kept as designed (filtered dataset, explicitly labeled).
+- Python backend, databases, runtime registry and formal P1-10R evidence: unchanged.
+- P1-10R last observed RUNNING (PID 19084, read-only checks); no PASS/FAIL conclusion made.

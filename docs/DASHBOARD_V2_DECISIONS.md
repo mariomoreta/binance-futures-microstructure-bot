@@ -68,11 +68,11 @@ table fallbacks. TanStack Table is recommended for Movers, also not installed.
 - Any provider credentials, paid tier or public deployment.
 - Python SSR retirement/cutover.
 
-## 2026-10-07 — DASH-V2-00 slice decisions
+## 2026-10-07 ï¿½ DASH-V2-00 slice decisions
 
 - tsconfig jsx: react-jsx (not preserve): required so standalone vitest transforms TSX; Next build unaffected (tsc + build verified).
 - vitest esolve.alias @ -> src mirrors tsconfig paths (vite does not read them).
-- Token-detail route is singular /symbol/[symbol], matching the Python backend; the architecture folder plan sketch shows plural symbols/ — singular wins unless a later slice justifies otherwise.
+- Token-detail route is singular /symbol/[symbol], matching the Python backend; the architecture folder plan sketch shows plural symbols/ ï¿½ singular wins unless a later slice justifies otherwise.
 - eslint flat config (eslint.config.mjs + eslint-config-next); 
 ext lint is gone in Next 16, so the lint script is eslint src.
 - Minimal icon.svg added to silence favicon 404 (only console error seen).
@@ -80,7 +80,7 @@ ext lint is gone in Next 16, so the lint script is eslint src.
 - Ephemeral 
 ext start :3000 used for render/screenshot checks only, then stopped; screenshots recorded without reference comparison (mockups absent).
 
-## 2026-10-07 — DASH-V2-01 slice decisions
+## 2026-10-07 ï¿½ DASH-V2-01 slice decisions
 
 - Compact 2-demo-pill replaces large demo banners on Overview (one small RESEARCH ONLY notice retained); DEMO stays permanently visible.
 - Breadth rendered as a CSS bar with text counts + aria-label (no chart library; no series impersonation).
@@ -88,3 +88,12 @@ ext start :3000 used for render/screenshot checks only, then stopped; screenshot
 - ExtremeMoveWatch Research column links to the symbol page (investigation entry, not a signal).
 - Movers snapshot capped at 8 rows with a Full-movers link; full table stays on /movers.
 - Preview server renewal verified old-PID identity (31648) before stop; new PID 28552 on the same port/host; Python processes never touched.
+
+## 2026-10-07 - DASH-V2-02 slice decisions
+
+- Keep Movers fully isolated on centralized DEMO fixtures; no BFF, provider or Binance request in this slice.
+- Research-interest cutoffs are named fixture criteria for exercising UI states, never validated economic thresholds or signal rules.
+- Sort raw values only; stable ties; missing/non-finite values remain last in both directions; zero is observed but neither gainer nor loser.
+- Rank panels use the current filtered dataset and state that scope explicitly.
+- Bound the table to 8 rendered rows per page and confine narrow-screen overflow to its wrapper.
+- Compose the dashboard directly in `app/movers/page.tsx`; no route templates (the staged root CSS-hack suppressor and children-ignoring movers override were removed during recovery). Shell banner replaced by a compact demo strip in AppShell (small shared correction, Overview otherwise untouched).

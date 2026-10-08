@@ -1,5 +1,6 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
+import { DemoPill } from "@/components/overview/TopBar";
 import { TopNav } from "./TopNav";
 
 export function AppShell({ children }: { children: ReactNode }) {
@@ -7,9 +8,11 @@ export function AppShell({ children }: { children: ReactNode }) {
     <div className="v2-shell">
       <TopNav />
       <main className="v2-main">
-        <div className="v2-notice" data-testid="foundation-notice">
-          Dashboard V2 foundation (DASH-V2-00). Static shell only — no API
-          integration, no live data.
+        <div style={{ marginBottom: 12 }} data-testid="shell-demo-strip">
+          <DemoPill />{" "}
+          <span className="v2-muted" style={{ fontSize: 12 }}>
+            Static shell — no API integration, no live data.
+          </span>
         </div>
         {children}
       </main>
