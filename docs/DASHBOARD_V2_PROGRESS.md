@@ -130,3 +130,10 @@ architecture + static foundation (DASH-V2-00); no integration.
 - Five explicitly synthetic DEMO candidates exercise distinct families and lifecycles. All freshness STALE; data source clearly labeled DEMO. Research-priority score is NOT probability, forecast, profitability, execution signal or expected return.
 - Runtime data integration and versioned /api/v1 BFF remain NOT IMPLEMENTED. F-OPP-UI-01 remains design-stage, not live-data VERIFIED. Backend P1-13A API/status under independent corrective audit; no merging without reconciliation.
 - Local verification: TypeScript PASS, ESLint PASS, Vitest 30/30 PASS (4 new opportunities tests), Next.js production build PASS, independent preview http://127.0.0.1:3004/opportunities HTTP 200; Chrome desktop 1440x1000 and narrow 390x850 capture inspected. Responsive layout adjustments applied after narrow-screen findings; shared shell/nav horizontal overflow remains an existing cross-route concern for a later shell pass.
+
+## DASH-V2-04B — visual-target governance and Opportunities polish (2026-10-08)
+
+- Published approved V2 target PNGs but contact-sheet inspection found source ZIP name mismatches: `opportunities.png` actually Token Detail, `token-detail.png` actually Movers; correctly labeled Opportunities image is NOT present in the local eight-image ZIP. The discrepancy is documented in `design/references/v2-approved/README.md`; never report asset parity based on the wrong PNG.
+- Updated AGENTS.md, dashboard-v2 skill, and handoff to make approved visual targets binding with actual-data truth constraints.
+- Opportunities DEMO screen CSS refined for professional terminal treatment: accent/contrast, metric hierarchy, clearer selected rows, inspector/evidence emphasis, focus outlines and narrow layout; no change to business rules, backend, Python or API.
+- Local TypeScript, ESLint, Vitest (30/30), and production build passed. Live browser visual comparison of this new CSS still required after an isolated preview starts; do not claim screenshot parity yet.
