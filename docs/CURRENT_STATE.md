@@ -859,6 +859,43 @@ BTC NORMAL→REVERSAL with flip evidence), token pages render the panel,
 0 rejects, 0 reconnects, 0 orders, both frontends 200. No predictive
 accuracy claimed (prospective evaluation is P1-14 territory).
 
+## P1-12B dynamic live universe v0 — RESULT: PASS (2026-10-08)
+
+Bounded HOT selection + lifecycle (`universe_manager.py`, v0, pure
+deterministic logic): DISCOVERY_ONLY → PROMOTION_PENDING → SUBSCRIBING →
+WARMING → LIVE (DEGRADED on silent streams) with DEMOTION_PENDING →
+UNSUBSCRIBING → UNKNOWN + cooldowns. Ranked proposals from existing
+`select_hot` votes (no classifier input — no circularity); eligibility +
+ticker freshness + slot/stream budgets + transport health gate every
+promotion; 1800s LIVE dwell, 3600s demotion cooldown, 2-missed-scan rank
+decay, ineligibility bypasses dwell (proven breach), CORE never evicted
+or shadowed. Budgets (fail-closed, conservative local policy — official
+WS docs unfetchable here, all caps UNVERIFIED): 3 HOT slots, 60 total
+streams, 50/connection, 6 connections; actual footprint 4 connections /
+≤32 streams. HOT rides `hot-public` (bookTicker+depth) + `hot-market`
+(aggTrade); global markPrice/forceOrder arrays never duplicated.
+`_connection_loop` accepts a URL callable so reconnects restore exactly
+the desired set; resync (cancel exactly the 2 managed tasks + respawn)
+fires only on desired-set change with a 60s anti-flap guard; canonical
+pair never touched. Engines gained allow/forget (flow/book/returns/
+structure/classifier/OI tracker) + OI poller HOT list (≤8 polls/round);
+recorder finalizes demoted symbols as explicit PARTIAL (idempotent keys);
+markPrice returns ingest extends to subscribed HOT (funding detector
+stays CORE-configured). Dashboard overview distinguishes proposals
+(`HOT dynamic`) from subscriptions (`HOT subscribed (deep)`) + lifecycle
+table + hot_* events; Token Detail opens HOT symbols via live sets.
+No schema migration (discovery snapshot blob extended in place).
+
+Validation: 31 tests (manager + probe sync + recorder + classifier +
+config + safety surface); full suite 478/478. Controlled 300s
+observe-only run (temp 60s-scan config, repo config untouched)
+COMPLETED naturally: 465 eligible → 6 proposals → 3 promotions
+(OGNUSDT/METUSDT/GRIFFAINUSDT), both HOT connections up, all 3 LIVE
+(mark+trade+depth), 0 demotions/failures/refusals, 0 reconnects,
+0 rejects, 259k msgs, HOT research buckets 24/4/3 per symbol,
+6 symbols classified, safety 0/0/0. Dashboard verified live
+(subscribed row, lifecycle table, OGN token panel).
+
 ## Known gaps (Phase 1 work ahead, in order)
 
 Minimal dashboard: DONE (P1-03 PASS) → terminal DONE (P1-09 PASS,
@@ -876,8 +913,8 @@ VWAP + volatility + structure: DONE (P1-08 PASS — flow-VWAP, raw vol,
 range expansion, confirmed pivots, v0.7.0 dashboard + APIs, 372s run).
 Transport re-validation: DONE (P1-01R PASS — 45min healthy window, soak
 gate unblocked).
-Remaining: P1-12B dynamic live universe (NEXT candidate — needs explicit
-instruction), then signal UI (P1-13), calibration evidence (P1-14).
+Remaining: P1-13A opportunity/setup engine (NEXT candidate — needs explicit
+instruction), then P1-13B UX, calibration (P1-14).
 Decision/feature traceability for these lives in `docs/FEATURE_BACKLOG.md`
 (F-UNI-01, F-OPP-01/UI-01, F-BT-01, F-PAPER-01, F-PORT-01). P1-11 raw-feature validation may use the valid
 4.91h P1-10 evidence; the Movers shared-`_v` category-value anomaly is a

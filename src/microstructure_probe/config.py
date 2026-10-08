@@ -41,6 +41,28 @@ class DiscoveryConfig:
 
 
 @dataclass(frozen=True)
+class UniverseConfig:
+    """Dynamic HOT-universe budgets (P1-12B). All values operator-tunable.
+
+    Stream/connection caps are CONSERVATIVE local policy, not Binance
+    guarantees: the official USD-M websocket docs were not fetchable from
+    this environment, so every transport assumption below is UNVERIFIED and
+    the manager fails closed (no promotion) when a budget would break.
+    """
+    enabled: bool
+    max_hot_slots: int
+    max_total_streams: int
+    max_streams_per_connection: int
+    max_connections: int
+    promotion_interval_seconds: int
+    min_dwell_seconds: int
+    demotion_cooldown_seconds: int
+    max_discovery_age_seconds: int
+    demote_after_missed_scans: int
+    max_hot_reconnects_per_hour: int
+
+
+@dataclass(frozen=True)
 class OpenInterestConfig:
     enabled: bool
     interval_seconds: int
@@ -74,6 +96,13 @@ class ProbeConfig:
         default_factory=lambda: OpenInterestConfig(
             enabled=True, interval_seconds=60,
             request_timeout_seconds=15.0, stale_after_seconds=180))
+    universe: UniverseConfig = field(
+        default_factory=lambda: UniverseConfig(
+            enabled=True, max_hot_slots=3, max_total_streams=60,
+            max_streams_per_connection=50, max_connections=6,
+            promotion_interval_seconds=600, min_dwell_seconds=1800,
+            demotion_cooldown_seconds=3600, max_discovery_age_seconds=1800,
+            demote_after_missed_scans=2, max_hot_reconnects_per_hour=10))
 
 
 def _positive(name: str, value: Any) -> float:
@@ -155,6 +184,32 @@ def load_config(path: str | Path) -> ProbeConfig:
     if not 0 < lower < upper < 1:
         raise ValueError("Los percentiles de funding deben cumplir 0 < lower < upper < 1")
 
+def _universe_config(raw: Any) -> UniverseConfig:
+    """Optional dynamic-universe section; absent means code defaults."""
+    raw = raw if isinstance(raw, dict) else {}
+    def _int(name: str, default: int, lo: int) -> int:
+        value = int(raw.get(name, default))
+        if value < lo:
+            raise ValueError(f"universe.{name} must be >= {lo}")
+        return value
+    return UniverseConfig(
+        enabled=bool(raw.get("enabled", True)),
+        max_hot_slots=_int("max_hot_slots", 3, 0),
+        max_total_streams=_int("max_total_streams", 60, 1),
+        max_streams_per_connection=_int("max_streams_per_connection", 50, 1),
+        max_connections=_int("max_connections", 6, 1),
+        promotion_interval_seconds=int(_positive(
+            "universe.promotion_interval_seconds",
+            raw.get("promotion_interval_seconds", 600))),
+        min_dwell_seconds=_int("min_dwell_seconds", 1800, 0),
+        demotion_cooldown_seconds=_int("demotion_cooldown_seconds", 3600, 0),
+        max_discovery_age_seconds=_int("max_discovery_age_seconds", 1800, 60),
+        demote_after_missed_scans=_int("demote_after_missed_scans", 2, 1),
+        max_hot_reconnects_per_hour=_int(
+            "max_hot_reconnects_per_hour", 10, 1),
+    )
+
+
 def _open_interest_config(raw: Any) -> OpenInterestConfig:
     """Optional OI section; absent means code defaults (enabled, 60s)."""
     raw = raw if isinstance(raw, dict) else {}
@@ -207,6 +262,7 @@ def load_config(path: str | Path) -> ProbeConfig:
         symbols=symbols,
         discovery=_discovery_config(raw.get("discovery", {})),
         open_interest=_open_interest_config(raw.get("open_interest", {})),
+        universe=_universe_config(raw.get("universe", {})),
         observation_sample_ms=_observation_sample_ms(
             raw.get("observation_sample_ms", {})
         ),

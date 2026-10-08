@@ -27,7 +27,7 @@ it does not replace them. Authority stays where it was recorded
 | F-STATE-V2-MV-01 | V2 Movers: state/direction columns + filters | DECIDED | NOT IMPLEMENTED | DASH-V2 future |
 | F-STATE-V2-TK-01 | V2 Token Detail: state explanation panel | DECIDED | NOT IMPLEMENTED | DASH-V2 future |
 | F-STATE-V2-TL-01 | State timeline visualization | PROPOSED | NOT IMPLEMENTED | Later |
-| F-UNI-01 | Dynamic LIVE-universe expansion (P1-12B) | DECIDED | NOT IMPLEMENTED | P1-12B NEXT |
+| F-UNI-01 | Dynamic LIVE-universe expansion (P1-12B) | DECIDED | VERIFIED | P1-12B DONE |
 | F-OPP-01 | Research-based opportunity engine (P1-13A) | DECIDED | NOT IMPLEMENTED | P1-13A |
 | F-OPP-UI-01 | Opportunities dashboard (P1-13B) | DECIDED | NOT IMPLEMENTED | P1-13B |
 | F-BT-01 | Historical backtesting (P1-14) | DECIDED | NOT IMPLEMENTED | P1-14 |
@@ -162,18 +162,27 @@ it does not replace them. Authority stays where it was recorded
   `docs/ROADMAP.md` phase sequence; next candidate per
   `docs/TASK_QUEUE.md` 2026-10-08.
 - **Approval status:** DECIDED (sequenced). **Implementation status:**
-  NOT IMPLEMENTED.
-- **Target phase:** P1-12B NEXT (explicit instruction required).
+  VERIFIED (P1-12B PASS 2026-10-08).
+- **Target phase:** P1-12B DONE.
 - **Dependencies:** P1-12A PASS (satisfied), P1-01R transport headroom.
-- **Affected subsystems:** `discovery.py`, `probe.py` connection loop,
-  `universe.py`, dashboard universe displays.
-- **Required UI locations:** `/movers`, `/system` subscription state.
-- **Data/API requirements:** HOT change events, resubscribe audit log.
+- **Affected subsystems:** `universe_manager.py`, `probe.py` (managed
+  connections + discovery hook), engines (allow/forget), OI poller HOT
+  list, recorder `finalize_symbol`, dashboard overview tiers table.
+- **Required UI locations:** overview universe tiers + lifecycle (done);
+  Token Detail via live sets (done).
+- **Data/API requirements:** discovery candidates + select_hot proposals;
+  no new HTTP contract (discovery blob extended in place).
 - **Acceptance criteria:** no silent resubscription; hysteresis honored;
   live/deep vs discovery-only labeling preserved; transport monitored.
-- **Evidence needed:** tests + bounded live run + dashboard screenshots.
-- **Docs:** `docs/ROADMAP.md`, `docs/TASK_QUEUE.md`, P1-05 decision record.
-- **Open questions:** resubscribe cadence, max subscribed symbols.
+  All met (31 tests + 300s live run: 3 promotions all LIVE).
+- **Evidence:** `tests/test_universe.py` + `tests/test_universe_probe.py`
+  (31 tests), 478/478 suite, `logs/probe-runs/p12b-300s.log`
+  (git-ignored, preserved), `docs/UNIVERSE_SPEC.md`.
+- **Docs:** `docs/ROADMAP.md`, `docs/TASK_QUEUE.md`, P1-05 decision record,
+  `docs/UNIVERSE_SPEC.md`.
+- **Open questions:** transport caps stay UNVERIFIED (re-check against
+  official docs before raising budgets); resubscribe cadence beyond
+  scan-driven sync unevaluated.
 - **Last update:** 2026-10-08.
 
 ## F-OPP-01 — Research-based opportunity engine (P1-13A)

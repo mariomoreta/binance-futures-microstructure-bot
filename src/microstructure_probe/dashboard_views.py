@@ -217,9 +217,37 @@ def render_overview(state) -> str:
              + html.escape(", ".join(uni["core"]) or "—") + "</td></tr>"
              "<tr><th>HOT dynamic</th><td>"
              + html.escape(", ".join(uni["hot"]) or "none selected") + "</td></tr>"
+             "<tr><th>HOT subscribed (deep)</th><td>"
+             + html.escape(", ".join(
+                 (discovery.get("hot_subscribed") or [])) or "none")
+             + "</td></tr>"
              "<tr><th>DISCOVERY</th><td>"
              + html.escape(f"{discovery.get('eligible_count', '?')} eligible of "
                            f"{discovery.get('seen_count', '?')} seen") + "</td></tr></table>")
+    states = discovery.get("universe_states") if isinstance(
+        discovery.get("universe_states"), dict) else {}
+    if states:
+        body += ("<table class='kv'><tr><th>HOT symbol</th><th>lifecycle</th>"
+                 "<th>reason</th></tr>" + "".join(
+                     f"<tr><td>{html.escape(str(sym))}</td>"
+                     f"<td>{html.escape(str((rec or {}).get('state', '?')))}</td>"
+                     f"<td>{html.escape(str((rec or {}).get('reason', '')))}</td></tr>"
+                     for sym, rec in sorted(states.items())) + "</table>")
+    recent = []
+    try:
+        recent_fn = getattr(state, "universe_events", None)
+        recent = recent_fn(limit=10) if callable(recent_fn) else []
+    except Exception:
+        recent = []
+    hot_evts = [e for e in recent if isinstance(e, dict)
+                and str(e.get("kind", "")).startswith("hot_")]
+    if hot_evts:
+        body += ("<table class='kv'><tr><th>promotion event</th><th>detail</th></tr>"
+                 + "".join(
+                     f"<tr><td>{html.escape(str(e.get('kind', '')))} "
+                     f"{html.escape(str(e.get('symbol', '')))}</td>"
+                     f"<td>{html.escape(str(e.get('detail', '')))}</td></tr>"
+                     for e in hot_evts[:10]) + "</table>")
     body += "<h2>Live momentum (subscribed symbols only)</h2>"
     feats = state.return_features()
     if not feats:

@@ -135,6 +135,31 @@ class ReturnEngine:
             self._dirty[(key, bucket)] = series.latest()[1]
         return accepted
 
+    def allow(self, symbols) -> List[str]:
+        """Admit symbols to deep observation (P1-12B HOT promotions)."""
+        added = []
+        if self._allowed is None:
+            return added
+        for symbol in symbols:
+            key = str(symbol).upper()
+            if key not in self._allowed:
+                self._allowed.add(key)
+                added.append(key)
+        return sorted(added)
+
+    def forget(self, symbol: str) -> bool:
+        """Drop buckets + dirty markers for a demoted symbol.
+
+        Persisted price_samples rows are untouched (bounded retention
+        ages them out); a re-promotion rebuilds strictly from fresh
+        post-skew-guard observations.
+        """
+        key = str(symbol).upper()
+        dropped = self._series.pop(key, None) is not None
+        for marker in [m for m in self._dirty if m[0] == key]:
+            del self._dirty[marker]
+        return dropped
+
     def feature(self, symbol: str, as_of_ms: int) -> Dict[str, object]:
         """Feature record for one symbol. Unavailable horizons are None."""
         key = symbol.upper()

@@ -294,6 +294,23 @@ class OpenInterestTracker:
                 stale_after_ms=self.stale_after_ms)
         return tracker.ingest(fetch_ms, exchange_time_ms, oi_base)
 
+    def allow(self, symbols) -> List[str]:
+        """Admit symbols to OI tracking (P1-12B HOT promotions)."""
+        added = []
+        if self._allowed is None:
+            return added
+        for symbol in symbols:
+            key = str(symbol).upper()
+            if key not in self._allowed:
+                self._allowed.add(key)
+                added.append(key)
+        return sorted(added)
+
+    def forget(self, symbol: str) -> bool:
+        """Drop poll history for a demoted symbol (persisted OI samples
+        are untouched; staleness flags handle the rest honestly)."""
+        return self._trackers.pop(str(symbol).upper(), None) is not None
+
     def snapshot_all(self, as_of_ms: int,
                      price_returns_1m: Optional[Dict[str, Optional[float]]] = None
                      ) -> List[Dict[str, Any]]:
@@ -379,9 +396,20 @@ class OpenInterestPoller:
         self.requests = 0
         self.successes = 0
         self.failures = 0
+        self.hot_symbols: Tuple[str, ...] = ()
         self.last_tick_ms: Optional[float] = None
         self.last_error: Optional[str] = None
         self._latency = RunningDistribution(max(1, int(latency_max_samples)))
+
+    def set_hot_symbols(self, symbols) -> Tuple[str, ...]:
+        """Bounded HOT poll list for P1-12B (CORE list never shrinks).
+
+        Poll rounds then cover CORE + HOT; failures per symbol are counted
+        exactly as before and never break the WS path.
+        """
+        self.hot_symbols = tuple(dict.fromkeys(
+            str(s).upper() for s in symbols))
+        return self.hot_symbols
 
     def poll_once(self, tracker: OpenInterestTracker) -> Dict[str, int]:
         """One bounded round: each symbol polled at most once."""
@@ -389,7 +417,8 @@ class OpenInterestPoller:
                   else time.time() * 1000.0)
         self.last_tick_ms = now_ms
         outcome = {"requested": 0, "ok": 0, "failed": 0}
-        for symbol in self.symbols:
+        for symbol in list(self.symbols) + [s for s in self.hot_symbols
+                                            if s not in self.symbols]:
             outcome["requested"] += 1
             self.requests += 1
             start_ns = time.perf_counter_ns()
@@ -418,6 +447,7 @@ class OpenInterestPoller:
         """Poll telemetry (probe summary block)."""
         return {
             "symbols": list(self.symbols),
+            "hot_symbols": list(self.hot_symbols),
             "interval_seconds": self.interval_seconds,
             "requests": self.requests,
             "successes": self.successes,

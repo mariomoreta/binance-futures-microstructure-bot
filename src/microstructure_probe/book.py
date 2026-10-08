@@ -341,6 +341,27 @@ class BookEngine:
             elapsed_ms = (time.perf_counter_ns() - start_ns) / 1_000_000
             self._latency.add(max(elapsed_ms, 0.0))
 
+    def allow(self, symbols) -> List[str]:
+        """Admit symbols to deep observation (P1-12B HOT promotions)."""
+        added = []
+        if self._allowed is None:
+            return added
+        for symbol in symbols:
+            key = str(symbol).upper()
+            if key not in self._allowed:
+                self._allowed.add(key)
+                added.append(key)
+        return sorted(added)
+
+    def forget(self, symbol: str) -> bool:
+        """Drop in-memory book state for a demoted symbol.
+
+        Persisted latest rows are untouched (they age out honestly via
+        freshness gates); a fresh subscription starts DEGRADED-free only
+        after a chained update sequence, never from stale memory.
+        """
+        return self._books.pop(str(symbol).upper(), None) is not None
+
     def snapshot_all(self, as_of_ms: int) -> List[Dict[str, Any]]:
         """One record per known symbol (subscribed set = allowed set)."""
         out = []

@@ -507,6 +507,31 @@ class FlowEngine:
             elapsed_ms = (time.perf_counter_ns() - start_ns) / 1_000_000
             self._latency.add(max(elapsed_ms, 0.0))
 
+    def allow(self, symbols) -> List[str]:
+        """Admit symbols to deep observation (P1-12B HOT promotions).
+
+        No-op when the engine allows everything (tests). Returns the
+        newly admitted symbols, sorted.
+        """
+        added = []
+        if self._allowed is None:
+            return added
+        for symbol in symbols:
+            key = str(symbol).upper()
+            if key not in self._allowed:
+                self._allowed.add(key)
+                added.append(key)
+        return sorted(added)
+
+    def forget(self, symbol: str) -> bool:
+        """Drop in-memory state for a demoted symbol.
+
+        Persisted rows are untouched (history stays readable and ages out
+        honestly). The caller must drain completed buckets first — see
+        drain_completed_buckets — so no closed bucket is lost.
+        """
+        return self._series.pop(str(symbol).upper(), None) is not None
+
     def snapshot_all(self, as_of_ms: int) -> List[Dict[str, Any]]:
         """One record per known symbol (subscribed set = allowed set)."""
         out = []

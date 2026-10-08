@@ -385,6 +385,22 @@ class MarketStructureEngine:
             elapsed_ms = (time.perf_counter_ns() - start_ns) / 1_000_000
             self._latency.add(max(elapsed_ms, 0.0))
 
+    def allow(self, symbols) -> List[str]:
+        """Admit symbols to evaluation (P1-12B HOT promotions).
+
+        The engine is stateless (no per-symbol memory to forget), so only
+        admission exists; warm-up continuity is inherited from peer state.
+        """
+        added = []
+        if self._allowed is None:
+            return added
+        for symbol in symbols:
+            key = str(symbol).upper()
+            if key not in self._allowed:
+                self._allowed.add(key)
+                added.append(key)
+        return sorted(added)
+
     def stats(self) -> Dict[str, Any]:
         """Engine counters + latency distribution (probe summary block)."""
         return {

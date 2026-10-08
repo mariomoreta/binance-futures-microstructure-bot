@@ -34,9 +34,9 @@ the dashboard exists. No classifier before raw-feature dashboard validation.
 
 ## ACTIVE_TASK
 
-- `P1-12B` DYNAMIC LIVE UNIVERSE — next candidate (starts only on explicit
-  instruction). `P1-12A` is PASS (see COMPLETED). Do NOT start P1-12B,
-  P1-13, or any soak automatically.
+- `P1-13A` OPPORTUNITY / SETUP ENGINE — next candidate (starts only on
+  explicit instruction). `P1-12B` is PASS (see COMPLETED). Do NOT start
+  P1-13A, soaks, or trading automatically.
 
 ## NEXT_TASKS (ordered, all Phase 1)
 - `P1-10R` PROLONGED ≥6H SOAK RE-RUN — P1-10 FAIL stays FAIL (truncated at
@@ -47,11 +47,11 @@ the dashboard exists. No classifier before raw-feature dashboard validation.
   Foundation (DONE) → P1-11B.1 Probe Lifecycle + Run Control (DONE) →
   P1-11C Historical Event Studies (DONE) → P1-10R Formal ≥6h soak
   re-run (DONE — PASS) → P1-12A Market State Classifier v0
-  (DONE — PASS) → P1-12B Dynamic Live Universe (NEXT candidate) →
-  P1-13A Opportunity / Setup Engine → P1-13B Professional Opportunities UX
+  (DONE — PASS) → P1-12B Dynamic Live Universe (DONE — PASS) →
+  P1-13A Opportunity / Setup Engine (NEXT candidate) →
+  P1-13B Professional Opportunities UX
   → P1-14 Historical Backtester → P1-15 Forward Paper Trading → P1-16 Paper
   Portfolio / Dynamic Exit.
-- `P1-12B` DYNAMIC LIVE UNIVERSE — next candidate (needs instruction).
 - `P1-13` SIGNAL / EXTREME-MOVE UI — add `/signals`, `/extreme-moves`.
 - `P1-14` 24H CALIBRATION REVIEW — thresholds vs real crossings + Phase 1 gate
   evaluation per `docs/SUCCESS_GATES.md`.
@@ -61,12 +61,24 @@ strategies (P3), paper engine/positions (P4), execution (P5).
 
 ## BLOCKED
 
-- Nothing currently blocked. `P1-12B` is the next candidate pending
+- Nothing currently blocked. `P1-13A` is the next candidate pending
   explicit instruction. Later tasks remain sequenced; each starts after
   its predecessor's evidence is recorded.
 
 ## COMPLETED
 
+- `P1-12B` (2026-10-08) DYNAMIC LIVE UNIVERSE V0: **PASS**.
+  Bounded HOT selection + lifecycle (`universe_manager.py`, v0) on two
+  managed connections (canonical pair untouched): 3 HOT slots default,
+  fail-closed budgets, deterministic movement rank, dwell 1800s,
+  demotion cooldown 3600s, CORE never evicted. Engine allow/forget
+  (flow/book/returns/structure/classifier/OI) + OI HOT poll list +
+  recorder per-symbol PARTIAL finalize. 300s observe validation:
+  6 proposals → 3 promotions (OGN/MET/GRIFFAINUSDT) all reaching LIVE,
+  0 reconnects/rejects, HOT research buckets captured, 6 symbols
+  classified, COMPLETED naturally, 0 orders. 478/478 tests (31 new).
+  Spec: `docs/UNIVERSE_SPEC.md`. Transport caps stay UNVERIFIED
+  (docs unfetchable here) — re-check before raising budgets.
 - `BRAIN-00` (2026-10-06) PROJECT_BRAIN infrastructure: AGENTS.md + 20 docs.
 - `P1-00` (2026-10-06) REPOSITORY / TOOLING SANITY: canonical test command
   `python run_tests.py` works from repo root, 28/28 green, no app behavior change
@@ -244,6 +256,12 @@ strategies (P3), paper engine/positions (P4), execution (P5).
 
 ## LAST_VERIFICATION
 
+- 2026-10-08 (P1-12B): `python run_tests.py` → 478/478 OK (447 + 31 new
+  universe/manager/transport/recorder/classifier tests). 300s observe
+  validation COMPLETED via WMI-detached canonical module (temp 60s-scan
+  config; repo config untouched): 3 promotions all LIVE, HOT research +
+  classifier + dashboard verified, 0 orders. Next: P1-13A candidate
+  (needs explicit instruction).
 - 2026-10-08 (P1-12A): `python run_tests.py` → 447/447 OK (420 + 25 new
   classifier + 2 new persistence). 120s observe run COMPLETED via the
   canonical plane (9 evals ~0.2ms, states + transitions persisted, token

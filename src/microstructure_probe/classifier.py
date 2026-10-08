@@ -471,6 +471,26 @@ class ClassifierEngine:
             out.append(result)
         return out
 
+    def allow(self, symbols) -> List[str]:
+        """Admit symbols to classification (P1-12B HOT promotions)."""
+        added = []
+        if self._allowed is None:
+            return added
+        for symbol in symbols:
+            key = str(symbol).upper()
+            if key not in self._allowed:
+                self._allowed.add(key)
+                added.append(key)
+        return sorted(added)
+
+    def forget(self, symbol: str) -> bool:
+        """Drop dwell/confirmation memory for a demoted symbol.
+
+        Persisted state rows are untouched (they go STALE honestly); a
+        re-promotion restarts hysteresis cold with an explicit reason.
+        """
+        return self._memory.pop(str(symbol).upper(), None) is not None
+
     def stats(self) -> Dict[str, Any]:
         return {"rules_version": RULES_VERSION,
                 "evaluated": self.evaluated,

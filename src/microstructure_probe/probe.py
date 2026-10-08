@@ -14,6 +14,7 @@ import websockets
 from .book import BookEngine
 from .classifier import ClassifierEngine
 from .clock import ClockSynchronizer, corrected_lag_ms
+from .universe_manager import UniverseManager
 from .market_structure import MarketStructureEngine
 from .config import ProbeConfig
 from .detectors import EventDetectors
@@ -44,14 +45,41 @@ BASE_URL = "wss://fstream.binance.com"
 EVENT_DRIVEN_STREAMS = frozenset({"!forceOrder@arr"})
 
 
-def expected_stream_names(config: ProbeConfig) -> tuple[str, ...]:
+def expected_stream_names(config: ProbeConfig,
+                            extra_symbols: tuple = ()) -> tuple[str, ...]:
     symbols = [symbol.lower() for symbol in config.symbols]
+    extra = [symbol.lower() for symbol in extra_symbols
+             if str(symbol).upper() not in config.symbols]
     return tuple(
         ["!forceOrder@arr", "!markPrice@arr@1s"]
         + [f"{symbol}@aggTrade" for symbol in symbols]
         + [f"{symbol}@bookTicker" for symbol in symbols]
         + [f"{symbol}@depth20@100ms" for symbol in symbols]
+        + [f"{symbol}@aggTrade" for symbol in extra]
+        + [f"{symbol}@bookTicker" for symbol in extra]
+        + [f"{symbol}@depth20@100ms" for symbol in extra]
     )
+
+
+def build_hot_stream_urls(symbols: tuple = ()) -> dict[str, str]:
+    """Managed HOT connection group (P1-12B): per-symbol deep streams only.
+
+    markPrice (!arr) and forceOrder (!arr) are global array feeds already
+    carried by the canonical market connection — never duplicated here.
+    Empty input yields no connections (most conservative state).
+    """
+    syms = [str(symbol).lower() for symbol in dict.fromkeys(
+        str(s).upper() for s in symbols)]
+    if not syms:
+        return {}
+    hot_public = [stream for symbol in syms
+                  for stream in (f"{symbol}@bookTicker",
+                                 f"{symbol}@depth20@100ms")]
+    hot_market = [f"{symbol}@aggTrade" for symbol in syms]
+    return {
+        "hot-public": f"{BASE_URL}/public/stream?streams={'/'.join(hot_public)}",
+        "hot-market": f"{BASE_URL}/market/stream?streams={'/'.join(hot_market)}",
+    }
 
 
 @dataclass
@@ -186,6 +214,23 @@ class MarketProbe:
         # never signals). Pure evaluation over peer-engine rows each summary;
         # memory (dwell/confirmation) restarts cold by design.
         self._classifier = ClassifierEngine(symbols=config.symbols)
+        # P1-12B: dynamic universe manager (selection + lifecycle only).
+        # CORE is config.symbols (protected); HOT subscriptions ride managed
+        # connections that never disturb the canonical pair.
+        self._universe = UniverseManager(
+            core=tuple(config.symbols),
+            budget={k: getattr(config.universe, k) for k in (
+                "max_hot_slots", "max_total_streams",
+                "max_streams_per_connection", "max_connections",
+                "promotion_interval_seconds", "min_dwell_seconds",
+                "demotion_cooldown_seconds", "max_discovery_age_seconds",
+                "demote_after_missed_scans",
+                "max_hot_reconnects_per_hour")})
+        self._hot_active: tuple = ()
+        self._hot_tasks: dict = {}
+        self._hot_seen: dict = {}
+        self._hot_last_resync: float | None = None
+        self._hot_reconnect_marks: dict = {}
         self._discovery_info: dict = {
             "enabled": bool(config.discovery.enabled),
             "last_scan_ms": None,
@@ -254,6 +299,10 @@ class MarketProbe:
         """Market-state classifier v0 (P1-12A, observed states only)."""
         return self._classifier
 
+    @property
+    def universe_manager(self) -> UniverseManager:
+        """Dynamic universe manager (P1-12B, selection + lifecycle)."""
+        return self._universe
     def set_oi_fetcher(self, fetch_fn) -> None:
         """Replace the OI REST fetcher (tests only — never live traffic)."""
         self._oi_poller = OpenInterestPoller(
@@ -378,7 +427,13 @@ class MarketProbe:
             self.log_summary(final=True)
             for task in tasks:
                 task.cancel()
+            for task in list(self._hot_tasks.values()):
+                task.cancel()
             await asyncio.gather(*tasks, return_exceptions=True)
+            if self._hot_tasks:
+                await asyncio.gather(*self._hot_tasks.values(),
+                                     return_exceptions=True)
+                self._hot_tasks = {}
 
     def stop(self) -> None:
         self._stop.set()
@@ -387,15 +442,19 @@ class MarketProbe:
         await asyncio.sleep(duration_seconds)
         self.stop()
 
-    async def _connection_loop(self, name: str, url: str) -> None:
+    async def _connection_loop(self, name: str, url) -> None:
+        """One reconnecting websocket connection (P1-12B: url may be a
+        zero-arg callable, resolved fresh on every (re)connect so managed
+        HOT groups restore exactly the desired set after any drop)."""
         delay = 1.0
         while not self._stop.is_set():
             connected_at: float | None = None
+            current_url = url() if callable(url) else url
             try:
                 self.stats.connection_attempts[name] += 1
                 LOGGER.info(json.dumps({"kind": "connection_attempt", "endpoint": name}))
                 async with websockets.connect(
-                    url,
+                    current_url,
                     open_timeout=15,
                     close_timeout=10,
                     ping_interval=180,
@@ -532,6 +591,7 @@ class MarketProbe:
                         bids=payload.get("b"),
                         asks=payload.get("a"),
                     )
+                    self._note_hot_data(str(payload["s"]), "depth")
                 except (KeyError, TypeError, ValueError):
                     pass
                 # P1-11C research hook (read-only reuse, never alters engine).
@@ -561,14 +621,15 @@ class MarketProbe:
                 # guessed; the message still flows to detectors/persistence
                 # untouched. Engine failures must never break that path.
                 try:
-                    self._flow.ingest(
+                    if self._flow.ingest(
                         symbol=str(payload["s"]),
                         event_time_ms=int(payload["E"]),
                         price=float(payload["p"]),
                         quantity=float(payload["q"]),
                         buyer_is_maker=payload.get("m"),
                         normal_quantity=payload.get("nq"),
-                    )
+                    ):
+                        self._note_hot_data(str(payload["s"]), "trade")
                 except (KeyError, TypeError, ValueError):
                     pass
                 # P1-11C research hook (validated P1-06 semantics reused).
@@ -607,6 +668,24 @@ class MarketProbe:
                     try:
                         self._returns.ingest(
                             str(item["s"]), int(item["E"]), float(item["p"]))
+                    except (KeyError, TypeError, ValueError):
+                        pass
+                # P1-12B: returns also ingest for actively subscribed HOT
+                # symbols (markPrice arrays are global; the funding detector
+                # above stays CORE-configured by design).
+                for item in payload:
+                    try:
+                        sym = str(item.get("s"))
+                    except (AttributeError, TypeError, ValueError):
+                        continue
+                    if sym in self.config.symbols:
+                        continue
+                    if sym not in self._hot_active:
+                        continue
+                    try:
+                        if self._returns.ingest(
+                                sym, int(item["E"]), float(item["p"])):
+                            self._note_hot_data(sym, "mark")
                     except (KeyError, TypeError, ValueError):
                         pass
             else:
@@ -826,6 +905,11 @@ class MarketProbe:
                 "core": list(self.universe.active_symbols()),
                 "hot_dynamic": list(dynamic),
                 "hot_full": list(self.universe.active_symbols()) + list(dynamic),
+                # P1-12B: actually-subscribed HOT set + lifecycle states.
+                # Proposals (hot_dynamic) may exceed subscriptions; the two
+                # are never conflated on the dashboard.
+                "hot_subscribed": list(self._hot_active),
+                "universe_states": self._universe.states_snapshot(),
                 "tops": tops,
                 "top_n": cfg.top_n,
                 "min_quote_volume_usdt": cfg.min_quote_volume_usdt,
@@ -844,15 +928,208 @@ class MarketProbe:
                          "seen": counts["symbols_seen"],
                          "error": None})
             LOGGER.info(json.dumps({"kind": "discovery_scan",
-                                    "eligible": counts["eligible"],
-                                    "hot_dynamic": list(dynamic),
-                                    "events": events}))
+                                     "eligible": counts["eligible"],
+                                     "hot_dynamic": list(dynamic),
+                                     "events": events}))
+            await self._sync_universe_from_scan(candidates, list(dynamic),
+                                                   now_ms)
             return snapshot
         except Exception as exc:
             info["error"] = f"{type(exc).__name__}: {exc}"
             LOGGER.warning(json.dumps(
                 {"kind": "discovery_error", "error": str(exc)}))
             return {"error": str(exc)}
+
+    def _hot_transport_ok(self) -> bool:
+        """Fail-closed promotion gate from HOT-endpoint reconnect pressure.
+
+        Compares hot-endpoint reconnects since the last check; too many in
+        the trailing window freezes promotions (demotions still proceed).
+        Never raises; unknown counts mean "not ok".
+        """
+        try:
+            cfg = self.config.universe
+            window_s = 3600.0
+            now = self._monotonic()
+            total = (int(self.stats.reconnects.get("hot-public", 0))
+                     + int(self.stats.reconnects.get("hot-market", 0)))
+            prev_total, prev_ts = self._hot_reconnect_marks.get(
+                "marks", (0, now))
+            if now - prev_ts >= window_s:
+                self._hot_reconnect_marks["marks"] = (total, now)
+                prev_total = total
+            return (total - prev_total) <= int(
+                cfg.max_hot_reconnects_per_hour)
+        except Exception:
+            return False
+
+    async def _sync_universe_from_scan(self, candidates, hot_dynamic,
+                                       now_ms: int) -> None:
+        """P1-12B: selection step + subscription sync (scan-driven only).
+
+        Pure selection runs on every scan; transport changes (cancel +
+        respawn of exactly the two managed HOT connections) happen only
+        when the desired set actually changes. CORE connections are never
+        touched here.
+        """
+        if not self.config.universe.enabled:
+            return
+        cand_map = {}
+        for cand in candidates or []:
+            try:
+                cand_map[str(cand.symbol).upper()] = {
+                    "eligible": bool(cand.eligible),
+                    "change_24h_pct": cand.change_24h_pct,
+                    "quote_volume_24h": cand.quote_volume_24h,
+                    "ticker_close_ms": cand.ticker_close_ms,
+                }
+            except AttributeError:
+                continue
+        transport_ok = self._hot_transport_ok()
+        try:
+            decisions = self._universe.update(
+                cand_map, [str(s).upper() for s in hot_dynamic or []],
+                int(now_ms), scan_ms=int(now_ms),
+                transport_ok=transport_ok)
+        except Exception as exc:
+            LOGGER.warning(json.dumps(
+                {"kind": "universe_error", "error": str(exc)}))
+            return
+        for event in decisions.get("events", []):
+            try:
+                self.persistence.log_universe_event(
+                    "hot_%s" % event.get("kind", "unknown"),
+                    str(event.get("symbol", "?")),
+                    str(event.get("reason", "")))
+            except Exception as exc:
+                LOGGER.warning(json.dumps(
+                    {"kind": "persistence_error", "error": str(exc)}))
+        try:
+            await self._sync_hot_subscriptions(reason="discovery-scan")
+        except Exception as exc:
+            LOGGER.warning(json.dumps(
+                {"kind": "universe_error", "error": str(exc)}))
+
+    async def _sync_hot_subscriptions(self, reason: str = "") -> None:
+        """Reconcile managed HOT connections with the desired set.
+
+        Cancel + respawn exactly the hot-public/hot-market tasks on change;
+        drain-then-forget demoted engine state (no closed-bucket loss);
+        admit promoted symbols everywhere; confirm unsubscribes for
+        cooldown accounting. No-ops when nothing changed.
+        """
+        desired = self._universe.desired_hot()
+        if desired == self._hot_active:
+            return
+        now_mono = self._monotonic()
+        if (self._hot_last_resync is not None
+                and now_mono - self._hot_last_resync < 60.0
+                and self._hot_tasks):
+            LOGGER.info(json.dumps(
+                {"kind": "hot_resync_deferred", "reason": reason,
+                 "desired": list(desired)}))
+            return
+        self._hot_last_resync = now_mono
+        old, new = set(self._hot_active), set(desired)
+        # Drain closed flow buckets first so forget() cannot lose them.
+        try:
+            drained = self._flow.drain_completed_buckets()
+            if drained:
+                self.persistence.store_flow_buckets(drained)
+        except Exception as exc:
+            LOGGER.warning(json.dumps(
+                {"kind": "persistence_error", "error": str(exc)}))
+        # Cancel exactly the managed tasks (canonical pair untouched).
+        for task in list(self._hot_tasks.values()):
+            task.cancel()
+        if self._hot_tasks:
+            await asyncio.gather(*self._hot_tasks.values(),
+                                 return_exceptions=True)
+            self._hot_tasks = {}
+        # Demoted: forget engine memory, finalize recorder buckets,
+        # confirm unsubscribe (starts cooldown), drop seen-sets.
+        for symbol in sorted(old - new):
+            try:
+                self._flow.forget(symbol)
+                self._book.forget(symbol)
+                self._returns.forget(symbol)
+                self._oi.forget(symbol)
+                self._classifier.forget(symbol)
+                self._research.finalize_symbol(symbol)
+                self._universe.confirm_unsubscribed(
+                    [symbol], int(self._wall_clock_ms()))
+            except Exception as exc:
+                LOGGER.warning(json.dumps(
+                    {"kind": "universe_error", "error": str(exc)}))
+            self._hot_seen.pop(symbol, None)
+            try:
+                self.persistence.log_universe_event(
+                    "hot_unsubscribed", symbol, reason or "desired-set change")
+            except Exception:
+                pass
+        # Promoted: admit everywhere (engines create state lazily on first
+        # valid post-skew message; OI poller covers CORE + HOT, bounded).
+        for symbol in sorted(new - old):
+            try:
+                self._flow.allow([symbol])
+                self._book.allow([symbol])
+                self._returns.allow([symbol])
+                self._structure.allow([symbol])
+                self._oi.allow([symbol])
+                self._classifier.allow([symbol])
+                self.persistence.log_universe_event(
+                    "hot_subscribed", symbol, reason or "desired-set change")
+            except Exception as exc:
+                LOGGER.warning(json.dumps(
+                    {"kind": "universe_error", "error": str(exc)}))
+        try:
+            self._oi_poller.set_hot_symbols(sorted(new))
+        except Exception:
+            pass
+        self._hot_active = desired
+        # Spawn managed connections (none when the desired set is empty —
+        # the most conservative state: zero extra connections).
+        for name, url in build_hot_stream_urls(desired).items():
+            self._hot_tasks[name] = asyncio.create_task(
+                self._connection_loop(name, url), name=f"ws-{name}")
+        LOGGER.info(json.dumps(
+            {"kind": "hot_resync", "reason": reason,
+             "active": list(self._hot_active)}))
+
+    def _note_hot_data(self, symbol: str, kind: str) -> None:
+        """Track first-data / readiness for HOT lifecycle (never raises)."""
+        try:
+            sym = str(symbol).upper()
+            if sym not in self._universe.desired_hot():
+                return
+            seen = self._hot_seen.setdefault(sym, set())
+            seen.add(str(kind))
+            now_ms = int(self._wall_clock_ms())
+            self._universe.note_first_data(sym, now_ms)
+            if {"mark", "trade", "depth"} <= seen:
+                self._universe.note_live(sym, now_ms)
+        except Exception:
+            pass
+
+    def _refresh_hot_health(self, now_ms: int) -> None:
+        """Mark silent HOT symbols DEGRADED; audit partial subscriptions."""
+        try:
+            if not self._hot_active:
+                return
+            now_mono = self._monotonic()
+            for sym in self._hot_active:
+                streams = ["%s@aggTrade" % sym.lower(),
+                           "%s@bookTicker" % sym.lower(),
+                           "%s@depth20@100ms" % sym.lower()]
+                lasts = [self.stats.last_seen_monotonic.get(s)
+                         for s in streams]
+                if all(last is None or
+                       now_mono - last > self.config.stale_after_seconds
+                       for last in lasts):
+                    self._universe.note_degraded(
+                        sym, "all HOT streams silent", int(now_ms))
+        except Exception:
+            pass
 
     async def _discovery_loop(self) -> None:
         # First scan immediately so the dashboard has discovery state early.
@@ -900,7 +1177,7 @@ class MarketProbe:
     def build_summary(self, *, final: bool) -> dict[str, object]:
         now = self._monotonic()
         runtime = max(0.0, now - self.stats.started_monotonic)
-        expected = expected_stream_names(self.config)
+        expected = expected_stream_names(self.config, self._hot_active)
         active = [stream for stream in expected if stream in self.stats.last_seen_monotonic]
         # Event-driven streams (forceOrder: liquidations only) are NEVER
         # missing: silence is their normal state, not absence.
@@ -914,6 +1191,7 @@ class MarketProbe:
         cadence_streams = {
             "!markPrice@arr@1s",
             *(f"{symbol.lower()}@depth20@100ms" for symbol in self.config.symbols),
+            *(f"{symbol.lower()}@depth20@100ms" for symbol in self._hot_active),
         }
         stale = sorted(stream for stream in silent if stream in cadence_streams)
         max_silence_ms = {}
@@ -1059,6 +1337,9 @@ class MarketProbe:
             # P1-12A additive block: classifier eval counts + state census
             # (observed HYPOTHESIS states with evidence — never signals).
             "states": self._classifier.stats(),
+            # P1-12B additive block: dynamic-universe desired set, lifecycle
+            # states, slot/stream budgets, promotion/demotion counters.
+            "universe": self._universe.stats(),
             # P1-11C additive block: prospective recorder health (never
             # conflated with engine/feed health). Failure-isolated.
             "research": self._research.status(),
@@ -1089,6 +1370,12 @@ class MarketProbe:
             return {"sample_stats": {}}
 
     def log_summary(self, *, final: bool) -> None:
+        # P1-12B: refresh HOT stream health before snapshotting so silent
+        # HOT symbols read DEGRADED (never silently LIVE).
+        try:
+            self._refresh_hot_health(int(self._wall_clock_ms()))
+        except Exception:
+            pass
         summary = self.build_summary(final=final)
         # Persist the snapshot for the P1-03 dashboard (fire-and-forget;
         # persistence failures are logged there and never break logging).

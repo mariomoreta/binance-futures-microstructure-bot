@@ -230,6 +230,19 @@ illustrative, not statistical).
   `docs/SIGNAL_RESEARCH_PLAN.md` and `docs/HISTORICAL_RESEARCH_PLAN.md`
   (design only — nothing implemented in P1-11A beyond the Movers fix).
 
+## P1-12B dynamic universe (2026-10-08, budgets conservative/UNVERIFIED)
+
+- HOT symbols, once subscribed, produce the same raw families as CORE
+  (returns/velocity/accel, flow + baselines, book, OI polls, VWAP/vol/
+  range/structure) through identical code paths; funding-rate detector
+  events stay CORE-configured (threshold maps are per-trio).
+- Warm-up is per symbol/feature (no inheritance across lifecycles);
+  lifecycle WARMING/LIVE/DEGRADED is tracked separately from feature
+  UNKNOWN; classifier P1-12A consumes HOT rows unchanged (UNKNOWN until
+  its own minimum-data gate passes).
+- Recorder buckets for HOT open on first trade; demotion closes them
+  PARTIAL with idempotent keys (no double-count on re-promotion).
+
 ## P1-12A classifier outputs (2026-10-08, rules v0.1.0 HYPOTHESIS)
 
 - Observed states NORMAL/IGNITION/EXPANSION/EXHAUSTION/REVERSAL + UNKNOWN,

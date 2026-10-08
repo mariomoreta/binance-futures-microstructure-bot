@@ -248,6 +248,36 @@ class ResearchRecorder:
 
     # -- live-engine hooks (never raise into the probe) -----------
 
+    def finalize_symbol(self, symbol: str) -> Dict[str, int]:
+        """Close a demoted symbol's open buckets as explicitly PARTIAL.
+
+        Called on HOT demotion so the symbol's trailing buckets are
+        persisted with PARTIAL quality instead of lingering open (they
+        would otherwise never close — no more trades arrive). Flow
+        buckets keep idempotent keys (no double-count on re-promotion);
+        book partials are discarded per incomplete-bucket policy. Never
+        raises; never blocks transport threads.
+        """
+        closed = {"flow": 0, "book_discarded": 0}
+        try:
+            sym = str(symbol).upper()
+            for key in [k for k in self._flow_open if k[0] == sym]:
+                bucket = self._flow_open.pop(key)
+                bucket.partial = True
+                try:
+                    self._queue.put_nowait(
+                        ("flow", key[1], sym, bucket))
+                    closed["flow"] += 1
+                except queue.Full:
+                    with self._lock:
+                        self._drops += 1
+            if sym in self._book_open:
+                del self._book_open[sym]
+                closed["book_discarded"] += 1
+        except Exception:
+            pass
+        return closed
+
     def record_trade(self, symbol: str, event_ms: int, price: float,
                      qty: float, buyer_is_maker: Any) -> None:
         if not self.enabled or self.state not in ("RUNNING", "READY"):
