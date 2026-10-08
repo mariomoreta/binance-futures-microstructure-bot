@@ -216,3 +216,9 @@ architecture + static foundation (DASH-V2-00); no integration.
 - Added isolated `/opportunities/observations` view consuming same-origin read-only `/api/v1/opportunities`; existing `/opportunities` DEMO UI unchanged, no live signal claims. Displays source/as-of, stale status, quality flags, stored candidates and observed lifecycle; never presents persisted records as actionable current signals.
 - Reuses existing bounded Python BFF adapter. No mutation APIs, no backend/P1-14B changes, no fabricated outcomes. TypeScript PASS, ESLint PASS, Vitest 46/46 PASS, production build PASS. Actual browser/CSS QA performed separately.
 - Feature status: F-OPP-UI-01 PARTIAL; F-V2-BFF-01 PARTIAL READ ONLY, no full verified live model. Historical-validation and probability remain unavailable.
+
+## DASH-V2-13 — Persisted observations evidence inspector (2026-10-08)
+
+- Expanded saved-opportunity read-only view with selectable persisted records, direct evidence for/against/missing inspector, rule version, historical evidence status, and original observation timestamp. Added navigation from the DEMO Opportunities screen to the separate persisted-record page. Never merges synthetic DEMO rows with actual stored candidates.
+- Local TypeScript PASS, ESLint PASS, Vitest 46/46 PASS, Next production build PASS. Test phase took longer under resource contention; no backend Python/P1-14B changes.
+- API remains bounded read-only v1; persisted candidates retain STALE/UNKNOWN and are not represented as actionable current signals. Browser smoke and publication to be verified separately.
