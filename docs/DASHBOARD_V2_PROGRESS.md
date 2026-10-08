@@ -228,3 +228,8 @@ architecture + static foundation (DASH-V2-00); no integration.
 - Added `/api/v1/prospective` read-only local Python adapter for schema v9 with timeout, bounded response, no-store, fail-closed 503, and explicit missing-as-null semantics. New `/opportunities/prospective` displays actual persisted horizon states and marks return only when COMPLETE with valid numeric value; no trading claims.
 - Does not alter backend or Muse Spark P1-14B worktree. Existing Opportunities DEMO and saved observations pages remain isolated.
 - TypeScript PASS, ESLint PASS, Vitest 48/48 PASS, Next.js build PASS. Browser QA separately verified.
+
+## DASH-V2-15 — Unified research navigation (2026-10-08)
+
+- Added consistent responsive navigation among setup explorer DEMO, saved Python observations READ ONLY, and prospective outcome research READ ONLY. Explicitly distinguish sources; each view marks the active route accessibly.
+- Backend P1-14B untouched; no execution routes or invented outcomes. TypeScript PASS, ESLint PASS, Vitest 49/49 PASS, Next build PASS. Browser/CSS preview smoke to verify separately.
