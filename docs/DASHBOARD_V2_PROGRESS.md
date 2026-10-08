@@ -1,7 +1,7 @@
 # Dashboard V2 Progress
 
 **Purpose:** factual slice ledger for Dashboard V2.  
-**Status:** DASH-V2-00 COMPLETE 2026-10-07 (isolated static foundation; no API integration).  
+**Status:** DASH-V2-01 COMPLETE 2026-10-07 (professional Overview composition; fixtures only, no API integration).  
 **Rule:** update after every slice; never describe planned code as implemented.
 
 ## DASH-V2-ARCH — 2026-10-07
@@ -55,7 +55,37 @@ NEXT AUTHORIZED SLICE
 - Python suite: 408/408 green (untouched backend, verification only).
 - P1-10R: running probe (PID 19084) undisturbed; no DB/registry/config
   contact; `node_modules/` + `.next/` local-only, never committed.
-- Next authorized slice: DASH-V2-01 only on explicit instruction.
+## DASH-V2-01 — 2026-10-07 (professional market overview)
+
+- Starting SHA: `75c34815e8963e25237b93344b3a66e8b2cc107f`.
+- Scope: `frontend/` only — TopBar (market context, ENGINE/FEED/RESEARCH
+  chips, OBSERVE ONLY example, last-data, compact DEMO pill),
+  OverviewMetricGrid (6 provenance-carrying metric cards), MarketPulsePanel
+  (breadth bar + accel/vol/activity/concentration, no-signal disclaimer),
+  MoversSnapshot (8-column table + /movers link + symbol links),
+  ExtremeMoveWatch (descriptive monitor, no predictions/entries/targets),
+  ResearchHealthPanel (recorder/feed/persistence states kept distinct),
+  MarketContextPanel (BTC/ETH refs + CMC-future note, no endpoints called).
+  Nav regrouped with icons; literal `/symbol/[symbol]` menu link removed.
+- Data: centralized fixtures with BFF-forward types (MetricPoint/PulseData/
+  ExtremeMoveRow/HealthFacts/MarketContextFacts); null stays missing;
+  zero external references in `frontend/src` (grep-verified).
+- Tests: `tsc` clean; `eslint` clean; `vitest` 15/15 (freshness states,
+  null-vs-zero, no-prediction language, snapshot links); `next build`
+  9 routes; ephemeral checks + persistent preview on :3000 serve 5/5
+  routes 200 (server PID renewed 31648 → 28552, old process
+  identity-verified before stop; probe PID 19084 untouched).
+- Visual QA: desktop + 390px-mobile overview screenshots, movers
+  regression shot, 0 console errors; tables scroll intentionally on
+  narrow widths. VISUAL_REFERENCE_COMPARISON: NOT AVAILABLE (four
+  reference mockups absent).
+- Python suite: 408/408 green (backend untouched, verification only).
+- P1-10R: RUNNING throughout (read-only status checks only); no DB,
+  registry, config, or evidence contact.
+- Pending integration data per panel: versioned overview/pulse/movers/
+  research/health/context contracts (DASH-V2-02+); provider legal review;
+  reference mockups for future visual PASS.
+- Next authorized slice: DASH-V2-02 only on explicit instruction.
 
 ## Gate status
 

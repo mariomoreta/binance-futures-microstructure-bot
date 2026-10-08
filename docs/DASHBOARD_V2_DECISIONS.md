@@ -79,3 +79,12 @@ ext lint is gone in Next 16, so the lint script is eslint src.
 - No chart/table libraries installed; hand-rolled DataTable/FilterTabs suffice for the foundation.
 - Ephemeral 
 ext start :3000 used for render/screenshot checks only, then stopped; screenshots recorded without reference comparison (mockups absent).
+
+## 2026-10-07 — DASH-V2-01 slice decisions
+
+- Compact 2-demo-pill replaces large demo banners on Overview (one small RESEARCH ONLY notice retained); DEMO stays permanently visible.
+- Breadth rendered as a CSS bar with text counts + aria-label (no chart library; no series impersonation).
+- Metric cards carry unit/period/source/freshness/unavailable inline (BFF-forward MetricPoint shape).
+- ExtremeMoveWatch Research column links to the symbol page (investigation entry, not a signal).
+- Movers snapshot capped at 8 rows with a Full-movers link; full table stays on /movers.
+- Preview server renewal verified old-PID identity (31648) before stop; new PID 28552 on the same port/host; Python processes never touched.

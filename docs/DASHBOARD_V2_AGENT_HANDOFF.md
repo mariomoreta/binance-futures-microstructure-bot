@@ -66,3 +66,7 @@ that crosses observe-only boundaries.
 ## DASH-V2-00 landed (2026-10-07)
 
 Isolated static foundation exists under rontend/ (Next 16.4 + React 19.3, strict TS, tokens, 15 components, 7 static routes + /symbol/[symbol], labeled demo fixtures, no API calls). Python backend untouched (408/408). Next: DASH-V2-01 only on explicit authorization. P1-10R probe (PID 19084) must not be disturbed.
+
+## DASH-V2-01 landed (2026-10-07)
+
+/overview is now a professional terminal composition (TopBar, metric grid, pulse, movers snapshot, extreme watch, research health, market context) on labeled fixtures. Preview: http://127.0.0.1:3000/overview (server PID 28552). Next: DASH-V2-02 only on explicit authorization. P1-10R still RUNNING — do not disturb.

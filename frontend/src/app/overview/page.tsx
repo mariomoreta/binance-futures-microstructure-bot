@@ -1,33 +1,40 @@
-import { SectionHeader } from "@/components/shell/SectionHeader";
-import { EngineChip, FeedChip, ResearchChip } from "@/components/status/badges";
-import { MetricCard } from "@/components/cards/metrics";
+import { TopBar } from "@/components/overview/TopBar";
+import { OverviewMetricGrid } from "@/components/overview/OverviewMetricGrid";
+import { MarketPulsePanel } from "@/components/overview/MarketPulsePanel";
+import { MoversSnapshot } from "@/components/overview/MoversSnapshot";
+import { ExtremeMoveWatch } from "@/components/overview/ExtremeMoveWatch";
+import { ResearchHealthPanel } from "@/components/overview/ResearchHealthPanel";
+import { MarketContextPanel } from "@/components/overview/MarketContextPanel";
 import { ResearchOnlyNotice } from "@/components/notices/states";
-import { DEMO_ENGINE } from "@/lib/fixtures";
-import { DemoDataBanner } from "@/components/shell/AppShell";
+import {
+  DEMO_CONTEXT,
+  DEMO_ENGINE,
+  DEMO_EXTREMES,
+  DEMO_HEALTH,
+  DEMO_METRICS,
+  DEMO_MOVERS,
+  DEMO_PULSE,
+} from "@/lib/fixtures";
 
 export default function OverviewPage() {
   return (
     <div>
-      <SectionHeader
-        title="Overview"
-        aside={
-          <>
-            <EngineChip state={DEMO_ENGINE.state} />{" "}
-            <FeedChip state={DEMO_ENGINE.feed} />{" "}
-            <ResearchChip state={DEMO_ENGINE.research} />
-          </>
-        }
+      <TopBar
+        engine={DEMO_ENGINE.state}
+        feed={DEMO_ENGINE.feed}
+        research={DEMO_ENGINE.research}
+        lastData="last data: — (demo)"
       />
-      <DemoDataBanner />
-      <div className="v2-grid">
-        <MetricCard label="Engine" value={DEMO_ENGINE.state} />
-        <MetricCard label="Feed" value={DEMO_ENGINE.feed} />
-        <MetricCard label="Research capture" value={DEMO_ENGINE.research} />
-      </div>
       <ResearchOnlyNotice>
-        Market pulse and external context arrive with the versioned overview
-        contract in DASH-V2-01.
+        Demo composition. Every panel below renders labeled fixtures until
+        the versioned overview contract lands in a later slice.
       </ResearchOnlyNotice>
+      <OverviewMetricGrid metrics={DEMO_METRICS} />
+      <MarketPulsePanel pulse={DEMO_PULSE} />
+      <MoversSnapshot rows={DEMO_MOVERS} />
+      <ExtremeMoveWatch rows={DEMO_EXTREMES} />
+      <ResearchHealthPanel health={DEMO_HEALTH} />
+      <MarketContextPanel context={DEMO_CONTEXT} />
     </div>
   );
 }
