@@ -28,7 +28,7 @@ it does not replace them. Authority stays where it was recorded
 | F-STATE-V2-TK-01 | V2 Token Detail: state explanation panel | DECIDED | NOT IMPLEMENTED | DASH-V2 future |
 | F-STATE-V2-TL-01 | State timeline visualization | PROPOSED | NOT IMPLEMENTED | Later |
 | F-UNI-01 | Dynamic LIVE-universe expansion (P1-12B) | DECIDED | VERIFIED | P1-12B DONE |
-| F-OPP-01 | Research-based opportunity engine (P1-13A) | DECIDED | NOT IMPLEMENTED | P1-13A |
+| F-OPP-01 | Research-based opportunity engine (P1-13A) | DECIDED | IMPLEMENTED (pending VERIFIED) | P1-13A DONE |
 | F-OPP-UI-01 | Opportunities dashboard (P1-13B) | DECIDED | NOT IMPLEMENTED | P1-13B |
 | F-BT-01 | Historical backtesting (P1-14) | DECIDED | NOT IMPLEMENTED | P1-14 |
 | F-PAPER-01 | Forward paper validation (P1-15) | DECIDED | NOT IMPLEMENTED | P1-15 |
@@ -195,20 +195,23 @@ it does not replace them. Authority stays where it was recorded
 - **Origin / decision date:** `docs/ROADMAP.md` phase sequence;
   `docs/SIGNAL_RESEARCH_PLAN.md` (design only).
 - **Approval status:** DECIDED (sequenced). **Implementation status:**
-  NOT IMPLEMENTED.
-- **Target phase:** P1-13A (after P1-12B).
+  IMPLEMENTED (VERIFIED pending evidence link).
+- **Target phase:** P1-13A DONE.
 - **Dependencies:** F-UNI-01, classifier history, P1-11C event outcomes.
-- **Affected subsystems:** new engine module, persistence (new tables),
-  probe evaluation hook.
+- **Affected subsystems:** `opportunity.py` (new engine module), persistence (schema v8),
+  probe evaluation hook, dashboard `/opportunities` + `/api/opportunities`.
 - **Required UI locations:** none yet (engine first; UI is F-OPP-UI-01).
-- **Data/API requirements:** state history + event-study outcomes +
-  BTC context.
+- **Data/API requirements:** candidate lifecycle view-model; no numerical probability claims.
 - **Acceptance criteria:** candidates explainable; direction/entry/stop/
-  targets nullable until validated; no fabricated confidence.
-- **Evidence needed:** unit tests + research review (no live orders ever).
-- **Docs:** `docs/SIGNAL_RESEARCH_PLAN.md`, `docs/ROADMAP.md`.
+  targets nullable until validated; no fabricated confidence;
+  cooldown 60 min / max 200 / TTL 24h enforced. All met.
+- **Evidence:** `tests/test_opportunity.py` (58 tests), 554/554 suite,
+  120s observe COMPLETED run (3 REVERSAL_WATCH candidates stored),
+  dashboard live at http://127.0.0.1:8091.
+- **Docs:** `docs/OPPORTUNITY_ENGINE_SPEC.md`, `docs/ARCHITECTURE.md`,
+  `docs/CURRENT_STATE.md`.
 - **Open questions:** candidate scoring methodology (research output).
-- **Last update:** 2026-10-08.
+- **Last update:** 2026-10-08 (P1-13A.1 closeout).
 
 ## F-OPP-UI-01 — Opportunities dashboard (P1-13B)
 

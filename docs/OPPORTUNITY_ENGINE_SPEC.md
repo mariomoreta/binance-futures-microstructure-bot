@@ -25,9 +25,9 @@ generates orders/signals.
 
 `DETECTED → WATCHING → ACTIVE_RESEARCH → INVALIDATED/EXPIRED → UNKNOWN`
 
-- Cooldown: 60s after INVALIDATED/EXPIRED (prevents flapping)
-- TTL: 24h default (auto-expires open candidates)
-- Max candidates: 50; max events: 500 (rolling)
+- Cooldown: 60 min after INVALIDATED/EXPIRED (code: `cooldown_ms = 3_600_000`).
+- TTL: 24h default (auto-expires open candidates).
+- Max candidates: 200 (code: `max_candidates = 200`); max events: 500 (rolling).
 
 ## Persistence (schema v8)
 

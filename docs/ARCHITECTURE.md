@@ -56,7 +56,7 @@ signal engine → position manager → risk engine → execution engine
 | Probe run control (observe-only operator surface) | `control.py` (registry `logs/probe_runtime.json`, CLI status/start/stop) + probe self-registration in `__main__` + dashboard control APIs/UI | P1-11B.1 DONE (single registry for agent/terminal/dashboard launches; PID+image+ctime identity; single-instance refusal; merged UTF-8 file logging per run; POST-only localhost mutations with nonce+Origin; header ENGINE control with polling on all pages; 6H validation preset for P1-10R mechanics — audit still required for PASS) |
 | State classifier | `classifier.py` (ClassifierEngine + pure classify_symbol, rules v0.1.0 HYPOTHESIS) | P1-12A DONE (NORMAL/IGNITION/EXPANSION/EXHAUSTION/REVERSAL + UNKNOWN with evidence/validity/transitions; hysteresis + reversal confirmation; evaluated per summary over peer rows; token-page panel; spec `docs/CLASSIFIER_SPEC.md`) |
 | Dynamic universe (HOT subscriptions) | `universe_manager.py` (pure selection + lifecycle) + managed `hot-public`/`hot-market` connections in `probe.py` | P1-12B DONE (3 HOT slots, fail-closed budgets, dwell/cooldown, CORE protected; engine allow/forget; overview subscribed-vs-proposed display; spec `docs/UNIVERSE_SPEC.md`; transport caps UNVERIFIED) |
-| Persistence foundation | `persistence.py` | v7 (v6 + state_features REPLACE-per-symbol + state_transitions ≤500, tested migrations); sampling gate + dedicated snapshot writer |
+| Persistence foundation | `persistence.py` | v8 (v7 + opportunity_candidates REPLACE-per-key + opportunity_events append-only ≤500 + migrations v1–v8); sampling gate + dedicated snapshot writer |
 | Dashboard | `dashboard.py` + `dashboard_data.py` + `dashboard_components.py` + `dashboard_views.py` | LIVE v0.9.0 terminal (P1-09 PASS: OVERVIEW/MOVERS/SYSTEM + `/symbol/:symbol` + search + mark-price chart/CSV APIs; P1-03…P1-08 diagnostics kept under `/system`; `dashboard.py` keeps routing/health/lifecycle, views/components/data split by responsibility); P1-13A opportunity read surface + `/api/opportunities` JSON contract |
 
 ## Subscription posture (P1-05)
@@ -76,10 +76,10 @@ history (P1-11B multi-resolution REST bootstrap: 1m 30–90d, 5m/15m 6–12mo,
                    time-to-MAE/invalidation, no lookahead in event formation)
   → validated ≥6h soak re-run (P1-10R, gate still closed after P1-10 FAIL)
   → market-state classifier (P1-12) → dynamic live universe (P1-12B)
-  → opportunity/setup engine (P1-13A: DISCOVERED→WATCH→DEVELOPING→CONFIRMED→
-     PAPER ENTRY→HOLD→DETERIORATING→INVALIDATED/EXIT with direction,
-     historical confidence, sample size, entry zone, stop, targets, horizon,
-     reasons, risks)
+→ opportunity/setup engine (P1-13A V0 IMPLEMENTED: DETECTED→WATCHING→
+     ACTIVE_RESEARCH→INVALIDATED/EXPIRED→UNKNOWN, research-only, no
+     entry/stop/targets/confidence; full lifecycle with paper entry
+     gate remains design-only for P1-13B+)
   → professional UX (P1-13B) → historical backtester (P1-14, replay without
      future leakage) → forward paper trading (P1-15, simulated live entry)
   → paper portfolio / dynamic exit (P1-16)

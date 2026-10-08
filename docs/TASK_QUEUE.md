@@ -24,7 +24,8 @@ Binding dependency — actual Phase 1 execution order (project decision
 P1-00 tooling → P1-01 transport validation → P1-02 persistence foundation
   → P1-03 minimal live dashboard → P1-04…P1-08 progressive raw features
   → P1-09 intelligence dashboard → P1-10 soak → P1-11 feature validation
-  → P1-12 classifier → P1-13 signal UI → P1-14 calibration review
+  → P1-12 classifier → P1-13A opportunity engine DONE
+  → P1-13B Professional Opportunities UX → P1-14 calibration review
 ```
 
 Persistence lands before raw features so the dashboard becomes useful
@@ -34,9 +35,14 @@ the dashboard exists. No classifier before raw-feature dashboard validation.
 
 ## ACTIVE_TASK
 
-- `P1-13A` OPPORTUNITY / SETUP ENGINE — next candidate (starts only on
-  explicit instruction). `P1-12B` is PASS (see COMPLETED). Do NOT start
-  P1-13A, soaks, or trading automatically.
+- `P1-13A` (2026-10-08) OPPORTUNITY / SETUP ENGINE V0: **PASS (corrective closeout P1-13A.1)**.
+  Observe-only engine (`opportunity.py`, rules v0.1.0): 5 families,
+  lifecycle DETECTED→WATCHING→ACTIVE_RESEARCH→INVALIDATED/EXPIRED→UNKNOWN,
+  cooldown 60 min (3_600_000 ms), TTL 24h, max 200 candidates / 500 events,
+  schema v8, fabrication guards, dashboard `/opportunities` + `/api/opportunities`.
+  58 tests (all pass), 554/554 suite, 120s observe COMPLETED (3 REVERSAL_WATCH candidates),
+  dashboard live v0.9.0 at http://127.0.0.1:8091. Spec: `docs/OPPORTUNITY_ENGINE_SPEC.md`.
+  Documentation discrepancies corrected (cooldown 60s→60 min, max 50→200).
 
 ## NEXT_TASKS (ordered, all Phase 1)
 - `P1-10R` PROLONGED ≥6H SOAK RE-RUN — P1-10 FAIL stays FAIL (truncated at

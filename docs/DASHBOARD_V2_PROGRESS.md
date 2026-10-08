@@ -90,8 +90,9 @@ NEXT AUTHORIZED SLICE
 ## Gate status
 
 P1-10R: RUNNING since 2026-10-08T00:48:20Z (do not disturb). P1-12:
-blocked pending P1-10R PASS. P1-12B: not implemented. Dashboard V2:
-architecture + static foundation (DASH-V2-00); no integration.
+blocked pending P1-10R PASS. P1-12B: DONE. P1-13A: DONE (backend
+opportunity engine + dashboard API). Dashboard V2: architecture +
+static foundation (DASH-V2-00/01/02); no integration.
 
 ## DASH-V2-02 - Professional Futures Market Movers (2026-10-07)
 

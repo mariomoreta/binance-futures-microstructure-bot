@@ -978,7 +978,7 @@ all feature rows — never recalculates states, never generates orders.
 - 5 setup families: MOMENTUM_CONTINUATION, IGNITION_WATCH,
   EXHAUSTION_WATCH, REVERSAL_WATCH, EXTREME_MOVE_RESEARCH.
 - Lifecycle: DETECTED → WATCHING → ACTIVE_RESEARCH → INVALIDATED/EXPIRED
-  → UNKNOWN. Cooldown 60s, TTL 24h, max 50 candidates / 500 events.
+  → UNKNOWN. Cooldown 60 min (code 3_600_000 ms), TTL 24h, max 200 candidates / 500 events.
 - Persistence schema v8: `opportunity_candidates` (REPLACE per key) +
   `opportunity_events` (append-only, rolling 500). All upgrade chains
   migrated through v8.

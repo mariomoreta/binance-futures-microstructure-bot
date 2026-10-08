@@ -43,6 +43,7 @@ independent frontend.
 | GET `/api/control/probe/status` | process registry fields plus `feed_health`, `latest_snapshot_age` | live registry + snapshot | Engine control |
 | POST `/api/control/probe/start` | started/pid/mode/duration/preset/evidence; 409 if running | mutation; nonce+local Origin/Host | System only through BFF |
 | POST `/api/control/probe/stop` | stopped/pid | mutation; same boundary | System only through BFF |
+| GET `/api/opportunities` | schema_version/rules_version/candidates[]/lifecycle_events[] | opportunity store v8 | P1-13A research surface |
 
 Current HTML routes are `/overview`, `/movers`, `/search`, `/symbol/{symbol}`
 and `/system`; they are not frontend data contracts.
