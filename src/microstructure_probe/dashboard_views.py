@@ -1,7 +1,9 @@
 """P1-09 view renderers: overview / movers / symbol / search / system.
 
-Read-only composition over DashboardState. No trading language anywhere:
-aggressive BUY/SELL appear only as trade-side flow labels.
+P1-13A adds a minimal research-only opportunities read surface
+(render_opportunities). Read-only composition over DashboardState.
+No trading language anywhere: aggressive BUY/SELL appear only as
+trade-side flow labels.
 """
 
 from __future__ import annotations
@@ -934,8 +936,9 @@ def render_system(state) -> str:
                     "/api/features/momentum", "/api/features/flow",
                     "/api/features/volume", "/api/features/book",
                     "/api/features/open-interest", "/api/features/vwap",
-                    "/api/features/volatility", "/api/features/structure",
-                    "/api/discovery", "/api/search?q=BTC")) + "</p>")
+                     "/api/features/volatility", "/api/features/structure",
+                     "/api/discovery", "/api/opportunities", "/opportunities",
+                     "/api/search?q=BTC")) + "</p>")
     if stream_rows is not None:
         body += ("<h2>Streams</h2><div class='scrollx'><table><tr><th>stream</th>"
                  "<th>messages</th><th>msg/s</th><th>max silence ms</th>"
@@ -1002,4 +1005,84 @@ def render_system(state) -> str:
               "</table>")
     return C.page("System — Binance Futures", "SYSTEM",
                   C.banner_html_fn(safety, health["status"]), body,
+                  engine_html=C.engine_control_html(state))
+
+
+def render_opportunities(state) -> str:
+    """Minimal P1-13A research-only read surface (NOT the P1-13B UX).
+
+    Lists setup candidates with family / symbol / direction / state /
+    reason / counterevidence / freshness / lifecycle / coverage / version.
+    Empty until the engine observes qualifying setups — never fabricated.
+    """
+    try:
+        cands_fn = getattr(state, "opportunity_candidates", None)
+        cands = cands_fn() if callable(cands_fn) else []
+    except Exception:
+        cands = []
+    try:
+        ev_fn = getattr(state, "opportunity_events", None)
+        events = ev_fn(limit=20) if callable(ev_fn) else []
+    except Exception:
+        events = []
+    body = ("<p class='warn'>RESEARCH ONLY — NOT A TRADE SIGNAL. "
+            "Setups worth studying; no entries, exits, stops, targets, "
+            "probabilities, or recommendations. Ranking is research "
+            "priority, not expected profit.</p>")
+    if not cands:
+        body += ("<h2>Setup candidates</h2>"
+                 "<p class='note'>No qualifying setups observed yet. "
+                 "Candidates appear here only when LIVE deep-data evidence "
+                 "meets the versioned family rules; discovery-only, stale, "
+                 "or incomplete inputs are excluded or marked "
+                 "INSUFFICIENT_DATA, never zero-filled.</p>")
+    else:
+        rows = []
+        for cand in sorted(
+                cands, key=lambda c: (
+                    -float((c.get("ranking") or {}).get("score", 0.0)),
+                    str(c.get("symbol", "")), str(c.get("setup_family", "")))):
+            if not isinstance(cand, dict):
+                continue
+            fresh = cand.get("data_freshness") if isinstance(
+                cand.get("data_freshness"), dict) else {}
+            rank = cand.get("ranking") if isinstance(
+                cand.get("ranking"), dict) else {}
+            hist = cand.get("historical_reference") if isinstance(
+                cand.get("historical_reference"), dict) else {}
+            rows.append(
+                f"<tr><td>{html.escape(str(cand.get('setup_family', '?')))}</td>"
+                f"<td>{html.escape(str(cand.get('symbol', '?')))}</td>"
+                f"<td>{html.escape(str(cand.get('direction', '?')))}</td>"
+                f"<td>{html.escape(str(cand.get('market_state', '?')))}</td>"
+                f"<td>{html.escape(str(cand.get('eligibility_reason', ''))[:160])}</td>"
+                f"<td>{html.escape('; '.join(str(e) for e in (cand.get('evidence_against') or [])[:2]) or 'none')}</td>"
+                f"<td>{html.escape(str(fresh.get('price_age_ms', '?')))} ms</td>"
+                f"<td>{html.escape(str(cand.get('lifecycle', '?')))}</td>"
+                f"<td>{html.escape(str(cand.get('capability_tier', '?')))}</td>"
+                f"<td>{html.escape(str(cand.get('rule_version', '?')))}</td>"
+                f"<td>{html.escape(str(rank.get('score', '?')))}</td>"
+                f"<td>{html.escape(str(hist.get('status', '?')))}</td></tr>")
+        body += ("<h2>Setup candidates (research priority order)</h2>"
+                 "<div class='scrollx'><table><tr><th>family</th><th>symbol</th>"
+                 "<th>direction</th><th>state</th><th>reason</th>"
+                 "<th>counterevidence</th><th>freshness</th><th>lifecycle</th>"
+                 "<th>coverage</th><th>version</th><th>priority</th>"
+                 "<th>history</th></tr>" + "".join(rows) + "</table></div>")
+    if events:
+        erows = "".join(
+            f"<tr><td>{html.escape(str(e.get('symbol', '?')))}</td>"
+            f"<td>{html.escape(str(e.get('family', '?')))}</td>"
+            f"<td>{html.escape(str(e.get('transition', '?')))}</td>"
+            f"<td>{html.escape(str(e.get('reason', ''))[:160])}</td></tr>"
+            for e in events if isinstance(e, dict))
+        body += ("<h2>Lifecycle transitions (recent)</h2>"
+                 "<div class='scrollx'><table><tr><th>symbol</th><th>family</th>"
+                 "<th>transition</th><th>reason</th></tr>" + erows + "</table></div>")
+    body += ("<p class='note'>Machine-readable: "
+             "<a href='/api/opportunities'>/api/opportunities</a> "
+             "(versioned candidate view-model for the future BFF; "
+             "the browser never computes setups).</p>")
+    return C.page("Opportunities (research) — Binance Futures", "SYSTEM",
+                  _banner(state), body,
                   engine_html=C.engine_control_html(state))

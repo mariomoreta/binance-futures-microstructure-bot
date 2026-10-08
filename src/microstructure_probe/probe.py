@@ -14,6 +14,7 @@ import websockets
 from .book import BookEngine
 from .classifier import ClassifierEngine
 from .clock import ClockSynchronizer, corrected_lag_ms
+from .opportunity import OpportunityEngine
 from .universe_manager import UniverseManager
 from .market_structure import MarketStructureEngine
 from .config import ProbeConfig
@@ -214,6 +215,10 @@ class MarketProbe:
         # never signals). Pure evaluation over peer-engine rows each summary;
         # memory (dwell/confirmation) restarts cold by design.
         self._classifier = ClassifierEngine(symbols=config.symbols)
+        # P1-13A: research opportunity engine v0 (setups worth studying,
+        # never orders or positions). Consumes classifications + the same
+        # peer-engine rows; lifecycle memory restarts cold by design.
+        self._opportunity = OpportunityEngine()
         # P1-12B: dynamic universe manager (selection + lifecycle only).
         # CORE is config.symbols (protected); HOT subscriptions ride managed
         # connections that never disturb the canonical pair.
@@ -299,6 +304,10 @@ class MarketProbe:
     def classifier(self) -> ClassifierEngine:
         """Market-state classifier v0 (P1-12A, observed states only)."""
         return self._classifier
+
+    def opportunity(self) -> OpportunityEngine:
+        """Research opportunity engine v0 (P1-13A, research setups only)."""
+        return self._opportunity
 
     @property
     def universe_manager(self) -> UniverseManager:
@@ -1056,6 +1065,9 @@ class MarketProbe:
                 self._returns.forget(symbol)
                 self._oi.forget(symbol)
                 self._classifier.forget(symbol)
+                self._opportunity.forget(
+                    symbol, "hot_demotion",
+                    int(self._wall_clock_ms()))
                 self._research.finalize_symbol(symbol)
                 self._universe.confirm_unsubscribed(
                     [symbol], int(self._wall_clock_ms()))
@@ -1078,6 +1090,7 @@ class MarketProbe:
                 self._structure.allow([symbol])
                 self._oi.allow([symbol])
                 self._classifier.allow([symbol])
+                self._opportunity.allow([symbol])
                 self.persistence.log_universe_event(
                     "hot_subscribed", symbol, reason or "desired-set change")
             except Exception as exc:
@@ -1338,6 +1351,9 @@ class MarketProbe:
             # P1-12A additive block: classifier eval counts + state census
             # (observed HYPOTHESIS states with evidence — never signals).
             "states": self._classifier.stats(),
+            # P1-13A additive block: opportunity eval counts + open census
+            # (research setups with evidence — never orders or positions).
+            "opportunities": self._opportunity.stats(),
             # P1-12B additive block: dynamic-universe desired set, lifecycle
             # states, slot/stream budgets, promotion/demotion counters.
             "universe": self._universe.stats(),
@@ -1511,6 +1527,76 @@ class MarketProbe:
                         trans.get("previous_direction"),
                         str(st.get("direction")),
                         "; ".join(str(r) for r in reasons[:3]))
+            # P1-13A (additive): evaluate the research opportunity engine
+            # over the same peer-engine rows + fresh classifications
+            # (states consumed, never recomputed). Research setups only —
+            # never orders, entries, or positions. Restart restarts
+            # lifecycle memory cold by design.
+            states_by_symbol = {str(s.get("symbol", "UNKNOWN")): dict(s)
+                                for s in states if isinstance(s, dict)}
+            dq_block = summary.get("dataQuality") if isinstance(
+                summary, dict) else {}
+            stale_streams = set((dq_block or {}).get("staleStreams") or [])
+            opp_bundles: dict[str, dict[str, Any]] = {}
+            for symbol, inp in state_inputs.items():
+                sym = str(symbol).upper()
+                degraded = any(sym.lower() in str(st)
+                               or str(st) == "!markPrice@arr@1s"
+                               for st in stale_streams)
+                price_row = inp.get("price") if isinstance(
+                    inp.get("price"), dict) else {}
+                opp_bundles[sym] = {
+                    "tier": inp.get("tier", "DISCOVERY"),
+                    "subscribed": inp.get("subscribed", False),
+                    "live": inp.get("live", False),
+                    "market": "%s USDT-M PERP" % sym,
+                    "classification": states_by_symbol.get(sym, {}),
+                    "features": {
+                        "price": price_row,
+                        "current_price": price_row.get("current_price"),
+                        "sample_age_ms": price_row.get("sample_age_ms"),
+                        "returns": inp.get("returns", {}),
+                        "momentum": inp.get("momentum", {}),
+                        "flow": inp.get("flow", {}),
+                        "book": inp.get("book", {}),
+                        "oi": inp.get("oi", {}),
+                        "structure": inp.get("structure", {}),
+                    },
+                    "transport": {
+                        "degraded": bool(degraded),
+                        "reason": ("stale mandatory stream; setup held "
+                                   "INSUFFICIENT_DATA" if degraded else "ok"),
+                    },
+                }
+            opp_start_ns = self._perf_counter_ns()
+            opp_matched, _opp_rejected = self._opportunity.evaluate(
+                opp_bundles, as_of_ms)
+            self._opportunity.note_eval_ms(
+                (self._perf_counter_ns() - opp_start_ns) / 1_000_000)
+            self.persistence.store_opportunity_candidates(opp_matched)
+            watch_need = int(self._opportunity.rules.get("watching_evals", 2))
+            active_need = int(self._opportunity.rules.get(
+                "active_research_evals", 3))
+            for cand in opp_matched:
+                evals = int(cand.get("evals_in_lifecycle", 1))
+                lifecycle = str(cand.get("lifecycle", ""))
+                if (lifecycle == "DETECTED" and evals <= 1) or (
+                        lifecycle == "WATCHING" and evals == watch_need) or (
+                        lifecycle == "ACTIVE_RESEARCH"
+                        and evals == active_need):
+                    self.persistence.log_opportunity_event(
+                        str(cand.get("candidate_key")),
+                        str(cand.get("symbol", "UNKNOWN")),
+                        str(cand.get("setup_family", "?")),
+                        "-> %s" % lifecycle,
+                        str(cand.get("lifecycle_reason", ""))[:300])
+            for closed in self._opportunity.drain_closed_events():
+                self.persistence.log_opportunity_event(
+                    str(closed.get("candidate_key")),
+                    str(closed.get("symbol", "UNKNOWN")),
+                    str(closed.get("family", "?")),
+                    "-> %s" % str(closed.get("transition", "?")),
+                    str(closed.get("reason", ""))[:300])
         except Exception as exc:
             LOGGER.warning(json.dumps({"kind": "persistence_error", "error": str(exc)}))
         LOGGER.info(json.dumps(summary, sort_keys=True, allow_nan=False))

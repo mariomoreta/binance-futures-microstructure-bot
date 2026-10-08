@@ -965,3 +965,32 @@ recorded P1-11A audit item (not fixed).
   localhost — safe to keep). Snapshot goes STALE without a running probe
   feed (honest chip); continuous freshness arrives with the P1-10 soak.
 - No secrets, keys, or account access exist or are needed.
+
+## P1-13A research opportunity/setup engine V0 — RESULT: PASS (2026-10-08)
+
+Observe-only engine that identifies market setups worthy of further
+research. Consumes existing P1-12A classifier output + P1-12B universe +
+all feature rows — never recalculates states, never generates orders.
+
+- Module: `src/microstructure_probe/opportunity.py`
+  (`OpportunityEngine`, `evaluate_symbol`, `historical_reference`,
+  `rank_candidates`). Rules version `v0.1.0`.
+- 5 setup families: MOMENTUM_CONTINUATION, IGNITION_WATCH,
+  EXHAUSTION_WATCH, REVERSAL_WATCH, EXTREME_MOVE_RESEARCH.
+- Lifecycle: DETECTED → WATCHING → ACTIVE_RESEARCH → INVALIDATED/EXPIRED
+  → UNKNOWN. Cooldown 60s, TTL 24h, max 50 candidates / 500 events.
+- Persistence schema v8: `opportunity_candidates` (REPLACE per key) +
+  `opportunity_events` (append-only, rolling 500). All upgrade chains
+  migrated through v8.
+- Probe integration: `opportunity()` property, demotion `forget()`,
+  promotion `allow()`, summary stats + event logging.
+- Dashboard: `/opportunities` page + `/api/opportunities` JSON endpoint
+  (v0.1.0 candidate view-model, RESEARCH ONLY banner).
+- Fabrication guards: no confidence/win-rate/expected-return/MFE/MAE;
+  no "X% probability" patterns; interpretation says
+  "research priority only — NOT expected profit".
+- Tests: 58 tests in `tests/test_opportunity.py` — all pass.
+  Full suite: 554 tests OK (553 baseline + 1 new).
+- Validation run (120s, observe): 3 REVERSAL_WATCH candidates stored
+  (DETECTED), 4 lifecycle events, 7 state rows, safety clean
+  (BOT_MODE=observe, 0 keys, 0 orders, 11/11 streams).

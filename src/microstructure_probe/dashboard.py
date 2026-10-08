@@ -5,10 +5,12 @@ visualization only: nothing here can trade, and the engine never consumes
 anything rendered here.
 
 Routes: / (→ /overview), /overview, /movers, /search, /symbol/:symbol,
-/system, /api/health, /api/snapshot, /api/features/returns,
+/system, /opportunities (P1-13A minimal research-only read surface),
+/api/health, /api/snapshot, /api/features/returns,
 /api/features/momentum, /api/features/flow, /api/features/volume,
 /api/features/book, /api/features/open-interest, /api/features/vwap,
 /api/features/volatility, /api/features/structure, /api/discovery,
+/api/opportunities (P1-13A versioned candidate view-model),
 /api/search, /api/symbol/:symbol/price[.csv].
 
 Presentation lives in dashboard_views.py / dashboard_components.py;
@@ -49,7 +51,7 @@ from .persistence import PersistenceStore
 CONTROL_NONCE_BYTES = 16
 LOCAL_HOSTS = ("127.0.0.1", "localhost")
 
-DASHBOARD_VERSION = "0.8.0"
+DASHBOARD_VERSION = "0.9.0"
 HOST = "127.0.0.1"
 PORT_CANDIDATES = [8091, 8092, 8093, 8094, 8095, 18091, 18765]
 PIDFILE_NAME = "dashboard.pid"
@@ -321,6 +323,24 @@ class DashboardState:
         """
         try:
             return self.store.latest_state_features()
+        except (OSError, sqlite3.Error):
+            return []
+
+    def opportunity_candidates(self) -> List[Dict[str, Any]]:
+        """Latest research setup candidates (P1-13A), or [] before eval.
+
+        Research setups with evidence — never orders, entries, positions,
+        or trade recommendations. Ranked research priority only.
+        """
+        try:
+            return self.store.latest_opportunity_candidates()
+        except (OSError, sqlite3.Error):
+            return []
+
+    def opportunity_events(self, limit: int = 20) -> List[Dict[str, Any]]:
+        """Recent candidate lifecycle transitions, newest first."""
+        try:
+            return self.store.opportunity_events(limit=limit)
         except (OSError, sqlite3.Error):
             return []
 
@@ -1468,7 +1488,10 @@ class DashboardHandler(BaseHTTPRequestHandler):
                        views.render_search(self.state, q).encode("utf-8"))
         elif path == "/system":
             self._send(200, "text/html; charset=utf-8",
-                       views.render_system(self.state).encode("utf-8"))
+                        views.render_system(self.state).encode("utf-8"))
+        elif path == "/opportunities":
+            self._send(200, "text/html; charset=utf-8",
+                        views.render_opportunities(self.state).encode("utf-8"))
         elif path.startswith("/symbol/"):
             raw = urllib.parse.unquote(path[len("/symbol/"):]).split("/")[0]
             if normalize_symbol(raw) is None:
@@ -1794,8 +1817,20 @@ class DashboardHandler(BaseHTTPRequestHandler):
                 self._send_json(400, {"error": "invalid symbol"})
                 return
             self._send_json(200, {"symbol": raw.upper(),
-                                  "events": self.state.event_symbol(raw),
-                                  "note": "RESEARCH ONLY — NOT A SIGNAL"})
+                                   "events": self.state.event_symbol(raw),
+                                   "note": "RESEARCH ONLY — NOT A SIGNAL"})
+        elif path == "/api/opportunities":
+            self._send_json(200, {
+                "generated_at": time.strftime(
+                    "%Y-%m-%dT%H:%M:%SZ", time.gmtime(time.time())),
+                "note": "RESEARCH ONLY — NOT A TRADE SIGNAL. "
+                        "Research-priority ranking, not expected profit. "
+                        "Versioned candidate view-model for the future BFF.",
+                "schema_version": 1,
+                "rules_version": "v0.1.0",
+                "candidates": self.state.opportunity_candidates(),
+                "lifecycle_events": self.state.opportunity_events(limit=20),
+            })
         else:
             self._send_json(404, {"error": f"unknown route {path}"})
 

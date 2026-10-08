@@ -246,72 +246,87 @@ class PersistenceStore:
             row = cursor.fetchone()
             current_version = int(row[0]) if row else 0
             
-            if current_version >= 7:
+            if current_version >= 8:
+                self._initialized = True
+                return
+
+            if current_version == 7:
+                # Migrate v7 -> v8: keep existing rows, add P1-13A tables.
+                self._create_schema_v8(cursor)
+                cursor.execute(
+                    "INSERT OR REPLACE INTO persistence_meta (key, value) VALUES (?, ?)",
+                    ("schema_version", "8")
+                )
                 self._initialized = True
                 return
 
             if current_version == 6:
-                # Migrate v6 -> v7: keep existing rows, add P1-12A tables.
+                # Migrate v6 -> v8: keep existing rows, add P1-12A + P1-13A tables.
                 self._create_schema_v7(cursor)
+                self._create_schema_v8(cursor)
                 cursor.execute(
                     "INSERT OR REPLACE INTO persistence_meta (key, value) VALUES (?, ?)",
-                    ("schema_version", "7")
+                    ("schema_version", "8")
                 )
                 self._initialized = True
                 return
 
             if current_version == 5:
-                # Migrate v5 -> v7: keep existing rows, add P1-08 + P1-12A tables.
+                # Migrate v5 -> v8: keep existing rows, add P1-08 + P1-12A + P1-13A tables.
                 self._create_schema_v6(cursor)
                 self._create_schema_v7(cursor)
+                self._create_schema_v8(cursor)
                 cursor.execute(
                     "INSERT OR REPLACE INTO persistence_meta (key, value) VALUES (?, ?)",
-                    ("schema_version", "7")
+                    ("schema_version", "8")
                 )
                 self._initialized = True
                 return
 
             if current_version == 4:
-                # Migrate v4 -> v7: keep existing rows, add P1-07 + P1-08 + P1-12A tables.
+                # Migrate v4 -> v8: keep existing rows, add P1-07 + P1-08 + P1-12A + P1-13A tables.
                 self._create_schema_v5(cursor)
                 self._create_schema_v6(cursor)
                 self._create_schema_v7(cursor)
+                self._create_schema_v8(cursor)
                 cursor.execute(
                     "INSERT OR REPLACE INTO persistence_meta (key, value) VALUES (?, ?)",
-                    ("schema_version", "7")
+                    ("schema_version", "8")
                 )
                 self._initialized = True
                 return
 
             if current_version == 3:
-                # Migrate v3 -> v7: keep existing rows, add P1-06..P1-08 + P1-12A tables.
+                # Migrate v3 -> v8: keep existing rows, add P1-06..P1-08 + P1-12A + P1-13A tables.
                 self._create_schema_v4(cursor)
                 self._create_schema_v5(cursor)
                 self._create_schema_v6(cursor)
                 self._create_schema_v7(cursor)
+                self._create_schema_v8(cursor)
                 cursor.execute(
                     "INSERT OR REPLACE INTO persistence_meta (key, value) VALUES (?, ?)",
-                    ("schema_version", "7")
+                    ("schema_version", "8")
                 )
                 self._initialized = True
                 return
 
             if current_version == 2:
-                # Migrate v2 -> v7: keep existing rows, add P1-05..P1-08 + P1-12A tables.
+                # Migrate v2 -> v8: keep existing rows, add P1-05..P1-08 + P1-12A + P1-13A tables.
                 self._create_schema_v3(cursor)
                 self._create_schema_v4(cursor)
                 self._create_schema_v5(cursor)
                 self._create_schema_v6(cursor)
                 self._create_schema_v7(cursor)
+                self._create_schema_v8(cursor)
                 cursor.execute(
                     "INSERT OR REPLACE INTO persistence_meta (key, value) VALUES (?, ?)",
-                    ("schema_version", "7")
+                    ("schema_version", "8")
                 )
                 self._initialized = True
                 return
 
             if current_version == 1:
-                # Migrate v1 -> v7: keep existing rows, add P1-04..P1-08 + P1-12A tables.
+                # Migrate v1 -> v8: keep existing rows, add P1-04..P1-08 + P1-12A + P1-13A tables.
                 self._ensure_snapshot_columns(cursor)
                 self._create_schema_v2(cursor)
                 self._create_schema_v3(cursor)
@@ -319,9 +334,10 @@ class PersistenceStore:
                 self._create_schema_v5(cursor)
                 self._create_schema_v6(cursor)
                 self._create_schema_v7(cursor)
+                self._create_schema_v8(cursor)
                 cursor.execute(
                     "INSERT OR REPLACE INTO persistence_meta (key, value) VALUES (?, ?)",
-                    ("schema_version", "7")
+                    ("schema_version", "8")
                 )
                 self._initialized = True
                 return
@@ -340,11 +356,13 @@ class PersistenceStore:
             self._create_schema_v6(cursor)
             # Create tables for schema v7
             self._create_schema_v7(cursor)
+            # Create tables for schema v8
+            self._create_schema_v8(cursor)
 
             # Set schema version
             cursor.execute(
                 "INSERT OR REPLACE INTO persistence_meta (key, value) VALUES (?, ?)",
-                ("schema_version", "7")
+                ("schema_version", "8")
             )
 
             self._initialized = True
@@ -556,6 +574,42 @@ class PersistenceStore:
         cursor.execute("""
             CREATE INDEX IF NOT EXISTS idx_state_transitions_symbol_ts
             ON state_transitions(symbol, timestamp DESC)
+        """)
+
+    def _create_schema_v8(self, cursor: sqlite3.Cursor) -> None:
+        """P1-13A opportunity tables: latest setup candidates + event log.
+
+        ``opportunity_candidates`` is one REPLACE row per candidate_key
+        (research setups with evidence — never orders, entries, or
+        positions). Restarts re-evaluate from fresh features; lifecycle
+        memory restarts cold by design.
+        ``opportunity_events`` is an append-only bounded log (500 rows) of
+        lifecycle transitions for audit.
+        """
+        cursor.execute("""
+            CREATE TABLE IF NOT EXISTS opportunity_candidates (
+                candidate_key TEXT PRIMARY KEY,
+                symbol TEXT NOT NULL,
+                updated_ms INTEGER NOT NULL,
+                candidate_json TEXT NOT NULL
+            )
+        """)
+
+        cursor.execute("""
+            CREATE TABLE IF NOT EXISTS opportunity_events (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                timestamp REAL NOT NULL,
+                candidate_key TEXT NOT NULL,
+                symbol TEXT NOT NULL,
+                family TEXT NOT NULL,
+                transition TEXT NOT NULL,
+                reason TEXT
+            )
+        """)
+
+        cursor.execute("""
+            CREATE INDEX IF NOT EXISTS idx_opportunity_events_symbol_ts
+            ON opportunity_events(symbol, timestamp DESC)
         """)
 
     def _create_schema_v1(self, cursor: sqlite3.Cursor) -> None:
@@ -1513,6 +1567,96 @@ class PersistenceStore:
                      "reason": row[6] or ""}
                     for row in cursor.fetchall()]
 
+    def store_opportunity_candidates(
+            self, candidates: List[Dict[str, Any]]) -> None:
+        """Replace the latest setup-candidate record per candidate_key.
+
+        One row per candidate_key: inherently bounded. Synchronous; the
+        probe calls this from the infrequent summary path. Records are
+        research setups with evidence — never orders, entries, or
+        positions. Candidates without a key (rejections) are never
+        stored; the caller persists lifecycle events for those only when
+        it needs an audit trail.
+        """
+        rows = [c for c in (candidates or [])
+                if isinstance(c, dict) and c.get("candidate_key")]
+        if not rows:
+            return
+        if not self._initialized:
+            self.init_db()
+        now_ms = int(time.time() * 1000)
+        with self._get_cursor() as cursor:
+            cursor.executemany(
+                "INSERT OR REPLACE INTO opportunity_candidates (candidate_key,"
+                " symbol, updated_ms, candidate_json)"
+                " VALUES (?, ?, ?, ?)",
+                [(str(c.get("candidate_key")),
+                  str(c.get("symbol", "UNKNOWN")).upper(), now_ms,
+                  _safe_json(c)) for c in rows],
+            )
+
+    def latest_opportunity_candidates(self) -> List[Dict[str, Any]]:
+        """Latest setup-candidate record per key, ordered by symbol/family."""
+        if not self._initialized:
+            self.init_db()
+        with self._get_cursor() as cursor:
+            cursor.execute(
+                "SELECT candidate_json FROM opportunity_candidates"
+                " ORDER BY symbol, candidate_key")
+            out = []
+            for (blob,) in cursor.fetchall():
+                try:
+                    parsed = json.loads(blob)
+                except (json.JSONDecodeError, TypeError):
+                    continue
+                if isinstance(parsed, dict):
+                    out.append(parsed)
+            return out
+
+    def log_opportunity_event(self, candidate_key: str, symbol: str,
+                              family: str, transition: str,
+                              reason: str = "") -> None:
+        """Append one candidate lifecycle transition (bounded log, 500)."""
+        if not self._initialized:
+            self.init_db()
+        with self._get_cursor() as cursor:
+            cursor.execute(
+                "INSERT INTO opportunity_events (timestamp, candidate_key,"
+                " symbol, family, transition, reason)"
+                " VALUES (?, ?, ?, ?, ?, ?)",
+                (time.time(), str(candidate_key), str(symbol).upper(),
+                 str(family), str(transition), str(reason or "")),
+            )
+            self._apply_retention_policy_capped(cursor)
+
+    def _apply_retention_policy_capped(
+            self, cursor: sqlite3.Cursor) -> None:
+        """Bound the opportunity event log to the newest 500 rows."""
+        cursor.execute("""
+            DELETE FROM opportunity_events
+            WHERE id NOT IN (
+                SELECT id FROM opportunity_events
+                ORDER BY timestamp DESC
+                LIMIT 500
+            )
+        """)
+
+    def opportunity_events(self, limit: int = 50) -> List[Dict[str, Any]]:
+        """Recent candidate lifecycle transitions, newest first."""
+        if not self._initialized:
+            self.init_db()
+        with self._get_cursor() as cursor:
+            cursor.execute(
+                "SELECT timestamp, candidate_key, symbol, family,"
+                " transition, reason FROM opportunity_events"
+                " ORDER BY id DESC LIMIT ?",
+                (max(int(limit), 1),),
+            )
+            return [{"timestamp": row[0], "candidate_key": row[1],
+                     "symbol": row[2], "family": row[3],
+                     "transition": row[4], "reason": row[5] or ""}
+                    for row in cursor.fetchall()]
+
     def _apply_retention_policy(
         self, 
         cursor: sqlite3.Cursor, 
@@ -1689,7 +1833,8 @@ class PersistenceStore:
                               "flow_features", "flow_buckets",
                               "book_features", "oi_samples", "oi_features",
                               "structure_features", "state_features",
-                              "state_transitions"):
+                              "state_transitions", "opportunity_candidates",
+                              "opportunity_events"):
                     cursor.execute(f"SELECT COUNT(*) FROM {table}")
                     info["rows"][table] = cursor.fetchone()[0]
         except Exception:

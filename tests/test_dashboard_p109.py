@@ -696,7 +696,7 @@ class UiRegressionTest(_ServerCase):
         self.assertNotIn("!forceOrder@arr", dq["staleStreams"])
 
     def test_dashboard_version(self) -> None:
-        self.assertEqual(dashboard.DASHBOARD_VERSION, "0.8.0")
+        self.assertEqual(dashboard.DASHBOARD_VERSION, "0.9.0")
 
 
 class FeatureApiRegressionTest(_ServerCase):
