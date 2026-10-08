@@ -198,7 +198,6 @@ class PersistenceStore:
                 check_same_thread=False,  # Allow multi-thread access
                 timeout=30.0
             )
-            # Enable foreign key constraints
             self._connection.execute("PRAGMA foreign_keys = ON")
         return self._connection
     
@@ -215,7 +214,7 @@ class PersistenceStore:
             try:
                 yield cursor
                 conn.commit()
-            except Exception:
+            except Exception as exc:
                 conn.rollback()
                 raise
             finally:
@@ -246,87 +245,105 @@ class PersistenceStore:
             row = cursor.fetchone()
             current_version = int(row[0]) if row else 0
             
-            if current_version >= 8:
+            if current_version >= 9:
+                self._initialized = True
+                return
+
+            if current_version == 8:
+                # Migrate v8 -> v9: add prospective setup tables.
+                self._create_schema_v9(cursor)
+                cursor.execute(
+                    "INSERT OR REPLACE INTO persistence_meta (key, value) VALUES (?, ?)",
+                    ("schema_version", "9")
+                )
                 self._initialized = True
                 return
 
             if current_version == 7:
-                # Migrate v7 -> v8: keep existing rows, add P1-13A tables.
+                # Migrate v7 -> v9: keep existing rows, add P1-13A + P1-14A tables.
                 self._create_schema_v8(cursor)
+                self._create_schema_v9(cursor)
                 cursor.execute(
                     "INSERT OR REPLACE INTO persistence_meta (key, value) VALUES (?, ?)",
-                    ("schema_version", "8")
+                    ("schema_version", "9")
                 )
                 self._initialized = True
                 return
 
             if current_version == 6:
-                # Migrate v6 -> v8: keep existing rows, add P1-12A + P1-13A tables.
+                # Migrate v6 -> v9: keep existing rows, add P1-12A + P1-13A + P1-14A tables.
                 self._create_schema_v7(cursor)
                 self._create_schema_v8(cursor)
+                self._create_schema_v9(cursor)
                 cursor.execute(
                     "INSERT OR REPLACE INTO persistence_meta (key, value) VALUES (?, ?)",
-                    ("schema_version", "8")
+                    ("schema_version", "9")
                 )
+                self._initialized = True
+                return
                 self._initialized = True
                 return
 
             if current_version == 5:
-                # Migrate v5 -> v8: keep existing rows, add P1-08 + P1-12A + P1-13A tables.
+                # Migrate v5 -> v9: keep existing rows, add P1-08 + P1-12A + P1-13A + P1-14A tables.
                 self._create_schema_v6(cursor)
                 self._create_schema_v7(cursor)
                 self._create_schema_v8(cursor)
+                self._create_schema_v9(cursor)
                 cursor.execute(
                     "INSERT OR REPLACE INTO persistence_meta (key, value) VALUES (?, ?)",
-                    ("schema_version", "8")
+                    ("schema_version", "9")
                 )
                 self._initialized = True
                 return
 
             if current_version == 4:
-                # Migrate v4 -> v8: keep existing rows, add P1-07 + P1-08 + P1-12A + P1-13A tables.
+                # Migrate v4 -> v9: keep existing rows, add P1-07 + P1-08 + P1-12A + P1-13A + P1-14A tables.
                 self._create_schema_v5(cursor)
                 self._create_schema_v6(cursor)
                 self._create_schema_v7(cursor)
                 self._create_schema_v8(cursor)
+                self._create_schema_v9(cursor)
                 cursor.execute(
                     "INSERT OR REPLACE INTO persistence_meta (key, value) VALUES (?, ?)",
-                    ("schema_version", "8")
+                    ("schema_version", "9")
                 )
                 self._initialized = True
                 return
 
             if current_version == 3:
-                # Migrate v3 -> v8: keep existing rows, add P1-06..P1-08 + P1-12A + P1-13A tables.
+                # Migrate v3 -> v9: keep existing rows, add P1-06..P1-08 + P1-12A + P1-13A + P1-14A tables.
                 self._create_schema_v4(cursor)
                 self._create_schema_v5(cursor)
                 self._create_schema_v6(cursor)
                 self._create_schema_v7(cursor)
                 self._create_schema_v8(cursor)
+                self._create_schema_v9(cursor)
                 cursor.execute(
                     "INSERT OR REPLACE INTO persistence_meta (key, value) VALUES (?, ?)",
-                    ("schema_version", "8")
+                    ("schema_version", "9")
                 )
                 self._initialized = True
                 return
 
             if current_version == 2:
-                # Migrate v2 -> v8: keep existing rows, add P1-05..P1-08 + P1-12A + P1-13A tables.
+                # Migrate v2 -> v9: keep existing rows, add P1-05..P1-08 + P1-12A + P1-13A + P1-14A tables.
                 self._create_schema_v3(cursor)
                 self._create_schema_v4(cursor)
                 self._create_schema_v5(cursor)
                 self._create_schema_v6(cursor)
                 self._create_schema_v7(cursor)
                 self._create_schema_v8(cursor)
+                self._create_schema_v9(cursor)
                 cursor.execute(
                     "INSERT OR REPLACE INTO persistence_meta (key, value) VALUES (?, ?)",
-                    ("schema_version", "8")
+                    ("schema_version", "9")
                 )
                 self._initialized = True
                 return
 
             if current_version == 1:
-                # Migrate v1 -> v8: keep existing rows, add P1-04..P1-08 + P1-12A + P1-13A tables.
+                # Migrate v1 -> v9: keep existing rows, add P1-04..P1-08 + P1-12A + P1-13A + P1-14A tables.
                 self._ensure_snapshot_columns(cursor)
                 self._create_schema_v2(cursor)
                 self._create_schema_v3(cursor)
@@ -335,10 +352,13 @@ class PersistenceStore:
                 self._create_schema_v6(cursor)
                 self._create_schema_v7(cursor)
                 self._create_schema_v8(cursor)
+                self._create_schema_v9(cursor)
                 cursor.execute(
                     "INSERT OR REPLACE INTO persistence_meta (key, value) VALUES (?, ?)",
-                    ("schema_version", "8")
+                    ("schema_version", "9")
                 )
+                self._initialized = True
+                return
                 self._initialized = True
                 return
 
@@ -356,13 +376,15 @@ class PersistenceStore:
             self._create_schema_v6(cursor)
             # Create tables for schema v7
             self._create_schema_v7(cursor)
-            # Create tables for schema v8
+             # Create tables for schema v8
             self._create_schema_v8(cursor)
+            # Create tables for schema v9
+            self._create_schema_v9(cursor)
 
             # Set schema version
             cursor.execute(
                 "INSERT OR REPLACE INTO persistence_meta (key, value) VALUES (?, ?)",
-                ("schema_version", "8")
+                ("schema_version", "9")
             )
 
             self._initialized = True
@@ -610,6 +632,56 @@ class PersistenceStore:
         cursor.execute("""
             CREATE INDEX IF NOT EXISTS idx_opportunity_events_symbol_ts
             ON opportunity_events(symbol, timestamp DESC)
+        """)
+
+    def _create_schema_v9(self, cursor: sqlite3.Cursor) -> None:
+        """P1-14A prospective setup evaluation tables.
+
+        ``prospective_setups`` stores registered opportunity setups
+        at first DETECTED (one REPLACE row per candidate_key).
+        ``prospective_outcomes`` is an append-only bounded log (500
+        rows per setup) of forward outcome observations at versioned
+        horizons (1m/5m/15m/1h/4h).
+        """
+        cursor.execute("""
+            CREATE TABLE IF NOT EXISTS prospective_setups (
+                candidate_key TEXT PRIMARY KEY,
+                symbol TEXT NOT NULL,
+                family TEXT,
+                direction TEXT,
+                market_state TEXT,
+                rules_version TEXT,
+                capability_tier TEXT,
+                detected_at_ms INTEGER NOT NULL,
+                score REAL,
+                setup_json TEXT NOT NULL,
+                lifecycle TEXT
+            )
+        """)
+
+        cursor.execute("""
+            CREATE TABLE IF NOT EXISTS prospective_outcomes (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                candidate_key TEXT NOT NULL,
+                symbol TEXT NOT NULL,
+                horizon TEXT NOT NULL,
+                observed_at_ms INTEGER NOT NULL,
+                mark_return_pct REAL,
+                detected_price REAL,
+                current_price REAL,
+                outcome_state TEXT NOT NULL,
+                reason TEXT,
+                UNIQUE(candidate_key, horizon, observed_at_ms)
+            )
+        """)
+
+        cursor.execute("""
+            CREATE INDEX IF NOT EXISTS idx_pros_outcomes_key_horizon
+            ON prospective_outcomes(candidate_key, horizon, observed_at_ms DESC)
+        """)
+        cursor.execute("""
+            CREATE INDEX IF NOT EXISTS idx_pros_outcomes_symbol_horizon
+            ON prospective_outcomes(symbol, horizon, observed_at_ms DESC)
         """)
 
     def _create_schema_v1(self, cursor: sqlite3.Cursor) -> None:
@@ -1814,6 +1886,169 @@ class PersistenceStore:
             
             return observations
     
+    def store_prospective_setup(
+        self, candidate_key: str, setup_record: Dict[str, Any],
+        detected_at_ms: int
+    ) -> None:
+        """Register (REPLACE) a prospective setup at first detection."""
+        if not self._initialized:
+            self.init_db()
+        with self._get_cursor() as cursor:
+            cursor.execute(
+                "INSERT OR REPLACE INTO prospective_setups"
+                " (candidate_key, symbol, family, direction,"
+                " market_state, rules_version, capability_tier,"
+                " detected_at_ms, score, setup_json, lifecycle)"
+                " VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                (
+                    str(candidate_key),
+                    str(setup_record.get("symbol", "")).upper(),
+                    setup_record.get("setup_family"),
+                    setup_record.get("direction"),
+                    setup_record.get("market_state"),
+                    setup_record.get("rules_version"),
+                    setup_record.get("capability_tier"),
+                    int(detected_at_ms),
+                    setup_record.get("score"),
+                    json.dumps(setup_record, default=str),
+                    setup_record.get("lifecycle"),
+                ),
+            )
+
+    def prospective_setups(self) -> List[Dict[str, Any]]:
+        """All registered prospective setups."""
+        if not self._initialized:
+            self.init_db()
+        with self._get_cursor() as cursor:
+            cursor.execute(
+                "SELECT candidate_key, symbol, family, direction,"
+                " market_state, rules_version, capability_tier,"
+                " detected_at_ms, score, setup_json, lifecycle"
+                " FROM prospective_setups"
+                " ORDER BY detected_at_ms DESC"
+            )
+            rows = cursor.fetchall()
+        result = []
+        for row in rows:
+            try:
+                setup_json = json.loads(row[9]) if row[9] else {}
+            except (json.JSONDecodeError, TypeError):
+                setup_json = {}
+            result.append({
+                "candidate_key": row[0],
+                "symbol": row[1],
+                "family": row[2],
+                "direction": row[3],
+                "market_state": row[4],
+                "rules_version": row[5],
+                "capability_tier": row[6],
+                "detected_at_ms": row[7],
+                "score": row[8],
+                "setup_json": setup_json,
+                "lifecycle": row[10],
+            })
+        return result
+
+    def store_prospective_outcome(
+        self, candidate_key: str, symbol: str, horizon: str,
+        observed_at_ms: int, outcome: Dict[str, Any]
+    ) -> None:
+        """Append one forward outcome observation (idempotent per key)."""
+        if not self._initialized:
+            self.init_db()
+        with self._get_cursor() as cursor:
+            cursor.execute(
+                "INSERT OR REPLACE INTO prospective_outcomes"
+                " (candidate_key, symbol, horizon, observed_at_ms,"
+                " mark_return_pct, detected_price, current_price,"
+                " outcome_state, reason)"
+                " VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                (
+                    str(candidate_key),
+                    str(symbol).upper(),
+                    str(horizon),
+                    int(observed_at_ms),
+                    outcome.get("mark_return_pct"),
+                    outcome.get("detected_price"),
+                    outcome.get("current_price"),
+                    outcome.get("outcome_state"),
+                    outcome.get("reason", ""),
+                ),
+            )
+            cursor.execute(
+                "DELETE FROM prospective_outcomes"
+                " WHERE id NOT IN ("
+                "   SELECT id FROM prospective_outcomes"
+                "   WHERE candidate_key = ?"
+                "   ORDER BY observed_at_ms DESC"
+                "   LIMIT 500"
+                ")",
+                (str(candidate_key),),
+            )
+
+    def prospective_outcomes(
+        self, candidate_key: Optional[str] = None,
+        horizon: Optional[str] = None, limit: int = 200
+    ) -> List[Dict[str, Any]]:
+        """Forward outcome observations, newest first."""
+        if not self._initialized:
+            self.init_db()
+        with self._get_cursor() as cursor:
+            sql = (
+                "SELECT candidate_key, symbol, horizon, observed_at_ms,"
+                " mark_return_pct, detected_price, current_price,"
+                " outcome_state, reason FROM prospective_outcomes"
+            )
+            params: List[Any] = []
+            clauses: List[str] = []
+            if candidate_key:
+                clauses.append("candidate_key = ?")
+                params.append(str(candidate_key))
+            if horizon:
+                clauses.append("horizon = ?")
+                params.append(str(horizon))
+            if clauses:
+                sql += " WHERE " + " AND ".join(clauses)
+            sql += " ORDER BY observed_at_ms DESC LIMIT ?"
+            params.append(max(int(limit), 1))
+            cursor.execute(sql, params)
+            rows = cursor.fetchall()
+        return [
+            {
+                "candidate_key": row[0],
+                "symbol": row[1],
+                "horizon": row[2],
+                "observed_at_ms": row[3],
+                "mark_return_pct": row[4],
+                "detected_price": row[5],
+                "current_price": row[6],
+                "outcome_state": row[7],
+                "reason": row[8] or "",
+            }
+            for row in rows
+        ]
+
+    def research_retention_cleanup(
+        self, retention_days: Dict[str, int]
+    ) -> Dict[str, int]:
+        """Bounded retention cleanup for prospective tables."""
+        cleaned: Dict[str, int] = {}
+        with self._get_cursor() as cursor:
+            for table, days in retention_days.items():
+                if table not in ("prospective_setups", "prospective_outcomes"):
+                    continue
+                table_cutoff = int(
+                    (time.time() - 86400 * max(int(days), 1)) * 1000
+                )
+                cursor.execute(
+                    f"DELETE FROM {table} WHERE detected_at_ms < ?"
+                    if table == "prospective_setups"
+                    else f"DELETE FROM {table} WHERE observed_at_ms < ?",
+                    (table_cutoff,),
+                )
+                cleaned[table] = cursor.rowcount
+        return cleaned
+
     def storage_info(self) -> Dict[str, Any]:
         """Storage facts for the dashboard system page (path, size, row counts)."""
         info: Dict[str, Any] = {
@@ -1834,7 +2069,8 @@ class PersistenceStore:
                               "book_features", "oi_samples", "oi_features",
                               "structure_features", "state_features",
                               "state_transitions", "opportunity_candidates",
-                              "opportunity_events"):
+                              "opportunity_events", "prospective_setups",
+                              "prospective_outcomes"):
                     cursor.execute(f"SELECT COUNT(*) FROM {table}")
                     info["rows"][table] = cursor.fetchone()[0]
         except Exception:

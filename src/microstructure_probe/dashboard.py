@@ -386,6 +386,39 @@ class DashboardState:
                "last_write_at": live.get("last_write_at")}
         return out
 
+    def prospective_status(self) -> Dict[str, Any]:
+        """P1-14A prospective evaluator health (read-only)."""
+        live: Dict[str, Any] = {}
+        try:
+            snap = self.snapshot()
+            if isinstance(snap, dict) and isinstance(
+                    snap.get("prospective"), dict):
+                live = dict(snap["prospective"])
+        except Exception:
+            live = {}
+        setups: List[Dict[str, Any]] = []
+        outcomes: List[Dict[str, Any]] = []
+        try:
+            from .persistence import PersistenceStore
+            store = PersistenceStore()
+            setups = store.prospective_setups()
+            outcomes = store.prospective_outcomes(limit=50)
+        except Exception:
+            pass
+        return {
+            "enabled": True,
+            "state": str(live.get("state", "UNKNOWN")),
+            "registered_setups": live.get("registered_setups", 0),
+            "writes": live.get("writes", 0),
+            "drops": live.get("drops", 0),
+            "errors": live.get("errors", 0),
+            "inflight": live.get("inflight", 0),
+            "high_water": live.get("high_water", 0),
+            "setup_count": len(setups),
+            "outcome_count": len(outcomes),
+            "latest_outcomes": outcomes[:10],
+        }
+
     def event_studies(self) -> List[Dict[str, Any]]:
         """Stored event-study summaries per definition (P1-11C, read-only)."""
         try:
@@ -1830,6 +1863,16 @@ class DashboardHandler(BaseHTTPRequestHandler):
                 "rules_version": "v0.1.0",
                 "candidates": self.state.opportunity_candidates(),
                 "lifecycle_events": self.state.opportunity_events(limit=20),
+            })
+        elif path == "/api/prospective":
+            self._send_json(200, {
+                "generated_at": time.strftime(
+                    "%Y-%m-%dT%H:%M:%SZ", time.gmtime(time.time())),
+                "note": "RESEARCH ONLY — NOT A TRADE SIGNAL. "
+                        "Forward outcome observation for P1-13A setups. "
+                        "Horizons: 1m/5m/15m/1h/4h.",
+                "schema_version": 9,
+                "prospective": self.state.prospective_status(),
             })
         else:
             self._send_json(404, {"error": f"unknown route {path}"})

@@ -966,6 +966,33 @@ recorded P1-11A audit item (not fixed).
   feed (honest chip); continuous freshness arrives with the P1-10 soak.
 - No secrets, keys, or account access exist or are needed.
 
+## P1-14A prospective setup evaluation V0 — RESULT: PASS (2026-10-08)
+
+Forward outcome observation for P1-13A setups. Registers candidates at first DETECTED
+and evaluates mark-price returns at versioned horizons (1m/5m/15m/1h/4h).
+Research only — no P&L, no lookahead, no probabilities.
+
+- Module: `src/microstructure_probe/prospective.py` (`ProspectiveRecorder`).
+  Idempotent, restart-safe, bounded queue (default 1000), drops telemetry.
+- Horizons: 1m/5m/15m/1h/4h (ms). Maturity checked strictly after
+  `detected_at_ms + horizon_ms` — no lookahead.
+- Outcome states: COMPLETE / PENDING / INSUFFICIENT_HISTORY /
+  INVALID_GAP / PARTIAL. Missing ≠ zero; incomplete never forced COMPLETE.
+- Persistence schema v9 (additive): `prospective_setups` (REPLACE per key)
+  + `prospective_outcomes` (append-only, unique (key, horizon, observed_at_ms),
+  rolling 500 per setup). Migration chains v1–v9 all upgraded.
+- Retention cleanup: `research_retention_cleanup(days)` — hourly max,
+  default 90 days for both tables.
+- Probe integration: registers in opportunity cycle (DETECTED + evals<=1),
+  observes with current mark_price at summary tick. State exposed in
+  `snapshot()["prospective"]`.
+- Dashboard: `/api/prospective` (schema_version 9, RESEARCH ONLY banner,
+  live status + latest 10 outcomes).
+- Fabrication guards: no MFE/MAE, no win-rate, no "X% probability"
+  patterns; interpretation says "research priority only — NOT expected profit".
+- Tests: 35 tests in `tests/test_prospective.py` — all pass.
+  Full suite: 554/554 OK (519 baseline + 35 new).
+
 ## P1-13A research opportunity/setup engine V0 — RESULT: PASS (2026-10-08)
 
 Observe-only engine that identifies market setups worthy of further

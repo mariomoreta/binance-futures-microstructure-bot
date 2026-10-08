@@ -33,6 +33,7 @@ from .metrics import order_book_imbalance, spread_bps
 from .momentum import RANK_METRICS, VELOCITY_HORIZONS, RankTracker
 from .open_interest import OpenInterestPoller, OpenInterestTracker
 from .persistence import PersistenceStore, get_persistence_store
+from .prospective import ProspectiveRecorder
 from .research_recorder import ResearchRecorder
 from .returns import ReturnEngine, SymbolPriceSeries
 from .telemetry import RunningDistribution
@@ -219,6 +220,13 @@ class MarketProbe:
         # never orders or positions). Consumes classifications + the same
         # peer-engine rows; lifecycle memory restarts cold by design.
         self._opportunity = OpportunityEngine()
+        # P1-14A: prospective setup evaluator — registers setups at
+        # first DETECTED, observes forward outcomes at versioned
+        # horizons. Research only; no orders, no P&L claims.
+        self._prospective = ProspectiveRecorder(
+            db_path=getattr(config, "db_path", None),
+            enabled=True,
+        )
         # P1-12B: dynamic universe manager (selection + lifecycle only).
         # CORE is config.symbols (protected); HOT subscriptions ride managed
         # connections that never disturb the canonical pair.
@@ -391,6 +399,11 @@ class MarketProbe:
             self._research.start()
         except Exception:
             pass
+        # P1-14A: prospective recorder starts naturally with MarketProbe.
+        try:
+            self._prospective.start()
+        except Exception:
+            pass
         LOGGER.info(
             json.dumps(
                 {
@@ -432,6 +445,11 @@ class MarketProbe:
             # P1-11C: recorder drains on exit (partials marked, never complete).
             try:
                 self._research.stop_and_drain(timeout=10.0)
+            except Exception:
+                pass
+            # P1-14A: prospective recorder drains on exit.
+            try:
+                self._prospective.stop_and_drain(timeout=10.0)
             except Exception:
                 pass
             self.log_summary(final=True)
@@ -1357,10 +1375,13 @@ class MarketProbe:
             # P1-12B additive block: dynamic-universe desired set, lifecycle
             # states, slot/stream budgets, promotion/demotion counters.
             "universe": self._universe.stats(),
-            # P1-11C additive block: prospective recorder health (never
-            # conflated with engine/feed health). Failure-isolated.
-            "research": self._research.status(),
-        }
+             # P1-11C additive block: prospective recorder health (never
+             # conflated with engine/feed health). Failure-isolated.
+             "research": self._research.status(),
+             # P1-14A additive block: prospective setup evaluator
+             # (forward outcome observation for research setups).
+             "prospective": self._prospective.status(),
+         }
 
     @staticmethod
     def _snapshot_distributions(
@@ -1597,6 +1618,42 @@ class MarketProbe:
                     str(closed.get("family", "?")),
                     "-> %s" % str(closed.get("transition", "?")),
                     str(closed.get("reason", ""))[:300])
+            # P1-14A: register DETECTED setups (with detection mark price),
+            # observe forward outcomes. Registration is per-candidate_key,
+            # so re-registering the same episode is idempotent.
+            for cand in opp_matched:
+                sym = str(cand.get("symbol", "")).upper()
+                price_row = opp_bundles.get(sym, {}).get(
+                    "features", {}).get("price", {})
+                mark = price_row.get("current_price")
+                lifecycle = str(cand.get("lifecycle", ""))
+                evals = int(cand.get("evals_in_lifecycle", 1))
+                if lifecycle == "DETECTED" and evals <= 1:
+                    self._prospective.register_setup(
+                        str(cand.get("candidate_key")),
+                        {
+                            "setup_family": cand.get("setup_family"),
+                            "direction": cand.get("direction"),
+                            "market_state": cand.get("market_state"),
+                            "rule_version": cand.get("rule_version"),
+                            "capability_tier": cand.get("capability_tier"),
+                            "symbol": cand.get("symbol"),
+                            "ranking": cand.get("ranking", {}),
+                            "lifecycle": lifecycle,
+                            "evidence_for": cand.get("evidence_for", []),
+                            "evidence_against": cand.get(
+                                "evidence_against", []),
+                            "missing_features": cand.get(
+                                "missing_features", []),
+                            "data_freshness": cand.get(
+                                "data_freshness", {}),
+                            "detect_price": float(mark) if mark is not None else None,
+                        },
+                        as_of_ms,
+                    )
+                if mark is not None:
+                    self._prospective.observe(
+                        sym, as_of_ms, float(mark))
         except Exception as exc:
             LOGGER.warning(json.dumps({"kind": "persistence_error", "error": str(exc)}))
         LOGGER.info(json.dumps(summary, sort_keys=True, allow_nan=False))

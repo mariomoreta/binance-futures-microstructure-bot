@@ -235,6 +235,39 @@ it does not replace them. Authority stays where it was recorded
 - **Open questions:** none.
 - **Last update:** 2026-10-08.
 
+## F-P14A-01 — Prospective setup outcome evaluation (P1-14A)
+
+- **Product objective:** register P1-13A opportunity setups at first DETECTED
+  and observe forward mark-price outcomes at versioned horizons (1m/5m/15m/1h
+  /4h); research-only: no P&L, no probabilities, no lookahead.
+- **Origin / decision date:** `docs/MASTER_PLAN.md` P1-14; `docs/EVENT_LABELING.md`
+  forward-outcome concept.
+- **Approval status:** DECIDED (sequenced). **Implementation status:**
+  IMPLEMENTED + VERIFIED (35 new tests + 554 canonical OK — see P1-14A result
+  section in `docs/CURRENT_STATE.md`).
+- **Target phase:** P1-14.
+- **Dependencies:** P1-13A opportunity engine (setups, DETECTED lifecycle,
+  candidate_key + setup_family + direction + market_state + rule_version +
+  capability_tier fields).
+- **Affected subsystems:** `microstructure_probe` (prospective.py, persistence.py
+  schema v9), `probe.py` integration, dashboard `prospective.py`.
+- **Required UI locations:** dashboard prospective tab + `/api/prospective`.
+- **Data/API requirements:** schema v9 `prospective_setups` (REPLACE per key) +
+  `prospective_outcomes` (append-only, bounded 500/setup); retention max
+  hourly, default 90 days on detected_at_ms / observed_at_ms.
+- **Acceptance criteria:** idempotent registration (one key = one episode);
+  outcome states COMPLETE/PENDING/INSUFFICIENT_HISTORY only (never fabricated);
+  restart-safe rehydrate from `prospective_setups`; bounded queue + telemetry
+  (writes/drops/errors/inflight/high_water); 4h horizon usable with genuinely
+  later data; no orders, keys, P&L, or probabilities.
+- **Evidence needed:** `tests/test_prospective.py` (35 tests); `/api/prospective`
+  endpoint (schema_version 9, RESEARCH ONLY banner); migration chain v1–v9.
+- **Docs:** `docs/PROSPECTIVE_EVALUATION_SPEC.md`, `docs/DECISIONS.md`,
+  `docs/CURRENT_STATE.md`, `docs/TASK_QUEUE.md`.
+- **Open questions:** MFE/MAE and cohort aggregation deferred to a later
+  revision; final horizon list to be frozen once enough 4h data accumulates.
+- **Last update:** 2026-10-08.
+
 ## F-BT-01 — Historical backtesting (P1-14)
 
 - **Product objective:** replay-based backtester without future leakage;

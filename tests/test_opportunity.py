@@ -665,7 +665,7 @@ class PersistenceMigrationTest(unittest.TestCase):
         self.assertLessEqual(len(events), 500)
         self.assertEqual(len(events), 500)
 
-    def test_v7_database_migrates_to_v8_preserving_state_rows(self) -> None:
+    def test_v7_database_migrates_to_v9_preserving_state_rows(self) -> None:
         store = _temp_store(self)
         store.store_state_features([{"symbol": "BTCUSDT", "state": "NORMAL",
                                      "direction": "UP",
@@ -685,7 +685,7 @@ class PersistenceMigrationTest(unittest.TestCase):
         with reopened._get_cursor() as cursor:
             cursor.execute("SELECT value FROM persistence_meta"
                            " WHERE key='schema_version'")
-            self.assertEqual(int(cursor.fetchone()[0]), 8)
+            self.assertEqual(int(cursor.fetchone()[0]), 9)
             for table in ("state_features", "state_transitions",
                           "opportunity_candidates", "opportunity_events"):
                 cursor.execute("SELECT name FROM sqlite_master"
