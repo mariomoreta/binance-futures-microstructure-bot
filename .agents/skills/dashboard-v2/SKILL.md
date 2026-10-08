@@ -43,3 +43,7 @@ migration, or implementation work in this repository.
 Stop when a task requires live trading, secrets, a strategy/methodology
 change, an unapproved destructive migration, or evidence contradicts the plan.
 
+
+## Binding visual targets — approved 2026-10-08
+
+Before implementing, open `design/references/v2-approved/README.md` and the matching PNG reference. These eight image assets are the intended UI outcome, not optional inspiration. Compare fresh browser screenshots at desktop and narrow width with the approved target, record discrepancies and deliberate departures. Figures/graphs/states depicted in the mockups are illustrative; source-backed data, timestamp, freshness, coverage, safety and missing-data discipline override visual parity. Only claim design fidelity to the extent verified.

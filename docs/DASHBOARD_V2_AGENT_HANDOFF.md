@@ -83,3 +83,11 @@ Future live integration needs a versioned Movers view model carrying raw numbers
 ## Traceability update (2026-10-08)
 
 Operational lines above naming P1-10R RUNNING, PID 19084, or P1-12 blocked are superseded: P1-10R PASS (2026-10-08), P1-12A DONE. Current truth lives in docs/CURRENT_STATE.md + docs/TASK_QUEUE.md; feature/decision traceability (F-STATE-V2-*, F-V2-BFF-01, F-CMC-01) lives in docs/FEATURE_BACKLOG.md.
+
+## 2026-10-08 approved-design and current-work update
+
+- Official approved target assets: `design/references/v2-approved/README.md` plus eight PNGs. **Required before any V2 UI slice**; report visual parity against matching target, with browser captures, not stock/generated substitutes.
+- Dashboard V2 branch/worktree: `dash-v2-03-token-detail`, `C:\\proyectos\\binance-futures-dashboard-v2-worktree`. DEMO-only Overview/Movers/Token Detail/Opportunities exist, last V2 image publication commit `ac10973018b76f093f85e43d745d0f4378f9bb4b`. No validated live-data BFF yet. This update supersedes old handoff statements that no opportunity engine exists.
+- Backend branch has P1-13A.1 closeout at `1fdfbf474fa0cdb225b9744b9b731a8b816fda56`: Python opportunities V0 with 5 families, v8 persistence, `/api/opportunities` working; P1-14A prospective evaluation is delegated to the other agent and **may be in progress**. Inspect current HEAD/records before relying on status.
+- V2 reference visuals are product-design targets; all figures and positive metrics inside PNGs remain illustrative and are NOT market data. Never promote DEMO fixture metrics to LIVE or call placeholder paper/backtest outputs actual outcomes.
+- Do not modify the backend worktree during a concurrently assigned phase. Merge later only after reviewed contract and integration plan.

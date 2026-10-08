@@ -68,3 +68,7 @@ Dashboard V2 reference set (planned architecture; not an implemented frontend):
 - `LOOP PHASE <n>` may only continue through tasks already authorized inside that phase.
 - The loop MUST STOP if: human authorization is required; live trading/account mutation would be needed; a methodology or strategy change is required; evidence contradicts the plan; tests fail with unresolved root cause; an external dependency blocks progress; a destructive migration is required; secrets would be needed; or the phase success gate is reached.
 - It must never "keep coding until something looks profitable."
+
+## Dashboard V2 — Approved visual targets (2026-10-08)
+
+The eight PNGs in `design/references/v2-approved/` are the **approved product UI targets**, not optional design inspiration. Before any V2 UI work, read `design/references/v2-approved/README.md` and inspect the relevant PNG(s): overview, movers, opportunities, token-detail, system, backtest, paper-lab; movers-alternative is a secondary dense-screen concept. Perform screenshot-based desktop/mobile parity review and document differences before claiming visual completion. The image's values are illustrative ONLY: never fabricate live observations, coverage, signals, performance, backtest results or probabilities to match the artwork. Use source-verified data or truthful UNKNOWN/STALE/NOT AVAILABLE.
