@@ -1,6 +1,7 @@
 # ROADMAP
 
 Future sequence. Operational now lives in `docs/TASK_QUEUE.md`.
+Decision/feature traceability lives in `docs/FEATURE_BACKLOG.md`.
 
 ## Phase 1 — Market Intelligence + Dashboard (CURRENT)
 

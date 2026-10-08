@@ -129,3 +129,10 @@ visual PASS.
 Depends on the architecture and API contract documents. `DASH-V2-00` may
 implement tokens/components only after explicit authorization and after the
 four reference mockups are accessible to the implementing agent.
+
+## Traceability
+
+Design agreements on this page are indexed in `docs/FEATURE_BACKLOG.md`
+(F-STATE-V2-OV-01, F-STATE-V2-MV-01, F-STATE-V2-TK-01, F-OPP-UI-01,
+F-V2-BFF-01, F-CMC-01). That file tracks approval vs implementation status;
+this spec remains the design authority.

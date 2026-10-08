@@ -95,7 +95,7 @@ approves cutover. Retirement is a later task, not implied by V2 completion.
 
 ## Phase dependencies
 
-P1-10R remains the operational next gate and starts only on instruction.
-P1-12 remains blocked on P1-10R PASS. P1-12B and functional Opportunities,
-Backtest and Paper Lab remain bound to their engine phases. Documentation work
-does not advance those gates.
+P1-10R is PASS (2026-10-08); P1-12A classifier v0 is DONE. P1-12B and
+functional Opportunities, Backtest and Paper Lab remain bound to their
+engine phases (see `docs/FEATURE_BACKLOG.md` F-UNI-01, F-OPP-01,
+F-BT-01, F-PAPER-01). Documentation work does not advance those gates.

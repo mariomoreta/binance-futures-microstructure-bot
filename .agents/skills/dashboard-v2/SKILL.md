@@ -13,7 +13,9 @@ migration, or implementation work in this repository.
 1. Read `AGENTS.md`, `docs/CURRENT_STATE.md`, and `docs/TASK_QUEUE.md`.
 2. Read `docs/DASHBOARD_V2_PROGRESS.md` and
    `docs/DASHBOARD_V2_DECISIONS.md` before changing the V2 plan.
-3. Route the task to the narrowest relevant source:
+3. Check `docs/FEATURE_BACKLOG.md` for the relevant feature IDs (V2 state
+   presentation, BFF, CMC) and their approval vs implementation status.
+4. Route the task to the narrowest relevant source:
    - UI and visual behavior: `docs/DASHBOARD_V2_DESIGN_SPEC.md`
    - frontend boundaries: `docs/DASHBOARD_V2_FRONTEND_ARCHITECTURE.md`
    - data shapes: `docs/DASHBOARD_V2_API_CONTRACTS.md`

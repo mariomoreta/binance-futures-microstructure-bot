@@ -1,0 +1,375 @@
+# FEATURE BACKLOG — canonical decision traceability & deferred features
+
+**Purpose:** durable project-wide record so approved product decisions,
+deferred features, design agreements and future dependencies are never lost
+between AI agents or development phases. This document indexes decisions;
+it does not replace them. Authority stays where it was recorded
+(`docs/DECISIONS.md` for methods, `docs/DASHBOARD_V2_DECISIONS.md` for V2,
+`docs/TASK_QUEUE.md` for operational sequencing).
+
+**Rules:**
+
+- Statuses: `DECIDED` (approved, binding) / `PROPOSED` (discussed, not
+  approved) for approval; `NOT IMPLEMENTED` / `PARTIAL` / `IMPLEMENTED` /
+  `VERIFIED` for implementation. A discussed feature is never auto-marked
+  IMPLEMENTED or VERIFIED.
+- VERIFIED requires linked evidence (tests, logs, screenshots, commits).
+- New material decisions needing user approval are recorded as PROPOSED
+  first — never treated as binding before approval.
+- IDs are stable and unique (`F-<AREA>-<NN>`). Never reuse an ID.
+
+## Status legend (2026-10-08 snapshot)
+
+| ID | Title | Approval | Implementation | Phase |
+|---|---|---|---|---|
+| F-STATE-PY-01 | Market State Intelligence — Python presentation | DECIDED | VERIFIED (token panel) | P1-12A DONE |
+| F-STATE-V2-OV-01 | V2 Overview: state distribution + transitions | DECIDED | NOT IMPLEMENTED | DASH-V2 future |
+| F-STATE-V2-MV-01 | V2 Movers: state/direction columns + filters | DECIDED | NOT IMPLEMENTED | DASH-V2 future |
+| F-STATE-V2-TK-01 | V2 Token Detail: state explanation panel | DECIDED | NOT IMPLEMENTED | DASH-V2 future |
+| F-STATE-V2-TL-01 | State timeline visualization | PROPOSED | NOT IMPLEMENTED | Later |
+| F-UNI-01 | Dynamic LIVE-universe expansion (P1-12B) | DECIDED | NOT IMPLEMENTED | P1-12B NEXT |
+| F-OPP-01 | Research-based opportunity engine (P1-13A) | DECIDED | NOT IMPLEMENTED | P1-13A |
+| F-OPP-UI-01 | Opportunities dashboard (P1-13B) | DECIDED | NOT IMPLEMENTED | P1-13B |
+| F-BT-01 | Historical backtesting (P1-14) | DECIDED | NOT IMPLEMENTED | P1-14 |
+| F-PAPER-01 | Forward paper validation (P1-15) | DECIDED | NOT IMPLEMENTED | P1-15 |
+| F-PORT-01 | Paper portfolio (P1-16) | DECIDED | NOT IMPLEMENTED | P1-16 |
+| F-V2-BFF-01 | Next.js API integration (BFF) | DECIDED | NOT IMPLEMENTED | DASH-V2 future |
+| F-CMC-01 | CoinMarketCap supplementary metadata | DECIDED (staged) | NOT IMPLEMENTED | CMC-00/01/02 |
+| F-CORE-01 | Completed Phase 1 foundations (index) | DECIDED | VERIFIED | P1-00…P1-11C, P1-10R |
+
+---
+
+## F-STATE-PY-01 — Market State Intelligence, Python dashboard
+
+- **Product objective:** expose validated classifier output (state,
+  direction, timestamp, coverage, evidence) with truthful UNKNOWN/STALE
+  behavior; never as LONG/SHORT recommendations, probabilities, or
+  profitability claims.
+- **Origin / decision date:** `docs/MARKET_STATES.md` (vocabulary + gating);
+  phase order decision 2026-10-06 (`docs/DECISIONS.md`); authorized by
+  P1-11A/B/C + P1-10R PASS chain; implemented P1-12A 2026-10-08.
+- **Approval status:** DECIDED. **Implementation status:** VERIFIED
+  (token-page panel; movers/system exposure not built — see F-STATE-V2-MV-01
+  for V2-side tracking; no Python movers state column exists).
+- **Target phase:** P1-12A DONE.
+- **Dependencies:** P1-04…P1-08 engines, P1-09 token page, P1-11A/B/C +
+  P1-10R gates (all satisfied).
+- **Affected subsystems:** `classifier.py`, `persistence.py` (schema v7),
+  `probe.py` (per-summary evaluation), `dashboard.py` + `dashboard_views.py`
+  (token panel).
+- **Required UI locations:** `/symbol/:symbol` state panel (done).
+- **Data/API requirements:** persisted `state_features` rows; no new HTTP
+  contract needed (server-rendered from existing store reads).
+- **Acceptance criteria:** deterministic versioned rules; evidence
+  for/against + missing + validity on every record; hysteresis; no
+  probabilities; discovery-only honesty. All met.
+- **Evidence:** `tests/test_classifier.py` (25 tests), 447/447 suite,
+  120s observe COMPLETED run (9 evals, transitions persisted),
+  token-page screenshots in P1-12A report.
+- **Docs:** `docs/CLASSIFIER_SPEC.md`, `docs/FEATURE_MODEL.md`,
+  `docs/ARCHITECTURE.md`, `docs/MARKET_STATES.md`.
+- **Open questions:** none blocking; calibration is P1-14 territory.
+- **Last update:** 2026-10-08.
+
+## F-STATE-V2-OV-01 — V2 Overview: state distribution + transitions
+
+- **Product objective:** Overview shows market-state distribution across
+  the observed universe (with observed-universe denominator) plus recent
+  transitions, all from authoritative Python classifications.
+- **Origin / decision date:** `docs/DASHBOARD_V2_DESIGN_SPEC.md` +
+  V2 architecture review 2026-10-07.
+- **Approval status:** DECIDED (design). **Implementation status:**
+  NOT IMPLEMENTED.
+- **Target phase:** DASH-V2 future slice (after BFF).
+- **Dependencies:** F-V2-BFF-01 (versioned state view-model),
+  F-STATE-PY-01 (authoritative values). React must never compute
+  authoritative classifications.
+- **Affected subsystems:** `frontend/src/app/overview/`, BFF routes.
+- **Required UI locations:** `/overview` state distribution + transitions.
+- **Data/API requirements:** versioned `/api/v1` state view-model with
+  denominator, provenance, freshness.
+- **Acceptance criteria:** denominator shown; stale/unknown distinguished;
+  zero fabricated states; visual QA vs references.
+- **Evidence needed:** BFF contract tests, component tests, screenshots.
+- **Docs:** `docs/DASHBOARD_V2_DESIGN_SPEC.md`,
+  `docs/DASHBOARD_V2_API_CONTRACTS.md`.
+- **Open questions:** exact view-model schema (pending BFF design).
+- **Last update:** 2026-10-08.
+
+## F-STATE-V2-MV-01 — V2 Movers: state/direction columns + filters
+
+- **Product objective:** Movers table gains state and direction columns
+  with matching filters, sourced from Python classifications.
+- **Origin / decision date:** V2 design review 2026-10-07.
+- **Approval status:** DECIDED (design). **Implementation status:**
+  NOT IMPLEMENTED.
+- **Target phase:** DASH-V2 future slice (after BFF).
+- **Dependencies:** F-V2-BFF-01, F-STATE-PY-01.
+- **Affected subsystems:** `frontend/src/app/movers/`, BFF routes.
+- **Required UI locations:** `/movers` columns + filter controls.
+- **Data/API requirements:** per-symbol state + direction + freshness in
+  the movers view-model.
+- **Acceptance criteria:** filters combine with existing ones; nulls stay
+  last/empty; no LONG/SHORT language.
+- **Evidence needed:** contract + component + interaction tests, screenshots.
+- **Docs:** `docs/DASHBOARD_V2_DESIGN_SPEC.md`.
+- **Open questions:** none.
+- **Last update:** 2026-10-08.
+
+## F-STATE-V2-TK-01 — V2 Token Detail: state explanation panel
+
+- **Product objective:** Token Detail explains the current state with
+  supporting evidence, counterevidence, missing inputs, previous
+  transitions, and rule version — mirroring F-STATE-PY-01 content.
+- **Origin / decision date:** V2 design review 2026-10-07.
+- **Approval status:** DECIDED (design). **Implementation status:**
+  NOT IMPLEMENTED.
+- **Target phase:** DASH-V2-03 or later BFF-backed slice.
+- **Dependencies:** F-V2-BFF-01, F-STATE-PY-01.
+- **Affected subsystems:** `frontend/src/app/symbol/[symbol]/`, BFF routes.
+- **Required UI locations:** `/symbol/[symbol]` state panel.
+- **Data/API requirements:** full classification record view-model.
+- **Acceptance criteria:** evidence/counterevidence/missing/version all
+  visible; discovery-only honesty preserved.
+- **Evidence needed:** contract + component tests, screenshots.
+- **Docs:** `docs/DASHBOARD_V2_DESIGN_SPEC.md`.
+- **Open questions:** none.
+- **Last update:** 2026-10-08.
+
+## F-STATE-V2-TL-01 — State timeline visualization
+
+- **Product objective:** visual timeline of state transitions per symbol
+  (later enhancement, not existing functionality).
+- **Origin / decision date:** governance capture 2026-10-08 from the
+  standing "timeline is later" agreement.
+- **Approval status:** PROPOSED. **Implementation status:** NOT IMPLEMENTED.
+- **Target phase:** Later (after F-STATE-V2-TK-01).
+- **Dependencies:** persisted `state_transitions` history, BFF exposure.
+- **Affected subsystems:** frontend token/detail views.
+- **Required UI locations:** TBD.
+- **Data/API requirements:** transition history view-model.
+- **Acceptance criteria:** TBD at approval; must never imply prediction.
+- **Evidence needed:** design approval + tests + screenshots.
+- **Docs:** this backlog (sole record until approved).
+- **Open questions:** chart form, time windows, performance budget.
+- **Last update:** 2026-10-08.
+
+## F-UNI-01 — Dynamic LIVE-universe expansion (P1-12B)
+
+- **Product objective:** subscribe/unsubscribe WS streams as HOT set
+  evolves, with hysteresis and transport headroom.
+- **Origin / decision date:** P1-05 left HOT as proposal-only;
+  `docs/ROADMAP.md` phase sequence; next candidate per
+  `docs/TASK_QUEUE.md` 2026-10-08.
+- **Approval status:** DECIDED (sequenced). **Implementation status:**
+  NOT IMPLEMENTED.
+- **Target phase:** P1-12B NEXT (explicit instruction required).
+- **Dependencies:** P1-12A PASS (satisfied), P1-01R transport headroom.
+- **Affected subsystems:** `discovery.py`, `probe.py` connection loop,
+  `universe.py`, dashboard universe displays.
+- **Required UI locations:** `/movers`, `/system` subscription state.
+- **Data/API requirements:** HOT change events, resubscribe audit log.
+- **Acceptance criteria:** no silent resubscription; hysteresis honored;
+  live/deep vs discovery-only labeling preserved; transport monitored.
+- **Evidence needed:** tests + bounded live run + dashboard screenshots.
+- **Docs:** `docs/ROADMAP.md`, `docs/TASK_QUEUE.md`, P1-05 decision record.
+- **Open questions:** resubscribe cadence, max subscribed symbols.
+- **Last update:** 2026-10-08.
+
+## F-OPP-01 — Research-based opportunity engine (P1-13A)
+
+- **Product objective:** setup candidates from validated states +
+  historical analogs with lifecycle, evidence, counterevidence, risks —
+  research only, no execution.
+- **Origin / decision date:** `docs/ROADMAP.md` phase sequence;
+  `docs/SIGNAL_RESEARCH_PLAN.md` (design only).
+- **Approval status:** DECIDED (sequenced). **Implementation status:**
+  NOT IMPLEMENTED.
+- **Target phase:** P1-13A (after P1-12B).
+- **Dependencies:** F-UNI-01, classifier history, P1-11C event outcomes.
+- **Affected subsystems:** new engine module, persistence (new tables),
+  probe evaluation hook.
+- **Required UI locations:** none yet (engine first; UI is F-OPP-UI-01).
+- **Data/API requirements:** state history + event-study outcomes +
+  BTC context.
+- **Acceptance criteria:** candidates explainable; direction/entry/stop/
+  targets nullable until validated; no fabricated confidence.
+- **Evidence needed:** unit tests + research review (no live orders ever).
+- **Docs:** `docs/SIGNAL_RESEARCH_PLAN.md`, `docs/ROADMAP.md`.
+- **Open questions:** candidate scoring methodology (research output).
+- **Last update:** 2026-10-08.
+
+## F-OPP-UI-01 — Opportunities dashboard (P1-13B)
+
+- **Product objective:** present F-OPP-01 candidates (Python `/signals`,
+  `/extreme-moves` per ROADMAP; V2 Opportunities per design spec) with
+  empty/blocked shells until candidates exist.
+- **Origin / decision date:** `docs/ROADMAP.md`; V2 Opportunities section
+  `docs/DASHBOARD_V2_DESIGN_SPEC.md` (empty-shell-first rule).
+- **Approval status:** DECIDED (sequenced/designed).
+- **Implementation status:** NOT IMPLEMENTED (V2 has nav/blocked explanation only).
+- **Target phase:** P1-13B.
+- **Dependencies:** F-OPP-01.
+- **Affected subsystems:** Python dashboard routes; `frontend/src/app/
+  opportunities/`.
+- **Required UI locations:** `/signals`, `/extreme-moves` (Python);
+  `/opportunities` (V2).
+- **Data/API requirements:** candidate lifecycle view-model.
+- **Acceptance criteria:** honest empty states; no fabricated setups.
+- **Evidence needed:** route tests + screenshots.
+- **Docs:** `docs/DASHBOARD_V2_DESIGN_SPEC.md`, `docs/ROADMAP.md`.
+- **Open questions:** none.
+- **Last update:** 2026-10-08.
+
+## F-BT-01 — Historical backtesting (P1-14)
+
+- **Product objective:** replay-based backtester without future leakage;
+  24h calibration review of thresholds vs real crossings.
+- **Origin / decision date:** `docs/ROADMAP.md` P1-14; SUCCESS_GATES G9.
+- **Approval status:** DECIDED (sequenced). **Implementation status:**
+  NOT IMPLEMENTED.
+- **Target phase:** P1-14.
+- **Dependencies:** P1-11C outcomes, classifier history, cost model.
+- **Affected subsystems:** new backtest module (Phase 2+ overlap noted in
+  roadmap — stays research-only).
+- **Required UI locations:** V2 Backtest nav/blocked explanation exists;
+  results UI TBD.
+- **Data/API requirements:** historical bars + outcome tables + fee model.
+- **Acceptance criteria:** no-lookahead replay proven; sensitivity noted.
+- **Evidence needed:** replay tests + calibration report.
+- **Docs:** `docs/ROADMAP.md`, `docs/SUCCESS_GATES.md`.
+- **Open questions:** cost/slippage assumptions.
+- **Last update:** 2026-10-08.
+
+## F-PAPER-01 — Forward paper validation (P1-15)
+
+- **Product objective:** live paper engine with state-driven exits and
+  risk limits; performance vs backtest.
+- **Origin / decision date:** `docs/ROADMAP.md`, MASTER_PLAN Phase 4.
+- **Approval status:** DECIDED (sequenced). **Implementation status:**
+  NOT IMPLEMENTED.
+- **Target phase:** P1-15.
+- **Dependencies:** F-BT-01, risk engine (unbypassable).
+- **Affected subsystems:** new paper engine + position manager.
+- **Required UI locations:** V2 Paper Lab (blocked explanation exists).
+- **Data/API requirements:** live features + state stream + fills sim.
+- **Acceptance criteria:** risk limits enforced; halts exercised/reasoned.
+- **Evidence needed:** paper-vs-backtest divergence report.
+- **Docs:** `docs/PAPER_TRADING.md`, `docs/ROADMAP.md`.
+- **Open questions:** none (far horizon).
+- **Last update:** 2026-10-08.
+
+## F-PORT-01 — Paper portfolio (P1-16)
+
+- **Product objective:** paper portfolio / dynamic exit management.
+- **Origin / decision date:** `docs/ROADMAP.md`, `docs/TASK_QUEUE.md`
+  sequence.
+- **Approval status:** DECIDED (sequenced). **Implementation status:**
+  NOT IMPLEMENTED.
+- **Target phase:** P1-16.
+- **Dependencies:** F-PAPER-01.
+- **Affected subsystems:** TBD.
+- **Required UI locations:** TBD.
+- **Data/API requirements:** TBD.
+- **Acceptance criteria:** TBD at phase entry.
+- **Evidence needed:** TBD.
+- **Docs:** `docs/ROADMAP.md`.
+- **Open questions:** scope deferred until P1-15 evidence exists.
+- **Last update:** 2026-10-08.
+
+## F-V2-BFF-01 — Next.js API integration (BFF)
+
+- **Product objective:** same-origin BFF proxying allowlisted Python
+  endpoints with versioned view-models; browser never touches Python
+  directly, SQLite, keys, or the control nonce.
+- **Origin / decision date:** `docs/DASHBOARD_V2_FRONTEND_ARCHITECTURE.md`
+  + migration plan (DASH-V2-0x slices), 2026-10-07.
+- **Approval status:** DECIDED (architecture). **Implementation status:**
+  NOT IMPLEMENTED (frontend is static fixtures only).
+- **Target phase:** DASH-V2 future slice (explicit authorization).
+- **Dependencies:** Python `/api/v1` view-model facade (proposed, not built).
+- **Affected subsystems:** `frontend/src/app/api/v1/`, Python API additions.
+- **Required UI locations:** all V2 routes (data layer only).
+- **Data/API requirements:** envelope (schema_version, provenance,
+  freshness, quality flags) per V2 API contracts doc.
+- **Acceptance criteria:** BFF security tests (Host/Origin/CSRF/nonce
+  non-disclosure/allowlists); no open proxy; Python suite stays green.
+- **Evidence needed:** security + contract tests, screenshots.
+- **Docs:** `docs/DASHBOARD_V2_FRONTEND_ARCHITECTURE.md`,
+  `docs/DASHBOARD_V2_API_CONTRACTS.md`,
+  `docs/DASHBOARD_V2_MIGRATION_PLAN.md`.
+- **Open questions:** exact `/api/v1` schema validator language.
+- **Last update:** 2026-10-08.
+
+## F-CMC-01 — CoinMarketCap supplementary metadata
+
+- **Product objective:** optional aggregate context (metadata, rankings,
+  indices) with mandatory provider labeling; never a Binance mark-price,
+  liquidity, fill, PnL, or backtest source.
+- **Origin / decision date:** `docs/COINMARKETCAP_FEASIBILITY.md` +
+  `docs/EXTERNAL_MARKET_DATA_EVALUATION.md` + `docs/TOKEN_IDENTITY_MAPPING.md`,
+  2026-10-07 (staged CMC-00/01/02; legal review still required).
+- **Approval status:** DECIDED (staged feasibility; integration NOT
+  authorized). **Implementation status:** NOT IMPLEMENTED.
+- **Target phase:** CMC-00 (fixtures/mapping) → CMC-01 (bounded keyless
+  adapter, needs approval) → CMC-02 (optional).
+- **Dependencies:** stable-ID mapping design; legal review; measured
+  keyless stability.
+- **Affected subsystems:** future backend-only adapter (outside WS path),
+  V2 `ProviderAttribution`.
+- **Required UI locations:** V2 market context / profiles (when built).
+- **Data/API requirements:** ID map + metadata caches with budget TTLs.
+- **Acceptance criteria:** verified stable-ID mapping; fixtures for
+  ambiguity/429/outage/stale; Binance-only execution math.
+- **Evidence needed:** mapping fixtures + adapter tests (none exist).
+- **Docs:** as listed under Origin.
+- **Open questions:** keyless rate stability, category value, credentials.
+- **Last update:** 2026-10-08.
+
+## F-CORE-01 — Completed Phase 1 foundations (evidence index)
+
+- **Product objective:** N/A (index entry — prevents re-planning or
+  duplicating finished work).
+- **Origin:** phase completion records in `docs/TASK_QUEUE.md`.
+- **Approval status:** DECIDED. **Implementation status:** VERIFIED.
+- **Target phase:** P1-00…P1-11C, P1-10R (all DONE).
+- **Dependencies:** none remaining.
+- **Affected subsystems:** N/A (index).
+- **Required UI locations:** N/A.
+- **Data/API requirements:** N/A.
+- **Acceptance criteria:** phase PASS records linked below.
+- **Evidence:** COMPLETED section of `docs/TASK_QUEUE.md`; 447/447 suite;
+  `logs/p1-10r/` soak evidence (git-ignored, preserved).
+- **Docs:** `docs/CURRENT_STATE.md`, `docs/PHASE_1_REPORT.md` (untouchable).
+- **Open questions:** none.
+- **Last update:** 2026-10-08.
+
+Completed, evidence-linked work:
+
+- P1-00 tooling (`python run_tests.py`) — VERIFIED, 447/447.
+- P1-01/P1-01R transport validation — VERIFIED (45min healthy window).
+- P1-02 persistence (SQLite, retention-bounded) — VERIFIED.
+- P1-03/P1-09 dashboards (Python SSR + terminal) — VERIFIED, live.
+- P1-04…P1-08 engines (returns → structure) — VERIFIED (P1-11A scales).
+- P1-10R ≥6h soak — PASS (21603.9s, evidence `logs/p1-10r/`).
+- P1-10R-FIX-01 console suppression — FIXED.
+- P1-11A/B/C research chain — PASS.
+- P1-12A classifier v0 — PASS.
+- DASH-V2-00/01/02 slices — DONE (static foundation, no integration).
+
+## Mandatory closeout policy
+
+Every future implementation or documentation phase must report these
+seven fields in its final report (verbatim names):
+
+- `DECISIONS_REVIEWED` — which decision records were read.
+- `NEW_DECISIONS_RECORDED` — what was appended, where.
+- `FEATURES_IMPLEMENTED` — backlog IDs completed with evidence.
+- `FEATURES_VERIFIED` — backlog IDs verified with evidence links.
+- `DEFERRED_FEATURES` — IDs intentionally left not-implemented.
+- `BACKLOG_UPDATED` — whether this file changed and why.
+- `DOCUMENTATION_CONFLICTS` — contradictions found (fixed or flagged).
+
+If a new material decision needs user approval, record it as PROPOSED
+here and request approval before treating it as binding. Never mark
+features VERIFIED without evidence.

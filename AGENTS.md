@@ -31,6 +31,10 @@
    - `docs/TASK_QUEUE.md` = operational next work
    - `docs/ROADMAP.md` = future sequence
    - `docs/SUCCESS_GATES.md` = objective advancement criteria
+   - `docs/FEATURE_BACKLOG.md` = canonical feature/decision traceability
+     (stable IDs, approval vs implementation status, deferred features).
+     Review it before implementation planning; reconcile it after every
+     task; report the seven closeout fields defined there.
 5. **Preserve working code.** The audited probe baseline (public WS, detectors, telemetry, observe-only enforcement) is the foundation. Extend, don't break.
 6. **Selective commits.** Never use blind bulk staging when unrelated work exists. Commit coherent units with evidence-backed messages.
 7. Current thresholds are HYPOTHESIS until statistically validated. Never present them as proven edge.

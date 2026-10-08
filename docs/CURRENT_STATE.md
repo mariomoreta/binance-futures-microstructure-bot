@@ -877,7 +877,9 @@ range expansion, confirmed pivots, v0.7.0 dashboard + APIs, 372s run).
 Transport re-validation: DONE (P1-01R PASS — 45min healthy window, soak
 gate unblocked).
 Remaining: P1-12B dynamic live universe (NEXT candidate — needs explicit
-instruction), then signal UI (P1-13), calibration evidence (P1-14). P1-11 raw-feature validation may use the valid
+instruction), then signal UI (P1-13), calibration evidence (P1-14).
+Decision/feature traceability for these lives in `docs/FEATURE_BACKLOG.md`
+(F-UNI-01, F-OPP-01/UI-01, F-BT-01, F-PAPER-01, F-PORT-01). P1-11 raw-feature validation may use the valid
 4.91h P1-10 evidence; the Movers shared-`_v` category-value anomaly is a
 recorded P1-11A audit item (not fixed).
 

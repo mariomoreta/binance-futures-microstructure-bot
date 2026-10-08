@@ -6,6 +6,8 @@ Operational next work. Updated every task. Docs-realism rule applies.
 
 PHASE 1 — MARKET INTELLIGENCE + DASHBOARD
 
+Traceability: `docs/FEATURE_BACKLOG.md` (stable IDs; reconcile after every task).
+
 ## CURRENT_OBJECTIVE
 
 Execute Phase 1 in dependency order: tooling sanity → short transport

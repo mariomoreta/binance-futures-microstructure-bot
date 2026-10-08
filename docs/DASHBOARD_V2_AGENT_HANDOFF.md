@@ -24,10 +24,11 @@ when it does not.
 Python SSR and all engines remain intact. Next.js exists only as the
 DASH-V2-00 static foundation under `frontend/` (no API integration, no
 BFF, no live data). No CMC or
-CoinGecko adapter exists. No state classifier, opportunity engine, backtester
-or paper engine exists. P1-10R is RUNNING (PID 19084, since
-2026-10-08T00:48:20Z) — do not touch the probe, dashboard, databases,
-registry, or evidence. P1-12/P1-12B remain blocked.
+CoinGecko adapter exists. The P1-12A classifier v0 exists (observed
+states + evidence, HYPOTHESIS); no opportunity engine, backtester
+or paper engine exists. P1-10R is PASS (completed 2026-10-08);
+P1-12B is the next candidate (explicit instruction required). Do not
+disturb running processes, databases, registry, or evidence.
 
 ## Required workflow
 
@@ -78,3 +79,7 @@ Isolated static foundation exists under rontend/ (Next 16.4 + React 19.3, stric
 Keep PID 19084 and all P1-10R evidence untouched. Before any future preview restart, reverify the exact Node PID/command/creation time. Current production preview URL remains http://127.0.0.1:3000/movers.
 
 Future live integration needs a versioned Movers view model carrying raw numbers, source, observed_at, freshness, tier, capability, nullability and pagination metadata.
+
+## Traceability update (2026-10-08)
+
+Operational lines above naming P1-10R RUNNING, PID 19084, or P1-12 blocked are superseded: P1-10R PASS (2026-10-08), P1-12A DONE. Current truth lives in docs/CURRENT_STATE.md + docs/TASK_QUEUE.md; feature/decision traceability (F-STATE-V2-*, F-V2-BFF-01, F-CMC-01) lives in docs/FEATURE_BACKLOG.md.
