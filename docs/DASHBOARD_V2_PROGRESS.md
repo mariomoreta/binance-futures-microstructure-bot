@@ -222,3 +222,9 @@ architecture + static foundation (DASH-V2-00); no integration.
 - Expanded saved-opportunity read-only view with selectable persisted records, direct evidence for/against/missing inspector, rule version, historical evidence status, and original observation timestamp. Added navigation from the DEMO Opportunities screen to the separate persisted-record page. Never merges synthetic DEMO rows with actual stored candidates.
 - Local TypeScript PASS, ESLint PASS, Vitest 46/46 PASS, Next production build PASS. Test phase took longer under resource contention; no backend Python/P1-14B changes.
 - API remains bounded read-only v1; persisted candidates retain STALE/UNKNOWN and are not represented as actionable current signals. Browser smoke and publication to be verified separately.
+
+## DASH-V2-14 — Prospective read-only research panel (2026-10-08)
+
+- Added `/api/v1/prospective` read-only local Python adapter for schema v9 with timeout, bounded response, no-store, fail-closed 503, and explicit missing-as-null semantics. New `/opportunities/prospective` displays actual persisted horizon states and marks return only when COMPLETE with valid numeric value; no trading claims.
+- Does not alter backend or Muse Spark P1-14B worktree. Existing Opportunities DEMO and saved observations pages remain isolated.
+- TypeScript PASS, ESLint PASS, Vitest 48/48 PASS, Next.js build PASS. Browser QA separately verified.
