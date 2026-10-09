@@ -993,6 +993,45 @@ Research only — no P&L, no lookahead, no probabilities.
 - Tests: 35 tests in `tests/test_prospective.py` — all pass.
   Full suite: 554/554 OK (519 baseline + 35 new).
 
+## P1-14B prospective integrity validation (recovery) — RESULT: PASS (2026-10-09)
+
+Recovery of the interrupted P1-14B session on branch
+`phase1/market-intelligence-dashboard` at SHA `e727e54`; workspace recovered,
+evidence preserved, no data loss. Validation of P1-14A prospective evaluation
+integrity against deterministic tests and real persisted evidence:
+event-time maturity, no-lookahead, dedup, restart idempotency, v8→v9 migration,
+90-day retention + bounded 500-outcome log, quality flags without fabrication,
+dashboard `/api/prospective` parity, observe-only safety. Full suite **593/593**
+OK (519 + 35 + 39 `tests/test_p14b_validation.py`).
+
+- Two session fixes accepted into the working tree:
+  `prospective.py:106` rehydrates `setup.get("setup_json", {})` so restarted
+  registries carry `detected_mark_price` (recompute COMPLETE, not
+  INSUFFICIENT_HISTORY); `dashboard.py:403` reads the injected shared store
+  so `/api/prospective` mirrors the recorder (parity).
+- Real evidence in `data/microprobe.db` (schema v9): 7 unique registered setups
+  (event time 2026-10-08 23:42:04 → 24:06:30), 1 observed outcome
+  (`REVERSAL_WATCH:ETHUSDT:UP` → 1m, COMPLETE, mark_return_pct=-0.037134,
+  detected 2477.50 → current 2476.58). Event-time audit PASS on every record;
+  zero duplicates; zero PENDING/INVALID/INSUFFICIENT rows (unobserved horizons
+  are absent, never fabricated).
+- Pilot preserved: `p14b_pilot_monitor.py` (+`logs/p14b_pilot.log`) — 150s
+  observe-only run with DB polling and event-time vs wall-clock audit;
+  `p14b_dashboard_readtest.py` — dashboard read-path validation;
+  `.firecrawl/*.json` market-data dumps preserved.
+- API verified locally: `/api/prospective` returns schema_version 9,
+  RESEARCH ONLY banner, setup_count=7, outcome_count=1, full denominator in
+  latest_outcomes; `state` = UNKNOWN honestly reflects no live probe.
+- Limitations (honest): single outcome is descriptive only (-0.037134%);
+  6/7 setups lack observed horizons because the pilot window's event time did
+  not reach their 5m/15m/1h/4h maturities — absent, not forced. The pilot
+  suffered host clock anomalies (ms/s epoch mismatch in the monitor log) which
+  limited coverage; the event-time design tolerates host skew by firing only at
+  `detected_at_ms + horizon_ms` and never looking ahead.
+- No active run; `BOT_MODE=observe` preserved; zero orders, zero capital;
+  Dashboard V2 worktree untouched. P1-14C not started.
+- Full report: `docs/P1_14B_VALIDATION_REPORT.md`.
+
 ## P1-13A research opportunity/setup engine V0 — RESULT: PASS (2026-10-08)
 
 Observe-only engine that identifies market setups worthy of further

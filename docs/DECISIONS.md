@@ -481,3 +481,37 @@ d_at_ms / observed_at_ms cutoffs).
    banner) mirrors status + latest 10 outcomes; snapshot block exposes it.
    Validation: 35 new tests + 554 canonical OK; no orders, keys, P&L or
    probabilities.
+
+## 2026-10-09 — P1-14B recovery & prospective integrity validation
+
+Recovery of the interrupted P1-14B session (branch `phase1/market-intelligence-dashboard`,
+SHA `e727e542163552df0d45083eb1f5f0a4233f1292`): workspace recovered at the confirmed last
+commit, no divergent commits, no running process, all pilot evidence and new tests preserved
+in the working tree. Validated P1-14A prospective evaluation integrity against deterministic
+tests (39 new, all pass) and against real persisted evidence in `data/microprobe.db`
+(schema v9, 7 unique setups, 1 COMPLETE outcome, event-time audit PASS, zero duplicates,
+zero fabricated outcomes).
+
+Decisions:
+1. Two session fixes accepted and staged: `prospective.py:106` rehydrates
+   `setup.get("setup_json", {})` into the in-memory registry so a restarted recorder
+   carries `detected_mark_price` and re-observed setups recompute `COMPLETE` rather than
+   `INSUFFICIENT_HISTORY`; `dashboard.py:403` reads the injected shared store so
+   `/api/prospective` parity with the recorder cannot drift.
+2. Recovery boundary preserved: no `git reset --hard`, `git clean`, or discard of local
+   modifications; pilot artifacts kept as evidence (untracked):
+   `p14b_pilot_monitor.py`, `logs/p14b_pilot.log`, `p14b_dashboard_readtest.py`,
+   `analyze_p13a_run.py`, `.firecrawl/*.json` market-data dumps.
+3. No new prolonged observation started: the recovered evidence (single outcome,
+   `REVERSAL_WATCH:ETHUSDT:UP` — 1m, mark_return_pct=-0.037134%) is descriptive only;
+   6/7 setups have unobserved horizons because the pilot's event-time window did not
+   reach their 5m/15m/1h/4h maturities — absent, never forced. Extending coverage
+   requires a longer window under a stable host clock (clock anomalies during the pilot
+   are documented, not a code defect).
+4. Mode preserved: `BOT_MODE=observe`, zero orders, zero capital; Dashboard V2 worktree
+   untouched; P1-14C and later phases NOT started.
+5. Test gate reconfirmed: `python run_tests.py` — 593/593 OK (519 baseline + 35
+   `test_prospective.py` + 39 `test_p14b_validation.py`).
+6. Documentation updated: `docs/P1_14B_VALIDATION_REPORT.md` (full report),
+   `docs/CURRENT_STATE.md`, `docs/TASK_QUEUE.md`, `docs/FEATURE_BACKLOG.md`,
+   `docs/PROSPECTIVE_EVALUATION_SPEC.md`.

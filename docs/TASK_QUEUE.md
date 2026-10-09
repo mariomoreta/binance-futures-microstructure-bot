@@ -54,12 +54,24 @@ the dashboard exists. No classifier before raw-feature dashboard validation.
   persistence schema v9 (`prospective_setups` REPLACE +
   `prospective_outcomes` bounded 500/setup), dashboard `/api/prospective`
   (schema_version 9, RESEARCH ONLY banner).
-  35 tests (all pass), 554/554 canonical suite, 120s observe COMPLETED
-  (prospective recorders registered + observed). Spec:
-  `docs/PROSPECTIVE_EVALUATION_SPEC.md`. Integration wired in probe.py
-  (detect_price, recorder start/drain).
-
-- `P1-10R` PROLONGED ≥6H SOAK RE-RUN — P1-10 FAIL stays FAIL (truncated at
+   35 tests (all pass), 554/554 canonical suite, 120s observe COMPLETED
+   (prospective recorders registered + observed). Spec:
+   `docs/PROSPECTIVE_EVALUATION_SPEC.md`. Integration wired in probe.py
+   (detect_price, recorder start/drain).
+
+- `P1-14B` (2026-10-09) PROSPECTIVE INTEGRITY VALIDATION (RECOVERY) —
+  **PASS**. Recovery of interrupted P1-14B session at SHA `e727e54`: two
+  session fixes accepted (`prospective.py:106` rehydration now stores
+  `setup_json` so restarts recompute COMPLETE; `dashboard.py:403` reads the
+  shared store for `/api/prospective` parity); 39 new validation tests
+  (`tests/test_p14b_validation.py`, P1-14B.1–.11) all pass; pilot evidence
+  preserved (`p14b_pilot_monitor.py`, `logs/p14b_pilot.log`,
+  `.firecrawl/*.json`); real evidence validated in `data/microprobe.db`
+  (schema v9, 7 unique setups, 1 COMPLETE outcome, event-time audit PASS,
+  zero duplicates/fabrication). Full suite: 593/593 OK. Report:
+  `docs/P1_14B_VALIDATION_REPORT.md`.
+
+- `P1-10R` PROLONGED ≥6H SOAK RE-RUN — P1-10 FAIL stays FAIL (truncated at
   4.91h); re-run with dashboard live, blocking survivable launch, merged
   stdout+stderr as UTF-8 (see `docs/DECISIONS.md` launch rule).
 - Intended full sequence (binding order):

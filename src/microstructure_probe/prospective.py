@@ -106,7 +106,7 @@ class ProspectiveRecorder:
             for setup in store.prospective_setups():
                 key = setup.get("candidate_key")
                 if key:
-                    self._registered[key] = setup
+                    self._registered[key] = setup.get("setup_json", {})
         except Exception:
             pass
 

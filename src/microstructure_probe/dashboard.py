@@ -400,7 +400,7 @@ class DashboardState:
         outcomes: List[Dict[str, Any]] = []
         try:
             from .persistence import PersistenceStore
-            store = PersistenceStore()
+            store = self.store
             setups = store.prospective_setups()
             outcomes = store.prospective_outcomes(limit=50)
         except Exception:
