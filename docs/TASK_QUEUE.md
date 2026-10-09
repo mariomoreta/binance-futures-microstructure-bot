@@ -71,6 +71,21 @@ the dashboard exists. No classifier before raw-feature dashboard validation.
   zero duplicates/fabrication). Full suite: 593/593 OK. Report:
   `docs/P1_14B_VALIDATION_REPORT.md`.
 
+- `P1-14B.1` (2026-10-09) TIME INTEGRITY, DATA QUALITY & PROSPECTIVE
+  READINESS — **PASS**. Anomaly `elapsed=-1789712305900s` root-caused to
+  monitor-side s−ms mixing (exact-constant reproduction; core clean).
+  Three core defects fixed minimally with tests: (B) restart rehydration
+  dead on the default path (no `db_path` in config → early return);
+  (C) outcome-store bounding DELETE wiped other setups' rows (scratch-proven,
+  shaped the P1-14B "single outcome" evidence); (D) `observe()` ran only on
+  matched-candidate ticks, never on quiet ticks (against the per-cycle
+  spec). 16 new tests (`tests/test_p14b_1_time_integrity.py`); 1 P1-14B
+  restart test hardened. Full suite: 609/609 OK. Three controlled 120 s
+  observe runs (exit 0) prove each fix live: reg=7 from summary #1,
+  28 coexisting COMPLETE outcomes (0 dupes), safety 0/0/0. Corrected
+  denominators + readiness criteria (no long run started) in
+  `docs/P1_14B_1_TIME_INTEGRITY_AUDIT.md`.
+
 - `P1-10R` PROLONGED ≥6H SOAK RE-RUN — P1-10 FAIL stays FAIL (truncated at
   4.91h); re-run with dashboard live, blocking survivable launch, merged
   stdout+stderr as UTF-8 (see `docs/DECISIONS.md` launch rule).
@@ -295,7 +310,17 @@ strategies (P3), paper engine/positions (P4), execution (P5).
   drops 0, errors 0). Dashboard `/api/research/status` + `/api/events/*`
   + token research card live. 408/408 tests (32 new).
 
-## LAST_VERIFICATION
+## LAST_VERIFICATION
+
+
+
+- 2026-10-09 (P1-14B.1): `python run_tests.py` → 609/609 OK (593 + 16
+  new time-integrity tests; 1 P1-14B restart test hardened to the
+  no-re-emission contract). Three controlled 120 s observe runs COMPLETED
+  (exit 0, safety 0/0/0): rehydration live (reg=7), per-cycle observation
+  live (27 + 24 emissions), cross-key accumulation live (28 rows, 0 dupes).
+  Next: prolonged-run readiness blockers (30+ min healthy window, clock
+  resync note) before any 4–6 h run; P1-14C needs explicit instruction.
 
 - 2026-10-08 (P1-12B.1): `python run_tests.py` → 496/496 OK (478 + 18
   new freshness/accounting tests; toy-epoch fixtures migrated to

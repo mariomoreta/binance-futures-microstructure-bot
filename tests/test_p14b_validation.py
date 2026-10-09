@@ -389,18 +389,24 @@ class TestP14B5RestartIdempotency(TestCase):
         rec.stop_and_drain()
         rec2 = ProspectiveRecorder(db_path=tmp_path / "p.db", enabled=True)
         rec2.start()
-        # Rehydrated registry has detected_mark_price -> recomputes COMPLETE,
-        # not INSUFFICIENT_HISTORY; seen-outcome set rebuilds from registry.
+        # P1-14B.1 hardened contract: the seen-outcome set rebuilds from
+        # stored outcome rows, so the already-observed horizon does NOT
+        # re-emit (no duplicate row even at a later tick). The rehydrated
+        # registry still carries detected_mark_price (COMPLETE-capable).
+        regs = {s["candidate_key"]: s for s in rec2.registered_setups()}
+        assert regs["SEEN"].get("detected_mark_price") == 100.0
         outcomes = rec2.observe("SOLUSDT", EVENT_BASE_MS + 60_000, 101.0)
-        assert len(outcomes) == 1
-        assert outcomes[0]["outcome_state"] == OUTCOME_COMPLETE
-        # Storage-level dedup: exactly one outcome persists for key/horizon.
+        assert outcomes == []
+        outcomes_late = rec2.observe("SOLUSDT", EVENT_BASE_MS + 120_000, 102.0)
+        assert outcomes_late == []
+        # Storage-level idempotency: exactly one outcome persists.
         from src.microstructure_probe.persistence import PersistenceStore
 
         store = PersistenceStore(db_path=tmp_path / "p.db")
         store.init_db()
         assert len(store.prospective_outcomes(candidate_key="SEEN")) == 1
         assert store.prospective_outcomes(candidate_key="SEEN")[0]["outcome_state"] == OUTCOME_COMPLETE
+        assert store.prospective_outcomes(candidate_key="SEEN")[0]["observed_at_ms"] == EVENT_BASE_MS + 60_000
         store.close()
         rec2.stop_and_drain()
 

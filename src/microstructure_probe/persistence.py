@@ -1977,13 +1977,13 @@ class PersistenceStore:
             )
             cursor.execute(
                 "DELETE FROM prospective_outcomes"
-                " WHERE id NOT IN ("
+                " WHERE candidate_key = ? AND id NOT IN ("
                 "   SELECT id FROM prospective_outcomes"
                 "   WHERE candidate_key = ?"
                 "   ORDER BY observed_at_ms DESC"
                 "   LIMIT 500"
                 ")",
-                (str(candidate_key),),
+                (str(candidate_key), str(candidate_key)),
             )
 
     def prospective_outcomes(
@@ -2027,6 +2027,22 @@ class PersistenceStore:
             }
             for row in rows
         ]
+
+    def prospective_outcome_keys(self) -> List[Tuple[str, str]]:
+        """Distinct (candidate_key, horizon) pairs with stored outcomes.
+
+        Used to rebuild in-memory outcome dedup after a restart without
+        scanning full outcome payloads.
+        """
+        if not self._initialized:
+            self.init_db()
+        with self._get_cursor() as cursor:
+            cursor.execute(
+                "SELECT DISTINCT candidate_key, horizon"
+                " FROM prospective_outcomes"
+            )
+            rows = cursor.fetchall()
+        return [(str(r[0]), str(r[1])) for r in rows]
 
     def research_retention_cleanup(
         self, retention_days: Dict[str, int]

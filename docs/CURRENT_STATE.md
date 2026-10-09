@@ -1060,3 +1060,47 @@ all feature rows — never recalculates states, never generates orders.
 - Validation run (120s, observe): 3 REVERSAL_WATCH candidates stored
   (DETECTED), 4 lifecycle events, 7 state rows, safety clean
   (BOT_MODE=observe, 0 keys, 0 orders, 11/11 streams).
+
+## P1-14B.1 time integrity, data quality & prospective readiness — RESULT: PASS (2026-10-09)
+
+Audit → reproduce → correct → test → validate → document. Starting SHA
+`18c639b`; no other agent changes; safety preserved throughout.
+
+- **Anomaly A (monitor-side, confirmed):** pilot `elapsed=-1789712305900s`
+  is `time.time()[s] − t0[ms]` in the executed (unpreserved) monitor
+  version — magnitude, +10 s/poll tick, and exact constant all reproduced
+  (`t0_ms=1791503809710`, poll-1 wall `1791503809.713313`). The bug also
+  defeated the monitor's 200 s timeout (hence the killed session). Core
+  engine clean (zero `time.time()` in `prospective.py`; all-ms paths in
+  `probe.py`/`clock.py`). Preserved `p14b_pilot_monitor.py` (Run B) is
+  unit-clean; kept byte-identical as evidence with hygiene notes.
+- **Defect B (core, fixed):** restart rehydration dead on the production
+  path — `config/probe.json` has no `db_path`, so `_load_from_db`
+  early-returned and restarts orphaned all setups (Run B: `registered_setups=0`
+  with 6 DB rows). Fix: default-store rehydration + seen-set rebuild from
+  stored outcomes + load-failure warning. Post-fix run: `registered_setups=7`
+  from summary #1.
+- **Defect C (core, fixed):** `store_prospective_outcome`'s 500-row bounding
+  DELETE lacked a key filter — every store wiped all other setups' outcome
+  rows (scratch-proven: A×2 then B×1 → total=1, A=0). This artifact shaped
+  the P1-14B "single outcome" evidence. Fix: scoped per-key bound. Post-fix
+  run: 28 coexisting rows (4/key × 7), 0 dupes, all COMPLETE.
+- **Change D (core, fixed):** `observe()` ran only inside the matched-
+  candidate loop, so quiet ticks never matured setups (run #1: 7 setups,
+  4 summaries, 0 calls — against the spec's per-cycle mandate). Fix:
+  per-symbol observation over `opp_bundles` each summary (same mark source).
+- **Corrected denominators:** 7 setups cumulative across ≥4 runs (5 pre-pilot
+  + 1 Run-A-window + 2 Run-B @00:06:30); 28/28 matured cells COMPLETE
+  (4h: 0/7 matured — genuinely future); 0 PENDING/INSUFFICIENT rows;
+  no-lookahead PASS all rows; Defect-C losses unrecoverable (documented,
+  not reconstructed). The original UP-1m outcome predates the pilots.
+- **Host clock:** `w32tm` unsynchronized flag + 9 s dispersion, but live
+  offsets sub-second (−120 ms → +448 ms); design correctly avoids depending
+  on it (exchange E for ordering; host wall only as self-consistent anchor).
+- **Tests:** 609/609 OK (593 + 16 new `test_p14b_1_time_integrity.py`;
+  1 P1-14B restart test hardened). Three controlled 120 s observe-only runs
+  (exit 0) prove each fix live. P1-12A/B, P1-13A untouched.
+- **Readiness:** prolonged-run criteria + blockers recorded (needs 30+ min
+  healthy window, pre-run clock resync note, log-capture hygiene). NO long
+  run started. V2 worktree/ports untouched.
+- Full report: `docs/P1_14B_1_TIME_INTEGRITY_AUDIT.md`.

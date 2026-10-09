@@ -1,6 +1,7 @@
 # P1-14A Prospective Setup Evaluation — Specification
 
-**Status:** IMPLEMENTED · VERIFIED (tests + 554/554 suite) · 2026-10-08
+**Status:** IMPLEMENTED · VERIFIED (tests + 609/609 suite) · 2026-10-08,
+re-validated P1-14B 2026-10-09, integrity-hardened P1-14B.1 2026-10-09
 **Module:** `src/microstructure_probe/prospective.py`
 **Schema:** Persistence v9 (`prospective_setups`, `prospective_outcomes`)
 **Dashboard:** `/api/prospective` (read-only, RESEARCH ONLY banner)
@@ -41,13 +42,19 @@ Order of maturity evaluation: `1m → 5m → 15m → 1h → 4h`.
 
 ## Observation (no lookahead)
 
-- Called once per summary cycle with **current** `as_of_ms` and **current** `mark_price`.
+- Called once per summary cycle for every evaluated symbol with **current**
+  `as_of_ms` and **current** `mark_price` — independent of candidate matches,
+  so quiet ticks still mature registered setups (P1-14B.1: previously gated
+  on matched candidates; per-symbol, observing once per tick).
 - For each registered setup of the observed symbol:
   - For each horizon in order:
     - If `now_ms < detected_at_ms + horizon_ms` → skip (not matured).
     - If `(candidate_key, horizon)` already in `_seen_outcomes` → skip (dedup).
     - Compute outcome using **only** the mark price at observation time.
 - Never uses price data at or before detection time for outcome computation.
+- Late observations stay honest: `observed_at_ms` records the true observation
+  instant (never backdated to maturity); lateness is auditable as
+  `observed_at_ms − (detected_at_ms + horizon_ms)`.
 
 ---
 
@@ -87,7 +94,13 @@ Formula: `mark_return_pct = (current - detected) / detected * 100`.
 ## Idempotency & Restart Safety
 
 - In-memory `_registered` rehydrated from DB on `ProspectiveRecorder` construction (`_load_from_db`).
-- `_seen_outcomes` set prevents duplicate outcome emission across restarts.
+- Rehydration uses the default store when no explicit `db_path` was given (the production
+  configuration — `config/probe.json` carries no `db_path`; P1-14B.1: previously early-returned,
+  orphaning all setups after every restart).
+- `_seen_outcomes` set prevents duplicate outcome emission across restarts: rebuilt from stored
+  outcome rows on load, so an already-observed horizon never re-emits even at a later tick
+  (P1-14B.1; the `UNIQUE(candidate_key, horizon, observed_at_ms)` constraint alone cannot catch
+  re-emissions at new timestamps).
 - Persistence uses `INSERT OR REPLACE` with unique constraint `(candidate_key, horizon, observed_at_ms)`.
 
 ---
@@ -95,7 +108,9 @@ Formula: `mark_return_pct = (current - detected) / detected * 100`.
 ## Bounded Storage
 
 - **In-memory queue:** `max_queue` (default 1000). Drops counted in telemetry.
-- **Persisted outcomes per setup:** max 500 (oldest purged on insert).
+- **Persisted outcomes per setup:** max 500 (oldest purged on insert), scoped strictly
+  per `candidate_key` (P1-14B.1: the bounding DELETE previously lacked the key filter and
+  silently wiped other setups' rows — fixed; sibling global-cap logs intentionally global).
 - **Retention cleanup:** `research_retention_cleanup(retention_days)` — deletes rows older than configured days (default 90). Runs at most hourly.
 
 ---
@@ -140,7 +155,13 @@ State machine: `DISABLED → READY → RUNNING → DEGRADED (on DB error) → ST
 - **No MFE/MAE:** Only directional mark-price return at exact horizon.
 - **No slippage/execution model:** Mark price ≠ fill price.
 - **Survivorship:** Only setups that reach `DETECTED` are registered.
-- **Clock dependency:** Uses probe's wall clock (`_wall_clock_ms()`). Skew tolerated by 60s freshness gate upstream.
+- **Clock dependency:** `detected_at_ms`/`observed_at_ms` anchor on the probe wall clock
+  (`time.time_ns()/1_000_000`, one `as_of_ms` per summary tick); maturities measure true
+  host-elapsed durations and can never look ahead. Exchange event time (E) drives ordering
+  and the skew guard, never prospective stamps; monotonic time drives durations only.
+  Skew tolerated by 60s freshness gate upstream. Host clock itself is weak (`w32tm`
+  unsynchronized) and correctly untrusted for event semantics — see
+  `docs/P1_14B_1_TIME_INTEGRITY_AUDIT.md` §1.
 - **Sample size:** Early horizons (1m) mature quickly; 4h needs genuinely later data.
 
 ---
@@ -162,3 +183,9 @@ State machine: `DISABLED → READY → RUNNING → DEGRADED (on DB error) → ST
 - Retention cleanup
 
 Full suite: **554/554 tests pass**.
+
+P1-14B adds `tests/test_p14b_validation.py` (39 tests). P1-14B.1 adds
+`tests/test_p14b_1_time_integrity.py` (16 tests: anomaly forensics, unit locks,
+default-path rehydration, cross-restart idempotency, pending restart, late-observation
+honesty, maturity boundary, no wall-clock reads, horizon constants, store isolation).
+Full suite: **609/609 tests pass**.

@@ -29,7 +29,7 @@ it does not replace them. Authority stays where it was recorded
 | F-STATE-V2-TL-01 | State timeline visualization | PROPOSED | NOT IMPLEMENTED | Later |
 | F-UNI-01 | Dynamic LIVE-universe expansion (P1-12B) | DECIDED | VERIFIED | P1-12B DONE |
 | F-OPP-01 | Research-based opportunity engine (P1-13A) | DECIDED | IMPLEMENTED (pending VERIFIED) | P1-13A DONE |
-| F-P14A-01 | Prospective setup outcome evaluation (P1-14A / P1-14B) | DECIDED | VERIFIED | P1-14A/P1-14B DONE |
+| F-P14A-01 | Prospective setup outcome evaluation (P1-14A / P1-14B / P1-14B.1) | DECIDED | VERIFIED | P1-14A/P1-14B/P1-14B.1 DONE |
 | F-OPP-UI-01 | Opportunities dashboard (P1-13B) | DECIDED | NOT IMPLEMENTED | P1-13B |
 | F-BT-01 | Historical backtesting (P1-14) | DECIDED | NOT IMPLEMENTED | P1-14 |
 | F-PAPER-01 | Forward paper validation (P1-15) | DECIDED | NOT IMPLEMENTED | P1-15 |
@@ -236,19 +236,22 @@ it does not replace them. Authority stays where it was recorded
 - **Open questions:** none.
 - **Last update:** 2026-10-08.
 
-## F-P14A-01 — Prospective setup outcome evaluation (P1-14A / P1-14B)
+## F-P14A-01 — Prospective setup outcome evaluation (P1-14A / P1-14B / P1-14B.1)
 
 - **Product objective:** register P1-13A opportunity setups at first DETECTED
   and observe forward mark-price outcomes at versioned horizons (1m/5m/15m/1h
   /4h); research-only: no P&L, no probabilities, no lookahead.
 - **Origin / decision date:** `docs/MASTER_PLAN.md` P1-14; `docs/EVENT_LABELING.md`
   forward-outcome concept. Implemented P1-14A 2026-10-08; recovered and re-validated
-  P1-14B 2026-10-09 (see P1-14B section in `docs/CURRENT_STATE.md`).
+  P1-14B 2026-10-09 (see P1-14B section in `docs/CURRENT_STATE.md`); time-integrity
+  audited and three core defects fixed P1-14B.1 2026-10-09 (see P1-14B.1 section
+  in `docs/CURRENT_STATE.md`).
 - **Approval status:** DECIDED (sequenced). **Implementation status:**
-  IMPLEMENTED + VERIFIED (35 `test_prospective.py` + 39 `test_p14b_validation.py`,
-  593/593 canonical suite green — see P1-14A and P1-14B result sections in
-  `docs/CURRENT_STATE.md`; full evidence in `docs/P1_14B_VALIDATION_REPORT.md`).
-- **Target phase:** P1-14A DONE / P1-14B DONE (recovery).
+  IMPLEMENTED + VERIFIED (35 `test_prospective.py` + 39 `test_p14b_validation.py`
+  + 16 `test_p14b_1_time_integrity.py`, 609/609 canonical suite green — see P1-14A,
+  P1-14B and P1-14B.1 result sections in `docs/CURRENT_STATE.md`; full evidence in
+  `docs/P1_14B_VALIDATION_REPORT.md` + `docs/P1_14B_1_TIME_INTEGRITY_AUDIT.md`).
+- **Target phase:** P1-14A DONE / P1-14B DONE (recovery) / P1-14B.1 DONE (integrity).
 - **Dependencies:** P1-13A opportunity engine (setups, DETECTED lifecycle,
   candidate_key + setup_family + direction + market_state + rule_version +
   capability_tier fields).
@@ -264,18 +267,25 @@ it does not replace them. Authority stays where it was recorded
   restart-safe rehydrate from `prospective_setups`; bounded queue + telemetry
   (writes/drops/errors/inflight/high_water); 4h horizon usable with genuinely
   later data; no orders, keys, P&L, or probabilities.
-- **Evidence:** 35 `test_prospective.py` + 39 `test_p14b_validation.py` (593/593
-  canonical suite green); `/api/prospective` (schema_version 9, RESEARCH ONLY
-  banner); migration chain v1–v9; real persisted DB evidence
-  (`data/microprobe.db`, schema v9: 7 setups, 1 observed outcome, event-time/no-
-  lookahead audit PASS — full details in `docs/P1_14B_VALIDATION_REPORT.md`).
+- **Evidence:** 35 `test_prospective.py` + 39 `test_p14b_validation.py` + 16
+  `test_p14b_1_time_integrity.py` (609/609 canonical suite green);
+  `/api/prospective` (schema_version 9, RESEARCH ONLY banner); migration chain
+  v1–v9; real persisted DB evidence (`data/microprobe.db`, schema v9:
+  7 setups, 28 COMPLETE outcomes post-P1-14B.1 fix runs, 0 duplicates,
+  event-time/no-lookahead audit PASS — full details in
+  `docs/P1_14B_VALIDATION_REPORT.md` + `docs/P1_14B_1_TIME_INTEGRITY_AUDIT.md`).
+  Correction: the P1-14B "single outcome" shape was partly an artifact of the
+  outcome-store bounding bug (fixed P1-14B.1); rows already deleted are
+  unrecoverable and documented, not reconstructed.
 - **Docs:** `docs/PROSPECTIVE_EVALUATION_SPEC.md`, `docs/DECISIONS.md`,
   `docs/CURRENT_STATE.md`, `docs/TASK_QUEUE.md`.
 - **Open questions:** MFE/MAE and cohort aggregation deferred to a later
   revision; final horizon list to be frozen once enough 4h data accumulates;
   P1-14B: host-clock skew during the 150s observe window limited outcome
-  coverage (documented, not a code defect).
-- **Last update:** 2026-10-09 (P1-14B recovery validation).
+  coverage (documented, not a code defect); P1-14B.1: prolonged-run readiness
+  blockers recorded (30+ min healthy window, clock resync note) — no long run
+  started.
+- **Last update:** 2026-10-09 (P1-14B.1 time-integrity validation).
 
 ## F-BT-01 — Historical backtesting (P1-14)
 

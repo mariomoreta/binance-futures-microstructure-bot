@@ -222,3 +222,31 @@ Tested via a local dashboard instance bound to 127.0.0.1:8891 feeding `data/micr
 - **Gate:** `python run_tests.py` — 593/593 OK. Mode preserved `BOT_MODE=observe`;
   zero orders, zero capital; Dashboard V2 worktree untouched; P1-14C and later
   phases NOT started.
+
+---
+
+## Addendum — P1-14B.1 (2026-10-09): corrections to this report
+
+P1-14B.1 (`docs/P1_14B_1_TIME_INTEGRITY_AUDIT.md`, full evidence) revises three
+statements above — the underlying rows were real in all cases; only the
+interpretation changes:
+
+1. **"7 setups produced by the pilot / horizons never matured" (§3, §6):**
+   the 7 setups accumulated across ≥4 runs (5 pre-pilot 23:42–23:43, 1 Run-A
+   window, 2 Run-B 00:06:30), and missing outcomes were caused not only by
+   the clock-anomalous window but by two core defects: dead restart
+   rehydration on the default path and an outcome-store bounding bug that
+   silently deleted other setups' rows (scratch-proven). Deleted rows are
+   unrecoverable; post-fix runs accumulated 28/28 matured cells COMPLETE
+   (4h genuinely future), 0 duplicates.
+2. **"Monitor log ms/s mismatch, tolerated" (§4.3):** root-caused exactly —
+   executed monitor computed `time.time()[s] − t0[ms]` (constant reproduced
+   to the unit), which also defeated its 200 s timeout. Core engine verified
+   clean. Executed script version unpreserved (source UNKNOWN); preserved
+   scripts kept byte-identical as evidence.
+3. **"Record the 1-outcome evidence in FEATURE_BACKLOG — DONE" (§8):**
+   superseded — F-P14A-01 now records the corrected 28-outcome accumulation
+   with the artifact note.
+
+Suite after P1-14B.1: **609/609 OK**. No row in §3's tables was modified;
+this addendum only re-interprets them.

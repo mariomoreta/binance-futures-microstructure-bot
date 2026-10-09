@@ -515,3 +515,36 @@ Decisions:
 6. Documentation updated: `docs/P1_14B_VALIDATION_REPORT.md` (full report),
    `docs/CURRENT_STATE.md`, `docs/TASK_QUEUE.md`, `docs/FEATURE_BACKLOG.md`,
    `docs/PROSPECTIVE_EVALUATION_SPEC.md`.
+
+## 2026-10-09 -- P1-14B.1 time integrity, data quality & prospective readiness (PASS)
+
+Audit of the P1-14B pilot anomaly `elapsed=-1789712305900s` plus end-to-end
+time-integrity review, starting at SHA `18c639b` (no divergent work).
+
+Findings (all demonstrated, none assumed):
+1. Anomaly A is monitor-side seconds-minus-milliseconds
+   (`time.time() - t0_ms`; exact constant reproduced); it also defeated the
+   monitor's 200 s timeout, explaining the killed session. Core engine has
+   zero wall-clock unit defects. Executed monitor version unpreserved
+   (source UNKNOWN); preserved scripts kept byte-identical as evidence.
+2. Defect B (core): restart rehydration dead on the production path --
+   `config/probe.json` carries no `db_path`, so `_load_from_db` early-returned
+   and restarts orphaned all setups (live: reg=0 with 6 DB rows). Fixed:
+   default-store rehydration + seen-set rebuild + load-failure warning.
+3. Defect C (core): the outcome-store 500-row bounding DELETE lacked a key
+   filter and silently wiped other setups' rows (scratch-proven; shaped the
+   P1-14B single-outcome evidence; losses unrecoverable). Fixed: scoped
+   per-key bound. Sibling global-cap logs intentionally untouched.
+4. Change D (core): `observe()` ran only on matched-candidate ticks, never
+   on quiet ticks, against the spec's per-cycle mandate (live: 7 setups,
+   4 summaries, 0 calls). Fixed: per-symbol observation over `opp_bundles`.
+5. Corrected denominators: 7 setups cumulative across runs; 28/28 matured
+   horizon cells COMPLETE post-fix (4h genuinely future); 0 duplicates;
+   no-lookahead PASS; host clock weak but correctly untrusted by design.
+
+Validation: 16 new deterministic tests + 1 hardened restart test;
+`python run_tests.py` -- 609/609 OK. Three controlled 120 s observe-only
+runs (exit 0, safety 0/0/0) prove each fix live. No stored row rewritten.
+Prolonged-run readiness criteria recorded with blockers; NO long run
+started; P1-14C NOT started; V2 worktree/ports untouched.
+Full report: `docs/P1_14B_1_TIME_INTEGRITY_AUDIT.md`.

@@ -15,12 +15,15 @@ PENDING/INVALID — never forced to COMPLETE.
 from __future__ import annotations
 
 import math
+import logging
 import queue
 import sqlite3
 import threading
 import time
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
+
+LOGGER = logging.getLogger(__name__)
 
 PROSPECTIVE_SCHEMA_VERSION = 9
 
@@ -41,8 +44,6 @@ OUTCOME_PENDING = "PENDING"
 
 SETUP_REGISTRATION_REASON = "first qualifying detection"
 SETUP_DUPLICATE_REASON = "duplicate evaluation — same episode"
-
-_MAX_OUTCOMES_PER_SETUP = 50
 
 
 def _fnum(value: Any) -> Optional[float]:
@@ -96,19 +97,28 @@ class ProspectiveRecorder:
         self._load_from_db()
 
     def _load_from_db(self) -> None:
-        """Restart safety: rehydrate in-memory registry from DB."""
-        if not self.enabled or self.db_path is None:
+        """Restart safety: rehydrate in-memory registry from DB.
+
+        Uses the default store when no explicit db_path was given (the
+        production configuration: config/probe.json carries no db_path),
+        mirroring the worker/read paths. Also rebuilds the seen-outcome
+        set from stored outcome rows so already-observed horizons never
+        re-emit after a restart (exact cross-restart idempotency).
+        """
+        if not self.enabled:
             return
         try:
             from .persistence import PersistenceStore
-            store = PersistenceStore(db_path=self.db_path)
+            store = PersistenceStore(db_path=self.db_path) if self.db_path else PersistenceStore()
             store.init_db()
             for setup in store.prospective_setups():
                 key = setup.get("candidate_key")
                 if key:
                     self._registered[key] = setup.get("setup_json", {})
-        except Exception:
-            pass
+            for key, horizon in store.prospective_outcome_keys():
+                self._seen_outcomes.add((key, horizon))
+        except Exception as exc:
+            LOGGER.warning("prospective rehydrate failed: %r", exc)
 
     # -- lifecycle ------------------------------------------------
 

@@ -1618,9 +1618,9 @@ class MarketProbe:
                     str(closed.get("family", "?")),
                     "-> %s" % str(closed.get("transition", "?")),
                     str(closed.get("reason", ""))[:300])
-            # P1-14A: register DETECTED setups (with detection mark price),
-            # observe forward outcomes. Registration is per-candidate_key,
-            # so re-registering the same episode is idempotent.
+            # P1-14A: register DETECTED setups (with detection mark price).
+            # Registration is per-candidate_key, so re-registering the same
+            # episode is idempotent.
             for cand in opp_matched:
                 sym = str(cand.get("symbol", "")).upper()
                 price_row = opp_bundles.get(sym, {}).get(
@@ -1651,9 +1651,20 @@ class MarketProbe:
                         },
                         as_of_ms,
                     )
+            # P1-14B.1: observe forward outcomes once per summary cycle for
+            # every evaluated symbol (per the spec Observation section),
+            # independent of candidate matches so quiet ticks still mature
+            # registered setups; per-symbol so multi-candidate ticks
+            # observe once.
+            for sym, bundle in opp_bundles.items():
+                features = bundle.get("features", {})
+                price_row = features.get("price", {}) if isinstance(
+                    features, dict) else {}
+                mark = price_row.get("current_price") if isinstance(
+                    price_row, dict) else None
                 if mark is not None:
                     self._prospective.observe(
-                        sym, as_of_ms, float(mark))
+                        str(sym).upper(), as_of_ms, float(mark))
         except Exception as exc:
             LOGGER.warning(json.dumps({"kind": "persistence_error", "error": str(exc)}))
         LOGGER.info(json.dumps(summary, sort_keys=True, allow_nan=False))
