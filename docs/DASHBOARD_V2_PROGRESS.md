@@ -258,3 +258,10 @@ architecture + static foundation (DASH-V2-00); no integration.
 - Browser smoke on http://127.0.0.1:3024 checked /movers, /overview, /opportunities, /system, /symbol/BTCUSDT: all HTTP 200; CSS assets returned 200. Captured `v2-18-desktop-shell.png` (untracked QA) at reference resolution and visually inspected. Shared desktop shell now materially closer to approved target.
 - Remaining differences are substantial: missing true time-series sparklines, richer market columns, dense panels and some typography and status-line alignment. Do NOT declare pixel parity or display invented market data. Approved Opportunities PNG mislabel issue remains independently documented.
 - Frontend checks: TypeScript PASS, ESLint PASS, Vitest 49/49 PASS, production build PASS prior to global copy-only correction. Keep future commits scoped; do not alter backend/Muse Spark P1-14B.
+
+## DASH-V2-19 — Desktop market breadth visual component (2026-10-08)
+
+- Compared actual Chrome 1672x941 Movers with approved target and introduced a horizontal market-breadth research panel (positive/negative/flat/missing buckets) from existing DEMO fixture only. Explicitly distinguishes 14 measured of 16 fixtures and 2 UNKNOWN, with coverage disclaimer. No invented time series, real feed status or market-wide claim.
+- Desktop structure: branded horizontal terminal, quick filters, summary, market breadth strip, screener, central table and research leaderboards. This is incremental parity improvement, not full match with approved design.
+- Verification: TypeScript PASS, ESLint PASS, Vitest 50/50 PASS, production build PASS; isolated preview 3025/movers HTML/CSS HTTP 200. Screenshot `movers-v2-19-qa.png` (local QA, untracked) visually inspected at 1672x941.
+- Future priority: high-value additional table metrics based on verified live API schema and genuine as-of price time series for sparklines; avoid fabricated flow, probabilities or price traces.
