@@ -44,7 +44,7 @@ signal engine → position manager → risk engine → execution engine
 
 | Layer | File | Status |
 |---|---|---|
-| Transport (2 routed WS + reconnect) | `probe.py` | Implemented |
+| Transport (2 routed WS + reconnect) | `probe.py` | Implemented + P1-14B.3 freshness watchdog (post-guard accepted-traffic accounting per stream, pure stream→connection mapping, 90 s / 300 s budgets with 120 s grace + cooldown, one-shot forced reconnect through the normal retry path, additive summary `freshness` block; LOCAL_POLICY, no aggressive loops) |
 | Normalization + skew rejection | `probe.py` (`_handle_message`) | Implemented |
 | Clock sync | `clock.py` | Implemented |
 | Detectors (liq/funding/volume) | `detectors.py` | Implemented (hypothesis thresholds) |

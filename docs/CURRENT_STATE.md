@@ -1131,3 +1131,37 @@ Per §6 the <30 min window is INSUFFICIENT — duration objective not met.
   (resource with capture note); TRANSPORT PARTIAL (limiting gate).
 - No 4–6 h run authorized. V2/main untouched. Full report:
   `docs/P1_14B_2_OPERATIONAL_STABILITY_REPORT.md`.
+
+## P1-14B.3 transport freshness & prospective outcome validity — RESULT: PARTIAL (2026-10-09)
+
+P1-14B.2's episode root-caused from per-summary corrected-lag series
+(bookTicker p95 0.4 s → 375 s; processing sub-ms frozen; rate collapse without
+drain spike; syncs stable; worst stall on zero-reconnect `public`): host-external
+delivery stall, then path outage. Local backlog, clock skew, and HOT logic discarded
+with evidence; provider-vs-ISP left unseparated (no vantage point).
+Open-but-stale never triggers error retries (gap), and `last_seen` updates on receipt,
+so flowing-stale traffic looked healthy — receipt ≠ acceptance.
+
+- 68 historical outcomes classified read-only (rows preserved): 19 VALID_FRESH,
+  28 VALID_BUT_DELAYED (honest-late), 21 INSUFFICIENT_FRESHNESS_EVIDENCE
+  (degraded-window, math/lookahead still verified), 0 STALE_OR_INVALID.
+  Detection-time marks were fresh everywhere (1–17 s); only observation-time age
+  was unknowable in v9 columns.
+- Fixes (minimal, no new motor states): stale-mark gate (age >120 s known →
+  PENDING with explicit reason; unknown fail-open) with `sample_age_ms`
+  pass-through; freshness watchdog (accepted-traffic accounting per stream,
+  pure stream→connection mapping, 90 s / 300 s budgets, 120 s grace + cooldown,
+  one-shot consume → existing retry path); additive summary `freshness` block.
+- Tests: 629/629 OK (609 + 20 new `test_p14b_3_transport_freshness.py`).
+- Controlled validation (single authorized ≤35 min run, PID 34040, UTF-8 log
+  `logs/probe-runs/probe-20261009T100545Z.log`): 10-min pre-window committed
+  (6 min pristine); watchdog fired market+public → both reconnected in ~12 s →
+  5 min zero rejects (recovery PROVEN live); second episode + path outage
+  (handshake timeouts, 10 error-reconnects) → controlled stop at 17.1 min
+  (exit 0). Window <30 min = INSUFFICIENT. Post-run: 24 setups, 99 outcomes
+  (68+31) all COMPLETE, 0 dupes; 21 missing cells fully explained (OGN/RLC
+  15m/1h/4h: never simultaneously matured+observed+marked — unsubscribed +
+  CORE-only restore, no defect). No PENDING fired live (marks absent-not-stale).
+- Gates: CLOCK/PROSPECTIVE/PERSISTENCE/SAFETY PASS; TRANSPORT/FRESHNESS PARTIAL.
+  No 4–6 h run authorized; P1-14C not started; V2/main untouched. Full report:
+  `docs/P1_14B_3_TRANSPORT_FRESHNESS_AUDIT.md`.

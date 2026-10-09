@@ -573,3 +573,36 @@ Gates: CLOCK/PERSISTENCE/PROSPECTIVE/RESOURCE/SAFETY PASS;
 TRANSPORT PARTIAL (limiting). No 4-6 h run authorized; P1-14C not started;
 V2 worktree/ports and main untouched.
 Full report: `docs/P1_14B_2_OPERATIONAL_STABILITY_REPORT.md`.
+
+## 2026-10-09 -- P1-14B.3 transport freshness & outcome validity (PARTIAL)
+
+Root-caused the P1-14B.2 episode from per-summary corrected-lag series
+(bookTicker p95 0.4 s -> 375 s; processing sub-ms frozen; rate collapse
+without drain spike; syncs stable; worst stall on zero-reconnect public):
+host-external delivery stall, then path outage. Local backlog, clock skew,
+and HOT logic discarded with evidence; provider-vs-ISP left unseparated.
+Confirmed gaps: open-but-stale never triggers error retries, and last_seen
+updates on receipt, so flowing-stale traffic looked healthy.
+
+68 historical outcomes classified read-only (rows preserved): 19 VALID_FRESH,
+28 VALID_BUT_DELAYED, 21 INSUFFICIENT_FRESHNESS_EVIDENCE, 0 STALE_OR_INVALID
+(audit labels, not motor states).
+
+Fixes (minimal, no new motor states): stale-mark gate (known age >120 s ->
+PENDING with explicit reason; unknown fail-open) with sample_age_ms
+pass-through; freshness watchdog (post-guard accepted accounting per stream,
+pure stream->connection mapping, 90 s / 300 s budgets, 120 s grace + cooldown,
+one-shot consume into the existing retry path); additive summary freshness
+block. 20 new tests; suite 629/629 OK.
+
+Single authorized <=35 min run (PID 34040, UTF-8 log
+probe-20261009T100545Z.log): 10-min pre-window committed; watchdog fired
+market+public -> both reconnected in ~12 s -> 5 min zero rejects (recovery
+PROVEN live); second episode + handshake-timeout outage -> controlled stop
+at 17.1 min (exit 0). Window <30 min = INSUFFICIENT. Post-run: 24 setups,
+99/99 COMPLETE, 0 dupes; 21 missing cells fully explained (OGN/RLC 15m/1h/4h
+never simultaneously matured+observed+marked: unsubscribed + CORE-only
+restore, no defect). Gates: CLOCK/PROSPECTIVE/PERSISTENCE/SAFETY PASS;
+TRANSPORT/FRESHNESS PARTIAL. No 4-6 h authorization; P1-14C not started;
+V2 worktree/ports and main untouched.
+Full report: `docs/P1_14B_3_TRANSPORT_FRESHNESS_AUDIT.md`.

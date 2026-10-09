@@ -84,6 +84,54 @@ def build_hot_stream_urls(symbols: tuple = ()) -> dict[str, str]:
     }
 
 
+# LOCAL_POLICY thresholds (P1-14B.3 freshness watchdog). No Binance-doc
+# claims: tuned against observed healthy maxima (cadenced silence ~4.5 s,
+# silence flag at stale_after_seconds=10 s) vs the abort scale (minutes).
+# A connection whose streams deliver no guard-accepted (hence fresh)
+# message for this long is open-but-stale and gets one forced reconnect
+# through the normal retry path. hot-market carries aggTrade only, which
+# is legitimately sparse on quiet symbols, so it gets the longer budget.
+_FRESHNESS_RECONNECT_AFTER_MS = 90_000
+_HOT_MARKET_FRESHNESS_AFTER_MS = 300_000
+_FORCED_RECONNECT_COOLDOWN_S = 120.0
+_FRESHNESS_GRACE_S = 120.0
+
+
+def _connection_for_stream(stream: Any, core_symbols: Any,
+                           hot_active: Any) -> str | None:
+    """Map a stream name to its owning connection (pure, testable).
+
+    Returns public/market/hot-public/hot-market, or None for streams that
+    cannot be attributed (unknown symbols — conservatively unwatched).
+    Global array feeds (!markPrice, !forceOrder) always ride market.
+    """
+    name = str(stream or "")
+    if name in ("!markPrice@arr@1s", "!forceOrder@arr"):
+        return "market"
+    if "@" not in name:
+        return None
+    symbol, _, kind = name.partition("@")
+    symbol = symbol.upper()
+    try:
+        hot = {str(s).upper() for s in (hot_active or ())}
+        core = {str(s).upper() for s in (core_symbols or ())}
+    except TypeError:
+        return None
+    if symbol in hot:
+        if kind in ("bookTicker", "depth20@100ms"):
+            return "hot-public"
+        if kind == "aggTrade":
+            return "hot-market"
+        return None
+    if symbol in core:
+        if kind in ("bookTicker", "depth20@100ms"):
+            return "public"
+        if kind == "aggTrade":
+            return "market"
+        return None
+    return None
+
+
 @dataclass
 class RuntimeStats:
     started_monotonic: float
@@ -245,6 +293,14 @@ class MarketProbe:
         self._hot_seen: dict = {}
         self._hot_last_resync: float | None = None
         self._hot_reconnect_marks: dict = {}
+        # P1-14B.3 freshness watchdog: receipt != acceptance. Tracks the
+        # wall-clock ms of the last guard-ACCEPTED (hence fresh) message
+        # per stream; connections with no accepted traffic beyond budget
+        # get one forced reconnect through the normal retry path.
+        self._last_accepted_ms: dict = {}
+        self._reconnect_requested: set = set()
+        self._last_forced_reconnect_mono: dict = {}
+        self._forced_reconnect_counts: dict = {}
         self._discovery_info: dict = {
             "enabled": bool(config.discovery.enabled),
             "last_scan_ms": None,
@@ -495,6 +551,12 @@ class MarketProbe:
                     LOGGER.info(json.dumps({"kind": "connected", "endpoint": name}))
                     delay = 1.0
                     async for raw_message in websocket:
+                        if self._consume_reconnect_request(name):
+                            LOGGER.info(json.dumps(
+                                {"kind": "forced_reconnect",
+                                 "endpoint": name,
+                                 "reason": "freshness-watchdog"}))
+                            break
                         self._handle_message(raw_message)
             except asyncio.CancelledError:
                 raise
@@ -584,6 +646,11 @@ class MarketProbe:
                     rejected_end_ns,
                 )
                 return
+
+            # P1-14B.3: acceptance stamp (receipt != acceptance). Only
+            # guard-passing messages prove a stream is fresh; rejected
+            # (stale) traffic must not refresh freshness.
+            self._last_accepted_ms[stream] = received_ms
 
             if stream.endswith("@bookTicker"):
                 symbol = str(payload["s"])
@@ -891,6 +958,9 @@ class MarketProbe:
         while True:
             await asyncio.sleep(self.config.summary_interval_seconds)
             self.log_summary(final=False)
+            # P1-14B.3: probe-owned periodic path only (never dashboard
+            # reads) — open-but-stale connections get one forced reconnect.
+            self._check_connection_freshness(self._wall_clock_ms())
 
     @property
     def discovery_client(self) -> DiscoveryClient:
@@ -1163,6 +1233,68 @@ class MarketProbe:
         except Exception:
             pass
 
+    def _consume_reconnect_request(self, name: str) -> bool:
+        """One-shot consume of a forced-reconnect request (watchdog)."""
+        if name in self._reconnect_requested:
+            self._reconnect_requested.discard(name)
+            return True
+        return False
+
+    def _check_connection_freshness(self, now_ms: float) -> list:
+        """Freshness watchdog (P1-14B.3): request at most one forced
+        reconnect per stale connection. A connection is stale when NONE
+        of its streams has a guard-accepted message within budget —
+        open-but-stale never triggers the error retry path on its own.
+        Cooldown-guarded (no aggressive loops); connection-age graced;
+        unattributable streams never fire. Returns fired names.
+        """
+        fired: list = []
+        try:
+            now_mono = self._monotonic()
+            expected = expected_stream_names(self.config, self._hot_active)
+            by_conn: dict = {}
+            for stream in expected:
+                conn = _connection_for_stream(
+                    stream, self.config.symbols, self._hot_active)
+                if conn is not None:
+                    by_conn.setdefault(conn, []).append(stream)
+            live = {"public", "market"}
+            live.update(name for name in ("hot-public", "hot-market")
+                        if name in self._hot_tasks)
+            for name in sorted(live):
+                streams = by_conn.get(name, [])
+                if not streams:
+                    continue
+                started = self.stats.connection_started.get(name)
+                if started is None or now_mono - started < _FRESHNESS_GRACE_S:
+                    continue
+                last = self._last_forced_reconnect_mono.get(name)
+                if last is not None and now_mono - last < _FORCED_RECONNECT_COOLDOWN_S:
+                    continue
+                budget = (_HOT_MARKET_FRESHNESS_AFTER_MS
+                          if name == "hot-market"
+                          else _FRESHNESS_RECONNECT_AFTER_MS)
+                freshest = max(
+                    [float(self._last_accepted_ms.get(s, float("-inf")))
+                     for s in streams])
+                if now_ms - freshest > budget:
+                    self._reconnect_requested.add(name)
+                    self._last_forced_reconnect_mono[name] = now_mono
+                    self._forced_reconnect_counts[name] = (
+                        self._forced_reconnect_counts.get(name, 0) + 1)
+                    LOGGER.info(json.dumps(
+                        {"kind": "forced_reconnect_requested",
+                         "endpoint": name,
+                         "no_fresh_accepted_ms": round(now_ms - freshest, 1)
+                         if freshest != float("-inf") else None,
+                         "budget_ms": budget}))
+                    fired.append(name)
+        except Exception as exc:
+            LOGGER.warning(json.dumps(
+                {"kind": "freshness_watchdog_error",
+                 "error": f"{type(exc).__name__}: {exc}"}))
+        return fired
+
     async def _discovery_loop(self) -> None:
         # First scan immediately so the dashboard has discovery state early.
         await self.run_discovery_scan()
@@ -1381,6 +1513,15 @@ class MarketProbe:
              # P1-14A additive block: prospective setup evaluator
              # (forward outcome observation for research setups).
              "prospective": self._prospective.status(),
+             # P1-14B.3 additive block: freshness observability — receipt
+             # != acceptance. Connected/message counts never imply health;
+             # this block separates them (last guard-accepted ms per
+             # stream, pending forced reconnects, forced counts).
+             "freshness": {
+                 "lastAcceptedMsByStream": dict(self._last_accepted_ms),
+                 "reconnectRequested": sorted(self._reconnect_requested),
+                 "forcedReconnects": dict(self._forced_reconnect_counts),
+             },
          }
 
     @staticmethod
@@ -1662,9 +1803,19 @@ class MarketProbe:
                     features, dict) else {}
                 mark = price_row.get("current_price") if isinstance(
                     price_row, dict) else None
+                # P1-14B.3: carry the quote age so horizons maturing on a
+                # stale mark record PENDING (explicit reason) instead of a
+                # stale-price COMPLETE. Unknown/malformed age stays fail-open.
+                age = price_row.get("sample_age_ms") if isinstance(
+                    price_row, dict) else None
+                try:
+                    age_arg = float(age) if age is not None else None
+                except (TypeError, ValueError):
+                    age_arg = None
                 if mark is not None:
                     self._prospective.observe(
-                        str(sym).upper(), as_of_ms, float(mark))
+                        str(sym).upper(), as_of_ms, float(mark),
+                        mark_age_ms=age_arg)
         except Exception as exc:
             LOGGER.warning(json.dumps({"kind": "persistence_error", "error": str(exc)}))
         LOGGER.info(json.dumps(summary, sort_keys=True, allow_nan=False))

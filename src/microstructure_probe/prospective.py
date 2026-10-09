@@ -45,6 +45,12 @@ OUTCOME_PENDING = "PENDING"
 SETUP_REGISTRATION_REASON = "first qualifying detection"
 SETUP_DUPLICATE_REASON = "duplicate evaluation — same episode"
 
+# LOCAL_POLICY (P1-14B.3): a mark quote older than this at observation time
+# is too stale to complete a horizon. Such horizons record PENDING with an
+# explicit reason instead of a stale-price COMPLETE. Unknown age stays
+# fail-open (current behavior). No new outcome state is introduced.
+STALE_MARK_AGE_MS = 120_000
+
 
 def _fnum(value: Any) -> Optional[float]:
     try:
@@ -187,16 +193,24 @@ class ProspectiveRecorder:
         return True
 
     def observe(
-        self, symbol: str, as_of_ms: int, mark_price: Optional[float]
+        self, symbol: str, as_of_ms: int, mark_price: Optional[float],
+        mark_age_ms: Optional[float] = None,
     ) -> List[Dict[str, Any]]:
         """Check matured horizons for registered setups of this symbol.
 
         Returns newly matured outcomes (empty list when none ready).
         Never accesses data at or before detection time for outcome
         computation — only strictly later observations.
+        mark_age_ms (when known) gates stale quotes: horizons maturing
+        while the quote is older than STALE_MARK_AGE_MS record PENDING
+        with an explicit reason instead of a stale-price COMPLETE.
         """
         sym = str(symbol).upper()
         now_ms = int(as_of_ms)
+        try:
+            age_ms: Optional[float] = float(mark_age_ms) if mark_age_ms is not None else None
+        except (TypeError, ValueError):
+            age_ms = None
         matured: List[Dict[str, Any]] = []
         with self._lock:
             for key, reg in list(self._registered.items()):
@@ -220,7 +234,8 @@ class ProspectiveRecorder:
                         }
                     else:
                         outcome = self._compute_outcome(
-                            key, reg, horizon, mature_at, now_ms, mark_price
+                            key, reg, horizon, mature_at, now_ms, mark_price,
+                            mark_age_ms=age_ms,
                         )
                     self._seen_outcomes.add(outcome_key)
                     matured.append(outcome)
@@ -284,6 +299,7 @@ class ProspectiveRecorder:
         mature_at: int,
         as_of_ms: int,
         mark_price: float,
+        mark_age_ms: Optional[float] = None,
     ) -> Dict[str, Any]:
         detected_price = reg.get("detected_mark_price")
         if detected_price is None:
@@ -293,6 +309,17 @@ class ProspectiveRecorder:
                 "observed_at_ms": as_of_ms,
                 "outcome_state": OUTCOME_INSUFFICIENT_HISTORY,
                 "reason": "no detection-time reference price",
+            }
+        if mark_age_ms is not None and mark_age_ms > STALE_MARK_AGE_MS:
+            return {
+                "candidate_key": key,
+                "horizon": horizon,
+                "observed_at_ms": as_of_ms,
+                "outcome_state": OUTCOME_PENDING,
+                "reason": (
+                    "stale mark price (age %dms exceeds %dms); "
+                    "maturity honest, quote too old" % (int(mark_age_ms), STALE_MARK_AGE_MS)
+                ),
             }
         ret = (mark_price - detected_price) / detected_price * 100.0
         return {

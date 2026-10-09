@@ -1,7 +1,8 @@
 # P1-14A Prospective Setup Evaluation — Specification
 
-**Status:** IMPLEMENTED · VERIFIED (tests + 609/609 suite) · 2026-10-08,
-re-validated P1-14B 2026-10-09, integrity-hardened P1-14B.1 2026-10-09
+**Status:** IMPLEMENTED · VERIFIED (tests + 629/629 suite) · 2026-10-08,
+re-validated P1-14B 2026-10-09, integrity-hardened P1-14B.1 2026-10-09,
+freshness-hardened P1-14B.3 2026-10-09
 **Module:** `src/microstructure_probe/prospective.py`
 **Schema:** Persistence v9 (`prospective_setups`, `prospective_outcomes`)
 **Dashboard:** `/api/prospective` (read-only, RESEARCH ONLY banner)
@@ -55,6 +56,12 @@ Order of maturity evaluation: `1m → 5m → 15m → 1h → 4h`.
 - Late observations stay honest: `observed_at_ms` records the true observation
   instant (never backdated to maturity); lateness is auditable as
   `observed_at_ms − (detected_at_ms + horizon_ms)`.
+- Stale-quote gate (P1-14B.3): when the mark age at observation is KNOWN and exceeds
+  `STALE_MARK_AGE_MS` (120_000, LOCAL_POLICY), the horizon records PENDING with an explicit
+  reason (`stale mark price (age Nms exceeds …)`) instead of a stale-price COMPLETE.
+  Unknown/malformed age stays fail-open (current behavior). No new outcome state;
+  PENDING remains terminal via the seen-set. The probe passes `sample_age_ms` from the
+  price row. Rationale: `observed_at ≥ maturity` proves order, never quote freshness.
 
 ---
 
@@ -188,4 +195,7 @@ P1-14B adds `tests/test_p14b_validation.py` (39 tests). P1-14B.1 adds
 `tests/test_p14b_1_time_integrity.py` (16 tests: anomaly forensics, unit locks,
 default-path rehydration, cross-restart idempotency, pending restart, late-observation
 honesty, maturity boundary, no wall-clock reads, horizon constants, store isolation).
-Full suite: **609/609 tests pass**.
+P1-14B.3 adds `tests/test_p14b_3_transport_freshness.py` (20 tests: stale-mark gate incl.
+boundary/fail-open/terminality, accepted-vs-receipt accounting, stream→connection mapping,
+watchdog fire/grace/cooldown/long-threshold/one-shot, audit-label policy).
+Full suite: **629/629 tests pass**.

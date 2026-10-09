@@ -99,6 +99,20 @@ the dashboard exists. No classifier before raw-feature dashboard validation.
   PARTIAL (limiting). No 4–6 h run authorized. Report:
   `docs/P1_14B_2_OPERATIONAL_STABILITY_REPORT.md`.
 
+- `P1-14B.3` (2026-10-09) TRANSPORT FRESHNESS & PROSPECTIVE OUTCOME VALIDITY —
+  **PARTIAL**. Episode root-caused (host-external delivery stall; local backlog,
+  clock, HOT logic discarded with evidence). 68 rows classified read-only
+  (19/28/21/0, rows preserved). Fixes: stale-mark gate (known age >120 s →
+  PENDING, unknown fail-open) + freshness watchdog (accepted accounting,
+  90 s/300 s budgets, cooldowns, existing retry path) + summary freshness
+  block; no new motor states. 20 new tests; suite 629/629 OK. Single ≤35 min
+  run (PID 34040): watchdog recovery PROVEN live (5 min zero rejects after
+  forced reconnects); path outage → controlled stop at 17.1 min (exit 0).
+  Post-run: 24 setups, 99/99 COMPLETE, 0 dupes; 21 missing cells explained
+  (unsubscribed OGN/RLC, no defect). Gates: CLOCK/PROSPECTIVE/PERSISTENCE/
+  SAFETY PASS; TRANSPORT/FRESHNESS PARTIAL. No 4–6 h authorization. Report:
+  `docs/P1_14B_3_TRANSPORT_FRESHNESS_AUDIT.md`.
+
 - `P1-10R` PROLONGED ≥6H SOAK RE-RUN — P1-10 FAIL stays FAIL (truncated at
   4.91h); re-run with dashboard live, blocking survivable launch, merged
   stdout+stderr as UTF-8 (see `docs/DECISIONS.md` launch rule).
@@ -324,6 +338,16 @@ strategies (P3), paper engine/positions (P4), execution (P5).
   + token research card live. 408/408 tests (32 new).
 
 ## LAST_VERIFICATION
+
+
+
+- 2026-10-09 (P1-14B.3): `python run_tests.py` → 629/629 OK (609 + 20 new
+  transport-freshness tests). Single ≤35 min run aborted at 17.1 min
+  (watchdog recovery proven live, then path outage; exit 0, controlled stop,
+  evidence preserved); post-run 24 setups / 99 COMPLETE / 0 dupes. Verdict
+  PARTIAL (duration insufficient; transport limiting). Next: clean 10-min
+  pre-window + ≥30 min healthy run before any 4–6 h authorization; P1-14C
+  needs explicit instruction.
 
 
 
