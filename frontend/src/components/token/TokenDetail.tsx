@@ -1,4 +1,4 @@
-import Link from "next/link";
+import Link from "next/link";import {VerifiedPriceChart} from "./VerifiedPriceChart";
 import { DataStateBadge, TierBadge, StatusChip } from "@/components/status/badges";
 import type { TokenDetail as Detail } from "@/lib/token-detail";
 import styles from "./TokenDetail.module.css";
@@ -38,7 +38,7 @@ export function TokenDetail({data}:{data:Detail}) {
     <div className={styles.metricGrid}>{data.metrics.map(x=><div className={styles.metric} key={x.label}><div><b>{x.label}</b><small>{x.context}</small></div><strong>{x.value??"—"}</strong></div>)}</div>
   </section>
   <div className={styles.columns}>
-    <section className={styles.panel}><h2>Price and structure</h2><div className={styles.empty}><strong>Awaiting verified candle series</strong><span>Chart, structure levels and event overlays require as-of aligned Python data.</span><span className={styles.emptyBadge}>NO SERIES · NOT LIVE</span></div></section>
+    <section className={styles.panel}><h2>Price and structure</h2><VerifiedPriceChart symbol={data.symbol}/></section>
     <section className={styles.panel}><h2>Research history / transitions</h2><div className={styles.empty}><strong>No validated outcomes attached</strong><span>Transition timeline is a separately proposed feature. Historical hypotheses require P1-14 validation.</span><span className={styles.emptyBadge}>NOT EVALUATED</span></div></section>
   </div>
   <footer>RESEARCH ONLY · DEMO DATA — NOT LIVE · No trade recommendations, forecasts or P&amp;L.</footer>

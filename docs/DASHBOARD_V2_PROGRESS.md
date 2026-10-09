@@ -272,3 +272,10 @@ architecture + static foundation (DASH-V2-00); no integration.
 - Added explicit 1h trend slot per symbol showing `NO SERIES` until as-of-aligned verified price history exists. Never invent sparklines or mistake present 24h value for historical series. Sticky symbol column and refined table-header contrast support dense desktop reading.
 - Verified frontend TypeScript, ESLint, Vitest 50/50 PASS and Next production build PASS; Chrome screenshot `movers-v2-20-qa.png` at approved 1672x941 shows all table columns, no fake trends. HTML/CSS both HTTP 200 on isolated `http://127.0.0.1:3026/movers`.
 - Fidelity remains PARTIAL: dense authentic time-series mini charts and broader market metrics require future versioned data contract. Backend P1-14B untouched.
+
+## DASH-V2-21 — Verified mark-price chart read path (2026-10-08)
+
+- Contract-audited canonical Python `GET /api/symbol/{symbol}/price?range=1h` which reads persisted 10s markPrice buckets and returns timestamp/price points. Added fixed-loopback, read-only, bounded and no-cache Next BFF `GET /api/v1/price-series/[symbol]` with symbol validation, abort timeout, source/range checks and explicit 503 fallback.
+- Added client-only `VerifiedPriceChart` in Token Detail Price and structure section: a real SVG line only when >=3 valid as-of points, rejecting future/out-of-window/invalid prices and preserving source timestamps. No fake sparkline from one 24h return. Removed duplicate placeholder.
+- Python backend on port 8091 was unreachable during this round: live API check returned BFF 503 as designed, screenshot of BTC Token Detail at 1672x941 confirmed unchanged authoritative classifier UNKNOWN. No verified live price-series demonstrated. No backend mutation or process restart.
+- Frontend TypeScript/ESLint PASS, Vitest 52/52 PASS, Next build PASS (pre duplicate-placeholder removal); TypeScript/ESLint and Vitest 52/52 rerun after final edit. HTML+CSS both HTTP 200 in isolated preview 3027. Still NOT full design parity or live system.
