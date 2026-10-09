@@ -286,3 +286,10 @@ architecture + static foundation (DASH-V2-00); no integration.
 - UI still labels core Movers fixture metrics DEMO. A real historical line, when present, is explicitly labeled by accessible markPrice provenance, not conflated with the fictional demo values.
 - No Python code/process modifications, no active Muse Spark P1-14B interference. Frontend validation TypeScript/ESLint PASS, Vitest 52/52 PASS, Next production build PASS. Isolated preview `http://127.0.0.1:3028/movers` HTML and two CSS HTTP 200, headless Chrome 1672x941 screenshot `movers-v2-22-qa.png` reviewed. Python source unavailable, BFF returned HTTP 503 and honest `NO SERIES` displayed. No actual chart-data success demonstrated.
 - Remaining: real deep series coverage + coherence of current/demo market rows, browser interaction tests for asynchronous sparkline, official design fidelity audit.
+
+## DASH-V2-23 — Enforced source segregation in Movers (2026-10-08)
+
+- Architectural correction: removed Python historical sparkline from the per-row DEMO fixture table. It was unsafe to juxtapose actual persisted price history with fictional price, returns, momentum and fixture freshness in the same row. Restored DEMO screener to a homogeneous fixture-only table.
+- New standalone `VerifiedHistoryPanel` with BTCUSDT/ETHUSDT/SOLUSDT historical markPrice 1h sparklines independently from demo rankings. Shows explicit read-only historical provenance and warns against comparing or correlating them with DEMO metrics. Existing BFF returns 503 when Python unavailable; no invented curves.
+- QA: TypeScript PASS, ESLint PASS, Vitest 53/53 PASS, Next build PASS. Chrome 1672x941 screenshot `movers-v2-23-qa.png` confirms table-only fixtures; historical panel follows table (below first viewport), available on scroll. Preview `http://127.0.0.1:3029/movers` HTML/CSS 200. No backend P1-14B interference.
+- Next requirement: eventually replace entire Movers DEMO universe with an authoritative time-aligned backend read model and show historical series only in compatible provenance context; do not mix until validated.
