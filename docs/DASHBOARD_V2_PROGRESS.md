@@ -279,3 +279,10 @@ architecture + static foundation (DASH-V2-00); no integration.
 - Added client-only `VerifiedPriceChart` in Token Detail Price and structure section: a real SVG line only when >=3 valid as-of points, rejecting future/out-of-window/invalid prices and preserving source timestamps. No fake sparkline from one 24h return. Removed duplicate placeholder.
 - Python backend on port 8091 was unreachable during this round: live API check returned BFF 503 as designed, screenshot of BTC Token Detail at 1672x941 confirmed unchanged authoritative classifier UNKNOWN. No verified live price-series demonstrated. No backend mutation or process restart.
 - Frontend TypeScript/ESLint PASS, Vitest 52/52 PASS, Next build PASS (pre duplicate-placeholder removal); TypeScript/ESLint and Vitest 52/52 rerun after final edit. HTML+CSS both HTTP 200 in isolated preview 3027. Still NOT full design parity or live system.
+
+## DASH-V2-22 — Movers verified 1h sparkline integration (2026-10-08)
+
+- Added `VerifiedSparkline` to each visible paginated Movers row. Reads already-versioned same-origin `/api/v1/price-series/[symbol]` for time-ordered persisted markPrice samples; only draws a line on >=3 valid points, never derives a fabricated trend from static daily percent changes. Unavailable/unpopulated responses retain `NO SERIES`.
+- UI still labels core Movers fixture metrics DEMO. A real historical line, when present, is explicitly labeled by accessible markPrice provenance, not conflated with the fictional demo values.
+- No Python code/process modifications, no active Muse Spark P1-14B interference. Frontend validation TypeScript/ESLint PASS, Vitest 52/52 PASS, Next production build PASS. Isolated preview `http://127.0.0.1:3028/movers` HTML and two CSS HTTP 200, headless Chrome 1672x941 screenshot `movers-v2-22-qa.png` reviewed. Python source unavailable, BFF returned HTTP 503 and honest `NO SERIES` displayed. No actual chart-data success demonstrated.
+- Remaining: real deep series coverage + coherence of current/demo market rows, browser interaction tests for asynchronous sparkline, official design fidelity audit.
