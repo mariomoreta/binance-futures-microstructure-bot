@@ -84,7 +84,7 @@ def _seed_setup_and_outcome(db_file, key="K", detected_ms=EVENT_BASE_MS,
     rec.start()
     assert rec.register_setup(key, _cand(key, detect_price=price), detected_ms)
     if observed_ms is not None:
-        rec.observe("ETHUSDT", observed_ms, price * 1.01)
+        rec.observe("ETHUSDT", observed_ms, price * 1.01, mark_age_ms=1_000)
     rec.stop_and_drain()
     store = PersistenceStore(db_path=db_file)
     store.init_db()
@@ -215,7 +215,7 @@ class TestCrossRestartIdempotency(TestCase):
 
         rec2 = ProspectiveRecorder(db_path=db_file, enabled=True)
         rec2.start()
-        outcomes = rec2.observe("ETHUSDT", EVENT_BASE_MS + 90_000, 102.0)
+        outcomes = rec2.observe("ETHUSDT", EVENT_BASE_MS + 90_000, 102.0, mark_age_ms=1_000)
         rec2.stop_and_drain()
 
         self.assertEqual(outcomes, [])
@@ -245,7 +245,7 @@ class TestPendingHorizonRestart(TestCase):
 
         rec2 = ProspectiveRecorder(db_path=db_file, enabled=True)
         rec2.start()
-        outcomes = rec2.observe("ETHUSDT", EVENT_BASE_MS + 60_000, 505.0)
+        outcomes = rec2.observe("ETHUSDT", EVENT_BASE_MS + 60_000, 505.0, mark_age_ms=1_000)
         rec2.stop_and_drain()
 
         self.assertEqual(len(outcomes), 1)
@@ -271,7 +271,7 @@ class TestLateObservationHonesty(TestCase):
         rec.register_setup("LATE", _cand("LATE", detect_price=1000.0),
                            EVENT_BASE_MS)
         late_ms = EVENT_BASE_MS + 3 * 3_600_000  # 3h later: 1m/5m/15m/1h matured
-        outcomes = rec.observe("ETHUSDT", late_ms, 990.0)
+        outcomes = rec.observe("ETHUSDT", late_ms, 990.0, mark_age_ms=1_000)
         rec.stop_and_drain()
         # All four matured horizons emit; 4h (14.4M ms) is not yet mature.
         self.assertEqual(len(outcomes), 4)
@@ -297,8 +297,8 @@ class TestMaturityBoundary(TestCase):
         rec.start()
         rec.register_setup("B", _cand("B", detect_price=10.0), EVENT_BASE_MS)
         self.assertEqual(
-            rec.observe("ETHUSDT", EVENT_BASE_MS + 60_000 - 1, 10.5), [])
-        fired = rec.observe("ETHUSDT", EVENT_BASE_MS + 60_000, 10.5)
+            rec.observe("ETHUSDT", EVENT_BASE_MS + 60_000 - 1, 10.5, mark_age_ms=1_000), [])
+        fired = rec.observe("ETHUSDT", EVENT_BASE_MS + 60_000, 10.5, mark_age_ms=1_000)
         self.assertEqual(len(fired), 1)
         self.assertEqual(fired[0]["outcome_state"], OUTCOME_COMPLETE)
         rec.stop_and_drain()
@@ -318,7 +318,7 @@ class TestNoWallClockInObserve(TestCase):
         with patch.object(pros_mod, "time") as mock_time:
             mock_time.time.side_effect = AssertionError("wall clock read")
             mock_time.monotonic.side_effect = AssertionError("clock read")
-            outcomes = rec.observe("ETHUSDT", EVENT_BASE_MS + 60_000, 51.0)
+            outcomes = rec.observe("ETHUSDT", EVENT_BASE_MS + 60_000, 51.0, mark_age_ms=1_000)
         self.assertEqual(len(outcomes), 1)
         self.assertEqual(outcomes[0]["observed_at_ms"], EVENT_BASE_MS + 60_000)
         rec.stop_and_drain()

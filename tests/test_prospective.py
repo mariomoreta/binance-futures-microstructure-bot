@@ -13,9 +13,7 @@ import time
 
 BASE_MS = int(time.time() * 1000)  # current wall clock (ms), keeps retention checks happy
 from pathlib import Path
-from unittest.mock import MagicMock, patch
-
-import pytest
+from unittest import TestCase
 
 from src.microstructure_probe.prospective import (
     HORIZONS_MS,
@@ -71,26 +69,31 @@ def _detected_candidate(
 # Unit tests — _fnum / _normalize_candidate_key
 # ------------------------------------------------------------------
 
-class TestFnum:
+class TestFnum(TestCase):
     def test_valid(self):
+        tmp_path = Path(tempfile.mkdtemp())
         assert _fnum("1.5") == 1.5
         assert _fnum(42) == 42.0
 
     def test_none(self):
+        tmp_path = Path(tempfile.mkdtemp())
         assert _fnum(None) is None
         assert _fnum("abc") is None
         assert _fnum(float("inf")) is None
         assert _fnum(float("nan")) is None
 
 
-class TestNormalizeCandidateKey:
+class TestNormalizeCandidateKey(TestCase):
     def test_valid(self):
+        tmp_path = Path(tempfile.mkdtemp())
         assert _normalize_candidate_key("abc") == "abc"
 
     def test_empty(self):
+        tmp_path = Path(tempfile.mkdtemp())
         assert _normalize_candidate_key("") is None
 
     def test_non_string(self):
+        tmp_path = Path(tempfile.mkdtemp())
         assert _normalize_candidate_key(123) is None
         assert _normalize_candidate_key(None) is None
 
@@ -99,15 +102,17 @@ class TestNormalizeCandidateKey:
 # Registration — idempotent, first DETECTED only
 # ------------------------------------------------------------------
 
-class TestRegistration:
-    def test_register_new(self, tmp_path: Path):
+class TestRegistration(TestCase):
+    def test_register_new(self):
+        tmp_path = Path(tempfile.mkdtemp())
         rec = _setup_recorder(tmp_path / "p.db")
         cand = _detected_candidate()
         assert rec.register_setup(cand["candidate_key"], cand, BASE_MS) is True
         assert rec.status()["registered_setups"] == 1
         rec.stop_and_drain()
 
-    def test_register_duplicate_returns_false(self, tmp_path: Path):
+    def test_register_duplicate_returns_false(self):
+        tmp_path = Path(tempfile.mkdtemp())
         rec = _setup_recorder(tmp_path / "p.db")
         cand = _detected_candidate()
         rec.register_setup(cand["candidate_key"], cand, BASE_MS)
@@ -115,18 +120,21 @@ class TestRegistration:
         assert rec.status()["registered_setups"] == 1
         rec.stop_and_drain()
 
-    def test_register_invalid_key_returns_false(self, tmp_path: Path):
+    def test_register_invalid_key_returns_false(self):
+        tmp_path = Path(tempfile.mkdtemp())
         rec = _setup_recorder(tmp_path / "p.db")
         assert rec.register_setup("", {}, BASE_MS) is False
         assert rec.register_setup(None, {}, BASE_MS) is False
         rec.stop_and_drain()
 
-    def test_register_disabled(self, tmp_path: Path):
+    def test_register_disabled(self):
+        tmp_path = Path(tempfile.mkdtemp())
         rec = ProspectiveRecorder(db_path=tmp_path / "p.db", enabled=False)
         cand = _detected_candidate()
         assert rec.register_setup(cand["candidate_key"], cand, BASE_MS) is False
 
-    def test_register_persists_to_db(self, tmp_path: Path):
+    def test_register_persists_to_db(self):
+        tmp_path = Path(tempfile.mkdtemp())
         rec = _setup_recorder(tmp_path / "p.db")
         cand = _detected_candidate()
         rec.register_setup(cand["candidate_key"], cand, BASE_MS)
@@ -140,7 +148,8 @@ class TestRegistration:
         assert setups[0]["symbol"] == "BTCUSDT"
         assert setups[0]["family"] == "REVERSAL"
 
-    def test_register_idempotent_after_restart(self, tmp_path: Path):
+    def test_register_idempotent_after_restart(self):
+        tmp_path = Path(tempfile.mkdtemp())
         rec = _setup_recorder(tmp_path / "p.db")
         cand = _detected_candidate()
         rec.register_setup(cand["candidate_key"], cand, BASE_MS)
@@ -152,7 +161,8 @@ class TestRegistration:
         assert rec2.status()["registered_setups"] == 1
         rec2.stop_and_drain()
 
-    def test_register_different_keys_separate(self, tmp_path: Path):
+    def test_register_different_keys_separate(self):
+        tmp_path = Path(tempfile.mkdtemp())
         rec = _setup_recorder(tmp_path / "p.db")
         c1 = _detected_candidate(key="A")
         c2 = _detected_candidate(key="B")
@@ -166,52 +176,57 @@ class TestRegistration:
 # Observation — horizon maturity, no lookahead
 # ------------------------------------------------------------------
 
-class TestObservation:
-    def test_no_outcome_before_maturity(self, tmp_path: Path):
+class TestObservation(TestCase):
+    def test_no_outcome_before_maturity(self):
+        tmp_path = Path(tempfile.mkdtemp())
         rec = _setup_recorder(tmp_path / "p.db")
         cand = _detected_candidate()
         rec.register_setup(cand["candidate_key"], cand, BASE_MS)
         # Observe at T+30s — 1m horizon not matured
-        outcomes = rec.observe("BTCUSDT", BASE_MS + 30_000, 100_000)
+        outcomes = rec.observe("BTCUSDT", BASE_MS + 30_000, 100_000, mark_age_ms=1_000)
         assert outcomes == []
         rec.stop_and_drain()
 
-    def test_outcome_at_maturity(self, tmp_path: Path):
+    def test_outcome_at_maturity(self):
+        tmp_path = Path(tempfile.mkdtemp())
         rec = _setup_recorder(tmp_path / "p.db")
         cand = _detected_candidate()
         rec.register_setup(cand["candidate_key"], cand, BASE_MS)
         # Observe at T+60s — 1m horizon matured
-        outcomes = rec.observe("BTCUSDT", BASE_MS + 60_000, 101_000)
+        outcomes = rec.observe("BTCUSDT", BASE_MS + 60_000, 101_000, mark_age_ms=1_000)
         assert len(outcomes) == 1
         assert outcomes[0]["horizon"] == "1m"
         assert outcomes[0]["outcome_state"] == OUTCOME_COMPLETE
         assert outcomes[0]["mark_return_pct"] == 1.0  # (101000-100000)/100000*100
         rec.stop_and_drain()
 
-    def test_no_lookahead_beyond_maturity(self, tmp_path: Path):
+    def test_no_lookahead_beyond_maturity(self):
+        tmp_path = Path(tempfile.mkdtemp())
         """Observe after maturity but before next horizon — only one outcome."""
         rec = _setup_recorder(tmp_path / "p.db")
         cand = _detected_candidate()
         rec.register_setup(cand["candidate_key"], cand, BASE_MS)
         # At T+120s: 1m matured, 5m not yet (needs T+300s)
-        outcomes = rec.observe("BTCUSDT", BASE_MS + 120_000, 102_000)
+        outcomes = rec.observe("BTCUSDT", BASE_MS + 120_000, 102_000, mark_age_ms=1_000)
         assert len(outcomes) == 1
         assert outcomes[0]["horizon"] == "1m"
         rec.stop_and_drain()
 
-    def test_dedup_repeated_observations(self, tmp_path: Path):
+    def test_dedup_repeated_observations(self):
+        tmp_path = Path(tempfile.mkdtemp())
         rec = _setup_recorder(tmp_path / "p.db")
         cand = _detected_candidate()
         rec.register_setup(cand["candidate_key"], cand, BASE_MS)
         # First observation at maturity
-        outcomes1 = rec.observe("BTCUSDT", BASE_MS + 60_000, 101_000)
+        outcomes1 = rec.observe("BTCUSDT", BASE_MS + 60_000, 101_000, mark_age_ms=1_000)
         assert len(outcomes1) == 1
         # Second observation at same time — deduped
-        outcomes2 = rec.observe("BTCUSDT", BASE_MS + 60_000, 101_000)
+        outcomes2 = rec.observe("BTCUSDT", BASE_MS + 60_000, 101_000, mark_age_ms=1_000)
         assert outcomes2 == []
         rec.stop_and_drain()
 
-    def test_symbol_isolation(self, tmp_path: Path):
+    def test_symbol_isolation(self):
+        tmp_path = Path(tempfile.mkdtemp())
         """ETHUSDT observation does not affect BTCUSDT setup."""
         rec = _setup_recorder(tmp_path / "p.db")
         btc = _detected_candidate(key="BTC", symbol="BTCUSDT")
@@ -219,30 +234,37 @@ class TestObservation:
         rec.register_setup("BTC", btc, BASE_MS)
         rec.register_setup("ETH", eth, BASE_MS)
         # Observe ETH only
-        outcomes = rec.observe("ETHUSDT", BASE_MS + 60_000, 101_000)
+        outcomes = rec.observe("ETHUSDT", BASE_MS + 60_000, 101_000, mark_age_ms=1_000)
         assert len(outcomes) == 1
         assert outcomes[0]["candidate_key"] == "ETH"
         # BTC not yet observed
-        btc_outcomes = rec.observe("BTCUSDT", BASE_MS + 60_000, 101_000)
+        btc_outcomes = rec.observe("BTCUSDT", BASE_MS + 60_000, 101_000, mark_age_ms=1_000)
         assert len(btc_outcomes) == 1
         rec.stop_and_drain()
 
-    def test_outcome_without_mark_price(self, tmp_path: Path):
+    def test_outcome_without_mark_price(self):
+        tmp_path = Path(tempfile.mkdtemp())
         rec = _setup_recorder(tmp_path / "p.db")
         cand = _detected_candidate()
         rec.register_setup(cand["candidate_key"], cand, BASE_MS)
-        outcomes = rec.observe("BTCUSDT", BASE_MS + 60_000, None)
+        # Contract v1.1: absent-mark horizons retry silently within the
+        # recovery window (one horizon-length past maturity), then record
+        # terminal PENDING.
+        assert rec.observe("BTCUSDT", BASE_MS + 60_000, None) == []
+        outcomes = rec.observe("BTCUSDT", BASE_MS + 120_001, None)
+        assert len(outcomes) == 1
         assert outcomes[0]["outcome_state"] == OUTCOME_PENDING
         rec.stop_and_drain()
 
-    def test_missing_detection_price(self, tmp_path: Path):
+    def test_missing_detection_price(self):
+        tmp_path = Path(tempfile.mkdtemp())
         """Setup without detect_price -> INSUFFICIENT_HISTORY."""
         rec = _setup_recorder(tmp_path / "p.db")
         cand = _detected_candidate()
         rec.register_setup("KEY", cand, BASE_MS)
         # Override: no detection price
         rec._registered["KEY"]["detected_mark_price"] = None
-        outcomes = rec.observe("BTCUSDT", BASE_MS + 60_000, 101_000)
+        outcomes = rec.observe("BTCUSDT", BASE_MS + 60_000, 101_000, mark_age_ms=1_000)
         assert outcomes[0]["outcome_state"] == OUTCOME_INSUFFICIENT_HISTORY
         rec.stop_and_drain()
 
@@ -251,8 +273,9 @@ class TestObservation:
 # Bounded queue / drops
 # ------------------------------------------------------------------
 
-class TestBackpressure:
-    def test_queue_full_drops(self, tmp_path: Path):
+class TestBackpressure(TestCase):
+    def test_queue_full_drops(self):
+        tmp_path = Path(tempfile.mkdtemp())
         rec = ProspectiveRecorder(
             db_path=tmp_path / "p.db",
             max_queue=1,
@@ -271,8 +294,9 @@ class TestBackpressure:
 # ProspectiveRecorder.status()
 # ------------------------------------------------------------------
 
-class TestStatus:
-    def test_status_shape(self, tmp_path: Path):
+class TestStatus(TestCase):
+    def test_status_shape(self):
+        tmp_path = Path(tempfile.mkdtemp())
         rec = _setup_recorder(tmp_path / "p.db")
         s = rec.status()
         assert "enabled" in s
@@ -283,9 +307,14 @@ class TestStatus:
         assert "errors" in s
         assert "inflight" in s
         assert "high_water" in s
+        assert "completed" in s
+        assert "pending" in s
+        assert "insufficient" in s
+        assert "in_grace" in s
         rec.stop_and_drain()
 
-    def test_disabled_status(self, tmp_path: Path):
+    def test_disabled_status(self):
+        tmp_path = Path(tempfile.mkdtemp())
         rec = ProspectiveRecorder(db_path=tmp_path / "p.db", enabled=False)
         s = rec.status()
         assert s["state"] == "DISABLED"
@@ -296,8 +325,9 @@ class TestStatus:
 # Persistence integration — schema v9
 # ------------------------------------------------------------------
 
-class TestSchemaV9:
-    def test_schema_version_after_init(self, tmp_path: Path):
+class TestSchemaV9(TestCase):
+    def test_schema_version_after_init(self):
+        tmp_path = Path(tempfile.mkdtemp())
         from src.microstructure_probe.persistence import PersistenceStore
         store = PersistenceStore(db_path=tmp_path / "p.db")
         store.init_db()
@@ -310,7 +340,8 @@ class TestSchemaV9:
         assert int(row[0]) == 9
         store.close()
 
-    def test_prospective_tables_exist(self, tmp_path: Path):
+    def test_prospective_tables_exist(self):
+        tmp_path = Path(tempfile.mkdtemp())
         from src.microstructure_probe.persistence import PersistenceStore
         store = PersistenceStore(db_path=tmp_path / "p.db")
         store.init_db()
@@ -323,7 +354,8 @@ class TestSchemaV9:
         assert "prospective_outcomes" in tables
         store.close()
 
-    def test_store_and_retrieve_setup(self, tmp_path: Path):
+    def test_store_and_retrieve_setup(self):
+        tmp_path = Path(tempfile.mkdtemp())
         from src.microstructure_probe.persistence import PersistenceStore
         store = PersistenceStore(db_path=tmp_path / "p.db")
         store.init_db()
@@ -336,7 +368,8 @@ class TestSchemaV9:
         assert setups[0]["family"] == "REVERSAL"
         store.close()
 
-    def test_store_and_retrieve_outcome(self, tmp_path: Path):
+    def test_store_and_retrieve_outcome(self):
+        tmp_path = Path(tempfile.mkdtemp())
         from src.microstructure_probe.persistence import PersistenceStore
         store = PersistenceStore(db_path=tmp_path / "p.db")
         store.init_db()
@@ -358,7 +391,8 @@ class TestSchemaV9:
         assert outcomes[0]["mark_return_pct"] == 1.0
         store.close()
 
-    def test_outcome_idempotent(self, tmp_path: Path):
+    def test_outcome_idempotent(self):
+        tmp_path = Path(tempfile.mkdtemp())
         from src.microstructure_probe.persistence import PersistenceStore
         store = PersistenceStore(db_path=tmp_path / "p.db")
         store.init_db()
@@ -369,7 +403,8 @@ class TestSchemaV9:
         assert len(outcomes) == 1  # unique constraint prevents dup
         store.close()
 
-    def test_outcome_bounded_per_setup(self, tmp_path: Path):
+    def test_outcome_bounded_per_setup(self):
+        tmp_path = Path(tempfile.mkdtemp())
         from src.microstructure_probe.persistence import PersistenceStore
         store = PersistenceStore(db_path=tmp_path / "p.db")
         store.init_db()
@@ -385,35 +420,38 @@ class TestSchemaV9:
 # Deterministic outcome computation
 # ------------------------------------------------------------------
 
-class TestOutcomeDeterminism:
-    def test_long_return_positive(self, tmp_path: Path):
+class TestOutcomeDeterminism(TestCase):
+    def test_long_return_positive(self):
+        tmp_path = Path(tempfile.mkdtemp())
         rec = _setup_recorder(tmp_path / "p.db")
         cand = _detected_candidate()
         rec.register_setup("KEY", cand, BASE_MS)
         rec._registered["KEY"]["detected_mark_price"] = 100_000.0
-        outcomes = rec.observe("BTCUSDT", BASE_MS + 60_000, 110_000.0)
+        outcomes = rec.observe("BTCUSDT", BASE_MS + 60_000, 110_000.0, mark_age_ms=1_000)
         assert len(outcomes) == 1
         assert outcomes[0]["mark_return_pct"] == 10.0
         assert outcomes[0]["detected_price"] == 100_000.0
         assert outcomes[0]["current_price"] == 110_000.0
         rec.stop_and_drain()
 
-    def test_short_return_negative(self, tmp_path: Path):
+    def test_short_return_negative(self):
+        tmp_path = Path(tempfile.mkdtemp())
         rec = _setup_recorder(tmp_path / "p.db")
         cand = _detected_candidate()
         rec.register_setup("KEY", cand, BASE_MS)
         rec._registered["KEY"]["detected_mark_price"] = 100_000.0
-        outcomes = rec.observe("BTCUSDT", BASE_MS + 60_000, 95_000.0)
+        outcomes = rec.observe("BTCUSDT", BASE_MS + 60_000, 95_000.0, mark_age_ms=1_000)
         assert outcomes[0]["mark_return_pct"] == -5.0
         rec.stop_and_drain()
 
-    def test_no_fabrication_of_missing_data(self, tmp_path: Path):
+    def test_no_fabrication_of_missing_data(self):
+        tmp_path = Path(tempfile.mkdtemp())
         """Without detection price, outcome is INSUFFICIENT_HISTORY, not zero."""
         rec = _setup_recorder(tmp_path / "p.db")
         cand = _detected_candidate()
         rec.register_setup("KEY", cand, BASE_MS)
         rec._registered["KEY"]["detected_mark_price"] = None
-        outcomes = rec.observe("BTCUSDT", BASE_MS + 60_000, 101_000.0)
+        outcomes = rec.observe("BTCUSDT", BASE_MS + 60_000, 101_000.0, mark_age_ms=1_000)
         assert outcomes[0]["outcome_state"] == OUTCOME_INSUFFICIENT_HISTORY
         assert "mark_return_pct" not in outcomes[0]
         rec.stop_and_drain()
@@ -423,13 +461,14 @@ class TestOutcomeDeterminism:
 # Multiple horizons
 # ------------------------------------------------------------------
 
-class TestMultipleHorizons:
-    def test_all_horizons_mature(self, tmp_path: Path):
+class TestMultipleHorizons(TestCase):
+    def test_all_horizons_mature(self):
+        tmp_path = Path(tempfile.mkdtemp())
         rec = _setup_recorder(tmp_path / "p.db")
         cand = _detected_candidate()
         rec.register_setup(cand["candidate_key"], cand, BASE_MS)
         # At T+4h, all horizons matured
-        outcomes = rec.observe("BTCUSDT", BASE_MS + 14_400_000, 105_000)
+        outcomes = rec.observe("BTCUSDT", BASE_MS + 14_400_000, 105_000, mark_age_ms=1_000)
         horizon_keys = {o["horizon"] for o in outcomes}
         assert "1m" in horizon_keys
         assert "5m" in horizon_keys
@@ -443,8 +482,9 @@ class TestMultipleHorizons:
 # Dashboard integration — prospective_status
 # ------------------------------------------------------------------
 
-class TestDashboardIntegration:
-    def test_prospective_status_shape(self, tmp_path: Path):
+class TestDashboardIntegration(TestCase):
+    def test_prospective_status_shape(self):
+        tmp_path = Path(tempfile.mkdtemp())
         from src.microstructure_probe.dashboard import DashboardState
         from src.microstructure_probe.persistence import PersistenceStore
         store = PersistenceStore(db_path=tmp_path / "p.db")
@@ -461,7 +501,8 @@ class TestDashboardIntegration:
         assert "outcome_count" in s
         assert "latest_outcomes" in s
 
-    def test_prospective_status_empty(self, tmp_path: Path):
+    def test_prospective_status_empty(self):
+        tmp_path = Path(tempfile.mkdtemp())
         from src.microstructure_probe.dashboard import DashboardState
         from src.microstructure_probe.persistence import PersistenceStore
         store = PersistenceStore(db_path=tmp_path / "p.db")
@@ -477,8 +518,9 @@ class TestDashboardIntegration:
 # Retention cleanup
 # ------------------------------------------------------------------
 
-class TestRetention:
-    def test_retention_cleanup(self, tmp_path: Path):
+class TestRetention(TestCase):
+    def test_retention_cleanup(self):
+        tmp_path = Path(tempfile.mkdtemp())
         from src.microstructure_probe.persistence import PersistenceStore
         store = PersistenceStore(db_path=tmp_path / "p.db")
         store.init_db()

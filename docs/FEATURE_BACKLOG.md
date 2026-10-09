@@ -29,7 +29,7 @@ it does not replace them. Authority stays where it was recorded
 | F-STATE-V2-TL-01 | State timeline visualization | PROPOSED | NOT IMPLEMENTED | Later |
 | F-UNI-01 | Dynamic LIVE-universe expansion (P1-12B) | DECIDED | VERIFIED | P1-12B DONE |
 | F-OPP-01 | Research-based opportunity engine (P1-13A) | DECIDED | IMPLEMENTED (pending VERIFIED) | P1-13A DONE |
-| F-P14A-01 | Prospective setup outcome evaluation (P1-14A→P1-14B.3) | DECIDED | VERIFIED (stability/freshness PARTIAL) | P1-14A/P1-14B/P1-14B.1 DONE, P1-14B.2/P1-14B.3 PARTIAL |
+| F-P14A-01 | Prospective setup outcome evaluation (P1-14A→P1-14B.4) | DECIDED | VERIFIED (contract v1.1; stability/freshness PARTIAL) | P1-14A/P1-14B/P1-14B.1/P1-14B.4 DONE, P1-14B.2/P1-14B.3 PARTIAL |
 | F-OPP-UI-01 | Opportunities dashboard (P1-13B) | DECIDED | NOT IMPLEMENTED | P1-13B |
 | F-BT-01 | Historical backtesting (P1-14) | DECIDED | NOT IMPLEMENTED | P1-14 |
 | F-PAPER-01 | Forward paper validation (P1-15) | DECIDED | NOT IMPLEMENTED | P1-15 |
@@ -236,7 +236,7 @@ it does not replace them. Authority stays where it was recorded
 - **Open questions:** none.
 - **Last update:** 2026-10-08.
 
-## F-P14A-01 — Prospective setup outcome evaluation (P1-14A / P1-14B / P1-14B.1 / P1-14B.2 / P1-14B.3)
+## F-P14A-01 — Prospective setup outcome evaluation (P1-14A → P1-14B.4)
 
 - **Product objective:** register P1-13A opportunity setups at first DETECTED
   and observe forward mark-price outcomes at versioned horizons (1m/5m/15m/1h
@@ -248,12 +248,16 @@ it does not replace them. Authority stays where it was recorded
   in `docs/CURRENT_STATE.md`).
 - **Approval status:** DECIDED (sequenced). **Implementation status:**
   IMPLEMENTED + VERIFIED (35 `test_prospective.py` + 39 `test_p14b_validation.py`
-  + 16 `test_p14b_1_time_integrity.py`, 609/609 canonical suite green — see P1-14A,
-  P1-14B and P1-14B.1 result sections in `docs/CURRENT_STATE.md`; full evidence in
-  `docs/P1_14B_VALIDATION_REPORT.md` + `docs/P1_14B_1_TIME_INTEGRITY_AUDIT.md`).
+  + 16 `test_p14b_1_time_integrity.py` + 20 `test_p14b_3_transport_freshness.py`
+  + 19 `test_p14b_4_lifecycle.py`, 683/683 canonical suite green — see P1-14A
+  through P1-14B.4 result sections in `docs/CURRENT_STATE.md`; full evidence in
+  `docs/P1_14B_VALIDATION_REPORT.md` + `docs/P1_14B_1_TIME_INTEGRITY_AUDIT.md`
+  + `docs/P1_14B_3_TRANSPORT_FRESHNESS_AUDIT.md` +
+  `docs/P1_14B_4_PROSPECTIVE_LIFECYCLE_AUDIT.md`).
 - **Target phase:** P1-14A DONE / P1-14B DONE (recovery) / P1-14B.1 DONE (integrity) /
   P1-14B.2 PARTIAL (stability gate: duration insufficient, prospective layer green) /
-  P1-14B.3 PARTIAL (freshness: watchdog + stale-mark gate validated, duration insufficient).
+  P1-14B.3 PARTIAL (freshness: watchdog + stale-mark gate validated, duration insufficient) /
+  P1-14B.4 PASS (contract v1.1: strict unknown-age, grace-deferred terminal PENDING).
 - **Dependencies:** P1-13A opportunity engine (setups, DETECTED lifecycle,
   candidate_key + setup_family + direction + market_state + rule_version +
   capability_tier fields).
@@ -266,8 +270,11 @@ it does not replace them. Authority stays where it was recorded
   hourly, default 90 days on detected_at_ms / observed_at_ms.
 - **Acceptance criteria:** idempotent registration (one key = one episode);
   outcome states COMPLETE/PENDING/INSUFFICIENT_HISTORY only (never fabricated);
-  restart-safe rehydrate from `prospective_setups`; bounded queue + telemetry
-  (writes/drops/errors/inflight/high_water); 4h horizon usable with genuinely
+  UNKNOWN age never FRESH (strict classification); PENDING grace-deferred (recovery
+  window = 1 horizon past maturity) then terminal, INSUFFICIENT immediate;
+  restart-safe rehydrate from `prospective_setups` (+ seen rebuilt incl. PENDING rows);
+  bounded queue + telemetry (writes/drops/errors/inflight/high_water +
+  completed/pending/insufficient/in_grace); 4h horizon usable with genuinely
   later data; no orders, keys, P&L, or probabilities.
 - **Evidence:** 35 `test_prospective.py` + 39 `test_p14b_validation.py` + 16
   `test_p14b_1_time_integrity.py` (609/609 canonical suite green);
@@ -285,7 +292,11 @@ it does not replace them. Authority stays where it was recorded
   (stale-mark gate + watchdog, 20 new tests, 629/629): 24 setups, 99/99 COMPLETE,
   0 dupes; 68-row historical classification (19/28/21/0); 21 missing cells explained
   (unsubscribed OGN/RLC, no defect) — full details in
-  `docs/P1_14B_3_TRANSPORT_FRESHNESS_AUDIT.md`.
+  `docs/P1_14B_3_TRANSPORT_FRESHNESS_AUDIT.md`. P1-14B.4 contract v1.1 (strict
+  unknown-age, grace-deferred terminal PENDING, upgrade rejected with schema
+  rationale; 19 new tests; 35 pytest-style tests converted to executing TestCase;
+  683/683): 24 setups, 99/99 COMPLETE, 0 dupes, all rows preserved — full details in
+  `docs/P1_14B_4_PROSPECTIVE_LIFECYCLE_AUDIT.md`.
 - **Docs:** `docs/PROSPECTIVE_EVALUATION_SPEC.md`, `docs/DECISIONS.md`,
   `docs/CURRENT_STATE.md`, `docs/TASK_QUEUE.md`.
 - **Open questions:** MFE/MAE and cohort aggregation deferred to a later
@@ -297,8 +308,10 @@ it does not replace them. Authority stays where it was recorded
   (reject rate rule) — duration insufficient, transport limiting, no 4–6 h
   authorization; P1-14B.3: ≤35-min attempt aborted at 17.1 min (second episode
   + path outage after proven watchdog recovery) — duration insufficient,
-  transport/freshness limiting, still no 4–6 h authorization.
-- **Last update:** 2026-10-09 (P1-14B.3 freshness audit, PARTIAL).
+  transport/freshness limiting, still no 4–6 h authorization; P1-14B.4: contract
+  v1.1 enforced (strict unknown-age, grace-deferred terminal PENDING), 120 s
+  regression run clean, no long runs.
+- **Last update:** 2026-10-09 (P1-14B.4 lifecycle audit, PASS).
 
 ## F-BT-01 — Historical backtesting (P1-14)
 

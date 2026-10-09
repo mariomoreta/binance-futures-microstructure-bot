@@ -45,11 +45,19 @@ OUTCOME_PENDING = "PENDING"
 SETUP_REGISTRATION_REASON = "first qualifying detection"
 SETUP_DUPLICATE_REASON = "duplicate evaluation — same episode"
 
+# Outcome Contract version (P1-14B.4): v1.1 adds freshness verdicts, strict
+# unknown-age handling, and grace-deferred terminal PENDING. Schema stays v9.
+PROSPECTIVE_CONTRACT_VERSION = "1.1"
+
 # LOCAL_POLICY (P1-14B.3): a mark quote older than this at observation time
 # is too stale to complete a horizon. Such horizons record PENDING with an
-# explicit reason instead of a stale-price COMPLETE. Unknown age stays
-# fail-open (current behavior). No new outcome state is introduced.
+# explicit reason instead of a stale-price COMPLETE.
 STALE_MARK_AGE_MS = 120_000
+
+# LOCAL_POLICY (P1-14B.4): magnitude of negative age tolerated as
+# snapshot/observe clock skew. Beyond this the quote is ahead of the
+# observation clock (clock pathology), never silently clamped to fresh.
+_FUTURE_AGE_TOLERANCE_MS = 1_000
 
 
 def _fnum(value: Any) -> Optional[float]:
@@ -64,6 +72,30 @@ def _normalize_candidate_key(key: Any) -> Optional[str]:
     if not isinstance(key, str) or not key:
         return None
     return key
+
+
+def _classify_mark_age(mark_age_ms: Any) -> Tuple[str, Optional[float]]:
+    """Classify an observation-time quote age (pure, testable).
+
+    Returns (verdict, value) with verdict in:
+      ok        -- finite age >= -tolerance (tiny negatives clamped to 0.0)
+      unknown   -- None / malformed (UNKNOWN is never FRESH)
+      nonfinite -- inf / nan (would otherwise slip comparisons silently)
+      future    -- quote ahead of the observation clock beyond tolerance
+    """
+    if mark_age_ms is None:
+        return ("unknown", None)
+    try:
+        age = float(mark_age_ms)
+    except (TypeError, ValueError):
+        return ("unknown", None)
+    if not math.isfinite(age):
+        return ("nonfinite", None)
+    if age < -_FUTURE_AGE_TOLERANCE_MS:
+        return ("future", None)
+    if age < 0:
+        return ("ok", 0.0)
+    return ("ok", age)
 
 
 class ProspectiveRecorder:
@@ -91,9 +123,18 @@ class ProspectiveRecorder:
         self._queue: "queue.Queue[Any]" = queue.Queue(maxsize=self.max_queue)
         self._registered: Dict[str, Dict[str, Any]] = {}
         self._seen_outcomes: set = set()
+        # P1-14B.4: grace-deferred PENDING. Maps (candidate_key, horizon) to
+        # the first failed-evaluation ms; a horizon records terminal PENDING
+        # only after now - first exceeds one horizon-length past maturity
+        # (recovery window; obs < det + 2H bound). Memory-only: a restart
+        # restarts grace (bounded, documented). Cleared on terminal emission.
+        self._pending_since: Dict[Tuple[str, str], int] = {}
         self._writes = 0
         self._drops = 0
         self._errors = 0
+        self._completed = 0
+        self._pending = 0
+        self._insufficient = 0
         self._inflight = 0
         self._high_water = 0
         self._last_cleanup = 0.0
@@ -201,16 +242,16 @@ class ProspectiveRecorder:
         Returns newly matured outcomes (empty list when none ready).
         Never accesses data at or before detection time for outcome
         computation — only strictly later observations.
-        mark_age_ms (when known) gates stale quotes: horizons maturing
-        while the quote is older than STALE_MARK_AGE_MS record PENDING
-        with an explicit reason instead of a stale-price COMPLETE.
+        Contract v1.1: mark_age_ms is classified strictly (UNKNOWN is never
+        FRESH). Horizons that mature without a valid sample retry silently
+        (absent, no row) while within the recovery window (one
+        horizon-length past maturity); only after the window exhausts is
+        terminal PENDING recorded. INSUFFICIENT_HISTORY (no reference) stays
+        immediate + terminal.
         """
         sym = str(symbol).upper()
         now_ms = int(as_of_ms)
-        try:
-            age_ms: Optional[float] = float(mark_age_ms) if mark_age_ms is not None else None
-        except (TypeError, ValueError):
-            age_ms = None
+        age_verdict, age_value = _classify_mark_age(mark_age_ms)
         matured: List[Dict[str, Any]] = []
         with self._lock:
             for key, reg in list(self._registered.items()):
@@ -224,28 +265,71 @@ class ProspectiveRecorder:
                     outcome_key = (key, horizon)
                     if outcome_key in self._seen_outcomes:
                         continue
-                    if mark_price is None:
-                        outcome = {
-                            "candidate_key": key,
-                            "horizon": horizon,
-                            "observed_at_ms": now_ms,
-                            "outcome_state": OUTCOME_PENDING,
-                            "reason": "no mark price available at maturity",
-                        }
-                    else:
+                    if reg.get("detected_mark_price") is None:
                         outcome = self._compute_outcome(
                             key, reg, horizon, mature_at, now_ms, mark_price,
-                            mark_age_ms=age_ms,
+                            pending_reason="no detection-time reference price",
+                            insufficient=True,
                         )
-                    self._seen_outcomes.add(outcome_key)
-                    matured.append(outcome)
-                    try:
-                        self._queue.put_nowait(
-                            ("outcome", key, horizon, now_ms, outcome)
+                        self._emit_locked(key, horizon, now_ms, outcome, outcome_key, matured)
+                        continue
+                    pending_reason = self._freshness_failure(
+                        mark_price, age_verdict, age_value)
+                    if pending_reason is None:
+                        outcome = self._compute_outcome(
+                            key, reg, horizon, mature_at, now_ms, mark_price)
+                        self._pending_since.pop(outcome_key, None)
+                        self._emit_locked(key, horizon, now_ms, outcome, outcome_key, matured)
+                        continue
+                    # Failed evaluation: grace-deferred terminal PENDING.
+                    first = self._pending_since.setdefault(outcome_key, now_ms)
+                    if now_ms - first > horizon_ms:
+                        outcome = self._compute_outcome(
+                            key, reg, horizon, mature_at, now_ms, mark_price,
+                            pending_reason=pending_reason + "; recovery window exhausted",
                         )
-                    except queue.Full:
-                        self._drops += 1
+                        self._pending_since.pop(outcome_key, None)
+                        self._emit_locked(key, horizon, now_ms, outcome, outcome_key, matured)
+                    # else: within recovery window — absent, retry next tick.
         return matured
+
+    @staticmethod
+    def _freshness_failure(mark_price: Optional[float], age_verdict: str,
+                           age_value: Optional[float]) -> Optional[str]:
+        """Return a PENDING reason when the sample is unusable, else None."""
+        if mark_price is None:
+            return "no mark price available at maturity"
+        if age_verdict == "unknown":
+            return ("unknown mark age; maturity honest, "
+                    "quote freshness unverifiable")
+        if age_verdict == "nonfinite":
+            return ("non-finite mark age; maturity honest, "
+                    "quote freshness unverifiable")
+        if age_verdict == "future":
+            return ("mark quote ahead of observation clock; "
+                    "maturity honest, clock pathology")
+        if age_value is not None and age_value > STALE_MARK_AGE_MS:
+            return ("stale mark price (age %dms exceeds %dms); "
+                    "maturity honest, quote too old" % (int(age_value), STALE_MARK_AGE_MS))
+        return None
+
+    def _emit_locked(self, key: str, horizon: str, now_ms: int,
+                     outcome: Dict[str, Any], outcome_key: Tuple[str, str],
+                     matured: List[Dict[str, Any]]) -> None:
+        """Record one terminal outcome (seen + counters + queue). Lock held."""
+        state = outcome.get("outcome_state")
+        if state == OUTCOME_COMPLETE:
+            self._completed += 1
+        elif state == OUTCOME_PENDING:
+            self._pending += 1
+        elif state == OUTCOME_INSUFFICIENT_HISTORY:
+            self._insufficient += 1
+        self._seen_outcomes.add(outcome_key)
+        matured.append(outcome)
+        try:
+            self._queue.put_nowait(("outcome", key, horizon, now_ms, outcome))
+        except queue.Full:
+            self._drops += 1
 
     def _worker(self) -> None:
         from .persistence import PersistenceStore
@@ -299,10 +383,11 @@ class ProspectiveRecorder:
         mature_at: int,
         as_of_ms: int,
         mark_price: float,
-        mark_age_ms: Optional[float] = None,
+        pending_reason: Optional[str] = None,
+        insufficient: bool = False,
     ) -> Dict[str, Any]:
         detected_price = reg.get("detected_mark_price")
-        if detected_price is None:
+        if detected_price is None or insufficient:
             return {
                 "candidate_key": key,
                 "horizon": horizon,
@@ -310,16 +395,13 @@ class ProspectiveRecorder:
                 "outcome_state": OUTCOME_INSUFFICIENT_HISTORY,
                 "reason": "no detection-time reference price",
             }
-        if mark_age_ms is not None and mark_age_ms > STALE_MARK_AGE_MS:
+        if pending_reason is not None:
             return {
                 "candidate_key": key,
                 "horizon": horizon,
                 "observed_at_ms": as_of_ms,
                 "outcome_state": OUTCOME_PENDING,
-                "reason": (
-                    "stale mark price (age %dms exceeds %dms); "
-                    "maturity honest, quote too old" % (int(mark_age_ms), STALE_MARK_AGE_MS)
-                ),
+                "reason": pending_reason,
             }
         ret = (mark_price - detected_price) / detected_price * 100.0
         return {
@@ -344,6 +426,10 @@ class ProspectiveRecorder:
                 "errors": self._errors,
                 "inflight": self._queue.qsize(),
                 "high_water": self._high_water,
+                "completed": self._completed,
+                "pending": self._pending,
+                "insufficient": self._insufficient,
+                "in_grace": len(self._pending_since),
             }
 
     def registered_setups(self) -> List[Dict[str, Any]]:

@@ -84,7 +84,7 @@ class TestP14B1Registration(TestCase):
         cand = _cand("A", "BTCUSDT", "REVERSAL", "LONG", 100_000.0)
         assert rec.register_setup("A", cand, EVENT_BASE_MS) is True
         # Observe at the exact event-time maturity of the 1m horizon.
-        outcomes = rec.observe("BTCUSDT", EVENT_BASE_MS + 60_000, 101_000.0)
+        outcomes = rec.observe("BTCUSDT", EVENT_BASE_MS + 60_000, 101_000.0, mark_age_ms=1_000)
         assert len(outcomes) == 1
         assert outcomes[0]["horizon"] == "1m"
         rec.stop_and_drain()
@@ -170,7 +170,7 @@ class TestP14B2HorizonMaturity(TestCase):
         rec = _rec(tmp_path / "p.db")
         cand = _cand("MAT1M", "BTCUSDT", "REVERSAL", "LONG", 1000.0)
         rec.register_setup("MAT1M", cand, EVENT_BASE_MS)
-        outcomes = rec.observe("BTCUSDT", EVENT_BASE_MS + 60_000, 1010.0)
+        outcomes = rec.observe("BTCUSDT", EVENT_BASE_MS + 60_000, 1010.0, mark_age_ms=1_000)
         assert len(outcomes) == 1
         assert outcomes[0]["observed_at_ms"] == EVENT_BASE_MS + 60_000
         assert outcomes[0]["horizon"] == "1m"
@@ -183,7 +183,7 @@ class TestP14B2HorizonMaturity(TestCase):
         cand = _cand("PRE", "ETHUSDT", "REVERSAL", "UP", 2000.0)
         rec.register_setup("PRE", cand, EVENT_BASE_MS)
         for lag in (30_000, 59_000, 59_999):
-            assert rec.observe("ETHUSDT", EVENT_BASE_MS + lag, 2010.0) == []
+            assert rec.observe("ETHUSDT", EVENT_BASE_MS + lag, 2010.0, mark_age_ms=1_000) == []
         # No outcome queued => persistence store stays empty until maturity.
         from src.microstructure_probe.persistence import PersistenceStore
 
@@ -200,13 +200,13 @@ class TestP14B2HorizonMaturity(TestCase):
         cand = _cand("MULTI", "SOLUSDT", "IGNITION", "DOWN", 100.0)
         rec.register_setup("MULTI", cand, EVENT_BASE_MS)
         # 1m only
-        o = rec.observe("SOLUSDT", EVENT_BASE_MS + 60_000, 101.0)
+        o = rec.observe("SOLUSDT", EVENT_BASE_MS + 60_000, 101.0, mark_age_ms=1_000)
         assert len(o) == 1 and o[0]["horizon"] == "1m"
         # 5m only (1m already seen, 5m not yet)
-        o = rec.observe("SOLUSDT", EVENT_BASE_MS + 300_000, 105.0)
+        o = rec.observe("SOLUSDT", EVENT_BASE_MS + 300_000, 105.0, mark_age_ms=1_000)
         assert len(o) == 1 and o[0]["horizon"] == "5m"
         # 4h => all remaining horizons
-        o = rec.observe("SOLUSDT", EVENT_BASE_MS + 14_400_000, 120.0)
+        o = rec.observe("SOLUSDT", EVENT_BASE_MS + 14_400_000, 120.0, mark_age_ms=1_000)
         assert {x["horizon"] for x in o} == {"15m", "1h", "4h"}
         rec.stop_and_drain()
 
@@ -216,7 +216,7 @@ class TestP14B2HorizonMaturity(TestCase):
         rec = _rec(tmp_path / "p.db")
         cand = _cand("RET", "BTCUSDT", "REVERSAL", "LONG", 100_000.0)
         rec.register_setup("RET", cand, EVENT_BASE_MS)
-        outcomes = rec.observe("BTCUSDT", EVENT_BASE_MS + 60_000, 110_000.0)
+        outcomes = rec.observe("BTCUSDT", EVENT_BASE_MS + 60_000, 110_000.0, mark_age_ms=1_000)
         assert len(outcomes) == 1
         assert outcomes[0]["detected_price"] == 100_000.0
         assert outcomes[0]["current_price"] == 110_000.0
@@ -238,7 +238,7 @@ class TestP14B3EventTimeIntegrity(TestCase):
         rec = _rec(tmp_path / "p.db")
         cand = _cand("ET", "BTCUSDT", "REVERSAL", "LONG", 1000.0)
         rec.register_setup("ET", cand, EVENT_BASE_MS)
-        outcomes = rec.observe("BTCUSDT", EVENT_BASE_MS + 60_000, 1010.0)
+        outcomes = rec.observe("BTCUSDT", EVENT_BASE_MS + 60_000, 1010.0, mark_age_ms=1_000)
         assert outcomes[0]["observed_at_ms"] == EVENT_BASE_MS + 60_000
         # Any wall-clock-based logic would break this equality.
         assert outcomes[0]["observed_at_ms"] < time.time() * 1000
@@ -251,7 +251,7 @@ class TestP14B3EventTimeIntegrity(TestCase):
         cand = _cand("LATEWALL", "ETHUSDT", "REVERSAL", "UP", 2500.0)
         rec.register_setup("LATEWALL", cand, EVENT_BASE_MS)
         # Simulate wall clock far ahead; as_of_ms still the event clock.
-        outcomes = rec.observe("ETHUSDT", EVENT_BASE_MS + 60_000, 2510.0)
+        outcomes = rec.observe("ETHUSDT", EVENT_BASE_MS + 60_000, 2510.0, mark_age_ms=1_000)
         assert len(outcomes) == 1
         assert outcomes[0]["observed_at_ms"] == EVENT_BASE_MS + 60_000
         rec.stop_and_drain()
@@ -262,7 +262,7 @@ class TestP14B3EventTimeIntegrity(TestCase):
         rec = _rec(tmp_path / "p.db")
         cand = _cand("ATM", "BTCUSDT", "REVERSAL", "LONG", 1000.0)
         rec.register_setup("ATM", cand, EVENT_BASE_MS)
-        outcomes = rec.observe("BTCUSDT", EVENT_BASE_MS + 60_000, 1010.0)
+        outcomes = rec.observe("BTCUSDT", EVENT_BASE_MS + 60_000, 1010.0, mark_age_ms=1_000)
         assert len(outcomes) == 1
         assert outcomes[0]["current_price"] == 1010.0
         assert outcomes[0]["mark_return_pct"] == round(1.0, 6)
@@ -283,7 +283,7 @@ class TestP14B4PriceTimeliness(TestCase):
         cand = _cand("LATE", "BTCUSDT", "REVERSAL", "LONG", 1000.0)
         rec.register_setup("LATE", cand, EVENT_BASE_MS)
         # Event time = maturity; wall clock could be arbitrarily far ahead.
-        outcomes = rec.observe("BTCUSDT", EVENT_BASE_MS + 60_000, 1005.0)
+        outcomes = rec.observe("BTCUSDT", EVENT_BASE_MS + 60_000, 1005.0, mark_age_ms=1_000)
         assert len(outcomes) == 1
         assert outcomes[0]["outcome_state"] == OUTCOME_COMPLETE
         rec.stop_and_drain()
@@ -295,7 +295,7 @@ class TestP14B4PriceTimeliness(TestCase):
         cand = _cand("FUTURE", "ETHUSDT", "REVERSAL", "DOWN", 2000.0)
         rec.register_setup("FUTURE", cand, EVENT_BASE_MS)
         # Event time = detection + 2m (ahead of 1m maturity)
-        outcomes = rec.observe("ETHUSDT", EVENT_BASE_MS + 120_000, 2020.0)
+        outcomes = rec.observe("ETHUSDT", EVENT_BASE_MS + 120_000, 2020.0, mark_age_ms=1_000)
         assert len(outcomes) == 1
         assert outcomes[0]["horizon"] == "1m"
         assert outcomes[0]["observed_at_ms"] == EVENT_BASE_MS + 120_000
@@ -308,9 +308,9 @@ class TestP14B4PriceTimeliness(TestCase):
         cand = _cand("OOO", "SOLUSDT", "IGNITION", "UP", 100.0)
         rec.register_setup("OOO", cand, EVENT_BASE_MS)
         # Event time 30s after detection < 1m maturity => ignored.
-        assert rec.observe("SOLUSDT", EVENT_BASE_MS + 30_000, 101.0) == []
+        assert rec.observe("SOLUSDT", EVENT_BASE_MS + 30_000, 101.0, mark_age_ms=1_000) == []
         # Only the mature event time produces the outcome.
-        outcomes = rec.observe("SOLUSDT", EVENT_BASE_MS + 60_000, 102.0)
+        outcomes = rec.observe("SOLUSDT", EVENT_BASE_MS + 60_000, 102.0, mark_age_ms=1_000)
         assert len(outcomes) == 1
         rec.stop_and_drain()
 
@@ -321,10 +321,10 @@ class TestP14B4PriceTimeliness(TestCase):
         cand = _cand("NOLOOK", "BTCUSDT", "REVERSAL", "LONG", 1000.0)
         rec.register_setup("NOLOOK", cand, EVENT_BASE_MS)
         # At 1.5m event time: only 1m should mature, 5m not yet.
-        outcomes = rec.observe("BTCUSDT", EVENT_BASE_MS + 90_000, 1005.0)
+        outcomes = rec.observe("BTCUSDT", EVENT_BASE_MS + 90_000, 1005.0, mark_age_ms=1_000)
         assert len(outcomes) == 1 and outcomes[0]["horizon"] == "1m"
         # 5m at its own event time
-        outcomes = rec.observe("BTCUSDT", EVENT_BASE_MS + 300_000, 1010.0)
+        outcomes = rec.observe("BTCUSDT", EVENT_BASE_MS + 300_000, 1010.0, mark_age_ms=1_000)
         assert outcomes and outcomes[0]["horizon"] == "5m"
         rec.stop_and_drain()
 
@@ -354,7 +354,7 @@ class TestP14B5RestartIdempotency(TestCase):
         rec = _rec(tmp_path / "p.db")
         cand = _cand("OUTRESTART", "ETHUSDT", "REVERSAL", "UP", 2000.0)
         rec.register_setup("OUTRESTART", cand, EVENT_BASE_MS)
-        rec.observe("ETHUSDT", EVENT_BASE_MS + 60_000, 2020.0)
+        rec.observe("ETHUSDT", EVENT_BASE_MS + 60_000, 2020.0, mark_age_ms=1_000)
         rec.stop_and_drain()
         from src.microstructure_probe.persistence import PersistenceStore
 
@@ -369,7 +369,7 @@ class TestP14B5RestartIdempotency(TestCase):
         rec = _rec(tmp_path / "p.db", max_queue=100000)
         cand = _cand("DRAIN", "BTCUSDT", "REVERSAL", "LONG", 1000.0)
         rec.register_setup("DRAIN", cand, EVENT_BASE_MS)
-        rec.observe("BTCUSDT", EVENT_BASE_MS + 60_000, 1010.0)
+        rec.observe("BTCUSDT", EVENT_BASE_MS + 60_000, 1010.0, mark_age_ms=1_000)
         rec.stop_and_drain()
         from src.microstructure_probe.persistence import PersistenceStore
 
@@ -385,7 +385,7 @@ class TestP14B5RestartIdempotency(TestCase):
         rec = _rec(tmp_path / "p.db")
         cand = _cand("SEEN", "SOLUSDT", "IGNITION", "DOWN", 100.0)
         rec.register_setup("SEEN", cand, EVENT_BASE_MS)
-        rec.observe("SOLUSDT", EVENT_BASE_MS + 60_000, 101.0)
+        rec.observe("SOLUSDT", EVENT_BASE_MS + 60_000, 101.0, mark_age_ms=1_000)
         rec.stop_and_drain()
         rec2 = ProspectiveRecorder(db_path=tmp_path / "p.db", enabled=True)
         rec2.start()
@@ -395,9 +395,9 @@ class TestP14B5RestartIdempotency(TestCase):
         # registry still carries detected_mark_price (COMPLETE-capable).
         regs = {s["candidate_key"]: s for s in rec2.registered_setups()}
         assert regs["SEEN"].get("detected_mark_price") == 100.0
-        outcomes = rec2.observe("SOLUSDT", EVENT_BASE_MS + 60_000, 101.0)
+        outcomes = rec2.observe("SOLUSDT", EVENT_BASE_MS + 60_000, 101.0, mark_age_ms=1_000)
         assert outcomes == []
-        outcomes_late = rec2.observe("SOLUSDT", EVENT_BASE_MS + 120_000, 102.0)
+        outcomes_late = rec2.observe("SOLUSDT", EVENT_BASE_MS + 120_000, 102.0, mark_age_ms=1_000)
         assert outcomes_late == []
         # Storage-level idempotency: exactly one outcome persists.
         from src.microstructure_probe.persistence import PersistenceStore
@@ -535,7 +535,7 @@ class TestP14B8QualityFlags(TestCase):
         cand = _cand("NODET", "BTCUSDT", "REVERSAL", "LONG")
         rec.register_setup("NODET", cand, EVENT_BASE_MS)
         rec._registered["NODET"]["detected_mark_price"] = None
-        outcomes = rec.observe("BTCUSDT", EVENT_BASE_MS + 60_000, 1010.0)
+        outcomes = rec.observe("BTCUSDT", EVENT_BASE_MS + 60_000, 1010.0, mark_age_ms=1_000)
         assert len(outcomes) == 1
         assert outcomes[0]["outcome_state"] == OUTCOME_INSUFFICIENT_HISTORY
         assert "mark_return_pct" not in outcomes[0]
@@ -544,11 +544,13 @@ class TestP14B8QualityFlags(TestCase):
 
     def test_no_mark_price_at_maturity_yields_pending(self):
         tmp_path = Path(tempfile.mkdtemp())
-        """Mark price absent at maturity => PENDING, no fabrication."""
+        """Mark price absent at maturity => silent retry in-window, then
+        PENDING (contract v1.1 grace), no fabrication."""
         rec = _rec(tmp_path / "p.db")
         cand = _cand("NOMARK", "ETHUSDT", "REVERSAL", "UP", 2500.0)
         rec.register_setup("NOMARK", cand, EVENT_BASE_MS)
-        outcomes = rec.observe("ETHUSDT", EVENT_BASE_MS + 60_000, None)
+        assert rec.observe("ETHUSDT", EVENT_BASE_MS + 60_000, None) == []
+        outcomes = rec.observe("ETHUSDT", EVENT_BASE_MS + 120_001, None)
         assert outcomes[0]["outcome_state"] == OUTCOME_PENDING
         assert "mark_return_pct" not in outcomes[0]
         rec.stop_and_drain()
@@ -559,7 +561,7 @@ class TestP14B8QualityFlags(TestCase):
         rec = _rec(tmp_path / "p.db")
         cand = _cand("FULL", "BTCUSDT", "REVERSAL", "LONG", 1000.0)
         rec.register_setup("FULL", cand, EVENT_BASE_MS)
-        outcomes = rec.observe("BTCUSDT", EVENT_BASE_MS + 60_000, 1010.0)
+        outcomes = rec.observe("BTCUSDT", EVENT_BASE_MS + 60_000, 1010.0, mark_age_ms=1_000)
         o = outcomes[0]
         for field in ("candidate_key", "horizon", "observed_at_ms",
                       "detected_price", "current_price", "mark_return_pct",

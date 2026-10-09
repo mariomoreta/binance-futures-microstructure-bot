@@ -1165,3 +1165,34 @@ so flowing-stale traffic looked healthy — receipt ≠ acceptance.
 - Gates: CLOCK/PROSPECTIVE/PERSISTENCE/SAFETY PASS; TRANSPORT/FRESHNESS PARTIAL.
   No 4–6 h run authorized; P1-14C not started; V2/main untouched. Full report:
   `docs/P1_14B_3_TRANSPORT_FRESHNESS_AUDIT.md`.
+
+## P1-14B.4 prospective freshness & PENDING lifecycle integrity — RESULT: PASS (2026-10-09)
+
+UNKNOWN-freshness audit: via the probe, mark present implies age present/finite/>=0
+(`returns.feature` atomicity) — UNKNOWN arose only from direct callers; `nan`
+slips comparisons and negative age signals clock pathology (both closed).
+Precedent: classifier/opportunity engines already gate at 300 s; detections
+always had fresh marks (1–17 s). Policy: strict classification
+(ok/unknown/nonfinite/future; sub-ms negatives clamped, documented).
+
+- PENDING lifecycle decision (documented vs alternatives): grace-deferred, then
+  terminal. Failed evaluations retry silently while `now − first ≤ horizon_ms`
+  (recovery window = one horizon past maturity = pre-existing det+2H audit bound,
+  now enforced); then terminal PENDING with explicit reason. INSUFFICIENT stays
+  immediate+terminal. Upgrade-to-COMPLETE rejected (schema cannot express it without
+  backdating or dupe rows). No schema change (v9), no new states, no rewrites;
+  restart restarts grace (bounded, documented).
+- Outcome Contract v1.1 (`PROSPECTIVE_CONTRACT_VERSION`): decision table + additive
+  telemetry (`completed/pending/insufficient/in_grace`, dashboard-compatible).
+- Tests: 683/683 OK (648 + 19 new `test_p14b_4_lifecycle.py` + 16 net from converting
+  `test_prospective.py`'s 35 pytest-style functions — AUDIT FINDING: unittest discovery
+  silently ran 0 of them; now all execute). Legacy suites updated intent-preserving
+  to v1.1 (fresh ages; grace patterns; strict-unknown rename). Market/opportunity
+  rules untouched.
+- Validation: 120 s controlled run COMPLETED naturally (11/11, 0/0, reg=24 from
+  summary 1, 0 writes/errors, DB byte-identical 24/99, new telemetry live). No
+  stale-mark occasion live (marks fresh-or-absent; Fix A unit-proven). No 35-min,
+  4–6-h, or paper runs. All 99 historical rows preserved byte-identical.
+- Gates: prospective/persistence/safety PASS (no transport re-rating — no long run).
+  Verdict PASS. P1-14C not started; V2/main untouched. Full report:
+  `docs/P1_14B_4_PROSPECTIVE_LIFECYCLE_AUDIT.md`.

@@ -1,9 +1,10 @@
 # P1-14A Prospective Setup Evaluation — Specification
 
-**Status:** IMPLEMENTED · VERIFIED (tests + 629/629 suite) · 2026-10-08,
+**Status:** IMPLEMENTED · VERIFIED (tests + 683/683 suite) · 2026-10-08,
 re-validated P1-14B 2026-10-09, integrity-hardened P1-14B.1 2026-10-09,
-freshness-hardened P1-14B.3 2026-10-09
+freshness-hardened P1-14B.3 2026-10-09, contract v1.1 P1-14B.4 2026-10-09
 **Module:** `src/microstructure_probe/prospective.py`
+**Contract:** `PROSPECTIVE_CONTRACT_VERSION = "1.1"` (semantic; schema stays v9)
 **Schema:** Persistence v9 (`prospective_setups`, `prospective_outcomes`)
 **Dashboard:** `/api/prospective` (read-only, RESEARCH ONLY banner)
 
@@ -63,6 +64,35 @@ Order of maturity evaluation: `1m → 5m → 15m → 1h → 4h`.
   PENDING remains terminal via the seen-set. The probe passes `sample_age_ms` from the
   price row. Rationale: `observed_at ≥ maturity` proves order, never quote freshness.
 
+## Outcome Contract v1.1 (P1-14B.4 — supersedes the fail-open and immediate-PENDING rules above)
+
+UNKNOWN is never FRESH. `_classify_mark_age()`: ok (finite age in [−1000, +∞), sub-ms
+negatives clamped to 0.0 as snapshot/observe skew tolerance) vs unknown (None/malformed) vs
+nonfinite (inf/nan) vs future (< −1000 ms, clock pathology). Via the probe, mark present
+implies age present/finite/≥ 0 (`returns.feature` atomicity; verified) — UNKNOWN arises only
+from direct callers, and is now closed there too.
+
+| Situation | Verdict |
+|---|---|
+| mark fresh (classified ok, age ≤ 120_000) + reference + matured | COMPLETE |
+| mark stale-known (> 120_000) | retry in-window → PENDING(stale…) terminal |
+| age unknown / malformed / non-finite / future | retry in-window → PENDING(explicit reason) terminal |
+| mark absent | retry in-window (absent, no row) → PENDING(no mark…) terminal |
+| not matured | skip (absent) |
+| no detected_mark_price | INSUFFICIENT_HISTORY immediate terminal |
+| stored terminal row (any state, incl. across restarts) | never re-emitted |
+| retention 90 d / bound 500 per setup (scoped) | unchanged |
+
+Recovery window = one horizon-length past maturity (`now − first_failure ≤ horizon_ms`,
+i.e. the pre-existing `obs < det + 2H` audit bound, now enforced). Failed evaluations emit
+nothing inside the window; the recorded terminal PENDING carries the current cause's reason +
+"; recovery window exhausted". INSUFFICIENT_HISTORY bypasses grace (nothing can fix it).
+Grace state is memory-only (`_pending_since`, cleared on terminal emission; restart restarts
+grace — bounded to one extra window, documented). Upgrade of recorded PENDING was considered
+and rejected: the `UNIQUE(key, horizon, observed_at)` schema cannot express upgrades without
+backdating or duplicate rows. Telemetry adds `completed/pending/insufficient/in_grace`
+(additive, dashboard-compatible).
+
 ---
 
 ## Outcome States
@@ -70,8 +100,8 @@ Order of maturity evaluation: `1m → 5m → 15m → 1h → 4h`.
 | State                     | Meaning                                                             |
 |---------------------------|---------------------------------------------------------------------|
 | `COMPLETE`                | Horizon matured with valid reference price; return computed.        |
-| `PENDING`                 | Horizon matured but no mark price available at maturity.            |
-| `INSUFFICIENT_HISTORY`    | Setup lacked `detected_mark_price` (no reference).                  |
+| `PENDING`                 | Horizon matured but no valid sample within the recovery window (v1.1: stale/unknown/absent mark); terminal, reason explicit. |
+| `INSUFFICIENT_HISTORY`    | Setup lacked `detected_mark_price` (no reference); immediate terminal. |
 | `INVALID_GAP`             | (Reserved) Gap in data exceeds tolerance.                           |
 | `PARTIAL`                 | (Reserved) Some but not all required data present.                  |
 
@@ -133,7 +163,11 @@ Formula: `mark_return_pct = (current - detected) / detected * 100`.
   "drops": 0,
   "errors": 0,
   "inflight": 3,
-  "high_water": 17
+  "high_water": 17,
+  "completed": 100,
+  "pending": 5,
+  "insufficient": 1,
+  "in_grace": 2
 }
 ```
 
@@ -198,4 +232,8 @@ honesty, maturity boundary, no wall-clock reads, horizon constants, store isolat
 P1-14B.3 adds `tests/test_p14b_3_transport_freshness.py` (20 tests: stale-mark gate incl.
 boundary/fail-open/terminality, accepted-vs-receipt accounting, stream→connection mapping,
 watchdog fire/grace/cooldown/long-threshold/one-shot, audit-label policy).
-Full suite: **629/629 tests pass**.
+P1-14B.4 adds `tests/test_p14b_4_lifecycle.py` (19 tests: contract version, age classifier,
+boundary, grace deferral per cause, in-grace recovery, terminality, restart interplay,
+telemetry) and converts `tests/test_prospective.py` (35 pytest-style functions the canonical
+unittest runner silently skipped → all execute as TestCase now).
+Full suite: **683/683 tests pass**.

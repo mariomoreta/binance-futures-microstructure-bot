@@ -82,10 +82,15 @@ class TestStaleMarkGate(TestCase):
         return rec
 
     def test_stale_mark_records_pending_with_reason(self):
+        # Contract v1.1: stale horizons retry silently within the recovery
+        # window (one horizon-length past maturity), then record PENDING.
         tmp = Path(tempfile.mkdtemp()) / "s.db"
         rec = self._rec(tmp)
         rec.register_setup("S", _cand("S"), EVENT_BASE_MS)
-        out = rec.observe("ETHUSDT", EVENT_BASE_MS + 60_000, 2480.0,
+        t0 = EVENT_BASE_MS + 60_000
+        self.assertEqual(rec.observe("ETHUSDT", t0, 2480.0,
+                                     mark_age_ms=STALE_MARK_AGE_MS + 1), [])
+        out = rec.observe("ETHUSDT", t0 + 60_001, 2480.0,
                           mark_age_ms=STALE_MARK_AGE_MS + 1)
         rec.stop_and_drain()
         self.assertEqual(len(out), 1)
@@ -103,15 +108,19 @@ class TestStaleMarkGate(TestCase):
         self.assertEqual(len(out), 1)
         self.assertEqual(out[0]["outcome_state"], OUTCOME_COMPLETE)
 
-    def test_unknown_age_stays_fail_open(self):
+    def test_unknown_age_records_pending_not_complete(self):
+        # Contract v1.1: UNKNOWN is never FRESH. Unknown ages ride the same
+        # grace as stale ones, then record PENDING with an explicit reason.
         tmp = Path(tempfile.mkdtemp()) / "u.db"
         rec = self._rec(tmp)
         rec.register_setup("U", _cand("U"), EVENT_BASE_MS)
-        out = rec.observe("ETHUSDT", EVENT_BASE_MS + 60_000, 2480.0,
-                          mark_age_ms=None)
+        t0 = EVENT_BASE_MS + 60_000
+        self.assertEqual(rec.observe("ETHUSDT", t0, 2480.0, mark_age_ms=None), [])
+        out = rec.observe("ETHUSDT", t0 + 60_001, 2480.0, mark_age_ms=None)
         rec.stop_and_drain()
         self.assertEqual(len(out), 1)
-        self.assertEqual(out[0]["outcome_state"], OUTCOME_COMPLETE)
+        self.assertEqual(out[0]["outcome_state"], OUTCOME_PENDING)
+        self.assertIn("unknown mark age", out[0]["reason"])
 
     def test_boundary_age_is_complete(self):
         tmp = Path(tempfile.mkdtemp()) / "b.db"
@@ -127,8 +136,13 @@ class TestStaleMarkGate(TestCase):
         tmp = Path(tempfile.mkdtemp()) / "t.db"
         rec = self._rec(tmp)
         rec.register_setup("T", _cand("T"), EVENT_BASE_MS)
-        rec.observe("ETHUSDT", EVENT_BASE_MS + 60_000, 2480.0,
-                    mark_age_ms=600_000)
+        t0 = EVENT_BASE_MS + 60_000
+        self.assertEqual(rec.observe("ETHUSDT", t0, 2480.0,
+                                     mark_age_ms=600_000), [])
+        first = rec.observe("ETHUSDT", t0 + 60_001, 2480.0,
+                            mark_age_ms=600_000)
+        self.assertEqual(len(first), 1)
+        self.assertEqual(first[0]["outcome_state"], OUTCOME_PENDING)
         # Later fresh mark must NOT upgrade the recorded PENDING.
         again = rec.observe("ETHUSDT", EVENT_BASE_MS + 120_000, 2490.0,
                             mark_age_ms=1_000)

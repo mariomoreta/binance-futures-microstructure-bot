@@ -113,6 +113,17 @@ the dashboard exists. No classifier before raw-feature dashboard validation.
   SAFETY PASS; TRANSPORT/FRESHNESS PARTIAL. No 4–6 h authorization. Report:
   `docs/P1_14B_3_TRANSPORT_FRESHNESS_AUDIT.md`.
 
+- `P1-14B.4` (2026-10-09) PROSPECTIVE FRESHNESS & PENDING LIFECYCLE INTEGRITY —
+  **PASS**. UNKNOWN age never FRESH (strict classifier: unknown/nonfinite/future →
+  PENDING; probe proven to always supply age). PENDING grace-deferred (recovery
+  window = 1 horizon past maturity = det+2H bound enforced), then terminal;
+  upgrade rejected with schema rationale; INSUFFICIENT immediate. Contract v1.1
+  + additive telemetry. 19 new tests; 35 pytest-style tests converted to TestCase
+  (canonical runner silently ran 0 — now all execute). Suite 683/683 OK.
+  120 s controlled run COMPLETED (11/11, 0/0, reg=24, 0 writes/errors, DB
+  identical 24/99). All 99 rows preserved. Report:
+  `docs/P1_14B_4_PROSPECTIVE_LIFECYCLE_AUDIT.md`.
+
 - `P1-10R` PROLONGED ≥6H SOAK RE-RUN — P1-10 FAIL stays FAIL (truncated at
   4.91h); re-run with dashboard live, blocking survivable launch, merged
   stdout+stderr as UTF-8 (see `docs/DECISIONS.md` launch rule).
@@ -338,6 +349,15 @@ strategies (P3), paper engine/positions (P4), execution (P5).
   + token research card live. 408/408 tests (32 new).
 
 ## LAST_VERIFICATION
+
+
+
+- 2026-10-09 (P1-14B.4): `python run_tests.py` → 683/683 OK (648 + 19 new
+  lifecycle tests + 16 net from executing the converted test_prospective).
+  120 s controlled run COMPLETED naturally (11/11, 0 reconnects/rejects,
+  reg=24, 0 writes/errors, DB byte-identical). Contract v1.1 enforced.
+  Next: ≥30 min healthy run before any 4–6 h authorization; P1-14C needs
+  explicit instruction.
 
 
 

@@ -606,3 +606,39 @@ restore, no defect). Gates: CLOCK/PROSPECTIVE/PERSISTENCE/SAFETY PASS;
 TRANSPORT/FRESHNESS PARTIAL. No 4-6 h authorization; P1-14C not started;
 V2 worktree/ports and main untouched.
 Full report: `docs/P1_14B_3_TRANSPORT_FRESHNESS_AUDIT.md`.
+
+## 2026-10-09 -- P1-14B.4 prospective freshness & PENDING lifecycle (PASS)
+
+Starting at SHA `d4a8fe2` (clean tree, no divergent work). Two integrity
+questions resolved against code evidence, then enforced as Outcome Contract
+v1.1 (`PROSPECTIVE_CONTRACT_VERSION = "1.1"`, schema stays v9):
+
+1. UNKNOWN freshness: via the probe, mark present implies age present /
+   finite / >= 0 (`returns.feature` sets both atomically), so UNKNOWN arose
+   only from direct callers -- the fail-open default was the defect. Closed
+   strictly: None/malformed/non-finite/future ages record PENDING with
+   explicit reasons (nan/inf/future can no longer slip into COMPLETE;
+   sub-ms negatives clamped with documented tolerance). Precedent: classifier
+   and opportunity engines already gate at 300 s; detections always fresh.
+   Production paths proven unaffected (age always present when mark is).
+2. PENDING lifecycle: grace-deferred, then terminal. Failed evaluations retry
+   silently while now - first <= horizon_ms (recovery window = one horizon
+   past maturity = the pre-existing det+2H audit bound, now enforced); only
+   then is terminal PENDING recorded. INSUFFICIENT stays immediate+terminal.
+   Upgrade-to-COMPLETE rejected with schema rationale (UNIQUE includes
+   observed_at: upgrades need backdating or dupe rows). No schema change, no
+   new states, no rewrites; restart restarts grace (bounded, documented).
+   Memory-only `_pending_since`, cleared on terminal emission.
+
+Also fixed in passing: the 35 P1-14A tests were bare pytest-style functions
+that the canonical unittest runner silently SKIPPED (0 executed, verified) --
+converted to TestCase (fixtures -> mkdtemp, v1.1 semantics); all 35 now run.
+
+Validation: 19 new lifecycle tests; legacy suites updated intent-preserving
+(fresh ages; grace patterns; strict-unknown rename); suite 683/683 OK
+(648 + 19 + 16 net from conversion). 120 s controlled run COMPLETED
+naturally (11/11, 0/0, reg=24, 0 writes/errors, DB byte-identical 24/99,
+new telemetry live). All 99 historical rows preserved byte-identical.
+Gates: prospective/persistence/safety PASS (no transport re-rating, no long
+run). V2 worktree/ports and main untouched. P1-14C not started.
+Full report: `docs/P1_14B_4_PROSPECTIVE_LIFECYCLE_AUDIT.md`.
