@@ -26,3 +26,6 @@
 .advanced>summary{cursor:pointer;font:600 11px var(--font-mono);color:#7abde0;padding:9px 12px;letter-spacing:.035em}
 .advanced[open]>summary{border-bottom:1px solid #20374b}
 .advanced .filters{border:0;border-radius:0}
+
+/* DASH-V2-28: inline keyboard-accessible evidence inspection. */
+.symbolCell{display:flex;align-items:center;gap:8px;justify-content:space-between}.symbolCell a{min-width:0}.inspectButton{background:#11344c;color:#83d7ff;border:1px solid #2c5975;border-radius:4px;width:23px;height:23px;cursor:pointer;font:700 13px var(--font-mono);display:grid;place-items:center}.inspectButton:hover,.inspectButton:focus-visible{background:#155075;outline:1px solid #5cbbf2}.inspectButton[aria-expanded="true"]{color:#fff;background:#146388}.inspectionRow td{padding:0!important;border:0!important;background:#071a2a!important;text-align:left!important;position:static!important}

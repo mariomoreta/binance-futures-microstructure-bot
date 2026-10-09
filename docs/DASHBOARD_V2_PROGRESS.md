@@ -321,3 +321,10 @@ architecture + static foundation (DASH-V2-00); no integration.
 - Compared actual Chrome 1672x941 output to approved `design/references/v2-approved/movers.png`. Moved four-column research leaderboards immediately below the market table, ahead of secondary breadth and historical source-separated panels. Optimized board typography, row spacing and card contrast for dense desktop terminal layout.
 - New screenshot `movers-v2-27-qa.png` locally reviewed: first leaderboard row now begins within reference-sized viewport below table; full target parity still PARTIAL (more market columns / documented as-of verified series are absent). No synthetic sparklines or mixed DEMO and persisted data.
 - TypeScript, ESLint PASS; 57/57 Vitest PASS; production build exit 0. Preview `http://127.0.0.1:3033/movers` and CSS HTTP 200. Backend P1-14B untouched. Untracked QA PNGs preserved outside Git.
+
+## DASH-V2-28 — Market Movers per-symbol provenance inspector (2026-10-08)
+
+- Extended desktop market table with keyboard-accessible per-symbol +/− inspection toggles. Expanded row details show field value, fixture provenance, coverage state, missing evidence and precise fixture timestamp; UNKNOWN is never backfilled. Preserves full-width table, 4-column rank boards, and separate Python historical panels.
+- Approved visual target remains `design/references/v2-approved/movers.png` at 1672x941. Before/after Chrome screenshots `movers-v2-28-qa.png` and `movers-v2-28-final.png` (untracked local QA) manually reviewed; fixture detail interaction's expanded browser screenshot not yet captured; semantics covered by component tests, not full browser click automation.
+- TypeScript PASS, ESLint PASS, Vitest 58/58 PASS, production Next build exit 0. Isolated preview `http://127.0.0.1:3035/movers` HTML and both CSS HTTP 200. Source claims remain explicitly DEMO; backend not touched.
+- Visual parity still PARTIAL; missing actual depth, OI, volume-z and live time-series metrics cannot be added to DEMO without grounded source fields. Next improve authoritative read contract and visual parity once backend evidence is available.
