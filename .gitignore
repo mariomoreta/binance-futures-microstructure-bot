@@ -29,3 +29,7 @@ frontend/.next/
 frontend/out/
 *.tsbuildinfo
 
+
+.dashboard-v2-runtime.json
+dashboard-v2-3020.log
+
