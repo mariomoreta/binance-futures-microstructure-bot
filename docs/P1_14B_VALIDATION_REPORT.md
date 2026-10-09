@@ -190,8 +190,35 @@ Tested via a local dashboard instance bound to 127.0.0.1:8891 feeding `data/micr
 **Remaining open items (for future guidance, not blocking):**
 - Extend real-data coverage by running a longer observe window under a stable host clock so 5m/15m/1h/4h outcomes mature; retain honesty (PENDING/absent) until then.
 - Harden the monitor's epoch handling to avoid the ms/s confusion seen in the pilot log (monitor-side, not core).
-- Record the recovered 1-outcome evidence in `FEATURE_BACKLOG` under the P1-14A item as VERIFIED descriptive data.
+- Record the recovered 1-outcome evidence in `FEATURE_BACKLOG` under the P1-14A item as VERIFIED descriptive data — **DONE (2026-10-09)** in `docs/FEATURE_BACKLOG.md` (F-P14A-01 entry).
 
 ---
 
 *Report produced as part of P1-14B recovery. Evidence files preserved: `logs/p14b_pilot.log`, `data/microprobe.db`, `.firecrawl/*.json`, `p14b_pilot_monitor.py`, `p14b_dashboard_readtest.py`, `analyze_p13a_run.py`, `tests/test_p14b_validation.py`.*
+
+---
+
+## P1-14B Final Report Block — 2026-10-09
+
+- **Status:** PASS (recovery + validation complete).
+- **Branch:** `phase1/market-intelligence-dashboard` (commit `1817c88`, local and
+  remote SHA match; in sync with `origin`).
+- **Scope:** Recovered interrupted P1-14B session; validated the P1-14A prospective
+  evaluation against deterministic tests (39 new, P1-14B.1-.11 all pass) and against
+  real persisted evidence (`data/microprobe.db`, schema v9: 7 unique setups, 1
+  COMPLETE outcome, event-time/no-lookahead audit PASS, zero duplicates).
+- **Files staged:**
+  - `src/microstructure_probe/prospective.py` (fix: rehydrate setup_json; restart-safe
+    COMPLETE recomputation).
+  - `src/microstructure_probe/dashboard.py` (fix: use injected store; /api/prospective
+    parity).
+  - `tests/test_p14b_validation.py` (new: 39 P1-14B tests).
+  - `docs/P1_14B_VALIDATION_REPORT.md` (deliverable), `docs/CURRENT_STATE.md`,
+    `docs/TASK_QUEUE.md`, `docs/DECISIONS.md` (append-only entry),
+    `docs/FEATURE_BACKLOG.md` (F-P14A-01 status + evidence).
+- **Evidence kept untracked (not committed):** `.firecrawl/*.json`, `analyze_p13a_run.py`,
+  `p14b_dashboard_readtest.py`, `p14b_pilot_monitor.py`, `logs/p14b_pilot.log`,
+  `data/microprobe.db`.
+- **Gate:** `python run_tests.py` — 593/593 OK. Mode preserved `BOT_MODE=observe`;
+  zero orders, zero capital; Dashboard V2 worktree untouched; P1-14C and later
+  phases NOT started.
