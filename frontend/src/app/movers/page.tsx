@@ -1,5 +1,1 @@
-import { MoversDashboard } from "@/components/movers/MoversDashboard";
-
-export default function MoversPage() {
-  return <MoversDashboard />;
-}
+import Link from "next/link";import {MoversDashboard} from "@/components/movers/MoversDashboard";export default function MoversPage(){return <><div style={{display:"flex",justifyContent:"flex-end",marginBottom:8}}><Link href="/movers/verified" style={{fontSize:12}}>Inspect separate Python observations →</Link></div><MoversDashboard/></>}
