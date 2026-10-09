@@ -342,3 +342,10 @@ architecture + static foundation (DASH-V2-00); no integration.
 - Re-audited Movers desktop layout with approved reference. Redesigned 6 market KPI cards using subdued layered surfaces, thin status rails and positive/negative accent typography. Strengthened eight research leaderboard panels with denser rank rows, typography and left guide rail; no source data changes.
 - Captured and reviewed 1672x941 screenshot `movers-v2-30-qa.png` in Chrome: cards and full-width primary table remain legible. Rankings remain below table due to 16-row default/570px internal scroll, so visual parity remains PARTIAL and approved target is not achieved.
 - Verification: TypeScript PASS, ESLint PASS, Vitest 58/58 PASS, Next production build PASS, isolated `http://127.0.0.1:3037/movers` HTML and 2 CSS assets HTTP 200. QA screenshot is local untracked evidence only. P1-14B backend untouched.
+
+## DASH-V2-31 — Integrated desktop table + leaderboard terminal (2026-10-08)
+
+- Changed Movers primary workspace at >=1450px desktop to a two-column layout: main 16-row (scrollable) market table left and an always-visible eight-board research ranking rail right. This is a structural response to the approved terminal reference, not just cosmetic styling.
+- First real Chrome screenshot `movers-v2-31-qa.png` showed illegibly squeezed four-column rankings. Corrected to two readable columns in the research rail, rebuilt and inspected final `movers-v2-31-final.png` at 1672x941. Final capture shows both primary table and first four leaderboards within viewport simultaneously.
+- No change to DEMO market figures, backend, provenance or trade execution. Actual price series remain separate from illustrative fixture metrics. Frontend TypeScript, ESLint, Vitest 58/58 PASS, Next production build PASS; preview `http://127.0.0.1:3039/movers` HTML and CSS 200. Target visual fidelity improved but still PARTIAL.
+- Local QA screenshots are intentionally untracked. Muse Spark backend worktree untouched.

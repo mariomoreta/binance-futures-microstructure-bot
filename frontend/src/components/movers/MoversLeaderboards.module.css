@@ -30,3 +30,15 @@
 .rank{background:#194461;color:#a5e0ff;border:1px solid #2a6887}
 .action{margin-top:12px;font-size:10px;font-weight:600}
 }
+
+/* DASH-V2-31: readability of leaderboard rail when beside primary table. */
+@media(min-width:1450px){
+.section .grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+.board{min-height:190px;padding:10px 11px}
+.board header{min-height:34px;padding-bottom:7px}
+.board h3{font-size:10px;line-height:1.3}
+.board small{font-size:9px;max-width:90px}
+.board li{padding:5px 0;gap:5px}
+.board li a{font-size:10px}
+.board li strong{font-size:10px}
+}
