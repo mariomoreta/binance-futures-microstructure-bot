@@ -86,6 +86,19 @@ the dashboard exists. No classifier before raw-feature dashboard validation.
   denominators + readiness criteria (no long run started) in
   `docs/P1_14B_1_TIME_INTEGRITY_AUDIT.md`.
 
+- `P1-14B.2` (2026-10-09) PROSPECTIVE OPERATIONAL STABILITY GATE —
+  **PARTIAL**. Preflight PASS; clock audit PASS (+517 ms vs 60 s tolerance,
+  deliberate no-resync). 35-min run via canonical plane (PID 32532, UTF-8
+  log `logs/probe-runs/probe-20261009T015411Z.log`) aborted by controlled
+  stop at 23.4 min (exit 0) on the written >5 % reject rule (5.15 %
+  cumulative, ~100 % marginal episode, 3 market reconnects, markPrice stale).
+  Window <30 min = INSUFFICIENT for the duration objective. Post-run audit:
+  24 setups, 68/68 COMPLETE, 0 dupes, 100 % matured-cell coverage, no
+  fabrication. Tests 609/609 OK (no new tests — no confirmed defect).
+  Gates: CLOCK/PERSISTENCE/PROSPECTIVE/RESOURCE/SAFETY PASS; TRANSPORT
+  PARTIAL (limiting). No 4–6 h run authorized. Report:
+  `docs/P1_14B_2_OPERATIONAL_STABILITY_REPORT.md`.
+
 - `P1-10R` PROLONGED ≥6H SOAK RE-RUN — P1-10 FAIL stays FAIL (truncated at
   4.91h); re-run with dashboard live, blocking survivable launch, merged
   stdout+stderr as UTF-8 (see `docs/DECISIONS.md` launch rule).
@@ -311,6 +324,16 @@ strategies (P3), paper engine/positions (P4), execution (P5).
   + token research card live. 408/408 tests (32 new).
 
 ## LAST_VERIFICATION
+
+
+
+- 2026-10-09 (P1-14B.2): `python run_tests.py` → 609/609 OK (no code/test
+  changes — no confirmed defect). 35-min stability run aborted at 23.4 min
+  per the >5 % reject rule (exit 0, controlled stop, evidence preserved);
+  post-run audit 24 setups / 68 COMPLETE / 0 dupes. Verdict PARTIAL
+  (duration insufficient; transport limiting). Next: clean 10-min pre-window
+  + ≥30 min healthy run before any 4–6 h authorization; P1-14C needs
+  explicit instruction.
 
 
 

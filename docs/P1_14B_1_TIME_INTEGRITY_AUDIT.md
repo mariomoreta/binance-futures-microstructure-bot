@@ -299,3 +299,16 @@ Evidence preserved, uncommitted: `.firecrawl/`, `analyze_p13a_run.py`,
 `logs/p14b_pilot_run.out` (Run B only — Run A output lost to truncation),
 `logs/p14b_1_validation_run.out`, `logs/p14b_1_observe_run.out`,
 `logs/p14b_1_accumulate_run.out`, `data/microprobe.db`.
+
+---
+
+## Addendum — P1-14B.2 (2026-10-09): stability gate PARTIAL, prospective layer green
+
+The 35-minute stability attempt (`logs/probe-runs/probe-20261009T015411Z.log`)
+was aborted by controlled stop at 23.4 min on the written >5 % reject rule
+(market-endpoint episode; window INSUFFICIENT per the <30 min rule).
+Prospective integrity held throughout and after: 24 setups, 68/68 COMPLETE,
+0 duplicates, 100 % matured-cell coverage, Defect C fix proven at 24-key scale,
+restart idempotency proven live across the fresh process. No code or test changes
+owed (609/609 green, no confirmed defect). Full evidence:
+`docs/P1_14B_2_OPERATIONAL_STABILITY_REPORT.md`. No 4–6 h run authorized.

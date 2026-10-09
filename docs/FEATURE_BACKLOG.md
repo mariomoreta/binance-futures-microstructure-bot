@@ -29,7 +29,7 @@ it does not replace them. Authority stays where it was recorded
 | F-STATE-V2-TL-01 | State timeline visualization | PROPOSED | NOT IMPLEMENTED | Later |
 | F-UNI-01 | Dynamic LIVE-universe expansion (P1-12B) | DECIDED | VERIFIED | P1-12B DONE |
 | F-OPP-01 | Research-based opportunity engine (P1-13A) | DECIDED | IMPLEMENTED (pending VERIFIED) | P1-13A DONE |
-| F-P14A-01 | Prospective setup outcome evaluation (P1-14A / P1-14B / P1-14B.1) | DECIDED | VERIFIED | P1-14A/P1-14B/P1-14B.1 DONE |
+| F-P14A-01 | Prospective setup outcome evaluation (P1-14A / P1-14B / P1-14B.1 / P1-14B.2) | DECIDED | VERIFIED (stability PARTIAL) | P1-14A/P1-14B/P1-14B.1 DONE, P1-14B.2 PARTIAL |
 | F-OPP-UI-01 | Opportunities dashboard (P1-13B) | DECIDED | NOT IMPLEMENTED | P1-13B |
 | F-BT-01 | Historical backtesting (P1-14) | DECIDED | NOT IMPLEMENTED | P1-14 |
 | F-PAPER-01 | Forward paper validation (P1-15) | DECIDED | NOT IMPLEMENTED | P1-15 |
@@ -236,7 +236,7 @@ it does not replace them. Authority stays where it was recorded
 - **Open questions:** none.
 - **Last update:** 2026-10-08.
 
-## F-P14A-01 — Prospective setup outcome evaluation (P1-14A / P1-14B / P1-14B.1)
+## F-P14A-01 — Prospective setup outcome evaluation (P1-14A / P1-14B / P1-14B.1 / P1-14B.2)
 
 - **Product objective:** register P1-13A opportunity setups at first DETECTED
   and observe forward mark-price outcomes at versioned horizons (1m/5m/15m/1h
@@ -251,7 +251,8 @@ it does not replace them. Authority stays where it was recorded
   + 16 `test_p14b_1_time_integrity.py`, 609/609 canonical suite green — see P1-14A,
   P1-14B and P1-14B.1 result sections in `docs/CURRENT_STATE.md`; full evidence in
   `docs/P1_14B_VALIDATION_REPORT.md` + `docs/P1_14B_1_TIME_INTEGRITY_AUDIT.md`).
-- **Target phase:** P1-14A DONE / P1-14B DONE (recovery) / P1-14B.1 DONE (integrity).
+- **Target phase:** P1-14A DONE / P1-14B DONE (recovery) / P1-14B.1 DONE (integrity) /
+  P1-14B.2 PARTIAL (stability gate: duration insufficient, prospective layer green).
 - **Dependencies:** P1-13A opportunity engine (setups, DETECTED lifecycle,
   candidate_key + setup_family + direction + market_state + rule_version +
   capability_tier fields).
@@ -276,7 +277,10 @@ it does not replace them. Authority stays where it was recorded
   `docs/P1_14B_VALIDATION_REPORT.md` + `docs/P1_14B_1_TIME_INTEGRITY_AUDIT.md`).
   Correction: the P1-14B "single outcome" shape was partly an artifact of the
   outcome-store bounding bug (fixed P1-14B.1); rows already deleted are
-  unrecoverable and documented, not reconstructed.
+  unrecoverable and documented, not reconstructed. P1-14B.2 stability run
+  (23.4 min, aborted on the >5 % reject rule): 24 setups, 68/68 COMPLETE,
+  0 dupes, 100 % matured-cell coverage — full details in
+  `docs/P1_14B_2_OPERATIONAL_STABILITY_REPORT.md`.
 - **Docs:** `docs/PROSPECTIVE_EVALUATION_SPEC.md`, `docs/DECISIONS.md`,
   `docs/CURRENT_STATE.md`, `docs/TASK_QUEUE.md`.
 - **Open questions:** MFE/MAE and cohort aggregation deferred to a later
@@ -284,8 +288,10 @@ it does not replace them. Authority stays where it was recorded
   P1-14B: host-clock skew during the 150s observe window limited outcome
   coverage (documented, not a code defect); P1-14B.1: prolonged-run readiness
   blockers recorded (30+ min healthy window, clock resync note) — no long run
-  started.
-- **Last update:** 2026-10-09 (P1-14B.1 time-integrity validation).
+  started; P1-14B.2: 35-min attempt aborted at 23.4 min on transport episode
+  (reject rate rule) — duration insufficient, transport limiting, no 4–6 h
+  authorization.
+- **Last update:** 2026-10-09 (P1-14B.2 stability gate, PARTIAL).
 
 ## F-BT-01 — Historical backtesting (P1-14)
 

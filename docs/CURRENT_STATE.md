@@ -1104,3 +1104,30 @@ Audit → reproduce → correct → test → validate → document. Starting SHA
   healthy window, pre-run clock resync note, log-capture hygiene). NO long
   run started. V2 worktree/ports untouched.
 - Full report: `docs/P1_14B_1_TIME_INTEGRITY_AUDIT.md`.
+
+## P1-14B.2 prospective operational stability gate — RESULT: PARTIAL (2026-10-09)
+
+Preflight PASS (0 processes, port free, registry COMPLETED, SQLite ok, disk
+163.6 GB, baseline identical: v9 / 7 setups / 28 COMPLETE). Clock audit PASS
+(+517 ms worst case vs 60 s tolerance; 3/3 syncs ok; deliberate no-resync).
+35-min observation via canonical plane (`control start --duration 2100`,
+PID 32532, UTF-8 log `logs/probe-runs/probe-20261009T015411Z.log`) ABORTED
+by controlled stop at 23.4 min (1401.7 s, exit 0, `stopped-by-agent`) when
+the cumulative reject rate crossed 5.15 % (episode marginal rate ~100 % since
+rt≈983, 3 market reconnects, markPrice stale, throughput collapse ~7×).
+Per §6 the <30 min window is INSUFFICIENT — duration objective not met.
+
+- Pristine first 15.8 min (0 rejects/reconnects); HOT promotions (JCT/OGN/RLC)
+  grew streams 11→20 honestly; prospective layer error-free throughout
+  (rehydration + per-cycle observe live: 17 new setups incl. first
+  EXHAUSTION_WATCH/MOMENTUM_CONTINUATION, 40 new outcomes).
+- Post-run read-only audit: 24 unique setups, 68/68 COMPLETE, 0 dupes
+  (restart idempotency holds live), no-lookahead + math PASS, 68/68 matured
+  cells covered (52 unmatured absent honestly), max lateness 6732.6 s
+  recorded not backdated. DB file +0.0 MB; disk 163.5 GB. CPU/mem per-process
+  not captured (stated, not inferred).
+- Tests 609/609 OK (no new tests — no confirmed defect; episode is
+  environmental). Gates: CLOCK/PERSISTENCE/PROSPECTIVE/RESOURCE/SAFETY PASS
+  (resource with capture note); TRANSPORT PARTIAL (limiting gate).
+- No 4–6 h run authorized. V2/main untouched. Full report:
+  `docs/P1_14B_2_OPERATIONAL_STABILITY_REPORT.md`.

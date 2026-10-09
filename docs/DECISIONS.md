@@ -548,3 +548,28 @@ runs (exit 0, safety 0/0/0) prove each fix live. No stored row rewritten.
 Prolonged-run readiness criteria recorded with blockers; NO long run
 started; P1-14C NOT started; V2 worktree/ports untouched.
 Full report: `docs/P1_14B_1_TIME_INTEGRITY_AUDIT.md`.
+
+## 2026-10-09 -- P1-14B.2 operational stability gate (PARTIAL)
+
+35-minute stability attempt via the canonical control plane
+(`control start --duration 2100`, PID 32532, observe-only, UTF-8 log
+`logs/probe-runs/probe-20261009T015411Z.log`), starting at SHA `d79cfd9`
+with validated baseline (v9 / 7 setups / 28 COMPLETE).
+
+Supervision (read-only polls): 15.8 min pristine (11 -> 20 streams via
+honest HOT promotions, 0 rejects/reconnects), then a market-endpoint
+degradation episode (delivery lag, 3 reconnects, markPrice stale,
+marginal reject rate ~100 %). Controlled stop at 23.4 min (exit 0,
+`stopped-by-agent`) on the written >5 % reject rule (5.15 % cumulative).
+Per the task rule a <30 min window is INSUFFICIENT -- duration objective
+not met; no second long run started.
+
+Prospective layer green throughout (0 errors): rehydration + per-cycle
+observation live (17 new setups incl. HOT symbols and first
+EXHAUSTION_WATCH/MOMENTUM_CONTINUATION, 40 new outcomes); post-run audit
+24 setups, 68/68 COMPLETE, 0 dupes, 100 % matured-cell coverage, no
+lookahead, no fabrication. Tests 609/609 OK (no code/test changes owed).
+Gates: CLOCK/PERSISTENCE/PROSPECTIVE/RESOURCE/SAFETY PASS;
+TRANSPORT PARTIAL (limiting). No 4-6 h run authorized; P1-14C not started;
+V2 worktree/ports and main untouched.
+Full report: `docs/P1_14B_2_OPERATIONAL_STABILITY_REPORT.md`.
