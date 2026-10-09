@@ -368,3 +368,10 @@ architecture + static foundation (DASH-V2-00); no integration.
 - Prospective Research ledger now shows quality per returned observation and exports only currently filtered recent rows as CSV, using formula-injection-resistant escaping. Never claims this recent-list CSV is a full research cohort or profitable trading history.
 - Added 4 pure-helper tests including missing information, timestamp sanity and CSV escaping. TypeScript/ESLint PASS, Vitest 62/62 PASS, production build PASS. Isolated preview `http://127.0.0.1:3042/opportunities/prospective` HTML 200, BFF 503 because Python backend unreachable; Chrome screenshot `prospective-v2-34-qa.png` generated. Populated-data UI remains not verified, not simulated as live.
 - Backend worktree/P1-14B.3 untouched. Future: full-cohort quality requires provenance timestamps from Python and audit of 68 stored outcomes before any statistical conclusions.
+
+## DASH-V2-35 — Correct Prospective UI hidden by backend 503 (2026-10-09)
+
+- User could not see DASH-V2-34 updates: verified root cause in ProspectiveView early `if(failure)return ...` prevented all panels/filters/CSV and quality column from rendering whenever Python BFF returned 503.
+- Changed fail-closed handling to render the entire interactive research shell when backend is unavailable, with conspicuous `BACKEND UNAVAILABLE — UI PREVIEW` warning and UNKNOWN (not 0) for source-dependent headline and horizon counts. Empty outcome ledger is explicitly not evidence of zero returns.
+- Re-tested TypeScript + ESLint, Vitest full suite, production Next build exit 0. Isolated preview `/opportunities/prospective` at 3043 returned HTTP 200, Python BFF 503; inspected Chrome screenshot `prospective-v2-35-offline-qa.png` at 1672x941 proving visible layout/panels despite backend offline. Data-populated functionality is still not verified.
+- No Python backend or P1-14B.3 runtime changes. QA PNG remains local untracked.
