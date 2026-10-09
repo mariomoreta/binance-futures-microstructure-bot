@@ -300,3 +300,10 @@ architecture + static foundation (DASH-V2-00); no integration.
 - New standalone `/movers/verified` page and navigation link from DEMO `/movers`. No DEMO numbers used in verified read model. Core / HOT proposal tiers drawn only from discovery; subscribed flag requires momentum source. Missing data remains missing. Not yet suitable for combined charts/profit interpretation.
 - Python port 8091 was offline: read-only BFF returned 503, verified Chrome screenshot at 1672x941 shows fail-closed UI alert, not fictitious market entries. Main /movers and new /movers/verified and CSS returned HTTP 200 on isolated 3030 preview.
 - Frontend TypeScript, ESLint, Vitest 55/55 and Next build PASS. Does not touch backend P1-14B or other branch. Next audit must validate exact momentum shape, timestamps and full observation coverage with actual backend before elevating confidence.
+
+## DASH-V2-25 — Field-level source provenance and temporal honesty (2026-10-08)
+
+- Hardened the independent persisted Movers adapter/view. Each row now distinguishes discovery evidence versus subscribed momentum evidence, tracks priceSource (`discovery` / `momentum` / `unknown`) and marks data-source clocks/freshness as UNVERIFIED until matched observed as-of times are available. Adapter response `generated_at` is retrieval-time, explicitly NOT exchange observation time.
+- Fixed invalid/nonpositive price handling; missing data remains null. Never presents momentum-only rows as having a discovery 24h return or volume. No unsupported timestamp synchronization, probabilities or live-execution statements.
+- Tests expanded to 57/57 PASS; TypeScript, ESLint and production Next build PASS. Isolated preview http://127.0.0.1:3031/movers and /movers/verified HTML and CSS 200; Python backend remains offline, read API 503 and no fabricated records. Browser Chrome captured `movers-v2-25-qa.png` (untracked local QA). Backend worktree remains untouched while agent recovers P1-14B.
+- NEXT: integrate actual backend only after source as-of age and synchronization contracts can be verified; do not consolidate DEMO and observed market data into one table prematurely.
