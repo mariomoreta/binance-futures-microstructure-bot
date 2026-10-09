@@ -361,3 +361,10 @@ architecture + static foundation (DASH-V2-00); no integration.
 - Added interactive symbol substring, horizon (1m/5m/15m/1h/4h), and outcome-state filters to the recent prospective observation ledger. Counts reflect only filtered `latest_outcomes` rows, while headline metrics and horizon summary remain explicitly latest-returned data. No inference of full-cohort denominators or realized P&L.
 - Desktop filter styling integrated into existing research table. TypeScript and ESLint PASS, Vitest 58/58 PASS, production build PASS. Isolated `/opportunities/prospective` page returned 200 at 3041; Python backend unavailable, BFF 503 and intentional fail-closed notice. Chrome generated `prospective-v2-33-qa.png`; populated-data visual interaction remains unverified until upstream is online.
 - Separate V2 worktree only; no backend files/process changes. Local untracked QA screenshots preserved.
+
+## DASH-V2-34 — Prospective evidence quality + safe research CSV (2026-10-09)
+
+- Added deterministic field-level research quality classification to `latest_outcomes`: `COMPLETE_BUT_UNAUDITED` explicitly means basic price/return fields exist but source freshness, true event time and maturity lateness remain unverified; distinguishes non-complete rows, invalid timestamps, missing return and invalid price.
+- Prospective Research ledger now shows quality per returned observation and exports only currently filtered recent rows as CSV, using formula-injection-resistant escaping. Never claims this recent-list CSV is a full research cohort or profitable trading history.
+- Added 4 pure-helper tests including missing information, timestamp sanity and CSV escaping. TypeScript/ESLint PASS, Vitest 62/62 PASS, production build PASS. Isolated preview `http://127.0.0.1:3042/opportunities/prospective` HTML 200, BFF 503 because Python backend unreachable; Chrome screenshot `prospective-v2-34-qa.png` generated. Populated-data UI remains not verified, not simulated as live.
+- Backend worktree/P1-14B.3 untouched. Future: full-cohort quality requires provenance timestamps from Python and audit of 68 stored outcomes before any statistical conclusions.
