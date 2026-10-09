@@ -14,3 +14,19 @@
 .footer,.action{margin-top:6px;font-size:9px}
 .empty{min-height:64px}
 }
+
+/* DASH-V2-30: ranked data reads as research terminal, not generic cards. */
+@media(min-width:1251px){
+.section .grid{gap:10px}
+.board{position:relative;padding:14px 15px 11px;min-height:226px;background:linear-gradient(145deg,#122d42,#0b2033 55%,#0a1a2b);border:1px solid #28536c;box-shadow:inset 0 1px 0 #ffffff10}
+.board:before{content:"";position:absolute;left:0;top:13px;bottom:13px;width:2px;background:#2b84a5;opacity:.7}
+.board header{padding-bottom:10px;border-bottom:1px solid #274760;min-height:43px;align-items:flex-start}
+.board h3{font-size:11px;letter-spacing:.045em;color:#b8e8ff}
+.board small{color:#78a6bf;max-width:116px;line-height:1.35}
+.board li{padding:7px 0;border-color:#234156}
+.board li:hover{background:#15364a}
+.board li strong{font-size:11px}
+.board li a{font-weight:650}
+.rank{background:#194461;color:#a5e0ff;border:1px solid #2a6887}
+.action{margin-top:12px;font-size:10px;font-weight:600}
+}

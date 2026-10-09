@@ -336,3 +336,9 @@ architecture + static foundation (DASH-V2-00); no integration.
 - Verified screenshot at 1672x941 saved locally as `movers-v2-29-qa.png` (untracked QA; not part of Git). HTML and two CSS responses HTTP 200 on isolated preview `http://127.0.0.1:3036/movers`. Table and fixture labels display correctly.
 - TypeScript PASS, ESLint PASS, Vitest 58/58 PASS, Next production build PASS. Initial old pagination test failed when changing the default from 8 to 16; updated to exercise explicit 8-row selection and full pagination, then reran green. No Python backend files or live engine processes touched.
 - Visual parity with approved `design/references/v2-approved/movers.png` remains PARTIAL; this is a desktop data-density improvement, not complete visual parity. Source metrics still DEMO.
+
+## DASH-V2-30 — Desktop financial card/leaderboard visual refinement (2026-10-08)
+
+- Re-audited Movers desktop layout with approved reference. Redesigned 6 market KPI cards using subdued layered surfaces, thin status rails and positive/negative accent typography. Strengthened eight research leaderboard panels with denser rank rows, typography and left guide rail; no source data changes.
+- Captured and reviewed 1672x941 screenshot `movers-v2-30-qa.png` in Chrome: cards and full-width primary table remain legible. Rankings remain below table due to 16-row default/570px internal scroll, so visual parity remains PARTIAL and approved target is not achieved.
+- Verification: TypeScript PASS, ESLint PASS, Vitest 58/58 PASS, Next production build PASS, isolated `http://127.0.0.1:3037/movers` HTML and 2 CSS assets HTTP 200. QA screenshot is local untracked evidence only. P1-14B backend untouched.

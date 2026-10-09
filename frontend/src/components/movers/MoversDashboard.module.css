@@ -32,3 +32,17 @@
 
 /* DASH-V2-29 desktop table capacity and navigation. */
 .pagerControls{display:flex;align-items:center;gap:8px}.pageSizeLabel{font:11px var(--font-mono);color:#8db9d0;display:flex;gap:8px;align-items:center}.pageSizeLabel select{background:#0c2437;color:#d6f0ff;border:1px solid #2b5674;border-radius:5px;padding:7px 9px}.pageSizeLabel select:focus-visible{outline:2px solid #61cafa}@media(min-width:1250px){.table th{position:sticky;top:0;z-index:3}.tableWrap{max-height:570px;overflow:auto;scrollbar-color:#305574 #091725}.table tbody tr:nth-child(2n){background:#0b1a2b}.table tbody tr:hover{background:#123149}.tableWrap{border:1px solid #24435b;border-radius:7px}}
+
+/* DASH-V2-30: desktop market summary composition, values remain fixture-only. */
+@media(min-width:1251px){
+.grid{gap:9px}
+.card{position:relative;overflow:hidden;min-height:98px;padding:15px 17px;background:linear-gradient(143deg,#112a40 0%,#0c1d30 65%,#091826 100%);border:1px solid #28516b;box-shadow:inset 0 1px 0 #ffffff0b,0 8px 24px #00000015}
+.card:before{content:"";position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,#27b5e5,#1b506f 65%,transparent)}
+.card:nth-child(3):before,.card:nth-child(5):before{background:linear-gradient(90deg,#24b995,#215245,transparent)}
+.card:nth-child(4):before,.card:nth-child(6):before{background:linear-gradient(90deg,#e9687f,#5e2939,transparent)}
+.card .meta:first-child{font-size:10px;letter-spacing:.07em;text-transform:uppercase;color:#8dbad2;font-weight:600}
+.card .value{font:750 24px var(--font-mono);margin:9px 0 8px;letter-spacing:-.04em}
+.card:nth-child(3) .value,.card:nth-child(5) .value{color:#4adbb6}
+.card:nth-child(4) .value,.card:nth-child(6) .value{color:#ff7897}
+.card .meta:last-child{border-top:1px solid #234159;padding-top:6px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+}
