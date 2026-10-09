@@ -307,3 +307,11 @@ architecture + static foundation (DASH-V2-00); no integration.
 - Fixed invalid/nonpositive price handling; missing data remains null. Never presents momentum-only rows as having a discovery 24h return or volume. No unsupported timestamp synchronization, probabilities or live-execution statements.
 - Tests expanded to 57/57 PASS; TypeScript, ESLint and production Next build PASS. Isolated preview http://127.0.0.1:3031/movers and /movers/verified HTML and CSS 200; Python backend remains offline, read API 503 and no fabricated records. Browser Chrome captured `movers-v2-25-qa.png` (untracked local QA). Backend worktree remains untouched while agent recovers P1-14B.
 - NEXT: integrate actual backend only after source as-of age and synchronization contracts can be verified; do not consolidate DEMO and observed market data into one table prematurely.
+
+## DASH-V2-26 — Desktop Movers terminal density and structure (2026-10-08)
+
+- Re-audited official `design/references/v2-approved/movers.png` against Chrome desktop 1672x941. Implemented terminal integrity strip with explicit fixture-only posture, desktop table-first hierarchy, advanced filters in a collapsed details panel, compact financial metric/table styling, and moved market-breadth analysis below the primary table.
+- At 1672x941 screenshot `movers-v2-26-qa.png` shows header/navigation, quick tabs, six fixture KPIs, the eight-row table, pager and breadth strip above the fold. Historical Python charts remain a separate panel below, never mixed with DEMO fixture values.
+- Visual fidelity improved but PARTIAL: mockup's extensive verified metrics and sparklines not present, and eight leaderboards fall below the first viewport. No fictitious price series or unsupported trading signals added.
+- Frontend TypeScript PASS, ESLint PASS, Vitest 57/57 PASS, Next.js production build exit 0. Isolated preview `http://127.0.0.1:3032/movers` HTML and two CSS 200, screenshot visually inspected.
+- Agent P1-14B backend worktree untouched. Local QA PNGs remain untracked; do not stage them.
