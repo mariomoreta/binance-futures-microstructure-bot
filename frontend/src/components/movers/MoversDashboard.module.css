@@ -29,3 +29,6 @@
 
 /* DASH-V2-28: inline keyboard-accessible evidence inspection. */
 .symbolCell{display:flex;align-items:center;gap:8px;justify-content:space-between}.symbolCell a{min-width:0}.inspectButton{background:#11344c;color:#83d7ff;border:1px solid #2c5975;border-radius:4px;width:23px;height:23px;cursor:pointer;font:700 13px var(--font-mono);display:grid;place-items:center}.inspectButton:hover,.inspectButton:focus-visible{background:#155075;outline:1px solid #5cbbf2}.inspectButton[aria-expanded="true"]{color:#fff;background:#146388}.inspectionRow td{padding:0!important;border:0!important;background:#071a2a!important;text-align:left!important;position:static!important}
+
+/* DASH-V2-29 desktop table capacity and navigation. */
+.pagerControls{display:flex;align-items:center;gap:8px}.pageSizeLabel{font:11px var(--font-mono);color:#8db9d0;display:flex;gap:8px;align-items:center}.pageSizeLabel select{background:#0c2437;color:#d6f0ff;border:1px solid #2b5674;border-radius:5px;padding:7px 9px}.pageSizeLabel select:focus-visible{outline:2px solid #61cafa}@media(min-width:1250px){.table th{position:sticky;top:0;z-index:3}.tableWrap{max-height:570px;overflow:auto;scrollbar-color:#305574 #091725}.table tbody tr:nth-child(2n){background:#0b1a2b}.table tbody tr:hover{background:#123149}.tableWrap{border:1px solid #24435b;border-radius:7px}}

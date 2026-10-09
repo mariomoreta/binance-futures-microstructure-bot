@@ -328,3 +328,11 @@ architecture + static foundation (DASH-V2-00); no integration.
 - Approved visual target remains `design/references/v2-approved/movers.png` at 1672x941. Before/after Chrome screenshots `movers-v2-28-qa.png` and `movers-v2-28-final.png` (untracked local QA) manually reviewed; fixture detail interaction's expanded browser screenshot not yet captured; semantics covered by component tests, not full browser click automation.
 - TypeScript PASS, ESLint PASS, Vitest 58/58 PASS, production Next build exit 0. Isolated preview `http://127.0.0.1:3035/movers` HTML and both CSS HTTP 200. Source claims remain explicitly DEMO; backend not touched.
 - Visual parity still PARTIAL; missing actual depth, OI, volume-z and live time-series metrics cannot be added to DEMO without grounded source fields. Next improve authoritative read contract and visual parity once backend evidence is available.
+
+## DASH-V2-29 — Dense desktop table capacity and pagination (2026-10-08)
+
+- Desktop Movers table now shows 16 fixture contracts by default (previously 8) with an explicit accessible rows-per-page selector (8/16/32). Sorting, filtering and pagination reset remain state-consistent; selector is covered by updated interactive pagination test.
+- Desktop table gains capped internal scrolling, sticky table heading, stripe/hover contrast for high-density research. This fits all 16 DEMO fixture entries in one logical research table without forcing rankings and other panels to scroll away indefinitely.
+- Verified screenshot at 1672x941 saved locally as `movers-v2-29-qa.png` (untracked QA; not part of Git). HTML and two CSS responses HTTP 200 on isolated preview `http://127.0.0.1:3036/movers`. Table and fixture labels display correctly.
+- TypeScript PASS, ESLint PASS, Vitest 58/58 PASS, Next production build PASS. Initial old pagination test failed when changing the default from 8 to 16; updated to exercise explicit 8-row selection and full pagination, then reran green. No Python backend files or live engine processes touched.
+- Visual parity with approved `design/references/v2-approved/movers.png` remains PARTIAL; this is a desktop data-density improvement, not complete visual parity. Source metrics still DEMO.
