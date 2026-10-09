@@ -2,7 +2,7 @@ export type MoversTier = "CORE" | "HOT" | "DISCOVERY";
 export type MoversCapability = "LIVE" | "WARMING" | "STALE" | "DEGRADED" | "UNKNOWN" | "DISCOVERY ONLY";
 export type Direction = "ALL" | "GAINERS" | "LOSERS";
 export type Interest = "ALL" | "EXTREME_GAINERS" | "EXTREME_LOSERS" | "ACCELERATING_UP" | "ACCELERATING_DOWN" | "HIGH_VOLUME";
-export type SortKey = "symbol" | "change24hPct" | "quoteVolume24h" | "velocity1m" | "accel1m" | "sampleAgeMs";
+export type SortKey = "symbol" | "price" | "change24hPct" | "quoteVolume24h" | "velocity1m" | "accel1m" | "sampleAgeMs";
 export interface ProfessionalMover { symbol:string; tier:MoversTier; capability:MoversCapability; subscribed:boolean; price:number|null; change24hPct:number|null; quoteVolume24h:number|null; velocity1m:number|null; accel1m:number|null; sampleAgeMs:number|null; observedAt:string|null; source:string; }
 export interface MoversFiltersState { query:string; direction:Direction; coverage:"ALL"|MoversTier; state:"ALL"|MoversCapability; interest:Interest; }
 export const DEFAULT_FILTERS: MoversFiltersState = { query:"", direction:"ALL", coverage:"ALL", state:"ALL", interest:"ALL" };

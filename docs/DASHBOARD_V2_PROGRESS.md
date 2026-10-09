@@ -265,3 +265,10 @@ architecture + static foundation (DASH-V2-00); no integration.
 - Desktop structure: branded horizontal terminal, quick filters, summary, market breadth strip, screener, central table and research leaderboards. This is incremental parity improvement, not full match with approved design.
 - Verification: TypeScript PASS, ESLint PASS, Vitest 50/50 PASS, production build PASS; isolated preview 3025/movers HTML/CSS HTTP 200. Screenshot `movers-v2-19-qa.png` (local QA, untracked) visually inspected at 1672x941.
 - Future priority: high-value additional table metrics based on verified live API schema and genuine as-of price time series for sparklines; avoid fabricated flow, probabilities or price traces.
+
+## DASH-V2-20 — Movers market-table numeric correction and honest trend slot (2026-10-08)
+
+- Audited desktop Movers table against reference and found the Price column was bound to symbol sorting rather than numeric price. Extended `SortKey` with `price`, retained null-last behavior, and enabled genuine numeric Price sorting.
+- Added explicit 1h trend slot per symbol showing `NO SERIES` until as-of-aligned verified price history exists. Never invent sparklines or mistake present 24h value for historical series. Sticky symbol column and refined table-header contrast support dense desktop reading.
+- Verified frontend TypeScript, ESLint, Vitest 50/50 PASS and Next production build PASS; Chrome screenshot `movers-v2-20-qa.png` at approved 1672x941 shows all table columns, no fake trends. HTML/CSS both HTTP 200 on isolated `http://127.0.0.1:3026/movers`.
+- Fidelity remains PARTIAL: dense authentic time-series mini charts and broader market metrics require future versioned data contract. Backend P1-14B untouched.
