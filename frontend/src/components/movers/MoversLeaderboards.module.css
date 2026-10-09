@@ -1,1 +1,16 @@
 .section{display:grid;gap:10px;min-width:0}.heading{display:flex;justify-content:space-between;align-items:end;gap:12px;flex-wrap:wrap}.heading h2{font-size:14px;text-transform:uppercase;letter-spacing:.05em;margin:0;color:var(--text-1)}.heading p{margin:0;font-size:11px;color:var(--text-3)}.grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:9px}.board{background:var(--surface-1);border:1px solid var(--border);border-radius:8px;padding:12px;min-width:0}.board header{display:flex;align-items:start;justify-content:space-between;gap:7px;min-height:38px}.board h3{font-size:12px;margin:0;text-transform:uppercase;letter-spacing:.02em}.board small{font-size:10px;color:var(--text-3);text-align:right}.board ol{list-style:none;margin:6px 0 0;padding:0}.board li{display:flex;align-items:center;gap:9px;font-size:11px;padding:6px 0;border-bottom:1px solid var(--border)}.board li a{color:var(--accent);min-width:0;overflow:hidden;text-overflow:ellipsis}.board li strong{margin-left:auto;font:600 11px var(--font-mono);white-space:nowrap}.board li strong[data-sign="positive"]{color:var(--positive)}.board li strong[data-sign="negative"]{color:var(--negative)}.rank{flex-shrink:0;border-radius:50%;background:var(--bg-1);color:var(--text-3);width:21px;height:21px;display:grid;place-items:center;font:10px var(--font-mono)}.footer,.action{display:block;margin-top:9px;color:var(--text-3);font-size:10px}.action{color:var(--accent);border:0;background:transparent;text-align:left;cursor:pointer;padding:4px 0}.empty{color:var(--text-3);font-size:11px;min-height:70px;padding-top:10px}@media(max-width:1250px){.grid{grid-template-columns:repeat(2,minmax(0,1fr))}}@media(max-width:630px){.grid{grid-template-columns:1fr}}
+/* DASH-V2-27: approved desktop compact 4-up research boards. */
+@media(min-width:1251px){
+.section{gap:7px}.heading h2{font-size:12px;color:#72cffa}.heading p{font-size:10px}
+.grid{grid-template-columns:repeat(4,minmax(0,1fr));gap:7px}
+.board{padding:9px 11px;background:linear-gradient(125deg,#0c2034,#0a1929);border-color:#20425b;border-radius:7px}
+.board header{min-height:27px;align-items:center}
+.board h3{font-size:11px;color:#7dd6fb}
+.board small{font-size:9px}
+.board ol{margin-top:3px}
+.board li{padding:4px 0;font-size:10px;gap:7px}
+.board li strong{font-size:10px}
+.rank{width:18px;height:18px;font-size:9px}
+.footer,.action{margin-top:6px;font-size:9px}
+.empty{min-height:64px}
+}

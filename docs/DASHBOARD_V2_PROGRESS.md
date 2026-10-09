@@ -315,3 +315,9 @@ architecture + static foundation (DASH-V2-00); no integration.
 - Visual fidelity improved but PARTIAL: mockup's extensive verified metrics and sparklines not present, and eight leaderboards fall below the first viewport. No fictitious price series or unsupported trading signals added.
 - Frontend TypeScript PASS, ESLint PASS, Vitest 57/57 PASS, Next.js production build exit 0. Isolated preview `http://127.0.0.1:3032/movers` HTML and two CSS 200, screenshot visually inspected.
 - Agent P1-14B backend worktree untouched. Local QA PNGs remain untracked; do not stage them.
+
+## DASH-V2-27 — Desktop four-column research leaderboard density (2026-10-08)
+
+- Compared actual Chrome 1672x941 output to approved `design/references/v2-approved/movers.png`. Moved four-column research leaderboards immediately below the market table, ahead of secondary breadth and historical source-separated panels. Optimized board typography, row spacing and card contrast for dense desktop terminal layout.
+- New screenshot `movers-v2-27-qa.png` locally reviewed: first leaderboard row now begins within reference-sized viewport below table; full target parity still PARTIAL (more market columns / documented as-of verified series are absent). No synthetic sparklines or mixed DEMO and persisted data.
+- TypeScript, ESLint PASS; 57/57 Vitest PASS; production build exit 0. Preview `http://127.0.0.1:3033/movers` and CSS HTTP 200. Backend P1-14B untouched. Untracked QA PNGs preserved outside Git.
