@@ -1,4 +1,5 @@
 "use client";
+import {UnavailableDataPanel} from "@/components/notices/UnavailableDataPanel";
 import {useEffect,useMemo,useState} from "react";
 import type {OpportunityApiRow,OpportunityReadModel} from "@/lib/opportunities-api";
 import styles from "./Observations.module.css";
@@ -13,7 +14,7 @@ export function Observations(){
  const rows=data?.items;
  const active:OpportunityApiRow|undefined=useMemo(()=>rows?.find(x=>x.candidate_key===selected)??rows?.[0],[rows,selected]);
  if(loading)return <section className={styles.panel} role="status">Loading persisted research records…</section>;
- if(error||!data)return <section className={styles.warning} role="alert">{error??"No validated response"}</section>;
+ if(error||!data)return <UnavailableDataPanel title="Recorded research candidates" message={error??"No validated response"} columns={["Symbol","Family","Lifecycle","Evaluation UTC","Evidence"]}/>;
  const sourceTime=data.as_of_ms===null?"UNKNOWN":new Date(data.as_of_ms).toISOString();
  return <><div className={styles.banner} role="status"><strong>{data.freshness} · HISTORICAL/PERSISTED</strong><span>Source: {data.source} · as-of {sourceTime}</span><span>Saved observations are NOT current setups, trade signals or demonstrated predictive edges.</span></div>
  <div className={styles.grid}><div><small>Stored candidates</small><strong>{data.items.length}</strong></div><div><small>Data condition</small><strong>{data.freshness}</strong></div><div><small>API schema</small><strong>v{data.schema_version}</strong></div></div>

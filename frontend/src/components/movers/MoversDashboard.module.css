@@ -61,3 +61,9 @@
 @media(max-width:1449px){
 .terminalWorkspace{display:grid;gap:12px;min-width:0}
 }
+
+
+.title{margin:0}
+
+/* Keep the screener table inside its own scrolling pane. */
+.root{grid-template-columns:minmax(0,1fr)}.primaryMarketPane,.marketRankPane{min-width:0;max-width:100%}@media(max-width:1449px){.terminalWorkspace{grid-template-columns:minmax(0,1fr)}}

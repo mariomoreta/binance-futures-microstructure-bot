@@ -105,3 +105,14 @@ disclosure. Archive measurements separately from current health. Replace
 duplicate placeholders with one explicit screen-integration list. Preserve
 shared top navigation in this slice; omit unsupported charts/performance
 figures from the reference. These deliberate departures leave parity PARTIAL.
+
+
+## 2026-10-10 — DASH-V2-49 common terminal frame
+
+Use the approved sidebar composition for the shared desktop frame and a mobile
+menu with Escape recovery. This supersedes DASH-V2-18's horizontal common frame;
+Movers' horizontal target differs deliberately for cross-screen consistency.
+Use real, disabled/unavailable future-workspace compositions without fabricated
+results or graph series. Correct the two misnamed PNGs by byte-preserving rename;
+keep originals in Git history and declare Opportunities target missing.
+Operational integration and reference parity remain separate acceptance criteria.

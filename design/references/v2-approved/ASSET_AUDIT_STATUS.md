@@ -1,5 +1,15 @@
-# Visual asset audit — 2026-10-08
+# Visual asset audit — current 2026-10-10
 
-The approved package has two mislabeled images. The on-disk `opportunities.png` shows Token Detail, while `token-detail.png` shows Movers. The approved Opportunities image is absent from the package. The correct Token Detail image exists but is mislabeled. Do not claim visual parity for either page until corrected. Preserve all originals until a verified replacement can be added.
+DASH-V2-49 inspected all eight original PNG contents. Corrected names:
 
-This audit file is a status record, not evidence of image correction.
+| Original ZIP / Git name | Current name | Actual content | SHA-256 |
+|---|---|---|---|
+| opportunities.png | token-detail.png | Token Detail / BTCUSDT | d121988b35afaa54ff0478f6c2e0f99ad4067c517dac2be63c08c789b2c230e5 |
+| token-detail.png | movers-secondary.png | Additional Movers design | 4f8c902946ad07bf6d6127fffa6b86b4215e7839992f43ffdc40affc3590774e |
+
+Compared current bytes to git show of original HEAD files: identical hashes.
+No pixels regenerated or replaced. Original names remain in ZIP and history.
+Overview, Movers, Movers alternative, System, Backtest and Paper Lab verified.
+Approved Opportunities target is MISSING; do not substitute Token Detail.
+This resolves the Token Detail naming conflict, not full UI parity.
+Evidence: DASHBOARD_V2_49_VISUAL_VALIDATION.md and design/qa/v2-49/.

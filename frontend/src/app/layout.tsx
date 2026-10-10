@@ -4,9 +4,9 @@ import { AppShell } from "@/components/shell/AppShell";
 import "@/styles/tokens.css";
 
 export const metadata: Metadata = {
-  title: "Dashboard V2 — foundation",
+  title: "Binance Futures — Research Dashboard",
   description:
-    "Isolated Dashboard V2 foundation. Static shell; no API integration.",
+    "Market intelligence research workspace with labeled previews and recorded evidence.",
 };
 
 export default function RootLayout({ children }: { children: ReactNode }) {

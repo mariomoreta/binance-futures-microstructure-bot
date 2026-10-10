@@ -1,6 +1,5 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
-import { DemoPill } from "@/components/overview/TopBar";
 import { TopNav } from "./TopNav";
 
 export function AppShell({ children }: { children: ReactNode }) {
@@ -9,12 +8,7 @@ export function AppShell({ children }: { children: ReactNode }) {
       <a className="v2-skip-link" href="#main-content">Skip to main content</a>
       <TopNav />
       <main className="v2-main" id="main-content" tabIndex={-1}>
-        <div style={{ marginBottom: 12 }} data-testid="shell-demo-strip">
-          <DemoPill />{" "}
-          <span className="v2-muted" style={{ fontSize: 12 }}>
-            UI preview — each screen labels its own DEMO or read-only source.
-          </span>
-        </div>
+        <div className="v2-source-strip" data-testid="shell-demo-strip"><span className="v2-source-label">SOURCE PER PANEL</span><span>DEMO previews and recorded evidence are explicitly labeled.</span></div>
         {children}
       </main>
     </div>

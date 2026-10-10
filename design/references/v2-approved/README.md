@@ -6,12 +6,12 @@ These designs are the intended product UI target, not merely decorative inspirat
 |---|---|
 | Overview | overview.png |
 | Movers | movers.png |
-| Opportunities | opportunities.png |
+| Opportunities | MISSING ? correct target not in uploaded ZIP |
 | Token Detail | token-detail.png |
 | System | system.png |
 | Backtest (future) | backtest.png |
 | Paper Lab (future) | paper-lab.png |
-| Movers dense alternative | movers-alternative.png |
+| Movers dense alternative | movers-alternative.png; movers-secondary.png |
 
 ## Binding design and safety rules
 
@@ -43,3 +43,13 @@ IMPORTANT: The originally uploaded ZIP contains misnamed PNG files. An actual-im
 Do NOT treat `opportunities.png` as an Opportunities reference or `token-detail.png` as Token Detail until assets are corrected. The approved Opportunities image shown in the chat is still missing from this on-disk ZIP and must be obtained and checked before claiming its asset publication. The approved Token Detail visual is physically present under the wrong filename; do not discard it. Treat all values in every image as illustrative, never factual market data.
 
 Visual quality gate: report ASSET_MISMATCH instead of marking a screen parity PASS when its matching image is absent or mislabeled.
+
+
+## 2026-10-10 ? verified identity correction (DASH-V2-49)
+
+Renamed original opportunities.png to token-detail.png after actual-image review.
+Renamed original token-detail.png (another Movers image) to movers-secondary.png.
+Pixel content is unchanged; original names remain in Git history and ZIP.
+The earlier identity-audit bullets above describe original upload filenames.
+The route table now reflects the corrected current files. Opportunities remains
+MISSING; no unrelated image is substituted as its approved target.

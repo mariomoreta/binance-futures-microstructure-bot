@@ -16,7 +16,7 @@ function MetricCell({ point, label }: { point: MetricPoint; label: string }) {
       </span>
     );
   return (
-    <div style={{ gridColumn: "span 2" }}>
+    <div className="v2-overview-metric">
       <MetricCard
         label={label}
         value={shown}
@@ -27,9 +27,7 @@ function MetricCell({ point, label }: { point: MetricPoint; label: string }) {
             </div>
             <DataFreshnessIndicator freshness={point.freshness} />
             {point.unavailable ? (
-              <div className="v2-muted" style={{ fontSize: 12 }}>
-                {point.unavailable}
-              </div>
+              <details className="v2-metric-source"><summary>Source unavailable</summary><div>{point.unavailable}</div></details>
             ) : null}
           </>
         }
@@ -53,7 +51,7 @@ export function OverviewMetricGrid({
   ];
   return (
     <section className="v2-section" aria-label="Key metrics">
-      <div className="v2-grid" data-testid="metric-grid">
+      <div className="v2-grid v2-overview-metrics" data-testid="metric-grid">
         {order.map(([key, label]) =>
           metrics[key] ? (
             <MetricCell key={key} point={metrics[key] as MetricPoint} label={label} />

@@ -431,3 +431,16 @@ Concurrent registry writes/lease fencing need tests. V2 drops sentinel and
 start_probe does not launch watchers: F-V2-BFF-01 remains PARTIAL, start blocked.
 Owner feedback and documentation discrepancies: DASHBOARD_V2_P1_14B_8_REVIEW.md.
 No new run, backend edit, gate advancement or long-run authorization.
+
+
+## F-V2-VISUAL-01 — authorized all-screen visual cycle (DASH-V2-49)
+
+Approval: user authorized 2026-10-10. IMPLEMENTED and VERIFIED within bounded
+frontend scope: shared frame, responsive/semantic recovery, unavailable views,
+future empty compositions and reference identity correction. 13 routes x 3
+widths PASS; frontend 90/90 and V2 Python snapshot 496/496. Full pixel/data parity
+PARTIAL; correct Opportunities target MISSING. No engine is implemented by
+rendering its workspace. F-PAPER-01 and backtest validation stay NOT IMPLEMENTED;
+F-V2-BFF-01 and F-V2-SYSTEM-01 stay PARTIAL. Read-only integration resumes at
+reviewed backend SHA; Start blocked pending transactional supervised launch.
+Evidence: DASHBOARD_V2_49_VISUAL_VALIDATION.md; roadmap and design/qa/v2-49/.

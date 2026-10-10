@@ -81,3 +81,6 @@
 .auditCard dt { font-size: 10px; color: #80a9c7; }
 .auditCard dd { margin: 0 0 5px; color: #e4f3ff; font: 600 11px var(--font-mono); overflow-wrap: anywhere; }
 .stateFoot { font-size: 10px; }
+
+/* Six metrics on the approved desktop strip; retain mobile stacking. */
+.page{gap:12px}.header{min-height:65px}.hero>div{padding:16px}.panel,.statePanel{border-radius:6px}.metric{border-radius:5px}.stateFlow span{padding:7px 11px}@media(min-width:1200px){.metricGrid{grid-template-columns:repeat(6,minmax(0,1fr))}.metric{padding:11px;min-height:100px}.metric strong{font-size:13px}}

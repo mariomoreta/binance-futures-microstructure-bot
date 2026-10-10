@@ -1,0 +1,72 @@
+import {spawn} from "node:child_process";
+import {mkdtemp, readFile, mkdir, writeFile, rm} from "node:fs/promises";
+import os from "node:os";
+import path from "node:path";
+
+const chrome = "C:/Program Files/Google/Chrome/Application/chrome.exe";
+const root = process.cwd();
+const out = path.join(root, "design/qa/v2-49",process.argv[2]==="before"?"before":"after");
+await mkdir(out, {recursive:true});
+const profile = await mkdtemp(path.join(os.tmpdir(), "dashboard-v2-49-"));
+const child = spawn(chrome, ["--headless=new", "--disable-gpu", "--no-first-run",
+  "--remote-debugging-port=0", "--user-data-dir="+profile, "about:blank"], {stdio:"ignore"});
+const delay = ms => new Promise(resolve => setTimeout(resolve, ms));
+let ws;
+try {
+  let port;
+  for (let n=0;n<100;n++) {
+    try {port = Number((await readFile(path.join(profile,"DevToolsActivePort"),"utf8")).split("\n")[0]);break;} catch {await delay(100);}
+  }
+  if (!port) throw Error("No DevTools port");
+  const targets = await (await fetch("http://127.0.0.1:"+port+"/json/list")).json();
+  ws = new WebSocket(targets.find(t=>t.type==="page").webSocketDebuggerUrl);
+  await new Promise((resolve,reject)=>{ws.addEventListener("open",resolve,{once:true});ws.addEventListener("error",reject,{once:true});});
+  let id=0;
+  const waiting = new Map(), errors=[], unavailable=[];
+  ws.addEventListener("message", e=>{
+    const x=JSON.parse(e.data);
+    if(x.id){const p=waiting.get(x.id);waiting.delete(x.id);x.error?p.reject(Error(JSON.stringify(x.error))):p.resolve(x.result);}
+    if(x.method==="Runtime.exceptionThrown")errors.push(x.params.exceptionDetails.text);
+    if(x.method==="Log.entryAdded"&&x.params.entry.level==="error"){const e=x.params.entry;const known=["live-movers","opportunities","price-series/BTCUSDT","price-series/ETHUSDT","price-series/SOLUSDT"].some(p=>e.url==="http://127.0.0.1:3020/api/v1/"+p);if(e.text.includes("503")&&known)unavailable.push({url:e.url,text:e.text});else errors.push({url:e.url,text:e.text});}
+  });
+  const call=(method,params={})=>new Promise((resolve,reject)=>{
+    const number=++id;waiting.set(number,{resolve,reject});ws.send(JSON.stringify({id:number,method,params}));
+  });
+  const evaluate=async expression=>{
+    const result=await call("Runtime.evaluate",{expression,returnByValue:true,awaitPromise:true});
+    if(result.exceptionDetails)throw Error(result.exceptionDetails.text);
+    return result.result.value;
+  };
+  await call("Page.enable");await call("Runtime.enable");await call("Log.enable");
+
+  const routes=["overview","movers","movers/verified","opportunities","opportunities/observations","opportunities/prospective","symbol/BTCUSDT","historical-research","market-archive","market-lab","system","backtest","paper-lab"];
+  const results=[];
+  for(const width of (process.argv[2]==="full"?[1672]:[1672,1366,390])){
+    await call("Emulation.setDeviceMetricsOverride",{width,height:941,deviceScaleFactor:1,mobile:false});
+    for(const route of routes){
+      await call("Page.navigate",{url:"http://127.0.0.1:3020/"+route});
+      await delay(1800);
+      const x=await evaluate('({title:document.querySelector("h1")?.textContent,width:innerWidth,scroll:document.documentElement.scrollWidth,mains:document.querySelectorAll("main").length,loading:document.body.innerText.includes("LOADING"),active:[...document.querySelectorAll("#terminal-navigation a[aria-current=page]")].map(a=>a.getAttribute("href")),height:document.documentElement.scrollHeight,alerts:[...document.querySelectorAll("[role=alert]")].map(a=>a.textContent),scrollTables:[...document.querySelectorAll("table")].filter(t=>t.getBoundingClientRect().width>innerWidth).length})');
+      if(!x.title && process.argv[2]!=="before")throw Error("Missing page title "+route);
+      if(width===390 && await evaluate('!!document.querySelector("[aria-controls=terminal-navigation]")')){
+        await evaluate('document.querySelector("[aria-controls=terminal-navigation]").click()');
+        if(!await evaluate('document.querySelector("[aria-controls=terminal-navigation]").getAttribute("aria-expanded")==="true"'))throw Error("Mobile menu failed");
+        if(route==="overview"){const menuShot=await call("Page.captureScreenshot",{format:"png"});await writeFile(path.join(out,"mobile-navigation.png"),Buffer.from(menuShot.data,"base64"));await call("Input.dispatchKeyEvent",{type:"keyDown",key:"Escape",code:"Escape",windowsVirtualKeyCode:27});await call("Input.dispatchKeyEvent",{type:"keyUp",key:"Escape",code:"Escape",windowsVirtualKeyCode:27});if(await evaluate('document.querySelector("[aria-controls=terminal-navigation]").getAttribute("aria-expanded")==="true"'))throw Error("Escape did not close menu");}else await evaluate('document.querySelector("[aria-controls=terminal-navigation]").click()');
+      }
+      const shot=await call("Page.captureScreenshot",{format:"png"});
+      const name=route.replaceAll("/","-")+"-"+width;
+      await writeFile(path.join(out,name+".png"),Buffer.from(shot.data,"base64"));
+      if(process.argv[2]==="full"){const dimensions=await call("Page.getLayoutMetrics");const bounds=dimensions.cssContentSize;const fullShot=await call("Page.captureScreenshot",{format:"png",captureBeyondViewport:true,clip:{x:0,y:0,width:bounds.width,height:bounds.height,scale:1}});await writeFile(path.join(out,route.replaceAll("/","-")+"-full.png"),Buffer.from(fullShot.data,"base64"));}
+      results.push({route,...x});console.log(name,JSON.stringify(x));
+      if(route==="system"&&width===1672){await evaluate('document.querySelector("summary").click()');const s=await call("Page.captureScreenshot",{format:"png"});await writeFile(path.join(out,"system-expanded.png"),Buffer.from(s.data,"base64"));}
+    }
+  }
+  await writeFile(path.join(out,process.argv[2]==="full"?"full-results.json":"results.json"),JSON.stringify({results,errors,unavailable},null,2));
+  console.log("Route captures",results.length,"browser errors",JSON.stringify(errors),"unavailable sources",unavailable.length);
+  if(process.argv[2]!=="before" && (errors.length || results.some(x=>x.scroll>x.width||x.mains!==1||x.active.length!==1)))throw Error("Route validation failed; inspect results.json");
+
+} finally {
+  ws?.close();child.kill();
+  await new Promise(resolve=>child.exitCode!==null?resolve():child.once("exit",resolve));
+  await rm(profile,{recursive:true,force:true}).catch(()=>{});
+}

@@ -1,3 +1,4 @@
+import s from "./Overview.module.css";
 export const dynamic="force-dynamic";
 import {RuntimeDiagnostics} from "@/components/system/RuntimeDiagnostics";
 import { TopBar } from "@/components/overview/TopBar";
@@ -20,7 +21,7 @@ import {
 
 export default function OverviewPage() {
   return (
-    <div>
+    <div className={s.root}>
       <TopBar
         engine={DEMO_ENGINE.state}
         feed={DEMO_ENGINE.feed}
@@ -31,12 +32,10 @@ export default function OverviewPage() {
         Demo composition. Every panel below renders labeled fixtures until
         the versioned overview contract lands in a later slice.
       </ResearchOnlyNotice>
-      <RuntimeDiagnostics compact/><OverviewMetricGrid metrics={DEMO_METRICS} />
-      <MarketPulsePanel pulse={DEMO_PULSE} />
+      <OverviewMetricGrid metrics={DEMO_METRICS} />
+      <div className={s.context}><MarketPulsePanel pulse={DEMO_PULSE} /><MarketContextPanel context={DEMO_CONTEXT} /></div>
       <MoversSnapshot rows={DEMO_MOVERS} />
-      <ExtremeMoveWatch rows={DEMO_EXTREMES} />
-      <ResearchHealthPanel health={DEMO_HEALTH} />
-      <MarketContextPanel context={DEMO_CONTEXT} />
+      <div className={s.research}><ExtremeMoveWatch rows={DEMO_EXTREMES} /><ResearchHealthPanel health={DEMO_HEALTH} /><RuntimeDiagnostics compact /></div>
     </div>
   );
 }

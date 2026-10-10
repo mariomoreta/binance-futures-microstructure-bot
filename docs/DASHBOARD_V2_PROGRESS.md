@@ -451,3 +451,19 @@ architecture + static foundation (DASH-V2-00); no integration.
 - Canonical V2 3020 updated via identity-verified restart; no probe/V1/backend action.
 - Reference parity PARTIAL. Full evidence/closeout:
   DASHBOARD_V2_48_SYSTEM_VISUAL_AUDIT.md.
+
+
+## 2026-10-10 — DASH-V2-49 all-screen visual cycle
+
+Audited 13 routes and all eight reference PNG contents. Shared desktop sidebar,
+keyboard-recoverable mobile menu, dense Overview, responsive archives/lab,
+finished unavailable-data views, Backtest/Paper Lab empty compositions and
+six-metric Token Detail strip implemented. 90/90 frontend, type/lint/build PASS;
+V2 Python snapshot 496/496 PASS. Chrome 39 route/width cases PASS at 1672/1366/390,
+no page overflow, one main/h1/active primary parent; 18 provider 503s explicitly
+recorded as unavailable data. Full data/pixel parity is not claimed.
+References renamed with identical SHA-256: opportunities.png -> token-detail.png,
+old token-detail.png -> movers-secondary.png. Correct Opportunities target absent.
+Backend safety review and transactional launch remain blocked; no new run or
+execution. Canonical roadmap: DASHBOARD_V2_VISUAL_ROADMAP.md. Per-screen evidence,
+remaining dependencies and closeout: DASHBOARD_V2_49_VISUAL_VALIDATION.md.
