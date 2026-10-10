@@ -1283,19 +1283,22 @@ reasons. Never starts/restarts runs, never touches foreign PIDs, never acts on U
 
 ## P1-14B.8 supervised maiden voyage & abort enforcement — RESULT: PASS (2026-10-10)
 
-Agent-independence demonstrated in execution, not assertion. Probe PID 33292 ran 2102.1 s
-(13:12:44 → 13:47:55Z, exit 0) while supervisor PID 25800 ran 70 cycles 13:13:35 → 13:48:24Z
-and exited cleanly — zero agent contact after launch. Post-hoc log audit: 0.00% rejects,
+Agent-independence demonstrated in execution, not assertion. Probe PID 33292 ran 2102.147 s
+per final_summary (13:12:44 → 13:47:55Z, exit 0) while supervisor PID 25800 ran 70 cycles 13:13:35 → 13:48:24Z
+and exited cleanly — zero agent contact after launch. Post-hoc log audit (68 summary + one
+final_summary): 0.00% rejects,
 0 reconnects, 20/20 streams, reg 57→66 (+9 setups), 35 writes, 0 errors — nothing breached,
-correctly nothing aborted. A concurrently launched sentinel died silently in ~30 s (no cycles,
-no output); root-cause class: silent early death under buffering — encoded fixes: flushed
+correctly nothing aborted. The long window ran supervisor-only: a concurrently launched sentinel died silently in ~30 s (no cycles,
+no output); root-cause class: silent early death under buffering (observability gap, not a
+proven cause — `-u`/flush improve diagnostics, they do not fix process lifetime) — encoded fixes: flushed
 startup prints in both mains, `-u` in detached launches, lease-presence launch verification.
 
 - Sentinel layer completed: claim/takeover/no-op semantics, stale/FAILED-lease abort via
   canonical `enforce_abort`, own failure budget, additive status block + CLI, no-start guarantee.
 - Brief three-layer validation (150 s probe + 14-cycle supervisor + 12-cycle sentinel, verified
-  leases): claimed, heartbeated to natural COMPLETED, zero false aborts, zero orphans; probe
-  11/11, 0/0/0, reg=66, DB byte-identical (66/228/0 dupes).
+  leases; brief-run preflight was 66/228): claimed, heartbeated to natural COMPLETED, zero false
+  aborts, zero orphans; probe
+  11/11, 0/0/0, reg=66, DB byte-identical (66/228/0 dupes, unchanged by the brief run).
 - Tests 775/775 OK (760 + 15 sentinel). Post-run: 66 setups (+9), 228 outcomes (+26) all COMPLETE,
   0 dupes, 0 anomalies; v1.1 + v9 intact; 202 prior rows preserved.
 - Gates: CLOCK/TRANSPORT/FRESHNESS/SUPERVISION/PERSISTENCE/SAFETY PASS. Verdict PASS.

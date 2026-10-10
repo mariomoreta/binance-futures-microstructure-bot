@@ -4,7 +4,9 @@
 **Date:** 2026-10-10
 **Branch:** `phase1/market-intelligence-dashboard`
 **Starting SHA:** `9150c743c74a4dceac6f107531c9dac3c91f3bda`
-**Baseline validated pre-run:** schema v9, 66 setups, 228 COMPLETE outcomes, 0 dupes.
+**Baseline validated pre-run (35-min window):** schema v9, 57 setups, 202 COMPLETE
+outcomes, 0 dupes. (The brief validation run later started from 66/228 — baselines
+distinguished explicitly per §7 corrections.)
 **Safety:** `BOT_MODE=observe` end-to-end; 0 keys / 0 orders / 0 capital. V2 worktree/ports and `main` untouched.
 
 ---
@@ -12,18 +14,21 @@
 ## 1. Supervision without the agent (the §4 priority, demonstrated twice)
 
 - **35-min window (earlier, post-hoc reconstructed):** probe PID 33292 ran 13:12:44 → 13:47:55Z
-  (2102.1 s, exit 0 duration-reached) while supervisor PID 25800 ran 70 cycles 13:13:35 →
+  (2102.147 s per final_summary, exit 0 duration-reached) while supervisor PID 25800 ran 70 cycles 13:13:35 →
   13:48:24Z and exited cleanly on no-active-run. Zero false aborts across 70 evaluations
   (post-hoc log audit: 0.00 % rejects, 0 reconnects — nothing to abort, correctly nothing done).
-  69 summaries + final, 11→20 streams (HOT ERA/LUMIA/MAGIC), prospective reg 57→66 (+9 setups),
+  68 kind=summary + one final_summary, 11→20 streams (HOT ERA/LUMIA/MAGIC), prospective reg 57→66 (+9 setups),
   writes 0→35, errors 0. The supervisor performed its entire mission with zero agent contact
-  after launch — session-independence proven by execution, not by assertion.
+  after launch — session-independence proven by execution, not by assertion. The concurrent
+  sentinel did NOT protect this window (died pre-cycles — next bullet); three-layer protection
+  was demonstrated in the brief run only.
 - **Sentinel gap found honestly:** the concurrently launched sentinel (PID 39244) claimed its
   lease at 13:13:47Z and died within ~30 s with zero cycles, zero output, zero heartbeat. Root
   cause class: silent early death under output buffering (block-buffered stdout lost on kill) —
-  exact killer unrecoverable post-hoc (harness timeout overlapped). Lesson encoded: startup
-  prints (flushed) in both mains + `-u` in detached launches + lease-presence launch verification
-  as protocol (registry read ≤30 s after spawn).
+  exact killer unrecoverable post-hoc (harness timeout overlapped). Buffered output explains the
+  missing diagnostics, NOT the death itself — `-u`/flush improve observability, they do not fix
+  process lifetime. Lesson encoded: startup prints (flushed) in both mains + `-u` in detached
+  launches + lease-presence launch verification as protocol (registry read ≤30 s after spawn).
 - **Brief validation (this task, fully observed):** 150 s probe (PID 33300) + supervisor (PID 37176,
   14 cycles) + sentinel (PID 34452, 12 cycles), all launched detached with verified leases:
   both watchers claimed, heartbeated to natural COMPLETED, exited STOPPED cleanly, zero false
@@ -73,7 +78,8 @@ byte-identical** (+26 honest new from the 35-min window).
 
 **Global verdict: PASS.** Agent-independence demonstrated in execution (35-min unsupervised window
 + verified brief three-layer run); abort enforcement proven on a real process; no-orphan discipline
-kept. The residual P1-14B.6 note stands: one supervised 35-min window does not extinguish an
+kept. Qualified: the 35-min window ran WITHOUT sentinel protection (supervisor-only); uninterrupted
+three-layer protection is demonstrated by the brief run. The residual P1-14B.6 note stands: one supervised 35-min window does not extinguish an
 intermittent fault — but supervision of whatever comes next no longer depends on any session.
 **No 4–6 h run authorized. P1-14C not started.**
 
@@ -85,10 +91,28 @@ intermittent fault — but supervision of whatever comes next no longer depends 
    not by gap; mechanism proven on synthetic breach + brief runs.
 3. Clock note if offset >5 s (unchanged). SUCCESS_GATES checkboxes unchanged (no gate advancement).
 - New: `tests/test_sentinel.py` (15), this report. Changed: `control.py` (sentinel engine, status
-  blocks, CLI branches, evidence preservation, startup prints), `dashboard.py` (creation-time
-  fallback only).
+  blocks, CLI branches, evidence preservation, startup prints).
+  (`dashboard.py` creation-time fallback belongs to P1-14B.7/9150c74, not this commit — listed
+  here by error in v1, corrected.)
 - Updated: CURRENT_STATE, TASK_QUEUE, FEATURE_BACKLOG (F-P14A-01), DECISIONS (append-only),
   ARCHITECTURE (supervisor + sentinel rows).
 - Evidence (uncommitted, preserved): `logs/probe-runs/probe-20261010T131243Z.log` (35 min),
   `logs/probe-runs/probe-20261010T140206Z.log` (150 s), supervisor/sentinel stdout logs,
   `data/microprobe.db` (66/228). Temp scripts deleted. No logs/DB committed; no secrets anywhere.
+
+---
+
+## 7. Corrections log (post-review fixes; history above preserved as written)
+
+1. Duration: final `final_summary` reports `runtimeSeconds` 2102.147 (not 2102.5 — a P1-14B.5
+   number that contaminated drafts; P1-14B.5 sections keep their own correct 2102.5).
+2. Log census: 68 `kind=summary` + one `final_summary` (not "69 summaries + final").
+3. Baselines: 35-min preflight was 57 setups / 202 outcomes; 66/228 was the brief run's
+   preflight (= 35-min post-state) and end-state (unchanged by the brief run).
+4. `dashboard.py` was NOT modified in this task's scope (creation-time fallback is P1-14B.7).
+5. Buffered output explains missing sentinel diagnostics, not the watcher's death cause
+   (still unknown); `-u`/flush are observability, not lifetime fixes.
+6. Global PASS is qualified: the long window ran supervisor-only; three-layer protection
+   holds for the brief run. V2 launch stays blocked (start_probe launches no watchers;
+   transactional supervised launch with lease verification + rollback is documented pending
+   work, not presented as resolved).

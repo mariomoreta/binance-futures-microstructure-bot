@@ -142,8 +142,10 @@ class SentinelCycleTest(unittest.TestCase):
     def test_fresh_lease_no_action(self):
         self._live_lease(age_s=10.0)
         with mock.patch.object(pc, "is_canonical_pid", return_value=True):
-            with mock.patch.object(pc, "enforce_abort") as enf:
-                out = pc.sentinel_once(stale_after_s=120.0)
+            with mock.patch("microstructure_probe.dashboard.pid_is_ours",
+                             return_value=True):
+                with mock.patch.object(pc, "enforce_abort") as enf:
+                    out = pc.sentinel_once(stale_after_s=120.0)
         enf.assert_not_called()
         self.assertEqual(out["outcome"], "ok-supervised")
 
@@ -232,7 +234,9 @@ class SentinelStatusTest(unittest.TestCase):
         rec = _run_record()
         rec["sentinel"] = _lease(age_s=10.0)
         _write(rec)
-        sup = pc.status()["sentinel"]
+        with mock.patch("microstructure_probe.dashboard.pid_is_ours",
+                         return_value=True):
+            sup = pc.status()["sentinel"]
         self.assertEqual(sup["state"], "SENTINEL_ACTIVE")
         self.assertEqual(sup["watched_pid"], 424243)
 

@@ -158,15 +158,17 @@ the dashboard exists. No classifier before raw-feature dashboard validation.
   `docs/P1_14B_7_PERSISTENT_SUPERVISION_AUDIT.md`.
 
 - `P1-14B.8` (2026-10-10) SUPERVISED MAIDEN VOYAGE & ABORT ENFORCEMENT — **PASS**.
-  35-min probe (2102.1 s, exit 0) supervised all 70 cycles with zero agent contact;
+  35-min probe (2102.147 s per final_summary, exit 0; 68 summary + one final_summary)
+  supervised all 70 cycles with zero agent contact;
   post-hoc: 0.00% rejects, 0 reconnects, reg 57→66, 35 writes, 0 errors — nothing
-  breached, correctly nothing aborted. Sentinel layer completed (lease, stale/FAILED
-  abort via canonical path, own budget, status block, CLI) after honest gap (first
-  sentinel died silently — flushed startup prints + verified-launch protocol added).
+  breached, correctly nothing aborted (long window ran supervisor-only). Sentinel layer
+  completed (lease, stale/FAILED abort via canonical path, own budget, status block, CLI)
+  after honest gap (first sentinel died silently pre-cycles; buffered output explains missing
+  diagnostics, not the death — `-u`/flush are observability).
   Brief three-layer run clean (14+12 cycles, zero false aborts, zero orphans; DB
-  identical 66/228). Suite 775/775 OK. Post-run: 66 setups, 228/228 COMPLETE, 0 dupes.
+  identical 66/228, unchanged from its 66/228 preflight). Suite 775/775 OK. Post-run: 66 setups, 228/228 COMPLETE, 0 dupes.
   Gates all PASS incl. new SUPERVISION_GATE. No 4–6 h authorization. Report:
-  `docs/P1_14B_8_SUPERVISED_RUN_REPORT.md`.
+  `docs/P1_14B_8_SUPERVISED_RUN_REPORT.md` (see its §7 corrections log).
 
 - `P1-10R` PROLONGED ≥6H SOAK RE-RUN — P1-10 FAIL stays FAIL (truncated at
   4.91h); re-run with dashboard live, blocking survivable launch, merged

@@ -261,7 +261,8 @@ it does not replace them. Authority stays where it was recorded
   P1-14B.5 PASS (operational: independent reference + ≥30-min healthy window demonstrated) /
   P1-14B.6 PARTIAL (reproducibility: second window both regimes, attribution refined, fixes validated) /
   P1-14B.7 PASS (persistent supervision: registry-leased abort enforcement, identity restored) /
-  P1-14B.8 PASS (supervised maiden voyage: 35-min supervised window + sentinel layer validated).
+  P1-14B.8 PASS (supervised maiden voyage: 35-min supervisor window post-audited + sentinel
+  layer validated in brief run; V2 launch stays blocked — documented pending).
 - **Dependencies:** P1-13A opportunity engine (setups, DETECTED lifecycle,
   candidate_key + setup_family + direction + market_state + rule_version +
   capability_tier fields).

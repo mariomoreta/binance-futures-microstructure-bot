@@ -780,3 +780,43 @@ the agent session, per the P1-14B.7 mechanism.
    worktree/ports and main untouched. P1-14C not started. Still NO 4-6 h
    authorization (recurrence risk; repeat advisable).
 Full report: `docs/P1_14B_8_SUPERVISED_RUN_REPORT.md`.
+
+## 2026-10-10 -- P1-14B.8 corrections: verified supervision semantics (PASS)
+
+Starting at SHA `babf3ac` (clean tree). Frontend review of P1-14B.8
+(fetchable via git, not via web) found protection-semantics gaps; all
+reproduced and fixed with deterministic tests before any other change:
+
+1. _supervision_verdict accepted STOPPED-fresh and mismatched leases and
+   future heartbeats as ok-supervised. Now requires ACTIVE + fresh heartbeat
+   in [0, stale_after] + verified watcher identity + run association, with
+   distinct loss verdicts (stopped/dead/mismatched/failed/stale); only
+   never-established reads as unsupervised (no-op). Identity is a required
+   parameter (no lenient default).
+2. Malformed established heartbeat read as unsupervised (no abort). Now a
+   loss verdict (abort); missing lease stays a no-op. Bounded recovery IS
+   the safe stop (no endless grace while unverified).
+3. _sentinel_block/_supervisor_block published ACTIVE on lease state alone
+   (incl. a 2020 heartbeat). Now verified-display + raw lease evidence
+   published separately (lease_state, last_check_at, watcher pid/ctime);
+   states/nullability/timestamps/freshness documented for V2; V2 must not
+   turn the label into proof.
+4. Whole-record read-modify-write races: sidecar file lock + update_registry
+   (locked transform, atomic rename) + ownership fencing (lease pid == self
+   on every heartbeat/finalization/marking; enforce requires own STOPPING
+   marker + live ownership or reports superseded). Racing claims elect one
+   winner; takeovers silence the replaced watcher. Proven live root cause
+   class along the way: Windows mandatory locks deny our own second handle
+   (EACCES), which the sidecar design sidesteps.
+5. P1-14B.8 report factual corrections (68 + final, rt 2102.147, baselines
+   57/202 vs 66/228 labeled, dashboard.py not in scope, buffering != cause,
+   PASS qualified by the sentinel gap, three-layer scope = brief run only).
+
+Tests: 19 contract tests (verdict matrix incl. future/malformed/mismatch,
+display matrix, threaded fencing, takeover fencing, supersede, claim race).
+Suite 794/794 OK. No runs launched (per task bounds); prospective v1.1 + v9
+intact; all rows preserved. V2 launch stays blocked: start_probe launches no
+watchers (transactional supervised launch with lease verification + rollback
+documented as pending work, not presented as resolved). Gates:
+prospective/persistence/safety PASS (no long run). V2/main untouched.
+P1-14C not started. Still NO 4-6 h authorization.

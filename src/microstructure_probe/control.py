@@ -23,6 +23,7 @@ STALE / UNKNOWN stays a separate feed concern for the dashboard).
 from __future__ import annotations
 
 import argparse
+import contextlib
 import ctypes
 import json
 import os
@@ -68,9 +69,138 @@ def read_registry() -> Optional[Dict[str, Any]]:
 
 
 def _write_registry(record: Dict[str, Any]) -> None:
+    """Write the whole registry atomically (tmp + rename: no torn reads
+    for concurrent readers). Does NOT prevent lost updates between
+    concurrent writers -- use update_registry for read-modify-write."""
     path = registry_path()
     path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(json.dumps(record, indent=1), encoding="utf-8")
+    _clean_stale_tmps(path)
+    tmp = path.with_name("%s.tmp-%d" % (path.name, os.getpid()))
+    tmp.write_text(json.dumps(record, indent=1), encoding="utf-8")
+    os.replace(tmp, path)
+
+
+@contextlib.contextmanager
+def _locked_registry():
+    """Exclusive advisory lock via a sidecar lockfile (fail-closed).
+
+    The lock lives on `<registry>.lock`, NEVER on the registry file
+    itself: on Windows an open handle without share-delete blocks the
+    atomic rename used for writes, and mandatory byte-locks deny even
+    our own second handle (proven live: EACCES on replace). The sidecar
+    sidesteps both: writers serialize on it while the registry file
+    itself is only ever replaced atomically (readers never see torn
+    content). OS releases the lock if the holder dies, so no dead holder
+    can wedge writers; the lockfile carries no state, so nothing goes
+    stale. Lock errors raise OSError (callers treat as
+    registry-unavailable; heartbeats skip, claims refuse).
+    """
+    path = registry_path()
+    path.parent.mkdir(parents=True, exist_ok=True)
+    lock_path = path.with_name(path.name + ".lock")
+    try:
+        fh = open(str(lock_path), "a+b")
+    except OSError as exc:
+        raise OSError("registry lock unavailable: %s" % exc)
+    try:
+        if os.name == "nt":
+            import msvcrt
+            msvcrt.locking(fh.fileno(), msvcrt.LK_LOCK, 1)
+        else:
+            import fcntl
+            fcntl.flock(fh.fileno(), fcntl.LOCK_EX)
+    except Exception as exc:
+        try:
+            fh.close()
+        except Exception:
+            pass
+        raise OSError("registry lock unavailable: %s" % exc)
+    try:
+        yield lock_path
+    finally:
+        try:
+            if os.name == "nt":
+                import msvcrt
+                msvcrt.locking(fh.fileno(), msvcrt.LK_UNLCK, 1)
+            else:
+                import fcntl
+                fcntl.flock(fh.fileno(), fcntl.LOCK_UN)
+        except Exception:
+            pass
+        try:
+            fh.close()
+        except Exception:
+            pass
+
+
+def _clean_stale_tmps(path: Path) -> None:
+    """Best-effort removal of our own orphaned tmp files (failed replaces)."""
+    try:
+        for stale in path.parent.glob(path.name + ".tmp-*"):
+            try:
+                if stale.is_file():
+                    stale.unlink()
+            except OSError:
+                pass
+    except OSError:
+        pass
+
+
+def update_registry(transform):
+    """Locked read-modify-write: transform(record|None) -> (new|None, value).
+
+    Returns (wrote: bool, value). Returning None as the record skips the
+    write (refusals/no-ops without touching the file). The transform runs
+    under the exclusive lock, so concurrent writers serialize instead of
+    clobbering each other; the final write uses atomic rename so readers
+    outside the lock never see torn content.
+    NOTE (Windows): the lock lives on a sidecar file, so plain path reads
+    and the temp-file strategy are safe here (proven live: mandatory locks
+    deny even our own second handle on the same file, and open handles
+    without share-delete block atomic rename).
+    """
+    path = registry_path()
+    with _locked_registry():
+        try:
+            raw = path.read_text(encoding="utf-8")
+        except FileNotFoundError:
+            raw = ""
+        except OSError:
+            raise
+        except Exception:
+            raw = ""
+        try:
+            record = json.loads(raw) if raw.strip() else None
+        except ValueError:
+            record = None
+        try:
+            record = json.loads(raw) if raw.strip() else None
+        except ValueError:
+            record = None
+        new_record, value = transform(record)
+        if new_record is None:
+            return (False, value)
+        _clean_stale_tmps(path)
+        tmp = path.with_name("%s.tmp-%d" % (path.name, os.getpid()))
+        tmp.write_bytes(json.dumps(new_record, indent=1).encode("utf-8"))
+        os.replace(tmp, path)
+        return (True, value)
+
+
+def _owns_lease(record: Any, kind: str) -> bool:
+    """True iff this process holds the lease block for kind.
+
+    PID equality only: a live holder's PID cannot be reused out from under
+    it. Creation-time is enforced at claim/enforce boundaries (which verify
+    liveness too); heartbeats only need to prove non-replacement.
+    """
+    try:
+        lease = (record or {}).get(kind)
+        if not isinstance(lease, dict):
+            return False
+        return int(lease.get("pid")) == os.getpid()
+    except Exception:
+        return False
 
 
 def own_creation_time(pid: Optional[int] = None) -> Optional[str]:
@@ -863,61 +993,84 @@ def claim_supervision() -> Dict[str, Any]:
                 "state": (record or {}).get("state", "STOPPED")}
     if not is_canonical_pid(record):
         return {"supervised": False, "reason": "stale-record"}
-    lease = record.get("supervisor")
-    if isinstance(lease, dict) and str(lease.get("state", "")).upper() == "ACTIVE" \
-            and _lease_live(lease):
-        return {"supervised": False, "reason": "already-supervised",
-                "supervisor_pid": lease.get("pid")}
-    prev = lease.get("pid") if isinstance(lease, dict) else None
-    now_iso = _utc_now_iso()
-    record["supervisor"] = {
-        "pid": os.getpid(), "create_time": own_creation_time(),
-        "started_at": now_iso, "last_check_at": now_iso,
-        "state": "ACTIVE", "consecutive_failures": 0,
-        "prev_supervisor_pid": prev, "watched_pid": record.get("pid"),
-        "streaks": {"persistence": 0, "clock": 0, "db": 0},
-        "abort": None,
-    }
+    def _claim(record):
+        if not record or not _is_active_state(record.get("state")):
+            return None, {"supervised": False, "reason": "no-active-run",
+                          "state": (record or {}).get("state", "STOPPED")}
+        # Authoritative liveness recheck INSIDE the lock: a racing claim
+        # that won between our read and our write is observed here, so
+        # exactly one claimant wins (probes_racing_claims_single_winner).
+        if not is_canonical_pid(record):
+            return None, {"supervised": False, "reason": "stale-record"}
+        lease = record.get("supervisor")
+        if isinstance(lease, dict) and str(lease.get("state", "")).upper() == "ACTIVE" \
+                and _lease_live(lease):
+            return None, {"supervised": False, "reason": "already-supervised",
+                          "supervisor_pid": lease.get("pid")}
+        prev = lease.get("pid") if isinstance(lease, dict) else None
+        now_iso = _utc_now_iso()
+        record["supervisor"] = {
+            "pid": os.getpid(), "create_time": own_creation_time(),
+            "started_at": now_iso, "last_check_at": now_iso,
+            "state": "ACTIVE", "consecutive_failures": 0,
+            "prev_supervisor_pid": prev, "watched_pid": record.get("pid"),
+            "streaks": {"persistence": 0, "clock": 0, "db": 0},
+            "abort": None,
+        }
+        return record, {"supervised": True, "pid": os.getpid(),
+                        "watched_pid": record.get("pid"),
+                        "prev_supervisor_pid": prev}
     try:
-        _write_registry(record)
+        _, value = update_registry(_claim)
     except OSError as exc:
         return {"supervised": False, "reason": "registry-unavailable: %s" % exc}
-    return {"supervised": True, "pid": os.getpid(),
-            "watched_pid": record.get("pid"),
-            "prev_supervisor_pid": prev}
+    return value
 
 
 def _heartbeat_lease(consecutive_failures: int = 0,
                      streaks: Optional[Dict[str, int]] = None) -> None:
-    try:
-        record = read_registry()
+    """Heartbeat the supervisor lease. Fenced: a replaced watcher (lease
+    pid != self) is a silent no-op -- it must not touch the new lease."""
+    def _beat(record):
         if not record or not isinstance(record.get("supervisor"), dict):
-            return
+            return None, False
+        if not _owns_lease(record, "supervisor"):
+            return None, False
         record["supervisor"]["last_check_at"] = _utc_now_iso()
         record["supervisor"]["consecutive_failures"] = consecutive_failures
         if streaks is not None:
             record["supervisor"]["streaks"] = dict(streaks)
-        _write_registry(record)
+        return record, True
+    try:
+        update_registry(_beat)
     except OSError:
         pass
 
 
 def _fail_lease() -> None:
-    try:
-        record = read_registry()
+    def _fail(record):
         if not record or not isinstance(record.get("supervisor"), dict):
-            return
+            return None, False
+        if not _owns_lease(record, "supervisor"):
+            return None, False
         record["supervisor"]["state"] = "FAILED"
         record["supervisor"]["last_check_at"] = _utc_now_iso()
-        _write_registry(record)
+        return record, True
+    try:
+        update_registry(_fail)
     except OSError:
         pass
 
 
-def enforce_abort(decision: Dict[str, Any]) -> Dict[str, Any]:
+def enforce_abort(decision: Dict[str, Any],
+                  owner_kind: Optional[str] = None) -> Dict[str, Any]:
     """Execute one verified abort: re-validate identity, stop via the
     canonical path, mark ABORTED with reason. Never touches foreign PIDs,
-    never claims ABORTED unless the watched process is confirmed dead."""
+    never claims ABORTED unless the watched process is confirmed dead.
+    owner_kind ("supervisor"|"sentinel") additionally requires that OUR
+    lease still owns the watched run at marking time: a replaced watcher
+    must not mark its replacement's run, and a run that left the watched
+    state meanwhile is reported superseded, never ABORTED."""
     record = read_registry()
     if not record or not _is_active_state(record.get("state")):
         return {"aborted": False, "reason": "no-active-run"}
@@ -928,8 +1081,10 @@ def enforce_abort(decision: Dict[str, Any]) -> Dict[str, Any]:
         return {"aborted": False, "reason": "bad-record-pid"}
     if not is_canonical_pid(record):
         return {"aborted": False, "reason": "stale-record-not-touched"}
+    stopping_marker = ("enforce:%s:%d" % (owner_kind or "direct", os.getpid()))
     try:
         record["state"] = "STOPPING"
+        record["stopping_by"] = stopping_marker
         _write_registry(record)
     except OSError:
         pass
@@ -941,30 +1096,52 @@ def enforce_abort(decision: Dict[str, Any]) -> Dict[str, Any]:
             break
         time.sleep(0.2)
     if pid_is_ours(pid, record.get("create_time")):
-        try:
-            record["state"] = "FAILED"
-            record["last_exit"] = {
+        def _fail_mark(rec):
+            if not rec or rec.get("state") not in ("STOPPING",):
+                return None, False
+            if owner_kind is not None and not _owns_lease(rec, owner_kind):
+                return None, False
+            rec["state"] = "FAILED"
+            rec["last_exit"] = {
                 "code": None,
                 "reason": "abort stop-timeout (process survived bounded wait)",
                 "at": _utc_now_iso()}
-            _write_registry(record)
+            return rec, True
+        try:
+            update_registry(_fail_mark)
         except OSError:
             pass
         return {"aborted": False, "reason": "stop-timeout", "pid": pid}
+
+    def _abort_mark(rec):
+        # Fenced terminal marking: only when the run is still in OUR
+        # STOPPING state (not someone else's STOPPED/COMPLETED/FAILED) and
+        # -- when an owner kind is given -- our lease still owns the run.
+        # Anything else reports superseded without touching the record.
+        if not rec or rec.get("state") != "STOPPING":
+            return None, False
+        if rec.get("stopping_by") != stopping_marker:
+            return None, False
+        if owner_kind is not None and not _owns_lease(rec, owner_kind):
+            return None, False
+        rec["state"] = ABORTED
+        rec["aborted_by"] = "supervisor"
+        rec["abort_rule"] = decision.get("rule")
+        rec["abort_reason"] = decision.get("reason")
+        rec["abort_threshold"] = decision.get("threshold")
+        rec["abort_observed"] = decision.get("observed")
+        rec["abort_at"] = _utc_now_iso()
+        rec["last_exit"] = {"code": 0,
+                            "reason": "aborted-%s" % decision.get("rule"),
+                            "at": _utc_now_iso()}
+        return rec, True
+
     try:
-        record["state"] = ABORTED
-        record["aborted_by"] = "supervisor"
-        record["abort_rule"] = decision.get("rule")
-        record["abort_reason"] = decision.get("reason")
-        record["abort_threshold"] = decision.get("threshold")
-        record["abort_observed"] = decision.get("observed")
-        record["abort_at"] = _utc_now_iso()
-        record["last_exit"] = {"code": 0,
-                               "reason": "aborted-%s" % decision.get("rule"),
-                               "at": _utc_now_iso()}
-        _write_registry(record)
+        wrote, _ = update_registry(_abort_mark)
     except OSError:
-        pass
+        return {"aborted": False, "reason": "registry-unavailable"}
+    if not wrote:
+        return {"aborted": False, "reason": "superseded"}
     _close_log_handles(pid)
     return {"aborted": True, "pid": pid, "rule": decision.get("rule"),
             "reason": decision.get("reason")}
@@ -1029,7 +1206,7 @@ def supervise_once() -> Dict[str, Any]:
     if decision is None:
         _heartbeat_lease(consecutive_failures=0, streaks=new_streaks)
         return {"outcome": "ok", "streaks": new_streaks}
-    result = enforce_abort(decision)
+    result = enforce_abort(decision, owner_kind="supervisor")
     _heartbeat_lease(consecutive_failures=0, streaks=new_streaks)
     if result.get("aborted"):
         return {"outcome": "aborted", "decision": decision, "result": result}
@@ -1075,15 +1252,20 @@ def supervise(interval_s: float = SUPERVISOR_CHECK_DEFAULT_S,
                 break
             time.sleep(interval)
     finally:
+        def _finish_supervisor(record):
+            if not record or not isinstance(record.get("supervisor"), dict):
+                return None, False
+            if not _owns_lease(record, "supervisor"):
+                return None, False
+            if outcome.get("outcome") not in ("aborted",):
+                record["supervisor"]["state"] = (
+                    "FAILED" if outcome.get("outcome") == "supervisor-failed"
+                    else "STOPPED")
+                record["supervisor"]["last_check_at"] = _utc_now_iso()
+                return record, True
+            return None, False
         try:
-            record = read_registry()
-            if record and isinstance(record.get("supervisor"), dict):
-                if outcome.get("outcome") not in ("aborted",):
-                    record["supervisor"]["state"] = (
-                        "FAILED" if outcome.get("outcome") == "supervisor-failed"
-                        else "STOPPED")
-                    record["supervisor"]["last_check_at"] = _utc_now_iso()
-                    _write_registry(record)
+            update_registry(_finish_supervisor)
         except OSError:
             pass
     ok = outcome.get("outcome") in ("aborted", "already-terminal",
@@ -1097,9 +1279,16 @@ def supervise(interval_s: float = SUPERVISOR_CHECK_DEFAULT_S,
 def _supervisor_block(record: Optional[Dict[str, Any]]) -> Dict[str, Any]:
     """Additive V2 status contract (always present, None-safe).
 
-    Maps: ACTIVE->SUPERVISOR_ACTIVE, FAILED->SUPERVISOR_FAILED,
-    missing/stale lease->SUPERVISOR_UNKNOWN; terminal ABORTED state ->
-    ABORT_TRIGGERED with rule/reason/threshold/observed.
+    Display contract (P1-14B.8, documented for V2 integration):
+      SUPERVISOR_ACTIVE -- lease ACTIVE + heartbeat in [0, 90 s] + watcher
+        identity verified + run associated. A point-in-time observation,
+        NOT proof of protection.
+      SUPERVISOR_STALE  -- established lease failing any check above.
+      SUPERVISOR_UNKNOWN -- no lease block ever (never supervised).
+    Raw evidence rides alongside (lease_state, lease_last_check_at,
+    watcher_pid, watcher_create_time). Terminal ABORTED state still maps
+    to ABORT_TRIGGERED with rule/reason/threshold/observed. V2 must not
+    turn the label into proof.
     """
     block: Dict[str, Any] = {
         "state": "SUPERVISOR_UNKNOWN",
@@ -1112,19 +1301,28 @@ def _supervisor_block(record: Optional[Dict[str, Any]]) -> Dict[str, Any]:
         "abort_threshold": None,
         "abort_observed": None,
         "supervision_source": None,
+        "lease_state": None,
+        "lease_last_check_at": None,
+        "watcher_pid": None,
+        "watcher_create_time": None,
     }
     if not isinstance(record, dict):
         return block
     lease = record.get("supervisor")
+    if not isinstance(lease, dict):
+        lease = None
     if isinstance(lease, dict):
-        state = str(lease.get("state", "")).upper()
-        if state == "ACTIVE":
-            block["state"] = "SUPERVISOR_ACTIVE"
-        elif state == "FAILED":
-            block["state"] = "SUPERVISOR_FAILED"
+        block["lease_state"] = lease.get("state")
+        block["lease_last_check_at"] = lease.get("last_check_at")
         block["watched_pid"] = lease.get("watched_pid")
+        block["watcher_pid"] = lease.get("pid")
+        block["watcher_create_time"] = lease.get("create_time")
         block["last_check_at"] = lease.get("last_check_at")
         block["supervision_source"] = "supervisor:control-supervise"
+    if _supervisor_lease_verified(record):
+        block["state"] = "SUPERVISOR_ACTIVE"
+    elif isinstance(lease, dict):
+        block["state"] = "SUPERVISOR_STALE"
     evidence = record.get("evidence") or {}
     if isinstance(evidence, dict) and evidence.get("log"):
         try:
@@ -1133,6 +1331,38 @@ def _supervisor_block(record: Optional[Dict[str, Any]]) -> Dict[str, Any]:
             block["run_id"] = None
     if block["watched_pid"] is None:
         block["watched_pid"] = record.get("pid")
+    if record.get("state") == ABORTED:
+        block["abort_triggered"] = True
+        block["abort_reason"] = record.get("abort_reason")
+        block["abort_rule"] = record.get("abort_rule")
+        block["abort_threshold"] = record.get("abort_threshold")
+        block["abort_observed"] = record.get("abort_observed")
+    return block
+
+
+def _supervisor_lease_verified(record: Dict[str, Any]) -> bool:
+    """Display-time verification (no state change): ACTIVE + fresh + alive + bound."""
+    try:
+        lease = (record or {}).get("supervisor")
+        if not isinstance(lease, dict):
+            return False
+        if str(lease.get("state", "")).upper() != "ACTIVE":
+            return False
+        try:
+            watched = int(lease.get("watched_pid"))
+            run_pid = int((record or {}).get("pid"))
+        except (TypeError, ValueError):
+            return False
+        if watched != run_pid:
+            return False
+        age = _supervision_age_s(lease)
+        if age is None or not (0 <= age <= SUPERVISOR_LEASE_FRESH_S):
+            return False
+        from .dashboard import pid_is_ours
+        return bool(pid_is_ours(int(lease.get("pid")), lease.get("create_time")))
+    except Exception:
+        return False
+
     if record.get("state") == ABORTED:
         block["abort_triggered"] = True
         block["abort_reason"] = record.get("abort_reason")
@@ -1178,52 +1408,66 @@ def claim_sentinel() -> Dict[str, Any]:
                 "state": (record or {}).get("state", "STOPPED")}
     if not is_canonical_pid(record):
         return {"watching": False, "reason": "stale-record"}
-    lease = record.get("sentinel")
-    if isinstance(lease, dict) and str(lease.get("state", "")).upper() == "ACTIVE" \
-            and _lease_live(lease):
-        return {"watching": False, "reason": "already-watched",
-                "sentinel_pid": lease.get("pid")}
-    prev = lease.get("pid") if isinstance(lease, dict) else None
-    now_iso = _utc_now_iso()
-    record["sentinel"] = {
-        "pid": os.getpid(), "create_time": own_creation_time(),
-        "started_at": now_iso, "last_check_at": now_iso,
-        "state": "ACTIVE", "consecutive_failures": 0,
-        "prev_sentinel_pid": prev, "watched_pid": record.get("pid"),
-        "action": None,
-    }
+    def _claim(record):
+        if not record or not _is_active_state(record.get("state")):
+            return None, {"watching": False, "reason": "no-active-run",
+                          "state": (record or {}).get("state", "STOPPED")}
+        if not is_canonical_pid(record):
+            return None, {"watching": False, "reason": "stale-record"}
+        lease = record.get("sentinel")
+        if isinstance(lease, dict) and str(lease.get("state", "")).upper() == "ACTIVE" \
+                and _lease_live(lease):
+            return None, {"watching": False, "reason": "already-watched",
+                          "sentinel_pid": lease.get("pid")}
+        prev = lease.get("pid") if isinstance(lease, dict) else None
+        now_iso = _utc_now_iso()
+        record["sentinel"] = {
+            "pid": os.getpid(), "create_time": own_creation_time(),
+            "started_at": now_iso, "last_check_at": now_iso,
+            "state": "ACTIVE", "consecutive_failures": 0,
+            "prev_sentinel_pid": prev, "watched_pid": record.get("pid"),
+            "action": None,
+        }
+        return record, {"watching": True, "pid": os.getpid(),
+                        "watched_pid": record.get("pid"),
+                        "prev_sentinel_pid": prev}
     try:
-        _write_registry(record)
+        _, value = update_registry(_claim)
     except OSError as exc:
         return {"watching": False,
                 "reason": "registry-unavailable: %s" % exc}
-    return {"watching": True, "pid": os.getpid(),
-            "watched_pid": record.get("pid"),
-            "prev_sentinel_pid": prev}
+    return value
 
 
 def _heartbeat_sentinel(failures: int = 0, action: Optional[Dict[str, Any]] = None) -> None:
-    try:
-        record = read_registry()
+    """Heartbeat the sentinel lease. Fenced like _heartbeat_lease."""
+    def _beat(record):
         if not record or not isinstance(record.get("sentinel"), dict):
-            return
+            return None, False
+        if not _owns_lease(record, "sentinel"):
+            return None, False
         record["sentinel"]["last_check_at"] = _utc_now_iso()
         record["sentinel"]["consecutive_failures"] = failures
         if action is not None:
             record["sentinel"]["action"] = action
-        _write_registry(record)
+        return record, True
+    try:
+        update_registry(_beat)
     except Exception:
         pass
 
 
 def _fail_sentinel() -> None:
-    try:
-        record = read_registry()
+    def _fail(record):
         if not record or not isinstance(record.get("sentinel"), dict):
-            return
+            return None, False
+        if not _owns_lease(record, "sentinel"):
+            return None, False
         record["sentinel"]["state"] = "FAILED"
         record["sentinel"]["last_check_at"] = _utc_now_iso()
-        _write_registry(record)
+        return record, True
+    try:
+        update_registry(_fail)
     except Exception:
         pass
 
@@ -1240,21 +1484,66 @@ def _supervision_age_s(lease: Any) -> Optional[float]:
 
 
 def _supervision_verdict(record: Dict[str, Any],
-                         stale_after_s: float) -> str:
-    """Fresh supervision state: ok-supervised | stale-supervision |
-    failed-supervision | unsupervised (no lease ever)."""
+                         stale_after_s: float,
+                         *,
+                         watcher_alive: bool) -> str:
+    """Verified supervision verdict (P1-14B.8 hardening).
+
+    ok-supervised requires EVERYTHING, evaluated in order: an ACTIVE lease,
+    a parseable heartbeat inside [0, stale_after_s] (future timestamps and
+    malformed stamps are never fresh), a watcher identity match, and
+    association with this run (lease watched_pid == record pid).
+    Anything established-but-inapplicable is LOSS (abort), never absence:
+      stopped-supervision  -- lease STOPPED (orderly exit) while run active
+      dead-supervision     -- watcher PID/image/ctime check fails
+      mismatched-supervision -- lease covers a different run
+      failed-supervision   -- lease FAILED
+      stale-supervision    -- heartbeat missing/malformed/old/future
+    unsupervised is returned ONLY when no lease block ever existed
+    (continuity guard: existence belongs to the launcher).
+    watcher_alive is REQUIRED (no default): callers must verify identity
+    explicitly; there is no lenient path.
+    """
     lease = record.get("supervisor")
     if not isinstance(lease, dict):
         return "unsupervised"
     state = str(lease.get("state", "")).upper()
     if state == "FAILED":
         return "failed-supervision"
+    if state != "ACTIVE":
+        return "stopped-supervision"
+    try:
+        watched = int(lease.get("watched_pid"))
+        run_pid = int((record or {}).get("pid"))
+    except (TypeError, ValueError):
+        return "mismatched-supervision"
+    if watched != run_pid:
+        return "mismatched-supervision"
     age = _supervision_age_s(lease)
-    if age is None:
-        return "unsupervised"
-    if age <= stale_after_s:
-        return "ok-supervised"
-    return "stale-supervision"
+    if age is None or not (0 <= age <= float(stale_after_s)):
+        return "stale-supervision"
+    if watcher_alive is not True:
+        return "dead-supervision"
+    return "ok-supervised"
+
+
+def _verify_supervisor_lease(record: Dict[str, Any]) -> bool:
+    """Watcher identity for the supervisor lease: PID alive + python image
+    + creation-time match. True/False only (never None): unverifiable means
+    dead for abort purposes. Failures resolve to False, never raise."""
+    try:
+        lease = (record or {}).get("supervisor")
+        if not isinstance(lease, dict):
+            return False
+        from .dashboard import pid_is_ours
+        return bool(pid_is_ours(int(lease.get("pid")),
+                                lease.get("create_time")))
+    except Exception:
+        return False
+
+
+def _supervision_verdict_requires_abort(verdict: str) -> bool:
+    return verdict not in ("ok-supervised", "unsupervised")
 
 
 def sentinel_once(stale_after_s: float = SENTINEL_STALE_AFTER_S) -> Dict[str, Any]:
@@ -1298,7 +1587,9 @@ def _sentinel_cycle(stale_after_s: float) -> Dict[str, Any]:
                     "state": state}
         if not is_canonical_pid(record):
             return {"outcome": "stale-record"}
-        verdict = _supervision_verdict(record, float(stale_after_s))
+        verdict = _supervision_verdict(
+            record, float(stale_after_s),
+            watcher_alive=_verify_supervisor_lease(record))
         if verdict == "ok-supervised":
             _heartbeat_sentinel()
             _SENTINEL_FAILURES.pop(key, None)
@@ -1314,7 +1605,7 @@ def _sentinel_cycle(stale_after_s: float) -> Dict[str, Any]:
             "threshold": "<=%ss since heartbeat" % stale_after_s,
             "observed": _supervision_age_s(record.get("supervisor")),
         }
-        result = enforce_abort(decision)
+        result = enforce_abort(decision, owner_kind="sentinel")
         _heartbeat_sentinel(action={"rule": decision["rule"],
                                     "at": _utc_now_iso(),
                                     "aborted": bool(result.get("aborted"))})
@@ -1391,15 +1682,20 @@ def sentinel(interval_s: float = SUPERVISOR_CHECK_DEFAULT_S,
                 break
             time.sleep(interval)
     finally:
+        def _finish_sentinel(record):
+            if not record or not isinstance(record.get("sentinel"), dict):
+                return None, False
+            if not _owns_lease(record, "sentinel"):
+                return None, False
+            if outcome.get("outcome") not in ("aborted-supervision-lost",):
+                record["sentinel"]["state"] = (
+                    "FAILED" if outcome.get("outcome") == "sentinel-failed"
+                    else "STOPPED")
+                record["sentinel"]["last_check_at"] = _utc_now_iso()
+                return record, True
+            return None, False
         try:
-            record = read_registry()
-            if record and isinstance(record.get("sentinel"), dict):
-                if outcome.get("outcome") not in ("aborted-supervision-lost",):
-                    record["sentinel"]["state"] = (
-                        "FAILED" if outcome.get("outcome") == "sentinel-failed"
-                        else "STOPPED")
-                    record["sentinel"]["last_check_at"] = _utc_now_iso()
-                    _write_registry(record)
+            update_registry(_finish_sentinel)
         except OSError:
             pass
     ok = outcome.get("outcome") in ("aborted-supervision-lost",
@@ -1414,9 +1710,19 @@ def sentinel(interval_s: float = SUPERVISOR_CHECK_DEFAULT_S,
 def _sentinel_block(record: Optional[Dict[str, Any]]) -> Dict[str, Any]:
     """Additive sentinel status (always present, None-safe).
 
-    Maps: ACTIVE->SENTINEL_ACTIVE, FAILED->SENTINEL_FAILED,
-    missing/stale lease->SENTINEL_UNKNOWN. The last enforced action
-    (if any) rides along for audit.
+    Display contract (P1-14B.8, documented for V2 integration):
+      SENTINEL_ACTIVE -- lease ACTIVE + heartbeat in [0, 90 s] + watcher
+        identity verified + run associated. A point-in-time observation,
+        NOT proof of protection.
+      SENTINEL_STALE  -- established lease failing any check above
+        (stale/missing/malformed/future heartbeat, dead watcher,
+        mismatched run, non-ACTIVE state).
+      SENTINEL_UNKNOWN -- no lease block ever (never supervised).
+    Raw evidence rides alongside for independent verification
+    (lease_state, lease_last_check_at, watcher_pid, watcher_create_time).
+    Nullability: every value key may be None when unknown; state never None.
+    Timestamps: ISO UTC strings exactly as stored. Freshness bound:
+    SUPERVISOR_LEASE_FRESH_S. V2 must not turn the label into proof.
     """
     block: Dict[str, Any] = {
         "state": "SENTINEL_UNKNOWN",
@@ -1426,23 +1732,35 @@ def _sentinel_block(record: Optional[Dict[str, Any]]) -> Dict[str, Any]:
         "action_taken": None,
         "action_reason": None,
         "supervision_source": None,
+        "lease_state": None,
+        "lease_last_check_at": None,
+        "watcher_pid": None,
+        "watcher_create_time": None,
     }
     if not isinstance(record, dict):
         return block
     lease = record.get("sentinel")
-    if isinstance(lease, dict):
-        state = str(lease.get("state", "")).upper()
-        if state == "ACTIVE":
-            block["state"] = "SENTINEL_ACTIVE"
-        elif state == "FAILED":
-            block["state"] = "SENTINEL_FAILED"
-        block["watched_pid"] = lease.get("watched_pid")
-        block["last_check_at"] = lease.get("last_check_at")
-        block["supervision_source"] = "sentinel:control-sentinel"
-        action = lease.get("action")
-        if isinstance(action, dict):
-            block["action_taken"] = "aborted-supervision-lost" if action.get("aborted") else "none"
-            block["action_reason"] = action.get("rule", "supervision-lost")
+    if not isinstance(lease, dict):
+        evidence = record.get("evidence") or {}
+        if isinstance(evidence, dict) and evidence.get("log"):
+            try:
+                block["run_id"] = Path(evidence["log"]).stem
+            except (TypeError, ValueError):
+                block["run_id"] = None
+        if block["watched_pid"] is None:
+            block["watched_pid"] = record.get("pid")
+        return block
+    block["lease_state"] = lease.get("state")
+    block["lease_last_check_at"] = lease.get("last_check_at")
+    block["watched_pid"] = lease.get("watched_pid")
+    block["watcher_pid"] = lease.get("pid")
+    block["watcher_create_time"] = lease.get("create_time")
+    block["last_check_at"] = lease.get("last_check_at")
+    block["supervision_source"] = "sentinel:control-sentinel"
+    action = lease.get("action")
+    if isinstance(action, dict):
+        block["action_taken"] = "aborted-supervision-lost" if action.get("aborted") else "none"
+        block["action_reason"] = action.get("rule", "supervision-lost")
     evidence = record.get("evidence") or {}
     if isinstance(evidence, dict) and evidence.get("log"):
         try:
@@ -1451,7 +1769,32 @@ def _sentinel_block(record: Optional[Dict[str, Any]]) -> Dict[str, Any]:
             block["run_id"] = None
     if block["watched_pid"] is None:
         block["watched_pid"] = record.get("pid")
+    if _sentinel_lease_verified(record, lease):
+        block["state"] = "SENTINEL_ACTIVE"
+    else:
+        block["state"] = "SENTINEL_STALE"
     return block
+
+
+def _sentinel_lease_verified(record: Dict[str, Any], lease: Dict[str, Any]) -> bool:
+    """Display-time verification (no state change): ACTIVE + fresh + alive + bound."""
+    try:
+        if str(lease.get("state", "")).upper() != "ACTIVE":
+            return False
+        try:
+            watched = int(lease.get("watched_pid"))
+            run_pid = int((record or {}).get("pid"))
+        except (TypeError, ValueError):
+            return False
+        if watched != run_pid:
+            return False
+        age = _supervision_age_s(lease)
+        if age is None or not (0 <= age <= SUPERVISOR_LEASE_FRESH_S):
+            return False
+        from .dashboard import pid_is_ours
+        return bool(pid_is_ours(int(lease.get("pid")), lease.get("create_time")))
+    except Exception:
+        return False
 
 
 if __name__ == "__main__":
