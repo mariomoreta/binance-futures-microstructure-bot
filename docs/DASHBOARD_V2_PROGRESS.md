@@ -402,3 +402,9 @@ architecture + static foundation (DASH-V2-00); no integration.
 - Added `/market-archive` with saved SQLite `return_features`, `state_features`, and latest `telemetry_snapshots`. Shows stored mark, source quote age at capture, state/direction, raw return 1m, UTC timestamp; bot-mode/keys/orders/capital are historic snapshot ONLY, explicitly not current runtime health.
 - Navigation now links `Market Archive`; all reads via existing `historicalRead` with Node DatabaseSync readOnly=true. No engine commands, no DB writes, no extra preview ports.
 - Frontend typecheck, lint, Vitest 63/63, Next build PASS; restart only V2 owned listener at port 3020; GET `/market-archive` 200 and stored feature table visible in rendered HTML. Python port 8091 was not started or interrupted.
+
+## DASH-V2-41 — Historical Market Lab (2026-10-10)
+
+- New `/market-lab` desktop route with interactive symbol selection, saved-time windows (1h/6h/24h/all), comparison with a second symbol, recorded mark-price SVG plot, descriptive observed changes and coverage diagnostics.
+- SQLite read-only `price_samples` queries, mapped to plain React-serializable objects, never synthetic/forward-filled. Gaps greater than two minutes break the SVG stroke (do not connect distant observations). Time windows explicitly anchored at latest saved sample, not current time.
+- QA: actual Chrome screenshot inspected; corrected SQLite row serialization runtime exception; corrected SVG gaps observed visually. Typecheck, lint, 63/63 tests, production build PASS; server restarted on same 3020, `/market-lab` HTTP 200. No bot process or Python dashboard touched.

@@ -8,6 +8,7 @@ const MAIN = [
   { href: "/movers", label: "Movers", icon: "▦" },
   { href: "/historical-research", label: "Evidence", icon: "DB" },
   { href: "/market-archive", label: "Market Archive", icon: "MK" },
+  { href: "/market-lab", label: "Market Lab", icon: "CH" },
   { href: "/opportunities", label: "Opportunities", icon: "◈" },
   { href: "/system", label: "System", icon: "⚙" },
 ];
