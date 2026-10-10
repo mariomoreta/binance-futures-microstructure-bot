@@ -157,6 +157,17 @@ the dashboard exists. No classifier before raw-feature dashboard validation.
   preservation fix found+proven). 57 setups, 202/202 COMPLETE preserved. Report:
   `docs/P1_14B_7_PERSISTENT_SUPERVISION_AUDIT.md`.
 
+- `P1-14B.8` (2026-10-10) SUPERVISED MAIDEN VOYAGE & ABORT ENFORCEMENT — **PASS**.
+  35-min probe (2102.1 s, exit 0) supervised all 70 cycles with zero agent contact;
+  post-hoc: 0.00% rejects, 0 reconnects, reg 57→66, 35 writes, 0 errors — nothing
+  breached, correctly nothing aborted. Sentinel layer completed (lease, stale/FAILED
+  abort via canonical path, own budget, status block, CLI) after honest gap (first
+  sentinel died silently — flushed startup prints + verified-launch protocol added).
+  Brief three-layer run clean (14+12 cycles, zero false aborts, zero orphans; DB
+  identical 66/228). Suite 775/775 OK. Post-run: 66 setups, 228/228 COMPLETE, 0 dupes.
+  Gates all PASS incl. new SUPERVISION_GATE. No 4–6 h authorization. Report:
+  `docs/P1_14B_8_SUPERVISED_RUN_REPORT.md`.
+
 - `P1-10R` PROLONGED ≥6H SOAK RE-RUN — P1-10 FAIL stays FAIL (truncated at
   4.91h); re-run with dashboard live, blocking survivable launch, merged
   stdout+stderr as UTF-8 (see `docs/DECISIONS.md` launch rule).
@@ -382,6 +393,14 @@ strategies (P3), paper engine/positions (P4), execution (P5).
   + token research card live. 408/408 tests (32 new).
 
 ## LAST_VERIFICATION
+
+
+
+- 2026-10-10 (P1-14B.8): `python run_tests.py` → 775/775 OK (760 + 15 sentinel).
+  35-min supervised window post-audited (2102.1 s, 0/0/0.00%, 70 supervised cycles,
+  natural completion); brief three-layer validation clean (supervisor 14 + sentinel 12
+  cycles, zero false aborts, zero orphans, DB identical). Next: repeat advisable before
+  any 4–6 h authorization; P1-14C needs explicit instruction.
 
 
 

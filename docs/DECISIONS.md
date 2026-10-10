@@ -748,3 +748,35 @@ All 57 setups / 202 outcomes preserved byte-identical. Gates:
 prospective/persistence/safety PASS (no long run). V2 worktree/ports and main
 untouched. P1-14C not started. Still NO 4-6 h authorization.
 Full report: `docs/P1_14B_7_PERSISTENT_SUPERVISION_AUDIT.md`.
+
+## 2026-10-10 -- P1-14B.8 supervised maiden voyage & abort enforcement (PASS)
+
+Starting at SHA `9150c74` (clean tree). Objective: prove supervision without
+the agent session, per the P1-14B.7 mechanism.
+
+1. A 35-min probe (PID 33292, 2102.1 s, exit 0) ran with supervisor PID 25800
+   for 70 cycles and zero agent contact after launch; post-hoc log audit shows
+   0.00 % rejects, 0 reconnects, 20/20 streams, reg 57->66 (+9), 35 writes,
+   0 errors -- nothing breached, correctly nothing aborted. Agent-independence
+   demonstrated in execution.
+2. The concurrently launched sentinel (PID 39244) claimed its lease at
+   13:13:47Z and died within ~30 s with zero cycles and zero output (silent
+   early death under output buffering; exact killer unrecoverable post-hoc).
+   Lesson encoded, not hidden: flushed startup prints in both mains, `-u` in
+   detached launches, lease-presence launch verification as protocol.
+3. Sentinel layer completed: claim/takeover/no-op semantics, stale/FAILED
+   lease abort via canonical enforce_abort, own failure budget, additive
+   status block + CLI, no-start guarantee. V2 evidence mapping documented
+   (11 supervisor + 7 sentinel keys, always present, None-safe).
+4. Brief three-layer validation (150 s probe + 14-cycle supervisor + 12-cycle
+   sentinel, verified leases): claimed, heartbeated to natural COMPLETED,
+   zero false aborts, zero orphans; probe 11/11, 0/0/0, reg=66, DB
+   byte-identical (66/228/0 dupes).
+5. Tests: 15 sentinel (incl. REAL-PID abort: victim killed, foreign alive,
+   ABORTED persisted, no re-fire). Suite 775/775 OK (760 + 15). Post-run: 66
+   setups (+9), 228 outcomes (+26) all COMPLETE, 0 dupes, 0 anomalies;
+   contract v1.1 + v9 intact; all 202 prior rows preserved. Gates:
+   CLOCK/TRANSPORT/FRESHNESS/SUPERVISION/PERSISTENCE/SAFETY PASS. V2
+   worktree/ports and main untouched. P1-14C not started. Still NO 4-6 h
+   authorization (recurrence risk; repeat advisable).
+Full report: `docs/P1_14B_8_SUPERVISED_RUN_REPORT.md`.

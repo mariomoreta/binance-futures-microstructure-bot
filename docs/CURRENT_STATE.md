@@ -1280,3 +1280,24 @@ reasons. Never starts/restarts runs, never touches foreign PIDs, never acts on U
 - Gates: prospective/persistence/safety PASS (mechanism + validation, no long run). Verdict PASS.
   Still NO 4–6 h authorization; P1-14C not started; V2/main untouched. Full report:
   `docs/P1_14B_7_PERSISTENT_SUPERVISION_AUDIT.md`.
+
+## P1-14B.8 supervised maiden voyage & abort enforcement — RESULT: PASS (2026-10-10)
+
+Agent-independence demonstrated in execution, not assertion. Probe PID 33292 ran 2102.1 s
+(13:12:44 → 13:47:55Z, exit 0) while supervisor PID 25800 ran 70 cycles 13:13:35 → 13:48:24Z
+and exited cleanly — zero agent contact after launch. Post-hoc log audit: 0.00% rejects,
+0 reconnects, 20/20 streams, reg 57→66 (+9 setups), 35 writes, 0 errors — nothing breached,
+correctly nothing aborted. A concurrently launched sentinel died silently in ~30 s (no cycles,
+no output); root-cause class: silent early death under buffering — encoded fixes: flushed
+startup prints in both mains, `-u` in detached launches, lease-presence launch verification.
+
+- Sentinel layer completed: claim/takeover/no-op semantics, stale/FAILED-lease abort via
+  canonical `enforce_abort`, own failure budget, additive status block + CLI, no-start guarantee.
+- Brief three-layer validation (150 s probe + 14-cycle supervisor + 12-cycle sentinel, verified
+  leases): claimed, heartbeated to natural COMPLETED, zero false aborts, zero orphans; probe
+  11/11, 0/0/0, reg=66, DB byte-identical (66/228/0 dupes).
+- Tests 775/775 OK (760 + 15 sentinel). Post-run: 66 setups (+9), 228 outcomes (+26) all COMPLETE,
+  0 dupes, 0 anomalies; v1.1 + v9 intact; 202 prior rows preserved.
+- Gates: CLOCK/TRANSPORT/FRESHNESS/SUPERVISION/PERSISTENCE/SAFETY PASS. Verdict PASS.
+  Still NO 4–6 h authorization (recurrence risk); P1-14C not started; V2/main untouched.
+  Full report: `docs/P1_14B_8_SUPERVISED_RUN_REPORT.md`.
