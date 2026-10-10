@@ -20,3 +20,5 @@
 .controls label{display:grid;gap:5px;color:#95b4cd;font-size:10px;text-transform:uppercase;letter-spacing:.04em}
 .controls input,.controls select{border:1px solid #2a5270;background:#0e2538;border-radius:5px;padding:9px 11px;color:#e4f7ff;font:11px var(--font-mono);min-width:145px}
 .controls>span{margin-left:auto;font:11px var(--font-mono);color:#88c8ed;padding-bottom:9px}
+
+.retry{justify-self:start;border:1px solid #2a6486;background:#0e3046;color:#d9f5ff;padding:9px 14px;border-radius:6px;cursor:pointer;font-size:11px;font-weight:650}.retry:focus-visible{outline:2px solid #60c9ff}

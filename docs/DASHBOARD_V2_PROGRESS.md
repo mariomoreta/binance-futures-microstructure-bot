@@ -383,3 +383,9 @@ architecture + static foundation (DASH-V2-00); no integration.
 - Chrome captured **actual** screenshot `dashboard-v2-36-port3020-qa.png` at 1672x941 from canonical port and reviewed it. UI is visible even with backend offline and honestly shows UNKNOWN.
 - Initial Vitest run failed due UTF-8 BOM accidentally introduced by PowerShell JSON rewrite to frontend/package.json; corrected BOM, reran TypeScript, ESLint, complete Vitest suite and Next build successfully. Do not use encoding-BOM when writing config files.
 - No Python worktree/process modifications. Old legacy frontend previews may still listen on other ports; unverified process identities were not killed. They are obsolete and not user-facing; use 3020 for all QA, links and further work.
+
+## DASH-V2-37 — Prospective source recovery on canonical 3020 (2026-10-09)
+
+- Prospective Research now offers an explicit **Retry Python connection** button. It re-fetches the same-origin read-only API without replacing unavailable records with DEMO. On recovery it clears previous error state; on failure it maintains visible controls and UNKNOWN counts.
+- Added `prospective-recovery.test.tsx` testing offline shell controls and user-initiated retry; existing source separation maintained. TypeScript PASS, ESLint PASS, Vitest 63/63 PASS, Next production build PASS.
+- Rebuilt and safely restarted ONLY launcher-owned V2 Node server on canonical port 3020 (old PID 4144, new PID 4860); `/opportunities/prospective` HTTP 200. Backend Python on 8091 not started or modified; data-populated UI remains unverified. No new preview ports.
