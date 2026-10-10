@@ -389,3 +389,10 @@ architecture + static foundation (DASH-V2-00); no integration.
 - Prospective Research now offers an explicit **Retry Python connection** button. It re-fetches the same-origin read-only API without replacing unavailable records with DEMO. On recovery it clears previous error state; on failure it maintains visible controls and UNKNOWN counts.
 - Added `prospective-recovery.test.tsx` testing offline shell controls and user-initiated retry; existing source separation maintained. TypeScript PASS, ESLint PASS, Vitest 63/63 PASS, Next production build PASS.
 - Rebuilt and safely restarted ONLY launcher-owned V2 Node server on canonical port 3020 (old PID 4144, new PID 4860); `/opportunities/prospective` HTTP 200. Backend Python on 8091 not started or modified; data-populated UI remains unverified. No new preview ports.
+
+## DASH-V2-38 — Prospective v1.1 recorder counters (2026-10-10)
+
+- Prospective model BFF now passes through optional numeric recorder `completed`, `pending`, `insufficient`, `in_grace` keys from `/api/prospective`, preserving null/UNKNOWN when keys are absent. No fabricated source freshness or fabricated full historical denominators.
+- Prospective Research includes dedicated `Recorder lifecycle · contract v1.1` panel with COMPLETE/PENDING/INSUFFICIENT_HISTORY emission counters and in-memory recovery grace size; labels distinguish process counters from full-cohort storage. PENDING remains terminal only once grace expires; rows not emitted during grace.
+- TypeScript PASS, ESLint PASS, Vitest 63/63 PASS, Next production build PASS; canonical launcher safely restarted only owned V2 server on port 3020. Prospective UI HTTP 200, Python data unverified while offline.
+- Separate bot code and runtime untouched; no new Next preview ports created.
