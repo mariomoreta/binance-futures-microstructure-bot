@@ -1,0 +1,3 @@
+import {launchReadiness} from "@/lib/launch-readiness";
+import s from "./LaunchReadiness.module.css";
+export function LaunchReadiness(){const x=launchReadiness();return <section className={s.root} aria-label="Supervised launch readiness"><div className={s.top}><div><small>CONTROL PLANE / PRE-FLIGHT</small><h2>Supervised launch readiness</h2></div><span>BLOCKED · NO START</span></div><p>Starting a probe requires a canonical operation that guarantees a persistent supervisor and sentinel. This has not yet been verified; no session will be started from V2.</p><div className={s.checks}>{x.checks.map(y=><div key={y.name}><strong>{y.status}</strong><span>{y.name}<small>{y.detail}</small></span></div>)}</div></section>}
