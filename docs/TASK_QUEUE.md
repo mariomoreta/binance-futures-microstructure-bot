@@ -135,6 +135,18 @@ the dashboard exists. No classifier before raw-feature dashboard validation.
   Gates TRANSPORT/FRESHNESS/PERSISTENCE/SAFETY PASS. Still no 4–6 h authorization. Report:
   `docs/P1_14B_5_TRANSPORT_RESILIENCE_REPORT.md`.
 
+- `P1-14B.6` (2026-10-10) REPRODUCIBILITY & OPERATIONAL READINESS — **PARTIAL**.
+  Second window reproduced both regimes (~22.6 min pristine, then episode to 8.83%,
+  abort breached unacted — supervision lost to harness timeout, demerit recorded).
+  markPrice placement verified 2×2 (arrays only on /market/stream; --base-path +
+  warning + two-instance reference). Vendor incident reports corroborate provider-side
+  context. Fixes: heartbeat summaries, host telemetry (CPU/RSS/bytes, UNKNOWN-safe),
+  shared health classifier. Discriminating evidence: CPU flat + cadence steady (local
+  discarded); references healthy (server-side per-connection attribution refined).
+  Post-run: 57 setups, 202/202 COMPLETE, 0 dupes. Suite 726/726 OK. Gates:
+  CLOCK/PERSISTENCE/SAFETY PASS; TRANSPORT/FRESHNESS PARTIAL. No 4–6 h authorization.
+  Report: `docs/P1_14B_6_REPRODUCIBILITY_READINESS_REPORT.md`.
+
 - `P1-10R` PROLONGED ≥6H SOAK RE-RUN — P1-10 FAIL stays FAIL (truncated at
   4.91h); re-run with dashboard live, blocking survivable launch, merged
   stdout+stderr as UTF-8 (see `docs/DECISIONS.md` launch rule).
@@ -360,6 +372,15 @@ strategies (P3), paper engine/positions (P4), execution (P5).
   + token research card live. 408/408 tests (32 new).
 
 ## LAST_VERIFICATION
+
+
+
+- 2026-10-10 (P1-14B.6): `python run_tests.py` → 726/726 OK (708 + 18: path, warning,
+  heartbeat, host telemetry). Single ≤35 min run COMPLETED naturally (2102.5 s, exit 0)
+  with concurrent dual reference (bookTicker + array, both attempts 1, errors {});
+  post-run 57 setups / 202 COMPLETE / 0 dupes. Verdict PARTIAL (22.6 min healthy <30;
+  abort breached unacted — supervision lost). Next: supervised ≥30 min healthy run before
+  any 4–6 h authorization; P1-14C needs explicit instruction.
 
 
 

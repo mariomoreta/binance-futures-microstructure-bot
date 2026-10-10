@@ -1,6 +1,8 @@
 from __future__ import annotations
 
 import math
+import os
+import time
 from collections import deque
 
 
@@ -87,4 +89,103 @@ class NearMissCounter:
                 "100pct": self._counts[1.00],
             },
         }
+
+
+def process_cpu_times() -> tuple | None:
+    """Own-process CPU times (user_s, system_s) + monotonic s, or None.
+
+    os.times() is available on Windows (user/system CPU seconds,
+    children excluded by construction). Monotonic anchors the interval
+    (immune to wall-clock steps). Any failure -> None (UNKNOWN).
+    """
+    try:
+        t = os.times()
+        return (float(t.user), float(t.system), time.monotonic())
+    except Exception:
+        return None
+
+
+def cpu_percent_proc(prev: tuple | None, cur: tuple | None,
+                     cpu_count: int | None) -> float | None:
+    """Process CPU % between two samples. Pure, testable.
+
+    100 * dProc / (dWall * ncpu); None on missing/invalid input or
+    non-positive wall delta (never zero-filled, never negative).
+    May exceed 100 with threads (documented, not clamped).
+    """
+    try:
+        if prev is None or cur is None:
+            return None
+        ncpu = int(cpu_count) if cpu_count else 0
+        if ncpu <= 0:
+            return None
+        dproc = (float(cur[0]) + float(cur[1])) - (float(prev[0]) + float(prev[1]))
+        dwall = float(cur[2]) - float(prev[2])
+        if not (dwall > 0) or not math.isfinite(dproc) or not math.isfinite(dwall):
+            return None
+        if dproc < 0:
+            return None
+        return round(100.0 * dproc / (dwall * ncpu), 3)
+    except (TypeError, ValueError, IndexError):
+        return None
+
+
+def process_rss_bytes() -> int | None:
+    """Own-process RSS bytes, or None (UNKNOWN).
+
+    Windows-only capability: OpenProcess (real handle) +
+    psapi.GetProcessMemoryInfo (WorkingSetSize), with explicit ctypes
+    signatures and handle cleanup. Stdlib ctypes only, no new
+    dependencies. Any failure (non-Windows included) -> None.
+    Per-process only: NIC and system-wide counters are NOT available
+    through this path and stay UNKNOWN by design.
+    """
+    handle = None
+    try:
+        if os.name != "nt":
+            return None
+        import ctypes
+        kernel32 = ctypes.windll.kernel32
+        kernel32.OpenProcess.argtypes = [ctypes.c_ulong, ctypes.c_bool,
+                                         ctypes.c_ulong]
+        kernel32.OpenProcess.restype = ctypes.c_void_p
+        kernel32.GetCurrentProcessId.restype = ctypes.c_ulong
+        kernel32.CloseHandle.argtypes = [ctypes.c_void_p]
+
+        class _Counters(ctypes.Structure):
+            _fields_ = [("cb", ctypes.c_ulong),
+                        ("PageFaultCount", ctypes.c_ulong),
+                        ("PeakWorkingSetSize", ctypes.c_size_t),
+                        ("WorkingSetSize", ctypes.c_size_t),
+                        ("QuotaPeakPagedPoolUsage", ctypes.c_size_t),
+                        ("QuotaPagedPoolUsage", ctypes.c_size_t),
+                        ("QuotaPeakNonPagedPoolUsage", ctypes.c_size_t),
+                        ("QuotaNonPagedPoolUsage", ctypes.c_size_t),
+                        ("PagefileUsage", ctypes.c_size_t),
+                        ("PeakPagefileUsage", ctypes.c_size_t)]
+
+        pid = kernel32.GetCurrentProcessId()
+        handle = kernel32.OpenProcess(0x1000, False, pid)
+        if not handle:
+            return None
+        psapi = ctypes.windll.psapi
+        psapi.GetProcessMemoryInfo.argtypes = [ctypes.c_void_p,
+                                               ctypes.c_void_p,
+                                               ctypes.c_ulong]
+        psapi.GetProcessMemoryInfo.restype = ctypes.c_bool
+        counters = _Counters()
+        counters.cb = ctypes.sizeof(_Counters)
+        if not psapi.GetProcessMemoryInfo(handle, ctypes.byref(counters),
+                                          counters.cb):
+            return None
+        rss = int(counters.WorkingSetSize)
+        return rss if rss > 0 else None
+    except Exception:
+        return None
+    finally:
+        try:
+            if handle:
+                ctypes.windll.kernel32.CloseHandle(handle)
+        except Exception:
+            pass
 

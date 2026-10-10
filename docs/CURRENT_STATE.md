@@ -1226,3 +1226,29 @@ instability (which of the two still UNKNOWN — stated, not forced).
   Verdict PASS (operational). Still NO 4–6 h authorization (recurrence risk — repeat advisable);
   P1-14C not started; V2/main untouched. Full report:
   `docs/P1_14B_5_TRANSPORT_RESILIENCE_REPORT.md`.
+
+## P1-14B.6 reproducibility & operational readiness — RESULT: PARTIAL (2026-10-10)
+
+Second window reproduced BOTH regimes: ~22.6 min pristine, then delivery episode (rejects → 8.83%,
+error reconnects 1+3, watchdog fired 3 cycles, handshake timeouts). Abort rule breached UNACTED —
+live supervision lost to a harness timeout at launch (demerit recorded; no safety rule breached).
+
+- netprobe markPrice placement verified 2×2 live (arrays ONLY on `/market/stream`; per-symbol on
+  `/stream`+`/public/stream — mirrors the bot's own routing): `--base-path` allowlist + placement
+  warning + two-instance operational reference. Official docs unfetchable (recorded); vendor
+  incident reports TODAY corroborate provider-side instability (Sierra Chart feed stops;
+  connector ACK-but-no-data issue) — kept as context, not proof.
+- Fixes: netprobe heartbeat summaries (total silence now observable) + host telemetry
+  (`os.times` CPU%, psapi RSS with real-handle fix, per-stream exact bytes, UNKNOWN-safe) in
+  bot summary `host` block + netprobe records; shared health classifier + `connectionHealth`.
+- Discriminating evidence: bot CPU flat 3–6% + 30.5 s summary cadence through the episode
+  (local compute/loop-blockage DISCARDED); references on the same host stayed healthy
+  (bookTicker p95 ≤581 ms bump coinciding with bot collapse = shared wobble, ~100× milder);
+  per-connection selective degradation → server-side edge attribution refined (reconnect
+  recovery works until handshake-refusal stage). Provider-vs-ISP residual UNKNOWN (stated).
+- Tests 726/726 OK (708 + 4 path + 1 warning + 1 flag-off + 12 host + heartbeat). Post-run:
+  57 setups (+8), 202 outcomes (+52) all COMPLETE, 0 dupes, 0 anomalies; v1.1 + v9 intact.
+- Gates: CLOCK/PERSISTENCE/SAFETY PASS; TRANSPORT/FRESHNESS PARTIAL. Verdict PARTIAL
+  (duration + abort-supervision failed; fixes validated). Still NO 4–6 h authorization
+  (repeat advisable); P1-14C not started; V2/main untouched. Full report:
+  `docs/P1_14B_6_REPRODUCIBILITY_READINESS_REPORT.md`.

@@ -213,6 +213,7 @@ def classify_connection_health(
 class RuntimeStats:
     started_monotonic: float
     messages_by_stream: Counter[str] = field(default_factory=Counter)
+    bytes_by_stream: Counter[str] = field(default_factory=Counter)
     events_by_type: Counter[str] = field(default_factory=Counter)
     first_seen_monotonic: dict[str, float] = field(default_factory=dict)
     last_seen_monotonic: dict[str, float] = field(default_factory=dict)
@@ -382,6 +383,12 @@ class MarketProbe:
         self._reconnect_requested: set = set()
         self._last_forced_reconnect_mono: dict = {}
         self._forced_reconnect_counts: dict = {}
+        # P1-14B.6 host telemetry stash (probe-owned cadence sampling;
+        # build_summary only embeds, never samples — dashboard reads must
+        # not shorten the CPU interval).
+        self._last_cpu_sample: tuple | None = None
+        self._host_stats: dict = {"cpuPercentProc": None, "rssBytes": None,
+                                  "cpuCount": None}
         self._discovery_info: dict = {
             "enabled": bool(config.discovery.enabled),
             "last_scan_ms": None,
@@ -685,6 +692,13 @@ class MarketProbe:
                 gap_ms, self.stats.max_inter_message_ms.get(stream, 0.0)
             )
         self.stats.messages_by_stream[stream] += 1
+        # P1-14B.6: exact received bytes (per-connection network activity).
+        try:
+            raw_bytes = (len(raw_message.encode("utf-8"))
+                         if isinstance(raw_message, str) else len(raw_message))
+        except Exception:
+            raw_bytes = 0
+        self.stats.bytes_by_stream[stream] += raw_bytes
         self.stats.first_seen_monotonic.setdefault(stream, now_monotonic)
         self.stats.last_seen_monotonic[stream] = now_monotonic
         # P1-14B.5: receipt stamp (wall ms, pre-guard) for the diagnostic
@@ -1046,6 +1060,33 @@ class MarketProbe:
             # P1-14B.3: probe-owned periodic path only (never dashboard
             # reads) — open-but-stale connections get one forced reconnect.
             self._check_connection_freshness(self._wall_clock_ms())
+            # P1-14B.6: same cadence for host telemetry (CPU% needs stable
+            # ~30 s intervals; sampling anywhere else would distort it).
+            self._sample_host()
+
+    def _sample_host(self) -> dict:
+        """Sample process CPU%/RSS (P1-14B.6, bounded, UNKNOWN-safe).
+
+        CPU% derives from os.times() deltas over the sampling interval
+        (first call only establishes the baseline -> None). RSS via psapi
+        (None on any failure, non-Windows included). NIC and system-wide
+        counters are NOT available on this path and stay UNKNOWN by design;
+        per-connection byte rates (bytesByStream) cover network activity.
+        """
+        try:
+            from .telemetry import cpu_percent_proc, process_cpu_times, process_rss_bytes
+            import os as _os
+            cur = process_cpu_times()
+            ncpu = _os.cpu_count() or None
+            cpu = cpu_percent_proc(self._last_cpu_sample, cur, ncpu)
+            if cur is not None:
+                self._last_cpu_sample = cur
+            self._host_stats = {"cpuPercentProc": cpu,
+                                "rssBytes": process_rss_bytes(),
+                                "cpuCount": ncpu}
+        except Exception:
+            pass
+        return dict(self._host_stats)
 
     @property
     def discovery_client(self) -> DiscoveryClient:
@@ -1555,6 +1596,10 @@ class MarketProbe:
                 "silentStreams": silent,
                 "stalenessCadenceStreams": sorted(cadence_streams),
                 "messagesByStream": dict(self.stats.messages_by_stream),
+                # P1-14B.6 additive: exact received bytes per stream (UTF-8).
+                # Complements message counts: SILENT (0 B/s) vs FLOWING at
+                # the byte level, per connection attributable via stream map.
+                "bytesByStream": dict(self.stats.bytes_by_stream),
                 "maxObservedSilenceMsByStream": max_silence_ms,
                 "silenceSemantics": "inter-message silence; not inferred packet loss",
                 "depthSequenceGapsBySymbol": {
@@ -1651,6 +1696,11 @@ class MarketProbe:
                  "forcedReconnects": dict(self._forced_reconnect_counts),
                  "connectionHealth": self._connection_health(),
              },
+             # P1-14B.6 additive block: host telemetry (process-scoped only).
+             # cpuPercentProc/r/rssBytes are None (UNKNOWN) before the first
+             # probe-owned sample or when the OS refuses; NIC and system-wide
+             # CPU stay UNKNOWN by design (see _sample_host).
+             "host": dict(self._host_stats),
          }
 
     @staticmethod

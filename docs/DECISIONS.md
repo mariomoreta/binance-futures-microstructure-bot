@@ -676,3 +676,40 @@ TRANSPORT/FRESHNESS/PERSISTENCE/SAFETY PASS. Still NO 4-6 h authorization
 (recurrence risk -- repeat advisable); P1-14C not started; V2 worktree/ports
 and main untouched.
 Full report: `docs/P1_14B_5_TRANSPORT_RESILIENCE_REPORT.md`.
+
+## 2026-10-10 -- P1-14B.6 reproducibility & operational readiness (PARTIAL)
+
+Starting at SHA `f6d6691` (clean tree). Objectives: second healthy window,
+netprobe markPrice coverage fix, host telemetry, watchdog/health re-verify.
+
+1. Placement verified live (official docs unfetchable again, recorded):
+   per-symbol streams flow on /stream + /public/stream but NOT /market/stream;
+   `!` arrays flow ONLY on /market/stream -- mirroring the bot's own routing
+   (codebase already encoded it). netprobe --base-path allowlist + placement
+   warning + two-instance operational reference. Rival reading kept honest:
+   vendor ACK-but-no-data incident reports TODAY (connector issue + Sierra
+   Chart feed stops) offer server-side non-delivery as an alternative mechanism
+   for single-sample silent cells; routing wins on determinism.
+2. netprobe heartbeat summaries (total silence now observable) + host telemetry
+   (os.times CPU%, psapi RSS with real-handle fix, per-stream exact bytes,
+   UNKNOWN-safe) in bot summary `host` block + netprobe records. NIC and
+   system-wide CPU stay UNKNOWN by design. Shared health classifier +
+   `connectionHealth` block (additive).
+3. Controlled validation: 10-min gate passed; single <=35 min run COMPLETED
+   naturally (2102.5 s, 20/20, market 1 + public 3 error-reconnects, 8.83 %
+   rejects, exit 0) with concurrent dual reference (both attempts 1, errors
+   {}). Watchdog fired 3 cycles correctly; abort rule breached UNACTED --
+   live supervision lost to a harness timeout at launch (demerit recorded;
+   no safety rule breached).
+4. Discriminating evidence: bot CPU flat 3-6 % + 30.5 s cadence through the
+   episode (local compute/loop-blockage DISCARDED); references on the same
+   host healthy (bookTicker p95 <= 581 ms bump coinciding with bot collapse =
+   shared wobble ~100x milder); per-connection selective degradation =>
+   server-side edge attribution refined (reconnect recovery works until
+   handshake-refusal stage). Provider-vs-ISP residual UNKNOWN (stated).
+5. Post-run: 57 setups (+8), 202/202 COMPLETE (+52), 0 dupes, 0 anomalies;
+   contract v1.1 + v9 intact; all 150 prior rows preserved. Suite 726/726 OK
+   (708 + 18). Gates: CLOCK/PERSISTENCE/SAFETY PASS; TRANSPORT/FRESHNESS
+   PARTIAL. Still NO 4-6 h authorization (repeat advisable); P1-14C not
+   started; V2 worktree/ports and main untouched.
+Full report: `docs/P1_14B_6_REPRODUCIBILITY_READINESS_REPORT.md`.

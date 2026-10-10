@@ -15,11 +15,15 @@ from unittest import TestCase
 
 from src.microstructure_probe.netprobe import (
     ALLOWED_HOST,
+    DEFAULT_BASE_PATH,
     ReferenceTracker,
+    array_placement_warning,
+    build_reference_url,
     classify_connect_error,
     resolve_out_path,
     run_reference,
     stream_event_time,
+    validate_base_path,
     validate_target,
 )
 
@@ -82,7 +86,7 @@ def _connect_script(script, clock, seen):
     """Build a connect fake mirroring websockets.connect: a plain callable
     returning an async context manager (NOT a coroutine)."""
     def fake_connect(*args, **kwargs):
-        seen.append(kwargs)
+        seen.append((args, kwargs))
         item = script.pop(0)
         if isinstance(item, BaseException):
             raise item
@@ -91,10 +95,15 @@ def _connect_script(script, clock, seen):
 
 
 def _sleep_recorder(clock, calls):
+    import asyncio as _asyncio
+
     async def fake_sleep(seconds):
         calls.append(seconds)
         clock.mono += seconds
         clock.wall += seconds * 1000.0
+        # Yield to the event loop so concurrent tasks (heartbeat) interleave.
+        # Without this, instant fakes let one task monopolize the loop pass.
+        await _asyncio.sleep(0)
     return fake_sleep
 
 
@@ -202,7 +211,7 @@ class TestRunReference(TestCase):
             ["btcusdt@bookTicker"], 5.0, self._out(),
             connect=_connect_script([FakeWS(raws, clock)], clock, seen),
             wall_clock_ms=clock.wall_ms, monotonic=clock.mono_s,
-            sleep=_sleep_recorder(clock, [])))
+            sleep=_sleep_recorder(clock, []), heartbeat=False))
         self.assertEqual(final["attempts"], 1)
         self.assertEqual(final["successes"], 1)
         self.assertEqual(final["errors"], {})
@@ -216,7 +225,7 @@ class TestRunReference(TestCase):
             ["btcusdt@bookTicker"], 5.0, self._out(),
             connect=_connect_script([FakeWS(raws, clock)], clock, []),
             wall_clock_ms=clock.wall_ms, monotonic=clock.mono_s,
-            sleep=_sleep_recorder(clock, [])))
+            sleep=_sleep_recorder(clock, []), heartbeat=False))
         lag = final["streams"]["btcusdt@bookTicker"]["lagMs"]
         self.assertGreater(lag["max"], 100_000.0)
 
@@ -230,7 +239,7 @@ class TestRunReference(TestCase):
                 [TimeoutError(), TimeoutError(), FakeWS(raws, clock)],
                 clock, []),
             wall_clock_ms=clock.wall_ms, monotonic=clock.mono_s,
-            sleep=_sleep_recorder(clock, sleeps)))
+            sleep=_sleep_recorder(clock, sleeps), heartbeat=False))
         self.assertEqual(final["errors"], {"handshake-timeout": 2})
         self.assertEqual(final["successes"], 1)
         self.assertEqual(sleeps[:2], [1.0, 2.0])
@@ -239,14 +248,36 @@ class TestRunReference(TestCase):
     def test_silent_connection_tracked(self):
         # A truly silent connection yields NO stream rows (honest absence,
         # never zero-filled); attempts/errors still prove it was watched.
+        # Heartbeat summaries DO appear (time-based, not message-driven).
         clock = FakeClock()
-        final = asyncio.run(run_reference(
-            ["btcusdt@bookTicker"], 3.0, self._out(),
+        tmp = Path(tempfile.mkdtemp()) / "hb.jsonl"
+        asyncio.run(run_reference(
+            ["btcusdt@bookTicker"], 65.0, tmp,
             connect=_connect_script([FakeWS([], clock)], clock, []),
             wall_clock_ms=clock.wall_ms, monotonic=clock.mono_s,
             sleep=_sleep_recorder(clock, [])))
+        recs = [json.loads(l) for l in tmp.read_text(encoding="utf-8").splitlines()
+                if l.strip()]
+        beats = [r for r in recs if r.get("kind") == "netprobe_summary"
+                 and r.get("heartbeat") is True]
+        self.assertGreaterEqual(len(beats), 1)
+        self.assertEqual(beats[0]["streams"], {})
+        final = [r for r in recs if r.get("kind") == "netprobe_final"][0]
         self.assertGreaterEqual(final["attempts"], 1)
         self.assertEqual(final["streams"], {})
+
+    def test_heartbeat_disabled(self):
+        clock = FakeClock()
+        tmp = Path(tempfile.mkdtemp()) / "nohb.jsonl"
+        asyncio.run(run_reference(
+            ["btcusdt@bookTicker"], 65.0, tmp, heartbeat=False,
+            connect=_connect_script([FakeWS([], clock)], clock, []),
+            wall_clock_ms=clock.wall_ms, monotonic=clock.mono_s,
+            sleep=_sleep_recorder(clock, [])))
+        recs = [json.loads(l) for l in tmp.read_text(encoding="utf-8").splitlines()
+                if l.strip()]
+        beats = [r for r in recs if r.get("kind") == "netprobe_summary"]
+        self.assertEqual(beats, [])
 
     def test_markprice_array_stream(self):
         clock = FakeClock()
@@ -255,7 +286,7 @@ class TestRunReference(TestCase):
             ["!markPrice@arr@1s"], 3.0, self._out(),
             connect=_connect_script([FakeWS(raws, clock)], clock, []),
             wall_clock_ms=clock.wall_ms, monotonic=clock.mono_s,
-            sleep=_sleep_recorder(clock, [])))
+            sleep=_sleep_recorder(clock, []), heartbeat=False))
         self.assertEqual(final["streams"]["!markPrice@arr@1s"]["messages"], 1)
 
 
@@ -268,3 +299,44 @@ class TestOutPath(TestCase):
         self.assertNotEqual(second, first)
         self.assertTrue(str(second).endswith(".jsonl"))
         self.assertEqual(first.read_text(encoding="utf-8"), "evidence")
+
+
+class TestBasePath(TestCase):
+    """P1-14B.6: combined-stream path placement (verified live)."""
+
+    def test_known_paths_accepted(self):
+        for path in ("/stream", "/public/stream", "/market/stream"):
+            self.assertEqual(validate_base_path(path), path)
+        self.assertEqual(DEFAULT_BASE_PATH, "/stream")
+
+    def test_unknown_paths_refused(self):
+        for bad in ("/ws", "/fapi", "", None, "/market/stream/",
+                     "wss://evil.example.com/stream"):
+            with self.assertRaises(ValueError, msg=str(bad)):
+                validate_base_path(bad)
+
+    def test_url_builder(self):
+        url = build_reference_url(ALLOWED_HOST, "/market/stream",
+                                  ["!markPrice@arr@1s"])
+        self.assertEqual(
+            url, ALLOWED_HOST + "/market/stream?streams=!markPrice@arr@1s")
+
+    def test_run_uses_configured_path(self):
+        clock = FakeClock()
+        raws = [_btc_ticker(clock.wall - 100.0) for _ in range(60)]
+        seen = []
+        asyncio.run(run_reference(
+            ["btcusdt@bookTicker"], 5.0, Path(tempfile.mkdtemp()) / "p.jsonl",
+            base_path="/market/stream",
+            connect=_connect_script([FakeWS(raws, clock)], clock, seen),
+            wall_clock_ms=clock.wall_ms, monotonic=clock.mono_s,
+            sleep=_sleep_recorder(clock, []), heartbeat=False))
+        self.assertEqual(len(seen), 1)
+        self.assertTrue(seen[0][0][0].startswith(ALLOWED_HOST + "/market/stream"))
+
+    def test_array_placement_warning(self):
+        self.assertIsNone(array_placement_warning(["btcusdt@bookTicker"], "/stream"))
+        self.assertIsNone(array_placement_warning(["!markPrice@arr@1s"], "/market/stream"))
+        warn = array_placement_warning(["!markPrice@arr@1s"], "/stream")
+        self.assertIsNotNone(warn)
+        self.assertIn("/market/stream", warn)
