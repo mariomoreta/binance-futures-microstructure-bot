@@ -97,3 +97,11 @@ ext start :3000 used for render/screenshot checks only, then stopped; screenshot
 - Rank panels use the current filtered dataset and state that scope explicitly.
 - Bound the table to 8 rendered rows per page and confine narrow-screen overflow to its wrapper.
 - Compose the dashboard directly in `app/movers/page.tsx`; no route templates (the staged root CSS-hack suppressor and children-ignoring movers override were removed during recovery). Shell banner replaced by a compact demo strip in AppShell (small shared correction, Overview otherwise untouched).
+
+## 2026-10-10 — DASH-V2-48 bounded System composition
+
+Keep actual runtime states visible; long supervisor/control details use native
+disclosure. Archive measurements separately from current health. Replace
+duplicate placeholders with one explicit screen-integration list. Preserve
+shared top navigation in this slice; omit unsupported charts/performance
+figures from the reference. These deliberate departures leave parity PARTIAL.

@@ -437,3 +437,17 @@ architecture + static foundation (DASH-V2-00); no integration.
 - Local QA: typecheck, lint, original full suite 65/66 due unrelated System test timeout; isolated System retry PASS; Next build PASS. Canonical 3020 GET /system 200 and readiness API 200 with `ready:false` and four PASS checks/one BLOCKED. No probe started or stopped, no Python agent worktree edits.
 - Remaining: implement a verified, race-safe canonical launch integrating supervisor+sentinel on Python side through its owning agent, then test end-to-end start/abort in a separately authorized window. Do not enable V2 until then.
 
+
+
+## DASH-V2-48 — System terminal composition (2026-10-10)
+
+- Compact runtime cards, native supervisor/control disclosure, three-column
+  health/integration layout and separate persisted evidence; duplicate tiles removed.
+- Approved system.png inspected; actual desktop/mobile Chrome and Overview
+  captures reviewed. No page overflow; disclosure/Refresh PASS; browser errors 0.
+- Windows: type/lint/build and 86/86 frontend tests PASS; V2 Python snapshot
+  496/496 PASS. System unit-test real-source timeout corrected by isolation.
+- Compact Overview diagnostics mobile columns repaired during regression QA.
+- Canonical V2 3020 updated via identity-verified restart; no probe/V1/backend action.
+- Reference parity PARTIAL. Full evidence/closeout:
+  DASHBOARD_V2_48_SYSTEM_VISUAL_AUDIT.md.

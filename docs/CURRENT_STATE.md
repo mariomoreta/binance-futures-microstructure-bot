@@ -975,3 +975,13 @@ recorded P1-11A audit item (not fixed).
   feed (honest chip); continuous freshness arrives with the P1-10 soak.
 - No secrets, keys, or account access exist or are needed.
 
+
+
+## Dashboard V2 visual update — 2026-10-10
+
+DASH-V2-48 System is installed on canonical V2 port 3020: compact runtime
+states, inspectable controls, dense health panels and separate historical
+evidence. Windows frontend 86 tests/type/lint/build and V2 Python snapshot
+496 tests PASS. Browser source-populated captures inspected; reference parity
+PARTIAL. No probe action or V1/backend modification. Pending contracts:
+DASHBOARD_V2_48_SYSTEM_VISUAL_AUDIT.md.

@@ -409,3 +409,13 @@ F-STATE-V2-TK-01 remains PARTIAL (DEMO UI only). Added explicit historical fixtu
 
 F-STATE-V2-TK-01 remains **PARTIAL (DEMO UI only)**. Observation audit card now displays UNKNOWN previous state and last authoritative evaluation in a fourth desktop evidence panel, rather than implying verified classifier history. Evidence: 40/40 frontend tests, `design/qa/v2-09/` four Chrome captures, and `docs/DASHBOARD_V2_PROGRESS.md`. F-OPP-UI-01 remains PARTIAL; F-V2-BFF-01 NOT IMPLEMENTED. Visual reference correction and GitHub publication are not verified.
 
+
+
+## F-V2-SYSTEM-01 — System composition and integration (2026-10-10)
+
+PARTIAL: compact process/feed/supervisor/mode cards, inspectable controls,
+transport/readiness panels and separate recorded evidence. Five pipeline/
+resource/event contracts pending. Desktop/mobile Chrome, disclosure/Refresh,
+fallback and foreign ownership verified; frontend 86/86 and V2 Python snapshot
+496/496 PASS on Windows. Full reference/data parity and atomic start NOT VERIFIED.
+Evidence: DASHBOARD_V2_48_SYSTEM_VISUAL_AUDIT.md and design/qa/v2-48/.

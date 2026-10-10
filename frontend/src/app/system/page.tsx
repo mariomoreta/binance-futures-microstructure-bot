@@ -1,21 +1,40 @@
 import {LaunchReadiness} from "@/components/system/LaunchReadiness";
-export const dynamic="force-dynamic";
 import {RuntimeDiagnostics} from "@/components/system/RuntimeDiagnostics";
 import {SystemEvidence} from "@/components/system/SystemEvidence";
 import {BotControl} from "@/components/system/BotControl";
 import styles from "./System.module.css";
-const blocks=[
-{title:"Market Engine",description:"Probe lifecycle and bounded universe",metric:"UNKNOWN",rows:[["Process","NOT CONNECTED"],["Runtime mode","READ-ONLY UI"],["Evaluation age","UNKNOWN"]]},
-{title:"Data Feed",description:"Connections, freshness and timestamp integrity",metric:"UNKNOWN",rows:[["Active streams","UNKNOWN"],["Reconnects","UNKNOWN"],["Timestamp rejects","UNKNOWN"]]},
-{title:"Research Recorder",description:"Prospective capture and integrity",metric:"UNKNOWN",rows:[["Writes / drops","UNKNOWN"],["Research queue","UNKNOWN"],["Last observation","UNKNOWN"]]},
-{title:"Persistence",description:"Snapshots, schema and storage",metric:"UNKNOWN",rows:[["Database integrity","NOT CHECKED"],["Schema version","UNKNOWN"],["Stored rows","UNKNOWN"]]},
-{title:"Universe Manager",description:"Protected CORE and bounded HOT coverage",metric:"UNKNOWN",rows:[["CORE active","UNKNOWN"],["HOT live","UNKNOWN"],["Stream budget","UNKNOWN"]]},
-{title:"Classifier & Opportunity",description:"Rule versions, states and candidate lifecycle",metric:"UNKNOWN",rows:[["Classifier state","UNKNOWN"],["Research candidates","UNKNOWN"],["Rule versions","UNKNOWN"]]},
+
+export const dynamic = "force-dynamic";
+const pending = [
+  ["Live universe", "CORE / HOT allocation and subscription budgets"],
+  ["Research recorder", "Current queue, writes, drops and recorder lifecycle"],
+  ["Classifier & opportunities", "Latest evaluations and rule versions"],
+  ["Host resources", "CPU, memory and network samples with capture time"],
+  ["Operational events", "Timestamped events with component and severity"],
 ];
-export default function SystemPage(){return <div className={styles.root} data-testid="system-v2">
-<header className={styles.header}><div><h1>System & Research Health</h1><p>Infrastructure · transport · persistence · research pipeline</p></div><span className={styles.tag}>CONTROL CONNECTED · LEGACY TILES PENDING</span></header>
-<BotControl/><LaunchReadiness/><RuntimeDiagnostics/><SystemEvidence/><div className={styles.stats}>{[["Engine state","UNKNOWN"],["Feed state","UNKNOWN"],["Research state","UNKNOWN"],["Data freshness","UNKNOWN"]].map(([label,value])=><section className={styles.stat} key={label}><small>{label}</small><strong>{value}</strong><span>Awaiting verified runtime contract</span></section>)}</div>
-<div className={styles.warning}><strong>Legacy diagnostic tiles are not yet connected.</strong><span>Operational status, stream counts and integrity checks are intentionally UNKNOWN. No healthy status is inferred from this preview. The canonical process controller above provides process status; the legacy cards below remain placeholders.</span></div>
-<div className={styles.grid}>{blocks.map(block=><section className={styles.panel} key={block.title}><div className={styles.heading}><div><h2>{block.title}</h2><p>{block.description}</p></div><span className={styles.unknown}>{block.metric}</span></div><div className={styles.rows}>{block.rows.map(([k,v])=><div className={styles.row} key={k}><span>{k}</span><strong>{v}</strong></div>)}</div></section>)}</div>
-<section className={styles.panel}><div className={styles.heading}><div><h2>System events and audit log</h2><p>Timestamped operational events require a verified API.</p></div><span className={styles.unknown}>NO FEED</span></div><div className={styles.empty}>No real events loaded. This view never invents uptime, errors, recoveries, or passing checks.</div></section>
-<p className={styles.disclaimer}>RESEARCH ONLY · NOT LIVE · Canonical observe-only process control above. Legacy diagnostics below are placeholders; no account credentials, trading execution or fabricated telemetry.</p></div>}
+
+export default function SystemPage() {
+  return <div className={styles.root} data-testid="system-v2">
+    <header className={styles.header}>
+      <div><h1>System</h1><p>Infrastructure, transport, persistence and research pipeline</p></div>
+      <span className={styles.tag}>RESEARCH WORKSPACE</span>
+    </header>
+    <BotControl />
+    <div className={styles.grid}>
+      <RuntimeDiagnostics />
+      <LaunchReadiness />
+      <section className={styles.panel} aria-label="Integration coverage">
+        <div className={styles.heading}><small>SCREEN COVERAGE</small><h2>Research pipeline</h2><p>Backend capabilities awaiting integration in this screen.</p></div>
+        <div className={styles.rows}>{pending.map(([name, detail]) =>
+          <div className={styles.row} key={name}><div><strong>{name}</strong><small>{detail}</small></div><span className={styles.unknown}>NOT CONNECTED</span></div>
+        )}</div>
+        <p className={styles.note}>Unavailable in V2 does not mean absent from the Python engine. Recorded evidence below is separate from current runtime health.</p>
+      </section>
+    </div>
+    <SystemEvidence />
+    <section className={styles.panel} aria-label="System events and audit log">
+      <div className={styles.auditHeading}><div><small>OPERATIONAL HISTORY</small><h2>System events and audit log</h2></div><span className={styles.unknown}>NO EVENT FEED</span></div>
+      <p className={styles.note}>No real events loaded. A timestamped event contract is required; aggregate counters in archived evidence are not an event log.</p>
+    </section>
+  </div>;
+}

@@ -357,3 +357,11 @@ strategies (P3), paper engine/positions (P4), execution (P5).
   `mariomoreta/binance-futures-microstructure-bot` (origin in sync).
   P1-05 implementation/docs commit follows on this branch.
 
+
+
+## Dashboard V2 next work — 2026-10-10
+
+DASH-V2-48 System visual slice completed with partial reference parity.
+Next: reconcile five System data contracts with the owning agent's finished
+report before integrating them. Keep atomic start disabled until guarantees
+are independently verified. Further work remains frontend-only.
