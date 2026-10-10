@@ -408,3 +408,9 @@ architecture + static foundation (DASH-V2-00); no integration.
 - New `/market-lab` desktop route with interactive symbol selection, saved-time windows (1h/6h/24h/all), comparison with a second symbol, recorded mark-price SVG plot, descriptive observed changes and coverage diagnostics.
 - SQLite read-only `price_samples` queries, mapped to plain React-serializable objects, never synthetic/forward-filled. Gaps greater than two minutes break the SVG stroke (do not connect distant observations). Time windows explicitly anchored at latest saved sample, not current time.
 - QA: actual Chrome screenshot inspected; corrected SQLite row serialization runtime exception; corrected SVG gaps observed visually. Typecheck, lint, 63/63 tests, production build PASS; server restarted on same 3020, `/market-lab` HTTP 200. No bot process or Python dashboard touched.
+
+## DASH-V2-43 — Persisted System Evidence (2026-10-10)
+
+- System now incorporates an actual SQLite read-only operational evidence panel below the canonical Bot Control Center: last recorded expected/active/stale/silent streams, clock offset, saved setups/outcomes/mark samples, events by type, orders, keys and capital at capture.
+- Distinguishes process RUNNING (current PID-verified status from controller) from PERSISTED NOT LIVE telemetry with explicit UTC snapshot provenance; legacy placeholder panels remain marked pending. No inference that historic stream health represents current feed health.
+- QA: TypeScript, ESLint, 66/66 tests and Next build passed; canonical port 3020 restarted, `/system` HTTP 200, true Chrome screenshot `system-v2-43-evidence-qa.png` inspected. During snapshot 20/20 streams, 0 stale and 0 silent, 57 setups, 202 outcomes, 2031 price samples, 1181 extreme-funding-rate observations and 11 volume-spike detections. Counts dynamic, not fixed. No engine process was started/stopped.
