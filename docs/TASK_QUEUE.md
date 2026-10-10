@@ -365,3 +365,15 @@ DASH-V2-48 System visual slice completed with partial reference parity.
 Next: reconcile five System data contracts with the owning agent's finished
 report before integrating them. Keep atomic start disabled until guarantees
 are independently verified. Further work remains frontend-only.
+
+
+## 2026-10-10 — P1-14B.8 integration review
+
+Backend babf3ac verified in GitHub; sentinel 15/15 targeted tests rerun, SQLite
+66/228 quick_check OK. Long supervisor 70 cycles; three-layer evidence only
+brief 14/12 cycles (long sentinel died). Reproduced STOPPED-fresh accepted,
+malformed-established heartbeat unprotected, stale sentinel published ACTIVE.
+Concurrent registry writes/lease fencing need tests. V2 drops sentinel and
+start_probe does not launch watchers: F-V2-BFF-01 remains PARTIAL, start blocked.
+Owner feedback and documentation discrepancies: DASHBOARD_V2_P1_14B_8_REVIEW.md.
+No new run, backend edit, gate advancement or long-run authorization.
