@@ -115,15 +115,16 @@ def status(feed_provider: Optional[Callable[[], Dict[str, Any]]] = None
     feed = feed_provider() if feed_provider else _feed_unknown()
     if not record:
         out: Dict[str, Any] = {"running": False, "state": "STOPPED",
-                                "pid": None, "started_at": None,
-                                "uptime_seconds": 0.0, "mode": "observe",
-                                "duration_seconds": None,
-                                "elapsed_seconds": 0.0,
-                                "remaining_seconds": None,
-                                "expected_end_at": None, "launcher": None,
-                                "preset": "standard",
-                                "last_exit_code": None,
-                                "last_exit_reason": None}
+                                 "pid": None, "started_at": None,
+                                 "uptime_seconds": 0.0, "mode": "observe",
+                                 "duration_seconds": None,
+                                 "elapsed_seconds": 0.0,
+                                 "remaining_seconds": None,
+                                 "expected_end_at": None, "launcher": None,
+                                 "preset": "standard",
+                                 "last_exit_code": None,
+                                 "last_exit_reason": None,
+                                 "supervisor": _supervisor_block(None)}
         out.update(feed)
         return out
     state = record.get("state", "STOPPED")
@@ -173,6 +174,9 @@ def status(feed_provider: Optional[Callable[[], Dict[str, Any]]] = None
         "evidence": record.get("evidence"),
         "last_exit_code": last_exit.get("code"),
         "last_exit_reason": last_exit.get("reason"),
+        # P1-14B.7 additive supervisor contract (always present; UNKNOWN
+        # when never supervised). Flows to /api/control/probe/status.
+        "supervisor": _supervisor_block(record),
     }
     out.update(feed)
     return out
@@ -193,6 +197,16 @@ def try_register(duration_seconds: Optional[float] = None,
         return {"registered": False,
                 "already_running": status(),
                 "reason": "another canonical probe is already running"}
+    # P1-14B.7: a control-started child self-registers over its own STARTING
+    # record — carry the evidence path forward so supervision keeps its
+    # log-derived rules (UNKNOWN-safe skip otherwise). Never invent evidence:
+    # only preserve what the same PID already recorded.
+    preserved_evidence = None
+    try:
+        if current and int(current.get("pid") or -1) == os.getpid():
+            preserved_evidence = current.get("evidence")
+    except (TypeError, ValueError):
+        preserved_evidence = None
     record = {
         "schema": REGISTRY_SCHEMA,
         "writer": "control/1",
@@ -207,7 +221,7 @@ def try_register(duration_seconds: Optional[float] = None,
         "launcher": launcher or os.environ.get("MICROPROBE_LAUNCHER",
                                                "direct"),
         "preset": os.environ.get("MICROPROBE_PRESET", "standard"),
-        "evidence": None,
+        "evidence": preserved_evidence,
         "last_exit": None,
     }
     if isinstance(duration_seconds, (int, float)):
@@ -445,6 +459,13 @@ def build_parser() -> argparse.ArgumentParser:
                        choices=["standard", "validation-6h"],
                        help="validation-6h forces 21600s + evidence wrapper")
     sub.add_parser("stop", help="stop the verified canonical probe")
+    sup = sub.add_parser("supervise",
+                         help="watch the active run and enforce abort gates")
+    sup.add_argument("--interval", default=30.0,
+                     help="seconds between checks (5..300)")
+    sup.add_argument("--timeout", default=None,
+                     help="max watch seconds (60..86400); omit to watch "
+                          "until the run ends")
     return parser
 
 
@@ -466,7 +487,631 @@ def main(argv: Optional[List[str]] = None) -> int:
         result = stop_probe(requester="agent")
         print(json.dumps(result, indent=1))
         return 0 if result.get("stopped") else 1
+    if args.cmd == "supervise":
+        try:
+            result = supervise(interval_s=float(args.interval),
+                               timeout_s=(float(args.timeout)
+                                          if args.timeout else None))
+        except ValueError as exc:
+            print(json.dumps({"supervised": False, "error": str(exc)}))
+            return 2
+        print(json.dumps(result, indent=1, default=str))
+        return 0 if result.get("ok", False) else 1
     return 2
+
+
+# ------------------------------------------------------------------
+# P1-14B.7 persistent supervision & enforced abort gates.
+#
+# A supervisor independent of any agent session watches ONE authorized
+# run via this canonical registry. It evaluates the documented abort
+# rules every cycle from probe-produced evidence and enforces a one-shot
+# verified-PID stop with persisted reason. It never starts or restarts
+# runs, never touches foreign processes, and never acts on UNKNOWN
+# (explicit safe policy per rule: missing telemetry skips the rule,
+# never reads as zero).
+#
+# Survival model: the supervisor is an ordinary detached process (same
+# launch pattern as control-started probes); agent disconnects, closed
+# terminals, and harness timeouts do not affect it. A registry lease
+# (freshness-checked) serializes supervisors: live lease -> second
+# supervisor refuses; stale lease -> recorded takeover. Streak counters
+# persist in the lease so a restarted supervisor continues counting.
+# ------------------------------------------------------------------
+
+ABORTED = "ABORTED"
+
+SUPERVISOR_CHECK_DEFAULT_S = 30.0
+SUPERVISOR_INTERVAL_MIN_S = 5.0
+SUPERVISOR_INTERVAL_MAX_S = 300.0
+SUPERVISOR_MAX_FAILURES = 5
+SUPERVISOR_LEASE_FRESH_S = 90.0
+
+# Abort rules (exact semantics; thresholds are LOCAL_POLICY except the 5 %
+# reject rule, which follows the official cumulative methodology):
+REJECT_ABORT_RATE = 0.05          # cumulative rejected/total, latest summary
+RECONNECT_ABORT_COUNT = 5         # error-reconnect events in trailing window
+RECONNECT_ABORT_WINDOW_S = 600.0
+PERSIST_EVENTS_ABORT_MIN = 2      # persistence_error events in trailing window
+PERSIST_ABORT_PRIOR = 1           # ...seen on the previous check too (2 straight)
+CLOCK_ABORT_MS = 30000.0          # |host-Binance| sustained...
+CLOCK_ABORT_PRIOR = 2             # ...on 3 straight checks (noisy single samples)
+DB_ABORT_STREAK = 5               # consecutive unreadable-DB checks (lock transients)
+WATCHDOG_FORCED_MIN = 3           # compound backstop-loss signal...
+WATCHDOG_ERRORS_MIN = 3           # ...with rising reject rate
+EVIDENCE_TAIL_BYTES = 131072
+EVIDENCE_TAIL_LINES = 400
+
+
+def _abort(rule: str, reason: str, threshold: Any,
+           observed: Any) -> Dict[str, Any]:
+    return {"rule": rule, "reason": reason, "threshold": threshold,
+            "observed": observed}
+
+
+def _is_number(value: Any) -> bool:
+    return isinstance(value, (int, float)) and not isinstance(value, bool)
+
+
+def evaluate_supervision(snapshot: Dict[str, Any]) -> Optional[Dict[str, Any]]:
+    """Pure abort decision from one evidence snapshot (no I/O).
+
+    Every metric arrives Optional; missing/non-numeric input skips its
+    rule (UNKNOWN policy — never silent zero). First breach in priority
+    order wins (safety > rejects > reconnects > persistence > clock >
+    db > watchdog-overwhelm); streak inputs count CONSECUTIVE PRIOR
+    breaching checks (loop-maintained, lease-persisted).
+    """
+    if not isinstance(snapshot, dict):
+        return None
+    mode = snapshot.get("mode")
+    if mode is not None and str(mode) != "observe":
+        return _abort("safety-violation", "mode != observe", "observe", mode)
+    safety = snapshot.get("safety")
+    if isinstance(safety, dict):
+        try:
+            keys = int(safety.get("apiKeysUsed") or 0)
+        except (TypeError, ValueError):
+            keys = 0
+        try:
+            orders = int(safety.get("realOrdersSent") or 0)
+        except (TypeError, ValueError):
+            orders = 0
+        if keys > 0 or orders > 0 or bool(safety.get("orderExecutionPathPresent")):
+            return _abort("safety-violation",
+                          "observe-only invariant broken", "0/0/false",
+                          {"apiKeysUsed": keys, "realOrdersSent": orders,
+                           "orderExecutionPathPresent": bool(
+                               safety.get("orderExecutionPathPresent"))})
+    rate = snapshot.get("reject_rate")
+    if _is_number(rate) and rate == rate and rate > REJECT_ABORT_RATE:
+        return _abort("timestamp-reject-rate",
+                      "cumulative reject rate above limit", REJECT_ABORT_RATE,
+                      float(rate))
+    now_s = snapshot.get("now_s")
+    events = snapshot.get("reconnect_events")
+    if isinstance(events, list) and _is_number(now_s):
+        recent = 0
+        for item in events:
+            try:
+                ts = float(item[0]) if isinstance(item, (list, tuple)) else float("nan")
+            except (TypeError, ValueError, IndexError):
+                continue
+            if ts == ts and 0 <= now_s - ts <= RECONNECT_ABORT_WINDOW_S:
+                recent += 1
+        if recent > RECONNECT_ABORT_COUNT:
+            return _abort("reconnect-storm",
+                          "error reconnects in trailing 10 min",
+                          ">%d/600s" % RECONNECT_ABORT_COUNT, recent)
+    perr = snapshot.get("persistence_errors_10m")
+    pstreak = snapshot.get("persistence_streak", 0)
+    prosp_deg = snapshot.get("prospective_degraded", False)
+    perr_n = perr if _is_number(perr) and perr == perr else 0
+    try:
+        pstreak_n = int(pstreak or 0)
+    except (TypeError, ValueError):
+        pstreak_n = 0
+    if (perr_n >= PERSIST_EVENTS_ABORT_MIN or prosp_deg is True) and pstreak_n >= PERSIST_ABORT_PRIOR:
+        return _abort("persistence-errors",
+                      "critical persistence failures sustained", ">=2 events/10min x2 checks",
+                      {"events_10m": perr_n, "prospective_degraded": bool(prosp_deg)})
+    clk = snapshot.get("clock_offset_ms")
+    cstreak = snapshot.get("clock_streak", 0)
+    try:
+        cstreak_n = int(cstreak or 0)
+    except (TypeError, ValueError):
+        cstreak_n = 0
+    if _is_number(clk) and clk == clk and abs(float(clk)) > CLOCK_ABORT_MS and cstreak_n >= CLOCK_ABORT_PRIOR:
+        return _abort("clock-skew", "host clock beyond limit, sustained",
+                      ">%dms x3" % int(CLOCK_ABORT_MS), float(clk))
+    db_ok = snapshot.get("db_readable")
+    dstreak = snapshot.get("db_fail_streak", 0)
+    try:
+        dstreak_n = int(dstreak or 0)
+    except (TypeError, ValueError):
+        dstreak_n = 0
+    if db_ok is False and dstreak_n >= DB_ABORT_STREAK:
+        return _abort("db-unreadable", "operational DB unreadable, sustained",
+                      ">=%d straight checks" % (DB_ABORT_STREAK + 1), dstreak_n)
+    try:
+        forced = int(snapshot.get("forced_reconnects") or 0)
+    except (TypeError, ValueError):
+        forced = 0
+    try:
+        err_total = int(snapshot.get("error_reconnects") or 0)
+    except (TypeError, ValueError):
+        err_total = 0
+    rate_prev = snapshot.get("reject_rate_prev")
+    rising = (_is_number(rate) and _is_number(rate_prev)
+              and rate == rate and rate_prev == rate_prev
+              and float(rate) > float(rate_prev))
+    if forced >= WATCHDOG_FORCED_MIN and err_total >= WATCHDOG_ERRORS_MIN and rising:
+        return _abort("watchdog-overwhelmed",
+                      "forced recoveries keep firing while errors and rejects climb",
+                      "forced>=3, errors>=3, rising", float(rate))
+    return None
+
+
+def _parse_log_timestamp(prefix: str) -> Optional[float]:
+    try:
+        return datetime.strptime(prefix.strip(), "%Y-%m-%d %H:%M:%S,%f").timestamp()
+    except (TypeError, ValueError):
+        return None
+
+
+def collect_supervision_snapshot(record: Dict[str, Any]) -> Dict[str, Any]:
+    """Assemble one evidence snapshot from the run's evidence log tail.
+
+    Read-only. Tolerates missing/truncated/unparsable logs by returning
+    UNKNOWN (None) fields — the decision core then skips those rules.
+    Single-line JSON records (canonical UTF-8 evidence contract); wrapped
+    lines are skipped, never rejoined (UNKNOWN-safe direction).
+    """
+    now_s = time.time()
+    snapshot: Dict[str, Any] = {
+        "now_s": now_s,
+        "mode": (record or {}).get("mode"),
+        "safety": None,
+        "reject_rate": None,
+        "total_messages": None,
+        "reconnect_events": [],
+        "persistence_errors_10m": 0,
+        "prospective_degraded": False,
+        "clock_offset_ms": None,
+        "forced_reconnects": None,
+        "error_reconnects": None,
+        "reject_rate_prev": None,
+    }
+    evidence = (record or {}).get("evidence") or {}
+    log_path = evidence.get("log")
+    if not log_path:
+        return snapshot
+    try:
+        size = os.path.getsize(log_path)
+    except OSError:
+        return snapshot
+    try:
+        with open(log_path, "r", encoding="utf-8", errors="replace") as fh:
+            if size > EVIDENCE_TAIL_BYTES:
+                fh.seek(max(0, size - EVIDENCE_TAIL_BYTES))
+                fh.readline()
+            lines = fh.read().splitlines()[-EVIDENCE_TAIL_LINES:]
+    except OSError:
+        return snapshot
+    latest = None
+    latest_rt = -1.0
+    reconnect_events: List[Any] = []
+    persist_ts: List[float] = []
+    for line in lines:
+        ts = _parse_log_timestamp(line[:23])
+        brace = line.find("{")
+        if brace < 0:
+            continue
+        try:
+            payload = json.loads(line[brace:])
+        except ValueError:
+            continue
+        if not isinstance(payload, dict):
+            continue
+        kind = payload.get("kind")
+        if kind in ("summary", "final_summary"):
+            try:
+                rt = float(payload.get("runtimeSeconds", -1))
+            except (TypeError, ValueError):
+                rt = -1.0
+            if rt >= latest_rt:
+                latest_rt = rt
+                latest = payload
+        elif kind == "connection_error":
+            if ts is not None:
+                reconnect_events.append((ts, str(payload.get("endpoint", "?"))))
+        elif kind == "persistence_error":
+            if ts is not None and now_s - ts <= 600.0:
+                persist_ts.append(ts)
+    snapshot["reconnect_events"] = reconnect_events[-200:]
+    snapshot["persistence_errors_10m"] = len(persist_ts)
+    if latest is not None:
+        dq = latest.get("dataQuality") or {}
+        if isinstance(dq, dict):
+            msgs = dq.get("messagesByStream") or {}
+            if isinstance(msgs, dict):
+                try:
+                    total = sum(int(v) for v in msgs.values())
+                except (TypeError, ValueError):
+                    total = None
+                snapshot["total_messages"] = total
+                rej = dq.get("timestampRejected")
+                if _is_number(rej) and isinstance(total, int) and total > 0:
+                    snapshot["reject_rate"] = float(rej) / float(total)
+            reconn = dq.get("reconnections") or {}
+            if isinstance(reconn, dict):
+                try:
+                    snapshot["error_reconnects"] = sum(
+                        int(v) for v in reconn.values())
+                except (TypeError, ValueError):
+                    pass
+        safety = latest.get("safety")
+        if isinstance(safety, dict):
+            snapshot["safety"] = safety
+        clock = latest.get("clock") or {}
+        if isinstance(clock, dict) and _is_number(clock.get("clockOffsetMs")):
+            snapshot["clock_offset_ms"] = float(clock.get("clockOffsetMs"))
+        fresh = latest.get("freshness") or {}
+        if isinstance(fresh, dict):
+            forced = fresh.get("forcedReconnects") or {}
+            if isinstance(forced, dict):
+                try:
+                    snapshot["forced_reconnects"] = sum(
+                        int(v) for v in forced.values())
+                except (TypeError, ValueError):
+                    pass
+        prosp = latest.get("prospective") or {}
+        if isinstance(prosp, dict) and prosp.get("state") == "DEGRADED":
+            snapshot["prospective_degraded"] = True
+    return snapshot
+
+
+def _default_db_path() -> Optional[Path]:
+    """Operational DB path (config carries no db_path — P1-14B.1 proof)."""
+    try:
+        from .dashboard import repo_root
+        return repo_root() / "data" / "microprobe.db"
+    except Exception:
+        return None
+
+
+def probe_db_readable() -> Optional[bool]:
+    """Read-only open of the operational DB. None when unresolvable."""
+    import sqlite3
+    path = _default_db_path()
+    if path is None:
+        return None
+    try:
+        conn = sqlite3.connect("file:%s?mode=ro" % path, uri=True, timeout=5.0)
+        try:
+            conn.execute("SELECT 1").fetchone()
+        finally:
+            conn.close()
+        return True
+    except Exception:
+        return False
+
+
+def read_supervision() -> Optional[Dict[str, Any]]:
+    """Current supervisor lease block, or None."""
+    record = read_registry()
+    if not record:
+        return None
+    lease = record.get("supervisor")
+    return dict(lease) if isinstance(lease, dict) else None
+
+
+def _lease_live(lease: Optional[Dict[str, Any]]) -> bool:
+    if not isinstance(lease, dict):
+        return False
+    try:
+        pid = int(lease.get("pid"))
+    except (TypeError, ValueError):
+        return False
+    try:
+        from .dashboard import pid_is_ours
+        alive = bool(pid_is_ours(pid, lease.get("create_time")))
+    except Exception:
+        return False
+    if not alive:
+        return False
+    try:
+        last = datetime.fromisoformat(str(lease.get("last_check_at")))
+        age = (datetime.now(timezone.utc) - last).total_seconds()
+    except (TypeError, ValueError):
+        return False
+    return 0 <= age <= SUPERVISOR_LEASE_FRESH_S
+
+
+def claim_supervision() -> Dict[str, Any]:
+    """Claim the active run for supervision (lease). Refuses when another
+    live supervisor holds a fresh lease, when no run is active, or when
+    the record is stale. Never starts, stops, or otherwise touches runs."""
+    record = read_registry()
+    if not record or not _is_active_state(record.get("state")):
+        return {"supervised": False, "reason": "no-active-run",
+                "state": (record or {}).get("state", "STOPPED")}
+    if not is_canonical_pid(record):
+        return {"supervised": False, "reason": "stale-record"}
+    lease = record.get("supervisor")
+    if _lease_live(lease if isinstance(lease, dict) else None):
+        return {"supervised": False, "reason": "already-supervised",
+                "supervisor_pid": lease.get("pid")}
+    prev = lease.get("pid") if isinstance(lease, dict) else None
+    now_iso = _utc_now_iso()
+    record["supervisor"] = {
+        "pid": os.getpid(), "create_time": own_creation_time(),
+        "started_at": now_iso, "last_check_at": now_iso,
+        "state": "ACTIVE", "consecutive_failures": 0,
+        "prev_supervisor_pid": prev, "watched_pid": record.get("pid"),
+        "streaks": {"persistence": 0, "clock": 0, "db": 0},
+        "abort": None,
+    }
+    try:
+        _write_registry(record)
+    except OSError as exc:
+        return {"supervised": False, "reason": "registry-unavailable: %s" % exc}
+    return {"supervised": True, "pid": os.getpid(),
+            "watched_pid": record.get("pid"),
+            "prev_supervisor_pid": prev}
+
+
+def _heartbeat_lease(consecutive_failures: int = 0,
+                     streaks: Optional[Dict[str, int]] = None) -> None:
+    try:
+        record = read_registry()
+        if not record or not isinstance(record.get("supervisor"), dict):
+            return
+        record["supervisor"]["last_check_at"] = _utc_now_iso()
+        record["supervisor"]["consecutive_failures"] = consecutive_failures
+        if streaks is not None:
+            record["supervisor"]["streaks"] = dict(streaks)
+        _write_registry(record)
+    except OSError:
+        pass
+
+
+def _fail_lease() -> None:
+    try:
+        record = read_registry()
+        if not record or not isinstance(record.get("supervisor"), dict):
+            return
+        record["supervisor"]["state"] = "FAILED"
+        record["supervisor"]["last_check_at"] = _utc_now_iso()
+        _write_registry(record)
+    except OSError:
+        pass
+
+
+def enforce_abort(decision: Dict[str, Any]) -> Dict[str, Any]:
+    """Execute one verified abort: re-validate identity, stop via the
+    canonical path, mark ABORTED with reason. Never touches foreign PIDs,
+    never claims ABORTED unless the watched process is confirmed dead."""
+    record = read_registry()
+    if not record or not _is_active_state(record.get("state")):
+        return {"aborted": False, "reason": "no-active-run"}
+    pid = record.get("pid")
+    try:
+        pid = int(pid)
+    except (TypeError, ValueError):
+        return {"aborted": False, "reason": "bad-record-pid"}
+    if not is_canonical_pid(record):
+        return {"aborted": False, "reason": "stale-record-not-touched"}
+    try:
+        record["state"] = "STOPPING"
+        _write_registry(record)
+    except OSError:
+        pass
+    _terminate_verified_pid(pid)
+    deadline = time.monotonic() + 10.0
+    from .dashboard import pid_is_ours
+    while time.monotonic() < deadline:
+        if not pid_is_ours(pid, record.get("create_time")):
+            break
+        time.sleep(0.2)
+    if pid_is_ours(pid, record.get("create_time")):
+        try:
+            record["state"] = "FAILED"
+            record["last_exit"] = {
+                "code": None,
+                "reason": "abort stop-timeout (process survived bounded wait)",
+                "at": _utc_now_iso()}
+            _write_registry(record)
+        except OSError:
+            pass
+        return {"aborted": False, "reason": "stop-timeout", "pid": pid}
+    try:
+        record["state"] = ABORTED
+        record["aborted_by"] = "supervisor"
+        record["abort_rule"] = decision.get("rule")
+        record["abort_reason"] = decision.get("reason")
+        record["abort_threshold"] = decision.get("threshold")
+        record["abort_observed"] = decision.get("observed")
+        record["abort_at"] = _utc_now_iso()
+        record["last_exit"] = {"code": 0,
+                               "reason": "aborted-%s" % decision.get("rule"),
+                               "at": _utc_now_iso()}
+        _write_registry(record)
+    except OSError:
+        pass
+    _close_log_handles(pid)
+    return {"aborted": True, "pid": pid, "rule": decision.get("rule"),
+            "reason": decision.get("reason")}
+
+
+def supervise_once() -> Dict[str, Any]:
+    """One supervision cycle: terminal/identity/snapshot/decision/enforce.
+
+    Returns an outcome dict; mutates only the supervisor lease block (or
+    the ABORTED terminal marking after a confirmed kill). Never starts,
+    restarts, or touches foreign processes.
+    """
+    record = read_registry()
+    if not record:
+        return {"outcome": "no-active-run"}
+    state = record.get("state")
+    if state == ABORTED or not _is_active_state(state):
+        return {"outcome": "already-terminal" if state == ABORTED else "no-active-run",
+                "state": state}
+    if not is_canonical_pid(record):
+        return {"outcome": "stale-record"}
+    lease = record.get("supervisor") if isinstance(record.get("supervisor"), dict) else {}
+    streaks = dict(lease.get("streaks") or {})
+    failures = 0
+    try:
+        failures = int((lease.get("consecutive_failures") or 0))
+    except (TypeError, ValueError):
+        failures = 0
+    try:
+        snapshot = collect_supervision_snapshot(record)
+    except Exception as exc:
+        failures += 1
+        _heartbeat_lease(consecutive_failures=failures, streaks=streaks)
+        if failures >= SUPERVISOR_MAX_FAILURES:
+            _fail_lease()
+            return {"outcome": "supervisor-failed", "error": str(exc)[:200]}
+        return {"outcome": "check-failed", "error": str(exc)[:200],
+                "consecutive_failures": failures}
+    try:
+        db_ok = probe_db_readable()
+    except Exception:
+        db_ok = None
+    snapshot["db_readable"] = db_ok
+    db_streak = int(streaks.get("db", 0) or 0)
+    if db_ok is False:
+        db_streak += 1
+    elif db_ok is True:
+        db_streak = 0
+    snapshot["db_fail_streak"] = db_streak
+    decision = evaluate_supervision(snapshot)
+    perr_now = snapshot.get("persistence_errors_10m")
+    clk = snapshot.get("clock_offset_ms")
+    new_streaks = {
+        "persistence": (int(streaks.get("persistence", 0) or 0) + 1
+                        if isinstance(perr_now, (int, float)) and perr_now >= 2
+                        else 0),
+        "clock": (int(streaks.get("clock", 0) or 0) + 1
+                  if isinstance(clk, (int, float)) and abs(float(clk)) > CLOCK_ABORT_MS
+                  else 0),
+        "db": db_streak,
+    }
+    if decision is None:
+        _heartbeat_lease(consecutive_failures=0, streaks=new_streaks)
+        return {"outcome": "ok", "streaks": new_streaks}
+    result = enforce_abort(decision)
+    _heartbeat_lease(consecutive_failures=0, streaks=new_streaks)
+    if result.get("aborted"):
+        return {"outcome": "aborted", "decision": decision, "result": result}
+    return {"outcome": "abort-failed", "decision": decision, "result": result}
+
+
+def supervise(interval_s: float = SUPERVISOR_CHECK_DEFAULT_S,
+              timeout_s: Optional[float] = None) -> Dict[str, Any]:
+    """Watch the active run until terminal/timeout. Detached-safe: no
+    stdin/stdout dependency beyond an optional evidence log; agent
+    disconnects do not affect it. Never starts or restarts runs."""
+    try:
+        interval = float(interval_s)
+    except (TypeError, ValueError):
+        raise ValueError("invalid interval %r" % (interval_s,))
+    if not (SUPERVISOR_INTERVAL_MIN_S <= interval <= SUPERVISOR_INTERVAL_MAX_S):
+        raise ValueError("interval %ss outside [%s,%s]" % (
+            interval_s, SUPERVISOR_INTERVAL_MIN_S, SUPERVISOR_INTERVAL_MAX_S))
+    timeout = None
+    if timeout_s is not None and timeout_s != "":
+        timeout = validate_duration(timeout_s)
+        if timeout is None:
+            raise ValueError("invalid timeout %r" % (timeout_s,))
+    claim = claim_supervision()
+    if not claim.get("supervised"):
+        return {"ok": False, "aborted": False, "cycles": 0,
+                "refused": claim.get("reason"), "claim": claim}
+    cycles = 0
+    outcome: Dict[str, Any] = {"outcome": "timeout"}
+    start = time.monotonic()
+    try:
+        while True:
+            if timeout is not None and time.monotonic() - start >= timeout:
+                outcome = {"outcome": "timeout"}
+                break
+            outcome = supervise_once()
+            cycles += 1
+            if outcome.get("outcome") in ("aborted", "already-terminal",
+                                          "no-active-run", "stale-record",
+                                          "abort-failed", "supervisor-failed"):
+                break
+            time.sleep(interval)
+    finally:
+        try:
+            record = read_registry()
+            if record and isinstance(record.get("supervisor"), dict):
+                if outcome.get("outcome") not in ("aborted",):
+                    record["supervisor"]["state"] = (
+                        "FAILED" if outcome.get("outcome") == "supervisor-failed"
+                        else "STOPPED")
+                    record["supervisor"]["last_check_at"] = _utc_now_iso()
+                    _write_registry(record)
+        except OSError:
+            pass
+    ok = outcome.get("outcome") in ("aborted", "already-terminal",
+                                    "no-active-run", "stale-record", "timeout")
+    return {"ok": ok, "aborted": outcome.get("outcome") == "aborted",
+            "cycles": cycles, "outcome": outcome.get("outcome"),
+            "decision": outcome.get("decision"),
+            "claim": {"watched_pid": claim.get("watched_pid")}}
+
+
+def _supervisor_block(record: Optional[Dict[str, Any]]) -> Dict[str, Any]:
+    """Additive V2 status contract (always present, None-safe).
+
+    Maps: ACTIVE->SUPERVISOR_ACTIVE, FAILED->SUPERVISOR_FAILED,
+    missing/stale lease->SUPERVISOR_UNKNOWN; terminal ABORTED state ->
+    ABORT_TRIGGERED with rule/reason/threshold/observed.
+    """
+    block: Dict[str, Any] = {
+        "state": "SUPERVISOR_UNKNOWN",
+        "watched_pid": None,
+        "run_id": None,
+        "last_check_at": None,
+        "abort_triggered": False,
+        "abort_reason": None,
+        "abort_rule": None,
+        "abort_threshold": None,
+        "abort_observed": None,
+        "supervision_source": None,
+    }
+    if not isinstance(record, dict):
+        return block
+    lease = record.get("supervisor")
+    if isinstance(lease, dict):
+        state = str(lease.get("state", "")).upper()
+        if state == "ACTIVE":
+            block["state"] = "SUPERVISOR_ACTIVE"
+        elif state == "FAILED":
+            block["state"] = "SUPERVISOR_FAILED"
+        block["watched_pid"] = lease.get("watched_pid")
+        block["last_check_at"] = lease.get("last_check_at")
+        block["supervision_source"] = "supervisor:control-supervise"
+    evidence = record.get("evidence") or {}
+    if isinstance(evidence, dict) and evidence.get("log"):
+        try:
+            block["run_id"] = Path(evidence["log"]).stem
+        except (TypeError, ValueError):
+            block["run_id"] = None
+    if block["watched_pid"] is None:
+        block["watched_pid"] = record.get("pid")
+    if record.get("state") == ABORTED:
+        block["abort_triggered"] = True
+        block["abort_reason"] = record.get("abort_reason")
+        block["abort_rule"] = record.get("abort_rule")
+        block["abort_threshold"] = record.get("abort_threshold")
+        block["abort_observed"] = record.get("abort_observed")
+    return block
 
 
 if __name__ == "__main__":

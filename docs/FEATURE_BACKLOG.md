@@ -29,7 +29,7 @@ it does not replace them. Authority stays where it was recorded
 | F-STATE-V2-TL-01 | State timeline visualization | PROPOSED | NOT IMPLEMENTED | Later |
 | F-UNI-01 | Dynamic LIVE-universe expansion (P1-12B) | DECIDED | VERIFIED | P1-12B DONE |
 | F-OPP-01 | Research-based opportunity engine (P1-13A) | DECIDED | IMPLEMENTED (pending VERIFIED) | P1-13A DONE |
-| F-P14A-01 | Prospective setup outcome evaluation (P1-14A→P1-14B.6) | DECIDED | VERIFIED (contract v1.1; operational PARTIAL) | P1-14A/P1-14B/P1-14B.1/P1-14B.4/P1-14B.5 DONE, P1-14B.2/P1-14B.3/P1-14B.6 PARTIAL |
+| F-P14A-01 | Prospective setup outcome evaluation (P1-14A→P1-14B.7) | DECIDED | VERIFIED (contract v1.1; supervised) | P1-14A/P1-14B/P1-14B.1/P1-14B.4/P1-14B.5/P1-14B.7 DONE, P1-14B.2/P1-14B.3/P1-14B.6 PARTIAL |
 | F-OPP-UI-01 | Opportunities dashboard (P1-13B) | DECIDED | NOT IMPLEMENTED | P1-13B |
 | F-BT-01 | Historical backtesting (P1-14) | DECIDED | NOT IMPLEMENTED | P1-14 |
 | F-PAPER-01 | Forward paper validation (P1-15) | DECIDED | NOT IMPLEMENTED | P1-15 |
@@ -236,7 +236,7 @@ it does not replace them. Authority stays where it was recorded
 - **Open questions:** none.
 - **Last update:** 2026-10-08.
 
-## F-P14A-01 — Prospective setup outcome evaluation (P1-14A → P1-14B.6)
+## F-P14A-01 — Prospective setup outcome evaluation (P1-14A → P1-14B.7)
 
 - **Product objective:** register P1-13A opportunity setups at first DETECTED
   and observe forward mark-price outcomes at versioned horizons (1m/5m/15m/1h
@@ -259,7 +259,8 @@ it does not replace them. Authority stays where it was recorded
   P1-14B.3 PARTIAL (freshness: watchdog + stale-mark gate validated, duration insufficient) /
   P1-14B.4 PASS (contract v1.1: strict unknown-age, grace-deferred terminal PENDING) /
   P1-14B.5 PASS (operational: independent reference + ≥30-min healthy window demonstrated) /
-  P1-14B.6 PARTIAL (reproducibility: second window both regimes, attribution refined, fixes validated).
+  P1-14B.6 PARTIAL (reproducibility: second window both regimes, attribution refined, fixes validated) /
+  P1-14B.7 PASS (persistent supervision: registry-leased abort enforcement, identity restored).
 - **Dependencies:** P1-13A opportunity engine (setups, DETECTED lifecycle,
   candidate_key + setup_family + direction + market_state + rule_version +
   capability_tier fields).
@@ -304,7 +305,10 @@ it does not replace them. Authority stays where it was recorded
   `docs/P1_14B_5_TRANSPORT_RESILIENCE_REPORT.md`. P1-14B.6 PARTIAL (second window
   both regimes; attribution refined to server-side per-connection; abort breached
   unacted — supervision lost; 726/726): 57 setups, 202/202 COMPLETE, 0 dupes —
-  full details in `docs/P1_14B_6_REPRODUCIBILITY_READINESS_REPORT.md`.
+  full details in `docs/P1_14B_6_REPRODUCIBILITY_READINESS_REPORT.md`. P1-14B.7 PASS
+  (supervisor engine + 34 tests incl. real-PID abort; 760/760): 57 setups, 202/202
+  COMPLETE, 0 dupes, all rows preserved — full details in
+  `docs/P1_14B_7_PERSISTENT_SUPERVISION_AUDIT.md`.
 - **Docs:** `docs/PROSPECTIVE_EVALUATION_SPEC.md`, `docs/DECISIONS.md`,
   `docs/CURRENT_STATE.md`, `docs/TASK_QUEUE.md`.
 - **Open questions:** MFE/MAE and cohort aggregation deferred to a later
@@ -319,10 +323,12 @@ it does not replace them. Authority stays where it was recorded
   transport/freshness limiting, still no 4–6 h authorization; P1-14B.4: contract
   v1.1 enforced (strict unknown-age, grace-deferred terminal PENDING), 120 s
   regression run clean, no long runs; P1-14B.5: ≥30-min healthy window demonstrated
-  with reference agreement (repeat advisable); P1-14B.6: second window both regimes
+  with reference agreement (repeat advisable);   P1-14B.6: second window both regimes
   (22.6 min healthy), abort breached unacted (supervision lost), attribution refined
-  to server-side per-connection — still no 4–6 h authorization.
-- **Last update:** 2026-10-10 (P1-14B.6 reproducibility audit, PARTIAL).
+  to server-side per-connection — still no 4–6 h authorization; P1-14B.7: abort
+  enforcement moved into `control supervise` (registry lease, verified-PID one-shot,
+  UNKNOWN-safe) — next supervised window needs explicit instruction, still no 4–6 h.
+- **Last update:** 2026-10-10 (P1-14B.7 supervision audit, PASS).
 
 ## F-BT-01 — Historical backtesting (P1-14)
 

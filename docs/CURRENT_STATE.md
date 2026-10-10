@@ -1252,3 +1252,31 @@ live supervision lost to a harness timeout at launch (demerit recorded; no safet
   (duration + abort-supervision failed; fixes validated). Still NO 4–6 h authorization
   (repeat advisable); P1-14C not started; V2/main untouched. Full report:
   `docs/P1_14B_6_REPRODUCIBILITY_READINESS_REPORT.md`.
+
+## P1-14B.7 persistent supervision & enforced abort gates — RESULT: PASS (2026-10-10)
+
+P1-14B.6's abort breach happened because evaluation lived in the agent session. Fix by
+architecture: `control supervise` — a detached, registry-leased watcher evaluating documented
+abort rules every cycle from probe evidence, enforcing one-shot verified-PID stops with persisted
+reasons. Never starts/restarts runs, never touches foreign PIDs, never acts on UNKNOWN.
+
+- Rules (exact, LOCAL_POLICY except cumulative 5% rejects): safety immediate; rejects >5%;
+  >5 reconnects/10 min sliding; persistence ≥2 events/10 min ×2 checks (or recorder DEGRADED);
+  clock >30 s ×3; DB unreadable ×6; watchdog-overwhelm compound (forced≥3 + errors≥3 + rising).
+  Freshness-absence reduces to these (documented). Streaks persist in the lease (restart-safe).
+- Lease serializes supervisors (live→refuse, stale/corrupt→recorded takeover); failure budget
+  (5×) marks FAILED and exits without touching the probe; terminal ABORTED + reason/threshold/
+  observed persisted; second cycle no-op; launchers preserved.
+- Identity: PID + image + creation-time; wmic absent on this host class (verified) → ctypes
+  GetProcessTimes fallback restores full identity (proven live with ISO stamps).
+- Validation: 34 supervisor tests (decision matrix, lease/races, stale/reuse no-touch, terminal
+  no-ops, V2 contract keys, no-start assertion, store isolation) + REAL-PID integration (breach
+  evidence → sleeper killed, foreign sleeper alive, ABORTED persisted, no re-fire). Suite 760/760.
+  Brief live run (150 s probe + 12-cycle supervisor): claimed, heartbeated, clean exit, zero false
+  aborts; probe 11/11, 0/0, reg=57, DB identical. Found+fixed: self-registration wiped evidence
+  paths (same-PID preservation now).
+- V2 contract additive (`supervisor` block in control status → API; mapping table; UI renders via
+  existing opaque strings). No frontend changes. All 202 rows / 57 setups preserved byte-identical.
+- Gates: prospective/persistence/safety PASS (mechanism + validation, no long run). Verdict PASS.
+  Still NO 4–6 h authorization; P1-14C not started; V2/main untouched. Full report:
+  `docs/P1_14B_7_PERSISTENT_SUPERVISION_AUDIT.md`.
