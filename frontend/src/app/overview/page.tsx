@@ -1,3 +1,5 @@
+export const dynamic="force-dynamic";
+import {RuntimeDiagnostics} from "@/components/system/RuntimeDiagnostics";
 import { TopBar } from "@/components/overview/TopBar";
 import { OverviewMetricGrid } from "@/components/overview/OverviewMetricGrid";
 import { MarketPulsePanel } from "@/components/overview/MarketPulsePanel";
@@ -29,7 +31,7 @@ export default function OverviewPage() {
         Demo composition. Every panel below renders labeled fixtures until
         the versioned overview contract lands in a later slice.
       </ResearchOnlyNotice>
-      <OverviewMetricGrid metrics={DEMO_METRICS} />
+      <RuntimeDiagnostics compact/><OverviewMetricGrid metrics={DEMO_METRICS} />
       <MarketPulsePanel pulse={DEMO_PULSE} />
       <MoversSnapshot rows={DEMO_MOVERS} />
       <ExtremeMoveWatch rows={DEMO_EXTREMES} />

@@ -1,0 +1,8 @@
+import Link from "next/link";
+import {diagnostics} from "@/lib/runtime-diagnostics";
+import s from "./RuntimeDiagnostics.module.css";
+export function RuntimeDiagnostics({compact=false}:{compact?:boolean}){
+ const {process,snapshot}=diagnostics();
+ const metrics:[string,string|number][]=[["Process",process.state],["Feed status",process.feed_health],["Telemetry freshness",snapshot?.provenance??"UNKNOWN"],["Stream coverage",snapshot?.active==null||snapshot.expected==null?"UNKNOWN":snapshot.active+" / "+snapshot.expected],["Timestamp rejects (recorded)",snapshot?.rejected??"UNKNOWN"],["Reconnects (recorded)",snapshot?.reconnects??"UNKNOWN"],["WebSocket errors (recorded)",snapshot?.websocketErrors??"UNKNOWN"],["Stale / silent (recorded)",snapshot?.stale==null||snapshot.silent==null?"UNKNOWN":snapshot.stale+" / "+snapshot.silent]];
+ return <section className={s.root} aria-label="Runtime transport diagnostics"><div className={s.heading}><div><small>OBSERVE-ONLY / TRANSPORT DIAGNOSTICS</small><h2>{compact?"Engine & feed pulse":"Transport and research health"}</h2><p>{snapshot?"Snapshot "+snapshot.at+" · age "+snapshot.ageSeconds+"s":"No stored telemetry available"} · Process verification independent of feed samples</p></div>{compact?<Link href="/system">Open System →</Link>:null}</div><div className={s.grid}>{metrics.slice(0,compact?4:8).map(([label,v])=><div key={label}><small>{label}</small><strong>{String(v)}</strong></div>)}</div><p className={s.note}>{snapshot?.provenance==="RECENT_FROM_ACTIVE_RUN"?"Recent persisted snapshot from the running session; this is not an independent real-time websocket check.":"HISTORICAL / UNKNOWN: Do not infer current transport health from an old snapshot."} Trading and execution remain disabled.</p></section>
+}

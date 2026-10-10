@@ -1,3 +1,5 @@
+export const dynamic="force-dynamic";
+import {RuntimeDiagnostics} from "@/components/system/RuntimeDiagnostics";
 import {SystemEvidence} from "@/components/system/SystemEvidence";
 import {BotControl} from "@/components/system/BotControl";
 import styles from "./System.module.css";
@@ -11,7 +13,7 @@ const blocks=[
 ];
 export default function SystemPage(){return <div className={styles.root} data-testid="system-v2">
 <header className={styles.header}><div><h1>System & Research Health</h1><p>Infrastructure · transport · persistence · research pipeline</p></div><span className={styles.tag}>CONTROL CONNECTED · LEGACY TILES PENDING</span></header>
-<BotControl/><SystemEvidence/><div className={styles.stats}>{[["Engine state","UNKNOWN"],["Feed state","UNKNOWN"],["Research state","UNKNOWN"],["Data freshness","UNKNOWN"]].map(([label,value])=><section className={styles.stat} key={label}><small>{label}</small><strong>{value}</strong><span>Awaiting verified runtime contract</span></section>)}</div>
+<BotControl/><RuntimeDiagnostics/><SystemEvidence/><div className={styles.stats}>{[["Engine state","UNKNOWN"],["Feed state","UNKNOWN"],["Research state","UNKNOWN"],["Data freshness","UNKNOWN"]].map(([label,value])=><section className={styles.stat} key={label}><small>{label}</small><strong>{value}</strong><span>Awaiting verified runtime contract</span></section>)}</div>
 <div className={styles.warning}><strong>Legacy diagnostic tiles are not yet connected.</strong><span>Operational status, stream counts and integrity checks are intentionally UNKNOWN. No healthy status is inferred from this preview. The canonical process controller above provides process status; the legacy cards below remain placeholders.</span></div>
 <div className={styles.grid}>{blocks.map(block=><section className={styles.panel} key={block.title}><div className={styles.heading}><div><h2>{block.title}</h2><p>{block.description}</p></div><span className={styles.unknown}>{block.metric}</span></div><div className={styles.rows}>{block.rows.map(([k,v])=><div className={styles.row} key={k}><span>{k}</span><strong>{v}</strong></div>)}</div></section>)}</div>
 <section className={styles.panel}><div className={styles.heading}><div><h2>System events and audit log</h2><p>Timestamped operational events require a verified API.</p></div><span className={styles.unknown}>NO FEED</span></div><div className={styles.empty}>No real events loaded. This view never invents uptime, errors, recoveries, or passing checks.</div></section>
