@@ -1,5 +1,14 @@
 # CURRENT_STATE
 
+## Dashboard V2 update — 2026-10-10
+
+DASH-V2-47 corrects unavailable/unknown controller readiness to UNKNOWN.
+Frontend checks and production unavailable-backend HTTP smoke pass.
+Python snapshot here is older than uploaded backend documentation; its Linux
+test result is 494/496, with two Windows PID-identity failures. This does not
+supersede backend evidence or establish current Windows process state.
+See DASHBOARD_V2_47_READINESS_AUDIT.md. Atomic start remains disabled.
+
 Factual state as of 2026-10-06 (order refinement). Historical evidence:
 `docs/PHASE_1_REPORT.md` (do not rewrite).
 
@@ -965,3 +974,4 @@ recorded P1-11A audit item (not fixed).
   localhost — safe to keep). Snapshot goes STALE without a running probe
   feed (honest chip); continuous freshness arrives with the P1-10 soak.
 - No secrets, keys, or account access exist or are needed.
+

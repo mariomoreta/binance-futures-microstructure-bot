@@ -33,7 +33,7 @@ it does not replace them. Authority stays where it was recorded
 | F-BT-01 | Historical backtesting (P1-14) | DECIDED | NOT IMPLEMENTED | P1-14 |
 | F-PAPER-01 | Forward paper validation (P1-15) | DECIDED | NOT IMPLEMENTED | P1-15 |
 | F-PORT-01 | Paper portfolio (P1-16) | DECIDED | NOT IMPLEMENTED | P1-16 |
-| F-V2-BFF-01 | Next.js API integration (BFF) | DECIDED | NOT IMPLEMENTED | DASH-V2 future |
+| F-V2-BFF-01 | Next.js API integration (BFF) | DECIDED | PARTIAL (runtime routes; full contract integration unverified) | DASH-V2-47 scoped audit |
 | F-CMC-01 | CoinMarketCap supplementary metadata | DECIDED (staged) | NOT IMPLEMENTED | CMC-00/01/02 |
 | F-CORE-01 | Completed Phase 1 foundations (index) | DECIDED | VERIFIED | P1-00…P1-11C, P1-10R |
 
@@ -296,7 +296,7 @@ it does not replace them. Authority stays where it was recorded
 - **Origin / decision date:** `docs/DASHBOARD_V2_FRONTEND_ARCHITECTURE.md`
   + migration plan (DASH-V2-0x slices), 2026-10-07.
 - **Approval status:** DECIDED (architecture). **Implementation status:**
-  NOT IMPLEMENTED (frontend is static fixtures only).
+  PARTIAL (runtime routes exist; full versioned integration unverified).
 - **Target phase:** DASH-V2 future slice (explicit authorization).
 - **Dependencies:** Python `/api/v1` view-model facade (proposed, not built).
 - **Affected subsystems:** `frontend/src/app/api/v1/`, Python API additions.
@@ -368,6 +368,16 @@ Completed, evidence-linked work:
 - P1-12A classifier v0 — PASS.
 - DASH-V2-00/01/02 slices — DONE (static foundation, no integration).
 
+## DASH-V2-47 scoped BFF evidence update (2026-10-10)
+
+F-V2-BFF-01 is PARTIAL: runtime/readiness handlers exist in this branch.
+Unavailable/unknown controller evidence now stays UNKNOWN; start remains
+blocked. Evidence: 18 new regression cases, 84/84 full frontend tests,
+type/lint/build and unavailable-backend production HTTP smoke.
+This does not verify all API schemas, live data, mutation security, Windows
+runtime or atomic launch. Older static-only entries remain historical.
+See docs/DASHBOARD_V2_47_READINESS_AUDIT.md.
+
 ## Mandatory closeout policy
 
 Every future implementation or documentation phase must report these
@@ -398,3 +408,4 @@ F-STATE-V2-TK-01 remains PARTIAL (DEMO UI only). Added explicit historical fixtu
 ### DASH-V2-09 evidence update (2026-10-08)
 
 F-STATE-V2-TK-01 remains **PARTIAL (DEMO UI only)**. Observation audit card now displays UNKNOWN previous state and last authoritative evaluation in a fourth desktop evidence panel, rather than implying verified classifier history. Evidence: 40/40 frontend tests, `design/qa/v2-09/` four Chrome captures, and `docs/DASHBOARD_V2_PROGRESS.md`. F-OPP-UI-01 remains PARTIAL; F-V2-BFF-01 NOT IMPLEMENTED. Visual reference correction and GitHub publication are not verified.
+

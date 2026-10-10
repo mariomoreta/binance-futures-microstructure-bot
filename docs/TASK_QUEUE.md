@@ -1,5 +1,14 @@
 # TASK_QUEUE
 
+## Dashboard V2 continuation — 2026-10-10
+
+DASH-V2-47 frontend readiness correction implemented and tested. Next:
+Windows acceptance and reconciliation with the owning backend's canonical
+atomic supervisor+sentinel launch contract. Start stays disabled.
+No probe run, soak or start/stop is authorized by this dashboard correction.
+Existing backend task entries below are historical branch records; compare
+with the owning backend's current docs before selecting backend work.
+
 Operational next work. Updated every task. Docs-realism rule applies.
 
 ## CURRENT_PHASE
@@ -347,3 +356,4 @@ strategies (P3), paper engine/positions (P4), execution (P5).
 - Branch `phase1/market-intelligence-dashboard` published to private
   `mariomoreta/binance-futures-microstructure-bot` (origin in sync).
   P1-05 implementation/docs commit follows on this branch.
+

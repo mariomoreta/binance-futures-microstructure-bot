@@ -1,5 +1,20 @@
 # Dashboard V2 Progress
 
+## DASH-V2-47 — Evidence-based runtime readiness (2026-10-10)
+
+- Continued from remote DASH-V2-46 at fcaaca2, rather than uploaded DASH-V2-02.
+- Fixed fabricated observe mode and concurrency PASS on missing/UNKNOWN
+  controller evidence. Reject non-object JSON and preserve controller errors.
+- Frontend: 84/84 tests, TypeScript, lint and production build PASS. New
+  18-case regression suite fails 12/18 on original code. Production HTTP
+  runtime/readiness smoke returns 200 and UNKNOWN with unavailable controller.
+- Python: 494/496 PASS; two independently reproduced Windows PID-identity
+  tests fail on Linux. No backend edits; Windows acceptance remains pending.
+- Nonvisual correction: visual verification NOT APPLICABLE. No Windows
+  deployment or live-data verification claimed; start remains disabled.
+- Audit, bounded plan, evidence and seven closeout fields:
+  docs/DASHBOARD_V2_47_READINESS_AUDIT.md.
+
 **Purpose:** factual slice ledger for Dashboard V2.  
 **Status:** DASH-V2-01 COMPLETE 2026-10-07 (professional Overview composition; fixtures only, no API integration).  
 **Rule:** update after every slice; never describe planned code as implemented.
@@ -421,3 +436,4 @@ architecture + static foundation (DASH-V2-00); no integration.
 - Added read-only `/api/v1/runtime/readiness` (canonical status + SQLite quick_check + mode + active-run check + explicit atomic-launch blocker), and a `Supervised launch readiness` checklist in System. Reports exact blockers rather than allowing unsafe process start. Existing stop protection preserved.
 - Local QA: typecheck, lint, original full suite 65/66 due unrelated System test timeout; isolated System retry PASS; Next build PASS. Canonical 3020 GET /system 200 and readiness API 200 with `ready:false` and four PASS checks/one BLOCKED. No probe started or stopped, no Python agent worktree edits.
 - Remaining: implement a verified, race-safe canonical launch integrating supervisor+sentinel on Python side through its owning agent, then test end-to-end start/abort in a separately authorized window. Do not enable V2 until then.
+
