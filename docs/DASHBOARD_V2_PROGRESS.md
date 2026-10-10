@@ -396,3 +396,9 @@ architecture + static foundation (DASH-V2-00); no integration.
 - Prospective Research includes dedicated `Recorder lifecycle · contract v1.1` panel with COMPLETE/PENDING/INSUFFICIENT_HISTORY emission counters and in-memory recovery grace size; labels distinguish process counters from full-cohort storage. PENDING remains terminal only once grace expires; rows not emitted during grace.
 - TypeScript PASS, ESLint PASS, Vitest 63/63 PASS, Next production build PASS; canonical launcher safely restarted only owned V2 server on port 3020. Prospective UI HTTP 200, Python data unverified while offline.
 - Separate bot code and runtime untouched; no new Next preview ports created.
+
+## DASH-V2-40 — Historical market and runtime archive (2026-10-10)
+
+- Added `/market-archive` with saved SQLite `return_features`, `state_features`, and latest `telemetry_snapshots`. Shows stored mark, source quote age at capture, state/direction, raw return 1m, UTC timestamp; bot-mode/keys/orders/capital are historic snapshot ONLY, explicitly not current runtime health.
+- Navigation now links `Market Archive`; all reads via existing `historicalRead` with Node DatabaseSync readOnly=true. No engine commands, no DB writes, no extra preview ports.
+- Frontend typecheck, lint, Vitest 63/63, Next build PASS; restart only V2 owned listener at port 3020; GET `/market-archive` 200 and stored feature table visible in rendered HTML. Python port 8091 was not started or interrupted.
