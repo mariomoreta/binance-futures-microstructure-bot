@@ -1196,3 +1196,33 @@ always had fresh marks (1–17 s). Policy: strict classification
 - Gates: prospective/persistence/safety PASS (no transport re-rating — no long run).
   Verdict PASS. P1-14C not started; V2/main untouched. Full report:
   `docs/P1_14B_4_PROSPECTIVE_LIFECYCLE_AUDIT.md`.
+
+## P1-14B.5 transport resilience & independent network diagnostics — RESULT: PASS (operational, 2026-10-10)
+
+Attribution resolved as far as evidence allows: with identical code/config/host, NO episode
+reproduced — persistent host or bot defects DISCARDED; episodes are intermittent path/provider
+instability (which of the two still UNKNOWN — stated, not forced).
+
+- Independent probe (`netprobe.py`, stdlib + existing websockets dep): single reference connection
+  (host-pinned, private streams refused, params mirrored, read-only), bookTicker + markPrice-array
+  streams, per-message E/lag/reorder/gap tracking, DNS/handshake/error classes, UTF-8 JSONL, bounded
+  duration. 17 deterministic tests (faked transports/clocks). Limitation (honest): the bare
+  `/stream` path served zero markPrice-array messages in 40 min while bookTicker flowed — tool-side
+  path limitation, not a health signal; reference coverage is bookTicker-only for now.
+- Coincident 35+40 min windows AGREE: bot bookTicker p50 ~175 ms / p95 ~390 ms vs reference p50
+  ~340 ms / p95 ~370 ms (same sub-second regime); bot markPrice healthy (p50 ~243 ms); rejects 0;
+  reconnects 0/0; E-reorders 0; reference attempts 1, errors {}. DNS 8.3 ms.
+- Health classifier (pure, shared): raw socket vs FLOWING_FRESH/FLOWING_STALE/SILENT/RECONNECTING/
+  UNAVAILABLE + evidence, missing-is-None; summary `connectionHealth` additive; netprobe reuses it.
+  8 tests. Watchdog 10/10 re-verified (code + live log: cooldowns 292 s apart, recoveries, no loops).
+- Layered diagnosis: host (w32tm self-syncing, +322 ms, no resync; CPU/NIC per-process still
+  uncaptured — stated gap), transport (handshake timeouts = post-TCP path slowness, non-DNS),
+  engine (sub-ms, queues empty), data (all feeds fresh).
+- Controlled validation: preflight PASS + 10-min diagnostic gate → single ≤35 min run (PID 32940)
+  COMPLETED naturally: 2102.5 s, 20/20, 0 reconnects, 0 rejects, exit 0 — **≥30-min healthy window
+  DEMONSTRATED** (P1-14B.1 blocker #1 satisfied as far as one window can). Post-run: 49 setups
+  (+25), 150 outcomes (+51) all COMPLETE, 0 dupes, 0 anomalies; contract v1.1 + v9 intact.
+- Tests 708/708 OK (683 + 17 + 8). Gates: TRANSPORT/FRESHNESS/PERSISTENCE/SAFETY PASS.
+  Verdict PASS (operational). Still NO 4–6 h authorization (recurrence risk — repeat advisable);
+  P1-14C not started; V2/main untouched. Full report:
+  `docs/P1_14B_5_TRANSPORT_RESILIENCE_REPORT.md`.

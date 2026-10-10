@@ -124,6 +124,17 @@ the dashboard exists. No classifier before raw-feature dashboard validation.
   identical 24/99). All 99 rows preserved. Report:
   `docs/P1_14B_4_PROSPECTIVE_LIFECYCLE_AUDIT.md`.
 
+- `P1-14B.5` (2026-10-10) TRANSPORT RESILIENCE & INDEPENDENT NETWORK DIAGNOSTICS —
+  **PASS (operational)**. Attribution: no episode reproduced with identical code/config/host —
+  persistent host/bot defects discarded; intermittent path/provider instability (which one:
+  UNKNOWN, stated). Independent netprobe (host-pinned, read-only, mirrored params, 17 tests;
+  bookTicker-only limitation documented). Coincident windows agree (sub-second both, 0/0/0.00%).
+  Health classifier (pure, shared, additive block; 8 tests); watchdog 10/10 re-verified.
+  Single ≤35 min run COMPLETED: 2102.5 s, 20/20, 0 reconnects, 0 rejects — ≥30-min healthy
+  window DEMONSTRATED. Post-run: 49 setups, 150/150 COMPLETE, 0 dupes. Suite 708/708 OK.
+  Gates TRANSPORT/FRESHNESS/PERSISTENCE/SAFETY PASS. Still no 4–6 h authorization. Report:
+  `docs/P1_14B_5_TRANSPORT_RESILIENCE_REPORT.md`.
+
 - `P1-10R` PROLONGED ≥6H SOAK RE-RUN — P1-10 FAIL stays FAIL (truncated at
   4.91h); re-run with dashboard live, blocking survivable launch, merged
   stdout+stderr as UTF-8 (see `docs/DECISIONS.md` launch rule).
@@ -349,6 +360,15 @@ strategies (P3), paper engine/positions (P4), execution (P5).
   + token research card live. 408/408 tests (32 new).
 
 ## LAST_VERIFICATION
+
+
+
+- 2026-10-10 (P1-14B.5): `python run_tests.py` → 708/708 OK (683 + 17 netprobe + 8 health).
+  Single ≤35 min run COMPLETED naturally (2102.5 s, 20/20, 0 reconnects, 0 rejects,
+  exit 0) with concurrent 40-min reference (attempts 1, errors {}); post-run 49 setups /
+  150 COMPLETE / 0 dupes. ≥30-min healthy window demonstrated with reference agreement.
+  Next: repeat advisable before any 4–6 h authorization (recurrence risk); P1-14C needs
+  explicit instruction.
 
 
 

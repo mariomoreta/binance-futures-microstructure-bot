@@ -44,7 +44,8 @@ signal engine → position manager → risk engine → execution engine
 
 | Layer | File | Status |
 |---|---|---|
-| Transport (2 routed WS + reconnect) | `probe.py` | Implemented + P1-14B.3 freshness watchdog (post-guard accepted-traffic accounting per stream, pure stream→connection mapping, 90 s / 300 s budgets with 120 s grace + cooldown, one-shot forced reconnect through the normal retry path, additive summary `freshness` block; LOCAL_POLICY, no aggressive loops) |
+| Transport (2 routed WS + reconnect) | `probe.py` | Implemented + P1-14B.3 freshness watchdog (post-guard accepted-traffic accounting per stream, pure stream→connection mapping, 90 s / 300 s budgets with 120 s grace + cooldown, one-shot forced reconnect through the normal retry path, additive summary `freshness` block; LOCAL_POLICY, no aggressive loops) + P1-14B.5 diagnostic health (`classify_connection_health`: socket vs FLOWING_FRESH/STALE/SILENT/RECONNECTING/UNAVAILABLE + evidence, additive `connectionHealth` block; shared with netprobe) |
+| Independent transport reference | `netprobe.py` (stdlib + existing websockets dep; host-pinned read-only single connection, mirrored params, E/lag/reorder/error-class tracking, UTF-8 JSONL, bounded duration) | P1-14B.5 DONE (17 tests; bookTicker-only limitation documented: bare `/stream` path does not serve `!` arrays) |
 | Normalization + skew rejection | `probe.py` (`_handle_message`) | Implemented |
 | Clock sync | `clock.py` | Implemented |
 | Detectors (liq/funding/volume) | `detectors.py` | Implemented (hypothesis thresholds) |

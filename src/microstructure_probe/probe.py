@@ -97,6 +97,13 @@ _FORCED_RECONNECT_COOLDOWN_S = 120.0
 _FRESHNESS_GRACE_S = 120.0
 
 
+# LOCAL_POLICY (P1-14B.5): receipt-silence budget for the diagnostic
+# connection-health classifier. Above the worst healthy cadenced silence
+# (~4.5 s) and the 10 s silence flag, far below the 90 s watchdog budget:
+# separates SILENT (nothing arriving) from FLOWING_STALE (arriving but old).
+_CONNECTION_SILENCE_MS = 30_000
+
+
 def _connection_for_stream(stream: Any, core_symbols: Any,
                            hot_active: Any) -> str | None:
     """Map a stream name to its owning connection (pure, testable).
@@ -129,6 +136,76 @@ def _connection_for_stream(stream: Any, core_symbols: Any,
         if kind == "aggTrade":
             return "market"
         return None
+    return None
+
+
+def classify_connection_health(
+    *,
+    socket_up: bool,
+    ever_attempted: bool,
+    now_wall_ms: float,
+    last_receipt_wall_ms: Any = None,
+    last_accepted_wall_ms: Any = None,
+    budget_ms: float = _FRESHNESS_RECONNECT_AFTER_MS,
+    silence_ms: float = _CONNECTION_SILENCE_MS,
+) -> dict:
+    """Diagnostic connection health (P1-14B.5, pure, testable).
+
+    Separates the RAW socket state from the diagnostic verdict — an open
+    socket never implies a healthy stream. States (diagnostic vocabulary,
+    disjoint from P1-12A market states and P1-13A lifecycles):
+      UNAVAILABLE   -- never attempted (no evidence at all)
+      RECONNECTING  -- wanted but socket down after ≥1 attempt
+      FLOWING_FRESH -- socket up, guard-accepted traffic within budget
+      FLOWING_STALE -- socket up, receipts recent, nothing accepted in budget
+      SILENT        -- socket up, no receipts within the silence budget
+    Missing timestamps stay None (never zero-filled); ages computed only
+    from present values, else None.
+    """
+    try:
+        now = float(now_wall_ms)
+    except (TypeError, ValueError):
+        now = float("nan")
+    try:
+        receipt = float(last_receipt_wall_ms) if last_receipt_wall_ms is not None else None
+    except (TypeError, ValueError):
+        receipt = None
+    try:
+        accepted = float(last_accepted_wall_ms) if last_accepted_wall_ms is not None else None
+    except (TypeError, ValueError):
+        accepted = None
+    try:
+        budget = float(budget_ms)
+    except (TypeError, ValueError):
+        budget = float(_FRESHNESS_RECONNECT_AFTER_MS)
+    try:
+        silence = float(silence_ms)
+    except (TypeError, ValueError):
+        silence = float(_CONNECTION_SILENCE_MS)
+    socket = "CONNECTED" if socket_up else "DOWN"
+    if not socket_up:
+        health = "RECONNECTING" if ever_attempted else "UNAVAILABLE"
+        receipt_age = None
+        accepted_age = None
+    else:
+        receipt_age = now - receipt if receipt is not None else None
+        accepted_age = now - accepted if accepted is not None else None
+        if accepted_age is not None and accepted_age <= budget:
+            health = "FLOWING_FRESH"
+        elif receipt_age is not None and receipt_age <= silence:
+            health = "FLOWING_STALE"
+        else:
+            health = "SILENT"
+    return {
+        "socket": socket,
+        "health": health,
+        "budget_ms": budget,
+        "silence_ms": silence,
+        "lastReceiptMs": receipt,
+        "lastAcceptedMs": accepted,
+        "receiptAgeMs": receipt_age,
+        "acceptedAgeMs": accepted_age,
+    }
     return None
 
 
@@ -298,6 +375,10 @@ class MarketProbe:
         # per stream; connections with no accepted traffic beyond budget
         # get one forced reconnect through the normal retry path.
         self._last_accepted_ms: dict = {}
+        # P1-14B.5: wall-clock receipt stamp per stream (pre-guard). Receipt
+        # != acceptance: received-but-rejected traffic keeps this fresh while
+        # _last_accepted_ms freezes — the FLOWING_STALE signature.
+        self._last_receipt_wall_ms: dict = {}
         self._reconnect_requested: set = set()
         self._last_forced_reconnect_mono: dict = {}
         self._forced_reconnect_counts: dict = {}
@@ -606,6 +687,10 @@ class MarketProbe:
         self.stats.messages_by_stream[stream] += 1
         self.stats.first_seen_monotonic.setdefault(stream, now_monotonic)
         self.stats.last_seen_monotonic[stream] = now_monotonic
+        # P1-14B.5: receipt stamp (wall ms, pre-guard) for the diagnostic
+        # health classifier. Updated for EVERY received message, including
+        # ones the skew guard is about to reject.
+        self._last_receipt_wall_ms[stream] = received_ms
 
         processing_key = self._processing_key(stream, payload)
         legacy_timestamp = self._legacy_timestamp(payload)
@@ -1240,6 +1325,45 @@ class MarketProbe:
             return True
         return False
 
+    def _connection_health(self) -> dict:
+        """Per-connection diagnostic health for the summary (P1-14B.5)."""
+        out: dict = {}
+        try:
+            now_ms = self._wall_clock_ms()
+            expected = expected_stream_names(self.config, self._hot_active)
+            by_conn: dict = {}
+            for stream in expected:
+                conn = _connection_for_stream(
+                    stream, self.config.symbols, self._hot_active)
+                if conn is not None:
+                    by_conn.setdefault(conn, []).append(stream)
+            live = {"public", "market"}
+            live.update(name for name in ("hot-public", "hot-market")
+                        if name in self._hot_tasks)
+            for name in sorted(live):
+                streams = by_conn.get(name, [])
+                receipts = [self._last_receipt_wall_ms.get(s) for s in streams]
+                accepts = [self._last_accepted_ms.get(s) for s in streams]
+                receipts = [v for v in receipts if v is not None]
+                accepts = [v for v in accepts if v is not None]
+                budget = (_HOT_MARKET_FRESHNESS_AFTER_MS
+                          if name == "hot-market"
+                          else _FRESHNESS_RECONNECT_AFTER_MS)
+                out[name] = classify_connection_health(
+                    socket_up=name in self.stats.connection_started,
+                    ever_attempted=bool(
+                        self.stats.connection_attempts.get(name, 0)),
+                    now_wall_ms=now_ms,
+                    last_receipt_wall_ms=max(receipts) if receipts else None,
+                    last_accepted_wall_ms=max(accepts) if accepts else None,
+                    budget_ms=budget,
+                )
+        except Exception as exc:
+            LOGGER.warning(json.dumps(
+                {"kind": "connection_health_error",
+                 "error": f"{type(exc).__name__}: {exc}"}))
+        return out
+
     def _check_connection_freshness(self, now_ms: float) -> list:
         """Freshness watchdog (P1-14B.3): request at most one forced
         reconnect per stale connection. A connection is stale when NONE
@@ -1517,10 +1641,15 @@ class MarketProbe:
              # != acceptance. Connected/message counts never imply health;
              # this block separates them (last guard-accepted ms per
              # stream, pending forced reconnects, forced counts).
+             # P1-14B.5 additive: per-connection diagnostic health
+             # (socket vs FLOWING_FRESH/FLOWING_STALE/SILENT/RECONNECTING/
+             # UNAVAILABLE) with evidence; missing data stays None.
              "freshness": {
                  "lastAcceptedMsByStream": dict(self._last_accepted_ms),
+                 "lastReceiptMsByStream": dict(self._last_receipt_wall_ms),
                  "reconnectRequested": sorted(self._reconnect_requested),
                  "forcedReconnects": dict(self._forced_reconnect_counts),
+                 "connectionHealth": self._connection_health(),
              },
          }
 

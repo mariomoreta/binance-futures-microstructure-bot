@@ -29,7 +29,7 @@ it does not replace them. Authority stays where it was recorded
 | F-STATE-V2-TL-01 | State timeline visualization | PROPOSED | NOT IMPLEMENTED | Later |
 | F-UNI-01 | Dynamic LIVE-universe expansion (P1-12B) | DECIDED | VERIFIED | P1-12B DONE |
 | F-OPP-01 | Research-based opportunity engine (P1-13A) | DECIDED | IMPLEMENTED (pending VERIFIED) | P1-13A DONE |
-| F-P14A-01 | Prospective setup outcome evaluation (P1-14A→P1-14B.4) | DECIDED | VERIFIED (contract v1.1; stability/freshness PARTIAL) | P1-14A/P1-14B/P1-14B.1/P1-14B.4 DONE, P1-14B.2/P1-14B.3 PARTIAL |
+| F-P14A-01 | Prospective setup outcome evaluation (P1-14A→P1-14B.5) | DECIDED | VERIFIED (contract v1.1; operational PASS) | P1-14A/P1-14B/P1-14B.1/P1-14B.4/P1-14B.5 DONE, P1-14B.2/P1-14B.3 PARTIAL |
 | F-OPP-UI-01 | Opportunities dashboard (P1-13B) | DECIDED | NOT IMPLEMENTED | P1-13B |
 | F-BT-01 | Historical backtesting (P1-14) | DECIDED | NOT IMPLEMENTED | P1-14 |
 | F-PAPER-01 | Forward paper validation (P1-15) | DECIDED | NOT IMPLEMENTED | P1-15 |
@@ -236,7 +236,7 @@ it does not replace them. Authority stays where it was recorded
 - **Open questions:** none.
 - **Last update:** 2026-10-08.
 
-## F-P14A-01 — Prospective setup outcome evaluation (P1-14A → P1-14B.4)
+## F-P14A-01 — Prospective setup outcome evaluation (P1-14A → P1-14B.5)
 
 - **Product objective:** register P1-13A opportunity setups at first DETECTED
   and observe forward mark-price outcomes at versioned horizons (1m/5m/15m/1h
@@ -257,7 +257,8 @@ it does not replace them. Authority stays where it was recorded
 - **Target phase:** P1-14A DONE / P1-14B DONE (recovery) / P1-14B.1 DONE (integrity) /
   P1-14B.2 PARTIAL (stability gate: duration insufficient, prospective layer green) /
   P1-14B.3 PARTIAL (freshness: watchdog + stale-mark gate validated, duration insufficient) /
-  P1-14B.4 PASS (contract v1.1: strict unknown-age, grace-deferred terminal PENDING).
+  P1-14B.4 PASS (contract v1.1: strict unknown-age, grace-deferred terminal PENDING) /
+  P1-14B.5 PASS (operational: independent reference + ≥30-min healthy window demonstrated).
 - **Dependencies:** P1-13A opportunity engine (setups, DETECTED lifecycle,
   candidate_key + setup_family + direction + market_state + rule_version +
   capability_tier fields).
@@ -296,7 +297,10 @@ it does not replace them. Authority stays where it was recorded
   unknown-age, grace-deferred terminal PENDING, upgrade rejected with schema
   rationale; 19 new tests; 35 pytest-style tests converted to executing TestCase;
   683/683): 24 setups, 99/99 COMPLETE, 0 dupes, all rows preserved — full details in
-  `docs/P1_14B_4_PROSPECTIVE_LIFECYCLE_AUDIT.md`.
+  `docs/P1_14B_4_PROSPECTIVE_LIFECYCLE_AUDIT.md`. P1-14B.5 operational PASS
+  (independent reference + coincident 35/40-min agreement; 708/708): 49 setups,
+  150/150 COMPLETE, 0 dupes, ≥30-min healthy window demonstrated — full details in
+  `docs/P1_14B_5_TRANSPORT_RESILIENCE_REPORT.md`.
 - **Docs:** `docs/PROSPECTIVE_EVALUATION_SPEC.md`, `docs/DECISIONS.md`,
   `docs/CURRENT_STATE.md`, `docs/TASK_QUEUE.md`.
 - **Open questions:** MFE/MAE and cohort aggregation deferred to a later
@@ -311,7 +315,7 @@ it does not replace them. Authority stays where it was recorded
   transport/freshness limiting, still no 4–6 h authorization; P1-14B.4: contract
   v1.1 enforced (strict unknown-age, grace-deferred terminal PENDING), 120 s
   regression run clean, no long runs.
-- **Last update:** 2026-10-09 (P1-14B.4 lifecycle audit, PASS).
+- **Last update:** 2026-10-10 (P1-14B.5 operational PASS; repeat advisable before 4–6 h).
 
 ## F-BT-01 — Historical backtesting (P1-14)
 

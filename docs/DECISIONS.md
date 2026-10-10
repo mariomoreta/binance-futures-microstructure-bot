@@ -642,3 +642,37 @@ new telemetry live). All 99 historical rows preserved byte-identical.
 Gates: prospective/persistence/safety PASS (no transport re-rating, no long
 run). V2 worktree/ports and main untouched. P1-14C not started.
 Full report: `docs/P1_14B_4_PROSPECTIVE_LIFECYCLE_AUDIT.md`.
+
+## 2026-10-10 -- P1-14B.5 transport resilience & independent diagnostics (PASS operational)
+
+Starting at SHA `0df2170` (clean tree). Attribution resolved as far as
+evidence allows: with identical code/config/host, NO episode reproduced in
+coincident 35 + 40 min windows -- persistent host or bot defects DISCARDED;
+episodes are intermittent path/provider instability (which of the two stays
+UNKNOWN, stated not forced).
+
+Built netprobe.py (stdlib + existing websockets dep): single host-pinned
+read-only reference connection, mirrored params, per-message E/lag/reorder
+tracking, DNS/handshake/error classes, UTF-8 JSONL, bounded duration.
+Honest limitation: the bare /stream path served zero markPrice-array messages
+in 40 min while bookTicker flowed -- tool-side path limitation, not a health
+signal; reference coverage is bookTicker-only for now. 17 deterministic tests
+(faked transports/clocks).
+
+Coincident windows AGREE: bot bookTicker p50 ~175 ms vs reference ~340 ms
+(same sub-second regime), markPrice healthy per bot, 0/0/0.00 % both, zero
+E-reorders, reference attempts 1 errors {}. Added pure
+classify_connection_health() (socket vs FLOWING_FRESH/STALE/SILENT/
+RECONNECTING/UNAVAILABLE + evidence; shared by bot summary block and
+netprobe) with 8 tests; watchdog re-verified 10/10 (cooldowns 292 s apart,
+recoveries, no loops).
+
+Single authorized <=35 min run COMPLETED naturally: 2102.5 s, 20/20, 0
+reconnects, 0 rejects, exit 0 -- first >=30-min healthy window (P1-14B.1
+blocker #1 satisfied as far as one window can). Post-run: 49 setups (+25),
+150/150 COMPLETE (+51), 0 dupes, 0 anomalies; contract v1.1 + v9 intact;
+all 99 prior rows preserved. Suite 708/708 OK (683 + 17 + 8). Gates:
+TRANSPORT/FRESHNESS/PERSISTENCE/SAFETY PASS. Still NO 4-6 h authorization
+(recurrence risk -- repeat advisable); P1-14C not started; V2 worktree/ports
+and main untouched.
+Full report: `docs/P1_14B_5_TRANSPORT_RESILIENCE_REPORT.md`.
