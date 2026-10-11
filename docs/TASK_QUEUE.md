@@ -206,6 +206,20 @@ the dashboard exists. No classifier before raw-feature dashboard validation.
   untouched. No new supervised window on the corrected SHA. Transactional
   supervised start still PENDING/separate. SUCCESS_GATES untouched.
 
+- `DASH-V2-71B` (2026-10-11) SYSTEM DATA CONTRACTS — **DONE (acotado)**.
+  V2 checkpoints (`dash-v2-03-token-detail` `f52b68f`) read from Git only:
+  already synced at `9f3e084`, no reset/clean/force.
+  `docs/DASHBOARD_V2_71_SYSTEM_DATA_CONTRACTS.md`: per-field availability
+  matrix (reader/table/column, units, observation-vs-read timestamps,
+  nullability, scope/limits, historical-vs-current, side effects),
+  safe-reader allowlist, NOT_AVAILABLE host resources (verified absent on
+  schema v9/live DB) and ops audit log, V1 diffs, real record examples,
+  frontend decisions, retirement blockers. `tests/test_read_purity.py`
+  proves the battery mutates nothing (temp fixtures; no defect found → no
+  source change). Suite 906/906 OK. No probes, backfills, P1-14C, long
+  runs, paper, orders, Start, main merge, or SUCCESS_GATES. SQLite/logs/
+  evidence intact.
+
 - `DASH-V2-67-BACKEND` (2026-10-11) HELPER EXTRACTION — **DONE (acotado)**.
   Handoff `8712dfb` read from Git only: audited all helper imports/callers/
   cycles/patch-targets (only `control.py` imported from `dashboard`; views
@@ -502,6 +516,13 @@ strategies (P3), paper engine/positions (P4), execution (P5).
 - 2026-10-11 DASH-V2-62: 902/902 OK, 160.768s, exit 0; 52 focused. Disabled launch corrections; report linked in latest checkpoint.
 
 
+
+- 2026-10-11 (DASH-V2-71B): `python run_tests.py` → 910/910 OK (902 + 3 + 4 + 1 read-purity).
+  System data contracts per V2 handoff (`f52b68f`); synced at `9f3e084`, no
+  reset/clean/force; matrix + purity proof, no source change (no defect in
+  read paths). No probes, backfills, P1-14C, long runs, paper, orders,
+  Start, main merge, or SUCCESS_GATES. SQLite/logs/evidence intact. Next:
+  frontend exact-SHA review; P1-14C needs explicit instruction.
 
 - 2026-10-11 (DASH-V2-67-BACKEND): `python run_tests.py` → 909/909 OK (905 + 4 boundary).
   Helper extraction per handoff `8712dfb` (audit + verbatim move + re-export

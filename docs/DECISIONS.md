@@ -1016,3 +1016,9 @@ Reconciled da231b9..c635938 by fast-forward (clean worktree, zero Python process
 
 ## DASH-V2-69 — 2026-10-11 — extraction proof review
 Exact c59c5ec extraction reviewed independently. Five helper bodies match; original Python 3.14 find_module blocker was ineffective despite four green tests. Existing H2 strengthened with find_spec plus deliberate negative control; four focused tests pass. No application source edits. V1 contract retirement section now closes extraction prerequisite while retaining parity/review/authorization requirements; no retirement performed. See DASH_V2_69_EXTRACTION_PROOF_REVIEW.md; canonical verification recorded there. Full cutover and operational readiness remain PARTIAL; Start/gates/main/DB/registry preserved.
+
+## DASH-V2-71B — 2026-10-11 — System data contracts for V2 integration
+
+Read V2-69/70 acceptance + diagnostics + migration plan from Git only (dash-v2-03-token-detail f52b68f); base 9f3e084 already synced, no reset/clean/force. Audited every DashboardState reader against live schema v9 (read-only): per-field contracts in docs/DASHBOARD_V2_71_SYSTEM_DATA_CONTRACTS.md with safe-reader allowlist proven by tests/test_read_purity.py (byte-identical DBs/registry/evidence, no new .db files, content queries agree; temp fixtures). Host resources verified absent (no column; log-only host block is not a reader contract) → NOT_AVAILABLE with future-work note; no ops audit journal exists (latest last_exit + capped lifecycle tables only). No defect in read paths on existing stores → no source change (fresh-DB init/_ensure/WAL documented as V2-avoided, not fixed). 
+Suite 910/910 OK (902 + 3 + 4 + 1). No probes, backfills, P1-14C, runs, paper, orders, Start, main merge, SUCCESS_GATES, formula, or
+accepted-fix changes.

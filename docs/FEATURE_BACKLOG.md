@@ -439,7 +439,12 @@ it does not replace them. Authority stays where it was recorded
   no gate advancement. DASH-V2-67 backend: helpers extracted VERBATIM to
   `host_process.py` (stdlib only), `control.py` decoupled from the HTTP
   module, `dashboard.py` re-exports identical objects, boundary tests H1–H4;
-  file-level old-UI retirement still NOT executed, pending review).
+  file-level old-UI retirement still NOT executed, pending review.
+  DASH-V2-71B backend: System data contracts matrix
+  (`docs/DASHBOARD_V2_71_SYSTEM_DATA_CONTRACTS.md`) + read-purity proof
+  (1 test, temp fixtures); host resources + ops audit log NOT_AVAILABLE
+  (honest absence, future work noted); V2 reads stay on allowlisted
+  readers + own readOnly adapter; PARTIAL unchanged, no gate advancement).
 
 ## F-LAUNCH-SUP-01 — Supervised transactional launch
 

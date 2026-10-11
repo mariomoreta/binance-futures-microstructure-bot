@@ -1631,3 +1631,35 @@ boundary), exit 0. No probes, backfills, traffic, P1-14C, long runs,
 paper, orders, Start, main merge, SUCCESS_GATES, formula, or accepted-fix
 changes. No old-UI/server/file retirement executed (file-level removal
 still waits on this extraction's review). SQLite/registry/logs preserved.
+
+## DASH-V2-71B System data contracts (2026-10-11) — RESULT: DONE (acotado)
+
+V2 checkpoints read from Git only (`dash-v2-03-token-detail` `f52b68f`:
+acceptance, recorded diagnostics, migration plan). No V2/main/SQLite/log/
+evidence mutation; no second collector or database; no probes or traffic.
+
+- Preflight/reconciliation: local == origin == `9f3e084` on entry (already
+  synced, clean worktree, foreign files preserved); no reset/clean/force.
+- Matrix: `docs/DASHBOARD_V2_71_SYSTEM_DATA_CONTRACTS.md` — per-field
+  reader/table/column, meaning+unit, observation-vs-read timestamps,
+  nullability/absence, scope/limits, historical-vs-current, and side
+  effects for persistence, universe/budget, research, classifier/
+  opportunities, runtime/watchers/feed; safe-reader allowlist with purity
+  notes; NOT_AVAILABLE host resources (no column on schema v9, verified on
+  the live DB read-only; log-only `host` block is not a reader contract)
+  and ops audit log (latest `last_exit` + capped lifecycle tables only);
+  V1 diffs (price anchor, search limits/parser, prospective vs historical
+  DBs); real record examples; frontend MUST-respect decisions; concrete
+  retirement blockers.
+- Validation: `tests/test_read_purity.py` (full read battery leaves
+  operational/historical DBs, registry, and evidence byte-identical, no
+  new `.db` files, content queries agree; temp fixtures only). No defect
+  found in these read paths on existing stores → no source change (fresh-DB
+  `init_db`/`_ensure`/WAL paths documented as NOT safe for V2 instead).
+- Suite: `python run_tests.py` → 910/910 OK (902 + 3 GET-purity + 4
+  boundary + 1 read-purity), exit 0. No probes, backfills, P1-14C, long
+  runs, paper, orders, Start, main merge, SUCCESS_GATES, formula, or
+  accepted-fix changes. Deterministic only. (One early full run reported
+  905 on the same tree; four subsequent consistent measurements — three
+  discovery counts plus per-file sum plus a full OK execution — establish
+  910; the single 905 reading is unreproduced and superseded.)
