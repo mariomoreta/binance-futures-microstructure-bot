@@ -1,5 +1,9 @@
 # Dashboard V2 Migration Plan
 
+## DASH-V2-70 / V2-69 — 2026-10-11 — extraction accepted and recorded diagnostics
+Backend c59c5ec extraction accepted after direct proof/docs repair published 9f3e084192e90b52948c398f021f64b7884e2df2; independent 909/909, no reviewer application-source edit. See DASHBOARD_V2_69_EXTRACTION_ACCEPTANCE.md. V2 recorded diagnostics now avoid timestamp-based run association and display missing-stream, parse/payload-error and signed clock-offset fields. 192/192 frontend, type/lint/build pass; System 3 widths, disclosure/refresh and Overview check pass, zero overflow/browser errors; canonical DB/registry bytes unchanged. Production http://127.0.0.1:3020 managed PID23296. See DASHBOARD_V2_70_RECORDED_DIAGNOSTICS.md. Exact reference fidelity/full cutover remain PARTIAL. Next V2-71 source-backed pipeline/persistence/universe parity; host/events require separate contracts. Old HTML, Start, gates, main and runtime operations preserved.
+
+
 
 ## Current implementation checkpoint — 2026-10-11
 The 2026-10-07 plan below is historical. V2 is implemented at loopback port 3020; main persisted-data migration is DASH-V2-63. See its migration matrix/report and canonical data contract. Old SSR retained; full cutover gate NOT accepted. The backend/control authority and collector remain unchanged. The next migration phase is an exhaustive legacy-function coverage audit, not another demo scaffold.

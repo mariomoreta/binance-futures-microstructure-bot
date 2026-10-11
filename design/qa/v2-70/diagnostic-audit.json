@@ -1,0 +1,1846 @@
+{
+  "snapshot_columns": [
+    "id",
+    "timestamp",
+    "runtime_seconds",
+    "bot_mode",
+    "api_keys_used",
+    "real_orders_sent",
+    "real_capital_at_risk",
+    "max_drawdown_kill_switch_active",
+    "authenticated_clients_present",
+    "order_execution_path_present",
+    "clock_sync_json",
+    "latency_json",
+    "legacy_global_clamped_lag_ms",
+    "processing_json",
+    "detectors_json",
+    "data_quality_json",
+    "events_by_type_json",
+    "book_imbalance_json",
+    "spread_bps_json"
+  ],
+  "latest_snapshot": {
+    "id": 1809,
+    "timestamp": 1791641080.1290023,
+    "runtime_seconds": 152.284,
+    "bot_mode": "observe",
+    "api_keys_used": 0,
+    "real_orders_sent": 0,
+    "real_capital_at_risk": 0.0,
+    "max_drawdown_kill_switch_active": 0,
+    "authenticated_clients_present": 0,
+    "order_execution_path_present": 0,
+    "clock_sync_json": {
+      "clockOffsetMs": -313.029297,
+      "serverTimeRttMs": 318.313965,
+      "lastClockSyncTimestamp": "2026-10-10T14:02:09.734453+00:00",
+      "clockSyncSuccessful": 1,
+      "clockSyncFailed": 0,
+      "clockSamplesValid": 5,
+      "clockSamplesFailed": 0
+    },
+    "latency_json": {
+      "correctedEventLagMs": {
+        "aggTrade/BTCUSDT": {
+          "count": 749,
+          "retainedCount": 749,
+          "retention": "latest_20000",
+          "nonFiniteCount": 0,
+          "min": 158.997803,
+          "p50": 173.11792,
+          "p90": 194.45874,
+          "p95": 242.230225,
+          "p99": 641.491943,
+          "max": 1845.04834,
+          "mean": 191.463035
+        },
+        "aggTrade/ETHUSDT": {
+          "count": 383,
+          "retainedCount": 383,
+          "retention": "latest_20000",
+          "nonFiniteCount": 0,
+          "min": 159.478271,
+          "p50": 164.60791,
+          "p90": 208.834717,
+          "p95": 379.558105,
+          "p99": 1288.490479,
+          "max": 1598.195312,
+          "mean": 203.416335
+        },
+        "aggTrade/SOLUSDT": {
+          "count": 290,
+          "retainedCount": 290,
+          "retention": "latest_20000",
+          "nonFiniteCount": 0,
+          "min": 159.329834,
+          "p50": 164.311035,
+          "p90": 392.356689,
+          "p95": 755.926514,
+          "p99": 1394.294678,
+          "max": 1866.773682,
+          "mean": 240.012506
+        },
+        "bookTicker/BTCUSDT": {
+          "count": 11284,
+          "retainedCount": 11284,
+          "retention": "latest_20000",
+          "nonFiniteCount": 0,
+          "min": 155.738525,
+          "p50": 167.712646,
+          "p90": 308.447021,
+          "p95": 365.970703,
+          "p99": 782.78125,
+          "max": 1928.759521,
+          "mean": 206.074507
+        },
+        "bookTicker/ETHUSDT": {
+          "count": 8037,
+          "retainedCount": 8037,
+          "retention": "latest_20000",
+          "nonFiniteCount": 0,
+          "min": 155.921143,
+          "p50": 162.882812,
+          "p90": 205.181641,
+          "p95": 358.042236,
+          "p99": 930.411621,
+          "max": 1937.483154,
+          "mean": 201.05977
+        },
+        "bookTicker/SOLUSDT": {
+          "count": 6655,
+          "retainedCount": 6655,
+          "retention": "latest_20000",
+          "nonFiniteCount": 0,
+          "min": 155.480225,
+          "p50": 162.129395,
+          "p90": 267.158203,
+          "p95": 554.957031,
+          "p99": 1572.319824,
+          "max": 1933.695557,
+          "mean": 223.368137
+        },
+        "depth/BTCUSDT": {
+          "count": 1369,
+          "retainedCount": 1369,
+          "retention": "latest_20000",
+          "nonFiniteCount": 0,
+          "min": 155.858398,
+          "p50": 160.64502,
+          "p90": 303.634521,
+          "p95": 541.60376,
+          "p99": 1198.962891,
+          "max": 1838.041992,
+          "mean": 216.82559
+        },
+        "depth/ETHUSDT": {
+          "count": 1382,
+          "retainedCount": 1382,
+          "retention": "latest_20000",
+          "nonFiniteCount": 0,
+          "min": 155.6521,
+          "p50": 160.560791,
+          "p90": 291.947998,
+          "p95": 561.80127,
+          "p99": 1228.654297,
+          "max": 1889.577148,
+          "mean": 216.203174
+        },
+        "depth/SOLUSDT": {
+          "count": 1302,
+          "retainedCount": 1302,
+          "retention": "latest_20000",
+          "nonFiniteCount": 0,
+          "min": 155.628906,
+          "p50": 160.492432,
+          "p90": 288.360352,
+          "p95": 561.502197,
+          "p99": 1224.036865,
+          "max": 1842.604736,
+          "mean": 216.090338
+        },
+        "forceOrder": {
+          "count": 40,
+          "retainedCount": 40,
+          "retention": "latest_20000",
+          "nonFiniteCount": 0,
+          "min": 161.435059,
+          "p50": 165.558105,
+          "p90": 517.527832,
+          "p95": 780.223633,
+          "p99": 1104.612549,
+          "max": 1104.612549,
+          "mean": 259.690576
+        },
+        "markPrice/BTCUSDT": {
+          "count": 149,
+          "retainedCount": 149,
+          "retention": "latest_20000",
+          "nonFiniteCount": 0,
+          "min": 219.493652,
+          "p50": 240.392822,
+          "p90": 421.847412,
+          "p95": 719.253418,
+          "p99": 1210.742188,
+          "max": 1800.394775,
+          "mean": 299.699047
+        },
+        "markPrice/ETHUSDT": {
+          "count": 149,
+          "retainedCount": 149,
+          "retention": "latest_20000",
+          "nonFiniteCount": 0,
+          "min": 219.493652,
+          "p50": 240.392822,
+          "p90": 421.847412,
+          "p95": 719.253418,
+          "p99": 1210.742188,
+          "max": 1800.394775,
+          "mean": 299.699047
+        },
+        "markPrice/SOLUSDT": {
+          "count": 149,
+          "retainedCount": 149,
+          "retention": "latest_20000",
+          "nonFiniteCount": 0,
+          "min": 219.493652,
+          "p50": 240.392822,
+          "p90": 421.847412,
+          "p95": 719.253418,
+          "p99": 1210.742188,
+          "max": 1800.394775,
+          "mean": 299.699047
+        }
+      },
+      "correctedTransactionLagMs": {
+        "aggTrade/BTCUSDT": {
+          "count": 749,
+          "retainedCount": 749,
+          "retention": "latest_20000",
+          "nonFiniteCount": 0,
+          "min": 163.848145,
+          "p50": 189.800537,
+          "p90": 315.353271,
+          "p95": 328.005615,
+          "p99": 791.491943,
+          "max": 1996.04834,
+          "mean": 248.485732
+        },
+        "aggTrade/ETHUSDT": {
+          "count": 383,
+          "retainedCount": 383,
+          "retention": "latest_20000",
+          "nonFiniteCount": 0,
+          "min": 164.625977,
+          "p50": 312.681641,
+          "p90": 341.983887,
+          "p95": 511.499512,
+          "p99": 1438.490479,
+          "max": 1652.195312,
+          "mean": 317.886309
+        },
+        "aggTrade/SOLUSDT": {
+          "count": 290,
+          "retainedCount": 290,
+          "retention": "latest_20000",
+          "nonFiniteCount": 0,
+          "min": 165.160156,
+          "p50": 313.602539,
+          "p90": 540.681152,
+          "p95": 904.305176,
+          "p99": 1544.294678,
+          "max": 2016.773682,
+          "mean": 373.829747
+        },
+        "bookTicker/BTCUSDT": {
+          "count": 11284,
+          "retainedCount": 11284,
+          "retention": "latest_20000",
+          "nonFiniteCount": 0,
+          "min": 155.787842,
+          "p50": 167.967529,
+          "p90": 308.447021,
+          "p95": 366.048584,
+          "p99": 782.78125,
+          "max": 1928.759521,
+          "mean": 206.263891
+        },
+        "bookTicker/ETHUSDT": {
+          "count": 8037,
+          "retainedCount": 8037,
+          "retention": "latest_20000",
+          "nonFiniteCount": 0,
+          "min": 156.006104,
+          "p50": 163.025391,
+          "p90": 205.181641,
+          "p95": 358.297119,
+          "p99": 931.411621,
+          "max": 1937.483154,
+          "mean": 201.242549
+        },
+        "bookTicker/SOLUSDT": {
+          "count": 6655,
+          "retainedCount": 6655,
+          "retention": "latest_20000",
+          "nonFiniteCount": 0,
+          "min": 155.908691,
+          "p50": 162.293945,
+          "p90": 267.158203,
+          "p95": 555.77832,
+          "p99": 1572.319824,
+          "max": 1933.695557,
+          "mean": 223.548152
+        },
+        "depth/BTCUSDT": {
+          "count": 1369,
+          "retainedCount": 1369,
+          "retention": "latest_20000",
+          "nonFiniteCount": 0,
+          "min": 156.858398,
+          "p50": 161.986084,
+          "p90": 305.634521,
+          "p95": 543.60376,
+          "p99": 1199.962891,
+          "max": 1840.041992,
+          "mean": 218.275554
+        },
+        "depth/ETHUSDT": {
+          "count": 1382,
+          "retainedCount": 1382,
+          "retention": "latest_20000",
+          "nonFiniteCount": 0,
+          "min": 156.6521,
+          "p50": 162.406738,
+          "p90": 293.178955,
+          "p95": 563.80127,
+          "p99": 1230.654297,
+          "max": 1890.577148,
+          "mean": 218.050497
+        },
+        "depth/SOLUSDT": {
+          "count": 1302,
+          "retainedCount": 1302,
+          "retention": "latest_20000",
+          "nonFiniteCount": 0,
+          "min": 157.022705,
+          "p50": 169.885498,
+          "p90": 291.807861,
+          "p95": 566.354248,
+          "p99": 1229.209229,
+          "max": 1843.604736,
+          "mean": 226.674823
+        },
+        "forceOrder": {
+          "count": 40,
+          "retainedCount": 40,
+          "retention": "latest_20000",
+          "nonFiniteCount": 0,
+          "min": 1086.558105,
+          "p50": 1176.118652,
+          "p90": 1528.527832,
+          "p95": 1784.223633,
+          "p99": 2111.612549,
+          "max": 2111.612549,
+          "mean": 1262.140576
+        }
+      },
+      "exchangeEventMinusTransactionMs": {
+        "aggTrade/BTCUSDT": {
+          "count": 749,
+          "retainedCount": 749,
+          "retention": "latest_20000",
+          "nonFiniteCount": 0,
+          "min": 0.0,
+          "p50": 1.0,
+          "p90": 151.0,
+          "p95": 151.0,
+          "p99": 151.0,
+          "max": 151.0,
+          "mean": 57.022697
+        },
+        "aggTrade/ETHUSDT": {
+          "count": 383,
+          "retainedCount": 383,
+          "retention": "latest_20000",
+          "nonFiniteCount": 0,
+          "min": 0.0,
+          "p50": 150.0,
+          "p90": 151.0,
+          "p95": 151.0,
+          "p99": 151.0,
+          "max": 151.0,
+          "mean": 114.469974
+        },
+        "aggTrade/SOLUSDT": {
+          "count": 290,
+          "retainedCount": 290,
+          "retention": "latest_20000",
+          "nonFiniteCount": 0,
+          "min": 0.0,
+          "p50": 150.0,
+          "p90": 151.0,
+          "p95": 151.0,
+          "p99": 151.0,
+          "max": 151.0,
+          "mean": 133.817241
+        },
+        "bookTicker/BTCUSDT": {
+          "count": 11284,
+          "retainedCount": 11284,
+          "retention": "latest_20000",
+          "nonFiniteCount": 0,
+          "min": 0.0,
+          "p50": 0.0,
+          "p90": 1.0,
+          "p95": 1.0,
+          "p99": 1.0,
+          "max": 1.0,
+          "mean": 0.189383
+        },
+        "bookTicker/ETHUSDT": {
+          "count": 8037,
+          "retainedCount": 8037,
+          "retention": "latest_20000",
+          "nonFiniteCount": 0,
+          "min": 0.0,
+          "p50": 0.0,
+          "p90": 1.0,
+          "p95": 1.0,
+          "p99": 1.0,
+          "max": 1.0,
+          "mean": 0.18278
+        },
+        "bookTicker/SOLUSDT": {
+          "count": 6655,
+          "retainedCount": 6655,
+          "retention": "latest_20000",
+          "nonFiniteCount": 0,
+          "min": 0.0,
+          "p50": 0.0,
+          "p90": 1.0,
+          "p95": 1.0,
+          "p99": 1.0,
+          "max": 1.0,
+          "mean": 0.180015
+        },
+        "depth/BTCUSDT": {
+          "count": 1369,
+          "retainedCount": 1369,
+          "retention": "latest_20000",
+          "nonFiniteCount": 0,
+          "min": 1.0,
+          "p50": 1.0,
+          "p90": 2.0,
+          "p95": 2.0,
+          "p99": 4.0,
+          "max": 6.0,
+          "mean": 1.449963
+        },
+        "depth/ETHUSDT": {
+          "count": 1382,
+          "retainedCount": 1382,
+          "retention": "latest_20000",
+          "nonFiniteCount": 0,
+          "min": 1.0,
+          "p50": 2.0,
+          "p90": 3.0,
+          "p95": 4.0,
+          "p99": 4.0,
+          "max": 6.0,
+          "mean": 1.847323
+        },
+        "depth/SOLUSDT": {
+          "count": 1302,
+          "retainedCount": 1302,
+          "retention": "latest_20000",
+          "nonFiniteCount": 0,
+          "min": 1.0,
+          "p50": 6.0,
+          "p90": 25.0,
+          "p95": 35.0,
+          "p99": 57.0,
+          "max": 96.0,
+          "mean": 10.584485
+        },
+        "forceOrder": {
+          "count": 40,
+          "retainedCount": 40,
+          "retention": "latest_20000",
+          "nonFiniteCount": 0,
+          "min": 921.0,
+          "p50": 1006.0,
+          "p90": 1011.0,
+          "p95": 1012.0,
+          "p99": 1014.0,
+          "max": 1014.0,
+          "mean": 1002.45
+        }
+      },
+      "rawEventLagMs": {
+        "aggTrade/BTCUSDT": {
+          "count": 749,
+          "retainedCount": 749,
+          "retention": "latest_20000",
+          "nonFiniteCount": 0,
+          "min": 472.0271,
+          "p50": 486.147217,
+          "p90": 507.488037,
+          "p95": 555.259521,
+          "p99": 954.52124,
+          "max": 2158.077637,
+          "mean": 504.492332
+        },
+        "aggTrade/ETHUSDT": {
+          "count": 383,
+          "retainedCount": 383,
+          "retention": "latest_20000",
+          "nonFiniteCount": 0,
+          "min": 472.507568,
+          "p50": 477.637207,
+          "p90": 521.864014,
+          "p95": 692.587402,
+          "p99": 1601.519775,
+          "max": 1911.224609,
+          "mean": 516.445632
+        },
+        "aggTrade/SOLUSDT": {
+          "count": 290,
+          "retainedCount": 290,
+          "retention": "latest_20000",
+          "nonFiniteCount": 0,
+          "min": 472.359131,
+          "p50": 477.340332,
+          "p90": 705.385986,
+          "p95": 1068.955811,
+          "p99": 1707.323975,
+          "max": 2179.802979,
+          "mean": 553.041803
+        },
+        "bookTicker/BTCUSDT": {
+          "count": 11284,
+          "retainedCount": 11284,
+          "retention": "latest_20000",
+          "nonFiniteCount": 0,
+          "min": 468.767822,
+          "p50": 480.741943,
+          "p90": 621.476318,
+          "p95": 679.0,
+          "p99": 1095.810547,
+          "max": 2241.788818,
+          "mean": 519.103804
+        },
+        "bookTicker/ETHUSDT": {
+          "count": 8037,
+          "retainedCount": 8037,
+          "retention": "latest_20000",
+          "nonFiniteCount": 0,
+          "min": 468.950439,
+          "p50": 475.912109,
+          "p90": 518.210938,
+          "p95": 671.071533,
+          "p99": 1243.440918,
+          "max": 2250.512451,
+          "mean": 514.089067
+        },
+        "bookTicker/SOLUSDT": {
+          "count": 6655,
+          "retainedCount": 6655,
+          "retention": "latest_20000",
+          "nonFiniteCount": 0,
+          "min": 468.509521,
+          "p50": 475.158691,
+          "p90": 580.1875,
+          "p95": 867.986328,
+          "p99": 1885.349121,
+          "max": 2246.724854,
+          "mean": 536.397434
+        },
+        "depth/BTCUSDT": {
+          "count": 1369,
+          "retainedCount": 1369,
+          "retention": "latest_20000",
+          "nonFiniteCount": 0,
+          "min": 468.887695,
+          "p50": 473.674316,
+          "p90": 616.663818,
+          "p95": 854.633057,
+          "p99": 1511.992188,
+          "max": 2151.071289,
+          "mean": 529.854887
+        },
+        "depth/ETHUSDT": {
+          "count": 1382,
+          "retainedCount": 1382,
+          "retention": "latest_20000",
+          "nonFiniteCount": 0,
+          "min": 468.681396,
+          "p50": 473.590088,
+          "p90": 604.977295,
+          "p95": 874.830566,
+          "p99": 1541.683594,
+          "max": 2202.606445,
+          "mean": 529.232471
+        },
+        "depth/SOLUSDT": {
+          "count": 1302,
+          "retainedCount": 1302,
+          "retention": "latest_20000",
+          "nonFiniteCount": 0,
+          "min": 468.658203,
+          "p50": 473.521729,
+          "p90": 601.389648,
+          "p95": 874.531494,
+          "p99": 1537.066162,
+          "max": 2155.634033,
+          "mean": 529.119635
+        },
+        "forceOrder": {
+          "count": 40,
+          "retainedCount": 40,
+          "retention": "latest_20000",
+          "nonFiniteCount": 0,
+          "min": 474.464355,
+          "p50": 478.587402,
+          "p90": 830.557129,
+          "p95": 1093.25293,
+          "p99": 1417.641846,
+          "max": 1417.641846,
+          "mean": 572.719873
+        },
+        "markPrice/BTCUSDT": {
+          "count": 149,
+          "retainedCount": 149,
+          "retention": "latest_20000",
+          "nonFiniteCount": 0,
+          "min": 532.522949,
+          "p50": 553.422119,
+          "p90": 734.876709,
+          "p95": 1032.282715,
+          "p99": 1523.771484,
+          "max": 2113.424072,
+          "mean": 612.728344
+        },
+        "markPrice/ETHUSDT": {
+          "count": 149,
+          "retainedCount": 149,
+          "retention": "latest_20000",
+          "nonFiniteCount": 0,
+          "min": 532.522949,
+          "p50": 553.422119,
+          "p90": 734.876709,
+          "p95": 1032.282715,
+          "p99": 1523.771484,
+          "max": 2113.424072,
+          "mean": 612.728344
+        },
+        "markPrice/SOLUSDT": {
+          "count": 149,
+          "retainedCount": 149,
+          "retention": "latest_20000",
+          "nonFiniteCount": 0,
+          "min": 532.522949,
+          "p50": 553.422119,
+          "p90": 734.876709,
+          "p95": 1032.282715,
+          "p99": 1523.771484,
+          "max": 2113.424072,
+          "mean": 612.728344
+        }
+      },
+      "rawTransactionLagMs": {
+        "aggTrade/BTCUSDT": {
+          "count": 749,
+          "retainedCount": 749,
+          "retention": "latest_20000",
+          "nonFiniteCount": 0,
+          "min": 476.877441,
+          "p50": 502.829834,
+          "p90": 628.382568,
+          "p95": 641.034912,
+          "p99": 1104.52124,
+          "max": 2309.077637,
+          "mean": 561.515029
+        },
+        "aggTrade/ETHUSDT": {
+          "count": 383,
+          "retainedCount": 383,
+          "retention": "latest_20000",
+          "nonFiniteCount": 0,
+          "min": 477.655273,
+          "p50": 625.710938,
+          "p90": 655.013184,
+          "p95": 824.528809,
+          "p99": 1751.519775,
+          "max": 1965.224609,
+          "mean": 630.915606
+        },
+        "aggTrade/SOLUSDT": {
+          "count": 290,
+          "retainedCount": 290,
+          "retention": "latest_20000",
+          "nonFiniteCount": 0,
+          "min": 478.189453,
+          "p50": 626.631836,
+          "p90": 853.710449,
+          "p95": 1217.334473,
+          "p99": 1857.323975,
+          "max": 2329.802979,
+          "mean": 686.859044
+        },
+        "bookTicker/BTCUSDT": {
+          "count": 11284,
+          "retainedCount": 11284,
+          "retention": "latest_20000",
+          "nonFiniteCount": 0,
+          "min": 468.817139,
+          "p50": 480.996826,
+          "p90": 621.476318,
+          "p95": 679.077881,
+          "p99": 1095.810547,
+          "max": 2241.788818,
+          "mean": 519.293188
+        },
+        "bookTicker/ETHUSDT": {
+          "count": 8037,
+          "retainedCount": 8037,
+          "retention": "latest_20000",
+          "nonFiniteCount": 0,
+          "min": 469.0354,
+          "p50": 476.054688,
+          "p90": 518.210938,
+          "p95": 671.326416,
+          "p99": 1244.440918,
+          "max": 2250.512451,
+          "mean": 514.271846
+        },
+        "bookTicker/SOLUSDT": {
+          "count": 6655,
+          "retainedCount": 6655,
+          "retention": "latest_20000",
+          "nonFiniteCount": 0,
+          "min": 468.937988,
+          "p50": 475.323242,
+          "p90": 580.1875,
+          "p95": 868.807617,
+          "p99": 1885.349121,
+          "max": 2246.724854,
+          "mean": 536.577449
+        },
+        "depth/BTCUSDT": {
+          "count": 1369,
+          "retainedCount": 1369,
+          "retention": "latest_20000",
+          "nonFiniteCount": 0,
+          "min": 469.887695,
+          "p50": 475.015381,
+          "p90": 618.663818,
+          "p95": 856.633057,
+          "p99": 1512.992188,
+          "max": 2153.071289,
+          "mean": 531.304851
+        },
+        "depth/ETHUSDT": {
+          "count": 1382,
+          "retainedCount": 1382,
+          "retention": "latest_20000",
+          "nonFiniteCount": 0,
+          "min": 469.681396,
+          "p50": 475.436035,
+          "p90": 606.208252,
+          "p95": 876.830566,
+          "p99": 1543.683594,
+          "max": 2203.606445,
+          "mean": 531.079794
+        },
+        "depth/SOLUSDT": {
+          "count": 1302,
+          "retainedCount": 1302,
+          "retention": "latest_20000",
+          "nonFiniteCount": 0,
+          "min": 470.052002,
+          "p50": 482.914795,
+          "p90": 604.837158,
+          "p95": 879.383545,
+          "p99": 1542.238525,
+          "max": 2156.634033,
+          "mean": 539.70412
+        },
+        "forceOrder": {
+          "count": 40,
+          "retainedCount": 40,
+          "retention": "latest_20000",
+          "nonFiniteCount": 0,
+          "min": 1399.587402,
+          "p50": 1489.147949,
+          "p90": 1841.557129,
+          "p95": 2097.25293,
+          "p99": 2424.641846,
+          "max": 2424.641846,
+          "mean": 1575.169873
+        }
+      },
+      "legacyGlobalClampedLagMs": {
+        "count": 31789,
+        "retainedCount": 20000,
+        "retention": "latest_20000",
+        "nonFiniteCount": 0,
+        "min": 468.509521,
+        "p50": 477.884033,
+        "p90": 527.01001,
+        "p95": 620.735596,
+        "p99": 681.174805,
+        "max": 2250.512451,
+        "mean": 523.550167
+      },
+      "legacySemantics": "localReceiveMs-minus-E; fallback-o.T; negative-clamped; mixed-streams",
+      "timestampAvailability": {
+        "aggTrade": {
+          "E": "eventTime",
+          "T": "tradeTime"
+        },
+        "bookTicker": {
+          "E": "eventTime",
+          "T": "transactionTime"
+        },
+        "depth": {
+          "E": "eventTime",
+          "T": "transactionTime"
+        },
+        "forceOrder": {
+          "E": "eventTime",
+          "T": "orderTradeTime"
+        },
+        "markPrice": {
+          "E": "eventTime",
+          "transactionTime": "NOT_AVAILABLE",
+          "T": "nextFundingTime_not_latency"
+        }
+      }
+    },
+    "legacy_global_clamped_lag_ms": null,
+    "processing_json": {
+      "detectorLatencyMs": {
+        "aggTrade/BTCUSDT": {
+          "count": 749,
+          "retainedCount": 749,
+          "retention": "latest_20000",
+          "nonFiniteCount": 0,
+          "min": 0.0172,
+          "p50": 0.0268,
+          "p90": 0.0944,
+          "p95": 0.116,
+          "p99": 0.1723,
+          "max": 10.2934,
+          "mean": 0.064837
+        },
+        "aggTrade/ETHUSDT": {
+          "count": 383,
+          "retainedCount": 383,
+          "retention": "latest_20000",
+          "nonFiniteCount": 0,
+          "min": 0.0177,
+          "p50": 0.0717,
+          "p90": 0.116,
+          "p95": 0.1393,
+          "p99": 0.1719,
+          "max": 2.5437,
+          "mean": 0.081919
+        },
+        "aggTrade/SOLUSDT": {
+          "count": 290,
+          "retainedCount": 290,
+          "retention": "latest_20000",
+          "nonFiniteCount": 0,
+          "min": 0.025,
+          "p50": 0.0781,
+          "p90": 0.1081,
+          "p95": 0.1168,
+          "p99": 0.1512,
+          "max": 0.3787,
+          "mean": 0.08088
+        },
+        "bookTicker/BTCUSDT": {
+          "count": 11284,
+          "retainedCount": 11284,
+          "retention": "latest_20000",
+          "nonFiniteCount": 0,
+          "min": 0.0002,
+          "p50": 0.0004,
+          "p90": 0.0012,
+          "p95": 0.0014,
+          "p99": 0.0019,
+          "max": 0.0489,
+          "mean": 0.000598
+        },
+        "bookTicker/ETHUSDT": {
+          "count": 8037,
+          "retainedCount": 8037,
+          "retention": "latest_20000",
+          "nonFiniteCount": 0,
+          "min": 0.0002,
+          "p50": 0.0005,
+          "p90": 0.0013,
+          "p95": 0.0015,
+          "p99": 0.002,
+          "max": 0.0993,
+          "mean": 0.00074
+        },
+        "bookTicker/SOLUSDT": {
+          "count": 6655,
+          "retainedCount": 6655,
+          "retention": "latest_20000",
+          "nonFiniteCount": 0,
+          "min": 0.0002,
+          "p50": 0.0007,
+          "p90": 0.0014,
+          "p95": 0.0016,
+          "p99": 0.0021,
+          "max": 0.1221,
+          "mean": 0.000809
+        },
+        "depth/BTCUSDT": {
+          "count": 1369,
+          "retainedCount": 1369,
+          "retention": "latest_20000",
+          "nonFiniteCount": 0,
+          "min": 0.0003,
+          "p50": 0.001,
+          "p90": 0.0018,
+          "p95": 0.0022,
+          "p99": 0.0029,
+          "max": 0.3524,
+          "mean": 0.001379
+        },
+        "depth/ETHUSDT": {
+          "count": 1382,
+          "retainedCount": 1382,
+          "retention": "latest_20000",
+          "nonFiniteCount": 0,
+          "min": 0.0003,
+          "p50": 0.001,
+          "p90": 0.0018,
+          "p95": 0.0022,
+          "p99": 0.0028,
+          "max": 0.0207,
+          "mean": 0.001136
+        },
+        "depth/SOLUSDT": {
+          "count": 1302,
+          "retainedCount": 1302,
+          "retention": "latest_20000",
+          "nonFiniteCount": 0,
+          "min": 0.0003,
+          "p50": 0.001,
+          "p90": 0.0018,
+          "p95": 0.0021,
+          "p99": 0.0026,
+          "max": 18.8619,
+          "mean": 0.015631
+        },
+        "forceOrder": {
+          "count": 40,
+          "retainedCount": 40,
+          "retention": "latest_20000",
+          "nonFiniteCount": 0,
+          "min": 0.0013,
+          "p50": 0.0055,
+          "p90": 0.0091,
+          "p95": 0.0104,
+          "p99": 0.0234,
+          "max": 0.0234,
+          "mean": 0.0058
+        },
+        "markPrice": {
+          "count": 298,
+          "retainedCount": 298,
+          "retention": "latest_20000",
+          "nonFiniteCount": 0,
+          "min": 0.0625,
+          "p50": 0.2469,
+          "p90": 0.7577,
+          "p95": 0.9718,
+          "p99": 3.2177,
+          "max": 5.0019,
+          "mean": 0.36693
+        }
+      },
+      "metricsLatencyMs": {
+        "aggTrade/BTCUSDT": {
+          "count": 749,
+          "retainedCount": 749,
+          "retention": "latest_20000",
+          "nonFiniteCount": 0,
+          "min": 0.0087,
+          "p50": 0.0139,
+          "p90": 0.0498,
+          "p95": 0.0591,
+          "p99": 0.0787,
+          "max": 6.3257,
+          "mean": 0.033588
+        },
+        "aggTrade/ETHUSDT": {
+          "count": 383,
+          "retainedCount": 383,
+          "retention": "latest_20000",
+          "nonFiniteCount": 0,
+          "min": 0.0089,
+          "p50": 0.038,
+          "p90": 0.0575,
+          "p95": 0.07,
+          "p99": 0.0874,
+          "max": 0.1936,
+          "mean": 0.037307
+        },
+        "aggTrade/SOLUSDT": {
+          "count": 290,
+          "retainedCount": 290,
+          "retention": "latest_20000",
+          "nonFiniteCount": 0,
+          "min": 0.0118,
+          "p50": 0.0399,
+          "p90": 0.0572,
+          "p95": 0.0659,
+          "p99": 0.0942,
+          "max": 1.1995,
+          "mean": 0.043817
+        },
+        "bookTicker/BTCUSDT": {
+          "count": 11284,
+          "retainedCount": 11284,
+          "retention": "latest_20000",
+          "nonFiniteCount": 0,
+          "min": 0.0089,
+          "p50": 0.0156,
+          "p90": 0.0515,
+          "p95": 0.0588,
+          "p99": 0.0788,
+          "max": 7.4409,
+          "mean": 0.025145
+        },
+        "bookTicker/ETHUSDT": {
+          "count": 8037,
+          "retainedCount": 8037,
+          "retention": "latest_20000",
+          "nonFiniteCount": 0,
+          "min": 0.0089,
+          "p50": 0.0208,
+          "p90": 0.056,
+          "p95": 0.0646,
+          "p99": 0.085,
+          "max": 13.3694,
+          "mean": 0.032553
+        },
+        "bookTicker/SOLUSDT": {
+          "count": 6655,
+          "retainedCount": 6655,
+          "retention": "latest_20000",
+          "nonFiniteCount": 0,
+          "min": 0.0089,
+          "p50": 0.0289,
+          "p90": 0.0584,
+          "p95": 0.0672,
+          "p99": 0.0985,
+          "max": 3.4783,
+          "mean": 0.035566
+        },
+        "depth/BTCUSDT": {
+          "count": 1369,
+          "retainedCount": 1369,
+          "retention": "latest_20000",
+          "nonFiniteCount": 0,
+          "min": 0.1262,
+          "p50": 0.3052,
+          "p90": 0.4565,
+          "p95": 0.5313,
+          "p99": 1.9747,
+          "max": 38.1217,
+          "mean": 0.422778
+        },
+        "depth/ETHUSDT": {
+          "count": 1382,
+          "retainedCount": 1382,
+          "retention": "latest_20000",
+          "nonFiniteCount": 0,
+          "min": 0.1297,
+          "p50": 0.308,
+          "p90": 0.4498,
+          "p95": 0.54,
+          "p99": 1.8061,
+          "max": 14.8131,
+          "mean": 0.363098
+        },
+        "depth/SOLUSDT": {
+          "count": 1302,
+          "retainedCount": 1302,
+          "retention": "latest_20000",
+          "nonFiniteCount": 0,
+          "min": 0.1207,
+          "p50": 0.2986,
+          "p90": 0.4351,
+          "p95": 0.5156,
+          "p99": 1.4071,
+          "max": 20.8664,
+          "mean": 0.400543
+        },
+        "forceOrder": {
+          "count": 40,
+          "retainedCount": 40,
+          "retention": "latest_20000",
+          "nonFiniteCount": 0,
+          "min": 0.0085,
+          "p50": 0.035,
+          "p90": 0.0518,
+          "p95": 0.0553,
+          "p99": 0.0626,
+          "max": 0.0626,
+          "mean": 0.033192
+        },
+        "markPrice": {
+          "count": 298,
+          "retainedCount": 298,
+          "retention": "latest_20000",
+          "nonFiniteCount": 0,
+          "min": 0.0672,
+          "p50": 0.2936,
+          "p90": 0.8609,
+          "p95": 1.1279,
+          "p99": 5.3232,
+          "max": 11.7848,
+          "mean": 0.48999
+        }
+      },
+      "parseLatencyMs": {
+        "aggTrade/BTCUSDT": {
+          "count": 749,
+          "retainedCount": 749,
+          "retention": "latest_20000",
+          "nonFiniteCount": 0,
+          "min": 0.0047,
+          "p50": 0.0079,
+          "p90": 0.0358,
+          "p95": 0.0427,
+          "p99": 0.0503,
+          "max": 0.3711,
+          "mean": 0.015967
+        },
+        "aggTrade/ETHUSDT": {
+          "count": 383,
+          "retainedCount": 383,
+          "retention": "latest_20000",
+          "nonFiniteCount": 0,
+          "min": 0.0048,
+          "p50": 0.0263,
+          "p90": 0.0433,
+          "p95": 0.0474,
+          "p99": 0.0742,
+          "max": 0.0885,
+          "mean": 0.025561
+        },
+        "aggTrade/SOLUSDT": {
+          "count": 290,
+          "retainedCount": 290,
+          "retention": "latest_20000",
+          "nonFiniteCount": 0,
+          "min": 0.0054,
+          "p50": 0.028,
+          "p90": 0.0444,
+          "p95": 0.0481,
+          "p99": 0.0834,
+          "max": 0.7325,
+          "mean": 0.030252
+        },
+        "bookTicker/BTCUSDT": {
+          "count": 11284,
+          "retainedCount": 11284,
+          "retention": "latest_20000",
+          "nonFiniteCount": 0,
+          "min": 0.0041,
+          "p50": 0.0078,
+          "p90": 0.0332,
+          "p95": 0.0379,
+          "p99": 0.0497,
+          "max": 19.796,
+          "mean": 0.016516
+        },
+        "bookTicker/ETHUSDT": {
+          "count": 8037,
+          "retainedCount": 8037,
+          "retention": "latest_20000",
+          "nonFiniteCount": 0,
+          "min": 0.0041,
+          "p50": 0.0106,
+          "p90": 0.0361,
+          "p95": 0.0409,
+          "p99": 0.0535,
+          "max": 4.5449,
+          "mean": 0.018688
+        },
+        "bookTicker/SOLUSDT": {
+          "count": 6655,
+          "retainedCount": 6655,
+          "retention": "latest_20000",
+          "nonFiniteCount": 0,
+          "min": 0.0041,
+          "p50": 0.0163,
+          "p90": 0.0374,
+          "p95": 0.0429,
+          "p99": 0.0613,
+          "max": 9.4993,
+          "mean": 0.023347
+        },
+        "depth/BTCUSDT": {
+          "count": 1369,
+          "retainedCount": 1369,
+          "retention": "latest_20000",
+          "nonFiniteCount": 0,
+          "min": 0.0091,
+          "p50": 0.048,
+          "p90": 0.0696,
+          "p95": 0.0792,
+          "p99": 0.1194,
+          "max": 1.7651,
+          "mean": 0.051708
+        },
+        "depth/ETHUSDT": {
+          "count": 1382,
+          "retainedCount": 1382,
+          "retention": "latest_20000",
+          "nonFiniteCount": 0,
+          "min": 0.0102,
+          "p50": 0.0467,
+          "p90": 0.07,
+          "p95": 0.078,
+          "p99": 0.1081,
+          "max": 4.1304,
+          "mean": 0.054386
+        },
+        "depth/SOLUSDT": {
+          "count": 1302,
+          "retainedCount": 1302,
+          "retention": "latest_20000",
+          "nonFiniteCount": 0,
+          "min": 0.0099,
+          "p50": 0.0484,
+          "p90": 0.0709,
+          "p95": 0.0809,
+          "p99": 0.1556,
+          "max": 15.4808,
+          "mean": 0.072128
+        },
+        "forceOrder": {
+          "count": 40,
+          "retainedCount": 40,
+          "retention": "latest_20000",
+          "nonFiniteCount": 0,
+          "min": 0.0055,
+          "p50": 0.0277,
+          "p90": 0.0358,
+          "p95": 0.0457,
+          "p99": 0.1011,
+          "max": 0.1011,
+          "mean": 0.027175
+        },
+        "markPrice": {
+          "count": 298,
+          "retainedCount": 298,
+          "retention": "latest_20000",
+          "nonFiniteCount": 0,
+          "min": 0.301,
+          "p50": 1.3854,
+          "p90": 2.7333,
+          "p95": 3.5136,
+          "p99": 11.6585,
+          "max": 16.3167,
+          "mean": 1.594089
+        }
+      },
+      "processingLatencyMs": {
+        "aggTrade/BTCUSDT": {
+          "count": 749,
+          "retainedCount": 749,
+          "retention": "latest_20000",
+          "nonFiniteCount": 0,
+          "min": 0.0335,
+          "p50": 0.054,
+          "p90": 0.2167,
+          "p95": 0.2963,
+          "p99": 29.5195,
+          "max": 161.9387,
+          "mean": 1.4349
+        },
+        "aggTrade/ETHUSDT": {
+          "count": 383,
+          "retainedCount": 383,
+          "retention": "latest_20000",
+          "nonFiniteCount": 0,
+          "min": 0.0343,
+          "p50": 0.1553,
+          "p90": 0.3052,
+          "p95": 14.3032,
+          "p99": 51.2707,
+          "max": 1297.8105,
+          "mean": 5.714708
+        },
+        "aggTrade/SOLUSDT": {
+          "count": 290,
+          "retainedCount": 290,
+          "retention": "latest_20000",
+          "nonFiniteCount": 0,
+          "min": 0.0491,
+          "p50": 0.1642,
+          "p90": 0.286,
+          "p95": 19.0605,
+          "p99": 35.1107,
+          "max": 47.997,
+          "mean": 1.806917
+        },
+        "bookTicker/BTCUSDT": {
+          "count": 11284,
+          "retainedCount": 11284,
+          "retention": "latest_20000",
+          "nonFiniteCount": 0,
+          "min": 0.0156,
+          "p50": 0.0281,
+          "p90": 0.1006,
+          "p95": 0.1156,
+          "p99": 0.159,
+          "max": 596.0541,
+          "mean": 0.292003
+        },
+        "bookTicker/ETHUSDT": {
+          "count": 8037,
+          "retainedCount": 8037,
+          "retention": "latest_20000",
+          "nonFiniteCount": 0,
+          "min": 0.0157,
+          "p50": 0.0379,
+          "p90": 0.1093,
+          "p95": 0.127,
+          "p99": 0.1862,
+          "max": 201.9486,
+          "mean": 0.192119
+        },
+        "bookTicker/SOLUSDT": {
+          "count": 6655,
+          "retainedCount": 6655,
+          "retention": "latest_20000",
+          "nonFiniteCount": 0,
+          "min": 0.0158,
+          "p50": 0.055,
+          "p90": 0.115,
+          "p95": 0.1337,
+          "p99": 0.3954,
+          "max": 1073.0963,
+          "mean": 0.550884
+        },
+        "depth/BTCUSDT": {
+          "count": 1369,
+          "retainedCount": 1369,
+          "retention": "latest_20000",
+          "nonFiniteCount": 0,
+          "min": 0.1389,
+          "p50": 0.3716,
+          "p90": 0.5784,
+          "p95": 0.8261,
+          "p99": 51.7173,
+          "max": 899.8858,
+          "mean": 3.08595
+        },
+        "depth/ETHUSDT": {
+          "count": 1382,
+          "retainedCount": 1382,
+          "retention": "latest_20000",
+          "nonFiniteCount": 0,
+          "min": 0.1434,
+          "p50": 0.375,
+          "p90": 0.5924,
+          "p95": 0.8283,
+          "p99": 29.2772,
+          "max": 1521.8901,
+          "mean": 2.727143
+        },
+        "depth/SOLUSDT": {
+          "count": 1302,
+          "retainedCount": 1302,
+          "retention": "latest_20000",
+          "nonFiniteCount": 0,
+          "min": 0.134,
+          "p50": 0.3675,
+          "p90": 0.5808,
+          "p95": 1.1812,
+          "p99": 34.2236,
+          "max": 337.312,
+          "mean": 1.894882
+        },
+        "forceOrder": {
+          "count": 40,
+          "retainedCount": 40,
+          "retention": "latest_20000",
+          "nonFiniteCount": 0,
+          "min": 0.0205,
+          "p50": 0.1004,
+          "p90": 32.6643,
+          "p95": 40.0616,
+          "p99": 83.4299,
+          "max": 83.4299,
+          "mean": 9.804147
+        },
+        "markPrice": {
+          "count": 298,
+          "retainedCount": 298,
+          "retention": "latest_20000",
+          "nonFiniteCount": 0,
+          "min": 0.4544,
+          "p50": 2.5383,
+          "p90": 29.2909,
+          "p95": 50.7452,
+          "p99": 287.1024,
+          "max": 453.2443,
+          "mean": 13.812764
+        }
+      }
+    },
+    "detectors_json": {
+      "detections": {
+        "liquidationIndividual": {
+          "BTCUSDT": {
+            "BUY": 0,
+            "SELL": 0,
+            "total": 0
+          },
+          "ETHUSDT": {
+            "BUY": 0,
+            "SELL": 0,
+            "total": 0
+          },
+          "SOLUSDT": {
+            "BUY": 0,
+            "SELL": 0,
+            "total": 0
+          }
+        },
+        "liquidationWindow": {
+          "BTCUSDT": {
+            "BUY": 0,
+            "SELL": 0,
+            "total": 0
+          },
+          "ETHUSDT": {
+            "BUY": 0,
+            "SELL": 0,
+            "total": 0
+          },
+          "SOLUSDT": {
+            "BUY": 0,
+            "SELL": 0,
+            "total": 0
+          }
+        },
+        "funding": {
+          "BTCUSDT": {
+            "LOW": 7,
+            "HIGH": 0,
+            "total": 7
+          },
+          "ETHUSDT": {
+            "LOW": 7,
+            "HIGH": 0,
+            "total": 7
+          },
+          "SOLUSDT": {
+            "LOW": 7,
+            "HIGH": 0,
+            "total": 7
+          }
+        },
+        "volumeSpike": {
+          "BTCUSDT": {
+            "ABOVE_THRESHOLD": 0,
+            "total": 0
+          },
+          "ETHUSDT": {
+            "ABOVE_THRESHOLD": 0,
+            "total": 0
+          },
+          "SOLUSDT": {
+            "ABOVE_THRESHOLD": 0,
+            "total": 0
+          }
+        }
+      },
+      "liquidation": {
+        "BTCUSDT": {
+          "observationsReceived": 0,
+          "observationsEvaluable": 0,
+          "individual": {
+            "observations": 0,
+            "maxRatio": null,
+            "atOrAbove": {
+              "50pct": 0,
+              "75pct": 0,
+              "90pct": 0,
+              "100pct": 0
+            }
+          },
+          "window": {
+            "observations": 0,
+            "maxRatio": null,
+            "atOrAbove": {
+              "50pct": 0,
+              "75pct": 0,
+              "90pct": 0,
+              "100pct": 0
+            }
+          }
+        },
+        "ETHUSDT": {
+          "observationsReceived": 0,
+          "observationsEvaluable": 0,
+          "individual": {
+            "observations": 0,
+            "maxRatio": null,
+            "atOrAbove": {
+              "50pct": 0,
+              "75pct": 0,
+              "90pct": 0,
+              "100pct": 0
+            }
+          },
+          "window": {
+            "observations": 0,
+            "maxRatio": null,
+            "atOrAbove": {
+              "50pct": 0,
+              "75pct": 0,
+              "90pct": 0,
+              "100pct": 0
+            }
+          }
+        },
+        "SOLUSDT": {
+          "observationsReceived": 0,
+          "observationsEvaluable": 0,
+          "individual": {
+            "observations": 0,
+            "maxRatio": null,
+            "atOrAbove": {
+              "50pct": 0,
+              "75pct": 0,
+              "90pct": 0,
+              "100pct": 0
+            }
+          },
+          "window": {
+            "observations": 0,
+            "maxRatio": null,
+            "atOrAbove": {
+              "50pct": 0,
+              "75pct": 0,
+              "90pct": 0,
+              "100pct": 0
+            }
+          }
+        }
+      },
+      "volume": {
+        "BTCUSDT": {
+          "tradesReceived": 749,
+          "completedBuckets": 14,
+          "warmupBuckets": 14,
+          "warmupRequired": 30,
+          "warmupComplete": false,
+          "evaluatedBuckets": 0,
+          "thresholdCrossings": 0,
+          "zScore": {
+            "count": 0,
+            "retainedCount": 0,
+            "retention": "latest_20000",
+            "nonFiniteCount": 0,
+            "min": null,
+            "p50": null,
+            "p90": null,
+            "p95": null,
+            "p99": null,
+            "max": null,
+            "mean": null
+          },
+          "nearMiss": {
+            "observations": 0,
+            "maxRatio": null,
+            "atOrAbove": {
+              "50pct": 0,
+              "75pct": 0,
+              "90pct": 0,
+              "100pct": 0
+            }
+          }
+        },
+        "ETHUSDT": {
+          "tradesReceived": 383,
+          "completedBuckets": 14,
+          "warmupBuckets": 14,
+          "warmupRequired": 30,
+          "warmupComplete": false,
+          "evaluatedBuckets": 0,
+          "thresholdCrossings": 0,
+          "zScore": {
+            "count": 0,
+            "retainedCount": 0,
+            "retention": "latest_20000",
+            "nonFiniteCount": 0,
+            "min": null,
+            "p50": null,
+            "p90": null,
+            "p95": null,
+            "p99": null,
+            "max": null,
+            "mean": null
+          },
+          "nearMiss": {
+            "observations": 0,
+            "maxRatio": null,
+            "atOrAbove": {
+              "50pct": 0,
+              "75pct": 0,
+              "90pct": 0,
+              "100pct": 0
+            }
+          }
+        },
+        "SOLUSDT": {
+          "tradesReceived": 290,
+          "completedBuckets": 14,
+          "warmupBuckets": 14,
+          "warmupRequired": 30,
+          "warmupComplete": false,
+          "evaluatedBuckets": 0,
+          "thresholdCrossings": 0,
+          "zScore": {
+            "count": 0,
+            "retainedCount": 0,
+            "retention": "latest_20000",
+            "nonFiniteCount": 0,
+            "min": null,
+            "p50": null,
+            "p90": null,
+            "p95": null,
+            "p99": null,
+            "max": null,
+            "mean": null
+          },
+          "nearMiss": {
+            "observations": 0,
+            "maxRatio": null,
+            "atOrAbove": {
+              "50pct": 0,
+              "75pct": 0,
+              "90pct": 0,
+              "100pct": 0
+            }
+          }
+        }
+      },
+      "funding": {
+        "BTCUSDT": {
+          "samplesReceived": 149,
+          "samplesEligible": 119,
+          "warmupProgress": 30,
+          "warmupRequired": 30,
+          "warmupComplete": true,
+          "currentPercentile": 0.256757,
+          "crossings": 7,
+          "distinctRates": 2,
+          "valueChanges": 2,
+          "minimumRate": -1.567e-05,
+          "maximumRate": -1.545e-05,
+          "independenceNote": "repeated_stream_samples_are_not_independent"
+        },
+        "ETHUSDT": {
+          "samplesReceived": 149,
+          "samplesEligible": 119,
+          "warmupProgress": 30,
+          "warmupRequired": 30,
+          "warmupComplete": true,
+          "currentPercentile": 0.256757,
+          "crossings": 7,
+          "distinctRates": 2,
+          "valueChanges": 2,
+          "minimumRate": 3.849e-05,
+          "maximumRate": 3.9e-05,
+          "independenceNote": "repeated_stream_samples_are_not_independent"
+        },
+        "SOLUSDT": {
+          "samplesReceived": 149,
+          "samplesEligible": 119,
+          "warmupProgress": 30,
+          "warmupRequired": 30,
+          "warmupComplete": true,
+          "currentPercentile": 0.256757,
+          "crossings": 7,
+          "distinctRates": 2,
+          "valueChanges": 2,
+          "minimumRate": 3.238e-05,
+          "maximumRate": 3.268e-05,
+          "independenceNote": "repeated_stream_samples_are_not_independent"
+        }
+      }
+    },
+    "data_quality_json": {
+      "expectedStreams": 11,
+      "activeStreams": 11,
+      "missingStreams": [],
+      "staleStreams": [],
+      "silentStreams": [],
+      "stalenessCadenceStreams": [
+        "!markPrice@arr@1s",
+        "btcusdt@depth20@100ms",
+        "ethusdt@depth20@100ms",
+        "solusdt@depth20@100ms"
+      ],
+      "messagesByStream": {
+        "btcusdt@bookTicker": 11284,
+        "solusdt@bookTicker": 6655,
+        "ethusdt@bookTicker": 8037,
+        "ethusdt@depth20@100ms": 1382,
+        "btcusdt@depth20@100ms": 1369,
+        "solusdt@depth20@100ms": 1302,
+        "!markPrice@arr@1s": 298,
+        "solusdt@aggTrade": 290,
+        "btcusdt@aggTrade": 749,
+        "ethusdt@aggTrade": 383,
+        "!forceOrder@arr": 40
+      },
+      "bytesByStream": {
+        "btcusdt@bookTicker": 2286416,
+        "solusdt@bookTicker": 1364336,
+        "ethusdt@bookTicker": 1628794,
+        "ethusdt@depth20@100ms": 1399479,
+        "btcusdt@depth20@100ms": 1428235,
+        "solusdt@depth20@100ms": 1456807,
+        "!markPrice@arr@1s": 24302794,
+        "solusdt@aggTrade": 58858,
+        "btcusdt@aggTrade": 152945,
+        "ethusdt@aggTrade": 77951,
+        "!forceOrder@arr": 9902
+      },
+      "maxObservedSilenceMsByStream": {
+        "!forceOrder@arr": 22662.069,
+        "!markPrice@arr@1s": 1576.122,
+        "btcusdt@aggTrade": 3499.551,
+        "ethusdt@aggTrade": 3534.969,
+        "solusdt@aggTrade": 3906.266,
+        "btcusdt@bookTicker": 1522.857,
+        "ethusdt@bookTicker": 1561.676,
+        "solusdt@bookTicker": 1522.284,
+        "btcusdt@depth20@100ms": 1562.969,
+        "ethusdt@depth20@100ms": 1774.596,
+        "solusdt@depth20@100ms": 1563.13
+      },
+      "silenceSemantics": "inter-message silence; not inferred packet loss",
+      "depthSequenceGapsBySymbol": {
+        "BTCUSDT": 0,
+        "ETHUSDT": 0,
+        "SOLUSDT": 0
+      },
+      "timestampRejected": 0,
+      "timestampRejectedByStream": {},
+      "parseErrors": 0,
+      "payloadErrors": 0,
+      "websocketErrors": {
+        "public": 0,
+        "market": 0
+      },
+      "reconnections": {
+        "public": 0,
+        "market": 0
+      },
+      "connectionAttempts": {
+        "public": 1,
+        "market": 1
+      },
+      "connectionSuccesses": {
+        "public": 1,
+        "market": 1
+      },
+      "connectedSecondsByEndpoint": {
+        "public": 149.091,
+        "market": 149.283
+      },
+      "connectivityObservationSeconds": 150.214,
+      "observedUptimePercentByEndpoint": {
+        "public": 99.252496,
+        "market": 99.380711
+      }
+    },
+    "events_by_type_json": {
+      "extreme_funding_rate": 21
+    },
+    "book_imbalance_json": {
+      "ETHUSDT": -0.663695,
+      "BTCUSDT": 0.338676,
+      "SOLUSDT": 0.134267
+    },
+    "spread_bps_json": {
+      "BTCUSDT": 0.012086,
+      "SOLUSDT": 0.911452,
+      "ETHUSDT": 0.040059
+    }
+  },
+  "runtime": {
+    "running": false,
+    "state": "COMPLETED",
+    "pid": 33300,
+    "launcher": "agent",
+    "mode": "observe",
+    "uptime_seconds": 107636.5,
+    "duration_seconds": 150,
+    "started_at": "2026-10-10T14:02:07+00:00",
+    "feed_health": "UNKNOWN",
+    "latest_snapshot_age": null,
+    "observed_at": "2026-10-11T19:56:03.535Z",
+    "supervisor": {
+      "state": "SUPERVISOR_STALE",
+      "lease_state": "STOPPED",
+      "lease_last_check_at": "2026-10-10T14:04:57+00:00",
+      "last_check_at": "2026-10-10T14:04:57+00:00",
+      "watcher_pid": 37176,
+      "watcher_create_time": "2026-10-10T14:02:40.568691+00:00",
+      "watched_pid": 33300,
+      "run_id": "probe-20261010T140206Z",
+      "supervision_source": "supervisor:control-supervise",
+      "abort_triggered": false,
+      "abort_reason": null,
+      "abort_rule": null,
+      "abort_threshold": null,
+      "abort_observed": null,
+      "action_taken": null,
+      "action_reason": null
+    },
+    "sentinel": {
+      "state": "SENTINEL_STALE",
+      "lease_state": "STOPPED",
+      "lease_last_check_at": "2026-10-10T14:04:50+00:00",
+      "last_check_at": "2026-10-10T14:04:50+00:00",
+      "watcher_pid": 34452,
+      "watcher_create_time": "2026-10-10T14:02:52.681835+00:00",
+      "watched_pid": 33300,
+      "run_id": "probe-20261010T140206Z",
+      "supervision_source": "sentinel:control-sentinel",
+      "abort_triggered": null,
+      "abort_reason": null,
+      "abort_rule": null,
+      "abort_threshold": null,
+      "abort_observed": null,
+      "action_taken": null,
+      "action_reason": null
+    }
+  },
+  "system_http": 200,
+  "bytes_unchanged": true,
+  "system_pending_labels": {
+    "NOT CONNECTED": true,
+    "Host resources": true,
+    "NO EVENT FEED": true
+  },
+  "audit_limits": "source/HTTP audit, not new browser or liveness verification"
+}

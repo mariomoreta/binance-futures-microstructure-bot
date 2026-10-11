@@ -1,0 +1,98 @@
+{
+  "backend_initial": "c59c5ec1f87c6a35f90e28144c65e35962a22655",
+  "helper_source_identical": {
+    "repo_root": true,
+    "no_window_flags": true,
+    "process_info": true,
+    "_creation_time_ctypes": true,
+    "pid_is_ours": true
+  },
+  "legacy_blocker_negative_control": {
+    "exit": 0,
+    "stdout": "HTTP_IMPORT_ALLOWED",
+    "stderr": ""
+  },
+  "modern_blocker_control": {
+    "exit": 0,
+    "stdout": "BLOCK_VERIFIED_AND_CONTROL_ISOLATED",
+    "stderr": ""
+  },
+  "get_checks": [
+    {
+      "route": "/api/v1/runtime",
+      "status": 200,
+      "keys": [
+        "running",
+        "state",
+        "pid",
+        "launcher",
+        "mode",
+        "uptime_seconds",
+        "duration_seconds",
+        "started_at",
+        "feed_health",
+        "latest_snapshot_age",
+        "observed_at",
+        "supervisor",
+        "sentinel"
+      ]
+    },
+    {
+      "route": "/api/v1/runtime/readiness",
+      "status": 200,
+      "keys": [
+        "ready",
+        "reason",
+        "checks"
+      ]
+    },
+    {
+      "route": "/api/v1/historical-coverage?symbol=ORCAUSDT",
+      "status": 200,
+      "keys": [
+        "schema_version",
+        "historical_schema_version",
+        "available",
+        "source",
+        "read_at",
+        "filter",
+        "coverage",
+        "gaps",
+        "studies",
+        "events",
+        "counts",
+        "limits",
+        "truncated",
+        "semantics"
+      ]
+    },
+    {
+      "route": "/api/v1/price-series/BTCUSDT?range=24h",
+      "status": 200,
+      "keys": [
+        "schema_version",
+        "symbol",
+        "range",
+        "source",
+        "window_anchor",
+        "read_at",
+        "generated_at",
+        "requested_start",
+        "observed_start",
+        "observed_end",
+        "points",
+        "status",
+        "raw_count",
+        "display_count",
+        "read_limit",
+        "display_limit",
+        "truncated",
+        "downsampled",
+        "gap_count",
+        "coverage",
+        "note"
+      ]
+    }
+  ],
+  "registry_unchanged": true
+}
