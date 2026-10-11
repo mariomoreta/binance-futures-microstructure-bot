@@ -231,3 +231,6 @@ Retained-record search is not an exchange universe or live subscription guarante
 
 ## DASH-V2-66 - 2026-10-11
 Price production model v3 uses explicit historical ranges, last retained valid sample anchor, 10000 raw read budget + overflow sentinel, 1200 actual displayed/exported samples, preserved raw-gap evidence and unverified coverage. Download is a new same-parameter read, not a frozen prior response.
+
+## DASH-V2-67 - 2026-10-11 - exact backend contract reconciliation
+Backend 5dedacb local/origin verified; documentation+3 tests only since c635938. Focused3 and canonical905 independently pass. Five V2 GET checks and unchanged registry bytes recorded. Separate historical DB schema2 has14 coverage rows/2831 event instances; existing historical-research endpoint is prospective archive, not bar/study parity. No automatic SHA guard in runtime bridge; manual verification clarified. Search/window/Unicode residuals explicit. See DASHBOARD_V2_67_CONTRACT_RECONCILIATION.md and backend handoff. Next frontend V2-68: readonly coverage/studies presentation; backend owner: shared-helper extraction, no retirement. Full cutover/BFF remains PARTIAL; Start/gates unchanged. Nonvisual review only.

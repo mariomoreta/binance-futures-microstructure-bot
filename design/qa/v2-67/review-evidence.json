@@ -1,0 +1,122 @@
+{
+  "backend_sha": "5dedacb19152e6f1bab0d475d15f477bb22ddad1",
+  "frontend_base": "6e1a70c00492bfc73e16d04226b2a2ec4a3ac1f9",
+  "get_checks": [
+    {
+      "route": "/api/v1/runtime",
+      "status": 200,
+      "bytes": 1241,
+      "keys": [
+        "running",
+        "state",
+        "pid",
+        "launcher",
+        "mode",
+        "uptime_seconds",
+        "duration_seconds",
+        "started_at",
+        "feed_health",
+        "latest_snapshot_age",
+        "observed_at",
+        "supervisor",
+        "sentinel"
+      ],
+      "schema_version": null
+    },
+    {
+      "route": "/api/v1/runtime/readiness",
+      "status": 200,
+      "bytes": 649,
+      "keys": [
+        "ready",
+        "reason",
+        "checks"
+      ],
+      "schema_version": null
+    },
+    {
+      "route": "/api/v1/price-series/BTCUSDT?range=24h",
+      "status": 200,
+      "bytes": 40600,
+      "keys": [
+        "schema_version",
+        "symbol",
+        "range",
+        "source",
+        "window_anchor",
+        "read_at",
+        "generated_at",
+        "requested_start",
+        "observed_start",
+        "observed_end",
+        "points",
+        "status",
+        "raw_count",
+        "display_count",
+        "read_limit",
+        "display_limit",
+        "truncated",
+        "downsampled",
+        "gap_count",
+        "coverage",
+        "note"
+      ],
+      "schema_version": 3
+    },
+    {
+      "route": "/search?q=BTC",
+      "status": 200,
+      "bytes": 12020
+    },
+    {
+      "route": "/api/v1/historical-research",
+      "status": 200,
+      "bytes": 16566,
+      "keys": [
+        "source",
+        "schema_version",
+        "counts",
+        "latest_outcome_ms",
+        "states",
+        "symbols",
+        "samples",
+        "setups",
+        "latest_outcomes"
+      ],
+      "schema_version": 9
+    }
+  ],
+  "databases": [
+    {
+      "file": "microprobe.db",
+      "tables": [
+        "persistence_meta",
+        "telemetry_snapshots",
+        "sqlite_sequence",
+        "market_observations",
+        "rejected_observations",
+        "price_samples",
+        "return_features",
+        "discovery_snapshots",
+        "universe_events",
+        "rank_snapshots",
+        "flow_features",
+        "flow_buckets",
+        "book_features",
+        "oi_samples",
+        "oi_features",
+        "structure_features",
+        "state_features",
+        "state_transitions",
+        "opportunity_candidates",
+        "opportunity_events",
+        "prospective_setups",
+        "prospective_outcomes"
+      ]
+    }
+  ],
+  "canonical_tests": {
+    "exit_code": 0,
+    "elapsed_seconds": 167.029
+  }
+}

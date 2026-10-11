@@ -1,0 +1,284 @@
+{
+  "historical_path": "C:\\proyectos\\binance-futures-microstructure-bot\\data\\historical\\historical.db",
+  "exists": true,
+  "schema": [
+    [
+      "schema_version",
+      "2"
+    ]
+  ],
+  "counts": {
+    "historical_coverage": 14,
+    "historical_klines": 17270,
+    "historical_mark_klines": 2157,
+    "event_instances": 2831,
+    "event_outcomes": 16986
+  },
+  "coverage_rows": [
+    {
+      "symbol": "BTCUSDT",
+      "interval": "15m",
+      "source": "klines",
+      "requested_start": 1788816194130,
+      "actual_start": 1567964700000,
+      "first_open": 1788816600000,
+      "last_open": 1791406800000,
+      "expected_bars": 2879,
+      "actual_bars": 2879,
+      "coverage_ratio": 1.0,
+      "updated_at": 1791408196462
+    },
+    {
+      "symbol": "BTCUSDT",
+      "interval": "1h",
+      "source": "klines",
+      "requested_start": 1788816275724,
+      "actual_start": 1567962000000,
+      "first_open": null,
+      "last_open": null,
+      "expected_bars": 0,
+      "actual_bars": 0,
+      "coverage_ratio": null,
+      "updated_at": 1791408277984
+    },
+    {
+      "symbol": "BTCUSDT",
+      "interval": "1h",
+      "source": "mark_klines",
+      "requested_start": 1788816215455,
+      "actual_start": 1577098800000,
+      "first_open": 1788818400000,
+      "last_open": 1791403200000,
+      "expected_bars": 719,
+      "actual_bars": 719,
+      "coverage_ratio": 1.0,
+      "updated_at": 1791408216280
+    },
+    {
+      "symbol": "BTCUSDT",
+      "interval": "1m",
+      "source": "klines",
+      "requested_start": 1791149007615,
+      "actual_start": 1567965420000,
+      "first_open": 1791149040000,
+      "last_open": 1791408120000,
+      "expected_bars": 4319,
+      "actual_bars": 4319,
+      "coverage_ratio": 1.0,
+      "updated_at": 1791408210451
+    },
+    {
+      "symbol": "BTCUSDT",
+      "interval": "5m",
+      "source": "oi_hist",
+      "requested_start": 1790803447171,
+      "actual_start": 1791258300000,
+      "first_open": 1791258300000,
+      "last_open": 1791408000000,
+      "expected_bars": 500,
+      "actual_bars": 500,
+      "coverage_ratio": 1.0,
+      "updated_at": 1791408251385
+    },
+    {
+      "symbol": "ETHUSDT",
+      "interval": "15m",
+      "source": "klines",
+      "requested_start": 1788816196467,
+      "actual_start": 1574840700000,
+      "first_open": 1788816600000,
+      "last_open": 1791406800000,
+      "expected_bars": 2879,
+      "actual_bars": 2879,
+      "coverage_ratio": 1.0,
+      "updated_at": 1791408198176
+    },
+    {
+      "symbol": "ETHUSDT",
+      "interval": "1h",
+      "source": "klines",
+      "requested_start": 1788816184011,
+      "actual_start": 1574838000000,
+      "first_open": 1788818400000,
+      "last_open": 1791403200000,
+      "expected_bars": 719,
+      "actual_bars": 719,
+      "coverage_ratio": 1.0,
+      "updated_at": 1791408184781
+    },
+    {
+      "symbol": "ETHUSDT",
+      "interval": "1h",
+      "source": "mark_klines",
+      "requested_start": 1788816216283,
+      "actual_start": 1577098800000,
+      "first_open": 1788818400000,
+      "last_open": 1791403200000,
+      "expected_bars": 719,
+      "actual_bars": 719,
+      "coverage_ratio": 1.0,
+      "updated_at": 1791408217026
+    },
+    {
+      "symbol": "MINAUSDT",
+      "interval": "1h",
+      "source": "klines",
+      "requested_start": 1788816185527,
+      "actual_start": 1675767600000,
+      "first_open": 1788818400000,
+      "last_open": 1791403200000,
+      "expected_bars": 719,
+      "actual_bars": 719,
+      "coverage_ratio": 1.0,
+      "updated_at": 1791408186385
+    },
+    {
+      "symbol": "NMRUSDT",
+      "interval": "1h",
+      "source": "klines",
+      "requested_start": 1788820960682,
+      "actual_start": 1687435200000,
+      "first_open": 1788822000000,
+      "last_open": 1791406800000,
+      "expected_bars": 719,
+      "actual_bars": 719,
+      "coverage_ratio": 1.0,
+      "updated_at": 1791412962917
+    },
+    {
+      "symbol": "ORCAUSDT",
+      "interval": "1h",
+      "source": "klines",
+      "requested_start": 1788816186389,
+      "actual_start": 1733497200000,
+      "first_open": 1788818400000,
+      "last_open": 1791403200000,
+      "expected_bars": 719,
+      "actual_bars": 719,
+      "coverage_ratio": 1.0,
+      "updated_at": 1791408187132
+    },
+    {
+      "symbol": "SOLUSDT",
+      "interval": "15m",
+      "source": "klines",
+      "requested_start": 1788816198180,
+      "actual_start": 1600066800000,
+      "first_open": 1788816600000,
+      "last_open": 1791406800000,
+      "expected_bars": 2879,
+      "actual_bars": 2879,
+      "coverage_ratio": 1.0,
+      "updated_at": 1791408207374
+    },
+    {
+      "symbol": "SOLUSDT",
+      "interval": "1h",
+      "source": "klines",
+      "requested_start": 1788816184784,
+      "actual_start": 1600066800000,
+      "first_open": 1788818400000,
+      "last_open": 1791403200000,
+      "expected_bars": 719,
+      "actual_bars": 719,
+      "coverage_ratio": 1.0,
+      "updated_at": 1791408185523
+    },
+    {
+      "symbol": "SOLUSDT",
+      "interval": "1h",
+      "source": "mark_klines",
+      "requested_start": 1788816217029,
+      "actual_start": 1599994800000,
+      "first_open": 1788818400000,
+      "last_open": 1791403200000,
+      "expected_bars": 719,
+      "actual_bars": 719,
+      "coverage_ratio": 1.0,
+      "updated_at": 1791408217772
+    }
+  ],
+  "event_definition_counts": [
+    {
+      "definition_name": "EXTENDED_GAINER",
+      "definition_version": 1,
+      "n": 318
+    },
+    {
+      "definition_name": "EXTENDED_LOSER",
+      "definition_version": 1,
+      "n": 97
+    },
+    {
+      "definition_name": "FAILED_HIGH_CANDIDATE",
+      "definition_version": 1,
+      "n": 19
+    },
+    {
+      "definition_name": "FAILED_LOW_CANDIDATE",
+      "definition_version": 1,
+      "n": 10
+    },
+    {
+      "definition_name": "MOMENTUM_ACCELERATION_DOWN",
+      "definition_version": 1,
+      "n": 1184
+    },
+    {
+      "definition_name": "MOMENTUM_ACCELERATION_UP",
+      "definition_version": 1,
+      "n": 1203
+    }
+  ],
+  "runtime": {
+    "running": false,
+    "state": "COMPLETED",
+    "pid": 33300,
+    "launcher": "agent",
+    "mode": "observe",
+    "uptime_seconds": 105269.3,
+    "duration_seconds": 150,
+    "started_at": "2026-10-10T14:02:07+00:00",
+    "feed_health": "UNKNOWN",
+    "latest_snapshot_age": null,
+    "observed_at": "2026-10-11T19:16:36.337Z",
+    "supervisor": {
+      "state": "SUPERVISOR_STALE",
+      "lease_state": "STOPPED",
+      "lease_last_check_at": "2026-10-10T14:04:57+00:00",
+      "last_check_at": "2026-10-10T14:04:57+00:00",
+      "watcher_pid": 37176,
+      "watcher_create_time": "2026-10-10T14:02:40.568691+00:00",
+      "watched_pid": 33300,
+      "run_id": "probe-20261010T140206Z",
+      "supervision_source": "supervisor:control-supervise",
+      "abort_triggered": false,
+      "abort_reason": null,
+      "abort_rule": null,
+      "abort_threshold": null,
+      "abort_observed": null,
+      "action_taken": null,
+      "action_reason": null
+    },
+    "sentinel": {
+      "state": "SENTINEL_STALE",
+      "lease_state": "STOPPED",
+      "lease_last_check_at": "2026-10-10T14:04:50+00:00",
+      "last_check_at": "2026-10-10T14:04:50+00:00",
+      "watcher_pid": 34452,
+      "watcher_create_time": "2026-10-10T14:02:52.681835+00:00",
+      "watched_pid": 33300,
+      "run_id": "probe-20261010T140206Z",
+      "supervision_source": "sentinel:control-sentinel",
+      "abort_triggered": null,
+      "abort_reason": null,
+      "abort_rule": null,
+      "abort_threshold": null,
+      "abort_observed": null,
+      "action_taken": null,
+      "action_reason": null
+    }
+  },
+  "registry_unchanged": true,
+  "registry_sha256": "45c6a39ec91f55db708e1b9011f86bc55248b4485e582c015ea4442cc7cab5da"
+}

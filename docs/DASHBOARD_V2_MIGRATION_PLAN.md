@@ -113,3 +113,6 @@ V2-65 delivered retained-symbol search and additional saved token fields. Next V
 
 ## DASH-V2-66 - 2026-10-11
 V2-66 five ranges and bounded exports delivered; next V2-67 saved historical coverage/study routes/diagnostic presentation. Complete retirement still requires V2-64 acceptance matrix.
+
+## DASH-V2-67 - 2026-10-11 - exact backend contract reconciliation
+Backend 5dedacb local/origin verified; documentation+3 tests only since c635938. Focused3 and canonical905 independently pass. Five V2 GET checks and unchanged registry bytes recorded. Separate historical DB schema2 has14 coverage rows/2831 event instances; existing historical-research endpoint is prospective archive, not bar/study parity. No automatic SHA guard in runtime bridge; manual verification clarified. Search/window/Unicode residuals explicit. See DASHBOARD_V2_67_CONTRACT_RECONCILIATION.md and backend handoff. Next frontend V2-68: readonly coverage/studies presentation; backend owner: shared-helper extraction, no retirement. Full cutover/BFF remains PARTIAL; Start/gates unchanged. Nonvisual review only.

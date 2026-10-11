@@ -1,5 +1,8 @@
 # TASK_QUEUE
 
+## DASH-V2-67 - 2026-10-11 - exact backend contract reconciliation
+Backend 5dedacb local/origin verified; documentation+3 tests only since c635938. Focused3 and canonical905 independently pass. Five V2 GET checks and unchanged registry bytes recorded. Separate historical DB schema2 has14 coverage rows/2831 event instances; existing historical-research endpoint is prospective archive, not bar/study parity. No automatic SHA guard in runtime bridge; manual verification clarified. Search/window/Unicode residuals explicit. See DASHBOARD_V2_67_CONTRACT_RECONCILIATION.md and backend handoff. Next frontend V2-68: readonly coverage/studies presentation; backend owner: shared-helper extraction, no retirement. Full cutover/BFF remains PARTIAL; Start/gates unchanged. Nonvisual review only.
+
 ## DASH-V2-66 - 2026-10-11 - historical ranges and exports
 Five saved-price ranges and CSV/JSON attachments implemented via production response model v3, bounded/gap-aware sampling, explicit incomplete coverage. Frontend 168/168 + types/lint/build; V2 Python snapshot 496/496. HTTP representations agree; browser 15 cases passes, final label delta recorded separately. See DASHBOARD_V2_66_PRICE_RANGES_EXPORT.md. Next V2-67 historical coverage/studies and diagnostic parity, backend exact-report coordination. Start/old fallback/gates preserved; no collector traffic or DB migration.
 
