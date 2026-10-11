@@ -1033,3 +1033,22 @@ watcher panels and production DTOs captured. Reference fidelity remains PARTIAL.
 Start/transactional launch blocked; no market run, backend edit or gate advance.
 F-V2-BFF-01 and F-V2-SYSTEM-01 remain PARTIAL. Runtime source shows COMPLETED;
 both leases STOPPED, displayed STALE; feed UNKNOWN, recorded evidence separate.
+
+
+## 2026-10-11 - DASH-V2-51 operation boundary and pure observation
+Backend 0786617 exact SHA reviewed; 48/48 targeted regressions PASS.
+Locked STOPPING acquisition, final marks, actual abort owner and genuine
+thread heartbeat writes accepted. Remaining operation-boundary findings:
+post-claim takeover reaches simulated termination; wrong-run owned lease
+reaches termination; status() can overwrite ABORTED with stale FAILED.
+Independent process-owner concurrency coverage remains absent.
+
+V2 no longer calls mutating status() for GET observation or command preflight.
+Requires canonical status_readonly(); missing capability returns explicit
+READ_ONLY_STATUS_REQUIRED/UNKNOWN and pauses controls. The source currently
+lacks it. Recorded SQLite evidence remains available; Start still blocked.
+118/118 frontend/type/lint/build and V2 Python snapshot 496/496 PASS.
+Bridge execution against a synthetic active registry preserved its bytes;
+canonical registry SHA-256 unchanged. No market run or backend edit.
+Full audit/owner follow-up: DASHBOARD_V2_51_FENCING_REVIEW.md.
+F-V2-BFF-01 and F-V2-SYSTEM-01 remain PARTIAL; safety gates unchanged.

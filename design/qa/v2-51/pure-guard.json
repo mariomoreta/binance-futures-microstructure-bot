@@ -1,0 +1,8 @@
+{
+  "response": {
+    "error": "READ_ONLY_STATUS_REQUIRED"
+  },
+  "temporary_registry_unchanged": true,
+  "canonical_registry_sha256_before": "45c6a39ec91f55db708e1b9011f86bc55248b4485e582c015ea4442cc7cab5da",
+  "canonical_registry_sha256_after": "45c6a39ec91f55db708e1b9011f86bc55248b4485e582c015ea4442cc7cab5da"
+}

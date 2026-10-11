@@ -1,0 +1,123 @@
+{
+  "results": [
+    {
+      "route": "system",
+      "title": "System",
+      "width": 1672,
+      "scroll": 1657,
+      "mains": 1,
+      "loading": false,
+      "active": [
+        "/system"
+      ],
+      "height": 1442,
+      "alerts": [
+        "Runtime observation is paused until status can be reported without changing runtime records. Commands are disabled."
+      ],
+      "scrollTables": 0,
+      "watcherUI": {
+        "width": 1672,
+        "scroll": 1672,
+        "sentinel": true,
+        "startDisabled": true,
+        "alerts": [
+          "Runtime observation is paused until status can be reported without changing runtime records. Commands are disabled."
+        ]
+      }
+    },
+    {
+      "route": "overview",
+      "title": "Overview",
+      "width": 1672,
+      "scroll": 1657,
+      "mains": 1,
+      "loading": false,
+      "active": [
+        "/overview"
+      ],
+      "height": 1549,
+      "alerts": [],
+      "scrollTables": 0
+    },
+    {
+      "route": "system",
+      "title": "System",
+      "width": 1366,
+      "scroll": 1351,
+      "mains": 1,
+      "loading": false,
+      "active": [
+        "/system"
+      ],
+      "height": 1458,
+      "alerts": [
+        "Runtime observation is paused until status can be reported without changing runtime records. Commands are disabled."
+      ],
+      "scrollTables": 0,
+      "watcherUI": {
+        "width": 1366,
+        "scroll": 1366,
+        "sentinel": true,
+        "startDisabled": true,
+        "alerts": [
+          "Runtime observation is paused until status can be reported without changing runtime records. Commands are disabled."
+        ]
+      }
+    },
+    {
+      "route": "overview",
+      "title": "Overview",
+      "width": 1366,
+      "scroll": 1351,
+      "mains": 1,
+      "loading": false,
+      "active": [
+        "/overview"
+      ],
+      "height": 1565,
+      "alerts": [],
+      "scrollTables": 0
+    },
+    {
+      "route": "system",
+      "title": "System",
+      "width": 390,
+      "scroll": 375,
+      "mains": 1,
+      "loading": false,
+      "active": [
+        "/system"
+      ],
+      "height": 3116,
+      "alerts": [
+        "Runtime observation is paused until status can be reported without changing runtime records. Commands are disabled."
+      ],
+      "scrollTables": 0,
+      "watcherUI": {
+        "width": 390,
+        "scroll": 390,
+        "sentinel": true,
+        "startDisabled": true,
+        "alerts": [
+          "Runtime observation is paused until status can be reported without changing runtime records. Commands are disabled."
+        ]
+      }
+    },
+    {
+      "route": "overview",
+      "title": "Overview",
+      "width": 390,
+      "scroll": 375,
+      "mains": 1,
+      "loading": false,
+      "active": [
+        "/overview"
+      ],
+      "height": 2784,
+      "alerts": [],
+      "scrollTables": 2
+    }
+  ],
+  "errors": [],
+  "unavailable": []
+}

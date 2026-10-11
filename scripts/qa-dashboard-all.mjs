@@ -5,8 +5,9 @@ import path from "node:path";
 
 const chrome = "C:/Program Files/Google/Chrome/Application/chrome.exe";
 const root = process.cwd();
-const watcherAudit=process.argv[2]==="system-50";
-const out = watcherAudit ? path.join(root,"design/qa/v2-50") : path.join(root, "design/qa/v2-49",process.argv[2]==="before"?"before":"after");
+const guardAudit=process.argv[2]==="system-51";
+const watcherAudit=process.argv[2]==="system-50"||guardAudit;
+const out = watcherAudit ? path.join(root,guardAudit?"design/qa/v2-51":"design/qa/v2-50") : path.join(root, "design/qa/v2-49",process.argv[2]==="before"?"before":"after");
 await mkdir(out, {recursive:true});
 const profile = await mkdtemp(path.join(os.tmpdir(), "dashboard-v2-49-"));
 const child = spawn(chrome, ["--headless=new", "--disable-gpu", "--no-first-run",
@@ -67,10 +68,10 @@ try {
         await writeFile(path.join(out,watcherAudit?"system-expanded-"+width+".png":"system-expanded.png"),Buffer.from(s.data,"base64"));
         if(watcherAudit){
           const ui=await evaluate('({width:innerWidth,scroll:document.documentElement.scrollWidth,sentinel:!!document.querySelector("[aria-label=\\\"sentinel evidence\\\"]"),startDisabled:[...document.querySelectorAll("button")].find(b=>b.textContent.includes("Start monitor"))?.disabled,alerts:[...document.querySelectorAll("[role=alert]")].map(a=>a.textContent)})');
-          if(ui.scroll>ui.width||!ui.sentinel||!ui.startDisabled||ui.alerts.length)throw Error("Watcher UI check failed "+JSON.stringify(ui));
+          if(ui.scroll>ui.width||!ui.sentinel||!ui.startDisabled||(guardAudit ? ui.alerts.length!==1||!ui.alerts[0].includes("Runtime observation is paused") : ui.alerts.length>0))throw Error("Watcher UI check failed "+JSON.stringify(ui));
           results.at(-1).watcherUI=ui;
           const dto=await evaluate('fetch("/api/v1/runtime",{cache:"no-store"}).then(r=>r.json())');
-          if(!dto.sentinel||!dto.supervisor||!dto.observed_at||dto.error)throw Error("Watcher API evidence unavailable");
+          if(!dto.sentinel||!dto.supervisor||!dto.observed_at||(guardAudit ? dto.error!=="READ_ONLY_STATUS_REQUIRED"||dto.state!=="UNKNOWN" : !!dto.error))throw Error("Watcher API evidence unavailable");
           await writeFile(path.join(out,"runtime-"+width+".json"),JSON.stringify(dto,null,2));
         }
       }

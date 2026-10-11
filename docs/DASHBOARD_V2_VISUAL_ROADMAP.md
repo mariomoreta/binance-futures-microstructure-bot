@@ -69,3 +69,11 @@ System remains visually PARTIAL. Safety review remains CHANGES REQUIRED:
 enforce_abort pre-termination ownership/locking, genuine heartbeat race tests.
 Next: owner follow-up in DASHBOARD_V2_50_CORRECTIONS_REVIEW.md, then review exact
 new SHA before transactional launch integration. No market run authorized here.
+
+
+## 2026-10-11 - DASH-V2-51 follow-up checkpoint
+Backend 0786617 reviewed. Pre-claim and final-mark fixes accepted; operation
+boundary, run-associated lease, pure status and process-owner race coverage
+remain pending. V2 now pauses runtime observation until status_readonly exists;
+historical evidence remains visible. Next owner task is specified in
+DASHBOARD_V2_51_FENCING_REVIEW.md. Start and launch gates remain blocked.

@@ -1,7 +1,7 @@
 import {afterEach,describe,expect,it,vi} from "vitest";
 const run=vi.hoisted(()=>vi.fn());
 vi.mock("node:child_process",()=>({spawnSync:run,default:{spawnSync:run}}));
-import {runtimeStatus} from "@/lib/runtime-control";
+import {runtimeStatus,runtimeAction} from "@/lib/runtime-control";
 afterEach(()=>vi.resetAllMocks());
 describe("Runtime BFF additive watcher contract",()=>{
   it("preserves both raw watcher blocks and adds its own observation time",()=>{
@@ -16,7 +16,7 @@ describe("Runtime BFF additive watcher contract",()=>{
     expect(x.sentinel?.watcher_pid).toBe(8);expect(x.sentinel?.lease_state).toBe("ACTIVE");
     expect(x.sentinel?.action_reason).toBe("stale-supervision");
     expect(Number.isFinite(Date.parse(x.observed_at!))).toBe(true);
-    expect(run.mock.calls[0]?.[1]?.[1]).toContain("control.status()");
+    expect(run.mock.calls[0]?.[1]?.[1]).toContain("status_readonly");
   });
   it("keeps both watchers UNKNOWN when controller unavailable or blocks malformed",()=>{
     run.mockReturnValue({status:1,stdout:""});
@@ -25,4 +25,22 @@ describe("Runtime BFF additive watcher contract",()=>{
     const x=runtimeStatus();expect(x.supervisor?.state).toBe("SUPERVISOR_UNKNOWN");
     expect(x.sentinel?.state).toBe("SENTINEL_UNKNOWN");expect(x.state).toBe("COMPLETED");
   });
+});
+
+describe("Pure runtime observation capability",()=>{
+ it("returns UNKNOWN/error when pure capability is absent and never selects legacy status",()=>{
+  run.mockReturnValue({status:0,stdout:JSON.stringify({error:"READ_ONLY_STATUS_REQUIRED"})});
+  const x=runtimeStatus();expect(x.state).toBe("UNKNOWN");
+  expect(x.error).toBe("READ_ONLY_STATUS_REQUIRED");
+  expect(x.sentinel?.state).toBe("SENTINEL_UNKNOWN");
+  const script=run.mock.calls[0]?.[1]?.[1];
+  expect(script).toContain("status_readonly");expect(script).not.toContain("control.status()");
+ });
+ it("requires the same pure capability for stop preflight; start never spawns Python",()=>{
+  run.mockReturnValue({status:0,stdout:JSON.stringify({error:"READ_ONLY_STATUS_REQUIRED"})});
+  expect(runtimeAction("stop").data.error).toBe("READ_ONLY_STATUS_REQUIRED");
+  expect(run.mock.calls[0]?.[1]?.[1]).not.toContain("control.status()");
+  run.mockClear();expect(runtimeAction("start").data.error).toBe("SUPERVISOR_REQUIRED");
+  expect(run).not.toHaveBeenCalled();
+ });
 });

@@ -199,3 +199,17 @@ Process lifecycle, feed health, supervisor and sentinel remain distinct.
 Start stays blocked; launch readiness and success gates are unchanged.
 Residual source contract: abort_at / aborted_by persist in registry but are not
 published by control.status() watcher blocks at this SHA; V2 does not invent them.
+
+
+## 2026-10-11 - DASH-V2-51 pure observation requirement
+The runtime BFF and command preflight require canonical control.status_readonly().
+Its shape must match existing process + supervisor + sentinel status fields.
+It must not write/reconcile registry, close/mutate log handles or take process
+actions. Legacy control.status() is not called as fallback.
+Current backend 0786617 lacks this capability: runtime returns explicit
+READ_ONLY_STATUS_REQUIRED with UNKNOWN process/feed/watchers and null evidence.
+This intentionally supersedes the direct control.status() bridge in DASH-V2-50.
+It does not imply that historical SQLite evidence is missing or that the
+underlying engine is stopped. Client commands are disabled on the source error.
+Start remains blocked in its route and helper; mutation/security gates unchanged.
+The pure method must be independently audited before accepting a backend handoff.

@@ -1,0 +1,42 @@
+{
+  "backend_sha": "07866176559954818dfccf880106bdf22feab40d",
+  "supervisor_after_claim_takeover": {
+    "terminate_called": true,
+    "result": {
+      "aborted": false,
+      "reason": "superseded"
+    },
+    "lease_owner": 999999
+  },
+  "supervisor_wrong_run_lease": {
+    "terminate_called": true,
+    "result": {
+      "aborted": true,
+      "pid": 424243,
+      "rule": "timestamp-reject-rate",
+      "reason": "t"
+    }
+  },
+  "sentinel_after_claim_takeover": {
+    "terminate_called": true,
+    "result": {
+      "aborted": false,
+      "reason": "superseded"
+    },
+    "lease_owner": 999999
+  },
+  "sentinel_wrong_run_lease": {
+    "terminate_called": true,
+    "result": {
+      "aborted": true,
+      "pid": 424243,
+      "rule": "timestamp-reject-rate",
+      "reason": "t"
+    }
+  },
+  "status_overwrites_terminal": {
+    "output_state": "FAILED",
+    "stored_state": "FAILED",
+    "abort_reason": null
+  }
+}

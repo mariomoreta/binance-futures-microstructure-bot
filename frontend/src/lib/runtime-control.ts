@@ -12,17 +12,17 @@ function execute(code:string):{ok:boolean;data:Record<string,unknown>}{
   return {ok:p.status===0,data:value as Record<string,unknown>};
  }catch{return {ok:false,data:{error:"INVALID_CONTROLLER_RESPONSE"}}}
 }
-const statusCode="import json;from microstructure_probe import control;print(json.dumps(control.status()))";
+const pureStatusCode="import json;from microstructure_probe import control;f=getattr(control,'status_readonly',None);s=f() if callable(f) else {'error':'READ_ONLY_STATUS_REQUIRED'};";
+const statusCode=pureStatusCode+"print(json.dumps(s))";
 export function runtimeStatus():RuntimeState{
  const r=execute(statusCode);
- if(!r.ok)return {running:false,state:"UNKNOWN",pid:null,launcher:null,mode:"UNKNOWN",uptime_seconds:null,duration_seconds:null,started_at:null,feed_health:"UNKNOWN",latest_snapshot_age:null,observed_at:new Date().toISOString(),supervisor:normalizeWatcher(null,"supervisor"),sentinel:normalizeWatcher(null,"sentinel"),error:typeof r.data.error==="string"?r.data.error:"CANONICAL_CONTROLLER_UNAVAILABLE"};
+ if(!r.ok||typeof r.data.error==="string")return {running:false,state:"UNKNOWN",pid:null,launcher:null,mode:"UNKNOWN",uptime_seconds:null,duration_seconds:null,started_at:null,feed_health:"UNKNOWN",latest_snapshot_age:null,observed_at:new Date().toISOString(),supervisor:normalizeWatcher(null,"supervisor"),sentinel:normalizeWatcher(null,"sentinel"),error:typeof r.data.error==="string"?r.data.error:"CANONICAL_CONTROLLER_UNAVAILABLE"};
  const x=r.data;
  return {running:x.running===true,state:typeof x.running==="boolean"&&typeof x.state==="string"&&x.state.trim()?x.state:"UNKNOWN",pid:typeof x.pid==="number"?x.pid:null,launcher:typeof x.launcher==="string"?x.launcher:null,mode:typeof x.mode==="string"&&x.mode.trim()?x.mode:"UNKNOWN",uptime_seconds:typeof x.uptime_seconds==="number"?x.uptime_seconds:null,duration_seconds:typeof x.duration_seconds==="number"?x.duration_seconds:null,started_at:typeof x.started_at==="string"?x.started_at:null,feed_health:"UNKNOWN",latest_snapshot_age:null,observed_at:new Date().toISOString(),supervisor:normalizeWatcher(x.supervisor,"supervisor"),sentinel:normalizeWatcher(x.sentinel,"sentinel"),...(typeof x.error==="string"?{error:x.error}:{})};
 }
 export function runtimeAction(kind:"start"|"stop"){
- const code=kind==="start"?
- "import json;from microstructure_probe import control;s=control.status();r={'error':'already_running','state':s.get('state')} if s.get('running') or s.get('state') in ('STARTING','STOPPING','UNKNOWN') else control.start_probe(2100,launcher='dashboard',preset='standard');print(json.dumps(r))":
- "import json;from microstructure_probe import control;s=control.status();r={'error':'not_dashboard_owned','launcher':s.get('launcher')} if not s.get('running') or s.get('launcher')!='dashboard' else control.stop_probe(requester='dashboard-v2');print(json.dumps(r))";
+ if(kind==="start")return {ok:false,data:{error:"SUPERVISOR_REQUIRED"}};
+ const code=pureStatusCode+"r=s if s.get('error') else ({'error':'not_dashboard_owned','launcher':s.get('launcher')} if not s.get('running') or s.get('launcher')!='dashboard' else control.stop_probe(requester='dashboard-v2'));print(json.dumps(r))";
  return execute(code);
 }
 export function requestAllowed(req:Request){

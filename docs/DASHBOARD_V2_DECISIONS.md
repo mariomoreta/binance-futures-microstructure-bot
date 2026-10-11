@@ -125,3 +125,12 @@ OS liveness or protection. Expose sentinel independently from supervisor.
 Use the documented 90s display bound and explicit UTC observation time. Keep
 Start disabled until canonical transactional launch and enforcement ownership
 are independently verified. Read-only integration does not advance safety gates.
+
+
+## 2026-10-11 - DASH-V2-51 pure runtime observation
+GET must not cause lifecycle reconciliation. Require canonical status_readonly()
+and explicitly pause observation when absent; never call legacy status() as
+fallback or create a second lifecycle manager. Command preflight uses the same
+boundary. Recorded evidence remains independent of current runtime availability.
+This supersedes DASH-V2-50's direct status() bridge, whose side effect was
+confirmed by the owner and reproduced. Start and operational gates stay blocked.
