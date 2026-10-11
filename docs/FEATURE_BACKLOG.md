@@ -1,6 +1,6 @@
 # FEATURE BACKLOG — canonical decision traceability & deferred features
 
-> Current reconciliation: DASH-V2-53 (2026-10-11). Original inventories/statuses below are dated historical checkpoints; consult the dated reconciliation section and MOVER_LEVEL_STRATEGY_RESEARCH.md before interpreting implementation status. Backend 55efaa2 and the V2 snapshot are separate source trees.
+> Current reconciliation: DASH-V2-61 (2026-10-11); see latest dated review below. Previous reconciliation: DASH-V2-53 (2026-10-11). Original inventories/statuses below are dated historical checkpoints; consult the dated reconciliation section and MOVER_LEVEL_STRATEGY_RESEARCH.md before interpreting implementation status. Backend 55efaa2 and the V2 snapshot are separate source trees.
 
 **Purpose:** durable project-wide record so approved product decisions,
 deferred features, design agreements and future dependencies are never lost
@@ -596,3 +596,8 @@ Research navigation/headings/notices and mobile summary grids refined; literal r
 ## DASH-V2-60 - 2026-10-11 - bounded visual cycle checkpoint
 
 Token Detail (V58), research workspace (V59), System/archives/future workspace refinements and final consistency (V60) are DONE within bounded visual scope; exact reference parity remains PARTIAL. All 13 routes / 3 widths = 39 browser cases pass, source-unavailable responses preserved; keyboard table checks pass. Frontend 118/118, types/build pass, Python V2 snapshot 496/496; lint 0 errors / 1 existing warning. Production http://127.0.0.1:3020, managed PID 34380. See [final screen matrix and evidence](DASHBOARD_V2_60_CONSISTENCY_REVIEW.md). Opportunities reference missing; contracts/engines and finer frame fidelity remain separate. Await other owner's published report for exact-SHA integration review. No backend change, Start, probe, trading or SUCCESS_GATES advancement.
+
+
+## DASH-V2-61 - 2026-10-11 - launch preparation reconciliation
+
+F-LAUNCH-SUP-01: PROPOSED/PARTIAL (disabled backend preparation reported at da231b9; V2 acceptance CHANGES REQUIRED). No enabled operation implemented in V2. Five new discrepancies reproduced, with C1/C2 contract reconciliation pending; see DASHBOARD_V2_61_SUPERVISED_LAUNCH_REVIEW.md and correction handoff. Backend 873/873 and V2 snapshot 496/496 OK do not close the new findings. F-P14A-01: prior bounded corrections/windows remain dated historical evidence; no new longevity or SUCCESS_GATES advancement. Visual V58-V60 scope remains bounded DONE with exact fidelity PARTIAL.

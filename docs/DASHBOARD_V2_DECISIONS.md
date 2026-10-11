@@ -207,3 +207,8 @@ Missing Opportunities reference blocks exact design fidelity, not independently 
 
 ## 2026-10-11 - DASH-V2-60 bounded visual cycle
 Named focusable scrolling regions preserve table access on narrow screens. Compact recorded coverage and neutral future icons improve hierarchy without creating observations or capabilities. The A/B/C/D bounded composition cycle and final route audit can be DONE while exact fidelity is PARTIAL and contracts/assets remain unavailable. Backend launch/report review stays a separate exact-SHA task; no gate or run authorization inferred.
+
+
+## DASH-V2-61 - 2026-10-11 - withhold dormant launch acceptance
+
+The newly added disabled engine at backend da231b9 has reproduced ownership, revalidation, command, time-budget and uncertainty discrepancies. Keep Start disabled and withhold integration; accepted prior BOOL/evidence-handoff fixes remain closed. Canonical 873/873 plus V2 496/496 pass but do not establish new launch correctness. Follow DASHBOARD_V2_61_SUPERVISED_LAUNCH_REVIEW.md and bounded backend handoff; no operational or strategy authorization.

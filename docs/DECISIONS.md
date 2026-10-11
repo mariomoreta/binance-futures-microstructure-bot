@@ -449,3 +449,8 @@ Independent review concerns both reproduced against code: (A) ticker timestamp g
 User authorized evaluation and durable documentation of mover/level strategy intent. Record H-A1 continuation after breakout/retest and H-B1 confirmed short reversal as the first proposed research comparison; H-A2/C1 secondary and H-D1 deferred. Percentage-move cohorts, cap cutoff, confirmation/risk/sample parameters remain hypotheses/open decisions. PROPOSED implementation; no strategy, numeric threshold, classifier change, runtime run, paper or gate approval.
 
 [MOVER_LEVEL_STRATEGY_RESEARCH.md](MOVER_LEVEL_STRATEGY_RESEARCH.md) owns the research specification; FEATURE_BACKLOG.md indexes seven future requirements. Reconcile canonical backend 55efaa2 implementations with V2 snapshot separately. Existing endpoint outcomes do not establish path metrics, executable returns or independent trade counts. Evaluate net expectancy and uncertainty under costs; sub-50% win rate alone is not a rejection rule. Preserve SUCCESS_GATES and existing operational boundaries.
+
+
+## DASH-V2-61 - 2026-10-11 - withhold dormant launch acceptance
+
+The newly added disabled engine at backend da231b9 has reproduced ownership, revalidation, command, time-budget and uncertainty discrepancies. Keep Start disabled and withhold integration; accepted prior BOOL/evidence-handoff fixes remain closed. Canonical 873/873 plus V2 496/496 pass but do not establish new launch correctness. Follow DASHBOARD_V2_61_SUPERVISED_LAUNCH_REVIEW.md and bounded backend handoff; no operational or strategy authorization.

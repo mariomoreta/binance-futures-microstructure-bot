@@ -1,5 +1,10 @@
 # Dashboard V2 Progress
 
+
+## DASH-V2-61 - 2026-10-11 - disabled launch review
+
+Exact backend da231b911e9b1a0cfe86b3aaa3325e5b71928687 reviewed read-only from Git archive: CHANGES REQUIRED, not accepted for integration. Public disabled guard verified; nine deterministic cases reproduce five new issues (foreign run ownership/rollback, ignored watcher recheck, wrong default supervisor command, finite-budget violation, unreadable-final uncertainty). Future tolerance and claimed pure preflight timing also require reconciliation. Backend canonical 873/873 OK (170.494s); V2 snapshot 496/496 OK (83.491s), both exit 0. Passing existing suites do not negate new reproductions. See [review/evidence](DASHBOARD_V2_61_SUPERVISED_LAUNCH_REVIEW.md) and [complete backend correction prompt](DASHBOARD_V2_61_BACKEND_HANDOFF.md). Start stays disabled; pure status GETs and production V2-60 remain unchanged at http://127.0.0.1:3020. Next: backend owner fixes bounded R1-R5/C1-C2, then exact-SHA review. V2-55 accepted R1/R2 remain closed; no probes, gates, main merge or backend worktree edits. Visual verification N/A for this nonvisual checkpoint.
+
 ## DASH-V2-47 — Evidence-based runtime readiness (2026-10-10)
 
 - Continued from remote DASH-V2-46 at fcaaca2, rather than uploaded DASH-V2-02.

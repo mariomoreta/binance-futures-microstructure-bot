@@ -1,0 +1,314 @@
+{
+  "backend_sha": "da231b911e9b1a0cfe86b3aaa3325e5b71928687",
+  "real_processes_spawned": 0,
+  "real_terminations": 0,
+  "registry_writes": 0,
+  "findings": {
+    "disabled_guard": {
+      "passes": true,
+      "result": {
+        "outcome": "rejected",
+        "reason": "supervised-launch-disabled",
+        "scope": "point-in-time confirmation, not future protection",
+        "run": null,
+        "watchers": {
+          "supervisor": {
+            "pid": null,
+            "create_time": null,
+            "confirmed": false
+          },
+          "sentinel": {
+            "pid": null,
+            "create_time": null,
+            "confirmed": false
+          }
+        },
+        "verification": {
+          "polls": 0,
+          "budget_s": 60.0
+        },
+        "rollback": {
+          "attempted": false,
+          "cleaned": [],
+          "pending": []
+        },
+        "evidence": null
+      }
+    },
+    "R1_foreign_rollback": {
+      "result": {
+        "outcome": "rejected",
+        "reason": "supervisor-spawn-failed",
+        "scope": "point-in-time confirmation, not future protection",
+        "run": {
+          "pid": 999,
+          "create_time": "c999"
+        },
+        "watchers": {
+          "supervisor": {
+            "pid": null,
+            "create_time": null,
+            "confirmed": false
+          },
+          "sentinel": {
+            "pid": null,
+            "create_time": null,
+            "confirmed": false
+          }
+        },
+        "verification": {
+          "polls": 0,
+          "budget_s": 0,
+          "error": "injected"
+        },
+        "rollback": {
+          "attempted": true,
+          "cleaned": [
+            {
+              "role": "probe",
+              "pid": 999,
+              "note": "already-gone"
+            }
+          ],
+          "pending": []
+        },
+        "evidence": {
+          "log": "mock-only.log"
+        }
+      },
+      "mock_kills": [
+        999
+      ],
+      "mock_spawns": [
+        {
+          "role": "supervisor",
+          "watched_pid": 999
+        }
+      ],
+      "own_child_alive": true,
+      "foreign_alive": false
+    },
+    "R1_foreign_confirmation": {
+      "result": {
+        "outcome": "confirmed",
+        "reason": "all-components-verified",
+        "scope": "point-in-time confirmation, not future protection",
+        "run": {
+          "pid": 999,
+          "create_time": "c999"
+        },
+        "watchers": {
+          "supervisor": {
+            "pid": 201,
+            "create_time": "c201",
+            "confirmed": true
+          },
+          "sentinel": {
+            "pid": 202,
+            "create_time": "c202",
+            "confirmed": true
+          }
+        },
+        "verification": {
+          "polls": 1,
+          "budget_s": 0.0,
+          "supervisor_age_s": 1.000251,
+          "sentinel_age_s": 1.000251
+        },
+        "rollback": {
+          "attempted": false,
+          "cleaned": [],
+          "pending": []
+        },
+        "evidence": {
+          "log": "mock-only.log"
+        }
+      },
+      "mock_kills": [],
+      "mock_spawns": [
+        {
+          "role": "supervisor",
+          "watched_pid": 999
+        },
+        {
+          "role": "sentinel",
+          "watched_pid": 999
+        }
+      ],
+      "own_child_alive": true,
+      "foreign_alive": true
+    },
+    "R2_ignored_second_check": {
+      "confirmed": true,
+      "detail": {
+        "reason": "verified",
+        "supervisor_age_s": null,
+        "sentinel_age_s": null
+      },
+      "checks": [
+        201,
+        202,
+        201,
+        202
+      ]
+    },
+    "R3_wrong_default_command": {
+      "argv": [
+        "C:\\Python314\\python.exe",
+        "-m",
+        "microstructure_probe.control",
+        "supervisor",
+        "--interval",
+        "30.0"
+      ],
+      "expected_subcommand": "supervise",
+      "real_processes": 0
+    },
+    "R4_confirmed_after_deadline": {
+      "execution": {
+        "result": {
+          "outcome": "confirmed",
+          "reason": "all-components-verified",
+          "scope": "point-in-time confirmation, not future protection",
+          "run": {
+            "pid": 100,
+            "create_time": "c100"
+          },
+          "watchers": {
+            "supervisor": {
+              "pid": 201,
+              "create_time": "c201",
+              "confirmed": true
+            },
+            "sentinel": {
+              "pid": 202,
+              "create_time": "c202",
+              "confirmed": true
+            }
+          },
+          "verification": {
+            "polls": 2,
+            "budget_s": 0.1,
+            "supervisor_age_s": 1.000575,
+            "sentinel_age_s": 1.000559
+          },
+          "rollback": {
+            "attempted": false,
+            "cleaned": [],
+            "pending": []
+          },
+          "evidence": {
+            "log": "mock-only.log"
+          }
+        },
+        "mock_kills": [],
+        "mock_spawns": [
+          {
+            "role": "supervisor",
+            "watched_pid": 100
+          },
+          {
+            "role": "sentinel",
+            "watched_pid": 100
+          }
+        ],
+        "own_child_alive": true,
+        "foreign_alive": true
+      },
+      "fake_clock": {
+        "now": 10.0,
+        "sleeps": [
+          10.0
+        ]
+      },
+      "budget_s": 0.1
+    },
+    "R4_nonfinite_budget": {
+      "accepted": true,
+      "outcome": "confirmed",
+      "budget_argument": "Infinity",
+      "spawn_count": 2
+    },
+    "R5_unreadable_final_rejected": {
+      "result": {
+        "outcome": "rejected",
+        "reason": "verify-unreadable",
+        "scope": "point-in-time confirmation, not future protection",
+        "run": {
+          "pid": 100,
+          "create_time": "c100"
+        },
+        "watchers": {
+          "supervisor": {
+            "pid": 201,
+            "create_time": "c201",
+            "confirmed": false
+          },
+          "sentinel": {
+            "pid": 202,
+            "create_time": "c202",
+            "confirmed": false
+          }
+        },
+        "verification": {
+          "polls": 1,
+          "budget_s": 0.0,
+          "detail": {
+            "reason": "poll-unreadable"
+          }
+        },
+        "rollback": {
+          "attempted": true,
+          "cleaned": [
+            {
+              "role": "sentinel",
+              "pid": 202,
+              "note": "terminated"
+            },
+            {
+              "role": "supervisor",
+              "pid": 201,
+              "note": "terminated"
+            },
+            {
+              "role": "probe",
+              "pid": 100,
+              "note": "terminated"
+            }
+          ],
+          "pending": []
+        },
+        "evidence": {
+          "log": "mock-only.log"
+        }
+      },
+      "mock_kills": [
+        202,
+        201,
+        100
+      ],
+      "mock_spawns": [
+        {
+          "role": "supervisor",
+          "watched_pid": 100
+        },
+        {
+          "role": "sentinel",
+          "watched_pid": 100
+        }
+      ],
+      "own_child_alive": false,
+      "foreign_alive": true
+    },
+    "C1_future_tolerance": {
+      "accepted": true,
+      "detail": {
+        "kind": "supervisor",
+        "reason": "verified",
+        "age_s": -0.999994
+      },
+      "scope": "New launch contract accepts up to 5s future; reconcile with prior strict freshness."
+    }
+  },
+  "meaning": "Defects reproduced, not acceptance tests passing."
+}

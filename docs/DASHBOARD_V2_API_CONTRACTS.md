@@ -1,5 +1,10 @@
 # Dashboard V2 API Contracts
 
+
+## DASH-V2-61 - 2026-10-11 - disabled launch review
+
+Exact backend da231b911e9b1a0cfe86b3aaa3325e5b71928687 reviewed read-only from Git archive: CHANGES REQUIRED, not accepted for integration. Public disabled guard verified; nine deterministic cases reproduce five new issues (foreign run ownership/rollback, ignored watcher recheck, wrong default supervisor command, finite-budget violation, unreadable-final uncertainty). Future tolerance and claimed pure preflight timing also require reconciliation. Backend canonical 873/873 OK (170.494s); V2 snapshot 496/496 OK (83.491s), both exit 0. Passing existing suites do not negate new reproductions. See [review/evidence](DASHBOARD_V2_61_SUPERVISED_LAUNCH_REVIEW.md) and [complete backend correction prompt](DASHBOARD_V2_61_BACKEND_HANDOFF.md). Start stays disabled; pure status GETs and production V2-60 remain unchanged at http://127.0.0.1:3020. Next: backend owner fixes bounded R1-R5/C1-C2, then exact-SHA review. V2-55 accepted R1/R2 remain closed; no probes, gates, main merge or backend worktree edits. Visual verification N/A for this nonvisual checkpoint.
+
 > Current reconciliation: DASH-V2-53 (2026-10-11). Original inventories/statuses below are dated historical checkpoints; consult the dated reconciliation section and MOVER_LEVEL_STRATEGY_RESEARCH.md before interpreting implementation status. Backend 55efaa2 and the V2 snapshot are separate source trees.
 
 **Purpose:** inventory current Python routes and define the compatibility

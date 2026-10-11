@@ -1,0 +1,22 @@
+{
+  "backend_sha": "da231b911e9b1a0cfe86b3aaa3325e5b71928687",
+  "frontend_base": "64c9b3915c48c5449abdea32613977af2acd2145",
+  "backend_control_sha256": "52beb68842da2777129e6594cfe5c083cb87c8328343b4dc840c58d974dd5088",
+  "canonical_backend": {
+    "tests": 873,
+    "seconds": 170.494,
+    "exit": 0
+  },
+  "canonical_v2_snapshot": {
+    "tests": 496,
+    "seconds": 83.491,
+    "exit": 0
+  },
+  "reproduction_cases": 9,
+  "verdict": "CHANGES REQUIRED",
+  "visual_verification": "NOT APPLICABLE",
+  "runtime_changes": false,
+  "real_probes": 0,
+  "real_terminations": 0,
+  "start_enabled": false
+}
