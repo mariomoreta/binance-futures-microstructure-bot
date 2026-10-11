@@ -143,3 +143,35 @@ Label it Recorded process, elapsed wall time as Elapsed since start, and readine
 as a registry check. Persisted transport provenance does not certify OS liveness.
 Never infer present health from terminal history. Native termination/start ordering
 remain owner corrections; no Start enablement or supervised-run authorization.
+
+
+## 2026-10-11 - DASH-V2-50 observation-only supervision display
+Preserve raw canonical watcher labels and raw lifecycle evidence separately.
+The client may downgrade/expire an ACTIVE observation, never certify continuing
+OS liveness or protection. Expose sentinel independently from supervisor.
+Use the documented 90s display bound and explicit UTC observation time. Keep
+Start disabled until canonical transactional launch and enforcement ownership
+are independently verified. Read-only integration does not advance safety gates.
+
+
+## 2026-10-11 - DASH-V2-51 pure runtime observation
+GET must not cause lifecycle reconciliation. Require canonical status_readonly()
+and explicitly pause observation when absent; never call legacy status() as
+fallback or create a second lifecycle manager. Command preflight uses the same
+boundary. Recorded evidence remains independent of current runtime availability.
+This supersedes DASH-V2-50's direct status() bridge, whose side effect was
+confirmed by the owner and reproduced. Start and operational gates stay blocked.
+
+
+## 2026-10-11 - DASH-V2-52 recorded process semantics
+Accept audited canonical status_readonly for observation without lifecycle writes.
+Its process state is a registry projection, not a target-process liveness check.
+Label it Recorded process, elapsed wall time as Elapsed since start, and readiness
+as a registry check. Persisted transport provenance does not certify OS liveness.
+Never infer present health from terminal history. Native termination/start ordering
+remain owner corrections; no Start enablement or supervised-run authorization.
+
+
+## 2026-10-11 — DASH-V2-53 proposed research presentation
+
+Record F-V2-RESEARCH-01 as PROPOSED / NOT IMPLEMENTED. Canonical backend owns candidate classification, level/strategy definitions and future risk/position logic. V2 projects source/time/quality/coverage and explicit unavailable fields; it never synthesizes trade side, entry, stops, targets or probability from visual badges. ACTIVE_RESEARCH is not a fill. Follow [MOVER_LEVEL_STRATEGY_RESEARCH.md](MOVER_LEVEL_STRATEGY_RESEARCH.md). This slice is documentation only; no screen/code/API change, no Start activation and no new execution authorization.

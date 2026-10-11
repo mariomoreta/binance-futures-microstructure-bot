@@ -522,3 +522,8 @@ DASHBOARD_V2_52_INTEGRATION_REVIEW.md. Start and operational gates remain blocke
 Frontend 118/118, V2 Python snapshot 496/496; type/build PASS. System/Overview at
 1672/1366/390: 6 cases, no browser errors/page overflow. Visual parity PARTIAL.
 F-V2-BFF-01 and F-V2-SYSTEM-01 remain PARTIAL. No new supervised run or gate advance.
+
+
+## DASH-V2-53 — 2026-10-11 — research documentation checkpoint
+
+DONE bounded documentation slice. Evaluated mover/level intent against canonical backend 55efaa2 and V2 base 066577e; registered seven PROPOSED future requirements and reconciled descriptive states, research setup families, endpoint outcomes and future trading rules. No source/UI/runtime changes. Canonical V2 snapshot regression: 496/496, exit 0, 72.304s. Visual verification: NOT APPLICABLE (documentation only). See [DASHBOARD_V2_53_RESEARCH_DOCUMENTATION.md](DASHBOARD_V2_53_RESEARCH_DOCUMENTATION.md). Backend correction task retains priority; no probes/paper/gate advancement.

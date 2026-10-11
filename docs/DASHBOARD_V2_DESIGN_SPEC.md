@@ -1,5 +1,7 @@
 # Dashboard V2 Design Specification
 
+> Current reconciliation: DASH-V2-53 (2026-10-11). Original inventories/statuses below are dated historical checkpoints; consult the dated reconciliation section and MOVER_LEVEL_STRATEGY_RESEARCH.md before interpreting implementation status. Backend 55efaa2 and the V2 snapshot are separate source trees.
+
 **Purpose:** preserve the approved financial-terminal direction as reusable
 tokens, components and truthful capability rules.  
 **Status:** DESIGN FOUNDATION APPROVED; VISUAL IMPLEMENTATION NOT STARTED.  
@@ -136,3 +138,10 @@ Design agreements on this page are indexed in `docs/FEATURE_BACKLOG.md`
 (F-STATE-V2-OV-01, F-STATE-V2-MV-01, F-STATE-V2-TK-01, F-OPP-UI-01,
 F-V2-BFF-01, F-CMC-01). That file tracks approval vs implementation status;
 this spec remains the design authority.
+
+
+## Proposed mover/level research views — DASH-V2-53, 2026-10-11
+
+Historical design-stage statuses above do not describe current V2 delivery or canonical backend capability. Current frontend integration evidence is in [DASHBOARD_V2_52_INTEGRATION_REVIEW.md](DASHBOARD_V2_52_INTEGRATION_REVIEW.md); backend 55efaa2 already has dynamic discovery/HOT membership and research setups. This slice changes documentation only.
+
+F-V2-RESEARCH-01 is PROPOSED / NOT IMPLEMENTED. Extend existing Movers, Token Detail and Opportunities only after canonical contracts exist: show cohort/source/as-of identity, observed move direction, immutable level source/timeframe/availability, evidence for/against, missingness and research outcome coverage. Distinguish endpoint returns from path MFE/MAE and executable P&L. Future trade side, entry, stop, target and cost fields are nullable/unavailable until supplied by a validated canonical strategy; never fabricate them in the client or reinterpret ACTIVE_RESEARCH as a fill. No additional screen, confidence percentage or execution affordance is approved here. Requirements: [MOVER_LEVEL_STRATEGY_RESEARCH.md](MOVER_LEVEL_STRATEGY_RESEARCH.md).

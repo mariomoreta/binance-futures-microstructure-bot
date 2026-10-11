@@ -1,5 +1,7 @@
 # FEATURE BACKLOG — canonical decision traceability & deferred features
 
+> Current reconciliation: DASH-V2-53 (2026-10-11). Original inventories/statuses below are dated historical checkpoints; consult the dated reconciliation section and MOVER_LEVEL_STRATEGY_RESEARCH.md before interpreting implementation status. Backend 55efaa2 and the V2 snapshot are separate source trees.
+
 **Purpose:** durable project-wide record so approved product decisions,
 deferred features, design agreements and future dependencies are never lost
 between AI agents or development phases. This document indexes decisions;
@@ -499,3 +501,66 @@ DASHBOARD_V2_52_INTEGRATION_REVIEW.md. Start and operational gates remain blocke
 Frontend 118/118, V2 Python snapshot 496/496; type/build PASS. System/Overview at
 1672/1366/390: 6 cases, no browser errors/page overflow. Visual parity PARTIAL.
 F-V2-BFF-01 and F-V2-SYSTEM-01 remain PARTIAL. No new supervised run or gate advance.
+
+
+## DASH-V2-53 research proposals — 2026-10-11
+
+This dated checkpoint supersedes design-era implementation assumptions only where explicitly identified. Backend 55efaa2 implements research opportunities and prospective endpoint persistence; the old F-OPP-01 / F-BT-01 snapshot above is historical, not a current backend absence claim. This does not import that code into V2 or verify a complete costed strategy backtest. Prior VERIFIED evidence remains scoped to its original checkpoint.
+
+The user authorized preservation and evaluation of the strategy discussion. The implementation definitions and unresolved parameters below remain PROPOSED / NOT IMPLEMENTED; recording them does not approve execution, paper, market runs or SUCCESS_GATES advancement. Existing F-CMC-01, F-BT-01 and F-PAPER-01 are dependencies, not duplicated features. Specification: [MOVER_LEVEL_STRATEGY_RESEARCH.md](MOVER_LEVEL_STRATEGY_RESEARCH.md).
+
+### F-RES-MOVERS-01 — As-of movers and verified market-cap cohorts
+
+- Approval: PROPOSED.
+- Implementation: NOT IMPLEMENTED for the proposed strategy requirement.
+- Owner/dependencies: Research/backend; depends on F-CMC-01 and token identity.
+- Scope/acceptance: Preserve first-selection times, rolling-return units, contract multipliers and historical eligibility. Unknown cap stays UNKNOWN; low price never implies small cap. Acceptance: as-of mapping/cohort fixtures, delisted-data limitations and eligible/rejected denominators.
+- Evidence: DASH-V2-53 source audit and documentation only; no implementation or strategy performance evidence.
+
+### F-RES-LEVELS-01 — Frozen level and activation definitions
+
+- Approval: PROPOSED.
+- Implementation: NOT IMPLEMENTED for the proposed strategy requirement.
+- Owner/dependencies: Research/backend; depends on F-RES-MOVERS-01.
+- Scope/acceptance: Preregister H-A1 breakout/retest and H-B1 confirmed reversal. Freeze level basis, timeframe, formation/availability, activation, expiry and invalidation. Acceptance: no-lookahead fixtures including delayed pivots; unchanged classifier rules; observed direction separated from proposed side.
+- Evidence: DASH-V2-53 source audit and documentation only; no implementation or strategy performance evidence.
+
+### F-RES-PATH-01 — Complete decision snapshots and path adequacy
+
+- Approval: PROPOSED.
+- Implementation: NOT IMPLEMENTED for the proposed strategy requirement.
+- Owner/dependencies: Research/backend; depends on F-RES-LEVELS-01 and existing prospective contract.
+- Scope/acceptance: Document existing endpoint-only outcomes; propose separately versioned snapshot/path extensions without silently changing v1.1. Acceptance: declared sampling/coverage, actual late times, MFE/MAE fidelity, censored/missing/ambiguous labels and full feature/context provenance.
+- Evidence: DASH-V2-53 source audit and documentation only; no implementation or strategy performance evidence.
+
+### F-RES-CONTEXT-01 — Participation, absorption and market-context studies
+
+- Approval: PROPOSED.
+- Implementation: NOT IMPLEMENTED for the proposed strategy requirement.
+- Owner/dependencies: Research/backend; depends on F-RES-PATH-01.
+- Scope/acceptance: Compare flow plus price response, OI quantity/value, distinct funding events, bounded depth and aligned BTC context. Acceptance: group ablations against simple baselines out of sample; correlated indicators never count as independent confirmations; unsupported beta/causal claims remain unvalidated.
+- Evidence: DASH-V2-53 source audit and documentation only; no implementation or strategy performance evidence.
+
+### F-RES-CATALYST-01 — Optional official catalyst ledger
+
+- Approval: PROPOSED.
+- Implementation: NOT IMPLEMENTED for the proposed strategy requirement.
+- Owner/dependencies: Research/backend; depends on F-RES-MOVERS-01; optional, not feed-critical.
+- Scope/acceptance: Record stable asset identity, official source, announcement/first-seen/effective times and event type. Acceptance: information unavailable at decision time excluded, retrospective attribution flagged, provider outages never block existing market feeds.
+- Evidence: DASH-V2-53 source audit and documentation only; no implementation or strategy performance evidence.
+
+### F-RES-VALIDATION-01 — Costed H-A1/H-B1 strategy comparison
+
+- Approval: PROPOSED.
+- Implementation: NOT IMPLEMENTED for the proposed strategy requirement.
+- Owner/dependencies: Research/backend; depends on F-RES-MOVERS-01, F-RES-LEVELS-01, F-RES-PATH-01 and F-BT-01; F-RES-CONTEXT-01 supplies optional evidence groups.
+- Scope/acceptance: Freeze definitions, parameter budget and precision/rejection criteria before experiments. Acceptance: chronological grouped evaluation, overlap purge including late windows, fill/no-fill/latency/fees/funding/impact, 1x/2x/3x cost stress, net expectancy and uncertainty. Win rate below 50% alone is not rejection. No run authorization.
+- Evidence: DASH-V2-53 source audit and documentation only; no implementation or strategy performance evidence.
+
+### F-V2-RESEARCH-01 — Truthful mover/level research presentation
+
+- Approval: PROPOSED.
+- Implementation: NOT IMPLEMENTED for the proposed strategy requirement.
+- Owner/dependencies: V2/frontend; depends on canonical read-only contracts and F-RES-LEVELS-01/F-RES-PATH-01.
+- Scope/acceptance: Show provenance, observed direction, frozen levels, evidence for/against, missing coverage and endpoint/path distinction. Future proposed side/entry/stop/target/cost fields stay null or unavailable until canonical data exists. Acceptance: contract tests and visual review, no frontend-generated trading decision, no Start activation.
+- Evidence: DASH-V2-53 source audit and documentation only; no implementation or strategy performance evidence.

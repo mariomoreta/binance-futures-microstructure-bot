@@ -442,3 +442,10 @@ New universe_manager.py (pure selection + lifecycle, no I/O): DISCOVERY/CORE/HOT
 ## 2026-10-08 — P1-12B.1 integrity audit corrections
 
 Independent review concerns both reproduced against code: (A) ticker timestamp gate accepted None/future and aborted whole updates on malformed values — fixed with per-candidate fail-closed check_timestamp_fresh() (60s documented skew tolerance, local wall clock as reference); (B) budget math mixed connections into streams and docs claimed 17 canonical vs measured 11 — fixed with single authoritative ccount_streams() shared by enforcement and telemetry. Both errors erred conservative (fail-closed held; no unsafe promotion ever occurred). Added clock_skew_tolerance_ms to UniverseConfig (default 60s, additive). Provider docs still unfetchable — caps unchanged. Proven by 18 tests + 240s observe run; P1-12B PASS preserved append-only.
+
+
+## 2026-10-11 â€” DASH-V2-53 strategy research documentation
+
+User authorized evaluation and durable documentation of mover/level strategy intent. Record H-A1 continuation after breakout/retest and H-B1 confirmed short reversal as the first proposed research comparison; H-A2/C1 secondary and H-D1 deferred. Percentage-move cohorts, cap cutoff, confirmation/risk/sample parameters remain hypotheses/open decisions. PROPOSED implementation; no strategy, numeric threshold, classifier change, runtime run, paper or gate approval.
+
+[MOVER_LEVEL_STRATEGY_RESEARCH.md](MOVER_LEVEL_STRATEGY_RESEARCH.md) owns the research specification; FEATURE_BACKLOG.md indexes seven future requirements. Reconcile canonical backend 55efaa2 implementations with V2 snapshot separately. Existing endpoint outcomes do not establish path metrics, executable returns or independent trade counts. Evaluate net expectancy and uncertainty under costs; sub-50% win rate alone is not a rejection rule. Preserve SUCCESS_GATES and existing operational boundaries.

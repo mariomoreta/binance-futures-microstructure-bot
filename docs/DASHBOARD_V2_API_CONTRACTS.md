@@ -1,5 +1,7 @@
 # Dashboard V2 API Contracts
 
+> Current reconciliation: DASH-V2-53 (2026-10-11). Original inventories/statuses below are dated historical checkpoints; consult the dated reconciliation section and MOVER_LEVEL_STRATEGY_RESEARCH.md before interpreting implementation status. Backend 55efaa2 and the V2 snapshot are separate source trees.
+
 **Purpose:** inventory current Python routes and define the compatibility
 boundary required by the future Next.js BFF.  
 **Status:** CURRENT ROUTES VERIFIED FROM CODE; V1 FACADE PROPOSED, NOT BUILT.  
@@ -222,3 +224,10 @@ for a dead/reused PID. They do not certify current target liveness. uptime_secon
 is elapsed wall time since recorded start, including terminal records; UI labels
 it Elapsed since start. Watcher verification/expiry and feed UNKNOWN remain separate.
 No live duration, protection, or supervised-launch capability is inferred.
+
+
+## Proposed research projection boundary — DASH-V2-53, 2026-10-11
+
+The original inventory/facade status above is historical at 6270be29; subsequent V2 integration is recorded in the progress and integration reports. Backend contract statements in this checkpoint refer to 55efaa2, not to the older Python snapshot inside V2. This documentation adds no route, API version or wire field and changes no prospective v1.1 contract.
+
+F-V2-RESEARCH-01 proposes a future read-only projection with stable episode/strategy identity; canonical observed direction separate from nullable proposed trade side; level formation/availability and price basis; feature/source/as-of/quality evidence; endpoint actual observation time; declared path coverage; and nullable activation/entry/invalidation/cost-plan fields. Names are conceptual pending a separate contract decision. Missing paths never become zero MFE/MAE; mark returns never become fills; research lifecycle never becomes position state. Existing registry-readiness projection and disabled Start remain unchanged. See [MOVER_LEVEL_STRATEGY_RESEARCH.md](MOVER_LEVEL_STRATEGY_RESEARCH.md).

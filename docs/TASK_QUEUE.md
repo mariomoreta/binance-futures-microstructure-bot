@@ -1,5 +1,12 @@
 # TASK_QUEUE
 
+## Latest V2 documentation task ? 2026-10-11, DASH-V2-53
+
+DONE: validate and preserve mover/level strategy intent, reconcile existing capabilities, register future requirements and run V2 snapshot regression (496/496).
+Research implementation proposals: F-RES-MOVERS-01 -> F-RES-LEVELS-01 -> F-RES-PATH-01 -> F-RES-VALIDATION-01; context/catalysts optional studies; F-V2-RESEARCH-01 follows canonical contracts. These are not active run tasks or approved strategy rules.
+Existing backend correction ownership/priority is unchanged. Do not run probes, historical backfills, paper or long runs from this documentation checkpoint. Start remains disabled; SUCCESS_GATES unchanged. See [MOVER_LEVEL_STRATEGY_RESEARCH.md](MOVER_LEVEL_STRATEGY_RESEARCH.md) and [DASHBOARD_V2_53_RESEARCH_DOCUMENTATION.md](DASHBOARD_V2_53_RESEARCH_DOCUMENTATION.md).
+Older queue entries below are historical source snapshots, not a directive to repeat completed backend work.
+
 ## Dashboard V2 continuation — 2026-10-10
 
 DASH-V2-47 frontend readiness correction implemented and tested. Next:

@@ -107,3 +107,19 @@ size before any confidence is quoted.
 - Engine src/microstructure_probe/events.py: T-formation / T+outcome split, mark-vs-regular labeling, fixed 1m–1h horizons, direction-oriented MFE/MAE + time-to, predeclared invalidation, COMPLETE/PARTIAL/INVALID_GAP/INSUFFICIENT_HISTORY, BTC sync + relative return, as-of 30d levels, HISTORICAL_TAKER_BUY_PROXY + ABSORPTION_PROXY labels, quantity-only sample tiers.
 - Six versioned HYPOTHESIS families; CLI events definitions|run|summary; 38 bounded pilot runs stored (see CURRENT_STATE for counts; sub-1h-on-1h resolution limit documented).
 - Prospective recorder esearch_recorder.py ENABLED inside MarketProbe (flow 10s/1m, book 1m; 7d/90d/90d retention; ~200B/row estimate); replaces the 'not enabled' design note above — the retention-gap items (per-trade flow, depth history) are now covered prospectively, never historically fabricated.
+
+
+## 2026-10-11 - Strategy dataset adequacy and future work
+[Movers and Levels](MOVER_LEVEL_STRATEGY_RESEARCH.md) supersedes design-era claims
+that historical event studies/prospective aggregate retention have not started.
+P1-11B/C foundations exist; they do not reconstruct full historical depth or
+prospective executable paths. P1-14 endpoint outcomes remain a separate surface.
+Before H-A1/H-B1 evaluation, preregister as-of universe/levels, retain rejected
+candidates/control windows and document unavailable historical market-cap/news
+or delisted-asset coverage. Never backfill today's identity/cap into past cohorts
+without a time-valid source. Bar order ambiguity stays explicit; coarse bars
+cannot prove fast stop/target ordering. Add full snapshots/path adequacy only
+through a separately reviewed contract/retention plan (F-RES-PATH-01).
+Chronological splits must group overlapping episodes and account for actual late
+outcome windows; multiple horizons are not independent tests. Costed evaluation
+is F-RES-VALIDATION-01 / F-BT-01. No new backfill or run is authorized here.

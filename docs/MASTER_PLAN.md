@@ -52,3 +52,14 @@ P1-00…P1-14 dependency order in `docs/TASK_QUEUE.md` (dashboard-progressive,
 classifier only after raw-feature validation). Persistence foundation is a
 Phase 1 task (P1-02); full labeling stays Phase 2. No paper trading and no
 execution until their phases and authorizations.
+
+
+## 2026-10-11 - Recorded research focus, phases unchanged
+The user's mover/level strategy discussion is preserved in STRATEGY_THESIS.md
+and [Movers and Levels](MOVER_LEVEL_STRATEGY_RESEARCH.md). First proposed studies:
+H-A1 continuation after breakout/retest and H-B1 confirmed reversal after an
+extended rise; secondary/deferred studies remain separate. Factual gap/approval
+tracking is in FEATURE_BACKLOG.md. Existing historical labels and prospective
+endpoints are foundations, not completion of full Phase 2/3 strategy validation.
+No phase gate, active runtime task, run authorization or execution boundary
+changes merely because this design is recorded.

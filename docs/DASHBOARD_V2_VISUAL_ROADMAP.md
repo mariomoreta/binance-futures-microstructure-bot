@@ -93,3 +93,8 @@ DASHBOARD_V2_52_INTEGRATION_REVIEW.md. Start and operational gates remain blocke
 Frontend 118/118, V2 Python snapshot 496/496; type/build PASS. System/Overview at
 1672/1366/390: 6 cases, no browser errors/page overflow. Visual parity PARTIAL.
 F-V2-BFF-01 and F-V2-SYSTEM-01 remain PARTIAL. No new supervised run or gate advance.
+
+
+## DASH-V2-53 future dependency — 2026-10-11
+
+F-V2-RESEARCH-01 proposes truthful level/evidence/context detail within existing research screens after canonical data contracts exist. Documentation capture is DONE; visual implementation and verification of this proposal are NOT IMPLEMENTED. Do not add synthetic trade-plan fields or probabilities to make the interface appear complete. See [MOVER_LEVEL_STRATEGY_RESEARCH.md](MOVER_LEVEL_STRATEGY_RESEARCH.md) and FEATURE_BACKLOG.md. Current dashboard corrections and backend integration retain their established sequence; Start remains disabled.

@@ -26,3 +26,16 @@ enabling execution. See `docs/SAFETY_RULES.md`.
 - Risk events (halts, kills, limit hits) are first-class log/persisted records.
 - In Phase 1 the "risk engine" is the observe-only enforcement + no-order-paths
   static test. That is sufficient because there is nothing to lose — keep it so.
+
+
+## 2026-10-11 - Proposed operability gate for movers
+Future requirements: [Movers and Levels](MOVER_LEVEL_STRATEGY_RESEARCH.md).
+Small capitalization/large 24h change never waives liquidity or data quality.
+Before any future simulated entry, separately validate freshness/clock/coverage,
+spread and depth sufficient for the proposed size, frozen invalidation, maximum
+chase price/expiry, cost sensitivity and exposure constraints. Descriptive
+classifier minimum-data gates cannot substitute for these checks.
+Position sizing must use a separately selected loss budget and adverse-move plus
+cost assumptions; stops do not guarantee fill at their trigger price. No numeric
+risk limit, leverage setting, averaging-down rule or live protection guarantee
+is chosen by this documentation. Existing tighten-only/governance rules remain.

@@ -262,3 +262,25 @@ illustrative, not statistical).
 - Event formation features (T-known only): prior 1h/4h/24h log returns, trailing-96 range position + high/low distances, as-of 30d high/low, volume percentile, realized |return| vol + percentile, HISTORICAL_TAKER_BUY_PROXY (+ implied sell share), HISTORICAL_MOMENTUM_PROXY accel, BTC 5m/15m/1h sync + 1h relative return.
 - Outcome features per horizon: forward return, direction-oriented MFE/MAE, time-to-MFE/MAE, predeclared invalidation time, path state + gap flags + usability, continuation/reversal label (CONTINUED_UP/REVERSED_DOWN/CONTINUED_DOWN/REVERSED_UP/MIXED/INSUFFICIENT_DATA).
 - Prospective capture schemas: flow buckets (buy/sell notional+base, delta/ratio, OHLC, trade counts, quality) and book 1m summaries (spread/imbalance/microprice min-mean-max, top5/20 notionals, gap/degraded/crossed counts).
+
+
+## 2026-10-11 - Proposed mover/level research measurements
+Detailed definitions and gap register: [Movers and Levels](MOVER_LEVEL_STRATEGY_RESEARCH.md).
+New measurements below are PROPOSED / NOT IMPLEMENTED, not added engine outputs:
+- As-of small-cap cohort: stable asset mapping, contract multiplier, circulating
+  supply/market-cap definition, provider/source time; UNKNOWN stays unknown.
+- Separate rolling 24h arithmetic change, internal log returns, return since
+  first detection and drawdown from the then-known running peak; explicit units.
+- Frozen levels: source/timeframe/price basis, formation and confirmation/available
+  time, prior completed range/confirmed pivot/day-week anchors, invalidation.
+- Strategy snapshot/path: full feature vectors at decision T, chosen research side,
+  path coverage/MAE/MFE/first touches and clock bases, separate endpoint lateness.
+- Incremental BTC-relative and price-response-to-aggressive-flow measurements;
+  do not count correlated flow/volume transforms as independent confirmations.
+- Funding economic updates/actual interval and OI quantity versus OI value;
+  repeated funding samples do not add independent information.
+- Covered liquidity/impact for proposed size; depth20 coverage cannot justify
+  arbitrary fill sizes or event-level recovery claims from 1m summaries.
+Current VWAP is rolling 1m/3m/5m/15m; session/anchored VWAP remains a separate
+proposal. Current classifier cadence/gates are descriptive, not execution-grade.
+Backlog: F-RES-MOVERS-01 / F-RES-LEVELS-01 / F-RES-PATH-01 / F-RES-CONTEXT-01.

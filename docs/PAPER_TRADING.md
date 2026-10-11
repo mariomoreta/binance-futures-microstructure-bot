@@ -28,3 +28,17 @@ conversation.
   investigation task; it never "adjusts" the backtest to match.
 - Phase 5 (controlled execution) requires proven paper profitability AND
   explicit human authorization. This file alone authorizes nothing.
+
+
+## 2026-10-11 - Future mover/level validation requirements
+[Movers and Levels](MOVER_LEVEL_STRATEGY_RESEARCH.md) records H-A1/H-B1 research.
+Paper remains Phase 4 / NOT IMPLEMENTED; documenting it does not authorize a run.
+After costed out-of-sample validation, replay actual activation latency,
+marketable bid/ask/spread, bounded depth/impact, fees and contract funding,
+limit orders not filled, cancellation/expiry and adverse stop slippage.
+Unknown depth/path or intrabar order is explicitly unavailable/ambiguous or
+uses a preregistered conservative assumption, never invented executable fills.
+Preserve the audit trail from rejected candidate through simulated fill/exit.
+Compare net expectancy, drawdown, payoff tails, no-fill rate and MFE capture;
+report strategy and cost versions and stress costs at 1x/2x/3x. Mark-price
+endpoint returns are research labels, not paper P&L. See EVENT_LABELING.md.

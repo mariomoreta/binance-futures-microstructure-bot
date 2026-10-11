@@ -32,3 +32,11 @@ P1-09) before any classifier score is shown or trusted.
 - Strategy mapping: momentum path (NORMAL→IGNITION→EXPANSION→CONTINUATION)
   vs exhaustion path (EXPANSION→EXHAUSTION→REVERSAL CONFIRMATION) per
   `docs/STRATEGY_THESIS.md`. The classifier serves both; statistics decide.
+
+
+## 2026-10-11 - Proposed level-based consumers
+Continuation and confirmed-reversal research is defined in
+[Movers and Levels](MOVER_LEVEL_STRATEGY_RESEARCH.md), not as new classifier states.
+Observed direction is not trade side; EXHAUSTION UP is an upward move losing
+strength, not a LONG signal. Energetic states can overlap/skip the illustrative
+sequence. No state alone enables entry, and no calibration/gate is advanced.

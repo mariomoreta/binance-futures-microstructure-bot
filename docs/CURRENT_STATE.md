@@ -1,5 +1,11 @@
 # CURRENT_STATE
 
+## Latest V2 documentation checkpoint ? 2026-10-11, DASH-V2-53
+
+Docs-only research reconciliation is DONE. See [MOVER_LEVEL_STRATEGY_RESEARCH.md](MOVER_LEVEL_STRATEGY_RESEARCH.md) and [DASHBOARD_V2_53_RESEARCH_DOCUMENTATION.md](DASHBOARD_V2_53_RESEARCH_DOCUMENTATION.md).
+Canonical backend reviewed: 55efaa2; V2 base: 066577e. These are separate source trees. Seven future requirements remain PROPOSED / NOT IMPLEMENTED. Endpoint outcomes do not prove executable profitability. V2 snapshot regression on Windows: 496/496, exit 0 (72.304s); this supersedes the older Linux snapshot result below for this environment only.
+Current integration/UI evidence remains DASHBOARD_V2_52_INTEGRATION_REVIEW.md. Backend native termination/start race corrections remain separate owner work. No new supervised window, paper, gate advance or Start activation.
+
 ## Dashboard V2 update — 2026-10-10
 
 DASH-V2-47 corrects unavailable/unknown controller readiness to UNKNOWN.

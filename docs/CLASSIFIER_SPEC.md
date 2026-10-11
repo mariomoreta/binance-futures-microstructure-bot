@@ -81,3 +81,15 @@ least one of: velocity_1m, 1m flow (nonzero notional), 1m realized vol.
 - Live: 120s observe-only run → 9 evaluations, states + transitions
   persisted, token pages render, 0 orders. No predictive accuracy is
   claimed without prospective evaluation (P1-14 territory).
+
+
+## 2026-10-11 - Strategy-consumer boundary
+[Movers and Levels](MOVER_LEVEL_STRATEGY_RESEARCH.md) defines proposed consumers;
+classifier v0.1.0 and all thresholds above remain unchanged.
+An EXHAUSTION UP record describes the preceding rise, not a buy instruction;
+REVERSAL direction refers to the newly observed direction. A future consumer
+must keep observed direction separate from its preregistered proposed side.
+Two confirmations are consecutive engine evaluations, not two independently
+closed candles. Current approximately 30s summary cadence/minimum-data gates
+are not certified entry timing or execution-grade freshness. Missing features,
+contradictions and warm-up remain visible even when a descriptive state exists.

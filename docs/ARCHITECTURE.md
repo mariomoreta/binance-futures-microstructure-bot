@@ -1,5 +1,7 @@
 # ARCHITECTURE
 
+> Current reconciliation: DASH-V2-53 (2026-10-11). Original inventories/statuses below are dated historical checkpoints; consult the dated reconciliation section and MOVER_LEVEL_STRATEGY_RESEARCH.md before interpreting implementation status. Backend 55efaa2 and the V2 snapshot are separate source trees.
+
 ## Canonical pipeline (Phase 1–2)
 
 ```text
@@ -114,3 +116,10 @@ MarketProbe -> validated engine state -> ResearchRecorder (bounded queue, worker
 `
 
 Single process, single registry (logs/probe_runtime.json), single launcher family. Dashboard reads research depth via /api/research/status and studies via /api/events/*; ENGINE/FEED/RESEARCH states are reported separately and never conflated.
+
+
+## Research boundary reconciliation — DASH-V2-53, 2026-10-11
+
+The implementation map and phase wording above are historical V2 source snapshots. Canonical backend 55efaa2 already has a dynamic HOT universe, opportunity.py, historical events.py, aggregate research_recorder.py and prospective.py endpoint persistence. Those modules are not thereby imported into the V2 snapshot. Full strategy decision snapshots, prospective paths, executable fills and costed strategy validation remain future requirements; earlier wording assigning all snapshots/outcomes to Phase 2 must not be read as denying existing bounded Phase 1 research persistence.
+
+Proposed future flow: as-of eligible universe -> frozen levels and feature/context snapshots -> preregistered strategy activation -> separately validated risk approval -> simulated execution/management. [MOVER_LEVEL_STRATEGY_RESEARCH.md](MOVER_LEVEL_STRATEGY_RESEARCH.md) owns definitions and dependencies. State classification and research opportunity priority remain distinct from strategy activation. The V2 BFF may project canonical research data; frontend render state never supplies engine decisions. No API, schema, runtime or phase boundary changes in this checkpoint.

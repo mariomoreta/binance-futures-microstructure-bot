@@ -60,3 +60,15 @@ paper/performance surfaces → divergence monitoring.
 
 Authorization gate → small-size execution with kill-switch → audit. Not planned
 in detail until Phase 4 proves expectancy. No code before authorization.
+
+
+## 2026-10-11 - Proposed research sequence for movers/levels
+Detailed dependencies: [Movers and Levels](MOVER_LEVEL_STRATEGY_RESEARCH.md).
+After current runtime corrections and applicable phase gates, sequence proposed
+work as: as-of identity/cohorts -> frozen level definitions -> full snapshot/path
+adequacy -> incremental BTC/flow-response context -> optional catalyst ledger ->
+costed H-A1/H-B1 comparison -> later paper validation. UI consumes reviewed
+read-only research contracts; it does not determine strategy or execution.
+Backlog IDs F-RES-MOVERS-01 through F-RES-VALIDATION-01 / F-V2-RESEARCH-01 remain
+PROPOSED / NOT IMPLEMENTED. This ordering is not an instruction to launch runs,
+backfills or advance phases; operational work remains in TASK_QUEUE.md.
