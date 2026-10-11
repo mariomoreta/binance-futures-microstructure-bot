@@ -26,8 +26,9 @@ describe("System runtime presentation", () => {
     })}));
     render(<BotControl />);
     await act(async () => {await vi.advanceTimersByTimeAsync(1);});
-    expect(screen.getByText("Market engine").parentElement?.querySelector("strong")).toHaveTextContent("RUNNING");
+    expect(screen.getByText("Recorded process").parentElement?.querySelector("strong")).toHaveTextContent("RUNNING");
     expect(screen.getByText("Supervisor").parentElement?.querySelector("strong")).toHaveTextContent("UNKNOWN");
+    expect(screen.getByText(/current process liveness is not reported/)).toBeInTheDocument();
     expect(screen.getByRole("button", {name: /Stop dashboard/})).toBeDisabled();
     expect(screen.getByText(/A session launched by agent/)).toBeInTheDocument();
   });

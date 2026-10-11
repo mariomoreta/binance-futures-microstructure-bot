@@ -432,3 +432,19 @@ Bridge execution against a synthetic active registry preserved its bytes;
 canonical registry SHA-256 unchanged. No market run or backend edit.
 Full audit/owner follow-up: DASHBOARD_V2_51_FENCING_REVIEW.md.
 F-V2-BFF-01 and F-V2-SYSTEM-01 remain PARTIAL; safety gates unchanged.
+
+
+## 2026-10-11 - DASH-V2-52 pure observation and native boundary review
+Backend exact SHA 55efaa2 reviewed; canonical suite independently 826/826 PASS.
+V2 bridge status_readonly verified byte-preserving; runtime observation resumes.
+Recorded COMPLETED / watcher STALE / feed UNKNOWN are independent observations.
+Registry state is not verified target liveness: V2 labels it Recorded process,
+uses Elapsed since start, and describes readiness as a registry check.
+Two remaining reproductions: native TerminateProcess FALSE accepted as True,
+missing native HANDLE signatures; start kills its own child if registration wins
+before parent commit. Both are hermetic, without probes or actual OS termination.
+Native/start corrections remain owned by backend; full detail and follow-up in
+DASHBOARD_V2_52_INTEGRATION_REVIEW.md. Start and operational gates remain blocked.
+Frontend 118/118, V2 Python snapshot 496/496; type/build PASS. System/Overview at
+1672/1366/390: 6 cases, no browser errors/page overflow. Visual parity PARTIAL.
+F-V2-BFF-01 and F-V2-SYSTEM-01 remain PARTIAL. No new supervised run or gate advance.

@@ -134,3 +134,12 @@ fallback or create a second lifecycle manager. Command preflight uses the same
 boundary. Recorded evidence remains independent of current runtime availability.
 This supersedes DASH-V2-50's direct status() bridge, whose side effect was
 confirmed by the owner and reproduced. Start and operational gates stay blocked.
+
+
+## 2026-10-11 - DASH-V2-52 recorded process semantics
+Accept audited canonical status_readonly for observation without lifecycle writes.
+Its process state is a registry projection, not a target-process liveness check.
+Label it Recorded process, elapsed wall time as Elapsed since start, and readiness
+as a registry check. Persisted transport provenance does not certify OS liveness.
+Never infer present health from terminal history. Native termination/start ordering
+remain owner corrections; no Start enablement or supervised-run authorization.

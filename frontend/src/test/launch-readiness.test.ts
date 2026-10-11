@@ -27,7 +27,7 @@ describe("runtime readiness requires controller evidence", () => {
     expect(runtimeStatus()).toMatchObject({mode: "UNKNOWN", state: "UNKNOWN"});
     expect(check("Canonical controller")).toBe("UNKNOWN");
     expect(check("Observe-only mode")).toBe("UNKNOWN");
-    expect(check("No concurrent active run")).toBe("UNKNOWN");
+    expect(check("Registry reports no active run")).toBe("UNKNOWN");
   });
   it.each([null, [], "observe", 1])("rejects non-object JSON %j without throwing", value => {
     respond(value);
@@ -41,15 +41,15 @@ describe("runtime readiness requires controller evidence", () => {
   });
   it.each(["UNKNOWN", "RUNNING", "FUTURE_STATE"])("does not clear concurrency for %s", state => {
     respond({running: false, state, mode: "observe"});
-    expect(check("No concurrent active run")).toBe("UNKNOWN");
+    expect(check("Registry reports no active run")).toBe("UNKNOWN");
   });
   it("requires an explicit boolean running field", () => {
     respond({state: "STOPPED", mode: "observe"});
-    expect(check("No concurrent active run")).toBe("UNKNOWN");
+    expect(check("Registry reports no active run")).toBe("UNKNOWN");
   });
-  it.each(["STOPPED", "COMPLETED", "FAILED"])("recognizes verified inactive %s", state => {
+  it.each(["STOPPED", "COMPLETED", "FAILED"])("recognizes recorded inactive %s", state => {
     respond({running: false, state, mode: "observe"});
-    expect(check("No concurrent active run")).toBe("PASS");
+    expect(check("Registry reports no active run")).toBe("PASS");
     expect(check("Observe-only mode")).toBe("PASS");
     expect(launchReadiness()).toMatchObject({
       ready: false, reason: "ATOMIC_SUPERVISED_LAUNCH_UNAVAILABLE",
@@ -58,18 +58,18 @@ describe("runtime readiness requires controller evidence", () => {
   });
   it.each(["STARTING", "STOPPING"])("blocks concurrent %s", state => {
     respond({running: false, state, mode: "observe"});
-    expect(check("No concurrent active run")).toBe("BLOCKED");
+    expect(check("Registry reports no active run")).toBe("BLOCKED");
   });
   it("blocks explicit active runs and non-observe mode", () => {
     respond({running: true, state: "RUNNING", mode: "execution"});
-    expect(check("No concurrent active run")).toBe("BLOCKED");
+    expect(check("Registry reports no active run")).toBe("BLOCKED");
     expect(check("Observe-only mode")).toBe("BLOCKED");
   });
   it("does not report a controller error as verified observe mode", () => {
     respond({running: false, state: "STOPPED", mode: "observe", error: "STATUS_FAILED"});
     expect(check("Canonical controller")).toBe("UNKNOWN");
     expect(check("Observe-only mode")).toBe("UNKNOWN");
-    expect(check("No concurrent active run")).toBe("UNKNOWN");
+    expect(check("Registry reports no active run")).toBe("UNKNOWN");
   });
   it("keeps failed commands unknown even when stdout resembles success", () => {
     respond({running: false, state: "STOPPED", mode: "observe"}, 1);

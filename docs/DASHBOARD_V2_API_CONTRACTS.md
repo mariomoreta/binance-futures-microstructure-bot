@@ -213,3 +213,12 @@ It does not imply that historical SQLite evidence is missing or that the
 underlying engine is stopped. Client commands are disabled on the source error.
 Start remains blocked in its route and helper; mutation/security gates unchanged.
 The pure method must be independently audited before accepting a backend handoff.
+
+
+## 2026-10-11 - DASH-V2-52 pure-status interpretation
+Backend 55efaa2 provides status_readonly(); exact V2 bridge verified byte-preserving.
+state/running are canonical registry projection fields. Stored RUNNING is preserved
+for a dead/reused PID. They do not certify current target liveness. uptime_seconds
+is elapsed wall time since recorded start, including terminal records; UI labels
+it Elapsed since start. Watcher verification/expiry and feed UNKNOWN remain separate.
+No live duration, protection, or supervised-launch capability is inferred.

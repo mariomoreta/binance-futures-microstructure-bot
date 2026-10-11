@@ -63,21 +63,21 @@ export function BotControl(){
     finally{setConfirm(false);setBusy(false);await refresh()}
   }
   const cards=[
-    ["Market engine",state?.state??"LOADING"],["Data feed",state?.feed_health??"UNKNOWN"],
+    ["Recorded process",state?.state??"LOADING"],["Data feed",state?.feed_health??"UNKNOWN"],
     ["Supervisor",supervisor.replace("SUPERVISOR_","")],["Sentinel",sentinel.replace("SENTINEL_","")],
     ["Runtime mode",state?.mode?.toUpperCase()??"UNKNOWN"],
   ];
   return <section className={s.root} aria-label="Bot Control Center">
     <div className={s.header}><div><small>CANONICAL CONTROLLER / OBSERVE-ONLY MONITORING</small></div><button className={s.refresh} onClick={()=>void refresh()} type="button">Refresh status</button></div>
     <div className={s.stats}>{cards.map(([label,value])=><div key={label}><small>{label}</small><strong>{value}</strong><span>Controller observation / polled every 10s</span></div>)}</div>
-    <p className={s.foot}>Process, feed, supervisor and sentinel are independent. ACTIVE is a point-in-time controller observation, not proof of continuing protection. Freshness bound: 90s.</p>
+    <p className={s.foot}>Process state is recorded in the runtime registry; current process liveness is not reported by this endpoint. Feed, supervisor and sentinel are independent. ACTIVE is a point-in-time controller observation, not proof of continuing protection. Freshness bound: 90s.</p>
     {state?.error?<p role="alert" className={s.warn}>{state.error==="READ_ONLY_STATUS_REQUIRED" ? "Runtime observation is paused until status can be reported without changing runtime records. Commands are disabled." : <>Canonical status unavailable — commands are disabled. {state.error}</>}</p>:null}
     <details className={s.inspector}><summary>Runtime controls & supervisor evidence<span>Inspect supervisor, sentinel, ownership and abort details</span></summary>
       <div className={s.details}><span>Observed UTC: <b>{state?.observed_at??"UNKNOWN"}</b></span></div>
       <WatcherPanel kind="supervisor" evidence={state?.supervisor} state={supervisor}/>
       <WatcherPanel kind="sentinel" evidence={state?.sentinel} state={sentinel}/>
-      <div className={s.details}><span>PID: <b>{state?.pid??"UNKNOWN"}</b></span><span>Uptime: <b>{state?.uptime_seconds==null?"UNKNOWN":Math.round(state.uptime_seconds)+"s"}</b></span><span>Planned duration: <b>{state?.duration_seconds==null?"UNKNOWN":Math.round(state.duration_seconds)+"s"}</b></span><span>Started UTC: <b>{state?.started_at??"UNKNOWN"}</b></span></div>
-      {state?.running&&state.launcher!=="dashboard"?<p className={s.warn}>A session launched by {state.launcher??"another process"} is detected. V2 will not stop or replace it.</p>:null}
+      <div className={s.details}><span>PID: <b>{state?.pid??"UNKNOWN"}</b></span><span>Elapsed since start: <b>{state?.uptime_seconds==null?"UNKNOWN":Math.round(state.uptime_seconds)+"s"}</b></span><span>Planned duration: <b>{state?.duration_seconds==null?"UNKNOWN":Math.round(state.duration_seconds)+"s"}</b></span><span>Started UTC: <b>{state?.started_at??"UNKNOWN"}</b></span></div>
+      {state?.running&&state.launcher!=="dashboard"?<p className={s.warn}>A session launched by {state.launcher??"another process"} is recorded. V2 will not stop or replace it.</p>:null}
       <div className={s.actions}><button type="button" disabled={!canStart||busy} onClick={()=>{setConfirm(true);setMessage("")}}>Start monitor (requires supervised launch)</button><button type="button" disabled={!canStop||busy} onClick={()=>{setConfirm(true);setMessage("")}}>Stop dashboard-owned monitor</button></div>
       {confirm?<div className={s.confirm}><p>Confirm one observe-only action. Duration is fixed to 35 minutes. No automatic restart and no trading access.</p><button disabled={busy} onClick={()=>void action(canStop?"stop":"start")} type="button">Confirm {canStop?"stop":"start"}</button><button disabled={busy} onClick={()=>setConfirm(false)} type="button">Cancel</button></div>:null}
       {message?<p role="status" className={s.warn}>{message}</p>:null}

@@ -1,0 +1,80 @@
+{
+  "backend_sha": "55efaa2b171c83701f6736ab6e6374869a733af1",
+  "pure_bridge": {
+    "response": {
+      "running": true,
+      "state": "RUNNING",
+      "pid": 424243,
+      "started_at": null,
+      "uptime_seconds": 0.0,
+      "mode": "observe",
+      "duration_seconds": null,
+      "elapsed_seconds": 0.0,
+      "remaining_seconds": null,
+      "expected_end_at": null,
+      "launcher": "dashboard",
+      "preset": "standard",
+      "evidence": null,
+      "last_exit_code": null,
+      "last_exit_reason": null,
+      "supervisor": {
+        "state": "SUPERVISOR_UNKNOWN",
+        "watched_pid": 424243,
+        "run_id": null,
+        "last_check_at": null,
+        "abort_triggered": false,
+        "abort_reason": null,
+        "abort_rule": null,
+        "abort_threshold": null,
+        "abort_observed": null,
+        "supervision_source": null,
+        "lease_state": null,
+        "lease_last_check_at": null,
+        "watcher_pid": null,
+        "watcher_create_time": null
+      },
+      "sentinel": {
+        "state": "SENTINEL_UNKNOWN",
+        "watched_pid": 424243,
+        "run_id": null,
+        "last_check_at": null,
+        "action_taken": null,
+        "action_reason": null,
+        "supervision_source": null,
+        "lease_state": null,
+        "lease_last_check_at": null,
+        "watcher_pid": null,
+        "watcher_create_time": null
+      },
+      "feed_health": "UNKNOWN",
+      "latest_snapshot_age": null
+    },
+    "temporary_registry_unchanged": true,
+    "stored_state_not_os_liveness": true
+  },
+  "same_child_registration_race": {
+    "result": {
+      "started": false,
+      "already_running": true,
+      "pid": null,
+      "state": "RUNNING"
+    },
+    "mock_child_kill_calls": 1,
+    "registry_after": {
+      "state": "RUNNING",
+      "pid": 424243,
+      "create_time": "CHILD",
+      "launcher": "agent"
+    }
+  },
+  "native_api_failure": {
+    "os_api_result": 0,
+    "helper_returned": true,
+    "terminate_argtypes_configured": false,
+    "close_argtypes_configured": false,
+    "mock_handle": "0x100000123",
+    "real_os_calls": false
+  },
+  "canonical_registry_sha256_before": "45c6a39ec91f55db708e1b9011f86bc55248b4485e582c015ea4442cc7cab5da",
+  "canonical_registry_sha256_after": "45c6a39ec91f55db708e1b9011f86bc55248b4485e582c015ea4442cc7cab5da"
+}
