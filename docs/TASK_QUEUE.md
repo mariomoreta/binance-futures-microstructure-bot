@@ -202,6 +202,19 @@ the dashboard exists. No classifier before raw-feature dashboard validation.
   untouched. No new supervised window on the corrected SHA. Transactional
   supervised start still PENDING/separate. SUCCESS_GATES untouched.
 
+- `DASH-V2-67-BACKEND` (2026-10-11) HELPER EXTRACTION — **DONE (acotado)**.
+  Handoff `8712dfb` read from Git only: audited all helper imports/callers/
+  cycles/patch-targets (only `control.py` imported from `dashboard`; views
+  use labels/version only); moved the 5 helpers VERBATIM to new
+  `host_process.py` (stdlib only); `dashboard.py` re-exports identical
+  objects; `control.py` top-level binding with 16 lazy imports removed
+  (+1 indentation repair); retargeted 24 `control.pid_is_ours` + 7
+  `host_process.process_info` test patches; new boundary tests H1–H4
+  failing-first on base. V2-64 doc 5-point corrections applied. Suite
+  909/909 OK. No probes, backfills, traffic, P1-14C, long runs, paper,
+  orders, Start, main merge, SUCCESS_GATES, formula, or accepted-fix
+  changes. No old-UI/file retirement executed. SQLite/registry/logs intact.
+
 - `DASH-V2-64-BACKEND` (2026-10-11) RECONCILIATION + READ CONTRACTS — **DONE (acotado)**.
   V2 checkpoints (`dash-v2-03-token-detail` `8780da2`) read from Git only:
   reconciled `da231b9..c635938` by fast-forward (clean worktree, zero Python
@@ -485,6 +498,13 @@ strategies (P3), paper engine/positions (P4), execution (P5).
 - 2026-10-11 DASH-V2-62: 902/902 OK, 160.768s, exit 0; 52 focused. Disabled launch corrections; report linked in latest checkpoint.
 
 
+
+- 2026-10-11 (DASH-V2-67-BACKEND): `python run_tests.py` → 909/909 OK (905 + 4 boundary).
+  Helper extraction per handoff `8712dfb` (audit + verbatim move + re-export
+  compat + 24/7 patch retargets + H1–H4 failing-first). V2-64 doc corrections
+  applied. No probes, backfills, traffic, P1-14C, long runs, paper, orders,
+  Start, main merge, or SUCCESS_GATES. SQLite/registry/logs intact. Next:
+  frontend exact-SHA review; P1-14C needs explicit instruction.
 
 - 2026-10-11 (DASH-V2-64-BACKEND): `python run_tests.py` → 905/905 OK (902 + 3 GET-purity pins).
   Reconciliation + read contracts per V2 handoff (`8780da2`); FF `da231b9..c635938`

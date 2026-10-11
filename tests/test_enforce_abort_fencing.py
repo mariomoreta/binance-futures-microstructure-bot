@@ -215,7 +215,7 @@ class TerminalMarkFencingTest(unittest.TestCase):
         with mock.patch.object(pc, "is_canonical_pid", return_value=True):
             with mock.patch.object(pc, "_terminate_verified_pid",
                                    side_effect=_kill_and_takeover) as term:
-                with mock.patch("microstructure_probe.dashboard.pid_is_ours",
+                with mock.patch("microstructure_probe.control.pid_is_ours",
                                  return_value=False):
                     out = pc.enforce_abort(_decision(), owner_kind=owner_kind)
         self.assertTrue(term.called)
@@ -252,7 +252,7 @@ class TerminalMarkFencingTest(unittest.TestCase):
         with mock.patch.object(pc, "is_canonical_pid", return_value=True):
             with mock.patch.object(pc, "_terminate_verified_pid",
                                    side_effect=_kill_and_foreign_marker) as term:
-                with mock.patch("microstructure_probe.dashboard.pid_is_ours",
+                with mock.patch("microstructure_probe.control.pid_is_ours",
                                  return_value=True):
                     out = pc.enforce_abort(_decision(), owner_kind=owner_kind)
         self.assertTrue(term.called)
@@ -279,7 +279,7 @@ class OwnerPersistedTest(unittest.TestCase):
         _write(rec)
         with mock.patch.object(pc, "is_canonical_pid", return_value=True):
             with mock.patch.object(pc, "_terminate_verified_pid"):
-                with mock.patch("microstructure_probe.dashboard.pid_is_ours",
+                with mock.patch("microstructure_probe.control.pid_is_ours",
                                  return_value=False):
                     out = pc.enforce_abort(_decision(), owner_kind=owner_kind)
         self.assertTrue(out["aborted"])

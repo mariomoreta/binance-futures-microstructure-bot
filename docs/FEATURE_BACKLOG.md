@@ -432,7 +432,10 @@ it does not replace them. Authority stays where it was recorded
   and canonical DB readOnly; legacy read contracts inventoried in
   `docs/DASHBOARD_V1_READ_CONTRACTS.md`; old-UI retirement proposed with
   helper-extraction blocker; GET purity pinned by 3 tests; PARTIAL unchanged,
-  no gate advancement).
+  no gate advancement. DASH-V2-67 backend: helpers extracted VERBATIM to
+  `host_process.py` (stdlib only), `control.py` decoupled from the HTTP
+  module, `dashboard.py` re-exports identical objects, boundary tests H1–H4;
+  file-level old-UI retirement still NOT executed, pending review).
 
 ## F-LAUNCH-SUP-01 — Supervised transactional launch
 

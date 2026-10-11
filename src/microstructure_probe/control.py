@@ -37,6 +37,17 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Callable, Dict, List, Optional
 
+# Shared host-process helpers (repo_root, process_info, pid_is_ours,
+# no_window_flags) live in host_process (stdlib only, no HTTP) so this
+# controller never imports the dashboard server module. Test patch targets
+# for controller behavior are microstructure_probe.control.<name>.
+from .host_process import (
+    no_window_flags,
+    pid_is_ours,
+    process_info,
+    repo_root,
+)
+
 REGISTRY_NAME = "probe_runtime.json"
 REGISTRY_SCHEMA = 1
 
@@ -105,7 +116,6 @@ def registry_path() -> Path:
     override = os.environ.get("MICROPROBE_RUNTIME_FILE")
     if override:
         return Path(override)
-    from .dashboard import repo_root
     return repo_root() / "logs" / REGISTRY_NAME
 
 
@@ -285,7 +295,6 @@ def _owner_lease_valid(record: Any, kind: str, target_pid: int) -> bool:
 
 def own_creation_time(pid: Optional[int] = None) -> Optional[str]:
     """Recorded creation-time string for pid (None when indeterminable)."""
-    from .dashboard import process_info
     target = int(pid) if pid is not None else os.getpid()
     try:
         _, creation = process_info(target)
@@ -298,7 +307,6 @@ def is_canonical_pid(record: Optional[Dict[str, Any]]) -> bool:
     """True only if the registry PID is alive, python, and ctime-matched."""
     if not record or not record.get("pid"):
         return False
-    from .dashboard import pid_is_ours
     try:
         return bool(pid_is_ours(int(record["pid"]),
                                 record.get("create_time")))
@@ -580,7 +588,6 @@ def validate_duration(value: Any) -> Optional[int]:
 
 
 def _probe_env(launcher: str) -> Dict[str, str]:
-    from .dashboard import repo_root
     env = dict(os.environ)
     env["BOT_MODE"] = "observe"  # forced: observe-only, always
     env["MICROPROBE_LAUNCHER"] = launcher
@@ -617,7 +624,6 @@ def start_probe(duration_seconds: Optional[int] = None,
         return {"started": False, "already_running": True,
                 "pid": live["pid"], "uptime_seconds": live["uptime_seconds"],
                 "mode": live.get("mode", "observe"), "state": live["state"]}
-    from .dashboard import repo_root
     duration = validate_duration(duration_seconds)
     if preset == "validation-6h":
         duration = SIX_HOURS
@@ -641,7 +647,6 @@ def start_probe(duration_seconds: Optional[int] = None,
     env["MICROPROBE_PRESET"] = preset
     stdout_fh = open(str(log_path), "w", encoding="utf-8")
     try:
-        from .dashboard import no_window_flags
         proc = subprocess.Popen(argv, cwd=str(repo_root()), env=env,
                                 stdout=stdout_fh,
                                 stderr=subprocess.STDOUT,
@@ -912,7 +917,6 @@ def stop_probe(requester: str = "agent") -> Dict[str, Any]:
     if not gate2.get("proceed"):
         return {"stopped": False, "error": gate2.get("reason", "refused"), "pid": pid}
     deadline = time.monotonic() + 10.0
-    from .dashboard import pid_is_ours
     while time.monotonic() < deadline:
         if not pid_is_ours(pid, expected_ctime):
             break
@@ -1072,8 +1076,7 @@ def _terminate_verified_pid(pid: int,
     else:
         try:
             if expected_ctime is not None:
-                from .dashboard import pid_is_ours as _pio
-                if not bool(_pio(target, expected_ctime)):
+                if not bool(pid_is_ours(target, expected_ctime)):
                     return False
             os.kill(target, signal.SIGTERM)
         except (OSError, ProcessLookupError, ValueError, TypeError):
@@ -1440,7 +1443,6 @@ def collect_supervision_snapshot(record: Dict[str, Any]) -> Dict[str, Any]:
 def _default_db_path() -> Optional[Path]:
     """Operational DB path (config carries no db_path — P1-14B.1 proof)."""
     try:
-        from .dashboard import repo_root
         return repo_root() / "data" / "microprobe.db"
     except Exception:
         return None
@@ -1480,7 +1482,6 @@ def _lease_live(lease: Optional[Dict[str, Any]]) -> bool:
     except (TypeError, ValueError):
         return False
     try:
-        from .dashboard import pid_is_ours
         alive = bool(pid_is_ours(pid, lease.get("create_time")))
     except Exception:
         return False
@@ -1696,7 +1697,6 @@ def enforce_abort(decision: Dict[str, Any],
                 "reason": gate2.get("reason", "refused"),
                 "pid": pid}
     deadline = time.monotonic() + 10.0
-    from .dashboard import pid_is_ours
     while time.monotonic() < deadline:
         if not pid_is_ours(pid, expected_ctime):
             break
@@ -1986,7 +1986,6 @@ def _supervisor_lease_verified(record: Dict[str, Any]) -> bool:
         age = _supervision_age_s(lease)
         if age is None or not (0 <= age <= SUPERVISOR_LEASE_FRESH_S):
             return False
-        from .dashboard import pid_is_ours
         return bool(pid_is_ours(int(lease.get("pid")), lease.get("create_time")))
     except Exception:
         return False
@@ -2159,7 +2158,6 @@ def _verify_supervisor_lease(record: Dict[str, Any]) -> bool:
         lease = (record or {}).get("supervisor")
         if not isinstance(lease, dict):
             return False
-        from .dashboard import pid_is_ours
         return bool(pid_is_ours(int(lease.get("pid")),
                                 lease.get("create_time")))
     except Exception:
@@ -2423,7 +2421,6 @@ def _sentinel_lease_verified(record: Dict[str, Any], lease: Dict[str, Any]) -> b
         age = _supervision_age_s(lease)
         if age is None or not (0 <= age <= SUPERVISOR_LEASE_FRESH_S):
             return False
-        from .dashboard import pid_is_ours
         return bool(pid_is_ours(int(lease.get("pid")), lease.get("create_time")))
     except Exception:
         return False
@@ -2477,7 +2474,6 @@ def _default_watcher_spawner(kind: str) -> Any:
     Returns the Popen object (pid + kill). Never runs in tests.
     """
     def _spawn(run_pid: int) -> Any:
-        from .dashboard import repo_root, no_window_flags
         command = {"supervisor": "supervise", "sentinel": "sentinel"}[kind]
         argv = [sys.executable, "-m", "microstructure_probe.control", command,
                 "--interval", str(SUPERVISOR_CHECK_DEFAULT_S)]
@@ -2802,7 +2798,6 @@ def _launch_supervised_impl(duration_seconds: Optional[float] = None,
     except Exception:
         return finish("registry-unavailable")
     try:
-        from .dashboard import repo_root
         ev_dir = Path(evidence_dir) if evidence_dir else (
             repo_root() / "logs" / ("p1-10r" if preset == "validation-6h" else "probe-runs"))
         ev_dir.mkdir(parents=True, exist_ok=True)

@@ -111,10 +111,10 @@ class RegistryStatusTest(unittest.TestCase):
 
     def test_creation_mismatch_is_not_canonical(self) -> None:
         _temp_registry(self)
-        with mock.patch("microstructure_probe.dashboard.pid_is_ours",
+        with mock.patch("microstructure_probe.control.pid_is_ours",
                         return_value=False):
             self.assertFalse(pc.is_canonical_pid(_record()))
-        with mock.patch("microstructure_probe.dashboard.pid_is_ours",
+        with mock.patch("microstructure_probe.control.pid_is_ours",
                         return_value=True):
             self.assertTrue(pc.is_canonical_pid(_record()))
 
@@ -258,7 +258,7 @@ class StartStopTest(unittest.TestCase):
                                side_effect=fake_canonical):
             with mock.patch.object(pc, "_terminate_verified_pid",
                                    side_effect=fake_term):
-                with mock.patch("microstructure_probe.dashboard.pid_is_ours",
+                with mock.patch("microstructure_probe.control.pid_is_ours",
                                side_effect=fake_is_ours):
                     out = pc.stop_probe(requester="dashboard")
         self.assertEqual(killed, [424242])

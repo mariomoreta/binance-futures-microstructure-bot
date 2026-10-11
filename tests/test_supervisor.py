@@ -189,7 +189,7 @@ class LeaseTest(unittest.TestCase):
         with mock.patch.object(pc, "is_canonical_pid", return_value=True):
             pc.claim_supervision()
         with mock.patch.object(pc, "is_canonical_pid", return_value=True):
-            with mock.patch("microstructure_probe.dashboard.pid_is_ours",
+            with mock.patch("microstructure_probe.control.pid_is_ours",
                              return_value=False):
                 take = pc.claim_supervision()
         self.assertTrue(take["supervised"])

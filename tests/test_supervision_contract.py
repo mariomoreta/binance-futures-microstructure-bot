@@ -183,7 +183,7 @@ class DisplayContractTest(unittest.TestCase):
 
     def test_sentinel_active_requires_verification(self):
         rec = self._rec(sen_lease=_sup_lease(state="ACTIVE", age_s=5.0))
-        with mock.patch("microstructure_probe.dashboard.pid_is_ours",
+        with mock.patch("microstructure_probe.control.pid_is_ours",
                          return_value=True):
             block = pc._sentinel_block(rec)
         self.assertEqual(block["state"], "SENTINEL_ACTIVE")
@@ -193,7 +193,7 @@ class DisplayContractTest(unittest.TestCase):
         lease = _sup_lease(state="ACTIVE", age_s=10.0)
         lease["last_check_at"] = "2020-01-01T00:00:00+00:00"
         rec = self._rec(sen_lease=lease)
-        with mock.patch("microstructure_probe.dashboard.pid_is_ours",
+        with mock.patch("microstructure_probe.control.pid_is_ours",
                          return_value=True):
             block = pc._sentinel_block(rec)
         self.assertEqual(block["state"], "SENTINEL_STALE")
@@ -201,7 +201,7 @@ class DisplayContractTest(unittest.TestCase):
 
     def test_sentinel_dead_watcher_is_stale(self):
         rec = self._rec(sen_lease=_sup_lease(state="ACTIVE", age_s=5.0))
-        with mock.patch("microstructure_probe.dashboard.pid_is_ours",
+        with mock.patch("microstructure_probe.control.pid_is_ours",
                          return_value=False):
             block = pc._sentinel_block(rec)
         self.assertEqual(block["state"], "SENTINEL_STALE")
@@ -209,7 +209,7 @@ class DisplayContractTest(unittest.TestCase):
     def test_sentinel_mismatched_run_is_stale(self):
         lease = _sup_lease(state="ACTIVE", age_s=5.0, watched=999999)
         rec = self._rec(sen_lease=lease)
-        with mock.patch("microstructure_probe.dashboard.pid_is_ours",
+        with mock.patch("microstructure_probe.control.pid_is_ours",
                          return_value=True):
             block = pc._sentinel_block(rec)
         self.assertEqual(block["state"], "SENTINEL_STALE")
@@ -221,14 +221,14 @@ class DisplayContractTest(unittest.TestCase):
 
     def test_supervisor_active_requires_verification(self):
         rec = self._rec(sup_lease=_sup_lease(state="ACTIVE", age_s=5.0))
-        with mock.patch("microstructure_probe.dashboard.pid_is_ours",
+        with mock.patch("microstructure_probe.control.pid_is_ours",
                          return_value=True):
             block = pc._supervisor_block(rec)
         self.assertEqual(block["state"], "SUPERVISOR_ACTIVE")
 
     def test_supervisor_stopped_fresh_is_not_active(self):
         rec = self._rec(sup_lease=_sup_lease(state="STOPPED", age_s=5.0))
-        with mock.patch("microstructure_probe.dashboard.pid_is_ours",
+        with mock.patch("microstructure_probe.control.pid_is_ours",
                          return_value=True):
             block = pc._supervisor_block(rec)
         self.assertEqual(block["state"], "SUPERVISOR_STALE")
@@ -304,7 +304,7 @@ class FencingTest(unittest.TestCase):
         _write(rec)
         # Takeover by a new owner.
         with mock.patch.object(pc, "is_canonical_pid", return_value=True):
-            with mock.patch("microstructure_probe.dashboard.pid_is_ours",
+            with mock.patch("microstructure_probe.control.pid_is_ours",
                              return_value=False):
                 take = pc.claim_supervision()
         self.assertTrue(take["supervised"])

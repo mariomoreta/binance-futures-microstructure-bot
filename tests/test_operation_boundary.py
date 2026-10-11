@@ -118,7 +118,7 @@ class PostClaimTakeoverTest(unittest.TestCase):
             with mock.patch.object(pc, "update_registry",
                                    side_effect=swap_after_claim):
                 with mock.patch.object(pc, "_terminate_verified_pid") as term:
-                    with mock.patch("microstructure_probe.dashboard.pid_is_ours",
+                    with mock.patch("microstructure_probe.control.pid_is_ours",
                                      return_value=False):
                         out = pc.enforce_abort(_decision(), owner_kind=kind)
         term.assert_not_called()

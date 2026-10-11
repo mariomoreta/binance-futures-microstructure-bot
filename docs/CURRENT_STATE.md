@@ -1599,3 +1599,31 @@ main, SQLite, log, or evidence mutation; no collector/formula duplication.
 - Suite: `python run_tests.py` → 905/905 OK (902 + 3 pinning), exit 0. No
   probes, backfills, P1-14C, long runs, paper, orders, Start, or gate
   advancement. Deterministic results only — no longevity claim.
+
+## Helper extraction: control decoupled from the HTTP module (2026-10-11) — RESULT: DONE (acotado)
+
+Per DASH-V2-67 handoff (`dash-v2-03-token-detail` `8712dfb`, read from Git
+only): `repo_root / process_info / pid_is_ours / no_window_flags` (+
+`_creation_time_ctypes`) moved VERBATIM to new
+`src/microstructure_probe/host_process.py` (stdlib only, verified
+byte-identical bodies); `dashboard.py` re-exports the same objects (no
+duplication; old helpers, importers, and dashboard-namespace tests keep
+working); `control.py` binds them at top level with all 16 lazy
+`from .dashboard import` removed (one mis-indented `def _probe_env`
+repaired to module level). Controller-behavior patch targets moved
+`dashboard.pid_is_ours` → `control.pid_is_ours` (24 sites) and
+`dashboard.process_info` → `host_process.process_info` (7 sites) after a
+full import/caller/cycle/patch-target audit (only control.py imported the
+helpers from dashboard; views only use DASHBOARD_VERSION). New
+`tests/test_host_process_boundary.py` (H1 source scan, H2 subprocess
+isolation with the dashboard import blocked, H3 object-identity compat, H4
+parity) — failing-first (collection ImportError + missing API on base).
+V2-64 doc corrections applied alongside: manual (not automatic) SHA
+verification, current price schema 3 (5 historical ranges, 10k raw / 1200
+display), REQUEST-vs-retained + ASCII-vs-Unicode kept explicit,
+prospective (microprobe.db) vs historical.db split explicit, purity-scope
+limit (`_ensure` writable paths) explicit. Suite 909/909 OK (905 + 4
+boundary), exit 0. No probes, backfills, traffic, P1-14C, long runs,
+paper, orders, Start, main merge, SUCCESS_GATES, formula, or accepted-fix
+changes. No old-UI/server/file retirement executed (file-level removal
+still waits on this extraction's review). SQLite/registry/logs preserved.

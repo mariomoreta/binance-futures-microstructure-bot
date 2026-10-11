@@ -193,7 +193,7 @@ def _harness(testcase, world):
     patches = [
         mock.patch.object(pc, "is_canonical_pid",
                           side_effect=ident["is_canonical"]),
-        mock.patch("microstructure_probe.dashboard.pid_is_ours",
+        mock.patch("microstructure_probe.control.pid_is_ours",
                    side_effect=lambda pid, ctime: ident["watcher_alive"](
                        pid, ctime)),
         mock.patch.object(pc, "own_creation_time", side_effect=_ctime),

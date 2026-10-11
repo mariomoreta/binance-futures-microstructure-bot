@@ -156,7 +156,7 @@ class PosixTerminateTest(unittest.TestCase):
 
     def test_verified_kill(self):
         with self._posix():
-            with mock.patch("microstructure_probe.dashboard.pid_is_ours",
+            with mock.patch("microstructure_probe.control.pid_is_ours",
                              return_value=True):
                 with mock.patch.object(pc.os, "kill") as kill:
                     self.assertTrue(pc._terminate_verified_pid(424242, "STAMP"))
@@ -164,7 +164,7 @@ class PosixTerminateTest(unittest.TestCase):
 
     def test_unverified_refuses_without_kill(self):
         with self._posix():
-            with mock.patch("microstructure_probe.dashboard.pid_is_ours",
+            with mock.patch("microstructure_probe.control.pid_is_ours",
                              return_value=False):
                 with mock.patch.object(pc.os, "kill") as kill:
                     self.assertFalse(pc._terminate_verified_pid(424242, "STAMP"))

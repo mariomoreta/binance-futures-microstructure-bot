@@ -950,6 +950,27 @@ Tests: 7 win32-bool + 8 start-race delta (key cases fail on `b801ab0`);
 suite 850/850 OK. V2/main/SUCCESS_GATES intact; `status_readonly()` kept;
 no new supervised window (longevity UNDEMONSTRATED).
 
+## DASH-V2-67-BACKEND - 2026-10-11 - helper extraction from the HTTP module
+
+Handoff `8712dfb` (`dash-v2-03-token-detail`, Git only). Audit first: the
+only cross-module helper imports were control.py's 16 lazy
+`from .dashboard import` (repo_root/process_info/pid_is_ours/
+no_window_flags); views use labels/version only; no import cycle is
+introduced (host_process is stdlib-only). Moved the five helpers VERBATIM
+(byte-identical bodies, verified by diff) to `host_process.py`;
+dashboard.py re-exports the same objects (no second identity logic);
+control.py binds them at top level. Controller-behavior patch targets
+moved to `control.pid_is_ours` (24) and `host_process.process_info` (7);
+dashboard-namespace behavior tests unchanged. One self-inflicted
+mis-indentation of `def _probe_env` caught by focused tests and repaired
+to module level (semantics unchanged). New boundary tests H1–H4 fail on
+base (ImportError + 16 source hits) and pass after. V2-64 doc 5-point
+corrections applied alongside (manual SHA check, price schema 3 with
+10k/1200, anchors + ASCII/Unicode kept, prospective vs historical.db
+split, purity-scope limit). Suite 909/909 OK. No probes, backfills,
+traffic, P1-14C, runs, paper, orders, Start, main merge, SUCCESS_GATES,
+formula, or accepted-fix changes. No old-UI/file retirement executed.
+
 ## 2026-10-11 -- Supervised transactional launch preparation (DISABLED)
 
 Contract first (`docs/SUPERVISED_LAUNCH_CONTRACT.md`), then the minimum

@@ -12,8 +12,10 @@ Deployed-source identity: V2 `runtime-control.ts` spawns Python with
 (`/src`), calling `control.status_readonly()`; V2 SQLite reads use
 `DatabaseSync readOnly:true` on the canonical
 `data/microprobe.db`. After the fast-forward, deployed source == accepted
-checkpoint `c635938` (the cutover audit's da231b9-vs-remote split is
-closed on this checkout; V2 re-verifies the exact SHA before consuming).
+checkpoint `c635938`, closing the cutover audit's da231b9-vs-remote split
+on this checkout. SHA verification is MANUAL (exact-SHA audit scripts and
+review checkpoints): the V2 bridge does NOT inspect Git SHA on every
+consumption and no automatic pinned-version guard is claimed.
 
 Conventions below: `generated_at` on JSON APIs is RESPONSE time
 (`strftime(gmtime())`), never observation time. Empty stores answer 404
@@ -75,8 +77,10 @@ start validates duration/preset allowlist (200/409/500); stop
 - `normalize_symbol`: strip/upper; length 6..34; must end `USDT`; prefix
   chars unicode-alnum or `_-.'; rejects `/ ? & # < > " ' ` space %`.
   NOTE vs V2-64 audit: Python accepts MORE than ASCII A-Z0-9 (e.g.
- 龍虾USDT flows through). V2's stricter parser is a V2-side coverage
-  boundary (DASH-V2-65); never join external tokens on symbol alone.
+ 龍虾USDT flows through). Current V2 search uses retained records with
+  max 50 and ASCII query validation (vs old max 25 + broader parser), so
+  Unicode symbols and differing source unions are not full parity. Never
+  join external tokens on symbol alone.
 - `search_symbols(query, rows, limit=25)`: case-insensitive partial over
   persisted universe rows only (tops + core + hot + live); full exchange
   listing intentionally NOT persisted. Order: exact, prefix, substring,
@@ -96,12 +100,24 @@ start validates duration/preset allowlist (200/409/500); stop
 
 ## 3. Historical coverage / event studies (priority)
 
-- Coverage reads the SEPARATE historical DB (`HistoryStore`,
-  `coverage_summary()`); per-symbol filter is exact uppercased match.
-  404 when absent. Units/limits follow `docs/MARKET_DATA.md` + history
-  contracts (klines/mark/OI availability caps); not duplicated here.
+Two different files — never conflate them by name alone:
+(a) the prospective archive lives INSIDE canonical `microprobe.db`
+(`prospective_setups` / `prospective_outcomes`, schema v9, §prospective
+API above); (b) coverage + event studies live in the SEPARATE
+`data/historical/historical.db` (`HistoryStore`, `history_meta` schema2).
+
+- Coverage reads the separate historical DB (`coverage_summary()`);
+  per-symbol filter is exact uppercased match. 404 when absent.
+  Units/limits follow `docs/MARKET_DATA.md` + history contracts
+  (klines/mark/OI availability caps); not duplicated here. A stored
+  coverage row with zero bars and null span/ratio must be preserved
+  as-is, never upgraded from neighboring datasets; ratio 1.0 is the
+  recorded interval result, not current completeness.
 - `event_studies()`: one `{definition, version:1, horizons}` per
-  EVENT_FAMILY via `event_summary(fam, 1)`; `[]` on any error.
+  EVENT_FAMILY via `event_summary(fam, 1)`; `[]` on any error. Legacy
+  AVG(forward_return) includes all non-null outcome rows while n_usable
+  is a separate count — do not silently change the statistical
+  population; methodology changes are separate research tasks.
 - `event_summary(def, 1)` rows: per-horizon aggregates (served as-is).
 - `event_symbol(sym, 50)`: fixed column list, `ORDER BY event_time DESC
   LIMIT 50`, uppercased symbol; `[]` on any error. `event_time` semantics
@@ -130,10 +146,13 @@ mark-price buckets, NO new source):
 - CSV: same points, header `timestamp,price`, `text/csv`, attachment
   `{SYM}-{rng}.csv`.
 - Anchor warning (do NOT silently substitute): the old window is anchored
-  at REQUEST time; V2-63 price-series schema 2 anchors at
-  LAST_RETAINED_SAMPLE with ≤600 buckets and >60s gap segmentation. A
-  600-row query is not automatically sufficient for 24h — budget per range
-  before V2-66 implementation (frontend-owned).
+  at REQUEST time. Current production V2 price response is schema_version
+  3: the same five historical ranges anchored at LAST_RETAINED_SAMPLE,
+  max 10_000 raw input samples with 1_200 display output samples, and
+  separate fresh exports (CSV/JSON with metadata and gaps — not a frozen
+  earlier chart snapshot, not an exhaustive raw export). REQUEST-time mode
+  remains absent and the historical range is explicitly labeled. Budget per
+  range before any implementation (frontend-owned).
 
 ## 5. Diagnostics contract (status_readonly purity + UNKNOWN rules)
 
@@ -143,6 +162,12 @@ mark-price buckets, NO new source):
   reconciled, absent registry never created, process/feed reported
   separately, zero writes/handles/process actions; mutation check fails
   G1/G3 when legacy `status()` is restored).
+- Scope limit: the purity pins cover `probe_status` ONLY. They do not
+  certify every legacy GET's storage behavior — `HistoryStore` read
+  helpers call `_ensure()`, which can initialize/migrate storage through
+  writable connections (and `event_symbol` opens the historical DB
+  read-write). V2 read-only presentation must avoid those methods and use
+  an explicit read-only adapter that never creates absent DBs.
 - Shape: same nullable keys as mutating `status()`; supervisor/sentinel
   blocks always present (ACTIVE only when verified, else STALE/UNKNOWN
   with raw lease evidence alongside).

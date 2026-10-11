@@ -16,6 +16,7 @@ from unittest import mock
 
 from microstructure_probe import control
 from microstructure_probe import dashboard
+from microstructure_probe import host_process
 
 
 def _completed_run(cmd, stdout="", stderr=""):
@@ -87,22 +88,22 @@ class NoWindowFlagsTest(unittest.TestCase):
 
 class PidIdentityTest(unittest.TestCase):
     def test_correct_identity_accepted(self) -> None:
-        with mock.patch.object(dashboard, "process_info",
+        with mock.patch.object(host_process, "process_info",
                                return_value=("python.exe", "CTIME-1")):
             self.assertTrue(dashboard.pid_is_ours(111, "CTIME-1"))
 
     def test_wrong_image_rejected(self) -> None:
-        with mock.patch.object(dashboard, "process_info",
+        with mock.patch.object(host_process, "process_info",
                                return_value=("notepad.exe", "CTIME-1")):
             self.assertFalse(dashboard.pid_is_ours(111, "CTIME-1"))
 
     def test_mismatched_creation_rejected_pid_reuse(self) -> None:
-        with mock.patch.object(dashboard, "process_info",
+        with mock.patch.object(host_process, "process_info",
                                return_value=("python.exe", "CTIME-2")):
             self.assertFalse(dashboard.pid_is_ours(111, "CTIME-1"))
 
     def test_missing_process_rejected(self) -> None:
-        with mock.patch.object(dashboard, "process_info",
+        with mock.patch.object(host_process, "process_info",
                                return_value=(None, None)):
             self.assertFalse(dashboard.pid_is_ours(111, "CTIME-1"))
 
@@ -117,7 +118,7 @@ class StartProbeNoWindowTest(unittest.TestCase):
                 fake_proc.pid = 424242
                 with mock.patch.object(control.subprocess, "Popen",
                                        return_value=fake_proc) as popen, \
-                     mock.patch.object(dashboard, "process_info",
+                     mock.patch.object(host_process, "process_info",
                                        return_value=("python.exe", "CT-9")):
                     result = control.start_probe(75, launcher="test",
                                                  preset="standard")
@@ -144,7 +145,7 @@ class LifecycleStatusTest(unittest.TestCase):
             os.environ["MICROPROBE_RUNTIME_FILE"] = str(
                 Path(tmp) / "probe_runtime.json")
             try:
-                with mock.patch.object(dashboard, "process_info",
+                with mock.patch.object(host_process, "process_info",
                                        return_value=("python.exe", "CT-X")):
                     control._write_registry(self._record("RUNNING"))
                     self.assertTrue(control.status()["running"])
@@ -165,7 +166,7 @@ class LifecycleStatusTest(unittest.TestCase):
             os.environ["MICROPROBE_RUNTIME_FILE"] = str(
                 Path(tmp) / "probe_runtime.json")
             try:
-                with mock.patch.object(dashboard, "process_info",
+                with mock.patch.object(host_process, "process_info",
                                        return_value=(None, None)):
                     control._write_registry(self._record("RUNNING"))
                     st = control.status()
