@@ -1,5 +1,8 @@
 # FEATURE BACKLOG — canonical decision traceability & deferred features
 
+## DASH-V2-64 - 2026-10-11 - cutover coverage audit
+Read-only review DONE bounded: deployed V2 328d406, 10 GETs pass, fresh browser audit 39 cases passes; prior V2-63 test results were not rerun. Legacy replacement remains PARTIAL. Next frontend slice: symbol search and complete recorded token fields, followed by range/export and study/diagnostic parity. Backend owner: reconcile published c635938 with original checkout da231b9; read-only data/diagnostic contract audit only. No runs, control enablement, DB changes, main merge or SUCCESS_GATES advancement. See DASHBOARD_V2_64_CUTOVER_AUDIT.md and DASHBOARD_V2_64_BACKEND_HANDOFF.md.
+
 
 ## DASH-V2-63 reconciliation — 2026-10-11
 - F-V2-DATA-MIG-01: DECIDED / IMPLEMENTED bounded canonical presentation and periodic read refresh. Coverage/verification report: DASHBOARD_V2_63_DATA_MIGRATION.md. Full cutover remains PARTIAL.

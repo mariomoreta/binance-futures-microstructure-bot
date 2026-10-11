@@ -104,3 +104,6 @@ P1-10R is PASS (2026-10-08); P1-12A classifier v0 is DONE. P1-12B and
 functional Opportunities, Backtest and Paper Lab remain bound to their
 engine phases (see `docs/FEATURE_BACKLOG.md` F-UNI-01, F-OPP-01,
 F-BT-01, F-PAPER-01). Documentation work does not advance those gates.
+
+## DASH-V2-64 - next coverage sequence
+Current exhaustive coverage assessment and retirement criteria: DASHBOARD_V2_64_CUTOVER_AUDIT.md. Search/token fields -> ranges/exports -> historical studies/diagnostics -> reversible presentation cutover. Start/operating readiness and future research are separate gates. Backend contract/deployment handoff: DASHBOARD_V2_64_BACKEND_HANDOFF.md.
