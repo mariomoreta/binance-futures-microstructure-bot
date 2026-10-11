@@ -558,3 +558,7 @@ Verification: Python snapshot 496/496 OK, exit 0, 68.411s. See DASHBOARD_V2_57_V
 ## DASH-V2-58 - 2026-10-11 - Token Detail visual round
 
 Token Detail category/status/evidence/metric hierarchy and mobile composition refined. ROUND DONE; fidelity PARTIAL. Frontend 118/118, type/build pass, lint 0 errors (1 existing warning), Python snapshot 496/496; fresh 3 before / 6 after browser cases, no exceptions/overflow, expected price-series unavailable. Production V2 route http://127.0.0.1:3020/symbol/BTCUSDT. See [visual round report](DASHBOARD_V2_58_TOKEN_DETAIL_VISUAL.md). Next Opportunities composition READY; missing exact reference remains isolated. No backend change, Start or gate advance.
+
+## DASH-V2-59 - 2026-10-11 - Research workspace visual round
+
+Research navigation/headings/notices and mobile summary grids refined; literal rendered backslash-n removed. Bounded round DONE; reference fidelity ASSET_MISMATCH (missing dedicated asset). Frontend 118/118, type/build pass, Python snapshot 496/496; 9 before / 9 after browser cases, no exceptions/overflow. Source-unavailable observations retain honest empty state. See [research visual report](DASHBOARD_V2_59_RESEARCH_VISUAL.md). Next C/D scopes ready. Start/gates/backend unchanged.

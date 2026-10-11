@@ -17,7 +17,7 @@ This is not a background job or a live-run authorization.
 | V56 | Overview and Movers hierarchy/composition | ROUND DONE; overall parity PARTIAL | DASHBOARD_V2_56_VISUAL_REFINEMENT.md; 39 before/after cases; 118 frontend / 496 snapshot |
 | V57 | Autonomous visual control plan | ROUND DONE, documentation only | This dated control section |
 | V58 / A | Token Detail | ROUND DONE; fidelity PARTIAL | DASHBOARD_V2_58_TOKEN_DETAIL_VISUAL.md; 3 before / 6 after browser cases, 118 frontend / 496 snapshot |
-| Next B | Opportunities, observations, prospective | READY for bounded composition; exact parity BLOCKED | Correct Opportunities reference absent; do not substitute another screen |
+| V59 / B | Opportunities, observations, prospective | ROUND DONE; exact fidelity ASSET_MISMATCH | DASHBOARD_V2_59_RESEARCH_VISUAL.md; missing dedicated reference isolated |
 | Next C | System and research archives | PENDING after A/B; may advance around isolated external blockers | Preserve recorded process vs watcher vs feed, registry-only semantics |
 | Next D | Backtest and Paper Lab unavailable states | PENDING | Reference composition allowed; engines/results remain unavailable |
 | Final | Whole-dashboard desktop/mobile consistency | PENDING | All 13 routes, menu/keyboard/navigation/overflow/error checks; explicit remaining gaps |

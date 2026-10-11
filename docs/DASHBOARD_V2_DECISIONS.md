@@ -201,3 +201,6 @@ blocker. No background execution or new market/run/Start authority.
 
 ## 2026-10-11 - DASH-V2-58 visual state neutrality
 Category controls remain descriptive and visually neutral while classifier state is UNKNOWN. Approved-reference ornamental price curves are omitted without a verified series. Token Detail styling preserves source-specific fixture and chart provenance; no classifier or operational capability inferred.
+
+## 2026-10-11 - DASH-V2-59 reference dependency isolation
+Missing Opportunities reference blocks exact design fidelity, not independently authorized navigation/readability improvements. Separate route modes and source warnings remain visible; no live observations invented to cover unavailable backend.
