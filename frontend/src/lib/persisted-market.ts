@@ -72,5 +72,28 @@ export function featureSections(m:PersistedMarket,symbol:string,now:number){
  section("Book and depth","book_features",book,[{label:"Best bid",value:n(object(book.book).best_bid," USDT")},{label:"Best ask",value:n(object(book.book).best_ask," USDT")},{label:"Spread",value:n(object(book.book).spread_bps," bps")},{label:"Notional imbalance",value:n(object(book.book).imbalance_notional,"% of signed balance",100)}]),
  section("Open interest","oi_features",oi,[{label:"Recorded OI",value:n(oi.current_oi," base units")},...windows.map(h=>({label:h+" OI change",value:n(object(object(oi.horizons)[h]).delta_pct,"%",100)}))]),
  section("VWAP and volatility","structure_features",structure,windows.flatMap(h=>[{label:h+" VWAP displacement",value:n(object(object(structure.vwap)[h]).displacement_pct,"%")},{label:h+" realized volatility",value:n(object(object(structure.volatility)[h]).realized_vol,"%",100)}])),
+
+ section("Flow detail and recorded warmup","flow_features",flow,["10s","30s",...windows].flatMap(h=>{const x=object(object(flow.horizons)[h]);return [{label:h+" notional",value:n(x.notional," USDT")},{label:h+" trade rate",value:n(x.trade_rate," trades/s")},{label:h+" delta ratio",value:n(x.delta_ratio)},{label:h+" recorded warmup",value:typeof x.warmup_complete==="boolean"?String(x.warmup_complete):null}]})),
+ section("Visible depth and recorded integrity","book_features",book,[
+  ...["top1","top5","top10","top20"].flatMap(h=>{const x=object(object(object(book.book).depth)[h]);return [{label:h+" bid notional",value:n(x.bid_notional," USDT")},{label:h+" ask notional",value:n(x.ask_notional," USDT")}]}),
+  {label:"Microprice displacement",value:n(object(book.book).microprice_displacement_bps," bps")},
+  {label:"Slope asymmetry (ratio)",value:n(object(object(book.book).slopes).asymmetry)},
+  ...["bid","ask"].flatMap(side=>["within_5bps","within_10bps","within_25bps"].map(band=>({label:side+" concentration "+band,value:n(object(object(object(book.book).concentration)[side])[band],"%",100)}))),
+  {label:"Recorded sequence gaps",value:n(book.sequence_gaps)},
+  {label:"Recorded degraded flag",value:typeof book.degraded==="boolean"?String(book.degraded):null}
+ ]),
+ section("OI context and dynamics","oi_features",oi,[
+  ...windows.flatMap(h=>{const x=object(object(oi.horizons)[h]),context=object(oi.price_oi_context)[h];return [{label:h+" absolute OI delta",value:n(x.delta," base units")},{label:h+" OI rate",value:n(x.rate_per_s," base units/s")},{label:h+" recorded price/OI context",value:typeof context==="string"?context.slice(0,80):null}]}),
+  {label:"OI acceleration",value:n(oi.acceleration_per_s2," base units/s²")}
+ ]),
+ section("Ranges and saved structure","structure_features",structure,[
+  ...["1m","5m","15m"].flatMap(h=>{const x=object(object(structure.ranges)[h]);return [{label:h+" range high",value:n(x.high," USDT")},{label:h+" range low",value:n(x.low," USDT")},{label:h+" range width",value:n(x.range_pct,"%",100)},{label:h+" range position",value:n(x.range_position,"%",100)},{label:h+" expansion ratio",value:n(x.expansion_ratio)}]}),
+  ...["higher_high","lower_high","higher_low","lower_low"].map(k=>({label:k,value:typeof object(structure.structure)[k]==="boolean"?String(object(structure.structure)[k]):null})),
+  ...["swing_highs","swing_lows"].map(k=>{const a=object(structure.structure)[k];return {label:"Last saved "+k,value:n(Array.isArray(a)?object(a.at(-1)).price:null," USDT")}}),
+  {label:"Prior range high",value:n(object(structure.structure).prior_range_high," USDT")},
+  {label:"Prior range low",value:n(object(structure.structure).prior_range_low," USDT")},
+  {label:"Recorded breakout",value:typeof object(structure.structure).breakout_state==="string"?String(object(structure.structure).breakout_state).slice(0,80):null},
+  ...windows.map(h=>({label:h+" recorded VWAP",value:n(object(object(structure.vwap)[h]).vwap," USDT")}))
+ ]),
  ];
 }

@@ -1,0 +1,63 @@
+{
+  "results": [
+    {
+      "route": "search",
+      "title": "Symbol search",
+      "width": 390,
+      "scroll": 375,
+      "mains": 1,
+      "loading": false,
+      "active": [
+        "/search"
+      ],
+      "height": 2174,
+      "alerts": [],
+      "scrollTables": 0,
+      "searchAndFeatures": {
+        "search": true,
+        "demo": false,
+        "details": 0
+      }
+    },
+    {
+      "route": "search?q=LUMIA",
+      "title": "Symbol search",
+      "width": 390,
+      "scroll": 390,
+      "mains": 1,
+      "loading": false,
+      "active": [
+        "/search"
+      ],
+      "height": 941,
+      "alerts": [],
+      "scrollTables": 0,
+      "searchAndFeatures": {
+        "search": true,
+        "demo": false,
+        "details": 0
+      }
+    },
+    {
+      "route": "search?q=ZZZNODATA",
+      "title": "Symbol search",
+      "width": 390,
+      "scroll": 390,
+      "mains": 1,
+      "loading": false,
+      "active": [
+        "/search"
+      ],
+      "height": 941,
+      "alerts": [],
+      "scrollTables": 0,
+      "searchAndFeatures": {
+        "search": true,
+        "demo": false,
+        "details": 0
+      }
+    }
+  ],
+  "errors": [],
+  "unavailable": []
+}

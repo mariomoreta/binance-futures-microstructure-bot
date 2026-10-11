@@ -221,3 +221,10 @@ h1{font-size:26px;line-height:1.25;letter-spacing:-.03em}button,input,select{fon
 
 /* V60: consistent recorded-data headings and compact coverage hierarchy. */
 .v2-records h1{font-size:30px;letter-spacing:-.035em}.v2-record-panels>section:last-child{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:0 16px}.v2-record-panels>section:last-child h2{grid-column:1/-1}.v2-records [role=region]:focus-visible{outline:2px solid #60c9ff;outline-offset:3px}.v2-records th{color:#a5c2d7;background:#0a2335}.v2-record-metrics small{font-size:11px;color:#a5c2d7}@media(max-width:760px){.v2-records h1{font-size:25px}.v2-record-panels>section:last-child{grid-template-columns:1fr}}
+
+/* V65: global retained-record search, responsive without moving navigation. */
+.v2-header-search{display:flex;gap:4px;min-width:0;flex:0 1 280px}.v2-header-search input,.v2-search-form input{min-width:0;width:100%;background:#071b2b;color:#d9efff;border:1px solid #285575;border-radius:4px;padding:7px 9px;font-size:12px}.v2-header-search button,.v2-search-form button{background:#10334c;color:#b7e6ff;border:1px solid #285575;border-radius:4px;padding:6px 10px}.v2-search-form{display:flex;align-items:center;gap:12px;max-width:680px;margin:20px 0}.v2-search-form label{white-space:nowrap}.v2-search-form button{white-space:nowrap}
+@media(max-width:1050px){.v2-header-context{display:none}}
+@media(max-width:760px){.v2-header-search{flex:0 1 150px}.v2-header-search button,.v2-header-mode{display:none}.v2-header-search input{font-size:16px;width:100%;padding:6px}.v2-search-form{flex-wrap:wrap}.v2-search-form input{flex:1 1 170px}.v2-brand{font-size:11px}}
+
+@media(max-width:760px){.v2-search-table{table-layout:fixed;white-space:normal!important}.v2-search-table th,.v2-search-table td{white-space:normal;overflow-wrap:anywhere;padding:8px}.v2-search-table th:first-child{width:29%}.v2-search-table th:last-child{width:22%}}

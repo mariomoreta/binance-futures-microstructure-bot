@@ -225,3 +225,6 @@ User authorized proceeding with V2 data migration and keeping Python/SQLite auth
 BFF price-series is schema 2 (historical hour anchored to last retained sample). Discovery tops remain a selected subset; per-row price source and independent feature date are retained. Server-rendered read metadata updates with visible-tab polling, which does not create observations.
 Correct misleading legacy UI filter names: positive/negative Flow were velocity/acceleration predicates, now upward/downward acceleration; Exhaustion research predicate was extreme gainers, now labelled extreme gainers. Threshold formulas unchanged and remain descriptive hypotheses.
 Main candidates table bounded to 12/page with visible-page evidence; tiny nonzero observations use scientific notation. Full legacy cutover, current liveness, timelines and supervised launches remain separate gates.
+
+## DASH-V2-65 - 2026-10-11
+Retained-record search is not an exchange universe or live subscription guarantee; parameterized submitted lookup bounded to 50 output symbols. Saved token projections carry independent family dates and recorded integrity/warmup; no new formulas. ASCII identity boundary stays explicit, coordinated expansion pending.

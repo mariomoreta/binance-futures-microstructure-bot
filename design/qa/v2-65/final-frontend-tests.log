@@ -1,0 +1,92 @@
+
+> dashboard-v2@0.0.1 test
+> vitest run --run
+
+[33m(!) Your Vite config uses features that are unsupported by `configLoader: 'native'`, which is planned to become the default in a future major version of Vite:
+  - `__dirname` (vitest.config.mts:5:41). Use `import.meta.dirname` instead
+Set `VITE_CONFIG_NATIVE_IGNORE_WARNING=true` to suppress this warning.[39m
+
+[1m[30m[46m RUN [49m[39m[22m [36mv5.0.3 [39m[90mC:/proyectos/binance-futures-dashboard-v2-worktree/frontend[39m
+
+ [32m✓[39m src/test/canonical-search.test.ts [2m([22m[2m3 tests[22m[2m)[22m[32m 61[2mms[22m[39m
+ [32m✓[39m src/test/tables.test.tsx [2m([22m[2m3 tests[22m[2m)[22m[33m 481[2mms[22m[39m
+   [32m✓[39m tables [2m(3)[22m
+     [33m[2m✓[22m[39m filter tabs report selection to the caller[33m 346[2mms[22m[39m
+ [32m✓[39m src/test/movers-pulse.test.tsx [2m([22m[2m1 test[22m[2m)[22m[33m 738[2mms[22m[39m
+   [32m✓[39m market breadth visual integrity [2m(1)[22m
+     [33m[2m✓[22m[39m states retained-subset limits and labels missing observations[33m 732[2mms[22m[39m
+ [32m✓[39m src/test/system.test.tsx [2m([22m[2m1 test[22m[2m)[22m[33m 858[2mms[22m[39m
+   [32m✓[39m System V2 truthful shell [2m(1)[22m
+     [33m[2m✓[22m[39m shows unknown, not invented operational health[33m 851[2mms[22m[39m
+ [32m✓[39m src/test/token-detail.test.tsx [2m([22m[2m5 tests[22m[2m)[22m[33m 1216[2mms[22m[39m
+   [32m✓[39m DASH-V2-03 token detail [2m(2)[22m
+     [33m[2m✓[22m[39m never claims authoritative live state from a demo price[33m 577[2mms[22m[39m
+Not implemented: navigation to another Document
+ [32m✓[39m src/test/navigation.test.tsx [2m([22m[2m4 tests[22m[2m)[22m[33m 1477[2mms[22m[39m
+   [32m✓[39m Terminal navigation [2m(2)[22m
+     [33m[2m✓[22m[39m marks the parent route and closes the mobile menu by Escape[33m 774[2mms[22m[39m
+     [33m[2m✓[22m[39m closes navigation after selecting a destination[33m 351[2mms[22m[39m
+ [32m✓[39m src/test/prospective-recovery.test.tsx [2m([22m[2m1 test[22m[2m)[22m[33m 973[2mms[22m[39m
+   [32m✓[39m prospective offline recovery [2m(1)[22m
+     [33m[2m✓[22m[39m keeps research controls visible while offline and retries on explicit user request[33m 969[2mms[22m[39m
+ [32m✓[39m src/test/shell-accessibility.test.tsx [2m([22m[2m3 tests[22m[2m)[22m[33m 1770[2mms[22m[39m
+   [32m✓[39m DASH-V2-05 accessible research views [2m(2)[22m
+     [33m[2m✓[22m[39m offers skip navigation and one main landmark[33m 1028[2mms[22m[39m
+     [33m[2m✓[22m[39m keeps token detail within one main landmark[33m 354[2mms[22m[39m
+   [32m✓[39m Opportunities keyboard inspection [2m(1)[22m
+     [33m[2m✓[22m[39m marks selected candidate and exposes a focusable table[33m 384[2mms[22m[39m
+ [32m✓[39m src/test/bot-control.test.tsx [2m([22m[2m4 tests[22m[2m)[22m[33m 2009[2mms[22m[39m
+   [32m✓[39m System runtime presentation [2m(2)[22m
+     [33m[2m✓[22m[39m keeps unavailable client mode UNKNOWN and exposes the error outside the disclosure[33m 1052[2mms[22m[39m
+     [33m[2m✓[22m[39m renders authoritative process and supervisor independently and preserves foreign ownership protection[33m 312[2mms[22m[39m
+   [32m✓[39m System watcher observation [2m(2)[22m
+     [33m[2m✓[22m[39m shows both watchers separately and retains raw evidence when the display expires[33m 363[2mms[22m[39m
+ [32m✓[39m src/test/migration-ui.test.tsx [2m([22m[2m3 tests[22m[2m)[22m[33m 2373[2mms[22m[39m
+   [32m✓[39m migration interaction and precision [2m(2)[22m
+     [33m[2m✓[22m[39m bounds the candidate page and keeps its evidence on the visible page[33m 2190[2mms[22m[39m
+ [32m✓[39m src/test/opportunities.test.tsx [2m([22m[2m8 tests[22m[2m)[22m[33m 3187[2mms[22m[39m
+   [32m✓[39m DASH V2 Opportunities DEMO [2m(6)[22m
+     [33m[2m✓[22m[39m renders honest demo disclaimer and evidence inspector[33m 452[2mms[22m[39m
+     [33m[2m✓[22m[39m search narrows results and reset restores[33m 465[2mms[22m[39m
+     [33m[2m✓[22m[39m shows selected candidate lifecycle, state, priority and stale provenance[33m 1111[2mms[22m[39m
+     [33m[2m✓[22m[39m never displays filtered-out candidate evidence[33m 630[2mms[22m[39m
+   [32m✓[39m DASH V2 Opportunities provenance and lifecycle presentation [2m(2)[22m
+     [33m[2m✓[22m[39m marks selected lifecycle and direction for visual status treatment[33m 333[2mms[22m[39m
+ [32m✓[39m src/test/readonly-database.test.ts [2m([22m[2m2 tests[22m[2m)[22m[32m 141[2mms[22m[39m
+ [32m✓[39m src/test/verified-history-panel.test.tsx [2m([22m[2m1 test[22m[2m)[22m[32m 276[2mms[22m[39m
+ [32m✓[39m src/test/movers-row-inspector.test.tsx [2m([22m[2m1 test[22m[2m)[22m[32m 238[2mms[22m[39m
+ [32m✓[39m src/test/opportunities-observations.test.tsx [2m([22m[2m1 test[22m[2m)[22m[32m 222[2mms[22m[39m
+ [32m✓[39m src/test/polling.test.tsx [2m([22m[2m5 tests[22m[2m)[22m[32m 152[2mms[22m[39m
+ [32m✓[39m src/test/badges.test.tsx [2m([22m[2m3 tests[22m[2m)[22m[32m 149[2mms[22m[39m
+ [32m✓[39m src/test/persisted-market.test.ts [2m([22m[2m18 tests[22m[2m)[22m[32m 147[2mms[22m[39m
+ [32m✓[39m src/test/overview.test.tsx [2m([22m[2m5 tests[22m[2m)[22m[33m 445[2mms[22m[39m
+ [32m✓[39m src/test/research-navigation.test.tsx [2m([22m[2m1 test[22m[2m)[22m[32m 286[2mms[22m[39m
+ [32m✓[39m src/test/movers-dashboard.test.tsx [2m([22m[2m4 tests[22m[2m)[22m[33m 6532[2mms[22m[39m
+   [32m✓[39m professional movers [2m(4)[22m
+     [33m[2m✓[22m[39m keeps research isolation and valid symbol navigation[33m 3226[2mms[22m[39m
+     [33m[2m✓[22m[39m filters, searches, resets and renders empty state[33m 1482[2mms[22m[39m
+     [33m[2m✓[22m[39m paginates bounded rows[33m 1134[2mms[22m[39m
+     [33m[2m✓[22m[39m sorting controls are keyboard buttons[33m 679[2mms[22m[39m
+ [32m✓[39m src/test/launch-readiness.test.ts [2m([22m[2m18 tests[22m[2m)[22m[32m 81[2mms[22m[39m
+ [32m✓[39m src/test/token-parity.test.ts [2m([22m[2m4 tests[22m[2m)[22m[32m 141[2mms[22m[39m
+ [32m✓[39m src/test/format.test.ts [2m([22m[2m4 tests[22m[2m)[22m[32m 103[2mms[22m[39m
+ [32m✓[39m src/test/supervision.test.ts [2m([22m[2m22 tests[22m[2m)[22m[32m 32[2mms[22m[39m
+ [32m✓[39m src/test/symbol-search.test.ts [2m([22m[2m4 tests[22m[2m)[22m[32m 51[2mms[22m[39m
+ [32m✓[39m src/test/runtime-contract.test.ts [2m([22m[2m4 tests[22m[2m)[22m[32m 25[2mms[22m[39m
+ [32m✓[39m src/test/prospective-quality.test.ts [2m([22m[2m4 tests[22m[2m)[22m[32m 16[2mms[22m[39m
+ [32m✓[39m src/test/opportunities-api.test.ts [2m([22m[2m4 tests[22m[2m)[22m[32m 22[2mms[22m[39m
+ [32m✓[39m src/test/movers-domain.test.ts [2m([22m[2m5 tests[22m[2m)[22m[32m 13[2mms[22m[39m
+ [32m✓[39m src/test/runtime-security.test.ts [2m([22m[2m3 tests[22m[2m)[22m[32m 15[2mms[22m[39m
+ [32m✓[39m src/test/live-movers.test.ts [2m([22m[2m4 tests[22m[2m)[22m[32m 11[2mms[22m[39m
+ [32m✓[39m src/test/price-series.test.ts [2m([22m[2m2 tests[22m[2m)[22m[32m 10[2mms[22m[39m
+ [32m✓[39m src/test/prospective-api.test.ts [2m([22m[2m2 tests[22m[2m)[22m[32m 7[2mms[22m[39m
+
+[2m Test Files [22m [1m[32m34 passed[39m[22m[90m (34)[39m
+[2m      Tests [22m [1m[32m157 passed[39m[22m[90m (157)[39m
+[2m   Start at [22m 14:49:35
+[2m   Duration [22m 16.86s[2m (environment 62%, setup 16%, tests 15%, transform 4%, import 2%, worker 1%)[22m
+
+[2mEnvironment [22m [33mjsdom was created 34 times[39m[2m · 98.86s total, 62% of tracked time[22m
+[2m            [22m [2mcreate it once per worker with [22m[33mpool: 'vmThreads'[39m[2m (keeps per-file isolation) or [22m[33misolate: false[39m[2m (shares it across files)[22m
+[2m            [22m [2mlearn more: https://vitest.dev/guide/improving-performance#test-environments[22m
+

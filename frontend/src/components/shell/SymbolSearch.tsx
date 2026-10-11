@@ -1,0 +1,1 @@
+export function SymbolSearch(){return <form action="/search" className="v2-header-search" role="search" aria-label="Search retained symbols"><input name="q" aria-label="Search symbol" placeholder="Search symbol..." maxLength={32} autoComplete="off"/><button type="submit" aria-label="Search records">Search</button></form>}

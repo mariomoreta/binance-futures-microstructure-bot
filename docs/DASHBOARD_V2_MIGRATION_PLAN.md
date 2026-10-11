@@ -107,3 +107,6 @@ F-BT-01, F-PAPER-01). Documentation work does not advance those gates.
 
 ## DASH-V2-64 - next coverage sequence
 Current exhaustive coverage assessment and retirement criteria: DASHBOARD_V2_64_CUTOVER_AUDIT.md. Search/token fields -> ranges/exports -> historical studies/diagnostics -> reversible presentation cutover. Start/operating readiness and future research are separate gates. Backend contract/deployment handoff: DASHBOARD_V2_64_BACKEND_HANDOFF.md.
+
+## DASH-V2-65 - 2026-10-11
+V2-65 delivered retained-symbol search and additional saved token fields. Next V2-66 range selectors and exports; legacy retirement criteria remain V2-64, no operation gate advancement.

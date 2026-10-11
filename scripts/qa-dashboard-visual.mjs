@@ -52,6 +52,13 @@ try {
       await call("Page.navigate",{url:base+"/"+route});
       await delay(1800);
       if(watcherAudit&&route==="system"){for(let n=0;n<50;n++){if(!await evaluate('document.querySelector("[aria-label=\\\"Bot Control Center\\\"]")?.innerText.includes("LOADING")'))break;await delay(100);}}
+      if(round==="v2-65"&&route.includes("q=LUMIA")){
+        await evaluate("(()=>{const input=document.querySelector('.v2-header-search input');input.value='LUMIA';input.focus()})()");
+        await call("Input.dispatchKeyEvent",{type:"keyDown",key:"Enter",code:"Enter",windowsVirtualKeyCode:13});
+        await call("Input.dispatchKeyEvent",{type:"keyUp",key:"Enter",code:"Enter",windowsVirtualKeyCode:13});await delay(1800);
+        if(!await evaluate("location.pathname==='/search'&&new URLSearchParams(location.search).get('q')==='LUMIA'"))throw Error('Header Enter search failed');
+      }
+      if(round==="v2-65"&&route.startsWith("symbol/"))await evaluate("document.querySelectorAll('main details').forEach(d=>d.open=true)");
       const x=await evaluate('({title:document.querySelector("h1")?.textContent,width:innerWidth,scroll:document.documentElement.scrollWidth,mains:document.querySelectorAll("main").length,loading:document.body.innerText.includes("LOADING"),active:[...document.querySelectorAll("#terminal-navigation a[aria-current=page]")].map(a=>a.getAttribute("href")),height:document.documentElement.scrollHeight,alerts:[...document.querySelectorAll("[role=alert]")].map(a=>a.textContent),scrollTables:[...document.querySelectorAll("table")].filter(t=>t.getBoundingClientRect().width>innerWidth).length})');
       if(!x.title && process.argv[2]!=="before")throw Error("Missing page title "+route);
       if(width===390 && await evaluate('!!document.querySelector("[aria-controls=terminal-navigation]")')){
@@ -118,10 +125,18 @@ try {
           await writeFile(path.join(out,"canonical-snapshot.json"),JSON.stringify(snapshot,null,2));
         }
       }
+      if(round==="v2-65"){
+        const check=await evaluate("({search:!!document.querySelector('form[aria-label=\"Search retained symbols\"] input[name=q]'),demo:document.querySelector('main').innerText.includes('DEMO DATA'),details:document.querySelectorAll('main details[open]').length})");
+        if(!check.search||check.demo||(route.startsWith('symbol/')&&check.details!==9))throw Error('V65 search/feature evidence failed '+JSON.stringify(check));
+        x.searchAndFeatures=check;
+        if(route.startsWith('search')&&width===390&&!await evaluate("(()=>{const t=document.querySelector('.v2-search-table');return !t||t.scrollWidth<=t.parentElement.clientWidth})()"))throw Error('Search action clipped at mobile width');
+        if(route.includes('q=LUMIA')&&!await evaluate("!!document.querySelector('main a[href=\"/symbol/LUMIAUSDT\"]')"))throw Error('Search result missing');
+        if(route.includes('q=ZZZNODATA')&&!await evaluate("document.querySelector('main').innerText.includes('No matching retained records')"))throw Error('Empty search fabricated data');
+      }
       const shot=await call("Page.captureScreenshot",{format:"png"});
-      const name=route.replaceAll("/","-")+"-"+width;
+      const name=route.replaceAll("/","-").replace(/[?=&%:]/g,"-")+"-"+width;
       await writeFile(path.join(out,name+".png"),Buffer.from(shot.data,"base64"));
-      if(process.argv[2]==="full"||process.env.QA_FULL==="1"){const dimensions=await call("Page.getLayoutMetrics");const bounds=dimensions.cssContentSize;const fullShot=await call("Page.captureScreenshot",{format:"png",captureBeyondViewport:true,clip:{x:0,y:0,width:bounds.width,height:bounds.height,scale:1}});await writeFile(path.join(out,route.replaceAll("/","-")+"-"+width+"-full.png"),Buffer.from(fullShot.data,"base64"));}
+      if(process.argv[2]==="full"||process.env.QA_FULL==="1"){const dimensions=await call("Page.getLayoutMetrics");const bounds=dimensions.cssContentSize;const fullShot=await call("Page.captureScreenshot",{format:"png",captureBeyondViewport:true,clip:{x:0,y:0,width:bounds.width,height:bounds.height,scale:1}});await writeFile(path.join(out,route.replaceAll("/","-").replace(/[?=&%:]/g,"-")+"-"+width+"-full.png"),Buffer.from(fullShot.data,"base64"));}
       results.push({route,...x});console.log(name,JSON.stringify(x));
       if(route==="system"&&(width===1672||watcherAudit)){
         await evaluate('document.querySelector("summary").click()');

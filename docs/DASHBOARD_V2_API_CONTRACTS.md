@@ -254,3 +254,6 @@ Backend b801ab0 preserves status_readonly and nullable GET projection. Exact cur
 
 ## DASH-V2-55 compatibility acceptance - 2026-10-11
 Current pureStatusCode against backend e317569 passed five temporary recorded/absent registry cases without mutation. No frontend status DTO/route change required. Launch evidence_associated distinguishes confirmed parent-log association from absent/different evidence; started=True alone never certifies supervisor protection. V2 Start stays disabled. See DASHBOARD_V2_55_CORRECTIONS_ACCEPTANCE.md.
+
+## DASH-V2-65 - 2026-10-11
+GET /search?q=<ASCII fragment> is server-rendered read-only search over ten canonical symbol tables plus retained discovery. Up to 50 output symbols, cap notice, input/source errors explicit. No new API search response contract. Token additional fields reuse saved feature families; range_pct and concentration are fractions converted once, OI rate_per_s stays base units/s, VWAP displacement_pct already percent.

@@ -1,0 +1,472 @@
+{
+  "results": [
+    {
+      "route": "overview",
+      "title": "Overview",
+      "width": 1672,
+      "scroll": 1657,
+      "mains": 1,
+      "loading": false,
+      "active": [
+        "/overview"
+      ],
+      "height": 1887,
+      "alerts": [],
+      "scrollTables": 0,
+      "searchAndFeatures": {
+        "search": true,
+        "demo": false,
+        "details": 0
+      }
+    },
+    {
+      "route": "movers",
+      "title": "Market Movers",
+      "width": 1672,
+      "scroll": 1657,
+      "mains": 1,
+      "loading": false,
+      "active": [
+        "/movers"
+      ],
+      "height": 2011,
+      "alerts": [],
+      "scrollTables": 0,
+      "visualLayout": {
+        "tableFits": true,
+        "rows": 8,
+        "rankingColumns": 4
+      },
+      "searchAndFeatures": {
+        "search": true,
+        "demo": false,
+        "details": 0
+      }
+    },
+    {
+      "route": "search",
+      "title": "Symbol search",
+      "width": 1672,
+      "scroll": 1657,
+      "mains": 1,
+      "loading": false,
+      "active": [
+        "/search"
+      ],
+      "height": 1430,
+      "alerts": [],
+      "scrollTables": 0,
+      "searchAndFeatures": {
+        "search": true,
+        "demo": false,
+        "details": 0
+      }
+    },
+    {
+      "route": "search?q=LUMIA",
+      "title": "Symbol search",
+      "width": 1672,
+      "scroll": 1672,
+      "mains": 1,
+      "loading": false,
+      "active": [
+        "/search"
+      ],
+      "height": 941,
+      "alerts": [],
+      "scrollTables": 0,
+      "searchAndFeatures": {
+        "search": true,
+        "demo": false,
+        "details": 0
+      }
+    },
+    {
+      "route": "search?q=ZZZNODATA",
+      "title": "Symbol search",
+      "width": 1672,
+      "scroll": 1672,
+      "mains": 1,
+      "loading": false,
+      "active": [
+        "/search"
+      ],
+      "height": 941,
+      "alerts": [],
+      "scrollTables": 0,
+      "searchAndFeatures": {
+        "search": true,
+        "demo": false,
+        "details": 0
+      }
+    },
+    {
+      "route": "symbol/BTCUSDT",
+      "title": "BTCUSDT",
+      "width": 1672,
+      "scroll": 1657,
+      "mains": 1,
+      "loading": false,
+      "active": [
+        "/movers"
+      ],
+      "height": 7002,
+      "alerts": [],
+      "scrollTables": 0,
+      "searchAndFeatures": {
+        "search": true,
+        "demo": false,
+        "details": 9
+      }
+    },
+    {
+      "route": "symbol/LUMIAUSDT",
+      "title": "LUMIAUSDT",
+      "width": 1672,
+      "scroll": 1657,
+      "mains": 1,
+      "loading": false,
+      "active": [
+        "/movers"
+      ],
+      "height": 6966,
+      "alerts": [],
+      "scrollTables": 0,
+      "searchAndFeatures": {
+        "search": true,
+        "demo": false,
+        "details": 9
+      }
+    },
+    {
+      "route": "symbol/ZZZNODATAUSDT",
+      "title": "ZZZNODATAUSDT",
+      "width": 1672,
+      "scroll": 1657,
+      "mains": 1,
+      "loading": false,
+      "active": [
+        "/movers"
+      ],
+      "height": 6898,
+      "alerts": [],
+      "scrollTables": 0,
+      "searchAndFeatures": {
+        "search": true,
+        "demo": false,
+        "details": 9
+      }
+    },
+    {
+      "route": "overview",
+      "title": "Overview",
+      "width": 1366,
+      "scroll": 1351,
+      "mains": 1,
+      "loading": false,
+      "active": [
+        "/overview"
+      ],
+      "height": 2099,
+      "alerts": [],
+      "scrollTables": 0,
+      "searchAndFeatures": {
+        "search": true,
+        "demo": false,
+        "details": 0
+      }
+    },
+    {
+      "route": "movers",
+      "title": "Market Movers",
+      "width": 1366,
+      "scroll": 1351,
+      "mains": 1,
+      "loading": false,
+      "active": [
+        "/movers"
+      ],
+      "height": 2063,
+      "alerts": [],
+      "scrollTables": 0,
+      "visualLayout": {
+        "tableFits": true,
+        "rows": 8,
+        "rankingColumns": 4
+      },
+      "searchAndFeatures": {
+        "search": true,
+        "demo": false,
+        "details": 0
+      }
+    },
+    {
+      "route": "search",
+      "title": "Symbol search",
+      "width": 1366,
+      "scroll": 1351,
+      "mains": 1,
+      "loading": false,
+      "active": [
+        "/search"
+      ],
+      "height": 1430,
+      "alerts": [],
+      "scrollTables": 0,
+      "searchAndFeatures": {
+        "search": true,
+        "demo": false,
+        "details": 0
+      }
+    },
+    {
+      "route": "search?q=LUMIA",
+      "title": "Symbol search",
+      "width": 1366,
+      "scroll": 1366,
+      "mains": 1,
+      "loading": false,
+      "active": [
+        "/search"
+      ],
+      "height": 941,
+      "alerts": [],
+      "scrollTables": 0,
+      "searchAndFeatures": {
+        "search": true,
+        "demo": false,
+        "details": 0
+      }
+    },
+    {
+      "route": "search?q=ZZZNODATA",
+      "title": "Symbol search",
+      "width": 1366,
+      "scroll": 1366,
+      "mains": 1,
+      "loading": false,
+      "active": [
+        "/search"
+      ],
+      "height": 941,
+      "alerts": [],
+      "scrollTables": 0,
+      "searchAndFeatures": {
+        "search": true,
+        "demo": false,
+        "details": 0
+      }
+    },
+    {
+      "route": "symbol/BTCUSDT",
+      "title": "BTCUSDT",
+      "width": 1366,
+      "scroll": 1351,
+      "mains": 1,
+      "loading": false,
+      "active": [
+        "/movers"
+      ],
+      "height": 7017,
+      "alerts": [],
+      "scrollTables": 0,
+      "searchAndFeatures": {
+        "search": true,
+        "demo": false,
+        "details": 9
+      }
+    },
+    {
+      "route": "symbol/LUMIAUSDT",
+      "title": "LUMIAUSDT",
+      "width": 1366,
+      "scroll": 1351,
+      "mains": 1,
+      "loading": false,
+      "active": [
+        "/movers"
+      ],
+      "height": 6981,
+      "alerts": [],
+      "scrollTables": 0,
+      "searchAndFeatures": {
+        "search": true,
+        "demo": false,
+        "details": 9
+      }
+    },
+    {
+      "route": "symbol/ZZZNODATAUSDT",
+      "title": "ZZZNODATAUSDT",
+      "width": 1366,
+      "scroll": 1351,
+      "mains": 1,
+      "loading": false,
+      "active": [
+        "/movers"
+      ],
+      "height": 6932,
+      "alerts": [],
+      "scrollTables": 0,
+      "searchAndFeatures": {
+        "search": true,
+        "demo": false,
+        "details": 9
+      }
+    },
+    {
+      "route": "overview",
+      "title": "Overview",
+      "width": 390,
+      "scroll": 375,
+      "mains": 1,
+      "loading": false,
+      "active": [
+        "/overview"
+      ],
+      "height": 4218,
+      "alerts": [],
+      "scrollTables": 2,
+      "searchAndFeatures": {
+        "search": true,
+        "demo": false,
+        "details": 0
+      }
+    },
+    {
+      "route": "movers",
+      "title": "Market Movers",
+      "width": 390,
+      "scroll": 375,
+      "mains": 1,
+      "loading": false,
+      "active": [
+        "/movers"
+      ],
+      "height": 4857,
+      "alerts": [],
+      "scrollTables": 1,
+      "searchAndFeatures": {
+        "search": true,
+        "demo": false,
+        "details": 0
+      }
+    },
+    {
+      "route": "search",
+      "title": "Symbol search",
+      "width": 390,
+      "scroll": 375,
+      "mains": 1,
+      "loading": false,
+      "active": [
+        "/search"
+      ],
+      "height": 1595,
+      "alerts": [],
+      "scrollTables": 1,
+      "searchAndFeatures": {
+        "search": true,
+        "demo": false,
+        "details": 0
+      }
+    },
+    {
+      "route": "search?q=LUMIA",
+      "title": "Symbol search",
+      "width": 390,
+      "scroll": 390,
+      "mains": 1,
+      "loading": false,
+      "active": [
+        "/search"
+      ],
+      "height": 941,
+      "alerts": [],
+      "scrollTables": 1,
+      "searchAndFeatures": {
+        "search": true,
+        "demo": false,
+        "details": 0
+      }
+    },
+    {
+      "route": "search?q=ZZZNODATA",
+      "title": "Symbol search",
+      "width": 390,
+      "scroll": 390,
+      "mains": 1,
+      "loading": false,
+      "active": [
+        "/search"
+      ],
+      "height": 941,
+      "alerts": [],
+      "scrollTables": 0,
+      "searchAndFeatures": {
+        "search": true,
+        "demo": false,
+        "details": 0
+      }
+    },
+    {
+      "route": "symbol/BTCUSDT",
+      "title": "BTCUSDT",
+      "width": 390,
+      "scroll": 375,
+      "mains": 1,
+      "loading": false,
+      "active": [
+        "/movers"
+      ],
+      "height": 8722,
+      "alerts": [],
+      "scrollTables": 0,
+      "searchAndFeatures": {
+        "search": true,
+        "demo": false,
+        "details": 9
+      }
+    },
+    {
+      "route": "symbol/LUMIAUSDT",
+      "title": "LUMIAUSDT",
+      "width": 390,
+      "scroll": 375,
+      "mains": 1,
+      "loading": false,
+      "active": [
+        "/movers"
+      ],
+      "height": 8780,
+      "alerts": [],
+      "scrollTables": 0,
+      "searchAndFeatures": {
+        "search": true,
+        "demo": false,
+        "details": 9
+      }
+    },
+    {
+      "route": "symbol/ZZZNODATAUSDT",
+      "title": "ZZZNODATAUSDT",
+      "width": 390,
+      "scroll": 375,
+      "mains": 1,
+      "loading": false,
+      "active": [
+        "/movers"
+      ],
+      "height": 8274,
+      "alerts": [],
+      "scrollTables": 0,
+      "searchAndFeatures": {
+        "search": true,
+        "demo": false,
+        "details": 9
+      }
+    }
+  ],
+  "errors": [],
+  "unavailable": []
+}

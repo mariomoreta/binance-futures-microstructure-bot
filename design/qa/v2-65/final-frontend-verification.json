@@ -1,0 +1,22 @@
+[
+  {
+    "check": "frontend-tests",
+    "exit": 0,
+    "seconds": 18.138
+  },
+  {
+    "check": "typecheck",
+    "exit": 0,
+    "seconds": 7.174
+  },
+  {
+    "check": "lint",
+    "exit": 0,
+    "seconds": 13.551
+  },
+  {
+    "check": "build",
+    "exit": 0,
+    "seconds": 10.673
+  }
+]
