@@ -90,6 +90,34 @@ try {
           const system=await evaluate("({recorded:document.body.innerText.includes('Recorded process'),startDisabled:[...document.querySelectorAll('button')].find(e=>e.textContent.includes('Start monitor'))?.disabled})");if(!system.recorded||!system.startDisabled)throw Error("System source/control contract failed "+JSON.stringify(system));x.systemSemantics=system;
         }
       }
+      if(process.env.QA_ROUND==="v2-63"&&process.argv[2]!=="before"){
+        const migrated=["overview","movers","movers/verified","opportunities","opportunities/observations","opportunities/prospective"];
+        if(migrated.includes(route)||route.startsWith("symbol/")){
+          const evidence=await evaluate("({demo:/DEMO|STATIC EXAMPLE|Illustrative candidates/.test(document.querySelector('main').innerText),source:document.querySelector('main').innerText.includes('PERSISTED')||document.querySelector('main').innerText.includes('persisted')||document.querySelector('main').innerText.includes('Canonical'),rows:document.querySelectorAll('tbody tr').length})");
+          if(evidence.demo||!evidence.source)throw Error("Migration provenance failed "+route+JSON.stringify(evidence));
+          x.canonicalEvidence=evidence;
+        }
+        if(route==="opportunities"){
+          const table=await evaluate("({rows:document.querySelector('[aria-label=\"Opportunity candidates table\"] tbody').rows.length,hasPager:[...document.querySelectorAll('button')].some(b=>b.textContent==='Next candidates')})");
+          if(table.rows>12||!table.hasPager)throw Error("Candidate pagination not bounded");
+          x.candidatePagination=table;
+        }
+        if(route==="system"){
+          const guard=await evaluate("({disabled:[...document.querySelectorAll('button')].find(b=>b.textContent.includes('Start monitor'))?.disabled})");
+          if(!guard.disabled)throw Error("Start unexpectedly enabled");
+          x.controlBoundary=guard;
+        }
+        if(route==="overview"&&width===1672){
+          const before=await evaluate("document.querySelector('main [role=status]').textContent");
+          await delay(17000);
+          const after=await evaluate("document.querySelector('main [role=status]').textContent");
+          if(before===after)throw Error("Snapshot auto-refresh did not update read metadata");
+          x.refreshEvidence={before,after};
+          const snapshot=await evaluate('fetch("/api/v1/market-snapshot",{cache:"no-store"}).then(r=>r.json())');
+          if(!snapshot.available||snapshot.source!=="PERSISTED_SQLITE_READONLY"||snapshot.rows.some(r=>r.capability==="LIVE"))throw Error("Canonical snapshot or liveness boundary invalid");
+          await writeFile(path.join(out,"canonical-snapshot.json"),JSON.stringify(snapshot,null,2));
+        }
+      }
       const shot=await call("Page.captureScreenshot",{format:"png"});
       const name=route.replaceAll("/","-")+"-"+width;
       await writeFile(path.join(out,name+".png"),Buffer.from(shot.data,"base64"));

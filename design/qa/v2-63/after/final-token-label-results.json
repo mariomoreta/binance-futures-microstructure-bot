@@ -1,0 +1,82 @@
+{
+  "results": [
+    {
+      "route": "symbol/LUMIAUSDT",
+      "title": "LUMIAUSDT",
+      "width": 1672,
+      "scroll": 1657,
+      "mains": 1,
+      "loading": false,
+      "active": [
+        "/movers"
+      ],
+      "height": 1610,
+      "alerts": [],
+      "scrollTables": 0,
+      "canonicalEvidence": {
+        "demo": false,
+        "source": true,
+        "rows": 55
+      }
+    },
+    {
+      "route": "symbol/ZZZNODATAUSDT",
+      "title": "ZZZNODATAUSDT",
+      "width": 1672,
+      "scroll": 1657,
+      "mains": 1,
+      "loading": false,
+      "active": [
+        "/movers"
+      ],
+      "height": 1542,
+      "alerts": [],
+      "scrollTables": 0,
+      "canonicalEvidence": {
+        "demo": false,
+        "source": true,
+        "rows": 55
+      }
+    },
+    {
+      "route": "symbol/LUMIAUSDT",
+      "title": "LUMIAUSDT",
+      "width": 390,
+      "scroll": 375,
+      "mains": 1,
+      "loading": false,
+      "active": [
+        "/movers"
+      ],
+      "height": 3016,
+      "alerts": [],
+      "scrollTables": 0,
+      "canonicalEvidence": {
+        "demo": false,
+        "source": true,
+        "rows": 55
+      }
+    },
+    {
+      "route": "symbol/ZZZNODATAUSDT",
+      "title": "ZZZNODATAUSDT",
+      "width": 390,
+      "scroll": 375,
+      "mains": 1,
+      "loading": false,
+      "active": [
+        "/movers"
+      ],
+      "height": 2834,
+      "alerts": [],
+      "scrollTables": 0,
+      "canonicalEvidence": {
+        "demo": false,
+        "source": true,
+        "rows": 55
+      }
+    }
+  ],
+  "errors": [],
+  "unavailable": []
+}

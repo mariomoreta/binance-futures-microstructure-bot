@@ -78,7 +78,7 @@ export function MoversSnapshot({ rows }: { rows: MoverRow[] }) {
         <DataTable
           columns={COLUMNS}
           rows={rows.slice(0, 8)}
-          caption="Top demo movers. 24h change is not instantaneous velocity; empty cells mean the source is unavailable."
+          caption="Retained historical discovery tops. 24h change is not instantaneous velocity; empty cells mean the source is unavailable."
         />
       </div>
     </section>

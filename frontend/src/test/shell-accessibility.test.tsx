@@ -1,3 +1,4 @@
+import {DEMO_OPPORTUNITIES} from "@/lib/opportunities-domain";
 import { describe, expect, it, vi } from "vitest";
 import { fireEvent, render, screen, within } from "@testing-library/react";
 import { AppShell } from "@/components/shell/AppShell";
@@ -9,7 +10,7 @@ vi.mock("next/navigation", () => ({ usePathname: () => "/opportunities" }));
 
 describe("DASH-V2-05 accessible research views", () => {
   it("offers skip navigation and one main landmark", () => {
-    render(<AppShell><OpportunitiesDashboard /></AppShell>);
+    render(<AppShell><OpportunitiesDashboard items={DEMO_OPPORTUNITIES} demo /></AppShell>);
     expect(screen.getByRole("link", { name: "Skip to main content" })).toHaveAttribute("href", "#main-content");
     expect(screen.getAllByRole("main")).toHaveLength(1);
     expect(screen.getByRole("link", { name: /Opportunities/i })).toHaveAttribute("aria-current", "page");
@@ -24,7 +25,7 @@ describe("DASH-V2-05 accessible research views", () => {
 
 describe("Opportunities keyboard inspection", () => {
   it("marks selected candidate and exposes a focusable table", () => {
-    render(<OpportunitiesDashboard />);
+    render(<OpportunitiesDashboard items={DEMO_OPPORTUNITIES} demo />);
     const region = screen.getByRole("region", { name: "Opportunity candidates table" });
     expect(region).toHaveAttribute("tabindex", "0");
     const btc = within(region).getByRole("button", { name: /Inspect BTCUSDT/ });

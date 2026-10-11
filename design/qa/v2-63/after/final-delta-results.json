@@ -1,0 +1,374 @@
+{
+  "results": [
+    {
+      "route": "overview",
+      "title": "Overview",
+      "width": 1672,
+      "scroll": 1657,
+      "mains": 1,
+      "loading": false,
+      "active": [
+        "/overview"
+      ],
+      "height": 1887,
+      "alerts": [],
+      "scrollTables": 0,
+      "canonicalEvidence": {
+        "demo": false,
+        "source": true,
+        "rows": 27
+      },
+      "refreshEvidence": {
+        "before": "Canonical SQLite · read only · read 2026-10-11T18:23:35.933Z · refresh every 15 s; bounded retry on failure · Read time is not observation time.",
+        "after": "Canonical SQLite · read only · read 2026-10-11T18:23:50.924Z · refresh every 15 s; bounded retry on failure · Read time is not observation time."
+      }
+    },
+    {
+      "route": "movers",
+      "title": "Market Movers",
+      "width": 1672,
+      "scroll": 1657,
+      "mains": 1,
+      "loading": false,
+      "active": [
+        "/movers"
+      ],
+      "height": 2011,
+      "alerts": [],
+      "scrollTables": 0,
+      "visualLayout": {
+        "tableFits": true,
+        "rows": 8,
+        "rankingColumns": 4
+      },
+      "canonicalEvidence": {
+        "demo": false,
+        "source": true,
+        "rows": 8
+      }
+    },
+    {
+      "route": "opportunities",
+      "title": "Research Opportunities",
+      "width": 1672,
+      "scroll": 1657,
+      "mains": 1,
+      "loading": false,
+      "active": [
+        "/opportunities"
+      ],
+      "height": 1745,
+      "alerts": [],
+      "scrollTables": 0,
+      "canonicalEvidence": {
+        "demo": false,
+        "source": true,
+        "rows": 12
+      },
+      "candidatePagination": {
+        "rows": 12,
+        "hasPager": true
+      }
+    },
+    {
+      "route": "symbol/BTCUSDT",
+      "title": "BTCUSDT",
+      "width": 1672,
+      "scroll": 1657,
+      "mains": 1,
+      "loading": false,
+      "active": [
+        "/movers"
+      ],
+      "height": 1646,
+      "alerts": [],
+      "scrollTables": 0,
+      "canonicalEvidence": {
+        "demo": false,
+        "source": true,
+        "rows": 55
+      }
+    },
+    {
+      "route": "symbol/LUMIAUSDT",
+      "title": "LUMIAUSDT",
+      "width": 1672,
+      "scroll": 1657,
+      "mains": 1,
+      "loading": false,
+      "active": [
+        "/movers"
+      ],
+      "height": 1628,
+      "alerts": [],
+      "scrollTables": 0,
+      "canonicalEvidence": {
+        "demo": false,
+        "source": true,
+        "rows": 55
+      }
+    },
+    {
+      "route": "symbol/ZZZNODATAUSDT",
+      "title": "ZZZNODATAUSDT",
+      "width": 1672,
+      "scroll": 1657,
+      "mains": 1,
+      "loading": false,
+      "active": [
+        "/movers"
+      ],
+      "height": 1542,
+      "alerts": [],
+      "scrollTables": 0,
+      "canonicalEvidence": {
+        "demo": false,
+        "source": true,
+        "rows": 55
+      }
+    },
+    {
+      "route": "overview",
+      "title": "Overview",
+      "width": 1366,
+      "scroll": 1351,
+      "mains": 1,
+      "loading": false,
+      "active": [
+        "/overview"
+      ],
+      "height": 2099,
+      "alerts": [],
+      "scrollTables": 0,
+      "canonicalEvidence": {
+        "demo": false,
+        "source": true,
+        "rows": 27
+      }
+    },
+    {
+      "route": "movers",
+      "title": "Market Movers",
+      "width": 1366,
+      "scroll": 1351,
+      "mains": 1,
+      "loading": false,
+      "active": [
+        "/movers"
+      ],
+      "height": 2063,
+      "alerts": [],
+      "scrollTables": 0,
+      "visualLayout": {
+        "tableFits": true,
+        "rows": 8,
+        "rankingColumns": 4
+      },
+      "canonicalEvidence": {
+        "demo": false,
+        "source": true,
+        "rows": 8
+      }
+    },
+    {
+      "route": "opportunities",
+      "title": "Research Opportunities",
+      "width": 1366,
+      "scroll": 1351,
+      "mains": 1,
+      "loading": false,
+      "active": [
+        "/opportunities"
+      ],
+      "height": 1745,
+      "alerts": [],
+      "scrollTables": 0,
+      "canonicalEvidence": {
+        "demo": false,
+        "source": true,
+        "rows": 12
+      },
+      "candidatePagination": {
+        "rows": 12,
+        "hasPager": true
+      }
+    },
+    {
+      "route": "symbol/BTCUSDT",
+      "title": "BTCUSDT",
+      "width": 1366,
+      "scroll": 1351,
+      "mains": 1,
+      "loading": false,
+      "active": [
+        "/movers"
+      ],
+      "height": 1661,
+      "alerts": [],
+      "scrollTables": 0,
+      "canonicalEvidence": {
+        "demo": false,
+        "source": true,
+        "rows": 55
+      }
+    },
+    {
+      "route": "symbol/LUMIAUSDT",
+      "title": "LUMIAUSDT",
+      "width": 1366,
+      "scroll": 1351,
+      "mains": 1,
+      "loading": false,
+      "active": [
+        "/movers"
+      ],
+      "height": 1625,
+      "alerts": [],
+      "scrollTables": 0,
+      "canonicalEvidence": {
+        "demo": false,
+        "source": true,
+        "rows": 55
+      }
+    },
+    {
+      "route": "symbol/ZZZNODATAUSDT",
+      "title": "ZZZNODATAUSDT",
+      "width": 1366,
+      "scroll": 1351,
+      "mains": 1,
+      "loading": false,
+      "active": [
+        "/movers"
+      ],
+      "height": 1594,
+      "alerts": [],
+      "scrollTables": 0,
+      "canonicalEvidence": {
+        "demo": false,
+        "source": true,
+        "rows": 55
+      }
+    },
+    {
+      "route": "overview",
+      "title": "Overview",
+      "width": 390,
+      "scroll": 375,
+      "mains": 1,
+      "loading": false,
+      "active": [
+        "/overview"
+      ],
+      "height": 4218,
+      "alerts": [],
+      "scrollTables": 2,
+      "canonicalEvidence": {
+        "demo": false,
+        "source": true,
+        "rows": 27
+      }
+    },
+    {
+      "route": "movers",
+      "title": "Market Movers",
+      "width": 390,
+      "scroll": 375,
+      "mains": 1,
+      "loading": false,
+      "active": [
+        "/movers"
+      ],
+      "height": 4857,
+      "alerts": [],
+      "scrollTables": 1,
+      "canonicalEvidence": {
+        "demo": false,
+        "source": true,
+        "rows": 8
+      }
+    },
+    {
+      "route": "opportunities",
+      "title": "Research Opportunities",
+      "width": 390,
+      "scroll": 375,
+      "mains": 1,
+      "loading": false,
+      "active": [
+        "/opportunities"
+      ],
+      "height": 3082,
+      "alerts": [],
+      "scrollTables": 1,
+      "canonicalEvidence": {
+        "demo": false,
+        "source": true,
+        "rows": 12
+      },
+      "candidatePagination": {
+        "rows": 12,
+        "hasPager": true
+      }
+    },
+    {
+      "route": "symbol/BTCUSDT",
+      "title": "BTCUSDT",
+      "width": 390,
+      "scroll": 375,
+      "mains": 1,
+      "loading": false,
+      "active": [
+        "/movers"
+      ],
+      "height": 2994,
+      "alerts": [],
+      "scrollTables": 0,
+      "canonicalEvidence": {
+        "demo": false,
+        "source": true,
+        "rows": 55
+      }
+    },
+    {
+      "route": "symbol/LUMIAUSDT",
+      "title": "LUMIAUSDT",
+      "width": 390,
+      "scroll": 375,
+      "mains": 1,
+      "loading": false,
+      "active": [
+        "/movers"
+      ],
+      "height": 3016,
+      "alerts": [],
+      "scrollTables": 0,
+      "canonicalEvidence": {
+        "demo": false,
+        "source": true,
+        "rows": 55
+      }
+    },
+    {
+      "route": "symbol/ZZZNODATAUSDT",
+      "title": "ZZZNODATAUSDT",
+      "width": 390,
+      "scroll": 375,
+      "mains": 1,
+      "loading": false,
+      "active": [
+        "/movers"
+      ],
+      "height": 2834,
+      "alerts": [],
+      "scrollTables": 0,
+      "canonicalEvidence": {
+        "demo": false,
+        "source": true,
+        "rows": 55
+      }
+    }
+  ],
+  "errors": [],
+  "unavailable": []
+}

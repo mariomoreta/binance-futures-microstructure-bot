@@ -1,0 +1,806 @@
+{
+  "results": [
+    {
+      "route": "overview",
+      "title": "Overview",
+      "width": 1672,
+      "scroll": 1657,
+      "mains": 1,
+      "loading": false,
+      "active": [
+        "/overview"
+      ],
+      "height": 1887,
+      "alerts": [],
+      "scrollTables": 0,
+      "canonicalEvidence": {
+        "demo": false,
+        "source": true,
+        "rows": 27
+      },
+      "refreshEvidence": {
+        "before": "Canonical SQLite · read only · read 2026-10-11T18:16:36.492Z · refresh every 15 s; bounded retry on failure · Read time is not observation time.",
+        "after": "Canonical SQLite · read only · read 2026-10-11T18:16:51.479Z · refresh every 15 s; bounded retry on failure · Read time is not observation time."
+      }
+    },
+    {
+      "route": "movers",
+      "title": "Market Movers",
+      "width": 1672,
+      "scroll": 1657,
+      "mains": 1,
+      "loading": false,
+      "active": [
+        "/movers"
+      ],
+      "height": 2011,
+      "alerts": [],
+      "scrollTables": 0,
+      "visualLayout": {
+        "tableFits": true,
+        "rows": 8,
+        "rankingColumns": 4
+      },
+      "canonicalEvidence": {
+        "demo": false,
+        "source": true,
+        "rows": 8
+      }
+    },
+    {
+      "route": "movers/verified",
+      "title": "Observed Market Movers",
+      "width": 1672,
+      "scroll": 1657,
+      "mains": 1,
+      "loading": false,
+      "active": [
+        "/movers"
+      ],
+      "height": 1769,
+      "alerts": [],
+      "scrollTables": 0,
+      "canonicalEvidence": {
+        "demo": false,
+        "source": true,
+        "rows": 29
+      }
+    },
+    {
+      "route": "opportunities",
+      "title": "Research Opportunities",
+      "width": 1672,
+      "scroll": 1657,
+      "mains": 1,
+      "loading": false,
+      "active": [
+        "/opportunities"
+      ],
+      "height": 1745,
+      "alerts": [],
+      "scrollTables": 0,
+      "canonicalEvidence": {
+        "demo": false,
+        "source": true,
+        "rows": 12
+      },
+      "candidatePagination": {
+        "rows": 12,
+        "hasPager": true
+      }
+    },
+    {
+      "route": "opportunities/observations",
+      "title": "Persisted Research Observations",
+      "width": 1672,
+      "scroll": 1657,
+      "mains": 1,
+      "loading": false,
+      "active": [
+        "/opportunities"
+      ],
+      "height": 3832,
+      "alerts": [],
+      "scrollTables": 0,
+      "canonicalEvidence": {
+        "demo": false,
+        "source": true,
+        "rows": 68
+      }
+    },
+    {
+      "route": "opportunities/prospective",
+      "title": "Prospective Research",
+      "width": 1672,
+      "scroll": 1657,
+      "mains": 1,
+      "loading": false,
+      "active": [
+        "/opportunities"
+      ],
+      "height": 3416,
+      "alerts": [],
+      "scrollTables": 0,
+      "canonicalEvidence": {
+        "demo": false,
+        "source": true,
+        "rows": 50
+      }
+    },
+    {
+      "route": "symbol/BTCUSDT",
+      "title": "BTCUSDT",
+      "width": 1672,
+      "scroll": 1657,
+      "mains": 1,
+      "loading": false,
+      "active": [
+        "/movers"
+      ],
+      "height": 1646,
+      "alerts": [],
+      "scrollTables": 0,
+      "canonicalEvidence": {
+        "demo": false,
+        "source": true,
+        "rows": 55
+      }
+    },
+    {
+      "route": "symbol/LUMIAUSDT",
+      "title": "LUMIAUSDT",
+      "width": 1672,
+      "scroll": 1657,
+      "mains": 1,
+      "loading": false,
+      "active": [
+        "/movers"
+      ],
+      "height": 1628,
+      "alerts": [],
+      "scrollTables": 0,
+      "canonicalEvidence": {
+        "demo": false,
+        "source": true,
+        "rows": 55
+      }
+    },
+    {
+      "route": "symbol/ZZZNODATAUSDT",
+      "title": "ZZZNODATAUSDT",
+      "width": 1672,
+      "scroll": 1657,
+      "mains": 1,
+      "loading": false,
+      "active": [
+        "/movers"
+      ],
+      "height": 1542,
+      "alerts": [],
+      "scrollTables": 0,
+      "canonicalEvidence": {
+        "demo": false,
+        "source": true,
+        "rows": 55
+      }
+    },
+    {
+      "route": "historical-research",
+      "title": "Historical Research",
+      "width": 1672,
+      "scroll": 1657,
+      "mains": 1,
+      "loading": false,
+      "active": [
+        "/historical-research"
+      ],
+      "height": 3638,
+      "alerts": [],
+      "scrollTables": 0
+    },
+    {
+      "route": "market-archive",
+      "title": "Market & Runtime Archive",
+      "width": 1672,
+      "scroll": 1657,
+      "mains": 1,
+      "loading": false,
+      "active": [
+        "/market-archive"
+      ],
+      "height": 1206,
+      "alerts": [],
+      "scrollTables": 0
+    },
+    {
+      "route": "market-lab",
+      "title": "Historical Market Lab",
+      "width": 1672,
+      "scroll": 1657,
+      "mains": 1,
+      "loading": false,
+      "active": [
+        "/market-lab"
+      ],
+      "height": 1727,
+      "alerts": [],
+      "scrollTables": 0
+    },
+    {
+      "route": "system",
+      "title": "System",
+      "width": 1672,
+      "scroll": 1657,
+      "mains": 1,
+      "loading": false,
+      "active": [
+        "/system"
+      ],
+      "height": 1384,
+      "alerts": [],
+      "scrollTables": 0,
+      "controlBoundary": {
+        "disabled": true
+      }
+    },
+    {
+      "route": "backtest",
+      "title": "Backtest (future)",
+      "width": 1672,
+      "scroll": 1657,
+      "mains": 1,
+      "loading": false,
+      "active": [
+        "/backtest"
+      ],
+      "height": 975,
+      "alerts": [],
+      "scrollTables": 0
+    },
+    {
+      "route": "paper-lab",
+      "title": "Paper Lab (future)",
+      "width": 1672,
+      "scroll": 1657,
+      "mains": 1,
+      "loading": false,
+      "active": [
+        "/paper-lab"
+      ],
+      "height": 1108,
+      "alerts": [],
+      "scrollTables": 0
+    },
+    {
+      "route": "overview",
+      "title": "Overview",
+      "width": 1366,
+      "scroll": 1351,
+      "mains": 1,
+      "loading": false,
+      "active": [
+        "/overview"
+      ],
+      "height": 2099,
+      "alerts": [],
+      "scrollTables": 0,
+      "canonicalEvidence": {
+        "demo": false,
+        "source": true,
+        "rows": 27
+      }
+    },
+    {
+      "route": "movers",
+      "title": "Market Movers",
+      "width": 1366,
+      "scroll": 1351,
+      "mains": 1,
+      "loading": false,
+      "active": [
+        "/movers"
+      ],
+      "height": 2063,
+      "alerts": [],
+      "scrollTables": 0,
+      "visualLayout": {
+        "tableFits": true,
+        "rows": 8,
+        "rankingColumns": 4
+      },
+      "canonicalEvidence": {
+        "demo": false,
+        "source": true,
+        "rows": 8
+      }
+    },
+    {
+      "route": "movers/verified",
+      "title": "Observed Market Movers",
+      "width": 1366,
+      "scroll": 1351,
+      "mains": 1,
+      "loading": false,
+      "active": [
+        "/movers"
+      ],
+      "height": 1769,
+      "alerts": [],
+      "scrollTables": 0,
+      "canonicalEvidence": {
+        "demo": false,
+        "source": true,
+        "rows": 29
+      }
+    },
+    {
+      "route": "opportunities",
+      "title": "Research Opportunities",
+      "width": 1366,
+      "scroll": 1351,
+      "mains": 1,
+      "loading": false,
+      "active": [
+        "/opportunities"
+      ],
+      "height": 1745,
+      "alerts": [],
+      "scrollTables": 0,
+      "canonicalEvidence": {
+        "demo": false,
+        "source": true,
+        "rows": 12
+      },
+      "candidatePagination": {
+        "rows": 12,
+        "hasPager": true
+      }
+    },
+    {
+      "route": "opportunities/observations",
+      "title": "Persisted Research Observations",
+      "width": 1366,
+      "scroll": 1351,
+      "mains": 1,
+      "loading": false,
+      "active": [
+        "/opportunities"
+      ],
+      "height": 3847,
+      "alerts": [],
+      "scrollTables": 0,
+      "canonicalEvidence": {
+        "demo": false,
+        "source": true,
+        "rows": 68
+      }
+    },
+    {
+      "route": "opportunities/prospective",
+      "title": "Prospective Research",
+      "width": 1366,
+      "scroll": 1351,
+      "mains": 1,
+      "loading": false,
+      "active": [
+        "/opportunities"
+      ],
+      "height": 3486,
+      "alerts": [],
+      "scrollTables": 0,
+      "canonicalEvidence": {
+        "demo": false,
+        "source": true,
+        "rows": 50
+      }
+    },
+    {
+      "route": "symbol/BTCUSDT",
+      "title": "BTCUSDT",
+      "width": 1366,
+      "scroll": 1351,
+      "mains": 1,
+      "loading": false,
+      "active": [
+        "/movers"
+      ],
+      "height": 1661,
+      "alerts": [],
+      "scrollTables": 0,
+      "canonicalEvidence": {
+        "demo": false,
+        "source": true,
+        "rows": 55
+      }
+    },
+    {
+      "route": "symbol/LUMIAUSDT",
+      "title": "LUMIAUSDT",
+      "width": 1366,
+      "scroll": 1351,
+      "mains": 1,
+      "loading": false,
+      "active": [
+        "/movers"
+      ],
+      "height": 1625,
+      "alerts": [],
+      "scrollTables": 0,
+      "canonicalEvidence": {
+        "demo": false,
+        "source": true,
+        "rows": 55
+      }
+    },
+    {
+      "route": "symbol/ZZZNODATAUSDT",
+      "title": "ZZZNODATAUSDT",
+      "width": 1366,
+      "scroll": 1351,
+      "mains": 1,
+      "loading": false,
+      "active": [
+        "/movers"
+      ],
+      "height": 1594,
+      "alerts": [],
+      "scrollTables": 0,
+      "canonicalEvidence": {
+        "demo": false,
+        "source": true,
+        "rows": 55
+      }
+    },
+    {
+      "route": "historical-research",
+      "title": "Historical Research",
+      "width": 1366,
+      "scroll": 1351,
+      "mains": 1,
+      "loading": false,
+      "active": [
+        "/historical-research"
+      ],
+      "height": 3638,
+      "alerts": [],
+      "scrollTables": 0
+    },
+    {
+      "route": "market-archive",
+      "title": "Market & Runtime Archive",
+      "width": 1366,
+      "scroll": 1351,
+      "mains": 1,
+      "loading": false,
+      "active": [
+        "/market-archive"
+      ],
+      "height": 1206,
+      "alerts": [],
+      "scrollTables": 0
+    },
+    {
+      "route": "market-lab",
+      "title": "Historical Market Lab",
+      "width": 1366,
+      "scroll": 1351,
+      "mains": 1,
+      "loading": false,
+      "active": [
+        "/market-lab"
+      ],
+      "height": 1727,
+      "alerts": [],
+      "scrollTables": 0
+    },
+    {
+      "route": "system",
+      "title": "System",
+      "width": 1366,
+      "scroll": 1351,
+      "mains": 1,
+      "loading": false,
+      "active": [
+        "/system"
+      ],
+      "height": 1416,
+      "alerts": [],
+      "scrollTables": 0,
+      "controlBoundary": {
+        "disabled": true
+      }
+    },
+    {
+      "route": "backtest",
+      "title": "Backtest (future)",
+      "width": 1366,
+      "scroll": 1351,
+      "mains": 1,
+      "loading": false,
+      "active": [
+        "/backtest"
+      ],
+      "height": 975,
+      "alerts": [],
+      "scrollTables": 0
+    },
+    {
+      "route": "paper-lab",
+      "title": "Paper Lab (future)",
+      "width": 1366,
+      "scroll": 1351,
+      "mains": 1,
+      "loading": false,
+      "active": [
+        "/paper-lab"
+      ],
+      "height": 1108,
+      "alerts": [],
+      "scrollTables": 0
+    },
+    {
+      "route": "overview",
+      "title": "Overview",
+      "width": 390,
+      "scroll": 375,
+      "mains": 1,
+      "loading": false,
+      "active": [
+        "/overview"
+      ],
+      "height": 4218,
+      "alerts": [],
+      "scrollTables": 2,
+      "canonicalEvidence": {
+        "demo": false,
+        "source": true,
+        "rows": 27
+      }
+    },
+    {
+      "route": "movers",
+      "title": "Market Movers",
+      "width": 390,
+      "scroll": 375,
+      "mains": 1,
+      "loading": false,
+      "active": [
+        "/movers"
+      ],
+      "height": 4857,
+      "alerts": [],
+      "scrollTables": 1,
+      "canonicalEvidence": {
+        "demo": false,
+        "source": true,
+        "rows": 8
+      }
+    },
+    {
+      "route": "movers/verified",
+      "title": "Observed Market Movers",
+      "width": 390,
+      "scroll": 375,
+      "mains": 1,
+      "loading": false,
+      "active": [
+        "/movers"
+      ],
+      "height": 2442,
+      "alerts": [],
+      "scrollTables": 1,
+      "canonicalEvidence": {
+        "demo": false,
+        "source": true,
+        "rows": 29
+      }
+    },
+    {
+      "route": "opportunities",
+      "title": "Research Opportunities",
+      "width": 390,
+      "scroll": 375,
+      "mains": 1,
+      "loading": false,
+      "active": [
+        "/opportunities"
+      ],
+      "height": 3082,
+      "alerts": [],
+      "scrollTables": 1,
+      "canonicalEvidence": {
+        "demo": false,
+        "source": true,
+        "rows": 12
+      },
+      "candidatePagination": {
+        "rows": 12,
+        "hasPager": true
+      }
+    },
+    {
+      "route": "opportunities/observations",
+      "title": "Persisted Research Observations",
+      "width": 390,
+      "scroll": 375,
+      "mains": 1,
+      "loading": false,
+      "active": [
+        "/opportunities"
+      ],
+      "height": 4803,
+      "alerts": [],
+      "scrollTables": 1,
+      "canonicalEvidence": {
+        "demo": false,
+        "source": true,
+        "rows": 68
+      }
+    },
+    {
+      "route": "opportunities/prospective",
+      "title": "Prospective Research",
+      "width": 390,
+      "scroll": 375,
+      "mains": 1,
+      "loading": false,
+      "active": [
+        "/opportunities"
+      ],
+      "height": 4457,
+      "alerts": [],
+      "scrollTables": 1,
+      "canonicalEvidence": {
+        "demo": false,
+        "source": true,
+        "rows": 50
+      }
+    },
+    {
+      "route": "symbol/BTCUSDT",
+      "title": "BTCUSDT",
+      "width": 390,
+      "scroll": 375,
+      "mains": 1,
+      "loading": false,
+      "active": [
+        "/movers"
+      ],
+      "height": 2994,
+      "alerts": [],
+      "scrollTables": 0,
+      "canonicalEvidence": {
+        "demo": false,
+        "source": true,
+        "rows": 55
+      }
+    },
+    {
+      "route": "symbol/LUMIAUSDT",
+      "title": "LUMIAUSDT",
+      "width": 390,
+      "scroll": 375,
+      "mains": 1,
+      "loading": false,
+      "active": [
+        "/movers"
+      ],
+      "height": 3016,
+      "alerts": [],
+      "scrollTables": 0,
+      "canonicalEvidence": {
+        "demo": false,
+        "source": true,
+        "rows": 55
+      }
+    },
+    {
+      "route": "symbol/ZZZNODATAUSDT",
+      "title": "ZZZNODATAUSDT",
+      "width": 390,
+      "scroll": 375,
+      "mains": 1,
+      "loading": false,
+      "active": [
+        "/movers"
+      ],
+      "height": 2834,
+      "alerts": [],
+      "scrollTables": 0,
+      "canonicalEvidence": {
+        "demo": false,
+        "source": true,
+        "rows": 55
+      }
+    },
+    {
+      "route": "historical-research",
+      "title": "Historical Research",
+      "width": 390,
+      "scroll": 375,
+      "mains": 1,
+      "loading": false,
+      "active": [
+        "/historical-research"
+      ],
+      "height": 4227,
+      "alerts": [],
+      "scrollTables": 2
+    },
+    {
+      "route": "market-archive",
+      "title": "Market & Runtime Archive",
+      "width": 390,
+      "scroll": 375,
+      "mains": 1,
+      "loading": false,
+      "active": [
+        "/market-archive"
+      ],
+      "height": 1426,
+      "alerts": [],
+      "scrollTables": 1
+    },
+    {
+      "route": "market-lab",
+      "title": "Historical Market Lab",
+      "width": 390,
+      "scroll": 375,
+      "mains": 1,
+      "loading": false,
+      "active": [
+        "/market-lab"
+      ],
+      "height": 2663,
+      "alerts": [],
+      "scrollTables": 0
+    },
+    {
+      "route": "system",
+      "title": "System",
+      "width": 390,
+      "scroll": 375,
+      "mains": 1,
+      "loading": false,
+      "active": [
+        "/system"
+      ],
+      "height": 3100,
+      "alerts": [],
+      "scrollTables": 0,
+      "controlBoundary": {
+        "disabled": true
+      }
+    },
+    {
+      "route": "backtest",
+      "title": "Backtest (future)",
+      "width": 390,
+      "scroll": 375,
+      "mains": 1,
+      "loading": false,
+      "active": [
+        "/backtest"
+      ],
+      "height": 1946,
+      "alerts": [],
+      "scrollTables": 1
+    },
+    {
+      "route": "paper-lab",
+      "title": "Paper Lab (future)",
+      "width": 390,
+      "scroll": 375,
+      "mains": 1,
+      "loading": false,
+      "active": [
+        "/paper-lab"
+      ],
+      "height": 2155,
+      "alerts": [],
+      "scrollTables": 1
+    }
+  ],
+  "errors": [],
+  "unavailable": []
+}

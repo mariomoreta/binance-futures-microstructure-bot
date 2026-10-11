@@ -1,0 +1,123 @@
+{
+  "results": [
+    {
+      "route": "/overview",
+      "title": "Overview",
+      "width": 1672,
+      "scroll": 1657,
+      "mains": 1,
+      "loading": false,
+      "active": [
+        "/overview"
+      ],
+      "height": 1504,
+      "alerts": [],
+      "scrollTables": 0
+    },
+    {
+      "route": "/movers",
+      "title": "Market Movers",
+      "width": 1672,
+      "scroll": 1657,
+      "mains": 1,
+      "loading": false,
+      "active": [
+        "/movers"
+      ],
+      "height": 1989,
+      "alerts": [],
+      "scrollTables": 0
+    },
+    {
+      "route": "/symbol/BTCUSDT",
+      "title": "BTCUSDT",
+      "width": 1672,
+      "scroll": 1657,
+      "mains": 1,
+      "loading": false,
+      "active": [
+        "/movers"
+      ],
+      "height": 1267,
+      "alerts": [],
+      "scrollTables": 0
+    },
+    {
+      "route": "/overview",
+      "title": "Overview",
+      "width": 390,
+      "scroll": 375,
+      "mains": 1,
+      "loading": false,
+      "active": [
+        "/overview"
+      ],
+      "height": 2815,
+      "alerts": [],
+      "scrollTables": 2
+    },
+    {
+      "route": "/movers",
+      "title": "Market Movers",
+      "width": 390,
+      "scroll": 375,
+      "mains": 1,
+      "loading": false,
+      "active": [
+        "/movers"
+      ],
+      "height": 4679,
+      "alerts": [],
+      "scrollTables": 1
+    },
+    {
+      "route": "/symbol/BTCUSDT",
+      "title": "BTCUSDT",
+      "width": 390,
+      "scroll": 375,
+      "mains": 1,
+      "loading": false,
+      "active": [
+        "/movers"
+      ],
+      "height": 2316,
+      "alerts": [],
+      "scrollTables": 0
+    }
+  ],
+  "errors": [],
+  "unavailable": [
+    {
+      "url": "http://127.0.0.1:3020/api/v1/price-series/BTCUSDT",
+      "text": "Failed to load resource: the server responded with a status of 503 (Service Unavailable)"
+    },
+    {
+      "url": "http://127.0.0.1:3020/api/v1/price-series/ETHUSDT",
+      "text": "Failed to load resource: the server responded with a status of 503 (Service Unavailable)"
+    },
+    {
+      "url": "http://127.0.0.1:3020/api/v1/price-series/SOLUSDT",
+      "text": "Failed to load resource: the server responded with a status of 503 (Service Unavailable)"
+    },
+    {
+      "url": "http://127.0.0.1:3020/api/v1/price-series/BTCUSDT",
+      "text": "Failed to load resource: the server responded with a status of 503 (Service Unavailable)"
+    },
+    {
+      "url": "http://127.0.0.1:3020/api/v1/price-series/BTCUSDT",
+      "text": "Failed to load resource: the server responded with a status of 503 (Service Unavailable)"
+    },
+    {
+      "url": "http://127.0.0.1:3020/api/v1/price-series/ETHUSDT",
+      "text": "Failed to load resource: the server responded with a status of 503 (Service Unavailable)"
+    },
+    {
+      "url": "http://127.0.0.1:3020/api/v1/price-series/SOLUSDT",
+      "text": "Failed to load resource: the server responded with a status of 503 (Service Unavailable)"
+    },
+    {
+      "url": "http://127.0.0.1:3020/api/v1/price-series/BTCUSDT",
+      "text": "Failed to load resource: the server responded with a status of 503 (Service Unavailable)"
+    }
+  ]
+}

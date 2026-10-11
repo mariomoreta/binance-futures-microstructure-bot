@@ -4,6 +4,11 @@ export type MarketState = "NORMAL" | "IGNITION" | "EXPANSION" | "EXHAUSTION" | "
 export type Direction = "UP" | "DOWN" | "NONE" | "UNKNOWN";
 export interface DetailMetric { label: string; value: string | null; context: string; }
 export interface TokenDetail {
+  featureSections?:{title:string;source:string;asOf:string|null;freshness:"STALE"|"UNKNOWN";rows:{label:string;value:string|null}[]}[];
+  source?: "PERSISTED_SQLITE_READONLY";
+  priceSource?:string;
+  discoveryAsOf?:string|null;
+  evaluationAsOf?:string|null;
   symbol: string;
   market: "Binance USD-M Futures";
   tier: Tier;

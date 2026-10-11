@@ -8,7 +8,7 @@ export function AppShell({ children }: { children: ReactNode }) {
       <a className="v2-skip-link" href="#main-content">Skip to main content</a>
       <TopNav />
       <main className="v2-main" id="main-content" tabIndex={-1}>
-        <div className="v2-source-strip" data-testid="shell-demo-strip"><span className="v2-source-label">SOURCE PER PANEL</span><span>DEMO previews and recorded evidence are explicitly labeled.</span></div>
+        <div className="v2-source-strip" data-testid="shell-demo-strip"><span className="v2-source-label">SOURCE PER PANEL</span><span>Canonical recorded evidence; observation dates and unavailable sources are labelled.</span></div>
         {children}
       </main>
     </div>

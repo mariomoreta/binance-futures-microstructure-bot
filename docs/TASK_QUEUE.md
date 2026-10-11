@@ -1,6 +1,14 @@
 # TASK_QUEUE
 
 
+## DASH-V2-63 — 2026-10-11 — canonical data migration
+
+DASH-V2-63 closeout: bounded migration DONE; 45 general browser cases plus 18 affected-screen and 4 final-label cases passed. Final build passed; production http://127.0.0.1:3020 (managed PID 24168). Complete legacy cutover remains PARTIAL.
+Overview, main Movers, main Opportunities and Token Detail now render canonical persisted Python records, with independent source dates and no runtime demo fallback. Research/price BFF reads are independent of old SSR/8091; historical/archive/Market Lab retained and refreshed. Read-only polling every 15s while visible; current feed liveness remains separate/UNKNOWN. Start remains disabled. Backend c635938 acceptance is unchanged; this task edits no Python collector, production DB, main or SUCCESS_GATES.
+146/146 frontend tests (31 files), typecheck/build and lint exit 0 (one pre-existing BotControl warning); V2 Python snapshot 496/496, exit 0. See [migration report](DASHBOARD_V2_63_DATA_MIGRATION.md), [data contract](DASHBOARD_V2_63_DATA_CONTRACT.md) and [agent handoff](DASHBOARD_V2_63_AGENT_DATA_HANDOFF.md).
+This is a bounded presentation migration, not complete legacy cutover or operational PASS. Remaining: exhaustive legacy search/export/study/depth parity, state timeline/overview distribution, supervised runtime binding and observation evidence, and approved old-interface retirement. Reference values are not copied; stale records remain stale.
+
+
 ## DASH-V2-62 - 2026-10-11 - backend corrections completed directly
 
 User authorized this reviewer to correct backend R1-R5/C1-C2 directly. Published c635938fc5542be992e06838a8727652225e1657 on phase1/market-intelligence-dashboard: bounded disabled correction DONE/ACCEPTED, 902/902 canonical and 52 focused OK; exact published source checksum verified. Original backend checkout/evidence preserved and needs git pull --ff-only. V2-61 handoff is superseded; no repeat correction request. See [bounded acceptance](DASHBOARD_V2_62_BACKEND_CORRECTIONS_ACCEPTANCE.md). Internal disabled preparation is not an enabled capability: Start/pure GETs/production V2-60 and SUCCESS_GATES remain unchanged. Actual watcher startup binding/spawn/rollback and longevity remain unverified; no operational PASS or new runs. Visual N/A for this checkpoint.

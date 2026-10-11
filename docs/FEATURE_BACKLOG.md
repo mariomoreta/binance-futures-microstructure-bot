@@ -1,5 +1,14 @@
 # FEATURE BACKLOG — canonical decision traceability & deferred features
 
+
+## DASH-V2-63 reconciliation — 2026-10-11
+- F-V2-DATA-MIG-01: DECIDED / IMPLEMENTED bounded canonical presentation and periodic read refresh. Coverage/verification report: DASHBOARD_V2_63_DATA_MIGRATION.md. Full cutover remains PARTIAL.
+- F-STATE-V2-TK-01: actual persisted classification, evidence, rule version and dates now connected; real-data presentation implemented. Live classification and timeline are not certified.
+- F-STATE-V2-OV-01 / F-STATE-V2-MV-01 / F-STATE-V2-TL-01: distribution/state-filter/timeline coverage still pending; do not mark complete from token integration.
+- F-LAUNCH-SUP-01 / F-P14A-01: unchanged bounded backend acceptance c635938; disabled launch/current SHA longevity remain unverified.
+- Legacy parity residuals: symbol search/export/studies/depth/UI coverage, narrow-width/current-window variants and operating cutover. Old SSR retained.
+No strategy gates, runtime windows, paper/backtest or external-provider implementation advanced.
+
 > Current reconciliation: DASH-V2-62 (2026-10-11); see latest dated review below. Previous reconciliation: DASH-V2-53 (2026-10-11). Original inventories/statuses below are dated historical checkpoints; consult the dated reconciliation section and MOVER_LEVEL_STRATEGY_RESEARCH.md before interpreting implementation status. Backend 55efaa2 and the V2 snapshot are separate source trees.
 
 **Purpose:** durable project-wide record so approved product decisions,

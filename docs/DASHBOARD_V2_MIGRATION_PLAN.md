@@ -1,8 +1,13 @@
 # Dashboard V2 Migration Plan
 
+
+## Current implementation checkpoint — 2026-10-11
+The 2026-10-07 plan below is historical. V2 is implemented at loopback port 3020; main persisted-data migration is DASH-V2-63. See its migration matrix/report and canonical data contract. Old SSR retained; full cutover gate NOT accepted. The backend/control authority and collector remain unchanged. The next migration phase is an exhaustive legacy-function coverage audit, not another demo scaffold.
+
+
 **Purpose:** migrate presentation in parallel while preserving the verified
 Python backend and current dashboard.  
-**Status:** PLAN APPROVED; NO MIGRATION IMPLEMENTED.  
+**Status at 2026-10-07:** PLAN APPROVED; NO MIGRATION IMPLEMENTED (historical; current checkpoint above).
 **Date:** 2026-10-07.
 
 ## Invariants

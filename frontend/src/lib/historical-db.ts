@@ -1,12 +1,13 @@
 import {DatabaseSync} from "node:sqlite";
 const DB="C:/proyectos/binance-futures-microstructure-bot/data/microprobe.db";
-export function historicalRead<T>(fn:(db:DatabaseSync)=>T):T{
- const db=new DatabaseSync(DB,{readOnly:true,timeout:1000});
+export function withReadonlyDatabase<T>(path:string,fn:(db:DatabaseSync)=>T):T{
+ const db=new DatabaseSync(path,{readOnly:true,timeout:1000});
  try{return fn(db)}finally{db.close()}
 }
+export const historicalRead=<T>(fn:(db:DatabaseSync)=>T):T=>withReadonlyDatabase(DB,fn);
 export function historicalSnapshot(){
  return historicalRead(db=>{
-  const counts={setups:Number((db.prepare("SELECT COUNT(*) n FROM prospective_setups").get() as {n:number}).n),outcomes:Number((db.prepare("SELECT COUNT(*) n FROM prospective_outcomes").get() as {n:number}).n),samples:Number((db.prepare("SELECT COUNT(*) n FROM price_samples").get() as {n:number}).n)};
+  const counts={symbols:Number((db.prepare("SELECT COUNT(DISTINCT symbol) n FROM prospective_outcomes").get() as {n:number}).n),setups:Number((db.prepare("SELECT COUNT(*) n FROM prospective_setups").get() as {n:number}).n),outcomes:Number((db.prepare("SELECT COUNT(*) n FROM prospective_outcomes").get() as {n:number}).n),samples:Number((db.prepare("SELECT COUNT(*) n FROM price_samples").get() as {n:number}).n)};
   const latest=db.prepare("SELECT candidate_key,symbol,horizon,observed_at_ms,mark_return_pct,detected_price,current_price,outcome_state,reason FROM prospective_outcomes ORDER BY observed_at_ms DESC LIMIT 50").all();
   const states=db.prepare("SELECT outcome_state state, COUNT(*) count FROM prospective_outcomes GROUP BY outcome_state ORDER BY outcome_state").all();
   const symbols=db.prepare("SELECT symbol,COUNT(*) count FROM prospective_outcomes GROUP BY symbol ORDER BY count DESC,symbol ASC LIMIT 20").all();
@@ -16,3 +17,5 @@ export function historicalSnapshot(){
   return {source:"PERSISTED_SQLITE_READONLY" as const,schema_version:9,counts,latest_outcome_ms:latestMs,states,symbols,samples,setups,latest_outcomes:latest};
  });
 }
+
+export const canonicalReadTime=()=>new Date().toISOString();

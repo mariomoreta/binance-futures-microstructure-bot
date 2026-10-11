@@ -1,16 +1,14 @@
 "use client";
 import {UnavailableDataPanel} from "@/components/notices/UnavailableDataPanel";
-import {useEffect,useMemo,useState} from "react";
+import {useMemo,useState} from "react";
+import {usePollingJson} from "@/lib/use-polling-json";
 import type {OpportunityApiRow,OpportunityReadModel} from "@/lib/opportunities-api";
 import styles from "./Observations.module.css";
 
 function Evidence({title,values}:{title:string;values:string[]}){return <div className={styles.evidence}><h3>{title}</h3>{values.length?<ul>{values.map((v,i)=><li key={i}>{v}</li>)}</ul>:<p>Not recorded — UNKNOWN</p>}</div>}
 export function Observations(){
- const [data,setData]=useState<OpportunityReadModel|null>(null);
- const [error,setError]=useState<string|null>(null);
- const [loading,setLoading]=useState(true);
+ const {data,error,loading}=usePollingJson<OpportunityReadModel>("/api/v1/opportunities");
  const [selected,setSelected]=useState<string|null>(null);
- useEffect(()=>{const controller=new AbortController();fetch("/api/v1/opportunities",{cache:"no-store",signal:controller.signal}).then(async r=>{if(!r.ok)throw new Error("Read-only backend unavailable");return r.json() as Promise<OpportunityReadModel>}).then(x=>{if(!controller.signal.aborted){setData(x);setLoading(false)}}).catch(()=>{if(!controller.signal.aborted){setError("Backend unavailable — cannot verify observations");setLoading(false)}});return()=>controller.abort()},[]);
  const rows=data?.items;
  const active:OpportunityApiRow|undefined=useMemo(()=>rows?.find(x=>x.candidate_key===selected)??rows?.[0],[rows,selected]);
  if(loading)return <section className={styles.panel} role="status">Loading persisted research records…</section>;

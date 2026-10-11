@@ -3,10 +3,10 @@ export type MoversCapability = "LIVE" | "WARMING" | "STALE" | "DEGRADED" | "UNKN
 export type Direction = "ALL" | "GAINERS" | "LOSERS";
 export type Interest = "ALL" | "EXTREME_GAINERS" | "EXTREME_LOSERS" | "ACCELERATING_UP" | "ACCELERATING_DOWN" | "HIGH_VOLUME";
 export type SortKey = "symbol" | "price" | "change24hPct" | "quoteVolume24h" | "velocity1m" | "accel1m" | "sampleAgeMs";
-export interface ProfessionalMover { symbol:string; tier:MoversTier; capability:MoversCapability; subscribed:boolean; price:number|null; change24hPct:number|null; quoteVolume24h:number|null; velocity1m:number|null; accel1m:number|null; sampleAgeMs:number|null; observedAt:string|null; source:string; }
+export interface ProfessionalMover { symbol:string; tier:MoversTier; capability:MoversCapability; subscribed:boolean; price:number|null; change24hPct:number|null; quoteVolume24h:number|null; velocity1m:number|null; accel1m:number|null; sampleAgeMs:number|null; observedAt:string|null; source:string; discoveryAsOf?:string|null; featureAsOf?:string|null; priceSource?:string; }
 export interface MoversFiltersState { query:string; direction:Direction; coverage:"ALL"|MoversTier; state:"ALL"|MoversCapability; interest:Interest; }
 export const DEFAULT_FILTERS: MoversFiltersState = { query:"", direction:"ALL", coverage:"ALL", state:"ALL", interest:"ALL" };
-export const DEMO_CRITERIA = {
+export const RESEARCH_FILTER_CRITERIA = {
   EXTREME_GAINERS:"24h change exists and is at least +20%", EXTREME_LOSERS:"24h change exists and is at most -15%",
   ACCELERATING_UP:"velocity and acceleration exist; both are positive", ACCELERATING_DOWN:"velocity and acceleration exist; both are negative",
   HIGH_VOLUME:"24h quote volume exists and is at least 100M USDT",

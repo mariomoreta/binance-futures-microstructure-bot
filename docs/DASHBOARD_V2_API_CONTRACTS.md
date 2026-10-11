@@ -1,6 +1,11 @@
 # Dashboard V2 API Contracts
 
 
+## DASH-V2-63 — 2026-10-11 — implemented persisted facade
+Current core data reads use canonical read-only SQLite server projection. Main market snapshot schema 1; opportunities normalized schema "1"; prospective schema 9; price series schema 2 with LAST_RETAINED_SAMPLE anchor. Read time is not observation time. Source tags and independent source dates are explicit; no current liveness proof from persistence. See DASHBOARD_V2_63_DATA_CONTRACT.md for exact bounds/nullability/refresh and compatibility. Old route inventories below are historical; no backend HTTP contract was changed.
+
+
+
 ## DASH-V2-62 - 2026-10-11 - backend corrections completed directly
 
 User authorized this reviewer to correct backend R1-R5/C1-C2 directly. Published c635938fc5542be992e06838a8727652225e1657 on phase1/market-intelligence-dashboard: bounded disabled correction DONE/ACCEPTED, 902/902 canonical and 52 focused OK; exact published source checksum verified. Original backend checkout/evidence preserved and needs git pull --ff-only. V2-61 handoff is superseded; no repeat correction request. See [bounded acceptance](DASHBOARD_V2_62_BACKEND_CORRECTIONS_ACCEPTANCE.md). Internal disabled preparation is not an enabled capability: Start/pure GETs/production V2-60 and SUCCESS_GATES remain unchanged. Actual watcher startup binding/spawn/rollback and longevity remain unverified; no operational PASS or new runs. Visual N/A for this checkpoint.
@@ -14,7 +19,7 @@ Exact backend da231b911e9b1a0cfe86b3aaa3325e5b71928687 reviewed read-only from G
 
 **Purpose:** inventory current Python routes and define the compatibility
 boundary required by the future Next.js BFF.  
-**Status:** CURRENT ROUTES VERIFIED FROM CODE; V1 FACADE PROPOSED, NOT BUILT.  
+**Status at original inventory:** CURRENT ROUTES VERIFIED FROM CODE; V1 FACADE PROPOSED, NOT BUILT (historical; current facade above).
 **Evidence:** `src/microstructure_probe/dashboard.py`,
 `dashboard_data.py`, persistence readers and tests at commit `6270be29`.
 

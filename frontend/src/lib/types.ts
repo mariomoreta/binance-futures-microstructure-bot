@@ -2,6 +2,7 @@
 // Null means not measured — never render null as zero.
 
 export type EngineState =
+  | "UNKNOWN"
   | "RUNNING"
   | "STOPPED"
   | "STARTING"

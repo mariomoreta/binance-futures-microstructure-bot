@@ -18,13 +18,13 @@ export function MarketPulsePanel({ pulse }: { pulse: PulseData }) {
       <h2>Market Pulse</h2>
       <div className="v2-card" data-testid="pulse-panel">
         <div className="v2-muted" style={{ marginBottom: 8 }}>
-          Breadth {up}/{down} of {total} ·{" "}
+          Retained subset {pulse.breadthUp??"UNKNOWN"}/{pulse.breadthDown??"UNKNOWN"} of {pulse.breadthTotal??"UNKNOWN"} ·{" "}
           <DataFreshnessIndicator freshness={pulse.freshness} />
         </div>
         <div
           className="v2-pulse-bar"
           role="img"
-          aria-label={`${up} advancing, ${down} declining of ${total}`}
+          aria-label={pulse.breadthTotal===null?"Breadth UNKNOWN":`${up} advancing, ${down} declining of ${total} retained contracts`}
           data-testid="breadth-bar"
         >
           <span className="v2-pulse-pos" style={{ width: `${upPct}%` }} />

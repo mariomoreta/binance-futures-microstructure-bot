@@ -10,7 +10,7 @@ function MetricCell({ point, label }: { point: MetricPoint; label: string }) {
     ) : (
       <span>
         {formatCompact(point.value)}{" "}
-        <span className="v2-muted" style={{ fontSize: 12 }}>
+        <span className="v2-muted" style={{ fontSize: 12, overflowWrap: "anywhere" }}>
           {point.unit}
         </span>
       </span>
@@ -22,8 +22,8 @@ function MetricCell({ point, label }: { point: MetricPoint; label: string }) {
         value={shown}
         sub={
           <>
-            <div className="v2-muted" style={{ fontSize: 12 }}>
-              {point.period} · {point.source}
+            <div className="v2-muted" style={{ fontSize: 12, overflowWrap: "anywhere" }}>
+              {point.period} · <span title={point.source}>{point.source==="PERSISTED_SQLITE_READONLY"?"Python / SQLite":point.source}</span><div>Observed: {point.asOf??"UNKNOWN"}</div>
             </div>
             <DataFreshnessIndicator freshness={point.freshness} />
             {point.unavailable ? (
@@ -43,7 +43,7 @@ export function OverviewMetricGrid({
 }) {
   const order: Array<[string, string]> = [
     ["discovered", "Discovered contracts"],
-    ["deepTracked", "Deep-tracked symbols"],
+    ["deepTracked", "Retained deep symbols"],
     ["topGainer", "Top gainer"],
     ["topLoser", "Top loser"],
     ["activity", "Market activity"],

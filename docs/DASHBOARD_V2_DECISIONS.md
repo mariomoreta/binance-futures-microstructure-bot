@@ -217,3 +217,11 @@ The newly added disabled engine at backend da231b9 has reproduced ownership, rev
 ## DASH-V2-62 - 2026-10-11 - direct bounded backend correction
 
 The user authorized direct correction on the backend branch. Isolated c635938 resolves the V2-61 R1-R5/C1-C2 request in disabled preparation; 902 canonical and 52 focused tests pass with published code checksum checked. V2-61 handoff is historical; no repetition required. Start and runtime code remain unchanged. Enabled capability, actual watcher startup association/real OS behavior and longevity remain deferred. See DASHBOARD_V2_62_BACKEND_CORRECTIONS_ACCEPTANCE.md.
+
+
+
+## DASH-V2-63 — 2026-10-11 — canonical presentation migration
+User authorized proceeding with V2 data migration and keeping Python/SQLite authoritative. Decided: main screens replace fixtures with read-only canonical snapshots; no DB copying, collector duplication or operational enablement. Independent source timestamps are mandatory; historic fresh/live flags are not present protection/health.
+BFF price-series is schema 2 (historical hour anchored to last retained sample). Discovery tops remain a selected subset; per-row price source and independent feature date are retained. Server-rendered read metadata updates with visible-tab polling, which does not create observations.
+Correct misleading legacy UI filter names: positive/negative Flow were velocity/acceleration predicates, now upward/downward acceleration; Exhaustion research predicate was extreme gainers, now labelled extreme gainers. Threshold formulas unchanged and remain descriptive hypotheses.
+Main candidates table bounded to 12/page with visible-page evidence; tiny nonzero observations use scientific notation. Full legacy cutover, current liveness, timelines and supervised launches remain separate gates.

@@ -2,7 +2,7 @@
     "name":  "dashboard-v2",
     "version":  "0.0.1",
     "private":  true,
-    "description":  "Dashboard V2 isolated frontend foundation (DASH-V2-00). No API integration; static labeled fixtures only.",
+    "description":  "Dashboard V2 read-only canonical Python market and research interface.",
     "scripts":  {
                     "dev":  "next dev -p 3020 -H 127.0.0.1",
                     "build":  "next build",

@@ -1,8 +1,15 @@
 # Dashboard V2 Frontend Architecture
 
+
+## Current implementation — DASH-V2-63 (2026-10-11)
+The scaffold/folder descriptions below are the approved historical plan, not current unimplemented status.
+Implemented data path: Python acquisition/features/research -> canonical SQLite -> read-only Next.js server projection -> browser views / same-origin BFF. Runtime/control retains the existing pure Python control adapter; Start disabled. Browser SQLite and frontend trading decisions remain prohibited.
+Direct SQLite projection reuses the historical-reader boundary rather than duplicating an engine or relying on old HTML/8091. Sources/contracts and remaining parity: DASHBOARD_V2_63_DATA_CONTRACT.md.
+
+
 **Purpose:** define a parallel professional frontend without rewriting the
 Python market/research backend.  
-**Status:** ARCHITECTURE APPROVED; NEXT.JS SCAFFOLD NOT IMPLEMENTED.  
+**Status at 2026-10-07:** ARCHITECTURE APPROVED; NEXT.JS SCAFFOLD NOT IMPLEMENTED (historical; current checkpoint above).
 **Date:** 2026-10-07.
 
 ## Decision

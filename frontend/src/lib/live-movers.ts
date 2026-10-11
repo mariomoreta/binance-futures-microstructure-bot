@@ -1,5 +1,5 @@
 export type LiveMover={symbol:string;tier:string;price:number|null;change24hPct:number|null;quoteVolume24h:number|null;velocity1m:number|null;sampleAgeMs:number|null;deepEvidence:boolean;priceSource:"discovery"|"momentum"|"unknown";discoveryEvidence:boolean};
-export type LiveMoversModel={source:"python-persisted";generated_at:string;rows:LiveMover[];sources:{discovery:boolean;momentum:boolean};warnings:string[];alignment:"UNVERIFIED";freshness:"UNVERIFIED";availableFields:{discovery:string[];momentum:string[]}};
+export type LiveMoversModel={source:"python-persisted"|"persisted-sqlite-readonly";generated_at:string;rows:LiveMover[];sources:{discovery:boolean;momentum:boolean};warnings:string[];alignment:"UNVERIFIED";freshness:"UNVERIFIED";availableFields:{discovery:string[];momentum:string[]}};
 const obj=(x:unknown):Record<string,unknown>=>x!==null&&typeof x==="object"&&!Array.isArray(x)?x as Record<string,unknown>:{};
 const number=(x:unknown):number|null=>typeof x==="number"&&Number.isFinite(x)?x:null;
 const symbol=(x:unknown)=>typeof x==="string"&&/^[A-Z0-9]{2,32}$/.test(x)?x:null;
