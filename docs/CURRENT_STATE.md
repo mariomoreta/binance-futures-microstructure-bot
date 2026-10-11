@@ -1343,3 +1343,66 @@ regression no-op'd. Fixed deterministically, no market runs launched:
   P1-14B.8 2102.147 s supervisor-only + brief three-layer run) are historical
   evidence only. No new supervised window was run on this corrected SHA (per
   task bounds); corrected-code longevity remains UNDEMONSTRATED.
+
+## P1-14B.8 V2-51 fencing (bounded correction, 2026-10-11) — RESULT: DONE (acotado)
+
+Frontend review `35401f9:docs/DASHBOARD_V2_51_FENCING_REVIEW.md` (backend
+`0786617`) left HIGH findings with mocked reproductions
+(`scripts/review-p1-14b8-final-fencing.py`,
+`design/qa/v2-51/backend-reproductions.json`): post-claim takeover still
+reached termination, owned lease need not cover the run, `status()` overwrote
+terminals, no `status_readonly()`, thread-only concurrency. Fixed
+deterministically, no market runs launched:
+
+- Operation boundary through termination: STOPPING acquisition AND a final
+  locked verify-and-kill (same lock held across re-verification and the
+  kill, via `update_registry` transform). Post-claim owner/run/marker changes
+  refuse with `takeover-after-claim`/`run-replaced`/`replaced-owner` and leave
+  the mocked termination uncalled. `_terminate_verified_pid(pid, ctime)` now
+  verifies on the real OS handle (Windows: one handle reads GetProcessTimes
+  and terminates; POSIX: `pid_is_ours` immediately before `os.kill`) and
+  returns False on identity failure. `stop_probe` carries the same
+  verify-while-locked discipline with its own `stop:` marker.
+- Lease-vs-run: `_owner_lease_valid` (ACTIVE + owned + `watched_pid` == run
+  PID + ctime when determinable on both sides) replaces pid-only checks at
+  acquisition, pre-kill and terminal marking, for supervisor and sentinel.
+  Wrong-run (`wrong-run-lease`), foreign (`replaced-owner`), inactive
+  (`owner-lease-invalid`) leases never terminate. Heartbeats keep pid-only
+  `_owns_lease` (non-replacement proof) by design.
+- `control.status_readonly()`: pure projection shared with `status()` via
+  `_status_view` (identical shape/nullability). No writes, no reconciliation,
+  no log-handle mutation, no process action. Missing → STOPPED shape without
+  creating a file; dead/reused PID, STOPPING and ABORTED preserved
+  byte-for-byte. Mutating reconciliation is separated into fenced
+  `_reconcile_stale_record` (locked; never touches terminal states nor a
+  held enforcement STOPPING) and `dashboard.probe_status()` (browser-polled
+  GET path) now reads purely. `try_register`/`start_probe`/`_mark_terminal`
+  moved to locked fenced commits (refuse live runs and held STOPPING
+  markers; never overwrite terminals).
+- Concurrency between processes: `tests/test_process_concurrency.py` (3)
+  with spawned owners (distinct PIDs, barrier rendezvous so winners stay
+  alive during the race): supervisor+sentinel claim then 10 counted
+  heartbeats each (bool returns; every call wrote, both timestamps advance,
+  11/22 + streaks/action survive); 4-process supervisor and sentinel claim
+  races elect exactly one winner; all workers exit 0 with zero hidden
+  errors. Without the rendezvous, late starters legitimately take over
+  exited winners' leases (documented takeover, not a lock failure).
+- Fail-before: 15 new boundary/readonly tests fail on `0786617`
+  (termination reached, `status_readonly` missing, ABORTED overwritten with
+  FAILED); corrected code passes all. Heartbeat counting fails before the
+  bool-return change (returns None). Prior 808 green preserved.
+- Suite: `python run_tests.py` → 826/826 OK (808 + 8 boundary + 7 readonly
+  + 3 multiprocess). No probes, P1-14C, long runs, paper trading or Start
+  enablement. SQLite/logs/evidence preserved. V2/main untouched.
+  SUCCESS_GATES not advanced. Transactional supervised start stays PENDING
+  and separate.
+- Guarantee: with the lock held across final verification and the
+  handle-bound kill, a registry takeover cannot interleave at the boundary
+  and a reused PID cannot be hit (Windows: same-handle check+kill).
+  Residuals (explicit): POSIX has no handle API (microsecond recheck
+  window); ctime comparison skipped when indeterminable either side;
+  `_owns_lease` stays pid-only for heartbeats; `status()` CLI/`stop_probe`
+  stale paths still mutate by design (fenced). No complete-protection claim
+  beyond the audited writers.
+- Window scope: no new supervised window on this corrected SHA (per bounds);
+  historical windows stay historical; corrected-code longevity UNDEMONSTRATED.

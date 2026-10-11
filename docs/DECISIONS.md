@@ -847,3 +847,45 @@ with temp registries + mocked termination (8/13 fail on HEAD) then fixed:
    stay historical: no new supervised window was run on the corrected SHA.
 
 Tests: 13 fencing + 1 sentinel race; suite 808/808 OK.
+
+## 2026-10-11 -- P1-14B.8 V2-51: operation boundary through termination + pure observation
+
+Starting at SHA `0786617` (clean tree). Frontend review
+`35401f9:docs/DASHBOARD_V2_51_FENCING_REVIEW.md` with mocked reproductions
+proved three residual races; all fixed with fail-before tests, no market runs:
+
+1. Post-claim takeover reached termination (lock released after STOPPING
+   acquisition). Now acquisition AND a final verify-and-kill run under the
+   registry lock, and the kill itself is handle-bound
+   (`_terminate_verified_pid(pid, ctime)`: one Windows handle verifies
+   GetProcessTimes then terminates; POSIX rechecks `pid_is_ours`
+   immediately before `os.kill`). Refusals (`takeover-after-claim`,
+   `run-replaced`, `replaced-owner`, `handle-identity-refused`) leave the
+   mocked termination uncalled, both owners. `stop_probe` carries the same
+   discipline with its own marker.
+2. Owned lease need not cover the run (`_owns_lease` is pid-only).
+   Enforcement now requires `_owner_lease_valid` (ACTIVE + owned +
+   watched_pid == run PID + ctime when determinable both sides) at
+   acquisition, pre-kill and terminal marking. Wrong-run, foreign and
+   inactive leases never terminate. Heartbeats keep pid-only `_owns_lease`
+   (non-replacement proof) by design; heartbeat functions now return bool
+   so effective writes are countable.
+3. `status()` overwrote terminals from stale reads (unlocked). Split into
+   pure `_status_view` (shared shape), `status_readonly()` (no writes,
+   reconciliation, handle or process action; byte-preserving, V2 GET
+   requirement) and fenced `_reconcile_stale_record` (locked; never touches
+   terminals or held enforcement STOPPING). `dashboard.probe_status()`,
+   `try_register` refusal snapshots and `start_probe` preflight read purely;
+   `try_register`/`start_probe`/`_mark_terminal` commit via locked fenced
+   transforms. All writers audited (`status`, `stop_probe`, `try_register`,
+   `start`, `_mark_terminal`, claims, heartbeats, finishers); residuals
+   documented, no complete-protection claim beyond them.
+4. Thread tests share one PID. New multiprocess proof (spawned owners,
+   barrier rendezvous so winners stay alive): supervisor+sentinel claim then
+   10 counted heartbeats each (all wrote, both advance, 11/22 survive) and
+   4-process claim races elect exactly one winner per kind; all exit 0.
+
+Tests: 8 boundary + 7 readonly + 3 multiprocess (15 fail on `0786617`);
+suite 826/826 OK. No probes, P1-14C, long runs, paper or Start; DB/logs
+preserved; V2/main untouched; SUCCESS_GATES untouched. No new supervised
+window on the corrected SHA (historical windows stay historical).

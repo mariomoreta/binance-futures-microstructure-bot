@@ -539,10 +539,14 @@ class DashboardState:
             feed = {"feed_health": feed_label, "latest_snapshot_age": age}
         except Exception:
             feed = {"feed_health": "UNKNOWN", "latest_snapshot_age": None}
+        # Pure observation (V2-51): GET/diagnostic paths never reconcile or
+        # write the registry; stale records stay as stored (feed STALE chips
+        # and V2 90s expiry present them honestly). Mutating reconciliation
+        # lives in control.status() / stop paths only.
         try:
-            return control.status(feed_provider=lambda: dict(feed))
+            return control.status_readonly(feed_provider=lambda: dict(feed))
         except Exception:
-            out = control.status()
+            out = control.status_readonly()
             out.update(feed)
             return out
         # NOTE: P1-11C research health is exposed via /api/research/status

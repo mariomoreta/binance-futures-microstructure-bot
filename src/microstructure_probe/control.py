@@ -199,6 +199,38 @@ def _owns_lease(record: Any, kind: str) -> bool:
         return False
 
 
+def _owner_lease_valid(record: Any, kind: str, target_pid: int) -> bool:
+    """Enforcement-grade owner validation (V2-51): PID + run binding.
+
+    Stronger than _owns_lease (which heartbeats keep using): the lease must
+    be ACTIVE, owned by this process, bound to the target run
+    (watched_pid == run PID), and ctime-bound when determinable on both
+    sides. Either side None (indeterminable identity, e.g. non-Windows
+    fallback) skips only the ctime comparison -- documented residual, never
+    a silent pass on pid/watched/state.
+    """
+    try:
+        lease = (record or {}).get(kind)
+        if not isinstance(lease, dict):
+            return False
+        if str(lease.get("state", "")).upper() != "ACTIVE":
+            return False
+        if int(lease.get("pid")) != os.getpid():
+            return False
+        if int(lease.get("watched_pid")) != int(target_pid):
+            return False
+    except Exception:
+        return False
+    try:
+        mine = own_creation_time()
+    except Exception:
+        mine = None
+    theirs = lease.get("create_time")
+    if mine is not None and theirs is not None and theirs != mine:
+        return False
+    return True
+
+
 def own_creation_time(pid: Optional[int] = None) -> Optional[str]:
     """Recorded creation-time string for pid (None when indeterminable)."""
     from .dashboard import process_info
@@ -230,15 +262,13 @@ def _feed_unknown() -> Dict[str, Any]:
     return {"feed_health": "UNKNOWN", "latest_snapshot_age": None}
 
 
-def status(feed_provider: Optional[Callable[[], Dict[str, Any]]] = None
-           ) -> Dict[str, Any]:
-    """Machine-readable probe status; stale/dead PIDs detected safely.
+def _status_view(record: Optional[Dict[str, Any]],
+                 feed: Dict[str, Any]) -> Dict[str, Any]:
+    """Pure status projection (no I/O, no writes, no handle mutation).
 
-    A record stuck in an active state whose PID is dead is transitioned to
-    FAILED (terminated-externally) and persisted, so the UI is stable.
+    Shared by status() and status_readonly() so shape and nullability stay
+    identical; only the reconciliation step differs.
     """
-    record = read_registry()
-    feed = feed_provider() if feed_provider else _feed_unknown()
     if not record:
         out: Dict[str, Any] = {"running": False, "state": "STOPPED",
                                  "pid": None, "started_at": None,
@@ -255,19 +285,6 @@ def status(feed_provider: Optional[Callable[[], Dict[str, Any]]] = None
         out.update(feed)
         return out
     state = record.get("state", "STOPPED")
-    if _is_active_state(state) and not is_canonical_pid(record):
-        record["state"] = "FAILED"
-        record["last_exit"] = {
-            "code": None,
-            "reason": "terminated-externally (no exit record)",
-            "at": _utc_now_iso(),
-        }
-        try:
-            _write_registry(record)
-        except OSError:
-            pass
-        _close_log_handles(int(record["pid"]) if record.get("pid") else -1)
-        state = "FAILED"
     pid = record.get("pid")
     started_at = record.get("started_at")
     uptime = 0.0
@@ -312,6 +329,77 @@ def status(feed_provider: Optional[Callable[[], Dict[str, Any]]] = None
     return out
 
 
+def _reconcile_stale_record() -> Optional[Dict[str, Any]]:
+    """Fenced stale-record reconciliation (V2-51, mutating).
+
+    Locked read-modify-write that transitions a stuck active record with a
+    dead PID to FAILED. Fences: never touches terminal states (STOPPED /
+    COMPLETED / FAILED / ABORTED), never touches STOPPING with a
+    stopping_by marker (an enforcement operation owns it), never touches a
+    live canonical PID. Returns (fresh record or None, wrote flag).
+    OSError propagates (callers treat as unavailable).
+    """
+    def _reconcile(rec):
+        if not rec:
+            return None, False
+        state = rec.get("state", "STOPPED")
+        if not _is_active_state(state):
+            return None, False
+        if state == "STOPPING" and rec.get("stopping_by"):
+            return None, False
+        if is_canonical_pid(rec):
+            return None, False
+        rec["state"] = "FAILED"
+        rec["last_exit"] = {
+            "code": None,
+            "reason": "terminated-externally (no exit record)",
+            "at": _utc_now_iso(),
+        }
+        return rec, True
+    try:
+        wrote, _ = update_registry(_reconcile)
+    except OSError:
+        raise
+    return read_registry(), wrote
+
+
+def status(feed_provider: Optional[Callable[[], Dict[str, Any]]] = None
+           ) -> Dict[str, Any]:
+    """Machine-readable probe status; stale/dead PIDs reconciled safely.
+
+    Mutating reconciliation is fenced (locked, terminal-preserving, never
+    stealing an enforcement STOPPING marker). V2 GET observation must use
+    status_readonly() instead -- a method name or HTTP GET does not make
+    this controller pure.
+    """
+    feed = feed_provider() if feed_provider else _feed_unknown()
+    try:
+        record, wrote = _reconcile_stale_record()
+    except OSError:
+        record, wrote = read_registry(), False
+    if wrote:
+        try:
+            _close_log_handles(int(record["pid"]) if record and record.get("pid") else -1)
+        except (TypeError, ValueError):
+            pass
+    return _status_view(record, feed)
+
+
+def status_readonly(feed_provider: Optional[Callable[[], Dict[str, Any]]] = None
+                    ) -> Dict[str, Any]:
+    """Pure runtime observation for V2 GET paths (V2-51 required).
+
+    Same nullable shape as status(). Never writes the registry, never
+    reconciles stale records, never closes or mutates log handles, never
+    starts, stops or otherwise modifies processes. A dead or reused PID is
+    reported as stored (caller decides); terminal races are preserved
+    byte-for-byte because nothing is written.
+    """
+    feed = feed_provider() if feed_provider else _feed_unknown()
+    record = read_registry()
+    return _status_view(record, feed)
+
+
 def try_register(duration_seconds: Optional[float] = None,
                  launcher: Optional[str] = None) -> Dict[str, Any]:
     """Probe-side self-registration (called by EVERY canonical launch).
@@ -320,54 +408,68 @@ def try_register(duration_seconds: Optional[float] = None,
     the registry — the caller must exit without touching it. Registry
     write failures never break the probe: warn and run unregistered.
     """
-    current = read_registry()
-    if current and _is_active_state(current.get("state")) \
-            and is_canonical_pid(current) \
-            and int(current.get("pid") or -1) != os.getpid():
-        return {"registered": False,
-                "already_running": status(),
-                "reason": "another canonical probe is already running"}
-    # P1-14B.7: a control-started child self-registers over its own STARTING
-    # record — carry the evidence path forward so supervision keeps its
-    # log-derived rules (UNKNOWN-safe skip otherwise). Never invent evidence:
-    # only preserve what the same PID already recorded.
-    preserved_evidence = None
-    try:
-        if current and int(current.get("pid") or -1) == os.getpid():
-            preserved_evidence = current.get("evidence")
-    except (TypeError, ValueError):
+    # Locked registration (V2-51): the live-run check and the RUNNING
+    # write are one atomic update -- a concurrent enforcement terminal
+    # commit is observed fresh and never silently overwritten, and an
+    # enforcement STOPPING marker is never stolen (refuse while held).
+    def _register(current):
+        if current and _is_active_state(current.get("state")) \
+                and is_canonical_pid(current) \
+                and int(current.get("pid") or -1) != os.getpid():
+            return None, {"registered": False, "reason": "already-running"}
+        if current and current.get("state") == "STOPPING" \
+                and current.get("stopping_by"):
+            return None, {"registered": False, "reason": "already-stopping"}
+        # P1-14B.7: a control-started child self-registers over its own
+        # STARTING record — carry the evidence path forward so supervision
+        # keeps its log-derived rules (UNKNOWN-safe skip otherwise). Never
+        # invent evidence: only preserve what the same PID already recorded.
         preserved_evidence = None
-    record = {
-        "schema": REGISTRY_SCHEMA,
-        "writer": "control/1",
-        "state": "RUNNING",
-        "pid": os.getpid(),
-        "create_time": own_creation_time(),
-        "started_at": _utc_now_iso(),
-        "mode": os.environ.get("BOT_MODE", "observe"),
-        "command": [sys.executable, "-m", "microstructure_probe"] + sys.argv[1:],
-        "duration_seconds": duration_seconds,
-        "expected_end_at": None,
-        "launcher": launcher or os.environ.get("MICROPROBE_LAUNCHER",
-                                               "direct"),
-        "preset": os.environ.get("MICROPROBE_PRESET", "standard"),
-        "evidence": preserved_evidence,
-        "last_exit": None,
-    }
-    if isinstance(duration_seconds, (int, float)):
         try:
-            end_ts = (datetime.now(timezone.utc).timestamp()
-                      + float(duration_seconds))
-            record["expected_end_at"] = datetime.fromtimestamp(
-                end_ts, timezone.utc).isoformat(timespec="seconds")
+            if current and int(current.get("pid") or -1) == os.getpid():
+                preserved_evidence = current.get("evidence")
         except (TypeError, ValueError):
-            pass
+            preserved_evidence = None
+        record = {
+            "schema": REGISTRY_SCHEMA,
+            "writer": "control/1",
+            "state": "RUNNING",
+            "pid": os.getpid(),
+            "create_time": own_creation_time(),
+            "started_at": _utc_now_iso(),
+            "mode": os.environ.get("BOT_MODE", "observe"),
+            "command": [sys.executable, "-m", "microstructure_probe"] + sys.argv[1:],
+            "duration_seconds": duration_seconds,
+            "expected_end_at": None,
+            "launcher": launcher or os.environ.get("MICROPROBE_LAUNCHER",
+                                                   "direct"),
+            "preset": os.environ.get("MICROPROBE_PRESET", "standard"),
+            "evidence": preserved_evidence,
+            "last_exit": None,
+        }
+        if isinstance(duration_seconds, (int, float)):
+            try:
+                end_ts = (datetime.now(timezone.utc).timestamp()
+                          + float(duration_seconds))
+                record["expected_end_at"] = datetime.fromtimestamp(
+                    end_ts, timezone.utc).isoformat(timespec="seconds")
+            except (TypeError, ValueError):
+                pass
+        return record, {"registered": True, "record": record}
     try:
-        _write_registry(record)
+        wrote, value = update_registry(_register)
     except OSError as exc:
-        return {"registered": True, "degraded": f"registry-unavailable: {exc}",
-                "record": record}
-    return {"registered": True, "record": record}
+        return {"registered": True, "degraded": f"registry-unavailable: {exc}"}
+    if not wrote:
+        reason = (value or {}).get("reason", "refused")
+        if reason == "already-running":
+            return {"registered": False,
+                    "already_running": status_readonly(),
+                    "reason": "another canonical probe is already running"}
+        return {"registered": False,
+                "already_running": status_readonly(),
+                "reason": reason}
+    return value
 
 
 def mark_completed(exit_code: int = 0) -> None:
@@ -384,14 +486,27 @@ def mark_failed(reason: str, exit_code: Optional[int] = 1) -> None:
 
 def _mark_terminal(state: str, exit_code: Optional[int],
                    reason: str) -> None:
+    # Fenced self-marking (V2-51): locked, same-PID only, never overwrites
+    # a terminal state committed by someone else (ABORTED/STOPPED/COMPLETED
+    # /FAILED wins over a late natural mark; enforcement markers included).
+    def _mark(rec):
+        if not rec:
+            return None, False
+        try:
+            if int(rec.get("pid") or -1) != os.getpid():
+                return None, False
+        except (TypeError, ValueError):
+            return None, False
+        if not _is_active_state(rec.get("state")):
+            return None, False
+        if rec.get("state") == "STOPPING" and rec.get("stopping_by"):
+            return None, False
+        rec["state"] = state
+        rec["last_exit"] = {"code": exit_code, "reason": reason,
+                            "at": _utc_now_iso()}
+        return rec, True
     try:
-        record = read_registry()
-        if not record or int(record.get("pid") or -1) != os.getpid():
-            return
-        record["state"] = state
-        record["last_exit"] = {"code": exit_code, "reason": reason,
-                               "at": _utc_now_iso()}
-        _write_registry(record)
+        update_registry(_mark)
     except (OSError, TypeError, ValueError):
         pass
     finally:
@@ -428,9 +543,13 @@ def start_probe(duration_seconds: Optional[int] = None,
                 preset: str = "standard",
                 evidence_dir: Optional[Path] = None) -> Dict[str, Any]:
     """Start one canonical probe; refuse when one is already running."""
-    live = status()
-    if live["running"] or (live["state"] in ("STARTING", "STOPPING")
-                           and is_canonical_pid(read_registry())):
+    # Pure preflight (V2-51): observation never mutates; liveness is decided
+    # on a fresh read so a stale RUNNING record (dead PID) does not block a
+    # new launch, while a live run or a held enforcement STOPPING does.
+    live = status_readonly()
+    fresh = read_registry()
+    if (live["running"] and is_canonical_pid(fresh)) or \
+            (live["state"] in ("STARTING", "STOPPING") and is_canonical_pid(fresh)):
         return {"started": False, "already_running": True,
                 "pid": live["pid"], "uptime_seconds": live["uptime_seconds"],
                 "mode": live.get("mode", "observe"), "state": live["state"]}
@@ -470,22 +589,48 @@ def start_probe(duration_seconds: Optional[int] = None,
             pass
         return {"started": False, "error": f"spawn failed: {exc}"}
     _LOG_HANDLES[proc.pid] = stdout_fh
-    _write_registry({
-        "schema": REGISTRY_SCHEMA,
-        "writer": "control/1",
-        "state": "STARTING",
-        "pid": proc.pid,
-        "create_time": own_creation_time(proc.pid),
-        "started_at": _utc_now_iso(),
-        "mode": "observe",
-        "command": argv,
-        "duration_seconds": duration,
-        "expected_end_at": None,
-        "launcher": launcher,
-        "preset": preset if preset == "validation-6h" else "standard",
-        "evidence": evidence,
-        "last_exit": None,
-    })
+    # Locked STARTING commit (V2-51): refuse a live run or a held
+    # enforcement STOPPING observed fresh; terminal/stale records yield to
+    # the new launch. A spawn failure after Popen is the caller's orphan to
+    # reap -- the record below is rolled back to FAILED only when it is
+    # still our STARTING (never stealing another writer's state).
+    def _commit_start(rec):
+        if rec and _is_active_state(rec.get("state")) and is_canonical_pid(rec):
+            return None, False
+        if rec and rec.get("state") == "STOPPING" and rec.get("stopping_by"):
+            return None, False
+        return {
+            "schema": REGISTRY_SCHEMA,
+            "writer": "control/1",
+            "state": "STARTING",
+            "pid": proc.pid,
+            "create_time": own_creation_time(proc.pid),
+            "started_at": _utc_now_iso(),
+            "mode": "observe",
+            "command": argv,
+            "duration_seconds": duration,
+            "expected_end_at": None,
+            "launcher": launcher,
+            "preset": preset if preset == "validation-6h" else "standard",
+            "evidence": evidence,
+            "last_exit": None,
+        }, True
+    try:
+        wrote, _ = update_registry(_commit_start)
+    except OSError:
+        wrote = False
+    if not wrote:
+        try:
+            stdout_fh.close()
+        except OSError:
+            pass
+        _LOG_HANDLES.pop(proc.pid, None)
+        try:
+            proc.kill()
+        except Exception:
+            pass
+        return {"started": False, "already_running": True,
+                "pid": None, "state": status_readonly().get("state")}
     # The child self-registers RUNNING on entry (self-registration flips
     # STARTING → RUNNING within seconds, incl. externally launched probes
     # that never pass through here).
@@ -496,76 +641,241 @@ def start_probe(duration_seconds: Optional[int] = None,
 
 
 def stop_probe(requester: str = "agent") -> Dict[str, Any]:
-    """Terminate ONLY the verified canonical probe PID (bounded wait)."""
+    """Terminate ONLY the verified canonical probe PID (bounded wait).
+
+    V2-51 hardening: STOPPING acquisition refuses a held enforcement
+    marker (already-stopping) and terminal states; the final
+    verification-plus-handle-kill runs under the registry lock so a
+    takeover cannot interleave; STOPPED/FAILED marks are fenced against
+    run replacement and foreign markers and never overwrite ABORTED.
+    """
     record = read_registry()
     if not record or not _is_active_state(record.get("state")):
         return {"stopped": False, "error": "no-active-probe",
                 "state": (record or {}).get("state", "STOPPED")}
-    pid = int(record["pid"])
-    if not is_canonical_pid(record):
+    try:
+        pid = int(record.get("pid"))
+    except (TypeError, ValueError):
+        return {"stopped": False, "error": "bad-record-pid"}
+    expected_ctime = record.get("create_time")
+    stop_marker = "stop:%s:%d" % (requester, os.getpid())
+
+    def _claim_stop(rec):
+        if not rec or not _is_active_state(rec.get("state")):
+            return None, {"proceed": False, "reason": "no-active-probe"}
         try:
-            record["state"] = "FAILED"
-            record["last_exit"] = {
+            fresh_pid = int(rec.get("pid"))
+        except (TypeError, ValueError):
+            return None, {"proceed": False, "reason": "bad-record-pid"}
+        if fresh_pid != pid or rec.get("create_time") != expected_ctime:
+            return None, {"proceed": False, "reason": "run-replaced"}
+        if not is_canonical_pid(rec):
+            # Fenced stale recovery: only from a non-marker active state;
+            # never steals an enforcement STOPPING or a terminal record.
+            if rec.get("state") == "STOPPING" and rec.get("stopping_by"):
+                return None, {"proceed": False, "reason": "already-stopping"}
+            rec["state"] = "FAILED"
+            rec["last_exit"] = {
                 "code": None,
                 "reason": "stale-record-recovered-on-stop (pid dead/mismatched)",
                 "at": _utc_now_iso()}
-            _write_registry(record)
-        except OSError:
-            pass
-        return {"stopped": False, "error": "stale-probe-record-recovered",
-                "state": "FAILED"}
+            return rec, {"proceed": False, "reason": "stale-probe-record-recovered"}
+        if rec.get("state") == "STOPPING":
+            if rec.get("stopping_by"):
+                return None, {"proceed": False, "reason": "already-stopping"}
+            rec["state"] = "STOPPING"
+            rec["stopping_by"] = stop_marker
+            return rec, {"proceed": True}
+        rec["state"] = "STOPPING"
+        rec["stopping_by"] = stop_marker
+        return rec, {"proceed": True}
+
     try:
-        record["state"] = "STOPPING"
-        _write_registry(record)
+        wrote, gate = update_registry(_claim_stop)
     except OSError:
-        pass
-    _terminate_verified_pid(pid)
+        return {"stopped": False, "error": "registry-unavailable"}
+    if not wrote or not gate.get("proceed"):
+        reason = (gate or {}).get("reason", "refused")
+        if reason == "stale-probe-record-recovered":
+            return {"stopped": False, "error": reason, "state": "FAILED"}
+        return {"stopped": False, "error": reason, "pid": pid}
+
+    def _verify_and_kill(rec):
+        if not rec or not _is_active_state(rec.get("state")):
+            return None, {"proceed": False, "reason": "no-active-probe"}
+        if rec.get("state") != "STOPPING" or rec.get("stopping_by") != stop_marker:
+            return None, {"proceed": False, "reason": "takeover-after-claim"}
+        try:
+            fresh_pid = int(rec.get("pid"))
+        except (TypeError, ValueError):
+            return None, {"proceed": False, "reason": "bad-record-pid"}
+        if fresh_pid != pid or rec.get("create_time") != expected_ctime:
+            return None, {"proceed": False, "reason": "run-replaced"}
+        if not is_canonical_pid(rec):
+            return None, {"proceed": False, "reason": "stale-record-not-touched"}
+        if not _terminate_verified_pid(pid, expected_ctime):
+            return None, {"proceed": False, "reason": "handle-identity-refused"}
+        return None, {"proceed": True}
+
+    try:
+        _, gate2 = update_registry(_verify_and_kill)
+    except OSError:
+        return {"stopped": False, "error": "registry-unavailable", "pid": pid}
+    if not gate2.get("proceed"):
+        return {"stopped": False, "error": gate2.get("reason", "refused"), "pid": pid}
     deadline = time.monotonic() + 10.0
     from .dashboard import pid_is_ours
     while time.monotonic() < deadline:
-        if not pid_is_ours(pid, record.get("create_time")):
+        if not pid_is_ours(pid, expected_ctime):
             break
         time.sleep(0.2)
-    if pid_is_ours(pid, record.get("create_time")):
+    if pid_is_ours(pid, expected_ctime):
+        def _fail_mark(rec):
+            if not rec or rec.get("state") != "STOPPING":
+                return None, False
+            if rec.get("stopping_by") != stop_marker:
+                return None, False
+            try:
+                if int(rec.get("pid")) != pid:
+                    return None, False
+            except (TypeError, ValueError):
+                return None, False
+            if rec.get("create_time") != expected_ctime:
+                return None, False
+            rec["state"] = "FAILED"
+            rec["last_exit"] = {"code": None, "reason": "stop-timeout"
+                               " (process survived bounded wait)",
+                               "at": _utc_now_iso()}
+            return rec, True
         try:
-            record["state"] = "FAILED"
-            record["last_exit"] = {"code": None, "reason": "stop-timeout"
-                                   " (process survived bounded wait)",
-                                   "at": _utc_now_iso()}
-            _write_registry(record)
+            update_registry(_fail_mark)
         except OSError:
             pass
         return {"stopped": False, "error": "stop-timeout", "pid": pid}
+
+    def _stop_mark(rec):
+        # Never overwrite ABORTED or any other terminal state.
+        if not rec or rec.get("state") != "STOPPING":
+            return None, False
+        if rec.get("stopping_by") != stop_marker:
+            return None, False
+        try:
+            if int(rec.get("pid")) != pid:
+                return None, False
+        except (TypeError, ValueError):
+            return None, False
+        if rec.get("create_time") != expected_ctime:
+            return None, False
+        rec["state"] = "STOPPED"
+        rec["last_exit"] = {"code": 0,
+                            "reason": f"stopped-by-{requester}",
+                            "at": _utc_now_iso()}
+        return rec, True
     try:
-        record["state"] = "STOPPED"
-        record["last_exit"] = {"code": 0,
-                               "reason": f"stopped-by-{requester}",
-                               "at": _utc_now_iso()}
-        _write_registry(record)
+        wrote, _ = update_registry(_stop_mark)
     except OSError:
-        pass
+        return {"stopped": False, "error": "registry-unavailable", "pid": pid}
+    if not wrote:
+        return {"stopped": False, "error": "superseded", "pid": pid}
     _close_log_handles(pid)
     return {"stopped": True, "pid": pid}
 
 
-def _terminate_verified_pid(pid: int) -> None:
-    """SIGTERM on POSIX; TerminateProcess on Windows (no graceful stdlib
-    path exists there for detached children — documented, identity already
-    revalidated by the caller immediately before this call)."""
+def _terminate_verified_pid(pid: int,
+                              expected_ctime: Optional[str] = None) -> bool:
+    """Terminate ONLY the verified OS process; False when refused.
+
+    Handle-bound identity (V2-51): on Windows the same OpenProcess handle
+    is used to read creation time (GetProcessTimes) and to terminate, so a
+    PID reused between verification and kill cannot be hit. On POSIX the
+    pre-kill recheck (pid_is_ours immediately before os.kill) narrows the
+    reuse window to microseconds -- documented residual, no handle API.
+    Callers must hold the registry lock across their final verification and
+    this call so a registry takeover cannot interleave at the boundary.
+    Returns True when termination was attempted, False when identity failed
+    (nothing touched).
+    """
+    try:
+        target = int(pid)
+    except (TypeError, ValueError):
+        return False
     if os.name == "nt":
-        kernel32 = ctypes.windll.kernel32  # type: ignore[attr-defined]
-        handle = kernel32.OpenProcess(1, False, pid)  # PROCESS_TERMINATE
-        if not handle:
-            return
         try:
-            kernel32.TerminateProcess(handle, 0)
+            import ctypes as _ct
+            kernel32 = _ct.windll.kernel32  # type: ignore[attr-defined]
+        except Exception:
+            return False
+        handle = None
+        try:
+            access = 0x0001 | 0x1000  # TERMINATE | QUERY_LIMITED
+            try:
+                kernel32.OpenProcess.argtypes = [_ct.c_ulong, _ct.c_bool,
+                                                 _ct.c_ulong]
+                kernel32.OpenProcess.restype = _ct.c_void_p
+            except Exception:
+                pass
+            handle = kernel32.OpenProcess(access, False, target)
+            if not handle:
+                return False
+            if expected_ctime is not None:
+                try:
+                    from .dashboard import _creation_time_ctypes as _ct_time
+                    _ = _ct_time  # handle path below re-reads on one handle
+                except Exception:
+                    pass
+                # Verify creation time on THIS handle (no reopen: no reuse).
+                try:
+                    class _FT(_ct.Structure):
+                        _fields_ = [("dwLowDateTime", _ct.c_ulong),
+                                    ("dwHighDateTime", _ct.c_ulong)]
+                    try:
+                        kernel32.GetProcessTimes.argtypes = [
+                            _ct.c_void_p, _ct.POINTER(_FT), _ct.POINTER(_FT),
+                            _ct.POINTER(_FT), _ct.POINTER(_FT)]
+                        kernel32.GetProcessTimes.restype = _ct.c_bool
+                    except Exception:
+                        pass
+                    ft_c, ft_e, ft_k, ft_u = (_FT() for _ in range(4))
+                    ok = kernel32.GetProcessTimes(
+                        handle, _ct.byref(ft_c), _ct.byref(ft_e),
+                        _ct.byref(ft_k), _ct.byref(ft_u))
+                    if not ok:
+                        return False
+                    ticks = (int(ft_c.dwHighDateTime) << 32) + int(ft_c.dwLowDateTime)
+                    epoch_us = ticks // 10 - 11644473600000000
+                    if epoch_us <= 0:
+                        return False
+                    from datetime import datetime as _dt, timezone as _tz
+                    actual = _dt.fromtimestamp(epoch_us / 1_000_000,
+                                               tz=_tz.utc).isoformat()
+                    if actual != expected_ctime:
+                        return False
+                except Exception:
+                    return False
+            try:
+                kernel32.TerminateProcess(handle, 0)
+            except Exception:
+                return False
+            return True
         finally:
-            kernel32.CloseHandle(handle)
+            try:
+                if handle:
+                    import ctypes as _ct2
+                    _ct2.windll.kernel32.CloseHandle(handle)
+            except Exception:
+                pass
     else:
         try:
-            os.kill(pid, signal.SIGTERM)
-        except (OSError, ProcessLookupError):
-            pass
+            if expected_ctime is not None:
+                from .dashboard import pid_is_ours as _pio
+                if not bool(_pio(target, expected_ctime)):
+                    return False
+            os.kill(target, signal.SIGTERM)
+        except (OSError, ProcessLookupError, ValueError, TypeError):
+            # Process already gone counts as terminated for abort purposes,
+            # but only after the identity check above passed.
+            return True
+        return True
 
 
 def _close_log_handles(pid: int) -> None:
@@ -1024,9 +1334,11 @@ def claim_supervision() -> Dict[str, Any]:
 
 
 def _heartbeat_lease(consecutive_failures: int = 0,
-                     streaks: Optional[Dict[str, int]] = None) -> None:
+                     streaks: Optional[Dict[str, int]] = None) -> bool:
     """Heartbeat the supervisor lease. Fenced: a replaced watcher (lease
-    pid != self) is a silent no-op -- it must not touch the new lease."""
+    pid != self) is a silent no-op -- it must not touch the new lease.
+    Returns True when the heartbeat was effectively written, False on
+    refusal or registry failure (callers counting effective writes)."""
     def _beat(record):
         if not record or not isinstance(record.get("supervisor"), dict):
             return None, False
@@ -1038,12 +1350,13 @@ def _heartbeat_lease(consecutive_failures: int = 0,
             record["supervisor"]["streaks"] = dict(streaks)
         return record, True
     try:
-        update_registry(_beat)
+        wrote, _ = update_registry(_beat)
     except OSError:
-        pass
+        return False
+    return bool(wrote)
 
 
-def _fail_lease() -> None:
+def _fail_lease() -> bool:
     def _fail(record):
         if not record or not isinstance(record.get("supervisor"), dict):
             return None, False
@@ -1053,9 +1366,25 @@ def _fail_lease() -> None:
         record["supervisor"]["last_check_at"] = _utc_now_iso()
         return record, True
     try:
-        update_registry(_fail)
+        wrote, _ = update_registry(_fail)
     except OSError:
-        pass
+        return False
+    return bool(wrote)
+
+
+def _owner_refusal_reason(rec: Any, kind: str, target_pid: int) -> str:
+    """Specific refusal reason for an invalid enforcement lease."""
+    try:
+        lease = (rec or {}).get(kind)
+        if not isinstance(lease, dict):
+            return "replaced-owner"
+        if int(lease.get("pid")) != os.getpid():
+            return "replaced-owner"
+        if int(lease.get("watched_pid")) != int(target_pid):
+            return "wrong-run-lease"
+    except Exception:
+        return "replaced-owner"
+    return "owner-lease-invalid"
 
 
 def enforce_abort(decision: Dict[str, Any],
@@ -1063,15 +1392,18 @@ def enforce_abort(decision: Dict[str, Any],
     """Execute one verified abort: re-validate identity, stop via the
     canonical path, mark ABORTED with reason. Never touches foreign PIDs,
     never claims ABORTED unless the watched process is confirmed dead.
-    owner_kind ("supervisor"|"sentinel") additionally requires that OUR
-    lease still owns the watched run at marking time: a replaced watcher
-    must not mark its replacement's run, and a run that left the watched
-    state meanwhile is reported superseded, never ABORTED.
-    Fencing (P1-14B.8 corrections): the STOPPING transition itself happens
-    under the registry lock AFTER re-verifying run identity, eligible
-    state, and owner lease on fresh state. A refused/failed marker write
-    never reaches termination. Checking ownership only after a kill is
-    insufficient -- a replaced watcher must not reach the kill at all.
+    owner_kind ("supervisor"|"sentinel") requires an ACTIVE lease owned by
+    this process AND bound to the target run (watched_pid == run PID) with
+    matching creation time when determinable: a replaced watcher, a
+    wrong-run lease, or a run that left the watched state is reported
+    refused/superseded, never ABORTED.
+    Fencing (V2-51 operation boundary): STOPPING acquisition AND the final
+    verification-plus-termination both happen under the registry lock on
+    fresh state, and termination itself runs while the lock is held via a
+    handle-verified kill (same OS handle verifies creation time and
+    terminates: PID reuse cannot interleave, registry takeover cannot
+    interleave). A refused/failed gate never reaches termination; checking
+    ownership only after a kill is insufficient.
     """
     record = read_registry()
     if not record or not _is_active_state(record.get("state")):
@@ -1089,7 +1421,7 @@ def enforce_abort(decision: Dict[str, Any],
     stopping_marker = ("enforce:%s:%d" % (owner_kind or "direct", os.getpid()))
 
     def _claim_stop(rec):
-        # Locked pre-terminate gate: re-verify EVERYTHING on fresh state.
+        # Locked acquisition gate: re-verify EVERYTHING on fresh state.
         # Any refusal returns without touching the record -- and crucially
         # without terminating anything afterwards.
         if not rec or not _is_active_state(rec.get("state")):
@@ -1102,8 +1434,9 @@ def enforce_abort(decision: Dict[str, Any],
             return None, {"proceed": False, "reason": "run-replaced"}
         if not is_canonical_pid(rec):
             return None, {"proceed": False, "reason": "stale-record-not-touched"}
-        if owner_kind is not None and not _owns_lease(rec, owner_kind):
-            return None, {"proceed": False, "reason": "replaced-owner"}
+        if owner_kind is not None and not _owner_lease_valid(rec, owner_kind, fresh_pid):
+            return None, {"proceed": False,
+                           "reason": _owner_refusal_reason(rec, owner_kind, fresh_pid)}
         if rec.get("state") == "STOPPING":
             # Marker acquisition: a foreign STOPPING transition already
             # holds the run -- back off without touching it and without
@@ -1123,7 +1456,40 @@ def enforce_abort(decision: Dict[str, Any],
         return {"aborted": False,
                 "reason": gate.get("reason", "refused"),
                 "pid": pid}
-    _terminate_verified_pid(pid)
+
+    def _verify_and_kill(rec):
+        # Runs INSIDE the registry lock: final re-verification and the
+        # handle-verified kill are atomic -- no takeover can interleave
+        # between validation and the irreversible operation. Returns
+        # (None, gate): never writes here (STOPPING already acquired).
+        if not rec or not _is_active_state(rec.get("state")):
+            return None, {"proceed": False, "reason": "no-active-run"}
+        if rec.get("state") != "STOPPING" or rec.get("stopping_by") != stopping_marker:
+            return None, {"proceed": False, "reason": "takeover-after-claim"}
+        try:
+            fresh_pid = int(rec.get("pid"))
+        except (TypeError, ValueError):
+            return None, {"proceed": False, "reason": "bad-record-pid"}
+        if fresh_pid != pid or rec.get("create_time") != expected_ctime:
+            return None, {"proceed": False, "reason": "run-replaced"}
+        if not is_canonical_pid(rec):
+            return None, {"proceed": False, "reason": "stale-record-not-touched"}
+        if owner_kind is not None and not _owner_lease_valid(rec, owner_kind, fresh_pid):
+            return None, {"proceed": False,
+                           "reason": _owner_refusal_reason(rec, owner_kind, fresh_pid)}
+        killed = _terminate_verified_pid(pid, expected_ctime)
+        if not killed:
+            return None, {"proceed": False, "reason": "handle-identity-refused"}
+        return None, {"proceed": True}
+
+    try:
+        _, gate2 = update_registry(_verify_and_kill)
+    except OSError:
+        return {"aborted": False, "reason": "registry-unavailable", "pid": pid}
+    if not gate2.get("proceed"):
+        return {"aborted": False,
+                "reason": gate2.get("reason", "refused"),
+                "pid": pid}
     deadline = time.monotonic() + 10.0
     from .dashboard import pid_is_ours
     while time.monotonic() < deadline:
@@ -1133,8 +1499,9 @@ def enforce_abort(decision: Dict[str, Any],
     if pid_is_ours(pid, expected_ctime):
         def _fail_mark(rec):
             # Fenced: same run (pid+ctime), still OUR stopping marker, and
-            # (when given) still our lease. A foreign STOPPING marker, a
-            # replaced run, or a lost lease all refuse without touching.
+            # (when given) still our run-bound lease. A foreign STOPPING
+            # marker, a replaced run, a wrong-run lease or a lost lease all
+            # refuse without touching.
             if not rec or rec.get("state") not in ("STOPPING",):
                 return None, False
             if rec.get("stopping_by") != stopping_marker:
@@ -1146,7 +1513,7 @@ def enforce_abort(decision: Dict[str, Any],
                 return None, False
             if rec.get("create_time") != expected_ctime:
                 return None, False
-            if owner_kind is not None and not _owns_lease(rec, owner_kind):
+            if owner_kind is not None and not _owner_lease_valid(rec, owner_kind, pid):
                 return None, False
             rec["state"] = "FAILED"
             rec["last_exit"] = {
@@ -1163,8 +1530,8 @@ def enforce_abort(decision: Dict[str, Any],
     def _abort_mark(rec):
         # Fenced terminal marking: only when the run is still in OUR
         # STOPPING state (not someone else's STOPPED/COMPLETED/FAILED) and
-        # -- when an owner kind is given -- our lease still owns the run.
-        # Anything else reports superseded without touching the record.
+        # -- when an owner kind is given -- our run-bound lease still owns
+        # it. Anything else reports superseded without touching the record.
         # Run identity (pid + creation-time) is rechecked against the
         # pre-terminate snapshot: a replaced run is never marked.
         if not rec or rec.get("state") != "STOPPING":
@@ -1178,7 +1545,7 @@ def enforce_abort(decision: Dict[str, Any],
             return None, False
         if rec.get("create_time") != expected_ctime:
             return None, False
-        if owner_kind is not None and not _owns_lease(rec, owner_kind):
+        if owner_kind is not None and not _owner_lease_valid(rec, owner_kind, pid):
             return None, False
         rec["state"] = ABORTED
         rec["aborted_by"] = owner_kind if owner_kind else "direct"
@@ -1487,8 +1854,10 @@ def claim_sentinel() -> Dict[str, Any]:
     return value
 
 
-def _heartbeat_sentinel(failures: int = 0, action: Optional[Dict[str, Any]] = None) -> None:
-    """Heartbeat the sentinel lease. Fenced like _heartbeat_lease."""
+def _heartbeat_sentinel(failures: int = 0, action: Optional[Dict[str, Any]] = None) -> bool:
+    """Heartbeat the sentinel lease. Fenced like _heartbeat_lease.
+
+    Returns True when effectively written, False on refusal/failure."""
     def _beat(record):
         if not record or not isinstance(record.get("sentinel"), dict):
             return None, False
@@ -1500,12 +1869,13 @@ def _heartbeat_sentinel(failures: int = 0, action: Optional[Dict[str, Any]] = No
             record["sentinel"]["action"] = action
         return record, True
     try:
-        update_registry(_beat)
+        wrote, _ = update_registry(_beat)
     except Exception:
-        pass
+        return False
+    return bool(wrote)
 
 
-def _fail_sentinel() -> None:
+def _fail_sentinel() -> bool:
     def _fail(record):
         if not record or not isinstance(record.get("sentinel"), dict):
             return None, False
@@ -1515,9 +1885,10 @@ def _fail_sentinel() -> None:
         record["sentinel"]["last_check_at"] = _utc_now_iso()
         return record, True
     try:
-        update_registry(_fail)
+        wrote, _ = update_registry(_fail)
     except Exception:
-        pass
+        return False
+    return bool(wrote)
 
 
 def _supervision_age_s(lease: Any) -> Optional[float]:

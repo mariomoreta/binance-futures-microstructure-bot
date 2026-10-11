@@ -338,8 +338,11 @@ it does not replace them. Authority stays where it was recorded
   enforce fencing corrected per frontend review `d80fb9b` (locked STOPPING,
   fenced ABORTED/FAILED, real `aborted_by`, owned-lease heartbeat proof, 808/808)
   with no new supervised window on the corrected SHA (historical windows stay
-  historical); V2 supervised start still PENDING/separate.
-- **Last update:** 2026-10-11 (P1-14B.8 follow-up fencing, DONE).
+  historical); P1-14B.8-V2-51 (2026-10-11): operation boundary through
+  handle-bound termination, run-bound leases, pure `status_readonly()` +
+  fenced reconciliation, locked remaining writers, multiprocess proof
+  (826/826), no new window; V2 supervised start still PENDING/separate.
+- **Last update:** 2026-10-11 (P1-14B.8 V2-51 boundary+readonly, DONE acotado).
 
 ## F-BT-01 — Historical backtesting (P1-14)
 

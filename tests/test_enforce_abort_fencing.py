@@ -64,7 +64,13 @@ def _run_record(pid=424243, state="RUNNING", ctime="STAMP"):
 
 
 def _owned_lease(kind, watched=424243):
-    base = {"pid": os.getpid(), "create_time": "C",
+    # Owner ctime tracks this process so enforcement-grade identity
+    # (watched binding + ctime when determinable) verifies without mocks.
+    try:
+        ctime = pc.own_creation_time()
+    except Exception:
+        ctime = None
+    base = {"pid": os.getpid(), "create_time": ctime,
             "started_at": "2026-10-10T10:00:00+00:00",
             "last_check_at": "2026-10-10T10:00:10+00:00",
             "state": "ACTIVE", "consecutive_failures": 0,
@@ -201,9 +207,10 @@ class TerminalMarkFencingTest(unittest.TestCase):
         rec[owner_kind] = _owned_lease(owner_kind)
         _write(rec)
 
-        def _kill_and_takeover(pid):
+        def _kill_and_takeover(pid, *args):
             self._inject_takeover(
                 foreign_marker=("enforce:%s:999999" % owner_kind))
+            return True
 
         with mock.patch.object(pc, "is_canonical_pid", return_value=True):
             with mock.patch.object(pc, "_terminate_verified_pid",
@@ -233,13 +240,14 @@ class TerminalMarkFencingTest(unittest.TestCase):
         rec[owner_kind] = _owned_lease(owner_kind)
         _write(rec)
 
-        def _kill_and_foreign_marker(pid):
+        def _kill_and_foreign_marker(pid, *args):
             cur = pc.read_registry()
             cur["stopping_by"] = "enforce:%s:999999" % owner_kind
             if isinstance(cur.get(owner_kind), dict):
                 cur[owner_kind] = dict(cur[owner_kind])
                 cur[owner_kind]["pid"] = 999999
             pc._write_registry(cur)
+            return True
 
         with mock.patch.object(pc, "is_canonical_pid", return_value=True):
             with mock.patch.object(pc, "_terminate_verified_pid",

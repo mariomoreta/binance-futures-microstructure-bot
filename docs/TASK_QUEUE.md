@@ -182,6 +182,21 @@ the dashboard exists. No classifier before raw-feature dashboard validation.
   window on the corrected SHA. V2 supervised start still PENDING/separate.
   SUCCESS_GATES untouched.
 
+- `P1-14B.8-V2-51` (2026-10-11) OPERATION-BOUNDARY + READONLY BOUNDED CORRECTION — **DONE (acotado)**.
+  Frontend review `35401f9` HIGH findings fixed deterministically (temp
+  registries + mocked termination/processes; 15 new boundary/readonly tests
+  fail on `0786617`, all pass corrected): locked verify-and-kill inside the
+  registry lock with handle-bound `_terminate_verified_pid(pid, ctime)`,
+  run-bound `_owner_lease_valid` (watched==run, ACTIVE, ctime) at
+  acquisition/pre-kill/marking (x2 owners), pure `status_readonly()` +
+  fenced `_reconcile_stale_record` (never overwrites terminals/markers) +
+  readonly dashboard GET path, locked `try_register`/`start_probe`/
+  `_mark_terminal`/`stop_probe`, multiprocess heartbeat/claim proof
+  (counted writes, one winner, all exit 0). Suite 826/826 OK. No probes,
+  P1-14C, long runs, paper or Start. DB/logs/evidence preserved. V2/main
+  untouched. No new supervised window on the corrected SHA. Transactional
+  supervised start still PENDING/separate. SUCCESS_GATES untouched.
+
 - `P1-10R` PROLONGED ≥6H SOAK RE-RUN — P1-10 FAIL stays FAIL (truncated at
   4.91h); re-run with dashboard live, blocking survivable launch, merged
   stdout+stderr as UTF-8 (see `docs/DECISIONS.md` launch rule).
@@ -409,6 +424,16 @@ strategies (P3), paper engine/positions (P4), execution (P5).
 ## LAST_VERIFICATION
 
 
+
+- 2026-10-11 (P1-14B.8-V2-51): `python run_tests.py` → 826/826 OK (808 + 8 boundary + 7 readonly + 3 multiprocess).
+  Operation boundary + readonly corrected per frontend review `35401f9`
+  (15 new tests fail on `0786617`, all pass corrected; heartbeat counting
+  fails before the bool-return change). No probes, P1-14C, long runs, paper
+  or Start started; DB/logs/evidence preserved; V2/main untouched.
+  No new supervised window on the corrected SHA (historical windows stay
+  historical). Transactional supervised start still PENDING/separate. Next:
+  backend SHA review before operational integration; P1-14C needs explicit
+  instruction.
 
 - 2026-10-11 (P1-14B.8-followup): `python run_tests.py` → 808/808 OK (794 + 13 fencing + 1 sentinel race).
   Enforce fencing corrected per frontend review `d80fb9b` (8/13 new tests fail on `8648366`,

@@ -162,11 +162,15 @@ class DurationValidationTest(unittest.TestCase):
 class StartStopTest(unittest.TestCase):
     def test_start_refused_when_running(self) -> None:
         _temp_registry(self)
-        with mock.patch.object(pc, "status", return_value={
+        with mock.patch.object(pc, "status_readonly", return_value={
                 "running": True, "state": "RUNNING", "pid": 7,
                 "uptime_seconds": 10.0, "mode": "observe"}):
-            with mock.patch("subprocess.Popen") as popen:
-                out = pc.start_probe(21600)
+            with mock.patch.object(pc, "read_registry", return_value={
+                    "state": "RUNNING", "pid": 7, "create_time": "STAMP"}):
+                with mock.patch.object(pc, "is_canonical_pid",
+                                       return_value=True):
+                    with mock.patch("subprocess.Popen") as popen:
+                        out = pc.start_probe(21600)
         popen.assert_not_called()
         self.assertTrue(out["already_running"])
         self.assertEqual(out["pid"], 7)
@@ -184,7 +188,7 @@ class StartStopTest(unittest.TestCase):
                             stderr=stderr, kwargs=kwargs)
             return FakeProc()
 
-        with mock.patch.object(pc, "status",
+        with mock.patch.object(pc, "status_readonly",
                                return_value={"running": False,
                                              "state": "STOPPED"}):
             with mock.patch("subprocess.Popen", side_effect=fake_popen):
@@ -245,9 +249,10 @@ class StartStopTest(unittest.TestCase):
             return alive["n"] and int(record.get("pid")) == 424242 \
                 and record.get("create_time") == "STAMP"
 
-        def fake_term(pid):
+        def fake_term(pid, *args):
             killed.append(pid)
             alive["n"] = False
+            return True
 
         with mock.patch.object(pc, "is_canonical_pid",
                                side_effect=fake_canonical):
