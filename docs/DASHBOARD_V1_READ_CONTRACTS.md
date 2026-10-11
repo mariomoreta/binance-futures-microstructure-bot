@@ -208,37 +208,34 @@ mark-price buckets, NO new source):
 
 ## 7. Reversible old-UI retirement plan (PROPOSED — NOT executed)
 
-Preconditions (all must hold; otherwise stop, this plan waits):
-P1 old server process verified absent by pidfile PID+ctime (never kill to
-satisfy this); P2 V2 parity gates from DASH-V2-CUTOVER pass on the exact
-SHA; P3 canonical DB + registry + evidence backed up byte-verified.
+Dependency update 2026-10-11: the DASH-V2-64 audit originally found lazy
+control imports from dashboard.py. Extraction c59c5ec moved repo_root,
+process_info, pid_is_ours, no_window_flags and _creation_time_ctypes to
+host_process.py (stdlib only). control imports that module; dashboard
+re-exports the same function objects. Source bodies were verified identical.
+This closes the shared-helper extraction prerequisite; it does NOT authorize
+HTML/file retirement or certify exhaustive V2 parity. The modern isolation
+proof and exact-SHA review are recorded in DASH_V2_69_EXTRACTION_PROOF_REVIEW.md.
 
-Dependency blocker found by this audit: `control.py` lazily imports
-shared helpers FROM `dashboard.py` (`repo_root`, `process_info`,
-`pid_is_ours`, `no_window_flags` — function-level imports used by
-identity, lifecycle, and termination paths, including the V2 pure bridge
-via `control.status_readonly`). Probe/persistence/history do NOT import
-`dashboard`, but `control` does. Therefore file-level retirement of
-`dashboard.py` is BLOCKED until those helpers move to a non-HTTP module
-(proposed prerequisite refactor, not executed here).
+Preconditions for a future separately scoped retirement:
+P1 Before any stop, verify the tracked server PID/image/ctime if present;
+if absent, confirm absence without terminating unrelated processes.
+P2 V2 parity/cutover gates must pass on the exact reviewed SHA.
+P3 Canonical DB, registry and evidence need byte-verified recoverable backups.
+None of these retirement steps was executed by the extraction/review task.
 
-Steps (each reversible, in order):
-1. Stop serving: `dashboard stop` (tracked PID only, after P1 identity
-   proof) — do NOT uninstall code; confirm port free via `pick-port`
-   (read-only). This alone retires the HTTP surface with zero file
-   changes and is fully rolled back by `dashboard start`.
-2. File-level gating (BLOCKED, do not execute yet): requires first
-   extracting the shared helpers above out of `dashboard.py` and
-   re-pointing `control.py` imports, with the canonical suite green.
-   Only then may the HTTP handler/server/CLI be gated (never deleted).
-3. Keep registry, SQLite files, logs, and tests untouched throughout —
-   collector/telemetry paths do not depend on the HTTP server, but
-   `control` DOES depend on `dashboard` helpers (see blocker).
-4. Re-verify: V2 reads (SQLite readOnly + pure bridge) unaffected;
-   canonical suite green; pidfile absent; ports free.
+Steps (reversible, only after that retirement task is authorized):
+1. Stop serving through the existing tracked-PID dashboard stop path if
+   a verified owned server is running. Keep code installed. Confirm the old
+   server is absent afterward; restart through dashboard start for rollback.
+2. File-level gating remains PENDING: although control no longer imports the
+   HTTP module, require the completed parity gate and reviewed compatibility
+   before gating any handler/server/CLI. Do not delete or rename modules.
+3. Preserve registry, SQLite, logs and evidence. Canonical host-process
+   utilities remain independent of HTTP; legacy callers keep re-exports.
+4. Recheck V2 readonly SQLite and pure bridge, canonical tests and old-server
+   absence. Do not equate a free candidate port with proof all servers stopped.
 
-Rollback triggers: any V2 read regression, missing legacy field needed for
-audit, or operator request — restart the server, re-verify routes. No file
-is deleted or renamed at any step; no DB/registry/log mutation is part of
-retirement. Execution requires a separate explicit instruction (this task
-only proposes).
+Rollback triggers: a V2 read regression, missing audit field or operator
+request. Restore serving through the retained old dashboard and verify routes.
+No old listener/file was retired here; Start and operational gates are unchanged.

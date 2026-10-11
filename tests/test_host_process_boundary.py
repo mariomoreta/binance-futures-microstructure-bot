@@ -9,7 +9,8 @@ imports in control, H2 raises ImportError, H3 cannot import host_process.
 
   H1  control.py source contains no dashboard import (static boundary).
   H2  fresh-subprocess isolation: with `microstructure_probe.dashboard`
-      blocked by a meta-path hook, `control` imports and
+      blocked by a find_spec hook (negative control proves the blocker),
+      `control` imports and
       `own_creation_time()` resolves without touching the HTTP module.
   H3  compatibility: dashboard.X IS host_process.X (same function object,
       no second implementation) for all five helpers.
@@ -48,26 +49,33 @@ class ImportBoundaryTest(unittest.TestCase):
         repo = Path(pc.__file__).resolve().parent.parent.parent
         registry = os.environ.get("MICROPROBE_RUNTIME_FILE", "")
         script = (
-            "import sys\n"
-            "class _Block:\n"
-            "    def find_module(self, name, path=None):\n"
+            "import sys, importlib, importlib.abc\n"
+            "class _Block(importlib.abc.MetaPathFinder):\n"
+            "    def find_spec(self, name, path=None, target=None):\n"
             "        if name == 'microstructure_probe.dashboard':\n"
-            "            return self\n"
-            "    def load_module(self, name):\n"
-            "        raise ImportError('blocked HTTP module: ' + name)\n"
+            "            raise ImportError('blocked HTTP module: ' + name)\n"
             "sys.meta_path.insert(0, _Block())\n"
             "sys.path.insert(0, %r)\n"
+            "try:\n"
+            "    importlib.import_module('microstructure_probe.dashboard')\n"
+            "except ImportError as error:\n"
+            "    assert 'blocked HTTP module' in str(error)\n"
+            "else:\n"
+            "    raise AssertionError('HTTP import blocker ineffective')\n"
+            "print('BLOCK_VERIFIED')\n"
             "import microstructure_probe.host_process as hp\n"
             "import microstructure_probe.control as pc\n"
             "assert 'microstructure_probe.dashboard' not in sys.modules\n"
             "print('ctime:', pc.own_creation_time())\n"
             "print('root:', hp.repo_root())\n"
+            "assert 'microstructure_probe.dashboard' not in sys.modules\n"
             "print('OK')\n" % str(repo / "src"))
         proc = subprocess.run(
             [sys.executable, "-c", script], capture_output=True, text=True,
             timeout=60, env={**os.environ,
                              "MICROPROBE_RUNTIME_FILE": registry})
         self.assertEqual(proc.returncode, 0, proc.stderr[-2000:])
+        self.assertIn("BLOCK_VERIFIED", proc.stdout)
         self.assertIn("OK", proc.stdout)
         self.assertNotIn("blocked HTTP module", proc.stderr)
 
