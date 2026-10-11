@@ -1,13 +1,16 @@
-"""P1-14B.8 V2-51: concurrency between independent process owners.
+"""P1-14B.8 V2-51/V2-52: concurrency between independent process owners.
 
 Thread tests share one PID, so lease-pid fencing cannot distinguish owners.
 These tests use real spawned processes (distinct PIDs) with a hermetic temp
 registry (MICROPROBE_RUNTIME_FILE inherited):
 
-  M1  supervisor + sentinel owners heartbeat concurrently: every call
-      effectively writes (counted via the bool return), both timestamps
-      advance, distinctive 11/22 values survive, no silent failures, all
-      workers exit 0.
+  M1  supervisor + sentinel owners heartbeat concurrently from a shared
+      start barrier (true overlap, not sequential): every call effectively
+      writes (counted via the bool return), both final timestamps parse
+      and fall inside the test window [t0, t1] (explicit temporal
+      advancement), distinctive 11/22 values survive, no silent failures,
+      all workers exit 0. Bounded scope: 10 beats per owner, not a
+      long-term stability proof.
   M2  four processes racing claim_supervision elect exactly one winner.
   M3  four processes racing claim_sentinel elect exactly one winner.
 
@@ -43,7 +46,7 @@ def _run_record(pid=424243, state="RUNNING"):
 # Top-level workers (spawn pickling requires module-level functions).
 # ------------------------------------------------------------------
 
-def _sup_beat_worker(registry, out_queue, n):
+def _sup_beat_worker(registry, out_queue, n, barrier):
     import os as _os
     _os.environ["MICROPROBE_RUNTIME_FILE"] = registry
     from unittest import mock as _mock
@@ -55,6 +58,14 @@ def _sup_beat_worker(registry, out_queue, n):
             out_queue.put({"role": "supervisor", "pid": _os.getpid(),
                            "claimed": False, "wrote": 0,
                            "errors": ["claim-refused"]})
+            return
+        # Shared start barrier: both owners beat inside the same window.
+        try:
+            barrier.wait(timeout=120)
+        except Exception as exc:  # noqa: BLE001
+            out_queue.put({"role": "supervisor", "pid": _os.getpid(),
+                           "claimed": True, "wrote": 0,
+                           "errors": ["beat-barrier: %r" % (exc,)]})
             return
         wrote, errors = 0, []
         for _ in range(int(n)):
@@ -79,7 +90,7 @@ def _sup_beat_worker(registry, out_queue, n):
             pass
 
 
-def _sen_beat_worker(registry, out_queue, n):
+def _sen_beat_worker(registry, out_queue, n, barrier):
     import os as _os
     _os.environ["MICROPROBE_RUNTIME_FILE"] = registry
     from unittest import mock as _mock
@@ -91,6 +102,13 @@ def _sen_beat_worker(registry, out_queue, n):
             out_queue.put({"role": "sentinel", "pid": _os.getpid(),
                            "claimed": False, "wrote": 0,
                            "errors": ["claim-refused"]})
+            return
+        try:
+            barrier.wait(timeout=120)
+        except Exception as exc:  # noqa: BLE001
+            out_queue.put({"role": "sentinel", "pid": _os.getpid(),
+                           "claimed": True, "wrote": 0,
+                           "errors": ["beat-barrier: %r" % (exc,)]})
             return
         wrote, errors = 0, []
         for _ in range(int(n)):
@@ -203,6 +221,7 @@ def _drain(out_queue, count, timeout=120.0):
 
 class ProcessHeartbeatTest(unittest.TestCase):
     def test_independent_owners_both_advance(self):
+        from datetime import datetime, timedelta, timezone
         from microstructure_probe import control as pc
         tmp = Path(tempfile.mkdtemp(prefix="mpbeat_"))
         self.addCleanup(lambda: _rmtree(tmp))
@@ -212,11 +231,16 @@ class ProcessHeartbeatTest(unittest.TestCase):
         pc._write_registry(_run_record())
         ctx = multiprocessing.get_context("spawn")
         out_queue = ctx.Queue()
+        barrier = ctx.Barrier(2)
         n = 10
-        procs = [_spawn(ctx, _sup_beat_worker, registry, out_queue, n),
-                 _spawn(ctx, _sen_beat_worker, registry, out_queue, n)]
+        t0 = datetime.now(timezone.utc)
+        procs = [_spawn(ctx, _sup_beat_worker, registry, out_queue, n,
+                        barrier),
+                 _spawn(ctx, _sen_beat_worker, registry, out_queue, n,
+                        barrier)]
         for p in procs:
             p.join(timeout=180)
+        t1 = datetime.now(timezone.utc)
         for p in procs:
             self.assertFalse(p.is_alive())
             self.assertEqual(p.exitcode, 0)
@@ -243,6 +267,15 @@ class ProcessHeartbeatTest(unittest.TestCase):
                          {"rule": "none", "at": "t", "aborted": False})
         self.assertEqual(final["supervisor"]["pid"], by_role["supervisor"]["pid"])
         self.assertEqual(final["sentinel"]["pid"], by_role["sentinel"]["pid"])
+        # Explicit temporal advancement: both heartbeats parse and fall
+        # inside this test's window (2s tolerance covers ISO-second
+        # truncation plus spawn scheduling).
+        skew = timedelta(seconds=2)
+        for kind in ("supervisor", "sentinel"):
+            ts = datetime.fromisoformat(
+                str(final[kind]["last_check_at"]))
+            self.assertGreaterEqual(ts, t0 - skew)
+            self.assertLessEqual(ts, t1 + skew)
 
 
 class ProcessClaimRaceTest(unittest.TestCase):

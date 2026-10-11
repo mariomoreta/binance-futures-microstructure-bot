@@ -1406,3 +1406,54 @@ deterministically, no market runs launched:
   beyond the audited writers.
 - Window scope: no new supervised window on this corrected SHA (per bounds);
   historical windows stay historical; corrected-code longevity UNDEMONSTRATED.
+
+## P1-14B.8 V2-52 integration (bounded correction, 2026-10-11) — RESULT: DONE (acotado)
+
+Frontend review `066577e:docs/DASHBOARD_V2_52_INTEGRATION_REVIEW.md` (backend
+`55efaa2`) with mocked reproductions (`scripts/review-p1-14b8-v2-52.py`,
+`design/qa/v2-52/backend-reproductions.json`). H1+H2 fixed with
+failing-first hermetic regressions; `status_readonly()` and contracts kept:
+
+- H1 native Windows termination: `TerminateProcess`/`CloseHandle` now carry
+  explicit HANDLE-width (`c_void_p`) argtypes/restype with BOOL checked; a
+  `0`/exception returns False with a bounded GetLastError record
+  (`_LAST_NATIVE_ERROR`, code + timestamp, single overwritten entry) --
+  never reported as success. Handle closed on success, refusal and
+  exception paths alike; creation verification and termination stay on the
+  same handle inside the registry lock. Missing ctime falls back to
+  handle-liveness only (open + queryable times terminate; unqueryable
+  refuses) -- PID-reuse NOT excluded there, documented residual.
+  Precision: the finding never proved a live process falsely marked
+  ABORTED (callers verify disappearance + 10s wait); the demonstrated fault
+  was accepting native refusal as success. Tests
+  `tests/test_native_terminate.py` (9: matching/mismatched ctime,
+  GetProcessTimes refusal, TerminateProcess=0, exception, open failure,
+  >32-bit handle intact `0x100000123`, missing-ctime fallback, 2 POSIX).
+  Fail-before on `55efaa2`: signatures unconfigured, `0` returned True.
+- H2 parent/child start race: `_commit_start` recognizes the own
+  just-spawned child by PID + creation-time (captured once) and adopts its
+  RUNNING/STARTING record verbatim -- no kill, no STARTING overwrite,
+  evidence preserved (byte-preserving: adoption writes nothing). Held
+  enforcement markers are never adopted. Genuinely foreign runs and reused
+  PIDs (same PID, different ctime) are still refused with exactly one
+  orphan-cleanup kill; write failures kill once. Tests
+  `tests/test_start_race.py` (5: parent-first, child-first, foreign-winner
+  via preflight→commit injection, reused-PID, write failure; response +
+  final record + kill count asserted). Fail-before: child-first killed its
+  own child and returned started=False. Not extended to the V2 supervised
+  transactional launch (separate).
+- C1 concurrency precision: M1 heartbeat workers now rendezvous on a shared
+  start barrier (true overlap) and the parent asserts both final
+  `last_check_at` parse inside the test window [t0, t1] (explicit temporal
+  advancement, 2s tolerance for ISO-second truncation). Scope stays bounded
+  (10 beats/owner; no long-term stability claim).
+- Suite: `python run_tests.py` → 840/840 OK (826 + 9 native + 5 start-race;
+  M1 strengthened in place). No probes, P1-14C, long runs, paper, trading
+  or Start enablement. SQLite/logs/evidence preserved. V2/main and
+  SUCCESS_GATES intact. `status_readonly()` kept in all GET paths.
+  Transactional supervised start stays separate.
+- Residuals (explicit): POSIX pre-kill recheck window (no handle API);
+  ctime-None fallback excludes PID-reuse proof; `_owns_lease` pid-only kept
+  for heartbeats; `status()` CLI/`stop_probe` stale paths mutate by design
+  (fenced). No general PASS, no demonstrated longevity, no authorization
+  for new runs.

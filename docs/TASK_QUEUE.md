@@ -193,9 +193,20 @@ the dashboard exists. No classifier before raw-feature dashboard validation.
   readonly dashboard GET path, locked `try_register`/`start_probe`/
   `_mark_terminal`/`stop_probe`, multiprocess heartbeat/claim proof
   (counted writes, one winner, all exit 0). Suite 826/826 OK. No probes,
-  P1-14C, long runs, paper or Start. DB/logs/evidence preserved. V2/main
+  P1-14C, long runs,   paper or Start. DB/logs/evidence preserved. V2/main
   untouched. No new supervised window on the corrected SHA. Transactional
   supervised start still PENDING/separate. SUCCESS_GATES untouched.
+
+- `P1-14B.8-V2-52` (2026-10-11) NATIVE + START-RACE BOUNDED CORRECTION — **DONE (acotado)**.
+  Frontend review `066577e` H1/H2 fixed with failing-first hermetic tests:
+  explicit HANDLE-width native signatures + BOOL propagation + bounded
+  GetLastError + guaranteed close (9 tests; `0` returned True on `55efaa2`),
+  same-child PID+ctime adoption preserving RUNNING+evidence with zero kills
+  (5 tests; child-first killed on `55efaa2`), foreign/reused still refused
+  with exactly one orphan kill, C1 barrier + [t0,t1] advancement proof.
+  Suite 840/840 OK. No probes, P1-14C, long runs, paper, trading or Start.
+  V2/main/SUCCESS_GATES intact. `status_readonly()` kept. Transactional
+  supervised start still separate.
 
 - `P1-10R` PROLONGED ≥6H SOAK RE-RUN — P1-10 FAIL stays FAIL (truncated at
   4.91h); re-run with dashboard live, blocking survivable launch, merged
@@ -424,6 +435,14 @@ strategies (P3), paper engine/positions (P4), execution (P5).
 ## LAST_VERIFICATION
 
 
+
+- 2026-10-11 (P1-14B.8-V2-52): `python run_tests.py` → 840/840 OK (826 + 9 native + 5 start-race).
+  H1/H2 corrected per frontend review `066577e` (key cases fail on `55efaa2`,
+  all pass corrected; C1 barrier + window proof strengthened in place).
+  No probes, P1-14C, long runs, paper, trading or Start; DB/logs/evidence
+  preserved; V2/main/SUCCESS_GATES intact; `status_readonly()` kept. No new
+  supervised window on the corrected SHA. Transactional supervised start
+  still separate. Next: backend SHA review; P1-14C needs explicit instruction.
 
 - 2026-10-11 (P1-14B.8-V2-51): `python run_tests.py` → 826/826 OK (808 + 8 boundary + 7 readonly + 3 multiprocess).
   Operation boundary + readonly corrected per frontend review `35401f9`

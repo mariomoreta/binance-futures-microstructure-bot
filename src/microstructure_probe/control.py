@@ -47,6 +47,11 @@ STATES = ("STOPPED", "STARTING", "RUNNING", "STOPPING",
 
 _LOG_HANDLES: Dict[int, Any] = {}
 
+# Bounded native-API diagnostic (V2-52 H1): last Windows termination refusal
+# (GetLastError code + UTC timestamp). Single entry, overwritten on each
+# refusal; never PII, never a process list. Empty when no refusal recorded.
+_LAST_NATIVE_ERROR: Dict[str, Any] = {}
+
 
 def registry_path() -> Path:
     """Registry file, overridable for hermetic tests."""
@@ -589,6 +594,15 @@ def start_probe(duration_seconds: Optional[int] = None,
             pass
         return {"started": False, "error": f"spawn failed: {exc}"}
     _LOG_HANDLES[proc.pid] = stdout_fh
+    # Identity of OUR just-spawned child, captured once (V2-52 H2): if the
+    # child self-registers RUNNING before our STARTING commit lands, the
+    # commit must recognize it by PID + creation-time instead of mistaking
+    # it for a foreign run. PID reuse within microseconds of our own spawn
+    # is implausible; equal ctime (including None == None) is required.
+    try:
+        child_ctime = own_creation_time(proc.pid)
+    except Exception:
+        child_ctime = None
     # Locked STARTING commit (V2-51): refuse a live run or a held
     # enforcement STOPPING observed fresh; terminal/stale records yield to
     # the new launch. A spawn failure after Popen is the caller's orphan to
@@ -596,15 +610,29 @@ def start_probe(duration_seconds: Optional[int] = None,
     # still our STARTING (never stealing another writer's state).
     def _commit_start(rec):
         if rec and _is_active_state(rec.get("state")) and is_canonical_pid(rec):
-            return None, False
+            # Same-child adoption (V2-52 H2): our own spawn already
+            # self-registered RUNNING (or STARTING). Adopt it verbatim --
+            # no kill, no STARTING overwrite, evidence preserved. A held
+            # enforcement marker on it is NOT adopted (refuse instead).
+            try:
+                same = (int(rec.get("pid")) == int(proc.pid)
+                        and rec.get("create_time") == child_ctime)
+            except (TypeError, ValueError):
+                same = False
+            if same and rec.get("state") in ("STARTING", "RUNNING") \
+                    and not rec.get("stopping_by"):
+                return None, {"started": True, "adopted": True,
+                              "evidence": rec.get("evidence"),
+                              "state": rec.get("state")}
+            return None, {"started": False}
         if rec and rec.get("state") == "STOPPING" and rec.get("stopping_by"):
-            return None, False
+            return None, {"started": False}
         return {
             "schema": REGISTRY_SCHEMA,
             "writer": "control/1",
             "state": "STARTING",
             "pid": proc.pid,
-            "create_time": own_creation_time(proc.pid),
+            "create_time": child_ctime,
             "started_at": _utc_now_iso(),
             "mode": "observe",
             "command": argv,
@@ -614,11 +642,19 @@ def start_probe(duration_seconds: Optional[int] = None,
             "preset": preset if preset == "validation-6h" else "standard",
             "evidence": evidence,
             "last_exit": None,
-        }, True
+        }, {"started": True, "adopted": False}
     try:
-        wrote, _ = update_registry(_commit_start)
+        wrote, outcome = update_registry(_commit_start)
     except OSError:
-        wrote = False
+        wrote, outcome = False, {}
+    if isinstance(outcome, dict) and outcome.get("adopted"):
+        # Own child won the race: its RUNNING record + evidence stand as
+        # stored (byte-preserving -- nothing was written). No kill.
+        return {"started": True, "pid": proc.pid, "mode": "observe",
+                "duration_seconds": duration,
+                "preset": preset if preset == "validation-6h" else "standard",
+                "evidence": outcome.get("evidence"),
+                "adopted_child_registration": True}
     if not wrote:
         try:
             stdout_fh.close()
@@ -781,19 +817,40 @@ def stop_probe(requester: str = "agent") -> Dict[str, Any]:
     return {"stopped": True, "pid": pid}
 
 
+def _record_native_error() -> None:
+    """Store one bounded Windows error code (GetLastError + timestamp)."""
+    try:
+        import ctypes as _ct
+        code = int(_ct.windll.kernel32.GetLastError())
+    except Exception:
+        code = -1
+    try:
+        _LAST_NATIVE_ERROR.clear()
+        _LAST_NATIVE_ERROR.update({"code": code, "at": _utc_now_iso()})
+    except Exception:
+        pass
+
+
 def _terminate_verified_pid(pid: int,
                               expected_ctime: Optional[str] = None) -> bool:
     """Terminate ONLY the verified OS process; False when refused.
 
     Handle-bound identity (V2-51): on Windows the same OpenProcess handle
     is used to read creation time (GetProcessTimes) and to terminate, so a
-    PID reused between verification and kill cannot be hit. On POSIX the
-    pre-kill recheck (pid_is_ours immediately before os.kill) narrows the
-    reuse window to microseconds -- documented residual, no handle API.
+    PID reused between verification and kill cannot be hit. Native
+    signatures (V2-52 H1) are explicit HANDLE-width (c_void_p) with BOOL
+    results checked: a TerminateProcess refusal (0/exception) returns False
+    with a bounded GetLastError record -- never reported as success. The
+    handle is closed on success, refusal and exception paths alike.
+    Missing expected_ctime falls back to handle-liveness only (open +
+    queryable times): PID-reuse is then NOT excluded -- documented
+    residual, not complete protection. On POSIX the pre-kill recheck
+    (pid_is_ours immediately before os.kill) narrows the reuse window to
+    microseconds -- documented residual, no handle API.
     Callers must hold the registry lock across their final verification and
     this call so a registry takeover cannot interleave at the boundary.
-    Returns True when termination was attempted, False when identity failed
-    (nothing touched).
+    Returns True when termination was issued, False when identity failed or
+    the native API refused (nothing terminated).
     """
     try:
         target = int(pid)
@@ -805,24 +862,34 @@ def _terminate_verified_pid(pid: int,
             kernel32 = _ct.windll.kernel32  # type: ignore[attr-defined]
         except Exception:
             return False
+        try:
+            kernel32.OpenProcess.argtypes = [_ct.c_ulong, _ct.c_bool,
+                                             _ct.c_ulong]
+            kernel32.OpenProcess.restype = _ct.c_void_p
+        except Exception:
+            pass
+        try:
+            kernel32.TerminateProcess.argtypes = [_ct.c_void_p, _ct.c_uint]
+            kernel32.TerminateProcess.restype = _ct.c_bool
+        except Exception:
+            pass
+        try:
+            kernel32.CloseHandle.argtypes = [_ct.c_void_p]
+            kernel32.CloseHandle.restype = _ct.c_bool
+        except Exception:
+            pass
+        try:
+            kernel32.GetLastError.argtypes = []
+            kernel32.GetLastError.restype = _ct.c_ulong
+        except Exception:
+            pass
         handle = None
         try:
             access = 0x0001 | 0x1000  # TERMINATE | QUERY_LIMITED
-            try:
-                kernel32.OpenProcess.argtypes = [_ct.c_ulong, _ct.c_bool,
-                                                 _ct.c_ulong]
-                kernel32.OpenProcess.restype = _ct.c_void_p
-            except Exception:
-                pass
             handle = kernel32.OpenProcess(access, False, target)
             if not handle:
                 return False
             if expected_ctime is not None:
-                try:
-                    from .dashboard import _creation_time_ctypes as _ct_time
-                    _ = _ct_time  # handle path below re-reads on one handle
-                except Exception:
-                    pass
                 # Verify creation time on THIS handle (no reopen: no reuse).
                 try:
                     class _FT(_ct.Structure):
@@ -852,9 +919,34 @@ def _terminate_verified_pid(pid: int,
                         return False
                 except Exception:
                     return False
+            else:
+                # Documented fallback: no expected creation time, so only
+                # handle queryability is verified (live-handle proof).
+                try:
+                    class _FTQ(_ct.Structure):
+                        _fields_ = [("dwLowDateTime", _ct.c_ulong),
+                                    ("dwHighDateTime", _ct.c_ulong)]
+                    try:
+                        kernel32.GetProcessTimes.argtypes = [
+                            _ct.c_void_p, _ct.POINTER(_FTQ), _ct.POINTER(_FTQ),
+                            _ct.POINTER(_FTQ), _ct.POINTER(_FTQ)]
+                        kernel32.GetProcessTimes.restype = _ct.c_bool
+                    except Exception:
+                        pass
+                    q_c, q_e, q_k, q_u = (_FTQ() for _ in range(4))
+                    if not kernel32.GetProcessTimes(
+                            handle, _ct.byref(q_c), _ct.byref(q_e),
+                            _ct.byref(q_k), _ct.byref(q_u)):
+                        return False
+                except Exception:
+                    return False
             try:
-                kernel32.TerminateProcess(handle, 0)
+                issued = kernel32.TerminateProcess(handle, 0)
             except Exception:
+                _record_native_error()
+                return False
+            if not issued:
+                _record_native_error()
                 return False
             return True
         finally:

@@ -889,3 +889,31 @@ Tests: 8 boundary + 7 readonly + 3 multiprocess (15 fail on `0786617`);
 suite 826/826 OK. No probes, P1-14C, long runs, paper or Start; DB/logs
 preserved; V2/main untouched; SUCCESS_GATES untouched. No new supervised
 window on the corrected SHA (historical windows stay historical).
+
+## 2026-10-11 -- P1-14B.8 V2-52: native refusal propagation + own-child adoption
+
+Starting at SHA `55efaa2` (clean tree). Frontend review
+`066577e:docs/DASHBOARD_V2_52_INTEGRATION_REVIEW.md` with mocked
+reproductions; H1+H2 fixed failing-first, no market runs:
+
+1. Native termination accepted refusal as success (TerminateProcess BOOL
+   ignored, HANDLE-width signatures missing). Now explicit `c_void_p`
+   signatures for TerminateProcess/CloseHandle, BOOL checked, `0`/exception
+   returns False with bounded `_LAST_NATIVE_ERROR` (code + timestamp),
+   handle closed on every path, verify+kill on one handle inside the
+   registry lock. Missing ctime = handle-liveness-only fallback,
+   expressly documented (PID-reuse not excluded there). Precision kept:
+   the repro never showed a false ABORTED (callers verify disappearance);
+   the fault was success-on-refusal.
+2. Parent start killed its own already-registered child (commit mistook it
+   for a foreign run). `_commit_start` now adopts same-PID+ctime
+   RUNNING/STARTING records verbatim (no write, no kill, evidence kept);
+   held enforcement markers never adopted; foreign/reused-PID still refused
+   with exactly one orphan kill; write failures kill once. Scoped away from
+   the V2 supervised transactional launch.
+3. C1: M1 heartbeat workers share a start barrier and assert both stamps
+   inside [t0, t1]; wording bounded to 10 beats/owner.
+
+Tests: 9 native + 5 start-race (key cases fail on `55efaa2`); suite
+840/840 OK. V2/main/SUCCESS_GATES intact; `status_readonly()` kept in GETs;
+no new supervised window (longevity UNDEMONSTRATED).
