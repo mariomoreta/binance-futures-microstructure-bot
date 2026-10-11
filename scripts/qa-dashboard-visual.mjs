@@ -144,6 +144,31 @@ try {
         if(route.includes('q=LUMIA')&&!await evaluate("!!document.querySelector('main a[href=\"/symbol/LUMIAUSDT\"]')"))throw Error('Search result missing');
         if(route.includes('q=ZZZNODATA')&&!await evaluate("document.querySelector('main').innerText.includes('No matching retained records')"))throw Error('Empty search fabricated data');
       }
+      if(round==="v2-68"&&route.startsWith("historical-research/coverage")){
+        const evidence=await evaluate("({source:document.querySelector('main').innerText.includes('HISTORICAL_SQLITE_READONLY'),unknown:document.querySelector('main').innerText.includes('No retained records match this view'),tables:document.querySelectorAll('main table').length,alerts:[...document.querySelectorAll('main [role=alert]')].map(e=>e.innerText),filter:document.querySelector('input[name=symbol]')?.value,definition:document.querySelector('select[name=definition]')?.value,archive:!!document.querySelector('main a[href=\"/historical-research\"]'),readStatus:document.querySelector('main [role=status]')?.textContent})");
+        if(!evidence.archive)throw Error('Missing research navigation');
+        if(route.includes('definition=INVALID')){if(evidence.tables||!evidence.alerts.some(x=>x.includes('Invalid filter')))throw Error('Invalid filter not rejected')}
+        else if(route.includes('ZZZNODATA')){if(evidence.tables||!evidence.unknown)throw Error('Unknown historical token fabricated rows')}
+        else {if(!evidence.source||evidence.tables<3||!evidence.readStatus?.includes('Historical SQLite'))throw Error('Historical source contract missing');
+          const query=new URL(base+'/'+route).search;
+          const dto=await evaluate(`fetch('/api/v1/historical-coverage${query}',{cache:'no-store'}).then(r=>r.json())`);
+          if(!dto.available||dto.source!=='HISTORICAL_SQLITE_READONLY'||dto.historical_schema_version!==2||dto.filter.symbol!==evidence.filter||dto.filter.definition!==evidence.definition)throw Error('History filtered API disagrees with view');
+          if(route.includes('symbol=BTCUSDT')&&dto.coverage.some(x=>x.symbol!=='BTCUSDT'))throw Error('Wrong-symbol history');
+          evidence.counts=dto.counts;
+          if(width===390){
+            await call("Input.dispatchKeyEvent",{type:"keyDown",key:"Tab",code:"Tab",windowsVirtualKeyCode:9});await call("Input.dispatchKeyEvent",{type:"keyUp",key:"Tab",code:"Tab",windowsVirtualKeyCode:9});
+            const region=await evaluate("(()=>{const e=document.querySelector('[aria-label=\"Historical coverage table\"]');e.focus();e.scrollLeft=0;return {focused:document.activeElement===e,outline:getComputedStyle(e).outlineStyle,overflow:e.scrollWidth>e.clientWidth}})()");
+            await call('Input.dispatchKeyEvent',{type:'keyDown',key:'ArrowRight',code:'ArrowRight',windowsVirtualKeyCode:39});await call('Input.dispatchKeyEvent',{type:'keyUp',key:'ArrowRight',code:'ArrowRight',windowsVirtualKeyCode:39});await delay(200);
+            const moved=await evaluate("document.querySelector('[aria-label=\"Historical coverage table\"]').scrollLeft>0");
+            if(!region.focused||region.outline!=='solid'||!moved)throw Error('Historical table keyboard access failed '+JSON.stringify({...region,moved}));evidence.keyboard={...region,moved};
+            await evaluate("document.activeElement.scrollLeft=0;document.activeElement.blur();window.scrollTo(0,0)");
+          }
+        }
+        x.historicalEvidence=evidence;
+      }
+      if(round==="v2-68"&&route.startsWith('symbol/')){
+        if(!await evaluate(`!!document.querySelector('main a[href=\"/historical-research/coverage?symbol=${route.split('/')[1]}\"]')`))throw Error('Missing token history handoff');
+      }
       const shot=await call("Page.captureScreenshot",{format:"png"});
       const name=route.replaceAll("/","-").replace(/[?=&%:]/g,"-")+"-"+width;
       await writeFile(path.join(out,name+".png"),Buffer.from(shot.data,"base64"));

@@ -1,0 +1,62 @@
+{
+  "results": [
+    {
+      "route": "historical-research",
+      "title": "Historical Research",
+      "width": 1672,
+      "scroll": 1657,
+      "mains": 1,
+      "loading": false,
+      "active": [
+        "/historical-research"
+      ],
+      "height": 3638,
+      "alerts": [],
+      "scrollTables": 0
+    },
+    {
+      "route": "system",
+      "title": "System",
+      "width": 1672,
+      "scroll": 1657,
+      "mains": 1,
+      "loading": false,
+      "active": [
+        "/system"
+      ],
+      "height": 1384,
+      "alerts": [],
+      "scrollTables": 0
+    },
+    {
+      "route": "historical-research",
+      "title": "Historical Research",
+      "width": 390,
+      "scroll": 375,
+      "mains": 1,
+      "loading": false,
+      "active": [
+        "/historical-research"
+      ],
+      "height": 4227,
+      "alerts": [],
+      "scrollTables": 2
+    },
+    {
+      "route": "system",
+      "title": "System",
+      "width": 390,
+      "scroll": 375,
+      "mains": 1,
+      "loading": false,
+      "active": [
+        "/system"
+      ],
+      "height": 3100,
+      "alerts": [],
+      "scrollTables": 0
+    }
+  ],
+  "errors": [],
+  "unavailable": []
+}

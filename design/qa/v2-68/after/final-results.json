@@ -1,0 +1,1045 @@
+{
+  "results": [
+    {
+      "route": "overview",
+      "title": "Overview",
+      "width": 1672,
+      "scroll": 1657,
+      "mains": 1,
+      "loading": false,
+      "active": [
+        "/overview"
+      ],
+      "height": 1887,
+      "alerts": [],
+      "scrollTables": 0
+    },
+    {
+      "route": "movers",
+      "title": "Market Movers",
+      "width": 1672,
+      "scroll": 1657,
+      "mains": 1,
+      "loading": false,
+      "active": [
+        "/movers"
+      ],
+      "height": 2011,
+      "alerts": [],
+      "scrollTables": 0,
+      "visualLayout": {
+        "tableFits": true,
+        "rows": 8,
+        "rankingColumns": 4
+      }
+    },
+    {
+      "route": "movers/verified",
+      "title": "Observed Market Movers",
+      "width": 1672,
+      "scroll": 1657,
+      "mains": 1,
+      "loading": false,
+      "active": [
+        "/movers"
+      ],
+      "height": 1769,
+      "alerts": [],
+      "scrollTables": 0
+    },
+    {
+      "route": "opportunities",
+      "title": "Research Opportunities",
+      "width": 1672,
+      "scroll": 1657,
+      "mains": 1,
+      "loading": false,
+      "active": [
+        "/opportunities"
+      ],
+      "height": 1745,
+      "alerts": [],
+      "scrollTables": 0
+    },
+    {
+      "route": "opportunities/observations",
+      "title": "Persisted Research Observations",
+      "width": 1672,
+      "scroll": 1657,
+      "mains": 1,
+      "loading": false,
+      "active": [
+        "/opportunities"
+      ],
+      "height": 3832,
+      "alerts": [],
+      "scrollTables": 0
+    },
+    {
+      "route": "opportunities/prospective",
+      "title": "Prospective Research",
+      "width": 1672,
+      "scroll": 1657,
+      "mains": 1,
+      "loading": false,
+      "active": [
+        "/opportunities"
+      ],
+      "height": 3416,
+      "alerts": [],
+      "scrollTables": 0
+    },
+    {
+      "route": "symbol/BTCUSDT",
+      "title": "BTCUSDT",
+      "width": 1672,
+      "scroll": 1657,
+      "mains": 1,
+      "loading": false,
+      "active": [
+        "/movers"
+      ],
+      "height": 1913,
+      "alerts": [],
+      "scrollTables": 0
+    },
+    {
+      "route": "symbol/ORCAUSDT",
+      "title": "ORCAUSDT",
+      "width": 1672,
+      "scroll": 1657,
+      "mains": 1,
+      "loading": false,
+      "active": [
+        "/movers"
+      ],
+      "height": 1834,
+      "alerts": [],
+      "scrollTables": 0
+    },
+    {
+      "route": "historical-research",
+      "title": "Prospective archive",
+      "width": 1672,
+      "scroll": 1657,
+      "mains": 1,
+      "loading": false,
+      "active": [
+        "/historical-research"
+      ],
+      "height": 3719,
+      "alerts": [],
+      "scrollTables": 0
+    },
+    {
+      "route": "historical-research/coverage",
+      "title": "Historical coverage & studies",
+      "width": 1672,
+      "scroll": 1657,
+      "mains": 1,
+      "loading": false,
+      "active": [
+        "/historical-research"
+      ],
+      "height": 2407,
+      "alerts": [],
+      "scrollTables": 0,
+      "historicalEvidence": {
+        "source": true,
+        "unknown": false,
+        "tables": 3,
+        "alerts": [],
+        "filter": "",
+        "definition": "",
+        "archive": true,
+        "readStatus": "Historical SQLite · read only · read 2026-10-11T19:36:47.489Z · refresh every 15 s; bounded retry on failure · Read time is not observation time.",
+        "counts": {
+          "contract_bars": 17270,
+          "mark_bars": 2157,
+          "events": 2831,
+          "outcomes": 16986
+        }
+      }
+    },
+    {
+      "route": "historical-research/coverage?symbol=BTCUSDT",
+      "title": "Historical coverage & studies",
+      "width": 1672,
+      "scroll": 1657,
+      "mains": 1,
+      "loading": false,
+      "active": [
+        "/historical-research"
+      ],
+      "height": 2297,
+      "alerts": [],
+      "scrollTables": 0,
+      "historicalEvidence": {
+        "source": true,
+        "unknown": false,
+        "tables": 3,
+        "alerts": [],
+        "filter": "BTCUSDT",
+        "definition": "",
+        "archive": true,
+        "readStatus": "Historical SQLite · read only · read 2026-10-11T19:36:49.731Z · refresh every 15 s; bounded retry on failure · Read time is not observation time.",
+        "counts": {
+          "contract_bars": 7917,
+          "mark_bars": 719,
+          "events": 476,
+          "outcomes": 2856
+        }
+      }
+    },
+    {
+      "route": "historical-research/coverage?symbol=ORCAUSDT",
+      "title": "Historical coverage & studies",
+      "width": 1672,
+      "scroll": 1657,
+      "mains": 1,
+      "loading": false,
+      "active": [
+        "/historical-research"
+      ],
+      "height": 2077,
+      "alerts": [],
+      "scrollTables": 0,
+      "historicalEvidence": {
+        "source": true,
+        "unknown": false,
+        "tables": 3,
+        "alerts": [],
+        "filter": "ORCAUSDT",
+        "definition": "",
+        "archive": true,
+        "readStatus": "Historical SQLite · read only · read 2026-10-11T19:36:52.135Z · refresh every 15 s; bounded retry on failure · Read time is not observation time.",
+        "counts": {
+          "contract_bars": 719,
+          "mark_bars": 0,
+          "events": 605,
+          "outcomes": 3630
+        }
+      }
+    },
+    {
+      "route": "historical-research/coverage?symbol=ZZZNODATAUSDT",
+      "title": "Historical coverage & studies",
+      "width": 1672,
+      "scroll": 1657,
+      "mains": 1,
+      "loading": false,
+      "active": [
+        "/historical-research"
+      ],
+      "height": 1374,
+      "alerts": [],
+      "scrollTables": 0,
+      "historicalEvidence": {
+        "source": true,
+        "unknown": true,
+        "tables": 0,
+        "alerts": [],
+        "filter": "ZZZNODATAUSDT",
+        "definition": "",
+        "archive": true,
+        "readStatus": "Historical SQLite · read only · read 2026-10-11T19:36:54.253Z · refresh every 15 s; bounded retry on failure · Read time is not observation time."
+      }
+    },
+    {
+      "route": "historical-research/coverage?definition=INVALID",
+      "title": "Historical coverage & studies",
+      "width": 1672,
+      "scroll": 1672,
+      "mains": 1,
+      "loading": false,
+      "active": [
+        "/historical-research"
+      ],
+      "height": 941,
+      "alerts": [
+        "Invalid filter. Use an ASCII symbol of 2–32 letters/digits and a listed event definition. No source query was made."
+      ],
+      "scrollTables": 0,
+      "historicalEvidence": {
+        "source": false,
+        "unknown": false,
+        "tables": 0,
+        "alerts": [
+          "Invalid filter. Use an ASCII symbol of 2–32 letters/digits and a listed event definition. No source query was made."
+        ],
+        "filter": "",
+        "definition": "",
+        "archive": true
+      }
+    },
+    {
+      "route": "market-archive",
+      "title": "Market & Runtime Archive",
+      "width": 1672,
+      "scroll": 1657,
+      "mains": 1,
+      "loading": false,
+      "active": [
+        "/market-archive"
+      ],
+      "height": 1206,
+      "alerts": [],
+      "scrollTables": 0
+    },
+    {
+      "route": "market-lab",
+      "title": "Historical Market Lab",
+      "width": 1672,
+      "scroll": 1657,
+      "mains": 1,
+      "loading": false,
+      "active": [
+        "/market-lab"
+      ],
+      "height": 1727,
+      "alerts": [],
+      "scrollTables": 0
+    },
+    {
+      "route": "system",
+      "title": "System",
+      "width": 1672,
+      "scroll": 1657,
+      "mains": 1,
+      "loading": false,
+      "active": [
+        "/system"
+      ],
+      "height": 1384,
+      "alerts": [],
+      "scrollTables": 0
+    },
+    {
+      "route": "backtest",
+      "title": "Backtest (future)",
+      "width": 1672,
+      "scroll": 1657,
+      "mains": 1,
+      "loading": false,
+      "active": [
+        "/backtest"
+      ],
+      "height": 975,
+      "alerts": [],
+      "scrollTables": 0
+    },
+    {
+      "route": "paper-lab",
+      "title": "Paper Lab (future)",
+      "width": 1672,
+      "scroll": 1657,
+      "mains": 1,
+      "loading": false,
+      "active": [
+        "/paper-lab"
+      ],
+      "height": 1108,
+      "alerts": [],
+      "scrollTables": 0
+    },
+    {
+      "route": "overview",
+      "title": "Overview",
+      "width": 1366,
+      "scroll": 1351,
+      "mains": 1,
+      "loading": false,
+      "active": [
+        "/overview"
+      ],
+      "height": 2099,
+      "alerts": [],
+      "scrollTables": 0
+    },
+    {
+      "route": "movers",
+      "title": "Market Movers",
+      "width": 1366,
+      "scroll": 1351,
+      "mains": 1,
+      "loading": false,
+      "active": [
+        "/movers"
+      ],
+      "height": 2063,
+      "alerts": [],
+      "scrollTables": 0,
+      "visualLayout": {
+        "tableFits": true,
+        "rows": 8,
+        "rankingColumns": 4
+      }
+    },
+    {
+      "route": "movers/verified",
+      "title": "Observed Market Movers",
+      "width": 1366,
+      "scroll": 1351,
+      "mains": 1,
+      "loading": false,
+      "active": [
+        "/movers"
+      ],
+      "height": 1769,
+      "alerts": [],
+      "scrollTables": 0
+    },
+    {
+      "route": "opportunities",
+      "title": "Research Opportunities",
+      "width": 1366,
+      "scroll": 1351,
+      "mains": 1,
+      "loading": false,
+      "active": [
+        "/opportunities"
+      ],
+      "height": 1745,
+      "alerts": [],
+      "scrollTables": 0
+    },
+    {
+      "route": "opportunities/observations",
+      "title": "Persisted Research Observations",
+      "width": 1366,
+      "scroll": 1351,
+      "mains": 1,
+      "loading": false,
+      "active": [
+        "/opportunities"
+      ],
+      "height": 3847,
+      "alerts": [],
+      "scrollTables": 0
+    },
+    {
+      "route": "opportunities/prospective",
+      "title": "Prospective Research",
+      "width": 1366,
+      "scroll": 1351,
+      "mains": 1,
+      "loading": false,
+      "active": [
+        "/opportunities"
+      ],
+      "height": 3486,
+      "alerts": [],
+      "scrollTables": 0
+    },
+    {
+      "route": "symbol/BTCUSDT",
+      "title": "BTCUSDT",
+      "width": 1366,
+      "scroll": 1351,
+      "mains": 1,
+      "loading": false,
+      "active": [
+        "/movers"
+      ],
+      "height": 1946,
+      "alerts": [],
+      "scrollTables": 0
+    },
+    {
+      "route": "symbol/ORCAUSDT",
+      "title": "ORCAUSDT",
+      "width": 1366,
+      "scroll": 1351,
+      "mains": 1,
+      "loading": false,
+      "active": [
+        "/movers"
+      ],
+      "height": 1869,
+      "alerts": [],
+      "scrollTables": 0
+    },
+    {
+      "route": "historical-research",
+      "title": "Prospective archive",
+      "width": 1366,
+      "scroll": 1351,
+      "mains": 1,
+      "loading": false,
+      "active": [
+        "/historical-research"
+      ],
+      "height": 3719,
+      "alerts": [],
+      "scrollTables": 0
+    },
+    {
+      "route": "historical-research/coverage",
+      "title": "Historical coverage & studies",
+      "width": 1366,
+      "scroll": 1351,
+      "mains": 1,
+      "loading": false,
+      "active": [
+        "/historical-research"
+      ],
+      "height": 2426,
+      "alerts": [],
+      "scrollTables": 0,
+      "historicalEvidence": {
+        "source": true,
+        "unknown": false,
+        "tables": 3,
+        "alerts": [],
+        "filter": "",
+        "definition": "",
+        "archive": true,
+        "readStatus": "Historical SQLite · read only · read 2026-10-11T19:37:31.673Z · refresh every 15 s; bounded retry on failure · Read time is not observation time.",
+        "counts": {
+          "contract_bars": 17270,
+          "mark_bars": 2157,
+          "events": 2831,
+          "outcomes": 16986
+        }
+      }
+    },
+    {
+      "route": "historical-research/coverage?symbol=BTCUSDT",
+      "title": "Historical coverage & studies",
+      "width": 1366,
+      "scroll": 1351,
+      "mains": 1,
+      "loading": false,
+      "active": [
+        "/historical-research"
+      ],
+      "height": 2316,
+      "alerts": [],
+      "scrollTables": 0,
+      "historicalEvidence": {
+        "source": true,
+        "unknown": false,
+        "tables": 3,
+        "alerts": [],
+        "filter": "BTCUSDT",
+        "definition": "",
+        "archive": true,
+        "readStatus": "Historical SQLite · read only · read 2026-10-11T19:37:33.747Z · refresh every 15 s; bounded retry on failure · Read time is not observation time.",
+        "counts": {
+          "contract_bars": 7917,
+          "mark_bars": 719,
+          "events": 476,
+          "outcomes": 2856
+        }
+      }
+    },
+    {
+      "route": "historical-research/coverage?symbol=ORCAUSDT",
+      "title": "Historical coverage & studies",
+      "width": 1366,
+      "scroll": 1351,
+      "mains": 1,
+      "loading": false,
+      "active": [
+        "/historical-research"
+      ],
+      "height": 2096,
+      "alerts": [],
+      "scrollTables": 0,
+      "historicalEvidence": {
+        "source": true,
+        "unknown": false,
+        "tables": 3,
+        "alerts": [],
+        "filter": "ORCAUSDT",
+        "definition": "",
+        "archive": true,
+        "readStatus": "Historical SQLite · read only · read 2026-10-11T19:37:36.050Z · refresh every 15 s; bounded retry on failure · Read time is not observation time.",
+        "counts": {
+          "contract_bars": 719,
+          "mark_bars": 0,
+          "events": 605,
+          "outcomes": 3630
+        }
+      }
+    },
+    {
+      "route": "historical-research/coverage?symbol=ZZZNODATAUSDT",
+      "title": "Historical coverage & studies",
+      "width": 1366,
+      "scroll": 1351,
+      "mains": 1,
+      "loading": false,
+      "active": [
+        "/historical-research"
+      ],
+      "height": 1394,
+      "alerts": [],
+      "scrollTables": 0,
+      "historicalEvidence": {
+        "source": true,
+        "unknown": true,
+        "tables": 0,
+        "alerts": [],
+        "filter": "ZZZNODATAUSDT",
+        "definition": "",
+        "archive": true,
+        "readStatus": "Historical SQLite · read only · read 2026-10-11T19:37:38.207Z · refresh every 15 s; bounded retry on failure · Read time is not observation time."
+      }
+    },
+    {
+      "route": "historical-research/coverage?definition=INVALID",
+      "title": "Historical coverage & studies",
+      "width": 1366,
+      "scroll": 1366,
+      "mains": 1,
+      "loading": false,
+      "active": [
+        "/historical-research"
+      ],
+      "height": 941,
+      "alerts": [
+        "Invalid filter. Use an ASCII symbol of 2–32 letters/digits and a listed event definition. No source query was made."
+      ],
+      "scrollTables": 0,
+      "historicalEvidence": {
+        "source": false,
+        "unknown": false,
+        "tables": 0,
+        "alerts": [
+          "Invalid filter. Use an ASCII symbol of 2–32 letters/digits and a listed event definition. No source query was made."
+        ],
+        "filter": "",
+        "definition": "",
+        "archive": true
+      }
+    },
+    {
+      "route": "market-archive",
+      "title": "Market & Runtime Archive",
+      "width": 1366,
+      "scroll": 1351,
+      "mains": 1,
+      "loading": false,
+      "active": [
+        "/market-archive"
+      ],
+      "height": 1206,
+      "alerts": [],
+      "scrollTables": 0
+    },
+    {
+      "route": "market-lab",
+      "title": "Historical Market Lab",
+      "width": 1366,
+      "scroll": 1351,
+      "mains": 1,
+      "loading": false,
+      "active": [
+        "/market-lab"
+      ],
+      "height": 1727,
+      "alerts": [],
+      "scrollTables": 0
+    },
+    {
+      "route": "system",
+      "title": "System",
+      "width": 1366,
+      "scroll": 1351,
+      "mains": 1,
+      "loading": false,
+      "active": [
+        "/system"
+      ],
+      "height": 1416,
+      "alerts": [],
+      "scrollTables": 0
+    },
+    {
+      "route": "backtest",
+      "title": "Backtest (future)",
+      "width": 1366,
+      "scroll": 1351,
+      "mains": 1,
+      "loading": false,
+      "active": [
+        "/backtest"
+      ],
+      "height": 975,
+      "alerts": [],
+      "scrollTables": 0
+    },
+    {
+      "route": "paper-lab",
+      "title": "Paper Lab (future)",
+      "width": 1366,
+      "scroll": 1351,
+      "mains": 1,
+      "loading": false,
+      "active": [
+        "/paper-lab"
+      ],
+      "height": 1108,
+      "alerts": [],
+      "scrollTables": 0
+    },
+    {
+      "route": "overview",
+      "title": "Overview",
+      "width": 390,
+      "scroll": 375,
+      "mains": 1,
+      "loading": false,
+      "active": [
+        "/overview"
+      ],
+      "height": 4218,
+      "alerts": [],
+      "scrollTables": 2
+    },
+    {
+      "route": "movers",
+      "title": "Market Movers",
+      "width": 390,
+      "scroll": 375,
+      "mains": 1,
+      "loading": false,
+      "active": [
+        "/movers"
+      ],
+      "height": 4857,
+      "alerts": [],
+      "scrollTables": 1
+    },
+    {
+      "route": "movers/verified",
+      "title": "Observed Market Movers",
+      "width": 390,
+      "scroll": 375,
+      "mains": 1,
+      "loading": false,
+      "active": [
+        "/movers"
+      ],
+      "height": 2442,
+      "alerts": [],
+      "scrollTables": 1
+    },
+    {
+      "route": "opportunities",
+      "title": "Research Opportunities",
+      "width": 390,
+      "scroll": 375,
+      "mains": 1,
+      "loading": false,
+      "active": [
+        "/opportunities"
+      ],
+      "height": 3082,
+      "alerts": [],
+      "scrollTables": 1
+    },
+    {
+      "route": "opportunities/observations",
+      "title": "Persisted Research Observations",
+      "width": 390,
+      "scroll": 375,
+      "mains": 1,
+      "loading": false,
+      "active": [
+        "/opportunities"
+      ],
+      "height": 4803,
+      "alerts": [],
+      "scrollTables": 1
+    },
+    {
+      "route": "opportunities/prospective",
+      "title": "Prospective Research",
+      "width": 390,
+      "scroll": 375,
+      "mains": 1,
+      "loading": false,
+      "active": [
+        "/opportunities"
+      ],
+      "height": 4457,
+      "alerts": [],
+      "scrollTables": 1
+    },
+    {
+      "route": "symbol/BTCUSDT",
+      "title": "BTCUSDT",
+      "width": 390,
+      "scroll": 375,
+      "mains": 1,
+      "loading": false,
+      "active": [
+        "/movers"
+      ],
+      "height": 3441,
+      "alerts": [],
+      "scrollTables": 0
+    },
+    {
+      "route": "symbol/ORCAUSDT",
+      "title": "ORCAUSDT",
+      "width": 390,
+      "scroll": 375,
+      "mains": 1,
+      "loading": false,
+      "active": [
+        "/movers"
+      ],
+      "height": 3326,
+      "alerts": [],
+      "scrollTables": 0
+    },
+    {
+      "route": "historical-research",
+      "title": "Prospective archive",
+      "width": 390,
+      "scroll": 375,
+      "mains": 1,
+      "loading": false,
+      "active": [
+        "/historical-research"
+      ],
+      "height": 4383,
+      "alerts": [],
+      "scrollTables": 2
+    },
+    {
+      "route": "historical-research/coverage",
+      "title": "Historical coverage & studies",
+      "width": 390,
+      "scroll": 375,
+      "mains": 1,
+      "loading": false,
+      "active": [
+        "/historical-research"
+      ],
+      "height": 3213,
+      "alerts": [],
+      "scrollTables": 3,
+      "historicalEvidence": {
+        "source": true,
+        "unknown": false,
+        "tables": 3,
+        "alerts": [],
+        "filter": "",
+        "definition": "",
+        "archive": true,
+        "readStatus": "Historical SQLite · read only · read 2026-10-11T19:38:12.952Z · refresh every 15 s; bounded retry on failure · Read time is not observation time.",
+        "counts": {
+          "contract_bars": 17270,
+          "mark_bars": 2157,
+          "events": 2831,
+          "outcomes": 16986
+        },
+        "keyboard": {
+          "focused": true,
+          "outline": "solid",
+          "overflow": true,
+          "moved": true
+        }
+      }
+    },
+    {
+      "route": "historical-research/coverage?symbol=BTCUSDT",
+      "title": "Historical coverage & studies",
+      "width": 390,
+      "scroll": 375,
+      "mains": 1,
+      "loading": false,
+      "active": [
+        "/historical-research"
+      ],
+      "height": 3118,
+      "alerts": [],
+      "scrollTables": 3,
+      "historicalEvidence": {
+        "source": true,
+        "unknown": false,
+        "tables": 3,
+        "alerts": [],
+        "filter": "BTCUSDT",
+        "definition": "",
+        "archive": true,
+        "readStatus": "Historical SQLite · read only · read 2026-10-11T19:38:15.157Z · refresh every 15 s; bounded retry on failure · Read time is not observation time.",
+        "counts": {
+          "contract_bars": 7917,
+          "mark_bars": 719,
+          "events": 476,
+          "outcomes": 2856
+        },
+        "keyboard": {
+          "focused": true,
+          "outline": "solid",
+          "overflow": true,
+          "moved": true
+        }
+      }
+    },
+    {
+      "route": "historical-research/coverage?symbol=ORCAUSDT",
+      "title": "Historical coverage & studies",
+      "width": 390,
+      "scroll": 375,
+      "mains": 1,
+      "loading": false,
+      "active": [
+        "/historical-research"
+      ],
+      "height": 2898,
+      "alerts": [],
+      "scrollTables": 3,
+      "historicalEvidence": {
+        "source": true,
+        "unknown": false,
+        "tables": 3,
+        "alerts": [],
+        "filter": "ORCAUSDT",
+        "definition": "",
+        "archive": true,
+        "readStatus": "Historical SQLite · read only · read 2026-10-11T19:38:17.423Z · refresh every 15 s; bounded retry on failure · Read time is not observation time.",
+        "counts": {
+          "contract_bars": 719,
+          "mark_bars": 0,
+          "events": 605,
+          "outcomes": 3630
+        },
+        "keyboard": {
+          "focused": true,
+          "outline": "solid",
+          "overflow": true,
+          "moved": true
+        }
+      }
+    },
+    {
+      "route": "historical-research/coverage?symbol=ZZZNODATAUSDT",
+      "title": "Historical coverage & studies",
+      "width": 390,
+      "scroll": 375,
+      "mains": 1,
+      "loading": false,
+      "active": [
+        "/historical-research"
+      ],
+      "height": 2163,
+      "alerts": [],
+      "scrollTables": 0,
+      "historicalEvidence": {
+        "source": true,
+        "unknown": true,
+        "tables": 0,
+        "alerts": [],
+        "filter": "ZZZNODATAUSDT",
+        "definition": "",
+        "archive": true,
+        "readStatus": "Historical SQLite · read only · read 2026-10-11T19:38:19.669Z · refresh every 15 s; bounded retry on failure · Read time is not observation time."
+      }
+    },
+    {
+      "route": "historical-research/coverage?definition=INVALID",
+      "title": "Historical coverage & studies",
+      "width": 390,
+      "scroll": 390,
+      "mains": 1,
+      "loading": false,
+      "active": [
+        "/historical-research"
+      ],
+      "height": 941,
+      "alerts": [
+        "Invalid filter. Use an ASCII symbol of 2–32 letters/digits and a listed event definition. No source query was made."
+      ],
+      "scrollTables": 0,
+      "historicalEvidence": {
+        "source": false,
+        "unknown": false,
+        "tables": 0,
+        "alerts": [
+          "Invalid filter. Use an ASCII symbol of 2–32 letters/digits and a listed event definition. No source query was made."
+        ],
+        "filter": "",
+        "definition": "",
+        "archive": true
+      }
+    },
+    {
+      "route": "market-archive",
+      "title": "Market & Runtime Archive",
+      "width": 390,
+      "scroll": 375,
+      "mains": 1,
+      "loading": false,
+      "active": [
+        "/market-archive"
+      ],
+      "height": 1426,
+      "alerts": [],
+      "scrollTables": 1
+    },
+    {
+      "route": "market-lab",
+      "title": "Historical Market Lab",
+      "width": 390,
+      "scroll": 375,
+      "mains": 1,
+      "loading": false,
+      "active": [
+        "/market-lab"
+      ],
+      "height": 2663,
+      "alerts": [],
+      "scrollTables": 0
+    },
+    {
+      "route": "system",
+      "title": "System",
+      "width": 390,
+      "scroll": 375,
+      "mains": 1,
+      "loading": false,
+      "active": [
+        "/system"
+      ],
+      "height": 3100,
+      "alerts": [],
+      "scrollTables": 0
+    },
+    {
+      "route": "backtest",
+      "title": "Backtest (future)",
+      "width": 390,
+      "scroll": 375,
+      "mains": 1,
+      "loading": false,
+      "active": [
+        "/backtest"
+      ],
+      "height": 1946,
+      "alerts": [],
+      "scrollTables": 1
+    },
+    {
+      "route": "paper-lab",
+      "title": "Paper Lab (future)",
+      "width": 390,
+      "scroll": 375,
+      "mains": 1,
+      "loading": false,
+      "active": [
+        "/paper-lab"
+      ],
+      "height": 2155,
+      "alerts": [],
+      "scrollTables": 1
+    }
+  ],
+  "errors": [],
+  "unavailable": []
+}

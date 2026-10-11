@@ -1,0 +1,105 @@
+{
+  "checks": [
+    {
+      "query": "",
+      "status": 200,
+      "counts": {
+        "contract_bars": 17270,
+        "mark_bars": 2157,
+        "events": 2831,
+        "outcomes": 16986
+      },
+      "coverage_rows": 14,
+      "study_rows": 36,
+      "event_rows": 50
+    },
+    {
+      "query": "?symbol=BTCUSDT",
+      "status": 200,
+      "counts": {
+        "contract_bars": 7917,
+        "mark_bars": 719,
+        "events": 476,
+        "outcomes": 2856
+      },
+      "coverage_rows": 5,
+      "study_rows": 30,
+      "event_rows": 50
+    },
+    {
+      "query": "?symbol=ORCAUSDT",
+      "status": 200,
+      "counts": {
+        "contract_bars": 719,
+        "mark_bars": 0,
+        "events": 605,
+        "outcomes": 3630
+      },
+      "coverage_rows": 1,
+      "study_rows": 36,
+      "event_rows": 50
+    },
+    {
+      "query": "?symbol=BTCUSDT&definition=EXTENDED_GAINER",
+      "status": 200,
+      "counts": {
+        "contract_bars": 7917,
+        "mark_bars": 719,
+        "events": 28,
+        "outcomes": 168
+      },
+      "coverage_rows": 5,
+      "study_rows": 6,
+      "event_rows": 28
+    },
+    {
+      "query": "?symbol=ZZZNODATAUSDT",
+      "status": 200,
+      "counts": {
+        "contract_bars": 0,
+        "mark_bars": 0,
+        "events": 0,
+        "outcomes": 0
+      },
+      "coverage_rows": 0,
+      "study_rows": 0,
+      "event_rows": 0
+    },
+    {
+      "query": "?definition=INVALID",
+      "status": 400,
+      "counts": null,
+      "coverage_rows": 0,
+      "study_rows": 0,
+      "event_rows": 0
+    },
+    {
+      "query": "?symbol=%27DROP",
+      "status": 400,
+      "counts": null,
+      "coverage_rows": 0,
+      "study_rows": 0,
+      "event_rows": 0
+    },
+    {
+      "query": "?symbol=BTCUSDT&symbol=ETHUSDT",
+      "status": 400,
+      "counts": null,
+      "coverage_rows": 0,
+      "study_rows": 0,
+      "event_rows": 0
+    }
+  ],
+  "native_aggregate_parity": true,
+  "source_hashes_before": {
+    "C:\\proyectos\\binance-futures-microstructure-bot\\data\\historical\\historical.db": "ca647946a2ba3590db3d1b023993cd13f65844648cba9b7bb210cbc3cb1f7a0a",
+    "C:\\proyectos\\binance-futures-microstructure-bot\\logs\\probe_runtime.json": "45c6a39ec91f55db708e1b9011f86bc55248b4485e582c015ea4442cc7cab5da",
+    "C:\\proyectos\\binance-futures-microstructure-bot\\data\\microprobe.db": "01d706d66377bf462d9f35ddea36429b480a60328defef2c682d84af790bde05"
+  },
+  "source_hashes_after": {
+    "C:\\proyectos\\binance-futures-microstructure-bot\\data\\historical\\historical.db": "ca647946a2ba3590db3d1b023993cd13f65844648cba9b7bb210cbc3cb1f7a0a",
+    "C:\\proyectos\\binance-futures-microstructure-bot\\logs\\probe_runtime.json": "45c6a39ec91f55db708e1b9011f86bc55248b4485e582c015ea4442cc7cab5da",
+    "C:\\proyectos\\binance-futures-microstructure-bot\\data\\microprobe.db": "01d706d66377bf462d9f35ddea36429b480a60328defef2c682d84af790bde05"
+  },
+  "unchanged": true
+}

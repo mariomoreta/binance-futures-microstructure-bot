@@ -1,0 +1,42 @@
+{
+  "results": [
+    {
+      "route": "historical-research/coverage",
+      "title": "Historical coverage & studies",
+      "width": 390,
+      "scroll": 375,
+      "mains": 1,
+      "loading": false,
+      "active": [
+        "/historical-research"
+      ],
+      "height": 3213,
+      "alerts": [],
+      "scrollTables": 3,
+      "historicalEvidence": {
+        "source": true,
+        "unknown": false,
+        "tables": 3,
+        "alerts": [],
+        "filter": "",
+        "definition": "",
+        "archive": true,
+        "readStatus": "Historical SQLite · read only · read 2026-10-11T19:36:01.876Z · refresh every 15 s; bounded retry on failure · Read time is not observation time.",
+        "counts": {
+          "contract_bars": 17270,
+          "mark_bars": 2157,
+          "events": 2831,
+          "outcomes": 16986
+        },
+        "keyboard": {
+          "focused": true,
+          "outline": "solid",
+          "overflow": true,
+          "moved": true
+        }
+      }
+    }
+  ],
+  "errors": [],
+  "unavailable": []
+}

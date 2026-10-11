@@ -1,0 +1,531 @@
+test_best_bid_ask_mid_spread (test_book_oi.BookMathTest.test_best_bid_ask_mid_spread) ... ok
+test_concentration_and_coverage (test_book_oi.BookMathTest.test_concentration_and_coverage) ... ok
+test_crossed_top_kept_and_counted (test_book_oi.BookMathTest.test_crossed_top_kept_and_counted) ... ok
+test_depth_sums_top_n (test_book_oi.BookMathTest.test_depth_sums_top_n) ... ok
+test_imbalance_formula_and_zero_denominator (test_book_oi.BookMathTest.test_imbalance_formula_and_zero_denominator) ... ok
+test_invalid_levels_excluded (test_book_oi.BookMathTest.test_invalid_levels_excluded) ... ok
+test_microprice_known_values (test_book_oi.BookMathTest.test_microprice_known_values) ... ok
+test_microprice_zero_top_qty_is_unknown (test_book_oi.BookMathTest.test_microprice_zero_top_qty_is_unknown) ... ok
+test_slope_known_fixture (test_book_oi.BookMathTest.test_slope_known_fixture) ... ok
+test_wire_order_never_assumed (test_book_oi.BookMathTest.test_wire_order_never_assumed) ... ok
+test_book_features_replace_and_read (test_book_oi.BookOIPersistenceTest.test_book_features_replace_and_read) ... ok
+test_oi_features_replace_and_read (test_book_oi.BookOIPersistenceTest.test_oi_features_replace_and_read) ... ok
+test_oi_restore_continuity (test_book_oi.BookOIPersistenceTest.test_oi_restore_continuity) ... ok
+test_oi_samples_rewrite_is_idempotent (test_book_oi.BookOIPersistenceTest.test_oi_samples_rewrite_is_idempotent) ... ok
+test_oi_samples_round_trip_and_retention (test_book_oi.BookOIPersistenceTest.test_oi_samples_round_trip_and_retention) ... ok
+test_new_modules_have_no_trading_paths (test_book_oi.BookOISafetyTest.test_new_modules_have_no_trading_paths) ... ok
+test_book_and_oi_apis_empty_is_404 (test_book_oi.DashboardBookOITest.test_book_and_oi_apis_empty_is_404) ... ok
+test_book_api_payload_shape (test_book_oi.DashboardBookOITest.test_book_api_payload_shape) ... ok
+test_oi_api_payload_shape (test_book_oi.DashboardBookOITest.test_oi_api_payload_shape) ... ok
+test_overview_renders_book_oi_and_no_live_book (test_book_oi.DashboardBookOITest.test_overview_renders_book_oi_and_no_live_book) ... ok
+test_render_sections_empty_are_honest (test_book_oi.DashboardBookOITest.test_render_sections_empty_are_honest) ... ok
+test_parse_rejects_garbage (test_book_oi.OIClientTest.test_parse_rejects_garbage) ... ok
+test_parse_tolerates_missing_time (test_book_oi.OIClientTest.test_parse_tolerates_missing_time) ... ok
+test_parse_valid_payload (test_book_oi.OIClientTest.test_parse_valid_payload) ... ok
+test_acceleration_known_values (test_book_oi.OIEngineTest.test_acceleration_known_values) ... ok
+test_acceleration_zero_on_linear (test_book_oi.OIEngineTest.test_acceleration_zero_on_linear) ... ok
+test_context_labels (test_book_oi.OIEngineTest.test_context_labels) ... ok
+test_delta_rate_known_values (test_book_oi.OIEngineTest.test_delta_rate_known_values) ... ok
+test_insufficient_history_is_unknown (test_book_oi.OIEngineTest.test_insufficient_history_is_unknown) ... ok
+test_irregular_timestamps_use_actual_elapsed (test_book_oi.OIEngineTest.test_irregular_timestamps_use_actual_elapsed) ... ok
+test_no_lookahead_future_sample_invisible (test_book_oi.OIEngineTest.test_no_lookahead_future_sample_invisible) ... ok
+test_stale_flag_and_freshness (test_book_oi.OIEngineTest.test_stale_flag_and_freshness) ... ok
+test_unknown_symbol_refused (test_book_oi.OIEngineTest.test_unknown_symbol_refused) ... ok
+test_bad_payload_counted_as_failure (test_book_oi.OIPollerTest.test_bad_payload_counted_as_failure) ... ok
+test_poll_once_bounded_one_request_per_symbol (test_book_oi.OIPollerTest.test_poll_once_bounded_one_request_per_symbol) ... ok
+test_rest_failure_counted_never_raises (test_book_oi.OIPollerTest.test_rest_failure_counted_never_raises) ... ok
+test_flow_totals_untouched_by_depth_work (test_book_oi.ProbeBookOIWiringTest.test_flow_totals_untouched_by_depth_work)
+P1-06 regression: depth/OI wiring never alters flow accounting. ... ok
+test_log_summary_persists_book_and_oi (test_book_oi.ProbeBookOIWiringTest.test_log_summary_persists_book_and_oi) ... ok
+test_probe_gap_counter_parity (test_book_oi.ProbeBookOIWiringTest.test_probe_gap_counter_parity) ... ok
+test_sampling_does_not_alter_book_state (test_book_oi.ProbeBookOIWiringTest.test_sampling_does_not_alter_book_state) ... ok
+test_skew_rejected_depth_never_reaches_book (test_book_oi.ProbeBookOIWiringTest.test_skew_rejected_depth_never_reaches_book) ... ok
+test_summary_carries_book_and_oi_blocks (test_book_oi.ProbeBookOIWiringTest.test_summary_carries_book_and_oi_blocks) ... ok
+test_unsubscribed_hot_gets_no_book_or_oi (test_book_oi.ProbeBookOIWiringTest.test_unsubscribed_hot_gets_no_book_or_oi) ... ok
+test_first_update_always_accepted (test_book_oi.SequenceIntegrityTest.test_first_update_always_accepted) ... ok
+test_freshness_and_unknown_symbol (test_book_oi.SequenceIntegrityTest.test_freshness_and_unknown_symbol) ... ok
+test_gap_marks_degraded_until_chained (test_book_oi.SequenceIntegrityTest.test_gap_marks_degraded_until_chained) ... ok
+test_latency_distribution_present (test_book_oi.SequenceIntegrityTest.test_latency_distribution_present) ... ok
+test_strictly_older_snapshot_never_regresses (test_book_oi.SequenceIntegrityTest.test_strictly_older_snapshot_never_regresses) ... ok
+test_big_up_move_alone_is_not_exhaustion (test_classifier.ExhaustionTest.test_big_up_move_alone_is_not_exhaustion) ... ok
+test_exhaustion_down (test_classifier.ExhaustionTest.test_exhaustion_down) ... ok
+test_exhaustion_up (test_classifier.ExhaustionTest.test_exhaustion_up) ... ok
+test_big_24h_style_return_alone_is_not_expansion (test_classifier.ExpansionTest.test_big_24h_style_return_alone_is_not_expansion) ... ok
+test_contradictory_flow_recorded_not_hidden (test_classifier.ExpansionTest.test_contradictory_flow_recorded_not_hidden) ... ok
+test_expansion_down (test_classifier.ExpansionTest.test_expansion_down) ... ok
+test_expansion_up (test_classifier.ExpansionTest.test_expansion_up) ... ok
+test_ignition_down (test_classifier.IgnitionTest.test_ignition_down) ... ok
+test_ignition_up (test_classifier.IgnitionTest.test_ignition_up) ... ok
+test_velocity_alone_is_not_ignition (test_classifier.IgnitionTest.test_velocity_alone_is_not_ignition) ... ok
+test_deterministic_rerun (test_classifier.NoLookaheadTest.test_deterministic_rerun) ... ok
+test_future_keys_ignored (test_classifier.NoLookaheadTest.test_future_keys_ignored) ... ok
+test_discovery_only_never_deep (test_classifier.NormalUnknownTest.test_discovery_only_never_deep) ... ok
+test_none_direction_on_exact_zero (test_classifier.NormalUnknownTest.test_none_direction_on_exact_zero) ... ok
+test_normal_with_sufficient_quiet_data (test_classifier.NormalUnknownTest.test_normal_with_sufficient_quiet_data) ... ok
+test_unknown_gap_even_with_strong_motion (test_classifier.NormalUnknownTest.test_unknown_gap_even_with_strong_motion) ... ok
+test_unknown_on_missing_data (test_classifier.NormalUnknownTest.test_unknown_on_missing_data) ... ok
+test_unknown_on_stale_data (test_classifier.NormalUnknownTest.test_unknown_on_stale_data) ... ok
+test_reversal_needs_confirmation (test_classifier.ReversalTest.test_reversal_needs_confirmation) ... ok
+test_small_pullback_is_not_reversal (test_classifier.ReversalTest.test_small_pullback_is_not_reversal) ... ok
+test_record_is_json_serializable (test_classifier.SerializationTest.test_record_is_json_serializable) ... ok
+test_hysteresis_holds_then_releases (test_classifier.TransitionHysteresisTest.test_hysteresis_holds_then_releases) ... ok
+test_restart_cold_memory_no_phantom_reversal (test_classifier.TransitionHysteresisTest.test_restart_cold_memory_no_phantom_reversal) ... ok
+test_timestamps_and_transition_reasons (test_classifier.TransitionHysteresisTest.test_timestamps_and_transition_reasons) ... ok
+test_unknown_exits_immediately (test_classifier.TransitionHysteresisTest.test_unknown_exits_immediately) ... ok
+test_failed_sync_preserves_last_valid_estimate (test_clock.ClockFailureTest.test_failed_sync_preserves_last_valid_estimate) ... {"kind": "clock_sync_sample_error", "error": "OSError: offline"}
+{"kind": "clock_sync_sample_error", "error": "OSError: offline"}
+{"kind": "clock_sync_failed", "clockOffsetMs": 7.5, "serverTimeRttMs": 3.0, "lastClockSyncTimestamp": null, "clockSyncSuccessful": 0, "clockSyncFailed": 1, "clockSamplesValid": 0, "clockSamplesFailed": 2}
+ok
+test_clock_offset_uses_request_midpoint (test_clock.ClockMathTest.test_clock_offset_uses_request_midpoint) ... ok
+test_corrected_event_lag_applies_offset (test_clock.ClockMathTest.test_corrected_event_lag_applies_offset) ... ok
+test_default_configuration_loads_three_symbols (test_config.ConfigTest.test_default_configuration_loads_three_symbols) ... ok
+test_non_observe_mode_is_rejected (test_config.ConfigTest.test_non_observe_mode_is_rejected) ... ok
+test_health_empty_db (test_dashboard.DashboardRoutesTest.test_health_empty_db) ... ok
+test_health_ok_when_healthy (test_dashboard.DashboardRoutesTest.test_health_ok_when_healthy) ... ok
+test_overview_empty_db_is_unknown_not_error (test_dashboard.DashboardRoutesTest.test_overview_empty_db_is_unknown_not_error) ... ok
+test_overview_shows_safety_banner_and_metrics (test_dashboard.DashboardRoutesTest.test_overview_shows_safety_banner_and_metrics) ... ok
+test_system_empty_db_is_unknown_not_error (test_dashboard.DashboardRoutesTest.test_system_empty_db_is_unknown_not_error) ... ok
+test_system_shows_streams_latency_clock_safety (test_dashboard.DashboardRoutesTest.test_system_shows_streams_latency_clock_safety) ... ok
+test_unknown_route_404 (test_dashboard.DashboardRoutesTest.test_unknown_route_404) ... ok
+test_degraded_on_high_rejection_rate (test_dashboard.HealthModelTest.test_degraded_on_high_rejection_rate) ... ok
+test_degraded_on_reconnects (test_dashboard.HealthModelTest.test_degraded_on_reconnects) ... ok
+test_degraded_on_stale_streams (test_dashboard.HealthModelTest.test_degraded_on_stale_streams) ... ok
+test_ok_when_healthy (test_dashboard.HealthModelTest.test_ok_when_healthy) ... ok
+test_stale_when_snapshot_old (test_dashboard.HealthModelTest.test_stale_when_snapshot_old) ... ok
+test_unknown_with_no_snapshot (test_dashboard.HealthModelTest.test_unknown_with_no_snapshot) ... ok
+test_discovery_api_shape_and_empty (test_dashboard.IntelSectionTest.test_discovery_api_shape_and_empty) ... ok
+test_health_sections_separated (test_dashboard.IntelSectionTest.test_health_sections_separated) ... ok
+test_intel_tiers_and_momentum_rendered (test_dashboard.IntelSectionTest.test_intel_tiers_and_momentum_rendered) ... ok
+test_momentum_api_empty_is_404 (test_dashboard.IntelSectionTest.test_momentum_api_empty_is_404) ... ok
+test_momentum_api_shape (test_dashboard.IntelSectionTest.test_momentum_api_shape) ... ok
+test_reject_labels_current_vs_retained (test_dashboard.IntelSectionTest.test_reject_labels_current_vs_retained) ... ok
+test_server_ok_while_feed_unknown (test_dashboard.IntelSectionTest.test_server_ok_while_feed_unknown) ... ok
+test_dead_pid_is_not_ours (test_dashboard.PidfileTest.test_dead_pid_is_not_ours) ... ok
+test_live_python_pid_is_ours (test_dashboard.PidfileTest.test_live_python_pid_is_ours) ... ok
+test_restart_parser_accepts_port_args (test_dashboard.PidfileTest.test_restart_parser_accepts_port_args)
+Regression: restart must parse like start (AttributeError once). ... ok
+test_stale_pidfile_round_trip (test_dashboard.PidfileTest.test_stale_pidfile_round_trip) ... ok
+test_all_busy_raises (test_dashboard.PortSelectionTest.test_all_busy_raises) ... ok
+test_skips_occupied_port (test_dashboard.PortSelectionTest.test_skips_occupied_port) ... ok
+test_forceorder_never_missing (test_dashboard.ProbeHealthSemanticsTest.test_forceorder_never_missing) ... ok
+test_features_api_empty_is_404 (test_dashboard.ReturnsSectionTest.test_features_api_empty_is_404) ... ok
+test_features_api_shape (test_dashboard.ReturnsSectionTest.test_features_api_shape) ... ok
+test_movers_route_exists_p109 (test_dashboard.ReturnsSectionTest.test_movers_route_exists_p109) ... ok
+test_no_features_yet_honest_note (test_dashboard.ReturnsSectionTest.test_no_features_yet_honest_note) ... ok
+test_partial_warmup_renders_values_and_gaps (test_dashboard.ReturnsSectionTest.test_partial_warmup_renders_values_and_gaps) ... ok
+test_bounded_output (test_dashboard_p109.ChartApiTest.test_bounded_output) ... ok
+test_csv_export (test_dashboard_p109.ChartApiTest.test_csv_export) ... ok
+test_insufficient_history (test_dashboard_p109.ChartApiTest.test_insufficient_history) ... ok
+test_invalid_range_400 (test_dashboard_p109.ChartApiTest.test_invalid_range_400) ... ok
+test_invalid_symbol_400_and_unknown_404 (test_dashboard_p109.ChartApiTest.test_invalid_symbol_400_and_unknown_404) ... ok
+test_ordering_and_no_future (test_dashboard_p109.ChartApiTest.test_ordering_and_no_future) ... ok
+test_valid_ranges (test_dashboard_p109.ChartApiTest.test_valid_ranges) ... ok
+test_p104_p108_apis_intact (test_dashboard_p109.FeatureApiRegressionTest.test_p104_p108_apis_intact) ... ok
+test_gainers_shows_24h_pct_not_live_fields (test_dashboard_p109.MoversIntegrityTest.test_gainers_shows_24h_pct_not_live_fields) ... ok
+test_hot_and_activity_values (test_dashboard_p109.MoversIntegrityTest.test_hot_and_activity_values) ... ok
+test_live_velocity_and_accel_use_own_fields (test_dashboard_p109.MoversIntegrityTest.test_live_velocity_and_accel_use_own_fields) ... ok
+test_velocity_sort_key_unchanged (test_dashboard_p109.MoversIntegrityTest.test_velocity_sort_key_unchanged) ... ok
+test_volume_expansion_and_flow_use_own_fields (test_dashboard_p109.MoversIntegrityTest.test_volume_expansion_and_flow_use_own_fields) ... ok
+test_categories_present (test_dashboard_p109.MoversTest.test_categories_present) ... ok
+test_live_vs_discovery_only (test_dashboard_p109.MoversTest.test_live_vs_discovery_only) ... ok
+test_rows_clickable (test_dashboard_p109.MoversTest.test_rows_clickable) ... ok
+test_tier_labels (test_dashboard_p109.MoversTest.test_tier_labels) ... ok
+test_all_negative_positive_table_empty (test_dashboard_p109.MoversVelocitySemanticsTest.test_all_negative_positive_table_empty) ... ok
+test_all_positive_negative_table_empty (test_dashboard_p109.MoversVelocitySemanticsTest.test_all_positive_negative_table_empty) ... ok
+test_exact_zero_excluded_from_both (test_dashboard_p109.MoversVelocitySemanticsTest.test_exact_zero_excluded_from_both) ... ok
+test_mixed_signs_split_correctly (test_dashboard_p109.MoversVelocitySemanticsTest.test_mixed_signs_split_correctly) ... ok
+test_none_and_nonfinite_excluded_from_both (test_dashboard_p109.MoversVelocitySemanticsTest.test_none_and_nonfinite_excluded_from_both) ... ok
+test_movers_200 (test_dashboard_p109.RoutingTest.test_movers_200) ... ok
+test_symbol_case_insensitive (test_dashboard_p109.RoutingTest.test_symbol_case_insensitive) ... ok
+test_symbol_discovery_only_200 (test_dashboard_p109.RoutingTest.test_symbol_discovery_only_200) ... ok
+test_symbol_live_200 (test_dashboard_p109.RoutingTest.test_symbol_live_200) ... ok
+test_symbol_malformed_400 (test_dashboard_p109.RoutingTest.test_symbol_malformed_400) ... ok
+test_symbol_unknown_404 (test_dashboard_p109.RoutingTest.test_symbol_unknown_404) ... ok
+test_case_insensitive (test_dashboard_p109.SearchTest.test_case_insensitive) ... ok
+test_escaping_injection_safe (test_dashboard_p109.SearchTest.test_escaping_injection_safe) ... ok
+test_exact_symbol (test_dashboard_p109.SearchTest.test_exact_symbol) ... ok
+test_partial_symbol (test_dashboard_p109.SearchTest.test_partial_symbol) ... ok
+test_search_api (test_dashboard_p109.SearchTest.test_search_api) ... ok
+test_core_live_panels (test_dashboard_p109.TokenDetailTest.test_core_live_panels) ... ok
+test_discovery_only_honesty (test_dashboard_p109.TokenDetailTest.test_discovery_only_honesty) ... ok
+test_integrity_copy (test_dashboard_p109.TokenDetailTest.test_integrity_copy) ... ok
+test_no_fake_live_metrics (test_dashboard_p109.TokenDetailTest.test_no_fake_live_metrics) ... ok
+test_unknown_warming_rendering (test_dashboard_p109.TokenDetailTest.test_unknown_warming_rendering) ... ok
+test_dashboard_version (test_dashboard_p109.UiRegressionTest.test_dashboard_version) ... ok
+test_forceorder_semantics (test_dashboard_p109.UiRegressionTest.test_forceorder_semantics) ... ok
+test_health_separation (test_dashboard_p109.UiRegressionTest.test_health_separation) ... ok
+test_html_escaping (test_dashboard_p109.UiRegressionTest.test_html_escaping) ... ok
+test_no_forbidden_signal_language (test_dashboard_p109.UiRegressionTest.test_no_forbidden_signal_language) ... ok
+test_no_trading_controls (test_dashboard_p109.UiRegressionTest.test_no_trading_controls) ... ok
+test_unicode_symbol (test_dashboard_p109.UiRegressionTest.test_unicode_symbol) ... ok
+test_funding_marks_repeated_samples_as_non_independent (test_detectors.DetectorsTest.test_funding_marks_repeated_samples_as_non_independent) ... ok
+test_funding_waits_for_minimum_history (test_detectors.DetectorsTest.test_funding_waits_for_minimum_history) ... ok
+test_individual_liquidation_notional (test_detectors.DetectorsTest.test_individual_liquidation_notional) ... ok
+test_liquidation_near_miss_telemetry (test_detectors.DetectorsTest.test_liquidation_near_miss_telemetry) ... ok
+test_liquidation_window_accumulates (test_detectors.DetectorsTest.test_liquidation_window_accumulates) ... ok
+test_volume_spike_uses_completed_buckets (test_detectors.DetectorsTest.test_volume_spike_uses_completed_buckets) ... ok
+test_volume_telemetry_reports_warmup_and_evaluation (test_detectors.DetectorsTest.test_volume_telemetry_reports_warmup_and_evaluation) ... ok
+test_malformed_payload_raises (test_discovery.DiscoveryClientTest.test_malformed_payload_raises) ... ok
+test_scan_with_injected_fetch_never_hits_network (test_discovery.DiscoveryClientTest.test_scan_with_injected_fetch_never_hits_network) ... ok
+test_core_trio_eligible (test_discovery.DiscoveryFilterTest.test_core_trio_eligible) ... ok
+test_eligibility_rules (test_discovery.DiscoveryFilterTest.test_eligibility_rules) ... ok
+test_missing_sides_kept_with_reasons (test_discovery.DiscoveryFilterTest.test_missing_sides_kept_with_reasons) ... ok
+test_unknown_volume_never_eligible_never_fabricated (test_discovery.DiscoveryFilterTest.test_unknown_volume_never_eligible_never_fabricated) ... ok
+test_core_never_voted_never_in_dynamic (test_discovery.HotSelectionTest.test_core_never_voted_never_in_dynamic) ... ok
+test_deterministic_bounded_movement_ranked (test_discovery.HotSelectionTest.test_deterministic_bounded_movement_ranked) ... ok
+test_hysteresis_requires_votes_and_dwell (test_discovery.HotSelectionTest.test_hysteresis_requires_votes_and_dwell) ... ok
+test_ineligibility_demotes_immediately (test_discovery.HotSelectionTest.test_ineligibility_demotes_immediately) ... ok
+test_top_movers_are_movement_not_cap (test_discovery.HotSelectionTest.test_top_movers_are_movement_not_cap) ... ok
+test_momentum_and_ranks_persisted_on_summary (test_discovery.ProbeDiscoveryScanTest.test_momentum_and_ranks_persisted_on_summary) ... ok
+test_scan_failure_never_breaks_probe (test_discovery.ProbeDiscoveryScanTest.test_scan_failure_never_breaks_probe) ... {"kind": "discovery_error", "error": "offline"}
+ok
+test_scan_selects_hot_persists_and_reports (test_discovery.ProbeDiscoveryScanTest.test_scan_selects_hot_persists_and_reports) ... ok
+test_hot_set_never_changes_subscriptions (test_discovery.SubscriptionBoundTest.test_hot_set_never_changes_subscriptions)
+HOT proposal must not open unbounded websocket load. ... ok
+test_30d_high_asof (test_events.ContextDisciplineTest.test_30d_high_asof) ... ok
+test_btc_synchronized_lookup_no_future (test_events.ContextDisciplineTest.test_btc_synchronized_lookup_no_future) ... ok
+test_definition_versioning_new_version_on_change (test_events.ContextDisciplineTest.test_definition_versioning_new_version_on_change) ... ok
+test_deterministic_rerun (test_events.ContextDisciplineTest.test_deterministic_rerun) ... ok
+test_idempotent_event_persistence (test_events.ContextDisciplineTest.test_idempotent_event_persistence) ... ok
+test_no_threshold_autotuning_surface (test_events.ContextDisciplineTest.test_no_threshold_autotuning_surface) ... ok
+test_relative_return (test_events.ContextDisciplineTest.test_relative_return) ... ok
+test_sample_size_tiers (test_events.ContextDisciplineTest.test_sample_size_tiers) ... ok
+test_taker_buy_proxy_calc_and_label (test_events.ContextDisciplineTest.test_taker_buy_proxy_calc_and_label) ... ok
+test_event_at_T_cannot_access_Tplus1 (test_events.NoLookaheadTest.test_event_at_T_cannot_access_Tplus1) ... ok
+test_future_path_separated_from_feature_snapshot (test_events.NoLookaheadTest.test_future_path_separated_from_feature_snapshot) ... ok
+test_mark_regular_provenance_separation (test_events.NoLookaheadTest.test_mark_regular_provenance_separation) ... ok
+test_formation_gap_exclusion (test_events.OutcomeMathTest.test_formation_gap_exclusion) ... ok
+test_gap_exclusion (test_events.OutcomeMathTest.test_gap_exclusion) ... ok
+test_incomplete_future_path_partial (test_events.OutcomeMathTest.test_incomplete_future_path_partial) ... ok
+test_invalidation_timestamp_predeclared (test_events.OutcomeMathTest.test_invalidation_timestamp_predeclared) ... ok
+test_long_mfe_mae (test_events.OutcomeMathTest.test_long_mfe_mae) ... ok
+test_short_mfe_mae_mirror (test_events.OutcomeMathTest.test_short_mfe_mae_mirror) ... ok
+test_volume_and_delta_acceleration_known_values (test_flow.AccelerationTest.test_volume_and_delta_acceleration_known_values) ... ok
+test_buy_sell_percentages (test_flow.AggressorSemanticsTest.test_buy_sell_percentages) ... ok
+test_buyer_is_maker_false_is_aggressive_buy (test_flow.AggressorSemanticsTest.test_buyer_is_maker_false_is_aggressive_buy) ... ok
+test_buyer_is_maker_true_is_aggressive_sell (test_flow.AggressorSemanticsTest.test_buyer_is_maker_true_is_aggressive_sell) ... ok
+test_delta_ratio_bounds_and_zero_denominator_unknown (test_flow.AggressorSemanticsTest.test_delta_ratio_bounds_and_zero_denominator_unknown) ... ok
+test_invalid_price_or_quantity_refused (test_flow.AggressorSemanticsTest.test_invalid_price_or_quantity_refused) ... ok
+test_missing_or_non_bool_maker_flag_is_invalid (test_flow.AggressorSemanticsTest.test_missing_or_non_bool_maker_flag_is_invalid) ... ok
+test_quote_notional_math_and_signed_delta (test_flow.AggressorSemanticsTest.test_quote_notional_math_and_signed_delta) ... ok
+test_rpi_quantity_tracked_but_totals_use_q (test_flow.AggressorSemanticsTest.test_rpi_quantity_tracked_but_totals_use_q) ... ok
+test_insufficient_baseline_is_unknown (test_flow.BaselineZTest.test_insufficient_baseline_is_unknown) ... ok
+test_skipped_buckets_counted_never_fabricated (test_flow.BaselineZTest.test_skipped_buckets_counted_never_fabricated) ... ok
+test_z_score_known_values (test_flow.BaselineZTest.test_z_score_known_values) ... ok
+test_zero_variance_baseline_is_unknown (test_flow.BaselineZTest.test_zero_variance_baseline_is_unknown) ... ok
+test_discovery_table_labels_unsubscribed (test_flow.DashboardFlowTest.test_discovery_table_labels_unsubscribed) ... ok
+test_flow_api_empty_is_404 (test_flow.DashboardFlowTest.test_flow_api_empty_is_404) ... ok
+test_flow_api_payload_shape (test_flow.DashboardFlowTest.test_flow_api_payload_shape) ... ok
+test_overview_renders_flow_split_and_no_signals (test_flow.DashboardFlowTest.test_overview_renders_flow_split_and_no_signals) ... ok
+test_render_flow_section_empty_is_honest (test_flow.DashboardFlowTest.test_render_flow_section_empty_is_honest) ... ok
+test_render_flow_section_marks_unknown_z (test_flow.DashboardFlowTest.test_render_flow_section_marks_unknown_z) ... ok
+test_volume_api_payload_shape (test_flow.DashboardFlowTest.test_volume_api_payload_shape) ... ok
+test_horizon_catalog_complete (test_flow.EngineScopeTest.test_horizon_catalog_complete) ... ok
+test_stats_shape_with_latency (test_flow.EngineScopeTest.test_stats_shape_with_latency) ... ok
+test_unknown_symbol_refused_and_counted (test_flow.EngineScopeTest.test_unknown_symbol_refused_and_counted) ... ok
+test_flow_buckets_retention_bounded (test_flow.FlowPersistenceTest.test_flow_buckets_retention_bounded) ... ok
+test_flow_buckets_round_trip_and_restart (test_flow.FlowPersistenceTest.test_flow_buckets_round_trip_and_restart) ... ok
+test_flow_features_round_trip (test_flow.FlowPersistenceTest.test_flow_features_round_trip) ... ok
+test_repeated_bucket_rewrite_is_idempotent (test_flow.FlowPersistenceTest.test_repeated_bucket_rewrite_is_idempotent) ... ok
+test_flow_module_has_no_trading_paths (test_flow.FlowSafetyTest.test_flow_module_has_no_trading_paths) ... ok
+test_exact_window_boundary_excluded (test_flow.HorizonAggregationTest.test_exact_window_boundary_excluded) ... ok
+test_expiry_is_exact_per_horizon (test_flow.HorizonAggregationTest.test_expiry_is_exact_per_horizon) ... ok
+test_irregular_timestamps (test_flow.HorizonAggregationTest.test_irregular_timestamps) ... ok
+test_multi_horizon_membership (test_flow.HorizonAggregationTest.test_multi_horizon_membership) ... ok
+test_trade_and_notional_rates_use_full_window (test_flow.HorizonAggregationTest.test_trade_and_notional_rates_use_full_window) ... ok
+test_warmup_flags_span (test_flow.HorizonAggregationTest.test_warmup_flags_span) ... ok
+test_history_never_rewritten_by_older_trade (test_flow.LatePolicyTest.test_history_never_rewritten_by_older_trade) ... ok
+test_same_event_time_accepted_in_arrival_order (test_flow.LatePolicyTest.test_same_event_time_accepted_in_arrival_order) ... ok
+test_strictly_older_events_dropped_and_counted (test_flow.LatePolicyTest.test_strictly_older_events_dropped_and_counted) ... ok
+test_acceleration_needs_completed_bucket (test_flow.NoLookaheadTest.test_acceleration_needs_completed_bucket) ... ok
+test_partial_bucket_never_enters_own_baseline (test_flow.NoLookaheadTest.test_partial_bucket_never_enters_own_baseline) ... ok
+test_log_summary_persists_flow_state (test_flow.ProbeFlowWiringTest.test_log_summary_persists_flow_state) ... ok
+test_missing_maker_flag_reaches_detectors_but_not_flow (test_flow.ProbeFlowWiringTest.test_missing_maker_flag_reaches_detectors_but_not_flow) ... ok
+test_sampling_does_not_alter_engine_flow_totals (test_flow.ProbeFlowWiringTest.test_sampling_does_not_alter_engine_flow_totals) ... ok
+test_skew_rejected_trades_never_reach_engine (test_flow.ProbeFlowWiringTest.test_skew_rejected_trades_never_reach_engine) ... ok
+test_summary_carries_flow_counters (test_flow.ProbeFlowWiringTest.test_summary_carries_flow_counters) ... ok
+test_unsubscribed_hot_symbol_gets_no_live_flow (test_flow.ProbeFlowWiringTest.test_unsubscribed_hot_symbol_gets_no_live_flow) ... ok
+test_status_lists_coverage (test_history.HistoryApiTest.test_status_lists_coverage) ... ok
+test_symbol_coverage (test_history.HistoryApiTest.test_symbol_coverage) ... ok
+test_token_page_shows_coverage_card (test_history.HistoryApiTest.test_token_page_shows_coverage_card) ... ok
+test_unknown_symbol_404_malformed_400 (test_history.HistoryApiTest.test_unknown_symbol_404_malformed_400) ... ok
+test_idempotent_upsert (test_history.IngestTest.test_idempotent_upsert) ... ok
+test_listing_aware_clamps_to_first_available (test_history.IngestTest.test_listing_aware_clamps_to_first_available) ... ok
+test_no_data_symbol_reported (test_history.IngestTest.test_no_data_symbol_reported) ... ok
+test_resume_continues_from_coverage (test_history.IngestTest.test_resume_continues_from_coverage) ... ok
+test_earliest_bar_none_when_unavailable (test_history.PaginationTest.test_earliest_bar_none_when_unavailable) ... ok
+test_earliest_bar_probe (test_history.PaginationTest.test_earliest_bar_probe) ... ok
+test_forward_pagination_no_boundary_duplicates (test_history.PaginationTest.test_forward_pagination_no_boundary_duplicates) ... ok
+test_max_pages_bounds_requests (test_history.PaginationTest.test_max_pages_bounds_requests) ... ok
+test_page_overlap_raises (test_history.PaginationTest.test_page_overlap_raises) ... ok
+test_418_aborts_immediately (test_history.RateLimitTest.test_418_aborts_immediately) ... ok
+test_429_budget_exhaustion_aborts (test_history.RateLimitTest.test_429_budget_exhaustion_aborts) ... ok
+test_429_honors_retry_after_then_succeeds (test_history.RateLimitTest.test_429_honors_retry_after_then_succeeds) ... ok
+test_5xx_retried_within_budget (test_history.RateLimitTest.test_5xx_retried_within_budget) ... ok
+test_cli_defaults_are_bounded (test_history.SafetyTest.test_cli_defaults_are_bounded) ... ok
+test_no_bulk_mode_exists (test_history.SafetyTest.test_no_bulk_mode_exists) ... ok
+test_no_private_api_paths (test_history.SafetyTest.test_no_private_api_paths) ... ok
+test_no_signal_or_trading_language (test_history.SafetyTest.test_no_signal_or_trading_language) ... ok
+test_live_db_rejected (test_history.SchemaTest.test_live_db_rejected) ... ok
+test_mark_table_has_no_volume_columns (test_history.SchemaTest.test_mark_table_has_no_volume_columns) ... ok
+test_oi_pagination_dedupes_boundary (test_history.SchemaTest.test_oi_pagination_dedupes_boundary) ... ok
+test_oi_round_trip_preserves_served_fields (test_history.SchemaTest.test_oi_round_trip_preserves_served_fields) ... ok
+test_schema_version_and_tables (test_history.SchemaTest.test_schema_version_and_tables) ... ok
+test_duplicates_counted (test_history.ValidationTest.test_duplicates_counted) ... ok
+test_gap_detection (test_history.ValidationTest.test_gap_detection) ... ok
+test_malformed_ohlc_flagged (test_history.ValidationTest.test_malformed_ohlc_flagged) ... ok
+test_mark_rows_carry_no_volume (test_history.ValidationTest.test_mark_rows_carry_no_volume) ... ok
+test_partial_final_candle_excluded (test_history.ValidationTest.test_partial_final_candle_excluded) ... ok
+test_apis_empty_is_404 (test_market_structure.DashboardStructureTest.test_apis_empty_is_404) ... ok
+test_overview_renders_section_cleanly (test_market_structure.DashboardStructureTest.test_overview_renders_section_cleanly) ... ok
+test_render_empty_is_honest (test_market_structure.DashboardStructureTest.test_render_empty_is_honest) ... ok
+test_structure_api_shape (test_market_structure.DashboardStructureTest.test_structure_api_shape) ... ok
+test_volatility_api_shape (test_market_structure.DashboardStructureTest.test_volatility_api_shape) ... ok
+test_vwap_api_shape (test_market_structure.DashboardStructureTest.test_vwap_api_shape) ... ok
+test_hot_symbol_gets_no_structure (test_market_structure.ProbeStructureWiringTest.test_hot_symbol_gets_no_structure) ... ok
+test_log_summary_persists_structure (test_market_structure.ProbeStructureWiringTest.test_log_summary_persists_structure) ... ok
+test_peer_regressions_intact (test_market_structure.ProbeStructureWiringTest.test_peer_regressions_intact)
+P1-04..P1-07 wiring untouched: returns/flow/book/OI all advance. ... ok
+test_summary_carries_structure_block (test_market_structure.ProbeStructureWiringTest.test_summary_carries_structure_block) ... ok
+test_expansion_ratio_known (test_market_structure.RangeTest.test_expansion_ratio_known) ... ok
+test_expansion_z_known (test_market_structure.RangeTest.test_expansion_z_known) ... ok
+test_flat_range_position_unknown (test_market_structure.RangeTest.test_flat_range_position_unknown) ... ok
+test_high_low_range_position (test_market_structure.RangeTest.test_high_low_range_position) ... ok
+test_insufficient_baseline_is_unknown (test_market_structure.RangeTest.test_insufficient_baseline_is_unknown) ... ok
+test_round_trip_replace (test_market_structure.StructurePersistenceTest.test_round_trip_replace) ... ok
+test_module_has_no_trading_paths (test_market_structure.StructureSafetyTest.test_module_has_no_trading_paths) ... ok
+test_breakout_above_below_inside (test_market_structure.StructureTest.test_breakout_above_below_inside) ... ok
+test_breakout_unknown_without_history (test_market_structure.StructureTest.test_breakout_unknown_without_history) ... ok
+test_confirmation_delay_exact (test_market_structure.StructureTest.test_confirmation_delay_exact) ... ok
+test_higher_high_lower_low_relations (test_market_structure.StructureTest.test_higher_high_lower_low_relations) ... ok
+test_lower_high_lower_low_relations (test_market_structure.StructureTest.test_lower_high_lower_low_relations) ... ok
+test_single_pivot_relations_unknown (test_market_structure.StructureTest.test_single_pivot_relations_unknown) ... ok
+test_swing_high_and_low_confirmed (test_market_structure.StructureTest.test_swing_high_and_low_confirmed) ... ok
+test_unconfirmed_tail_never_pivots (test_market_structure.StructureTest.test_unconfirmed_tail_never_pivots) ... ok
+test_insufficient_samples_is_unknown (test_market_structure.VolatilityTest.test_insufficient_samples_is_unknown) ... ok
+test_irregular_timestamps (test_market_structure.VolatilityTest.test_irregular_timestamps) ... ok
+test_known_log_return_fixture (test_market_structure.VolatilityTest.test_known_log_return_fixture) ... ok
+test_no_lookahead_future_buckets_invisible (test_market_structure.VolatilityTest.test_no_lookahead_future_buckets_invisible) ... ok
+test_short_span_is_unknown (test_market_structure.VolatilityTest.test_short_span_is_unknown) ... ok
+test_zero_movement_is_measured_zero (test_market_structure.VolatilityTest.test_zero_movement_is_measured_zero) ... ok
+test_engine_stats_shape (test_market_structure.VwapTest.test_engine_stats_shape) ... ok
+test_engine_unknown_symbol_refused (test_market_structure.VwapTest.test_engine_unknown_symbol_refused) ... ok
+test_exact_known_vwap (test_market_structure.VwapTest.test_exact_known_vwap) ... ok
+test_missing_reference_is_unknown (test_market_structure.VwapTest.test_missing_reference_is_unknown) ... ok
+test_multi_horizon_passthrough (test_market_structure.VwapTest.test_multi_horizon_passthrough) ... ok
+test_zero_denominator_is_unknown (test_market_structure.VwapTest.test_zero_denominator_is_unknown) ... ok
+test_negative_half_percent_is_minus_fifty_basis_points (test_metrics.MetricsTest.test_negative_half_percent_is_minus_fifty_basis_points) ... ok
+test_one_percent_is_one_hundred_basis_points (test_metrics.MetricsTest.test_one_percent_is_one_hundred_basis_points) ... ok
+test_order_book_imbalance_known_value (test_metrics.MetricsTest.test_order_book_imbalance_known_value) ... ok
+test_percentile_interpolates (test_metrics.MetricsTest.test_percentile_interpolates) ... ok
+test_population_z_score (test_metrics.MetricsTest.test_population_z_score) ... ok
+test_spread_uses_midpoint (test_metrics.MetricsTest.test_spread_uses_midpoint) ... ok
+test_change_velocity_acceleration (test_momentum.RankTrackerTest.test_change_velocity_acceleration) ... ok
+test_empty_snapshot (test_momentum.RankTrackerTest.test_empty_snapshot) ... ok
+test_missing_values_excluded_not_zero (test_momentum.RankTrackerTest.test_missing_values_excluded_not_zero) ... ok
+test_positive_negative_ordering_and_ties (test_momentum.RankTrackerTest.test_positive_negative_ordering_and_ties) ... ok
+test_acceleration_exact (test_momentum.VelocityMathTest.test_acceleration_exact) ... ok
+test_engine_momentum_wrapper_shape (test_momentum.VelocityMathTest.test_engine_momentum_wrapper_shape) ... ok
+test_flat_return_has_zero_velocity (test_momentum.VelocityMathTest.test_flat_return_has_zero_velocity)
+The key non-rename property: steady exponential trend => ~0. ... ok
+test_insufficient_history_is_none (test_momentum.VelocityMathTest.test_insufficient_history_is_none) ... ok
+test_irregular_timestamps (test_momentum.VelocityMathTest.test_irregular_timestamps) ... ok
+test_jump_gives_exact_velocity (test_momentum.VelocityMathTest.test_jump_gives_exact_velocity) ... ok
+test_no_lookahead (test_momentum.VelocityMathTest.test_no_lookahead) ... ok
+test_after_interval_accepted (test_persistence.ObservationSamplingTest.test_after_interval_accepted) ... ok
+test_configure_sampling_override_and_disable (test_persistence.ObservationSamplingTest.test_configure_sampling_override_and_disable) ... ok
+test_first_sighting_always_accepted (test_persistence.ObservationSamplingTest.test_first_sighting_always_accepted) ... ok
+test_gate_disabled_by_empty_map (test_persistence.ObservationSamplingTest.test_gate_disabled_by_empty_map) ... ok
+test_inflight_high_water_tracked (test_persistence.ObservationSamplingTest.test_inflight_high_water_tracked) ... ok
+test_per_symbol_independence (test_persistence.ObservationSamplingTest.test_per_symbol_independence) ... ok
+test_ungated_kinds_always_persist (test_persistence.ObservationSamplingTest.test_ungated_kinds_always_persist) ... ok
+test_within_interval_dropped_and_counted (test_persistence.ObservationSamplingTest.test_within_interval_dropped_and_counted) ... ok
+test_default_path_is_project_local_and_ignored (test_persistence.PersistenceStoreTest.test_default_path_is_project_local_and_ignored)
+Default DB lives under project data/ which the repo git-ignores. ... ok
+test_graceful_close (test_persistence.PersistenceStoreTest.test_graceful_close)
+Close cleans up resources without error. ... ok
+test_invalid_data_excluded_from_valid_feature_records (test_persistence.PersistenceStoreTest.test_invalid_data_excluded_from_valid_feature_records)
+Timestamp-rejected/skew-invalid observations are NEVER treated ... ok
+test_market_observation_round_trip (test_persistence.PersistenceStoreTest.test_market_observation_round_trip)
+A valid observation is stored and readable with parsed payload. ... ok
+test_observe_only_safety (test_persistence.PersistenceStoreTest.test_observe_only_safety)
+Persistence enforces observe-only: no trading/order paths. ... ok
+test_rejected_observation_not_in_valid_records (test_persistence.PersistenceStoreTest.test_rejected_observation_not_in_valid_records)
+Skew-invalid observations are counted as rejection telemetry ... ok
+test_rejection_record_sync_context_without_event_loop (test_persistence.PersistenceStoreTest.test_rejection_record_sync_context_without_event_loop)
+store_rejection_record works with no running event loop (sync fallback). ... ok
+test_rejection_retention_bounded (test_persistence.PersistenceStoreTest.test_rejection_retention_bounded)
+Rejected-observation retention keeps the table bounded. ... ok
+test_restart_reopen (test_persistence.PersistenceStoreTest.test_restart_reopen)
+Data persists across store close/reopen. ... ok
+test_retention_policy_observations (test_persistence.PersistenceStoreTest.test_retention_policy_observations)
+Market observations are bounded by retention policy. ... ok
+test_retention_policy_telemetry (test_persistence.PersistenceStoreTest.test_retention_policy_telemetry)
+Telemetry snapshots are bounded by retention policy. ... ok
+test_schema_initialization (test_persistence.PersistenceStoreTest.test_schema_initialization)
+Schema initializes correctly with all required tables. ... ok
+test_schema_version_tracking (test_persistence.PersistenceStoreTest.test_schema_version_tracking)
+Schema version is tracked in persistence_meta (currently v7). ... ok
+test_snapshot_not_starved_by_observation_flood (test_persistence.PersistenceStoreTest.test_snapshot_not_starved_by_observation_flood)
+Snapshots use a dedicated writer: a bulk observation backlog must ... ok
+test_storage_path_is_project_local (test_persistence.PersistenceStoreTest.test_storage_path_is_project_local)
+Database path is project-local, not system-wide. ... ok
+test_telemetry_snapshot_round_trip (test_persistence.PersistenceStoreTest.test_telemetry_snapshot_round_trip)
+Telemetry snapshot can be stored and retrieved. ... ok
+test_markprice_array_persisted_as_multi_record (test_persistence.ProbePersistenceTest.test_markprice_array_persisted_as_multi_record)
+List payloads (markPrice arrays) are preserved, not dropped. ... ok
+test_skew_rejected_message_reaches_only_rejections (test_persistence.ProbePersistenceTest.test_skew_rejected_message_reaches_only_rejections)
+A skew-rejected message is rejection telemetry, never a valid record. ... ok
+test_summary_persisted_for_dashboard (test_persistence.ProbePersistenceTest.test_summary_persisted_for_dashboard)
+log_summary stores a snapshot the P1-03 dashboard can read back. ... ok
+test_valid_message_reaches_observations (test_persistence.ProbePersistenceTest.test_valid_message_reaches_observations)
+A fresh valid aggTrade lands in market_observations, not rejections. ... ok
+test_discovery_snapshot_replace_and_read (test_persistence.SchemaV3Test.test_discovery_snapshot_replace_and_read) ... ok
+test_price_samples_round_trip_and_restart (test_persistence.SchemaV3Test.test_price_samples_round_trip_and_restart) ... ok
+test_rank_snapshots_replace_per_metric (test_persistence.SchemaV3Test.test_rank_snapshots_replace_per_metric) ... ok
+test_return_features_replace_per_symbol (test_persistence.SchemaV3Test.test_return_features_replace_per_symbol) ... ok
+test_schema_version_is_7_with_feature_tables (test_persistence.SchemaV3Test.test_schema_version_is_7_with_feature_tables) ... ok
+test_state_features_replace_and_transitions_bounded (test_persistence.SchemaV3Test.test_state_features_replace_and_transitions_bounded) ... ok
+test_universe_events_bounded_log (test_persistence.SchemaV3Test.test_universe_events_bounded_log) ... ok
+test_v1_database_migrates_to_v7 (test_persistence.SchemaV3Test.test_v1_database_migrates_to_v7) ... ok
+test_v2_database_migrates_to_v7_preserving_rows (test_persistence.SchemaV3Test.test_v2_database_migrates_to_v7_preserving_rows) ... ok
+test_v3_database_migrates_to_v7_preserving_rows (test_persistence.SchemaV3Test.test_v3_database_migrates_to_v7_preserving_rows) ... ok
+test_v4_database_migrates_to_v7_preserving_rows (test_persistence.SchemaV3Test.test_v4_database_migrates_to_v7_preserving_rows) ... ok
+test_v5_database_migrates_to_v7_preserving_rows (test_persistence.SchemaV3Test.test_v5_database_migrates_to_v7_preserving_rows) ... ok
+test_v6_database_migrates_to_v7_preserving_rows (test_persistence.SchemaV3Test.test_v6_database_migrates_to_v7_preserving_rows) ... ok
+test_event_driven_force_order_silence_is_not_reported_as_stale (test_probe.ProbeTest.test_event_driven_force_order_silence_is_not_reported_as_stale) ... ok
+test_final_summary_aggregates_data_quality_and_safety (test_probe.ProbeTest.test_final_summary_aggregates_data_quality_and_safety) ... ok
+test_future_or_stale_payload_is_discarded (test_probe.ProbeTest.test_future_or_stale_payload_is_discarded) ... ok
+test_latency_is_separated_by_stream_and_e_from_t (test_probe.ProbeTest.test_latency_is_separated_by_stream_and_e_from_t) ... ok
+test_mark_price_next_funding_time_is_not_transaction_time (test_probe.ProbeTest.test_mark_price_next_funding_time_is_not_transaction_time) ... ok
+test_processing_latency_uses_high_resolution_monotonic_clock (test_probe.ProbeTest.test_processing_latency_uses_high_resolution_monotonic_clock) ... ok
+test_source_contains_no_order_or_authenticated_client_paths (test_probe.ProbeTest.test_source_contains_no_order_or_authenticated_client_paths) ... ok
+test_streams_use_current_routed_endpoints (test_probe.ProbeTest.test_streams_use_current_routed_endpoints) ... ok
+test_get_mutation_rejected (test_probe_control.ControlApiTest.test_get_mutation_rejected) ... ok
+test_post_rejects_bad_origin (test_probe_control.ControlApiTest.test_post_rejects_bad_origin) ... ok
+test_post_requires_nonce (test_probe_control.ControlApiTest.test_post_requires_nonce) ... ok
+test_post_validates_duration (test_probe_control.ControlApiTest.test_post_validates_duration) ... ok
+test_start_stop_mapping (test_probe_control.ControlApiTest.test_start_stop_mapping) ... ok
+test_status_shape (test_probe_control.ControlApiTest.test_status_shape) ... ok
+test_ui_renders_control_without_buttons (test_probe_control.ControlApiTest.test_ui_renders_control_without_buttons) ... ok
+test_invalid (test_probe_control.DurationValidationTest.test_invalid) ... ok
+test_valid (test_probe_control.DurationValidationTest.test_valid) ... ok
+test_continuous_has_null_remaining (test_probe_control.RegistryStatusTest.test_continuous_has_null_remaining) ... ok
+test_creation_mismatch_is_not_canonical (test_probe_control.RegistryStatusTest.test_creation_mismatch_is_not_canonical) ... ok
+test_duplicate_registration_refused (test_probe_control.RegistryStatusTest.test_duplicate_registration_refused) ... ok
+test_foreign_record_never_marked (test_probe_control.RegistryStatusTest.test_foreign_record_never_marked) ... ok
+test_no_record_is_stopped (test_probe_control.RegistryStatusTest.test_no_record_is_stopped) ... ok
+test_register_flows_running (test_probe_control.RegistryStatusTest.test_register_flows_running) ... ok
+test_stale_record_recovered_to_failed (test_probe_control.RegistryStatusTest.test_stale_record_recovered_to_failed) ... ok
+test_terminal_markers (test_probe_control.RegistryStatusTest.test_terminal_markers) ... ok
+test_start_refused_when_running (test_probe_control.StartStopTest.test_start_refused_when_running) ... ok
+test_start_spawns_fixed_command_observe_only (test_probe_control.StartStopTest.test_start_spawns_fixed_command_observe_only) ... ok
+test_stop_kills_only_verified_pid (test_probe_control.StartStopTest.test_stop_kills_only_verified_pid) ... ok
+test_stop_refuses_identity_changed_pid (test_probe_control.StartStopTest.test_stop_refuses_identity_changed_pid) ... ok
+test_stop_stale_recovers_without_kill (test_probe_control.StartStopTest.test_stop_stale_recovers_without_kill) ... ok
+test_stop_without_record (test_probe_control.StartStopTest.test_stop_without_record) ... ok
+test_dead_pid_recovers_to_failed (test_process_identity.LifecycleStatusTest.test_dead_pid_recovers_to_failed) ... ok
+test_running_completed_stopped_accurate (test_process_identity.LifecycleStatusTest.test_running_completed_stopped_accurate) ... ok
+test_helper_returns_int_flag (test_process_identity.NoWindowFlagsTest.test_helper_returns_int_flag) ... ok
+test_tasklist_failure_returns_honest_unknown (test_process_identity.NoWindowFlagsTest.test_tasklist_failure_returns_honest_unknown) ... ok
+test_tasklist_run_suppresses_console (test_process_identity.NoWindowFlagsTest.test_tasklist_run_suppresses_console) ... ok
+test_timeouts_and_capture_preserved (test_process_identity.NoWindowFlagsTest.test_timeouts_and_capture_preserved) ... ok
+test_wmic_run_suppresses_console (test_process_identity.NoWindowFlagsTest.test_wmic_run_suppresses_console) ... ok
+test_correct_identity_accepted (test_process_identity.PidIdentityTest.test_correct_identity_accepted) ... ok
+test_mismatched_creation_rejected_pid_reuse (test_process_identity.PidIdentityTest.test_mismatched_creation_rejected_pid_reuse) ... ok
+test_missing_process_rejected (test_process_identity.PidIdentityTest.test_missing_process_rejected) ... ok
+test_wrong_image_rejected (test_process_identity.PidIdentityTest.test_wrong_image_rejected) ... ok
+test_spawn_hides_console_and_registers (test_process_identity.StartProbeNoWindowTest.test_spawn_hides_console_and_registers) ... ok
+test_10s_and_1m_aggregation (test_research_recorder.FlowBucketTest.test_10s_and_1m_aggregation) ... ok
+test_aggressor_mapping_and_delta (test_research_recorder.FlowBucketTest.test_aggressor_mapping_and_delta) ... ok
+test_book_aggregation_min_mean_max (test_research_recorder.FlowBucketTest.test_book_aggregation_min_mean_max) ... ok
+test_bounded_queue_drop_telemetry (test_research_recorder.FlowBucketTest.test_bounded_queue_drop_telemetry) ... ok
+test_db_failure_isolation (test_research_recorder.FlowBucketTest.test_db_failure_isolation) ... ok
+test_gap_degraded_crossed_counting (test_research_recorder.FlowBucketTest.test_gap_degraded_crossed_counting) ... ok
+test_incomplete_bucket_policy_partial (test_research_recorder.FlowBucketTest.test_incomplete_bucket_policy_partial) ... ok
+test_no_live_engine_semantic_changes (test_research_recorder.FlowBucketTest.test_no_live_engine_semantic_changes) ... ok
+test_no_second_process_or_registry (test_research_recorder.FlowBucketTest.test_no_second_process_or_registry) ... ok
+test_ohlc_and_counts (test_research_recorder.FlowBucketTest.test_ohlc_and_counts) ... ok
+test_recorder_cannot_crash_probe_path (test_research_recorder.FlowBucketTest.test_recorder_cannot_crash_probe_path) ... ok
+test_recorder_lifecycle_with_probe (test_research_recorder.FlowBucketTest.test_recorder_lifecycle_with_probe) ... ok
+test_restart_idempotency_no_double_count (test_research_recorder.FlowBucketTest.test_restart_idempotency_no_double_count) ... ok
+test_retention_cleanup_bounded (test_research_recorder.FlowBucketTest.test_retention_cleanup_bounded) ... ok
+test_log_summary_persists_return_features (test_returns.ProbeReturnsWiringTest.test_log_summary_persists_return_features) ... ok
+test_new_modules_have_no_trading_paths (test_returns.ProbeReturnsWiringTest.test_new_modules_have_no_trading_paths) ... ok
+test_sampling_config_loads_from_file (test_returns.ProbeReturnsWiringTest.test_sampling_config_loads_from_file) ... ok
+test_skew_rejected_markprice_never_reaches_engine (test_returns.ProbeReturnsWiringTest.test_skew_rejected_markprice_never_reaches_engine) ... ok
+test_universe_matches_config (test_returns.ProbeReturnsWiringTest.test_universe_matches_config) ... ok
+test_valid_markprice_feeds_engine (test_returns.ProbeReturnsWiringTest.test_valid_markprice_feeds_engine)
+Two valid mark prices 10s apart land as two engine samples. ... ok
+test_all_timeframes_known_log_values (test_returns.ReturnEngineTest.test_all_timeframes_known_log_values) ... ok
+test_empty_series_all_unknown_never_zero (test_returns.ReturnEngineTest.test_empty_series_all_unknown_never_zero) ... ok
+test_gap_beyond_tolerance_is_unknown (test_returns.ReturnEngineTest.test_gap_beyond_tolerance_is_unknown) ... ok
+test_invalid_prices_and_unknown_symbols_refused (test_returns.ReturnEngineTest.test_invalid_prices_and_unknown_symbols_refused) ... ok
+test_irregular_gap_within_tolerance_uses_nearest (test_returns.ReturnEngineTest.test_irregular_gap_within_tolerance_uses_nearest) ... ok
+test_no_lookahead_future_jump_invisible (test_returns.ReturnEngineTest.test_no_lookahead_future_jump_invisible) ... ok
+test_out_of_order_dropped_same_bucket_coalesced (test_returns.ReturnEngineTest.test_out_of_order_dropped_same_bucket_coalesced) ... ok
+test_restore_round_trip (test_returns.ReturnEngineTest.test_restore_round_trip) ... ok
+test_series_bounded (test_returns.ReturnEngineTest.test_series_bounded) ... ok
+test_short_history_long_horizons_unknown (test_returns.ReturnEngineTest.test_short_history_long_horizons_unknown) ... ok
+test_stats_shape (test_returns.ReturnEngineTest.test_stats_shape) ... ok
+test_tolerance_boundary_accepted (test_returns.ReturnEngineTest.test_tolerance_boundary_accepted) ... ok
+test_disabled_symbols_excluded_from_active (test_returns.UniverseTest.test_disabled_symbols_excluded_from_active) ... ok
+test_duplicate_symbols_rejected (test_returns.UniverseTest.test_duplicate_symbols_rejected) ... ok
+test_from_config_preserves_validated_trio (test_returns.UniverseTest.test_from_config_preserves_validated_trio) ... ok
+test_unknown_symbol_lookup (test_returns.UniverseTest.test_unknown_symbol_lookup) ... ok
+test_near_miss_buckets_are_cumulative (test_telemetry.NearMissCounterTest.test_near_miss_buckets_are_cumulative) ... ok
+test_required_statistics_are_reported (test_telemetry.RunningDistributionTest.test_required_statistics_are_reported) ... ok
+test_demotion_dwell_and_cooldown (test_universe.LifecycleTest.test_demotion_dwell_and_cooldown) ... ok
+test_ineligible_demotes_immediately (test_universe.LifecycleTest.test_ineligible_demotes_immediately) ... ok
+test_live_to_degraded (test_universe.LifecycleTest.test_live_to_degraded) ... ok
+test_partial_failure_returns_to_pending (test_universe.LifecycleTest.test_partial_failure_returns_to_pending) ... ok
+test_promotion_pending_then_warming_then_live (test_universe.LifecycleTest.test_promotion_pending_then_warming_then_live) ... ok
+test_repromotion_needs_fresh_data (test_universe.LifecycleTest.test_repromotion_needs_fresh_data) ... ok
+test_movement_order_and_tie_break (test_universe.RankingTest.test_movement_order_and_tie_break) ... ok
+test_stream_counts (test_universe.RankingTest.test_stream_counts) ... ok
+test_core_never_promoted_or_shadowed (test_universe.SelectionTest.test_core_never_promoted_or_shadowed) ... ok
+test_ineligible_never_promoted (test_universe.SelectionTest.test_ineligible_never_promoted) ... ok
+test_missing_metrics_handled (test_universe.SelectionTest.test_missing_metrics_handled) ... ok
+test_no_promotion_without_proposals (test_universe.SelectionTest.test_no_promotion_without_proposals) ... ok
+test_promotes_top_ranked_fresh_candidate (test_universe.SelectionTest.test_promotes_top_ranked_fresh_candidate) ... ok
+test_slot_enforcement (test_universe.SelectionTest.test_slot_enforcement) ... ok
+test_stale_discovery_skipped (test_universe.SelectionTest.test_stale_discovery_skipped) ... ok
+test_stream_budget_fail_closed (test_universe.SelectionTest.test_stream_budget_fail_closed) ... ok
+test_transport_freeze (test_universe.SelectionTest.test_transport_freeze) ... ok
+test_canonical_inventory (test_universe.StreamAccountingTest.test_canonical_inventory) ... ok
+test_connection_limit_enforced (test_universe.StreamAccountingTest.test_connection_limit_enforced) ... ok
+test_connections_and_streams_separate_units (test_universe.StreamAccountingTest.test_connections_and_streams_separate_units) ... ok
+test_global_feeds_counted_once (test_universe.StreamAccountingTest.test_global_feeds_counted_once) ... ok
+test_hot_inventory_three_symbols (test_universe.StreamAccountingTest.test_hot_inventory_three_symbols) ... ok
+test_per_connection_limit_enforced (test_universe.StreamAccountingTest.test_per_connection_limit_enforced) ... ok
+test_telemetry_matches_enforcement (test_universe.StreamAccountingTest.test_telemetry_matches_enforcement) ... ok
+test_total_stream_limit_enforced (test_universe.StreamAccountingTest.test_total_stream_limit_enforced) ... ok
+test_core_unaffected_by_invalid_hot_candidates (test_universe.TimestampFreshnessTest.test_core_unaffected_by_invalid_hot_candidates) ... ok
+test_excessively_future_rejected (test_universe.TimestampFreshnessTest.test_excessively_future_rejected) ... ok
+test_excessively_old_rejected (test_universe.TimestampFreshnessTest.test_excessively_old_rejected) ... ok
+test_malformed_timestamp_rejected_without_aborting_update (test_universe.TimestampFreshnessTest.test_malformed_timestamp_rejected_without_aborting_update) ... ok
+test_missing_never_interpreted_as_zero (test_universe.TimestampFreshnessTest.test_missing_never_interpreted_as_zero) ... ok
+test_missing_timestamp_rejected (test_universe.TimestampFreshnessTest.test_missing_timestamp_rejected) ... ok
+test_seconds_confusion_rejected (test_universe.TimestampFreshnessTest.test_seconds_confusion_rejected) ... ok
+test_small_future_skew_permitted (test_universe.TimestampFreshnessTest.test_small_future_skew_permitted) ... ok
+test_stale_snapshot_blocks_promotion (test_universe.TimestampFreshnessTest.test_stale_snapshot_blocks_promotion) ... ok
+test_valid_fresh_timestamp (test_universe.TimestampFreshnessTest.test_valid_fresh_timestamp) ... ok
+test_empty_means_no_connections (test_universe.UrlTest.test_empty_means_no_connections) ... ok
+test_expected_names_cover_hot (test_universe.UrlTest.test_expected_names_cover_hot) ... ok
+test_no_duplicate_subscriptions (test_universe.UrlTest.test_no_duplicate_subscriptions) ... ok
+test_stream_counts_and_split (test_universe.UrlTest.test_stream_counts_and_split) ... ok
+test_classifier_unknown_during_warmup (test_universe_probe.HotDataTrackingTest.test_classifier_unknown_during_warmup) ... ok
+test_core_symbols_not_tracked (test_universe_probe.HotDataTrackingTest.test_core_symbols_not_tracked) ... ok
+test_warming_then_live_on_mark_trade_depth (test_universe_probe.HotDataTrackingTest.test_warming_then_live_on_mark_trade_depth) ... ok
+test_canonical_pair_untouched_by_sync (test_universe_probe.HotSyncTest.test_canonical_pair_untouched_by_sync) ... ok
+test_demote_cancels_forgets_and_cools_down (test_universe_probe.HotSyncTest.test_demote_cancels_forgets_and_cools_down) ... ok
+test_no_resync_when_set_unchanged (test_universe_probe.HotSyncTest.test_no_resync_when_set_unchanged) ... ok
+test_promote_spawns_managed_tasks_and_allows_engines (test_universe_probe.HotSyncTest.test_promote_spawns_managed_tasks_and_allows_engines) ... ok
+test_finalize_marks_partial_without_cross_contamination (test_universe_probe.RecorderIsolationTest.test_finalize_marks_partial_without_cross_contamination) ... ok
+test_defaults_backward_compatible (test_universe_probe.UniverseConfigTest.test_defaults_backward_compatible) ... ok
+test_observe_only_safety_surface (test_universe_probe.UniverseConfigTest.test_observe_only_safety_surface) ... ok
+
+----------------------------------------------------------------------
+Ran 496 tests in 77.458s
+
+OK

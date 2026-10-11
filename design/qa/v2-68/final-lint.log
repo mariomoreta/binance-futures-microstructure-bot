@@ -1,0 +1,10 @@
+
+> dashboard-v2@0.0.1 lint
+> eslint src
+
+
+C:\proyectos\binance-futures-dashboard-v2-worktree\frontend\src\components\system\BotControl.tsx
+  48:87  warning  The ref value 'sequence.current' will likely have changed by the time this effect cleanup function runs. If this ref points to a node rendered by React, copy 'sequence.current' to a variable inside the effect, and use that variable in the cleanup function  react-hooks/exhaustive-deps
+
+✖ 1 problem (0 errors, 1 warning)
+
