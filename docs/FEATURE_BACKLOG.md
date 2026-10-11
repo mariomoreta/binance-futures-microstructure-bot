@@ -334,8 +334,12 @@ it does not replace them. Authority stays where it was recorded
   enforcement moved into `control supervise` (registry lease, verified-PID one-shot,
   UNKNOWN-safe) — next supervised window needs explicit instruction, still no 4–6 h;
   P1-14B.8: 35-min supervised window post-audited + sentinel layer validated (brief
-  three-layer run) — still no 4–6 h authorization.
-- **Last update:** 2026-10-10 (P1-14B.8 supervised voyage, PASS).
+  three-layer run) — still no 4–6 h authorization; P1-14B.8-followup (2026-10-11):
+  enforce fencing corrected per frontend review `d80fb9b` (locked STOPPING,
+  fenced ABORTED/FAILED, real `aborted_by`, owned-lease heartbeat proof, 808/808)
+  with no new supervised window on the corrected SHA (historical windows stay
+  historical); V2 supervised start still PENDING/separate.
+- **Last update:** 2026-10-11 (P1-14B.8 follow-up fencing, DONE).
 
 ## F-BT-01 — Historical backtesting (P1-14)
 

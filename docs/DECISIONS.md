@@ -820,3 +820,30 @@ watchers (transactional supervised launch with lease verification + rollback
 documented as pending work, not presented as resolved). Gates:
 prospective/persistence/safety PASS (no long run). V2/main untouched.
 P1-14C not started. Still NO 4-6 h authorization.
+
+## 2026-10-11 -- P1-14B.8 follow-up: enforce fencing before termination
+
+Starting at SHA `8648366` (clean tree). Frontend review
+`d80fb9b:docs/DASHBOARD_V2_50_CORRECTIONS_REVIEW.md` proved the 794-test
+correction still terminated before fencing; all remaining cases reproduced
+with temp registries + mocked termination (8/13 fail on HEAD) then fixed:
+
+1. STOPPING is now a locked `update_registry` acquisition that re-verifies
+   eligible state, run PID+ctime, canonical liveness, owner lease and foreign
+   marker (`already-stopping` refusal). Refused/failed acquisition never
+   reaches `_terminate_verified_pid`; post-kill ownership checks alone are
+   insufficient and are no longer the fence.
+2. ABORTED/FAILED marks recheck run identity, own `stopping_by` and lease;
+   `aborted_by` persists `supervisor`/`sentinel`/`direct` (was hardcoded
+   `supervisor`). `sentinel_once` heartbeat is locked+fenced like the
+   supervisor path. Duplicate JSON parse + unreachable abort-field block
+   removed.
+3. Heartbeat regression repaired: owned leases, 4x25 locked heartbeats, both
+   timestamps advance, distinctive 11/22 values survive, all threads join
+   with zero hidden errors; sentinel claim race added (exactly one winner).
+4. No market probes, P1-14C, long runs or paper trading in this slice;
+   SQLite/logs/evidence preserved; V2 transactional supervised start stays
+   PENDING and separate; SUCCESS_GATES untouched. Historical healthy windows
+   stay historical: no new supervised window was run on the corrected SHA.
+
+Tests: 13 fencing + 1 sentinel race; suite 808/808 OK.

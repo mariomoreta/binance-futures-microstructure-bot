@@ -170,6 +170,18 @@ the dashboard exists. No classifier before raw-feature dashboard validation.
   Gates all PASS incl. new SUPERVISION_GATE. No 4–6 h authorization. Report:
   `docs/P1_14B_8_SUPERVISED_RUN_REPORT.md` (see its §7 corrections log).
 
+- `P1-14B.8-followup` (2026-10-11) ENFORCE FENCING BOUNDED CORRECTION — **DONE**.
+  Frontend review `d80fb9b` HIGH findings fixed deterministically (temp
+  registries + mocked termination; 8/13 new fencing tests fail on `8648366`,
+  13/13 pass corrected): locked STOPPING acquisition with run/lease/marker
+  re-verification, refused/failed marker never terminates, ABORTED/FAILED
+  fenced, real `aborted_by`, locked+fenced `sentinel_once`, owned-lease
+  heartbeat proof (4x25, 11/22 retained) + sentinel single-winner race.
+  Suite 808/808 OK. No probes, P1-14C, long runs or paper trading. DB/logs
+  preserved. Historical healthy windows stay historical; no new supervised
+  window on the corrected SHA. V2 supervised start still PENDING/separate.
+  SUCCESS_GATES untouched.
+
 - `P1-10R` PROLONGED ≥6H SOAK RE-RUN — P1-10 FAIL stays FAIL (truncated at
   4.91h); re-run with dashboard live, blocking survivable launch, merged
   stdout+stderr as UTF-8 (see `docs/DECISIONS.md` launch rule).
@@ -397,6 +409,14 @@ strategies (P3), paper engine/positions (P4), execution (P5).
 ## LAST_VERIFICATION
 
 
+
+- 2026-10-11 (P1-14B.8-followup): `python run_tests.py` → 808/808 OK (794 + 13 fencing + 1 sentinel race).
+  Enforce fencing corrected per frontend review `d80fb9b` (8/13 new tests fail on `8648366`,
+  13/13 pass corrected; owned-lease heartbeat proof replaces the no-op fixture).
+  No probes, P1-14C, long runs or paper trading started; DB/logs preserved.
+  No new supervised window on the corrected SHA (historical windows stay historical).
+  V2 supervised start still PENDING/separate. Next: backend SHA review before
+  operational integration; P1-14C needs explicit instruction.
 
 - 2026-10-10 (P1-14B.8): `python run_tests.py` → 775/775 OK (760 + 15 sentinel).
   35-min supervised window post-audited (2102.1 s, 0/0/0.00%, 70 supervised cycles,

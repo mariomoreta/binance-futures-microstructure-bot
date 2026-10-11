@@ -1304,3 +1304,42 @@ startup prints in both mains, `-u` in detached launches, lease-presence launch v
 - Gates: CLOCK/TRANSPORT/FRESHNESS/SUPERVISION/PERSISTENCE/SAFETY PASS. Verdict PASS.
   Still NO 4–6 h authorization (recurrence risk); P1-14C not started; V2/main untouched.
   Full report: `docs/P1_14B_8_SUPERVISED_RUN_REPORT.md`.
+
+## P1-14B.8 follow-up — enforce fencing (bounded correction, 2026-10-11)
+
+Frontend review `d80fb9b:docs/DASHBOARD_V2_50_CORRECTIONS_REVIEW.md` (backend
+`8648366`) left HIGH findings: `enforce_abort` terminated before fencing,
+terminal marks ignored run replacement, `aborted_by` hardcoded, heartbeat
+regression no-op'd. Fixed deterministically, no market runs launched:
+
+- `enforce_abort`: STOPPING via locked `update_registry`; pre-terminate gate
+  re-verifies eligible state, run PID+ctime, canonical liveness, owner lease
+  and foreign STOPPING marker (`already-stopping` refusal). Failed/refused
+  marker never reaches termination. ABORTED/FAILED marks recheck run
+  identity, own marker and lease; `aborted_by` persists the real owner
+  (`supervisor`/`sentinel`/`direct`). `sentinel_once` heartbeat is now
+  locked+fenced (replaced sentinel no-ops; no clobber of supervisor block).
+  Cleanup: single JSON parse in `update_registry`; unreachable abort-field
+  block removed.
+- Regressions `tests/test_enforce_abort_fencing.py` (13): foreign owner never
+  terminates (x2); COMPLETED+takeover between read and STOPPING preserved
+  (x2); STOPPING write failure never terminates (x2); PID/ctime + foreign
+  marker fenced on ABORT and timeout paths (x4); real owner persisted (x2);
+  foreign STOPPING acquisition refused. On `8648366` 8/13 fail (termination
+  invoked, COMPLETED overwritten, `sentinel` mis-marked as `supervisor`);
+  on corrected code 13/13 pass.
+- Heartbeat `test_concurrent_heartbeats_keep_both_fields` now uses owned
+  leases (`os.getpid()`): 4 threads x25 locked heartbeats advance both
+  `last_check_at`, retain distinctive `11`/`22` + streaks/action, preserve
+  the run, exit cleanly with zero hidden errors. Old fixture (PIDs
+  424244/424245) left a byte-equivalent record. Added
+  `test_racing_sentinel_claims_single_winner`: exactly one winner (supervisor
+  race already covered).
+- Suite: `python run_tests.py` → 808/808 OK (794 + 13 fencing + 1 sentinel
+  race). No probes, P1-14C, long runs or paper trading started. DB/logs
+  preserved. V2 transactional supervised start stays PENDING and separate.
+  SUCCESS_GATES not advanced.
+- Window scope: historical >=30-min healthy windows (P1-14B.5 2102.5 s;
+  P1-14B.8 2102.147 s supervisor-only + brief three-layer run) are historical
+  evidence only. No new supervised window was run on this corrected SHA (per
+  task bounds); corrected-code longevity remains UNDEMONSTRATED.

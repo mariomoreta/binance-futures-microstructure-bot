@@ -274,7 +274,7 @@ class SentinelAbortIntegrationTest(unittest.TestCase):
             final = pc.read_registry()
             self.assertEqual(final.get("state"), "ABORTED")
             self.assertEqual(final.get("abort_rule"), "supervision-lost")
-            self.assertEqual(final.get("aborted_by"), "supervisor")
+            self.assertEqual(final.get("aborted_by"), "sentinel")
             self.assertEqual(final.get("launcher"), "agent")
             again = pc.sentinel_once(stale_after_s=1.0)
             self.assertEqual(again["outcome"], "already-terminal")

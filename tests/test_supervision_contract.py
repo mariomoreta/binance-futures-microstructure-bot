@@ -240,24 +240,34 @@ class DisplayContractTest(unittest.TestCase):
 
 class FencingTest(unittest.TestCase):
     def test_concurrent_heartbeats_keep_both_fields(self):
+        # Genuine owners: both leases belong to this process, so every
+        # heartbeat performs a real locked write (the old fixture used
+        # foreign PIDs 424244/424245 and every heartbeat silently no-op'd,
+        # leaving a byte-equivalent record).
         _temp_registry(self)
         rec = _run_record()
-        rec["supervisor"] = _sup_lease(age_s=200.0)
-        rec["sentinel"] = _sen_lease(age_s=200.0)
+        rec["supervisor"] = _sup_lease(age_s=200.0, pid=os.getpid())
+        rec["sentinel"] = _sen_lease(age_s=200.0, pid=os.getpid())
         _write(rec)
+        sup_before = rec["supervisor"]["last_check_at"]
+        sen_before = rec["sentinel"]["last_check_at"]
         errors = []
 
         def beat_sup():
             try:
                 for _ in range(25):
-                    pc._heartbeat_lease()
+                    pc._heartbeat_lease(
+                        consecutive_failures=11,
+                        streaks={"persistence": 1, "clock": 2, "db": 3})
             except Exception as exc:  # noqa: BLE001 - collected below
                 errors.append(exc)
 
         def beat_sen():
             try:
                 for _ in range(25):
-                    pc._heartbeat_sentinel()
+                    pc._heartbeat_sentinel(
+                        failures=22,
+                        action={"rule": "none", "at": "t", "aborted": False})
             except Exception as exc:  # noqa: BLE001
                 errors.append(exc)
 
@@ -267,12 +277,25 @@ class FencingTest(unittest.TestCase):
             t.start()
         for t in threads:
             t.join(timeout=60)
+        # All workers exit; no failure hidden behind the threads.
+        for t in threads:
+            self.assertFalse(t.is_alive())
         self.assertEqual(errors, [])
         final = pc.read_registry()
         self.assertIn("supervisor", final)
         self.assertIn("sentinel", final)
         self.assertEqual(final["state"], "RUNNING")
         self.assertEqual(final["pid"], 424243)
+        # Both heartbeats really advanced (writes happened, not no-ops).
+        self.assertNotEqual(final["supervisor"]["last_check_at"], sup_before)
+        self.assertNotEqual(final["sentinel"]["last_check_at"], sen_before)
+        # Distinctive updates from each owner survive the race.
+        self.assertEqual(final["supervisor"]["consecutive_failures"], 11)
+        self.assertEqual(final["supervisor"]["streaks"],
+                         {"persistence": 1, "clock": 2, "db": 3})
+        self.assertEqual(final["sentinel"]["consecutive_failures"], 22)
+        self.assertEqual(final["sentinel"]["action"],
+                         {"rule": "none", "at": "t", "aborted": False})
 
     def test_takeover_then_old_heartbeat_noop(self):
         _temp_registry(self)
@@ -335,5 +358,32 @@ class FencingTest(unittest.TestCase):
                 t.start()
             for t in threads:
                 t.join(timeout=60)
+        for t in threads:
+            self.assertFalse(t.is_alive())
+        self.assertEqual(errors, [])
+        self.assertEqual(len(winners), 1)
+
+    def test_racing_sentinel_claims_single_winner(self):
+        _temp_registry(self)
+        _write(_run_record())
+        winners = []
+        errors = []
+
+        def claim():
+            try:
+                out = pc.claim_sentinel()
+                if out.get("watching"):
+                    winners.append(out.get("pid"))
+            except Exception as exc:  # noqa: BLE001
+                errors.append(exc)
+
+        with mock.patch.object(pc, "is_canonical_pid", return_value=True):
+            threads = [threading.Thread(target=claim) for _ in range(4)]
+            for t in threads:
+                t.start()
+            for t in threads:
+                t.join(timeout=60)
+        for t in threads:
+            self.assertFalse(t.is_alive())
         self.assertEqual(errors, [])
         self.assertEqual(len(winners), 1)

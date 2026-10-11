@@ -173,10 +173,6 @@ def update_registry(transform):
             record = json.loads(raw) if raw.strip() else None
         except ValueError:
             record = None
-        try:
-            record = json.loads(raw) if raw.strip() else None
-        except ValueError:
-            record = None
         new_record, value = transform(record)
         if new_record is None:
             return (False, value)
@@ -1070,34 +1066,85 @@ def enforce_abort(decision: Dict[str, Any],
     owner_kind ("supervisor"|"sentinel") additionally requires that OUR
     lease still owns the watched run at marking time: a replaced watcher
     must not mark its replacement's run, and a run that left the watched
-    state meanwhile is reported superseded, never ABORTED."""
+    state meanwhile is reported superseded, never ABORTED.
+    Fencing (P1-14B.8 corrections): the STOPPING transition itself happens
+    under the registry lock AFTER re-verifying run identity, eligible
+    state, and owner lease on fresh state. A refused/failed marker write
+    never reaches termination. Checking ownership only after a kill is
+    insufficient -- a replaced watcher must not reach the kill at all.
+    """
     record = read_registry()
     if not record or not _is_active_state(record.get("state")):
         return {"aborted": False, "reason": "no-active-run"}
-    pid = record.get("pid")
     try:
-        pid = int(pid)
+        pid = int(record.get("pid"))
     except (TypeError, ValueError):
         return {"aborted": False, "reason": "bad-record-pid"}
     if not is_canonical_pid(record):
         return {"aborted": False, "reason": "stale-record-not-touched"}
-    stopping_marker = ("enforce:%s:%d" % (owner_kind or "direct", os.getpid()))
     try:
-        record["state"] = "STOPPING"
-        record["stopping_by"] = stopping_marker
-        _write_registry(record)
+        expected_ctime = record.get("create_time")
+    except AttributeError:
+        expected_ctime = None
+    stopping_marker = ("enforce:%s:%d" % (owner_kind or "direct", os.getpid()))
+
+    def _claim_stop(rec):
+        # Locked pre-terminate gate: re-verify EVERYTHING on fresh state.
+        # Any refusal returns without touching the record -- and crucially
+        # without terminating anything afterwards.
+        if not rec or not _is_active_state(rec.get("state")):
+            return None, {"proceed": False, "reason": "no-active-run"}
+        try:
+            fresh_pid = int(rec.get("pid"))
+        except (TypeError, ValueError):
+            return None, {"proceed": False, "reason": "bad-record-pid"}
+        if fresh_pid != pid or rec.get("create_time") != expected_ctime:
+            return None, {"proceed": False, "reason": "run-replaced"}
+        if not is_canonical_pid(rec):
+            return None, {"proceed": False, "reason": "stale-record-not-touched"}
+        if owner_kind is not None and not _owns_lease(rec, owner_kind):
+            return None, {"proceed": False, "reason": "replaced-owner"}
+        if rec.get("state") == "STOPPING":
+            # Marker acquisition: a foreign STOPPING transition already
+            # holds the run -- back off without touching it and without
+            # terminating. Our own marker (same process retry) may resume.
+            if rec.get("stopping_by") != stopping_marker:
+                return None, {"proceed": False, "reason": "already-stopping"}
+            return rec, {"proceed": True}
+        rec["state"] = "STOPPING"
+        rec["stopping_by"] = stopping_marker
+        return rec, {"proceed": True}
+
+    try:
+        wrote, gate = update_registry(_claim_stop)
     except OSError:
-        pass
+        return {"aborted": False, "reason": "registry-unavailable"}
+    if not wrote or not gate.get("proceed"):
+        return {"aborted": False,
+                "reason": gate.get("reason", "refused"),
+                "pid": pid}
     _terminate_verified_pid(pid)
     deadline = time.monotonic() + 10.0
     from .dashboard import pid_is_ours
     while time.monotonic() < deadline:
-        if not pid_is_ours(pid, record.get("create_time")):
+        if not pid_is_ours(pid, expected_ctime):
             break
         time.sleep(0.2)
-    if pid_is_ours(pid, record.get("create_time")):
+    if pid_is_ours(pid, expected_ctime):
         def _fail_mark(rec):
+            # Fenced: same run (pid+ctime), still OUR stopping marker, and
+            # (when given) still our lease. A foreign STOPPING marker, a
+            # replaced run, or a lost lease all refuse without touching.
             if not rec or rec.get("state") not in ("STOPPING",):
+                return None, False
+            if rec.get("stopping_by") != stopping_marker:
+                return None, False
+            try:
+                if int(rec.get("pid")) != pid:
+                    return None, False
+            except (TypeError, ValueError):
+                return None, False
+            if rec.get("create_time") != expected_ctime:
                 return None, False
             if owner_kind is not None and not _owns_lease(rec, owner_kind):
                 return None, False
@@ -1118,14 +1165,23 @@ def enforce_abort(decision: Dict[str, Any],
         # STOPPING state (not someone else's STOPPED/COMPLETED/FAILED) and
         # -- when an owner kind is given -- our lease still owns the run.
         # Anything else reports superseded without touching the record.
+        # Run identity (pid + creation-time) is rechecked against the
+        # pre-terminate snapshot: a replaced run is never marked.
         if not rec or rec.get("state") != "STOPPING":
             return None, False
         if rec.get("stopping_by") != stopping_marker:
             return None, False
+        try:
+            if int(rec.get("pid")) != pid:
+                return None, False
+        except (TypeError, ValueError):
+            return None, False
+        if rec.get("create_time") != expected_ctime:
+            return None, False
         if owner_kind is not None and not _owns_lease(rec, owner_kind):
             return None, False
         rec["state"] = ABORTED
-        rec["aborted_by"] = "supervisor"
+        rec["aborted_by"] = owner_kind if owner_kind else "direct"
         rec["abort_rule"] = decision.get("rule")
         rec["abort_reason"] = decision.get("reason")
         rec["abort_threshold"] = decision.get("threshold")
@@ -1363,14 +1419,6 @@ def _supervisor_lease_verified(record: Dict[str, Any]) -> bool:
     except Exception:
         return False
 
-    if record.get("state") == ABORTED:
-        block["abort_triggered"] = True
-        block["abort_reason"] = record.get("abort_reason")
-        block["abort_rule"] = record.get("abort_rule")
-        block["abort_threshold"] = record.get("abort_threshold")
-        block["abort_observed"] = record.get("abort_observed")
-    return block
-
 
 # ------------------------------------------------------------------
 # P1-14B.8 sentinel: supervision-liveness watchdog with enforced stop.
@@ -1554,18 +1602,26 @@ def sentinel_once(stale_after_s: float = SENTINEL_STALE_AFTER_S) -> Dict[str, An
     persist the heartbeat never mask the cycle outcome.
     """
     outcome = _sentinel_cycle(stale_after_s)
+    # Fenced heartbeat: locked read-modify-write that only touches OUR
+    # sentinel lease. A replaced sentinel no-ops; concurrent supervisor
+    # heartbeats serialize on the lock instead of being clobbered by an
+    # unlocked read-modify-write. Failures never mask the cycle outcome.
+    def _touch(rec):
+        if not rec or not isinstance(rec.get("sentinel"), dict):
+            return None, False
+        if not _owns_lease(rec, "sentinel"):
+            return None, False
+        rec["sentinel"]["last_check_at"] = _utc_now_iso()
+        if outcome.get("outcome") == "aborted-supervision-lost":
+            decision = outcome.get("decision") or {}
+            rec["sentinel"]["action"] = {
+                "rule": decision.get("rule", "supervision-lost"),
+                "at": _utc_now_iso(),
+                "aborted": True,
+            }
+        return rec, True
     try:
-        record = read_registry()
-        if record and isinstance(record.get("sentinel"), dict):
-            record["sentinel"]["last_check_at"] = _utc_now_iso()
-            if outcome.get("outcome") == "aborted-supervision-lost":
-                decision = outcome.get("decision") or {}
-                record["sentinel"]["action"] = {
-                    "rule": decision.get("rule", "supervision-lost"),
-                    "at": _utc_now_iso(),
-                    "aborted": True,
-                }
-            _write_registry(record)
+        update_registry(_touch)
     except OSError:
         pass
     return outcome
