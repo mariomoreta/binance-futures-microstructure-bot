@@ -1,6 +1,6 @@
 # FEATURE BACKLOG — canonical decision traceability & deferred features
 
-> Current reconciliation: DASH-V2-61 (2026-10-11); see latest dated review below. Previous reconciliation: DASH-V2-53 (2026-10-11). Original inventories/statuses below are dated historical checkpoints; consult the dated reconciliation section and MOVER_LEVEL_STRATEGY_RESEARCH.md before interpreting implementation status. Backend 55efaa2 and the V2 snapshot are separate source trees.
+> Current reconciliation: DASH-V2-62 (2026-10-11); see latest dated review below. Previous reconciliation: DASH-V2-53 (2026-10-11). Original inventories/statuses below are dated historical checkpoints; consult the dated reconciliation section and MOVER_LEVEL_STRATEGY_RESEARCH.md before interpreting implementation status. Backend 55efaa2 and the V2 snapshot are separate source trees.
 
 **Purpose:** durable project-wide record so approved product decisions,
 deferred features, design agreements and future dependencies are never lost
@@ -601,3 +601,8 @@ Token Detail (V58), research workspace (V59), System/archives/future workspace r
 ## DASH-V2-61 - 2026-10-11 - launch preparation reconciliation
 
 F-LAUNCH-SUP-01: PROPOSED/PARTIAL (disabled backend preparation reported at da231b9; V2 acceptance CHANGES REQUIRED). No enabled operation implemented in V2. Five new discrepancies reproduced, with C1/C2 contract reconciliation pending; see DASHBOARD_V2_61_SUPERVISED_LAUNCH_REVIEW.md and correction handoff. Backend 873/873 and V2 snapshot 496/496 OK do not close the new findings. F-P14A-01: prior bounded corrections/windows remain dated historical evidence; no new longevity or SUCCESS_GATES advancement. Visual V58-V60 scope remains bounded DONE with exact fidelity PARTIAL.
+
+
+## DASH-V2-62 reconciliation - 2026-10-11
+
+F-LAUNCH-SUP-01 remains PROPOSED for enablement / PARTIAL overall: corrected disabled preparation accepted at backend c635938 (902 canonical, 52 focused, exact published checksum). V2-61 R1-R5/C1-C2 are now resolved; old correction handoff superseded. No enabled runtime API integrated into V2. Real watcher startup association, live spawners/rollback and longevity remain deferred; Start/gates unchanged. F-P14A-01 historical windows not advanced. See DASHBOARD_V2_62_BACKEND_CORRECTIONS_ACCEPTANCE.md.

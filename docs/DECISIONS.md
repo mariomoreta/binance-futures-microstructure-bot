@@ -454,3 +454,8 @@ User authorized evaluation and durable documentation of mover/level strategy int
 ## DASH-V2-61 - 2026-10-11 - withhold dormant launch acceptance
 
 The newly added disabled engine at backend da231b9 has reproduced ownership, revalidation, command, time-budget and uncertainty discrepancies. Keep Start disabled and withhold integration; accepted prior BOOL/evidence-handoff fixes remain closed. Canonical 873/873 plus V2 496/496 pass but do not establish new launch correctness. Follow DASHBOARD_V2_61_SUPERVISED_LAUNCH_REVIEW.md and bounded backend handoff; no operational or strategy authorization.
+
+
+## DASH-V2-62 - 2026-10-11 - direct bounded backend correction
+
+The user authorized direct correction on the backend branch. Isolated c635938 resolves the V2-61 R1-R5/C1-C2 request in disabled preparation; 902 canonical and 52 focused tests pass with published code checksum checked. V2-61 handoff is historical; no repetition required. Start and runtime code remain unchanged. Enabled capability, actual watcher startup association/real OS behavior and longevity remain deferred. See DASHBOARD_V2_62_BACKEND_CORRECTIONS_ACCEPTANCE.md.

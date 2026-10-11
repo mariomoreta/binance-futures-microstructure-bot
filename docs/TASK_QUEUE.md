@@ -1,6 +1,11 @@
 # TASK_QUEUE
 
 
+## DASH-V2-62 - 2026-10-11 - backend corrections completed directly
+
+User authorized this reviewer to correct backend R1-R5/C1-C2 directly. Published c635938fc5542be992e06838a8727652225e1657 on phase1/market-intelligence-dashboard: bounded disabled correction DONE/ACCEPTED, 902/902 canonical and 52 focused OK; exact published source checksum verified. Original backend checkout/evidence preserved and needs git pull --ff-only. V2-61 handoff is superseded; no repeat correction request. See [bounded acceptance](DASHBOARD_V2_62_BACKEND_CORRECTIONS_ACCEPTANCE.md). Internal disabled preparation is not an enabled capability: Start/pure GETs/production V2-60 and SUCCESS_GATES remain unchanged. Actual watcher startup binding/spawn/rollback and longevity remain unverified; no operational PASS or new runs. Visual N/A for this checkpoint.
+
+
 ## DASH-V2-61 - 2026-10-11 - disabled launch review
 
 Exact backend da231b911e9b1a0cfe86b3aaa3325e5b71928687 reviewed read-only from Git archive: CHANGES REQUIRED, not accepted for integration. Public disabled guard verified; nine deterministic cases reproduce five new issues (foreign run ownership/rollback, ignored watcher recheck, wrong default supervisor command, finite-budget violation, unreadable-final uncertainty). Future tolerance and claimed pure preflight timing also require reconciliation. Backend canonical 873/873 OK (170.494s); V2 snapshot 496/496 OK (83.491s), both exit 0. Passing existing suites do not negate new reproductions. See [review/evidence](DASHBOARD_V2_61_SUPERVISED_LAUNCH_REVIEW.md) and [complete backend correction prompt](DASHBOARD_V2_61_BACKEND_HANDOFF.md). Start stays disabled; pure status GETs and production V2-60 remain unchanged at http://127.0.0.1:3020. Next: backend owner fixes bounded R1-R5/C1-C2, then exact-SHA review. V2-55 accepted R1/R2 remain closed; no probes, gates, main merge or backend worktree edits. Visual verification N/A for this nonvisual checkpoint.

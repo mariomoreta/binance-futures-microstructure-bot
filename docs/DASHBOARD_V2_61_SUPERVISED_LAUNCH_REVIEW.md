@@ -1,5 +1,8 @@
 # DASH-V2-61 - disabled supervised launch exact-SHA review
 
+
+> V2-62 superseding checkpoint: user-authorized direct backend correction is published at c635938. R1-R5/C1-C2 are resolved within disabled scope; this V2-61 file is historical base evidence, not a pending correction request. See [V2-62 acceptance](DASHBOARD_V2_62_BACKEND_CORRECTIONS_ACCEPTANCE.md).
+
 Date: 2026-10-11. Frontend base: 64c9b3915c48c5449abdea32613977af2acd2145.
 Backend reviewed: da231b911e9b1a0cfe86b3aaa3325e5b71928687, from Git archive.
 Verdict: CHANGES REQUIRED for the dormant implementation. Public disabled guard verified.

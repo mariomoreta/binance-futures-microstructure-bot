@@ -1,5 +1,8 @@
 # DASH-V2-61 - backend correction handoff
 
+
+> V2-62 superseding checkpoint: user-authorized direct backend correction is published at c635938. R1-R5/C1-C2 are resolved within disabled scope; this V2-61 file is historical base evidence, not a pending correction request. See [V2-62 acceptance](DASHBOARD_V2_62_BACKEND_CORRECTIONS_ACCEPTANCE.md).
+
 Copy this complete prompt to the backend owner.
 
 Work only in C:\proyectos\binance-futures-microstructure-bot, branch phase1/market-intelligence-dashboard.

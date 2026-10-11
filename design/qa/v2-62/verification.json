@@ -1,0 +1,25 @@
+{
+  "backend_sha": "c635938fc5542be992e06838a8727652225e1657",
+  "backend_base": "da231b911e9b1a0cfe86b3aaa3325e5b71928687",
+  "frontend_base": "f63dd162106b807c7d754da2834663d946000ccf",
+  "backend_canonical": {
+    "tests": 902,
+    "seconds": 160.768,
+    "exit": 0
+  },
+  "focused": {
+    "tests": 52,
+    "seconds": 2.543,
+    "exit": 0
+  },
+  "v2_snapshot": {
+    "tests": 496,
+    "seconds": 66.45,
+    "exit": 0
+  },
+  "published_source_checksum_matches": true,
+  "launch_enabled": false,
+  "ui_changed": false,
+  "original_agent_checkout_preserved": true,
+  "verdict": "ACCEPTED bounded disabled correction only"
+}
