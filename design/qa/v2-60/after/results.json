@@ -1,0 +1,726 @@
+{
+  "results": [
+    {
+      "route": "overview",
+      "title": "Overview",
+      "width": 1672,
+      "scroll": 1657,
+      "mains": 1,
+      "loading": false,
+      "active": [
+        "/overview"
+      ],
+      "height": 1504,
+      "alerts": [],
+      "scrollTables": 0
+    },
+    {
+      "route": "movers",
+      "title": "Market Movers",
+      "width": 1672,
+      "scroll": 1657,
+      "mains": 1,
+      "loading": false,
+      "active": [
+        "/movers"
+      ],
+      "height": 1989,
+      "alerts": [],
+      "scrollTables": 0,
+      "visualLayout": {
+        "tableFits": true,
+        "rows": 8,
+        "rankingColumns": 4
+      }
+    },
+    {
+      "route": "movers/verified",
+      "title": "Observed Market Movers",
+      "width": 1672,
+      "scroll": 1672,
+      "mains": 1,
+      "loading": false,
+      "active": [
+        "/movers"
+      ],
+      "height": 941,
+      "alerts": [
+        "Python backend unavailable - no observations verified"
+      ],
+      "scrollTables": 0
+    },
+    {
+      "route": "opportunities",
+      "title": "Research Opportunities",
+      "width": 1672,
+      "scroll": 1657,
+      "mains": 1,
+      "loading": false,
+      "active": [
+        "/opportunities"
+      ],
+      "height": 1268,
+      "alerts": [],
+      "scrollTables": 0
+    },
+    {
+      "route": "opportunities/observations",
+      "title": "Persisted Research Observations",
+      "width": 1672,
+      "scroll": 1672,
+      "mains": 1,
+      "loading": false,
+      "active": [
+        "/opportunities"
+      ],
+      "height": 941,
+      "alerts": [
+        "Backend unavailable — cannot verify observations"
+      ],
+      "scrollTables": 0
+    },
+    {
+      "route": "opportunities/prospective",
+      "title": "Prospective Research",
+      "width": 1672,
+      "scroll": 1657,
+      "mains": 1,
+      "loading": false,
+      "active": [
+        "/opportunities"
+      ],
+      "height": 3416,
+      "alerts": [],
+      "scrollTables": 0
+    },
+    {
+      "route": "symbol/BTCUSDT",
+      "title": "BTCUSDT",
+      "width": 1672,
+      "scroll": 1657,
+      "mains": 1,
+      "loading": false,
+      "active": [
+        "/movers"
+      ],
+      "height": 1267,
+      "alerts": [],
+      "scrollTables": 0
+    },
+    {
+      "route": "historical-research",
+      "title": "Historical Research",
+      "width": 1672,
+      "scroll": 1657,
+      "mains": 1,
+      "loading": false,
+      "active": [
+        "/historical-research"
+      ],
+      "height": 3608,
+      "alerts": [],
+      "scrollTables": 0
+    },
+    {
+      "route": "market-archive",
+      "title": "Market & Runtime Archive",
+      "width": 1672,
+      "scroll": 1657,
+      "mains": 1,
+      "loading": false,
+      "active": [
+        "/market-archive"
+      ],
+      "height": 1176,
+      "alerts": [],
+      "scrollTables": 0
+    },
+    {
+      "route": "market-lab",
+      "title": "Historical Market Lab",
+      "width": 1672,
+      "scroll": 1657,
+      "mains": 1,
+      "loading": false,
+      "active": [
+        "/market-lab"
+      ],
+      "height": 1697,
+      "alerts": [],
+      "scrollTables": 0
+    },
+    {
+      "route": "system",
+      "title": "System",
+      "width": 1672,
+      "scroll": 1657,
+      "mains": 1,
+      "loading": false,
+      "active": [
+        "/system"
+      ],
+      "height": 1384,
+      "alerts": [],
+      "scrollTables": 0,
+      "systemSemantics": {
+        "recorded": true,
+        "startDisabled": true
+      }
+    },
+    {
+      "route": "backtest",
+      "title": "Backtest (future)",
+      "width": 1672,
+      "scroll": 1657,
+      "mains": 1,
+      "loading": false,
+      "active": [
+        "/backtest"
+      ],
+      "height": 975,
+      "alerts": [],
+      "scrollTables": 0,
+      "unavailableWorkspace": {
+        "measurements": 6,
+        "allUnavailable": true,
+        "enabledControls": 0
+      }
+    },
+    {
+      "route": "paper-lab",
+      "title": "Paper Lab (future)",
+      "width": 1672,
+      "scroll": 1657,
+      "mains": 1,
+      "loading": false,
+      "active": [
+        "/paper-lab"
+      ],
+      "height": 1108,
+      "alerts": [],
+      "scrollTables": 0,
+      "unavailableWorkspace": {
+        "measurements": 4,
+        "allUnavailable": true,
+        "enabledControls": 0
+      }
+    },
+    {
+      "route": "overview",
+      "title": "Overview",
+      "width": 1366,
+      "scroll": 1351,
+      "mains": 1,
+      "loading": false,
+      "active": [
+        "/overview"
+      ],
+      "height": 1520,
+      "alerts": [],
+      "scrollTables": 0
+    },
+    {
+      "route": "movers",
+      "title": "Market Movers",
+      "width": 1366,
+      "scroll": 1351,
+      "mains": 1,
+      "loading": false,
+      "active": [
+        "/movers"
+      ],
+      "height": 2039,
+      "alerts": [],
+      "scrollTables": 0,
+      "visualLayout": {
+        "tableFits": true,
+        "rows": 8,
+        "rankingColumns": 4
+      }
+    },
+    {
+      "route": "movers/verified",
+      "title": "Observed Market Movers",
+      "width": 1366,
+      "scroll": 1366,
+      "mains": 1,
+      "loading": false,
+      "active": [
+        "/movers"
+      ],
+      "height": 941,
+      "alerts": [
+        "Python backend unavailable - no observations verified"
+      ],
+      "scrollTables": 0
+    },
+    {
+      "route": "opportunities",
+      "title": "Research Opportunities",
+      "width": 1366,
+      "scroll": 1351,
+      "mains": 1,
+      "loading": false,
+      "active": [
+        "/opportunities"
+      ],
+      "height": 1268,
+      "alerts": [],
+      "scrollTables": 0
+    },
+    {
+      "route": "opportunities/observations",
+      "title": "Persisted Research Observations",
+      "width": 1366,
+      "scroll": 1366,
+      "mains": 1,
+      "loading": false,
+      "active": [
+        "/opportunities"
+      ],
+      "height": 941,
+      "alerts": [
+        "Backend unavailable — cannot verify observations"
+      ],
+      "scrollTables": 0
+    },
+    {
+      "route": "opportunities/prospective",
+      "title": "Prospective Research",
+      "width": 1366,
+      "scroll": 1351,
+      "mains": 1,
+      "loading": false,
+      "active": [
+        "/opportunities"
+      ],
+      "height": 3486,
+      "alerts": [],
+      "scrollTables": 0
+    },
+    {
+      "route": "symbol/BTCUSDT",
+      "title": "BTCUSDT",
+      "width": 1366,
+      "scroll": 1351,
+      "mains": 1,
+      "loading": false,
+      "active": [
+        "/movers"
+      ],
+      "height": 1267,
+      "alerts": [],
+      "scrollTables": 0
+    },
+    {
+      "route": "historical-research",
+      "title": "Historical Research",
+      "width": 1366,
+      "scroll": 1351,
+      "mains": 1,
+      "loading": false,
+      "active": [
+        "/historical-research"
+      ],
+      "height": 3608,
+      "alerts": [],
+      "scrollTables": 0
+    },
+    {
+      "route": "market-archive",
+      "title": "Market & Runtime Archive",
+      "width": 1366,
+      "scroll": 1351,
+      "mains": 1,
+      "loading": false,
+      "active": [
+        "/market-archive"
+      ],
+      "height": 1176,
+      "alerts": [],
+      "scrollTables": 0
+    },
+    {
+      "route": "market-lab",
+      "title": "Historical Market Lab",
+      "width": 1366,
+      "scroll": 1351,
+      "mains": 1,
+      "loading": false,
+      "active": [
+        "/market-lab"
+      ],
+      "height": 1697,
+      "alerts": [],
+      "scrollTables": 0
+    },
+    {
+      "route": "system",
+      "title": "System",
+      "width": 1366,
+      "scroll": 1351,
+      "mains": 1,
+      "loading": false,
+      "active": [
+        "/system"
+      ],
+      "height": 1416,
+      "alerts": [],
+      "scrollTables": 0,
+      "systemSemantics": {
+        "recorded": true,
+        "startDisabled": true
+      }
+    },
+    {
+      "route": "backtest",
+      "title": "Backtest (future)",
+      "width": 1366,
+      "scroll": 1351,
+      "mains": 1,
+      "loading": false,
+      "active": [
+        "/backtest"
+      ],
+      "height": 975,
+      "alerts": [],
+      "scrollTables": 0,
+      "unavailableWorkspace": {
+        "measurements": 6,
+        "allUnavailable": true,
+        "enabledControls": 0
+      }
+    },
+    {
+      "route": "paper-lab",
+      "title": "Paper Lab (future)",
+      "width": 1366,
+      "scroll": 1351,
+      "mains": 1,
+      "loading": false,
+      "active": [
+        "/paper-lab"
+      ],
+      "height": 1108,
+      "alerts": [],
+      "scrollTables": 0,
+      "unavailableWorkspace": {
+        "measurements": 4,
+        "allUnavailable": true,
+        "enabledControls": 0
+      }
+    },
+    {
+      "route": "overview",
+      "title": "Overview",
+      "width": 390,
+      "scroll": 375,
+      "mains": 1,
+      "loading": false,
+      "active": [
+        "/overview"
+      ],
+      "height": 2815,
+      "alerts": [],
+      "scrollTables": 2
+    },
+    {
+      "route": "movers",
+      "title": "Market Movers",
+      "width": 390,
+      "scroll": 375,
+      "mains": 1,
+      "loading": false,
+      "active": [
+        "/movers"
+      ],
+      "height": 4679,
+      "alerts": [],
+      "scrollTables": 1
+    },
+    {
+      "route": "movers/verified",
+      "title": "Observed Market Movers",
+      "width": 390,
+      "scroll": 375,
+      "mains": 1,
+      "loading": false,
+      "active": [
+        "/movers"
+      ],
+      "height": 996,
+      "alerts": [
+        "Python backend unavailable - no observations verified"
+      ],
+      "scrollTables": 1
+    },
+    {
+      "route": "opportunities",
+      "title": "Research Opportunities",
+      "width": 390,
+      "scroll": 375,
+      "mains": 1,
+      "loading": false,
+      "active": [
+        "/opportunities"
+      ],
+      "height": 2486,
+      "alerts": [],
+      "scrollTables": 1
+    },
+    {
+      "route": "opportunities/observations",
+      "title": "Persisted Research Observations",
+      "width": 390,
+      "scroll": 375,
+      "mains": 1,
+      "loading": false,
+      "active": [
+        "/opportunities"
+      ],
+      "height": 1169,
+      "alerts": [
+        "Backend unavailable — cannot verify observations"
+      ],
+      "scrollTables": 1
+    },
+    {
+      "route": "opportunities/prospective",
+      "title": "Prospective Research",
+      "width": 390,
+      "scroll": 375,
+      "mains": 1,
+      "loading": false,
+      "active": [
+        "/opportunities"
+      ],
+      "height": 4458,
+      "alerts": [],
+      "scrollTables": 1,
+      "keyboardTable": {
+        "regions": [
+          "Recorded observation ledger"
+        ],
+        "focused": true,
+        "outline": "solid",
+        "moved": true,
+        "left": 40
+      }
+    },
+    {
+      "route": "symbol/BTCUSDT",
+      "title": "BTCUSDT",
+      "width": 390,
+      "scroll": 375,
+      "mains": 1,
+      "loading": false,
+      "active": [
+        "/movers"
+      ],
+      "height": 2316,
+      "alerts": [],
+      "scrollTables": 0
+    },
+    {
+      "route": "historical-research",
+      "title": "Historical Research",
+      "width": 390,
+      "scroll": 375,
+      "mains": 1,
+      "loading": false,
+      "active": [
+        "/historical-research"
+      ],
+      "height": 4145,
+      "alerts": [],
+      "scrollTables": 2,
+      "keyboardTable": {
+        "regions": [
+          "Latest recorded outcomes",
+          "Latest detected setups"
+        ],
+        "focused": true,
+        "outline": "solid",
+        "moved": true,
+        "left": 40
+      }
+    },
+    {
+      "route": "market-archive",
+      "title": "Market & Runtime Archive",
+      "width": 390,
+      "scroll": 375,
+      "mains": 1,
+      "loading": false,
+      "active": [
+        "/market-archive"
+      ],
+      "height": 1344,
+      "alerts": [],
+      "scrollTables": 1,
+      "keyboardTable": {
+        "regions": [
+          "Stored symbol features"
+        ],
+        "focused": true,
+        "outline": "solid",
+        "moved": true,
+        "left": 40
+      }
+    },
+    {
+      "route": "market-lab",
+      "title": "Historical Market Lab",
+      "width": 390,
+      "scroll": 375,
+      "mains": 1,
+      "loading": false,
+      "active": [
+        "/market-lab"
+      ],
+      "height": 2581,
+      "alerts": [],
+      "scrollTables": 0,
+      "keyboardTable": {
+        "regions": [
+          "Stored sample coverage"
+        ],
+        "focused": true,
+        "outline": "solid",
+        "moved": true,
+        "left": 8
+      }
+    },
+    {
+      "route": "system",
+      "title": "System",
+      "width": 390,
+      "scroll": 375,
+      "mains": 1,
+      "loading": false,
+      "active": [
+        "/system"
+      ],
+      "height": 3084,
+      "alerts": [],
+      "scrollTables": 0,
+      "systemSemantics": {
+        "recorded": true,
+        "startDisabled": true
+      }
+    },
+    {
+      "route": "backtest",
+      "title": "Backtest (future)",
+      "width": 390,
+      "scroll": 375,
+      "mains": 1,
+      "loading": false,
+      "active": [
+        "/backtest"
+      ],
+      "height": 1930,
+      "alerts": [],
+      "scrollTables": 1,
+      "unavailableWorkspace": {
+        "measurements": 6,
+        "allUnavailable": true,
+        "enabledControls": 0
+      }
+    },
+    {
+      "route": "paper-lab",
+      "title": "Paper Lab (future)",
+      "width": 390,
+      "scroll": 375,
+      "mains": 1,
+      "loading": false,
+      "active": [
+        "/paper-lab"
+      ],
+      "height": 2139,
+      "alerts": [],
+      "scrollTables": 1,
+      "unavailableWorkspace": {
+        "measurements": 4,
+        "allUnavailable": true,
+        "enabledControls": 0
+      }
+    }
+  ],
+  "errors": [],
+  "unavailable": [
+    {
+      "url": "http://127.0.0.1:3020/api/v1/price-series/BTCUSDT",
+      "text": "Failed to load resource: the server responded with a status of 503 (Service Unavailable)"
+    },
+    {
+      "url": "http://127.0.0.1:3020/api/v1/price-series/ETHUSDT",
+      "text": "Failed to load resource: the server responded with a status of 503 (Service Unavailable)"
+    },
+    {
+      "url": "http://127.0.0.1:3020/api/v1/price-series/SOLUSDT",
+      "text": "Failed to load resource: the server responded with a status of 503 (Service Unavailable)"
+    },
+    {
+      "url": "http://127.0.0.1:3020/api/v1/live-movers",
+      "text": "Failed to load resource: the server responded with a status of 503 (Service Unavailable)"
+    },
+    {
+      "url": "http://127.0.0.1:3020/api/v1/opportunities",
+      "text": "Failed to load resource: the server responded with a status of 503 (Service Unavailable)"
+    },
+    {
+      "url": "http://127.0.0.1:3020/api/v1/price-series/BTCUSDT",
+      "text": "Failed to load resource: the server responded with a status of 503 (Service Unavailable)"
+    },
+    {
+      "url": "http://127.0.0.1:3020/api/v1/price-series/BTCUSDT",
+      "text": "Failed to load resource: the server responded with a status of 503 (Service Unavailable)"
+    },
+    {
+      "url": "http://127.0.0.1:3020/api/v1/price-series/ETHUSDT",
+      "text": "Failed to load resource: the server responded with a status of 503 (Service Unavailable)"
+    },
+    {
+      "url": "http://127.0.0.1:3020/api/v1/price-series/SOLUSDT",
+      "text": "Failed to load resource: the server responded with a status of 503 (Service Unavailable)"
+    },
+    {
+      "url": "http://127.0.0.1:3020/api/v1/live-movers",
+      "text": "Failed to load resource: the server responded with a status of 503 (Service Unavailable)"
+    },
+    {
+      "url": "http://127.0.0.1:3020/api/v1/opportunities",
+      "text": "Failed to load resource: the server responded with a status of 503 (Service Unavailable)"
+    },
+    {
+      "url": "http://127.0.0.1:3020/api/v1/price-series/BTCUSDT",
+      "text": "Failed to load resource: the server responded with a status of 503 (Service Unavailable)"
+    },
+    {
+      "url": "http://127.0.0.1:3020/api/v1/price-series/BTCUSDT",
+      "text": "Failed to load resource: the server responded with a status of 503 (Service Unavailable)"
+    },
+    {
+      "url": "http://127.0.0.1:3020/api/v1/price-series/ETHUSDT",
+      "text": "Failed to load resource: the server responded with a status of 503 (Service Unavailable)"
+    },
+    {
+      "url": "http://127.0.0.1:3020/api/v1/price-series/SOLUSDT",
+      "text": "Failed to load resource: the server responded with a status of 503 (Service Unavailable)"
+    },
+    {
+      "url": "http://127.0.0.1:3020/api/v1/live-movers",
+      "text": "Failed to load resource: the server responded with a status of 503 (Service Unavailable)"
+    },
+    {
+      "url": "http://127.0.0.1:3020/api/v1/opportunities",
+      "text": "Failed to load resource: the server responded with a status of 503 (Service Unavailable)"
+    },
+    {
+      "url": "http://127.0.0.1:3020/api/v1/price-series/BTCUSDT",
+      "text": "Failed to load resource: the server responded with a status of 503 (Service Unavailable)"
+    }
+  ]
+}

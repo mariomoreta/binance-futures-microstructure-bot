@@ -46,7 +46,7 @@ try {
 
   const routes=process.env.QA_ROUTES?process.env.QA_ROUTES.split(","):watcherAudit?["system","overview"]:["overview","movers","movers/verified","opportunities","opportunities/observations","opportunities/prospective","symbol/BTCUSDT","historical-research","market-archive","market-lab","system","backtest","paper-lab"];
   const results=[];
-  for(const width of (process.argv[2]==="full"?[1672]:[1672,1366,390])){
+  for(const width of (process.env.QA_WIDTHS?process.env.QA_WIDTHS.split(",").map(Number):process.argv[2]==="full"?[1672]:[1672,1366,390])){
     await call("Emulation.setDeviceMetricsOverride",{width,height:941,deviceScaleFactor:1,mobile:false});
     for(const route of routes){
       await call("Page.navigate",{url:base+"/"+route});
@@ -70,6 +70,26 @@ try {
         if(route.includes("ORCA")&&!token.fixture.includes("NO SYMBOL FIXTURE"))throw Error("Unknown symbol inherited fixture");
         x.tokenLayout=token;
       }
+      if(process.env.QA_ROUND==="v2-60"&&process.argv[2]!=="before"){
+        if(width===390&&["historical-research","market-archive","market-lab","opportunities/prospective"].includes(route)){
+          await call("Input.dispatchKeyEvent",{type:"keyDown",key:"Tab",code:"Tab",windowsVirtualKeyCode:9});
+          await call("Input.dispatchKeyEvent",{type:"keyUp",key:"Tab",code:"Tab",windowsVirtualKeyCode:9});
+          const keyboard=await evaluate("(()=>{const regions=[...document.querySelectorAll('[role=\"region\"][tabindex=\"0\"]')].filter(e=>e.scrollWidth>e.clientWidth);regions.forEach(e=>e.scrollLeft=0);const e=regions[0];if(e)e.focus();return {regions:regions.map(e=>e.getAttribute('aria-label')),focused:!!e&&document.activeElement===e,outline:e?getComputedStyle(e).outlineStyle:null}})()");
+          if(!keyboard.focused||keyboard.outline!=="solid")throw Error("Record table focus failed "+route+JSON.stringify(keyboard));
+          await call("Input.dispatchKeyEvent",{type:"keyDown",key:"ArrowRight",code:"ArrowRight",windowsVirtualKeyCode:39});
+          await call("Input.dispatchKeyEvent",{type:"keyUp",key:"ArrowRight",code:"ArrowRight",windowsVirtualKeyCode:39});await delay(200);
+          const scroll=await evaluate("(()=>{const e=document.activeElement;return {moved:e.scrollLeft>0,left:e.scrollLeft}})()");if(!scroll.moved)throw Error("Keyboard table scroll failed "+route);
+          x.keyboardTable={...keyboard,...scroll};
+          await evaluate('document.activeElement.scrollLeft=0;document.activeElement.blur();window.scrollTo(0,0)');await delay(80);
+        }
+        if(["backtest","paper-lab"].includes(route)){
+          const future=await evaluate("(()=>{const root=document.querySelector('[data-kind]');const unavailable=root.querySelector('[aria-label=\"Unavailable measurements\"]');return {measurements:unavailable.children.length,allUnavailable:[...unavailable.children].every(e=>e.innerText.includes('NOT AVAILABLE')),enabledControls:[...root.querySelectorAll('button,input,textarea,select')].filter(e=>!e.matches(':disabled')).length}})()");
+          if(!future.allUnavailable||future.enabledControls!==0||future.measurements!==(route==="backtest"?6:4))throw Error("Future state contract failed "+JSON.stringify(future));x.unavailableWorkspace=future;
+        }
+        if(route==="system"){
+          const system=await evaluate("({recorded:document.body.innerText.includes('Recorded process'),startDisabled:[...document.querySelectorAll('button')].find(e=>e.textContent.includes('Start monitor'))?.disabled})");if(!system.recorded||!system.startDisabled)throw Error("System source/control contract failed "+JSON.stringify(system));x.systemSemantics=system;
+        }
+      }
       const shot=await call("Page.captureScreenshot",{format:"png"});
       const name=route.replaceAll("/","-")+"-"+width;
       await writeFile(path.join(out,name+".png"),Buffer.from(shot.data,"base64"));
@@ -92,7 +112,7 @@ try {
       }
     }
   }
-  await writeFile(path.join(out,process.argv[2]==="full"?"full-results.json":"results.json"),JSON.stringify({results,errors,unavailable},null,2));
+  await writeFile(path.join(out,process.env.QA_RESULT_NAME || (process.argv[2]==="full"?"full-results.json":"results.json")),JSON.stringify({results,errors,unavailable},null,2));
   console.log("Route captures",results.length,"browser errors",JSON.stringify(errors),"unavailable sources",unavailable.length);
   if(process.argv[2]!=="before" && (errors.length || results.some(x=>x.scroll>x.width||x.mains!==1||x.active.length!==1)))throw Error("Route validation failed; inspect results.json");
 

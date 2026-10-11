@@ -1,0 +1,258 @@
+{
+  "results": [
+    {
+      "route": "system",
+      "title": "System",
+      "width": 1672,
+      "scroll": 1657,
+      "mains": 1,
+      "loading": false,
+      "active": [
+        "/system"
+      ],
+      "height": 1381,
+      "alerts": [],
+      "scrollTables": 0
+    },
+    {
+      "route": "historical-research",
+      "title": "Historical Research",
+      "width": 1672,
+      "scroll": 1657,
+      "mains": 1,
+      "loading": false,
+      "active": [
+        "/historical-research"
+      ],
+      "height": 3749,
+      "alerts": [],
+      "scrollTables": 0
+    },
+    {
+      "route": "market-archive",
+      "title": "Market & Runtime Archive",
+      "width": 1672,
+      "scroll": 1657,
+      "mains": 1,
+      "loading": false,
+      "active": [
+        "/market-archive"
+      ],
+      "height": 1171,
+      "alerts": [],
+      "scrollTables": 0
+    },
+    {
+      "route": "market-lab",
+      "title": "Historical Market Lab",
+      "width": 1672,
+      "scroll": 1657,
+      "mains": 1,
+      "loading": false,
+      "active": [
+        "/market-lab"
+      ],
+      "height": 1703,
+      "alerts": [],
+      "scrollTables": 0
+    },
+    {
+      "route": "backtest",
+      "title": "Backtest (future)",
+      "width": 1672,
+      "scroll": 1657,
+      "mains": 1,
+      "loading": false,
+      "active": [
+        "/backtest"
+      ],
+      "height": 970,
+      "alerts": [],
+      "scrollTables": 0
+    },
+    {
+      "route": "paper-lab",
+      "title": "Paper Lab (future)",
+      "width": 1672,
+      "scroll": 1657,
+      "mains": 1,
+      "loading": false,
+      "active": [
+        "/paper-lab"
+      ],
+      "height": 1133,
+      "alerts": [],
+      "scrollTables": 0
+    },
+    {
+      "route": "system",
+      "title": "System",
+      "width": 1366,
+      "scroll": 1351,
+      "mains": 1,
+      "loading": false,
+      "active": [
+        "/system"
+      ],
+      "height": 1414,
+      "alerts": [],
+      "scrollTables": 0
+    },
+    {
+      "route": "historical-research",
+      "title": "Historical Research",
+      "width": 1366,
+      "scroll": 1351,
+      "mains": 1,
+      "loading": false,
+      "active": [
+        "/historical-research"
+      ],
+      "height": 3749,
+      "alerts": [],
+      "scrollTables": 0
+    },
+    {
+      "route": "market-archive",
+      "title": "Market & Runtime Archive",
+      "width": 1366,
+      "scroll": 1351,
+      "mains": 1,
+      "loading": false,
+      "active": [
+        "/market-archive"
+      ],
+      "height": 1171,
+      "alerts": [],
+      "scrollTables": 0
+    },
+    {
+      "route": "market-lab",
+      "title": "Historical Market Lab",
+      "width": 1366,
+      "scroll": 1351,
+      "mains": 1,
+      "loading": false,
+      "active": [
+        "/market-lab"
+      ],
+      "height": 1703,
+      "alerts": [],
+      "scrollTables": 0
+    },
+    {
+      "route": "backtest",
+      "title": "Backtest (future)",
+      "width": 1366,
+      "scroll": 1351,
+      "mains": 1,
+      "loading": false,
+      "active": [
+        "/backtest"
+      ],
+      "height": 970,
+      "alerts": [],
+      "scrollTables": 0
+    },
+    {
+      "route": "paper-lab",
+      "title": "Paper Lab (future)",
+      "width": 1366,
+      "scroll": 1351,
+      "mains": 1,
+      "loading": false,
+      "active": [
+        "/paper-lab"
+      ],
+      "height": 1133,
+      "alerts": [],
+      "scrollTables": 0
+    },
+    {
+      "route": "system",
+      "title": "System",
+      "width": 390,
+      "scroll": 375,
+      "mains": 1,
+      "loading": false,
+      "active": [
+        "/system"
+      ],
+      "height": 3055,
+      "alerts": [],
+      "scrollTables": 0
+    },
+    {
+      "route": "historical-research",
+      "title": "Historical Research",
+      "width": 390,
+      "scroll": 375,
+      "mains": 1,
+      "loading": false,
+      "active": [
+        "/historical-research"
+      ],
+      "height": 4148,
+      "alerts": [],
+      "scrollTables": 2
+    },
+    {
+      "route": "market-archive",
+      "title": "Market & Runtime Archive",
+      "width": 390,
+      "scroll": 375,
+      "mains": 1,
+      "loading": false,
+      "active": [
+        "/market-archive"
+      ],
+      "height": 1345,
+      "alerts": [],
+      "scrollTables": 1
+    },
+    {
+      "route": "market-lab",
+      "title": "Historical Market Lab",
+      "width": 390,
+      "scroll": 375,
+      "mains": 1,
+      "loading": false,
+      "active": [
+        "/market-lab"
+      ],
+      "height": 2583,
+      "alerts": [],
+      "scrollTables": 0
+    },
+    {
+      "route": "backtest",
+      "title": "Backtest (future)",
+      "width": 390,
+      "scroll": 375,
+      "mains": 1,
+      "loading": false,
+      "active": [
+        "/backtest"
+      ],
+      "height": 1959,
+      "alerts": [],
+      "scrollTables": 1
+    },
+    {
+      "route": "paper-lab",
+      "title": "Paper Lab (future)",
+      "width": 390,
+      "scroll": 375,
+      "mains": 1,
+      "loading": false,
+      "active": [
+        "/paper-lab"
+      ],
+      "height": 2185,
+      "alerts": [],
+      "scrollTables": 1
+    }
+  ],
+  "errors": [],
+  "unavailable": []
+}

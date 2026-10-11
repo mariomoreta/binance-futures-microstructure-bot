@@ -1,0 +1,99 @@
+{
+  "results": [
+    {
+      "route": "opportunities/prospective",
+      "title": "Prospective Research",
+      "width": 390,
+      "scroll": 375,
+      "mains": 1,
+      "loading": false,
+      "active": [
+        "/opportunities"
+      ],
+      "height": 4458,
+      "alerts": [],
+      "scrollTables": 1,
+      "keyboardTable": {
+        "regions": [
+          "Recorded observation ledger"
+        ],
+        "focused": true,
+        "outline": "solid",
+        "moved": true,
+        "left": 40
+      }
+    },
+    {
+      "route": "historical-research",
+      "title": "Historical Research",
+      "width": 390,
+      "scroll": 375,
+      "mains": 1,
+      "loading": false,
+      "active": [
+        "/historical-research"
+      ],
+      "height": 4145,
+      "alerts": [],
+      "scrollTables": 2,
+      "keyboardTable": {
+        "regions": [
+          "Latest recorded outcomes",
+          "Latest detected setups"
+        ],
+        "focused": true,
+        "outline": "solid",
+        "moved": true,
+        "left": 40
+      }
+    },
+    {
+      "route": "market-archive",
+      "title": "Market & Runtime Archive",
+      "width": 390,
+      "scroll": 375,
+      "mains": 1,
+      "loading": false,
+      "active": [
+        "/market-archive"
+      ],
+      "height": 1344,
+      "alerts": [],
+      "scrollTables": 1,
+      "keyboardTable": {
+        "regions": [
+          "Stored symbol features"
+        ],
+        "focused": true,
+        "outline": "solid",
+        "moved": true,
+        "left": 40
+      }
+    },
+    {
+      "route": "market-lab",
+      "title": "Historical Market Lab",
+      "width": 390,
+      "scroll": 375,
+      "mains": 1,
+      "loading": false,
+      "active": [
+        "/market-lab"
+      ],
+      "height": 2581,
+      "alerts": [],
+      "scrollTables": 0,
+      "keyboardTable": {
+        "regions": [
+          "Stored sample coverage"
+        ],
+        "focused": true,
+        "outline": "solid",
+        "moved": true,
+        "left": 8
+      }
+    }
+  ],
+  "errors": [],
+  "unavailable": []
+}

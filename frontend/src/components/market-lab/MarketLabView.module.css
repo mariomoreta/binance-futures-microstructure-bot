@@ -3,3 +3,5 @@
 
 /* Shared shell owns page padding. */
 .root{padding:0;min-width:0}.header{flex-wrap:wrap}.panel{min-width:0;overflow-x:auto}.metrics section{min-width:0}.metrics strong{overflow-wrap:anywhere}@media(max-width:760px){.metrics{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}.metrics section,.panel{padding:13px}.header h1{font-size:24px}.header{gap:8px}.compare{grid-template-columns:1fr}.panel svg{height:220px}.axis{gap:10px;flex-wrap:wrap}}
+
+.header h1{font-size:30px;letter-spacing:-.035em}.metrics section,.panel{background:linear-gradient(135deg,#0b2133,#081725);border-color:#23465c;border-radius:6px}.metrics section{padding:15px}.panel[role=region]:focus-visible{outline:2px solid #60c9ff;outline-offset:3px}@media(max-width:760px){.header h1{font-size:25px}.metrics section{padding:12px}}

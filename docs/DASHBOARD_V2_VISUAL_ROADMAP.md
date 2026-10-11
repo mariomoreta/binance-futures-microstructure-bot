@@ -18,9 +18,9 @@ This is not a background job or a live-run authorization.
 | V57 | Autonomous visual control plan | ROUND DONE, documentation only | This dated control section |
 | V58 / A | Token Detail | ROUND DONE; fidelity PARTIAL | DASHBOARD_V2_58_TOKEN_DETAIL_VISUAL.md; 3 before / 6 after browser cases, 118 frontend / 496 snapshot |
 | V59 / B | Opportunities, observations, prospective | ROUND DONE; exact fidelity ASSET_MISMATCH | DASHBOARD_V2_59_RESEARCH_VISUAL.md; missing dedicated reference isolated |
-| Next C | System and research archives | PENDING after A/B; may advance around isolated external blockers | Preserve recorded process vs watcher vs feed, registry-only semantics |
-| Next D | Backtest and Paper Lab unavailable states | PENDING | Reference composition allowed; engines/results remain unavailable |
-| Final | Whole-dashboard desktop/mobile consistency | PENDING | All 13 routes, menu/keyboard/navigation/overflow/error checks; explicit remaining gaps |
+| V60 / C | System and research archives | ROUND DONE; PARTIAL / NO DEDICATED REFERENCE | DASHBOARD_V2_60_CONSISTENCY_REVIEW.md; labels and record-table keyboard access retained |
+| V60 / D | Backtest and Paper Lab unavailable states | ROUND DONE; fidelity PARTIAL | Neutral icons/hierarchy refined; engines/results unavailable, controls disabled |
+| V60 / Final | Whole-dashboard desktop/mobile consistency | BOUNDED CYCLE DONE; exact fidelity remains PARTIAL | 39 browser cases; four mobile keyboard checks; screen-by-screen gaps in V60 report |
 
 Read latest progress/backlog before selecting each round. Do not repeat verified
 work just because an old historical section says it is pending. Backend report

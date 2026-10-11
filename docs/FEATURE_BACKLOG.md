@@ -592,3 +592,7 @@ Token Detail category/status/evidence/metric hierarchy and mobile composition re
 ## DASH-V2-59 - 2026-10-11 - Research workspace visual round
 
 Research navigation/headings/notices and mobile summary grids refined; literal rendered backslash-n removed. Bounded round DONE; reference fidelity ASSET_MISMATCH (missing dedicated asset). Frontend 118/118, type/build pass, Python snapshot 496/496; 9 before / 9 after browser cases, no exceptions/overflow. Source-unavailable observations retain honest empty state. See [research visual report](DASHBOARD_V2_59_RESEARCH_VISUAL.md). Next C/D scopes ready. Start/gates/backend unchanged.
+
+## DASH-V2-60 - 2026-10-11 - bounded visual cycle checkpoint
+
+Token Detail (V58), research workspace (V59), System/archives/future workspace refinements and final consistency (V60) are DONE within bounded visual scope; exact reference parity remains PARTIAL. All 13 routes / 3 widths = 39 browser cases pass, source-unavailable responses preserved; keyboard table checks pass. Frontend 118/118, types/build pass, Python V2 snapshot 496/496; lint 0 errors / 1 existing warning. Production http://127.0.0.1:3020, managed PID 34380. See [final screen matrix and evidence](DASHBOARD_V2_60_CONSISTENCY_REVIEW.md). Opportunities reference missing; contracts/engines and finer frame fidelity remain separate. Await other owner's published report for exact-SHA integration review. No backend change, Start, probe, trading or SUCCESS_GATES advancement.

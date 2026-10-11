@@ -16,3 +16,6 @@
 .auditHeading{display:flex;align-items:center;justify-content:space-between;gap:12px}
 @media(max-width:1250px){.grid{grid-template-columns:1fr 1fr}.grid>:last-child{grid-column:1/-1}}
 @media(max-width:720px){.grid{grid-template-columns:minmax(0,1fr)}.grid>:last-child{grid-column:auto}.header h1{font-size:25px}.row{flex-wrap:wrap}}
+
+/* V60: align headings and make integration labels readable. */
+.header h1{font-size:30px}.row .unknown{font-size:9px}.heading small,.auditHeading small{font-size:10px}@media(max-width:720px){.header h1{font-size:25px}}

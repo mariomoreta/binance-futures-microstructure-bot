@@ -1,0 +1,25 @@
+{
+  "scope": "Selected explicit CSS text/surface pairs only; not full-page contrast certification",
+  "pairs": [
+    {
+      "foreground": "#90afc5",
+      "background": "#071b29",
+      "ratio": 7.62
+    },
+    {
+      "foreground": "#90afc5",
+      "background": "#0b1f2e",
+      "ratio": 7.3
+    },
+    {
+      "foreground": "#a5c2d7",
+      "background": "#0a2335",
+      "ratio": 8.66
+    },
+    {
+      "foreground": "#edc071",
+      "background": "#17222a",
+      "ratio": 9.53
+    }
+  ]
+}

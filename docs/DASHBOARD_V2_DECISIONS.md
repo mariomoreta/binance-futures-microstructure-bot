@@ -204,3 +204,6 @@ Category controls remain descriptive and visually neutral while classifier state
 
 ## 2026-10-11 - DASH-V2-59 reference dependency isolation
 Missing Opportunities reference blocks exact design fidelity, not independently authorized navigation/readability improvements. Separate route modes and source warnings remain visible; no live observations invented to cover unavailable backend.
+
+## 2026-10-11 - DASH-V2-60 bounded visual cycle
+Named focusable scrolling regions preserve table access on narrow screens. Compact recorded coverage and neutral future icons improve hierarchy without creating observations or capabilities. The A/B/C/D bounded composition cycle and final route audit can be DONE while exact fidelity is PARTIAL and contracts/assets remain unavailable. Backend launch/report review stays a separate exact-SHA task; no gate or run authorization inferred.

@@ -1,5 +1,7 @@
 # Dashboard V2 Design Specification
 
+> Latest visual reconciliation: DASH-V2-60 (2026-10-11). Bounded presentation rounds implemented and checked; exact fidelity remains PARTIAL. See DASHBOARD_V2_60_CONSISTENCY_REVIEW.md and DASHBOARD_V2_VISUAL_ROADMAP.md for current screen matrix. Older initial status and missing-reference statements below describe their historical dates.
+
 > Current reconciliation: DASH-V2-53 (2026-10-11). Original inventories/statuses below are dated historical checkpoints; consult the dated reconciliation section and MOVER_LEVEL_STRATEGY_RESEARCH.md before interpreting implementation status. Backend 55efaa2 and the V2 snapshot are separate source trees.
 
 **Purpose:** preserve the approved financial-terminal direction as reusable
