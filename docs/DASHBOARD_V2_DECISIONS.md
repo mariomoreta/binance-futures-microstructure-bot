@@ -116,3 +116,12 @@ Use real, disabled/unavailable future-workspace compositions without fabricated
 results or graph series. Correct the two misnamed PNGs by byte-preserving rename;
 keep originals in Git history and declare Opportunities target missing.
 Operational integration and reference parity remain separate acceptance criteria.
+
+
+## 2026-10-11 - DASH-V2-50 observation-only supervision display
+Preserve raw canonical watcher labels and raw lifecycle evidence separately.
+The client may downgrade/expire an ACTIVE observation, never certify continuing
+OS liveness or protection. Expose sentinel independently from supervisor.
+Use the documented 90s display bound and explicit UTC observation time. Keep
+Start disabled until canonical transactional launch and enforcement ownership
+are independently verified. Read-only integration does not advance safety gates.

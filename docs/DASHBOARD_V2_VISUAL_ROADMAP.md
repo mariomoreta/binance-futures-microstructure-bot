@@ -60,3 +60,12 @@ backend work into V2 without a reviewed integration need.
 Stop this frontend cycle after all route checks and documented bounded changes
 are published; list external dependencies precisely. Resume their integration
 when the user supplies the owning report. Rollback: revert the V2 visual commits.
+
+
+## 2026-10-11 - Integration checkpoint DASH-V2-50
+Reviewed backend corrections at 8648366. Watcher read-only contracts integrated
+in V2 with sentinel/raw lease evidence and 90s observation expiry.
+System remains visually PARTIAL. Safety review remains CHANGES REQUIRED:
+enforce_abort pre-termination ownership/locking, genuine heartbeat race tests.
+Next: owner follow-up in DASHBOARD_V2_50_CORRECTIONS_REVIEW.md, then review exact
+new SHA before transactional launch integration. No market run authorized here.

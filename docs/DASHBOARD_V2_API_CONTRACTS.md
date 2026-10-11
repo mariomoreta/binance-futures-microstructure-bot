@@ -165,3 +165,37 @@ arbitrary process arguments.
 Runtime schemas and Python contract tests; null/zero/stale fixtures; Unicode
 symbol and historical-only routing fixtures; pagination/filter determinism;
 security tests; backwards-compatible current SSR until cutover.
+
+
+## 2026-10-11 - DASH-V2-50 read-only watcher integration
+Current frontend BFF adapts canonical control.status() at backend 8648366.
+This slice adds sentinel and preserves supervisor/sentinel raw lease evidence.
+It does not implement or authorize transactional runtime launch.
+
+| Field | Representation / rule |
+|---|---|
+| observed_at | BFF response observation time, ISO UTC; not a feed sample timestamp |
+| supervisor / sentinel | separate normalized watcher blocks |
+| state | controller label preserved as observed |
+| lease_state | raw lease lifecycle; nullable |
+| lease_last_check_at / last_check_at | raw UTC heartbeat strings; nullable |
+| watcher_pid / watcher_create_time | watcher identity evidence; nullable |
+| watched_pid / run_id | associated run evidence; nullable |
+| abort_triggered | explicit true/false or null; never inferred from missing data |
+| abort_rule / abort_reason / abort_threshold / abort_observed | supervisor evidence; numbers/text/null; numeric zero retained |
+| action_taken / action_reason | sentinel action evidence; nullable |
+
+ACTIVE display requires the canonical ACTIVE label plus raw ACTIVE lease, a
+valid UTC lease heartbeat in [0,90s], associated watched PID, watcher identity
+evidence and observation in [0,90s]. Future, malformed or expired timestamps
+never count as fresh. The client updates expiry every second, independently
+of the 10-second poll; failed fetches replace previous evidence with UNKNOWN.
+Canonical watcher liveness is a controller observation; the browser does not
+independently verify the OS process. ACTIVE is never a protection guarantee.
+Raw controller labels remain inspectable when the displayed state ages to STALE.
+
+Missing blocks render UNKNOWN; established but invalid evidence renders STALE.
+Process lifecycle, feed health, supervisor and sentinel remain distinct.
+Start stays blocked; launch readiness and success gates are unchanged.
+Residual source contract: abort_at / aborted_by persist in registry but are not
+published by control.status() watcher blocks at this SHA; V2 does not invent them.

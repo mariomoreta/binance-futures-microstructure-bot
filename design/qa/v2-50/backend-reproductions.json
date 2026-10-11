@@ -1,0 +1,46 @@
+﻿{
+  "backend_sha": "8648366ec5ea82a46e4573cf81a53546f666d8d6",
+  "published_heartbeat_fixture": {
+    "owners": [
+      424244,
+      424245
+    ],
+    "self_pid": 37268,
+    "byte_equivalent_record": true
+  },
+  "owned_heartbeat_writes": {
+    "supervisor_advanced": true,
+    "sentinel_advanced": true,
+    "failures": [
+      11,
+      22
+    ],
+    "run_preserved": true
+  },
+  "foreign_owner_enforce": {
+    "terminate_called": true,
+    "result": {
+      "aborted": false,
+      "reason": "superseded"
+    },
+    "registry_state": "STOPPING"
+  },
+  "terminal_takeover_race": {
+    "terminate_called": true,
+    "result": {
+      "aborted": true,
+      "pid": 424243,
+      "rule": "review",
+      "reason": "mock only"
+    },
+    "registry_state": "ABORTED",
+    "lease_owner": 37268
+  },
+  "stopping_write_failed": {
+    "terminate_called": true,
+    "result": {
+      "aborted": false,
+      "reason": "superseded"
+    }
+  }
+}

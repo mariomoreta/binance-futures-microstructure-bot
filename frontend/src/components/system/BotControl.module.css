@@ -5,7 +5,7 @@
 .header p{font-size:10px;color:var(--text-3);margin:0}
 .refresh,.actions button,.confirm button{cursor:pointer;border:1px solid #265a7c;background:#0b2940;color:#bde9ff;padding:7px 10px;border-radius:4px;font:11px var(--font-ui)}
 .actions button:disabled{opacity:.5;cursor:not-allowed}
-.stats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin:0 0 10px}
+.stats{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:12px;margin:0 0 10px}
 .stats>div{min-width:0;background:linear-gradient(150deg,#0b2133,#071823);border:1px solid #1c4d6e;border-radius:6px;padding:13px 15px;box-shadow:inset 2px 0 0 #1684b6}
 .stats small{display:block;font-size:11px;color:var(--text-2)}
 .stats strong{display:block;font:650 20px var(--font-mono);margin:8px 0;overflow-wrap:anywhere}

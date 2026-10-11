@@ -393,3 +393,23 @@ old token-detail.png -> movers-secondary.png. Correct Opportunities target absen
 Backend safety review and transactional launch remain blocked; no new run or
 execution. Canonical roadmap: DASHBOARD_V2_VISUAL_ROADMAP.md. Per-screen evidence,
 remaining dependencies and closeout: DASHBOARD_V2_49_VISUAL_VALIDATION.md.
+
+
+## 2026-10-11 - DASH-V2-50 corrections review and watcher integration
+Backend 8648366 exact SHA reviewed; 34/34 contract+sentinel tests PASS.
+Freshness/identity/binding predicates accepted. Enforcement fencing NOT accepted:
+enforce_abort still writes STOPPING unlocked and calls termination before owner
+verification. Synthetic mocked-kill reproductions prove foreign-owner invocation
+and terminal/new-lease overwrite; committed heartbeat race test is a no-op.
+Full evidence and owner follow-up: DASHBOARD_V2_50_CORRECTIONS_REVIEW.md.
+
+V2 BFF now preserves sentinel and raw evidence for both watchers. System exposes
+five independent process/feed/supervisor/sentinel/mode cards and lease details.
+Client expires ACTIVE at 90s, rejects invalid/future/mismatched evidence and
+clears cached evidence on fetch error. This is observation, not protection proof.
+116/116 frontend, type/lint/build PASS; V2 Python snapshot 496/496 PASS.
+System+Overview at 1672/1366/390: 6 browser cases PASS, no errors/overflow; expanded
+watcher panels and production DTOs captured. Reference fidelity remains PARTIAL.
+Start/transactional launch blocked; no market run, backend edit or gate advance.
+F-V2-BFF-01 and F-V2-SYSTEM-01 remain PARTIAL. Runtime source shows COMPLETED;
+both leases STOPPED, displayed STALE; feed UNKNOWN, recorded evidence separate.

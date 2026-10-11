@@ -5,7 +5,8 @@ import path from "node:path";
 
 const chrome = "C:/Program Files/Google/Chrome/Application/chrome.exe";
 const root = process.cwd();
-const out = path.join(root, "design/qa/v2-49",process.argv[2]==="before"?"before":"after");
+const watcherAudit=process.argv[2]==="system-50";
+const out = watcherAudit ? path.join(root,"design/qa/v2-50") : path.join(root, "design/qa/v2-49",process.argv[2]==="before"?"before":"after");
 await mkdir(out, {recursive:true});
 const profile = await mkdtemp(path.join(os.tmpdir(), "dashboard-v2-49-"));
 const child = spawn(chrome, ["--headless=new", "--disable-gpu", "--no-first-run",
@@ -39,13 +40,14 @@ try {
   };
   await call("Page.enable");await call("Runtime.enable");await call("Log.enable");
 
-  const routes=["overview","movers","movers/verified","opportunities","opportunities/observations","opportunities/prospective","symbol/BTCUSDT","historical-research","market-archive","market-lab","system","backtest","paper-lab"];
+  const routes=watcherAudit?["system","overview"]:["overview","movers","movers/verified","opportunities","opportunities/observations","opportunities/prospective","symbol/BTCUSDT","historical-research","market-archive","market-lab","system","backtest","paper-lab"];
   const results=[];
   for(const width of (process.argv[2]==="full"?[1672]:[1672,1366,390])){
     await call("Emulation.setDeviceMetricsOverride",{width,height:941,deviceScaleFactor:1,mobile:false});
     for(const route of routes){
       await call("Page.navigate",{url:"http://127.0.0.1:3020/"+route});
       await delay(1800);
+      if(watcherAudit&&route==="system"){for(let n=0;n<50;n++){if(!await evaluate('document.querySelector("[aria-label=\\\"Bot Control Center\\\"]")?.innerText.includes("LOADING")'))break;await delay(100);}}
       const x=await evaluate('({title:document.querySelector("h1")?.textContent,width:innerWidth,scroll:document.documentElement.scrollWidth,mains:document.querySelectorAll("main").length,loading:document.body.innerText.includes("LOADING"),active:[...document.querySelectorAll("#terminal-navigation a[aria-current=page]")].map(a=>a.getAttribute("href")),height:document.documentElement.scrollHeight,alerts:[...document.querySelectorAll("[role=alert]")].map(a=>a.textContent),scrollTables:[...document.querySelectorAll("table")].filter(t=>t.getBoundingClientRect().width>innerWidth).length})');
       if(!x.title && process.argv[2]!=="before")throw Error("Missing page title "+route);
       if(width===390 && await evaluate('!!document.querySelector("[aria-controls=terminal-navigation]")')){
@@ -58,7 +60,20 @@ try {
       await writeFile(path.join(out,name+".png"),Buffer.from(shot.data,"base64"));
       if(process.argv[2]==="full"){const dimensions=await call("Page.getLayoutMetrics");const bounds=dimensions.cssContentSize;const fullShot=await call("Page.captureScreenshot",{format:"png",captureBeyondViewport:true,clip:{x:0,y:0,width:bounds.width,height:bounds.height,scale:1}});await writeFile(path.join(out,route.replaceAll("/","-")+"-full.png"),Buffer.from(fullShot.data,"base64"));}
       results.push({route,...x});console.log(name,JSON.stringify(x));
-      if(route==="system"&&width===1672){await evaluate('document.querySelector("summary").click()');const s=await call("Page.captureScreenshot",{format:"png"});await writeFile(path.join(out,"system-expanded.png"),Buffer.from(s.data,"base64"));}
+      if(route==="system"&&(width===1672||watcherAudit)){
+        await evaluate('document.querySelector("summary").click()');
+        const dimensions=await call("Page.getLayoutMetrics");const b=dimensions.cssContentSize;
+        const s=await call("Page.captureScreenshot",{format:"png",captureBeyondViewport:true,clip:{x:0,y:0,width:b.width,height:b.height,scale:1}});
+        await writeFile(path.join(out,watcherAudit?"system-expanded-"+width+".png":"system-expanded.png"),Buffer.from(s.data,"base64"));
+        if(watcherAudit){
+          const ui=await evaluate('({width:innerWidth,scroll:document.documentElement.scrollWidth,sentinel:!!document.querySelector("[aria-label=\\\"sentinel evidence\\\"]"),startDisabled:[...document.querySelectorAll("button")].find(b=>b.textContent.includes("Start monitor"))?.disabled,alerts:[...document.querySelectorAll("[role=alert]")].map(a=>a.textContent)})');
+          if(ui.scroll>ui.width||!ui.sentinel||!ui.startDisabled||ui.alerts.length)throw Error("Watcher UI check failed "+JSON.stringify(ui));
+          results.at(-1).watcherUI=ui;
+          const dto=await evaluate('fetch("/api/v1/runtime",{cache:"no-store"}).then(r=>r.json())');
+          if(!dto.sentinel||!dto.supervisor||!dto.observed_at||dto.error)throw Error("Watcher API evidence unavailable");
+          await writeFile(path.join(out,"runtime-"+width+".json"),JSON.stringify(dto,null,2));
+        }
+      }
     }
   }
   await writeFile(path.join(out,process.argv[2]==="full"?"full-results.json":"results.json"),JSON.stringify({results,errors,unavailable},null,2));
