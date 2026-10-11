@@ -202,6 +202,24 @@ the dashboard exists. No classifier before raw-feature dashboard validation.
   untouched. No new supervised window on the corrected SHA. Transactional
   supervised start still PENDING/separate. SUCCESS_GATES untouched.
 
+- `DASH-V2-64-BACKEND` (2026-10-11) RECONCILIATION + READ CONTRACTS — **DONE (acotado)**.
+  V2 checkpoints (`dash-v2-03-token-detail` `8780da2`) read from Git only:
+  reconciled `da231b9..c635938` by fast-forward (clean worktree, zero Python
+  processes, terminal registry, unheld lock — no reset/clean/kill); deployed
+  identity verified (V2 imports this worktree `/src` + `status_readonly()`,
+  canonical DB readOnly; deployed == accepted `c635938`).
+  `docs/DASHBOARD_V1_READ_CONTRACTS.md`: 7 pages + 25 JSON APIs inventoried
+  (fields/units/nullability/timestamps/limits/empty semantics), universe/
+  search/history/events/prices specified, persisted-vs-absent split, range
+  anchoring (old request-time vs V2 retained-sample) + CSV/JSON metadata,
+  diagnostics purity + future-run evidence list, old-server dependency audit
+  (blocker: `control.py` imports helpers FROM `dashboard.py`) + reversible
+  retirement plan PROPOSED, NOT executed. New pinning tests
+  `tests/test_dashboard_get_purity.py` (G1–G3; mutation check fails G1/G3).
+  Only additive test file added, no source change. Suite 905/905 OK. No
+  probes, backfills, P1-14C, long runs, paper, orders, Start, or gate
+  advancement. Frontend reviews the exact SHA before consuming.
+
 - `P1-14B.8-V2-55` (2026-10-11) SUPERVISED TRANSACTIONAL LAUNCH PREPARATION — **DONE (acotado)**.
   Contract-first (`docs/SUPERVISED_LAUNCH_CONTRACT.md`) disabled backend per
   V2-55 acceptance (`7b2b5e75`): `launch_supervised_transaction` refuses
@@ -467,6 +485,14 @@ strategies (P3), paper engine/positions (P4), execution (P5).
 - 2026-10-11 DASH-V2-62: 902/902 OK, 160.768s, exit 0; 52 focused. Disabled launch corrections; report linked in latest checkpoint.
 
 
+
+- 2026-10-11 (DASH-V2-64-BACKEND): `python run_tests.py` → 905/905 OK (902 + 3 GET-purity pins).
+  Reconciliation + read contracts per V2 handoff (`8780da2`); FF `da231b9..c635938`
+  with zero processes/conflicts; deployed identity verified; inventory +
+  diagnostics + history/export contracts + retirement proposal (blocked on
+  helper extraction); mutation check fails G1/G3. No probes, backfills, P1-14C,
+  long runs, paper, orders, Start, or gate advancement. V2/main/SQLite/logs
+  intact. Next: frontend exact-SHA review; P1-14C needs explicit instruction.
 
 - 2026-10-11 (P1-14B.8-V2-55): `python run_tests.py` → 873/873 OK (850 + 23 supervised-launch).
   Contract-first disabled preparation per V2-55 acceptance (`7b2b5e75`):

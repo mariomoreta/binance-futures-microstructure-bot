@@ -1553,3 +1553,49 @@ R1/R2 accepted as closed; not reopened.
   ownership pid-only; CLI/stop mutations by design (fenced); pure status
   proves no liveness. No general PASS, no longevity, no operational
   authorization.
+
+## DASH-V2-64 backend reconciliation + read contracts (2026-10-11) — RESULT: DONE (acotado)
+
+Frontend checkpoints read from Git only (`dash-v2-03-token-detail`
+`8780da2`: cutover audit, backend handoff, V2-63 data contract). No V2,
+main, SQLite, log, or evidence mutation; no collector/formula duplication.
+
+- Preflight/reconciliation: branch `phase1/market-intelligence-dashboard`,
+  local `da231b9` vs remote `c635938` (owner fix "fence disabled launch
+  ownership and uncertainty", +29 tests). Worktree clean (tracked),
+  zero Python processes, COMPLETED terminal registry, unheld sidecar lock,
+  stale dashboard pidfile only → fast-forward `da231b9..c635938` executed
+  with no reset/clean/kill. No conflict or active-process blocker existed.
+- Deployed identity (verified post-FF): V2 `runtime-control.ts` spawns
+  Python with cwd+PYTHONPATH = this workspace (`/src`) calling
+  `control.status_readonly()` (fallback READ_ONLY_STATUS_REQUIRED), and
+  reads canonical `data/microprobe.db` via DatabaseSync readOnly. V2
+  imports NOTHING else from backend Python. Deployed source == accepted
+  `c635938`; the audit's da231b9-vs-remote split is closed on this
+  checkout (V2 re-verifies the exact SHA before consuming).
+- Inventory: `docs/DASHBOARD_V1_READ_CONTRACTS.md` — all legacy GET pages
+  + 25 JSON APIs (fields, units, nullability, response-time `generated_at`,
+  empty→404 semantics), universe/search (persisted-only universe, exact/
+  prefix/substring order, limit 25; `normalize_symbol` accepts unicode
+  alnum — STRICTER-than-Python V2 parser is a V2-side boundary for
+  DASH-V2-65), historical coverage + event studies (separate historical
+  DB, fixed columns, limits 20/50), price ranges 5m–24h anchored at
+  REQUEST time (vs V2-63 LAST_RETAINED_SAMPLE ≤600 buckets + >60s gap
+  segments — never silently substituted) + CSV/JSON export metadata.
+- Diagnostics: `status_readonly()` purity re-pinned by new
+  `tests/test_dashboard_get_purity.py` (G1–G3: stale RUNNING never
+  reconciled, absent never created, process/feed reported separately,
+  zero writes/handles/actions; mutation check restoring legacy `status()`
+  fails G1/G3). Recency never proves identity/liveness/protection;
+  unverified reads UNKNOWN. Future authorized runs must produce the
+  evidence list in §5 of the inventory doc — no standing authorization.
+- Retirement: reversible old-UI plan PROPOSED, NOT executed. Audit-found
+  blocker: `control.py` lazily imports shared helpers FROM `dashboard.py`
+  (`repo_root`, `process_info`, `pid_is_ours`, `no_window_flags`), so
+  file-level retirement is blocked pending helper extraction (proposed
+  prerequisite). Operational stop alone is fully reversible today.
+- Code added: only the pinning test file (no source change; V2-63 already
+  covers presentation, old APIs already serve history/exports).
+- Suite: `python run_tests.py` → 905/905 OK (902 + 3 pinning), exit 0. No
+  probes, backfills, P1-14C, long runs, paper, orders, Start, or gate
+  advancement. Deterministic results only — no longevity claim.

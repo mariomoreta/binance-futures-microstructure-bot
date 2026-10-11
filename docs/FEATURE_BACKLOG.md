@@ -427,7 +427,12 @@ it does not replace them. Authority stays where it was recorded
   `docs/DASHBOARD_V2_API_CONTRACTS.md`,
   `docs/DASHBOARD_V2_MIGRATION_PLAN.md`.
 - **Open questions:** exact `/api/v1` schema validator language.
-- **Last update:** 2026-10-08.
+- **Last update:** 2026-10-11 (DASH-V2-64 backend handoff: reconciled to
+  `c635938`; deployed V2 imports this worktree `/src` + `status_readonly()`
+  and canonical DB readOnly; legacy read contracts inventoried in
+  `docs/DASHBOARD_V1_READ_CONTRACTS.md`; old-UI retirement proposed with
+  helper-extraction blocker; GET purity pinned by 3 tests; PARTIAL unchanged,
+  no gate advancement).
 
 ## F-LAUNCH-SUP-01 — Supervised transactional launch
 
