@@ -568,3 +568,7 @@ The user authorized preservation and evaluation of the strategy discussion. The 
 
 ## DASH-V2-54 review checkpoint - 2026-10-11
 F-V2-BFF-01 and F-V2-SYSTEM-01 remain PARTIAL. Published backend b801ab0 passes 840 tests and current pure bridge preserves five synthetic registry cases. R1 exact Win32 BOOL width and R2 absent child-first log association are open backend correction dependencies, not completed V2 capabilities. Transactional supervised launch and new longevity evidence remain deferred. Research proposals registered in DASH-V2-53 are unchanged. Evidence: DASHBOARD_V2_54_BACKEND_CORRECTIONS_REVIEW.md, scripts/review-p1-14b8-v2-54.py and design/qa/v2-54/backend-reproductions.json.
+
+
+## DASH-V2-55 acceptance checkpoint - 2026-10-11
+F-V2-BFF-01/F-V2-SYSTEM-01 remain PARTIAL. R1/R2 backend dependencies from V2-54 are closed within reviewed deterministic Windows scope on e317569. Current pure bridge is compatible in five temporary cases; native/start handoff cases independently reproduced. Transactional launch, OS-liveness evidence, longevity and visual parity remain deferred. Research proposals from V2-53 unchanged. Evidence: DASHBOARD_V2_55_CORRECTIONS_ACCEPTANCE.md, scripts/review-p1-14b8-v2-55.py and design/qa/v2-55/backend-reproductions.json.

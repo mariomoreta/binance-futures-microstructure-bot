@@ -235,3 +235,7 @@ F-V2-RESEARCH-01 proposes a future read-only projection with stable episode/stra
 
 ## DASH-V2-54 compatibility review - 2026-10-11
 Backend b801ab0 preserves status_readonly and nullable GET projection. Exact current pureStatusCode against its archived source passed RUNNING/STOPPING/ABORTED/COMPLETED/absent temporary registry cases without writes. No new DTO/route or target-liveness guarantee. Native/start follow-ups in DASHBOARD_V2_54_BACKEND_CORRECTIONS_REVIEW.md do not require frontend changes. Start remains disabled.
+
+
+## DASH-V2-55 compatibility acceptance - 2026-10-11
+Current pureStatusCode against backend e317569 passed five temporary recorded/absent registry cases without mutation. No frontend status DTO/route change required. Launch evidence_associated distinguishes confirmed parent-log association from absent/different evidence; started=True alone never certifies supervisor protection. V2 Start stays disabled. See DASHBOARD_V2_55_CORRECTIONS_ACCEPTANCE.md.

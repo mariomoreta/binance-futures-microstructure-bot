@@ -1,5 +1,10 @@
 # CURRENT_STATE
 
+## Latest V2 acceptance review - 2026-10-11, DASH-V2-55
+
+Backend e317569 reviewed in an isolated archive. R1 exact Windows BOOL and R2 real child-first log association accepted within deterministic scope; five handoff boundaries and five pure bridge cases verified. See [DASHBOARD_V2_55_CORRECTIONS_ACCEPTANCE.md](DASHBOARD_V2_55_CORRECTIONS_ACCEPTANCE.md).
+No frontend/runtime change or general operational PASS. Start disabled; SUCCESS_GATES unchanged. Transactional supervised launch, target-liveness contract and longevity remain separate. Earlier V2-54 findings below are historical, superseded for R1/R2 by this acceptance.
+
 ## Latest V2 review - 2026-10-11, DASH-V2-54
 
 Published backend b801ab0 reviewed in an isolated archive: 840/840 OK, exit 0, 162.462s. Original refusal propagation and same-child survival corrected; two follow-ups remain: exact Win32 BOOL widths and missing child-first log association. Pure V2 bridge preserves 5/5 temporary registry cases. No source/UI/runtime change; no general PASS or new supervised window.

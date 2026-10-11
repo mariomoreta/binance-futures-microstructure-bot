@@ -179,3 +179,7 @@ Record F-V2-RESEARCH-01 as PROPOSED / NOT IMPLEMENTED. Canonical backend owns ca
 
 ## 2026-10-11 - DASH-V2-54 bounded correction acceptance
 Accept published b801ab0 fixes for original zero-result propagation and same-child survival; retain R1 BOOL marshalling and R2 genuine self-registration log-association follow-ups. Current read-only V2 bridge needs no compatibility change. Describe C1 as bounded shared-start/effective writes/current-window timestamp coverage, not strict monotonic advancement or longevity. No Start/run/gate permission. See DASHBOARD_V2_54_BACKEND_CORRECTIONS_REVIEW.md.
+
+
+## 2026-10-11 - DASH-V2-55 bounded correction acceptance
+Accept R1 Windows BOOL marshalling and R2 child-first log association on e317569 based on exact-source deterministic evidence. Preserve separate recorded-process/read-only semantics and Start restriction. A successful start response with unconfirmed log association is not proof of protection. C1 claims remain bounded. No run/gate permission or strategy implementation approval. See DASHBOARD_V2_55_CORRECTIONS_ACCEPTANCE.md.

@@ -1,0 +1,144 @@
+{
+  "backend_sha": "e3175692f44e8d717f023c5693fcef56b5b83e18",
+  "control_sha256": "7a10faa6704088a598727bc71d44094bc453119c98aaccf808c63be8b5ce2a6d",
+  "original_refusal_fixed": [
+    {
+      "native_return": 0,
+      "helper_return": false,
+      "closed": true,
+      "handle": "0x100000123",
+      "return_width": 4
+    },
+    {
+      "native_return": 1,
+      "helper_return": true,
+      "closed": true,
+      "handle": "0x100000123",
+      "return_width": 4
+    }
+  ],
+  "bool_width": {
+    "synthetic_native_nonzero": 256,
+    "helper_return": true,
+    "configured_width": 4,
+    "windows_BOOL_width": 4,
+    "scope": "ABI callback only; no actual Windows process API called"
+  },
+  "actual_child_first_registration": {
+    "result": {
+      "started": true,
+      "pid": 424243,
+      "mode": "observe",
+      "duration_seconds": 60,
+      "preset": "standard",
+      "evidence": {
+        "dir": "C:\\Users\\adonm\\AppData\\Local\\Temp\\v2-55-9u8nbn5j\\evidence",
+        "log": "C:\\Users\\adonm\\AppData\\Local\\Temp\\v2-55-9u8nbn5j\\evidence\\probe-20261011T155017Z.log"
+      },
+      "adopted_child_registration": true,
+      "evidence_associated": true
+    },
+    "kill_calls": 0,
+    "state_and_identity_preserved": true,
+    "created_log_exists": true,
+    "registered_log_matches_created": true,
+    "scope": "actual try_register, mocked child/identity"
+  },
+  "handoff_boundaries": [
+    {
+      "case": "STOPPING",
+      "response": {
+        "started": false,
+        "pid": 424243,
+        "reason": "adopted-record-superseded",
+        "adopted_child_registration": true,
+        "evidence_associated": false,
+        "evidence_result": "enforcement-hold"
+      },
+      "kill_calls": 0,
+      "injected_bytes_preserved": true
+    },
+    {
+      "case": "ABORTED",
+      "response": {
+        "started": false,
+        "pid": 424243,
+        "reason": "adopted-record-superseded",
+        "adopted_child_registration": true,
+        "evidence_associated": false,
+        "evidence_result": "terminal-now"
+      },
+      "kill_calls": 0,
+      "injected_bytes_preserved": true
+    },
+    {
+      "case": "foreign",
+      "response": {
+        "started": false,
+        "already_running": true,
+        "pid": null,
+        "state": "RUNNING",
+        "adopted_child_registration": true,
+        "evidence_associated": false,
+        "evidence_result": "not-ours-anymore"
+      },
+      "kill_calls": 1,
+      "injected_bytes_preserved": true
+    },
+    {
+      "case": "write-failure",
+      "response": {
+        "started": true,
+        "pid": 424243,
+        "mode": "observe",
+        "duration_seconds": 60,
+        "preset": "standard",
+        "evidence": null,
+        "adopted_child_registration": true,
+        "evidence_associated": false,
+        "evidence_result": "registry-unavailable"
+      },
+      "kill_calls": 0,
+      "injected_bytes_preserved": false
+    },
+    {
+      "case": "evidence-race",
+      "response": {
+        "started": true,
+        "pid": 424243,
+        "mode": "observe",
+        "duration_seconds": 60,
+        "preset": "standard",
+        "evidence": {
+          "log": "existing-child.log"
+        },
+        "adopted_child_registration": true,
+        "evidence_associated": false
+      },
+      "kill_calls": 0,
+      "injected_bytes_preserved": true
+    }
+  ],
+  "pure_bridge": [
+    {
+      "state": "RUNNING",
+      "bytes_preserved": true
+    },
+    {
+      "state": "STOPPING",
+      "bytes_preserved": true
+    },
+    {
+      "state": "ABORTED",
+      "bytes_preserved": true
+    },
+    {
+      "state": "COMPLETED",
+      "bytes_preserved": true
+    },
+    {
+      "state": "ABSENT",
+      "file_not_created": true
+    }
+  ]
+}
