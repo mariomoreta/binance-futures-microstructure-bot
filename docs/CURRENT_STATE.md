@@ -1507,3 +1507,44 @@ failing-first hermetic regressions; `status_readonly()` and contracts kept:
   pid-only heartbeat ownership; mutating CLI/stop paths by design (fenced);
   pure status certifies no OS liveness. No general PASS, no longevity, no
   authorization for new runs.
+
+## Supervised transactional launch — preparation DISABLED (2026-10-11) — RESULT: DONE (acotado)
+
+Contract first: `docs/SUPERVISED_LAUNCH_CONTRACT.md` (preconditions +
+capacity, per-process identity/association, sequence, watcher confirmation
+criteria, finite budget, partial failure/cancellation/rollback, confirmed/
+rejected/uncertain outcomes, backend/BFF responsibilities + field compat).
+R1/R2 accepted as closed; not reopened.
+
+- Implementation: `control.launch_supervised_transaction` (public, refuses
+  with `supervised-launch-disabled` and zero side effects) +
+  `_launch_supervised_impl` (tested engine reusing `start_probe`, leases,
+  identity, verified termination, registry lock; pure-read verification,
+  kill-only rollback). No HTTP route, CLI subcommand, Start enablement or
+  contract change ships with this preparation.
+- Confirmation rule: Popen/ACTIVE lease/heartbeat alone never confirms.
+  Both watchers must verify ACTIVE + owned PID/ctime + watched==run +
+  alive + parseable fresh non-future heartbeat on ONE fresh read inside the
+  budget. Confirmation is point-in-time, never future protection.
+- Rollback: reverse order, spawn-captured identity only, verified kills;
+  already-dead counts as cleaned; foreign/terminal records never written
+  or killed. Unverifiable cleanup → UNCERTAIN with pending evidence (never
+  declared completed).
+- Failure matrix (`tests/test_supervised_launch.py`, 23): full path;
+  foreign pre-seed / probe / supervisor / sentinel spawn-register failures;
+  absent / stale / future / malformed / wrong-run leases; dead watcher;
+  reused watcher PID; timeout; unreadable verification; takeover/STOPPING
+  and terminal interleaves (records preserved); refused/stuck kills
+  (uncertain); concurrent launches elect one confirmation (single
+  parent-held Popen patch -- per-thread global patches leak process-wide);
+  repeated launch rejected; verification+rollback issue zero registry
+  writes under strict no-write mocks. Fail-before: 23/23 missing API.
+- Suite: `python run_tests.py` → 873/873 OK (850 + 23). No real probes,
+  market traffic, P1-14C, long runs, paper, orders or Start. SQLite/logs/
+  evidence preserved. V2/main/SUCCESS_GATES intact. `status_readonly()` in
+  GETs. No phase advanced.
+- Residuals (explicit): default Popen spawners dormant (untested against
+  live OS); POSIX/no-handle and ctime-None limits inherited; heartbeat
+  ownership pid-only; CLI/stop mutations by design (fenced); pure status
+  proves no liveness. No general PASS, no longevity, no operational
+  authorization.

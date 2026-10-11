@@ -2424,5 +2424,444 @@ def _sentinel_lease_verified(record: Dict[str, Any], lease: Dict[str, Any]) -> b
         return False
 
 
+# ------------------------------------------------------------------
+# Supervised transactional launch (DISABLED preparation).
+#
+# Contract: docs/SUPERVISED_LAUNCH_CONTRACT.md. A single operation that
+# starts the probe plus both watchers, verifies every component against
+# the run inside a finite budget, and rolls back EVERYTHING it launched
+# on any failure. Operational access is disabled
+# (SUPERVISED_LAUNCH_ENABLED = False): the public entry point refuses
+# without spawning anything. No HTTP route, CLI subcommand, Start
+# enablement or contract change ships with this preparation.
+# Reuses start_probe / leases / identity / verified termination / the
+# registry lock; no parallel controller exists.
+# ------------------------------------------------------------------
+
+SUPERVISED_LAUNCH_ENABLED = False
+
+SUPERVISED_LAUNCH_VERIFY_BUDGET_S = 60.0
+SUPERVISED_LAUNCH_POLL_S = 2.0
+_SUPERVISED_LAUNCH_SCOPE = ("point-in-time confirmation, "
+                            "not future protection")
+_SUPERVISED_LAUNCH_FUTURE_TOL_S = 5.0
+
+
+def _default_watcher_alive(pid: Any, ctime: Any) -> bool:
+    from .dashboard import pid_is_ours
+    try:
+        return bool(pid_is_ours(int(pid), ctime))
+    except (TypeError, ValueError):
+        return False
+
+
+def _default_identity() -> Dict[str, Any]:
+    """Production identity bundle (injectable fakes in tests)."""
+    return {
+        "is_canonical": is_canonical_pid,
+        "watcher_alive": _default_watcher_alive,
+        "terminate": _terminate_verified_pid,
+        "proc_ctime": own_creation_time,
+        "read_record": read_registry,
+    }
+
+
+def _default_watcher_spawner(kind: str) -> Any:
+    """Production watcher spawner (dormant while disabled).
+
+    Popens the canonical `control supervise` / `control sentinel` entry
+    point with merged UTF-8 logging, mirroring start_probe conventions.
+    Returns the Popen object (pid + kill). Never runs in tests.
+    """
+    def _spawn(run_pid: int) -> Any:
+        from .dashboard import repo_root, no_window_flags
+        argv = [sys.executable, "-m", "microstructure_probe.control", kind,
+                "--interval", str(SUPERVISOR_CHECK_DEFAULT_S)]
+        log_dir = repo_root() / "logs" / "probe-runs"
+        log_dir.mkdir(parents=True, exist_ok=True)
+        log_path = log_dir / ("watcher-%s-%s.log" % (
+            kind, datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ")))
+        fh = open(str(log_path), "w", encoding="utf-8")
+        try:
+            proc = subprocess.Popen(argv, cwd=str(repo_root()),
+                                    stdout=fh, stderr=subprocess.STDOUT,
+                                    creationflags=no_window_flags())
+        except OSError:
+            try:
+                fh.close()
+            except OSError:
+                pass
+            raise
+        _LOG_HANDLES[proc.pid] = fh
+        return proc
+    return _spawn
+
+
+def _verify_watcher_lease(record: Any, kind: str, watcher_pid: Any,
+                          watcher_ctime: Any, run_pid: Any,
+                          watcher_alive: Any) -> Any:
+    """Pure per-watcher confirmation (contract §4).
+
+    Returns (ok, detail). Never touches the registry, processes, or the
+    clock beyond reading it. `watcher_alive` is injected (production:
+    PID+image+ctime liveness).
+    """
+    detail: Dict[str, Any] = {"kind": kind}
+    lease = (record or {}).get(kind) if isinstance(record, dict) else None
+    if not isinstance(lease, dict):
+        return False, {**detail, "reason": "lease-absent"}
+    if str(lease.get("state", "")).upper() != "ACTIVE":
+        return False, {**detail, "reason": "lease-not-active",
+                       "state": lease.get("state")}
+    try:
+        if int(lease.get("pid")) != int(watcher_pid):
+            return False, {**detail, "reason": "owner-changed"}
+    except (TypeError, ValueError):
+        return False, {**detail, "reason": "lease-bad-pid"}
+    if lease.get("create_time") != watcher_ctime:
+        return False, {**detail, "reason": "watcher-replaced"}
+    try:
+        if int(lease.get("watched_pid")) != int(run_pid):
+            return False, {**detail, "reason": "wrong-run-lease"}
+    except (TypeError, ValueError):
+        return False, {**detail, "reason": "lease-bad-watched"}
+    try:
+        alive = bool(watcher_alive(watcher_pid, watcher_ctime))
+    except Exception:
+        alive = False
+    if not alive:
+        return False, {**detail, "reason": "watcher-dead"}
+    try:
+        last = datetime.fromisoformat(str(lease.get("last_check_at")))
+        age = (datetime.now(timezone.utc) - last).total_seconds()
+    except (TypeError, ValueError):
+        return False, {**detail, "reason": "malformed-heartbeat"}
+    if age < -_SUPERVISED_LAUNCH_FUTURE_TOL_S \
+            or age > SUPERVISOR_LEASE_FRESH_S:
+        return False, {**detail, "reason": "stale-heartbeat", "age_s": age}
+    return True, {**detail, "reason": "verified", "age_s": age}
+
+
+def _verify_launch_state(record: Any, run: Dict[str, Any],
+                         watchers: Dict[str, Dict[str, Any]],
+                         identity: Dict[str, Any]) -> Any:
+    """Pure launch-state evaluation (contract §4/§5).
+
+    No registry writes, no process actions. Returns (ok, detail) where a
+    falsy ok carries a `reason` in: no-record, terminal-found,
+    run-replaced, takeover, stale-run, lease-<kind>-<lease-reason>.
+    """
+    if not isinstance(record, dict):
+        return False, {"reason": "no-record"}
+    state = record.get("state")
+    if not _is_active_state(state):
+        return False, {"reason": "terminal-found", "state": state}
+    try:
+        if int(record.get("pid")) != int(run["pid"]) \
+                or record.get("create_time") != run["create_time"]:
+            return False, {"reason": "run-replaced"}
+    except (TypeError, ValueError, KeyError):
+        return False, {"reason": "run-replaced"}
+    if state == "STOPPING":
+        # Launch never writes STOPPING: any hold here is foreign.
+        return False, {"reason": "takeover",
+                       "stopping_by": record.get("stopping_by")}
+    try:
+        live = bool(identity["is_canonical"](record))
+    except Exception:
+        live = False
+    if not live:
+        return False, {"reason": "stale-run"}
+    for kind in ("supervisor", "sentinel"):
+        info = (watchers or {}).get(kind) or {}
+        ok, detail = _verify_watcher_lease(
+            record, kind, info.get("pid"), info.get("create_time"),
+            run["pid"], identity["watcher_alive"])
+        if not ok:
+            return False, {"reason": "lease-%s-%s" % (kind, detail["reason"]),
+                           kind: detail}
+    ages = {}
+    for kind in ("supervisor", "sentinel"):
+        ok, detail = _verify_watcher_lease(
+            record, kind, watchers[kind]["pid"],
+            watchers[kind]["create_time"], run["pid"],
+            identity["watcher_alive"])
+        ages[kind] = detail.get("age_s")
+    return True, {"reason": "verified", "supervisor_age_s": ages["supervisor"],
+                  "sentinel_age_s": ages["sentinel"]}
+
+
+def _rollback_transaction(launched: Any, identity: Dict[str, Any]) -> Dict[str, Any]:
+    """Kill-only rollback (contract §6).
+
+    Acts solely on transaction PIDs with spawn-captured identity, in the
+    given order (callers pass reverse launch order). Never writes the
+    registry, never marks records, never touches foreign processes:
+    already-dead entries count as cleaned. Returns
+    {attempted, cleaned, pending}.
+    """
+    terminate = identity["terminate"]
+    alive = identity["watcher_alive"]
+    cleaned: List[Any] = []
+    pending: List[Any] = []
+    for role, pid, ctime in list(launched or []):
+        try:
+            is_alive = bool(alive(pid, ctime))
+        except Exception:
+            is_alive = True  # cannot prove dead: must attempt termination
+        if not is_alive:
+            cleaned.append({"role": role, "pid": pid, "note": "already-gone"})
+            continue
+        try:
+            ok = bool(terminate(pid, ctime))
+        except Exception:
+            ok = False
+        if not ok:
+            pending.append({"role": role, "pid": pid,
+                            "reason": "terminate-refused"})
+            continue
+        try:
+            still = bool(alive(pid, ctime))
+        except Exception:
+            still = True
+        if still:
+            pending.append({"role": role, "pid": pid,
+                            "reason": "still-alive"})
+        else:
+            cleaned.append({"role": role, "pid": pid, "note": "terminated"})
+    return {"attempted": bool(launched), "cleaned": cleaned,
+            "pending": pending}
+
+
+def _launch_envelope(outcome: str, reason: str, run: Any,
+                     watchers: Dict[str, Any], verification: Dict[str, Any],
+                     rollback: Dict[str, Any], evidence: Any) -> Dict[str, Any]:
+    return {"outcome": outcome, "reason": reason,
+            "scope": _SUPERVISED_LAUNCH_SCOPE, "run": run,
+            "watchers": watchers, "verification": verification,
+            "rollback": rollback, "evidence": evidence}
+
+
+def _watcher_slot(pid: Any, ctime: Any, confirmed: bool) -> Dict[str, Any]:
+    return {"pid": pid, "create_time": ctime, "confirmed": bool(confirmed)}
+
+
+def launch_supervised_transaction(duration_seconds: Optional[float] = None,
+                                  launcher: str = "agent",
+                                  preset: str = "standard",
+                                  evidence_dir: Optional[Path] = None,
+                                  verify_budget_s: float = 60.0,
+                                  poll_interval_s: float = 2.0,
+                                  spawners: Optional[Dict[str, Any]] = None,
+                                  identity: Optional[Dict[str, Any]] = None
+                                  ) -> Dict[str, Any]:
+    """Supervised transactional launch (DISABLED preparation).
+
+    Contract: docs/SUPERVISED_LAUNCH_CONTRACT.md. While
+    SUPERVISED_LAUNCH_ENABLED is False this refuses with
+    `supervised-launch-disabled` and performs no spawn, write, or process
+    action. No HTTP route or CLI subcommand is wired to it.
+    """
+    if not SUPERVISED_LAUNCH_ENABLED:
+        return _launch_envelope(
+            "rejected", "supervised-launch-disabled", None,
+            {"supervisor": _watcher_slot(None, None, False),
+             "sentinel": _watcher_slot(None, None, False)},
+            {"polls": 0, "budget_s": verify_budget_s},
+            {"attempted": False, "cleaned": [], "pending": []}, None)
+    return _launch_supervised_impl(
+        duration_seconds=duration_seconds, launcher=launcher, preset=preset,
+        evidence_dir=evidence_dir, verify_budget_s=verify_budget_s,
+        poll_interval_s=poll_interval_s, spawners=spawners, identity=identity)
+
+
+def _launch_supervised_impl(duration_seconds: Optional[float] = None,
+                            launcher: str = "agent",
+                            preset: str = "standard",
+                            evidence_dir: Optional[Path] = None,
+                            verify_budget_s: float = 60.0,
+                            poll_interval_s: float = 2.0,
+                            spawners: Optional[Dict[str, Any]] = None,
+                            identity: Optional[Dict[str, Any]] = None
+                            ) -> Dict[str, Any]:
+    """Transactional launch engine (tested directly; production disabled).
+
+    Pure preflight first (no spawn, no writes on refusal), then the probe
+    step via start_probe, watcher spawns, a finite pure-read verification
+    loop, and kill-only rollback of everything launched on any failure.
+    """
+    ident = _default_identity()
+    if identity:
+        ident.update(identity)
+    sp = dict(spawners or {})
+    watchers: Dict[str, Any] = {
+        "supervisor": _watcher_slot(None, None, False),
+        "sentinel": _watcher_slot(None, None, False)}
+    launched: List[Any] = []
+
+    def _reject(reason: str, run: Any = None,
+                verification: Any = None, evidence: Any = None) -> Dict[str, Any]:
+        rb = _rollback_transaction(list(reversed(launched)), ident) \
+            if launched else {"attempted": False, "cleaned": [],
+                              "pending": []}
+        return _launch_envelope(
+            "rejected", reason, run, dict(watchers),
+            verification or {"polls": 0, "budget_s": verify_budget_s},
+            rb, evidence)
+
+    # -- preflight: pure reads only ------------------------------------
+    if not launcher or not isinstance(launcher, str):
+        return _reject("bad-launcher")
+    try:
+        current = ident["read_record"]()
+    except OSError:
+        return _reject("registry-unavailable")
+    if isinstance(current, dict) and _is_active_state(current.get("state")):
+        try:
+            live = bool(ident["is_canonical"](current))
+        except Exception:
+            live = False
+        if live:
+            return _reject("already-running")
+    # -- probe step (canonical start_probe: spawn + adoption + handoff) --
+    try:
+        start = start_probe(duration_seconds, launcher, preset, evidence_dir)
+    except Exception as exc:
+        return _reject("probe-spawn-failed",
+                       verification={"polls": 0, "budget_s": verify_budget_s,
+                                     "error": str(exc)[:120]})
+    if not isinstance(start, dict) or not start.get("started"):
+        err = str((start or {}).get("error", "refused"))
+        reason = ("probe-spawn-failed" if "spawn failed" in err
+                  else "start-refused")
+        return _reject(reason,
+                       verification={"polls": 0, "budget_s": verify_budget_s,
+                                     "detail": err[:120]})
+    # -- establish run identity from a fresh read ----------------------
+    try:
+        fresh = ident["read_record"]()
+    except OSError:
+        fresh = None
+    if not isinstance(fresh, dict) or not _is_active_state(fresh.get("state")):
+        try:
+            ctime = ident["proc_ctime"](start.get("pid"))
+        except Exception:
+            ctime = None
+        launched.append(("probe", start.get("pid"), ctime))
+        rb = _rollback_transaction(list(reversed(launched)), ident)
+        if rb["pending"]:
+            return _launch_envelope(
+                "uncertain", "run-unestablished", None, dict(watchers),
+                {"polls": 0, "budget_s": verify_budget_s}, rb, None)
+        return _reject("run-unestablished")
+    try:
+        run = {"pid": int(fresh.get("pid")),
+               "create_time": fresh.get("create_time")}
+    except (TypeError, ValueError):
+        run = {"pid": fresh.get("pid"),
+               "create_time": fresh.get("create_time")}
+    launched.append(("probe", run["pid"], run["create_time"]))
+    evidence = fresh.get("evidence") if isinstance(fresh, dict) else None
+    # -- spawn watchers -------------------------------------------------
+    for role in ("supervisor", "sentinel"):
+        fn = sp.get(role)
+        if fn is None:
+            fn = _default_watcher_spawner(role)
+        try:
+            proc = fn(run["pid"])
+        except Exception as exc:
+            rb = _rollback_transaction(list(reversed(launched)), ident)
+            if rb["pending"]:
+                return _launch_envelope(
+                    "uncertain", "%s-spawn-failed" % role, run,
+                    dict(watchers),
+                    {"polls": 0, "budget_s": verify_budget_s,
+                     "error": str(exc)[:120]}, rb, evidence)
+            return _reject("%s-spawn-failed" % role, run,
+                           {"polls": 0, "budget_s": verify_budget_s,
+                            "error": str(exc)[:120]}, evidence)
+        if proc is None or getattr(proc, "pid", None) is None:
+            rb = _rollback_transaction(list(reversed(launched)), ident)
+            if rb["pending"]:
+                return _launch_envelope(
+                    "uncertain", "%s-spawn-failed" % role, run,
+                    dict(watchers),
+                    {"polls": 0, "budget_s": verify_budget_s}, rb, evidence)
+            return _reject("%s-spawn-failed" % role, run,
+                           {"polls": 0, "budget_s": verify_budget_s},
+                           evidence)
+        try:
+            ctime = ident["proc_ctime"](proc.pid)
+        except Exception:
+            ctime = None
+        watchers[role] = _watcher_slot(proc.pid, ctime, False)
+        launched.append((role, proc.pid, ctime))
+    # -- finite pure-read verification loop -----------------------------
+    try:
+        budget = max(0.0, float(verify_budget_s))
+    except (TypeError, ValueError):
+        budget = 0.0
+    try:
+        interval = max(0.0, float(poll_interval_s))
+    except (TypeError, ValueError):
+        interval = 0.0
+    polls = 0
+    good_polls = 0
+    last_detail: Dict[str, Any] = {"reason": "no-poll"}
+    deadline = time.monotonic() + budget
+    while True:
+        polls += 1
+        try:
+            rec = ident["read_record"]()
+        except OSError:
+            rec = None
+            read_error = True
+        else:
+            read_error = False
+        if read_error or not isinstance(rec, dict):
+            last_detail = {"reason": "poll-unreadable"}
+        else:
+            good_polls += 1
+            ok, detail = _verify_launch_state(rec, run, watchers, ident)
+            last_detail = detail
+            if ok:
+                for role in ("supervisor", "sentinel"):
+                    watchers[role] = _watcher_slot(
+                        watchers[role]["pid"], watchers[role]["create_time"],
+                        True)
+                return _launch_envelope(
+                    "confirmed", "all-components-verified", run,
+                    dict(watchers),
+                    {"polls": polls, "budget_s": budget,
+                     "supervisor_age_s": detail.get("supervisor_age_s"),
+                     "sentinel_age_s": detail.get("sentinel_age_s")},
+                    {"attempted": False, "cleaned": [], "pending": []},
+                    evidence)
+            if detail.get("reason") not in ("lease-supervisor-lease-absent",
+                                            "lease-sentinel-lease-absent",
+                                            "no-record", "poll-unreadable"):
+                break
+        if time.monotonic() >= deadline:
+            break
+        if interval > 0:
+            time.sleep(interval)
+    if good_polls == 0:
+        reason = "verify-unreadable"
+    elif last_detail.get("reason") in ("no-record", "poll-unreadable",
+                                       "lease-supervisor-lease-absent",
+                                       "lease-sentinel-lease-absent"):
+        reason = "verify-timeout"
+    else:
+        reason = last_detail.get("reason", "verify-timeout")
+    verification = {"polls": polls, "budget_s": budget,
+                    "detail": last_detail}
+    rb = _rollback_transaction(list(reversed(launched)), ident)
+    if rb["pending"]:
+        return _launch_envelope("uncertain", "rollback-incomplete", run,
+                                dict(watchers), verification, rb, evidence)
+    return _launch_envelope("rejected", reason, run, dict(watchers),
+                            verification, rb, evidence)
+
+
 if __name__ == "__main__":
     raise SystemExit(main())

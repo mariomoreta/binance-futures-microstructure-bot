@@ -949,3 +949,37 @@ reproductions; R1+R2 fixed failing-first, no market runs:
 Tests: 7 win32-bool + 8 start-race delta (key cases fail on `b801ab0`);
 suite 850/850 OK. V2/main/SUCCESS_GATES intact; `status_readonly()` kept;
 no new supervised window (longevity UNDEMONSTRATED).
+
+## 2026-10-11 -- Supervised transactional launch preparation (DISABLED)
+
+Contract first (`docs/SUPERVISED_LAUNCH_CONTRACT.md`), then the minimum
+backend, per V2-55 acceptance (`7b2b5e75`). R1/R2 accepted as closed and
+left untouched:
+
+1. Preconditions + capacity (no live run, lock acquirable, one-run/three-
+   proc bound, named launcher, writable evidence) checked on pure reads;
+   refusal spawns and writes nothing.
+2. Identity per process: probe PID+ctime from a fresh read; watchers need
+   ACTIVE + owned PID/ctime + watched==run + alive + parseable fresh
+   non-future heartbeat on ONE read. Popen/ACTIVE/recent-heartbeat alone
+   never confirms; confirmation is point-in-time, not future protection.
+3. Sequence start_probe → spawn watchers → finite-budget pure verification
+   → kill-only rollback of everything launched on any failure. Rollback
+   touches only transaction PIDs with spawn-captured identity (already-dead
+   counts as cleaned); foreign/terminal records never written or killed;
+   unverifiable cleanup → UNCERTAIN with pending evidence, never completed.
+4. Disabled surface: public entry refuses with zero side effects; no HTTP
+   route, CLI subcommand, Start enablement or contract change ships.
+   BFF keeps Start disabled and renders the envelope (outcome/reason,
+   per-watcher confirmation, pending list, point-in-time scope) after a
+   future enablement review.
+5. Found+fixed in passing: per-thread global Popen patches leak the mock
+   process-wide (concurrent test now uses one parent-held patch).
+
+Tests: 23-test matrix in `tests/test_supervised_launch.py` (full path,
+per-component spawn failures, lease matrix, death/reuse, timeout,
+unreadable, takeover/terminal interleaves, uncertain rollbacks, concurrent
+single-confirmation, repeat rejection, zero-write purity); fail-before is
+23/23 missing API. Suite 873/873 OK. No real probes, market traffic,
+P1-14C, long runs, paper, orders or Start; V2/main/SUCCESS_GATES intact;
+no phase advanced. Enablement needs explicit authorization.

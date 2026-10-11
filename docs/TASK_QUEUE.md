@@ -197,6 +197,18 @@ the dashboard exists. No classifier before raw-feature dashboard validation.
   untouched. No new supervised window on the corrected SHA. Transactional
   supervised start still PENDING/separate. SUCCESS_GATES untouched.
 
+- `P1-14B.8-V2-55` (2026-10-11) SUPERVISED TRANSACTIONAL LAUNCH PREPARATION — **DONE (acotado)**.
+  Contract-first (`docs/SUPERVISED_LAUNCH_CONTRACT.md`) disabled backend per
+  V2-55 acceptance (`7b2b5e75`): `launch_supervised_transaction` refuses
+  while disabled with zero side effects; `_launch_supervised_impl` reuses
+  `start_probe`/leases/identity/verified termination/lock with finite-budget
+  pure verification and kill-only rollback; confirmed/rejected/uncertain
+  envelope (point-in-time only); 23-test failure matrix incl. concurrent
+  single-confirmation and zero-write purity. No HTTP/CLI wiring, Start stays
+  disabled; enablement needs explicit authorization + V2 review of the exact
+  SHA. Suite 873/873 OK. No probes, market traffic, P1-14C, long runs, paper,
+  orders or Start. V2/main/SUCCESS_GATES intact. No phase advanced.
+
 - `P1-14B.8-V2-54` (2026-10-11) BOOL + LOG-HANDOFF BOUNDED CORRECTION — **DONE (acotado)**.
   Frontend review `d4d82c9` R1/R2 fixed with failing-first hermetic tests:
   exact 32-bit Win32 BOOL signatures + ABI 0/1/256 marshalling proof (7
@@ -448,6 +460,18 @@ strategies (P3), paper engine/positions (P4), execution (P5).
 ## LAST_VERIFICATION
 
 
+
+- 2026-10-11 (P1-14B.8-V2-55): `python run_tests.py` → 873/873 OK (850 + 23 supervised-launch).
+  Contract-first disabled preparation per V2-55 acceptance (`7b2b5e75`):
+  envelope confirmed/rejected/uncertain, finite-budget pure verification,
+  kill-only rollback, 23-test failure matrix (full path, per-component spawn
+  failures, lease matrix, death/reuse, timeout, unreadable, takeover/terminal
+  interleaves, uncertain rollbacks, concurrent single-confirmation, repeat
+  rejection, zero-write purity). Found+fixed in passing: per-thread global
+  Popen patches leak process-wide (single parent-held patch now). No probes,
+  market traffic, P1-14C, long runs, paper, orders or Start; V2/main/
+  SUCCESS_GATES intact; `status_readonly()` kept. No new supervised window.
+  Transactional enablement still needs explicit authorization + V2 review.
 
 - 2026-10-11 (P1-14B.8-V2-54): `python run_tests.py` → 850/850 OK (840 + 7 win32-bool + 3 start-race delta).
   R1/R2 corrected per frontend review `d4d82c9` (key cases fail on `b801ab0`,

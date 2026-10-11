@@ -35,6 +35,7 @@ it does not replace them. Authority stays where it was recorded
 | F-PAPER-01 | Forward paper validation (P1-15) | DECIDED | NOT IMPLEMENTED | P1-15 |
 | F-PORT-01 | Paper portfolio (P1-16) | DECIDED | NOT IMPLEMENTED | P1-16 |
 | F-V2-BFF-01 | Next.js API integration (BFF) | DECIDED | NOT IMPLEMENTED | DASH-V2 future |
+| F-LAUNCH-SUP-01 | Supervised transactional launch | PROPOSED (enablement needs explicit authorization) | PARTIAL (contract + disabled backend preparation; no wiring) | Future (V2 review of exact SHA first) |
 | F-CMC-01 | CoinMarketCap supplementary metadata | DECIDED (staged) | NOT IMPLEMENTED | CMC-00/01/02 |
 | F-CORE-01 | Completed Phase 1 foundations (index) | DECIDED | VERIFIED | P1-00…P1-11C, P1-10R |
 
@@ -427,6 +428,40 @@ it does not replace them. Authority stays where it was recorded
   `docs/DASHBOARD_V2_MIGRATION_PLAN.md`.
 - **Open questions:** exact `/api/v1` schema validator language.
 - **Last update:** 2026-10-08.
+
+## F-LAUNCH-SUP-01 — Supervised transactional launch
+
+- **Product objective:** one atomic operation that starts probe + supervisor
+  + sentinel, verifies every component against the run inside a finite
+  budget, and rolls back everything launched on any failure. Research and
+  operator use only; no trading semantics.
+- **Origin / decision date:** V2-55 acceptance checkpoint 2026-10-11
+  (enablement NOT authorized); contract `docs/SUPERVISED_LAUNCH_CONTRACT.md`.
+- **Approval status:** PROPOSED (operational enablement needs explicit
+  authorization + V2 review of the exact SHA).
+- **Implementation status:** PARTIAL (contract + disabled backend
+  preparation: `control.launch_supervised_transaction` refuses while
+  disabled; no HTTP route, CLI subcommand, or Start wiring).
+- **Target phase:** future (V2 enablement review first).
+- **Dependencies:** P1-11B.1 run control, P1-14B.7/8 supervision + sentinel,
+  registry mutual exclusion, verified termination, pure observation.
+- **Affected subsystems:** `control.py` launch section only; dashboard,
+  probe, persistence untouched.
+- **Required UI locations:** none (BFF renders the outcome envelope only
+  after a future enablement review).
+- **Data/API requirements:** outcome envelope (outcome/reason/scope/run/
+  watchers/verification/rollback/evidence) reusing registry field names,
+  nullable-safe; `status_readonly()` stays the GET path.
+- **Acceptance criteria:** confirmation only on simultaneous full
+  verification (never Popen/lease/heartbeat alone); kill-only rollback of
+  transaction PIDs with verified identity; foreign/terminal never touched;
+  unverifiable cleanup reported UNCERTAIN with pending evidence.
+- **Evidence:** `tests/test_supervised_launch.py` (23 tests), 873/873 suite,
+  `docs/SUPERVISED_LAUNCH_CONTRACT.md`.
+- **Docs:** `docs/SUPERVISED_LAUNCH_CONTRACT.md`, `docs/ARCHITECTURE.md`,
+  `docs/CURRENT_STATE.md`, `docs/DECISIONS.md`.
+- **Open questions:** enablement authorization; exact V2 Start preflight UX.
+- **Last update:** 2026-10-11.
 
 ## F-CMC-01 — CoinMarketCap supplementary metadata
 
