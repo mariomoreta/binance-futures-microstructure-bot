@@ -8,7 +8,9 @@ const root = process.cwd();
 const guardAudit=process.argv[2]==="system-51";
 const integrationAudit=process.argv[2]==="system-52";
 const watcherAudit=process.argv[2]==="system-50"||guardAudit||integrationAudit;
-const out = path.join(root,"design/qa/v2-56",process.argv[2]==="before"?"before":"after");
+const round = process.env.QA_ROUND || "v2-56";
+const base = process.env.QA_BASE_URL || "http://127.0.0.1:3020";
+const out = path.join(root,"design/qa",round,process.argv[2]==="before"?"before":"after");
 await mkdir(out, {recursive:true});
 const profile = await mkdtemp(path.join(os.tmpdir(), "dashboard-v2-49-"));
 const child = spawn(chrome, ["--headless=new", "--disable-gpu", "--no-first-run",
@@ -30,7 +32,7 @@ try {
     const x=JSON.parse(e.data);
     if(x.id){const p=waiting.get(x.id);waiting.delete(x.id);x.error?p.reject(Error(JSON.stringify(x.error))):p.resolve(x.result);}
     if(x.method==="Runtime.exceptionThrown")errors.push(x.params.exceptionDetails.text);
-    if(x.method==="Log.entryAdded"&&x.params.entry.level==="error"){const e=x.params.entry;const known=["live-movers","opportunities","price-series/BTCUSDT","price-series/ETHUSDT","price-series/SOLUSDT"].some(p=>e.url==="http://127.0.0.1:3020/api/v1/"+p);if(e.text.includes("503")&&known)unavailable.push({url:e.url,text:e.text});else errors.push({url:e.url,text:e.text});}
+    if(x.method==="Log.entryAdded"&&x.params.entry.level==="error"){const e=x.params.entry;const known=["live-movers","opportunities","price-series/BTCUSDT","price-series/ETHUSDT","price-series/SOLUSDT","price-series/ORCAUSDT"].some(p=>e.url===base+"/api/v1/"+p);if(e.text.includes("503")&&known)unavailable.push({url:e.url,text:e.text});else errors.push({url:e.url,text:e.text});}
   });
   const call=(method,params={})=>new Promise((resolve,reject)=>{
     const number=++id;waiting.set(number,{resolve,reject});ws.send(JSON.stringify({id:number,method,params}));
@@ -42,12 +44,12 @@ try {
   };
   await call("Page.enable");await call("Runtime.enable");await call("Log.enable");
 
-  const routes=watcherAudit?["system","overview"]:["overview","movers","movers/verified","opportunities","opportunities/observations","opportunities/prospective","symbol/BTCUSDT","historical-research","market-archive","market-lab","system","backtest","paper-lab"];
+  const routes=process.env.QA_ROUTES?process.env.QA_ROUTES.split(","):watcherAudit?["system","overview"]:["overview","movers","movers/verified","opportunities","opportunities/observations","opportunities/prospective","symbol/BTCUSDT","historical-research","market-archive","market-lab","system","backtest","paper-lab"];
   const results=[];
   for(const width of (process.argv[2]==="full"?[1672]:[1672,1366,390])){
     await call("Emulation.setDeviceMetricsOverride",{width,height:941,deviceScaleFactor:1,mobile:false});
     for(const route of routes){
-      await call("Page.navigate",{url:"http://127.0.0.1:3020/"+route});
+      await call("Page.navigate",{url:base+"/"+route});
       await delay(1800);
       if(watcherAudit&&route==="system"){for(let n=0;n<50;n++){if(!await evaluate('document.querySelector("[aria-label=\\\"Bot Control Center\\\"]")?.innerText.includes("LOADING")'))break;await delay(100);}}
       const x=await evaluate('({title:document.querySelector("h1")?.textContent,width:innerWidth,scroll:document.documentElement.scrollWidth,mains:document.querySelectorAll("main").length,loading:document.body.innerText.includes("LOADING"),active:[...document.querySelectorAll("#terminal-navigation a[aria-current=page]")].map(a=>a.getAttribute("href")),height:document.documentElement.scrollHeight,alerts:[...document.querySelectorAll("[role=alert]")].map(a=>a.textContent),scrollTables:[...document.querySelectorAll("table")].filter(t=>t.getBoundingClientRect().width>innerWidth).length})');
@@ -62,10 +64,16 @@ try {
         if(!layout.tableFits||layout.rows!==8||layout.rankingColumns!==4)throw Error("Movers reference layout failed "+JSON.stringify(layout));
         x.visualLayout=layout;
       }
+      if(process.env.QA_ROUND==="v2-58"&&process.argv[2]!=="before"&&route.startsWith("symbol/")){
+        const token=await evaluate("(()=>{const s=document.querySelector('[aria-label=\"Market State Intelligence\"]');const flow=s.querySelector('[aria-label=\"Possible research states, not a mandatory progression\"]');const metrics=[...document.querySelectorAll('section')].find(e=>e.innerText.includes('Microstructure Snapshot'));const grid=[...metrics.children].find(e=>getComputedStyle(e).display==='grid');return {categories:flow.children.length,unknown:s.innerText.includes('UNKNOWN'),fixture:document.querySelector('[aria-label=\"Token dataset provenance\"]').innerText,metricColumns:getComputedStyle(grid).gridTemplateColumns.split(' ').length,metrics:grid.children.length}})()");
+        if(token.categories!==5||!token.unknown||!token.fixture.includes("NOT LIVE")||token.metricColumns!==(width>1350?6:width>700?3:2))throw Error("Token visual/source contract failed "+JSON.stringify(token));
+        if(route.includes("ORCA")&&!token.fixture.includes("NO SYMBOL FIXTURE"))throw Error("Unknown symbol inherited fixture");
+        x.tokenLayout=token;
+      }
       const shot=await call("Page.captureScreenshot",{format:"png"});
       const name=route.replaceAll("/","-")+"-"+width;
       await writeFile(path.join(out,name+".png"),Buffer.from(shot.data,"base64"));
-      if(process.argv[2]==="full"){const dimensions=await call("Page.getLayoutMetrics");const bounds=dimensions.cssContentSize;const fullShot=await call("Page.captureScreenshot",{format:"png",captureBeyondViewport:true,clip:{x:0,y:0,width:bounds.width,height:bounds.height,scale:1}});await writeFile(path.join(out,route.replaceAll("/","-")+"-full.png"),Buffer.from(fullShot.data,"base64"));}
+      if(process.argv[2]==="full"||process.env.QA_FULL==="1"){const dimensions=await call("Page.getLayoutMetrics");const bounds=dimensions.cssContentSize;const fullShot=await call("Page.captureScreenshot",{format:"png",captureBeyondViewport:true,clip:{x:0,y:0,width:bounds.width,height:bounds.height,scale:1}});await writeFile(path.join(out,route.replaceAll("/","-")+"-"+width+"-full.png"),Buffer.from(fullShot.data,"base64"));}
       results.push({route,...x});console.log(name,JSON.stringify(x));
       if(route==="system"&&(width===1672||watcherAudit)){
         await evaluate('document.querySelector("summary").click()');

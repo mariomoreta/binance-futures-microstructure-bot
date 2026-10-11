@@ -16,7 +16,7 @@ This is not a background job or a live-run authorization.
 |---|---|---|---|
 | V56 | Overview and Movers hierarchy/composition | ROUND DONE; overall parity PARTIAL | DASHBOARD_V2_56_VISUAL_REFINEMENT.md; 39 before/after cases; 118 frontend / 496 snapshot |
 | V57 | Autonomous visual control plan | ROUND DONE, documentation only | This dated control section |
-| Next A | Token Detail | READY; reference audited, implementation PENDING | token-detail.png inspected; retain real/fixture/source distinction |
+| V58 / A | Token Detail | ROUND DONE; fidelity PARTIAL | DASHBOARD_V2_58_TOKEN_DETAIL_VISUAL.md; 3 before / 6 after browser cases, 118 frontend / 496 snapshot |
 | Next B | Opportunities, observations, prospective | READY for bounded composition; exact parity BLOCKED | Correct Opportunities reference absent; do not substitute another screen |
 | Next C | System and research archives | PENDING after A/B; may advance around isolated external blockers | Preserve recorded process vs watcher vs feed, registry-only semantics |
 | Next D | Backtest and Paper Lab unavailable states | PENDING | Reference composition allowed; engines/results remain unavailable |

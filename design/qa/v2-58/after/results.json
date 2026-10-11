@@ -1,0 +1,157 @@
+{
+  "results": [
+    {
+      "route": "symbol/BTCUSDT",
+      "title": "BTCUSDT",
+      "width": 1672,
+      "scroll": 1657,
+      "mains": 1,
+      "loading": false,
+      "active": [
+        "/movers"
+      ],
+      "height": 1267,
+      "alerts": [],
+      "scrollTables": 0,
+      "tokenLayout": {
+        "categories": 5,
+        "unknown": true,
+        "fixture": "STATIC DEMO FIXTURE · NOT LIVE\nExample as-of: Oct 7, 2026, 12:00 PM UTC · historical fixture, not current market data\nClassifier API: NOT CONNECTED",
+        "metricColumns": 6,
+        "metrics": 6
+      }
+    },
+    {
+      "route": "symbol/ORCAUSDT",
+      "title": "ORCAUSDT",
+      "width": 1672,
+      "scroll": 1657,
+      "mains": 1,
+      "loading": false,
+      "active": [
+        "/movers"
+      ],
+      "height": 1267,
+      "alerts": [],
+      "scrollTables": 0,
+      "tokenLayout": {
+        "categories": 5,
+        "unknown": true,
+        "fixture": "NO SYMBOL FIXTURE · NOT LIVE\nNo symbol-specific observation or timestamp available\nClassifier API: NOT CONNECTED",
+        "metricColumns": 6,
+        "metrics": 4
+      }
+    },
+    {
+      "route": "symbol/BTCUSDT",
+      "title": "BTCUSDT",
+      "width": 1366,
+      "scroll": 1351,
+      "mains": 1,
+      "loading": false,
+      "active": [
+        "/movers"
+      ],
+      "height": 1267,
+      "alerts": [],
+      "scrollTables": 0,
+      "tokenLayout": {
+        "categories": 5,
+        "unknown": true,
+        "fixture": "STATIC DEMO FIXTURE · NOT LIVE\nExample as-of: Oct 7, 2026, 12:00 PM UTC · historical fixture, not current market data\nClassifier API: NOT CONNECTED",
+        "metricColumns": 6,
+        "metrics": 6
+      }
+    },
+    {
+      "route": "symbol/ORCAUSDT",
+      "title": "ORCAUSDT",
+      "width": 1366,
+      "scroll": 1351,
+      "mains": 1,
+      "loading": false,
+      "active": [
+        "/movers"
+      ],
+      "height": 1267,
+      "alerts": [],
+      "scrollTables": 0,
+      "tokenLayout": {
+        "categories": 5,
+        "unknown": true,
+        "fixture": "NO SYMBOL FIXTURE · NOT LIVE\nNo symbol-specific observation or timestamp available\nClassifier API: NOT CONNECTED",
+        "metricColumns": 6,
+        "metrics": 4
+      }
+    },
+    {
+      "route": "symbol/BTCUSDT",
+      "title": "BTCUSDT",
+      "width": 390,
+      "scroll": 375,
+      "mains": 1,
+      "loading": false,
+      "active": [
+        "/movers"
+      ],
+      "height": 2316,
+      "alerts": [],
+      "scrollTables": 0,
+      "tokenLayout": {
+        "categories": 5,
+        "unknown": true,
+        "fixture": "STATIC DEMO FIXTURE · NOT LIVE\nExample as-of: Oct 7, 2026, 12:00 PM UTC · historical fixture, not current market data\nClassifier API: NOT CONNECTED",
+        "metricColumns": 2,
+        "metrics": 6
+      }
+    },
+    {
+      "route": "symbol/ORCAUSDT",
+      "title": "ORCAUSDT",
+      "width": 390,
+      "scroll": 375,
+      "mains": 1,
+      "loading": false,
+      "active": [
+        "/movers"
+      ],
+      "height": 2200,
+      "alerts": [],
+      "scrollTables": 0,
+      "tokenLayout": {
+        "categories": 5,
+        "unknown": true,
+        "fixture": "NO SYMBOL FIXTURE · NOT LIVE\nNo symbol-specific observation or timestamp available\nClassifier API: NOT CONNECTED",
+        "metricColumns": 2,
+        "metrics": 4
+      }
+    }
+  ],
+  "errors": [],
+  "unavailable": [
+    {
+      "url": "http://127.0.0.1:3020/api/v1/price-series/BTCUSDT",
+      "text": "Failed to load resource: the server responded with a status of 503 (Service Unavailable)"
+    },
+    {
+      "url": "http://127.0.0.1:3020/api/v1/price-series/ORCAUSDT",
+      "text": "Failed to load resource: the server responded with a status of 503 (Service Unavailable)"
+    },
+    {
+      "url": "http://127.0.0.1:3020/api/v1/price-series/BTCUSDT",
+      "text": "Failed to load resource: the server responded with a status of 503 (Service Unavailable)"
+    },
+    {
+      "url": "http://127.0.0.1:3020/api/v1/price-series/ORCAUSDT",
+      "text": "Failed to load resource: the server responded with a status of 503 (Service Unavailable)"
+    },
+    {
+      "url": "http://127.0.0.1:3020/api/v1/price-series/BTCUSDT",
+      "text": "Failed to load resource: the server responded with a status of 503 (Service Unavailable)"
+    },
+    {
+      "url": "http://127.0.0.1:3020/api/v1/price-series/ORCAUSDT",
+      "text": "Failed to load resource: the server responded with a status of 503 (Service Unavailable)"
+    }
+  ]
+}

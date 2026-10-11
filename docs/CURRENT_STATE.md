@@ -1,5 +1,10 @@
 # CURRENT_STATE
 
+## DASH-V2-58 - 2026-10-11 - Token Detail visual round
+
+Token Detail category/status/evidence/metric hierarchy and mobile composition refined. ROUND DONE; fidelity PARTIAL. Frontend 118/118, type/build pass, lint 0 errors (1 existing warning), Python snapshot 496/496; fresh 3 before / 6 after browser cases, no exceptions/overflow, expected price-series unavailable. Production V2 route http://127.0.0.1:3020/symbol/BTCUSDT. See [visual round report](DASHBOARD_V2_58_TOKEN_DETAIL_VISUAL.md). Next Opportunities composition READY; missing exact reference remains isolated. No backend change, Start or gate advance.
+
+
 ## Active visual sequencing - 2026-10-11, DASH-V2-57
 
 The existing [visual roadmap](DASHBOARD_V2_VISUAL_ROADMAP.md) is the single frontend control plan. User-authorized ready rounds continue within the active work cycle after implementation, tests, actual desktop/mobile reference comparison and a published checkpoint. This is not a background job or operational authorization.

@@ -554,3 +554,7 @@ format and bounded cycle finish conditions. Token Detail reference inspected;
 Next A READY for implementation, not yet visually completed. No UI/runtime change.
 
 Verification: Python snapshot 496/496 OK, exit 0, 68.411s. See DASHBOARD_V2_57_VISUAL_CONTROL_PLAN.md. UI verification not applicable to this documentation-only round.
+
+## DASH-V2-58 - 2026-10-11 - Token Detail visual round
+
+Token Detail category/status/evidence/metric hierarchy and mobile composition refined. ROUND DONE; fidelity PARTIAL. Frontend 118/118, type/build pass, lint 0 errors (1 existing warning), Python snapshot 496/496; fresh 3 before / 6 after browser cases, no exceptions/overflow, expected price-series unavailable. Production V2 route http://127.0.0.1:3020/symbol/BTCUSDT. See [visual round report](DASHBOARD_V2_58_TOKEN_DETAIL_VISUAL.md). Next Opportunities composition READY; missing exact reference remains isolated. No backend change, Start or gate advance.

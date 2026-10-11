@@ -198,3 +198,6 @@ Missing assets/API capabilities block only dependent requirements; preserve
 truthful unavailable states and continue independent work. Stop on user steering
 to stop, resolved cycle completion or unisolatable regression/ownership/scope
 blocker. No background execution or new market/run/Start authority.
+
+## 2026-10-11 - DASH-V2-58 visual state neutrality
+Category controls remain descriptive and visually neutral while classifier state is UNKNOWN. Approved-reference ornamental price curves are omitted without a verified series. Token Detail styling preserves source-specific fixture and chart provenance; no classifier or operational capability inferred.
