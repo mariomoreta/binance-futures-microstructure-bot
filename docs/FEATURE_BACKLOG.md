@@ -572,3 +572,7 @@ F-V2-BFF-01 and F-V2-SYSTEM-01 remain PARTIAL. Published backend b801ab0 passes 
 
 ## DASH-V2-55 acceptance checkpoint - 2026-10-11
 F-V2-BFF-01/F-V2-SYSTEM-01 remain PARTIAL. R1/R2 backend dependencies from V2-54 are closed within reviewed deterministic Windows scope on e317569. Current pure bridge is compatible in five temporary cases; native/start handoff cases independently reproduced. Transactional launch, OS-liveness evidence, longevity and visual parity remain deferred. Research proposals from V2-53 unchanged. Evidence: DASHBOARD_V2_55_CORRECTIONS_ACCEPTANCE.md, scripts/review-p1-14b8-v2-55.py and design/qa/v2-55/backend-reproductions.json.
+
+
+## DASH-V2-56 visual checkpoint - 2026-10-11
+Existing Overview/Movers presentation and BFF capabilities remain PARTIAL. Bounded layout refinement verified with frontend suite/build and before/after browser cases; no live contract completion or full-reference PASS inferred. F-V2-BFF-01/F-V2-SYSTEM-01 remain PARTIAL; transaction preparation prompt recorded separately, Start disabled. F-V2-RESEARCH-01 remains PROPOSED / NOT IMPLEMENTED. Evidence: DASHBOARD_V2_56_VISUAL_REFINEMENT.md, scripts/qa-dashboard-visual.mjs and design/qa/v2-56/.

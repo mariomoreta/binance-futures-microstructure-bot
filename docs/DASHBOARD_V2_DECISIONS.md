@@ -183,3 +183,7 @@ Accept published b801ab0 fixes for original zero-result propagation and same-chi
 
 ## 2026-10-11 - DASH-V2-55 bounded correction acceptance
 Accept R1 Windows BOOL marshalling and R2 child-first log association on e317569 based on exact-source deterministic evidence. Preserve separate recorded-process/read-only semantics and Start restriction. A successful start response with unconfirmed log association is not proof of protection. C1 claims remain bounded. No run/gate permission or strategy implementation approval. See DASHBOARD_V2_55_CORRECTIONS_ACCEPTANCE.md.
+
+
+## 2026-10-11 - DASH-V2-56 reference composition refinement
+Restore full-width Movers table with ranking boards below instead of the old side rail that hid desktop columns. Eight default rows match reference density; preserve selectable 16/32. Compact existing Overview pulse measurements as tiles; preserve content/fixture labels and native table markup. No new market values, graphs, probabilities or trading rules. Overall visual status PARTIAL. Backend supervised-launch preparation remains disabled and separate, per DASHBOARD_V2_56_BACKEND_HANDOFF.md.

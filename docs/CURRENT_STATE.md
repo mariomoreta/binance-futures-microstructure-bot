@@ -1,5 +1,11 @@
 # CURRENT_STATE
 
+## Latest frontend visual checkpoint - 2026-10-11, DASH-V2-56
+
+Overview pulse/title/action hierarchy refined; Movers full-width table, four-column rankings below, eight default rows with 16/32 available. Production V2 updated at http://127.0.0.1:3020 (managed PID 18520).
+Frontend 118/118; Python snapshot 496/496; type/build pass; lint zero errors, one existing warning. Before/after all-route QA: 39 cases each; no browser errors/page overflow. Overall reference parity remains PARTIAL; Opportunities asset absent.
+See [DASHBOARD_V2_56_VISUAL_REFINEMENT.md](DASHBOARD_V2_56_VISUAL_REFINEMENT.md) and [backend handoff prompt](DASHBOARD_V2_56_BACKEND_HANDOFF.md). Start disabled, no runtime probe or gate advancement. Next visual scope: Token Detail/Opportunities under existing contracts.
+
 ## Latest V2 acceptance review - 2026-10-11, DASH-V2-55
 
 Backend e317569 reviewed in an isolated archive. R1 exact Windows BOOL and R2 real child-first log association accepted within deterministic scope; five handoff boundaries and five pure bridge cases verified. See [DASHBOARD_V2_55_CORRECTIONS_ACCEPTANCE.md](DASHBOARD_V2_55_CORRECTIONS_ACCEPTANCE.md).

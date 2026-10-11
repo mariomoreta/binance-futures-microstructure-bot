@@ -98,3 +98,7 @@ F-V2-BFF-01 and F-V2-SYSTEM-01 remain PARTIAL. No new supervised run or gate adv
 ## DASH-V2-53 future dependency — 2026-10-11
 
 F-V2-RESEARCH-01 proposes truthful level/evidence/context detail within existing research screens after canonical data contracts exist. Documentation capture is DONE; visual implementation and verification of this proposal are NOT IMPLEMENTED. Do not add synthetic trade-plan fields or probabilities to make the interface appear complete. See [MOVER_LEVEL_STRATEGY_RESEARCH.md](MOVER_LEVEL_STRATEGY_RESEARCH.md) and FEATURE_BACKLOG.md. Current dashboard corrections and backend integration retain their established sequence; Start remains disabled.
+
+
+## DASH-V2-56 - 2026-10-11 - Overview/Movers layout checkpoint
+Full-width Movers table replaces the older desktop ranking side rail; rankings below in four columns. Default eight rows with 16/32 choices. Overview pulse tiles reduce vertical height, title and action hierarchy improved. All 13 routes checked before/after at 1672/1366/390: 39 cases each, no page overflow/browser errors. Overall parity remains PARTIAL; missing Opportunities reference unchanged. Next visual slice: Token Detail/Opportunities evidence composition under existing contracts. See DASHBOARD_V2_56_VISUAL_REFINEMENT.md. Current source content still governs unavailable/demo/live labels.

@@ -47,22 +47,9 @@
 .card .meta:last-child{border-top:1px solid #234159;padding-top:6px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 }
 
-/* DASH-V2-31 integrated desktop market table + research leaderboard rail */
-@media(min-width:1450px){
-.terminalWorkspace{display:grid;grid-template-columns:minmax(0,1.9fr) minmax(385px,1fr);align-items:start;gap:12px;min-width:0}
-.primaryMarketPane{min-width:0}
-.marketRankPane{min-width:0}
-.primaryMarketPane .table{min-width:1010px}
-.primaryMarketPane .tableWrap{overflow:auto;max-height:598px}
-}
-@media(min-width:1450px) and (max-width:1800px){
-.terminalWorkspace{grid-template-columns:minmax(0,1.75fr) minmax(410px,1fr)}
-}
-@media(max-width:1449px){
-.terminalWorkspace{display:grid;gap:12px;min-width:0}
-}
-
-
+/* DASH-V2-56: full-width table followed by reference-style ranking grid. */
+.terminalWorkspace{display:grid;grid-template-columns:minmax(0,1fr);align-items:start;gap:12px;min-width:0}
+.primaryMarketPane,.marketRankPane{min-width:0}
 .title{margin:0}
 
 /* Keep the screener table inside its own scrolling pane. */
