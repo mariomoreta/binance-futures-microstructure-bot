@@ -59,6 +59,17 @@ try {
         if(!await evaluate("location.pathname==='/search'&&new URLSearchParams(location.search).get('q')==='LUMIA'"))throw Error('Header Enter search failed');
       }
       if(round==="v2-65"&&route.startsWith("symbol/"))await evaluate("document.querySelectorAll('main details').forEach(d=>d.open=true)");
+      if(round==="v2-66"&&route.startsWith("symbol/")){
+        for(const range of ['5m','15m','1h','4h','24h']){
+          await evaluate(`(()=>{const s=document.querySelector('[aria-label="Historical price range"]');s.value='${range}';s.dispatchEvent(new Event('change',{bubbles:true}))})()`);
+          let ready=false;
+          for(let n=0;n<50;n++){if(await evaluate(`document.querySelector('[data-testid="price-coverage"]')?.textContent.includes('Requested: ${range} /')`)){ready=true;break}await delay(100)}
+          if(!ready)throw Error('Price range did not resolve '+range+' '+route);
+          if(!await evaluate(`document.querySelector('.v2-price-controls a[href*="format=csv"]')?.getAttribute('href').includes('range=${range}&')`))throw Error('Wrong-range export link');
+        }
+        if(route.includes('ZZZNODATA')&&await evaluate('!!document.querySelector(".v2-price-chart svg")'))throw Error('Unknown token fabricated chart');
+        await evaluate('document.querySelector(".v2-price-chart").scrollIntoView({block:"center"})');
+      }
       const x=await evaluate('({title:document.querySelector("h1")?.textContent,width:innerWidth,scroll:document.documentElement.scrollWidth,mains:document.querySelectorAll("main").length,loading:document.body.innerText.includes("LOADING"),active:[...document.querySelectorAll("#terminal-navigation a[aria-current=page]")].map(a=>a.getAttribute("href")),height:document.documentElement.scrollHeight,alerts:[...document.querySelectorAll("[role=alert]")].map(a=>a.textContent),scrollTables:[...document.querySelectorAll("table")].filter(t=>t.getBoundingClientRect().width>innerWidth).length})');
       if(!x.title && process.argv[2]!=="before")throw Error("Missing page title "+route);
       if(width===390 && await evaluate('!!document.querySelector("[aria-controls=terminal-navigation]")')){

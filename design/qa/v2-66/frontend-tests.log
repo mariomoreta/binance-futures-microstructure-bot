@@ -1,0 +1,86 @@
+
+> dashboard-v2@0.0.1 test
+> vitest run --run
+
+[33m(!) Your Vite config uses features that are unsupported by `configLoader: 'native'`, which is planned to become the default in a future major version of Vite:
+  - `__dirname` (vitest.config.mts:5:41). Use `import.meta.dirname` instead
+Set `VITE_CONFIG_NATIVE_IGNORE_WARNING=true` to suppress this warning.[39m
+
+[1m[30m[46m RUN [49m[39m[22m [36mv5.0.3 [39m[90mC:/proyectos/binance-futures-dashboard-v2-worktree/frontend[39m
+
+ [32m✓[39m src/test/movers-pulse.test.tsx [2m([22m[2m1 test[22m[2m)[22m[33m 484[2mms[22m[39m
+   [32m✓[39m market breadth visual integrity [2m(1)[22m
+     [33m[2m✓[22m[39m states retained-subset limits and labels missing observations[33m 480[2mms[22m[39m
+ [32m✓[39m src/test/tables.test.tsx [2m([22m[2m3 tests[22m[2m)[22m[33m 560[2mms[22m[39m
+   [32m✓[39m tables [2m(3)[22m
+     [33m[2m✓[22m[39m filter tabs report selection to the caller[33m 409[2mms[22m[39m
+ [32m✓[39m src/test/overview.test.tsx [2m([22m[2m5 tests[22m[2m)[22m[33m 328[2mms[22m[39m
+ [32m✓[39m src/test/prospective-recovery.test.tsx [2m([22m[2m1 test[22m[2m)[22m[33m 853[2mms[22m[39m
+   [32m✓[39m prospective offline recovery [2m(1)[22m
+     [33m[2m✓[22m[39m keeps research controls visible while offline and retries on explicit user request[33m 849[2mms[22m[39m
+ [32m✓[39m src/test/token-detail.test.tsx [2m([22m[2m5 tests[22m[2m)[22m[33m 874[2mms[22m[39m
+   [32m✓[39m DASH-V2-03 token detail [2m(2)[22m
+     [33m[2m✓[22m[39m never claims authoritative live state from a demo price[33m 409[2mms[22m[39m
+ [32m✓[39m src/test/bot-control.test.tsx [2m([22m[2m4 tests[22m[2m)[22m[33m 1329[2mms[22m[39m
+   [32m✓[39m System runtime presentation [2m(2)[22m
+     [33m[2m✓[22m[39m keeps unavailable client mode UNKNOWN and exposes the error outside the disclosure[33m 759[2mms[22m[39m
+ [32m✓[39m src/test/migration-ui.test.tsx [2m([22m[2m3 tests[22m[2m)[22m[33m 1622[2mms[22m[39m
+   [32m✓[39m migration interaction and precision [2m(2)[22m
+     [33m[2m✓[22m[39m bounds the candidate page and keeps its evidence on the visible page[33m 1473[2mms[22m[39m
+Not implemented: navigation to another Document
+ [32m✓[39m src/test/navigation.test.tsx [2m([22m[2m4 tests[22m[2m)[22m[33m 1618[2mms[22m[39m
+   [32m✓[39m Terminal navigation [2m(2)[22m
+     [33m[2m✓[22m[39m marks the parent route and closes the mobile menu by Escape[33m 934[2mms[22m[39m
+     [33m[2m✓[22m[39m closes navigation after selecting a destination[33m 322[2mms[22m[39m
+ [32m✓[39m src/test/opportunities.test.tsx [2m([22m[2m8 tests[22m[2m)[22m[33m 1880[2mms[22m[39m
+   [32m✓[39m DASH V2 Opportunities DEMO [2m(6)[22m
+     [33m[2m✓[22m[39m shows selected candidate lifecycle, state, priority and stale provenance[33m 756[2mms[22m[39m
+ [32m✓[39m src/test/shell-accessibility.test.tsx [2m([22m[2m3 tests[22m[2m)[22m[33m 2045[2mms[22m[39m
+   [32m✓[39m DASH-V2-05 accessible research views [2m(2)[22m
+     [33m[2m✓[22m[39m offers skip navigation and one main landmark[33m 1099[2mms[22m[39m
+     [33m[2m✓[22m[39m keeps token detail within one main landmark[33m 426[2mms[22m[39m
+   [32m✓[39m Opportunities keyboard inspection [2m(1)[22m
+     [33m[2m✓[22m[39m marks selected candidate and exposes a focusable table[33m 516[2mms[22m[39m
+ [32m✓[39m src/test/price-range-db.test.ts [2m([22m[2m3 tests[22m[2m)[22m[32m 85[2mms[22m[39m
+ [32m✓[39m src/test/readonly-database.test.ts [2m([22m[2m2 tests[22m[2m)[22m[32m 108[2mms[22m[39m
+ [32m✓[39m src/test/movers-row-inspector.test.tsx [2m([22m[2m1 test[22m[2m)[22m[32m 141[2mms[22m[39m
+ [32m✓[39m src/test/launch-readiness.test.ts [2m([22m[2m18 tests[22m[2m)[22m[32m 53[2mms[22m[39m
+ [32m✓[39m src/test/verified-history-panel.test.tsx [2m([22m[2m1 test[22m[2m)[22m[32m 204[2mms[22m[39m
+ [32m✓[39m src/test/research-navigation.test.tsx [2m([22m[2m1 test[22m[2m)[22m[32m 126[2mms[22m[39m
+ [32m✓[39m src/test/polling.test.tsx [2m([22m[2m5 tests[22m[2m)[22m[32m 145[2mms[22m[39m
+ [32m✓[39m src/test/opportunities-observations.test.tsx [2m([22m[2m1 test[22m[2m)[22m[32m 152[2mms[22m[39m
+ [32m✓[39m src/test/badges.test.tsx [2m([22m[2m3 tests[22m[2m)[22m[32m 142[2mms[22m[39m
+ [32m✓[39m src/test/persisted-market.test.ts [2m([22m[2m18 tests[22m[2m)[22m[32m 131[2mms[22m[39m
+ [32m✓[39m src/test/movers-dashboard.test.tsx [2m([22m[2m4 tests[22m[2m)[22m[33m 5170[2mms[22m[39m
+   [32m✓[39m professional movers [2m(4)[22m
+     [33m[2m✓[22m[39m keeps research isolation and valid symbol navigation[33m 2198[2mms[22m[39m
+     [33m[2m✓[22m[39m filters, searches, resets and renders empty state[33m 1296[2mms[22m[39m
+     [33m[2m✓[22m[39m paginates bounded rows[33m 1036[2mms[22m[39m
+     [33m[2m✓[22m[39m sorting controls are keyboard buttons[33m 634[2mms[22m[39m
+ [32m✓[39m src/test/token-parity.test.ts [2m([22m[2m4 tests[22m[2m)[22m[32m 91[2mms[22m[39m
+ [32m✓[39m src/test/canonical-search.test.ts [2m([22m[2m3 tests[22m[2m)[22m[32m 51[2mms[22m[39m
+ [32m✓[39m src/test/format.test.ts [2m([22m[2m4 tests[22m[2m)[22m[32m 82[2mms[22m[39m
+ [32m✓[39m src/test/price-ranges.test.ts [2m([22m[2m8 tests[22m[2m)[22m[32m 115[2mms[22m[39m
+ [32m✓[39m src/test/symbol-search.test.ts [2m([22m[2m4 tests[22m[2m)[22m[32m 51[2mms[22m[39m
+ [32m✓[39m src/test/supervision.test.ts [2m([22m[2m22 tests[22m[2m)[22m[32m 31[2mms[22m[39m
+ [32m✓[39m src/test/opportunities-api.test.ts [2m([22m[2m4 tests[22m[2m)[22m[32m 19[2mms[22m[39m
+ [32m✓[39m src/test/runtime-contract.test.ts [2m([22m[2m4 tests[22m[2m)[22m[32m 19[2mms[22m[39m
+ [32m✓[39m src/test/runtime-security.test.ts [2m([22m[2m3 tests[22m[2m)[22m[32m 19[2mms[22m[39m
+ [32m✓[39m src/test/system.test.tsx [2m([22m[2m1 test[22m[2m)[22m[33m 522[2mms[22m[39m
+   [32m✓[39m System V2 truthful shell [2m(1)[22m
+     [33m[2m✓[22m[39m shows unknown, not invented operational health[33m 516[2mms[22m[39m
+ [32m✓[39m src/test/prospective-quality.test.ts [2m([22m[2m4 tests[22m[2m)[22m[32m 16[2mms[22m[39m
+ [32m✓[39m src/test/movers-domain.test.ts [2m([22m[2m5 tests[22m[2m)[22m[32m 13[2mms[22m[39m
+ [32m✓[39m src/test/live-movers.test.ts [2m([22m[2m4 tests[22m[2m)[22m[32m 10[2mms[22m[39m
+ [32m✓[39m src/test/price-series.test.ts [2m([22m[2m2 tests[22m[2m)[22m[32m 6[2mms[22m[39m
+ [32m✓[39m src/test/prospective-api.test.ts [2m([22m[2m2 tests[22m[2m)[22m[32m 4[2mms[22m[39m
+
+[2m Test Files [22m [1m[32m36 passed[39m[22m[90m (36)[39m
+[2m      Tests [22m [1m[32m168 passed[39m[22m[90m (168)[39m
+[2m   Start at [22m 15:02:20
+[2m   Duration [22m 15.48s[2m (environment 63%, setup 16%, tests 13%, transform 5%, import 2%)[22m
+
+[2mEnvironment [22m [33mjsdom was created 36 times[39m[2m · 90.26s total, 63% of tracked time[22m
+[2m            [22m [2mcreate it once per worker with [22m[33mpool: 'vmThreads'[39m[2m (keeps per-file isolation) or [22m[33misolate: false[39m[2m (shares it across files)[22m
+[2m            [22m [2mlearn more: https://vitest.dev/guide/improving-performance#test-environments[22m
+

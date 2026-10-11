@@ -110,3 +110,6 @@ Current exhaustive coverage assessment and retirement criteria: DASHBOARD_V2_64_
 
 ## DASH-V2-65 - 2026-10-11
 V2-65 delivered retained-symbol search and additional saved token fields. Next V2-66 range selectors and exports; legacy retirement criteria remain V2-64, no operation gate advancement.
+
+## DASH-V2-66 - 2026-10-11
+V2-66 five ranges and bounded exports delivered; next V2-67 saved historical coverage/study routes/diagnostic presentation. Complete retirement still requires V2-64 acceptance matrix.

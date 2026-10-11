@@ -1,0 +1,61 @@
+{
+  "ranges": [
+    {
+      "range": "5m",
+      "points": 15,
+      "raw": 15,
+      "truncated": false,
+      "downsampled": false,
+      "gaps": 0,
+      "first": "2026-10-10T14:02:10.000Z",
+      "last": "2026-10-10T14:04:30.000Z",
+      "csv_json_parity": true
+    },
+    {
+      "range": "15m",
+      "points": 15,
+      "raw": 15,
+      "truncated": false,
+      "downsampled": false,
+      "gaps": 0,
+      "first": "2026-10-10T14:02:10.000Z",
+      "last": "2026-10-10T14:04:30.000Z",
+      "csv_json_parity": true
+    },
+    {
+      "range": "1h",
+      "points": 226,
+      "raw": 226,
+      "truncated": false,
+      "downsampled": false,
+      "gaps": 1,
+      "first": "2026-10-10T13:12:40.000Z",
+      "last": "2026-10-10T14:04:30.000Z",
+      "csv_json_parity": true
+    },
+    {
+      "range": "4h",
+      "points": 401,
+      "raw": 401,
+      "truncated": false,
+      "downsampled": false,
+      "gaps": 5,
+      "first": "2026-10-10T11:07:50.000Z",
+      "last": "2026-10-10T14:04:30.000Z",
+      "csv_json_parity": true
+    },
+    {
+      "range": "24h",
+      "points": 612,
+      "raw": 612,
+      "truncated": false,
+      "downsampled": false,
+      "gaps": 6,
+      "first": "2026-10-10T03:45:10.000Z",
+      "last": "2026-10-10T14:04:30.000Z",
+      "csv_json_parity": true
+    }
+  ],
+  "invalid_inputs": 400,
+  "unknown_symbol": "INSUFFICIENT_HISTORY"
+}

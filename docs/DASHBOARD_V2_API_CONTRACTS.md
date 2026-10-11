@@ -257,3 +257,6 @@ Current pureStatusCode against backend e317569 passed five temporary recorded/ab
 
 ## DASH-V2-65 - 2026-10-11
 GET /search?q=<ASCII fragment> is server-rendered read-only search over ten canonical symbol tables plus retained discovery. Up to 50 output symbols, cap notice, input/source errors explicit. No new API search response contract. Token additional fields reuse saved feature families; range_pct and concentration are fractions converted once, OI rate_per_s stays base units/s, VWAP displacement_pct already percent.
+
+## DASH-V2-66 - 2026-10-11
+GET /api/v1/price-series/{symbol}?range=5m|15m|1h|4h|24h&format=json|csv (defaults 1h/no attachment) now returns model schema 3. See V2-66 report for nullable bounds/read limits/gaps/coverage/empty CSV. Invalid input 400; source failure 503. v1/v2 pure normalizers are compatibility helpers, not current production response.

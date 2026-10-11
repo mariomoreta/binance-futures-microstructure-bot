@@ -1,5 +1,5 @@
-export type PricePoint={timestamp:number;price:number};
-export type PriceSeries={schema_version:1|2;window_anchor?:"LAST_RETAINED_SAMPLE";read_at?:string;symbol:string;range:"1h";source:"markPrice";generated_at:string|null;points:PricePoint[];status:"AVAILABLE"|"INSUFFICIENT_HISTORY";note:string};
+export type PricePoint={timestamp:number;price:number;gapBefore?:boolean};
+export type PriceSeries={schema_version:1|2|3;window_anchor?:"LAST_RETAINED_SAMPLE";read_at?:string;symbol:string;range:"5m"|"15m"|"1h"|"4h"|"24h";source:"markPrice";generated_at:string|null;points:PricePoint[];status:"AVAILABLE"|"INSUFFICIENT_HISTORY";note:string};
 export function normalizePriceSeries(raw:unknown,symbol:string,now:number):PriceSeries{
  const x=raw&&typeof raw==="object"&&!Array.isArray(raw)?raw as Record<string,unknown>:{};
  const rows=Array.isArray(x.points)?x.points.slice(0,1000):[];
@@ -18,5 +18,5 @@ export function normalizePersistedSeries(raw:unknown,symbol:string,now:number):P
 export function pricePath(points:PricePoint[],width:number,height:number):string{
  if(points.length<3)return "";
  const lo=Math.min(...points.map(p=>p.price)),hi=Math.max(...points.map(p=>p.price)),span=hi-lo||Math.max(hi*.0001,1e-10),start=points[0]!.timestamp,duration=Math.max(1,points[points.length-1]!.timestamp-start);
- return points.map((p,i)=>(i&&p.timestamp-points[i-1]!.timestamp<=60000?"L":"M")+(2+(p.timestamp-start)/duration*(width-4)).toFixed(2)+","+(height-2-(p.price-lo)/span*(height-4)).toFixed(2)).join(" ");
+ return points.map((p,i)=>(i&&(typeof p.gapBefore==="boolean"?!p.gapBefore:p.timestamp-points[i-1]!.timestamp<=60000)?"L":"M")+(2+(p.timestamp-start)/duration*(width-4)).toFixed(2)+","+(height-2-(p.price-lo)/span*(height-4)).toFixed(2)).join(" ");
 }

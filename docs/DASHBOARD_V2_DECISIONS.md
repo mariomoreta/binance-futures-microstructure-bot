@@ -228,3 +228,6 @@ Main candidates table bounded to 12/page with visible-page evidence; tiny nonzer
 
 ## DASH-V2-65 - 2026-10-11
 Retained-record search is not an exchange universe or live subscription guarantee; parameterized submitted lookup bounded to 50 output symbols. Saved token projections carry independent family dates and recorded integrity/warmup; no new formulas. ASCII identity boundary stays explicit, coordinated expansion pending.
+
+## DASH-V2-66 - 2026-10-11
+Price production model v3 uses explicit historical ranges, last retained valid sample anchor, 10000 raw read budget + overflow sentinel, 1200 actual displayed/exported samples, preserved raw-gap evidence and unverified coverage. Download is a new same-parameter read, not a frozen prior response.

@@ -1,5 +1,8 @@
 # CURRENT_STATE
 
+## DASH-V2-66 - 2026-10-11 - historical ranges and exports
+Five saved-price ranges and CSV/JSON attachments implemented via production response model v3, bounded/gap-aware sampling, explicit incomplete coverage. Frontend 168/168 + types/lint/build; V2 Python snapshot 496/496. HTTP representations agree; browser 15 cases passes, final label delta recorded separately. See DASHBOARD_V2_66_PRICE_RANGES_EXPORT.md. Next V2-67 historical coverage/studies and diagnostic parity, backend exact-report coordination. Start/old fallback/gates preserved; no collector traffic or DB migration.
+
 ## DASH-V2-65 - 2026-10-11 - search and recorded token fields
 Global retained-symbol search/header/navigation and nine dated token families implemented. Frontend 157/157, types/lint/build pass (existing warning); V2 Python snapshot 496/496. Browser 24 cases plus final mobile-search delta; evidence/report: DASHBOARD_V2_65_SEARCH_TOKEN_PARITY.md. Full migration remains PARTIAL; next V2-66 chart ranges/export contract. User-managed backend task stays separate; Start/gates/old fallback unchanged.
 
