@@ -26,6 +26,8 @@ import argparse
 import contextlib
 import ctypes
 import json
+import math
+import tempfile
 import os
 import signal
 import subprocess
@@ -602,7 +604,8 @@ def _valid_evidence(evidence: Any) -> bool:
 def start_probe(duration_seconds: Optional[int] = None,
                 launcher: str = "agent",
                 preset: str = "standard",
-                evidence_dir: Optional[Path] = None) -> Dict[str, Any]:
+                evidence_dir: Optional[Path] = None,
+                _on_spawn: Any = None) -> Dict[str, Any]:
     """Start one canonical probe; refuse when one is already running."""
     # Pure preflight (V2-51): observation never mutates; liveness is decided
     # on a fresh read so a stale RUNNING record (dead PID) does not block a
@@ -659,6 +662,8 @@ def start_probe(duration_seconds: Optional[int] = None,
         child_ctime = own_creation_time(proc.pid)
     except Exception:
         child_ctime = None
+    if _on_spawn is not None:
+        _on_spawn(proc, child_ctime)
     # Locked STARTING commit (V2-51): refuse a live run or a held
     # enforcement STOPPING observed fresh; terminal/stale records yield to
     # the new launch. A spawn failure after Popen is the caller's orphan to
@@ -2444,15 +2449,12 @@ SUPERVISED_LAUNCH_VERIFY_BUDGET_S = 60.0
 SUPERVISED_LAUNCH_POLL_S = 2.0
 _SUPERVISED_LAUNCH_SCOPE = ("point-in-time confirmation, "
                             "not future protection")
-_SUPERVISED_LAUNCH_FUTURE_TOL_S = 5.0
+_SUPERVISED_LAUNCH_FUTURE_TOL_S = 0.0
 
 
 def _default_watcher_alive(pid: Any, ctime: Any) -> bool:
-    from .dashboard import pid_is_ours
-    try:
-        return bool(pid_is_ours(int(pid), ctime))
-    except (TypeError, ValueError):
-        return False
+    """Launch-only strict identity; missing times never confirm."""
+    return _default_process_state(pid, ctime) == "owned"
 
 
 def _default_identity() -> Dict[str, Any]:
@@ -2463,6 +2465,7 @@ def _default_identity() -> Dict[str, Any]:
         "terminate": _terminate_verified_pid,
         "proc_ctime": own_creation_time,
         "read_record": read_registry,
+        "process_state": _default_process_state,
     }
 
 
@@ -2475,7 +2478,8 @@ def _default_watcher_spawner(kind: str) -> Any:
     """
     def _spawn(run_pid: int) -> Any:
         from .dashboard import repo_root, no_window_flags
-        argv = [sys.executable, "-m", "microstructure_probe.control", kind,
+        command = {"supervisor": "supervise", "sentinel": "sentinel"}[kind]
+        argv = [sys.executable, "-m", "microstructure_probe.control", command,
                 "--interval", str(SUPERVISOR_CHECK_DEFAULT_S)]
         log_dir = repo_root() / "logs" / "probe-runs"
         log_dir.mkdir(parents=True, exist_ok=True)
@@ -2518,6 +2522,8 @@ def _verify_watcher_lease(record: Any, kind: str, watcher_pid: Any,
             return False, {**detail, "reason": "owner-changed"}
     except (TypeError, ValueError):
         return False, {**detail, "reason": "lease-bad-pid"}
+    if not watcher_ctime:
+        return False, {**detail, "reason": "watcher-identity-unknown"}
     if lease.get("create_time") != watcher_ctime:
         return False, {**detail, "reason": "watcher-replaced"}
     try:
@@ -2536,7 +2542,7 @@ def _verify_watcher_lease(record: Any, kind: str, watcher_pid: Any,
         age = (datetime.now(timezone.utc) - last).total_seconds()
     except (TypeError, ValueError):
         return False, {**detail, "reason": "malformed-heartbeat"}
-    if age < -_SUPERVISED_LAUNCH_FUTURE_TOL_S \
+    if age < 0 \
             or age > SUPERVISOR_LEASE_FRESH_S:
         return False, {**detail, "reason": "stale-heartbeat", "age_s": age}
     return True, {**detail, "reason": "verified", "age_s": age}
@@ -2572,6 +2578,10 @@ def _verify_launch_state(record: Any, run: Dict[str, Any],
         live = False
     if not live:
         return False, {"reason": "stale-run"}
+    if identity.get("process_state") and _launch_process_state(
+            identity, run["pid"], run["create_time"]) != "owned":
+        return False, {"reason": "stale-run"}
+    ages = {}
     for kind in ("supervisor", "sentinel"):
         info = (watchers or {}).get(kind) or {}
         ok, detail = _verify_watcher_lease(
@@ -2580,57 +2590,99 @@ def _verify_launch_state(record: Any, run: Dict[str, Any],
         if not ok:
             return False, {"reason": "lease-%s-%s" % (kind, detail["reason"]),
                            kind: detail}
-    ages = {}
-    for kind in ("supervisor", "sentinel"):
-        ok, detail = _verify_watcher_lease(
-            record, kind, watchers[kind]["pid"],
-            watchers[kind]["create_time"], run["pid"],
-            identity["watcher_alive"])
         ages[kind] = detail.get("age_s")
     return True, {"reason": "verified", "supervisor_age_s": ages["supervisor"],
                   "sentinel_age_s": ages["sentinel"]}
 
 
-def _rollback_transaction(launched: Any, identity: Dict[str, Any]) -> Dict[str, Any]:
-    """Kill-only rollback (contract §6).
-
-    Acts solely on transaction PIDs with spawn-captured identity, in the
-    given order (callers pass reverse launch order). Never writes the
-    registry, never marks records, never touches foreign processes:
-    already-dead entries count as cleaned. Returns
-    {attempted, cleaned, pending}.
-    """
-    terminate = identity["terminate"]
-    alive = identity["watcher_alive"]
-    cleaned: List[Any] = []
-    pending: List[Any] = []
-    for role, pid, ctime in list(launched or []):
+def _default_process_state(pid: Any, expected_ctime: Any) -> str:
+    """owned/gone/replaced/unknown. Identity failure is never absence proof."""
+    try:
+        target = int(pid)
+        if target <= 0:
+            return "unknown"
+    except (TypeError, ValueError):
+        return "unknown"
+    if os.name == "nt":
+        kernel = ctypes.windll.kernel32
+        _configure_kernel_signatures(kernel)
+        kernel.GetExitCodeProcess.argtypes = [_WIN_HANDLE, ctypes.POINTER(_WIN_DWORD)]
+        kernel.GetExitCodeProcess.restype = _WIN_BOOL
+        kernel.GetLastError.argtypes = []
+        kernel.GetLastError.restype = _WIN_DWORD
+        handle = kernel.OpenProcess(0x1000, False, target)
+        if not handle:
+            return "gone" if kernel.GetLastError() == 87 else "unknown"
         try:
-            is_alive = bool(alive(pid, ctime))
-        except Exception:
-            is_alive = True  # cannot prove dead: must attempt termination
-        if not is_alive:
+            exit_code = _WIN_DWORD()
+            if not kernel.GetExitCodeProcess(handle, ctypes.byref(exit_code)):
+                return "unknown"
+            if exit_code.value != 259:  # STILL_ACTIVE
+                return "gone"
+            if not expected_ctime:
+                return "unknown"
+            created, exited, cpu_kernel, cpu_user = (_FILETIME() for _ in range(4))
+            if not kernel.GetProcessTimes(handle, ctypes.byref(created),
+                    ctypes.byref(exited), ctypes.byref(cpu_kernel), ctypes.byref(cpu_user)):
+                return "unknown"
+            ticks = (int(created.dwHighDateTime) << 32) + int(created.dwLowDateTime)
+            epoch_us = ticks // 10 - 11644473600000000
+            if epoch_us <= 0:
+                return "unknown"
+            actual = datetime.fromtimestamp(epoch_us / 1_000_000, tz=timezone.utc).isoformat()
+            return "owned" if actual == expected_ctime else "replaced"
+        finally:
+            kernel.CloseHandle(handle)
+    try:
+        os.kill(target, 0)  # POSIX liveness query only.
+    except ProcessLookupError:
+        return "gone"
+    except (OSError, ValueError):
+        return "unknown"
+    if not expected_ctime:
+        return "unknown"
+    actual = own_creation_time(target)
+    if not actual:
+        return "unknown"
+    return "owned" if actual == expected_ctime else "replaced"
+
+
+def _launch_process_state(identity: Dict[str, Any], pid: Any, ctime: Any) -> str:
+    try:
+        check = identity.get("process_state")
+        if check:
+            state = check(pid, ctime)
+            return state if state in ("owned", "gone", "replaced", "unknown") else "unknown"
+        # Old injected bundles can prove identity, but False cannot prove death.
+        return "owned" if ctime and identity["watcher_alive"](pid, ctime) else "unknown"
+    except Exception:
+        return "unknown"
+
+
+def _rollback_transaction(launched: Any, identity: Dict[str, Any]) -> Dict[str, Any]:
+    """Kill-only owned rollback; retain unknown/replaced identities as pending."""
+    cleaned, pending = [], []
+    for role, pid, ctime in list(launched or []):
+        state = _launch_process_state(identity, pid, ctime)
+        if state == "gone":
             cleaned.append({"role": role, "pid": pid, "note": "already-gone"})
             continue
-        try:
-            ok = bool(terminate(pid, ctime))
-        except Exception:
-            ok = False
-        if not ok:
-            pending.append({"role": role, "pid": pid,
-                            "reason": "terminate-refused"})
+        if state != "owned" or not ctime:
+            pending.append({"role": role, "pid": pid, "reason": "identity-" + state})
             continue
         try:
-            still = bool(alive(pid, ctime))
+            # Native termination itself binds PID+ctime to one Windows handle.
+            issued = bool(identity["terminate"](pid, ctime))
         except Exception:
-            still = True
-        if still:
-            pending.append({"role": role, "pid": pid,
-                            "reason": "still-alive"})
-        else:
+            issued = False
+        final = _launch_process_state(identity, pid, ctime)
+        if final == "gone":
             cleaned.append({"role": role, "pid": pid, "note": "terminated"})
-    return {"attempted": bool(launched), "cleaned": cleaned,
-            "pending": pending}
+        else:
+            pending.append({"role": role, "pid": pid,
+                            "reason": "terminate-refused" if not issued else
+                            ("still-alive" if final == "owned" else "identity-" + final)})
+    return {"attempted": bool(launched), "cleaned": cleaned, "pending": pending}
 
 
 def _launch_envelope(outcome: str, reason: str, run: Any,
@@ -2684,183 +2736,180 @@ def _launch_supervised_impl(duration_seconds: Optional[float] = None,
                             spawners: Optional[Dict[str, Any]] = None,
                             identity: Optional[Dict[str, Any]] = None
                             ) -> Dict[str, Any]:
-    """Transactional launch engine (tested directly; production disabled).
-
-    Pure preflight first (no spawn, no writes on refusal), then the probe
-    step via start_probe, watcher spawns, a finite pure-read verification
-    loop, and kill-only rollback of everything launched on any failure.
-    """
+    """Disabled transaction engine; verification budget excludes blocking IO/spawn."""
     ident = _default_identity()
     if identity:
         ident.update(identity)
     sp = dict(spawners or {})
-    watchers: Dict[str, Any] = {
-        "supervisor": _watcher_slot(None, None, False),
-        "sentinel": _watcher_slot(None, None, False)}
-    launched: List[Any] = []
+    watchers = {role: _watcher_slot(None, None, False)
+                for role in ("supervisor", "sentinel")}
+    launched = []
+    run = None
+    evidence = None
 
-    def _reject(reason: str, run: Any = None,
-                verification: Any = None, evidence: Any = None) -> Dict[str, Any]:
-        rb = _rollback_transaction(list(reversed(launched)), ident) \
-            if launched else {"attempted": False, "cleaned": [],
-                              "pending": []}
-        return _launch_envelope(
-            "rejected", reason, run, dict(watchers),
-            verification or {"polls": 0, "budget_s": verify_budget_s},
-            rb, evidence)
+    def finish(reason, verification=None):
+        rb = _rollback_transaction(list(reversed(launched)), ident) if launched else {
+            "attempted": False, "cleaned": [], "pending": []}
+        if launched:
+            try:
+                final = ident["read_record"]()
+                if final is not None and not isinstance(final, dict):
+                    raise ValueError("malformed final registry")
+            except Exception:
+                rb["pending"].append({"role": "registry", "pid": (run or {}).get("pid"),
+                                      "reason": "final-registry-unreadable"})
+                final = None
+            # Read only: a dead process may leave its historical RUNNING record.
+            # Do not reconcile or overwrite foreign/terminal evidence.
+        outcome = "uncertain" if rb["pending"] else "rejected"
+        info = dict(verification or {"polls": 0, "budget_s": verify_budget_s})
+        if launched:
+            info["final_record_state"] = final.get("state") if isinstance(final, dict) else None
+        return _launch_envelope(outcome, reason, run, dict(watchers), info, rb, evidence)
 
-    # -- preflight: pure reads only ------------------------------------
-    if not launcher or not isinstance(launcher, str):
-        return _reject("bad-launcher")
+    # Validate before any process, lock or evidence preparation effect.
+    try:
+        if isinstance(verify_budget_s, bool) or isinstance(poll_interval_s, bool):
+            raise ValueError("boolean timing")
+        budget, interval = float(verify_budget_s), float(poll_interval_s)
+        if not math.isfinite(budget) or budget <= 0:
+            raise ValueError("budget must be finite and positive")
+        if not math.isfinite(interval) or interval < 0:
+            raise ValueError("interval must be finite and nonnegative")
+    except (TypeError, ValueError, OverflowError):
+        return finish("bad-verification-timing")
+    if not isinstance(launcher, str) or not launcher.strip():
+        return finish("bad-launcher")
     try:
         current = ident["read_record"]()
-    except OSError:
-        return _reject("registry-unavailable")
+    except Exception:
+        return finish("registry-unavailable")
+    if current is not None and not isinstance(current, dict):
+        return finish("registry-unavailable")
     if isinstance(current, dict) and _is_active_state(current.get("state")):
         try:
             live = bool(ident["is_canonical"](current))
         except Exception:
-            live = False
+            # Unverifiable active identity cannot authorize a new spawn.
+            return finish("preflight-identity-unknown")
         if live:
-            return _reject("already-running")
-    # -- probe step (canonical start_probe: spawn + adoption + handoff) --
+            return finish("already-running")
+        if _launch_process_state(ident, current.get("pid"), current.get("create_time")) != "gone":
+            return finish("preflight-identity-unknown")
     try:
-        start = start_probe(duration_seconds, launcher, preset, evidence_dir)
+        with _locked_registry():
+            pass  # P2: no registry record transform/write.
+    except Exception:
+        return finish("registry-unavailable")
+    try:
+        from .dashboard import repo_root
+        ev_dir = Path(evidence_dir) if evidence_dir else (
+            repo_root() / "logs" / ("p1-10r" if preset == "validation-6h" else "probe-runs"))
+        ev_dir.mkdir(parents=True, exist_ok=True)
+        with tempfile.NamedTemporaryFile(prefix=".launch-check-", dir=str(ev_dir)):
+            pass  # P4: own exclusive file, closed/removed; no registry write.
+    except (OSError, TypeError, ValueError):
+        return finish("evidence-unavailable")
+
+    def capture_child(proc, ctime):
+        nonlocal run
+        run = {"pid": int(proc.pid), "create_time": ctime}
+        launched.append(("probe", run["pid"], ctime))
+
+    try:
+        start = start_probe(duration_seconds, launcher, preset, ev_dir,
+                            _on_spawn=capture_child)
     except Exception as exc:
-        return _reject("probe-spawn-failed",
-                       verification={"polls": 0, "budget_s": verify_budget_s,
-                                     "error": str(exc)[:120]})
+        return finish("probe-spawn-failed", {"polls": 0, "budget_s": budget,
+                                            "error": str(exc)[:120]})
     if not isinstance(start, dict) or not start.get("started"):
-        err = str((start or {}).get("error", "refused"))
-        reason = ("probe-spawn-failed" if "spawn failed" in err
-                  else "start-refused")
-        return _reject(reason,
-                       verification={"polls": 0, "budget_s": verify_budget_s,
-                                     "detail": err[:120]})
-    # -- establish run identity from a fresh read ----------------------
+        detail = start if isinstance(start, dict) else {}
+        reason = "probe-spawn-failed" if "spawn failed" in str(detail.get("error", "")) else "start-refused"
+        return finish(reason)
+    if not launched or run is None:
+        # The adapter did not supply ownership: no PID-only cleanup guess.
+        return _launch_envelope("uncertain", "spawn-identity-unavailable", None,
+            dict(watchers), {"polls": 0, "budget_s": budget},
+            {"attempted": False, "cleaned": [], "pending": [
+                {"role": "probe", "pid": start.get("pid"), "reason": "spawn-identity-unavailable"}]}, None)
+    if not run["create_time"]:
+        return finish("run-identity-unknown")
+    if start.get("pid") != run["pid"]:
+        return finish("start-identity-mismatch")
     try:
         fresh = ident["read_record"]()
-    except OSError:
-        fresh = None
-    if not isinstance(fresh, dict) or not _is_active_state(fresh.get("state")):
-        try:
-            ctime = ident["proc_ctime"](start.get("pid"))
-        except Exception:
-            ctime = None
-        launched.append(("probe", start.get("pid"), ctime))
-        rb = _rollback_transaction(list(reversed(launched)), ident)
-        if rb["pending"]:
-            return _launch_envelope(
-                "uncertain", "run-unestablished", None, dict(watchers),
-                {"polls": 0, "budget_s": verify_budget_s}, rb, None)
-        return _reject("run-unestablished")
-    try:
-        run = {"pid": int(fresh.get("pid")),
-               "create_time": fresh.get("create_time")}
-    except (TypeError, ValueError):
-        run = {"pid": fresh.get("pid"),
-               "create_time": fresh.get("create_time")}
-    launched.append(("probe", run["pid"], run["create_time"]))
-    evidence = fresh.get("evidence") if isinstance(fresh, dict) else None
-    # -- spawn watchers -------------------------------------------------
+    except Exception:
+        return finish("run-unestablished")
+    if not isinstance(fresh, dict):
+        return finish("run-unestablished")
+    if fresh.get("pid") != run["pid"] or fresh.get("create_time") != run["create_time"]:
+        return finish("run-replaced")
+    if fresh.get("state") not in ("STARTING", "RUNNING") or fresh.get("stopping_by"):
+        return finish("run-unestablished")
+    evidence = fresh.get("evidence")
+
     for role in ("supervisor", "sentinel"):
-        fn = sp.get(role)
-        if fn is None:
-            fn = _default_watcher_spawner(role)
         try:
-            proc = fn(run["pid"])
+            proc = (sp.get(role) or _default_watcher_spawner(role))(run["pid"])
         except Exception as exc:
-            rb = _rollback_transaction(list(reversed(launched)), ident)
-            if rb["pending"]:
-                return _launch_envelope(
-                    "uncertain", "%s-spawn-failed" % role, run,
-                    dict(watchers),
-                    {"polls": 0, "budget_s": verify_budget_s,
-                     "error": str(exc)[:120]}, rb, evidence)
-            return _reject("%s-spawn-failed" % role, run,
-                           {"polls": 0, "budget_s": verify_budget_s,
-                            "error": str(exc)[:120]}, evidence)
+            return finish(role + "-spawn-failed", {"polls": 0, "budget_s": budget,
+                                                   "error": str(exc)[:120]})
         if proc is None or getattr(proc, "pid", None) is None:
-            rb = _rollback_transaction(list(reversed(launched)), ident)
-            if rb["pending"]:
-                return _launch_envelope(
-                    "uncertain", "%s-spawn-failed" % role, run,
-                    dict(watchers),
-                    {"polls": 0, "budget_s": verify_budget_s}, rb, evidence)
-            return _reject("%s-spawn-failed" % role, run,
-                           {"polls": 0, "budget_s": verify_budget_s},
-                           evidence)
+            return finish(role + "-spawn-failed")
         try:
             ctime = ident["proc_ctime"](proc.pid)
         except Exception:
             ctime = None
         watchers[role] = _watcher_slot(proc.pid, ctime, False)
         launched.append((role, proc.pid, ctime))
-    # -- finite pure-read verification loop -----------------------------
-    try:
-        budget = max(0.0, float(verify_budget_s))
-    except (TypeError, ValueError):
-        budget = 0.0
-    try:
-        interval = max(0.0, float(poll_interval_s))
-    except (TypeError, ValueError):
-        interval = 0.0
+        if not ctime:
+            return finish(role + "-identity-unknown")
+
     polls = 0
     good_polls = 0
-    last_detail: Dict[str, Any] = {"reason": "no-poll"}
+    last_detail = {"reason": "no-poll"}
     deadline = time.monotonic() + budget
-    while True:
+    while time.monotonic() < deadline:
         polls += 1
         try:
             rec = ident["read_record"]()
-        except OSError:
+        except Exception:
             rec = None
-            read_error = True
-        else:
-            read_error = False
-        if read_error or not isinstance(rec, dict):
+        if time.monotonic() >= deadline:
+            last_detail = {"reason": "verify-timeout"}
+            break
+        if not isinstance(rec, dict):
             last_detail = {"reason": "poll-unreadable"}
         else:
             good_polls += 1
-            ok, detail = _verify_launch_state(rec, run, watchers, ident)
-            last_detail = detail
-            if ok:
-                for role in ("supervisor", "sentinel"):
-                    watchers[role] = _watcher_slot(
-                        watchers[role]["pid"], watchers[role]["create_time"],
-                        True)
-                return _launch_envelope(
-                    "confirmed", "all-components-verified", run,
-                    dict(watchers),
-                    {"polls": polls, "budget_s": budget,
-                     "supervisor_age_s": detail.get("supervisor_age_s"),
-                     "sentinel_age_s": detail.get("sentinel_age_s")},
-                    {"attempted": False, "cleaned": [], "pending": []},
-                    evidence)
-            if detail.get("reason") not in ("lease-supervisor-lease-absent",
-                                            "lease-sentinel-lease-absent",
-                                            "no-record", "poll-unreadable"):
+            ok, last_detail = _verify_launch_state(rec, run, watchers, ident)
+            if time.monotonic() >= deadline:
+                last_detail = {"reason": "verify-timeout"}
                 break
-        if time.monotonic() >= deadline:
+            if ok:
+                for role in watchers:
+                    watchers[role]["confirmed"] = True
+                return _launch_envelope("confirmed", "all-components-verified", run,
+                    dict(watchers), {"polls": polls, "budget_s": budget,
+                    "supervisor_age_s": last_detail.get("supervisor_age_s"),
+                    "sentinel_age_s": last_detail.get("sentinel_age_s")},
+                    {"attempted": False, "cleaned": [], "pending": []}, evidence)
+            if last_detail.get("reason") not in (
+                    "lease-supervisor-lease-absent", "lease-sentinel-lease-absent",
+                    "no-record", "poll-unreadable"):
+                break
+        remaining = deadline - time.monotonic()
+        if remaining <= 0:
             break
         if interval > 0:
-            time.sleep(interval)
-    if good_polls == 0:
+            time.sleep(min(interval, remaining))
+    reason = last_detail.get("reason")
+    if good_polls == 0 and reason != "verify-timeout":
         reason = "verify-unreadable"
-    elif last_detail.get("reason") in ("no-record", "poll-unreadable",
-                                       "lease-supervisor-lease-absent",
-                                       "lease-sentinel-lease-absent"):
+    elif reason in ("no-poll", "no-record", "poll-unreadable",
+                    "lease-supervisor-lease-absent", "lease-sentinel-lease-absent"):
         reason = "verify-timeout"
-    else:
-        reason = last_detail.get("reason", "verify-timeout")
-    verification = {"polls": polls, "budget_s": budget,
-                    "detail": last_detail}
-    rb = _rollback_transaction(list(reversed(launched)), ident)
-    if rb["pending"]:
-        return _launch_envelope("uncertain", "rollback-incomplete", run,
-                                dict(watchers), verification, rb, evidence)
-    return _launch_envelope("rejected", reason, run, dict(watchers),
-                            verification, rb, evidence)
+    return finish(reason, {"polls": polls, "budget_s": budget, "detail": last_detail})
 
 
 if __name__ == "__main__":

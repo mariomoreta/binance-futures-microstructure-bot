@@ -1,5 +1,10 @@
 # CURRENT_STATE
 
+
+## DASH-V2-62 - 2026-10-11 - disabled transactional launch corrected
+
+User authorized the V2 reviewer to correct the backend branch directly, in an isolated checkout based on da231b9. R1-R5 and C1/C2 from frontend f63dd16 corrected: direct captured child identity, one lease evaluation, canonical supervise argv, strict finite verification/deadline, owned/gone/replaced/unknown rollback with final pure assessment, strict non-future freshness and explicit lock/evidence preflight effects. Added 29 tests; canonical 902/902 OK, 160.768s, exit 0; focused 52/52 OK. Fail-before: 15 of 18 initial methods failed (25 assertions/subtests). See DASH_V2_62_SUPERVISED_LAUNCH_CORRECTIONS.md and docs/evidence/DASH_V2_62_LAUNCH_VERIFICATION.json. DONE bounded disabled preparation; no general operational PASS. Start/launch flag remain disabled; no new HTTP/CLI operation, market probes, longevity, SUCCESS_GATES or main merge. Original agent checkout/evidence preserved; backend remote will advance by normal fast-forward push. Next exact-SHA V2 checkpoint, enablement/real watcher startup association and runs remain separate.
+
 Factual state as of 2026-10-06 (order refinement). Historical evidence:
 `docs/PHASE_1_REPORT.md` (do not rewrite).
 

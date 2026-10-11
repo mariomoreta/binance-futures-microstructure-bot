@@ -39,13 +39,14 @@ and pure observation (`read_registry` / `status_readonly`).
   PID/ctime.
 - Association is always lease→run (`watched_pid` == run PID); a lease
   owned by the right PID but bound to another run is wrong-run and never
-  confirms. Timestamps must parse and be non-future (5s tolerance) and
+  confirms. Timestamps must parse and be strictly non-future and
   fresh (within `SUPERVISOR_LEASE_FRESH_S`).
 
 ## 3. Launch sequence
 
-1. Preflight (pure reads only): P1–P4 checked, nothing spawned, nothing
-   written.
+1. Preflight: validate finite budget/cadence and launcher, then P1-P4.
+   No process or registry-record write; sidecar lock and an owned temporary
+   evidence write-test are permitted filesystem preparation effects.
 2. Probe step: `start_probe` (spawn, same-child adoption, log handoff).
    Refusal stops the transaction with nothing else launched.
 3. Spawn supervisor, then sentinel (injectable spawners; production
@@ -62,7 +63,7 @@ is ACTIVE; `lease.pid` == spawned watcher PID; `lease.create_time` ==
 spawn-captured ctime; `lease.watched_pid` == run PID; the watcher is
 alive with matching ctime (injected identity check; production
 `pid_is_ours`); `last_check_at` parses and its age is within
-[-5s, `SUPERVISOR_LEASE_FRESH_S`]. The run record on the same read must
+[0s, `SUPERVISOR_LEASE_FRESH_S`]. The run record on the same read must
 be STARTING/RUNNING with the transaction PID+ctime and canonical
 liveness. Popen success, an ACTIVE lease alone, or a recent heartbeat
 alone NEVER confirms.
@@ -125,3 +126,14 @@ registry writes.
   `watched_pid`, `last_check_at`, `lease_state`) plus the additive result
   keys above, all nullable-safe. `status_readonly()` stays the GET path;
   launch polling must use pure reads.
+
+
+## V2-62 correction design (recorded before implementation, 2026-10-11)
+
+The public operation remains disabled. A private optional spawn callback on start_probe passes the actual Popen child and captured ctime directly to the transaction before registration/handoff. Existing callers/results retain their semantics. Registry reads validate association only; they never establish transaction ownership. Missing captured ctime cannot confirm or authorize PID-only rollback; it remains UNCERTAIN unless process absence is independently proved.
+
+Verification uses one lease evaluation per watcher retaining its age, strict non-future freshness, finite positive budget and finite nonnegative cadence validated before effects. The verification budget starts after spawns and is checked before polling and after read/identity callbacks; sleeps clamp to remaining budget. This is a bounded verification loop, not a hard wall-clock bound on blocking Popen, identity, lock, IO or termination calls. Default supervisor command maps role supervisor to CLI supervise.
+
+Rollback distinguishes owned, gone, replaced and unknown process identities. Only owned identities may be terminated; only independently proved gone identities count as cleaned. Replaced/unknown remain pending. Verification/rollback never write registry records. A final pure registry read is required to assess cleanup; unreadable/malformed final observation yields UNCERTAIN with registry assessment pending, even after successful simulated process cleanup. No completed-cleanup declaration from missing evidence. Rollback is run once per failure path.
+
+P2 is an actual no-write sidecar lock acquisition before any spawn. P4 checks evidence directory using an exclusively created temporary file that is closed and removed. This may create directories and sidecar files; it is not a claim of filesystem-pure preflight. No unapproved runtime operation follows.

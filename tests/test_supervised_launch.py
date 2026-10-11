@@ -14,7 +14,7 @@ launched, no Start enabled, no market I/O):
       rejected, transaction rolled back.
   L2  dead watcher / reused watcher PID: rejected, rolled back.
   T1  leases never validate inside the budget: rejected on timeout.
-  T2  verification unreadable: rejected, rollback still verified.
+  T2  verification/final registry unreadable: UNCERTAIN, pending assessment.
   T3  takeover/STOPPING interleave: rejected, foreign record preserved.
   T4  terminal record interleave: rejected, terminal preserved.
   U1  rollback kill refused: UNCERTAIN with pending evidence.
@@ -144,9 +144,17 @@ def _identity(world):
             return None
         return entry["ctime"] if entry else None
 
+    def _state(pid, ctime):
+        entry = world.procs.get(pid)
+        if not entry or not entry["alive"]:
+            return "gone"
+        if ctime is None:
+            return "unknown"
+        return "owned" if entry["ctime"] == ctime else "replaced"
+
     return {"is_canonical": _canonical, "watcher_alive": _alive,
             "terminate": _terminate, "proc_ctime": _ctime,
-            "read_record": pc.read_registry}
+            "process_state": _state, "read_record": pc.read_registry}
 
 
 def _lease(pid, ctime, watched, age_s=5.0, state="ACTIVE"):
@@ -199,15 +207,14 @@ def _harness(testcase, world):
 def _probe_side_effect(world, ident):
     """Fake Popen: the child self-registers through REAL try_register.
 
-    The world entry uses ctime None to match what the real
-    own_creation_time() observes for a simulated PID (indeterminable),
-    so record/world identity agrees. A refused registration (lost race)
+    The patched creation-time query returns the world's captured identity;
+    the successful transaction fixture requires a known ctime. A refused registration (lost race)
     is legitimate: the child would exit non-zero in reality, so just
     return the proc and let the parent's commit decide.
     """
 
     def _spawn(*args, **kwargs):
-        pid = world.spawn(ctime=None)
+        pid = world.spawn()
         with mock.patch.object(pc.os, "getpid", return_value=pid):
             pc.try_register(duration_seconds=60, launcher="agent")
         return _FakeProc(pid, world)
@@ -493,9 +500,10 @@ class TimingInterleaveTest(unittest.TestCase):
                 duration_seconds=60, identity=ident, verify_budget_s=0.3,
                 poll_interval_s=0.02, evidence_dir=str(tmp / "evidence"),
                 spawners=spawners)
-        self.assertEqual(out["outcome"], "rejected")
+        self.assertEqual(out["outcome"], "uncertain")
         self.assertIn(out["reason"], ("verify-timeout", "verify-unreadable"))
-        self.assertEqual(out["rollback"]["pending"], [])
+        self.assertTrue(any(p["reason"] == "final-registry-unreadable"
+                            for p in out["rollback"]["pending"]))
         self.assertFalse(any(e["alive"] for e in world.procs.values()))
 
     def test_takeover_stopping_preserved(self):

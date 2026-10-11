@@ -983,3 +983,8 @@ single-confirmation, repeat rejection, zero-write purity); fail-before is
 23/23 missing API. Suite 873/873 OK. No real probes, market traffic,
 P1-14C, long runs, paper, orders or Start; V2/main/SUCCESS_GATES intact;
 no phase advanced. Enablement needs explicit authorization.
+
+
+## DASH-V2-62 - 2026-10-11 - launch identity and uncertainty correction
+
+Supersedes the prior preparation claim that a fresh registry read establishes probe ownership: the transaction receives spawn-captured child PID+ctime directly via an optional private start_probe callback. Ordinary start/adoption/handoff semantics stay unchanged. New launch-only process evidence distinguishes owned/gone/replaced/unknown; PID-only identity fallback cannot confirm or authorize transaction rollback. Final unreadable assessment remains UNCERTAIN. Strict non-future watcher timestamps and one result per watcher retained. Actual sidecar lock and owned evidence-file preflight effects documented; verification budget excludes blocking IO/spawn/native calls. Public launch remains disabled. See DASH_V2_62_SUPERVISED_LAUNCH_CORRECTIONS.md (902/902 canonical, 52/52 focused). No strategy, gate, run or enablement authorization.

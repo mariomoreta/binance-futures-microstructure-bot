@@ -1,0 +1,43 @@
+{
+  "base_sha": "da231b911e9b1a0cfe86b3aaa3325e5b71928687",
+  "review_sha": "f63dd162106b807c7d754da2834663d946000ccf",
+  "corrected_control_sha256": "11da506807d3bfdd6db09a77f7a0ebf92805ee6ff19168f512c625938e26491e",
+  "baseline_regressions": {
+    "methods": 18,
+    "failed_methods": 15,
+    "assertion_failures_including_subtests": 25,
+    "exit": 1,
+    "failed_names": [
+      "test_default_supervisor_command",
+      "test_evidence_preflight_failure_before_spawn",
+      "test_expired_read_cannot_confirm",
+      "test_final_unreadable_is_uncertain",
+      "test_foreign_post_start_cannot_be_rolled_back",
+      "test_foreign_post_start_cannot_confirm",
+      "test_identity_mismatch_not_proved_dead",
+      "test_invalid_numeric_inputs_before_effects",
+      "test_lock_preflight_failure_before_spawn",
+      "test_one_verifier_result_per_watcher",
+      "test_positive_future_timestamp_rejected",
+      "test_same_pid_changed_ctime_not_adopted",
+      "test_sleep_clamped_and_no_late_confirmation",
+      "test_stopping_before_watchers_not_spawned",
+      "test_unknown_identity_not_terminated"
+    ]
+  },
+  "focused": {
+    "tests": 52,
+    "seconds": 2.543,
+    "exit": 0
+  },
+  "canonical": {
+    "tests": 902,
+    "seconds": 160.768,
+    "exit": 0
+  },
+  "new_tests": 29,
+  "real_market_probes": 0,
+  "new_live_window": false,
+  "launch_enabled": false,
+  "verdict": "DONE bounded disabled correction, not operational PASS"
+}

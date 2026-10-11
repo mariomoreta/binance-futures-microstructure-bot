@@ -115,3 +115,8 @@ MarketProbe -> validated engine state -> ResearchRecorder (bounded queue, worker
 `
 
 Single process, single registry (logs/probe_runtime.json), single launcher family. Dashboard reads research depth via /api/research/status and studies via /api/events/*; ENGINE/FEED/RESEARCH states are reported separately and never conflated.
+
+
+## DASH-V2-62 - 2026-10-11 - launch identity and uncertainty correction
+
+Supersedes the prior preparation claim that a fresh registry read establishes probe ownership: the transaction receives spawn-captured child PID+ctime directly via an optional private start_probe callback. Ordinary start/adoption/handoff semantics stay unchanged. New launch-only process evidence distinguishes owned/gone/replaced/unknown; PID-only identity fallback cannot confirm or authorize transaction rollback. Final unreadable assessment remains UNCERTAIN. Strict non-future watcher timestamps and one result per watcher retained. Actual sidecar lock and owned evidence-file preflight effects documented; verification budget excludes blocking IO/spawn/native calls. Public launch remains disabled. See DASH_V2_62_SUPERVISED_LAUNCH_CORRECTIONS.md (902/902 canonical, 52/52 focused). No strategy, gate, run or enablement authorization.
