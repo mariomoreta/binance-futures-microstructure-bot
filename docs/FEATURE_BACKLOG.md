@@ -564,3 +564,7 @@ The user authorized preservation and evaluation of the strategy discussion. The 
 - Owner/dependencies: V2/frontend; depends on canonical read-only contracts and F-RES-LEVELS-01/F-RES-PATH-01.
 - Scope/acceptance: Show provenance, observed direction, frozen levels, evidence for/against, missing coverage and endpoint/path distinction. Future proposed side/entry/stop/target/cost fields stay null or unavailable until canonical data exists. Acceptance: contract tests and visual review, no frontend-generated trading decision, no Start activation.
 - Evidence: DASH-V2-53 source audit and documentation only; no implementation or strategy performance evidence.
+
+
+## DASH-V2-54 review checkpoint - 2026-10-11
+F-V2-BFF-01 and F-V2-SYSTEM-01 remain PARTIAL. Published backend b801ab0 passes 840 tests and current pure bridge preserves five synthetic registry cases. R1 exact Win32 BOOL width and R2 absent child-first log association are open backend correction dependencies, not completed V2 capabilities. Transactional supervised launch and new longevity evidence remain deferred. Research proposals registered in DASH-V2-53 are unchanged. Evidence: DASHBOARD_V2_54_BACKEND_CORRECTIONS_REVIEW.md, scripts/review-p1-14b8-v2-54.py and design/qa/v2-54/backend-reproductions.json.

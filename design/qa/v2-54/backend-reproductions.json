@@ -1,0 +1,79 @@
+{
+  "backend_sha": "b801ab094d64b6b45caabfc7fed22276abb0c0b6",
+  "control_sha256": "118e0da7196310b649115a738d7da693446a6495364f63d8cbc3adb75e33ada2",
+  "original_refusal_fixed": [
+    {
+      "native_return": 0,
+      "helper_return": false,
+      "closed": true,
+      "handle": "0x100000123",
+      "return_width": 1
+    },
+    {
+      "native_return": 1,
+      "helper_return": true,
+      "closed": true,
+      "handle": "0x100000123",
+      "return_width": 1
+    }
+  ],
+  "bool_width": {
+    "synthetic_native_nonzero": 256,
+    "helper_return": false,
+    "configured_width": 1,
+    "windows_BOOL_width": 4,
+    "scope": "ABI callback only; no actual Windows process API called"
+  },
+  "actual_child_first_registration": {
+    "result": {
+      "started": true,
+      "pid": 424243,
+      "mode": "observe",
+      "duration_seconds": 60,
+      "preset": "standard",
+      "evidence": null,
+      "adopted_child_registration": true
+    },
+    "kill_calls": 0,
+    "registry_byte_preserved": true,
+    "created_log_exists": true,
+    "registered_log_path": null,
+    "scope": "actual try_register, mocked child/identity"
+  },
+  "missing_log_snapshot": {
+    "now_s": 1791732626.207841,
+    "mode": "observe",
+    "safety": null,
+    "reject_rate": null,
+    "total_messages": null,
+    "reconnect_events": [],
+    "persistence_errors_10m": 0,
+    "prospective_degraded": false,
+    "clock_offset_ms": null,
+    "forced_reconnects": null,
+    "error_reconnects": null,
+    "reject_rate_prev": null
+  },
+  "pure_bridge": [
+    {
+      "state": "RUNNING",
+      "bytes_preserved": true
+    },
+    {
+      "state": "STOPPING",
+      "bytes_preserved": true
+    },
+    {
+      "state": "ABORTED",
+      "bytes_preserved": true
+    },
+    {
+      "state": "COMPLETED",
+      "bytes_preserved": true
+    },
+    {
+      "state": "ABSENT",
+      "file_not_created": true
+    }
+  ]
+}

@@ -527,3 +527,9 @@ F-V2-BFF-01 and F-V2-SYSTEM-01 remain PARTIAL. No new supervised run or gate adv
 ## DASH-V2-53 — 2026-10-11 — research documentation checkpoint
 
 DONE bounded documentation slice. Evaluated mover/level intent against canonical backend 55efaa2 and V2 base 066577e; registered seven PROPOSED future requirements and reconciled descriptive states, research setup families, endpoint outcomes and future trading rules. No source/UI/runtime changes. Canonical V2 snapshot regression: 496/496, exit 0, 72.304s. Visual verification: NOT APPLICABLE (documentation only). See [DASHBOARD_V2_53_RESEARCH_DOCUMENTATION.md](DASHBOARD_V2_53_RESEARCH_DOCUMENTATION.md). Backend correction task retains priority; no probes/paper/gate advancement.
+
+
+## DASH-V2-54 - 2026-10-11 - backend correction review
+DONE bounded audit of published b801ab0. Isolated backend suite 840/840; exact pure BFF bridge 5/5; no visual/code/runtime change. Original 0-refusal and child-kill race improved; R1 native BOOL width and R2 actual self-registration log association remain backend follow-ups. F-V2-BFF-01/F-V2-SYSTEM-01 remain PARTIAL. See DASHBOARD_V2_54_BACKEND_CORRECTIONS_REVIEW.md and design/qa/v2-54/backend-reproductions.json. No operational gate advanced.
+
+V2-54 snapshot regression: 496/496 OK, 67.975s, exit 0; visual verification NOT APPLICABLE.

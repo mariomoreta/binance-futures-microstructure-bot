@@ -175,3 +175,7 @@ remain owner corrections; no Start enablement or supervised-run authorization.
 ## 2026-10-11 — DASH-V2-53 proposed research presentation
 
 Record F-V2-RESEARCH-01 as PROPOSED / NOT IMPLEMENTED. Canonical backend owns candidate classification, level/strategy definitions and future risk/position logic. V2 projects source/time/quality/coverage and explicit unavailable fields; it never synthesizes trade side, entry, stops, targets or probability from visual badges. ACTIVE_RESEARCH is not a fill. Follow [MOVER_LEVEL_STRATEGY_RESEARCH.md](MOVER_LEVEL_STRATEGY_RESEARCH.md). This slice is documentation only; no screen/code/API change, no Start activation and no new execution authorization.
+
+
+## 2026-10-11 - DASH-V2-54 bounded correction acceptance
+Accept published b801ab0 fixes for original zero-result propagation and same-child survival; retain R1 BOOL marshalling and R2 genuine self-registration log-association follow-ups. Current read-only V2 bridge needs no compatibility change. Describe C1 as bounded shared-start/effective writes/current-window timestamp coverage, not strict monotonic advancement or longevity. No Start/run/gate permission. See DASHBOARD_V2_54_BACKEND_CORRECTIONS_REVIEW.md.

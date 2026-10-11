@@ -1,5 +1,10 @@
 # TASK_QUEUE
 
+## Latest V2 review - 2026-10-11, DASH-V2-54
+
+Published backend b801ab0 reviewed in an isolated archive: 840/840 OK, exit 0, 162.462s. Original refusal propagation and same-child survival corrected; two follow-ups remain: exact Win32 BOOL widths and missing child-first log association. Pure V2 bridge preserves 5/5 temporary registry cases. No source/UI/runtime change; no general PASS or new supervised window.
+See [DASHBOARD_V2_54_BACKEND_CORRECTIONS_REVIEW.md](DASHBOARD_V2_54_BACKEND_CORRECTIONS_REVIEW.md). Start disabled; SUCCESS_GATES unchanged. Backend follow-up ownership remains separate. DASH-V2-53 research proposals remain proposed.
+
 ## Latest V2 documentation task ? 2026-10-11, DASH-V2-53
 
 DONE: validate and preserve mover/level strategy intent, reconcile existing capabilities, register future requirements and run V2 snapshot regression (496/496).
