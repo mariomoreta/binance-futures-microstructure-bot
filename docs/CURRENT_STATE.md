@@ -1,5 +1,12 @@
 # CURRENT_STATE
 
+## Active visual sequencing - 2026-10-11, DASH-V2-57
+
+The existing [visual roadmap](DASHBOARD_V2_VISUAL_ROADMAP.md) is the single frontend control plan. User-authorized ready rounds continue within the active work cycle after implementation, tests, actual desktop/mobile reference comparison and a published checkpoint. This is not a background job or operational authorization.
+Next A: Token Detail READY for implementation, not completed. Next B: Opportunities composition, with exact parity blocked by the missing dedicated reference. System/research, unavailable Backtest/Paper Lab states and final all-route consistency follow.
+DASH-V2-57 is documentation-only: Python snapshot 496/496 OK, exit 0, 68.411s; visual verification not applicable to this change. Current production remains DASH-V2-56 at http://127.0.0.1:3020. See [control-plan checkpoint](DASHBOARD_V2_57_VISUAL_CONTROL_PLAN.md). Start and SUCCESS_GATES unchanged.
+
+
 ## Latest frontend visual checkpoint - 2026-10-11, DASH-V2-56
 
 Overview pulse/title/action hierarchy refined; Movers full-width table, four-column rankings below, eight default rows with 16/32 available. Production V2 updated at http://127.0.0.1:3020 (managed PID 18520).

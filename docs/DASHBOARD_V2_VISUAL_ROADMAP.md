@@ -1,5 +1,82 @@
 # Dashboard V2 — visual completion roadmap (DASH-V2-49)
 
+## Active visual control plan - 2026-10-11, DASH-V2-57
+
+Owner: V2 frontend agent. This document is the single control plan for autonomous
+visual rounds, separate from backend engineering and project operational gates.
+User authorized phase-by-phase visual work and self-verification without repeated
+approval. This supersedes the earlier stop-after-one-cycle sequencing below:
+continue through ready visual rounds within the active work cycle; stop when the
+planned visual cycle is complete or a real blocking condition cannot be isolated.
+This is not a background job or a live-run authorization.
+
+### Current state and next rounds
+
+| Round | Scope | Status | Evidence / dependency |
+|---|---|---|---|
+| V56 | Overview and Movers hierarchy/composition | ROUND DONE; overall parity PARTIAL | DASHBOARD_V2_56_VISUAL_REFINEMENT.md; 39 before/after cases; 118 frontend / 496 snapshot |
+| V57 | Autonomous visual control plan | ROUND DONE, documentation only | This dated control section |
+| Next A | Token Detail | READY; reference audited, implementation PENDING | token-detail.png inspected; retain real/fixture/source distinction |
+| Next B | Opportunities, observations, prospective | READY for bounded composition; exact parity BLOCKED | Correct Opportunities reference absent; do not substitute another screen |
+| Next C | System and research archives | PENDING after A/B; may advance around isolated external blockers | Preserve recorded process vs watcher vs feed, registry-only semantics |
+| Next D | Backtest and Paper Lab unavailable states | PENDING | Reference composition allowed; engines/results remain unavailable |
+| Final | Whole-dashboard desktop/mobile consistency | PENDING | All 13 routes, menu/keyboard/navigation/overflow/error checks; explicit remaining gaps |
+
+Read latest progress/backlog before selecting each round. Do not repeat verified
+work just because an old historical section says it is pending. Backend report
+review is an interrupting integration task at exact SHA, not permission to change
+backend ownership or broaden visual work into strategy/control implementation.
+
+### Entry and exit criteria for every round
+
+1. Inspect the actual matching reference and current source. Record absent or
+   misidentified assets. Capture BEFORE at 1672/1366/390 or a justified scoped
+   viewport set. State the exact visual problem and the available data contract.
+2. Define bounded layout/hierarchy/spacing/typography/table/responsive changes;
+   retain routes, accessibility, source labels, timestamps, units and nullability.
+   Never manufacture charts, history, market states, signals, probabilities,
+   validated performance or functioning controls to imitate a reference.
+3. Implement only in the owned V2 tree. Changes to shared components trigger
+   checks on all affected screens. No canonical engine/DB/log/Start mutation.
+4. Run relevant existing tests and required regression checks; type/build for
+   frontend changes. Update existing tests only when intended behavior changes.
+   No unnecessary mirrored tests for trivial CSS. Tests do not replace visuals.
+5. Inspect fresh AFTER images against BEFORE and reference. Verify desktop/mobile
+   alignment, hierarchy, readable labels, contrast, focus/navigation, table
+   scrolling and absence of document overflow/browser errors. Record deliberate
+   departures and unavailable capabilities, not just a screenshot filename.
+6. Close ROUND DONE only when the bounded acceptance passes and regressions are
+   resolved. Separately report screen fidelity as MATCHED COMPOSITION / PARTIAL /
+   ASSET_MISMATCH / NO DEDICATED REFERENCE. ROUND DONE never means full reference
+   parity, live data readiness, profitability or SUCCESS_GATES advancement.
+7. Update progress, relevant decisions/backlog and this control matrix. Selective
+   commit/push; managed V2 restart only when needed with verified process ownership.
+   Give the user a concise outcome, dashboard route, checks, remaining gaps and
+   next round. User preview is invited, not required as repeated approval.
+8. Continue directly to the next READY round during the active cycle. On an
+   isolated asset/API dependency, mark only that requirement BLOCKED and continue
+   independent visual work. Stop on user instruction, unresolved regression,
+   conflicting ownership, or changes outside authorized frontend scope.
+
+### Stop and finish conditions
+
+Finish after the planned round set and final consistency check are published.
+Report screen-by-screen fidelity and precise external dependencies; do not mark
+everything PASS because tests/build succeeded. A backend/API/ref dependency is
+recorded for later integration when its evidence arrives, without fictitious data
+or a new permission flow for ordinary reversible UI changes.
+No live probes, backfills, long runs, paper, orders or Start enablement authorized.
+
+### User feedback format
+
+- What changed and why it improves the reference composition.
+- Direct link to the updated dashboard route.
+- Checks and visual verdict; unresolved dependency if any.
+- Next round already selected and its acceptance target.
+
+The user's design preference or correction steers the active round. This control
+plan remains in Git, not a private agent-only file that can drift from the project.
+
 Authorized 2026-10-10: audit all routes/references, then proceed phase by phase
 without repeated approval. Backend owner remains separate. No market run or
 execution authorization inferred.

@@ -187,3 +187,14 @@ Accept R1 Windows BOOL marshalling and R2 child-first log association on e317569
 
 ## 2026-10-11 - DASH-V2-56 reference composition refinement
 Restore full-width Movers table with ranking boards below instead of the old side rail that hid desktop columns. Eight default rows match reference density; preserve selectable 16/32. Compact existing Overview pulse measurements as tiles; preserve content/fixture labels and native table markup. No new market values, graphs, probabilities or trading rules. Overall visual status PARTIAL. Backend supervised-launch preparation remains disabled and separate, per DASHBOARD_V2_56_BACKEND_HANDOFF.md.
+
+
+## 2026-10-11 - DASH-V2-57 autonomous visual rounds
+User authorizes V2 frontend agent to validate and advance ready visual rounds
+during the active cycle without repeated continue prompts. Use existing visual
+roadmap as the single control plan; keep backend/operational gates separate.
+Bounded round completion and overall design fidelity are separate verdicts.
+Missing assets/API capabilities block only dependent requirements; preserve
+truthful unavailable states and continue independent work. Stop on user steering
+to stop, resolved cycle completion or unisolatable regression/ownership/scope
+blocker. No background execution or new market/run/Start authority.

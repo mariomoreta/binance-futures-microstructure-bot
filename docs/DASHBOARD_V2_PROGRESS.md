@@ -543,3 +543,14 @@ V2-55 final suites: published backend archive 850/850 OK (200.210s); V2 snapshot
 
 ## DASH-V2-56 - 2026-10-11 - bounded visual refinement
 Overview pulse tiles/title/action alignment; full-width Movers table and four-column rankings below, eight default rows with larger choices preserved. 118 frontend tests and 496 V2 Python snapshot tests pass; type/build pass, lint one existing warning. Before/after 39-route/width cases each, no browser errors/page overflow. Managed V2 PID 35700 -> 18520. Reference fidelity remains PARTIAL. See DASHBOARD_V2_56_VISUAL_REFINEMENT.md and design/qa/v2-56/. Backend preparation prompt is separate; no actual run/Start/gate authorization.
+
+
+## DASH-V2-57 - 2026-10-11 - autonomous visual control plan
+User requested dedicated visual-phase validation and automatic continuation.
+Existing DASHBOARD_V2_VISUAL_ROADMAP.md is the single owned frontend control plan;
+no duplicate private plan. Added phase matrix, per-round entry/exit checks,
+screen fidelity vs round completion, isolated-blocker handling, user feedback
+format and bounded cycle finish conditions. Token Detail reference inspected;
+Next A READY for implementation, not yet visually completed. No UI/runtime change.
+
+Verification: Python snapshot 496/496 OK, exit 0, 68.411s. See DASHBOARD_V2_57_VISUAL_CONTROL_PLAN.md. UI verification not applicable to this documentation-only round.
