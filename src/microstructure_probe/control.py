@@ -52,6 +52,51 @@ _LOG_HANDLES: Dict[int, Any] = {}
 # refusal; never PII, never a process list. Empty when no refusal recorded.
 _LAST_NATIVE_ERROR: Dict[str, Any] = {}
 
+# Exact Win32 declarations (V2-54 R1): Windows BOOL is a 32-bit int, not a
+# one-byte C bool -- ctypes.c_bool (1 byte) misreads any nonzero native
+# return whose low byte is zero (e.g. 256 -> 0x00). HANDLE is
+# pointer-width (c_void_p: 8 bytes on 64-bit; a >32-bit handle such as
+# 0x100000123 must survive argument passing intact).
+try:
+    from ctypes import wintypes as _wintypes
+    _WIN_BOOL = _wintypes.BOOL
+    _WIN_DWORD = _wintypes.DWORD
+    _WIN_HANDLE = _wintypes.HANDLE
+except Exception:  # non-Windows import fallback (nt branch never runs)
+    _WIN_BOOL = ctypes.c_int32
+    _WIN_DWORD = ctypes.c_uint32
+    _WIN_HANDLE = ctypes.c_void_p
+
+
+class _FILETIME(ctypes.Structure):
+    """Windows FILETIME for GetProcessTimes (bound once, not per call)."""
+
+    _fields_ = [("dwLowDateTime", ctypes.c_ulong),
+                ("dwHighDateTime", ctypes.c_ulong)]
+
+
+def _configure_kernel_signatures(kernel32: Any) -> None:
+    """Bind exact native prototypes (V2-54 R1, no silent setup).
+
+    Assigns directly so a binding failure raises instead of silently
+    keeping a wrong-width default. Callers pass the real windll kernel32
+    or a signature-recording fake (tests assert exact type identity).
+    """
+    kernel32.OpenProcess.argtypes = [_WIN_DWORD, _WIN_BOOL, _WIN_DWORD]
+    kernel32.OpenProcess.restype = _WIN_HANDLE
+    kernel32.TerminateProcess.argtypes = [_WIN_HANDLE, ctypes.c_uint]
+    kernel32.TerminateProcess.restype = _WIN_BOOL
+    kernel32.CloseHandle.argtypes = [_WIN_HANDLE]
+    kernel32.CloseHandle.restype = _WIN_BOOL
+    kernel32.GetProcessTimes.argtypes = [_WIN_HANDLE,
+                                         ctypes.POINTER(_FILETIME),
+                                         ctypes.POINTER(_FILETIME),
+                                         ctypes.POINTER(_FILETIME),
+                                         ctypes.POINTER(_FILETIME)]
+    kernel32.GetProcessTimes.restype = _WIN_BOOL
+    kernel32.GetLastError.argtypes = []
+    kernel32.GetLastError.restype = _WIN_DWORD
+
 
 def registry_path() -> Path:
     """Registry file, overridable for hermetic tests."""
@@ -543,6 +588,17 @@ def _probe_env(launcher: str) -> Dict[str, str]:
     return env
 
 
+def _valid_evidence(evidence: Any) -> bool:
+    """A log association is usable only with a non-empty log-path string.
+
+    Anything else (absent block, null log, blank string) means the run has
+    no discoverable evidence log -- never treated as associated.
+    """
+    return (isinstance(evidence, dict)
+            and isinstance(evidence.get("log"), str)
+            and bool(evidence["log"].strip()))
+
+
 def start_probe(duration_seconds: Optional[int] = None,
                 launcher: str = "agent",
                 preset: str = "standard",
@@ -648,13 +704,104 @@ def start_probe(duration_seconds: Optional[int] = None,
     except OSError:
         wrote, outcome = False, {}
     if isinstance(outcome, dict) and outcome.get("adopted"):
-        # Own child won the race: its RUNNING record + evidence stand as
-        # stored (byte-preserving -- nothing was written). No kill.
-        return {"started": True, "pid": proc.pid, "mode": "observe",
-                "duration_seconds": duration,
-                "preset": preset if preset == "validation-6h" else "standard",
-                "evidence": outcome.get("evidence"),
-                "adopted_child_registration": True}
+        stored_ev = outcome.get("evidence")
+        if _valid_evidence(stored_ev):
+            # Own child already carries a usable log: preserve it verbatim
+            # (byte-preserving -- nothing is written). No kill.
+            return {"started": True, "pid": proc.pid, "mode": "observe",
+                    "duration_seconds": duration,
+                    "preset": preset if preset == "validation-6h" else "standard",
+                    "evidence": stored_ev,
+                    "adopted_child_registration": True,
+                    "evidence_associated": stored_ev == evidence}
+        # Evidence handoff (V2-54 R2): the child self-registered with no
+        # log, while this controlled start created one. Bind OUR log to
+        # the SAME child via a conditional locked update that revalidates
+        # PID + creation-time + active state on fresh state. Anything else
+        # (foreign run, terminal state, enforcement hold) refuses without
+        # touching the record -- and a refused/failed handoff never
+        # reports a confirmed association.
+        def _associate_log(rec):
+            if not rec:
+                return None, {"associated": False,
+                              "reason": "no-record"}
+            try:
+                same = (int(rec.get("pid")) == int(proc.pid)
+                        and rec.get("create_time") == child_ctime)
+            except (TypeError, ValueError):
+                same = False
+            if not same:
+                return None, {"associated": False,
+                              "reason": "not-ours-anymore"}
+            if not _is_active_state(rec.get("state")):
+                return None, {"associated": False,
+                              "reason": "terminal-now"}
+            if rec.get("stopping_by"):
+                return None, {"associated": False,
+                              "reason": "enforcement-hold"}
+            if _valid_evidence(rec.get("evidence")):
+                return None, {"associated": False,
+                              "reason": "evidence-present",
+                              "evidence": rec.get("evidence")}
+            rec["evidence"] = evidence
+            return rec, {"associated": True}
+        try:
+            wrote_ev, assoc = update_registry(_associate_log)
+        except OSError:
+            wrote_ev, assoc = False, {"associated": False,
+                                      "reason": "registry-unavailable"}
+        if isinstance(assoc, dict) and assoc.get("associated") and wrote_ev:
+            return {"started": True, "pid": proc.pid, "mode": "observe",
+                    "duration_seconds": duration,
+                    "preset": preset if preset == "validation-6h" else "standard",
+                    "evidence": evidence,
+                    "adopted_child_registration": True,
+                    "evidence_associated": True}
+        reason = (assoc or {}).get("reason", "refused")
+        if reason == "evidence-present":
+            # A usable log raced in: preserve it, report as stored. It is
+            # only "associated" when it is byte-identical to our log.
+            raced_ev = (assoc or {}).get("evidence")
+            return {"started": True, "pid": proc.pid, "mode": "observe",
+                    "duration_seconds": duration,
+                    "preset": preset if preset == "validation-6h" else "standard",
+                    "evidence": raced_ev,
+                    "adopted_child_registration": True,
+                    "evidence_associated": raced_ev == evidence}
+        if reason == "registry-unavailable":
+            # Verified live child keeps running (never destroy it over a
+            # transient registry failure); the association is UNCONFIRMED.
+            return {"started": True, "pid": proc.pid, "mode": "observe",
+                    "duration_seconds": duration,
+                    "preset": preset if preset == "validation-6h" else "standard",
+                    "evidence": None,
+                    "adopted_child_registration": True,
+                    "evidence_associated": False,
+                    "evidence_result": reason}
+        if reason == "not-ours-anymore":
+            # A foreign/different record now holds the registry: our spawn
+            # is redundant -- orphan cleanup exactly once, foreign kept.
+            try:
+                stdout_fh.close()
+            except OSError:
+                pass
+            _LOG_HANDLES.pop(proc.pid, None)
+            try:
+                proc.kill()
+            except Exception:
+                pass
+            return {"started": False, "already_running": True,
+                    "pid": None, "state": status_readonly().get("state"),
+                    "adopted_child_registration": True,
+                    "evidence_associated": False,
+                    "evidence_result": reason}
+        # Same child turned terminal or fell under an enforcement hold:
+        # do not interfere with it and do not kill it.
+        return {"started": False, "pid": proc.pid,
+                "reason": "adopted-record-superseded",
+                "adopted_child_registration": True,
+                "evidence_associated": False,
+                "evidence_result": reason}
     if not wrote:
         try:
             stdout_fh.close()
@@ -838,10 +985,11 @@ def _terminate_verified_pid(pid: int,
     Handle-bound identity (V2-51): on Windows the same OpenProcess handle
     is used to read creation time (GetProcessTimes) and to terminate, so a
     PID reused between verification and kill cannot be hit. Native
-    signatures (V2-52 H1) are explicit HANDLE-width (c_void_p) with BOOL
-    results checked: a TerminateProcess refusal (0/exception) returns False
-    with a bounded GetLastError record -- never reported as success. The
-    handle is closed on success, refusal and exception paths alike.
+    signatures (V2-52 H1, exact in V2-54 R1) are explicit HANDLE-width with
+    32-bit Win32 BOOL results checked: a TerminateProcess refusal
+    (0/exception) returns False with a bounded GetLastError record -- never
+    reported as success. The handle is closed on success, refusal and
+    exception paths alike.
     Missing expected_ctime falls back to handle-liveness only (open +
     queryable times): PID-reuse is then NOT excluded -- documented
     residual, not complete protection. On POSIX the pre-kill recheck
@@ -862,27 +1010,7 @@ def _terminate_verified_pid(pid: int,
             kernel32 = _ct.windll.kernel32  # type: ignore[attr-defined]
         except Exception:
             return False
-        try:
-            kernel32.OpenProcess.argtypes = [_ct.c_ulong, _ct.c_bool,
-                                             _ct.c_ulong]
-            kernel32.OpenProcess.restype = _ct.c_void_p
-        except Exception:
-            pass
-        try:
-            kernel32.TerminateProcess.argtypes = [_ct.c_void_p, _ct.c_uint]
-            kernel32.TerminateProcess.restype = _ct.c_bool
-        except Exception:
-            pass
-        try:
-            kernel32.CloseHandle.argtypes = [_ct.c_void_p]
-            kernel32.CloseHandle.restype = _ct.c_bool
-        except Exception:
-            pass
-        try:
-            kernel32.GetLastError.argtypes = []
-            kernel32.GetLastError.restype = _ct.c_ulong
-        except Exception:
-            pass
+        _configure_kernel_signatures(kernel32)
         handle = None
         try:
             access = 0x0001 | 0x1000  # TERMINATE | QUERY_LIMITED
@@ -892,17 +1020,7 @@ def _terminate_verified_pid(pid: int,
             if expected_ctime is not None:
                 # Verify creation time on THIS handle (no reopen: no reuse).
                 try:
-                    class _FT(_ct.Structure):
-                        _fields_ = [("dwLowDateTime", _ct.c_ulong),
-                                    ("dwHighDateTime", _ct.c_ulong)]
-                    try:
-                        kernel32.GetProcessTimes.argtypes = [
-                            _ct.c_void_p, _ct.POINTER(_FT), _ct.POINTER(_FT),
-                            _ct.POINTER(_FT), _ct.POINTER(_FT)]
-                        kernel32.GetProcessTimes.restype = _ct.c_bool
-                    except Exception:
-                        pass
-                    ft_c, ft_e, ft_k, ft_u = (_FT() for _ in range(4))
+                    ft_c, ft_e, ft_k, ft_u = (_FILETIME() for _ in range(4))
                     ok = kernel32.GetProcessTimes(
                         handle, _ct.byref(ft_c), _ct.byref(ft_e),
                         _ct.byref(ft_k), _ct.byref(ft_u))
@@ -923,17 +1041,7 @@ def _terminate_verified_pid(pid: int,
                 # Documented fallback: no expected creation time, so only
                 # handle queryability is verified (live-handle proof).
                 try:
-                    class _FTQ(_ct.Structure):
-                        _fields_ = [("dwLowDateTime", _ct.c_ulong),
-                                    ("dwHighDateTime", _ct.c_ulong)]
-                    try:
-                        kernel32.GetProcessTimes.argtypes = [
-                            _ct.c_void_p, _ct.POINTER(_FTQ), _ct.POINTER(_FTQ),
-                            _ct.POINTER(_FTQ), _ct.POINTER(_FTQ)]
-                        kernel32.GetProcessTimes.restype = _ct.c_bool
-                    except Exception:
-                        pass
-                    q_c, q_e, q_k, q_u = (_FTQ() for _ in range(4))
+                    q_c, q_e, q_k, q_u = (_FILETIME() for _ in range(4))
                     if not kernel32.GetProcessTimes(
                             handle, _ct.byref(q_c), _ct.byref(q_e),
                             _ct.byref(q_k), _ct.byref(q_u)):

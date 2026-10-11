@@ -1382,8 +1382,9 @@ deterministically, no market runs launched:
 - Concurrency between processes: `tests/test_process_concurrency.py` (3)
   with spawned owners (distinct PIDs, barrier rendezvous so winners stay
   alive during the race): supervisor+sentinel claim then 10 counted
-  heartbeats each (bool returns; every call wrote, both timestamps advance,
-  11/22 + streaks/action survive); 4-process supervisor and sentinel claim
+  heartbeats each (bool returns; every call wrote, both final timestamps
+  fall inside the overlapped window, 11/22 + streaks/action survive);
+  4-process supervisor and sentinel claim
   races elect exactly one winner; all workers exit 0 with zero hidden
   errors. Without the rendezvous, late starters legitimately take over
   exited winners' leases (documented takeover, not a lock failure).
@@ -1442,11 +1443,11 @@ failing-first hermetic regressions; `status_readonly()` and contracts kept:
   final record + kill count asserted). Fail-before: child-first killed its
   own child and returned started=False. Not extended to the V2 supervised
   transactional launch (separate).
-- C1 concurrency precision: M1 heartbeat workers now rendezvous on a shared
-  start barrier (true overlap) and the parent asserts both final
-  `last_check_at` parse inside the test window [t0, t1] (explicit temporal
-  advancement, 2s tolerance for ISO-second truncation). Scope stays bounded
-  (10 beats/owner; no long-term stability claim).
+- C1 concurrency precision (corrected V2-54): M1 heartbeat workers
+  rendezvous on a shared start barrier with ten effective writes per owner
+  and both final timestamps inside the window [t0, t1] (2s tolerance for
+  ISO-second truncation). This does NOT prove strict advancement versus the
+  claim timestamps, forced per-write interleaving, or longevity.
 - Suite: `python run_tests.py` → 840/840 OK (826 + 9 native + 5 start-race;
   M1 strengthened in place). No probes, P1-14C, long runs, paper, trading
   or Start enablement. SQLite/logs/evidence preserved. V2/main and
@@ -1457,3 +1458,52 @@ failing-first hermetic regressions; `status_readonly()` and contracts kept:
   for heartbeats; `status()` CLI/`stop_probe` stale paths mutate by design
   (fenced). No general PASS, no demonstrated longevity, no authorization
   for new runs.
+
+## P1-14B.8 V2-54 corrections (bounded, 2026-10-11) — RESULT: DONE (acotado)
+
+Frontend review `d4d82c9:docs/DASHBOARD_V2_54_BACKEND_CORRECTIONS_REVIEW.md`
+(backend `b801ab0`) with mocked reproductions
+(`scripts/review-p1-14b8-v2-54.py`,
+`design/qa/v2-54/backend-reproductions.json`). R1+R2 fixed with
+failing-first hermetic regressions; `status_readonly()` and contracts kept:
+
+- R1 exact Win32 BOOL: native signatures now use 32-bit
+  `ctypes.wintypes.BOOL` (`c_long`; `c_bool` is 1 byte and misreads native
+  returns such as 256 as falsy) for TerminateProcess/CloseHandle/
+  GetProcessTimes results, the OpenProcess inherit flag, and HANDLE-width
+  (`c_void_p`) arguments -- bound once in `_configure_kernel_signatures`
+  (no silent setup), verified on the same handle inside the registry lock.
+  Refusal/exception propagation, bounded `_LAST_NATIVE_ERROR` and guaranteed
+  close preserved. Tests `tests/test_win32_bool.py` (7: 32-bit width +
+  exact type identity, ABI 0/1/256 through real WINFUNCTYPE callbacks --
+  256 truthy under BOOL and falsy under `c_bool` -- plus end-to-end helper
+  acceptance of a 256 native success). Fail-before on `b801ab0`: width 1,
+  no exact-type helper, 256 returned False. No real termination failure or
+  false ABORTED is claimed (out of scope by review precision).
+- R2 child-first log association: adoption with absent evidence now performs
+  a conditional locked handoff binding the parent-created log to the same
+  PID+ctime run (revalidating state, no enforcement hold, no valid log
+  present). Valid pre-existing evidence is preserved verbatim (no write);
+  foreign/terminal/enforcement races refuse without touching; handoff
+  OSError keeps the verified live child running with the association
+  explicitly unconfirmed (`evidence_associated: False` -- never declared
+  confirmed when not established); no log is invented for direct launches
+  (handoff only binds the log this start created). Tests rewritten onto the
+  REAL `try_register()` child-first flow (evidence None) plus existing
+  evidence, interleaved STOPPING, and handoff write failure; parent-first,
+  foreign, reused-PID and commit-failure cases kept with response + record +
+  kill-count assertions. Fail-before: association stayed None.
+- C1 precision corrected in test wording and here: M1 is a shared start
+  barrier with ten effective writes per owner and final timestamps inside
+  [t0, t1] -- NOT strict advancement versus claim timestamps, NOT forced
+  per-write interleaving, NOT longevity. Earlier "advance" phrasing above
+  is superseded by this scope.
+- Suite: `python run_tests.py` → 850/850 OK (840 + 7 win32-bool + 3
+  start-race delta: 8 cases = 4 kept + 4 handoff/real-registration cases
+  replacing 1 artificial). No probes, backfills, P1-14C, long windows,
+  paper, trading or Start. SQLite/logs/evidence preserved. V2/main/
+  SUCCESS_GATES intact. Supervised transactional start stays separate.
+- Residuals (explicit): POSIX recheck window; ctime-None fallback;
+  pid-only heartbeat ownership; mutating CLI/stop paths by design (fenced);
+  pure status certifies no OS liveness. No general PASS, no longevity, no
+  authorization for new runs.

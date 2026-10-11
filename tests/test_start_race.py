@@ -1,22 +1,33 @@
-"""P1-14B.8 V2-52 H2: parent start vs own-child self-registration race.
+"""P1-14B.8 V2-52/V2-54 H2+R2: parent start vs own-child registration race.
 
-Fail-before regressions (simulated spawn/kill, temp registries):
+Fail-before regressions (simulated spawn/kill, temp registries; the child
+uses the REAL try_register() on an empty registry, so it registers with
+evidence=None -- no handcrafted records):
 
   R1  parent-first (empty registry): STARTING committed, started=True,
       kill never called.
-  R2  child-first (own child RUNNING with same PID+ctime before the
-      parent commit): adoption -- started=True, kill never called,
-      child's RUNNING record + evidence preserved byte-for-byte
-      (never overwritten with STARTING).
+  R2a child-first real (own child RUNNING evidence=None before the parent
+      commit): adoption + locked log handoff -- started=True, kill never
+      called, final RUNNING carries the parent-created log which exists,
+      evidence_associated=True.
+  R2b child-first with valid pre-existing evidence: adopted verbatim,
+      evidence preserved byte-for-byte, evidence_associated=False
+      (not our log), kill never called, zero writes.
+  R2c interleaved takeover/STOPPING between adoption and handoff: handoff
+      refused -- started=False (adopted-record-superseded), kill never
+      called, foreign marker preserved, no log declared associated.
+  R2d handoff write failure: started=True (verified live child, never
+      destroyed), evidence unconfirmed (associated=False), kill never
+      called, child record preserved.
   R3  foreign winner (live foreign RUNNING): started=False, orphan
       cleanup kills exactly once, foreign record preserved.
   R4  same PID with different creation time (reused PID): refused as
       foreign, kill called once.
-  R5  registry write failure: started=False, kill called once.
+  R5  registry write failure at commit: started=False, kill called once.
 
-On 55efaa2 R2 fails (own child killed once, started=False). This task
-does NOT extend to the V2 supervised transactional launch. Run:
-python run_tests.py
+On b801ab0 R2a fails (evidence stays None: log-discovery gap), R2c/R2d
+fail (no handoff path). This task does NOT extend to the V2 supervised
+transactional launch. Run: python run_tests.py
 """
 
 from __future__ import annotations
@@ -92,14 +103,18 @@ class StartRaceTest(unittest.TestCase):
         self.assertEqual(final.get("pid"), 555)
         pc._close_log_handles(555)
 
-    def test_child_first_adopts_running_record(self):
-        path, tmp = _temp_registry(self)
+    def test_child_first_real_registration_gets_log(self):
+        # The child wins the race via the REAL try_register() on an empty
+        # registry (evidence=None, as genuinely self-registered children
+        # look). The parent must adopt AND associate its created log.
+        _, tmp = _temp_registry(self)
         proc = _FakeProc(555)
 
         def _spawn_first(*args, **kwargs):
-            # The child wins the race: self-registers RUNNING before the
-            # parent's STARTING commit runs.
-            pc._write_registry(_child_record(555, "C555"))
+            with mock.patch.object(pc.os, "getpid", return_value=555):
+                reg = pc.try_register(duration_seconds=60, launcher="agent")
+            self.assertTrue(reg["registered"])
+            self.assertIsNone(reg["record"]["evidence"])
             return proc
 
         with mock.patch.object(pc.subprocess, "Popen",
@@ -108,32 +123,163 @@ class StartRaceTest(unittest.TestCase):
                                    return_value="C555"):
                 with mock.patch.object(pc, "is_canonical_pid",
                                        return_value=True):
-                    before = None
-                    orig_commit = pc.update_registry
+                    out = pc.start_probe(
+                        duration_seconds=60,
+                        evidence_dir=str(tmp / "evidence"))
+        self.assertTrue(out["started"])
+        self.assertTrue(out.get("adopted_child_registration"))
+        self.assertTrue(out.get("evidence_associated"))
+        self.assertEqual(out["pid"], 555)
+        self.assertEqual(proc.kill_calls, 0)
+        final = pc.read_registry()
+        self.assertEqual(final.get("state"), "RUNNING")
+        self.assertEqual(final.get("pid"), 555)
+        self.assertEqual(final.get("create_time"), "C555")
+        log_path = (final.get("evidence") or {}).get("log")
+        self.assertEqual(log_path, (out.get("evidence") or {}).get("log"))
+        self.assertTrue(log_path and Path(log_path).is_file())
+        pc._close_log_handles(555)
 
-                    def _capture_before(transform):
-                        nonlocal before
-                        try:
-                            before = path.read_bytes()
-                        except OSError:
-                            before = None
-                        return orig_commit(transform)
+    def test_child_first_existing_evidence_preserved(self):
+        # Same child already carrying a valid log: adopt verbatim, never
+        # overwrite it, never write at all (byte-preserving).
+        path, tmp = _temp_registry(self)
+        path.write_text(json.dumps(_child_record(555, "C555")),
+                        encoding="utf-8")
+        before = path.read_bytes()
+        proc = _FakeProc(555)
+        calls = {"n": 0}
+        canon = {"n": 0}
+
+        def _stale_then_live(record):
+            # Preflight sees a stale record (passes through to spawn);
+            # every later check sees the live child.
+            canon["n"] += 1
+            return canon["n"] > 1
+
+        with mock.patch.object(pc.subprocess, "Popen", return_value=proc):
+            with mock.patch.object(pc, "own_creation_time",
+                                   return_value="C555"):
+                with mock.patch.object(pc, "is_canonical_pid",
+                                       side_effect=_stale_then_live):
+                    orig = pc.update_registry
+
+                    def _count(transform):
+                        calls["n"] += 1
+                        return orig(transform)
 
                     with mock.patch.object(pc, "update_registry",
-                                           side_effect=_capture_before):
+                                           side_effect=_count):
                         out = pc.start_probe(
                             duration_seconds=60,
                             evidence_dir=str(tmp / "evidence"))
         self.assertTrue(out["started"])
-        self.assertEqual(out["pid"], 555)
+        self.assertTrue(out.get("adopted_child_registration"))
+        self.assertFalse(out.get("evidence_associated"))
         self.assertEqual(proc.kill_calls, 0)
+        self.assertEqual(path.read_bytes(), before)
         final = pc.read_registry()
-        # Same child's registration preserved: RUNNING + its evidence.
-        self.assertEqual(final.get("state"), "RUNNING")
-        self.assertEqual(final.get("pid"), 555)
-        self.assertEqual(final.get("create_time"), "C555")
         self.assertEqual((final.get("evidence") or {}).get("log"),
                          "child-evidence.log")
+        pc._close_log_handles(555)
+
+    def test_handoff_refused_on_interleaved_stopping(self):
+        # Takeover/STOPPING lands between adoption and the log handoff:
+        # no association may be declared, the child must not be killed,
+        # and the foreign marker must survive.
+        _, tmp = _temp_registry(self)
+        proc = _FakeProc(555)
+        state = {"spawned": False}
+
+        def _spawn_first(*args, **kwargs):
+            with mock.patch.object(pc.os, "getpid", return_value=555):
+                reg = pc.try_register(duration_seconds=60, launcher="agent")
+            self.assertTrue(reg["registered"])
+            state["spawned"] = True
+            return proc
+
+        orig = pc.update_registry
+        calls = {"n": 0}
+
+        def _takeover_before_handoff(transform):
+            # The child's own try_register also flows through here: only
+            # intercept the parent's commit (1st post-spawn call) boundary.
+            if not state["spawned"]:
+                return orig(transform)
+            calls["n"] += 1
+            if calls["n"] == 2:
+                take = pc.read_registry()
+                take["state"] = "STOPPING"
+                take["stopping_by"] = "enforce:supervisor:999999"
+                take["supervisor"] = {"pid": 999999, "state": "ACTIVE"}
+                pc._write_registry(take)
+            return orig(transform)
+
+        with mock.patch.object(pc.subprocess, "Popen",
+                               side_effect=_spawn_first):
+            with mock.patch.object(pc, "own_creation_time",
+                                   return_value="C555"):
+                with mock.patch.object(pc, "is_canonical_pid",
+                                       return_value=True):
+                    with mock.patch.object(pc, "update_registry",
+                                           side_effect=_takeover_before_handoff):
+                        out = pc.start_probe(
+                            duration_seconds=60,
+                            evidence_dir=str(tmp / "evidence"))
+        self.assertFalse(out["started"])
+        self.assertFalse(out.get("evidence_associated", False))
+        self.assertEqual(proc.kill_calls, 0)
+        final = pc.read_registry()
+        self.assertEqual(final.get("state"), "STOPPING")
+        self.assertEqual(final.get("stopping_by"),
+                         "enforce:supervisor:999999")
+        self.assertIsNone(final.get("evidence"))
+        pc._close_log_handles(555)
+
+    def test_handoff_write_failure_leaves_child_alive(self):
+        # The log handoff itself fails: the verified live child must NOT be
+        # destroyed, and no confirmed association may be declared.
+        _, tmp = _temp_registry(self)
+        proc = _FakeProc(555)
+        state = {"spawned": False}
+
+        def _spawn_first(*args, **kwargs):
+            with mock.patch.object(pc.os, "getpid", return_value=555):
+                reg = pc.try_register(duration_seconds=60, launcher="agent")
+            self.assertTrue(reg["registered"])
+            state["spawned"] = True
+            return proc
+
+        orig = pc.update_registry
+        calls = {"n": 0}
+
+        def _fail_handoff(transform):
+            if not state["spawned"]:
+                return orig(transform)
+            calls["n"] += 1
+            if calls["n"] >= 2:
+                raise OSError("disk")
+            return orig(transform)
+
+        with mock.patch.object(pc.subprocess, "Popen",
+                               side_effect=_spawn_first):
+            with mock.patch.object(pc, "own_creation_time",
+                                   return_value="C555"):
+                with mock.patch.object(pc, "is_canonical_pid",
+                                       return_value=True):
+                    with mock.patch.object(pc, "update_registry",
+                                           side_effect=_fail_handoff):
+                        out = pc.start_probe(
+                            duration_seconds=60,
+                            evidence_dir=str(tmp / "evidence"))
+        self.assertTrue(out["started"])
+        self.assertTrue(out.get("adopted_child_registration"))
+        self.assertFalse(out.get("evidence_associated"))
+        self.assertEqual(proc.kill_calls, 0)
+        final = pc.read_registry()
+        self.assertEqual(final.get("state"), "RUNNING")
+        self.assertEqual(final.get("pid"), 555)
+        self.assertIsNone(final.get("evidence"))
         pc._close_log_handles(555)
 
     def test_foreign_winner_refused_and_orphan_cleaned(self):

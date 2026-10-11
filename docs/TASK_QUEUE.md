@@ -197,6 +197,19 @@ the dashboard exists. No classifier before raw-feature dashboard validation.
   untouched. No new supervised window on the corrected SHA. Transactional
   supervised start still PENDING/separate. SUCCESS_GATES untouched.
 
+- `P1-14B.8-V2-54` (2026-10-11) BOOL + LOG-HANDOFF BOUNDED CORRECTION — **DONE (acotado)**.
+  Frontend review `d4d82c9` R1/R2 fixed with failing-first hermetic tests:
+  exact 32-bit Win32 BOOL signatures + ABI 0/1/256 marshalling proof (7
+  tests; width-1 + 256-misread on `b801ab0`), real-`try_register()`
+  child-first log handoff under lock with PID+ctime+state revalidation (8
+  start-race cases; association None on `b801ab0`), valid evidence
+  preserved, foreign/terminal/enforcement races refuse without touching,
+  handoff failure keeps the live child with association unconfirmed, C1
+  scope qualified (barrier + counted writes + in-window finals only).
+  Suite 850/850 OK. No probes, backfills, P1-14C, long windows, paper,
+  trading or Start. V2/main/SUCCESS_GATES intact. `status_readonly()` kept.
+  Transactional supervised start still separate.
+
 - `P1-14B.8-V2-52` (2026-10-11) NATIVE + START-RACE BOUNDED CORRECTION — **DONE (acotado)**.
   Frontend review `066577e` H1/H2 fixed with failing-first hermetic tests:
   explicit HANDLE-width native signatures + BOOL propagation + bounded
@@ -435,6 +448,14 @@ strategies (P3), paper engine/positions (P4), execution (P5).
 ## LAST_VERIFICATION
 
 
+
+- 2026-10-11 (P1-14B.8-V2-54): `python run_tests.py` → 850/850 OK (840 + 7 win32-bool + 3 start-race delta).
+  R1/R2 corrected per frontend review `d4d82c9` (key cases fail on `b801ab0`,
+  all pass corrected; C1 wording qualified, M1 assertions unchanged in count).
+  No probes, backfills, P1-14C, long windows, paper, trading or Start;
+  DB/logs/evidence preserved; V2/main/SUCCESS_GATES intact; `status_readonly()`
+  kept. No new supervised window on the corrected SHA. Transactional supervised
+  start still separate. Next: backend SHA review; P1-14C needs explicit instruction.
 
 - 2026-10-11 (P1-14B.8-V2-52): `python run_tests.py` → 840/840 OK (826 + 9 native + 5 start-race).
   H1/H2 corrected per frontend review `066577e` (key cases fail on `55efaa2`,

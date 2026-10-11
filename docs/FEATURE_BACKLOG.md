@@ -343,8 +343,10 @@ it does not replace them. Authority stays where it was recorded
   fenced reconciliation, locked remaining writers, multiprocess proof
   (826/826), no new window; P1-14B.8-V2-52 (2026-10-11): native refusal
   propagation, own-child adoption, C1 barrier+window proof (840/840), no new
-  window; V2 supervised start still PENDING/separate.
-- **Last update:** 2026-10-11 (P1-14B.8 V2-52 native+start-race, DONE acotado).
+  window; P1-14B.8-V2-54 (2026-10-11): exact 32-bit BOOL + ABI proof,
+  child-first log handoff on the real-try_register flow, C1 scope qualified
+  (850/850), no new window; V2 supervised start still PENDING/separate.
+- **Last update:** 2026-10-11 (P1-14B.8 V2-54 BOOL+handoff, DONE acotado).
 
 ## F-BT-01 — Historical backtesting (P1-14)
 

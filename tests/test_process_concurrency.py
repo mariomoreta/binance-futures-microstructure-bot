@@ -4,13 +4,13 @@ Thread tests share one PID, so lease-pid fencing cannot distinguish owners.
 These tests use real spawned processes (distinct PIDs) with a hermetic temp
 registry (MICROPROBE_RUNTIME_FILE inherited):
 
-  M1  supervisor + sentinel owners heartbeat concurrently from a shared
-      start barrier (true overlap, not sequential): every call effectively
+  M1  supervisor + sentinel owners heartbeat from a shared start
+      barrier (overlapped beating, not sequential): every call effectively
       writes (counted via the bool return), both final timestamps parse
-      and fall inside the test window [t0, t1] (explicit temporal
-      advancement), distinctive 11/22 values survive, no silent failures,
-      all workers exit 0. Bounded scope: 10 beats per owner, not a
-      long-term stability proof.
+      and fall inside the test window [t0, t1], distinctive 11/22 values
+      survive, no silent failures, all workers exit 0. Bounded scope:
+      10 beats per owner. This does NOT prove strict advancement versus
+      the claim timestamps, forced per-write interleaving, or longevity.
   M2  four processes racing claim_supervision elect exactly one winner.
   M3  four processes racing claim_sentinel elect exactly one winner.
 

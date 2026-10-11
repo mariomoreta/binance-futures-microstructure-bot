@@ -917,3 +917,35 @@ reproductions; H1+H2 fixed failing-first, no market runs:
 Tests: 9 native + 5 start-race (key cases fail on `55efaa2`); suite
 840/840 OK. V2/main/SUCCESS_GATES intact; `status_readonly()` kept in GETs;
 no new supervised window (longevity UNDEMONSTRATED).
+
+## 2026-10-11 -- P1-14B.8 V2-54: exact BOOL + child-first log handoff
+
+Starting at SHA `b801ab0` (clean tree). Frontend review
+`d4d82c9:docs/DASHBOARD_V2_54_BACKEND_CORRECTIONS_REVIEW.md` with mocked
+reproductions; R1+R2 fixed failing-first, no market runs:
+
+1. BOOL declarations were one byte (`c_bool`), not Win32 BOOL. Now exact
+   32-bit `wintypes.BOOL` (fallback `c_int32`) on all BOOL params/results
+   via `_configure_kernel_signatures` (direct binding, no silent setup;
+   module-level `_FILETIME`), HANDLE-width args kept, verify+kill on one
+   handle in the lock. ABI regressions through real WINFUNCTYPE callbacks
+   for 0/1/256 prove 256 truthy under BOOL and falsy under `c_bool`, plus
+   end-to-end helper acceptance of a 256 native success. Refusal/exception
+   propagation, bounded diagnostic and close guarantees unchanged. No real
+   kill failure or false ABORTED claimed.
+2. Child-first adoption left evidence None (log-discovery gap). Adoption
+   with absent evidence now performs a conditional locked handoff binding
+   the start-created log to the same PID+ctime run (active, unmarked, no
+   valid log present). Valid stored evidence preserved unwritten; foreign/
+   terminal/enforcement races refuse untouched; handoff OSError keeps the
+   verified live child with association explicitly unconfirmed (never
+   declared confirmed when not established); nothing invented for direct
+   launches. Proven on the REAL `try_register()` child-first flow.
+3. C1 corrected here and in CURRENT_STATE: M1 claims shared-start barrier,
+   ten effective writes per owner and in-window finals ONLY -- earlier
+   "advance" phrasing superseded (no strict-vs-initial, interleaving, or
+   longevity proof).
+
+Tests: 7 win32-bool + 8 start-race delta (key cases fail on `b801ab0`);
+suite 850/850 OK. V2/main/SUCCESS_GATES intact; `status_readonly()` kept;
+no new supervised window (longevity UNDEMONSTRATED).
