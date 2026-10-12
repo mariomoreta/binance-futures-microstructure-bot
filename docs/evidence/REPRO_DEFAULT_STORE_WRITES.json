@@ -1,0 +1,21 @@
+{
+  "tests_run": 10,
+  "tests_ok": true,
+  "factory_calls_intercepted": 10,
+  "temp_observations_written": 4,
+  "temp_rejections_written": 54,
+  "temp_rejection_by_reason": {
+    "timestamp_skew": 54
+  },
+  "canonical_hashes_before": [
+    "221b332b74a967025f2e6cfe03066f6cd40c24d9e8596a83a87a6a7fb86fa473",
+    "ca647946a2ba3590db3d1b023993cd13f65844648cba9b7bb210cbc3cb1f7a0a",
+    "45c6a39ec91f55db708e1b9011f86bc55248b4485e582c015ea4442cc7cab5da"
+  ],
+  "canonical_hashes_after": [
+    "221b332b74a967025f2e6cfe03066f6cd40c24d9e8596a83a87a6a7fb86fa473",
+    "ca647946a2ba3590db3d1b023993cd13f65844648cba9b7bb210cbc3cb1f7a0a",
+    "45c6a39ec91f55db708e1b9011f86bc55248b4485e582c015ea4442cc7cab5da"
+  ],
+  "canonical_untouched": true
+}

@@ -1,0 +1,4694 @@
+{
+  "barrier": "audit_test_isolation ETAPA1",
+  "suite": {
+    "tests_run": 916,
+    "ok": true,
+    "failures": [],
+    "errors": []
+  },
+  "prohibited_hits": [],
+  "prohibited_hit_count": 0,
+  "prohibited_by_kind": {},
+  "canonical_connects": [
+    {
+      "db": "microprobe.db",
+      "test": "test_book_oi.test_flow_totals_untouched_by_depth_work:534",
+      "stack": [
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\tests\\test_book_oi.py",
+          "line": 441,
+          "func": "_probe"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\probe.py",
+          "line": 352,
+          "func": "__init__"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\prospective.py",
+          "line": 144,
+          "func": "__init__"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\prospective.py",
+          "line": 160,
+          "func": "_load_from_db"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\persistence.py",
+          "line": 232,
+          "func": "init_db"
+        },
+        {
+          "file": "C:\\Python314\\Lib\\contextlib.py",
+          "line": 141,
+          "func": "__enter__"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\persistence.py",
+          "line": 211,
+          "func": "_get_cursor"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\persistence.py",
+          "line": 196,
+          "func": "_get_connection"
+        }
+      ]
+    },
+    {
+      "db": "microprobe.db",
+      "test": "test_book_oi.test_log_summary_persists_book_and_oi:516",
+      "stack": [
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\tests\\test_book_oi.py",
+          "line": 441,
+          "func": "_probe"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\probe.py",
+          "line": 352,
+          "func": "__init__"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\prospective.py",
+          "line": 144,
+          "func": "__init__"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\prospective.py",
+          "line": 160,
+          "func": "_load_from_db"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\persistence.py",
+          "line": 232,
+          "func": "init_db"
+        },
+        {
+          "file": "C:\\Python314\\Lib\\contextlib.py",
+          "line": 141,
+          "func": "__enter__"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\persistence.py",
+          "line": 211,
+          "func": "_get_cursor"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\persistence.py",
+          "line": 196,
+          "func": "_get_connection"
+        }
+      ]
+    },
+    {
+      "db": "microprobe.db",
+      "test": "test_book_oi.test_probe_gap_counter_parity:482",
+      "stack": [
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\tests\\test_book_oi.py",
+          "line": 441,
+          "func": "_probe"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\probe.py",
+          "line": 352,
+          "func": "__init__"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\prospective.py",
+          "line": 144,
+          "func": "__init__"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\prospective.py",
+          "line": 160,
+          "func": "_load_from_db"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\persistence.py",
+          "line": 232,
+          "func": "init_db"
+        },
+        {
+          "file": "C:\\Python314\\Lib\\contextlib.py",
+          "line": 141,
+          "func": "__enter__"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\persistence.py",
+          "line": 211,
+          "func": "_get_cursor"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\persistence.py",
+          "line": 196,
+          "func": "_get_connection"
+        }
+      ]
+    },
+    {
+      "db": "microprobe.db",
+      "test": "test_book_oi.test_sampling_does_not_alter_book_state:467",
+      "stack": [
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\tests\\test_book_oi.py",
+          "line": 441,
+          "func": "_probe"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\probe.py",
+          "line": 352,
+          "func": "__init__"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\prospective.py",
+          "line": 144,
+          "func": "__init__"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\prospective.py",
+          "line": 160,
+          "func": "_load_from_db"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\persistence.py",
+          "line": 232,
+          "func": "init_db"
+        },
+        {
+          "file": "C:\\Python314\\Lib\\contextlib.py",
+          "line": 141,
+          "func": "__enter__"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\persistence.py",
+          "line": 211,
+          "func": "_get_cursor"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\persistence.py",
+          "line": 196,
+          "func": "_get_connection"
+        }
+      ]
+    },
+    {
+      "db": "microprobe.db",
+      "test": "test_book_oi.test_skew_rejected_depth_never_reaches_book:459",
+      "stack": [
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\tests\\test_book_oi.py",
+          "line": 441,
+          "func": "_probe"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\probe.py",
+          "line": 352,
+          "func": "__init__"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\prospective.py",
+          "line": 144,
+          "func": "__init__"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\prospective.py",
+          "line": 160,
+          "func": "_load_from_db"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\persistence.py",
+          "line": 232,
+          "func": "init_db"
+        },
+        {
+          "file": "C:\\Python314\\Lib\\contextlib.py",
+          "line": 141,
+          "func": "__enter__"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\persistence.py",
+          "line": 211,
+          "func": "_get_cursor"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\persistence.py",
+          "line": 196,
+          "func": "_get_connection"
+        }
+      ]
+    },
+    {
+      "db": "microprobe.db",
+      "test": "test_book_oi.test_summary_carries_book_and_oi_blocks:506",
+      "stack": [
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\tests\\test_book_oi.py",
+          "line": 441,
+          "func": "_probe"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\probe.py",
+          "line": 352,
+          "func": "__init__"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\prospective.py",
+          "line": 144,
+          "func": "__init__"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\prospective.py",
+          "line": 160,
+          "func": "_load_from_db"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\persistence.py",
+          "line": 232,
+          "func": "init_db"
+        },
+        {
+          "file": "C:\\Python314\\Lib\\contextlib.py",
+          "line": 141,
+          "func": "__enter__"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\persistence.py",
+          "line": 211,
+          "func": "_get_cursor"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\persistence.py",
+          "line": 196,
+          "func": "_get_connection"
+        }
+      ]
+    },
+    {
+      "db": "microprobe.db",
+      "test": "test_book_oi.test_unsubscribed_hot_gets_no_book_or_oi:492",
+      "stack": [
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\tests\\test_book_oi.py",
+          "line": 441,
+          "func": "_probe"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\probe.py",
+          "line": 352,
+          "func": "__init__"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\prospective.py",
+          "line": 144,
+          "func": "__init__"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\prospective.py",
+          "line": 160,
+          "func": "_load_from_db"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\persistence.py",
+          "line": 232,
+          "func": "init_db"
+        },
+        {
+          "file": "C:\\Python314\\Lib\\contextlib.py",
+          "line": 141,
+          "func": "__enter__"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\persistence.py",
+          "line": 211,
+          "func": "_get_cursor"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\persistence.py",
+          "line": 196,
+          "func": "_get_connection"
+        }
+      ]
+    },
+    {
+      "db": "microprobe.db",
+      "test": "test_dashboard.test_forceorder_never_missing:502",
+      "stack": [
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\tests\\test_dashboard.py",
+          "line": 502,
+          "func": "test_forceorder_never_missing"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\probe.py",
+          "line": 352,
+          "func": "__init__"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\prospective.py",
+          "line": 144,
+          "func": "__init__"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\prospective.py",
+          "line": 160,
+          "func": "_load_from_db"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\persistence.py",
+          "line": 232,
+          "func": "init_db"
+        },
+        {
+          "file": "C:\\Python314\\Lib\\contextlib.py",
+          "line": 141,
+          "func": "__enter__"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\persistence.py",
+          "line": 211,
+          "func": "_get_cursor"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\persistence.py",
+          "line": 196,
+          "func": "_get_connection"
+        }
+      ]
+    },
+    {
+      "db": "microprobe.db",
+      "test": "test_dashboard_p109.test_forceorder_semantics:689",
+      "stack": [
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\tests\\test_dashboard_p109.py",
+          "line": 689,
+          "func": "test_forceorder_semantics"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\probe.py",
+          "line": 352,
+          "func": "__init__"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\prospective.py",
+          "line": 144,
+          "func": "__init__"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\prospective.py",
+          "line": 160,
+          "func": "_load_from_db"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\persistence.py",
+          "line": 232,
+          "func": "init_db"
+        },
+        {
+          "file": "C:\\Python314\\Lib\\contextlib.py",
+          "line": 141,
+          "func": "__enter__"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\persistence.py",
+          "line": 211,
+          "func": "_get_cursor"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\persistence.py",
+          "line": 196,
+          "func": "_get_connection"
+        }
+      ]
+    },
+    {
+      "db": "microprobe.db",
+      "test": "test_discovery.setUp:207",
+      "stack": [
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\tests\\test_discovery.py",
+          "line": 207,
+          "func": "setUp"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\probe.py",
+          "line": 352,
+          "func": "__init__"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\prospective.py",
+          "line": 144,
+          "func": "__init__"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\prospective.py",
+          "line": 160,
+          "func": "_load_from_db"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\persistence.py",
+          "line": 232,
+          "func": "init_db"
+        },
+        {
+          "file": "C:\\Python314\\Lib\\contextlib.py",
+          "line": 141,
+          "func": "__enter__"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\persistence.py",
+          "line": 211,
+          "func": "_get_cursor"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\persistence.py",
+          "line": 196,
+          "func": "_get_connection"
+        }
+      ]
+    },
+    {
+      "db": "microprobe.db",
+      "test": "test_discovery.test_momentum_and_ranks_persisted_on_summary:272",
+      "stack": [
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\tests\\test_discovery.py",
+          "line": 272,
+          "func": "test_momentum_and_ranks_persisted_on_summary"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\probe.py",
+          "line": 352,
+          "func": "__init__"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\prospective.py",
+          "line": 144,
+          "func": "__init__"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\prospective.py",
+          "line": 160,
+          "func": "_load_from_db"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\persistence.py",
+          "line": 232,
+          "func": "init_db"
+        },
+        {
+          "file": "C:\\Python314\\Lib\\contextlib.py",
+          "line": 141,
+          "func": "__enter__"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\persistence.py",
+          "line": 211,
+          "func": "_get_cursor"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\persistence.py",
+          "line": 196,
+          "func": "_get_connection"
+        }
+      ]
+    },
+    {
+      "db": "microprobe.db",
+      "test": "test_discovery.setUp:207",
+      "stack": [
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\tests\\test_discovery.py",
+          "line": 207,
+          "func": "setUp"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\probe.py",
+          "line": 352,
+          "func": "__init__"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\prospective.py",
+          "line": 144,
+          "func": "__init__"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\prospective.py",
+          "line": 160,
+          "func": "_load_from_db"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\persistence.py",
+          "line": 232,
+          "func": "init_db"
+        },
+        {
+          "file": "C:\\Python314\\Lib\\contextlib.py",
+          "line": 141,
+          "func": "__enter__"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\persistence.py",
+          "line": 211,
+          "func": "_get_cursor"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\persistence.py",
+          "line": 196,
+          "func": "_get_connection"
+        }
+      ]
+    },
+    {
+      "db": "microprobe.db",
+      "test": "test_discovery.setUp:207",
+      "stack": [
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\tests\\test_discovery.py",
+          "line": 207,
+          "func": "setUp"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\probe.py",
+          "line": 352,
+          "func": "__init__"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\prospective.py",
+          "line": 144,
+          "func": "__init__"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\prospective.py",
+          "line": 160,
+          "func": "_load_from_db"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\persistence.py",
+          "line": 232,
+          "func": "init_db"
+        },
+        {
+          "file": "C:\\Python314\\Lib\\contextlib.py",
+          "line": 141,
+          "func": "__enter__"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\persistence.py",
+          "line": 211,
+          "func": "_get_cursor"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\persistence.py",
+          "line": 196,
+          "func": "_get_connection"
+        }
+      ]
+    },
+    {
+      "db": "microprobe.db",
+      "test": "test_discovery.test_hot_set_never_changes_subscriptions:183",
+      "stack": [
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\tests\\test_discovery.py",
+          "line": 183,
+          "func": "test_hot_set_never_changes_subscriptions"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\probe.py",
+          "line": 352,
+          "func": "__init__"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\prospective.py",
+          "line": 144,
+          "func": "__init__"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\prospective.py",
+          "line": 160,
+          "func": "_load_from_db"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\persistence.py",
+          "line": 232,
+          "func": "init_db"
+        },
+        {
+          "file": "C:\\Python314\\Lib\\contextlib.py",
+          "line": 141,
+          "func": "__enter__"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\persistence.py",
+          "line": 211,
+          "func": "_get_cursor"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\persistence.py",
+          "line": 196,
+          "func": "_get_connection"
+        }
+      ]
+    },
+    {
+      "db": "microprobe.db",
+      "test": "test_flow.test_log_summary_persists_flow_state:505",
+      "stack": [
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\tests\\test_flow.py",
+          "line": 505,
+          "func": "test_log_summary_persists_flow_state"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\probe.py",
+          "line": 352,
+          "func": "__init__"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\prospective.py",
+          "line": 144,
+          "func": "__init__"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\prospective.py",
+          "line": 160,
+          "func": "_load_from_db"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\persistence.py",
+          "line": 232,
+          "func": "init_db"
+        },
+        {
+          "file": "C:\\Python314\\Lib\\contextlib.py",
+          "line": 141,
+          "func": "__enter__"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\persistence.py",
+          "line": 211,
+          "func": "_get_cursor"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\persistence.py",
+          "line": 196,
+          "func": "_get_connection"
+        }
+      ]
+    },
+    {
+      "db": "microprobe.db",
+      "test": "test_flow.test_missing_maker_flag_reaches_detectors_but_not_flow:469",
+      "stack": [
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\tests\\test_flow.py",
+          "line": 426,
+          "func": "_probe"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\probe.py",
+          "line": 352,
+          "func": "__init__"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\prospective.py",
+          "line": 144,
+          "func": "__init__"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\prospective.py",
+          "line": 160,
+          "func": "_load_from_db"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\persistence.py",
+          "line": 232,
+          "func": "init_db"
+        },
+        {
+          "file": "C:\\Python314\\Lib\\contextlib.py",
+          "line": 141,
+          "func": "__enter__"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\persistence.py",
+          "line": 211,
+          "func": "_get_cursor"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\persistence.py",
+          "line": 196,
+          "func": "_get_connection"
+        }
+      ]
+    },
+    {
+      "db": "microprobe.db",
+      "test": "test_flow.test_sampling_does_not_alter_engine_flow_totals:450",
+      "stack": [
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\tests\\test_flow.py",
+          "line": 426,
+          "func": "_probe"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\probe.py",
+          "line": 352,
+          "func": "__init__"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\prospective.py",
+          "line": 144,
+          "func": "__init__"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\prospective.py",
+          "line": 160,
+          "func": "_load_from_db"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\persistence.py",
+          "line": 232,
+          "func": "init_db"
+        },
+        {
+          "file": "C:\\Python314\\Lib\\contextlib.py",
+          "line": 141,
+          "func": "__enter__"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\persistence.py",
+          "line": 211,
+          "func": "_get_cursor"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\persistence.py",
+          "line": 196,
+          "func": "_get_connection"
+        }
+      ]
+    },
+    {
+      "db": "microprobe.db",
+      "test": "test_flow.test_skew_rejected_trades_never_reach_engine:442",
+      "stack": [
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\tests\\test_flow.py",
+          "line": 426,
+          "func": "_probe"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\probe.py",
+          "line": 352,
+          "func": "__init__"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\prospective.py",
+          "line": 144,
+          "func": "__init__"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\prospective.py",
+          "line": 160,
+          "func": "_load_from_db"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\persistence.py",
+          "line": 232,
+          "func": "init_db"
+        },
+        {
+          "file": "C:\\Python314\\Lib\\contextlib.py",
+          "line": 141,
+          "func": "__enter__"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\persistence.py",
+          "line": 211,
+          "func": "_get_cursor"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\persistence.py",
+          "line": 196,
+          "func": "_get_connection"
+        }
+      ]
+    },
+    {
+      "db": "microprobe.db",
+      "test": "test_flow.test_summary_carries_flow_counters:493",
+      "stack": [
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\tests\\test_flow.py",
+          "line": 426,
+          "func": "_probe"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\probe.py",
+          "line": 352,
+          "func": "__init__"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\prospective.py",
+          "line": 144,
+          "func": "__init__"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\prospective.py",
+          "line": 160,
+          "func": "_load_from_db"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\persistence.py",
+          "line": 232,
+          "func": "init_db"
+        },
+        {
+          "file": "C:\\Python314\\Lib\\contextlib.py",
+          "line": 141,
+          "func": "__enter__"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\persistence.py",
+          "line": 211,
+          "func": "_get_cursor"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\persistence.py",
+          "line": 196,
+          "func": "_get_connection"
+        }
+      ]
+    },
+    {
+      "db": "microprobe.db",
+      "test": "test_flow.test_unsubscribed_hot_symbol_gets_no_live_flow:481",
+      "stack": [
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\tests\\test_flow.py",
+          "line": 426,
+          "func": "_probe"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\probe.py",
+          "line": 352,
+          "func": "__init__"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\prospective.py",
+          "line": 144,
+          "func": "__init__"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\prospective.py",
+          "line": 160,
+          "func": "_load_from_db"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\persistence.py",
+          "line": 232,
+          "func": "init_db"
+        },
+        {
+          "file": "C:\\Python314\\Lib\\contextlib.py",
+          "line": 141,
+          "func": "__enter__"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\persistence.py",
+          "line": 211,
+          "func": "_get_cursor"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\persistence.py",
+          "line": 196,
+          "func": "_get_connection"
+        }
+      ]
+    },
+    {
+      "db": "microprobe.db",
+      "test": "test_host_telemetry.test_exact_bytes_per_stream:98",
+      "stack": [
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\tests\\test_host_telemetry.py",
+          "line": 43,
+          "func": "make_isolated_probe"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\probe.py",
+          "line": 352,
+          "func": "__init__"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\prospective.py",
+          "line": 144,
+          "func": "__init__"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\prospective.py",
+          "line": 160,
+          "func": "_load_from_db"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\persistence.py",
+          "line": 232,
+          "func": "init_db"
+        },
+        {
+          "file": "C:\\Python314\\Lib\\contextlib.py",
+          "line": 141,
+          "func": "__enter__"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\persistence.py",
+          "line": 211,
+          "func": "_get_cursor"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\persistence.py",
+          "line": 196,
+          "func": "_get_connection"
+        }
+      ]
+    },
+    {
+      "db": "microprobe.db",
+      "test": "test_host_telemetry.test_host_stash_shape:120",
+      "stack": [
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\tests\\test_host_telemetry.py",
+          "line": 120,
+          "func": "test_host_stash_shape"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\probe.py",
+          "line": 352,
+          "func": "__init__"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\prospective.py",
+          "line": 144,
+          "func": "__init__"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\prospective.py",
+          "line": 160,
+          "func": "_load_from_db"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\persistence.py",
+          "line": 232,
+          "func": "init_db"
+        },
+        {
+          "file": "C:\\Python314\\Lib\\contextlib.py",
+          "line": 141,
+          "func": "__enter__"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\persistence.py",
+          "line": 211,
+          "func": "_get_cursor"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\persistence.py",
+          "line": 196,
+          "func": "_get_connection"
+        }
+      ]
+    },
+    {
+      "db": "microprobe.db",
+      "test": "test_host_telemetry.test_rejected_messages_still_count_bytes:109",
+      "stack": [
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\tests\\test_host_telemetry.py",
+          "line": 43,
+          "func": "make_isolated_probe"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\probe.py",
+          "line": 352,
+          "func": "__init__"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\prospective.py",
+          "line": 144,
+          "func": "__init__"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\prospective.py",
+          "line": 160,
+          "func": "_load_from_db"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\persistence.py",
+          "line": 232,
+          "func": "init_db"
+        },
+        {
+          "file": "C:\\Python314\\Lib\\contextlib.py",
+          "line": 141,
+          "func": "__enter__"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\persistence.py",
+          "line": 211,
+          "func": "_get_cursor"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\persistence.py",
+          "line": 196,
+          "func": "_get_connection"
+        }
+      ]
+    },
+    {
+      "db": "historical.db",
+      "test": "UNKNOWN",
+      "stack": [
+        {
+          "file": "C:\\Python314\\Lib\\http\\server.py",
+          "line": 484,
+          "func": "handle_one_request"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\dashboard.py",
+          "line": 1495,
+          "func": "do_GET"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\dashboard_views.py",
+          "line": 860,
+          "func": "render_symbol"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\dashboard.py",
+          "line": 303,
+          "func": "history_coverage"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\history_store.py",
+          "line": 362,
+          "func": "coverage_summary"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\history_store.py",
+          "line": 241,
+          "func": "_ensure"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\history_store.py",
+          "line": 68,
+          "func": "init_db"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\history_store.py",
+          "line": 52,
+          "func": "_connect"
+        }
+      ]
+    },
+    {
+      "db": "historical.db",
+      "test": "UNKNOWN",
+      "stack": [
+        {
+          "file": "C:\\Python314\\Lib\\socketserver.py",
+          "line": 362,
+          "func": "finish_request"
+        },
+        {
+          "file": "C:\\Python314\\Lib\\socketserver.py",
+          "line": 766,
+          "func": "__init__"
+        },
+        {
+          "file": "C:\\Python314\\Lib\\http\\server.py",
+          "line": 496,
+          "func": "handle"
+        },
+        {
+          "file": "C:\\Python314\\Lib\\http\\server.py",
+          "line": 484,
+          "func": "handle_one_request"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\dashboard.py",
+          "line": 1495,
+          "func": "do_GET"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\dashboard_views.py",
+          "line": 860,
+          "func": "render_symbol"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\dashboard.py",
+          "line": 303,
+          "func": "history_coverage"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\history_store.py",
+          "line": 363,
+          "func": "coverage_summary"
+        }
+      ]
+    },
+    {
+      "db": "historical.db",
+      "test": "UNKNOWN",
+      "stack": [
+        {
+          "file": "C:\\Python314\\Lib\\http\\server.py",
+          "line": 484,
+          "func": "handle_one_request"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\dashboard.py",
+          "line": 1495,
+          "func": "do_GET"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\dashboard_views.py",
+          "line": 886,
+          "func": "render_symbol"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\dashboard.py",
+          "line": 382,
+          "func": "event_studies"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\history_store.py",
+          "line": 613,
+          "func": "event_summary"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\history_store.py",
+          "line": 241,
+          "func": "_ensure"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\history_store.py",
+          "line": 68,
+          "func": "init_db"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\history_store.py",
+          "line": 52,
+          "func": "_connect"
+        }
+      ]
+    },
+    {
+      "db": "historical.db",
+      "test": "UNKNOWN",
+      "stack": [
+        {
+          "file": "C:\\Python314\\Lib\\socketserver.py",
+          "line": 362,
+          "func": "finish_request"
+        },
+        {
+          "file": "C:\\Python314\\Lib\\socketserver.py",
+          "line": 766,
+          "func": "__init__"
+        },
+        {
+          "file": "C:\\Python314\\Lib\\http\\server.py",
+          "line": 496,
+          "func": "handle"
+        },
+        {
+          "file": "C:\\Python314\\Lib\\http\\server.py",
+          "line": 484,
+          "func": "handle_one_request"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\dashboard.py",
+          "line": 1495,
+          "func": "do_GET"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\dashboard_views.py",
+          "line": 886,
+          "func": "render_symbol"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\dashboard.py",
+          "line": 382,
+          "func": "event_studies"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\history_store.py",
+          "line": 614,
+          "func": "event_summary"
+        }
+      ]
+    },
+    {
+      "db": "historical.db",
+      "test": "UNKNOWN",
+      "stack": [
+        {
+          "file": "C:\\Python314\\Lib\\socketserver.py",
+          "line": 362,
+          "func": "finish_request"
+        },
+        {
+          "file": "C:\\Python314\\Lib\\socketserver.py",
+          "line": 766,
+          "func": "__init__"
+        },
+        {
+          "file": "C:\\Python314\\Lib\\http\\server.py",
+          "line": 496,
+          "func": "handle"
+        },
+        {
+          "file": "C:\\Python314\\Lib\\http\\server.py",
+          "line": 484,
+          "func": "handle_one_request"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\dashboard.py",
+          "line": 1495,
+          "func": "do_GET"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\dashboard_views.py",
+          "line": 886,
+          "func": "render_symbol"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\dashboard.py",
+          "line": 382,
+          "func": "event_studies"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\history_store.py",
+          "line": 614,
+          "func": "event_summary"
+        }
+      ]
+    },
+    {
+      "db": "historical.db",
+      "test": "UNKNOWN",
+      "stack": [
+        {
+          "file": "C:\\Python314\\Lib\\socketserver.py",
+          "line": 362,
+          "func": "finish_request"
+        },
+        {
+          "file": "C:\\Python314\\Lib\\socketserver.py",
+          "line": 766,
+          "func": "__init__"
+        },
+        {
+          "file": "C:\\Python314\\Lib\\http\\server.py",
+          "line": 496,
+          "func": "handle"
+        },
+        {
+          "file": "C:\\Python314\\Lib\\http\\server.py",
+          "line": 484,
+          "func": "handle_one_request"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\dashboard.py",
+          "line": 1495,
+          "func": "do_GET"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\dashboard_views.py",
+          "line": 886,
+          "func": "render_symbol"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\dashboard.py",
+          "line": 382,
+          "func": "event_studies"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\history_store.py",
+          "line": 614,
+          "func": "event_summary"
+        }
+      ]
+    },
+    {
+      "db": "historical.db",
+      "test": "UNKNOWN",
+      "stack": [
+        {
+          "file": "C:\\Python314\\Lib\\socketserver.py",
+          "line": 362,
+          "func": "finish_request"
+        },
+        {
+          "file": "C:\\Python314\\Lib\\socketserver.py",
+          "line": 766,
+          "func": "__init__"
+        },
+        {
+          "file": "C:\\Python314\\Lib\\http\\server.py",
+          "line": 496,
+          "func": "handle"
+        },
+        {
+          "file": "C:\\Python314\\Lib\\http\\server.py",
+          "line": 484,
+          "func": "handle_one_request"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\dashboard.py",
+          "line": 1495,
+          "func": "do_GET"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\dashboard_views.py",
+          "line": 886,
+          "func": "render_symbol"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\dashboard.py",
+          "line": 382,
+          "func": "event_studies"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\history_store.py",
+          "line": 614,
+          "func": "event_summary"
+        }
+      ]
+    },
+    {
+      "db": "historical.db",
+      "test": "UNKNOWN",
+      "stack": [
+        {
+          "file": "C:\\Python314\\Lib\\socketserver.py",
+          "line": 362,
+          "func": "finish_request"
+        },
+        {
+          "file": "C:\\Python314\\Lib\\socketserver.py",
+          "line": 766,
+          "func": "__init__"
+        },
+        {
+          "file": "C:\\Python314\\Lib\\http\\server.py",
+          "line": 496,
+          "func": "handle"
+        },
+        {
+          "file": "C:\\Python314\\Lib\\http\\server.py",
+          "line": 484,
+          "func": "handle_one_request"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\dashboard.py",
+          "line": 1495,
+          "func": "do_GET"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\dashboard_views.py",
+          "line": 886,
+          "func": "render_symbol"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\dashboard.py",
+          "line": 382,
+          "func": "event_studies"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\history_store.py",
+          "line": 614,
+          "func": "event_summary"
+        }
+      ]
+    },
+    {
+      "db": "historical.db",
+      "test": "UNKNOWN",
+      "stack": [
+        {
+          "file": "C:\\Python314\\Lib\\socketserver.py",
+          "line": 362,
+          "func": "finish_request"
+        },
+        {
+          "file": "C:\\Python314\\Lib\\socketserver.py",
+          "line": 766,
+          "func": "__init__"
+        },
+        {
+          "file": "C:\\Python314\\Lib\\http\\server.py",
+          "line": 496,
+          "func": "handle"
+        },
+        {
+          "file": "C:\\Python314\\Lib\\http\\server.py",
+          "line": 484,
+          "func": "handle_one_request"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\dashboard.py",
+          "line": 1495,
+          "func": "do_GET"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\dashboard_views.py",
+          "line": 886,
+          "func": "render_symbol"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\dashboard.py",
+          "line": 382,
+          "func": "event_studies"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\history_store.py",
+          "line": 614,
+          "func": "event_summary"
+        }
+      ]
+    },
+    {
+      "db": "microprobe.db",
+      "test": "test_market_structure.test_hot_symbol_gets_no_structure:354",
+      "stack": [
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\tests\\test_market_structure.py",
+          "line": 301,
+          "func": "_probe"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\probe.py",
+          "line": 352,
+          "func": "__init__"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\prospective.py",
+          "line": 144,
+          "func": "__init__"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\prospective.py",
+          "line": 160,
+          "func": "_load_from_db"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\persistence.py",
+          "line": 232,
+          "func": "init_db"
+        },
+        {
+          "file": "C:\\Python314\\Lib\\contextlib.py",
+          "line": 141,
+          "func": "__enter__"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\persistence.py",
+          "line": 211,
+          "func": "_get_cursor"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\persistence.py",
+          "line": 196,
+          "func": "_get_connection"
+        }
+      ]
+    },
+    {
+      "db": "historical.db",
+      "test": "test_market_structure.test_hot_symbol_gets_no_structure:360",
+      "stack": [
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\tests\\test_market_structure.py",
+          "line": 360,
+          "func": "test_hot_symbol_gets_no_structure"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\probe.py",
+          "line": 1737,
+          "func": "log_summary"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\probe.py",
+          "line": 1681,
+          "func": "build_summary"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\research_recorder.py",
+          "line": 413,
+          "func": "status"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\history_store.py",
+          "line": 699,
+          "func": "research_counts"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\history_store.py",
+          "line": 241,
+          "func": "_ensure"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\history_store.py",
+          "line": 68,
+          "func": "init_db"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\history_store.py",
+          "line": 52,
+          "func": "_connect"
+        }
+      ]
+    },
+    {
+      "db": "historical.db",
+      "test": "test_market_structure.test_hot_symbol_gets_no_structure:360",
+      "stack": [
+        {
+          "file": "C:\\Python314\\Lib\\unittest\\case.py",
+          "line": 725,
+          "func": "__call__"
+        },
+        {
+          "file": "C:\\Python314\\Lib\\unittest\\case.py",
+          "line": 669,
+          "func": "run"
+        },
+        {
+          "file": "C:\\Python314\\Lib\\unittest\\case.py",
+          "line": 615,
+          "func": "_callTestMethod"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\tests\\test_market_structure.py",
+          "line": 360,
+          "func": "test_hot_symbol_gets_no_structure"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\probe.py",
+          "line": 1737,
+          "func": "log_summary"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\probe.py",
+          "line": 1681,
+          "func": "build_summary"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\research_recorder.py",
+          "line": 413,
+          "func": "status"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\history_store.py",
+          "line": 700,
+          "func": "research_counts"
+        }
+      ]
+    },
+    {
+      "db": "microprobe.db",
+      "test": "test_market_structure.test_log_summary_persists_structure:328",
+      "stack": [
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\tests\\test_market_structure.py",
+          "line": 328,
+          "func": "test_log_summary_persists_structure"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\probe.py",
+          "line": 352,
+          "func": "__init__"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\prospective.py",
+          "line": 144,
+          "func": "__init__"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\prospective.py",
+          "line": 160,
+          "func": "_load_from_db"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\persistence.py",
+          "line": 232,
+          "func": "init_db"
+        },
+        {
+          "file": "C:\\Python314\\Lib\\contextlib.py",
+          "line": 141,
+          "func": "__enter__"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\persistence.py",
+          "line": 211,
+          "func": "_get_cursor"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\persistence.py",
+          "line": 196,
+          "func": "_get_connection"
+        }
+      ]
+    },
+    {
+      "db": "historical.db",
+      "test": "test_market_structure.test_log_summary_persists_structure:339",
+      "stack": [
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\tests\\test_market_structure.py",
+          "line": 339,
+          "func": "test_log_summary_persists_structure"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\probe.py",
+          "line": 1737,
+          "func": "log_summary"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\probe.py",
+          "line": 1681,
+          "func": "build_summary"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\research_recorder.py",
+          "line": 413,
+          "func": "status"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\history_store.py",
+          "line": 699,
+          "func": "research_counts"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\history_store.py",
+          "line": 241,
+          "func": "_ensure"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\history_store.py",
+          "line": 68,
+          "func": "init_db"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\history_store.py",
+          "line": 52,
+          "func": "_connect"
+        }
+      ]
+    },
+    {
+      "db": "historical.db",
+      "test": "test_market_structure.test_log_summary_persists_structure:339",
+      "stack": [
+        {
+          "file": "C:\\Python314\\Lib\\unittest\\case.py",
+          "line": 725,
+          "func": "__call__"
+        },
+        {
+          "file": "C:\\Python314\\Lib\\unittest\\case.py",
+          "line": 669,
+          "func": "run"
+        },
+        {
+          "file": "C:\\Python314\\Lib\\unittest\\case.py",
+          "line": 615,
+          "func": "_callTestMethod"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\tests\\test_market_structure.py",
+          "line": 339,
+          "func": "test_log_summary_persists_structure"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\probe.py",
+          "line": 1737,
+          "func": "log_summary"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\probe.py",
+          "line": 1681,
+          "func": "build_summary"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\research_recorder.py",
+          "line": 413,
+          "func": "status"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\history_store.py",
+          "line": 700,
+          "func": "research_counts"
+        }
+      ]
+    },
+    {
+      "db": "microprobe.db",
+      "test": "test_market_structure.test_peer_regressions_intact:374",
+      "stack": [
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\tests\\test_market_structure.py",
+          "line": 301,
+          "func": "_probe"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\probe.py",
+          "line": 352,
+          "func": "__init__"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\prospective.py",
+          "line": 144,
+          "func": "__init__"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\prospective.py",
+          "line": 160,
+          "func": "_load_from_db"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\persistence.py",
+          "line": 232,
+          "func": "init_db"
+        },
+        {
+          "file": "C:\\Python314\\Lib\\contextlib.py",
+          "line": 141,
+          "func": "__enter__"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\persistence.py",
+          "line": 211,
+          "func": "_get_cursor"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\persistence.py",
+          "line": 196,
+          "func": "_get_connection"
+        }
+      ]
+    },
+    {
+      "db": "microprobe.db",
+      "test": "test_market_structure.test_summary_carries_structure_block:366",
+      "stack": [
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\tests\\test_market_structure.py",
+          "line": 301,
+          "func": "_probe"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\probe.py",
+          "line": 352,
+          "func": "__init__"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\prospective.py",
+          "line": 144,
+          "func": "__init__"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\prospective.py",
+          "line": 160,
+          "func": "_load_from_db"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\persistence.py",
+          "line": 232,
+          "func": "init_db"
+        },
+        {
+          "file": "C:\\Python314\\Lib\\contextlib.py",
+          "line": 141,
+          "func": "__enter__"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\persistence.py",
+          "line": 211,
+          "func": "_get_cursor"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\persistence.py",
+          "line": 196,
+          "func": "_get_connection"
+        }
+      ]
+    },
+    {
+      "db": "historical.db",
+      "test": "test_market_structure.test_summary_carries_structure_block:367",
+      "stack": [
+        {
+          "file": "C:\\Python314\\Lib\\unittest\\case.py",
+          "line": 615,
+          "func": "_callTestMethod"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\tests\\test_market_structure.py",
+          "line": 367,
+          "func": "test_summary_carries_structure_block"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\probe.py",
+          "line": 1681,
+          "func": "build_summary"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\research_recorder.py",
+          "line": 413,
+          "func": "status"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\history_store.py",
+          "line": 699,
+          "func": "research_counts"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\history_store.py",
+          "line": 241,
+          "func": "_ensure"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\history_store.py",
+          "line": 68,
+          "func": "init_db"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\history_store.py",
+          "line": 52,
+          "func": "_connect"
+        }
+      ]
+    },
+    {
+      "db": "historical.db",
+      "test": "test_market_structure.test_summary_carries_structure_block:367",
+      "stack": [
+        {
+          "file": "C:\\Python314\\Lib\\unittest\\suite.py",
+          "line": 122,
+          "func": "run"
+        },
+        {
+          "file": "C:\\Python314\\Lib\\unittest\\case.py",
+          "line": 725,
+          "func": "__call__"
+        },
+        {
+          "file": "C:\\Python314\\Lib\\unittest\\case.py",
+          "line": 669,
+          "func": "run"
+        },
+        {
+          "file": "C:\\Python314\\Lib\\unittest\\case.py",
+          "line": 615,
+          "func": "_callTestMethod"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\tests\\test_market_structure.py",
+          "line": 367,
+          "func": "test_summary_carries_structure_block"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\probe.py",
+          "line": 1681,
+          "func": "build_summary"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\research_recorder.py",
+          "line": 413,
+          "func": "status"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\history_store.py",
+          "line": 700,
+          "func": "research_counts"
+        }
+      ]
+    },
+    {
+      "db": "microprobe.db",
+      "test": "test_opportunity.test_probe_exposes_opportunity_engine:791",
+      "stack": [
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\tests\\test_opportunity.py",
+          "line": 791,
+          "func": "test_probe_exposes_opportunity_engine"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\probe.py",
+          "line": 352,
+          "func": "__init__"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\prospective.py",
+          "line": 144,
+          "func": "__init__"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\prospective.py",
+          "line": 160,
+          "func": "_load_from_db"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\persistence.py",
+          "line": 232,
+          "func": "init_db"
+        },
+        {
+          "file": "C:\\Python314\\Lib\\contextlib.py",
+          "line": 141,
+          "func": "__enter__"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\persistence.py",
+          "line": 211,
+          "func": "_get_cursor"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\persistence.py",
+          "line": 196,
+          "func": "_get_connection"
+        }
+      ]
+    },
+    {
+      "db": "microprobe.db",
+      "test": "test_opportunity.test_summary_carries_opportunity_stats:798",
+      "stack": [
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\tests\\test_opportunity.py",
+          "line": 798,
+          "func": "test_summary_carries_opportunity_stats"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\probe.py",
+          "line": 352,
+          "func": "__init__"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\prospective.py",
+          "line": 144,
+          "func": "__init__"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\prospective.py",
+          "line": 160,
+          "func": "_load_from_db"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\persistence.py",
+          "line": 232,
+          "func": "init_db"
+        },
+        {
+          "file": "C:\\Python314\\Lib\\contextlib.py",
+          "line": 141,
+          "func": "__enter__"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\persistence.py",
+          "line": 211,
+          "func": "_get_cursor"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\persistence.py",
+          "line": 196,
+          "func": "_get_connection"
+        }
+      ]
+    },
+    {
+      "db": "historical.db",
+      "test": "test_opportunity.test_summary_carries_opportunity_stats:799",
+      "stack": [
+        {
+          "file": "C:\\Python314\\Lib\\unittest\\case.py",
+          "line": 615,
+          "func": "_callTestMethod"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\tests\\test_opportunity.py",
+          "line": 799,
+          "func": "test_summary_carries_opportunity_stats"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\probe.py",
+          "line": 1681,
+          "func": "build_summary"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\research_recorder.py",
+          "line": 413,
+          "func": "status"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\history_store.py",
+          "line": 699,
+          "func": "research_counts"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\history_store.py",
+          "line": 241,
+          "func": "_ensure"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\history_store.py",
+          "line": 68,
+          "func": "init_db"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\history_store.py",
+          "line": 52,
+          "func": "_connect"
+        }
+      ]
+    },
+    {
+      "db": "historical.db",
+      "test": "test_opportunity.test_summary_carries_opportunity_stats:799",
+      "stack": [
+        {
+          "file": "C:\\Python314\\Lib\\unittest\\suite.py",
+          "line": 122,
+          "func": "run"
+        },
+        {
+          "file": "C:\\Python314\\Lib\\unittest\\case.py",
+          "line": 725,
+          "func": "__call__"
+        },
+        {
+          "file": "C:\\Python314\\Lib\\unittest\\case.py",
+          "line": 669,
+          "func": "run"
+        },
+        {
+          "file": "C:\\Python314\\Lib\\unittest\\case.py",
+          "line": 615,
+          "func": "_callTestMethod"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\tests\\test_opportunity.py",
+          "line": 799,
+          "func": "test_summary_carries_opportunity_stats"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\probe.py",
+          "line": 1681,
+          "func": "build_summary"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\research_recorder.py",
+          "line": 413,
+          "func": "status"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\history_store.py",
+          "line": 700,
+          "func": "research_counts"
+        }
+      ]
+    },
+    {
+      "db": "microprobe.db",
+      "test": "test_p14b_3_transport_freshness.test_accepted_message_updates_freshness:208",
+      "stack": [
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\tests\\test_p14b_3_transport_freshness.py",
+          "line": 62,
+          "func": "make_isolated_probe"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\probe.py",
+          "line": 352,
+          "func": "__init__"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\prospective.py",
+          "line": 144,
+          "func": "__init__"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\prospective.py",
+          "line": 160,
+          "func": "_load_from_db"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\persistence.py",
+          "line": 232,
+          "func": "init_db"
+        },
+        {
+          "file": "C:\\Python314\\Lib\\contextlib.py",
+          "line": 141,
+          "func": "__enter__"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\persistence.py",
+          "line": 211,
+          "func": "_get_cursor"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\persistence.py",
+          "line": 196,
+          "func": "_get_connection"
+        }
+      ]
+    },
+    {
+      "db": "microprobe.db",
+      "test": "test_p14b_3_transport_freshness.test_burst_of_rejects_leaves_freshness_frozen:222",
+      "stack": [
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\tests\\test_p14b_3_transport_freshness.py",
+          "line": 62,
+          "func": "make_isolated_probe"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\probe.py",
+          "line": 352,
+          "func": "__init__"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\prospective.py",
+          "line": 144,
+          "func": "__init__"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\prospective.py",
+          "line": 160,
+          "func": "_load_from_db"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\persistence.py",
+          "line": 232,
+          "func": "init_db"
+        },
+        {
+          "file": "C:\\Python314\\Lib\\contextlib.py",
+          "line": 141,
+          "func": "__enter__"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\persistence.py",
+          "line": 211,
+          "func": "_get_cursor"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\persistence.py",
+          "line": 196,
+          "func": "_get_connection"
+        }
+      ]
+    },
+    {
+      "db": "microprobe.db",
+      "test": "test_p14b_3_transport_freshness.test_rejected_message_does_not_update_freshness:214",
+      "stack": [
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\tests\\test_p14b_3_transport_freshness.py",
+          "line": 62,
+          "func": "make_isolated_probe"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\probe.py",
+          "line": 352,
+          "func": "__init__"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\prospective.py",
+          "line": 144,
+          "func": "__init__"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\prospective.py",
+          "line": 160,
+          "func": "_load_from_db"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\persistence.py",
+          "line": 232,
+          "func": "init_db"
+        },
+        {
+          "file": "C:\\Python314\\Lib\\contextlib.py",
+          "line": 141,
+          "func": "__enter__"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\persistence.py",
+          "line": 211,
+          "func": "_get_cursor"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\persistence.py",
+          "line": 196,
+          "func": "_get_connection"
+        }
+      ]
+    },
+    {
+      "db": "microprobe.db",
+      "test": "test_p14b_3_transport_freshness.test_connection_age_grace:281",
+      "stack": [
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\tests\\test_p14b_3_transport_freshness.py",
+          "line": 254,
+          "func": "_probe"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\probe.py",
+          "line": 352,
+          "func": "__init__"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\prospective.py",
+          "line": 144,
+          "func": "__init__"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\prospective.py",
+          "line": 160,
+          "func": "_load_from_db"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\persistence.py",
+          "line": 232,
+          "func": "init_db"
+        },
+        {
+          "file": "C:\\Python314\\Lib\\contextlib.py",
+          "line": 141,
+          "func": "__enter__"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\persistence.py",
+          "line": 211,
+          "func": "_get_cursor"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\persistence.py",
+          "line": 196,
+          "func": "_get_connection"
+        }
+      ]
+    },
+    {
+      "db": "microprobe.db",
+      "test": "test_p14b_3_transport_freshness.test_consume_request_is_one_shot:321",
+      "stack": [
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\tests\\test_p14b_3_transport_freshness.py",
+          "line": 321,
+          "func": "test_consume_request_is_one_shot"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\probe.py",
+          "line": 352,
+          "func": "__init__"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\prospective.py",
+          "line": 144,
+          "func": "__init__"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\prospective.py",
+          "line": 160,
+          "func": "_load_from_db"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\persistence.py",
+          "line": 232,
+          "func": "init_db"
+        },
+        {
+          "file": "C:\\Python314\\Lib\\contextlib.py",
+          "line": 141,
+          "func": "__enter__"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\persistence.py",
+          "line": 211,
+          "func": "_get_cursor"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\persistence.py",
+          "line": 196,
+          "func": "_get_connection"
+        }
+      ]
+    },
+    {
+      "db": "microprobe.db",
+      "test": "test_p14b_3_transport_freshness.test_cooldown_suppresses_refire:290",
+      "stack": [
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\tests\\test_p14b_3_transport_freshness.py",
+          "line": 290,
+          "func": "test_cooldown_suppresses_refire"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\probe.py",
+          "line": 352,
+          "func": "__init__"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\prospective.py",
+          "line": 144,
+          "func": "__init__"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\prospective.py",
+          "line": 160,
+          "func": "_load_from_db"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\persistence.py",
+          "line": 232,
+          "func": "init_db"
+        },
+        {
+          "file": "C:\\Python314\\Lib\\contextlib.py",
+          "line": 141,
+          "func": "__enter__"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\persistence.py",
+          "line": 211,
+          "func": "_get_cursor"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\persistence.py",
+          "line": 196,
+          "func": "_get_connection"
+        }
+      ]
+    },
+    {
+      "db": "microprobe.db",
+      "test": "test_p14b_3_transport_freshness.test_fresh_connection_does_not_fire:273",
+      "stack": [
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\tests\\test_p14b_3_transport_freshness.py",
+          "line": 254,
+          "func": "_probe"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\probe.py",
+          "line": 352,
+          "func": "__init__"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\prospective.py",
+          "line": 144,
+          "func": "__init__"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\prospective.py",
+          "line": 160,
+          "func": "_load_from_db"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\persistence.py",
+          "line": 232,
+          "func": "init_db"
+        },
+        {
+          "file": "C:\\Python314\\Lib\\contextlib.py",
+          "line": 141,
+          "func": "__enter__"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\persistence.py",
+          "line": 211,
+          "func": "_get_cursor"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\persistence.py",
+          "line": 196,
+          "func": "_get_connection"
+        }
+      ]
+    },
+    {
+      "db": "microprobe.db",
+      "test": "test_p14b_3_transport_freshness.test_hot_market_uses_longer_threshold:310",
+      "stack": [
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\tests\\test_p14b_3_transport_freshness.py",
+          "line": 254,
+          "func": "_probe"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\probe.py",
+          "line": 352,
+          "func": "__init__"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\prospective.py",
+          "line": 144,
+          "func": "__init__"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\prospective.py",
+          "line": 160,
+          "func": "_load_from_db"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\persistence.py",
+          "line": 232,
+          "func": "init_db"
+        },
+        {
+          "file": "C:\\Python314\\Lib\\contextlib.py",
+          "line": 141,
+          "func": "__enter__"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\persistence.py",
+          "line": 211,
+          "func": "_get_cursor"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\persistence.py",
+          "line": 196,
+          "func": "_get_connection"
+        }
+      ]
+    },
+    {
+      "db": "microprobe.db",
+      "test": "test_p14b_3_transport_freshness.test_open_but_stale_connection_requests_reconnect:264",
+      "stack": [
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\tests\\test_p14b_3_transport_freshness.py",
+          "line": 254,
+          "func": "_probe"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\probe.py",
+          "line": 352,
+          "func": "__init__"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\prospective.py",
+          "line": 144,
+          "func": "__init__"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\prospective.py",
+          "line": 160,
+          "func": "_load_from_db"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\persistence.py",
+          "line": 232,
+          "func": "init_db"
+        },
+        {
+          "file": "C:\\Python314\\Lib\\contextlib.py",
+          "line": 141,
+          "func": "__enter__"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\persistence.py",
+          "line": 211,
+          "func": "_get_cursor"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\persistence.py",
+          "line": 196,
+          "func": "_get_connection"
+        }
+      ]
+    },
+    {
+      "db": "microprobe.db",
+      "test": "test_persistence.setUp:359",
+      "stack": [
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\tests\\test_persistence.py",
+          "line": 359,
+          "func": "setUp"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\probe.py",
+          "line": 352,
+          "func": "__init__"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\prospective.py",
+          "line": 144,
+          "func": "__init__"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\prospective.py",
+          "line": 160,
+          "func": "_load_from_db"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\persistence.py",
+          "line": 232,
+          "func": "init_db"
+        },
+        {
+          "file": "C:\\Python314\\Lib\\contextlib.py",
+          "line": 141,
+          "func": "__enter__"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\persistence.py",
+          "line": 211,
+          "func": "_get_cursor"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\persistence.py",
+          "line": 196,
+          "func": "_get_connection"
+        }
+      ]
+    },
+    {
+      "db": "microprobe.db",
+      "test": "test_persistence.setUp:359",
+      "stack": [
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\tests\\test_persistence.py",
+          "line": 359,
+          "func": "setUp"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\probe.py",
+          "line": 352,
+          "func": "__init__"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\prospective.py",
+          "line": 144,
+          "func": "__init__"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\prospective.py",
+          "line": 160,
+          "func": "_load_from_db"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\persistence.py",
+          "line": 232,
+          "func": "init_db"
+        },
+        {
+          "file": "C:\\Python314\\Lib\\contextlib.py",
+          "line": 141,
+          "func": "__enter__"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\persistence.py",
+          "line": 211,
+          "func": "_get_cursor"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\persistence.py",
+          "line": 196,
+          "func": "_get_connection"
+        }
+      ]
+    },
+    {
+      "db": "microprobe.db",
+      "test": "test_persistence.setUp:359",
+      "stack": [
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\tests\\test_persistence.py",
+          "line": 359,
+          "func": "setUp"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\probe.py",
+          "line": 352,
+          "func": "__init__"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\prospective.py",
+          "line": 144,
+          "func": "__init__"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\prospective.py",
+          "line": 160,
+          "func": "_load_from_db"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\persistence.py",
+          "line": 232,
+          "func": "init_db"
+        },
+        {
+          "file": "C:\\Python314\\Lib\\contextlib.py",
+          "line": 141,
+          "func": "__enter__"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\persistence.py",
+          "line": 211,
+          "func": "_get_cursor"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\persistence.py",
+          "line": 196,
+          "func": "_get_connection"
+        }
+      ]
+    },
+    {
+      "db": "historical.db",
+      "test": "test_persistence.test_summary_persisted_for_dashboard:410",
+      "stack": [
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\tests\\test_persistence.py",
+          "line": 410,
+          "func": "test_summary_persisted_for_dashboard"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\probe.py",
+          "line": 1737,
+          "func": "log_summary"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\probe.py",
+          "line": 1681,
+          "func": "build_summary"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\research_recorder.py",
+          "line": 413,
+          "func": "status"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\history_store.py",
+          "line": 699,
+          "func": "research_counts"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\history_store.py",
+          "line": 241,
+          "func": "_ensure"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\history_store.py",
+          "line": 68,
+          "func": "init_db"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\history_store.py",
+          "line": 52,
+          "func": "_connect"
+        }
+      ]
+    },
+    {
+      "db": "historical.db",
+      "test": "test_persistence.test_summary_persisted_for_dashboard:410",
+      "stack": [
+        {
+          "file": "C:\\Python314\\Lib\\unittest\\case.py",
+          "line": 725,
+          "func": "__call__"
+        },
+        {
+          "file": "C:\\Python314\\Lib\\unittest\\case.py",
+          "line": 669,
+          "func": "run"
+        },
+        {
+          "file": "C:\\Python314\\Lib\\unittest\\case.py",
+          "line": 615,
+          "func": "_callTestMethod"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\tests\\test_persistence.py",
+          "line": 410,
+          "func": "test_summary_persisted_for_dashboard"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\probe.py",
+          "line": 1737,
+          "func": "log_summary"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\probe.py",
+          "line": 1681,
+          "func": "build_summary"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\research_recorder.py",
+          "line": 413,
+          "func": "status"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\history_store.py",
+          "line": 700,
+          "func": "research_counts"
+        }
+      ]
+    },
+    {
+      "db": "microprobe.db",
+      "test": "test_persistence.setUp:359",
+      "stack": [
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\tests\\test_persistence.py",
+          "line": 359,
+          "func": "setUp"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\probe.py",
+          "line": 352,
+          "func": "__init__"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\prospective.py",
+          "line": 144,
+          "func": "__init__"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\prospective.py",
+          "line": 160,
+          "func": "_load_from_db"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\persistence.py",
+          "line": 232,
+          "func": "init_db"
+        },
+        {
+          "file": "C:\\Python314\\Lib\\contextlib.py",
+          "line": 141,
+          "func": "__enter__"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\persistence.py",
+          "line": 211,
+          "func": "_get_cursor"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\persistence.py",
+          "line": 196,
+          "func": "_get_connection"
+        }
+      ]
+    },
+    {
+      "db": "microprobe.db",
+      "test": "test_persistence_isolation.test_host_telemetry_helper_never_uses_default:68",
+      "stack": [
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\tests\\test_host_telemetry.py",
+          "line": 43,
+          "func": "make_isolated_probe"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\probe.py",
+          "line": 352,
+          "func": "__init__"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\prospective.py",
+          "line": 144,
+          "func": "__init__"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\prospective.py",
+          "line": 160,
+          "func": "_load_from_db"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\persistence.py",
+          "line": 232,
+          "func": "init_db"
+        },
+        {
+          "file": "C:\\Python314\\Lib\\contextlib.py",
+          "line": 141,
+          "func": "__enter__"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\persistence.py",
+          "line": 211,
+          "func": "_get_cursor"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\persistence.py",
+          "line": 196,
+          "func": "_get_connection"
+        }
+      ]
+    },
+    {
+      "db": "microprobe.db",
+      "test": "test_persistence_isolation.test_p14b3_helper_never_uses_default:71",
+      "stack": [
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\tests\\test_p14b_3_transport_freshness.py",
+          "line": 62,
+          "func": "make_isolated_probe"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\probe.py",
+          "line": 352,
+          "func": "__init__"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\prospective.py",
+          "line": 144,
+          "func": "__init__"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\prospective.py",
+          "line": 160,
+          "func": "_load_from_db"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\persistence.py",
+          "line": 232,
+          "func": "init_db"
+        },
+        {
+          "file": "C:\\Python314\\Lib\\contextlib.py",
+          "line": 141,
+          "func": "__enter__"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\persistence.py",
+          "line": 211,
+          "func": "_get_cursor"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\persistence.py",
+          "line": 196,
+          "func": "_get_connection"
+        }
+      ]
+    },
+    {
+      "db": "microprobe.db",
+      "test": "test_persistence_isolation.test_probe_helper_never_uses_default:65",
+      "stack": [
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\tests\\test_probe.py",
+          "line": 30,
+          "func": "make_isolated_probe"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\probe.py",
+          "line": 352,
+          "func": "__init__"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\prospective.py",
+          "line": 144,
+          "func": "__init__"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\prospective.py",
+          "line": 160,
+          "func": "_load_from_db"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\persistence.py",
+          "line": 232,
+          "func": "init_db"
+        },
+        {
+          "file": "C:\\Python314\\Lib\\contextlib.py",
+          "line": 141,
+          "func": "__enter__"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\persistence.py",
+          "line": 211,
+          "func": "_get_cursor"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\persistence.py",
+          "line": 196,
+          "func": "_get_connection"
+        }
+      ]
+    },
+    {
+      "db": "microprobe.db",
+      "test": "test_probe.test_event_driven_force_order_silence_is_not_reported_as_stale:181",
+      "stack": [
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\tests\\test_probe.py",
+          "line": 181,
+          "func": "test_event_driven_force_order_silence_is_not_reported_as_stale"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\probe.py",
+          "line": 352,
+          "func": "__init__"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\prospective.py",
+          "line": 144,
+          "func": "__init__"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\prospective.py",
+          "line": 160,
+          "func": "_load_from_db"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\persistence.py",
+          "line": 232,
+          "func": "init_db"
+        },
+        {
+          "file": "C:\\Python314\\Lib\\contextlib.py",
+          "line": 141,
+          "func": "__enter__"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\persistence.py",
+          "line": 211,
+          "func": "_get_cursor"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\persistence.py",
+          "line": 196,
+          "func": "_get_connection"
+        }
+      ]
+    },
+    {
+      "db": "historical.db",
+      "test": "test_probe.test_event_driven_force_order_silence_is_not_reported_as_stale:190",
+      "stack": [
+        {
+          "file": "C:\\Python314\\Lib\\unittest\\case.py",
+          "line": 615,
+          "func": "_callTestMethod"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\tests\\test_probe.py",
+          "line": 190,
+          "func": "test_event_driven_force_order_silence_is_not_reported_as_stale"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\probe.py",
+          "line": 1681,
+          "func": "build_summary"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\research_recorder.py",
+          "line": 413,
+          "func": "status"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\history_store.py",
+          "line": 699,
+          "func": "research_counts"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\history_store.py",
+          "line": 241,
+          "func": "_ensure"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\history_store.py",
+          "line": 68,
+          "func": "init_db"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\history_store.py",
+          "line": 52,
+          "func": "_connect"
+        }
+      ]
+    },
+    {
+      "db": "historical.db",
+      "test": "test_probe.test_event_driven_force_order_silence_is_not_reported_as_stale:190",
+      "stack": [
+        {
+          "file": "C:\\Python314\\Lib\\unittest\\suite.py",
+          "line": 122,
+          "func": "run"
+        },
+        {
+          "file": "C:\\Python314\\Lib\\unittest\\case.py",
+          "line": 725,
+          "func": "__call__"
+        },
+        {
+          "file": "C:\\Python314\\Lib\\unittest\\case.py",
+          "line": 669,
+          "func": "run"
+        },
+        {
+          "file": "C:\\Python314\\Lib\\unittest\\case.py",
+          "line": 615,
+          "func": "_callTestMethod"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\tests\\test_probe.py",
+          "line": 190,
+          "func": "test_event_driven_force_order_silence_is_not_reported_as_stale"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\probe.py",
+          "line": 1681,
+          "func": "build_summary"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\research_recorder.py",
+          "line": 413,
+          "func": "status"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\history_store.py",
+          "line": 700,
+          "func": "research_counts"
+        }
+      ]
+    },
+    {
+      "db": "microprobe.db",
+      "test": "test_probe.test_final_summary_aggregates_data_quality_and_safety:154",
+      "stack": [
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\tests\\test_probe.py",
+          "line": 30,
+          "func": "make_isolated_probe"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\probe.py",
+          "line": 352,
+          "func": "__init__"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\prospective.py",
+          "line": 144,
+          "func": "__init__"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\prospective.py",
+          "line": 160,
+          "func": "_load_from_db"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\persistence.py",
+          "line": 232,
+          "func": "init_db"
+        },
+        {
+          "file": "C:\\Python314\\Lib\\contextlib.py",
+          "line": 141,
+          "func": "__enter__"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\persistence.py",
+          "line": 211,
+          "func": "_get_cursor"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\persistence.py",
+          "line": 196,
+          "func": "_get_connection"
+        }
+      ]
+    },
+    {
+      "db": "historical.db",
+      "test": "test_probe.test_final_summary_aggregates_data_quality_and_safety:172",
+      "stack": [
+        {
+          "file": "C:\\Python314\\Lib\\unittest\\case.py",
+          "line": 615,
+          "func": "_callTestMethod"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\tests\\test_probe.py",
+          "line": 172,
+          "func": "test_final_summary_aggregates_data_quality_and_safety"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\probe.py",
+          "line": 1681,
+          "func": "build_summary"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\research_recorder.py",
+          "line": 413,
+          "func": "status"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\history_store.py",
+          "line": 699,
+          "func": "research_counts"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\history_store.py",
+          "line": 241,
+          "func": "_ensure"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\history_store.py",
+          "line": 68,
+          "func": "init_db"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\history_store.py",
+          "line": 52,
+          "func": "_connect"
+        }
+      ]
+    },
+    {
+      "db": "historical.db",
+      "test": "test_probe.test_final_summary_aggregates_data_quality_and_safety:172",
+      "stack": [
+        {
+          "file": "C:\\Python314\\Lib\\unittest\\suite.py",
+          "line": 122,
+          "func": "run"
+        },
+        {
+          "file": "C:\\Python314\\Lib\\unittest\\case.py",
+          "line": 725,
+          "func": "__call__"
+        },
+        {
+          "file": "C:\\Python314\\Lib\\unittest\\case.py",
+          "line": 669,
+          "func": "run"
+        },
+        {
+          "file": "C:\\Python314\\Lib\\unittest\\case.py",
+          "line": 615,
+          "func": "_callTestMethod"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\tests\\test_probe.py",
+          "line": 172,
+          "func": "test_final_summary_aggregates_data_quality_and_safety"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\probe.py",
+          "line": 1681,
+          "func": "build_summary"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\research_recorder.py",
+          "line": 413,
+          "func": "status"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\history_store.py",
+          "line": 700,
+          "func": "research_counts"
+        }
+      ]
+    },
+    {
+      "db": "microprobe.db",
+      "test": "test_probe.test_future_or_stale_payload_is_discarded:54",
+      "stack": [
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\tests\\test_probe.py",
+          "line": 30,
+          "func": "make_isolated_probe"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\probe.py",
+          "line": 352,
+          "func": "__init__"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\prospective.py",
+          "line": 144,
+          "func": "__init__"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\prospective.py",
+          "line": 160,
+          "func": "_load_from_db"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\persistence.py",
+          "line": 232,
+          "func": "init_db"
+        },
+        {
+          "file": "C:\\Python314\\Lib\\contextlib.py",
+          "line": 141,
+          "func": "__enter__"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\persistence.py",
+          "line": 211,
+          "func": "_get_cursor"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\persistence.py",
+          "line": 196,
+          "func": "_get_connection"
+        }
+      ]
+    },
+    {
+      "db": "microprobe.db",
+      "test": "test_probe.test_latency_is_separated_by_stream_and_e_from_t:69",
+      "stack": [
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\tests\\test_probe.py",
+          "line": 30,
+          "func": "make_isolated_probe"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\probe.py",
+          "line": 352,
+          "func": "__init__"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\prospective.py",
+          "line": 144,
+          "func": "__init__"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\prospective.py",
+          "line": 160,
+          "func": "_load_from_db"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\persistence.py",
+          "line": 232,
+          "func": "init_db"
+        },
+        {
+          "file": "C:\\Python314\\Lib\\contextlib.py",
+          "line": 141,
+          "func": "__enter__"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\persistence.py",
+          "line": 211,
+          "func": "_get_cursor"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\persistence.py",
+          "line": 196,
+          "func": "_get_connection"
+        }
+      ]
+    },
+    {
+      "db": "historical.db",
+      "test": "test_probe.test_latency_is_separated_by_stream_and_e_from_t:87",
+      "stack": [
+        {
+          "file": "C:\\Python314\\Lib\\unittest\\case.py",
+          "line": 615,
+          "func": "_callTestMethod"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\tests\\test_probe.py",
+          "line": 87,
+          "func": "test_latency_is_separated_by_stream_and_e_from_t"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\probe.py",
+          "line": 1681,
+          "func": "build_summary"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\research_recorder.py",
+          "line": 413,
+          "func": "status"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\history_store.py",
+          "line": 699,
+          "func": "research_counts"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\history_store.py",
+          "line": 241,
+          "func": "_ensure"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\history_store.py",
+          "line": 68,
+          "func": "init_db"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\history_store.py",
+          "line": 52,
+          "func": "_connect"
+        }
+      ]
+    },
+    {
+      "db": "historical.db",
+      "test": "test_probe.test_latency_is_separated_by_stream_and_e_from_t:87",
+      "stack": [
+        {
+          "file": "C:\\Python314\\Lib\\unittest\\suite.py",
+          "line": 122,
+          "func": "run"
+        },
+        {
+          "file": "C:\\Python314\\Lib\\unittest\\case.py",
+          "line": 725,
+          "func": "__call__"
+        },
+        {
+          "file": "C:\\Python314\\Lib\\unittest\\case.py",
+          "line": 669,
+          "func": "run"
+        },
+        {
+          "file": "C:\\Python314\\Lib\\unittest\\case.py",
+          "line": 615,
+          "func": "_callTestMethod"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\tests\\test_probe.py",
+          "line": 87,
+          "func": "test_latency_is_separated_by_stream_and_e_from_t"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\probe.py",
+          "line": 1681,
+          "func": "build_summary"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\research_recorder.py",
+          "line": 413,
+          "func": "status"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\history_store.py",
+          "line": 700,
+          "func": "research_counts"
+        }
+      ]
+    },
+    {
+      "db": "microprobe.db",
+      "test": "test_probe.test_mark_price_next_funding_time_is_not_transaction_time:101",
+      "stack": [
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\tests\\test_probe.py",
+          "line": 30,
+          "func": "make_isolated_probe"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\probe.py",
+          "line": 352,
+          "func": "__init__"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\prospective.py",
+          "line": 144,
+          "func": "__init__"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\prospective.py",
+          "line": 160,
+          "func": "_load_from_db"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\persistence.py",
+          "line": 232,
+          "func": "init_db"
+        },
+        {
+          "file": "C:\\Python314\\Lib\\contextlib.py",
+          "line": 141,
+          "func": "__enter__"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\persistence.py",
+          "line": 211,
+          "func": "_get_cursor"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\persistence.py",
+          "line": 196,
+          "func": "_get_connection"
+        }
+      ]
+    },
+    {
+      "db": "historical.db",
+      "test": "test_probe.test_mark_price_next_funding_time_is_not_transaction_time:121",
+      "stack": [
+        {
+          "file": "C:\\Python314\\Lib\\unittest\\case.py",
+          "line": 615,
+          "func": "_callTestMethod"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\tests\\test_probe.py",
+          "line": 121,
+          "func": "test_mark_price_next_funding_time_is_not_transaction_time"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\probe.py",
+          "line": 1681,
+          "func": "build_summary"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\research_recorder.py",
+          "line": 413,
+          "func": "status"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\history_store.py",
+          "line": 699,
+          "func": "research_counts"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\history_store.py",
+          "line": 241,
+          "func": "_ensure"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\history_store.py",
+          "line": 68,
+          "func": "init_db"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\history_store.py",
+          "line": 52,
+          "func": "_connect"
+        }
+      ]
+    },
+    {
+      "db": "historical.db",
+      "test": "test_probe.test_mark_price_next_funding_time_is_not_transaction_time:121",
+      "stack": [
+        {
+          "file": "C:\\Python314\\Lib\\unittest\\suite.py",
+          "line": 122,
+          "func": "run"
+        },
+        {
+          "file": "C:\\Python314\\Lib\\unittest\\case.py",
+          "line": 725,
+          "func": "__call__"
+        },
+        {
+          "file": "C:\\Python314\\Lib\\unittest\\case.py",
+          "line": 669,
+          "func": "run"
+        },
+        {
+          "file": "C:\\Python314\\Lib\\unittest\\case.py",
+          "line": 615,
+          "func": "_callTestMethod"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\tests\\test_probe.py",
+          "line": 121,
+          "func": "test_mark_price_next_funding_time_is_not_transaction_time"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\probe.py",
+          "line": 1681,
+          "func": "build_summary"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\research_recorder.py",
+          "line": 413,
+          "func": "status"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\history_store.py",
+          "line": 700,
+          "func": "research_counts"
+        }
+      ]
+    },
+    {
+      "db": "microprobe.db",
+      "test": "test_probe.test_processing_latency_uses_high_resolution_monotonic_clock:127",
+      "stack": [
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\tests\\test_probe.py",
+          "line": 30,
+          "func": "make_isolated_probe"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\probe.py",
+          "line": 352,
+          "func": "__init__"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\prospective.py",
+          "line": 144,
+          "func": "__init__"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\prospective.py",
+          "line": 160,
+          "func": "_load_from_db"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\persistence.py",
+          "line": 232,
+          "func": "init_db"
+        },
+        {
+          "file": "C:\\Python314\\Lib\\contextlib.py",
+          "line": 141,
+          "func": "__enter__"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\persistence.py",
+          "line": 211,
+          "func": "_get_cursor"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\persistence.py",
+          "line": 196,
+          "func": "_get_connection"
+        }
+      ]
+    },
+    {
+      "db": "historical.db",
+      "test": "test_probe.test_processing_latency_uses_high_resolution_monotonic_clock:140",
+      "stack": [
+        {
+          "file": "C:\\Python314\\Lib\\unittest\\case.py",
+          "line": 615,
+          "func": "_callTestMethod"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\tests\\test_probe.py",
+          "line": 140,
+          "func": "test_processing_latency_uses_high_resolution_monotonic_clock"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\probe.py",
+          "line": 1681,
+          "func": "build_summary"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\research_recorder.py",
+          "line": 413,
+          "func": "status"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\history_store.py",
+          "line": 699,
+          "func": "research_counts"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\history_store.py",
+          "line": 241,
+          "func": "_ensure"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\history_store.py",
+          "line": 68,
+          "func": "init_db"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\history_store.py",
+          "line": 52,
+          "func": "_connect"
+        }
+      ]
+    },
+    {
+      "db": "historical.db",
+      "test": "test_probe.test_processing_latency_uses_high_resolution_monotonic_clock:140",
+      "stack": [
+        {
+          "file": "C:\\Python314\\Lib\\unittest\\suite.py",
+          "line": 122,
+          "func": "run"
+        },
+        {
+          "file": "C:\\Python314\\Lib\\unittest\\case.py",
+          "line": 725,
+          "func": "__call__"
+        },
+        {
+          "file": "C:\\Python314\\Lib\\unittest\\case.py",
+          "line": 669,
+          "func": "run"
+        },
+        {
+          "file": "C:\\Python314\\Lib\\unittest\\case.py",
+          "line": 615,
+          "func": "_callTestMethod"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\tests\\test_probe.py",
+          "line": 140,
+          "func": "test_processing_latency_uses_high_resolution_monotonic_clock"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\probe.py",
+          "line": 1681,
+          "func": "build_summary"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\research_recorder.py",
+          "line": 413,
+          "func": "status"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\history_store.py",
+          "line": 700,
+          "func": "research_counts"
+        }
+      ]
+    },
+    {
+      "db": "microprobe.db",
+      "test": "test_research_recorder.test_recorder_cannot_crash_probe_path:157",
+      "stack": [
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\tests\\test_research_recorder.py",
+          "line": 157,
+          "func": "test_recorder_cannot_crash_probe_path"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\probe.py",
+          "line": 352,
+          "func": "__init__"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\prospective.py",
+          "line": 144,
+          "func": "__init__"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\prospective.py",
+          "line": 160,
+          "func": "_load_from_db"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\persistence.py",
+          "line": 232,
+          "func": "init_db"
+        },
+        {
+          "file": "C:\\Python314\\Lib\\contextlib.py",
+          "line": 141,
+          "func": "__enter__"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\persistence.py",
+          "line": 211,
+          "func": "_get_cursor"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\persistence.py",
+          "line": 196,
+          "func": "_get_connection"
+        }
+      ]
+    },
+    {
+      "db": "microprobe.db",
+      "test": "test_research_recorder.test_recorder_lifecycle_with_probe:168",
+      "stack": [
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\tests\\test_research_recorder.py",
+          "line": 168,
+          "func": "test_recorder_lifecycle_with_probe"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\probe.py",
+          "line": 352,
+          "func": "__init__"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\prospective.py",
+          "line": 144,
+          "func": "__init__"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\prospective.py",
+          "line": 160,
+          "func": "_load_from_db"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\persistence.py",
+          "line": 232,
+          "func": "init_db"
+        },
+        {
+          "file": "C:\\Python314\\Lib\\contextlib.py",
+          "line": 141,
+          "func": "__enter__"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\persistence.py",
+          "line": 211,
+          "func": "_get_cursor"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\persistence.py",
+          "line": 196,
+          "func": "_get_connection"
+        }
+      ]
+    },
+    {
+      "db": "historical.db",
+      "test": "test_research_recorder.test_recorder_lifecycle_with_probe:171",
+      "stack": [
+        {
+          "file": "C:\\Python314\\Lib\\unittest\\case.py",
+          "line": 615,
+          "func": "_callTestMethod"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\tests\\test_research_recorder.py",
+          "line": 171,
+          "func": "test_recorder_lifecycle_with_probe"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\research_recorder.py",
+          "line": 247,
+          "func": "stop_and_drain"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\research_recorder.py",
+          "line": 413,
+          "func": "status"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\history_store.py",
+          "line": 699,
+          "func": "research_counts"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\history_store.py",
+          "line": 241,
+          "func": "_ensure"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\history_store.py",
+          "line": 68,
+          "func": "init_db"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\history_store.py",
+          "line": 52,
+          "func": "_connect"
+        }
+      ]
+    },
+    {
+      "db": "historical.db",
+      "test": "test_research_recorder.test_recorder_lifecycle_with_probe:171",
+      "stack": [
+        {
+          "file": "C:\\Python314\\Lib\\unittest\\suite.py",
+          "line": 122,
+          "func": "run"
+        },
+        {
+          "file": "C:\\Python314\\Lib\\unittest\\case.py",
+          "line": 725,
+          "func": "__call__"
+        },
+        {
+          "file": "C:\\Python314\\Lib\\unittest\\case.py",
+          "line": 669,
+          "func": "run"
+        },
+        {
+          "file": "C:\\Python314\\Lib\\unittest\\case.py",
+          "line": 615,
+          "func": "_callTestMethod"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\tests\\test_research_recorder.py",
+          "line": 171,
+          "func": "test_recorder_lifecycle_with_probe"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\research_recorder.py",
+          "line": 247,
+          "func": "stop_and_drain"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\research_recorder.py",
+          "line": 413,
+          "func": "status"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\history_store.py",
+          "line": 700,
+          "func": "research_counts"
+        }
+      ]
+    },
+    {
+      "db": "microprobe.db",
+      "test": "test_returns.setUp:211",
+      "stack": [
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\tests\\test_returns.py",
+          "line": 211,
+          "func": "setUp"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\probe.py",
+          "line": 352,
+          "func": "__init__"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\prospective.py",
+          "line": 144,
+          "func": "__init__"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\prospective.py",
+          "line": 160,
+          "func": "_load_from_db"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\persistence.py",
+          "line": 232,
+          "func": "init_db"
+        },
+        {
+          "file": "C:\\Python314\\Lib\\contextlib.py",
+          "line": 141,
+          "func": "__enter__"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\persistence.py",
+          "line": 211,
+          "func": "_get_cursor"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\persistence.py",
+          "line": 196,
+          "func": "_get_connection"
+        }
+      ]
+    },
+    {
+      "db": "historical.db",
+      "test": "test_returns.test_log_summary_persists_return_features:260",
+      "stack": [
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\tests\\test_returns.py",
+          "line": 260,
+          "func": "test_log_summary_persists_return_features"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\probe.py",
+          "line": 1737,
+          "func": "log_summary"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\probe.py",
+          "line": 1681,
+          "func": "build_summary"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\research_recorder.py",
+          "line": 413,
+          "func": "status"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\history_store.py",
+          "line": 699,
+          "func": "research_counts"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\history_store.py",
+          "line": 241,
+          "func": "_ensure"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\history_store.py",
+          "line": 68,
+          "func": "init_db"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\history_store.py",
+          "line": 52,
+          "func": "_connect"
+        }
+      ]
+    },
+    {
+      "db": "historical.db",
+      "test": "test_returns.test_log_summary_persists_return_features:260",
+      "stack": [
+        {
+          "file": "C:\\Python314\\Lib\\unittest\\case.py",
+          "line": 725,
+          "func": "__call__"
+        },
+        {
+          "file": "C:\\Python314\\Lib\\unittest\\case.py",
+          "line": 669,
+          "func": "run"
+        },
+        {
+          "file": "C:\\Python314\\Lib\\unittest\\case.py",
+          "line": 615,
+          "func": "_callTestMethod"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\tests\\test_returns.py",
+          "line": 260,
+          "func": "test_log_summary_persists_return_features"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\probe.py",
+          "line": 1737,
+          "func": "log_summary"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\probe.py",
+          "line": 1681,
+          "func": "build_summary"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\research_recorder.py",
+          "line": 413,
+          "func": "status"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\history_store.py",
+          "line": 700,
+          "func": "research_counts"
+        }
+      ]
+    },
+    {
+      "db": "microprobe.db",
+      "test": "test_returns.setUp:211",
+      "stack": [
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\tests\\test_returns.py",
+          "line": 211,
+          "func": "setUp"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\probe.py",
+          "line": 352,
+          "func": "__init__"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\prospective.py",
+          "line": 144,
+          "func": "__init__"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\prospective.py",
+          "line": 160,
+          "func": "_load_from_db"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\persistence.py",
+          "line": 232,
+          "func": "init_db"
+        },
+        {
+          "file": "C:\\Python314\\Lib\\contextlib.py",
+          "line": 141,
+          "func": "__enter__"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\persistence.py",
+          "line": 211,
+          "func": "_get_cursor"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\persistence.py",
+          "line": 196,
+          "func": "_get_connection"
+        }
+      ]
+    },
+    {
+      "db": "microprobe.db",
+      "test": "test_returns.setUp:211",
+      "stack": [
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\tests\\test_returns.py",
+          "line": 211,
+          "func": "setUp"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\probe.py",
+          "line": 352,
+          "func": "__init__"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\prospective.py",
+          "line": 144,
+          "func": "__init__"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\prospective.py",
+          "line": 160,
+          "func": "_load_from_db"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\persistence.py",
+          "line": 232,
+          "func": "init_db"
+        },
+        {
+          "file": "C:\\Python314\\Lib\\contextlib.py",
+          "line": 141,
+          "func": "__enter__"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\persistence.py",
+          "line": 211,
+          "func": "_get_cursor"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\persistence.py",
+          "line": 196,
+          "func": "_get_connection"
+        }
+      ]
+    },
+    {
+      "db": "microprobe.db",
+      "test": "test_returns.setUp:211",
+      "stack": [
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\tests\\test_returns.py",
+          "line": 211,
+          "func": "setUp"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\probe.py",
+          "line": 352,
+          "func": "__init__"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\prospective.py",
+          "line": 144,
+          "func": "__init__"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\prospective.py",
+          "line": 160,
+          "func": "_load_from_db"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\persistence.py",
+          "line": 232,
+          "func": "init_db"
+        },
+        {
+          "file": "C:\\Python314\\Lib\\contextlib.py",
+          "line": 141,
+          "func": "__enter__"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\persistence.py",
+          "line": 211,
+          "func": "_get_cursor"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\persistence.py",
+          "line": 196,
+          "func": "_get_connection"
+        }
+      ]
+    },
+    {
+      "db": "microprobe.db",
+      "test": "test_returns.setUp:211",
+      "stack": [
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\tests\\test_returns.py",
+          "line": 211,
+          "func": "setUp"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\probe.py",
+          "line": 352,
+          "func": "__init__"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\prospective.py",
+          "line": 144,
+          "func": "__init__"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\prospective.py",
+          "line": 160,
+          "func": "_load_from_db"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\persistence.py",
+          "line": 232,
+          "func": "init_db"
+        },
+        {
+          "file": "C:\\Python314\\Lib\\contextlib.py",
+          "line": 141,
+          "func": "__enter__"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\persistence.py",
+          "line": 211,
+          "func": "_get_cursor"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\persistence.py",
+          "line": 196,
+          "func": "_get_connection"
+        }
+      ]
+    },
+    {
+      "db": "microprobe.db",
+      "test": "test_returns.setUp:211",
+      "stack": [
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\tests\\test_returns.py",
+          "line": 211,
+          "func": "setUp"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\probe.py",
+          "line": 352,
+          "func": "__init__"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\prospective.py",
+          "line": 144,
+          "func": "__init__"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\prospective.py",
+          "line": 160,
+          "func": "_load_from_db"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\persistence.py",
+          "line": 232,
+          "func": "init_db"
+        },
+        {
+          "file": "C:\\Python314\\Lib\\contextlib.py",
+          "line": 141,
+          "func": "__enter__"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\persistence.py",
+          "line": 211,
+          "func": "_get_cursor"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\persistence.py",
+          "line": 196,
+          "func": "_get_connection"
+        }
+      ]
+    },
+    {
+      "db": "microprobe.db",
+      "test": "test_returns.test_valid_markprice_feeds_engine:238",
+      "stack": [
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\tests\\test_returns.py",
+          "line": 238,
+          "func": "test_valid_markprice_feeds_engine"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\probe.py",
+          "line": 352,
+          "func": "__init__"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\prospective.py",
+          "line": 144,
+          "func": "__init__"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\prospective.py",
+          "line": 160,
+          "func": "_load_from_db"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\persistence.py",
+          "line": 232,
+          "func": "init_db"
+        },
+        {
+          "file": "C:\\Python314\\Lib\\contextlib.py",
+          "line": 141,
+          "func": "__enter__"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\persistence.py",
+          "line": 211,
+          "func": "_get_cursor"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\persistence.py",
+          "line": 196,
+          "func": "_get_connection"
+        }
+      ]
+    },
+    {
+      "db": "microprobe.db",
+      "test": "test_universe_probe.test_core_symbols_not_tracked:175",
+      "stack": [
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\tests\\test_universe_probe.py",
+          "line": 27,
+          "func": "make_probe"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\probe.py",
+          "line": 352,
+          "func": "__init__"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\prospective.py",
+          "line": 144,
+          "func": "__init__"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\prospective.py",
+          "line": 160,
+          "func": "_load_from_db"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\persistence.py",
+          "line": 232,
+          "func": "init_db"
+        },
+        {
+          "file": "C:\\Python314\\Lib\\contextlib.py",
+          "line": 141,
+          "func": "__enter__"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\persistence.py",
+          "line": 211,
+          "func": "_get_cursor"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\persistence.py",
+          "line": 196,
+          "func": "_get_connection"
+        }
+      ]
+    },
+    {
+      "db": "microprobe.db",
+      "test": "test_universe_probe.test_warming_then_live_on_mark_trade_depth:160",
+      "stack": [
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\tests\\test_universe_probe.py",
+          "line": 27,
+          "func": "make_probe"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\probe.py",
+          "line": 352,
+          "func": "__init__"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\prospective.py",
+          "line": 144,
+          "func": "__init__"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\prospective.py",
+          "line": 160,
+          "func": "_load_from_db"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\persistence.py",
+          "line": 232,
+          "func": "init_db"
+        },
+        {
+          "file": "C:\\Python314\\Lib\\contextlib.py",
+          "line": 141,
+          "func": "__enter__"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\persistence.py",
+          "line": 211,
+          "func": "_get_cursor"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\persistence.py",
+          "line": 196,
+          "func": "_get_connection"
+        }
+      ]
+    },
+    {
+      "db": "microprobe.db",
+      "test": "test_universe_probe.test_canonical_pair_untouched_by_sync:143",
+      "stack": [
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\tests\\test_universe_probe.py",
+          "line": 27,
+          "func": "make_probe"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\probe.py",
+          "line": 352,
+          "func": "__init__"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\prospective.py",
+          "line": 144,
+          "func": "__init__"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\prospective.py",
+          "line": 160,
+          "func": "_load_from_db"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\persistence.py",
+          "line": 232,
+          "func": "init_db"
+        },
+        {
+          "file": "C:\\Python314\\Lib\\contextlib.py",
+          "line": 141,
+          "func": "__enter__"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\persistence.py",
+          "line": 211,
+          "func": "_get_cursor"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\persistence.py",
+          "line": 196,
+          "func": "_get_connection"
+        }
+      ]
+    },
+    {
+      "db": "microprobe.db",
+      "test": "test_universe_probe.test_demote_cancels_forgets_and_cools_down:88",
+      "stack": [
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\tests\\test_universe_probe.py",
+          "line": 27,
+          "func": "make_probe"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\probe.py",
+          "line": 352,
+          "func": "__init__"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\prospective.py",
+          "line": 144,
+          "func": "__init__"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\prospective.py",
+          "line": 160,
+          "func": "_load_from_db"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\persistence.py",
+          "line": 232,
+          "func": "init_db"
+        },
+        {
+          "file": "C:\\Python314\\Lib\\contextlib.py",
+          "line": 141,
+          "func": "__enter__"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\persistence.py",
+          "line": 211,
+          "func": "_get_cursor"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\persistence.py",
+          "line": 196,
+          "func": "_get_connection"
+        }
+      ]
+    },
+    {
+      "db": "microprobe.db",
+      "test": "test_universe_probe.test_hot_sync_never_uses_default_persistence:49",
+      "stack": [
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\tests\\test_universe_probe.py",
+          "line": 27,
+          "func": "make_probe"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\probe.py",
+          "line": 352,
+          "func": "__init__"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\prospective.py",
+          "line": 144,
+          "func": "__init__"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\prospective.py",
+          "line": 160,
+          "func": "_load_from_db"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\persistence.py",
+          "line": 232,
+          "func": "init_db"
+        },
+        {
+          "file": "C:\\Python314\\Lib\\contextlib.py",
+          "line": 141,
+          "func": "__enter__"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\persistence.py",
+          "line": 211,
+          "func": "_get_cursor"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\persistence.py",
+          "line": 196,
+          "func": "_get_connection"
+        }
+      ]
+    },
+    {
+      "db": "microprobe.db",
+      "test": "test_universe_probe.test_no_resync_when_set_unchanged:131",
+      "stack": [
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\tests\\test_universe_probe.py",
+          "line": 27,
+          "func": "make_probe"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\probe.py",
+          "line": 352,
+          "func": "__init__"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\prospective.py",
+          "line": 144,
+          "func": "__init__"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\prospective.py",
+          "line": 160,
+          "func": "_load_from_db"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\persistence.py",
+          "line": 232,
+          "func": "init_db"
+        },
+        {
+          "file": "C:\\Python314\\Lib\\contextlib.py",
+          "line": 141,
+          "func": "__enter__"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\persistence.py",
+          "line": 211,
+          "func": "_get_cursor"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\persistence.py",
+          "line": 196,
+          "func": "_get_connection"
+        }
+      ]
+    },
+    {
+      "db": "microprobe.db",
+      "test": "test_universe_probe.test_promote_spawns_managed_tasks_and_allows_engines:56",
+      "stack": [
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\tests\\test_universe_probe.py",
+          "line": 27,
+          "func": "make_probe"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\probe.py",
+          "line": 352,
+          "func": "__init__"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\prospective.py",
+          "line": 144,
+          "func": "__init__"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\prospective.py",
+          "line": 160,
+          "func": "_load_from_db"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\persistence.py",
+          "line": 232,
+          "func": "init_db"
+        },
+        {
+          "file": "C:\\Python314\\Lib\\contextlib.py",
+          "line": 141,
+          "func": "__enter__"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\persistence.py",
+          "line": 211,
+          "func": "_get_cursor"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\persistence.py",
+          "line": 196,
+          "func": "_get_connection"
+        }
+      ]
+    }
+  ],
+  "canonical_connect_count": 100,
+  "readonly_uri_connects": [
+    {
+      "kind": "sqlite_connect_readonly_uri",
+      "test": "test_supervisor.test_abort_real_sleeper_preserves_foreign:395",
+      "extra": {
+        "database": "file:C:\\proyectos\\binance-futures-microstructure-bot\\data\\microprobe.db?mode=ro"
+      },
+      "stack": [
+        {
+          "file": "C:\\Python314\\Lib\\unittest\\case.py",
+          "line": 725,
+          "func": "__call__"
+        },
+        {
+          "file": "C:\\Python314\\Lib\\unittest\\case.py",
+          "line": 669,
+          "func": "run"
+        },
+        {
+          "file": "C:\\Python314\\Lib\\unittest\\case.py",
+          "line": 615,
+          "func": "_callTestMethod"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\tests\\test_supervisor.py",
+          "line": 395,
+          "func": "test_abort_real_sleeper_preserves_foreign"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\control.py",
+          "line": 1875,
+          "func": "supervise"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\control.py",
+          "line": 1812,
+          "func": "supervise_once"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\control.py",
+          "line": 1458,
+          "func": "probe_db_readable"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\scripts\\audit_test_isolation.py",
+          "line": 190,
+          "func": "guarded_connect"
+        }
+      ]
+    }
+  ],
+  "registry_write_attempts": [],
+  "file_write_attempts": [],
+  "connect_counters": {
+    "temp_connects": 764,
+    "memory_connects": 0,
+    "other_connects": 0
+  },
+  "hashes_before": {
+    "microprobe.db": "221b332b74a967025f2e6cfe03066f6cd40c24d9e8596a83a87a6a7fb86fa473",
+    "historical.db": "ca647946a2ba3590db3d1b023993cd13f65844648cba9b7bb210cbc3cb1f7a0a",
+    "probe_runtime.json": "45c6a39ec91f55db708e1b9011f86bc55248b4485e582c015ea4442cc7cab5da"
+  },
+  "hashes_after": {
+    "microprobe.db": "221b332b74a967025f2e6cfe03066f6cd40c24d9e8596a83a87a6a7fb86fa473",
+    "historical.db": "ca647946a2ba3590db3d1b023993cd13f65844648cba9b7bb210cbc3cb1f7a0a",
+    "probe_runtime.json": "45c6a39ec91f55db708e1b9011f86bc55248b4485e582c015ea4442cc7cab5da"
+  },
+  "hashes_equal": true,
+  "data_inventory_diff": {
+    "added": [],
+    "removed": [],
+    "changed": []
+  },
+  "logs_inventory_diff": {
+    "added": [],
+    "removed": [],
+    "changed": []
+  }
+}

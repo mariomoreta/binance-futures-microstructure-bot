@@ -1,3 +1,19 @@
+## ETAPA 1 test isolation — DONE (2026-10-12)
+Barrier scripts/audit_test_isolation.py over the full suite: PREFIX 911/911
+green WITH 61 swallowed default-factory attempts (test_probe x5,
+test_host_telemetry x2, test_p14b_3 x4 methods) + 97 residual canonical
+connects classified (rehydration/HistoryStore-reads/RO-URI) + 0-byte
+logs/probe-runs sidecars from three test-side routes. Repro on temp:
+10 bodies -> 4 obs + 54 rej rows, canonical untouched. Fixes are test-only
+(isolated-probe helpers, evidence_dir, pc.repo_root patch; 5 new regression
+tests, no production change). POSTFIX: 916/916 OK, zero prohibited hits,
+zero file/registry writes, clean inventories, exit 0. Canonical
+run_tests.py -q: 916/916 OK (162.068s), microprobe.db SHA256 stable
+(221b33..fb86), historical.db + registry unchanged. Pure re-read: 375
+universe rows, 225 detail='test', retained as-is. Complete-purity (zero
+connects) NOT claimed: Routes B/C need production injection points
+(deferred). Full evidence: docs/TEST_ISOLATION_ETAPA1_REPORT.md.
+
 ## Final proof and fixture-isolation checkpoint (2026-10-11)
 Original proof correction: focused 1/1 and canonical 910/910 exit0 (184.479s).
 A subsequent System read found 375 universe rows, 225 tagged detail='test',

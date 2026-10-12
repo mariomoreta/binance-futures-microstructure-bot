@@ -119,7 +119,12 @@ class LaunchCorrectionsTest(unittest.TestCase):
 
     def test_default_supervisor_command(self):
         seen=[]
+        # ETAPA 1 isolation: the spawner resolves its log under repo_root();
+        # control holds its own reference (from host_process via dashboard
+        # re-export), so patch pc.repo_root -- patching dashboard.repo_root
+        # alone still lands watcher logs in canonical logs/probe-runs/.
         with mock.patch.object(dashboard,"repo_root",return_value=Path(self.tmp.name)), \
+             mock.patch.object(pc,"repo_root",return_value=Path(self.tmp.name)), \
              mock.patch.object(dashboard,"no_window_flags",return_value=0), \
              mock.patch.object(pc.subprocess,"Popen",side_effect=lambda argv,**kw:(seen.append(argv) or SimpleNamespace(pid=700))):
             pc._default_watcher_spawner("supervisor")(100)

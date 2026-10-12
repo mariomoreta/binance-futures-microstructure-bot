@@ -23,6 +23,28 @@ from microstructure_probe.telemetry import (
 from test_detectors import test_config
 
 
+def make_isolated_probe(case, config=None, **kwargs):
+    """Probe bound to a temp PersistenceStore (never the canonical DB).
+
+    ETAPA 1 isolation: byte-counting feeds messages through
+    ``_handle_message``, which reaches ``self.persistence``; the lazy
+    default factory would open+write the canonical ``data/microprobe.db``
+    (swallowed as ``persistence_error``). Mirrors ``make_probe`` in
+    test_universe_probe.
+    """
+    from microstructure_probe.persistence import PersistenceStore
+    from microstructure_probe.probe import MarketProbe
+
+    temp = tempfile.TemporaryDirectory(prefix="host_telemetry_test_")
+    case.addCleanup(temp.cleanup)
+    store = PersistenceStore(Path(temp.name) / "probe.db")
+    store.init_db()
+    case.addCleanup(store.close)
+    probe = MarketProbe(config or test_config(), **kwargs)
+    probe.set_persistence(store)
+    return probe
+
+
 class TestCpuHelper(TestCase):
     def test_normal(self):
         prev = (10.0, 5.0, 1000.0)
@@ -73,8 +95,7 @@ class TestHostContracts(TestCase):
 
 class TestProbeByteCounting(TestCase):
     def test_exact_bytes_per_stream(self):
-        from microstructure_probe.probe import MarketProbe
-        probe = MarketProbe(test_config())
+        probe = make_isolated_probe(self)
         payload = json.dumps({"stream": "btcusdt@bookTicker",
                               "data": {"E": 1_800_000_000_000, "s": "BTCUSDT",
                                        "b": "100", "a": "100.01"}})
@@ -84,9 +105,8 @@ class TestProbeByteCounting(TestCase):
         self.assertEqual(probe.stats.messages_by_stream["btcusdt@bookTicker"], 1)
 
     def test_rejected_messages_still_count_bytes(self):
-        from microstructure_probe.probe import MarketProbe
         import time
-        probe = MarketProbe(test_config())
+        probe = make_isolated_probe(self)
         stale_e = int(time.time() * 1000) - 600_000
         payload = json.dumps({"stream": "btcusdt@bookTicker",
                               "data": {"E": stale_e, "s": "BTCUSDT",

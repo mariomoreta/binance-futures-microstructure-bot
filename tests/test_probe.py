@@ -1,12 +1,35 @@
 import json
+import tempfile
+import unittest
 from pathlib import Path
 import time
-import unittest
 
 from microstructure_probe.clock import ClockSynchronizer
 from microstructure_probe.probe import MarketProbe, build_stream_urls
 
 from test_detectors import test_config
+
+
+def make_isolated_probe(case, config=None, **kwargs):
+    """Probe bound to a temp PersistenceStore (never the canonical DB).
+
+    ETAPA 1 isolation: ``_handle_message`` reaches ``self.persistence``,
+    whose lazy default factory would open+write the canonical
+    ``data/microprobe.db`` (and the failure is swallowed as
+    ``persistence_error``, so the test stays green while contaminating).
+    Every fixture below that feeds messages through the probe owns a temp
+    store with cleanup, mirroring ``make_probe`` in test_universe_probe.
+    """
+    from microstructure_probe.persistence import PersistenceStore
+
+    temp = tempfile.TemporaryDirectory(prefix="probe_isolated_test_")
+    case.addCleanup(temp.cleanup)
+    store = PersistenceStore(Path(temp.name) / "probe.db")
+    store.init_db()
+    case.addCleanup(store.close)
+    probe = MarketProbe(config or test_config(), **kwargs)
+    probe.set_persistence(store)
+    return probe
 
 
 class ProbeTest(unittest.TestCase):
@@ -28,7 +51,7 @@ class ProbeTest(unittest.TestCase):
         self.assertIn("btcusdt@aggTrade", urls["market"])
 
     def test_future_or_stale_payload_is_discarded(self) -> None:
-        probe = MarketProbe(test_config())
+        probe = make_isolated_probe(self)
         payload = {
             "stream": "btcusdt@aggTrade",
             "data": {
@@ -43,7 +66,8 @@ class ProbeTest(unittest.TestCase):
         self.assertEqual(probe.stats.discarded_clock_skew, 1)
 
     def test_latency_is_separated_by_stream_and_e_from_t(self) -> None:
-        probe = MarketProbe(
+        probe = make_isolated_probe(
+            self,
             test_config(),
             clock_sync=self._clock(50.0),
             wall_clock_ms=lambda: 1000.0,
@@ -74,7 +98,8 @@ class ProbeTest(unittest.TestCase):
         )
 
     def test_mark_price_next_funding_time_is_not_transaction_time(self) -> None:
-        probe = MarketProbe(
+        probe = make_isolated_probe(
+            self,
             test_config(),
             clock_sync=self._clock(),
             wall_clock_ms=lambda: 1000.0,
@@ -99,7 +124,8 @@ class ProbeTest(unittest.TestCase):
 
     def test_processing_latency_uses_high_resolution_monotonic_clock(self) -> None:
         ticks = iter((0, 1_000_000, 3_000_000, 6_000_000, 10_000_000))
-        probe = MarketProbe(
+        probe = make_isolated_probe(
+            self,
             test_config(),
             clock_sync=self._clock(),
             wall_clock_ms=lambda: 1000.0,
@@ -125,7 +151,8 @@ class ProbeTest(unittest.TestCase):
         )
 
     def test_final_summary_aggregates_data_quality_and_safety(self) -> None:
-        probe = MarketProbe(
+        probe = make_isolated_probe(
+            self,
             test_config(),
             clock_sync=self._clock(),
             wall_clock_ms=lambda: 1000.0,

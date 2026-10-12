@@ -120,8 +120,9 @@ class StartProbeNoWindowTest(unittest.TestCase):
                                        return_value=fake_proc) as popen, \
                      mock.patch.object(host_process, "process_info",
                                        return_value=("python.exe", "CT-9")):
-                    result = control.start_probe(75, launcher="test",
-                                                 preset="standard")
+                    result = control.start_probe(
+                        75, launcher="test", preset="standard",
+                        evidence_dir=tmp)
                 self.assertTrue(result.get("started"))
                 self.assertIn("creationflags", popen.call_args.kwargs)
                 self.assertEqual(popen.call_args.kwargs["creationflags"],

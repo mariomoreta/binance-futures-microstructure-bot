@@ -43,6 +43,39 @@ from test_detectors import test_config
 EVENT_BASE_MS = 1791502924007
 
 
+def make_isolated_probe(case, config=None, **kwargs):
+    """Probe bound to a temp PersistenceStore (never the canonical DB).
+
+    ETAPA 1 isolation: accepted/rejected traffic accounting feeds messages
+    through ``_handle_message``, which reaches ``self.persistence``; the
+    lazy default factory would open+write the canonical
+    ``data/microprobe.db`` (swallowed as ``persistence_error``). Mirrors
+    ``make_probe`` in test_universe_probe.
+    """
+    from microstructure_probe.persistence import PersistenceStore
+
+    tmp = Path(tempfile.mkdtemp(prefix="p14b3_freshness_test_"))
+    case.addCleanup(lambda: _rmtree(tmp))
+    store = PersistenceStore(db_path=tmp / "probe.db")
+    store.init_db()
+    case.addCleanup(store.close)
+    probe = MarketProbe(config or test_config(), **kwargs)
+    probe.set_persistence(store)
+    return probe
+
+
+def _rmtree(path: Path) -> None:
+    try:
+        for child in sorted(path.rglob("*"), reverse=True):
+            if child.is_file() or child.is_symlink():
+                child.unlink(missing_ok=True)
+            elif child.is_dir():
+                child.rmdir()
+        path.rmdir()
+    except OSError:
+        pass
+
+
 def _cand(key, symbol="ETHUSDT", price=2477.50):
     return {
         "candidate_key": key,
@@ -165,8 +198,10 @@ class TestStaleMarkGate(TestCase):
 
 class TestAcceptedTrafficAccounting(TestCase):
     def _probe(self, now_ms):
-        return MarketProbe(test_config(), wall_clock_ms=lambda: float(now_ms),
-                           monotonic=lambda: float(now_ms) / 1000.0)
+        return make_isolated_probe(
+            self, test_config(),
+            wall_clock_ms=lambda: float(now_ms),
+            monotonic=lambda: float(now_ms) / 1000.0)
 
     def test_accepted_message_updates_freshness(self):
         now = 1_800_000_000_000

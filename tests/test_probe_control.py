@@ -176,7 +176,7 @@ class StartStopTest(unittest.TestCase):
         self.assertEqual(out["pid"], 7)
 
     def test_start_spawns_fixed_command_observe_only(self) -> None:
-        _temp_registry(self)
+        reg = _temp_registry(self)
         captured = {}
 
         class FakeProc:
@@ -195,7 +195,9 @@ class StartStopTest(unittest.TestCase):
                 with mock.patch.object(pc, "own_creation_time",
                                        return_value="STAMP"):
                     with mock.patch.dict(os.environ, {"BOT_MODE": "live"}):
-                        out = pc.start_probe(21600, launcher="dashboard")
+                        out = pc.start_probe(
+                            21600, launcher="dashboard",
+                            evidence_dir=str(reg.parent))
         self.assertTrue(out["started"])
         self.assertEqual(out["pid"], 31337)
         # Fixed module invocation: no shell, no caller-supplied fragments.

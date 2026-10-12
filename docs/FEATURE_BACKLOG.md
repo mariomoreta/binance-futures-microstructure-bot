@@ -1,3 +1,12 @@
+
+## ETAPA-1 test isolation — 2026-10-12
+Enabling test-hygiene (no backlog ID): full-suite write barrier
+(scripts/audit_test_isolation.py, PREFIX/POSTFIX evidence), temp-intercepted
+repro (scripts/repro_default_store_writes.py), 6 test-file fixture fixes +
+tests/test_persistence_isolation.py (5 regressions). 916/916 canonical OK,
+zero prohibited writes, stable microprobe hash; Routes B/C residual with
+production-side blocker. Report: docs/TEST_ISOLATION_ETAPA1_REPORT.md.
+No production change; no gate advancement.
 ## Final proof and fixture-isolation checkpoint (2026-10-11)
 Original proof correction: focused 1/1 and canonical 910/910 exit0 (184.479s).
 A subsequent System read found 375 universe rows, 225 tagged detail='test',

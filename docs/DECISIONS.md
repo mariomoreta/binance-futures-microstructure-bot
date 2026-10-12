@@ -1063,3 +1063,23 @@ FEATURES_IMPLEMENTED adds temporary HOT fixtures and fallback regression.
 FEATURES_VERIFIED final 911 plus isolated original/after negative control.
 DEFERRED_FEATURES retains remaining default-store test isolation, historical lineage and complete cutover.
 No runs, traffic, orders, Start, retirement, main merge or gate advancement.
+
+
+## ETAPA 1 test isolation — 2026-10-12 (append-only)
+
+Prohibited-vs-residual write classification (barrier scripts/audit_test_isolation.py):
+PROHIBITED (must be zero) = row/payload writes via the default persistence
+factory, registry writes, canonical-tree file writes (evidence/watcher logs,
+sidecars). RESIDUAL (reported, byte-neutral, never silenced) = prospective
+rehydration connects on MarketProbe construction (no config db_path exists),
+HistoryStore default-path reads with idempotent DDL, read-only URI connects.
+Hashes+inventory prove effect; green suite never proves purity (61 swallowed
+attempts observed while 911/911 green pre-fix).
+
+Fixture pattern (test-only, production untouched): make_isolated_probe
+(temp PersistenceStore + cleanup, per test_universe_probe.make_probe
+precedent) for message-feeding probes; evidence_dir=tmp for start_probe;
+patch pc.repo_root (not only dashboard.repo_root) for the default watcher
+spawner. Routes B/C need production injection points -- deferred, see
+docs/TEST_ISOLATION_ETAPA1_REPORT.md. No runs, traffic, orders, Start,
+paper, V2/main changes, resets or evidence deletions.
