@@ -1,7 +1,14 @@
 # EVENT_LABELING
 
-Phase 2 scope. No persistence or labeling code exists yet — Phase 1 must not
-persist events (in-memory warm-up only, by design).
+Historical header note (2026-10-06): this file originally stated that no
+persistence or labeling code existed and Phase 1 must not persist events.
+That was true at P1-02 planning time and is SUPERSEDED: P1-02 built the
+SQLite foundation, P1-11B the historical store, P1-11C the no-lookahead
+event-study engine (`events.py`, 38 runs / 2831 instances / 16986 outcomes
+in `data/historical/historical.db`), and P1-13A/14A opportunity +
+prospective evaluation. In-memory warm-up still applies to detectors;
+durable labeling is implemented as specified below (Phase 2 scope
+delivered inside the Phase 1 research chain; roadmap phases unchanged).
 
 ## Requirement
 

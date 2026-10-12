@@ -57,16 +57,18 @@ signal engine → position manager → risk engine → execution engine
 | Probe run control (observe-only operator surface) | `control.py` (registry `logs/probe_runtime.json`, CLI status/start/stop) + probe self-registration in `__main__` + dashboard control APIs/UI | P1-11B.1 DONE (single registry for agent/terminal/dashboard launches; PID+image+ctime identity with ctypes fallback; single-instance refusal; merged UTF-8 file logging per run; POST-only localhost mutations with nonce+Origin; header ENGINE control with polling on all pages; 6H validation preset for P1-10R mechanics — audit still required for PASS) + P1-14B.7 persistent supervision (`control supervise`: detached registry-leased watcher, documented abort rules with UNKNOWN-safe semantics, one-shot verified-PID abort with persisted reason/threshold/observed, lease takeover + failure budget, additive `supervisor` block in control status → API with verified display (ACTIVE only when lease ACTIVE + fresh + identity-verified + run-bound) + raw lease evidence; never starts/restarts runs, never touches foreign PIDs) + registry mutual exclusion (sidecar file lock + `update_registry` locked transforms + ownership fencing on every heartbeat/finalization/marking; atomic rename for readers) + P1-14B.8 sentinel (`control sentinel`: watches supervision liveness via verified lease age/identity/association, enforces safe stop on stale/FAILED/mismatched supervision through the canonical path, own lease + failure budget, verified-display + raw-evidence status blocks, flushed startup prints for launch forensics) + supervised transactional launch PREPARATION DISABLED (`control.launch_supervised_transaction` refuses while disabled; contract `docs/SUPERVISED_LAUNCH_CONTRACT.md`; probe+supervisor+sentinel atomic start with finite-budget verification and kill-only rollback; no HTTP/CLI wiring, Start stays disabled — V2 review pending) |
 | State classifier | `classifier.py` (ClassifierEngine + pure classify_symbol, rules v0.1.0 HYPOTHESIS) | P1-12A DONE (NORMAL/IGNITION/EXPANSION/EXHAUSTION/REVERSAL + UNKNOWN with evidence/validity/transitions; hysteresis + reversal confirmation; evaluated per summary over peer rows; token-page panel; spec `docs/CLASSIFIER_SPEC.md`) |
 | Dynamic universe (HOT subscriptions) | `universe_manager.py` (pure selection + lifecycle) + managed `hot-public`/`hot-market` connections in `probe.py` | P1-12B DONE (3 HOT slots, fail-closed budgets, dwell/cooldown, CORE protected; engine allow/forget; overview subscribed-vs-proposed display; spec `docs/UNIVERSE_SPEC.md`; transport caps UNVERIFIED) |
-| Persistence foundation | `persistence.py` | v8 (v7 + opportunity_candidates REPLACE-per-key + opportunity_events append-only ≤500 + migrations v1–v8); sampling gate + dedicated snapshot writer |
+| Persistence foundation | `persistence.py` | v10 (v9: prospective_setups REPLACE-per-key + prospective_outcomes append-only ≤500 + migrations v1–v9; v10: nullable run_id linkage on universe_events/prospective_setups/prospective_outcomes/telemetry_snapshots, pre-existing rows NULL=UNKNOWN, no backfill; `/api/prospective` schema_version 10); sampling gate + dedicated snapshot writer |
 | Dashboard | `dashboard.py` + `dashboard_data.py` + `dashboard_components.py` + `dashboard_views.py` | LIVE v0.9.0 terminal (P1-09 PASS: OVERVIEW/MOVERS/SYSTEM + `/symbol/:symbol` + search + mark-price chart/CSV APIs; P1-03…P1-08 diagnostics kept under `/system`; `dashboard.py` keeps routing/health/lifecycle, views/components/data split by responsibility); P1-13A opportunity read surface + `/api/opportunities` JSON contract |
 
-## Subscription posture (P1-05)
+## Subscription posture (P1-05 baseline, superseded by P1-12B — see below)
 
-Only CORE symbols are subscribed to websocket streams. The HOT set is
-computed from cheap REST scans and exposed (dashboard/API/logs) but NOT
-subscribed: integrating dynamic stream rebuild on HOT change is the next
-explicit step (owned by P1-09 planning, requires P1-01R transport headroom).
-No live features are ever shown for unsubscribed symbols.
+P1-05 baseline: only CORE symbols were subscribed; HOT was computed from
+cheap REST scans and exposed (dashboard/API/logs) but NOT subscribed.
+P1-12B IMPLEMENTED the next step: managed `hot-public`/`hot-market`
+connections subscribe up to 3 HOT symbols (fail-closed budgets,
+dwell/cooldown, CORE protected; engine allow/forget). Current posture:
+CORE + subscribed HOT get live deep features; discovery-only symbols get
+proposals only, never live features, never inferred subscriptions.
 
 ## Future research pipeline (P1-11B → P1-16, design only — NOT BUILT)
 

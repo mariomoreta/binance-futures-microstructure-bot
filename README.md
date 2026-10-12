@@ -50,7 +50,11 @@ python -m microstructure_probe --duration 60
 
 Sin `--duration`, corre hasta `Ctrl+C`. Los logs son JSON precedidos por timestamp y nivel. El ultimo registro `final_summary` es la evidencia compacta de la ejecucion.
 
-Para conservar una corrida sin agregar persistencia al probe, PowerShell puede capturar el log externamente:
+Para conservar una corrida, el probe persiste evidencia por construcción:
+registro en `logs/probe_runtime.json`, log fusionado UTF-8 en `logs/probe-runs/`
+y filas en `data/microprobe.db` (observaciones, snapshots, eventos,
+prospectiva) más `data/historical/historical.db` (investigación). Para
+capturar además la consola, PowerShell puede redirigirla externamente:
 
 ```powershell
 New-Item -ItemType Directory -Force -Path .\logs\phase1b | Out-Null
@@ -58,7 +62,10 @@ $evidenceStamp = Get-Date -Format 'yyyyMMdd-HHmmss'
 python -m microstructure_probe --duration 300 2>&1 | Tee-Object -FilePath ".\logs\phase1b\evidence-5m-$evidenceStamp.log"
 ```
 
-La carpeta `logs/` esta ignorada. Los detectores no guardan estado y vuelven a hacer warm-up al reiniciar.
+La carpeta `logs/` esta ignorada. Los detectores no guardan estado; los
+motores restauran continuidad desde la base (returns/flow/OI rehidratan
+buckets y muestras al iniciar) y vuelven a hacer warm-up donde no hay
+continuidad persistida.
 
 ## Configuracion
 
@@ -71,7 +78,13 @@ Todos los umbrales estan en `config/probe.json`; no hay umbrales sueltos en el c
 - Clock sync: cinco muestras publicas de `GET /fapi/v1/time` al iniciar y aproximadamente cada 10 minutos. El offset y RTT reportados son medianas.
 - Telemetria: cuantiles por stream/simbolo, procesamiento interno, near-misses, warm-up, data quality y uptime de las conexiones.
 
-La Fase 1 no persiste eventos ni checkpoints posteriores. Eso pertenece expresamente a la Fase 2. Al reiniciar, el historial estadistico de funding y volumen vuelve a calentarse.
+La persistencia operativa (P1-02: observaciones, snapshots, universo) y la
+de investigación (P1-11B/C: klines históricas, event studies con outcomes
+MFE/MAE sin lookahead; P1-13A/14A: oportunidades y prospectiva) existen y
+están validadas; el detalle vive en `docs/CURRENT_STATE.md` y
+`docs/TASK_QUEUE.md`. El boceto temprano "observar sin persistir en Fase 1"
+quedó superado por decisión documentada (ver `docs/DECISIONS.md`); lo que
+sigue perteneciendo a fases posteriores es paper trading y ejecución.
 
 ## Streams y ruteo
 
@@ -97,4 +110,4 @@ Los samples de funding repetidos no se consideran evidencia independiente: el re
 
 ## Estado del proyecto
 
-Consultar `docs/PHASE_1_REPORT.md`. Un test exitoso no demuestra edge ni autoriza persistencia, paper trading o capital real.
+Consultar `docs/PHASE_1_REPORT.md`. Un test exitoso no demuestra edge ni autoriza paper trading, órdenes o capital real. La persistencia local de investigación (P1-02/P1-11B/C) es la vía autorizada para datos; nunca credenciales ni fondos.

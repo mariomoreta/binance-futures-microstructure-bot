@@ -1,3 +1,15 @@
+## Cierre correctivo P1-P4 (2026-10-12, sin push)
+P1 motor offline v2 (7 defectos causales/contables corregidos; 10
+regresiones fail-before 8F+2E sobre bdc9ef2, 26/26 pass-after; contrato
+de lectura v2 sin cablear). P2 inyeccion minima Rutas B/C con defaults
+intactos (barrera con buckets: 946 verdes, 0 bloqueados, 0 efectivos,
+1 RO mode=ro separado, hashes/inventarios limpios). P3 linkage run_id
+(schema v10; migracion probada en copia temporal v9 real; historicos
+NULL=UNKNOWN sin backfill). P4 docs reconciliados (README/EVENT_LABELING/
+ARCHITECTURE/TASK_QUEUE/PAPER_LAB/V2-addendum/cobertura BTC 1h). Suite
+950/950 en sitio; copia aislada pendiente de corrida final. Sin
+rentabilidad, V2, Paper Lab ni ejecucion. Veredicto final abajo.
+
 ## ETAPA 5 Paper Lab plan — DONE (2026-10-12, design only)
 Six build items + entry gates specified; nothing implemented or started.
 Plan: docs/PAPER_LAB_PLAN_ETAPA5.md. Canonical 932/932 OK with stable

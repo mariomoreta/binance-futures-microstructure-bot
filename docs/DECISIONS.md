@@ -1133,3 +1133,33 @@ comparison with predeclared tolerance. Entry gates: Etapa-1 barrier green,
 Etapa-2 dataset fit, Etapa-3 family acceptance, Etapa-4 real-dataset
 validation, explicit human authorization. Nothing implemented, started, or
 authorized. See docs/PAPER_LAB_PLAN_ETAPA5.md.
+
+## Cierre correctivo P1-P4 — 2026-10-12 (append-only, sin push)
+
+P1 motor v2 (metodologia no fijada por contratos, decidida aqui):
+fills secuenciales con estado-causal por vela; stops evaluados contra la
+posicion del momento (posteriores nunca retroactivos); gaps: stop dentro
+del rango => precio stop, si no => open (primer precio real), tiempo de
+conocimiento; OHLC: H/L/C conocidos al close_time (siguiente open);
+horizonte usa velas completadas; primera apertura tras horizonte =>
+expirado contado; incompletos: cantidad/costes conservados, cierre a
+ultimo precio conocido con flag open_at_end; contabilidad por cantidad
+(P&L precio vs friccion); funding con signo por direccion bajo tasa
+unica (limitacion etiquetada); drawdown realizado (MTM no modelado);
+capacidad comprometida en tiempo de senal; mismatch family/version =>
+skip+conteo; knobs no soportados => ValueError; OOS por tiempo de evento
+con cutoff explicito.
+P2: inyeccion minima con defaults intactos (persistence_store /
+research_history_store en MarketProbe; store/run_id en
+ProspectiveRecorder con _resolve_store unico; history_store en
+ResearchRecorder/DashboardState; history_db_path en DashboardServer);
+tests con dependencias temporales explicitas; barrera distingue
+bloqueado/efectivo/RO/preservacion; unico residual RO = lectura
+supervision mode=ro (SQLite impide escritura).
+P3: run_id uuid4 por ejecucion en universe/prospective/snapshots
+(schema v10, migracion en copias temporales, historicos NULL=UNKNOWN
+sin backfill ni inferencia); research buckets: linkage diferido
+explicito; rehidratacion recarga todo (continuidad por diseno).
+Version unica de reglas NO bloquea validacion por si sola: exige
+version congelada+trazable, datos aptos y split temporal defendible;
+sin versiones artificiales.

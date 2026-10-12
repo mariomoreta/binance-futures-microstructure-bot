@@ -69,6 +69,12 @@ profitable operation.
   3× mark 1h); OI capped at 500 rows (~41.6h, served-data limit);
   `historical_gaps` 0 in-window; 10 ingestion runs ledgered; aggTrades
   recent-only (no reconstructed book).
+- Coverage-table note (2026-10-12, no data changed): the
+  `BTCUSDT/1h/klines` row reads expected 0 / actual 0 / ratio NULL
+  because 1h SPOT-klines were never requested — NULL means "not
+  requested", not "missing". The `BTCUSDT/1h/mark_klines` row (719/719,
+  ratio 1.0) is the requested mark series and is present. Different
+  sources, no contradiction.
 - Research buckets (live-captured): flow_10s 10615 / flow_1m 1855 /
   book_1m 1776; spans not extracted here (UNKNOWN — do not infer).
 - Ring buffers, NOT archival: snapshots 1000 (~2.5d span), observations

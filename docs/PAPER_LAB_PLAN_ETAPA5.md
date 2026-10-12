@@ -22,6 +22,11 @@ authorization per `docs/PAPER_TRADING.md` + `docs/RISK_RULES.md` +
   levels from the Etapa-3 contract); fixed-time exits as baseline
   comparator only. Mirrors backtest exit semantics so paper-vs-backtest
   comparison is apples-to-apples.
+- The ACTION VOCABULARY exists as a design document
+  (`docs/POSITION_MANAGEMENT.md`: HOLD / LET_WINNER_RUN / RAISE_STOP /
+  PROTECT_PROFIT / PARTIAL_EXIT / FULL_EXIT, state-driven durations);
+  what is pending is its IMPLEMENTATION as an engine plus the
+  authoritative paper-only position ledger below.
 - One authoritative position ledger (paper-only store, separate from
   research DBs); every action timestamped with event-time + receive-time.
 

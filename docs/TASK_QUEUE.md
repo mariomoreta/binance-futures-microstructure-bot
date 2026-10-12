@@ -1,3 +1,8 @@
+## Cierre correctivo P1-P4 — DONE acotado (2026-10-12, sin push)
+Motor v2 + aislamiento con inyeccion + linkage v10 + docs reconciliados.
+Verificacion final (copia aislada) y entrega abajo. Sin rentabilidad,
+V2, Paper Lab ni ejecucion; gates sin avance.
+
 ## ETAPA 5 Paper Lab plan — DONE (2026-10-12)
 Design delivered; implementation gated on prior-stage validation +
 authorization. Scope complete through Etapa 5 as bounded work.
@@ -144,6 +149,17 @@ any classifier (P1-12) consumes them. No prolonged blind observation before
 
 the dashboard exists. No classifier before raw-feature dashboard validation.
 
+
+
+## ACTIVE_TASK — scope note (2026-10-12, corrective closeout)
+
+The ACTIVE_TASK / NEXT_TASKS sections below preserve the Phase-1 sequence
+state (P1-13A PASS through P1-14B.x, DASH-V2 slices) as historical record —
+do not rewrite them. The CURRENT active work is the bounded corrective
+closeout tracked in the dated blocks at the top of this file (Etapas 1–5
+plus P1–P4 corrective priorities): backtest repair, isolation injection
+points, run linkage, documentation reconciliation. No P1-14C, no paper,
+no execution. Phase gates advance only per docs/SUCCESS_GATES.md.
 
 
 ## ACTIVE_TASK

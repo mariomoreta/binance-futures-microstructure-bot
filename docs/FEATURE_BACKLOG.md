@@ -1,4 +1,9 @@
 
+## Cierre correctivo P1-P4 — 2026-10-12 (sin push)
+Motor offline v2 + regresiones; inyeccion B/C; linkage run_id v10;
+reconciliacion documental. Sin IDs nuevos verificados como feature de
+producto; trabajo habilitante + correctivo. Gates sin avance.
+
 ## ETAPA-5 Paper Lab plan — 2026-10-12
 Design only (no backlog ID): six build items + entry gates. No
 implementation, no paper session, no authorization.

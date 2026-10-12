@@ -252,3 +252,25 @@ FEATURES_IMPLEMENTED adds temporary HOT fixtures and fallback regression.
 FEATURES_VERIFIED final 911 plus isolated original/after negative control.
 DEFERRED_FEATURES retains remaining default-store test isolation, historical lineage and complete cutover.
 No runs, traffic, orders, Start, retirement, main merge or gate advancement.
+
+
+## Addendum — post-closure isolation state (2026-10-12, backend; history above preserved)
+
+Supersedes the 2026-10-11 BLOCKER assessment WITHOUT rewriting it: the
+remaining fixtures were fixed (Etapa 1: isolated-probe helpers,
+evidence_dir, pc.repo_root patch) and production gained minimal
+hermetic injection points (corrective P2: persistence_store /
+research_history_store on MarketProbe, store/run_id on
+ProspectiveRecorder, history_store on ResearchRecorder/DashboardState,
+history_db_path on DashboardServer; defaults unchanged).
+Barrier evidence docs/evidence/TEST_ISOLATION_AUDIT_P2.json: 946 tests
+green, zero blocked factory attempts, zero effective canonical accesses
+(connects/writes/registry), data/logs inventories clean, hashes stable;
+single residual is one SQLite mode=ro supervision read, recorded
+separately. Provenance closed in docs/DATASET_READINESS_ETAPA2.md (225
+fixture rows confirmed, retained + explicit filter; 150
+operational-probable, per-row run UNKNOWN). Storage schema is v10
+(nullable run_id linkage on universe/prospective/snapshot tables;
+pre-existing NULLs = UNKNOWN, never backfilled). The frontend 496-test
+snapshot guidance above still holds. No runs, paper, orders, Start, main
+merge or gate advancement.
