@@ -13,9 +13,9 @@ from typing import Any, Callable
 import websockets
 
 from .book import BookEngine
-from .classifier import ClassifierEngine
+from .classifier import ClassifierEngine, RULES_VERSION as CLASSIFIER_VERSION
 from .clock import ClockSynchronizer, corrected_lag_ms
-from .opportunity import OpportunityEngine
+from .opportunity import OPPORTUNITY_RULES_VERSION, OpportunityEngine
 from .universe_manager import UniverseManager
 from .market_structure import MarketStructureEngine
 from .config import ProbeConfig
@@ -353,7 +353,11 @@ class MarketProbe:
         # Starts with MarketProbe, drains on exit. Never a second process /
         # registry / launcher. Failures degrade the recorder only.
         self._research = ResearchRecorder(
-            enabled=True, history_store=research_history_store)
+            enabled=True, history_store=research_history_store,
+            run_id=self.run_id,
+            rules_version="classifier-%s+opportunity-%s" % (
+                CLASSIFIER_VERSION, OPPORTUNITY_RULES_VERSION),
+            dataset_id=None)
         if persistence_store is not None:
             self._persistence = persistence_store
             self._restore_attempted = False

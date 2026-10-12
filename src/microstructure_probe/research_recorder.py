@@ -198,12 +198,22 @@ class ResearchRecorder:
                  max_queue: int = 2000,
                  retention_days: Optional[Dict[str, int]] = None,
                  enabled: bool = True,
-                 history_store: Optional[Any] = None) -> None:
+                 history_store: Optional[Any] = None,
+                 run_id: Optional[str] = None,
+                 rules_version: Optional[str] = None,
+                 dataset_id: Optional[str] = None) -> None:
         """Optional ``history_store`` overrides the default HistoryStore
         for read-only count lookups in status() (Route-C injection point
-        for hermetic tests). When None, behavior is unchanged."""
+        for hermetic tests). When None, behavior is unchanged.
+        Optional linkage context (run_id / rules_version / dataset_id)
+        stamps flushed bucket rows; all None by default (NULL = UNKNOWN).
+        as_of_ms is stamped at flush wall time (persist-availability),
+        price_source per table ("aggTrade" flow, "depth20" book)."""
         self.db_path = Path(db_path) if db_path else None
         self._history_store = history_store
+        self.run_id = run_id
+        self.rules_version = rules_version
+        self.dataset_id = dataset_id
         self.max_queue = max(16, int(max_queue))
         self.retention_days = retention_days or {"flow_10s": 7, "flow_1m": 90,
                                                  "book_1m": 90}
@@ -368,6 +378,23 @@ class ResearchRecorder:
         # buckets are never treated as complete)
         self._book_open.clear()
 
+    def _stamp(self, row: Dict[str, Any], price_source: str) -> Dict[str, Any]:
+        """Attach linkage context at flush time (never at event time).
+
+        as_of_ms is the persist-availability wall time — distinct from
+        event time (first/last_event_ms) and bucket close. Receive
+        timestamps do not exist here and are never fabricated.
+        """
+        row["run_id"] = self.run_id
+        row["rules_version"] = self.rules_version
+        try:
+            row["as_of_ms"] = int(time.time() * 1000)
+        except Exception:
+            row["as_of_ms"] = None
+        row["price_source"] = price_source
+        row["dataset_id"] = self.dataset_id
+        return row
+
     def _worker(self) -> None:
         while not self._stop.is_set() or not self._queue.empty():
             try:
@@ -385,12 +412,15 @@ class ResearchRecorder:
                     self._seen_flow_keys.add(key)
                     table = "research_flow_10s" if int(size_s) == 10 \
                         else "research_flow_1m"
-                    db.store_research_flow(table, [bucket.row(sym, "OK")])
+                    db.store_research_flow(
+                        table, [self._stamp(bucket.row(sym, "OK"),
+                                            "aggTrade")])
                 else:
                     _, _, sym, bucket = item
                     if bucket.n == 0:
                         continue
-                    db.store_research_book([bucket.row(sym)])
+                    db.store_research_book(
+                        [self._stamp(bucket.row(sym), "depth20")])
                 with self._lock:
                     self._writes += 1
                     try:

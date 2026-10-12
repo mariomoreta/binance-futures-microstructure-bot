@@ -30,7 +30,7 @@ import time
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
 
-SCHEMA_VERSION = 2
+SCHEMA_VERSION = 3
 
 DEFAULT_HISTORICAL_PATH = Path("data") / "historical" / "historical.db"
 
@@ -131,6 +131,9 @@ class HistoryStore:
             )
             # P1-11C migration v1 -> v2 (additive; existing rows preserved).
             self._ensure_v2(con)
+            # Research linkage migration v2 -> v3 (additive; existing rows
+            # keep NULL = UNKNOWN provenance, never backfilled).
+            self._ensure_v3(con)
             con.execute(
                 "UPDATE history_meta SET value=? WHERE key='schema_version'",
                 (str(SCHEMA_VERSION),),
@@ -239,6 +242,38 @@ class HistoryStore:
     def _ensure(self) -> None:
         if not self._initialized:
             self.init_db()
+
+    @staticmethod
+    def _ensure_v3(con: sqlite3.Connection) -> None:
+        """Research linkage columns (additive, idempotent).
+
+        run_id: producing execution (NULL = UNKNOWN, never backfilled).
+        rules_version: feature/hypothesis versions active at recording.
+        as_of_ms: persist-availability wall time at flush — distinct from
+          event time (first/last_event_ms) and bucket close; a historical
+          query never proves when data was available.
+        price_source: venue stream feeding the bucket ("aggTrade" flow,
+          "depth20" book). Receive timestamps do not exist in the
+          recorder and are NOT fabricated (no such column).
+        dataset_id: optional study binding; NULL = UNKNOWN until a study
+          run binds the rows (study runs carry input_source_versions).
+        """
+        for table in ("research_flow_10s", "research_flow_1m",
+                      "research_book_1m"):
+            row = con.execute("SELECT name FROM sqlite_master WHERE type='table'"
+                              " AND name=?", (table,)).fetchone()
+            if row is None:
+                raise ValueError(
+                    "research linkage (v3): missing table %s — refusing"
+                    " partial linkage instead of silently skipping it" % table)
+            existing = {row[1] for row in con.execute(
+                "PRAGMA table_info(%s)" % table).fetchall()}
+            for col in ("run_id", "rules_version", "as_of_ms",
+                        "price_source", "dataset_id"):
+                if col not in existing:
+                    typ = "INTEGER" if col == "as_of_ms" else "TEXT"
+                    con.execute("ALTER TABLE %s ADD COLUMN %s %s"
+                                % (table, col, typ))
 
     def schema_version(self) -> int:
         self._ensure()
@@ -648,7 +683,9 @@ class HistoryStore:
                 " delta_ratio, buy_base, sell_base, base_volume, notional_volume,"
                 " trade_count, buy_trades, sell_trades, price_open, price_high,"
                 " price_low, price_close, first_event_ms, last_event_ms,"
-                " data_quality) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
+                " data_quality, run_id, rules_version, as_of_ms, price_source,"
+                " dataset_id) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,"
+                " ?,?,?,?,?)",
                 [(str(r["symbol"]).upper(), int(r["bucket_start"]),
                   int(r["bucket_end"]), int(r.get("bucket_size_s", 10)),
                   float(r.get("buy_notional", 0.0)), float(r.get("sell_notional", 0.0)),
@@ -659,7 +696,9 @@ class HistoryStore:
                   int(r.get("sell_trades", 0)), r.get("price_open"),
                   r.get("price_high"), r.get("price_low"), r.get("price_close"),
                   r.get("first_event_ms"), r.get("last_event_ms"),
-                  str(r.get("data_quality", "OK")))
+                  str(r.get("data_quality", "OK")), r.get("run_id"),
+                  r.get("rules_version"), r.get("as_of_ms"),
+                  r.get("price_source"), r.get("dataset_id"))
                  for r in rows])
             con.commit()
         finally:
@@ -678,8 +717,10 @@ class HistoryStore:
                 " bucket_end, sample_count, spread_min, spread_mean, spread_max,"
                 " imb_min, imb_mean, imb_max, micro_min, micro_mean, micro_max,"
                 " bid5_mean, ask5_mean, bid20_mean, ask20_mean, depth_gaps,"
-                " degraded, crossed, first_event_ms, last_event_ms)"
-                " VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
+                " degraded, crossed, first_event_ms, last_event_ms,"
+                " run_id, rules_version, as_of_ms, price_source, dataset_id)"
+                " VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,"
+                " ?,?,?,?,?)",
                 [(str(r["symbol"]).upper(), int(r["bucket_start"]),
                   int(r["bucket_end"]), int(r.get("sample_count", 0)),
                   r.get("spread_min"), r.get("spread_mean"), r.get("spread_max"),
@@ -689,7 +730,9 @@ class HistoryStore:
                   r.get("bid20_mean"), r.get("ask20_mean"),
                   int(r.get("depth_gaps", 0)), int(r.get("degraded", 0)),
                   int(r.get("crossed", 0)), r.get("first_event_ms"),
-                  r.get("last_event_ms")) for r in rows])
+                  r.get("last_event_ms"), r.get("run_id"),
+                  r.get("rules_version"), r.get("as_of_ms"),
+                  r.get("price_source"), r.get("dataset_id")) for r in rows])
             con.commit()
         finally:
             con.close()

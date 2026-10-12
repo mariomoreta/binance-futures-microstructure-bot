@@ -1,5 +1,21 @@
 # P3 — Run linkage report (2026-10-12, CORRECTED 2026-10-13)
 
+## Addendum — research-bucket linkage v3 (2026-10-13)
+
+The deferred research-bucket gap is now closed (minimum): history schema
+v2→v3 adds nullable run_id/rules_version/as_of_ms/price_source/
+dataset_id to research_flow_10s/1m + research_book_1m; the recorder
+stamps run_id/rules_version/dataset_id context at flush plus as_of_ms
+(persist-availability wall time, distinct from event time and bucket
+close) and price_source ("aggTrade" flow, "depth20" book); the probe
+threads its run_id + classifier/opportunity versions (dataset_id stays
+None = UNKNOWN until a study binds the rows). Receive timestamps do not
+exist and are never fabricated. Old rows stay NULL. Migration proven on
+temp fixtures and a temp byte-copy of the real canonical historical DB
+(counts preserved, zero leaked linkage); canonical never opened for
+writing. Event-level linkage still rides run_id + (symbol, window);
+study runs keep input_source_versions for dataset identity.
+
 ## Gap analysis (execution → observation → persist → rehydrate)
 
 - universe_events: NO run column → ADDED (nullable run_id).
@@ -70,8 +86,9 @@ Proven on a temp byte-copy of the real v9 canonical DB
 all row counts preserved, old rows NULL, new writes stamped. Canonical
 DBs never opened for writing by any test (P2 barrier evidence).
 
-## Deferred (explicit)
+## Deferred (explicit) — research-bucket item CLOSED 2026-10-13
 
-Research-bucket run linkage (historical schema + recorder row paths)
-needs its own migration + recorder context threading; deferred to avoid
-an oversized atomic change. Recording counts still work without it.
+The deferral above is superseded by the v3 addendum at the top (kept for
+history): research-bucket linkage is implemented with the minimum fields.
+Remaining linkage-adjacent work (not blockers for this scope): study-run
+binding of dataset_id on live buckets; venue funding calendars per symbol.
