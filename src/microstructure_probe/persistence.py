@@ -1215,19 +1215,25 @@ class PersistenceStore:
             )
 
     def latest_return_features(self) -> List[Dict[str, Any]]:
-        """Latest return feature per symbol, ordered by symbol (dashboard/API)."""
+        """Latest return feature per symbol, ordered by symbol (dashboard/API).
+
+        Attaches the row write time as ``updated_ms`` (as-of for the whole
+        feature record; additive key, no stored field is altered).
+        """
         if not self._initialized:
             self.init_db()
         with self._get_cursor() as cursor:
             cursor.execute(
-                "SELECT feature_json FROM return_features ORDER BY symbol")
+                "SELECT symbol, updated_ms, feature_json FROM return_features"
+                " ORDER BY symbol")
             out = []
-            for (blob,) in cursor.fetchall():
+            for (sym, updated_ms, blob) in cursor.fetchall():
                 try:
                     parsed = json.loads(blob)
                 except (json.JSONDecodeError, TypeError):
                     continue
                 if isinstance(parsed, dict):
+                    parsed["updated_ms"] = updated_ms
                     out.append(parsed)
             return out
 

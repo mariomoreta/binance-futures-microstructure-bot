@@ -20,6 +20,7 @@ from .dashboard_data import (
     capability_for,
     compose_universe,
     discovery_rows,
+    funding_snapshot,
     movers_table,
     normalize_symbol,
     price_history_points,
@@ -45,6 +46,20 @@ def _finite(value: Any) -> Optional[float]:
     except (TypeError, ValueError):
         return None
     return f if math.isfinite(f) else None
+
+
+def _fmt_ts(ms: Any) -> str:
+    """UTC timestamp or em-dash (never invents a time)."""
+    try:
+        value = float(ms)
+    except (TypeError, ValueError):
+        return "—"
+    if value <= 0 or value != value:
+        return "—"
+    try:
+        return time.strftime("%Y-%m-%d %H:%M:%S UTC", time.gmtime(value / 1000))
+    except (OverflowError, OSError, ValueError):
+        return "—"
 
 
 def _banner(state) -> str:
@@ -569,6 +584,10 @@ def _render_state_section(record: Any, subscribed: bool) -> str:
         record.get("validity"), dict) else {}
     missing = record.get("missing_features") if isinstance(
         record.get("missing_features"), list) else []
+    evidence_for = record.get("evidence_for") if isinstance(
+        record.get("evidence_for"), list) else []
+    evidence_against = record.get("evidence_against") if isinstance(
+        record.get("evidence_against"), list) else []
     try:
         observed = int(record.get("observed_at_ms") or 0)
         age_s = max(0, int(time.time() * 1000 - observed) // 1000) \
@@ -576,6 +595,13 @@ def _render_state_section(record: Any, subscribed: bool) -> str:
         age = f"{age_s}s ago" if age_s is not None else "—"
     except (TypeError, ValueError):
         age = "—"
+    since_ms = _finite(trans.get("state_since_ms"))
+    duration_ms = _finite(trans.get("duration_ms"))
+    try:
+        duration_s = f"{float(duration_ms) / 1000:.0f}s" \
+            if duration_ms is not None else "—"
+    except (TypeError, ValueError):
+        duration_s = "—"
     rows = [
         ("state", record.get("state", "UNKNOWN")),
         ("direction", record.get("direction", "UNKNOWN")),
@@ -583,8 +609,14 @@ def _render_state_section(record: Any, subscribed: bool) -> str:
         ("rules", record.get("rules_version", "?")),
         ("previous", "%s / %s" % (trans.get("previous_state"),
                                   trans.get("previous_direction"))),
+        ("phase since (transition time)", _fmt_ts(since_ms)),
+        ("phase duration", duration_s),
         ("transition reasons",
          "; ".join(str(r) for r in reasons[:3]) or "—"),
+        ("evidence for",
+         "; ".join(str(e) for e in evidence_for[:6]) or "none recorded"),
+        ("evidence against",
+         "; ".join(str(e) for e in evidence_against[:6]) or "none recorded"),
         ("features used",
          ", ".join(str(f) for f in (
              record.get("features_used") or [])[:6]) or "—"),
@@ -651,17 +683,55 @@ def render_symbol(state, symbol: str, range_name: str = "1h") -> Optional[str]:
     except (TypeError, ValueError):
         chg_s = "—"
     body = (f"<p>{C.tier_chip(tier)} {C.capability_chip(cap)} "
-            f"<span class='note'>feed: {html.escape(health['status'].upper())}</span></p>")
+             f"<span class='note'>feed: {html.escape(health['status'].upper())}</span></p>")
     body += ("<div class='grid g4'>"
              f"<div class='card'><h3>Price (mark reference)</h3>"
              f"<div class='big'>{html.escape(price_s)}</div></div>"
-             f"<div class='card'><h3>24h change (discovery)</h3>"
+             f"<div class='card'><h3>24h change (REST discovery)</h3>"
              f"<div class='big'>{C.signed_pct(chg)}</div></div>"
              f"<div class='card'><h3>Freshness</h3><div class='big'>"
              f"{html.escape(C.age(feat.get('sample_age_ms')) if isinstance(feat, dict) else None)}</div></div>"
              f"<div class='card'><h3>Quote volume 24h (discovery)</h3>"
              f"<div class='big'>{html.escape(str(disc.get('quote_volume_24h', '—')))}</div></div>"
              "</div>")
+    body += ("<p class='note'>REST 24h change is exchange-computed and "
+             "independent of the live anchored 24h return below (when the "
+             "symbol is subscribed). They can disagree; neither is a signal."
+             "</p>")
+    if subscribed and isinstance(feat, dict):
+        returns = feat.get("returns") if isinstance(feat.get("returns"), dict) else {}
+        anchors = feat.get("anchor_ms") if isinstance(feat.get("anchor_ms"), dict) else {}
+        src_ts = _finite(feat.get("source_timestamp_ms"))
+        row_as_of = _finite(feat.get("updated_ms"))
+        r24 = _finite(returns.get("24h"))
+        a24 = _finite(anchors.get("24h"))
+        anchor_px = None
+        cur_px = _finite(feat.get("current_price"))
+        if cur_px is not None and r24 is not None:
+            try:
+                anchor_px = cur_px / math.exp(r24)
+            except (OverflowError, ValueError, ZeroDivisionError):
+                anchor_px = None
+        ref_rows = [
+            ("reference price (markPrice)",
+             f"{cur_px:.4f}" if cur_px is not None else "—"),
+            ("reference time", _fmt_ts(src_ts)),
+            ("row as-of (persisted)", _fmt_ts(row_as_of)),
+            ("history span",
+             f"{float(feat.get('history_span_ms', 0)) / 3600000:.1f}h"
+             if _finite(feat.get("history_span_ms")) is not None else "—"),
+            ("24h anchor time", _fmt_ts(a24)),
+            ("24h anchor price (derived P/exp(r), not observed)",
+             f"{anchor_px:.4f}" if anchor_px is not None else "—"),
+        ]
+        body += ("<h2>Reference &amp; 24h anchor (live, descriptive)</h2>"
+                 "<table class='kv'>"
+                 + "".join(f"<tr><th>{html.escape(k)}</th><td>{html.escape(v)}</td></tr>"
+                           for k, v in ref_rows) + "</table>"
+                 "<p class='note'>24h attribution (how much of the 24h move "
+                 "comes from the current price vs the rolling anchor) needs "
+                 "consecutive evaluations; only the latest row is retained, "
+                 "so the split is UNKNOWN — never simulated.</p>")
     if subscribed and isinstance(feat, dict):
         returns = feat.get("returns") if isinstance(feat.get("returns"), dict) else {}
         momentum = feat.get("momentum") if isinstance(feat.get("momentum"), dict) else {}
@@ -729,9 +799,9 @@ def render_symbol(state, symbol: str, range_name: str = "1h") -> Optional[str]:
         vel = momentum.get("velocity") if isinstance(momentum.get("velocity"), dict) else {}
         acc = momentum.get("acceleration") if isinstance(momentum.get("acceleration"), dict) else {}
         body += "<h2>Momentum (descriptive, NOT signals)</h2><div class='grid g2'>"
-        body += ("<div class='card'><h3>Returns</h3><table class='kv'>"
-                  + "".join(f"<tr><th>{tf}</th><td>{C.signed_frac(returns.get(tf), 3)}</td></tr>"
-                           for tf in ("1m", "3m", "5m", "15m", "1h"))
+        body += ("<div class='card'><h3>Returns (live, anchored)</h3><table class='kv'>"
+                 + "".join(f"<tr><th>{tf}</th><td>{C.signed_frac(returns.get(tf), 3)}</td></tr>"
+                           for tf in ("1m", "3m", "5m", "15m", "1h", "4h", "24h"))
                  + "</table></div>")
         body += ("<div class='card'><h3>Velocity / acceleration / rank</h3>"
                  "<table class='kv'>"
@@ -799,9 +869,9 @@ def render_symbol(state, symbol: str, range_name: str = "1h") -> Optional[str]:
             c1 = str(ctx.get("1m", "UNKNOWN"))
             body += ("<h2>Open interest (descriptive, NOT signals)</h2>"
                      "<table class='kv'>"
-                     f"<tr><th>current OI</th><td>{html.escape(str(oi.get('current_oi', '—')))}</td></tr>"
+                     f"<tr><th>current OI (base units, e.g. BTC — NOT notional)</th><td>{html.escape(str(oi.get('current_oi', '—')))}</td></tr>"
                      + "".join(
-                         f"<tr><th>Δ {h}</th><td>{C.signed_num((horizons.get(h) or {}).get('delta') if isinstance(horizons.get(h), dict) else None)}</td></tr>"
+                         f"<tr><th>Δ {h} (base units)</th><td>{C.signed_num((horizons.get(h) or {}).get('delta') if isinstance(horizons.get(h), dict) else None)}</td></tr>"
                          for h in ("1m", "5m", "15m"))
                      + f"<tr><th>rate</th><td>{html.escape(str((horizons.get('1m') or {}).get('rate') if isinstance(horizons.get('1m'), dict) else '—'))}</td></tr>"
                      f"<tr><th>acceleration</th><td>{C.sci(oi.get('acceleration_per_s2'), '/s²')}</td></tr>"
@@ -810,7 +880,11 @@ def render_symbol(state, symbol: str, range_name: str = "1h") -> Optional[str]:
                      f"<tr><th>freshness{' STALE' if oi.get('stale') else ''}</th>"
                      f"<td>{html.escape(C.age(oi.get('freshness_ms')))}</td></tr>"
                      "</table>"
-                     "<p class='note'>Context labels describe joint price/OI direction only.</p>")
+                     "<p class='note'>Context labels describe joint price/OI direction only. "
+                     "Valued (notional) OI: UNKNOWN — no persisted valuation basis "
+                     "(base units × a price would mix timestamps); never estimated. "
+                     "Long/short account ratios: no account data exists — not shown, "
+                     "never inferred from flow notionals.</p>")
         else:
             body += ("<h2>Open interest</h2><p class='note'>No OI features yet — "
                      "WARMING or STALE.</p>")
@@ -821,13 +895,27 @@ def render_symbol(state, symbol: str, range_name: str = "1h") -> Optional[str]:
             vol = struct.get("volatility") if isinstance(struct.get("volatility"), dict) else {}
             ranges = struct.get("ranges") if isinstance(struct.get("ranges"), dict) else {}
             sts = struct.get("structure") if isinstance(struct.get("structure"), dict) else {}
+            struct_as_of = _finite(struct.get("as_of_ms"))
+            vwap_rows = []
+            for h in ("1m", "3m", "5m", "15m"):
+                vh = vwap.get(h) if isinstance(vwap.get(h), dict) else {}
+                window_ms = _finite(vh.get("window_ms"))
+                anchor = None
+                if struct_as_of is not None and window_ms is not None:
+                    anchor = struct_as_of - window_ms
+                vwap_rows.append(
+                    f"<tr><th>{h} VWAP (trailing, anchor {_fmt_ts(anchor)})</th>"
+                    f"<td>{html.escape(str(vh.get('vwap', '—')))}</td></tr>"
+                    f"<tr><th>{h} displacement bps</th>"
+                    f"<td>{C.signed_num(vh.get('displacement_bps'), 1)}</td></tr>")
             body += "<h2>VWAP / volatility / structure (descriptive, NOT signals)</h2><div class='grid g2'>"
             body += ("<div class='card'><h3>VWAP (flow provenance)</h3><table class='kv'>"
-                     + "".join(
-                         f"<tr><th>{h} VWAP</th><td>{html.escape(str((vwap.get(h) or {}).get('vwap') if isinstance(vwap.get(h), dict) else '—'))}</td></tr>"
-                         f"<tr><th>{h} displacement bps</th><td>{C.signed_num((vwap.get(h) or {}).get('displacement_bps') if isinstance(vwap.get(h), dict) else None, 1)}</td></tr>"
-                         for h in ("1m", "3m", "5m", "15m"))
-                     + "</table></div>")
+                     + "".join(vwap_rows)
+                     + "</table>"
+                     "<p class='note'>Windows trail the feature as-of; the "
+                     "anchor is its start (as_of − window). Reference: "
+                     "markPrice at as-of; displacement raw, never a signal."
+                     "</p></div>")
             body += ("<div class='card'><h3>Realized volatility (raw)</h3><table class='kv'>"
                      + "".join(
                          f"<tr><th>RV {h}</th><td>{html.escape(str((vol.get(h) or {}).get('realized_vol', '—') if isinstance(vol.get(h), dict) else 'UNKNOWN'))}</td></tr>"
@@ -853,6 +941,32 @@ def render_symbol(state, symbol: str, range_name: str = "1h") -> Optional[str]:
         else:
             body += ("<h2>VWAP / volatility / structure</h2>"
                      "<p class='note'>No structure features yet — UNKNOWN / WARMING.</p>")
+        try:
+            funding = funding_snapshot(state.store, sym)
+        except Exception:
+            funding = {"symbol": sym, "next_funding_time_ms": None,
+                       "funding_rate": None, "observation_ms": None,
+                       "settled_history": "UNKNOWN", "calendar": "UNKNOWN"}
+        obs_age = None
+        if isinstance(funding.get("observation_ms"), int):
+            try:
+                obs_age = max(0, int(time.time() * 1000)
+                              - int(funding["observation_ms"])) // 1000
+            except (TypeError, ValueError):
+                obs_age = None
+        body += ("<h2>Funding (quoted context, NOT settled accounting)</h2>"
+                 "<table class='kv'>"
+                 f"<tr><th>next funding time</th><td>{html.escape(_fmt_ts(funding.get('next_funding_time_ms')))}</td></tr>"
+                 f"<tr><th>quoted rate (as-of observation)</th><td>{html.escape(str(funding.get('funding_rate', '—')))}</td></tr>"
+                 f"<tr><th>observation age</th><td>{html.escape(f'{obs_age}s ago' if obs_age is not None else '—')}</td></tr>"
+                 f"<tr><th>settled history</th><td>UNKNOWN (not computed)</td></tr>"
+                 f"<tr><th>calendar</th><td>UNKNOWN (no venue calendar stored)</td></tr>"
+                 "</table>"
+                 "<p class='note'>Rate and next time come from the latest "
+                 "persisted markPrice array only. The rate is quoted-as-of "
+                 "(an estimate for the coming settlement), never a settled "
+                 "record. Settled funding accounting belongs to versioned "
+                 "study runs, not to this panel.</p>")
     body += _render_state_section(state_by.get(sym), subscribed)
     hist = []
     try:

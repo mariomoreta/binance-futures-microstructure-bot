@@ -322,3 +322,74 @@ def price_history_points(store, symbol: str,
         "insufficient": total == 0,
     }
     return pts, meta
+
+
+def _finite_number(value: Any) -> Optional[float]:
+    try:
+        number = float(value)
+    except (TypeError, ValueError):
+        return None
+    if number != number or number in (float("inf"), float("-inf")):
+        return None
+    return number
+
+
+def funding_snapshot(store, symbol: str,
+                     scan_limit: int = 200) -> Dict[str, Any]:
+    """Next-funding context from the latest persisted markPrice array.
+
+    Reads the newest MULTI observation (!markPrice stream) and extracts,
+    for one symbol, the venue fields carried inside the payload:
+    T = next funding time, r = funding rate quoted with that array.
+    Everything else is UNKNOWN: no settled-funding history is computed,
+    no calendar exists, and the rate is quoted-as-of (an estimate for the
+    coming settlement), never a settled record. Observation age is
+    reported honestly (sampled/capped retention may be stale).
+    """
+    sym = normalize_symbol(symbol)
+    unknown: Dict[str, Any] = {
+        "symbol": sym,
+        "next_funding_time_ms": None,
+        "funding_rate": None,
+        "observation_ms": None,
+        "settled_history": "UNKNOWN",
+        "calendar": "UNKNOWN",
+    }
+    if sym is None:
+        return unknown
+    try:
+        rows = store.latest_observations(limit=max(int(scan_limit), 1))
+    except Exception:
+        return unknown
+    for row in rows:
+        if not isinstance(row, dict):
+            continue
+        if row.get("symbol") != "MULTI":
+            continue
+        stream = str(row.get("stream_type") or "")
+        if "markPrice" not in stream:
+            continue
+        payload = row.get("payload")
+        items = payload.get("items") if isinstance(payload, dict) else None
+        if not isinstance(items, list):
+            continue
+        for item in items:
+            if not isinstance(item, dict):
+                continue
+            if str(item.get("s", "")).upper() != sym:
+                continue
+            funding_time = _finite_number(item.get("T"))
+            rate = _finite_number(item.get("r"))
+            obs_ms = _finite_number(row.get("timestamp"))
+            if obs_ms is not None and obs_ms < 1_000_000_000_000:
+                obs_ms = obs_ms * 1000.0  # stored seconds -> ms
+            return {
+                "symbol": sym,
+                "next_funding_time_ms": int(funding_time)
+                if funding_time else None,
+                "funding_rate": rate,
+                "observation_ms": int(obs_ms) if obs_ms else None,
+                "settled_history": "UNKNOWN",
+                "calendar": "UNKNOWN",
+            }
+    return unknown
