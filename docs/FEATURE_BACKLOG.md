@@ -1,4 +1,47 @@
+## Final proof and fixture-isolation checkpoint (2026-10-11)
+Original proof correction: focused 1/1 and canonical 910/910 exit0 (184.479s).
+A subsequent System read found 375 universe rows, 225 tagged detail='test',
+rather than the earlier read of 366/222. Earlier canonical-suite preservation
+claims do NOT hold across those test runs. Readonly GET hashes are a separate,
+bounded check and remain equal.
+
+Root route proven without touching the canonical DB: original HotSyncTest
+calls the default persistence factory twice and writes three DOGEUSDT lifecycle
+rows to an intercepted temporary store. test_universe_probe.make_probe now
+injects a real initialized temporary PersistenceStore with cleanup per testcase.
+All 11 module tests pass with the default factory forbidden, zero calls.
+One added regression prevents fallback. No application source changes.
+This establishes a test contamination route; it does not attribute every
+historical tagged row. Existing canonical rows were retained without cleanup.
+
+Final canonical: 911/911 application tests exit0. The preservation wrapper
+exits1: microprobe.db SHA256 changed; historical.db and registry hashes equal.
+Universe rows stayed375/225: HOT leakage fixed, whole-suite preservation FAILED.
+A guarded subset audit (729 tests) records default-store accesses in test_probe,
+test_host_telemetry and test_p14b_3_transport_freshness (six errors with factory
+forbidden, swallowed persistence errors also observed). These remaining fixtures
+are a BLOCKER for whole-suite isolation; no claim of complete purity is made.
+See backend-isolated-final.json and default-store-audit.json.
+Source notice remains until historical provenance is reviewed.
+The 496-test frontend Python snapshot is historical validation, not the
+current backend. Its old HOT fixtures must not be rerun against the canonical
+store; reconcile the fixture isolation or run it in a fully isolated checkout.
+FEATURES_IMPLEMENTED adds temporary HOT fixtures and fallback regression.
+FEATURES_VERIFIED final 911 plus isolated original/after negative control.
+DEFERRED_FEATURES retains remaining default-store test isolation, historical lineage and complete cutover.
+No runs, traffic, orders, Start, retirement, main merge or gate advancement.
+
+
 # FEATURE BACKLOG — canonical decision traceability & deferred features
+
+## DASH-V2-71B reviewer correction — 2026-10-11
+89232f7 independently reviewed: discovery/canonical 910, exit0. Strengthened
+existing purity test (missing historical-byte assertion, no new logs, env
+restoration); historical-tempfile mutation passed old proof and fails new.
+No application source change. Final bytes do not certify readonly mode;
+four HistoryStore init calls observed. See DASH_V2_71B_REVIEW_CORRECTIONS.md.
+Full cutover/Start/gates unchanged; universe detail=test provenance pending.
+
 
 ## DASH-V2-69 — 2026-10-11 — extraction proof review
 Exact c59c5ec extraction reviewed independently. Five helper bodies match; original Python 3.14 find_module blocker was ineffective despite four green tests. Existing H2 strengthened with find_spec plus deliberate negative control; four focused tests pass. No application source edits. V1 contract retirement section now closes extraction prerequisite while retaining parity/review/authorization requirements; no retirement performed. See DASH_V2_69_EXTRACTION_PROOF_REVIEW.md; canonical verification recorded there. Full cutover and operational readiness remain PARTIAL; Start/gates/main/DB/registry preserved.

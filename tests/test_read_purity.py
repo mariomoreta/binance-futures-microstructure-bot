@@ -1,11 +1,15 @@
-"""Read-path purity for System V2 integration (DASH-V2-71B).
+"""Existing-fixture final-byte checks for System V2 integration (DASH-V2-71B).
 
-Contract proof (no defect found in these paths on existing stores, so no
+Bounded fixture check (not certification of readonly connections; no
 source change ships with it): every audited DashboardState read used by
 System V2 leaves the operational SQLite file, the historical SQLite file,
 the probe registry, and the evidence log byte-identical, and creates no
 new database files. WAL sidecars (*-wal/-shm) from read connections are
 tolerated but recorded; content queries must agree before/after.
+
+HistoryStore readers can call _ensure/init_db despite equal final bytes.
+Those constructors/readers remain excluded from V2; WAL sidecar changes
+are not certified by this test. No new log file is tolerated.
 
 Covers: snapshot/health, all feature families, discovery + universe
 events, ranks, opportunities, prospective, history coverage, research
@@ -67,14 +71,16 @@ class ReadPurityTest(unittest.TestCase):
                                    ("BTCUSDT", 1791641010000, 97001.0)])
         store.store_discovery_snapshot(_discovery())
         hist_path = tmp / "historical.db"
-        os.environ["MICROPROBE_HISTORICAL_DB"] = str(hist_path)
-        self.addCleanup(os.environ.pop, "MICROPROBE_HISTORICAL_DB", None)
+        hist_env = mock.patch.dict(os.environ, {"MICROPROBE_HISTORICAL_DB": str(hist_path)})
+        hist_env.start()
+        self.addCleanup(hist_env.stop)
         from microstructure_probe.history_store import HistoryStore
         hist = HistoryStore(db_path=hist_path)
         hist.init_db()
         reg_path = tmp / "probe_runtime.json"
-        os.environ["MICROPROBE_RUNTIME_FILE"] = str(reg_path)
-        self.addCleanup(os.environ.pop, "MICROPROBE_RUNTIME_FILE", None)
+        runtime_env = mock.patch.dict(os.environ, {"MICROPROBE_RUNTIME_FILE": str(reg_path)})
+        runtime_env.start()
+        self.addCleanup(runtime_env.stop)
         pc._write_registry(_record())
         ev_path = tmp / "evidence.log"
         ev_path.write_text("evidence\n", encoding="utf-8")
@@ -120,6 +126,7 @@ class ReadPurityTest(unittest.TestCase):
         pc.status_readonly()
 
         self.assertEqual((tmp / "microprobe.db").read_bytes(), before_db)
+        self.assertEqual((tmp / "historical.db").read_bytes(), before_hist)
         self.assertEqual(reg_path.read_bytes(), before_reg)
         self.assertEqual(ev_path.read_bytes(), before_ev)
         self.assertEqual(_content_fingerprint(store, hist), before_content)
@@ -131,7 +138,7 @@ class ReadPurityTest(unittest.TestCase):
         # appearing is a real write and fails loudly.
         new_other = [f for f in after_files if f not in before_files]
         for f in new_other:
-            self.assertTrue(f.endswith(("-wal", "-shm", ".log")),
+            self.assertTrue(f.endswith(("-wal", "-shm")),
                             "unexpected new file from reads: %s" % f)
 
 

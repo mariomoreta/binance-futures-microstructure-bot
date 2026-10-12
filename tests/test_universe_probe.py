@@ -3,6 +3,8 @@
 from __future__ import annotations
 
 import asyncio
+import tempfile
+from pathlib import Path
 import unittest
 from unittest import mock
 
@@ -10,12 +12,21 @@ from microstructure_probe.classifier import ClassifierEngine
 T0 = 1_791_000_000_000  # realistic ms epoch for timestamp gates
 
 
+from microstructure_probe.persistence import PersistenceStore
 from microstructure_probe.probe import MarketProbe
 from test_detectors import test_config
 
 
-def make_probe():
-    return MarketProbe(test_config())
+def make_probe(case):
+    # HOT resync writes lifecycle events: every integration fixture owns a DB.
+    temp = tempfile.TemporaryDirectory(prefix="hot_sync_test_")
+    case.addCleanup(temp.cleanup)
+    store = PersistenceStore(Path(temp.name) / "probe.db")
+    store.init_db()
+    case.addCleanup(store.close)
+    probe = MarketProbe(test_config())
+    probe.set_persistence(store)
+    return probe
 
 
 def cands(*symbols):
@@ -32,8 +43,17 @@ def cands(*symbols):
 
 
 class HotSyncTest(unittest.TestCase):
+    def test_hot_sync_never_uses_default_persistence(self) -> None:
+        with mock.patch("microstructure_probe.probe.get_persistence_store",
+                        side_effect=AssertionError("canonical store forbidden")) as default:
+            probe = make_probe(self)
+            self.assertIs(probe.persistence, probe._persistence)
+            self.assertTrue(str(probe.persistence.db_path).startswith(tempfile.gettempdir()))
+            asyncio.run(probe._sync_hot_subscriptions(reason="test"))
+            default.assert_not_called()
+
     def test_promote_spawns_managed_tasks_and_allows_engines(self) -> None:
-        probe = make_probe()
+        probe = make_probe(self)
         created = []
 
         async def fake_loop(name, url):
@@ -65,7 +85,7 @@ class HotSyncTest(unittest.TestCase):
                 task.cancel()
 
     def test_demote_cancels_forgets_and_cools_down(self) -> None:
-        probe = make_probe()
+        probe = make_probe(self)
 
         async def fake_loop(name, url):
             await asyncio.sleep(3600)
@@ -108,7 +128,7 @@ class HotSyncTest(unittest.TestCase):
                 task.cancel()
 
     def test_no_resync_when_set_unchanged(self) -> None:
-        probe = make_probe()
+        probe = make_probe(self)
         probe._hot_active = ("DOGEUSDT",)
         probe._universe.update(
             {"DOGEUSDT": {"eligible": True, "change_24h_pct": 41.2,
@@ -120,7 +140,7 @@ class HotSyncTest(unittest.TestCase):
             loop.assert_not_called()
 
     def test_canonical_pair_untouched_by_sync(self) -> None:
-        probe = make_probe()
+        probe = make_probe(self)
         urls_before = sorted(probe._hot_tasks)
         asyncio.run(probe._sync_hot_subscriptions(reason="test"))
         self.assertEqual(sorted(probe._hot_tasks), urls_before)
@@ -137,7 +157,7 @@ class HotDataTrackingTest(unittest.TestCase):
         probe._hot_active = ("DOGEUSDT",)
 
     def test_warming_then_live_on_mark_trade_depth(self) -> None:
-        probe = make_probe()
+        probe = make_probe(self)
         self._promoted(probe)
         with mock.patch.object(probe, "_wall_clock_ms",
                                return_value=T0+10_000.0):
@@ -152,7 +172,7 @@ class HotDataTrackingTest(unittest.TestCase):
                 "LIVE")
 
     def test_core_symbols_not_tracked(self) -> None:
-        probe = make_probe()
+        probe = make_probe(self)
         probe._note_hot_data("BTCUSDT", "trade")
         self.assertNotIn("BTCUSDT", probe._universe.states_snapshot())
 

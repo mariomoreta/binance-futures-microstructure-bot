@@ -84,14 +84,13 @@ nullability/absence; scope+limits; historical vs current; side effects.
   Example symbols observed: GRIFFAIN/AIOT/MET/OGN/RLC + USDT.
 - `latest_opportunity_candidates()` → `opportunity_candidates`
   REPLACE-per-key (`candidate_key`, `symbol`, `updated_ms`,
-  `candidate_json`); `opportunity_events(limit)` newest-first, ≤500
-  retained per setup (API surfaces 20). Individual lifecycle rows with
+  `candidate_json`); `opportunity_events(limit)` newest-first, bounded retained events (API surfaces 20; retention must be traced
+  in the corresponding writer, not inferred from this reader). Individual lifecycle rows with
   timestamps. Absent → [].
 - `prospective_setups()` / `prospective_outcomes(limit=50)` →
   `prospective_setups` (REPLACE per key: candidate_key/symbol/family/
   direction/market_state/rules_version/capability_tier/detected_at_ms/
-  score/setup_json/lifecycle) + `prospective_outcomes` (append-only,
-  ≤500/setup: horizon/observed_at_ms/mark_return_pct/detected_price/
+  score/setup_json/lifecycle) + `prospective_outcomes` (append-only outcomes: horizon/observed_at_ms/mark_return_pct/detected_price/
   current_price/outcome_state/reason). Dashboard surfaces latest 10.
   Example observed: 1m×63, 5m×59, 15m×44, 1h×35, 4h×27, all COMPLETE.
   Times in ms (event-time); states never fabricated.
@@ -146,14 +145,18 @@ nullability/absence; scope+limits; historical vs current; side effects.
 
 ## 3. Safe readers for V2 (allowlist with purity notes)
 
-Proven zero-mutation on existing stores by `tests/test_read_purity.py`
-(DB/registry/evidence bytes identical + content queries agree + no new
-`.db` files across the full read battery on temp fixtures):
+Bounded final-byte equality on the populated temporary fixture checked by `tests/test_read_purity.py`
+(both DB/registry/evidence bytes compared, content queries agree, no new
+DB or log files; WAL sidecars remain tolerated). This is not proof of
+readonly connection mode, absent-store behavior or intermediate writes.
+Independent review observed four HistoryStore.init_db calls despite
+equal final bytes. Do not promote these helpers to the V2 readonly
+boundary from this test alone. Source-audited existing-store projections:
 `latest_telemetry`, `latest_return_features`, `latest_discovery`,
 `universe_events`, `latest_ranks`, all `latest_*_features`,
 `latest_state_features`, `latest_opportunity_candidates`,
 `opportunity_events`, `prospective_setups/outcomes`,
-`price_history_points` (via `load_price_samples`), `search_symbols` /
+`search_symbols` /
 `movers_table` / `compose_universe` (pure composition),
 `status_readonly`, `compute_health`, `get_rejection_stats`.
 
@@ -203,3 +206,49 @@ bars and null span/ratio is preserved as-is (per V2-67), never upgraded.
    is the boundary.
 4. An authorized observation run is the only source of fresh evidence;
    none is authorized here — all UNKNOWNs above stay UNKNOWN.
+
+## DASH-V2-71 reviewer correction
+Reviewer found that before_hist was captured but never asserted, and new
+.log files were allowed. A historical tempfile mutation passed the original
+test; the strengthened existing test now rejects it. No test-count change.
+Environment overrides now restore prior values. No application source edit.
+
+Final-byte equality is not a readonly-API guarantee: HistoryStore readers
+invoke _ensure/init_db on existing fixtures. Keep V2 on fixed-path
+DatabaseSync readOnly connections. Canonical universe rows detail='test'
+are unverified in origin; preserve them and distinguish retained counts
+from validated operational events. Do not silently delete or exclude.
+
+
+## Final proof and fixture-isolation checkpoint (2026-10-11)
+Original proof correction: focused 1/1 and canonical 910/910 exit0 (184.479s).
+A subsequent System read found 375 universe rows, 225 tagged detail='test',
+rather than the earlier read of 366/222. Earlier canonical-suite preservation
+claims do NOT hold across those test runs. Readonly GET hashes are a separate,
+bounded check and remain equal.
+
+Root route proven without touching the canonical DB: original HotSyncTest
+calls the default persistence factory twice and writes three DOGEUSDT lifecycle
+rows to an intercepted temporary store. test_universe_probe.make_probe now
+injects a real initialized temporary PersistenceStore with cleanup per testcase.
+All 11 module tests pass with the default factory forbidden, zero calls.
+One added regression prevents fallback. No application source changes.
+This establishes a test contamination route; it does not attribute every
+historical tagged row. Existing canonical rows were retained without cleanup.
+
+Final canonical: 911/911 application tests exit0. The preservation wrapper
+exits1: microprobe.db SHA256 changed; historical.db and registry hashes equal.
+Universe rows stayed375/225: HOT leakage fixed, whole-suite preservation FAILED.
+A guarded subset audit (729 tests) records default-store accesses in test_probe,
+test_host_telemetry and test_p14b_3_transport_freshness (six errors with factory
+forbidden, swallowed persistence errors also observed). These remaining fixtures
+are a BLOCKER for whole-suite isolation; no claim of complete purity is made.
+See backend-isolated-final.json and default-store-audit.json.
+Source notice remains until historical provenance is reviewed.
+The 496-test frontend Python snapshot is historical validation, not the
+current backend. Its old HOT fixtures must not be rerun against the canonical
+store; reconcile the fixture isolation or run it in a fully isolated checkout.
+FEATURES_IMPLEMENTED adds temporary HOT fixtures and fallback regression.
+FEATURES_VERIFIED final 911 plus isolated original/after negative control.
+DEFERRED_FEATURES retains remaining default-store test isolation, historical lineage and complete cutover.
+No runs, traffic, orders, Start, retirement, main merge or gate advancement.
