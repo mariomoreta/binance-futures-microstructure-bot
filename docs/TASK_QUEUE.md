@@ -1,3 +1,8 @@
+## ETAPA 4 offline backtest prep — DONE (2026-10-12)
+Mechanics implemented + tested in isolation; V2 read contract prepared
+unwired. Next: ETAPA 5 Paper Lab design (no implementation). Validation
+still blocked per Etapa 2.
+
 ## ETAPA 3 research/backtest contract — DONE (2026-10-12)
 Contract written before any engine. Next: ETAPA 4 isolated offline prep
 (temp fixtures, versioned contracts). No validation claimed.

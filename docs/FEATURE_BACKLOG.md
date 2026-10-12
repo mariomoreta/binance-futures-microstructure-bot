@@ -1,4 +1,8 @@
 
+## ETAPA-4 offline backtest prep — 2026-10-12
+Prep implementation (no backlog ID): isolated engine + 16 tests + unwired
+read contract. Mechanics smoke only; strategy validation NOT claimed.
+
 ## ETAPA-3 research/backtest contract — 2026-10-12
 Contract only (no backlog ID): H1/H2/H3 + cost model + replay limits.
 Engine deferred to Etapa 4 prep. No gate advancement.

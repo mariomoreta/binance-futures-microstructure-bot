@@ -1109,3 +1109,18 @@ UNKNOWN (never infer from volume/price). Costs versioned per study with
 1x/2x/3x sensitivity; raw outcomes stored separately (EVENT_LABELING).
 No study is valid until OOS + costed; anything today is IN-SAMPLE
 EXPLORATION by label. See docs/RESEARCH_BACKTEST_CONTRACT_ETAPA3.md.
+
+## ETAPA 4 offline backtest prep — 2026-10-12 (append-only)
+
+Isolated engine src/microstructure_probe/backtest_offline.py
+(backtest-offline/v1, stdlib-only, no IO/network/DB/clock): chronological
+replay, next-open fills after event time (poison-tested), horizon exits +
+distance stops, fees/funding/spread/slippage, deterministic partial fills,
+single-position overlap skips (counted), MFE/MAE, equity/drawdown,
+config-hash + dataset-id versioning, median dev/OOS split, 1x/2x/3x cost
+sensitivity. Entry/exit rules are STRUCTURAL MECHANICS placeholders, not
+signals. 16 tests/tests/test_backtest_offline.py green on synthetic
+fixtures. Read contract docs/BACKTEST_READ_CONTRACT_V1.md UNWIRED by
+design (no dashboard change, no fictitious results). Fixture smoke only
+executes mechanics; zero performance interpretation. Strategy validation
+still blocked (Etapa 2 gates).

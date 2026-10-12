@@ -1,3 +1,10 @@
+## ETAPA 4 offline backtest prep — DONE (2026-10-12, prep only)
+Isolated engine + 16 tests green + UNWIRED V2 read contract. Mechanics
+smoke on fixtures executes (dev/OOS x 1x/2x/3x, monotone costs, counted
+skips); no performance claim, no validation. Engine:
+src/microstructure_probe/backtest_offline.py. Contract:
+docs/BACKTEST_READ_CONTRACT_V1.md.
+
 ## ETAPA 3 research/backtest contract — DONE (2026-10-12, contract only)
 H1/H2/H3 study contracts with per-family universe/confirmation/timing/
 invalidation/no-trade/params/evidence blocks + versioned cost model +
