@@ -201,7 +201,20 @@ def main(argv: list[str]) -> int:
         try:
             if isinstance(db, str) and db.startswith("file:"):
                 if "mode=ro" in db:
-                    record("sqlite_connect_readonly_uri", {"database": db})
+                    # Read-only URIs: record only canonical ones (temp-copy
+                    # RO opens, e.g. migration fixtures, are not residual).
+                    try:
+                        raw = db.split("?", 1)[0][len("file:"):]
+                        rp = Path(raw).resolve() if raw not in (
+                            ":memory:", "") else None
+                    except Exception:
+                        rp = None
+                    if rp is not None and rp in (CANON_MICROPROBE,
+                                                CANON_HISTORICAL):
+                        record("sqlite_connect_readonly_uri",
+                               {"database": db})
+                    else:
+                        counters["other_connects"] += 1
                 else:
                     record("sqlite_connect_uri", {"database": db})
             elif isinstance(db, (str, Path)) and str(db) != ":memory:":

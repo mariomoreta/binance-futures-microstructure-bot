@@ -1,7 +1,7 @@
 {
   "barrier": "audit_test_isolation ETAPA1",
   "suite": {
-    "tests_run": 946,
+    "tests_run": 950,
     "ok": true,
     "failures": [],
     "errors": []
@@ -60,7 +60,7 @@
           },
           {
             "file": "C:\\proyectos\\binance-futures-microstructure-bot\\scripts\\audit_test_isolation.py",
-            "line": 204,
+            "line": 214,
             "func": "guarded_connect"
           }
         ]
@@ -116,7 +116,7 @@
         },
         {
           "file": "C:\\proyectos\\binance-futures-microstructure-bot\\scripts\\audit_test_isolation.py",
-          "line": 204,
+          "line": 214,
           "func": "guarded_connect"
         }
       ]
@@ -125,9 +125,9 @@
   "registry_write_attempts": [],
   "file_write_attempts": [],
   "connect_counters": {
-    "temp_connects": 818,
+    "temp_connects": 828,
     "memory_connects": 0,
-    "other_connects": 0
+    "other_connects": 1
   },
   "hashes_before": {
     "microprobe.db": "221b332b74a967025f2e6cfe03066f6cd40c24d9e8596a83a87a6a7fb86fa473",

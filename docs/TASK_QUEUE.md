@@ -1,3 +1,8 @@
+## Verificacion final — DONE (2026-10-12, sin push)
+950/950 en sitio y en copia aislada (1 skip esperado). Queda pendiente:
+decision de alcance para research-buckets linkage, OOS real, V2,
+Paper Lab y ejecucion. Nada promovido en SUCCESS_GATES.
+
 ## Cierre correctivo P1-P4 — DONE acotado (2026-10-12, sin push)
 Motor v2 + aislamiento con inyeccion + linkage v10 + docs reconciliados.
 Verificacion final (copia aislada) y entrega abajo. Sin rentabilidad,

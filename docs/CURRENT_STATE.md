@@ -1,3 +1,16 @@
+## Verificacion final (2026-10-12, sin push)
+In-place: barrera P2 exit 0 sobre 950 tests (0 bloqueados, 0 efectivos,
+1 RO mode=ro de supervision registrado aparte, hashes/inventarios
+iguales). Copia aislada (git archive HEAD, sin data//logs/untracked):
+Windows win32, Python 3.14.3, websockets 15.0.1, discovery unittest
+canonico 950 ejecutados, 0 fallos, 1 skip esperado (migracion v9 sobre
+copia canonica ausente), exit 0, sin crear data/ ni logs/. Plataforma
+Linux no reproducida aqui (pendiente si se requiere). Evidencia:
+docs/evidence/ISOLATED_RUN_950.txt. Commits locales (sin push):
+motor, aislamiento, trazabilidad, documentacion + 2 fallouts de
+verificacion (ruta absoluta en test, mkdir diferido). Trabajo ajeno y
+untracked preexistentes intactos.
+
 ## Cierre correctivo P1-P4 (2026-10-12, sin push)
 P1 motor offline v2 (7 defectos causales/contables corregidos; 10
 regresiones fail-before 8F+2E sobre bdc9ef2, 26/26 pass-after; contrato
