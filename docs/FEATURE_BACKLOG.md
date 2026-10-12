@@ -1,4 +1,8 @@
 
+## Cierre correctivo R1-R7 — 2026-10-13 (sin push aun)
+Motor v3 + migraciones v10 en una init + resolver R7 + 22 regresiones.
+Habilitante/correctivo; sin IDs de producto; gates sin avance.
+
 ## Cierre correctivo P1-P4 — 2026-10-12 (sin push)
 Motor offline v2 + regresiones; inyeccion B/C; linkage run_id v10;
 reconciliacion documental. Sin IDs nuevos verificados como feature de

@@ -1,3 +1,13 @@
+## Cierre correctivo R1-R7 (2026-10-13, rama review, sin push aun)
+R1-R5 motor v3 (conocimiento estricto, marcas vs ejecuciones, gap-first,
+orden stop-antes-fills, metricas demostradas); garantias v2 retiradas,
+motor NO verificado causalmente. R6 cadenas v1-v8 a v10 en una init
+(pins actualizados, error explicito en tablas ausentes). R7 resolver
+HistoryStore unico en status/worker/retention. run_id UUID32 con garantia
+probabilistica precisa. Suite 972/972 en sitio + barrera exit 0 (0/0/1RO,
+hashes limpios); canonico intacto (schema v9, 221b33/ca6479/45c6a3,
+375/225). Copia aislada pendiente. Sin rentabilidad/V2/Paper/ejecucion.
+
 ## Verificacion final (2026-10-12, sin push)
 In-place: barrera P2 exit 0 sobre 950 tests (0 bloqueados, 0 efectivos,
 1 RO mode=ro de supervision registrado aparte, hashes/inventarios

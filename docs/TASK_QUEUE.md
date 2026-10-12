@@ -1,3 +1,7 @@
+## Cierre correctivo R1-R7 — implementado (2026-10-13, sin push aun)
+Motor v3 + R6 + R7 + regresiones (22 nuevas) verdes en sitio (972).
+Resta: copia aislada final, commits, push a review, entrega acotada.
+
 ## Verificacion final — DONE (2026-10-12, sin push)
 950/950 en sitio y en copia aislada (1 skip esperado). Queda pendiente:
 decision de alcance para research-buckets linkage, OOS real, V2,

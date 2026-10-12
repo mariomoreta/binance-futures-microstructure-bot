@@ -1163,3 +1163,21 @@ explicito; rehidratacion recarga todo (continuidad por diseno).
 Version unica de reglas NO bloquea validacion por si sola: exige
 version congelada+trazable, datos aptos y split temporal defendible;
 sin versiones artificiales.
+
+## Cierre correctivo R1-R7 — 2026-10-13 (append-only)
+
+R1: stops/metricas/salidas consumen rangos solo con close conocido y en
+ventana; exit_ms/horizontes son tiempos de conocimiento; datos tras la
+ventana no aportan nada. R2: fin de datos = marca a ultimo conocimiento
+(open_at_end), nunca ejecucion al horizonte; sin duracion/funding/cierre/
+capacidad inventados. R3: gap observable al open resuelve primero; la
+recuperacion no mejora el fill. R4: orden vela = stop-existente,
+cancelar resto, fills permitidos, reevaluar; capacidad desde senal.
+R5: MFE/MAE de prints demostrados (open incluido), extremos favorables
+excluidos, salida alimenta MAE. R6: _finish_v10 en todas las cadenas;
+tablas ausentes => ValueError nombrando la tabla (nunca skip
+silencioso); tests re-pineados a v10. R7: _resolve_history unico.
+run_id UUID4 completo: unicidad probabilistica (122 bits), jamas
+absoluta; la separacion usa desigualdad observada. Version unica de
+reglas: congelada+trazable + datos aptos + split defendible; sin
+versiones artificiales.
