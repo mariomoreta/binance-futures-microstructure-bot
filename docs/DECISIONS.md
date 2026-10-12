@@ -1124,3 +1124,12 @@ fixtures. Read contract docs/BACKTEST_READ_CONTRACT_V1.md UNWIRED by
 design (no dashboard change, no fictitious results). Fixture smoke only
 executes mechanics; zero performance interpretation. Strategy validation
 still blocked (Etapa 2 gates).
+
+## ETAPA 5 Paper Lab plan — 2026-10-12 (append-only, DESIGN ONLY)
+
+Work breakdown: simulation+fill model, position manager, cash/fee/funding
+accounting, per-position/portfolio risk, halts/kill-switch, paper-vs-backtest
+comparison with predeclared tolerance. Entry gates: Etapa-1 barrier green,
+Etapa-2 dataset fit, Etapa-3 family acceptance, Etapa-4 real-dataset
+validation, explicit human authorization. Nothing implemented, started, or
+authorized. See docs/PAPER_LAB_PLAN_ETAPA5.md.

@@ -1,3 +1,8 @@
+## ETAPA 5 Paper Lab plan — DONE (2026-10-12, design only)
+Six build items + entry gates specified; nothing implemented or started.
+Plan: docs/PAPER_LAB_PLAN_ETAPA5.md. Canonical 932/932 OK with stable
+hashes (221b33/ca6479/45c6a3).
+
 ## ETAPA 4 offline backtest prep — DONE (2026-10-12, prep only)
 Isolated engine + 16 tests green + UNWIRED V2 read contract. Mechanics
 smoke on fixtures executes (dev/OOS x 1x/2x/3x, monotone costs, counted

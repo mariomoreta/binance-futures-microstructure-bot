@@ -1,4 +1,8 @@
 
+## ETAPA-5 Paper Lab plan — 2026-10-12
+Design only (no backlog ID): six build items + entry gates. No
+implementation, no paper session, no authorization.
+
 ## ETAPA-4 offline backtest prep — 2026-10-12
 Prep implementation (no backlog ID): isolated engine + 16 tests + unwired
 read contract. Mechanics smoke only; strategy validation NOT claimed.

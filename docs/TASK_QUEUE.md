@@ -1,3 +1,7 @@
+## ETAPA 5 Paper Lab plan — DONE (2026-10-12)
+Design delivered; implementation gated on prior-stage validation +
+authorization. Scope complete through Etapa 5 as bounded work.
+
 ## ETAPA 4 offline backtest prep — DONE (2026-10-12)
 Mechanics implemented + tested in isolation; V2 read contract prepared
 unwired. Next: ETAPA 5 Paper Lab design (no implementation). Validation
