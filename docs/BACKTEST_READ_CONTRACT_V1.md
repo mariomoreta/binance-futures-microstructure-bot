@@ -1,29 +1,35 @@
-# Backtest read contract v3 (prep — UNWIRED)
+# Backtest read contract v4 (prep — UNWIRED)
 
 Purpose: let a future Dashboard V2 System/Research panel consume offline
 backtest results WITHOUT touching the engine. Nothing serves this schema
 yet; no route, no UI change, no fictitious results are connected.
-Supersedes the v2 draft (its causality/closure guarantees were refuted;
-see `docs/BACKTEST_CORRECTIVE_P1.md`). History preserved in git.
+Supersedes v3 (funding reworked; v3 history preserved in git).
 
-## Result envelope (`backtest_result/v3`)
+## Result envelope (`backtest_result/v4`)
 
 Produced by `backtest_offline.run_backtest` (`ENGINE_VERSION =
-backtest-offline/v3`). All money in USDT; all times integer ms;
+backtest-offline/v4`). All money in USDT; all times integer ms;
 all times are KNOWLEDGE/decision times, never tick times.
 
 | Field | Type | Meaning |
 |---|---|---|
-| `engine_version` | string | `backtest-offline/v3` |
-| `config_hash` / `config` | string(16) / object | full `BacktestConfig` incl. unsupported knobs (always null in a valid run) |
+| `engine_version` | string | `backtest-offline/v4` |
+| `config_hash` / `config` | string(16) / object | full `BacktestConfig` incl. funding calendar + estimate (context) + unsupported knobs (always null in a valid run) |
 | `dataset_id` / `input_hash` | strings | caller label + sha256 of canonical event/candle tuples |
 | `segment` | `dev`\|`oos` | event-time segment (limitation, see below) |
-| `label` / `limitations` / `drawdown_scope` | strings | smoke guard; unmodeled effects; `realized-only` |
+| `label` / `limitations` / `drawdown_scope` | strings | smoke guard; unmodeled effects (incl. `funding-calendar-or-interval-fallback`); `realized-only` |
 | `n_events` / `n_trades` / `skipped_overlap` / `n_expired` / `n_mismatched` | integers | overlaps skipped, out-of-window expired, family/version mismatches — counted, never silent |
-| `expectancy_net` / `expectancy_gross`, `total_net` / `total_fees` / `total_funding` | floats | mean/additive splits; funding direction-signed under a single-rate assumption |
+| `expectancy_net` / `expectancy_gross`, `total_net` / `total_fees` / `total_funding` | floats | mean/additive splits; funding = SETTLED only (per-settlement, direction-signed, cost-basis exposure) |
+| `funding_calendar` | object\|null | version/source/nominal-interval/n/hash of the calendar used; null = interval fallback |
+| `funding_estimated_bps_context` | float\|null | quoted estimate echoed as context; provably excluded from accounting |
 | `max_drawdown`, `mfe_mean` / `mae_mean` | floats | realized equity peak-to-trough; excursions over demonstrated prints only (favorable extremes excluded, exit move feeds MAE) |
 | `exit_reasons` | {horizon, stop, open_at_end} | rule-close marks vs stop executions vs data-end marks (`open_at_end` trades carry the flag + `cancelled_notional`) |
-| `equity_curve` / `trades` | arrays | cumulative net; per-trade symbol/direction/family/rules, event/entry/exit ms (`exit_ms` ≥ `entry_ms`, knowledge-based), cost/qty average entry, filled_qty/filled_cost, gross/friction/net, fills |
+| `equity_curve` / `trades` | arrays | cumulative net; per-trade symbol/direction/family/rules, event/entry/exit ms (`exit_ms` ≥ `entry_ms`, knowledge-based), cost/qty average entry, filled_qty/filled_cost, gross/friction/net, `funding_events[]` {settlement_ms, rate_bps, held_cost, amount}, `funding_uncovered_ms`, `funding_model`, fills |
+
+Funding semantics (binding): a settlement applies iff
+entry_ms ≤ settlement_ms < exit_ms; exposure = cost filled at times ≤
+settlement; holding time outside the calendar span is `uncovered`
+(unknown cadence, never zero-rate); inter-settlement spans are cadence.
 
 Guarantees a consumer may rely on: sequential fills; stops evaluated on
 known closes only; gap-first open resolution; no post-window data use;

@@ -1,4 +1,4 @@
-"""Offline backtest preparation (research mechanics only, v3).
+"""Offline backtest preparation (research mechanics only, v4).
 
 Pure, deterministic, stdlib-only replay over injected candles + study
 events. No network, no live modules, no database access, no wall clock,
@@ -8,7 +8,7 @@ never performance. The v2 causality/closure guarantees refuted by review
 (R1/R2) are WITHDRAWN and replaced below; the motor is NOT claimed
 causally verified — only covered by the regression battery.
 
-Temporal availability contract (v3):
+Temporal availability contract (v4; v3 rules kept, funding reworked):
 - A candle's OPEN is known at its open_time. Its high/low/close are known
   ONLY at its close_time (the next same-symbol open_time, or UNKNOWN for
   the last candle and across gaps — a following open never proves how long
@@ -36,9 +36,20 @@ Temporal availability contract (v3):
 - Quantity accounting: filled_qty, filled_cost (raw), average entry =
   cost/qty. gross_pnl is pure price P&L on filled qty; friction =
   spread/slip drag + fees + signed funding; net = gross - friction.
-- Funding accrues per full 8h held on filled notional, SIGNED by direction
-  (LONG pays, SHORT receives at a positive rate). Single-rate model is a
-  labeled limitation.
+- Funding (v4): per-SETTLEMENT accounting over an explicit versioned
+  calendar — never a global interval swap. Each settlement carries its own
+  timestamp and realized rate; a settlement applies iff
+  entry_ms <= settlement_ms < exit_ms (boundary convention, tested both
+  edges). Exposure at settlement = cost filled at times <= settlement
+  (executed fills only; partial fills and pre-settlement exits included,
+  later fills excluded). Sign by direction (LONG pays / SHORT receives at
+  a positive rate). Holding time OUTSIDE the calendar's listed span
+  [first, last] is reported as funding_uncovered_ms (truncated head/tail
+  = unknown cadence continuity, never invented as zero-rate);
+  inter-settlement spans inside the span are cadence (no payment due). `funding_estimated_bps`, when set, is CONTEXT ONLY (e.g. a
+  forecast shown on a dashboard) and never enters accounting — estimated
+  vs realized rates are different quantities. Without a calendar, the
+  legacy interval fallback applies (unchanged math, labeled as such).
 - Concurrency is enforced over signal-to-exit intervals (capacity commits
   at event time), per max_concurrent; simultaneous events compete
   deterministically in time order.
@@ -58,8 +69,40 @@ import json
 from dataclasses import dataclass
 from typing import Any, Dict, List, Optional, Tuple
 
-ENGINE_VERSION = "backtest-offline/v3"
+ENGINE_VERSION = "backtest-offline/v4"
 FUNDING_INTERVAL_MS = 8 * 3600 * 1000
+
+
+@dataclass(frozen=True)
+class FundingSettlement:
+    """One realized funding settlement: timestamp + rate actually paid."""
+    settlement_ms: int
+    rate_bps: float
+
+
+@dataclass(frozen=True)
+class FundingCalendar:
+    """Versioned settlement calendar (per-symbol venue reality, injected).
+
+    NOT a global interval: each settlement carries its own timestamp and
+    realized rate (4h cadences, 8h cadences, irregular histories all fit).
+    `source` names provenance ("synthetic-fixture",
+    "exchange-funding-history", ...); `interval_ms` is an informational
+    nominal cadence only, never used for accounting.
+    """
+    version: str = "synthetic/v1"
+    source: str = "synthetic-fixture"
+    interval_ms: Optional[int] = None
+    settlements: Tuple[FundingSettlement, ...] = ()
+
+    def calendar_hash(self) -> str:
+        payload = json.dumps({
+            "version": self.version, "source": self.source,
+            "interval_ms": self.interval_ms,
+            "settlements": sorted((s.settlement_ms, s.rate_bps)
+                                  for s in self.settlements),
+        }, sort_keys=True, default=str)
+        return hashlib.sha256(payload.encode("utf-8")).hexdigest()[:16]
 
 
 @dataclass(frozen=True)
@@ -91,6 +134,12 @@ class BacktestConfig:
     notional_usdt: float = 1000.0
     fee_bps: float = 5.0
     funding_8h_bps: float = 1.0
+    # Explicit settlement calendar (v4). When None, the legacy interval
+    # fallback applies (full 8h intervals from entry at funding_8h_bps).
+    funding_calendar: Optional[FundingCalendar] = None
+    # Estimated future rate: CONTEXT ONLY (e.g. dashboard forecast display).
+    # Never enters accounting; only realized calendar rates settle.
+    funding_estimated_bps: Optional[float] = None
     spread_bps: float = 1.0
     slippage_bps: float = 2.0
     cost_scale: float = 1.0
@@ -114,9 +163,54 @@ LIMITATIONS = [
     "no-tick-lot-rounding",
     "no-min-notional-gate",
     "realized-only-drawdown",
-    "funding-single-rate",
+    "funding-calendar-or-interval-fallback",
     "oos-split-by-event-time",
 ]
+
+
+def _funding_for_trade(side: str,
+                       fill_ledger: List[Tuple[int, float]],
+                       entry_ms: int, exit_ms: int,
+                       cfg: BacktestConfig) -> Tuple[float, list, int, str]:
+    """Returns (total, events, uncovered_ms, model).
+
+    Calendar path: each settlement with entry_ms <= t < exit_ms settles
+    sign * cost-filled-at-times-<=t * rate. Holding time covered by no
+    settlement accrues nothing and counts as uncovered (unknown, never
+    zero-invented). Fallback path: legacy full-interval math, unchanged.
+    """
+    sign = 1.0 if side == "LONG" else -1.0
+    scale = cfg.cost_scale
+    if cfg.funding_calendar is None:
+        filled_notional = sum(cost for (_, cost) in fill_ledger)
+        n = max(0, (exit_ms - entry_ms) // FUNDING_INTERVAL_MS)
+        total = sign * filled_notional * cfg.funding_8h_bps / \
+            10_000.0 * scale * n
+        return total, [], 0, "interval-fallback"
+    cal = sorted(cfg.funding_calendar.settlements,
+                 key=lambda s: s.settlement_ms)
+    total = 0.0
+    events: list = []
+    for s in cal:
+        if entry_ms <= s.settlement_ms < exit_ms:
+            held_cost = sum(cost for (t, cost) in fill_ledger
+                            if t <= s.settlement_ms)
+            amount = sign * held_cost * s.rate_bps / 10_000.0 * scale
+            total += amount
+            events.append({"settlement_ms": s.settlement_ms,
+                           "rate_bps": s.rate_bps,
+                           "held_cost": held_cost, "amount": amount})
+    # UNKNOWN coverage, never zero-invented: holding time outside the
+    # calendar's listed span [first, last] is silent about cadence
+    # continuity (truncated head/tail). Inter-settlement spans inside the
+    # span are cadence (no payment due), not unknown.
+    if cal:
+        span_lo = cal[0].settlement_ms
+        span_hi = cal[-1].settlement_ms
+        uncovered = max(0, span_lo - entry_ms) + max(0, exit_ms - span_hi)
+    else:
+        uncovered = max(0, exit_ms - entry_ms)
+    return total, events, uncovered, "settlement-calendar"
 
 
 def _check_supported(config: BacktestConfig) -> None:
@@ -208,6 +302,7 @@ def run_backtest(events: List[StudyEvent], candles: List[Candle],
         spread_slip = 0.0
         n_fills = 0
         remaining = config.notional_usdt
+        fill_ledger: List[Tuple[int, float]] = []
         cancelled_notional = 0.0
         entry_ms: Optional[int] = None
         exit_ms: Optional[int] = None
@@ -262,6 +357,7 @@ def run_backtest(events: List[StudyEvent], candles: List[Candle],
                     spread_slip += chunk * drag
                     remaining -= chunk
                     n_fills += 1
+                    fill_ledger.append((c.open_time_ms, chunk))
                     if entry_ms is None:
                         entry_ms = c.open_time_ms
                     last_known_px, last_known_ms = c.open, c.open_time_ms
@@ -322,10 +418,9 @@ def run_backtest(events: List[StudyEvent], candles: List[Candle],
         filled_notional = filled_cost_raw
         fees = filled_notional * config.fee_bps / 10_000.0 * \
             config.cost_scale * 2.0
-        n_funding = max(0, (exit_ms - entry_ms) // FUNDING_INTERVAL_MS)
-        sign = 1.0 if is_long else -1.0
-        funding = sign * filled_notional * config.funding_8h_bps / \
-            10_000.0 * config.cost_scale * n_funding
+        funding, funding_events, funding_uncovered_ms, funding_model = \
+            _funding_for_trade(ev.direction, fill_ledger, entry_ms, exit_ms,
+                               config)
         friction = spread_slip + fees + funding
         net = gross - friction
         trades.append({
@@ -336,6 +431,9 @@ def run_backtest(events: List[StudyEvent], candles: List[Candle],
             "filled_qty": filled_qty, "filled_cost": filled_cost_raw,
             "gross_pnl": gross, "spread_slip_cost": spread_slip,
             "fees": fees, "funding": funding, "friction": friction,
+            "funding_events": funding_events,
+            "funding_uncovered_ms": funding_uncovered_ms,
+            "funding_model": funding_model,
             "net_pnl": net, "mfe_pct": mfe, "mae_pct": mae,
             "exit_reason": exit_reason, "open_at_end": open_at_end,
             "fills": n_fills, "cancelled_notional": cancelled_notional,
@@ -375,6 +473,14 @@ def run_backtest(events: List[StudyEvent], candles: List[Candle],
         "total_net": sum(nets),
         "total_fees": sum(t["fees"] for t in trades),
         "total_funding": sum(t["funding"] for t in trades),
+        "funding_calendar": None if config.funding_calendar is None else {
+            "version": config.funding_calendar.version,
+            "source": config.funding_calendar.source,
+            "interval_ms": config.funding_calendar.interval_ms,
+            "n_settlements": len(config.funding_calendar.settlements),
+            "hash": config.funding_calendar.calendar_hash(),
+        },
+        "funding_estimated_bps_context": config.funding_estimated_bps,
         "max_drawdown": max_dd,
         "mfe_mean": sum(t["mfe_pct"] for t in trades) / len(trades)
         if trades else 0.0,

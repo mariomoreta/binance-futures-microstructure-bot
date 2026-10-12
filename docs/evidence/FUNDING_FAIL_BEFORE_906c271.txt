@@ -1,0 +1,27 @@
+python : E
+En línea: 1 Carácter: 150
++ ... ree\tests'; python -m unittest test_backtest_funding > C:\proyectos\b ...
++                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (E:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+======================================================================
+ERROR: test_backtest_funding (unittest.loader._FailedTest.test_backtest_funding)
+----------------------------------------------------------------------
+ImportError: Failed to import test module: test_backtest_funding
+Traceback (most recent call last):
+  File "C:\Python314\Lib\unittest\loader.py", line 137, in loadTestsFromName
+    module = __import__(module_name)
+  File "C:\Users\adonm\AppData\Local\Temp\opencode\pristine906\tree\tests\test_backtest_funding.py", line 15, in 
+<module>
+    from microstructure_probe.backtest_offline import (
+    ...<6 lines>...
+    )
+ImportError: cannot import name 'FundingCalendar' from 'microstructure_probe.backtest_offline' 
+(C:\Users\adonm\AppData\Local\Temp\opencode\pristine906\tree\src\microstructure_probe\backtest_offline.py)
+
+
+----------------------------------------------------------------------
+Ran 1 test in 0.002s
+
+FAILED (errors=1)

@@ -1,0 +1,11 @@
+python : ......................
+En línea: 1 Carácter: 322
++ ... src;tests'; python -m unittest test_backtest_funding test_dashboard_i ...
++                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (......................:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+----------------------------------------------------------------------
+Ran 22 tests in 2.552s
+
+OK
