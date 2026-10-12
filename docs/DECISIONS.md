@@ -1097,3 +1097,15 @@ studies 2831x6 exact, 420 COMPLETE-unusable = FORMATION_GAP by design.
 Dataset SUFFICIENT for descriptive exploration only; NOT for strategy
 validation (single versions, small rare tiers, no OOS, capped buffers,
 capitalization UNKNOWN). See docs/DATASET_READINESS_ETAPA2.md.
+
+## ETAPA 3 research/backtest contract — 2026-10-12 (append-only)
+
+H1 (continuation after breakout/recovery), H2 (exhaustion+reversal after
+expansion), H3 (bearish continuation after support loss, NEVER pooled with
+loser-recovery) defined as STUDY contracts over existing rule versions
+(classifier v0.1.0, opportunity v0.1.0, event-defs v1). Move sizes
+5/15/40/70pc are study-population tiers, not signals. Capitalization
+UNKNOWN (never infer from volume/price). Costs versioned per study with
+1x/2x/3x sensitivity; raw outcomes stored separately (EVENT_LABELING).
+No study is valid until OOS + costed; anything today is IN-SAMPLE
+EXPLORATION by label. See docs/RESEARCH_BACKTEST_CONTRACT_ETAPA3.md.

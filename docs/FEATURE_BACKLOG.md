@@ -1,4 +1,8 @@
 
+## ETAPA-3 research/backtest contract — 2026-10-12
+Contract only (no backlog ID): H1/H2/H3 + cost model + replay limits.
+Engine deferred to Etapa 4 prep. No gate advancement.
+
 ## ETAPA-2 dataset readiness — 2026-10-12
 Enabling research forensics (no backlog ID): pure-read provenance script
 (scripts/audit_dataset_provenance.py) + DATASET_READINESS report with

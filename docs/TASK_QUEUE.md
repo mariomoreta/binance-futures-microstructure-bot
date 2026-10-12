@@ -1,3 +1,7 @@
+## ETAPA 3 research/backtest contract — DONE (2026-10-12)
+Contract written before any engine. Next: ETAPA 4 isolated offline prep
+(temp fixtures, versioned contracts). No validation claimed.
+
 ## ETAPA 2 dataset readiness — DONE (2026-10-12)
 Provenance closed (confirmed/probable/unknown split, all rows retained).
 Dataset apt for descriptive work with explicit fixture filter; blocked for

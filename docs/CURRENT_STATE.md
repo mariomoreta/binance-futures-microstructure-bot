@@ -1,3 +1,9 @@
+## ETAPA 3 research/backtest contract — DONE (2026-10-12, contract only)
+H1/H2/H3 study contracts with per-family universe/confirmation/timing/
+invalidation/no-trade/params/evidence blocks + versioned cost model +
+replay limits + in-sample labeling mandate. No engine, no runs, no claims.
+Report: docs/RESEARCH_BACKTEST_CONTRACT_ETAPA3.md.
+
 ## ETAPA 2 dataset readiness — DONE (2026-10-12)
 Pure-read provenance (hashes unchanged): 225 fixture rows confirmed
 (DOGEUSDT hot lifecycle detail=test) retained + explicit filter rule; 150
