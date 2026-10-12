@@ -1,0 +1,31 @@
+# Regresiones del comparador W/LUMIA (2026-10-13, rama review/w-lumia-correccion-bc327f1)
+Script: docs/evidence/compare_case_study_json_csv.py (fortalecido).
+Metodo: 5 mutantes en copia temporal de binance_case_study (originales intactos).
+Comando por caso:
+  $env:PYTHONUTF8='1'
+  python docs/evidence/compare_case_study_json_csv.py "binance_case_study" "<mutante>" --out <salida>.json
+
+Caso M1 valor->missing (WUSDT fila 100 rsi14 51.06347303475749 -> vacio):
+  exit=1, verdict=DIFFERENT.
+  csv_diff_sample=['MISSING_MASK rsi14: orig_na=14 repro_na=15 rows=[100]'].
+  Con el script anterior esto daba max_abs_numeric_diff=0.0, non_numeric_exact=True, exit 0 (bug).
+
+Caso M2 missing->valor (WUSDT fila 5 rsi14 NaN -> 50.0):
+  exit=1, verdict=DIFFERENT (MISSING_MASK rsi14, rows=[5]).
+
+Caso M3 cambio numerico (WUSDT fila 100 rsi14 +1.0):
+  exit=1, verdict=DIFFERENT (NUMERIC_DIFF col=rsi14).
+
+Caso M4 estructura distinta (WUSDT sin columna atr_pct):
+  exit=1, verdict=DIFFERENT (COLUMNS ... atr_pct ...).
+
+Caso M5 archivo ausente (sin GTCUSDT_features_5m.csv en repro):
+  exit=2, verdict=INCOMPLETE (repro/GTCUSDT_features_5m.csv missing).
+
+Comparacion legitima original vs re-ejecucion fresca (copia temporal lumia_repro2,
+analyze exit 0 + finish exit 0, sin tocar originales):
+  exit=0, verdict=MATCH, differences=0, incomplete=[].
+  JSON analysis_summary/supplemental: MATCH (parsed_diffs 0).
+  CSV W/LUMIA/BTC/GTC: MATCH (missing-masks iguales, dtypes iguales, max_abs_numeric_diff 0.0).
+  PNG: hash difiere (render del entorno); visual NOT_ASSESSED; excluido del exit code.
+Evidencia: docs/evidence/CASE_STUDY_WUSDT_LUMIA_COMPARISON.json (UTF-8, ensure_ascii=False).
