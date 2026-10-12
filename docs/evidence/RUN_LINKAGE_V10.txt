@@ -1,0 +1,21 @@
+RUN_LINKAGE v10 evidence - 4 tests on temp resources; v9 migration on temp byte-copy of canonical (read once, never written). Canonical state at capture: schema v9, hashes 221b33/ca6479/45c6a3, universe 375/225 (pure read, see delivery).
+
+python : test_probe_run_ids_unique_and_propagated 
+(test_run_linkage.ProbeRunPropagationTest.test_probe_run_ids_unique_and_propagated) ... ok
+En línea: 1 Carácter: 30
++ ... src;tests'; python -m unittest test_run_linkage -v > docs/evidence/RU ...
++                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (test_probe_run_...pagated) ... ok:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+test_prospective_rows_carry_recorder_run 
+(test_run_linkage.ProbeRunPropagationTest.test_prospective_rows_carry_recorder_run) ... ok
+test_fresh_init_is_v10_with_run_id_columns (test_run_linkage.SchemaV10Test.test_fresh_init_is_v10_with_run_id_columns) 
+... ok
+test_v9_copy_migrates_preserving_rows_without_backfill 
+(test_run_linkage.SchemaV10Test.test_v9_copy_migrates_preserving_rows_without_backfill) ... ok
+
+----------------------------------------------------------------------
+Ran 4 tests in 1.199s
+
+OK
