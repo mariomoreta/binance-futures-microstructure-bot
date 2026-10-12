@@ -44,6 +44,33 @@ from microstructure_probe.persistence import PersistenceStore
 T0 = 1_700_000_100_000  # fixed observation epoch (ms)
 
 
+def _isolated_probe(case, config=None, **kwargs):
+    """Probe bound to temp stores (P2: no canonical Route-B/C access)."""
+    from microstructure_probe.history_store import HistoryStore
+    from microstructure_probe.probe import MarketProbe
+
+    tmp = Path(tempfile.mkdtemp(prefix="opp_probe_test_"))
+    case.addCleanup(lambda: _rmtree(tmp))
+    store = PersistenceStore(tmp / "probe.db")
+    store.init_db()
+    case.addCleanup(store.close)
+    hist = HistoryStore(tmp / "historical.db")
+    return MarketProbe(config, persistence_store=store,
+                       research_history_store=hist, **kwargs)
+
+
+def _rmtree(path: Path) -> None:
+    try:
+        for child in sorted(path.rglob("*"), reverse=True):
+            if child.is_file() or child.is_symlink():
+                child.unlink(missing_ok=True)
+            elif child.is_dir():
+                child.rmdir()
+        path.rmdir()
+    except OSError:
+        pass
+
+
 def make_classification(state="EXPANSION", direction="UP",
                         observed_at_ms=T0 - 30_000,
                         version=CLASSIFIER_VERSION, **over):
@@ -787,15 +814,13 @@ class ResourceBudgetTest(unittest.TestCase):
 class ProbeIntegrationTest(unittest.TestCase):
     def test_probe_exposes_opportunity_engine(self) -> None:
         from test_detectors import test_config
-        from microstructure_probe.probe import MarketProbe
-        probe = MarketProbe(test_config())
+        probe = _isolated_probe(self, test_config())
         self.assertEqual(probe.opportunity().stats()["rules_version"],
                          OPPORTUNITY_RULES_VERSION)
 
     def test_summary_carries_opportunity_stats(self) -> None:
         from test_detectors import test_config
-        from microstructure_probe.probe import MarketProbe
-        probe = MarketProbe(test_config())
+        probe = _isolated_probe(self, test_config())
         summary = probe.build_summary(final=False)
         self.assertIn("opportunities", summary)
         self.assertEqual(
@@ -882,7 +907,8 @@ class DashboardSurfaceTest(unittest.TestCase):
         matched, _ = evaluate_symbol("BTCUSDT", make_bundle(), T0)
         store.store_opportunity_candidates(matched)
         server = DashboardServer(host="127.0.0.1", port=0,
-                                     db_path=store.db_path).start()
+                                     db_path=store.db_path,
+                                     history_db_path=store.db_path.parent / "hist.db").start()
         self.addCleanup(server.stop)
         url = f"http://127.0.0.1:{server.bound_port()}/api/opportunities"
         with urllib.request.urlopen(url, timeout=10) as resp:

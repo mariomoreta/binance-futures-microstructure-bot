@@ -208,8 +208,10 @@ class ProbeReturnsWiringTest(unittest.TestCase):
         self.db_path = Path(self.temp_dir) / "probe_ret.db"
         self.store = PersistenceStore(db_path=self.db_path)
         self.store.sample_interval_ms = {}
-        self.probe = MarketProbe(test_config())
-        self.probe.set_persistence(self.store)
+        from microstructure_probe.history_store import HistoryStore
+        self.hist = HistoryStore(Path(self.temp_dir) / "historical.db")
+        self.probe = MarketProbe(test_config(), persistence_store=self.store,
+                                 research_history_store=self.hist)
 
     def tearDown(self) -> None:
         self.store.close()
@@ -237,8 +239,8 @@ class ProbeReturnsWiringTest(unittest.TestCase):
         clock = [t0]
         probe = MarketProbe(
             test_config(), wall_clock_ms=lambda: float(clock[0]),
-            monotonic=lambda: 10.0)
-        probe.set_persistence(self.store)
+            monotonic=lambda: 10.0, persistence_store=self.store,
+            research_history_store=self.hist)
         for step in (0, 10_000):
             clock[0] = t0 + step
             probe._handle_message(self._markprice(t0 + step, "100"))

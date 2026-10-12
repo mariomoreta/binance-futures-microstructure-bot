@@ -26,6 +26,18 @@ def _tick(symbol, change="5.0", volume="2000000", price="100.0", count=100):
             "closeTime": 1_700_000_000_000}
 
 
+def _rmtree(path: Path) -> None:
+    try:
+        for child in sorted(path.rglob("*"), reverse=True):
+            if child.is_file() or child.is_symlink():
+                child.unlink(missing_ok=True)
+            elif child.is_dir():
+                child.rmdir()
+        path.rmdir()
+    except OSError:
+        pass
+
+
 class DiscoveryFilterTest(unittest.TestCase):
     def test_core_trio_eligible(self) -> None:
         infos = {"symbols": [_meta(s) for s in CORE_SYMBOLS]}
@@ -180,7 +192,17 @@ class SubscriptionBoundTest(unittest.TestCase):
         from microstructure_probe.probe import MarketProbe, build_stream_urls
         from test_detectors import test_config
 
-        probe = MarketProbe(test_config())
+        import tempfile
+        from microstructure_probe.history_store import HistoryStore
+        from microstructure_probe.persistence import PersistenceStore
+        tmp = Path(tempfile.mkdtemp(prefix="subbound_test_"))
+        self.addCleanup(lambda: _rmtree(tmp))
+        store = PersistenceStore(tmp / "probe.db")
+        store.init_db()
+        self.addCleanup(store.close)
+        probe = MarketProbe(test_config(), persistence_store=store,
+                            research_history_store=HistoryStore(
+                                tmp / "historical.db"))
         probe._hot_dynamic = tuple(f"SYM{i}USDT" for i in range(50))
         urls = build_stream_urls(probe.config)
         blob = urls["public"] + urls["market"]
@@ -204,8 +226,10 @@ class ProbeDiscoveryScanTest(unittest.TestCase):
         self.db_path = Path(self.temp_dir) / "disc.db"
         self.store = PersistenceStore(db_path=self.db_path)
         self.store.sample_interval_ms = {}
-        self.probe = MarketProbe(test_config())
-        self.probe.set_persistence(self.store)
+        from microstructure_probe.history_store import HistoryStore
+        self.hist = HistoryStore(Path(self.temp_dir) / "historical.db")
+        self.probe = MarketProbe(test_config(), persistence_store=self.store,
+                                 research_history_store=self.hist)
 
         infos = {"symbols": [_meta("BTCUSDT"),
                              _meta("SCREAMUSDT"),
@@ -271,8 +295,8 @@ class ProbeDiscoveryScanTest(unittest.TestCase):
         clock = [t0]
         probe = MarketProbe(
             test_config(), wall_clock_ms=lambda: float(clock[0]),
-            monotonic=lambda: 10.0)
-        probe.set_persistence(self.store)
+            monotonic=lambda: 10.0, persistence_store=self.store,
+            research_history_store=self.hist)
         for i in range(25):  # ~4 min of rising mark-price history, zero skew
             clock[0] = t0 + i * 10_000
             probe._handle_message(_json.dumps({

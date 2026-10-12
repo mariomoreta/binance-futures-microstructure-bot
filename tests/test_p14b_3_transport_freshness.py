@@ -44,13 +44,13 @@ EVENT_BASE_MS = 1791502924007
 
 
 def make_isolated_probe(case, config=None, **kwargs):
-    """Probe bound to a temp PersistenceStore (never the canonical DB).
+    """Probe bound to temp stores (never the canonical DBs).
 
-    ETAPA 1 isolation: accepted/rejected traffic accounting feeds messages
-    through ``_handle_message``, which reaches ``self.persistence``; the
-    lazy default factory would open+write the canonical
-    ``data/microprobe.db`` (swallowed as ``persistence_error``). Mirrors
-    ``make_probe`` in test_universe_probe.
+    ETAPA 1 isolation + P2 injection: accepted/rejected traffic accounting
+    feeds messages through ``_handle_message`` (default factory route);
+    construction rehydrates the prospective recorder from the default
+    store (Route B); summaries read research counts through the default
+    HistoryStore (Route C). Mirrors ``make_probe`` in test_universe_probe.
     """
     from microstructure_probe.persistence import PersistenceStore
 
@@ -59,8 +59,10 @@ def make_isolated_probe(case, config=None, **kwargs):
     store = PersistenceStore(db_path=tmp / "probe.db")
     store.init_db()
     case.addCleanup(store.close)
-    probe = MarketProbe(config or test_config(), **kwargs)
-    probe.set_persistence(store)
+    from microstructure_probe.history_store import HistoryStore
+    hist = HistoryStore(tmp / "historical.db")
+    probe = MarketProbe(config or test_config(), persistence_store=store,
+                        research_history_store=hist, **kwargs)
     return probe
 
 
@@ -251,8 +253,10 @@ class TestConnectionMapping(TestCase):
 
 class TestFreshnessWatchdog(TestCase):
     def _probe(self, now_ms):
-        probe = MarketProbe(test_config(), wall_clock_ms=lambda: float(now_ms),
-                            monotonic=lambda: float(now_ms) / 1000.0)
+        probe = make_isolated_probe(
+            self, test_config(),
+            wall_clock_ms=lambda: float(now_ms),
+            monotonic=lambda: float(now_ms) / 1000.0)
         probe.stats.connection_started["public"] = float(now_ms) / 1000.0 - 600.0
         probe.stats.connection_started["market"] = float(now_ms) / 1000.0 - 600.0
         return probe
@@ -287,9 +291,10 @@ class TestFreshnessWatchdog(TestCase):
         now = 1_800_000_000_000
         wall = [now]
         mono = [float(now) / 1000.0]
-        probe = MarketProbe(test_config(),
-                            wall_clock_ms=lambda: float(wall[0]),
-                            monotonic=lambda: float(mono[0]))
+        probe = make_isolated_probe(
+            self, test_config(),
+            wall_clock_ms=lambda: float(wall[0]),
+            monotonic=lambda: float(mono[0]))
         probe.stats.connection_started["public"] = mono[0] - 600.0
         probe.stats.connection_started["market"] = mono[0] - 600.0
         probe._last_accepted_ms["btcusdt@bookTicker"] = float(now - 200_000)
@@ -318,7 +323,7 @@ class TestFreshnessWatchdog(TestCase):
         self.assertIn("hot-market", probe._check_connection_freshness(now))
 
     def test_consume_request_is_one_shot(self):
-        probe = MarketProbe(test_config())
+        probe = make_isolated_probe(self)
         self.assertFalse(probe._consume_reconnect_request("market"))
         probe._reconnect_requested.add("market")
         self.assertTrue(probe._consume_reconnect_request("market"))

@@ -4,6 +4,7 @@ import asyncio
 import json
 import logging
 import time
+import uuid
 from collections import Counter, defaultdict
 from contextlib import suppress
 from dataclasses import dataclass, field
@@ -267,8 +268,19 @@ class MarketProbe:
         wall_clock_ms: Callable[[], float] | None = None,
         monotonic: Callable[[], float] | None = None,
         perf_counter_ns: Callable[[], int] | None = None,
+        persistence_store: PersistenceStore | None = None,
+        research_history_store: Any | None = None,
     ) -> None:
+        """Optional ``persistence_store`` / ``research_history_store`` are
+        hermetic-test injection points (Routes B/C): the probe and its
+        owned prospective recorder use them instead of the default
+        production stores. When None (production default) behavior is
+        unchanged."""
         self.config = config
+        # P3 run linkage: unique per probe execution; stamped on every
+        # row this run persists (universe events, setups, outcomes,
+        # snapshots). Historical rows without one stay NULL = UNKNOWN.
+        self.run_id = uuid.uuid4().hex[:16]
         self._wall_clock_ms = wall_clock_ms or (lambda: time.time_ns() / 1_000_000)
         self._monotonic = monotonic or time.monotonic
         self._perf_counter_ns = perf_counter_ns or time.perf_counter_ns
@@ -337,7 +349,11 @@ class MarketProbe:
         # P1-11C: prospective research recorder (probe-owned, same process).
         # Starts with MarketProbe, drains on exit. Never a second process /
         # registry / launcher. Failures degrade the recorder only.
-        self._research = ResearchRecorder(enabled=True)
+        self._research = ResearchRecorder(
+            enabled=True, history_store=research_history_store)
+        if persistence_store is not None:
+            self._persistence = persistence_store
+            self._restore_attempted = False
         # P1-12A: market-state classifier v0 (observed states with evidence,
         # never signals). Pure evaluation over peer-engine rows each summary;
         # memory (dwell/confirmation) restarts cold by design.
@@ -352,6 +368,8 @@ class MarketProbe:
         self._prospective = ProspectiveRecorder(
             db_path=getattr(config, "db_path", None),
             enabled=True,
+            store=persistence_store,
+            run_id=self.run_id,
         )
         # P1-12B: dynamic universe manager (selection + lifecycle only).
         # CORE is config.symbols (protected); HOT subscriptions ride managed
@@ -1142,7 +1160,8 @@ class MarketProbe:
                 self.persistence.store_discovery_snapshot(snapshot)
                 for event in events:
                     self.persistence.log_universe_event(
-                        event["kind"], event["symbol"], event.get("reason", ""))
+                        event["kind"], event["symbol"],
+                        event.get("reason", ""), run_id=self.run_id)
             except Exception as exc:
                 LOGGER.warning(json.dumps(
                     {"kind": "persistence_error", "error": str(exc)}))
@@ -1224,7 +1243,7 @@ class MarketProbe:
                 self.persistence.log_universe_event(
                     "hot_%s" % event.get("kind", "unknown"),
                     str(event.get("symbol", "?")),
-                    str(event.get("reason", "")))
+                    str(event.get("reason", "")), run_id=self.run_id)
             except Exception as exc:
                 LOGGER.warning(json.dumps(
                     {"kind": "persistence_error", "error": str(exc)}))
@@ -1291,7 +1310,8 @@ class MarketProbe:
             self._hot_seen.pop(symbol, None)
             try:
                 self.persistence.log_universe_event(
-                    "hot_unsubscribed", symbol, reason or "desired-set change")
+                    "hot_unsubscribed", symbol,
+                    reason or "desired-set change", run_id=self.run_id)
             except Exception:
                 pass
         # Promoted: admit everywhere (engines create state lazily on first
@@ -1306,7 +1326,8 @@ class MarketProbe:
                 self._classifier.allow([symbol])
                 self._opportunity.allow([symbol])
                 self.persistence.log_universe_event(
-                    "hot_subscribed", symbol, reason or "desired-set change")
+                    "hot_subscribed", symbol,
+                    reason or "desired-set change", run_id=self.run_id)
             except Exception as exc:
                 LOGGER.warning(json.dumps(
                     {"kind": "universe_error", "error": str(exc)}))
@@ -1559,6 +1580,7 @@ class MarketProbe:
 
         return {
             "kind": "final_summary" if final else "summary",
+            "run_id": self.run_id,
             "runtimeSeconds": round(runtime, 3),
             "safety": {
                 "BOT_MODE": "observe",

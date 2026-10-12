@@ -88,7 +88,9 @@ class ReadPurityTest(unittest.TestCase):
 
     def test_read_battery_leaves_everything_untouched(self):
         tmp, store, hist, reg_path, ev_path = self._fixture()
-        state = DashboardState(store)
+        # P2: explicit temp history dependency (no default construction,
+        # no env reliance for the state under test).
+        state = DashboardState(store, history_store=hist)
         before_db = (tmp / "microprobe.db").read_bytes()
         before_hist = (tmp / "historical.db").read_bytes()
         before_reg = reg_path.read_bytes()

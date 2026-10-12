@@ -18,14 +18,19 @@ from test_detectors import test_config
 
 
 def make_probe(case):
-    # HOT resync writes lifecycle events: every integration fixture owns a DB.
+    # HOT resync writes lifecycle events: every integration fixture owns
+    # a DB. P2 injection: the temp store is also wired into construction
+    # (prospective rehydration + research history reads use it instead of
+    # the canonical defaults).
+    from microstructure_probe.history_store import HistoryStore
     temp = tempfile.TemporaryDirectory(prefix="hot_sync_test_")
     case.addCleanup(temp.cleanup)
     store = PersistenceStore(Path(temp.name) / "probe.db")
     store.init_db()
     case.addCleanup(store.close)
-    probe = MarketProbe(test_config())
-    probe.set_persistence(store)
+    hist = HistoryStore(Path(temp.name) / "historical.db")
+    probe = MarketProbe(test_config(), persistence_store=store,
+                        research_history_store=hist)
     return probe
 
 

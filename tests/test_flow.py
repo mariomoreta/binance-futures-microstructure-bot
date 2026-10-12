@@ -423,11 +423,15 @@ class FlowPersistenceTest(unittest.TestCase):
 
 class ProbeFlowWiringTest(unittest.TestCase):
     def _probe(self, now_ms):
+        from microstructure_probe.history_store import HistoryStore
+
+        store = _temp_store(self)
+        hist = HistoryStore(store.db_path.parent / "historical.db")
         probe = MarketProbe(test_config(),
                             wall_clock_ms=lambda: float(now_ms),
-                            monotonic=lambda: 10.0)
-        store = _temp_store(self)
-        probe.set_persistence(store)
+                            monotonic=lambda: 10.0,
+                            persistence_store=store,
+                            research_history_store=hist)
         return probe, store
 
     def _aggtrade(self, event_ms, price="100", qty="1", maker=False):
@@ -502,11 +506,14 @@ class ProbeFlowWiringTest(unittest.TestCase):
         # Mutable wall clock: each message is fresh at its own event time
         # (an 11s-old E against a fixed clock would be skew-rejected).
         clock = [float(now_ms)]
+        store = _temp_store(self)
+        from microstructure_probe.history_store import HistoryStore
+        hist = HistoryStore(store.db_path.parent / "historical.db")
         probe = MarketProbe(test_config(),
                             wall_clock_ms=lambda: clock[0],
-                            monotonic=lambda: 10.0)
-        store = _temp_store(self)
-        probe.set_persistence(store)
+                            monotonic=lambda: 10.0,
+                            persistence_store=store,
+                            research_history_store=hist)
         # Span two 10s buckets so one bucket completes for persistence.
         probe._handle_message(self._aggtrade(now_ms, maker=False))
         clock[0] = float(now_ms + 11_000)
@@ -533,7 +540,8 @@ class DashboardFlowTest(unittest.TestCase):
         self.store.init_db()
         self.addCleanup(self.store.close)
         self.server = DashboardServer(host="127.0.0.1", port=0,
-                                     db_path=self.store.db_path).start()
+                                     db_path=self.store.db_path,
+                                     history_db_path=self.store.db_path.parent / "hist.db").start()
         self.addCleanup(self.server.stop)
         self.base = f"http://127.0.0.1:{self.server.bound_port()}"
 

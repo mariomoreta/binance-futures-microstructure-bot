@@ -298,11 +298,15 @@ class StructureTest(unittest.TestCase):
 
 class ProbeStructureWiringTest(unittest.TestCase):
     def _probe(self, now_ms):
+        from microstructure_probe.history_store import HistoryStore
+
+        store = _temp_store(self)
+        hist = HistoryStore(store.db_path.parent / "historical.db")
         probe = MarketProbe(test_config(),
                             wall_clock_ms=lambda: float(now_ms),
-                            monotonic=lambda: 10.0)
-        store = _temp_store(self)
-        probe.set_persistence(store)
+                            monotonic=lambda: 10.0,
+                            persistence_store=store,
+                            research_history_store=hist)
         return probe, store
 
     def _markprice(self, event_ms, price):
@@ -325,11 +329,14 @@ class ProbeStructureWiringTest(unittest.TestCase):
         # Advancing wall clock: each message is fresh at its own event
         # time (a fixed clock would skew-reject everything older than 5s).
         clock = [float(base)]
+        store = _temp_store(self)
+        from microstructure_probe.history_store import HistoryStore
+        hist = HistoryStore(store.db_path.parent / "historical.db")
         probe = MarketProbe(test_config(),
                             wall_clock_ms=lambda: clock[0],
-                            monotonic=lambda: 10.0)
-        store = _temp_store(self)
-        probe.set_persistence(store)
+                            monotonic=lambda: 10.0,
+                            persistence_store=store,
+                            research_history_store=hist)
         for i in range(8):
             clock[0] = float(base + i * 10_000)
             probe._handle_message(
@@ -421,7 +428,8 @@ class DashboardStructureTest(unittest.TestCase):
         self.store.init_db()
         self.addCleanup(self.store.close)
         self.server = DashboardServer(host="127.0.0.1", port=0,
-                                     db_path=self.store.db_path).start()
+                                     db_path=self.store.db_path,
+                                     history_db_path=self.store.db_path.parent / "hist.db").start()
         self.addCleanup(self.server.stop)
         self.base = f"http://127.0.0.1:{self.server.bound_port()}"
 

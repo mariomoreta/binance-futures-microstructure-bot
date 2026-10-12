@@ -438,11 +438,15 @@ class BookOIPersistenceTest(unittest.TestCase):
 
 class ProbeBookOIWiringTest(unittest.TestCase):
     def _probe(self, now_ms):
+        from microstructure_probe.history_store import HistoryStore
+
+        store = _temp_store(self)
+        hist = HistoryStore(store.db_path.parent / "historical.db")
         probe = MarketProbe(test_config(),
                             wall_clock_ms=lambda: float(now_ms),
-                            monotonic=lambda: 10.0)
-        store = _temp_store(self)
-        probe.set_persistence(store)
+                            monotonic=lambda: 10.0,
+                            persistence_store=store,
+                            research_history_store=hist)
         return probe, store
 
     def _depth(self, event_ms, u=100, pu=99, bids=None, asks=None):
@@ -558,7 +562,8 @@ class DashboardBookOITest(unittest.TestCase):
         self.store.init_db()
         self.addCleanup(self.store.close)
         self.server = DashboardServer(host="127.0.0.1", port=0,
-                                     db_path=self.store.db_path).start()
+                                     db_path=self.store.db_path,
+                                     history_db_path=self.store.db_path.parent / "hist.db").start()
         self.addCleanup(self.server.stop)
         self.base = f"http://127.0.0.1:{self.server.bound_port()}"
 

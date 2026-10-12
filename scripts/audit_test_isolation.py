@@ -11,15 +11,27 @@ three verifiable barriers installed:
    green test can still be proven impure.
 2. ``sqlite3.connect`` is wrapped: every connection whose resolved path is a
    canonical DB (data/microprobe.db, data/historical/historical.db) is
-   recorded with test id + stack, whatever route opened it (default factory,
-   HistoryStore default path, direct connects). Read-only URI connects are
-   flagged separately. Temp-store connects are counted, never recorded.
+   recorded with test id + thread + stack, whatever route opened it
+   (default factory, HistoryStore default path, direct connects), then
+   DELEGATED (recorded, not blocked — see buckets below). Read-only URI
+   connects are flagged separately. Temp-store connects are counted.
 3. ``control._write_registry`` is wrapped: write attempts resolving to the
    canonical registry (logs/probe_runtime.json) are recorded, then delegated.
 4. ``builtins.open`` / ``io.open`` are wrapped: write-mode opens resolving
-   under canonical data/ or logs/ trees (probe evidence logs, watcher logs,
-   pidfiles, registry rewrites, any other sidecar) are recorded with test
-   id + stack, then delegated. Read-mode opens are never recorded.
+   under canonical data/ or logs/ trees are recorded with test id + thread
+   + stack, then delegated. Read-mode opens are never recorded.
+
+BUCKETS (evidence fields):
+- ``blocked``: forbidden-factory calls. The factory RAISES, so the
+  underlying canonical write never executes — an attempt with no effect.
+  Any nonzero count fails the gate.
+- ``canonical_effective``: canonical connects + canonical file writes +
+  registry writes that were RECORDED AND DELEGATED (real accesses with
+  real effects, however byte-neutral). Must be zero for isolation; any
+  entry fails the gate and names the exact route.
+- ``residual_ro``: read-only URI connects only (mode=ro, no write
+  capability). Reported separately, never mixed into the gate.
+- ``preservation``: hashes + data/logs inventories before/after.
 
 Additionally snapshots SHA256 of both DBs + registry and a full inventory
 (name/size/mtime) of data/ and logs/ before/after, catching sidecars
@@ -51,6 +63,7 @@ import io
 import json
 import sqlite3
 import sys
+import threading
 import traceback
 import unittest
 from pathlib import Path
@@ -142,6 +155,7 @@ def main(argv: list[str]) -> int:
         entry = {
             "kind": kind,
             "test": guess_test(stack),
+            "thread": threading.current_thread().name,
             "extra": extra,
             "stack": [
                 {"file": f.filename, "line": f.lineno, "func": f.name}
@@ -197,6 +211,7 @@ def main(argv: list[str]) -> int:
                     canonical_connects.append({
                         "db": "microprobe.db",
                         "test": guess_test(stack),
+                        "thread": threading.current_thread().name,
                         "stack": [
                             {"file": f.filename, "line": f.lineno,
                              "func": f.name} for f in stack[-8:]
@@ -207,6 +222,7 @@ def main(argv: list[str]) -> int:
                     canonical_connects.append({
                         "db": "historical.db",
                         "test": guess_test(stack),
+                        "thread": threading.current_thread().name,
                         "stack": [
                             {"file": f.filename, "line": f.lineno,
                              "func": f.name} for f in stack[-8:]
@@ -310,6 +326,11 @@ def main(argv: list[str]) -> int:
 
     prohibited = [h for h in hits if h["kind"] != "sqlite_connect_readonly_uri"]
     readonly_uri = [h for h in hits if h["kind"] == "sqlite_connect_readonly_uri"]
+    blocked = [h for h in prohibited if h["kind"] == "default_factory_call"]
+    canonical_effective = (
+        [{"bucket": "connect", **h} for h in canonical_connects]
+        + [{"bucket": "file", **h} for h in file_write_attempts]
+        + [{"bucket": "registry", **h} for h in registry_attempts])
     evidence = {
         "barrier": "audit_test_isolation ETAPA1",
         "suite": {"tests_run": tests_run, "ok": suite_ok,
@@ -317,6 +338,14 @@ def main(argv: list[str]) -> int:
         "prohibited_hits": prohibited,
         "prohibited_hit_count": len(prohibited),
         "prohibited_by_kind": {},
+        "buckets": {
+            "blocked": blocked,
+            "blocked_count": len(blocked),
+            "canonical_effective": canonical_effective,
+            "canonical_effective_count": len(canonical_effective),
+            "residual_ro": readonly_uri,
+            "residual_ro_count": len(readonly_uri),
+        },
         "canonical_connects": canonical_connects,
         "canonical_connect_count": len(canonical_connects),
         "readonly_uri_connects": readonly_uri,
@@ -336,15 +365,16 @@ def main(argv: list[str]) -> int:
         Counter(h["kind"] for h in prohibited))
     out_path.write_text(json.dumps(evidence, indent=2), encoding="utf-8")
 
-    print("tests=%d ok=%s prohibited_hits=%s canonical_connects=%d "
+    print("tests=%d ok=%s prohibited=%s blocked=%d effective=%d ro=%d "
           "file_writes=%d hashes_equal=%s data_diff=%s logs_diff=%s" % (
               tests_run, suite_ok, evidence["prohibited_by_kind"],
-              len(canonical_connects), len(file_write_attempts),
+              len(blocked), len(canonical_effective), len(readonly_uri),
+              len(file_write_attempts),
               hashes_before == hashes_after,
               evidence["data_inventory_diff"],
               evidence["logs_inventory_diff"]))
     print("evidence: %s" % out_path)
-    clean = (suite_ok and not prohibited
+    clean = (suite_ok and not prohibited and not canonical_effective
              and hashes_before == hashes_after
              and not evidence["data_inventory_diff"]["added"]
              and not evidence["data_inventory_diff"]["removed"]
@@ -352,12 +382,9 @@ def main(argv: list[str]) -> int:
              and not evidence["logs_inventory_diff"]["added"]
              and not evidence["logs_inventory_diff"]["removed"]
              and not evidence["logs_inventory_diff"]["changed"])
-    # NOTE: canonical_connects (read-path HistoryStore DDL/SELECT on the
-    # existing schema, plus prospective rehydration reads) are reported,
-    # never silenced; their disposition (byte-neutral residual vs violation)
-    # belongs in the audit report, but they do not flip this gate by
-    # themselves -- hashes+inventory prove effect. Prohibited row writes,
-    # registry writes and canonical-tree file writes always flip it.
+    # NOTE: residual_ro (read-only URIs) is reported separately and never
+    # flips this gate: mode=ro connections cannot write. Everything else
+    # canonical flips it: blocked attempts, effective connects/writes.
     return 0 if clean else 1
 
 

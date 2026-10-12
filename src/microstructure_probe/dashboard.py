@@ -183,8 +183,13 @@ def compute_health(snapshot: Optional[Dict[str, Any]],
 class DashboardState:
     """All data the pages/API need, sourced only from the persistence store."""
 
-    def __init__(self, store: PersistenceStore) -> None:
+    def __init__(self, store: PersistenceStore,
+                 history_store: Any = None) -> None:
         self.store = store
+        # Route-C injection point for hermetic tests: when given, history
+        # readers use it instead of constructing the default HistoryStore.
+        # When None (production default) behavior is unchanged.
+        self.history_store = history_store
         # Local control nonce for probe start/stop POSTs (P1-11B.1). Set by
         # the server at startup; empty in bare unit-test states (mutations
         # then fail closed with 403).
@@ -197,6 +202,13 @@ class DashboardState:
         except (OSError, sqlite3.Error):
             pass
         self.server_started_monotonic = time.monotonic()
+
+    def _history(self):
+        """Injected HistoryStore or the default production one."""
+        if self.history_store is not None:
+            return self.history_store
+        from .history_store import HistoryStore
+        return HistoryStore()
 
     def snapshot(self) -> Optional[Dict[str, Any]]:
         try:
@@ -299,8 +311,7 @@ class DashboardState:
     def history_coverage(self, symbol: Optional[str] = None) -> List[Dict[str, Any]]:
         """Historical research coverage (P1-11B separate DB), [] when absent."""
         try:
-            from .history_store import HistoryStore
-            rows = HistoryStore().coverage_summary()
+            rows = self._history().coverage_summary()
         except (OSError, sqlite3.Error, ValueError):
             return []
         if symbol is None:
@@ -311,8 +322,7 @@ class DashboardState:
     def research_status(self) -> Dict[str, Any]:
         """Prospective recorder health (P1-11C, read-only, failure-isolated)."""
         try:
-            from .history_store import HistoryStore
-            counts = HistoryStore().research_counts()
+            counts = self._history().research_counts()
         except Exception:
             counts = {"research_flow_10s": 0, "research_flow_1m": 0,
                       "research_book_1m": 0}
@@ -375,8 +385,7 @@ class DashboardState:
         """Stored event-study summaries per definition (P1-11C, read-only)."""
         try:
             from .events import EVENT_FAMILIES
-            from .history_store import HistoryStore
-            store = HistoryStore()
+            store = self._history()
             out = []
             for fam in EVENT_FAMILIES:
                 rows = store.event_summary(fam, 1)
@@ -389,9 +398,8 @@ class DashboardState:
     def event_symbol(self, symbol: str, limit: int = 50) -> List[Dict[str, Any]]:
         """Recent event instances for one symbol (bounded, read-only)."""
         try:
-            from .history_store import HistoryStore
             import sqlite3 as _sq
-            store = HistoryStore()
+            store = self._history()
             store._ensure()
             con = _sq.connect(str(store.db_path))
             try:
@@ -1792,8 +1800,7 @@ class DashboardHandler(BaseHTTPRequestHandler):
             raw = urllib.parse.unquote(
                 path[len("/api/events/studies/"):]).split("/")[0].upper()
             try:
-                from .history_store import HistoryStore
-                rows = HistoryStore().event_summary(raw, 1)
+                rows = self.state._history().event_summary(raw, 1)
             except Exception:
                 rows = []
             self._send_json(200, {"definition": raw, "version": 1,
@@ -1827,7 +1834,7 @@ class DashboardHandler(BaseHTTPRequestHandler):
                 "note": "RESEARCH ONLY — NOT A TRADE SIGNAL. "
                         "Forward outcome observation for P1-13A setups. "
                         "Horizons: 1m/5m/15m/1h/4h.",
-                "schema_version": 9,
+                "schema_version": 10,
                 "prospective": self.state.prospective_status(),
             })
         else:
@@ -1838,11 +1845,16 @@ class DashboardServer:
     """Threaded HTTP server bound to 127.0.0.1; start()/stop() lifecycle."""
 
     def __init__(self, host: str = HOST, port: int = 0,
-                 db_path: Optional[Path] = None) -> None:
+                 db_path: Optional[Path] = None,
+                 history_db_path: Optional[Path] = None) -> None:
         self.host = host
         self.port = port
         self.store = PersistenceStore(
             db_path=Path(db_path) if db_path else default_db_path())
+        # Route-C injection: temp history DB for hermetic server tests.
+        # When None (production default) readers use the default store.
+        self.history_db_path = Path(history_db_path) \
+            if history_db_path else None
         self._httpd: Optional[ThreadingHTTPServer] = None
         self._thread: Optional[threading.Thread] = None
 
@@ -1857,7 +1869,11 @@ class DashboardServer:
 
     def start(self) -> "DashboardServer":
         nonce = secrets.token_hex(CONTROL_NONCE_BYTES)
-        state = DashboardState(self.store)
+        history_store = None
+        if self.history_db_path is not None:
+            from .history_store import HistoryStore
+            history_store = HistoryStore(self.history_db_path)
+        state = DashboardState(self.store, history_store=history_store)
         state.control_nonce = nonce
         handler = type("BoundHandler", (DashboardHandler,),
                        {"state": state, "control_nonce": nonce})

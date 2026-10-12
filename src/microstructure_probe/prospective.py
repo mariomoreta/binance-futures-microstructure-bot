@@ -46,7 +46,8 @@ SETUP_REGISTRATION_REASON = "first qualifying detection"
 SETUP_DUPLICATE_REASON = "duplicate evaluation — same episode"
 
 # Outcome Contract version (P1-14B.4): v1.1 adds freshness verdicts, strict
-# unknown-age handling, and grace-deferred terminal PENDING. Schema stays v9.
+# unknown-age handling, and grace-deferred terminal PENDING. Storage schema
+# is v10 (v9 + P3 run_id linkage columns).
 PROSPECTIVE_CONTRACT_VERSION = "1.1"
 
 # LOCAL_POLICY (P1-14B.3): a mark quote older than this at observation time
@@ -111,8 +112,18 @@ class ProspectiveRecorder:
         max_queue: int = 1000,
         retention_days: Optional[Dict[str, int]] = None,
         enabled: bool = True,
+        store: Optional[Any] = None,
+        run_id: Optional[str] = None,
     ) -> None:
+        """Optional ``store`` (a PersistenceStore) overrides the default
+        store for rehydration (Route-B injection point for hermetic tests).
+        Optional ``run_id`` stamps setups/outcomes written by this recorder
+        (P3 linkage; None = unstamped, as before). When both are None,
+        behavior is unchanged: explicit db_path or the default production
+        store."""
         self.db_path = Path(db_path) if db_path else None
+        self._store = store
+        self.run_id = run_id
         self.max_queue = max(16, int(max_queue))
         self.retention_days = retention_days or {
             "prospective_setups": 90,
@@ -143,6 +154,16 @@ class ProspectiveRecorder:
         self._stop = threading.Event()
         self._load_from_db()
 
+    def _resolve_store(self):
+        """Store for all DB paths: injected store first, then explicit
+        db_path, then the default production store. Single choke point so
+        hermetic injection covers rehydration, worker flush and reads."""
+        if self._store is not None:
+            return self._store
+        from .persistence import PersistenceStore
+        return PersistenceStore(db_path=self.db_path) if self.db_path \
+            else PersistenceStore()
+
     def _load_from_db(self) -> None:
         """Restart safety: rehydrate in-memory registry from DB.
 
@@ -155,8 +176,7 @@ class ProspectiveRecorder:
         if not self.enabled:
             return
         try:
-            from .persistence import PersistenceStore
-            store = PersistenceStore(db_path=self.db_path) if self.db_path else PersistenceStore()
+            store = self._resolve_store()
             store.init_db()
             for setup in store.prospective_setups():
                 key = setup.get("candidate_key")
@@ -332,9 +352,8 @@ class ProspectiveRecorder:
             self._drops += 1
 
     def _worker(self) -> None:
-        from .persistence import PersistenceStore
         try:
-            db = PersistenceStore(db_path=self.db_path) if self.db_path else PersistenceStore()
+            db = self._resolve_store()
             db.init_db()
             while not self._stop.is_set() or not self._queue.empty():
                 try:
@@ -345,12 +364,15 @@ class ProspectiveRecorder:
                     kind = item[0]
                     if kind == "register":
                         _, key, detected_at_ms = item
-                        db.store_prospective_setup(key, self._registered[key], detected_at_ms)
+                        db.store_prospective_setup(key, self._registered[key],
+                                                   detected_at_ms,
+                                                   run_id=self.run_id)
                     elif kind == "outcome":
                         _, key, horizon, observed_at_ms, outcome = item
                         sym = self._registered.get(key, {}).get("symbol", "")
                         db.store_prospective_outcome(
-                            key, sym, horizon, observed_at_ms, outcome)
+                            key, sym, horizon, observed_at_ms, outcome,
+                            run_id=self.run_id)
                     with self._lock:
                         self._writes += 1
                 except Exception:
@@ -438,6 +460,5 @@ class ProspectiveRecorder:
 
     def outcomes_for(self, candidate_key: str) -> List[Dict[str, Any]]:
         """Outcomes for one candidate (re-read from persistence store)."""
-        from .persistence import PersistenceStore
-        store = PersistenceStore(db_path=self.db_path) if self.db_path else PersistenceStore()
+        store = self._resolve_store()
         return store.prospective_outcomes(candidate_key=candidate_key, limit=50)

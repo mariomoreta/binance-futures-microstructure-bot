@@ -24,14 +24,15 @@ from test_detectors import test_config
 
 
 def make_isolated_probe(case, config=None, **kwargs):
-    """Probe bound to a temp PersistenceStore (never the canonical DB).
+    """Probe bound to temp stores (never the canonical DBs).
 
-    ETAPA 1 isolation: byte-counting feeds messages through
-    ``_handle_message``, which reaches ``self.persistence``; the lazy
-    default factory would open+write the canonical ``data/microprobe.db``
-    (swallowed as ``persistence_error``). Mirrors ``make_probe`` in
-    test_universe_probe.
+    ETAPA 1 isolation + P2 injection: byte-counting feeds messages through
+    ``_handle_message`` (default factory route), construction rehydrates
+    the prospective recorder from the default store (Route B), and
+    summaries read research counts through the default HistoryStore
+    (Route C). Mirrors ``make_probe`` in test_universe_probe.
     """
+    from microstructure_probe.history_store import HistoryStore
     from microstructure_probe.persistence import PersistenceStore
     from microstructure_probe.probe import MarketProbe
 
@@ -40,8 +41,9 @@ def make_isolated_probe(case, config=None, **kwargs):
     store = PersistenceStore(Path(temp.name) / "probe.db")
     store.init_db()
     case.addCleanup(store.close)
-    probe = MarketProbe(config or test_config(), **kwargs)
-    probe.set_persistence(store)
+    hist = HistoryStore(Path(temp.name) / "historical.db")
+    probe = MarketProbe(config or test_config(), persistence_store=store,
+                        research_history_store=hist, **kwargs)
     return probe
 
 
@@ -116,8 +118,7 @@ class TestProbeByteCounting(TestCase):
         self.assertGreater(probe.stats.bytes_by_stream["btcusdt@bookTicker"], 0)
 
     def test_host_stash_shape(self):
-        from microstructure_probe.probe import MarketProbe
-        probe = MarketProbe(test_config())
+        probe = make_isolated_probe(self)
         stash = probe._sample_host()
         self.assertIn("cpuPercentProc", stash)
         self.assertIn("rssBytes", stash)

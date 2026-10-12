@@ -297,7 +297,8 @@ class ControlApiTest(unittest.TestCase):
         live.init_db()
         live.close()
         self.server = DashboardServer(host="127.0.0.1", port=0,
-                                      db_path=tmp / "live.db").start()
+                                      db_path=tmp / "live.db",
+                                      history_db_path=tmp / "hist.db").start()
         self.addCleanup(self.server.stop)
         self.base = f"http://127.0.0.1:{self.server.bound_port()}"
         body = self._raw_get("/overview")

@@ -11,15 +11,17 @@ from test_detectors import test_config
 
 
 def make_isolated_probe(case, config=None, **kwargs):
-    """Probe bound to a temp PersistenceStore (never the canonical DB).
+    """Probe bound to temp stores (never the canonical DBs).
 
-    ETAPA 1 isolation: ``_handle_message`` reaches ``self.persistence``,
-    whose lazy default factory would open+write the canonical
-    ``data/microprobe.db`` (and the failure is swallowed as
-    ``persistence_error``, so the test stays green while contaminating).
-    Every fixture below that feeds messages through the probe owns a temp
-    store with cleanup, mirroring ``make_probe`` in test_universe_probe.
+    ETAPA 1 isolation + P2 injection: ``_handle_message`` reaches
+    ``self.persistence`` (default factory would open+write the canonical
+    ``data/microprobe.db``), construction rehydrates the prospective
+    recorder from the default store (Route B), and summaries read research
+    counts through the default HistoryStore (Route C). All three now use
+    the temp stores below; production defaults are untouched. Mirrors
+    ``make_probe`` in test_universe_probe.
     """
+    from microstructure_probe.history_store import HistoryStore
     from microstructure_probe.persistence import PersistenceStore
 
     temp = tempfile.TemporaryDirectory(prefix="probe_isolated_test_")
@@ -27,8 +29,9 @@ def make_isolated_probe(case, config=None, **kwargs):
     store = PersistenceStore(Path(temp.name) / "probe.db")
     store.init_db()
     case.addCleanup(store.close)
-    probe = MarketProbe(config or test_config(), **kwargs)
-    probe.set_persistence(store)
+    hist = HistoryStore(Path(temp.name) / "historical.db")
+    probe = MarketProbe(config or test_config(), persistence_store=store,
+                        research_history_store=hist, **kwargs)
     return probe
 
 
@@ -178,7 +181,8 @@ class ProbeTest(unittest.TestCase):
 
     def test_event_driven_force_order_silence_is_not_reported_as_stale(self) -> None:
         current = [0.0]
-        probe = MarketProbe(
+        probe = make_isolated_probe(
+            self,
             test_config(),
             clock_sync=self._clock(),
             wall_clock_ms=lambda: 1000.0,

@@ -127,6 +127,21 @@ def _temp_store(testcase: unittest.TestCase) -> PersistenceStore:
     return store
 
 
+def _isolated_probe(testcase, config=None, **kwargs):
+    """Probe bound to temp stores (P2: no canonical Route-B/C access)."""
+    from microstructure_probe.history_store import HistoryStore
+    from microstructure_probe.probe import MarketProbe
+
+    tmp = Path(tempfile.mkdtemp(prefix="dash_probe_test_"))
+    testcase.addCleanup(lambda: _rmtree(tmp))
+    store = PersistenceStore(tmp / "probe.db")
+    store.init_db()
+    testcase.addCleanup(store.close)
+    hist = HistoryStore(tmp / "historical.db")
+    return MarketProbe(config, persistence_store=store,
+                       research_history_store=hist, **kwargs)
+
+
 def _rmtree(path: Path) -> None:
     try:
         for child in sorted(path.rglob("*"), reverse=True):
@@ -143,7 +158,8 @@ class DashboardRoutesTest(unittest.TestCase):
     def setUp(self) -> None:
         self.store = _temp_store(self)
         self.server = DashboardServer(host="127.0.0.1", port=0,
-                                      db_path=self.store.db_path).start()
+                                      db_path=self.store.db_path,
+                                      history_db_path=self.store.db_path.parent / "hist.db").start()
         self.addCleanup(self.server.stop)
         self.base = f"http://127.0.0.1:{self.server.bound_port()}"
 
@@ -243,7 +259,8 @@ class ReturnsSectionTest(unittest.TestCase):
     def setUp(self) -> None:
         self.store = _temp_store(self)
         self.server = DashboardServer(host="127.0.0.1", port=0,
-                                      db_path=self.store.db_path).start()
+                                      db_path=self.store.db_path,
+                                      history_db_path=self.store.db_path.parent / "hist.db").start()
         self.addCleanup(self.server.stop)
         self.base = f"http://127.0.0.1:{self.server.bound_port()}"
 
@@ -388,7 +405,8 @@ class IntelSectionTest(unittest.TestCase):
     def setUp(self) -> None:
         self.store = _temp_store(self)
         self.server = DashboardServer(host="127.0.0.1", port=0,
-                                      db_path=self.store.db_path).start()
+                                      db_path=self.store.db_path,
+                                      history_db_path=self.store.db_path.parent / "hist.db").start()
         self.addCleanup(self.server.stop)
         self.base = f"http://127.0.0.1:{self.server.bound_port()}"
 
@@ -496,11 +514,11 @@ class ProbeHealthSemanticsTest(unittest.TestCase):
     """forceOrder silence is normal: never missing, never stale."""
 
     def test_forceorder_never_missing(self) -> None:
-        from microstructure_probe.probe import MarketProbe
         from test_detectors import test_config
 
-        probe = MarketProbe(test_config(), wall_clock_ms=lambda: 11_000.0,
-                            monotonic=lambda: 11.0)
+        probe = _isolated_probe(self, test_config(),
+                                wall_clock_ms=lambda: 11_000.0,
+                                monotonic=lambda: 11.0)
         # Only forceOrder seen; everything else absent.
         probe.stats.last_seen_monotonic["!forceOrder@arr"] = 10.0
         probe.stats.first_seen_monotonic["!forceOrder@arr"] = 10.0

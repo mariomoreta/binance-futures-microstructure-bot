@@ -197,8 +197,13 @@ class ResearchRecorder:
     def __init__(self, db_path: Optional[Path] = None,
                  max_queue: int = 2000,
                  retention_days: Optional[Dict[str, int]] = None,
-                 enabled: bool = True) -> None:
+                 enabled: bool = True,
+                 history_store: Optional[Any] = None) -> None:
+        """Optional ``history_store`` overrides the default HistoryStore
+        for read-only count lookups in status() (Route-C injection point
+        for hermetic tests). When None, behavior is unchanged."""
         self.db_path = Path(db_path) if db_path else None
+        self._history_store = history_store
         self.max_queue = max(16, int(max_queue))
         self.retention_days = retention_days or {"flow_10s": 7, "flow_1m": 90,
                                                  "book_1m": 90}
@@ -408,8 +413,11 @@ class ResearchRecorder:
         with self._lock:
             counts = {"flow_10s": 0, "flow_1m": 0, "book_1m": 0}
             try:
-                from .history_store import HistoryStore as _HS
-                db = _HS(self.db_path) if self.db_path else _HS()
+                if self._history_store is not None:
+                    db = self._history_store
+                else:
+                    from .history_store import HistoryStore as _HS
+                    db = _HS(self.db_path) if self.db_path else _HS()
                 raw = db.research_counts()
                 counts = {"flow_10s": raw.get("research_flow_10s", 0),
                           "flow_1m": raw.get("research_flow_1m", 0),

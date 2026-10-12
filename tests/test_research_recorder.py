@@ -13,6 +13,35 @@ def _tmp_db():
     return Path(tmp) / "historical.db"
 
 
+def _isolated_probe(case, config=None, **kwargs):
+    """Probe bound to temp stores (P2: no canonical Route-B/C access)."""
+    from microstructure_probe.history_store import HistoryStore
+    from microstructure_probe.persistence import PersistenceStore
+    from microstructure_probe.probe import MarketProbe
+    from test_detectors import test_config
+
+    tmp = Path(tempfile.mkdtemp(prefix="p11c-probe-"))
+    case.addCleanup(lambda: _rmtree(tmp))
+    store = PersistenceStore(tmp / "probe.db")
+    store.init_db()
+    case.addCleanup(store.close)
+    hist = HistoryStore(tmp / "historical.db")
+    return MarketProbe(config or test_config(), persistence_store=store,
+                       research_history_store=hist, **kwargs)
+
+
+def _rmtree(path: Path) -> None:
+    try:
+        for child in sorted(path.rglob("*"), reverse=True):
+            if child.is_file() or child.is_symlink():
+                child.unlink(missing_ok=True)
+            elif child.is_dir():
+                child.rmdir()
+        path.rmdir()
+    except OSError:
+        pass
+
+
 class FlowBucketTest(unittest.TestCase):
     def test_10s_and_1m_aggregation(self) -> None:
         from microstructure_probe.research_recorder import ResearchRecorder
@@ -152,9 +181,7 @@ class FlowBucketTest(unittest.TestCase):
         self.assertIn(st["state"], ("STOPPED", "DEGRADED", "RUNNING"))
 
     def test_recorder_cannot_crash_probe_path(self) -> None:
-        from microstructure_probe.probe import MarketProbe
-        from test_detectors import test_config
-        probe = MarketProbe(test_config())
+        probe = _isolated_probe(self)
         # hooks must never raise even with garbage
         try:
             probe.research.record_trade("X", "bad", float("nan"), -1, "maybe")
@@ -163,9 +190,7 @@ class FlowBucketTest(unittest.TestCase):
             self.fail(f"recorder raised: {exc}")
 
     def test_recorder_lifecycle_with_probe(self) -> None:
-        from microstructure_probe.probe import MarketProbe
-        from test_detectors import test_config
-        probe = MarketProbe(test_config())
+        probe = _isolated_probe(self)
         self.assertTrue(hasattr(probe, "research"))
         probe.research.start()
         probe.research.stop_and_drain(timeout=5.0)
