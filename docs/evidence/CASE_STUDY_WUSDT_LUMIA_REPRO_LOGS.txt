@@ -20,3 +20,11 @@ Notas:
   - analyze_stdout.log contiene el mismo summary que analysis_summary.json (impreso por el script).
   - Evidencia pequena: se publican hashes, comparacion estructurada y este resumen; los stdout completos son reproducibles con los comandos de arriba.
   - PNG regenerado: hash difiere (ver COMPARISON.json); equivalencia visual NO declarada (PNG no inspeccionado visualmente).
+
+Addendum 2026-10-13 (review/w-lumia-correccion-bc327f1, historia preservada):
+  - Comparador fortalecido (missing-masks, tipos, especiales, exit 1/2, JSON UTF-8 con --out).
+  - Re-ejecucion fresca en %TEMP%\lumia_repro2\binance_case_study (originales intactos):
+    analyze exit=0, finish exit=0,
+    compare "binance_case_study" "<copia2>\binance_case_study" --out ... exit=0, verdict=MATCH.
+  - 5 regresiones en copias temporales (M1..M5): exits 1,1,1,1,2.
+    Detalle: docs/evidence/CASE_STUDY_WUSDT_LUMIA_REGRESSIONS.txt.

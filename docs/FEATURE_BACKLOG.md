@@ -10,6 +10,16 @@ frontend estatico dash-v2-03-token-detail, no SSR backend. Pendientes
 correctivos NO resueltos: funding, posiciones abiertas, runner, incidente
 de aislamiento, schemas V2. Gates sin avance.
 
+## Correccion V2 + comparador — 2026-10-13 (review/w-lumia-correccion-bc327f1, sin push aun)
+Addendum (historia preservada): V2 `27b7af59cb1e313169f49655161d66e043b5412d`
+= rama `dash-v2-03-token-detail` CON rutas BFF (`api/v1/...`) + adapters
+SQLite (`canonical-market.ts`, `historicalRead`); integracion parcial,
+feed live/operacion NO verificados (UNVERIFIED + warnings en la propia
+ruta). Comparador fortalecido con 5 regresiones (temp, originales
+intactos). Distincion vigente: reproduccion DONE; integracion dashboard
+parcial-no-verificada; validacion financiera NOT IMPLEMENTED. Pendientes:
+funding, realizados/marcas, runner, aislamiento, schemas V2. Gates sin avance.
+
 ## Mejoras funding/trazabilidad/dashboard/evaluacion — 2026-10-13 (sin push aun)
 Ingenieria + docs + evaluacion offline. Sin ordenes/paper/servicios.
 Sin rentabilidad ni SUCCESS_GATES. Kronos diferido (fuera de alcance).

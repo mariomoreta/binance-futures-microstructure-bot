@@ -112,3 +112,41 @@ calibration, no profitability claim. No SUCCESS_GATES advancement.
   in-sample only. Without OOS, calibration, or profitability. Funding 4h
   is a replay-fidelity requirement per contract, not an edge.
 
+## Addendum v2.1 — V2 correction + strengthened comparator (2026-10-13, review branch)
+
+History preserved: v1 and v2 above are untouched. This addendum corrects
+the V2 sentence in v2 and records the strengthened comparator.
+
+- V2 correction: `27b7af59cb1e313169f49655161d66e043b5412d`
+  ("Integrate recorded System panels...", rama `dash-v2-03-token-detail`)
+  DOES contain BFF routes (`frontend/src/app/api/v1/`: live-movers,
+  market-snapshot, opportunities, price-series, prospective,
+  historical-coverage/research, runtime, system-evidence) and SQLite read
+  adapters (`frontend/src/lib/canonical-market.ts`: `historicalRead` over
+  discovery_snapshots, return/flow/book/oi/structure/state_features,
+  price_samples, prospective, opportunity_candidates; BEGIN/COMMIT with
+  ROLLBACK and `available:false` fallback). Reviewed from Git only
+  (`git show 27b7af5:...`), no checkout touched. The v2 phrase "sin
+  BFF/datos vivos" was wrong and is replaced by: integration PARTIALLY
+  implemented (BFF read path exists) but live feed/operation NOT verified
+  — the route itself returns alignment/freshness UNVERIFIED with warnings
+  ("Read time is not observation time", "Retained coverage and captured
+  freshness do not certify present feed liveness"). Partial integration
+  is not verified live operation. No paper/orders/gates.
+- Comparator hardened: `docs/evidence/compare_case_study_json_csv.py`
+  now compares missing-masks BEFORE numerics, detects type changes and
+  special values (NaN/inf/None), never silently omits expected files,
+  columns or comparisons, and exits 1 on differences / 2 on incomplete
+  comparison (PNG hash-only, excluded from exit; visual NOT_ASSESSED).
+  Output JSON textual UTF-8 (`--out`, ensure_ascii=False).
+- Regression proof (temp copies, originals intact): value->missing,
+  missing->value, numeric change and structure change each exit 1;
+  missing file exits 2. The reported rsi14=51.06347303475749 (WUSDT row
+  100) -> missing case now yields
+  `MISSING_MASK rsi14: orig_na=14 repro_na=15 rows=[100]` instead of the
+  old silent 0.0/exit 0. Fresh legitimate re-run (analyze 0, finish 0)
+  still exits 0 with verdict MATCH. Evidence:
+  `docs/evidence/CASE_STUDY_WUSDT_LUMIA_REGRESSIONS.txt` +
+  regenerated `docs/evidence/CASE_STUDY_WUSDT_LUMIA_COMPARISON.json`.
+
+

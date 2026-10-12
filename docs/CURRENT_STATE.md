@@ -14,6 +14,25 @@ backend (`dashboard.py`). Pendientes explicitos del prompt correctivo
 anterior (NO resueltos por este cierre): funding, posiciones abiertas,
 runner, incidente de aislamiento, schemas V2. Sin ordenes/paper/servicios.
 
+## Correccion V2 + comparador (2026-10-13, review/w-lumia-correccion-bc327f1, sin push aun)
+Addendum sobre el bloque anterior (historia preservada). V2 exacto
+`27b7af59cb1e313169f49655161d66e043b5412d` (rama `dash-v2-03-token-detail`,
+revisado con `git show`, sin tocar el checkout) SI tiene rutas BFF
+(`frontend/src/app/api/v1/live-movers/route.ts` y hermanas) y adapters de
+lectura SQLite (`frontend/src/lib/canonical-market.ts`, `historicalRead`
+con BEGIN/COMMIT/ROLLBACK y fallback `available:false`): el "sin
+BFF/datos vivos" del bloque anterior era erroneo. Integracion
+PARCIALMENTE implementada (ruta de lectura existe) != feed
+live/operacion verificados (la ruta declara alignment/freshness
+UNVERIFIED y advierte que cobertura retenida no certifica liveness
+presente). Comparador fortalecido (missing-masks primero, tipos y
+especiales, sin omisiones silenciosas, exit 1/2, JSON UTF-8) con 5
+regresiones en copias temporales. Reconciliacion: phase1 avanzo
+bdc9ef2->bc327f1 con 21 commits (esta correccion anadio solo sus
+propios); publicar no equivale a aceptar las correcciones anteriores.
+Pendientes: funding, realizados/marcas, runner, aislamiento, schemas V2.
+Sin merge/force-push, despliegues, sesiones, paper, ordenes ni gates.
+
 ## Mejoras funding/trazabilidad/dashboard/casos/evaluacion (2026-10-13, sin push aun)
 Funding v4 por liquidaciones + linkage research v3 + dashboard con
 semantica honesta + protocolo de casos (paquete ausente) + runner de

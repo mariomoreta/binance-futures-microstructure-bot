@@ -7,6 +7,17 @@ posiciones abiertas, runner, incidente de aislamiento, schemas V2.
 Resta: commits selectivos + push a rama de revision + entrega (SHA, URL,
 comparacion, remoto=local, evidencias, completados/pendientes). Sin gates.
 
+## Correccion V2 + comparador (2026-10-13, review/w-lumia-correccion-bc327f1, sin push aun)
+Addendum (historia preservada): V2 `27b7af59cb1e313169f49655161d66e043b5412d`
+tiene rutas BFF + adapters SQLite (ver `route.ts` live-movers y
+`canonical-market.ts` en Git); integracion parcial != feed
+live/operacion verificados (UNVERIFIED declarado). Comparador con
+missing-masks/tipos/especiales, exit 1/2 y 5 regresiones en temp.
+phase1 avanzo bdc9ef2->bc327f1 con 21 commits (esta tarea: sus propios
+commits en rama de revision, sin avanzar phase1/main). Publicar !=
+aceptar correcciones anteriores. Pendientes: funding, realizados/marcas,
+runner, aislamiento, schemas V2. Sin merge/force-push ni gates.
+
 ## Mejoras funding/dashboard/evaluacion — implementado (2026-10-13, sin push aun)
 Resta: suite completa + barrera + copia aislada, commits acotados, push
 a rama de revision coherente, entrega con siete campos.
