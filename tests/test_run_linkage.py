@@ -26,7 +26,7 @@ from pathlib import Path
 from microstructure_probe.persistence import PersistenceStore
 
 CANONICAL_MICROPROBE = Path(__file__).resolve().parent.parent / "data" / "microprobe.db"
-RUN_ID_RE = re.compile(r"^[0-9a-f]{16}$")
+RUN_ID_RE = re.compile(r"^[0-9a-f]{32}$")
 LINKED_TABLES = ("universe_events", "prospective_setups",
                  "prospective_outcomes", "telemetry_snapshots")
 

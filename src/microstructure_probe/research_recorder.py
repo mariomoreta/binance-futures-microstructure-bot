@@ -236,6 +236,18 @@ class ResearchRecorder:
                                         daemon=True)
         self._thread.start()
 
+    def _resolve_history(self):
+        """Single choke point for HistoryStore access (R7).
+
+        Injected store first, then explicit db_path, then the default
+        operational store. Covers status(), the writer worker and
+        retention cleanup alike; when nothing is injected and no path is
+        set, behavior is unchanged (default store)."""
+        if self._history_store is not None:
+            return self._history_store
+        from .history_store import HistoryStore as _HS
+        return _HS(self.db_path) if self.db_path else _HS()
+
     def stop_and_drain(self, timeout: float = 10.0) -> Dict[str, Any]:
         # close open buckets as PARTIAL (explicitly marked, never complete)
         try:
@@ -357,7 +369,6 @@ class ResearchRecorder:
         self._book_open.clear()
 
     def _worker(self) -> None:
-        from .history_store import HistoryStore
         while not self._stop.is_set() or not self._queue.empty():
             try:
                 item = self._queue.get(timeout=0.2)
@@ -365,10 +376,7 @@ class ResearchRecorder:
                 continue
             try:
                 kind = item[0]
-                db = HistoryStore(self.db_path) if self.db_path else None
-                # resolve default historical path when none injected
-                if db is None:
-                    db = HistoryStore()
+                db = self._resolve_history()
                 if kind == "flow":
                     _, size_s, sym, bucket = item
                     key = (sym, int(size_s), int(bucket.start))
@@ -403,9 +411,8 @@ class ResearchRecorder:
                 if now - self._last_cleanup > 3600:
                     self._last_cleanup = now
                     try:
-                        from .history_store import HistoryStore as _HS
-                        (_HS(self.db_path) if self.db_path else _HS()
-                         ).research_retention_cleanup(self.retention_days)
+                        self._resolve_history().research_retention_cleanup(
+                            self.retention_days)
                     except Exception:
                         pass
 
@@ -413,12 +420,7 @@ class ResearchRecorder:
         with self._lock:
             counts = {"flow_10s": 0, "flow_1m": 0, "book_1m": 0}
             try:
-                if self._history_store is not None:
-                    db = self._history_store
-                else:
-                    from .history_store import HistoryStore as _HS
-                    db = _HS(self.db_path) if self.db_path else _HS()
-                raw = db.research_counts()
+                raw = self._resolve_history().research_counts()
                 counts = {"flow_10s": raw.get("research_flow_10s", 0),
                           "flow_1m": raw.get("research_flow_1m", 0),
                           "book_1m": raw.get("research_book_1m", 0)}

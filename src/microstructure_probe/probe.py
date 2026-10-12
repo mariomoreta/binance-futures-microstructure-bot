@@ -280,7 +280,10 @@ class MarketProbe:
         # P3 run linkage: unique per probe execution; stamped on every
         # row this run persists (universe events, setups, outcomes,
         # snapshots). Historical rows without one stay NULL = UNKNOWN.
-        self.run_id = uuid.uuid4().hex[:16]
+        # Guarantee: UUID4 randomness (122 bits); uniqueness is
+        # probabilistic (collision negligible), never claimed absolute;
+        # separation relies on inequality of actually stored ids.
+        self.run_id = uuid.uuid4().hex
         self._wall_clock_ms = wall_clock_ms or (lambda: time.time_ns() / 1_000_000)
         self._monotonic = monotonic or time.monotonic
         self._perf_counter_ns = perf_counter_ns or time.perf_counter_ns

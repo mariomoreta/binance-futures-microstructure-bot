@@ -265,84 +265,60 @@ class PersistenceStore:
                 return
 
             if current_version == 8:
-                # Migrate v8 -> v9: add prospective setup tables.
+                # Migrate v8 -> v10: add prospective setup tables + run linkage.
                 self._create_schema_v9(cursor)
-                cursor.execute(
-                    "INSERT OR REPLACE INTO persistence_meta (key, value) VALUES (?, ?)",
-                    ("schema_version", "9")
-                )
-                self._initialized = True
+                self._finish_v10(cursor)
                 return
 
             if current_version == 7:
-                # Migrate v7 -> v9: keep existing rows, add P1-13A + P1-14A tables.
+                # Migrate v7 -> v10: keep existing rows, add P1-13A + P1-14A tables + run linkage.
                 self._create_schema_v8(cursor)
                 self._create_schema_v9(cursor)
-                cursor.execute(
-                    "INSERT OR REPLACE INTO persistence_meta (key, value) VALUES (?, ?)",
-                    ("schema_version", "9")
-                )
-                self._initialized = True
+                self._finish_v10(cursor)
                 return
 
             if current_version == 6:
-                # Migrate v6 -> v9: keep existing rows, add P1-12A + P1-13A + P1-14A tables.
+                # Migrate v6 -> v10: keep existing rows, add P1-12A + P1-13A + P1-14A tables + run linkage.
                 self._create_schema_v7(cursor)
                 self._create_schema_v8(cursor)
                 self._create_schema_v9(cursor)
-                cursor.execute(
-                    "INSERT OR REPLACE INTO persistence_meta (key, value) VALUES (?, ?)",
-                    ("schema_version", "9")
-                )
-                self._initialized = True
+                self._finish_v10(cursor)
                 return
                 self._initialized = True
                 return
 
             if current_version == 5:
-                # Migrate v5 -> v9: keep existing rows, add P1-08 + P1-12A + P1-13A + P1-14A tables.
+                # Migrate v5 -> v10: keep existing rows, add P1-08 + P1-12A + P1-13A + P1-14A tables + run linkage.
                 self._create_schema_v6(cursor)
                 self._create_schema_v7(cursor)
                 self._create_schema_v8(cursor)
                 self._create_schema_v9(cursor)
-                cursor.execute(
-                    "INSERT OR REPLACE INTO persistence_meta (key, value) VALUES (?, ?)",
-                    ("schema_version", "9")
-                )
-                self._initialized = True
+                self._finish_v10(cursor)
                 return
 
             if current_version == 4:
-                # Migrate v4 -> v9: keep existing rows, add P1-07 + P1-08 + P1-12A + P1-13A + P1-14A tables.
+                # Migrate v4 -> v10: keep existing rows, add P1-07 + P1-08 + P1-12A + P1-13A + P1-14A tables + run linkage.
                 self._create_schema_v5(cursor)
                 self._create_schema_v6(cursor)
                 self._create_schema_v7(cursor)
                 self._create_schema_v8(cursor)
                 self._create_schema_v9(cursor)
-                cursor.execute(
-                    "INSERT OR REPLACE INTO persistence_meta (key, value) VALUES (?, ?)",
-                    ("schema_version", "9")
-                )
-                self._initialized = True
+                self._finish_v10(cursor)
                 return
 
             if current_version == 3:
-                # Migrate v3 -> v9: keep existing rows, add P1-06..P1-08 + P1-12A + P1-13A + P1-14A tables.
+                # Migrate v3 -> v10: keep existing rows, add P1-06..P1-08 + P1-12A + P1-13A + P1-14A tables + run linkage.
                 self._create_schema_v4(cursor)
                 self._create_schema_v5(cursor)
                 self._create_schema_v6(cursor)
                 self._create_schema_v7(cursor)
                 self._create_schema_v8(cursor)
                 self._create_schema_v9(cursor)
-                cursor.execute(
-                    "INSERT OR REPLACE INTO persistence_meta (key, value) VALUES (?, ?)",
-                    ("schema_version", "9")
-                )
-                self._initialized = True
+                self._finish_v10(cursor)
                 return
 
             if current_version == 2:
-                # Migrate v2 -> v9: keep existing rows, add P1-05..P1-08 + P1-12A + P1-13A + P1-14A tables.
+                # Migrate v2 -> v10: keep existing rows, add P1-05..P1-08 + P1-12A + P1-13A + P1-14A tables + run linkage.
                 self._create_schema_v3(cursor)
                 self._create_schema_v4(cursor)
                 self._create_schema_v5(cursor)
@@ -350,15 +326,11 @@ class PersistenceStore:
                 self._create_schema_v7(cursor)
                 self._create_schema_v8(cursor)
                 self._create_schema_v9(cursor)
-                cursor.execute(
-                    "INSERT OR REPLACE INTO persistence_meta (key, value) VALUES (?, ?)",
-                    ("schema_version", "9")
-                )
-                self._initialized = True
+                self._finish_v10(cursor)
                 return
 
             if current_version == 1:
-                # Migrate v1 -> v9: keep existing rows, add P1-04..P1-08 + P1-12A + P1-13A + P1-14A tables.
+                # Migrate v1 -> v10: keep existing rows, add P1-04..P1-08 + P1-12A + P1-13A + P1-14A tables + run linkage.
                 self._ensure_snapshot_columns(cursor)
                 self._create_schema_v2(cursor)
                 self._create_schema_v3(cursor)
@@ -368,11 +340,7 @@ class PersistenceStore:
                 self._create_schema_v7(cursor)
                 self._create_schema_v8(cursor)
                 self._create_schema_v9(cursor)
-                cursor.execute(
-                    "INSERT OR REPLACE INTO persistence_meta (key, value) VALUES (?, ?)",
-                    ("schema_version", "9")
-                )
-                self._initialized = True
+                self._finish_v10(cursor)
                 return
                 self._initialized = True
                 return
@@ -416,11 +384,33 @@ class PersistenceStore:
         """
         for table in ("universe_events", "prospective_setups",
                       "prospective_outcomes", "telemetry_snapshots"):
+            cursor.execute("SELECT name FROM sqlite_master WHERE type='table'"
+                           " AND name=?", (table,))
+            if cursor.fetchone() is None:
+                raise ValueError(
+                    "run_id migration (v10): missing table %s — refusing"
+                    " partial linkage instead of silently skipping it" % table)
             cursor.execute("PRAGMA table_info(%s)" % table)
             existing = {row[1] for row in cursor.fetchall()}
             if "run_id" not in existing:
                 cursor.execute(
                     "ALTER TABLE %s ADD COLUMN run_id TEXT" % table)
+
+    def _finish_v10(self, cursor: sqlite3.Cursor) -> None:
+        """Complete any migration at schema v10 (R6: one init suffices).
+
+        Adds run_id linkage columns, stamps version 10, marks initialized.
+        Every supported chain (v1..v9, fresh) ends here, so a single
+        init_db leaves the store fully operable for current writers —
+        no second instance required. Migration errors propagate loudly
+        (cursor context rolls back); they are never swallowed.
+        """
+        self._ensure_run_id_columns(cursor)
+        cursor.execute(
+            "INSERT OR REPLACE INTO persistence_meta (key, value) VALUES (?, ?)",
+            ("schema_version", "10")
+        )
+        self._initialized = True
     
     @staticmethod
     def _ensure_snapshot_columns(cursor: sqlite3.Cursor) -> None:

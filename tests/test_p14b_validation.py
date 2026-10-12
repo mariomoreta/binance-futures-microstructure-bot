@@ -434,25 +434,30 @@ class TestP14B6SchemaMigration(TestCase):
         assert "prospective_setups" in tables and "prospective_outcomes" in tables
         store.close()
 
-    def test_migration_v8_to_v9_adds_prospective_tables(self):
+    def test_migration_v8_to_v10_adds_prospective_tables(self):
         tmp_path = Path(tempfile.mkdtemp())
         """Fresh DB stops at v8 and init_db() adds prospective tables."""
         from src.microstructure_probe.persistence import PersistenceStore
 
         store = PersistenceStore(db_path=tmp_path / "p8.db")
-        # Build a v8-only DB by creating meta and stopping before v9
+        # Build a v8-shaped DB: meta at 8 plus the pre-v9 tables a genuine
+        # v8 carries (the v9 chain only adds the prospective ones).
         with store._get_cursor() as cursor:
             cursor.execute(
                 """CREATE TABLE IF NOT EXISTS persistence_meta (
                    key TEXT PRIMARY KEY, value TEXT NOT NULL)"""
             )
             cursor.execute("INSERT INTO persistence_meta (key, value) VALUES ('schema_version', '8')")
+            cursor.execute("CREATE TABLE IF NOT EXISTS universe_events (id INTEGER PRIMARY KEY,"
+                           " timestamp REAL, kind TEXT, symbol TEXT, detail TEXT)")
+            cursor.execute("CREATE TABLE IF NOT EXISTS telemetry_snapshots (id INTEGER PRIMARY KEY,"
+                           " timestamp REAL)")
         store._initialized = True  # pretend v8 init done; now upgrade path
         store._initialized = False
         store.init_db()
         with store._get_cursor() as cursor:
             cursor.execute("SELECT value FROM persistence_meta WHERE key = 'schema_version'")
-            assert int(cursor.fetchone()[0]) == 9
+            assert int(cursor.fetchone()[0]) == 10
             cursor.execute("SELECT name FROM sqlite_master WHERE type='table'")
             tables = {r[0] for r in cursor.fetchall()}
         assert "prospective_setups" in tables and "prospective_outcomes" in tables

@@ -712,7 +712,7 @@ class PersistenceMigrationTest(unittest.TestCase):
         with reopened._get_cursor() as cursor:
             cursor.execute("SELECT value FROM persistence_meta"
                            " WHERE key='schema_version'")
-            self.assertEqual(int(cursor.fetchone()[0]), 9)
+            self.assertEqual(int(cursor.fetchone()[0]), 10)
             for table in ("state_features", "state_transitions",
                           "opportunity_candidates", "opportunity_events"):
                 cursor.execute("SELECT name FROM sqlite_master"

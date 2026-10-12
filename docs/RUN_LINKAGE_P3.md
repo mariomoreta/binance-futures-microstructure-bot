@@ -1,4 +1,36 @@
-# P3 — Run linkage report (2026-10-12, schema v10)
+# P3 — Run linkage report (2026-10-12, CORRECTED 2026-10-13)
+
+## Gap analysis (execution → observation → persist → rehydrate)
+
+- universe_events: NO run column → ADDED (nullable run_id).
+- prospective_setups / prospective_outcomes: NO run column → ADDED.
+- telemetry_snapshots: NO run column → ADDED (via summary payload).
+- event tables (historical): run_id already present (event_study_runs,
+  event_instances) → REUSED, untouched.
+- research buckets (flow/book): recorder path has no run context; linkage
+  DEFERRED with rationale below (no silent omission).
+- Rehydration (`ProspectiveRecorder._load_from_db`) reloads all stamped
+  rows regardless of run (cross-restart continuity by design); run_id now
+  distinguishes origin without breaking continuity.
+
+## Corrective addendum (R6/R7, 2026-10-13)
+
+- R6: EVERY supported chain (v1–v8, v9, fresh) reaches v10 in ONE
+  `init_db` via `_finish_v10` (columns + stamp + initialized). No second
+  instance required; repeat init is idempotent; migration errors propagate
+  loudly (cursor rollback). Tests pinned to v9 were updated to v10 (not
+  conserved green-by-pin). Proven on temp fixtures incl. a temp byte-copy
+  of the real v9 canonical DB (counts preserved, old rows NULL, new
+  writes stamped; canonical never opened for writing).
+- R7: `ResearchRecorder._resolve_history` (injected → db_path → default)
+  now covers status(), the writer worker AND retention cleanup. Proven by
+  enqueue → worker → drain → forced cleanup with default constructions
+  forbidden: injected store receives rows, zero errors. Default behavior
+  (no injection) unchanged.
+- run_id is full UUID4 hex (32). Guarantee, precisely: UUID4 randomness
+  (122 bits); uniqueness is probabilistic (collision negligible), never
+  claimed absolute; separation relies on inequality of stored ids, which
+  the tests assert per execution. No absolute-unicity claim is made.
 
 ## Gap analysis (execution → observation → persist → rehydrate)
 
