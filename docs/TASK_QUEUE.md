@@ -1,3 +1,9 @@
+## ETAPA 2 dataset readiness — DONE (2026-10-12)
+Provenance closed (confirmed/probable/unknown split, all rows retained).
+Dataset apt for descriptive work with explicit fixture filter; blocked for
+validation (costs, versions, OOS, run linkage). Next: ETAPA 3
+research/backtest contract. No runs, traffic, orders, Start or paper.
+
 ## ETAPA 1 test isolation — DONE (2026-10-12)
 Prohibited writes zero (barrier exit 0); canonical 916/916 OK with stable
 microprobe hash; 375/225 re-verified by pure read. Residual Routes B/C

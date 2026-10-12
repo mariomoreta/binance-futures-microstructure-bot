@@ -1,3 +1,12 @@
+## ETAPA 2 dataset readiness — DONE (2026-10-12)
+Pure-read provenance (hashes unchanged): 225 fixture rows confirmed
+(DOGEUSDT hot lifecycle detail=test) retained + explicit filter rule; 150
+operational-probable with unknown per-row runs; prospective 66/228 clean of
+markers; event studies 2831x6 exact with FORMATION_GAP usability correct by
+design. Verdict: descriptive exploration only; no validation/trading claim.
+Evidence: docs/evidence/DATASET_PROVENANCE_ETAPA2.json, report
+docs/DATASET_READINESS_ETAPA2.md.
+
 ## ETAPA 1 test isolation — DONE (2026-10-12)
 Barrier scripts/audit_test_isolation.py over the full suite: PREFIX 911/911
 green WITH 61 swallowed default-factory attempts (test_probe x5,

@@ -1,4 +1,9 @@
 
+## ETAPA-2 dataset readiness — 2026-10-12
+Enabling research forensics (no backlog ID): pure-read provenance script
+(scripts/audit_dataset_provenance.py) + DATASET_READINESS report with
+per-population blockers. No data mutation. No gate advancement.
+
 ## ETAPA-1 test isolation — 2026-10-12
 Enabling test-hygiene (no backlog ID): full-suite write barrier
 (scripts/audit_test_isolation.py, PREFIX/POSTFIX evidence), temp-intercepted

@@ -1083,3 +1083,17 @@ patch pc.repo_root (not only dashboard.repo_root) for the default watcher
 spawner. Routes B/C need production injection points -- deferred, see
 docs/TEST_ISOLATION_ETAPA1_REPORT.md. No runs, traffic, orders, Start,
 paper, V2/main changes, resets or evidence deletions.
+
+## ETAPA 2 dataset readiness — 2026-10-12 (append-only)
+
+225/375 universe rows CONFIRMED pre-aea0376 HotSyncTest leakage (all
+DOGEUSDT hot_subscribed/unsubscribed detail=test, 10-08->10-11; other
+test-detail writers temp-scoped and absent from canonical: 0 S-pattern,
+0 XRP rows). Disposition: retain all rows, filter detail!=test explicitly
+for research. 150 rows probable-operational, per-row run UNKNOWN (no
+run-id column). Prospective 66/228 COMPLETE zero-fixture-markers, single
+rules v0.1.0, static lifecycle, mark-returns-only (no costs). Event
+studies 2831x6 exact, 420 COMPLETE-unusable = FORMATION_GAP by design.
+Dataset SUFFICIENT for descriptive exploration only; NOT for strategy
+validation (single versions, small rare tiers, no OOS, capped buffers,
+capitalization UNKNOWN). See docs/DATASET_READINESS_ETAPA2.md.
