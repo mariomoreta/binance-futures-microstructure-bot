@@ -1,0 +1,20 @@
+# Verificacion SHA256 paquete W/LUMIA (2026-10-13)
+Metodo: python hashlib.sha256 sobre bytes exactos en binance_case_study/
+Referencia: binance_case_study/SHA256SUMS.txt (12 archivos)
+HEAD: 6f8bd204c3a0622a90288fa49c656a232f9d7c24
+Resultado: 12/12 OK (verificado 2026-10-13, sin modificar originales)
+
+53efb82ba3473e263a31f81705a9bcb6f6787850736300230f353b48d1cf8d55  BTCUSDT_features_5m.csv  OK
+7b29f2fb3e3d87c84608932205b3d8d22e9f132ef7a93595442dab30d870f59d  Casos_Binance_W_LUMIA.png  OK
+fea031c92d30821daee0f7b2cf05875357d69b953cf4e31345da40a1f3d39272  GTCUSDT_features_5m.csv  OK
+340a338e78b78ad6c5b288bfcb16ab753740ad5f3cd370a8cad197af4ad4a8bd  Investigacion_Binance_W_LUMIA.md  OK
+2530d5d896d09dc4ed79ded20fa71b600c83d95b798551a32541e47fdb13b3a1  LUMIAUSDT_features_5m.csv  OK
+9f46250d7f3032a4ae08025cfb66563a4a81353ce814687452668c19426f97bf  WUSDT_features_5m.csv  OK
+41fcad7458f79d116c483d887edcb4d1be28d0a58ecc32c8c635baba8e7aaece  analysis_summary.json  OK
+751219a715d9a4c9cb3d3285c84fbbb610ef27c8612047977bd0af02d189d2dd  analyze.py  OK
+2b6b07ed3a5d2e83e977157b0624db6745c9a0aec0194f7d9ef24cebc6363167  finish.py  OK
+90716b817c0464c7169185ad024ba48b5aed59cfb08153b82ce67a8c55a48bf5  funding_info.json  OK
+0176ff9bcf239e6ce3b035156abf4b44ae4acd2d980cfcec92b2a1203c79f55f  raw_snapshot.json  OK
+8aafd2fa12e42cc2163428d62898c50f069629b0b375377cf02a441fb81cc5ce  supplemental_analysis.json  OK
+
+MATCHED 12/12. Originales intactos; re-ejecucion en copia temporal aislada.

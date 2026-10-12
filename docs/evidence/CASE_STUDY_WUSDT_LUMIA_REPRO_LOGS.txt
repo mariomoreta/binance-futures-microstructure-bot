@@ -1,0 +1,22 @@
+# Reproduccion W/LUMIA - logs y codigos (2026-10-13)
+HEAD: 6f8bd204c3a0622a90288fa49c656a232f9d7c24
+Metodo: copia aislada en %TEMP%\lumia_repro\binance_case_study (originales intactos).
+Entorno: Windows win32, PYTHONUTF8=1.
+
+Comandos exactos (PowerShell, desde repo root):
+  $env:PYTHONUTF8='1'
+  python "C:\Users\adonm\AppData\Local\Temp\opencode\lumia_repro\binance_case_study\analyze.py" > analyze_stdout.log 2> analyze_stderr.log
+  $env:PYTHONUTF8='1'
+  python "C:\Users\adonm\AppData\Local\Temp\opencode\lumia_repro\binance_case_study\finish.py" > finish_stdout.log 2> finish_stderr.log
+  python docs/evidence/compare_case_study_json_csv.py "binance_case_study" "<copia>\binance_case_study"
+
+Resultados:
+  analyze.py exit=0; stdout_bytes=185124 (JSON impreso, no publicado integro por tamano); stderr_bytes=0 (vacio).
+  finish.py exit=0; stdout_bytes=~5516 (JSON impreso); stderr_bytes=0 (vacio).
+  compare script exit=0; salida publicada en docs/evidence/CASE_STUDY_WUSDT_LUMIA_COMPARISON.json.
+
+Notas:
+  - No se requirio red (scripts leen raw_snapshot.json local; sin Binance ni canonico del proyecto).
+  - analyze_stdout.log contiene el mismo summary que analysis_summary.json (impreso por el script).
+  - Evidencia pequena: se publican hashes, comparacion estructurada y este resumen; los stdout completos son reproducibles con los comandos de arriba.
+  - PNG regenerado: hash difiere (ver COMPARISON.json); equivalencia visual NO declarada (PNG no inspeccionado visualmente).
