@@ -1,3 +1,10 @@
+## Mejoras funding/trazabilidad/dashboard/casos/evaluacion (2026-10-13, sin push aun)
+Funding v4 por liquidaciones + linkage research v3 + dashboard con
+semantica honesta + protocolo de casos (paquete ausente) + runner de
+evaluacion por familias. INCIDENTE: historico canonico v2->v3 por
+side-effect de test (aditivo, verificado intacto); corregido y con
+barrera. Sin ordenes/paper/servicios; sin rentabilidad ni gates.
+
 ## Cierre correctivo R1-R7 (2026-10-13, rama review, sin push aun)
 R1-R5 motor v3 (conocimiento estricto, marcas vs ejecuciones, gap-first,
 orden stop-antes-fills, metricas demostradas); garantias v2 retiradas,

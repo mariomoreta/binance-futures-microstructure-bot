@@ -1,4 +1,8 @@
 
+## Mejoras funding/trazabilidad/dashboard/evaluacion — 2026-10-13 (sin push aun)
+Ingenieria + docs + evaluacion offline. Sin ordenes/paper/servicios.
+Sin rentabilidad ni SUCCESS_GATES. Kronos diferido (fuera de alcance).
+
 ## Cierre correctivo R1-R7 — 2026-10-13 (sin push aun)
 Motor v3 + migraciones v10 en una init + resolver R7 + 22 regresiones.
 Habilitante/correctivo; sin IDs de producto; gates sin avance.

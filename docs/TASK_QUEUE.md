@@ -1,3 +1,7 @@
+## Mejoras funding/dashboard/evaluacion — implementado (2026-10-13, sin push aun)
+Resta: suite completa + barrera + copia aislada, commits acotados, push
+a rama de revision coherente, entrega con siete campos.
+
 ## Cierre correctivo R1-R7 — implementado (2026-10-13, sin push aun)
 Motor v3 + R6 + R7 + regresiones (22 nuevas) verdes en sitio (972).
 Resta: copia aislada final, commits, push a review, entrega acotada.

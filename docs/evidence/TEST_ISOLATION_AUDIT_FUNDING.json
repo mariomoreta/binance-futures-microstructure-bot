@@ -1,0 +1,153 @@
+{
+  "barrier": "audit_test_isolation ETAPA1",
+  "suite": {
+    "tests_run": 1000,
+    "ok": true,
+    "failures": [],
+    "errors": []
+  },
+  "prohibited_hits": [],
+  "prohibited_hit_count": 0,
+  "prohibited_by_kind": {},
+  "buckets": {
+    "blocked": [],
+    "blocked_count": 0,
+    "canonical_effective": [],
+    "canonical_effective_count": 0,
+    "residual_ro": [
+      {
+        "kind": "sqlite_connect_readonly_uri",
+        "test": "test_supervisor.test_abort_real_sleeper_preserves_foreign:395",
+        "thread": "MainThread",
+        "extra": {
+          "database": "file:C:\\proyectos\\binance-futures-microstructure-bot\\data\\microprobe.db?mode=ro"
+        },
+        "stack": [
+          {
+            "file": "C:\\Python314\\Lib\\unittest\\case.py",
+            "line": 725,
+            "func": "__call__"
+          },
+          {
+            "file": "C:\\Python314\\Lib\\unittest\\case.py",
+            "line": 669,
+            "func": "run"
+          },
+          {
+            "file": "C:\\Python314\\Lib\\unittest\\case.py",
+            "line": 615,
+            "func": "_callTestMethod"
+          },
+          {
+            "file": "C:\\proyectos\\binance-futures-microstructure-bot\\tests\\test_supervisor.py",
+            "line": 395,
+            "func": "test_abort_real_sleeper_preserves_foreign"
+          },
+          {
+            "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\control.py",
+            "line": 1875,
+            "func": "supervise"
+          },
+          {
+            "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\control.py",
+            "line": 1812,
+            "func": "supervise_once"
+          },
+          {
+            "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\control.py",
+            "line": 1458,
+            "func": "probe_db_readable"
+          },
+          {
+            "file": "C:\\proyectos\\binance-futures-microstructure-bot\\scripts\\audit_test_isolation.py",
+            "line": 214,
+            "func": "guarded_connect"
+          }
+        ]
+      }
+    ],
+    "residual_ro_count": 1
+  },
+  "canonical_connects": [],
+  "canonical_connect_count": 0,
+  "readonly_uri_connects": [
+    {
+      "kind": "sqlite_connect_readonly_uri",
+      "test": "test_supervisor.test_abort_real_sleeper_preserves_foreign:395",
+      "thread": "MainThread",
+      "extra": {
+        "database": "file:C:\\proyectos\\binance-futures-microstructure-bot\\data\\microprobe.db?mode=ro"
+      },
+      "stack": [
+        {
+          "file": "C:\\Python314\\Lib\\unittest\\case.py",
+          "line": 725,
+          "func": "__call__"
+        },
+        {
+          "file": "C:\\Python314\\Lib\\unittest\\case.py",
+          "line": 669,
+          "func": "run"
+        },
+        {
+          "file": "C:\\Python314\\Lib\\unittest\\case.py",
+          "line": 615,
+          "func": "_callTestMethod"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\tests\\test_supervisor.py",
+          "line": 395,
+          "func": "test_abort_real_sleeper_preserves_foreign"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\control.py",
+          "line": 1875,
+          "func": "supervise"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\control.py",
+          "line": 1812,
+          "func": "supervise_once"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\control.py",
+          "line": 1458,
+          "func": "probe_db_readable"
+        },
+        {
+          "file": "C:\\proyectos\\binance-futures-microstructure-bot\\scripts\\audit_test_isolation.py",
+          "line": 214,
+          "func": "guarded_connect"
+        }
+      ]
+    }
+  ],
+  "registry_write_attempts": [],
+  "file_write_attempts": [],
+  "connect_counters": {
+    "temp_connects": 925,
+    "memory_connects": 0,
+    "other_connects": 2
+  },
+  "hashes_before": {
+    "microprobe.db": "221b332b74a967025f2e6cfe03066f6cd40c24d9e8596a83a87a6a7fb86fa473",
+    "historical.db": "51170b58ba138ffd613e848b4970c15e94735a3695a8081b19020797797992ac",
+    "probe_runtime.json": "45c6a39ec91f55db708e1b9011f86bc55248b4485e582c015ea4442cc7cab5da"
+  },
+  "hashes_after": {
+    "microprobe.db": "221b332b74a967025f2e6cfe03066f6cd40c24d9e8596a83a87a6a7fb86fa473",
+    "historical.db": "51170b58ba138ffd613e848b4970c15e94735a3695a8081b19020797797992ac",
+    "probe_runtime.json": "45c6a39ec91f55db708e1b9011f86bc55248b4485e582c015ea4442cc7cab5da"
+  },
+  "hashes_equal": true,
+  "data_inventory_diff": {
+    "added": [],
+    "removed": [],
+    "changed": []
+  },
+  "logs_inventory_diff": {
+    "added": [],
+    "removed": [],
+    "changed": []
+  }
+}

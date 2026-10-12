@@ -1181,3 +1181,32 @@ run_id UUID4 completo: unicidad probabilistica (122 bits), jamas
 absoluta; la separacion usa desigualdad observada. Version unica de
 reglas: congelada+trazable + datos aptos + split defendible; sin
 versiones artificiales.
+
+## Mejoras funding/trazabilidad/dashboard/casos/evaluacion — 2026-10-13 (append-only)
+
+Funding v4 (backtest-offline/v4): calendario versionado de liquidaciones
+con timestamp+tasa realizados por evento; aplica si entry<=t<exit;
+exposicion = coste llenado con fills<=t; signo por direccion; fuera del
+span = funding_uncovered_ms (UNKNOWN, jamas cero inventado); entre
+liquidaciones = cadencia. funding_estimated_bps es CONTEXTO (nunca
+contabiliza). Sin calendario: fallback de intervalos intacto. Motor
+offline/determinista, sin red/BD. Tasas 4h/8h caben sin swap global.
+Linkage research v3: run_id/rules_version/as_of_ms/price_source/
+dataset_id nulables en buckets; recorder estampa en flush (as_of =
+disponibilidad, fuente mecanica); probe hila run_id+versiones;
+dataset_id None=UNKNOWN; historicos NULL sin backfill; migracion en
+copias temporales, canonico nunca escribible.
+Dashboard: solo campos respaldados (24h anclada vs REST, referencia/
+ancla/as_of, fase/transicion, evidencia triple, OI en base, funding
+citado vs UNKNOWN, VWAP con ancla); ratio cuentas, OI valorado, RSI/ATR
+y calendario ausentes => UNKNOWN/bloqueador, jamas simulados; sin
+etiquetas normativas ni botones.
+Casos WUSDT/LUMIA: paquete AUSENTE verificado (sin hashes que validar);
+informe de protocolo+metodo v1 sin cifras; H3 intacto, rebotes como
+variante H2 explicita; sin calibracion ni OOS.
+Evaluacion: runner sobre motor existente (6 grupos separados, dev/OOS
+por cutoff declarado, baseline agrupada como referencia, confirmacion
+mecanica etiquetada); RSI/ATR candidatos; formacion caller-declared.
+INCIDENTE: test DashboardState sin history_store migro el historico
+canonico v2->v3 (aditivo, conteos intactos, cero linkage filtrado);
+corregido con inyeccion + barrera tras cada archivo de tests nuevo.
