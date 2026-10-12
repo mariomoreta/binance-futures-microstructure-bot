@@ -1,3 +1,19 @@
+## Cierre W/LUMIA documental — reproduccion aislada (2026-10-13, sin push aun)
+Reproduccion de caso (DESCRIPTIVE/IN-SAMPLE): paquete en
+`binance_case_study/` (12/12 hashes OK), re-ejecutado en copia temporal
+(analyze 0, finish 0); coincidencia numerica parsed 0 diffs, bytes
+difieren por serializacion; PNG NO inspeccionado (equivalencia visual no
+declarada). Evidencia: `docs/evidence/CASE_STUDY_WUSDT_LUMIA_*` + script
+de comparacion. Distincion: reproduccion de casos != integracion
+dashboard (campos/versionado/funding-calendario pendientes) !=
+validacion financiera (sin OOS/calibracion/rentabilidad; gates intactos).
+V2 exacto `27b7af59cb1e313169f49655161d66e043b5412d` = checkpoint
+estatico frontend `dash-v2-03-token-detail` (Next.js bajo `frontend/`,
+sin BFF/datos vivos); no confundir con el dashboard Python SSR del
+backend (`dashboard.py`). Pendientes explicitos del prompt correctivo
+anterior (NO resueltos por este cierre): funding, posiciones abiertas,
+runner, incidente de aislamiento, schemas V2. Sin ordenes/paper/servicios.
+
 ## Mejoras funding/trazabilidad/dashboard/casos/evaluacion (2026-10-13, sin push aun)
 Funding v4 por liquidaciones + linkage research v3 + dashboard con
 semantica honesta + protocolo de casos (paquete ausente) + runner de

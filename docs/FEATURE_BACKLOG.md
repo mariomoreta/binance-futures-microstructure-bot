@@ -1,4 +1,15 @@
 
+## Cierre W/LUMIA documental — 2026-10-13 (sin push aun)
+Reproduccion de caso (sin ID de producto; habilitante/documental):
+addendum v2 en CASE_STUDY + 5 evidencias (hashes, comparacion,
+logs, env, script). Distincion: reproduccion DONE; integracion dashboard
+(F-STATE-*/F-OPP-UI-01/campos+funding-calendario) NOT IMPLEMENTED;
+validacion financiera (F-BT-01/F-PAPER-01, OOS/calibracion/rentabilidad)
+NOT IMPLEMENTED. V2 `27b7af59cb1e313169f49655161d66e043b5412d` =
+frontend estatico dash-v2-03-token-detail, no SSR backend. Pendientes
+correctivos NO resueltos: funding, posiciones abiertas, runner, incidente
+de aislamiento, schemas V2. Gates sin avance.
+
 ## Mejoras funding/trazabilidad/dashboard/evaluacion — 2026-10-13 (sin push aun)
 Ingenieria + docs + evaluacion offline. Sin ordenes/paper/servicios.
 Sin rentabilidad ni SUCCESS_GATES. Kronos diferido (fuera de alcance).

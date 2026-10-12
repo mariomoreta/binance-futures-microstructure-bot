@@ -1,3 +1,12 @@
+## Cierre W/LUMIA documental — reproduccion aislada (2026-10-13, sin push aun)
+Reproduccion DONE acotado (addendum v2 + 5 evidencias). No es integracion
+dashboard ni validacion financiera. V2 exacto `27b7af59cb1e313169f49655161d66e043b5412d`
+= frontend estatico `dash-v2-03-token-detail`, no el SSR backend.
+Pendientes explicitos (prompt correctivo anterior, no sustituido): funding,
+posiciones abiertas, runner, incidente de aislamiento, schemas V2.
+Resta: commits selectivos + push a rama de revision + entrega (SHA, URL,
+comparacion, remoto=local, evidencias, completados/pendientes). Sin gates.
+
 ## Mejoras funding/dashboard/evaluacion — implementado (2026-10-13, sin push aun)
 Resta: suite completa + barrera + copia aislada, commits acotados, push
 a rama de revision coherente, entrega con siete campos.
