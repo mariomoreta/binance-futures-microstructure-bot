@@ -91,8 +91,12 @@ class CompatibilityTest(unittest.TestCase):
     def test_behavioral_parity(self):
         from microstructure_probe import dashboard as dash
         self.assertEqual(hp.repo_root(), dash.repo_root())
-        self.assertEqual(hp.repo_root().name,
-                         Path("C:/proyectos/binance-futures-microstructure-bot").name)
+        # NOTE (corrective): no hardcoded checkout path — the suite must
+        # pass in any directory (isolated copies included). Parity between
+        # the two namespaces is the assertion; here only that repo_root
+        # resolves to a real named directory.
+        self.assertTrue(hp.repo_root().is_dir())
+        self.assertTrue(hp.repo_root().name)
         self.assertEqual(hp.no_window_flags(), dash.no_window_flags())
         self.assertIsInstance(hp.no_window_flags(), int)
         self.assertEqual(hp.process_info(99999999), (None, None))
