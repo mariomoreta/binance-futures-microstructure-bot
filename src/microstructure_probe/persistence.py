@@ -90,17 +90,19 @@ class PersistenceStore:
     
     def __init__(self, db_path: Optional[Union[str, Path]] = None):
         """Initialize persistence store.
-        
+
         Args:
             db_path: Path to SQLite database file. Defaults to data/microprobe.db
-                    in project root. Directory is created if needed.
+                    in project root. The parent directory is created lazily
+                    on first connection (constructing a store never touches
+                    the filesystem — hermetic tests may assert default paths
+                    without side effects).
         """
         if db_path is None:
             # Default to data/ directory (already git-ignored via .gitignore)
             db_path = Path(__file__).resolve().parent.parent.parent / "data" / "microprobe.db"
-        
+
         self.db_path = Path(db_path)
-        self.db_path.parent.mkdir(parents=True, exist_ok=True)
         
         # Connection will be established on first use
         self._connection: Optional[sqlite3.Connection] = None
@@ -193,6 +195,7 @@ class PersistenceStore:
     def _get_connection(self) -> sqlite3.Connection:
         """Get or create SQLite connection."""
         if self._connection is None:
+            self.db_path.parent.mkdir(parents=True, exist_ok=True)
             self._connection = sqlite3.connect(
                 str(self.db_path),
                 check_same_thread=False,  # Allow multi-thread access
