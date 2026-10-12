@@ -1,0 +1,77 @@
+{
+  "research": {
+    "setups": 66,
+    "outcomes": 228,
+    "complete_outcomes": 228,
+    "opportunity_events": 392,
+    "state_transitions": 500,
+    "universe_events": 375
+  },
+  "universe": {
+    "updated_ms": 1791640931081,
+    "core": 3,
+    "hot_dynamic": 0,
+    "hot_subscribed": 0,
+    "eligible": 439,
+    "unverified_test_detail_rows": 225
+  },
+  "classifier": {
+    "records": 14,
+    "span": {
+      "first_ms": 1791460736992,
+      "last_ms": 1791641080112
+    },
+    "states": [
+      {
+        "label": "REVERSAL",
+        "count": 5
+      },
+      {
+        "label": "IGNITION",
+        "count": 3
+      },
+      {
+        "label": "NORMAL",
+        "count": 3
+      },
+      {
+        "label": "UNKNOWN",
+        "count": 2
+      },
+      {
+        "label": "EXPANSION",
+        "count": 1
+      }
+    ],
+    "versions": [
+      "v0.1.0"
+    ],
+    "versions_truncated": false
+  },
+  "opportunities": {
+    "records": 68,
+    "span": {
+      "first_ms": 1791511554217,
+      "last_ms": 1791641080117
+    },
+    "lifecycles": [
+      {
+        "label": "DETECTED",
+        "count": 31
+      },
+      {
+        "label": "WATCHING",
+        "count": 25
+      },
+      {
+        "label": "ACTIVE_RESEARCH",
+        "count": 12
+      }
+    ],
+    "versions": [
+      "v0.1.0"
+    ],
+    "versions_truncated": false
+  },
+  "bytes_unchanged": true
+}

@@ -2,6 +2,7 @@ import {describe,expect,it,vi} from "vitest";
 import {render,screen} from "@testing-library/react";
 import SystemPage from "@/app/system/page";
 
+vi.mock("@/components/notices/SnapshotRefresh",()=>({SnapshotRefresh:()=>null}));
 vi.mock("@/lib/runtime-control",()=>({runtimeStatus:()=>({
   running:false,state:"UNKNOWN",pid:null,launcher:null,mode:"UNKNOWN",
   uptime_seconds:null,duration_seconds:null,started_at:null,
@@ -13,8 +14,8 @@ describe("System V2 truthful shell",()=>{it("shows unknown, not invented operati
   render(<SystemPage/>);
   expect(screen.getByTestId("system-v2")).toBeInTheDocument();
   expect(screen.getAllByText("UNKNOWN").length).toBeGreaterThan(4);
-  expect(screen.getByText(/No real events loaded/)).toBeInTheDocument();
+  expect(screen.getByText(/No real operational events loaded/)).toBeInTheDocument();
   expect(screen.queryByText("99.98%")).not.toBeInTheDocument();
   expect(screen.queryByText(/CONTROL CONNECTED/)).not.toBeInTheDocument();
-  expect(screen.getByRole("region",{name:"Integration coverage"})).toBeInTheDocument();
+  expect(screen.getByRole("region",{name:"Host & service coverage"})).toBeInTheDocument();
 });});

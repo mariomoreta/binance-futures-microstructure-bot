@@ -1,0 +1,46 @@
+{
+  "frontend_tests": 207,
+  "python_snapshot_tests": 496,
+  "checks": {
+    "frontend-tests": {
+      "exit": 0,
+      "elapsed_s": 22.584
+    },
+    "typecheck": {
+      "exit": 0,
+      "elapsed_s": 4.897
+    },
+    "lint": {
+      "exit": 0,
+      "elapsed_s": 12.158
+    },
+    "build": {
+      "exit": 0,
+      "elapsed_s": 10.52
+    }
+  },
+  "python": {
+    "exit": 0,
+    "elapsed_s": 93.267,
+    "scope": "frontend checkout Python snapshot, not concurrently edited backend"
+  },
+  "browser_exit": 0,
+  "cases": [
+    "System1672",
+    "System1366",
+    "System390",
+    "control-disclosure/refresh",
+    "preflight-disclosure",
+    "Overview-smoke"
+  ],
+  "http_exit": 0,
+  "canonical_bytes_unchanged": true,
+  "before_capture": "timed out during running-output rebuild; committed V2-70 screenshots are historical baseline",
+  "visual_fidelity": "PARTIAL",
+  "backend_tests": 911,
+  "backend_sha": "aea037629ed867534c68474bea6b883a19e280bf",
+  "test_isolation_fixed": true,
+  "tagged_rows_final": 225,
+  "universe_rows_final": 375,
+  "suite_hashes_unchanged_after_isolation": false
+}

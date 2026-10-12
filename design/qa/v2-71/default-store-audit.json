@@ -1,0 +1,642 @@
+{
+  "tests": 729,
+  "hits": [
+    [
+      "  File \"C:\\Python314\\Lib\\unittest\\case.py\", line 615, in _callTestMethod\n    result = method()\n",
+      "  File \"C:\\proyectos\\binance-futures-microstructure-bot\\tests\\test_host_telemetry.py\", line 81, in test_exact_bytes_per_stream\n    probe._handle_message(payload)\n",
+      "  File \"C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\probe.py\", line 728, in _handle_message\n    self.persistence.store_rejection_record(\n",
+      "  File \"C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\probe.py\", line 406, in persistence\n    self._persistence = get_persistence_store()\n",
+      "  File \"C:\\Python314\\Lib\\unittest\\mock.py\", line 1175, in __call__\n    return self._mock_call(*args, **kwargs)\n",
+      "  File \"C:\\Python314\\Lib\\unittest\\mock.py\", line 1179, in _mock_call\n    return self._execute_mock_call(*args, **kwargs)\n",
+      "  File \"C:\\Python314\\Lib\\unittest\\mock.py\", line 1240, in _execute_mock_call\n    result = effect(*args, **kwargs)\n",
+      "  File \"C:\\proyectos\\binance-futures-dashboard-v2-worktree\\.qa-v2-71-default-audit.py\", line 9, in forbidden\n    hits.append(traceback.format_stack(limit=8))\n"
+    ],
+    [
+      "  File \"C:\\Python314\\Lib\\unittest\\case.py\", line 615, in _callTestMethod\n    result = method()\n",
+      "  File \"C:\\proyectos\\binance-futures-microstructure-bot\\tests\\test_host_telemetry.py\", line 94, in test_rejected_messages_still_count_bytes\n    probe._handle_message(payload)\n",
+      "  File \"C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\probe.py\", line 728, in _handle_message\n    self.persistence.store_rejection_record(\n",
+      "  File \"C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\probe.py\", line 406, in persistence\n    self._persistence = get_persistence_store()\n",
+      "  File \"C:\\Python314\\Lib\\unittest\\mock.py\", line 1175, in __call__\n    return self._mock_call(*args, **kwargs)\n",
+      "  File \"C:\\Python314\\Lib\\unittest\\mock.py\", line 1179, in _mock_call\n    return self._execute_mock_call(*args, **kwargs)\n",
+      "  File \"C:\\Python314\\Lib\\unittest\\mock.py\", line 1240, in _execute_mock_call\n    result = effect(*args, **kwargs)\n",
+      "  File \"C:\\proyectos\\binance-futures-dashboard-v2-worktree\\.qa-v2-71-default-audit.py\", line 9, in forbidden\n    hits.append(traceback.format_stack(limit=8))\n"
+    ],
+    [
+      "  File \"C:\\Python314\\Lib\\unittest\\case.py\", line 615, in _callTestMethod\n    result = method()\n",
+      "  File \"C:\\proyectos\\binance-futures-microstructure-bot\\tests\\test_p14b_3_transport_freshness.py\", line 174, in test_accepted_message_updates_freshness\n    probe._handle_message(_msg(\"btcusdt@bookTicker\", \"BTCUSDT\", now - 100))\n",
+      "  File \"C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\probe.py\", line 909, in _handle_message\n    self.persistence.store_market_observation(\n",
+      "  File \"C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\probe.py\", line 406, in persistence\n    self._persistence = get_persistence_store()\n",
+      "  File \"C:\\Python314\\Lib\\unittest\\mock.py\", line 1175, in __call__\n    return self._mock_call(*args, **kwargs)\n",
+      "  File \"C:\\Python314\\Lib\\unittest\\mock.py\", line 1179, in _mock_call\n    return self._execute_mock_call(*args, **kwargs)\n",
+      "  File \"C:\\Python314\\Lib\\unittest\\mock.py\", line 1240, in _execute_mock_call\n    result = effect(*args, **kwargs)\n",
+      "  File \"C:\\proyectos\\binance-futures-dashboard-v2-worktree\\.qa-v2-71-default-audit.py\", line 9, in forbidden\n    hits.append(traceback.format_stack(limit=8))\n"
+    ],
+    [
+      "  File \"C:\\Python314\\Lib\\unittest\\case.py\", line 615, in _callTestMethod\n    result = method()\n",
+      "  File \"C:\\proyectos\\binance-futures-microstructure-bot\\tests\\test_p14b_3_transport_freshness.py\", line 188, in test_burst_of_rejects_leaves_freshness_frozen\n    probe._handle_message(_msg(\"btcusdt@bookTicker\", \"BTCUSDT\", now - 100))\n",
+      "  File \"C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\probe.py\", line 909, in _handle_message\n    self.persistence.store_market_observation(\n",
+      "  File \"C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\probe.py\", line 406, in persistence\n    self._persistence = get_persistence_store()\n",
+      "  File \"C:\\Python314\\Lib\\unittest\\mock.py\", line 1175, in __call__\n    return self._mock_call(*args, **kwargs)\n",
+      "  File \"C:\\Python314\\Lib\\unittest\\mock.py\", line 1179, in _mock_call\n    return self._execute_mock_call(*args, **kwargs)\n",
+      "  File \"C:\\Python314\\Lib\\unittest\\mock.py\", line 1240, in _execute_mock_call\n    result = effect(*args, **kwargs)\n",
+      "  File \"C:\\proyectos\\binance-futures-dashboard-v2-worktree\\.qa-v2-71-default-audit.py\", line 9, in forbidden\n    hits.append(traceback.format_stack(limit=8))\n"
+    ],
+    [
+      "  File \"C:\\Python314\\Lib\\unittest\\case.py\", line 615, in _callTestMethod\n    result = method()\n",
+      "  File \"C:\\proyectos\\binance-futures-microstructure-bot\\tests\\test_p14b_3_transport_freshness.py\", line 190, in test_burst_of_rejects_leaves_freshness_frozen\n    probe._handle_message(\n",
+      "  File \"C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\probe.py\", line 728, in _handle_message\n    self.persistence.store_rejection_record(\n",
+      "  File \"C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\probe.py\", line 406, in persistence\n    self._persistence = get_persistence_store()\n",
+      "  File \"C:\\Python314\\Lib\\unittest\\mock.py\", line 1175, in __call__\n    return self._mock_call(*args, **kwargs)\n",
+      "  File \"C:\\Python314\\Lib\\unittest\\mock.py\", line 1179, in _mock_call\n    return self._execute_mock_call(*args, **kwargs)\n",
+      "  File \"C:\\Python314\\Lib\\unittest\\mock.py\", line 1240, in _execute_mock_call\n    result = effect(*args, **kwargs)\n",
+      "  File \"C:\\proyectos\\binance-futures-dashboard-v2-worktree\\.qa-v2-71-default-audit.py\", line 9, in forbidden\n    hits.append(traceback.format_stack(limit=8))\n"
+    ],
+    [
+      "  File \"C:\\Python314\\Lib\\unittest\\case.py\", line 615, in _callTestMethod\n    result = method()\n",
+      "  File \"C:\\proyectos\\binance-futures-microstructure-bot\\tests\\test_p14b_3_transport_freshness.py\", line 190, in test_burst_of_rejects_leaves_freshness_frozen\n    probe._handle_message(\n",
+      "  File \"C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\probe.py\", line 728, in _handle_message\n    self.persistence.store_rejection_record(\n",
+      "  File \"C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\probe.py\", line 406, in persistence\n    self._persistence = get_persistence_store()\n",
+      "  File \"C:\\Python314\\Lib\\unittest\\mock.py\", line 1175, in __call__\n    return self._mock_call(*args, **kwargs)\n",
+      "  File \"C:\\Python314\\Lib\\unittest\\mock.py\", line 1179, in _mock_call\n    return self._execute_mock_call(*args, **kwargs)\n",
+      "  File \"C:\\Python314\\Lib\\unittest\\mock.py\", line 1240, in _execute_mock_call\n    result = effect(*args, **kwargs)\n",
+      "  File \"C:\\proyectos\\binance-futures-dashboard-v2-worktree\\.qa-v2-71-default-audit.py\", line 9, in forbidden\n    hits.append(traceback.format_stack(limit=8))\n"
+    ],
+    [
+      "  File \"C:\\Python314\\Lib\\unittest\\case.py\", line 615, in _callTestMethod\n    result = method()\n",
+      "  File \"C:\\proyectos\\binance-futures-microstructure-bot\\tests\\test_p14b_3_transport_freshness.py\", line 190, in test_burst_of_rejects_leaves_freshness_frozen\n    probe._handle_message(\n",
+      "  File \"C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\probe.py\", line 728, in _handle_message\n    self.persistence.store_rejection_record(\n",
+      "  File \"C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\probe.py\", line 406, in persistence\n    self._persistence = get_persistence_store()\n",
+      "  File \"C:\\Python314\\Lib\\unittest\\mock.py\", line 1175, in __call__\n    return self._mock_call(*args, **kwargs)\n",
+      "  File \"C:\\Python314\\Lib\\unittest\\mock.py\", line 1179, in _mock_call\n    return self._execute_mock_call(*args, **kwargs)\n",
+      "  File \"C:\\Python314\\Lib\\unittest\\mock.py\", line 1240, in _execute_mock_call\n    result = effect(*args, **kwargs)\n",
+      "  File \"C:\\proyectos\\binance-futures-dashboard-v2-worktree\\.qa-v2-71-default-audit.py\", line 9, in forbidden\n    hits.append(traceback.format_stack(limit=8))\n"
+    ],
+    [
+      "  File \"C:\\Python314\\Lib\\unittest\\case.py\", line 615, in _callTestMethod\n    result = method()\n",
+      "  File \"C:\\proyectos\\binance-futures-microstructure-bot\\tests\\test_p14b_3_transport_freshness.py\", line 190, in test_burst_of_rejects_leaves_freshness_frozen\n    probe._handle_message(\n",
+      "  File \"C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\probe.py\", line 728, in _handle_message\n    self.persistence.store_rejection_record(\n",
+      "  File \"C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\probe.py\", line 406, in persistence\n    self._persistence = get_persistence_store()\n",
+      "  File \"C:\\Python314\\Lib\\unittest\\mock.py\", line 1175, in __call__\n    return self._mock_call(*args, **kwargs)\n",
+      "  File \"C:\\Python314\\Lib\\unittest\\mock.py\", line 1179, in _mock_call\n    return self._execute_mock_call(*args, **kwargs)\n",
+      "  File \"C:\\Python314\\Lib\\unittest\\mock.py\", line 1240, in _execute_mock_call\n    result = effect(*args, **kwargs)\n",
+      "  File \"C:\\proyectos\\binance-futures-dashboard-v2-worktree\\.qa-v2-71-default-audit.py\", line 9, in forbidden\n    hits.append(traceback.format_stack(limit=8))\n"
+    ],
+    [
+      "  File \"C:\\Python314\\Lib\\unittest\\case.py\", line 615, in _callTestMethod\n    result = method()\n",
+      "  File \"C:\\proyectos\\binance-futures-microstructure-bot\\tests\\test_p14b_3_transport_freshness.py\", line 190, in test_burst_of_rejects_leaves_freshness_frozen\n    probe._handle_message(\n",
+      "  File \"C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\probe.py\", line 728, in _handle_message\n    self.persistence.store_rejection_record(\n",
+      "  File \"C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\probe.py\", line 406, in persistence\n    self._persistence = get_persistence_store()\n",
+      "  File \"C:\\Python314\\Lib\\unittest\\mock.py\", line 1175, in __call__\n    return self._mock_call(*args, **kwargs)\n",
+      "  File \"C:\\Python314\\Lib\\unittest\\mock.py\", line 1179, in _mock_call\n    return self._execute_mock_call(*args, **kwargs)\n",
+      "  File \"C:\\Python314\\Lib\\unittest\\mock.py\", line 1240, in _execute_mock_call\n    result = effect(*args, **kwargs)\n",
+      "  File \"C:\\proyectos\\binance-futures-dashboard-v2-worktree\\.qa-v2-71-default-audit.py\", line 9, in forbidden\n    hits.append(traceback.format_stack(limit=8))\n"
+    ],
+    [
+      "  File \"C:\\Python314\\Lib\\unittest\\case.py\", line 615, in _callTestMethod\n    result = method()\n",
+      "  File \"C:\\proyectos\\binance-futures-microstructure-bot\\tests\\test_p14b_3_transport_freshness.py\", line 190, in test_burst_of_rejects_leaves_freshness_frozen\n    probe._handle_message(\n",
+      "  File \"C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\probe.py\", line 728, in _handle_message\n    self.persistence.store_rejection_record(\n",
+      "  File \"C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\probe.py\", line 406, in persistence\n    self._persistence = get_persistence_store()\n",
+      "  File \"C:\\Python314\\Lib\\unittest\\mock.py\", line 1175, in __call__\n    return self._mock_call(*args, **kwargs)\n",
+      "  File \"C:\\Python314\\Lib\\unittest\\mock.py\", line 1179, in _mock_call\n    return self._execute_mock_call(*args, **kwargs)\n",
+      "  File \"C:\\Python314\\Lib\\unittest\\mock.py\", line 1240, in _execute_mock_call\n    result = effect(*args, **kwargs)\n",
+      "  File \"C:\\proyectos\\binance-futures-dashboard-v2-worktree\\.qa-v2-71-default-audit.py\", line 9, in forbidden\n    hits.append(traceback.format_stack(limit=8))\n"
+    ],
+    [
+      "  File \"C:\\Python314\\Lib\\unittest\\case.py\", line 615, in _callTestMethod\n    result = method()\n",
+      "  File \"C:\\proyectos\\binance-futures-microstructure-bot\\tests\\test_p14b_3_transport_freshness.py\", line 190, in test_burst_of_rejects_leaves_freshness_frozen\n    probe._handle_message(\n",
+      "  File \"C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\probe.py\", line 728, in _handle_message\n    self.persistence.store_rejection_record(\n",
+      "  File \"C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\probe.py\", line 406, in persistence\n    self._persistence = get_persistence_store()\n",
+      "  File \"C:\\Python314\\Lib\\unittest\\mock.py\", line 1175, in __call__\n    return self._mock_call(*args, **kwargs)\n",
+      "  File \"C:\\Python314\\Lib\\unittest\\mock.py\", line 1179, in _mock_call\n    return self._execute_mock_call(*args, **kwargs)\n",
+      "  File \"C:\\Python314\\Lib\\unittest\\mock.py\", line 1240, in _execute_mock_call\n    result = effect(*args, **kwargs)\n",
+      "  File \"C:\\proyectos\\binance-futures-dashboard-v2-worktree\\.qa-v2-71-default-audit.py\", line 9, in forbidden\n    hits.append(traceback.format_stack(limit=8))\n"
+    ],
+    [
+      "  File \"C:\\Python314\\Lib\\unittest\\case.py\", line 615, in _callTestMethod\n    result = method()\n",
+      "  File \"C:\\proyectos\\binance-futures-microstructure-bot\\tests\\test_p14b_3_transport_freshness.py\", line 190, in test_burst_of_rejects_leaves_freshness_frozen\n    probe._handle_message(\n",
+      "  File \"C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\probe.py\", line 728, in _handle_message\n    self.persistence.store_rejection_record(\n",
+      "  File \"C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\probe.py\", line 406, in persistence\n    self._persistence = get_persistence_store()\n",
+      "  File \"C:\\Python314\\Lib\\unittest\\mock.py\", line 1175, in __call__\n    return self._mock_call(*args, **kwargs)\n",
+      "  File \"C:\\Python314\\Lib\\unittest\\mock.py\", line 1179, in _mock_call\n    return self._execute_mock_call(*args, **kwargs)\n",
+      "  File \"C:\\Python314\\Lib\\unittest\\mock.py\", line 1240, in _execute_mock_call\n    result = effect(*args, **kwargs)\n",
+      "  File \"C:\\proyectos\\binance-futures-dashboard-v2-worktree\\.qa-v2-71-default-audit.py\", line 9, in forbidden\n    hits.append(traceback.format_stack(limit=8))\n"
+    ],
+    [
+      "  File \"C:\\Python314\\Lib\\unittest\\case.py\", line 615, in _callTestMethod\n    result = method()\n",
+      "  File \"C:\\proyectos\\binance-futures-microstructure-bot\\tests\\test_p14b_3_transport_freshness.py\", line 190, in test_burst_of_rejects_leaves_freshness_frozen\n    probe._handle_message(\n",
+      "  File \"C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\probe.py\", line 728, in _handle_message\n    self.persistence.store_rejection_record(\n",
+      "  File \"C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\probe.py\", line 406, in persistence\n    self._persistence = get_persistence_store()\n",
+      "  File \"C:\\Python314\\Lib\\unittest\\mock.py\", line 1175, in __call__\n    return self._mock_call(*args, **kwargs)\n",
+      "  File \"C:\\Python314\\Lib\\unittest\\mock.py\", line 1179, in _mock_call\n    return self._execute_mock_call(*args, **kwargs)\n",
+      "  File \"C:\\Python314\\Lib\\unittest\\mock.py\", line 1240, in _execute_mock_call\n    result = effect(*args, **kwargs)\n",
+      "  File \"C:\\proyectos\\binance-futures-dashboard-v2-worktree\\.qa-v2-71-default-audit.py\", line 9, in forbidden\n    hits.append(traceback.format_stack(limit=8))\n"
+    ],
+    [
+      "  File \"C:\\Python314\\Lib\\unittest\\case.py\", line 615, in _callTestMethod\n    result = method()\n",
+      "  File \"C:\\proyectos\\binance-futures-microstructure-bot\\tests\\test_p14b_3_transport_freshness.py\", line 190, in test_burst_of_rejects_leaves_freshness_frozen\n    probe._handle_message(\n",
+      "  File \"C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\probe.py\", line 728, in _handle_message\n    self.persistence.store_rejection_record(\n",
+      "  File \"C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\probe.py\", line 406, in persistence\n    self._persistence = get_persistence_store()\n",
+      "  File \"C:\\Python314\\Lib\\unittest\\mock.py\", line 1175, in __call__\n    return self._mock_call(*args, **kwargs)\n",
+      "  File \"C:\\Python314\\Lib\\unittest\\mock.py\", line 1179, in _mock_call\n    return self._execute_mock_call(*args, **kwargs)\n",
+      "  File \"C:\\Python314\\Lib\\unittest\\mock.py\", line 1240, in _execute_mock_call\n    result = effect(*args, **kwargs)\n",
+      "  File \"C:\\proyectos\\binance-futures-dashboard-v2-worktree\\.qa-v2-71-default-audit.py\", line 9, in forbidden\n    hits.append(traceback.format_stack(limit=8))\n"
+    ],
+    [
+      "  File \"C:\\Python314\\Lib\\unittest\\case.py\", line 615, in _callTestMethod\n    result = method()\n",
+      "  File \"C:\\proyectos\\binance-futures-microstructure-bot\\tests\\test_p14b_3_transport_freshness.py\", line 190, in test_burst_of_rejects_leaves_freshness_frozen\n    probe._handle_message(\n",
+      "  File \"C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\probe.py\", line 728, in _handle_message\n    self.persistence.store_rejection_record(\n",
+      "  File \"C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\probe.py\", line 406, in persistence\n    self._persistence = get_persistence_store()\n",
+      "  File \"C:\\Python314\\Lib\\unittest\\mock.py\", line 1175, in __call__\n    return self._mock_call(*args, **kwargs)\n",
+      "  File \"C:\\Python314\\Lib\\unittest\\mock.py\", line 1179, in _mock_call\n    return self._execute_mock_call(*args, **kwargs)\n",
+      "  File \"C:\\Python314\\Lib\\unittest\\mock.py\", line 1240, in _execute_mock_call\n    result = effect(*args, **kwargs)\n",
+      "  File \"C:\\proyectos\\binance-futures-dashboard-v2-worktree\\.qa-v2-71-default-audit.py\", line 9, in forbidden\n    hits.append(traceback.format_stack(limit=8))\n"
+    ],
+    [
+      "  File \"C:\\Python314\\Lib\\unittest\\case.py\", line 615, in _callTestMethod\n    result = method()\n",
+      "  File \"C:\\proyectos\\binance-futures-microstructure-bot\\tests\\test_p14b_3_transport_freshness.py\", line 190, in test_burst_of_rejects_leaves_freshness_frozen\n    probe._handle_message(\n",
+      "  File \"C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\probe.py\", line 728, in _handle_message\n    self.persistence.store_rejection_record(\n",
+      "  File \"C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\probe.py\", line 406, in persistence\n    self._persistence = get_persistence_store()\n",
+      "  File \"C:\\Python314\\Lib\\unittest\\mock.py\", line 1175, in __call__\n    return self._mock_call(*args, **kwargs)\n",
+      "  File \"C:\\Python314\\Lib\\unittest\\mock.py\", line 1179, in _mock_call\n    return self._execute_mock_call(*args, **kwargs)\n",
+      "  File \"C:\\Python314\\Lib\\unittest\\mock.py\", line 1240, in _execute_mock_call\n    result = effect(*args, **kwargs)\n",
+      "  File \"C:\\proyectos\\binance-futures-dashboard-v2-worktree\\.qa-v2-71-default-audit.py\", line 9, in forbidden\n    hits.append(traceback.format_stack(limit=8))\n"
+    ],
+    [
+      "  File \"C:\\Python314\\Lib\\unittest\\case.py\", line 615, in _callTestMethod\n    result = method()\n",
+      "  File \"C:\\proyectos\\binance-futures-microstructure-bot\\tests\\test_p14b_3_transport_freshness.py\", line 190, in test_burst_of_rejects_leaves_freshness_frozen\n    probe._handle_message(\n",
+      "  File \"C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\probe.py\", line 728, in _handle_message\n    self.persistence.store_rejection_record(\n",
+      "  File \"C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\probe.py\", line 406, in persistence\n    self._persistence = get_persistence_store()\n",
+      "  File \"C:\\Python314\\Lib\\unittest\\mock.py\", line 1175, in __call__\n    return self._mock_call(*args, **kwargs)\n",
+      "  File \"C:\\Python314\\Lib\\unittest\\mock.py\", line 1179, in _mock_call\n    return self._execute_mock_call(*args, **kwargs)\n",
+      "  File \"C:\\Python314\\Lib\\unittest\\mock.py\", line 1240, in _execute_mock_call\n    result = effect(*args, **kwargs)\n",
+      "  File \"C:\\proyectos\\binance-futures-dashboard-v2-worktree\\.qa-v2-71-default-audit.py\", line 9, in forbidden\n    hits.append(traceback.format_stack(limit=8))\n"
+    ],
+    [
+      "  File \"C:\\Python314\\Lib\\unittest\\case.py\", line 615, in _callTestMethod\n    result = method()\n",
+      "  File \"C:\\proyectos\\binance-futures-microstructure-bot\\tests\\test_p14b_3_transport_freshness.py\", line 190, in test_burst_of_rejects_leaves_freshness_frozen\n    probe._handle_message(\n",
+      "  File \"C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\probe.py\", line 728, in _handle_message\n    self.persistence.store_rejection_record(\n",
+      "  File \"C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\probe.py\", line 406, in persistence\n    self._persistence = get_persistence_store()\n",
+      "  File \"C:\\Python314\\Lib\\unittest\\mock.py\", line 1175, in __call__\n    return self._mock_call(*args, **kwargs)\n",
+      "  File \"C:\\Python314\\Lib\\unittest\\mock.py\", line 1179, in _mock_call\n    return self._execute_mock_call(*args, **kwargs)\n",
+      "  File \"C:\\Python314\\Lib\\unittest\\mock.py\", line 1240, in _execute_mock_call\n    result = effect(*args, **kwargs)\n",
+      "  File \"C:\\proyectos\\binance-futures-dashboard-v2-worktree\\.qa-v2-71-default-audit.py\", line 9, in forbidden\n    hits.append(traceback.format_stack(limit=8))\n"
+    ],
+    [
+      "  File \"C:\\Python314\\Lib\\unittest\\case.py\", line 615, in _callTestMethod\n    result = method()\n",
+      "  File \"C:\\proyectos\\binance-futures-microstructure-bot\\tests\\test_p14b_3_transport_freshness.py\", line 190, in test_burst_of_rejects_leaves_freshness_frozen\n    probe._handle_message(\n",
+      "  File \"C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\probe.py\", line 728, in _handle_message\n    self.persistence.store_rejection_record(\n",
+      "  File \"C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\probe.py\", line 406, in persistence\n    self._persistence = get_persistence_store()\n",
+      "  File \"C:\\Python314\\Lib\\unittest\\mock.py\", line 1175, in __call__\n    return self._mock_call(*args, **kwargs)\n",
+      "  File \"C:\\Python314\\Lib\\unittest\\mock.py\", line 1179, in _mock_call\n    return self._execute_mock_call(*args, **kwargs)\n",
+      "  File \"C:\\Python314\\Lib\\unittest\\mock.py\", line 1240, in _execute_mock_call\n    result = effect(*args, **kwargs)\n",
+      "  File \"C:\\proyectos\\binance-futures-dashboard-v2-worktree\\.qa-v2-71-default-audit.py\", line 9, in forbidden\n    hits.append(traceback.format_stack(limit=8))\n"
+    ],
+    [
+      "  File \"C:\\Python314\\Lib\\unittest\\case.py\", line 615, in _callTestMethod\n    result = method()\n",
+      "  File \"C:\\proyectos\\binance-futures-microstructure-bot\\tests\\test_p14b_3_transport_freshness.py\", line 190, in test_burst_of_rejects_leaves_freshness_frozen\n    probe._handle_message(\n",
+      "  File \"C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\probe.py\", line 728, in _handle_message\n    self.persistence.store_rejection_record(\n",
+      "  File \"C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\probe.py\", line 406, in persistence\n    self._persistence = get_persistence_store()\n",
+      "  File \"C:\\Python314\\Lib\\unittest\\mock.py\", line 1175, in __call__\n    return self._mock_call(*args, **kwargs)\n",
+      "  File \"C:\\Python314\\Lib\\unittest\\mock.py\", line 1179, in _mock_call\n    return self._execute_mock_call(*args, **kwargs)\n",
+      "  File \"C:\\Python314\\Lib\\unittest\\mock.py\", line 1240, in _execute_mock_call\n    result = effect(*args, **kwargs)\n",
+      "  File \"C:\\proyectos\\binance-futures-dashboard-v2-worktree\\.qa-v2-71-default-audit.py\", line 9, in forbidden\n    hits.append(traceback.format_stack(limit=8))\n"
+    ],
+    [
+      "  File \"C:\\Python314\\Lib\\unittest\\case.py\", line 615, in _callTestMethod\n    result = method()\n",
+      "  File \"C:\\proyectos\\binance-futures-microstructure-bot\\tests\\test_p14b_3_transport_freshness.py\", line 190, in test_burst_of_rejects_leaves_freshness_frozen\n    probe._handle_message(\n",
+      "  File \"C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\probe.py\", line 728, in _handle_message\n    self.persistence.store_rejection_record(\n",
+      "  File \"C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\probe.py\", line 406, in persistence\n    self._persistence = get_persistence_store()\n",
+      "  File \"C:\\Python314\\Lib\\unittest\\mock.py\", line 1175, in __call__\n    return self._mock_call(*args, **kwargs)\n",
+      "  File \"C:\\Python314\\Lib\\unittest\\mock.py\", line 1179, in _mock_call\n    return self._execute_mock_call(*args, **kwargs)\n",
+      "  File \"C:\\Python314\\Lib\\unittest\\mock.py\", line 1240, in _execute_mock_call\n    result = effect(*args, **kwargs)\n",
+      "  File \"C:\\proyectos\\binance-futures-dashboard-v2-worktree\\.qa-v2-71-default-audit.py\", line 9, in forbidden\n    hits.append(traceback.format_stack(limit=8))\n"
+    ],
+    [
+      "  File \"C:\\Python314\\Lib\\unittest\\case.py\", line 615, in _callTestMethod\n    result = method()\n",
+      "  File \"C:\\proyectos\\binance-futures-microstructure-bot\\tests\\test_p14b_3_transport_freshness.py\", line 190, in test_burst_of_rejects_leaves_freshness_frozen\n    probe._handle_message(\n",
+      "  File \"C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\probe.py\", line 728, in _handle_message\n    self.persistence.store_rejection_record(\n",
+      "  File \"C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\probe.py\", line 406, in persistence\n    self._persistence = get_persistence_store()\n",
+      "  File \"C:\\Python314\\Lib\\unittest\\mock.py\", line 1175, in __call__\n    return self._mock_call(*args, **kwargs)\n",
+      "  File \"C:\\Python314\\Lib\\unittest\\mock.py\", line 1179, in _mock_call\n    return self._execute_mock_call(*args, **kwargs)\n",
+      "  File \"C:\\Python314\\Lib\\unittest\\mock.py\", line 1240, in _execute_mock_call\n    result = effect(*args, **kwargs)\n",
+      "  File \"C:\\proyectos\\binance-futures-dashboard-v2-worktree\\.qa-v2-71-default-audit.py\", line 9, in forbidden\n    hits.append(traceback.format_stack(limit=8))\n"
+    ],
+    [
+      "  File \"C:\\Python314\\Lib\\unittest\\case.py\", line 615, in _callTestMethod\n    result = method()\n",
+      "  File \"C:\\proyectos\\binance-futures-microstructure-bot\\tests\\test_p14b_3_transport_freshness.py\", line 190, in test_burst_of_rejects_leaves_freshness_frozen\n    probe._handle_message(\n",
+      "  File \"C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\probe.py\", line 728, in _handle_message\n    self.persistence.store_rejection_record(\n",
+      "  File \"C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\probe.py\", line 406, in persistence\n    self._persistence = get_persistence_store()\n",
+      "  File \"C:\\Python314\\Lib\\unittest\\mock.py\", line 1175, in __call__\n    return self._mock_call(*args, **kwargs)\n",
+      "  File \"C:\\Python314\\Lib\\unittest\\mock.py\", line 1179, in _mock_call\n    return self._execute_mock_call(*args, **kwargs)\n",
+      "  File \"C:\\Python314\\Lib\\unittest\\mock.py\", line 1240, in _execute_mock_call\n    result = effect(*args, **kwargs)\n",
+      "  File \"C:\\proyectos\\binance-futures-dashboard-v2-worktree\\.qa-v2-71-default-audit.py\", line 9, in forbidden\n    hits.append(traceback.format_stack(limit=8))\n"
+    ],
+    [
+      "  File \"C:\\Python314\\Lib\\unittest\\case.py\", line 615, in _callTestMethod\n    result = method()\n",
+      "  File \"C:\\proyectos\\binance-futures-microstructure-bot\\tests\\test_p14b_3_transport_freshness.py\", line 190, in test_burst_of_rejects_leaves_freshness_frozen\n    probe._handle_message(\n",
+      "  File \"C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\probe.py\", line 728, in _handle_message\n    self.persistence.store_rejection_record(\n",
+      "  File \"C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\probe.py\", line 406, in persistence\n    self._persistence = get_persistence_store()\n",
+      "  File \"C:\\Python314\\Lib\\unittest\\mock.py\", line 1175, in __call__\n    return self._mock_call(*args, **kwargs)\n",
+      "  File \"C:\\Python314\\Lib\\unittest\\mock.py\", line 1179, in _mock_call\n    return self._execute_mock_call(*args, **kwargs)\n",
+      "  File \"C:\\Python314\\Lib\\unittest\\mock.py\", line 1240, in _execute_mock_call\n    result = effect(*args, **kwargs)\n",
+      "  File \"C:\\proyectos\\binance-futures-dashboard-v2-worktree\\.qa-v2-71-default-audit.py\", line 9, in forbidden\n    hits.append(traceback.format_stack(limit=8))\n"
+    ],
+    [
+      "  File \"C:\\Python314\\Lib\\unittest\\case.py\", line 615, in _callTestMethod\n    result = method()\n",
+      "  File \"C:\\proyectos\\binance-futures-microstructure-bot\\tests\\test_p14b_3_transport_freshness.py\", line 190, in test_burst_of_rejects_leaves_freshness_frozen\n    probe._handle_message(\n",
+      "  File \"C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\probe.py\", line 728, in _handle_message\n    self.persistence.store_rejection_record(\n",
+      "  File \"C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\probe.py\", line 406, in persistence\n    self._persistence = get_persistence_store()\n",
+      "  File \"C:\\Python314\\Lib\\unittest\\mock.py\", line 1175, in __call__\n    return self._mock_call(*args, **kwargs)\n",
+      "  File \"C:\\Python314\\Lib\\unittest\\mock.py\", line 1179, in _mock_call\n    return self._execute_mock_call(*args, **kwargs)\n",
+      "  File \"C:\\Python314\\Lib\\unittest\\mock.py\", line 1240, in _execute_mock_call\n    result = effect(*args, **kwargs)\n",
+      "  File \"C:\\proyectos\\binance-futures-dashboard-v2-worktree\\.qa-v2-71-default-audit.py\", line 9, in forbidden\n    hits.append(traceback.format_stack(limit=8))\n"
+    ],
+    [
+      "  File \"C:\\Python314\\Lib\\unittest\\case.py\", line 615, in _callTestMethod\n    result = method()\n",
+      "  File \"C:\\proyectos\\binance-futures-microstructure-bot\\tests\\test_p14b_3_transport_freshness.py\", line 190, in test_burst_of_rejects_leaves_freshness_frozen\n    probe._handle_message(\n",
+      "  File \"C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\probe.py\", line 728, in _handle_message\n    self.persistence.store_rejection_record(\n",
+      "  File \"C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\probe.py\", line 406, in persistence\n    self._persistence = get_persistence_store()\n",
+      "  File \"C:\\Python314\\Lib\\unittest\\mock.py\", line 1175, in __call__\n    return self._mock_call(*args, **kwargs)\n",
+      "  File \"C:\\Python314\\Lib\\unittest\\mock.py\", line 1179, in _mock_call\n    return self._execute_mock_call(*args, **kwargs)\n",
+      "  File \"C:\\Python314\\Lib\\unittest\\mock.py\", line 1240, in _execute_mock_call\n    result = effect(*args, **kwargs)\n",
+      "  File \"C:\\proyectos\\binance-futures-dashboard-v2-worktree\\.qa-v2-71-default-audit.py\", line 9, in forbidden\n    hits.append(traceback.format_stack(limit=8))\n"
+    ],
+    [
+      "  File \"C:\\Python314\\Lib\\unittest\\case.py\", line 615, in _callTestMethod\n    result = method()\n",
+      "  File \"C:\\proyectos\\binance-futures-microstructure-bot\\tests\\test_p14b_3_transport_freshness.py\", line 190, in test_burst_of_rejects_leaves_freshness_frozen\n    probe._handle_message(\n",
+      "  File \"C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\probe.py\", line 728, in _handle_message\n    self.persistence.store_rejection_record(\n",
+      "  File \"C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\probe.py\", line 406, in persistence\n    self._persistence = get_persistence_store()\n",
+      "  File \"C:\\Python314\\Lib\\unittest\\mock.py\", line 1175, in __call__\n    return self._mock_call(*args, **kwargs)\n",
+      "  File \"C:\\Python314\\Lib\\unittest\\mock.py\", line 1179, in _mock_call\n    return self._execute_mock_call(*args, **kwargs)\n",
+      "  File \"C:\\Python314\\Lib\\unittest\\mock.py\", line 1240, in _execute_mock_call\n    result = effect(*args, **kwargs)\n",
+      "  File \"C:\\proyectos\\binance-futures-dashboard-v2-worktree\\.qa-v2-71-default-audit.py\", line 9, in forbidden\n    hits.append(traceback.format_stack(limit=8))\n"
+    ],
+    [
+      "  File \"C:\\Python314\\Lib\\unittest\\case.py\", line 615, in _callTestMethod\n    result = method()\n",
+      "  File \"C:\\proyectos\\binance-futures-microstructure-bot\\tests\\test_p14b_3_transport_freshness.py\", line 190, in test_burst_of_rejects_leaves_freshness_frozen\n    probe._handle_message(\n",
+      "  File \"C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\probe.py\", line 728, in _handle_message\n    self.persistence.store_rejection_record(\n",
+      "  File \"C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\probe.py\", line 406, in persistence\n    self._persistence = get_persistence_store()\n",
+      "  File \"C:\\Python314\\Lib\\unittest\\mock.py\", line 1175, in __call__\n    return self._mock_call(*args, **kwargs)\n",
+      "  File \"C:\\Python314\\Lib\\unittest\\mock.py\", line 1179, in _mock_call\n    return self._execute_mock_call(*args, **kwargs)\n",
+      "  File \"C:\\Python314\\Lib\\unittest\\mock.py\", line 1240, in _execute_mock_call\n    result = effect(*args, **kwargs)\n",
+      "  File \"C:\\proyectos\\binance-futures-dashboard-v2-worktree\\.qa-v2-71-default-audit.py\", line 9, in forbidden\n    hits.append(traceback.format_stack(limit=8))\n"
+    ],
+    [
+      "  File \"C:\\Python314\\Lib\\unittest\\case.py\", line 615, in _callTestMethod\n    result = method()\n",
+      "  File \"C:\\proyectos\\binance-futures-microstructure-bot\\tests\\test_p14b_3_transport_freshness.py\", line 190, in test_burst_of_rejects_leaves_freshness_frozen\n    probe._handle_message(\n",
+      "  File \"C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\probe.py\", line 728, in _handle_message\n    self.persistence.store_rejection_record(\n",
+      "  File \"C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\probe.py\", line 406, in persistence\n    self._persistence = get_persistence_store()\n",
+      "  File \"C:\\Python314\\Lib\\unittest\\mock.py\", line 1175, in __call__\n    return self._mock_call(*args, **kwargs)\n",
+      "  File \"C:\\Python314\\Lib\\unittest\\mock.py\", line 1179, in _mock_call\n    return self._execute_mock_call(*args, **kwargs)\n",
+      "  File \"C:\\Python314\\Lib\\unittest\\mock.py\", line 1240, in _execute_mock_call\n    result = effect(*args, **kwargs)\n",
+      "  File \"C:\\proyectos\\binance-futures-dashboard-v2-worktree\\.qa-v2-71-default-audit.py\", line 9, in forbidden\n    hits.append(traceback.format_stack(limit=8))\n"
+    ],
+    [
+      "  File \"C:\\Python314\\Lib\\unittest\\case.py\", line 615, in _callTestMethod\n    result = method()\n",
+      "  File \"C:\\proyectos\\binance-futures-microstructure-bot\\tests\\test_p14b_3_transport_freshness.py\", line 190, in test_burst_of_rejects_leaves_freshness_frozen\n    probe._handle_message(\n",
+      "  File \"C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\probe.py\", line 728, in _handle_message\n    self.persistence.store_rejection_record(\n",
+      "  File \"C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\probe.py\", line 406, in persistence\n    self._persistence = get_persistence_store()\n",
+      "  File \"C:\\Python314\\Lib\\unittest\\mock.py\", line 1175, in __call__\n    return self._mock_call(*args, **kwargs)\n",
+      "  File \"C:\\Python314\\Lib\\unittest\\mock.py\", line 1179, in _mock_call\n    return self._execute_mock_call(*args, **kwargs)\n",
+      "  File \"C:\\Python314\\Lib\\unittest\\mock.py\", line 1240, in _execute_mock_call\n    result = effect(*args, **kwargs)\n",
+      "  File \"C:\\proyectos\\binance-futures-dashboard-v2-worktree\\.qa-v2-71-default-audit.py\", line 9, in forbidden\n    hits.append(traceback.format_stack(limit=8))\n"
+    ],
+    [
+      "  File \"C:\\Python314\\Lib\\unittest\\case.py\", line 615, in _callTestMethod\n    result = method()\n",
+      "  File \"C:\\proyectos\\binance-futures-microstructure-bot\\tests\\test_p14b_3_transport_freshness.py\", line 190, in test_burst_of_rejects_leaves_freshness_frozen\n    probe._handle_message(\n",
+      "  File \"C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\probe.py\", line 728, in _handle_message\n    self.persistence.store_rejection_record(\n",
+      "  File \"C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\probe.py\", line 406, in persistence\n    self._persistence = get_persistence_store()\n",
+      "  File \"C:\\Python314\\Lib\\unittest\\mock.py\", line 1175, in __call__\n    return self._mock_call(*args, **kwargs)\n",
+      "  File \"C:\\Python314\\Lib\\unittest\\mock.py\", line 1179, in _mock_call\n    return self._execute_mock_call(*args, **kwargs)\n",
+      "  File \"C:\\Python314\\Lib\\unittest\\mock.py\", line 1240, in _execute_mock_call\n    result = effect(*args, **kwargs)\n",
+      "  File \"C:\\proyectos\\binance-futures-dashboard-v2-worktree\\.qa-v2-71-default-audit.py\", line 9, in forbidden\n    hits.append(traceback.format_stack(limit=8))\n"
+    ],
+    [
+      "  File \"C:\\Python314\\Lib\\unittest\\case.py\", line 615, in _callTestMethod\n    result = method()\n",
+      "  File \"C:\\proyectos\\binance-futures-microstructure-bot\\tests\\test_p14b_3_transport_freshness.py\", line 190, in test_burst_of_rejects_leaves_freshness_frozen\n    probe._handle_message(\n",
+      "  File \"C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\probe.py\", line 728, in _handle_message\n    self.persistence.store_rejection_record(\n",
+      "  File \"C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\probe.py\", line 406, in persistence\n    self._persistence = get_persistence_store()\n",
+      "  File \"C:\\Python314\\Lib\\unittest\\mock.py\", line 1175, in __call__\n    return self._mock_call(*args, **kwargs)\n",
+      "  File \"C:\\Python314\\Lib\\unittest\\mock.py\", line 1179, in _mock_call\n    return self._execute_mock_call(*args, **kwargs)\n",
+      "  File \"C:\\Python314\\Lib\\unittest\\mock.py\", line 1240, in _execute_mock_call\n    result = effect(*args, **kwargs)\n",
+      "  File \"C:\\proyectos\\binance-futures-dashboard-v2-worktree\\.qa-v2-71-default-audit.py\", line 9, in forbidden\n    hits.append(traceback.format_stack(limit=8))\n"
+    ],
+    [
+      "  File \"C:\\Python314\\Lib\\unittest\\case.py\", line 615, in _callTestMethod\n    result = method()\n",
+      "  File \"C:\\proyectos\\binance-futures-microstructure-bot\\tests\\test_p14b_3_transport_freshness.py\", line 190, in test_burst_of_rejects_leaves_freshness_frozen\n    probe._handle_message(\n",
+      "  File \"C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\probe.py\", line 728, in _handle_message\n    self.persistence.store_rejection_record(\n",
+      "  File \"C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\probe.py\", line 406, in persistence\n    self._persistence = get_persistence_store()\n",
+      "  File \"C:\\Python314\\Lib\\unittest\\mock.py\", line 1175, in __call__\n    return self._mock_call(*args, **kwargs)\n",
+      "  File \"C:\\Python314\\Lib\\unittest\\mock.py\", line 1179, in _mock_call\n    return self._execute_mock_call(*args, **kwargs)\n",
+      "  File \"C:\\Python314\\Lib\\unittest\\mock.py\", line 1240, in _execute_mock_call\n    result = effect(*args, **kwargs)\n",
+      "  File \"C:\\proyectos\\binance-futures-dashboard-v2-worktree\\.qa-v2-71-default-audit.py\", line 9, in forbidden\n    hits.append(traceback.format_stack(limit=8))\n"
+    ],
+    [
+      "  File \"C:\\Python314\\Lib\\unittest\\case.py\", line 615, in _callTestMethod\n    result = method()\n",
+      "  File \"C:\\proyectos\\binance-futures-microstructure-bot\\tests\\test_p14b_3_transport_freshness.py\", line 190, in test_burst_of_rejects_leaves_freshness_frozen\n    probe._handle_message(\n",
+      "  File \"C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\probe.py\", line 728, in _handle_message\n    self.persistence.store_rejection_record(\n",
+      "  File \"C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\probe.py\", line 406, in persistence\n    self._persistence = get_persistence_store()\n",
+      "  File \"C:\\Python314\\Lib\\unittest\\mock.py\", line 1175, in __call__\n    return self._mock_call(*args, **kwargs)\n",
+      "  File \"C:\\Python314\\Lib\\unittest\\mock.py\", line 1179, in _mock_call\n    return self._execute_mock_call(*args, **kwargs)\n",
+      "  File \"C:\\Python314\\Lib\\unittest\\mock.py\", line 1240, in _execute_mock_call\n    result = effect(*args, **kwargs)\n",
+      "  File \"C:\\proyectos\\binance-futures-dashboard-v2-worktree\\.qa-v2-71-default-audit.py\", line 9, in forbidden\n    hits.append(traceback.format_stack(limit=8))\n"
+    ],
+    [
+      "  File \"C:\\Python314\\Lib\\unittest\\case.py\", line 615, in _callTestMethod\n    result = method()\n",
+      "  File \"C:\\proyectos\\binance-futures-microstructure-bot\\tests\\test_p14b_3_transport_freshness.py\", line 190, in test_burst_of_rejects_leaves_freshness_frozen\n    probe._handle_message(\n",
+      "  File \"C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\probe.py\", line 728, in _handle_message\n    self.persistence.store_rejection_record(\n",
+      "  File \"C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\probe.py\", line 406, in persistence\n    self._persistence = get_persistence_store()\n",
+      "  File \"C:\\Python314\\Lib\\unittest\\mock.py\", line 1175, in __call__\n    return self._mock_call(*args, **kwargs)\n",
+      "  File \"C:\\Python314\\Lib\\unittest\\mock.py\", line 1179, in _mock_call\n    return self._execute_mock_call(*args, **kwargs)\n",
+      "  File \"C:\\Python314\\Lib\\unittest\\mock.py\", line 1240, in _execute_mock_call\n    result = effect(*args, **kwargs)\n",
+      "  File \"C:\\proyectos\\binance-futures-dashboard-v2-worktree\\.qa-v2-71-default-audit.py\", line 9, in forbidden\n    hits.append(traceback.format_stack(limit=8))\n"
+    ],
+    [
+      "  File \"C:\\Python314\\Lib\\unittest\\case.py\", line 615, in _callTestMethod\n    result = method()\n",
+      "  File \"C:\\proyectos\\binance-futures-microstructure-bot\\tests\\test_p14b_3_transport_freshness.py\", line 190, in test_burst_of_rejects_leaves_freshness_frozen\n    probe._handle_message(\n",
+      "  File \"C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\probe.py\", line 728, in _handle_message\n    self.persistence.store_rejection_record(\n",
+      "  File \"C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\probe.py\", line 406, in persistence\n    self._persistence = get_persistence_store()\n",
+      "  File \"C:\\Python314\\Lib\\unittest\\mock.py\", line 1175, in __call__\n    return self._mock_call(*args, **kwargs)\n",
+      "  File \"C:\\Python314\\Lib\\unittest\\mock.py\", line 1179, in _mock_call\n    return self._execute_mock_call(*args, **kwargs)\n",
+      "  File \"C:\\Python314\\Lib\\unittest\\mock.py\", line 1240, in _execute_mock_call\n    result = effect(*args, **kwargs)\n",
+      "  File \"C:\\proyectos\\binance-futures-dashboard-v2-worktree\\.qa-v2-71-default-audit.py\", line 9, in forbidden\n    hits.append(traceback.format_stack(limit=8))\n"
+    ],
+    [
+      "  File \"C:\\Python314\\Lib\\unittest\\case.py\", line 615, in _callTestMethod\n    result = method()\n",
+      "  File \"C:\\proyectos\\binance-futures-microstructure-bot\\tests\\test_p14b_3_transport_freshness.py\", line 190, in test_burst_of_rejects_leaves_freshness_frozen\n    probe._handle_message(\n",
+      "  File \"C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\probe.py\", line 728, in _handle_message\n    self.persistence.store_rejection_record(\n",
+      "  File \"C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\probe.py\", line 406, in persistence\n    self._persistence = get_persistence_store()\n",
+      "  File \"C:\\Python314\\Lib\\unittest\\mock.py\", line 1175, in __call__\n    return self._mock_call(*args, **kwargs)\n",
+      "  File \"C:\\Python314\\Lib\\unittest\\mock.py\", line 1179, in _mock_call\n    return self._execute_mock_call(*args, **kwargs)\n",
+      "  File \"C:\\Python314\\Lib\\unittest\\mock.py\", line 1240, in _execute_mock_call\n    result = effect(*args, **kwargs)\n",
+      "  File \"C:\\proyectos\\binance-futures-dashboard-v2-worktree\\.qa-v2-71-default-audit.py\", line 9, in forbidden\n    hits.append(traceback.format_stack(limit=8))\n"
+    ],
+    [
+      "  File \"C:\\Python314\\Lib\\unittest\\case.py\", line 615, in _callTestMethod\n    result = method()\n",
+      "  File \"C:\\proyectos\\binance-futures-microstructure-bot\\tests\\test_p14b_3_transport_freshness.py\", line 190, in test_burst_of_rejects_leaves_freshness_frozen\n    probe._handle_message(\n",
+      "  File \"C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\probe.py\", line 728, in _handle_message\n    self.persistence.store_rejection_record(\n",
+      "  File \"C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\probe.py\", line 406, in persistence\n    self._persistence = get_persistence_store()\n",
+      "  File \"C:\\Python314\\Lib\\unittest\\mock.py\", line 1175, in __call__\n    return self._mock_call(*args, **kwargs)\n",
+      "  File \"C:\\Python314\\Lib\\unittest\\mock.py\", line 1179, in _mock_call\n    return self._execute_mock_call(*args, **kwargs)\n",
+      "  File \"C:\\Python314\\Lib\\unittest\\mock.py\", line 1240, in _execute_mock_call\n    result = effect(*args, **kwargs)\n",
+      "  File \"C:\\proyectos\\binance-futures-dashboard-v2-worktree\\.qa-v2-71-default-audit.py\", line 9, in forbidden\n    hits.append(traceback.format_stack(limit=8))\n"
+    ],
+    [
+      "  File \"C:\\Python314\\Lib\\unittest\\case.py\", line 615, in _callTestMethod\n    result = method()\n",
+      "  File \"C:\\proyectos\\binance-futures-microstructure-bot\\tests\\test_p14b_3_transport_freshness.py\", line 190, in test_burst_of_rejects_leaves_freshness_frozen\n    probe._handle_message(\n",
+      "  File \"C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\probe.py\", line 728, in _handle_message\n    self.persistence.store_rejection_record(\n",
+      "  File \"C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\probe.py\", line 406, in persistence\n    self._persistence = get_persistence_store()\n",
+      "  File \"C:\\Python314\\Lib\\unittest\\mock.py\", line 1175, in __call__\n    return self._mock_call(*args, **kwargs)\n",
+      "  File \"C:\\Python314\\Lib\\unittest\\mock.py\", line 1179, in _mock_call\n    return self._execute_mock_call(*args, **kwargs)\n",
+      "  File \"C:\\Python314\\Lib\\unittest\\mock.py\", line 1240, in _execute_mock_call\n    result = effect(*args, **kwargs)\n",
+      "  File \"C:\\proyectos\\binance-futures-dashboard-v2-worktree\\.qa-v2-71-default-audit.py\", line 9, in forbidden\n    hits.append(traceback.format_stack(limit=8))\n"
+    ],
+    [
+      "  File \"C:\\Python314\\Lib\\unittest\\case.py\", line 615, in _callTestMethod\n    result = method()\n",
+      "  File \"C:\\proyectos\\binance-futures-microstructure-bot\\tests\\test_p14b_3_transport_freshness.py\", line 190, in test_burst_of_rejects_leaves_freshness_frozen\n    probe._handle_message(\n",
+      "  File \"C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\probe.py\", line 728, in _handle_message\n    self.persistence.store_rejection_record(\n",
+      "  File \"C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\probe.py\", line 406, in persistence\n    self._persistence = get_persistence_store()\n",
+      "  File \"C:\\Python314\\Lib\\unittest\\mock.py\", line 1175, in __call__\n    return self._mock_call(*args, **kwargs)\n",
+      "  File \"C:\\Python314\\Lib\\unittest\\mock.py\", line 1179, in _mock_call\n    return self._execute_mock_call(*args, **kwargs)\n",
+      "  File \"C:\\Python314\\Lib\\unittest\\mock.py\", line 1240, in _execute_mock_call\n    result = effect(*args, **kwargs)\n",
+      "  File \"C:\\proyectos\\binance-futures-dashboard-v2-worktree\\.qa-v2-71-default-audit.py\", line 9, in forbidden\n    hits.append(traceback.format_stack(limit=8))\n"
+    ],
+    [
+      "  File \"C:\\Python314\\Lib\\unittest\\case.py\", line 615, in _callTestMethod\n    result = method()\n",
+      "  File \"C:\\proyectos\\binance-futures-microstructure-bot\\tests\\test_p14b_3_transport_freshness.py\", line 190, in test_burst_of_rejects_leaves_freshness_frozen\n    probe._handle_message(\n",
+      "  File \"C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\probe.py\", line 728, in _handle_message\n    self.persistence.store_rejection_record(\n",
+      "  File \"C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\probe.py\", line 406, in persistence\n    self._persistence = get_persistence_store()\n",
+      "  File \"C:\\Python314\\Lib\\unittest\\mock.py\", line 1175, in __call__\n    return self._mock_call(*args, **kwargs)\n",
+      "  File \"C:\\Python314\\Lib\\unittest\\mock.py\", line 1179, in _mock_call\n    return self._execute_mock_call(*args, **kwargs)\n",
+      "  File \"C:\\Python314\\Lib\\unittest\\mock.py\", line 1240, in _execute_mock_call\n    result = effect(*args, **kwargs)\n",
+      "  File \"C:\\proyectos\\binance-futures-dashboard-v2-worktree\\.qa-v2-71-default-audit.py\", line 9, in forbidden\n    hits.append(traceback.format_stack(limit=8))\n"
+    ],
+    [
+      "  File \"C:\\Python314\\Lib\\unittest\\case.py\", line 615, in _callTestMethod\n    result = method()\n",
+      "  File \"C:\\proyectos\\binance-futures-microstructure-bot\\tests\\test_p14b_3_transport_freshness.py\", line 190, in test_burst_of_rejects_leaves_freshness_frozen\n    probe._handle_message(\n",
+      "  File \"C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\probe.py\", line 728, in _handle_message\n    self.persistence.store_rejection_record(\n",
+      "  File \"C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\probe.py\", line 406, in persistence\n    self._persistence = get_persistence_store()\n",
+      "  File \"C:\\Python314\\Lib\\unittest\\mock.py\", line 1175, in __call__\n    return self._mock_call(*args, **kwargs)\n",
+      "  File \"C:\\Python314\\Lib\\unittest\\mock.py\", line 1179, in _mock_call\n    return self._execute_mock_call(*args, **kwargs)\n",
+      "  File \"C:\\Python314\\Lib\\unittest\\mock.py\", line 1240, in _execute_mock_call\n    result = effect(*args, **kwargs)\n",
+      "  File \"C:\\proyectos\\binance-futures-dashboard-v2-worktree\\.qa-v2-71-default-audit.py\", line 9, in forbidden\n    hits.append(traceback.format_stack(limit=8))\n"
+    ],
+    [
+      "  File \"C:\\Python314\\Lib\\unittest\\case.py\", line 615, in _callTestMethod\n    result = method()\n",
+      "  File \"C:\\proyectos\\binance-futures-microstructure-bot\\tests\\test_p14b_3_transport_freshness.py\", line 190, in test_burst_of_rejects_leaves_freshness_frozen\n    probe._handle_message(\n",
+      "  File \"C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\probe.py\", line 728, in _handle_message\n    self.persistence.store_rejection_record(\n",
+      "  File \"C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\probe.py\", line 406, in persistence\n    self._persistence = get_persistence_store()\n",
+      "  File \"C:\\Python314\\Lib\\unittest\\mock.py\", line 1175, in __call__\n    return self._mock_call(*args, **kwargs)\n",
+      "  File \"C:\\Python314\\Lib\\unittest\\mock.py\", line 1179, in _mock_call\n    return self._execute_mock_call(*args, **kwargs)\n",
+      "  File \"C:\\Python314\\Lib\\unittest\\mock.py\", line 1240, in _execute_mock_call\n    result = effect(*args, **kwargs)\n",
+      "  File \"C:\\proyectos\\binance-futures-dashboard-v2-worktree\\.qa-v2-71-default-audit.py\", line 9, in forbidden\n    hits.append(traceback.format_stack(limit=8))\n"
+    ],
+    [
+      "  File \"C:\\Python314\\Lib\\unittest\\case.py\", line 615, in _callTestMethod\n    result = method()\n",
+      "  File \"C:\\proyectos\\binance-futures-microstructure-bot\\tests\\test_p14b_3_transport_freshness.py\", line 190, in test_burst_of_rejects_leaves_freshness_frozen\n    probe._handle_message(\n",
+      "  File \"C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\probe.py\", line 728, in _handle_message\n    self.persistence.store_rejection_record(\n",
+      "  File \"C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\probe.py\", line 406, in persistence\n    self._persistence = get_persistence_store()\n",
+      "  File \"C:\\Python314\\Lib\\unittest\\mock.py\", line 1175, in __call__\n    return self._mock_call(*args, **kwargs)\n",
+      "  File \"C:\\Python314\\Lib\\unittest\\mock.py\", line 1179, in _mock_call\n    return self._execute_mock_call(*args, **kwargs)\n",
+      "  File \"C:\\Python314\\Lib\\unittest\\mock.py\", line 1240, in _execute_mock_call\n    result = effect(*args, **kwargs)\n",
+      "  File \"C:\\proyectos\\binance-futures-dashboard-v2-worktree\\.qa-v2-71-default-audit.py\", line 9, in forbidden\n    hits.append(traceback.format_stack(limit=8))\n"
+    ],
+    [
+      "  File \"C:\\Python314\\Lib\\unittest\\case.py\", line 615, in _callTestMethod\n    result = method()\n",
+      "  File \"C:\\proyectos\\binance-futures-microstructure-bot\\tests\\test_p14b_3_transport_freshness.py\", line 190, in test_burst_of_rejects_leaves_freshness_frozen\n    probe._handle_message(\n",
+      "  File \"C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\probe.py\", line 728, in _handle_message\n    self.persistence.store_rejection_record(\n",
+      "  File \"C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\probe.py\", line 406, in persistence\n    self._persistence = get_persistence_store()\n",
+      "  File \"C:\\Python314\\Lib\\unittest\\mock.py\", line 1175, in __call__\n    return self._mock_call(*args, **kwargs)\n",
+      "  File \"C:\\Python314\\Lib\\unittest\\mock.py\", line 1179, in _mock_call\n    return self._execute_mock_call(*args, **kwargs)\n",
+      "  File \"C:\\Python314\\Lib\\unittest\\mock.py\", line 1240, in _execute_mock_call\n    result = effect(*args, **kwargs)\n",
+      "  File \"C:\\proyectos\\binance-futures-dashboard-v2-worktree\\.qa-v2-71-default-audit.py\", line 9, in forbidden\n    hits.append(traceback.format_stack(limit=8))\n"
+    ],
+    [
+      "  File \"C:\\Python314\\Lib\\unittest\\case.py\", line 615, in _callTestMethod\n    result = method()\n",
+      "  File \"C:\\proyectos\\binance-futures-microstructure-bot\\tests\\test_p14b_3_transport_freshness.py\", line 190, in test_burst_of_rejects_leaves_freshness_frozen\n    probe._handle_message(\n",
+      "  File \"C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\probe.py\", line 728, in _handle_message\n    self.persistence.store_rejection_record(\n",
+      "  File \"C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\probe.py\", line 406, in persistence\n    self._persistence = get_persistence_store()\n",
+      "  File \"C:\\Python314\\Lib\\unittest\\mock.py\", line 1175, in __call__\n    return self._mock_call(*args, **kwargs)\n",
+      "  File \"C:\\Python314\\Lib\\unittest\\mock.py\", line 1179, in _mock_call\n    return self._execute_mock_call(*args, **kwargs)\n",
+      "  File \"C:\\Python314\\Lib\\unittest\\mock.py\", line 1240, in _execute_mock_call\n    result = effect(*args, **kwargs)\n",
+      "  File \"C:\\proyectos\\binance-futures-dashboard-v2-worktree\\.qa-v2-71-default-audit.py\", line 9, in forbidden\n    hits.append(traceback.format_stack(limit=8))\n"
+    ],
+    [
+      "  File \"C:\\Python314\\Lib\\unittest\\case.py\", line 615, in _callTestMethod\n    result = method()\n",
+      "  File \"C:\\proyectos\\binance-futures-microstructure-bot\\tests\\test_p14b_3_transport_freshness.py\", line 190, in test_burst_of_rejects_leaves_freshness_frozen\n    probe._handle_message(\n",
+      "  File \"C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\probe.py\", line 728, in _handle_message\n    self.persistence.store_rejection_record(\n",
+      "  File \"C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\probe.py\", line 406, in persistence\n    self._persistence = get_persistence_store()\n",
+      "  File \"C:\\Python314\\Lib\\unittest\\mock.py\", line 1175, in __call__\n    return self._mock_call(*args, **kwargs)\n",
+      "  File \"C:\\Python314\\Lib\\unittest\\mock.py\", line 1179, in _mock_call\n    return self._execute_mock_call(*args, **kwargs)\n",
+      "  File \"C:\\Python314\\Lib\\unittest\\mock.py\", line 1240, in _execute_mock_call\n    result = effect(*args, **kwargs)\n",
+      "  File \"C:\\proyectos\\binance-futures-dashboard-v2-worktree\\.qa-v2-71-default-audit.py\", line 9, in forbidden\n    hits.append(traceback.format_stack(limit=8))\n"
+    ],
+    [
+      "  File \"C:\\Python314\\Lib\\unittest\\case.py\", line 615, in _callTestMethod\n    result = method()\n",
+      "  File \"C:\\proyectos\\binance-futures-microstructure-bot\\tests\\test_p14b_3_transport_freshness.py\", line 190, in test_burst_of_rejects_leaves_freshness_frozen\n    probe._handle_message(\n",
+      "  File \"C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\probe.py\", line 728, in _handle_message\n    self.persistence.store_rejection_record(\n",
+      "  File \"C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\probe.py\", line 406, in persistence\n    self._persistence = get_persistence_store()\n",
+      "  File \"C:\\Python314\\Lib\\unittest\\mock.py\", line 1175, in __call__\n    return self._mock_call(*args, **kwargs)\n",
+      "  File \"C:\\Python314\\Lib\\unittest\\mock.py\", line 1179, in _mock_call\n    return self._execute_mock_call(*args, **kwargs)\n",
+      "  File \"C:\\Python314\\Lib\\unittest\\mock.py\", line 1240, in _execute_mock_call\n    result = effect(*args, **kwargs)\n",
+      "  File \"C:\\proyectos\\binance-futures-dashboard-v2-worktree\\.qa-v2-71-default-audit.py\", line 9, in forbidden\n    hits.append(traceback.format_stack(limit=8))\n"
+    ],
+    [
+      "  File \"C:\\Python314\\Lib\\unittest\\case.py\", line 615, in _callTestMethod\n    result = method()\n",
+      "  File \"C:\\proyectos\\binance-futures-microstructure-bot\\tests\\test_p14b_3_transport_freshness.py\", line 190, in test_burst_of_rejects_leaves_freshness_frozen\n    probe._handle_message(\n",
+      "  File \"C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\probe.py\", line 728, in _handle_message\n    self.persistence.store_rejection_record(\n",
+      "  File \"C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\probe.py\", line 406, in persistence\n    self._persistence = get_persistence_store()\n",
+      "  File \"C:\\Python314\\Lib\\unittest\\mock.py\", line 1175, in __call__\n    return self._mock_call(*args, **kwargs)\n",
+      "  File \"C:\\Python314\\Lib\\unittest\\mock.py\", line 1179, in _mock_call\n    return self._execute_mock_call(*args, **kwargs)\n",
+      "  File \"C:\\Python314\\Lib\\unittest\\mock.py\", line 1240, in _execute_mock_call\n    result = effect(*args, **kwargs)\n",
+      "  File \"C:\\proyectos\\binance-futures-dashboard-v2-worktree\\.qa-v2-71-default-audit.py\", line 9, in forbidden\n    hits.append(traceback.format_stack(limit=8))\n"
+    ],
+    [
+      "  File \"C:\\Python314\\Lib\\unittest\\case.py\", line 615, in _callTestMethod\n    result = method()\n",
+      "  File \"C:\\proyectos\\binance-futures-microstructure-bot\\tests\\test_p14b_3_transport_freshness.py\", line 190, in test_burst_of_rejects_leaves_freshness_frozen\n    probe._handle_message(\n",
+      "  File \"C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\probe.py\", line 728, in _handle_message\n    self.persistence.store_rejection_record(\n",
+      "  File \"C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\probe.py\", line 406, in persistence\n    self._persistence = get_persistence_store()\n",
+      "  File \"C:\\Python314\\Lib\\unittest\\mock.py\", line 1175, in __call__\n    return self._mock_call(*args, **kwargs)\n",
+      "  File \"C:\\Python314\\Lib\\unittest\\mock.py\", line 1179, in _mock_call\n    return self._execute_mock_call(*args, **kwargs)\n",
+      "  File \"C:\\Python314\\Lib\\unittest\\mock.py\", line 1240, in _execute_mock_call\n    result = effect(*args, **kwargs)\n",
+      "  File \"C:\\proyectos\\binance-futures-dashboard-v2-worktree\\.qa-v2-71-default-audit.py\", line 9, in forbidden\n    hits.append(traceback.format_stack(limit=8))\n"
+    ],
+    [
+      "  File \"C:\\Python314\\Lib\\unittest\\case.py\", line 615, in _callTestMethod\n    result = method()\n",
+      "  File \"C:\\proyectos\\binance-futures-microstructure-bot\\tests\\test_p14b_3_transport_freshness.py\", line 190, in test_burst_of_rejects_leaves_freshness_frozen\n    probe._handle_message(\n",
+      "  File \"C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\probe.py\", line 728, in _handle_message\n    self.persistence.store_rejection_record(\n",
+      "  File \"C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\probe.py\", line 406, in persistence\n    self._persistence = get_persistence_store()\n",
+      "  File \"C:\\Python314\\Lib\\unittest\\mock.py\", line 1175, in __call__\n    return self._mock_call(*args, **kwargs)\n",
+      "  File \"C:\\Python314\\Lib\\unittest\\mock.py\", line 1179, in _mock_call\n    return self._execute_mock_call(*args, **kwargs)\n",
+      "  File \"C:\\Python314\\Lib\\unittest\\mock.py\", line 1240, in _execute_mock_call\n    result = effect(*args, **kwargs)\n",
+      "  File \"C:\\proyectos\\binance-futures-dashboard-v2-worktree\\.qa-v2-71-default-audit.py\", line 9, in forbidden\n    hits.append(traceback.format_stack(limit=8))\n"
+    ],
+    [
+      "  File \"C:\\Python314\\Lib\\unittest\\case.py\", line 615, in _callTestMethod\n    result = method()\n",
+      "  File \"C:\\proyectos\\binance-futures-microstructure-bot\\tests\\test_p14b_3_transport_freshness.py\", line 190, in test_burst_of_rejects_leaves_freshness_frozen\n    probe._handle_message(\n",
+      "  File \"C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\probe.py\", line 728, in _handle_message\n    self.persistence.store_rejection_record(\n",
+      "  File \"C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\probe.py\", line 406, in persistence\n    self._persistence = get_persistence_store()\n",
+      "  File \"C:\\Python314\\Lib\\unittest\\mock.py\", line 1175, in __call__\n    return self._mock_call(*args, **kwargs)\n",
+      "  File \"C:\\Python314\\Lib\\unittest\\mock.py\", line 1179, in _mock_call\n    return self._execute_mock_call(*args, **kwargs)\n",
+      "  File \"C:\\Python314\\Lib\\unittest\\mock.py\", line 1240, in _execute_mock_call\n    result = effect(*args, **kwargs)\n",
+      "  File \"C:\\proyectos\\binance-futures-dashboard-v2-worktree\\.qa-v2-71-default-audit.py\", line 9, in forbidden\n    hits.append(traceback.format_stack(limit=8))\n"
+    ],
+    [
+      "  File \"C:\\Python314\\Lib\\unittest\\case.py\", line 615, in _callTestMethod\n    result = method()\n",
+      "  File \"C:\\proyectos\\binance-futures-microstructure-bot\\tests\\test_p14b_3_transport_freshness.py\", line 190, in test_burst_of_rejects_leaves_freshness_frozen\n    probe._handle_message(\n",
+      "  File \"C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\probe.py\", line 728, in _handle_message\n    self.persistence.store_rejection_record(\n",
+      "  File \"C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\probe.py\", line 406, in persistence\n    self._persistence = get_persistence_store()\n",
+      "  File \"C:\\Python314\\Lib\\unittest\\mock.py\", line 1175, in __call__\n    return self._mock_call(*args, **kwargs)\n",
+      "  File \"C:\\Python314\\Lib\\unittest\\mock.py\", line 1179, in _mock_call\n    return self._execute_mock_call(*args, **kwargs)\n",
+      "  File \"C:\\Python314\\Lib\\unittest\\mock.py\", line 1240, in _execute_mock_call\n    result = effect(*args, **kwargs)\n",
+      "  File \"C:\\proyectos\\binance-futures-dashboard-v2-worktree\\.qa-v2-71-default-audit.py\", line 9, in forbidden\n    hits.append(traceback.format_stack(limit=8))\n"
+    ],
+    [
+      "  File \"C:\\Python314\\Lib\\unittest\\case.py\", line 615, in _callTestMethod\n    result = method()\n",
+      "  File \"C:\\proyectos\\binance-futures-microstructure-bot\\tests\\test_p14b_3_transport_freshness.py\", line 190, in test_burst_of_rejects_leaves_freshness_frozen\n    probe._handle_message(\n",
+      "  File \"C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\probe.py\", line 728, in _handle_message\n    self.persistence.store_rejection_record(\n",
+      "  File \"C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\probe.py\", line 406, in persistence\n    self._persistence = get_persistence_store()\n",
+      "  File \"C:\\Python314\\Lib\\unittest\\mock.py\", line 1175, in __call__\n    return self._mock_call(*args, **kwargs)\n",
+      "  File \"C:\\Python314\\Lib\\unittest\\mock.py\", line 1179, in _mock_call\n    return self._execute_mock_call(*args, **kwargs)\n",
+      "  File \"C:\\Python314\\Lib\\unittest\\mock.py\", line 1240, in _execute_mock_call\n    result = effect(*args, **kwargs)\n",
+      "  File \"C:\\proyectos\\binance-futures-dashboard-v2-worktree\\.qa-v2-71-default-audit.py\", line 9, in forbidden\n    hits.append(traceback.format_stack(limit=8))\n"
+    ],
+    [
+      "  File \"C:\\Python314\\Lib\\unittest\\case.py\", line 615, in _callTestMethod\n    result = method()\n",
+      "  File \"C:\\proyectos\\binance-futures-microstructure-bot\\tests\\test_p14b_3_transport_freshness.py\", line 180, in test_rejected_message_does_not_update_freshness\n    probe._handle_message(_msg(\"btcusdt@bookTicker\", \"BTCUSDT\", now - 100))\n",
+      "  File \"C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\probe.py\", line 909, in _handle_message\n    self.persistence.store_market_observation(\n",
+      "  File \"C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\probe.py\", line 406, in persistence\n    self._persistence = get_persistence_store()\n",
+      "  File \"C:\\Python314\\Lib\\unittest\\mock.py\", line 1175, in __call__\n    return self._mock_call(*args, **kwargs)\n",
+      "  File \"C:\\Python314\\Lib\\unittest\\mock.py\", line 1179, in _mock_call\n    return self._execute_mock_call(*args, **kwargs)\n",
+      "  File \"C:\\Python314\\Lib\\unittest\\mock.py\", line 1240, in _execute_mock_call\n    result = effect(*args, **kwargs)\n",
+      "  File \"C:\\proyectos\\binance-futures-dashboard-v2-worktree\\.qa-v2-71-default-audit.py\", line 9, in forbidden\n    hits.append(traceback.format_stack(limit=8))\n"
+    ],
+    [
+      "  File \"C:\\Python314\\Lib\\unittest\\case.py\", line 615, in _callTestMethod\n    result = method()\n",
+      "  File \"C:\\proyectos\\binance-futures-microstructure-bot\\tests\\test_p14b_3_transport_freshness.py\", line 181, in test_rejected_message_does_not_update_freshness\n    probe._handle_message(_msg(\"btcusdt@bookTicker\", \"BTCUSDT\", now - 600_000))\n",
+      "  File \"C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\probe.py\", line 728, in _handle_message\n    self.persistence.store_rejection_record(\n",
+      "  File \"C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\probe.py\", line 406, in persistence\n    self._persistence = get_persistence_store()\n",
+      "  File \"C:\\Python314\\Lib\\unittest\\mock.py\", line 1175, in __call__\n    return self._mock_call(*args, **kwargs)\n",
+      "  File \"C:\\Python314\\Lib\\unittest\\mock.py\", line 1179, in _mock_call\n    return self._execute_mock_call(*args, **kwargs)\n",
+      "  File \"C:\\Python314\\Lib\\unittest\\mock.py\", line 1240, in _execute_mock_call\n    result = effect(*args, **kwargs)\n",
+      "  File \"C:\\proyectos\\binance-futures-dashboard-v2-worktree\\.qa-v2-71-default-audit.py\", line 9, in forbidden\n    hits.append(traceback.format_stack(limit=8))\n"
+    ],
+    [
+      "  File \"C:\\Python314\\Lib\\unittest\\case.py\", line 615, in _callTestMethod\n    result = method()\n",
+      "  File \"C:\\proyectos\\binance-futures-microstructure-bot\\tests\\test_probe.py\", line 144, in test_final_summary_aggregates_data_quality_and_safety\n    probe._handle_message(json.dumps(payload))\n",
+      "  File \"C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\probe.py\", line 909, in _handle_message\n    self.persistence.store_market_observation(\n",
+      "  File \"C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\probe.py\", line 406, in persistence\n    self._persistence = get_persistence_store()\n",
+      "  File \"C:\\Python314\\Lib\\unittest\\mock.py\", line 1175, in __call__\n    return self._mock_call(*args, **kwargs)\n",
+      "  File \"C:\\Python314\\Lib\\unittest\\mock.py\", line 1179, in _mock_call\n    return self._execute_mock_call(*args, **kwargs)\n",
+      "  File \"C:\\Python314\\Lib\\unittest\\mock.py\", line 1240, in _execute_mock_call\n    result = effect(*args, **kwargs)\n",
+      "  File \"C:\\proyectos\\binance-futures-dashboard-v2-worktree\\.qa-v2-71-default-audit.py\", line 9, in forbidden\n    hits.append(traceback.format_stack(limit=8))\n"
+    ],
+    [
+      "  File \"C:\\Python314\\Lib\\unittest\\case.py\", line 615, in _callTestMethod\n    result = method()\n",
+      "  File \"C:\\proyectos\\binance-futures-microstructure-bot\\tests\\test_probe.py\", line 42, in test_future_or_stale_payload_is_discarded\n    probe._handle_message(json.dumps(payload))\n",
+      "  File \"C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\probe.py\", line 728, in _handle_message\n    self.persistence.store_rejection_record(\n",
+      "  File \"C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\probe.py\", line 406, in persistence\n    self._persistence = get_persistence_store()\n",
+      "  File \"C:\\Python314\\Lib\\unittest\\mock.py\", line 1175, in __call__\n    return self._mock_call(*args, **kwargs)\n",
+      "  File \"C:\\Python314\\Lib\\unittest\\mock.py\", line 1179, in _mock_call\n    return self._execute_mock_call(*args, **kwargs)\n",
+      "  File \"C:\\Python314\\Lib\\unittest\\mock.py\", line 1240, in _execute_mock_call\n    result = effect(*args, **kwargs)\n",
+      "  File \"C:\\proyectos\\binance-futures-dashboard-v2-worktree\\.qa-v2-71-default-audit.py\", line 9, in forbidden\n    hits.append(traceback.format_stack(limit=8))\n"
+    ],
+    [
+      "  File \"C:\\Python314\\Lib\\unittest\\case.py\", line 615, in _callTestMethod\n    result = method()\n",
+      "  File \"C:\\proyectos\\binance-futures-microstructure-bot\\tests\\test_probe.py\", line 62, in test_latency_is_separated_by_stream_and_e_from_t\n    probe._handle_message(json.dumps(payload))\n",
+      "  File \"C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\probe.py\", line 909, in _handle_message\n    self.persistence.store_market_observation(\n",
+      "  File \"C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\probe.py\", line 406, in persistence\n    self._persistence = get_persistence_store()\n",
+      "  File \"C:\\Python314\\Lib\\unittest\\mock.py\", line 1175, in __call__\n    return self._mock_call(*args, **kwargs)\n",
+      "  File \"C:\\Python314\\Lib\\unittest\\mock.py\", line 1179, in _mock_call\n    return self._execute_mock_call(*args, **kwargs)\n",
+      "  File \"C:\\Python314\\Lib\\unittest\\mock.py\", line 1240, in _execute_mock_call\n    result = effect(*args, **kwargs)\n",
+      "  File \"C:\\proyectos\\binance-futures-dashboard-v2-worktree\\.qa-v2-71-default-audit.py\", line 9, in forbidden\n    hits.append(traceback.format_stack(limit=8))\n"
+    ],
+    [
+      "  File \"C:\\Python314\\Lib\\unittest\\case.py\", line 615, in _callTestMethod\n    result = method()\n",
+      "  File \"C:\\proyectos\\binance-futures-microstructure-bot\\tests\\test_probe.py\", line 95, in test_mark_price_next_funding_time_is_not_transaction_time\n    probe._handle_message(json.dumps(payload))\n",
+      "  File \"C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\probe.py\", line 926, in _handle_message\n    self.persistence.store_market_observation(\n",
+      "  File \"C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\probe.py\", line 406, in persistence\n    self._persistence = get_persistence_store()\n",
+      "  File \"C:\\Python314\\Lib\\unittest\\mock.py\", line 1175, in __call__\n    return self._mock_call(*args, **kwargs)\n",
+      "  File \"C:\\Python314\\Lib\\unittest\\mock.py\", line 1179, in _mock_call\n    return self._execute_mock_call(*args, **kwargs)\n",
+      "  File \"C:\\Python314\\Lib\\unittest\\mock.py\", line 1240, in _execute_mock_call\n    result = effect(*args, **kwargs)\n",
+      "  File \"C:\\proyectos\\binance-futures-dashboard-v2-worktree\\.qa-v2-71-default-audit.py\", line 9, in forbidden\n    hits.append(traceback.format_stack(limit=8))\n"
+    ],
+    [
+      "  File \"C:\\Python314\\Lib\\unittest\\case.py\", line 615, in _callTestMethod\n    result = method()\n",
+      "  File \"C:\\proyectos\\binance-futures-microstructure-bot\\tests\\test_probe.py\", line 113, in test_processing_latency_uses_high_resolution_monotonic_clock\n    probe._handle_message(json.dumps(payload))\n",
+      "  File \"C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\probe.py\", line 909, in _handle_message\n    self.persistence.store_market_observation(\n",
+      "  File \"C:\\proyectos\\binance-futures-microstructure-bot\\src\\microstructure_probe\\probe.py\", line 406, in persistence\n    self._persistence = get_persistence_store()\n",
+      "  File \"C:\\Python314\\Lib\\unittest\\mock.py\", line 1175, in __call__\n    return self._mock_call(*args, **kwargs)\n",
+      "  File \"C:\\Python314\\Lib\\unittest\\mock.py\", line 1179, in _mock_call\n    return self._execute_mock_call(*args, **kwargs)\n",
+      "  File \"C:\\Python314\\Lib\\unittest\\mock.py\", line 1240, in _execute_mock_call\n    result = effect(*args, **kwargs)\n",
+      "  File \"C:\\proyectos\\binance-futures-dashboard-v2-worktree\\.qa-v2-71-default-audit.py\", line 9, in forbidden\n    hits.append(traceback.format_stack(limit=8))\n"
+    ]
+  ],
+  "failures": [],
+  "errors": [
+    [
+      "test_tracker_bytes (test_host_telemetry.TestNetprobeBytes.test_tracker_bytes)",
+      "Traceback (most recent call last):\n  File \"C:\\proyectos\\binance-futures-microstructure-bot\\tests\\test_host_telemetry.py\", line 113, in test_tracker_bytes\n    from src.microstructure_probe.netprobe import ReferenceTracker\nModuleNotFoundError: No module named 'src.microstructure_probe.netprobe'\n"
+    ],
+    [
+      "test_netprobe (unittest.loader._FailedTest.test_netprobe)",
+      "ImportError: Failed to import test module: test_netprobe\nTraceback (most recent call last):\n  File \"C:\\Python314\\Lib\\unittest\\loader.py\", line 426, in _find_test_path\n    module = self._get_module_from_name(name)\n  File \"C:\\Python314\\Lib\\unittest\\loader.py\", line 367, in _get_module_from_name\n    __import__(name)\n    ~~~~~~~~~~^^^^^^\n  File \"C:\\proyectos\\binance-futures-microstructure-bot\\tests\\test_netprobe.py\", line 16, in <module>\n    from src.microstructure_probe.netprobe import (\n    ...<11 lines>...\n    )\nModuleNotFoundError: No module named 'src.microstructure_probe.netprobe'\n\n"
+    ],
+    [
+      "test_p14b_1_time_integrity (unittest.loader._FailedTest.test_p14b_1_time_integrity)",
+      "ImportError: Failed to import test module: test_p14b_1_time_integrity\nTraceback (most recent call last):\n  File \"C:\\Python314\\Lib\\unittest\\loader.py\", line 426, in _find_test_path\n    module = self._get_module_from_name(name)\n  File \"C:\\Python314\\Lib\\unittest\\loader.py\", line 367, in _get_module_from_name\n    __import__(name)\n    ~~~~~~~~~~^^^^^^\n  File \"C:\\proyectos\\binance-futures-microstructure-bot\\tests\\test_p14b_1_time_integrity.py\", line 32, in <module>\n    from src.microstructure_probe.prospective import (\n    ...<3 lines>...\n    )\nModuleNotFoundError: No module named 'src.microstructure_probe.prospective'\n\n"
+    ],
+    [
+      "test_p14b_4_lifecycle (unittest.loader._FailedTest.test_p14b_4_lifecycle)",
+      "ImportError: Failed to import test module: test_p14b_4_lifecycle\nTraceback (most recent call last):\n  File \"C:\\Python314\\Lib\\unittest\\loader.py\", line 426, in _find_test_path\n    module = self._get_module_from_name(name)\n  File \"C:\\Python314\\Lib\\unittest\\loader.py\", line 367, in _get_module_from_name\n    __import__(name)\n    ~~~~~~~~~~^^^^^^\n  File \"C:\\proyectos\\binance-futures-microstructure-bot\\tests\\test_p14b_4_lifecycle.py\", line 24, in <module>\n    from src.microstructure_probe.prospective import (\n    ...<8 lines>...\n    )\nModuleNotFoundError: No module named 'src.microstructure_probe.prospective'\n\n"
+    ],
+    [
+      "test_p14b_validation (unittest.loader._FailedTest.test_p14b_validation)",
+      "ImportError: Failed to import test module: test_p14b_validation\nTraceback (most recent call last):\n  File \"C:\\Python314\\Lib\\unittest\\loader.py\", line 426, in _find_test_path\n    module = self._get_module_from_name(name)\n  File \"C:\\Python314\\Lib\\unittest\\loader.py\", line 367, in _get_module_from_name\n    __import__(name)\n    ~~~~~~~~~~^^^^^^\n  File \"C:\\proyectos\\binance-futures-microstructure-bot\\tests\\test_p14b_validation.py\", line 34, in <module>\n    from src.microstructure_probe.prospective import (\n    ...<6 lines>...\n    )\nModuleNotFoundError: No module named 'src.microstructure_probe.prospective'\n\n"
+    ],
+    [
+      "test_prospective (unittest.loader._FailedTest.test_prospective)",
+      "ImportError: Failed to import test module: test_prospective\nTraceback (most recent call last):\n  File \"C:\\Python314\\Lib\\unittest\\loader.py\", line 426, in _find_test_path\n    module = self._get_module_from_name(name)\n  File \"C:\\Python314\\Lib\\unittest\\loader.py\", line 367, in _get_module_from_name\n    __import__(name)\n    ~~~~~~~~~~^^^^^^\n  File \"C:\\proyectos\\binance-futures-microstructure-bot\\tests\\test_prospective.py\", line 18, in <module>\n    from src.microstructure_probe.prospective import (\n    ...<10 lines>...\n    )\nModuleNotFoundError: No module named 'src.microstructure_probe.prospective'\n\n"
+    ]
+  ]
+}

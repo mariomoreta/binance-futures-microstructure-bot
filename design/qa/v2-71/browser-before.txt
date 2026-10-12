@@ -1,0 +1,9 @@
+file:///C:/proyectos/binance-futures-dashboard-v2-worktree/.qa-v2-71-before.mjs:46
+      if(n===99)throw Error("System never settled");
+                      ^
+
+Error: System never settled
+    at capture (file:///C:/proyectos/binance-futures-dashboard-v2-worktree/.qa-v2-71-before.mjs:46:23)
+    at async file:///C:/proyectos/binance-futures-dashboard-v2-worktree/.qa-v2-71-before.mjs:59:3
+
+Node.js v24.19.0

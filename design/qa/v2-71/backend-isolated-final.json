@@ -1,0 +1,15 @@
+{
+  "exit": 0,
+  "elapsed_s": 175.054,
+  "hashes_before": {
+    "C:\\proyectos\\binance-futures-microstructure-bot\\data\\microprobe.db": "12f5c609431048d5690441126da536a1f20fee7bef1f079ae4eeaf5e6982654a",
+    "C:\\proyectos\\binance-futures-microstructure-bot\\data\\historical\\historical.db": "ca647946a2ba3590db3d1b023993cd13f65844648cba9b7bb210cbc3cb1f7a0a",
+    "C:\\proyectos\\binance-futures-microstructure-bot\\logs\\probe_runtime.json": "45c6a39ec91f55db708e1b9011f86bc55248b4485e582c015ea4442cc7cab5da"
+  },
+  "hashes_after": {
+    "C:\\proyectos\\binance-futures-microstructure-bot\\data\\microprobe.db": "65e0cf3f97c68b68cb40859af8915ec28d84c5a4cefe192feaac8f747d359fee",
+    "C:\\proyectos\\binance-futures-microstructure-bot\\data\\historical\\historical.db": "ca647946a2ba3590db3d1b023993cd13f65844648cba9b7bb210cbc3cb1f7a0a",
+    "C:\\proyectos\\binance-futures-microstructure-bot\\logs\\probe_runtime.json": "45c6a39ec91f55db708e1b9011f86bc55248b4485e582c015ea4442cc7cab5da"
+  },
+  "canonical_bytes_unchanged": false
+}

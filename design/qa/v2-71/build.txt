@@ -1,0 +1,55 @@
+
+> dashboard-v2@0.0.1 build
+> next build
+
+▲ Next.js 16.4.0 (Turbopack)
+✓ Running next.config.ts took 40ms
+
+  Creating an optimized production build ...
+✓ Compiled successfully in 1534ms
+  Running TypeScript ...
+  Finished TypeScript in 3.4s ...
+  Collecting page data using 11 workers ...
+  Generating static pages using 11 workers (0/11) ...
+  Generating static pages using 11 workers (2/11) 
+  Generating static pages using 11 workers (5/11) 
+  Generating static pages using 11 workers (8/11) 
+✓ Generating static pages using 11 workers (11/11) in 458ms
+  Finalizing page optimization ...
+
+Route (app)
+┌ ○ /
+├ ○ /_not-found
+├ ƒ /api/v1/historical-coverage
+├ ƒ /api/v1/historical-research
+├ ƒ /api/v1/live-movers
+├ ƒ /api/v1/market-snapshot
+├ ƒ /api/v1/opportunities
+├ ƒ /api/v1/price-series/[symbol]
+├ ƒ /api/v1/prospective
+├ ƒ /api/v1/runtime
+├ ƒ /api/v1/runtime/readiness
+├ ƒ /api/v1/runtime/start
+├ ƒ /api/v1/runtime/stop
+├ ƒ /api/v1/system-evidence
+├ ○ /backtest
+├ ƒ /historical-research
+├ ƒ /historical-research/coverage
+├ ○ /icon.svg
+├ ƒ /market-archive
+├ ƒ /market-lab
+├ ƒ /movers
+├ ○ /movers/verified
+├ ƒ /opportunities
+├ ○ /opportunities/observations
+├ ○ /opportunities/prospective
+├ ƒ /overview
+├ ○ /paper-lab
+├ ƒ /search
+├ ƒ /symbol/[symbol]
+└ ƒ /system
+
+
+○  (Static)   prerendered as static content
+ƒ  (Dynamic)  server-rendered on demand
+

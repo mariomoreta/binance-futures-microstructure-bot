@@ -1,0 +1,154 @@
+{
+  "status": 200,
+  "headers": {
+    "vary": "rsc, next-router-state-tree, next-router-prefetch, next-router-segment-prefetch",
+    "cache-control": "no-store",
+    "content-type": "application/json",
+    "Date": "Mon, 12 Oct 2026 01:32:02 GMT",
+    "Connection": "close",
+    "Transfer-Encoding": "chunked"
+  },
+  "system_data": {
+    "schema_version": 1,
+    "source": "CANONICAL_SQLITE_READONLY",
+    "available": true,
+    "read_at": "2026-10-12T01:32:02.312Z",
+    "persistence": {
+      "schema": 9,
+      "allocated_bytes": 238927872,
+      "telemetry_rows": 1000,
+      "price_rows": 3042,
+      "last_telemetry_ms": 1791641080129.0024,
+      "last_price_ms": 1791641070000
+    },
+    "universe": {
+      "updated_ms": 1791640931081,
+      "core": 3,
+      "hot_dynamic": 0,
+      "hot_subscribed": 0,
+      "eligible": 439,
+      "unverified_test_detail_rows": 225
+    },
+    "research": {
+      "setups": 66,
+      "outcomes": 228,
+      "complete_outcomes": 228,
+      "latest_setup_ms": 1791640046025,
+      "latest_outcome_ms": 1791640046025,
+      "opportunity_events": 392,
+      "state_transitions": 500,
+      "universe_events": 375
+    },
+    "classifier": {
+      "records": 14,
+      "span": {
+        "first_ms": 1791460736992,
+        "last_ms": 1791641080112
+      },
+      "states": [
+        {
+          "label": "REVERSAL",
+          "count": 5
+        },
+        {
+          "label": "IGNITION",
+          "count": 3
+        },
+        {
+          "label": "NORMAL",
+          "count": 3
+        },
+        {
+          "label": "UNKNOWN",
+          "count": 2
+        },
+        {
+          "label": "EXPANSION",
+          "count": 1
+        }
+      ],
+      "versions": [
+        "v0.1.0"
+      ],
+      "versions_truncated": false
+    },
+    "opportunities": {
+      "records": 68,
+      "span": {
+        "first_ms": 1791511554217,
+        "last_ms": 1791641080117
+      },
+      "lifecycles": [
+        {
+          "label": "DETECTED",
+          "count": 31
+        },
+        {
+          "label": "WATCHING",
+          "count": 25
+        },
+        {
+          "label": "ACTIVE_RESEARCH",
+          "count": 12
+        }
+      ],
+      "versions": [
+        "v0.1.0"
+      ],
+      "versions_truncated": false
+    }
+  },
+  "research_sql_counts": {
+    "setups": 66,
+    "outcomes": 228,
+    "complete_outcomes": 228,
+    "opportunity_events": 392,
+    "state_transitions": 500,
+    "universe_events": 375
+  },
+  "routes": [
+    {
+      "url": "/system",
+      "status": 200
+    },
+    {
+      "url": "/overview",
+      "status": 200
+    },
+    {
+      "url": "/movers",
+      "status": 200
+    },
+    {
+      "url": "/opportunities",
+      "status": 200
+    },
+    {
+      "url": "/historical-research",
+      "status": 200
+    },
+    {
+      "url": "/historical-research/coverage",
+      "status": 200
+    },
+    {
+      "url": "/api/v1/runtime",
+      "status": 200
+    },
+    {
+      "url": "/api/v1/runtime/readiness",
+      "status": 200
+    }
+  ],
+  "hashes_before": {
+    "C:\\proyectos\\binance-futures-microstructure-bot\\data\\microprobe.db": "65e0cf3f97c68b68cb40859af8915ec28d84c5a4cefe192feaac8f747d359fee",
+    "C:\\proyectos\\binance-futures-microstructure-bot\\data\\historical\\historical.db": "ca647946a2ba3590db3d1b023993cd13f65844648cba9b7bb210cbc3cb1f7a0a",
+    "C:\\proyectos\\binance-futures-microstructure-bot\\logs\\probe_runtime.json": "45c6a39ec91f55db708e1b9011f86bc55248b4485e582c015ea4442cc7cab5da"
+  },
+  "hashes_after": {
+    "C:\\proyectos\\binance-futures-microstructure-bot\\data\\microprobe.db": "65e0cf3f97c68b68cb40859af8915ec28d84c5a4cefe192feaac8f747d359fee",
+    "C:\\proyectos\\binance-futures-microstructure-bot\\data\\historical\\historical.db": "ca647946a2ba3590db3d1b023993cd13f65844648cba9b7bb210cbc3cb1f7a0a",
+    "C:\\proyectos\\binance-futures-microstructure-bot\\logs\\probe_runtime.json": "45c6a39ec91f55db708e1b9011f86bc55248b4485e582c015ea4442cc7cab5da"
+  },
+  "bytes_unchanged": true
+}

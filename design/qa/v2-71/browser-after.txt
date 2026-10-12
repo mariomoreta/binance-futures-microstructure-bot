@@ -1,0 +1,5 @@
+system-desktop {"width":1672,"scroll":1657,"headline":"System","disclosure":true,"open":false}
+Disclosure + refresh PASS
+system-1366 {"width":1366,"scroll":1351,"headline":"System","disclosure":true,"open":false}
+system-mobile {"width":390,"scroll":375,"headline":"System","disclosure":true,"open":false}
+Browser console/errors: 0

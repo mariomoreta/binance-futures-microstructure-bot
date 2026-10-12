@@ -1,0 +1,6 @@
+test_read_battery_leaves_everything_untouched (test_read_purity.ReadPurityTest.test_read_battery_leaves_everything_untouched) ... ok
+
+----------------------------------------------------------------------
+Ran 1 test in 0.212s
+
+OK

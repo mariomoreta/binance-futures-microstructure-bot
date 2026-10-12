@@ -1,0 +1,13 @@
+{
+  "before": {
+    "default_factory_calls": 2,
+    "temporary_universe_rows": 3
+  },
+  "after": {
+    "tests": 11,
+    "default_factory_calls": 0,
+    "failures": 0,
+    "errors": 0
+  },
+  "canonical_not_used_in_control": true
+}

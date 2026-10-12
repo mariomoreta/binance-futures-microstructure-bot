@@ -1,0 +1,19 @@
+{
+  "historical_init_db_calls": 4,
+  "before": {
+    "evidence.log": "ffb9a8be5f26ace0e4edc54d3112c480a187104286279284363f5896767e6ae3",
+    "historical.db": "96c8d1aac25b35e3933b0aa5af9f1e304e80d7ca2fdbf9405a453efa5491c24d",
+    "microprobe.db": "82e5d7481659532b0fa34950113cb484080a8254a09c86958094afc51a8f43b2",
+    "probe_runtime.json": "e1ac385e04b46e2d103d28145ca10487878d0f883e9759b8e1a64afd3a946421"
+  },
+  "after": {
+    "evidence.log": "ffb9a8be5f26ace0e4edc54d3112c480a187104286279284363f5896767e6ae3",
+    "historical.db": "96c8d1aac25b35e3933b0aa5af9f1e304e80d7ca2fdbf9405a453efa5491c24d",
+    "microprobe.db": "82e5d7481659532b0fa34950113cb484080a8254a09c86958094afc51a8f43b2",
+    "probe_runtime.json": "e1ac385e04b46e2d103d28145ca10487878d0f883e9759b8e1a64afd3a946421"
+  },
+  "changed_files": [],
+  "missing_assertion": "before_hist captured but never compared in committed test",
+  "allows_new_log_files": true,
+  "canonical_storage_untouched": true
+}

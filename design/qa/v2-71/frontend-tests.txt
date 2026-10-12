@@ -1,0 +1,102 @@
+
+> dashboard-v2@0.0.1 test
+> vitest run
+
+[33m(!) Your Vite config uses features that are unsupported by `configLoader: 'native'`, which is planned to become the default in a future major version of Vite:
+  - `__dirname` (vitest.config.mts:5:41). Use `import.meta.dirname` instead
+Set `VITE_CONFIG_NATIVE_IGNORE_WARNING=true` to suppress this warning.[39m
+
+[1m[30m[46m RUN [49m[39m[22m [36mv5.0.3 [39m[90mC:/proyectos/binance-futures-dashboard-v2-worktree/frontend[39m
+
+ [32m✓[39m src/test/prospective-recovery.test.tsx [2m([22m[2m1 test[22m[2m)[22m[33m 877[2mms[22m[39m
+   [32m✓[39m prospective offline recovery [2m(1)[22m
+     [33m[2m✓[22m[39m keeps research controls visible while offline and retries on explicit user request[33m 874[2mms[22m[39m
+ [32m✓[39m src/test/token-detail.test.tsx [2m([22m[2m5 tests[22m[2m)[22m[33m 843[2mms[22m[39m
+   [32m✓[39m DASH-V2-03 token detail [2m(2)[22m
+     [33m[2m✓[22m[39m never claims authoritative live state from a demo price[33m 423[2mms[22m[39m
+ [32m✓[39m src/test/system-panels.test.tsx [2m([22m[2m3 tests[22m[2m)[22m[33m 912[2mms[22m[39m
+   [33m[2m✓[22m[39m unknown subscription list is distinct from genuine zero HOT allocation[33m 755[2mms[22m[39m
+ [32m✓[39m src/test/bot-control.test.tsx [2m([22m[2m4 tests[22m[2m)[22m[33m 1310[2mms[22m[39m
+   [32m✓[39m System runtime presentation [2m(2)[22m
+     [33m[2m✓[22m[39m keeps unavailable client mode UNKNOWN and exposes the error outside the disclosure[33m 755[2mms[22m[39m
+ [32m✓[39m src/test/historical-coverage-ui.test.tsx [2m([22m[2m4 tests[22m[2m)[22m[33m 1080[2mms[22m[39m
+   [33m[2m✓[22m[39m shows unavailable source without counts or fabricated tables[33m 612[2mms[22m[39m
+ [32m✓[39m src/test/system.test.tsx [2m([22m[2m1 test[22m[2m)[22m[33m 1010[2mms[22m[39m
+   [32m✓[39m System V2 truthful shell [2m(1)[22m
+     [33m[2m✓[22m[39m shows unknown, not invented operational health[33m 1001[2mms[22m[39m
+ [32m✓[39m src/test/migration-ui.test.tsx [2m([22m[2m3 tests[22m[2m)[22m[33m 1578[2mms[22m[39m
+   [32m✓[39m migration interaction and precision [2m(2)[22m
+     [33m[2m✓[22m[39m bounds the candidate page and keeps its evidence on the visible page[33m 1403[2mms[22m[39m
+Not implemented: navigation to another Document
+ [32m✓[39m src/test/navigation.test.tsx [2m([22m[2m4 tests[22m[2m)[22m[33m 1713[2mms[22m[39m
+   [32m✓[39m Terminal navigation [2m(2)[22m
+     [33m[2m✓[22m[39m marks the parent route and closes the mobile menu by Escape[33m 940[2mms[22m[39m
+     [33m[2m✓[22m[39m closes navigation after selecting a destination[33m 311[2mms[22m[39m
+ [32m✓[39m src/test/opportunities.test.tsx [2m([22m[2m8 tests[22m[2m)[22m[33m 2152[2mms[22m[39m
+   [32m✓[39m DASH V2 Opportunities DEMO [2m(6)[22m
+     [33m[2m✓[22m[39m renders honest demo disclaimer and evidence inspector[33m 319[2mms[22m[39m
+     [33m[2m✓[22m[39m search narrows results and reset restores[33m 330[2mms[22m[39m
+     [33m[2m✓[22m[39m shows selected candidate lifecycle, state, priority and stale provenance[33m 821[2mms[22m[39m
+     [33m[2m✓[22m[39m never displays filtered-out candidate evidence[33m 397[2mms[22m[39m
+ [32m✓[39m src/test/shell-accessibility.test.tsx [2m([22m[2m3 tests[22m[2m)[22m[33m 1989[2mms[22m[39m
+   [32m✓[39m DASH-V2-05 accessible research views [2m(2)[22m
+     [33m[2m✓[22m[39m offers skip navigation and one main landmark[33m 1034[2mms[22m[39m
+     [33m[2m✓[22m[39m keeps token detail within one main landmark[33m 375[2mms[22m[39m
+   [32m✓[39m Opportunities keyboard inspection [2m(1)[22m
+     [33m[2m✓[22m[39m marks selected candidate and exposes a focusable table[33m 575[2mms[22m[39m
+ [32m✓[39m src/test/historical-coverage.test.ts [2m([22m[2m8 tests[22m[2m)[22m[33m 458[2mms[22m[39m
+   [33m[2m✓[22m[39m readonly historical presentation preserves bytes and never creates absent storage[33m 406[2mms[22m[39m
+ [32m✓[39m src/test/system-evidence.test.ts [2m([22m[2m11 tests[22m[2m)[22m[33m 579[2mms[22m[39m
+   [33m[2m✓[22m[39m readonly access preserves file bytes and does not create missing storage[33m 534[2mms[22m[39m
+ [32m✓[39m src/test/movers-pulse.test.tsx [2m([22m[2m1 test[22m[2m)[22m[33m 622[2mms[22m[39m
+   [32m✓[39m market breadth visual integrity [2m(1)[22m
+     [33m[2m✓[22m[39m states retained-subset limits and labels missing observations[33m 616[2mms[22m[39m
+ [32m✓[39m src/test/opportunities-observations.test.tsx [2m([22m[2m1 test[22m[2m)[22m[32m 210[2mms[22m[39m
+ [32m✓[39m src/test/movers-dashboard.test.tsx [2m([22m[2m4 tests[22m[2m)[22m[33m 5727[2mms[22m[39m
+   [32m✓[39m professional movers [2m(4)[22m
+     [33m[2m✓[22m[39m keeps research isolation and valid symbol navigation[33m 2116[2mms[22m[39m
+     [33m[2m✓[22m[39m filters, searches, resets and renders empty state[33m 1540[2mms[22m[39m
+     [33m[2m✓[22m[39m paginates bounded rows[33m 1375[2mms[22m[39m
+     [33m[2m✓[22m[39m sorting controls are keyboard buttons[33m 691[2mms[22m[39m
+ [32m✓[39m src/test/movers-row-inspector.test.tsx [2m([22m[2m1 test[22m[2m)[22m[32m 145[2mms[22m[39m
+ [32m✓[39m src/test/verified-history-panel.test.tsx [2m([22m[2m1 test[22m[2m)[22m[32m 207[2mms[22m[39m
+ [32m✓[39m src/test/tables.test.tsx [2m([22m[2m3 tests[22m[2m)[22m[33m 713[2mms[22m[39m
+   [32m✓[39m tables [2m(3)[22m
+     [33m[2m✓[22m[39m filter tabs report selection to the caller[33m 494[2mms[22m[39m
+ [32m✓[39m src/test/overview.test.tsx [2m([22m[2m5 tests[22m[2m)[22m[33m 624[2mms[22m[39m
+   [32m✓[39m overview honesty [2m(3)[22m
+     [33m[2m✓[22m[39m extreme watch contains no prediction or trade language[33m 305[2mms[22m[39m
+ [32m✓[39m src/test/persisted-market.test.ts [2m([22m[2m18 tests[22m[2m)[22m[32m 136[2mms[22m[39m
+ [32m✓[39m src/test/badges.test.tsx [2m([22m[2m3 tests[22m[2m)[22m[32m 225[2mms[22m[39m
+ [32m✓[39m src/test/readonly-database.test.ts [2m([22m[2m2 tests[22m[2m)[22m[32m 114[2mms[22m[39m
+ [32m✓[39m src/test/polling.test.tsx [2m([22m[2m5 tests[22m[2m)[22m[32m 262[2mms[22m[39m
+ [32m✓[39m src/test/research-navigation.test.tsx [2m([22m[2m1 test[22m[2m)[22m[32m 229[2mms[22m[39m
+ [32m✓[39m src/test/price-range-db.test.ts [2m([22m[2m3 tests[22m[2m)[22m[32m 121[2mms[22m[39m
+ [32m✓[39m src/test/launch-readiness.test.ts [2m([22m[2m18 tests[22m[2m)[22m[32m 69[2mms[22m[39m
+ [32m✓[39m src/test/canonical-search.test.ts [2m([22m[2m3 tests[22m[2m)[22m[32m 49[2mms[22m[39m
+ [32m✓[39m src/test/historical-coverage-api.test.ts [2m([22m[2m3 tests[22m[2m)[22m[32m 33[2mms[22m[39m
+ [32m✓[39m src/test/format.test.ts [2m([22m[2m4 tests[22m[2m)[22m[32m 159[2mms[22m[39m
+ [32m✓[39m src/test/supervision.test.ts [2m([22m[2m22 tests[22m[2m)[22m[32m 49[2mms[22m[39m
+ [32m✓[39m src/test/price-ranges.test.ts [2m([22m[2m8 tests[22m[2m)[22m[32m 258[2mms[22m[39m
+ [32m✓[39m src/test/token-parity.test.ts [2m([22m[2m4 tests[22m[2m)[22m[32m 225[2mms[22m[39m
+ [32m✓[39m src/test/symbol-search.test.ts [2m([22m[2m4 tests[22m[2m)[22m[32m 122[2mms[22m[39m
+ [32m✓[39m src/test/runtime-diagnostics.test.ts [2m([22m[2m9 tests[22m[2m)[22m[32m 133[2mms[22m[39m
+ [32m✓[39m src/test/runtime-contract.test.ts [2m([22m[2m4 tests[22m[2m)[22m[32m 77[2mms[22m[39m
+ [32m✓[39m src/test/opportunities-api.test.ts [2m([22m[2m4 tests[22m[2m)[22m[32m 63[2mms[22m[39m
+ [32m✓[39m src/test/live-movers.test.ts [2m([22m[2m4 tests[22m[2m)[22m[32m 25[2mms[22m[39m
+ [32m✓[39m src/test/runtime-security.test.ts [2m([22m[2m3 tests[22m[2m)[22m[32m 24[2mms[22m[39m
+ [32m✓[39m src/test/prospective-quality.test.ts [2m([22m[2m4 tests[22m[2m)[22m[32m 16[2mms[22m[39m
+ [32m✓[39m src/test/system-evidence-api.test.ts [2m([22m[2m1 test[22m[2m)[22m[32m 14[2mms[22m[39m
+ [32m✓[39m src/test/prospective-api.test.ts [2m([22m[2m2 tests[22m[2m)[22m[32m 11[2mms[22m[39m
+ [32m✓[39m src/test/price-series.test.ts [2m([22m[2m2 tests[22m[2m)[22m[32m 11[2mms[22m[39m
+ [32m✓[39m src/test/movers-domain.test.ts [2m([22m[2m5 tests[22m[2m)[22m[32m 12[2mms[22m[39m
+
+[2m Test Files [22m [1m[32m43 passed[39m[22m[90m (43)[39m
+[2m      Tests [22m [1m[32m207 passed[39m[22m[90m (207)[39m
+[2m   Start at [22m 16:48:50
+[2m   Duration [22m 21.44s[2m (environment 60%, setup 21%, tests 13%, transform 4%, import 2%, worker 1%)[22m
+
+[2mEnvironment [22m [33mjsdom was created 43 times[39m[2m · 118.24s total, 60% of tracked time[22m
+[2m            [22m [2mcreate it once per worker with [22m[33mpool: 'vmThreads'[39m[2m (keeps per-file isolation) or [22m[33misolate: false[39m[2m (shares it across files)[22m
+[2m            [22m [2mlearn more: https://vitest.dev/guide/improving-performance#test-environments[22m
+

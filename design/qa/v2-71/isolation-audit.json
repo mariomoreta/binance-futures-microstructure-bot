@@ -1,0 +1,121 @@
+{
+  "source_hits": [
+    {
+      "file": "test_dashboard.py",
+      "line": 484,
+      "text": "self.store.log_universe_event(\"promoted\", \"XRPUSDT\", \"top_mover_2_votes\")"
+    },
+    {
+      "file": "test_persistence.py",
+      "line": 724,
+      "text": "self.store.log_universe_event(\"promoted\", f\"S{i}USDT\", \"test\")"
+    }
+  ],
+  "latest_rows": [
+    {
+      "id": 375,
+      "timestamp": 1791751880.5368516,
+      "kind": "hot_subscribed",
+      "symbol": "DOGEUSDT",
+      "detail": "test"
+    },
+    {
+      "id": 374,
+      "timestamp": 1791751880.5119314,
+      "kind": "hot_unsubscribed",
+      "symbol": "DOGEUSDT",
+      "detail": "test"
+    },
+    {
+      "id": 373,
+      "timestamp": 1791751880.500816,
+      "kind": "hot_subscribed",
+      "symbol": "DOGEUSDT",
+      "detail": "test"
+    },
+    {
+      "id": 372,
+      "timestamp": 1791751526.52267,
+      "kind": "hot_subscribed",
+      "symbol": "DOGEUSDT",
+      "detail": "test"
+    },
+    {
+      "id": 371,
+      "timestamp": 1791751526.4965274,
+      "kind": "hot_unsubscribed",
+      "symbol": "DOGEUSDT",
+      "detail": "test"
+    },
+    {
+      "id": 370,
+      "timestamp": 1791751526.4909263,
+      "kind": "hot_subscribed",
+      "symbol": "DOGEUSDT",
+      "detail": "test"
+    },
+    {
+      "id": 369,
+      "timestamp": 1791750859.1352296,
+      "kind": "hot_subscribed",
+      "symbol": "DOGEUSDT",
+      "detail": "test"
+    },
+    {
+      "id": 368,
+      "timestamp": 1791750859.0984747,
+      "kind": "hot_unsubscribed",
+      "symbol": "DOGEUSDT",
+      "detail": "test"
+    },
+    {
+      "id": 367,
+      "timestamp": 1791750859.0886183,
+      "kind": "hot_subscribed",
+      "symbol": "DOGEUSDT",
+      "detail": "test"
+    },
+    {
+      "id": 366,
+      "timestamp": 1791748356.5400865,
+      "kind": "hot_subscribed",
+      "symbol": "DOGEUSDT",
+      "detail": "test"
+    },
+    {
+      "id": 365,
+      "timestamp": 1791748356.5102155,
+      "kind": "hot_unsubscribed",
+      "symbol": "DOGEUSDT",
+      "detail": "test"
+    },
+    {
+      "id": 364,
+      "timestamp": 1791748356.5047953,
+      "kind": "hot_subscribed",
+      "symbol": "DOGEUSDT",
+      "detail": "test"
+    },
+    {
+      "id": 363,
+      "timestamp": 1791747491.6990669,
+      "kind": "hot_subscribed",
+      "symbol": "DOGEUSDT",
+      "detail": "test"
+    },
+    {
+      "id": 362,
+      "timestamp": 1791747491.6701224,
+      "kind": "hot_unsubscribed",
+      "symbol": "DOGEUSDT",
+      "detail": "test"
+    },
+    {
+      "id": 361,
+      "timestamp": 1791747491.6640313,
+      "kind": "hot_subscribed",
+      "symbol": "DOGEUSDT",
+      "detail": "test"
+    }
+  ]
+}

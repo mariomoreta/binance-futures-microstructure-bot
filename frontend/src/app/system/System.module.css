@@ -19,3 +19,5 @@
 
 /* V60: align headings and make integration labels readable. */
 .header h1{font-size:30px}.row .unknown{font-size:9px}.heading small,.auditHeading small{font-size:10px}@media(max-width:720px){.header h1{font-size:25px}}
+
+.panel>summary{cursor:pointer;font-size:12px;color:var(--text-2)}.panel>summary:focus-visible{outline:2px solid var(--accent);outline-offset:4px}.panel>summary+section{margin-top:12px}

@@ -462,3 +462,53 @@ The user authorized direct correction on the backend branch. Isolated c635938 re
 
 ## DASH-V2-70 / V2-69 — 2026-10-11 — extraction accepted and recorded diagnostics
 Backend c59c5ec extraction accepted after direct proof/docs repair published 9f3e084192e90b52948c398f021f64b7884e2df2; independent 909/909, no reviewer application-source edit. See DASHBOARD_V2_69_EXTRACTION_ACCEPTANCE.md. V2 recorded diagnostics now avoid timestamp-based run association and display missing-stream, parse/payload-error and signed clock-offset fields. 192/192 frontend, type/lint/build pass; System 3 widths, disclosure/refresh and Overview check pass, zero overflow/browser errors; canonical DB/registry bytes unchanged. Production http://127.0.0.1:3020 managed PID23296. See DASHBOARD_V2_70_RECORDED_DIAGNOSTICS.md. Exact reference fidelity/full cutover remain PARTIAL. Next V2-71 source-backed pipeline/persistence/universe parity; host/events require separate contracts. Old HTML, Start, gates, main and runtime operations preserved.
+
+## DASH-V2-71 — 2026-10-11 — recorded System integration
+Schema9 fixed-path readonly system adapter/API, six-panel layout, dated
+independent counters/classifier/lifecycles, 15s stored-data refresh implemented.
+207 frontend + type/lint/build;496 V2 Python; native SQL/9 GET/hash purity;
+System3 widths, control/preflight disclosures and Overview pass. Reference
+fidelity/full cutover PARTIAL. 222 universe rows marked detail=test remain
+unverified; prominent notice, no deletion/exclusion. Backend89232f7 reviewed
+910 baseline; existing purity proof/docs strengthened (historical-byte
+assertion, no new logs, env restoration); no application source change.
+See DASHBOARD_V2_71_SYSTEM_INTEGRATION.md and backend correction report.
+Next: readonly origin/fixture-isolation audit, host/ops contract, deployment
+build isolation. Old UI/Start/gates/main/DB retained. Exact published SHAs
+and final backend results recorded in checkpoint section.
+
+## Final proof and fixture-isolation checkpoint (2026-10-11)
+Original proof correction: focused 1/1 and canonical 910/910 exit0 (184.479s).
+A subsequent System read found 375 universe rows, 225 tagged detail='test',
+rather than the earlier read of 366/222. Earlier canonical-suite preservation
+claims do NOT hold across those test runs. Readonly GET hashes are a separate,
+bounded check and remain equal.
+
+Root route proven without touching the canonical DB: original HotSyncTest
+calls the default persistence factory twice and writes three DOGEUSDT lifecycle
+rows to an intercepted temporary store. test_universe_probe.make_probe now
+injects a real initialized temporary PersistenceStore with cleanup per testcase.
+All 11 module tests pass with the default factory forbidden, zero calls.
+One added regression prevents fallback. No application source changes.
+This establishes a test contamination route; it does not attribute every
+historical tagged row. Existing canonical rows were retained without cleanup.
+
+Final canonical: 911/911 application tests exit0. The preservation wrapper
+exits1: microprobe.db SHA256 changed; historical.db and registry hashes equal.
+Universe rows stayed375/225: HOT leakage fixed, whole-suite preservation FAILED.
+A guarded subset audit (729 tests) records default-store accesses in test_probe,
+test_host_telemetry and test_p14b_3_transport_freshness (six errors with factory
+forbidden, swallowed persistence errors also observed). These remaining fixtures
+are a BLOCKER for whole-suite isolation; no claim of complete purity is made.
+See backend-isolated-final.json and default-store-audit.json.
+Source notice remains until historical provenance is reviewed.
+The 496-test frontend Python snapshot is historical validation, not the
+current backend. Its old HOT fixtures must not be rerun against the canonical
+store; reconcile the fixture isolation or run it in a fully isolated checkout.
+FEATURES_IMPLEMENTED adds temporary HOT fixtures and fallback regression.
+FEATURES_VERIFIED final 911 plus isolated original/after negative control.
+DEFERRED_FEATURES retains remaining default-store test isolation, historical lineage and complete cutover.
+No runs, traffic, orders, Start, retirement, main merge or gate advancement.
+
+Backend corrected/pushed SHA: aea037629ed867534c68474bea6b883a19e280bf
+System production managed restart PID27636; 207/207 frontend, typecheck/lint/build0; snapshot496/496. Fresh browser1672/1366/390 and nine readonly GETs/native SQL checks pass. Final GET read: 375 universe rows/225 tagged, included verbatim. Canonical hashes unchanged during GET checks. Visual parity and full cutover PARTIAL.
