@@ -245,7 +245,19 @@ class PersistenceStore:
             row = cursor.fetchone()
             current_version = int(row[0]) if row else 0
             
-            if current_version >= 9:
+            if current_version >= 10:
+                self._initialized = True
+                return
+
+            if current_version == 9:
+                # Migrate v9 -> v10: add run_id linkage columns (P3).
+                # Pre-existing rows keep run_id NULL (= UNKNOWN provenance,
+                # never backfilled).
+                self._ensure_run_id_columns(cursor)
+                cursor.execute(
+                    "INSERT OR REPLACE INTO persistence_meta (key, value) VALUES (?, ?)",
+                    ("schema_version", "10")
+                )
                 self._initialized = True
                 return
 
@@ -380,14 +392,32 @@ class PersistenceStore:
             self._create_schema_v8(cursor)
             # Create tables for schema v9
             self._create_schema_v9(cursor)
+            # v10 run linkage on fresh databases (same call, no second init).
+            self._ensure_run_id_columns(cursor)
 
             # Set schema version
             cursor.execute(
                 "INSERT OR REPLACE INTO persistence_meta (key, value) VALUES (?, ?)",
-                ("schema_version", "9")
+                ("schema_version", "10")
             )
 
             self._initialized = True
+    
+    @staticmethod
+    def _ensure_run_id_columns(cursor: sqlite3.Cursor) -> None:
+        """P3 run linkage: nullable run_id on execution-linked tables.
+
+        Idempotent (PRAGMA-checked, same idiom as _ensure_snapshot_columns).
+        Existing rows keep NULL = UNKNOWN provenance; no backfill exists
+        anywhere by design (see docs/RUN_LINKAGE_P3.md).
+        """
+        for table in ("universe_events", "prospective_setups",
+                      "prospective_outcomes", "telemetry_snapshots"):
+            cursor.execute("PRAGMA table_info(%s)" % table)
+            existing = {row[1] for row in cursor.fetchall()}
+            if "run_id" not in existing:
+                cursor.execute(
+                    "ALTER TABLE %s ADD COLUMN run_id TEXT" % table)
     
     @staticmethod
     def _ensure_snapshot_columns(cursor: sqlite3.Cursor) -> None:
@@ -899,8 +929,9 @@ class PersistenceStore:
                     order_execution_path_present,
                     clock_sync_json, latency_json, legacy_global_clamped_lag_ms,
                     processing_json, detectors_json, data_quality_json,
-                    events_by_type_json, spread_bps_json, book_imbalance_json
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                    events_by_type_json, spread_bps_json, book_imbalance_json,
+                    run_id
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             """, (
                 timestamp,
                 runtime_seconds,
@@ -919,7 +950,8 @@ class PersistenceStore:
                 json.dumps(data_quality),
                 json.dumps(events_by_type),
                 _safe_json(spread_bps),
-                _safe_json(book_imbalance)
+                _safe_json(book_imbalance),
+                summary_dict.get("run_id"),
             ))
             
             # Apply retention policy: keep only most recent N snapshots
@@ -1238,15 +1270,17 @@ class PersistenceStore:
             return parsed if isinstance(parsed, dict) else None
 
     def log_universe_event(self, kind: str, symbol: str,
-                           detail: str = "") -> None:
+                           detail: str = "",
+                           run_id: Optional[str] = None) -> None:
         """Append a promotion/demotion/scan event (bounded log, 500 rows)."""
         if not self._initialized:
             self.init_db()
         with self._get_cursor() as cursor:
             cursor.execute(
-                "INSERT INTO universe_events (timestamp, kind, symbol, detail)"
-                " VALUES (?, ?, ?, ?)",
-                (time.time(), str(kind), str(symbol).upper(), str(detail or "")),
+                "INSERT INTO universe_events (timestamp, kind, symbol, detail,"
+                " run_id) VALUES (?, ?, ?, ?, ?)",
+                (time.time(), str(kind), str(symbol).upper(),
+                 str(detail or ""), run_id),
             )
             self._apply_retention_policy(cursor, "universe_events", 500)
 
@@ -1256,12 +1290,13 @@ class PersistenceStore:
             self.init_db()
         with self._get_cursor() as cursor:
             cursor.execute(
-                "SELECT timestamp, kind, symbol, detail FROM universe_events"
-                " ORDER BY id DESC LIMIT ?",
+                "SELECT timestamp, kind, symbol, detail, run_id"
+                " FROM universe_events ORDER BY id DESC LIMIT ?",
                 (max(int(limit), 1),),
             )
             return [{"timestamp": row[0], "kind": row[1],
-                     "symbol": row[2], "detail": row[3] or ""}
+                     "symbol": row[2], "detail": row[3] or "",
+                     "run_id": row[4]}
                     for row in cursor.fetchall()]
 
     def store_rank_snapshot(self, metric: str,
@@ -1888,7 +1923,7 @@ class PersistenceStore:
     
     def store_prospective_setup(
         self, candidate_key: str, setup_record: Dict[str, Any],
-        detected_at_ms: int
+        detected_at_ms: int, run_id: Optional[str] = None
     ) -> None:
         """Register (REPLACE) a prospective setup at first detection."""
         if not self._initialized:
@@ -1898,8 +1933,8 @@ class PersistenceStore:
                 "INSERT OR REPLACE INTO prospective_setups"
                 " (candidate_key, symbol, family, direction,"
                 " market_state, rules_version, capability_tier,"
-                " detected_at_ms, score, setup_json, lifecycle)"
-                " VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                " detected_at_ms, score, setup_json, lifecycle, run_id)"
+                " VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
                 (
                     str(candidate_key),
                     str(setup_record.get("symbol", "")).upper(),
@@ -1912,6 +1947,7 @@ class PersistenceStore:
                     setup_record.get("score"),
                     json.dumps(setup_record, default=str),
                     setup_record.get("lifecycle"),
+                    run_id,
                 ),
             )
 
@@ -1923,7 +1959,7 @@ class PersistenceStore:
             cursor.execute(
                 "SELECT candidate_key, symbol, family, direction,"
                 " market_state, rules_version, capability_tier,"
-                " detected_at_ms, score, setup_json, lifecycle"
+                " detected_at_ms, score, setup_json, lifecycle, run_id"
                 " FROM prospective_setups"
                 " ORDER BY detected_at_ms DESC"
             )
@@ -1946,12 +1982,14 @@ class PersistenceStore:
                 "score": row[8],
                 "setup_json": setup_json,
                 "lifecycle": row[10],
+                "run_id": row[11],
             })
         return result
 
     def store_prospective_outcome(
         self, candidate_key: str, symbol: str, horizon: str,
-        observed_at_ms: int, outcome: Dict[str, Any]
+        observed_at_ms: int, outcome: Dict[str, Any],
+        run_id: Optional[str] = None
     ) -> None:
         """Append one forward outcome observation (idempotent per key)."""
         if not self._initialized:
@@ -1961,8 +1999,8 @@ class PersistenceStore:
                 "INSERT OR REPLACE INTO prospective_outcomes"
                 " (candidate_key, symbol, horizon, observed_at_ms,"
                 " mark_return_pct, detected_price, current_price,"
-                " outcome_state, reason)"
-                " VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                " outcome_state, reason, run_id)"
+                " VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
                 (
                     str(candidate_key),
                     str(symbol).upper(),
@@ -1973,6 +2011,7 @@ class PersistenceStore:
                     outcome.get("current_price"),
                     outcome.get("outcome_state"),
                     outcome.get("reason", ""),
+                    run_id,
                 ),
             )
             cursor.execute(
@@ -1997,7 +2036,7 @@ class PersistenceStore:
             sql = (
                 "SELECT candidate_key, symbol, horizon, observed_at_ms,"
                 " mark_return_pct, detected_price, current_price,"
-                " outcome_state, reason FROM prospective_outcomes"
+                " outcome_state, reason, run_id FROM prospective_outcomes"
             )
             params: List[Any] = []
             clauses: List[str] = []
@@ -2024,6 +2063,7 @@ class PersistenceStore:
                 "current_price": row[6],
                 "outcome_state": row[7],
                 "reason": row[8] or "",
+                "run_id": row[9],
             }
             for row in rows
         ]

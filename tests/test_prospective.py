@@ -337,7 +337,7 @@ class TestSchemaV9(TestCase):
             )
             row = cursor.fetchone()
         assert row is not None
-        assert int(row[0]) == 9
+        assert int(row[0]) == 10
         store.close()
 
     def test_prospective_tables_exist(self):

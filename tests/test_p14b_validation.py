@@ -418,7 +418,7 @@ class TestP14B5RestartIdempotency(TestCase):
 class TestP14B6SchemaMigration(TestCase):
     """P1-14B.6 legacy v8 DB migrates to v9 prospective tables."""
 
-    def test_init_db_creates_v9_tables(self):
+    def test_init_db_creates_v10_tables(self):
         tmp_path = Path(tempfile.mkdtemp())
         from src.microstructure_probe.persistence import PersistenceStore
 
@@ -427,7 +427,7 @@ class TestP14B6SchemaMigration(TestCase):
         with store._get_cursor() as cursor:
             cursor.execute("SELECT value FROM persistence_meta WHERE key = 'schema_version'")
             row = cursor.fetchone()
-        assert row is not None and int(row[0]) == 9
+        assert row is not None and int(row[0]) == 10
         with store._get_cursor() as cursor:
             cursor.execute("SELECT name FROM sqlite_master WHERE type='table'")
             tables = {r[0] for r in cursor.fetchall()}

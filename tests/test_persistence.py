@@ -53,14 +53,14 @@ class PersistenceStoreTest(unittest.TestCase):
                 self.assertIsNotNone(cursor.fetchone(), f"Table {table} should exist")
 
     def test_schema_version_tracking(self) -> None:
-        """Schema version is tracked in persistence_meta (currently v9)."""
+        """Schema version is tracked in persistence_meta (currently v10)."""
         with self.store._get_cursor() as cursor:
             cursor.execute(
                 "SELECT value FROM persistence_meta WHERE key = 'schema_version'"
             )
             row = cursor.fetchone()
             self.assertIsNotNone(row)
-            self.assertEqual(int(row[0]), 9)
+            self.assertEqual(int(row[0]), 10)
 
     def test_telemetry_snapshot_round_trip(self) -> None:
         """Telemetry snapshot can be stored and retrieved."""
@@ -356,8 +356,10 @@ class ProbePersistenceTest(unittest.TestCase):
         self.temp_dir = tempfile.mkdtemp(prefix="probe_persist_test_")
         self.db_path = Path(self.temp_dir) / "probe.db"
         self.store = PersistenceStore(db_path=self.db_path)
-        self.probe = MarketProbe(test_config())
-        self.probe.set_persistence(self.store)
+        from microstructure_probe.history_store import HistoryStore
+        self.hist = HistoryStore(Path(self.temp_dir) / "historical.db")
+        self.probe = MarketProbe(test_config(), persistence_store=self.store,
+                                 research_history_store=self.hist)
 
     def tearDown(self) -> None:
         self.store.close()
@@ -517,11 +519,11 @@ class SchemaV3Test(unittest.TestCase):
         except OSError:
             pass
 
-    def test_schema_version_is_9_with_feature_tables(self) -> None:
+    def test_schema_version_is_10_with_feature_tables(self) -> None:
         with self.store._get_cursor() as cursor:
             cursor.execute(
                 "SELECT value FROM persistence_meta WHERE key='schema_version'")
-            self.assertEqual(int(cursor.fetchone()[0]), 9)
+            self.assertEqual(int(cursor.fetchone()[0]), 10)
             for table in ("price_samples", "return_features",
                           "discovery_snapshots", "universe_events",
                           "rank_snapshots", "flow_features", "flow_buckets",
