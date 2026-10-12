@@ -1,0 +1,46 @@
+python : test_close_exactly_at_boundary_is_usable 
+(test_corrective_r1r7.R1StopAvailabilityTest.test_close_exactly_at_boundary_is_usable) ... ok
+En línea: 1 Carácter: 30
++ ... src;tests'; python -m unittest test_corrective_r1r7 -v > docs/evidenc ...
++                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (test_close_exac..._usable) ... ok:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+test_future_low_cannot_trigger_stop (test_corrective_r1r7.R1StopAvailabilityTest.test_future_low_cannot_trigger_stop) 
+... ok
+test_short_mirror_future_high_ignored 
+(test_corrective_r1r7.R1StopAvailabilityTest.test_short_mirror_future_high_ignored) ... ok
+test_unknown_close_time_never_triggers_stop 
+(test_corrective_r1r7.R1StopAvailabilityTest.test_unknown_close_time_never_triggers_stop) ... ok
+test_horizon_beyond_data_marks_at_last_known 
+(test_corrective_r1r7.R2DataEndTest.test_horizon_beyond_data_marks_at_last_known) ... ok
+test_no_candles_is_expired (test_corrective_r1r7.R2DataEndTest.test_no_candles_is_expired) ... ok
+test_two_candles_partial_marks_at_last_known 
+(test_corrective_r1r7.R2DataEndTest.test_two_candles_partial_marks_at_last_known) ... ok
+test_long_gap_down_exits_at_open (test_corrective_r1r7.R3GapRecoveryTest.test_long_gap_down_exits_at_open) ... ok
+test_recovery_past_entry_still_exits_at_gap 
+(test_corrective_r1r7.R3GapRecoveryTest.test_recovery_past_entry_still_exits_at_gap) ... ok
+test_short_gap_up_exits_at_open (test_corrective_r1r7.R3GapRecoveryTest.test_short_gap_up_exits_at_open) ... ok
+test_gap_open_ends_position_before_second_fill 
+(test_corrective_r1r7.R4StopBeforeFillsTest.test_gap_open_ends_position_before_second_fill) ... ok
+test_safe_open_still_permits_second_fill 
+(test_corrective_r1r7.R4StopBeforeFillsTest.test_safe_open_still_permits_second_fill) ... ok
+test_gap_stop_mae_is_full_gap (test_corrective_r1r7.R5StopMetricsTest.test_gap_stop_mae_is_full_gap) ... ok
+test_long_stop_reports_mae_without_candle_extreme 
+(test_corrective_r1r7.R5StopMetricsTest.test_long_stop_reports_mae_without_candle_extreme) ... ok
+test_open_print_credits_mfe_but_not_extreme 
+(test_corrective_r1r7.R5StopMetricsTest.test_open_print_credits_mfe_but_not_extreme) ... ok
+test_partial_fill_stop_uses_average (test_corrective_r1r7.R5StopMetricsTest.test_partial_fill_stop_uses_average) ... ok
+test_short_stop_mirror (test_corrective_r1r7.R5StopMetricsTest.test_short_stop_mirror) ... ok
+test_missing_linked_table_fails_loudly 
+(test_corrective_r1r7.R6SingleInitToV10Test.test_missing_linked_table_fails_loudly) ... ok
+test_repeat_init_is_idempotent (test_corrective_r1r7.R6SingleInitToV10Test.test_repeat_init_is_idempotent) ... ok
+test_v1_single_init_reaches_v10 (test_corrective_r1r7.R6SingleInitToV10Test.test_v1_single_init_reaches_v10) ... ok
+test_v8_single_init_reaches_v10 (test_corrective_r1r7.R6SingleInitToV10Test.test_v8_single_init_reaches_v10) ... ok
+test_worker_and_retention_use_injected_store 
+(test_corrective_r1r7.R7WorkerResolverTest.test_worker_and_retention_use_injected_store) ... ok
+
+----------------------------------------------------------------------
+Ran 22 tests in 0.596s
+
+OK

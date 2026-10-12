@@ -1,44 +1,54 @@
-"""Offline backtest preparation (research mechanics only, v2).
+"""Offline backtest preparation (research mechanics only, v3).
 
 Pure, deterministic, stdlib-only replay over injected candles + study
 events. No network, no live modules, no database access, no wall clock,
 no randomness. Entry/exit rules are STRUCTURAL MECHANICS placeholders —
 NOT validated signals; any result on fixtures is a MECHANICS SMOKE proof,
-never performance.
+never performance. The v2 causality/closure guarantees refuted by review
+(R1/R2) are WITHDRAWN and replaced below; the motor is NOT claimed
+causally verified — only covered by the regression battery.
 
-Causality contract (v2):
-- Fills are sequential: each fill buys qty = chunk_notional / fill_price
-  at successive candle opens; stops are evaluated against the position
-  AS OF each candle. A later fill can never move an earlier entry/stop.
-- A candle's open is known at its open_time; its high/low/close are known
-  only at its close_time (next candle's open_time, same symbol). A candle
-  with unknown close_time, or closing after the horizon, contributes no
-  high/low/close. No intra-candle timing is ever attributed.
-- Stop policy (conservative, explicit): if the stop level lies inside the
-  candle's [low, high], the stop fills AT the stop price; otherwise the
-  candle gapped through it and the exit fills at the candle OPEN (first
-  available price). Stop-exit knowledge time = candle close_time when
-  known, else its open_time.
-- Entry window: if the first fillable open falls after the horizon, the
-  event EXPIRES (counted, never traded). exit_ms is never before entry_ms.
-- Incomplete data: actually-filled quantity/costs are kept; the position
-  closes at the last KNOWN price with reason "open_at_end" and an explicit
-  flag (never silently dropped).
+Temporal availability contract (v3):
+- A candle's OPEN is known at its open_time. Its high/low/close are known
+  ONLY at its close_time (the next same-symbol open_time, or UNKNOWN for
+  the last candle and across gaps — a following open never proves how long
+  the prior candle lasted). No intra-candle timing is ever attributed.
+- Stops, MFE/MAE and exits consume a candle's range ONLY when its close is
+  known AND within the window (close_time <= horizon_end). Using a future
+  or unknown low/high and then patching exit_ms does NOT cure lookahead.
+- Gap-first ordering: an existing position resolves against the KNOWN open
+  before any new fill at that candle. An open through the stop exits AT
+  the open (first available price); a later recovery cannot upgrade it. A
+  stopped position cancels its remainder; new fills happen only while the
+  position stays open and the window is open.
+- Range stops (open on the safe side) fill AT the stop price with knowledge
+  time = close_time. MFE/MAE credit only demonstrated prints: prior candles
+  plus the current OPEN (observed while holding); the candle's favorable
+  extreme is excluded (order vs the exit is unknown). The exit move itself
+  always feeds MAE.
+- Horizon vs data end: candles past the window contribute nothing (no
+  fills, no stops, no metrics). If data extends past the window, the rule
+  closes the position marked at the last knowledge (reason "horizon"). If
+  the data ends first, the position is OPEN at data end: marked at the
+  last known price/time with reason "open_at_end" (a MARK, never an
+  executed exit — no invented duration, funding, close, or capacity
+  release beyond knowledge).
 - Quantity accounting: filled_qty, filled_cost (raw), average entry =
   cost/qty. gross_pnl is pure price P&L on filled qty; friction =
-  spread/slippage drag + fees + signed funding; net = gross - friction.
+  spread/slip drag + fees + signed funding; net = gross - friction.
 - Funding accrues per full 8h held on filled notional, SIGNED by direction
   (LONG pays, SHORT receives at a positive rate). Single-rate model is a
   labeled limitation.
-- Concurrency is enforced over signal-to-exit intervals (capacity
-  commits at event time), per max_concurrent; simultaneous events compete
+- Concurrency is enforced over signal-to-exit intervals (capacity commits
+  at event time), per max_concurrent; simultaneous events compete
   deterministically in time order.
 - Events whose (family, rules_version) differ from config are SKIPPED and
   counted (never silently pooled).
 - Unsupported knobs (latency_ms, tick_size, lot_step, min_notional_usdt)
   REJECT the run with ValueError; they are never simulated as supported.
 - Drawdown is REALIZED-only (closed-trade net equity); mark-to-market is
-  explicitly NOT modeled. dev/OOS splits by event time (documented).
+  explicitly NOT modeled. dev/OOS splits by event time (documented;
+  cutoff_ms reported but credited with no purging power).
 """
 
 from __future__ import annotations
@@ -48,7 +58,7 @@ import json
 from dataclasses import dataclass
 from typing import Any, Dict, List, Optional, Tuple
 
-ENGINE_VERSION = "backtest-offline/v2"
+ENGINE_VERSION = "backtest-offline/v3"
 FUNDING_INTERVAL_MS = 8 * 3600 * 1000
 
 
@@ -207,21 +217,46 @@ def run_backtest(events: List[StudyEvent], candles: List[Candle],
         mfe = 0.0
         mae = 0.0
         last_known_px: Optional[float] = None
+        last_known_ms: Optional[int] = None
+
+        def _fav(px: float, avg: float) -> float:
+            return (px - avg) / avg * 100.0 if is_long else \
+                (avg - px) / avg * 100.0
+
+        def _adv(px: float, avg: float) -> float:
+            return (avg - px) / avg * 100.0 if is_long else \
+                (px - avg) / avg * 100.0
+
+        def _stop_px(avg: float) -> float:
+            return avg * (1.0 - config.stop_distance_pct / 100.0) \
+                if is_long else avg * (
+                    1.0 + config.stop_distance_pct / 100.0)
 
         for i in fill_idx:
             c = series[i]
-            if entry_ms is not None and c.open_time_ms > horizon_end:
-                break  # past the window: no more fills, no post-window info
+            if c.open_time_ms > horizon_end:
+                break  # past the window: nothing here is usable (R1/R2)
             ct = closes[ev.symbol][i]
-            # (a) Fill at this candle's open (known at open_time) while the
-            # window is open and notional remains. Unfilled remainder past
-            # the last in-window open is CANCELLED, never force-filled.
-            if remaining > 0 and c.open_time_ms <= horizon_end:
+            known_close = ct is not None and ct <= horizon_end
+            # (1) Existing position resolves against the KNOWN open first
+            # (R3/R4): a gap through the stop exits AT the open; a later
+            # recovery cannot upgrade it; a stopped position takes no fills.
+            if filled_qty > 0:
+                avg_now = filled_cost_raw / filled_qty
+                stop_now = _stop_px(avg_now)
+                gapped = (c.open <= stop_now) if is_long else \
+                    (c.open >= stop_now)
+                if gapped:
+                    exit_raw, exit_ms = c.open, c.open_time_ms
+                    exit_reason = "stop"
+                    mae = max(mae, _adv(c.open, avg_now))
+                    break
+            # (2) New fill at the known open while notional remains.
+            if remaining > 0:
                 chunk = remaining if config.partial_fill_notional_cap is None \
                     else min(remaining, config.partial_fill_notional_cap)
                 if chunk > 0:
-                    fill_px_raw = c.open
-                    qty = chunk / fill_px_raw
+                    qty = chunk / c.open
                     filled_qty += qty
                     filled_cost_raw += chunk
                     spread_slip += chunk * drag
@@ -229,47 +264,52 @@ def run_backtest(events: List[StudyEvent], candles: List[Candle],
                     n_fills += 1
                     if entry_ms is None:
                         entry_ms = c.open_time_ms
-                    last_known_px = c.open
+                    last_known_px, last_known_ms = c.open, c.open_time_ms
             if filled_qty <= 0:
                 continue
-            # (b) Stop check against the position AS OF this candle (only
-            # candles at/inside the window can trigger; later fills can
-            # never retroactively move this decision).
-            avg_raw = filled_cost_raw / filled_qty
-            stop_px = avg_raw * (1.0 - config.stop_distance_pct / 100.0) \
-                if is_long else avg_raw * (
-                    1.0 + config.stop_distance_pct / 100.0)
-            touched = (c.low <= stop_px) if is_long else (c.high >= stop_px)
-            if touched and c.open_time_ms <= horizon_end:
-                in_range = (c.low <= stop_px <= c.high)
-                exit_raw = stop_px if in_range else c.open  # gap: first real
-                exit_ms = ct if ct is not None else c.open_time_ms
+            # (3) Range stop + metrics need the KNOWN close (R1/R5).
+            if not known_close:
+                continue
+            avg_now = filled_cost_raw / filled_qty
+            stop_now = _stop_px(avg_now)
+            # The open printed while holding: demonstrated, credited.
+            mfe = max(mfe, _fav(c.open, avg_now))
+            mae = max(mae, _adv(c.open, avg_now))
+            touched = (c.low <= stop_now) if is_long else \
+                (c.high >= stop_now)
+            if touched:
+                # Open was safe (gap handled above), so the level is in
+                # range: fill AT the stop with knowledge time = close.
+                exit_raw, exit_ms = stop_now, ct
                 exit_reason = "stop"
+                mae = max(mae, _adv(stop_now, avg_now))
                 break
-            # (c) Usable high/low/close only when known within the horizon.
-            if ct is not None and ct <= horizon_end:
-                if is_long:
-                    mfe = max(mfe, (c.high - avg_raw) / avg_raw * 100.0)
-                    mae = max(mae, (avg_raw - c.low) / avg_raw * 100.0)
-                else:
-                    mfe = max(mfe, (avg_raw - c.low) / avg_raw * 100.0)
-                    mae = max(mae, (c.high - avg_raw) / avg_raw * 100.0)
-                last_known_px = c.close
-                exit_raw = c.close
-                exit_ms = horizon_end
-                exit_reason = "horizon"
+            # Favorable extreme excluded: order vs a later exit is unknown.
+            mfe = max(mfe, _fav(c.high if is_long else c.low, avg_now))
+            mae = max(mae, _adv(c.low if is_long else c.high, avg_now))
+            last_known_px, last_known_ms = c.close, ct
+            exit_raw, exit_ms = c.close, ct
 
         if entry_ms is None:
             n_expired += 1
             continue
         cancelled_notional = remaining
         if exit_raw is None or exit_ms is None:
-            # Data ended with the position open: keep what was simulated,
-            # close at the last KNOWN price, flag explicitly.
+            # No usable close ever resolved: fall back to last knowledge
+            # (always exists: at least the fill open is known).
             exit_raw = last_known_px if last_known_px is not None else \
                 filled_cost_raw / filled_qty
-            exit_ms = entry_ms
-            exit_reason = "open_at_end"
+            exit_ms = last_known_ms if last_known_ms is not None else entry_ms
+        data_past_horizon = series[-1].open_time_ms > horizon_end
+        if exit_raw is None or exit_ms is None:
+            # No resolution inside the window: mark at last knowledge.
+            exit_raw = last_known_px if last_known_px is not None else \
+                filled_cost_raw / filled_qty
+            exit_ms = last_known_ms if last_known_ms is not None else entry_ms
+        if data_past_horizon and exit_reason != "stop":
+            exit_reason = "horizon"  # rule closed it; price/time are marks
+        elif exit_reason != "stop":
+            exit_reason = "open_at_end"  # data ended first: a MARK, flagged
             open_at_end = True
         if exit_ms is not None and exit_ms < entry_ms:
             exit_ms = entry_ms  # invariant: knowledge time never precedes entry

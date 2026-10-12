@@ -1,0 +1,273 @@
+python : test_close_exactly_at_boundary_is_usable 
+(test_corrective_r1r7.R1StopAvailabilityTest.test_close_exactly_at_boundary_is_usable) ... ok
+En línea: 1 Carácter: 150
++ ... ree\tests'; python -m unittest test_corrective_r1r7 -v > C:\proyectos ...
++                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (test_close_exac..._usable) ... ok:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+test_future_low_cannot_trigger_stop (test_corrective_r1r7.R1StopAvailabilityTest.test_future_low_cannot_trigger_stop) 
+... FAIL
+test_short_mirror_future_high_ignored 
+(test_corrective_r1r7.R1StopAvailabilityTest.test_short_mirror_future_high_ignored) ... FAIL
+test_unknown_close_time_never_triggers_stop 
+(test_corrective_r1r7.R1StopAvailabilityTest.test_unknown_close_time_never_triggers_stop) ... FAIL
+test_horizon_beyond_data_marks_at_last_known 
+(test_corrective_r1r7.R2DataEndTest.test_horizon_beyond_data_marks_at_last_known) ... FAIL
+test_no_candles_is_expired (test_corrective_r1r7.R2DataEndTest.test_no_candles_is_expired) ... ok
+test_two_candles_partial_marks_at_last_known 
+(test_corrective_r1r7.R2DataEndTest.test_two_candles_partial_marks_at_last_known) ... FAIL
+test_long_gap_down_exits_at_open (test_corrective_r1r7.R3GapRecoveryTest.test_long_gap_down_exits_at_open) ... FAIL
+test_recovery_past_entry_still_exits_at_gap 
+(test_corrective_r1r7.R3GapRecoveryTest.test_recovery_past_entry_still_exits_at_gap) ... FAIL
+test_short_gap_up_exits_at_open (test_corrective_r1r7.R3GapRecoveryTest.test_short_gap_up_exits_at_open) ... FAIL
+test_gap_open_ends_position_before_second_fill 
+(test_corrective_r1r7.R4StopBeforeFillsTest.test_gap_open_ends_position_before_second_fill) ... FAIL
+test_safe_open_still_permits_second_fill 
+(test_corrective_r1r7.R4StopBeforeFillsTest.test_safe_open_still_permits_second_fill) ... ok
+test_gap_stop_mae_is_full_gap (test_corrective_r1r7.R5StopMetricsTest.test_gap_stop_mae_is_full_gap) ... FAIL
+test_long_stop_reports_mae_without_candle_extreme 
+(test_corrective_r1r7.R5StopMetricsTest.test_long_stop_reports_mae_without_candle_extreme) ... FAIL
+test_open_print_credits_mfe_but_not_extreme 
+(test_corrective_r1r7.R5StopMetricsTest.test_open_print_credits_mfe_but_not_extreme) ... FAIL
+test_partial_fill_stop_uses_average (test_corrective_r1r7.R5StopMetricsTest.test_partial_fill_stop_uses_average) ... 
+FAIL
+test_short_stop_mirror (test_corrective_r1r7.R5StopMetricsTest.test_short_stop_mirror) ... FAIL
+test_repeat_init_is_idempotent (test_corrective_r1r7.R6SingleInitToV10Test.test_repeat_init_is_idempotent) ... ERROR
+test_v1_single_init_reaches_v10 (test_corrective_r1r7.R6SingleInitToV10Test.test_v1_single_init_reaches_v10) ... FAIL
+test_v8_single_init_reaches_v10 (test_corrective_r1r7.R6SingleInitToV10Test.test_v8_single_init_reaches_v10) ... FAIL
+test_worker_and_retention_use_injected_store 
+(test_corrective_r1r7.R7WorkerResolverTest.test_worker_and_retention_use_injected_store) ... FAIL
+
+======================================================================
+ERROR: test_repeat_init_is_idempotent (test_corrective_r1r7.R6SingleInitToV10Test.test_repeat_init_is_idempotent)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "C:\Users\adonm\AppData\Local\Temp\opencode\pristine906\tree\tests\test_corrective_r1r7.py", line 335, in 
+test_repeat_init_is_idempotent
+    store.log_universe_event("promoted", "BTCUSDT", "x", run_id="R1")
+    ~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\adonm\AppData\Local\Temp\opencode\pristine906\tree\src\microstructure_probe\persistence.py", line 
+1282, in log_universe_event
+    cursor.execute(
+    ~~~~~~~~~~~~~~^
+        "INSERT INTO universe_events (timestamp, kind, symbol, detail,"
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    ...<2 lines>...
+         str(detail or ""), run_id),
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+sqlite3.OperationalError: table universe_events has no column named run_id
+
+======================================================================
+FAIL: test_future_low_cannot_trigger_stop 
+(test_corrective_r1r7.R1StopAvailabilityTest.test_future_low_cannot_trigger_stop)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "C:\Users\adonm\AppData\Local\Temp\opencode\pristine906\tree\tests\test_corrective_r1r7.py", line 47, in 
+test_future_low_cannot_trigger_stop
+    self.assertEqual(calm["trades"], moved["trades"])
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: Lists differ: [{'sy[125 chars]ms': 1000, 'entry_px': 100.0, 'exit_px': 100.0[267 chars]0.0}] != 
+[{'sy[125 chars]ms': 2000, 'entry_px': 100.0, 'exit_px': 90.0,[266 chars]0.0}]
+
+First differing element 0:
+{'sym[124 chars]ms': 1000, 'entry_px': 100.0, 'exit_px': 100.0[266 chars] 0.0}
+{'sym[124 chars]ms': 2000, 'entry_px': 100.0, 'exit_px': 90.0,[265 chars] 0.0}
+
+Diff is 903 characters long. Set self.maxDiff to None to see it.
+
+======================================================================
+FAIL: test_short_mirror_future_high_ignored 
+(test_corrective_r1r7.R1StopAvailabilityTest.test_short_mirror_future_high_ignored)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "C:\Users\adonm\AppData\Local\Temp\opencode\pristine906\tree\tests\test_corrective_r1r7.py", line 80, in 
+test_short_mirror_future_high_ignored
+    self.assertEqual(calm["trades"], moved["trades"])
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: Lists differ: [{'sy[126 chars]ms': 1000, 'entry_px': 100.0, 'exit_px': 100.0[268 chars]0.0}] != 
+[{'sy[126 chars]ms': 2000, 'entry_px': 100.0, 'exit_px': 110.0[307 chars]0.0}]
+
+First differing element 0:
+{'sym[125 chars]ms': 1000, 'entry_px': 100.0, 'exit_px': 100.0[267 chars] 0.0}
+{'sym[125 chars]ms': 2000, 'entry_px': 100.0, 'exit_px': 110.0[306 chars] 0.0}
+
+Diff is 866 characters long. Set self.maxDiff to None to see it.
+
+======================================================================
+FAIL: test_unknown_close_time_never_triggers_stop 
+(test_corrective_r1r7.R1StopAvailabilityTest.test_unknown_close_time_never_triggers_stop)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "C:\Users\adonm\AppData\Local\Temp\opencode\pristine906\tree\tests\test_corrective_r1r7.py", line 57, in 
+test_unknown_close_time_never_triggers_stop
+    self.assertEqual(res["trades"][0]["exit_reason"], "open_at_end")
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 'stop' != 'open_at_end'
+- stop
++ open_at_end
+
+
+======================================================================
+FAIL: test_horizon_beyond_data_marks_at_last_known 
+(test_corrective_r1r7.R2DataEndTest.test_horizon_beyond_data_marks_at_last_known)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "C:\Users\adonm\AppData\Local\Temp\opencode\pristine906\tree\tests\test_corrective_r1r7.py", line 97, in 
+test_horizon_beyond_data_marks_at_last_known
+    self.assertEqual(trade["exit_reason"], "open_at_end")
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 'horizon' != 'open_at_end'
+- horizon
++ open_at_end
+
+
+======================================================================
+FAIL: test_two_candles_partial_marks_at_last_known 
+(test_corrective_r1r7.R2DataEndTest.test_two_candles_partial_marks_at_last_known)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "C:\Users\adonm\AppData\Local\Temp\opencode\pristine906\tree\tests\test_corrective_r1r7.py", line 110, in 
+test_two_candles_partial_marks_at_last_known
+    self.assertTrue(trade["open_at_end"])
+    ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: False is not true
+
+======================================================================
+FAIL: test_long_gap_down_exits_at_open (test_corrective_r1r7.R3GapRecoveryTest.test_long_gap_down_exits_at_open)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "C:\Users\adonm\AppData\Local\Temp\opencode\pristine906\tree\tests\test_corrective_r1r7.py", line 141, in 
+test_long_gap_down_exits_at_open
+    self.assertAlmostEqual(trade["exit_px"], 80.0)
+    ~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 90.0 != 80.0 within 7 places (10.0 difference)
+
+======================================================================
+FAIL: test_recovery_past_entry_still_exits_at_gap 
+(test_corrective_r1r7.R3GapRecoveryTest.test_recovery_past_entry_still_exits_at_gap)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "C:\Users\adonm\AppData\Local\Temp\opencode\pristine906\tree\tests\test_corrective_r1r7.py", line 161, in 
+test_recovery_past_entry_still_exits_at_gap
+    self.assertAlmostEqual(res["trades"][0]["exit_px"], 80.0)
+    ~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 90.0 != 80.0 within 7 places (10.0 difference)
+
+======================================================================
+FAIL: test_short_gap_up_exits_at_open (test_corrective_r1r7.R3GapRecoveryTest.test_short_gap_up_exits_at_open)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "C:\Users\adonm\AppData\Local\Temp\opencode\pristine906\tree\tests\test_corrective_r1r7.py", line 152, in 
+test_short_gap_up_exits_at_open
+    self.assertAlmostEqual(trade["exit_px"], 120.0)
+    ~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 110.00000000000001 != 120.0 within 7 places (9.999999999999986 difference)
+
+======================================================================
+FAIL: test_gap_open_ends_position_before_second_fill 
+(test_corrective_r1r7.R4StopBeforeFillsTest.test_gap_open_ends_position_before_second_fill)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "C:\Users\adonm\AppData\Local\Temp\opencode\pristine906\tree\tests\test_corrective_r1r7.py", line 178, in 
+test_gap_open_ends_position_before_second_fill
+    self.assertEqual(trade["fills"], 1)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^
+AssertionError: 2 != 1
+
+======================================================================
+FAIL: test_gap_stop_mae_is_full_gap (test_corrective_r1r7.R5StopMetricsTest.test_gap_stop_mae_is_full_gap)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "C:\Users\adonm\AppData\Local\Temp\opencode\pristine906\tree\tests\test_corrective_r1r7.py", line 245, in 
+test_gap_stop_mae_is_full_gap
+    self.assertAlmostEqual(trade["mae_pct"], 20.0)
+    ~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 0.0 != 20.0 within 7 places (20.0 difference)
+
+======================================================================
+FAIL: test_long_stop_reports_mae_without_candle_extreme 
+(test_corrective_r1r7.R5StopMetricsTest.test_long_stop_reports_mae_without_candle_extreme)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "C:\Users\adonm\AppData\Local\Temp\opencode\pristine906\tree\tests\test_corrective_r1r7.py", line 211, in 
+test_long_stop_reports_mae_without_candle_extreme
+    self.assertAlmostEqual(trade["mae_pct"], 10.0)
+    ~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 0.0 != 10.0 within 7 places (10.0 difference)
+
+======================================================================
+FAIL: test_open_print_credits_mfe_but_not_extreme 
+(test_corrective_r1r7.R5StopMetricsTest.test_open_print_credits_mfe_but_not_extreme)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "C:\Users\adonm\AppData\Local\Temp\opencode\pristine906\tree\tests\test_corrective_r1r7.py", line 222, in 
+test_open_print_credits_mfe_but_not_extreme
+    self.assertAlmostEqual(trade["mfe_pct"], 2.0)
+    ~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 0.0 != 2.0 within 7 places (2.0 difference)
+
+======================================================================
+FAIL: test_partial_fill_stop_uses_average (test_corrective_r1r7.R5StopMetricsTest.test_partial_fill_stop_uses_average)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "C:\Users\adonm\AppData\Local\Temp\opencode\pristine906\tree\tests\test_corrective_r1r7.py", line 261, in 
+test_partial_fill_stop_uses_average
+    self.assertAlmostEqual(trade["mae_pct"], 10.0)
+    ~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 0.0 != 10.0 within 7 places (10.0 difference)
+
+======================================================================
+FAIL: test_short_stop_mirror (test_corrective_r1r7.R5StopMetricsTest.test_short_stop_mirror)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "C:\Users\adonm\AppData\Local\Temp\opencode\pristine906\tree\tests\test_corrective_r1r7.py", line 234, in 
+test_short_stop_mirror
+    self.assertAlmostEqual(trade["mfe_pct"], 2.0)
+    ~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 0.0 != 2.0 within 7 places (2.0 difference)
+
+======================================================================
+FAIL: test_v1_single_init_reaches_v10 (test_corrective_r1r7.R6SingleInitToV10Test.test_v1_single_init_reaches_v10)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "C:\Users\adonm\AppData\Local\Temp\opencode\pristine906\tree\tests\test_corrective_r1r7.py", line 300, in 
+test_v1_single_init_reaches_v10
+    self.assertEqual(_version(store), 10)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 9 != 10
+
+======================================================================
+FAIL: test_v8_single_init_reaches_v10 (test_corrective_r1r7.R6SingleInitToV10Test.test_v8_single_init_reaches_v10)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "C:\Users\adonm\AppData\Local\Temp\opencode\pristine906\tree\tests\test_corrective_r1r7.py", line 322, in 
+test_v8_single_init_reaches_v10
+    self.assertEqual(_version(store), 10)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 9 != 10
+
+======================================================================
+FAIL: test_worker_and_retention_use_injected_store 
+(test_corrective_r1r7.R7WorkerResolverTest.test_worker_and_retention_use_injected_store)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "C:\Users\adonm\AppData\Local\Temp\opencode\pristine906\tree\tests\test_corrective_r1r7.py", line 424, in 
+test_worker_and_retention_use_injected_store
+    self.assertEqual(default_calls, [])
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^
+AssertionError: Lists differ: [1, 1, 1, 1, 1] != []
+
+First list contains 5 additional elements.
+First extra element 0:
+1
+
+- [1, 1, 1, 1, 1]
++ []
+
+----------------------------------------------------------------------
+Ran 21 tests in 0.509s
+
+FAILED (failures=17, errors=1)
