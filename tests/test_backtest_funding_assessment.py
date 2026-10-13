@@ -187,10 +187,15 @@ class UnknownMarkTest(unittest.TestCase):
     def test_settlement_mark_helper_needs_cover(self) -> None:
         from microstructure_probe.backtest_offline import _settlement_mark
         candles = _hourly(4, start=H)
-        self.assertIsNone(_settlement_mark(candles, 0))
-        self.assertAlmostEqual(_settlement_mark(candles, H), 100.0)
-        # Far-future settlement reuses the last known open (causal).
-        self.assertAlmostEqual(_settlement_mark(candles, 99 * H), 100.0)
+        self.assertEqual(_settlement_mark(candles, 0), (None, None))
+        mark, age = _settlement_mark(candles, H)
+        self.assertAlmostEqual(mark, 100.0)
+        self.assertEqual(age, 0)
+        # Far-future settlement reuses the last known open (causal) with
+        # its age recorded; staleness is judged by the caller, not hidden.
+        mark, age = _settlement_mark(candles, 99 * H)
+        self.assertAlmostEqual(mark, 100.0)
+        self.assertEqual(age, 95 * H)
 
     def test_pre_entry_settlement_settles_nothing(self) -> None:
         # Settlement at t=0 precedes the first fill (entry at H): outside

@@ -85,7 +85,17 @@ class CostMathTest(unittest.TestCase):
         cfg = BacktestConfig(fee_bps=10.0, spread_bps=0.0, slippage_bps=0.0,
                              funding_8h_bps=0.0, notional_usdt=1000.0)
         res = run_backtest([_ev()], _candles(), cfg)
-        self.assertAlmostEqual(res["trades"][0]["fees"], 2.0)
+        t = res["trades"][0]
+        # Corrected 2026-10-13: entry commission on executed notional
+        # (1000 x 10bps = 1.00); exit commission on the EXIT VALUE
+        # (qty x exit price x 10bps, here ~1.0111 on the drifted close) —
+        # never a symmetric copy of the entry figure.
+        self.assertAlmostEqual(t["entry_fees"], 1.0)
+        self.assertAlmostEqual(t["exit_fees"],
+                               t["filled_qty"] * t["exit_px"] * 10.0
+                               / 10_000.0)
+        self.assertAlmostEqual(t["fees"],
+                               t["entry_fees"] + t["exit_fees"])
 
     def test_cost_scales_monotone(self) -> None:
         candles = _candles()

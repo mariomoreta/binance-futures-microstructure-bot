@@ -244,20 +244,37 @@ LIMITATIONS = [
 
 
 def _settlement_mark(series: List[Candle],
-                      settlement_ms: int) -> Optional[float]:
-    """Causal mark at settlement: open of the candle holding that time.
+                      settlement_ms: int) -> Tuple[Optional[float],
+                                                  Optional[int]]:
+    """Causal (mark, age_ms) at settlement: open of the candle holding it.
 
     The open is known exactly at its open_time, so it is usable at any
-    settlement_ms >= open_time. Returns None when no candle covers the
-    settlement (unknown mark: never invented from thin air).
+    settlement_ms >= open_time. Returns (None, None) when no candle covers
+    the settlement (unknown mark: never invented from thin air).
     """
     mark: Optional[float] = None
+    age: Optional[int] = None
     for c in series:
         if c.open_time_ms <= settlement_ms:
             mark = c.open
+            age = settlement_ms - c.open_time_ms
         else:
             break
-    return mark
+    return mark, age
+
+
+def _mark_is_stale(age_ms: int, interval_ms: Optional[int]) -> bool:
+    """A covering mark older than the nominal cadence is STALE (proxy).
+
+    Freshness needs a contemporaneous print: age 0 (settlement on a candle
+    open) always counts as fresh. Without a nominal cadence there is no
+    basis to call any aged print fresh, so any age > 0 is stale.
+    """
+    if age_ms <= 0:
+        return False
+    if interval_ms is None:
+        return True
+    return age_ms > interval_ms
 
 
 def _overlap_ms(lo: int, hi: int, spans: List[Tuple[int, int]]) -> int:
@@ -310,13 +327,26 @@ def _funding_for_trade(side: str,
                             if t <= s.settlement_ms)
             held_qty = sum(qty for (t, _, qty) in fill_ledger
                            if t <= s.settlement_ms)
-            mark = _settlement_mark(series, s.settlement_ms)
-            if mark is None:
+            mark, age = _settlement_mark(series, s.settlement_ms)
+            if mark is None or age is None:
                 unknown += 1
                 events.append({"basis": "unknown-excluded",
                                "settlement_ms": s.settlement_ms,
                                "rate_bps": s.rate_bps,
                                "reason": "no covering candle: mark UNKNOWN",
+                               "symbol": symbol,
+                               "calendar_symbol": cal.symbol,
+                               "calendar_version": cal.version,
+                               "calendar_source": cal.source})
+                continue
+            if _mark_is_stale(age, cal.interval_ms):
+                unknown += 1
+                events.append({"basis": "unknown-excluded",
+                               "settlement_ms": s.settlement_ms,
+                               "rate_bps": s.rate_bps,
+                               "reason": "stale mark proxy: age_ms=%d "
+                               "exceeds cadence basis" % age,
+                               "mark_age_ms": age,
                                "symbol": symbol,
                                "calendar_symbol": cal.symbol,
                                "calendar_version": cal.version,
@@ -334,16 +364,20 @@ def _funding_for_trade(side: str,
                            "held_qty": held_qty, "held_cost": held_cost,
                            "settlement_mark_px": mark,
                            "mark_source": "candle-open",
+                           "mark_age_ms": age,
+                           "mark_freshness": "fresh",
                            "amount": amount})
     # UNKNOWN coverage, never zero-invented: holding time outside the
     # calendar's listed span [first, last] is silent about cadence
     # continuity (truncated head/tail). Inter-settlement spans inside the
     # span are cadence (no payment due), not unknown — except detected
-    # interior gaps, reported separately as gap_ms.
+    # interior gaps, reported separately as gap_ms. Unknown time OF THE
+    # HOLDING never exceeds the holding itself (capped at exit-entry).
     if ordered:
         span_lo = ordered[0].settlement_ms
         span_hi = ordered[-1].settlement_ms
-        uncovered = max(0, span_lo - entry_ms) + max(0, exit_ms - span_hi)
+        raw = max(0, span_lo - entry_ms) + max(0, exit_ms - span_hi)
+        uncovered = min(raw, max(0, exit_ms - entry_ms))
     else:
         uncovered = max(0, exit_ms - entry_ms)
     gap_ms = _overlap_ms(entry_ms, exit_ms, gap_spans)
@@ -419,6 +453,18 @@ def run_backtest(events: List[StudyEvent], candles: List[Candle],
     if config.funding_calendar is not None:
         _, cal_duplicates = config.funding_calendar.normalized()
         cal_assessment = config.funding_calendar.assess()
+        # A symbol-pinned calendar settles ONE contract only: replaying a
+        # foreign symbol against it would silently misattribute venue
+        # reality, so the run is REJECTED (fail-closed, never coerced).
+        if config.funding_calendar.symbol is not None:
+            foreign = sorted({e.symbol for e in ordered_events
+                              if e.symbol != config.funding_calendar.symbol})
+            if foreign:
+                raise ValueError(
+                    "funding calendar for %s cannot settle %s "
+                    "(calendar %s)" % (
+                        config.funding_calendar.symbol, foreign,
+                        config.funding_calendar.version))
 
     for ev in ordered_events:
         if ev.direction not in ("LONG", "SHORT"):
@@ -567,9 +613,13 @@ def run_backtest(events: List[StudyEvent], candles: List[Candle],
         exit_spread_slip = exit_value * drag
         spread_slip += exit_spread_slip
         filled_notional = filled_cost_raw
+        # Entry commission on executed notional; exit commission on the
+        # exit VALUE (qty x exit price): closing 10u at 120 with 10 bps
+        # costs 1.20, not the 1.00 entry figure. Symmetric halves would
+        # misprice every non-flat exit.
         entry_fees = filled_notional * config.fee_bps / 10_000.0 * \
             config.cost_scale
-        exit_fees = filled_notional * config.fee_bps / 10_000.0 * \
+        exit_fees = exit_value * config.fee_bps / 10_000.0 * \
             config.cost_scale
         fees = entry_fees + exit_fees
         funding, funding_events, funding_uncovered_ms, funding_gap_ms, \

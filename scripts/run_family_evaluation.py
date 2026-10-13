@@ -96,10 +96,12 @@ def _load_calendar(path: Path | None):
     if path is None:
         return None
     raw = json.loads(path.read_text(encoding="utf-8"))
+    sym = raw.get("symbol")
     return FundingCalendar(
         version=str(raw.get("version", "external/v1")),
         source=str(raw.get("source", "external")),
         interval_ms=raw.get("interval_ms"),
+        symbol=None if sym is None else str(sym),
         settlements=tuple(
             FundingSettlement(int(s["settlement_ms"]),
                               float(s["rate_bps"]))
@@ -183,6 +185,11 @@ def main(argv=None) -> int:
         "formation_method": args.formation_method,
         "formation_note": "Formation is caller-declared and echoed; this "
                           "runner invents no entries and validates no edge.",
+        "funding_calendar": None if calendar is None else {
+            "version": calendar.version, "source": calendar.source,
+            "interval_ms": calendar.interval_ms,
+            "symbol": calendar.symbol,
+            "n_settlements": len(calendar.settlements)},
         "groups": {},
     }
     for group in GROUPS:
