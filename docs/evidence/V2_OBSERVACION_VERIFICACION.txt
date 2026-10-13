@@ -1,0 +1,43 @@
+# Bot + V2 observacion — verificacion (2026-10-13, review/bot-dashboard-v2-observacion)
+Solo Binance. Sin servicios iniciados, sin corridas reales, sin paper/ordenes.
+
+## SHAs y rama a continuar
+- Backend (esta linea): base 3cbbb1c (= origin/review/entrega-nueve-archivos-6fd6091).
+- V2 checkpoint a continuar: 27b7af5 (dash-v2-03-token-detail, 2026-10-11;
+  el mas reciente V2; contiene DASH-V2-45/46/47; ancestro d4df766 incluido).
+  NO modificar esa rama desde aqui; continuar en revision + merge humano.
+- Otras ramas ajenas intactas (codex/dash-v2-47, phase1, main).
+
+## Pantallas V2 (punto 8: API vs visual, separados)
+- API/componentes linea local (DASH-V2-02, estatica): `npm test` en
+  frontend/ -> 6 ficheros, 24/24 pass (29.8s). Node v24.19.0.
+- Checkpoint 27b7af5 (codigo, desde Git sin checkout): 12 rutas BFF
+  (live-movers, market-snapshot, opportunities, price-series/[symbol],
+  prospective, historical-coverage, historical-research, runtime,
+  runtime/start, runtime/stop, runtime/readiness, system-evidence) +
+  paginas overview/movers/movers-verified/symbol/[symbol]/opportunities
+  (x3)/system/historical-research (x2)/market-archive/market-lab/backtest/
+  paper-lab/search. Lectores SELECT-only (unico `readOnly:true`;
+  CREATE TABLE solo en src/test fixtures; ningun INSERT/UPDATE/DELETE/
+  migracion en codigo de produccion). Gates: historico-2
+  (UNSUPPORTED_HISTORICAL_SCHEMA) y operacional-9
+  (UNSUPPORTED_SYSTEM_SCHEMA). Evidencia de tests del propio SHA citada
+  en docs (207 frontend V2-71 + type/lint/build).
+- Revision visual efectiva (navegador): NO realizada aqui (ningun
+  servicio iniciado). Obtener HTTP 200 no se declara liveness.
+  PENDIENTE explicito para la linea V2.
+
+## Compatibilidad y funding
+- V2 lee ambos stores en real con fail-closed (gates 2/9 vs backend
+  v10/v3 => incompatibles hoy; solo un SHA que declare v10/v3 consume).
+- Funding en tres niveles (matriz §Funding): cotizado (contexto),
+  calendario realizado (versionado), replay (run_backtest). Sin mezclas.
+
+## Preflight medido (este host, no extrapolable)
+microprobe 238.9MB (caps 10000/1000/1000 llenos = retencion activa),
+historical 19.2MB, logs 117.4MB/166 ficheros (SIN tope: podar manual),
+libres 159.3GB. Comando: scripts/storage_preflight.py (exit 0).
+
+## Kronos/IA
+F-KRONOS-01 PROPOSED/diferido (FEATURE_BACKLOG): cero deps, cero codigo,
+nunca requisito de arranque.

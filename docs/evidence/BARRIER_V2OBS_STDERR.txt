@@ -1,0 +1,480 @@
+python : ..............................................................................................................
+................{"kind": "clock_sync_sample_error", "error": "OSError: offline"}
+En línea: 1 Carácter: 22
++ ... ONUTF8="1"; python scripts/audit_test_isolation.py --out "C:\Users\ad ...
++                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (..................rror: offline"}:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+{"kind": "clock_sync_sample_error", "error": "OSError: offline"}
+{"kind": "clock_sync_failed", "clockOffsetMs": 7.5, "serverTimeRttMs": 3.0, "lastClockSyncTimestamp": null, 
+"clockSyncSuccessful": 0, "clockSyncFailed": 1, "clockSamplesValid": 0, "clockSamplesFailed": 2}
+........................................................Exception in thread Thread-59 (_readerthread):
+Traceback (most recent call last):
+  File "C:\Python314\Lib\threading.py", line 1082, in _bootstrap_inner
+    self._context.run(self.run)
+    ~~~~~~~~~~~~~~~~~^^^^^^^^^^
+  File "C:\Python314\Lib\threading.py", line 1024, in run
+    self._target(*self._args, **self._kwargs)
+    ~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Python314\Lib\subprocess.py", line 1613, in _readerthread
+    buffer.append(fh.read())
+                  ~~~~~~~^^
+  File "<frozen codecs>", line 325, in decode
+UnicodeDecodeError: 'utf-8' codec can't decode byte 0xa0 in position 33: invalid start byte
+EException in thread Thread-63 (_readerthread):
+Traceback (most recent call last):
+  File "C:\Python314\Lib\threading.py", line 1082, in _bootstrap_inner
+    self._context.run(self.run)
+    ~~~~~~~~~~~~~~~~~^^^^^^^^^^
+  File "C:\Python314\Lib\threading.py", line 1024, in run
+    self._target(*self._args, **self._kwargs)
+    ~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Python314\Lib\subprocess.py", line 1613, in _readerthread
+    buffer.append(fh.read())
+                  ~~~~~~~^^
+  File "<frozen codecs>", line 325, in decode
+UnicodeDecodeError: 'utf-8' codec can't decode byte 0xa0 in position 33: invalid start byte
+E.Exception in thread Thread-65 (_readerthread):
+Traceback (most recent call last):
+  File "C:\Python314\Lib\threading.py", line 1082, in _bootstrap_inner
+    self._context.run(self.run)
+    ~~~~~~~~~~~~~~~~~^^^^^^^^^^
+  File "C:\Python314\Lib\threading.py", line 1024, in run
+    self._target(*self._args, **self._kwargs)
+    ~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Python314\Lib\subprocess.py", line 1613, in _readerthread
+    buffer.append(fh.read())
+                  ~~~~~~~^^
+  File "<frozen codecs>", line 325, in decode
+UnicodeDecodeError: 'utf-8' codec can't decode byte 0xa0 in position 33: invalid start byte
+E....................................................................................{"kind": "discovery_error", 
+"error": "offline"}
+....................................................................................................................Exc
+eption in thread Thread-372 (_readerthread):
+Traceback (most recent call last):
+  File "C:\Python314\Lib\threading.py", line 1082, in _bootstrap_inner
+    self._context.run(self.run)
+    ~~~~~~~~~~~~~~~~~^^^^^^^^^^
+  File "C:\Python314\Lib\threading.py", line 1024, in run
+    self._target(*self._args, **self._kwargs)
+    ~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Python314\Lib\subprocess.py", line 1613, in _readerthread
+    buffer.append(fh.read())
+                  ~~~~~~~^^
+  File "<frozen codecs>", line 325, in decode
+UnicodeDecodeError: 'utf-8' codec can't decode byte 0xa0 in position 33: invalid start byte
+E......................................................................................................................
+.......................................................................................................................
+.......................................................................................................................
+............Exception in thread Thread-632 (_readerthread):
+Traceback (most recent call last):
+  File "C:\Python314\Lib\threading.py", line 1082, in _bootstrap_inner
+    self._context.run(self.run)
+    ~~~~~~~~~~~~~~~~~^^^^^^^^^^
+  File "C:\Python314\Lib\threading.py", line 1024, in run
+    self._target(*self._args, **self._kwargs)
+    ~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Python314\Lib\subprocess.py", line 1613, in _readerthread
+    buffer.append(fh.read())
+                  ~~~~~~~^^
+  File "<frozen codecs>", line 325, in decode
+UnicodeDecodeError: 'utf-8' codec can't decode byte 0xa0 in position 33: invalid start byte
+E..................................................................................Exception in thread Thread-645 
+(_readerthread):
+Traceback (most recent call last):
+  File "C:\Python314\Lib\threading.py", line 1082, in _bootstrap_inner
+    self._context.run(self.run)
+    ~~~~~~~~~~~~~~~~~^^^^^^^^^^
+  File "C:\Python314\Lib\threading.py", line 1024, in run
+    self._target(*self._args, **self._kwargs)
+    ~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Python314\Lib\subprocess.py", line 1613, in _readerthread
+    buffer.append(fh.read())
+                  ~~~~~~~^^
+  File "<frozen codecs>", line 325, in decode
+UnicodeDecodeError: 'utf-8' codec can't decode byte 0xa0 in position 33: invalid start byte
+Exception in thread Thread-651 (_readerthread):
+Traceback (most recent call last):
+  File "C:\Python314\Lib\threading.py", line 1082, in _bootstrap_inner
+    self._context.run(self.run)
+    ~~~~~~~~~~~~~~~~~^^^^^^^^^^
+  File "C:\Python314\Lib\threading.py", line 1024, in run
+    self._target(*self._args, **self._kwargs)
+    ~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Python314\Lib\subprocess.py", line 1613, in _readerthread
+    buffer.append(fh.read())
+                  ~~~~~~~^^
+  File "<frozen codecs>", line 325, in decode
+UnicodeDecodeError: 'utf-8' codec can't decode byte 0xa0 in position 33: invalid start byte
+Exception in thread Thread-663 (_readerthread):
+Traceback (most recent call last):
+  File "C:\Python314\Lib\threading.py", line 1082, in _bootstrap_inner
+    self._context.run(self.run)
+    ~~~~~~~~~~~~~~~~~^^^^^^^^^^
+  File "C:\Python314\Lib\threading.py", line 1024, in run
+    self._target(*self._args, **self._kwargs)
+    ~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Python314\Lib\subprocess.py", line 1613, in _readerthread
+    buffer.append(fh.read())
+                  ~~~~~~~^^
+  File "<frozen codecs>", line 325, in decode
+UnicodeDecodeError: 'utf-8' codec can't decode byte 0xa0 in position 33: invalid start byte
+Exception in thread Thread-665 (_readerthread):
+Traceback (most recent call last):
+  File "C:\Python314\Lib\threading.py", line 1082, in _bootstrap_inner
+    self._context.run(self.run)
+    ~~~~~~~~~~~~~~~~~^^^^^^^^^^
+  File "C:\Python314\Lib\threading.py", line 1024, in run
+    self._target(*self._args, **self._kwargs)
+    ~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Python314\Lib\subprocess.py", line 1613, in _readerthread
+    buffer.append(fh.read())
+                  ~~~~~~~^^
+  File "<frozen codecs>", line 325, in decode
+UnicodeDecodeError: 'utf-8' codec can't decode byte 0xa0 in position 33: invalid start byte
+Exception in thread Thread-667 (_readerthread):
+Traceback (most recent call last):
+  File "C:\Python314\Lib\threading.py", line 1082, in _bootstrap_inner
+    self._context.run(self.run)
+    ~~~~~~~~~~~~~~~~~^^^^^^^^^^
+  File "C:\Python314\Lib\threading.py", line 1024, in run
+    self._target(*self._args, **self._kwargs)
+    ~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Python314\Lib\subprocess.py", line 1613, in _readerthread
+    buffer.append(fh.read())
+                  ~~~~~~~^^
+  File "<frozen codecs>", line 325, in decode
+UnicodeDecodeError: 'utf-8' codec can't decode byte 0xa0 in position 33: invalid start byte
+Exception in thread Thread-669 (_readerthread):
+Traceback (most recent call last):
+  File "C:\Python314\Lib\threading.py", line 1082, in _bootstrap_inner
+    self._context.run(self.run)
+    ~~~~~~~~~~~~~~~~~^^^^^^^^^^
+  File "C:\Python314\Lib\threading.py", line 1024, in run
+    self._target(*self._args, **self._kwargs)
+    ~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Python314\Lib\subprocess.py", line 1613, in _readerthread
+    buffer.append(fh.read())
+                  ~~~~~~~^^
+  File "<frozen codecs>", line 325, in decode
+UnicodeDecodeError: 'utf-8' codec can't decode byte 0xa0 in position 33: invalid start byte
+Exception in thread Thread-671 (_readerthread):
+Traceback (most recent call last):
+  File "C:\Python314\Lib\threading.py", line 1082, in _bootstrap_inner
+    self._context.run(self.run)
+    ~~~~~~~~~~~~~~~~~^^^^^^^^^^
+  File "C:\Python314\Lib\threading.py", line 1024, in run
+    self._target(*self._args, **self._kwargs)
+    ~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Python314\Lib\subprocess.py", line 1613, in _readerthread
+    buffer.append(fh.read())
+                  ~~~~~~~^^
+  File "<frozen codecs>", line 325, in decode
+UnicodeDecodeError: 'utf-8' codec can't decode byte 0xa0 in position 33: invalid start byte
+F....Exception in thread Thread-679 (_readerthread):
+Traceback (most recent call last):
+  File "C:\Python314\Lib\threading.py", line 1082, in _bootstrap_inner
+    self._context.run(self.run)
+    ~~~~~~~~~~~~~~~~~^^^^^^^^^^
+  File "C:\Python314\Lib\threading.py", line 1024, in run
+    self._target(*self._args, **self._kwargs)
+    ~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Python314\Lib\subprocess.py", line 1613, in _readerthread
+    buffer.append(fh.read())
+                  ~~~~~~~^^
+  File "<frozen codecs>", line 325, in decode
+UnicodeDecodeError: 'utf-8' codec can't decode byte 0xa0 in position 33: invalid start byte
+.....Exception in thread Thread-683 (_readerthread):
+Traceback (most recent call last):
+  File "C:\Python314\Lib\threading.py", line 1082, in _bootstrap_inner
+    self._context.run(self.run)
+    ~~~~~~~~~~~~~~~~~^^^^^^^^^^
+  File "C:\Python314\Lib\threading.py", line 1024, in run
+    self._target(*self._args, **self._kwargs)
+    ~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Python314\Lib\subprocess.py", line 1613, in _readerthread
+    buffer.append(fh.read())
+                  ~~~~~~~^^
+  File "<frozen codecs>", line 325, in decode
+UnicodeDecodeError: 'utf-8' codec can't decode byte 0xa0 in position 33: invalid start byte
+.......................................................................................Exception in thread Thread-745 
+(_readerthread):
+Traceback (most recent call last):
+  File "C:\Python314\Lib\threading.py", line 1082, in _bootstrap_inner
+    self._context.run(self.run)
+    ~~~~~~~~~~~~~~~~~^^^^^^^^^^
+  File "C:\Python314\Lib\threading.py", line 1024, in run
+    self._target(*self._args, **self._kwargs)
+    ~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Python314\Lib\subprocess.py", line 1613, in _readerthread
+    buffer.append(fh.read())
+                  ~~~~~~~^^
+  File "<frozen codecs>", line 325, in decode
+UnicodeDecodeError: 'utf-8' codec can't decode byte 0xa0 in position 33: invalid start byte
+E.......................Exception in thread Thread-759 (_readerthread):
+Traceback (most recent call last):
+  File "C:\Python314\Lib\threading.py", line 1082, in _bootstrap_inner
+    self._context.run(self.run)
+    ~~~~~~~~~~~~~~~~~^^^^^^^^^^
+  File "C:\Python314\Lib\threading.py", line 1024, in run
+    self._target(*self._args, **self._kwargs)
+    ~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Python314\Lib\subprocess.py", line 1613, in _readerthread
+    buffer.append(fh.read())
+                  ~~~~~~~^^
+  File "<frozen codecs>", line 325, in decode
+UnicodeDecodeError: 'utf-8' codec can't decode byte 0xa0 in position 33: invalid start byte
+E.......Exception in thread Thread-781 (_readerthread):
+Traceback (most recent call last):
+  File "C:\Python314\Lib\threading.py", line 1082, in _bootstrap_inner
+    self._context.run(self.run)
+    ~~~~~~~~~~~~~~~~~^^^^^^^^^^
+  File "C:\Python314\Lib\threading.py", line 1024, in run
+    self._target(*self._args, **self._kwargs)
+    ~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Python314\Lib\subprocess.py", line 1613, in _readerthread
+    buffer.append(fh.read())
+                  ~~~~~~~^^
+  File "<frozen codecs>", line 325, in decode
+UnicodeDecodeError: 'utf-8' codec can't decode byte 0xa0 in position 33: invalid start byte
+E....................................................................
+======================================================================
+ERROR: test_dead_pid_is_not_ours (test_dashboard.PidfileTest.test_dead_pid_is_not_ours)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "C:\proyectos\binance-futures-microstructure-bot\tests\test_dashboard.py", line 344, in 
+test_dead_pid_is_not_ours
+    self.assertFalse(pid_is_ours(999999, None))
+                     ~~~~~~~~~~~^^^^^^^^^^^^^^
+  File "C:\proyectos\binance-futures-microstructure-bot\src\microstructure_probe\host_process.py", line 133, in 
+pid_is_ours
+    image, creation = process_info(pid)
+                      ~~~~~~~~~~~~^^^^^
+  File "C:\proyectos\binance-futures-microstructure-bot\src\microstructure_probe\host_process.py", line 42, in 
+process_info
+    ).stdout.strip().splitlines()
+             ^^^^^
+AttributeError: 'NoneType' object has no attribute 'strip'
+
+======================================================================
+ERROR: test_live_python_pid_is_ours (test_dashboard.PidfileTest.test_live_python_pid_is_ours)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "C:\proyectos\binance-futures-microstructure-bot\tests\test_dashboard.py", line 353, in 
+test_live_python_pid_is_ours
+    self.assertFalse(pid_is_ours(proc.pid, None))
+                     ~~~~~~~~~~~^^^^^^^^^^^^^^^^
+  File "C:\proyectos\binance-futures-microstructure-bot\src\microstructure_probe\host_process.py", line 133, in 
+pid_is_ours
+    image, creation = process_info(pid)
+                      ~~~~~~~~~~~~^^^^^
+  File "C:\proyectos\binance-futures-microstructure-bot\src\microstructure_probe\host_process.py", line 42, in 
+process_info
+    ).stdout.strip().splitlines()
+             ^^^^^
+AttributeError: 'NoneType' object has no attribute 'strip'
+
+======================================================================
+ERROR: test_stale_pidfile_round_trip (test_dashboard.PidfileTest.test_stale_pidfile_round_trip)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "C:\proyectos\binance-futures-microstructure-bot\tests\test_dashboard.py", line 363, in 
+test_stale_pidfile_round_trip
+    dashboard.write_pidfile(999999, 8091, "http://127.0.0.1:8091")
+    ~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\proyectos\binance-futures-microstructure-bot\src\microstructure_probe\dashboard.py", line 125, in 
+write_pidfile
+    _, creation = process_info(pid)
+                  ~~~~~~~~~~~~^^^^^
+  File "C:\proyectos\binance-futures-microstructure-bot\src\microstructure_probe\host_process.py", line 42, in 
+process_info
+    ).stdout.strip().splitlines()
+             ^^^^^
+AttributeError: 'NoneType' object has no attribute 'strip'
+
+======================================================================
+ERROR: test_behavioral_parity (test_host_process_boundary.CompatibilityTest.test_behavioral_parity)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "C:\proyectos\binance-futures-microstructure-bot\tests\test_host_process_boundary.py", line 102, in 
+test_behavioral_parity
+    self.assertEqual(hp.process_info(99999999), (None, None))
+                     ~~~~~~~~~~~~~~~^^^^^^^^^^
+  File "C:\proyectos\binance-futures-microstructure-bot\src\microstructure_probe\host_process.py", line 42, in 
+process_info
+    ).stdout.strip().splitlines()
+             ^^^^^
+AttributeError: 'NoneType' object has no attribute 'strip'
+
+======================================================================
+ERROR: test_spawn_hides_console_and_registers 
+(test_process_identity.StartProbeNoWindowTest.test_spawn_hides_console_and_registers)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "C:\proyectos\binance-futures-microstructure-bot\tests\test_process_identity.py", line 130, in 
+test_spawn_hides_console_and_registers
+    status = control.status()
+  File "C:\proyectos\binance-futures-microstructure-bot\src\microstructure_probe\control.py", line 437, in status
+    record, wrote = _reconcile_stale_record()
+                    ~~~~~~~~~~~~~~~~~~~~~~~^^
+  File "C:\proyectos\binance-futures-microstructure-bot\src\microstructure_probe\control.py", line 420, in 
+_reconcile_stale_record
+    wrote, _ = update_registry(_reconcile)
+               ~~~~~~~~~~~~~~~^^^^^^^^^^^^
+  File "C:\proyectos\binance-futures-microstructure-bot\src\microstructure_probe\control.py", line 238, in 
+update_registry
+    new_record, value = transform(record)
+                        ~~~~~~~~~^^^^^^^^
+  File "C:\proyectos\binance-futures-microstructure-bot\src\microstructure_probe\control.py", line 410, in _reconcile
+    if is_canonical_pid(rec):
+       ~~~~~~~~~~~~~~~~^^^^^
+  File "C:\proyectos\binance-futures-microstructure-bot\src\microstructure_probe\control.py", line 311, in 
+is_canonical_pid
+    return bool(pid_is_ours(int(record["pid"]),
+                ~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^
+                            record.get("create_time")))
+                            ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\proyectos\binance-futures-microstructure-bot\src\microstructure_probe\host_process.py", line 133, in 
+pid_is_ours
+    image, creation = process_info(pid)
+                      ~~~~~~~~~~~~^^^^^
+  File "C:\proyectos\binance-futures-microstructure-bot\src\microstructure_probe\host_process.py", line 42, in 
+process_info
+    ).stdout.strip().splitlines()
+             ^^^^^
+AttributeError: 'NoneType' object has no attribute 'strip'
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "C:\Python314\Lib\shutil.py", line 701, in _rmtree_unsafe
+    os.unlink(fullname)
+    ~~~~~~~~~^^^^^^^^^^
+PermissionError: [WinError 32] El proceso no tiene acceso al archivo porque est├í siendo utilizado por otro proceso: 
+'C:\\Users\\adonm\\AppData\\Local\\Temp\\tmp1k2x00_e\\probe-20261013T104817Z.log'
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "C:\proyectos\binance-futures-microstructure-bot\tests\test_process_identity.py", line 113, in 
+test_spawn_hides_console_and_registers
+    with tempfile.TemporaryDirectory() as tmp:
+         ~~~~~~~~~~~~~~~~~~~~~~~~~~~^^
+  File "C:\Python314\Lib\tempfile.py", line 971, in __exit__
+    self.cleanup()
+    ~~~~~~~~~~~~^^
+  File "C:\Python314\Lib\tempfile.py", line 975, in cleanup
+    self._rmtree(self.name, ignore_errors=self._ignore_cleanup_errors)
+    ~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Python314\Lib\tempfile.py", line 955, in _rmtree
+    _shutil.rmtree(name, onexc=onexc)
+    ~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^
+  File "C:\Python314\Lib\shutil.py", line 852, in rmtree
+    _rmtree_impl(path, dir_fd, onexc)
+    ~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Python314\Lib\shutil.py", line 705, in _rmtree_unsafe
+    onexc(os.unlink, fullname, err)
+    ~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Python314\Lib\tempfile.py", line 930, in onexc
+    _os.unlink(path)
+    ~~~~~~~~~~^^^^^^
+PermissionError: [WinError 32] El proceso no tiene acceso al archivo porque est├í siendo utilizado por otro proceso: 
+'C:\\Users\\adonm\\AppData\\Local\\Temp\\tmp1k2x00_e\\probe-20261013T104817Z.log'
+
+======================================================================
+ERROR: test_abort_real_sleeper_preserves_foreign 
+(test_supervisor.AbortIntegrationTest.test_abort_real_sleeper_preserves_foreign)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "C:\proyectos\binance-futures-microstructure-bot\tests\test_supervisor.py", line 395, in 
+test_abort_real_sleeper_preserves_foreign
+    out = pc.supervise(interval_s=5.0, timeout_s=60.0)
+  File "C:\proyectos\binance-futures-microstructure-bot\src\microstructure_probe\control.py", line 1875, in supervise
+    outcome = supervise_once()
+  File "C:\proyectos\binance-futures-microstructure-bot\src\microstructure_probe\control.py", line 1837, in 
+supervise_once
+    result = enforce_abort(decision, owner_kind="supervisor")
+  File "C:\proyectos\binance-futures-microstructure-bot\src\microstructure_probe\control.py", line 1701, in 
+enforce_abort
+    if not pid_is_ours(pid, expected_ctime):
+           ~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^
+  File "C:\proyectos\binance-futures-microstructure-bot\src\microstructure_probe\host_process.py", line 133, in 
+pid_is_ours
+    image, creation = process_info(pid)
+                      ~~~~~~~~~~~~^^^^^
+  File "C:\proyectos\binance-futures-microstructure-bot\src\microstructure_probe\host_process.py", line 42, in 
+process_info
+    ).stdout.strip().splitlines()
+             ^^^^^
+AttributeError: 'NoneType' object has no attribute 'strip'
+
+======================================================================
+ERROR: test_dead_pid_not_ours (test_supervisor.IdentityTest.test_dead_pid_not_ours)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "C:\proyectos\binance-futures-microstructure-bot\tests\test_supervisor.py", line 349, in test_dead_pid_not_ours
+    self.assertFalse(dash.pid_is_ours(99999999, "STAMP"))
+                     ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^
+  File "C:\proyectos\binance-futures-microstructure-bot\src\microstructure_probe\host_process.py", line 133, in 
+pid_is_ours
+    image, creation = process_info(pid)
+                      ~~~~~~~~~~~~^^^^^
+  File "C:\proyectos\binance-futures-microstructure-bot\src\microstructure_probe\host_process.py", line 42, in 
+process_info
+    ).stdout.strip().splitlines()
+             ^^^^^
+AttributeError: 'NoneType' object has no attribute 'strip'
+
+======================================================================
+ERROR: test_active_shape (test_supervisor.SupervisorStatusTest.test_active_shape)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "C:\proyectos\binance-futures-microstructure-bot\tests\test_supervisor.py", line 330, in test_active_shape
+    sup = pc.status()["supervisor"]
+          ~~~~~~~~~^^
+  File "C:\proyectos\binance-futures-microstructure-bot\src\microstructure_probe\control.py", line 437, in status
+    record, wrote = _reconcile_stale_record()
+                    ~~~~~~~~~~~~~~~~~~~~~~~^^
+  File "C:\proyectos\binance-futures-microstructure-bot\src\microstructure_probe\control.py", line 420, in 
+_reconcile_stale_record
+    wrote, _ = update_registry(_reconcile)
+               ~~~~~~~~~~~~~~~^^^^^^^^^^^^
+  File "C:\proyectos\binance-futures-microstructure-bot\src\microstructure_probe\control.py", line 238, in 
+update_registry
+    new_record, value = transform(record)
+                        ~~~~~~~~~^^^^^^^^
+  File "C:\proyectos\binance-futures-microstructure-bot\src\microstructure_probe\control.py", line 410, in _reconcile
+    if is_canonical_pid(rec):
+       ~~~~~~~~~~~~~~~~^^^^^
+  File "C:\proyectos\binance-futures-microstructure-bot\src\microstructure_probe\control.py", line 311, in 
+is_canonical_pid
+    return bool(pid_is_ours(int(record["pid"]),
+                ~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^
+                            record.get("create_time")))
+                            ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\proyectos\binance-futures-microstructure-bot\src\microstructure_probe\host_process.py", line 133, in 
+pid_is_ours
+    image, creation = process_info(pid)
+                      ~~~~~~~~~~~~^^^^^
+  File "C:\proyectos\binance-futures-microstructure-bot\src\microstructure_probe\host_process.py", line 42, in 
+process_info
+    ).stdout.strip().splitlines()
+             ^^^^^
+AttributeError: 'NoneType' object has no attribute 'strip'
+
+======================================================================
+FAIL: test_stale_supervision_kills_only_watched 
+(test_sentinel.SentinelAbortIntegrationTest.test_stale_supervision_kills_only_watched)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "C:\proyectos\binance-futures-microstructure-bot\tests\test_sentinel.py", line 271, in 
+test_stale_supervision_kills_only_watched
+    self.assertTrue(out.get("aborted"))
+    ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^
+AssertionError: False is not true
+
+----------------------------------------------------------------------
+Ran 1036 tests in 199.418s
+
+FAILED (failures=1, errors=8)
