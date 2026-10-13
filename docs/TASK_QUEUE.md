@@ -3,7 +3,11 @@ R1-R7 9/9 + dirigidas 68/68 + comparador 10/10; barrera 1029 (1F+8E preexistente
 contrastados en base). Resta: commits selectivos, push revision, matriz de entrega.
 Sin merge/force, sesiones, paper, ordenes ni gates.
 
-## Correccion tecnica de14ac1-base (2026-10-13, review/correccion-tecnica-de14ac1, sin push aun)
+## Bot + V2 observacion (2026-10-13, review/bot-dashboard-v2-observacion, sin push aun)
+Matriz/ciclo/preflight + ciclo aislado 4/4 + preflight 3/3 + vitest 24/24.
+Resta: barrera completa, commits selectivos, push revision, entrega. Sin gates.
+
+## Correccion tecnica de14ac1-base (2026-10-13, review/correccion-tecnica-de14ac1; push 6fd6091 completado)
 Comparador M6a/M6b/M7/M8 + SELF (automatizado, 10/10) + re-verificacion MATCH legitima.
 Motor: split realizado/abierto + costes hipoteticos + funding qty x mark/identidad/dedup/gaps
 (contrato v4.1). Runner H1/H2/H3 por grupo + identidad por indice. Incidente v2->v3

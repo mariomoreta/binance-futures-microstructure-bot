@@ -1,4 +1,13 @@
-## Entrega nueve archivos 6fd6091-base (2026-10-13, review/entrega-nueve-archivos-6fd6091, sin push aun)
+## Bot + V2 observacion (2026-10-13, review/bot-dashboard-v2-observacion, sin push aun)
+V2 checkpoint 27b7af5 (mas reciente; contiene DASH-V2-47) como interfaz
+principal; Python SSR a LEGADO (sin semanticas contradictorias).
+Matriz 10 funciones + funding en 3 niveles + ciclo/aceptacion + preflight
+medido (docs/OBSERVATION_RUN_MATRIX|CYCLE|STORAGE_PREFLIGHT_CONTRACT).
+Kronos/IA diferidos (F-KRONOS-01). V2 SELECT-only verificado; gates 2/9
+vs backend v10/v3 (fail-closed). Vitest local 24/24; visual 27b7af5
+PENDIENTE (sin servicios). Sin corridas reales, paper, ordenes ni gates.
+
+## Entrega nueve archivos 6fd6091-base (2026-10-13; push review/entrega-nueve-archivos-6fd6091 completado en 3cbbb1c)
 Base 6fd6091 (= remoto). Nueve archivos tecnicos: comparador+M6-M8 auto (10/10),
 motor (cap uncovered al holding, calendario monocontrato, mark stale excluido,
 fees salida a exit value; 1 assert legacy corregido y documentado), runner

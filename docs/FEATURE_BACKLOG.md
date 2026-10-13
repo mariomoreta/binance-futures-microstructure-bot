@@ -1,5 +1,13 @@
 
-## Entrega nueve archivos 6fd6091-base — 2026-10-13 (review/entrega-nueve-archivos-6fd6091, sin push aun)
+## Bot + Dashboard V2 para corridas de observacion — 2026-10-13 (review/bot-dashboard-v2-observacion, sin push aun)
+V2 (checkpoint 27b7af5, rama dash-v2-03-token-detail) como interfaz principal
+para observacion/evaluacion; dashboard Python pasa a LEGADO (funcional, no
+primario; sin semanticas contradictorias). Agentes IA + Kronos: ver
+F-KRONOS-01 (PROPOSED, diferido, fuera de alcance; sin dependencias ni
+integraciones; no es requisito de arranque). Pendientes tecnicos previos se
+mantienen. Gates sin avance.
+
+## Entrega nueve archivos 6fd6091-base — 2026-10-13 (push review/entrega-nueve-archivos-6fd6091 completado)
 Cierres tecnicos (habilitante, sin IDs nuevos): cap holding, calendario
 monocontrato, mark stale, fees exit-value (1 assert legacy corregido),
 symbol en manifiesto, handoff 27b7af5 real (gates 2/9 vs v10/v3).
@@ -7,7 +15,12 @@ R1-R7 + dirigidas + comparador verdes; barrera con 9 preexistentes
 contrastados. Distincion: implementacion DONE; validacion financiera NOT
 IMPLEMENTED. Gates sin avance.
 
-## Correccion tecnica de14ac1-base — 2026-10-13 (review/correccion-tecnica-de14ac1, sin push aun)
+## Bot + V2 observacion — 2026-10-13 (review/bot-dashboard-v2-observacion, sin push aun)
+V2 principal (27b7af5 a continuar) + legado Python (sin contradicciones) +
+matriz/ciclo/aceptacion/preflight + F-KRONOS-01 diferido. Sin IDs nuevos de
+producto salvo F-KRONOS-01 (PROPOSED). Gates sin avance.
+
+## Correccion tecnica de14ac1-base — 2026-10-13 (review/correccion-tecnica-de14ac1; push 6fd6091 completado)
 Motor/contratos (habilitante, sin IDs nuevos): split realizado/abierto
 (n_realized/n_open/open_positions; curva realizada; costes hipoteticos),
 funding qty x mark + identidad/dedup/gaps (contrato v4.1), runner por
@@ -166,6 +179,28 @@ it does not replace them. Authority stays where it was recorded
 | F-CORE-01 | Completed Phase 1 foundations (index) | DECIDED | VERIFIED | P1-00…P1-11C, P1-10R |
 
 ---
+
+## F-KRONOS-01 — Agentes IA + Kronos (investigacion futura)
+
+- **Product objective:** explorar, solo como investigacion futura, si
+  agentes IA y la fuente de datos Kronos pueden aportar contexto de
+  mercado (metadata agregada, nunca fills, PnL ni backtest de Binance).
+- **Origin / decision date:** objetivo Bot+V2 2026-10-13 (propuesta
+  registrada, NO aprobada para implementacion).
+- **Approval status:** PROPOSED (deferral explicito). **Implementation
+  status:** NOT IMPLEMENTED. Cero dependencias instaladas, cero
+  integraciones, cero codigo. No es requisito de arranque de ninguna
+  corrida de observacion/evaluacion ni del ciclo de uso V2.
+- **Target phase:** futura e indefinida (fuera del alcance actual:
+  observacion + V2 como interfaz principal).
+- **Dependencies:** ninguna (diseno pendiente de aprobacion previa).
+- **Acceptance criteria (si algun dia se aprueba):** proveedor etiquetado
+  obligatorio; jamas fuente de mark-price, liquidez, fills, PnL o
+  backtest; revision legal previa si aplica.
+- **Evidence needed:** ninguna aun (nada que probar).
+- **Docs:** este backlog (unico registro hasta aprobacion).
+- **Open questions:** valor real, estabilidad de acceso, credenciales.
+- **Last update:** 2026-10-13 (diferido).
 
 ## F-STATE-PY-01 — Market State Intelligence, Python dashboard
 
