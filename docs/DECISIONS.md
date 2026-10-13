@@ -1210,3 +1210,51 @@ mecanica etiquetada); RSI/ATR candidatos; formacion caller-declared.
 INCIDENTE: test DashboardState sin history_store migro el historico
 canonico v2->v3 (aditivo, conteos intactos, cero linkage filtrado);
 corregido con inyeccion + barrera tras cada archivo de tests nuevo.
+
+## Correccion tecnica de14ac1-base - 2026-10-13 (append-only, rama review/correccion-tecnica-de14ac1)
+
+Contabilidad (motor backtest-offline/v4, aditivo, bateria v4 intacta):
+realizados vs abiertas vs marcas separados (n_realized/n_open/open_positions
+con mark_ms/mark_px; total_net_realized/expectancy_net_realized/
+equity_curve_realized en orden de cierre efectivo/max_drawdown_realized);
+open_at_end no alimenta metricas realizadas (realized_net null en marcas);
+costes de salida hipoteticos (exit-leg en marcas) separados de ejecutados
+(costs_exit_hypothetical vs costs_executed). Legacy totals/curva sin cambios
+(incluyen marcas; no citarlos como realizados). Ver contrato v4.1.
+
+Funding (v4 aditivo): exposicion = cantidad vigente x mark de liquidacion
+(open causal de la vela que cubre el settlement; sin vela -> unknown-excluded,
+nunca precio cero); identidad del contrato en cada evento (symbol + calendar
+symbol/version/source, UNKNOWN jamas inventado); duplicados exactos
+deduplicados y contados, conflicto mismo-ms-tasa-distinta RECHAZA el run;
+cobertura desconocida acotada al holding (uncovered head/tail + gap_ms
+interior); completitud jamas inferida por primer/ultimo timestamp
+(assess() con cadencia nominal; sin cadencia -> UNKNOWN); faltantes y
+fallback sintetico explicitos (basis settled/unknown-excluded/
+synthetic-fallback; sin fidelidad venue inventada).
+
+Runner (scripts/run_family_evaluation.py, sin reconstruir): configuracion
+familia/version por grupo (GROUP_FAMILY H1/H2/H3; baseline usa default CLI);
+H3 valido ya no se descarta por config H1; identidad por indice de fila +
+event_ids en manifiesto (colisiones mismo-triple en grupos distintos
+imposibles); demo emite H1/H2/H3 acorde a cada grupo (8 eventos);
+manifiesto suma n_realized/n_open/total_net_realized/max_drawdown_realized.
+
+Aislamiento/incidente (reconciliacion, sin tocar el canonico): el incidente
+de migracion v2->v3 del historico canonico por side-effect de test queda
+registrado como aditivo (conteos intactos, cero linkage filtrado al
+historico: store de investigacion sin columnas run_id; verificado read-only
+2026-10-13: historical.db con tablas research v3 intactas, microprobe.db
+operacional separada). Limites: no se prueba ausencia de otras escrituras;
+filas borradas por el bug de bounding P1-14B.1 siguen irrecuperables
+(documentado, no reconstruido). No se repara ni revierte el canonico,
+ni silenciosa ni explicitamente, en esta tarea. Barrera
+scripts/audit_test_isolation.py corre tras cada archivo de tests nuevo.
+
+Contratos V2 (handoff, sin editar frontend/): incompatibilidad explicita
+operacional-v10 vs historico-v3 (ver docs/DASHBOARD_V2_27B7AF5_READ_HANDOFF.md):
+el frontend exacto 27b7af5 lee microprobe.db read-only con supuestos v9
+(schema_version:9 hardcodeado) y no lee historical.db v3; el backend
+operacional es v10 (tablas v9 + linkage run_id). Consumo solo por contratos
+versionados con chequeo explicito de presencia de tablas (R6); la fundacion
+antigua de frontend/ no se edita como sustituto del handoff.

@@ -1,0 +1,46 @@
+# Correccion tecnica de14ac1-base — verificacion (2026-10-13, review/correccion-tecnica-de14ac1)
+Base: de14ac1. Rama review (phase1/main intactos). PYTHONUTF8=1.
+
+## 1. Regresiones dirigidas: 59/59 OK
+Comando: PYTHONPATH=src python -m unittest tests.test_backtest_accounting_split
+  tests.test_backtest_funding_assessment tests.test_backtest_funding
+  tests.test_backtest_offline tests.test_backtest_offline_corrections
+  tests.test_family_runner_h1h2h3 tests.test_family_evaluation
+Resultado: Ran 59 tests, OK (6 accounting-split + 10 funding-assessment +
+  resto bateria v4 + runner existentes, sin tocar archivos de tests previos).
+
+## 2. Comparador: 10/10 OK
+Comando: python scripts/regress_compare_cases.py (temp, originales intactos)
+M1 valor->missing exit 1 | M2 missing->valor exit 1 | M3 numerico exit 1 |
+M4 estructura exit 1 | M5 archivo ausente exit 2 | M6a +inf vs -inf exit 1 |
+M6b finito vs -inf exit 1 | M7 csv vacio exit 2 | M8 csv ilegible exit 2 |
+SELF pristine exit 0. ALL 10 CASES OK.
+Re-verificacion legitima (lumia_repro2, analyze 0 + finish 0): MATCH exit 0,
+differences 0, incomplete []. Evidencia: CASE_STUDY_WUSDT_LUMIA_COMPARISON.json.
+
+## 3. Suite canonica + barrera (scripts/audit_test_isolation.py)
+Comando: python scripts/audit_test_isolation.py --out <temp>/barrier_ct.json -q
+Resultado: tests_run=1020, 1011 pass, 1 failure + 8 errors, BARRIER_EXIT=1.
+Los 9 son preexistentes ambientales (identidad de procesos Windows:
+tasklist/wmic; stdout None en process_info + 1 aborto sentinel que depende
+de lo mismo), VERIFICADOS identicos en worktree aislado de la base de14ac1
+(13-test subset -> 6 errors iguales; sentinel/identity/abort subset ->
+misma 1F+2E). Ninguno toca backtest/runner/comparador/docs.
+Aislamiento: prohibited=0, blocked=0, canonical_effective=0,
+residual_ro=1 (URI read-only permitida), hashes_equal=True,
+data_diff vacio, logs_diff vacio. Canonico intacto (solo lectura mode=ro
+fuera de la suite).
+
+## 4. Matriz por requisito
+P1 comparador (inf con signo/posicion, csv vacio/ilegible, M1-M8+SELF
+  automatizados, cabeceras sin-push corregidas): DONE (codigo + 10/10 + docs).
+P2 contabilidad (realizados/abiertas/marcas, open_at_end excluido, costes
+  hipoteticos, curva por cierre efectivo): DONE (motor aditivo + 6 tests).
+P3 funding (qty x mark, identidad, dedup/rechazo, cobertura acotada,
+  gaps, faltantes/fallback explicitos): DONE (motor aditivo + 10 tests).
+P4 runner (familia por grupo incl. H3, identidad por indice, demo/ext
+  H1/H2/H3): DONE (runner + 3 tests + 3 existentes verdes).
+P5 aislamiento/contratos (incidente v2->v3 reconciliado sin tocar canonico;
+  v10/v3 explicito; handoff 27b7af5; frontend/ intacto): DONE (docs).
+W/LUMIA sigue investigacion descriptiva (IN-SAMPLE, sin OOS/calibracion/
+  rentabilidad). Sin merge, despliegues, sesiones, paper, ordenes, gates.

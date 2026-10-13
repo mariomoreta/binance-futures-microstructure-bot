@@ -1,5 +1,16 @@
 
-## Cierre W/LUMIA documental — 2026-10-13 (sin push aun)
+## Correccion tecnica de14ac1-base — 2026-10-13 (review/correccion-tecnica-de14ac1, sin push aun)
+Motor/contratos (habilitante, sin IDs nuevos): split realizado/abierto
+(n_realized/n_open/open_positions; curva realizada; costes hipoteticos),
+funding qty x mark + identidad/dedup/gaps (contrato v4.1), runner por
+familia H1/H2/H3 + identidad por indice. Comparador M6a/M6b/M7/M8/SELF.
+Handoff 27b7af5 (v10/v3 explicito; frontend/ intacto). Incidente v2->v3
+reconciliado. Distincion: reproduccion DONE; integracion dashboard
+parcial-no-verificada; validacion financiera NOT IMPLEMENTED. Pendientes:
+despliegue/operacion de lo corregido, OOS/calibracion/rentabilidad.
+Gates sin avance.
+
+## Cierre W/LUMIA documental — 2026-10-13 (push phase1 bc327f1 completado)
 Reproduccion de caso (sin ID de producto; habilitante/documental):
 addendum v2 en CASE_STUDY + 5 evidencias (hashes, comparacion,
 logs, env, script). Distincion: reproduccion DONE; integracion dashboard
@@ -10,7 +21,7 @@ frontend estatico dash-v2-03-token-detail, no SSR backend. Pendientes
 correctivos NO resueltos: funding, posiciones abiertas, runner, incidente
 de aislamiento, schemas V2. Gates sin avance.
 
-## Correccion V2 + comparador — 2026-10-13 (review/w-lumia-correccion-bc327f1, sin push aun)
+## Correccion V2 + comparador — 2026-10-13 (review/w-lumia-correccion-bc327f1; push de14ac1 completado)
 Addendum (historia preservada): V2 `27b7af59cb1e313169f49655161d66e043b5412d`
 = rama `dash-v2-03-token-detail` CON rutas BFF (`api/v1/...`) + adapters
 SQLite (`canonical-market.ts`, `historicalRead`); integracion parcial,

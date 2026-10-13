@@ -53,3 +53,29 @@ purging overlaps and does NOT validate out-of-sample.
 
 UNWIRED on purpose. Wiring needs: a versioned real dataset id, an
 authorized study run, and frontend review of the exact backend SHA.
+
+## Amendment v4.1 — realized/open/marks split + funding assessment (2026-10-13, additive, engine still `backtest-offline/v4`)
+
+History above preserved. New fields are ADDITIVE; legacy
+`total_net`/`expectancy_net`/`equity_curve`/`max_drawdown` still include
+open marks (do not cite them as realized performance).
+
+| Field | Type | Meaning |
+|---|---|---|
+| `n_realized` / `n_open` / `open_positions[]` | integers/array | closed trades vs data-end marks; marks carry mark_ms/mark_px/qty/cost and feed NOTHING realized |
+| `total_net_realized` / `expectancy_net_realized` | floats | realized-only sums (open marks excluded) |
+| `equity_curve_realized[]` | {exit_ms, equity} | realized equity in effective-close-time order |
+| `max_drawdown_realized` | float | realized-only peak-to-trough |
+| `exit_executed` / `realized_net` (per trade) | bool/float\|null | executed flag; null when open |
+| `entry_spread_slip` / `exit_spread_slip`, `entry_fees` / `exit_fees` | floats | exit leg on an open mark is hypothetical |
+| `costs_executed` / `costs_exit_hypothetical` (+ totals) | floats | hypothetical exit costs separated from executed |
+| funding events | objects | `basis`: `settled` (qty x causal candle-open mark, with contract identity) \| `unknown-excluded` (no covering candle) \| `synthetic-fallback` (interval path marker) |
+| `funding_gap_ms` / `funding_unknown` (per trade) | integer | interior-gap overlap with holding; unresolvable settlements |
+| `funding_calendar` += `symbol`, `duplicates_deduped`, `complete`, `completeness_basis`, `gaps[]` | mixed | identity, exact-duplicate count, cadence-gap assessment (never first/last-inferred) |
+
+Funding exposure is now CURRENT QUANTITY x SETTLEMENT MARK (flat-price
+fixtures unchanged). Same-ms same-rate duplicates dedup (counted);
+same-ms different-rate REJECTS the run. Runner manifest: per-group
+`family`/`rules_version` (H1/H2/H3 map; baseline uses CLI default),
+`event_ids[]` (index-based identity), `n_realized`/`n_open`,
+`total_net_realized`, `max_drawdown_realized`.

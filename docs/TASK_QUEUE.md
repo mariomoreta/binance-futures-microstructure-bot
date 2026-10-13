@@ -1,4 +1,11 @@
-## Cierre W/LUMIA documental — reproduccion aislada (2026-10-13, sin push aun)
+## Correccion tecnica de14ac1-base (2026-10-13, review/correccion-tecnica-de14ac1, sin push aun)
+Comparador M6a/M6b/M7/M8 + SELF (automatizado, 10/10) + re-verificacion MATCH legitima.
+Motor: split realizado/abierto + costes hipoteticos + funding qty x mark/identidad/dedup/gaps
+(contrato v4.1). Runner H1/H2/H3 por grupo + identidad por indice. Incidente v2->v3
+reconciliado (canonico intacto); handoff 27b7af5 con incompatibilidad v10/v3. Resta:
+suite canonica + barrera, commits selectivos, push revision, entrega con matriz. Sin gates.
+
+## Cierre W/LUMIA documental — reproduccion aislada (2026-10-13; push phase1 bc327f1 completado)
 Reproduccion DONE acotado (addendum v2 + 5 evidencias). No es integracion
 dashboard ni validacion financiera. V2 exacto `27b7af59cb1e313169f49655161d66e043b5412d`
 = frontend estatico `dash-v2-03-token-detail`, no el SSR backend.
@@ -7,7 +14,7 @@ posiciones abiertas, runner, incidente de aislamiento, schemas V2.
 Resta: commits selectivos + push a rama de revision + entrega (SHA, URL,
 comparacion, remoto=local, evidencias, completados/pendientes). Sin gates.
 
-## Correccion V2 + comparador (2026-10-13, review/w-lumia-correccion-bc327f1, sin push aun)
+## Correccion V2 + comparador (2026-10-13, review/w-lumia-correccion-bc327f1; push de14ac1 completado)
 Addendum (historia preservada): V2 `27b7af59cb1e313169f49655161d66e043b5412d`
 tiene rutas BFF + adapters SQLite (ver `route.ts` live-movers y
 `canonical-market.ts` en Git); integracion parcial != feed

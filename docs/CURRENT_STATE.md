@@ -1,4 +1,20 @@
-## Cierre W/LUMIA documental — reproduccion aislada (2026-10-13, sin push aun)
+## Correccion tecnica de14ac1-base (2026-10-13, review/correccion-tecnica-de14ac1, sin push aun)
+Base de14ac1 (= remote review/w-lumia-correccion-bc327f1; phase1 remote=local en
+bc327f1; main intacto). Comparador: signo/posicion de inf + CSV vacio/ilegible
+(INCOMPLETE exit 2), regresiones M1-M8 + SELF automatizadas
+(scripts/regress_compare_cases.py, 10/10). Motor v4 aditivo: realizados vs
+abiertas vs marcas, open_at_end fuera de metricas realizadas, costes de
+salida hipoteticos separados, curva realizada por cierre efectivo; funding
+qty x mark con identidad, dedup/rechazo duplicados, cobertura acotada,
+gaps detectados, faltantes/fallback explicitos (contrato v4.1). Runner por
+familia/ version (H3 ya no descartado), identidad por indice, demo H1/H2/H3.
+Aislamiento: incidente v2->v3 reconciliado (aditivo, verificado read-only;
+canonico intacto); incompatibilidad v10/v3 explicita + handoff 27b7af5
+(docs/DASHBOARD_V2_27B7AF5_READ_HANDOFF.md; frontend/ intacto). Pendientes
+que siguen: despliegue/operacion de lo corregido, OOS/calibracion/
+rentabilidad, gates. Sin merge, sesiones, paper, ordenes.
+
+## Cierre W/LUMIA documental — reproduccion aislada (2026-10-13; push phase1 bc327f1 completado)
 Reproduccion de caso (DESCRIPTIVE/IN-SAMPLE): paquete en
 `binance_case_study/` (12/12 hashes OK), re-ejecutado en copia temporal
 (analyze 0, finish 0); coincidencia numerica parsed 0 diffs, bytes
@@ -14,7 +30,7 @@ backend (`dashboard.py`). Pendientes explicitos del prompt correctivo
 anterior (NO resueltos por este cierre): funding, posiciones abiertas,
 runner, incidente de aislamiento, schemas V2. Sin ordenes/paper/servicios.
 
-## Correccion V2 + comparador (2026-10-13, review/w-lumia-correccion-bc327f1, sin push aun)
+## Correccion V2 + comparador (2026-10-13, review/w-lumia-correccion-bc327f1; push de14ac1 completado)
 Addendum sobre el bloque anterior (historia preservada). V2 exacto
 `27b7af59cb1e313169f49655161d66e043b5412d` (rama `dash-v2-03-token-detail`,
 revisado con `git show`, sin tocar el checkout) SI tiene rutas BFF
