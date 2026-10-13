@@ -36,20 +36,37 @@ Temporal availability contract (v4; v3 rules kept, funding reworked):
 - Quantity accounting: filled_qty, filled_cost (raw), average entry =
   cost/qty. gross_pnl is pure price P&L on filled qty; friction =
   spread/slip drag + fees + signed funding; net = gross - friction.
+- Realized vs open vs marks (additive split; legacy totals UNCHANGED and
+  still include open marks — never cite them as realized): trades closed
+  inside the window (exit_executed) feed total_net_realized,
+  expectancy_net_realized, equity_curve_realized (effective-close-time
+  order) and max_drawdown_realized. Trades with reason "open_at_end" are
+  listed under open_positions with their mark (mark_ms/mark_px) and
+  contribute NOTHING to realized metrics; their exit-leg costs sit in
+  costs_exit_hypothetical (totaled separately), entry-leg costs in
+  costs_executed.
 - Funding (v4): per-SETTLEMENT accounting over an explicit versioned
   calendar — never a global interval swap. Each settlement carries its own
   timestamp and realized rate; a settlement applies iff
   entry_ms <= settlement_ms < exit_ms (boundary convention, tested both
-  edges). Exposure at settlement = cost filled at times <= settlement
-  (executed fills only; partial fills and pre-settlement exits included,
-  later fills excluded). Sign by direction (LONG pays / SHORT receives at
-  a positive rate). Holding time OUTSIDE the calendar's listed span
+  edges). Exposure at settlement = CURRENT QUANTITY x SETTLEMENT MARK
+  (causal candle open covering the settlement time; a settlement with no
+  covering candle is excluded as unknown, never zero-priced). Sign by
+  direction (LONG pays / SHORT receives at a positive rate). Every settled
+  event records contract identity (trade symbol + calendar symbol/
+  version/source; UNKNOWN when absent, never invented). Exact duplicate
+  settlements (same ms AND rate) are deduped and counted; same-ms
+  different-rate conflicts REJECT the run. Completeness is never inferred
+  from first/last timestamps: interior gaps against the nominal cadence
+  are reported (gap_ms), and without a nominal cadence completeness is
+  UNKNOWN. Holding time OUTSIDE the calendar's listed span
   [first, last] is reported as funding_uncovered_ms (truncated head/tail
   = unknown cadence continuity, never invented as zero-rate);
   inter-settlement spans inside the span are cadence (no payment due). `funding_estimated_bps`, when set, is CONTEXT ONLY (e.g. a
   forecast shown on a dashboard) and never enters accounting — estimated
   vs realized rates are different quantities. Without a calendar, the
-  legacy interval fallback applies (unchanged math, labeled as such).
+  legacy interval fallback applies (unchanged math, labeled as such, with
+  an explicit synthetic marker event).
 - Concurrency is enforced over signal-to-exit intervals (capacity commits
   at event time), per max_concurrent; simultaneous events compete
   deterministically in time order.
@@ -89,20 +106,78 @@ class FundingCalendar:
     `source` names provenance ("synthetic-fixture",
     "exchange-funding-history", ...); `interval_ms` is an informational
     nominal cadence only, never used for accounting.
+    `symbol` names the contract the calendar was pulled for (None =
+    UNKNOWN, never invented: events record it verbatim).
     """
+
     version: str = "synthetic/v1"
     source: str = "synthetic-fixture"
     interval_ms: Optional[int] = None
     settlements: Tuple[FundingSettlement, ...] = ()
+    symbol: Optional[str] = None
 
     def calendar_hash(self) -> str:
         payload = json.dumps({
             "version": self.version, "source": self.source,
-            "interval_ms": self.interval_ms,
+            "interval_ms": self.interval_ms, "symbol": self.symbol,
             "settlements": sorted((s.settlement_ms, s.rate_bps)
                                   for s in self.settlements),
         }, sort_keys=True, default=str)
         return hashlib.sha256(payload.encode("utf-8")).hexdigest()[:16]
+
+    def normalized(self) -> Tuple[Tuple[FundingSettlement, ...], int]:
+        """Deduped settlements + exact-duplicate count.
+
+        Exact duplicates (same timestamp AND rate) are rejected down to one
+        (double-payment protection). Same timestamp with a DIFFERENT rate
+        is a conflict: raises ValueError (never averaged silently).
+        """
+        seen: Dict[Tuple[int, float], FundingSettlement] = {}
+        duplicates = 0
+        by_time: Dict[int, float] = {}
+        for s in sorted(self.settlements, key=lambda s: s.settlement_ms):
+            key = (s.settlement_ms, s.rate_bps)
+            if key in seen:
+                duplicates += 1
+                continue
+            if (s.settlement_ms in by_time
+                    and by_time[s.settlement_ms] != s.rate_bps):
+                raise ValueError(
+                    "conflicting duplicate funding settlement at ms=%d: "
+                    "%r vs %r bps (calendar %s)" % (
+                        s.settlement_ms, by_time[s.settlement_ms],
+                        s.rate_bps, self.version))
+            seen[key] = s
+            by_time[s.settlement_ms] = s.rate_bps
+        ordered = tuple(seen[k] for k in sorted(seen))
+        return ordered, duplicates
+
+    def assess(self) -> Dict[str, Any]:
+        """Completeness assessment (never inferred from first/last only).
+
+        Interior gaps are detected against the nominal cadence: a span
+        between consecutive settlements wider than 1.5x `interval_ms` is a
+        GAP (unknown continuity inside the span, even though listed
+        settlements still settle). Without a nominal cadence
+        (`interval_ms is None`) interior completeness is UNKNOWN.
+        """
+        ordered, _ = self.normalized()
+        gaps = []
+        if self.interval_ms:
+            nominal = int(self.interval_ms)
+            for a, b in zip(ordered, ordered[1:]):
+                if b.settlement_ms - a.settlement_ms > 1.5 * nominal:
+                    gaps.append({"from_ms": a.settlement_ms,
+                                 "to_ms": b.settlement_ms})
+            complete = bool(ordered) and not gaps
+            basis = ("nominal-cadence-no-gaps" if complete
+                     else ("empty-calendar" if not ordered
+                           else "interior-gaps-present"))
+        else:
+            complete = False
+            basis = "unknown-basis (no nominal cadence; first/last prove nothing)"
+        return {"complete": complete, "completeness_basis": basis,
+                "gaps": gaps}
 
 
 @dataclass(frozen=True)
@@ -168,49 +243,114 @@ LIMITATIONS = [
 ]
 
 
-def _funding_for_trade(side: str,
-                       fill_ledger: List[Tuple[int, float]],
-                       entry_ms: int, exit_ms: int,
-                       cfg: BacktestConfig) -> Tuple[float, list, int, str]:
-    """Returns (total, events, uncovered_ms, model).
+def _settlement_mark(series: List[Candle],
+                      settlement_ms: int) -> Optional[float]:
+    """Causal mark at settlement: open of the candle holding that time.
 
-    Calendar path: each settlement with entry_ms <= t < exit_ms settles
-    sign * cost-filled-at-times-<=t * rate. Holding time covered by no
-    settlement accrues nothing and counts as uncovered (unknown, never
-    zero-invented). Fallback path: legacy full-interval math, unchanged.
+    The open is known exactly at its open_time, so it is usable at any
+    settlement_ms >= open_time. Returns None when no candle covers the
+    settlement (unknown mark: never invented from thin air).
+    """
+    mark: Optional[float] = None
+    for c in series:
+        if c.open_time_ms <= settlement_ms:
+            mark = c.open
+        else:
+            break
+    return mark
+
+
+def _overlap_ms(lo: int, hi: int, spans: List[Tuple[int, int]]) -> int:
+    total = 0
+    for (a, b) in spans:
+        total += max(0, min(hi, b) - max(lo, a))
+    return total
+
+
+def _funding_for_trade(side: str,
+                       fill_ledger: List[Tuple[int, float, float]],
+                       entry_ms: int, exit_ms: int,
+                       cfg: BacktestConfig, symbol: str,
+                       series: List[Candle]) -> Tuple[float, list, int, int,
+                                                     int, str, dict]:
+    """Returns (total, events, uncovered_ms, gap_ms, unknown, model, meta).
+
+    Calendar path: exposure is CURRENT QUANTITY x SETTLEMENT MARK
+    (causal candle open at the settlement, never entry-frozen cost), signed
+    by direction, per settlement with entry_ms <= t < exit_ms. Every event
+    carries contract identity (trade symbol + calendar symbol/version/
+    source, UNKNOWN when absent, never invented). Settlements with no
+    covering candle are EXCLUDED as unknown (counted, never zero-priced).
+    Holding outside the calendar span is uncovered (unknown, never zero);
+    holding inside detected interior gaps is reported as gap_ms.
+    Fallback path: legacy full-interval math, unchanged, with an explicit
+    synthetic marker event (no venue fidelity claimed).
     """
     sign = 1.0 if side == "LONG" else -1.0
     scale = cfg.cost_scale
     if cfg.funding_calendar is None:
-        filled_notional = sum(cost for (_, cost) in fill_ledger)
+        filled_notional = sum(cost for (_, cost, _) in fill_ledger)
         n = max(0, (exit_ms - entry_ms) // FUNDING_INTERVAL_MS)
         total = sign * filled_notional * cfg.funding_8h_bps / \
             10_000.0 * scale * n
-        return total, [], 0, "interval-fallback"
-    cal = sorted(cfg.funding_calendar.settlements,
-                 key=lambda s: s.settlement_ms)
+        marker = [{"basis": "synthetic-fallback",
+                   "detail": "legacy full-interval math; no venue calendar",
+                   "intervals": n, "symbol": symbol}]
+        return total, marker, 0, 0, 0, "interval-fallback", {}
+    cal = cfg.funding_calendar
+    ordered, _ = cal.normalized()  # conflicts raise here, before any math
+    assessment = cal.assess()
+    gap_spans = [(g["from_ms"], g["to_ms"]) for g in assessment["gaps"]]
     total = 0.0
     events: list = []
-    for s in cal:
+    unknown = 0
+    for s in ordered:
         if entry_ms <= s.settlement_ms < exit_ms:
-            held_cost = sum(cost for (t, cost) in fill_ledger
+            held_cost = sum(cost for (t, cost, _) in fill_ledger
                             if t <= s.settlement_ms)
-            amount = sign * held_cost * s.rate_bps / 10_000.0 * scale
+            held_qty = sum(qty for (t, _, qty) in fill_ledger
+                           if t <= s.settlement_ms)
+            mark = _settlement_mark(series, s.settlement_ms)
+            if mark is None:
+                unknown += 1
+                events.append({"basis": "unknown-excluded",
+                               "settlement_ms": s.settlement_ms,
+                               "rate_bps": s.rate_bps,
+                               "reason": "no covering candle: mark UNKNOWN",
+                               "symbol": symbol,
+                               "calendar_symbol": cal.symbol,
+                               "calendar_version": cal.version,
+                               "calendar_source": cal.source})
+                continue
+            amount = sign * held_qty * mark * s.rate_bps / 10_000.0 * scale
             total += amount
-            events.append({"settlement_ms": s.settlement_ms,
+            events.append({"basis": "settled",
+                           "settlement_ms": s.settlement_ms,
                            "rate_bps": s.rate_bps,
-                           "held_cost": held_cost, "amount": amount})
+                           "symbol": symbol,
+                           "calendar_symbol": cal.symbol,
+                           "calendar_version": cal.version,
+                           "calendar_source": cal.source,
+                           "held_qty": held_qty, "held_cost": held_cost,
+                           "settlement_mark_px": mark,
+                           "mark_source": "candle-open",
+                           "amount": amount})
     # UNKNOWN coverage, never zero-invented: holding time outside the
     # calendar's listed span [first, last] is silent about cadence
     # continuity (truncated head/tail). Inter-settlement spans inside the
-    # span are cadence (no payment due), not unknown.
-    if cal:
-        span_lo = cal[0].settlement_ms
-        span_hi = cal[-1].settlement_ms
+    # span are cadence (no payment due), not unknown — except detected
+    # interior gaps, reported separately as gap_ms.
+    if ordered:
+        span_lo = ordered[0].settlement_ms
+        span_hi = ordered[-1].settlement_ms
         uncovered = max(0, span_lo - entry_ms) + max(0, exit_ms - span_hi)
     else:
         uncovered = max(0, exit_ms - entry_ms)
-    return total, events, uncovered, "settlement-calendar"
+    gap_ms = _overlap_ms(entry_ms, exit_ms, gap_spans)
+    meta = {"calendar_complete": assessment["complete"],
+            "completeness_basis": assessment["completeness_basis"],
+            "calendar_gaps": assessment["gaps"]}
+    return total, events, uncovered, gap_ms, unknown, "settlement-calendar", meta
 
 
 def _check_supported(config: BacktestConfig) -> None:
@@ -272,6 +412,14 @@ def run_backtest(events: List[StudyEvent], candles: List[Candle],
     n_mismatched = 0
     open_intervals: List[Tuple[int, int]] = []
 
+    # Fail fast on calendar conflicts (same ms, different rates) before
+    # any replay math. Exact duplicates are deduped per trade below.
+    cal_duplicates = 0
+    cal_assessment: Dict[str, Any] = {}
+    if config.funding_calendar is not None:
+        _, cal_duplicates = config.funding_calendar.normalized()
+        cal_assessment = config.funding_calendar.assess()
+
     for ev in ordered_events:
         if ev.direction not in ("LONG", "SHORT"):
             continue
@@ -300,9 +448,10 @@ def run_backtest(events: List[StudyEvent], candles: List[Candle],
         filled_qty = 0.0
         filled_cost_raw = 0.0
         spread_slip = 0.0
+        entry_spread_slip = 0.0
         n_fills = 0
         remaining = config.notional_usdt
-        fill_ledger: List[Tuple[int, float]] = []
+        fill_ledger: List[Tuple[int, float, float]] = []
         cancelled_notional = 0.0
         entry_ms: Optional[int] = None
         exit_ms: Optional[int] = None
@@ -355,9 +504,10 @@ def run_backtest(events: List[StudyEvent], candles: List[Candle],
                     filled_qty += qty
                     filled_cost_raw += chunk
                     spread_slip += chunk * drag
+                    entry_spread_slip += chunk * drag
                     remaining -= chunk
                     n_fills += 1
-                    fill_ledger.append((c.open_time_ms, chunk))
+                    fill_ledger.append((c.open_time_ms, chunk, qty))
                     if entry_ms is None:
                         entry_ms = c.open_time_ms
                     last_known_px, last_known_ms = c.open, c.open_time_ms
@@ -414,15 +564,28 @@ def run_backtest(events: List[StudyEvent], candles: List[Candle],
         move = (exit_raw - avg_raw) if is_long else (avg_raw - exit_raw)
         gross = filled_qty * move
         exit_value = filled_qty * exit_raw
-        spread_slip += exit_value * drag
+        exit_spread_slip = exit_value * drag
+        spread_slip += exit_spread_slip
         filled_notional = filled_cost_raw
-        fees = filled_notional * config.fee_bps / 10_000.0 * \
-            config.cost_scale * 2.0
-        funding, funding_events, funding_uncovered_ms, funding_model = \
+        entry_fees = filled_notional * config.fee_bps / 10_000.0 * \
+            config.cost_scale
+        exit_fees = filled_notional * config.fee_bps / 10_000.0 * \
+            config.cost_scale
+        fees = entry_fees + exit_fees
+        funding, funding_events, funding_uncovered_ms, funding_gap_ms, \
+            funding_unknown, funding_model, funding_meta = \
             _funding_for_trade(ev.direction, fill_ledger, entry_ms, exit_ms,
-                               config)
+                               config, ev.symbol, series)
         friction = spread_slip + fees + funding
         net = gross - friction
+        exit_executed = not open_at_end
+        # Exit-leg costs on an open mark are HYPOTHETICAL (no executed
+        # exit); entry-leg costs always executed. Funding accrues over the
+        # actually-held span either way and stays whole in friction.
+        costs_exit_hypothetical = (exit_spread_slip + exit_fees) \
+            if open_at_end else 0.0
+        costs_executed = friction - costs_exit_hypothetical
+        realized_net = net if exit_executed else None
         trades.append({
             "symbol": ev.symbol, "direction": ev.direction,
             "family": ev.family, "rules_version": ev.rules_version,
@@ -430,12 +593,24 @@ def run_backtest(events: List[StudyEvent], candles: List[Candle],
             "exit_ms": exit_ms, "entry_px": avg_raw, "exit_px": exit_raw,
             "filled_qty": filled_qty, "filled_cost": filled_cost_raw,
             "gross_pnl": gross, "spread_slip_cost": spread_slip,
-            "fees": fees, "funding": funding, "friction": friction,
+            "entry_spread_slip": entry_spread_slip,
+            "exit_spread_slip": exit_spread_slip,
+            "fees": fees, "entry_fees": entry_fees, "exit_fees": exit_fees,
+            "funding": funding, "friction": friction,
             "funding_events": funding_events,
-            "funding_uncovered_ms": funding_uncovered_ms,
             "funding_model": funding_model,
+            "funding_uncovered_ms": funding_uncovered_ms,
+            "funding_gap_ms": funding_gap_ms,
+            "funding_unknown": funding_unknown,
+            "funding_symbol": ev.symbol,
+            "funding_complete": funding_meta.get("calendar_complete")
+            if funding_meta else None,
             "net_pnl": net, "mfe_pct": mfe, "mae_pct": mae,
             "exit_reason": exit_reason, "open_at_end": open_at_end,
+            "exit_executed": exit_executed,
+            "costs_executed": costs_executed,
+            "costs_exit_hypothetical": costs_exit_hypothetical,
+            "realized_net": realized_net,
             "fills": n_fills, "cancelled_notional": cancelled_notional,
         })
         # Capacity commitment starts at signal time (not at fill time), so
@@ -452,6 +627,28 @@ def run_backtest(events: List[StudyEvent], candles: List[Candle],
         peak = max(peak, equity)
         max_dd = max(max_dd, peak - equity)
     nets = [t["net_pnl"] for t in trades]
+    # Realized-only books: open_at_end marks NEVER feed realized metrics.
+    # The realized curve runs in effective-close-time order (exit_ms), not
+    # event order. Legacy totals/curve above are unchanged (they include
+    # open marks; do not cite them as realized performance).
+    realized = [t for t in trades if t["exit_executed"]]
+    open_positions = [{
+        "symbol": t["symbol"], "direction": t["direction"],
+        "family": t["family"], "rules_version": t["rules_version"],
+        "event_time_ms": t["event_time_ms"], "entry_ms": t["entry_ms"],
+        "mark_ms": t["exit_ms"], "mark_px": t["exit_px"],
+        "filled_qty": t["filled_qty"], "filled_cost": t["filled_cost"],
+    } for t in trades if t["open_at_end"]]
+    realized_nets = [t["net_pnl"] for t in realized]
+    realized_curve: List[Dict[str, Any]] = []
+    req = 0.0
+    rpeak = 0.0
+    rmax_dd = 0.0
+    for t in sorted(realized, key=lambda t: (t["exit_ms"], t["entry_ms"])):
+        req += t["net_pnl"]
+        realized_curve.append({"exit_ms": t["exit_ms"], "equity": req})
+        rpeak = max(rpeak, req)
+        rmax_dd = max(rmax_dd, rpeak - req)
     return {
         "engine_version": ENGINE_VERSION,
         "config_hash": config.config_hash(),
@@ -473,11 +670,27 @@ def run_backtest(events: List[StudyEvent], candles: List[Candle],
         "total_net": sum(nets),
         "total_fees": sum(t["fees"] for t in trades),
         "total_funding": sum(t["funding"] for t in trades),
+        "n_realized": len(realized),
+        "n_open": len(open_positions),
+        "open_positions": open_positions,
+        "total_net_realized": sum(realized_nets),
+        "expectancy_net_realized": sum(realized_nets) / len(realized_nets)
+        if realized_nets else 0.0,
+        "equity_curve_realized": realized_curve,
+        "max_drawdown_realized": rmax_dd,
+        "total_costs_executed": sum(t["costs_executed"] for t in trades),
+        "total_exit_costs_hypothetical": sum(
+            t["costs_exit_hypothetical"] for t in trades),
         "funding_calendar": None if config.funding_calendar is None else {
             "version": config.funding_calendar.version,
             "source": config.funding_calendar.source,
             "interval_ms": config.funding_calendar.interval_ms,
+            "symbol": config.funding_calendar.symbol,
             "n_settlements": len(config.funding_calendar.settlements),
+            "duplicates_deduped": cal_duplicates,
+            "complete": cal_assessment.get("complete"),
+            "completeness_basis": cal_assessment.get("completeness_basis"),
+            "gaps": cal_assessment.get("gaps", []),
             "hash": config.funding_calendar.calendar_hash(),
         },
         "funding_estimated_bps_context": config.funding_estimated_bps,
