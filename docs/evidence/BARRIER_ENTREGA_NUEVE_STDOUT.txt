@@ -1,0 +1,4 @@
+{"watching": true, "pid": 17016, "watched_pid": 36536}
+{"supervising": true, "pid": 17016, "watched_pid": 37472}
+tests=1029 ok=False prohibited={} blocked=0 effective=0 ro=1 file_writes=0 hashes_equal=True data_diff={'added': [], 'removed': [], 'changed': []} logs_diff={'added': [], 'removed': [], 'changed': []}
+evidence: C:\Users\adonm\AppData\Local\Temp\opencode\barrier_entrega.json

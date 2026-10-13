@@ -1,0 +1,11 @@
+python : ....................................................................
+En línea: 1 Carácter: 45
++ ... ONUTF8="1"; python -m unittest tests.test_backtest_accounting_split t ...
++                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (.................................:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+----------------------------------------------------------------------
+Ran 68 tests in 1.770s
+
+OK
