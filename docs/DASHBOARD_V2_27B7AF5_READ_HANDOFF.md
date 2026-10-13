@@ -19,31 +19,55 @@ verificados (las rutas declaran alignment/freshness UNVERIFIED).
 
 ## Que lee (verificado en el arbol del SHA)
 
-- `historical-db.ts`: abre `data/microprobe.db` en modo readOnly con
-  `node:sqlite` (`DatabaseSync(path, {readOnly: true})`).
+- Operacional: `historical-db.ts` abre `data/microprobe.db` en modo
+  readOnly con `node:sqlite` (`DatabaseSync(path, {readOnly: true})`).
 - `canonical-market.ts`: `historicalRead` con BEGIN/COMMIT (+ROLLBACK en
   error) sobre tablas `discovery_snapshots`, `return/flow/book/oi/
   structure/state_features`, `price_samples`, `prospective_setups`,
   `prospective_outcomes`, `opportunity_candidates`; fallback
   `available:false` ante cualquier error.
-- `historicalSnapshot` etiqueta `schema_version:9` (hardcodeado) y lee
-  tablas de la era v9 (`prospective_*`, `price_samples`).
+- `historicalSnapshot` / prospective etiquetan `schema_version:9`
+  (hardcodeado) y leen tablas de la era v9 (`prospective_*`,
+  `price_samples`).
+- Historico (lectura REAL, no supuesta): `historical-coverage.ts` abre
+  `data/historical/historical.db` readOnly
+  (`withReadonlyDatabase(HISTORICAL_DB, ...)`), consumido por la ruta BFF
+  `GET /api/v1/historical-coverage` y la pagina
+  `app/historical-research/coverage` (tablas `historical_coverage`,
+  `historical_gaps`, event studies; limites 500/100/50/100; jamas backfill
+  ni market requests).
 - Las rutas BFF advierten: "Read time is not observation time",
   "Retained coverage and captured freshness do not certify present feed
   liveness".
 
-## Incompatibilidad explicita operacional-v10 / historico-v3
+## Restricciones de schema del frontend citado (fail-closed)
+
+- Historico: `readHistoricalCoverage` exige
+  `history_meta.schema_version === '2'` o lanza
+  `UNSUPPORTED_HISTORICAL_SCHEMA` (probado en
+  `src/test/historical-coverage.test.ts`, incl. pureza read-only).
+- Operacional: `system-evidence.ts` exige
+  `persistence_meta.schema_version === "9"` o lanza
+  `UNSUPPORTED_SYSTEM_SCHEMA` (probado en `src/test/system-evidence.test.ts`).
+- Correccion sobre la version anterior de este handoff: el frontend SI lee
+  `historical.db` (seccion anterior) y sus restricciones son
+  historico-2 / operacional-9, no "v3 no leido".
+
+## Incompatibilidad explicita con el backend actual
 
 - El backend operacional (`data/microprobe.db`) es schema v10: tablas v9
   + columnas de linkage run_id/rules_version/as_of/dataset (migraciones
   v1..v10 en una init, error explicito ante tablas ausentes — R6).
-- El store historico (`data/historical/historical.db`) es schema v3 y es
-  OTRO archivo: klines/mark-klines/OI/coverage/gaps/runs de ingesta,
-  event studies y research buckets. El frontend 27b7af5 NO lo lee.
-- Consecuencia: consumir 27b7af5 contra un backend v10 exige verificar
-  presencia de tablas por contrato versionado (nunca asumir); el
-  `schema_version:9` hardcodeado del frontend NO certifica el backend.
-  H2/H3/funding dependen de calendarios y linkage que este SHA no conoce.
+  Frente al gate operacional-9 del frontend => `UNSUPPORTED_SYSTEM_SCHEMA`.
+- El store historico (`data/historical/historical.db`) es schema v3
+  (mismo arbol de tablas que el frontend espera, version distinta).
+  Frente al gate historico-2 del frontend =>
+  `UNSUPPORTED_HISTORICAL_SCHEMA`.
+- Consecuencia: consumir 27b7af5 contra este backend es HOY incompatible
+  por version en ambos stores (fail-closed, sin datos mezclados); solo un
+  SHA frontend revisado que declare v10/v3 puede consumirlos, verificando
+  presencia de tablas por contrato versionado (nunca asumir).
+  H2/H3/funding dependen de calendarios y linkage que 27b7af5 no conoce.
 
 ## Reglas de consumo (binding)
 

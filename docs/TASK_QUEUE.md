@@ -1,3 +1,8 @@
+## Entrega nueve archivos 6fd6091-base (2026-10-13, review/entrega-nueve-archivos-6fd6091, sin push aun)
+R1-R7 9/9 + dirigidas 68/68 + comparador 10/10; barrera 1029 (1F+8E preexistentes,
+contrastados en base). Resta: commits selectivos, push revision, matriz de entrega.
+Sin merge/force, sesiones, paper, ordenes ni gates.
+
 ## Correccion tecnica de14ac1-base (2026-10-13, review/correccion-tecnica-de14ac1, sin push aun)
 Comparador M6a/M6b/M7/M8 + SELF (automatizado, 10/10) + re-verificacion MATCH legitima.
 Motor: split realizado/abierto + costes hipoteticos + funding qty x mark/identidad/dedup/gaps

@@ -1,4 +1,12 @@
 
+## Entrega nueve archivos 6fd6091-base — 2026-10-13 (review/entrega-nueve-archivos-6fd6091, sin push aun)
+Cierres tecnicos (habilitante, sin IDs nuevos): cap holding, calendario
+monocontrato, mark stale, fees exit-value (1 assert legacy corregido),
+symbol en manifiesto, handoff 27b7af5 real (gates 2/9 vs v10/v3).
+R1-R7 + dirigidas + comparador verdes; barrera con 9 preexistentes
+contrastados. Distincion: implementacion DONE; validacion financiera NOT
+IMPLEMENTED. Gates sin avance.
+
 ## Correccion tecnica de14ac1-base — 2026-10-13 (review/correccion-tecnica-de14ac1, sin push aun)
 Motor/contratos (habilitante, sin IDs nuevos): split realizado/abierto
 (n_realized/n_open/open_positions; curva realizada; costes hipoteticos),

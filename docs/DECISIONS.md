@@ -1258,3 +1258,36 @@ el frontend exacto 27b7af5 lee microprobe.db read-only con supuestos v9
 operacional es v10 (tablas v9 + linkage run_id). Consumo solo por contratos
 versionados con chequeo explicito de presencia de tablas (R6); la fundacion
 antigua de frontend/ no se edita como sustituto del handoff.
+
+## Entrega nueve archivos 6fd6091-base - 2026-10-13 (append-only, rama review/entrega-nueve-archivos-6fd6091)
+
+Correcciones sobre la base 6fd6091 (motor v4 + runner + comparador intactos
+en lo demas):
+
+- Uncovered acotado al holding (min(raw, exit-entry); holding 100ms ->
+  uncovered == 100, nunca mayor). Bateria previa intacta (casos con
+  uncovered == holding no cambian; el resto solo afirma >0).
+- Calendario con symbol-fija es monocontrato: evento de otro symbol
+  RECHAZA el run (LUMIAUSDT no liquida BTCUSDT). Sin pin (null) se
+  conserva el comportamiento legacy, registrado UNKNOWN.
+- Runner conserva `symbol` del calendario JSON al manifiesto
+  (`funding_calendar.symbol`; ausente -> null, jamas inventado).
+- Mark con edad > cadencia nominal (o cualquier edad sin cadencia) es
+  STALE: excluido como unknown-excluded con mark_age_ms registrado;
+  edad 0 siempre fresh. Bateria de grid (edad 0) intacta.
+- Comisiones: entrada sobre nocional ejecutado, salida sobre valor de
+  salida (10u 100->120 @10bps = 1.00/1.20). Las mitades simetricas eran
+  el bug: UN assert legacy actualizado (test_fees_charged_both_sides,
+  2.0 -> split 1.00/exit-value, con comentario de correccion). Resto de
+  la bateria verde.
+- Handoff 27b7af5 corregido: el frontend SI lee historical.db en real
+  (historical-coverage.ts -> GET /api/v1/historical-coverage) con gate
+  historico-2 (UNSUPPORTED_HISTORICAL_SCHEMA) y gate operacional-9
+  (UNSUPPORTED_SYSTEM_SCHEMA en system-evidence.ts); backend actual
+  v10/v3 => incompatible fail-closed en ambos stores.
+
+Verificacion: dirigidas 68/68 OK (incl. R1-R7), comparador 10/10 OK,
+barrera 1029 (1020+9) con 1F+8E preexistentes contrastados en worktree
+aislado de de14ac1 (misma firma; alcance fuera de esta tarea).
+Aislamiento: prohibited/bloqueados/efectivos 0, hashes iguales,
+data/logs sin cambios. Sin merge, sesiones, paper, ordenes ni gates.

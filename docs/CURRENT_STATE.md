@@ -1,3 +1,14 @@
+## Entrega nueve archivos 6fd6091-base (2026-10-13, review/entrega-nueve-archivos-6fd6091, sin push aun)
+Base 6fd6091 (= remoto). Nueve archivos tecnicos: comparador+M6-M8 auto (10/10),
+motor (cap uncovered al holding, calendario monocontrato, mark stale excluido,
+fees salida a exit value; 1 assert legacy corregido y documentado), runner
+(symbol preservado + manifiesto), tests R1-R7 (9/9), handoff 27b7af5 corregido
+(lee historical.db real; gates historico-2/operacional-9 vs backend v10/v3).
+Dirigidas 68/68 OK; barrera 1029 con 1F+8E preexistentes contrastados en
+worktree de14ac1 (misma firma); aislamiento OK (0/0/0, hashes iguales).
+Logs completos en docs/evidence/BARRIER_ENTREGA_NUEVE_*. Sin merge, sesiones,
+paper, ordenes ni gates.
+
 ## Correccion tecnica de14ac1-base (2026-10-13, review/correccion-tecnica-de14ac1, sin push aun)
 Base de14ac1 (= remote review/w-lumia-correccion-bc327f1; phase1 remote=local en
 bc327f1; main intacto). Comparador: signo/posicion de inf + CSV vacio/ilegible

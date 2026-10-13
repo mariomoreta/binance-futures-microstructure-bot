@@ -79,3 +79,20 @@ same-ms different-rate REJECTS the run. Runner manifest: per-group
 `family`/`rules_version` (H1/H2/H3 map; baseline uses CLI default),
 `event_ids[]` (index-based identity), `n_realized`/`n_open`,
 `total_net_realized`, `max_drawdown_realized`.
+
+## Amendment v4.2 — caps, pins, stale marks, exit-value fees (2026-10-13, additive)
+
+- Unknown coverage is capped at the holding (`uncovered <= exit-entry`):
+  a 100ms holding never reports more than 100ms unknown.
+- A symbol-pinned calendar settles ONE contract: any foreign event symbol
+  REJECTS the run (fail-closed; LUMIAUSDT calendar never settles BTCUSDT).
+  Unpinned (`symbol: null`) calendars keep legacy multi-symbol behavior,
+  recorded as UNKNOWN identity.
+- Settlement marks carry `mark_age_ms` + `mark_freshness`. A covering print
+  older than the nominal cadence (or any aged print without a cadence) is
+  STALE: excluded as `unknown-excluded`, never settled as proxy.
+- Commissions: entry leg on executed notional, exit leg on exit value
+  (10u 100->120 @10bps = 1.00 entry / 1.20 exit). Symmetric halves were a
+  bug; one legacy assertion updated to the corrected split (documented).
+- Runner preserves calendar `symbol` verbatim into the manifest
+  (`funding_calendar.symbol`); absent stays null (UNKNOWN, never invented).
