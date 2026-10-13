@@ -45,23 +45,41 @@ from microstructure_probe.backtest_offline import (  # noqa: E402
 GROUPS = ("continuation", "correction-exhaustion", "correction-reversal",
           "bearish-continuation", "rebound-variant", "baseline")
 
+# Canonical family/version per study group. A group replays under its OWN
+# contract: a valid H3 event is never judged by an H1 configuration (a
+# global H1 default used to strand every H2/H3 event in n_mismatched).
+# The baseline pooled reference and unmapped groups use the CLI default.
+GROUP_FAMILY = {
+    "continuation": ("H1", "H1-v1"),
+    "correction-exhaustion": ("H2", "H2-v1"),
+    "correction-reversal": ("H2", "H2-v1"),
+    "bearish-continuation": ("H3", "H3-v1"),
+    "rebound-variant": ("H2", "H2-v1-rebound"),
+}
+
 
 def _load_events(path: Path):
     out = []
-    groups = {}
-    for row in json.loads(path.read_text(encoding="utf-8")):
+    groups = []
+    for idx, row in enumerate(json.loads(path.read_text(encoding="utf-8"))):
+        family = str(row.get("family", "H1"))
+        version = str(row.get("rules_version", "H1-v1"))
         ev = StudyEvent(
             symbol=str(row["symbol"]), event_time_ms=int(row["event_time_ms"]),
             direction=str(row["direction"]),
             reference_price=float(row.get("reference_price", 0.0)),
-            family=str(row.get("family", "H1")),
-            rules_version=str(row.get("rules_version", "H1-v1")))
+            family=family, rules_version=version)
         out.append(ev)
         # Runner-level annotation (not engine semantics; excluded from
-        # input_hash): keeps families separate without touching the engine.
-        groups[(ev.symbol, ev.event_time_ms, ev.direction)] = str(
-            row.get("group", "continuation"))
-    return out, groups
+        # input_hash): index-based identity, so two rows sharing
+        # (symbol, time, direction) in different groups never collide.
+        groups.append(str(row.get("group", "continuation")))
+    event_ids = [
+        "%s:%d:%s:%s:%s:%d" % (
+            e.symbol, e.event_time_ms, e.direction, e.family,
+            e.rules_version, i)
+        for i, e in enumerate(out)]
+    return out, groups, event_ids
 
 
 def _load_candles(path: Path):
@@ -93,6 +111,11 @@ def _demo(out_dir: Path):
     T0 = 1_700_000_000_000
     candles, events = [], []
     px = 100.0
+    plan = [("continuation", "H1", "H1-v1"),
+            ("correction-reversal", "H2", "H2-v1"),
+            ("bearish-continuation", "H3", "H3-v1"),
+            ("rebound-variant", "H2", "H2-v1-rebound"),
+            ("baseline", "H1", "H1-v1")]
     for i in range(200):
         o = px
         c = px * (1.002 if i % 5 else 0.999)
@@ -101,14 +124,12 @@ def _demo(out_dir: Path):
                         "low": min(o, c) * 0.999, "close": c})
         px = c
         if i % 25 == 0:
+            group, family, version = plan[(i // 25) % 5]
             events.append({"symbol": "DEMOUSDT",
                            "event_time_ms": T0 + i * 60_000,
                            "direction": "LONG", "reference_price": o,
-                           "family": "H1", "rules_version": "H1-v1",
-                           "group": ["continuation", "correction-reversal",
-                                     "bearish-continuation",
-                                     "rebound-variant", "baseline"][i // 25 %
-                                                                     5]})
+                           "family": family, "rules_version": version,
+                           "group": group})
     ev_path = out_dir / "demo_events.json"
     cx_path = out_dir / "demo_candles.json"
     ev_path.write_text(json.dumps(events), encoding="utf-8")
@@ -125,6 +146,10 @@ def main(argv=None) -> int:
     ap.add_argument("--cutoff-ms", type=int, default=None)
     ap.add_argument("--formation-method", default="caller-declared")
     ap.add_argument("--scales", default="1.0,2.0,3.0")
+    ap.add_argument("--family", default="H1",
+                    help="default family (baseline + unmapped groups)")
+    ap.add_argument("--rules-version", default="H1-v1",
+                    help="default rules version (baseline + unmapped groups)")
     ap.add_argument("--demo", action="store_true")
     args = ap.parse_args(argv)
 
@@ -142,7 +167,7 @@ def main(argv=None) -> int:
             int(args.cutoff_ms)
         out_path = Path(args.out) if args.out else work / "manifest.json"
         label = "OFFLINE-EVAL-PREP — mechanics only, NOT validation"
-    events, groups_of = _load_events(ev_path)
+    events, groups_of, event_ids_of = _load_events(ev_path)
     candles = _load_candles(cx_path)
     calendar = _load_calendar(Path(args.calendar)
                               if args.calendar else None)
@@ -161,15 +186,21 @@ def main(argv=None) -> int:
         "groups": {},
     }
     for group in GROUPS:
-        gev = [e for e in events
-               if groups_of.get((e.symbol, e.event_time_ms,
-                                 e.direction)) == group]
+        family, version = GROUP_FAMILY.get(group,
+                                           (args.family,
+                                            args.rules_version))
+        idx = [i for i, e in enumerate(events) if groups_of[i] == group]
+        gev = [events[i] for i in idx]
+        gids = [event_ids_of[i] for i in idx]
         parts = split_by_time(gev, cutoff)
-        manifest["groups"][group] = {}
+        manifest["groups"][group] = {"family": family,
+                                     "rules_version": version,
+                                     "event_ids": gids}
         for seg, seg_events in parts.items():
             manifest["groups"][group][seg] = {}
             for scale in scales:
-                cfg = BacktestConfig(cost_scale=scale,
+                cfg = BacktestConfig(family=family, rules_version=version,
+                                     cost_scale=scale,
                                      funding_calendar=calendar)
                 res = run_backtest(seg_events, candles, cfg,
                                    dataset_id=dataset_id, segment=seg)
@@ -182,6 +213,8 @@ def main(argv=None) -> int:
                     "n_expired": res["n_expired"],
                     "n_mismatched": res["n_mismatched"],
                     "skipped_overlap": res["skipped_overlap"],
+                    "n_realized": res["n_realized"],
+                    "n_open": res["n_open"],
                     "exit_reasons": res["exit_reasons"],
                     "confirmation_rate_mech": (
                         (len(trades) - stops) / len(trades)
@@ -192,9 +225,11 @@ def main(argv=None) -> int:
                     "expectancy_net": res["expectancy_net"],
                     "expectancy_gross": res["expectancy_gross"],
                     "total_net": res["total_net"],
+                    "total_net_realized": res["total_net_realized"],
                     "total_fees": res["total_fees"],
                     "total_funding": res["total_funding"],
                     "max_drawdown": res["max_drawdown"],
+                    "max_drawdown_realized": res["max_drawdown_realized"],
                     "mfe_mean": res["mfe_mean"],
                     "mae_mean": res["mae_mean"],
                     "config_hash": res["config_hash"],
