@@ -159,7 +159,20 @@ def main():
                 out["summary"]["incomplete"].append("orig/" + name)
                 out["csv"][name] = entry
                 continue
-            a = pd.read_csv(po)
+            try:
+                a = pd.read_csv(po)
+            except Exception as e:
+                entry["status"] = "INCOMPLETE_ORIG_UNREADABLE"
+                entry["error"] = "csv unreadable/empty: " + str(e)[:200]
+                out["summary"]["incomplete"].append("orig/" + name + " unreadable")
+                out["csv"][name] = entry
+                continue
+            if a.shape[1] == 0:
+                entry["status"] = "INCOMPLETE_ORIG_EMPTY"
+                entry["error"] = "csv has no columns"
+                out["summary"]["incomplete"].append("orig/" + name + " empty")
+                out["csv"][name] = entry
+                continue
             entry = {"orig_bytes": len(po.read_bytes()), "orig_sha256": sha(po),
                      "orig_shape": list(a.shape), "orig_columns": list(a.columns)}
             if pr is None or not pr.exists():
@@ -167,7 +180,20 @@ def main():
                 out["summary"]["incomplete"].append("repro/" + name + " missing")
                 out["csv"][name] = entry
                 continue
-            b = pd.read_csv(pr)
+            try:
+                b = pd.read_csv(pr)
+            except Exception as e:
+                entry["status"] = "INCOMPLETE_REPRO_UNREADABLE"
+                entry["error"] = "csv unreadable/empty: " + str(e)[:200]
+                out["summary"]["incomplete"].append("repro/" + name + " unreadable")
+                out["csv"][name] = entry
+                continue
+            if b.shape[1] == 0:
+                entry["status"] = "INCOMPLETE_REPRO_EMPTY"
+                entry["error"] = "csv has no columns"
+                out["summary"]["incomplete"].append("repro/" + name + " empty")
+                out["csv"][name] = entry
+                continue
             entry.update({"repro_bytes": len(pr.read_bytes()),
                           "repro_sha256": sha(pr),
                           "repro_shape": list(b.shape),
@@ -203,12 +229,24 @@ def main():
                 if pd.api.types.is_numeric_dtype(a[c]):
                     an = pd.to_numeric(a[c], errors="coerce").to_numpy(dtype="float64")
                     bn = pd.to_numeric(b[c], errors="coerce").to_numpy(dtype="float64")
-                    ia = int(np.isinf(an).sum())
-                    ib = int(np.isinf(bn).sum())
-                    row.update({"orig_inf": ia, "repro_inf": ib})
-                    if ia != ib:
-                        type_diffs.append("SPECIAL_INF " + c + ": orig=" + str(ia)
-                                          + " repro=" + str(ib))
+                    pa = set(int(idx) for idx in np.where(np.isposinf(an))[0].tolist())
+                    pb = set(int(idx) for idx in np.where(np.isposinf(bn))[0].tolist())
+                    na = set(int(idx) for idx in np.where(np.isneginf(an))[0].tolist())
+                    nb = set(int(idx) for idx in np.where(np.isneginf(bn))[0].tolist())
+                    fa = set(int(idx) for idx in np.where(np.isfinite(an))[0].tolist())
+                    fb = set(int(idx) for idx in np.where(np.isfinite(bn))[0].tolist())
+                    row.update({"orig_pos_inf": len(pa), "repro_pos_inf": len(pb),
+                                "orig_neg_inf": len(na), "repro_neg_inf": len(nb)})
+                    if pa != pb or na != nb:
+                        type_diffs.append(
+                            "SPECIAL_INF " + c + ": orig(+inf@%s,-inf@%s) repro(+inf@%s,-inf@%s)"
+                            % (sorted(pa)[:10], sorted(na)[:10],
+                               sorted(pb)[:10], sorted(nb)[:10]))
+                    if fa != fb:
+                        type_diffs.append(
+                            "FINITE_MASK " + c + ": finite-position sets differ "
+                            "(orig_only=%s repro_only=%s)"
+                            % (sorted(fa - fb)[:10], sorted(fb - fa)[:10]))
                 special_report[c] = row
             md, md_col = 0.0, None
             for c in a.columns:

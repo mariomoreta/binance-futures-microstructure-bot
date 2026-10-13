@@ -1,6 +1,7 @@
-# Regresiones del comparador W/LUMIA (2026-10-13, rama review/w-lumia-correccion-bc327f1)
+# Regresiones del comparador W/LUMIA (2026-10-13; M6-M8 agregados 2026-10-13 en review/correccion-tecnica-de14ac1)
 Script: docs/evidence/compare_case_study_json_csv.py (fortalecido).
-Metodo: 5 mutantes en copia temporal de binance_case_study (originales intactos).
+Automatizacion: python scripts/regress_compare_cases.py (exit 0 ssi 10/10 casos OK; temp, originales intactos).
+Metodo: mutantes en copia temporal de binance_case_study (originales intactos).
 Comando por caso:
   $env:PYTHONUTF8='1'
   python docs/evidence/compare_case_study_json_csv.py "binance_case_study" "<mutante>" --out <salida>.json
@@ -21,6 +22,24 @@ Caso M4 estructura distinta (WUSDT sin columna atr_pct):
 
 Caso M5 archivo ausente (sin GTCUSDT_features_5m.csv en repro):
   exit=2, verdict=INCOMPLETE (repro/GTCUSDT_features_5m.csv missing).
+
+Caso M6a +inf vs -inf (WUSDT fila 100 rsi14 +inf en orig, -inf en repro):
+  exit=1, verdict=DIFFERENT (SPECIAL_INF rsi14 con posiciones y signo).
+  Con el conteo sin signo anterior esto pasaba como MATCH (bug).
+
+Caso M6b finito vs -inf (WUSDT fila 100 rsi14 51.06... vs -inf):
+  exit=1, verdict=DIFFERENT (FINITE_MASK rsi14 + SPECIAL_INF).
+
+Caso M7 CSV vacio (WUSDT 0 bytes):
+  exit=2, verdict=INCOMPLETE (repro/WUSDT_features_5m.csv unreadable).
+
+Caso M8 CSV ilegible (WUSDT con basura binaria):
+  exit=2, verdict=INCOMPLETE (repro/WUSDT_features_5m.csv unreadable/empty).
+
+Caso SELF (base vs base, pristine):
+  exit=0, verdict=MATCH.
+
+Automatizacion 2026-10-13: scripts/regress_compare_cases.py -> ALL 10 CASES OK, exit 0.
 
 Comparacion legitima original vs re-ejecucion fresca (copia temporal lumia_repro2,
 analyze exit 0 + finish exit 0, sin tocar originales):

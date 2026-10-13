@@ -339,74 +339,98 @@
         "open_ms": {
           "orig_dtype": "int64",
           "repro_dtype": "int64",
-          "orig_inf": 0,
-          "repro_inf": 0
+          "orig_pos_inf": 0,
+          "repro_pos_inf": 0,
+          "orig_neg_inf": 0,
+          "repro_neg_inf": 0
         },
         "open": {
           "orig_dtype": "float64",
           "repro_dtype": "float64",
-          "orig_inf": 0,
-          "repro_inf": 0
+          "orig_pos_inf": 0,
+          "repro_pos_inf": 0,
+          "orig_neg_inf": 0,
+          "repro_neg_inf": 0
         },
         "high": {
           "orig_dtype": "float64",
           "repro_dtype": "float64",
-          "orig_inf": 0,
-          "repro_inf": 0
+          "orig_pos_inf": 0,
+          "repro_pos_inf": 0,
+          "orig_neg_inf": 0,
+          "repro_neg_inf": 0
         },
         "low": {
           "orig_dtype": "float64",
           "repro_dtype": "float64",
-          "orig_inf": 0,
-          "repro_inf": 0
+          "orig_pos_inf": 0,
+          "repro_pos_inf": 0,
+          "orig_neg_inf": 0,
+          "repro_neg_inf": 0
         },
         "close": {
           "orig_dtype": "float64",
           "repro_dtype": "float64",
-          "orig_inf": 0,
-          "repro_inf": 0
+          "orig_pos_inf": 0,
+          "repro_pos_inf": 0,
+          "orig_neg_inf": 0,
+          "repro_neg_inf": 0
         },
         "volume": {
           "orig_dtype": "float64",
           "repro_dtype": "float64",
-          "orig_inf": 0,
-          "repro_inf": 0
+          "orig_pos_inf": 0,
+          "repro_pos_inf": 0,
+          "orig_neg_inf": 0,
+          "repro_neg_inf": 0
         },
         "close_ms": {
           "orig_dtype": "int64",
           "repro_dtype": "int64",
-          "orig_inf": 0,
-          "repro_inf": 0
+          "orig_pos_inf": 0,
+          "repro_pos_inf": 0,
+          "orig_neg_inf": 0,
+          "repro_neg_inf": 0
         },
         "quote_volume": {
           "orig_dtype": "float64",
           "repro_dtype": "float64",
-          "orig_inf": 0,
-          "repro_inf": 0
+          "orig_pos_inf": 0,
+          "repro_pos_inf": 0,
+          "orig_neg_inf": 0,
+          "repro_neg_inf": 0
         },
         "trades": {
           "orig_dtype": "int64",
           "repro_dtype": "int64",
-          "orig_inf": 0,
-          "repro_inf": 0
+          "orig_pos_inf": 0,
+          "repro_pos_inf": 0,
+          "orig_neg_inf": 0,
+          "repro_neg_inf": 0
         },
         "taker_buy_base": {
           "orig_dtype": "float64",
           "repro_dtype": "float64",
-          "orig_inf": 0,
-          "repro_inf": 0
+          "orig_pos_inf": 0,
+          "repro_pos_inf": 0,
+          "orig_neg_inf": 0,
+          "repro_neg_inf": 0
         },
         "taker_buy_quote": {
           "orig_dtype": "float64",
           "repro_dtype": "float64",
-          "orig_inf": 0,
-          "repro_inf": 0
+          "orig_pos_inf": 0,
+          "repro_pos_inf": 0,
+          "orig_neg_inf": 0,
+          "repro_neg_inf": 0
         },
         "ignore": {
           "orig_dtype": "int64",
           "repro_dtype": "int64",
-          "orig_inf": 0,
-          "repro_inf": 0
+          "orig_pos_inf": 0,
+          "repro_pos_inf": 0,
+          "orig_neg_inf": 0,
+          "repro_neg_inf": 0
         },
         "time_utc": {
           "orig_dtype": "str",
@@ -415,176 +439,234 @@
         "ret_5m": {
           "orig_dtype": "float64",
           "repro_dtype": "float64",
-          "orig_inf": 0,
-          "repro_inf": 0
+          "orig_pos_inf": 0,
+          "repro_pos_inf": 0,
+          "orig_neg_inf": 0,
+          "repro_neg_inf": 0
         },
         "ret_15m": {
           "orig_dtype": "float64",
           "repro_dtype": "float64",
-          "orig_inf": 0,
-          "repro_inf": 0
+          "orig_pos_inf": 0,
+          "repro_pos_inf": 0,
+          "orig_neg_inf": 0,
+          "repro_neg_inf": 0
         },
         "ret_1h": {
           "orig_dtype": "float64",
           "repro_dtype": "float64",
-          "orig_inf": 0,
-          "repro_inf": 0
+          "orig_pos_inf": 0,
+          "repro_pos_inf": 0,
+          "orig_neg_inf": 0,
+          "repro_neg_inf": 0
         },
         "ret_24h": {
           "orig_dtype": "float64",
           "repro_dtype": "float64",
-          "orig_inf": 0,
-          "repro_inf": 0
+          "orig_pos_inf": 0,
+          "repro_pos_inf": 0,
+          "orig_neg_inf": 0,
+          "repro_neg_inf": 0
         },
         "rsi14": {
           "orig_dtype": "float64",
           "repro_dtype": "float64",
-          "orig_inf": 0,
-          "repro_inf": 0
+          "orig_pos_inf": 0,
+          "repro_pos_inf": 0,
+          "orig_neg_inf": 0,
+          "repro_neg_inf": 0
         },
         "atr14": {
           "orig_dtype": "float64",
           "repro_dtype": "float64",
-          "orig_inf": 0,
-          "repro_inf": 0
+          "orig_pos_inf": 0,
+          "repro_pos_inf": 0,
+          "orig_neg_inf": 0,
+          "repro_neg_inf": 0
         },
         "atr_pct": {
           "orig_dtype": "float64",
           "repro_dtype": "float64",
-          "orig_inf": 0,
-          "repro_inf": 0
+          "orig_pos_inf": 0,
+          "repro_pos_inf": 0,
+          "orig_neg_inf": 0,
+          "repro_neg_inf": 0
         },
         "vol_rel_1h": {
           "orig_dtype": "float64",
           "repro_dtype": "float64",
-          "orig_inf": 0,
-          "repro_inf": 0
+          "orig_pos_inf": 0,
+          "repro_pos_inf": 0,
+          "orig_neg_inf": 0,
+          "repro_neg_inf": 0
         },
         "vol_z_1h": {
           "orig_dtype": "float64",
           "repro_dtype": "float64",
-          "orig_inf": 0,
-          "repro_inf": 0
+          "orig_pos_inf": 0,
+          "repro_pos_inf": 0,
+          "orig_neg_inf": 0,
+          "repro_neg_inf": 0
         },
         "taker_buy_share": {
           "orig_dtype": "float64",
           "repro_dtype": "float64",
-          "orig_inf": 0,
-          "repro_inf": 0
+          "orig_pos_inf": 0,
+          "repro_pos_inf": 0,
+          "orig_neg_inf": 0,
+          "repro_neg_inf": 0
         },
         "delta_ratio": {
           "orig_dtype": "float64",
           "repro_dtype": "float64",
-          "orig_inf": 0,
-          "repro_inf": 0
+          "orig_pos_inf": 0,
+          "repro_pos_inf": 0,
+          "orig_neg_inf": 0,
+          "repro_neg_inf": 0
         },
         "flow_buy_share_15m": {
           "orig_dtype": "float64",
           "repro_dtype": "float64",
-          "orig_inf": 0,
-          "repro_inf": 0
+          "orig_pos_inf": 0,
+          "repro_pos_inf": 0,
+          "orig_neg_inf": 0,
+          "repro_neg_inf": 0
         },
         "momentum_change": {
           "orig_dtype": "float64",
           "repro_dtype": "float64",
-          "orig_inf": 0,
-          "repro_inf": 0
+          "orig_pos_inf": 0,
+          "repro_pos_inf": 0,
+          "orig_neg_inf": 0,
+          "repro_neg_inf": 0
         },
         "utc_vwap": {
           "orig_dtype": "float64",
           "repro_dtype": "float64",
-          "orig_inf": 0,
-          "repro_inf": 0
+          "orig_pos_inf": 0,
+          "repro_pos_inf": 0,
+          "orig_neg_inf": 0,
+          "repro_neg_inf": 0
         },
         "vwap_distance_pct": {
           "orig_dtype": "float64",
           "repro_dtype": "float64",
-          "orig_inf": 0,
-          "repro_inf": 0
+          "orig_pos_inf": 0,
+          "repro_pos_inf": 0,
+          "orig_neg_inf": 0,
+          "repro_neg_inf": 0
         },
         "vwap_distance_atr": {
           "orig_dtype": "float64",
           "repro_dtype": "float64",
-          "orig_inf": 0,
-          "repro_inf": 0
+          "orig_pos_inf": 0,
+          "repro_pos_inf": 0,
+          "orig_neg_inf": 0,
+          "repro_neg_inf": 0
         },
         "prior_15m_low": {
           "orig_dtype": "float64",
           "repro_dtype": "float64",
-          "orig_inf": 0,
-          "repro_inf": 0
+          "orig_pos_inf": 0,
+          "repro_pos_inf": 0,
+          "orig_neg_inf": 0,
+          "repro_neg_inf": 0
         },
         "prior_15m_high": {
           "orig_dtype": "float64",
           "repro_dtype": "float64",
-          "orig_inf": 0,
-          "repro_inf": 0
+          "orig_pos_inf": 0,
+          "repro_pos_inf": 0,
+          "orig_neg_inf": 0,
+          "repro_neg_inf": 0
         },
         "break_down": {
           "orig_dtype": "bool",
           "repro_dtype": "bool",
-          "orig_inf": 0,
-          "repro_inf": 0
+          "orig_pos_inf": 0,
+          "repro_pos_inf": 0,
+          "orig_neg_inf": 0,
+          "repro_neg_inf": 0
         },
         "break_up": {
           "orig_dtype": "bool",
           "repro_dtype": "bool",
-          "orig_inf": 0,
-          "repro_inf": 0
+          "orig_pos_inf": 0,
+          "repro_pos_inf": 0,
+          "orig_neg_inf": 0,
+          "repro_neg_inf": 0
         },
         "btc_ret_1h": {
           "orig_dtype": "float64",
           "repro_dtype": "float64",
-          "orig_inf": 0,
-          "repro_inf": 0
+          "orig_pos_inf": 0,
+          "repro_pos_inf": 0,
+          "orig_neg_inf": 0,
+          "repro_neg_inf": 0
         },
         "relative_btc_1h": {
           "orig_dtype": "float64",
           "repro_dtype": "float64",
-          "orig_inf": 0,
-          "repro_inf": 0
+          "orig_pos_inf": 0,
+          "repro_pos_inf": 0,
+          "orig_neg_inf": 0,
+          "repro_neg_inf": 0
         },
         "sumOpenInterest": {
           "orig_dtype": "float64",
           "repro_dtype": "float64",
-          "orig_inf": 0,
-          "repro_inf": 0
+          "orig_pos_inf": 0,
+          "repro_pos_inf": 0,
+          "orig_neg_inf": 0,
+          "repro_neg_inf": 0
         },
         "sumOpenInterestValue": {
           "orig_dtype": "float64",
           "repro_dtype": "float64",
-          "orig_inf": 0,
-          "repro_inf": 0
+          "orig_pos_inf": 0,
+          "repro_pos_inf": 0,
+          "orig_neg_inf": 0,
+          "repro_neg_inf": 0
         },
         "oi_change_1h_pct": {
           "orig_dtype": "float64",
           "repro_dtype": "float64",
-          "orig_inf": 0,
-          "repro_inf": 0
+          "orig_pos_inf": 0,
+          "repro_pos_inf": 0,
+          "orig_neg_inf": 0,
+          "repro_neg_inf": 0
         },
         "longAccount": {
           "orig_dtype": "float64",
           "repro_dtype": "float64",
-          "orig_inf": 0,
-          "repro_inf": 0
+          "orig_pos_inf": 0,
+          "repro_pos_inf": 0,
+          "orig_neg_inf": 0,
+          "repro_neg_inf": 0
         },
         "shortAccount": {
           "orig_dtype": "float64",
           "repro_dtype": "float64",
-          "orig_inf": 0,
-          "repro_inf": 0
+          "orig_pos_inf": 0,
+          "repro_pos_inf": 0,
+          "orig_neg_inf": 0,
+          "repro_neg_inf": 0
         },
         "longShortRatio": {
           "orig_dtype": "float64",
           "repro_dtype": "float64",
-          "orig_inf": 0,
-          "repro_inf": 0
+          "orig_pos_inf": 0,
+          "repro_pos_inf": 0,
+          "orig_neg_inf": 0,
+          "repro_neg_inf": 0
         },
         "last_settled_funding_pct": {
           "orig_dtype": "float64",
           "repro_dtype": "float64",
-          "orig_inf": 0,
-          "repro_inf": 0
+          "orig_pos_inf": 0,
+          "repro_pos_inf": 0,
+          "orig_neg_inf": 0,
+          "repro_neg_inf": 0
         }
       },
       "max_abs_numeric_diff": 0.0,
@@ -914,74 +996,98 @@
         "open_ms": {
           "orig_dtype": "int64",
           "repro_dtype": "int64",
-          "orig_inf": 0,
-          "repro_inf": 0
+          "orig_pos_inf": 0,
+          "repro_pos_inf": 0,
+          "orig_neg_inf": 0,
+          "repro_neg_inf": 0
         },
         "open": {
           "orig_dtype": "float64",
           "repro_dtype": "float64",
-          "orig_inf": 0,
-          "repro_inf": 0
+          "orig_pos_inf": 0,
+          "repro_pos_inf": 0,
+          "orig_neg_inf": 0,
+          "repro_neg_inf": 0
         },
         "high": {
           "orig_dtype": "float64",
           "repro_dtype": "float64",
-          "orig_inf": 0,
-          "repro_inf": 0
+          "orig_pos_inf": 0,
+          "repro_pos_inf": 0,
+          "orig_neg_inf": 0,
+          "repro_neg_inf": 0
         },
         "low": {
           "orig_dtype": "float64",
           "repro_dtype": "float64",
-          "orig_inf": 0,
-          "repro_inf": 0
+          "orig_pos_inf": 0,
+          "repro_pos_inf": 0,
+          "orig_neg_inf": 0,
+          "repro_neg_inf": 0
         },
         "close": {
           "orig_dtype": "float64",
           "repro_dtype": "float64",
-          "orig_inf": 0,
-          "repro_inf": 0
+          "orig_pos_inf": 0,
+          "repro_pos_inf": 0,
+          "orig_neg_inf": 0,
+          "repro_neg_inf": 0
         },
         "volume": {
           "orig_dtype": "float64",
           "repro_dtype": "float64",
-          "orig_inf": 0,
-          "repro_inf": 0
+          "orig_pos_inf": 0,
+          "repro_pos_inf": 0,
+          "orig_neg_inf": 0,
+          "repro_neg_inf": 0
         },
         "close_ms": {
           "orig_dtype": "int64",
           "repro_dtype": "int64",
-          "orig_inf": 0,
-          "repro_inf": 0
+          "orig_pos_inf": 0,
+          "repro_pos_inf": 0,
+          "orig_neg_inf": 0,
+          "repro_neg_inf": 0
         },
         "quote_volume": {
           "orig_dtype": "float64",
           "repro_dtype": "float64",
-          "orig_inf": 0,
-          "repro_inf": 0
+          "orig_pos_inf": 0,
+          "repro_pos_inf": 0,
+          "orig_neg_inf": 0,
+          "repro_neg_inf": 0
         },
         "trades": {
           "orig_dtype": "int64",
           "repro_dtype": "int64",
-          "orig_inf": 0,
-          "repro_inf": 0
+          "orig_pos_inf": 0,
+          "repro_pos_inf": 0,
+          "orig_neg_inf": 0,
+          "repro_neg_inf": 0
         },
         "taker_buy_base": {
           "orig_dtype": "float64",
           "repro_dtype": "float64",
-          "orig_inf": 0,
-          "repro_inf": 0
+          "orig_pos_inf": 0,
+          "repro_pos_inf": 0,
+          "orig_neg_inf": 0,
+          "repro_neg_inf": 0
         },
         "taker_buy_quote": {
           "orig_dtype": "float64",
           "repro_dtype": "float64",
-          "orig_inf": 0,
-          "repro_inf": 0
+          "orig_pos_inf": 0,
+          "repro_pos_inf": 0,
+          "orig_neg_inf": 0,
+          "repro_neg_inf": 0
         },
         "ignore": {
           "orig_dtype": "int64",
           "repro_dtype": "int64",
-          "orig_inf": 0,
-          "repro_inf": 0
+          "orig_pos_inf": 0,
+          "repro_pos_inf": 0,
+          "orig_neg_inf": 0,
+          "repro_neg_inf": 0
         },
         "time_utc": {
           "orig_dtype": "str",
@@ -990,176 +1096,234 @@
         "ret_5m": {
           "orig_dtype": "float64",
           "repro_dtype": "float64",
-          "orig_inf": 0,
-          "repro_inf": 0
+          "orig_pos_inf": 0,
+          "repro_pos_inf": 0,
+          "orig_neg_inf": 0,
+          "repro_neg_inf": 0
         },
         "ret_15m": {
           "orig_dtype": "float64",
           "repro_dtype": "float64",
-          "orig_inf": 0,
-          "repro_inf": 0
+          "orig_pos_inf": 0,
+          "repro_pos_inf": 0,
+          "orig_neg_inf": 0,
+          "repro_neg_inf": 0
         },
         "ret_1h": {
           "orig_dtype": "float64",
           "repro_dtype": "float64",
-          "orig_inf": 0,
-          "repro_inf": 0
+          "orig_pos_inf": 0,
+          "repro_pos_inf": 0,
+          "orig_neg_inf": 0,
+          "repro_neg_inf": 0
         },
         "ret_24h": {
           "orig_dtype": "float64",
           "repro_dtype": "float64",
-          "orig_inf": 0,
-          "repro_inf": 0
+          "orig_pos_inf": 0,
+          "repro_pos_inf": 0,
+          "orig_neg_inf": 0,
+          "repro_neg_inf": 0
         },
         "rsi14": {
           "orig_dtype": "float64",
           "repro_dtype": "float64",
-          "orig_inf": 0,
-          "repro_inf": 0
+          "orig_pos_inf": 0,
+          "repro_pos_inf": 0,
+          "orig_neg_inf": 0,
+          "repro_neg_inf": 0
         },
         "atr14": {
           "orig_dtype": "float64",
           "repro_dtype": "float64",
-          "orig_inf": 0,
-          "repro_inf": 0
+          "orig_pos_inf": 0,
+          "repro_pos_inf": 0,
+          "orig_neg_inf": 0,
+          "repro_neg_inf": 0
         },
         "atr_pct": {
           "orig_dtype": "float64",
           "repro_dtype": "float64",
-          "orig_inf": 0,
-          "repro_inf": 0
+          "orig_pos_inf": 0,
+          "repro_pos_inf": 0,
+          "orig_neg_inf": 0,
+          "repro_neg_inf": 0
         },
         "vol_rel_1h": {
           "orig_dtype": "float64",
           "repro_dtype": "float64",
-          "orig_inf": 0,
-          "repro_inf": 0
+          "orig_pos_inf": 0,
+          "repro_pos_inf": 0,
+          "orig_neg_inf": 0,
+          "repro_neg_inf": 0
         },
         "vol_z_1h": {
           "orig_dtype": "float64",
           "repro_dtype": "float64",
-          "orig_inf": 0,
-          "repro_inf": 0
+          "orig_pos_inf": 0,
+          "repro_pos_inf": 0,
+          "orig_neg_inf": 0,
+          "repro_neg_inf": 0
         },
         "taker_buy_share": {
           "orig_dtype": "float64",
           "repro_dtype": "float64",
-          "orig_inf": 0,
-          "repro_inf": 0
+          "orig_pos_inf": 0,
+          "repro_pos_inf": 0,
+          "orig_neg_inf": 0,
+          "repro_neg_inf": 0
         },
         "delta_ratio": {
           "orig_dtype": "float64",
           "repro_dtype": "float64",
-          "orig_inf": 0,
-          "repro_inf": 0
+          "orig_pos_inf": 0,
+          "repro_pos_inf": 0,
+          "orig_neg_inf": 0,
+          "repro_neg_inf": 0
         },
         "flow_buy_share_15m": {
           "orig_dtype": "float64",
           "repro_dtype": "float64",
-          "orig_inf": 0,
-          "repro_inf": 0
+          "orig_pos_inf": 0,
+          "repro_pos_inf": 0,
+          "orig_neg_inf": 0,
+          "repro_neg_inf": 0
         },
         "momentum_change": {
           "orig_dtype": "float64",
           "repro_dtype": "float64",
-          "orig_inf": 0,
-          "repro_inf": 0
+          "orig_pos_inf": 0,
+          "repro_pos_inf": 0,
+          "orig_neg_inf": 0,
+          "repro_neg_inf": 0
         },
         "utc_vwap": {
           "orig_dtype": "float64",
           "repro_dtype": "float64",
-          "orig_inf": 0,
-          "repro_inf": 0
+          "orig_pos_inf": 0,
+          "repro_pos_inf": 0,
+          "orig_neg_inf": 0,
+          "repro_neg_inf": 0
         },
         "vwap_distance_pct": {
           "orig_dtype": "float64",
           "repro_dtype": "float64",
-          "orig_inf": 0,
-          "repro_inf": 0
+          "orig_pos_inf": 0,
+          "repro_pos_inf": 0,
+          "orig_neg_inf": 0,
+          "repro_neg_inf": 0
         },
         "vwap_distance_atr": {
           "orig_dtype": "float64",
           "repro_dtype": "float64",
-          "orig_inf": 0,
-          "repro_inf": 0
+          "orig_pos_inf": 0,
+          "repro_pos_inf": 0,
+          "orig_neg_inf": 0,
+          "repro_neg_inf": 0
         },
         "prior_15m_low": {
           "orig_dtype": "float64",
           "repro_dtype": "float64",
-          "orig_inf": 0,
-          "repro_inf": 0
+          "orig_pos_inf": 0,
+          "repro_pos_inf": 0,
+          "orig_neg_inf": 0,
+          "repro_neg_inf": 0
         },
         "prior_15m_high": {
           "orig_dtype": "float64",
           "repro_dtype": "float64",
-          "orig_inf": 0,
-          "repro_inf": 0
+          "orig_pos_inf": 0,
+          "repro_pos_inf": 0,
+          "orig_neg_inf": 0,
+          "repro_neg_inf": 0
         },
         "break_down": {
           "orig_dtype": "bool",
           "repro_dtype": "bool",
-          "orig_inf": 0,
-          "repro_inf": 0
+          "orig_pos_inf": 0,
+          "repro_pos_inf": 0,
+          "orig_neg_inf": 0,
+          "repro_neg_inf": 0
         },
         "break_up": {
           "orig_dtype": "bool",
           "repro_dtype": "bool",
-          "orig_inf": 0,
-          "repro_inf": 0
+          "orig_pos_inf": 0,
+          "repro_pos_inf": 0,
+          "orig_neg_inf": 0,
+          "repro_neg_inf": 0
         },
         "btc_ret_1h": {
           "orig_dtype": "float64",
           "repro_dtype": "float64",
-          "orig_inf": 0,
-          "repro_inf": 0
+          "orig_pos_inf": 0,
+          "repro_pos_inf": 0,
+          "orig_neg_inf": 0,
+          "repro_neg_inf": 0
         },
         "relative_btc_1h": {
           "orig_dtype": "float64",
           "repro_dtype": "float64",
-          "orig_inf": 0,
-          "repro_inf": 0
+          "orig_pos_inf": 0,
+          "repro_pos_inf": 0,
+          "orig_neg_inf": 0,
+          "repro_neg_inf": 0
         },
         "sumOpenInterest": {
           "orig_dtype": "float64",
           "repro_dtype": "float64",
-          "orig_inf": 0,
-          "repro_inf": 0
+          "orig_pos_inf": 0,
+          "repro_pos_inf": 0,
+          "orig_neg_inf": 0,
+          "repro_neg_inf": 0
         },
         "sumOpenInterestValue": {
           "orig_dtype": "float64",
           "repro_dtype": "float64",
-          "orig_inf": 0,
-          "repro_inf": 0
+          "orig_pos_inf": 0,
+          "repro_pos_inf": 0,
+          "orig_neg_inf": 0,
+          "repro_neg_inf": 0
         },
         "oi_change_1h_pct": {
           "orig_dtype": "float64",
           "repro_dtype": "float64",
-          "orig_inf": 0,
-          "repro_inf": 0
+          "orig_pos_inf": 0,
+          "repro_pos_inf": 0,
+          "orig_neg_inf": 0,
+          "repro_neg_inf": 0
         },
         "longAccount": {
           "orig_dtype": "float64",
           "repro_dtype": "float64",
-          "orig_inf": 0,
-          "repro_inf": 0
+          "orig_pos_inf": 0,
+          "repro_pos_inf": 0,
+          "orig_neg_inf": 0,
+          "repro_neg_inf": 0
         },
         "shortAccount": {
           "orig_dtype": "float64",
           "repro_dtype": "float64",
-          "orig_inf": 0,
-          "repro_inf": 0
+          "orig_pos_inf": 0,
+          "repro_pos_inf": 0,
+          "orig_neg_inf": 0,
+          "repro_neg_inf": 0
         },
         "longShortRatio": {
           "orig_dtype": "float64",
           "repro_dtype": "float64",
-          "orig_inf": 0,
-          "repro_inf": 0
+          "orig_pos_inf": 0,
+          "repro_pos_inf": 0,
+          "orig_neg_inf": 0,
+          "repro_neg_inf": 0
         },
         "last_settled_funding_pct": {
           "orig_dtype": "float64",
           "repro_dtype": "float64",
-          "orig_inf": 0,
-          "repro_inf": 0
+          "orig_pos_inf": 0,
+          "repro_pos_inf": 0,
+          "orig_neg_inf": 0,
+          "repro_neg_inf": 0
         }
       },
       "max_abs_numeric_diff": 0.0,
@@ -1440,74 +1604,98 @@
         "open_ms": {
           "orig_dtype": "int64",
           "repro_dtype": "int64",
-          "orig_inf": 0,
-          "repro_inf": 0
+          "orig_pos_inf": 0,
+          "repro_pos_inf": 0,
+          "orig_neg_inf": 0,
+          "repro_neg_inf": 0
         },
         "open": {
           "orig_dtype": "float64",
           "repro_dtype": "float64",
-          "orig_inf": 0,
-          "repro_inf": 0
+          "orig_pos_inf": 0,
+          "repro_pos_inf": 0,
+          "orig_neg_inf": 0,
+          "repro_neg_inf": 0
         },
         "high": {
           "orig_dtype": "float64",
           "repro_dtype": "float64",
-          "orig_inf": 0,
-          "repro_inf": 0
+          "orig_pos_inf": 0,
+          "repro_pos_inf": 0,
+          "orig_neg_inf": 0,
+          "repro_neg_inf": 0
         },
         "low": {
           "orig_dtype": "float64",
           "repro_dtype": "float64",
-          "orig_inf": 0,
-          "repro_inf": 0
+          "orig_pos_inf": 0,
+          "repro_pos_inf": 0,
+          "orig_neg_inf": 0,
+          "repro_neg_inf": 0
         },
         "close": {
           "orig_dtype": "float64",
           "repro_dtype": "float64",
-          "orig_inf": 0,
-          "repro_inf": 0
+          "orig_pos_inf": 0,
+          "repro_pos_inf": 0,
+          "orig_neg_inf": 0,
+          "repro_neg_inf": 0
         },
         "volume": {
           "orig_dtype": "float64",
           "repro_dtype": "float64",
-          "orig_inf": 0,
-          "repro_inf": 0
+          "orig_pos_inf": 0,
+          "repro_pos_inf": 0,
+          "orig_neg_inf": 0,
+          "repro_neg_inf": 0
         },
         "close_ms": {
           "orig_dtype": "int64",
           "repro_dtype": "int64",
-          "orig_inf": 0,
-          "repro_inf": 0
+          "orig_pos_inf": 0,
+          "repro_pos_inf": 0,
+          "orig_neg_inf": 0,
+          "repro_neg_inf": 0
         },
         "quote_volume": {
           "orig_dtype": "float64",
           "repro_dtype": "float64",
-          "orig_inf": 0,
-          "repro_inf": 0
+          "orig_pos_inf": 0,
+          "repro_pos_inf": 0,
+          "orig_neg_inf": 0,
+          "repro_neg_inf": 0
         },
         "trades": {
           "orig_dtype": "int64",
           "repro_dtype": "int64",
-          "orig_inf": 0,
-          "repro_inf": 0
+          "orig_pos_inf": 0,
+          "repro_pos_inf": 0,
+          "orig_neg_inf": 0,
+          "repro_neg_inf": 0
         },
         "taker_buy_base": {
           "orig_dtype": "float64",
           "repro_dtype": "float64",
-          "orig_inf": 0,
-          "repro_inf": 0
+          "orig_pos_inf": 0,
+          "repro_pos_inf": 0,
+          "orig_neg_inf": 0,
+          "repro_neg_inf": 0
         },
         "taker_buy_quote": {
           "orig_dtype": "float64",
           "repro_dtype": "float64",
-          "orig_inf": 0,
-          "repro_inf": 0
+          "orig_pos_inf": 0,
+          "repro_pos_inf": 0,
+          "orig_neg_inf": 0,
+          "repro_neg_inf": 0
         },
         "ignore": {
           "orig_dtype": "int64",
           "repro_dtype": "int64",
-          "orig_inf": 0,
-          "repro_inf": 0
+          "orig_pos_inf": 0,
+          "repro_pos_inf": 0,
+          "orig_neg_inf": 0,
+          "repro_neg_inf": 0
         },
         "time_utc": {
           "orig_dtype": "str",
@@ -1516,134 +1704,178 @@
         "ret_5m": {
           "orig_dtype": "float64",
           "repro_dtype": "float64",
-          "orig_inf": 0,
-          "repro_inf": 0
+          "orig_pos_inf": 0,
+          "repro_pos_inf": 0,
+          "orig_neg_inf": 0,
+          "repro_neg_inf": 0
         },
         "ret_15m": {
           "orig_dtype": "float64",
           "repro_dtype": "float64",
-          "orig_inf": 0,
-          "repro_inf": 0
+          "orig_pos_inf": 0,
+          "repro_pos_inf": 0,
+          "orig_neg_inf": 0,
+          "repro_neg_inf": 0
         },
         "ret_1h": {
           "orig_dtype": "float64",
           "repro_dtype": "float64",
-          "orig_inf": 0,
-          "repro_inf": 0
+          "orig_pos_inf": 0,
+          "repro_pos_inf": 0,
+          "orig_neg_inf": 0,
+          "repro_neg_inf": 0
         },
         "ret_24h": {
           "orig_dtype": "float64",
           "repro_dtype": "float64",
-          "orig_inf": 0,
-          "repro_inf": 0
+          "orig_pos_inf": 0,
+          "repro_pos_inf": 0,
+          "orig_neg_inf": 0,
+          "repro_neg_inf": 0
         },
         "rsi14": {
           "orig_dtype": "float64",
           "repro_dtype": "float64",
-          "orig_inf": 0,
-          "repro_inf": 0
+          "orig_pos_inf": 0,
+          "repro_pos_inf": 0,
+          "orig_neg_inf": 0,
+          "repro_neg_inf": 0
         },
         "atr14": {
           "orig_dtype": "float64",
           "repro_dtype": "float64",
-          "orig_inf": 0,
-          "repro_inf": 0
+          "orig_pos_inf": 0,
+          "repro_pos_inf": 0,
+          "orig_neg_inf": 0,
+          "repro_neg_inf": 0
         },
         "atr_pct": {
           "orig_dtype": "float64",
           "repro_dtype": "float64",
-          "orig_inf": 0,
-          "repro_inf": 0
+          "orig_pos_inf": 0,
+          "repro_pos_inf": 0,
+          "orig_neg_inf": 0,
+          "repro_neg_inf": 0
         },
         "vol_rel_1h": {
           "orig_dtype": "float64",
           "repro_dtype": "float64",
-          "orig_inf": 0,
-          "repro_inf": 0
+          "orig_pos_inf": 0,
+          "repro_pos_inf": 0,
+          "orig_neg_inf": 0,
+          "repro_neg_inf": 0
         },
         "vol_z_1h": {
           "orig_dtype": "float64",
           "repro_dtype": "float64",
-          "orig_inf": 0,
-          "repro_inf": 0
+          "orig_pos_inf": 0,
+          "repro_pos_inf": 0,
+          "orig_neg_inf": 0,
+          "repro_neg_inf": 0
         },
         "taker_buy_share": {
           "orig_dtype": "float64",
           "repro_dtype": "float64",
-          "orig_inf": 0,
-          "repro_inf": 0
+          "orig_pos_inf": 0,
+          "repro_pos_inf": 0,
+          "orig_neg_inf": 0,
+          "repro_neg_inf": 0
         },
         "delta_ratio": {
           "orig_dtype": "float64",
           "repro_dtype": "float64",
-          "orig_inf": 0,
-          "repro_inf": 0
+          "orig_pos_inf": 0,
+          "repro_pos_inf": 0,
+          "orig_neg_inf": 0,
+          "repro_neg_inf": 0
         },
         "flow_buy_share_15m": {
           "orig_dtype": "float64",
           "repro_dtype": "float64",
-          "orig_inf": 0,
-          "repro_inf": 0
+          "orig_pos_inf": 0,
+          "repro_pos_inf": 0,
+          "orig_neg_inf": 0,
+          "repro_neg_inf": 0
         },
         "momentum_change": {
           "orig_dtype": "float64",
           "repro_dtype": "float64",
-          "orig_inf": 0,
-          "repro_inf": 0
+          "orig_pos_inf": 0,
+          "repro_pos_inf": 0,
+          "orig_neg_inf": 0,
+          "repro_neg_inf": 0
         },
         "utc_vwap": {
           "orig_dtype": "float64",
           "repro_dtype": "float64",
-          "orig_inf": 0,
-          "repro_inf": 0
+          "orig_pos_inf": 0,
+          "repro_pos_inf": 0,
+          "orig_neg_inf": 0,
+          "repro_neg_inf": 0
         },
         "vwap_distance_pct": {
           "orig_dtype": "float64",
           "repro_dtype": "float64",
-          "orig_inf": 0,
-          "repro_inf": 0
+          "orig_pos_inf": 0,
+          "repro_pos_inf": 0,
+          "orig_neg_inf": 0,
+          "repro_neg_inf": 0
         },
         "vwap_distance_atr": {
           "orig_dtype": "float64",
           "repro_dtype": "float64",
-          "orig_inf": 0,
-          "repro_inf": 0
+          "orig_pos_inf": 0,
+          "repro_pos_inf": 0,
+          "orig_neg_inf": 0,
+          "repro_neg_inf": 0
         },
         "prior_15m_low": {
           "orig_dtype": "float64",
           "repro_dtype": "float64",
-          "orig_inf": 0,
-          "repro_inf": 0
+          "orig_pos_inf": 0,
+          "repro_pos_inf": 0,
+          "orig_neg_inf": 0,
+          "repro_neg_inf": 0
         },
         "prior_15m_high": {
           "orig_dtype": "float64",
           "repro_dtype": "float64",
-          "orig_inf": 0,
-          "repro_inf": 0
+          "orig_pos_inf": 0,
+          "repro_pos_inf": 0,
+          "orig_neg_inf": 0,
+          "repro_neg_inf": 0
         },
         "break_down": {
           "orig_dtype": "bool",
           "repro_dtype": "bool",
-          "orig_inf": 0,
-          "repro_inf": 0
+          "orig_pos_inf": 0,
+          "repro_pos_inf": 0,
+          "orig_neg_inf": 0,
+          "repro_neg_inf": 0
         },
         "break_up": {
           "orig_dtype": "bool",
           "repro_dtype": "bool",
-          "orig_inf": 0,
-          "repro_inf": 0
+          "orig_pos_inf": 0,
+          "repro_pos_inf": 0,
+          "orig_neg_inf": 0,
+          "repro_neg_inf": 0
         },
         "btc_ret_1h": {
           "orig_dtype": "float64",
           "repro_dtype": "float64",
-          "orig_inf": 0,
-          "repro_inf": 0
+          "orig_pos_inf": 0,
+          "repro_pos_inf": 0,
+          "orig_neg_inf": 0,
+          "repro_neg_inf": 0
         },
         "relative_btc_1h": {
           "orig_dtype": "float64",
           "repro_dtype": "float64",
-          "orig_inf": 0,
-          "repro_inf": 0
+          "orig_pos_inf": 0,
+          "repro_pos_inf": 0,
+          "orig_neg_inf": 0,
+          "repro_neg_inf": 0
         }
       },
       "max_abs_numeric_diff": 0.0,
@@ -1924,74 +2156,98 @@
         "open_ms": {
           "orig_dtype": "int64",
           "repro_dtype": "int64",
-          "orig_inf": 0,
-          "repro_inf": 0
+          "orig_pos_inf": 0,
+          "repro_pos_inf": 0,
+          "orig_neg_inf": 0,
+          "repro_neg_inf": 0
         },
         "open": {
           "orig_dtype": "float64",
           "repro_dtype": "float64",
-          "orig_inf": 0,
-          "repro_inf": 0
+          "orig_pos_inf": 0,
+          "repro_pos_inf": 0,
+          "orig_neg_inf": 0,
+          "repro_neg_inf": 0
         },
         "high": {
           "orig_dtype": "float64",
           "repro_dtype": "float64",
-          "orig_inf": 0,
-          "repro_inf": 0
+          "orig_pos_inf": 0,
+          "repro_pos_inf": 0,
+          "orig_neg_inf": 0,
+          "repro_neg_inf": 0
         },
         "low": {
           "orig_dtype": "float64",
           "repro_dtype": "float64",
-          "orig_inf": 0,
-          "repro_inf": 0
+          "orig_pos_inf": 0,
+          "repro_pos_inf": 0,
+          "orig_neg_inf": 0,
+          "repro_neg_inf": 0
         },
         "close": {
           "orig_dtype": "float64",
           "repro_dtype": "float64",
-          "orig_inf": 0,
-          "repro_inf": 0
+          "orig_pos_inf": 0,
+          "repro_pos_inf": 0,
+          "orig_neg_inf": 0,
+          "repro_neg_inf": 0
         },
         "volume": {
           "orig_dtype": "float64",
           "repro_dtype": "float64",
-          "orig_inf": 0,
-          "repro_inf": 0
+          "orig_pos_inf": 0,
+          "repro_pos_inf": 0,
+          "orig_neg_inf": 0,
+          "repro_neg_inf": 0
         },
         "close_ms": {
           "orig_dtype": "int64",
           "repro_dtype": "int64",
-          "orig_inf": 0,
-          "repro_inf": 0
+          "orig_pos_inf": 0,
+          "repro_pos_inf": 0,
+          "orig_neg_inf": 0,
+          "repro_neg_inf": 0
         },
         "quote_volume": {
           "orig_dtype": "float64",
           "repro_dtype": "float64",
-          "orig_inf": 0,
-          "repro_inf": 0
+          "orig_pos_inf": 0,
+          "repro_pos_inf": 0,
+          "orig_neg_inf": 0,
+          "repro_neg_inf": 0
         },
         "trades": {
           "orig_dtype": "int64",
           "repro_dtype": "int64",
-          "orig_inf": 0,
-          "repro_inf": 0
+          "orig_pos_inf": 0,
+          "repro_pos_inf": 0,
+          "orig_neg_inf": 0,
+          "repro_neg_inf": 0
         },
         "taker_buy_base": {
           "orig_dtype": "float64",
           "repro_dtype": "float64",
-          "orig_inf": 0,
-          "repro_inf": 0
+          "orig_pos_inf": 0,
+          "repro_pos_inf": 0,
+          "orig_neg_inf": 0,
+          "repro_neg_inf": 0
         },
         "taker_buy_quote": {
           "orig_dtype": "float64",
           "repro_dtype": "float64",
-          "orig_inf": 0,
-          "repro_inf": 0
+          "orig_pos_inf": 0,
+          "repro_pos_inf": 0,
+          "orig_neg_inf": 0,
+          "repro_neg_inf": 0
         },
         "ignore": {
           "orig_dtype": "int64",
           "repro_dtype": "int64",
-          "orig_inf": 0,
-          "repro_inf": 0
+          "orig_pos_inf": 0,
+          "repro_pos_inf": 0,
+          "orig_neg_inf": 0,
+          "repro_neg_inf": 0
         },
         "time_utc": {
           "orig_dtype": "str",
@@ -2000,134 +2256,178 @@
         "ret_5m": {
           "orig_dtype": "float64",
           "repro_dtype": "float64",
-          "orig_inf": 0,
-          "repro_inf": 0
+          "orig_pos_inf": 0,
+          "repro_pos_inf": 0,
+          "orig_neg_inf": 0,
+          "repro_neg_inf": 0
         },
         "ret_15m": {
           "orig_dtype": "float64",
           "repro_dtype": "float64",
-          "orig_inf": 0,
-          "repro_inf": 0
+          "orig_pos_inf": 0,
+          "repro_pos_inf": 0,
+          "orig_neg_inf": 0,
+          "repro_neg_inf": 0
         },
         "ret_1h": {
           "orig_dtype": "float64",
           "repro_dtype": "float64",
-          "orig_inf": 0,
-          "repro_inf": 0
+          "orig_pos_inf": 0,
+          "repro_pos_inf": 0,
+          "orig_neg_inf": 0,
+          "repro_neg_inf": 0
         },
         "ret_24h": {
           "orig_dtype": "float64",
           "repro_dtype": "float64",
-          "orig_inf": 0,
-          "repro_inf": 0
+          "orig_pos_inf": 0,
+          "repro_pos_inf": 0,
+          "orig_neg_inf": 0,
+          "repro_neg_inf": 0
         },
         "rsi14": {
           "orig_dtype": "float64",
           "repro_dtype": "float64",
-          "orig_inf": 0,
-          "repro_inf": 0
+          "orig_pos_inf": 0,
+          "repro_pos_inf": 0,
+          "orig_neg_inf": 0,
+          "repro_neg_inf": 0
         },
         "atr14": {
           "orig_dtype": "float64",
           "repro_dtype": "float64",
-          "orig_inf": 0,
-          "repro_inf": 0
+          "orig_pos_inf": 0,
+          "repro_pos_inf": 0,
+          "orig_neg_inf": 0,
+          "repro_neg_inf": 0
         },
         "atr_pct": {
           "orig_dtype": "float64",
           "repro_dtype": "float64",
-          "orig_inf": 0,
-          "repro_inf": 0
+          "orig_pos_inf": 0,
+          "repro_pos_inf": 0,
+          "orig_neg_inf": 0,
+          "repro_neg_inf": 0
         },
         "vol_rel_1h": {
           "orig_dtype": "float64",
           "repro_dtype": "float64",
-          "orig_inf": 0,
-          "repro_inf": 0
+          "orig_pos_inf": 0,
+          "repro_pos_inf": 0,
+          "orig_neg_inf": 0,
+          "repro_neg_inf": 0
         },
         "vol_z_1h": {
           "orig_dtype": "float64",
           "repro_dtype": "float64",
-          "orig_inf": 0,
-          "repro_inf": 0
+          "orig_pos_inf": 0,
+          "repro_pos_inf": 0,
+          "orig_neg_inf": 0,
+          "repro_neg_inf": 0
         },
         "taker_buy_share": {
           "orig_dtype": "float64",
           "repro_dtype": "float64",
-          "orig_inf": 0,
-          "repro_inf": 0
+          "orig_pos_inf": 0,
+          "repro_pos_inf": 0,
+          "orig_neg_inf": 0,
+          "repro_neg_inf": 0
         },
         "delta_ratio": {
           "orig_dtype": "float64",
           "repro_dtype": "float64",
-          "orig_inf": 0,
-          "repro_inf": 0
+          "orig_pos_inf": 0,
+          "repro_pos_inf": 0,
+          "orig_neg_inf": 0,
+          "repro_neg_inf": 0
         },
         "flow_buy_share_15m": {
           "orig_dtype": "float64",
           "repro_dtype": "float64",
-          "orig_inf": 0,
-          "repro_inf": 0
+          "orig_pos_inf": 0,
+          "repro_pos_inf": 0,
+          "orig_neg_inf": 0,
+          "repro_neg_inf": 0
         },
         "momentum_change": {
           "orig_dtype": "float64",
           "repro_dtype": "float64",
-          "orig_inf": 0,
-          "repro_inf": 0
+          "orig_pos_inf": 0,
+          "repro_pos_inf": 0,
+          "orig_neg_inf": 0,
+          "repro_neg_inf": 0
         },
         "utc_vwap": {
           "orig_dtype": "float64",
           "repro_dtype": "float64",
-          "orig_inf": 0,
-          "repro_inf": 0
+          "orig_pos_inf": 0,
+          "repro_pos_inf": 0,
+          "orig_neg_inf": 0,
+          "repro_neg_inf": 0
         },
         "vwap_distance_pct": {
           "orig_dtype": "float64",
           "repro_dtype": "float64",
-          "orig_inf": 0,
-          "repro_inf": 0
+          "orig_pos_inf": 0,
+          "repro_pos_inf": 0,
+          "orig_neg_inf": 0,
+          "repro_neg_inf": 0
         },
         "vwap_distance_atr": {
           "orig_dtype": "float64",
           "repro_dtype": "float64",
-          "orig_inf": 0,
-          "repro_inf": 0
+          "orig_pos_inf": 0,
+          "repro_pos_inf": 0,
+          "orig_neg_inf": 0,
+          "repro_neg_inf": 0
         },
         "prior_15m_low": {
           "orig_dtype": "float64",
           "repro_dtype": "float64",
-          "orig_inf": 0,
-          "repro_inf": 0
+          "orig_pos_inf": 0,
+          "repro_pos_inf": 0,
+          "orig_neg_inf": 0,
+          "repro_neg_inf": 0
         },
         "prior_15m_high": {
           "orig_dtype": "float64",
           "repro_dtype": "float64",
-          "orig_inf": 0,
-          "repro_inf": 0
+          "orig_pos_inf": 0,
+          "repro_pos_inf": 0,
+          "orig_neg_inf": 0,
+          "repro_neg_inf": 0
         },
         "break_down": {
           "orig_dtype": "bool",
           "repro_dtype": "bool",
-          "orig_inf": 0,
-          "repro_inf": 0
+          "orig_pos_inf": 0,
+          "repro_pos_inf": 0,
+          "orig_neg_inf": 0,
+          "repro_neg_inf": 0
         },
         "break_up": {
           "orig_dtype": "bool",
           "repro_dtype": "bool",
-          "orig_inf": 0,
-          "repro_inf": 0
+          "orig_pos_inf": 0,
+          "repro_pos_inf": 0,
+          "orig_neg_inf": 0,
+          "repro_neg_inf": 0
         },
         "btc_ret_1h": {
           "orig_dtype": "float64",
           "repro_dtype": "float64",
-          "orig_inf": 0,
-          "repro_inf": 0
+          "orig_pos_inf": 0,
+          "repro_pos_inf": 0,
+          "orig_neg_inf": 0,
+          "repro_neg_inf": 0
         },
         "relative_btc_1h": {
           "orig_dtype": "float64",
           "repro_dtype": "float64",
-          "orig_inf": 0,
-          "repro_inf": 0
+          "orig_pos_inf": 0,
+          "repro_pos_inf": 0,
+          "orig_neg_inf": 0,
+          "repro_neg_inf": 0
         }
       },
       "max_abs_numeric_diff": 0.0,
