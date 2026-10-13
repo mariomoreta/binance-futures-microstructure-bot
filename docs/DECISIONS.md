@@ -1291,3 +1291,13 @@ barrera 1029 (1020+9) con 1F+8E preexistentes contrastados en worktree
 aislado de de14ac1 (misma firma; alcance fuera de esta tarea).
 Aislamiento: prohibited/bloqueados/efectivos 0, hashes iguales,
 data/logs sin cambios. Sin merge, sesiones, paper, ordenes ni gates.
+
+## 2026-10-13 — Mandato operativo y V2 principal (instruccion explicita del usuario)
+Destino: operar el bot; completar decision, simulacion, posiciones, riesgo y adaptador,
+con V2 como interfaz principal y SSR legado/rollback. Entregas deben describir capacidad
+operativa ganada, dependencia pendiente y prueba de cierre, no repetir limitaciones sin tareas.
+O1-O5 son paquetes, no avance automatico de fases/gates. Preparacion aislada de contratos/
+mocks puede progresar en paralelo; activacion real requiere cuenta/capital/limites autorizados.
+Agentes IA/noticias y Kronos quedan diferidos en FUTURE_RESEARCH_OPTIONS.
+Inventario fuente: OPERATIONAL_READINESS_INVENTORY; backend 3cbbb1c9290e252ee18d6f0a466898f2f7b7dfee, frontend 27b7af59cb1e313169f49655161d66e043b5412d.
+No se selecciona familia ni umbrales por esta decision. No codigo/servicios/DBs cambiados.

@@ -1,3 +1,14 @@
+## Mandato actualizado — 2026-10-13
+Objetivo final: operar el bot mediante Dashboard V2. Lee primero
+docs/OPERATIONAL_READINESS_INVENTORY.md y los bloques vigentes de CURRENT_STATE/TASK_QUEUE.
+V2 es la interfaz principal elegida; no es solo una fundacion estatica: checkpoint 27b7af5
+incluye BFF/lectores. Completar paridad y control antes de declarar corte funcional.
+Agentes IA/noticias y Kronos son investigacion futura; no integrarlos ahora.
+Trabajo actual solicitado: inventario y documentacion del camino operativo.
+La aprobacion del destino no entrega credenciales ni autoriza ordenes/capital;
+la implementacion se desglosa en paquetes O1-O5 verificables.
+Las restricciones de aislamiento, secretos y riesgo siguientes siguen vigentes.
+
 # AGENTS.md
 
 **Role:** Autonomous Research & Development Agent for the Binance Futures Market Intelligence project.

@@ -1,3 +1,26 @@
+## Direccion vigente — 2026-10-13
+El destino aprobado es operar el bot mediante Dashboard V2 como interfaz principal.
+Inventario, brechas y aceptacion: [OPERATIONAL_READINESS_INVENTORY.md](OPERATIONAL_READINESS_INVENTORY.md).
+La ruta es O1 integracion/captura -> O2 estrategia/replay -> O3 paper/posiciones/riesgo
+-> O4 adaptador de ejecucion probado -> O5 operacion controlada.
+Los pasos documentan trabajo a completar; no declaran funciones implementadas ni avanzan gates.
+Agentes IA/noticias y Kronos: [FUTURE_RESEARCH_OPTIONS.md](FUTURE_RESEARCH_OPTIONS.md), diferidos.
+Las notas antiguas siguientes conservan historia; este bloque rige la prioridad actual.
+
+### Registro actual (complementa las tablas historicas; no las convierte en evidencia)
+| ID | Decision / alcance | Implementacion actual | Siguiente cierre |
+|---|---|---|---|
+| F-V2-BFF-01 | Mantener y completar | PARCIAL: rutas/lectores existentes en 27b7af5 | Paridad, schemas y contratos |
+| F-LAUNCH-SUP-01 | Completar control V2 | PARCIAL: backend preparado/deshabilitado; Start bloqueado | Arranque atomico/status/stop y corrida |
+| F-BT-01 | Completar replay util | PARCIAL: mecanica existente, calidad/version pendientes | O2 con costes/OOS |
+| F-PAPER-01 / F-PORT-01 | Completar ciclo simulado | DISENO; sin motor verificado | O3 con posiciones/riesgo |
+| F-OPS-V2-01 | DECIDED: V2 interfaz principal | Integracion/cutover pendiente | O1 |
+| F-STRAT-PILOT-01 | DECIDED: primera estrategia versionada; familia PROPOSED | Contratos H1/H2/H3 de estudio | Seleccion fundada y O2 |
+| F-RISK-ENGINE-01 | DECIDED: riesgo no eludible | DISENO | O3 pruebas de limites/fallos |
+| F-EXEC-ADAPTER-01 | DECIDED: camino a ejecucion; activacion separada | Pendiente | O4 mocks/entorno de prueba -> O5 |
+| F-STORAGE-OPS-01 | DECIDED: recursos/retencion medidos | Retencion parcial existente | Cuotas/logs/backup/disco y corrida |
+| F-RESEARCH-AI-01 | DEFERRED: agentes/noticias/Kronos | Sin integracion | FUTURE_RESEARCH_OPTIONS |
+
 
 ## Entrega nueve archivos 6fd6091-base — 2026-10-13 (review/entrega-nueve-archivos-6fd6091, sin push aun)
 Cierres tecnicos (habilitante, sin IDs nuevos): cap holding, calendario

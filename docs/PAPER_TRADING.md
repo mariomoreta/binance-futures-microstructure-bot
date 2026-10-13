@@ -1,3 +1,17 @@
+## Direccion vigente — 2026-10-13
+El destino aprobado es operar el bot mediante Dashboard V2 como interfaz principal.
+Inventario, brechas y aceptacion: [OPERATIONAL_READINESS_INVENTORY.md](OPERATIONAL_READINESS_INVENTORY.md).
+La ruta es O1 integracion/captura -> O2 estrategia/replay -> O3 paper/posiciones/riesgo
+-> O4 adaptador de ejecucion probado -> O5 operacion controlada.
+Los pasos documentan trabajo a completar; no declaran funciones implementadas ni avanzan gates.
+Agentes IA/noticias y Kronos: [FUTURE_RESEARCH_OPTIONS.md](FUTURE_RESEARCH_OPTIONS.md), diferidos.
+Las notas antiguas siguientes conservan historia; este bloque rige la prioridad actual.
+
+Siguiente entrega O3: ledger/saldo, intenciones, fills parciales/rechazos,
+comisiones/funding, posiciones, risk gate y reconciliacion. Paper consume estrategia
+versionada del backend; V2 muestra resultados. Probar desconexion/reinicio/doble orden.
+Ver inventario para separar funciones existentes del motor pendiente.
+
 # PAPER_TRADING
 
 Phase 4 scope. No paper engine exists. Nothing here authorizes trading.

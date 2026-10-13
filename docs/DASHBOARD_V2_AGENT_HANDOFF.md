@@ -1,3 +1,20 @@
+## Direccion vigente — 2026-10-13
+El destino aprobado es operar el bot mediante Dashboard V2 como interfaz principal.
+Inventario, brechas y aceptacion: [OPERATIONAL_READINESS_INVENTORY.md](OPERATIONAL_READINESS_INVENTORY.md).
+La ruta es O1 integracion/captura -> O2 estrategia/replay -> O3 paper/posiciones/riesgo
+-> O4 adaptador de ejecucion probado -> O5 operacion controlada.
+Los pasos documentan trabajo a completar; no declaran funciones implementadas ni avanzan gates.
+Agentes IA/noticias y Kronos: [FUTURE_RESEARCH_OPTIONS.md](FUTURE_RESEARCH_OPTIONS.md), diferidos.
+Las notas antiguas siguientes conservan historia; este bloque rige la prioridad actual.
+
+V2 de referencia 27b7af59cb1e313169f49655161d66e043b5412d: hay rutas BFF/lectores reales.
+No seguir el encabezado historico "static/no BFF" como estado presente.
+Backend de referencia 3cbbb1c9290e252ee18d6f0a466898f2f7b7dfee. No unir ramas ciegamente:
+comparar fuentes/contratos, preservar correcciones y publicar SHAs separados si aplica.
+Prioridad: paridad necesaria, schemas 10/3, supervision segura, observabilidad y
+superficies de backtest/paper cuando sus motores existan; evitar pulido sin dependencia.
+Destino aprobado: V2 principal; SSR conservado como legado/rollback hasta demostrar corte.
+
 # Dashboard V2 Agent Handoff
 
 **Purpose:** let Codex, Muse Spark or another agent continue without the

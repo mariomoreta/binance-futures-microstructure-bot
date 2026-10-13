@@ -1,3 +1,18 @@
+## Direccion vigente — 2026-10-13
+El destino aprobado es operar el bot mediante Dashboard V2 como interfaz principal.
+Inventario, brechas y aceptacion: [OPERATIONAL_READINESS_INVENTORY.md](OPERATIONAL_READINESS_INVENTORY.md).
+La ruta es O1 integracion/captura -> O2 estrategia/replay -> O3 paper/posiciones/riesgo
+-> O4 adaptador de ejecucion probado -> O5 operacion controlada.
+Los pasos documentan trabajo a completar; no declaran funciones implementadas ni avanzan gates.
+Agentes IA/noticias y Kronos: [FUTURE_RESEARCH_OPTIONS.md](FUTURE_RESEARCH_OPTIONS.md), diferidos.
+Las notas antiguas siguientes conservan historia; este bloque rige la prioridad actual.
+
+Siguiente entrega O3: contrato y enforcement de exposicion concurrente,
+notional/riesgo por posicion, perdida diaria, apalancamiento, stops, datos degradados,
+timeouts y kill-switch. Valores numericos requieren decision registrada y evidencia.
+Un risk gate antes de cada intento, proteccion de posiciones existentes y ledger auditable;
+observe-only/supervisor de procesos no sustituye este motor.
+
 # RISK_RULES
 
 Unbypassable by design: neither signal nor position engines can override risk.
