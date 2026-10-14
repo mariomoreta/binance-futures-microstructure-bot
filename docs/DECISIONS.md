@@ -1291,3 +1291,29 @@ barrera 1029 (1020+9) con 1F+8E preexistentes contrastados en worktree
 aislado de de14ac1 (misma firma; alcance fuera de esta tarea).
 Aislamiento: prohibited/bloqueados/efectivos 0, hashes iguales,
 data/logs sin cambios. Sin merge, sesiones, paper, ordenes ni gates.
+
+## Habilitacion Start supervisado O1 - 2026-10-13 (append-only, review/o1-funcional-v2-observacion)
+
+SUPERVISED_LAUNCH_ENABLED False -> True con la cadena completa, nunca como
+bandera sola: readiness-green (launch-readiness.ts, 5 checks) + token de
+confirmacion START_OBSERVE_2100 + allowlist de presets (brief 120s,
+standard 3600s, validation-6h 21600s) + spawn de codigo fijo al controlador
+canonico (sin interpolacion de usuario) + identidad verificada/heartbeat
+(supervisor+sentinel) + stop cableado (solo runs launcher=dashboard) +
+matriz de fallos 23/23 + ciclo aislado + refusales preservados.
+Alcance: observe-only (BOT_MODE lo impone), launcher requerido (anonimos
+rechazados pre-spawn), kill-only rollback, foreign/terminal intocables.
+Ninguna corrida real lanzada en esta entrega; la primera corrida conjunta
+requiere su autorizacion propia. No hay ruta HTTP/CLI nueva en el backend:
+el unico llamante es el path fijo del BFF V2.
+
+## Registro bandera Start — checkpoint 4f1d92e (2026-10-14, append-only)
+
+La bandera Python `SUPERVISED_LAUNCH_ENABLED=True` (control.py) quedo
+habilitada en el checkpoint 4f1d92e junto a `V2PathTest` (launch con llamada
+fija brief/dashboard, asociacion supervisor+sentinel al run, rollback ante
+fallo de sentinel, stop de run propio). `V2PathTest` NO es prueba HTTP/BFF:
+cubre el controlador canonico, no la ruta. Las pruebas de la ruta real
+(POST /runtime/start con token + readiness, asociacion/rollback/stop
+extremo a extremo del BFF) quedan para el Bloque 3 y condicionan cualquier
+corrida conjunta. Sin corridas reales a esta fecha.

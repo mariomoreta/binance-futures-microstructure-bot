@@ -123,3 +123,15 @@ same-ms different-rate REJECTS the run. Runner manifest: per-group
   12/16/20 identically with or without 37-48h hourly candles; the
   full-series median flipped 16h/20h to stale, 3 -> 1 — R8 regression
   `R8FundingHorizonCausalityTest`). `ENGINE_VERSION` unchanged (v4.1).
+
+## Amendment v4.4 — engine v4.2 + per-settlement causality (2026-10-14,
+review 4f1d92e)
+
+- `ENGINE_VERSION` is `backtest-offline/v4.2`. The v4.1 exit_ms prefix was
+  still retrospective inside the holding (0/12/24/36h + 21/22/23h flipped
+  16h/20h proxy -> stale, 3 -> 1); each settlement now computes its data
+  step AND its mark from the candle prefix known at its own
+  `settlement_ms` (R9 `R9InHoldingCausalityTest` beside R8). Behavior
+  change is versioned in results: `engine_version` reads v4.2 and
+  `config_hash` embeds it, so v4.1 and v4.2 executions never compare
+  equal (a contract note alone does not distinguish runs).

@@ -1,4 +1,4 @@
-"""Offline backtest preparation (research mechanics only, v4.1).
+"""Offline backtest preparation (research mechanics only, v4.2).
 
 Pure, deterministic, stdlib-only replay over injected candles + study
 events. No network, no live modules, no database access, no wall clock,
@@ -16,6 +16,15 @@ v4.1 result hashes never compare equal. 2026-10-14 causality fix: the data
 step and settlement marks use the candle prefix known at exit_ms — candles
 printed later never reclassify earlier settlements (R8 regression). Flat-price fixture amounts from v4
 are unchanged; legacy totals still include open marks (never realized).
+
+v4.2 revision (2026-10-14, review 4f1d92e): per-SETTLEMENT causality. The
+exit_ms prefix was still retrospective INSIDE the holding: on 0/12/24/36h
+data, inserting 21/22/23h candles dragged the shared median step and
+flipped the 16h/20h settlements from proxy to stale (3 -> 1). Each
+settlement now computes its data step AND its mark from the candle prefix
+known at its own settlement_ms (R9 regression beside R8). Behavior change
+is versioned: ENGINE_VERSION is backtest-offline/v4.2, so v4.1 and v4.2
+result/config hashes never compare equal.
 
 Temporal availability contract (v4; v3 rules kept, funding reworked):
 - A candle's OPEN is known at its open_time. Its high/low/close are known
@@ -54,14 +63,16 @@ Temporal availability contract (v4; v3 rules kept, funding reworked):
   contribute NOTHING to realized metrics; their exit-leg costs sit in
   costs_exit_hypothetical (totaled separately), entry-leg costs in
   costs_executed.
-- Funding (v4.1): per-SETTLEMENT accounting over an explicit versioned
+- Funding (v4.2): per-SETTLEMENT accounting over an explicit versioned
   calendar — never a global interval swap. Each settlement carries its own
   timestamp and realized rate; a settlement applies iff
   entry_ms <= settlement_ms < exit_ms (boundary convention, tested both
   edges). Exposure at settlement = CURRENT QUANTITY x SETTLEMENT MARK
   (causal candle open covering the settlement; a settlement with no
   covering candle is excluded as unknown, never zero-priced). Mark
-  freshness is judged against the DATA step, never the funding cadence:
+   freshness is judged against the DATA step, never the funding cadence
+   (v4.2: step AND mark per settlement, from the prefix known at that
+   settlement_ms — R9):
   age 0 = fresh (observed), within one data step = proxy (settles,
   flagged with its age), older = stale (excluded as unknown). Sign by
   direction (LONG pays / SHORT receives at a positive rate). Every settled
@@ -102,7 +113,7 @@ import json
 from dataclasses import dataclass
 from typing import Any, Dict, List, Optional, Tuple
 
-ENGINE_VERSION = "backtest-offline/v4.1"
+ENGINE_VERSION = "backtest-offline/v4.2"
 FUNDING_INTERVAL_MS = 8 * 3600 * 1000
 
 
@@ -246,8 +257,9 @@ class BacktestConfig:
 
     def config_hash(self) -> str:
         # Versioned implementation identity: the engine version joins the
-        # payload so a v4 result hash never equals a v4.1 result hash even
-        # with identical knobs (fee semantics changed in v4.1).
+        # payload so a v4/v4.1/v4.2 result hash never equals another
+        # version's hash even with identical knobs (fee semantics changed
+        # in v4.1, per-settlement causality in v4.2).
         payload = json.dumps({"engine_version": ENGINE_VERSION,
                               "config": self.__dict__},
                              sort_keys=True, default=str)
@@ -356,15 +368,19 @@ def _funding_for_trade(side: str,
     ordered, _ = cal.normalized()  # conflicts raise here, before any math
     assessment = cal.assess()
     gap_spans = [(g["from_ms"], g["to_ms"]) for g in assessment["gaps"]]
-    # CAUSALITY (2026-10-14): the data cadence and settlement marks must
-    # come from knowledge available at the position's end, never from
-    # candles printed later. The full-series median step is NOT causal: on
-    # 0/12/24/36h data the step is 12h (16h/20h settlements = proxy), but
-    # appending 37-48h hourly candles drags the median to ~1h and flips
-    # those same settlements to stale (3 settled -> 1). Truncate to the
-    # prefix known at exit_ms; later candles cannot move earlier funding.
-    causal = [c for c in series if c.open_time_ms <= exit_ms] or series
-    data_step = _data_step_ms(causal)
+    # CAUSALITY v4.2 (2026-10-14, review 4f1d92e): cadence AND availability
+    # are computed per settlement from the candle prefix known at THAT
+    # settlement_ms — never from the holding's full prefix. The exit_ms
+    # prefix (v4.1 fix, R8) was still retrospective inside the holding: on
+    # 0/12/24/36h data, inserting 21/22/23h candles dragged the shared
+    # median step and flipped the 16h/20h settlements proxy->stale (3->1).
+    # Later candles — even inside the holding — never move earlier funding.
+    by_open = sorted(series, key=lambda c: c.open_time_ms)
+    opens = [c.open_time_ms for c in by_open]
+
+    def _prefix(ms: int) -> list:
+        import bisect
+        return by_open[:bisect.bisect_right(opens, ms)] or series
     total = 0.0
     events: list = []
     unknown = 0
@@ -374,7 +390,9 @@ def _funding_for_trade(side: str,
                             if t <= s.settlement_ms)
             held_qty = sum(qty for (t, _, qty) in fill_ledger
                            if t <= s.settlement_ms)
-            mark, age = _settlement_mark(causal, s.settlement_ms)
+            prefix = _prefix(s.settlement_ms)
+            mark, age = _settlement_mark(prefix, s.settlement_ms)
+            data_step = _data_step_ms(prefix)
             if mark is None or age is None:
                 unknown += 1
                 events.append({"basis": "unknown-excluded",

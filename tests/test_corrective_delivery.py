@@ -274,5 +274,50 @@ class R8FundingHorizonCausalityTest(unittest.TestCase):
                          t_base["funding_accounting_complete"])
 
 
+class R9InHoldingCausalityTest(unittest.TestCase):
+    def test_mid_holding_candles_never_move_earlier_settlements(self) -> None:
+        # Review finding on 4f1d92e: the exit_ms prefix (R8) was still
+        # retrospective INSIDE the holding. Base 0/12/24/36h settles
+        # 12/16/20 (fresh/proxy/proxy = 3); inserting 21/22/23h candles
+        # dragged the shared median step and flipped 16h/20h to stale
+        # (3 -> 1). Each settlement must use the prefix known at its own
+        # settlement_ms, so both inputs settle identically.
+        base = [Candle("BTCUSDT", h * H, 100.0, 100.1, 99.9, 100.0)
+                for h in (0, 12, 24, 36)]
+        mid = sorted(
+            base + [Candle("BTCUSDT", h * H, 100.0, 100.1, 99.9, 100.0)
+                    for h in (21, 22, 23)],
+            key=lambda c: c.open_time_ms)
+        cal = FundingCalendar(version="venue-4h/v1",
+                              source="synthetic-fixture", interval_ms=4 * H,
+                              symbol="BTCUSDT",
+                              settlements=tuple(
+                                  FundingSettlement(m * H, 10.0)
+                                  for m in (12, 16, 20, 24)))
+        cfg = _cfg(exit_horizon_ms=24 * H, funding_calendar=cal)
+        r_base = run_backtest([StudyEvent("BTCUSDT", 0, "LONG", 100.0)],
+                              base, cfg)
+        r_mid = run_backtest([StudyEvent("BTCUSDT", 0, "LONG", 100.0)],
+                             mid, cfg)
+        t_base = r_base["trades"][0]
+        t_mid = r_mid["trades"][0]
+        settled = lambda t: [e["settlement_ms"] for e in t["funding_events"]
+                             if e["basis"] == "settled"]
+        self.assertEqual(settled(t_base), [12 * H, 16 * H, 20 * H])
+        self.assertEqual(settled(t_mid), settled(t_base))
+        fresh = lambda t: {e["settlement_ms"]: e["mark_freshness"]
+                           for e in t["funding_events"]
+                           if e["basis"] == "settled"}
+        self.assertEqual(fresh(t_mid), fresh(t_base))
+        self.assertEqual(fresh(t_base)[16 * H], "proxy")
+        self.assertEqual(fresh(t_base)[20 * H], "proxy")
+        self.assertAlmostEqual(t_mid["funding"], t_base["funding"])
+        self.assertAlmostEqual(t_base["funding"], 3.0)
+        # Behavior version is identifiable in results (review 4f1d92e:
+        # a contract note alone does not distinguish executions).
+        self.assertEqual(r_base["engine_version"], "backtest-offline/v4.2")
+        self.assertEqual(r_mid["engine_version"], "backtest-offline/v4.2")
+
+
 if __name__ == "__main__":
     unittest.main()
