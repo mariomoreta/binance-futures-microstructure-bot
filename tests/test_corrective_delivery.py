@@ -124,16 +124,17 @@ class R3RunnerSymbolPreservationTest(unittest.TestCase):
 
 class R4StaleMarkTest(unittest.TestCase):
     def test_stale_proxy_excluded_fresh_settles_with_age(self) -> None:
-        # 12H-step candles; 4H nominal cadence. Settlement at 16H rides a
-        # 4H-old print (fresh, age recorded); at 20H the print is 8H old
-        # (stale proxy -> UNKNOWN-excluded, never settled).
-        candles = [Candle("BTCUSDT", i * 12 * H, 100.0, 100.1, 99.9,
-                          100.0) for i in range(4)]
+        # Irregular 0/12/24/60H candles (data step 12H) with a 4H nominal
+        # calendar. Settlement at 28H rides a 4H-old print: PROXY (settles,
+        # age recorded, never called fresh). At 40H the print is 16H old
+        # (data gap): STALE -> UNKNOWN-excluded, never settled as proxy.
+        candles = [Candle("BTCUSDT", h * H, 100.0, 100.1, 99.9, 100.0)
+                   for h in (0, 12, 24, 60)]
         cal = FundingCalendar(version="venue-4h/v1",
                               source="synthetic-fixture", interval_ms=4 * H,
-                              settlements=(FundingSettlement(16 * H, 10.0),
-                                           FundingSettlement(20 * H, 10.0)))
-        cfg = _cfg(exit_horizon_ms=30 * H, funding_calendar=cal)
+                              settlements=(FundingSettlement(28 * H, 10.0),
+                                           FundingSettlement(40 * H, 10.0)))
+        cfg = _cfg(exit_horizon_ms=70 * H, funding_calendar=cal)
         res = run_backtest([StudyEvent("BTCUSDT", 0, "LONG", 100.0)],
                            candles, cfg)
         t = res["trades"][0]
@@ -141,12 +142,44 @@ class R4StaleMarkTest(unittest.TestCase):
                    if e["basis"] == "settled"]
         excluded = [e for e in t["funding_events"]
                     if e["basis"] == "unknown-excluded"]
-        self.assertEqual([e["settlement_ms"] for e in settled], [16 * H])
+        self.assertEqual([e["settlement_ms"] for e in settled], [28 * H])
         self.assertEqual(settled[0]["mark_age_ms"], 4 * H)
-        self.assertEqual(settled[0]["mark_freshness"], "fresh")
-        self.assertEqual([e["settlement_ms"] for e in excluded], [20 * H])
+        self.assertEqual(settled[0]["mark_freshness"], "proxy")
+        self.assertEqual(settled[0]["data_step_ms"], 12 * H)
+        self.assertEqual([e["settlement_ms"] for e in excluded], [40 * H])
         self.assertEqual(t["funding_unknown"], 1)
         self.assertAlmostEqual(t["funding"], 1.0)
+        # This calendar itself is gapped (28H->40H vs 4H nominal), and
+        # the position is accounting-incomplete for its own reasons
+        # (stale exclusion + gap/uncovered spans): two verdicts, never
+        # one inferred from the other.
+        self.assertFalse(t["funding_accounting_complete"])
+        self.assertFalse(res["funding_calendar"]["complete"])
+        self.assertEqual(res["funding_calendar"]["gaps"],
+                         [{"from_ms": 28 * H, "to_ms": 40 * H}])
+
+    def test_fully_covered_position_is_accounting_complete(self) -> None:
+        # Entry exactly on the first settlement, exit exactly on the last:
+        # one fresh settlement, zero gaps, zero uncovered holding.
+        candles = [Candle("BTCUSDT", i * H, 100.0, 100.1, 99.9, 100.0)
+                   for i in range(30)]
+        cal = FundingCalendar(version="venue-4h/v1",
+                              source="synthetic-fixture", interval_ms=4 * H,
+                              settlements=(FundingSettlement(H, 10.0),
+                                           FundingSettlement(5 * H, 10.0)))
+        cfg = _cfg(exit_horizon_ms=5 * H, funding_calendar=cal)
+        res = run_backtest([StudyEvent("BTCUSDT", 0, "LONG", 100.0)],
+                           candles, cfg)
+        t = res["trades"][0]
+        self.assertEqual(t["entry_ms"], H)
+        self.assertEqual(t["exit_ms"], 5 * H)
+        self.assertEqual([e["settlement_ms"]
+                          for e in t["funding_events"]
+                          if e["basis"] == "settled"], [H])
+        self.assertEqual(t["funding_unknown"], 0)
+        self.assertEqual(t["funding_gap_ms"], 0)
+        self.assertEqual(t["funding_uncovered_ms"], 0)
+        self.assertTrue(t["funding_accounting_complete"])
 
 
 class R5CommissionsTest(unittest.TestCase):

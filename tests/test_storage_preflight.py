@@ -56,13 +56,25 @@ class PreflightContractTest(unittest.TestCase):
         data = tmp / "data"
         data.mkdir()
         (data / "microprobe.db").write_bytes(b"x" * 100)
-        _, first = _run(tmp)
+        first_out = tmp / "first.json"
+        proc = subprocess.run(
+            [sys.executable, str(SCRIPT), "--root", str(tmp),
+             "--out", str(first_out)],
+            capture_output=True, text=True, timeout=120)
+        self.assertEqual(proc.returncode, 0, proc.stderr[-2000:])
         (data / "microprobe.db").write_bytes(b"x" * 160)
-        code, second = _run(tmp, "--compare", str(tmp / "preflight.json"))
-        self.assertEqual(code, 0)
-        self.assertEqual(second["growth"]["bytes_delta"], 60)
+        # NOTE: --out must differ from --compare (self-overwrite refused).
+        second_out = tmp / "second.json"
+        proc = subprocess.run(
+            [sys.executable, str(SCRIPT), "--root", str(tmp),
+             "--out", str(second_out), "--compare", str(first_out)],
+            capture_output=True, text=True, timeout=120)
+        self.assertEqual(proc.returncode, 0, proc.stderr[-2000:])
+        second = json.loads(second_out.read_text(encoding="utf-8"))
+        comps = second["growth"]["components"]
+        self.assertEqual(comps["operational_db"]["delta"], 60)
         self.assertEqual(second["growth"]["basis"],
-                         "measured delta vs --compare file")
+                         "measured per-component delta vs --compare file")
 
 
 if __name__ == "__main__":

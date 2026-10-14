@@ -214,6 +214,14 @@ def main(argv=None) -> int:
                 trades = res["trades"]
                 stops = sum(1 for t in trades
                             if t["exit_reason"] == "stop")
+                settled = sum(1 for t in trades for e in t["funding_events"]
+                              if e.get("basis") == "settled")
+                unknown = sum(t.get("funding_unknown", 0) for t in trades)
+                gap_ms = sum(t.get("funding_gap_ms", 0) for t in trades)
+                uncovered_ms = sum(t.get("funding_uncovered_ms", 0)
+                                   for t in trades)
+                complete = [t for t in trades
+                            if t.get("funding_accounting_complete") is True]
                 manifest["groups"][group][seg][str(scale)] = {
                     "n_events": res["n_events"],
                     "n_trades": res["n_trades"],
@@ -235,6 +243,15 @@ def main(argv=None) -> int:
                     "total_net_realized": res["total_net_realized"],
                     "total_fees": res["total_fees"],
                     "total_funding": res["total_funding"],
+                    "funding_quality": {
+                        "settled_events": settled,
+                        "unknown_excluded": unknown,
+                        "gap_ms": gap_ms,
+                        "uncovered_ms": uncovered_ms,
+                        "accounting_complete_trades": len(complete),
+                        "note": "per-position accounting completeness; "
+                                "calendar-complete never implies it",
+                    },
                     "max_drawdown": res["max_drawdown"],
                     "max_drawdown_realized": res["max_drawdown_realized"],
                     "mfe_mean": res["mfe_mean"],

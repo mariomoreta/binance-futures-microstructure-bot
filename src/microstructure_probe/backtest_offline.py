@@ -1,4 +1,4 @@
-"""Offline backtest preparation (research mechanics only, v4).
+"""Offline backtest preparation (research mechanics only, v4.1).
 
 Pure, deterministic, stdlib-only replay over injected candles + study
 events. No network, no live modules, no database access, no wall clock,
@@ -7,6 +7,13 @@ NOT validated signals; any result on fixtures is a MECHANICS SMOKE proof,
 never performance. The v2 causality/closure guarantees refuted by review
 (R1/R2) are WITHDRAWN and replaced below; the motor is NOT claimed
 causally verified — only covered by the regression battery.
+
+v4.1 revision (2026-10-13): exit commissions on exit value (not symmetric
+halves); settlement exposure is current quantity x causal settlement mark
+with data-step freshness tiers (fresh/proxy/stale); per-position funding
+accounting completeness; config_hash carries the engine version so v4 and
+v4.1 result hashes never compare equal. Flat-price fixture amounts from v4
+are unchanged; legacy totals still include open marks (never realized).
 
 Temporal availability contract (v4; v3 rules kept, funding reworked):
 - A candle's OPEN is known at its open_time. Its high/low/close are known
@@ -45,22 +52,29 @@ Temporal availability contract (v4; v3 rules kept, funding reworked):
   contribute NOTHING to realized metrics; their exit-leg costs sit in
   costs_exit_hypothetical (totaled separately), entry-leg costs in
   costs_executed.
-- Funding (v4): per-SETTLEMENT accounting over an explicit versioned
+- Funding (v4.1): per-SETTLEMENT accounting over an explicit versioned
   calendar — never a global interval swap. Each settlement carries its own
   timestamp and realized rate; a settlement applies iff
   entry_ms <= settlement_ms < exit_ms (boundary convention, tested both
   edges). Exposure at settlement = CURRENT QUANTITY x SETTLEMENT MARK
-  (causal candle open covering the settlement time; a settlement with no
-  covering candle is excluded as unknown, never zero-priced). Sign by
+  (causal candle open covering the settlement; a settlement with no
+  covering candle is excluded as unknown, never zero-priced). Mark
+  freshness is judged against the DATA step, never the funding cadence:
+  age 0 = fresh (observed), within one data step = proxy (settles,
+  flagged with its age), older = stale (excluded as unknown). Sign by
   direction (LONG pays / SHORT receives at a positive rate). Every settled
   event records contract identity (trade symbol + calendar symbol/
   version/source; UNKNOWN when absent, never invented). Exact duplicate
   settlements (same ms AND rate) are deduped and counted; same-ms
-  different-rate conflicts REJECT the run. Completeness is never inferred
-  from first/last timestamps: interior gaps against the nominal cadence
-  are reported (gap_ms), and without a nominal cadence completeness is
-  UNKNOWN. Holding time OUTSIDE the calendar's listed span
-  [first, last] is reported as funding_uncovered_ms (truncated head/tail
+  different-rate conflicts REJECT the run. A symbol-pinned calendar
+  settles ONE contract (foreign symbols rejected). Completeness is never
+  inferred from first/last timestamps: interior gaps against the nominal
+  cadence are reported (gap_ms), and without a nominal cadence
+  completeness is UNKNOWN. Accounting completeness is PER POSITION
+  (all in-window settlements fresh-or-proxy, no gap overlap, no
+  uncovered holding) — calendar-complete never implies it. Holding time
+  OUTSIDE the calendar's listed span [first, last] is reported as
+  funding_uncovered_ms capped at the holding (truncated head/tail
   = unknown cadence continuity, never invented as zero-rate);
   inter-settlement spans inside the span are cadence (no payment due). `funding_estimated_bps`, when set, is CONTEXT ONLY (e.g. a
   forecast shown on a dashboard) and never enters accounting — estimated
@@ -86,7 +100,7 @@ import json
 from dataclasses import dataclass
 from typing import Any, Dict, List, Optional, Tuple
 
-ENGINE_VERSION = "backtest-offline/v4"
+ENGINE_VERSION = "backtest-offline/v4.1"
 FUNDING_INTERVAL_MS = 8 * 3600 * 1000
 
 
@@ -229,7 +243,12 @@ class BacktestConfig:
     min_notional_usdt: Optional[float] = None
 
     def config_hash(self) -> str:
-        payload = json.dumps(self.__dict__, sort_keys=True, default=str)
+        # Versioned implementation identity: the engine version joins the
+        # payload so a v4 result hash never equals a v4.1 result hash even
+        # with identical knobs (fee semantics changed in v4.1).
+        payload = json.dumps({"engine_version": ENGINE_VERSION,
+                              "config": self.__dict__},
+                             sort_keys=True, default=str)
         return hashlib.sha256(payload.encode("utf-8")).hexdigest()[:16]
 
 
@@ -263,18 +282,33 @@ def _settlement_mark(series: List[Candle],
     return mark, age
 
 
-def _mark_is_stale(age_ms: int, interval_ms: Optional[int]) -> bool:
-    """A covering mark older than the nominal cadence is STALE (proxy).
+def _data_step_ms(series: List[Candle]) -> Optional[int]:
+    """Nominal data cadence: median positive open_time step, or None."""
+    diffs = sorted(b.open_time_ms - a.open_time_ms
+                   for a, b in zip(series, series[1:])
+                   if b.open_time_ms > a.open_time_ms)
+    if not diffs:
+        return None
+    return diffs[len(diffs) // 2]
 
-    Freshness needs a contemporaneous print: age 0 (settlement on a candle
-    open) always counts as fresh. Without a nominal cadence there is no
-    basis to call any aged print fresh, so any age > 0 is stale.
+
+def _mark_freshness(age_ms: int,
+                    data_step_ms: Optional[int]) -> str:
+    """Freshness judged against the DATA cadence, never funding cadence.
+
+    - age 0: "fresh" (the settlement prints exactly on a candle open —
+      an observed print, not a proxy).
+    - 0 < age <= data step: "proxy" (the best causal print, explicitly
+      aged; settles with its age recorded).
+    - older, or no data step to judge by: "stale" (excluded as unknown).
+    A 4h-old print on 12h data is a PROXY, never "fresh because the
+    funding cadence is 4h".
     """
     if age_ms <= 0:
-        return False
-    if interval_ms is None:
-        return True
-    return age_ms > interval_ms
+        return "fresh"
+    if data_step_ms is None:
+        return "stale"
+    return "proxy" if age_ms <= data_step_ms else "stale"
 
 
 def _overlap_ms(lo: int, hi: int, spans: List[Tuple[int, int]]) -> int:
@@ -313,11 +347,14 @@ def _funding_for_trade(side: str,
         marker = [{"basis": "synthetic-fallback",
                    "detail": "legacy full-interval math; no venue calendar",
                    "intervals": n, "symbol": symbol}]
-        return total, marker, 0, 0, 0, "interval-fallback", {}
+        meta = {"accounting_complete": False,
+                "accounting_basis": "synthetic-fallback (no venue calendar)"}
+        return total, marker, 0, 0, 0, "interval-fallback", meta
     cal = cfg.funding_calendar
     ordered, _ = cal.normalized()  # conflicts raise here, before any math
     assessment = cal.assess()
     gap_spans = [(g["from_ms"], g["to_ms"]) for g in assessment["gaps"]]
+    data_step = _data_step_ms(series)
     total = 0.0
     events: list = []
     unknown = 0
@@ -339,14 +376,16 @@ def _funding_for_trade(side: str,
                                "calendar_version": cal.version,
                                "calendar_source": cal.source})
                 continue
-            if _mark_is_stale(age, cal.interval_ms):
+            freshness = _mark_freshness(age, data_step)
+            if freshness == "stale":
                 unknown += 1
                 events.append({"basis": "unknown-excluded",
                                "settlement_ms": s.settlement_ms,
                                "rate_bps": s.rate_bps,
                                "reason": "stale mark proxy: age_ms=%d "
-                               "exceeds cadence basis" % age,
+                               "exceeds data step %s" % (age, data_step),
                                "mark_age_ms": age,
+                               "data_step_ms": data_step,
                                "symbol": symbol,
                                "calendar_symbol": cal.symbol,
                                "calendar_version": cal.version,
@@ -365,7 +404,8 @@ def _funding_for_trade(side: str,
                            "settlement_mark_px": mark,
                            "mark_source": "candle-open",
                            "mark_age_ms": age,
-                           "mark_freshness": "fresh",
+                           "data_step_ms": data_step,
+                           "mark_freshness": freshness,
                            "amount": amount})
     # UNKNOWN coverage, never zero-invented: holding time outside the
     # calendar's listed span [first, last] is silent about cadence
@@ -381,9 +421,24 @@ def _funding_for_trade(side: str,
     else:
         uncovered = max(0, exit_ms - entry_ms)
     gap_ms = _overlap_ms(entry_ms, exit_ms, gap_spans)
+    # Accounting completeness is PER POSITION, never calendar-level:
+    # every in-window settlement settled on a fresh-or-proxy mark, no
+    # interior gap overlap, no uncovered holding. A continuous calendar
+    # (complete=True) with one stale mark is accounting-INCOMPLETE.
+    reasons = []
+    if unknown:
+        reasons.append("%d unknown-excluded settlement(s)" % unknown)
+    if gap_ms:
+        reasons.append("interior-gap overlap %dms" % gap_ms)
+    if uncovered:
+        reasons.append("uncovered holding %dms" % uncovered)
     meta = {"calendar_complete": assessment["complete"],
             "completeness_basis": assessment["completeness_basis"],
-            "calendar_gaps": assessment["gaps"]}
+            "calendar_gaps": assessment["gaps"],
+            "accounting_complete": not reasons,
+            "accounting_basis": ("fully settled, no gaps, no uncovered "
+                                 "holding" if not reasons
+                                 else "; ".join(reasons))}
     return total, events, uncovered, gap_ms, unknown, "settlement-calendar", meta
 
 
@@ -655,6 +710,10 @@ def run_backtest(events: List[StudyEvent], candles: List[Candle],
             "funding_symbol": ev.symbol,
             "funding_complete": funding_meta.get("calendar_complete")
             if funding_meta else None,
+            "funding_accounting_complete": funding_meta.get(
+                "accounting_complete") if funding_meta else None,
+            "funding_accounting_basis": funding_meta.get(
+                "accounting_basis") if funding_meta else None,
             "net_pnl": net, "mfe_pct": mfe, "mae_pct": mae,
             "exit_reason": exit_reason, "open_at_end": open_at_end,
             "exit_executed": exit_executed,

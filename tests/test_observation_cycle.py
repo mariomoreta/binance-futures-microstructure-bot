@@ -42,13 +42,30 @@ class IsolatedCycleTest(unittest.TestCase):
         self.assertEqual(set(self.tmp.iterdir()), before)
         self.assertFalse((self.tmp / "probe_runtime.json").exists())
 
-    def test_disabled_launch_refuses_with_zero_side_effects(self) -> None:
+    def test_refusal_path_has_zero_side_effects(self) -> None:
+        # Refusal branch pinned with the flag forced off (enablement O1
+        # flipped the module default; the branch itself stays covered).
+        from unittest import mock
         from microstructure_probe import control as pc
-        out = pc.launch_supervised_transaction(duration_seconds=60.0,
-                                               launcher="cycle-test")
+        with mock.patch.object(pc, "SUPERVISED_LAUNCH_ENABLED", False):
+            out = pc.launch_supervised_transaction(duration_seconds=60.0,
+                                                   launcher="cycle-test")
         self.assertNotEqual(out.get("outcome"), "confirmed")
         self.assertFalse((self.tmp / "probe_runtime.json").exists())
         self.assertEqual(list(self.tmp.iterdir()), [])
+
+    def test_enabled_launch_requires_launcher_identity(self) -> None:
+        # Enabled path still rejects anonymous launches before any spawn.
+        from unittest import mock
+        from microstructure_probe import control as pc
+        spawner = mock.Mock(side_effect=AssertionError("must not spawn"))
+        out = pc.launch_supervised_transaction(
+            duration_seconds=60.0, launcher="",
+            spawners={"probe": spawner, "supervisor": spawner,
+                      "sentinel": spawner})
+        self.assertNotEqual(out.get("outcome"), "confirmed")
+        spawner.assert_not_called()
+        self.assertFalse((self.tmp / "probe_runtime.json").exists())
 
     def test_stop_with_no_run_is_harmless(self) -> None:
         from microstructure_probe import control as pc

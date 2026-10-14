@@ -96,3 +96,21 @@ same-ms different-rate REJECTS the run. Runner manifest: per-group
   bug; one legacy assertion updated to the corrected split (documented).
 - Runner preserves calendar `symbol` verbatim into the manifest
   (`funding_calendar.symbol`); absent stays null (UNKNOWN, never invented).
+
+## Amendment v4.3 — engine v4.1 + proxy freshness + accounting verdict (2026-10-13)
+
+- `ENGINE_VERSION` is `backtest-offline/v4.1` (exit-value commissions,
+  qty-x-mark exposure, data-step freshness, per-position accounting
+  verdict); `config_hash` embeds the engine version, so v4 and v4.1
+  result hashes never compare equal (v4 `fees=2.0/net=198.0` vs v4.1
+  `fees=2.2/net=197.8` on the reference fixture is EXPECTED drift from
+  the corrected fee leg, not a regression).
+- Settlement marks: `mark_age_ms` + `data_step_ms` + `mark_freshness` in
+  {fresh (observed, age 0), proxy (aged within one data step, settles
+  flagged), stale (excluded as unknown)}. Freshness never uses the
+  funding cadence.
+- Per-trade `funding_accounting_complete` (+ basis): every in-window
+  settlement fresh-or-proxy AND no gap overlap AND no uncovered holding.
+  Calendar `complete` never implies it. Manifest cells carry
+  `funding_quality` {settled, unknown, gap_ms, uncovered_ms,
+  accounting_complete_trades}.
