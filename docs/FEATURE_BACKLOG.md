@@ -632,10 +632,10 @@ it does not replace them. Authority stays where it was recorded
   transaction PIDs with verified identity; foreign/terminal never touched;
   unverifiable cleanup reported UNCERTAIN with pending evidence.
 - **Evidence:** `tests/test_supervised_launch.py` (23 tests + V2PathTest),
-  backend directed 49 OK; BFF `runtime-start-route` (12) /
-  `runtime-contract` / `launch-readiness` (13) / `runtime-stop-route`;
-  vitest 252/252; `docs/evidence/BARRIER_FINAL_RESUMEN.json` (barrier
-  1062, control path green); `docs/evidence/VISUAL_QA_PREPILOTO.txt`.
+  backend directed 143 OK (launch/stop/supervision/abort/identity);
+  BFF + UI vitest 255/255 (incl. BotControl 202 x3);
+  `docs/evidence/BARRIER_FIX_RESUMEN.json` (barrier 1077 exit 0);
+  `docs/evidence/VISUAL_QA_PREPILOTO.txt`.
 - **Docs:** `docs/SUPERVISED_LAUNCH_CONTRACT.md`, `docs/ARCHITECTURE.md`,
   `docs/CURRENT_STATE.md`, `docs/DECISIONS.md`,
   `docs/OBSERVATION_RUN_MATRIX.md`.
@@ -715,6 +715,21 @@ If a new material decision needs user approval, record it as PROPOSED
 here and request approval before treating it as binding. Never mark
 features VERIFIED without evidence.
 
+
+## O1 defect-fix reconciliation - 2026-10-14 (review/o1-funcional-v2-observacion, sobre 972a19e)
+
+- `DECISIONS_REVIEWED` — 202-chain (BFF 202 + reconcile-before-retry),
+  host identity call sites (`pid_is_ours` gates), migration pins v9/v2.
+- `NEW_DECISIONS_RECORDED` — `docs/DECISIONS.md` §"Cierre defectos
+  pre-piloto" (202-pending + two-read reconcile; `_run_text` UNKNOWN +
+  expected-without-real False; versioned temp fixtures).
+- `FEATURES_IMPLEMENTED` — F-LAUNCH-SUP-01 UI safety (no new scope).
+- `FEATURES_VERIFIED` — BotControl 8/8, robustness 15/15, directed 143
+  OK, barrier 1077 exit 0 (`BARRIER_FIX_*`), frontend 255/255.
+- `DEFERRED_FEATURES` — pilot brief-120s (authorization pending); test
+  redesign beyond fixtures; any O2-O5/IA/Kronos/redesign (excluded).
+- `BACKLOG_UPDATED` — yes: this entry + F-LAUNCH-SUP-01 evidence line.
+- `DOCUMENTATION_CONFLICTS` — none new; prior MATRIX/handoff fixes stand.
 
 ## O1 pre-pilot reconciliation - 2026-10-14 (review/o1-funcional-v2-observacion, sobre e887287)
 

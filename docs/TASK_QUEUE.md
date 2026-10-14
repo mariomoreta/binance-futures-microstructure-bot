@@ -1,3 +1,9 @@
+## Cierre defectos pre-piloto (2026-10-14, review/o1-funcional-v2-observacion sobre 972a19e, sin push aun)
+202/BotControl + identidad host + migracion en fixtures: barrera 1077
+exit 0, frontend 255/255, 143 dirigidas OK. Resta: commit selectivo,
+push, checkpoint y plan brief 120s actualizado para autorizacion.
+Piloto NO iniciado.
+
 ## Revision pre-piloto O1 (2026-10-14, review/o1-funcional-v2-observacion sobre e887287, sin push aun)
 Seis puntos atendidos: presupuestos 4200/8000/65000 + reconcile 202 +
 ALREADY_RUNNING; readiness por capability + storage bloqueo/aviso;

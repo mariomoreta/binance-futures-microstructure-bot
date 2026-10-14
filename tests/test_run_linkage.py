@@ -2,22 +2,24 @@
 
 Proves on TEMP resources exclusively (never the canonical DBs):
 - Fresh stores initialize at schema v10 with nullable run_id columns.
-- v9 -> v10 migration on a temp COPY of real v9 bytes: version bumps,
-  row counts preserved, pre-existing rows keep run_id NULL (UNKNOWN,
-  never backfilled), new writes stamp the current run.
+- v9 -> v10 migration on a synthetic v9-shaped TEMP fixture (built by
+  the real v10 DDL, structurally downgraded): version bumps, row counts
+  preserved, pre-existing rows keep run_id NULL (UNKNOWN, never
+  backfilled), new writes stamp the current run.
 - Probe executions carry distinct run_ids; universe events, snapshots
   and prospective rows written by a run carry its id (propagation).
 - Rehydration reloads stamped rows; runs never share ids (separation).
 
-The canonical copy test reads canonical FILE BYTES once to build the
-fixture (pure read, no connection, no write); it skips when the canonical
-DB is absent (isolated-copy runs). Run: python run_tests.py
+2026-10-14: decoupled from canonical evolution — the old temp-copy-of-
+canonical test pinned canonical at v9 and broke on the live v10 store.
+Versioned fixtures make the suite green on any canonical state without
+reading, modifying, or rolling back original databases.
+Run: python run_tests.py
 """
 
 from __future__ import annotations
 
 import re
-import shutil
 import sqlite3
 import tempfile
 import unittest
@@ -25,10 +27,20 @@ from pathlib import Path
 
 from microstructure_probe.persistence import PersistenceStore
 
-CANONICAL_MICROPROBE = Path(__file__).resolve().parent.parent / "data" / "microprobe.db"
 RUN_ID_RE = re.compile(r"^[0-9a-f]{32}$")
 LINKED_TABLES = ("universe_events", "prospective_setups",
                  "prospective_outcomes", "telemetry_snapshots")
+
+
+def _dummy(coltype: str, tag: str, n: int):
+    t = (coltype or "").upper()
+    if "INT" in t:
+        return n + 1
+    if "CHAR" in t or "CLOB" in t or "TEXT" in t:
+        return "%s-%d" % (tag, n)
+    if "REAL" in t or "FLOA" in t or "DOUB" in t:
+        return 1.5 + n
+    return None
 
 
 def _temp_store(case, name="link.db"):
@@ -64,26 +76,39 @@ class SchemaV10Test(unittest.TestCase):
                 cols = {row[1] for row in cursor.fetchall()}
                 self.assertIn("run_id", cols, table)
 
-    def test_v9_copy_migrates_preserving_rows_without_backfill(self) -> None:
-        if not CANONICAL_MICROPROBE.exists():
-            self.skipTest("canonical DB absent (isolated copy)")
-        tmp = Path(tempfile.mkdtemp(prefix="runlink_mig_"))
+    def test_v9_shape_migrates_preserving_rows_without_backfill(self) -> None:
+        # Synthetic v9-shaped fixture on TEMP only: real v10 DDL builds the
+        # tables, rows are inserted, then run_id is structurally dropped and
+        # the version restamped to 9. init_db must bring it back to v10
+        # with counts preserved and pre-existing run_id NULL (no backfill).
+        tmp = Path(tempfile.mkdtemp(prefix="runlink_v9shape_"))
         self.addCleanup(lambda: _rmtree(tmp))
-        copy = tmp / "v9copy.db"
-        shutil.copyfile(CANONICAL_MICROPROBE, copy)  # bytes read once
-        before = {}
-        con = sqlite3.connect("file:%s?mode=ro" % copy, uri=True)
-        try:
-            before["version"] = con.execute(
-                "SELECT value FROM persistence_meta"
-                " WHERE key='schema_version'").fetchone()[0]
+        path = tmp / "v9shape.db"
+        seed = PersistenceStore(path)
+        seed.init_db()
+        with seed._get_cursor() as cursor:
             for table in LINKED_TABLES + ("market_observations",):
-                before[table] = con.execute(
-                    "SELECT COUNT(*) FROM %s" % table).fetchone()[0]
+                cursor.execute("PRAGMA table_info(%s)" % table)
+                cols = [(r[1], r[2]) for r in cursor.fetchall()
+                        if r[1] != "run_id"]
+                for n in range(3):
+                    vals = [_dummy(t, table, n) for _, t in cols]
+                    cursor.execute(
+                        "INSERT INTO %s (%s) VALUES (%s)"
+                        % (table, ",".join(c for c, _ in cols),
+                           ",".join("?" * len(cols))), vals)
+        seed.close()
+        con = sqlite3.connect(str(path))
+        try:
+            for table in LINKED_TABLES:
+                con.execute("ALTER TABLE %s DROP COLUMN run_id" % table)
+            con.execute("UPDATE persistence_meta SET value='9'"
+                        " WHERE key='schema_version'")
+            con.commit()
         finally:
             con.close()
-        self.assertEqual(int(before["version"]), 9)
-        store = PersistenceStore(copy)
+        before = {}
+        store = PersistenceStore(path)
         store.init_db()
         self.addCleanup(store.close)
         with store._get_cursor() as cursor:
@@ -92,7 +117,9 @@ class SchemaV10Test(unittest.TestCase):
             self.assertEqual(int(cursor.fetchone()[0]), 10)
             for table in LINKED_TABLES + ("market_observations",):
                 cursor.execute("SELECT COUNT(*) FROM %s" % table)
-                self.assertEqual(cursor.fetchone()[0], before[table], table)
+                n = cursor.fetchone()[0]
+                before[table] = n
+                self.assertEqual(n, 3, table)
             for table in LINKED_TABLES:
                 cursor.execute(
                     "SELECT COUNT(*) FROM %s WHERE run_id IS NOT NULL" % table)

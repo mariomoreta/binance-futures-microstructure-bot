@@ -1355,3 +1355,35 @@ corrida conjunta. Sin corridas reales a esta fecha.
    historica = main preexistente (14 coberturas, 2831 eventos);
    incremental de esta tarea = 0 filas. Compat implementada != consumo
    vivo comprobado (pendiente §5). Sin corridas reales a esta fecha.
+
+## Cierre defectos pre-piloto — 202 (BotControl) + identidad host + migracion (2026-10-14, append-only, sobre 972a19e)
+
+1. BotControl 202 (`frontend/src/components/system/BotControl.tsx`):
+   `r.ok` es true en HTTP 202, asi el `START_TIMEOUT_UNCERTAIN` se
+   mostraba como arranque exitoso. Ahora: estado pendiente `{at,quiet}`,
+   boton Start bloqueado mientras hay pendiente, reconciliacion por
+   lectura — exito solo con RUNNING dashboard-owned y `started_at` >=
+   peticion; dos lecturas inactivas consecutivas para limpiar (una sola
+   compite con confirmacion tardia); lecturas fallidas conservan la
+   incertidumbre. 3 tests de componente (202 no-exito, confirmacion
+   tardia, persistencia ante fallos + reconciliacion sin declarar exito).
+2. Identidad host (`src/microstructure_probe/host_process.py`, causa
+   reproducida en Windows real: tasklist emite bytes de locale bajo
+   `PYTHONUTF8=1` → `UnicodeDecodeError` en hilos lectores y
+   `stdout=None` → `AttributeError`): nuevo `_run_text()` con
+   `errors="replace"` + None/incompleto/ausente → `(None,None)`
+   UNKNOWN; `pid_is_ours()` con creation esperado pero real UNKNOWN →
+   False (era True). UNKNOWN nunca autoriza propiedad ni kills (el
+   controlador ya propaga `unknown`; `_terminate_verified_pid` intacto).
+   15 tests nuevos (`test_host_process_robustness.py`, 7 fail-before);
+   los 8E+1F previos de identidad/sentinel pasan por la causa, sin
+   tocar aserciones. Dashboard re-exporta mismos objetos (paridad).
+3. Migracion desacoplada del canonico (`test_run_linkage.py`,
+   `test_research_linkage.py`): fixtures temporales v9/v2-shaped (DDL
+   real + degradacion estructural + filas semilla): bump de version,
+   conteos preservados, linkage previo NULL, escrituras nuevas sellan.
+   Tests canonico-copia eliminados (pineaban v9/linkage-NULL y rompian
+   sobre el vivo v10). Cero lecturas/escrituras al canonico.
+Barrera final: 1077 OK (1 skip entorno), exit 0, aislamiento OK
+(`docs/evidence/BARRIER_FIX_*`). Frontend 255/255 + typecheck + lint
+0 errores. Sin piloto aun (requiere autorizacion).

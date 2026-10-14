@@ -24,19 +24,56 @@ function WatcherPanel({kind,evidence,state}:{kind:WatcherKind;evidence:WatcherEv
     <div className={s.supervisorGrid}>{rows.map(([label,value]) => <div key={label}><small>{label}</small><b>{value ?? "UNKNOWN"}</b></div>)}</div>
   </section>;
 }
+const UNCERTAIN_START="Start outcome UNCERTAIN (HTTP 202): the launch may still confirm late. Reconciling by status read — success is announced only on explicit dashboard-owned confirmation. No new launch while uncertain.";
 export function BotControl(){
   const [state,setState]=useState<RuntimeState|null>(null),[busy,setBusy]=useState(false),
     [confirm,setConfirm]=useState(false),[message,setMessage]=useState(""),[now,setNow]=useState(Date.now);
   const [ready,setReady]=useState<boolean|null>(null);
   const [preset,setPreset]=useState<"brief"|"standard"|"validation-6h">("brief");
   const sequence=useRef(0);
+  // Pending uncertain start: set on HTTP 202, cleared ONLY by reconcile
+  // (explicit dashboard-owned RUNNING with started_at at/after the
+  // request, or a read proving no active run). Never cleared by time.
+  type Pending={at:number;quiet:number};
+  const [pendingStart,setPendingStart]=useState<Pending|null>(null);
+  const pendingRef=useRef<Pending|null>(null);
+  function setPending(value:Pending|null){setPendingStart(value);pendingRef.current=value;}
+  function reconcile(next:RuntimeState|null,p:Pending):void{
+    if(next===null||next.error){return}
+    if(next.running===true&&next.launcher==="dashboard"&&next.started_at){
+      const started=Date.parse(next.started_at);
+      if(Number.isFinite(started)&&started>=p.at){
+        setPending(null);
+        setMessage("Observe-only monitor confirmed via supervised chain (dashboard-owned pid "+String(next.pid)+", started "+next.started_at+").");
+        return;
+      }
+      setPending({at:p.at,quiet:0});
+      return;
+    }
+    if(next.running!==true&&!["STARTING","STOPPING"].includes(next.state)){
+      // One inactive read right after a timed-out spawn races the
+      // server-side verification (late confirmation still possible), so
+      // it never clears. Two consecutive inactive reads on the poll
+      // cadence (>=10s apart) are reconcile-grade; the controller
+      // pre-check still guards any new start.
+      if(p.quiet+1>=2){
+        setPending(null);
+        setMessage("Reconciled: no active dashboard run recorded across consecutive reads. The uncertain start was never confirmed; a new start is allowed (the controller pre-check still prevents duplicates).");
+      }else{
+        setPending({at:p.at,quiet:p.quiet+1});
+      }
+      return;
+    }
+    setPending({at:p.at,quiet:0});
+  }
   async function refresh(){
     const request=++sequence.current;
+    const pending=pendingRef.current;
     try{
       const r=await fetch("/api/v1/runtime",{cache:"no-store"});
       if(!r.ok)throw Error();
       const result=await r.json() as RuntimeState;
-      if(request===sequence.current){setState(result);setNow(Date.now())}
+      if(request===sequence.current){setState(result);setNow(Date.now());if(pending)reconcile(result,pending)}
     }catch{
       if(request===sequence.current)setState({state:"UNKNOWN",running:false,pid:null,launcher:null,
         mode:"UNKNOWN",uptime_seconds:null,duration_seconds:null,started_at:null,feed_health:"UNKNOWN",
@@ -60,16 +97,25 @@ export function BotControl(){
   const supervisor=watcherDisplayState("supervisor",state?.supervisor,state?.pid,state?.observed_at,now);
   const sentinel=watcherDisplayState("sentinel",state?.sentinel,state?.pid,state?.observed_at,now);
   const owned=state?.running===true&&state?.launcher==="dashboard";
-  const canStart=ready===true&&!busy;
+  const canStart=ready===true&&!busy&&pendingStart===null;
   const canStop=owned&&state?.state==="RUNNING"&&!state?.error;
   const presetSeconds=preset==="brief"?120:preset==="standard"?3600:21600;
   async function action(kind:"start"|"stop"){
     setBusy(true);setMessage("");
+    const at=Date.now();
     try{
       const r=await fetch("/api/v1/runtime/"+kind,{method:"POST",headers:{"content-type":"application/json","x-v2-action":"observe-only"},
         body:JSON.stringify(kind==="start"?{confirm:"START_OBSERVE_2100",preset}:{confirm:"STOP_DASHBOARD_SESSION"})});
       const body=await r.json() as {error?:string;outcome?:string};
-      setMessage(r.ok?(kind==="start"?"Observe-only monitor started via supervised chain ("+body.outcome+").":"Dashboard-owned monitor stopped."):(body.error??"Action rejected by controller"));
+      if(kind==="start"&&(r.status===202||body.error==="START_TIMEOUT_UNCERTAIN")){
+        // HTTP 202 is NEVER success: keep the outcome pending, block any
+        // new launch, and reconcile by status read (refresh in finally).
+        setPending({at,quiet:0});
+        setMessage(UNCERTAIN_START);
+      }else{
+        if(pendingStart!==null&&kind==="start")setPending(null);
+        setMessage(r.ok&&body.outcome==="confirmed"?(kind==="start"?"Observe-only monitor started via supervised chain ("+body.outcome+").":"Dashboard-owned monitor stopped."):(body.error??"Action rejected by controller"));
+      }
     }catch{setMessage("Controller request failed. No success confirmed.")}
     finally{setConfirm(false);setBusy(false);await refresh()}
   }

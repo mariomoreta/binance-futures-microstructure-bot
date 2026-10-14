@@ -32,18 +32,40 @@ def no_window_flags() -> int:
     return int(getattr(subprocess, "CREATE_NO_WINDOW", 0) or 0)
 
 
-def process_info(pid: int) -> Tuple[Optional[str], Optional[str]]:
-    """(image_name, creation_time) for pid, or (None, None) if not present."""
+def _run_text(argv: list) -> Optional[str]:
+    """Stdout of a short diagnostic, or None when unavailable/unreadable.
+
+    2026-10-14: on Windows with tasklist emitting locale bytes (e.g.
+    cp1252 NBSP) while Python decodes UTF-8, reader threads die with
+    UnicodeDecodeError and CompletedProcess.stdout is None. Both cases
+    (plus missing commands and timeouts) report None instead of raising,
+    so callers degrade to UNKNOWN instead of crashing.
+    """
     try:
-        out = subprocess.run(
-            ["tasklist", "/FI", f"PID eq {pid}", "/FO", "CSV", "/NH"],
-            capture_output=True, text=True, timeout=10,
-            creationflags=no_window_flags(),
-        ).stdout.strip().splitlines()
+        proc = subprocess.run(
+            argv, capture_output=True, text=True, errors="replace",
+            timeout=10, creationflags=no_window_flags(),
+        )
     except (OSError, subprocess.SubprocessError):
+        return None
+    except Exception:
+        return None
+    if proc.stdout is None:
+        return None
+    try:
+        return proc.stdout.strip()
+    except Exception:
+        return None
+
+
+def process_info(pid: int) -> Tuple[Optional[str], Optional[str]]:
+    """(image_name, creation_time) for pid, or (None, None) if not present
+    or not determinable (UNKNOWN — never a verified identity)."""
+    out = _run_text(["tasklist", "/FI", f"PID eq {pid}", "/FO", "CSV", "/NH"])
+    if out is None:
         return None, None
     image = None
-    for line in out:
+    for line in out.splitlines():
         parts = [p.strip('"') for p in line.split('","')]
         if len(parts) >= 2 and parts[1].strip() == str(pid):
             image = parts[0].strip('"')
@@ -51,19 +73,13 @@ def process_info(pid: int) -> Tuple[Optional[str], Optional[str]]:
     if image is None:
         return None, None
     creation = None
-    try:
-        wmic = subprocess.run(
-            ["wmic", "process", "where", f"ProcessId={pid}",
-             "get", "CreationDate", "/VALUE"],
-            capture_output=True, text=True, timeout=10,
-            creationflags=no_window_flags(),
-        ).stdout
+    wmic = _run_text(["wmic", "process", "where", f"ProcessId={pid}",
+                      "get", "CreationDate", "/VALUE"])
+    if wmic is not None:
         for line in wmic.splitlines():
             if line.strip().startswith("CreationDate="):
                 creation = line.strip().split("=", 1)[1]
                 break
-    except (OSError, subprocess.SubprocessError):
-        creation = None
     if creation is None:
         # P1-14B.7: wmic is absent on recent Windows builds; fall back to
         # GetProcessTimes so PID+creation-time identity keeps working.
@@ -129,10 +145,15 @@ def _creation_time_ctypes(pid: int) -> Optional[str]:
 
 def pid_is_ours(pid: int, expected_creation: Optional[str]) -> bool:
     """True only if pid exists, looks like Python, and matches the recorded
-    creation time (when recorded). Stale/reused PIDs return False."""
+    creation time (when recorded). Stale/reused PIDs return False.
+
+    2026-10-14: an expected creation_time with an UNKNOWN real one is NOT
+    verified identity (was: True). UNKNOWN never authorizes ownership, so
+    no unverified process can ever be terminated on this signal alone.
+    """
     image, creation = process_info(pid)
     if image is None or "python" not in image.lower():
         return False
-    if expected_creation and creation and creation != expected_creation:
+    if expected_creation and creation != expected_creation:
         return False
     return True

@@ -55,6 +55,75 @@ describe("System launch through the supervised chain",()=>{
   });
 });
 
+describe("System launch uncertainty (HTTP 202)",()=>{
+  const stoppedBody=()=>({state:"STOPPED",running:false,pid:null,launcher:null,mode:"observe",supervisor:{state:"SUPERVISOR_UNKNOWN"},sentinel:{state:"SENTINEL_UNKNOWN"}});
+  const setup=(startReply:{ok:boolean;status:number;body:unknown},statusAfter:()=>unknown)=>{
+    vi.useFakeTimers();vi.setSystemTime(new Date("2026-10-14T11:00:00Z"));
+    let statusBody:unknown=stoppedBody();
+    const posted:{url:string,init:RequestInit}[]=[];
+    vi.stubGlobal("fetch",vi.fn().mockImplementation(async(url:string,init?:RequestInit)=>{
+      if(String(url).endsWith("/runtime/readiness"))return {ok:true,json:async()=>({ready:true,reason:"SUPERVISED_CHAIN_VERIFIED",checks:[]})};
+      if(String(url).endsWith("/runtime/start")){posted.push({url:String(url),init:init!});statusBody=statusAfter();return startReply.ok?{ok:true,status:startReply.status,json:async()=>startReply.body}:{ok:false,status:startReply.status,json:async()=>startReply.body}};
+      return {ok:true,json:async()=>statusBody};
+    }));
+    return {posted,getStatus:()=>statusBody};
+  };
+  const openConfirm=async()=>{
+    render(<BotControl/>);
+    await act(async()=>{await vi.advanceTimersByTimeAsync(1);});
+    await act(async()=>{screen.getByRole("button",{name:/Start monitor/}).click();});
+    await act(async()=>{screen.getByRole("button",{name:"Confirm start"}).click();await vi.advanceTimersByTimeAsync(10);});
+  };
+  it("never presents 202 uncertain as success and blocks relaunch while uncertain",async()=>{
+    setup({ok:true,status:202,body:{error:"START_TIMEOUT_UNCERTAIN",retry:"reconcile-before-retry",status:{state:"UNKNOWN"}}},()=>stoppedBody());
+    await openConfirm();
+    expect(screen.queryByText(/started via supervised chain/)).not.toBeInTheDocument();
+    expect(screen.getByRole("status")).toHaveTextContent(/uncertain/i);
+    expect(screen.getByRole("button",{name:/Start monitor/})).toBeDisabled();
+  });
+  it("announces success only on later explicit dashboard-owned confirmation",async()=>{
+    vi.useFakeTimers();vi.setSystemTime(new Date("2026-10-14T11:00:00Z"));
+    const t0=new Date("2026-10-14T11:00:00Z").getTime();
+    const running=()=>({state:"RUNNING",running:true,pid:777,launcher:"dashboard",mode:"observe",started_at:new Date(t0+5000).toISOString(),supervisor:{state:"SUPERVISOR_UNKNOWN"},sentinel:{state:"SENTINEL_UNKNOWN"}});
+    let late=false;
+    vi.stubGlobal("fetch",vi.fn().mockImplementation(async(url:string)=>{
+      if(String(url).endsWith("/runtime/readiness"))return {ok:true,json:async()=>({ready:true,reason:"SUPERVISED_CHAIN_VERIFIED",checks:[]})};
+      if(String(url).endsWith("/runtime/start"))return {ok:true,status:202,json:async()=>({error:"START_TIMEOUT_UNCERTAIN",retry:"reconcile-before-retry"})};
+      return {ok:true,json:async()=>late?running():stoppedBody()};
+    }));
+    render(<BotControl/>);
+    await act(async()=>{await vi.advanceTimersByTimeAsync(1);});
+    await act(async()=>{screen.getByRole("button",{name:/Start monitor/}).click();});
+    await act(async()=>{screen.getByRole("button",{name:"Confirm start"}).click();await vi.advanceTimersByTimeAsync(10);});
+    expect(screen.getByRole("status")).toHaveTextContent(/uncertain/i);
+    expect(screen.getByRole("button",{name:/Start monitor/})).toBeDisabled();
+    late=true;
+    await act(async()=>{await vi.advanceTimersByTimeAsync(10_000);});
+    expect(screen.getByRole("status")).toHaveTextContent(/confirmed.*777|777.*confirmed/i);
+    expect(screen.queryByText(/uncertain/i)).not.toBeInTheDocument();
+  });
+  it("keeps uncertainty across failed refreshes and reconciles an inactive run without claiming success",async()=>{
+    setup({ok:true,status:202,body:{error:"START_TIMEOUT_UNCERTAIN",retry:"reconcile-before-retry",status:{state:"UNKNOWN"}}},()=>stoppedBody());
+    await openConfirm();
+    expect(screen.getByRole("button",{name:/Start monitor/})).toBeDisabled();
+    // Failed refresh: uncertainty persists, start stays blocked.
+    vi.stubGlobal("fetch",vi.fn().mockRejectedValue(new Error("offline")));
+    await act(async()=>{await vi.advanceTimersByTimeAsync(10_000);});
+    expect(screen.getByRole("status")).toHaveTextContent(/uncertain/i);
+    expect(screen.getByRole("button",{name:/Start monitor/})).toBeDisabled();
+    // Reconciled inactive run: a new start is allowed, but the old
+    // uncertain outcome is never rewritten as success.
+    vi.stubGlobal("fetch",vi.fn().mockImplementation(async(url:string)=>{
+      if(String(url).endsWith("/runtime/readiness"))return {ok:true,json:async()=>({ready:true,reason:"SUPERVISED_CHAIN_VERIFIED",checks:[]})};
+      return {ok:true,json:async()=>stoppedBody()};
+    }));
+    await act(async()=>{await vi.advanceTimersByTimeAsync(10_000);});
+    expect(screen.queryByText(/started via supervised chain/)).not.toBeInTheDocument();
+    expect(screen.getByRole("status")).toHaveTextContent(/reconciled/i);
+    expect(screen.getByRole("button",{name:/Start monitor/})).toBeEnabled();
+  });
+});
+
 describe("System watcher observation",()=>{
   it("shows both watchers separately and retains raw evidence when the display expires",async()=>{
     vi.useFakeTimers();vi.setSystemTime(new Date("2026-10-11T04:00:00Z"));

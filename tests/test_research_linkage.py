@@ -2,23 +2,25 @@
 
 Proves on TEMP resources exclusively (never the canonical DBs):
 - Fresh stores initialize at history schema v3 with linkage columns.
-- v2 -> v3 migration on synthetic v2 and on a temp byte-copy of the
-  real canonical historical DB: version bumps, row counts preserved,
-  pre-existing rows keep NULL (= UNKNOWN, never backfilled).
+- v2 -> v3 migration on synthetic v2 and on a synthetic v2-shaped TEMP
+  fixture (built by the real v3 DDL, structurally downgraded): version
+  bumps, row counts preserved, pre-existing rows keep NULL (= UNKNOWN,
+  never backfilled).
 - Recorder end-to-end stamps run_id/rules_version/as_of/price_source/
   dataset_id at flush; absent context stays NULL.
 - Probe threads its run_id + engine versions into its recorder.
 - Event time vs close time vs availability stay distinct (as_of >=
   bucket_end; first/last_event_ms inside the bucket window).
 
-The canonical-copy test reads canonical FILE BYTES once (pure read, no
-connection, no write); it skips when the canonical DB is absent.
+2026-10-14: decoupled from canonical evolution — the old temp-copy-of-
+canonical test broke on the live v3 store (linkage rows present). The
+v2-shaped fixture makes the suite green on any canonical state without
+reading, modifying, or rolling back original databases.
 Run: python run_tests.py
 """
 
 from __future__ import annotations
 
-import shutil
 import sqlite3
 import tempfile
 import unittest
@@ -26,11 +28,20 @@ from pathlib import Path
 
 from microstructure_probe.history_store import HistoryStore, SCHEMA_VERSION
 
-CANONICAL_HISTORICAL = Path(__file__).resolve().parent.parent / "data" / \
-    "historical" / "historical.db"
 LINKED_TABLES = ("research_flow_10s", "research_flow_1m", "research_book_1m")
 LINKED_COLS = ("run_id", "rules_version", "as_of_ms", "price_source",
                "dataset_id")
+
+
+def _dummy(coltype: str, tag: str, n: int):
+    t = (coltype or "").upper()
+    if "INT" in t:
+        return 1000 + n
+    if "CHAR" in t or "CLOB" in t or "TEXT" in t:
+        return "%s-%d" % (tag, n)
+    if "REAL" in t or "FLOA" in t or "DOUB" in t:
+        return 2.5 + n
+    return None
 
 
 def _rmtree(path: Path) -> None:
@@ -100,37 +111,52 @@ class SchemaV3Test(unittest.TestCase):
         finally:
             con.close()
 
-    def test_v2_canonical_copy_migrates_preserving_rows(self) -> None:
-        if not CANONICAL_HISTORICAL.exists():
-            self.skipTest("canonical historical DB absent (isolated copy)")
-        tmp = Path(tempfile.mkdtemp(prefix="reslink_canon_"))
+    def test_v2_shape_migrates_preserving_rows(self) -> None:
+        # Synthetic v2-shaped fixture on TEMP only: real v3 DDL builds the
+        # tables, rows are inserted, then linkage columns are structurally
+        # dropped and the version restamped to 2. init_db must bring it
+        # back to v3 with counts preserved and pre-existing linkage NULL.
+        tmp = Path(tempfile.mkdtemp(prefix="reslink_v2shape_"))
         self.addCleanup(lambda: _rmtree(tmp))
-        copy = tmp / "hcopy.db"
-        shutil.copyfile(CANONICAL_HISTORICAL, copy)  # bytes read once
-        before = {}
-        con = sqlite3.connect("file:%s?mode=ro" % copy, uri=True)
+        path = tmp / "v2shape.db"
+        seed = HistoryStore(path)
+        seed.init_db()
+        con = sqlite3.connect(str(path))
         try:
-            before["version"] = int(con.execute(
-                "SELECT value FROM history_meta"
-                " WHERE key='schema_version'").fetchone()[0])
             for table in LINKED_TABLES:
-                before[table] = con.execute(
-                    "SELECT COUNT(*) FROM %s" % table).fetchone()[0]
+                info = con.execute(
+                    "PRAGMA table_info(%s)" % table).fetchall()
+                cols = [(r[1], r[2]) for r in info
+                        if r[1] not in LINKED_COLS]
+                for n in range(3):
+                    vals = [_dummy(t, table, n) for _, t in cols]
+                    con.execute(
+                        "INSERT INTO %s (%s) VALUES (%s)"
+                        % (table, ",".join(c for c, _ in cols),
+                           ",".join("?" * len(cols))), vals)
+            con.commit()
         finally:
             con.close()
-        # Canonical may sit at v2 (pre-linkage) or v3 (linkage columns
-        # present, historical rows NULL). Either way the copy must land
-        # at v3 with counts preserved and no backfilled linkage.
-        self.assertIn(before["version"], (2, 3))
-        store = HistoryStore(copy)
+        con = sqlite3.connect(str(path))
+        try:
+            for table in LINKED_TABLES:
+                for col in LINKED_COLS:
+                    con.execute("ALTER TABLE %s DROP COLUMN %s"
+                                % (table, col))
+            con.execute("UPDATE history_meta SET value='2'"
+                        " WHERE key='schema_version'")
+            con.commit()
+        finally:
+            con.close()
+        store = HistoryStore(path)
         store.init_db()
         self.assertEqual(store.schema_version(), 3)
-        con = sqlite3.connect(str(copy))
+        con = sqlite3.connect(str(path))
         try:
             for table in LINKED_TABLES:
                 n = con.execute(
                     "SELECT COUNT(*) FROM %s" % table).fetchone()[0]
-                self.assertEqual(n, before[table], table)
+                self.assertEqual(n, 3, table)
                 leaked = con.execute(
                     "SELECT COUNT(*) FROM %s WHERE run_id IS NOT NULL"
                     " OR rules_version IS NOT NULL OR as_of_ms IS NOT NULL"

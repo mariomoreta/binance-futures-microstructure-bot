@@ -1,3 +1,11 @@
+## Cierre defectos pre-piloto 202/identidad/migracion (2026-10-14, review/o1-funcional-v2-observacion, sin push aun)
+BotControl: 202 pendiente + reconcile (exito solo con confirmacion
+explicita; 3 tests). host_process: `_run_text` (None/decode/ausente →
+UNKNOWN) + expected-sin-real → False (15 tests, 7 fail-before; 8E+1F
+previos verdes por la causa). Migracion en fixtures v9/v2 temporales
+(cero contacto canonico). Barrera 1077 OK exit 0; frontend 255/255.
+Piloto brief 120s pendiente de autorizacion, no iniciado.
+
 ## Revision pre-piloto sobre e887287 (2026-10-14, review/o1-funcional-v2-observacion, sin push aun)
 Presupuestos separados (status 4200 / stop 8000 / start 65000ms) con
 reconciliacion START_TIMEOUT_UNCERTAIN (202) + pre-check ALREADY_RUNNING
