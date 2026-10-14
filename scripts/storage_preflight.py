@@ -32,6 +32,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import shutil
 import sqlite3
 import sys
@@ -130,6 +131,44 @@ def measured_copy_read(src_db: Path, workdir: Path,
         con.close()
 
 
+def _same_file(a: Path, b: Path) -> bool:
+    """True when both paths name the same file (hardlink-aware).
+
+    os.path.samestat compares device+inode identity, so a hardlink alias
+    (e.g. alias.json -> microprobe.db) matches even though resolve()
+    yields different names. Missing/unstatable paths never match.
+    """
+    try:
+        return os.path.samestat(os.stat(a), os.stat(b))
+    except OSError:
+        return False
+
+
+def _protected_files(root_resolved: Path,
+                     compare: Path | None) -> list:
+    """Candidate files --out must never clobber, by identity not by name."""
+    cands: list = [Path(__file__).resolve(),
+                   root_resolved / "logs" / "probe_runtime.json"]
+    if compare is not None:
+        cands.append(compare)
+    for tree in (root_resolved / "data",
+                 root_resolved / "binance_case_study"):
+        try:
+            if not tree.is_dir():
+                continue
+            for i, p in enumerate(tree.rglob("*")):
+                if i >= 5000:
+                    break
+                try:
+                    if p.is_file() and not p.is_symlink():
+                        cands.append(p)
+                except OSError:
+                    continue
+        except OSError:
+            continue
+    return cands
+
+
 def _refuse_out(out: Path, root: Path, compare: Path | None) -> str | None:
     """Reason to refuse --out, or None when writable. Resolved (links)."""
     try:
@@ -161,6 +200,17 @@ def _refuse_out(out: Path, root: Path, compare: Path | None) -> str | None:
             rc = compare.absolute()
         if ro == rc:
             return "refused: --out equals the --compare input (would destroy the base)"
+    # Hardlink aliases defeat name comparison: compare file IDENTITY
+    # against every protected candidate when --out already exists.
+    try:
+        out_exists = out.exists() or out.is_symlink()
+    except OSError:
+        out_exists = False
+    if out_exists:
+        for cand in _protected_files(rr, compare):
+            if _same_file(out, cand):
+                return ("refused: --out is the same file as protected %s "
+                        "(hardlink/symlink alias)" % cand)
     return None
 
 
@@ -174,6 +224,12 @@ def _db_report(path: Path, warnings: list) -> dict:
         try:
             counts = measured_copy_read(path, work)
         except Exception as e:
+            # Size is known but state is illegible/corrupt: warn LOUDLY
+            # (never silent, never zero-filled). Tables stay None/UNKNOWN.
+            warnings.append(
+                "%s: %sB on disk but tables UNKNOWN (%s): state "
+                "illegible/corrupt, run state UNKNOWN" % (
+                    path.name, files["total"], str(e)[:120]))
             return {"path": str(path),
                     "status": "UNKNOWN (%s)" % str(e)[:120],
                     "files": files, "bytes": files["total"],
@@ -285,6 +341,10 @@ def main(argv=None) -> int:
         warnings.append("logs/ absent: no history to measure")
 
     retention = _retention_from_code()
+    for key, val in retention.items():
+        if isinstance(val, str) and val.startswith("UNKNOWN"):
+            warnings.append("retention %s UNKNOWN (%s): caps unverifiable, "
+                            "growth boundedness UNKNOWN" % (key, val[:100]))
     _cap_warnings(micro, retention, warnings)
 
     try:

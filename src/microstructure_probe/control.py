@@ -2427,20 +2427,24 @@ def _sentinel_lease_verified(record: Dict[str, Any], lease: Dict[str, Any]) -> b
 
 
 # ------------------------------------------------------------------
-# Supervised transactional launch (DISABLED preparation).
+# Supervised transactional launch (ENABLED through the verified chain).
 #
 # Contract: docs/SUPERVISED_LAUNCH_CONTRACT.md. A single operation that
 # starts the probe plus both watchers, verifies every component against
 # the run inside a finite budget, and rolls back EVERYTHING it launched
-# on any failure. Operational access is disabled
-# (SUPERVISED_LAUNCH_ENABLED = False): the public entry point refuses
-# without spawning anything. No HTTP route, CLI subcommand, Start
-# enablement or contract change ships with this preparation.
+# on any failure. Enabled 2026-10-13 (O1 observacion conjunta V2) ONLY
+# with the full chain, never as a bare flag flip: V2 readiness-green +
+# confirmation token + preset allowlist + verified identity/heartbeat +
+# stop wiring (frontend runtime-control.ts + launch-readiness.ts),
+# observe-only enforced by the probe itself, failure matrix + isolated
+# tests green (V2PathTest pins the fixed dashboard call: confirm,
+# association, rollback, stop). Decision recorded in docs/DECISIONS.md (no anonymous
+# launches; kill-only rollback; foreign/terminal never touched).
 # Reuses start_probe / leases / identity / verified termination / the
 # registry lock; no parallel controller exists.
 # ------------------------------------------------------------------
 
-SUPERVISED_LAUNCH_ENABLED = False
+SUPERVISED_LAUNCH_ENABLED = True
 
 SUPERVISED_LAUNCH_VERIFY_BUDGET_S = 60.0
 SUPERVISED_LAUNCH_POLL_S = 2.0
@@ -2703,12 +2707,17 @@ def launch_supervised_transaction(duration_seconds: Optional[float] = None,
                                   spawners: Optional[Dict[str, Any]] = None,
                                   identity: Optional[Dict[str, Any]] = None
                                   ) -> Dict[str, Any]:
-    """Supervised transactional launch (DISABLED preparation).
+    """Supervised transactional launch (ENABLED through the verified chain).
 
     Contract: docs/SUPERVISED_LAUNCH_CONTRACT.md. While
     SUPERVISED_LAUNCH_ENABLED is False this refuses with
     `supervised-launch-disabled` and performs no spawn, write, or process
-    action. No HTTP route or CLI subcommand is wired to it.
+    action. Enablement (True) is the CONSEQUENCE of the V2 fixed-call
+    path tests (V2PathTest: brief-allowlisted dashboard launch confirms
+    with supervisor+sentinel bound to the run, sentinel failure rolls
+    back everything, dashboard-owned stop lands) — never a bare flag
+    flip. The only wired caller is the V2 BFF fixed-code path
+    (readiness-green + START_OBSERVE_2100 + preset allowlist).
     """
     if not SUPERVISED_LAUNCH_ENABLED:
         return _launch_envelope(

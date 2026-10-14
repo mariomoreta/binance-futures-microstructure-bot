@@ -114,3 +114,12 @@ same-ms different-rate REJECTS the run. Runner manifest: per-group
   Calendar `complete` never implies it. Manifest cells carry
   `funding_quality` {settled, unknown, gap_ms, uncovered_ms,
   accounting_complete_trades}.
+
+## Amendment v4.3.1 — causal data step (2026-10-14, review dcb2e32)
+
+- The data step and settlement marks use the candle prefix known at
+  `exit_ms`: candles printed later never reclassify earlier settlements
+  (0/12/24/36h + entry 12h/exit 24h + calendar 12/16/20/24h settles
+  12/16/20 identically with or without 37-48h hourly candles; the
+  full-series median flipped 16h/20h to stale, 3 -> 1 — R8 regression
+  `R8FundingHorizonCausalityTest`). `ENGINE_VERSION` unchanged (v4.1).

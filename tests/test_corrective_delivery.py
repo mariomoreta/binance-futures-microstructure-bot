@@ -235,5 +235,44 @@ class R7SchemaMatrixTest(unittest.TestCase):
             self.assertIn(anchor, doc)
 
 
+class R8FundingHorizonCausalityTest(unittest.TestCase):
+    def test_later_candles_never_move_earlier_funding(self) -> None:
+        # Review finding on dcb2e32: 0/12/24/36h candles, entry 12h,
+        # effective exit 24h, calendar 12/16/20/24h. The full-series data
+        # step (12h) settles 12/16/20 (fresh/proxy/proxy = 3); appending
+        # 37-48h hourly candles dragged the median step to ~1h and flipped
+        # 16h/20h to stale (3 -> 1). Causality demands the prefix known at
+        # exit_ms: both inputs must settle identically.
+        base = [Candle("BTCUSDT", h * H, 100.0, 100.1, 99.9, 100.0)
+                for h in (0, 12, 24, 36)]
+        late = base + [Candle("BTCUSDT", 37 * H + k * (H // 12), 100.0,
+                              100.1, 99.9, 100.0) for k in range(132)]
+        cal = FundingCalendar(version="venue-4h/v1",
+                              source="synthetic-fixture", interval_ms=4 * H,
+                              symbol="BTCUSDT",
+                              settlements=tuple(
+                                  FundingSettlement(m * H, 10.0)
+                                  for m in (12, 16, 20, 24)))
+        cfg = _cfg(exit_horizon_ms=24 * H, funding_calendar=cal)
+        r_base = run_backtest([StudyEvent("BTCUSDT", 0, "LONG", 100.0)],
+                              base, cfg)
+        r_late = run_backtest([StudyEvent("BTCUSDT", 0, "LONG", 100.0)],
+                              late, cfg)
+        t_base = r_base["trades"][0]
+        t_late = r_late["trades"][0]
+        for t in (t_base, t_late):
+            self.assertEqual((t["entry_ms"], t["exit_ms"]), (12 * H, 24 * H))
+        settled = lambda t: [e["settlement_ms"] for e in t["funding_events"]
+                             if e["basis"] == "settled"]
+        self.assertEqual(settled(t_base), [12 * H, 16 * H, 20 * H])
+        self.assertEqual(settled(t_late), settled(t_base))
+        self.assertAlmostEqual(t_late["funding"], t_base["funding"])
+        self.assertAlmostEqual(t_base["funding"], 3.0)
+        self.assertEqual(t_late["funding_unknown"],
+                         t_base["funding_unknown"])
+        self.assertEqual(t_late["funding_accounting_complete"],
+                         t_base["funding_accounting_complete"])
+
+
 if __name__ == "__main__":
     unittest.main()

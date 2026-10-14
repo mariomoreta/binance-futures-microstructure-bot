@@ -12,7 +12,9 @@ v4.1 revision (2026-10-13): exit commissions on exit value (not symmetric
 halves); settlement exposure is current quantity x causal settlement mark
 with data-step freshness tiers (fresh/proxy/stale); per-position funding
 accounting completeness; config_hash carries the engine version so v4 and
-v4.1 result hashes never compare equal. Flat-price fixture amounts from v4
+v4.1 result hashes never compare equal. 2026-10-14 causality fix: the data
+step and settlement marks use the candle prefix known at exit_ms — candles
+printed later never reclassify earlier settlements (R8 regression). Flat-price fixture amounts from v4
 are unchanged; legacy totals still include open marks (never realized).
 
 Temporal availability contract (v4; v3 rules kept, funding reworked):
@@ -354,7 +356,15 @@ def _funding_for_trade(side: str,
     ordered, _ = cal.normalized()  # conflicts raise here, before any math
     assessment = cal.assess()
     gap_spans = [(g["from_ms"], g["to_ms"]) for g in assessment["gaps"]]
-    data_step = _data_step_ms(series)
+    # CAUSALITY (2026-10-14): the data cadence and settlement marks must
+    # come from knowledge available at the position's end, never from
+    # candles printed later. The full-series median step is NOT causal: on
+    # 0/12/24/36h data the step is 12h (16h/20h settlements = proxy), but
+    # appending 37-48h hourly candles drags the median to ~1h and flips
+    # those same settlements to stale (3 settled -> 1). Truncate to the
+    # prefix known at exit_ms; later candles cannot move earlier funding.
+    causal = [c for c in series if c.open_time_ms <= exit_ms] or series
+    data_step = _data_step_ms(causal)
     total = 0.0
     events: list = []
     unknown = 0
@@ -364,7 +374,7 @@ def _funding_for_trade(side: str,
                             if t <= s.settlement_ms)
             held_qty = sum(qty for (t, _, qty) in fill_ledger
                            if t <= s.settlement_ms)
-            mark, age = _settlement_mark(series, s.settlement_ms)
+            mark, age = _settlement_mark(causal, s.settlement_ms)
             if mark is None or age is None:
                 unknown += 1
                 events.append({"basis": "unknown-excluded",

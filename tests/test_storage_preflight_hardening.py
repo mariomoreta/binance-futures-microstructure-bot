@@ -10,6 +10,7 @@ SQLite/WAL reads on copies (never canonical). Run: python run_tests.py
 from __future__ import annotations
 
 import json
+import os
 import subprocess
 import sys
 import tempfile
@@ -69,6 +70,33 @@ class OutProtectionTest(unittest.TestCase):
             capture_output=True, text=True, timeout=120)
         self.assertEqual(proc.returncode, 2)
         self.assertEqual(real.read_bytes(), b"fake-db")
+
+    def test_out_hardlink_alias_to_db_is_refused(self) -> None:
+        import sqlite3
+        tmp = Path(tempfile.mkdtemp(prefix="pre_hard_"))
+        (tmp / "data").mkdir()
+        real = tmp / "data" / "microprobe.db"
+        con = sqlite3.connect(str(real))
+        con.execute("create table t(x)")
+        con.executemany("insert into t values (?)", [(i,) for i in range(3)])
+        con.commit()
+        con.close()
+        before = real.read_bytes()
+        alias = tmp / "alias.json"
+        try:
+            os.link(str(real), str(alias))
+        except (OSError, NotImplementedError) as e:
+            self.skipTest("hardlinks unavailable: %s" % e)
+        self.assertTrue(os.path.samestat(os.stat(str(real)),
+                                           os.stat(str(alias))))
+        proc = subprocess.run(
+            [sys.executable, str(SCRIPT), "--root", str(tmp),
+             "--out", str(alias)],
+            capture_output=True, text=True, timeout=120)
+        self.assertEqual(proc.returncode, 2)
+        # Same file by identity: the refusal must leave its bytes intact.
+        self.assertEqual(real.read_bytes(), before)
+        self.assertEqual(alias.read_bytes(), before)
 
 
 class UnknownCompareTest(unittest.TestCase):
@@ -162,6 +190,25 @@ class StateWarningsTest(unittest.TestCase):
         self.assertIn("db", files)
         self.assertIn("wal", files)
         self.assertIn("shm", files)
+
+    def test_corrupt_db_with_known_size_still_warns(self) -> None:
+        tmp = Path(tempfile.mkdtemp(prefix="pre_corrupt_"))
+        data = tmp / "data"
+        data.mkdir()
+        db = data / "microprobe.db"
+        db.write_bytes(b"not-a-sqlite-file" * 64)
+        code, _, _ = _run(tmp)
+        self.assertEqual(code, 0)
+        report = json.loads((tmp / "CLI_OUT_PLACEHOLDER").read_text(
+            encoding="utf-8"))
+        op = report["operational_db"]
+        # Size known, state illegible: bytes present, tables UNKNOWN.
+        self.assertIsNotNone(op["bytes"])
+        self.assertIsNone(op["tables"])
+        self.assertIn("UNKNOWN", op["status"])
+        joined = " ".join(report["warnings"])
+        self.assertIn("microprobe.db", joined)
+        self.assertIn("UNKNOWN", joined)
 
 
 class CopyReadEffectsTest(unittest.TestCase):

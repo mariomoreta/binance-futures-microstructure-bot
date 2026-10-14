@@ -255,10 +255,14 @@ class DisabledTest(unittest.TestCase):
     def test_refuses_without_side_effects(self):
         _temp_registry(self)
         spawner = mock.Mock(side_effect=AssertionError("must not spawn"))
-        out = pc.launch_supervised_transaction(
-            duration_seconds=60,
-            spawners={"probe": spawner, "supervisor": spawner,
-                      "sentinel": spawner})
+        # Refusal branch pinned explicitly: enablement (O1, 2026-10-13)
+        # flipped the module default, but the refusal path itself stays
+        # covered here with the flag forced off.
+        with mock.patch.object(pc, "SUPERVISED_LAUNCH_ENABLED", False):
+            out = pc.launch_supervised_transaction(
+                duration_seconds=60,
+                spawners={"probe": spawner, "supervisor": spawner,
+                          "sentinel": spawner})
         self.assertEqual(out["outcome"], "rejected")
         self.assertEqual(out["reason"], "supervised-launch-disabled")
         spawner.assert_not_called()
@@ -291,6 +295,101 @@ class FullPathTest(unittest.TestCase):
         final = pc.read_registry()
         self.assertEqual(final.get("state"), "RUNNING")
         self.assertTrue(all(world.procs[p]["alive"] for p in world.procs))
+
+
+class V2PathTest(unittest.TestCase):
+    """V2 fixed-call path: launch/association/confirmation/rollback/stop.
+
+    Pins the exact call shape the V2 BFF emits (fixed code, allowlisted
+    preset brief=120s, launcher='dashboard' — never user interpolation)
+    through the PUBLIC entry point. SUPERVISED_LAUNCH_ENABLED=True is the
+    CONSEQUENCE of this class passing, not a bare flag flip: reverting
+    the flag to False fails test_v2_fixed_call_confirms.
+    """
+
+    def _v2_launch(self, world, **kw):
+        path, tmp, ident = _harness(self, world)
+        kw.setdefault("identity", ident)
+        kw.setdefault("verify_budget_s", 5.0)
+        kw.setdefault("poll_interval_s", 0.05)
+        kw.setdefault("evidence_dir", str(tmp / "evidence"))
+        kw.setdefault("spawners", {
+            "supervisor": _watcher_spawner(world, "supervisor"),
+            "sentinel": _watcher_spawner(world, "sentinel")})
+
+        def _dashboard_spawn(*args, **kwargs):
+            # Mirrors the real dashboard-spawned child: launcher + preset
+            # reach it via the spawn env (control.start_probe sets
+            # MICROPROBE_PRESET) and it self-registers with both.
+            pid = world.spawn()
+            with mock.patch.object(pc.os, "getpid", return_value=pid), \
+                    mock.patch.dict(pc.os.environ,
+                                    {"MICROPROBE_PRESET": "brief"}):
+                pc.try_register(duration_seconds=120, launcher="dashboard")
+            return _FakeProc(pid, world)
+
+        with mock.patch.object(pc.subprocess, "Popen",
+                               side_effect=_dashboard_spawn):
+            out = pc.launch_supervised_transaction(
+                duration_seconds=120, launcher="dashboard", preset="brief",
+                **kw)
+        return out, path, tmp, ident
+
+    def test_v2_fixed_call_confirms(self):
+        self.assertTrue(
+            pc.SUPERVISED_LAUNCH_ENABLED,
+            "enablement must be the consequence of this V2 path passing")
+        world = _World()
+        out, _, _, _ = self._v2_launch(world)
+        self.assertEqual(out["outcome"], "confirmed")
+        run = out["run"]
+        for role in ("supervisor", "sentinel"):
+            slot = out["watchers"][role]
+            self.assertTrue(slot["confirmed"], role)
+        final = pc.read_registry()
+        self.assertEqual(final.get("state"), "RUNNING")
+        self.assertEqual(final.get("launcher"), "dashboard")
+        self.assertEqual(final.get("preset"), "brief")
+        # Association: both watcher leases are bound to the launched run.
+        for role in ("supervisor", "sentinel"):
+            self.assertEqual((final.get(role) or {}).get("watched_pid"),
+                             run["pid"], role)
+
+    def test_v2_sentinel_failure_rolls_back_everything(self):
+        world = _World()
+
+        def _boom(run_pid):
+            raise OSError("no fork")
+
+        out, _, _, _ = self._v2_launch(
+            world,
+            spawners={"supervisor": _watcher_spawner(world, "supervisor"),
+                      "sentinel": _boom})
+        self.assertEqual(out["outcome"], "rejected")
+        self.assertEqual(out["rollback"]["pending"], [])
+        self.assertFalse(any(e["alive"] for e in world.procs.values()))
+
+    def test_v2_stop_dashboard_owned_run(self):
+        world = _World()
+        out, _, _, _ = self._v2_launch(world)
+        self.assertEqual(out["outcome"], "confirmed")
+        run_pid = int(out["run"]["pid"])
+        run_ctime = out["run"]["create_time"]
+
+        def _fake_terminate(pid, ctime):
+            entry = world.procs.get(int(pid))
+            if entry is None or entry["ctime"] != ctime \
+                    or not entry["alive"]:
+                return False
+            world.kill(int(pid))
+            return True
+
+        with mock.patch.object(pc, "_terminate_verified_pid",
+                               side_effect=_fake_terminate):
+            res = pc.stop_probe(requester="dashboard-v2")
+        self.assertTrue(res.get("stopped"), res)
+        self.assertFalse(world.procs[run_pid]["alive"])
+        self.assertEqual(pc.read_registry().get("state"), "STOPPED")
 
 
 class PreconditionTest(unittest.TestCase):
