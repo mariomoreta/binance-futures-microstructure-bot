@@ -1,0 +1,5 @@
+import {NextResponse} from "next/server";
+import {canonicalMarket} from "@/lib/canonical-market";
+export const dynamic="force-dynamic";export const runtime="nodejs";
+export function GET(){const m=canonicalMarket();if(!m.available)return NextResponse.json({error:"CANONICAL_SOURCE_UNAVAILABLE"},{status:503,headers:{"Cache-Control":"no-store"}});
+ return NextResponse.json({source:"persisted-sqlite-readonly",generated_at:m.readAt,rows:m.rows.map(r=>({...r,deepEvidence:r.subscribed,priceSource:r.priceSource==="discovery_snapshots"?"discovery":"momentum",discoveryEvidence:r.discoveryAsOf!==null})),sources:{discovery:m.discoveryAsOf!==null,momentum:m.rows.some(r=>r.subscribed)},alignment:"UNVERIFIED",freshness:"UNVERIFIED",availableFields:{discovery:["change24hPct","quoteVolume24h"],momentum:["velocity1m"]},warnings:["Read time is not observation time.","Discovery and deep-feature timestamps are separate.","Retained coverage and captured freshness do not certify present feed liveness."]},{headers:{"Cache-Control":"no-store"}})}

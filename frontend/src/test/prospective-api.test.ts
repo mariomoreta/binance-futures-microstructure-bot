@@ -1,0 +1,3 @@
+import {describe,it,expect} from "vitest";
+import {normalizeProspective} from "@/lib/prospective-api";
+describe("prospective read model",()=>{it("keeps invalid outcome as null, never zero",()=>{const p=normalizeProspective({prospective:{state:"UNKNOWN",latest_outcomes:[{symbol:"BTCUSDT",horizon:"1m",outcome_state:"INSUFFICIENT_HISTORY",mark_return_pct:null}]}});expect(p.latest_outcomes[0]?.mark_return_pct).toBeNull();expect(p.setup_count).toBeNull()});it("handles empty payload without invented telemetry",()=>{const p=normalizeProspective({});expect(p.latest_outcomes).toEqual([]);expect(p.errors).toBeNull()})});
