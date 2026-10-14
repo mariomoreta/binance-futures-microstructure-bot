@@ -1,0 +1,2 @@
+import Link from "next/link";import {LiveMoversView} from "@/components/movers/LiveMoversView";
+export default function VerifiedMovers(){return <div style={{display:"grid",gap:16}}><header><Link href="/movers">← Demo Movers</Link><h1 style={{margin:"12px 0 4px"}}>Observed Market Movers</h1><p style={{fontSize:12,color:"var(--text-3)"}}>Separate Python-persisted observations · discovery and deep coverage labeled independently</p></header><LiveMoversView/></div>}

@@ -36,16 +36,18 @@ export function TopBar({
   feed,
   research,
   lastData,
+  demo=true,
 }: {
   engine: EngineState;
   feed: FeedState;
   research: ResearchState;
   lastData: string | null;
+  demo?:boolean;
 }) {
   return (
     <div className="v2-topbar" data-testid="topbar">
       <div>
-        <div style={{ fontSize: 18, fontWeight: 700 }}>Overview</div>
+        <h1 style={{ margin: "0 0 4px" }}>Overview</h1>
         <div className="v2-market">Binance USD-M Futures · market intelligence</div>
       </div>
       <div className="v2-spacer" />
@@ -53,12 +55,12 @@ export function TopBar({
       <FeedChip state={feed} />
       <ResearchChip state={research} />
       <span className="v2-chip" data-tone="muted" data-testid="safety-chip">
-        OBSERVE ONLY (example)
+        {demo?"OBSERVE ONLY (example)":"READ-ONLY RESEARCH"}
       </span>
       <span className="v2-muted v2-mono" data-testid="last-data" style={{ fontSize: 12 }}>
         {lastData ?? "last data: —"}
       </span>
-      <DemoPill />
+      {demo?<DemoPill />:<span className="v2-chip" data-tone="warn">PERSISTED · NOT LIVE</span>}
     </div>
   );
 }

@@ -10,26 +10,24 @@ function MetricCell({ point, label }: { point: MetricPoint; label: string }) {
     ) : (
       <span>
         {formatCompact(point.value)}{" "}
-        <span className="v2-muted" style={{ fontSize: 12 }}>
+        <span className="v2-muted" style={{ fontSize: 12, overflowWrap: "anywhere" }}>
           {point.unit}
         </span>
       </span>
     );
   return (
-    <div style={{ gridColumn: "span 2" }}>
+    <div className="v2-overview-metric">
       <MetricCard
         label={label}
         value={shown}
         sub={
           <>
-            <div className="v2-muted" style={{ fontSize: 12 }}>
-              {point.period} · {point.source}
+            <div className="v2-muted" style={{ fontSize: 12, overflowWrap: "anywhere" }}>
+              {point.period} · <span title={point.source}>{point.source==="PERSISTED_SQLITE_READONLY"?"Python / SQLite":point.source}</span><div>Observed: {point.asOf??"UNKNOWN"}</div>
             </div>
             <DataFreshnessIndicator freshness={point.freshness} />
             {point.unavailable ? (
-              <div className="v2-muted" style={{ fontSize: 12 }}>
-                {point.unavailable}
-              </div>
+              <details className="v2-metric-source"><summary>Source unavailable</summary><div>{point.unavailable}</div></details>
             ) : null}
           </>
         }
@@ -45,7 +43,7 @@ export function OverviewMetricGrid({
 }) {
   const order: Array<[string, string]> = [
     ["discovered", "Discovered contracts"],
-    ["deepTracked", "Deep-tracked symbols"],
+    ["deepTracked", "Retained deep symbols"],
     ["topGainer", "Top gainer"],
     ["topLoser", "Top loser"],
     ["activity", "Market activity"],
@@ -53,7 +51,7 @@ export function OverviewMetricGrid({
   ];
   return (
     <section className="v2-section" aria-label="Key metrics">
-      <div className="v2-grid" data-testid="metric-grid">
+      <div className="v2-grid v2-overview-metrics" data-testid="metric-grid">
         {order.map(([key, label]) =>
           metrics[key] ? (
             <MetricCell key={key} point={metrics[key] as MetricPoint} label={label} />

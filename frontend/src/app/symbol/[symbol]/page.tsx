@@ -1,22 +1,8 @@
-import { SectionHeader } from "@/components/shell/SectionHeader";
-import { WarmingState } from "@/components/notices/states";
-import { Placeholder } from "@/components/shell/AppShell";
-
-export default async function SymbolPage({
-  params,
-}: {
-  params: Promise<{ symbol: string }>;
-}) {
-  const { symbol } = await params;
-  const display = decodeURIComponent(symbol).toUpperCase();
-  return (
-    <div>
-      <SectionHeader title={display} />
-      <WarmingState what={`Live features for ${display}`} />
-      <Placeholder
-        title="Detail contract (future)"
-        what="Chart, returns/momentum, flow, book, OI, VWAP/vol/structure, coverage, events, and identity arrive with the normalized detail contract in DASH-V2-03 — including history-only routes."
-      />
-    </div>
-  );
-}
+import Link from "next/link";
+import {notFound} from "next/navigation";
+import {TokenDetail} from "@/components/token/TokenDetail";
+import {SnapshotRefresh} from "@/components/notices/SnapshotRefresh";
+import {canonicalMarket} from "@/lib/canonical-market";
+import {recordedToken} from "@/lib/persisted-market";
+export const dynamic="force-dynamic";export const runtime="nodejs";
+export default async function SymbolPage({params}:{params:Promise<{symbol:string}>}){const {symbol:raw}=await params;const symbol=raw.toUpperCase();if(!/^[A-Z0-9]{2,32}$/.test(symbol))notFound();const m=canonicalMarket(),now=Date.parse(m.readAt);return <><SnapshotRefresh readAt={m.readAt} available={m.available}/><TokenDetail data={recordedToken(m,symbol,now)}/><p className="v2-muted" style={{fontSize:12,marginTop:18}}><Link href={"/historical-research/coverage?symbol="+encodeURIComponent(symbol)}>Historical coverage and recorded events for {symbol} →</Link> · Separate historical research source; availability is not current feed health.</p></>}

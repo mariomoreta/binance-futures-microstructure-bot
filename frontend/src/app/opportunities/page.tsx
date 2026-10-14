@@ -1,19 +1,7 @@
-import { SectionHeader } from "@/components/shell/SectionHeader";
-import { EmptyState } from "@/components/notices/states";
-import { Placeholder } from "@/components/shell/AppShell";
-
-export default function OpportunitiesPage() {
-  return (
-    <div>
-      <SectionHeader title="Opportunities" />
-      <EmptyState
-        title="No candidates — classifier not built"
-        hint="This shell stays empty until P1-12/P1-13A provide validated setups. No rankings, probabilities, or trade fields are shown."
-      />
-      <Placeholder
-        title="Lifecycle contract (future)"
-        what="Selection reasons, evidence, counterevidence, risks, and nullable research fields arrive with the typed contract."
-      />
-    </div>
-  );
-}
+import s from "@/components/opportunities/ResearchWorkspace.module.css";
+import {OpportunitiesDashboard} from "@/components/opportunities/OpportunitiesDashboard";
+import {ResearchNavigation} from "@/components/opportunities/ResearchNavigation";
+import {SnapshotRefresh} from "@/components/notices/SnapshotRefresh";
+import {canonicalOpportunityView} from "@/lib/canonical-market";
+export const dynamic="force-dynamic";export const runtime="nodejs";
+export default function OpportunitiesPage(){const m=canonicalOpportunityView();return <div className={s.workspace}><ResearchNavigation active="/opportunities"/><SnapshotRefresh readAt={m.readAt} available={m.available}/><OpportunitiesDashboard items={m.items} available={m.available}/></div>;}

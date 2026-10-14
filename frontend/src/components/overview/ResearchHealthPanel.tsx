@@ -40,8 +40,7 @@ export function ResearchHealthPanel({ health }: { health: HealthFacts }) {
         <p>
           <DataFreshnessIndicator freshness="UNKNOWN" />{" "}
           <span className="v2-muted">
-            Example values — operational health is never asserted from
-            fixtures.
+            Stored records do not certify current process or feed health.
           </span>
         </p>
       </div>

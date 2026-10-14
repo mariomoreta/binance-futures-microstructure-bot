@@ -1,1 +1,56 @@
 .root{display:grid;gap:12px;min-width:0;width:100%}.top{display:flex;align-items:center;flex-wrap:wrap;gap:10px;border-bottom:1px solid var(--border);padding-bottom:12px;min-width:0}.title{font-size:20px;font-weight:700}.subtitle,.meta,.help{color:var(--text-3);font-size:12px}.spacer{flex:1}.grid{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:8px;min-width:0}.card,.panel,.filters{background:var(--surface-1);border:1px solid var(--border);border-radius:var(--radius-md);padding:12px;min-width:0}.value{font:600 18px var(--font-mono)}.filters{display:grid;grid-template-columns:minmax(0,1.5fr) repeat(4,minmax(0,1fr)) auto;gap:8px;align-items:end}.field{display:grid;gap:4px;font-size:11px;color:var(--text-3);min-width:0}.control,.button{background:var(--bg-1);border:1px solid var(--border);border-radius:4px;color:var(--text-1);padding:7px 8px;min-width:0}.control{width:100%}.button{cursor:pointer}.rankGrid,.qualityGrid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:12px;min-width:0}.rank{display:grid;grid-template-columns:28px minmax(0,1fr) auto auto;gap:8px;padding:6px 0;border-bottom:1px solid var(--border);align-items:center}.tableWrap{overflow-x:auto;max-width:100%;min-width:0}.table{width:100%;min-width:1050px;border-collapse:collapse;font-size:12px}.table th,.table td{padding:7px 9px;border-bottom:1px solid var(--border);white-space:nowrap}.table th{text-align:left;color:var(--text-3)}.table th[data-num],.table td[data-num]{text-align:right}.sort{all:unset;cursor:pointer;color:inherit}.pager{display:flex;justify-content:space-between;align-items:center;padding-top:10px;gap:8px}.empty{text-align:center;padding:32px}.signed[data-sign="positive"]{color:var(--positive)}.signed[data-sign="negative"]{color:var(--negative)}.criteria{margin:0;padding-left:18px;color:var(--text-3);font-size:11px}.counts{display:flex;flex-wrap:wrap;gap:6px}@media(max-width:1024px){.grid{grid-template-columns:repeat(3,minmax(0,1fr))}.filters{grid-template-columns:repeat(2,minmax(0,1fr))}.rankGrid,.qualityGrid{grid-template-columns:minmax(0,1fr)}}@media(max-width:640px){.grid,.filters{grid-template-columns:minmax(0,1fr)}.title{width:100%}.pager{align-items:flex-start;flex-direction:column}}@media(prefers-reduced-motion:reduce){.root *{scroll-behavior:auto!important}}
+
+/* DASH-V2-16: official Movers reference — market table first, denser financial-terminal rhythm. */
+.root{gap:10px}.top{padding-bottom:9px}.grid{grid-template-columns:repeat(6,minmax(0,1fr));gap:7px}.card{padding:10px 12px;border-color:var(--border)}.card .meta{font-size:10px}.value{font-size:18px;margin:4px 0}.filters{padding:10px 12px;gap:7px}.panel{padding:10px 12px}.table{font-size:11px;min-width:990px}.table th,.table td{padding:6px 8px}.table tbody tr:hover{background:var(--accent-muted)}.table th{font-size:10px;text-transform:uppercase;letter-spacing:.03em}.rankGrid .panel{padding:12px}.rank{padding:4px 0;font-size:11px}.rankGrid{gap:9px}.qualityGrid{gap:9px}.rankGrid .meta{font-size:10px}.counts{margin-top:9px}@media(max-width:1024px){.grid{grid-template-columns:repeat(3,minmax(0,1fr))}}@media(max-width:640px){.grid{grid-template-columns:repeat(2,minmax(0,1fr))}.root{gap:9px}}
+
+.noSeries{color:var(--text-3);background:#0b1928;border:1px dashed #274153;border-radius:4px;font:9px var(--font-mono);letter-spacing:.04em;padding:6px 10px;display:inline-flex;justify-content:center;min-width:90px}.table td:first-child{position:sticky;left:0;background:var(--surface-1);z-index:1}.table thead th:first-child{position:sticky;left:0;background:var(--surface-1);z-index:2}.table tbody tr:hover td:first-child{background:#153145}.table thead{background:#0c1b2b}
+/* DASH-V2-26: desktop-first visual hierarchy matching approved terminal reference. */
+@media(min-width:1200px){
+.root{gap:9px}
+.top{padding:2px 1px 7px;border-bottom:0}
+.title{font-size:16px;font-weight:750;letter-spacing:.02em;text-transform:uppercase;color:#64cffb}
+.subtitle{font-size:10px;color:#8caac0}
+.grid{grid-template-columns:repeat(6,minmax(0,1fr));gap:8px}
+.card{background:linear-gradient(120deg,#0d2235,#0b1b2a);border-color:#1c3a54;padding:10px 13px;border-radius:7px;min-height:77px}
+.value{font:700 21px var(--font-mono);color:#f4f8fe}
+.panel{background:#0c1c2d;border:1px solid #1c3c58;border-radius:7px;padding:10px}
+.tableWrap{overflow-x:auto}
+.table{width:100%;min-width:1020px;font-size:11px;table-layout:auto}
+.table thead{background:#10243a}
+.table th,.table td{padding:7px 9px;border-right:1px solid #20374b;border-bottom:1px solid #20374b}
+.table th{color:#98b9d4;font-size:10px}
+.table td:first-child a{font-weight:650;color:#49c0ff}
+.pager{padding-top:7px}
+}
+.advanced{background:#0d1b2a;border:1px solid #1c3b53;border-radius:7px}
+.advanced>summary{cursor:pointer;font:600 11px var(--font-mono);color:#7abde0;padding:9px 12px;letter-spacing:.035em}
+.advanced[open]>summary{border-bottom:1px solid #20374b}
+.advanced .filters{border:0;border-radius:0}
+
+/* DASH-V2-28: inline keyboard-accessible evidence inspection. */
+.symbolCell{display:flex;align-items:center;gap:8px;justify-content:space-between}.symbolCell a{min-width:0}.inspectButton{background:#11344c;color:#83d7ff;border:1px solid #2c5975;border-radius:4px;width:23px;height:23px;cursor:pointer;font:700 13px var(--font-mono);display:grid;place-items:center}.inspectButton:hover,.inspectButton:focus-visible{background:#155075;outline:1px solid #5cbbf2}.inspectButton[aria-expanded="true"]{color:#fff;background:#146388}.inspectionRow td{padding:0!important;border:0!important;background:#071a2a!important;text-align:left!important;position:static!important}
+
+/* DASH-V2-29 desktop table capacity and navigation. */
+.pagerControls{display:flex;align-items:center;gap:8px}.pageSizeLabel{font:11px var(--font-mono);color:#8db9d0;display:flex;gap:8px;align-items:center}.pageSizeLabel select{background:#0c2437;color:#d6f0ff;border:1px solid #2b5674;border-radius:5px;padding:7px 9px}.pageSizeLabel select:focus-visible{outline:2px solid #61cafa}@media(min-width:1250px){.table th{position:sticky;top:0;z-index:3}.tableWrap{max-height:570px;overflow:auto;scrollbar-color:#305574 #091725}.table tbody tr:nth-child(2n){background:#0b1a2b}.table tbody tr:hover{background:#123149}.tableWrap{border:1px solid #24435b;border-radius:7px}}
+
+/* DASH-V2-30: desktop market summary composition, values remain fixture-only. */
+@media(min-width:1251px){
+.grid{gap:9px}
+.card{position:relative;overflow:hidden;min-height:98px;padding:15px 17px;background:linear-gradient(143deg,#112a40 0%,#0c1d30 65%,#091826 100%);border:1px solid #28516b;box-shadow:inset 0 1px 0 #ffffff0b,0 8px 24px #00000015}
+.card:before{content:"";position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,#27b5e5,#1b506f 65%,transparent)}
+.card:nth-child(3):before,.card:nth-child(5):before{background:linear-gradient(90deg,#24b995,#215245,transparent)}
+.card:nth-child(4):before,.card:nth-child(6):before{background:linear-gradient(90deg,#e9687f,#5e2939,transparent)}
+.card .meta:first-child{font-size:10px;letter-spacing:.07em;text-transform:uppercase;color:#8dbad2;font-weight:600}
+.card .value{font:750 24px var(--font-mono);margin:9px 0 8px;letter-spacing:-.04em}
+.card:nth-child(3) .value,.card:nth-child(5) .value{color:#4adbb6}
+.card:nth-child(4) .value,.card:nth-child(6) .value{color:#ff7897}
+.card .meta:last-child{border-top:1px solid #234159;padding-top:6px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+}
+
+/* DASH-V2-56: full-width table followed by reference-style ranking grid. */
+.terminalWorkspace{display:grid;grid-template-columns:minmax(0,1fr);align-items:start;gap:12px;min-width:0}
+.primaryMarketPane,.marketRankPane{min-width:0}
+.title{margin:0}
+
+/* Keep the screener table inside its own scrolling pane. */
+.root{grid-template-columns:minmax(0,1fr)}.primaryMarketPane,.marketRankPane{min-width:0;max-width:100%}@media(max-width:1449px){.terminalWorkspace{grid-template-columns:minmax(0,1fr)}}

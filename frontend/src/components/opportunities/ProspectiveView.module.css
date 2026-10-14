@@ -1,0 +1,30 @@
+.alert,.panel{background:var(--surface-1);border:1px solid var(--border);border-radius:9px;padding:17px}.alert{border-color:var(--warning);font-size:12px}.alert strong{color:var(--warning)}.alert p,.panel p{color:var(--text-2);font-size:12px}.grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}.panel small,.panel strong{display:block}.panel small{color:var(--text-3)}.panel strong{font:600 19px var(--font-mono);margin-top:9px}.panel h2{font-size:15px;margin:0 0 14px}.scroll{overflow-x:auto}.scroll table{width:100%;min-width:760px;border-collapse:collapse;font-size:12px}.scroll th,.scroll td{padding:12px 8px;border-bottom:1px solid var(--border);text-align:left}.scroll th{color:var(--text-3)}@media(max-width:800px){.grid{grid-template-columns:repeat(2,minmax(0,1fr))}}@media(max-width:460px){.grid{grid-template-columns:1fr}}
+.workspace{display:grid;gap:12px}
+.sectionTitle{display:flex;align-items:start;justify-content:space-between;gap:12px;flex-wrap:wrap}
+.sectionTitle span{font-size:10px;color:var(--text-3)}
+.horizons{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:9px}
+.horizons>div{background:#091c2c;border:1px solid #25435b;border-radius:7px;padding:13px;display:grid;gap:4px}
+.horizons span{font:650 12px var(--font-mono);color:#79cfff}
+.horizons strong{font:700 23px var(--font-mono);margin:5px 0;color:#e2f3ff}
+.horizons small{font-size:10px;color:#829fb7}
+.scroll{border:1px solid #26445d;border-radius:6px}
+.scroll table{min-width:1170px;font-size:11px}
+.scroll thead{background:#0a2337}
+.scroll th{font-size:10px;text-transform:uppercase;letter-spacing:.03em;white-space:nowrap}
+.scroll td{font-family:var(--font-mono);font-size:10px}
+.scroll tbody tr:nth-child(2n){background:#0c1c2c}
+.symbol{font-weight:700;color:#50bbf6}
+.positive{color:#46d7ab}.negative{color:#ef7794}
+
+.controls{display:flex;align-items:end;gap:12px;flex-wrap:wrap;margin:12px 0;border:1px solid #24445c;background:#091b2c;border-radius:7px;padding:10px 12px}
+.controls label{display:grid;gap:5px;color:#95b4cd;font-size:10px;text-transform:uppercase;letter-spacing:.04em}
+.controls input,.controls select{border:1px solid #2a5270;background:#0e2538;border-radius:5px;padding:9px 11px;color:#e4f7ff;font:11px var(--font-mono);min-width:145px}
+.controls>span{margin-left:auto;font:11px var(--font-mono);color:#88c8ed;padding-bottom:9px}
+
+.retry{justify-self:start;border:1px solid #2a6486;background:#0e3046;color:#d9f5ff;padding:9px 14px;border-radius:6px;cursor:pointer;font-size:11px;font-weight:650}.retry:focus-visible{outline:2px solid #60c9ff}
+
+/* Contain the recorded ledger; long lifecycle labels must wrap. */
+.workspace{min-width:0;grid-template-columns:minmax(0,1fr)}.panel{min-width:0}.scroll{min-width:0;max-width:100%}.horizons>div{min-width:0}.horizons span{overflow-wrap:anywhere}@media(max-width:900px){.horizons{grid-template-columns:repeat(2,minmax(0,1fr))}}@media(max-width:420px){.horizons{grid-template-columns:minmax(0,1fr)}.controls input,.controls select{width:100%;min-width:0}.controls label{width:100%;min-width:0}.controls>span{margin-left:0}.sectionTitle span{overflow-wrap:anywhere}}
+
+/* V59: readable source notices and balanced narrow-screen summary grids. */
+.alert{padding:13px 15px;border-color:#66502b;border-left:3px solid #d5a64e;border-radius:6px;background:#17222a}.alert p{line-height:1.55;margin:8px 0}.alert a{font-size:12px}.panel{padding:15px;border-color:#23465c;border-radius:6px;background:#0b1f2e}.panel small{font-size:11px;color:#90afc5}.panel strong{overflow-wrap:anywhere}.panel h2{font-size:16px}.horizons{grid-template-columns:repeat(auto-fit,minmax(140px,1fr))}.horizons>div{padding:12px}.horizons small{color:#90afc5}.scroll:focus-visible{outline:2px solid #60c9ff;outline-offset:3px}.controls button{padding:9px 12px;border:1px solid #2a6486;background:#0e3046;color:#d9f5ff;border-radius:5px;font-size:11px;cursor:pointer}.controls button:disabled{opacity:.6;cursor:default}.controls button:focus-visible{outline:2px solid #60c9ff;outline-offset:2px}@media(max-width:700px){.grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}.panel{padding:12px}.grid strong{font-size:16px}.sectionTitle span{line-height:1.5}.horizons{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}.horizons strong{font-size:18px}.horizons>div{padding:10px}.controls{gap:10px}.controls>span{padding-bottom:0}}

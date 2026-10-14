@@ -1,0 +1,23 @@
+.root{display:grid;gap:14px;min-width:0}
+.header{display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap}
+.header h1{font-size:28px;letter-spacing:-.03em;margin:0}
+.header p{color:var(--text-2);font-size:12px;margin:3px 0 0}
+.tag,.unknown{font:10px var(--font-mono);padding:4px 7px;border:1px solid #284d68;border-radius:4px;color:var(--text-2);background:#081b2b}
+.grid{display:grid;grid-template-columns:1.1fr 1fr 1fr;gap:12px;align-items:stretch;min-width:0}
+.panel{min-width:0;background:linear-gradient(150deg,#0b2032,#081621);border:1px solid #1d4c6b;border-radius:7px;padding:14px}
+.heading small,.auditHeading small{color:var(--accent);font-size:9px;letter-spacing:.12em}
+.heading h2,.auditHeading h2{font-size:16px;margin:3px 0}
+.heading p,.note{font-size:11px;color:var(--text-2);margin:5px 0;line-height:1.6}
+.rows{margin-top:12px}
+.row{display:flex;justify-content:space-between;align-items:flex-start;gap:9px;border-top:1px solid #17374d;padding:8px 0}
+.row strong{display:block;font-size:12px;font-weight:550}
+.row small{display:block;font-size:10px;color:var(--text-3);margin-top:4px}
+.row .unknown{flex-shrink:0;font-size:8px}
+.auditHeading{display:flex;align-items:center;justify-content:space-between;gap:12px}
+@media(max-width:1250px){.grid{grid-template-columns:1fr 1fr}.grid>:last-child{grid-column:1/-1}}
+@media(max-width:720px){.grid{grid-template-columns:minmax(0,1fr)}.grid>:last-child{grid-column:auto}.header h1{font-size:25px}.row{flex-wrap:wrap}}
+
+/* V60: align headings and make integration labels readable. */
+.header h1{font-size:30px}.row .unknown{font-size:9px}.heading small,.auditHeading small{font-size:10px}@media(max-width:720px){.header h1{font-size:25px}}
+
+.panel>summary{cursor:pointer;font-size:12px;color:var(--text-2)}.panel>summary:focus-visible{outline:2px solid var(--accent);outline-offset:4px}.panel>summary+section{margin-top:12px}

@@ -25,6 +25,7 @@ export function StatusChip({
 }
 
 const ENGINE_TONE: Record<EngineState, Tone> = {
+  UNKNOWN: "muted",
   RUNNING: "pos",
   COMPLETED: "info",
   STARTING: "warn",

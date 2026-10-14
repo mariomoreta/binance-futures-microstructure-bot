@@ -1,0 +1,2 @@
+import {describe,it,expect} from "vitest";import {render,screen} from "@testing-library/react";import {VerifiedHistoryPanel} from "@/components/movers/VerifiedHistoryPanel";
+describe("isolated verified data presentation",()=>{it("does not blend market fixtures and verified history",()=>{render(<VerifiedHistoryPanel/>);expect(screen.getByText("Persisted price history")).toBeInTheDocument();expect(screen.getByText(/historical window anchored/i)).toBeInTheDocument();expect(screen.getByText(/dates may differ from discovery/i)).toBeInTheDocument()})});

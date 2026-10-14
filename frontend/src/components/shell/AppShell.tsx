@@ -1,19 +1,14 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
-import { DemoPill } from "@/components/overview/TopBar";
 import { TopNav } from "./TopNav";
 
 export function AppShell({ children }: { children: ReactNode }) {
   return (
     <div className="v2-shell">
+      <a className="v2-skip-link" href="#main-content">Skip to main content</a>
       <TopNav />
-      <main className="v2-main">
-        <div style={{ marginBottom: 12 }} data-testid="shell-demo-strip">
-          <DemoPill />{" "}
-          <span className="v2-muted" style={{ fontSize: 12 }}>
-            Static shell — no API integration, no live data.
-          </span>
-        </div>
+      <main className="v2-main" id="main-content" tabIndex={-1}>
+        <div className="v2-source-strip" data-testid="shell-demo-strip"><span className="v2-source-label">SOURCE PER PANEL</span><span>Canonical recorded evidence; observation dates and unavailable sources are labelled.</span></div>
         {children}
       </main>
     </div>

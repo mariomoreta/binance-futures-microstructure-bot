@@ -1,0 +1,2 @@
+import {describe,it,expect} from "vitest";import {render,screen} from "@testing-library/react";import ObservationsPage from "@/app/opportunities/observations/page";
+describe("stored observation page",()=>{it("identifies real records as research, not current trade signals",()=>{render(<ObservationsPage/>);expect(screen.getByText("Persisted Research Observations")).toBeInTheDocument();expect(screen.getByText(/not live trading signals/i)).toBeInTheDocument();});});
