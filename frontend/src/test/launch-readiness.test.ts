@@ -7,6 +7,8 @@ import {launchReadiness} from "@/lib/launch-readiness";
 
 vi.mock("node:child_process", () => ({spawnSync: vi.fn()}));
 vi.mock("@/lib/historical-db", () => ({historicalRead: vi.fn()}));
+vi.mock("@/lib/storage-preflight", () => ({readStorageEvidence: vi.fn()}));
+import {readStorageEvidence} from "@/lib/storage-preflight";
 
 const respond = (value: unknown, status = 0) =>
   vi.mocked(spawnSync).mockReturnValue({
@@ -14,9 +16,17 @@ const respond = (value: unknown, status = 0) =>
   } as ReturnType<typeof spawnSync>);
 const check = (name: string) => launchReadiness().checks.find(x => x.name === name)?.status;
 
+const storageOk = () => vi.mocked(readStorageEvidence).mockReturnValue({
+  available: true, read_at: "2026-10-14T00:00:00Z", snapshot: null,
+  measured: {operational_db: {bytes: 1000, wal_bytes: null, shm_bytes: null},
+    historical_db: {bytes: 1000, wal_bytes: null, shm_bytes: null},
+    logs: {bytes: 10, files: 1}, disk_free_bytes: 153_000_000_000},
+  alerts: [], errors: [], blocked: [], note: "test",
+});
 beforeEach(() => {
   vi.resetAllMocks();
   vi.mocked(historicalRead).mockReturnValue(true);
+  storageOk();
 });
 
 describe("runtime readiness requires controller evidence", () => {
@@ -80,20 +90,91 @@ describe("runtime readiness requires controller evidence", () => {
     vi.mocked(historicalRead).mockReturnValue({quick_check: "ok"});
     vi.mocked(spawnSync).mockImplementation(((...a: unknown[]) => {
       const code = String((a[1] as string[])[1] ?? "");
-      if (code.includes("has_launch")) return {stdout: JSON.stringify({has_launch: true}), status: 0};
+      if (code.includes("SUPERVISED_LAUNCH_ENABLED")) return {stdout: JSON.stringify({present: true, enabled: true, verify_budget_s: 60, poll_s: 2}), status: 0};
       return {stdout: JSON.stringify({running: false, state: "STOPPED", mode: "observe"}), status: 0};
     }) as typeof spawnSync);
     const r = launchReadiness();
     expect(check("Atomic launch with persistent supervisor and sentinel")).toBe("PASS");
+    expect(check("Storage preflight")).toBe("PASS");
     expect(r).toMatchObject({ready: true, reason: "SUPERVISED_CHAIN_VERIFIED"});
   });
   it("keeps launch blocked when the capability probe disagrees", () => {
     vi.mocked(spawnSync).mockImplementation(((...a: unknown[]) => {
       const code = String((a[1] as string[])[1] ?? "");
-      if (code.includes("has_launch")) return {stdout: JSON.stringify({has_launch: false}), status: 0};
+      if (code.includes("SUPERVISED_LAUNCH_ENABLED")) return {stdout: JSON.stringify({present: true, enabled: false, verify_budget_s: 60, poll_s: 2}), status: 0};
       return {stdout: JSON.stringify({running: false, state: "STOPPED", mode: "observe"}), status: 0};
     }) as typeof spawnSync);
     expect(check("Atomic launch with persistent supervisor and sentinel")).toBe("BLOCKED");
     expect(launchReadiness()).toMatchObject({ready: false, reason: "ATOMIC_SUPERVISED_LAUNCH_UNAVAILABLE"});
+  });
+  it("never certifies the chain by mere callable presence: disabled stays blocked", () => {
+    vi.mocked(historicalRead).mockReturnValue({quick_check: "ok"});
+    vi.mocked(spawnSync).mockImplementation(((...a: unknown[]) => {
+      const code = String((a[1] as string[])[1] ?? "");
+      if (code.includes("SUPERVISED_LAUNCH_ENABLED")) return {stdout: JSON.stringify({present: true, enabled: false, verify_budget_s: 60, poll_s: 2}), status: 0};
+      return {stdout: JSON.stringify({running: false, state: "STOPPED", mode: "observe"}), status: 0};
+    }) as typeof spawnSync);
+    expect(check("Atomic launch with persistent supervisor and sentinel")).toBe("BLOCKED");
+    expect(launchReadiness().ready).toBe(false);
+  });
+  it("blocks on a non-finite verification budget even when enabled", () => {
+    vi.mocked(historicalRead).mockReturnValue({quick_check: "ok"});
+    vi.mocked(spawnSync).mockImplementation(((...a: unknown[]) => {
+      const code = String((a[1] as string[])[1] ?? "");
+      if (code.includes("SUPERVISED_LAUNCH_ENABLED")) return {stdout: JSON.stringify({present: true, enabled: true, verify_budget_s: null, poll_s: 2}), status: 0};
+      return {stdout: JSON.stringify({running: false, state: "STOPPED", mode: "observe"}), status: 0};
+    }) as typeof spawnSync);
+    expect(check("Atomic launch with persistent supervisor and sentinel")).toBe("BLOCKED");
+    expect(launchReadiness().ready).toBe(false);
+  });
+  it("blocks launch when the operational DB is absent, with measured values", () => {
+    vi.mocked(historicalRead).mockReturnValue({quick_check: "ok"});
+    vi.mocked(spawnSync).mockImplementation(((...a: unknown[]) => {
+      const code = String((a[1] as string[])[1] ?? "");
+      if (code.includes("SUPERVISED_LAUNCH_ENABLED")) return {stdout: JSON.stringify({present: true, enabled: true, verify_budget_s: 60, poll_s: 2}), status: 0};
+      return {stdout: JSON.stringify({running: false, state: "STOPPED", mode: "observe"}), status: 0};
+    }) as typeof spawnSync);
+    vi.mocked(readStorageEvidence).mockReturnValue({
+      available: false, read_at: "2026-10-14T00:00:00Z", snapshot: null,
+      measured: {operational_db: {bytes: null, wal_bytes: null, shm_bytes: null},
+        historical_db: {bytes: 1000, wal_bytes: null, shm_bytes: null},
+        logs: {bytes: 10, files: 1}, disk_free_bytes: 153_000_000_000},
+      alerts: [], errors: ["operational DB absent/unreadable: run state UNKNOWN"], blocked: [], note: "test",
+    });
+    expect(check("Storage preflight")).toBe("BLOCKED");
+    expect(launchReadiness().ready).toBe(false);
+  });
+  it("blocks launch when disk free is unmeasurable or below the hard floor", () => {
+    vi.mocked(historicalRead).mockReturnValue({quick_check: "ok"});
+    vi.mocked(spawnSync).mockImplementation(((...a: unknown[]) => {
+      const code = String((a[1] as string[])[1] ?? "");
+      if (code.includes("SUPERVISED_LAUNCH_ENABLED")) return {stdout: JSON.stringify({present: true, enabled: true, verify_budget_s: 60, poll_s: 2}), status: 0};
+      return {stdout: JSON.stringify({running: false, state: "STOPPED", mode: "observe"}), status: 0};
+    }) as typeof spawnSync);
+    vi.mocked(readStorageEvidence).mockReturnValue({
+      available: false, read_at: "2026-10-14T00:00:00Z", snapshot: null,
+      measured: {operational_db: {bytes: 1000, wal_bytes: null, shm_bytes: null},
+        historical_db: {bytes: 1000, wal_bytes: null, shm_bytes: null},
+        logs: {bytes: 10, files: 1}, disk_free_bytes: 100_000_000},
+      alerts: [], errors: [], blocked: [], note: "test",
+    });
+    expect(check("Storage preflight")).toBe("BLOCKED");
+  });
+  it("keeps historical absence and warn-floor advisory, never blocking", () => {
+    vi.mocked(historicalRead).mockReturnValue({quick_check: "ok"});
+    vi.mocked(spawnSync).mockImplementation(((...a: unknown[]) => {
+      const code = String((a[1] as string[])[1] ?? "");
+      if (code.includes("SUPERVISED_LAUNCH_ENABLED")) return {stdout: JSON.stringify({present: true, enabled: true, verify_budget_s: 60, poll_s: 2}), status: 0};
+      return {stdout: JSON.stringify({running: false, state: "STOPPED", mode: "observe"}), status: 0};
+    }) as typeof spawnSync);
+    vi.mocked(readStorageEvidence).mockReturnValue({
+      available: false, read_at: "2026-10-14T00:00:00Z", snapshot: null,
+      measured: {operational_db: {bytes: 1000, wal_bytes: null, shm_bytes: null},
+        historical_db: {bytes: null, wal_bytes: null, shm_bytes: null},
+        logs: {bytes: 10, files: 1}, disk_free_bytes: 500_000_000},
+      alerts: [{level: "info", text: "No preflight snapshot"}], errors: ["historical DB absent/unreadable: research coverage UNKNOWN"], blocked: [], note: "test",
+    });
+    expect(check("Storage preflight")).toBe("PASS");
+    expect(launchReadiness()).toMatchObject({ready: true, reason: "SUPERVISED_CHAIN_VERIFIED"});
   });
 });

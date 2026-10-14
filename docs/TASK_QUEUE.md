@@ -1,3 +1,12 @@
+## Revision pre-piloto O1 (2026-10-14, review/o1-funcional-v2-observacion sobre e887287, sin push aun)
+Seis puntos atendidos: presupuestos 4200/8000/65000 + reconcile 202 +
+ALREADY_RUNNING; readiness por capability + storage bloqueo/aviso;
+presets own-keys + 20 tests nuevos (vitest 252/252); compat 9/10+2/3
+corregida + prospective schema real + eyebrow dinamico; barrera 1062
+(control verde, 11 preexistentes contrastados); QA visual 10/10 + 7
+capturas; docs 207186d reconciliados. Resta: commit selectivo, push,
+checkpoint y plan brief 120s para autorizacion. Piloto NO iniciado.
+
 ## Entrega nueve archivos 6fd6091-base (2026-10-13, review/entrega-nueve-archivos-6fd6091, sin push aun)
 R1-R7 9/9 + dirigidas 68/68 + comparador 10/10; barrera 1029 (1F+8E preexistentes,
 contrastados en base). Resta: commits selectivos, push revision, matriz de entrega.

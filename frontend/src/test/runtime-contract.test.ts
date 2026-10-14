@@ -47,15 +47,43 @@ describe("Pure runtime observation capability",()=>{
    expect(runtimeAction("start","nope").data.error).toBe("INVALID_PRESET");
    expect(run).not.toHaveBeenCalled();
   });
+  it.each(["toString","constructor","__proto__","hasOwnProperty","valueOf","BRIEF","Brief",""])("rejects prototype-chain and off-list preset %j without spawning",preset=>{
+   expect(parseLaunchPreset(preset)).toBeNull();
+   expect(runtimeAction("start",preset).data.error).toBe("INVALID_PRESET");
+  });
+  it("rejects non-string presets without spawning",()=>{
+   for(const v of [null,undefined,0,120,{},[],true])expect(parseLaunchPreset(v)).toBeNull();
+   expect(run).not.toHaveBeenCalled();
+  });
   it("launches only fixed allowlisted code on the green path",()=>{
-   run.mockReturnValue({status:0,stdout:JSON.stringify({outcome:"confirmed",reason:"verified",run_id:"r1"})});
+   run.mockImplementation((...a:unknown[])=>{
+    if(String((a[1] as string[])[1]).includes("launch_supervised_transaction"))
+     return {status:0,stdout:JSON.stringify({outcome:"confirmed",reason:"verified",run_id:"r1"})};
+    return {status:0,stdout:JSON.stringify({state:"STOPPED",running:false,pid:null,launcher:null,mode:"observe",supervisor:null,sentinel:null})};
+   });
    const r=runtimeAction("start","standard");
    expect(r.ok).toBe(true);
-   const script=String(run.mock.calls[0]?.[1]?.[1]);
+   const launch=run.mock.calls.filter(c=>String((c[1] as string[])[1]).includes("launch_supervised_transaction"));
+   expect(launch).toHaveLength(1);
+   const script=String(launch[0]?.[1]?.[1]);
    expect(script).toContain("launch_supervised_transaction");
    expect(script).toContain("duration_seconds=3600");
    expect(script).toContain("preset='standard'");
    expect(script).toContain("launcher='dashboard'");
    expect(script).not.toContain("nope");
+  });
+  it("uses separate spawn budgets: fast status, bounded stop, 60s-covering start",()=>{
+   run.mockImplementation((...a:unknown[])=>{
+    const code=String((a[1] as string[])[1]);
+    if(code.includes("launch_supervised_transaction"))
+     return {status:0,stdout:JSON.stringify({outcome:"confirmed",run_id:"r1"})};
+    return {status:0,stdout:JSON.stringify({state:"STOPPED",running:false,pid:null,launcher:null,mode:"observe",supervisor:null,sentinel:null})};
+   });
+   runtimeStatus();
+   const statusTimeout=(run.mock.calls[0]?.[2] as {timeout:number}).timeout;
+   expect(statusTimeout).toBe(4200);
+   runtimeAction("start","brief");
+   const launchTimeouts=run.mock.calls.filter(c=>String((c[1] as string[])[1]).includes("launch_supervised_transaction")).map(c=>(c[2] as {timeout:number}).timeout);
+   expect(launchTimeouts).toEqual([65000]);
   });
 });

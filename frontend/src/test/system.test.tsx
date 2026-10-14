@@ -7,7 +7,7 @@ vi.mock("@/lib/runtime-control",()=>({runtimeStatus:()=>({
   running:false,state:"UNKNOWN",pid:null,launcher:null,mode:"UNKNOWN",
   uptime_seconds:null,duration_seconds:null,started_at:null,
   feed_health:"UNKNOWN",latest_snapshot_age:null,error:"CONTROLLER_UNAVAILABLE",
-}),controllerHasLaunch:()=>false}));
+}),controllerLaunchCapability:()=>({present:false,enabled:false,verify_budget_s:null,poll_s:null}),controllerLaunchEnabled:()=>false}));
 vi.mock("@/lib/historical-db",()=>({historicalRead:()=>{throw Error("No unit-test database");}}));
 
 describe("System V2 truthful shell",()=>{it("shows unknown, not invented operational health",()=>{

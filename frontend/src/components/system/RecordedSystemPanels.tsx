@@ -11,7 +11,7 @@ function Rows({items}:{items:[string,unknown][]}){return <dl className={s.rows}>
 function Missing(){return <p role="alert" className={s.note}>Source unavailable. No substitute values.</p>}
 function Span({first,last}:{first:number|null;last:number|null}){return <p className={s.date}>Stored update span (UTC)<br/>{systemUtc(first)}<br/>→ {systemUtc(last)}</p>}
 export function PersistencePanel({data}:{data:SystemEvidenceResult}){
- return <Panel title="Persistence evidence" eyebrow="CANONICAL STORE / SCHEMA 9" note="Allocated SQLite bytes describe logical database pages, not disk capacity or host usage. Read access is not a durability guarantee.">
+ return <Panel title="Persistence evidence" eyebrow={data.available?"CANONICAL STORE / SCHEMA "+data.persistence.schema:"CANONICAL STORE / SCHEMA UNKNOWN"} note="Allocated SQLite bytes describe logical database pages, not disk capacity or host usage. Read access is not a durability guarantee.">
  {data.available?<><Rows items={[["Telemetry snapshots",data.persistence.telemetry_rows],["Saved price samples",data.persistence.price_rows],["Allocated SQLite bytes",data.persistence.allocated_bytes],["Schema version",data.persistence.schema]]}/><p className={s.date}>Last telemetry UTC<br/>{systemUtc(data.persistence.last_telemetry_ms)}<br/>Last price bucket UTC<br/>{systemUtc(data.persistence.last_price_ms)}</p></>:<Missing/>}
  </Panel>;
 }

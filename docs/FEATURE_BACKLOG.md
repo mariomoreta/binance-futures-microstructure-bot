@@ -611,12 +611,13 @@ it does not replace them. Authority stays where it was recorded
   operator use only; no trading semantics.
 - **Origin / decision date:** V2-55 acceptance checkpoint 2026-10-11
   (enablement NOT authorized); contract `docs/SUPERVISED_LAUNCH_CONTRACT.md`.
-- **Approval status:** PROPOSED (operational enablement needs explicit
-  authorization + V2 review of the exact SHA).
-- **Implementation status:** PARTIAL (contract + disabled backend
-  preparation: `control.launch_supervised_transaction` refuses while
-  disabled; no HTTP route, CLI subcommand, or Start wiring).
-- **Target phase:** future (V2 enablement review first).
+- **Approval status:** PROPOSED (pilot brief-120s run needs explicit
+  authorization; enablement chain implemented, no run launched).
+- **Implementation status:** PARTIAL (contract + enabled backend chain +
+  BFF fixed path: readiness-green + START_OBSERVE_2100 + preset allowlist
+  + separate status/start/stop budgets + timeout reconcile + capability +
+  storage gate + own-keys presets; 2026-10-14, evidence below).
+- **Target phase:** O1 pilot (authorized brief run first).
 - **Dependencies:** P1-11B.1 run control, P1-14B.7/8 supervision + sentinel,
   registry mutual exclusion, verified termination, pure observation.
 - **Affected subsystems:** `control.py` launch section only; dashboard,
@@ -630,12 +631,16 @@ it does not replace them. Authority stays where it was recorded
   verification (never Popen/lease/heartbeat alone); kill-only rollback of
   transaction PIDs with verified identity; foreign/terminal never touched;
   unverifiable cleanup reported UNCERTAIN with pending evidence.
-- **Evidence:** `tests/test_supervised_launch.py` (23 tests), 873/873 suite,
-  `docs/SUPERVISED_LAUNCH_CONTRACT.md`.
+- **Evidence:** `tests/test_supervised_launch.py` (23 tests + V2PathTest),
+  backend directed 49 OK; BFF `runtime-start-route` (12) /
+  `runtime-contract` / `launch-readiness` (13) / `runtime-stop-route`;
+  vitest 252/252; `docs/evidence/BARRIER_FINAL_RESUMEN.json` (barrier
+  1062, control path green); `docs/evidence/VISUAL_QA_PREPILOTO.txt`.
 - **Docs:** `docs/SUPERVISED_LAUNCH_CONTRACT.md`, `docs/ARCHITECTURE.md`,
-  `docs/CURRENT_STATE.md`, `docs/DECISIONS.md`.
-- **Open questions:** enablement authorization; exact V2 Start preflight UX.
-- **Last update:** 2026-10-11.
+  `docs/CURRENT_STATE.md`, `docs/DECISIONS.md`,
+  `docs/OBSERVATION_RUN_MATRIX.md`.
+- **Open questions:** pilot brief-120s authorization (pending user).
+- **Last update:** 2026-10-14.
 
 ## F-CMC-01 — CoinMarketCap supplementary metadata
 
@@ -710,6 +715,30 @@ If a new material decision needs user approval, record it as PROPOSED
 here and request approval before treating it as binding. Never mark
 features VERIFIED without evidence.
 
+
+## O1 pre-pilot reconciliation - 2026-10-14 (review/o1-funcional-v2-observacion, sobre e887287)
+
+- `DECISIONS_REVIEWED` — DASH-V2-62/55/51 supervision chain, R8/R9 funding
+  causality, 4f1d92e Start-flag record, 207186d operational inventory,
+  27b7af5 read handoff, storage preflight docstring + thresholds.
+- `NEW_DECISIONS_RECORDED` — `docs/DECISIONS.md` §"Revision independiente
+  pre-piloto" (budgets 4200/8000/65000 + START_TIMEOUT_UNCERTAIN/202 +
+  ALREADY_RUNNING pre-check; capability-not-callable; storage
+  block-256MB/warn-1GB; own-keys presets; compat 9/10+2/3 correction).
+- `FEATURES_IMPLEMENTED` — F-LAUNCH-SUP-01 chain (PARTIAL→pilot-ready,
+  no run), F-V2-BFF-01 control/data paths (start/stop/readiness +
+  supervision/diagnostics/storage-preflight + 9/10 + 2/3 readers).
+- `FEATURES_VERIFIED` — vitest 252/252 (232 base + 20 new), typecheck,
+  lint 0 errors (1 pre-existing warning), build 31 routes, backend
+  directed 49 OK, barrier 1062 (control green; 11 pre-existing contrasted),
+  preview QA 10/10 HTTP 200 + 7 captures + 0 overflow + hashes unchanged.
+- `DEFERRED_FEATURES` — pilot brief-120s run (needs explicit authorization);
+  any other O2-O5 work; migration-pin test redesign (data-state-dependent,
+  out of scope, documented).
+- `BACKLOG_UPDATED` — yes: F-LAUNCH-SUP-01 status/evidence (this file).
+- `DOCUMENTATION_CONFLICTS` — fixed: MATRIX/handoff "v10/v3 incompatible"
+  (was 27b7af5-only), prospective hardcoded schema 9, SCHEMA-9 eyebrow,
+  `data/historical.db` path, MATRIX dangling STORAGE_PREFLIGHT_CONTRACT ref.
 
 ## DASH-V2-62 reconciliation - 2026-10-11
 

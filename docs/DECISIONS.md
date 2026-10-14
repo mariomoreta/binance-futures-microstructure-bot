@@ -1317,3 +1317,41 @@ cubre el controlador canonico, no la ruta. Las pruebas de la ruta real
 (POST /runtime/start con token + readiness, asociacion/rollback/stop
 extremo a extremo del BFF) quedan para el Bloque 3 y condicionan cualquier
 corrida conjunta. Sin corridas reales a esta fecha.
+
+## Revision independiente pre-piloto — presupuestos/readiness/presets/compat (2026-10-14, append-only, sobre e887287)
+
+1. Presupuestos separados (`frontend/src/lib/runtime-control.ts`):
+   STATUS 4200ms (lectura pura, intacto), STOP 8000ms (kill verificado
+   acotado), START 65000ms (cubre `SUPERVISED_LAUNCH_VERIFY_BUDGET_S=60s`
+   + margen de spawn). Un start que excede su presupuesto NUNCA reporta
+   fallo plano: reconcilia por lectura de estado y devuelve
+   `START_TIMEOUT_UNCERTAIN` (HTTP 202) con disciplina
+   `reconcile-before-retry`. Pre-check de idempotencia: reintento con
+   run activo/STARTING/STOPPING devuelve `ALREADY_RUNNING` (propio) o
+   `ALREADY_RUNNING_FOREIGN` (409) SIN spawnear; el backend ya rechaza
+   `already-running`, el BFF evita ademas el segundo spawn.
+2. Readiness sin `callable()` (`launch-readiness.ts` +
+   `controllerLaunchCapability()`): PASS solo con
+   present+enabled+`verify_budget_s` finito positivo+`poll_s` finito no
+   negativo; presente-pero-deshabilitado o presupuesto no finito queda
+   BLOCKED. Storage integrado con valores documentados: BLOQUEO sin DB
+   operacional legible, sin disco medible o bajo
+   `STORAGE_BLOCK_FLOOR_BYTES=256MB`; ADVERTENCIA no bloqueante bajo
+   `WARN_FREE_BYTES=1GB` (`storage_preflight.py`), sin snapshot o sin
+   historico (cobertura research UNKNOWN). Medido 2026-10-14 por
+   `scripts/storage_preflight.py`: op 238927872B, hist 19210240B, logs
+   117579529B/175 ficheros (sin tope en codigo), libres 153007280128B.
+3. Presets own-keys (`parseLaunchPreset` con
+   `hasOwnProperty`): rechaza `toString`/`constructor`/`__proto__`/
+   `hasOwnProperty`/`valueOf`, mayusculas y no-strings ANTES de spawnear;
+   regresiones en `runtime-contract.test.ts`.
+4. Correccion compat (revision tenia razon): lectores publicados
+   admiten operacional 9/10 e historico 2/3 (tests `accepts schema 10`
+   y `accepts schema 3` preexistentes); la restriccion 9-only/2-only
+   era del SHA 27b7af5, no de esta rama. `prospective` reporta el
+   schema real 9/10 (era etiqueta fija 9). Ruta historica correcta:
+   `data/historical/historical.db`. Verificado vivo por copia-temp:
+   operacional v10 (22 tablas), historico v3 (16 tablas). Base
+   historica = main preexistente (14 coberturas, 2831 eventos);
+   incremental de esta tarea = 0 filas. Compat implementada != consumo
+   vivo comprobado (pendiente §5). Sin corridas reales a esta fecha.

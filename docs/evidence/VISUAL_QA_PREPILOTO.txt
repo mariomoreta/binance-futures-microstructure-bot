@@ -1,0 +1,48 @@
+# QA visual pre-piloto — preview local prod, solo lectura (2026-10-14, sobre e887287 + cambios sin push aun)
+
+Servidor: `npm run start` (next start -p 3020 -H 127.0.0.1), build prod con
+los cambios de esta tarea. Cero POSTs: ninguna corrida iniciada, ningun
+start/stop invocado. Lecturas read-only contra los DBs canonicos.
+Hashes antes == despues (ffa5a668ac623af8 / 073ad12a5660d1ba): cero mutaciones.
+
+## Rutas (todas HTTP 200)
+
+- /overview -> 200 64246B
+- /movers -> 200 51911B
+- /symbol/BTCUSDT -> 200 84324B
+- /system -> 200 49170B
+- /opportunities -> 200 59471B
+- /historical-research/coverage -> 200 133263B
+- /api/v1/runtime/readiness -> 200 (ready:true, 6/6 PASS: controller,
+  registry COMPLETED, quick_check, observe, capability
+  present=true/enabled=true/budget=60/poll=2, storage op=238927872B
+  free=152014753792B con aviso informativo sin snapshot)
+- /api/v1/system-evidence -> 200 available:true persistence.schema:10
+  (consumo vivo v10: 1000 snapshots, 30 price rows, 66 setups, 228 outcomes)
+- /api/v1/historical-coverage -> 200 26778B (consumo vivo v3)
+- /api/v1/prospective -> 200 13942B (schema_version real 10)
+
+## Capturas (docs/evidence/VISUAL_*.png, script frontend/scripts/capture-v2.cjs)
+
+- VISUAL_overview_1440.png (234477B) + VISUAL_overview_390.png (114045B)
+- VISUAL_movers_1440.png (207136B)
+- VISUAL_system_1440.png (305087B, recapturada tras correccion eyebrow)
+- VISUAL_token_1440.png (219296B, BTCUSDT)
+- VISUAL_opportunities_1440.png (180041B)
+- VISUAL_historical_1440.png (133344B)
+
+Overflow horizontal: 0 en las 7 capturas (documentWidth <= viewport;
+el script sale exit 2 ante overflow: todos exit 0).
+Consola del navegador: sin errores observados en la captura (CDP limpio).
+
+## Veredicto visual
+
+- Etiquetas honestas en vivo: ENGINE/FEED/RESEARCH UNKNOWN, PERSISTED NOT
+  LIVE, STALE, RESEARCH ONLY — NOT A SIGNAL, STORED (no current feed).
+- Corregido durante el QA: eyebrow duro "SCHEMA 9" con schema 10 real
+  (RecordedSystemPanels.tsx ahora reporta el schema medido; regresion en
+  system-panels.test.tsx; rebuild + recaptura).
+- Provenance historica en vivo: "data/historical/historical.db / schema 3"
+  con 17270 contract bars / 2157 mark bars / 2831 eventos / 16986 outcomes.
+- Liveness presente NO certificada por registros (declarado en UI); el
+  piloto brief la medira. Servidor preview detenido (puerto 3020 libre).

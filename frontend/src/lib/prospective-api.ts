@@ -1,5 +1,5 @@
 export type ProspectiveOutcome={candidate_key:string;symbol:string;horizon:string;outcome_state:string;observed_at_ms:number|null;mark_return_pct:number|null;detected_price:number|null;current_price:number|null;reason:string};
-export type ProspectiveModel={schema_version:9;source:"python-marketprobe"|"persisted-sqlite-readonly";generated_at:string|null;status:string;setup_count:number|null;outcome_count:number|null;drops:number|null;errors:number|null;completed:number|null;pending:number|null;insufficient:number|null;in_grace:number|null;latest_outcomes:ProspectiveOutcome[];note:string};
+export type ProspectiveModel={schema_version:9|10;source:"python-marketprobe"|"persisted-sqlite-readonly";generated_at:string|null;status:string;setup_count:number|null;outcome_count:number|null;drops:number|null;errors:number|null;completed:number|null;pending:number|null;insufficient:number|null;in_grace:number|null;latest_outcomes:ProspectiveOutcome[];note:string};
 const obj=(x:unknown):Record<string,unknown>=>x&&typeof x==="object"&&!Array.isArray(x)?x as Record<string,unknown>:{};
 const str=(x:unknown):string=>typeof x==="string"?x.slice(0,500):"UNKNOWN";
 const num=(x:unknown):number|null=>typeof x==="number"&&Number.isFinite(x)?x:null;

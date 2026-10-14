@@ -86,3 +86,17 @@ verificados (las rutas declaran alignment/freshness UNVERIFIED).
 Revision del SHA que consuma: contratos v10/v3 declarados aqui,
 calendarios de funding versionados, y linkage research (run_id) antes de
 cualquier integracion viva. Sin paper/ejecucion.
+
+## Addendum 2026-10-14 — alcance de estas restricciones
+
+Las restricciones historico-2 / operacional-9 documentadas arriba
+describen EXCLUSIVAMENTE el SHA 27b7af5 (verificado por `git show`).
+La rama `review/o1-funcional-v2-observacion` publica lectores que YA
+admiten operacional 9/10 (`system-evidence.ts`, test `accepts schema
+10`) e historico 2/3 (`historical-coverage.ts`, test `accepts schema
+3`), y la ruta `prospective` reporta el schema real (9/10). Este
+handoff se preserva como registro del SHA citado; no se usa como
+sustituto de la compatibilidad implementada en la rama actual
+(ver `docs/OBSERVATION_RUN_MATRIX.md`, correccion 2026-10-14).
+Compatibilidad implementada != consumo vivo comprobado: la lectura
+viva con servicios sigue pendiente.

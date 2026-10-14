@@ -24,6 +24,14 @@ it("lifecycle labels and versions remain explicitly historical with separate sou
  expect(screen.getByText(/Candidate stored update span/)).toHaveTextContent("1970-01-01T00:00:03.000Z");
  expect(screen.queryByText("HEALTHY")).not.toBeInTheDocument();
 });
+it("reports the actual store schema in the eyebrow, never a hardcoded label",()=>{
+ const r=render(<PersistencePanel data={data}/>);
+ expect(screen.getByText("CANONICAL STORE / SCHEMA 9")).toBeInTheDocument();
+ const v10:SystemEvidenceData={...data,persistence:{...data.persistence,schema:10}};
+ r.rerender(<PersistencePanel data={v10}/>);
+ expect(screen.getByText("CANONICAL STORE / SCHEMA 10")).toBeInTheDocument();
+ expect(screen.queryByText("CANONICAL STORE / SCHEMA 9")).not.toBeInTheDocument();
+});
 it("missing source returns absence notices while real empty counts stay zero",()=>{
  const missing:SystemEvidenceResult={schema_version:1,source:"CANONICAL_SQLITE_READONLY",available:false,read_at:"x",error:"SYSTEM_EVIDENCE_UNAVAILABLE"};
  const r=render(<PersistencePanel data={missing}/>);

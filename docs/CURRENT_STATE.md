@@ -1,3 +1,14 @@
+## Revision pre-piloto sobre e887287 (2026-10-14, review/o1-funcional-v2-observacion, sin push aun)
+Presupuestos separados (status 4200 / stop 8000 / start 65000ms) con
+reconciliacion START_TIMEOUT_UNCERTAIN (202) + pre-check ALREADY_RUNNING
+(sin segundo spawn); readiness por capability habilitada (no callable)
++ storage (bloqueo sin DB/disco<256MB; aviso 1GB/historico); presets
+own-keys (prototipos rechazados); compat corregida (lectores admiten
+9/10 y 2/3; prospective reporta schema real; ruta
+data/historical/historical.db; base main v10/v3 verificada por
+copia-temp, incremental 0 filas). Compat implementada != consumo vivo
+(pendiente barrera final + QA visual + piloto brief autorizado).
+
 ## Bot + V2 observacion (2026-10-13, review/bot-dashboard-v2-observacion, sin push aun)
 V2 checkpoint 27b7af5 (mas reciente; contiene DASH-V2-47) como interfaz
 principal; Python SSR a LEGADO (sin semanticas contradictorias).
