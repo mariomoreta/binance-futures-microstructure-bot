@@ -1,0 +1,5 @@
+Command: python docs/evidence/analyze_intraday_20261014.py
+Exit: 0
+Compact input: 11 series x 360 closed 5m bars (30h); original retrieval 11 x 1500.
+All 10 summaries, 40 episodes and aggregate alert_stats match original full-input output.
+No market/network access in reproduction; no canonical DB access.

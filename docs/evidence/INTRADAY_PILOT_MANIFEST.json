@@ -1,0 +1,29 @@
+{
+  "source": "Binance public market data connector",
+  "cutoff_utc": "2026-10-14T10:20:00+00:00",
+  "timeframe": "5m",
+  "original_universe_crypto_usdt_perpetual_trading": 523,
+  "cohort": "top5 gainers/bottom5 losers by ticker24; retrospectively selected; market-cap filter NOT VERIFIED",
+  "compact_evidence": "Last30h retain 24h study plus preceding6h RVOL baseline; 3960 bars across11 symbols. BTC fetched but no BTC-conditioned comparison is claimed.",
+  "original_full_raw_sha256": "96f498953f0322654ce8ec5256ed06beee70e8f815c88ed6858172b669c6fb49",
+  "original_archive_sha256": "50db58b1854639b9b05a489f8dfa3e14adcec07845d69133334818cde8e940d0",
+  "files": {
+    "analyze_intraday_20261014.py": {
+      "bytes": 7470,
+      "sha256": "cbd0e5d1970feb102f59853f763652a8b46daf3602b69510ac819e228b962bd0"
+    },
+    "intraday_analysis_20261014.json": {
+      "bytes": 49947,
+      "sha256": "6215f09d3ea7864ff48babcff9a405bd348a3ccd063538ff7c07b12e7cc398f7"
+    },
+    "intraday_raw_20261014.json": {
+      "bytes": 674176,
+      "sha256": "c6a24a8b73c24e7e2d011beb1813d007c2924801cc40030675626695a8667260"
+    },
+    "INTRADAY_PILOT_REPRODUCTION.txt": {
+      "bytes": 306,
+      "sha256": "388709c234602ef9455ad99f917e139a9a072ee04d82f62a7ef904ae689ef208"
+    }
+  },
+  "selection_snapshot_rows": 523
+}

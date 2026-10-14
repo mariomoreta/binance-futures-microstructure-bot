@@ -1,3 +1,12 @@
+
+## Investigacion intradia documentada — 2026-10-14 (rama documental separada)
+Autorizado: organizar piloto y proxima investigacion de entradas/salidas; no modificar
+la rama O1 ni sus motores/configuracion. Ver research/INTRADAY_ENTRY_EXIT_AGENT_HANDOFF.md.
+Piloto descriptivo: 10 extremos, 40 alertas, capitalizacion no certificada, sin costes/OOS.
+Material reproducible versionado; no constituye nuevas senales operativas.
+O1 y sus correcciones/control/QA siguen como prioridad. Los hallazgos de revision de
+e887287 se resuelven en su rama activa; esta tarea no los declara cerrados.
+
 ## Bot + V2 observacion (2026-10-13, review/bot-dashboard-v2-observacion, sin push aun)
 V2 checkpoint 27b7af5 (mas reciente; contiene DASH-V2-47) como interfaz
 principal; Python SSR a LEGADO (sin semanticas contradictorias).

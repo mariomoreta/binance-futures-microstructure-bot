@@ -714,3 +714,12 @@ features VERIFIED without evidence.
 ## DASH-V2-62 reconciliation - 2026-10-11
 
 F-LAUNCH-SUP-01 remains PROPOSED for enablement / PARTIAL overall. The five new implementation findings and two contract notes are corrected in disabled preparation; 29 new tests, 902/902 canonical and 52/52 targeted OK. Report: DASH_V2_62_SUPERVISED_LAUNCH_CORRECTIONS.md. Operational readiness, real watcher startup binding, enabled access and longevity remain unverified/deferred. F-P14A-01 historical windows unchanged; no new run or gate advancement. User-authorized direct backend correction replaces the V2-61 handoff for these findings; no need for the other agent to repeat them.
+
+## Investigacion entradas/salidas intradia — 2026-10-14
+| ID | Aprobacion | Implementacion | Dependencias / criterio |
+|---|---|---|---|
+| F-INTRA-STUDY-01 | DECIDED: documentar investigacion; metodo numerico PROPOSED | Documentacion + piloto reproducible; estudio ampliado pendiente | Cerrar O1; research/INTRADAY_ENTRY_EXIT_STUDY_PLAN.md |
+| F-INTRA-V2-01 | PROPOSED: presentar episodios/comparables | No endpoint/UI implementados por esta tarea | F-INTRA-STUDY-01; research/INTRADAY_V2_RESEARCH_CONTRACT.md |
+
+La aprobacion de documentar no aprueba thresholds, estrategia ni activacion.
+Sin avance de F-BT-01/F-PAPER-01/F-PORT-01 ni SUCCESS_GATES. IA/Kronos siguen diferidos.

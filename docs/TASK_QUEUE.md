@@ -1224,3 +1224,10 @@ strategies (P3), paper engine/positions (P4), execution (P5).
   `mariomoreta/binance-futures-microstructure-bot` (origin in sync).
 
   P1-05 implementation/docs commit follows on this branch.
+
+## Cola de investigacion posterior a O1 — 2026-10-14
+F-INTRA-STUDY-01: documentacion lista; implementacion pendiente de prompt posterior.
+Orden: reproducir piloto -> auditar cobertura/cohorte -> definir A/B/C y dev/OOS ->
+estudio con motor existente -> lectura V2 con contrato propuesto.
+No desplaza ACTIVE_TASK O1 ni autoriza cambiar entradas/salidas por medianas del piloto.
+Handoff: research/INTRADAY_ENTRY_EXIT_AGENT_HANDOFF.md.

@@ -88,3 +88,11 @@ entry list.
 
 - Event/outcome tables persist everything the future P1-12+ needs for expected-horizon work (time_to_MFE percentiles, time-to-invalidation), dynamic-exit research (MFE-before-reversal, MAE-before-recovery), and stop/target research (MAE/MFE percentile context). No live recommendations are generated.
 - Exhaustion/absorption questions are now answerable historically (proxy-labeled) and will become answerable with true microstructure once the prospective recorder accumulates flow/book history (starts with every MarketProbe run, incl. the coming P1-10R 6h window).
+
+## Extension propuesta — timing de entradas/salidas (2026-10-14)
+Ver research/INTRADAY_ENTRY_EXIT_STUDY_PLAN.md para estudio actualizado propuesto.
+El piloto reproducible de extremos permite estudiar duracion/retroceso/recuperacion,
+no convertir ranking24h ni extremos finales en entradas. Reutilizar features/estados
+existentes, separar disponibilidad y outcomes. Comparar entradas A/B/C, luego salidas
+con riesgo/costes comunes, controles, temporal OOS y censura.
+Material listo; ejecucion futura tras O1. No umbrales ni nuevas senales activadas.

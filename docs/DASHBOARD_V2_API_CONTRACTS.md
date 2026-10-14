@@ -166,3 +166,11 @@ arbitrary process arguments.
 Runtime schemas and Python contract tests; null/zero/stale fixtures; Unicode
 symbol and historical-only routing fixtures; pagination/filter determinism;
 security tests; backwards-compatible current SSR until cutover.
+
+## Extension de investigacion intradia — propuesta 2026-10-14
+Contrato propuesto, sin nuevas rutas implementadas:
+research/INTRADAY_V2_RESEARCH_CONTRACT.md. Separar features_at_T, outcomes_after_T y
+comparables; preservar null, disponibilidad, version, cohort/coverage y censura.
+No usar peak_final ni tiempo al extremo como feature de entrada; no cuenta regresiva
+de salida basada en medianas retrospectivas. V2 muestra decisiones del backend.
+No cambia contratos actuales de control/datos ni requisitos O1.
