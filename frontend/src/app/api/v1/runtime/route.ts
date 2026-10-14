@@ -1,0 +1,1 @@
+import {NextResponse} from "next/server";import {runtimeStatus} from "@/lib/runtime-control";export const runtime="nodejs";export const dynamic="force-dynamic";export async function GET(){return NextResponse.json(runtimeStatus(),{headers:{"Cache-Control":"no-store"}})}
