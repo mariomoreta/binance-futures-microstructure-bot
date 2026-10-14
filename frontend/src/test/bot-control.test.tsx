@@ -124,6 +124,36 @@ describe("System launch uncertainty (HTTP 202)",()=>{
   });
 });
 
+describe("System stop confirmation criteria",()=>{
+  const runningDashboard=()=>({state:"RUNNING",running:true,pid:123,launcher:"dashboard",mode:"observe",supervisor:{state:"SUPERVISOR_UNKNOWN"},sentinel:{state:"SENTINEL_UNKNOWN"}});
+  const setupStop=(stopReply:{ok:boolean;status:number;body:unknown})=>{
+    vi.useFakeTimers();
+    vi.stubGlobal("fetch",vi.fn().mockImplementation(async(url:string)=>{
+      if(String(url).endsWith("/runtime/readiness"))return {ok:true,json:async()=>({ready:true,reason:"SUPERVISED_CHAIN_VERIFIED",checks:[]})};
+      if(String(url).endsWith("/runtime/stop"))return stopReply.ok?{ok:true,status:stopReply.status,json:async()=>stopReply.body}:{ok:false,status:stopReply.status,json:async()=>stopReply.body};
+      return {ok:true,json:async()=>runningDashboard()};
+    }));
+  };
+  const openStopConfirm=async()=>{
+    render(<BotControl/>);
+    await act(async()=>{await vi.advanceTimersByTimeAsync(1);});
+    await act(async()=>{screen.getByRole("button",{name:/Stop dashboard/}).click();});
+    await act(async()=>{screen.getByRole("button",{name:"Confirm stop"}).click();await vi.advanceTimersByTimeAsync(10);});
+  };
+  it("shows a confirmed stop on 200 + stopped:true without requiring outcome",async()=>{
+    setupStop({ok:true,status:200,body:{stopped:true,pid:123}});
+    await openStopConfirm();
+    expect(screen.getByRole("status")).toHaveTextContent(/Dashboard-owned monitor stopped/);
+    expect(screen.queryByText(/rejected/i)).not.toBeInTheDocument();
+  });
+  it("keeps the controller error on a rejected stop",async()=>{
+    setupStop({ok:false,status:409,body:{stopped:false,error:"not_dashboard_owned",launcher:"agent"}});
+    await openStopConfirm();
+    expect(screen.getByRole("status")).toHaveTextContent(/not_dashboard_owned/);
+    expect(screen.queryByText(/Dashboard-owned monitor stopped/)).not.toBeInTheDocument();
+  });
+});
+
 describe("System watcher observation",()=>{
   it("shows both watchers separately and retains raw evidence when the display expires",async()=>{
     vi.useFakeTimers();vi.setSystemTime(new Date("2026-10-11T04:00:00Z"));

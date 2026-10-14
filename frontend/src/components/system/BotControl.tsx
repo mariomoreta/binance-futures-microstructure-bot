@@ -106,7 +106,7 @@ export function BotControl(){
     try{
       const r=await fetch("/api/v1/runtime/"+kind,{method:"POST",headers:{"content-type":"application/json","x-v2-action":"observe-only"},
         body:JSON.stringify(kind==="start"?{confirm:"START_OBSERVE_2100",preset}:{confirm:"STOP_DASHBOARD_SESSION"})});
-      const body=await r.json() as {error?:string;outcome?:string};
+      const body=await r.json() as {error?:string;outcome?:string;stopped?:unknown};
       if(kind==="start"&&(r.status===202||body.error==="START_TIMEOUT_UNCERTAIN")){
         // HTTP 202 is NEVER success: keep the outcome pending, block any
         // new launch, and reconcile by status read (refresh in finally).
@@ -114,7 +114,11 @@ export function BotControl(){
         setMessage(UNCERTAIN_START);
       }else{
         if(pendingStart!==null&&kind==="start")setPending(null);
-        setMessage(r.ok&&body.outcome==="confirmed"?(kind==="start"?"Observe-only monitor started via supervised chain ("+body.outcome+").":"Dashboard-owned monitor stopped."):(body.error??"Action rejected by controller"));
+        // Separate success criteria per action (2026-10-14): start needs
+        // outcome==="confirmed"; stop needs stopped===true. A valid stop
+        // carries no outcome field and must not read as rejected.
+        const succeeded=kind==="start"?r.ok&&body.outcome==="confirmed":r.ok&&body.stopped===true;
+        setMessage(succeeded?(kind==="start"?"Observe-only monitor started via supervised chain ("+body.outcome+").":"Dashboard-owned monitor stopped."):(body.error??"Action rejected by controller"));
       }
     }catch{setMessage("Controller request failed. No success confirmed.")}
     finally{setConfirm(false);setBusy(false);await refresh()}
