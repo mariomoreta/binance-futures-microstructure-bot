@@ -1461,6 +1461,17 @@ para siempre) + test. Sin cambios de estrategia/umbrales/ejecucion.
    `docs/evidence/RECOVERY_REHEARSAL_20261015.json` (hot-rollback,
    integrity ok, schema 10, consumido, intacto; re-ejecutable).
 
+## Mantenimiento recovery aplicado (2026-10-15, autorizado; sin corridas)
+
+Autorizado solo el mantenimiento con el script de e773e51. Pre
+verificado (SHA, cero escritores, V2 detenido por identidad, registry
+ABORTED, hashes sin deriva, destino fuera del repo). Apply PASS:
+integrity ok, schema 10, aplicado-vs-restaurado identicos, journal
+consumido; hash resultante byte-identico al pre (rollback limpio).
+Backup + informe conservados fuera del repo. V2 reiniciado y
+verificado (readiness 6/6, 5 rutas 200). Monitor no arrancado.
+Evidencia: `docs/evidence/DB_MAINTENANCE_APPLIED_20261015.txt`.
+
 ## Ventana por registry + hot real + spy (2026-10-16, append-only, sobre e0b0141; sin aplicar, sin corridas)
 
 Forense del defecto: la sonda lock abria el ORIGINAL read-write

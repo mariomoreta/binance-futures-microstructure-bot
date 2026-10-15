@@ -1,0 +1,47 @@
+# Mantenimiento recovery aplicado al canonico — 2026-10-15 (autorizado)
+
+Autorizacion: mantenimiento de recuperacion de la DB con el script de
+e773e51. Sin nuevas corridas (no se arranco el monitor; registro sigue
+ABORTED del piloto 20261015T000730Z).
+
+## Pre (todo verificado antes de actuar)
+
+- SHA codigo: e773e51f0942e54dbb78b051fc7ae9bbfd4cf857.
+- Escritores: cero python.exe; watchers muertos verificados.
+- V2 propio detenido por identidad actual (PID 18216, next start
+  -p 3020); ajenos (Adobe, MCP) intactos; puerto 3020 libre.
+- Registry: ABORTED conocido (no UNKNOWN).
+- Hashes esperados revalidados sin deriva:
+  db df10cb35b44a37f3254fbc7234733dba2eaaa250b578787c20b66cc0e8c50b3c
+  journal 2822655c3e4ae9cb03ed35598ebd84218042e605450e278c8a89a35af2fc3757
+- Backup destino C:\proyectos\binance-db-backups\recovery-20261015-3a55052
+  verificado fuera del repo e inexistente; reporte en
+  C:\proyectos\binance-db-backups\recovery_canonical_20261015.json
+  (nuevo, fuera de data/ y del repo).
+
+## Ejecucion (exit 0, "apply PASS; backup ...; journal consumed")
+
+- Registry no-ACTIVO a la entrada y re-verificado pre-write; hashes
+  re-verificados pre-write (pre_apply_hashes iguales).
+- Backup real: copy.db + copy.db-journal con hashes iguales al origen.
+- Restore desde el backup: integrity ok, schema 10, conteos iguales.
+- Aplicado: integrity ["ok"], schema "10", conteos 1000/10000/1000/12/
+  8195/66/228/375/500 (+meta 1), aplicado-vs-restaurado identicos,
+  journal consumido (fichero -journal desaparecido).
+
+## Post
+
+- Hash canonico resultante:
+  df10cb35b44a37f3254fbc7234733dba2eaaa250b578787c20b66cc0e8c50b3c
+  (byte-identico al pre: el journal solo contenia paginas no
+  confirmadas; rollback limpio, cero filas comprometidas).
+- Respaldo conservado en:
+  C:\proyectos\binance-db-backups\recovery-20261015-3a55052\
+  (copy.db + copy.db-journal, hashes verificados en el informe).
+- Informe completo conservado en:
+  C:\proyectos\binance-db-backups\recovery_canonical_20261015.json
+  (veredicto PASS, todas las verificaciones).
+- V2 reiniciado (nuevo PID 25684): readiness ready:true 6/6 PASS;
+  /api/v1/market-snapshot, live-movers, system-evidence (schema 10),
+  prospective (schema_version 10), opportunities -> 200 available.
+- Monitor NO arrancado (verificado: sin POST a /runtime/start).

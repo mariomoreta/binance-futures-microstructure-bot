@@ -716,6 +716,17 @@ here and request approval before treating it as binding. Never mark
 features VERIFIED without evidence.
 
 
+## O1 maintenance applied - 2026-10-15 (autorizado, sobre e773e51)
+
+- `DECISIONS_REVIEWED` — procedimiento DB_MAINTENANCE_RECOVERY.md.
+- `NEW_DECISIONS_RECORDED` — DECISIONS §mantenimiento aplicado.
+- `FEATURES_IMPLEMENTED` — recovery aplicado (no codigo nuevo).
+- `FEATURES_VERIFIED` — apply PASS, journal consumido, hash
+  byte-identico, readiness 6/6, 5 rutas 200, monitor no arrancado.
+- `DEFERRED_FEATURES` — proximo piloto (nueva autorizacion), resto.
+- `BACKLOG_UPDATED` — yes: this entry.
+- `DOCUMENTATION_CONFLICTS` — none new.
+
 ## O1 window reconciliation - 2026-10-16 (sobre e0b0141)
 
 - `DECISIONS_REVIEWED` — lock-probe forense, registry states, hot

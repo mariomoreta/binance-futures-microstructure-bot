@@ -1,3 +1,12 @@
+## Mantenimiento recovery APLICADO (2026-10-15, autorizado, sin push aun)
+Pre verificado (SHA e773e51, cero escritores, V2 propio detenido por
+identidad, registry ABORTED, hashes sin deriva, destino fuera del
+repo). Apply PASS: backup real + restore + integrity ok + schema 10 +
+conteos iguales + journal consumido. Hash resultante byte-identico
+(rollback limpio). V2 reiniciado (PID 25684): readiness 6/6,
+5 rutas 200. Monitor NO arrancado. Evidencia
+DB_MAINTENANCE_APPLIED_20261015.txt.
+
 ## Ventana por registry + fixture hot real (2026-10-16, sin push aun)
 Sonda lock eliminada (recuperaba el original pre-backup: forense).
 Ventana = registry no-ACTIVO + re-hash pre-write (sin exclusion

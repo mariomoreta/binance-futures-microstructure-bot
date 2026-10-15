@@ -1,3 +1,8 @@
+## Mantenimiento recovery aplicado (2026-10-15, autorizado, sin push aun)
+Apply PASS con backup; V2 reiniciado y verificado; monitor no
+arrancado. Resta: commit selectivo (sin DBs/backups), push, entrega
+con hashes/respaldo/SHA/URLs.
+
 ## Ventana registry + hot real + spy (2026-10-16, sobre e0b0141, sin push aun)
 Lock-probe fuera; registry+re-hash; fixture hot valido; spy 1-rw
 (fail-before en viejo). Resta: barrera, commit, push, entrega.
