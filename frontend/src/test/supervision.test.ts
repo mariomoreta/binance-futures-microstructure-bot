@@ -1,5 +1,5 @@
 import {describe,expect,it} from "vitest";
-import {normalizeWatcher,watcherDisplayState,utcTimestamp} from "@/lib/supervision";
+import {isTerminalRunState,normalizeWatcher,processDisplay,processDisplayFresh,watcherDisplayState,utcTimestamp} from "@/lib/supervision";
 const now=Date.parse("2026-10-11T04:00:00Z");
 const observed="2026-10-11T04:00:00Z";
 const valid={
@@ -49,6 +49,29 @@ describe("Watcher contract and observation freshness",()=>{
   it("does not fabricate an established lease from missing evidence",()=>{
     expect(watcherDisplayState("sentinel",undefined,123,observed,now)).toBe("SENTINEL_UNKNOWN");
     expect(normalizeWatcher({watcher_pid:Infinity,abort_observed:NaN},"sentinel").abort_observed).toBeNull();
+  });
+  it("distinguishes owned, gone, replaced and unknown identities",()=>{
+    expect(processDisplay("owned",true)).toBe("OWNED-LIVE");
+    expect(processDisplay("gone",false)).toBe("NOT-LIVE (gone)");
+    expect(processDisplay("replaced",false)).toBe("REPLACED (run replaced)");
+    expect(processDisplay("unknown",false)).toBe("UNVERIFIED (unknown)");
+    // Unknown is never NOT-LIVE, and owned without verification never claims live.
+    expect(processDisplay("unknown",false)).not.toContain("NOT-LIVE");
+    expect(processDisplay("owned",false)).not.toBe("OWNED-LIVE");
+    expect(processDisplay(null,false)).toBe("UNVERIFIED (unknown)");
+  });
+  it("treats only explicit terminal states as closed; UNKNOWN never confirms a close",()=>{
+    for(const s of ["STOPPED","COMPLETED","FAILED","ABORTED"])expect(isTerminalRunState(s)).toBe(true);
+    for(const s of ["RUNNING","STARTING","STOPPING","UNKNOWN","LOADING","",null,undefined])expect(isTerminalRunState(s)).toBe(false);
+  });
+  it("expires verification when the observation is stale, pending or failed",()=>{
+    const stamp="2026-10-11T04:00:00Z";
+    expect(processDisplayFresh("owned",true,stamp,now)).toBe("OWNED-LIVE");
+    expect(processDisplayFresh("owned",true,stamp,now+30_000)).toBe("OWNED-LIVE");
+    expect(processDisplayFresh("owned",true,stamp,now+30_001)).toBe("UNVERIFIED (expired)");
+    expect(processDisplayFresh("gone",false,stamp,now+31_000)).toBe("UNVERIFIED (expired)");
+    expect(processDisplayFresh("owned",true,undefined,now)).toBe("UNVERIFIED (expired)");
+    expect(processDisplayFresh("owned",true,"bad",now)).toBe("UNVERIFIED (expired)");
   });
   it("requires a valid UTC calendar timestamp",()=>{
     expect(utcTimestamp("2026-02-30T04:00:00Z")).toBeNull();

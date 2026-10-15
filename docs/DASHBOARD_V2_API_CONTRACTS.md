@@ -141,11 +141,38 @@ direct/foreign), `run_id` (evidence-log stem), `pid`, `started_at`,
 `duration_seconds`, `elapsed_seconds` (frozen on terminal),
 `remaining_seconds` (RUNNING only), `expected_end_at`,
 `last_exit_code/reason/at` (terminal close motive + close time),
-`feed_health` + `latest_snapshot_age` (BFF-enriched from recorded
-telemetry: STALE >120s, else HEALTHY/DEGRADED/UNKNOWN; never invents
-liveness), `supervisor`/`sentinel` raw blocks + `observed_at` (browser
-ages them against the 90s freshness bound; raw evidence retained after
-expiry). Recorded state and verified liveness are never conflated.
+`feed_health` + `latest_snapshot_age` + `feed_attribution`
+(current/previous-run/none) + `feed_note` (BFF-enriched from recorded
+telemetry, attributed to THIS run window; never invents liveness),
+`supervisor`/`sentinel` raw blocks + `observed_at` (browser ages them
+against the 90s freshness bound; raw evidence retained after expiry).
+Recorded state and verified liveness are never conflated.
+
+Identity display (2026-10-16 hardening): owned requires verified
+(OWNED-LIVE); gone is NOT-LIVE (gone); replaced is REPLACED (run
+replaced); unknown is UNVERIFIED (unknown) — never NOT-LIVE. Only the
+explicit terminal states STOPPED/COMPLETED/FAILED/ABORTED render as a
+confirmed close; UNKNOWN never does. Browser verification expires
+after 30s without a fresh read (poll 10s): expired reads render
+UNVERIFIED (expired), never a retained OWNED-LIVE.
+
+Feed HEALTHY rule (2026-10-16 hardening, strict): HEALTHY only for
+fresh (age <=120s), attributable (timestamp inside
+[started_at-60s, windowEnd+120s]) snapshots with parseable quality,
+non-zero messages, complete coverage/error fields, no stale or missing
+streams, no reconnect/websocket errors, reject rate within the
+supervisor gate, no parse/payload errors, and silence limited to the
+event-driven `!forceOrder@arr`. Invalid JSON, insufficient data, zero
+messages, missing fields, stale data, or another run's evidence render
+UNKNOWN (previous-run evidence labeled as such), never HEALTHY.
+Reject-gate reconciliation (thresholds untouched): the enforced
+supervisor abort gate is 0.05 cumulative reject rate
+(control.REJECT_ABORT_RATE — a run above it is aborted as invalid
+observation); the 0.5 dashboard concept
+(dashboard.DEGRADED_REJECTION_RATE) is only a looser legacy transport
+display, never a health claim. The BFF reports DEGRADED — never
+HEALTHY — for any data breaching the 0.05 supervisor quality
+condition, without modifying either threshold.
 
 ### `POST /api/v1/runtime/start|stop`
 

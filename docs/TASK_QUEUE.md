@@ -1,9 +1,15 @@
-## Visibilidad global de corridas V2 (2026-10-16, sobre 5d4fef6, sin push aun)
+## Endurecimiento identidad UNKNOWN + feed estricto (2026-10-16, sobre 3544ad6, sin push aun)
+UNKNOWN=UNVERIFIED + terminal explicito + expiracion 30s + feed
+estricto/atribuido + gates 0.05/0.5 reconciliados + tests feed y de
+otro run; Start/Stop/propiedad intactos. Resta: barrera completa,
+commit selectivo, push, entrega con SHA/pruebas/capturas. V2 abierto,
+monitor detenido.
+
+## Visibilidad global de corridas V2 (2026-10-16, push 3544ad6)
 Barra global + stop proyecto verificado + reconciliacion piloto.
-Controlador canonico reutilizado. Tests backend 10 + frontend 63
-verdes con fixtures/aislados; sin corridas Binance. Resta: barrera
-completa, commit selectivo, push, entrega con SHA/pruebas/capturas.
-V2 abierto, monitor detenido.
+Controlador canonico reutilizado. Tests backend 10 + frontend 266
+verdes con fixtures/aislados; sin corridas Binance. V2 abierto,
+monitor detenido.
 
 ## Piloto brief completado (2026-10-15, autorizado, sin push aun)
 Ventana sana 120s completa y auditada; PIDs muertos, COMPLETED,

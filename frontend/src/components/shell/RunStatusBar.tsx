@@ -2,7 +2,7 @@
 import Link from "next/link";
 import {useEffect,useRef,useState} from "react";
 import type {RuntimeState} from "@/lib/runtime-control";
-import {watcherDisplayState} from "@/lib/supervision";
+import {isTerminalRunState, processDisplayFresh, watcherDisplayState} from "@/lib/supervision";
 import s from "./RunStatusBar.module.css";
 
 function fmtSecs(v:number|null):string{
@@ -16,7 +16,7 @@ function fmtClock(v:number|null):string{
 
 export function RunStatusBar(){
  const [state,setState]=useState<RuntimeState|null>(null);
- const [now,setNow]=useState(Date.now());
+ const [now,setNow]=useState<number>(Date.now);
  const seq=useRef(0);
  async function refresh(){
   const id=++seq.current;
@@ -37,7 +37,16 @@ export function RunStatusBar(){
  },[]);
  const supervisor=state?watcherDisplayState("supervisor",state.supervisor,state.pid,state.observed_at,now).replace("SUPERVISOR_",""):"…";
  const sentinel=state?watcherDisplayState("sentinel",state.sentinel,state.pid,state.observed_at,now).replace("SENTINEL_",""):"…";
- const terminal=state&&!["RUNNING","STARTING","STOPPING"].includes(state.state);
+ // Explicit terminal states only: UNKNOWN is never a confirmed close.
+ const terminal=state?isTerminalRunState(state.state):false;
+ const verifyLabel=state?processDisplayFresh(state.process_state,state.process_verified,state.observed_at,now):"…";
+ const feedLabel=(()=>{
+  if(!state)return "…";
+  const age=state.latest_snapshot_age!==null&&state.latest_snapshot_age!==undefined?` ${state.latest_snapshot_age}s`:"";
+  if(state.feed_attribution==="previous-run")return `${state.feed_health}${age} (previous-run evidence)`;
+  if(state.feed_health==="UNKNOWN")return `UNKNOWN${age}`;
+  return `${state.feed_health}${age}`;
+ })();
  // Live remaining: age the recorded remaining by time since observation.
  let remainingLive: number|null = state?.remaining_seconds ?? null;
  if(state?.running&&state.state==="RUNNING"&&remainingLive!==null&&state.observed_at){
@@ -48,12 +57,12 @@ export function RunStatusBar(){
  return <div className={s.bar} data-testid="run-status-bar" role="status" aria-label="Global run status">
   <span className={`${s.dot} ${s[dot]}`} aria-hidden="true" />
   <div className={s.main}>
-   <span className={s.line}>
-    <strong data-testid="rsb-recorded">{state?`RECORDED ${state.state}`:"LOADING"}</strong>
-    <span data-testid="rsb-verified">VERIFY {state?(state.process_verified?"OWNED-LIVE":"NOT-LIVE ("+state.process_state+")"):"…"}</span>
-    <span data-testid="rsb-origin">ORIGIN {state?.launcher??"…"}</span>
-    <span data-testid="rsb-run">RUN {state?.run_id??"…"}</span>
-   </span>
+    <span className={s.line}>
+     <strong data-testid="rsb-recorded">{state?`RECORDED ${state.state}`:"LOADING"}</strong>
+     <span data-testid="rsb-verified">VERIFY {verifyLabel}</span>
+     <span data-testid="rsb-origin">ORIGIN {state?.launcher??"…"}</span>
+     <span data-testid="rsb-run">RUN {state?.run_id??"…"}</span>
+    </span>
    <span className={s.line}>
     <span data-testid="rsb-start">START {state?.started_at??"…"}</span>
     <span data-testid="rsb-duration">PLAN {fmtSecs(state?.duration_seconds??null)}</span>
@@ -61,12 +70,12 @@ export function RunStatusBar(){
       ?<span data-testid="rsb-terminal">END {state?.last_exit_reason??"UNKNOWN"} · CLOSE {state?.last_exit_at??"UNKNOWN"} · FROZEN {fmtClock(state?.elapsed_seconds??state?.uptime_seconds??null)}</span>
       :<span data-testid="rsb-remaining">LEFT {fmtClock(remainingLive)}</span>}
    </span>
-   <span className={s.line}>
-    <span data-testid="rsb-feed">FEED {state?.feed_health??"…"}{state?.latest_snapshot_age!==null&&state?.latest_snapshot_age!==undefined?` ${state.latest_snapshot_age}s`:""}</span>
-    <span data-testid="rsb-supervisor">SUP {supervisor}</span>
-    <span data-testid="rsb-sentinel">SEN {sentinel}</span>
-    {state?.error?<span data-testid="rsb-error">OFFLINE {state.error}</span>:null}
-   </span>
+    <span className={s.line}>
+     <span data-testid="rsb-feed">FEED {feedLabel}</span>
+     <span data-testid="rsb-supervisor">SUP {supervisor}</span>
+     <span data-testid="rsb-sentinel">SEN {sentinel}</span>
+     {state?.error?<span data-testid="rsb-error">OFFLINE {state.error}</span>:null}
+    </span>
   </div>
   <Link className={s.link} href="/system">System →</Link>
  </div>;

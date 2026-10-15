@@ -12,18 +12,19 @@ describe("System runtime presentation", () => {
     await act(async () => {await vi.advanceTimersByTimeAsync(1);});
     const recorded = screen.getByText("Recorded process").parentElement;
     expect(recorded?.querySelector("strong")).toHaveTextContent("UNKNOWN");
-    expect(screen.getByText("Verified process").parentElement?.querySelector("strong")).toHaveTextContent("NOT-LIVE");
+    expect(screen.getByText("Verified process").parentElement?.querySelector("strong")).toHaveTextContent("UNVERIFIED");
     expect(screen.getByRole("alert").closest("details")).toBeNull();
     expect(screen.getByText("Runtime controls & supervisor evidence").closest("details")).not.toHaveAttribute("open");
     expect(screen.getByRole("button", {name: /Start monitor/})).toBeDisabled();
     expect(screen.getByRole("button", {name: /Stop project/})).toBeDisabled();
   });
   it("renders recorded vs verified process separately and allows stop for project agent runs", async () => {
-    vi.useFakeTimers();
+    vi.useFakeTimers();vi.setSystemTime(new Date("2026-10-15T10:26:00Z"));
     vi.stubGlobal("fetch", vi.fn().mockResolvedValue({ok:true, json:async () => ({
       state:"RUNNING", running:true, mode:"observe", launcher:"agent",
       pid:123, uptime_seconds:10, elapsed_seconds:10, remaining_seconds:110, duration_seconds:120, started_at:"2026-10-15T10:25:20+00:00",
       run_id:"probe-test", process_state:"owned", process_verified:true,
+      observed_at:new Date().toISOString(),
       feed_health:"UNKNOWN", supervisor:{state:"SUPERVISOR_UNKNOWN"},
     })}));
     render(<BotControl />);
@@ -46,6 +47,59 @@ describe("System runtime presentation", () => {
     await act(async () => {await vi.advanceTimersByTimeAsync(1);});
     expect(screen.getByRole("button", {name: /Stop project/})).toBeDisabled();
     expect(screen.getByText(/only stops verified project runs/)).toBeInTheDocument();
+  });
+  it("renders unknown identity as UNVERIFIED, never NOT-LIVE, with stop still guarded by ownership", async () => {
+    vi.useFakeTimers();vi.setSystemTime(new Date("2026-10-15T10:26:00Z"));
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue({ok:true, json:async () => ({
+      state:"RUNNING", running:true, mode:"observe", launcher:"agent",
+      pid:123, observed_at:new Date().toISOString(),
+      process_state:"unknown", process_verified:false,
+      feed_health:"UNKNOWN", supervisor:{state:"SUPERVISOR_UNKNOWN"},
+    })}));
+    render(<BotControl />);
+    await act(async () => {await vi.advanceTimersByTimeAsync(1);});
+    const verified=screen.getByText("Verified process").parentElement?.querySelector("strong");
+    expect(verified).toHaveTextContent("UNVERIFIED");
+    expect(verified).not.toHaveTextContent("NOT-LIVE");
+  });
+  it("labels a replaced run distinctly and never offers it as live", async () => {
+    vi.useFakeTimers();vi.setSystemTime(new Date("2026-10-15T10:26:00Z"));
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue({ok:true, json:async () => ({
+      state:"RUNNING", running:true, mode:"observe", launcher:"agent",
+      pid:123, observed_at:new Date().toISOString(),
+      process_state:"replaced", process_verified:false,
+      feed_health:"UNKNOWN", supervisor:{state:"SUPERVISOR_UNKNOWN"},
+    })}));
+    render(<BotControl />);
+    await act(async () => {await vi.advanceTimersByTimeAsync(1);});
+    expect(screen.getByText("Verified process").parentElement?.querySelector("strong")).toHaveTextContent("REPLACED");
+  });
+  it("expires a previously owned verification when the next read never arrives", async () => {
+    vi.useFakeTimers();vi.setSystemTime(new Date("2026-10-15T10:26:00Z"));
+    const stamp=new Date().toISOString();
+    const hanging=vi.fn().mockResolvedValueOnce({ok:true,json:async()=>({
+      state:"RUNNING",running:true,mode:"observe",launcher:"dashboard",pid:123,
+      observed_at:stamp,process_state:"owned",process_verified:true,
+      feed_health:"UNKNOWN",supervisor:{state:"SUPERVISOR_UNKNOWN"},
+    })}).mockImplementation(()=>new Promise(()=>{}));
+    vi.stubGlobal("fetch",hanging);render(<BotControl/>);
+    await act(async()=>{await vi.advanceTimersByTimeAsync(1)});
+    expect(screen.getByText("Verified process").parentElement?.querySelector("strong")).toHaveTextContent("OWNED-LIVE");
+    await act(async()=>{await vi.advanceTimersByTimeAsync(31_000)});
+    expect(screen.getByText("Verified process").parentElement?.querySelector("strong")).toHaveTextContent("UNVERIFIED");
+    expect(screen.getByText("Verified process").parentElement?.querySelector("strong")).not.toHaveTextContent("OWNED-LIVE");
+  });
+  it("never renders UNKNOWN registry state as a confirmed close", async () => {
+    vi.useFakeTimers();
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue({ok:true, json:async () => ({
+      state:"UNKNOWN", running:false, mode:"UNKNOWN", launcher:null,
+      pid:null, process_state:"unknown", process_verified:false,
+      feed_health:"UNKNOWN", supervisor:{state:"SUPERVISOR_UNKNOWN"},
+    })}));
+    render(<BotControl />);
+    await act(async () => {await vi.advanceTimersByTimeAsync(1);});
+    expect(screen.queryByText(/Close reason/)).toBeNull();
+    expect(screen.getByText("Verified process").parentElement?.querySelector("strong")).toHaveTextContent("UNVERIFIED");
   });
   it("shows terminal close reason, close time and frozen duration without ticking", async () => {
     vi.useFakeTimers();

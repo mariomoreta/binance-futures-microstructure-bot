@@ -1,17 +1,26 @@
-## Visibilidad global de corridas V2 (2026-10-16, sobre 5d4fef6, sin push aun)
+## Endurecimiento identidad UNKNOWN + feed estricto (2026-10-16, sobre 3544ad6, sin push aun)
+UNKNOWN = UNVERIFIED (nunca NOT-LIVE); owned/gone/replaced
+distinguidos; solo terminal explicito cierra; verificacion expira a
+30s sin lectura fresca. Feed HEALTHY solo con evidencia suficiente y
+atribuible al run (si no, UNKNOWN o corrida anterior); gate 0.05 vs
+display 0.5 reconciliados sin tocar umbrales; missing/silent/parse
+revisados. Tests frontend 286/286 + feed 12 nuevos + propiedad
+intacta; backend propiedad 67 verdes. Resta: barrera completa, commit
+selectivo, push, entrega con SHA/pruebas/capturas. V2 abierto,
+monitor detenido.
+
+## Visibilidad global de corridas V2 (2026-10-16, push 3544ad6)
 Barra global en todas las pantallas (estado, origen, run_id, inicio,
 duracion prevista y restante vivo; feed/supervisor/sentinel por
 separado con frescura; en terminal motivo, hora de cierre y duracion
 congelada; registrado vs verificado). Stop con confirmacion para
 cualquier corrida verificada del proyecto (dashboard/agent/direct),
 backend verifica identidad/propiedad sin ampliar permisos. Tests:
-backend 10 + frontend 63 dirigidos verdes; fixtures y procesos
-aislados, cero corridas Binance. Reconciliacion: 123.957s vs 133s
-sin contradiccion, 9 funding artefacto sin valor de senal, aborto
-previo con retraso observado pero origen no aislado (correccion).
-Contratos y docs actualizados. Resta: barrera completa, commit
-selectivo, push, entrega con SHA/pruebas/capturas. V2 abierto,
-monitor detenido (COMPLETED, PIDs muertos).
+backend 10 + frontend 266 verdes; fixtures y procesos aislados, cero
+corridas Binance. Reconciliacion: 123.957s vs 133s sin contradiccion,
+9 funding artefacto sin valor de senal, aborto previo con retraso
+observado pero origen no aislado (correccion). Contratos y docs
+actualizados. V2 abierto, monitor detenido (COMPLETED, PIDs muertos).
 
 ## Piloto brief COMPLETADO 20261015T102519Z (2026-10-15, autorizado, sin push aun)
 Arranque V2 confirmado (492/12980/20736); 123.96s, 82161 msgs,

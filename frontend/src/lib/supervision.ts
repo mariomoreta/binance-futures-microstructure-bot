@@ -1,4 +1,33 @@
 export const WATCHER_FRESHNESS_MS = 90_000;
+// Run-verification freshness: the browser polls /api/v1/runtime every 10s.
+// An OWNED-LIVE claim older than this bound is expired evidence, never a
+// live proof. Expired verification displays UNVERIFIED, never OWNED-LIVE.
+export const VERIFY_EXPIRY_MS = 30_000;
+// Explicit terminal registry states. UNKNOWN (and LOADING) are never
+// terminal: they must not render as a confirmed close.
+export const TERMINAL_RUN_STATES = ["STOPPED", "COMPLETED", "FAILED", "ABORTED"] as const;
+export function isTerminalRunState(s: unknown): boolean {
+  return typeof s === "string" && (TERMINAL_RUN_STATES as readonly string[]).includes(s);
+}
+// Identity display contract: unknown is never NOT-LIVE, and every canonical
+// process_state has its own label. owned requires the verified flag too;
+// anything else with unknown/missing identity is UNVERIFIED.
+export function processDisplay(processState: unknown, verified: unknown): string {
+  if (processState === "owned" && verified === true) return "OWNED-LIVE";
+  if (processState === "gone") return "NOT-LIVE (gone)";
+  if (processState === "replaced") return "REPLACED (run replaced)";
+  return "UNVERIFIED (unknown)";
+}
+// Freshness-bound wrapper: a stale/pending/failed observation expires any
+// previous verification. Without a fresh read there is no identity claim.
+export function processDisplayFresh(
+  processState: unknown, verified: unknown,
+  observedAt: string | null | undefined, now: number): string {
+  const obs = utcTimestamp(observedAt);
+  const fresh = obs !== null && now - obs >= 0 && now - obs <= VERIFY_EXPIRY_MS;
+  if (!fresh) return "UNVERIFIED (expired)";
+  return processDisplay(processState, verified);
+}
 export type WatcherKind = "supervisor" | "sentinel";
 export type WatcherEvidence = {
   state: string;

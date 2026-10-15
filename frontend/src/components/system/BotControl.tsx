@@ -1,7 +1,7 @@
 "use client";
 import {useEffect,useRef,useState} from "react";
 import type {RuntimeState} from "@/lib/runtime-control";
-import {watcherDisplayState, type WatcherEvidence, type WatcherKind} from "@/lib/supervision";
+import {isTerminalRunState, processDisplay, processDisplayFresh, watcherDisplayState, type WatcherEvidence, type WatcherKind} from "@/lib/supervision";
 import s from "./BotControl.module.css";
 
 function WatcherPanel({kind,evidence,state}:{kind:WatcherKind;evidence:WatcherEvidence|undefined;state:string}) {
@@ -123,7 +123,10 @@ export function BotControl(){
     }catch{setMessage("Controller request failed. No success confirmed.")}
     finally{setConfirm(false);setBusy(false);await refresh()}
   }
-  const verified=state?(state.process_verified?"OWNED-LIVE":"NOT-LIVE ("+(state.process_state??"unknown")+")"):"LOADING";
+  // Freshness-bound identity: without a fresh read there is no claim.
+  // process_state=unknown renders UNVERIFIED, never NOT-LIVE.
+  const verified=state?processDisplayFresh(state.process_state,state.process_verified,state.observed_at,now):"LOADING";
+  const verifiedDetail=state?processDisplay(state.process_state,state.process_verified):"UNKNOWN";
   const cards=[
     ["Recorded process",state?.state??"LOADING"],["Verified process",verified],["Data feed",state?.feed_health??"UNKNOWN"],
     ["Supervisor",supervisor.replace("SUPERVISOR_","")],["Sentinel",sentinel.replace("SENTINEL_","")],
@@ -137,8 +140,8 @@ export function BotControl(){
       <div className={s.details}><span>Observed UTC: <b>{state?.observed_at??"UNKNOWN"}</b></span></div>
       <WatcherPanel kind="supervisor" evidence={state?.supervisor} state={supervisor}/>
       <WatcherPanel kind="sentinel" evidence={state?.sentinel} state={sentinel}/>
-      <div className={s.details}><span>Run: <b>{state?.run_id??"UNKNOWN"}</b></span><span>Origin: <b>{state?.launcher??"UNKNOWN"}</b></span><span>PID: <b>{state?.pid??"UNKNOWN"}</b></span><span>Verified: <b>{state?(state.process_verified?"OWNED-LIVE":"NOT-LIVE ("+(state.process_state??"unknown")+")"):"UNKNOWN"}</b></span><span>Elapsed since start: <b>{state?.elapsed_seconds==null?(state?.uptime_seconds==null?"UNKNOWN":Math.round(state.uptime_seconds)+"s"):Math.round(state.elapsed_seconds)+"s"}</b></span><span>Planned duration: <b>{state?.duration_seconds==null?"UNKNOWN":Math.round(state.duration_seconds)+"s"}</b></span><span>Remaining: <b>{state?.remaining_seconds==null?"—":Math.round(state.remaining_seconds)+"s"}</b></span><span>Started UTC: <b>{state?.started_at??"UNKNOWN"}</b></span><span>Expected end: <b>{state?.expected_end_at??"UNKNOWN"}</b></span></div>
-      {state&&!["RUNNING","STARTING","STOPPING","UNKNOWN","LOADING"].includes(state.state)?<div className={s.details}><span>Close reason: <b>{state.last_exit_reason??"UNKNOWN"}</b></span><span>Close UTC: <b>{state.last_exit_at??"UNKNOWN"}</b></span><span>Frozen duration: <b>{state.elapsed_seconds==null?"UNKNOWN":Math.round(state.elapsed_seconds)+"s"}</b></span></div>:null}
+      <div className={s.details}><span>Run: <b>{state?.run_id??"UNKNOWN"}</b></span><span>Origin: <b>{state?.launcher??"UNKNOWN"}</b></span><span>PID: <b>{state?.pid??"UNKNOWN"}</b></span><span>Verified: <b>{verifiedDetail}</b></span><span>Feed: <b>{state?state.feed_health+(state.feed_attribution==="previous-run"?" (previous-run evidence)":state.feed_attribution==="none"&&state.feed_health==="UNKNOWN"?" (unattributable)":""):"UNKNOWN"}</b></span><span>Elapsed since start: <b>{state?.elapsed_seconds==null?(state?.uptime_seconds==null?"UNKNOWN":Math.round(state.uptime_seconds)+"s"):Math.round(state.elapsed_seconds)+"s"}</b></span><span>Planned duration: <b>{state?.duration_seconds==null?"UNKNOWN":Math.round(state.duration_seconds)+"s"}</b></span><span>Remaining: <b>{state?.remaining_seconds==null?"—":Math.round(state.remaining_seconds)+"s"}</b></span><span>Started UTC: <b>{state?.started_at??"UNKNOWN"}</b></span><span>Expected end: <b>{state?.expected_end_at??"UNKNOWN"}</b></span></div>
+      {state&&isTerminalRunState(state.state)?<div className={s.details}><span>Close reason: <b>{state.last_exit_reason??"UNKNOWN"}</b></span><span>Close UTC: <b>{state.last_exit_at??"UNKNOWN"}</b></span><span>Frozen duration: <b>{state.elapsed_seconds==null?"UNKNOWN":Math.round(state.elapsed_seconds)+"s"}</b></span></div>:null}
       {state?.running&&state.launcher&&!["dashboard","agent","direct"].includes(state.launcher)?<p className={s.warn}>A session launched by {state.launcher} is recorded. V2 only stops verified project runs (dashboard/agent/direct) and never touches foreign processes.</p>:null}
       {state?.running&&(state.launcher==="agent"||state.launcher==="direct")?<p className={s.warn}>A project session launched by {state.launcher} is recorded (run {state.run_id??"unknown"}). Stopping requires this confirmation and the backend verifies PID+image+creation-time before terminating only that process.</p>:null}
       <div className={s.actions}><label>Preset <select aria-label="Launch preset" value={preset} onChange={e=>setPreset(e.target.value as typeof preset)} disabled={busy}><option value="brief">brief · 120s</option><option value="standard">standard · 3600s</option><option value="validation-6h">validation-6h · 21600s</option></select></label><button type="button" disabled={!canStart||busy} onClick={()=>{setConfirm(true);setMessage("")}}>Start monitor (requires supervised launch)</button><button type="button" disabled={!canStop||busy} onClick={()=>{setConfirm(true);setMessage("")}}>Stop project monitor</button></div>

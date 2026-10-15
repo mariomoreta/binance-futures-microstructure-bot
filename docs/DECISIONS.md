@@ -1547,3 +1547,22 @@ referencia independiente ni prueba local retenida para esa ventana);
 decir "transporte" concluyente excede lo probado (origen UNKNOWN).
 Umbrales y estrategias intactos. Detalle en
 `docs/PILOT_BRIEF_20261015_RECONCILIATION.md`.
+
+## Endurecimiento identidad UNKNOWN + feed estricto (2026-10-16, sobre 3544ad6; sin nuevas corridas)
+
+Correccion sobre la entrada anterior: `process_verified` NO es
+`is_canonical_pid` en lectura (eso acoplaba secuencias mockeadas y
+heredaba su residual con ctime ausente); es `process_state == owned`
+via `_default_process_state`, mas estricto (identidad ausente jamas
+owned). Display: unknown = UNVERIFIED (unknown), nunca NOT-LIVE;
+gone = NOT-LIVE (gone); replaced = REPLACED; solo STOPPED/COMPLETED/
+FAILED/ABORTED son cierre confirmado (UNKNOWN jamas lo es); la
+verificacion expira a los 30s sin lectura fresca (poll 10s): jamas se
+retiene OWNED-LIVE. Feed HEALTHY solo con evidencia suficiente y
+atribuible a ESTE run ([started_at-60s, windowEnd+120s]); si no,
+UNKNOWN o evidencia de corrida anterior. Rechazo: gate supervisor
+0.05 intacto (abortada la corrida que lo excede); 0.5 es solo display
+legacy; el BFF marca DEGRADED — nunca HEALTHY — sobre 0.05 sin tocar
+ningun umbral. Missing/silent (salvo forceOrder event-driven),
+parse/payload/websocket>0, cobertura incompleta y cero mensajes
+inhabilitan HEALTHY. Start/Stop y propiedad intactos.

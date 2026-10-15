@@ -716,6 +716,22 @@ here and request approval before treating it as binding. Never mark
 features VERIFIED without evidence.
 
 
+## V2 identity/feed hardening - 2026-10-16 (sobre 3544ad6, sin nuevas corridas)
+
+- `DECISIONS_REVIEWED` — visibilidad 3544ad6, aborto 0.05, display 0.5,
+  staleness cadence vs event-driven, propiedad PID+imagen+ctime.
+- `NEW_DECISIONS_RECORDED` — DECISIONS §endurecimiento + contratos feed
+  (HEALTHY estricto, atribucion, 0.05 vs 0.5, missing/silent/parse).
+- `FEATURES_IMPLEMENTED` — display unknown/gone/replaced, terminal
+  explicito, expiracion 30s, feed estricto con atribucion previous-run.
+- `FEATURES_VERIFIED` — feed 12 nuevos (invalido/cero/faltante/0.06/
+  limpio/previous-run/missing/silent/parse + piloto), supervision 3,
+  barra 5, BotControl 4; Start/Stop/propiedad intactos (67 backend).
+- `DEFERRED_FEATURES` — nuevas corridas, resto excluido.
+- `BACKLOG_UPDATED` — yes: this entry.
+- `DOCUMENTATION_CONFLICTS` — none new (0.05 enforced vs 0.5 display
+  reconciliados por escrito; umbrales intactos).
+
 ## V2 run visibility - 2026-10-16 (sobre 5d4fef6, sin nuevas corridas)
 
 - `DECISIONS_REVIEWED` — control canonico (start/stop/supervise/sentinel/

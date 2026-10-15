@@ -87,7 +87,22 @@ NEXT AUTHORIZED SLICE
   reference mockups for future visual PASS.
 - Next authorized slice: DASH-V2-02 only on explicit instruction.
 
-## DASH-V2-RUNVIS — 2026-10-16 (visibilidad y control global de corridas)
+## DASH-V2-RUNVIS-HARDEN — 2026-10-16 (identidad UNKNOWN + feed estricto)
+
+- Starting SHA: `3544ad6`.
+- Scope: `supervision.ts` (display owned/gone/replaced/unknown,
+  terminal explicito, expiracion 30s); `runtime-control.ts` (feed
+  estricto + atribucion current/previous-run/none, 0.05 vs 0.5
+  documentados, missing/silent/parse); `RunStatusBar` + `BotControl`
+  (misma semantica); contratos + decisiones; tests feed/supervision/
+  barra/BotControl (incluida evidencia reciente de otro run);
+  Start/Stop/propiedad intactos; sin nuevas corridas.
+- Verification: typecheck limpio; frontend 286/286; propiedad backend
+  67 verdes; build + QA visual pendientes en el cierre.
+- Runtime: ninguna corrida Binance; registry COMPLETED retenido.
+- Next: barrera completa, commit selectivo, push, entrega.
+
+## DASH-V2-RUNVIS — 2026-10-16 (visibilidad y control global de corridas, push 3544ad6)
 
 - Starting SHA: `5d4fef6`.
 - Scope: backend `control.py` (run_id/process_state/verified/last_exit_at
