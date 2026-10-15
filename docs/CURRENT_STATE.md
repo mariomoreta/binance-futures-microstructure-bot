@@ -1,3 +1,12 @@
+## Post-mortem piloto brief 20261015T000730Z — ABORTED sano (2026-10-15, sin push aun)
+Lanzado por V2 fuera de autorizacion registrada (agente no emitio).
+Aborto timestamp-reject-rate 0.146136>0.05 a 00:08:34Z; PIDs muertos
+verificados, seguridad 0/0/0. Rechazos = skew-guard bookTicker,
+reloj sano, entrega degradada; umbral intacto. SQLite 503 por journal
+caliente (error exacto preservado; journal intacto). Correcciones:
+contador terminal congelado + readiness ABORTED terminal. Evidencia
+PILOT_BRIEF_20261015_ABORT.txt. V2 abierto, cero auto-corridas.
+
 ## Cierre defectos pre-piloto 202/identidad/migracion (2026-10-14, review/o1-funcional-v2-observacion, sin push aun)
 BotControl: 202 pendiente + reconcile (exito solo con confirmacion
 explicita; 3 tests). host_process: `_run_text` (None/decode/ausente →

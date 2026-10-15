@@ -1,3 +1,9 @@
+## Post-mortem piloto + contador/readiness (2026-10-15, sobre 51d6095, sin push aun)
+ABORTED sano auditado (PIDs muertos, 0/0/0, journal intacto, umbral
+intacto); contador congelado + ABORTED terminal en readiness + tests.
+Resta: barrera completa (control.py tocado), commit selectivo, push,
+entrega. V2 abierto, cero auto-corridas.
+
 ## Cierre defectos pre-piloto (2026-10-14, review/o1-funcional-v2-observacion sobre 972a19e, sin push aun)
 202/BotControl + identidad host + migracion en fixtures: barrera 1077
 exit 0, frontend 255/255, 143 dirigidas OK. Resta: commit selectivo,

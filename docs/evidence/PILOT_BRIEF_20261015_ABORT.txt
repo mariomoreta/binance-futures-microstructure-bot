@@ -1,0 +1,105 @@
+# Piloto brief 120s probe-20261015T000730Z — aborto por tasa de rechazos (2026-10-15, solo lectura + reporte)
+
+ACLARACION DE AUTORIA: este piloto fue lanzado por ruta V2 dashboard
+(registry launcher=dashboard, preset=brief) fuera de una sesion con
+autorizacion expresa registrada por el agente. El agente NO emitio el
+arranque; este informe es post-mortem read-only. Sin relanzamientos.
+
+## Identidad y estado terminal (verificado, cero kills)
+
+- Registro: state=ABORTED, running=false, pid=21252, launcher=dashboard,
+  preset=brief, mode=observe, started_at=2026-10-15T00:07:31+00:00,
+  duration 120s, last_exit={code:0, reason:aborted-timestamp-reject-rate,
+  at:2026-10-15T00:08:34+00:00}.
+- PIDs 21252 (monitor) / 9016 (supervisor) / 25648 (sentinel):
+  process_info=(None,None) los tres; cero procesos python.exe en el host.
+  Cierre efectivo probado por identidad (ningun kill emitido; los PIDs
+  ya no existen, y pid_is_ours exige identidad demostrada).
+- Supervisor: 3 ciclos, abort_triggered=true, rule=timestamp-reject-rate,
+  threshold=0.05, observed=0.14613646633529145, lease ACTIVE pero
+  STALE (ultimo heartbeat 00:08:34Z; proceso muerto; evidencia retenida).
+- Sentinel: 3 ciclos, outcome=stale-record, lease STOPPED 00:08:35Z.
+- Seguridad: BOT_MODE=observe, apiKeysUsed=0, realOrdersSent=0,
+  capital=0, sin clientes autenticados, sin rutas de ordenes.
+
+## Cronologia UTC 2026-10-15 (logs logs/probe-runs/*20261015T000730Z.log)
+
+- 00:07:30.48/.65Z: watchers spawn (supervisor 9016, sentinel 25648).
+- 00:07:31Z: startup probe 21252 (trio BTC/ETH/SOL, observe).
+- 00:07:35Z: clock sync OK (offset -864ms, RTT 558ms, 5/5 validas).
+- 00:08:04Z: ultima escritura research (12 writes, 0 drops, 0 errores).
+- 00:08:12Z: summary rt=41.1s con 3234 rechazos (ver diagnostico).
+- 00:08:34Z: supervisor ciclo 3 impone aborto (tasa 0.146136 > 0.05);
+  rollback mata lo lanzado; sentinel 00:08:35Z registra stale-record.
+- Despues: PIDs muertos; registro ABORTED retenido como evidencia.
+
+## Diagnostico de rechazos (umbral 0.05 intacto; NO se sube ni se toca)
+
+- Tasa: 3234 / 22130 = 0.146136 (denominador = mensajes recibidos
+  totales, contador legacyGlobalClampedLagMs; coincide con
+  abort_observed al ultimo decimal publicado).
+- Por stream: bookTicker BTC 1476 + ETH 1362 + SOL 190 (=3028, 93.6%),
+  aggTrade 24/49/15, depth ~32-34/simbolo, markPrice 18, forceOrder 0.
+- Motivo: 100% skew-guard (|recibido-E| > 5000ms). parseErrors=0,
+  payloadErrors=0, reconnects=0, websocketErrors=0.
+- Reloj: sano (offset -864ms dentro de tolerancia 60s, RTT 558ms,
+  sync 1/1). Reloj descartado como causa con evidencia.
+- Latencias de entrega (corregidas, causa): bookTicker p50 0.54-0.71s /
+  p95 8.5-16s / max ~23s; aggTrade p50 0.6-2.5s; depth p50 ~0.87s.
+  Episodio de transporte degradado grado P1-01 (sano era p50 ~0.2s en
+  P1-01R). Los rechazos describen la ruta de entrega, no Binance
+  (E-T del exchange en milisegundos: bookTicker p50 0-1ms).
+- Veredicto: el aborto funciono segun diseno (ventana no valida para
+  observacion con 14.6% de perdida por skew). Repetir el piloto en
+  ventana sana; el umbral 0.05 no se modifica para ocultar nada.
+
+## SOURCE UNAVAILABLE — error exacto preservado
+
+- Rutas /api/v1/market-snapshot, live-movers, system-evidence,
+  prospective, opportunities -> HTTP 503 (medido 2026-10-15T00:18:39Z).
+- Causa exacta (reproducida con node:sqlite readOnly):
+  `ERR_SQLITE_ERROR: attempt to write a readonly database` sobre
+  data/microprobe.db. /api/v1/runtime (registry JSON) sigue 200.
+- Mecanismo: data/microprobe.db-journal (41552B, 00:08:33Z) — journal
+  caliente dejado por el probe abortado a mitad de transaccion. Abrir
+  readOnly exige recovery del journal (una escritura) y SQLite lo
+  rehusa. Los lectores fallan cerrados (correcto: cero datos inventados).
+- NO se borra el journal, NO se abre read-write manual (modificaria el
+  canonico fuera de una corrida). La proxima corrida autorizada lo
+  recupera automaticamente al abrir read-write. historical.db (v3)
+  abre OK y sus rutas dependientes siguen disponibles donde apliquen.
+- Correccion de reporte incluida en este commit: los payloads 503
+  conservan su forma; este informe es la constancia del error exacto.
+
+## Datos nuevos del piloto (medidos por copia-temp read-only)
+
+- Por simbolo (ventana 00:07:30-00:08:12Z): aggTrade procesados
+  BTC 256 / ETH 290 / SOL 58 (604 eventos flow, latencia p50 0.011ms);
+  book 84/84/81 (249 msgs, 0 gaps, 0 cruzados); returns 14
+  muestras/simbolo (span 133050000ms, 0 invalid/late); OI 3/3 polls OK;
+  discovery 927 vistos -> 452 elegibles, HOT [] (1 scan); funding 21
+  muestras/simbolo sin warmup (0 cruces); detectores 0 en todo.
+- Persistencia: snapshots 1000 (cap, span 08-oct -> 00:08:12Z);
+  observations 10000 (cap); rejections 1000 (cap); price_samples 12
+  (4/simbolo, span 00:07:30-00:08:00Z: solo piloto retenido);
+  flow_buckets 8195; setups 66 / outcomes 228 (sin cambios);
+  research recorder 12 writes / 0 drops / 0 errores.
+- Crecimiento: microprobe.db 238927872B (0B: caps retienen);
+  historical.db 19177472 -> 19214336B (+36864B); logs 117579529B/175
+  -> 117618348B/178 (+38819B = los 3 logs del piloto 38046+201+342).
+- Heartbeats: supervisor 3 ciclos (ultimo 00:08:34Z), sentinel 3
+  ciclos (ultimo 00:08:35Z); ambos procesos hoy muertos (verificado).
+
+## Correcciones publicadas con este informe (commit siguiente)
+
+1. Contador terminal (`control.py _status_view` + `_frozen_terminal_
+   elapsed`): elapsed/uptime se congelan en last_exit.at para estados
+   terminales (ABORTED 63.0s en vez de tick infinito 650s+). Legacy sin
+   `at` conserva display anterior (documentado). Test
+   TerminalCounterTest (fail-before 1F en codigo viejo).
+2. Readiness ABORTED (`launch-readiness.ts`): sesion terminal conocida
+   = PASS "no active run" con detalle explicito (antes UNKNOWN que
+   bloqueaba cualquier reintento para siempre pese a que el canonico
+   `_is_active_state` ya la considera inactiva). Test añadido.
+Sin cambios de estrategia, umbrales, batches de datos ni ejecucion.
+Dashboard V2 queda abierto; cero corridas automaticas.

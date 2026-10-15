@@ -716,6 +716,24 @@ here and request approval before treating it as binding. Never mark
 features VERIFIED without evidence.
 
 
+## O1 pilot post-mortem reconciliation - 2026-10-15 (sobre 51d6095)
+
+- `DECISIONS_REVIEWED` — abort rule timestamp-reject-rate, `_status_view`
+  counters, `_is_active_state`, BFF concurrency check, journal/WAL
+  readOnly semantics.
+- `NEW_DECISIONS_RECORDED` — `docs/DECISIONS.md` §"Post-mortem piloto
+  brief" (cronologia, diagnostico sin tocar umbral, error SQLite exacto,
+  congelado de contador, ABORTED terminal).
+- `FEATURES_IMPLEMENTED` — congelado de contador terminal + ABORTED
+  terminal en readiness (sin otro alcance).
+- `FEATURES_VERIFIED` — TerminalCounterTest (fail-before), readiness
+  ABORTED test, barrera completa pendiente (control.py tocado),
+  evidencia `PILOT_BRIEF_20261015_ABORT.txt`.
+- `DEFERRED_FEATURES` — proximo piloto (autorizacion), journal recovery
+  (proxima corrida autorizada), resto O2-O5/IA/Kronos (excluidos).
+- `BACKLOG_UPDATED` — yes: this entry.
+- `DOCUMENTATION_CONFLICTS` — none new.
+
 ## O1 defect-fix reconciliation - 2026-10-14 (review/o1-funcional-v2-observacion, sobre 972a19e)
 
 - `DECISIONS_REVIEWED` — 202-chain (BFF 202 + reconcile-before-retry),

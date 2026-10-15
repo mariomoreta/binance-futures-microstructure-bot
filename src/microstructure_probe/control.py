@@ -318,6 +318,23 @@ def _is_active_state(state: Optional[str]) -> bool:
     return state in ("STARTING", "RUNNING", "STOPPING")
 
 
+def _frozen_terminal_elapsed(record: Optional[Dict[str, Any]],
+                             started_at: Any) -> Optional[float]:
+    """Frozen elapsed seconds for a terminal record, or None when the
+    terminal time was never recorded (legacy rows keep live-tick display,
+    documented as unknown-terminal-time)."""
+    try:
+        last_exit = (record or {}).get("last_exit") or {}
+        at = last_exit.get("at")
+        if not at or not started_at:
+            return None
+        end_ts = datetime.fromisoformat(at).timestamp()
+        start_ts = datetime.fromisoformat(started_at).timestamp()
+        return max(0.0, end_ts - start_ts)
+    except (TypeError, ValueError):
+        return None
+
+
 def _feed_unknown() -> Dict[str, Any]:
     return {"feed_health": "UNKNOWN", "latest_snapshot_age": None}
 
@@ -356,6 +373,15 @@ def _status_view(record: Optional[Dict[str, Any]],
             uptime = elapsed
         except (TypeError, ValueError):
             pass
+    if not _is_active_state(state):
+        # 2026-10-15 (pilot probe-20261015T000730Z): a terminal session
+        # ticked elapsed/uptime with the wall clock forever (ABORTED at
+        # 00:08:34Z still counting minutes later), looking alive in V2.
+        # Freeze at the recorded terminal time; unknown when unrecorded.
+        frozen = _frozen_terminal_elapsed(record, started_at)
+        if frozen is not None:
+            elapsed = frozen
+            uptime = frozen
     duration = record.get("duration_seconds")
     remaining = (max(0.0, duration - elapsed)
                  if isinstance(duration, (int, float)) and state == "RUNNING"

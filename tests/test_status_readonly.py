@@ -160,6 +160,38 @@ class ReadonlyPreservationTest(unittest.TestCase):
         kill.assert_not_called()
 
 
+class TerminalCounterTest(unittest.TestCase):
+    def _aborted(self):
+        rec = _run_record(state="ABORTED")
+        rec["started_at"] = "2026-10-15T00:07:31+00:00"
+        rec["last_exit"] = {"code": 0,
+                            "reason": "aborted-timestamp-reject-rate",
+                            "at": "2026-10-15T00:08:34+00:00"}
+        return rec
+
+    def test_terminal_elapsed_freezes_at_recorded_exit(self) -> None:
+        # Pilot probe-20261015T000730Z: ABORTED at 00:08:34Z kept ticking
+        # elapsed/uptime with the wall clock, looking alive in V2.
+        out = pc._status_view(self._aborted(), {})
+        self.assertFalse(out["running"])
+        self.assertEqual(out["state"], "ABORTED")
+        self.assertEqual(out["elapsed_seconds"], 63.0)
+        self.assertEqual(out["uptime_seconds"], 63.0)
+        self.assertIsNone(out["remaining_seconds"])
+
+    def test_active_run_still_ticks(self) -> None:
+        out = pc._status_view(_run_record(state="RUNNING"), {})
+        self.assertTrue(out["elapsed_seconds"] > 0.0)
+        self.assertTrue(out["running"])
+
+    def test_terminal_without_recorded_exit_never_crashes(self) -> None:
+        rec = self._aborted()
+        rec["last_exit"] = {"code": 0, "reason": "legacy", "at": None}
+        out = pc._status_view(rec, {})
+        self.assertEqual(out["state"], "ABORTED")
+        self.assertTrue(out["elapsed_seconds"] >= 0.0)
+
+
 class FencedReconciliationTest(unittest.TestCase):
     def test_status_never_overwrites_terminal(self):
         _temp_registry(self)

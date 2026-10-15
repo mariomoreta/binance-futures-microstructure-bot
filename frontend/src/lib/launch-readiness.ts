@@ -41,7 +41,7 @@ export function launchReadiness():LaunchReadiness{
  }
  const checks=[
   {name:"Canonical controller",status:s.error?"UNKNOWN":"PASS",detail:s.error??"Canonical read-only status is accessible"},
-  {name:"Registry reports no active run",status:s.running||["STARTING","STOPPING"].includes(s.state)?"BLOCKED":s.error||!['STOPPED','COMPLETED','FAILED'].includes(s.state)?"UNKNOWN":"PASS",detail:"Recorded state: "+s.state},
+  {name:"Registry reports no active run",status:s.running||["STARTING","STOPPING"].includes(s.state)?"BLOCKED":s.error||!['STOPPED','COMPLETED','FAILED','ABORTED'].includes(s.state)?"UNKNOWN":"PASS",detail:"Recorded state: "+s.state+(s.state==="ABORTED"?" (terminal; prior abort preserved in controller evidence)":"")},
   {name:"Operational database",status:dbOk?"PASS":"UNKNOWN",detail:dbOk?"SQLite quick_check passed (read-only)":"Read-only integrity check unavailable"},
   {name:"Observe-only mode",status:s.error||s.mode==="UNKNOWN"?"UNKNOWN":s.mode==="observe"?"PASS":"BLOCKED",detail:s.error?"Controller mode unavailable":"Controller reports "+s.mode},
   {name:"Atomic launch with persistent supervisor and sentinel",status:capabilityOk?"PASS":"BLOCKED",detail:capabilityDetail},

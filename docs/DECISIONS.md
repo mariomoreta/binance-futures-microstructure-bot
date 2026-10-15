@@ -1387,3 +1387,25 @@ corrida conjunta. Sin corridas reales a esta fecha.
 Barrera final: 1077 OK (1 skip entorno), exit 0, aislamiento OK
 (`docs/evidence/BARRIER_FIX_*`). Frontend 255/255 + typecheck + lint
 0 errores. Sin piloto aun (requiere autorizacion).
+
+## Post-mortem piloto brief probe-20261015T000730Z — aborto sano + 2 correcciones (2026-10-15, append-only)
+
+Lanzado por ruta V2 dashboard fuera de sesion con autorizacion
+registrada por el agente (el agente no lo emitio); informe read-only
+`docs/evidence/PILOT_BRIEF_20261015_ABORT.txt`. Cronologia UTC:
+00:07:31 startup (brief 120s, trio, observe) → 00:08:12 summary
+rt=41s con 3234 rechazos → 00:08:34 supervisor aborta (tasa
+0.146136 > 0.05) → 00:08:35 sentinel stale-record → PIDs muertos
+(21252/9016/25648 verificados ausentes, cero python.exe, cero kills
+emitidos). Seguridad 0/0/0. Rechazos 100% skew-guard en bookTicker
+(93.6%), reloj sano (-864ms/558ms), entrega degradada p50 0.5-2.6s:
+transporte, no Binance. Umbral 0.05 intacto.
+SOURCE UNAVAILABLE exacto: `ERR_SQLITE_ERROR: attempt to write a
+readonly database` por `microprobe.db-journal` caliente (00:08:33Z);
+lectores fallan cerrados (correcto); journal intacto, recovery en la
+proxima corrida autorizada; historical.db OK.
+Correcciones: (1) `_status_view` congela elapsed/uptime en
+`last_exit.at` para terminales (ABORTED 63.0s, no tick infinito) +
+`TerminalCounterTest`; (2) readiness ABORTED = PASS terminal
+(alineado con `_is_active_state`; antes UNKNOWN bloqueaba reintentos
+para siempre) + test. Sin cambios de estrategia/umbrales/ejecucion.

@@ -98,6 +98,16 @@ describe("runtime readiness requires controller evidence", () => {
     expect(check("Storage preflight")).toBe("PASS");
     expect(r).toMatchObject({ready: true, reason: "SUPERVISED_CHAIN_VERIFIED"});
   });
+  it("treats ABORTED as recorded-terminal, not as an active or unknown run", () => {
+    vi.mocked(historicalRead).mockReturnValue({quick_check: "ok"});
+    vi.mocked(spawnSync).mockImplementation(((...a: unknown[]) => {
+      const code = String((a[1] as string[])[1] ?? "");
+      if (code.includes("SUPERVISED_LAUNCH_ENABLED")) return {stdout: JSON.stringify({present: true, enabled: true, verify_budget_s: 60, poll_s: 2}), status: 0};
+      return {stdout: JSON.stringify({running: false, state: "ABORTED", mode: "observe"}), status: 0};
+    }) as typeof spawnSync);
+    expect(check("Registry reports no active run")).toBe("PASS");
+    expect(launchReadiness().checks.find(x => x.name === "Registry reports no active run")?.detail).toMatch(/ABORTED.*terminal/);
+  });
   it("keeps launch blocked when the capability probe disagrees", () => {
     vi.mocked(spawnSync).mockImplementation(((...a: unknown[]) => {
       const code = String((a[1] as string[])[1] ?? "");
