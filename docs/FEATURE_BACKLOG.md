@@ -716,6 +716,21 @@ here and request approval before treating it as binding. Never mark
 features VERIFIED without evidence.
 
 
+## V2 feed attribution fix - 2026-10-16 (sobre 3f2fcea, sin nuevas corridas)
+
+- `DECISIONS_REVIEWED` — hardening 3f2fcea, id-spaces registry/DB,
+  propiedad, umbrales 0.05/0.5.
+- `NEW_DECISIONS_RECORDED` — DECISIONS §correccion + contrato feed
+  (sin gracia, run_id priorizado, cruce runtime, regresion 20s).
+- `FEATURES_IMPLEMENTED` — atribucion estricta (exacta > temporal),
+  previous-run nunca HEALTHY, UNKNOWN sin certeza.
+- `FEATURES_VERIFIED` — regresion 20s A/B + run_id exacto +
+  runtime-inconsistente; Start/Stop/propiedad/umbrales/identidad
+  intactos (suites abajo).
+- `DEFERRED_FEATURES` — nuevas corridas, resto excluido.
+- `BACKLOG_UPDATED` — yes: this entry.
+- `DOCUMENTATION_CONFLICTS` — none new.
+
 ## V2 identity/feed hardening - 2026-10-16 (sobre 3544ad6, sin nuevas corridas)
 
 - `DECISIONS_REVIEWED` — visibilidad 3544ad6, aborto 0.05, display 0.5,

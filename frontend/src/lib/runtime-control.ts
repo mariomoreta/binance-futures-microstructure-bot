@@ -52,37 +52,58 @@ const txt=(v:unknown):string|null=>typeof v==="string"&&v.trim()?v:null;
 export const SUPERVISOR_REJECT_GATE=0.05;
 export const DASHBOARD_DEGRADED_REJECT=0.5;
 export const FEED_STALE_AFTER_S=120;
-export const FEED_ATTRIBUTION_SKEW_S=60;
+// Maximum probe-life runtime plausibly above the registry-measured elapsed
+// time (spawn overhead + graceful drain are seconds, not tens of seconds).
+// A row claiming far more runtime than the run could have lived through
+// cannot be this run's evidence.
+export const FEED_RUNTIME_TOLERANCE_S=30;
 export type FeedEvidence={feed_health:string;latest_snapshot_age:number|null;feed_attribution:FeedAttribution;feed_note:string|null};
-export type FeedRunWindow={started_at:string|null;last_exit_at:string|null;expected_end_at:string|null;state:string};
+export type FeedRunWindow={started_at:string|null;last_exit_at:string|null;expected_end_at:string|null;state:string;runUuid?:string|null};
 function feedUnknown(note:string,age:number|null=null):FeedEvidence{
  return {feed_health:"UNKNOWN",latest_snapshot_age:age,feed_attribution:"none",feed_note:note};
 }
 export function feedFromStore(window:FeedRunWindow={started_at:null,last_exit_at:null,expected_end_at:null,state:"UNKNOWN"}):FeedEvidence{
  const nowMs=Date.now();
- let row:{timestamp:unknown;data_quality_json:unknown}|undefined;
+ let row:{timestamp:unknown;runtime_seconds:unknown;run_id:unknown;data_quality_json:unknown}|undefined;
  try{
-  row=historicalRead(db=>db.prepare("SELECT timestamp,data_quality_json FROM telemetry_snapshots ORDER BY id DESC LIMIT 1").get() as typeof row);
+  row=historicalRead(db=>db.prepare("SELECT timestamp,runtime_seconds,run_id,data_quality_json FROM telemetry_snapshots ORDER BY id DESC LIMIT 1").get() as typeof row);
  }catch{return feedUnknown("telemetry-unavailable")}
  if(!row||typeof row.timestamp!=="number"||!Number.isFinite(row.timestamp))return feedUnknown("missing-timestamp");
  const tsMs=row.timestamp*1000;
  const ageS=Math.round(nowMs/1000-row.timestamp);
  if(!Number.isFinite(ageS)||ageS<0)return feedUnknown("invalid-timestamp");
- // Attribution: the row must fall inside the current run window
- // [started_at - skew, windowEnd + stale]. Otherwise it is evidence from
- // another (usually previous) run and must never render as current HEALTHY.
+ const rowRunId=typeof row.run_id==="string"&&row.run_id?row.run_id:null;
+ const rowRt=typeof row.runtime_seconds==="number"&&Number.isFinite(row.runtime_seconds)?row.runtime_seconds:null;
+ // 1) Exact linkage by run_id wins when both sides carry it. (The registry
+ // record carries the evidence-log stem while telemetry rows carry the
+ // probe UUID32 — different id spaces — so in production this match is
+ // unavailable and attribution falls through to the conservative temporal
+ // rule below. It is checked first so any future shared identifier is
+ // honored without relying on clocks at all.)
+ if(rowRunId&&window.runUuid&&rowRunId===window.runUuid){
+  return feedCurrent(row,ageS);
+ }
+ // 2) Conservative temporal attribution. A snapshot written BEFORE the run
+ // started is NEVER current — no skew grace: with close starts (e.g. 20s
+ // apart) the previous run's fresh snapshot would otherwise classify as
+ // current. When time cannot attribute with certainty, UNKNOWN.
  const startMs=typeof window.started_at==="string"?Date.parse(window.started_at):NaN;
- let endMs=Number.isFinite(Date.parse(window.last_exit_at??""))?Date.parse(window.last_exit_at as string):NaN;
- if(!Number.isFinite(endMs)&&typeof window.expected_end_at==="string")endMs=Date.parse(window.expected_end_at);
- if(!Number.isFinite(endMs))endMs=nowMs;
- let attribution:FeedAttribution="none";
- if(Number.isFinite(startMs)){
-  attribution=(tsMs>=startMs-FEED_ATTRIBUTION_SKEW_S*1000&&tsMs<=endMs+FEED_STALE_AFTER_S*1000)?"current":"previous-run";
+ if(!Number.isFinite(startMs))return {feed_health:"UNKNOWN",latest_snapshot_age:ageS,feed_attribution:"none",feed_note:"unattributable-no-run-window"};
+ if(tsMs<startMs){
+  // Evidence from an earlier (usually the immediately previous) run:
+  // surface its age but never as current health. This is last-run
+  // evidence, not a currently-active feed.
+  return {feed_health:"UNKNOWN",latest_snapshot_age:ageS,feed_attribution:"previous-run",feed_note:"previous-run-evidence"};
  }
- if(attribution!=="current"){
-  // Stale data from another run: surface its age but never as current health.
-  return {feed_health:"UNKNOWN",latest_snapshot_age:ageS,feed_attribution:attribution==="previous-run"?"previous-run":"none",feed_note:attribution==="previous-run"?"previous-run-evidence":"unattributable-no-run-window"};
+ // 3) Runtime cross-check: the row's probe-life runtime cannot exceed what
+ // this run could have lived through. A far larger value proves another
+ // run's row even when its timestamp looks plausible.
+ if(rowRt!==null&&(rowRt-(tsMs-startMs)/1000)>FEED_RUNTIME_TOLERANCE_S){
+  return {feed_health:"UNKNOWN",latest_snapshot_age:ageS,feed_attribution:"none",feed_note:"runtime-inconsistent"};
  }
+ return feedCurrent(row,ageS);
+}
+function feedCurrent(row:{timestamp:unknown;runtime_seconds:unknown;run_id:unknown;data_quality_json:unknown},ageS:number):FeedEvidence{
  if(ageS>FEED_STALE_AFTER_S)return {feed_health:"STALE",latest_snapshot_age:ageS,feed_attribution:"current",feed_note:null};
  // Fresh + attributable: HEALTHY requires complete, sufficient evidence.
  // Anything else is UNKNOWN (insufficient) or DEGRADED (bad quality) —
@@ -149,7 +170,11 @@ export function runtimeStatus():RuntimeState{
  let feed_attribution:FeedAttribution="none";
  let feed_note:string|null=null;
  if(feed_health==="UNKNOWN"&&latest_snapshot_age===null){
-  const f=feedFromStore({started_at:txt(x.started_at),last_exit_at:txt(x.last_exit_at),expected_end_at:txt(x.expected_end_at),state:typeof x.state==="string"?x.state:"UNKNOWN"});
+  // runUuid: the registry record carries the evidence-log stem while
+  // telemetry rows carry the probe UUID32 — different id spaces, so no
+  // shared identifier is passed and attribution uses the conservative
+  // temporal rule (snapshot before started_at is never current).
+  const f=feedFromStore({started_at:txt(x.started_at),last_exit_at:txt(x.last_exit_at),expected_end_at:txt(x.expected_end_at),state:typeof x.state==="string"?x.state:"UNKNOWN",runUuid:null});
   feed_health=f.feed_health;latest_snapshot_age=f.latest_snapshot_age;feed_attribution=f.feed_attribution;feed_note=f.feed_note;
  }
  return {running:x.running===true,state:typeof x.running==="boolean"&&typeof x.state==="string"&&x.state.trim()?x.state:"UNKNOWN",pid:typeof x.pid==="number"?x.pid:null,launcher:typeof x.launcher==="string"?x.launcher:null,mode:typeof x.mode==="string"&&x.mode.trim()?x.mode:"UNKNOWN",uptime_seconds:num(x.uptime_seconds),duration_seconds:num(x.duration_seconds),started_at:txt(x.started_at),feed_health,latest_snapshot_age,observed_at:new Date().toISOString(),supervisor:normalizeWatcher(x.supervisor,"supervisor"),sentinel:normalizeWatcher(x.sentinel,"sentinel"),run_id:txt(x.run_id),expected_end_at:txt(x.expected_end_at),elapsed_seconds:num(x.elapsed_seconds),remaining_seconds:num(x.remaining_seconds),last_exit_code:num(x.last_exit_code),last_exit_reason:txt(x.last_exit_reason),last_exit_at:txt(x.last_exit_at),process_state:txt(x.process_state)??"unknown",process_verified:x.process_verified===true,preset:txt(x.preset),feed_attribution,feed_note,...(typeof x.error==="string"?{error:x.error}:{})};

@@ -87,7 +87,18 @@ NEXT AUTHORIZED SLICE
   reference mockups for future visual PASS.
 - Next authorized slice: DASH-V2-02 only on explicit instruction.
 
-## DASH-V2-RUNVIS-HARDEN — 2026-10-16 (identidad UNKNOWN + feed estricto)
+## DASH-V2-FEEDATTR — 2026-10-16 (correccion atribucion del feed)
+
+- Starting SHA: `3f2fcea`.
+- Scope: `runtime-control.ts` (sin gracia pre-start, run_id exacto
+  primero con fallback temporal conservador + cruce runtime_seconds,
+  previous-run distinguido); `runtime-feed.test.ts` (regresion 20s A/B
+  + exacto + inconsistente); contratos + decisiones; Start/Stop,
+  umbrales e identidad intactos; sin nuevas corridas.
+- Verification: typecheck + suites + build + QA visual en el cierre.
+- Next: barrera, commit selectivo, push, entrega.
+
+## DASH-V2-RUNVIS-HARDEN — 2026-10-16 (identidad UNKNOWN + feed estricto, push 3f2fcea)
 
 - Starting SHA: `3544ad6`.
 - Scope: `supervision.ts` (display owned/gone/replaced/unknown,

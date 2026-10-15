@@ -156,15 +156,26 @@ confirmed close; UNKNOWN never does. Browser verification expires
 after 30s without a fresh read (poll 10s): expired reads render
 UNVERIFIED (expired), never a retained OWNED-LIVE.
 
-Feed HEALTHY rule (2026-10-16 hardening, strict): HEALTHY only for
-fresh (age <=120s), attributable (timestamp inside
-[started_at-60s, windowEnd+120s]) snapshots with parseable quality,
-non-zero messages, complete coverage/error fields, no stale or missing
-streams, no reconnect/websocket errors, reject rate within the
-supervisor gate, no parse/payload errors, and silence limited to the
-event-driven `!forceOrder@arr`. Invalid JSON, insufficient data, zero
-messages, missing fields, stale data, or another run's evidence render
-UNKNOWN (previous-run evidence labeled as such), never HEALTHY.
+Feed HEALTHY rule (2026-10-16 hardening, strict; attribution corrected
+over 3f2fcea): HEALTHY only for fresh (age <=120s) snapshots
+attributable to THIS run with parseable quality, non-zero messages,
+complete coverage/error fields, no stale or missing streams, no
+reconnect/websocket errors, reject rate within the supervisor gate, no
+parse/payload errors, and silence limited to the event-driven
+`!forceOrder@arr`. Invalid JSON, insufficient data, zero messages,
+missing fields, stale data, or another run's evidence render UNKNOWN
+(previous-run evidence labeled as such), never HEALTHY. Attribution
+order: exact `run_id` linkage first (telemetry rows carry the probe
+UUID32; the registry record carries the evidence-log stem — different
+id spaces, so in production this match is unavailable and the rule
+below applies; any future shared identifier is honored without
+clocks); otherwise conservative temporal: a snapshot written BEFORE
+`started_at` is NEVER current (no skew grace — with close starts the
+previous run's fresh snapshot would otherwise classify as current),
+unparseable `started_at` is unattributable (UNKNOWN), and a
+probe-life `runtime_seconds` far above the run's possible elapsed time
+proves another run's row (UNKNOWN). Last-run evidence stays labeled
+previous-run and is never a currently-active feed.
 Reject-gate reconciliation (thresholds untouched): the enforced
 supervisor abort gate is 0.05 cumulative reject rate
 (control.REJECT_ABORT_RATE — a run above it is aborted as invalid

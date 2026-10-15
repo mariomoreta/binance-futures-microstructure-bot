@@ -1,9 +1,14 @@
-## Endurecimiento identidad UNKNOWN + feed estricto (2026-10-16, sobre 3544ad6, sin push aun)
+## Correccion atribucion del feed (2026-10-16, sobre 3f2fcea, sin push aun)
+Sin gracia pre-start + run_id priorizado + regresion 20s A/B +
+UNKNOWN sin certeza; Start/Stop/umbrales/identidad intactos. Resta:
+barrera, commit selectivo, push, entrega con SHA/pruebas/capturas.
+V2 abierto, monitor detenido.
+
+## Endurecimiento identidad UNKNOWN + feed estricto (2026-10-16, push 3f2fcea)
 UNKNOWN=UNVERIFIED + terminal explicito + expiracion 30s + feed
 estricto/atribuido + gates 0.05/0.5 reconciliados + tests feed y de
-otro run; Start/Stop/propiedad intactos. Resta: barrera completa,
-commit selectivo, push, entrega con SHA/pruebas/capturas. V2 abierto,
-monitor detenido.
+otro run; Start/Stop/propiedad intactos. V2 abierto, monitor
+detenido.
 
 ## Visibilidad global de corridas V2 (2026-10-16, push 3544ad6)
 Barra global + stop proyecto verificado + reconciliacion piloto.

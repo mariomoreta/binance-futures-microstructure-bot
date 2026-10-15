@@ -1,13 +1,19 @@
-## Endurecimiento identidad UNKNOWN + feed estricto (2026-10-16, sobre 3544ad6, sin push aun)
+## Correccion atribucion del feed (2026-10-16, sobre 3f2fcea, sin push aun)
+Sin gracia pre-start (snapshot anterior a started_at nunca current);
+run_id exacto priorizado en codigo (espacios distintos, rige temporal
+conservadora + cruce runtime_seconds); regresion 20s A/B; UNKNOWN sin
+certeza; previous-run distinguido de feed activo. Start/Stop,
+umbrales e identidad intactos. Resta: barrera, commit selectivo, push,
+entrega con SHA/pruebas/capturas. V2 abierto, monitor detenido.
+
+## Endurecimiento identidad UNKNOWN + feed estricto (2026-10-16, push 3f2fcea)
 UNKNOWN = UNVERIFIED (nunca NOT-LIVE); owned/gone/replaced
 distinguidos; solo terminal explicito cierra; verificacion expira a
 30s sin lectura fresca. Feed HEALTHY solo con evidencia suficiente y
 atribuible al run (si no, UNKNOWN o corrida anterior); gate 0.05 vs
 display 0.5 reconciliados sin tocar umbrales; missing/silent/parse
-revisados. Tests frontend 286/286 + feed 12 nuevos + propiedad
-intacta; backend propiedad 67 verdes. Resta: barrera completa, commit
-selectivo, push, entrega con SHA/pruebas/capturas. V2 abierto,
-monitor detenido.
+revisados. Tests frontend 286/286 + feed 15 + propiedad intacta;
+backend propiedad 67 verdes. V2 abierto, monitor detenido.
 
 ## Visibilidad global de corridas V2 (2026-10-16, push 3544ad6)
 Barra global en todas las pantallas (estado, origen, run_id, inicio,

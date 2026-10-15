@@ -1566,3 +1566,18 @@ legacy; el BFF marca DEGRADED — nunca HEALTHY — sobre 0.05 sin tocar
 ningun umbral. Missing/silent (salvo forceOrder event-driven),
 parse/payload/websocket>0, cobertura incompleta y cero mensajes
 inhabilitan HEALTHY. Start/Stop y propiedad intactos.
+
+## Correccion atribucion del feed (2026-10-16, sobre 3f2fcea; sin nuevas corridas)
+
+La ventana [started_at-60s, ...] admitia snapshots de la corrida
+anterior con arranques proximos (regresion: 20s bastan) y los
+clasificaba current/HEALTHY. Eliminada la gracia pre-start: snapshot
+anterior a started_at nunca es current (previous-run, nunca HEALTHY).
+Linkage exacto por run_id priorizado en codigo (SELECT incluye
+run_id/runtime_seconds): las filas llevan el UUID32 del probe y el
+registro el stem del log — espacios distintos, sin cruce disponible
+(991/1000 filas historicas ademas sin run_id) — luego rige la regla
+temporal conservadora + cruce de runtime_seconds (rt muy por encima
+del elapsed posible = fila ajena, UNKNOWN). Sin tiempo atribuible con
+certeza: UNKNOWN. Start/Stop, umbrales (0.05/0.5) e identidad
+intactos.

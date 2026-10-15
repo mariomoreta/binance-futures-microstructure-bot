@@ -29,14 +29,23 @@ function controller(patch: Record<string, unknown> = {}) {
     ...patch,
   };
 }
-function row(tsSec: number, dq: unknown) {
+function row(tsSec: number, dq: unknown, opts: {rt?: number; runId?: string | null} = {}) {
+  const startSec = Date.parse(STARTED) / 1000;
   return {
-    prepare: () => ({get: () => ({timestamp: tsSec, data_quality_json: typeof dq === "string" ? dq : JSON.stringify(dq)})}),
+    prepare: () => ({get: () => ({
+      timestamp: tsSec,
+      runtime_seconds: opts.rt ?? Math.max(0, Math.round(tsSec - startSec) - 1),
+      run_id: opts.runId ?? null,
+      data_quality_json: typeof dq === "string" ? dq : JSON.stringify(dq),
+    })}),
   };
 }
-function statusWith(tsSec: number, dq: unknown, ctrl: Record<string, unknown> = {}) {
+function statusWith(tsSec: number, dq: unknown, ctrl: Record<string, unknown> = {}, opts: {rt?: number; runId?: string | null} = {}) {
+  const startIso = typeof ctrl.started_at === "string" ? ctrl.started_at : STARTED;
+  const startSec = Date.parse(startIso) / 1000;
+  const rt = opts.rt ?? Math.max(0, Math.round(tsSec - startSec) - 1);
   run.mockReturnValue({status: 0, stdout: JSON.stringify(controller(ctrl))});
-  readDb.mockImplementation((fn: (db: unknown) => unknown) => fn(row(tsSec, dq)));
+  readDb.mockImplementation((fn: (db: unknown) => unknown) => fn(row(tsSec, dq, {runId: opts.runId ?? null, rt})));
   return runtimeStatus();
 }
 
@@ -95,6 +104,36 @@ describe("Feed health never claims HEALTHY without sufficient attributable evide
     run.mockReturnValue({status: 0, stdout: JSON.stringify(controller())});
     readDb.mockImplementation(() => {throw new Error("locked");});
     const x = runtimeStatus();
+    expect(x.feed_health).toBe("UNKNOWN");
+    expect(x.feed_attribution).toBe("none");
+  });
+  it("never classifies a previous run snapshot as current when starts are 20s apart", () => {
+    // Run A wrote a healthy snapshot at T0 (rt=100, its own run_id).
+    // Run B started 20s later; now is B.start+5s, so A's snapshot is still
+    // fresh (25s) with clean quality. The old started_at-60s grace would
+    // have called it current HEALTHY; the strict rule must not.
+    const t0 = NOW - 25_000;
+    const bStart = new Date(t0 + 20_000).toISOString();
+    const x = statusWith(t0 / 1000, quality(), {started_at: bStart}, {rt: 100, runId: "aaaa-uuid-run-a"});
+    expect(x.feed_health).toBe("UNKNOWN");
+    expect(x.feed_attribution).toBe("previous-run");
+    expect(x.feed_health).not.toBe("HEALTHY");
+    // B stays UNKNOWN until its own sufficient evidence lands: same poll
+    // with B's own snapshot (ts=now, small rt, different run_id) is HEALTHY.
+    const y = statusWith(NOW / 1000, quality(), {started_at: bStart}, {rt: 5, runId: "bbbb-uuid-run-b"});
+    expect(y.feed_health).toBe("HEALTHY");
+    expect(y.feed_attribution).toBe("current");
+  });
+  it("prioritizes exact run_id linkage when both sides carry it", () => {
+    readDb.mockImplementation((fn: (db: unknown) => unknown) => fn(row(NOW / 1000 - 5, quality(), {rt: 5, runId: "exact-uuid"})));
+    const f = feedFromStore({started_at: new Date(NOW).toISOString(), last_exit_at: null, expected_end_at: null, state: "RUNNING", runUuid: "exact-uuid"});
+    expect(f.feed_attribution).toBe("current");
+    expect(f.feed_health).toBe("HEALTHY");
+  });
+  it("reports UNKNOWN when runtime contradicts the run window", () => {
+    // Timestamp looks plausible (after start) but the row claims far more
+    // probe-life runtime than this run could have lived through.
+    const x = statusWith(NOW / 1000 - 10, quality(), {started_at: new Date(NOW - 15_000).toISOString()}, {rt: 500});
     expect(x.feed_health).toBe("UNKNOWN");
     expect(x.feed_attribution).toBe("none");
   });
