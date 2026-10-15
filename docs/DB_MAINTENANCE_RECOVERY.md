@@ -15,6 +15,21 @@ Separado del arranque: no es una corrida, no toca estrategias ni gates.
   salta: la salida es este mantenimiento autorizado, tras el cual
   readiness se reevalúa (DB legible → verde si el resto pasa).
 
+## Defecto corregido 2026-10-16 (leer antes de operar)
+
+La version anterior del script tanteaba escritores con `BEGIN
+IMMEDIATE` sobre el ORIGINAL antes del backup. Forense 2026-10-16:
+esa sonda abria read-write y RECUPERABA (y eliminaba) el hot journal
+del original — destruia justo la evidencia a respaldar y cambiaba el
+hash del DB. Eliminada por completo: antes del backup verificado el
+script solo hace lecturas de bytes (stat/copy/hash) y UNA lectura
+JSON del registry; cero `sqlite3.connect` con capacidad de escritura
+sobre el original (regresion con espia que lo prueba: exactamente 1
+apertura rw, la `_recover` final). La ventana de mantenimiento es:
+estado del registry no-ACTIVO (al entrar y justo antes del write) +
+re-verificacion de hashes en ambos puntos; ningun paso declara
+exclusion sostenida, cada puerta la re-prueba.
+
 ## Precondiciones verificadas (2026-10-15, este host)
 
 - Cero escritores: ningún `python.exe` en pie; V2 (PID 18216) solo abre

@@ -23,10 +23,12 @@ schema != --expect-schema (when given), any expected table missing or
 unreadable, --expect-counts mismatch, backup hash mismatch, source pair
 changed mid-operation, restore rehearsal mismatch, pre-apply hash drift,
 applied-vs-restored schema/counts discrepancy (automatic, even without
---expect-counts). Live-writer detection and pre-apply drift are REFUSALS
-(exit 2, nothing touched): --apply additionally requires a positive
-no-writer probe (BEGIN IMMEDIATE + ROLLBACK, lock-only, zero writes)
-and re-verified expected hashes immediately before the target write.
+--expect-counts). Maintenance-window REFUSALS (exit 2, nothing touched):
+--apply requires a non-ACTIVE registry record (pure JSON read, zero
+SQLite) plus re-verified expected hashes at entry AND immediately
+before the target write. No SQLite open with recovery capacity touches
+the original before the verified backup exists; no step claims
+sustained exclusion — every gate re-proves the window.
 
 Usage:
   rehearse: python scripts/recover_hot_journal.py --db <db>
@@ -86,34 +88,47 @@ def _hashes_match(db: Path, journal: Path, exp_db: str | None,
     return None
 
 
-def _assert_no_live_writer(db_path: Path, timeout_s: float = 2.0
-                           ) -> str | None:
-    """Refuse when another connection holds a write lock (live writer).
+ACTIVE_REGISTRY_STATES = ("STARTING", "RUNNING", "STOPPING")
+# Mirrors control._is_active_state (documented copy; terminal states
+# ABORTED/STOPPED/COMPLETED/FAILED are inactive).
 
-    BEGIN IMMEDIATE only takes the RESERVED lock and ROLLBACK releases it:
-    no page is read or written, no journal is recovered, file bytes are
-    untouched. SQLITE_BUSY within the timeout means a writer is active.
-    Returns an error string, or None when no writer was observed.
+
+def _registry_state() -> tuple:
+    """Recorded runtime state from the JSON registry (pure file read).
+
+    Returns (state, note). No SQLite, no processes, no writes — safe at
+    any point, including before the backup. Absent/unreadable registry
+    is UNKNOWN (proceeding; the hash gates remain the hard net), never
+    a proof of anything.
     """
+    override = os.environ.get("MICROPROBE_RUNTIME_FILE")
+    path = Path(override) if override else (
+        Path(__file__).resolve().parent.parent / "logs" / "probe_runtime.json")
     try:
-        con = sqlite3.connect(str(db_path), timeout=timeout_s)
-    except (sqlite3.Error, OSError) as exc:
-        return "writer check cannot open db: %s" % str(exc)[:120]
-    try:
-        try:
-            con.execute("BEGIN IMMEDIATE")
-        except sqlite3.OperationalError as exc:
-            if "locked" in str(exc).lower() or "busy" in str(exc).lower():
-                return ("live writer holds the database (locked);"
-                        " refusing maintenance while it runs")
-            return "writer check failed: %s" % str(exc)[:120]
-        con.execute("ROLLBACK")
-        return None
-    finally:
-        try:
-            con.close()
-        except (sqlite3.Error, OSError):
-            pass
+        record = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        return None, "registry unreadable/absent: %s" % path
+    if not isinstance(record, dict):
+        return None, "registry malformed (not an object)"
+    return record.get("state"), "recorded state via %s" % path
+
+
+def _refuse_active_registry(report: dict) -> str | None:
+    """Error string when the registry records an ACTIVE run, else None.
+
+    Maintenance window, first net: a recorded active run means a project
+    writer may be live — refuse without touching anything. This detects
+    RECORDED activity only; it never claims sustained exclusion (a writer
+    without a record is outside this net). The hash re-verification
+    immediately before the target write is the second net: any writer
+    commit changes bytes and refuses there.
+    """
+    state, note = _registry_state()
+    report["registry_check"] = {"state": state, "note": note}
+    if state in ACTIVE_REGISTRY_STATES:
+        return ("maintenance window blocked: registry records ACTIVE run"
+                " (state=%s); stop it and re-run" % state)
+    return None
 
 
 def _compare_records(name: str, got: dict, want: dict) -> list:
@@ -335,12 +350,10 @@ def main() -> int:
                 print("REFUSED: " + problem, file=sys.stderr)
             return 2
     if args.apply:
-        writer = _assert_no_live_writer(db)
-        report["writer_check"] = ("excluded" if writer is None
-                                  else "REFUSED: " + writer)
-        if writer is not None:
+        blocked = _refuse_active_registry(report)
+        if blocked is not None:
             report["verdict"] = "REFUSED"
-            print("REFUSED: " + writer, file=sys.stderr)
+            print("REFUSED: " + blocked, file=sys.stderr)
             return 2
     try:
         pre = _immutable_counts(db)
@@ -502,15 +515,21 @@ def _apply(args, db, journal, out, report, before, pre) -> int:
                                restored["counts"][table]))
     if failures:
         return _fail(report, out, failures)
-    # Stage 4 (the only target write): re-verify hashes IMMEDIATELY
-    # before touching the target; any drift refuses without applying.
-    # Writers were excluded at entry; this closes the remaining window.
+    # Stage 4 (the only target write): re-verify hashes AND the
+    # registry IMMEDIATELY before touching the target. Any drift, or a
+    # newly ACTIVE record, refuses without applying. Together with the
+    # entry checks this is the maintenance window: no step claims
+    # sustained exclusion, every step re-proves it.
     pre_apply = {"db": _sha(db), "journal": _sha(journal)}
     report["pre_apply_hashes"] = pre_apply
     if pre_apply != {"db": before["db"], "journal": before["journal"]}:
         return _fail(report, out,
                      ["pre-apply drift: source pair changed since entry;"
                       " refusing without applying"])
+    blocked = _refuse_active_registry(report)
+    report["pre_apply_registry"] = report.pop("registry_check")
+    if blocked is not None:
+        return _fail(report, out, ["pre-apply " + blocked.lower()])
     _recover(db)
     applied = _verify(db)
     report["applied_verification"] = {

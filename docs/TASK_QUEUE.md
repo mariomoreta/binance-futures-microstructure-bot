@@ -1,3 +1,8 @@
+## Ventana registry + hot real + spy (2026-10-16, sobre e0b0141, sin push aun)
+Lock-probe fuera; registry+re-hash; fixture hot valido; spy 1-rw
+(fail-before en viejo). Resta: barrera, commit, push, entrega.
+Sin aplicar, sin corridas. V2 abierto.
+
 ## Mantenimiento aplicable + deriva (2026-10-16, sobre 3a55052, sin push aun)
 Backup real + re-hash pre-write + writers excluidos + auto-compare +
 regresiones; destino verificado fuera/inexistente. Resta: commit,

@@ -716,6 +716,19 @@ here and request approval before treating it as binding. Never mark
 features VERIFIED without evidence.
 
 
+## O1 window reconciliation - 2026-10-16 (sobre e0b0141)
+
+- `DECISIONS_REVIEWED` — lock-probe forense, registry states, hot
+  fixture recipe, spy design.
+- `NEW_DECISIONS_RECORDED` — DECISIONS §ventana por registry (forense
+  + ventana + hot real + spy).
+- `FEATURES_IMPLEMENTED` — ventana registry, fixture hot, spy test.
+- `FEATURES_VERIFIED` — journal 22/22, spy fail-before/passa-after,
+  barrera pendiente.
+- `DEFERRED_FEATURES` — apply (sin solicitar aun), piloto, resto.
+- `BACKLOG_UPDATED` — yes: this entry.
+- `DOCUMENTATION_CONFLICTS` — none new.
+
 ## O1 maintenance reconciliation - 2026-10-16 (sobre 3a55052)
 
 - `DECISIONS_REVIEWED` — backup/rollback, hash binding, writer locks,

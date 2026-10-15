@@ -1,3 +1,10 @@
+## Ventana por registry + fixture hot real (2026-10-16, sin push aun)
+Sonda lock eliminada (recuperaba el original pre-backup: forense).
+Ventana = registry no-ACTIVO + re-hash pre-write (sin exclusion
+sostenida declarada). Fixture hot REAL (magia valida, bloquea ro).
+Spy: 1 sola apertura rw en origen (la _recover final). Barrera
+pendiente. Sin aplicar, sin corridas. V2 abierto.
+
 ## Mantenimiento aplicable + deriva/discrepancia (2026-10-16, sin push aun)
 --apply con backup real + re-verificacion pre-write + exclusion de
 escritores + aplicado-vs-restaurado; backup verificado fuera del

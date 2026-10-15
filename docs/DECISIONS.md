@@ -1461,6 +1461,17 @@ para siempre) + test. Sin cambios de estrategia/umbrales/ejecucion.
    `docs/evidence/RECOVERY_REHEARSAL_20261015.json` (hot-rollback,
    integrity ok, schema 10, consumido, intacto; re-ejecutable).
 
+## Ventana por registry + hot real + spy (2026-10-16, append-only, sobre e0b0141; sin aplicar, sin corridas)
+
+Forense del defecto: la sonda lock abria el ORIGINAL read-write
+pre-backup y RECUPERABA (borraba) su hot journal — fail-before del
+spy en codigo viejo. Eliminada; la ventana es registry no-ACTIVO
+(JSON puro) + re-hash + re-registry justo antes del write, sin
+declarar exclusion sostenida. Fixture hot REAL (cache -64 + UPDATE
+sin commit + os._exit, magia valida que bloquea ro con el sintoma
+exacto). Spy en subprocess: 1 sola apertura rw en origen (la
+_recover final), fail-before en viejo. 22 tests journal.
+
 ## Mantenimiento aplicable + deriva/discrepancia (2026-10-16, append-only, sobre 3a55052; sin aplicar, sin corridas)
 
 `--apply` completo (probar→respaldar→restaurar→aplicar) con backup
