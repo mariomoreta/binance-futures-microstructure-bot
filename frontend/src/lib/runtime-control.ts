@@ -179,7 +179,7 @@ export function runtimeStatus():RuntimeState{
  }
  return {running:x.running===true,state:typeof x.running==="boolean"&&typeof x.state==="string"&&x.state.trim()?x.state:"UNKNOWN",pid:typeof x.pid==="number"?x.pid:null,launcher:typeof x.launcher==="string"?x.launcher:null,mode:typeof x.mode==="string"&&x.mode.trim()?x.mode:"UNKNOWN",uptime_seconds:num(x.uptime_seconds),duration_seconds:num(x.duration_seconds),started_at:txt(x.started_at),feed_health,latest_snapshot_age,observed_at:new Date().toISOString(),supervisor:normalizeWatcher(x.supervisor,"supervisor"),sentinel:normalizeWatcher(x.sentinel,"sentinel"),run_id:txt(x.run_id),expected_end_at:txt(x.expected_end_at),elapsed_seconds:num(x.elapsed_seconds),remaining_seconds:num(x.remaining_seconds),last_exit_code:num(x.last_exit_code),last_exit_reason:txt(x.last_exit_reason),last_exit_at:txt(x.last_exit_at),process_state:txt(x.process_state)??"unknown",process_verified:x.process_verified===true,preset:txt(x.preset),feed_attribution,feed_note,...(typeof x.error==="string"?{error:x.error}:{})};
 }
-export const LAUNCH_PRESETS={brief:120,standard:3600,"validation-6h":21600} as const;
+export const LAUNCH_PRESETS={brief:120,"observation-10m":600,standard:3600,"validation-6h":21600} as const;
 export type LaunchPreset=keyof typeof LAUNCH_PRESETS;
 // Own-keys preset check (2026-10-14, review): `x in obj` walks the
 // prototype chain, so "toString"/"constructor"/"__proto__" pass it.
@@ -218,7 +218,7 @@ function activeOwned(state:RuntimeState):boolean{
 export function runtimeAction(kind:"start"|"stop",preset?:unknown){
  if(kind==="start"){
   const chosen=parseLaunchPreset(preset===undefined?"brief":preset);
-  if(chosen===null)return {ok:false,data:{error:"INVALID_PRESET",detail:"preset must be brief|standard|validation-6h"}};
+  if(chosen===null)return {ok:false,data:{error:"INVALID_PRESET",detail:"preset must be brief|observation-10m|standard|validation-6h"}};
   // Idempotency first: a retry while a run is active/starting/stopping
   // returns the live record and NEVER spawns a second probe.
   const before=runtimeStatus();

@@ -1,7 +1,11 @@
-## Correccion atribucion del feed (2026-10-16, sobre 3f2fcea, sin push aun)
+## Corrida autorizada observation-10m 600s (2026-10-16, sobre 8c73de2, sin push aun)
+Preset canonico + tests; commit+push pre-ejecucion con SHA; servir
+version; readiness verde; arranque V2 unico 600s; observacion y
+cierre con informe. V2 abierto, monitor detenido hasta el arranque.
+
+## Correccion atribucion del feed (2026-10-16, push 8c73de2)
 Sin gracia pre-start + run_id priorizado + regresion 20s A/B +
-UNKNOWN sin certeza; Start/Stop/umbrales/identidad intactos. Resta:
-barrera, commit selectivo, push, entrega con SHA/pruebas/capturas.
+UNKNOWN sin certeza; Start/Stop/umbrales/identidad intactos.
 V2 abierto, monitor detenido.
 
 ## Endurecimiento identidad UNKNOWN + feed estricto (2026-10-16, push 3f2fcea)

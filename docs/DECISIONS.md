@@ -1581,3 +1581,16 @@ temporal conservadora + cruce de runtime_seconds (rt muy por encima
 del elapsed posible = fila ajena, UNKNOWN). Sin tiempo atribuible con
 certeza: UNKNOWN. Start/Stop, umbrales (0.05/0.5) e identidad
 intactos.
+
+## Preset observation-10m=600s (2026-10-16, sobre 8c73de2; autorizada 1 corrida 600s)
+
+Preset explicito por el mecanismo canonico, sin modificar los
+existentes: `OBSERVATION_10M_SECONDS=600` + fuerza de duracion como
+validation-6h + `_recorded_preset` (solo preserva validation-6h y
+observation-10m; brief/standard y colapsos intactos) + choices CLI +
+`LAUNCH_PRESETS` BFF + opcion BotControl (brief sigue defecto).
+Evidencia a logs/probe-runs (rama por defecto, no p1-10r). Legacy
+dashboard.py sin cambios (su allowlist sigue standard/validation-6h;
+el arranque autorizado usa la ruta publica V2). Tests: validacion CLI
++ fuerza/propagacion 600s + registro verificado + existentes
+intactos (BFF y BotControl).

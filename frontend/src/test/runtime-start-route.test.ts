@@ -62,6 +62,20 @@ describe("runtime start route: gated supervised chain", () => {
     expect(script).toContain("launch_supervised_transaction");
     expect(script).toContain("duration_seconds=120");
   });
+  it("starts the authorized observation-10m preset with its 600s duration", async () => {
+    readiness.mockReturnValue({ready: true, reason: "SUPERVISED_CHAIN_VERIFIED", checks: []});
+    run.mockImplementation((...a: unknown[]) => {
+      if (isLaunch(a)) return {status: 0, stdout: JSON.stringify({outcome: "confirmed", reason: "verified", run_id: "r1"})};
+      return stoppedFree;
+    });
+    const r = await POST(req({confirm: "START_OBSERVE_2100", preset: "observation-10m"}));
+    expect(r.status).toBe(200);
+    expect(await r.json()).toMatchObject({outcome: "confirmed"});
+    expect(launchCalls()).toHaveLength(1);
+    const script = String(launchCalls()[0]?.[1]?.[1]);
+    expect(script).toContain("duration_seconds=600");
+    expect(script).toContain("preset='observation-10m'");
+  });
   it("maps non-confirmed envelopes to 409 without claiming success", async () => {
     readiness.mockReturnValue({ready: true, reason: "SUPERVISED_CHAIN_VERIFIED", checks: []});
     run.mockImplementation((...a: unknown[]) => {

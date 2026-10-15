@@ -29,7 +29,7 @@ export function BotControl(){
   const [state,setState]=useState<RuntimeState|null>(null),[busy,setBusy]=useState(false),
     [confirm,setConfirm]=useState(false),[message,setMessage]=useState(""),[now,setNow]=useState(Date.now);
   const [ready,setReady]=useState<boolean|null>(null);
-  const [preset,setPreset]=useState<"brief"|"standard"|"validation-6h">("brief");
+  const [preset,setPreset]=useState<"brief"|"observation-10m"|"standard"|"validation-6h">("brief");
   const sequence=useRef(0);
   // Pending uncertain start: set on HTTP 202, cleared ONLY by reconcile
   // (explicit dashboard-owned RUNNING with started_at at/after the
@@ -99,7 +99,7 @@ export function BotControl(){
   const projectOwned=state?.running===true&&(state?.launcher==="dashboard"||state?.launcher==="agent"||state?.launcher==="direct");
   const canStart=ready===true&&!busy&&pendingStart===null;
   const canStop=projectOwned&&state?.state==="RUNNING"&&!state?.error;
-  const presetSeconds=preset==="brief"?120:preset==="standard"?3600:21600;
+  const presetSeconds=preset==="brief"?120:preset==="observation-10m"?600:preset==="standard"?3600:21600;
   async function action(kind:"start"|"stop"){
     setBusy(true);setMessage("");
     const at=Date.now();
@@ -144,7 +144,7 @@ export function BotControl(){
       {state&&isTerminalRunState(state.state)?<div className={s.details}><span>Close reason: <b>{state.last_exit_reason??"UNKNOWN"}</b></span><span>Close UTC: <b>{state.last_exit_at??"UNKNOWN"}</b></span><span>Frozen duration: <b>{state.elapsed_seconds==null?"UNKNOWN":Math.round(state.elapsed_seconds)+"s"}</b></span></div>:null}
       {state?.running&&state.launcher&&!["dashboard","agent","direct"].includes(state.launcher)?<p className={s.warn}>A session launched by {state.launcher} is recorded. V2 only stops verified project runs (dashboard/agent/direct) and never touches foreign processes.</p>:null}
       {state?.running&&(state.launcher==="agent"||state.launcher==="direct")?<p className={s.warn}>A project session launched by {state.launcher} is recorded (run {state.run_id??"unknown"}). Stopping requires this confirmation and the backend verifies PID+image+creation-time before terminating only that process.</p>:null}
-      <div className={s.actions}><label>Preset <select aria-label="Launch preset" value={preset} onChange={e=>setPreset(e.target.value as typeof preset)} disabled={busy}><option value="brief">brief · 120s</option><option value="standard">standard · 3600s</option><option value="validation-6h">validation-6h · 21600s</option></select></label><button type="button" disabled={!canStart||busy} onClick={()=>{setConfirm(true);setMessage("")}}>Start monitor (requires supervised launch)</button><button type="button" disabled={!canStop||busy} onClick={()=>{setConfirm(true);setMessage("")}}>Stop project monitor</button></div>
+      <div className={s.actions}><label>Preset <select aria-label="Launch preset" value={preset} onChange={e=>setPreset(e.target.value as typeof preset)} disabled={busy}><option value="brief">brief · 120s</option><option value="observation-10m">observation-10m · 600s</option><option value="standard">standard · 3600s</option><option value="validation-6h">validation-6h · 21600s</option></select></label><button type="button" disabled={!canStart||busy} onClick={()=>{setConfirm(true);setMessage("")}}>Start monitor (requires supervised launch)</button><button type="button" disabled={!canStop||busy} onClick={()=>{setConfirm(true);setMessage("")}}>Stop project monitor</button></div>
       {confirm?<div className={s.confirm}><p>Confirm one observe-only action{canStop?` on ${state?.launcher} run ${state?.run_id??""} (PID ${state?.pid??"?"})`:""}. Duration is fixed to {presetSeconds}s ({preset} preset). No automatic restart and no trading access. Launch requires readiness-green plus this confirmation; stop verifies identity before terminating only that process.</p><button disabled={busy} onClick={()=>void action(canStop?"stop":"start")} type="button">Confirm {canStop?"stop":"start"}</button><button disabled={busy} onClick={()=>setConfirm(false)} type="button">Cancel</button></div>:null}
       {message?<p role="status" className={s.warn}>{message}</p>:null}
       <p className={s.foot}>Unknown health is not healthy. Start requires readiness-green, confirmation and a bounded preset through the supervised chain (probe + supervisor + sentinel, verified identity, kill-only rollback).</p>

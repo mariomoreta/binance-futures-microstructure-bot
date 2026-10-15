@@ -60,6 +60,23 @@ describe("Pure runtime observation capability",()=>{
    for(const v of [null,undefined,0,120,{},[],true])expect(parseLaunchPreset(v)).toBeNull();
    expect(run).not.toHaveBeenCalled();
   });
+  it("validates the observation-10m preset and propagates its 600s duration",()=>{
+    expect(parseLaunchPreset("observation-10m")).toBe("observation-10m");
+    expect(parseLaunchPreset("brief")).toBe("brief");
+    run.mockImplementation((...a:unknown[])=>{
+      if(String((a[1] as string[])[1]).includes("launch_supervised_transaction"))
+        return {status:0,stdout:JSON.stringify({outcome:"confirmed",reason:"verified",run_id:"r1"})};
+      return {status:0,stdout:JSON.stringify({state:"STOPPED",running:false,pid:null,launcher:null,mode:"observe",supervisor:null,sentinel:null})};
+    });
+    const r=runtimeAction("start","observation-10m");
+    expect(r.ok).toBe(true);
+    const launch=run.mock.calls.filter(c=>String((c[1] as string[])[1]).includes("launch_supervised_transaction"));
+    expect(launch).toHaveLength(1);
+    const script=String(launch[0]?.[1]?.[1]);
+    expect(script).toContain("duration_seconds=600");
+    expect(script).toContain("preset='observation-10m'");
+    expect(script).toContain("launcher='dashboard'");
+  });
   it("launches only fixed allowlisted code on the green path",()=>{
    run.mockImplementation((...a:unknown[])=>{
     if(String((a[1] as string[])[1]).includes("launch_supervised_transaction"))

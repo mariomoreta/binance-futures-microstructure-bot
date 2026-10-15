@@ -136,6 +136,26 @@ describe("System launch through the supervised chain",()=>{
     await act(async()=>{screen.getByRole("button",{name:"Confirm start"}).click();await vi.advanceTimersByTimeAsync(10);});
     expect(posted).toHaveLength(1);
     expect(JSON.parse(String(posted[0]!.init.body))).toMatchObject({confirm:"START_OBSERVE_2100",preset:"brief"});
+    expect(screen.getByRole("option",{name:/observation-10m/})).toBeInTheDocument();
+  });
+  it("posts the observation-10m preset with its 600s confirmation text",async()=>{
+    vi.useFakeTimers();
+    const posted:{url:string,init:RequestInit}[]=[];
+    vi.stubGlobal("fetch",vi.fn().mockImplementation(async(url:string,init?:RequestInit)=>{
+      if(String(url).endsWith("/runtime/readiness"))return {ok:true,json:async()=>({ready:true,reason:"SUPERVISED_CHAIN_VERIFIED",checks:[]})};
+      if(String(url).endsWith("/runtime/start")){posted.push({url:String(url),init:init!});return {ok:true,json:async()=>({outcome:"confirmed",run_id:"r1"})}};
+      return {ok:true,json:async()=>({state:"STOPPED",running:false,pid:null,launcher:null,mode:"observe",supervisor:{state:"SUPERVISOR_UNKNOWN"},sentinel:{state:"SENTINEL_UNKNOWN"}})};
+    }));
+    render(<BotControl/>);
+    await act(async()=>{await vi.advanceTimersByTimeAsync(1);});
+    const select=screen.getByLabelText("Launch preset");
+    const {fireEvent}=await import("@testing-library/react");
+    fireEvent.change(select,{target:{value:"observation-10m"}});
+    await act(async()=>{screen.getByRole("button",{name:/Start monitor/}).click();});
+    expect(screen.getByText(/600s \(observation-10m preset\)/)).toBeInTheDocument();
+    await act(async()=>{screen.getByRole("button",{name:"Confirm start"}).click();await vi.advanceTimersByTimeAsync(10);});
+    expect(posted).toHaveLength(1);
+    expect(JSON.parse(String(posted[0]!.init.body))).toMatchObject({confirm:"START_OBSERVE_2100",preset:"observation-10m"});
     expect(screen.getByText(/supervised chain \(confirmed\)/)).toBeInTheDocument();
   });
 });

@@ -189,8 +189,9 @@ condition, without modifying either threshold.
 
 Fixed typed commands. Same 400/403/409 semantics, plus request/audit ID. Only
 the trusted BFF may call; browser never sees Python nonce. Start: readiness-
-green + `START_OBSERVE_2100` + preset allowlist (brief/standard/
-validation-6h) + transactional supervised launch + 202-uncertain reconcile
+green + `START_OBSERVE_2100` + preset allowlist (brief/observation-10m/
+standard/validation-6h; observation-10m = 600s authorized observation)
++ transactional supervised launch + 202-uncertain reconcile
 + no-double-spawn pre-check. Stop: `STOP_DASHBOARD_SESSION` + confirmation;
 allowed for any verified project run (launcher dashboard/agent/direct);
 foreign launchers refuse `not_project_owned` before any kill. Backend

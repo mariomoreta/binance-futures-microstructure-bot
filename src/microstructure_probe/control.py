@@ -54,6 +54,18 @@ REGISTRY_SCHEMA = 1
 MIN_DURATION_SECONDS = 60
 MAX_DURATION_SECONDS = 86400
 SIX_HOURS = 21600
+OBSERVATION_10M_SECONDS = 600
+
+# Presets recorded verbatim in the registry. Any other preset string keeps
+# the historical behavior (recorded as "standard"; the child carries its
+# own MICROPROBE_PRESET env value on self-registration). Existing presets
+# are untouched: adding a name here only preserves it, never remaps it.
+_RECORDED_PRESETS = ("validation-6h", "observation-10m")
+
+
+def _recorded_preset(preset: Any) -> str:
+    """Registry preset label: verbatim for known presets, else standard."""
+    return preset if preset in _RECORDED_PRESETS else "standard"
 
 STATES = ("STOPPED", "STARTING", "RUNNING", "STOPPING",
           "COMPLETED", "FAILED")
@@ -719,6 +731,8 @@ def start_probe(duration_seconds: Optional[int] = None,
     duration = validate_duration(duration_seconds)
     if preset == "validation-6h":
         duration = SIX_HOURS
+    elif preset == "observation-10m":
+        duration = OBSERVATION_10M_SECONDS
     argv = [sys.executable, "-m", "microstructure_probe"]
     if duration is not None:
         argv += ["--duration", str(duration)]
@@ -797,7 +811,7 @@ def start_probe(duration_seconds: Optional[int] = None,
             "duration_seconds": duration,
             "expected_end_at": None,
             "launcher": launcher,
-            "preset": preset if preset == "validation-6h" else "standard",
+            "preset": _recorded_preset(preset),
             "evidence": evidence,
             "last_exit": None,
         }, {"started": True, "adopted": False}
@@ -812,7 +826,7 @@ def start_probe(duration_seconds: Optional[int] = None,
             # (byte-preserving -- nothing is written). No kill.
             return {"started": True, "pid": proc.pid, "mode": "observe",
                     "duration_seconds": duration,
-                    "preset": preset if preset == "validation-6h" else "standard",
+                    "preset": _recorded_preset(preset),
                     "evidence": stored_ev,
                     "adopted_child_registration": True,
                     "evidence_associated": stored_ev == evidence}
@@ -855,7 +869,7 @@ def start_probe(duration_seconds: Optional[int] = None,
         if isinstance(assoc, dict) and assoc.get("associated") and wrote_ev:
             return {"started": True, "pid": proc.pid, "mode": "observe",
                     "duration_seconds": duration,
-                    "preset": preset if preset == "validation-6h" else "standard",
+                    "preset": _recorded_preset(preset),
                     "evidence": evidence,
                     "adopted_child_registration": True,
                     "evidence_associated": True}
@@ -866,7 +880,7 @@ def start_probe(duration_seconds: Optional[int] = None,
             raced_ev = (assoc or {}).get("evidence")
             return {"started": True, "pid": proc.pid, "mode": "observe",
                     "duration_seconds": duration,
-                    "preset": preset if preset == "validation-6h" else "standard",
+                    "preset": _recorded_preset(preset),
                     "evidence": raced_ev,
                     "adopted_child_registration": True,
                     "evidence_associated": raced_ev == evidence}
@@ -875,7 +889,7 @@ def start_probe(duration_seconds: Optional[int] = None,
             # transient registry failure); the association is UNCONFIRMED.
             return {"started": True, "pid": proc.pid, "mode": "observe",
                     "duration_seconds": duration,
-                    "preset": preset if preset == "validation-6h" else "standard",
+                    "preset": _recorded_preset(preset),
                     "evidence": None,
                     "adopted_child_registration": True,
                     "evidence_associated": False,
@@ -921,7 +935,7 @@ def start_probe(duration_seconds: Optional[int] = None,
     # that never pass through here).
     return {"started": True, "pid": proc.pid, "mode": "observe",
             "duration_seconds": duration,
-            "preset": preset if preset == "validation-6h" else "standard",
+            "preset": _recorded_preset(preset),
             "evidence": evidence}
 
 
@@ -1196,8 +1210,10 @@ def build_parser() -> argparse.ArgumentParser:
     start.add_argument("--duration", default=None,
                        help="seconds in [60,86400]; omit for continuous")
     start.add_argument("--preset", default="standard",
-                       choices=["standard", "validation-6h"],
-                       help="validation-6h forces 21600s + evidence wrapper")
+                       choices=["standard", "validation-6h",
+                                "observation-10m"],
+                       help="validation-6h forces 21600s + evidence wrapper; "
+                            "observation-10m forces 600s")
     sub.add_parser("stop", help="stop the verified canonical probe")
     sup = sub.add_parser("supervise",
                          help="watch the active run and enforce abort gates")
