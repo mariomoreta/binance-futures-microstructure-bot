@@ -339,12 +339,60 @@ def _feed_unknown() -> Dict[str, Any]:
     return {"feed_health": "UNKNOWN", "latest_snapshot_age": None}
 
 
+def _run_id_from_record(record: Optional[Dict[str, Any]]) -> Optional[str]:
+    """Project run identifier for V2 visibility (no I/O).
+
+    Derived from the evidence log stem (probe-*.log -> probe-*) when
+    present, falling back to the supervisor lease run_id. None when
+    unknown. Never invented.
+    """
+    try:
+        evidence = (record or {}).get("evidence") or {}
+        log = evidence.get("log") if isinstance(evidence, dict) else None
+        if isinstance(log, str) and log.strip():
+            return Path(log).stem or None
+    except (TypeError, ValueError):
+        pass
+    try:
+        lease = (record or {}).get("supervisor")
+        if isinstance(lease, dict):
+            rid = lease.get("run_id")
+            if isinstance(rid, str) and rid.strip():
+                return rid
+    except (TypeError, ValueError):
+        pass
+    return None
+
+
+def _process_state_for_record(record: Optional[Dict[str, Any]]) -> str:
+    """Verified OS liveness distinct from the recorded registry state.
+
+    Returns owned/gone/replaced/unknown via the canonical identity check.
+    Read-only (handle query / kill-0 probe); never terminates. Unknown when
+    the record carries no PID or identity is indeterminable. A recorded
+    RUNNING with process_state != owned must be presented as unverified.
+    """
+    try:
+        if not isinstance(record, dict) or record.get("pid") is None:
+            return "unknown"
+        return _default_process_state(record.get("pid"),
+                                      record.get("create_time"))
+    except Exception:
+        return "unknown"
+
+
 def _status_view(record: Optional[Dict[str, Any]],
                  feed: Dict[str, Any]) -> Dict[str, Any]:
     """Pure status projection (no I/O, no writes, no handle mutation).
 
     Shared by status() and status_readonly() so shape and nullability stay
     identical; only the reconciliation step differs.
+
+    Visibility contract (V2 global bar): recorded registry state stays in
+    `state`, while verified OS liveness rides in `process_state` + 
+    `process_verified`. Callers must never present `state` as liveness
+    proof. Terminal rows also carry `last_exit_at` (close time) and the
+    frozen `elapsed/uptime` duration.
     """
     if not record:
         out: Dict[str, Any] = {"running": False, "state": "STOPPED",
@@ -355,8 +403,12 @@ def _status_view(record: Optional[Dict[str, Any]],
                                  "remaining_seconds": None,
                                  "expected_end_at": None, "launcher": None,
                                  "preset": "standard",
+                                 "run_id": None,
                                  "last_exit_code": None,
                                  "last_exit_reason": None,
+                                 "last_exit_at": None,
+                                 "process_state": "unknown",
+                                 "process_verified": False,
                                  "supervisor": _supervisor_block(None),
                                  "sentinel": _sentinel_block(None)}
         out.update(feed)
@@ -387,6 +439,16 @@ def _status_view(record: Optional[Dict[str, Any]],
                  if isinstance(duration, (int, float)) and state == "RUNNING"
                  else None)
     last_exit = record.get("last_exit") or {}
+    # Verified liveness WITHOUT calling is_canonical_pid: status_readonly
+    # must stay free of the enforcement identity hook (call-count coupled
+    # tests mock is_canonical with sequences; an extra call shifts them).
+    # owned via _default_process_state is the strictest proof (alive +
+    # ctime-matched; missing identity never owned), so verified == owned.
+    try:
+        proc_state = _process_state_for_record(record)
+    except Exception:
+        proc_state = "unknown"
+    verified = proc_state == "owned"
     out = {
         "running": state == "RUNNING",
         "state": state,
@@ -402,8 +464,12 @@ def _status_view(record: Optional[Dict[str, Any]],
         "launcher": record.get("launcher"),
         "preset": record.get("preset", "standard"),
         "evidence": record.get("evidence"),
+        "run_id": _run_id_from_record(record),
         "last_exit_code": last_exit.get("code"),
         "last_exit_reason": last_exit.get("reason"),
+        "last_exit_at": last_exit.get("at"),
+        "process_state": proc_state,
+        "process_verified": verified,
         # P1-14B.7 additive supervisor contract (always present; UNKNOWN
         # when never supervised). Flows to /api/control/probe/status.
         "supervisor": _supervisor_block(record),

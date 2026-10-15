@@ -1,3 +1,10 @@
+## Visibilidad global de corridas V2 (2026-10-16, sobre 5d4fef6, sin push aun)
+Barra global + stop proyecto verificado + reconciliacion piloto.
+Controlador canonico reutilizado. Tests backend 10 + frontend 63
+verdes con fixtures/aislados; sin corridas Binance. Resta: barrera
+completa, commit selectivo, push, entrega con SHA/pruebas/capturas.
+V2 abierto, monitor detenido.
+
 ## Piloto brief completado (2026-10-15, autorizado, sin push aun)
 Ventana sana 120s completa y auditada; PIDs muertos, COMPLETED,
 SQLite + V2 verificados, sin journal. Resta: commit selectivo

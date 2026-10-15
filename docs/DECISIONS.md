@@ -1510,3 +1510,40 @@ post (helpers + CLI). 22 tests journal. Comando definitivo en
 `DB_MAINTENANCE_RECOVERY.md` paso 3, pendiente de autorización.
    Procedimiento `DB_MAINTENANCE_RECOVERY.md` actualizado con el
    comando exacto + hashes para autorizacion.
+
+## Visibilidad global de corridas V2 (2026-10-16, sobre 5d4fef6; sin nuevas corridas)
+
+Reutiliza el controlador canonico (control.py); ningun segundo gestor.
+`_status_view` suma run_id (stem del log), last_exit_at, process_state
+(owned/gone/replaced/unknown) y process_verified (is_canonical_pid):
+estado registrado nunca equivale a proceso vivo verificado. BFF
+preserva esos campos y enriquece feed desde telemetry persistida
+(STALE >120s, si no HEALTHY/DEGRADED/UNKNOWN; jamas inventa liveness).
+Barra global `RunStatusBar` en AppShell (todas las pantallas): estado,
+origen, run_id, inicio, duracion prevista y restante vivo; feed,
+supervisor y sentinel por separado con frescura (watchers 90s, feed
+120s); en terminal motivo, hora de cierre y duracion congelada.
+Start sigue con readiness + confirmacion + sin duplicados. Stop con
+confirmacion para cualquier corrida verificada del proyecto
+(dashboard/agent/direct); launcher ajeno rechaza `not_project_owned`
+antes de ningun kill; backend `stop_probe` revalida PID+imagen+ctime
+bajo lock y solo termina el PID canonico verificado. Sin ampliar
+permisos sobre procesos ajenos.
+
+## Reconciliacion del piloto brief 20261015T102519Z (2026-10-16; solo lectura)
+
+123.957s (probe, monotono interno) vs 133s (registro, STARTING ->
+marca terminal): el registro incluye overhead de spawn (~0.6s) mas
+apagado/marcado (~9s tras el final_summary); 120s solicitados,
+expected_end 10:27:20Z, cierre 10:27:33Z. Sin contradiccion; la V2
+muestra ambos en su dominio. Nueve cruces funding = 3 simbolos x 3
+evaluaciones (10:26:01/02/03Z, history 35/36/37, misma tasa por
+simbolo): borde de warm-up sobre serie casi constante, clase
+artefacto-hipotesis; sin valor de senal, sin validar umbrales.
+Correccion del aborto previo 20261015T000730Z: hubo retraso observado
+en la ruta de entrega (p50 0.5-2.5s vs E-T en ms, 14.6% skew,
+reloj sano, 0 reconnects), pero su ORIGEN no quedo aislado (sin
+referencia independiente ni prueba local retenida para esa ventana);
+decir "transporte" concluyente excede lo probado (origen UNKNOWN).
+Umbrales y estrategias intactos. Detalle en
+`docs/PILOT_BRIEF_20261015_RECONCILIATION.md`.

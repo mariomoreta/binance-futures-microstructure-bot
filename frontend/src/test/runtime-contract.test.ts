@@ -7,6 +7,9 @@ describe("Runtime BFF additive watcher contract",()=>{
   it("preserves both raw watcher blocks and adds its own observation time",()=>{
     const stamp="2026-10-11T04:00:00+00:00";
     run.mockReturnValue({status:0,stdout:JSON.stringify({state:"RUNNING",running:true,pid:123,mode:"observe",
+      run_id:"probe-x",expected_end_at:"2026-10-11T04:02:00+00:00",elapsed_seconds:10,remaining_seconds:110,
+      last_exit_code:null,last_exit_reason:null,last_exit_at:null,process_state:"owned",process_verified:true,preset:"brief",
+      feed_health:"HEALTHY",latest_snapshot_age:5,
       supervisor:{state:"SUPERVISOR_STALE",lease_state:"STOPPED",watcher_pid:7,watched_pid:123,
         watcher_create_time:stamp,lease_last_check_at:stamp,abort_triggered:true,abort_threshold:0,abort_observed:0},
       sentinel:{state:"SENTINEL_STALE",lease_state:"ACTIVE",watcher_pid:8,watched_pid:123,
@@ -17,6 +20,8 @@ describe("Runtime BFF additive watcher contract",()=>{
     expect(x.sentinel?.action_reason).toBe("stale-supervision");
     expect(Number.isFinite(Date.parse(x.observed_at!))).toBe(true);
     expect(run.mock.calls[0]?.[1]?.[1]).toContain("status_readonly");
+    expect(x.run_id).toBe("probe-x");expect(x.process_state).toBe("owned");expect(x.process_verified).toBe(true);
+    expect(x.remaining_seconds).toBe(110);expect(x.feed_health).toBe("HEALTHY");expect(x.latest_snapshot_age).toBe(5);
   });
   it("keeps both watchers UNKNOWN when controller unavailable or blocks malformed",()=>{
     run.mockReturnValue({status:1,stdout:""});

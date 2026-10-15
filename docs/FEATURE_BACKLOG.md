@@ -716,6 +716,32 @@ here and request approval before treating it as binding. Never mark
 features VERIFIED without evidence.
 
 
+## V2 run visibility - 2026-10-16 (sobre 5d4fef6, sin nuevas corridas)
+
+- `DECISIONS_REVIEWED` — control canonico (start/stop/supervise/sentinel/
+  launch), readiness por capability + storage, BotControl 202 + reconcile,
+  identidad host PID+imagen+ctime, contratos runtime V2, piloto COMPLETED
+  + aborto previo + journal forense.
+- `NEW_DECISIONS_RECORDED` — DECISIONS §visibilidad global + §reconciliacion
+  piloto; contratos runtime V2 actualizados; reconciliacion en
+  `docs/PILOT_BRIEF_20261015_RECONCILIATION.md`.
+- `FEATURES_IMPLEMENTED` — barra global RunStatusBar (todas las pantallas),
+  stop proyecto verificado (dashboard/agent/direct), campos run_id/
+  process_state/verified/last_exit_at + feed enriquecido, BotControl
+  registrado-vs-verificado + terminal congelado.
+- `FEATURES_VERIFIED` — backend `tests/test_run_visibility.py` 10 OK
+  (origenes, stop, identidad incompleta, reemplazo, timeout, desconexion,
+  cierre natural, aborto; procesos sleep aislados); frontend 63 OK
+  (bot-control/run-status-bar/stop/start/contract); typecheck limpio;
+  barrera completa y QA visual pendientes en el cierre.
+- `DEFERRED_FEATURES` — nuevas corridas/pilotos, validacion economica,
+  resto O2-O5/IA/Kronos (excluidos).
+- `BACKLOG_UPDATED` — yes: this entry.
+- `DOCUMENTATION_CONFLICTS` — corrected: "V2 will not stop agent runs"
+  (ahora stop proyecto verificado); "aborto previo = transporte
+  concluyente" (ahora origen UNKNOWN con retraso observado);
+  feed UNKNOWN permanente en BFF (ahora enriquecido desde telemetry).
+
 ## O1 pilot completed - 2026-10-15 (autorizado, sobre 1c566b1)
 
 - `DECISIONS_REVIEWED` — plan brief, readiness verde, plan de captura.

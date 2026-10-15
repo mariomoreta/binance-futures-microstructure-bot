@@ -1,3 +1,18 @@
+## Visibilidad global de corridas V2 (2026-10-16, sobre 5d4fef6, sin push aun)
+Barra global en todas las pantallas (estado, origen, run_id, inicio,
+duracion prevista y restante vivo; feed/supervisor/sentinel por
+separado con frescura; en terminal motivo, hora de cierre y duracion
+congelada; registrado vs verificado). Stop con confirmacion para
+cualquier corrida verificada del proyecto (dashboard/agent/direct),
+backend verifica identidad/propiedad sin ampliar permisos. Tests:
+backend 10 + frontend 63 dirigidos verdes; fixtures y procesos
+aislados, cero corridas Binance. Reconciliacion: 123.957s vs 133s
+sin contradiccion, 9 funding artefacto sin valor de senal, aborto
+previo con retraso observado pero origen no aislado (correccion).
+Contratos y docs actualizados. Resta: barrera completa, commit
+selectivo, push, entrega con SHA/pruebas/capturas. V2 abierto,
+monitor detenido (COMPLETED, PIDs muertos).
+
 ## Piloto brief COMPLETADO 20261015T102519Z (2026-10-15, autorizado, sin push aun)
 Arranque V2 confirmado (492/12980/20736); 123.96s, 82161 msgs,
 0 rechazos, lags sanos, dispatch p50 ~0.001ms (primera medicion),

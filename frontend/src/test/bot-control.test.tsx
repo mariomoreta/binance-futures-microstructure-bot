@@ -10,27 +10,58 @@ describe("System runtime presentation", () => {
     vi.stubGlobal("fetch", vi.fn().mockRejectedValue(new Error("offline")));
     render(<BotControl />);
     await act(async () => {await vi.advanceTimersByTimeAsync(1);});
-    const mode = screen.getByText("Runtime mode").parentElement;
-    expect(mode?.querySelector("strong")).toHaveTextContent("UNKNOWN");
+    const recorded = screen.getByText("Recorded process").parentElement;
+    expect(recorded?.querySelector("strong")).toHaveTextContent("UNKNOWN");
+    expect(screen.getByText("Verified process").parentElement?.querySelector("strong")).toHaveTextContent("NOT-LIVE");
     expect(screen.getByRole("alert").closest("details")).toBeNull();
     expect(screen.getByText("Runtime controls & supervisor evidence").closest("details")).not.toHaveAttribute("open");
     expect(screen.getByRole("button", {name: /Start monitor/})).toBeDisabled();
-    expect(screen.getByRole("button", {name: /Stop dashboard/})).toBeDisabled();
+    expect(screen.getByRole("button", {name: /Stop project/})).toBeDisabled();
   });
-  it("renders authoritative process and supervisor independently and preserves foreign ownership protection", async () => {
+  it("renders recorded vs verified process separately and allows stop for project agent runs", async () => {
     vi.useFakeTimers();
     vi.stubGlobal("fetch", vi.fn().mockResolvedValue({ok:true, json:async () => ({
       state:"RUNNING", running:true, mode:"observe", launcher:"agent",
-      pid:123, uptime_seconds:0, duration_seconds:2100, started_at:null,
+      pid:123, uptime_seconds:10, elapsed_seconds:10, remaining_seconds:110, duration_seconds:120, started_at:"2026-10-15T10:25:20+00:00",
+      run_id:"probe-test", process_state:"owned", process_verified:true,
       feed_health:"UNKNOWN", supervisor:{state:"SUPERVISOR_UNKNOWN"},
     })}));
     render(<BotControl />);
     await act(async () => {await vi.advanceTimersByTimeAsync(1);});
     expect(screen.getByText("Recorded process").parentElement?.querySelector("strong")).toHaveTextContent("RUNNING");
+    expect(screen.getByText("Verified process").parentElement?.querySelector("strong")).toHaveTextContent("OWNED-LIVE");
     expect(screen.getByText("Supervisor").parentElement?.querySelector("strong")).toHaveTextContent("UNKNOWN");
-    expect(screen.getByText(/current process liveness is not reported/)).toBeInTheDocument();
-    expect(screen.getByRole("button", {name: /Stop dashboard/})).toBeDisabled();
-    expect(screen.getByText(/A session launched by agent/)).toBeInTheDocument();
+    expect(screen.getByText(/Recorded process is the registry state/)).toBeInTheDocument();
+    expect(screen.getByRole("button", {name: /Stop project/})).toBeEnabled();
+    expect(screen.getByText(/project session launched by agent/)).toBeInTheDocument();
+  });
+  it("keeps stop disabled for truly foreign launchers and never offers their termination", async () => {
+    vi.useFakeTimers();
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue({ok:true, json:async () => ({
+      state:"RUNNING", running:true, mode:"observe", launcher:"other-tool",
+      pid:999, process_state:"unknown", process_verified:false,
+      feed_health:"UNKNOWN", supervisor:{state:"SUPERVISOR_UNKNOWN"},
+    })}));
+    render(<BotControl />);
+    await act(async () => {await vi.advanceTimersByTimeAsync(1);});
+    expect(screen.getByRole("button", {name: /Stop project/})).toBeDisabled();
+    expect(screen.getByText(/only stops verified project runs/)).toBeInTheDocument();
+  });
+  it("shows terminal close reason, close time and frozen duration without ticking", async () => {
+    vi.useFakeTimers();
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue({ok:true, json:async () => ({
+      state:"COMPLETED", running:false, mode:"observe", launcher:"dashboard",
+      pid:492, run_id:"probe-20261015T102519Z", elapsed_seconds:133, uptime_seconds:133,
+      duration_seconds:120, last_exit_reason:"duration-reached", last_exit_at:"2026-10-15T10:27:33+00:00",
+      process_state:"gone", process_verified:false, feed_health:"STALE",
+      supervisor:{state:"SUPERVISOR_STALE"}, sentinel:{state:"SENTINEL_STALE"},
+    })}));
+    render(<BotControl />);
+    await act(async () => {await vi.advanceTimersByTimeAsync(1);});
+    expect(screen.getByText("Recorded process").parentElement?.querySelector("strong")).toHaveTextContent("COMPLETED");
+    expect(screen.getByText(/Close reason/)).toBeInTheDocument();
+    expect(screen.getByText(/duration-reached/)).toBeInTheDocument();
+    expect(screen.getByRole("button", {name: /Stop project/})).toBeDisabled();
   });
 });
 
@@ -125,32 +156,38 @@ describe("System launch uncertainty (HTTP 202)",()=>{
 });
 
 describe("System stop confirmation criteria",()=>{
-  const runningDashboard=()=>({state:"RUNNING",running:true,pid:123,launcher:"dashboard",mode:"observe",supervisor:{state:"SUPERVISOR_UNKNOWN"},sentinel:{state:"SENTINEL_UNKNOWN"}});
-  const setupStop=(stopReply:{ok:boolean;status:number;body:unknown})=>{
+  const runningDashboard=()=>({state:"RUNNING",running:true,pid:123,launcher:"dashboard",mode:"observe",run_id:"probe-dash",process_state:"owned",process_verified:true,supervisor:{state:"SUPERVISOR_UNKNOWN"},sentinel:{state:"SENTINEL_UNKNOWN"}});
+  const runningAgent=()=>({state:"RUNNING",running:true,pid:456,launcher:"agent",mode:"observe",run_id:"probe-agent",process_state:"owned",process_verified:true,supervisor:{state:"SUPERVISOR_UNKNOWN"},sentinel:{state:"SENTINEL_UNKNOWN"}});
+  const setupStop=(stopReply:{ok:boolean;status:number;body:unknown},statusFn:()=>unknown=runningDashboard)=>{
     vi.useFakeTimers();
     vi.stubGlobal("fetch",vi.fn().mockImplementation(async(url:string)=>{
       if(String(url).endsWith("/runtime/readiness"))return {ok:true,json:async()=>({ready:true,reason:"SUPERVISED_CHAIN_VERIFIED",checks:[]})};
       if(String(url).endsWith("/runtime/stop"))return stopReply.ok?{ok:true,status:stopReply.status,json:async()=>stopReply.body}:{ok:false,status:stopReply.status,json:async()=>stopReply.body};
-      return {ok:true,json:async()=>runningDashboard()};
+      return {ok:true,json:async()=>statusFn()};
     }));
   };
   const openStopConfirm=async()=>{
     render(<BotControl/>);
     await act(async()=>{await vi.advanceTimersByTimeAsync(1);});
-    await act(async()=>{screen.getByRole("button",{name:/Stop dashboard/}).click();});
+    await act(async()=>{screen.getByRole("button",{name:/Stop project/}).click();});
     await act(async()=>{screen.getByRole("button",{name:"Confirm stop"}).click();await vi.advanceTimersByTimeAsync(10);});
   };
   it("shows a confirmed stop on 200 + stopped:true without requiring outcome",async()=>{
     setupStop({ok:true,status:200,body:{stopped:true,pid:123}});
     await openStopConfirm();
-    expect(screen.getByRole("status")).toHaveTextContent(/Dashboard-owned monitor stopped/);
+    expect(screen.getByRole("status")).toHaveTextContent(/Project monitor stopped/);
     expect(screen.queryByText(/rejected/i)).not.toBeInTheDocument();
   });
-  it("keeps the controller error on a rejected stop",async()=>{
-    setupStop({ok:false,status:409,body:{stopped:false,error:"not_dashboard_owned",launcher:"agent"}});
+  it("stops a verified agent run with confirmation (launcher=agent)",async()=>{
+    setupStop({ok:true,status:200,body:{stopped:true,pid:456}},runningAgent);
     await openStopConfirm();
-    expect(screen.getByRole("status")).toHaveTextContent(/not_dashboard_owned/);
-    expect(screen.queryByText(/Dashboard-owned monitor stopped/)).not.toBeInTheDocument();
+    expect(screen.getByRole("status")).toHaveTextContent(/Project monitor stopped.*agent/);
+  });
+  it("keeps the controller error on a rejected stop",async()=>{
+    setupStop({ok:false,status:409,body:{stopped:false,error:"not_project_owned",launcher:"other-tool"}});
+    await openStopConfirm();
+    expect(screen.getByRole("status")).toHaveTextContent(/not_project_owned/);
+    expect(screen.queryByText(/Project monitor stopped/)).not.toBeInTheDocument();
   });
 });
 

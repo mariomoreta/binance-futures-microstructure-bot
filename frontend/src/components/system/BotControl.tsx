@@ -96,9 +96,9 @@ export function BotControl(){
   },[]);
   const supervisor=watcherDisplayState("supervisor",state?.supervisor,state?.pid,state?.observed_at,now);
   const sentinel=watcherDisplayState("sentinel",state?.sentinel,state?.pid,state?.observed_at,now);
-  const owned=state?.running===true&&state?.launcher==="dashboard";
+  const projectOwned=state?.running===true&&(state?.launcher==="dashboard"||state?.launcher==="agent"||state?.launcher==="direct");
   const canStart=ready===true&&!busy&&pendingStart===null;
-  const canStop=owned&&state?.state==="RUNNING"&&!state?.error;
+  const canStop=projectOwned&&state?.state==="RUNNING"&&!state?.error;
   const presetSeconds=preset==="brief"?120:preset==="standard"?3600:21600;
   async function action(kind:"start"|"stop"){
     setBusy(true);setMessage("");
@@ -118,29 +118,31 @@ export function BotControl(){
         // outcome==="confirmed"; stop needs stopped===true. A valid stop
         // carries no outcome field and must not read as rejected.
         const succeeded=kind==="start"?r.ok&&body.outcome==="confirmed":r.ok&&body.stopped===true;
-        setMessage(succeeded?(kind==="start"?"Observe-only monitor started via supervised chain ("+body.outcome+").":"Dashboard-owned monitor stopped."):(body.error??"Action rejected by controller"));
+        setMessage(succeeded?(kind==="start"?"Observe-only monitor started via supervised chain ("+body.outcome+").":"Project monitor stopped (origin "+(state?.launcher??"unknown")+")."):(body.error??"Action rejected by controller"));
       }
     }catch{setMessage("Controller request failed. No success confirmed.")}
     finally{setConfirm(false);setBusy(false);await refresh()}
   }
+  const verified=state?(state.process_verified?"OWNED-LIVE":"NOT-LIVE ("+(state.process_state??"unknown")+")"):"LOADING";
   const cards=[
-    ["Recorded process",state?.state??"LOADING"],["Data feed",state?.feed_health??"UNKNOWN"],
+    ["Recorded process",state?.state??"LOADING"],["Verified process",verified],["Data feed",state?.feed_health??"UNKNOWN"],
     ["Supervisor",supervisor.replace("SUPERVISOR_","")],["Sentinel",sentinel.replace("SENTINEL_","")],
-    ["Runtime mode",state?.mode?.toUpperCase()??"UNKNOWN"],
   ];
   return <section className={s.root} aria-label="Bot Control Center">
     <div className={s.header}><div><small>CANONICAL CONTROLLER / OBSERVE-ONLY MONITORING</small></div><button className={s.refresh} onClick={()=>void refresh()} type="button">Refresh status</button></div>
     <div className={s.stats}>{cards.map(([label,value])=><div key={label}><small>{label}</small><strong>{value}</strong><span>Controller observation / polled every 10s</span></div>)}</div>
-    <p className={s.foot}>Process state is recorded in the runtime registry; current process liveness is not reported by this endpoint. Feed, supervisor and sentinel are independent. ACTIVE is a point-in-time controller observation, not proof of continuing protection. Freshness bound: 90s.</p>
+    <p className={s.foot}>Recorded process is the registry state; verified process is the OS identity check (owned = PID alive + python image + creation-time match). Feed, supervisor and sentinel are independent point-in-time observations, not proof of continuing protection. Watcher freshness bound: 90s; feed STALE bound: 120s.</p>
     {state?.error?<p role="alert" className={s.warn}>{state.error==="READ_ONLY_STATUS_REQUIRED" ? "Runtime observation is paused until status can be reported without changing runtime records. Commands are disabled." : <>Canonical status unavailable — commands are disabled. {state.error}</>}</p>:null}
     <details className={s.inspector}><summary>Runtime controls & supervisor evidence<span>Inspect supervisor, sentinel, ownership and abort details</span></summary>
       <div className={s.details}><span>Observed UTC: <b>{state?.observed_at??"UNKNOWN"}</b></span></div>
       <WatcherPanel kind="supervisor" evidence={state?.supervisor} state={supervisor}/>
       <WatcherPanel kind="sentinel" evidence={state?.sentinel} state={sentinel}/>
-      <div className={s.details}><span>PID: <b>{state?.pid??"UNKNOWN"}</b></span><span>Elapsed since start: <b>{state?.uptime_seconds==null?"UNKNOWN":Math.round(state.uptime_seconds)+"s"}</b></span><span>Planned duration: <b>{state?.duration_seconds==null?"UNKNOWN":Math.round(state.duration_seconds)+"s"}</b></span><span>Started UTC: <b>{state?.started_at??"UNKNOWN"}</b></span></div>
-      {state?.running&&state.launcher!=="dashboard"?<p className={s.warn}>A session launched by {state.launcher??"another process"} is recorded. V2 will not stop or replace it.</p>:null}
-      <div className={s.actions}><label>Preset <select aria-label="Launch preset" value={preset} onChange={e=>setPreset(e.target.value as typeof preset)} disabled={busy}><option value="brief">brief · 120s</option><option value="standard">standard · 3600s</option><option value="validation-6h">validation-6h · 21600s</option></select></label><button type="button" disabled={!canStart||busy} onClick={()=>{setConfirm(true);setMessage("")}}>Start monitor (requires supervised launch)</button><button type="button" disabled={!canStop||busy} onClick={()=>{setConfirm(true);setMessage("")}}>Stop dashboard-owned monitor</button></div>
-      {confirm?<div className={s.confirm}><p>Confirm one observe-only action. Duration is fixed to {presetSeconds}s ({preset} preset). No automatic restart and no trading access. Launch requires readiness-green plus this confirmation.</p><button disabled={busy} onClick={()=>void action(canStop?"stop":"start")} type="button">Confirm {canStop?"stop":"start"}</button><button disabled={busy} onClick={()=>setConfirm(false)} type="button">Cancel</button></div>:null}
+      <div className={s.details}><span>Run: <b>{state?.run_id??"UNKNOWN"}</b></span><span>Origin: <b>{state?.launcher??"UNKNOWN"}</b></span><span>PID: <b>{state?.pid??"UNKNOWN"}</b></span><span>Verified: <b>{state?(state.process_verified?"OWNED-LIVE":"NOT-LIVE ("+(state.process_state??"unknown")+")"):"UNKNOWN"}</b></span><span>Elapsed since start: <b>{state?.elapsed_seconds==null?(state?.uptime_seconds==null?"UNKNOWN":Math.round(state.uptime_seconds)+"s"):Math.round(state.elapsed_seconds)+"s"}</b></span><span>Planned duration: <b>{state?.duration_seconds==null?"UNKNOWN":Math.round(state.duration_seconds)+"s"}</b></span><span>Remaining: <b>{state?.remaining_seconds==null?"—":Math.round(state.remaining_seconds)+"s"}</b></span><span>Started UTC: <b>{state?.started_at??"UNKNOWN"}</b></span><span>Expected end: <b>{state?.expected_end_at??"UNKNOWN"}</b></span></div>
+      {state&&!["RUNNING","STARTING","STOPPING","UNKNOWN","LOADING"].includes(state.state)?<div className={s.details}><span>Close reason: <b>{state.last_exit_reason??"UNKNOWN"}</b></span><span>Close UTC: <b>{state.last_exit_at??"UNKNOWN"}</b></span><span>Frozen duration: <b>{state.elapsed_seconds==null?"UNKNOWN":Math.round(state.elapsed_seconds)+"s"}</b></span></div>:null}
+      {state?.running&&state.launcher&&!["dashboard","agent","direct"].includes(state.launcher)?<p className={s.warn}>A session launched by {state.launcher} is recorded. V2 only stops verified project runs (dashboard/agent/direct) and never touches foreign processes.</p>:null}
+      {state?.running&&(state.launcher==="agent"||state.launcher==="direct")?<p className={s.warn}>A project session launched by {state.launcher} is recorded (run {state.run_id??"unknown"}). Stopping requires this confirmation and the backend verifies PID+image+creation-time before terminating only that process.</p>:null}
+      <div className={s.actions}><label>Preset <select aria-label="Launch preset" value={preset} onChange={e=>setPreset(e.target.value as typeof preset)} disabled={busy}><option value="brief">brief · 120s</option><option value="standard">standard · 3600s</option><option value="validation-6h">validation-6h · 21600s</option></select></label><button type="button" disabled={!canStart||busy} onClick={()=>{setConfirm(true);setMessage("")}}>Start monitor (requires supervised launch)</button><button type="button" disabled={!canStop||busy} onClick={()=>{setConfirm(true);setMessage("")}}>Stop project monitor</button></div>
+      {confirm?<div className={s.confirm}><p>Confirm one observe-only action{canStop?` on ${state?.launcher} run ${state?.run_id??""} (PID ${state?.pid??"?"})`:""}. Duration is fixed to {presetSeconds}s ({preset} preset). No automatic restart and no trading access. Launch requires readiness-green plus this confirmation; stop verifies identity before terminating only that process.</p><button disabled={busy} onClick={()=>void action(canStop?"stop":"start")} type="button">Confirm {canStop?"stop":"start"}</button><button disabled={busy} onClick={()=>setConfirm(false)} type="button">Cancel</button></div>:null}
       {message?<p role="status" className={s.warn}>{message}</p>:null}
       <p className={s.foot}>Unknown health is not healthy. Start requires readiness-green, confirmation and a bounded preset through the supervised chain (probe + supervisor + sentinel, verified identity, kill-only rollback).</p>
     </details>

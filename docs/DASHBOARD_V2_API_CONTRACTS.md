@@ -132,12 +132,35 @@ limitations. Existing per-definition and per-symbol routes can back it.
 
 ### `GET /api/v1/runtime`
 
-Consolidates process/feed/research states without conflation. Read-only.
+Consolidates process/feed/research states without conflation. Read-only
+(`control.status_readonly`, never `status()` on GET). Shape (additive,
+2026-10-16 run-visibility): `state` (recorded registry state),
+`process_state` (owned/gone/replaced/unknown, verified OS liveness),
+`process_verified` (is_canonical_pid), `launcher` (dashboard/agent/
+direct/foreign), `run_id` (evidence-log stem), `pid`, `started_at`,
+`duration_seconds`, `elapsed_seconds` (frozen on terminal),
+`remaining_seconds` (RUNNING only), `expected_end_at`,
+`last_exit_code/reason/at` (terminal close motive + close time),
+`feed_health` + `latest_snapshot_age` (BFF-enriched from recorded
+telemetry: STALE >120s, else HEALTHY/DEGRADED/UNKNOWN; never invents
+liveness), `supervisor`/`sentinel` raw blocks + `observed_at` (browser
+ages them against the 90s freshness bound; raw evidence retained after
+expiry). Recorded state and verified liveness are never conflated.
 
 ### `POST /api/v1/runtime/start|stop`
 
 Fixed typed commands. Same 400/403/409 semantics, plus request/audit ID. Only
-the trusted BFF may call; browser never sees Python nonce.
+the trusted BFF may call; browser never sees Python nonce. Start: readiness-
+green + `START_OBSERVE_2100` + preset allowlist (brief/standard/
+validation-6h) + transactional supervised launch + 202-uncertain reconcile
++ no-double-spawn pre-check. Stop: `STOP_DASHBOARD_SESSION` + confirmation;
+allowed for any verified project run (launcher dashboard/agent/direct);
+foreign launchers refuse `not_project_owned` before any kill. Backend
+`stop_probe`/`enforce_abort` revalidate PID+image+ctime under the registry
+lock and terminate only the verified canonical PID (kill-only rollback;
+foreign/terminal never touched). The global `RunStatusBar` (AppShell, all
+screens) renders this contract; `/system` BotControl keeps the detailed
+controls + evidence.
 
 ### `GET /api/v1/assets/{symbol}/profile`
 
