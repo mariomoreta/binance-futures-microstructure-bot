@@ -1,9 +1,13 @@
-## Corrida autorizada observation-10m 600s (2026-10-16, sobre 8c73de2, sin push aun)
-Preset observation-10m=600 canonico (existentes intactos) + tests
-validacion/propagacion. Resta: commit selectivo pre-ejecucion, push
-con SHA, servir version, readiness verde, arranque V2 unico,
-observacion inicio/mitad/final, cierre e informe. V2 abierto,
-monitor detenido hasta el arranque.
+## Corrida autorizada observation-10m 600s COMPLETADA (2026-10-15, push 10cad5c + informe pendiente)
+probe-20261015T230630Z (UUID 893f24029cba4cff96eaba7c0af094d0):
+600s solicitados, runtimeSeconds 602.615, 468162 msgs, 0.00%
+rechazos, 0 reconnects, lags sanos (book p50 ~180ms), dispatch p50
+~0.001-0.006ms, reloj -190ms/337ms, seguridad 0/0/0. Watchers 22+22
+sin abortos, cierre natural duration-reached 23:16:41Z, PIDs muertos,
+COMPLETED congelado 610s, sin journal, DB 0B. Barra fiel en
+inicio/mitad/final. Evidencia RUN_OBS10M_20261015_COMPLETED + 2
+capturas terminal. Resta: commit selectivo del informe, push,
+entrega con SHA y comparacion. V2 abierto, monitor detenido.
 
 ## Correccion atribucion del feed (2026-10-16, push 8c73de2)
 Sin gracia pre-start (snapshot anterior a started_at nunca current);

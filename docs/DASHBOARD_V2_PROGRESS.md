@@ -87,7 +87,16 @@ NEXT AUTHORIZED SLICE
   reference mockups for future visual PASS.
 - Next authorized slice: DASH-V2-02 only on explicit instruction.
 
-## DASH-V2-FEEDATTR — 2026-10-16 (correccion atribucion del feed)
+## O2-RUN-OBS10M — 2026-10-15 (corrida autorizada 600s COMPLETADA)
+
+- Starting SHA: `10cad5c` (presetcommit pre-ejecucion).
+- Run: probe-20261015T230630Z (UUID 893f...), 602.615s, 468162 msgs,
+  0 rechazos/reconnects/parse, lags sanos, watchers 22+22, cierre
+  natural, PIDs muertos, COMPLETED 610s, sin journal, DB 0B.
+- Evidencia: RUN_OBS10M_20261015_COMPLETED.txt + 2 capturas terminal.
+- Sin push aun (informe). V2 abierto, monitor detenido.
+
+## DASH-V2-FEEDATTR — 2026-10-16 (correccion atribucion del feed, push 8c73de2)
 
 - Starting SHA: `3f2fcea`.
 - Scope: `runtime-control.ts` (sin gracia pre-start, run_id exacto

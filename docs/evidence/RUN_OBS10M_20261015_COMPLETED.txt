@@ -1,0 +1,112 @@
+# Corrida autorizada observation-10m 600s probe-20261015T230630Z — COMPLETADO natural (2026-10-15)
+
+Autorizada por el usuario (observe, BTC/ETH/SOL, preset
+observation-10m=600, umbrales intactos, una sola corrida, sin
+reinicios). Arranque por ruta publica V2 POST /runtime/start
+(confirm START_OBSERVE_2100) con supervisor + sentinel verificados.
+Codigo 10cad5c (backend = codigo 8c73de2 + preset; frontend servido =
+build de ese mismo codigo). Sin edicion de codigo ni rebuild de V2
+durante la corrida. Sin relanzamientos posteriores.
+
+## Identidad y cronologia UTC
+
+- POST 23:06:2xZ -> confirmacion `confirmed/all-components-verified`
+  (3 polls, supervisor_age 3.9s, sentinel_age 1.9s, rollback no
+  intentado).
+- run_id probe-20261015T230630Z (stem del log); UUID del probe
+  893f24029cba4cff888c33f89c566630 (columna run_id de las filas
+  telemetry de la corrida; linkage exacto disponible en la evidencia
+  persistida para este run).
+- PIDs: monitor 21068, supervisor 16548, sentinel 25624 (los tres
+  verified+bound al arranque).
+- Registry: RUNNING 23:06:31Z, duration 600s, expected_end
+  23:16:31Z, launcher=dashboard, preset=observation-10m, mode=observe.
+- Fin natural: runtimeSeconds 602.615, last_exit duration-reached code
+  0 at 23:16:41Z. Watchers 22 ciclos cada uno, aborted:false, salida
+  no-active-run, leases STOPPED 23:17:07/12Z (cierre ordenado).
+- Post-cierre: 0 procesos python.exe en el host; estado terminal
+  COMPLETED, uptime congelado 610.0s (23:06:31 -> 23:16:41);
+  probe-interno 602.615s (drenaje + overhead de marcado ~7.4s, mismo
+  patron que el piloto 123.957s vs 133s).
+
+## Ventana (602.6s, 468162 mensajes, 0.00% rechazos)
+
+- Mensajes: bookTicker 179573/190606/66049 (BTC/ETH/SOL), aggTrade
+  4755/7358/1610, depth ~5500-5700/simbolo, markPrice 596x3 (array
+  compartido), forceOrder 128. 0 reconnects, 0 parse, 0 payload,
+  0 websocket errors. Uptime 99.47% (setup inicial ~3s por endpoint).
+- Rechazos: timestampRejected 0 en todos los streams (tasa 0.0 <
+  0.05; motivo N/A). Gate de aborto intacto, jamas cerca de brecha.
+- Lags corregidos p50: bookTicker ~176-180ms, depth ~172ms, aggTrade
+  176-218ms, markPrice 265ms, forceOrder 202ms. p95: book/depth
+  233-293ms; aggTrade BTC 1912ms / ETH 614ms / SOL 859ms; markPrice
+  1438ms. Maximos ~1.4-3.8s en un transitorio aislado
+  (auto-recuperado, sin reconnect). E-T exchange en ms: demora en
+  ruta local, ventana sana grado P1-01R.
+- dispatchDelayMs (iteracion->handler, real): p50 0.0009-0.0058ms,
+  max 1.24ms — dispatch local despreciable.
+- yieldLagMs (evento->iteracion, exchange+red+cola COMBINADOS):
+  p50 ~363-456ms. Estructura coherente: corrected ~= raw - 190ms
+  (offset); dispatch << yield.
+- Reloj: offset -190.55ms, RTT 336.8ms, 5/5 validas, sync 1/1 (sano).
+- Silencios maximos: forceOrder 85.8s (event-driven, correctamente NO
+  stale); cadenciados <=3.6s (markPrice, transitorio citado).
+- Seguridad: observe, 0 keys, 0 ordenes, 0 capital, sin clientes
+  autenticados, sin rutas de ordenes.
+
+## Motores y detectores (sin conclusiones)
+
+- Flow: sampling accepted aggTrade 1446 / bookTicker 1741 / depth
+  1710 (dropped contados 12277/434487/15181 — totales intactos por
+  diseno); research recorder 246 writes (flow_10s 4215, flow_1m 1909,
+  book_1m 1818), 0 drops, 0 errores, drenado; prospective 66 setups
+  rehidratados, 0 writes, 0 errores.
+- Detectores: 245 extreme_funding_rate (rachas de tasa constante por
+  simbolo con history_samples creciente 564+; clase
+  artefacto-hipotesis, sin valor de senal); 1 large_liquidation
+  individual (ETH) + 1 window; 3 volume_spike. Todos hipotesis sin
+  calibrar: contados, sin conclusiones, umbrales intactos.
+- Discovery: 927 vistos -> 505 elegibles, HOT [] (histeresis honesta).
+
+## Barra global (inicio / mitad / final)
+
+- Inicio: RECORDED RUNNING + OWNED-LIVE + dashboard +
+  probe-20261015T230630Z + PLAN 600s + LEFT 538s + FEED HEALTHY 20s
+  (current, evidencia propia) + SUP/SEN ACTIVE.
+- Mitad (rt 335s): RUNNING + OWNED-LIVE + LEFT 235s + HEALTHY 27s +
+  ACTIVE/ACTIVE; 252919 msgs acumulados, 0.0% rechazos, mismo UUID.
+- Final: RECORDED COMPLETED + NOT-LIVE (gone) + END
+  duration-reached + CLOSE 23:16:41Z + FROZEN 610s + FEED STALE +
+  SUP/SEN STALE. 0 errores de consola en las tres lecturas.
+- Atribucion: durante la corrida el feed fue HEALTHY current por
+  evidencia propia (temporal dentro de la ventana + UUID exacto
+  893f... constante en sus filas); tras el cierre, STALE current
+  (su ultima snapshot, envejecida honestamente). Ningun snapshot
+  ajeno se presento como HEALTHY (regla estricta 8c73de2 en vivo).
+
+## Crecimiento y journal
+
+- microprobe.db 238927872B (0B: caps retienen; telemetry 1000,
+  price 51 -> 234 (+183)); historical.db sin cambios de corrida
+  (solo lectura V2). Sin hot journal
+  (microprobe.db-journal ausente): nada que recuperar, ninguna
+  recuperacion ejecutada.
+- Logs +~957KB (probe 956118B + 2 watchers ~200B).
+- SQLite legible tras el cierre (quick_check ok, schema 10).
+
+## Comparacion con el piloto brief 120s (20261015T102519Z)
+
+Misma cadena supervisada, mismos umbrales, preset distinto
+(brief 120s -> observation-10m 600s): 82k -> 468k msgs, 0.00% en
+ambos, watchers 6+6 -> 22+22 ciclos sin abortos, cierre natural en
+ambos, overhead registro-vs-probe 9.0s -> 7.4s. Sin rentabilidad
+declarada (dos ventanas no validan nada economico); umbrales siguen
+hipotesis.
+
+## Veredicto
+
+Primera ventana 600s sana completa con supervision: arranque
+confirmado por via publica, 22+22 ciclos sin abortos, cierre
+natural, procesos terminados, terminal COMPLETED, SQLite legible
+desde V2, barra global fiel en los tres puntos. Dashboard abierto;
+cero corridas automaticas; no relanzar sin nueva autorizacion.

@@ -716,6 +716,22 @@ here and request approval before treating it as binding. Never mark
 features VERIFIED without evidence.
 
 
+## O2 observation-10m run completed - 2026-10-15 (autorizada, sobre 10cad5c, sin push aun)
+
+- `DECISIONS_REVIEWED` — preset observation-10m, readiness verde 6/6,
+  registro terminal previo, DB legible, cadena supervisada.
+- `NEW_DECISIONS_RECORDED` — informe RUN_OBS10M_20261015_COMPLETED
+  (ventana, metricas, comparacion con piloto, veredicto acotado).
+- `FEATURES_IMPLEMENTED` — primera ventana 600s supervisada via V2
+  (no codigo).
+- `FEATURES_VERIFIED` — arranque confirmado, 0 rechazos, watchers
+  22+22, cierre natural, PIDs muertos, COMPLETED 610s, SQLite+V2, sin
+  journal, barra fiel inicio/mitad/final; evidencia + 2 capturas.
+- `DEFERRED_FEATURES` — validacion economica (dos ventanas no bastan),
+  proximas ventanas, resto.
+- `BACKLOG_UPDATED` — yes: this entry.
+- `DOCUMENTATION_CONFLICTS` — none new.
+
 ## V2 feed attribution fix - 2026-10-16 (sobre 3f2fcea, sin nuevas corridas)
 
 - `DECISIONS_REVIEWED` — hardening 3f2fcea, id-spaces registry/DB,

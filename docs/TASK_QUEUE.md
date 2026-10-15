@@ -1,7 +1,8 @@
-## Corrida autorizada observation-10m 600s (2026-10-16, sobre 8c73de2, sin push aun)
-Preset canonico + tests; commit+push pre-ejecucion con SHA; servir
-version; readiness verde; arranque V2 unico 600s; observacion y
-cierre con informe. V2 abierto, monitor detenido hasta el arranque.
+## Corrida autorizada observation-10m 600s COMPLETADA (2026-10-15, push 10cad5c + informe sin push aun)
+600s sanos supervisados (468162 msgs, 0 rechazos, cierre natural,
+PIDs muertos, COMPLETED 610s, sin journal). Resta: commit selectivo
+del informe + capturas, push, entrega con SHA y comparacion. V2
+abierto, monitor detenido.
 
 ## Correccion atribucion del feed (2026-10-16, push 8c73de2)
 Sin gracia pre-start + run_id priorizado + regresion 20s A/B +
