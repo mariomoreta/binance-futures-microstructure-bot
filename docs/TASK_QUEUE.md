@@ -1,3 +1,9 @@
+## Piloto brief completado (2026-10-15, autorizado, sin push aun)
+Ventana sana 120s completa y auditada; PIDs muertos, COMPLETED,
+SQLite + V2 verificados, sin journal. Resta: commit selectivo
+(con copia maintenance JSON revisada, sin DBs/backups), push,
+entrega. Dashboard abierto.
+
 ## Mantenimiento recovery aplicado (2026-10-15, autorizado, sin push aun)
 Apply PASS con backup; V2 reiniciado y verificado; monitor no
 arrancado. Resta: commit selectivo (sin DBs/backups), push, entrega

@@ -1461,6 +1461,19 @@ para siempre) + test. Sin cambios de estrategia/umbrales/ejecucion.
    `docs/evidence/RECOVERY_REHEARSAL_20261015.json` (hot-rollback,
    integrity ok, schema 10, consumido, intacto; re-ejecutable).
 
+## Piloto brief completado 20261015T102519Z (2026-10-15, autorizado)
+
+Arranque V2 confirmado (492+supervisor+sentinel verificados, 3
+polls, sin rollback); 123.96s naturales, 82161 msgs, 0 rechazos
+(tasa 0.0), lags p50 ~0.17-0.25s, dispatch real p50 ~0.001ms (local
+despreciable) + yield combinado p50 ~0.6s (jamas red aislada), reloj
+sano, research 54/0/0, seguridad 0/0/0; watchers 6+6 sin abortos;
+cierre duration-reached code 0, procesos muertos, COMPLETED con
+uptime congelado 133s; sin hot journal (nada que recuperar);
+price 12->51 visibles en V2 (5 rutas 200). El aborto previo fue
+episodio de transporte, no defecto del motor. Una ventana no valida
+economia; umbrales siguen hipotesis.
+
 ## Mantenimiento recovery aplicado (2026-10-15, autorizado; sin corridas)
 
 Autorizado solo el mantenimiento con el script de e773e51. Pre

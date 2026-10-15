@@ -1,0 +1,71 @@
+# Piloto brief 120s probe-20261015T102519Z — COMPLETADO natural (2026-10-15)
+
+Autorizado por el usuario (observe, BTC/ETH/SOL, readiness verde).
+Arranque por ruta publica V2 POST /runtime/start (confirm
+START_OBSERVE_2100, preset brief). Sin reinicios automaticos.
+Umbrales de aborto intactos (0.05 sin tocar).
+
+## Identidad y cronologia UTC
+
+- Arranque: 2026-10-15T10:25:19Z (POST 10:25:18Z) via V2, codigo
+  1c566b1 (backend = codigo e773e51 + docs; frontend servido = build
+  de ese mismo codigo).
+- run_id probe-20261015T102519Z; monitor PID 492, supervisor 12980,
+  sentinel 20736 (los tres verified+bound, polls 3/60s, sin rollback).
+- Fin natural: runtimeSeconds 123.957, last_exit duration-reached,
+  code 0. Watchers 6 ciclos cada uno, aborted:false, outcome
+  no-active-run. PIDs muertos verificados; cero python.exe en host.
+- Estado terminal: COMPLETED, launcher=dashboard, uptime congelado
+  133.0s en lecturas separadas (fix del contador verificado en vivo).
+
+## Ventana (123.96s, 82161 mensajes, 0.00% rechazos)
+
+- Mensajes: bookTicker 27894/29112/17911 (BTC/ETH/SOL), aggTrade
+  1072/1134/389, depth ~1130/simbolo, markPrice 236, forceOrder 41,
+  0 reconnects, 0 parse, 0 payload.
+- Rechazos: timestampRejected 0 en todos los streams (denominador =
+  mensajes recibidos; tasa 0.0 < 0.05; motivo N/A).
+- Lags corregidos p50/p95/max: aggTrade 169-176/244-305/631-842ms;
+  bookTicker 173-175/288-966/1943-1999ms; depth ~169-170/331-341/
+  1884-1923ms; markPrice 251/471/840ms; forceOrder 186/433/540ms.
+  E-T exchange en ms (bookTicker p50 0-1ms): demora en ruta local.
+- dispatchDelayMs (iteracion->handler, real, primera medicion):
+  p50 0.001-0.006ms en todos los streams, max 0.33ms — dispatch
+  local despreciable.
+- yieldLagMs (evento->iteracion: exchange+red+TCP+cola COMBINADOS,
+  jamas "latencia de red"): p50 580-663ms, max 2.4s. Estructura
+  coherente: corrected ~= raw - 411ms (offset); dispatch << yield.
+- Reloj: offset -411ms, RTT 369ms, 5/5 validas, sync 1/1 (sano).
+- Persistencia: errors/drops/writes del probe: research 54 writes,
+  0 drops, 0 errores, inflight drenado; prospective 0 writes (66
+  setups rehidratados).
+- Motores: flow 2595 trades (1072/1134/389); returns 17
+  muestras/simbolo (span 37.19M ms, 0 invalid/late); OI 3/3 polls;
+  discovery 927->501 elegibles, HOT []; funding 9 cruces clase
+  artefacto-hipotesis (3/simbolo, sin conclusiones); resto 0.
+- Seguridad: observe, 0 keys, 0 ordenes, 0 capital, sin clientes
+  autenticados, sin rutas de ordenes.
+
+## Datos nuevos persistidos y visibles en V2 (HTTP 200)
+
+- price_rows 12 -> 51 (+39); last_telemetry/price = fin del piloto;
+  snapshots 1000 (cap); setups 66 / outcomes 228 (sin cambios).
+- /api/v1/market-snapshot, live-movers, system-evidence (schema 10),
+  prospective (schema_version 10), opportunities, runtime (COMPLETED)
+  -> 200 available.
+- DB 238927872B (0B: caps retienen); hash db4bba5944d663ea (cambio
+  esperado por escrituras retenidas). Sin hot journal
+  (microprobe.db-journal ausente): nada que recuperar, ningun
+  recovery ejecutado.
+- Logs +175KB aprox (3 ficheros del run: probe 175048B + watchers).
+
+## Veredicto
+
+Primera ventana sana completa con supervision: arranque confirmado,
+6+6 ciclos de watchers sin abortos, cierre natural, procesos
+terminados, terminal COMPLETED, SQLite legible desde V2. El aborto
+anterior queda caracterizado como episodio de transporte (14.6%
+skew), no como defecto del motor: con entrega sana la misma cadena
+completa 120s con 0.00% rechazos. Sin rentabilidad declarada (una
+ventana no valida nada economico); umbrales siguen hipotesis.
+Dashboard abierto; cero corridas automaticas.

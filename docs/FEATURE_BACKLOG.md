@@ -716,6 +716,20 @@ here and request approval before treating it as binding. Never mark
 features VERIFIED without evidence.
 
 
+## O1 pilot completed - 2026-10-15 (autorizado, sobre 1c566b1)
+
+- `DECISIONS_REVIEWED` — plan brief, readiness verde, plan de captura.
+- `NEW_DECISIONS_RECORDED` — DECISIONS §piloto completado (ventana,
+  metricas, veredicto acotado).
+- `FEATURES_IMPLEMENTED` — primera ventana sana supervisada (no codigo).
+- `FEATURES_VERIFIED` — arranque confirmado, 0 rechazos, watchers 6+6,
+  cierre natural, PIDs muertos, COMPLETED, SQLite+V2, sin journal;
+  evidencia PILOT_BRIEF_20261015_COMPLETED + copia maintenance JSON.
+- `DEFERRED_FEATURES` — validacion economica (una ventana no basta),
+  proximas ventanas, resto.
+- `BACKLOG_UPDATED` — yes: this entry.
+- `DOCUMENTATION_CONFLICTS` — none new.
+
 ## O1 maintenance applied - 2026-10-15 (autorizado, sobre e773e51)
 
 - `DECISIONS_REVIEWED` — procedimiento DB_MAINTENANCE_RECOVERY.md.

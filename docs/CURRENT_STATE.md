@@ -1,3 +1,11 @@
+## Piloto brief COMPLETADO 20261015T102519Z (2026-10-15, autorizado, sin push aun)
+Arranque V2 confirmado (492/12980/20736); 123.96s, 82161 msgs,
+0 rechazos, lags sanos, dispatch p50 ~0.001ms (primera medicion),
+yield combinado p50 ~0.6s; watchers 6+6 sin abortos; cierre natural
+code 0, PIDs muertos, COMPLETED congelado 133s; sin hot journal;
+V2 lee todo (price 12->51). Evidencia PILOT_BRIEF_20261015_COMPLETED
++ copia RECOVERY_CANONICAL aplicada. Dashboard abierto.
+
 ## Mantenimiento recovery APLICADO (2026-10-15, autorizado, sin push aun)
 Pre verificado (SHA e773e51, cero escritores, V2 propio detenido por
 identidad, registry ABORTED, hashes sin deriva, destino fuera del
