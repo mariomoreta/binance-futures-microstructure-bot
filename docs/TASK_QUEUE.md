@@ -1,3 +1,9 @@
+## Recovery-journal + atribucion (2026-10-15, sobre 9b78058, sin push aun)
+Ensayo recovery en copia (diff 0) + procedimiento propuesto para
+autorizacion (sin aplicar); queue/transit instrumentado + 5 tests.
+Resta: barrera completa (probe.py tocado), commit selectivo, push,
+entrega. V2 abierto, cero auto-corridas.
+
 ## Post-mortem piloto + contador/readiness (2026-10-15, sobre 51d6095, sin push aun)
 ABORTED sano auditado (PIDs muertos, 0/0/0, journal intacto, umbral
 intacto); contador congelado + ABORTED terminal en readiness + tests.

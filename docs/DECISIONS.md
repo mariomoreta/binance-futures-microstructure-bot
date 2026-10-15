@@ -1409,3 +1409,25 @@ Correcciones: (1) `_status_view` congela elapsed/uptime en
 `TerminalCounterTest`; (2) readiness ABORTED = PASS terminal
 (alineado con `_is_active_state`; antes UNKNOWN bloqueaba reintentos
 para siempre) + test. Sin cambios de estrategia/umbrales/ejecucion.
+
+## Bloqueo journal + atribucion de rechazos (2026-10-15, append-only, sobre 9b78058; sin aplicar al original, sin corridas)
+
+1. Circular resuelto por procedimiento, no por bypass: readiness sigue
+   bloqueado (DB ilegible) hasta el mantenimiento autorizado
+   (`docs/DB_MAINTENANCE_RECOVERY.md`, PROPUESTO). Journal y DB
+   preservados con hashes; ensayo en copia temp: integrity ok, schema
+   10, conteos iguales, journal consumido, diff pre/post = 0 (rollback
+   limpio, cero filas comprometidas), canonico byte-identico.
+   Evidencia logs-vs-DB documentada en el procedimiento.
+2. Atribucion de rechazos (`probe.py`, sin tocar umbral 5000 ni correr):
+   lo medido antes era received-E (handler) + E-T (exchange) + offset/
+   RTT/sync + sub-etapas de proceso; FALTABA la espera en cola local
+   (max_queue=4096, buffers TCP, stalls de event-loop) y arrival-E.
+   Instrumentacion minima: stamps de arrival en `_connection_loop`,
+   `queueWaitMs` (handler-arrival) + `transitLagMs` (arrival-E) en
+   `_record_lags` (incluye rechazados; UNKNOWN jamas se registra).
+   Descomposicion: received-E = queue + transit. 5 tests en
+   `test_queue_wait_attribution.py` (identidad exacta en fixture,
+   UNKNOWN no-cero, rechazado conserva conteos, umbral pineado 5000,
+   path markPrice). La ventana del aborto no puede re-medirse (sin
+   re-corridas): su diagnostico queda en entrega por stream/latencia.

@@ -1,3 +1,9 @@
+## Journal-recovery ensayado + atribucion queue/transit (2026-10-15, sin push aun)
+Bloqueo resuelto por procedimiento propuesto (DB_MAINTENANCE_RECOVERY,
+NO aplicado al original): ensayo en copia ok, diff 0, canonico
+intacto. Instrumentacion arrival/queue/transit + 5 tests (umbral
+intacto, sin corridas). V2 abierto (nuevo PID), cero auto-corridas.
+
 ## Post-mortem piloto brief 20261015T000730Z — ABORTED sano (2026-10-15, sin push aun)
 Lanzado por V2 fuera de autorizacion registrada (agente no emitio).
 Aborto timestamp-reject-rate 0.146136>0.05 a 00:08:34Z; PIDs muertos

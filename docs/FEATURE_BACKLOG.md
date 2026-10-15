@@ -716,6 +716,21 @@ here and request approval before treating it as binding. Never mark
 features VERIFIED without evidence.
 
 
+## O1 journal/attribution reconciliation - 2026-10-15 (sobre 9b78058)
+
+- `DECISIONS_REVIEWED` — journal/WAL readOnly, `_connection_loop`
+  buffering, skew-guard path, telemetry summary shape.
+- `NEW_DECISIONS_RECORDED` — `docs/DECISIONS.md` §journal+atribucion;
+  `docs/DB_MAINTENANCE_RECOVERY.md` (PROPUESTO, sin aplicar).
+- `FEATURES_IMPLEMENTED` — recovery rehearsal script + queue/transit
+  instrumentation (threshold untouched).
+- `FEATURES_VERIFIED` — rehearsal report (integrity ok, diff 0),
+  5 attribution tests, barrier pending (probe.py touched).
+- `DEFERRED_FEATURES` — canonical recovery apply (authorization
+  pending), next pilot, resto excluido.
+- `BACKLOG_UPDATED` — yes: this entry.
+- `DOCUMENTATION_CONFLICTS` — none new.
+
 ## O1 pilot post-mortem reconciliation - 2026-10-15 (sobre 51d6095)
 
 - `DECISIONS_REVIEWED` — abort rule timestamp-reject-rate, `_status_view`
