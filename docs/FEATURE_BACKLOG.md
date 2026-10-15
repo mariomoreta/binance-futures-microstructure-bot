@@ -716,6 +716,22 @@ here and request approval before treating it as binding. Never mark
 features VERIFIED without evidence.
 
 
+## O1 correction reconciliation - 2026-10-16 (sobre 6264ccc)
+
+- `DECISIONS_REVIEWED` — receive-path stamping order, fixture journal
+  forensics (magia cero vs hot real), backup/protecciones.
+- `NEW_DECISIONS_RECORDED` — DECISIONS §correccion revision (nombres
+  honestos, test ruta real, --apply/backup, informe publicado).
+- `FEATURES_IMPLEMENTED` — renombres + RealReceivePathTest + --apply
+  completo + 14 tests recover/backup.
+- `FEATURES_VERIFIED` — attribution 6/6 (3x ruta real), journal 14/14,
+  barrera 1100 exit 0, rehearsal publicado re-ejecutable.
+- `DEFERRED_FEATURES` — apply canonico (autorizacion), proximo piloto,
+  resto excluido.
+- `BACKLOG_UPDATED` — yes: this entry.
+- `DOCUMENTATION_CONFLICTS` — none new (queue/transit renombrado en
+  codigo+tests+docs a dispatch/yield).
+
 ## O1 journal/attribution reconciliation - 2026-10-15 (sobre 9b78058)
 
 - `DECISIONS_REVIEWED` — journal/WAL readOnly, `_connection_loop`

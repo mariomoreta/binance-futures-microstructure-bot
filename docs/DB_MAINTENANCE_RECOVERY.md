@@ -53,13 +53,24 @@ Separado del arranque: no es una corrida, no toca estrategias ni gates.
 2. Copia de seguridad del par a `docs/evidence/` (NO: son 239MB;
    alternativa: registrar hashes + confiar en el par intacto; este
    documento propone NO duplicar y abortar si difieren).
-3. Abrir el canónico read-write UNA vez vía script auditado
-   (`scripts/recover_hot_journal.py --db data/microprobe.db --out
-   <temp>/recovery_canonical.json` adaptado a modo `--apply` + doble
-   confirmación; el modo actual es solo-ensayo y rehúsa el original).
-   NOTA: el script actual NO trae modo apply; implementarlo es parte
-   de la autorización (cambio mínimo, misma verificación + backup de
-   hashes pre/post en el reporte).
+3. Abrir el canónico read-write UNA vez vía script auditado (modo
+   `--apply` YA implementado y probado en fixtures temporales; 14
+   tests en `tests/test_journal_recovery.py`, rama hot probada en el
+   ensayo canónico). Comando exacto propuesto (NO ejecutar sin la
+   autorización de abajo):
+
+   python scripts/recover_hot_journal.py --db data/microprobe.db --out <temp>/recovery_canonical.json --expect-schema 10 --apply --backup-dir <DIR-FUERA-DE-GIT> --expect-db-sha256 df10cb35b44a37f3254fbc7234733dba2eaaa250b578787c20b66cc0e8c50b3c --expect-journal-sha256 2822655c3e4ae9cb03ed35598ebd84218042e605450e278c8a89a35af2fc3757
+
+   (hashes medidos 2026-10-15; re-medír antes de autorizar: cualquier
+   deriva rehúsa automáticamente). El script: verifica hashes,
+   recupera en temporal y comprueba TODO antes de respaldar; respalda
+   fuera del repo con doble verificación; ensaya restauración desde
+   el backup; y solo entonces abre el canónico. Protecciones: --out y
+   --backup resueltos por realpath (symlinks/hardlinks incluidos),
+   rehúsa .db* y data/, jamás sobrescribe. Ensayo canónico publicado:
+   `docs/evidence/RECOVERY_REHEARSAL_20261015.json` (hot-rollback,
+   integrity ok, schema 10, consumido, canónico intacto; re-ejecutable
+   con el comando `reproduce` del propio informe).
 4. Verificar: `integrity_check=ok`, schema 10, conteos vs los del
    ensayo, journal consumido, hashes nuevos registrados.
 5. Re-evaluar readiness por ruta V2 (debe pasar "Operational

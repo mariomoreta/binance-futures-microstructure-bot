@@ -1,3 +1,9 @@
+## Correccion revision + apply/backup (2026-10-16, sobre 6264ccc, sin push aun)
+Metricas renombradas + RealReceivePathTest; --apply/backup/
+protecciones + 14 tests; informe reproducible publicado. Resta:
+commit selectivo, push, entrega + comando exacto para autorizacion.
+Sin aplicar, sin corridas. V2 abierto.
+
 ## Recovery-journal + atribucion (2026-10-15, sobre 9b78058, sin push aun)
 Ensayo recovery en copia (diff 0) + procedimiento propuesto para
 autorizacion (sin aplicar); queue/transit instrumentado + 5 tests.

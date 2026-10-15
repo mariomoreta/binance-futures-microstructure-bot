@@ -1,3 +1,10 @@
+## Correccion revision 2026-10-16 — metricas honestas + apply/backup (sin push aun)
+dispatchDelayMs/yieldLagMs (nombres honestos) + test ruta real con
+delay 300ms (3/3 estable); --apply con backup fuera de git +
+protecciones realpath + fallos limpios (14 tests); informe
+RECOVERY_REHEARSAL publicado (hot-rollback, intacto). Barrera 1100
+exit 0. Sin aplicar al original, sin corridas. V2 abierto.
+
 ## Journal-recovery ensayado + atribucion queue/transit (2026-10-15, sin push aun)
 Bloqueo resuelto por procedimiento propuesto (DB_MAINTENANCE_RECOVERY,
 NO aplicado al original): ensayo en copia ok, diff 0, canonico

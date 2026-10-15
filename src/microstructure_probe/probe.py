@@ -670,19 +670,22 @@ class MarketProbe:
                                  "endpoint": name,
                                  "reason": "freshness-watchdog"}))
                             break
-                        # 2026-10-15: socket-arrival stamps. received_ms is
-                        # stamped at handler entry, so local queueing
-                        # (library max_queue=4096, TCP buffers, event-loop
-                        # stalls) was invisible and every skew reject looked
-                        # like network lag. Arrival stamps split
-                        # received-E into queue_wait + transit (see
-                        # _record_lags); UNKNOWN arrival stays unrecorded.
-                        arrival_mono_ns = self._perf_counter_ns()
-                        arrival_wall_ms = self._wall_clock_ms()
+                        # 2026-10-15 (review): iteration stamps, NOT socket
+                        # arrival. The stamps below run AFTER `async for`
+                        # yields, so library/TCP wait upstream of the yield
+                        # stays unobservable at this layer (max_queue=4096).
+                        # What they split: received-E = dispatchDelayMs
+                        # (iteration -> handler entry; local dispatch only)
+                        # + yieldLagMs (exchange event -> iteration:
+                        # exchange + network + TCP + library queue COMBINED,
+                        # never presented as isolated network latency).
+                        # UNKNOWN iteration stays unrecorded, never zero.
+                        iter_mono_ns = self._perf_counter_ns()
+                        iter_wall_ms = self._wall_clock_ms()
                         self._handle_message(
                             raw_message,
-                            arrival_ms=arrival_wall_ms,
-                            arrival_mono_ns=arrival_mono_ns,
+                            iter_ms=iter_wall_ms,
+                            iter_mono_ns=iter_mono_ns,
                         )
             except asyncio.CancelledError:
                 raise
@@ -712,22 +715,24 @@ class MarketProbe:
     def _handle_message(
         self,
         raw_message: str | bytes,
-        arrival_ms: float | None = None,
-        arrival_mono_ns: int | None = None,
+        iter_ms: float | None = None,
+        iter_mono_ns: int | None = None,
     ) -> None:
         processing_start_ns = self._perf_counter_ns()
         received_ms = self._wall_clock_ms()
-        # Local queue wait (handler entry minus socket arrival, monotonic).
-        # None when the caller did not stamp arrival (legacy/direct calls):
-        # UNKNOWN is never recorded as zero.
-        queue_wait_ms: float | None = None
-        if arrival_mono_ns is not None:
+        # Iteration -> handler dispatch (monotonic). Only the dispatch
+        # after the `async for` yield is observed here; wait upstream of
+        # the yield is NOT socket arrival and is NOT measured.
+        # None when the caller did not stamp the iteration
+        # (legacy/direct calls): UNKNOWN is never recorded as zero.
+        dispatch_delay_ms: float | None = None
+        if iter_mono_ns is not None:
             try:
-                queue_wait_ms = max(
-                    0.0, (processing_start_ns - int(arrival_mono_ns)) / 1_000_000
+                dispatch_delay_ms = max(
+                    0.0, (processing_start_ns - int(iter_mono_ns)) / 1_000_000
                 )
             except (TypeError, ValueError):
-                queue_wait_ms = None
+                dispatch_delay_ms = None
         try:
             envelope = json.loads(raw_message)
             stream = str(envelope["stream"])
@@ -769,7 +774,7 @@ class MarketProbe:
         try:
             self._record_timestamp_metrics(
                 stream, payload, received_ms,
-                arrival_ms=arrival_ms, queue_wait_ms=queue_wait_ms,
+                iter_ms=iter_ms, dispatch_delay_ms=dispatch_delay_ms,
             )
             if (
                 legacy_timestamp is not None
@@ -1007,8 +1012,8 @@ class MarketProbe:
         stream: str,
         payload: Any,
         received_ms: float,
-        arrival_ms: float | None = None,
-        queue_wait_ms: float | None = None,
+        iter_ms: float | None = None,
+        dispatch_delay_ms: float | None = None,
     ) -> None:
         if stream == "!markPrice@arr@1s":
             for item in payload:
@@ -1016,7 +1021,7 @@ class MarketProbe:
                 if symbol in self.config.symbols and "E" in item:
                     self._record_lags(
                         f"markPrice/{symbol}", received_ms, event_ms=float(item["E"]),
-                        arrival_ms=arrival_ms, queue_wait_ms=queue_wait_ms,
+                        iter_ms=iter_ms, dispatch_delay_ms=dispatch_delay_ms,
                     )
             return
 
@@ -1038,7 +1043,7 @@ class MarketProbe:
                     transaction_ms = float(order["T"])
         self._record_lags(key, received_ms, event_ms=event_ms,
                           transaction_ms=transaction_ms,
-                          arrival_ms=arrival_ms, queue_wait_ms=queue_wait_ms)
+                          iter_ms=iter_ms, dispatch_delay_ms=dispatch_delay_ms)
 
     def _record_lags(
         self,
@@ -1047,22 +1052,26 @@ class MarketProbe:
         *,
         event_ms: float | None = None,
         transaction_ms: float | None = None,
-        arrival_ms: float | None = None,
-        queue_wait_ms: float | None = None,
+        iter_ms: float | None = None,
+        dispatch_delay_ms: float | None = None,
     ) -> None:
-        # Lag decomposition (2026-10-15): received-E = queue_wait +
-        # transit, with transit = arrival-E and queue_wait =
-        # handler_entry-arrival. E-T stays the exchange-side component and
-        # the clock offset/RTT/sync counters stay the sync component.
-        # UNKNOWN components are never recorded (never zero-filled).
+        # Lag decomposition (2026-10-15, corrected 2026-10-16 review):
+        # received-E = dispatchDelayMs + yieldLagMs, where dispatchDelayMs
+        # = loop-iteration -> handler entry (local dispatch ONLY) and
+        # yieldLagMs = exchange event -> loop iteration (exchange +
+        # network + TCP + library queue COMBINED — never isolated network
+        # latency; pre-yield wait is unobservable at this layer). E-T stays
+        # the exchange-side component; clock offset/RTT/sync counters stay
+        # the sync component. UNKNOWN components are never recorded
+        # (never zero-filled).
         offset = self.clock_sync.offset_ms
-        if queue_wait_ms is not None:
-            self._distribution(self._latency, "queueWaitMs", key).add(
-                queue_wait_ms
+        if dispatch_delay_ms is not None:
+            self._distribution(self._latency, "dispatchDelayMs", key).add(
+                dispatch_delay_ms
             )
-        if arrival_ms is not None and event_ms is not None:
-            self._distribution(self._latency, "transitLagMs", key).add(
-                arrival_ms - event_ms
+        if iter_ms is not None and event_ms is not None:
+            self._distribution(self._latency, "yieldLagMs", key).add(
+                iter_ms - event_ms
             )
         if event_ms is not None:
             self._distribution(self._latency, "rawEventLagMs", key).add(

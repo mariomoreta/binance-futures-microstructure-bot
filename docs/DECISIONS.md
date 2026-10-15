@@ -1431,3 +1431,34 @@ para siempre) + test. Sin cambios de estrategia/umbrales/ejecucion.
    UNKNOWN no-cero, rechazado conserva conteos, umbral pineado 5000,
    path markPrice). La ventana del aborto no puede re-medirse (sin
    re-corridas): su diagnostico queda en entrega por stream/latencia.
+
+## Correccion revision 2026-10-16 — metricas honestas + apply/backup (append-only, sobre 6264ccc; sin aplicar al original, sin corridas)
+
+1. Atribucion corregida: los stamps corren DESPUES del `async for`
+   (llegada al socket y espera previa en biblioteca/TCP siguen sin
+   medirse en esta capa). Renombres: `dispatchDelayMs` (iteracion ->
+   handler; solo dispatch local) y `yieldLagMs` (evento -> iteracion:
+   exchange+red+TCP+cola combinados, JAMAS latencia de red aislada).
+   `yieldLagMs` nunca se presenta como red. Prueba por ruta real
+   (`RealReceivePathTest`: `_connection_loop` real + websocket falso
+   con delay controlado 300ms pre-yield): el delay aparece en yield
+   (separacion max-min >= 200ms), dispatch p50 < 50ms, identidad de
+   medias ±5ms, conteos y rechazos intactos (3/3 estable).
+2. `--apply` implementado y probado (fixtures temporales, jamas el
+   original): backup obligatorio fuera del repo con doble verificacion
+   de hashes + ensayo de restauracion desde el backup; orden probar→
+   respaldar→restaurar→aplicar; protecciones realpath (symlinks/
+   hardlinks), rehuso de .db*/data/ y sobrescrituras; fallos limpios
+   (integrity/schema/tablas/conteos/origen). Hallazgo honesto: este
+   stack no fabrica journals calientes validos en fixtures (magia
+   cero, SQLite los ignora — probado 4 vias); el script distingue por
+   magia leida (hot-rollback vs stale-or-foreign, sin borrar nada) y
+   la rama hot queda probada por el ensayo canónico + 1 test con
+   magia sintetica documentada como construccion (no evidencia).
+   14 tests `test_journal_recovery.py` (1 skip: symlinks sin
+   privilegio). Constante de magia corregida (16 digitos).
+3. Informe reproducible publicado:
+   `docs/evidence/RECOVERY_REHEARSAL_20261015.json` (hot-rollback,
+   integrity ok, schema 10, consumido, intacto; re-ejecutable).
+   Procedimiento `DB_MAINTENANCE_RECOVERY.md` actualizado con el
+   comando exacto + hashes para autorizacion.
