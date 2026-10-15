@@ -1,3 +1,8 @@
+## Mantenimiento aplicable + deriva (2026-10-16, sobre 3a55052, sin push aun)
+Backup real + re-hash pre-write + writers excluidos + auto-compare +
+regresiones; destino verificado fuera/inexistente. Resta: commit,
+push, entrega + comando definitivo. Sin aplicar, sin corridas.
+
 ## Correccion revision + apply/backup (2026-10-16, sobre 6264ccc, sin push aun)
 Metricas renombradas + RealReceivePathTest; --apply/backup/
 protecciones + 14 tests; informe reproducible publicado. Resta:

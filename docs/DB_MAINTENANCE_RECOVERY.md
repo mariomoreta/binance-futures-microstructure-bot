@@ -50,39 +50,55 @@ Separado del arranque: no es una corrida, no toca estrategias ni gates.
 1. Re-verificar precondiciones: cero `python.exe`, V2 solo-lectura,
    hashes del par iguales a los de arriba (abortar ante cualquier
    diferencia: el estado cambió y el ensayo ya no aplica).
-2. Copia de seguridad del par a `docs/evidence/` (NO: son 239MB;
-   alternativa: registrar hashes + confiar en el par intacto; este
-   documento propone NO duplicar y abortar si difieren).
+2. Backup real obligatorio del par (DB + journal) en
+   `--backup-dir` (fuera del repo; el script rehúsa destinos dentro
+   de git, alias por symlink/hardlink, y existentes). Los hashes
+   solos NO sustituyen al backup: el script verifica los hashes de
+   AMBAS copias (origen y backup deben coincidir byte a byte) y
+   ensaya la restauración copiando el backup a temporal,
+   recuperándolo y comparando esquema+conteos contra el pre-estado.
+   Sin backup verificado + restauración probada no hay apply.
 3. Abrir el canónico read-write UNA vez vía script auditado (modo
-   `--apply` YA implementado y probado en fixtures temporales; 14
+   `--apply` YA implementado y probado en fixtures temporales; 22
    tests en `tests/test_journal_recovery.py`, rama hot probada en el
    ensayo canónico). Comando exacto propuesto (NO ejecutar sin la
    autorización de abajo):
 
-   python scripts/recover_hot_journal.py --db data/microprobe.db --out <temp>/recovery_canonical.json --expect-schema 10 --apply --backup-dir <DIR-FUERA-DE-GIT> --expect-db-sha256 df10cb35b44a37f3254fbc7234733dba2eaaa250b578787c20b66cc0e8c50b3c --expect-journal-sha256 2822655c3e4ae9cb03ed35598ebd84218042e605450e278c8a89a35af2fc3757
+   python scripts/recover_hot_journal.py --db data/microprobe.db --out <temp>/recovery_canonical.json --expect-schema 10 --apply --backup-dir C:\proyectos\binance-db-backups\recovery-20261015-3a55052 --expect-db-sha256 df10cb35b44a37f3254fbc7234733dba2eaaa250b578787c20b66cc0e8c50b3c --expect-journal-sha256 2822655c3e4ae9cb03ed35598ebd84218042e605450e278c8a89a35af2fc3757
 
-   (hashes medidos 2026-10-15; re-medír antes de autorizar: cualquier
-   deriva rehúsa automáticamente). El script: verifica hashes,
-   recupera en temporal y comprueba TODO antes de respaldar; respalda
-   fuera del repo con doble verificación; ensaya restauración desde
-   el backup; y solo entonces abre el canónico. Protecciones: --out y
-   --backup resueltos por realpath (symlinks/hardlinks incluidos),
-   rehúsa .db* y data/, jamás sobrescribe. Ensayo canónico publicado:
+   Destino verificado 2026-10-16: fuera del repo (hermano, no
+   descendiente) e inexistente (nada que sobrescribir; el script
+   rehusaría de todos modos). Hashes medidos 2026-10-15; re-medír
+   antes de autorizar: cualquier deriva rehúsa automáticamente, y el
+   script re-verifica hashes + excluye escritores vivos
+   INMEDIATAMENTE antes del write (sin aplicar ante deriva).
+   Secuencia: verifica hashes → excluye escritores (lock-only, cero
+   escrituras) → recupera en temporal y comprueba TODO → respalda el
+   par real fuera del repo con doble verificación → ensaya
+   restauración DESDE ese backup → compara aplicado-vs-restaurado
+   (automático, sin --expect-counts) → y solo entonces abre el
+   canónico. Protecciones: --out y --backup resueltos por realpath
+   (symlinks/hardlinks incluidos), rehúsa .db* y data/, jamás
+   sobrescribe. Ensayo canónico publicado:
    `docs/evidence/RECOVERY_REHEARSAL_20261015.json` (hot-rollback,
    integrity ok, schema 10, consumido, canónico intacto; re-ejecutable
    con el comando `reproduce` del propio informe).
-4. Verificar: `integrity_check=ok`, schema 10, conteos vs los del
-   ensayo, journal consumido, hashes nuevos registrados.
+4. Verificar: `integrity_check=ok`, schema 10, aplicado-vs-restaurado
+   idénticos, journal consumido, hashes nuevos registrados.
 5. Re-evaluar readiness por ruta V2 (debe pasar "Operational
    database"; el resto manda) y QA visual de /system. Sin arrancar
    ninguna corrida como parte de este mantenimiento.
 
-## Rollback
+## Rollback (restauración desde el par real, no desde hashes)
 
-Si cualquier verificación difiere del ensayo: NO continuar; el par
-original sigue intacto salvo el paso 3 (que solo corre tras backup de
-hashes). No existe restauración automática: la red de seguridad es no
-haber tocado nada antes del paso 3 y abortar ante diferencias.
+Si cualquier verificación difiere: NO continuar. La red de seguridad
+es el backup REAL del paso 2 (DB + journal byte a byte fuera del
+repo, hashes verificados en ambos sentidos): restaurar es copiar
+`copy.db` → `data/microprobe.db` y `copy.db-journal` →
+`data/microprobe.db-journal`, re-medir hashes contra el reporte, y
+re-evaluar readiness. Los hashes solos documentan; solo el par
+restaura. El ensayo de restauración del propio `--apply` (stage 3)
+prueba este camino en cada ejecución.
 
 ## Autorización requerida (texto propuesto para el usuario)
 

@@ -716,6 +716,19 @@ here and request approval before treating it as binding. Never mark
 features VERIFIED without evidence.
 
 
+## O1 maintenance reconciliation - 2026-10-16 (sobre 3a55052)
+
+- `DECISIONS_REVIEWED` — backup/rollback, hash binding, writer locks,
+  pre/post comparison.
+- `NEW_DECISIONS_RECORDED` — DECISIONS §mantenimiento aplicable;
+  DB_MAINTENANCE_RECOVERY con backup real + comando definitivo.
+- `FEATURES_IMPLEMENTED` — --apply con backup/writer/drift/compare.
+- `FEATURES_VERIFIED` — journal 22/22, barrera 1108 exit 0, destino
+  verificado fuera/inexistente.
+- `DEFERRED_FEATURES` — apply canonico (autorizacion), piloto, resto.
+- `BACKLOG_UPDATED` — yes: this entry.
+- `DOCUMENTATION_CONFLICTS` — none new.
+
 ## O1 correction reconciliation - 2026-10-16 (sobre 6264ccc)
 
 - `DECISIONS_REVIEWED` — receive-path stamping order, fixture journal

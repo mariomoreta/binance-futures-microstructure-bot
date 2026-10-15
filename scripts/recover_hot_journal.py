@@ -21,7 +21,12 @@ never overwritten.
 FAIL CONDITIONS (exit 1, nothing applied): integrity_check != ["ok"],
 schema != --expect-schema (when given), any expected table missing or
 unreadable, --expect-counts mismatch, backup hash mismatch, source pair
-changed mid-operation, restore rehearsal mismatch.
+changed mid-operation, restore rehearsal mismatch, pre-apply hash drift,
+applied-vs-restored schema/counts discrepancy (automatic, even without
+--expect-counts). Live-writer detection and pre-apply drift are REFUSALS
+(exit 2, nothing touched): --apply additionally requires a positive
+no-writer probe (BEGIN IMMEDIATE + ROLLBACK, lock-only, zero writes)
+and re-verified expected hashes immediately before the target write.
 
 Usage:
   rehearse: python scripts/recover_hot_journal.py --db <db>
@@ -63,6 +68,67 @@ def _sha(path: Path) -> str:
 
 
 ROLLBACK_MAGIC = "d9d505f920a163d7"
+
+
+def _hashes_match(db: Path, journal: Path, exp_db: str | None,
+                  exp_journal: str | None) -> str | None:
+    """None when both live hashes equal the expected hex (case-insensitive),
+    else an error string. Used at entry AND immediately before the target
+    write: any drift refuses without applying."""
+    try:
+        got_db, got_journal = _sha(db), _sha(journal)
+    except OSError as exc:
+        return "cannot hash source pair: %s" % str(exc)[:120]
+    if got_db != (exp_db or "").lower() or \
+            got_journal != (exp_journal or "").lower():
+        return ("source hashes differ from expected (state changed;"
+                " rehearsal no longer applies)")
+    return None
+
+
+def _assert_no_live_writer(db_path: Path, timeout_s: float = 2.0
+                           ) -> str | None:
+    """Refuse when another connection holds a write lock (live writer).
+
+    BEGIN IMMEDIATE only takes the RESERVED lock and ROLLBACK releases it:
+    no page is read or written, no journal is recovered, file bytes are
+    untouched. SQLITE_BUSY within the timeout means a writer is active.
+    Returns an error string, or None when no writer was observed.
+    """
+    try:
+        con = sqlite3.connect(str(db_path), timeout=timeout_s)
+    except (sqlite3.Error, OSError) as exc:
+        return "writer check cannot open db: %s" % str(exc)[:120]
+    try:
+        try:
+            con.execute("BEGIN IMMEDIATE")
+        except sqlite3.OperationalError as exc:
+            if "locked" in str(exc).lower() or "busy" in str(exc).lower():
+                return ("live writer holds the database (locked);"
+                        " refusing maintenance while it runs")
+            return "writer check failed: %s" % str(exc)[:120]
+        con.execute("ROLLBACK")
+        return None
+    finally:
+        try:
+            con.close()
+        except (sqlite3.Error, OSError):
+            pass
+
+
+def _compare_records(name: str, got: dict, want: dict) -> list:
+    """Field-wise schema+counts comparison; any difference is a failure."""
+    failures = []
+    if got.get("schema_version") != want.get("schema_version"):
+        failures.append("%s schema %r != %r"
+                        % (name, got.get("schema_version"),
+                           want.get("schema_version")))
+    for table, want_n in (want.get("counts") or {}).items():
+        got_n = (got.get("counts") or {}).get(table)
+        if got_n != want_n:
+            failures.append("%s count %s: got %r, expected %r"
+                            % (name, table, got_n, want_n))
+    return failures
 
 
 def _journal_kind(journal: Path) -> dict:
@@ -260,14 +326,21 @@ def main() -> int:
     report["source_hashes_before"] = before
     report["journal"] = _journal_kind(journal)
     if args.apply:
-        if before["db"] != args.expect_db_sha256.lower() \
-                or before["journal"] != args.expect_journal_sha256.lower():
+        drift = _hashes_match(db, journal, args.expect_db_sha256,
+                              args.expect_journal_sha256)
+        if drift is not None:
             report["verdict"] = "REFUSED"
-            report["protections"] = [
-                "source hashes differ from expected (state changed;"
-                " rehearsal no longer applies)"]
+            report["protections"] = [drift]
             for problem in report["protections"]:
                 print("REFUSED: " + problem, file=sys.stderr)
+            return 2
+    if args.apply:
+        writer = _assert_no_live_writer(db)
+        report["writer_check"] = ("excluded" if writer is None
+                                  else "REFUSED: " + writer)
+        if writer is not None:
+            report["verdict"] = "REFUSED"
+            print("REFUSED: " + writer, file=sys.stderr)
             return 2
     try:
         pre = _immutable_counts(db)
@@ -429,7 +502,15 @@ def _apply(args, db, journal, out, report, before, pre) -> int:
                                restored["counts"][table]))
     if failures:
         return _fail(report, out, failures)
-    # Stage 4 (the only target write): open the TARGET read-write.
+    # Stage 4 (the only target write): re-verify hashes IMMEDIATELY
+    # before touching the target; any drift refuses without applying.
+    # Writers were excluded at entry; this closes the remaining window.
+    pre_apply = {"db": _sha(db), "journal": _sha(journal)}
+    report["pre_apply_hashes"] = pre_apply
+    if pre_apply != {"db": before["db"], "journal": before["journal"]}:
+        return _fail(report, out,
+                     ["pre-apply drift: source pair changed since entry;"
+                      " refusing without applying"])
     _recover(db)
     applied = _verify(db)
     report["applied_verification"] = {
@@ -437,6 +518,14 @@ def _apply(args, db, journal, out, report, before, pre) -> int:
         "schema_version": applied["schema_version"],
         "counts": applied["counts"]}
     failures = _check_expectations(args, applied)
+    # Automatic post-recovery comparison against the restored backup
+    # result — enforced even when the operator passed no --expect-counts.
+    failures.extend(_compare_records(
+        "applied-vs-restored",
+        {"schema_version": applied["schema_version"],
+         "counts": applied["counts"]},
+        {"schema_version": restored["schema_version"],
+         "counts": restored["counts"]}))
     if report["journal"]["kind"] == "hot-rollback":
         journal_gone = (not journal.exists()) or journal.stat().st_size == 0
         report["journal_consumed"] = journal_gone
@@ -449,7 +538,9 @@ def _apply(args, db, journal, out, report, before, pre) -> int:
         return _fail(report, out, failures)
     report["verdict"] = "PASS"
     out.write_text(json.dumps(report, indent=1), encoding="utf-8")
-    print("apply PASS; backup at %s; journal consumed" % backup)
+    print("apply PASS; backup at %s; journal %s"
+          % (backup, "consumed" if report.get("journal_consumed")
+             else "stale-ignored"))
     return 0
 
 

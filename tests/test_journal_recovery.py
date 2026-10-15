@@ -24,6 +24,15 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 SCRIPT = ROOT / "scripts" / "recover_hot_journal.py"
 
+
+def _script_module():
+    import importlib.util
+    spec = importlib.util.spec_from_file_location(
+        "recover_hot_journal", SCRIPT)
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
+
 TABLES = ("telemetry_snapshots", "market_observations",
           "rejected_observations", "price_samples", "flow_buckets",
           "prospective_setups", "prospective_outcomes",
@@ -289,6 +298,111 @@ class ApplyTest(unittest.TestCase):
                          b"old-journal")
         self.assertTrue((tmp / "fix.db-journal").exists())
         self.assertEqual(self._hashes(db), before)
+
+
+class DriftRegressionTest(unittest.TestCase):
+    """Pre-apply drift + post-apply discrepancy (module-level, exact
+    helpers used by --apply; CLI wiring proven by ApplyTest runs)."""
+
+    def test_hashes_match_accepts_exact_pair(self) -> None:
+        mod = _script_module()
+        tmp = Path(tempfile.mkdtemp(prefix="jr_drift_ok_"))
+        db = _hot_fixture(tmp)
+        journal = Path(str(db) + "-journal")
+        self.assertIsNone(mod._hashes_match(
+            db, journal, _sha(db), _sha(journal)))
+
+    def test_hashes_match_rejects_drift(self) -> None:
+        mod = _script_module()
+        tmp = Path(tempfile.mkdtemp(prefix="jr_drift_bad_"))
+        db = _hot_fixture(tmp)
+        journal = Path(str(db) + "-journal")
+        err = mod._hashes_match(db, journal, "0" * 64, _sha(journal))
+        self.assertIsNotNone(err)
+        self.assertIn("differ", err)
+        # Missing files are drift too, never a crash.
+        missing = tmp / "absent.db"
+        self.assertIn("cannot hash", mod._hashes_match(
+            missing, journal, "0" * 64, _sha(journal)) or "")
+
+    def test_compare_records_accepts_identical(self) -> None:
+        mod = _script_module()
+        snap = {"schema_version": "10",
+                "counts": {"telemetry_snapshots": 1000}}
+        self.assertEqual(mod._compare_records("x", snap, dict(snap)), [])
+
+    def test_compare_records_rejects_schema_and_count_drift(self) -> None:
+        mod = _script_module()
+        want = {"schema_version": "10",
+                "counts": {"telemetry_snapshots": 1000, "price_samples": 12}}
+        got = {"schema_version": "9",
+               "counts": {"telemetry_snapshots": 999, "price_samples": 12}}
+        failures = mod._compare_records("applied-vs-restored", got, want)
+        self.assertEqual(len(failures), 2)
+        self.assertTrue(any("schema" in f for f in failures))
+        self.assertTrue(any("telemetry_snapshots" in f for f in failures))
+
+    def test_no_live_writer_probe_is_lock_only(self) -> None:
+        mod = _script_module()
+        tmp = Path(tempfile.mkdtemp(prefix="jr_lockfree_"))
+        db = _hot_fixture(tmp)
+        journal = Path(str(db) + "-journal")
+        before = (_sha(db), _sha(journal))
+        self.assertIsNone(mod._assert_no_live_writer(db))
+        # The probe itself writes nothing (hashes identical after).
+        self.assertEqual((_sha(db), _sha(journal)), before)
+
+    def test_live_writer_is_detected(self) -> None:
+        mod = _script_module()
+        tmp = Path(tempfile.mkdtemp(prefix="jr_locked_"))
+        db = _hot_fixture(tmp)
+        holder = sqlite3.connect(str(db), timeout=30)
+        self.addCleanup(holder.close)
+        holder.execute("BEGIN IMMEDIATE")
+        err = mod._assert_no_live_writer(db, timeout_s=2.0)
+        self.assertIsNotNone(err)
+        self.assertIn("writer", err)
+
+
+class WriterExclusionTest(unittest.TestCase):
+    def test_apply_refuses_while_writer_holds_lock(self) -> None:
+        tmp = Path(tempfile.mkdtemp(prefix="jr_wexcl_"))
+        db = _hot_fixture(tmp)
+        holder = sqlite3.connect(str(db), timeout=30)
+        self.addCleanup(holder.close)
+        holder.execute("BEGIN IMMEDIATE")
+        before = (_sha(db), _sha(Path(str(db) + "-journal")))
+        backup = Path(tempfile.mkdtemp(prefix="jr_wexclb_"))
+        out = tmp / "report.json"
+        code, _, err = _run(
+            "--db", str(db), "--out", str(out), "--expect-schema", "10",
+            "--apply", "--backup-dir", str(backup),
+            "--expect-db-sha256", before[0],
+            "--expect-journal-sha256", before[1])
+        self.assertEqual(code, 2)
+        self.assertIn("writer", err)
+        # Refused before any backup or target write.
+        self.assertFalse((backup / "copy.db").exists())
+        self.assertFalse(out.exists())
+        self.assertEqual(
+            (_sha(db), _sha(Path(str(db) + "-journal"))), before)
+
+    def test_successful_apply_records_pre_apply_hashes(self) -> None:
+        tmp = Path(tempfile.mkdtemp(prefix="jr_pah_"))
+        db = _hot_fixture(tmp)
+        backup = Path(tempfile.mkdtemp(prefix="jr_pahb_"))
+        before = (_sha(db), _sha(Path(str(db) + "-journal")))
+        out = tmp / "report.json"
+        code, _, _ = _run(
+            "--db", str(db), "--out", str(out), "--expect-schema", "10",
+            "--apply", "--backup-dir", str(backup),
+            "--expect-db-sha256", before[0],
+            "--expect-journal-sha256", before[1])
+        self.assertEqual(code, 0)
+        report = json.loads(out.read_text(encoding="utf-8"))
+        self.assertEqual(report["pre_apply_hashes"],
+                         {"db": before[0], "journal": before[1]})
+        self.assertEqual(report["writer_check"], "excluded")
 
 
 if __name__ == "__main__":

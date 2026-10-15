@@ -1,3 +1,9 @@
+## Mantenimiento aplicable + deriva/discrepancia (2026-10-16, sin push aun)
+--apply con backup real + re-verificacion pre-write + exclusion de
+escritores + aplicado-vs-restaurado; backup verificado fuera del
+repo e inexistente; regresiones de deriva/discrepancia (22 tests).
+Barrera 1108 exit 0. Sin aplicar, sin corridas. V2 abierto.
+
 ## Correccion revision 2026-10-16 — metricas honestas + apply/backup (sin push aun)
 dispatchDelayMs/yieldLagMs (nombres honestos) + test ruta real con
 delay 300ms (3/3 estable); --apply con backup fuera de git +

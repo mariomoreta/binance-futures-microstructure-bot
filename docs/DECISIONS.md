@@ -1460,5 +1460,18 @@ para siempre) + test. Sin cambios de estrategia/umbrales/ejecucion.
 3. Informe reproducible publicado:
    `docs/evidence/RECOVERY_REHEARSAL_20261015.json` (hot-rollback,
    integrity ok, schema 10, consumido, intacto; re-ejecutable).
+
+## Mantenimiento aplicable + deriva/discrepancia (2026-10-16, append-only, sobre 3a55052; sin aplicar, sin corridas)
+
+`--apply` completo (probar→respaldar→restaurar→aplicar) con backup
+real obligatorio fuera de git + restauración ensayada desde ese par
+(los hashes documentan, solo el par restaura). Re-verificación de
+hashes + exclusión de escritores (lock-only BEGIN/ROLLBACK, cero
+escrituras) INMEDIATAMENTE antes del write; aplicado-vs-restaurado
+automático aun sin --expect-counts. Destino propuesto verificado:
+`C:\proyectos\binance-db-backups\recovery-20261015-3a55052` (fuera
+del repo, inexistente). Regresiones: deriva pre-apply y discrepancia
+post (helpers + CLI). 22 tests journal. Comando definitivo en
+`DB_MAINTENANCE_RECOVERY.md` paso 3, pendiente de autorización.
    Procedimiento `DB_MAINTENANCE_RECOVERY.md` actualizado con el
    comando exacto + hashes para autorizacion.
