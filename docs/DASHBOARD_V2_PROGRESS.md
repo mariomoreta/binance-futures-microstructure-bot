@@ -94,7 +94,7 @@ NEXT AUTHORIZED SLICE
   0 rechazos/reconnects/parse, lags sanos, watchers 22+22, cierre
   natural, PIDs muertos, COMPLETED 610s, sin journal, DB 0B.
 - Evidencia: RUN_OBS10M_20261015_COMPLETED.txt + 2 capturas terminal.
-- Sin push aun (informe). V2 abierto, monitor detenido.
+- Informe push 67472e0; reconciliacion (UUID/persistencia/funding) sin push aun. V2 abierto, monitor detenido.
 
 ## DASH-V2-FEEDATTR — 2026-10-16 (correccion atribucion del feed, push 8c73de2)
 

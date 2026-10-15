@@ -716,7 +716,25 @@ here and request approval before treating it as binding. Never mark
 features VERIFIED without evidence.
 
 
-## O2 observation-10m run completed - 2026-10-15 (autorizada, sobre 10cad5c, sin push aun)
+## O2 reconciliation UUID/persistence/funding - 2026-10-16 (sobre 67472e0, sin nuevas corridas)
+
+- `DECISIONS_REVIEWED` — informe OBS10M, codigo recorder/resolve,
+  esquema y contenidos DB, log de la corrida.
+- `NEW_DECISIONS_RECORDED` — addendum + JSON de reconciliacion (esta
+  entrada los indexa).
+- `FEATURES_IMPLEMENTED` — correccion UUID/persistencia/funding en el
+  informe + addendum + evidencia estructurada (no codigo).
+- `FEATURES_VERIFIED` — UUID exacto (20/20 + final_summary + vecinas),
+  246 writes a historical.db con UUID (183+33+30), 245 = 13 episodios;
+  Starting/Stop/umbrales/identidad no tocados (sin codigo).
+- `DEFERRED_FEATURES` — baseline por tabla pre-run (proxima ventana),
+  resto excluido.
+- `BACKLOG_UPDATED` — yes: this entry.
+- `DOCUMENTATION_CONFLICTS` — corregidos aqui: UUID quimera del
+  informe, "historical.db sin cambios" (contenido nuevo con 0B),
+  245 como cruces independientes (son 13 episodios).
+
+## O2 observation-10m run completed - 2026-10-15 (autorizada, sobre 10cad5c, push 67472e0)
 
 - `DECISIONS_REVIEWED` — preset observation-10m, readiness verde 6/6,
   registro terminal previo, DB legible, cadena supervisada.

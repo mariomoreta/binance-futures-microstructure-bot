@@ -1,8 +1,13 @@
-## Corrida autorizada observation-10m 600s COMPLETADA (2026-10-15, push 10cad5c + informe sin push aun)
+## Reconciliacion OBS10M UUID/persistencia/funding (2026-10-16, sobre 67472e0, sin push aun)
+UUID exacto, 246 writes a historical.db (delta UNKNOWN), funding 245
+= 13 episodios; addendum + JSON. Resta: commit selectivo, push,
+entrega con SHA/comparacion/hallazgos/pendientes. V2 abierto,
+monitor detenido.
+
+## Corrida autorizada observation-10m 600s COMPLETADA (2026-10-15, push 10cad5c + informe 67472e0)
 600s sanos supervisados (468162 msgs, 0 rechazos, cierre natural,
-PIDs muertos, COMPLETED 610s, sin journal). Resta: commit selectivo
-del informe + capturas, push, entrega con SHA y comparacion. V2
-abierto, monitor detenido.
+PIDs muertos, COMPLETED 610s, sin journal). V2 abierto, monitor
+detenido.
 
 ## Correccion atribucion del feed (2026-10-16, push 8c73de2)
 Sin gracia pre-start + run_id priorizado + regresion 20s A/B +

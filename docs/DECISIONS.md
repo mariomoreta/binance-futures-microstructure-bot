@@ -1594,3 +1594,16 @@ dashboard.py sin cambios (su allowlist sigue standard/validation-6h;
 el arranque autorizado usa la ruta publica V2). Tests: validacion CLI
 + fuerza/propagacion 600s + registro verificado + existentes
 intactos (BFF y BotControl).
+
+## Reconciliacion OBS10M UUID/persistencia/funding (2026-10-16, sobre 67472e0; sin nuevas corridas)
+
+UUID correcto 893f24029cba4cff96eaba7c0af094d0 por linkage exacto
+(20/20 filas en ventana + final_summary.run_id del propio log +
+vecinas con otros UUID); el valor ...888c33f89c566630 del informe
+no existe en la evidencia (quimera con la cola del UUID del piloto).
+246 writes = filas bucket a historical.db (ruta ResearchRecorder sin
+inyeccion -> HistoryStore por defecto; 183+33+30 con el UUID del
+run); delta por tabla UNKNOWN sin baseline pre-run. Funding 245
+eventos = 13 episodios (misma tasa contigua; condicion: salto a
+nuevo extremo + re-disparo ~1/s en constante). Sin codigo, umbrales
+ni estrategias tocados. Detalle en el addendum + JSON.

@@ -14,9 +14,10 @@ durante la corrida. Sin relanzamientos posteriores.
   (3 polls, supervisor_age 3.9s, sentinel_age 1.9s, rollback no
   intentado).
 - run_id probe-20261015T230630Z (stem del log); UUID del probe
-  893f24029cba4cff888c33f89c566630 (columna run_id de las filas
+  893f24029cba4cff96eaba7c0af094d0 (columna run_id de las filas
   telemetry de la corrida; linkage exacto disponible en la evidencia
-  persistida para este run).
+  persistida para este run; corregido por addendum 2026-10-16, el
+  valor ...888c33f89c566630 publicado antes no existe en la evidencia).
 - PIDs: monitor 21068, supervisor 16548, sentinel 25624 (los tres
   verified+bound al arranque).
 - Registry: RUNNING 23:06:31Z, duration 600s, expected_end
@@ -58,14 +59,16 @@ durante la corrida. Sin relanzamientos posteriores.
 
 - Flow: sampling accepted aggTrade 1446 / bookTicker 1741 / depth
   1710 (dropped contados 12277/434487/15181 — totales intactos por
-  diseno); research recorder 246 writes (flow_10s 4215, flow_1m 1909,
-  book_1m 1818), 0 drops, 0 errores, drenado; prospective 66 setups
+  diseno); research recorder 246 writes a historical.db (flow_10s 4215,
+  flow_1m 1909, book_1m 1818; 183+33+30 filas con el UUID del run —
+  ver addendum), 0 drops, 0 errores, drenado; prospective 66 setups
   rehidratados, 0 writes, 0 errores.
-- Detectores: 245 extreme_funding_rate (rachas de tasa constante por
-  simbolo con history_samples creciente 564+; clase
-  artefacto-hipotesis, sin valor de senal); 1 large_liquidation
-  individual (ETH) + 1 window; 3 volume_spike. Todos hipotesis sin
-  calibrar: contados, sin conclusiones, umbrales intactos.
+- Detectores: 245 extreme_funding_rate = 13 episodios independientes
+  (6 BTC + 1 ETH + 6 SOL; dedup por simbolo+tasa contigua, ver
+  addendum 2026-10-16; clase artefacto-hipotesis, sin valor de senal);
+  1 large_liquidation individual (ETH) + 1 window; 3 volume_spike.
+  Todos hipotesis sin calibrar: contados, sin conclusiones, umbrales
+  intactos.
 - Discovery: 927 vistos -> 505 elegibles, HOT [] (histeresis honesta).
 
 ## Barra global (inicio / mitad / final)
@@ -87,9 +90,10 @@ durante la corrida. Sin relanzamientos posteriores.
 ## Crecimiento y journal
 
 - microprobe.db 238927872B (0B: caps retienen; telemetry 1000,
-  price 51 -> 234 (+183)); historical.db sin cambios de corrida
-  (solo lectura V2). Sin hot journal
-  (microprobe.db-journal ausente): nada que recuperar, ninguna
+  price 51 -> 234 (+183)); historical.db 19181568B (0B por
+  reutilizacion de paginas, pero CON contenido nuevo: los 246 writes
+  fueron a sus tablas research — correccion por addendum 2026-10-16).
+  Sin hot journal en ninguna DB: nada que recuperar, ninguna
   recuperacion ejecutada.
 - Logs +~957KB (probe 956118B + 2 watchers ~200B).
 - SQLite legible tras el cierre (quick_check ok, schema 10).

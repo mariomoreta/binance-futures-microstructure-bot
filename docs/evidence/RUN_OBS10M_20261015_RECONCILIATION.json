@@ -1,0 +1,40 @@
+{
+  "run": "probe-20261015T230630Z",
+  "scope": "read-only reconciliation over retained evidence, no new runs",
+  "uuid_verdict": {
+    "correct": "893f24029cba4cff96eaba7c0af094d0",
+    "rejected": "893f24029cba4cff888c33f89c566630",
+    "rejected_rows": 0,
+    "proof": [
+      "20/20 telemetry rows inside [23:06:31Z, 23:16:41Z] carry the correct UUID (span 23:07:04Z-23:16:34Z)",
+      "final_summary.run_id read from logs/probe-runs/probe-20261015T230630Z.log equals the correct UUID",
+      "neighbor rows carry other runs UUIDs (pilot 6c2b922e95314bff888c33f89c566630, abort 5959ff55b8d24d55b481a439b0006a3e)",
+      "rejected value matches 0 rows; its tail equals the pilot UUID tail (transcription chimera, see addendum)"
+    ],
+    "linkage": "exact (DB run_id == log final_summary run_id == registry evidence stem file), not temporal attribution"
+  },
+  "persistence": {
+    "correction": "246 research writes went to data/historical/historical.db (HistoryStore default via ResearchRecorder._resolve_history), not microprobe.db",
+    "code_ref": "research_recorder.py:249-259 (resolve), :406-425 (flush, _writes+=1 per bucket row)",
+    "writes_counter_meaning": "flushed bucket rows (deduped, empty book buckets skipped)",
+    "own_run_rows": {"research_flow_10s": 183, "research_flow_1m": 33, "research_book_1m": 30, "sum": 246},
+    "table_totals_now": {"research_flow_10s": 4215, "research_flow_1m": 1909, "research_book_1m": 1818},
+    "per_table_delta": "UNKNOWN (no pre-run per-table baseline recorded; retention cleanup may delete concurrently)",
+    "file_sizes": {"microprobe.db": [238927872, 238927872], "historical.db": [19181568, 19181568]},
+    "journal": "absent on both DBs (no recovery executed)"
+  },
+  "funding": {
+    "raw_events": 245,
+    "per_symbol": {"BTCUSDT": 118, "ETHUSDT": 9, "SOLUSDT": 118},
+    "episodes": 13,
+    "episode_rule": "maximal same-symbol+same-rate block with gaps<=5s and history_samples+1 per second",
+    "condition": "rate steps to a new percentile extreme, then re-fires ~1/s while constant (first fires at samples 144, 204, 324, 384, 444, 564)",
+    "rates": {
+      "BTCUSDT": ["5.583e-05", "5.561e-05", "5.53e-05", "5.471e-05", "5.376e-05", "5.332e-05"],
+      "ETHUSDT": ["7.718e-05"],
+      "SOLUSDT": ["4.958e-05", "4.942e-05", "4.925e-05", "4.92e-05", "4.897e-05", "4.883e-05"]
+    },
+    "dedup": "13 independent episodes (6 BTC + 1 ETH + 6 SOL), not 245 independent crossings",
+    "aptitude": "hypothesis-artifact class, no signal value, thresholds and strategies unchanged"
+  }
+}
