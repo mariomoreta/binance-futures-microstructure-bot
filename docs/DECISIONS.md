@@ -1693,3 +1693,30 @@ mismatched/expirados, overlaps contados, rebound/baseline vacios;
 economia calculada pero RETENIDA (sin lectura). Faltan: mapping
 aprobado, calendario funding realizado (contrato §B), costes
 medidos, purga/embargo, prueba de disponibilidad.
+
+## R3 v2 + causalidad de velas (2026-10-16, sobre 69d55ba; sin corridas)
+
+1. Captura: adquisicion separada del veredicto (terminal/exit 0
+nunca implica PASS). R3 PASS exige captura RUNNING del run
+esperado + proceso verificado + atribucion exacta demostrable
+(UUID fijado presente + feed_attribution current); HEALTHY/current
+solos, coincidencia temporal y post-cierre no bastan.
+UUID ausente al adquirir: se acepta, se registra la ausencia y se
+fija el primer UUID valido posterior (tardio); cambios posteriores
+se rechazan, desapariciones se registran sin detener. Detections
+verifica run_id/UUID antes de atribuir (foreign/mismatch/unlinked
+registrados, contenido conservado pero no atribuido). Informe con
+identidades fijadas + `r3` (PASS/FAIL/UNKNOWN + motivos):
+terminal-directo/acquire-timeout/run-changed = UNKNOWN,
+enlace contradictorio = FAIL. 6 tests R3 (incl. PASS completo con
+identidades fijadas y UNKNOWN con adquisicion completa).
+2. Export: close_time venue preservado por vela (`Candle.
+close_time_ms` aditivo: solo procedencia, fuera de matematicas y
+de `input_hash`), `--as-of-ms` filtra velas abiertas (contadas),
+meta con unidades/cobertura/violaciones de cadena (0 en trio 15m)
+y distincion as_of (frontera de conocimiento) vs cutoff (split
+dev/OOS). Regresion causal: evento 1ms dentro de vela 15m llena
+en el siguiente open conocido, jamas toca su rango; runner
+conserva open/close_time (hash intacto). Mapping PROPOSED y
+salida solo-mecanica intactos; sin optimizar, sin P&L, sin
+repetir el prep economico.

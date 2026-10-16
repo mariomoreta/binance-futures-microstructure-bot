@@ -14,7 +14,12 @@ meta file — NOT an approved methodology):
   FAILED_LOW_CANDIDATE      -> correction-reversal (H2/H2-v1)
 Only instances with a usable direction + reference_price are
 exported; the rest are counted as discarded (never fabricated).
-Candles: closed regular klines for the requested symbols/interval.
+Candles: closed regular klines for the requested symbols/interval,
+with venue close_time preserved per candle. --as-of-ms drops candles
+still open at that frontier (close_time > as_of, counted); meta
+records as_of_ms (dataset knowledge frontier, in ms epoch) SEPARATE
+from cutoff_ms (dev/OOS event-time split): the two must never be
+confused. Units and coverage are documented in meta.json.
 Funding: NO realized calendar is exported — fundingRate history was
 never ingested, so the engine falls back to its labeled synthetic
 interval math (see inventory doc for the acquisition contract).
@@ -66,6 +71,10 @@ def main(argv=None) -> int:
     ap.add_argument("--interval", default="15m")
     ap.add_argument("--out-dir", default=None)
     ap.add_argument("--cutoff-ms", type=int, default=None)
+    ap.add_argument("--as-of-ms", type=int, default=None,
+                    help="dataset knowledge frontier: keep only candles with "
+                         "close_time <= as_of (open candles dropped+counted). "
+                         "Distinct from --cutoff-ms (dev/OOS event split).")
     ap.add_argument("--db", default=None,
                     help="historical DB override (tests/fixtures only; "
                          "default: canonical read-only)")
@@ -83,14 +92,31 @@ def main(argv=None) -> int:
                                                   else HISTORICAL), uri=True)
     try:
         candles = []
+        chain_violations = 0
         for sym in symbols:
             rows = con.execute(
-                'SELECT open_time, open, high, low, close FROM historical_klines'
+                'SELECT open_time, open, high, low, close, close_time'
+                ' FROM historical_klines'
                 ' WHERE symbol=? AND interval=? ORDER BY open_time',
                 (sym, args.interval)).fetchall()
-            for (t, o, h, low, c) in rows:
+            for (t, o, h, low, c, ct) in rows:
+                if args.as_of_ms is not None and ct is not None \
+                        and ct > args.as_of_ms:
+                    continue  # still open at the frontier (counted below)
                 candles.append({"symbol": sym, "open_time_ms": t, "open": o,
-                                "high": h, "low": low, "close": c})
+                                "high": h, "low": low, "close": c,
+                                "close_time_ms": ct})
+            chain = [r for r in rows if r[0] is not None]
+            for (prev, cur) in zip(chain, chain[1:]):
+                if prev[5] is not None and prev[5] > cur[0]:
+                    chain_violations += 1
+        n_open_dropped = 0
+        if args.as_of_ms is not None:
+            n_open_dropped = sum(
+                1 for sym in symbols for r in con.execute(
+                    'SELECT close_time FROM historical_klines'
+                    ' WHERE symbol=? AND interval=?', (sym, args.interval))
+                if r[0] is not None and r[0] > args.as_of_ms)
         raw_events = con.execute(
             'SELECT definition_name, symbol, event_time, direction, reference_price'
             ' FROM event_instances').fetchall()
@@ -98,7 +124,8 @@ def main(argv=None) -> int:
         con.close()
 
     events, discarded = [], {"unmapped-definition": 0, "bad-direction": 0,
-                             "bad-price": 0, "bad-time": 0, "symbol-filtered": 0}
+                             "bad-price": 0, "bad-time": 0, "symbol-filtered": 0,
+                             "open-after-asof": n_open_dropped}
     for (definition, symbol, event_time, direction, price) in raw_events:
         if definition not in PROPOSED_MAP:
             discarded["unmapped-definition"] += 1
@@ -133,15 +160,33 @@ def main(argv=None) -> int:
 
     candles_text = json.dumps(candles, sort_keys=True)
     events_text = json.dumps(events, sort_keys=True)
+    opens = sorted(c["open_time_ms"] for c in candles)
+    closes = sorted(c["close_time_ms"] for c in candles
+                    if c["close_time_ms"] is not None)
     meta = {
         "formation_method": "PROPOSED-P1-11C-map-v1 (caller-declared, NOT approved)",
         "mapping": {k: {"group": v[0], "family": v[1], "rules_version": v[2]}
                     for k, v in PROPOSED_MAP.items()},
         "direction_map": DIRECTION_MAP,
         "symbols": symbols, "interval": args.interval,
+        "units": {"times_ms": "epoch milliseconds (open_time, close_time, "
+                              "event_time, cutoff, as_of)",
+                  "prices": "quote currency (USDT) per base unit",
+                  "volumes": "not exported (engine Candle carries no volume)"},
+        "coverage": {"window_open_ms": opens[0] if opens else None,
+                     "window_close_ms": closes[-1] if closes else None,
+                     "null_close_time": sum(1 for c in candles
+                                            if c["close_time_ms"] is None),
+                     "close_chain_violations": chain_violations},
         "n_candles": len(candles), "n_events": len(events),
         "discarded": discarded,
         "cutoff_ms": cutoff,
+        "cutoff_note": "dev/OOS EVENT-time split (split_by_time); NOT a dataset "
+                       "knowledge frontier",
+        "as_of_ms": args.as_of_ms,
+        "as_of_note": "dataset knowledge frontier: only candles with "
+                      "close_time <= as_of are exported (None keeps all closed "
+                      "rows as stored); never confuse with cutoff_ms",
         "funding_calendar": None,
         "funding_note": "no realized calendar exported (fundingRate history never "
                         "ingested); engine uses labeled synthetic interval fallback",

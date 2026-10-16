@@ -225,6 +225,12 @@ class Candle:
     high: float
     low: float
     close: float
+    # Venue-reported close time (provenance only, additive 2026-10-16):
+    # close/high/low knowledge is STILL derived exclusively by the
+    # next-open rule in run_backtest (this field never enters math or
+    # input_hash). Carried so exporters/runners can preserve and check
+    # availability chains without touching causality.
+    close_time_ms: Optional[int] = None
 
 
 @dataclass(frozen=True)

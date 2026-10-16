@@ -88,7 +88,9 @@ def _load_candles(path: Path):
         out.append(Candle(
             symbol=str(row["symbol"]), open_time_ms=int(row["open_time_ms"]),
             open=float(row["open"]), high=float(row["high"]),
-            low=float(row["low"]), close=float(row["close"])))
+            low=float(row["low"]), close=float(row["close"]),
+            close_time_ms=(int(row["close_time_ms"])
+                           if row.get("close_time_ms") is not None else None)))
     return out
 
 

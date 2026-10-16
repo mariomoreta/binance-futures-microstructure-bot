@@ -1,4 +1,15 @@
-## R3 capture + offline entry/exit prep (2026-10-16, sobre 48445f2, sin push aun)
+## Captura R3 v2 + causalidad de velas (2026-10-16, sobre 69d55ba, sin push aun)
+R3 separado de adquisicion (exit 0 != PASS; HEALTHY/current
+insuficientes): UUID tardio aprende/fija, ausencias registradas,
+detections verificado antes de atribuir, identidades fijadas +
+veredicto en informe; 6 tests R3 nuevos. Export con close_time/
+as_of explicito (cadena 0 violaciones en trio 15m) + regresion
+causal intra-vela + runner preserva tiempos (hash intacto).
+Mapping PROPOSED + solo-mecanica intactos; sin P&L ni repeticion
+del prep. Resta: suites, barrera, commit, push, entrega. V2
+abierto 3020, monitor detenido, sin corridas.
+
+## R3 capture + offline entry/exit prep (2026-10-16, push 69d55ba)
 Reconciliado: matriz 10 PASS + 1 UNKNOWN (el "9 PASS" era error de
 conteo) + UNKNOWN-vs-STALE por capas (controlador vs BFF).
 Herramienta `scripts/capture_run_window.py` (solo GET runtime/

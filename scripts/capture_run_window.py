@@ -8,10 +8,33 @@ DBs, the logs, or any secret.
 
 Binding (learn-and-pin): --run-id / --probe-uuid optionally pin the
 expected identities up front; anything not pinned is learned from
-the first RUNNING sighting and pinned from then on. A different
-run_id later, or a different probe_run_id once pinned, is recorded
-as run-changed / incompatible-link and stops the schedule (exit 3):
-data is never substituted and nothing is relaunched.
+the first RUNNING sighting and pinned from then on. A RUNNING
+sighting WITHOUT a UUID is accepted (absence recorded); the first
+later valid UUID is learned and pinned, and any DIFFERENT UUID
+after pinning is recorded as incompatible-link and stops the
+schedule (exit 3): data is never substituted and nothing is
+relaunched. A UUID that disappears after pinning is recorded
+(uuid-absent-after-pin) but does not stop the schedule; that
+capture simply cannot prove exact attribution.
+
+Detections identity: before a capture's detections content is
+attributed to the expected run, its run_id/probe_run_id are
+checked (detections-foreign / detections-link-mismatch /
+detections-unlinked recorded; unattributed content is kept but
+flagged, never substituted).
+
+R3 verdict (separate from acquisition): a captured terminal state
+(exit 0) does NOT imply R3 PASS. R3 PASS requires at least one
+RUNNING capture of the expected run with a verified process
+(process_verified true) AND demonstrable exact attribution
+(feed_attribution current with the pinned UUID present in that
+capture). HEALTHY/current alone, temporal coincidence alone, or a
+post-close capture never suffice; HEALTHY vs DEGRADED is recorded
+as context, never as the attribution decision. The report carries
+the finally pinned identities plus doc["r3"] = verdict/reasons.
+Early-terminal acquisition, acquisition timeouts and
+run-changed endings yield UNKNOWN (nothing to assess / broken
+evidence); a proven contradictory link yields FAIL.
 
 Schedule: capture at first RUNNING sighting (t0), then at
 +offsets seconds (default 30,60,90), then wait (bounded) for a
@@ -24,8 +47,10 @@ Output protection: --out must be a NEW path outside data/, logs/,
 secrets/, private/ and never a database/journal/secret filename.
 All budgets are explicit; nothing waits forever.
 
-Exit codes: 0 terminal captured; 1 usage/output-protection refusal
-(no request sent); 2 invalid binding (no request sent);
+Exit codes: 0 terminal captured (acquisition complete; see doc["r3"]
+for the separate R3 verdict, which may still be UNKNOWN);
+1 usage/output-protection refusal (no request sent);
+2 invalid binding (no request sent);
 3 run-changed/incompatible-link (partial written);
 4 acquisition timeout (attempt record written);
 5 terminal timeout (partial written).
@@ -211,8 +236,11 @@ def main(argv=None) -> int:
 
     pinned_run = args.run_id.strip() if args.run_id else None
     pinned_uuid = args.probe_uuid
+    uuid_absences = 0
+    uuid_first_seen = None
     doc: dict = {
-        "tool": "capture_run_window/v1 (GET only, no Start/Stop)",
+        "tool": "capture_run_window/v2 (GET only, no Start/Stop; "
+                "acquisition outcome separated from the R3 verdict)",
         "base_url": args.base_url,
         "expected": {"run_id": pinned_run, "probe_run_id": pinned_uuid},
         "events": [],
@@ -223,7 +251,101 @@ def main(argv=None) -> int:
     def event(kind: str, detail: str) -> None:
         doc["events"].append({"at": _utc_now(), "kind": kind, "detail": detail})
 
-    # 1) Acquire RUNNING (bounded).
+    def pinned_block() -> dict:
+        return {"run_id": pinned_run, "probe_run_id": pinned_uuid,
+                "uuid_absences": uuid_absences,
+                "uuid_first_seen": uuid_first_seen}
+
+    def r3_verdict() -> dict:
+        """R3 over the captures so far (never from acquisition alone).
+
+        PASS needs one RUNNING capture of the pinned run with a
+        verified process and demonstrable exact attribution (pinned
+        UUID present in that capture + feed_attribution current) plus
+        detections content attributed to the same run. HEALTHY/current
+        without the UUID, temporal coincidence, and post-close states
+        never qualify.
+        """
+        running = [c for c in doc["captures"]
+                   if c["runtime"]["reviewed"].get("state") == "RUNNING"
+                   and c["runtime"]["reviewed"].get("run_id") == pinned_run]
+        if not running:
+            return {"verdict": "UNKNOWN",
+                    "reasons": ["no-running-capture-of-expected-run"]}
+        if any(e["kind"] == "incompatible-link" for e in doc["events"]):
+            return {"verdict": "FAIL",
+                    "reasons": ["contradictory-link-observed"]}
+        if any(e["kind"] == "run-changed" for e in doc["events"]):
+            return {"verdict": "UNKNOWN",
+                    "reasons": ["run-changed-breaks-evidence"]}
+        reasons = []
+        for cap in running:
+            rev = cap["runtime"]["reviewed"]
+            det = cap["detections"]
+            ok_uuid = (pinned_uuid is not None
+                       and rev.get("probe_run_id") == pinned_uuid)
+            ok_verified = rev.get("process_verified") is True
+            ok_attr = (ok_uuid and rev.get("feed_attribution") == "current")
+            ok_det = (isinstance(det, dict)
+                      and det.get("attributed") is True)
+            if ok_uuid and ok_verified and ok_attr and ok_det:
+                return {"verdict": "PASS",
+                        "reasons": ["qualifying-capture: %s (health %s recorded "
+                                    "as context, not as the decision)" % (
+                                        cap["tag"], rev.get("feed_health") )]}
+            missing = []
+            if not ok_uuid:
+                missing.append("exact-uuid-not-demonstrated")
+            if not ok_verified:
+                missing.append("process-not-verified")
+            if not ok_attr:
+                missing.append("attribution-not-current-with-uuid")
+            if not ok_det:
+                missing.append("detections-not-attributed")
+            reasons.append("%s lacks %s" % (cap["tag"], "+".join(missing)))
+        return {"verdict": "UNKNOWN", "reasons": reasons}
+
+    def finish(outcome: str, code: int, complete: bool) -> int:
+        doc["outcome"] = outcome
+        doc["complete"] = complete
+        doc["pinned"] = pinned_block()
+        doc["r3"] = r3_verdict()
+        out.write_text(json.dumps(doc, indent=1), encoding="utf-8")
+        return code
+
+    def check_detections(det: dict, tag: str):
+        """(entry, event-or-None). Content attributed only after identity
+        check; mismatches are kept but flagged, never substituted."""
+        base = {"request_at": det.get("request_at"),
+                "response_at": det.get("response_at"),
+                "http_ms": det.get("http_ms"),
+                "http_status": det.get("http_status"),
+                "attributed": False}
+        if not det.get("ok"):
+            base["error"] = str(det.get("error"))
+            return (base, ("detections-read-failed",
+                           "%s: %s" % (tag, det.get("error"))))
+        rev = _review_detections(det.get("payload"))
+        base["reviewed"] = rev
+        if rev.get("run_id") != pinned_run:
+            return (base, ("detections-foreign",
+                           "%s: expected run %s, detections run %s"
+                           % (tag, pinned_run, rev.get("run_id"))))
+        if pinned_uuid is None:
+            return (base, ("detections-unlinked",
+                           "%s: runtime UUID never pinned; content unattributed"
+                           % tag))
+        if rev.get("probe_run_id") is not None \
+                and rev["probe_run_id"] != pinned_uuid:
+            return (base, ("detections-link-mismatch",
+                           "%s: expected UUID %s, detections UUID %s"
+                           % (tag, pinned_uuid, rev.get("probe_run_id"))))
+        base["attributed"] = True
+        return (base, None)
+
+    # 1) Acquire RUNNING (bounded). A RUNNING sighting without a
+    # UUID is accepted (absence recorded); the first later valid UUID
+    # is learned and pinned.
     deadline = time.monotonic() + args.acquire_timeout_s
     t0_mono = None
     first = None
@@ -237,9 +359,7 @@ def main(argv=None) -> int:
                     and rev["run_id"] != pinned_run:
                 event("run-changed",
                       "expected %s, saw %s" % (pinned_run, rev["run_id"]))
-                doc["outcome"] = "run-changed"
-                out.write_text(json.dumps(doc, indent=1), encoding="utf-8")
-                return 3
+                return finish("run-changed", 3, False)
             if rev["state"] == "RUNNING" and rev["run_id"]:
                 if pinned_run is None:
                     pinned_run = rev["run_id"]
@@ -249,12 +369,15 @@ def main(argv=None) -> int:
                         and uuid != pinned_uuid:
                     event("incompatible-link",
                           "expected %s, saw %s" % (pinned_uuid, uuid))
-                    doc["outcome"] = "incompatible-link"
-                    out.write_text(json.dumps(doc, indent=1), encoding="utf-8")
-                    return 3
-                if pinned_uuid is None and uuid is not None:
+                    return finish("incompatible-link", 3, False)
+                if uuid is not None and pinned_uuid is None:
                     pinned_uuid = uuid
+                    uuid_first_seen = "acquire"
                     event("uuid-pinned", uuid)
+                if uuid is None:
+                    uuid_absences += 1
+                    event("uuid-absent-at-acquire",
+                          "RUNNING without UUID; watching for the first valid one")
                 t0_mono = time.monotonic()
                 first = (res, rev)
                 break
@@ -271,9 +394,25 @@ def main(argv=None) -> int:
     if first is None:
         event("acquire-timeout",
               "no RUNNING sighting within %.0fs" % args.acquire_timeout_s)
-        doc["outcome"] = "acquire-timeout"
-        out.write_text(json.dumps(doc, indent=1), encoding="utf-8")
-        return 4
+        return finish("acquire-timeout", 4, False)
+
+    def pin_late(uuid: str | None, tag: str) -> str | None:
+        """Learn/pin/check the runtime UUID. Returns refusal kind or None."""
+        nonlocal pinned_uuid, uuid_first_seen, uuid_absences
+        if uuid is None:
+            uuid_absences += 1
+            event("uuid-absent", "%s: no UUID yet" % tag)
+            return None
+        if pinned_uuid is None:
+            pinned_uuid = uuid
+            uuid_first_seen = tag
+            event("uuid-pinned", "%s: %s" % (tag, uuid))
+            return None
+        if uuid != pinned_uuid:
+            event("incompatible-link",
+                  "%s: expected %s, saw %s" % (tag, pinned_uuid, uuid))
+            return "incompatible-link"
+        return None
 
     def capture(tag: str) -> dict | None:
         res = _get(args.base_url, "/api/v1/runtime", args.request_timeout_s)
@@ -286,10 +425,12 @@ def main(argv=None) -> int:
             event("run-changed",
                   "%s: expected %s, saw %s" % (tag, pinned_run, rev["run_id"]))
             return "run-changed"
-        uuid = rev["probe_run_id"]
-        if uuid is not None and pinned_uuid is not None and uuid != pinned_uuid:
-            event("incompatible-link", "%s: %s" % (tag, uuid))
-            return "incompatible-link"
+        refusal = pin_late(rev.get("probe_run_id"), tag)
+        if refusal:
+            return refusal
+        det_rev, det_event = check_detections(det, tag)
+        if det_event is not None:
+            event(*det_event)
         entry = {
             "tag": tag,
             "runtime": {"request_at": res["request_at"],
@@ -297,17 +438,7 @@ def main(argv=None) -> int:
                         "http_ms": res["http_ms"],
                         "http_status": res["http_status"],
                         "reviewed": rev},
-            "detections": ({"request_at": det["request_at"],
-                            "response_at": det["response_at"],
-                            "http_ms": det["http_ms"],
-                            "http_status": det["http_status"],
-                            "reviewed": _review_detections(det.get("payload"))}
-                           if det["ok"] else
-                           {"request_at": det["request_at"],
-                            "response_at": det["response_at"],
-                            "http_ms": det["http_ms"],
-                            "http_status": det["http_status"],
-                            "error": str(det.get("error"))}),
+            "detections": det_rev,
         }
         doc["captures"].append(entry)
         return rev
@@ -315,24 +446,21 @@ def main(argv=None) -> int:
     # t0 capture from the acquiring read (no second request).
     res0, rev0 = first
     det0 = _get(args.base_url, "/api/v1/detections", args.request_timeout_s)
+    det0_rev, det0_event = check_detections(det0, "t0-running")
+    if det0_event is not None:
+        event(*det0_event)
     doc["captures"].append({
         "tag": "t0-running",
         "runtime": {"request_at": res0["request_at"],
                     "response_at": res0["response_at"],
                     "http_ms": res0["http_ms"],
                     "http_status": res0["http_status"], "reviewed": rev0},
-        "detections": ({"request_at": det0["request_at"],
-                        "response_at": det0["response_at"],
-                        "http_ms": det0["http_ms"],
-                        "http_status": det0["http_status"],
-                        "reviewed": _review_detections(det0.get("payload"))}
-                       if det0["ok"] else {"error": str(det0.get("error"))}),
+        "detections": det0_rev,
     })
     if rev0["state"] in TERMINAL_STATES:
-        doc["outcome"] = "early-terminal-captured"
-        doc["complete"] = True
-        out.write_text(json.dumps(doc, indent=1), encoding="utf-8")
-        return 0
+        # Acquisition complete, but a post-close capture alone can
+        # never prove live exact attribution: R3 stays non-PASS.
+        return finish("early-terminal-captured", 0, True)
 
     # 2) Scheduled offsets from t0.
     for off in offsets:
@@ -341,9 +469,7 @@ def main(argv=None) -> int:
             time.sleep(wait)
         got = capture("t+%gs" % off)
         if got in ("run-changed", "incompatible-link"):
-            doc["outcome"] = got
-            out.write_text(json.dumps(doc, indent=1), encoding="utf-8")
-            return 3
+            return finish(got, 3, False)
 
     # 3) Bounded terminal wait.
     end = time.monotonic() + args.terminal_timeout_s
@@ -351,20 +477,13 @@ def main(argv=None) -> int:
         time.sleep(min(args.poll_s, max(0.05, end - time.monotonic())))
         got = capture("terminal-poll")
         if got in ("run-changed", "incompatible-link"):
-            doc["outcome"] = got
-            out.write_text(json.dumps(doc, indent=1), encoding="utf-8")
-            return 3
+            return finish(got, 3, False)
         if isinstance(got, dict) and got.get("state") in TERMINAL_STATES:
-            doc["outcome"] = "terminal-captured"
-            doc["complete"] = True
-            out.write_text(json.dumps(doc, indent=1), encoding="utf-8")
-            return 0
+            return finish("terminal-captured", 0, True)
         if got is None:
             continue
     # Final attempt already recorded by the loop; close out partial.
-    doc["outcome"] = "terminal-timeout"
-    out.write_text(json.dumps(doc, indent=1), encoding="utf-8")
-    return 5
+    return finish("terminal-timeout", 5, False)
 
 
 if __name__ == "__main__":

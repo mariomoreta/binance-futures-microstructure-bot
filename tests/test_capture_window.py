@@ -1,4 +1,4 @@
-"""R3 capture tool: GET-only, pinned identities, bounded waits, safe output.
+﻿"""R3 capture tool: GET-only, pinned identities, bounded waits, safe output.
 
 Local HTTPServer fixtures only. Never touches the network beyond
 localhost, never starts a monitor, never reads the canonical DBs.
@@ -34,10 +34,124 @@ def _runtime(state="RUNNING", run="probe-test", uuid=UUID_A):
             "sentinel": {"state": "SENTINEL_ACTIVE", "lease_state": "ACTIVE"}}
 
 
-def _detections(run="probe-test"):
-    return {"available": True, "run_id": run, "probe_run_id": UUID_A,
+def _detections(run="probe-test", uuid=UUID_A):
+    return {"available": True, "run_id": run, "probe_run_id": uuid,
             "grouping_version": "v1", "events_total": 10,
             "episodes_total": 2, "limitation": None}
+
+
+def _server_url(server) -> str:
+    return "http://127.0.0.1:%d" % server.server_address[1]
+
+
+def _run_server(testcase, runtime_plan, **kw):
+    return _serve(testcase, runtime_plan, **kw)
+
+
+class R3VerdictTest(unittest.TestCase):
+    """Acquisition outcome (exit code) is separated from the R3 verdict.
+
+    R3 PASS needs a RUNNING capture of the expected run with a
+    verified process and demonstrable exact attribution (pinned UUID
+    present + feed_attribution current) plus attributed detections.
+    HEALTHY/current alone, temporal coincidence and post-close
+    captures never suffice.
+    """
+
+    def test_early_terminal_acquires_but_r3_not_pass(self) -> None:
+        server, _ = _run_server(self, [_runtime("COMPLETED")])
+        out = _tmpout(self)
+        code = main(["--base-url", _server_url(server), "--out", str(out),
+                     "--offsets", "30"] + BASE_ARGS)
+        self.assertEqual(code, 0)  # acquisition complete ...
+        doc = json.loads(out.read_text(encoding="utf-8"))
+        self.assertEqual(doc["outcome"], "early-terminal-captured")
+        self.assertNotEqual(doc["r3"]["verdict"], "PASS")
+        self.assertIn("no-running-capture-of-expected-run",
+                      doc["r3"]["reasons"])
+        self.assertEqual(doc["pinned"]["run_id"], "probe-test")
+
+    def test_absent_uuid_then_available_passes(self) -> None:
+        server, _ = _run_server(self, 
+            [_runtime("RUNNING", uuid=None),
+             _runtime("RUNNING", uuid=UUID_A),
+             _runtime("COMPLETED", uuid=UUID_A)])
+        out = _tmpout(self)
+        code = main(["--base-url", _server_url(server), "--out", str(out),
+                     "--offsets", "0.2"] + BASE_ARGS)
+        self.assertEqual(code, 0)
+        doc = json.loads(out.read_text(encoding="utf-8"))
+        kinds = [e["kind"] for e in doc["events"]]
+        self.assertIn("uuid-absent-at-acquire", kinds)
+        self.assertIn("uuid-pinned", kinds)
+        self.assertEqual(doc["pinned"]["probe_run_id"], UUID_A)
+        self.assertGreaterEqual(doc["pinned"]["uuid_absences"], 1)
+        self.assertEqual(doc["r3"]["verdict"], "PASS")
+
+    def test_later_incompatible_uuid_fails_r3(self) -> None:
+        server, _ = _run_server(self, 
+            [_runtime("RUNNING", uuid=UUID_A),
+             _runtime("RUNNING", uuid=UUID_B)])
+        out = _tmpout(self)
+        code = main(["--base-url", _server_url(server), "--out", str(out),
+                     "--offsets", "0.2"] + BASE_ARGS)
+        self.assertEqual(code, 3)
+        doc = json.loads(out.read_text(encoding="utf-8"))
+        self.assertEqual(doc["outcome"], "incompatible-link")
+        self.assertEqual(doc["r3"]["verdict"], "FAIL")
+        self.assertEqual(doc["pinned"]["probe_run_id"], UUID_A)
+
+    def test_foreign_detections_unattributed_r3_unknown(self) -> None:
+        server, handler = _serve(
+            self, [_runtime("RUNNING"), _runtime("COMPLETED")],
+            detections=_detections(run="probe-other", uuid=UUID_B))
+        out = _tmpout(self)
+        code = main(["--base-url", _server_url(server), "--out", str(out),
+                     "--offsets", "0.2"] + BASE_ARGS)
+        self.assertEqual(code, 0)  # runtime schedule unaffected ...
+        doc = json.loads(out.read_text(encoding="utf-8"))
+        kinds = [e["kind"] for e in doc["events"]]
+        self.assertIn("detections-foreign", kinds)
+        for cap in doc["captures"]:
+            self.assertFalse(cap["detections"]["attributed"])
+            # Foreign content kept verbatim, never substituted.
+            self.assertEqual(cap["detections"]["reviewed"]["run_id"],
+                             "probe-other")
+        self.assertNotEqual(doc["r3"]["verdict"], "PASS")
+        self.assertTrue(any("detections-not-attributed" in r
+                            for r in doc["r3"]["reasons"]))
+
+    def test_complete_acquisition_can_stay_unknown(self) -> None:
+        # Verified + current but the UUID never appears: exact
+        # attribution not demonstrable, so R3 stays UNKNOWN even
+        # though the terminal state was captured (exit 0).
+        server, _ = _run_server(self, 
+            [_runtime("RUNNING", uuid=None),
+             _runtime("COMPLETED", uuid=None)])
+        out = _tmpout(self)
+        code = main(["--base-url", _server_url(server), "--out", str(out),
+                     "--offsets", "0.2"] + BASE_ARGS,
+                    )
+        self.assertEqual(code, 0)
+        doc = json.loads(out.read_text(encoding="utf-8"))
+        self.assertEqual(doc["outcome"], "terminal-captured")
+        self.assertEqual(doc["r3"]["verdict"], "UNKNOWN")
+        self.assertTrue(any("exact-uuid-not-demonstrated" in r
+                            for r in doc["r3"]["reasons"]))
+        self.assertIsNone(doc["pinned"]["probe_run_id"])
+
+    def test_full_pass_saves_pinned_identities(self) -> None:
+        server, _ = _run_server(self, 
+            [_runtime("RUNNING"), _runtime("RUNNING"), _runtime("COMPLETED")])
+        out = _tmpout(self)
+        code = main(["--base-url", _server_url(server), "--out", str(out),
+                     "--offsets", "0.2,0.4"] + BASE_ARGS)
+        self.assertEqual(code, 0)
+        doc = json.loads(out.read_text(encoding="utf-8"))
+        self.assertEqual(doc["r3"]["verdict"], "PASS")
+        self.assertEqual(doc["pinned"],
+                         {"run_id": "probe-test", "probe_run_id": UUID_A,
+                          "uuid_absences": 0, "uuid_first_seen": "acquire"})
 
 
 class _Handler(BaseHTTPRequestHandler):
@@ -121,10 +235,10 @@ BASE_ARGS = ["--poll-s", "0.05", "--acquire-timeout-s", "5",
 
 class CaptureFlowTest(unittest.TestCase):
     def test_valid_run_to_terminal(self) -> None:
-        server, _ = self._run_server(
+        server, _ = _run_server(self, 
             [_runtime("RUNNING"), _runtime("RUNNING"), _runtime("COMPLETED")])
         out = _tmpout(self)
-        code = main(["--base-url", self._url(server), "--out", str(out),
+        code = main(["--base-url", _server_url(server), "--out", str(out),
                      "--offsets", "0.2,0.4"] + BASE_ARGS)
         self.assertEqual(code, 0)
         doc = json.loads(out.read_text(encoding="utf-8"))
@@ -139,9 +253,9 @@ class CaptureFlowTest(unittest.TestCase):
         self.assertEqual((det["events_total"], det["episodes_total"]), (10, 2))
 
     def test_learn_and_pin_without_args(self) -> None:
-        server, _ = self._run_server([_runtime("RUNNING"), _runtime("COMPLETED")])
+        server, _ = _run_server(self, [_runtime("RUNNING"), _runtime("COMPLETED")])
         out = _tmpout(self)
-        code = main(["--base-url", self._url(server), "--out", str(out),
+        code = main(["--base-url", _server_url(server), "--out", str(out),
                      "--offsets", "0.2"] + BASE_ARGS)
         self.assertEqual(code, 0)
         kinds = [e["kind"] for e in
@@ -150,11 +264,11 @@ class CaptureFlowTest(unittest.TestCase):
         self.assertIn("uuid-pinned", kinds)
 
     def test_run_change_stops_without_substitution(self) -> None:
-        server, handler = self._run_server(
+        server, handler = _run_server(self, 
             [_runtime("RUNNING", run="probe-test"), _runtime("RUNNING", run="probe-other")])
         out = _tmpout(self)
         before = handler.total_calls
-        code = main(["--base-url", self._url(server), "--out", str(out),
+        code = main(["--base-url", _server_url(server), "--out", str(out),
                      "--run-id", "probe-test", "--offsets", "30"] + BASE_ARGS)
         self.assertEqual(code, 3)
         doc = json.loads(out.read_text(encoding="utf-8"))
@@ -166,27 +280,27 @@ class CaptureFlowTest(unittest.TestCase):
         self.assertGreater(handler.total_calls, before)
 
     def test_incompatible_link_refused(self) -> None:
-        server, _ = self._run_server([_runtime("RUNNING", uuid=UUID_B)])
+        server, _ = _run_server(self, [_runtime("RUNNING", uuid=UUID_B)])
         out = _tmpout(self)
-        code = main(["--base-url", self._url(server), "--out", str(out),
+        code = main(["--base-url", _server_url(server), "--out", str(out),
                      "--probe-uuid", UUID_A] + BASE_ARGS)
         self.assertEqual(code, 3)
         doc = json.loads(out.read_text(encoding="utf-8"))
         self.assertEqual(doc["outcome"], "incompatible-link")
 
     def test_early_terminal_captured(self) -> None:
-        server, _ = self._run_server([_runtime("COMPLETED")])
+        server, _ = _run_server(self, [_runtime("COMPLETED")])
         out = _tmpout(self)
-        code = main(["--base-url", self._url(server), "--out", str(out),
+        code = main(["--base-url", _server_url(server), "--out", str(out),
                      "--offsets", "30"] + BASE_ARGS)
         self.assertEqual(code, 0)
         doc = json.loads(out.read_text(encoding="utf-8"))
         self.assertEqual(doc["outcome"], "early-terminal-captured")
 
     def test_error_status_records_attempt(self) -> None:
-        server, _ = self._run_server([], status_code=500)
+        server, _ = _run_server(self, [], status_code=500)
         out = _tmpout(self)
-        code = main(["--base-url", self._url(server), "--out", str(out),
+        code = main(["--base-url", _server_url(server), "--out", str(out),
                      "--acquire-timeout-s", "1"] + BASE_ARGS)
         self.assertEqual(code, 4)
         doc = json.loads(out.read_text(encoding="utf-8"))
@@ -195,18 +309,12 @@ class CaptureFlowTest(unittest.TestCase):
                             for e in doc["events"]))
 
     def test_timeout_records_without_hanging(self) -> None:
-        server, _ = self._run_server([_runtime("RUNNING")], sleep_s=3.0)
+        server, _ = _run_server(self, [_runtime("RUNNING")], sleep_s=3.0)
         out = _tmpout(self)
-        code = main(["--base-url", self._url(server), "--out", str(out),
+        code = main(["--base-url", _server_url(server), "--out", str(out),
                      "--acquire-timeout-s", "1", "--request-timeout-s", "0.2"]
                     + BASE_ARGS[2:])
         self.assertEqual(code, 4)
-
-    def _run_server(self, runtime_plan, **kw):
-        return _serve(self, runtime_plan, **kw)
-
-    def _url(self, server) -> str:
-        return "http://127.0.0.1:%d" % server.server_address[1]
 
 
 class OutputProtectionTest(unittest.TestCase):
@@ -251,3 +359,4 @@ class OutputProtectionTest(unittest.TestCase):
 
 if __name__ == "__main__":
     raise SystemExit(unittest.main())
+

@@ -116,6 +116,18 @@ NEXT AUTHORIZED SLICE
 - Evidencia: `docs/evidence/V2_3020_SYSTEM_TOP.png`,
   `V2_3020_SYSTEM_EPISODES.png`. Monitor detenido.
 
+## DASH-V2-R3CAP-V2 — 2026-10-16 (veredicto R3 + causalidad)
+
+- Starting SHA: `69d55ba`. Sin corridas, papel ni ordenes.
+- Captura v2: veredicto separado, UUID tardio/ausencias,
+  detections verificado, identidades fijadas (6 tests R3 nuevos).
+- Export v2: close_time/as_of/cadena + regresion intra-vela +
+  runner preserva tiempos, hash intacto (4 tests nuevos).
+- Comando proxima ventana: sin cambios
+  (`capture_run_window.py --run-id <stem> --out
+  docs/evidence/R3_WINDOW_<stem>.json`).
+- Verification: suites + barrera en el cierre.
+
 ## DASH-V2-R3CAP — 2026-10-16 (captura R3 lista + prep offline)
 
 - Starting SHA: `48445f2`. Sin corridas, papel ni ordenes.

@@ -716,6 +716,27 @@ here and request approval before treating it as binding. Never mark
 features VERIFIED without evidence.
 
 
+## F-R3CAP-02 + F-ENTRY-PREP-02 — veredicto R3 y causalidad (2026-10-16, sobre 69d55ba, sin corridas)
+
+- `DECISIONS_REVIEWED` — captura v1, contrato de velas real,
+  conversion del runner, `input_hash`, reglas de conocimiento v4.2.
+- `NEW_DECISIONS_RECORDED` — DECISIONS §R3 v2 + causalidad;
+  contrato close_time/as_of en inventario.
+- `FEATURES_IMPLEMENTED` — captura: veredicto separado + UUID
+  tardio/ausencias + detections verificado + identidades fijadas;
+  export/runner: close_time aditivo + as_of + cadena; motor
+  intacto (campo solo procedencia).
+- `FEATURES_VERIFIED` — 6 R3 (terminal-directo, tardio, incompatible,
+  foreign, UNKNOWN-completo, PASS con fijadas) + 4 export/causal
+  (close_time, as_of vs cutoff, preservacion, intra-vela con
+  control negativo); locales, sin Binance.
+- `DEFERRED_FEATURES` — R3 vivo, mapping, funding, costes, purga,
+  entradas/salidas, paper, ejecucion.
+- `BACKLOG_UPDATED` — yes: this entry (IDs F-R3CAP-02,
+  F-ENTRY-PREP-02).
+- `DOCUMENTATION_CONFLICTS` — none new (PROPOSED + mecanica
+  intactos; prep economico no repetido).
+
 ## F-R3CAP-01 + F-ENTRY-PREP-01 — captura R3 + prep offline (2026-10-16, sobre 48445f2, sin corridas)
 
 - `DECISIONS_REVIEWED` — cierre brief R1-R11, contratos runtime/

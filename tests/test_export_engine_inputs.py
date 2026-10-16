@@ -12,23 +12,34 @@ import unittest
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "scripts"))
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "src"))
 
 from export_engine_inputs import main  # noqa: E402
+from microstructure_probe.backtest_offline import (  # noqa: E402
+    BacktestConfig,
+    Candle,
+    StudyEvent,
+    input_hash,
+    run_backtest,
+)
+from run_family_evaluation import _load_candles  # noqa: E402
 
 
-def _fixture(testcase):
+def _fixture(testcase, close_times=True):
     tmp = Path(tempfile.mkdtemp(prefix="engexp_"))
     testcase.addCleanup(lambda: _rmtree(tmp))
     db = tmp / "hist.db"
     con = sqlite3.connect(str(db))
     try:
         con.execute("CREATE TABLE historical_klines (symbol TEXT, interval TEXT,"
-                    " open_time INTEGER, open REAL, high REAL, low REAL, close REAL)")
+                    " open_time INTEGER, open REAL, high REAL, low REAL, close REAL,"
+                    " close_time INTEGER)")
         base = 1_700_000_000_000
         for i in range(10):
-            con.execute("INSERT INTO historical_klines VALUES (?,?,?,?,?,?,?)",
+            ct = base + (i + 1) * 900_000 if close_times else None
+            con.execute("INSERT INTO historical_klines VALUES (?,?,?,?,?,?,?,?)",
                         ("BTCUSDT", "15m", base + i * 900_000, 100.0 + i,
-                         101.0 + i, 99.0 + i, 100.5 + i))
+                         101.0 + i, 99.0 + i, 100.5 + i, ct))
         con.execute("CREATE TABLE event_instances (definition_name TEXT, symbol TEXT,"
                     " event_time INTEGER, direction TEXT, reference_price REAL)")
         rows = [("MOMENTUM_ACCELERATION_UP", "BTCUSDT", base + 900_000, "up", 101.0),
@@ -97,6 +108,100 @@ class ExportAdapterTest(unittest.TestCase):
         main(["--db", str(db), "--out-dir", str(tmp / "exp")])
         self.assertTrue((tmp / "exp" / "meta.json").exists())
         self.assertEqual(before & set((tmp / "exp").rglob("*")), set())
+
+
+class CloseTimeContractTest(unittest.TestCase):
+    def test_close_time_preserved_units_and_coverage(self) -> None:
+        db, tmp = _fixture(self)
+        out = tmp / "exp"
+        code = main(["--db", str(db), "--symbols", "BTCUSDT",
+                     "--interval", "15m", "--out-dir", str(out)])
+        self.assertEqual(code, 0)
+        candles = json.loads((out / "candles.json").read_text(encoding="utf-8"))
+        meta = json.loads((out / "meta.json").read_text(encoding="utf-8"))
+        self.assertTrue(all(c["close_time_ms"] is not None for c in candles))
+        self.assertEqual(candles[0]["close_time_ms"],
+                         candles[0]["open_time_ms"] + 900_000)
+        self.assertIn("epoch milliseconds", meta["units"]["times_ms"])
+        self.assertEqual(meta["coverage"]["window_open_ms"],
+                         candles[0]["open_time_ms"])
+        self.assertEqual(meta["coverage"]["null_close_time"], 0)
+        self.assertEqual(meta["coverage"]["close_chain_violations"], 0)
+
+    def test_as_of_filters_open_candles_and_differs_from_cutoff(self) -> None:
+        db, tmp = _fixture(self)
+        out = tmp / "exp"
+        base = 1_700_000_000_000
+        # Frontier inside candle 5: candles closing after it are dropped.
+        code = main(["--db", str(db), "--symbols", "BTCUSDT",
+                     "--interval", "15m", "--out-dir", str(out),
+                     "--as-of-ms", str(base + 5 * 900_000)])
+        self.assertEqual(code, 0)
+        meta = json.loads((out / "meta.json").read_text(encoding="utf-8"))
+        candles = json.loads((out / "candles.json").read_text(encoding="utf-8"))
+        self.assertEqual(len(candles), 5)
+        self.assertEqual(meta["discarded"]["open-after-asof"], 5)
+        self.assertEqual(meta["as_of_ms"], base + 5 * 900_000)
+        # cutoff (dev/OOS event split) is a different knob with a
+        # different meaning: it never filters candles here.
+        self.assertNotEqual(meta["as_of_ms"], meta["cutoff_ms"])
+        self.assertIn("never confuse", meta["as_of_note"])
+
+    def test_runner_preserves_open_and_close_times(self) -> None:
+        db, tmp = _fixture(self)
+        out = tmp / "exp"
+        main(["--db", str(db), "--symbols", "BTCUSDT",
+              "--interval", "15m", "--out-dir", str(out)])
+        rows = json.loads((out / "candles.json").read_text(encoding="utf-8"))
+        kept = _load_candles(out / "candles.json")
+        self.assertEqual(len(kept), len(rows))
+        for raw, candle in zip(rows, kept):
+            self.assertEqual(candle.open_time_ms, raw["open_time_ms"])
+            self.assertEqual(candle.close_time_ms, raw["close_time_ms"])
+        # Carried provenance never enters the identity hash.
+        h1 = input_hash([], kept)
+        stripped = [Candle(c.symbol, c.open_time_ms, c.open, c.high,
+                           c.low, c.close) for c in kept]
+        self.assertEqual(h1, input_hash([], stripped))
+
+
+class IntraCandleCausalityTest(unittest.TestCase):
+    """An event inside a 15m candle cannot use that candle's final
+    close/high/low before it closes (fail-before would fill at 100.0,
+    stop at the 1.0 low, or harvest the 200.0 high)."""
+
+    def test_unclosed_candle_range_never_touched(self) -> None:
+        step = 900_000
+        t0 = 1_700_000_000_000
+        candles = [
+            Candle("BTCUSDT", t0, 100.0, 200.0, 1.0, 101.0, t0 + step),
+            Candle("BTCUSDT", t0 + step, 100.5, 100.6, 100.4, 100.5,
+                   t0 + 2 * step),
+            Candle("BTCUSDT", t0 + 2 * step, 100.5, 100.6, 100.4, 100.5,
+                   t0 + 3 * step),
+        ]
+        events = [StudyEvent(symbol="BTCUSDT", event_time_ms=t0 + 1,
+                             direction="LONG", reference_price=100.0,
+                             family="H1", rules_version="H1-v1")]
+        cfg = BacktestConfig(family="H1", rules_version="H1-v1",
+                             exit_horizon_ms=3600_000, stop_distance_pct=0.5,
+                             notional_usdt=1000.0)
+        res = run_backtest(events, candles, cfg, dataset_id="causal-fixture",
+                           segment="dev")
+        self.assertEqual(res["n_trades"], 1)
+        trade = res["trades"][0]
+        # Fill at the first KNOWN open strictly after the event...
+        self.assertEqual(trade["entry_ms"], t0 + step)
+        self.assertAlmostEqual(trade["entry_px"], 100.5, places=9)
+        # ...never at the enclosing candle's open/close, never stopped
+        # by its low, never harvesting its high.
+        self.assertNotEqual(trade["entry_ms"], t0)
+        self.assertNotEqual(trade["exit_reason"], "stop")
+        self.assertLess(trade["mfe_pct"], 1.0)  # 200.0 high would read ~99%
+        # Negative control: a lookahead engine using candle0 would fill
+        # at 100.0, stop at the 1.0 low and harvest ~99% MFE — every one
+        # of those readings differs here, so the test discriminates.
+        self.assertNotAlmostEqual(trade["entry_px"], 100.0, places=9)
 
 
 if __name__ == "__main__":

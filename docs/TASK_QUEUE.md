@@ -1,4 +1,11 @@
-## R3 capture + prep offline (2026-10-16, sobre 48445f2, sin push aun)
+## Captura R3 v2 + causalidad (2026-10-16, sobre 69d55ba, sin push aun)
+Veredicto R3 separado + UUID tardio + detections verificado (6
+tests); close_time/as_of + regresion intra-vela + runner conserva
+tiempos. PROPOSED + mecanica intactos, sin P&L. Resta: suites,
+barrera, commit, push, entrega. Sin corridas/gates. V2 abierto,
+monitor detenido.
+
+## R3 capture + prep offline (2026-10-16, push 69d55ba)
 Reconciliacion 10+1 + UNKNOWN/STALE por capas; captura GET-only
 lista (10 tests) con comando para la proxima ventana; inventario
 H1/H2/H3 + adaptador + prep mecanico en temp (economia retenida).

@@ -30,9 +30,16 @@ change was needed or made.
 
 Regular klines (OHLCV): BTC/ETH/SOL 1h x719 + 15m x2879, BTC 1m x4319,
 MINA/NMR/ORCA 1h x719; window ~2026-09-07..2026-10-07. Mark klines
-(no volume): trio 1h x719. Engine Candle needs OHLC only: regular
-15m used here (8637 candles trio). Mark klines reserved for
-mark-referenced variants (not run).
+(no volume): trio 1h x719. The klines table carries venue
+close_time per candle: the adapter exports it as close_time_ms
+(engine Candle carries it as provenance only; close/high/low
+knowledge still derives exclusively from the next-open rule).
+Contract audit on the trio 15m export (8637 candles): 0 null
+close_time, 0 close_chain_violations (no close_time past the next
+open). Units: ms epoch times, USDT-quoted prices, no volumes.
+as_of_ms (dataset knowledge frontier: only close_time <= as_of
+exported) is recorded SEPARATE from cutoff_ms (dev/OOS event-time
+split): the two must never be confused.
 
 ## §B funding acquisition contract (missing piece)
 
@@ -50,6 +57,12 @@ Adapter: `scripts/export_engine_inputs.py` (read-only canonical DB
 mapping + direction convention echoed, `meta.json` with SHAs).
 Runner: `run_family_evaluation.py` on the export, cutoff
 1790010000000, formation `PROPOSED-P1-11C-map-v1`.
+Causal regression (new, `IntraCandleCausalityTest`): an event
+1ms inside a 15m candle fills at the next known open (never the
+enclosing open/close), never stops on its low, never harvests its
+high — with a negative control against each lookahead reading;
+`_load_candles` preserves open_time_ms + close_time_ms and the
+carried close_time provably never enters `input_hash`.
 Envelope: input_hash `1358c7f05ee8474b`, 6 groups x dev/oos x 3
 cost scales, 692 trades @1x. Mechanics (NOT economics):
 dev 778 / oos 780 events; n_mismatched 0; n_expired 0;
