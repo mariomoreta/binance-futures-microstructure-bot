@@ -1,3 +1,10 @@
+## Atribucion exacta R3 (2026-10-16, sobre a2aebc5, sin push aun)
+BFF method/snapshot_run_id/timestamp + capturador PASS solo
+exact-uuid con UUID registro=snapshot (3 regresiones nuevas);
+frontend 304 + capturador 19 + export 6 verdes locales. Resta:
+commit, push, entrega. Sin corridas/gates. V2 abierto,
+monitor detenido.
+
 ## Captura R3 v2 + causalidad (2026-10-16, sobre 69d55ba, sin push aun)
 Veredicto R3 separado + UUID tardio + detections verificado (6
 tests); close_time/as_of + regresion intra-vela + runner conserva

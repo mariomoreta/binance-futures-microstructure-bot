@@ -14,7 +14,8 @@ export const STATUS_BUDGET_MS=4200;
 export const STOP_BUDGET_MS=8000;
 export const START_BUDGET_MS=65000;
 export type FeedAttribution="current"|"previous-run"|"none";
-export type RuntimeState={running:boolean;state:string;pid:number|null;launcher:string|null;mode:string;uptime_seconds:number|null;duration_seconds:number|null;started_at:string|null;feed_health:string;latest_snapshot_age:number|null;observed_at?:string;supervisor?:WatcherEvidence;sentinel?:WatcherEvidence;error?:string;run_id?:string|null;expected_end_at?:string|null;elapsed_seconds?:number|null;remaining_seconds?:number|null;last_exit_code?:number|null;last_exit_reason?:string|null;last_exit_at?:string|null;process_state?:string;process_verified?:boolean;preset?:string|null;feed_attribution?:FeedAttribution;feed_note?:string|null;probe_run_id?:string|null};
+export type FeedAttributionMethod="exact-uuid"|"temporal"|"none";
+export type RuntimeState={running:boolean;state:string;pid:number|null;launcher:string|null;mode:string;uptime_seconds:number|null;duration_seconds:number|null;started_at:string|null;feed_health:string;latest_snapshot_age:number|null;observed_at?:string;supervisor?:WatcherEvidence;sentinel?:WatcherEvidence;error?:string;run_id?:string|null;expected_end_at?:string|null;elapsed_seconds?:number|null;remaining_seconds?:number|null;last_exit_code?:number|null;last_exit_reason?:string|null;last_exit_at?:string|null;process_state?:string;process_verified?:boolean;preset?:string|null;feed_attribution?:FeedAttribution;feed_note?:string|null;probe_run_id?:string|null;feed_attribution_method?:FeedAttributionMethod;feed_snapshot_run_id?:string|null;feed_snapshot_timestamp?:number|null};
 // Project-owned launchers (canonical control.py): agent CLI, dashboard V2
 // and direct terminal self-registration. Any other launcher value is
 // treated as foreign and never offered a V2 stop. Backend stop_probe
@@ -57,10 +58,10 @@ export const FEED_STALE_AFTER_S=120;
 // A row claiming far more runtime than the run could have lived through
 // cannot be this run's evidence.
 export const FEED_RUNTIME_TOLERANCE_S=30;
-export type FeedEvidence={feed_health:string;latest_snapshot_age:number|null;feed_attribution:FeedAttribution;feed_note:string|null};
+export type FeedEvidence={feed_health:string;latest_snapshot_age:number|null;feed_attribution:FeedAttribution;feed_note:string|null;feed_attribution_method:FeedAttributionMethod;feed_snapshot_run_id:string|null;feed_snapshot_timestamp:number|null};
 export type FeedRunWindow={started_at:string|null;last_exit_at:string|null;expected_end_at:string|null;state:string;runUuid?:string|null};
-function feedUnknown(note:string,age:number|null=null):FeedEvidence{
- return {feed_health:"UNKNOWN",latest_snapshot_age:age,feed_attribution:"none",feed_note:note};
+function feedUnknown(note:string,age:number|null=null,snapRun:string|null=null,snapTs:number|null=null):FeedEvidence{
+ return {feed_health:"UNKNOWN",latest_snapshot_age:age,feed_attribution:"none",feed_note:note,feed_attribution_method:"none",feed_snapshot_run_id:snapRun,feed_snapshot_timestamp:snapTs};
 }
 export function feedFromStore(window:FeedRunWindow={started_at:null,last_exit_at:null,expected_end_at:null,state:"UNKNOWN"}):FeedEvidence{
  const nowMs=Date.now();
@@ -72,62 +73,70 @@ export function feedFromStore(window:FeedRunWindow={started_at:null,last_exit_at
  const tsMs=row.timestamp*1000;
  const ageS=Math.round(nowMs/1000-row.timestamp);
  if(!Number.isFinite(ageS)||ageS<0)return feedUnknown("invalid-timestamp");
- const rowRunId=typeof row.run_id==="string"&&row.run_id?row.run_id:null;
- const rowRt=typeof row.runtime_seconds==="number"&&Number.isFinite(row.runtime_seconds)?row.runtime_seconds:null;
- // 1) Exact linkage by run_id wins when both sides carry it. (The registry
- // record carries the evidence-log stem while telemetry rows carry the
- // probe UUID32 — different id spaces — so in production this match is
- // unavailable and attribution falls through to the conservative temporal
- // rule below. It is checked first so any future shared identifier is
- // honored without relying on clocks at all.)
- if(rowRunId&&window.runUuid&&rowRunId===window.runUuid){
-  return feedCurrent(row,ageS);
- }
- // A known incompatible UUID is never accepted via temporal fallback:
- // the row provably belongs to another run even when its timestamp
- // looks plausible.
- if(rowRunId&&window.runUuid&&rowRunId!==window.runUuid){
-  return {feed_health:"UNKNOWN",latest_snapshot_age:ageS,feed_attribution:"previous-run",feed_note:"incompatible-run-id"};
- }
- // 2) Conservative temporal attribution. A snapshot written BEFORE the run
- // started is NEVER current — no skew grace: with close starts (e.g. 20s
- // apart) the previous run's fresh snapshot would otherwise classify as
- // current. When time cannot attribute with certainty, UNKNOWN.
- const startMs=typeof window.started_at==="string"?Date.parse(window.started_at):NaN;
- if(!Number.isFinite(startMs))return {feed_health:"UNKNOWN",latest_snapshot_age:ageS,feed_attribution:"none",feed_note:"unattributable-no-run-window"};
- if(tsMs<startMs){
-  // Evidence from an earlier (usually the immediately previous) run:
-  // surface its age but never as current health. This is last-run
-  // evidence, not a currently-active feed.
-  return {feed_health:"UNKNOWN",latest_snapshot_age:ageS,feed_attribution:"previous-run",feed_note:"previous-run-evidence"};
- }
- // 3) Runtime cross-check: the row's probe-life runtime cannot exceed what
- // this run could have lived through. A far larger value proves another
- // run's row even when its timestamp looks plausible.
- if(rowRt!==null&&(rowRt-(tsMs-startMs)/1000)>FEED_RUNTIME_TOLERANCE_S){
-  return {feed_health:"UNKNOWN",latest_snapshot_age:ageS,feed_attribution:"none",feed_note:"runtime-inconsistent"};
- }
- return feedCurrent(row,ageS);
+  const rowRunId=typeof row.run_id==="string"&&row.run_id?row.run_id:null;
+  const rowRt=typeof row.runtime_seconds==="number"&&Number.isFinite(row.runtime_seconds)?row.runtime_seconds:null;
+  const snapTs=typeof row.timestamp==="number"&&Number.isFinite(row.timestamp)?row.timestamp:null;
+  // 1) Exact linkage by run_id wins when both sides carry it. (The registry
+  // record carries the evidence-log stem while telemetry rows carry the
+  // probe UUID32 — different id spaces — so in production this match is
+  // unavailable and attribution falls through to the conservative temporal
+  // rule below. It is checked first so any future shared identifier is
+  // honored without relying on clocks at all.)
+  // Method exposed: "exact-uuid" here, "temporal" on the clock-based
+  // current path, "none" whenever the row is not attributed to this run.
+  // A temporal HEALTHY/current row is useful context but never proves an
+  // exact R3 link (R3 requires method "exact-uuid" + snapshot UUID match).
+  if(rowRunId&&window.runUuid&&rowRunId===window.runUuid){
+   return feedCurrent(row,ageS,"exact-uuid");
+  }
+  // A known incompatible UUID is never accepted via temporal fallback:
+  // the row provably belongs to another run even when its timestamp
+  // looks plausible.
+  if(rowRunId&&window.runUuid&&rowRunId!==window.runUuid){
+   return {feed_health:"UNKNOWN",latest_snapshot_age:ageS,feed_attribution:"previous-run",feed_note:"incompatible-run-id",feed_attribution_method:"none",feed_snapshot_run_id:rowRunId,feed_snapshot_timestamp:snapTs};
+  }
+  // 2) Conservative temporal attribution. A snapshot written BEFORE the run
+  // started is NEVER current — no skew grace: with close starts (e.g. 20s
+  // apart) the previous run's fresh snapshot would otherwise classify as
+  // current. When time cannot attribute with certainty, UNKNOWN.
+  const startMs=typeof window.started_at==="string"?Date.parse(window.started_at):NaN;
+  if(!Number.isFinite(startMs))return {feed_health:"UNKNOWN",latest_snapshot_age:ageS,feed_attribution:"none",feed_note:"unattributable-no-run-window",feed_attribution_method:"none",feed_snapshot_run_id:rowRunId,feed_snapshot_timestamp:snapTs};
+  if(tsMs<startMs){
+   // Evidence from an earlier (usually the immediately previous) run:
+   // surface its age but never as current health. This is last-run
+   // evidence, not a currently-active feed.
+   return {feed_health:"UNKNOWN",latest_snapshot_age:ageS,feed_attribution:"previous-run",feed_note:"previous-run-evidence",feed_attribution_method:"none",feed_snapshot_run_id:rowRunId,feed_snapshot_timestamp:snapTs};
+  }
+  // 3) Runtime cross-check: the row's probe-life runtime cannot exceed what
+  // this run could have lived through. A far larger value proves another
+  // run's row even when its timestamp looks plausible.
+  if(rowRt!==null&&(rowRt-(tsMs-startMs)/1000)>FEED_RUNTIME_TOLERANCE_S){
+   return {feed_health:"UNKNOWN",latest_snapshot_age:ageS,feed_attribution:"none",feed_note:"runtime-inconsistent",feed_attribution_method:"none",feed_snapshot_run_id:rowRunId,feed_snapshot_timestamp:snapTs};
+  }
+  return feedCurrent(row,ageS,"temporal");
 }
-function feedCurrent(row:{timestamp:unknown;runtime_seconds:unknown;run_id:unknown;data_quality_json:unknown},ageS:number):FeedEvidence{
- if(ageS>FEED_STALE_AFTER_S)return {feed_health:"STALE",latest_snapshot_age:ageS,feed_attribution:"current",feed_note:null};
+function feedCurrent(row:{timestamp:unknown;runtime_seconds:unknown;run_id:unknown;data_quality_json:unknown},ageS:number,method:FeedAttributionMethod):FeedEvidence{
+ const snapRun=typeof row.run_id==="string"&&row.run_id?row.run_id:null;
+ const snapTs=typeof row.timestamp==="number"&&Number.isFinite(row.timestamp)?row.timestamp:null;
+ const withMethod=(health:string,note:string|null):FeedEvidence=>({feed_health:health,latest_snapshot_age:ageS,feed_attribution:"current",feed_note:note,feed_attribution_method:method,feed_snapshot_run_id:snapRun,feed_snapshot_timestamp:snapTs});
+ if(ageS>FEED_STALE_AFTER_S)return withMethod("STALE",null);
  // Fresh + attributable: HEALTHY requires complete, sufficient evidence.
  // Anything else is UNKNOWN (insufficient) or DEGRADED (bad quality) —
  // never HEALTHY by default.
  let q:Record<string,unknown>;
  try{
   const parsed:unknown=JSON.parse(String(row.data_quality_json??"null"));
-  if(!parsed||typeof parsed!=="object"||Array.isArray(parsed))return {feed_health:"UNKNOWN",latest_snapshot_age:ageS,feed_attribution:"current",feed_note:"invalid-quality-json"};
+  if(!parsed||typeof parsed!=="object"||Array.isArray(parsed))return withMethod("UNKNOWN","invalid-quality-json");
   q=parsed as Record<string,unknown>;
- }catch{return {feed_health:"UNKNOWN",latest_snapshot_age:ageS,feed_attribution:"current",feed_note:"invalid-quality-json"}}
+ }catch{return withMethod("UNKNOWN","invalid-quality-json")}
  const msgsRaw=q.messagesByStream;
- if(!msgsRaw||typeof msgsRaw!=="object"||Array.isArray(msgsRaw))return {feed_health:"UNKNOWN",latest_snapshot_age:ageS,feed_attribution:"current",feed_note:"missing-messages"};
+ if(!msgsRaw||typeof msgsRaw!=="object"||Array.isArray(msgsRaw))return withMethod("UNKNOWN","missing-messages");
  const counts=Object.values(msgsRaw as Record<string,unknown>);
- if(counts.length===0||counts.some(v=>typeof v!=="number"||!Number.isFinite(v)||v<0))return {feed_health:"UNKNOWN",latest_snapshot_age:ageS,feed_attribution:"current",feed_note:"missing-messages"};
+ if(counts.length===0||counts.some(v=>typeof v!=="number"||!Number.isFinite(v)||v<0))return withMethod("UNKNOWN","missing-messages");
  const total=counts.reduce<number>((a,v)=>a+(v as number),0);
- if(!(total>0))return {feed_health:"UNKNOWN",latest_snapshot_age:ageS,feed_attribution:"current",feed_note:"zero-messages"};
- if(!Array.isArray(q.staleStreams)||!Array.isArray(q.missingStreams)||!Array.isArray(q.silentStreams))return {feed_health:"UNKNOWN",latest_snapshot_age:ageS,feed_attribution:"current",feed_note:"missing-stream-lists"};
- if(typeof q.activeStreams!=="number"||typeof q.expectedStreams!=="number")return {feed_health:"UNKNOWN",latest_snapshot_age:ageS,feed_attribution:"current",feed_note:"missing-coverage"};
+ if(!(total>0))return withMethod("UNKNOWN","zero-messages");
+ if(!Array.isArray(q.staleStreams)||!Array.isArray(q.missingStreams)||!Array.isArray(q.silentStreams))return withMethod("UNKNOWN","missing-stream-lists");
+ if(typeof q.activeStreams!=="number"||typeof q.expectedStreams!=="number")return withMethod("UNKNOWN","missing-coverage");
  // Error counters arrive as numbers or per-endpoint maps depending on the
  // probe summary shape; both are accepted, anything else is insufficient.
  const errTotal=(v:unknown):number|null=>{
@@ -144,8 +153,8 @@ function feedCurrent(row:{timestamp:unknown;runtime_seconds:unknown;run_id:unkno
  const parseErr=errTotal(q.parseErrors);
  const payloadErr=errTotal(q.payloadErrors);
  const wsErr=errTotal(q.websocketErrors);
- if(reconn===null||parseErr===null||payloadErr===null||wsErr===null)return {feed_health:"UNKNOWN",latest_snapshot_age:ageS,feed_attribution:"current",feed_note:"missing-error-counters"};
- if(typeof q.timestampRejected!=="number"||!Number.isFinite(q.timestampRejected)||q.timestampRejected<0)return {feed_health:"UNKNOWN",latest_snapshot_age:ageS,feed_attribution:"current",feed_note:"missing-reject-counter"};
+ if(reconn===null||parseErr===null||payloadErr===null||wsErr===null)return withMethod("UNKNOWN","missing-error-counters");
+ if(typeof q.timestampRejected!=="number"||!Number.isFinite(q.timestampRejected)||q.timestampRejected<0)return withMethod("UNKNOWN","missing-reject-counter");
  const stale=q.staleStreams as unknown[];
  const missing=q.missingStreams as unknown[];
  const silent=q.silentStreams as unknown[];
@@ -153,19 +162,19 @@ function feedCurrent(row:{timestamp:unknown;runtime_seconds:unknown;run_id:unkno
  // Supervisor quality condition: a run whose latest summary exceeds the
  // 0.05 abort gate is invalid observation — the BFF reports DEGRADED and
  // never HEALTHY there, without touching the enforced threshold itself.
- if(stale.length>0)return {feed_health:"DEGRADED",latest_snapshot_age:ageS,feed_attribution:"current",feed_note:"stale-streams"};
- if(missing.length>0||q.activeStreams!==q.expectedStreams)return {feed_health:"DEGRADED",latest_snapshot_age:ageS,feed_attribution:"current",feed_note:"incomplete-coverage"};
- if(reconn>0||wsErr>0)return {feed_health:"DEGRADED",latest_snapshot_age:ageS,feed_attribution:"current",feed_note:"reconnects"};
- if(rate>SUPERVISOR_REJECT_GATE)return {feed_health:"DEGRADED",latest_snapshot_age:ageS,feed_attribution:"current",feed_note:"reject-rate-above-supervisor-gate"};
- if(parseErr>0||payloadErr>0)return {feed_health:"DEGRADED",latest_snapshot_age:ageS,feed_attribution:"current",feed_note:"parse-payload-errors"};
+ if(stale.length>0)return withMethod("DEGRADED","stale-streams");
+ if(missing.length>0||q.activeStreams!==q.expectedStreams)return withMethod("DEGRADED","incomplete-coverage");
+ if(reconn>0||wsErr>0)return withMethod("DEGRADED","reconnects");
+ if(rate>SUPERVISOR_REJECT_GATE)return withMethod("DEGRADED","reject-rate-above-supervisor-gate");
+ if(parseErr>0||payloadErr>0)return withMethod("DEGRADED","parse-payload-errors");
  // Event-driven !forceOrder@arr silence is normal; any other silent stream
  // means the snapshot does not cover the cadenced surface.
- if(silent.some(s=>s!=="!forceOrder@arr"))return {feed_health:"DEGRADED",latest_snapshot_age:ageS,feed_attribution:"current",feed_note:"silent-streams"};
- return {feed_health:"HEALTHY",latest_snapshot_age:ageS,feed_attribution:"current",feed_note:null};
+ if(silent.some(s=>s!=="!forceOrder@arr"))return withMethod("DEGRADED","silent-streams");
+ return withMethod("HEALTHY",null);
 }
 export function runtimeStatus():RuntimeState{
  const r=execute(statusCode,STATUS_BUDGET_MS);
- if(!r.ok||typeof r.data.error==="string")return {running:false,state:"UNKNOWN",pid:null,launcher:null,mode:"UNKNOWN",uptime_seconds:null,duration_seconds:null,started_at:null,feed_health:"UNKNOWN",latest_snapshot_age:null,observed_at:new Date().toISOString(),supervisor:normalizeWatcher(null,"supervisor"),sentinel:normalizeWatcher(null,"sentinel"),run_id:null,expected_end_at:null,elapsed_seconds:null,remaining_seconds:null,last_exit_code:null,last_exit_reason:null,last_exit_at:null,process_state:"unknown",process_verified:false,preset:null,feed_attribution:"none",feed_note:"controller-unavailable",probe_run_id:null,error:typeof r.data.error==="string"?r.data.error:"CANONICAL_CONTROLLER_UNAVAILABLE"};
+ if(!r.ok||typeof r.data.error==="string")return {running:false,state:"UNKNOWN",pid:null,launcher:null,mode:"UNKNOWN",uptime_seconds:null,duration_seconds:null,started_at:null,feed_health:"UNKNOWN",latest_snapshot_age:null,observed_at:new Date().toISOString(),supervisor:normalizeWatcher(null,"supervisor"),sentinel:normalizeWatcher(null,"sentinel"),run_id:null,expected_end_at:null,elapsed_seconds:null,remaining_seconds:null,last_exit_code:null,last_exit_reason:null,last_exit_at:null,process_state:"unknown",process_verified:false,preset:null,feed_attribution:"none",feed_note:"controller-unavailable",probe_run_id:null,feed_attribution_method:"none",feed_snapshot_run_id:null,feed_snapshot_timestamp:null,error:typeof r.data.error==="string"?r.data.error:"CANONICAL_CONTROLLER_UNAVAILABLE"};
  const x=r.data;
  // Feed: canonical controller is registry-only (UNKNOWN without a dashboard
  // feed provider). Enrich best-effort from the recorded telemetry snapshot
@@ -175,14 +184,17 @@ export function runtimeStatus():RuntimeState{
  let latest_snapshot_age=num(x.latest_snapshot_age);
  let feed_attribution:FeedAttribution="none";
  let feed_note:string|null=null;
+ let feed_attribution_method:FeedAttributionMethod="none";
+ let feed_snapshot_run_id:string|null=null;
+ let feed_snapshot_timestamp:number|null=null;
  if(feed_health==="UNKNOWN"&&latest_snapshot_age===null){
   // runUuid: the explicit stem<->UUID correspondence linked at probe
   // startup (control.link_probe_run_id); historic unlinked rows keep
   // runUuid null and fall back to the conservative temporal rule.
   const f=feedFromStore({started_at:txt(x.started_at),last_exit_at:txt(x.last_exit_at),expected_end_at:txt(x.expected_end_at),state:typeof x.state==="string"?x.state:"UNKNOWN",runUuid:txt(x.probe_run_id)});
-  feed_health=f.feed_health;latest_snapshot_age=f.latest_snapshot_age;feed_attribution=f.feed_attribution;feed_note=f.feed_note;
+  feed_health=f.feed_health;latest_snapshot_age=f.latest_snapshot_age;feed_attribution=f.feed_attribution;feed_note=f.feed_note;feed_attribution_method=f.feed_attribution_method;feed_snapshot_run_id=f.feed_snapshot_run_id;feed_snapshot_timestamp=f.feed_snapshot_timestamp;
  }
- return {running:x.running===true,state:typeof x.running==="boolean"&&typeof x.state==="string"&&x.state.trim()?x.state:"UNKNOWN",pid:typeof x.pid==="number"?x.pid:null,launcher:typeof x.launcher==="string"?x.launcher:null,mode:typeof x.mode==="string"&&x.mode.trim()?x.mode:"UNKNOWN",uptime_seconds:num(x.uptime_seconds),duration_seconds:num(x.duration_seconds),started_at:txt(x.started_at),feed_health,latest_snapshot_age,observed_at:new Date().toISOString(),supervisor:normalizeWatcher(x.supervisor,"supervisor"),sentinel:normalizeWatcher(x.sentinel,"sentinel"),run_id:txt(x.run_id),expected_end_at:txt(x.expected_end_at),elapsed_seconds:num(x.elapsed_seconds),remaining_seconds:num(x.remaining_seconds),last_exit_code:num(x.last_exit_code),last_exit_reason:txt(x.last_exit_reason),last_exit_at:txt(x.last_exit_at),process_state:txt(x.process_state)??"unknown",process_verified:x.process_verified===true,preset:txt(x.preset),feed_attribution,feed_note,probe_run_id:txt(x.probe_run_id),...(typeof x.error==="string"?{error:x.error}:{})};
+ return {running:x.running===true,state:typeof x.running==="boolean"&&typeof x.state==="string"&&x.state.trim()?x.state:"UNKNOWN",pid:typeof x.pid==="number"?x.pid:null,launcher:typeof x.launcher==="string"?x.launcher:null,mode:typeof x.mode==="string"&&x.mode.trim()?x.mode:"UNKNOWN",uptime_seconds:num(x.uptime_seconds),duration_seconds:num(x.duration_seconds),started_at:txt(x.started_at),feed_health,latest_snapshot_age,observed_at:new Date().toISOString(),supervisor:normalizeWatcher(x.supervisor,"supervisor"),sentinel:normalizeWatcher(x.sentinel,"sentinel"),run_id:txt(x.run_id),expected_end_at:txt(x.expected_end_at),elapsed_seconds:num(x.elapsed_seconds),remaining_seconds:num(x.remaining_seconds),last_exit_code:num(x.last_exit_code),last_exit_reason:txt(x.last_exit_reason),last_exit_at:txt(x.last_exit_at),process_state:txt(x.process_state)??"unknown",process_verified:x.process_verified===true,preset:txt(x.preset),feed_attribution,feed_note,probe_run_id:txt(x.probe_run_id),feed_attribution_method,feed_snapshot_run_id,feed_snapshot_timestamp,...(typeof x.error==="string"?{error:x.error}:{})};
 }
 export const LAUNCH_PRESETS={brief:120,"observation-10m":600,standard:3600,"validation-6h":21600} as const;
 export type LaunchPreset=keyof typeof LAUNCH_PRESETS;

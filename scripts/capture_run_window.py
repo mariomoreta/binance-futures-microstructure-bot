@@ -26,12 +26,16 @@ flagged, never substituted).
 R3 verdict (separate from acquisition): a captured terminal state
 (exit 0) does NOT imply R3 PASS. R3 PASS requires at least one
 RUNNING capture of the expected run with a verified process
-(process_verified true) AND demonstrable exact attribution
-(feed_attribution current with the pinned UUID present in that
-capture). HEALTHY/current alone, temporal coincidence alone, or a
-post-close capture never suffice; HEALTHY vs DEGRADED is recorded
-as context, never as the attribution decision. The report carries
-the finally pinned identities plus doc["r3"] = verdict/reasons.
+(process_verified true) AND demonstrable exact attribution:
+pinned UUID present in the registry record AND in the snapshot row
+(feed_snapshot_run_id) with feed_attribution_method exact-uuid and
+feed_attribution current, plus detections content attributed to
+the same run. HEALTHY/current alone, a temporal fallback row
+(method temporal, or a snapshot without UUID), temporal
+coincidence alone, or a post-close capture never suffice;
+HEALTHY vs DEGRADED is recorded as context, never as the
+attribution decision. The report carries the finally pinned
+identities plus doc["r3"] = verdict/reasons.
 Early-terminal acquisition, acquisition timeouts and
 run-changed endings yield UNKNOWN (nothing to assess / broken
 evidence); a proven contradictory link yields FAIL.
@@ -172,6 +176,9 @@ def _review_runtime(payload) -> dict:
         "process_verified": x.get("process_verified"),
         "feed_health": _txt(x.get("feed_health")),
         "feed_attribution": _txt(x.get("feed_attribution")),
+        "feed_attribution_method": _txt(x.get("feed_attribution_method")),
+        "feed_snapshot_run_id": _txt(x.get("feed_snapshot_run_id")),
+        "feed_snapshot_timestamp": _num(x.get("feed_snapshot_timestamp")),
         "feed_note": _txt(x.get("feed_note")),
         "latest_snapshot_age": _num(x.get("latest_snapshot_age")),
         "started_at": _txt(x.get("started_at")),
@@ -260,11 +267,14 @@ def main(argv=None) -> int:
         """R3 over the captures so far (never from acquisition alone).
 
         PASS needs one RUNNING capture of the pinned run with a
-        verified process and demonstrable exact attribution (pinned
-        UUID present in that capture + feed_attribution current) plus
-        detections content attributed to the same run. HEALTHY/current
-        without the UUID, temporal coincidence, and post-close states
-        never qualify.
+        verified process and demonstrable EXACT attribution: the
+        pinned UUID in the registry record (probe_run_id) AND in the
+        snapshot row (feed_snapshot_run_id) with
+        feed_attribution_method exact-uuid and feed_attribution
+        current, plus detections content attributed to the same run.
+        HEALTHY/current without the UUID, any temporal fallback
+        (method temporal, snapshot without UUID), temporal
+        coincidence, and post-close states never qualify.
         """
         running = [c for c in doc["captures"]
                    if c["runtime"]["reviewed"].get("state") == "RUNNING"
@@ -284,18 +294,29 @@ def main(argv=None) -> int:
             det = cap["detections"]
             ok_uuid = (pinned_uuid is not None
                        and rev.get("probe_run_id") == pinned_uuid)
+            ok_snap = (pinned_uuid is not None
+                       and rev.get("feed_snapshot_run_id") == pinned_uuid)
+            ok_method = (rev.get("feed_attribution_method") == "exact-uuid")
             ok_verified = rev.get("process_verified") is True
-            ok_attr = (ok_uuid and rev.get("feed_attribution") == "current")
+            ok_attr = (ok_uuid and ok_snap and ok_method
+                       and rev.get("feed_attribution") == "current")
             ok_det = (isinstance(det, dict)
                       and det.get("attributed") is True)
-            if ok_uuid and ok_verified and ok_attr and ok_det:
+            if ok_uuid and ok_snap and ok_method and ok_verified \
+                    and ok_attr and ok_det:
                 return {"verdict": "PASS",
                         "reasons": ["qualifying-capture: %s (health %s recorded "
-                                    "as context, not as the decision)" % (
-                                        cap["tag"], rev.get("feed_health") )]}
+                                    "as context, not as the decision; "
+                                    "method exact-uuid, snapshot %s)" % (
+                                        cap["tag"], rev.get("feed_health"),
+                                        rev.get("feed_snapshot_run_id"))]}
             missing = []
             if not ok_uuid:
                 missing.append("exact-uuid-not-demonstrated")
+            if not ok_snap:
+                missing.append("snapshot-uuid-not-demonstrated")
+            if not ok_method:
+                missing.append("attribution-method-not-exact")
             if not ok_verified:
                 missing.append("process-not-verified")
             if not ok_attr:

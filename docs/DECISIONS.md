@@ -1720,3 +1720,28 @@ en el siguiente open conocido, jamas toca su rango; runner
 conserva open/close_time (hash intacto). Mapping PROPOSED y
 salida solo-mecanica intactos; sin optimizar, sin P&L, sin
 repetir el prep economico.
+
+## Atribucion exacta R3 (2026-10-16, sobre a2aebc5; sin corridas)
+
+1. BFF (`frontend/src/lib/runtime-control.ts`): `feedFromStore` +
+`runtimeStatus` exponen `feed_attribution_method`
+(exact-uuid/temporal/none) + `feed_snapshot_run_id` (UUID real
+de la fila o null) + `feed_snapshot_timestamp` (segundos de la
+fila o null). Exact-uuid solo cuando la fila y el registro
+llevan el mismo UUID; temporal en la via conservadora del
+reloj; none cuando no hay enlace atribuible (incluido
+incompatible y sin ventana). Salud, umbrales (0.05/0.5, 120s,
+30s), Start/Stop y contratos intactos; campos aditivos.
+2. Capturador (`scripts/capture_run_window.py`): conserva los
+tres campos por captura; R3 PASS exige RUNNING del run
+esperado + proceso verificado + UUID fijado igual en registro
+y snapshot + metodo exact-uuid + feed_attribution current +
+detections atribuido. Temporal HEALTHY/current, snapshot sin
+UUID, coincidencia temporal o post-cierre nunca califican;
+UUID incompatible nunca PASS (FAIL si hay enlace
+contradictorio). Regresion: valido+sin-UUID/temporal->UNKNOWN;
+coincidente+exact->puede calificar; incompatible->nunca PASS.
+3. Verificado con fixtures locales: frontend 304/304 (4 BFF
+nuevos) + capturador 19/19 (3 R3 nuevos) + export 6/6; sin
+Binance, sin corridas. V2 3020 intacto (build anterior, sin
+redeploy), monitor detenido.

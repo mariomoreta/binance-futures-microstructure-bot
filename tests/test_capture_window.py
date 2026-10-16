@@ -23,10 +23,20 @@ UUID_A = "a" * 32
 UUID_B = "b" * 32
 
 
-def _runtime(state="RUNNING", run="probe-test", uuid=UUID_A):
+def _runtime(state="RUNNING", run="probe-test", uuid=UUID_A,
+            method="exact-uuid", snap_uuid="__follow__", snap_ts=1760000000.0):
+    snap = uuid if snap_uuid == "__follow__" else snap_uuid
+    # A snapshot without UUID can only come from the temporal fallback:
+    # callers that pass snap_uuid=None without an explicit method get
+    # the temporal method, never an exact claim.
+    if snap is None and method == "exact-uuid":
+        method = "temporal"
     return {"state": state, "running": state == "RUNNING", "run_id": run,
             "probe_run_id": uuid, "process_verified": True,
             "feed_health": "HEALTHY", "feed_attribution": "current",
+            "feed_attribution_method": method,
+            "feed_snapshot_run_id": snap,
+            "feed_snapshot_timestamp": snap_ts,
             "feed_note": None, "latest_snapshot_age": 5,
             "started_at": "2026-10-16T00:00:00+00:00",
             "supervisor": {"state": "SUPERVISOR_ACTIVE", "lease_state": "ACTIVE",
@@ -152,6 +162,77 @@ class R3VerdictTest(unittest.TestCase):
         self.assertEqual(doc["pinned"],
                          {"run_id": "probe-test", "probe_run_id": UUID_A,
                           "uuid_absences": 0, "uuid_first_seen": "acquire"})
+        # Exact linkage preserved on the qualifying capture.
+        running = [c for c in doc["captures"]
+                   if c["runtime"]["reviewed"].get("state") == "RUNNING"]
+        self.assertTrue(running)
+        rev = running[0]["runtime"]["reviewed"]
+        self.assertEqual(rev["feed_attribution_method"], "exact-uuid")
+        self.assertEqual(rev["feed_snapshot_run_id"], UUID_A)
+        self.assertTrue(isinstance(rev["feed_snapshot_timestamp"], (int, float)))
+
+    def test_temporal_healthy_current_without_snapshot_uuid_stays_unknown(self) -> None:
+        # Mandatory regression: registry UUID valid + snapshot WITHOUT
+        # UUID, temporally compatible and HEALTHY/current -> R3 UNKNOWN.
+        # Temporal attribution is useful context, never exact proof.
+        server, _ = _run_server(self,
+            [_runtime("RUNNING", uuid=UUID_A, method="temporal",
+                      snap_uuid=None),
+             _runtime("COMPLETED", uuid=UUID_A, method="temporal",
+                      snap_uuid=None)])
+        out = _tmpout(self)
+        code = main(["--base-url", _server_url(server), "--out", str(out),
+                     "--offsets", "0.2"] + BASE_ARGS)
+        self.assertEqual(code, 0)
+        doc = json.loads(out.read_text(encoding="utf-8"))
+        self.assertEqual(doc["r3"]["verdict"], "UNKNOWN")
+        self.assertNotEqual(doc["r3"]["verdict"], "PASS")
+        rev = doc["captures"][0]["runtime"]["reviewed"]
+        self.assertEqual(rev["probe_run_id"], UUID_A)
+        self.assertIsNone(rev["feed_snapshot_run_id"])
+        self.assertEqual(rev["feed_attribution"], "current")
+        self.assertEqual(rev["feed_health"], "HEALTHY")
+        self.assertEqual(rev["feed_attribution_method"], "temporal")
+        self.assertTrue(any("snapshot-uuid-not-demonstrated" in r
+                            or "attribution-method-not-exact" in r
+                            for r in doc["r3"]["reasons"]))
+
+    def test_exact_uuid_snapshot_match_can_qualify(self) -> None:
+        # Snapshot UUID matching the pinned registry UUID with method
+        # exact-uuid may qualify (other identity checks still apply).
+        server, _ = _run_server(self,
+            [_runtime("RUNNING", uuid=UUID_A, method="exact-uuid",
+                      snap_uuid=UUID_A),
+             _runtime("COMPLETED", uuid=UUID_A, method="exact-uuid",
+                      snap_uuid=UUID_A)])
+        out = _tmpout(self)
+        code = main(["--base-url", _server_url(server), "--out", str(out),
+                     "--offsets", "0.2"] + BASE_ARGS)
+        self.assertEqual(code, 0)
+        doc = json.loads(out.read_text(encoding="utf-8"))
+        self.assertEqual(doc["r3"]["verdict"], "PASS")
+        rev = doc["captures"][0]["runtime"]["reviewed"]
+        self.assertEqual(rev["probe_run_id"], UUID_A)
+        self.assertEqual(rev["feed_snapshot_run_id"], UUID_A)
+        self.assertEqual(rev["feed_attribution_method"], "exact-uuid")
+
+    def test_incompatible_snapshot_uuid_never_pass(self) -> None:
+        # Snapshot UUID incompatible with the pinned registry UUID ->
+        # never PASS (FAIL on contradictory link, or UNKNOWN at best).
+        server, _ = _run_server(self,
+            [_runtime("RUNNING", uuid=UUID_A, method="exact-uuid",
+                      snap_uuid=UUID_B),
+             _runtime("RUNNING", uuid=UUID_A, method="exact-uuid",
+                      snap_uuid=UUID_B)])
+        out = _tmpout(self)
+        code = main(["--base-url", _server_url(server), "--out", str(out),
+                     "--offsets", "0.2"] + BASE_ARGS)
+        doc = json.loads(out.read_text(encoding="utf-8"))
+        self.assertNotEqual(doc["r3"]["verdict"], "PASS")
+        rev = doc["captures"][0]["runtime"]["reviewed"]
+        self.assertEqual(rev["probe_run_id"], UUID_A)
+        self.assertEqual(rev["feed_snapshot_run_id"], UUID_B)
+        self.assertNotEqual(rev["feed_snapshot_run_id"], UUID_A)
 
 
 class _Handler(BaseHTTPRequestHandler):

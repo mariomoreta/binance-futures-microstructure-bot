@@ -1,3 +1,13 @@
+## Atribucion exacta R3 (2026-10-16, sobre a2aebc5, sin push aun)
+BFF expone method exact-uuid/temporal/none + snapshot_run_id +
+timestamp (salud/umbrales/Start-Stop intactos); capturador solo
+PASS con RUNNING verificado + UUID registro=snapshot + method
+exact-uuid + current + detections atribuido. Temporal
+HEALTHY/current sin UUID -> UNKNOWN; incompatible -> nunca
+PASS. Suites locales: frontend 304/304, capturador 19/19,
+export 6/6; sin Binance. Resta: commit, push, entrega. V2
+abierto 3020, monitor detenido, sin corridas.
+
 ## Captura R3 v2 + causalidad de velas (2026-10-16, sobre 69d55ba, sin push aun)
 R3 separado de adquisicion (exit 0 != PASS; HEALTHY/current
 insuficientes): UUID tardio aprende/fija, ausencias registradas,

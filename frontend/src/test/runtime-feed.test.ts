@@ -164,4 +164,47 @@ describe("Feed health never claims HEALTHY without sufficient attributable evide
     expect(f.feed_attribution).toBe("current");
     expect(f.feed_health).toBe("STALE");
   });
+  it("exposes exact-uuid method + snapshot identity on exact linkage", () => {
+    const ts = NOW / 1000 - 5;
+    readDb.mockImplementation((fn: (db: unknown) => unknown) => fn(row(ts, quality(), {rt: 5, runId: "exact-uuid"})));
+    const f = feedFromStore({started_at: new Date(NOW).toISOString(), last_exit_at: null, expected_end_at: null, state: "RUNNING", runUuid: "exact-uuid"});
+    expect(f.feed_attribution).toBe("current");
+    expect(f.feed_attribution_method).toBe("exact-uuid");
+    expect(f.feed_snapshot_run_id).toBe("exact-uuid");
+    expect(f.feed_snapshot_timestamp).toBe(ts);
+  });
+  it("exposes temporal method + null snapshot UUID when the row carries none", () => {
+    // Registry UUID valid + snapshot without UUID, temporally compatible
+    // and HEALTHY/current: useful context, never exact proof (R3 UNKNOWN).
+    const ts = NOW / 1000 - 5;
+    readDb.mockImplementation((fn: (db: unknown) => unknown) => fn(row(ts, quality(), {rt: 5, runId: null})));
+    const uuid = "a".repeat(32);
+    const f = feedFromStore({started_at: new Date(NOW - 120_000).toISOString(), last_exit_at: null, expected_end_at: null, state: "RUNNING", runUuid: uuid});
+    expect(f.feed_attribution).toBe("current");
+    expect(f.feed_health).toBe("HEALTHY");
+    expect(f.feed_attribution_method).toBe("temporal");
+    expect(f.feed_snapshot_run_id).toBeNull();
+    expect(f.feed_snapshot_timestamp).toBe(ts);
+  });
+  it("exposes method none + snapshot identity on incompatible UUID", () => {
+    const ts = NOW / 1000 - 10;
+    readDb.mockImplementation((fn: (db: unknown) => unknown) => fn(row(ts, quality(), {rt: 100, runId: "a".repeat(32)})));
+    const f = feedFromStore({started_at: new Date(NOW - 120_000).toISOString(), last_exit_at: null, expected_end_at: null, state: "RUNNING", runUuid: "b".repeat(32)});
+    expect(f.feed_attribution).toBe("previous-run");
+    expect(f.feed_attribution_method).toBe("none");
+    expect(f.feed_snapshot_run_id).toBe("a".repeat(32));
+    expect(f.feed_snapshot_timestamp).toBe(ts);
+  });
+  it("runtimeStatus propagates method + snapshot identity without touching health gates", () => {
+    const uuid = "c".repeat(32);
+    const ts = NOW / 1000 - 5;
+    run.mockReturnValue({status: 0, stdout: JSON.stringify(controller({started_at: new Date(NOW - 120_000).toISOString(), probe_run_id: uuid}))});
+    readDb.mockImplementation((fn: (db: unknown) => unknown) => fn(row(ts, quality(), {rt: 100, runId: uuid})));
+    const x = runtimeStatus();
+    expect(x.probe_run_id).toBe(uuid);
+    expect(x.feed_attribution).toBe("current");
+    expect(x.feed_attribution_method).toBe("exact-uuid");
+    expect(x.feed_snapshot_run_id).toBe(uuid);
+    expect(x.feed_snapshot_timestamp).toBe(ts);
+  });
 });

@@ -716,6 +716,32 @@ here and request approval before treating it as binding. Never mark
 features VERIFIED without evidence.
 
 
+## F-R3CAP-03 — atribucion exacta R3 (2026-10-16, sobre a2aebc5, sin corridas)
+
+- `DECISIONS_REVIEWED` — R3 v2 (veredicto separado, UUID
+  tardio, detections verificado), atribucion del feed
+  (sin gracia, run_id primero, regresion 20s), identidad
+  UNKNOWN + feed estricto, contratos runtime/BFF/detections.
+- `NEW_DECISIONS_RECORDED` — DECISIONS §Atribucion exacta R3
+  (method/snapshot_run_id/timestamp; PASS solo exact-uuid con
+  UUID registro=snapshot; temporal nunca prueba exacto).
+- `FEATURES_IMPLEMENTED` — BFF: `feed_attribution_method` +
+  `feed_snapshot_run_id` + `feed_snapshot_timestamp` aditivos
+  (salud/umbrales/Start-Stop intactos); capturador: conserva
+  los tres campos y exige exact-uuid + coincidencia doble +
+  resto de identidad para PASS.
+- `FEATURES_VERIFIED` — BFF 4 nuevos + capturador 3 nuevos
+  (temporal HEALTHY/current sin UUID -> UNKNOWN;
+  coincidente+exact -> puede calificar; incompatible ->
+  nunca PASS); suites locales frontend 304/304 + capturador
+  19/19 + export 6/6 + typecheck; sin Binance.
+- `DEFERRED_FEATURES` — R3 vivo, redeploy V2 3020 (build
+  anterior intacto), mapping, funding, costes, purga,
+  entradas/salidas, paper, ejecucion.
+- `BACKLOG_UPDATED` — yes: this entry (ID F-R3CAP-03).
+- `DOCUMENTATION_CONFLICTS` — none new (temporal util pero
+  no probatorio; PROPOSED + mecanica intactos).
+
 ## F-R3CAP-02 + F-ENTRY-PREP-02 — veredicto R3 y causalidad (2026-10-16, sobre 69d55ba, sin corridas)
 
 - `DECISIONS_REVIEWED` — captura v1, contrato de velas real,
