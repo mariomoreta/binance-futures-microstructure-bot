@@ -124,6 +124,25 @@ describe("Feed health never claims HEALTHY without sufficient attributable evide
     expect(y.feed_health).toBe("HEALTHY");
     expect(y.feed_attribution).toBe("current");
   });
+  it("never accepts a known incompatible UUID via temporal fallback", () => {
+    // Row timestamp plausible (after start, fresh, consistent runtime)
+    // but carrying another run UUID while the record links a different
+    // one: provably foreign, never current.
+    run.mockReturnValue({status: 0, stdout: JSON.stringify(controller({started_at: new Date(NOW - 120_000).toISOString(), probe_run_id: "b".repeat(32)}))});
+    readDb.mockImplementation((fn: (db: unknown) => unknown) => fn(row(NOW / 1000 - 10, quality(), {rt: 100, runId: "a".repeat(32)})));
+    const x = runtimeStatus();
+    expect(x.probe_run_id).toBe("b".repeat(32));
+    expect(x.feed_health).toBe("UNKNOWN");
+    expect(x.feed_attribution).toBe("previous-run");
+    expect(x.feed_health).not.toBe("HEALTHY");
+  });
+  it("keeps historic unlinked rows on the temporal rule", () => {
+    // No probe_run_id anywhere (historic record): temporal attribution
+    // still refuses pre-start snapshots without inventing a link.
+    const x = statusWith(NOW / 1000 - 90, quality(), {started_at: new Date(NOW).toISOString()});
+    expect(x.probe_run_id).toBeNull();
+    expect(x.feed_attribution).toBe("previous-run");
+  });
   it("prioritizes exact run_id linkage when both sides carry it", () => {
     readDb.mockImplementation((fn: (db: unknown) => unknown) => fn(row(NOW / 1000 - 5, quality(), {rt: 5, runId: "exact-uuid"})));
     const f = feedFromStore({started_at: new Date(NOW).toISOString(), last_exit_at: null, expected_end_at: null, state: "RUNNING", runUuid: "exact-uuid"});

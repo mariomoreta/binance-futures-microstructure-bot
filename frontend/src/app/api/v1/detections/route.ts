@@ -1,0 +1,1 @@
+import {NextResponse} from "next/server";import {runDetections} from "@/lib/detections";export const runtime="nodejs";export const dynamic="force-dynamic";export async function GET(){return NextResponse.json(runDetections(),{headers:{"Cache-Control":"no-store"}})}

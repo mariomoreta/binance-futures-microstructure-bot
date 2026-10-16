@@ -1,3 +1,18 @@
+## Trazabilidad stem<->UUID + episodios v1 (2026-10-16, sobre d7dcc70, sin push aun)
+link_probe_run_id fenced + probe_run_id en status + lector V2 con
+enlace exacto y rechazo de incompatible; agrupacion v1
+(bruto/episodio/update/nuevo) + BFF /detections + panel System
+(eventos/episodios/UNKNOWN/research); regresion 245 retenidos -> 13
+agrupados por regla (fixture completo; el lector BFF en vivo sobre
+cola acotada muestra 98/4 parcial con limitacion
+evidence-tail-truncated + enlace UNKNOWN por historico sin link).
+Sin corridas, estrategias, umbrales,
+calibracion, Start/Stop nuevos ni segundo gestor. Correccion
+documental: episodios agrupados (no independencia), microprobe sin
+byte-identidad (tamano estable + contenido modificado, sin hashes).
+Resta: suites, build, barrera, visual, commit, push, entrega. V2
+abierto, monitor detenido.
+
 ## Corrida autorizada observation-10m 600s COMPLETADA (2026-10-15, push 10cad5c + informe 67472e0)
 probe-20261015T230630Z (UUID 893f24029cba4cff96eaba7c0af094d0,
 verificado exacto por addendum):

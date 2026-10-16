@@ -21,6 +21,7 @@ describe("Runtime BFF additive watcher contract",()=>{
     expect(Number.isFinite(Date.parse(x.observed_at!))).toBe(true);
     expect(run.mock.calls[0]?.[1]?.[1]).toContain("status_readonly");
     expect(x.run_id).toBe("probe-x");expect(x.process_state).toBe("owned");expect(x.process_verified).toBe(true);
+    expect(x.probe_run_id).toBeNull();expect(x.feed_attribution).toBe("none");
     expect(x.remaining_seconds).toBe(110);expect(x.feed_health).toBe("HEALTHY");expect(x.latest_snapshot_age).toBe(5);
   });
   it("keeps both watchers UNKNOWN when controller unavailable or blocks malformed",()=>{

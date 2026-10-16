@@ -1,0 +1,1962 @@
+[
+ {
+  "timestamp": "2026-10-15T23:09:01+00:00",
+  "symbol": "BTCUSDT",
+  "funding_rate": 5.583e-05,
+  "history_samples": 144,
+  "lower": 5.616e-05,
+  "upper": 5.703e-05
+ },
+ {
+  "timestamp": "2026-10-15T23:09:01+00:00",
+  "symbol": "ETHUSDT",
+  "funding_rate": 7.718e-05,
+  "history_samples": 144,
+  "lower": 7.737e-05,
+  "upper": 7.927e-05
+ },
+ {
+  "timestamp": "2026-10-15T23:09:01+00:00",
+  "symbol": "SOLUSDT",
+  "funding_rate": 4.958e-05,
+  "history_samples": 144,
+  "lower": 4.989e-05,
+  "upper": 5.057e-05
+ },
+ {
+  "timestamp": "2026-10-15T23:09:02.001000+00:00",
+  "symbol": "BTCUSDT",
+  "funding_rate": 5.583e-05,
+  "history_samples": 145,
+  "lower": 5.616e-05,
+  "upper": 5.703e-05
+ },
+ {
+  "timestamp": "2026-10-15T23:09:02.001000+00:00",
+  "symbol": "ETHUSDT",
+  "funding_rate": 7.718e-05,
+  "history_samples": 145,
+  "lower": 7.737e-05,
+  "upper": 7.927e-05
+ },
+ {
+  "timestamp": "2026-10-15T23:09:02.001000+00:00",
+  "symbol": "SOLUSDT",
+  "funding_rate": 4.958e-05,
+  "history_samples": 145,
+  "lower": 4.989e-05,
+  "upper": 5.057e-05
+ },
+ {
+  "timestamp": "2026-10-15T23:09:03+00:00",
+  "symbol": "BTCUSDT",
+  "funding_rate": 5.583e-05,
+  "history_samples": 146,
+  "lower": 5.616e-05,
+  "upper": 5.703e-05
+ },
+ {
+  "timestamp": "2026-10-15T23:09:03+00:00",
+  "symbol": "ETHUSDT",
+  "funding_rate": 7.718e-05,
+  "history_samples": 146,
+  "lower": 7.737e-05,
+  "upper": 7.927e-05
+ },
+ {
+  "timestamp": "2026-10-15T23:09:03+00:00",
+  "symbol": "SOLUSDT",
+  "funding_rate": 4.958e-05,
+  "history_samples": 146,
+  "lower": 4.989e-05,
+  "upper": 5.057e-05
+ },
+ {
+  "timestamp": "2026-10-15T23:09:04+00:00",
+  "symbol": "BTCUSDT",
+  "funding_rate": 5.583e-05,
+  "history_samples": 147,
+  "lower": 5.616e-05,
+  "upper": 5.703e-05
+ },
+ {
+  "timestamp": "2026-10-15T23:09:04+00:00",
+  "symbol": "ETHUSDT",
+  "funding_rate": 7.718e-05,
+  "history_samples": 147,
+  "lower": 7.737e-05,
+  "upper": 7.927e-05
+ },
+ {
+  "timestamp": "2026-10-15T23:09:04+00:00",
+  "symbol": "SOLUSDT",
+  "funding_rate": 4.958e-05,
+  "history_samples": 147,
+  "lower": 4.989e-05,
+  "upper": 5.057e-05
+ },
+ {
+  "timestamp": "2026-10-15T23:09:05+00:00",
+  "symbol": "BTCUSDT",
+  "funding_rate": 5.583e-05,
+  "history_samples": 148,
+  "lower": 5.616e-05,
+  "upper": 5.703e-05
+ },
+ {
+  "timestamp": "2026-10-15T23:09:05+00:00",
+  "symbol": "ETHUSDT",
+  "funding_rate": 7.718e-05,
+  "history_samples": 148,
+  "lower": 7.737e-05,
+  "upper": 7.927e-05
+ },
+ {
+  "timestamp": "2026-10-15T23:09:05+00:00",
+  "symbol": "SOLUSDT",
+  "funding_rate": 4.958e-05,
+  "history_samples": 148,
+  "lower": 4.989e-05,
+  "upper": 5.057e-05
+ },
+ {
+  "timestamp": "2026-10-15T23:09:06.001000+00:00",
+  "symbol": "BTCUSDT",
+  "funding_rate": 5.583e-05,
+  "history_samples": 149,
+  "lower": 5.616e-05,
+  "upper": 5.703e-05
+ },
+ {
+  "timestamp": "2026-10-15T23:09:06.001000+00:00",
+  "symbol": "ETHUSDT",
+  "funding_rate": 7.718e-05,
+  "history_samples": 149,
+  "lower": 7.737e-05,
+  "upper": 7.927e-05
+ },
+ {
+  "timestamp": "2026-10-15T23:09:06.001000+00:00",
+  "symbol": "SOLUSDT",
+  "funding_rate": 4.958e-05,
+  "history_samples": 149,
+  "lower": 4.989e-05,
+  "upper": 5.057e-05
+ },
+ {
+  "timestamp": "2026-10-15T23:09:07+00:00",
+  "symbol": "BTCUSDT",
+  "funding_rate": 5.583e-05,
+  "history_samples": 150,
+  "lower": 5.616e-05,
+  "upper": 5.703e-05
+ },
+ {
+  "timestamp": "2026-10-15T23:09:07+00:00",
+  "symbol": "ETHUSDT",
+  "funding_rate": 7.718e-05,
+  "history_samples": 150,
+  "lower": 7.737e-05,
+  "upper": 7.927e-05
+ },
+ {
+  "timestamp": "2026-10-15T23:09:07+00:00",
+  "symbol": "SOLUSDT",
+  "funding_rate": 4.958e-05,
+  "history_samples": 150,
+  "lower": 4.989e-05,
+  "upper": 5.057e-05
+ },
+ {
+  "timestamp": "2026-10-15T23:09:08+00:00",
+  "symbol": "BTCUSDT",
+  "funding_rate": 5.583e-05,
+  "history_samples": 151,
+  "lower": 5.616e-05,
+  "upper": 5.703e-05
+ },
+ {
+  "timestamp": "2026-10-15T23:09:08+00:00",
+  "symbol": "ETHUSDT",
+  "funding_rate": 7.718e-05,
+  "history_samples": 151,
+  "lower": 7.737e-05,
+  "upper": 7.927e-05
+ },
+ {
+  "timestamp": "2026-10-15T23:09:08+00:00",
+  "symbol": "SOLUSDT",
+  "funding_rate": 4.958e-05,
+  "history_samples": 151,
+  "lower": 4.989e-05,
+  "upper": 5.057e-05
+ },
+ {
+  "timestamp": "2026-10-15T23:09:09+00:00",
+  "symbol": "BTCUSDT",
+  "funding_rate": 5.583e-05,
+  "history_samples": 152,
+  "lower": 5.60115e-05,
+  "upper": 5.703e-05
+ },
+ {
+  "timestamp": "2026-10-15T23:09:09+00:00",
+  "symbol": "ETHUSDT",
+  "funding_rate": 7.718e-05,
+  "history_samples": 152,
+  "lower": 7.72845e-05,
+  "upper": 7.927e-05
+ },
+ {
+  "timestamp": "2026-10-15T23:09:09+00:00",
+  "symbol": "SOLUSDT",
+  "funding_rate": 4.958e-05,
+  "history_samples": 152,
+  "lower": 4.97505e-05,
+  "upper": 5.057e-05
+ },
+ {
+  "timestamp": "2026-10-15T23:10:01.002000+00:00",
+  "symbol": "BTCUSDT",
+  "funding_rate": 5.561e-05,
+  "history_samples": 204,
+  "lower": 5.583e-05,
+  "upper": 5.703e-05
+ },
+ {
+  "timestamp": "2026-10-15T23:10:01.002000+00:00",
+  "symbol": "SOLUSDT",
+  "funding_rate": 4.942e-05,
+  "history_samples": 204,
+  "lower": 4.958e-05,
+  "upper": 5.057e-05
+ },
+ {
+  "timestamp": "2026-10-15T23:10:02+00:00",
+  "symbol": "BTCUSDT",
+  "funding_rate": 5.561e-05,
+  "history_samples": 205,
+  "lower": 5.583e-05,
+  "upper": 5.703e-05
+ },
+ {
+  "timestamp": "2026-10-15T23:10:02+00:00",
+  "symbol": "SOLUSDT",
+  "funding_rate": 4.942e-05,
+  "history_samples": 205,
+  "lower": 4.958e-05,
+  "upper": 5.057e-05
+ },
+ {
+  "timestamp": "2026-10-15T23:10:03.005000+00:00",
+  "symbol": "BTCUSDT",
+  "funding_rate": 5.561e-05,
+  "history_samples": 206,
+  "lower": 5.583e-05,
+  "upper": 5.703e-05
+ },
+ {
+  "timestamp": "2026-10-15T23:10:03.005000+00:00",
+  "symbol": "SOLUSDT",
+  "funding_rate": 4.942e-05,
+  "history_samples": 206,
+  "lower": 4.958e-05,
+  "upper": 5.057e-05
+ },
+ {
+  "timestamp": "2026-10-15T23:10:04+00:00",
+  "symbol": "BTCUSDT",
+  "funding_rate": 5.561e-05,
+  "history_samples": 207,
+  "lower": 5.583e-05,
+  "upper": 5.703e-05
+ },
+ {
+  "timestamp": "2026-10-15T23:10:04+00:00",
+  "symbol": "SOLUSDT",
+  "funding_rate": 4.942e-05,
+  "history_samples": 207,
+  "lower": 4.958e-05,
+  "upper": 5.057e-05
+ },
+ {
+  "timestamp": "2026-10-15T23:10:05+00:00",
+  "symbol": "BTCUSDT",
+  "funding_rate": 5.561e-05,
+  "history_samples": 208,
+  "lower": 5.583e-05,
+  "upper": 5.703e-05
+ },
+ {
+  "timestamp": "2026-10-15T23:10:05+00:00",
+  "symbol": "SOLUSDT",
+  "funding_rate": 4.942e-05,
+  "history_samples": 208,
+  "lower": 4.958e-05,
+  "upper": 5.057e-05
+ },
+ {
+  "timestamp": "2026-10-15T23:10:06+00:00",
+  "symbol": "BTCUSDT",
+  "funding_rate": 5.561e-05,
+  "history_samples": 209,
+  "lower": 5.583e-05,
+  "upper": 5.703e-05
+ },
+ {
+  "timestamp": "2026-10-15T23:10:06+00:00",
+  "symbol": "SOLUSDT",
+  "funding_rate": 4.942e-05,
+  "history_samples": 209,
+  "lower": 4.958e-05,
+  "upper": 5.057e-05
+ },
+ {
+  "timestamp": "2026-10-15T23:10:07+00:00",
+  "symbol": "BTCUSDT",
+  "funding_rate": 5.561e-05,
+  "history_samples": 210,
+  "lower": 5.583e-05,
+  "upper": 5.703e-05
+ },
+ {
+  "timestamp": "2026-10-15T23:10:07+00:00",
+  "symbol": "SOLUSDT",
+  "funding_rate": 4.942e-05,
+  "history_samples": 210,
+  "lower": 4.958e-05,
+  "upper": 5.057e-05
+ },
+ {
+  "timestamp": "2026-10-15T23:10:08+00:00",
+  "symbol": "BTCUSDT",
+  "funding_rate": 5.561e-05,
+  "history_samples": 211,
+  "lower": 5.583e-05,
+  "upper": 5.703e-05
+ },
+ {
+  "timestamp": "2026-10-15T23:10:08+00:00",
+  "symbol": "SOLUSDT",
+  "funding_rate": 4.942e-05,
+  "history_samples": 211,
+  "lower": 4.958e-05,
+  "upper": 5.057e-05
+ },
+ {
+  "timestamp": "2026-10-15T23:10:09+00:00",
+  "symbol": "BTCUSDT",
+  "funding_rate": 5.561e-05,
+  "history_samples": 212,
+  "lower": 5.583e-05,
+  "upper": 5.703e-05
+ },
+ {
+  "timestamp": "2026-10-15T23:10:09+00:00",
+  "symbol": "SOLUSDT",
+  "funding_rate": 4.942e-05,
+  "history_samples": 212,
+  "lower": 4.958e-05,
+  "upper": 5.057e-05
+ },
+ {
+  "timestamp": "2026-10-15T23:10:10+00:00",
+  "symbol": "BTCUSDT",
+  "funding_rate": 5.561e-05,
+  "history_samples": 213,
+  "lower": 5.583e-05,
+  "upper": 5.703e-05
+ },
+ {
+  "timestamp": "2026-10-15T23:10:10+00:00",
+  "symbol": "SOLUSDT",
+  "funding_rate": 4.942e-05,
+  "history_samples": 213,
+  "lower": 4.958e-05,
+  "upper": 5.057e-05
+ },
+ {
+  "timestamp": "2026-10-15T23:10:11.003000+00:00",
+  "symbol": "BTCUSDT",
+  "funding_rate": 5.561e-05,
+  "history_samples": 214,
+  "lower": 5.583e-05,
+  "upper": 5.703e-05
+ },
+ {
+  "timestamp": "2026-10-15T23:10:11.003000+00:00",
+  "symbol": "SOLUSDT",
+  "funding_rate": 4.942e-05,
+  "history_samples": 214,
+  "lower": 4.958e-05,
+  "upper": 5.057e-05
+ },
+ {
+  "timestamp": "2026-10-15T23:10:12.002000+00:00",
+  "symbol": "BTCUSDT",
+  "funding_rate": 5.561e-05,
+  "history_samples": 215,
+  "lower": 5.5764e-05,
+  "upper": 5.703e-05
+ },
+ {
+  "timestamp": "2026-10-15T23:10:12.002000+00:00",
+  "symbol": "SOLUSDT",
+  "funding_rate": 4.942e-05,
+  "history_samples": 215,
+  "lower": 4.9532e-05,
+  "upper": 5.057e-05
+ },
+ {
+  "timestamp": "2026-10-15T23:12:01.001000+00:00",
+  "symbol": "BTCUSDT",
+  "funding_rate": 5.53e-05,
+  "history_samples": 324,
+  "lower": 5.561e-05,
+  "upper": 5.703e-05
+ },
+ {
+  "timestamp": "2026-10-15T23:12:01.001000+00:00",
+  "symbol": "SOLUSDT",
+  "funding_rate": 4.925e-05,
+  "history_samples": 324,
+  "lower": 4.942e-05,
+  "upper": 5.057e-05
+ },
+ {
+  "timestamp": "2026-10-15T23:12:02+00:00",
+  "symbol": "BTCUSDT",
+  "funding_rate": 5.53e-05,
+  "history_samples": 325,
+  "lower": 5.561e-05,
+  "upper": 5.703e-05
+ },
+ {
+  "timestamp": "2026-10-15T23:12:02+00:00",
+  "symbol": "SOLUSDT",
+  "funding_rate": 4.925e-05,
+  "history_samples": 325,
+  "lower": 4.942e-05,
+  "upper": 5.057e-05
+ },
+ {
+  "timestamp": "2026-10-15T23:12:03+00:00",
+  "symbol": "BTCUSDT",
+  "funding_rate": 5.53e-05,
+  "history_samples": 326,
+  "lower": 5.561e-05,
+  "upper": 5.703e-05
+ },
+ {
+  "timestamp": "2026-10-15T23:12:03+00:00",
+  "symbol": "SOLUSDT",
+  "funding_rate": 4.925e-05,
+  "history_samples": 326,
+  "lower": 4.942e-05,
+  "upper": 5.057e-05
+ },
+ {
+  "timestamp": "2026-10-15T23:12:04+00:00",
+  "symbol": "BTCUSDT",
+  "funding_rate": 5.53e-05,
+  "history_samples": 327,
+  "lower": 5.561e-05,
+  "upper": 5.703e-05
+ },
+ {
+  "timestamp": "2026-10-15T23:12:04+00:00",
+  "symbol": "SOLUSDT",
+  "funding_rate": 4.925e-05,
+  "history_samples": 327,
+  "lower": 4.942e-05,
+  "upper": 5.057e-05
+ },
+ {
+  "timestamp": "2026-10-15T23:12:05.001000+00:00",
+  "symbol": "BTCUSDT",
+  "funding_rate": 5.53e-05,
+  "history_samples": 328,
+  "lower": 5.561e-05,
+  "upper": 5.703e-05
+ },
+ {
+  "timestamp": "2026-10-15T23:12:05.001000+00:00",
+  "symbol": "SOLUSDT",
+  "funding_rate": 4.925e-05,
+  "history_samples": 328,
+  "lower": 4.942e-05,
+  "upper": 5.057e-05
+ },
+ {
+  "timestamp": "2026-10-15T23:12:06.002000+00:00",
+  "symbol": "BTCUSDT",
+  "funding_rate": 5.53e-05,
+  "history_samples": 329,
+  "lower": 5.561e-05,
+  "upper": 5.703e-05
+ },
+ {
+  "timestamp": "2026-10-15T23:12:06.002000+00:00",
+  "symbol": "SOLUSDT",
+  "funding_rate": 4.925e-05,
+  "history_samples": 329,
+  "lower": 4.942e-05,
+  "upper": 5.057e-05
+ },
+ {
+  "timestamp": "2026-10-15T23:12:07+00:00",
+  "symbol": "BTCUSDT",
+  "funding_rate": 5.53e-05,
+  "history_samples": 330,
+  "lower": 5.561e-05,
+  "upper": 5.703e-05
+ },
+ {
+  "timestamp": "2026-10-15T23:12:07+00:00",
+  "symbol": "SOLUSDT",
+  "funding_rate": 4.925e-05,
+  "history_samples": 330,
+  "lower": 4.942e-05,
+  "upper": 5.057e-05
+ },
+ {
+  "timestamp": "2026-10-15T23:12:08.004000+00:00",
+  "symbol": "BTCUSDT",
+  "funding_rate": 5.53e-05,
+  "history_samples": 331,
+  "lower": 5.561e-05,
+  "upper": 5.703e-05
+ },
+ {
+  "timestamp": "2026-10-15T23:12:08.004000+00:00",
+  "symbol": "SOLUSDT",
+  "funding_rate": 4.925e-05,
+  "history_samples": 331,
+  "lower": 4.942e-05,
+  "upper": 5.057e-05
+ },
+ {
+  "timestamp": "2026-10-15T23:12:09.003000+00:00",
+  "symbol": "BTCUSDT",
+  "funding_rate": 5.53e-05,
+  "history_samples": 332,
+  "lower": 5.561e-05,
+  "upper": 5.703e-05
+ },
+ {
+  "timestamp": "2026-10-15T23:12:09.003000+00:00",
+  "symbol": "SOLUSDT",
+  "funding_rate": 4.925e-05,
+  "history_samples": 332,
+  "lower": 4.942e-05,
+  "upper": 5.057e-05
+ },
+ {
+  "timestamp": "2026-10-15T23:12:10+00:00",
+  "symbol": "BTCUSDT",
+  "funding_rate": 5.53e-05,
+  "history_samples": 333,
+  "lower": 5.561e-05,
+  "upper": 5.703e-05
+ },
+ {
+  "timestamp": "2026-10-15T23:12:10+00:00",
+  "symbol": "SOLUSDT",
+  "funding_rate": 4.925e-05,
+  "history_samples": 333,
+  "lower": 4.942e-05,
+  "upper": 5.057e-05
+ },
+ {
+  "timestamp": "2026-10-15T23:12:11+00:00",
+  "symbol": "BTCUSDT",
+  "funding_rate": 5.53e-05,
+  "history_samples": 334,
+  "lower": 5.561e-05,
+  "upper": 5.703e-05
+ },
+ {
+  "timestamp": "2026-10-15T23:12:11+00:00",
+  "symbol": "SOLUSDT",
+  "funding_rate": 4.925e-05,
+  "history_samples": 334,
+  "lower": 4.942e-05,
+  "upper": 5.057e-05
+ },
+ {
+  "timestamp": "2026-10-15T23:12:12+00:00",
+  "symbol": "BTCUSDT",
+  "funding_rate": 5.53e-05,
+  "history_samples": 335,
+  "lower": 5.561e-05,
+  "upper": 5.703e-05
+ },
+ {
+  "timestamp": "2026-10-15T23:12:12+00:00",
+  "symbol": "SOLUSDT",
+  "funding_rate": 4.925e-05,
+  "history_samples": 335,
+  "lower": 4.942e-05,
+  "upper": 5.057e-05
+ },
+ {
+  "timestamp": "2026-10-15T23:12:13.001000+00:00",
+  "symbol": "BTCUSDT",
+  "funding_rate": 5.53e-05,
+  "history_samples": 336,
+  "lower": 5.561e-05,
+  "upper": 5.703e-05
+ },
+ {
+  "timestamp": "2026-10-15T23:12:13.001000+00:00",
+  "symbol": "SOLUSDT",
+  "funding_rate": 4.925e-05,
+  "history_samples": 336,
+  "lower": 4.942e-05,
+  "upper": 5.057e-05
+ },
+ {
+  "timestamp": "2026-10-15T23:12:14.001000+00:00",
+  "symbol": "BTCUSDT",
+  "funding_rate": 5.53e-05,
+  "history_samples": 337,
+  "lower": 5.561e-05,
+  "upper": 5.703e-05
+ },
+ {
+  "timestamp": "2026-10-15T23:12:14.001000+00:00",
+  "symbol": "SOLUSDT",
+  "funding_rate": 4.925e-05,
+  "history_samples": 337,
+  "lower": 4.942e-05,
+  "upper": 5.057e-05
+ },
+ {
+  "timestamp": "2026-10-15T23:12:15+00:00",
+  "symbol": "BTCUSDT",
+  "funding_rate": 5.53e-05,
+  "history_samples": 338,
+  "lower": 5.561e-05,
+  "upper": 5.703e-05
+ },
+ {
+  "timestamp": "2026-10-15T23:12:15+00:00",
+  "symbol": "SOLUSDT",
+  "funding_rate": 4.925e-05,
+  "history_samples": 338,
+  "lower": 4.942e-05,
+  "upper": 5.057e-05
+ },
+ {
+  "timestamp": "2026-10-15T23:12:16+00:00",
+  "symbol": "BTCUSDT",
+  "funding_rate": 5.53e-05,
+  "history_samples": 339,
+  "lower": 5.561e-05,
+  "upper": 5.703e-05
+ },
+ {
+  "timestamp": "2026-10-15T23:12:16+00:00",
+  "symbol": "SOLUSDT",
+  "funding_rate": 4.925e-05,
+  "history_samples": 339,
+  "lower": 4.942e-05,
+  "upper": 5.057e-05
+ },
+ {
+  "timestamp": "2026-10-15T23:12:17.003000+00:00",
+  "symbol": "BTCUSDT",
+  "funding_rate": 5.53e-05,
+  "history_samples": 340,
+  "lower": 5.561e-05,
+  "upper": 5.703e-05
+ },
+ {
+  "timestamp": "2026-10-15T23:12:17.003000+00:00",
+  "symbol": "SOLUSDT",
+  "funding_rate": 4.925e-05,
+  "history_samples": 340,
+  "lower": 4.942e-05,
+  "upper": 5.057e-05
+ },
+ {
+  "timestamp": "2026-10-15T23:12:18+00:00",
+  "symbol": "BTCUSDT",
+  "funding_rate": 5.53e-05,
+  "history_samples": 341,
+  "lower": 5.561e-05,
+  "upper": 5.703e-05
+ },
+ {
+  "timestamp": "2026-10-15T23:12:18+00:00",
+  "symbol": "SOLUSDT",
+  "funding_rate": 4.925e-05,
+  "history_samples": 341,
+  "lower": 4.942e-05,
+  "upper": 5.057e-05
+ },
+ {
+  "timestamp": "2026-10-15T23:12:19+00:00",
+  "symbol": "BTCUSDT",
+  "funding_rate": 5.53e-05,
+  "history_samples": 342,
+  "lower": 5.53155e-05,
+  "upper": 5.703e-05
+ },
+ {
+  "timestamp": "2026-10-15T23:12:19+00:00",
+  "symbol": "SOLUSDT",
+  "funding_rate": 4.925e-05,
+  "history_samples": 342,
+  "lower": 4.9258499999999996e-05,
+  "upper": 5.057e-05
+ },
+ {
+  "timestamp": "2026-10-15T23:13:01+00:00",
+  "symbol": "BTCUSDT",
+  "funding_rate": 5.471e-05,
+  "history_samples": 384,
+  "lower": 5.53e-05,
+  "upper": 5.703e-05
+ },
+ {
+  "timestamp": "2026-10-15T23:13:01+00:00",
+  "symbol": "SOLUSDT",
+  "funding_rate": 4.92e-05,
+  "history_samples": 384,
+  "lower": 4.925e-05,
+  "upper": 5.057e-05
+ },
+ {
+  "timestamp": "2026-10-15T23:13:02+00:00",
+  "symbol": "BTCUSDT",
+  "funding_rate": 5.471e-05,
+  "history_samples": 385,
+  "lower": 5.53e-05,
+  "upper": 5.703e-05
+ },
+ {
+  "timestamp": "2026-10-15T23:13:02+00:00",
+  "symbol": "SOLUSDT",
+  "funding_rate": 4.92e-05,
+  "history_samples": 385,
+  "lower": 4.925e-05,
+  "upper": 5.057e-05
+ },
+ {
+  "timestamp": "2026-10-15T23:13:03+00:00",
+  "symbol": "BTCUSDT",
+  "funding_rate": 5.471e-05,
+  "history_samples": 386,
+  "lower": 5.53e-05,
+  "upper": 5.703e-05
+ },
+ {
+  "timestamp": "2026-10-15T23:13:03+00:00",
+  "symbol": "SOLUSDT",
+  "funding_rate": 4.92e-05,
+  "history_samples": 386,
+  "lower": 4.925e-05,
+  "upper": 5.057e-05
+ },
+ {
+  "timestamp": "2026-10-15T23:13:04+00:00",
+  "symbol": "BTCUSDT",
+  "funding_rate": 5.471e-05,
+  "history_samples": 387,
+  "lower": 5.53e-05,
+  "upper": 5.703e-05
+ },
+ {
+  "timestamp": "2026-10-15T23:13:04+00:00",
+  "symbol": "SOLUSDT",
+  "funding_rate": 4.92e-05,
+  "history_samples": 387,
+  "lower": 4.925e-05,
+  "upper": 5.057e-05
+ },
+ {
+  "timestamp": "2026-10-15T23:13:05+00:00",
+  "symbol": "BTCUSDT",
+  "funding_rate": 5.471e-05,
+  "history_samples": 388,
+  "lower": 5.53e-05,
+  "upper": 5.703e-05
+ },
+ {
+  "timestamp": "2026-10-15T23:13:05+00:00",
+  "symbol": "SOLUSDT",
+  "funding_rate": 4.92e-05,
+  "history_samples": 388,
+  "lower": 4.925e-05,
+  "upper": 5.057e-05
+ },
+ {
+  "timestamp": "2026-10-15T23:13:06+00:00",
+  "symbol": "BTCUSDT",
+  "funding_rate": 5.471e-05,
+  "history_samples": 389,
+  "lower": 5.53e-05,
+  "upper": 5.703e-05
+ },
+ {
+  "timestamp": "2026-10-15T23:13:06+00:00",
+  "symbol": "SOLUSDT",
+  "funding_rate": 4.92e-05,
+  "history_samples": 389,
+  "lower": 4.925e-05,
+  "upper": 5.057e-05
+ },
+ {
+  "timestamp": "2026-10-15T23:13:07.002000+00:00",
+  "symbol": "BTCUSDT",
+  "funding_rate": 5.471e-05,
+  "history_samples": 390,
+  "lower": 5.53e-05,
+  "upper": 5.703e-05
+ },
+ {
+  "timestamp": "2026-10-15T23:13:07.002000+00:00",
+  "symbol": "SOLUSDT",
+  "funding_rate": 4.92e-05,
+  "history_samples": 390,
+  "lower": 4.925e-05,
+  "upper": 5.057e-05
+ },
+ {
+  "timestamp": "2026-10-15T23:13:08+00:00",
+  "symbol": "BTCUSDT",
+  "funding_rate": 5.471e-05,
+  "history_samples": 391,
+  "lower": 5.53e-05,
+  "upper": 5.703e-05
+ },
+ {
+  "timestamp": "2026-10-15T23:13:08+00:00",
+  "symbol": "SOLUSDT",
+  "funding_rate": 4.92e-05,
+  "history_samples": 391,
+  "lower": 4.925e-05,
+  "upper": 5.057e-05
+ },
+ {
+  "timestamp": "2026-10-15T23:13:09+00:00",
+  "symbol": "BTCUSDT",
+  "funding_rate": 5.471e-05,
+  "history_samples": 392,
+  "lower": 5.53e-05,
+  "upper": 5.703e-05
+ },
+ {
+  "timestamp": "2026-10-15T23:13:09+00:00",
+  "symbol": "SOLUSDT",
+  "funding_rate": 4.92e-05,
+  "history_samples": 392,
+  "lower": 4.925e-05,
+  "upper": 5.057e-05
+ },
+ {
+  "timestamp": "2026-10-15T23:13:10.001000+00:00",
+  "symbol": "BTCUSDT",
+  "funding_rate": 5.471e-05,
+  "history_samples": 393,
+  "lower": 5.53e-05,
+  "upper": 5.703e-05
+ },
+ {
+  "timestamp": "2026-10-15T23:13:10.001000+00:00",
+  "symbol": "SOLUSDT",
+  "funding_rate": 4.92e-05,
+  "history_samples": 393,
+  "lower": 4.925e-05,
+  "upper": 5.057e-05
+ },
+ {
+  "timestamp": "2026-10-15T23:13:11.005000+00:00",
+  "symbol": "BTCUSDT",
+  "funding_rate": 5.471e-05,
+  "history_samples": 394,
+  "lower": 5.53e-05,
+  "upper": 5.703e-05
+ },
+ {
+  "timestamp": "2026-10-15T23:13:11.005000+00:00",
+  "symbol": "SOLUSDT",
+  "funding_rate": 4.92e-05,
+  "history_samples": 394,
+  "lower": 4.925e-05,
+  "upper": 5.057e-05
+ },
+ {
+  "timestamp": "2026-10-15T23:13:12+00:00",
+  "symbol": "BTCUSDT",
+  "funding_rate": 5.471e-05,
+  "history_samples": 395,
+  "lower": 5.53e-05,
+  "upper": 5.703e-05
+ },
+ {
+  "timestamp": "2026-10-15T23:13:12+00:00",
+  "symbol": "SOLUSDT",
+  "funding_rate": 4.92e-05,
+  "history_samples": 395,
+  "lower": 4.925e-05,
+  "upper": 5.057e-05
+ },
+ {
+  "timestamp": "2026-10-15T23:13:13.005000+00:00",
+  "symbol": "BTCUSDT",
+  "funding_rate": 5.471e-05,
+  "history_samples": 396,
+  "lower": 5.53e-05,
+  "upper": 5.703e-05
+ },
+ {
+  "timestamp": "2026-10-15T23:13:13.005000+00:00",
+  "symbol": "SOLUSDT",
+  "funding_rate": 4.92e-05,
+  "history_samples": 396,
+  "lower": 4.925e-05,
+  "upper": 5.057e-05
+ },
+ {
+  "timestamp": "2026-10-15T23:13:14+00:00",
+  "symbol": "BTCUSDT",
+  "funding_rate": 5.471e-05,
+  "history_samples": 397,
+  "lower": 5.53e-05,
+  "upper": 5.703e-05
+ },
+ {
+  "timestamp": "2026-10-15T23:13:14+00:00",
+  "symbol": "SOLUSDT",
+  "funding_rate": 4.92e-05,
+  "history_samples": 397,
+  "lower": 4.925e-05,
+  "upper": 5.057e-05
+ },
+ {
+  "timestamp": "2026-10-15T23:13:15+00:00",
+  "symbol": "BTCUSDT",
+  "funding_rate": 5.471e-05,
+  "history_samples": 398,
+  "lower": 5.53e-05,
+  "upper": 5.703e-05
+ },
+ {
+  "timestamp": "2026-10-15T23:13:15+00:00",
+  "symbol": "SOLUSDT",
+  "funding_rate": 4.92e-05,
+  "history_samples": 398,
+  "lower": 4.925e-05,
+  "upper": 5.057e-05
+ },
+ {
+  "timestamp": "2026-10-15T23:13:16.001000+00:00",
+  "symbol": "BTCUSDT",
+  "funding_rate": 5.471e-05,
+  "history_samples": 399,
+  "lower": 5.53e-05,
+  "upper": 5.703e-05
+ },
+ {
+  "timestamp": "2026-10-15T23:13:16.001000+00:00",
+  "symbol": "SOLUSDT",
+  "funding_rate": 4.92e-05,
+  "history_samples": 399,
+  "lower": 4.925e-05,
+  "upper": 5.057e-05
+ },
+ {
+  "timestamp": "2026-10-15T23:13:17+00:00",
+  "symbol": "BTCUSDT",
+  "funding_rate": 5.471e-05,
+  "history_samples": 400,
+  "lower": 5.53e-05,
+  "upper": 5.703e-05
+ },
+ {
+  "timestamp": "2026-10-15T23:13:17+00:00",
+  "symbol": "SOLUSDT",
+  "funding_rate": 4.92e-05,
+  "history_samples": 400,
+  "lower": 4.925e-05,
+  "upper": 5.057e-05
+ },
+ {
+  "timestamp": "2026-10-15T23:13:18.004000+00:00",
+  "symbol": "BTCUSDT",
+  "funding_rate": 5.471e-05,
+  "history_samples": 401,
+  "lower": 5.53e-05,
+  "upper": 5.703e-05
+ },
+ {
+  "timestamp": "2026-10-15T23:13:18.004000+00:00",
+  "symbol": "SOLUSDT",
+  "funding_rate": 4.92e-05,
+  "history_samples": 401,
+  "lower": 4.925e-05,
+  "upper": 5.057e-05
+ },
+ {
+  "timestamp": "2026-10-15T23:13:19+00:00",
+  "symbol": "BTCUSDT",
+  "funding_rate": 5.471e-05,
+  "history_samples": 402,
+  "lower": 5.53e-05,
+  "upper": 5.703e-05
+ },
+ {
+  "timestamp": "2026-10-15T23:13:19+00:00",
+  "symbol": "SOLUSDT",
+  "funding_rate": 4.92e-05,
+  "history_samples": 402,
+  "lower": 4.925e-05,
+  "upper": 5.057e-05
+ },
+ {
+  "timestamp": "2026-10-15T23:13:20+00:00",
+  "symbol": "BTCUSDT",
+  "funding_rate": 5.471e-05,
+  "history_samples": 403,
+  "lower": 5.53e-05,
+  "upper": 5.703e-05
+ },
+ {
+  "timestamp": "2026-10-15T23:13:20+00:00",
+  "symbol": "SOLUSDT",
+  "funding_rate": 4.92e-05,
+  "history_samples": 403,
+  "lower": 4.925e-05,
+  "upper": 5.057e-05
+ },
+ {
+  "timestamp": "2026-10-15T23:13:21+00:00",
+  "symbol": "BTCUSDT",
+  "funding_rate": 5.471e-05,
+  "history_samples": 404,
+  "lower": 5.53e-05,
+  "upper": 5.703e-05
+ },
+ {
+  "timestamp": "2026-10-15T23:13:21+00:00",
+  "symbol": "SOLUSDT",
+  "funding_rate": 4.92e-05,
+  "history_samples": 404,
+  "lower": 4.925e-05,
+  "upper": 5.057e-05
+ },
+ {
+  "timestamp": "2026-10-15T23:13:22.003000+00:00",
+  "symbol": "BTCUSDT",
+  "funding_rate": 5.471e-05,
+  "history_samples": 405,
+  "lower": 5.4828000000000004e-05,
+  "upper": 5.703e-05
+ },
+ {
+  "timestamp": "2026-10-15T23:13:22.003000+00:00",
+  "symbol": "SOLUSDT",
+  "funding_rate": 4.92e-05,
+  "history_samples": 405,
+  "lower": 4.9210000000000005e-05,
+  "upper": 5.057e-05
+ },
+ {
+  "timestamp": "2026-10-15T23:14:01+00:00",
+  "symbol": "BTCUSDT",
+  "funding_rate": 5.376e-05,
+  "history_samples": 444,
+  "lower": 5.471e-05,
+  "upper": 5.703e-05
+ },
+ {
+  "timestamp": "2026-10-15T23:14:01+00:00",
+  "symbol": "SOLUSDT",
+  "funding_rate": 4.897e-05,
+  "history_samples": 444,
+  "lower": 4.92e-05,
+  "upper": 5.057e-05
+ },
+ {
+  "timestamp": "2026-10-15T23:14:02.002000+00:00",
+  "symbol": "BTCUSDT",
+  "funding_rate": 5.376e-05,
+  "history_samples": 445,
+  "lower": 5.471e-05,
+  "upper": 5.703e-05
+ },
+ {
+  "timestamp": "2026-10-15T23:14:02.002000+00:00",
+  "symbol": "SOLUSDT",
+  "funding_rate": 4.897e-05,
+  "history_samples": 445,
+  "lower": 4.92e-05,
+  "upper": 5.057e-05
+ },
+ {
+  "timestamp": "2026-10-15T23:14:03.002000+00:00",
+  "symbol": "BTCUSDT",
+  "funding_rate": 5.376e-05,
+  "history_samples": 446,
+  "lower": 5.471e-05,
+  "upper": 5.703e-05
+ },
+ {
+  "timestamp": "2026-10-15T23:14:03.002000+00:00",
+  "symbol": "SOLUSDT",
+  "funding_rate": 4.897e-05,
+  "history_samples": 446,
+  "lower": 4.92e-05,
+  "upper": 5.057e-05
+ },
+ {
+  "timestamp": "2026-10-15T23:14:04+00:00",
+  "symbol": "BTCUSDT",
+  "funding_rate": 5.376e-05,
+  "history_samples": 447,
+  "lower": 5.471e-05,
+  "upper": 5.703e-05
+ },
+ {
+  "timestamp": "2026-10-15T23:14:04+00:00",
+  "symbol": "SOLUSDT",
+  "funding_rate": 4.897e-05,
+  "history_samples": 447,
+  "lower": 4.92e-05,
+  "upper": 5.057e-05
+ },
+ {
+  "timestamp": "2026-10-15T23:14:05+00:00",
+  "symbol": "BTCUSDT",
+  "funding_rate": 5.376e-05,
+  "history_samples": 448,
+  "lower": 5.471e-05,
+  "upper": 5.703e-05
+ },
+ {
+  "timestamp": "2026-10-15T23:14:05+00:00",
+  "symbol": "SOLUSDT",
+  "funding_rate": 4.897e-05,
+  "history_samples": 448,
+  "lower": 4.92e-05,
+  "upper": 5.057e-05
+ },
+ {
+  "timestamp": "2026-10-15T23:14:06.001000+00:00",
+  "symbol": "BTCUSDT",
+  "funding_rate": 5.376e-05,
+  "history_samples": 449,
+  "lower": 5.471e-05,
+  "upper": 5.703e-05
+ },
+ {
+  "timestamp": "2026-10-15T23:14:06.001000+00:00",
+  "symbol": "SOLUSDT",
+  "funding_rate": 4.897e-05,
+  "history_samples": 449,
+  "lower": 4.92e-05,
+  "upper": 5.057e-05
+ },
+ {
+  "timestamp": "2026-10-15T23:14:07+00:00",
+  "symbol": "BTCUSDT",
+  "funding_rate": 5.376e-05,
+  "history_samples": 450,
+  "lower": 5.471e-05,
+  "upper": 5.703e-05
+ },
+ {
+  "timestamp": "2026-10-15T23:14:07+00:00",
+  "symbol": "SOLUSDT",
+  "funding_rate": 4.897e-05,
+  "history_samples": 450,
+  "lower": 4.92e-05,
+  "upper": 5.057e-05
+ },
+ {
+  "timestamp": "2026-10-15T23:14:08+00:00",
+  "symbol": "BTCUSDT",
+  "funding_rate": 5.376e-05,
+  "history_samples": 451,
+  "lower": 5.471e-05,
+  "upper": 5.703e-05
+ },
+ {
+  "timestamp": "2026-10-15T23:14:08+00:00",
+  "symbol": "SOLUSDT",
+  "funding_rate": 4.897e-05,
+  "history_samples": 451,
+  "lower": 4.92e-05,
+  "upper": 5.057e-05
+ },
+ {
+  "timestamp": "2026-10-15T23:14:09.003000+00:00",
+  "symbol": "BTCUSDT",
+  "funding_rate": 5.376e-05,
+  "history_samples": 452,
+  "lower": 5.471e-05,
+  "upper": 5.703e-05
+ },
+ {
+  "timestamp": "2026-10-15T23:14:09.003000+00:00",
+  "symbol": "SOLUSDT",
+  "funding_rate": 4.897e-05,
+  "history_samples": 452,
+  "lower": 4.92e-05,
+  "upper": 5.057e-05
+ },
+ {
+  "timestamp": "2026-10-15T23:14:10+00:00",
+  "symbol": "BTCUSDT",
+  "funding_rate": 5.376e-05,
+  "history_samples": 453,
+  "lower": 5.471e-05,
+  "upper": 5.703e-05
+ },
+ {
+  "timestamp": "2026-10-15T23:14:10+00:00",
+  "symbol": "SOLUSDT",
+  "funding_rate": 4.897e-05,
+  "history_samples": 453,
+  "lower": 4.92e-05,
+  "upper": 5.057e-05
+ },
+ {
+  "timestamp": "2026-10-15T23:14:11+00:00",
+  "symbol": "BTCUSDT",
+  "funding_rate": 5.376e-05,
+  "history_samples": 454,
+  "lower": 5.471e-05,
+  "upper": 5.703e-05
+ },
+ {
+  "timestamp": "2026-10-15T23:14:11+00:00",
+  "symbol": "SOLUSDT",
+  "funding_rate": 4.897e-05,
+  "history_samples": 454,
+  "lower": 4.92e-05,
+  "upper": 5.057e-05
+ },
+ {
+  "timestamp": "2026-10-15T23:14:12+00:00",
+  "symbol": "BTCUSDT",
+  "funding_rate": 5.376e-05,
+  "history_samples": 455,
+  "lower": 5.471e-05,
+  "upper": 5.703e-05
+ },
+ {
+  "timestamp": "2026-10-15T23:14:12+00:00",
+  "symbol": "SOLUSDT",
+  "funding_rate": 4.897e-05,
+  "history_samples": 455,
+  "lower": 4.92e-05,
+  "upper": 5.057e-05
+ },
+ {
+  "timestamp": "2026-10-15T23:14:13+00:00",
+  "symbol": "BTCUSDT",
+  "funding_rate": 5.376e-05,
+  "history_samples": 456,
+  "lower": 5.471e-05,
+  "upper": 5.703e-05
+ },
+ {
+  "timestamp": "2026-10-15T23:14:13+00:00",
+  "symbol": "SOLUSDT",
+  "funding_rate": 4.897e-05,
+  "history_samples": 456,
+  "lower": 4.92e-05,
+  "upper": 5.057e-05
+ },
+ {
+  "timestamp": "2026-10-15T23:14:14.004000+00:00",
+  "symbol": "BTCUSDT",
+  "funding_rate": 5.376e-05,
+  "history_samples": 457,
+  "lower": 5.471e-05,
+  "upper": 5.703e-05
+ },
+ {
+  "timestamp": "2026-10-15T23:14:14.004000+00:00",
+  "symbol": "SOLUSDT",
+  "funding_rate": 4.897e-05,
+  "history_samples": 457,
+  "lower": 4.92e-05,
+  "upper": 5.057e-05
+ },
+ {
+  "timestamp": "2026-10-15T23:14:15.001000+00:00",
+  "symbol": "BTCUSDT",
+  "funding_rate": 5.376e-05,
+  "history_samples": 458,
+  "lower": 5.471e-05,
+  "upper": 5.703e-05
+ },
+ {
+  "timestamp": "2026-10-15T23:14:15.001000+00:00",
+  "symbol": "SOLUSDT",
+  "funding_rate": 4.897e-05,
+  "history_samples": 458,
+  "lower": 4.92e-05,
+  "upper": 5.057e-05
+ },
+ {
+  "timestamp": "2026-10-15T23:14:16.003000+00:00",
+  "symbol": "BTCUSDT",
+  "funding_rate": 5.376e-05,
+  "history_samples": 459,
+  "lower": 5.471e-05,
+  "upper": 5.703e-05
+ },
+ {
+  "timestamp": "2026-10-15T23:14:16.003000+00:00",
+  "symbol": "SOLUSDT",
+  "funding_rate": 4.897e-05,
+  "history_samples": 459,
+  "lower": 4.92e-05,
+  "upper": 5.057e-05
+ },
+ {
+  "timestamp": "2026-10-15T23:14:17+00:00",
+  "symbol": "BTCUSDT",
+  "funding_rate": 5.376e-05,
+  "history_samples": 460,
+  "lower": 5.471e-05,
+  "upper": 5.703e-05
+ },
+ {
+  "timestamp": "2026-10-15T23:14:17+00:00",
+  "symbol": "SOLUSDT",
+  "funding_rate": 4.897e-05,
+  "history_samples": 460,
+  "lower": 4.92e-05,
+  "upper": 5.057e-05
+ },
+ {
+  "timestamp": "2026-10-15T23:14:18+00:00",
+  "symbol": "BTCUSDT",
+  "funding_rate": 5.376e-05,
+  "history_samples": 461,
+  "lower": 5.471e-05,
+  "upper": 5.703e-05
+ },
+ {
+  "timestamp": "2026-10-15T23:14:18+00:00",
+  "symbol": "SOLUSDT",
+  "funding_rate": 4.897e-05,
+  "history_samples": 461,
+  "lower": 4.92e-05,
+  "upper": 5.057e-05
+ },
+ {
+  "timestamp": "2026-10-15T23:14:19.003000+00:00",
+  "symbol": "BTCUSDT",
+  "funding_rate": 5.376e-05,
+  "history_samples": 462,
+  "lower": 5.471e-05,
+  "upper": 5.6986499999999994e-05
+ },
+ {
+  "timestamp": "2026-10-15T23:14:19.003000+00:00",
+  "symbol": "SOLUSDT",
+  "funding_rate": 4.897e-05,
+  "history_samples": 462,
+  "lower": 4.92e-05,
+  "upper": 5.053599999999999e-05
+ },
+ {
+  "timestamp": "2026-10-15T23:14:20+00:00",
+  "symbol": "BTCUSDT",
+  "funding_rate": 5.376e-05,
+  "history_samples": 463,
+  "lower": 5.471e-05,
+  "upper": 5.694299999999998e-05
+ },
+ {
+  "timestamp": "2026-10-15T23:14:20+00:00",
+  "symbol": "SOLUSDT",
+  "funding_rate": 4.897e-05,
+  "history_samples": 463,
+  "lower": 4.92e-05,
+  "upper": 5.0501999999999985e-05
+ },
+ {
+  "timestamp": "2026-10-15T23:14:21.005000+00:00",
+  "symbol": "BTCUSDT",
+  "funding_rate": 5.376e-05,
+  "history_samples": 464,
+  "lower": 5.471e-05,
+  "upper": 5.689949999999997e-05
+ },
+ {
+  "timestamp": "2026-10-15T23:14:21.005000+00:00",
+  "symbol": "SOLUSDT",
+  "funding_rate": 4.897e-05,
+  "history_samples": 464,
+  "lower": 4.92e-05,
+  "upper": 5.046799999999998e-05
+ },
+ {
+  "timestamp": "2026-10-15T23:14:22+00:00",
+  "symbol": "BTCUSDT",
+  "funding_rate": 5.376e-05,
+  "history_samples": 465,
+  "lower": 5.471e-05,
+  "upper": 5.685599999999996e-05
+ },
+ {
+  "timestamp": "2026-10-15T23:14:22+00:00",
+  "symbol": "SOLUSDT",
+  "funding_rate": 4.897e-05,
+  "history_samples": 465,
+  "lower": 4.92e-05,
+  "upper": 5.0433999999999965e-05
+ },
+ {
+  "timestamp": "2026-10-15T23:14:23.001000+00:00",
+  "symbol": "BTCUSDT",
+  "funding_rate": 5.376e-05,
+  "history_samples": 466,
+  "lower": 5.471e-05,
+  "upper": 5.68125e-05
+ },
+ {
+  "timestamp": "2026-10-15T23:14:23.001000+00:00",
+  "symbol": "SOLUSDT",
+  "funding_rate": 4.897e-05,
+  "history_samples": 466,
+  "lower": 4.92e-05,
+  "upper": 5.04e-05
+ },
+ {
+  "timestamp": "2026-10-15T23:14:24.006000+00:00",
+  "symbol": "BTCUSDT",
+  "funding_rate": 5.376e-05,
+  "history_samples": 467,
+  "lower": 5.471e-05,
+  "upper": 5.676899999999999e-05
+ },
+ {
+  "timestamp": "2026-10-15T23:14:24.006000+00:00",
+  "symbol": "SOLUSDT",
+  "funding_rate": 4.897e-05,
+  "history_samples": 467,
+  "lower": 4.92e-05,
+  "upper": 5.036599999999999e-05
+ },
+ {
+  "timestamp": "2026-10-15T23:14:25+00:00",
+  "symbol": "BTCUSDT",
+  "funding_rate": 5.376e-05,
+  "history_samples": 468,
+  "lower": 5.4092500000000004e-05,
+  "upper": 5.672549999999998e-05
+ },
+ {
+  "timestamp": "2026-10-15T23:14:25+00:00",
+  "symbol": "SOLUSDT",
+  "funding_rate": 4.897e-05,
+  "history_samples": 468,
+  "lower": 4.90505e-05,
+  "upper": 5.0331999999999985e-05
+ },
+ {
+  "timestamp": "2026-10-15T23:16:01+00:00",
+  "symbol": "BTCUSDT",
+  "funding_rate": 5.332e-05,
+  "history_samples": 564,
+  "lower": 5.376e-05,
+  "upper": 5.616e-05
+ },
+ {
+  "timestamp": "2026-10-15T23:16:01+00:00",
+  "symbol": "SOLUSDT",
+  "funding_rate": 4.883e-05,
+  "history_samples": 564,
+  "lower": 4.897e-05,
+  "upper": 4.989e-05
+ },
+ {
+  "timestamp": "2026-10-15T23:16:02+00:00",
+  "symbol": "BTCUSDT",
+  "funding_rate": 5.332e-05,
+  "history_samples": 565,
+  "lower": 5.376e-05,
+  "upper": 5.616e-05
+ },
+ {
+  "timestamp": "2026-10-15T23:16:02+00:00",
+  "symbol": "SOLUSDT",
+  "funding_rate": 4.883e-05,
+  "history_samples": 565,
+  "lower": 4.897e-05,
+  "upper": 4.989e-05
+ },
+ {
+  "timestamp": "2026-10-15T23:16:03.003000+00:00",
+  "symbol": "BTCUSDT",
+  "funding_rate": 5.332e-05,
+  "history_samples": 566,
+  "lower": 5.376e-05,
+  "upper": 5.616e-05
+ },
+ {
+  "timestamp": "2026-10-15T23:16:03.003000+00:00",
+  "symbol": "SOLUSDT",
+  "funding_rate": 4.883e-05,
+  "history_samples": 566,
+  "lower": 4.897e-05,
+  "upper": 4.989e-05
+ },
+ {
+  "timestamp": "2026-10-15T23:16:04.001000+00:00",
+  "symbol": "BTCUSDT",
+  "funding_rate": 5.332e-05,
+  "history_samples": 567,
+  "lower": 5.376e-05,
+  "upper": 5.616e-05
+ },
+ {
+  "timestamp": "2026-10-15T23:16:04.001000+00:00",
+  "symbol": "SOLUSDT",
+  "funding_rate": 4.883e-05,
+  "history_samples": 567,
+  "lower": 4.897e-05,
+  "upper": 4.989e-05
+ },
+ {
+  "timestamp": "2026-10-15T23:16:05+00:00",
+  "symbol": "BTCUSDT",
+  "funding_rate": 5.332e-05,
+  "history_samples": 568,
+  "lower": 5.376e-05,
+  "upper": 5.616e-05
+ },
+ {
+  "timestamp": "2026-10-15T23:16:05+00:00",
+  "symbol": "SOLUSDT",
+  "funding_rate": 4.883e-05,
+  "history_samples": 568,
+  "lower": 4.897e-05,
+  "upper": 4.989e-05
+ },
+ {
+  "timestamp": "2026-10-15T23:16:06+00:00",
+  "symbol": "BTCUSDT",
+  "funding_rate": 5.332e-05,
+  "history_samples": 569,
+  "lower": 5.376e-05,
+  "upper": 5.616e-05
+ },
+ {
+  "timestamp": "2026-10-15T23:16:06+00:00",
+  "symbol": "SOLUSDT",
+  "funding_rate": 4.883e-05,
+  "history_samples": 569,
+  "lower": 4.897e-05,
+  "upper": 4.989e-05
+ },
+ {
+  "timestamp": "2026-10-15T23:16:07.002000+00:00",
+  "symbol": "BTCUSDT",
+  "funding_rate": 5.332e-05,
+  "history_samples": 570,
+  "lower": 5.376e-05,
+  "upper": 5.616e-05
+ },
+ {
+  "timestamp": "2026-10-15T23:16:07.002000+00:00",
+  "symbol": "SOLUSDT",
+  "funding_rate": 4.883e-05,
+  "history_samples": 570,
+  "lower": 4.897e-05,
+  "upper": 4.989e-05
+ },
+ {
+  "timestamp": "2026-10-15T23:16:08.001000+00:00",
+  "symbol": "BTCUSDT",
+  "funding_rate": 5.332e-05,
+  "history_samples": 571,
+  "lower": 5.376e-05,
+  "upper": 5.616e-05
+ },
+ {
+  "timestamp": "2026-10-15T23:16:08.001000+00:00",
+  "symbol": "SOLUSDT",
+  "funding_rate": 4.883e-05,
+  "history_samples": 571,
+  "lower": 4.897e-05,
+  "upper": 4.989e-05
+ },
+ {
+  "timestamp": "2026-10-15T23:16:09.001000+00:00",
+  "symbol": "BTCUSDT",
+  "funding_rate": 5.332e-05,
+  "history_samples": 572,
+  "lower": 5.376e-05,
+  "upper": 5.616e-05
+ },
+ {
+  "timestamp": "2026-10-15T23:16:09.001000+00:00",
+  "symbol": "SOLUSDT",
+  "funding_rate": 4.883e-05,
+  "history_samples": 572,
+  "lower": 4.897e-05,
+  "upper": 4.989e-05
+ },
+ {
+  "timestamp": "2026-10-15T23:16:10+00:00",
+  "symbol": "BTCUSDT",
+  "funding_rate": 5.332e-05,
+  "history_samples": 573,
+  "lower": 5.376e-05,
+  "upper": 5.616e-05
+ },
+ {
+  "timestamp": "2026-10-15T23:16:10+00:00",
+  "symbol": "SOLUSDT",
+  "funding_rate": 4.883e-05,
+  "history_samples": 573,
+  "lower": 4.897e-05,
+  "upper": 4.989e-05
+ },
+ {
+  "timestamp": "2026-10-15T23:16:11.001000+00:00",
+  "symbol": "BTCUSDT",
+  "funding_rate": 5.332e-05,
+  "history_samples": 574,
+  "lower": 5.376e-05,
+  "upper": 5.616e-05
+ },
+ {
+  "timestamp": "2026-10-15T23:16:11.001000+00:00",
+  "symbol": "SOLUSDT",
+  "funding_rate": 4.883e-05,
+  "history_samples": 574,
+  "lower": 4.897e-05,
+  "upper": 4.989e-05
+ },
+ {
+  "timestamp": "2026-10-15T23:16:12+00:00",
+  "symbol": "BTCUSDT",
+  "funding_rate": 5.332e-05,
+  "history_samples": 575,
+  "lower": 5.376e-05,
+  "upper": 5.616e-05
+ },
+ {
+  "timestamp": "2026-10-15T23:16:12+00:00",
+  "symbol": "SOLUSDT",
+  "funding_rate": 4.883e-05,
+  "history_samples": 575,
+  "lower": 4.897e-05,
+  "upper": 4.989e-05
+ },
+ {
+  "timestamp": "2026-10-15T23:16:13+00:00",
+  "symbol": "BTCUSDT",
+  "funding_rate": 5.332e-05,
+  "history_samples": 576,
+  "lower": 5.376e-05,
+  "upper": 5.616e-05
+ },
+ {
+  "timestamp": "2026-10-15T23:16:13+00:00",
+  "symbol": "SOLUSDT",
+  "funding_rate": 4.883e-05,
+  "history_samples": 576,
+  "lower": 4.897e-05,
+  "upper": 4.989e-05
+ },
+ {
+  "timestamp": "2026-10-15T23:16:14+00:00",
+  "symbol": "BTCUSDT",
+  "funding_rate": 5.332e-05,
+  "history_samples": 577,
+  "lower": 5.376e-05,
+  "upper": 5.616e-05
+ },
+ {
+  "timestamp": "2026-10-15T23:16:14+00:00",
+  "symbol": "SOLUSDT",
+  "funding_rate": 4.883e-05,
+  "history_samples": 577,
+  "lower": 4.897e-05,
+  "upper": 4.989e-05
+ },
+ {
+  "timestamp": "2026-10-15T23:16:15.005000+00:00",
+  "symbol": "BTCUSDT",
+  "funding_rate": 5.332e-05,
+  "history_samples": 578,
+  "lower": 5.376e-05,
+  "upper": 5.616e-05
+ },
+ {
+  "timestamp": "2026-10-15T23:16:15.005000+00:00",
+  "symbol": "SOLUSDT",
+  "funding_rate": 4.883e-05,
+  "history_samples": 578,
+  "lower": 4.897e-05,
+  "upper": 4.989e-05
+ },
+ {
+  "timestamp": "2026-10-15T23:16:16+00:00",
+  "symbol": "BTCUSDT",
+  "funding_rate": 5.332e-05,
+  "history_samples": 579,
+  "lower": 5.376e-05,
+  "upper": 5.616e-05
+ },
+ {
+  "timestamp": "2026-10-15T23:16:16+00:00",
+  "symbol": "SOLUSDT",
+  "funding_rate": 4.883e-05,
+  "history_samples": 579,
+  "lower": 4.897e-05,
+  "upper": 4.989e-05
+ },
+ {
+  "timestamp": "2026-10-15T23:16:17.002000+00:00",
+  "symbol": "BTCUSDT",
+  "funding_rate": 5.332e-05,
+  "history_samples": 580,
+  "lower": 5.376e-05,
+  "upper": 5.616e-05
+ },
+ {
+  "timestamp": "2026-10-15T23:16:17.002000+00:00",
+  "symbol": "SOLUSDT",
+  "funding_rate": 4.883e-05,
+  "history_samples": 580,
+  "lower": 4.897e-05,
+  "upper": 4.989e-05
+ },
+ {
+  "timestamp": "2026-10-15T23:16:18.002000+00:00",
+  "symbol": "BTCUSDT",
+  "funding_rate": 5.332e-05,
+  "history_samples": 581,
+  "lower": 5.376e-05,
+  "upper": 5.616e-05
+ },
+ {
+  "timestamp": "2026-10-15T23:16:18.002000+00:00",
+  "symbol": "SOLUSDT",
+  "funding_rate": 4.883e-05,
+  "history_samples": 581,
+  "lower": 4.897e-05,
+  "upper": 4.989e-05
+ },
+ {
+  "timestamp": "2026-10-15T23:16:19.003000+00:00",
+  "symbol": "BTCUSDT",
+  "funding_rate": 5.332e-05,
+  "history_samples": 582,
+  "lower": 5.376e-05,
+  "upper": 5.616e-05
+ },
+ {
+  "timestamp": "2026-10-15T23:16:19.003000+00:00",
+  "symbol": "SOLUSDT",
+  "funding_rate": 4.883e-05,
+  "history_samples": 582,
+  "lower": 4.897e-05,
+  "upper": 4.989e-05
+ },
+ {
+  "timestamp": "2026-10-15T23:16:20+00:00",
+  "symbol": "BTCUSDT",
+  "funding_rate": 5.332e-05,
+  "history_samples": 583,
+  "lower": 5.376e-05,
+  "upper": 5.616e-05
+ },
+ {
+  "timestamp": "2026-10-15T23:16:20+00:00",
+  "symbol": "SOLUSDT",
+  "funding_rate": 4.883e-05,
+  "history_samples": 583,
+  "lower": 4.897e-05,
+  "upper": 4.989e-05
+ },
+ {
+  "timestamp": "2026-10-15T23:16:21.003000+00:00",
+  "symbol": "BTCUSDT",
+  "funding_rate": 5.332e-05,
+  "history_samples": 584,
+  "lower": 5.376e-05,
+  "upper": 5.616e-05
+ },
+ {
+  "timestamp": "2026-10-15T23:16:21.003000+00:00",
+  "symbol": "SOLUSDT",
+  "funding_rate": 4.883e-05,
+  "history_samples": 584,
+  "lower": 4.897e-05,
+  "upper": 4.989e-05
+ },
+ {
+  "timestamp": "2026-10-15T23:16:22+00:00",
+  "symbol": "BTCUSDT",
+  "funding_rate": 5.332e-05,
+  "history_samples": 585,
+  "lower": 5.376e-05,
+  "upper": 5.616e-05
+ },
+ {
+  "timestamp": "2026-10-15T23:16:22+00:00",
+  "symbol": "SOLUSDT",
+  "funding_rate": 4.883e-05,
+  "history_samples": 585,
+  "lower": 4.897e-05,
+  "upper": 4.989e-05
+ },
+ {
+  "timestamp": "2026-10-15T23:16:23.002000+00:00",
+  "symbol": "BTCUSDT",
+  "funding_rate": 5.332e-05,
+  "history_samples": 586,
+  "lower": 5.376e-05,
+  "upper": 5.616e-05
+ },
+ {
+  "timestamp": "2026-10-15T23:16:23.002000+00:00",
+  "symbol": "SOLUSDT",
+  "funding_rate": 4.883e-05,
+  "history_samples": 586,
+  "lower": 4.897e-05,
+  "upper": 4.989e-05
+ },
+ {
+  "timestamp": "2026-10-15T23:16:24+00:00",
+  "symbol": "BTCUSDT",
+  "funding_rate": 5.332e-05,
+  "history_samples": 587,
+  "lower": 5.376e-05,
+  "upper": 5.616e-05
+ },
+ {
+  "timestamp": "2026-10-15T23:16:24+00:00",
+  "symbol": "SOLUSDT",
+  "funding_rate": 4.883e-05,
+  "history_samples": 587,
+  "lower": 4.897e-05,
+  "upper": 4.989e-05
+ },
+ {
+  "timestamp": "2026-10-15T23:16:25+00:00",
+  "symbol": "BTCUSDT",
+  "funding_rate": 5.332e-05,
+  "history_samples": 588,
+  "lower": 5.376e-05,
+  "upper": 5.616e-05
+ },
+ {
+  "timestamp": "2026-10-15T23:16:25+00:00",
+  "symbol": "SOLUSDT",
+  "funding_rate": 4.883e-05,
+  "history_samples": 588,
+  "lower": 4.897e-05,
+  "upper": 4.989e-05
+ },
+ {
+  "timestamp": "2026-10-15T23:16:26+00:00",
+  "symbol": "BTCUSDT",
+  "funding_rate": 5.332e-05,
+  "history_samples": 589,
+  "lower": 5.376e-05,
+  "upper": 5.616e-05
+ },
+ {
+  "timestamp": "2026-10-15T23:16:26+00:00",
+  "symbol": "SOLUSDT",
+  "funding_rate": 4.883e-05,
+  "history_samples": 589,
+  "lower": 4.897e-05,
+  "upper": 4.989e-05
+ },
+ {
+  "timestamp": "2026-10-15T23:16:27.004000+00:00",
+  "symbol": "BTCUSDT",
+  "funding_rate": 5.332e-05,
+  "history_samples": 590,
+  "lower": 5.376e-05,
+  "upper": 5.616e-05
+ },
+ {
+  "timestamp": "2026-10-15T23:16:27.004000+00:00",
+  "symbol": "SOLUSDT",
+  "funding_rate": 4.883e-05,
+  "history_samples": 590,
+  "lower": 4.897e-05,
+  "upper": 4.989e-05
+ },
+ {
+  "timestamp": "2026-10-15T23:16:28+00:00",
+  "symbol": "BTCUSDT",
+  "funding_rate": 5.332e-05,
+  "history_samples": 591,
+  "lower": 5.376e-05,
+  "upper": 5.616e-05
+ },
+ {
+  "timestamp": "2026-10-15T23:16:28+00:00",
+  "symbol": "SOLUSDT",
+  "funding_rate": 4.883e-05,
+  "history_samples": 591,
+  "lower": 4.897e-05,
+  "upper": 4.989e-05
+ },
+ {
+  "timestamp": "2026-10-15T23:16:29+00:00",
+  "symbol": "BTCUSDT",
+  "funding_rate": 5.332e-05,
+  "history_samples": 592,
+  "lower": 5.376e-05,
+  "upper": 5.616e-05
+ },
+ {
+  "timestamp": "2026-10-15T23:16:29+00:00",
+  "symbol": "SOLUSDT",
+  "funding_rate": 4.883e-05,
+  "history_samples": 592,
+  "lower": 4.897e-05,
+  "upper": 4.989e-05
+ },
+ {
+  "timestamp": "2026-10-15T23:16:30+00:00",
+  "symbol": "BTCUSDT",
+  "funding_rate": 5.332e-05,
+  "history_samples": 593,
+  "lower": 5.376e-05,
+  "upper": 5.616e-05
+ },
+ {
+  "timestamp": "2026-10-15T23:16:30+00:00",
+  "symbol": "SOLUSDT",
+  "funding_rate": 4.883e-05,
+  "history_samples": 593,
+  "lower": 4.897e-05,
+  "upper": 4.989e-05
+ },
+ {
+  "timestamp": "2026-10-15T23:16:31+00:00",
+  "symbol": "BTCUSDT",
+  "funding_rate": 5.332e-05,
+  "history_samples": 594,
+  "lower": 5.3606e-05,
+  "upper": 5.616e-05
+ },
+ {
+  "timestamp": "2026-10-15T23:16:31+00:00",
+  "symbol": "SOLUSDT",
+  "funding_rate": 4.883e-05,
+  "history_samples": 594,
+  "lower": 4.8921e-05,
+  "upper": 4.989e-05
+ }
+]

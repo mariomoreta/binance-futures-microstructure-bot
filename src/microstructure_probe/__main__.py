@@ -58,6 +58,20 @@ async def async_main(args: argparse.Namespace) -> None:
         raise SystemExit(2)
 
     probe = MarketProbe(config)
+    # Explicit stem<->UUID correspondence (no temporal derivation): bind
+    # this process UUID to its registry record. Fenced inside
+    # link_probe_run_id (same-PID active record only, never overwrites a
+    # different link); failures never break data collection.
+    try:
+        link = control.link_probe_run_id(probe.run_id)
+    except Exception as exc:  # never break data collection on registry IO
+        logging.getLogger(__name__).warning(
+            json.dumps({"kind": "registry_error", "error": str(exc)}))
+        link = {"linked": False, "degraded": "registry-exception"}
+    if not link.get("linked"):
+        logging.getLogger(__name__).warning(
+            json.dumps({"kind": "run_link", "linked": False,
+                        "reason": link.get("reason", "refused")}))
     loop = asyncio.get_running_loop()
     for signal_name in (signal.SIGINT, signal.SIGTERM):
         try:

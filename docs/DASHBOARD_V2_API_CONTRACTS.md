@@ -140,6 +140,9 @@ Consolidates process/feed/research states without conflation. Read-only
 direct/foreign), `run_id` (evidence-log stem), `pid`, `started_at`,
 `duration_seconds`, `elapsed_seconds` (frozen on terminal),
 `remaining_seconds` (RUNNING only), `expected_end_at`,
+`probe_run_id` (probe UUID linked at startup via
+`control.link_probe_run_id`; None = unlinked historic = UNKNOWN, never
+backfilled),
 `last_exit_code/reason/at` (terminal close motive + close time),
 `feed_health` + `latest_snapshot_age` + `feed_attribution`
 (current/previous-run/none) + `feed_note` (BFF-enriched from recorded
@@ -184,6 +187,21 @@ observation); the 0.5 dashboard concept
 display, never a health claim. The BFF reports DEGRADED — never
 HEALTHY — for any data breaching the 0.05 supervisor quality
 condition, without modifying either threshold.
+
+### `GET /api/v1/detections`
+
+Read-only grouped funding evidence of the RECORDED run (registry
+evidence log only, bounded tail, canonical `control.read_run_detections`
++ `event_episodes` v1). Shape: `available`, `run_id` (log stem),
+`probe_run_id` (linked UUID or null), `grouping_version`, separate
+`events_total` (raw) / `episodes_total` (grouped) with per-episode
+repetitions, duration, open/close reasons, `skipped_records` and a
+`limitation` note (`no-recorded-run`, `no-evidence-log`,
+`log-unavailable`, `evidence-tail-truncated`,
+`no-funding-events-in-evidence`). Unavailable or empty evidence renders
+UNKNOWN — episodes are never invented from aggregates. Feeds the
+System detection-episodes panel (research label; thresholds
+unvalidated).
 
 ### `POST /api/v1/runtime/start|stop`
 

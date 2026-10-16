@@ -716,6 +716,29 @@ here and request approval before treating it as binding. Never mark
 features VERIFIED without evidence.
 
 
+## F-LINK-01 + F-EPISODE-V1-01 — trazabilidad y episodios (2026-10-16, sobre d7dcc70, sin nuevas corridas)
+
+- `DECISIONS_REVIEWED` — control/registro/leases/identidad,
+  detector funding, contratos runtime/BFF, V2 (sin consumo crudo),
+  reconciliacion OBS10M.
+- `NEW_DECISIONS_RECORDED` — DECISIONS §trazabilidad+episodios;
+  `docs/EVENT_EPISODES.md` (contrato v1); contratos runtime/BFF.
+- `FEATURES_IMPLEMENTED` — F-LINK-01: link_probe_run_id fenced +
+  probe_run_id en status + lector exacto con rechazo incompatible;
+  F-EPISODE-V1-01: agrupacion v1 + BFF /detections + panel System.
+- `FEATURES_VERIFIED` — linkage 7 + episodios 5 (245 retenidos) +
+  detecciones 5 + persistencia-linkage 4 restaurados (P3 v10/propaga-
+  cion/rehidratacion, `test_persistence_run_linkage.py` verbatim HEAD)
+  + feed/BFF/panel nuevos; Start/Stop/propiedad en
+  barrera; suites abajo.
+- `DEFERRED_FEATURES` — episodios en otras vistas sin fuente
+  reconstruible (limitacion informada, no inventada); resto excluido.
+- `BACKLOG_UPDATED` — yes: this entry (IDs F-LINK-01,
+  F-EPISODE-V1-01).
+- `DOCUMENTATION_CONFLICTS` — corregidos: "episodios independientes"
+  (agrupados por regla), "byte-identico" sin hashes (tamano estable
+  + contenido modificado).
+
 ## O2 reconciliation UUID/persistence/funding - 2026-10-16 (sobre 67472e0, sin nuevas corridas)
 
 - `DECISIONS_REVIEWED` — informe OBS10M, codigo recorder/resolve,

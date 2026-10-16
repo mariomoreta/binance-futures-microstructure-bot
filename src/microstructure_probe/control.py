@@ -351,6 +351,128 @@ def _feed_unknown() -> Dict[str, Any]:
     return {"feed_health": "UNKNOWN", "latest_snapshot_age": None}
 
 
+DETECTIONS_TAIL_BYTES = 262144
+DETECTIONS_MAX_EVENTS = 5000
+
+
+def read_run_detections() -> Dict[str, Any]:
+    """Raw funding detections of the recorded run, grouped (read-only).
+
+    Reads ONLY the registry evidence log (never user input, never a live
+    probe): parses detected_event/extreme_funding_rate records from the
+    tail and groups them with event_episodes v1. Returns an envelope with
+    separate raw-event and grouped-episode counts plus provenance
+    (log-stem run_id, linked probe UUID when present, grouping version).
+    Missing log/records surface as available:false or zero counts with a
+    limitation note — episodes are never invented from aggregates.
+    Never writes the registry, never touches processes.
+    """
+    from . import event_episodes as _episodes
+
+    def _unavailable(reason: str) -> Dict[str, Any]:
+        return {"schema_version": 1, "available": False,
+                "generated_at": _utc_now_iso(), "run_id": None,
+                "probe_run_id": None, "grouping_version":
+                _episodes.GROUPING_VERSION, "events_total": None,
+                "episodes_total": None, "episodes": [],
+                "limitation": reason}
+
+    try:
+        record = read_registry()
+    except Exception:
+        return _unavailable("registry-unreadable")
+    if not record:
+        return _unavailable("no-recorded-run")
+    evidence = record.get("evidence") or {}
+    log_path = evidence.get("log") if isinstance(evidence, dict) else None
+    if not isinstance(log_path, str) or not log_path.strip():
+        return _unavailable("no-evidence-log")
+    run_id = None
+    try:
+        run_id = Path(log_path).stem or None
+    except (TypeError, ValueError):
+        run_id = None
+    probe_uuid = record.get("probe_run_id")
+    if not isinstance(probe_uuid, str) or not probe_uuid:
+        probe_uuid = None
+    try:
+        size = os.path.getsize(log_path)
+    except OSError:
+        out = _unavailable("log-unavailable")
+        out["run_id"] = run_id
+        out["probe_run_id"] = probe_uuid
+        return out
+    events: List[Any] = []
+    truncated = False
+    try:
+        with open(log_path, "r", encoding="utf-8", errors="replace") as fh:
+            if size > DETECTIONS_TAIL_BYTES:
+                fh.seek(max(0, size - DETECTIONS_TAIL_BYTES))
+                fh.readline()
+                truncated = True
+            for line in fh:
+                if len(events) >= DETECTIONS_MAX_EVENTS:
+                    truncated = True
+                    break
+                brace = line.find("{")
+                if brace < 0 or '"detected_event"' not in line:
+                    continue
+                try:
+                    payload = json.loads(line[brace:])
+                except ValueError:
+                    continue
+                if not isinstance(payload, dict):
+                    continue
+                if payload.get("event_type") != "extreme_funding_rate":
+                    continue
+                details = payload.get("details")
+                if not isinstance(details, dict):
+                    continue
+                events.append({
+                    "timestamp": payload.get("timestamp"),
+                    "symbol": payload.get("symbol"),
+                    "funding_rate": details.get("funding_rate"),
+                    "history_samples": details.get("history_samples"),
+                    "lower": details.get("lower_percentile_value"),
+                    "upper": details.get("upper_percentile_value"),
+                })
+    except OSError:
+        out = _unavailable("log-unreadable")
+        out["run_id"] = run_id
+        out["probe_run_id"] = probe_uuid
+        return out
+    grouped = _episodes.group_funding_episodes(events)
+    out_episodes = []
+    for ep in grouped["episodes"]:
+        out_episodes.append({
+            "episode_id": ep["episode_id"],
+            "symbol": ep["symbol"],
+            "funding_rate": ep["funding_rate"],
+            "repetitions": ep["repetitions"],
+            "duplicate_records": ep["duplicate_records"],
+            "first_observed_at": ep["first_observed_at"],
+            "last_observed_at": ep["last_observed_at"],
+            "duration_s": ep["duration_s"],
+            "samples_first": ep["samples_first"],
+            "samples_last": ep["samples_last"],
+            "open_reason": ep["open_reason"],
+            "close_reason": ep["close_reason"],
+        })
+    limitation = None
+    if truncated:
+        limitation = "evidence-tail-truncated"
+    elif not events:
+        limitation = "no-funding-events-in-evidence"
+    return {"schema_version": 1, "available": True,
+            "generated_at": _utc_now_iso(), "run_id": run_id,
+            "probe_run_id": probe_uuid,
+            "grouping_version": grouped["grouping_version"],
+            "events_total": len(events),
+            "episodes_total": len(out_episodes),
+            "skipped_records": grouped["skipped"],
+            "episodes": out_episodes, "limitation": limitation}
+
+
 def _run_id_from_record(record: Optional[Dict[str, Any]]) -> Optional[str]:
     """Project run identifier for V2 visibility (no I/O).
 
@@ -401,10 +523,12 @@ def _status_view(record: Optional[Dict[str, Any]],
     identical; only the reconciliation step differs.
 
     Visibility contract (V2 global bar): recorded registry state stays in
-    `state`, while verified OS liveness rides in `process_state` + 
+    `state`, while verified OS liveness rides in `process_state` +
     `process_verified`. Callers must never present `state` as liveness
     proof. Terminal rows also carry `last_exit_at` (close time) and the
-    frozen `elapsed/uptime` duration.
+    frozen `elapsed/uptime` duration. `probe_run_id` carries the probe
+    UUID linked via link_probe_run_id (None = unlinked historic row =
+    UNKNOWN downstream, never backfilled).
     """
     if not record:
         out: Dict[str, Any] = {"running": False, "state": "STOPPED",
@@ -416,6 +540,7 @@ def _status_view(record: Optional[Dict[str, Any]],
                                  "expected_end_at": None, "launcher": None,
                                  "preset": "standard",
                                  "run_id": None,
+                                 "probe_run_id": None,
                                  "last_exit_code": None,
                                  "last_exit_reason": None,
                                  "last_exit_at": None,
@@ -477,6 +602,8 @@ def _status_view(record: Optional[Dict[str, Any]],
         "preset": record.get("preset", "standard"),
         "evidence": record.get("evidence"),
         "run_id": _run_id_from_record(record),
+        "probe_run_id": record.get("probe_run_id")
+        if isinstance(record.get("probe_run_id"), str) else None,
         "last_exit_code": last_exit.get("code"),
         "last_exit_reason": last_exit.get("reason"),
         "last_exit_at": last_exit.get("at"),
@@ -675,6 +802,62 @@ def _mark_terminal(state: str, exit_code: Optional[int],
         pass
     finally:
         _close_log_handles(os.getpid())
+
+
+def _valid_probe_run_id(value: Any) -> bool:
+    """Probe UUID shape: 32 lowercase hex chars (uuid4().hex)."""
+    if not isinstance(value, str) or len(value) != 32:
+        return False
+    try:
+        return all(c in "0123456789abcdef" for c in value.lower()) \
+            and value == value.lower()
+    except Exception:
+        return False
+
+
+def link_probe_run_id(probe_run_id: Any) -> Dict[str, Any]:
+    """Bind the probe UUID to its registry record (explicit correspondence).
+
+    The controller identifies a run by the evidence-log stem; the probe
+    identifies itself by UUID. This call writes the UUID into the record so
+    readers never derive identity by temporal coincidence. Fenced: the
+    record must exist, be active, and belong to this process (same PID);
+    an existing DIFFERENT link is never overwritten (refused) and terminal
+    or foreign records are never touched. Historical records without a
+    link stay absent (UNKNOWN downstream); nothing is backfilled.
+    Registry failures return degraded refusals, never raise.
+    """
+    if not _valid_probe_run_id(probe_run_id):
+        return {"linked": False, "reason": "invalid-run-id"}
+
+    def _link(rec):
+        if not rec:
+            return None, {"linked": False, "reason": "no-record"}
+        if not _is_active_state(rec.get("state")):
+            return None, {"linked": False, "reason": "no-active-run",
+                           "state": rec.get("state")}
+        try:
+            if int(rec.get("pid") or -1) != os.getpid():
+                return None, {"linked": False, "reason": "not-ours"}
+        except (TypeError, ValueError):
+            return None, {"linked": False, "reason": "not-ours"}
+        existing = rec.get("probe_run_id")
+        if isinstance(existing, str) and existing:
+            if existing == probe_run_id:
+                return None, {"linked": True, "duplicate": True}
+            return None, {"linked": False, "reason": "already-linked"}
+        rec["probe_run_id"] = probe_run_id
+        return rec, {"linked": True}
+    try:
+        wrote, value = update_registry(_link)
+    except OSError as exc:
+        return {"linked": False, "reason": "registry-unavailable: %s" % exc}
+    except (TypeError, ValueError) as exc:
+        return {"linked": False, "reason": "link-failed: %s" % exc}
+    if not wrote:
+        return value if isinstance(value, dict) else {"linked": False,
+                                                      "reason": "refused"}
+    return value if isinstance(value, dict) else {"linked": True}
 
 
 def validate_duration(value: Any) -> Optional[int]:

@@ -1607,3 +1607,23 @@ run); delta por tabla UNKNOWN sin baseline pre-run. Funding 245
 eventos = 13 episodios (misma tasa contigua; condicion: salto a
 nuevo extremo + re-disparo ~1/s en constante). Sin codigo, umbrales
 ni estrategias tocados. Detalle en el addendum + JSON.
+
+## Trazabilidad stem<->UUID + episodios v1 (2026-10-16, sobre d7dcc70; sin nuevas corridas)
+
+`control.link_probe_run_id` (fenced: mismo-PID activo, jamas
+sobrescribe un enlace distinto, jamas toca ajenos/terminales;
+historicos sin enlace = ausente = UNKNOWN, sin backfill) llamado
+desde `__main__` tras construir el probe (fallos degradados, jamas
+rompen la recoleccion). `status_view` expone `probe_run_id`; el
+lector V2 lo usa como runUuid exacto y rechaza UUID incompatible
+conocido por fallback temporal. Detector intacto
+(`detectors.py:119-158` revisado, sin cambios). Agrupacion v1 pura
+(`event_episodes.py`): bruto/episodio/update/nuevo con claves,
+inicio/ultima, duracion, repeticiones y motivos; originales
+preservados; episodios NO son muestras independientes ni senales.
+BFF `GET /api/v1/detections` solo lee el log evidenciado del
+registro (cola acotada); panel System con contadores separados,
+procedencia/corrida/version/frescura, UNKNOWN explicito y etiqueta
+research. V2 no consume eventos crudos en ninguna otra vista
+(verificado: oportunidades usan clasificaciones). Sin Start/Stop
+nuevos ni segundo gestor.

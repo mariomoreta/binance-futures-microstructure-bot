@@ -14,7 +14,7 @@ export const STATUS_BUDGET_MS=4200;
 export const STOP_BUDGET_MS=8000;
 export const START_BUDGET_MS=65000;
 export type FeedAttribution="current"|"previous-run"|"none";
-export type RuntimeState={running:boolean;state:string;pid:number|null;launcher:string|null;mode:string;uptime_seconds:number|null;duration_seconds:number|null;started_at:string|null;feed_health:string;latest_snapshot_age:number|null;observed_at?:string;supervisor?:WatcherEvidence;sentinel?:WatcherEvidence;error?:string;run_id?:string|null;expected_end_at?:string|null;elapsed_seconds?:number|null;remaining_seconds?:number|null;last_exit_code?:number|null;last_exit_reason?:string|null;last_exit_at?:string|null;process_state?:string;process_verified?:boolean;preset?:string|null;feed_attribution?:FeedAttribution;feed_note?:string|null};
+export type RuntimeState={running:boolean;state:string;pid:number|null;launcher:string|null;mode:string;uptime_seconds:number|null;duration_seconds:number|null;started_at:string|null;feed_health:string;latest_snapshot_age:number|null;observed_at?:string;supervisor?:WatcherEvidence;sentinel?:WatcherEvidence;error?:string;run_id?:string|null;expected_end_at?:string|null;elapsed_seconds?:number|null;remaining_seconds?:number|null;last_exit_code?:number|null;last_exit_reason?:string|null;last_exit_at?:string|null;process_state?:string;process_verified?:boolean;preset?:string|null;feed_attribution?:FeedAttribution;feed_note?:string|null;probe_run_id?:string|null};
 // Project-owned launchers (canonical control.py): agent CLI, dashboard V2
 // and direct terminal self-registration. Any other launcher value is
 // treated as foreign and never offered a V2 stop. Backend stop_probe
@@ -82,6 +82,12 @@ export function feedFromStore(window:FeedRunWindow={started_at:null,last_exit_at
  // honored without relying on clocks at all.)
  if(rowRunId&&window.runUuid&&rowRunId===window.runUuid){
   return feedCurrent(row,ageS);
+ }
+ // A known incompatible UUID is never accepted via temporal fallback:
+ // the row provably belongs to another run even when its timestamp
+ // looks plausible.
+ if(rowRunId&&window.runUuid&&rowRunId!==window.runUuid){
+  return {feed_health:"UNKNOWN",latest_snapshot_age:ageS,feed_attribution:"previous-run",feed_note:"incompatible-run-id"};
  }
  // 2) Conservative temporal attribution. A snapshot written BEFORE the run
  // started is NEVER current — no skew grace: with close starts (e.g. 20s
@@ -159,7 +165,7 @@ function feedCurrent(row:{timestamp:unknown;runtime_seconds:unknown;run_id:unkno
 }
 export function runtimeStatus():RuntimeState{
  const r=execute(statusCode,STATUS_BUDGET_MS);
- if(!r.ok||typeof r.data.error==="string")return {running:false,state:"UNKNOWN",pid:null,launcher:null,mode:"UNKNOWN",uptime_seconds:null,duration_seconds:null,started_at:null,feed_health:"UNKNOWN",latest_snapshot_age:null,observed_at:new Date().toISOString(),supervisor:normalizeWatcher(null,"supervisor"),sentinel:normalizeWatcher(null,"sentinel"),run_id:null,expected_end_at:null,elapsed_seconds:null,remaining_seconds:null,last_exit_code:null,last_exit_reason:null,last_exit_at:null,process_state:"unknown",process_verified:false,preset:null,feed_attribution:"none",feed_note:"controller-unavailable",error:typeof r.data.error==="string"?r.data.error:"CANONICAL_CONTROLLER_UNAVAILABLE"};
+ if(!r.ok||typeof r.data.error==="string")return {running:false,state:"UNKNOWN",pid:null,launcher:null,mode:"UNKNOWN",uptime_seconds:null,duration_seconds:null,started_at:null,feed_health:"UNKNOWN",latest_snapshot_age:null,observed_at:new Date().toISOString(),supervisor:normalizeWatcher(null,"supervisor"),sentinel:normalizeWatcher(null,"sentinel"),run_id:null,expected_end_at:null,elapsed_seconds:null,remaining_seconds:null,last_exit_code:null,last_exit_reason:null,last_exit_at:null,process_state:"unknown",process_verified:false,preset:null,feed_attribution:"none",feed_note:"controller-unavailable",probe_run_id:null,error:typeof r.data.error==="string"?r.data.error:"CANONICAL_CONTROLLER_UNAVAILABLE"};
  const x=r.data;
  // Feed: canonical controller is registry-only (UNKNOWN without a dashboard
  // feed provider). Enrich best-effort from the recorded telemetry snapshot
@@ -170,14 +176,13 @@ export function runtimeStatus():RuntimeState{
  let feed_attribution:FeedAttribution="none";
  let feed_note:string|null=null;
  if(feed_health==="UNKNOWN"&&latest_snapshot_age===null){
-  // runUuid: the registry record carries the evidence-log stem while
-  // telemetry rows carry the probe UUID32 — different id spaces, so no
-  // shared identifier is passed and attribution uses the conservative
-  // temporal rule (snapshot before started_at is never current).
-  const f=feedFromStore({started_at:txt(x.started_at),last_exit_at:txt(x.last_exit_at),expected_end_at:txt(x.expected_end_at),state:typeof x.state==="string"?x.state:"UNKNOWN",runUuid:null});
+  // runUuid: the explicit stem<->UUID correspondence linked at probe
+  // startup (control.link_probe_run_id); historic unlinked rows keep
+  // runUuid null and fall back to the conservative temporal rule.
+  const f=feedFromStore({started_at:txt(x.started_at),last_exit_at:txt(x.last_exit_at),expected_end_at:txt(x.expected_end_at),state:typeof x.state==="string"?x.state:"UNKNOWN",runUuid:txt(x.probe_run_id)});
   feed_health=f.feed_health;latest_snapshot_age=f.latest_snapshot_age;feed_attribution=f.feed_attribution;feed_note=f.feed_note;
  }
- return {running:x.running===true,state:typeof x.running==="boolean"&&typeof x.state==="string"&&x.state.trim()?x.state:"UNKNOWN",pid:typeof x.pid==="number"?x.pid:null,launcher:typeof x.launcher==="string"?x.launcher:null,mode:typeof x.mode==="string"&&x.mode.trim()?x.mode:"UNKNOWN",uptime_seconds:num(x.uptime_seconds),duration_seconds:num(x.duration_seconds),started_at:txt(x.started_at),feed_health,latest_snapshot_age,observed_at:new Date().toISOString(),supervisor:normalizeWatcher(x.supervisor,"supervisor"),sentinel:normalizeWatcher(x.sentinel,"sentinel"),run_id:txt(x.run_id),expected_end_at:txt(x.expected_end_at),elapsed_seconds:num(x.elapsed_seconds),remaining_seconds:num(x.remaining_seconds),last_exit_code:num(x.last_exit_code),last_exit_reason:txt(x.last_exit_reason),last_exit_at:txt(x.last_exit_at),process_state:txt(x.process_state)??"unknown",process_verified:x.process_verified===true,preset:txt(x.preset),feed_attribution,feed_note,...(typeof x.error==="string"?{error:x.error}:{})};
+ return {running:x.running===true,state:typeof x.running==="boolean"&&typeof x.state==="string"&&x.state.trim()?x.state:"UNKNOWN",pid:typeof x.pid==="number"?x.pid:null,launcher:typeof x.launcher==="string"?x.launcher:null,mode:typeof x.mode==="string"&&x.mode.trim()?x.mode:"UNKNOWN",uptime_seconds:num(x.uptime_seconds),duration_seconds:num(x.duration_seconds),started_at:txt(x.started_at),feed_health,latest_snapshot_age,observed_at:new Date().toISOString(),supervisor:normalizeWatcher(x.supervisor,"supervisor"),sentinel:normalizeWatcher(x.sentinel,"sentinel"),run_id:txt(x.run_id),expected_end_at:txt(x.expected_end_at),elapsed_seconds:num(x.elapsed_seconds),remaining_seconds:num(x.remaining_seconds),last_exit_code:num(x.last_exit_code),last_exit_reason:txt(x.last_exit_reason),last_exit_at:txt(x.last_exit_at),process_state:txt(x.process_state)??"unknown",process_verified:x.process_verified===true,preset:txt(x.preset),feed_attribution,feed_note,probe_run_id:txt(x.probe_run_id),...(typeof x.error==="string"?{error:x.error}:{})};
 }
 export const LAUNCH_PRESETS={brief:120,"observation-10m":600,standard:3600,"validation-6h":21600} as const;
 export type LaunchPreset=keyof typeof LAUNCH_PRESETS;

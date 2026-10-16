@@ -42,11 +42,13 @@ Significado del contador: filas bucket volcadas (no bytes ni
 batches): 183 flow_10s + 33 flow_1m + 30 book_1m = 246, todas con el
 UUID del run (linkage exacto). Totales actuales 4215/1909/1818.
 Delta por tabla: UNKNOWN (sin baseline por tabla pre-run y con
-limpieza de retención concurrente posible). microprobe.db sí quedó
-byte-idéntico (238927872B, caps con REPLACE). Sin journal en
+limpieza de retención concurrente posible). microprobe.db mantuvo
+tamaño estable (238927872B pre/post, caps con REPLACE) con contenido
+modificado (telemetry/price writes observados por conteos); sin
+hashes pre/post no se afirma byte-identidad. Sin journal en
 ninguna DB: nada que recuperar, nada recuperado.
 
-## 3. Funding: 245 eventos = 13 episodios independientes
+## 3. Funding: 245 eventos = 13 episodios agrupados mediante la regla documentada
 
 Regla de episodio: mismo símbolo+tasa, huecos ≤5s, samples+1/s.
 BTC 118 eventos en 6 episodios (tasas 5.583→5.332e-05),
@@ -54,10 +56,22 @@ SOL 118 en 6 (4.958→4.883e-05), ETH 9 en 1 (7.718e-05 constante).
 Condición: la tasa salta a un nuevo extremo percentil y el detector
 re-dispara ~1/s mientras permanece constante (inicios en samples
 144/204/324/384/444/564, simétricos BTC/SOL). Repetición sin
-información nueva dentro del episodio; dedup honesto: 13, no 245.
-Clase artefacto-hipótesis (como los 9 del piloto, aquí con deriva
-de tasa a lo largo de 600s). Sin valor de señal; umbrales y
-estrategias intactos.
+información nueva dentro del episodio; conteo agrupado: 13
+episodios mediante la regla documentada (v1, ver
+docs/EVENT_EPISODES.md), no 245 cruces independientes — agrupar no
+es afirmar independencia estadística. Clase artefacto-hipótesis
+(como los 9 del piloto, aquí con deriva de tasa a lo largo de 600s).
+Sin valor de señal; umbrales y estrategias intactos.
+
+## Corrección 2026-10-16 (ii) — historia preservada
+
+- "13 episodios independientes" → "13 episodios agrupados mediante
+  la regla documentada" (títulos y cuerpo de este addendum, informe
+  y JSON). La agrupación describe repetición, no independencia.
+- "microprobe.db byte-idéntico" → retirado por falta de hashes
+  pre/post: tamaño estable + contenido modificado (writes por
+  conteos) + sin baseline hash. Distinción registrada.
+- Cambios solo de redacción correctiva; ningún dato medido cambió.
 
 ## Pendientes
 

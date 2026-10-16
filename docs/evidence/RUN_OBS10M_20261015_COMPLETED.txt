@@ -63,9 +63,10 @@ durante la corrida. Sin relanzamientos posteriores.
   flow_1m 1909, book_1m 1818; 183+33+30 filas con el UUID del run —
   ver addendum), 0 drops, 0 errores, drenado; prospective 66 setups
   rehidratados, 0 writes, 0 errores.
-- Detectores: 245 extreme_funding_rate = 13 episodios independientes
-  (6 BTC + 1 ETH + 6 SOL; dedup por simbolo+tasa contigua, ver
-  addendum 2026-10-16; clase artefacto-hipotesis, sin valor de senal);
+- Detectores: 245 extreme_funding_rate = 13 episodios agrupados
+  mediante la regla documentada v1 (6 BTC + 1 ETH + 6 SOL; agrupar
+  no afirma independencia, ver addendum 2026-10-16; clase
+  artefacto-hipotesis, sin valor de senal);
   1 large_liquidation individual (ETH) + 1 window; 3 volume_spike.
   Todos hipotesis sin calibrar: contados, sin conclusiones, umbrales
   intactos.

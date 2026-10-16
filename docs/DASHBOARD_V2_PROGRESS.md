@@ -94,7 +94,18 @@ NEXT AUTHORIZED SLICE
   0 rechazos/reconnects/parse, lags sanos, watchers 22+22, cierre
   natural, PIDs muertos, COMPLETED 610s, sin journal, DB 0B.
 - Evidencia: RUN_OBS10M_20261015_COMPLETED.txt + 2 capturas terminal.
-- Informe push 67472e0; reconciliacion (UUID/persistencia/funding) sin push aun. V2 abierto, monitor detenido.
+- Informe push 67472e0; reconciliacion push d7dcc70. V2 abierto, monitor detenido.
+
+## DASH-V2-LINK-EP — 2026-10-16 (trazabilidad stem<->UUID + episodios v1)
+
+- Starting SHA: `d7dcc70`.
+- Scope: `link_probe_run_id` + `probe_run_id` + `read_run_detections`
+  + `event_episodes.py` v1 + BFF `runtime-control`/`detections` +
+  ruta `/detections` + panel System + fixture 245 + contrato
+  EVENT_EPISODES; correccion documental agrupados/sin-byte-identidad.
+  Sin corridas, umbrales, estrategias, calibracion ni Start/Stop nuevos.
+- Verification: suites + typecheck + build + barrera + visual en el cierre.
+- Next: commit selectivo, push, entrega.
 
 ## DASH-V2-FEEDATTR — 2026-10-16 (correccion atribucion del feed, push 8c73de2)
 

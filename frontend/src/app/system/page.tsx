@@ -2,6 +2,7 @@ import {LaunchReadiness} from "@/components/system/LaunchReadiness";
 import {RuntimeDiagnostics} from "@/components/system/RuntimeDiagnostics";
 import {SystemEvidence} from "@/components/system/SystemEvidence";
 import {BotControl} from "@/components/system/BotControl";
+import {DetectionEpisodes} from "@/components/system/DetectionEpisodes";
 import {PersistencePanel,ResearchPanel,UniversePanel,ClassifierPanel,ResourcePanel,StoragePanel} from "@/components/system/RecordedSystemPanels";
 import {SnapshotRefresh} from "@/components/notices/SnapshotRefresh";
 import {canonicalSystemEvidence} from "@/lib/system-evidence";
@@ -11,8 +12,9 @@ export default function SystemPage() {
  const data=canonicalSystemEvidence();
  return <div className={styles.root} data-testid="system-v2">
   <header className={styles.header}><div><h1>System</h1><p>Infrastructure, transport, persistence and research pipeline</p></div><span className={styles.tag}>RESEARCH WORKSPACE</span></header>
-  <BotControl/>
-  <SnapshotRefresh readAt={data.read_at} available={data.available} pollUrl="/api/v1/system-evidence" sourceLabel="Recorded system SQLite"/>
+   <BotControl/>
+   <DetectionEpisodes/>
+   <SnapshotRefresh readAt={data.read_at} available={data.available} pollUrl="/api/v1/system-evidence" sourceLabel="Recorded system SQLite"/>
   <div className={styles.grid}><RuntimeDiagnostics/><PersistencePanel data={data}/><ResearchPanel data={data}/></div>
   <div className={styles.grid}><UniversePanel data={data}/><ClassifierPanel data={data}/><ResourcePanel/></div>
   <div className={styles.grid}><StoragePanel/></div>

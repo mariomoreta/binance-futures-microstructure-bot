@@ -1,8 +1,13 @@
-## Reconciliacion OBS10M UUID/persistencia/funding (2026-10-16, sobre 67472e0, sin push aun)
+## Trazabilidad + episodios v1 (2026-10-16, sobre d7dcc70, sin push aun)
+link fenced + lector exacto + agrupacion v1 + BFF/panel + regresion
+245 (fixture completo; BFF en vivo 98/4 parcial con limitacion
+declarada + UNKNOWN historico). Correccion documental agrupados/sin-byte-identidad. Sin
+corridas ni calibracion. Resta: suites, build, barrera, visual,
+commit, push, entrega. V2 abierto, monitor detenido.
+
+## Reconciliacion OBS10M UUID/persistencia/funding (2026-10-16, push d7dcc70)
 UUID exacto, 246 writes a historical.db (delta UNKNOWN), funding 245
-= 13 episodios; addendum + JSON. Resta: commit selectivo, push,
-entrega con SHA/comparacion/hallazgos/pendientes. V2 abierto,
-monitor detenido.
+= 13 episodios agrupados por regla. V2 abierto, monitor detenido.
 
 ## Corrida autorizada observation-10m 600s COMPLETADA (2026-10-15, push 10cad5c + informe 67472e0)
 600s sanos supervisados (468162 msgs, 0 rechazos, cierre natural,

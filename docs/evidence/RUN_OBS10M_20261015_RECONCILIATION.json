@@ -34,7 +34,7 @@
       "ETHUSDT": ["7.718e-05"],
       "SOLUSDT": ["4.958e-05", "4.942e-05", "4.925e-05", "4.92e-05", "4.897e-05", "4.883e-05"]
     },
-    "dedup": "13 independent episodes (6 BTC + 1 ETH + 6 SOL), not 245 independent crossings",
+    "dedup": "13 episodes grouped under the documented v1 rule (6 BTC + 1 ETH + 6 SOL), not 245 independent crossings; grouping claims no statistical independence",
     "aptitude": "hypothesis-artifact class, no signal value, thresholds and strategies unchanged"
   }
 }
