@@ -1,0 +1,3931 @@
+{
+ "schema_version": 1,
+ "artifact_version": "OFFLINE-EVAL-V1",
+ "label": "OFFLINE-EVAL \u2014 mechanics with conditioned costs, NOT validation",
+ "engine_version": "backtest-offline/v4.2",
+ "formation_method": "PROPOSED-P1-11C-map-v1 (caller-declared, NOT approved)",
+ "map_candidate": "MAP-CANDIDATE-v1 (docs/HYPOTHESIS_ENTRY_MAPPING_CANDIDATE.md)",
+ "cutoff_ms": 1790010000000,
+ "horizon_ms": 3600000,
+ "cost_assumption": {
+  "id": "COST-ASSUME-v1",
+  "fee_bps": 5.0,
+  "spread_bps": 1.0,
+  "slippage_bps": 2.0,
+  "scales": [
+   1.0,
+   2.0,
+   3.0
+  ],
+  "note": "assumed drag (defaults, untouched); spread/depth history absent so slippage is NOT measured; account fee tier unknown so fees are NOT applicable commissions"
+ },
+ "symbols": {
+  "BTCUSDT": {
+   "venue": "Binance USD-M (fapi.binance.com)",
+   "interval": "15m",
+   "n_candles": 2879,
+   "window_open_ms": 1788816600000,
+   "window_close_ms": 1791407699999,
+   "null_close_time": 0,
+   "close_chain_violations": 0,
+   "n_events": 476,
+   "discarded": {
+    "unmapped-definition": 0,
+    "bad-direction": 0,
+    "bad-price": 0,
+    "bad-time": 0,
+    "symbol-filtered": 2355,
+    "open-after-asof": 0
+   },
+   "input_hash": "31c100e2de5a05b1",
+   "cutoff_ms": 1790010000000,
+   "selection": {
+    "cutoff_ms": 1790010000000,
+    "horizon_ms": 3600000,
+    "n_in": 476,
+    "n_dev": 224,
+    "n_oos": 252,
+    "n_purged_dev_crossing": 0,
+    "note": "dev windows never cross the cutoff; eval = time-held-out (non-pristine, see design doc)"
+   },
+   "funding_calendar": {
+    "version": "FUNDING-CAL-v1",
+    "source": "exchange-funding-history (Binance USD-M fundingRate)",
+    "interval_ms": 28800000,
+    "n_settlements": 90,
+    "span_ms": [
+     1788825600004,
+     1791388800000
+    ],
+    "response_sha256": "ce0d64a045edd65b45a9ca0d5578b6b6be56f7f8c1bc31b1d9178d52f2e0cab3"
+   }
+  },
+  "ETHUSDT": {
+   "venue": "Binance USD-M (fapi.binance.com)",
+   "interval": "15m",
+   "n_candles": 2879,
+   "window_open_ms": 1788816600000,
+   "window_close_ms": 1791407699999,
+   "null_close_time": 0,
+   "close_chain_violations": 0,
+   "n_events": 498,
+   "discarded": {
+    "unmapped-definition": 0,
+    "bad-direction": 0,
+    "bad-price": 0,
+    "bad-time": 0,
+    "symbol-filtered": 2333,
+    "open-after-asof": 0
+   },
+   "input_hash": "7643681e65483162",
+   "cutoff_ms": 1790010000000,
+   "selection": {
+    "cutoff_ms": 1790010000000,
+    "horizon_ms": 3600000,
+    "n_in": 498,
+    "n_dev": 256,
+    "n_oos": 241,
+    "n_purged_dev_crossing": 1,
+    "note": "dev windows never cross the cutoff; eval = time-held-out (non-pristine, see design doc)"
+   },
+   "funding_calendar": {
+    "version": "FUNDING-CAL-v1",
+    "source": "exchange-funding-history (Binance USD-M fundingRate)",
+    "interval_ms": 28800000,
+    "n_settlements": 90,
+    "span_ms": [
+     1788825600004,
+     1791388800000
+    ],
+    "response_sha256": "ddbe33762663dbe263fee07d0c2325ffe72c45c76bc5a21503bbde2d8730d5df"
+   }
+  },
+  "SOLUSDT": {
+   "venue": "Binance USD-M (fapi.binance.com)",
+   "interval": "15m",
+   "n_candles": 2879,
+   "window_open_ms": 1788816600000,
+   "window_close_ms": 1791407699999,
+   "null_close_time": 0,
+   "close_chain_violations": 0,
+   "n_events": 584,
+   "discarded": {
+    "unmapped-definition": 0,
+    "bad-direction": 0,
+    "bad-price": 0,
+    "bad-time": 0,
+    "symbol-filtered": 2247,
+    "open-after-asof": 0
+   },
+   "input_hash": "d784680b973bea6e",
+   "cutoff_ms": 1790010000000,
+   "selection": {
+    "cutoff_ms": 1790010000000,
+    "horizon_ms": 3600000,
+    "n_in": 584,
+    "n_dev": 297,
+    "n_oos": 287,
+    "n_purged_dev_crossing": 0,
+    "note": "dev windows never cross the cutoff; eval = time-held-out (non-pristine, see design doc)"
+   },
+   "funding_calendar": {
+    "version": "FUNDING-CAL-v1",
+    "source": "exchange-funding-history (Binance USD-M fundingRate)",
+    "interval_ms": 28800000,
+    "n_settlements": 90,
+    "span_ms": [
+     1788825600004,
+     1791388800000
+    ],
+    "response_sha256": "271557db51c76f2d31f8f098d275df22d75d521d670086ef2b6a65b132ae267d"
+   }
+  }
+ },
+ "cells": {
+  "BTCUSDT": {
+   "continuation": {
+    "dev": {
+     "1.0": {
+      "n_events": 121,
+      "n_trades": 105,
+      "n_expired": 0,
+      "n_mismatched": 0,
+      "skipped_overlap": 16,
+      "n_realized": 105,
+      "n_open": 0,
+      "exit_reasons": {
+       "horizon": 99,
+       "stop": 6,
+       "open_at_end": 0
+      },
+      "expectancy_net": 0.48412677881495625,
+      "expectancy_gross": 2.0857954151470737,
+      "total_net": 50.83331177557041,
+      "total_net_realized": 50.83331177557041,
+      "total_fees": 105.10950425929522,
+      "total_funding": 0.0,
+      "max_drawdown": 26.03930898304681,
+      "max_drawdown_realized": 26.03930898304681,
+      "mfe_mean": 0.3822214809364897,
+      "mae_mean": 0.14042950397962342,
+      "config_hash": "abc87a91ea88f769",
+      "funding_quality": {
+       "settled_events": 0,
+       "unknown_excluded": 0,
+       "gap_ms": 0,
+       "uncovered_ms": 0,
+       "accounting_complete_trades": 105,
+       "note": "per-position accounting completeness; calendar-complete never implies it"
+      }
+     },
+     "2.0": {
+      "n_events": 121,
+      "n_trades": 105,
+      "n_expired": 0,
+      "n_mismatched": 0,
+      "skipped_overlap": 16,
+      "n_realized": 105,
+      "n_open": 0,
+      "exit_reasons": {
+       "horizon": 99,
+       "stop": 6,
+       "open_at_end": 0
+      },
+      "expectancy_net": -1.1175418575171614,
+      "expectancy_gross": 2.0857954151470737,
+      "total_net": -117.34189503930195,
+      "total_net_realized": -117.34189503930195,
+      "total_fees": 210.21900851859044,
+      "total_funding": 0.0,
+      "max_drawdown": 129.89950224381252,
+      "max_drawdown_realized": 129.89950224381252,
+      "mfe_mean": 0.3822214809364897,
+      "mae_mean": 0.14042950397962342,
+      "config_hash": "1f8a58d7037be998",
+      "funding_quality": {
+       "settled_events": 0,
+       "unknown_excluded": 0,
+       "gap_ms": 0,
+       "uncovered_ms": 0,
+       "accounting_complete_trades": 105,
+       "note": "per-position accounting completeness; calendar-complete never implies it"
+      }
+     },
+     "3.0": {
+      "n_events": 121,
+      "n_trades": 105,
+      "n_expired": 0,
+      "n_mismatched": 0,
+      "skipped_overlap": 16,
+      "n_realized": 105,
+      "n_open": 0,
+      "exit_reasons": {
+       "horizon": 99,
+       "stop": 6,
+       "open_at_end": 0
+      },
+      "expectancy_net": -2.719210493849279,
+      "expectancy_gross": 2.0857954151470737,
+      "total_net": -285.5171018541743,
+      "total_net_realized": -285.5171018541743,
+      "total_fees": 315.3285127778857,
+      "total_funding": 0.0,
+      "max_drawdown": 286.8119965927594,
+      "max_drawdown_realized": 286.8119965927594,
+      "mfe_mean": 0.3822214809364897,
+      "mae_mean": 0.14042950397962342,
+      "config_hash": "89807d3671e5fe27",
+      "funding_quality": {
+       "settled_events": 0,
+       "unknown_excluded": 0,
+       "gap_ms": 0,
+       "uncovered_ms": 0,
+       "accounting_complete_trades": 105,
+       "note": "per-position accounting completeness; calendar-complete never implies it"
+      }
+     }
+    },
+    "oos": {
+     "1.0": {
+      "n_events": 130,
+      "n_trades": 122,
+      "n_expired": 0,
+      "n_mismatched": 0,
+      "skipped_overlap": 8,
+      "n_realized": 122,
+      "n_open": 0,
+      "exit_reasons": {
+       "horizon": 120,
+       "stop": 2,
+       "open_at_end": 0
+      },
+      "expectancy_net": 0.3372425066138194,
+      "expectancy_gross": 1.938793541446977,
+      "total_net": 41.143585806885966,
+      "total_net_realized": 41.143585806885966,
+      "total_fees": 122.11826640602827,
+      "total_funding": 0.0,
+      "max_drawdown": 17.07498480744297,
+      "max_drawdown_realized": 17.07498480744297,
+      "mfe_mean": 0.31495310499116475,
+      "mae_mean": 0.1096119937127492,
+      "config_hash": "abc87a91ea88f769",
+      "funding_quality": {
+       "settled_events": 0,
+       "unknown_excluded": 0,
+       "gap_ms": 0,
+       "uncovered_ms": 2700000,
+       "accounting_complete_trades": 121,
+       "note": "per-position accounting completeness; calendar-complete never implies it"
+      }
+     },
+     "2.0": {
+      "n_events": 130,
+      "n_trades": 122,
+      "n_expired": 0,
+      "n_mismatched": 0,
+      "skipped_overlap": 8,
+      "n_realized": 122,
+      "n_open": 0,
+      "exit_reasons": {
+       "horizon": 120,
+       "stop": 2,
+       "open_at_end": 0
+      },
+      "expectancy_net": -1.264308528219338,
+      "expectancy_gross": 1.938793541446977,
+      "total_net": -154.24564044275925,
+      "total_net_realized": -154.24564044275925,
+      "total_fees": 244.23653281205654,
+      "total_funding": 0.0,
+      "max_drawdown": 159.28003469015155,
+      "max_drawdown_realized": 159.28003469015155,
+      "mfe_mean": 0.31495310499116475,
+      "mae_mean": 0.1096119937127492,
+      "config_hash": "1f8a58d7037be998",
+      "funding_quality": {
+       "settled_events": 0,
+       "unknown_excluded": 0,
+       "gap_ms": 0,
+       "uncovered_ms": 2700000,
+       "accounting_complete_trades": 121,
+       "note": "per-position accounting completeness; calendar-complete never implies it"
+      }
+     },
+     "3.0": {
+      "n_events": 130,
+      "n_trades": 122,
+      "n_expired": 0,
+      "n_mismatched": 0,
+      "skipped_overlap": 8,
+      "n_realized": 122,
+      "n_open": 0,
+      "exit_reasons": {
+       "horizon": 120,
+       "stop": 2,
+       "open_at_end": 0
+      },
+      "expectancy_net": -2.865859563052496,
+      "expectancy_gross": 1.938793541446977,
+      "total_net": -349.6348666924045,
+      "total_net_realized": -349.6348666924045,
+      "total_fees": 366.3547992180848,
+      "total_funding": 0.0,
+      "max_drawdown": 349.92869231139485,
+      "max_drawdown_realized": 349.92869231139485,
+      "mfe_mean": 0.31495310499116475,
+      "mae_mean": 0.1096119937127492,
+      "config_hash": "89807d3671e5fe27",
+      "funding_quality": {
+       "settled_events": 0,
+       "unknown_excluded": 0,
+       "gap_ms": 0,
+       "uncovered_ms": 2700000,
+       "accounting_complete_trades": 121,
+       "note": "per-position accounting completeness; calendar-complete never implies it"
+      }
+     }
+    }
+   },
+   "correction-exhaustion": {
+    "dev": {
+     "1.0": {
+      "n_events": 1,
+      "n_trades": 1,
+      "n_expired": 0,
+      "n_mismatched": 0,
+      "skipped_overlap": 0,
+      "n_realized": 1,
+      "n_open": 0,
+      "exit_reasons": {
+       "horizon": 1,
+       "stop": 0,
+       "open_at_end": 0
+      },
+      "expectancy_net": -0.7441552228140434,
+      "expectancy_gross": 0.8565300011869058,
+      "total_net": -0.7441552228140434,
+      "total_net_realized": -0.7441552228140434,
+      "total_fees": 1.0004282650005933,
+      "total_funding": 0.0,
+      "max_drawdown": 0.7441552228140434,
+      "max_drawdown_realized": 0.7441552228140434,
+      "mfe_mean": 0.18941549169103292,
+      "mae_mean": 0.0298561886128114,
+      "config_hash": "11fb62a783ecf104",
+      "funding_quality": {
+       "settled_events": 0,
+       "unknown_excluded": 0,
+       "gap_ms": 0,
+       "uncovered_ms": 0,
+       "accounting_complete_trades": 1,
+       "note": "per-position accounting completeness; calendar-complete never implies it"
+      }
+     },
+     "2.0": {
+      "n_events": 1,
+      "n_trades": 1,
+      "n_expired": 0,
+      "n_mismatched": 0,
+      "skipped_overlap": 0,
+      "n_realized": 1,
+      "n_open": 0,
+      "exit_reasons": {
+       "horizon": 1,
+       "stop": 0,
+       "open_at_end": 0
+      },
+      "expectancy_net": -2.3448404468149926,
+      "expectancy_gross": 0.8565300011869058,
+      "total_net": -2.3448404468149926,
+      "total_net_realized": -2.3448404468149926,
+      "total_fees": 2.0008565300011867,
+      "total_funding": 0.0,
+      "max_drawdown": 2.3448404468149926,
+      "max_drawdown_realized": 2.3448404468149926,
+      "mfe_mean": 0.18941549169103292,
+      "mae_mean": 0.0298561886128114,
+      "config_hash": "d79bd69a95d1a079",
+      "funding_quality": {
+       "settled_events": 0,
+       "unknown_excluded": 0,
+       "gap_ms": 0,
+       "uncovered_ms": 0,
+       "accounting_complete_trades": 1,
+       "note": "per-position accounting completeness; calendar-complete never implies it"
+      }
+     },
+     "3.0": {
+      "n_events": 1,
+      "n_trades": 1,
+      "n_expired": 0,
+      "n_mismatched": 0,
+      "skipped_overlap": 0,
+      "n_realized": 1,
+      "n_open": 0,
+      "exit_reasons": {
+       "horizon": 1,
+       "stop": 0,
+       "open_at_end": 0
+      },
+      "expectancy_net": -3.945525670815943,
+      "expectancy_gross": 0.8565300011869058,
+      "total_net": -3.945525670815943,
+      "total_net_realized": -3.945525670815943,
+      "total_fees": 3.0012847950017805,
+      "total_funding": 0.0,
+      "max_drawdown": 3.945525670815943,
+      "max_drawdown_realized": 3.945525670815943,
+      "mfe_mean": 0.18941549169103292,
+      "mae_mean": 0.0298561886128114,
+      "config_hash": "964b3fc54466d9c2",
+      "funding_quality": {
+       "settled_events": 0,
+       "unknown_excluded": 0,
+       "gap_ms": 0,
+       "uncovered_ms": 0,
+       "accounting_complete_trades": 1,
+       "note": "per-position accounting completeness; calendar-complete never implies it"
+      }
+     }
+    },
+    "oos": {
+     "1.0": {
+      "n_events": 1,
+      "n_trades": 1,
+      "n_expired": 0,
+      "n_mismatched": 0,
+      "skipped_overlap": 0,
+      "n_realized": 1,
+      "n_open": 0,
+      "exit_reasons": {
+       "horizon": 1,
+       "stop": 0,
+       "open_at_end": 0
+      },
+      "expectancy_net": 0.775144563577034,
+      "expectancy_gross": 2.377046200537464,
+      "total_net": 0.775144563577034,
+      "total_net_realized": 0.775144563577034,
+      "total_fees": 1.0011885231002688,
+      "total_funding": 0.0,
+      "max_drawdown": 0.0,
+      "max_drawdown_realized": 0.0,
+      "mfe_mean": 0.3280018856883662,
+      "mae_mean": 0.1220772123709497,
+      "config_hash": "11fb62a783ecf104",
+      "funding_quality": {
+       "settled_events": 0,
+       "unknown_excluded": 0,
+       "gap_ms": 0,
+       "uncovered_ms": 0,
+       "accounting_complete_trades": 1,
+       "note": "per-position accounting completeness; calendar-complete never implies it"
+      }
+     },
+     "2.0": {
+      "n_events": 1,
+      "n_trades": 1,
+      "n_expired": 0,
+      "n_mismatched": 0,
+      "skipped_overlap": 0,
+      "n_realized": 1,
+      "n_open": 0,
+      "exit_reasons": {
+       "horizon": 1,
+       "stop": 0,
+       "open_at_end": 0
+      },
+      "expectancy_net": -0.826757073383396,
+      "expectancy_gross": 2.377046200537464,
+      "total_net": -0.826757073383396,
+      "total_net_realized": -0.826757073383396,
+      "total_fees": 2.0023770462005377,
+      "total_funding": 0.0,
+      "max_drawdown": 0.826757073383396,
+      "max_drawdown_realized": 0.826757073383396,
+      "mfe_mean": 0.3280018856883662,
+      "mae_mean": 0.1220772123709497,
+      "config_hash": "d79bd69a95d1a079",
+      "funding_quality": {
+       "settled_events": 0,
+       "unknown_excluded": 0,
+       "gap_ms": 0,
+       "uncovered_ms": 0,
+       "accounting_complete_trades": 1,
+       "note": "per-position accounting completeness; calendar-complete never implies it"
+      }
+     },
+     "3.0": {
+      "n_events": 1,
+      "n_trades": 1,
+      "n_expired": 0,
+      "n_mismatched": 0,
+      "skipped_overlap": 0,
+      "n_realized": 1,
+      "n_open": 0,
+      "exit_reasons": {
+       "horizon": 1,
+       "stop": 0,
+       "open_at_end": 0
+      },
+      "expectancy_net": -2.428658710343826,
+      "expectancy_gross": 2.377046200537464,
+      "total_net": -2.428658710343826,
+      "total_net_realized": -2.428658710343826,
+      "total_fees": 3.003565569300806,
+      "total_funding": 0.0,
+      "max_drawdown": 2.428658710343826,
+      "max_drawdown_realized": 2.428658710343826,
+      "mfe_mean": 0.3280018856883662,
+      "mae_mean": 0.1220772123709497,
+      "config_hash": "964b3fc54466d9c2",
+      "funding_quality": {
+       "settled_events": 0,
+       "unknown_excluded": 0,
+       "gap_ms": 0,
+       "uncovered_ms": 0,
+       "accounting_complete_trades": 1,
+       "note": "per-position accounting completeness; calendar-complete never implies it"
+      }
+     }
+    }
+   },
+   "correction-reversal": {
+    "dev": {
+     "1.0": {
+      "n_events": 1,
+      "n_trades": 1,
+      "n_expired": 0,
+      "n_mismatched": 0,
+      "skipped_overlap": 0,
+      "n_realized": 1,
+      "n_open": 0,
+      "exit_reasons": {
+       "horizon": 1,
+       "stop": 0,
+       "open_at_end": 0
+      },
+      "expectancy_net": -2.4126945769519317,
+      "expectancy_gross": -0.8120449409991326,
+      "total_net": -2.4126945769519317,
+      "total_net_realized": -2.4126945769519317,
+      "total_fees": 1.0004060224704996,
+      "total_funding": 0.0,
+      "max_drawdown": 2.4126945769519317,
+      "max_drawdown_realized": 2.4126945769519317,
+      "mfe_mean": 0.08826575445643986,
+      "mae_mean": 0.40288413256338296,
+      "config_hash": "11fb62a783ecf104",
+      "funding_quality": {
+       "settled_events": 0,
+       "unknown_excluded": 0,
+       "gap_ms": 0,
+       "uncovered_ms": 0,
+       "accounting_complete_trades": 1,
+       "note": "per-position accounting completeness; calendar-complete never implies it"
+      }
+     },
+     "2.0": {
+      "n_events": 1,
+      "n_trades": 1,
+      "n_expired": 0,
+      "n_mismatched": 0,
+      "skipped_overlap": 0,
+      "n_realized": 1,
+      "n_open": 0,
+      "exit_reasons": {
+       "horizon": 1,
+       "stop": 0,
+       "open_at_end": 0
+      },
+      "expectancy_net": -4.013344212904731,
+      "expectancy_gross": -0.8120449409991326,
+      "total_net": -4.013344212904731,
+      "total_net_realized": -4.013344212904731,
+      "total_fees": 2.000812044940999,
+      "total_funding": 0.0,
+      "max_drawdown": 4.013344212904731,
+      "max_drawdown_realized": 4.013344212904731,
+      "mfe_mean": 0.08826575445643986,
+      "mae_mean": 0.40288413256338296,
+      "config_hash": "d79bd69a95d1a079",
+      "funding_quality": {
+       "settled_events": 0,
+       "unknown_excluded": 0,
+       "gap_ms": 0,
+       "uncovered_ms": 0,
+       "accounting_complete_trades": 1,
+       "note": "per-position accounting completeness; calendar-complete never implies it"
+      }
+     },
+     "3.0": {
+      "n_events": 1,
+      "n_trades": 1,
+      "n_expired": 0,
+      "n_mismatched": 0,
+      "skipped_overlap": 0,
+      "n_realized": 1,
+      "n_open": 0,
+      "exit_reasons": {
+       "horizon": 1,
+       "stop": 0,
+       "open_at_end": 0
+      },
+      "expectancy_net": -5.613993848857531,
+      "expectancy_gross": -0.8120449409991326,
+      "total_net": -5.613993848857531,
+      "total_net_realized": -5.613993848857531,
+      "total_fees": 3.0012180674114988,
+      "total_funding": 0.0,
+      "max_drawdown": 5.613993848857531,
+      "max_drawdown_realized": 5.613993848857531,
+      "mfe_mean": 0.08826575445643986,
+      "mae_mean": 0.40288413256338296,
+      "config_hash": "964b3fc54466d9c2",
+      "funding_quality": {
+       "settled_events": 0,
+       "unknown_excluded": 0,
+       "gap_ms": 0,
+       "uncovered_ms": 0,
+       "accounting_complete_trades": 1,
+       "note": "per-position accounting completeness; calendar-complete never implies it"
+      }
+     }
+    },
+    "oos": {
+     "1.0": {
+      "n_events": 2,
+      "n_trades": 2,
+      "n_expired": 0,
+      "n_mismatched": 0,
+      "skipped_overlap": 0,
+      "n_realized": 2,
+      "n_open": 0,
+      "exit_reasons": {
+       "horizon": 2,
+       "stop": 0,
+       "open_at_end": 0
+      },
+      "expectancy_net": 0.668424679854486,
+      "expectancy_gross": 2.2666113907418923,
+      "total_net": 1.336849359708972,
+      "total_net_realized": 1.336849359708972,
+      "total_fees": 1.9977333886092583,
+      "total_funding": 0.0,
+      "max_drawdown": 0.0,
+      "max_drawdown_realized": 0.0,
+      "mfe_mean": 0.33339874340694536,
+      "mae_mean": 0.09473087440457367,
+      "config_hash": "11fb62a783ecf104",
+      "funding_quality": {
+       "settled_events": 0,
+       "unknown_excluded": 0,
+       "gap_ms": 0,
+       "uncovered_ms": 0,
+       "accounting_complete_trades": 2,
+       "note": "per-position accounting completeness; calendar-complete never implies it"
+      }
+     },
+     "2.0": {
+      "n_events": 2,
+      "n_trades": 2,
+      "n_expired": 0,
+      "n_mismatched": 0,
+      "skipped_overlap": 0,
+      "n_realized": 2,
+      "n_open": 0,
+      "exit_reasons": {
+       "horizon": 2,
+       "stop": 0,
+       "open_at_end": 0
+      },
+      "expectancy_net": -0.9297620310329207,
+      "expectancy_gross": 2.2666113907418923,
+      "total_net": -1.8595240620658413,
+      "total_net_realized": -1.8595240620658413,
+      "total_fees": 3.9954667772185166,
+      "total_funding": 0.0,
+      "max_drawdown": 1.8595240620658413,
+      "max_drawdown_realized": 1.8595240620658413,
+      "mfe_mean": 0.33339874340694536,
+      "mae_mean": 0.09473087440457367,
+      "config_hash": "d79bd69a95d1a079",
+      "funding_quality": {
+       "settled_events": 0,
+       "unknown_excluded": 0,
+       "gap_ms": 0,
+       "uncovered_ms": 0,
+       "accounting_complete_trades": 2,
+       "note": "per-position accounting completeness; calendar-complete never implies it"
+      }
+     },
+     "3.0": {
+      "n_events": 2,
+      "n_trades": 2,
+      "n_expired": 0,
+      "n_mismatched": 0,
+      "skipped_overlap": 0,
+      "n_realized": 2,
+      "n_open": 0,
+      "exit_reasons": {
+       "horizon": 2,
+       "stop": 0,
+       "open_at_end": 0
+      },
+      "expectancy_net": -2.5279487419203273,
+      "expectancy_gross": 2.2666113907418923,
+      "total_net": -5.0558974838406545,
+      "total_net_realized": -5.0558974838406545,
+      "total_fees": 5.9932001658277745,
+      "total_funding": 0.0,
+      "max_drawdown": 5.0558974838406545,
+      "max_drawdown_realized": 5.0558974838406545,
+      "mfe_mean": 0.33339874340694536,
+      "mae_mean": 0.09473087440457367,
+      "config_hash": "964b3fc54466d9c2",
+      "funding_quality": {
+       "settled_events": 0,
+       "unknown_excluded": 0,
+       "gap_ms": 0,
+       "uncovered_ms": 0,
+       "accounting_complete_trades": 2,
+       "note": "per-position accounting completeness; calendar-complete never implies it"
+      }
+     }
+    }
+   },
+   "bearish-continuation": {
+    "dev": {
+     "1.0": {
+      "n_events": 101,
+      "n_trades": 101,
+      "n_expired": 0,
+      "n_mismatched": 0,
+      "skipped_overlap": 0,
+      "n_realized": 101,
+      "n_open": 0,
+      "exit_reasons": {
+       "horizon": 100,
+       "stop": 1,
+       "open_at_end": 0
+      },
+      "expectancy_net": 0.2819476846212501,
+      "expectancy_gross": 1.8804433299572842,
+      "total_net": 28.476716146746256,
+      "total_net_realized": 28.476716146746256,
+      "total_fees": 100.90503761183716,
+      "total_funding": 0.0,
+      "max_drawdown": 13.81208236479371,
+      "max_drawdown_realized": 13.81208236479371,
+      "mfe_mean": 0.35195580701332263,
+      "mae_mean": 0.12996992207236702,
+      "config_hash": "8b4b404c77a3d390",
+      "funding_quality": {
+       "settled_events": 0,
+       "unknown_excluded": 0,
+       "gap_ms": 0,
+       "uncovered_ms": 0,
+       "accounting_complete_trades": 101,
+       "note": "per-position accounting completeness; calendar-complete never implies it"
+      }
+     },
+     "2.0": {
+      "n_events": 101,
+      "n_trades": 101,
+      "n_expired": 0,
+      "n_mismatched": 0,
+      "skipped_overlap": 0,
+      "n_realized": 101,
+      "n_open": 0,
+      "exit_reasons": {
+       "horizon": 100,
+       "stop": 1,
+       "open_at_end": 0
+      },
+      "expectancy_net": -1.316547960714784,
+      "expectancy_gross": 1.8804433299572842,
+      "total_net": -132.9713440321932,
+      "total_net_realized": -132.9713440321932,
+      "total_fees": 201.81007522367432,
+      "total_funding": 0.0,
+      "max_drawdown": 133.48507345546116,
+      "max_drawdown_realized": 133.48507345546116,
+      "mfe_mean": 0.35195580701332263,
+      "mae_mean": 0.12996992207236702,
+      "config_hash": "dd3c7bf5c1311b39",
+      "funding_quality": {
+       "settled_events": 0,
+       "unknown_excluded": 0,
+       "gap_ms": 0,
+       "uncovered_ms": 0,
+       "accounting_complete_trades": 101,
+       "note": "per-position accounting completeness; calendar-complete never implies it"
+      }
+     },
+     "3.0": {
+      "n_events": 101,
+      "n_trades": 101,
+      "n_expired": 0,
+      "n_mismatched": 0,
+      "skipped_overlap": 0,
+      "n_realized": 101,
+      "n_open": 0,
+      "exit_reasons": {
+       "horizon": 100,
+       "stop": 1,
+       "open_at_end": 0
+      },
+      "expectancy_net": -2.9150436060508182,
+      "expectancy_gross": 1.8804433299572842,
+      "total_net": -294.41940421113264,
+      "total_net_realized": -294.41940421113264,
+      "total_fees": 302.7151128355115,
+      "total_funding": 0.0,
+      "max_drawdown": 294.4194042111327,
+      "max_drawdown_realized": 294.4194042111327,
+      "mfe_mean": 0.35195580701332263,
+      "mae_mean": 0.12996992207236702,
+      "config_hash": "88608f865f670ad9",
+      "funding_quality": {
+       "settled_events": 0,
+       "unknown_excluded": 0,
+       "gap_ms": 0,
+       "uncovered_ms": 0,
+       "accounting_complete_trades": 101,
+       "note": "per-position accounting completeness; calendar-complete never implies it"
+      }
+     }
+    },
+    "oos": {
+     "1.0": {
+      "n_events": 119,
+      "n_trades": 119,
+      "n_expired": 0,
+      "n_mismatched": 0,
+      "skipped_overlap": 0,
+      "n_realized": 119,
+      "n_open": 0,
+      "exit_reasons": {
+       "horizon": 116,
+       "stop": 3,
+       "open_at_end": 0
+      },
+      "expectancy_net": 0.5652022751290104,
+      "expectancy_gross": 2.163471497930666,
+      "total_net": 67.25907074035224,
+      "total_net_realized": 67.25907074035224,
+      "total_fees": 118.87127344587313,
+      "total_funding": 0.0,
+      "max_drawdown": 14.02153144931956,
+      "max_drawdown_realized": 14.02153144931956,
+      "mfe_mean": 0.37449721516678086,
+      "mae_mean": 0.11745475186215985,
+      "config_hash": "8b4b404c77a3d390",
+      "funding_quality": {
+       "settled_events": 0,
+       "unknown_excluded": 0,
+       "gap_ms": 0,
+       "uncovered_ms": 0,
+       "accounting_complete_trades": 119,
+       "note": "per-position accounting completeness; calendar-complete never implies it"
+      }
+     },
+     "2.0": {
+      "n_events": 119,
+      "n_trades": 119,
+      "n_expired": 0,
+      "n_mismatched": 0,
+      "skipped_overlap": 0,
+      "n_realized": 119,
+      "n_open": 0,
+      "exit_reasons": {
+       "horizon": 116,
+       "stop": 3,
+       "open_at_end": 0
+      },
+      "expectancy_net": -1.0330669476726448,
+      "expectancy_gross": 2.163471497930666,
+      "total_net": -122.93496677304475,
+      "total_net_realized": -122.93496677304475,
+      "total_fees": 237.74254689174626,
+      "total_funding": 0.0,
+      "max_drawdown": 125.12026893177949,
+      "max_drawdown_realized": 125.12026893177949,
+      "mfe_mean": 0.37449721516678086,
+      "mae_mean": 0.11745475186215985,
+      "config_hash": "dd3c7bf5c1311b39",
+      "funding_quality": {
+       "settled_events": 0,
+       "unknown_excluded": 0,
+       "gap_ms": 0,
+       "uncovered_ms": 0,
+       "accounting_complete_trades": 119,
+       "note": "per-position accounting completeness; calendar-complete never implies it"
+      }
+     },
+     "3.0": {
+      "n_events": 119,
+      "n_trades": 119,
+      "n_expired": 0,
+      "n_mismatched": 0,
+      "skipped_overlap": 0,
+      "n_realized": 119,
+      "n_open": 0,
+      "exit_reasons": {
+       "horizon": 116,
+       "stop": 3,
+       "open_at_end": 0
+      },
+      "expectancy_net": -2.6313361704743,
+      "expectancy_gross": 2.163471497930666,
+      "total_net": -313.1290042864417,
+      "total_net_realized": -313.1290042864417,
+      "total_fees": 356.61382033761936,
+      "total_funding": 0.0,
+      "max_drawdown": 313.1290042864417,
+      "max_drawdown_realized": 313.1290042864417,
+      "mfe_mean": 0.37449721516678086,
+      "mae_mean": 0.11745475186215985,
+      "config_hash": "88608f865f670ad9",
+      "funding_quality": {
+       "settled_events": 0,
+       "unknown_excluded": 0,
+       "gap_ms": 0,
+       "uncovered_ms": 0,
+       "accounting_complete_trades": 119,
+       "note": "per-position accounting completeness; calendar-complete never implies it"
+      }
+     }
+    }
+   },
+   "rebound-variant": {
+    "dev": {
+     "1.0": {
+      "n_events": 0,
+      "n_trades": 0,
+      "n_expired": 0,
+      "n_mismatched": 0,
+      "skipped_overlap": 0,
+      "n_realized": 0,
+      "n_open": 0,
+      "exit_reasons": {
+       "horizon": 0,
+       "stop": 0,
+       "open_at_end": 0
+      },
+      "expectancy_net": 0.0,
+      "expectancy_gross": 0.0,
+      "total_net": 0,
+      "total_net_realized": 0,
+      "total_fees": 0,
+      "total_funding": 0,
+      "max_drawdown": 0.0,
+      "max_drawdown_realized": 0.0,
+      "mfe_mean": 0.0,
+      "mae_mean": 0.0,
+      "config_hash": "de490adff6155e77",
+      "funding_quality": {
+       "settled_events": 0,
+       "unknown_excluded": 0,
+       "gap_ms": 0,
+       "uncovered_ms": 0,
+       "accounting_complete_trades": 0,
+       "note": "per-position accounting completeness; calendar-complete never implies it"
+      }
+     },
+     "2.0": {
+      "n_events": 0,
+      "n_trades": 0,
+      "n_expired": 0,
+      "n_mismatched": 0,
+      "skipped_overlap": 0,
+      "n_realized": 0,
+      "n_open": 0,
+      "exit_reasons": {
+       "horizon": 0,
+       "stop": 0,
+       "open_at_end": 0
+      },
+      "expectancy_net": 0.0,
+      "expectancy_gross": 0.0,
+      "total_net": 0,
+      "total_net_realized": 0,
+      "total_fees": 0,
+      "total_funding": 0,
+      "max_drawdown": 0.0,
+      "max_drawdown_realized": 0.0,
+      "mfe_mean": 0.0,
+      "mae_mean": 0.0,
+      "config_hash": "21a3a83a9336c4d4",
+      "funding_quality": {
+       "settled_events": 0,
+       "unknown_excluded": 0,
+       "gap_ms": 0,
+       "uncovered_ms": 0,
+       "accounting_complete_trades": 0,
+       "note": "per-position accounting completeness; calendar-complete never implies it"
+      }
+     },
+     "3.0": {
+      "n_events": 0,
+      "n_trades": 0,
+      "n_expired": 0,
+      "n_mismatched": 0,
+      "skipped_overlap": 0,
+      "n_realized": 0,
+      "n_open": 0,
+      "exit_reasons": {
+       "horizon": 0,
+       "stop": 0,
+       "open_at_end": 0
+      },
+      "expectancy_net": 0.0,
+      "expectancy_gross": 0.0,
+      "total_net": 0,
+      "total_net_realized": 0,
+      "total_fees": 0,
+      "total_funding": 0,
+      "max_drawdown": 0.0,
+      "max_drawdown_realized": 0.0,
+      "mfe_mean": 0.0,
+      "mae_mean": 0.0,
+      "config_hash": "51c867e5269efb7c",
+      "funding_quality": {
+       "settled_events": 0,
+       "unknown_excluded": 0,
+       "gap_ms": 0,
+       "uncovered_ms": 0,
+       "accounting_complete_trades": 0,
+       "note": "per-position accounting completeness; calendar-complete never implies it"
+      }
+     }
+    },
+    "oos": {
+     "1.0": {
+      "n_events": 0,
+      "n_trades": 0,
+      "n_expired": 0,
+      "n_mismatched": 0,
+      "skipped_overlap": 0,
+      "n_realized": 0,
+      "n_open": 0,
+      "exit_reasons": {
+       "horizon": 0,
+       "stop": 0,
+       "open_at_end": 0
+      },
+      "expectancy_net": 0.0,
+      "expectancy_gross": 0.0,
+      "total_net": 0,
+      "total_net_realized": 0,
+      "total_fees": 0,
+      "total_funding": 0,
+      "max_drawdown": 0.0,
+      "max_drawdown_realized": 0.0,
+      "mfe_mean": 0.0,
+      "mae_mean": 0.0,
+      "config_hash": "de490adff6155e77",
+      "funding_quality": {
+       "settled_events": 0,
+       "unknown_excluded": 0,
+       "gap_ms": 0,
+       "uncovered_ms": 0,
+       "accounting_complete_trades": 0,
+       "note": "per-position accounting completeness; calendar-complete never implies it"
+      }
+     },
+     "2.0": {
+      "n_events": 0,
+      "n_trades": 0,
+      "n_expired": 0,
+      "n_mismatched": 0,
+      "skipped_overlap": 0,
+      "n_realized": 0,
+      "n_open": 0,
+      "exit_reasons": {
+       "horizon": 0,
+       "stop": 0,
+       "open_at_end": 0
+      },
+      "expectancy_net": 0.0,
+      "expectancy_gross": 0.0,
+      "total_net": 0,
+      "total_net_realized": 0,
+      "total_fees": 0,
+      "total_funding": 0,
+      "max_drawdown": 0.0,
+      "max_drawdown_realized": 0.0,
+      "mfe_mean": 0.0,
+      "mae_mean": 0.0,
+      "config_hash": "21a3a83a9336c4d4",
+      "funding_quality": {
+       "settled_events": 0,
+       "unknown_excluded": 0,
+       "gap_ms": 0,
+       "uncovered_ms": 0,
+       "accounting_complete_trades": 0,
+       "note": "per-position accounting completeness; calendar-complete never implies it"
+      }
+     },
+     "3.0": {
+      "n_events": 0,
+      "n_trades": 0,
+      "n_expired": 0,
+      "n_mismatched": 0,
+      "skipped_overlap": 0,
+      "n_realized": 0,
+      "n_open": 0,
+      "exit_reasons": {
+       "horizon": 0,
+       "stop": 0,
+       "open_at_end": 0
+      },
+      "expectancy_net": 0.0,
+      "expectancy_gross": 0.0,
+      "total_net": 0,
+      "total_net_realized": 0,
+      "total_fees": 0,
+      "total_funding": 0,
+      "max_drawdown": 0.0,
+      "max_drawdown_realized": 0.0,
+      "mfe_mean": 0.0,
+      "mae_mean": 0.0,
+      "config_hash": "51c867e5269efb7c",
+      "funding_quality": {
+       "settled_events": 0,
+       "unknown_excluded": 0,
+       "gap_ms": 0,
+       "uncovered_ms": 0,
+       "accounting_complete_trades": 0,
+       "note": "per-position accounting completeness; calendar-complete never implies it"
+      }
+     }
+    }
+   },
+   "baseline": {
+    "dev": {
+     "1.0": {
+      "n_events": 0,
+      "n_trades": 0,
+      "n_expired": 0,
+      "n_mismatched": 0,
+      "skipped_overlap": 0,
+      "n_realized": 0,
+      "n_open": 0,
+      "exit_reasons": {
+       "horizon": 0,
+       "stop": 0,
+       "open_at_end": 0
+      },
+      "expectancy_net": 0.0,
+      "expectancy_gross": 0.0,
+      "total_net": 0,
+      "total_net_realized": 0,
+      "total_fees": 0,
+      "total_funding": 0,
+      "max_drawdown": 0.0,
+      "max_drawdown_realized": 0.0,
+      "mfe_mean": 0.0,
+      "mae_mean": 0.0,
+      "config_hash": "abc87a91ea88f769",
+      "funding_quality": {
+       "settled_events": 0,
+       "unknown_excluded": 0,
+       "gap_ms": 0,
+       "uncovered_ms": 0,
+       "accounting_complete_trades": 0,
+       "note": "per-position accounting completeness; calendar-complete never implies it"
+      }
+     },
+     "2.0": {
+      "n_events": 0,
+      "n_trades": 0,
+      "n_expired": 0,
+      "n_mismatched": 0,
+      "skipped_overlap": 0,
+      "n_realized": 0,
+      "n_open": 0,
+      "exit_reasons": {
+       "horizon": 0,
+       "stop": 0,
+       "open_at_end": 0
+      },
+      "expectancy_net": 0.0,
+      "expectancy_gross": 0.0,
+      "total_net": 0,
+      "total_net_realized": 0,
+      "total_fees": 0,
+      "total_funding": 0,
+      "max_drawdown": 0.0,
+      "max_drawdown_realized": 0.0,
+      "mfe_mean": 0.0,
+      "mae_mean": 0.0,
+      "config_hash": "1f8a58d7037be998",
+      "funding_quality": {
+       "settled_events": 0,
+       "unknown_excluded": 0,
+       "gap_ms": 0,
+       "uncovered_ms": 0,
+       "accounting_complete_trades": 0,
+       "note": "per-position accounting completeness; calendar-complete never implies it"
+      }
+     },
+     "3.0": {
+      "n_events": 0,
+      "n_trades": 0,
+      "n_expired": 0,
+      "n_mismatched": 0,
+      "skipped_overlap": 0,
+      "n_realized": 0,
+      "n_open": 0,
+      "exit_reasons": {
+       "horizon": 0,
+       "stop": 0,
+       "open_at_end": 0
+      },
+      "expectancy_net": 0.0,
+      "expectancy_gross": 0.0,
+      "total_net": 0,
+      "total_net_realized": 0,
+      "total_fees": 0,
+      "total_funding": 0,
+      "max_drawdown": 0.0,
+      "max_drawdown_realized": 0.0,
+      "mfe_mean": 0.0,
+      "mae_mean": 0.0,
+      "config_hash": "89807d3671e5fe27",
+      "funding_quality": {
+       "settled_events": 0,
+       "unknown_excluded": 0,
+       "gap_ms": 0,
+       "uncovered_ms": 0,
+       "accounting_complete_trades": 0,
+       "note": "per-position accounting completeness; calendar-complete never implies it"
+      }
+     }
+    },
+    "oos": {
+     "1.0": {
+      "n_events": 0,
+      "n_trades": 0,
+      "n_expired": 0,
+      "n_mismatched": 0,
+      "skipped_overlap": 0,
+      "n_realized": 0,
+      "n_open": 0,
+      "exit_reasons": {
+       "horizon": 0,
+       "stop": 0,
+       "open_at_end": 0
+      },
+      "expectancy_net": 0.0,
+      "expectancy_gross": 0.0,
+      "total_net": 0,
+      "total_net_realized": 0,
+      "total_fees": 0,
+      "total_funding": 0,
+      "max_drawdown": 0.0,
+      "max_drawdown_realized": 0.0,
+      "mfe_mean": 0.0,
+      "mae_mean": 0.0,
+      "config_hash": "abc87a91ea88f769",
+      "funding_quality": {
+       "settled_events": 0,
+       "unknown_excluded": 0,
+       "gap_ms": 0,
+       "uncovered_ms": 0,
+       "accounting_complete_trades": 0,
+       "note": "per-position accounting completeness; calendar-complete never implies it"
+      }
+     },
+     "2.0": {
+      "n_events": 0,
+      "n_trades": 0,
+      "n_expired": 0,
+      "n_mismatched": 0,
+      "skipped_overlap": 0,
+      "n_realized": 0,
+      "n_open": 0,
+      "exit_reasons": {
+       "horizon": 0,
+       "stop": 0,
+       "open_at_end": 0
+      },
+      "expectancy_net": 0.0,
+      "expectancy_gross": 0.0,
+      "total_net": 0,
+      "total_net_realized": 0,
+      "total_fees": 0,
+      "total_funding": 0,
+      "max_drawdown": 0.0,
+      "max_drawdown_realized": 0.0,
+      "mfe_mean": 0.0,
+      "mae_mean": 0.0,
+      "config_hash": "1f8a58d7037be998",
+      "funding_quality": {
+       "settled_events": 0,
+       "unknown_excluded": 0,
+       "gap_ms": 0,
+       "uncovered_ms": 0,
+       "accounting_complete_trades": 0,
+       "note": "per-position accounting completeness; calendar-complete never implies it"
+      }
+     },
+     "3.0": {
+      "n_events": 0,
+      "n_trades": 0,
+      "n_expired": 0,
+      "n_mismatched": 0,
+      "skipped_overlap": 0,
+      "n_realized": 0,
+      "n_open": 0,
+      "exit_reasons": {
+       "horizon": 0,
+       "stop": 0,
+       "open_at_end": 0
+      },
+      "expectancy_net": 0.0,
+      "expectancy_gross": 0.0,
+      "total_net": 0,
+      "total_net_realized": 0,
+      "total_fees": 0,
+      "total_funding": 0,
+      "max_drawdown": 0.0,
+      "max_drawdown_realized": 0.0,
+      "mfe_mean": 0.0,
+      "mae_mean": 0.0,
+      "config_hash": "89807d3671e5fe27",
+      "funding_quality": {
+       "settled_events": 0,
+       "unknown_excluded": 0,
+       "gap_ms": 0,
+       "uncovered_ms": 0,
+       "accounting_complete_trades": 0,
+       "note": "per-position accounting completeness; calendar-complete never implies it"
+      }
+     }
+    }
+   }
+  },
+  "ETHUSDT": {
+   "continuation": {
+    "dev": {
+     "1.0": {
+      "n_events": 141,
+      "n_trades": 115,
+      "n_expired": 0,
+      "n_mismatched": 0,
+      "skipped_overlap": 26,
+      "n_realized": 115,
+      "n_open": 0,
+      "exit_reasons": {
+       "horizon": 104,
+       "stop": 11,
+       "open_at_end": 0
+      },
+      "expectancy_net": 1.0263258134061002,
+      "expectancy_gross": 2.629206134835708,
+      "total_net": 118.02746854170152,
+      "total_net_realized": 118.02746854170152,
+      "total_fees": 115.15117935275305,
+      "total_funding": 0.08935000000000001,
+      "max_drawdown": 22.367432217834654,
+      "max_drawdown_realized": 22.367432217834654,
+      "mfe_mean": 0.5495655595846436,
+      "mae_mean": 0.18819275735001254,
+      "config_hash": "6ed0bf27eaccf5e5",
+      "funding_quality": {
+       "settled_events": 1,
+       "unknown_excluded": 0,
+       "gap_ms": 0,
+       "uncovered_ms": 0,
+       "accounting_complete_trades": 115,
+       "note": "per-position accounting completeness; calendar-complete never implies it"
+      }
+     },
+     "2.0": {
+      "n_events": 141,
+      "n_trades": 115,
+      "n_expired": 0,
+      "n_mismatched": 0,
+      "skipped_overlap": 26,
+      "n_realized": 115,
+      "n_open": 0,
+      "exit_reasons": {
+       "horizon": 104,
+       "stop": 11,
+       "open_at_end": 0
+      },
+      "expectancy_net": -0.5765545080235075,
+      "expectancy_gross": 2.629206134835708,
+      "total_net": -66.30376842270336,
+      "total_net_realized": -66.30376842270336,
+      "total_fees": 230.3023587055061,
+      "total_funding": 0.17870000000000003,
+      "max_drawdown": 100.4854733037237,
+      "max_drawdown_realized": 100.4854733037237,
+      "mfe_mean": 0.5495655595846436,
+      "mae_mean": 0.18819275735001254,
+      "config_hash": "bd046213a0d7e65a",
+      "funding_quality": {
+       "settled_events": 1,
+       "unknown_excluded": 0,
+       "gap_ms": 0,
+       "uncovered_ms": 0,
+       "accounting_complete_trades": 115,
+       "note": "per-position accounting completeness; calendar-complete never implies it"
+      }
+     },
+     "3.0": {
+      "n_events": 141,
+      "n_trades": 115,
+      "n_expired": 0,
+      "n_mismatched": 0,
+      "skipped_overlap": 26,
+      "n_realized": 115,
+      "n_open": 0,
+      "exit_reasons": {
+       "horizon": 104,
+       "stop": 11,
+       "open_at_end": 0
+      },
+      "expectancy_net": -2.179434829453115,
+      "expectancy_gross": 2.629206134835708,
+      "total_net": -250.63500538710824,
+      "total_net_realized": -250.63500538710824,
+      "total_fees": 345.45353805825914,
+      "total_funding": 0.26805,
+      "max_drawdown": 250.6350053871084,
+      "max_drawdown_realized": 250.6350053871084,
+      "mfe_mean": 0.5495655595846436,
+      "mae_mean": 0.18819275735001254,
+      "config_hash": "bb9fbf390f9ff8ef",
+      "funding_quality": {
+       "settled_events": 1,
+       "unknown_excluded": 0,
+       "gap_ms": 0,
+       "uncovered_ms": 0,
+       "accounting_complete_trades": 115,
+       "note": "per-position accounting completeness; calendar-complete never implies it"
+      }
+     }
+    },
+    "oos": {
+     "1.0": {
+      "n_events": 118,
+      "n_trades": 115,
+      "n_expired": 0,
+      "n_mismatched": 0,
+      "skipped_overlap": 3,
+      "n_realized": 114,
+      "n_open": 1,
+      "exit_reasons": {
+       "horizon": 108,
+       "stop": 6,
+       "open_at_end": 1
+      },
+      "expectancy_net": 0.3934059510560599,
+      "expectancy_gross": 1.9950019526181544,
+      "total_net": 45.24168437144689,
+      "total_net_realized": 47.478204016419554,
+      "total_fees": 115.11471261227554,
+      "total_funding": 0.0,
+      "max_drawdown": 23.636790858335566,
+      "max_drawdown_realized": 23.636790858335566,
+      "mfe_mean": 0.36718102591462864,
+      "mae_mean": 0.14314832273779166,
+      "config_hash": "6ed0bf27eaccf5e5",
+      "funding_quality": {
+       "settled_events": 0,
+       "unknown_excluded": 0,
+       "gap_ms": 0,
+       "uncovered_ms": 5400000,
+       "accounting_complete_trades": 113,
+       "note": "per-position accounting completeness; calendar-complete never implies it"
+      }
+     },
+     "2.0": {
+      "n_events": 118,
+      "n_trades": 115,
+      "n_expired": 0,
+      "n_mismatched": 0,
+      "skipped_overlap": 3,
+      "n_realized": 114,
+      "n_open": 1,
+      "exit_reasons": {
+       "horizon": 108,
+       "stop": 6,
+       "open_at_end": 1
+      },
+      "expectancy_net": -1.2081900505060346,
+      "expectancy_gross": 1.9950019526181544,
+      "total_net": -138.94185580819396,
+      "total_net_realized": -135.10584578663602,
+      "total_fees": 230.22942522455108,
+      "total_funding": 0.0,
+      "max_drawdown": 138.94185580819396,
+      "max_drawdown_realized": 135.10584578663602,
+      "mfe_mean": 0.36718102591462864,
+      "mae_mean": 0.14314832273779166,
+      "config_hash": "bd046213a0d7e65a",
+      "funding_quality": {
+       "settled_events": 0,
+       "unknown_excluded": 0,
+       "gap_ms": 0,
+       "uncovered_ms": 5400000,
+       "accounting_complete_trades": 113,
+       "note": "per-position accounting completeness; calendar-complete never implies it"
+      }
+     },
+     "3.0": {
+      "n_events": 118,
+      "n_trades": 115,
+      "n_expired": 0,
+      "n_mismatched": 0,
+      "skipped_overlap": 3,
+      "n_realized": 114,
+      "n_open": 1,
+      "exit_reasons": {
+       "horizon": 108,
+       "stop": 6,
+       "open_at_end": 1
+      },
+      "expectancy_net": -2.8097860520681293,
+      "expectancy_gross": 1.9950019526181544,
+      "total_net": -323.12539598783485,
+      "total_net_realized": -317.6898955896916,
+      "total_fees": 345.34413783682663,
+      "total_funding": 0.0,
+      "max_drawdown": 323.12539598783485,
+      "max_drawdown_realized": 317.6898955896916,
+      "mfe_mean": 0.36718102591462864,
+      "mae_mean": 0.14314832273779166,
+      "config_hash": "bb9fbf390f9ff8ef",
+      "funding_quality": {
+       "settled_events": 0,
+       "unknown_excluded": 0,
+       "gap_ms": 0,
+       "uncovered_ms": 5400000,
+       "accounting_complete_trades": 113,
+       "note": "per-position accounting completeness; calendar-complete never implies it"
+      }
+     }
+    }
+   },
+   "correction-exhaustion": {
+    "dev": {
+     "1.0": {
+      "n_events": 2,
+      "n_trades": 2,
+      "n_expired": 0,
+      "n_mismatched": 0,
+      "skipped_overlap": 0,
+      "n_realized": 2,
+      "n_open": 0,
+      "exit_reasons": {
+       "horizon": 2,
+       "stop": 0,
+       "open_at_end": 0
+      },
+      "expectancy_net": 2.0235006807340445,
+      "expectancy_gross": 3.626401802175785,
+      "total_net": 4.047001361468089,
+      "total_net_realized": 4.047001361468089,
+      "total_fees": 2.0036264018021757,
+      "total_funding": 0.0,
+      "max_drawdown": 0.0,
+      "max_drawdown_realized": 0.0,
+      "mfe_mean": 0.5277817662756907,
+      "mae_mean": 0.062022832801859,
+      "config_hash": "4a12bddaa8d3c0d6",
+      "funding_quality": {
+       "settled_events": 0,
+       "unknown_excluded": 0,
+       "gap_ms": 0,
+       "uncovered_ms": 0,
+       "accounting_complete_trades": 2,
+       "note": "per-position accounting completeness; calendar-complete never implies it"
+      }
+     },
+     "2.0": {
+      "n_events": 2,
+      "n_trades": 2,
+      "n_expired": 0,
+      "n_mismatched": 0,
+      "skipped_overlap": 0,
+      "n_realized": 2,
+      "n_open": 0,
+      "exit_reasons": {
+       "horizon": 2,
+       "stop": 0,
+       "open_at_end": 0
+      },
+      "expectancy_net": 0.42059955929230397,
+      "expectancy_gross": 3.626401802175785,
+      "total_net": 0.8411991185846079,
+      "total_net_realized": 0.8411991185846079,
+      "total_fees": 4.007252803604351,
+      "total_funding": 0.0,
+      "max_drawdown": 1.0750263560957531,
+      "max_drawdown_realized": 1.0750263560957531,
+      "mfe_mean": 0.5277817662756907,
+      "mae_mean": 0.062022832801859,
+      "config_hash": "3df576733d369114",
+      "funding_quality": {
+       "settled_events": 0,
+       "unknown_excluded": 0,
+       "gap_ms": 0,
+       "uncovered_ms": 0,
+       "accounting_complete_trades": 2,
+       "note": "per-position accounting completeness; calendar-complete never implies it"
+      }
+     },
+     "3.0": {
+      "n_events": 2,
+      "n_trades": 2,
+      "n_expired": 0,
+      "n_mismatched": 0,
+      "skipped_overlap": 0,
+      "n_realized": 2,
+      "n_open": 0,
+      "exit_reasons": {
+       "horizon": 2,
+       "stop": 0,
+       "open_at_end": 0
+      },
+      "expectancy_net": -1.182301562149437,
+      "expectancy_gross": 3.626401802175785,
+      "total_net": -2.364603124298874,
+      "total_net_realized": -2.364603124298874,
+      "total_fees": 6.010879205406527,
+      "total_funding": 0.0,
+      "max_drawdown": 2.6767290593360613,
+      "max_drawdown_realized": 2.6767290593360613,
+      "mfe_mean": 0.5277817662756907,
+      "mae_mean": 0.062022832801859,
+      "config_hash": "e14ebca191458049",
+      "funding_quality": {
+       "settled_events": 0,
+       "unknown_excluded": 0,
+       "gap_ms": 0,
+       "uncovered_ms": 0,
+       "accounting_complete_trades": 2,
+       "note": "per-position accounting completeness; calendar-complete never implies it"
+      }
+     }
+    },
+    "oos": {
+     "1.0": {
+      "n_events": 0,
+      "n_trades": 0,
+      "n_expired": 0,
+      "n_mismatched": 0,
+      "skipped_overlap": 0,
+      "n_realized": 0,
+      "n_open": 0,
+      "exit_reasons": {
+       "horizon": 0,
+       "stop": 0,
+       "open_at_end": 0
+      },
+      "expectancy_net": 0.0,
+      "expectancy_gross": 0.0,
+      "total_net": 0,
+      "total_net_realized": 0,
+      "total_fees": 0,
+      "total_funding": 0,
+      "max_drawdown": 0.0,
+      "max_drawdown_realized": 0.0,
+      "mfe_mean": 0.0,
+      "mae_mean": 0.0,
+      "config_hash": "4a12bddaa8d3c0d6",
+      "funding_quality": {
+       "settled_events": 0,
+       "unknown_excluded": 0,
+       "gap_ms": 0,
+       "uncovered_ms": 0,
+       "accounting_complete_trades": 0,
+       "note": "per-position accounting completeness; calendar-complete never implies it"
+      }
+     },
+     "2.0": {
+      "n_events": 0,
+      "n_trades": 0,
+      "n_expired": 0,
+      "n_mismatched": 0,
+      "skipped_overlap": 0,
+      "n_realized": 0,
+      "n_open": 0,
+      "exit_reasons": {
+       "horizon": 0,
+       "stop": 0,
+       "open_at_end": 0
+      },
+      "expectancy_net": 0.0,
+      "expectancy_gross": 0.0,
+      "total_net": 0,
+      "total_net_realized": 0,
+      "total_fees": 0,
+      "total_funding": 0,
+      "max_drawdown": 0.0,
+      "max_drawdown_realized": 0.0,
+      "mfe_mean": 0.0,
+      "mae_mean": 0.0,
+      "config_hash": "3df576733d369114",
+      "funding_quality": {
+       "settled_events": 0,
+       "unknown_excluded": 0,
+       "gap_ms": 0,
+       "uncovered_ms": 0,
+       "accounting_complete_trades": 0,
+       "note": "per-position accounting completeness; calendar-complete never implies it"
+      }
+     },
+     "3.0": {
+      "n_events": 0,
+      "n_trades": 0,
+      "n_expired": 0,
+      "n_mismatched": 0,
+      "skipped_overlap": 0,
+      "n_realized": 0,
+      "n_open": 0,
+      "exit_reasons": {
+       "horizon": 0,
+       "stop": 0,
+       "open_at_end": 0
+      },
+      "expectancy_net": 0.0,
+      "expectancy_gross": 0.0,
+      "total_net": 0,
+      "total_net_realized": 0,
+      "total_fees": 0,
+      "total_funding": 0,
+      "max_drawdown": 0.0,
+      "max_drawdown_realized": 0.0,
+      "mfe_mean": 0.0,
+      "mae_mean": 0.0,
+      "config_hash": "e14ebca191458049",
+      "funding_quality": {
+       "settled_events": 0,
+       "unknown_excluded": 0,
+       "gap_ms": 0,
+       "uncovered_ms": 0,
+       "accounting_complete_trades": 0,
+       "note": "per-position accounting completeness; calendar-complete never implies it"
+      }
+     }
+    }
+   },
+   "correction-reversal": {
+    "dev": {
+     "1.0": {
+      "n_events": 1,
+      "n_trades": 1,
+      "n_expired": 0,
+      "n_mismatched": 0,
+      "skipped_overlap": 0,
+      "n_realized": 1,
+      "n_open": 0,
+      "exit_reasons": {
+       "horizon": 1,
+       "stop": 0,
+       "open_at_end": 0
+      },
+      "expectancy_net": -0.07153771760156191,
+      "expectancy_gross": 1.527240490006433,
+      "total_net": -0.07153771760156191,
+      "total_net_realized": -0.07153771760156191,
+      "total_fees": 0.9992363797549968,
+      "total_funding": 0.0,
+      "max_drawdown": 0.07153771760156191,
+      "max_drawdown_realized": 0.07153771760156191,
+      "mfe_mean": 0.17448420373951998,
+      "mae_mean": 0.1192778852353335,
+      "config_hash": "4a12bddaa8d3c0d6",
+      "funding_quality": {
+       "settled_events": 0,
+       "unknown_excluded": 0,
+       "gap_ms": 0,
+       "uncovered_ms": 0,
+       "accounting_complete_trades": 1,
+       "note": "per-position accounting completeness; calendar-complete never implies it"
+      }
+     },
+     "2.0": {
+      "n_events": 1,
+      "n_trades": 1,
+      "n_expired": 0,
+      "n_mismatched": 0,
+      "skipped_overlap": 0,
+      "n_realized": 1,
+      "n_open": 0,
+      "exit_reasons": {
+       "horizon": 1,
+       "stop": 0,
+       "open_at_end": 0
+      },
+      "expectancy_net": -1.6703159252095567,
+      "expectancy_gross": 1.527240490006433,
+      "total_net": -1.6703159252095567,
+      "total_net_realized": -1.6703159252095567,
+      "total_fees": 1.9984727595099936,
+      "total_funding": 0.0,
+      "max_drawdown": 1.6703159252095567,
+      "max_drawdown_realized": 1.6703159252095567,
+      "mfe_mean": 0.17448420373951998,
+      "mae_mean": 0.1192778852353335,
+      "config_hash": "3df576733d369114",
+      "funding_quality": {
+       "settled_events": 0,
+       "unknown_excluded": 0,
+       "gap_ms": 0,
+       "uncovered_ms": 0,
+       "accounting_complete_trades": 1,
+       "note": "per-position accounting completeness; calendar-complete never implies it"
+      }
+     },
+     "3.0": {
+      "n_events": 1,
+      "n_trades": 1,
+      "n_expired": 0,
+      "n_mismatched": 0,
+      "skipped_overlap": 0,
+      "n_realized": 1,
+      "n_open": 0,
+      "exit_reasons": {
+       "horizon": 1,
+       "stop": 0,
+       "open_at_end": 0
+      },
+      "expectancy_net": -3.2690941328175516,
+      "expectancy_gross": 1.527240490006433,
+      "total_net": -3.2690941328175516,
+      "total_net_realized": -3.2690941328175516,
+      "total_fees": 2.99770913926499,
+      "total_funding": 0.0,
+      "max_drawdown": 3.2690941328175516,
+      "max_drawdown_realized": 3.2690941328175516,
+      "mfe_mean": 0.17448420373951998,
+      "mae_mean": 0.1192778852353335,
+      "config_hash": "e14ebca191458049",
+      "funding_quality": {
+       "settled_events": 0,
+       "unknown_excluded": 0,
+       "gap_ms": 0,
+       "uncovered_ms": 0,
+       "accounting_complete_trades": 1,
+       "note": "per-position accounting completeness; calendar-complete never implies it"
+      }
+     }
+    },
+    "oos": {
+     "1.0": {
+      "n_events": 0,
+      "n_trades": 0,
+      "n_expired": 0,
+      "n_mismatched": 0,
+      "skipped_overlap": 0,
+      "n_realized": 0,
+      "n_open": 0,
+      "exit_reasons": {
+       "horizon": 0,
+       "stop": 0,
+       "open_at_end": 0
+      },
+      "expectancy_net": 0.0,
+      "expectancy_gross": 0.0,
+      "total_net": 0,
+      "total_net_realized": 0,
+      "total_fees": 0,
+      "total_funding": 0,
+      "max_drawdown": 0.0,
+      "max_drawdown_realized": 0.0,
+      "mfe_mean": 0.0,
+      "mae_mean": 0.0,
+      "config_hash": "4a12bddaa8d3c0d6",
+      "funding_quality": {
+       "settled_events": 0,
+       "unknown_excluded": 0,
+       "gap_ms": 0,
+       "uncovered_ms": 0,
+       "accounting_complete_trades": 0,
+       "note": "per-position accounting completeness; calendar-complete never implies it"
+      }
+     },
+     "2.0": {
+      "n_events": 0,
+      "n_trades": 0,
+      "n_expired": 0,
+      "n_mismatched": 0,
+      "skipped_overlap": 0,
+      "n_realized": 0,
+      "n_open": 0,
+      "exit_reasons": {
+       "horizon": 0,
+       "stop": 0,
+       "open_at_end": 0
+      },
+      "expectancy_net": 0.0,
+      "expectancy_gross": 0.0,
+      "total_net": 0,
+      "total_net_realized": 0,
+      "total_fees": 0,
+      "total_funding": 0,
+      "max_drawdown": 0.0,
+      "max_drawdown_realized": 0.0,
+      "mfe_mean": 0.0,
+      "mae_mean": 0.0,
+      "config_hash": "3df576733d369114",
+      "funding_quality": {
+       "settled_events": 0,
+       "unknown_excluded": 0,
+       "gap_ms": 0,
+       "uncovered_ms": 0,
+       "accounting_complete_trades": 0,
+       "note": "per-position accounting completeness; calendar-complete never implies it"
+      }
+     },
+     "3.0": {
+      "n_events": 0,
+      "n_trades": 0,
+      "n_expired": 0,
+      "n_mismatched": 0,
+      "skipped_overlap": 0,
+      "n_realized": 0,
+      "n_open": 0,
+      "exit_reasons": {
+       "horizon": 0,
+       "stop": 0,
+       "open_at_end": 0
+      },
+      "expectancy_net": 0.0,
+      "expectancy_gross": 0.0,
+      "total_net": 0,
+      "total_net_realized": 0,
+      "total_fees": 0,
+      "total_funding": 0,
+      "max_drawdown": 0.0,
+      "max_drawdown_realized": 0.0,
+      "mfe_mean": 0.0,
+      "mae_mean": 0.0,
+      "config_hash": "e14ebca191458049",
+      "funding_quality": {
+       "settled_events": 0,
+       "unknown_excluded": 0,
+       "gap_ms": 0,
+       "uncovered_ms": 0,
+       "accounting_complete_trades": 0,
+       "note": "per-position accounting completeness; calendar-complete never implies it"
+      }
+     }
+    }
+   },
+   "bearish-continuation": {
+    "dev": {
+     "1.0": {
+      "n_events": 112,
+      "n_trades": 107,
+      "n_expired": 0,
+      "n_mismatched": 0,
+      "skipped_overlap": 5,
+      "n_realized": 107,
+      "n_open": 0,
+      "exit_reasons": {
+       "horizon": 98,
+       "stop": 9,
+       "open_at_end": 0
+      },
+      "expectancy_net": 0.5754476616060586,
+      "expectancy_gross": 2.173708694650338,
+      "total_net": 61.57289979184828,
+      "total_net_realized": 61.57289979184828,
+      "total_fees": 106.8837065848362,
+      "total_funding": 0.0,
+      "max_drawdown": 19.220070910810115,
+      "max_drawdown_realized": 19.220070910810115,
+      "mfe_mean": 0.4802740542997304,
+      "mae_mean": 0.19059249010209664,
+      "config_hash": "9733488b1a1e2284",
+      "funding_quality": {
+       "settled_events": 0,
+       "unknown_excluded": 0,
+       "gap_ms": 0,
+       "uncovered_ms": 0,
+       "accounting_complete_trades": 107,
+       "note": "per-position accounting completeness; calendar-complete never implies it"
+      }
+     },
+     "2.0": {
+      "n_events": 112,
+      "n_trades": 107,
+      "n_expired": 0,
+      "n_mismatched": 0,
+      "skipped_overlap": 5,
+      "n_realized": 107,
+      "n_open": 0,
+      "exit_reasons": {
+       "horizon": 98,
+       "stop": 9,
+       "open_at_end": 0
+      },
+      "expectancy_net": -1.022813371438221,
+      "expectancy_gross": 2.173708694650338,
+      "total_net": -109.44103074388966,
+      "total_net_realized": -109.44103074388966,
+      "total_fees": 213.7674131696724,
+      "total_funding": 0.0,
+      "max_drawdown": 109.44103074388963,
+      "max_drawdown_realized": 109.44103074388963,
+      "mfe_mean": 0.4802740542997304,
+      "mae_mean": 0.19059249010209664,
+      "config_hash": "7a4733ca5e6c9c63",
+      "funding_quality": {
+       "settled_events": 0,
+       "unknown_excluded": 0,
+       "gap_ms": 0,
+       "uncovered_ms": 0,
+       "accounting_complete_trades": 107,
+       "note": "per-position accounting completeness; calendar-complete never implies it"
+      }
+     },
+     "3.0": {
+      "n_events": 112,
+      "n_trades": 107,
+      "n_expired": 0,
+      "n_mismatched": 0,
+      "skipped_overlap": 5,
+      "n_realized": 107,
+      "n_open": 0,
+      "exit_reasons": {
+       "horizon": 98,
+       "stop": 9,
+       "open_at_end": 0
+      },
+      "expectancy_net": -2.621074404482501,
+      "expectancy_gross": 2.173708694650338,
+      "total_net": -280.4549612796276,
+      "total_net_realized": -280.4549612796276,
+      "total_fees": 320.6511197545086,
+      "total_funding": 0.0,
+      "max_drawdown": 280.4549612796276,
+      "max_drawdown_realized": 280.4549612796276,
+      "mfe_mean": 0.4802740542997304,
+      "mae_mean": 0.19059249010209664,
+      "config_hash": "2bca80a8ae16ff37",
+      "funding_quality": {
+       "settled_events": 0,
+       "unknown_excluded": 0,
+       "gap_ms": 0,
+       "uncovered_ms": 0,
+       "accounting_complete_trades": 107,
+       "note": "per-position accounting completeness; calendar-complete never implies it"
+      }
+     }
+    },
+    "oos": {
+     "1.0": {
+      "n_events": 123,
+      "n_trades": 117,
+      "n_expired": 0,
+      "n_mismatched": 0,
+      "skipped_overlap": 6,
+      "n_realized": 117,
+      "n_open": 0,
+      "exit_reasons": {
+       "horizon": 110,
+       "stop": 7,
+       "open_at_end": 0
+      },
+      "expectancy_net": 0.7325709908121596,
+      "expectancy_gross": 2.330706425671622,
+      "total_net": 85.71080592502267,
+      "total_net_realized": 85.71080592502267,
+      "total_fees": 116.86365367409822,
+      "total_funding": 0.0,
+      "max_drawdown": 12.53401977089269,
+      "max_drawdown_realized": 12.53401977089269,
+      "mfe_mean": 0.45383002872717254,
+      "mae_mean": 0.14724247550524333,
+      "config_hash": "9733488b1a1e2284",
+      "funding_quality": {
+       "settled_events": 0,
+       "unknown_excluded": 0,
+       "gap_ms": 0,
+       "uncovered_ms": 2700000,
+       "accounting_complete_trades": 116,
+       "note": "per-position accounting completeness; calendar-complete never implies it"
+      }
+     },
+     "2.0": {
+      "n_events": 123,
+      "n_trades": 117,
+      "n_expired": 0,
+      "n_mismatched": 0,
+      "skipped_overlap": 6,
+      "n_realized": 117,
+      "n_open": 0,
+      "exit_reasons": {
+       "horizon": 110,
+       "stop": 7,
+       "open_at_end": 0
+      },
+      "expectancy_net": -0.865564444047303,
+      "expectancy_gross": 2.330706425671622,
+      "total_net": -101.27103995353445,
+      "total_net_realized": -101.27103995353445,
+      "total_fees": 233.72730734819643,
+      "total_funding": 0.0,
+      "max_drawdown": 105.44239557966304,
+      "max_drawdown_realized": 105.44239557966304,
+      "mfe_mean": 0.45383002872717254,
+      "mae_mean": 0.14724247550524333,
+      "config_hash": "7a4733ca5e6c9c63",
+      "funding_quality": {
+       "settled_events": 0,
+       "unknown_excluded": 0,
+       "gap_ms": 0,
+       "uncovered_ms": 2700000,
+       "accounting_complete_trades": 116,
+       "note": "per-position accounting completeness; calendar-complete never implies it"
+      }
+     },
+     "3.0": {
+      "n_events": 123,
+      "n_trades": 117,
+      "n_expired": 0,
+      "n_mismatched": 0,
+      "skipped_overlap": 6,
+      "n_realized": 117,
+      "n_open": 0,
+      "exit_reasons": {
+       "horizon": 110,
+       "stop": 7,
+       "open_at_end": 0
+      },
+      "expectancy_net": -2.4636998789067657,
+      "expectancy_gross": 2.330706425671622,
+      "total_net": -288.2528858320916,
+      "total_net_realized": -288.2528858320916,
+      "total_fees": 350.5909610222946,
+      "total_funding": 0.0,
+      "max_drawdown": 290.83012912245835,
+      "max_drawdown_realized": 290.83012912245835,
+      "mfe_mean": 0.45383002872717254,
+      "mae_mean": 0.14724247550524333,
+      "config_hash": "2bca80a8ae16ff37",
+      "funding_quality": {
+       "settled_events": 0,
+       "unknown_excluded": 0,
+       "gap_ms": 0,
+       "uncovered_ms": 2700000,
+       "accounting_complete_trades": 116,
+       "note": "per-position accounting completeness; calendar-complete never implies it"
+      }
+     }
+    }
+   },
+   "rebound-variant": {
+    "dev": {
+     "1.0": {
+      "n_events": 0,
+      "n_trades": 0,
+      "n_expired": 0,
+      "n_mismatched": 0,
+      "skipped_overlap": 0,
+      "n_realized": 0,
+      "n_open": 0,
+      "exit_reasons": {
+       "horizon": 0,
+       "stop": 0,
+       "open_at_end": 0
+      },
+      "expectancy_net": 0.0,
+      "expectancy_gross": 0.0,
+      "total_net": 0,
+      "total_net_realized": 0,
+      "total_fees": 0,
+      "total_funding": 0,
+      "max_drawdown": 0.0,
+      "max_drawdown_realized": 0.0,
+      "mfe_mean": 0.0,
+      "mae_mean": 0.0,
+      "config_hash": "4b89ac5d8b6440a9",
+      "funding_quality": {
+       "settled_events": 0,
+       "unknown_excluded": 0,
+       "gap_ms": 0,
+       "uncovered_ms": 0,
+       "accounting_complete_trades": 0,
+       "note": "per-position accounting completeness; calendar-complete never implies it"
+      }
+     },
+     "2.0": {
+      "n_events": 0,
+      "n_trades": 0,
+      "n_expired": 0,
+      "n_mismatched": 0,
+      "skipped_overlap": 0,
+      "n_realized": 0,
+      "n_open": 0,
+      "exit_reasons": {
+       "horizon": 0,
+       "stop": 0,
+       "open_at_end": 0
+      },
+      "expectancy_net": 0.0,
+      "expectancy_gross": 0.0,
+      "total_net": 0,
+      "total_net_realized": 0,
+      "total_fees": 0,
+      "total_funding": 0,
+      "max_drawdown": 0.0,
+      "max_drawdown_realized": 0.0,
+      "mfe_mean": 0.0,
+      "mae_mean": 0.0,
+      "config_hash": "a9fb471fcc795e72",
+      "funding_quality": {
+       "settled_events": 0,
+       "unknown_excluded": 0,
+       "gap_ms": 0,
+       "uncovered_ms": 0,
+       "accounting_complete_trades": 0,
+       "note": "per-position accounting completeness; calendar-complete never implies it"
+      }
+     },
+     "3.0": {
+      "n_events": 0,
+      "n_trades": 0,
+      "n_expired": 0,
+      "n_mismatched": 0,
+      "skipped_overlap": 0,
+      "n_realized": 0,
+      "n_open": 0,
+      "exit_reasons": {
+       "horizon": 0,
+       "stop": 0,
+       "open_at_end": 0
+      },
+      "expectancy_net": 0.0,
+      "expectancy_gross": 0.0,
+      "total_net": 0,
+      "total_net_realized": 0,
+      "total_fees": 0,
+      "total_funding": 0,
+      "max_drawdown": 0.0,
+      "max_drawdown_realized": 0.0,
+      "mfe_mean": 0.0,
+      "mae_mean": 0.0,
+      "config_hash": "524a45605ed8880a",
+      "funding_quality": {
+       "settled_events": 0,
+       "unknown_excluded": 0,
+       "gap_ms": 0,
+       "uncovered_ms": 0,
+       "accounting_complete_trades": 0,
+       "note": "per-position accounting completeness; calendar-complete never implies it"
+      }
+     }
+    },
+    "oos": {
+     "1.0": {
+      "n_events": 0,
+      "n_trades": 0,
+      "n_expired": 0,
+      "n_mismatched": 0,
+      "skipped_overlap": 0,
+      "n_realized": 0,
+      "n_open": 0,
+      "exit_reasons": {
+       "horizon": 0,
+       "stop": 0,
+       "open_at_end": 0
+      },
+      "expectancy_net": 0.0,
+      "expectancy_gross": 0.0,
+      "total_net": 0,
+      "total_net_realized": 0,
+      "total_fees": 0,
+      "total_funding": 0,
+      "max_drawdown": 0.0,
+      "max_drawdown_realized": 0.0,
+      "mfe_mean": 0.0,
+      "mae_mean": 0.0,
+      "config_hash": "4b89ac5d8b6440a9",
+      "funding_quality": {
+       "settled_events": 0,
+       "unknown_excluded": 0,
+       "gap_ms": 0,
+       "uncovered_ms": 0,
+       "accounting_complete_trades": 0,
+       "note": "per-position accounting completeness; calendar-complete never implies it"
+      }
+     },
+     "2.0": {
+      "n_events": 0,
+      "n_trades": 0,
+      "n_expired": 0,
+      "n_mismatched": 0,
+      "skipped_overlap": 0,
+      "n_realized": 0,
+      "n_open": 0,
+      "exit_reasons": {
+       "horizon": 0,
+       "stop": 0,
+       "open_at_end": 0
+      },
+      "expectancy_net": 0.0,
+      "expectancy_gross": 0.0,
+      "total_net": 0,
+      "total_net_realized": 0,
+      "total_fees": 0,
+      "total_funding": 0,
+      "max_drawdown": 0.0,
+      "max_drawdown_realized": 0.0,
+      "mfe_mean": 0.0,
+      "mae_mean": 0.0,
+      "config_hash": "a9fb471fcc795e72",
+      "funding_quality": {
+       "settled_events": 0,
+       "unknown_excluded": 0,
+       "gap_ms": 0,
+       "uncovered_ms": 0,
+       "accounting_complete_trades": 0,
+       "note": "per-position accounting completeness; calendar-complete never implies it"
+      }
+     },
+     "3.0": {
+      "n_events": 0,
+      "n_trades": 0,
+      "n_expired": 0,
+      "n_mismatched": 0,
+      "skipped_overlap": 0,
+      "n_realized": 0,
+      "n_open": 0,
+      "exit_reasons": {
+       "horizon": 0,
+       "stop": 0,
+       "open_at_end": 0
+      },
+      "expectancy_net": 0.0,
+      "expectancy_gross": 0.0,
+      "total_net": 0,
+      "total_net_realized": 0,
+      "total_fees": 0,
+      "total_funding": 0,
+      "max_drawdown": 0.0,
+      "max_drawdown_realized": 0.0,
+      "mfe_mean": 0.0,
+      "mae_mean": 0.0,
+      "config_hash": "524a45605ed8880a",
+      "funding_quality": {
+       "settled_events": 0,
+       "unknown_excluded": 0,
+       "gap_ms": 0,
+       "uncovered_ms": 0,
+       "accounting_complete_trades": 0,
+       "note": "per-position accounting completeness; calendar-complete never implies it"
+      }
+     }
+    }
+   },
+   "baseline": {
+    "dev": {
+     "1.0": {
+      "n_events": 0,
+      "n_trades": 0,
+      "n_expired": 0,
+      "n_mismatched": 0,
+      "skipped_overlap": 0,
+      "n_realized": 0,
+      "n_open": 0,
+      "exit_reasons": {
+       "horizon": 0,
+       "stop": 0,
+       "open_at_end": 0
+      },
+      "expectancy_net": 0.0,
+      "expectancy_gross": 0.0,
+      "total_net": 0,
+      "total_net_realized": 0,
+      "total_fees": 0,
+      "total_funding": 0,
+      "max_drawdown": 0.0,
+      "max_drawdown_realized": 0.0,
+      "mfe_mean": 0.0,
+      "mae_mean": 0.0,
+      "config_hash": "6ed0bf27eaccf5e5",
+      "funding_quality": {
+       "settled_events": 0,
+       "unknown_excluded": 0,
+       "gap_ms": 0,
+       "uncovered_ms": 0,
+       "accounting_complete_trades": 0,
+       "note": "per-position accounting completeness; calendar-complete never implies it"
+      }
+     },
+     "2.0": {
+      "n_events": 0,
+      "n_trades": 0,
+      "n_expired": 0,
+      "n_mismatched": 0,
+      "skipped_overlap": 0,
+      "n_realized": 0,
+      "n_open": 0,
+      "exit_reasons": {
+       "horizon": 0,
+       "stop": 0,
+       "open_at_end": 0
+      },
+      "expectancy_net": 0.0,
+      "expectancy_gross": 0.0,
+      "total_net": 0,
+      "total_net_realized": 0,
+      "total_fees": 0,
+      "total_funding": 0,
+      "max_drawdown": 0.0,
+      "max_drawdown_realized": 0.0,
+      "mfe_mean": 0.0,
+      "mae_mean": 0.0,
+      "config_hash": "bd046213a0d7e65a",
+      "funding_quality": {
+       "settled_events": 0,
+       "unknown_excluded": 0,
+       "gap_ms": 0,
+       "uncovered_ms": 0,
+       "accounting_complete_trades": 0,
+       "note": "per-position accounting completeness; calendar-complete never implies it"
+      }
+     },
+     "3.0": {
+      "n_events": 0,
+      "n_trades": 0,
+      "n_expired": 0,
+      "n_mismatched": 0,
+      "skipped_overlap": 0,
+      "n_realized": 0,
+      "n_open": 0,
+      "exit_reasons": {
+       "horizon": 0,
+       "stop": 0,
+       "open_at_end": 0
+      },
+      "expectancy_net": 0.0,
+      "expectancy_gross": 0.0,
+      "total_net": 0,
+      "total_net_realized": 0,
+      "total_fees": 0,
+      "total_funding": 0,
+      "max_drawdown": 0.0,
+      "max_drawdown_realized": 0.0,
+      "mfe_mean": 0.0,
+      "mae_mean": 0.0,
+      "config_hash": "bb9fbf390f9ff8ef",
+      "funding_quality": {
+       "settled_events": 0,
+       "unknown_excluded": 0,
+       "gap_ms": 0,
+       "uncovered_ms": 0,
+       "accounting_complete_trades": 0,
+       "note": "per-position accounting completeness; calendar-complete never implies it"
+      }
+     }
+    },
+    "oos": {
+     "1.0": {
+      "n_events": 0,
+      "n_trades": 0,
+      "n_expired": 0,
+      "n_mismatched": 0,
+      "skipped_overlap": 0,
+      "n_realized": 0,
+      "n_open": 0,
+      "exit_reasons": {
+       "horizon": 0,
+       "stop": 0,
+       "open_at_end": 0
+      },
+      "expectancy_net": 0.0,
+      "expectancy_gross": 0.0,
+      "total_net": 0,
+      "total_net_realized": 0,
+      "total_fees": 0,
+      "total_funding": 0,
+      "max_drawdown": 0.0,
+      "max_drawdown_realized": 0.0,
+      "mfe_mean": 0.0,
+      "mae_mean": 0.0,
+      "config_hash": "6ed0bf27eaccf5e5",
+      "funding_quality": {
+       "settled_events": 0,
+       "unknown_excluded": 0,
+       "gap_ms": 0,
+       "uncovered_ms": 0,
+       "accounting_complete_trades": 0,
+       "note": "per-position accounting completeness; calendar-complete never implies it"
+      }
+     },
+     "2.0": {
+      "n_events": 0,
+      "n_trades": 0,
+      "n_expired": 0,
+      "n_mismatched": 0,
+      "skipped_overlap": 0,
+      "n_realized": 0,
+      "n_open": 0,
+      "exit_reasons": {
+       "horizon": 0,
+       "stop": 0,
+       "open_at_end": 0
+      },
+      "expectancy_net": 0.0,
+      "expectancy_gross": 0.0,
+      "total_net": 0,
+      "total_net_realized": 0,
+      "total_fees": 0,
+      "total_funding": 0,
+      "max_drawdown": 0.0,
+      "max_drawdown_realized": 0.0,
+      "mfe_mean": 0.0,
+      "mae_mean": 0.0,
+      "config_hash": "bd046213a0d7e65a",
+      "funding_quality": {
+       "settled_events": 0,
+       "unknown_excluded": 0,
+       "gap_ms": 0,
+       "uncovered_ms": 0,
+       "accounting_complete_trades": 0,
+       "note": "per-position accounting completeness; calendar-complete never implies it"
+      }
+     },
+     "3.0": {
+      "n_events": 0,
+      "n_trades": 0,
+      "n_expired": 0,
+      "n_mismatched": 0,
+      "skipped_overlap": 0,
+      "n_realized": 0,
+      "n_open": 0,
+      "exit_reasons": {
+       "horizon": 0,
+       "stop": 0,
+       "open_at_end": 0
+      },
+      "expectancy_net": 0.0,
+      "expectancy_gross": 0.0,
+      "total_net": 0,
+      "total_net_realized": 0,
+      "total_fees": 0,
+      "total_funding": 0,
+      "max_drawdown": 0.0,
+      "max_drawdown_realized": 0.0,
+      "mfe_mean": 0.0,
+      "mae_mean": 0.0,
+      "config_hash": "bb9fbf390f9ff8ef",
+      "funding_quality": {
+       "settled_events": 0,
+       "unknown_excluded": 0,
+       "gap_ms": 0,
+       "uncovered_ms": 0,
+       "accounting_complete_trades": 0,
+       "note": "per-position accounting completeness; calendar-complete never implies it"
+      }
+     }
+    }
+   }
+  },
+  "SOLUSDT": {
+   "continuation": {
+    "dev": {
+     "1.0": {
+      "n_events": 167,
+      "n_trades": 115,
+      "n_expired": 0,
+      "n_mismatched": 0,
+      "skipped_overlap": 52,
+      "n_realized": 115,
+      "n_open": 0,
+      "exit_reasons": {
+       "horizon": 103,
+       "stop": 12,
+       "open_at_end": 0
+      },
+      "expectancy_net": 1.5039134534443794,
+      "expectancy_gross": 3.106398572302221,
+      "total_net": 172.95004714610363,
+      "total_net_realized": 172.95004714610363,
+      "total_fees": 115.17861791790737,
+      "total_funding": 0.0,
+      "max_drawdown": 29.80048767907819,
+      "max_drawdown_realized": 29.80048767907819,
+      "mfe_mean": 0.6144728050136121,
+      "mae_mean": 0.201567192682808,
+      "config_hash": "314bcdb9e2674199",
+      "funding_quality": {
+       "settled_events": 0,
+       "unknown_excluded": 0,
+       "gap_ms": 0,
+       "uncovered_ms": 0,
+       "accounting_complete_trades": 115,
+       "note": "per-position accounting completeness; calendar-complete never implies it"
+      }
+     },
+     "2.0": {
+      "n_events": 167,
+      "n_trades": 115,
+      "n_expired": 0,
+      "n_mismatched": 0,
+      "skipped_overlap": 52,
+      "n_realized": 115,
+      "n_open": 0,
+      "exit_reasons": {
+       "horizon": 103,
+       "stop": 12,
+       "open_at_end": 0
+      },
+      "expectancy_net": -0.09857166541346236,
+      "expectancy_gross": 3.106398572302221,
+      "total_net": -11.335741522548172,
+      "total_net_realized": -11.335741522548172,
+      "total_fees": 230.35723583581475,
+      "total_funding": 0.0,
+      "max_drawdown": 87.98438015757193,
+      "max_drawdown_realized": 87.98438015757193,
+      "mfe_mean": 0.6144728050136121,
+      "mae_mean": 0.201567192682808,
+      "config_hash": "a477c68e62099e67",
+      "funding_quality": {
+       "settled_events": 0,
+       "unknown_excluded": 0,
+       "gap_ms": 0,
+       "uncovered_ms": 0,
+       "accounting_complete_trades": 115,
+       "note": "per-position accounting completeness; calendar-complete never implies it"
+      }
+     },
+     "3.0": {
+      "n_events": 167,
+      "n_trades": 115,
+      "n_expired": 0,
+      "n_mismatched": 0,
+      "skipped_overlap": 52,
+      "n_realized": 115,
+      "n_open": 0,
+      "exit_reasons": {
+       "horizon": 103,
+       "stop": 12,
+       "open_at_end": 0
+      },
+      "expectancy_net": -1.7010567842713042,
+      "expectancy_gross": 3.106398572302221,
+      "total_net": -195.62153019119998,
+      "total_net_realized": -195.62153019119998,
+      "total_fees": 345.5358537537221,
+      "total_funding": 0.0,
+      "max_drawdown": 210.62155653584563,
+      "max_drawdown_realized": 210.62155653584563,
+      "mfe_mean": 0.6144728050136121,
+      "mae_mean": 0.201567192682808,
+      "config_hash": "df8b82dd90bfd05b",
+      "funding_quality": {
+       "settled_events": 0,
+       "unknown_excluded": 0,
+       "gap_ms": 0,
+       "uncovered_ms": 0,
+       "accounting_complete_trades": 115,
+       "note": "per-position accounting completeness; calendar-complete never implies it"
+      }
+     }
+    },
+    "oos": {
+     "1.0": {
+      "n_events": 154,
+      "n_trades": 138,
+      "n_expired": 0,
+      "n_mismatched": 0,
+      "skipped_overlap": 16,
+      "n_realized": 137,
+      "n_open": 1,
+      "exit_reasons": {
+       "horizon": 122,
+       "stop": 15,
+       "open_at_end": 1
+      },
+      "expectancy_net": 1.1098994676566543,
+      "expectancy_gross": 2.7120691229550182,
+      "total_net": 153.1661265366183,
+      "total_net_realized": 155.11011483165208,
+      "total_fees": 138.1871327694839,
+      "total_funding": 0.0,
+      "max_drawdown": 33.918004140786785,
+      "max_drawdown_realized": 33.918004140786785,
+      "mfe_mean": 0.5220736817174565,
+      "mae_mean": 0.18132353162862044,
+      "config_hash": "314bcdb9e2674199",
+      "funding_quality": {
+       "settled_events": 0,
+       "unknown_excluded": 0,
+       "gap_ms": 0,
+       "uncovered_ms": 5400000,
+       "accounting_complete_trades": 136,
+       "note": "per-position accounting completeness; calendar-complete never implies it"
+      }
+     },
+     "2.0": {
+      "n_events": 154,
+      "n_trades": 138,
+      "n_expired": 0,
+      "n_mismatched": 0,
+      "skipped_overlap": 16,
+      "n_realized": 137,
+      "n_open": 1,
+      "exit_reasons": {
+       "horizon": 122,
+       "stop": 15,
+       "open_at_end": 1
+      },
+      "expectancy_net": -0.4922701876417097,
+      "expectancy_gross": 2.7120691229550182,
+      "total_net": -67.93328589455594,
+      "total_net_realized": -64.38957301048694,
+      "total_fees": 276.3742655389678,
+      "total_funding": 0.0,
+      "max_drawdown": 77.82901187457094,
+      "max_drawdown_realized": 77.82901187457094,
+      "mfe_mean": 0.5220736817174565,
+      "mae_mean": 0.18132353162862044,
+      "config_hash": "a477c68e62099e67",
+      "funding_quality": {
+       "settled_events": 0,
+       "unknown_excluded": 0,
+       "gap_ms": 0,
+       "uncovered_ms": 5400000,
+       "accounting_complete_trades": 136,
+       "note": "per-position accounting completeness; calendar-complete never implies it"
+      }
+     },
+     "3.0": {
+      "n_events": 154,
+      "n_trades": 138,
+      "n_expired": 0,
+      "n_mismatched": 0,
+      "skipped_overlap": 16,
+      "n_realized": 137,
+      "n_open": 1,
+      "exit_reasons": {
+       "horizon": 122,
+       "stop": 15,
+       "open_at_end": 1
+      },
+      "expectancy_net": -2.0944398429400737,
+      "expectancy_gross": 2.7120691229550182,
+      "total_net": -289.03269832573017,
+      "total_net_realized": -283.88926085262597,
+      "total_fees": 414.5613983084517,
+      "total_funding": 0.0,
+      "max_drawdown": 289.03269832573,
+      "max_drawdown_realized": 283.8892608526258,
+      "mfe_mean": 0.5220736817174565,
+      "mae_mean": 0.18132353162862044,
+      "config_hash": "df8b82dd90bfd05b",
+      "funding_quality": {
+       "settled_events": 0,
+       "unknown_excluded": 0,
+       "gap_ms": 0,
+       "uncovered_ms": 5400000,
+       "accounting_complete_trades": 136,
+       "note": "per-position accounting completeness; calendar-complete never implies it"
+      }
+     }
+    }
+   },
+   "correction-exhaustion": {
+    "dev": {
+     "1.0": {
+      "n_events": 4,
+      "n_trades": 4,
+      "n_expired": 0,
+      "n_mismatched": 0,
+      "skipped_overlap": 0,
+      "n_realized": 4,
+      "n_open": 0,
+      "exit_reasons": {
+       "horizon": 4,
+       "stop": 0,
+       "open_at_end": 0
+      },
+      "expectancy_net": 6.003086511919593,
+      "expectancy_gross": 7.609173851000393,
+      "total_net": 24.01234604767837,
+      "total_net_realized": 24.01234604767837,
+      "total_fees": 4.0152183477020005,
+      "total_funding": 0.0,
+      "max_drawdown": 0.0,
+      "max_drawdown_realized": 0.0,
+      "mfe_mean": 0.9081811188286651,
+      "mae_mean": 0.1880741162040503,
+      "config_hash": "547cbe9c78adf516",
+      "funding_quality": {
+       "settled_events": 0,
+       "unknown_excluded": 0,
+       "gap_ms": 0,
+       "uncovered_ms": 0,
+       "accounting_complete_trades": 4,
+       "note": "per-position accounting completeness; calendar-complete never implies it"
+      }
+     },
+     "2.0": {
+      "n_events": 4,
+      "n_trades": 4,
+      "n_expired": 0,
+      "n_mismatched": 0,
+      "skipped_overlap": 0,
+      "n_realized": 4,
+      "n_open": 0,
+      "exit_reasons": {
+       "horizon": 4,
+       "stop": 0,
+       "open_at_end": 0
+      },
+      "expectancy_net": 4.396999172838792,
+      "expectancy_gross": 7.609173851000393,
+      "total_net": 17.58799669135517,
+      "total_net_realized": 17.58799669135517,
+      "total_fees": 8.030436695404001,
+      "total_funding": 0.0,
+      "max_drawdown": 1.2253908457337186,
+      "max_drawdown_realized": 1.2253908457337186,
+      "mfe_mean": 0.9081811188286651,
+      "mae_mean": 0.1880741162040503,
+      "config_hash": "a3dae717f2bf1821",
+      "funding_quality": {
+       "settled_events": 0,
+       "unknown_excluded": 0,
+       "gap_ms": 0,
+       "uncovered_ms": 0,
+       "accounting_complete_trades": 4,
+       "note": "per-position accounting completeness; calendar-complete never implies it"
+      }
+     },
+     "3.0": {
+      "n_events": 4,
+      "n_trades": 4,
+      "n_expired": 0,
+      "n_mismatched": 0,
+      "skipped_overlap": 0,
+      "n_realized": 4,
+      "n_open": 0,
+      "exit_reasons": {
+       "horizon": 4,
+       "stop": 0,
+       "open_at_end": 0
+      },
+      "expectancy_net": 2.790911833757992,
+      "expectancy_gross": 7.609173851000393,
+      "total_net": 11.163647335031968,
+      "total_net_realized": 11.163647335031968,
+      "total_fees": 12.045655043106002,
+      "total_funding": 0.0,
+      "max_drawdown": 2.826973064607329,
+      "max_drawdown_realized": 2.826973064607329,
+      "mfe_mean": 0.9081811188286651,
+      "mae_mean": 0.1880741162040503,
+      "config_hash": "e4e07943404dbc5b",
+      "funding_quality": {
+       "settled_events": 0,
+       "unknown_excluded": 0,
+       "gap_ms": 0,
+       "uncovered_ms": 0,
+       "accounting_complete_trades": 4,
+       "note": "per-position accounting completeness; calendar-complete never implies it"
+      }
+     }
+    },
+    "oos": {
+     "1.0": {
+      "n_events": 1,
+      "n_trades": 1,
+      "n_expired": 0,
+      "n_mismatched": 0,
+      "skipped_overlap": 0,
+      "n_realized": 1,
+      "n_open": 0,
+      "exit_reasons": {
+       "horizon": 1,
+       "stop": 0,
+       "open_at_end": 0
+      },
+      "expectancy_net": 21.668020220436034,
+      "expectancy_gross": 23.28664954006809,
+      "total_net": 21.668020220436034,
+      "total_net_realized": 21.668020220436034,
+      "total_fees": 1.011643324770034,
+      "total_funding": 0.0,
+      "max_drawdown": 0.0,
+      "max_drawdown_realized": 0.0,
+      "mfe_mean": 2.502693295765319,
+      "mae_mean": 0.0,
+      "config_hash": "547cbe9c78adf516",
+      "funding_quality": {
+       "settled_events": 0,
+       "unknown_excluded": 0,
+       "gap_ms": 0,
+       "uncovered_ms": 0,
+       "accounting_complete_trades": 1,
+       "note": "per-position accounting completeness; calendar-complete never implies it"
+      }
+     },
+     "2.0": {
+      "n_events": 1,
+      "n_trades": 1,
+      "n_expired": 0,
+      "n_mismatched": 0,
+      "skipped_overlap": 0,
+      "n_realized": 1,
+      "n_open": 0,
+      "exit_reasons": {
+       "horizon": 1,
+       "stop": 0,
+       "open_at_end": 0
+      },
+      "expectancy_net": 20.04939090080398,
+      "expectancy_gross": 23.28664954006809,
+      "total_net": 20.04939090080398,
+      "total_net_realized": 20.04939090080398,
+      "total_fees": 2.023286649540068,
+      "total_funding": 0.0,
+      "max_drawdown": 0.0,
+      "max_drawdown_realized": 0.0,
+      "mfe_mean": 2.502693295765319,
+      "mae_mean": 0.0,
+      "config_hash": "a3dae717f2bf1821",
+      "funding_quality": {
+       "settled_events": 0,
+       "unknown_excluded": 0,
+       "gap_ms": 0,
+       "uncovered_ms": 0,
+       "accounting_complete_trades": 1,
+       "note": "per-position accounting completeness; calendar-complete never implies it"
+      }
+     },
+     "3.0": {
+      "n_events": 1,
+      "n_trades": 1,
+      "n_expired": 0,
+      "n_mismatched": 0,
+      "skipped_overlap": 0,
+      "n_realized": 1,
+      "n_open": 0,
+      "exit_reasons": {
+       "horizon": 1,
+       "stop": 0,
+       "open_at_end": 0
+      },
+      "expectancy_net": 18.43076158117193,
+      "expectancy_gross": 23.28664954006809,
+      "total_net": 18.43076158117193,
+      "total_net_realized": 18.43076158117193,
+      "total_fees": 3.034929974310102,
+      "total_funding": 0.0,
+      "max_drawdown": 0.0,
+      "max_drawdown_realized": 0.0,
+      "mfe_mean": 2.502693295765319,
+      "mae_mean": 0.0,
+      "config_hash": "e4e07943404dbc5b",
+      "funding_quality": {
+       "settled_events": 0,
+       "unknown_excluded": 0,
+       "gap_ms": 0,
+       "uncovered_ms": 0,
+       "accounting_complete_trades": 1,
+       "note": "per-position accounting completeness; calendar-complete never implies it"
+      }
+     }
+    }
+   },
+   "correction-reversal": {
+    "dev": {
+     "1.0": {
+      "n_events": 0,
+      "n_trades": 0,
+      "n_expired": 0,
+      "n_mismatched": 0,
+      "skipped_overlap": 0,
+      "n_realized": 0,
+      "n_open": 0,
+      "exit_reasons": {
+       "horizon": 0,
+       "stop": 0,
+       "open_at_end": 0
+      },
+      "expectancy_net": 0.0,
+      "expectancy_gross": 0.0,
+      "total_net": 0,
+      "total_net_realized": 0,
+      "total_fees": 0,
+      "total_funding": 0,
+      "max_drawdown": 0.0,
+      "max_drawdown_realized": 0.0,
+      "mfe_mean": 0.0,
+      "mae_mean": 0.0,
+      "config_hash": "547cbe9c78adf516",
+      "funding_quality": {
+       "settled_events": 0,
+       "unknown_excluded": 0,
+       "gap_ms": 0,
+       "uncovered_ms": 0,
+       "accounting_complete_trades": 0,
+       "note": "per-position accounting completeness; calendar-complete never implies it"
+      }
+     },
+     "2.0": {
+      "n_events": 0,
+      "n_trades": 0,
+      "n_expired": 0,
+      "n_mismatched": 0,
+      "skipped_overlap": 0,
+      "n_realized": 0,
+      "n_open": 0,
+      "exit_reasons": {
+       "horizon": 0,
+       "stop": 0,
+       "open_at_end": 0
+      },
+      "expectancy_net": 0.0,
+      "expectancy_gross": 0.0,
+      "total_net": 0,
+      "total_net_realized": 0,
+      "total_fees": 0,
+      "total_funding": 0,
+      "max_drawdown": 0.0,
+      "max_drawdown_realized": 0.0,
+      "mfe_mean": 0.0,
+      "mae_mean": 0.0,
+      "config_hash": "a3dae717f2bf1821",
+      "funding_quality": {
+       "settled_events": 0,
+       "unknown_excluded": 0,
+       "gap_ms": 0,
+       "uncovered_ms": 0,
+       "accounting_complete_trades": 0,
+       "note": "per-position accounting completeness; calendar-complete never implies it"
+      }
+     },
+     "3.0": {
+      "n_events": 0,
+      "n_trades": 0,
+      "n_expired": 0,
+      "n_mismatched": 0,
+      "skipped_overlap": 0,
+      "n_realized": 0,
+      "n_open": 0,
+      "exit_reasons": {
+       "horizon": 0,
+       "stop": 0,
+       "open_at_end": 0
+      },
+      "expectancy_net": 0.0,
+      "expectancy_gross": 0.0,
+      "total_net": 0,
+      "total_net_realized": 0,
+      "total_fees": 0,
+      "total_funding": 0,
+      "max_drawdown": 0.0,
+      "max_drawdown_realized": 0.0,
+      "mfe_mean": 0.0,
+      "mae_mean": 0.0,
+      "config_hash": "e4e07943404dbc5b",
+      "funding_quality": {
+       "settled_events": 0,
+       "unknown_excluded": 0,
+       "gap_ms": 0,
+       "uncovered_ms": 0,
+       "accounting_complete_trades": 0,
+       "note": "per-position accounting completeness; calendar-complete never implies it"
+      }
+     }
+    },
+    "oos": {
+     "1.0": {
+      "n_events": 1,
+      "n_trades": 1,
+      "n_expired": 0,
+      "n_mismatched": 0,
+      "skipped_overlap": 0,
+      "n_realized": 1,
+      "n_open": 0,
+      "exit_reasons": {
+       "horizon": 1,
+       "stop": 0,
+       "open_at_end": 0
+      },
+      "expectancy_net": 10.045914720305806,
+      "expectancy_gross": 11.63660543595704,
+      "total_net": 10.045914720305806,
+      "total_net_realized": 10.045914720305806,
+      "total_fees": 0.9941816972820214,
+      "total_funding": 0.0,
+      "max_drawdown": 0.0,
+      "max_drawdown_realized": 0.0,
+      "mfe_mean": 1.1719724046213802,
+      "mae_mean": 0.008311861025687903,
+      "config_hash": "547cbe9c78adf516",
+      "funding_quality": {
+       "settled_events": 0,
+       "unknown_excluded": 0,
+       "gap_ms": 0,
+       "uncovered_ms": 0,
+       "accounting_complete_trades": 1,
+       "note": "per-position accounting completeness; calendar-complete never implies it"
+      }
+     },
+     "2.0": {
+      "n_events": 1,
+      "n_trades": 1,
+      "n_expired": 0,
+      "n_mismatched": 0,
+      "skipped_overlap": 0,
+      "n_realized": 1,
+      "n_open": 0,
+      "exit_reasons": {
+       "horizon": 1,
+       "stop": 0,
+       "open_at_end": 0
+      },
+      "expectancy_net": 8.455224004654571,
+      "expectancy_gross": 11.63660543595704,
+      "total_net": 8.455224004654571,
+      "total_net_realized": 8.455224004654571,
+      "total_fees": 1.9883633945640429,
+      "total_funding": 0.0,
+      "max_drawdown": 0.0,
+      "max_drawdown_realized": 0.0,
+      "mfe_mean": 1.1719724046213802,
+      "mae_mean": 0.008311861025687903,
+      "config_hash": "a3dae717f2bf1821",
+      "funding_quality": {
+       "settled_events": 0,
+       "unknown_excluded": 0,
+       "gap_ms": 0,
+       "uncovered_ms": 0,
+       "accounting_complete_trades": 1,
+       "note": "per-position accounting completeness; calendar-complete never implies it"
+      }
+     },
+     "3.0": {
+      "n_events": 1,
+      "n_trades": 1,
+      "n_expired": 0,
+      "n_mismatched": 0,
+      "skipped_overlap": 0,
+      "n_realized": 1,
+      "n_open": 0,
+      "exit_reasons": {
+       "horizon": 1,
+       "stop": 0,
+       "open_at_end": 0
+      },
+      "expectancy_net": 6.8645332890033375,
+      "expectancy_gross": 11.63660543595704,
+      "total_net": 6.8645332890033375,
+      "total_net_realized": 6.8645332890033375,
+      "total_fees": 2.9825450918460645,
+      "total_funding": 0.0,
+      "max_drawdown": 0.0,
+      "max_drawdown_realized": 0.0,
+      "mfe_mean": 1.1719724046213802,
+      "mae_mean": 0.008311861025687903,
+      "config_hash": "e4e07943404dbc5b",
+      "funding_quality": {
+       "settled_events": 0,
+       "unknown_excluded": 0,
+       "gap_ms": 0,
+       "uncovered_ms": 0,
+       "accounting_complete_trades": 1,
+       "note": "per-position accounting completeness; calendar-complete never implies it"
+      }
+     }
+    }
+   },
+   "bearish-continuation": {
+    "dev": {
+     "1.0": {
+      "n_events": 126,
+      "n_trades": 114,
+      "n_expired": 0,
+      "n_mismatched": 0,
+      "skipped_overlap": 12,
+      "n_realized": 114,
+      "n_open": 0,
+      "exit_reasons": {
+       "horizon": 102,
+       "stop": 12,
+       "open_at_end": 0
+      },
+      "expectancy_net": 0.6587583540199478,
+      "expectancy_gross": 2.256952791786518,
+      "total_net": 75.09845235827405,
+      "total_net_realized": 75.09845235827405,
+      "total_fees": 113.87135369086816,
+      "total_funding": 0.0,
+      "max_drawdown": 36.7080433184793,
+      "max_drawdown_realized": 36.7080433184793,
+      "mfe_mean": 0.5207583214717998,
+      "mae_mean": 0.22531831877212835,
+      "config_hash": "01bdead7a2afffd6",
+      "funding_quality": {
+       "settled_events": 0,
+       "unknown_excluded": 0,
+       "gap_ms": 0,
+       "uncovered_ms": 0,
+       "accounting_complete_trades": 114,
+       "note": "per-position accounting completeness; calendar-complete never implies it"
+      }
+     },
+     "2.0": {
+      "n_events": 126,
+      "n_trades": 114,
+      "n_expired": 0,
+      "n_mismatched": 0,
+      "skipped_overlap": 12,
+      "n_realized": 114,
+      "n_open": 0,
+      "exit_reasons": {
+       "horizon": 102,
+       "stop": 12,
+       "open_at_end": 0
+      },
+      "expectancy_net": -0.939436083746623,
+      "expectancy_gross": 2.256952791786518,
+      "total_net": -107.09571354711503,
+      "total_net_realized": -107.09571354711503,
+      "total_fees": 227.74270738173632,
+      "total_funding": 0.0,
+      "max_drawdown": 107.09571354711501,
+      "max_drawdown_realized": 107.09571354711501,
+      "mfe_mean": 0.5207583214717998,
+      "mae_mean": 0.22531831877212835,
+      "config_hash": "b1baffcdbc75382f",
+      "funding_quality": {
+       "settled_events": 0,
+       "unknown_excluded": 0,
+       "gap_ms": 0,
+       "uncovered_ms": 0,
+       "accounting_complete_trades": 114,
+       "note": "per-position accounting completeness; calendar-complete never implies it"
+      }
+     },
+     "3.0": {
+      "n_events": 126,
+      "n_trades": 114,
+      "n_expired": 0,
+      "n_mismatched": 0,
+      "skipped_overlap": 12,
+      "n_realized": 114,
+      "n_open": 0,
+      "exit_reasons": {
+       "horizon": 102,
+       "stop": 12,
+       "open_at_end": 0
+      },
+      "expectancy_net": -2.5376305215131936,
+      "expectancy_gross": 2.256952791786518,
+      "total_net": -289.28987945250407,
+      "total_net_realized": -289.28987945250407,
+      "total_fees": 341.6140610726045,
+      "total_funding": 0.0,
+      "max_drawdown": 289.2898794525042,
+      "max_drawdown_realized": 289.2898794525042,
+      "mfe_mean": 0.5207583214717998,
+      "mae_mean": 0.22531831877212835,
+      "config_hash": "a43183c154ae338f",
+      "funding_quality": {
+       "settled_events": 0,
+       "unknown_excluded": 0,
+       "gap_ms": 0,
+       "uncovered_ms": 0,
+       "accounting_complete_trades": 114,
+       "note": "per-position accounting completeness; calendar-complete never implies it"
+      }
+     }
+    },
+    "oos": {
+     "1.0": {
+      "n_events": 131,
+      "n_trades": 130,
+      "n_expired": 0,
+      "n_mismatched": 0,
+      "skipped_overlap": 1,
+      "n_realized": 130,
+      "n_open": 0,
+      "exit_reasons": {
+       "horizon": 114,
+       "stop": 16,
+       "open_at_end": 0
+      },
+      "expectancy_net": 1.4583732088323524,
+      "expectancy_gross": 3.055928466059505,
+      "total_net": 189.58851714820582,
+      "total_net_realized": 189.58851714820582,
+      "total_fees": 129.80136464970613,
+      "total_funding": 0.0,
+      "max_drawdown": 18.86457084676707,
+      "max_drawdown_realized": 18.86457084676707,
+      "mfe_mean": 0.6026706034355676,
+      "mae_mean": 0.19558392493171547,
+      "config_hash": "01bdead7a2afffd6",
+      "funding_quality": {
+       "settled_events": 0,
+       "unknown_excluded": 0,
+       "gap_ms": 0,
+       "uncovered_ms": 5400000,
+       "accounting_complete_trades": 128,
+       "note": "per-position accounting completeness; calendar-complete never implies it"
+      }
+     },
+     "2.0": {
+      "n_events": 131,
+      "n_trades": 130,
+      "n_expired": 0,
+      "n_mismatched": 0,
+      "skipped_overlap": 1,
+      "n_realized": 130,
+      "n_open": 0,
+      "exit_reasons": {
+       "horizon": 114,
+       "stop": 16,
+       "open_at_end": 0
+      },
+      "expectancy_net": -0.1391820483947999,
+      "expectancy_gross": 3.055928466059505,
+      "total_net": -18.093666291323984,
+      "total_net_realized": -18.093666291323984,
+      "total_fees": 259.60272929941226,
+      "total_funding": 0.0,
+      "max_drawdown": 56.979644516034575,
+      "max_drawdown_realized": 56.979644516034575,
+      "mfe_mean": 0.6026706034355676,
+      "mae_mean": 0.19558392493171547,
+      "config_hash": "b1baffcdbc75382f",
+      "funding_quality": {
+       "settled_events": 0,
+       "unknown_excluded": 0,
+       "gap_ms": 0,
+       "uncovered_ms": 5400000,
+       "accounting_complete_trades": 128,
+       "note": "per-position accounting completeness; calendar-complete never implies it"
+      }
+     },
+     "3.0": {
+      "n_events": 131,
+      "n_trades": 130,
+      "n_expired": 0,
+      "n_mismatched": 0,
+      "skipped_overlap": 1,
+      "n_realized": 130,
+      "n_open": 0,
+      "exit_reasons": {
+       "horizon": 114,
+       "stop": 16,
+       "open_at_end": 0
+      },
+      "expectancy_net": -1.7367373056219522,
+      "expectancy_gross": 3.055928466059505,
+      "total_net": -225.7758497308538,
+      "total_net_realized": -225.7758497308538,
+      "total_fees": 389.4040939491184,
+      "total_funding": 0.0,
+      "max_drawdown": 225.7758497308538,
+      "max_drawdown_realized": 225.7758497308538,
+      "mfe_mean": 0.6026706034355676,
+      "mae_mean": 0.19558392493171547,
+      "config_hash": "a43183c154ae338f",
+      "funding_quality": {
+       "settled_events": 0,
+       "unknown_excluded": 0,
+       "gap_ms": 0,
+       "uncovered_ms": 5400000,
+       "accounting_complete_trades": 128,
+       "note": "per-position accounting completeness; calendar-complete never implies it"
+      }
+     }
+    }
+   },
+   "rebound-variant": {
+    "dev": {
+     "1.0": {
+      "n_events": 0,
+      "n_trades": 0,
+      "n_expired": 0,
+      "n_mismatched": 0,
+      "skipped_overlap": 0,
+      "n_realized": 0,
+      "n_open": 0,
+      "exit_reasons": {
+       "horizon": 0,
+       "stop": 0,
+       "open_at_end": 0
+      },
+      "expectancy_net": 0.0,
+      "expectancy_gross": 0.0,
+      "total_net": 0,
+      "total_net_realized": 0,
+      "total_fees": 0,
+      "total_funding": 0,
+      "max_drawdown": 0.0,
+      "max_drawdown_realized": 0.0,
+      "mfe_mean": 0.0,
+      "mae_mean": 0.0,
+      "config_hash": "a10e6abd67e36b2e",
+      "funding_quality": {
+       "settled_events": 0,
+       "unknown_excluded": 0,
+       "gap_ms": 0,
+       "uncovered_ms": 0,
+       "accounting_complete_trades": 0,
+       "note": "per-position accounting completeness; calendar-complete never implies it"
+      }
+     },
+     "2.0": {
+      "n_events": 0,
+      "n_trades": 0,
+      "n_expired": 0,
+      "n_mismatched": 0,
+      "skipped_overlap": 0,
+      "n_realized": 0,
+      "n_open": 0,
+      "exit_reasons": {
+       "horizon": 0,
+       "stop": 0,
+       "open_at_end": 0
+      },
+      "expectancy_net": 0.0,
+      "expectancy_gross": 0.0,
+      "total_net": 0,
+      "total_net_realized": 0,
+      "total_fees": 0,
+      "total_funding": 0,
+      "max_drawdown": 0.0,
+      "max_drawdown_realized": 0.0,
+      "mfe_mean": 0.0,
+      "mae_mean": 0.0,
+      "config_hash": "5f9b15c1d0c261b9",
+      "funding_quality": {
+       "settled_events": 0,
+       "unknown_excluded": 0,
+       "gap_ms": 0,
+       "uncovered_ms": 0,
+       "accounting_complete_trades": 0,
+       "note": "per-position accounting completeness; calendar-complete never implies it"
+      }
+     },
+     "3.0": {
+      "n_events": 0,
+      "n_trades": 0,
+      "n_expired": 0,
+      "n_mismatched": 0,
+      "skipped_overlap": 0,
+      "n_realized": 0,
+      "n_open": 0,
+      "exit_reasons": {
+       "horizon": 0,
+       "stop": 0,
+       "open_at_end": 0
+      },
+      "expectancy_net": 0.0,
+      "expectancy_gross": 0.0,
+      "total_net": 0,
+      "total_net_realized": 0,
+      "total_fees": 0,
+      "total_funding": 0,
+      "max_drawdown": 0.0,
+      "max_drawdown_realized": 0.0,
+      "mfe_mean": 0.0,
+      "mae_mean": 0.0,
+      "config_hash": "c184c777267949fa",
+      "funding_quality": {
+       "settled_events": 0,
+       "unknown_excluded": 0,
+       "gap_ms": 0,
+       "uncovered_ms": 0,
+       "accounting_complete_trades": 0,
+       "note": "per-position accounting completeness; calendar-complete never implies it"
+      }
+     }
+    },
+    "oos": {
+     "1.0": {
+      "n_events": 0,
+      "n_trades": 0,
+      "n_expired": 0,
+      "n_mismatched": 0,
+      "skipped_overlap": 0,
+      "n_realized": 0,
+      "n_open": 0,
+      "exit_reasons": {
+       "horizon": 0,
+       "stop": 0,
+       "open_at_end": 0
+      },
+      "expectancy_net": 0.0,
+      "expectancy_gross": 0.0,
+      "total_net": 0,
+      "total_net_realized": 0,
+      "total_fees": 0,
+      "total_funding": 0,
+      "max_drawdown": 0.0,
+      "max_drawdown_realized": 0.0,
+      "mfe_mean": 0.0,
+      "mae_mean": 0.0,
+      "config_hash": "a10e6abd67e36b2e",
+      "funding_quality": {
+       "settled_events": 0,
+       "unknown_excluded": 0,
+       "gap_ms": 0,
+       "uncovered_ms": 0,
+       "accounting_complete_trades": 0,
+       "note": "per-position accounting completeness; calendar-complete never implies it"
+      }
+     },
+     "2.0": {
+      "n_events": 0,
+      "n_trades": 0,
+      "n_expired": 0,
+      "n_mismatched": 0,
+      "skipped_overlap": 0,
+      "n_realized": 0,
+      "n_open": 0,
+      "exit_reasons": {
+       "horizon": 0,
+       "stop": 0,
+       "open_at_end": 0
+      },
+      "expectancy_net": 0.0,
+      "expectancy_gross": 0.0,
+      "total_net": 0,
+      "total_net_realized": 0,
+      "total_fees": 0,
+      "total_funding": 0,
+      "max_drawdown": 0.0,
+      "max_drawdown_realized": 0.0,
+      "mfe_mean": 0.0,
+      "mae_mean": 0.0,
+      "config_hash": "5f9b15c1d0c261b9",
+      "funding_quality": {
+       "settled_events": 0,
+       "unknown_excluded": 0,
+       "gap_ms": 0,
+       "uncovered_ms": 0,
+       "accounting_complete_trades": 0,
+       "note": "per-position accounting completeness; calendar-complete never implies it"
+      }
+     },
+     "3.0": {
+      "n_events": 0,
+      "n_trades": 0,
+      "n_expired": 0,
+      "n_mismatched": 0,
+      "skipped_overlap": 0,
+      "n_realized": 0,
+      "n_open": 0,
+      "exit_reasons": {
+       "horizon": 0,
+       "stop": 0,
+       "open_at_end": 0
+      },
+      "expectancy_net": 0.0,
+      "expectancy_gross": 0.0,
+      "total_net": 0,
+      "total_net_realized": 0,
+      "total_fees": 0,
+      "total_funding": 0,
+      "max_drawdown": 0.0,
+      "max_drawdown_realized": 0.0,
+      "mfe_mean": 0.0,
+      "mae_mean": 0.0,
+      "config_hash": "c184c777267949fa",
+      "funding_quality": {
+       "settled_events": 0,
+       "unknown_excluded": 0,
+       "gap_ms": 0,
+       "uncovered_ms": 0,
+       "accounting_complete_trades": 0,
+       "note": "per-position accounting completeness; calendar-complete never implies it"
+      }
+     }
+    }
+   },
+   "baseline": {
+    "dev": {
+     "1.0": {
+      "n_events": 0,
+      "n_trades": 0,
+      "n_expired": 0,
+      "n_mismatched": 0,
+      "skipped_overlap": 0,
+      "n_realized": 0,
+      "n_open": 0,
+      "exit_reasons": {
+       "horizon": 0,
+       "stop": 0,
+       "open_at_end": 0
+      },
+      "expectancy_net": 0.0,
+      "expectancy_gross": 0.0,
+      "total_net": 0,
+      "total_net_realized": 0,
+      "total_fees": 0,
+      "total_funding": 0,
+      "max_drawdown": 0.0,
+      "max_drawdown_realized": 0.0,
+      "mfe_mean": 0.0,
+      "mae_mean": 0.0,
+      "config_hash": "314bcdb9e2674199",
+      "funding_quality": {
+       "settled_events": 0,
+       "unknown_excluded": 0,
+       "gap_ms": 0,
+       "uncovered_ms": 0,
+       "accounting_complete_trades": 0,
+       "note": "per-position accounting completeness; calendar-complete never implies it"
+      }
+     },
+     "2.0": {
+      "n_events": 0,
+      "n_trades": 0,
+      "n_expired": 0,
+      "n_mismatched": 0,
+      "skipped_overlap": 0,
+      "n_realized": 0,
+      "n_open": 0,
+      "exit_reasons": {
+       "horizon": 0,
+       "stop": 0,
+       "open_at_end": 0
+      },
+      "expectancy_net": 0.0,
+      "expectancy_gross": 0.0,
+      "total_net": 0,
+      "total_net_realized": 0,
+      "total_fees": 0,
+      "total_funding": 0,
+      "max_drawdown": 0.0,
+      "max_drawdown_realized": 0.0,
+      "mfe_mean": 0.0,
+      "mae_mean": 0.0,
+      "config_hash": "a477c68e62099e67",
+      "funding_quality": {
+       "settled_events": 0,
+       "unknown_excluded": 0,
+       "gap_ms": 0,
+       "uncovered_ms": 0,
+       "accounting_complete_trades": 0,
+       "note": "per-position accounting completeness; calendar-complete never implies it"
+      }
+     },
+     "3.0": {
+      "n_events": 0,
+      "n_trades": 0,
+      "n_expired": 0,
+      "n_mismatched": 0,
+      "skipped_overlap": 0,
+      "n_realized": 0,
+      "n_open": 0,
+      "exit_reasons": {
+       "horizon": 0,
+       "stop": 0,
+       "open_at_end": 0
+      },
+      "expectancy_net": 0.0,
+      "expectancy_gross": 0.0,
+      "total_net": 0,
+      "total_net_realized": 0,
+      "total_fees": 0,
+      "total_funding": 0,
+      "max_drawdown": 0.0,
+      "max_drawdown_realized": 0.0,
+      "mfe_mean": 0.0,
+      "mae_mean": 0.0,
+      "config_hash": "df8b82dd90bfd05b",
+      "funding_quality": {
+       "settled_events": 0,
+       "unknown_excluded": 0,
+       "gap_ms": 0,
+       "uncovered_ms": 0,
+       "accounting_complete_trades": 0,
+       "note": "per-position accounting completeness; calendar-complete never implies it"
+      }
+     }
+    },
+    "oos": {
+     "1.0": {
+      "n_events": 0,
+      "n_trades": 0,
+      "n_expired": 0,
+      "n_mismatched": 0,
+      "skipped_overlap": 0,
+      "n_realized": 0,
+      "n_open": 0,
+      "exit_reasons": {
+       "horizon": 0,
+       "stop": 0,
+       "open_at_end": 0
+      },
+      "expectancy_net": 0.0,
+      "expectancy_gross": 0.0,
+      "total_net": 0,
+      "total_net_realized": 0,
+      "total_fees": 0,
+      "total_funding": 0,
+      "max_drawdown": 0.0,
+      "max_drawdown_realized": 0.0,
+      "mfe_mean": 0.0,
+      "mae_mean": 0.0,
+      "config_hash": "314bcdb9e2674199",
+      "funding_quality": {
+       "settled_events": 0,
+       "unknown_excluded": 0,
+       "gap_ms": 0,
+       "uncovered_ms": 0,
+       "accounting_complete_trades": 0,
+       "note": "per-position accounting completeness; calendar-complete never implies it"
+      }
+     },
+     "2.0": {
+      "n_events": 0,
+      "n_trades": 0,
+      "n_expired": 0,
+      "n_mismatched": 0,
+      "skipped_overlap": 0,
+      "n_realized": 0,
+      "n_open": 0,
+      "exit_reasons": {
+       "horizon": 0,
+       "stop": 0,
+       "open_at_end": 0
+      },
+      "expectancy_net": 0.0,
+      "expectancy_gross": 0.0,
+      "total_net": 0,
+      "total_net_realized": 0,
+      "total_fees": 0,
+      "total_funding": 0,
+      "max_drawdown": 0.0,
+      "max_drawdown_realized": 0.0,
+      "mfe_mean": 0.0,
+      "mae_mean": 0.0,
+      "config_hash": "a477c68e62099e67",
+      "funding_quality": {
+       "settled_events": 0,
+       "unknown_excluded": 0,
+       "gap_ms": 0,
+       "uncovered_ms": 0,
+       "accounting_complete_trades": 0,
+       "note": "per-position accounting completeness; calendar-complete never implies it"
+      }
+     },
+     "3.0": {
+      "n_events": 0,
+      "n_trades": 0,
+      "n_expired": 0,
+      "n_mismatched": 0,
+      "skipped_overlap": 0,
+      "n_realized": 0,
+      "n_open": 0,
+      "exit_reasons": {
+       "horizon": 0,
+       "stop": 0,
+       "open_at_end": 0
+      },
+      "expectancy_net": 0.0,
+      "expectancy_gross": 0.0,
+      "total_net": 0,
+      "total_net_realized": 0,
+      "total_fees": 0,
+      "total_funding": 0,
+      "max_drawdown": 0.0,
+      "max_drawdown_realized": 0.0,
+      "mfe_mean": 0.0,
+      "mae_mean": 0.0,
+      "config_hash": "df8b82dd90bfd05b",
+      "funding_quality": {
+       "settled_events": 0,
+       "unknown_excluded": 0,
+       "gap_ms": 0,
+       "uncovered_ms": 0,
+       "accounting_complete_trades": 0,
+       "note": "per-position accounting completeness; calendar-complete never implies it"
+      }
+     }
+    }
+   }
+  }
+ },
+ "limits": [
+  "mapping caller-declared, NOT approved",
+  "costs assumed (COST-ASSUME-v1), never measured",
+  "funding realized venue calendars attached per symbol",
+  "eval segment is time-held-out (non-pristine), never clean OOS",
+  "grouped events are NOT independent samples",
+  "H2 legs INSUFFICIENT sample; rebound-variant excluded (0 events)",
+  "no availability proof (query time != tradable time)",
+  "no buy-and-hold/time-placebo baseline in V1",
+  "pooled reference is arithmetic aggregation, not a strategy"
+ ],
+ "pooled_reference": {
+  "dev": {
+   "1.0": {
+    "n_events": 777,
+    "n_trades": 666,
+    "n_realized": 666,
+    "n_open": 0,
+    "skipped_overlap": 111,
+    "n_expired": 0,
+    "n_mismatched": 0,
+    "total_net": 531.7898556520231,
+    "total_net_realized": 531.7898556520231,
+    "total_fees": 666.1183148342275,
+    "total_funding": 0.08935000000000001,
+    "expectancy_net": 0.7984832667447794,
+    "expectancy_net_realized": 0.7984832667447794
+   },
+   "2.0": {
+    "n_events": 777,
+    "n_trades": 666,
+    "n_realized": 666,
+    "n_open": 0,
+    "skipped_overlap": 111,
+    "n_expired": 0,
+    "n_mismatched": 0,
+    "total_net": -534.0887980827408,
+    "total_net_realized": -534.0887980827408,
+    "total_fees": 1332.236629668455,
+    "total_funding": 0.17870000000000003,
+    "expectancy_net": -0.8019351322563676,
+    "expectancy_net_realized": -0.8019351322563676
+   },
+   "3.0": {
+    "n_events": 777,
+    "n_trades": 666,
+    "n_realized": 666,
+    "n_open": 0,
+    "skipped_overlap": 111,
+    "n_expired": 0,
+    "n_mismatched": 0,
+    "total_net": -1599.9674518175048,
+    "total_net_realized": -1599.9674518175048,
+    "total_fees": 1998.3549445026824,
+    "total_funding": 0.26805,
+    "expectancy_net": -2.4023535312575146,
+    "expectancy_net_realized": -2.4023535312575146
+   }
+  },
+  "oos": {
+   "1.0": {
+    "n_events": 780,
+    "n_trades": 746,
+    "n_realized": 744,
+    "n_open": 2,
+    "skipped_overlap": 34,
+    "n_expired": 0,
+    "n_mismatched": 0,
+    "total_net": 615.9357193925598,
+    "total_net_realized": 620.1162273325663,
+    "total_fees": 745.9611504912267,
+    "total_funding": 0.0,
+    "expectancy_net": 0.8256510983814475,
+    "expectancy_net_realized": 0.8334895528663525
+   },
+   "2.0": {
+    "n_events": 780,
+    "n_trades": 746,
+    "n_realized": 744,
+    "n_open": 2,
+    "skipped_overlap": 34,
+    "n_expired": 0,
+    "n_mismatched": 0,
+    "total_net": -577.6021213934031,
+    "total_net_realized": -570.2223984877761,
+    "total_fees": 1491.9223009824534,
+    "total_funding": 0.0,
+    "expectancy_net": -0.7742655782753393,
+    "expectancy_net_realized": -0.7664279549566884
+   },
+   "3.0": {
+    "n_events": 780,
+    "n_trades": 746,
+    "n_realized": 744,
+    "n_open": 2,
+    "skipped_overlap": 34,
+    "n_expired": 0,
+    "n_mismatched": 0,
+    "total_net": -1771.1399621793657,
+    "total_net_realized": -1760.5610243081182,
+    "total_fees": 2237.88345147368,
+    "total_funding": 0.0,
+    "expectancy_net": -2.374182254932126,
+    "expectancy_net_realized": -2.3663454627797287
+   }
+  }
+ }
+}

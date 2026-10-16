@@ -1121,3 +1121,25 @@ F-LAUNCH-SUP-01 remains PROPOSED for enablement / PARTIAL overall. The five new 
   (fuente), SOL H2 7→6, friccion ~1.0→~1.60/op, "4 ventanas"→1 sostenida,
   pooled-como-cartera (nunca fue cartera), build servido 3020 identificado
   en CURRENT_STATE (sin redeploy en este cierre).
+
+## F-OFFLINE-EVAL-02 — artefacto publicado + generacion determinista (2026-10-16, sin corridas)
+
+- `DECISIONS_REVIEWED` — F-OFFLINE-EVAL-01, contrato de lectura
+  OFFLINE_EVAL_READ_CONTRACT_V1, informe §10, adquisicion FUNDING-CAL-v1.
+- `NEW_DECISIONS_RECORDED` — DECISIONS (Fix artefacto offline-eval:
+  force-add + agregador byte-identico + hashes funding reconciliados +
+  limitacion dataset declarada).
+- `FEATURES_IMPLEMENTED` — `scripts/aggregate_offline_eval.py`
+  (bundling fail-closed) + `tests/test_offline_eval_aggregation.py`
+  (6 tests) + artefacto publicado por force-add (pin c051e888… intacto)
+  + informe §10 y contrato actualizados + hashes funding reconciliados.
+- `FEATURES_VERIFIED` — regeneracion byte-identica del artefacto desde
+  replays en temp (mismo sha) + celdas↔manifiestos identicas + nuevo test
+  6/6 + checkout limpio (frontend tests + typecheck + build, sin
+  data/logs/canonicos; logs abajo).
+- `DEFERRED_FEATURES` — mismos que F-OFFLINE-EVAL-01; publicacion del
+  historico canonico (no publicado; limitacion declarada).
+- `BACKLOG_UPDATED` — yes: this entry (ID F-OFFLINE-EVAL-02).
+- `DOCUMENTATION_CONFLICTS` — corregidos aqui: artefacto ausente en Git
+  (404 en limpio), ruta de test en contrato (`src/`→`frontend/src/`),
+  hashes funding del draft (transitorios → provenance verificables).

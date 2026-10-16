@@ -1,3 +1,13 @@
+## Fix artefacto offline-eval publicado (2026-10-16, sin corridas, sin push aun)
+Defecto: `@/data/offline-eval-v1.json` ignorado y ausente en GitHub (404
+en limpio). Correccion: artefacto por force-add (114195 B, sha c051e888…
+verificado byte-identico por `scripts/aggregate_offline_eval.py` desde los
+replays en temp) + test agregador 6/6 + hashes funding reconciliados a
+provenance + limitacion dataset declarada (historico canonico no
+publicado; limpio verifica artefacto/UI/build, no regenera desde cero).
+Resta: checkout limpio, commit, push, entrega. V2 abierto 3020, monitor
+detenido.
+
 ## Offline entry/exit closeout V1 (2026-10-16, sin ventana forward, sin simulacion prospectiva, sin push aun)
 Re-ejecucion offline en temp (export 476/498/584, seleccion
 224+252/0, 256+241/1, 297+287/0, input_hash identicos al artefacto;

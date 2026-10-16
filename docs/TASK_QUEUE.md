@@ -1,3 +1,8 @@
+## Fix artefacto offline-eval publicado (2026-10-16, sin corridas, sin push aun)
+Artefacto por force-add + agregador determinista byte-identico + test 6/6
++ hashes funding reconciliados + limitacion dataset declarada. Resta:
+checkout limpio, commit, push, entrega. V2 abierto, monitor detenido.
+
 ## Offline entry/exit closeout V1 (2026-10-16, sin ventana forward, sin simulacion prospectiva, sin push aun)
 Auditoria de 5 puntos cerrada con re-ejecucion offline (hashes identicos)
 + informe corregido + audit JSON por operacion + barrera + QA visual.

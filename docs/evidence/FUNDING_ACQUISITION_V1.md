@@ -20,14 +20,36 @@ stays null in every run of this task).
 
 | Símbolo | URL (params) | Respuesta |
 |---|---|---|
-| BTCUSDT | `?symbol=BTCUSDT&startTime=1788816600000&endTime=1791406800000&limit=1000` | 200, 11351 B, sha256 `c67a2a68…41290db7` |
-| ETHUSDT | `?symbol=ETHUSDT&...` (idem) | 200, 11263 B, sha256 `0b755aba…949a31f2` |
-| SOLUSDT | `?symbol=SOLUSDT&...` (idem) | 200, 11177 B, sha256 `3db3ab2e…a00a25ad82` |
+| BTCUSDT | `?symbol=BTCUSDT&startTime=1788816600000&endTime=1791406800000&limit=1000` | 200, 90 filas venue |
+| ETHUSDT | `?symbol=ETHUSDT&...` (idem) | 200, 90 filas venue |
+| SOLUSDT | `?symbol=SOLUSDT&...` (idem) | 200, 90 filas venue |
 
 - Adquirido: 2026-10-16T05:30:00Z (UTC). Límite de peticiones: 3 GET
   (1/símbolo, `limit=1000` cubre la ventana en una sola página).
 - Crudos completos: `C:\Users\adonm\AppData\Local\Temp\opencode\funding_<SYM>.json`
-  (fuera de Git; hashes arriba para verificar re-adquisición).
+  (fuera de Git, transitorios, ya no disponibles).
+
+## Hashes verificables (corrigen la tabla anterior)
+
+Los hashes de cuerpo crudo citados en el draft (`c67a2a68…`,
+`0b755aba…`, `3db3ab2e…`) correspondían a los archivos transitorios de
+entonces y NO son re-verificables (fuera de Git, eliminados). Los hashes
+que sí verifican la adquisición son los de `provenance.response_sha256`
+en cada calendario versionado (entrada exacta de
+`scripts/build_funding_calendar.py --raw`):
+
+| Símbolo | `provenance.response_sha256` | `n_raw`/`n_settlements` |
+|---|---|---|
+| BTCUSDT | `ce0d64a045edd65b45a9ca0d5578b6b6be56f7f8c1bc31b1d9178d52f2e0cab3` | 90/90 |
+| ETHUSDT | `ddbe33762663dbe263fee07d0c2325ffe72c45c76bc5a21503bbde2d8730d5df` | 90/90 |
+| SOLUSDT | `271557db51c76f2d31f8f098d275df22d75d521d670086ef2b6a65b132ae267d` | 90/90 |
+
+Re-adquisición: repetir los 3 GET de arriba y reconstruir con
+`scripts/build_funding_calendar.py --raw <respuesta> --symbol <SYM>
+--version FUNDING-CAL-v1 --acquired-utc <UTC> --out <calendario>`; los
+`settlement_ms`/`rate_bps` (dato venue) deben coincidir con los calendarios
+en Git (el tamaño en bytes puede variar con el formato; lo que cuenta son
+90 liquidaciones con sus timestamps y tasas).
 
 ## Cobertura e intervalo
 

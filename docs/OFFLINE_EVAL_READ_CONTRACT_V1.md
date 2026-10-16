@@ -42,7 +42,12 @@ Nothing here executes, signals, or paper-trades.
 ## Status
 
 WIRED read-only in this task: artifact + lib + route + research-page
-section, covered by `src/test/offline-eval.test.ts` (+ route test) and the
+section, covered by `frontend/src/test/offline-eval.test.ts` (+ route test) and the
 page's existing visual QA. Regenerating the artifact requires re-running
 the documented offline pipeline (exporter → selection → runner →
-aggregation); the artifact hash pins the exact run.
+`scripts/aggregate_offline_eval.py`); the artifact hash pins the exact
+run. The artifact file itself is committed (force-added past the `data/`
+ignore) so clean checkouts build and test without it being generated;
+a clean checkout CANNOT regenerate it from scratch (canonical
+`data/historical/historical.db` unpublished — see the dataset limitation
+in `docs/OFFLINE_EVAL_REPORT_V1.md` §10).

@@ -184,15 +184,32 @@ window and pre-committing its protocol — NOT replaying again on this one.
 python scripts/export_engine_inputs.py --symbols BTCUSDT --interval 15m --out-dir <tmp_btc>   # x3 symbols
 python scripts/select_eval_events.py --events <tmp>/events.json --cutoff-ms 1790010000000 --horizon-ms 3600000 --dev-out <dev> --oos-out <oos> --report <sel>
 python scripts/run_family_evaluation.py --events <dev+oos> --candles <tmp>/candles.json --calendar docs/evidence/FUNDING_CALENDAR_<SYM>_V1.json --cutoff-ms 1790010000000 --out <manifest> --formation-method PROPOSED-P1-11C-map-v1
+python scripts/aggregate_offline_eval.py --inputs <inputs.json> --out frontend/src/data/offline-eval-v1.json
 ```
+
+`<inputs.json>` maps each symbol to its `{manifest, meta, selection,
+calendar}` paths (cutoff/horizon echoed at top level). The aggregator is
+bundling-only (fail-closed on cutoff/selection/calendar mismatches; pooled
+= arithmetic sums over directional groups) and regenerates the published
+artifact byte-identically (sha256 below).
 
 Re-executed 2026-10-16 into temp dirs (audit_btc/eth/sol): exports
 476/498/584 events, selections 224+252/0, 256+241/1, 297+287/0,
 `input_hash` identical to the bundled artifact per symbol
 (BTC 31c100e2…, ETH 7643681e…, SOL d784680b…), replayed trades
-452+457+503=1412. Funding re-acquisition: 3 GETs documented in
-`FUNDING_ACQUISITION_V1.md` + `scripts/build_funding_calendar.py`. Bulky
-JSON (candles/events/raw) lives outside Git; manifests/hashes/commands
-above reproduce them. Audit: `docs/evidence/OFFLINE_EVAL_AUDIT_V1.json`
-(sha pinned at commit). Artifact: `frontend/src/data/offline-eval-v1.json`
-(unchanged by this closeout; re-aggregation is deterministic).
+452+457+503=1412, aggregation byte-identical. Funding re-acquisition: 3
+GETs documented in `FUNDING_ACQUISITION_V1.md` (verifiable provenance
+hashes there) + `scripts/build_funding_calendar.py`. Bulky JSON
+(candles/events/raw) lives outside Git; manifests/hashes/commands above
+reproduce them. Audit: `docs/evidence/OFFLINE_EVAL_AUDIT_V1.json`.
+Artifact: `frontend/src/data/offline-eval-v1.json` (committed, force-added
+past the `data/` ignore; sha256
+`c051e88841754668a02a6d92db02ccdcb97fd16e45a08671022a370576287b3a`).
+
+Dataset limitation (binding): the export step reads the local canonical
+`data/historical/historical.db` (read-only), which is NOT published and is
+absent from a clean checkout. Commands + hashes alone do NOT reconstruct
+its 2879 candles/symbol + 2831 event rows. What a clean checkout CAN verify
+without it: the committed artifact (parsed content + pinned sha),
+aggregation determinism from fixtures (`tests/test_offline_eval_aggregation.py`),
+the UI adapter/route, and the full frontend suite + typecheck + build.

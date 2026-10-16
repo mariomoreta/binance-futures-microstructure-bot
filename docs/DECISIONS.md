@@ -1801,3 +1801,20 @@ asumido ~0.60; el '~1.0' del draft cubria solo comisiones). Costes 5/1/2bps
 supuestos versionados (COST-ASSUME-v1), no medidos. Held-out non-pristine;
 pooled no es estrategia alternativa comparable. Las 12 celdas direccionales
 caen en negativo a 2x (verificado).
+
+## Fix artefacto offline-eval publicado (2026-10-16, sin corridas)
+
+1. Defecto: frontend/src/lib/offline-eval.ts importaba
+@/data/offline-eval-v1.json, ignorado por data/ y ausente en GitHub
+(404 en checkout limpio). Informe y audit lo referencian.
+2. Correccion: artefacto publicado por force-add (114195 B, sha256
+c051e888...287b3a, identico al pin del informe) + generacion
+determinista scripts/aggregate_offline_eval.py (solo bundling de
+manifiestos/meta/seleccion/calendarios, fail-closed; pooled = sumas
+aritmeticas) verificada byte-identica desde los replays en temp.
+3. Hashes de adquisicion funding reconciliados: los del draft eran de
+crudos transitorios (ya no disponibles); rigen los provenance de los
+calendarios en Git (tabla corregida + re-adquisicion documentada).
+4. Limitacion declarada en informe 10: el export lee el historico
+canonico local (no publicado); checkout limpio verifica artefacto,
+agregacion (fixtures), UI y build, pero no regenera desde cero.
