@@ -716,6 +716,30 @@ here and request approval before treating it as binding. Never mark
 features VERIFIED without evidence.
 
 
+## F-R3CAP-04 — R3 vivo brief 120s (2026-10-16, autorizada 1x)
+
+- `DECISIONS_REVIEWED` — F-R3CAP-03 (atribucion exacta),
+  captura v2, contratos runtime/BFF/detections, readiness.
+- `NEW_DECISIONS_RECORDED` — DECISIONS §R3 vivo brief
+  (lanzamiento unico reconciliado por GET sin duplicar;
+  PASS vivo con triple RUNNING exact-uuid).
+- `FEATURES_IMPLEMENTED` — (sin codigo) corrida supervisada
+  brief 120s observe-only + captura automatica con ambas
+  identidades fijadas.
+- `FEATURES_VERIFIED` — capturador: outcome terminal-captured,
+  R3 PASS (t0/+30/+60 RUNNING verificados, exact-uuid,
+  snapshot coincidente, current, detections atribuidas;
+  0 eventos iniciales validos, 18/3 desde +60s); cierre
+  COMPLETED exit 0, 133s congelado, 0 python, sin journals,
+  filas UUID 4/6/39/9, JSON + resumen + 2 capturas V2.
+- `DEFERRED_FEATURES` — trabajo offline de entradas/salidas
+  (recomendado, no ejecutado): engine + runner + mapping +
+  funding realizado + costes + purga; paper/ejecucion.
+- `BACKLOG_UPDATED` — yes: this entry (ID F-R3CAP-04).
+- `DOCUMENTATION_CONFLICTS` — none new (respuesta 200 del
+  start sin run_id en nivel superior: reconciliacion
+  documentada, sin duplicar).
+
 ## F-R3CAP-03 — atribucion exacta R3 (2026-10-16, sobre a2aebc5, sin corridas)
 
 - `DECISIONS_REVIEWED` — R3 v2 (veredicto separado, UUID

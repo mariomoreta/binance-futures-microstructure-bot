@@ -1,3 +1,11 @@
+## R3 vivo PASS brief 120s (2026-10-16, autorizada 1x, sin push aun)
+Unico lanzamiento V2 brief=120 reconciliado sin duplicar (la
+respuesta 200 no trae run_id arriba); capturador con ambas
+identidades fijadas: terminal-captured + R3 PASS en vivo.
+Cierre natural exit 0, todo muerto, SQLite limpio, filas UUID
+contrastadas. Resta: commit, push, entrega. V2 abierto,
+monitor detenido.
+
 ## V2 08364ba publicado en 3020 (2026-10-16, deploy sin corridas)
 Build 08364ba en 3020 (PID 2868, BUILD_ID v4Od5kTGmfyFhyzE-twPO);
 runtime/detections/overview/system verificados 200 con las 3

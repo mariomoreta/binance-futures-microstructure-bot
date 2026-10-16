@@ -1,0 +1,280 @@
+{
+ "tool": "capture_run_window/v2 (GET only, no Start/Stop; acquisition outcome separated from the R3 verdict)",
+ "base_url": "http://127.0.0.1:3020",
+ "expected": {
+  "run_id": "probe-20261016T034423Z",
+  "probe_run_id": "4c76d94c71274812aaf42e81cd1303f9"
+ },
+ "events": [],
+ "captures": [
+  {
+   "tag": "t0-running",
+   "runtime": {
+    "request_at": "2026-10-16T03:45:08.927519+00:00",
+    "response_at": "2026-10-16T03:45:09.545884+00:00",
+    "http_ms": 618.4,
+    "http_status": 200,
+    "reviewed": {
+     "state": "RUNNING",
+     "running": true,
+     "run_id": "probe-20261016T034423Z",
+     "probe_run_id": "4c76d94c71274812aaf42e81cd1303f9",
+     "process_verified": true,
+     "feed_health": "HEALTHY",
+     "feed_attribution": "current",
+     "feed_attribution_method": "exact-uuid",
+     "feed_snapshot_run_id": "4c76d94c71274812aaf42e81cd1303f9",
+     "feed_snapshot_timestamp": 1792122297.4882362,
+     "feed_note": null,
+     "latest_snapshot_age": 12,
+     "started_at": "2026-10-16T03:44:24+00:00",
+     "last_exit_at": null,
+     "last_exit_reason": null,
+     "supervisor": {
+      "state": "SUPERVISOR_ACTIVE",
+      "lease_state": "ACTIVE",
+      "abort_triggered": false
+     },
+     "sentinel": {
+      "state": "SENTINEL_ACTIVE",
+      "lease_state": "ACTIVE"
+     }
+    }
+   },
+   "detections": {
+    "request_at": "2026-10-16T03:45:09.545922+00:00",
+    "response_at": "2026-10-16T03:45:09.786766+00:00",
+    "http_ms": 240.8,
+    "http_status": 200,
+    "attributed": true,
+    "reviewed": {
+     "available": true,
+     "run_id": "probe-20261016T034423Z",
+     "probe_run_id": "4c76d94c71274812aaf42e81cd1303f9",
+     "grouping_version": "v1",
+     "events_total": 0,
+     "episodes_total": 0,
+     "limitation": "no-funding-events-in-evidence"
+    }
+   }
+  },
+  {
+   "tag": "t+30s",
+   "runtime": {
+    "request_at": "2026-10-16T03:45:39.541719+00:00",
+    "response_at": "2026-10-16T03:45:40.091135+00:00",
+    "http_ms": 549.4,
+    "http_status": 200,
+    "reviewed": {
+     "state": "RUNNING",
+     "running": true,
+     "run_id": "probe-20261016T034423Z",
+     "probe_run_id": "4c76d94c71274812aaf42e81cd1303f9",
+     "process_verified": true,
+     "feed_health": "HEALTHY",
+     "feed_attribution": "current",
+     "feed_attribution_method": "exact-uuid",
+     "feed_snapshot_run_id": "4c76d94c71274812aaf42e81cd1303f9",
+     "feed_snapshot_timestamp": 1792122327.8379416,
+     "feed_note": null,
+     "latest_snapshot_age": 12,
+     "started_at": "2026-10-16T03:44:24+00:00",
+     "last_exit_at": null,
+     "last_exit_reason": null,
+     "supervisor": {
+      "state": "SUPERVISOR_ACTIVE",
+      "lease_state": "ACTIVE",
+      "abort_triggered": false
+     },
+     "sentinel": {
+      "state": "SENTINEL_ACTIVE",
+      "lease_state": "ACTIVE"
+     }
+    }
+   },
+   "detections": {
+    "request_at": "2026-10-16T03:45:40.091157+00:00",
+    "response_at": "2026-10-16T03:45:41.964274+00:00",
+    "http_ms": 1873.4,
+    "http_status": 200,
+    "attributed": true,
+    "reviewed": {
+     "available": true,
+     "run_id": "probe-20261016T034423Z",
+     "probe_run_id": "4c76d94c71274812aaf42e81cd1303f9",
+     "grouping_version": "v1",
+     "events_total": 0,
+     "episodes_total": 0,
+     "limitation": "no-funding-events-in-evidence"
+    }
+   }
+  },
+  {
+   "tag": "t+60s",
+   "runtime": {
+    "request_at": "2026-10-16T03:46:09.536616+00:00",
+    "response_at": "2026-10-16T03:46:10.097911+00:00",
+    "http_ms": 561.3,
+    "http_status": 200,
+    "reviewed": {
+     "state": "RUNNING",
+     "running": true,
+     "run_id": "probe-20261016T034423Z",
+     "probe_run_id": "4c76d94c71274812aaf42e81cd1303f9",
+     "process_verified": true,
+     "feed_health": "HEALTHY",
+     "feed_attribution": "current",
+     "feed_attribution_method": "exact-uuid",
+     "feed_snapshot_run_id": "4c76d94c71274812aaf42e81cd1303f9",
+     "feed_snapshot_timestamp": 1792122358.2257826,
+     "feed_note": null,
+     "latest_snapshot_age": 12,
+     "started_at": "2026-10-16T03:44:24+00:00",
+     "last_exit_at": null,
+     "last_exit_reason": null,
+     "supervisor": {
+      "state": "SUPERVISOR_ACTIVE",
+      "lease_state": "ACTIVE",
+      "abort_triggered": false
+     },
+     "sentinel": {
+      "state": "SENTINEL_ACTIVE",
+      "lease_state": "ACTIVE"
+     }
+    }
+   },
+   "detections": {
+    "request_at": "2026-10-16T03:46:10.097933+00:00",
+    "response_at": "2026-10-16T03:46:10.334138+00:00",
+    "http_ms": 236.2,
+    "http_status": 200,
+    "attributed": true,
+    "reviewed": {
+     "available": true,
+     "run_id": "probe-20261016T034423Z",
+     "probe_run_id": "4c76d94c71274812aaf42e81cd1303f9",
+     "grouping_version": "v1",
+     "events_total": 18,
+     "episodes_total": 3,
+     "limitation": null
+    }
+   }
+  },
+  {
+   "tag": "t+90s",
+   "runtime": {
+    "request_at": "2026-10-16T03:46:39.531402+00:00",
+    "response_at": "2026-10-16T03:46:40.110169+00:00",
+    "http_ms": 578.8,
+    "http_status": 200,
+    "reviewed": {
+     "state": "COMPLETED",
+     "running": false,
+     "run_id": "probe-20261016T034423Z",
+     "probe_run_id": "4c76d94c71274812aaf42e81cd1303f9",
+     "process_verified": false,
+     "feed_health": "HEALTHY",
+     "feed_attribution": "current",
+     "feed_attribution_method": "exact-uuid",
+     "feed_snapshot_run_id": "4c76d94c71274812aaf42e81cd1303f9",
+     "feed_snapshot_timestamp": 1792122387.9024606,
+     "feed_note": null,
+     "latest_snapshot_age": 12,
+     "started_at": "2026-10-16T03:44:24+00:00",
+     "last_exit_at": "2026-10-16T03:46:37+00:00",
+     "last_exit_reason": "duration-reached",
+     "supervisor": {
+      "state": "SUPERVISOR_ACTIVE",
+      "lease_state": "ACTIVE",
+      "abort_triggered": false
+     },
+     "sentinel": {
+      "state": "SENTINEL_ACTIVE",
+      "lease_state": "ACTIVE"
+     }
+    }
+   },
+   "detections": {
+    "request_at": "2026-10-16T03:46:40.110191+00:00",
+    "response_at": "2026-10-16T03:46:40.330891+00:00",
+    "http_ms": 220.7,
+    "http_status": 200,
+    "attributed": true,
+    "reviewed": {
+     "available": true,
+     "run_id": "probe-20261016T034423Z",
+     "probe_run_id": "4c76d94c71274812aaf42e81cd1303f9",
+     "grouping_version": "v1",
+     "events_total": 18,
+     "episodes_total": 3,
+     "limitation": null
+    }
+   }
+  },
+  {
+   "tag": "terminal-poll",
+   "runtime": {
+    "request_at": "2026-10-16T03:46:45.330497+00:00",
+    "response_at": "2026-10-16T03:46:45.883990+00:00",
+    "http_ms": 553.5,
+    "http_status": 200,
+    "reviewed": {
+     "state": "COMPLETED",
+     "running": false,
+     "run_id": "probe-20261016T034423Z",
+     "probe_run_id": "4c76d94c71274812aaf42e81cd1303f9",
+     "process_verified": false,
+     "feed_health": "HEALTHY",
+     "feed_attribution": "current",
+     "feed_attribution_method": "exact-uuid",
+     "feed_snapshot_run_id": "4c76d94c71274812aaf42e81cd1303f9",
+     "feed_snapshot_timestamp": 1792122387.9024606,
+     "feed_note": null,
+     "latest_snapshot_age": 18,
+     "started_at": "2026-10-16T03:44:24+00:00",
+     "last_exit_at": "2026-10-16T03:46:37+00:00",
+     "last_exit_reason": "duration-reached",
+     "supervisor": {
+      "state": "SUPERVISOR_ACTIVE",
+      "lease_state": "ACTIVE",
+      "abort_triggered": false
+     },
+     "sentinel": {
+      "state": "SENTINEL_ACTIVE",
+      "lease_state": "ACTIVE"
+     }
+    }
+   },
+   "detections": {
+    "request_at": "2026-10-16T03:46:45.884007+00:00",
+    "response_at": "2026-10-16T03:46:46.590293+00:00",
+    "http_ms": 706.3,
+    "http_status": 200,
+    "attributed": true,
+    "reviewed": {
+     "available": true,
+     "run_id": "probe-20261016T034423Z",
+     "probe_run_id": "4c76d94c71274812aaf42e81cd1303f9",
+     "grouping_version": "v1",
+     "events_total": 18,
+     "episodes_total": 3,
+     "limitation": null
+    }
+   }
+  }
+ ],
+ "complete": true,
+ "outcome": "terminal-captured",
+ "pinned": {
+  "run_id": "probe-20261016T034423Z",
+  "probe_run_id": "4c76d94c71274812aaf42e81cd1303f9",
+  "uuid_absences": 0,
+  "uuid_first_seen": null
+ },
+ "r3": {
+  "verdict": "PASS",
+  "reasons": [
+   "qualifying-capture: t0-running (health HEALTHY recorded as context, not as the decision; method exact-uuid, snapshot 4c76d94c71274812aaf42e81cd1303f9)"
+  ]
+ }
+}

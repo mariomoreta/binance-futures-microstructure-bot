@@ -1,3 +1,16 @@
+## R3 vivo PASS brief 120s (2026-10-16, autorizada 1x, sin push aun)
+probe-20261016T034423Z (UUID 4c76d94c…1303f9): 120s solicitados,
+cierre natural COMPLETED duration-reached exit 0, contador
+congelado 133s, PIDs muertos, supervisor/sentinel STOPPED sin
+abortos, 0 python, sin journals. Capturador 5/5 (3 RUNNING +
+2 post-cierre) con outcome terminal-captured y veredicto R3
+PASS (exact-uuid + snapshot coincidente + current + detections
+atribuidas; 0 eventos iniciales validos, 18/3 desde +60s).
+Filas UUID 4/6/39/9 con deltas netos por retencion (flow_10s
+4117->3636); tamanos invariantes; sin recovery. Evidencia JSON
++ resumen + 2 capturas V2. Resta: commit, push, entrega. V2
+abierto 3020, monitor detenido.
+
 ## V2 08364ba publicado en 3020 (2026-10-16, deploy sin corridas)
 Arbol 08364ba compilado (`npm run build` OK) y sirviendo en
 http://127.0.0.1:3020 (PID 2868, BUILD_ID

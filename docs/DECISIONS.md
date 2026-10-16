@@ -1745,3 +1745,22 @@ coincidente+exact->puede calificar; incompatible->nunca PASS.
 nuevos) + capturador 19/19 (3 R3 nuevos) + export 6/6; sin
 Binance, sin corridas. V2 3020 intacto (build anterior, sin
 redeploy), monitor detenido.
+
+## R3 vivo brief 120s (2026-10-16, autorizada 1x; sin codigo)
+
+1. Lanzamiento unico por ruta publica V2 (brief=120, 200
+confirmado). La respuesta 200 no expone `run_id` en el nivel
+superior: se reconcilio por GET runtime ( STEM RUNNING + UUID)
+sin relanzar ni duplicar, y se arranco el capturador con ambas
+identidades fijadas y salida nueva y protegida.
+2. Adquisicion 5/5 (3 RUNNING + 2 post-cierre), outcome
+terminal-captured; veredicto R3 PASS en vivo (triple RUNNING
+verificado con exact-uuid + snapshot coincidente + current +
+detections atribuidas; HEALTHY como contexto). Cero eventos
+iniciales valido (18/3 desde +60s).
+3. Cierre natural COMPLETED duration-reached exit 0, contador
+congelado 133s, PIDs muertos, 0 python, SQLite sin journals,
+tamanos invariantes, filas UUID 4/6/39/9 con deltas netos por
+retencion (flow_10s 4117->3636). Sin recovery, sin relanzar.
+Residual R3 vivo cerrado; siguiente: offline entradas/salidas
+(recomendado, no ejecutado).
