@@ -716,6 +716,26 @@ here and request approval before treating it as binding. Never mark
 features VERIFIED without evidence.
 
 
+## F-LINK-01 + F-EPISODE-V1-01 — piloto brief 20261016T005550Z (2026-10-16, 1x120s autorizada)
+
+- `DECISIONS_REVIEWED` — trazabilidad stem<->UUID, episodios v1,
+  contratos runtime/BFF/detections, reconciliacion OBS10M.
+- `NEW_DECISIONS_RECORDED` — DECISIONS §piloto brief; evidencia
+  `docs/evidence/RUN_BRIEF120_20261016_CLOSEOUT.json` (+2 capturas V2).
+- `FEATURES_IMPLEMENTED` — (sin codigo) prueba viva del enlace
+  automatico + agrupacion v1 sobre 10 eventos nuevos.
+- `FEATURES_VERIFIED` — matriz R1-R11 en el JSON: 9 PASS, R3
+  UNKNOWN (feed mid-run en vivo no capturado; enlace exacto
+  disponible + path probado offline), 0 FAIL; 54 filas UUID =
+  research.writes; V2 10/2 con enlace exacto y sin mezcla.
+- `DEFERRED_FEATURES` — R3 mid-run (residual), evaluacion de
+  entradas/salidas, backtests, paper, ejecucion; resto excluido.
+- `BACKLOG_UPDATED` — yes: this entry (IDs F-LINK-01,
+  F-EPISODE-V1-01, prueba viva, sin VERIFIED economico).
+- `DOCUMENTATION_CONFLICTS` — none new (98/4 parcial vs 245/13
+  completo ya distinguidos; filas del run vs delta neto por
+  retencion distinguidos aqui).
+
 ## F-LINK-01 + F-EPISODE-V1-01 — trazabilidad y episodios (2026-10-16, sobre d7dcc70, sin nuevas corridas)
 
 - `DECISIONS_REVIEWED` — control/registro/leases/identidad,

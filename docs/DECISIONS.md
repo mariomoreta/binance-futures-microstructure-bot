@@ -1640,3 +1640,22 @@ autorizacion). Auth verificada en vivo sin monitor (403 sin
 headers/origen evil, 400 con confirm erroneo previo a spawn) y con
 mocks 59/59. 98/4 = vista parcial de cola acotada; 245/13 =
 reconstruccion completa del fixture: no equivalentes.
+
+## Piloto brief probe-20261016T005550Z (2026-10-16, autorizada 1x120s observe)
+
+Unica corrida via V2 publica (brief, START_OBSERVE_2100, HTTP 200
+all-components-verified): probe 14500 + supervisor 14976 +
+sentinel 372. `link_probe_run_id` escribio el UUID al registro sin
+intervencion (R1 PASS); log/final/telemetry coinciden (R2 PASS:
+UUID unico en log, 4 snapshots UUID). Cierre natural
+duration-reached code 0 (122.377s probe vs 131s registro:
+observacion + drain vs overhead spawn/marcado). Ventana sana:
+89360 msgs, 0.00% rechazos, 0 reconnects, reloj 1/1, lags p50
+~171-175ms, research 54/0/0 = 54 filas UUID (flow_10s neto -98
+por retencion concurrente: filas del run != delta neto).
+10 funding LOW = 2 episodios v1, sin mezcla (R5 PASS). V2 3020
+muestra enlace exacto post-cierre (R4/R5 PASS); feed mid-run en
+vivo no capturado (R3 UNKNOWN, residual: capturar mid-run la
+proxima ventana). Sin ordenes/cambios (safety 0/0/0, sin diff
+funcional desde d126141). Detalle + matriz R1-R11 en
+`docs/evidence/RUN_BRIEF120_20261016_CLOSEOUT.json`.

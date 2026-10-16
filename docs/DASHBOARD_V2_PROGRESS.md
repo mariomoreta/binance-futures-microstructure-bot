@@ -116,6 +116,20 @@ NEXT AUTHORIZED SLICE
 - Evidencia: `docs/evidence/V2_3020_SYSTEM_TOP.png`,
   `V2_3020_SYSTEM_EPISODES.png`. Monitor detenido.
 
+## DASH-V2-BRIEF-PILOT — 2026-10-16 (piloto 120s probe-20261016T005550Z)
+
+- Starting SHA: `510c4ff` (funcional `d126141`, sin diff).
+- Run: UUID 4303b1c5 auto-enlazado, 122.377s probe / 131s registro,
+  COMPLETED duration-reached code 0, PIDs muertos, leases STOPPED.
+  89360 msgs, 0 rechazos/reconnects, reloj 1/1, research 54/0/0 =
+  54 filas UUID; 10 funding = 2 episodios v1 sin mezcla.
+- V2 3020: barra (RUN/START/PLAN/END/CLOSE/FROZEN/STALE) + panel
+  10/2 con enlace exacto; feed mid-run en vivo no capturado (R3
+  UNKNOWN, residual). Seguridad 0/0/0.
+- Evidencia: `RUN_BRIEF120_20261016_CLOSEOUT.json` (matriz R1-R11:
+  9 PASS, R3 UNKNOWN, 0 FAIL) + `V2_BRIEF120_CLOSE_TOP.png` +
+  `V2_BRIEF120_CLOSE_EPISODES.png`. Sin gates ni rentabilidad.
+
 ## DASH-V2-LINK-EP — 2026-10-16 (trazabilidad stem<->UUID + episodios v1)
 
 - Starting SHA: `d7dcc70`.

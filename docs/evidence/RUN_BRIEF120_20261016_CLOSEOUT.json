@@ -1,0 +1,211 @@
+{
+ "pilot": "probe-20261016T005550Z",
+ "scope": "ONE supervised brief run (120s, observe, BTC/ETH/SOL) to validate automatic registry-probe-snapshots-V2 linkage. No orders, no strategy or threshold changes. No restarts, no retries.",
+ "identity": {
+  "branch": "review/o1-funcional-v2-observacion",
+  "sha_docs": "510c4fffe91df001739cd45d4f3c9bf332aeca01",
+  "sha_functional": "d126141381a0cc7f119d1e4977fd892508715e53",
+  "functional_diff_since_d126141": "none (docs/evidence only)",
+  "v2": {
+   "url": "http://127.0.0.1:3020",
+   "pid": 23588,
+   "build_id": "u0ziTGs3Q12uEMZapEWf7",
+   "route": "public V2 brief=120"
+  },
+  "registry_run_id": "probe-20261016T005550Z",
+  "probe_run_id": "4303b1c565354609a2d690141c62da86",
+  "pids": {
+   "probe": 14500,
+   "supervisor": 14976,
+   "sentinel": 372
+  },
+  "uuid_match": {
+   "registry_probe_run_id": "4303b1c565354609a2d690141c62da86",
+   "log_only_run_id": "4303b1c565354609a2d690141c62da86 (sole run_id in log)",
+   "final_summary_run_id": "4303b1c565354609a2d690141c62da86",
+   "telemetry_rows_with_uuid": 4,
+   "verdict": "exact match on all four surfaces"
+  },
+  "v2_linkage_mode": {
+   "post_close_panel": "exact probe link shown (4303b1c5...), not UNKNOWN",
+   "offline_proof": "unit tests: exact-UUID first, incompatible-UUID rejected, historic-unlinked falls back to conservative temporal rule",
+   "mid_run_live_feed_response": "NOT captured during the 120s window",
+   "verdict": "UNKNOWN for live mid-run attribution (residual: capture /api/v1/runtime mid-run next window); exact-link availability PASS"
+  }
+ },
+ "chronology": {
+  "launch_confirmed": "2026-10-16T00:55:50Z (HTTP 200, all-components-verified, 3 polls)",
+  "probe_create": "2026-10-16T00:55:50.461612+00:00",
+  "started_at": "2026-10-16T00:55:51+00:00",
+  "expected_end_at": "2026-10-16T00:57:51+00:00",
+  "requested_seconds": 120,
+  "probe_runtimeSeconds": 122.377,
+  "registry_elapsed_frozen": 131.0,
+  "last_telemetry": "2026-10-16T00:57:54.097Z",
+  "last_exit_at": "2026-10-16T00:58:02+00:00",
+  "supervisor_last_check": "2026-10-16T00:58:23+00:00",
+  "sentinel_last_check": "2026-10-16T00:58:25+00:00",
+  "time_differences": "122.377s probe = 120s observation + ~2.4s startup/drain; 131s registry = spawn overhead (~1s) + shutdown/mark (~9s). Expected_end is observation deadline; last_exit is terminal mark.",
+  "terminal": {
+   "state": "COMPLETED",
+   "reason": "duration-reached",
+   "exit_code": 0,
+   "processes": "gone (0 python), leases STOPPED/STALE, 0 aborts"
+  }
+ },
+ "data_quality": {
+  "messages_total": 89360,
+  "by_stream": {
+   "bookTicker": {
+    "BTC": 33286,
+    "ETH": 40673,
+    "SOL": 10070
+   },
+   "depth": {
+    "BTC": 1106,
+    "ETH": 1149,
+    "SOL": 1101
+   },
+   "aggTrade": {
+    "BTC": 640,
+    "ETH": 907,
+    "SOL": 170
+   },
+   "markPrice_arr": 238,
+   "forceOrder_arr": 20
+  },
+  "timestampRejected": "0 / 89360 (0.00%)",
+  "reconnects": 0,
+  "parseErrors": 0,
+  "payloadErrors": 0,
+  "websocketErrors": 0,
+  "depth_gaps": "0/0/0",
+  "missing_stale_silent": "[]/[]/[]",
+  "uptime_percent": {
+   "market": 99.187,
+   "public": 99.258
+  },
+  "clock": "1/1 ok, 5/5 samples, offset -289.67ms, RTT 351.32ms",
+  "delivery_lag_p50_ms": "171-175 across streams (healthy sub-second)",
+  "dispatch_p50_ms": "sub-ms (bookTicker 0.0003, aggTrade 0.027-0.075, depth 0.0007)",
+  "host": "CPU 3.05%, RSS 80MB",
+  "research": "writes 54, drops 0, errors 0, state STOPPED, last_write 00:57:53Z",
+  "safety": "observe, 0 keys, 0 orders, 0 capital, no auth clients, no order paths"
+ },
+ "db_result": {
+  "microprobe_size": [
+   238927872,
+   238927872
+  ],
+  "historical_size": [
+   19181568,
+   19181568
+  ],
+  "integrity": "ok/ok (quick_check), readable",
+  "journals": "absent on both (no recovery executed)",
+  "run_rows_by_uuid": {
+   "telemetry_snapshots": 4,
+   "research_flow_10s": 39,
+   "research_flow_1m": 9,
+   "research_book_1m": 6,
+   "research_total": "54 = final_summary research.writes (exact)"
+  },
+  "net_delta_vs_baseline": {
+   "telemetry_snapshots": "1000->1000 (cap REPLACE; 4 UUID rows, oldest evicted)",
+   "oi_samples": "+6 (2891->2897, no run_id column: window-attributed only)",
+   "price_samples": "+39 (234->273, no run_id column: window-attributed only)",
+   "research_book_1m": "+6 net, 6 UUID",
+   "research_flow_1m": "+9 net, 9 UUID",
+   "research_flow_10s": "-98 net with 39 UUID rows (retention deleted ~137 old rows concurrently)",
+   "prospective_universe_rest": "unchanged (66/228, 375; 0 UUID rows: no new setups)"
+  },
+  "retention_note": "run rows (exact, by UUID) differ from net deltas (retention-bounded caps + concurrent cleanup); never conflate",
+  "logs_growth": "118750286B/185 files -> 118925682B/188 files (+175396B: probe log 174950B + watcher logs)"
+ },
+ "detections": {
+  "raw_events": 10,
+  "episodes": 2,
+  "detail": "BTCUSDT x5 @4.536e-05 + ETHUSDT x5 @5.931e-05, ~1/s over ~4s, samples 66->70 (warm-up-edge artifact class, LOW side)",
+  "grouping": "v1 (first-event/new-symbol), SOL 0",
+  "provenance": "run probe-20261016T005550Z + linked UUID 4303b1c5..., whole log inside tail (limitation null), log carries sole UUID (no mixing)",
+  "zero_policy": "zero detections would have been valid; no episodes invented from aggregates"
+ },
+ "v2_close": {
+  "runtime": "COMPLETED/duration-reached/exit 0, probe_run_id linked, feed UNKNOWN (correct: no fresh attributable evidence post-close)",
+  "global_bar": "RECORDED COMPLETED + VERIFY NOT-LIVE (gone) + RUN/START/PLAN 120s/END/CLOSE 00:58:02/FROZEN 131s + FEED/SUP/SEN STALE",
+  "panel": "10 raw / 2 episodes, probe 4303b1c5... exact, research labels, no limitation line",
+  "screenshots": [
+   "docs/evidence/V2_BRIEF120_CLOSE_TOP.png",
+   "docs/evidence/V2_BRIEF120_CLOSE_EPISODES.png"
+  ]
+ },
+ "matrix": [
+  {
+   "req": "R1 auto link registry<-probe",
+   "result": "PASS",
+   "evidence": "probe_run_id present minutes after start, same-PID fenced path only writer"
+  },
+  {
+   "req": "R2 UUID match probe/log/telemetry",
+   "result": "PASS",
+   "evidence": "sole log run_id == final_summary == registry == 4 telemetry rows"
+  },
+  {
+   "req": "R3 V2 exact (not temporal-only) attribution",
+   "result": "UNKNOWN",
+   "cause": "mid-run live /api/v1/runtime feed response not captured; exact-link availability + code path proven offline",
+   "residual": "capture mid-run V2 feed next window"
+  },
+  {
+   "req": "R4 global bar state/identity/freshness/close",
+   "result": "PASS",
+   "evidence": "V2_BRIEF120_CLOSE_TOP.png + snapshot"
+  },
+  {
+   "req": "R5 detections provenance/coverage, no mixing",
+   "result": "PASS",
+   "evidence": "/api/v1/detections new run_id+UUID, 10/2, limitation null"
+  },
+  {
+   "req": "R6 natural close + 3 processes dead",
+   "result": "PASS",
+   "evidence": "COMPLETED/duration-reached/0, gone, 0 python, STOPPED leases, 0 aborts"
+  },
+  {
+   "req": "R7 frozen counter + SQLite + journals",
+   "result": "PASS",
+   "evidence": "131 frozen, quick_check ok/ok, journals absent"
+  },
+  {
+   "req": "R8 run rows vs net delta + retention split",
+   "result": "PASS",
+   "evidence": "54 UUID == research.writes; per-table net vs UUID table above"
+  },
+  {
+   "req": "R9 no hot journal, no auto-recovery",
+   "result": "PASS",
+   "evidence": "journals absent"
+  },
+  {
+   "req": "R10 no orders/strategy/threshold change",
+   "result": "PASS",
+   "evidence": "safety 0/0/0; no functional diff since d126141"
+  },
+  {
+   "req": "R11 single run, no retries/restarts",
+   "result": "PASS",
+   "evidence": "one POST -> 200; no further launches; registry single COMPLETED"
+  }
+ ],
+ "phase_close": {
+  "closed": "automatic stem<->UUID traceability + v1 episode interpretation, proven live end-to-end on one 120s window within stated limits",
+  "limits": [
+   "R3 live mid-run attribution still UNKNOWN (residual above)",
+   "oi_samples/price_samples deltas are window-attributed (no run_id column)",
+   "one 120s window proves mechanism, not economics; thresholds stay hypotheses; no gate advancement"
+  ],
+  "not_started": "entry/exit evaluation, backtests, paper trading, execution"
+ },
+ "next_work": "capture mid-run V2 feed (/api/v1/runtime) on a future authorized window to close R3; then entry/exit evaluation design only on explicit instruction",
+ "end_state": "V2 open on 3020 (PID 23588, build u0ziTGs3Q12uEMZapEWf7), monitor stopped (COMPLETED/gone, 0 python)"
+}

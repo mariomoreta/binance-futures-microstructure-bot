@@ -1,3 +1,17 @@
+## Piloto brief probe-20261016T005550Z COMPLETADO (2026-10-16, autorizada 1x120s, sin push aun)
+UUID 4303b1c565354609a2d690141c62da86 auto-enlazado al registro;
+120s solicitados, probe 122.377s, registro 131s congelado,
+COMPLETED duration-reached code 0, PIDs muertos, leases STOPPED.
+89360 msgs, 0 rechazos/reconnects/parse, 11/11 streams, reloj 1/1,
+lags p50 ~171-175ms, dispatch sub-ms, research 54/0/0 STOPPED.
+10 funding (BTC/ETH LOW, 2 episodios v1) + log con UUID unico.
+Tablas: 54 filas UUID = research.writes (telemetry 4 con cap
+1000); flow_10s neto -98 con 39 UUID (retencion concurrente).
+V2 3020: barra + panel 10/2 con enlace exacto; feed mid-run en
+vivo no capturado (R3 UNKNOWN, residual). Seguridad 0/0/0.
+Resta: matriz en evidencia, commit, push, entrega. V2 abierto,
+monitor detenido.
+
 ## V2 operativo en 3020 (2026-10-16, sobre d126141, sin corridas)
 Unico dashboard principal http://127.0.0.1:3020 (PID 23588,
 BUILD_ID u0ziTGs3Q12uEMZapEWf7 del arbol d126141): detenidas la

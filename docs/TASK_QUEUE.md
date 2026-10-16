@@ -1,3 +1,9 @@
+## Piloto brief 120s COMPLETADO (2026-10-16, autorizado 1x, sin push aun)
+Enlace auto UUID 4303b1c5 + cierre natural COMPLETED + 89360 msgs
+sanos + 54 filas UUID + V2 10/2 con enlace exacto (R3 mid-run
+UNKNOWN, residual). Resta: matriz, commit, push, entrega.
+V2 abierto, monitor detenido.
+
 ## V2 operativo en 3020 (2026-10-16, sobre d126141, sin corridas)
 3020 unico con build d126141 (PID 23588, BUILD_ID registrado);
 obsoletas detenidas; auth 403/400 en vivo + mocks 59/59 sin
