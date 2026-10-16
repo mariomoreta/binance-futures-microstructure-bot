@@ -1,0 +1,380 @@
+{
+ "version": "FUNDING-CAL-v1",
+ "source": "exchange-funding-history (Binance USD-M fundingRate)",
+ "interval_ms": 28800000,
+ "symbol": "SOLUSDT",
+ "settlements": [
+  {
+   "settlement_ms": 1788825600004,
+   "rate_bps": 0.2574
+  },
+  {
+   "settlement_ms": 1788854400002,
+   "rate_bps": -0.06420000000000001
+  },
+  {
+   "settlement_ms": 1788883200001,
+   "rate_bps": 0.2385
+  },
+  {
+   "settlement_ms": 1788912000005,
+   "rate_bps": -0.0939
+  },
+  {
+   "settlement_ms": 1788940800004,
+   "rate_bps": 0.3107
+  },
+  {
+   "settlement_ms": 1788969600002,
+   "rate_bps": -0.6173
+  },
+  {
+   "settlement_ms": 1788998400000,
+   "rate_bps": -0.8755000000000001
+  },
+  {
+   "settlement_ms": 1789027200007,
+   "rate_bps": -0.1661
+  },
+  {
+   "settlement_ms": 1789056000002,
+   "rate_bps": -0.44889999999999997
+  },
+  {
+   "settlement_ms": 1789084800008,
+   "rate_bps": 0.125
+  },
+  {
+   "settlement_ms": 1789113600000,
+   "rate_bps": 0.3648
+  },
+  {
+   "settlement_ms": 1789142400000,
+   "rate_bps": 0.4064
+  },
+  {
+   "settlement_ms": 1789171200001,
+   "rate_bps": 0.5071
+  },
+  {
+   "settlement_ms": 1789200000003,
+   "rate_bps": 0.44749999999999995
+  },
+  {
+   "settlement_ms": 1789228800000,
+   "rate_bps": 0.1503
+  },
+  {
+   "settlement_ms": 1789257600002,
+   "rate_bps": 0.2147
+  },
+  {
+   "settlement_ms": 1789286400000,
+   "rate_bps": -0.13999999999999999
+  },
+  {
+   "settlement_ms": 1789315200000,
+   "rate_bps": -0.11120000000000001
+  },
+  {
+   "settlement_ms": 1789344000000,
+   "rate_bps": -0.0938
+  },
+  {
+   "settlement_ms": 1789372800000,
+   "rate_bps": 0.8182
+  },
+  {
+   "settlement_ms": 1789401600000,
+   "rate_bps": 1.0
+  },
+  {
+   "settlement_ms": 1789430400000,
+   "rate_bps": 1.0
+  },
+  {
+   "settlement_ms": 1789459200005,
+   "rate_bps": -0.6297999999999999
+  },
+  {
+   "settlement_ms": 1789488000001,
+   "rate_bps": -0.39690000000000003
+  },
+  {
+   "settlement_ms": 1789516800001,
+   "rate_bps": -0.2991
+  },
+  {
+   "settlement_ms": 1789545600002,
+   "rate_bps": -0.0133
+  },
+  {
+   "settlement_ms": 1789574400001,
+   "rate_bps": 0.32830000000000004
+  },
+  {
+   "settlement_ms": 1789603200000,
+   "rate_bps": 0.3565
+  },
+  {
+   "settlement_ms": 1789632000003,
+   "rate_bps": 0.09490000000000001
+  },
+  {
+   "settlement_ms": 1789660800000,
+   "rate_bps": 0.8823
+  },
+  {
+   "settlement_ms": 1789689600003,
+   "rate_bps": 1.0
+  },
+  {
+   "settlement_ms": 1789718400006,
+   "rate_bps": 1.0
+  },
+  {
+   "settlement_ms": 1789747200000,
+   "rate_bps": 1.0
+  },
+  {
+   "settlement_ms": 1789776000000,
+   "rate_bps": 1.0
+  },
+  {
+   "settlement_ms": 1789804800002,
+   "rate_bps": 1.0
+  },
+  {
+   "settlement_ms": 1789833600000,
+   "rate_bps": 1.0
+  },
+  {
+   "settlement_ms": 1789862400000,
+   "rate_bps": 1.0
+  },
+  {
+   "settlement_ms": 1789891200000,
+   "rate_bps": 1.0
+  },
+  {
+   "settlement_ms": 1789920000000,
+   "rate_bps": 1.0
+  },
+  {
+   "settlement_ms": 1789948800007,
+   "rate_bps": 0.9171
+  },
+  {
+   "settlement_ms": 1789977600004,
+   "rate_bps": 1.0
+  },
+  {
+   "settlement_ms": 1790006400002,
+   "rate_bps": 1.0
+  },
+  {
+   "settlement_ms": 1790035200000,
+   "rate_bps": 1.0
+  },
+  {
+   "settlement_ms": 1790064000004,
+   "rate_bps": 1.0
+  },
+  {
+   "settlement_ms": 1790092800000,
+   "rate_bps": 0.028100000000000003
+  },
+  {
+   "settlement_ms": 1790121600000,
+   "rate_bps": 0.7908
+  },
+  {
+   "settlement_ms": 1790150400004,
+   "rate_bps": 0.4274
+  },
+  {
+   "settlement_ms": 1790179200004,
+   "rate_bps": -0.6732999999999999
+  },
+  {
+   "settlement_ms": 1790208000002,
+   "rate_bps": 0.1129
+  },
+  {
+   "settlement_ms": 1790236800000,
+   "rate_bps": 0.1541
+  },
+  {
+   "settlement_ms": 1790265600005,
+   "rate_bps": 0.4849
+  },
+  {
+   "settlement_ms": 1790294400002,
+   "rate_bps": -0.4015
+  },
+  {
+   "settlement_ms": 1790323200000,
+   "rate_bps": 1.0
+  },
+  {
+   "settlement_ms": 1790352000002,
+   "rate_bps": 1.0
+  },
+  {
+   "settlement_ms": 1790380800000,
+   "rate_bps": 0.3121
+  },
+  {
+   "settlement_ms": 1790409600001,
+   "rate_bps": -0.418
+  },
+  {
+   "settlement_ms": 1790438400001,
+   "rate_bps": 0.7311
+  },
+  {
+   "settlement_ms": 1790467200000,
+   "rate_bps": 0.1484
+  },
+  {
+   "settlement_ms": 1790496000001,
+   "rate_bps": 0.6689
+  },
+  {
+   "settlement_ms": 1790524800000,
+   "rate_bps": -0.3009
+  },
+  {
+   "settlement_ms": 1790553600000,
+   "rate_bps": -0.16920000000000002
+  },
+  {
+   "settlement_ms": 1790582400001,
+   "rate_bps": 0.32549999999999996
+  },
+  {
+   "settlement_ms": 1790611200001,
+   "rate_bps": 0.41140000000000004
+  },
+  {
+   "settlement_ms": 1790640000000,
+   "rate_bps": 0.12819999999999998
+  },
+  {
+   "settlement_ms": 1790668800000,
+   "rate_bps": 0.48019999999999996
+  },
+  {
+   "settlement_ms": 1790697600000,
+   "rate_bps": -0.2581
+  },
+  {
+   "settlement_ms": 1790726400000,
+   "rate_bps": 0.2555
+  },
+  {
+   "settlement_ms": 1790755200000,
+   "rate_bps": 0.0901
+  },
+  {
+   "settlement_ms": 1790784000002,
+   "rate_bps": 0.0074
+  },
+  {
+   "settlement_ms": 1790812800001,
+   "rate_bps": -0.7987000000000001
+  },
+  {
+   "settlement_ms": 1790841600005,
+   "rate_bps": 0.1985
+  },
+  {
+   "settlement_ms": 1790870400003,
+   "rate_bps": -0.2261
+  },
+  {
+   "settlement_ms": 1790899200002,
+   "rate_bps": 0.3853
+  },
+  {
+   "settlement_ms": 1790928000000,
+   "rate_bps": 1.0
+  },
+  {
+   "settlement_ms": 1790956800000,
+   "rate_bps": 1.0
+  },
+  {
+   "settlement_ms": 1790985600001,
+   "rate_bps": -0.6097
+  },
+  {
+   "settlement_ms": 1791014400000,
+   "rate_bps": 0.36050000000000004
+  },
+  {
+   "settlement_ms": 1791043200001,
+   "rate_bps": 0.0679
+  },
+  {
+   "settlement_ms": 1791072000000,
+   "rate_bps": 0.18899999999999997
+  },
+  {
+   "settlement_ms": 1791100800001,
+   "rate_bps": 1.0
+  },
+  {
+   "settlement_ms": 1791129600002,
+   "rate_bps": 1.0
+  },
+  {
+   "settlement_ms": 1791158400002,
+   "rate_bps": 1.0
+  },
+  {
+   "settlement_ms": 1791187200001,
+   "rate_bps": 0.1333
+  },
+  {
+   "settlement_ms": 1791216000000,
+   "rate_bps": -0.17070000000000002
+  },
+  {
+   "settlement_ms": 1791244800003,
+   "rate_bps": 0.1156
+  },
+  {
+   "settlement_ms": 1791273600001,
+   "rate_bps": -0.38130000000000003
+  },
+  {
+   "settlement_ms": 1791302400000,
+   "rate_bps": 1.0
+  },
+  {
+   "settlement_ms": 1791331200002,
+   "rate_bps": 1.0
+  },
+  {
+   "settlement_ms": 1791360000002,
+   "rate_bps": -1.3562
+  },
+  {
+   "settlement_ms": 1791388800000,
+   "rate_bps": 0.3115
+  }
+ ],
+ "provenance": {
+  "endpoint": "https://fapi.binance.com/fapi/v1/fundingRate",
+  "acquired_utc": "2026-10-16T05:30:00Z",
+  "response_sha256": "271557db51c76f2d31f8f098d275df22d75d521d670086ef2b6a65b132ae267d",
+  "n_raw": 90,
+  "n_settlements": 90,
+  "coverage_ms": [
+   1788825600004,
+   1791388800000
+  ],
+  "note": "realized venue rates; quoted/next estimates never substitute them"
+ }
+}

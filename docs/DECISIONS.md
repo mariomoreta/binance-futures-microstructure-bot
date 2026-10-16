@@ -1764,3 +1764,40 @@ tamanos invariantes, filas UUID 4/6/39/9 con deltas netos por
 retencion (flow_10s 4117->3636). Sin recovery, sin relanzar.
 Residual R3 vivo cerrado; siguiente: offline entradas/salidas
 (recomendado, no ejecutado).
+
+## Offline entry/exit closeout V1 (2026-10-16, sin ventana forward, sin simulacion prospectiva)
+
+1. Causalidad por operacion (no por afirmacion): event_time = open de
+formacion, condicion conocible solo al close_time (= available_at);
+entrada = primer open > event_time (= entry_time). Auditoria re-ejecutada
+offline en temp (export+seleccion+runner, sin red, DB solo lectura):
+1412/1412 operaciones con available_at presente y entry >= available
+(0 violaciones, 0 nulos; gap uniforme 1ms por cadena intacta: 2879 velas
+cerradas/simbolo, 0 null_close_time, 0 violaciones). Tripletas conservadas
+en docs/evidence/OFFLINE_EVAL_AUDIT_V1.json. Disponibilidad de senal VIVA
+sigue UNKNOWN (sin prueba de formacion en streaming).
+2. Reconciliacion: fuente 1558 (BTC 476 + ETH 498 + SOL 584) - 1 purgada
+(ETH continuation LONG 1790007300000, ventana cruza el cutoff) = 1557
+admitidas (476+497+584; dev 777 + oos 780) - 145 solapes (max_concurrent=1
+intra celda) - 0 expiradas - 0 desajustadas = 1412 operaciones (BTC 452 +
+ETH 457 + SOL 503) = 1410 realizadas + 2 marcas open_at_end. Draft previo
+corregido (ETH 497 era admitidas no fuente; SOL H2 6 no 7).
+3. Funding: 1 liquidacion sostenida (+0.0894 USDT, ETH cont-dev) + 1403
+cubiertas sin liquidacion en ventana + 8 UNKNOWN/uncovered (6 colas + 2
+marcas, uncovered_ms 2700000 c/u); 1404/1412 completitud contable.
+'4 ventanas' del draft ANULADO (eran 179 horizontes de evento con
+liquidacion, solo 1 sostenida en [entry,exit)). Sensibilidad sin
+calendario: delta +0.0894 en una celda, resto identico; 'inmaterial' no
+se concluye para el conjunto uncovered. Cobertura y rango por simbolo en
+el audit JSON.
+4. Exposicion: max_concurrent=1 rige DENTRO de cada celda
+(simbolo-grupo-segmento-escala); simbolos en procesos separados con
+calendarios fijados (extranjero rechazado), grupos en llamadas separadas.
+Pooled = suma aritmetica de replays independientes, NO cartera de una
+sola posicion; exposicion simultanea no modelada.
+5. Resultados: E bruta +1.88...+3.11 USDT/operacion sobre nocional fijo
+1000 USD @1x; friccion medida ~1.60/op (comisiones ~1.00 + spread/slip
+asumido ~0.60; el '~1.0' del draft cubria solo comisiones). Costes 5/1/2bps
+supuestos versionados (COST-ASSUME-v1), no medidos. Held-out non-pristine;
+pooled no es estrategia alternativa comparable. Las 12 celdas direccionales
+caen en negativo a 2x (verificado).

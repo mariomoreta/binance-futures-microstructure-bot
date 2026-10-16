@@ -1,3 +1,24 @@
+## Offline entry/exit closeout V1 (2026-10-16, sin ventana forward, sin simulacion prospectiva, sin push aun)
+Re-ejecucion offline en temp (export 476/498/584, seleccion
+224+252/0, 256+241/1, 297+287/0, input_hash identicos al artefacto;
+replays BTC 452 + ETH 457 + SOL 503 = 1412). Causalidad por operacion:
+1412/1412 entry>=available, 0 violaciones, gap 1ms (tripletas en
+docs/evidence/OFFLINE_EVAL_AUDIT_V1.json). Flujo 1558 fuente - 1 purga
+(ETH H1 1790007300000) = 1557 admitidas - 145 solapes = 1412
+(1410R + 2 marcas). Funding: 1 sostenida (+0.0894) + 1403 cubiertas quietas
++ 8 UNKNOWN (1404/1412 completas); "4 ventanas" anulado. Exposicion
+intra-celda; pooled = suma aritmetica, no cartera. Unidades USDT/1000 USD:
+bruta +1.88...+3.11/op, friccion ~1.60/op (comisiones ~1.00 + spread/slip
+asumido ~0.60); costes supuestos. 12/12 celdas negativas a 2x.
+Verificado: backend 1168/1168 + barrera exit 0 (0/0/0, 1 RO, hashes
+iguales) + frontend 310/310 + typecheck + QA visual 3020 (overview +
+historical-research con seccion, 0 errores). Servido 3020: PID 26976
+(`next start -p 3020`), BUILD_ID 8ys8al-xhDgAYQyg8bz-T, runtime exact-uuid
+con snapshot 4c76d94c…1303f9, /overview + /api/v1/offline-eval 200;
+build incluye seccion offline-eval previa a la nota de alcance (sin
+redeploy en este cierre). Resta: commit, push, entrega. V2
+abierto 3020, monitor detenido.
+
 ## R3 vivo PASS brief 120s (2026-10-16, autorizada 1x, sin push aun)
 probe-20261016T034423Z (UUID 4c76d94c…1303f9): 120s solicitados,
 cierre natural COMPLETED duration-reached exit 0, contador

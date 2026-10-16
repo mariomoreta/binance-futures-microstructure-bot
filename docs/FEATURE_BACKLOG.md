@@ -1086,3 +1086,38 @@ features VERIFIED without evidence.
 ## DASH-V2-62 reconciliation - 2026-10-11
 
 F-LAUNCH-SUP-01 remains PROPOSED for enablement / PARTIAL overall. The five new implementation findings and two contract notes are corrected in disabled preparation; 29 new tests, 902/902 canonical and 52/52 targeted OK. Report: DASH_V2_62_SUPERVISED_LAUNCH_CORRECTIONS.md. Operational readiness, real watcher startup binding, enabled access and longevity remain unverified/deferred. F-P14A-01 historical windows unchanged; no new run or gate advancement. User-authorized direct backend correction replaces the V2-61 handoff for these findings; no need for the other agent to repeat them.
+
+## F-OFFLINE-EVAL-01 — cierre evaluacion offline entradas/salidas V1 (2026-10-16, sin ventana forward, sin simulacion prospectiva)
+
+- `DECISIONS_REVIEWED` — diseno OFFLINE_EVAL_DESIGN_V1 (corte+purga,
+  solape, baseline, costes, non-pristine), mapping MAP-CANDIDATE-v1
+  (auditoria retrospectiva, H1/H2/H3), contrato de lectura
+  OFFLINE_EVAL_READ_CONTRACT_V1, motor v4.2 + runner reutilizados,
+  adquisicion FUNDING-CAL-v1, R3 vivo b1f2aaf como alcance previo.
+- `NEW_DECISIONS_RECORDED` — DECISIONS (Offline entry/exit closeout V1:
+  causalidad por operacion, reconciliacion 1558→1557→1412, funding
+  1+1403+8 con "4 ventanas" anulado, exposicion intra-celda, unidades
+  USDT/1000 USD con friccion ~1.60, costes supuestos, non-pristine,
+  pooled no comparable).
+- `FEATURES_IMPLEMENTED` — auditoria reproducible offline (export +
+  seleccion + runner re-ejecutados en temp, hashes iguales al artefacto)
+  + docs/evidence/OFFLINE_EVAL_AUDIT_V1.json (1412 tripletas
+  formation/available/entry) + informe V1 corregido (fuente/admitidas,
+  funding, exposicion, unidades) + diseno (alcance intra-celda, pooled no
+  comparable) + mapping (puntero a prueba por operacion) + nota de alcance
+  en OfflineEvalSection + captura visual 3020.
+- `FEATURES_VERIFIED` — backend 1168/1168 OK + barrera exit 0
+  (0 prohibidos/bloqueados/efectivos, 1 RO esperado, hashes iguales, sin
+  diffs) + frontend 310/310 + typecheck limpio + replays 452+457+503=1412
+  con input_hash identicos + causalidad 1412/1412 sin violaciones +
+  sensibilidad 12/12 celdas negativas a 2x + QA visual 3020
+  (overview + historical-research con seccion, 0 errores consola).
+- `DEFERRED_FEATURES` — ventana forward pristina (no adquirida),
+  simulacion prospectiva (no iniciada), mapping aprobado, costes medidos,
+  modelo de posicion/exposicion, baselines alternativos
+  (buy-and-hold/placebo/aleatorio), paper/ejecucion.
+- `BACKLOG_UPDATED` — yes: this entry (ID F-OFFLINE-EVAL-01).
+- `DOCUMENTATION_CONFLICTS` — corregidos aqui: ETH 497 (admitidas) vs 498
+  (fuente), SOL H2 7→6, friccion ~1.0→~1.60/op, "4 ventanas"→1 sostenida,
+  pooled-como-cartera (nunca fue cartera), build servido 3020 identificado
+  en CURRENT_STATE (sin redeploy en este cierre).

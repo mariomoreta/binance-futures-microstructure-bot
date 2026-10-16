@@ -1,3 +1,10 @@
+## Offline entry/exit closeout V1 (2026-10-16, sin ventana forward, sin simulacion prospectiva, sin push aun)
+Auditoria de 5 puntos cerrada con re-ejecucion offline (hashes identicos)
++ informe corregido + audit JSON por operacion + barrera + QA visual.
+Sin ventana forward, sin simulacion, sin mapping aprobado, sin costes
+medidos, sin paper/ejecucion. Resta: commit, push, entrega. V2 abierto,
+monitor detenido.
+
 ## R3 vivo PASS brief 120s (2026-10-16, autorizada 1x, sin push aun)
 Unico lanzamiento V2 brief=120 reconciliado sin duplicar (la
 respuesta 200 no trae run_id arriba); capturador con ambas
