@@ -116,6 +116,17 @@ NEXT AUTHORIZED SLICE
 - Evidencia: `docs/evidence/V2_3020_SYSTEM_TOP.png`,
   `V2_3020_SYSTEM_EPISODES.png`. Monitor detenido.
 
+## DASH-V2-R3CAP — 2026-10-16 (captura R3 lista + prep offline)
+
+- Starting SHA: `48445f2`. Sin corridas, papel ni ordenes.
+- `scripts/capture_run_window.py` + 10 tests + `export_engine_inputs.py`
+  + 2 tests + `docs/ENGINE_ENTRY_EVAL_INVENTORY.md` (matriz H1/H2/H3,
+  prep mecanico 1558 eventos en temp, economia retenida).
+- Comando proxima ventana autorizada (tras el launch):
+  `python scripts/capture_run_window.py --run-id <stem> --out
+  docs/evidence/R3_WINDOW_<stem>.json`.
+- Verification: suites + barrera en el cierre.
+
 ## DASH-V2-BRIEF-PILOT — 2026-10-16 (piloto 120s probe-20261016T005550Z)
 
 - Starting SHA: `510c4ff` (funcional `d126141`, sin diff).
@@ -127,8 +138,13 @@ NEXT AUTHORIZED SLICE
   10/2 con enlace exacto; feed mid-run en vivo no capturado (R3
   UNKNOWN, residual). Seguridad 0/0/0.
 - Evidencia: `RUN_BRIEF120_20261016_CLOSEOUT.json` (matriz R1-R11:
-  9 PASS, R3 UNKNOWN, 0 FAIL) + `V2_BRIEF120_CLOSE_TOP.png` +
+  10 PASS, R3 UNKNOWN, 0 FAIL; correccion del "9 PASS": la matriz
+  siempre tuvo 10 PASS + 1 UNKNOWN) + `V2_BRIEF120_CLOSE_TOP.png` +
   `V2_BRIEF120_CLOSE_EPISODES.png`. Sin gates ni rentabilidad.
+- Nota feed: respuesta `feed_health` UNKNOWN (slot del controlador,
+  nunca rellenado por el lector V2 por diseño) vs barra STALE
+  (enriquecimiento BFF desde ultimo snapshot grabado): dos capas,
+  sin contradiccion.
 
 ## DASH-V2-LINK-EP — 2026-10-16 (trazabilidad stem<->UUID + episodios v1)
 

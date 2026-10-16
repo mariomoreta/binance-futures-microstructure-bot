@@ -1,4 +1,12 @@
-## Piloto brief 120s COMPLETADO (2026-10-16, autorizado 1x, sin push aun)
+## R3 capture + prep offline (2026-10-16, sobre 48445f2, sin push aun)
+Reconciliacion 10+1 + UNKNOWN/STALE por capas; captura GET-only
+lista (10 tests) con comando para la proxima ventana; inventario
+H1/H2/H3 + adaptador + prep mecanico en temp (economia retenida).
+Faltan: mapping, funding realizado, costes, purga. Resta: suites,
+barrera, commit, push, entrega. Sin corridas/gates. V2 abierto,
+monitor detenido.
+
+## Piloto brief 120s COMPLETADO (2026-10-16, autorizado 1x, push 48445f2)
 Enlace auto UUID 4303b1c5 + cierre natural COMPLETED + 89360 msgs
 sanos + 54 filas UUID + V2 10/2 con enlace exacto (R3 mid-run
 UNKNOWN, residual). Resta: matriz, commit, push, entrega.

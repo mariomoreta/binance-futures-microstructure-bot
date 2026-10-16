@@ -130,8 +130,10 @@
   "provenance": "run probe-20261016T005550Z + linked UUID 4303b1c5..., whole log inside tail (limitation null), log carries sole UUID (no mixing)",
   "zero_policy": "zero detections would have been valid; no episodes invented from aggregates"
  },
- "v2_close": {
-  "runtime": "COMPLETED/duration-reached/exit 0, probe_run_id linked, feed UNKNOWN (correct: no fresh attributable evidence post-close)",
+  "v2_close": {
+   "runtime": "COMPLETED/duration-reached/exit 0, probe_run_id linked, controller feed slot UNKNOWN (correct post-close: the read-only V2 path never fills the live feed assessment; see feed_layers)",
+   "feed_layers": "response feed_health UNKNOWN + latest_snapshot_age null comes from control.status_readonly via _feed_unknown() (V2 GET passes no feed_provider by design: a pure reader never asserts live transport health). Bar FEED STALE + age comes from the BFF enriching the last RECORDED telemetry snapshot (00:57:54Z) via the conservative attribution rule. Two layers, two sources, no contradiction; no deeper cause evidenced -> mechanism stated, nothing beyond it claimed",
+   "reconciled_count": "matrix R1-R11 = 10 PASS (R1,R2,R4,R5,R6,R7,R8,R9,R10,R11) + 1 UNKNOWN (R3); the earlier '9 PASS' prose was a counting error, corrected here with history preserved",
   "global_bar": "RECORDED COMPLETED + VERIFY NOT-LIVE (gone) + RUN/START/PLAN 120s/END/CLOSE 00:58:02/FROZEN 131s + FEED/SUP/SEN STALE",
   "panel": "10 raw / 2 episodes, probe 4303b1c5... exact, research labels, no limitation line",
   "screenshots": [

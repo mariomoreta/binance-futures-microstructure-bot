@@ -1,4 +1,19 @@
-## Piloto brief probe-20261016T005550Z COMPLETADO (2026-10-16, autorizada 1x120s, sin push aun)
+## R3 capture + offline entry/exit prep (2026-10-16, sobre 48445f2, sin push aun)
+Reconciliado: matriz 10 PASS + 1 UNKNOWN (el "9 PASS" era error de
+conteo) + UNKNOWN-vs-STALE por capas (controlador vs BFF).
+Herramienta `scripts/capture_run_window.py` (solo GET runtime/
+detections, learn-and-pin, +30/60/90 + terminal acotado, salida
+protegida) + 10 tests locales verdes; comando listo para la
+proxima ventana autorizada. Inventario `docs/ENGINE_ENTRY_EVAL_INVENTORY.md`: motor
+v4.2 + runner reutilizados sin cambios; adaptador
+`export_engine_inputs.py` (PROPOSED-P1-11C-map-v1 no aprobado);
+prep mecanico en temp: 1558 eventos, hash 1358c7f05ee8474b, 692
+trades @1x, economia RETENIDA (sin lectura). Faltan: mapping
+aprobado, calendario funding realizado, costes medidos, purga.
+Resta: suites, barrera, commit, push, entrega. V2 abierto 3020,
+monitor detenido, sin nuevas corridas.
+
+## Piloto brief probe-20261016T005550Z COMPLETADO (2026-10-16, autorizada 1x120s, push 48445f2)
 UUID 4303b1c565354609a2d690141c62da86 auto-enlazado al registro;
 120s solicitados, probe 122.377s, registro 131s congelado,
 COMPLETED duration-reached code 0, PIDs muertos, leases STOPPED.

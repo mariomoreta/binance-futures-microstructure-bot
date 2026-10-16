@@ -1659,3 +1659,37 @@ vivo no capturado (R3 UNKNOWN, residual: capturar mid-run la
 proxima ventana). Sin ordenes/cambios (safety 0/0/0, sin diff
 funcional desde d126141). Detalle + matriz R1-R11 en
 `docs/evidence/RUN_BRIEF120_20261016_CLOSEOUT.json`.
+
+## R3 capture + prep offline entradas/salidas (2026-10-16, sobre 48445f2; sin corridas)
+
+1. Reconciliacion: la matriz R1-R11 siempre fue 10 PASS + 1
+UNKNOWN (el "9 PASS" era error de conteo en la prosa; corregido
+con historia preservada). UNKNOWN-vs-STALE por capas: el slot
+`feed_health` de la respuesta sale de `status_readonly` via
+`_feed_unknown()` (el lector V2 no evalua transporte en vivo por
+diseno); el STALE de la barra lo enriquece el BFF desde el ultimo
+snapshot grabado. Sin contradiccion. Backtests existen y se
+reutilizan sin cambios: `backtest_offline.py` (v4.2) +
+`run_family_evaluation.py` (jamas descritos como inexistentes;
+aqui se inspeccionan y reutilizan).
+2. `scripts/capture_run_window.py` (solo GET a runtime/detections,
+learn-and-pin de run_id/UUID, capturas t0/+30/+60/+90 + terminal
+acotado, payload revisado, run-changed/incompatible registrados
+sin sustituir ni relanzar, salida protegida, budgets explicitos;
+exit 0/1/2/3/4/5). R3 solo PASS con captura en ventana activa +
+enlace exacto (HEALTHY/temporal/post-cierre no bastan). 10 tests
+locales (valida/errores/timeout/cambio/enlace/cierre/proteccion).
+Comando proxima ventana (tras el launch autorizado):
+`python scripts/capture_run_window.py --run-id <stem> --out
+docs/evidence/R3_WINDOW_<stem>.json` (offsets/defectos por
+defecto; ids tambien aprenden solos).
+3. Inventario `docs/ENGINE_ENTRY_EVAL_INVENTORY.md` (matriz
+capacidad/fuente/faltante/aceptacion H1/H2/H3 + bounce; H3 sigue
+bajista). Adaptador `scripts/export_engine_inputs.py`
+(PROPOSED-P1-11C-map-v1 NO aprobado, up->LONG/down->SHORT
+declarado). Prep mecanico en temp: 8637 velas + 1558 eventos,
+cutoff mediana, hash 1358c7f05ee8474b, 692 trades @1x, 0
+mismatched/expirados, overlaps contados, rebound/baseline vacios;
+economia calculada pero RETENIDA (sin lectura). Faltan: mapping
+aprobado, calendario funding realizado (contrato §B), costes
+medidos, purga/embargo, prueba de disponibilidad.

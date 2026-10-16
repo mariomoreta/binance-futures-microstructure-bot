@@ -716,6 +716,28 @@ here and request approval before treating it as binding. Never mark
 features VERIFIED without evidence.
 
 
+## F-R3CAP-01 + F-ENTRY-PREP-01 — captura R3 + prep offline (2026-10-16, sobre 48445f2, sin corridas)
+
+- `DECISIONS_REVIEWED` — cierre brief R1-R11, contratos runtime/
+  detecciones/BFF, motor v4.2 + runner, P1-11C, klines retenidos.
+- `NEW_DECISIONS_RECORDED` — DECISIONS §R3 capture + prep;
+  `docs/ENGINE_ENTRY_EVAL_INVENTORY.md`; reconciliacion 10+1 y
+  UNKNOWN/STALE por capas.
+- `FEATURES_IMPLEMENTED` — F-R3CAP-01: `scripts/capture_run_window.py`
+  (GET-only, pin, +30/60/90, terminal acotado, salida protegida);
+  F-ENTRY-PREP-01: `scripts/export_engine_inputs.py` (PROPOSED map
+  no aprobado) + inventario + prep mecanico en temp.
+- `FEATURES_VERIFIED` — captura 10 + export 2 (locales, sin Binance);
+  prep: 8637 velas/1558 eventos/hash/discartes/versiones; economia
+  RETENIDA (no leida, no presentada).
+- `DEFERRED_FEATURES` — R3 PASS vivo (proxima ventana autorizada);
+  mapping H, funding realizado, costes medidos, purga; entradas/
+  salidas, backtests validantes, paper, ejecucion.
+- `BACKLOG_UPDATED` — yes: this entry (IDs F-R3CAP-01,
+  F-ENTRY-PREP-01).
+- `DOCUMENTATION_CONFLICTS` — corregidos aqui: "9 PASS" (10+1) y
+  backtests jamas inexistentes (reutilizados v4.2 + runner).
+
 ## F-LINK-01 + F-EPISODE-V1-01 — piloto brief 20261016T005550Z (2026-10-16, 1x120s autorizada)
 
 - `DECISIONS_REVIEWED` — trazabilidad stem<->UUID, episodios v1,
@@ -724,10 +746,11 @@ features VERIFIED without evidence.
   `docs/evidence/RUN_BRIEF120_20261016_CLOSEOUT.json` (+2 capturas V2).
 - `FEATURES_IMPLEMENTED` — (sin codigo) prueba viva del enlace
   automatico + agrupacion v1 sobre 10 eventos nuevos.
-- `FEATURES_VERIFIED` — matriz R1-R11 en el JSON: 9 PASS, R3
-  UNKNOWN (feed mid-run en vivo no capturado; enlace exacto
-  disponible + path probado offline), 0 FAIL; 54 filas UUID =
-  research.writes; V2 10/2 con enlace exacto y sin mezcla.
+- `FEATURES_VERIFIED` — matriz R1-R11 en el JSON: 10 PASS
+  (R1,R2,R4-R11), R3 UNKNOWN (feed mid-run en vivo no capturado;
+  enlace exacto disponible + path probado offline), 0 FAIL
+  (correccion: el "9 PASS" anterior era error de conteo); 54 filas
+  UUID = research.writes; V2 10/2 con enlace exacto y sin mezcla.
 - `DEFERRED_FEATURES` — R3 mid-run (residual), evaluacion de
   entradas/salidas, backtests, paper, ejecucion; resto excluido.
 - `BACKLOG_UPDATED` — yes: this entry (IDs F-LINK-01,
