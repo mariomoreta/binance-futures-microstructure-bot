@@ -126,3 +126,42 @@ Contrastar el selector real, proponer delta minimo y actualizar backlog/contrato
 donde corresponde. No lanzar corridas, paper, ordenes ni calibracion por leerlo.
 Reconciliar documentos con cambios selectivos; no sobrescribir archivos
 concurrentes ni aplicar snapshots completos de una rama documental antigua.
+
+## 11. BTC: activo elegible y contexto transversal (aclaracion 2026-10-16)
+BTC tiene dos roles independientes: (a) candidato operable si cumple la misma
+aptitud/hipotesis/riesgo que corresponda; (b) referencia de regimen y fuerza
+relativa para cada altcoin. ETH/SOL pueden aportar contexto adicional cuando
+se justifique; su pertenencia al trio no les da automaticamente el mismo peso.
+Esto preserva SIGNAL_RESEARCH_PLAN (retorno relativo, correlacion, beta y lead/lag).
+
+La observacion del usuario sobre co-movimiento es una hipotesis medible por
+horizonte y regimen, no una ley: no se asume correlacion constante, causalidad
+ni que BTC anticipe a cada altcoin. Tampoco se asume que los movimientos
+contrarios sean pocos o pequenos; frecuencia y magnitud requieren medicion
+sobre el universo observado en cada instante.
+
+Para cada decision alt en T registrar contexto BTC at/before T, retorno,
+velocidad/aceleracion y volatilidad en horizontes comparables (por ejemplo
+1m/5m/15m/1h, a fijar y versionar), staleness y cobertura.
+Medir retorno relativo R_alt(h)-R_BTC(h), correlacion/beta sobre prefijos
+historicos y residual ajustado cuando haya muestras suficientes.
+Sin datos suficientes: UNKNOWN, no relacion supuesta.
+Distinguir:
+- alineada: alt y BTC avanzan en igual direccion;
+- fuerza relativa: alt supera a BTC, incluso cayendo menos;
+- divergente: direccion contraria, hipotesis propia a investigar.
+Alineacion no suma automaticamente evidencia independiente: precio alt,
+ranking y contexto BTC pueden reflejar el mismo factor de mercado.
+
+La estrategia candidata debe comparar con/sin contexto BTC fuera del conjunto
+de ajuste, controlando costes, cobertura y seleccion, antes de usarlo como
+filtro, ponderacion o regla de riesgo. Sin esa evidencia no bloquear por defecto
+divergencias ni convertir cada subida/caida BTC en entrada/salida alt.
+
+V2: contexto de mercado en Overview; en Movers retorno alt + BTC + relativo
+con horizonte; en detalle/Oportunidades evidencia BTC favorable/contraria/UNKNOWN
+y hora de observacion; Backtest comparacion condicionada; Paper Lab registra
+el contexto BTC de la entrada y su evolucion, separado del motivo de salida.
+Aceptacion: demostrar sincronizacion causal, casos alineados/divergentes,
+missing/stale y valor incremental sobre el baseline sin BTC. No codigo ni
+umbrales aprobados por esta aclaracion; fase activa y gates intactos.

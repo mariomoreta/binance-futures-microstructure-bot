@@ -1829,3 +1829,13 @@ rebote es variante H2 separada. No se aprueban reglas ni parametros nuevos.
 EXTREME_MOVERS_OBJECTIVE.md fija delta de investigacion, recorrido V2 y
 aceptacion. F-EXTREME-OBJECTIVE-01 registra el seguimiento. Actual tarea
 offline conserva prioridad; sin corridas, paper, servicios ni codigo tocados.
+
+
+## 2026-10-16 — BTC como activo y contexto, sin regla automatica
+Aclaracion del usuario: BTC permanece elegible para posiciones y es referencia
+transversal para altcoins. Se preservan las cantidades ya previstas en
+SIGNAL_RESEARCH_PLAN. EXTREME_MOVERS_OBJECTIVE §11 registra alineacion,
+fuerza relativa, divergencia, sincronizacion at/before T y comparacion con/sin
+BTC. Co-movimiento, escasez/magnitud de divergencias y poder predictivo son
+hipotesis a medir, no hechos asumidos ni instrucciones de trading.
+Solo documentacion en rama aislada; sin codigo, reglas, corridas ni gates.
