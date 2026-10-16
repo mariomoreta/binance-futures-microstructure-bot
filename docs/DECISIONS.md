@@ -1818,3 +1818,12 @@ calendarios en Git (tabla corregida + re-adquisicion documentada).
 4. Limitacion declarada en informe 10: el export lee el historico
 canonico local (no publicado); checkout limpio verifica artefacto,
 agregacion (fixtures), UI y build, pero no regenera desde cero.
+
+## Paquete reproducible + causalidad + costes + protocolo prospectivo (2026-10-17, sin corridas)
+
+1. Paquete OFFLINE-EVAL-PACKAGE-V1 (manifiesto docs/evidence/OFFLINE_EVAL_PACKAGE_V1.md): re-export/replay en temp reproduce input_hash (BTC 31c100e2, ETH 7643681e, SOL d784680b) y artefacto byte-identico (c051e888...287b3a); IDs originales 1:1 en event_ids.json (0 faltantes/multiples); checkout limpio verifica artefacto/agregacion sin canonico; zip fuera de Git + regeneracion por scripts/reproduce_offline_eval.py; reproduccion externa PENDIENTE.
+2. Causalidad (docs/OFFLINE_EVAL_CAUSAL_AUDIT_V2.md): formacion prefijo-causal + invariancia estricta 18/18 (3 simbx6 fam); direction/reference de datos pasados; seleccion retrospectiva (subconjunto piloto, exhaustiva actual daria ~1997 solo BTC); entry>=available no elimina sesgo de seleccion. Matriz: H1/H3/H2-legs RETROSPECTIVAS no utilizables como senal; rebote UNKNOWN/excluido. H3 nunca redefinido; direccion nunca por rendimiento posterior.
+3. Costes (docs/OFFLINE_EVAL_COST_BREAKEVEN_V1.md): breakeven s*=G/F1 1.18-1.94, maxRT 18.8-31.1bps; 12/12 direccionales negativas a 2x (fragil). Comisiones por escenarios oficiales (taker+taker ~1.00 = supuesto V1; maker/mixto/BNB como escenarios, tier jamas asumido). Spread/slippage historicos UNKNOWN (prohibido derivarlos del presente). Funding con signo/cobertura; 8 UNKNOWN nunca cero; realizadas separadas de abiertas. Pooled = suma aritmetica, NO cartera; baseline comparable propuesto TIME-PLACEBO-v1 (no implementado).
+4. Protocolo prospectivo V1 (docs/PROSPECTIVE_PROTOCOL_V1.md, solo preparacion, NO ejecutado): hipotesis elegibles H1/H3 solo con MAP-APPROVED-v1 + disponibilidad live + ventana pristina + costes medidos; bloqueo actual = ninguna elegible; criterios aceptacion/rechazo (supera placebo + sobrevive 2x); prohibido reajustar sobre la ventana; siguiente accion exacta en 4 pasos.
+5. V2: OfflineEvalSection con bloques reproducibilidad/causalidad/breakeven (solo lectura, sin senales; Start/Stop/supervision/atribucion intactos).
+

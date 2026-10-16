@@ -1,3 +1,31 @@
+## Paquete reproducible + causalidad + costes + protocolo (2026-10-17, sin corridas, sin push aun)
+Paquete OFFLINE-EVAL-PACKAGE-V1 (manifiesto en
+docs/evidence/OFFLINE_EVAL_PACKAGE_V1.md): replay completo en temp
+reproduce input_hash y artefacto byte-identico (c051e888…287b3a);
+IDs originales 1:1 (event_ids.json, 0 faltantes); zip fuera de Git
++ `scripts/reproduce_offline_eval.py`; limpio verifica
+artefacto/agregacion sin canonico; reproduccion externa PENDIENTE.
+Causalidad (OFFLINE_EVAL_CAUSAL_AUDIT_V2): formacion
+prefijo-causal + invariancia 18/18; seleccion retrospectiva;
+H1/H3/H2-legs no utilizables como senal, rebote UNKNOWN.
+Costes (OFFLINE_EVAL_COST_BREAKEVEN_V1): s* 1.18–1.94,
+12/12 negativas a 2x; comisiones por escenarios oficiales;
+spread/slip UNKNOWN; pooled no cartera + baseline
+TIME-PLACEBO-v1 propuesto. Protocolo prospectivo V1 solo
+preparado (ninguna hipotesis elegible hoy; 4 pasos siguientes).
+V2 historical-research con bloques reproducibilidad/causalidad/
+breakeven (solo lectura). Tests nuevos: breakeven 7 + causalidad
+3 (sinteticos) + agregacion 6/6 + frontend offline-eval 6/6 +
+typecheck. Verificado: backend 1183 OK (2 skips preexistentes
+symlink) + frontend 310/310 (52 files) + build OK (BUILD_ID
+JbysVWGpy6brxyWqTf9FQ) + V2 3020 PID 25708
+(127.0.0.1, `/overview` + `/historical-research` +
+`/api/v1/offline-eval` + `/api/v1/runtime` 200, 0 errores
+consola, 3 bloques nuevos visibles + captura
+docs/evidence/VISUAL_QA_OFFLINE_EVAL_V2.png). DBs intactos
+(mtimes 15/10). Resta: commit, push, entrega. V2 abierto 3020,
+monitor detenido.
+
 ## Fix artefacto offline-eval publicado (2026-10-16, sin corridas, sin push aun)
 Defecto: `@/data/offline-eval-v1.json` ignorado y ausente en GitHub (404
 en limpio). Correccion: artefacto por force-add (114195 B, sha c051e888…

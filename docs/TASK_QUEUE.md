@@ -1,3 +1,10 @@
+## Paquete + causalidad + costes + protocolo (2026-10-17, sin corridas, sin push aun)
+Manifiesto + replay verificado + IDs 1:1 + reproduce script; matriz
+causal (ninguna elegible); breakeven s* + fragilidad 2x; protocolo
+V1 preparado; V2 con 3 bloques lectura; tests nuevos verdes.
+Resta: build, QA visual 3020, commit, push, entrega. V2 por
+desplegar, monitor detenido.
+
 ## Fix artefacto offline-eval publicado (2026-10-16, sin corridas, sin push aun)
 Artefacto por force-add + agregador determinista byte-identico + test 6/6
 + hashes funding reconciliados + limitacion dataset declarada. Resta:

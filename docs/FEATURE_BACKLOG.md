@@ -1143,3 +1143,14 @@ F-LAUNCH-SUP-01 remains PROPOSED for enablement / PARTIAL overall. The five new 
 - `DOCUMENTATION_CONFLICTS` — corregidos aqui: artefacto ausente en Git
   (404 en limpio), ruta de test en contrato (`src/`→`frontend/src/`),
   hashes funding del draft (transitorios → provenance verificables).
+
+## F-OFFLINE-EVAL-03 - paquete reproducible + causalidad + costes + protocolo (2026-10-17, sin corridas, sin push aun)
+
+- DECISIONS_REVIEWED - paquete/artefacto V1, mapping MAP-CANDIDATE-v1, motor v4.2 + runner, contratos offline-eval, funding/calendarios, P1-11C Carteras, backlog F-OFFLINE-EVAL-02.
+- NEW_DECISIONS_RECORDED - DECISIONS parrafo 2026-10-17 (paquete/causalidad/costes/protocolo/V2); docs OFFLINE_EVAL_PACKAGE_V1 (manifiesto), OFFLINE_EVAL_CAUSAL_AUDIT_V2 (matriz), OFFLINE_EVAL_COST_BREAKEVEN_V1 (breakeven+exposicion), PROSPECTIVE_PROTOCOL_V1 (preparacion, no ejecutado).
+- FEATURES_IMPLEMENTED - paquete temp + zip + event_ids 1:1 + scripts/reproduce_offline_eval.py; 4 docs; V2 OfflineEvalSection (3 bloques lectura); tests breakeven 7 + causalidad 3.
+- FEATURES_VERIFIED - replay byte-identico (c051e888) + input_hash x3 + invariancia 18/18 + s*/fragilidad 2x + frontend offline-eval + typecheck; build + QA visual 3020 pendientes al cierre.
+- DEFERRED_FEATURES - publicacion DB canonica/zip (fuera de Git; reproduccion externa PENDIENTE); MAP-APPROVED-v1; disponibilidad live; ventana pristina; costes medidos; TIME-PLACEBO-v1; paper/ejecucion; gates.
+- BACKLOG_UPDATED - yes: this entry (ID F-OFFLINE-EVAL-03).
+- DOCUMENTATION_CONFLICTS - none new (agregacion != replay distinguido; pooled no cartera reiterado; H3 nunca recuperacion).
+

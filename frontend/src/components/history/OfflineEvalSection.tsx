@@ -64,6 +64,39 @@ export function OfflineEvalSection() {
           <td style={td}>{evalMoney((sc as Record<string, {total_fees: number | null}>)["1.0"]?.total_fees ?? null)}</td>
           <td style={td}>{evalMoney((sc as Record<string, {total_funding: number | null}>)["1.0"]?.total_funding ?? null)}</td></tr>)}</tbody>
     </table></div>
+    <h3 style={{fontSize: 14, fontWeight: 700, marginTop: 16}}>Reproducibility (isolated package)</h3>
+    <p style={{fontSize: 12, color: "#8ea4b5"}}>Artifact sha256 c051e888…287b3a (pinned). Per-symbol input hashes above re-verified by full replay from the canonical DB (byte-identical rebuild, 1412 trades, inputs identical). Bulky candles/events live outside Git; manifest with full SHA256, versions, units, coverage, gaps, provenance and commands: docs/evidence/OFFLINE_EVAL_PACKAGE_V1.md. Reproduce via scripts/reproduce_offline_eval.py. External reproduction without the DB/package stays PENDING (clean checkouts verify artifact/aggregation/UI only — aggregation determinism is not replay from raw data).</p>
+    <h3 style={{fontSize: 14, fontWeight: 700, marginTop: 16}}>Causality by family (mechanics vs signal)</h3>
+    <div style={{overflowX: "auto"}}><table style={{width: "100%", borderCollapse: "collapse"}}>
+      <thead><tr>{["Family", "Formation", "Selection", "Live availability", "Reading"].map(x => <th style={th} key={x}>{x}</th>)}</tr></thead>
+      <tbody>{[
+        ["H1 bullish continuation (LONG)", "prefix-causal, strict-posterior invariant", "retrospective pilot subset", "UNKNOWN", "retrospective — not a signal"],
+        ["H3 bearish continuation (SHORT)", "prefix-causal, strict-posterior invariant", "retrospective pilot subset", "UNKNOWN", "retrospective — not a signal"],
+        ["H2 exhaustion / reversal legs", "prefix-causal mechanics", "retrospective + n≤14 INSUFFICIENT + non-fade convention", "UNKNOWN", "fenced, no reading"],
+        ["H2 rebound variant", "no source definition", "0 events, excluded", "UNKNOWN", "UNKNOWN (untestable)"],
+      ].map(([f, a, b, c, d]) => <tr key={f as string}><td style={td}>{f}</td><td style={td}>{a}</td><td style={td}>{b}</td><td style={td}>{c}</td><td style={td}>{d}</td></tr>)}
+      </tbody>
+    </table></div>
+    <p style={{fontSize: 12, color: "#8ea4b5"}}>Per-trade entry ≥ available_at holds 1412/1412 (mechanical causality, not tradability). Full matrix: docs/OFFLINE_EVAL_CAUSAL_AUDIT_V2.md. No retrospective result is shown as an operable signal.</p>
+    <h3 style={{fontSize: 14, fontWeight: 700, marginTop: 16}}>Breakeven (assumed costs; spread/slippage UNKNOWN)</h3>
+    <p style={{fontSize: 12, color: "#8ea4b5"}}>Costs are COST-ASSUME-v1 (fee 5bps + spread 1bps + slippage 2bps, ~1.60 USDT/op on $1000 notional) — assumed, never measured; fee tier unknown; no historical spread/depth. Breakeven scale s* = E[gross]/1.60; max round-trip friction = E[gross]×10 bps. All 12 directional cells turn negative at 2x (fragile, no demonstrated edge). Detail: docs/OFFLINE_EVAL_COST_BREAKEVEN_V1.md.</p>
+    <div style={{overflowX: "auto"}}><table style={{width: "100%", borderCollapse: "collapse"}}>
+      <thead><tr>{["Symbol", "Group", "Seg", "E[gross]/op", "s* (breakeven scale)", "max round-trip", "@2x verdict"].map(x => <th style={th} key={x}>{x}</th>)}</tr></thead>
+      <tbody>{Object.keys(data.symbols).flatMap(sym => ["continuation", "bearish-continuation"].flatMap(g => (["dev", "oos"] as const).map(seg => {
+        const c1 = data!.cells[sym]?.[g]?.[seg]?.["1.0"];
+        const c2 = data!.cells[sym]?.[g]?.[seg]?.["2.0"];
+        if (!c1 || c1.expectancy_gross === null || c1.expectancy_net === null) return null;
+        const f1 = (c1.expectancy_gross as number) - (c1.expectancy_net as number);
+        const sstar = f1 > 0 ? (c1.expectancy_gross as number) / f1 : null;
+        return <tr key={`${sym}-${g}-${seg}-be`}>
+          <td style={td}>{sym}</td><td style={td}>{g}</td><td style={td}>{seg}</td>
+          <td style={td}>{evalMoney(c1.expectancy_gross)}</td>
+          <td style={td}>{sstar === null ? "UNKNOWN" : sstar.toFixed(2) + "x"}</td>
+          <td style={td}>{((c1.expectancy_gross as number) * 10).toFixed(1) + " bps"}</td>
+          <td style={td}>{(c2?.expectancy_net ?? 0) < 0 ? "negative (fragile)" : "UNKNOWN"}</td></tr>;
+      })))}
+      </tbody>
+    </table></div>
     <h3 style={{fontSize: 14, fontWeight: 700, marginTop: 16}}>Limits (binding)</h3>
     <ul style={{fontSize: 12, color: "#9cabbc"}}>{data.limits.map((l, i) => <li key={i}>{l}</li>)}</ul>
   </section>;
