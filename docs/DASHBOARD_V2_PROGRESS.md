@@ -96,6 +96,26 @@ NEXT AUTHORIZED SLICE
 - Evidencia: RUN_OBS10M_20261015_COMPLETED.txt + 2 capturas terminal.
 - Informe push 67472e0; reconciliacion push d7dcc70. V2 abierto, monitor detenido.
 
+## DASH-V2-OPS-3020 — 2026-10-16 (entrega operativa V2 en puerto canonico)
+
+- Canonical dashboard: `http://127.0.0.1:3020` (unico principal),
+  `next start` desde `frontend/` de este repo, PID 23588,
+  BUILD_ID `u0ziTGs3Q12uEMZapEWf7` construido del arbol d126141
+  (ruta `/api/v1/detections` presente, `probe_run_id` en runtime).
+- Reemplazo: instancia 3020 obsoleta (PID 24364, sin `/detections`
+  ni `probe_run_id`, build anterior a d126141) + instancia 8093
+  propia (PID 12268, build d126141) detenidas; `requestAllowed`
+  sigue pineado a 127.0.0.1:3020 (sin ampliar CORS/origenes).
+- Auth en vivo sin monitor: stop/start sin headers 403, origen evil
+  403, canonico + confirm erroneo 400 previo a cualquier spawn;
+  suites mockeadas 59/59 (security/start/stop/contract/feed/
+  detections/panel). Registro intacto (COMPLETED/gone), 0 python.
+- Visual 3020: barra global + panel episodios (98/4 parcial con
+  `evidence-tail-truncated`, enlace UNKNOWN, etiqueta research);
+  245/13 = reconstruccion completa del fixture, no equivalente.
+- Evidencia: `docs/evidence/V2_3020_SYSTEM_TOP.png`,
+  `V2_3020_SYSTEM_EPISODES.png`. Monitor detenido.
+
 ## DASH-V2-LINK-EP — 2026-10-16 (trazabilidad stem<->UUID + episodios v1)
 
 - Starting SHA: `d7dcc70`.
@@ -104,8 +124,9 @@ NEXT AUTHORIZED SLICE
   ruta `/detections` + panel System + fixture 245 + contrato
   EVENT_EPISODES; correccion documental agrupados/sin-byte-identidad.
   Sin corridas, umbrales, estrategias, calibracion ni Start/Stop nuevos.
-- Verification: suites + typecheck + build + barrera + visual en el cierre.
-- Next: commit selectivo, push, entrega.
+- Verification: backend 1139 OK + frontend 300/300 + typecheck + build
+  + barrera 0/0/1RO hashes iguales + visual escritorio/movil.
+- Commit d126141 + push review/o1-funcional-v2-observacion.
 
 ## DASH-V2-FEEDATTR — 2026-10-16 (correccion atribucion del feed, push 8c73de2)
 

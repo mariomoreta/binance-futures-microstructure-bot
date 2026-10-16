@@ -1,9 +1,17 @@
-## Trazabilidad + episodios v1 (2026-10-16, sobre d7dcc70, sin push aun)
+## V2 operativo en 3020 (2026-10-16, sobre d126141, sin corridas)
+3020 unico con build d126141 (PID 23588, BUILD_ID registrado);
+obsoletas detenidas; auth 403/400 en vivo + mocks 59/59 sin
+monitor; visual barra + episodios; 98/4 parcial vs 245/13
+completo (no equivalentes). Resta: commit, push, entrega.
+Monitor detenido.
+
+## Trazabilidad + episodios v1 (2026-10-16, push d126141)
 link fenced + lector exacto + agrupacion v1 + BFF/panel + regresion
 245 (fixture completo; BFF en vivo 98/4 parcial con limitacion
 declarada + UNKNOWN historico). Correccion documental agrupados/sin-byte-identidad. Sin
-corridas ni calibracion. Resta: suites, build, barrera, visual,
-commit, push, entrega. V2 abierto, monitor detenido.
+corridas ni calibracion. Backend 1139 + frontend 300/300 + barrera
+0/0/1RO + visual; commit d126141 + push. V2 en 3020, monitor
+detenido.
 
 ## Reconciliacion OBS10M UUID/persistencia/funding (2026-10-16, push d7dcc70)
 UUID exacto, 246 writes a historical.db (delta UNKNOWN), funding 245

@@ -1627,3 +1627,16 @@ procedencia/corrida/version/frescura, UNKNOWN explicito y etiqueta
 research. V2 no consume eventos crudos en ninguna otra vista
 (verificado: oportunidades usan clasificaciones). Sin Start/Stop
 nuevos ni segundo gestor.
+
+## Entrega operativa V2 en 3020 (2026-10-16, sobre d126141; sin nuevas corridas)
+
+Unico dashboard principal: `http://127.0.0.1:3020` (`next start`
+desde `frontend/` de este repo, BUILD_ID `u0ziTGs3Q12uEMZapEWf7`
+del arbol d126141). Detenidas la 3020 obsoleta (build anterior a
+d126141: sin `/detections` ni `probe_run_id`) y la 8093 propia
+(build d126141); `requestAllowed` sigue pineado a 127.0.0.1:3020
+(sin ampliar CORS/origenes: el problema era de publicacion, no de
+autorizacion). Auth verificada en vivo sin monitor (403 sin
+headers/origen evil, 400 con confirm erroneo previo a spawn) y con
+mocks 59/59. 98/4 = vista parcial de cola acotada; 245/13 =
+reconstruccion completa del fixture: no equivalentes.

@@ -57,3 +57,10 @@ history_samples first->last, open_reason, close_reason, event_indexes
   provenance (log-stem run_id + linked probe UUID when present),
   grouping version and freshness, with an explicit research label:
   funding thresholds remain unvalidated hypotheses.
+- The two published counts are NOT equivalent measurements and must
+  never be presented as such: 98 raw / 4 episodes is the live BFF
+  view over the bounded evidence tail (`evidence-tail-truncated`,
+  probe link UNKNOWN for the unlinked historic run); 245 raw / 13
+  episodes is the complete reconstruction over the frozen fixture
+  (`tests/fixtures/funding_245_obs10m.json`, 245/245 records
+  verified against the run log) under the same v1 rule.

@@ -1,4 +1,15 @@
-## Trazabilidad stem<->UUID + episodios v1 (2026-10-16, sobre d7dcc70, sin push aun)
+## V2 operativo en 3020 (2026-10-16, sobre d126141, sin corridas)
+Unico dashboard principal http://127.0.0.1:3020 (PID 23588,
+BUILD_ID u0ziTGs3Q12uEMZapEWf7 del arbol d126141): detenidas la
+3020 obsoleta (sin /detections ni probe_run_id) y la 8093 propia;
+requestAllowed intacto (solo 3020, sin CORS nuevos). Auth en vivo:
+403 sin headers/evil, 400 con confirm erroneo previo a spawn;
+mocks 59/59. Visual 3020: barra global + episodios 98/4 parcial
+(tail-truncated, UNKNOWN) vs 245/13 reconstruccion completa del
+fixture (no equivalentes). Registro COMPLETED/gone, 0 python.
+Resta: commit selectivo, push, entrega. Monitor detenido.
+
+## Trazabilidad stem<->UUID + episodios v1 (2026-10-16, push d126141)
 link_probe_run_id fenced + probe_run_id en status + lector V2 con
 enlace exacto y rechazo de incompatible; agrupacion v1
 (bruto/episodio/update/nuevo) + BFF /detections + panel System
@@ -10,8 +21,8 @@ Sin corridas, estrategias, umbrales,
 calibracion, Start/Stop nuevos ni segundo gestor. Correccion
 documental: episodios agrupados (no independencia), microprobe sin
 byte-identidad (tamano estable + contenido modificado, sin hashes).
-Resta: suites, build, barrera, visual, commit, push, entrega. V2
-abierto, monitor detenido.
+Verificado: backend 1139 + frontend 300/300 + barrera 0/0/1RO +
+visual; commit d126141 + push. V2 en 3020, monitor detenido.
 
 ## Corrida autorizada observation-10m 600s COMPLETADA (2026-10-15, push 10cad5c + informe 67472e0)
 probe-20261015T230630Z (UUID 893f24029cba4cff96eaba7c0af094d0,
