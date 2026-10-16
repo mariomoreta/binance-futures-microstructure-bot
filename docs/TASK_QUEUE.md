@@ -1,3 +1,10 @@
+## V2 08364ba publicado en 3020 (2026-10-16, deploy sin corridas)
+Build 08364ba en 3020 (PID 2868, BUILD_ID v4Od5kTGmfyFhyzE-twPO);
+runtime/detections/overview/system verificados 200 con las 3
+claves; sin corrida activa, monitor detenido. R3 vivo pendiente
+de futura ventana autorizada. Resta: commit documental, push,
+entrega.
+
 ## Atribucion exacta R3 (2026-10-16, sobre a2aebc5, sin push aun)
 BFF method/snapshot_run_id/timestamp + capturador PASS solo
 exact-uuid con UUID registro=snapshot (3 regresiones nuevas);

@@ -1,3 +1,18 @@
+## V2 08364ba publicado en 3020 (2026-10-16, deploy sin corridas)
+Arbol 08364ba compilado (`npm run build` OK) y sirviendo en
+http://127.0.0.1:3020 (PID 2868, BUILD_ID
+v4Od5kTGmfyFhyzE-twPO; instancia anterior 23588 detenida, resto
+de procesos intactos). Sin corrida activa (COMPLETED
+probe-20261016T005550Z, proceso gone, 0 python, monitor
+detenido). `/api/v1/runtime` incluye siempre
+feed_attribution_method/feed_snapshot_run_id/
+feed_snapshot_timestamp (en vivo: exact-uuid con UUID
+4303b1c5…c62da86 en registro y snapshot, STALE por reloj,
+valores de la evidencia sin forzar); `/overview` y `/system`
+200, `/api/v1/detections` 10/2 con mismo run+UUID. Puerto 3020
+y restricciones de origen intactas. R3 vivo NO cerrado: sigue
+pendiente de captura en futura corrida autorizada.
+
 ## Atribucion exacta R3 (2026-10-16, sobre a2aebc5, sin push aun)
 BFF expone method exact-uuid/temporal/none + snapshot_run_id +
 timestamp (salud/umbrales/Start-Stop intactos); capturador solo
