@@ -32,3 +32,11 @@ prior to test against labeled outcomes (`docs/EVENT_LABELING.md` horizons
   manager unconditionally.
 - No position code exists yet (Phase 4). Phase 1–3 work must keep the
   post-entry feature evolution measurable so this engine has inputs.
+
+## Contexto estructural y stops dinamicos — suplemento 2026-10-16
+Ver HISTORICAL_STRUCTURE_AND_EXIT_PLAN.md (F-STRUCTURE-EXIT-01).
+Se especifica diseno a evaluar: zonas multihorizonte disponibles causalmente,
+stop estructural/volatilidad, ajustes solo protectores, riesgos de fills/gaps y
+secuencia OHLC ambigua. No politica implementada ni parametros aprobados.
+No garantizar evitar stop-outs ni beneficio; registrar cada ajuste y medir
+coste de proteger vs devolver excursion. Backend y riesgo siguen autoridad.

@@ -165,3 +165,11 @@ el contexto BTC de la entrada y su evolucion, separado del motivo de salida.
 Aceptacion: demostrar sincronizacion causal, casos alineados/divergentes,
 missing/stale y valor incremental sobre el baseline sin BTC. No codigo ni
 umbrales aprobados por esta aclaracion; fase activa y gates intactos.
+
+## 12. Contexto historico y gestion del movimiento — 2026-10-16
+El objetivo incluye zonas soporte/resistencia con cobertura/fuente/horizonte,
+ruptura/retest y gestion dinamica de stop, no un techo/piso garantizado.
+HISTORICAL_STRUCTURE_AND_EXIT_PLAN.md (F-STRUCTURE-EXIT-01) especifica
+retencion compacta, disponibilidad causal de pivotes, escenarios y evaluacion
+de ajustes con riesgo. BTC sigue contexto transversal y candidato operable.
+Suplemento de diseno: sin codigo, parametros, corridas ni gates nuevos.

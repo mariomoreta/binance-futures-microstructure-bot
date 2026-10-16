@@ -1383,3 +1383,11 @@ strategies (P3), paper engine/positions (P4), execution (P5).
   `mariomoreta/binance-futures-microstructure-bot` (origin in sync).
 
   P1-05 implementation/docs commit follows on this branch.
+
+
+## Suplemento estructura historica — 2026-10-16 (solo documental)
+F-STRUCTURE-EXIT-01 en HISTORICAL_STRUCTURE_AND_EXIT_PLAN.md define contexto
+multihorizonte compacto, zonas causales y politicas de stop a evaluar.
+Fase causal/costes activa conserva prioridad. No datos nuevos, codigo,
+backfill, servicios, sesiones ni gates cambiados. Reconciliar despues de la
+entrega del agente sin sobrescribir sus archivos concurrentes.

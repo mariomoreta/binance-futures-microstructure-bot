@@ -1164,3 +1164,18 @@ BACKLOG_UPDATED: este ID, sin promover implementacion ni gates.
 DOCUMENTATION_CONFLICTS: estados historicos desactualizados preservados;
 map H2 mecanico no es fade/rebote validado; funding 8h del plan Paper antiguo
 debe reconciliarse al implementar, usando calendario por simbolo.
+
+
+## F-STRUCTURE-EXIT-01 — Estructura historica y gestion dinamica (2026-10-16)
+Objetivo documentado por solicitud del usuario; implementacion NO declarada.
+Spec: HISTORICAL_STRUCTURE_AND_EXIT_PLAN.md. Depende de auditoria causal/costes,
+datos multihorizonte y gestion/riesgo segun fases. No parametros aprobados.
+DECISIONS_REVIEWED: instrucciones/planes/gates/workflow y documentos de mercado,
+posicion y objetivo previamente auditados en esta rama documental.
+NEW_DECISIONS_RECORDED: contexto por zonas y retencion compacta; sin regla trading.
+FEATURES_IMPLEMENTED: plan y enlaces documentales solamente.
+FEATURES_VERIFIED: contraste con MARKET_DATA y POSITION_MANAGEMENT; sin codigo.
+DEFERRED_FEATURES: ingestion/cache/pivotes/ajustes/UI/paper segun auditoria y gates.
+BACKLOG_UPDATED: este ID; no cambia fase activa ni autorizaciones.
+DOCUMENTATION_CONFLICTS: fuentes historicas y paper funding 8h requieren
+reconciliacion al implementar; no extrapolar cobertura local a vida del token.

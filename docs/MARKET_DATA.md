@@ -172,3 +172,10 @@ Active/missing/silent/stale streams (staleness only on cadenced streams),
 per-stream message counts, max inter-message silence, depth sequence gaps,
 timestamp rejections, parse/payload/websocket errors, reconnects, per-endpoint
 uptime %, latency + processing distributions, detector near-miss/warm-up.
+
+## Historico multihorizonte compacto — diseno 2026-10-16
+HISTORICAL_STRUCTURE_AND_EXIT_PLAN.md define cobertura por contrato/fuente,
+contexto grueso largo y detalle reciente, cache incremental bajo demanda,
+limites medidos en bytes y preservacion de datasets. Historia del contrato no
+es historia desde creacion del token; ATH/ATL solo del periodo cubierto.
+Reutilizar ingestion y limiter existentes; ningun backfill iniciado aqui.

@@ -1839,3 +1839,13 @@ fuerza relativa, divergencia, sincronizacion at/before T y comparacion con/sin
 BTC. Co-movimiento, escasez/magnitud de divergencias y poder predictivo son
 hipotesis a medir, no hechos asumidos ni instrucciones de trading.
 Solo documentacion en rama aislada; sin codigo, reglas, corridas ni gates.
+
+
+## 2026-10-16 — Estructura historica y stops: diseno, no garantia
+Por solicitud del usuario se documenta F-STRUCTURE-EXIT-01 en
+HISTORICAL_STRUCTURE_AND_EXIT_PLAN.md, con enlaces desde MARKET_DATA,
+POSITION_MANAGEMENT y EXTREME_MOVERS_OBJECTIVE. Contexto multihorizonte,
+fuentes/contratos separados, cache/retencion medida y zonas causales;
+no techo/piso seguro ni trailing que evite toda salida prematura.
+Parametros y reglas quedan candidatos a evaluar con costes, no aprobados.
+Fase causal/costes activa intacta; sin datos nuevos, codigo, servicios ni sesiones.
