@@ -1,3 +1,12 @@
+## Suplemento de objetivo, sin interrumpir tarea activa — 2026-10-16
+Leer docs/EXTREME_MOVERS_OBJECTIVE.md antes del siguiente plan.
+Completar primero la auditoria causal/costes/paquete reproducible ya autorizada.
+Despues auditar selector discovery vs microestructura disponible, cobertura
+bilateral fuera del trio y conexiones Movers→detalle→Backtest/Paper.
+No iniciar sesiones ni implementar estrategia por este suplemento.
+F-EXTREME-OBJECTIVE-01 mantiene trazabilidad. Al integrar esta rama documental,
+portar solo sus cambios: preservar trabajo concurrente del agente.
+
 ## Fix artefacto offline-eval publicado (2026-10-16, sin corridas, sin push aun)
 Artefacto por force-add + agregador determinista byte-identico + test 6/6
 + hashes funding reconciliados + limitacion dataset declarada. Resta:

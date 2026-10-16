@@ -1818,3 +1818,14 @@ calendarios en Git (tabla corregida + re-adquisicion documentada).
 4. Limitacion declarada en informe 10: el export lee el historico
 canonico local (no publicado); checkout limpio verifica artefacto,
 agregacion (fixtures), UI y build, pero no regenera desde cero.
+
+
+## 2026-10-16 — Preservar objetivo de movers extremos (documental)
+Por instruccion del usuario se reafirma el alcance de PRODUCT_GOAL:
+universo Futures elegible, ganadores/perdedores, continuacion vs giro,
+entradas/salidas y duracion dinamica. El trio BTC/ETH/SOL valida mecanica
+en su cobertura, no sustituye el selector de extremos. H3 sigue bajista;
+rebote es variante H2 separada. No se aprueban reglas ni parametros nuevos.
+EXTREME_MOVERS_OBJECTIVE.md fija delta de investigacion, recorrido V2 y
+aceptacion. F-EXTREME-OBJECTIVE-01 registra el seguimiento. Actual tarea
+offline conserva prioridad; sin corridas, paper, servicios ni codigo tocados.

@@ -1,3 +1,11 @@
+## Objetivo movers extremos preservado — suplemento documental 2026-10-16
+Base revisada b748d22; no se infiere el estado de cambios locales concurrentes.
+PRODUCT_GOAL ya contenia el objetivo bilateral. EXTREME_MOVERS_OBJECTIVE.md
+lo conecta con selector causal, cobertura mas alla de BTC/ETH/SOL y
+Backtest/Paper Lab. Solo documentacion; sin cambio de fase, codigo, corridas,
+servicios ni gates. F-EXTREME-OBJECTIVE-01: objetivo reafirmado, implementacion
+por verificar; la auditoria offline actual sigue su alcance autorizado.
+
 ## Fix artefacto offline-eval publicado (2026-10-16, sin corridas, sin push aun)
 Defecto: `@/data/offline-eval-v1.json` ignorado y ausente en GitHub (404
 en limpio). Correccion: artefacto por force-add (114195 B, sha c051e888…

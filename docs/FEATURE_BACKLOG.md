@@ -1143,3 +1143,24 @@ F-LAUNCH-SUP-01 remains PROPOSED for enablement / PARTIAL overall. The five new 
 - `DOCUMENTATION_CONFLICTS` — corregidos aqui: artefacto ausente en Git
   (404 en limpio), ruta de test en contrato (`src/`→`frontend/src/`),
   hashes funding del draft (transitorios → provenance verificables).
+
+
+## F-EXTREME-OBJECTIVE-01 — Objetivo de movimientos extremos preservado (2026-10-16)
+Objetivo de producto: REAFIRMADO POR USUARIO. Plan tecnico: DOCUMENTADO,
+PENDIENTE DE AUDITORIA/IMPLEMENTACION por componentes. No feature completa.
+Fuente: PRODUCT_GOAL + MASTER_PLAN + EXTREME_MOVERS_OBJECTIVE.md.
+Aceptacion: selector causal bilateral, denominadores y cobertura fuera del
+trio, enlace evidencia-decision-posicion, costes/exposicion y V2 trazable.
+No aprobar mapping ni umbrales por registrar este ID. Reutilizar discovery,
+classifier, opportunity, motor/runner y contratos existentes.
+DECISIONS_REVIEWED: AGENTS, estado/cola/master/decisions/gates/workflow/backlog,
+PRODUCT_GOAL y SIGNAL_RESEARCH_PLAN en base b748d22.
+NEW_DECISIONS_RECORDED: alcance de producto preservado; no metodologia nueva.
+FEATURES_IMPLEMENTED: documentacion y enlaces, ningun codigo de producto.
+FEATURES_VERIFIED: contraste documental; sin pruebas de estrategia nuevas.
+DEFERRED_FEATURES: delta selector, cobertura, V2 Backtest/Paper, validacion,
+ejecucion segun fases/autorizaciones. IA/Kronos siguen diferidos.
+BACKLOG_UPDATED: este ID, sin promover implementacion ni gates.
+DOCUMENTATION_CONFLICTS: estados historicos desactualizados preservados;
+map H2 mecanico no es fade/rebote validado; funding 8h del plan Paper antiguo
+debe reconciliarse al implementar, usando calendario por simbolo.

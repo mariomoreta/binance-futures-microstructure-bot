@@ -52,3 +52,11 @@ P1-00…P1-14 dependency order in `docs/TASK_QUEUE.md` (dashboard-progressive,
 classifier only after raw-feature validation). Persistence foundation is a
 Phase 1 task (P1-02); full labeling stays Phase 2. No paper trading and no
 execution until their phases and authorizations.
+
+## Alcance estrategico preservado — 2026-10-16
+El producto final evalua movimientos extremos de ambos lados en el universo
+Futures elegible. BTC/ETH/SOL son un subconjunto de verificacion, no prueba
+de cobertura de esa estrategia. El seguimiento incremental y aceptacion
+estan en docs/EXTREME_MOVERS_OBJECTIVE.md (F-EXTREME-OBJECTIVE-01).
+Se conserva la secuencia vigente: auditoria causal/costes → selector evaluable
+→ backtest → paper → ejecucion autorizada. Sin cambio de gates.
