@@ -1904,15 +1904,19 @@ todo ahora: soportes, stops dinamicos y Paper Lab conservan su secuencia.
    EVALUADA donde falten datos (universe_ranking_history,
    liquidity_spread_depth, market_cap datado ausentes). El selector
    registra UNKNOWN; full-input decisions impossible on this dataset.
-8. Artefacto frontend/src/data/census-eval-v2.json publicado por
-   force-add (sha256 2b74a841...d37060, 73051 B; mismo patron que V1
-   c051e888): limpio verifica artefacto/UI/build, no regenera desde
-   cero (el canonico no se publica). QA visual 3020 PASS: historical-
-   research con OfflineEvalSection + CensusEvalSection, 0 errores
-   consola, captura docs/evidence/VISUAL_QA_CENSUS_EVAL_V2.png.
-   Defecto corregido: "0 cells eligible for operation" duplicado
-   (label del artefacto + componente). Suites: backend 1202 OK (2
-   skips), frontend 314/314, typecheck 0, build OK. Monitor y
-   watchers detenidos; V2 disponible en 3020 (PID 15480).
+## 2026-10-17 — Auditoría trazabilidad EVAL-CENSUS-V2 (addendum sobre commit b5cd690 / 1385927)
+
+1385927 es el prefijo de 7 chars del SHA publicado `13859277b7baa8b029d385c41bd3cb60c7cd4b13` (commit EVAL-CENSUS-V2, rama review/o1-funcional-v2-observacion), NO un run_id ni sesión. Verificado con git rev-parse/git show/git fetch; HEAD == origin/rama.
+
+Correcciones explícitas (sin reescribir historia):
+- H1/H3 direccionales 15m @1x = 12 celdas, 12 negativas. El "18/18" del commit mezcla 6 celdas baseline/comparator; no son direccionales. Doc base (§6) ya decía 12/12; mensaje de commit corregido por addendum.
+- Ledger de flujo desde manifiestos ejecutados (temp/opencode/eval*_*) + artefacto: 9320 detecciones censo → 7541 trio 15m+1h al builder (1779 censo extendido fuera de alcance) → 7167 admitidas direccionales + 374 excluidas por motivo (gap 225, no_entry 4, h2_no_conf 43, h2_reclaim 102) → expansión 1:2 placebo → 14334 → purge 30 → 14304 (= 7152 hipótesis + 7152 placebo). Hipótesis 1x: 7152 eventos, 2991 trades, 5 abiertas, 4161 skipped. Placebo: 7152/2264/2/4888. Total: 14304/5255/7/9049. realizadas = trades − abiertas (2986/2262/5248).
+- Trazabilidad: manifiestos con event_ids en temp/opencode (fuera de Git); vínculo completo detección→operación UNKNOWN hasta incorporarlos a Git. 594 grupos/616 filas duplicados del censo = misma (symbol, interval, formation_time) en múltiples familias; mecanismo verificado en subset BTC15m (129 grupos/135 filas); builder asigna cada detección a UNA familia (no duplica trades); max_concurrent=1 es intra-celda, NO prueba independencia entre familias/cedas.
+- Funding: 741 settled_events (escala 1x, hipótesis+placebo) = aplicaciones por operación; 270 liquidaciones únicas del calendario (90/símbolo); 0 unknown-excluded ≠ cobertura completa; 24/60 celdas uncovered. 741 ≠ 270 (métricas distintas).
+- MFE/MAE: mfe_mean/mae_mean de backtest_offline.run_backtest = excursión por posición, no captura por salida. Rango direccional 1x n>=30: MFE 0.19-0.64%, MAE 0.16-0.42% (aprox. al citado 0.18-0.66/0.10-0.42; subpoblación no especificada).
+- Verificador reproducible: scripts/audit_offline_eval_ledger.py + scripts/audit_offline_eval_checks.py (20 regresiones, todas pasan). Evidencia: docs/evidence/audit_offline_eval_ledger.json.
+- Sin corridas Binance, forward, paper, órdenes, optimización, cambios de umbrales. Sin modificar DBs canónicas. V2 en 3020; monitor detenido.
+- Pendientes: incorporar manifiestos temp/opencode a Git; verificación exacta de 594/616 sobre censo completo.
+
 
 

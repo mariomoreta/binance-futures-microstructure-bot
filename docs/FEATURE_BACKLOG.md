@@ -1216,3 +1216,15 @@ reconciliacion al implementar; no extrapolar cobertura local a vida del token.
 (Integracion 2026-10-17 desde review/extreme-movers-objective-20261016
 hasta 7a4e872; diseno, no garantia.)
 
+## F-EVAL-CENSUS-TRACE-01 — Auditoría trazabilidad EVAL-CENSUS-V2 (2026-10-17)
+Addendum sobre commit b5cd690 (1385927 = prefijo SHA del commit EVAL-CENSUS-V2, no run_id).
+FEATURES_IMPLEMENTED: ledger de flujo reconstruido desde manifiestos ejecutados + artefacto publicado;
+verificador reproducible (20 regresiones, todas pasan); corrección 12/12 vs 18/18; funding separado
+(741 aplicaciones vs 270 liquidaciones únicas; 0 unknown-excluded ≠ cobertura completa; 24/60 uncovered);
+MF/MAE documentadas como excursión no captura; duplicados 594/616 mecanismo verificado (subset BTC15m: 129/135).
+FEATURES_VERIFIED: totales y conteos separados (hipótesis 7152/2991/5/4161; placebo 7152/2264/2/4888; total 14304/5255/7/9049) contra manifiestos y artefacto.
+DEFERRED_FEATURES: incorporar manifiestos temp/opencode a Git para trazabilidad completa (vínculo detección→operación UNKNOWN); verificación exacta de 594/616 sobre censo completo (reconstruct lento, timeout).
+DOCUMENTATION_CONFLICTS: "18/18" del mensaje de commit corregido a "12/12 direccionales"; "0 unknown-excluded" no presentado como cobertura completa.
+BACKLOG_UPDATED: este ID; sin cambio de fase activa ni autorizaciones. Gates sin avance.
+
+

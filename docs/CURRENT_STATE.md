@@ -2193,11 +2193,21 @@ evidence mutation; no second collector or database; no probes or traffic.
   910; the single 905 reading is unreproduced and superseded.)
 
 
-## Suplemento estructura historica — 2026-10-16 (solo documental)
-F-STRUCTURE-EXIT-01 en HISTORICAL_STRUCTURE_AND_EXIT_PLAN.md define contexto
-multihorizonte compacto, zonas causales y politicas de stop a evaluar.
-Fase causal/costes activa conserva prioridad. No datos nuevos, codigo,
-backfill, servicios, sesiones ni gates cambiados. Reconciliar despues de la
-entrega del agente sin sobrescribir sus archivos concurrentes.
-(Integracion 2026-10-17: portado selectivo desde
-review/extreme-movers-objective-20261016 hasta 7a4e872.)
+## Auditoría trazabilidad EVAL-CENSUS-V2 — 2026-10-17 (addendum sobre commit b5cd690)
+
+- Identidad 1385927: prefijo de 7 chars del SHA publicado `13859277b7baa8b029d385c41bd3cb60c7cd4b13` (commit EVAL-CENSUS-V2, rama review/o1-funcional-v2-observacion), NO un run_id ni sesión. Verificado: git rev-parse --verify 1385927 → objeto válido; git show 1385927 → commit; git fetch origin OK; HEAD == origin/rama (0 commits de diferencia). Repo canónico: C:\proyectos\binance-futures-microstructure-bot, no junction/reparse. DBs canónicas intactas (microprobe.db, historical.db, sin modificación).
+- Flujo reconstruido desde manifiestos ejecutados (temp/opencode/eval*_*, fuera de Git) + artefacto publicado:
+  - 9320 detecciones censo (todas las resoluciones) → 7541 trio 15m+1h que entra al builder (6121 15m + 1420 1h); 1779 censo extendido/non-trio fuera de alcance de EVAL-CENSUS-V2.
+  - Builder (MAP-CANDIDATE-v2): 7167 admitidas direccionales + 374 excluidas por motivo (gap 225, no_entry 4, h2_no_confirmation 43, h2_reclaim 102) + expansión mapping 1:2 (placebo TIME-PLACEBO-v1 seed 42, mismo count) → 14334 eventos en events.json.
+  - Selection purge (cutoff 1790010000000): 30 dev-crossing purgados → 14304 (= 7152 hipótesis + 7152 placebo).
+  - Hipótesis 1x: 7152 eventos, 2991 trades, 5 abiertas, 4161 skipped_overlap, 2986 realizadas.
+  - Placebo 1x: 7152 eventos, 2264 trades, 2 abiertas, 4888 skipped_overlap, 2262 realizadas.
+  - Total: 14304 eventos, 5255 trades, 7 abiertas, 9049 overlaps, 5248 realizadas.
+- H1/H3 direccionales 15m @1x: 12 celdas, 12 negativas (no 18; el 18 del commit mezcla 6 celdas baseline/comparator). Corregido por addendum.
+- Trazabilidad: manifiestos con event_ids en temp/opencode (fuera de Git); vínculo completo detección→operación NO publicado en Git (UNKNOWN hasta que los manifiestos se incorporen). 594 grupos/616 filas duplicados del censo = misma (symbol, interval, formation_time) en múltiples familias; verificado mecanismo en subset BTC15m (129 grupos/135 filas); en el builder cada detección va a UNA familia (no se duplica en trades); max_concurrent=1 es intra-celda, NO prueba independencia entre familias/cedas.
+- Funding: 741 settled_events (escala 1x, hipótesis+placebo) = aplicaciones por operación; 270 liquidaciones únicas del calendario (90/símbolo BTC/ETH/SOL, funding_raw.json n=90); 0 unknown-excluded (no cobertura completa); 24/60 celdas uncovered (holdings fuera calendario span). 741 ≠ 270 (métricas distintas).
+- MFE/MAE: mfe_mean/mae_mean del backoff_offline.run_backtest (excursión por posición, no captura por salida). Rango direccional 1x n>=30: MFE 0.19-0.64%, MAE 0.16-0.42% (aprox. al citado 0.18-0.66/0.10-0.42; subpoblación no especificada en el doc).
+- Verificador: scripts/audit_offline_eval_ledger.py (genera reporte JSON) + scripts/audit_offline_eval_checks.py (20 regresiones, todas pasan). Evidencia publicada: docs/evidence/audit_offline_eval_ledger.json.
+- Reproducción completa: requiere ejecutar reconstruct_causal_census.py (lento, >5 min) + build_census_eval_inputs.py + select_eval_events.py + run_family_evaluation.py sobre historical.db read-only. No declarada reproducibilidad externa completa sin probarla.
+- Sin corridas Binance, forward, paper, órdenes, optimización, cambios de umbrales. Sin modificar DBs canónicas. V2 disponible en 3020; monitor detenido.
+- Pendientes: incorporar manifiestos temp/opencode a Git para trazabilidad completa; verificación exacta de 594/616 sobre censo completo (reconstruct lento no ejecutado por timeout).
