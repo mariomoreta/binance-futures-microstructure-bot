@@ -1,5 +1,6 @@
 import {HistoryNavigation} from "@/components/history/HistoryNavigation";
 import {OfflineEvalSection} from "@/components/history/OfflineEvalSection";
+import {CensusEvalSection} from "@/components/history/CensusEvalSection";
 import {SnapshotRefresh} from "@/components/notices/SnapshotRefresh";
 import {canonicalReadTime} from "@/lib/historical-db";
 import {historicalSnapshot} from "@/lib/historical-db";
@@ -11,7 +12,7 @@ let data:ReturnType<typeof historicalSnapshot>|null=null;try{data=historicalSnap
 const readAt=canonicalReadTime();
 return <div className="v2-records"><SnapshotRefresh readAt={readAt} available={data!==null}/>
 <header style={{display:"flex",justifyContent:"space-between",alignItems:"center",gap:20}}><div><small style={{color:"#6abbd4",letterSpacing:2}}>MARKET INTELLIGENCE / PERSISTED EVIDENCE</small><h1 style={{fontWeight:700,marginTop:8}}>Prospective archive</h1><p style={{color:"#9cabbc",fontSize:12}}>Read-only SQLite snapshot — not live streaming, not backtest validation or executable trading P&amp;L.</p></div><Link href="/opportunities/prospective" style={{color:"#80d4fd"}}>Prospective Research →</Link></header>
-<HistoryNavigation active="archive"/><OfflineEvalSection/>{!data?<p role="alert" style={{padding:20,border:"1px solid #795a32",marginTop:16}}>Historical storage unavailable. No replacement data.</p>:<>
+<HistoryNavigation active="archive"/><OfflineEvalSection/><CensusEvalSection/>{!data?<p role="alert" style={{padding:20,border:"1px solid #795a32",marginTop:16}}>Historical storage unavailable. No replacement data.</p>:<>
 <p style={{fontSize:12,color:"#8ea4b5",marginTop:20}}>PERSISTED_SQLITE_READONLY · Most recent outcome {data.latest_outcome_ms?new Date(data.latest_outcome_ms).toISOString():"UNKNOWN"} · Read-only refresh every 15 s while visible; does not collect new data</p>
 <div className="v2-record-metrics">{[["Recorded setups",data.counts.setups],["Outcome records",data.counts.outcomes],["Price samples",data.counts.samples],["Outcome symbols",data.counts.symbols]].map(([k,v])=><section key={String(k)} style={{background:"#112638",border:"1px solid #26415a",borderRadius:9,padding:18}}><small style={{color:"#9cabbc"}}>{k}</small><p style={{fontSize:28,fontWeight:700,marginTop:8}}>{v}</p></section>)}</div>
 <div className="v2-record-panels">{[[ "Stored outcome states",data.states.map(x=>[x.state,x.count])],["Top symbol coverage",data.symbols.slice(0,8).map(x=>[x.symbol,x.count])]].map(([name,rows])=><section key={String(name)} style={{background:"#102233",borderRadius:9,padding:18}}><h2 style={{fontSize:16,fontWeight:700}}>{String(name)}</h2>{(rows as unknown[][]).map((x,i)=><div key={i} style={{display:"flex",justifyContent:"space-between",padding:"8px 0",borderBottom:"1px solid #213649",fontSize:13}}><span>{String(x[0])}</span><strong>{String(x[1])}</strong></div>)}</section>)}</div>

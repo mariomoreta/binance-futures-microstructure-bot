@@ -154,6 +154,10 @@ def main(argv=None) -> int:
                     help="default family (baseline + unmapped groups)")
     ap.add_argument("--rules-version", default="H1-v1",
                     help="default rules version (baseline + unmapped groups)")
+    ap.add_argument("--horizon-ms", type=int, default=3600 * 1000,
+                    help="effective operation horizon (default 1h; use 4h on "
+                         "1h grids: a 1h window on 1h candles resolves no "
+                         "close under the close-knowledge rule)")
     ap.add_argument("--demo", action="store_true")
     args = ap.parse_args(argv)
 
@@ -184,6 +188,7 @@ def main(argv=None) -> int:
         "input_hash": input_hash(events, candles),
         "dataset_id": dataset_id,
         "cutoff_ms": cutoff,
+        "exit_horizon_ms": int(args.horizon_ms),
         "formation_method": args.formation_method,
         "formation_note": "Formation is caller-declared and echoed; this "
                           "runner invents no entries and validates no edge.",
@@ -209,6 +214,7 @@ def main(argv=None) -> int:
             manifest["groups"][group][seg] = {}
             for scale in scales:
                 cfg = BacktestConfig(family=family, rules_version=version,
+                                     exit_horizon_ms=int(args.horizon_ms),
                                      cost_scale=scale,
                                      funding_calendar=calendar)
                 res = run_backtest(seg_events, candles, cfg,

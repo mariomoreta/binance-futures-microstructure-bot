@@ -42,3 +42,14 @@ Status: `HUMAN_STRATEGY_HYPOTHESIS`. It informs what to measure (forward outcome
 30s→60m, MFE/MAE, time-to-peak/trough, continuation vs reversal), but it is NOT
 evidence and NOT an approved strategy. See `docs/STRATEGY_THESIS.md` and
 `docs/EVENT_LABELING.md`.
+
+## Objetivo de movimientos extremos reafirmado — 2026-10-16
+El universo objetivo NO se restringe al trio de pruebas BTC/ETH/SOL.
+Ganadores/perdedores son candidatos a continuacion, agotamiento/reversion
+y rebote confirmado (H2 variante; H3 sigue continuacion bajista).
+Ver docs/EXTREME_MOVERS_OBJECTIVE.md para selector causal, cobertura,
+recorrido V2 y aceptacion. Objetivo reafirmado, implementacion parcial;
+no constituye aprobacion de mapping ni umbrales ni lanzamiento de sesiones.
+(Integracion 2026-10-17 desde review/extreme-movers-objective-20261016
+hasta 7a4e872: portado selectivo sobre la evolucion actual; soportes,
+stops dinamicos y Paper Lab conservan su secuencia.)

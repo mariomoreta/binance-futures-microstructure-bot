@@ -1,0 +1,2447 @@
+{
+ "schema_version": 1,
+ "artifact_version": "CENSUS-EVAL-V2",
+ "label": "Causal census + same-grid evaluation (MAP-CANDIDATE-v2, HORIZON-GRID4-V1). 0 cells eligible for operation.",
+ "engine_version": "backtest-offline/v4.2",
+ "census_version": "CENSUS-V1",
+ "selector_version": "SELECTOR-EXTREME-V1 (candidate, not used as filter here)",
+ "mapping": "MAP-CANDIDATE-v2 (NOT approved)",
+ "horizon_rule": "HORIZON-GRID4-V1: 4 same-grid bars (15m->1h, 1h->4h)",
+ "cutoff_ms": 1790010000000,
+ "cost_id": "COST-ASSUME-v1 (assumed 5/1/2bps, never measured)",
+ "census": {
+  "detections": 9320,
+  "admitted": 9320,
+  "discarded": 0,
+  "entry_ge_available": "9314/9314 with entry (6 tail-edge without entry, honest)",
+  "chain_violations": 0,
+  "duplicate_groups": 594,
+  "duplicate_extra_rows": 616,
+  "prefix_cells_ok": "54/54 (prefix-equal + later-mutation invariant)",
+  "originals_matched": "2831/2831 (originals_only=0)",
+  "census_only": 6489,
+  "selection_bias_note": "stored 15m trio = EXTENDED-only (2.3% of exhaustive); V1 1558 mixed 1h-formed events replayed on 15m without explicit rule"
+ },
+ "coverage": {
+  "move_24h": "available",
+  "move_recent_1h": "available",
+  "range_position": "available",
+  "volume_percentile_own": "available",
+  "quote_notional": "available",
+  "coverage_gap": "available",
+  "freshness_close_time": "available (0 violations)",
+  "btc_context_synced": "available (at/before T; evidence, not gate)",
+  "liquidity_spread_depth": "UNKNOWN",
+  "universe_ranking_history": "UNKNOWN",
+  "market_cap": "UNKNOWN (never low-cap-by-proxy)",
+  "consequence": "all 9320 detections at best PARTIAL-input; full-input decisions impossible on this dataset"
+ },
+ "families": [
+  {
+   "group": "continuation",
+   "scenario": "H1 bullish continuation (LONG)",
+   "sources": "MOMENTUM_ACCELERATION_UP + EXTENDED_GAINER",
+   "status": "evaluated on census sets \u2014 REJECTED (negative @1x, 18/18 cells)"
+  },
+  {
+   "group": "bearish-continuation",
+   "scenario": "H3 bearish continuation (SHORT)",
+   "sources": "MOMENTUM_ACCELERATION_DOWN + EXTENDED_LOSER",
+   "status": "evaluated on census sets \u2014 REJECTED (negative @1x, 18/18 cells)"
+  },
+  {
+   "group": "correction-exhaustion",
+   "scenario": "H2 exhaustion fade (SHORT)",
+   "sources": "FAILED_HIGH + CONFIRM-H2-SHORT-v1",
+   "status": "evaluated \u2014 REJECTED (fails 2x or n insufficient); n=1 anecdotes fenced"
+  },
+  {
+   "group": "correction-reversal",
+   "scenario": "H2 reversal fade (LONG)",
+   "sources": "FAILED_LOW + CONFIRM-H2-LONG-v1",
+   "status": "evaluated \u2014 REJECTED or FENCED (SOL15m-oos n=8 +0.69 fenced, s* 1.43 < 2)"
+  },
+  {
+   "group": "rebound-variant",
+   "scenario": "H2 rebound variant",
+   "sources": "none (no bounce definition)",
+   "status": "EXCLUDED (0 events, untestable until defined)"
+  },
+  {
+   "group": "non-trio",
+   "scenario": "MINA/NMR/ORCA 1h census",
+   "sources": "census only",
+   "status": "EXCLUDED from eval (no realized funding calendars)"
+  }
+ ],
+ "btc_context": "formation_features carries BTC ret_5m/15m/1h + relative return synced at/before T; recorded as favorable/against/UNKNOWN evidence in the selector, never as an entry gate; incremental value vs no-BTC baseline unproven",
+ "cells": {
+  "BTCUSDT": {
+   "15m": {
+    "continuation": {
+     "dev": {
+      "1.0": {
+       "n_events": 395,
+       "n_trades": 145,
+       "n_open": 0,
+       "E_net": -1.4559626811313808,
+       "E_gross": 0.15058510660545382,
+       "s_star": 0.09373210542189042,
+       "placebo_E_net": -1.5131578400218593,
+       "verdict": "REJECTED (fails accept: beats-placebo AND survives-2x)",
+       "skipped_overlap": 250,
+       "exit_stop": 14
+      },
+      "2.0": {
+       "n_events": 395,
+       "n_trades": 145,
+       "n_open": 0,
+       "E_net": -3.0625104688682154,
+       "E_gross": 0.15058510660545382,
+       "s_star": 0.04686605271094521,
+       "placebo_E_net": -3.1138813335583877,
+       "verdict": "REJECTED (fails accept: beats-placebo AND survives-2x)",
+       "skipped_overlap": 250,
+       "exit_stop": 14
+      },
+      "3.0": {
+       "n_events": 395,
+       "n_trades": 145,
+       "n_open": 0,
+       "E_net": -4.66905825660505,
+       "E_gross": 0.15058510660545382,
+       "s_star": 0.031244035140630143,
+       "placebo_E_net": -4.714604827094917,
+       "verdict": "REJECTED (fails accept: beats-placebo AND survives-2x)",
+       "skipped_overlap": 250,
+       "exit_stop": 14
+      }
+     },
+     "oos": {
+      "1.0": {
+       "n_events": 489,
+       "n_trades": 185,
+       "n_open": 0,
+       "E_net": -1.3746036545928657,
+       "E_gross": 0.22825819251127072,
+       "s_star": 0.14240665402552374,
+       "placebo_E_net": -1.5591492260782407,
+       "verdict": "REJECTED (fails accept: beats-placebo AND survives-2x)",
+       "skipped_overlap": 304,
+       "exit_stop": 16
+      },
+      "2.0": {
+       "n_events": 489,
+       "n_trades": 185,
+       "n_open": 0,
+       "E_net": -2.977465501697002,
+       "E_gross": 0.22825819251127072,
+       "s_star": 0.07120332701276187,
+       "placebo_E_net": -3.1589174624847183,
+       "verdict": "REJECTED (fails accept: beats-placebo AND survives-2x)",
+       "skipped_overlap": 304,
+       "exit_stop": 16
+      },
+      "3.0": {
+       "n_events": 489,
+       "n_trades": 185,
+       "n_open": 0,
+       "E_net": -4.580327348801139,
+       "E_gross": 0.22825819251127072,
+       "s_star": 0.04746888467517459,
+       "placebo_E_net": -4.758685698891196,
+       "verdict": "REJECTED (fails accept: beats-placebo AND survives-2x)",
+       "skipped_overlap": 304,
+       "exit_stop": 16
+      }
+     }
+    },
+    "bearish-continuation": {
+     "dev": {
+      "1.0": {
+       "n_events": 362,
+       "n_trades": 141,
+       "n_open": 0,
+       "E_net": -2.283324448425501,
+       "E_gross": -0.6889637324047546,
+       "s_star": -0.4321253813404855,
+       "placebo_E_net": -1.5131578400218593,
+       "verdict": "REJECTED (fails accept: beats-placebo AND survives-2x)",
+       "skipped_overlap": 221,
+       "exit_stop": 21
+      },
+      "2.0": {
+       "n_events": 362,
+       "n_trades": 141,
+       "n_open": 0,
+       "E_net": -3.877685164446248,
+       "E_gross": -0.6889637324047546,
+       "s_star": -0.21606269067024272,
+       "placebo_E_net": -3.1138813335583877,
+       "verdict": "REJECTED (fails accept: beats-placebo AND survives-2x)",
+       "skipped_overlap": 221,
+       "exit_stop": 21
+      },
+      "3.0": {
+       "n_events": 362,
+       "n_trades": 141,
+       "n_open": 0,
+       "E_net": -5.472045880466994,
+       "E_gross": -0.6889637324047546,
+       "s_star": -0.14404179378016185,
+       "placebo_E_net": -4.714604827094917,
+       "verdict": "REJECTED (fails accept: beats-placebo AND survives-2x)",
+       "skipped_overlap": 221,
+       "exit_stop": 21
+      }
+     },
+     "oos": {
+      "1.0": {
+       "n_events": 477,
+       "n_trades": 182,
+       "n_open": 1,
+       "E_net": -1.3063048534816821,
+       "E_gross": 0.2911317032545781,
+       "s_star": 0.1822493056308868,
+       "placebo_E_net": -1.5591492260782407,
+       "verdict": "REJECTED (fails accept: beats-placebo AND survives-2x)",
+       "skipped_overlap": 295,
+       "exit_stop": 11
+      },
+      "2.0": {
+       "n_events": 477,
+       "n_trades": 182,
+       "n_open": 1,
+       "E_net": -2.9037414102179424,
+       "E_gross": 0.2911317032545781,
+       "s_star": 0.0911246528154434,
+       "placebo_E_net": -3.1589174624847183,
+       "verdict": "REJECTED (fails accept: beats-placebo AND survives-2x)",
+       "skipped_overlap": 295,
+       "exit_stop": 11
+      },
+      "3.0": {
+       "n_events": 477,
+       "n_trades": 182,
+       "n_open": 1,
+       "E_net": -4.501177966954202,
+       "E_gross": 0.2911317032545781,
+       "s_star": 0.06074976854362893,
+       "placebo_E_net": -4.758685698891196,
+       "verdict": "REJECTED (fails accept: beats-placebo AND survives-2x)",
+       "skipped_overlap": 295,
+       "exit_stop": 11
+      }
+     }
+    },
+    "correction-exhaustion": {
+     "dev": {
+      "1.0": {
+       "n_events": 40,
+       "n_trades": 24,
+       "n_open": 0,
+       "E_net": -1.848199606167773,
+       "E_gross": -0.2540424002248131,
+       "s_star": -0.15935843671988706,
+       "placebo_E_net": -1.5131578400218593,
+       "verdict": "FENCED-INSUFFICIENT (n<30, no reading)",
+       "skipped_overlap": 16,
+       "exit_stop": 6
+      },
+      "2.0": {
+       "n_events": 40,
+       "n_trades": 24,
+       "n_open": 0,
+       "E_net": -3.4423568121107326,
+       "E_gross": -0.2540424002248131,
+       "s_star": -0.07967921835994353,
+       "placebo_E_net": -3.1138813335583877,
+       "verdict": "FENCED-INSUFFICIENT (n<30, no reading)",
+       "skipped_overlap": 16,
+       "exit_stop": 6
+      },
+      "3.0": {
+       "n_events": 40,
+       "n_trades": 24,
+       "n_open": 0,
+       "E_net": -5.036514018053692,
+       "E_gross": -0.2540424002248131,
+       "s_star": -0.05311947890662903,
+       "placebo_E_net": -4.714604827094917,
+       "verdict": "FENCED-INSUFFICIENT (n<30, no reading)",
+       "skipped_overlap": 16,
+       "exit_stop": 6
+      }
+     },
+     "oos": {
+      "1.0": {
+       "n_events": 63,
+       "n_trades": 35,
+       "n_open": 0,
+       "E_net": -1.244714332512253,
+       "E_gross": 0.3501588377612108,
+       "s_star": 0.21955277967411735,
+       "placebo_E_net": -1.5591492260782407,
+       "verdict": "REJECTED (fails accept: beats-placebo AND survives-2x)",
+       "skipped_overlap": 28,
+       "exit_stop": 3
+      },
+      "2.0": {
+       "n_events": 63,
+       "n_trades": 35,
+       "n_open": 0,
+       "E_net": -2.8395875027857165,
+       "E_gross": 0.3501588377612108,
+       "s_star": 0.10977638983705869,
+       "placebo_E_net": -3.1589174624847183,
+       "verdict": "REJECTED (fails accept: beats-placebo AND survives-2x)",
+       "skipped_overlap": 28,
+       "exit_stop": 3
+      },
+      "3.0": {
+       "n_events": 63,
+       "n_trades": 35,
+       "n_open": 0,
+       "E_net": -4.43446067305918,
+       "E_gross": 0.3501588377612108,
+       "s_star": 0.07318425989137246,
+       "placebo_E_net": -4.758685698891196,
+       "verdict": "REJECTED (fails accept: beats-placebo AND survives-2x)",
+       "skipped_overlap": 28,
+       "exit_stop": 3
+      }
+     }
+    },
+    "correction-reversal": {
+     "dev": {
+      "1.0": {
+       "n_events": 20,
+       "n_trades": 13,
+       "n_open": 0,
+       "E_net": -0.7032378784924873,
+       "E_gross": 0.8974801055919863,
+       "s_star": 0.5606734693527528,
+       "placebo_E_net": -1.5131578400218593,
+       "verdict": "FENCED-INSUFFICIENT (n<30, no reading)",
+       "skipped_overlap": 7,
+       "exit_stop": 0
+      },
+      "2.0": {
+       "n_events": 20,
+       "n_trades": 13,
+       "n_open": 0,
+       "E_net": -2.303955862576961,
+       "E_gross": 0.8974801055919863,
+       "s_star": 0.2803367346763763,
+       "placebo_E_net": -3.1138813335583877,
+       "verdict": "FENCED-INSUFFICIENT (n<30, no reading)",
+       "skipped_overlap": 7,
+       "exit_stop": 0
+      },
+      "3.0": {
+       "n_events": 20,
+       "n_trades": 13,
+       "n_open": 0,
+       "E_net": -3.904673846661434,
+       "E_gross": 0.8974801055919863,
+       "s_star": 0.1868911564509176,
+       "placebo_E_net": -4.714604827094917,
+       "verdict": "FENCED-INSUFFICIENT (n<30, no reading)",
+       "skipped_overlap": 7,
+       "exit_stop": 0
+      }
+     },
+     "oos": {
+      "1.0": {
+       "n_events": 16,
+       "n_trades": 13,
+       "n_open": 0,
+       "E_net": -2.8593657032610205,
+       "E_gross": -1.2590307720706784,
+       "s_star": -0.786729544879834,
+       "placebo_E_net": -1.5591492260782407,
+       "verdict": "FENCED-INSUFFICIENT (n<30, no reading)",
+       "skipped_overlap": 3,
+       "exit_stop": 3
+      },
+      "2.0": {
+       "n_events": 16,
+       "n_trades": 13,
+       "n_open": 0,
+       "E_net": -4.459700634451362,
+       "E_gross": -1.2590307720706784,
+       "s_star": -0.3933647724399171,
+       "placebo_E_net": -3.1589174624847183,
+       "verdict": "FENCED-INSUFFICIENT (n<30, no reading)",
+       "skipped_overlap": 3,
+       "exit_stop": 3
+      },
+      "3.0": {
+       "n_events": 16,
+       "n_trades": 13,
+       "n_open": 0,
+       "E_net": -6.060035565641704,
+       "E_gross": -1.2590307720706784,
+       "s_star": -0.26224318162661137,
+       "placebo_E_net": -4.758685698891196,
+       "verdict": "FENCED-INSUFFICIENT (n<30, no reading)",
+       "skipped_overlap": 3,
+       "exit_stop": 3
+      }
+     }
+    },
+    "baseline": {
+     "dev": {
+      "1.0": {
+       "n_events": 842,
+       "n_trades": 269,
+       "n_open": 0,
+       "E_net": -1.5131578400218593,
+       "E_gross": 0.08756565351466884,
+       "s_star": 0.05470379729431429,
+       "placebo_E_net": -1.5131578400218593,
+       "verdict": "comparator",
+       "skipped_overlap": 573,
+       "exit_stop": 25
+      },
+      "2.0": {
+       "n_events": 842,
+       "n_trades": 269,
+       "n_open": 0,
+       "E_net": -3.1138813335583877,
+       "E_gross": 0.08756565351466884,
+       "s_star": 0.027351898647157143,
+       "placebo_E_net": -3.1138813335583877,
+       "verdict": "comparator",
+       "skipped_overlap": 573,
+       "exit_stop": 25
+      },
+      "3.0": {
+       "n_events": 842,
+       "n_trades": 269,
+       "n_open": 0,
+       "E_net": -4.714604827094917,
+       "E_gross": 0.08756565351466884,
+       "s_star": 0.018234599098104758,
+       "placebo_E_net": -4.714604827094917,
+       "verdict": "comparator",
+       "skipped_overlap": 573,
+       "exit_stop": 25
+      }
+     },
+     "oos": {
+      "1.0": {
+       "n_events": 1020,
+       "n_trades": 309,
+       "n_open": 0,
+       "E_net": -1.5591492260782407,
+       "E_gross": 0.040619010328237476,
+       "s_star": 0.02539055933469401,
+       "placebo_E_net": -1.5591492260782407,
+       "verdict": "comparator",
+       "skipped_overlap": 711,
+       "exit_stop": 27
+      },
+      "2.0": {
+       "n_events": 1020,
+       "n_trades": 309,
+       "n_open": 0,
+       "E_net": -3.1589174624847183,
+       "E_gross": 0.040619010328237476,
+       "s_star": 0.012695279667347008,
+       "placebo_E_net": -3.1589174624847183,
+       "verdict": "comparator",
+       "skipped_overlap": 711,
+       "exit_stop": 27
+      },
+      "3.0": {
+       "n_events": 1020,
+       "n_trades": 309,
+       "n_open": 0,
+       "E_net": -4.758685698891196,
+       "E_gross": 0.040619010328237476,
+       "s_star": 0.008463519778231338,
+       "placebo_E_net": -4.758685698891196,
+       "verdict": "comparator",
+       "skipped_overlap": 711,
+       "exit_stop": 27
+      }
+     }
+    }
+   },
+   "1h": {
+    "continuation": {
+     "dev": {
+      "1.0": {
+       "n_events": 99,
+       "n_trades": 51,
+       "n_open": 0,
+       "E_net": -2.0777047926361156,
+       "E_gross": -0.44906965548817906,
+       "s_star": -0.275733738788535,
+       "placebo_E_net": -2.2208369041375766,
+       "verdict": "REJECTED (fails accept: beats-placebo AND survives-2x)",
+       "skipped_overlap": 48,
+       "exit_stop": 14
+      },
+      "2.0": {
+       "n_events": 99,
+       "n_trades": 51,
+       "n_open": 0,
+       "E_net": -3.706339929784052,
+       "E_gross": -0.44906965548817906,
+       "s_star": -0.13786686939426754,
+       "placebo_E_net": -3.8205062780813637,
+       "verdict": "REJECTED (fails accept: beats-placebo AND survives-2x)",
+       "skipped_overlap": 48,
+       "exit_stop": 14
+      },
+      "3.0": {
+       "n_events": 99,
+       "n_trades": 51,
+       "n_open": 0,
+       "E_net": -5.334975066931988,
+       "E_gross": -0.44906965548817906,
+       "s_star": -0.09191124626284503,
+       "placebo_E_net": -5.420175652025151,
+       "verdict": "REJECTED (fails accept: beats-placebo AND survives-2x)",
+       "skipped_overlap": 48,
+       "exit_stop": 14
+      }
+     },
+     "oos": {
+      "1.0": {
+       "n_events": 124,
+       "n_trades": 62,
+       "n_open": 0,
+       "E_net": -1.1989062358027145,
+       "E_gross": 0.4109529734678774,
+       "s_star": 0.2552726170719459,
+       "placebo_E_net": -2.2593884442102854,
+       "verdict": "REJECTED (fails accept: beats-placebo AND survives-2x)",
+       "skipped_overlap": 62,
+       "exit_stop": 17
+      },
+      "2.0": {
+       "n_events": 124,
+       "n_trades": 62,
+       "n_open": 0,
+       "E_net": -2.8087654450733064,
+       "E_gross": 0.4109529734678774,
+       "s_star": 0.12763630853597294,
+       "placebo_E_net": -3.8585789362719285,
+       "verdict": "REJECTED (fails accept: beats-placebo AND survives-2x)",
+       "skipped_overlap": 62,
+       "exit_stop": 17
+      },
+      "3.0": {
+       "n_events": 124,
+       "n_trades": 62,
+       "n_open": 0,
+       "E_net": -4.4186246543438985,
+       "E_gross": 0.4109529734678774,
+       "s_star": 0.08509087235731529,
+       "placebo_E_net": -5.457769428333571,
+       "verdict": "REJECTED (fails accept: beats-placebo AND survives-2x)",
+       "skipped_overlap": 62,
+       "exit_stop": 17
+      }
+     }
+    },
+    "bearish-continuation": {
+     "dev": {
+      "1.0": {
+       "n_events": 94,
+       "n_trades": 49,
+       "n_open": 0,
+       "E_net": -2.2825142949213,
+       "E_gross": -0.7045821615768861,
+       "s_star": -0.44652247500881426,
+       "placebo_E_net": -2.2208369041375766,
+       "verdict": "REJECTED (fails accept: beats-placebo AND survives-2x)",
+       "skipped_overlap": 45,
+       "exit_stop": 22
+      },
+      "2.0": {
+       "n_events": 94,
+       "n_trades": 49,
+       "n_open": 0,
+       "E_net": -3.860446428265714,
+       "E_gross": -0.7045821615768861,
+       "s_star": -0.22326123750440718,
+       "placebo_E_net": -3.8205062780813637,
+       "verdict": "REJECTED (fails accept: beats-placebo AND survives-2x)",
+       "skipped_overlap": 45,
+       "exit_stop": 22
+      },
+      "3.0": {
+       "n_events": 94,
+       "n_trades": 49,
+       "n_open": 0,
+       "E_net": -5.4383785616101274,
+       "E_gross": -0.7045821615768861,
+       "s_star": -0.14884082500293813,
+       "placebo_E_net": -5.420175652025151,
+       "verdict": "REJECTED (fails accept: beats-placebo AND survives-2x)",
+       "skipped_overlap": 45,
+       "exit_stop": 22
+      }
+     },
+     "oos": {
+      "1.0": {
+       "n_events": 119,
+       "n_trades": 61,
+       "n_open": 0,
+       "E_net": -1.1507393281028584,
+       "E_gross": 0.44151001885117963,
+       "s_star": 0.27728698378541355,
+       "placebo_E_net": -2.2593884442102854,
+       "verdict": "REJECTED (fails accept: beats-placebo AND survives-2x)",
+       "skipped_overlap": 58,
+       "exit_stop": 14
+      },
+      "2.0": {
+       "n_events": 119,
+       "n_trades": 61,
+       "n_open": 0,
+       "E_net": -2.742988675056896,
+       "E_gross": 0.44151001885117963,
+       "s_star": 0.13864349189270678,
+       "placebo_E_net": -3.8585789362719285,
+       "verdict": "REJECTED (fails accept: beats-placebo AND survives-2x)",
+       "skipped_overlap": 58,
+       "exit_stop": 14
+      },
+      "3.0": {
+       "n_events": 119,
+       "n_trades": 61,
+       "n_open": 0,
+       "E_net": -4.335238022010934,
+       "E_gross": 0.44151001885117963,
+       "s_star": 0.09242899459513786,
+       "placebo_E_net": -5.457769428333571,
+       "verdict": "REJECTED (fails accept: beats-placebo AND survives-2x)",
+       "skipped_overlap": 58,
+       "exit_stop": 14
+      }
+     }
+    },
+    "correction-exhaustion": {
+     "dev": {
+      "1.0": {
+       "n_events": 1,
+       "n_trades": 1,
+       "n_open": 0,
+       "E_net": 2.0258197627293493,
+       "E_gross": 3.622921425588878,
+       "s_star": 2.268435072005512,
+       "placebo_E_net": -2.2208369041375766,
+       "verdict": "FENCED-INSUFFICIENT (n<30, no reading)",
+       "skipped_overlap": 0,
+       "exit_stop": 0
+      },
+      "2.0": {
+       "n_events": 1,
+       "n_trades": 1,
+       "n_open": 0,
+       "E_net": 0.42871809986982035,
+       "E_gross": 3.622921425588878,
+       "s_star": 1.134217536002756,
+       "placebo_E_net": -3.8205062780813637,
+       "verdict": "FENCED-INSUFFICIENT (n<30, no reading)",
+       "skipped_overlap": 0,
+       "exit_stop": 0
+      },
+      "3.0": {
+       "n_events": 1,
+       "n_trades": 1,
+       "n_open": 0,
+       "E_net": -1.1683835629897081,
+       "E_gross": 3.622921425588878,
+       "s_star": 0.7561450240018374,
+       "placebo_E_net": -5.420175652025151,
+       "verdict": "FENCED-INSUFFICIENT (n<30, no reading)",
+       "skipped_overlap": 0,
+       "exit_stop": 0
+      }
+     },
+     "oos": {
+      "1.0": {
+       "n_events": 0,
+       "n_trades": 0,
+       "n_open": 0,
+       "E_net": 0.0,
+       "E_gross": 0.0,
+       "s_star": null,
+       "placebo_E_net": -2.2593884442102854,
+       "verdict": "FENCED-INSUFFICIENT (n<30, no reading)",
+       "skipped_overlap": 0,
+       "exit_stop": 0
+      },
+      "2.0": {
+       "n_events": 0,
+       "n_trades": 0,
+       "n_open": 0,
+       "E_net": 0.0,
+       "E_gross": 0.0,
+       "s_star": null,
+       "placebo_E_net": -3.8585789362719285,
+       "verdict": "FENCED-INSUFFICIENT (n<30, no reading)",
+       "skipped_overlap": 0,
+       "exit_stop": 0
+      },
+      "3.0": {
+       "n_events": 0,
+       "n_trades": 0,
+       "n_open": 0,
+       "E_net": 0.0,
+       "E_gross": 0.0,
+       "s_star": null,
+       "placebo_E_net": -5.457769428333571,
+       "verdict": "FENCED-INSUFFICIENT (n<30, no reading)",
+       "skipped_overlap": 0,
+       "exit_stop": 0
+      }
+     }
+    },
+    "correction-reversal": {
+     "dev": {
+      "1.0": {
+       "n_events": 1,
+       "n_trades": 1,
+       "n_open": 0,
+       "E_net": -1.862533525838596,
+       "E_gross": -0.2627437208152481,
+       "s_star": -0.1642364015511485,
+       "placebo_E_net": -2.2208369041375766,
+       "verdict": "FENCED-INSUFFICIENT (n<30, no reading)",
+       "skipped_overlap": 0,
+       "exit_stop": 0
+      },
+      "2.0": {
+       "n_events": 1,
+       "n_trades": 1,
+       "n_open": 0,
+       "E_net": -3.4623233308619437,
+       "E_gross": -0.2627437208152481,
+       "s_star": -0.08211820077557425,
+       "placebo_E_net": -3.8205062780813637,
+       "verdict": "FENCED-INSUFFICIENT (n<30, no reading)",
+       "skipped_overlap": 0,
+       "exit_stop": 0
+      },
+      "3.0": {
+       "n_events": 1,
+       "n_trades": 1,
+       "n_open": 0,
+       "E_net": -5.0621131358852915,
+       "E_gross": -0.2627437208152481,
+       "s_star": -0.05474546718371616,
+       "placebo_E_net": -5.420175652025151,
+       "verdict": "FENCED-INSUFFICIENT (n<30, no reading)",
+       "skipped_overlap": 0,
+       "exit_stop": 0
+      }
+     },
+     "oos": {
+      "1.0": {
+       "n_events": 1,
+       "n_trades": 1,
+       "n_open": 0,
+       "E_net": 6.599289509288712,
+       "E_gross": 8.205854192642827,
+       "s_star": 5.1077023400707455,
+       "placebo_E_net": -2.2593884442102854,
+       "verdict": "FENCED-INSUFFICIENT (n<30, no reading)",
+       "skipped_overlap": 0,
+       "exit_stop": 0
+      },
+      "2.0": {
+       "n_events": 1,
+       "n_trades": 1,
+       "n_open": 0,
+       "E_net": 4.992724825934598,
+       "E_gross": 8.205854192642827,
+       "s_star": 2.5538511700353728,
+       "placebo_E_net": -3.8585789362719285,
+       "verdict": "FENCED-INSUFFICIENT (n<30, no reading)",
+       "skipped_overlap": 0,
+       "exit_stop": 0
+      },
+      "3.0": {
+       "n_events": 1,
+       "n_trades": 1,
+       "n_open": 0,
+       "E_net": 3.3861601425804837,
+       "E_gross": 8.205854192642827,
+       "s_star": 1.7025674466902487,
+       "placebo_E_net": -5.457769428333571,
+       "verdict": "FENCED-INSUFFICIENT (n<30, no reading)",
+       "skipped_overlap": 0,
+       "exit_stop": 0
+      }
+     }
+    },
+    "baseline": {
+     "dev": {
+      "1.0": {
+       "n_events": 223,
+       "n_trades": 71,
+       "n_open": 0,
+       "E_net": -2.2208369041375766,
+       "E_gross": -0.6211675301937896,
+       "s_star": -0.3883099472376456,
+       "placebo_E_net": -2.2208369041375766,
+       "verdict": "comparator",
+       "skipped_overlap": 152,
+       "exit_stop": 27
+      },
+      "2.0": {
+       "n_events": 223,
+       "n_trades": 71,
+       "n_open": 0,
+       "E_net": -3.8205062780813637,
+       "E_gross": -0.6211675301937896,
+       "s_star": -0.1941549736188228,
+       "placebo_E_net": -3.8205062780813637,
+       "verdict": "comparator",
+       "skipped_overlap": 152,
+       "exit_stop": 27
+      },
+      "3.0": {
+       "n_events": 223,
+       "n_trades": 71,
+       "n_open": 0,
+       "E_net": -5.420175652025151,
+       "E_gross": -0.6211675301937896,
+       "s_star": -0.1294366490792152,
+       "placebo_E_net": -5.420175652025151,
+       "verdict": "comparator",
+       "skipped_overlap": 152,
+       "exit_stop": 27
+      }
+     },
+     "oos": {
+      "1.0": {
+       "n_events": 215,
+       "n_trades": 81,
+       "n_open": 1,
+       "E_net": -2.2593884442102854,
+       "E_gross": -0.6601979521486423,
+       "s_star": -0.4128325896294749,
+       "placebo_E_net": -2.2593884442102854,
+       "verdict": "comparator",
+       "skipped_overlap": 134,
+       "exit_stop": 31
+      },
+      "2.0": {
+       "n_events": 215,
+       "n_trades": 81,
+       "n_open": 1,
+       "E_net": -3.8585789362719285,
+       "E_gross": -0.6601979521486423,
+       "s_star": -0.20641629481473744,
+       "placebo_E_net": -3.8585789362719285,
+       "verdict": "comparator",
+       "skipped_overlap": 134,
+       "exit_stop": 31
+      },
+      "3.0": {
+       "n_events": 215,
+       "n_trades": 81,
+       "n_open": 1,
+       "E_net": -5.457769428333571,
+       "E_gross": -0.6601979521486423,
+       "s_star": -0.13761086320982496,
+       "placebo_E_net": -5.457769428333571,
+       "verdict": "comparator",
+       "skipped_overlap": 134,
+       "exit_stop": 31
+      }
+     }
+    }
+   }
+  },
+  "ETHUSDT": {
+   "15m": {
+    "continuation": {
+     "dev": {
+      "1.0": {
+       "n_events": 435,
+       "n_trades": 158,
+       "n_open": 0,
+       "E_net": -1.2212998849986856,
+       "E_gross": 0.38448723911123994,
+       "s_star": 0.23943848679466653,
+       "placebo_E_net": -1.4470710832123144,
+       "verdict": "REJECTED (fails accept: beats-placebo AND survives-2x)",
+       "skipped_overlap": 277,
+       "exit_stop": 29
+      },
+      "2.0": {
+       "n_events": 435,
+       "n_trades": 158,
+       "n_open": 0,
+       "E_net": -2.827087009108611,
+       "E_gross": 0.38448723911123994,
+       "s_star": 0.11971924339733328,
+       "placebo_E_net": -3.0483625022880423,
+       "verdict": "REJECTED (fails accept: beats-placebo AND survives-2x)",
+       "skipped_overlap": 277,
+       "exit_stop": 29
+      },
+      "3.0": {
+       "n_events": 435,
+       "n_trades": 158,
+       "n_open": 0,
+       "E_net": -4.432874133218537,
+       "E_gross": 0.38448723911123994,
+       "s_star": 0.0798128289315555,
+       "placebo_E_net": -4.64965392136377,
+       "verdict": "REJECTED (fails accept: beats-placebo AND survives-2x)",
+       "skipped_overlap": 277,
+       "exit_stop": 29
+      }
+     },
+     "oos": {
+      "1.0": {
+       "n_events": 493,
+       "n_trades": 189,
+       "n_open": 1,
+       "E_net": -1.9461424117762394,
+       "E_gross": -0.3421948106020493,
+       "s_star": -0.2133453800807092,
+       "placebo_E_net": -1.8224022902400365,
+       "verdict": "REJECTED (fails accept: beats-placebo AND survives-2x)",
+       "skipped_overlap": 304,
+       "exit_stop": 32
+      },
+      "2.0": {
+       "n_events": 493,
+       "n_trades": 189,
+       "n_open": 1,
+       "E_net": -3.5500900129504296,
+       "E_gross": -0.3421948106020493,
+       "s_star": -0.10667269004035458,
+       "placebo_E_net": -3.4221811277872014,
+       "verdict": "REJECTED (fails accept: beats-placebo AND survives-2x)",
+       "skipped_overlap": 304,
+       "exit_stop": 32
+      },
+      "3.0": {
+       "n_events": 493,
+       "n_trades": 189,
+       "n_open": 1,
+       "E_net": -5.154037614124619,
+       "E_gross": -0.3421948106020493,
+       "s_star": -0.07111512669356973,
+       "placebo_E_net": -5.021959965334366,
+       "verdict": "REJECTED (fails accept: beats-placebo AND survives-2x)",
+       "skipped_overlap": 304,
+       "exit_stop": 32
+      }
+     }
+    },
+    "bearish-continuation": {
+     "dev": {
+      "1.0": {
+       "n_events": 387,
+       "n_trades": 158,
+       "n_open": 0,
+       "E_net": -2.3091261688093665,
+       "E_gross": -0.7103243548867907,
+       "s_star": -0.44428543219127786,
+       "placebo_E_net": -1.4470710832123144,
+       "verdict": "REJECTED (fails accept: beats-placebo AND survives-2x)",
+       "skipped_overlap": 229,
+       "exit_stop": 41
+      },
+      "2.0": {
+       "n_events": 387,
+       "n_trades": 158,
+       "n_open": 0,
+       "E_net": -3.9079279827319424,
+       "E_gross": -0.7103243548867907,
+       "s_star": -0.22214271609563893,
+       "placebo_E_net": -3.0483625022880423,
+       "verdict": "REJECTED (fails accept: beats-placebo AND survives-2x)",
+       "skipped_overlap": 229,
+       "exit_stop": 41
+      },
+      "3.0": {
+       "n_events": 387,
+       "n_trades": 158,
+       "n_open": 0,
+       "E_net": -5.506729796654518,
+       "E_gross": -0.7103243548867907,
+       "s_star": -0.14809514406375932,
+       "placebo_E_net": -4.64965392136377,
+       "verdict": "REJECTED (fails accept: beats-placebo AND survives-2x)",
+       "skipped_overlap": 229,
+       "exit_stop": 41
+      }
+     },
+     "oos": {
+      "1.0": {
+       "n_events": 494,
+       "n_trades": 190,
+       "n_open": 0,
+       "E_net": -1.6949421917642553,
+       "E_gross": -0.09878767623989335,
+       "s_star": -0.06189104831585809,
+       "placebo_E_net": -1.8224022902400365,
+       "verdict": "REJECTED (fails accept: beats-placebo AND survives-2x)",
+       "skipped_overlap": 304,
+       "exit_stop": 27
+      },
+      "2.0": {
+       "n_events": 494,
+       "n_trades": 190,
+       "n_open": 0,
+       "E_net": -3.2910967072886175,
+       "E_gross": -0.09878767623989335,
+       "s_star": -0.03094552415792904,
+       "placebo_E_net": -3.4221811277872014,
+       "verdict": "REJECTED (fails accept: beats-placebo AND survives-2x)",
+       "skipped_overlap": 304,
+       "exit_stop": 27
+      },
+      "3.0": {
+       "n_events": 494,
+       "n_trades": 190,
+       "n_open": 0,
+       "E_net": -4.88725122281298,
+       "E_gross": -0.09878767623989335,
+       "s_star": -0.02063034943861936,
+       "placebo_E_net": -5.021959965334366,
+       "verdict": "REJECTED (fails accept: beats-placebo AND survives-2x)",
+       "skipped_overlap": 304,
+       "exit_stop": 27
+      }
+     }
+    },
+    "correction-exhaustion": {
+     "dev": {
+      "1.0": {
+       "n_events": 15,
+       "n_trades": 13,
+       "n_open": 0,
+       "E_net": -2.245723156357139,
+       "E_gross": -0.6517664533266169,
+       "s_star": -0.40889846762301696,
+       "placebo_E_net": -1.4470710832123144,
+       "verdict": "FENCED-INSUFFICIENT (n<30, no reading)",
+       "skipped_overlap": 2,
+       "exit_stop": 4
+      },
+      "2.0": {
+       "n_events": 15,
+       "n_trades": 13,
+       "n_open": 0,
+       "E_net": -3.839679859387661,
+       "E_gross": -0.6517664533266169,
+       "s_star": -0.2044492338115085,
+       "placebo_E_net": -3.0483625022880423,
+       "verdict": "FENCED-INSUFFICIENT (n<30, no reading)",
+       "skipped_overlap": 2,
+       "exit_stop": 4
+      },
+      "3.0": {
+       "n_events": 15,
+       "n_trades": 13,
+       "n_open": 0,
+       "E_net": -5.433636562418183,
+       "E_gross": -0.6517664533266169,
+       "s_star": -0.13629948920767232,
+       "placebo_E_net": -4.64965392136377,
+       "verdict": "FENCED-INSUFFICIENT (n<30, no reading)",
+       "skipped_overlap": 2,
+       "exit_stop": 4
+      }
+     },
+     "oos": {
+      "1.0": {
+       "n_events": 49,
+       "n_trades": 26,
+       "n_open": 0,
+       "E_net": -1.1092427693027036,
+       "E_gross": 0.4844034430977113,
+       "s_star": 0.3039592095965158,
+       "placebo_E_net": -1.8224022902400365,
+       "verdict": "FENCED-INSUFFICIENT (n<30, no reading)",
+       "skipped_overlap": 23,
+       "exit_stop": 2
+      },
+      "2.0": {
+       "n_events": 49,
+       "n_trades": 26,
+       "n_open": 0,
+       "E_net": -2.7028889817031185,
+       "E_gross": 0.4844034430977113,
+       "s_star": 0.1519796047982579,
+       "placebo_E_net": -3.4221811277872014,
+       "verdict": "FENCED-INSUFFICIENT (n<30, no reading)",
+       "skipped_overlap": 23,
+       "exit_stop": 2
+      },
+      "3.0": {
+       "n_events": 49,
+       "n_trades": 26,
+       "n_open": 0,
+       "E_net": -4.296535194103534,
+       "E_gross": 0.4844034430977113,
+       "s_star": 0.10131973653217194,
+       "placebo_E_net": -5.021959965334366,
+       "verdict": "FENCED-INSUFFICIENT (n<30, no reading)",
+       "skipped_overlap": 23,
+       "exit_stop": 2
+      }
+     }
+    },
+    "correction-reversal": {
+     "dev": {
+      "1.0": {
+       "n_events": 5,
+       "n_trades": 5,
+       "n_open": 0,
+       "E_net": -2.41739162431012,
+       "E_gross": -0.8180460611590471,
+       "s_star": -0.511487998595695,
+       "placebo_E_net": -1.4470710832123144,
+       "verdict": "FENCED-INSUFFICIENT (n<30, no reading)",
+       "skipped_overlap": 0,
+       "exit_stop": 2
+      },
+      "2.0": {
+       "n_events": 5,
+       "n_trades": 5,
+       "n_open": 0,
+       "E_net": -4.016737187461192,
+       "E_gross": -0.8180460611590471,
+       "s_star": -0.2557439992978476,
+       "placebo_E_net": -3.0483625022880423,
+       "verdict": "FENCED-INSUFFICIENT (n<30, no reading)",
+       "skipped_overlap": 0,
+       "exit_stop": 2
+      },
+      "3.0": {
+       "n_events": 5,
+       "n_trades": 5,
+       "n_open": 0,
+       "E_net": -5.616082750612265,
+       "E_gross": -0.8180460611590471,
+       "s_star": -0.1704959995318984,
+       "placebo_E_net": -4.64965392136377,
+       "verdict": "FENCED-INSUFFICIENT (n<30, no reading)",
+       "skipped_overlap": 0,
+       "exit_stop": 2
+      }
+     },
+     "oos": {
+      "1.0": {
+       "n_events": 14,
+       "n_trades": 11,
+       "n_open": 0,
+       "E_net": -1.9899372711993821,
+       "E_gross": -0.39024947077600297,
+       "s_star": -0.24395352060115613,
+       "placebo_E_net": -1.8224022902400365,
+       "verdict": "FENCED-INSUFFICIENT (n<30, no reading)",
+       "skipped_overlap": 3,
+       "exit_stop": 4
+      },
+      "2.0": {
+       "n_events": 14,
+       "n_trades": 11,
+       "n_open": 0,
+       "E_net": -3.5896250716227613,
+       "E_gross": -0.39024947077600297,
+       "s_star": -0.12197676030057807,
+       "placebo_E_net": -3.4221811277872014,
+       "verdict": "FENCED-INSUFFICIENT (n<30, no reading)",
+       "skipped_overlap": 3,
+       "exit_stop": 4
+      },
+      "3.0": {
+       "n_events": 14,
+       "n_trades": 11,
+       "n_open": 0,
+       "E_net": -5.18931287204614,
+       "E_gross": -0.39024947077600297,
+       "s_star": -0.08131784020038538,
+       "placebo_E_net": -5.021959965334366,
+       "verdict": "FENCED-INSUFFICIENT (n<30, no reading)",
+       "skipped_overlap": 3,
+       "exit_stop": 4
+      }
+     }
+    },
+    "baseline": {
+     "dev": {
+      "1.0": {
+       "n_events": 854,
+       "n_trades": 278,
+       "n_open": 0,
+       "E_net": -1.4470710832123144,
+       "E_gross": 0.15422033586341352,
+       "s_star": 0.09630997457816276,
+       "placebo_E_net": -1.4470710832123144,
+       "verdict": "comparator",
+       "skipped_overlap": 576,
+       "exit_stop": 56
+      },
+      "2.0": {
+       "n_events": 854,
+       "n_trades": 278,
+       "n_open": 0,
+       "E_net": -3.0483625022880423,
+       "E_gross": 0.15422033586341352,
+       "s_star": 0.04815498728908138,
+       "placebo_E_net": -3.0483625022880423,
+       "verdict": "comparator",
+       "skipped_overlap": 576,
+       "exit_stop": 56
+      },
+      "3.0": {
+       "n_events": 854,
+       "n_trades": 278,
+       "n_open": 0,
+       "E_net": -4.64965392136377,
+       "E_gross": 0.15422033586341352,
+       "s_star": 0.03210332485938759,
+       "placebo_E_net": -4.64965392136377,
+       "verdict": "comparator",
+       "skipped_overlap": 576,
+       "exit_stop": 56
+      }
+     },
+     "oos": {
+      "1.0": {
+       "n_events": 1040,
+       "n_trades": 322,
+       "n_open": 0,
+       "E_net": -1.8224022902400365,
+       "E_gross": -0.22262345269287187,
+       "s_star": -0.13915889338441664,
+       "placebo_E_net": -1.8224022902400365,
+       "verdict": "comparator",
+       "skipped_overlap": 718,
+       "exit_stop": 52
+      },
+      "2.0": {
+       "n_events": 1040,
+       "n_trades": 322,
+       "n_open": 0,
+       "E_net": -3.4221811277872014,
+       "E_gross": -0.22262345269287187,
+       "s_star": -0.06957944669220832,
+       "placebo_E_net": -3.4221811277872014,
+       "verdict": "comparator",
+       "skipped_overlap": 718,
+       "exit_stop": 52
+      },
+      "3.0": {
+       "n_events": 1040,
+       "n_trades": 322,
+       "n_open": 0,
+       "E_net": -5.021959965334366,
+       "E_gross": -0.22262345269287187,
+       "s_star": -0.04638629779480555,
+       "placebo_E_net": -5.021959965334366,
+       "verdict": "comparator",
+       "skipped_overlap": 718,
+       "exit_stop": 52
+      }
+     }
+    }
+   },
+   "1h": {
+    "continuation": {
+     "dev": {
+      "1.0": {
+       "n_events": 108,
+       "n_trades": 52,
+       "n_open": 0,
+       "E_net": -1.18002071811577,
+       "E_gross": 0.43107028088421345,
+       "s_star": 0.26756420410255044,
+       "placebo_E_net": -1.449649119469757,
+       "verdict": "REJECTED (fails accept: beats-placebo AND survives-2x)",
+       "skipped_overlap": 56,
+       "exit_stop": 21
+      },
+      "2.0": {
+       "n_events": 108,
+       "n_trades": 52,
+       "n_open": 0,
+       "E_net": -2.7911117171157533,
+       "E_gross": 0.43107028088421345,
+       "s_star": 0.13378210205127522,
+       "placebo_E_net": -3.0464458162618313,
+       "verdict": "REJECTED (fails accept: beats-placebo AND survives-2x)",
+       "skipped_overlap": 56,
+       "exit_stop": 21
+      },
+      "3.0": {
+       "n_events": 108,
+       "n_trades": 52,
+       "n_open": 0,
+       "E_net": -4.402202716115736,
+       "E_gross": 0.43107028088421345,
+       "s_star": 0.08918806803418348,
+       "placebo_E_net": -4.643242513053905,
+       "verdict": "REJECTED (fails accept: beats-placebo AND survives-2x)",
+       "skipped_overlap": 56,
+       "exit_stop": 21
+      }
+     },
+     "oos": {
+      "1.0": {
+       "n_events": 113,
+       "n_trades": 61,
+       "n_open": 1,
+       "E_net": -1.6523373263877867,
+       "E_gross": -0.035427921701786436,
+       "s_star": -0.021910888513055834,
+       "placebo_E_net": -1.5335009663684294,
+       "verdict": "REJECTED (fails accept: beats-placebo AND survives-2x)",
+       "skipped_overlap": 52,
+       "exit_stop": 23
+      },
+      "2.0": {
+       "n_events": 113,
+       "n_trades": 61,
+       "n_open": 1,
+       "E_net": -3.2692467310737867,
+       "E_gross": -0.035427921701786436,
+       "s_star": -0.010955444256527919,
+       "placebo_E_net": -3.1359322384551667,
+       "verdict": "REJECTED (fails accept: beats-placebo AND survives-2x)",
+       "skipped_overlap": 52,
+       "exit_stop": 23
+      },
+      "3.0": {
+       "n_events": 113,
+       "n_trades": 61,
+       "n_open": 1,
+       "E_net": -4.886156135759788,
+       "E_gross": -0.035427921701786436,
+       "s_star": -0.007303629504351945,
+       "placebo_E_net": -4.738363510541904,
+       "verdict": "REJECTED (fails accept: beats-placebo AND survives-2x)",
+       "skipped_overlap": 52,
+       "exit_stop": 23
+      }
+     }
+    },
+    "bearish-continuation": {
+     "dev": {
+      "1.0": {
+       "n_events": 98,
+       "n_trades": 50,
+       "n_open": 0,
+       "E_net": -0.9751821895072039,
+       "E_gross": 0.6166545761971077,
+       "s_star": 0.38738555955155834,
+       "placebo_E_net": -1.449649119469757,
+       "verdict": "REJECTED (fails accept: beats-placebo AND survives-2x)",
+       "skipped_overlap": 48,
+       "exit_stop": 23
+      },
+      "2.0": {
+       "n_events": 98,
+       "n_trades": 50,
+       "n_open": 0,
+       "E_net": -2.5670189552115152,
+       "E_gross": 0.6166545761971077,
+       "s_star": 0.1936927797757792,
+       "placebo_E_net": -3.0464458162618313,
+       "verdict": "REJECTED (fails accept: beats-placebo AND survives-2x)",
+       "skipped_overlap": 48,
+       "exit_stop": 23
+      },
+      "3.0": {
+       "n_events": 98,
+       "n_trades": 50,
+       "n_open": 0,
+       "E_net": -4.158855720915827,
+       "E_gross": 0.6166545761971077,
+       "s_star": 0.12912851985051949,
+       "placebo_E_net": -4.643242513053905,
+       "verdict": "REJECTED (fails accept: beats-placebo AND survives-2x)",
+       "skipped_overlap": 48,
+       "exit_stop": 23
+      }
+     },
+     "oos": {
+      "1.0": {
+       "n_events": 118,
+       "n_trades": 66,
+       "n_open": 0,
+       "E_net": -1.40773252248326,
+       "E_gross": 0.17723283611351548,
+       "s_star": 0.11182126798684473,
+       "placebo_E_net": -1.5335009663684294,
+       "verdict": "REJECTED (fails accept: beats-placebo AND survives-2x)",
+       "skipped_overlap": 52,
+       "exit_stop": 26
+      },
+      "2.0": {
+       "n_events": 118,
+       "n_trades": 66,
+       "n_open": 0,
+       "E_net": -2.9926978810800353,
+       "E_gross": 0.17723283611351548,
+       "s_star": 0.055910633993422366,
+       "placebo_E_net": -3.1359322384551667,
+       "verdict": "REJECTED (fails accept: beats-placebo AND survives-2x)",
+       "skipped_overlap": 52,
+       "exit_stop": 26
+      },
+      "3.0": {
+       "n_events": 118,
+       "n_trades": 66,
+       "n_open": 0,
+       "E_net": -4.577663239676811,
+       "E_gross": 0.17723283611351548,
+       "s_star": 0.03727375599561491,
+       "placebo_E_net": -4.738363510541904,
+       "verdict": "REJECTED (fails accept: beats-placebo AND survives-2x)",
+       "skipped_overlap": 52,
+       "exit_stop": 26
+      }
+     }
+    },
+    "correction-exhaustion": {
+     "dev": {
+      "1.0": {
+       "n_events": 2,
+       "n_trades": 2,
+       "n_open": 0,
+       "E_net": -6.603999999999843,
+       "E_gross": -4.999999999999844,
+       "s_star": -3.117206982543545,
+       "placebo_E_net": -1.449649119469757,
+       "verdict": "FENCED-INSUFFICIENT (n<30, no reading)",
+       "skipped_overlap": 0,
+       "exit_stop": 2
+      },
+      "2.0": {
+       "n_events": 2,
+       "n_trades": 2,
+       "n_open": 0,
+       "E_net": -8.207999999999842,
+       "E_gross": -4.999999999999844,
+       "s_star": -1.5586034912717726,
+       "placebo_E_net": -3.0464458162618313,
+       "verdict": "FENCED-INSUFFICIENT (n<30, no reading)",
+       "skipped_overlap": 0,
+       "exit_stop": 2
+      },
+      "3.0": {
+       "n_events": 2,
+       "n_trades": 2,
+       "n_open": 0,
+       "E_net": -9.811999999999843,
+       "E_gross": -4.999999999999844,
+       "s_star": -1.0390689941811813,
+       "placebo_E_net": -4.643242513053905,
+       "verdict": "FENCED-INSUFFICIENT (n<30, no reading)",
+       "skipped_overlap": 0,
+       "exit_stop": 2
+      }
+     },
+     "oos": {
+      "1.0": {
+       "n_events": 0,
+       "n_trades": 0,
+       "n_open": 0,
+       "E_net": 0.0,
+       "E_gross": 0.0,
+       "s_star": null,
+       "placebo_E_net": -1.5335009663684294,
+       "verdict": "FENCED-INSUFFICIENT (n<30, no reading)",
+       "skipped_overlap": 0,
+       "exit_stop": 0
+      },
+      "2.0": {
+       "n_events": 0,
+       "n_trades": 0,
+       "n_open": 0,
+       "E_net": 0.0,
+       "E_gross": 0.0,
+       "s_star": null,
+       "placebo_E_net": -3.1359322384551667,
+       "verdict": "FENCED-INSUFFICIENT (n<30, no reading)",
+       "skipped_overlap": 0,
+       "exit_stop": 0
+      },
+      "3.0": {
+       "n_events": 0,
+       "n_trades": 0,
+       "n_open": 0,
+       "E_net": 0.0,
+       "E_gross": 0.0,
+       "s_star": null,
+       "placebo_E_net": -4.738363510541904,
+       "verdict": "FENCED-INSUFFICIENT (n<30, no reading)",
+       "skipped_overlap": 0,
+       "exit_stop": 0
+      }
+     }
+    },
+    "correction-reversal": {
+     "dev": {
+      "1.0": {
+       "n_events": 0,
+       "n_trades": 0,
+       "n_open": 0,
+       "E_net": 0.0,
+       "E_gross": 0.0,
+       "s_star": null,
+       "placebo_E_net": -1.449649119469757,
+       "verdict": "FENCED-INSUFFICIENT (n<30, no reading)",
+       "skipped_overlap": 0,
+       "exit_stop": 0
+      },
+      "2.0": {
+       "n_events": 0,
+       "n_trades": 0,
+       "n_open": 0,
+       "E_net": 0.0,
+       "E_gross": 0.0,
+       "s_star": null,
+       "placebo_E_net": -3.0464458162618313,
+       "verdict": "FENCED-INSUFFICIENT (n<30, no reading)",
+       "skipped_overlap": 0,
+       "exit_stop": 0
+      },
+      "3.0": {
+       "n_events": 0,
+       "n_trades": 0,
+       "n_open": 0,
+       "E_net": 0.0,
+       "E_gross": 0.0,
+       "s_star": null,
+       "placebo_E_net": -4.643242513053905,
+       "verdict": "FENCED-INSUFFICIENT (n<30, no reading)",
+       "skipped_overlap": 0,
+       "exit_stop": 0
+      }
+     },
+     "oos": {
+      "1.0": {
+       "n_events": 0,
+       "n_trades": 0,
+       "n_open": 0,
+       "E_net": 0.0,
+       "E_gross": 0.0,
+       "s_star": null,
+       "placebo_E_net": -1.5335009663684294,
+       "verdict": "FENCED-INSUFFICIENT (n<30, no reading)",
+       "skipped_overlap": 0,
+       "exit_stop": 0
+      },
+      "2.0": {
+       "n_events": 0,
+       "n_trades": 0,
+       "n_open": 0,
+       "E_net": 0.0,
+       "E_gross": 0.0,
+       "s_star": null,
+       "placebo_E_net": -3.1359322384551667,
+       "verdict": "FENCED-INSUFFICIENT (n<30, no reading)",
+       "skipped_overlap": 0,
+       "exit_stop": 0
+      },
+      "3.0": {
+       "n_events": 0,
+       "n_trades": 0,
+       "n_open": 0,
+       "E_net": 0.0,
+       "E_gross": 0.0,
+       "s_star": null,
+       "placebo_E_net": -4.738363510541904,
+       "verdict": "FENCED-INSUFFICIENT (n<30, no reading)",
+       "skipped_overlap": 0,
+       "exit_stop": 0
+      }
+     }
+    },
+    "baseline": {
+     "dev": {
+      "1.0": {
+       "n_events": 191,
+       "n_trades": 67,
+       "n_open": 0,
+       "E_net": -1.449649119469757,
+       "E_gross": 0.14714757732231695,
+       "s_star": 0.09215172953321665,
+       "placebo_E_net": -1.449649119469757,
+       "verdict": "comparator",
+       "skipped_overlap": 124,
+       "exit_stop": 29
+      },
+      "2.0": {
+       "n_events": 191,
+       "n_trades": 67,
+       "n_open": 0,
+       "E_net": -3.0464458162618313,
+       "E_gross": 0.14714757732231695,
+       "s_star": 0.04607586476660832,
+       "placebo_E_net": -3.0464458162618313,
+       "verdict": "comparator",
+       "skipped_overlap": 124,
+       "exit_stop": 29
+      },
+      "3.0": {
+       "n_events": 191,
+       "n_trades": 67,
+       "n_open": 0,
+       "E_net": -4.643242513053905,
+       "E_gross": 0.14714757732231695,
+       "s_star": 0.030717243177738884,
+       "placebo_E_net": -4.643242513053905,
+       "verdict": "comparator",
+       "skipped_overlap": 124,
+       "exit_stop": 29
+      }
+     },
+     "oos": {
+      "1.0": {
+       "n_events": 249,
+       "n_trades": 84,
+       "n_open": 0,
+       "E_net": -1.5335009663684294,
+       "E_gross": 0.0689303057183085,
+       "s_star": 0.04301607620808924,
+       "placebo_E_net": -1.5335009663684294,
+       "verdict": "comparator",
+       "skipped_overlap": 165,
+       "exit_stop": 32
+      },
+      "2.0": {
+       "n_events": 249,
+       "n_trades": 84,
+       "n_open": 0,
+       "E_net": -3.1359322384551667,
+       "E_gross": 0.0689303057183085,
+       "s_star": 0.021508038104044624,
+       "placebo_E_net": -3.1359322384551667,
+       "verdict": "comparator",
+       "skipped_overlap": 165,
+       "exit_stop": 32
+      },
+      "3.0": {
+       "n_events": 249,
+       "n_trades": 84,
+       "n_open": 0,
+       "E_net": -4.738363510541904,
+       "E_gross": 0.0689303057183085,
+       "s_star": 0.014338692069363081,
+       "placebo_E_net": -4.738363510541904,
+       "verdict": "comparator",
+       "skipped_overlap": 165,
+       "exit_stop": 32
+      }
+     }
+    }
+   }
+  },
+  "SOLUSDT": {
+   "15m": {
+    "continuation": {
+     "dev": {
+      "1.0": {
+       "n_events": 475,
+       "n_trades": 168,
+       "n_open": 0,
+       "E_net": -1.7417461389336275,
+       "E_gross": -0.13752026921832122,
+       "s_star": -0.08572375736761198,
+       "placebo_E_net": -2.2013438767774507,
+       "verdict": "REJECTED (fails accept: beats-placebo AND survives-2x)",
+       "skipped_overlap": 307,
+       "exit_stop": 42
+      },
+      "2.0": {
+       "n_events": 475,
+       "n_trades": 168,
+       "n_open": 0,
+       "E_net": -3.3459720086489337,
+       "E_gross": -0.13752026921832122,
+       "s_star": -0.04286187868380599,
+       "placebo_E_net": -3.800378779831581,
+       "verdict": "REJECTED (fails accept: beats-placebo AND survives-2x)",
+       "skipped_overlap": 307,
+       "exit_stop": 42
+      },
+      "3.0": {
+       "n_events": 475,
+       "n_trades": 168,
+       "n_open": 0,
+       "E_net": -4.95019787836424,
+       "E_gross": -0.13752026921832122,
+       "s_star": -0.02857458578920399,
+       "placebo_E_net": -5.39941368288571,
+       "verdict": "REJECTED (fails accept: beats-placebo AND survives-2x)",
+       "skipped_overlap": 307,
+       "exit_stop": 42
+      }
+     },
+     "oos": {
+      "1.0": {
+       "n_events": 548,
+       "n_trades": 193,
+       "n_open": 1,
+       "E_net": -1.569753580070514,
+       "E_gross": 0.03231570835455976,
+       "s_star": 0.020171230163414443,
+       "placebo_E_net": -1.3825892534661879,
+       "verdict": "REJECTED (fails accept: beats-placebo AND survives-2x)",
+       "skipped_overlap": 355,
+       "exit_stop": 48
+      },
+      "2.0": {
+       "n_events": 548,
+       "n_trades": 193,
+       "n_open": 1,
+       "E_net": -3.171822868495587,
+       "E_gross": 0.03231570835455976,
+       "s_star": 0.010085615081707225,
+       "placebo_E_net": -2.981122798711357,
+       "verdict": "REJECTED (fails accept: beats-placebo AND survives-2x)",
+       "skipped_overlap": 355,
+       "exit_stop": 48
+      },
+      "3.0": {
+       "n_events": 548,
+       "n_trades": 193,
+       "n_open": 1,
+       "E_net": -4.773892156920661,
+       "E_gross": 0.03231570835455976,
+       "s_star": 0.006723743387804815,
+       "placebo_E_net": -4.579656343956527,
+       "verdict": "REJECTED (fails accept: beats-placebo AND survives-2x)",
+       "skipped_overlap": 355,
+       "exit_stop": 48
+      }
+     }
+    },
+    "bearish-continuation": {
+     "dev": {
+      "1.0": {
+       "n_events": 412,
+       "n_trades": 163,
+       "n_open": 0,
+       "E_net": -2.149062297333215,
+       "E_gross": -0.5503722974306842,
+       "s_star": -0.34426455251752325,
+       "placebo_E_net": -2.2013438767774507,
+       "verdict": "REJECTED (fails accept: beats-placebo AND survives-2x)",
+       "skipped_overlap": 249,
+       "exit_stop": 55
+      },
+      "2.0": {
+       "n_events": 412,
+       "n_trades": 163,
+       "n_open": 0,
+       "E_net": -3.7477522972357455,
+       "E_gross": -0.5503722974306842,
+       "s_star": -0.17213227625876165,
+       "placebo_E_net": -3.800378779831581,
+       "verdict": "REJECTED (fails accept: beats-placebo AND survives-2x)",
+       "skipped_overlap": 249,
+       "exit_stop": 55
+      },
+      "3.0": {
+       "n_events": 412,
+       "n_trades": 163,
+       "n_open": 0,
+       "E_net": -5.346442297138276,
+       "E_gross": -0.5503722974306842,
+       "s_star": -0.11475485083917444,
+       "placebo_E_net": -5.39941368288571,
+       "verdict": "REJECTED (fails accept: beats-placebo AND survives-2x)",
+       "skipped_overlap": 249,
+       "exit_stop": 55
+      }
+     },
+     "oos": {
+      "1.0": {
+       "n_events": 528,
+       "n_trades": 203,
+       "n_open": 0,
+       "E_net": -1.683507114505846,
+       "E_gross": -0.08646554152351028,
+       "s_star": -0.05414107120708413,
+       "placebo_E_net": -1.3825892534661879,
+       "verdict": "REJECTED (fails accept: beats-placebo AND survives-2x)",
+       "skipped_overlap": 325,
+       "exit_stop": 56
+      },
+      "2.0": {
+       "n_events": 528,
+       "n_trades": 203,
+       "n_open": 0,
+       "E_net": -3.280548687488182,
+       "E_gross": -0.08646554152351028,
+       "s_star": -0.027070535603542063,
+       "placebo_E_net": -2.981122798711357,
+       "verdict": "REJECTED (fails accept: beats-placebo AND survives-2x)",
+       "skipped_overlap": 325,
+       "exit_stop": 56
+      },
+      "3.0": {
+       "n_events": 528,
+       "n_trades": 203,
+       "n_open": 0,
+       "E_net": -4.877590260470518,
+       "E_gross": -0.08646554152351028,
+       "s_star": -0.01804702373569471,
+       "placebo_E_net": -4.579656343956527,
+       "verdict": "REJECTED (fails accept: beats-placebo AND survives-2x)",
+       "skipped_overlap": 325,
+       "exit_stop": 56
+      }
+     }
+    },
+    "correction-exhaustion": {
+     "dev": {
+      "1.0": {
+       "n_events": 19,
+       "n_trades": 19,
+       "n_open": 0,
+       "E_net": -1.035387698378079,
+       "E_gross": 0.5536430713753472,
+       "s_star": 0.3484155762831813,
+       "placebo_E_net": -2.2013438767774507,
+       "verdict": "FENCED-INSUFFICIENT (n<30, no reading)",
+       "skipped_overlap": 0,
+       "exit_stop": 6
+      },
+      "2.0": {
+       "n_events": 19,
+       "n_trades": 19,
+       "n_open": 0,
+       "E_net": -2.624418468131505,
+       "E_gross": 0.5536430713753472,
+       "s_star": 0.17420778814159066,
+       "placebo_E_net": -3.800378779831581,
+       "verdict": "FENCED-INSUFFICIENT (n<30, no reading)",
+       "skipped_overlap": 0,
+       "exit_stop": 6
+      },
+      "3.0": {
+       "n_events": 19,
+       "n_trades": 19,
+       "n_open": 0,
+       "E_net": -4.213449237884931,
+       "E_gross": 0.5536430713753472,
+       "s_star": 0.11613852542772711,
+       "placebo_E_net": -5.39941368288571,
+       "verdict": "FENCED-INSUFFICIENT (n<30, no reading)",
+       "skipped_overlap": 0,
+       "exit_stop": 6
+      }
+     },
+     "oos": {
+      "1.0": {
+       "n_events": 26,
+       "n_trades": 18,
+       "n_open": 0,
+       "E_net": -0.09622638788660577,
+       "E_gross": 1.485957524873265,
+       "s_star": 0.9391812878954419,
+       "placebo_E_net": -1.3825892534661879,
+       "verdict": "FENCED-INSUFFICIENT (n<30, no reading)",
+       "skipped_overlap": 8,
+       "exit_stop": 0
+      },
+      "2.0": {
+       "n_events": 26,
+       "n_trades": 18,
+       "n_open": 0,
+       "E_net": -1.6784103006464768,
+       "E_gross": 1.485957524873265,
+       "s_star": 0.46959064394772093,
+       "placebo_E_net": -2.981122798711357,
+       "verdict": "FENCED-INSUFFICIENT (n<30, no reading)",
+       "skipped_overlap": 8,
+       "exit_stop": 0
+      },
+      "3.0": {
+       "n_events": 26,
+       "n_trades": 18,
+       "n_open": 0,
+       "E_net": -3.260594213406348,
+       "E_gross": 1.485957524873265,
+       "s_star": 0.31306042929848066,
+       "placebo_E_net": -4.579656343956527,
+       "verdict": "FENCED-INSUFFICIENT (n<30, no reading)",
+       "skipped_overlap": 8,
+       "exit_stop": 0
+      }
+     }
+    },
+    "correction-reversal": {
+     "dev": {
+      "1.0": {
+       "n_events": 11,
+       "n_trades": 8,
+       "n_open": 0,
+       "E_net": -2.168691192068089,
+       "E_gross": -0.5691465092755092,
+       "s_star": -0.3558178245335789,
+       "placebo_E_net": -2.2013438767774507,
+       "verdict": "FENCED-INSUFFICIENT (n<30, no reading)",
+       "skipped_overlap": 3,
+       "exit_stop": 3
+      },
+      "2.0": {
+       "n_events": 11,
+       "n_trades": 8,
+       "n_open": 0,
+       "E_net": -3.7682358748606686,
+       "E_gross": -0.5691465092755092,
+       "s_star": -0.17790891226678945,
+       "placebo_E_net": -3.800378779831581,
+       "verdict": "FENCED-INSUFFICIENT (n<30, no reading)",
+       "skipped_overlap": 3,
+       "exit_stop": 3
+      },
+      "3.0": {
+       "n_events": 11,
+       "n_trades": 8,
+       "n_open": 0,
+       "E_net": -5.367780557653248,
+       "E_gross": -0.5691465092755092,
+       "s_star": -0.11860594151119297,
+       "placebo_E_net": -5.39941368288571,
+       "verdict": "FENCED-INSUFFICIENT (n<30, no reading)",
+       "skipped_overlap": 3,
+       "exit_stop": 3
+      }
+     },
+     "oos": {
+      "1.0": {
+       "n_events": 11,
+       "n_trades": 8,
+       "n_open": 0,
+       "E_net": 0.6871484913372917,
+       "E_gross": 2.2889796750773534,
+       "s_star": 1.428976847443369,
+       "placebo_E_net": -1.3825892534661879,
+       "verdict": "FENCED-INSUFFICIENT (n<30, no reading)",
+       "skipped_overlap": 3,
+       "exit_stop": 0
+      },
+      "2.0": {
+       "n_events": 11,
+       "n_trades": 8,
+       "n_open": 0,
+       "E_net": -0.91468269240277,
+       "E_gross": 2.2889796750773534,
+       "s_star": 0.7144884237216845,
+       "placebo_E_net": -2.981122798711357,
+       "verdict": "FENCED-INSUFFICIENT (n<30, no reading)",
+       "skipped_overlap": 3,
+       "exit_stop": 0
+      },
+      "3.0": {
+       "n_events": 11,
+       "n_trades": 8,
+       "n_open": 0,
+       "E_net": -2.516513876142832,
+       "E_gross": 2.2889796750773534,
+       "s_star": 0.4763256158144563,
+       "placebo_E_net": -4.579656343956527,
+       "verdict": "FENCED-INSUFFICIENT (n<30, no reading)",
+       "skipped_overlap": 3,
+       "exit_stop": 0
+      }
+     }
+    },
+    "baseline": {
+     "dev": {
+      "1.0": {
+       "n_events": 913,
+       "n_trades": 283,
+       "n_open": 0,
+       "E_net": -2.2013438767774507,
+       "E_gross": -0.6023089737233212,
+       "s_star": -0.37667031068109974,
+       "placebo_E_net": -2.2013438767774507,
+       "verdict": "comparator",
+       "skipped_overlap": 630,
+       "exit_stop": 86
+      },
+      "2.0": {
+       "n_events": 913,
+       "n_trades": 283,
+       "n_open": 0,
+       "E_net": -3.800378779831581,
+       "E_gross": -0.6023089737233212,
+       "s_star": -0.18833515534054984,
+       "placebo_E_net": -3.800378779831581,
+       "verdict": "comparator",
+       "skipped_overlap": 630,
+       "exit_stop": 86
+      },
+      "3.0": {
+       "n_events": 913,
+       "n_trades": 283,
+       "n_open": 0,
+       "E_net": -5.39941368288571,
+       "E_gross": -0.6023089737233212,
+       "s_star": -0.12555677022703324,
+       "placebo_E_net": -5.39941368288571,
+       "verdict": "comparator",
+       "skipped_overlap": 630,
+       "exit_stop": 86
+      }
+     },
+     "oos": {
+      "1.0": {
+       "n_events": 1117,
+       "n_trades": 326,
+       "n_open": 0,
+       "E_net": -1.3825892534661879,
+       "E_gross": 0.2159442917789816,
+       "s_star": 0.13508899604972752,
+       "placebo_E_net": -1.3825892534661879,
+       "verdict": "comparator",
+       "skipped_overlap": 791,
+       "exit_stop": 76
+      },
+      "2.0": {
+       "n_events": 1117,
+       "n_trades": 326,
+       "n_open": 0,
+       "E_net": -2.981122798711357,
+       "E_gross": 0.2159442917789816,
+       "s_star": 0.06754449802486376,
+       "placebo_E_net": -2.981122798711357,
+       "verdict": "comparator",
+       "skipped_overlap": 791,
+       "exit_stop": 76
+      },
+      "3.0": {
+       "n_events": 1117,
+       "n_trades": 326,
+       "n_open": 0,
+       "E_net": -4.579656343956527,
+       "E_gross": 0.2159442917789816,
+       "s_star": 0.04502966534990917,
+       "placebo_E_net": -4.579656343956527,
+       "verdict": "comparator",
+       "skipped_overlap": 791,
+       "exit_stop": 76
+      }
+     }
+    }
+   },
+   "1h": {
+    "continuation": {
+     "dev": {
+      "1.0": {
+       "n_events": 115,
+       "n_trades": 59,
+       "n_open": 0,
+       "E_net": -2.2408130301039404,
+       "E_gross": -0.6325655276685477,
+       "s_star": -0.3933259816729977,
+       "placebo_E_net": -0.703751518718568,
+       "verdict": "REJECTED (fails accept: beats-placebo AND survives-2x)",
+       "skipped_overlap": 56,
+       "exit_stop": 38
+      },
+      "2.0": {
+       "n_events": 115,
+       "n_trades": 59,
+       "n_open": 0,
+       "E_net": -3.8490605325393332,
+       "E_gross": -0.6325655276685477,
+       "s_star": -0.19666299083649885,
+       "placebo_E_net": -2.307965676721436,
+       "verdict": "REJECTED (fails accept: beats-placebo AND survives-2x)",
+       "skipped_overlap": 56,
+       "exit_stop": 38
+      },
+      "3.0": {
+       "n_events": 115,
+       "n_trades": 59,
+       "n_open": 0,
+       "E_net": -5.457308034974726,
+       "E_gross": -0.6325655276685477,
+       "s_star": -0.13110866055766593,
+       "placebo_E_net": -3.9121798347243044,
+       "verdict": "REJECTED (fails accept: beats-placebo AND survives-2x)",
+       "skipped_overlap": 56,
+       "exit_stop": 38
+      }
+     },
+     "oos": {
+      "1.0": {
+       "n_events": 136,
+       "n_trades": 72,
+       "n_open": 0,
+       "E_net": -1.5352576077372526,
+       "E_gross": 0.0726613459514562,
+       "s_star": 0.04518968184606856,
+       "placebo_E_net": -2.5961262053614744,
+       "verdict": "REJECTED (fails accept: beats-placebo AND survives-2x)",
+       "skipped_overlap": 64,
+       "exit_stop": 39
+      },
+      "2.0": {
+       "n_events": 136,
+       "n_trades": 72,
+       "n_open": 0,
+       "E_net": -3.1431765614259612,
+       "E_gross": 0.0726613459514562,
+       "s_star": 0.022594840923034282,
+       "placebo_E_net": -4.198073853603024,
+       "verdict": "REJECTED (fails accept: beats-placebo AND survives-2x)",
+       "skipped_overlap": 64,
+       "exit_stop": 39
+      },
+      "3.0": {
+       "n_events": 136,
+       "n_trades": 72,
+       "n_open": 0,
+       "E_net": -4.75109551511467,
+       "E_gross": 0.0726613459514562,
+       "s_star": 0.015063227282022853,
+       "placebo_E_net": -5.800021501844572,
+       "verdict": "REJECTED (fails accept: beats-placebo AND survives-2x)",
+       "skipped_overlap": 64,
+       "exit_stop": 39
+      }
+     }
+    },
+    "bearish-continuation": {
+     "dev": {
+      "1.0": {
+       "n_events": 104,
+       "n_trades": 57,
+       "n_open": 0,
+       "E_net": -2.1683502010697153,
+       "E_gross": -0.5758019713958388,
+       "s_star": -0.361560146604635,
+       "placebo_E_net": -0.703751518718568,
+       "verdict": "REJECTED (fails accept: beats-placebo AND survives-2x)",
+       "skipped_overlap": 47,
+       "exit_stop": 33
+      },
+      "2.0": {
+       "n_events": 104,
+       "n_trades": 57,
+       "n_open": 0,
+       "E_net": -3.7608984307435915,
+       "E_gross": -0.5758019713958388,
+       "s_star": -0.18078007330231752,
+       "placebo_E_net": -2.307965676721436,
+       "verdict": "REJECTED (fails accept: beats-placebo AND survives-2x)",
+       "skipped_overlap": 47,
+       "exit_stop": 33
+      },
+      "3.0": {
+       "n_events": 104,
+       "n_trades": 57,
+       "n_open": 0,
+       "E_net": -5.353446660417468,
+       "E_gross": -0.5758019713958388,
+       "s_star": -0.12052004886821167,
+       "placebo_E_net": -3.9121798347243044,
+       "verdict": "REJECTED (fails accept: beats-placebo AND survives-2x)",
+       "skipped_overlap": 47,
+       "exit_stop": 33
+      }
+     },
+     "oos": {
+      "1.0": {
+       "n_events": 130,
+       "n_trades": 73,
+       "n_open": 1,
+       "E_net": -1.8752085823553821,
+       "E_gross": -0.28238861055230197,
+       "s_star": -0.17728846671393544,
+       "placebo_E_net": -2.5961262053614744,
+       "verdict": "REJECTED (fails accept: beats-placebo AND survives-2x)",
+       "skipped_overlap": 57,
+       "exit_stop": 43
+      },
+      "2.0": {
+       "n_events": 130,
+       "n_trades": 73,
+       "n_open": 1,
+       "E_net": -3.468028554158462,
+       "E_gross": -0.28238861055230197,
+       "s_star": -0.08864423335696774,
+       "placebo_E_net": -4.198073853603024,
+       "verdict": "REJECTED (fails accept: beats-placebo AND survives-2x)",
+       "skipped_overlap": 57,
+       "exit_stop": 43
+      },
+      "3.0": {
+       "n_events": 130,
+       "n_trades": 73,
+       "n_open": 1,
+       "E_net": -5.060848525961542,
+       "E_gross": -0.28238861055230197,
+       "s_star": -0.05909615557131182,
+       "placebo_E_net": -5.800021501844572,
+       "verdict": "REJECTED (fails accept: beats-placebo AND survives-2x)",
+       "skipped_overlap": 57,
+       "exit_stop": 43
+      }
+     }
+    },
+    "correction-exhaustion": {
+     "dev": {
+      "1.0": {
+       "n_events": 4,
+       "n_trades": 4,
+       "n_open": 0,
+       "E_net": -3.6337153554752004,
+       "E_gross": -2.0320896837282176,
+       "s_star": -1.2687669282371727,
+       "placebo_E_net": -0.703751518718568,
+       "verdict": "FENCED-INSUFFICIENT (n<30, no reading)",
+       "skipped_overlap": 0,
+       "exit_stop": 3
+      },
+      "2.0": {
+       "n_events": 4,
+       "n_trades": 4,
+       "n_open": 0,
+       "E_net": -5.235341027222183,
+       "E_gross": -2.0320896837282176,
+       "s_star": -0.6343834641185865,
+       "placebo_E_net": -2.307965676721436,
+       "verdict": "FENCED-INSUFFICIENT (n<30, no reading)",
+       "skipped_overlap": 0,
+       "exit_stop": 3
+      },
+      "3.0": {
+       "n_events": 4,
+       "n_trades": 4,
+       "n_open": 0,
+       "E_net": -6.836966698969165,
+       "E_gross": -2.0320896837282176,
+       "s_star": -0.422922309412391,
+       "placebo_E_net": -3.9121798347243044,
+       "verdict": "FENCED-INSUFFICIENT (n<30, no reading)",
+       "skipped_overlap": 0,
+       "exit_stop": 3
+      }
+     },
+     "oos": {
+      "1.0": {
+       "n_events": 1,
+       "n_trades": 1,
+       "n_open": 0,
+       "E_net": -6.504147662017906,
+       "E_gross": -4.999999999999859,
+       "s_star": -3.324141722423438,
+       "placebo_E_net": -2.5961262053614744,
+       "verdict": "FENCED-INSUFFICIENT (n<30, no reading)",
+       "skipped_overlap": 0,
+       "exit_stop": 1
+      },
+      "2.0": {
+       "n_events": 1,
+       "n_trades": 1,
+       "n_open": 0,
+       "E_net": -8.008295324035954,
+       "E_gross": -4.999999999999859,
+       "s_star": -1.6620708612117185,
+       "placebo_E_net": -4.198073853603024,
+       "verdict": "FENCED-INSUFFICIENT (n<30, no reading)",
+       "skipped_overlap": 0,
+       "exit_stop": 1
+      },
+      "3.0": {
+       "n_events": 1,
+       "n_trades": 1,
+       "n_open": 0,
+       "E_net": -9.512442986054001,
+       "E_gross": -4.999999999999859,
+       "s_star": -1.1080472408078126,
+       "placebo_E_net": -5.800021501844572,
+       "verdict": "FENCED-INSUFFICIENT (n<30, no reading)",
+       "skipped_overlap": 0,
+       "exit_stop": 1
+      }
+     }
+    },
+    "correction-reversal": {
+     "dev": {
+      "1.0": {
+       "n_events": 0,
+       "n_trades": 0,
+       "n_open": 0,
+       "E_net": 0.0,
+       "E_gross": 0.0,
+       "s_star": null,
+       "placebo_E_net": -0.703751518718568,
+       "verdict": "FENCED-INSUFFICIENT (n<30, no reading)",
+       "skipped_overlap": 0,
+       "exit_stop": 0
+      },
+      "2.0": {
+       "n_events": 0,
+       "n_trades": 0,
+       "n_open": 0,
+       "E_net": 0.0,
+       "E_gross": 0.0,
+       "s_star": null,
+       "placebo_E_net": -2.307965676721436,
+       "verdict": "FENCED-INSUFFICIENT (n<30, no reading)",
+       "skipped_overlap": 0,
+       "exit_stop": 0
+      },
+      "3.0": {
+       "n_events": 0,
+       "n_trades": 0,
+       "n_open": 0,
+       "E_net": 0.0,
+       "E_gross": 0.0,
+       "s_star": null,
+       "placebo_E_net": -3.9121798347243044,
+       "verdict": "FENCED-INSUFFICIENT (n<30, no reading)",
+       "skipped_overlap": 0,
+       "exit_stop": 0
+      }
+     },
+     "oos": {
+      "1.0": {
+       "n_events": 0,
+       "n_trades": 0,
+       "n_open": 0,
+       "E_net": 0.0,
+       "E_gross": 0.0,
+       "s_star": null,
+       "placebo_E_net": -2.5961262053614744,
+       "verdict": "FENCED-INSUFFICIENT (n<30, no reading)",
+       "skipped_overlap": 0,
+       "exit_stop": 0
+      },
+      "2.0": {
+       "n_events": 0,
+       "n_trades": 0,
+       "n_open": 0,
+       "E_net": 0.0,
+       "E_gross": 0.0,
+       "s_star": null,
+       "placebo_E_net": -4.198073853603024,
+       "verdict": "FENCED-INSUFFICIENT (n<30, no reading)",
+       "skipped_overlap": 0,
+       "exit_stop": 0
+      },
+      "3.0": {
+       "n_events": 0,
+       "n_trades": 0,
+       "n_open": 0,
+       "E_net": 0.0,
+       "E_gross": 0.0,
+       "s_star": null,
+       "placebo_E_net": -5.800021501844572,
+       "verdict": "FENCED-INSUFFICIENT (n<30, no reading)",
+       "skipped_overlap": 0,
+       "exit_stop": 0
+      }
+     }
+    },
+    "baseline": {
+     "dev": {
+      "1.0": {
+       "n_events": 213,
+       "n_trades": 75,
+       "n_open": 0,
+       "E_net": -0.703751518718568,
+       "E_gross": 0.9004626392843004,
+       "s_star": 0.56131074195562,
+       "placebo_E_net": -0.703751518718568,
+       "verdict": "comparator",
+       "skipped_overlap": 138,
+       "exit_stop": 40
+      },
+      "2.0": {
+       "n_events": 213,
+       "n_trades": 75,
+       "n_open": 0,
+       "E_net": -2.307965676721436,
+       "E_gross": 0.9004626392843004,
+       "s_star": 0.28065537097781007,
+       "placebo_E_net": -2.307965676721436,
+       "verdict": "comparator",
+       "skipped_overlap": 138,
+       "exit_stop": 40
+      },
+      "3.0": {
+       "n_events": 213,
+       "n_trades": 75,
+       "n_open": 0,
+       "E_net": -3.9121798347243044,
+       "E_gross": 0.9004626392843004,
+       "s_star": 0.18710358065187335,
+       "placebo_E_net": -3.9121798347243044,
+       "verdict": "comparator",
+       "skipped_overlap": 138,
+       "exit_stop": 40
+      }
+     },
+     "oos": {
+      "1.0": {
+       "n_events": 275,
+       "n_trades": 99,
+       "n_open": 1,
+       "E_net": -2.5961262053614744,
+       "E_gross": -0.9941785571199259,
+       "s_star": -0.6206061466560606,
+       "placebo_E_net": -2.5961262053614744,
+       "verdict": "comparator",
+       "skipped_overlap": 176,
+       "exit_stop": 62
+      },
+      "2.0": {
+       "n_events": 275,
+       "n_trades": 99,
+       "n_open": 1,
+       "E_net": -4.198073853603024,
+       "E_gross": -0.9941785571199259,
+       "s_star": -0.31030307332803025,
+       "placebo_E_net": -4.198073853603024,
+       "verdict": "comparator",
+       "skipped_overlap": 176,
+       "exit_stop": 62
+      },
+      "3.0": {
+       "n_events": 275,
+       "n_trades": 99,
+       "n_open": 1,
+       "E_net": -5.800021501844572,
+       "E_gross": -0.9941785571199259,
+       "s_star": -0.2068687155520202,
+       "placebo_E_net": -5.800021501844572,
+       "verdict": "comparator",
+       "skipped_overlap": 176,
+       "exit_stop": 62
+      }
+     }
+    }
+   }
+  }
+ },
+ "limits": [
+  "in-sample/non-pristine: same window as V1, definitions predate outcomes, window reused",
+  "costs assumed (COST-ASSUME-v1); spread/slippage unmeasured; fee tier unknown",
+  "no live-formation proof: decision_time NULL in census; availability live UNKNOWN",
+  "mapping candidate (MAP-CANDIDATE-v2), never approved; H2 fade directions are NEW-HYPOTHESIS",
+  "intra-cell single position only; cross-cell simultaneity unmodeled; no pooled portfolio computed",
+  "grouped/duplicate events correlated by construction (594 duplicate groups); n overstates independence",
+  "no thresholds optimized; no symbols/scenarios picked by posterior performance"
+ ]
+}

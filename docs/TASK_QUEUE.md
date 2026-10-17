@@ -1,3 +1,40 @@
+## Cierre EVAL-CENSUS-V2 + selector + QA visual 3020 (2026-10-17, sin corridas, sin push aun)
+Censo CENSUS-V1 (9320/9320/0, entry>=available 9314/9314, 594 grupos
+duplicados contados) + EVAL-CENSUS-V2 (5255 trades @1x, 0 celdas
+elegibles, H1/H3 RECHAZADAS, H2 fade RECHAZADO como metodologia y
+conservado como HIPTESIS NUEVA no aprobada). Funding 741 liquidaciones
+aplicadas (0 UNKNOWN-excluded); 24/60 celdas uncovered/UNKNOWN.
+Placebo TIME-PLACEBO-v1 seed 42 (una realizacion, no distribucion).
+HORIZON-GRID4-V1: degeneracion 1h/1h demostrada; separacion explicita
+experimento original (V1, 1h default) vs nuevo horizonte (4h/1h); no
+optimizacion validada. Selector SELECTOR-EXTREME-V1: mecanismo probado
+con fixtures, NO evaluado sobre censo, NO aprobado. Estrategia completa
+de extremos sobre universo/liquidez: NO EVALUADA (faltan datos de
+ranking/liquidez/market_cap). Artefacto census-eval-v2.json force-added
+(sha256 2b74a841...d37060). QA visual 3020 PASS (2 bloques, 0 errores,
+captura VISUAL_QA_CENSUS_EVAL_V2.png; defecto duplicado corregido).
+Verificado: backend 1202 OK + frontend 314/314 + typecheck 0 + build OK.
+V2 sirviendo 3020 PID 15480. Monitor detenido, watchers detenidos, sin
+corridas. Resta: commit selectivo, push, entrega con SHA.
+
+## Integracion objetivo movers extremos (2026-10-17, solo documental, sin corridas)
+Integrada review/extreme-movers-objective-20261016 hasta 7a4e872 por
+contenido (EXTREME_MOVERS_OBJECTIVE.md + HISTORICAL_STRUCTURE_AND_EXIT_PLAN.md
+restaurados + suplementos portados); evolucion actual preservada. Estos
+planes no aprueban parametros ni autorizan implementarlo todo ahora:
+soportes, stops dinamicos y Paper Lab conservan su secuencia. Leer
+docs/EXTREME_MOVERS_OBJECTIVE.md antes del siguiente plan; completar
+primero la auditoria causal/costes/paquete ya autorizada.
+
+## Suplemento de objetivo, sin interrumpir tarea activa — 2026-10-16
+Leer docs/EXTREME_MOVERS_OBJECTIVE.md antes del siguiente plan.
+Completar primero la auditoria causal/costes/paquete reproducible ya autorizada.
+Despues auditar selector discovery vs microestructura disponible, cobertura
+bilateral fuera del trio y conexiones Movers→detalle→Backtest/Paper.
+No iniciar sesiones ni implementar estrategia por este suplemento.
+F-EXTREME-OBJECTIVE-01 mantiene trazabilidad. Al integrar esta rama documental,
+portar solo sus cambios: preservar trabajo concurrente del agente.
+
 ## Paquete + causalidad + costes + protocolo (2026-10-17, sin corridas, sin push aun)
 Manifiesto + replay verificado + IDs 1:1 + reproduce script; matriz
 causal (ninguna elegible); breakeven s* + fragilidad 2x; protocolo
@@ -1381,3 +1418,13 @@ strategies (P3), paper engine/positions (P4), execution (P5).
   `mariomoreta/binance-futures-microstructure-bot` (origin in sync).
 
   P1-05 implementation/docs commit follows on this branch.
+
+
+## Suplemento estructura historica — 2026-10-16 (solo documental)
+F-STRUCTURE-EXIT-01 en HISTORICAL_STRUCTURE_AND_EXIT_PLAN.md define contexto
+multihorizonte compacto, zonas causales y politicas de stop a evaluar.
+Fase causal/costes activa conserva prioridad. No datos nuevos, codigo,
+backfill, servicios, sesiones ni gates cambiados. Reconciliar despues de la
+entrega del agente sin sobrescribir sus archivos concurrentes.
+(Integracion 2026-10-17: portado selectivo desde
+review/extreme-movers-objective-20261016 hasta 7a4e872.)

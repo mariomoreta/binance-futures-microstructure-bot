@@ -1,3 +1,55 @@
+## Cierre EVAL-CENSUS-V2 + selector + QA visual 3020 (2026-10-17, sin corridas)
+Cierre de la fase de evaluacion offline sobre censo same-grid. Evidencia:
+docs/OFFLINE_EVAL_CENSUS_V2.md + artefacto publicado
+frontend/src/data/census-eval-v2.json (sha256 2b74a841...d37060, 73051 B,
+force-added a Git; limpio verifica artefacto/UI/build, no regenera desde
+cero). Censo CENSUS-V1: 9320 detecciones, 9320 admitidas, 0 descartadas;
+entry>=available 9314/9314 (6 tail-edge sin entry, honesto); 594 grupos
+duplicados (+616 filas) contados, nunca tratados como independientes; 2831/2831
+originales reproducidos; 6489 censo-unicos (2.3% del censo 15m estaba en piloto).
+EVAL-CENSUS-V2: 5255 trades @1x (4055 15m + 1200 1h); 0 celdas elegibles
+(ninguna supera al placebo Y sobrevive 2x). H1/H3 RECHAZADAS (18/18 15m +
+6/6 1h negativas @1x). H2 fade RECHAZADO como metodologia (mejor s*<2 o n
+insuficiente; anecdotas n=1 cercadas). H2 fade queda como HIPTESIS NUEVA,
+no estrategia aprobada. Funding: 741 liquidaciones aplicadas en ventana (0
+UNKNOWN-excluded en 60 celdas); 24/60 celdas con holdings de cola fuera de
+calendario = uncovered/UNKNOWN (nunca cero). Placebo TIME-PLACEBO-v1 seed 42,
+misma cobertura/costes; no presentado como distribucion (una realizacion).
+HORIZON-GRID4-V1: degeneracion 1h/1h demostrada (entry==exit, bruto 0 por
+construccion); separacion explicita experimento original (OFFLINE-EVAL-V1,
+horizonte 1h por defecto) vs nuevo horizonte (4h/1h). No es optimizacion
+validada: el flag --horizon-ms es aditivo, default preservado 1h.
+Selector SELECTOR-EXTREME-V1: mecanismo probado con fixtures (tests
+test_extreme_selector.py); cobertura de universe/liquidez UNKNOWN (sin
+historico); ranking != entry; NO aprobado como senal.
+QA visual 3020: historical-research con 2 bloques (OfflineEvalSection +
+CensusEvalSection), 0 errores consola, captura
+docs/evidence/VISUAL_QA_CENSUS_EVAL_V2.png. Defecto corregido: texto "0 cells
+eligible for operation" duplicado en parrafo del censo (label del artefacto
++ componente). Verificado: backend 1202 OK (2 skips) + frontend 314/314 +
+typecheck 0 + build OK + census-eval tests 4/4. V2 sirviendo 3020 PID 15480
+(http://127.0.0.1:3020). Monitor detenido, watchers detenidos, sin corridas.
+Resta: commit selectivo, push, entrega con SHA. Matriz A/B/C en
+docs/OFFLINE_EVAL_CENSUS_V2.md seccion 7.
+
+## Integracion objetivo movers extremos (2026-10-17, solo documental)
+Integrada review/extreme-movers-objective-20261016 hasta 7a4e872 por
+contenido sobre 004b300e: EXTREME_MOVERS_OBJECTIVE.md +
+HISTORICAL_STRUCTURE_AND_EXIT_PLAN.md restaurados verbatim; suplementos
+portados a PRODUCT_GOAL/MASTER_PLAN/MARKET_DATA/POSITION_MANAGEMENT/
+TASK_QUEUE/CURRENT_STATE/DECISIONS/FEATURE_BACKLOG (F-EXTREME-OBJECTIVE-01,
+F-STRUCTURE-EXIT-01). Sin snapshots completos ni sobrescrituras; fase
+activa, codigo, corridas, servicios y gates intactos. Planes sin parametros
+aprobados; soportes/stops/Paper Lab conservan secuencia.
+
+## Objetivo movers extremos preservado — suplemento documental 2026-10-16
+Base revisada b748d22; no se infiere el estado de cambios locales concurrentes.
+PRODUCT_GOAL ya contenia el objetivo bilateral. EXTREME_MOVERS_OBJECTIVE.md
+lo conecta con selector causal, cobertura mas alla de BTC/ETH/SOL y
+Backtest/Paper Lab. Solo documentacion; sin cambio de fase, codigo, corridas,
+servicios ni gates. F-EXTREME-OBJECTIVE-01: objetivo reafirmado, implementacion
+por verificar; la auditoria offline actual sigue su alcance autorizado.
+
 ## Paquete reproducible + causalidad + costes + protocolo (2026-10-17, sin corridas, sin push aun)
 Paquete OFFLINE-EVAL-PACKAGE-V1 (manifiesto en
 docs/evidence/OFFLINE_EVAL_PACKAGE_V1.md): replay completo en temp
@@ -2139,3 +2191,13 @@ evidence mutation; no second collector or database; no probes or traffic.
   905 on the same tree; four subsequent consistent measurements — three
   discovery counts plus per-file sum plus a full OK execution — establish
   910; the single 905 reading is unreproduced and superseded.)
+
+
+## Suplemento estructura historica — 2026-10-16 (solo documental)
+F-STRUCTURE-EXIT-01 en HISTORICAL_STRUCTURE_AND_EXIT_PLAN.md define contexto
+multihorizonte compacto, zonas causales y politicas de stop a evaluar.
+Fase causal/costes activa conserva prioridad. No datos nuevos, codigo,
+backfill, servicios, sesiones ni gates cambiados. Reconciliar despues de la
+entrega del agente sin sobrescribir sus archivos concurrentes.
+(Integracion 2026-10-17: portado selectivo desde
+review/extreme-movers-objective-20261016 hasta 7a4e872.)

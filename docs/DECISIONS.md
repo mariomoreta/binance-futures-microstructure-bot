@@ -1827,3 +1827,92 @@ agregacion (fixtures), UI y build, pero no regenera desde cero.
 4. Protocolo prospectivo V1 (docs/PROSPECTIVE_PROTOCOL_V1.md, solo preparacion, NO ejecutado): hipotesis elegibles H1/H3 solo con MAP-APPROVED-v1 + disponibilidad live + ventana pristina + costes medidos; bloqueo actual = ninguna elegible; criterios aceptacion/rechazo (supera placebo + sobrevive 2x); prohibido reajustar sobre la ventana; siguiente accion exacta en 4 pasos.
 5. V2: OfflineEvalSection con bloques reproducibilidad/causalidad/breakeven (solo lectura, sin senales; Start/Stop/supervision/atribucion intactos).
 
+## 2026-10-16 — Preservar objetivo de movers extremos (documental)
+Por instruccion del usuario se reafirma el alcance de PRODUCT_GOAL:
+universo Futures elegible, ganadores/perdedores, continuacion vs giro,
+entradas/salidas y duracion dinamica. El trio BTC/ETH/SOL valida mecanica
+en su cobertura, no sustituye el selector de extremos. H3 sigue bajista;
+rebote es variante H2 separada. No se aprueban reglas ni parametros nuevos.
+EXTREME_MOVERS_OBJECTIVE.md fija delta de investigacion, recorrido V2 y
+aceptacion. F-EXTREME-OBJECTIVE-01 registra el seguimiento. Actual tarea
+offline conserva prioridad; sin corridas, paper, servicios ni codigo tocados.
+
+## 2026-10-16 — BTC como activo y contexto, sin regla automatica
+Aclaracion del usuario: BTC permanece elegible para posiciones y es referencia
+transversal para altcoins. Se preservan las cantidades ya previstas en
+SIGNAL_RESEARCH_PLAN. EXTREME_MOVERS_OBJECTIVE §11 registra alineacion,
+fuerza relativa, divergencia, sincronizacion at/before T y comparacion con/sin
+BTC. Co-movimiento, escasez/magnitud de divergencias y poder predictivo son
+hipotesis a medir, no hechos asumidos ni instrucciones de trading.
+Solo documentacion en rama aislada; sin codigo, reglas, corridas ni gates.
+
+## 2026-10-16 — Estructura historica y stops: diseno, no garantia
+Por solicitud del usuario se documenta F-STRUCTURE-EXIT-01 en
+HISTORICAL_STRUCTURE_AND_EXIT_PLAN.md, con enlaces desde MARKET_DATA,
+POSITION_MANAGEMENT y EXTREME_MOVERS_OBJECTIVE. Contexto multihorizonte,
+fuentes/contratos separados, cache/retencion medida y zonas causales;
+no techo/piso seguro ni trailing que evite toda salida prematura.
+Parametros y reglas quedan candidatos a evaluar con costes, no aprobados.
+Fase causal/costes activa intacta; sin datos nuevos, codigo, servicios ni sesiones.
+
+## 2026-10-17 — Integracion documental extreme-movers (sin sobrescribir)
+Integrada la rama review/extreme-movers-objective-20261016 hasta 7a4e872
+sobre la evolucion actual (004b300e): restaurados EXTREME_MOVERS_OBJECTIVE.md
+y HISTORICAL_STRUCTURE_AND_EXIT_PLAN.md verbatim + portados selectivamente
+los suplementos en PRODUCT_GOAL/MASTER_PLAN/MARKET_DATA/POSITION_MANAGEMENT/
+TASK_QUEUE/CURRENT_STATE/DECISIONS/FEATURE_BACKLOG. No se aplico snapshot
+completo ni se sobrescribio ningun archivo concurrente; conflictos resueltos
+por contenido. Estos planes no aprueban parametros ni autorizan implementarlo
+todo ahora: soportes, stops dinamicos y Paper Lab conservan su secuencia.
+
+## 2026-10-17 — Cierre EVAL-CENSUS-V2 + selector fixtures + QA visual (sin corridas)
+
+1. Censo CENSUS-V1 exhaustivo (scripts/reconstruct_causal_census.py,
+   sin seleccion retrospectiva): 9320 detecciones, 9320 admitidas,
+   0 descartadas; entry>=available 9314/9314 (6 tail-edge sin entry,
+   honesto); 594 grupos duplicados cross-familia (+616 filas) contados,
+   NUNCA tratados como independientes (correlacionados por construccion);
+   2831/2831 originales reproducidos (originals_only=0); 6489
+   censo-unicos. Causa de las seis sin entry: borde de dataset (ultima
+   vela), sin siguiente open conocido; no imputadas.
+2. EVAL-CENSUS-V2 (5255 trades @1x = 4055 15m + 1200 1h; mapping
+   MAP-CANDIDATE-v2 NO aprobado; costes COST-ASSUME-v1 supuestos):
+   0 celdas elegibles (criterio pre-fijado: superar placebo Y sobrevivir
+   2x). H1/H3 RECHAZADAS (18/18 15m + 6/6 1h negativas @1x). H2 fade
+   RECHAZADO como metodologia (mejor s*<2 o n insuficiente; anecdotas
+   n=1 cercadas). H2 fade se conserva como HIPTESIS NUEVA (correction-
+   exhaustion/reversal), NO estrategia aprobada. Rebote EXCLUIDO.
+3. Funding: 741 liquidaciones aplicadas en ventana, 0 unknown-excluded
+   en las 60 celdas (UNKNOWN anteriores eliminados: todo settlement en
+   ventana liquido sobre marca fresca); 24/60 celdas con holdings de
+   cola fuera del calendario = uncovered/UNKNOWN (nunca cero inventado).
+4. Placebo TIME-PLACEBO-v1: seed 42, entradas alternantes en timestamps
+   aleatorios, MISMA cobertura/cadencia/costes por celda; una
+   realizacion, NO una distribucion (no presentar como banda). Varias
+   celdas direccionales rinden PEOR que exposicion aleatoria.
+5. HORIZON-GRID4-V1: degeneracion 1h/1h demostrada (entry==exit, bruto 0
+   por construccion, no resultado). Separacion explicita: experimento
+   original OFFLINE-EVAL-V1 (horizonte 1h por defecto, intacto) vs
+   nuevo horizonte (15m->1h, 1h->4h; flag --horizon-ms aditivo del
+   runner, tests verdes). NO es optimizacion validada.
+6. Selector SELECTOR-EXTREME-V1 (src/microstructure_probe/
+   extreme_selector.py): mecanismo rank/coverage probado con fixtures
+   (tests/test_extreme_selector.py); universe/liquidez/market_cap
+   UNKNOWN (sin historico); ranking != entry; NO aprobado como senal,
+   NO evaluado sobre el censo (el censo mide familias, no el selector).
+7. Estrategia completa de extremos sobre universo y liquidez: NO
+   EVALUADA donde falten datos (universe_ranking_history,
+   liquidity_spread_depth, market_cap datado ausentes). El selector
+   registra UNKNOWN; full-input decisions impossible on this dataset.
+8. Artefacto frontend/src/data/census-eval-v2.json publicado por
+   force-add (sha256 2b74a841...d37060, 73051 B; mismo patron que V1
+   c051e888): limpio verifica artefacto/UI/build, no regenera desde
+   cero (el canonico no se publica). QA visual 3020 PASS: historical-
+   research con OfflineEvalSection + CensusEvalSection, 0 errores
+   consola, captura docs/evidence/VISUAL_QA_CENSUS_EVAL_V2.png.
+   Defecto corregido: "0 cells eligible for operation" duplicado
+   (label del artefacto + componente). Suites: backend 1202 OK (2
+   skips), frontend 314/314, typecheck 0, build OK. Monitor y
+   watchers detenidos; V2 disponible en 3020 (PID 15480).
+
+

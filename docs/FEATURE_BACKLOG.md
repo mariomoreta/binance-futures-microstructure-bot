@@ -126,6 +126,30 @@ No runs, traffic, orders, Start, retirement, main merge or gate advancement.
 
 # FEATURE BACKLOG — canonical decision traceability & deferred features
 
+## Cierre EVAL-CENSUS-V2 + selector + QA visual — 2026-10-17 (sin corridas)
+
+**1. Title:** Evaluación offline sobre censo causal exhaustivo
+(EVAL-CENSUS-V2) + selector extremo (fixtures) + QA visual V2.
+**2. Approval status:** DECIDED (criterio pre-fijado del protocolo
+prospectivo V1; sin reajustes). H2 fade: HIPTESIS NUEVA (NO aprobada).
+**3. Implementation status:** IMPLEMENTED (censo reconstruct_causal_census.py,
+selector extreme_selector.py, artefacto census-eval-v2.json force-added,
+scripts build_census_eval_inputs.py, tests test_causal_census.py +
+test_eval_horizon_grid.py + test_extreme_selector.py + census-eval.test.ts).
+**4. Evaluation status:** A) Reglas sobre censo historico: EVALUADO
+(0 celdas elegibles, H1/H3 RECHAZADAS, H2 fade RECHAZADO). B)
+Selector: MECANISMO probado con fixtures, NO evaluado. C) Estrategia
+completa extremos sobre universo/liquidez: NO EVALUADA (faltan datos).
+**5. Limitaciones:** in-sample/non-pristine, costes supuestos COST-ASSUME-v1,
+mapping candidato MAP-CANDIDATE-v2, sin prueba live, MFE/MAE no capturados,
+placebo una realizacion no distribucion, cross-celda no modelada, 6 detecciones
+tail-edge sin entry (honesto).
+**6. Evidence:** docs/OFFLINE_EVAL_CENSUS_V2.md (seccion 7 matriz A/B/C),
+frontend/src/data/census-eval-v2.json (sha256 2b74a841...d37060),
+docs/evidence/VISUAL_QA_CENSUS_EVAL_V2.png, suites backend 1202 OK +
+frontend 314/314 + typecheck 0 + build OK.
+**7. Last update:** 2026-10-17.
+
 ## DASH-V2-71B reviewer correction — 2026-10-11
 89232f7 independently reviewed: discovery/canonical 910, exit0. Strengthened
 existing purity test (missing historical-byte assertion, no new logs, env
@@ -1153,4 +1177,42 @@ F-LAUNCH-SUP-01 remains PROPOSED for enablement / PARTIAL overall. The five new 
 - DEFERRED_FEATURES - publicacion DB canonica/zip (fuera de Git; reproduccion externa PENDIENTE); MAP-APPROVED-v1; disponibilidad live; ventana pristina; costes medidos; TIME-PLACEBO-v1; paper/ejecucion; gates.
 - BACKLOG_UPDATED - yes: this entry (ID F-OFFLINE-EVAL-03).
 - DOCUMENTATION_CONFLICTS - none new (agregacion != replay distinguido; pooled no cartera reiterado; H3 nunca recuperacion).
+
+## F-EXTREME-OBJECTIVE-01 — Objetivo de movimientos extremos preservado (2026-10-16)
+Objetivo de producto: REAFIRMADO POR USUARIO. Plan tecnico: DOCUMENTADO,
+PENDIENTE DE AUDITORIA/IMPLEMENTACION por componentes. No feature completa.
+Fuente: PRODUCT_GOAL + MASTER_PLAN + EXTREME_MOVERS_OBJECTIVE.md.
+Aceptacion: selector causal bilateral, denominadores y cobertura fuera del
+trio, enlace evidencia-decision-posicion, costes/exposicion y V2 trazable.
+No aprobar mapping ni umbrales por registrar este ID. Reutilizar discovery,
+classifier, opportunity, motor/runner y contratos existentes.
+DECISIONS_REVIEWED: AGENTS, estado/cola/master/decisions/gates/workflow/backlog,
+PRODUCT_GOAL y SIGNAL_RESEARCH_PLAN en base b748d22.
+NEW_DECISIONS_RECORDED: alcance de producto preservado; no metodologia nueva.
+FEATURES_IMPLEMENTED: documentacion y enlaces, ningun codigo de producto.
+FEATURES_VERIFIED: contraste documental; sin pruebas de estrategia nuevas.
+DEFERRED_FEATURES: delta selector, cobertura, V2 Backtest/Paper, validacion,
+ejecucion segun fases/autorizaciones. IA/Kronos siguen diferidos.
+BACKLOG_UPDATED: este ID, sin promover implementacion ni gates.
+DOCUMENTATION_CONFLICTS: estados historicos desactualizados preservados;
+map H2 mecanico no es fade/rebote validado; funding 8h del plan Paper antiguo
+debe reconciliarse al implementar, usando calendario por simbolo.
+(Integracion 2026-10-17 desde review/extreme-movers-objective-20261016
+hasta 7a4e872; implementacion parcial, secuencia conservada.)
+
+## F-STRUCTURE-EXIT-01 — Estructura historica y gestion dinamica (2026-10-16)
+Objetivo documentado por solicitud del usuario; implementacion NO declarada.
+Spec: HISTORICAL_STRUCTURE_AND_EXIT_PLAN.md. Depende de auditoria causal/costes,
+datos multihorizonte y gestion/riesgo segun fases. No parametros aprobados.
+DECISIONS_REVIEWED: instrucciones/planes/gates/workflow y documentos de mercado,
+posicion y objetivo previamente auditados en esta rama documental.
+NEW_DECISIONS_RECORDED: contexto por zonas y retencion compacta; sin regla trading.
+FEATURES_IMPLEMENTED: plan y enlaces documentales solamente.
+FEATURES_VERIFIED: contraste con MARKET_DATA y POSITION_MANAGEMENT; sin codigo.
+DEFERRED_FEATURES: ingestion/cache/pivotes/ajustes/UI/paper segun auditoria y gates.
+BACKLOG_UPDATED: este ID; no cambia fase activa ni autorizaciones.
+DOCUMENTATION_CONFLICTS: fuentes historicas y paper funding 8h requieren
+reconciliacion al implementar; no extrapolar cobertura local a vida del token.
+(Integracion 2026-10-17 desde review/extreme-movers-objective-20261016
+hasta 7a4e872; diseno, no garantia.)
 
