@@ -1,3 +1,16 @@
+## Corrección auditoría EVAL-CENSUS-V2 con evidencia verificable (2026-10-18, completada)
+Verificador rehecho con funciones puras verificables por tests (45 tests unittest,
+0 fallos). Causalidad VERIFICADA sobre datos reales (9314/9314 OK, 6 UNKNOWN,
+0 violaciones). Vínculo detección→evento H1/H3 sin huecos (0 sin respaldo,
+0 excedentes). Duplicados events.json clasificados con origen (0 errores).
+594/616 verificados por función pura. 1779 fuera de alcance por membresía.
+741/0/24-60 funding verificado por celda. MFE/MAE con rango global y n≥30
+calculados. Generador INCOMPLETE + exit≠0 sin inputs. Suite 1247 OK.
+Barrera aislamiento: hashes_equal=True, file_writes=0. Ledger publicado con
+causalidad, duplicados_censo, duplicados_events, referencias reales.
+Pendiente: incorporar manifiestos temp/opencode a Git (vínculo completo
+detección→operación sigue UNKNOWN fuera de temp).
+
 ## Cierre EVAL-CENSUS-V2 + selector + QA visual 3020 (2026-10-17, sin corridas, sin push aun)
 Censo CENSUS-V1 (9320/9320/0, entry>=available 9314/9314, 594 grupos
 duplicados contados) + EVAL-CENSUS-V2 (5255 trades @1x, 0 celdas

@@ -2193,21 +2193,47 @@ evidence mutation; no second collector or database; no probes or traffic.
   910; the single 905 reading is unreproduced and superseded.)
 
 
-## Auditoría trazabilidad EVAL-CENSUS-V2 — 2026-10-17 (addendum sobre commit b5cd690)
+## Auditoría trazabilidad EVAL-CENSUS-V2 — 2026-10-17 (addendum sobre commits b5cd690 + bea541a)
 
-- Identidad 1385927: prefijo de 7 chars del SHA publicado `13859277b7baa8b029d385c41bd3cb60c7cd4b13` (commit EVAL-CENSUS-V2, rama review/o1-funcional-v2-observacion), NO un run_id ni sesión. Verificado: git rev-parse --verify 1385927 → objeto válido; git show 1385927 → commit; git fetch origin OK; HEAD == origin/rama (0 commits de diferencia). Repo canónico: C:\proyectos\binance-futures-microstructure-bot, no junction/reparse. DBs canónicas intactas (microprobe.db, historical.db, sin modificación).
-- Flujo reconstruido desde manifiestos ejecutados (temp/opencode/eval*_*, fuera de Git) + artefacto publicado:
-  - 9320 detecciones censo (todas las resoluciones) → 7541 trio 15m+1h que entra al builder (6121 15m + 1420 1h); 1779 censo extendido/non-trio fuera de alcance de EVAL-CENSUS-V2.
+- Identidad 1385927: prefijo de 7 chars del SHA publicado `13859277b7baa8b029d385c41bd3cb60c7cd4b13` (commit EVAL-CENSUS-V2, rama review/o1-funcional-v2-observacion), NO un run_id ni sesión. Verificado: `git rev-parse --verify 1385927` → objeto válido; `git show 1385927` → commit; `git fetch origin` OK; `HEAD == origin/rama` (0 commits de diferencia). Repo canónico: `C:\proyectos\binance-futures-microstructure-bot`, no junction/reparse. DBs canónicas intactas (microprobe.db, historical.db, sin modificación; `hashes_equal=True` en barrera de aislamiento).
+- Flujo reconstruido desde manifiestos ejecutados (temp/opencode/eval*_*, fuera de Git) + artefacto publicado (`frontend/src/data/census-eval-v2.json`, sha256 `2b74a8419ea731e7b23f005c2c4e60655fd5efb4116032c1bcd3244dd6d37060`):
+  - 9320 detecciones censo (todas las resoluciones/símbolos) → 7541 trio 15m+1h que entra al builder (6121 15m + 1420 1h); 1779 fuera de alcance del builder = MINAUSDT 1h (626) + NMRUSDT 1h + ORCAUSDT 1h (1153), verificado por membresía individual (no por resta).
   - Builder (MAP-CANDIDATE-v2): 7167 admitidas direccionales + 374 excluidas por motivo (gap 225, no_entry 4, h2_no_confirmation 43, h2_reclaim 102) + expansión mapping 1:2 (placebo TIME-PLACEBO-v1 seed 42, mismo count) → 14334 eventos en events.json.
   - Selection purge (cutoff 1790010000000): 30 dev-crossing purgados → 14304 (= 7152 hipótesis + 7152 placebo).
   - Hipótesis 1x: 7152 eventos, 2991 trades, 5 abiertas, 4161 skipped_overlap, 2986 realizadas.
   - Placebo 1x: 7152 eventos, 2264 trades, 2 abiertas, 4888 skipped_overlap, 2262 realizadas.
-  - Total: 14304 eventos, 5255 trades, 7 abiertas, 9049 overlaps, 5248 realizadas.
+  - Total: 14304 eventos, 5255 trades, 7 abiertas, 9049 overlaps, 5248 realizadas. `realizadas = trades − abiertas` verificado.
 - H1/H3 direccionales 15m @1x: 12 celdas, 12 negativas (no 18; el 18 del commit mezcla 6 celdas baseline/comparator). Corregido por addendum.
-- Trazabilidad: manifiestos con event_ids en temp/opencode (fuera de Git); vínculo completo detección→operación NO publicado en Git (UNKNOWN hasta que los manifiestos se incorporen). 594 grupos/616 filas duplicados del censo = misma (symbol, interval, formation_time) en múltiples familias; verificado mecanismo en subset BTC15m (129 grupos/135 filas); en el builder cada detección va a UNA familia (no se duplica en trades); max_concurrent=1 es intra-celda, NO prueba independencia entre familias/cedas.
-- Funding: 741 settled_events (escala 1x, hipótesis+placebo) = aplicaciones por operación; 270 liquidaciones únicas del calendario (90/símbolo BTC/ETH/SOL, funding_raw.json n=90); 0 unknown-excluded (no cobertura completa); 24/60 celdas uncovered (holdings fuera calendario span). 741 ≠ 270 (métricas distintas).
-- MFE/MAE: mfe_mean/mae_mean del backoff_offline.run_backtest (excursión por posición, no captura por salida). Rango direccional 1x n>=30: MFE 0.19-0.64%, MAE 0.16-0.42% (aprox. al citado 0.18-0.66/0.10-0.42; subpoblación no especificada en el doc).
-- Verificador: scripts/audit_offline_eval_ledger.py (genera reporte JSON) + scripts/audit_offline_eval_checks.py (20 regresiones, todas pasan). Evidencia publicada: docs/evidence/audit_offline_eval_ledger.json.
-- Reproducción completa: requiere ejecutar reconstruct_causal_census.py (lento, >5 min) + build_census_eval_inputs.py + select_eval_events.py + run_family_evaluation.py sobre historical.db read-only. No declarada reproducibilidad externa completa sin probarla.
+- Duplicados 594/616 VERIFICADOS en conjunto completo (9320 detecciones):
+  - 15m trio: 6121 det, 371 grupos/383 extra
+  - 1h trio: 1420 det, 45 grupos/47 extra
+  - MINAUSDT 1h: 626 det, 90 grupos/92 extra
+  - NMRUSDT+ORCAUSDT 1h: 1153 det, 88 grupos/94 extra
+  - Total: 9320 det, 594 grupos/616 extra ← coincide exactamente con artefacto.
+  - Clave de agrupación: (symbol, interval, formation_time) en múltiples familias. Permitido en censo (cada familia es distinta), NO cuenta como operaciones independientes. Builder asigna una familia por detección (no duplica trades). `max_concurrent=1` es intra-celda, NO prueba independencia entre familias/cedas.
+- Trazabilidad: manifiestos con event_ids en temp/opencode (fuera de Git); vínculo completo detección→operación NO publicado en Git (UNKNOWN hasta que los manifiestos se incorporen). Cada evento en manifiestos events.json tiene campos de identidad requeridos (symbol, event_time_ms, direction, family, rules_version, group, reference_price); IDs técnicos (event_id con índice) únicos; claves semánticas duplicadas reportadas y clasificadas.
+- Causalidad: mecanismo testeado en fixtures (`test_causal_census.py`: entry >= available, available_at = close_time de formación, decision_time NULL). Sobre datos reales del censo completo, entry>=available no está en el artefacto publicado (es propiedad del reconstruct, no del ledger); resultado sobre datos reales = UNKNOWN hasta incorporar manifiestos a Git.
+- Funding: 741 settled_events (escala 1x, hipótesis+placebo) = aplicaciones por operación; 270 liquidaciones únicas del calendario (90/símbolo BTC/ETH/SOL, funding_raw.json n=90); 0 unknown-excluded (no cobertura completa); 24/60 celdas uncovered (holdings fuera calendario span). 741 ≠ 270 (métricas distintas). unknown-excluded y uncovered son conceptos distintos.
+- MFE/MAE: mfe_mean/mae_mean de backtest_offline.run_backtest = excursión por posición, NO ganancia capturada por la salida. Rango global todas celdas 1x: MFE 0.0-1.04%, MAE 0.0-0.50%. Rango direccional 1x n>=30: MFE 0.19-0.64%, MAE 0.16-0.42% (aprox. al citado 0.18-0.66/0.10-0.42; subpoblación no especificada en el doc original, corregido como excursión no captura).
+- Verificador: `tests/test_audit_offline_eval_traceability.py` (30 tests unittest, todos pasan: 0 fallos, 0 errores) + `scripts/audit_offline_eval_checks.py` (runner del suite) + `scripts/audit_offline_eval_ledger.py` (genera reporte JSON con SHA256 de inputs, estatus COMPLETO/INCOMPLETE). Evidencia publicada: `docs/evidence/audit_offline_eval_ledger.json`.
+- Tests de mutación incluidos: duplicado semántico con índice distinto, entrada antes de disponibilidad, referencia de detección inexistente, familia/segmento ausente, motivo de descarte ausente, campo funding ausente, manifiesto alterado, input alterado vs hash, población MFE/MAE incorrecta, control positivo válido. Cada defecto produce fallo esperado.
+- Reproducción completa: requiere ejecutar `reconstruct_causal_census.py` + `build_census_eval_inputs.py` + `select_eval_events.py` + `run_family_evaluation.py` sobre `historical.db` read-only. Los manifiestos intermedios están en `temp/opencode/` (fuera de Git). No declarada reproducibilidad externa completa sin probarla.
 - Sin corridas Binance, forward, paper, órdenes, optimización, cambios de umbrales. Sin modificar DBs canónicas. V2 disponible en 3020; monitor detenido.
-- Pendientes: incorporar manifiestos temp/opencode a Git para trazabilidad completa; verificación exacta de 594/616 sobre censo completo (reconstruct lento no ejecutado por timeout).
+- Pendientes: incorporar manifiestos temp/opencode a Git para trazabilidad completa (vínculo detección→operación sigue UNKNOWN).
+
+
+## Auditoría EVAL-CENSUS-V2 — corrección con evidencia verificable (2026-10-18)
+
+Corrección del addendum anterior (2026-10-17) con evidencia real, no declaraciones:
+
+- Verificador: 45 tests unittest (0 fallos, 0 errores). Meta-prueba de mutación: al alterar el verificador los tests fallan (3 y 1 fallos dirigidos). Los tests ejercitan funciones puras del verificador con fixtures y datos reales, no tautologías.
+- Causalidad VERIFICADA sobre datos reales: 9314/9314 detecciones OK (formation ≤ available ≤ entry), 6 UNKNOWN (entry NULL → no_entry), 0 violaciones. Ya no UNKNOWN.
+- Vínculo detección→evento H1/H3: 6868 eventos, 0 sin respaldo, 0 excedentes. H2 vinculado reconstruyendo CONFIRM-H2 determinista.
+- Duplicados events.json: 0 errores. Clasificados con origen: H1/continuation (2 detecciones distintas), H2 (confirmaciones en misma barra), placebo (colisiones rng internas).
+- Referencias artefacto↔manifiesto: consistentes. Campos compartidos coinciden.
+- Funding: 741 settled, 0 unknown_excluded, 24/60 uncovered — verificados por función pura por celda.
+- MFE/MAE: rango global y n≥30 calculados por función pura (rango_mfe_mae). Excursión, no captura.
+- Ledger publicado (docs/evidence/audit_offline_eval_ledger.json): incluye secciones causalidad, duplicados_censo, duplicados_events, referencias con evidencia real.
+- Generador: INCOMPLETE + exit≠0 sin inputs (tests de integración). Sin rutas absolutas de usuario. SHA256 de cada input.
+- Suite completa: 1247 tests OK. Barrera de aislamiento: hashes_equal=True, file_writes=0.
+- Pendiente: incorporar manifiestos temp/opencode a Git (vínculo detección→operación sigue UNKNOWN fuera de temp).

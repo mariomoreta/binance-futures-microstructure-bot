@@ -1227,4 +1227,23 @@ DEFERRED_FEATURES: incorporar manifiestos temp/opencode a Git para trazabilidad 
 DOCUMENTATION_CONFLICTS: "18/18" del mensaje de commit corregido a "12/12 direccionales"; "0 unknown-excluded" no presentado como cobertura completa.
 BACKLOG_UPDATED: este ID; sin cambio de fase activa ni autorizaciones. Gates sin avance.
 
+## F-EVAL-CENSUS-TRACE-01-CORR — Corrección de F-EVAL-CENSUS-TRACE-01 (2026-10-17)
+Corrige el entry anterior de esta misma fecha (líneas 1219-1228) de forma explícita:
 
+FEATURES_IMPLEMENTED: verificador con 30 tests unittest (no "20 regresiones"), todos pasan (0 fallos, 0 errores); ledger portable con SHA256 de cada input y rutas repo-relative (sin rutas absolutas de usuario); tests de mutación que detectan duplicado semántico, entrada antes de disponibilidad, referencia inexistente, familia/segmento ausente, motivo ausente, funding ausente, manifiesto alterado, input alterado vs hash, población MFE incorrecta, control positivo.
+FEATURES_VERIFIED: 594 grupos/616 filas verificados EN CONJUNTO COMPLETO (9320 detecciones): 15m trio 371/383, 1h trio 45/47, MINAUSDT 1h 90/92, NMR+ORCA 1h 88/94. Total 594/616 ← coincide exactamente con artefacto. 1779 fuera de alcance del builder verificados por membresía (MINAUSDT 626 + NMR/ORCA 1153 = 1779). Conteos separados hipotésis/placebo verificados contra manifiestos y artefacto.
+DEFERRED_FEATURES: incorporar manifiestos temp/opencode a Git (vínculo detección→operación sigue UNKNOWN). Ninguna verificación pendiente de 594/616 (ya completada).
+DOCUMENTATION_CONFLICTS: "20 regresiones" corregido a "30 tests, todos pasan"; "594/616 solo en BTC15m" corregido a "verificado en conjunto completo"; "1779 por resta" corregido a "1779 por membresía (MINAUSDT 626 + NMR/ORCA 1153)".
+BACKLOG_UPDATED: este ID; sin cambio de fase activa ni autorizaciones. Gates sin avance.
+
+
+
+
+## F-EVAL-CENSUS-TRACE-01-CORR2 — Corrección con evidencia verificable (2026-10-18)
+Corrige F-EVAL-CENSUS-TRACE-01-CORR (2026-10-17) de forma explícita:
+
+FEATURES_IMPLEMENTED: verificador con funciones puras (verificar_causalidad_*, verificar_censo_duplicados, clasificar_duplicados_semanticos, origenes_de_evento, vincular_eventos_h1h3, verificar_referencias, verificar_motivos_descarte, verificar_funding_celda, rango_mfe_mae) ejercitadas por 45 tests unittest con fixtures y datos reales; meta-prueba de mutación verificada (los tests fallan cuando el verificador es alterado); generador con estatus INCOMPLETE + exit!=0 cuando faltan inputs; tests de integración del ledger.
+FEATURES_VERIFIED: causalidad real 9314 OK / 6 UNKNOWN / 0 violaciones (detections.jsonl del reconstruct); vínculo H1/H3 0 sin respaldo / 0 excedentes; duplicados events.json 0 errores (clasificados: H1 2 detecciones, H2 confirmación misma barra, placebo colisión rng); 594/616 con desglose exacto; 1779 por membresía; referencias consistentes (60 vs 56 celdas, rebound sin eventos esperado); funding 741/0/24-60 por celda; MFE/MAE rangos global y n>=30 calculados.
+DEFERRED_FEATURES: incorporar manifiestos temp/opencode a Git (vínculo detección→operación completo sigue UNKNOWN fuera de temp).
+DOCUMENTATION_CONFLICTS: "30 tests" corregido a "45 tests"; "causalidad UNKNOWN" corregido a "verificada 9314/6/0"; "duplicados reportados" corregido a "clasificados con origen, 0 errores".
+BACKLOG_UPDATED: este ID; sin cambio de fase activa ni autorizaciones. Gates sin avance.
