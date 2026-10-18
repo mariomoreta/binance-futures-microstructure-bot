@@ -2,176 +2,176 @@
   "estatus": "COMPLETO",
   "incomplete_reasons": [],
   "procedencia": {
-    "artefacto": "C:\\proyectos\\binance-futures-microstructure-bot\\frontend\\src\\data\\census-eval-v2.json",
+    "artefacto": "frontend\\src\\data\\census-eval-v2.json",
     "artefacto_sha256": "2b74a8419ea731e7b23f005c2c4e60655fd5efb4116032c1bcd3244dd6d37060",
     "inputs_externos": {
       "manifest BTCUSDT_15m": {
-        "path": "C:\\Users\\adonm\\AppData\\Local\\Temp\\opencode\\eval15_btc\\manifest_BTCUSDT_15m.json",
+        "path": "eval15_btc\\manifest_BTCUSDT_15m.json",
         "sha256": "d12862acf37db76cc3e9f6347d5df17e05291470adb3d187ae7e703ba68ddcf7",
         "exists": true
       },
       "events BTCUSDT_15m": {
-        "path": "C:\\Users\\adonm\\AppData\\Local\\Temp\\opencode\\eval15_btc\\events_BTCUSDT_15m.json",
+        "path": "eval15_btc\\events_BTCUSDT_15m.json",
         "sha256": "43641fe9c9b67fad02ddc333304cc09a2cf1b68998edc2aa3e44b9d236930eb9",
         "exists": true
       },
       "selection BTCUSDT_15m": {
-        "path": "C:\\Users\\adonm\\AppData\\Local\\Temp\\opencode\\eval15_btc\\selection_BTCUSDT_15m.json",
+        "path": "eval15_btc\\selection_BTCUSDT_15m.json",
         "sha256": "4a8420efd6506e2d0d3611e4b3b9204681831b37ca685d46bb62f00cffbd7538",
         "exists": true
       },
       "manifest ETHUSDT_15m": {
-        "path": "C:\\Users\\adonm\\AppData\\Local\\Temp\\opencode\\eval15_ethsol\\manifest_ETHUSDT_15m.json",
+        "path": "eval15_ethsol\\manifest_ETHUSDT_15m.json",
         "sha256": "9e9131434f5d77d26f86d8cb88e6498b9081f9db96f82f441f068cbf21a14b00",
         "exists": true
       },
       "events ETHUSDT_15m": {
-        "path": "C:\\Users\\adonm\\AppData\\Local\\Temp\\opencode\\eval15_ethsol\\events_ETHUSDT_15m.json",
+        "path": "eval15_ethsol\\events_ETHUSDT_15m.json",
         "sha256": "997378063880ba15bffd4f611b0c91f67cdebb31a983e6362e7a94a3bf032339",
         "exists": true
       },
       "selection ETHUSDT_15m": {
-        "path": "C:\\Users\\adonm\\AppData\\Local\\Temp\\opencode\\eval15_ethsol\\selection_ETHUSDT_15m.json",
+        "path": "eval15_ethsol\\selection_ETHUSDT_15m.json",
         "sha256": "a10733159c3713d2c9f4066adb7c6c37e4f9b8410aa1eb6baf1dc3051b61851b",
         "exists": true
       },
       "manifest SOLUSDT_15m": {
-        "path": "C:\\Users\\adonm\\AppData\\Local\\Temp\\opencode\\eval15_ethsol\\manifest_SOLUSDT_15m.json",
+        "path": "eval15_ethsol\\manifest_SOLUSDT_15m.json",
         "sha256": "2b1a5685b5c01aaa538f1a4e8c1dc140fd1341eb2fe57ef8021dc683be036021",
         "exists": true
       },
       "events SOLUSDT_15m": {
-        "path": "C:\\Users\\adonm\\AppData\\Local\\Temp\\opencode\\eval15_ethsol\\events_SOLUSDT_15m.json",
+        "path": "eval15_ethsol\\events_SOLUSDT_15m.json",
         "sha256": "b788dd541da58a467f448fc2b2e069a64a85135e611fdcbe9f777f293a4fef04",
         "exists": true
       },
       "selection SOLUSDT_15m": {
-        "path": "C:\\Users\\adonm\\AppData\\Local\\Temp\\opencode\\eval15_ethsol\\selection_SOLUSDT_15m.json",
+        "path": "eval15_ethsol\\selection_SOLUSDT_15m.json",
         "sha256": "45e436acfc24c4294ed893319dbf77d295abbeed3b6ee143b916b86275baec4c",
         "exists": true
       },
       "manifest BTCUSDT_1h": {
-        "path": "C:\\Users\\adonm\\AppData\\Local\\Temp\\opencode\\eval1h_trio\\manifest_BTCUSDT_1h.json",
+        "path": "eval1h_trio\\manifest_BTCUSDT_1h.json",
         "sha256": "f14db550e9b011d357d32530af8e4e06f4c4c48a436e12a461a19854326950b8",
         "exists": true
       },
       "events BTCUSDT_1h": {
-        "path": "C:\\Users\\adonm\\AppData\\Local\\Temp\\opencode\\eval1h_trio\\events_BTCUSDT_1h.json",
+        "path": "eval1h_trio\\events_BTCUSDT_1h.json",
         "sha256": "daef39c01da6a8f37e2cdf531d7ce9e63877858372b946823ca41d5cd7b164d3",
         "exists": true
       },
       "selection BTCUSDT_1h": {
-        "path": "C:\\Users\\adonm\\AppData\\Local\\Temp\\opencode\\eval1h_trio\\selection_BTCUSDT_1h.json",
+        "path": "eval1h_trio\\selection_BTCUSDT_1h.json",
         "sha256": "42eb17e80861aaa6d20058fa7156af90cacb274e70420a4ccf55e48e2df405ac",
         "exists": true
       },
       "manifest ETHUSDT_1h": {
-        "path": "C:\\Users\\adonm\\AppData\\Local\\Temp\\opencode\\eval1h_trio\\manifest_ETHUSDT_1h.json",
+        "path": "eval1h_trio\\manifest_ETHUSDT_1h.json",
         "sha256": "ffcc34bdae14fe74df46830c9473b5a4125d7bbd04730a1f74a870f3012353f9",
         "exists": true
       },
       "events ETHUSDT_1h": {
-        "path": "C:\\Users\\adonm\\AppData\\Local\\Temp\\opencode\\eval1h_trio\\events_ETHUSDT_1h.json",
+        "path": "eval1h_trio\\events_ETHUSDT_1h.json",
         "sha256": "e4ba05477a3c66960ffa2ff11572e10e3297f79f7ddf5d6378ae5de396b72955",
         "exists": true
       },
       "selection ETHUSDT_1h": {
-        "path": "C:\\Users\\adonm\\AppData\\Local\\Temp\\opencode\\eval1h_trio\\selection_ETHUSDT_1h.json",
+        "path": "eval1h_trio\\selection_ETHUSDT_1h.json",
         "sha256": "3fa45b4c3ecb29113423c9099a99ff0e9a869a3cbb6e9dbd57f6baf36c84e9ee",
         "exists": true
       },
       "manifest SOLUSDT_1h": {
-        "path": "C:\\Users\\adonm\\AppData\\Local\\Temp\\opencode\\eval1h_trio\\manifest_SOLUSDT_1h.json",
+        "path": "eval1h_trio\\manifest_SOLUSDT_1h.json",
         "sha256": "da0a5eb1f7e91f9d49140262d5ba9d09ec3e43f7f84ca687f9374c364abc96f9",
         "exists": true
       },
       "events SOLUSDT_1h": {
-        "path": "C:\\Users\\adonm\\AppData\\Local\\Temp\\opencode\\eval1h_trio\\events_SOLUSDT_1h.json",
+        "path": "eval1h_trio\\events_SOLUSDT_1h.json",
         "sha256": "65b4f6abfd69a4d9a9d37f132105720a05066b49387c1bdd75565b3d99a6e8c0",
         "exists": true
       },
       "selection SOLUSDT_1h": {
-        "path": "C:\\Users\\adonm\\AppData\\Local\\Temp\\opencode\\eval1h_trio\\selection_SOLUSDT_1h.json",
+        "path": "eval1h_trio\\selection_SOLUSDT_1h.json",
         "sha256": "66238ec9d88bfe4caadf1887083080707634c9bdb30a1e0885dbd4a4432e2ee7",
         "exists": true
       },
       "build_report eval15_btc": {
-        "path": "C:\\Users\\adonm\\AppData\\Local\\Temp\\opencode\\eval15_btc\\build_report.json",
+        "path": "eval15_btc\\build_report.json",
         "sha256": "8af66735d51eac6446f393de7f888f2a95c4ae17b40dc401884fcbc37cff17c7",
         "exists": true
       },
       "build_report eval15_ethsol": {
-        "path": "C:\\Users\\adonm\\AppData\\Local\\Temp\\opencode\\eval15_ethsol\\build_report.json",
+        "path": "eval15_ethsol\\build_report.json",
         "sha256": "4e35618126dbfcbaa7d0a8bca9f3407cc14f1632c4d4c4ac830f5d11377d8727",
         "exists": true
       },
       "build_report eval1h_trio": {
-        "path": "C:\\Users\\adonm\\AppData\\Local\\Temp\\opencode\\eval1h_trio\\build_report.json",
+        "path": "eval1h_trio\\build_report.json",
         "sha256": "12b60da7fc4ea4b80f87042cde38526577972595f6116180bfd1188af7131cce",
         "exists": true
       },
       "funding BTCUSDT": {
-        "path": "C:\\Users\\adonm\\AppData\\Local\\Temp\\opencode\\funding_BTCUSDT.json",
+        "path": "funding_BTCUSDT.json",
         "sha256": "c33442ecb4bd239880c1650282ed5ab0596a7f2da9f2fb11754047162f08fe60",
         "exists": true
       },
       "funding ETHUSDT": {
-        "path": "C:\\Users\\adonm\\AppData\\Local\\Temp\\opencode\\funding_ETHUSDT.json",
+        "path": "funding_ETHUSDT.json",
         "sha256": "de3557c56ab37453a9abb1ab6bb612c7a98918f48945241ccf858a30f0b49854",
         "exists": true
       },
       "funding SOLUSDT": {
-        "path": "C:\\Users\\adonm\\AppData\\Local\\Temp\\opencode\\funding_SOLUSDT.json",
+        "path": "funding_SOLUSDT.json",
         "sha256": "ad3f8eedb65b7cab21bf2d9dd43d4e012a230670190e7ba2e1b9e9d7942b83cd",
         "exists": true
       },
       "funding_raw": {
-        "path": "C:\\Users\\adonm\\AppData\\Local\\Temp\\opencode\\funding_raw.json",
+        "path": "funding_raw.json",
         "sha256": "a9e9b27b088302ee35edb6f86f1b3100a95af022e48c4231cfe91b39a7f0ecad",
         "exists": true
       },
       "detecciones census_btc15": {
-        "path": "C:\\Users\\adonm\\AppData\\Local\\Temp\\opencode\\census_btc15\\detections.jsonl",
+        "path": "census_btc15\\detections.jsonl",
         "sha256": "92ee95d30997f882e3bba9fa2654d9962ac687d12b9da94f17561d07d155ce6b",
         "exists": true
       },
       "detecciones census_ethsol15": {
-        "path": "C:\\Users\\adonm\\AppData\\Local\\Temp\\opencode\\census_ethsol15\\detections.jsonl",
+        "path": "census_ethsol15\\detections.jsonl",
         "sha256": "b49613f34280e8947b95e13ed8be0475a4ff39329e24376f43921aa6e33c7255",
         "exists": true
       },
       "detecciones census_1h": {
-        "path": "C:\\Users\\adonm\\AppData\\Local\\Temp\\opencode\\census_1h\\detections.jsonl",
+        "path": "census_1h\\detections.jsonl",
         "sha256": "854b693ac077117c114ea405cb11bb0cafbaf02b70c34bfd1bf225aa8caf9d30",
         "exists": true
       },
       "candles BTCUSDT_15m": {
-        "path": "C:\\Users\\adonm\\AppData\\Local\\Temp\\opencode\\eval15_btc\\candles_BTCUSDT_15m.json",
+        "path": "eval15_btc\\candles_BTCUSDT_15m.json",
         "sha256": "3ad1fcebc50eb23fe20dcba3cd3deb3bf471113fe97d93010f94dec3a02a92f2",
         "exists": true
       },
       "candles ETHUSDT_15m": {
-        "path": "C:\\Users\\adonm\\AppData\\Local\\Temp\\opencode\\eval15_ethsol\\candles_ETHUSDT_15m.json",
+        "path": "eval15_ethsol\\candles_ETHUSDT_15m.json",
         "sha256": "eaba6d60d2bc95cf328271202b2146341891967474604d96e28201bacb64f3e6",
         "exists": true
       },
       "candles SOLUSDT_15m": {
-        "path": "C:\\Users\\adonm\\AppData\\Local\\Temp\\opencode\\eval15_ethsol\\candles_SOLUSDT_15m.json",
+        "path": "eval15_ethsol\\candles_SOLUSDT_15m.json",
         "sha256": "2440f9427933bfbf2478efe8fb6c6e168d06f7d050e1e0c4c99e0c96ae8ae74c",
         "exists": true
       },
       "candles BTCUSDT_1h": {
-        "path": "C:\\Users\\adonm\\AppData\\Local\\Temp\\opencode\\eval1h_trio\\candles_BTCUSDT_1h.json",
+        "path": "eval1h_trio\\candles_BTCUSDT_1h.json",
         "sha256": "30cab63a9e2880e61da200cd17a8791f68cf0d9975c003fddc35d723489bbb8d",
         "exists": true
       },
       "candles ETHUSDT_1h": {
-        "path": "C:\\Users\\adonm\\AppData\\Local\\Temp\\opencode\\eval1h_trio\\candles_ETHUSDT_1h.json",
+        "path": "eval1h_trio\\candles_ETHUSDT_1h.json",
         "sha256": "9976115b20e0ca23c6fd455616efd0616fe9bd24b4f363f571b7355ed6c53311",
         "exists": true
       },
       "candles SOLUSDT_1h": {
-        "path": "C:\\Users\\adonm\\AppData\\Local\\Temp\\opencode\\eval1h_trio\\candles_SOLUSDT_1h.json",
+        "path": "eval1h_trio\\candles_SOLUSDT_1h.json",
         "sha256": "0f1faaee0279d5e443b436c9847d0e77e11663709d5f4eab74adefeb13d04619",
         "exists": true
       }

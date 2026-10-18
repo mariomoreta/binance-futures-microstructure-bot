@@ -583,11 +583,16 @@ class Ledger:
             self.inputs[desc] = {"path": None, "sha256": None, "exists": False}
             return
         p = Path(path)
+        try:
+            ruta = str(p.relative_to(self.temp_dir)) if self.temp_dir \
+                else str(p)
+        except ValueError:
+            ruta = str(p)
         if p.exists():
-            self.inputs[desc] = {"path": str(p), "sha256": sha256_file(p),
+            self.inputs[desc] = {"path": ruta, "sha256": sha256_file(p),
                                  "exists": True}
         else:
-            self.inputs[desc] = {"path": str(p), "sha256": None,
+            self.inputs[desc] = {"path": ruta, "sha256": None,
                                  "exists": False}
             self.incomplete = True
             self.incomplete_reasons.append("input externo ausente: %s" % p)
@@ -921,7 +926,8 @@ class Ledger:
             "estatus": "INCOMPLETE" if self.incomplete else "COMPLETO",
             "incomplete_reasons": self.incomplete_reasons,
             "procedencia": {
-                "artefacto": str(self.artifact_path),
+                "artefacto": str(self.artifact_path.relative_to(ROOT))
+                if self.artifact_path.is_absolute() else str(self.artifact_path),
                 "artefacto_sha256": self.artifact_sha256,
                 "inputs_externos": self.inputs,
                 "temp_limitacion": ("Manifiestos, funding y detecciones en "
