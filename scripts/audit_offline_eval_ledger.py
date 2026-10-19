@@ -30,10 +30,11 @@ ARTIFACT_DEFAULT = ROOT / "frontend" / "src" / "data" / "census-eval-v2.json"
 OUT_DEFAULT = ROOT / "docs" / "evidence" / "audit_offline_eval_ledger.json"
 
 ALLOWED_FAMILIES = {"continuation", "bearish-continuation",
-                    "correction-exhaustion", "correction-reversal",
-                    "baseline", "rebound-variant"}
+                     "correction-exhaustion", "correction-reversal",
+                     "baseline", "rebound-variant"}
+ALLOWED_SCALES = {"1.0", "2.0", "3.0"}
 REQUIRED_ARTIFACT_FIELDS = ("n_events", "n_trades", "n_open",
-                            "skipped_overlap", "E_net", "verdict")
+                             "skipped_overlap", "E_net", "verdict")
 
 H_DIRECCIONAL = {"continuation", "bearish-continuation"}   # H1 + H3
 H2_FADE = {"correction-exhaustion", "correction-reversal"}   # H2 fade
@@ -46,6 +47,16 @@ def sha256_file(path: Path) -> str:
         for chunk in iter(lambda: f.read(65536), b""):
             h.update(chunk)
     return h.hexdigest()
+
+
+def _ruta_repo(p: Path) -> str:
+    """Ruta relativa al repo si es posible; si no, absoluta (fixtures
+    externos). Nunca rutas del usuario adonm en published defaults."""
+    p = Path(p)
+    try:
+        return str(p.resolve().relative_to(ROOT.resolve()))
+    except ValueError:
+        return str(p)
 
 
 def load_json(path: Path):
@@ -459,6 +470,373 @@ def rango_mfe_mae(celdas: list) -> dict:
             "mae_max_n30": max(mas30) if mas30 else None}
 
 
+# Mapa de direcciones: detecciones usan up/down; eventos/trades LONG/SHORT
+DIR_DET_TO_EVENTO = {"up": "LONG", "down": "SHORT"}
+
+
+def vincular_trades_eventos(trades: list, manifiestos: dict,
+                            detecciones: list,
+                            bars_by: dict | None = None) -> dict:
+    """Trazabilidad operación ← candidato. Cada trade escala 1.0 debe:
+    - tener event_id presente en los event_ids del manifiesto (respaldo);
+    - H1/H3: entry_ms >= available_at de su detección vinculada;
+    - H2: entry_ms >= close_time de la barra de confirmación (conocida
+      antes de la entrada);
+    - placebo: entry_ms coincide con una open_time de las velas
+      (causalidad sintética: entrada en barra);
+    - estado realizada/abierta coherente con exit_executed.
+    Devuelve veredicto con discrepancias (cada una con sección, clave,
+    motivo)."""
+    discrep = []
+    ids_por_grupo = {}
+    for (sym, res), man in manifiestos.items():
+        for fam, g in man.get("groups", {}).items():
+            ids = g.get("event_ids", [])
+            if len(ids) != len(set(ids)):
+                discrep.append({"seccion": "trazabilidad_operaciones",
+                                "clave": "%s/%s/%s" % (sym, res, fam),
+                                "motivo": "event_ids duplicados en manifiesto"})
+            ids_por_grupo.setdefault((sym, res, fam), set(ids))
+    dets_por_clave = {}
+    for d in detecciones:
+        ivo = DIR_DET_TO_EVENTO.get(d.get("direction", "").lower(),
+                                      d.get("direction"))
+        dets_por_clave.setdefault(
+            (d.get("symbol"), d.get("formation_time"), ivo), []).append(d)
+    conf_h2 = {}
+    if bars_by:
+        for d in detecciones:
+            if d.get("definition_name") not in H2_SRC_DEFS:
+                continue
+            key = (d.get("symbol"), d.get("source_interval"))
+            bars = bars_by.get(key)
+            if not bars:
+                continue
+            f_ = d["formation_time"]
+            window = [b for b in bars if b["open_time_ms"] <= f_][-96:]
+            if not window:
+                continue
+            want_short = d["definition_name"] == "FAILED_HIGH_CANDIDATE"
+            trailing = (max(b["high"] for b in window) if want_short
+                        else min(b["low"] for b in window))
+            bar, motive = _confirm_h2_recon(bars, f_, d["reference_price"],
+                                           trailing, want_short)
+            if bar is None:
+                continue
+            ivo = "SHORT" if want_short else "LONG"
+            conf_h2[(d.get("symbol"), bar["open_time_ms"], ivo)] = bar
+    opens_por = {}
+    if bars_by:
+        for key, bars in bars_by.items():
+            opens_por[key] = set(b["open_time_ms"] for b in bars)
+    n = 0
+    for t in trades:
+        if t.get("escala") != 1.0:
+            continue
+        n += 1
+        eid = t.get("event_id", "")
+        sym, res, grp = t.get("symbol"), t.get("res"), t.get("group")
+        if eid not in ids_por_grupo.get((sym, res, grp), set()):
+            discrep.append({"seccion": "trazabilidad_operaciones",
+                            "clave": eid or t.get("symbol"),
+                            "motivo": "operación sin candidato en manifiesto"})
+            continue
+        if t.get("exit_executed") == bool(t.get("estado") == "abierta") \
+                and t.get("estado") is not None:
+            discrep.append({"seccion": "trazabilidad_operaciones",
+                            "clave": eid,
+                            "motivo": "estado incoherente con exit_executed"})
+        if grp == "baseline":
+            op = opens_por.get((sym, res))
+            if op is not None and t.get("entry_ms") not in op:
+                discrep.append({"seccion": "trazabilidad_operaciones",
+                                "clave": eid,
+                                "motivo": "placebo: entry_ms no es una "
+                                          "apertura de vela conocida"})
+            continue
+        if grp in ("correction-exhaustion", "correction-reversal"):
+            bar = conf_h2.get((sym, t.get("event_time_ms"),
+                               t.get("direction")))
+            if bar is None:
+                discrep.append({"seccion": "trazabilidad_operaciones",
+                                "clave": eid,
+                                "motivo": "H2 sin confirmación "
+                                          "reconstruible"})
+            elif bar.get("close_time_ms") is not None \
+                    and t.get("entry_ms") is not None \
+                    and t["entry_ms"] < bar["close_time_ms"]:
+                discrep.append({"seccion": "trazabilidad_operaciones",
+                                "clave": eid,
+                                "motivo": "H2 entrando antes de conocerse "
+                                          "su confirmación"})
+            continue
+        ds = dets_por_clave.get((sym, t.get("event_time_ms"),
+                                 t.get("direction")), [])
+        if not ds:
+            discrep.append({"seccion": "trazabilidad_operaciones",
+                            "clave": eid,
+                            "motivo": "H1/H3 sin detección de respaldo"})
+            continue
+        avail = max(d["available_at"] for d in ds)
+        if t.get("entry_ms") is not None and t["entry_ms"] < avail:
+            discrep.append({"seccion": "trazabilidad_operaciones",
+                            "clave": eid,
+                            "motivo": "entrada efectiva anterior a "
+                                      "disponibilidad (entry_ms=%s < "
+                                      "available_at=%s)"
+                                      % (t.get("entry_ms"), avail)})
+    return {"n_trades_revisados": n, "discrepancias": discrep,
+            "estado": "COMPLETO" if not discrep else "COMPLETO_CON_DISCREPANCIAS"}
+
+
+def verificar_multiplicidad_trades(trades: list, manifiesto: dict) -> list:
+    """n trades escala 1.0 por (grupo, segmento) debe igualar n_trades del
+    manifiesto (multiplicidad preservada: 3 escalas no se mezclan)."""
+    discrep = []
+    contador = {}
+    for t in trades:
+        if t.get("escala") != 1.0:
+            continue
+        k = (t.get("group"), t.get("segmento"))
+        contador[k] = contador.get(k, 0) + 1
+    for fam, segmentos in manifiesto.get("groups", {}).items():
+        for seg, escalas in segmentos.items():
+            if not isinstance(escalas, dict):
+                continue
+            ref = escalas.get("1.0", {}).get("n_trades")
+            if ref is None:
+                continue
+            if contador.get((fam, seg), 0) != ref:
+                discrep.append({"seccion": "trazabilidad_operaciones",
+                                "clave": "%s/%s" % (fam, seg),
+                                "motivo": "multiplicidad: %d trades != %d "
+                                          "manifiesto"
+                                          % (contador.get((fam, seg), 0),
+                                             ref)})
+    return discrep
+
+
+def clasificar_tail_edge(detecciones: list, build_reports: dict) -> dict:
+    """Los 6 tail-edge (entry_time_same_grid NULL, sin formation_gap) deben
+    clasificarse como exclusiones ESPERADAS cuando pueda probarse: la suma
+    del tail-edge de los símbolos que cubre cada build_report debe igualar
+    su excluded_no_entry (el builder cuenta por corrida, que agrupa
+    símbolos). Símbolos sin build_report propio: INCOMPLETE (no
+    verificable), nunca FAIL ni UNKNOWN aceptable."""
+    tail = [d for d in detecciones
+            if d.get("entry_time_same_grid") is None
+            and not d.get("formation_gap")]
+    por_sym_res = Counter((d["symbol"], d["source_interval"]) for d in tail)
+    cubiertos = set()
+    clasificados = []
+    discrepancias = []
+    for dname, br in build_reports.items():
+        syms = set(br.get("symbols", []))
+        iv = br.get("interval")
+        n_tail = sum(n for (s, r), n in por_sym_res.items()
+                     if s in syms and r == iv)
+        n_build = br.get("counts", {}).get("excluded_no_entry")
+        cubiertos.update((s, iv) for s in syms)
+        if n_build is None:
+            discrepancias.append({"build_report": dname,
+                                  "motivo": "sin excluded_no_entry "
+                                            "en build_report"})
+        elif n_build != n_tail:
+            discrepancias.append({"build_report": dname,
+                                  "motivo": "excluded_no_entry=%d != "
+                                            "tail_edge=%d"
+                                            % (n_build, n_tail)})
+        else:
+            clasificados.append({"build_report": dname,
+                                 "n_tail_edge": n_tail,
+                                 "excluded_no_entry": n_build})
+    no_cubiertos = [{"symbol": s, "res": r, "n": n}
+                    for (s, r), n in por_sym_res.items()
+                    if (s, r) not in cubiertos]
+    estado = "COMPLETO" if not discrepancias and not no_cubiertos \
+        else ("COMPLETO_CON_DISCREPANCIAS" if discrepancias
+              else "INCOMPLETE_NO_VERIFICABLE")
+    return {"n_tail_edge": len(tail),
+            "exclusiones_esperadas_verificadas": clasificados,
+            "discrepancias": discrepancias,
+            "no_cubiertos": no_cubiertos,
+            "estado": estado}
+
+
+def veredicto_global(secciones: dict) -> dict:
+    """Veredicto coherente que integra TODAS las secciones.
+    PASS: adquisición completa y 0 discrepancias.
+    FAIL: discrepancia demostrada (coexiste con INCOMPLETE si procede).
+    INCOMPLETE: falta evidencia obligatoria sin discrepancia.
+    Cada error incluye sección, clave afectada y motivo."""
+    discrepancias = []
+    incompletitud = []
+
+    def _add_discrep(sec, clave, motivo):
+        discrepancias.append({"seccion": sec, "clave": str(clave),
+                              "motivo": motivo})
+
+    adq = secciones.get("adquisicion", {})
+    if adq.get("incompleta"):
+        incompletitud.append({"seccion": "adquisicion",
+                              "motivo": adq.get("motivo", "inputs "
+                                                 "incompletos")})
+
+    c = secciones.get("causalidad", {})
+    if c.get("estado") == "UNKNOWN":
+        incompletitud.append({"seccion": "causalidad",
+                              "motivo": c.get("motivo", "sin datos")})
+    else:
+        for v in c.get("detalle", []):
+            _add_discrep("causalidad",
+                         "%s/%s@%s" % (v.get("symbol"),
+                                       v.get("interval"),
+                                       v.get("formation_time")),
+                         v.get("motivo", "violación causal"))
+
+    r = secciones.get("referencias", {})
+    if r and not r.get("consistente", False):
+        for k in r.get("solo_artefacto_con_eventos", []):
+            _add_discrep("referencias", k, "celda con eventos sin "
+                         "manifiesto")
+        for k in r.get("solo_manifiesto", []):
+            _add_discrep("referencias", k, "celda en manifiesto sin "
+                         "artefacto")
+        for m in r.get("campos_incompatibles", []):
+            _add_discrep("referencias", m, "campo compartido "
+                         "incompatible")
+        for m in r.get("escalas_inesperadas", []):
+            _add_discrep("referencias", m, "escenario inesperado")
+
+    ec = secciones.get("campos_economicos", {})
+    if ec:
+        for item in ec.get("discrepancias", []):
+            _add_discrep(item.get("seccion", "campos_economicos"),
+                         item.get("clave"), item.get("motivo"))
+
+    for e in secciones.get("duplicados_events", []):
+        for err in e.get("errores", []):
+            _add_discrep("duplicados_events",
+                         "%s/%s %s" % (e.get("symbol"), e.get("res"),
+                                       err.get("clave")),
+                         err.get("motivo", "duplicado indebido"))
+
+    for v in secciones.get("vinculos_h1h3", []):
+        for s in v.get("sin_respaldo", []):
+            _add_discrep("vinculo_h1h3", s.get("clave"),
+                         "evento sin detección de respaldo")
+        for s in v.get("excedentes", []):
+            _add_discrep("vinculo_h1h3", s.get("clave"),
+                         "más eventos que detecciones respaldo")
+
+    d = secciones.get("descartes", {})
+    if d:
+        if d.get("estado") == "INCOMPLETE":
+            for e in d.get("errores", []):
+                if "ausente" in e:
+                    incompletitud.append({"seccion": "descartes",
+                                          "motivo": e})
+        elif d.get("estado") == "COMPLETO_CON_DISCREPANCIAS":
+            for e in d.get("errores", []):
+                _add_discrep("descartes", "build_report", e)
+
+    f = secciones.get("funding", {})
+    if f:
+        for item in f.get("incompleto", []):
+            incompletitud.append({"seccion": "funding", "motivo": item})
+
+    t = secciones.get("trazabilidad_operaciones", {})
+    if t.get("estado") == "UNKNOWN":
+        incompletitud.append({"seccion": "trazabilidad_operaciones",
+                              "motivo": t.get("motivo",
+                                              "trades no reconstruidos")})
+    else:
+        for item in t.get("discrepancias", []):
+            _add_discrep(item.get("seccion", "trazabilidad_operaciones"),
+                         item.get("clave"), item.get("motivo"))
+
+    te = secciones.get("tail_edge", {})
+    if te:
+        for item in te.get("discrepancias", []):
+            _add_discrep("tail_edge", item.get("build_report"),
+                         item.get("motivo"))
+        for item in te.get("no_cubiertos", []):
+            incompletitud.append({
+                "seccion": "tail_edge",
+                "motivo": "%s/%s: tail-edge sin build_report verificable "
+                          "(INCOMPLETE, no FAIL)"
+                          % (item.get("symbol"), item.get("res"))})
+
+    if discrepancias:
+        estado = "FAIL+INCOMPLETE" if incompletitud else "FAIL"
+    elif incompletitud:
+        estado = "INCOMPLETE"
+    else:
+        estado = "PASS"
+    return {"estado": estado,
+            "discrepancias": discrepancias,
+            "incompleto": incompletitud,
+            "exitoso": estado == "PASS"}
+
+
+def verificar_campos_economicos(artefacto: dict, manifiestos: dict,
+                               rtol: float = 1e-9) -> dict:
+    """Compara campos compartidos con correspondencias explícitas:
+    E_net ↔ expectancy_net, placebo_E_net ↔ expectancy_net (baseline),
+    exit_stop ↔ exit_reasons.stop. Tolerancia relativa 1e-9 (mismo
+    float determinista). No acepta ausencias como coincidencias."""
+    discrep = []
+    n = 0
+    for sym in artefacto["cells"]:
+        for res in artefacto["cells"][sym]:
+            man = manifiestos.get((sym, res))
+            if not man:
+                continue
+            for fam in artefacto["cells"][sym][res]:
+                for split in artefacto["cells"][sym][res][fam]:
+                    if "1.0" not in artefacto["cells"][sym][res][fam][split]:
+                        continue
+                    c = artefacto["cells"][sym][res][fam][split]["1.0"]
+                    seg = man["groups"].get(fam, {}).get(split, {}).get("1.0", {})
+                    if not seg:
+                        continue
+                    n += 1
+                    en = c.get("E_net")
+                    mn = seg.get("expectancy_net")
+                    if en is None or mn is None:
+                        discrep.append({"seccion": "campos_economicos",
+                                        "clave": "%s/%s/%s/%s E_net" % (sym, res, fam, split),
+                                        "motivo": "campo ausente (artefacto=%s manifiesto=%s)" % (en, mn)})
+                    elif abs(en - mn) > rtol * max(1.0, abs(en), abs(mn)):
+                        discrep.append({"seccion": "campos_economicos",
+                                        "clave": "%s/%s/%s/%s E_net" % (sym, res, fam, split),
+                                        "motivo": "E_net=%s != expectancy_net=%s" % (en, mn)})
+                    es = c.get("exit_stop")
+                    ms = seg.get("exit_reasons", {}).get("stop")
+                    if es is None or ms is None:
+                        discrep.append({"seccion": "campos_economicos",
+                                        "clave": "%s/%s/%s/%s exit_stop" % (sym, res, fam, split),
+                                        "motivo": "campo ausente (artefacto=%s manifiesto=%s)" % (es, ms)})
+                    elif es != ms:
+                        discrep.append({"seccion": "campos_economicos",
+                                        "clave": "%s/%s/%s/%s exit_stop" % (sym, res, fam, split),
+                                        "motivo": "exit_stop=%s != exit_reasons.stop=%s" % (es, ms)})
+                    if fam != "baseline":
+                        pen = c.get("placebo_E_net")
+                        bseg = man["groups"].get("baseline", {}).get(split, {}).get("1.0", {})
+                        bn = bseg.get("expectancy_net")
+                        if pen is None or bn is None:
+                            discrep.append({"seccion": "campos_economicos",
+                                            "clave": "%s/%s/%s/%s placebo_E_net" % (sym, res, fam, split),
+                                            "motivo": "campo ausente (artefacto=%s manifiesto=%s)" % (pen, bn)})
+                        elif abs(pen - bn) > rtol * max(1.0, abs(pen), abs(bn)):
+                            discrep.append({"seccion": "campos_economicos",
+                                            "clave": "%s/%s/%s/%s placebo_E_net" % (sym, res, fam, split),
+                                            "motivo": "placebo_E_net=%s != baseline expectancy_net=%s" % (pen, bn)})
+    return {"n_celdas": n, "discrepancias": discrep,
+            "estado": "COMPLETO" if not discrep else "COMPLETO_CON_DISCREPANCIAS"}
+
+
 def verificar_referencias(artefacto: dict, manifiestos: dict) -> dict:
     """Correspondencia exacta (symbol, resolución, familia, segmento)
     entre artefacto (celdas 1x) y manifiestos. Detecta filas ausentes,
@@ -471,11 +849,17 @@ def verificar_referencias(artefacto: dict, manifiestos: dict) -> dict:
                     if "1.0" in artefacto["cells"][sym][res][fam][split]:
                         a_keys.add((sym, res, fam, split))
     m_keys = set()
+    escalas_inesperadas = []
     for (sym, res), man in manifiestos.items():
         for fam in man.get("groups", {}):
             if not man["groups"][fam].get("event_ids"):
                 continue
             for split in ("dev", "oos"):
+                for escala in man["groups"][fam].get(split, {}):
+                    if escala not in ALLOWED_SCALES:
+                        escalas_inesperadas.append(
+                            "%s/%s/%s/%s escala %s" % (sym, res, fam, split,
+                                                       escala))
                 if "1.0" in man["groups"][fam].get(split, {}):
                     m_keys.add((sym, res, fam, split))
     solo_art = a_keys - m_keys
@@ -506,13 +890,19 @@ def verificar_referencias(artefacto: dict, manifiestos: dict) -> dict:
                             incompat.append(
                                 "%s/%s/%s/%s %s: artefacto=%s manifiesto=%s"
                                 % (sym, res, fam, split, campo, av, mv))
+                        elif (av is None) != (mv is None):
+                            incompat.append(
+                                "%s/%s/%s/%s %s: campo presente solo en un "
+                                "lado (artefacto=%s manifiesto=%s)"
+                                % (sym, res, fam, split, campo, av, mv))
     return {"n_celdas_artefacto": len(a_keys),
             "n_celdas_manifiesto": len(m_keys),
             "solo_artefacto_con_eventos": sorted(solo_art_reales)[:50],
             "solo_manifiesto": sorted(solo_man)[:50],
             "campos_incompatibles": incompat[:50],
+            "escalas_inesperadas": escalas_inesperadas[:50],
             "consistente": (not solo_art_reales) and (not solo_man)
-            and (not incompat)}
+            and (not incompat) and (not escalas_inesperadas)}
 
 
 def validate_artifact(art: Path) -> tuple[dict, str, list[str]]:
@@ -545,6 +935,9 @@ def validate_artifact(art: Path) -> tuple[dict, str, list[str]]:
                                        % (sym, res, fam, split))
                     cell = cells[sym][res][fam][split]
                     for escala, c in cell.items():
+                        if escala not in ALLOWED_SCALES:
+                            errores.append("escenario inesperado: %s/%s/%s/%s/%s"
+                                            % (sym, res, fam, split, escala))
                         for campo in REQUIRED_ARTIFACT_FIELDS:
                             if campo not in c:
                                 errores.append("campo ausente %s/%s/%s/%s/%s/%s"
@@ -584,8 +977,8 @@ class Ledger:
             return
         p = Path(path)
         try:
-            ruta = str(p.relative_to(self.temp_dir)) if self.temp_dir \
-                else str(p)
+            base = self.package if self.package else self.temp_dir
+            ruta = str(p.relative_to(base)) if base else str(p)
         except ValueError:
             ruta = str(p)
         if p.exists():
@@ -597,7 +990,10 @@ class Ledger:
             self.incomplete = True
             self.incomplete_reasons.append("input externo ausente: %s" % p)
 
-    def load(self):
+    def load(self, package: Path | None = None,
+             trades_dir: Path | None = None):
+        self.package = package
+        self.trades_dir = trades_dir
         self.data, self.artifact_sha256, self.validation_errors = \
             validate_artifact(self.artifact_path)
         if self.validation_errors:
@@ -608,9 +1004,9 @@ class Ledger:
         # funding) — pueden no existir (fuera de Git).
         combos = COMBOS
         for d, sym, res in combos:
-            if self.temp_dir is None:
+            if self.base_dir is None:
                 continue
-            base = self.temp_dir / d
+            base = self.base_dir / d
             self._register_input("manifest %s_%s" % (sym, res),
                                  base / ("manifest_%s_%s.json" % (sym, res)))
             self._register_input("events %s_%s" % (sym, res),
@@ -622,32 +1018,62 @@ class Ledger:
             if d in seen_dirs:
                 continue
             seen_dirs.add(d)
-            if self.temp_dir is not None:
+            if self.base_dir is not None:
                 self._register_input("build_report %s" % d,
-                                     self.temp_dir / d / "build_report.json")
+                                     self.base_dir / d / "build_report.json")
+        fund_dir = self.package / "funding" if self.package else self.temp_dir
         for sym in ("BTCUSDT", "ETHUSDT", "SOLUSDT"):
-            if self.temp_dir is not None:
+            if fund_dir is not None:
                 self._register_input("funding %s" % sym,
-                                     self.temp_dir / ("funding_%s.json" % sym))
-        self._register_input("funding_raw", self.temp_dir / "funding_raw.json"
-                             if self.temp_dir else None)
-        if self.temp_dir is None:
+                                     fund_dir / ("funding_%s.json" % sym))
+        if fund_dir is not None and (fund_dir / "funding_raw.json").exists():
+            self._register_input("funding_raw",
+                                 fund_dir / "funding_raw.json")
+        if self.temp_dir is None and package is None:
             self.incomplete = True
             self.incomplete_reasons.append(
-                "temp_dir no especificado: manifiestos, funding y detecciones "
-                "no cargados (secciones de evidencia vacias)")
+                "temp_dir/package no especificado: manifiestos, funding y "
+                "detecciones no cargados (secciones de evidencia vacias)")
         # Detecciones del reconstruct (censo causal con tiempos reales)
         self.detecciones = []
         self.census_files = []
-        for dname, symbols, res in CENSUS_DIRS:
-            cp = self.temp_dir / ("%s/%s" % (dname, CENSUS_DETECTIONS_NAME)) \
-                if self.temp_dir else None
-            self._register_input("detecciones %s" % dname, cp)
-            if cp is not None and cp.exists():
-                for line in cp.read_text(encoding="utf-8").splitlines():
-                    if line.strip():
-                        self.detecciones.append(json.loads(line))
-                self.census_files.append(str(cp))
+        if package is not None:
+            for dname, symbols, res in CENSUS_DIRS:
+                cp = package / "detections" / ("%s_detections.jsonl" % dname)
+                self._register_input("detecciones %s" % dname, cp)
+                if cp.exists():
+                    for line in cp.read_text(encoding="utf-8").splitlines():
+                        if line.strip():
+                            self.detecciones.append(json.loads(line))
+                    self.census_files.append(str(cp))
+        elif self.temp_dir is not None:
+            for dname, symbols, res in CENSUS_DIRS:
+                cp = self.temp_dir / ("%s/%s" % (dname, CENSUS_DETECTIONS_NAME))
+                self._register_input("detecciones %s" % dname, cp)
+                if cp.exists():
+                    for line in cp.read_text(encoding="utf-8").splitlines():
+                        if line.strip():
+                            self.detecciones.append(json.loads(line))
+                    self.census_files.append(str(cp))
+        # Trazas reconstruidas (trades_*.json) si se proporcionan
+        self.trades = {}
+        if trades_dir is not None:
+            for d, sym, res in COMBOS:
+                tp = trades_dir / ("trades_%s_%s.json" % (sym, res))
+                if tp.exists():
+                    self.trades[(sym, res)] = json.loads(
+                        tp.read_text(encoding="utf-8"))
+                    self._register_input("trazas %s_%s" % (sym, res), tp)
+                else:
+                    self.incomplete = True
+                    self.incomplete_reasons.append(
+                        "trazas ausentes: %s" % tp)
+
+    @property
+    def base_dir(self) -> Path | None:
+        if self.package is not None:
+            return self.package / "combos"
+        return self.temp_dir
 
     def _manifiestos(self) -> dict:
         """Carga todos los manifiestos disponibles como (sym, res) -> dict."""
@@ -667,8 +1093,78 @@ class Ledger:
                 out[(s, r)] = m
         return out
 
+    def _build_reports(self) -> dict:
+        """Carga los build_report disponibles como dir -> dict."""
+        out = {}
+        if self.base_dir is None:
+            return out
+        for d, _, _ in COMBOS:
+            if d in out:
+                continue
+            bp = self.base_dir / d / "build_report.json"
+            if bp.exists():
+                out[d] = json.loads(bp.read_text(encoding="utf-8"))
+        return out
+
+    def _descartes_global(self) -> dict:
+        """Verifica motivos de descarte del builder contra la clasificación
+        determinista de las detecciones (agregado por build_report)."""
+        brs = self._build_reports()
+        if not brs:
+            return {"estado": "UNKNOWN",
+                    "motivo": "build_reports no disponibles",
+                    "errores": []}
+        errores = []
+        estado = "COMPLETO"
+        bars_by = {}
+        for d, sym, res in COMBOS:
+            if self.base_dir is None:
+                continue
+            cp = self.base_dir / d / ("candles_%s_%s.json" % (sym, res))
+            if cp.exists():
+                bars_by[(sym, res)] = json.loads(cp.read_text(encoding="utf-8"))
+        for dname, br in brs.items():
+            syms = br.get("symbols", [])
+            iv = br.get("interval")
+            dets = [x for x in self.detecciones
+                    if x.get("symbol") in syms
+                    and x.get("source_interval") == iv]
+            bb = {}
+            for s in syms:
+                if (s, iv) in bars_by:
+                    bb[(s, iv)] = bars_by[(s, iv)]
+            r = verificar_motivos_descarte(br.get("counts", {}), dets,
+                                           bb or None)
+            for e in r["errores"]:
+                errores.append("%s: %s" % (dname, e))
+            if r["estado"] == "INCOMPLETE":
+                estado = "INCOMPLETE"
+            elif r["estado"] == "COMPLETO_CON_DISCREPANCIAS" \
+                    and estado != "INCOMPLETE":
+                estado = "COMPLETO_CON_DISCREPANCIAS"
+        return {"estado": estado, "errores": errores}
+
+    def _funding_incompleto(self) -> list:
+        """Celdas sin funding_quality (INCOMPLETE, nunca cero)."""
+        out = []
+        mans = self._manifiestos()
+        for sym in self.data["cells"]:
+            for res in self.data["cells"][sym]:
+                man = mans.get((sym, res))
+                if not man:
+                    continue
+                for fam in self.data["cells"][sym][res]:
+                    for split in self.data["cells"][sym][res][fam]:
+                        if "1.0" not in self.data["cells"][sym][res][fam][split]:
+                            continue
+                        seg = man["groups"].get(fam, {}).get(split, {}).get(
+                            "1.0", {})
+                        if not seg.get("funding_quality"):
+                            out.append("%s/%s/%s/%s" % (sym, res, fam, split))
+        return out
+
     def _load_manifest(self, sym: str, res: str):
-        if self.temp_dir is None:
+        if self.base_dir is None:
             return None
         for d, s, r in [
             ("eval15_btc", "BTCUSDT", "15m"),
@@ -679,7 +1175,7 @@ class Ledger:
             ("eval1h_trio", "SOLUSDT", "1h"),
         ]:
             if s == sym and r == res:
-                p = self.temp_dir / d / ("manifest_%s_%s.json" % (sym, res))
+                p = self.base_dir / d / ("manifest_%s_%s.json" % (sym, res))
                 if p.exists():
                     return json.loads(p.read_text(encoding="utf-8"))
         return None
@@ -696,7 +1192,7 @@ class Ledger:
             ("eval1h_trio", "SOLUSDT", "1h"),
         ]:
             if s == sym and r == res:
-                p = self.temp_dir / d / ("selection_%s_%s.json" % (sym, res))
+                p = self.base_dir / d / ("selection_%s_%s.json" % (sym, res))
                 if p.exists():
                     return json.loads(p.read_text(encoding="utf-8"))
         return None
@@ -737,7 +1233,7 @@ class Ledger:
             builder_seen.add(d)
             if self.temp_dir is None:
                 continue
-            bp = self.temp_dir / d / "build_report.json"
+            bp = self.base_dir / d / "build_report.json"
             if bp.exists():
                 br = json.loads(bp.read_text(encoding="utf-8"))
                 ct = br.get("counts", {})
@@ -754,7 +1250,7 @@ class Ledger:
         for d, sym, res in COMBOS:
             if self.temp_dir is None:
                 continue
-            sp = self.temp_dir / d / ("selection_%s_%s.json" % (sym, res))
+            sp = self.base_dir / d / ("selection_%s_%s.json" % (sym, res))
             if sp.exists():
                 s = json.loads(sp.read_text(encoding="utf-8"))
                 summary["selection"]["n_in"] += s.get("n_in", 0)
@@ -877,11 +1373,11 @@ class Ledger:
         for d, sym, res in COMBOS:
             if self.temp_dir is None:
                 continue
-            ep = self.temp_dir / d / ("events_%s_%s.json" % (sym, res))
+            ep = self.base_dir / d / ("events_%s_%s.json" % (sym, res))
             if not ep.exists():
                 continue
             evs = json.loads(ep.read_text(encoding="utf-8"))
-            cp = self.temp_dir / d / ("candles_%s_%s.json" % (sym, res))
+            cp = self.base_dir / d / ("candles_%s_%s.json" % (sym, res))
             bars = None
             if cp.exists():
                 bars = json.loads(cp.read_text(encoding="utf-8"))
@@ -910,7 +1406,7 @@ class Ledger:
         for d, sym, res in COMBOS:
             if self.temp_dir is None:
                 continue
-            ep = self.temp_dir / d / ("events_%s_%s.json" % (sym, res))
+            ep = self.base_dir / d / ("events_%s_%s.json" % (sym, res))
             if ep.exists():
                 todos_evs.extend(json.loads(ep.read_text(encoding="utf-8")))
         vinculo_global = vincular_eventos_h1h3(todos_evs, self.detecciones)
@@ -921,13 +1417,72 @@ class Ledger:
                        for x in self.detecciones]
         censo_dup = verificar_censo_duplicados(filas_censo)
         referencias = verificar_referencias(self.data, self._manifiestos())
+        economicos = verificar_campos_economicos(self.data, self._manifiestos())
+
+        # --- Trazabilidad hasta la operación (trades reconstruidos) ---
+        mans = self._manifiestos()
+        trazabilidad = {"estado": "UNKNOWN",
+                        "motivo": "trades no proporcionados "
+                                  "(--trades-dir o reconstruir con "
+                                  "reconstruct_replay_traces.py)",
+                        "discrepancias": []}
+        if self.trades:
+            discrep_op = []
+            n_rev = 0
+            for (sym, res), tdata in self.trades.items():
+                trades = tdata.get("trades", [])
+                man = mans.get((sym, res), {})
+                dets = [x for x in self.detecciones
+                        if x.get("symbol") == sym
+                        and x.get("source_interval") == res]
+                bars = None
+                for d, s, r in COMBOS:
+                    if s == sym and r == res and self.base_dir is not None:
+                        cp = self.base_dir / d / ("candles_%s_%s.json" % (sym, res))
+                        if cp.exists():
+                            bars = json.loads(cp.read_text(encoding="utf-8"))
+                v = vincular_trades_eventos(trades, mans, dets,
+                                            {(sym, res): bars}
+                                            if bars else None)
+                n_rev += v["n_trades_revisados"]
+                discrep_op.extend(v["discrepancias"])
+                discrep_op.extend(verificar_multiplicidad_trades(trades, man))
+            trazabilidad = {
+                "estado": ("COMPLETO" if not discrep_op
+                           else "COMPLETO_CON_DISCREPANCIAS"),
+                "n_trades_revisados": n_rev,
+                "discrepancias": discrep_op}
+
+        # --- Tail-edge: exclusiones esperadas verificables ---
+        tail_edge = clasificar_tail_edge(self.detecciones,
+                                         self._build_reports())
+
+        # --- Veredicto global (integra todas las secciones) ---
+        secciones = {
+            "adquisicion": {
+                "incompleta": self.incomplete,
+                "motivo": "; ".join(self.incomplete_reasons)},
+            "causalidad": causalidad,
+            "referencias": referencias,
+            "campos_economicos": economicos,
+            "duplicados_events": duplicados_events,
+            "vinculos_h1h3": [v for v in causalidad.get("vinculos_h1h3", [])],
+            "descartes": self._descartes_global(),
+            "funding": {"incompleto": self._funding_incompleto()},
+            "trazabilidad_operaciones": trazabilidad,
+            "tail_edge": tail_edge,
+        }
+        veredicto = veredicto_global(secciones)
 
         reporte = {
-            "estatus": "INCOMPLETE" if self.incomplete else "COMPLETO",
+            "estatus": veredicto["estado"],
+            "veredicto": veredicto,
             "incomplete_reasons": self.incomplete_reasons,
+            "trazabilidad_operaciones": trazabilidad,
+            "tail_edge": tail_edge,
+            "descartes_global": self._descartes_global(),
             "procedencia": {
-                "artefacto": str(self.artifact_path.relative_to(ROOT))
-                if self.artifact_path.is_absolute() else str(self.artifact_path),
+                "artefacto": _ruta_repo(self.artifact_path),
                 "artefacto_sha256": self.artifact_sha256,
                 "inputs_externos": self.inputs,
                 "temp_limitacion": ("Manifiestos, funding y detecciones en "
@@ -941,6 +1496,7 @@ class Ledger:
             "causalidad": causalidad,
             "vinculo_h1h3_global": {k: v for k, v in vinculo_global.items()
                                     if not isinstance(v, list)},
+            "campos_economicos": economicos,
             "duplicados_censo": censo_dup,
             "duplicados_events": duplicados_events,
             "referencias": {k: v for k, v in referencias.items()
@@ -979,6 +1535,10 @@ def main(argv=None):
                     help="ruta al artefacto census-eval-v2.json")
     ap.add_argument("--temp-dir", default=None,
                     help="directorio temp con manifiestos (fuera de Git)")
+    ap.add_argument("--package", default=None,
+                    help="paquete de evidencia publicado (combos/<dir>/...)")
+    ap.add_argument("--trades-dir", default=None,
+                    help="directorio con trades_*.json reconstruidos")
     ap.add_argument("--out", default=str(OUT_DEFAULT),
                     help="ruta del informe JSON de salida")
     args = ap.parse_args(argv)
@@ -986,16 +1546,20 @@ def main(argv=None):
     artifact_path = Path(args.artifact)
     out_path = Path(args.out)
     temp_dir = Path(args.temp_dir) if args.temp_dir else None
+    package = Path(args.package) if args.package else None
+    trades_dir = Path(args.trades_dir) if args.trades_dir else None
 
     ledger = Ledger(artifact_path, temp_dir, out_path)
-    ledger.load()
+    ledger.load(package=package, trades_dir=trades_dir)
     reporte = ledger.build()
 
-    print("estatus:", reporte["estatus"])
-    if reporte["incomplete_reasons"]:
-        print("razones INCOMPLETE:")
-        for r in reporte["incomplete_reasons"]:
-            print("  -", r)
+    print("veredicto global:", reporte["veredicto"]["estado"])
+    print("discrepancias: %d" % len(reporte["veredicto"]["discrepancias"]))
+    for d in reporte["veredicto"]["discrepancias"]:
+        print("  - [%s] %s: %s" % (d["seccion"], d["clave"], d["motivo"]))
+    print("incompleto: %d" % len(reporte["veredicto"]["incompleto"]))
+    for d in reporte["veredicto"]["incompleto"]:
+        print("  - [%s] %s" % (d["seccion"], d["motivo"]))
     print("artefacto sha256:", reporte["procedencia"]["artefacto_sha256"])
     print("hipotesis: eventos=%d trades=%d abiertas=%d skipped=%d realizadas=%d" % (
         reporte["conteos"]["hipotesis"]["eventos"],
@@ -1024,8 +1588,10 @@ def main(argv=None):
         reporte["funding"]["uncovered_ms"],
         reporte["funding"]["celdas_uncovered"],
         reporte["funding"]["celdas_totales"]))
+    print("trazabilidad operaciones: %s" % reporte["trazabilidad_operaciones"]["estado"])
+    print("tail-edge: %s" % reporte["tail_edge"]["estado"])
     print("informe escrito en", out_path)
-    return 0 if reporte["estatus"] == "COMPLETO" else 1
+    return 0 if reporte["veredicto"]["exitoso"] else 1
 
 
 if __name__ == "__main__":

@@ -1,15 +1,5 @@
 ## Corrección auditoría EVAL-CENSUS-V2 con evidencia verificable (2026-10-18, completada)
-Verificador rehecho con funciones puras verificables por tests (45 tests unittest,
-0 fallos). Causalidad VERIFICADA sobre datos reales (9314/9314 OK, 6 UNKNOWN,
-0 violaciones). Vínculo detección→evento H1/H3 sin huecos (0 sin respaldo,
-0 excedentes). Duplicados events.json clasificados con origen (0 errores).
-594/616 verificados por función pura. 1779 fuera de alcance por membresía.
-741/0/24-60 funding verificado por celda. MFE/MAE con rango global y n≥30
-calculados. Generador INCOMPLETE + exit≠0 sin inputs. Suite 1247 OK.
-Barrera aislamiento: hashes_equal=True, file_writes=0. Ledger publicado con
-causalidad, duplicados_censo, duplicados_events, referencias reales.
-Pendiente: incorporar manifiestos temp/opencode a Git (vínculo completo
-detección→operación sigue UNKNOWN fuera de temp).
+Verificador rehecho con funciones puras (58 tests unittest: 45 puras + 3 PackageMode + 10 CLI fixtures, 0 fallos). Veredicto global PASS/FAIL/INCOMPLETE integrado. Estado actual: INCOMPLETE (0 discrepancias, 2 incompletos: MINAUSDT/1h y NMRUSDT/1h tail-edge). Causalidad VERIFICADA (9314/9314 OK, 6 UNKNOWN, 0 violaciones). Trazabilidad hasta operación: replay determinista, 0 celdas fail, 5255 trades escala 1.0 reconciliados exactamente, vinculados a eventos/candidatos. Paquete de evidencia publicado (docs/evidence/eval-census-v2-package/, 33 archivos, SHA256). Pruebas CLI: 10 casos de alteración + control; cada alteración FAIL/INCOMPLETE con exit ≠ 0, control PASS/exit 0. Campos económicos (E_net↔expectancy_net, etc.): 60 celdas, 0 discrepancias. Suite 1260 OK. Barrera aislamiento: hashes_equal=True, file_writes=0. Ledger publicado con veredicto, trazabilidad, tail-edge, campos económicos, descartes. Pendiente: incorporar manifiestos temp/opencode a Git para cerrar vínculo completo detección→operación y verificar los 2 tail-edge pendientes.
 
 ## Cierre EVAL-CENSUS-V2 + selector + QA visual 3020 (2026-10-17, sin corridas, sin push aun)
 Censo CENSUS-V1 (9320/9320/0, entry>=available 9314/9314, 594 grupos

@@ -1,0 +1,9 @@
+{
+ "cutoff_ms": 1790010000000,
+ "horizon_ms": 3600000,
+ "n_in": 4064,
+ "n_dev": 1830,
+ "n_oos": 2230,
+ "n_purged_dev_crossing": 4,
+ "note": "dev windows never cross the cutoff; eval = time-held-out (non-pristine, see design doc)"
+}

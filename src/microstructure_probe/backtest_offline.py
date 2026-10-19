@@ -534,6 +534,7 @@ def run_backtest(events: List[StudyEvent], candles: List[Candle],
     n_expired = 0
     n_mismatched = 0
     open_intervals: List[Tuple[int, int]] = []
+    admitted_positions: List[int] = []
 
     # Fail fast on calendar conflicts (same ms, different rates) before
     # any replay math. Exact duplicates are deduped per trade below.
@@ -555,7 +556,7 @@ def run_backtest(events: List[StudyEvent], candles: List[Candle],
                         config.funding_calendar.symbol, foreign,
                         config.funding_calendar.version))
 
-    for ev in ordered_events:
+    for _pos, ev in enumerate(ordered_events):
         if ev.direction not in ("LONG", "SHORT"):
             continue
         if (ev.family, ev.rules_version) != (config.family,
@@ -725,6 +726,7 @@ def run_backtest(events: List[StudyEvent], candles: List[Candle],
             if open_at_end else 0.0
         costs_executed = friction - costs_exit_hypothetical
         realized_net = net if exit_executed else None
+        admitted_positions.append(_pos)
         trades.append({
             "symbol": ev.symbol, "direction": ev.direction,
             "family": ev.family, "rules_version": ev.rules_version,
@@ -816,6 +818,7 @@ def run_backtest(events: List[StudyEvent], candles: List[Candle],
         "n_realized": len(realized),
         "n_open": len(open_positions),
         "open_positions": open_positions,
+        "admitted_positions": admitted_positions,
         "total_net_realized": sum(realized_nets),
         "expectancy_net_realized": sum(realized_nets) / len(realized_nets)
         if realized_nets else 0.0,

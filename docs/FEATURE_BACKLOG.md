@@ -1247,3 +1247,12 @@ FEATURES_VERIFIED: causalidad real 9314 OK / 6 UNKNOWN / 0 violaciones (detectio
 DEFERRED_FEATURES: incorporar manifiestos temp/opencode a Git (vínculo detección→operación completo sigue UNKNOWN fuera de temp).
 DOCUMENTATION_CONFLICTS: "30 tests" corregido a "45 tests"; "causalidad UNKNOWN" corregido a "verificada 9314/6/0"; "duplicados reportados" corregido a "clasificados con origen, 0 errores".
 BACKLOG_UPDATED: este ID; sin cambio de fase activa ni autorizaciones. Gates sin avance.
+
+## F-EVAL-CENSUS-TRACE-01-CORR3 — Veredicto global, trazabilidad a operación y paquete de evidencia (2026-10-18)
+Corrige F-EVAL-CENSUS-TRACE-01-CORR2 (2026-10-18) de forma explícita:
+
+FEATURES_IMPLEMENTED: veredicto global PASS/FAIL/INCOMPLETE integrado en el ledger; trazabilidad hasta la operación real mediante replay determinista (scripts/reconstruct_replay_traces.py) con equivalencia por celda (conteos, exit_reasons, config_hash, mfe/mae, expectativas, total_net, fees, funding, max_drawdown); 5255 trades escala 1.0 reconciliados exactamente (5248 realizadas + 7 abiertas); paquete de evidencia publicado (docs/evidence/eval-census-v2-package/, 33 archivos, package_manifest.json con SHA256); pruebas CLI de integración (10 casos de alteración + control íntegro); campos económicos comparados con tolerancia explícita (rtol=1e-9, 60 celdas, 0 discrepancias); tail-edge: 4/6 exclusiones esperadas verificadas, MINAUSDT/1h y NMRUSDT/1h conservados como INCOMPLETE.
+FEATURES_VERIFIED: 58 tests unittest (0 fallos): 45 funciones puras + 3 PackageMode + 10 CLI fixtures; meta-prueba de mutación verificada; causalidad 9314 OK / 6 UNKNOWN / 0 violaciones; duplicados events.json 0 errores clasificados con origen; 594/616 con desglose exacto; referencias consistentes; veredicto global actual: INCOMPLETE (0 discrepancias, 2 incompletos MINA/NMR).
+DEFERRED_FEATURES: incorporar manifiestos temp/opencode a Git para cerrar el vínculo completo detección→operación y verificar los 2 tail-edge pendientes (MINAUSDT/1h, NMRUSDT/1h).
+DOCUMENTATION_CONFLICTS: "45 tests" corregido a "58 tests"; "causalidad UNKNOWN" corregido a "verificada 9314/6/0"; "auditoría completa" corregido a "INCOMPLETE con 2 incompletos declarados".
+BACKLOG_UPDATED: este ID; sin cambio de fase activa ni autorizaciones. Gates sin avance.

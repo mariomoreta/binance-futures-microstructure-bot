@@ -1979,4 +1979,31 @@ Corrige el addendum anterior (2026-10-17) de forma explícita, sin reescribir hi
 13. Sin corridas Binance, forward, paper, órdenes, optimización, cambios de umbrales. Sin modificar DBs canónicas (hashes_equal=True en barrera de aislamiento).
 
 
+## 2026-10-18 — Veredicto global, trazabilidad a operación y paquete de evidencia (sobre 7aa863f)
+
+Corrige y extiende el addendum anterior de forma explícita, sin reescribir historia:
+
+1. Veredicto global PASS/FAIL/INCOMPLETE integrado en `scripts/audit_offline_eval_ledger.py`. PASS solo con adquisición completa y 0 discrepancias. FAIL si existe discrepancia demostrada (coexiste con INCOMPLETE si procede). Cada error incluye sección, clave afectada y motivo. Exit 0 solo cuando el veredicto es PASS. Secciones integradas: causalidad, referencias, campos económicos, duplicados, vínculos H1/H3, descartes, trazabilidad de operaciones, tail-edge, funding, hashes de inputs.
+
+2. Trazabilidad hasta la operación real del replay: `scripts/reconstruct_replay_traces.py` re-ejecuta el bucle del runner (split_by_time + BacktestConfig por grupo/escala) sobre events/candles publicados con configuración inferida de los manifiestos (cutoff_ms, exit_horizon_ms, escalas 1.0/2.0/3.0, calendario funding con conversión rate×10000 a bps). Demuestra equivalencia por celda contra el manifiesto: n_events, n_trades, n_realized, n_open, skipped_overlap, n_expired, n_mismatched, exit_reasons, config_hash, mfe/mae, expectancy_net/gross, total_net, total_net_realized, total_fees, total_funding, max_drawdown (0 celdas fail). Vinculación trade→evento vía admitted_positions de run_backtest (campo añadido al motor, sin cambio de mecánica) → event_id del manifiesto. 5255 trades escala 1.0 reconciliados exactamente con el manifiesto (5255 = 5255, 0 diferencias por celda; 5248 realizadas + 7 abiertas).
+
+3. Paquete de evidencia publicado en `docs/evidence/eval-census-v2-package/` (33 archivos): manifests, events post-purge, selections, build_reports, funding, detections (censo), candles, con package_manifest.json (SHA256 de cada archivo, versiones, comandos). `scripts/build_eval_package.py` y `scripts/verify_eval_package.py` (PASS verificado). Los trades reconstruidos NO se publican: se regeneran con reconstruct_replay_traces.py desde el paquete.
+
+4. Verificación de que events post-purge no reciben segunda purga: conteos antes/después publicados en package_manifest.json (n_in_pre_purge, n_dev, n_oos, n_purged, n_events_post_purge). En modo package, los events del paquete ya son post-purge y se verifican contra la selección (n_dev + n_oos = len(events)).
+
+5. Parámetros registrados vs inferidos documentados en package_manifest.json: registrados (cutoff_ms, horizon, escalas, familia/versión, calendar funding) vs inferidos (fee_bps, spread_bps, max_concurrent, notional, funding_estimated_bps).
+
+6. Comparación de resultados económicos, costes, funding, realizadas y abiertas con tolerancias explícitas (rtol=1e-9): E_net↔expectancy_net, placebo_E_net↔baseline expectancy_net, exit_stop↔exit_reasons.stop, n_trades, n_realized, n_open, skipped_overlap, total_fees, total_funding, max_drawdown — 60 celdas, 0 discrepancias.
+
+7. Tail-edge (6 detecciones con entry_time_same_grid NULL): 4 clasificadas como exclusiones esperadas verificables (BTC 15m, SOL 15m, ETH 1h, SOL 1h — coinciden con excluded_no_entry del builder). 2 (MINAUSDT/1h, NMRUSDT/1h) conservadas como INCOMPLETE (no build_report para esos símbolos; afectan solo al censo externo al replay, no a operaciones evaluadas).
+
+8. Pruebas de integración CLI: `tests/test_cli_fixtures.py` (10 tests): control íntegro PASS/exit 0; referencia inexistente FAIL; E_net alterado FAIL; campo obligatorio ausente FAIL; escenario inesperado FAIL; duplicación indebida FAIL; entrada antes de disponibilidad FAIL; H2 antes de confirmación FAIL; operación sin candidato FAIL; input faltante INCOMPLETE. Todas las alteraciones generan FAIL o INCOMPLETE con exit ≠ 0.
+
+9. Suite completa: 1260 tests OK (2 skipped), incl. 58 tests de auditoría (45 funciones puras + 3 PackageMode + 10 CLI fixtures). Barrera de aislamiento: hashes_equal=True, file_writes=0, prohibited={}, datos sin cambios.
+
+10. Veredicto actual del ledger publicado: INCOMPLETE (0 discrepancias, 2 incompletos: MINAUSDT/1h y NMRUSDT/1h tail-edge sin build_report). No se declara "auditoría completa" mientras esos 2 vínculos sigan abiertos.
+
+11. Siguiente acción concreta: incorporar manifiestos temp/opencode a Git (p. ej. docs/evidence/manifests/) para cerrar el vínculo completo detección→operación y verificar los 2 tail-edge pendientes.
+
+
 

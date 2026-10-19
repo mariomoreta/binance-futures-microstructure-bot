@@ -2237,3 +2237,18 @@ Corrección del addendum anterior (2026-10-17) con evidencia real, no declaracio
 - Generador: INCOMPLETE + exit≠0 sin inputs (tests de integración). Sin rutas absolutas de usuario. SHA256 de cada input.
 - Suite completa: 1247 tests OK. Barrera de aislamiento: hashes_equal=True, file_writes=0.
 - Pendiente: incorporar manifiestos temp/opencode a Git (vínculo detección→operación sigue UNKNOWN fuera de temp).
+
+## Auditoría EVAL-CENSUS-V2 — veredicto global, trazabilidad a operación y paquete de evidencia (2026-10-18)
+
+Corrige y extiende el addendum anterior de forma explícita:
+
+- Verificador: 58 tests unittest (0 fallos, 0 errores): 45 funciones puras + 3 PackageMode + 10 CLI fixtures. Meta-prueba de mutación: al alterar el verificador los tests fallan. Los tests ejercitan funciones puras con fixtures y datos reales, no tautologías.
+- Veredicto global PASS/FAIL/INCOMPLETE integrado en el ledger. Estado actual: INCOMPLETE (0 discrepancias, 2 incompletos: MINAUSDT/1h y NMRUSDT/1h tail-edge sin build_report). No se declara "auditoría completa" mientras esos 2 vínculos sigan abiertos.
+- Trazabilidad hasta la operación real: `scripts/reconstruct_replay_traces.py` re-ejecuta el runner sobre events/candles con configuración inferida de manifiestos; 0 celdas fail (equivalencia demostrada por celda: conteos, exit_reasons, config_hash, mfe/mae, expectancy, total_net, fees, funding, max_drawdown). 5255 trades escala 1.0 reconciliados exactamente (5255=5255; 5248 realizadas + 7 abiertas). Vinculación trade→evento vía admitted_positions.
+- Paquete de evidencia: `docs/evidence/eval-census-v2-package/` (33 archivos, package_manifest.json con SHA256). `build_eval_package.py` + `verify_eval_package.py` (PASS). Trades se regeneran con reconstruct_replay_traces.py desde el paquete.
+- Pruebas CLI: 10 casos de alteración + control íntegro; cada alteración genera FAIL o INCOMPLETE con exit ≠ 0; control da PASS y exit 0.
+- Campos económicos: E_net↔expectancy_net, exit_stop↔exit_reasons.stop, placebo_E_net↔baseline expectancy_net — 60 celdas, 0 discrepancias (rtol=1e-9).
+- Tail-edge: 4/6 exclusiones esperadas verificadas (BTC 15m, SOL 15m, ETH 1h, SOL 1h); MINAUSDT/1h y NMRUSDT/1h conservados como INCOMPLETE (afectan solo al censo externo al replay, no a operaciones evaluadas).
+- Suite completa: 1260 tests OK (2 skipped). Barrera de aislamiento: hashes_equal=True, file_writes=0, datos sin cambios.
+- Parámetros registrados vs inferidos documentados en package_manifest.json.
+- Pendiente: incorporar manifiestos temp/opencode a Git para cerrar el vínculo completo detección→operación y verificar los 2 tail-edge pendientes.

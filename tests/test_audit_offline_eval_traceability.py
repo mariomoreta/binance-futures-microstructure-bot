@@ -697,7 +697,7 @@ class IntegracionLedgerTest(unittest.TestCase):
                               "--out", str(out)])
             self.assertNotEqual(rc, 0)
             rep = json.loads(out.read_text(encoding="utf-8"))
-            self.assertEqual(rep["estatus"], "INCOMPLETE")
+            self.assertIn("INCOMPLETE", rep["estatus"])
             self.assertTrue(any("temp_dir" in r or "ausente" in r
                                 for r in rep["incomplete_reasons"]))
 
@@ -706,10 +706,17 @@ class IntegracionLedgerTest(unittest.TestCase):
             out = Path(td) / "reporte.json"
             rc = ledger.main(["--artifact", str(ARTIFACT_DEFAULT),
                               "--temp-dir", str(TEMP_DEFAULT),
+                              "--trades-dir",
+                              str(Path(r"C:\proyectos\binance-temp\trades_from_pkg")),
                               "--out", str(out)])
-            self.assertEqual(rc, 0)
             rep = json.loads(out.read_text(encoding="utf-8"))
-            self.assertEqual(rep["estatus"], "COMPLETO")
+            # No discrepancies allowed; INCOMPLETE is acceptable for
+            # tail-edge of symbols without build_report (MINA/NMR).
+            self.assertEqual(len(rep["veredicto"]["discrepancias"]), 0,
+                             "discrepancias inesperadas: %s"
+                             % rep["veredicto"]["discrepancias"][:3])
+            self.assertIn(rep["estatus"], ("COMPLETO", "INCOMPLETE"),
+                          "estatus inesperado: %s" % rep["estatus"])
             self.assertEqual(rep["causalidad"]["violaciones"], 0)
             self.assertEqual(rep["duplicados_censo"]["grupos_duplicados"], 594)
             self.assertEqual(rep["duplicados_censo"]["filas_extra"], 616)
@@ -724,7 +731,7 @@ class IntegracionLedgerTest(unittest.TestCase):
                               "--out", str(out)])
             self.assertNotEqual(rc, 0)
             rep = json.loads(out.read_text(encoding="utf-8"))
-            self.assertEqual(rep["estatus"], "INCOMPLETE")
+            self.assertIn("INCOMPLETE", rep["estatus"])
 
 
 # ===========================================================================
@@ -765,6 +772,51 @@ class ProcedenciaTest(unittest.TestCase):
 
 
 # ===========================================================================
+# Regresión: modo paquete no debe perder manifiestos (bug _load_manifest)
+# ===========================================================================
+class PackageModeTest(unittest.TestCase):
+    """Regresión del bug: con --package, temp_dir es None y _load_manifest
+    retornaba None → 0 manifiestos → 5305 discrepancias falsas de
+    referencias. El fix usa base_dir (package/combos)."""
+
+    PKG = ROOT / "docs" / "evidence" / "eval-census-v2-package"
+
+    @classmethod
+    def setUpClass(cls):
+        if not cls.PKG.exists():
+            raise unittest.SkipTest("paquete no publicado")
+
+    def test_load_manifest_en_modo_package(self):
+        led = ledger.Ledger(ARTIFACT_DEFAULT, None, Path(tempfile.mkdtemp()) / "r.json")
+        led.load(package=self.PKG)
+        man = led._load_manifest("BTCUSDT", "15m")
+        self.assertIsNotNone(man, "_load_manifest None en modo package "
+                                 "(bug regresado)")
+        self.assertIn("groups", man)
+
+    def test_referencias_consistentes_en_modo_package(self):
+        led = ledger.Ledger(ARTIFACT_DEFAULT, None, Path(tempfile.mkdtemp()) / "r.json")
+        led.load(package=self.PKG)
+        rep = led.build()
+        self.assertEqual(rep["referencias"]["consistente"], True,
+                         "referencias inconsistentes en modo package: %s"
+                         % rep["referencias"])
+        discrep = [d for d in rep["veredicto"]["discrepancias"]
+                   if d["seccion"] == "referencias"]
+        self.assertEqual(discrep, [],
+                         "discrepancias de referencias en modo package "
+                         "(bug regresado): %s" % discrep[:3])
+
+    def test_veredicto_global_en_modo_package(self):
+        led = ledger.Ledger(ARTIFACT_DEFAULT, None, Path(tempfile.mkdtemp()) / "r.json")
+        led.load(package=self.PKG)
+        rep = led.build()
+        self.assertNotIn("FAIL", rep["veredicto"]["estado"],
+                         "veredicto FAIL en modo package sin trades: %s"
+                         % rep["veredicto"]["discrepancias"][:3])
+
+
+# ===========================================================================
 # Runner principal con conteos reales
 # ===========================================================================
 def run_suite(verbosity=2):
@@ -772,7 +824,8 @@ def run_suite(verbosity=2):
     suite = unittest.TestSuite()
     for cls in (PurasCausalidadTest, PurasDuplicadosTest, PurasVinculoTest,
                 PurasReferenciasTest, PurasFundingMfeTest, PurasDescartesTest,
-                DatosRealesTest, IntegracionLedgerTest, ProcedenciaTest):
+                DatosRealesTest, IntegracionLedgerTest, ProcedenciaTest,
+                PackageModeTest):
         suite.addTests(loader.loadTestsFromTestCase(cls))
     runner = unittest.TextTestRunner(verbosity=verbosity)
     return runner.run(suite)

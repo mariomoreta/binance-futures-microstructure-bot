@@ -1,0 +1,182 @@
+{
+ "paquete": "EVAL-CENSUS-V2 evidence package",
+ "generado_por": "scripts/build_eval_package.py",
+ "raiz_repo": "docs/evidence/eval-census-v2-package",
+ "archivos": {
+  "combos/eval15_btc/events_BTCUSDT_15m.json": {
+   "bytes": 639120,
+   "sha256": "3e28a186cb254e1ad9906132c49e5c6c13f4ef828d804fad1543746e98fdc267",
+   "purga": {
+    "n_in": 3728,
+    "n_dev": 1659,
+    "n_oos": 2065,
+    "n_purged": 4
+   }
+  },
+  "combos/eval15_btc/manifest_BTCUSDT_15m.json": {
+   "bytes": 248100,
+   "sha256": "d12862acf37db76cc3e9f6347d5df17e05291470adb3d187ae7e703ba68ddcf7"
+  },
+  "combos/eval15_btc/selection_BTCUSDT_15m.json": {
+   "bytes": 239,
+   "sha256": "4a8420efd6506e2d0d3611e4b3b9204681831b37ca685d46bb62f00cffbd7538"
+  },
+  "combos/eval15_btc/candles_BTCUSDT_15m.json": {
+   "bytes": 443366,
+   "sha256": "3ad1fcebc50eb23fe20dcba3cd3deb3bf471113fe97d93010f94dec3a02a92f2"
+  },
+  "combos/eval15_btc/build_report.json": {
+   "bytes": 416,
+   "sha256": "8af66735d51eac6446f393de7f888f2a95c4ae17b40dc401884fcbc37cff17c7"
+  },
+  "funding/funding_BTCUSDT.json": {
+   "bytes": 14143,
+   "sha256": "c33442ecb4bd239880c1650282ed5ab0596a7f2da9f2fb11754047162f08fe60"
+  },
+  "combos/eval15_ethsol/events_ETHUSDT_15m.json": {
+   "bytes": 649018,
+   "sha256": "01a094be598c13eecf6b18048def711aa5f29cb0c4ab441e21b33892f8e785e6",
+   "purga": {
+    "n_in": 3792,
+    "n_dev": 1696,
+    "n_oos": 2090,
+    "n_purged": 6
+   }
+  },
+  "combos/eval15_ethsol/manifest_ETHUSDT_15m.json": {
+   "bytes": 251402,
+   "sha256": "9e9131434f5d77d26f86d8cb88e6498b9081f9db96f82f441f068cbf21a14b00"
+  },
+  "combos/eval15_ethsol/selection_ETHUSDT_15m.json": {
+   "bytes": 239,
+   "sha256": "a10733159c3713d2c9f4066adb7c6c37e4f9b8410aa1eb6baf1dc3051b61851b"
+  },
+  "combos/eval15_ethsol/candles_ETHUSDT_15m.json": {
+   "bytes": 441555,
+   "sha256": "eaba6d60d2bc95cf328271202b2146341891967474604d96e28201bacb64f3e6"
+  },
+  "combos/eval15_ethsol/build_report.json": {
+   "bytes": 433,
+   "sha256": "4e35618126dbfcbaa7d0a8bca9f3407cc14f1632c4d4c4ac830f5d11377d8727"
+  },
+  "funding/funding_ETHUSDT.json": {
+   "bytes": 14055,
+   "sha256": "de3557c56ab37453a9abb1ab6bb612c7a98918f48945241ccf858a30f0b49854"
+  },
+  "combos/eval15_ethsol/events_SOLUSDT_15m.json": {
+   "bytes": 691371,
+   "sha256": "eb7d975a7e5ce737ee4b574fd7d1b9401f34a414723df4b626302c3b2e56090d",
+   "purga": {
+    "n_in": 4064,
+    "n_dev": 1830,
+    "n_oos": 2230,
+    "n_purged": 4
+   }
+  },
+  "combos/eval15_ethsol/manifest_SOLUSDT_15m.json": {
+   "bytes": 265830,
+   "sha256": "2b1a5685b5c01aaa538f1a4e8c1dc140fd1341eb2fe57ef8021dc683be036021"
+  },
+  "combos/eval15_ethsol/selection_SOLUSDT_15m.json": {
+   "bytes": 239,
+   "sha256": "45e436acfc24c4294ed893319dbf77d295abbeed3b6ee143b916b86275baec4c"
+  },
+  "combos/eval15_ethsol/candles_SOLUSDT_15m.json": {
+   "bytes": 429508,
+   "sha256": "2440f9427933bfbf2478efe8fb6c6e168d06f7d050e1e0c4c99e0c96ae8ae74c"
+  },
+  "funding/funding_SOLUSDT.json": {
+   "bytes": 13969,
+   "sha256": "ad3f8eedb65b7cab21bf2d9dd43d4e012a230670190e7ba2e1b9e9d7942b83cd"
+  },
+  "combos/eval1h_trio/events_BTCUSDT_1h.json": {
+   "bytes": 150375,
+   "sha256": "1091e9cb7f1e05b61af772d6bb121da01fce02736c61caf780008d8482956e67",
+   "purga": {
+    "n_in": 880,
+    "n_dev": 418,
+    "n_oos": 459,
+    "n_purged": 3
+   }
+  },
+  "combos/eval1h_trio/manifest_BTCUSDT_1h.json": {
+   "bytes": 94893,
+   "sha256": "f14db550e9b011d357d32530af8e4e06f4c4c48a436e12a461a19854326950b8"
+  },
+  "combos/eval1h_trio/selection_BTCUSDT_1h.json": {
+   "bytes": 237,
+   "sha256": "42eb17e80861aaa6d20058fa7156af90cacb274e70420a4ccf55e48e2df405ac"
+  },
+  "combos/eval1h_trio/candles_BTCUSDT_1h.json": {
+   "bytes": 110726,
+   "sha256": "30cab63a9e2880e61da200cd17a8791f68cf0d9975c003fddc35d723489bbb8d"
+  },
+  "combos/eval1h_trio/build_report.json": {
+   "bytes": 438,
+   "sha256": "12b60da7fc4ea4b80f87042cde38526577972595f6116180bfd1188af7131cce"
+  },
+  "combos/eval1h_trio/events_ETHUSDT_1h.json": {
+   "bytes": 150629,
+   "sha256": "a8521938fd0587d529b6dbe39b1aef8c13e4ecc477c06b39ad5c91ee20f4e064",
+   "purga": {
+    "n_in": 886,
+    "n_dev": 399,
+    "n_oos": 480,
+    "n_purged": 7
+   }
+  },
+  "combos/eval1h_trio/manifest_ETHUSDT_1h.json": {
+   "bytes": 94248,
+   "sha256": "ffcc34bdae14fe74df46830c9473b5a4125d7bbd04730a1f74a870f3012353f9"
+  },
+  "combos/eval1h_trio/selection_ETHUSDT_1h.json": {
+   "bytes": 237,
+   "sha256": "3fa45b4c3ecb29113423c9099a99ff0e9a869a3cbb6e9dbd57f6baf36c84e9ee"
+  },
+  "combos/eval1h_trio/candles_ETHUSDT_1h.json": {
+   "bytes": 110266,
+   "sha256": "9976115b20e0ca23c6fd455616efd0616fe9bd24b4f363f571b7355ed6c53311"
+  },
+  "combos/eval1h_trio/events_SOLUSDT_1h.json": {
+   "bytes": 166543,
+   "sha256": "4847cc4c368a222fc38bbfdb97b20b567a1d57df0ed0bd784f6f04facd1bbf45",
+   "purga": {
+    "n_in": 984,
+    "n_dev": 436,
+    "n_oos": 542,
+    "n_purged": 6
+   }
+  },
+  "combos/eval1h_trio/manifest_SOLUSDT_1h.json": {
+   "bytes": 99950,
+   "sha256": "da0a5eb1f7e91f9d49140262d5ba9d09ec3e43f7f84ca687f9374c364abc96f9"
+  },
+  "combos/eval1h_trio/selection_SOLUSDT_1h.json": {
+   "bytes": 237,
+   "sha256": "66238ec9d88bfe4caadf1887083080707634c9bdb30a1e0885dbd4a4432e2ee7"
+  },
+  "combos/eval1h_trio/candles_SOLUSDT_1h.json": {
+   "bytes": 107286,
+   "sha256": "0f1faaee0279d5e443b436c9847d0e77e11663709d5f4eab74adefeb13d04619"
+  },
+  "detections/census_btc15_detections.jsonl": {
+   "bytes": 1320281,
+   "sha256": "92ee95d30997f882e3bba9fa2654d9962ac687d12b9da94f17561d07d155ce6b"
+  },
+  "detections/census_ethsol15_detections.jsonl": {
+   "bytes": 2726917,
+   "sha256": "b49613f34280e8947b95e13ed8be0475a4ff39329e24376f43921aa6e33c7255"
+  },
+  "detections/census_1h_detections.jsonl": {
+   "bytes": 2240254,
+   "sha256": "854b693ac077117c114ea405cb11bb0cafbaf02b70c34bfd1bf225aa8caf9d30"
+  }
+ },
+ "omitidos": [],
+ "comandos": {
+  "verificar_paquete": "python scripts/verify_eval_package.py --package docs/evidence/eval-census-v2-package",
+  "regenerar_ledger": "python scripts/audit_offline_eval_ledger.py --package docs/evidence/eval-census-v2-package --out docs/evidence/audit_offline_eval_ledger.json",
+  "reconstruir_trazas": "python scripts/reconstruct_replay_traces.py --package docs/evidence/eval-census-v2-package --out-dir <dir-temp>"
+ },
+ "depende_de": "inputs p\u00fablicos de Binance (klines, funding) y del censo reconstruido; NO depende de rutas de usuario ni de DBs can\u00f3nicas locales."
+}

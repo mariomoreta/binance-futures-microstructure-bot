@@ -1,0 +1,21 @@
+{
+ "interval": "15m",
+ "symbols": [
+  "BTCUSDT"
+ ],
+ "formation_method": "MAP-CANDIDATE-v2",
+ "confirm_window_bars": 3,
+ "placebo": "TIME-PLACEBO-v1 (seed 42)",
+ "counts": {
+  "h1": 884,
+  "h3": 841,
+  "h2ex": 103,
+  "h2rev": 36,
+  "placebo": 1864,
+  "excluded_gap": 61,
+  "excluded_no_entry": 1,
+  "excluded_h2_no_confirmation": 22,
+  "excluded_h2_reclaim": 49,
+  "excluded_other_symbol": 0
+ }
+}

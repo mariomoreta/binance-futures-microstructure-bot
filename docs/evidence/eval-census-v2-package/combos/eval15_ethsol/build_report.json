@@ -1,0 +1,22 @@
+{
+ "interval": "15m",
+ "symbols": [
+  "ETHUSDT",
+  "SOLUSDT"
+ ],
+ "formation_method": "MAP-CANDIDATE-v2",
+ "confirm_window_bars": 3,
+ "placebo": "TIME-PLACEBO-v1 (seed 42)",
+ "counts": {
+  "h1": 1955,
+  "h3": 1823,
+  "h2ex": 109,
+  "h2rev": 41,
+  "placebo": 3928,
+  "excluded_gap": 124,
+  "excluded_no_entry": 1,
+  "excluded_h2_no_confirmation": 21,
+  "excluded_h2_reclaim": 50,
+  "excluded_other_symbol": 0
+ }
+}
