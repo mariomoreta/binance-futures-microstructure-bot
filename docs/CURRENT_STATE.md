@@ -2252,3 +2252,61 @@ Corrige y extiende el addendum anterior de forma explícita:
 - Suite completa: 1260 tests OK (2 skipped). Barrera de aislamiento: hashes_equal=True, file_writes=0, datos sin cambios.
 - Parámetros registrados vs inferidos documentados en package_manifest.json.
 - Pendiente: incorporar manifiestos temp/opencode a Git para cerrar el vínculo completo detección→operación y verificar los 2 tail-edge pendientes.
+
+
+## Corrección de defectos restantes de la auditoría — 2026-10-19 (commit 2677b2f, rama review/o1-funcional-v2-observacion)
+
+Corrige los defectos pendientes de la auditoría EVAL-CENSUS-V2 sin corridas Binance, sin forward, sin paper, sin órdenes, sin cambios de estrategia/mapping/costes/umbrales, sin modificar DBs canónicas, dashboard ni servicios. Temporales fuera de OneDrive. Suite completa 1274 tests OK (2 skipped). Barrera de aislamiento: hashes_equal=True, file_writes=0.
+
+### 1. Tiempos obligatorios (vincular_trades_eventos)
+- Campos requeridos validados: entrada efectiva finita (entry_ms), disponibilidad efectiva (available_at finita), H2: confirmación y cierre conocido de su vela (close_time_ms finita), salida/estado según contrato realizada o abierta.
+- Ausencia o valor inválido → INCOMPLETE, nunca aceptación implícita (antes entry_ms ausente saltaba la comparación causal y close_time_ms ausente la evitaba en H2).
+- Entrada anterior a disponibilidad → FAIL.
+- No se deriva disponibilidad igualándola a la entrada.
+- Respaldo verificado con símbolo, resolución, familia, dirección e identidad compatibles; clave de respaldo ahora incluye source_interval para no cruzar detecciones de resoluciones distintas que compartan símbolo y timestamp.
+- Devuelve discrepancias (FAIL) e incompletos (INCOMPLETE) por separado.
+
+### 2. Reconstrucción fail-closed (reconstruct_replay_traces.py)
+- Una celda fallida no genera trazas consumibles como "verificada": solo las operaciones de celdas equivalentes van a trades_*.json; las de celdas falladas van a diagnostico_celdas_fallidas.json, etiquetado explícito FALLIDA_NO_CONSUMIBLE, que el ledger rechaza.
+- reconstruction_manifest.json registra veredicto (COMPLETO si todas las celdas, else FAIL), cobertura, celdas_fail, trades_sha256 y inputs_sha256.
+- Antes de escribir, limpia trazas/manifiestos/diagnóstico de ejecuciones previas en out-dir (no deja archivos antiguos que parezcan de la nueva reconstrucción).
+- El ledger valida el manifiesto de trazas (veredicto COMPLETO, cobertura de los 6 combos, hashes de trades, sin faltantes/extra/obsoletos, cada archivo consumible) ANTES de consumirlas; un manifiesto FAIL, hash mismatch, archivo faltante, extra o no consumible → rechazo (FAIL/INCOMPLETE, exit ≠ 0).
+
+### 3. Modo temp
+- events_pre definido: n_in_pre_purge documentado (conteo pre-purge en modo --temp-dir).
+- --package: inputs ya post-purge, sin segunda purga (segunda_purga=false).
+- Exactamente uno de --package / --temp-dir obligatorio; ausencia o ambos → error de uso (exit 2).
+- Equivalencia demostrada entre ambos modos sobre inputs correspondientes (orden, identidades, purga, resultados idénticos).
+
+### 4. Pruebas de integración obligatorias (cadena reconstructor → archivos → ledger)
+Nuevos tests en tests/test_cli_fixtures.py y tests/test_reconstruct_replay_traces.py. Para cada caso, estado y exit esperados vs observados; los defectos producen FAIL/INCOMPLETE y exit ≠ 0; el control válido pasa dentro de su alcance:
+- entry_ms ausente → INCOMPLETE, exit ≠ 0.
+- entry_ms no finito → INCOMPLETE, exit ≠ 0.
+- H2 con close_time_ms ausente → INCOMPLETE, exit ≠ 0.
+- Entrada anterior a disponibilidad → FAIL, exit ≠ 0.
+- Respaldo de resolución incompatible → INCOMPLETE, exit ≠ 0.
+- Celda con resultado económico alterado → FAIL, exit ≠ 0.
+- reconstruction_manifest con FAIL → ledger rechaza trazas → FAIL, exit ≠ 0.
+- Archivo de trades alterado después de reconstruir (hash mismatch) → FAIL, exit ≠ 0.
+- Archivo de trades obsoleto de ejecución previa (extra) → FAIL, exit ≠ 0.
+- Archivo esperado ausente → INCOMPLETE, exit ≠ 0.
+- Control íntegro → PASS, exit 0.
+- Ambos modos de reconstrucción (package y temp-dir) equivalentes → exit 0.
+
+### 5. Checkout limpio y alcances (desde commit 2677b2f)
+a. Hashes del paquete publicado docs/evidence/eval-census-v2-package/: 33/33 archivos OK (PASS), sha256 vs package_manifest.json coinciden.
+b. Regeneración de trades (--package): exit 0, veredicto COMPLETO, 168 celdas ok / 0 fail, 6 trades_*.json.
+c. Ledger con esas trazas: exit 1 (INCOMPLETE, no PASS), veredicto global INCOMPLETE, 0 discrepancias, trazabilidad_operaciones COMPLETO, n_trades_revisados=5255.
+d. Comandos, estados, exits y hashes registrados en C:\proyectos\binance-temp\audit_checkout_20261019\verificacion_checkout.txt (fuera del repo).
+
+### Veredictos separados (no rebajados)
+- Replay evaluado BTC/ETH/SOL: PASS dentro de su alcance explícito (6 celdas-combo, 168 celdas, equivalencia por celda, 5255 trades escala 1x reconciliadas, trazabilidad COMPLETO, 0 discrepancias).
+- Censo extendido MINA/NMR y otros símbolos: INCOMPLETE (tail-edge de MINAUSDT/1h y NMRUSDT/1h no verificable: falta build_report para esos símbolos; no es un defecto del replay, es un gap de evidencia del censo externo al replay).
+- Veredicto global del ledger: INCOMPLETE (0 discrepancias, 2 incompletos declarados), exit 1. No se declara "auditoría completa" mientras esos 2 vínculos sigan abiertos.
+
+### Residual MINA/NMR (preciso)
+- Falta exactamente: build_report.json que cubra MINAUSDT/1h y NMRUSDT/1h (interval 1h, counts.excluded_no_entry == 1 para cada uno) en el paquete de census extendido.
+- Lo que permitiría verificarlo: el build_report del builder para esos símbolos/resolución, para que clasificar_tail_edge confirme excluded_no_entry == n_tail_edge (1 == 1) y los marque como exclusiones esperadas.
+- Las detecciones de MINA/NMR ya están en census_1h_detections.jsonl del paquete; no se trata de "manifestos de temp" genéricos, falta el build_report que las ampare.
+- Impacto: veredicto global INCOMPLETE, no PASS; replay BTC/ETH/SOL reportado por separado como PASS.
+

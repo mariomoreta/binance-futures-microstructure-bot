@@ -2006,4 +2006,23 @@ Corrige y extiende el addendum anterior de forma explícita, sin reescribir hist
 11. Siguiente acción concreta: incorporar manifiestos temp/opencode a Git (p. ej. docs/evidence/manifests/) para cerrar el vínculo completo detección→operación y verificar los 2 tail-edge pendientes.
 
 
+## 2026-10-19 — Corrección de defectos restantes de la auditoría EVAL-CENSUS-V2 (sobre 2677b2f; sin corridas, sin push aún)
+
+Se corrigieron los defectos pendientes de la auditoría; el ledger y el reconstructor ahora garantizan el contrato fail-closed:
+
+- Reconstrucción fail-closed (scripts/reconstruct_replay_traces.py): una celda fallida NO publica trazas como "verificada". Solo las operaciones de celdas equivalentes se escriben en trades_*.json (consumibles). Las operaciones de celdas falladas van a diagnostico_celdas_fallidas.json, etiquetado explícito FALLIDA_NO_CONSUMIBLE, y el ledger las rechaza. El reconstructor limpia trazas/manifiestos/diagnóstico de ejecuciones previas en out-dir antes de escribir, de modo que no quedan archivos antiguos que parezcan pertenecer a la nueva reconstrucción. El manifiesto reconstruction_manifest.json registra veredicto (COMPLETO solo si todas las celdas, else FAIL), cobertura, celdas_fail y trades_sha256. Se corrigió la afirmación previa de que "ninguna traza fallida se publica": el código anterior SÍ escribía "equivalencia": "verificada" y conservaba los trades de celdas falladas; eso ya no ocurre.
+
+- Modo temp: events_pre definido (n_in_pre_purge documentado); --package usa inputs ya post-purge sin segunda purga; exactamente uno de --package/--temp-dir es obligatorio (ambos o ninguno → error de uso, exit ≠ 0).
+
+- Ledger valida el manifiesto de trazas (veredicto COMPLETO, cobertura de los 6 combos, hashes de trades, sin faltantes/extra/obsoletos, cada archivo consumible) ANTES de consumir las trazas; un manifiesto FAIL, hash mismatch, archivo faltante/extra o no consumible → rechazo (FAIL/INCOMPLETE, exit ≠ 0).
+
+- vincular_trades_eventos: entry_ms/available_at/H2 close_time_ms finitas requeridas; ausencia o valor inválido → INCOMPLETE (nunca aceptación implícita); entrada antes de disponibilidad → FAIL; respaldo por símbolo, resolución, familia, dirección e identidad sin cruzar resoluciones.
+
+### Distinción: publicación vs reproducción vs aceptación
+- Publicación: el paquete docs/evidence/eval-census-v2-package/ (33 archivos, package_manifest.json con SHA256) contiene manifiestos, events post-purge, selecciones, build_reports, funding, detections y candles. Los trades reconstruidos NO se publican en el paquete.
+- Reproducción: los trades se regeneran determinísticamente con reconstruct_replay_traces.py desde el paquete (--package) o desde inputs pre-purge (--temp-dir); no es la corrida original ni una validación financiera.
+- Aceptación: solo la otorga el ledger (audit_offline_eval_ledger.py) con veredicto PASS, requiriendo adquisición completa y 0 discrepancias; los traces rechazados (manifiesto FAIL, hashes que no coinciden, faltantes, extra, obsoletos o no consumibles) nunca son aceptados.
+
+Estado verificado: veredicto global del ledger INCOMPLETE (0 discrepancias, 2 incompletos: MINAUSDT/1h y NMRUSDT/1h tail-edge sin build_report), exit 1. El replay BTC/ETH/SOL está verificado (COMPLETO, 0 discrepancias, trazabilidad COMPLETO, 5255 trades) y se reporta por separado. El residual MINA/NMR es un gap de evidencia del censo externo al replay, no un defecto del replay; se cierra publicando el build_report de esos símbolos.
+
 

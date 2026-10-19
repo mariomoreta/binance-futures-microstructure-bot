@@ -1431,3 +1431,20 @@ backfill, servicios, sesiones ni gates cambiados. Reconciliar despues de la
 entrega del agente sin sobrescribir sus archivos concurrentes.
 (Integracion 2026-10-17: portado selectivo desde
 review/extreme-movers-objective-20261016 hasta 7a4e872.)
+
+## Corrección de defectos restantes de la auditoría EVAL-CENSUS-V2 — 2026-10-19 (completada, sin push aún)
+
+Se corrigieron los defectos pendientes de la auditoría sobre el commit candidato 2677b2f (rama review/o1-funcional-v2-observacion), sin corridas Binance, sin forward/paper/órdenes, sin cambios de estrategia/mapping/costes/umbrales y sin tocar DBs canónicas, dashboard ni servicios.
+
+- Tiempos obligatorios en vincular_trades_eventos: entry_ms/available_at/H2 close_time_ms finitas requeridas; ausencia → INCOMPLETE (nunca aceptación implícita); entrada antes de disponibilidad → FAIL; respaldo por símbolo/resolución/familia/dirección/identidad sin cruzar resoluciones.
+- Reconstrucción fail-closed (reconstruct_replay_traces.py): celda fallida no publica trazas como "verificada"; trazas fallidas van a diagnostico_celdas_fallidas.json (FALLIDA_NO_CONSUMIBLE, rechazado por el ledger); manifiesto con veredicto/cobertura/hashes validado por el ledger antes de consumir; no quedan archivos antiguos de ejecuciones previas.
+- Modo temp: events_pre definido (n_in_pre_purge); --package sin segunda purga; exactamente uno de --package/--temp-dir (ambos/ninguno → error); equivalencia entre modos verificada.
+- Pruebas de integración obligatorias (reconstructor → archivos → ledger): 17 casos + control; cada defecto produce FAIL/INCOMPLETE con exit ≠ 0; control PASS exit 0.
+- Checkout limpio verificado: hashes paquete 33/33 OK; trades regeneradas (exit 0, COMPLETO, 168 celdas, 5255 trades); ledger (exit 1, INCOMPLETE, 0 discrepancias, trazabilidad COMPLETO). Comandos/estados/exits/hashes en C:\proyectos\binance-temp\audit_checkout_20261019\verificacion_checkout.txt.
+- Veredictos separados: replay BTC/ETH/SOL = PASS (alcance explícito); censo extendido MINA/NMR = INCOMPLETE (tail-edge sin build_report). Global INCOMPLETE no rebajado.
+- Residual: falta build_report para MINAUSDT/1h y NMRUSDT/1h (gap de evidencia del censo externo al replay, no defecto del replay).
+
+Suite completa: 1274 tests OK (2 skipped). Barrera de aislamiento: hashes_equal=True, file_writes=0.
+
+Pendiente (siguiente acción): incorporar manifiestos temp/opencode a Git y/o publicar el build_report de MINAUSDT/1h y NMRUSDT/1h para cerrar los 2 tail-edge y pasar el veredicto global a PASS; luego commit selectivo + push + entrega con SHA.
+

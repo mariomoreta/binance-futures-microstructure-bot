@@ -1,21 +1,31 @@
-"""Tests CLI con fixtures completos (EVAL-CENSUS-V2).
+"""Tests CLI de integración EVAL-CENSUS-V2 — cadena reconstructor → archivos → ledger.
 
-Ejecuta el CLI (ledger.main) con un fixture mínimo autocontenido (6
-combos) y verifica reporte + exit. Cada alteración produce FAIL o
-INCOMPLETE con exit no exitoso; el control íntegro produce PASS y
-exit 0.
+Valida que el ledger consume solo trazas cuya reconstruction_manifest.json
+tenga veredicto COMPLETO, cobertura completa y hashes que coincidan, y que
+cualquier traza fallida, ausente, extra, obsoleta o alterada sea rechazada.
+
+Cada alteración controlada debe producir FAIL o INCOMPLETE con exit != 0;
+el control íntegro produce PASS y exit 0.
 
 Casos:
-  1. Referencia inexistente (celda en artefacto sin manifiesto)
-  2. E_net alterado manteniendo los conteos
-  3. Campo obligatorio ausente en manifiesto
-  4. Escenario inesperado (escala 4.0)
-  5. Duplicación indebida (event_id duplicado en manifiesto)
-  6. Entrada efectiva anterior a disponibilidad
-  7. H2 entrando antes de conocerse su confirmación
-  8. Operación sin candidato (event_id no en manifiesto)
-  9. Input faltante (funding ausente)
- 10. Control íntegro válido
+  control. Control íntegro válido → PASS, exit 0
+  1. Referencia inexistente (celda en artefacto sin manifiesto) → FAIL
+  2. E_net alterado manteniendo los conteos → FAIL
+  3. Campo obligatorio ausente en manifiesto → FAIL
+  4. Escenario inesperado (escala 4.0) → FAIL
+  5. Duplicación indebida (event_id duplicado en manifiesto) → FAIL
+  6. Entrada efectiva anterior a disponibilidad → FAIL
+  7. H2 entrando antes de conocerse su confirmación → FAIL
+  8. Operación sin candidato (event_id no en manifiesto) → FAIL
+  9. Input faltante (funding ausente) → INCOMPLETE
+ 10. entry_ms ausente → INCOMPLETE (nunca aceptación implícita)
+ 11. entry_ms no finito → INCOMPLETE
+ 12. H2 con close_time_ms ausente → INCOMPLETE
+ 13. Respaldo de resolución incompatible → INCOMPLETE
+ 14. reconstruction_manifest con FAIL → ledger rechaza → INCOMPLETE
+ 15. Archivo de trades alterado después de reconstruir (hash mismatch) → FAIL
+ 16. Archivo de trades obsoleto de ejecución previa (extra) → FAIL
+ 17. Archivo esperado ausente → INCOMPLETE
 """
 from __future__ import annotations
 
@@ -59,15 +69,20 @@ def _seg(n, en, extra=None):
 
 
 def _trade(eid, grp, et, entry, en, sym="BTCUSDT", direction="LONG",
-          fam="H1", ver="H1-v1"):
-    return {"event_id": eid, "group": grp, "segmento": "dev",
-            "escala": 1.0, "res": "15m", "symbol": sym,
+           fam="H1", ver="H1-v1", res="15m", segmento="dev", escala=1.0,
+           estado="realizada", exit_executed=True):
+    return {"event_id": eid, "group": grp, "segmento": segmento,
+            "escala": escala, "res": res, "symbol": sym,
             "direction": direction, "family": fam, "rules_version": ver,
             "event_time_ms": et, "entry_ms": entry, "exit_ms": entry + 1000,
             "entry_px": 100.0, "exit_px": 99.0, "exit_reason": "horizon",
-            "open_at_end": False, "exit_executed": True,
-            "estado": "realizada", "net_pnl": en, "gross_pnl": -0.5,
+            "open_at_end": False, "exit_executed": exit_executed,
+            "estado": estado, "net_pnl": en, "gross_pnl": -0.5,
             "fees": 0.5, "funding": 0.0, "mfe_pct": 0.5, "mae_pct": 0.2}
+
+
+def _manifest_seg(n, en):
+    return _seg(n, en)
 
 
 class CliFixturesTest(unittest.TestCase):
@@ -149,18 +164,18 @@ class CliFixturesTest(unittest.TestCase):
                            "event_ids": [
                                "%s:1000:LONG:H1:H1-v1:0" % sym,
                                "%s:1000:LONG:H1:H1-v1:1" % sym],
-                           "dev": {"1.0": _seg(2, -1.0)}},
+                           "dev": {"1.0": _manifest_seg(2, -1.0)}},
                        "correction-exhaustion": {
                            "family": "H2", "rules_version": "H2-v1",
                            "event_ids": ["%s:2000:SHORT:H2:H2-v1:2" % sym],
-                           "dev": {"1.0": _seg(1, -2.0)}},
+                           "dev": {"1.0": _manifest_seg(1, -2.0)}},
                        "baseline": {
                            "family": "H1", "rules_version": "H1-v1",
                            "event_ids": [
                                "%s:5000:LONG:H1:H1-v1:3" % sym,
                                "%s:5000:SHORT:H1:H1-v1:4" % sym,
                                "%s:5000:LONG:H1:H1-v1:5" % sym],
-                           "dev": {"1.0": _seg(3, -1.0)}}}}
+                           "dev": {"1.0": _manifest_seg(3, -1.0)}}}}
             (base / ("manifest_%s_%s.json" % (sym, res))).write_text(
                 json.dumps(man), encoding="utf-8")
             (base / ("selection_%s_%s.json" % (sym, res))).write_text(
@@ -225,25 +240,95 @@ class CliFixturesTest(unittest.TestCase):
             encoding="utf-8")
         self.trades_dir = t / "trades"
         self.trades_dir.mkdir()
+        self._escribir_traces_iniciales()
+
+    def _trades_por_sym_res(self, sym, res):
+        return json.loads((self.trades_dir
+                           / ("trades_%s_%s.json" % (sym, res))).read_text())
+
+    def _escribir_traces_iniciales(self):
+        """Escribe trades_*.json (equivalencia verificada/consumible) y
+        reconstruye reconstruction_manifest.json con los hashes actuales."""
+        trades_sha = {}
         for d, sym, res in COMBOS:
             trades = [
                 _trade("%s:1000:LONG:H1:H1-v1:0" % sym, "continuation",
-                       1000, 3000, -1.0, sym=sym),
+                       1000, 3000, -1.0, sym=sym, res=res),
                 _trade("%s:1000:LONG:H1:H1-v1:1" % sym, "continuation",
-                       1000, 3000, -1.0, sym=sym),
+                       1000, 3000, -1.0, sym=sym, res=res),
                 _trade("%s:2000:SHORT:H2:H2-v1:2" % sym,
                        "correction-exhaustion", 2000, 3000, -2.0,
-                       sym=sym, direction="SHORT", fam="H2", ver="H2-v1"),
+                       sym=sym, direction="SHORT", fam="H2", ver="H2-v1",
+                       res=res),
                 _trade("%s:5000:LONG:H1:H1-v1:3" % sym, "baseline",
-                       5000, 5000, -1.0, sym=sym),
+                       5000, 5000, -1.0, sym=sym, res=res),
                 _trade("%s:5000:SHORT:H1:H1-v1:4" % sym, "baseline",
-                       5000, 5000, -1.0, sym=sym, direction="SHORT"),
+                       5000, 5000, -1.0, sym=sym, direction="SHORT", res=res),
                 _trade("%s:5000:LONG:H1:H1-v1:5" % sym, "baseline",
-                       5000, 5000, -1.0, sym=sym),
+                       5000, 5000, -1.0, sym=sym, res=res),
             ]
-            (self.trades_dir / ("trades_%s_%s.json" % (sym, res))).write_text(
-                json.dumps({"equivalencia": "fixture", "trades": trades}),
-                encoding="utf-8")
+            tdata = {"equivalencia": "verificada", "etiqueta":
+                     "RECONSTRUCCION_POSTERIOR", "modo": "fixture",
+                     "consumible": True, "celdas_ok": 1, "celdas_fail": 0,
+                     "trades": trades}
+            tp = self.trades_dir / ("trades_%s_%s.json" % (sym, res))
+            tp.write_text(json.dumps(tdata), encoding="utf-8")
+            trades_sha["trades_%s_%s.json" % (sym, res)] = \
+                ledger.sha256_file(tp)
+        self._escribir_manifest_desde_hashes(trades_sha)
+
+    def _escribir_manifest_desde_hashes(self, trades_sha=None,
+                                        veredicto="COMPLETO",
+                                        n_celdas_fail=0):
+        """Escribe (o reescribe) reconstruction_manifest.json a partir de los
+        trades_*.json actuales. Usado tras modificar un trade para mantener
+        el hash del manifiesto consistente (el único fallo debe ser la
+        alteración inyectada, no un desajuste de hash)."""
+        if trades_sha is None:
+            trades_sha = {}
+            for (_, sym, res) in COMBOS:
+                tp = self.trades_dir / ("trades_%s_%s.json" % (sym, res))
+                trades_sha["trades_%s_%s.json" % (sym, res)] = \
+                    ledger.sha256_file(tp)
+        combos_out = []
+        celdas_ok = 0
+        for (_, sym, res) in COMBOS:
+            tp = self.trades_dir / ("trades_%s_%s.json" % (sym, res))
+            consumible = tp.exists() and tp.is_file()
+            if consumible:
+                try:
+                    td = json.loads(tp.read_text(encoding="utf-8"))
+                    consumible = td.get("equivalencia") == "verificada" and td.get("consumible")
+                except (ValueError, OSError):
+                    consumible = False
+            if consumible:
+                celdas_ok += 1
+            combos_out.append({"symbol": sym, "res": res,
+                               "celdas_ok": 1 if consumible else 0,
+                               "celdas_fail": 0 if consumible else 1,
+                               "equivalencia": "verificada" if consumible else "fallida",
+                               "consumible": consumible})
+        man = {
+            "etiqueta": "RECONSTRUCCION_POSTERIOR fixture",
+            "modo": "fixture", "tolerancia": 1e-9,
+            "veredicto": veredicto,
+            "celdas_fail": [], "n_celdas_fail": n_celdas_fail,
+            "cobertura": {
+                "combos": combos_out,
+                "celdas_totales": len(COMBOS), "celdas_ok": celdas_ok,
+                "celdas_fail": n_celdas_fail},
+            "trades_sha256": trades_sha,
+            "inputs_sha256": {},
+            "diagnostico_sha256": None,
+            "parametros": {},
+            "purga": {}}
+        (self.trades_dir / "reconstruction_manifest.json").write_text(
+            json.dumps(man), encoding="utf-8")
+
+    def _remanifiesto(self):
+        """Regenera reconstruction_manifest.json tras modificar trades
+        (sin reescribir los trades)."""
+        self._escribir_manifest_desde_hashes()
 
     def _run_cli(self, art=None, temp=None, trades=None):
         out = self.tmp / "reporte.json"
@@ -263,11 +348,14 @@ class CliFixturesTest(unittest.TestCase):
                                    ).read_text())
         raise KeyError((sym, res))
 
-    def _trades(self, sym="BTCUSDT", res="15m"):
-        return json.loads((self.trades_dir
-                           / ("trades_%s_%s.json" % (sym, res))).read_text())
+    def _guardar_manifiesto(self, sym, res, man):
+        for d, s, r in COMBOS:
+            if s == sym and r == res:
+                (self.tmp / d / ("manifest_%s_%s.json" % (sym, res))
+                 ).write_text(json.dumps(man), encoding="utf-8")
+                return
 
-    # 10. Control íntegro válido
+    # control. Control íntegro válido
     def test_control_integro_pass_exit0(self):
         rc, rep = self._run_cli()
         self.assertEqual(rc, 0, "control debe dar exit 0: %s"
@@ -302,10 +390,7 @@ class CliFixturesTest(unittest.TestCase):
     def test_campo_ausente_manifiesto_fail(self):
         man = self._manifiesto()
         del man["groups"]["continuation"]["dev"]["1.0"]["n_events"]
-        for d, s, r in COMBOS:
-            if s == "BTCUSDT" and r == "15m":
-                (self.tmp / d / "manifest_BTCUSDT_15m.json").write_text(
-                    json.dumps(man))
+        self._guardar_manifiesto("BTCUSDT", "15m", man)
         rc, rep = self._run_cli()
         self.assertNotEqual(rc, 0)
         self.assertIn("FAIL", rep["veredicto"]["estado"])
@@ -316,10 +401,7 @@ class CliFixturesTest(unittest.TestCase):
     def test_escenario_inesperado_fail(self):
         man = self._manifiesto()
         man["groups"]["continuation"]["dev"]["4.0"] = _seg(2, -1.0)
-        for d, s, r in COMBOS:
-            if s == "BTCUSDT" and r == "15m":
-                (self.tmp / d / "manifest_BTCUSDT_15m.json").write_text(
-                    json.dumps(man))
+        self._guardar_manifiesto("BTCUSDT", "15m", man)
         rc, rep = self._run_cli()
         self.assertNotEqual(rc, 0)
         self.assertIn("FAIL", rep["veredicto"]["estado"])
@@ -331,10 +413,7 @@ class CliFixturesTest(unittest.TestCase):
         man = self._manifiesto()
         man["groups"]["continuation"]["event_ids"].append(
             "BTCUSDT:1000:LONG:H1:H1-v1:0")
-        for d, s, r in COMBOS:
-            if s == "BTCUSDT" and r == "15m":
-                (self.tmp / d / "manifest_BTCUSDT_15m.json").write_text(
-                    json.dumps(man))
+        self._guardar_manifiesto("BTCUSDT", "15m", man)
         rc, rep = self._run_cli()
         self.assertNotEqual(rc, 0)
         self.assertIn("FAIL", rep["veredicto"]["estado"])
@@ -343,12 +422,13 @@ class CliFixturesTest(unittest.TestCase):
 
     # 6. Entrada efectiva anterior a disponibilidad
     def test_entry_antes_de_disponibilidad_fail(self):
-        t = self._trades()
+        t = self._trades_por_sym_res("BTCUSDT", "15m")
         for tr in t["trades"]:
             if tr["event_id"] == "BTCUSDT:1000:LONG:H1:H1-v1:0":
                 tr["entry_ms"] = 1500
-        (self.trades_dir / "trades_BTCUSDT_15m.json").write_text(
-            json.dumps(t))
+        self.trades_dir.joinpath("trades_BTCUSDT_15m.json").write_text(
+            json.dumps(t), encoding="utf-8")
+        self._remanifiesto()
         rc, rep = self._run_cli()
         self.assertNotEqual(rc, 0)
         self.assertIn("FAIL", rep["veredicto"]["estado"])
@@ -357,12 +437,13 @@ class CliFixturesTest(unittest.TestCase):
 
     # 7. H2 entrando antes de conocerse su confirmación
     def test_h2_antes_de_confirmacion_fail(self):
-        t = self._trades()
+        t = self._trades_por_sym_res("BTCUSDT", "15m")
         for tr in t["trades"]:
             if tr["event_id"] == "BTCUSDT:2000:SHORT:H2:H2-v1:2":
                 tr["entry_ms"] = 2000
-        (self.trades_dir / "trades_BTCUSDT_15m.json").write_text(
-            json.dumps(t))
+        self.trades_dir.joinpath("trades_BTCUSDT_15m.json").write_text(
+            json.dumps(t), encoding="utf-8")
+        self._remanifiesto()
         rc, rep = self._run_cli()
         self.assertNotEqual(rc, 0)
         self.assertIn("FAIL", rep["veredicto"]["estado"])
@@ -371,11 +452,13 @@ class CliFixturesTest(unittest.TestCase):
 
     # 8. Operación sin candidato
     def test_operacion_sin_candidato_fail(self):
-        t = self._trades()
+        t = self._trades_por_sym_res("BTCUSDT", "15m")
         t["trades"].append(_trade("BTCUSDT:9999:LONG:H1:H1-v9",
-                                  "continuation", 9999, 9999, -1.0))
-        (self.trades_dir / "trades_BTCUSDT_15m.json").write_text(
-            json.dumps(t))
+                                  "continuation", 9999, 9999, -1.0,
+                                  sym="BTCUSDT", res="15m"))
+        self.trades_dir.joinpath("trades_BTCUSDT_15m.json").write_text(
+            json.dumps(t), encoding="utf-8")
+        self._remanifiesto()
         rc, rep = self._run_cli()
         self.assertNotEqual(rc, 0)
         self.assertIn("FAIL", rep["veredicto"]["estado"])
@@ -385,6 +468,110 @@ class CliFixturesTest(unittest.TestCase):
     # 9. Input faltante
     def test_input_faltante_incomplete(self):
         rc, rep = self._run_cli(temp=self.tmp / "vacio_inexistente")
+        self.assertNotEqual(rc, 0)
+        self.assertIn("INCOMPLETE", rep["veredicto"]["estado"])
+
+    # 10. entry_ms ausente → INCOMPLETE
+    def test_entry_ms_ausente_incomplete(self):
+        t = self._trades_por_sym_res("BTCUSDT", "15m")
+        for tr in t["trades"]:
+            if tr["event_id"] == "BTCUSDT:1000:LONG:H1:H1-v1:0":
+                tr["entry_ms"] = None
+        self.trades_dir.joinpath("trades_BTCUSDT_15m.json").write_text(
+            json.dumps(t), encoding="utf-8")
+        self._remanifiesto()
+        rc, rep = self._run_cli()
+        self.assertNotEqual(rc, 0)
+        self.assertIn("INCOMPLETE", rep["veredicto"]["estado"])
+        self.assertTrue(any("entry_ms" in d.get("motivo", "")
+                            for d in rep["veredicto"]["incompleto"]))
+
+    # 11. entry_ms no finito → INCOMPLETE
+    def test_entry_ms_no_finito_incomplete(self):
+        t = self._trades_por_sym_res("BTCUSDT", "15m")
+        for tr in t["trades"]:
+            if tr["event_id"] == "BTCUSDT:1000:LONG:H1:H1-v1:0":
+                tr["entry_ms"] = float("inf")
+        self.trades_dir.joinpath("trades_BTCUSDT_15m.json").write_text(
+            json.dumps(t, default=str), encoding="utf-8")
+        self._remanifiesto()
+        rc, rep = self._run_cli()
+        self.assertNotEqual(rc, 0)
+        self.assertIn("INCOMPLETE", rep["veredicto"]["estado"])
+
+    # 12. H2 con close_time_ms ausente → INCOMPLETE
+    def test_h2_close_time_ms_ausente_incomplete(self):
+        cp = self.tmp / "eval15_btc" / "candles_BTCUSDT_15m.json"
+        bars = json.loads(cp.read_text(encoding="utf-8"))
+        for b in bars:
+            if b["open_time_ms"] == 2000:
+                b["close_time_ms"] = None
+        cp.write_text(json.dumps(bars), encoding="utf-8")
+        rc, rep = self._run_cli()
+        self.assertNotEqual(rc, 0)
+        self.assertIn("INCOMPLETE", rep["veredicto"]["estado"])
+
+    # 13. Respaldo de resolución incompatible → INCOMPLETE
+    def test_respaldo_resolucion_incompatible_incomplete(self):
+        # Añade una detección H1 de 1h con el mismo símbolo/timestamp/dirección
+        # que una operación de 15m, SIN detección de 15m compatible.
+        # El ledger no debe cruzar resoluciones: la operación de 15m se queda
+        # sin respaldo compatible.
+        det = {
+            "formation_time": 1000, "available_at": 2000,
+            "entry_time_same_grid": 3000, "direction": "up",
+            "definition_name": "EXTENDED_GAINER",
+            "original_event_id": "oid-res-1", "formation_gap": False,
+            "reference_price": 100.0, "symbol": "BTCUSDT",
+            "source_interval": "1h", "census_id": "c-res-1"}
+        (self.tmp / "census_1h" / "detections.jsonl").write_text(
+            json.dumps(det) + "\n", encoding="utf-8")
+        rc, rep = self._run_cli()
+        self.assertNotEqual(rc, 0)
+        self.assertIn("INCOMPLETE", rep["veredicto"]["estado"])
+
+    # 14. reconstruction_manifest con FAIL → ledger rechaza → INCOMPLETE
+    def test_manifest_traces_fail_rechazado_incomplete(self):
+        man = json.loads((self.trades_dir / "reconstruction_manifest.json")
+                         .read_text(encoding="utf-8"))
+        man["veredicto"] = "FAIL"
+        man["n_celdas_fail"] = 1
+        man["celdas_fail"] = [{"symbol": "BTCUSDT", "res": "15m",
+                               "motivos": ["sintetico"]}]
+        (self.trades_dir / "reconstruction_manifest.json").write_text(
+            json.dumps(man), encoding="utf-8")
+        rc, rep = self._run_cli()
+        self.assertNotEqual(rc, 0)
+        # Un manifiesto con veredicto FAIL = trazas no equivalentes: FAIL
+        # (demostrable), nunca aceptación implícita.
+        self.assertEqual(rep["veredicto"]["estado"], "FAIL",
+                         "manifest FAIL debe ser rechazado con FAIL: %s"
+                         % rep["veredicto"]["discrepancias"][:3])
+
+    # 15. Archivo de trades alterado después de reconstruir (hash mismatch) → FAIL
+    def test_trades_alterado_despues_hash_fail(self):
+        t = self._trades_por_sym_res("BTCUSDT", "15m")
+        t["trades"][0]["net_pnl"] = 9999.0
+        # Se altera el trade PERO NO se regenera el manifiesto:
+        self.trades_dir.joinpath("trades_BTCUSDT_15m.json").write_text(
+            json.dumps(t), encoding="utf-8")
+        rc, rep = self._run_cli()
+        self.assertNotEqual(rc, 0)
+        self.assertIn("FAIL", rep["veredicto"]["estado"])
+
+    # 16. Archivo de trades obsoleto de ejecución previa (extra) → FAIL
+    def test_trades_obsoleto_extra_fail(self):
+        (self.trades_dir / "trades_OBSOLETO_99.json").write_text(
+            json.dumps({"equivalencia": "verificada", "consumible": True,
+                        "trades": []}), encoding="utf-8")
+        rc, rep = self._run_cli()
+        self.assertNotEqual(rc, 0)
+        self.assertIn("FAIL", rep["veredicto"]["estado"])
+
+    # 17. Archivo esperado ausente → INCOMPLETE
+    def test_trades_esperado_ausente_incomplete(self):
+        (self.trades_dir / "trades_ETHUSDT_15m.json").unlink()
+        rc, rep = self._run_cli()
         self.assertNotEqual(rc, 0)
         self.assertIn("INCOMPLETE", rep["veredicto"]["estado"])
 

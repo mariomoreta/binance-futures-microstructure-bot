@@ -57,6 +57,11 @@ _spec = importlib.util.spec_from_file_location(
 ledger = importlib.util.module_from_spec(_spec)
 _spec.loader.exec_module(ledger)
 
+_spec = importlib.util.spec_from_file_location(
+    "recon", str(ROOT / "scripts" / "reconstruct_replay_traces.py"))
+recon = importlib.util.module_from_spec(_spec)
+_spec.loader.exec_module(recon)
+
 ARTIFACT_DEFAULT = ROOT / "frontend" / "src" / "data" / "census-eval-v2.json"
 TEMP_DEFAULT = Path(tempfile.gettempdir()) / "opencode"
 
@@ -702,13 +707,28 @@ class IntegracionLedgerTest(unittest.TestCase):
                                 for r in rep["incomplete_reasons"]))
 
     def test_ledger_completo_con_datos_reales(self):
+        """Cadena reconstructor (paquete publicado) → archivos → ledger
+        con datos reales. Requiere el paquete publicado en Git."""
+        pkg = ROOT / "docs" / "evidence" / "eval-census-v2-package"
+        if not pkg.exists():
+            raise unittest.SkipTest("paquete publicado ausente")
         with tempfile.TemporaryDirectory() as td:
             out = Path(td) / "reporte.json"
-            rc = ledger.main(["--artifact", str(ARTIFACT_DEFAULT),
-                              "--temp-dir", str(TEMP_DEFAULT),
-                              "--trades-dir",
-                              str(Path(r"C:\proyectos\binance-temp\trades_from_pkg")),
-                              "--out", str(out)])
+            recon_out = Path(td) / "recon"
+            # 1. Reconstruye trazas desde el paquete publicado (fail-closed).
+            rc1 = recon.main(["--package", str(pkg), "--out-dir",
+                              str(recon_out)])
+            self.assertEqual(rc1, 0,
+                             "reconstructor debe salir 0: %s" % rc1)
+            man = json.loads((recon_out / "reconstruction_manifest.json")
+                             .read_text(encoding="utf-8"))
+            self.assertEqual(man["veredicto"], "COMPLETO")
+            self.assertEqual(man["n_celdas_fail"], 0)
+            # 2. Ledger valida el manifiesto de trazas antes de consumirlas.
+            rc2 = ledger.main(["--artifact", str(ARTIFACT_DEFAULT),
+                               "--package", str(pkg),
+                               "--trades-dir", str(recon_out),
+                               "--out", str(out)])
             rep = json.loads(out.read_text(encoding="utf-8"))
             # No discrepancies allowed; INCOMPLETE is acceptable for
             # tail-edge of symbols without build_report (MINA/NMR).
@@ -723,6 +743,10 @@ class IntegracionLedgerTest(unittest.TestCase):
             self.assertTrue(rep["referencias"]["consistente"])
             for e in rep["duplicados_events"]:
                 self.assertEqual(e["errores"], [])
+            self.assertEqual(rep["trazabilidad_operaciones"]["estado"],
+                             "COMPLETO",
+                             "trazabilidad debe estar COMPLETO: %s"
+                             % rep["trazabilidad_operaciones"])
 
     def test_ledger_sin_temp_dir_no_parece_completo(self):
         with tempfile.TemporaryDirectory() as td:

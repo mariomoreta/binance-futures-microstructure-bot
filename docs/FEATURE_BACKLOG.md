@@ -1256,3 +1256,30 @@ FEATURES_VERIFIED: 58 tests unittest (0 fallos): 45 funciones puras + 3 PackageM
 DEFERRED_FEATURES: incorporar manifiestos temp/opencode a Git para cerrar el vínculo completo detección→operación y verificar los 2 tail-edge pendientes (MINAUSDT/1h, NMRUSDT/1h).
 DOCUMENTATION_CONFLICTS: "45 tests" corregido a "58 tests"; "causalidad UNKNOWN" corregido a "verificada 9314/6/0"; "auditoría completa" corregido a "INCOMPLETE con 2 incompletos declarados".
 BACKLOG_UPDATED: este ID; sin cambio de fase activa ni autorizaciones. Gates sin avance.
+
+
+## F-EVAL-CENSUS-TRACE-01-CORR4 — Corrección de defectos restantes de la auditoría (2026-10-19, sobre 2677b2f)
+Corrige F-EVAL-CENSUS-TRACE-01-CORR3 de forma explícita: defectos restantes de la auditoría sin corridas Binance, sin forward/paper/órdenes, sin cambios de estrategia/mapping/costes/umbrales y sin tocar DBs canónicas, dashboard ni servicios.
+
+FEATURES_IMPLEMENTED:
+- vincular_trades_eventos: campos temporales obligatorios (entry_ms finita, available_at finita, H2 close_time_ms finita, estado realizada/abierta); ausencia o valor inválido → INCOMPLETE (nunca aceptación implícita); entrada antes de disponibilidad → FAIL; respaldo por símbolo/resolución/familia/dirección/identidad sin cruzar resoluciones.
+- reconstruct_replay_traces.py fail-closed: celda fallida no publica trazas como "verificada"; trazas fallidas van a diagnostico_celdas_fallidas.json (FALLIDA_NO_CONSUMIBLE, rechazado por el ledger); manifiesto con veredicto/cobertura/hashes validado por el ledger antes de consumir; no quedan archivos antiguos de ejecuciones previas; exactamente uno de --package/--temp-dir obligatorio; --package sin segunda purga; events_pre (n_in_pre_purge) documentado en modo temp.
+- Ledger valida manifiesto de trazas (veredicto COMPLETO, cobertura 6 combos, trades_sha256, sin faltantes/extra/obsoletos, consumible) antes de consumir; rechaza manifiesto FAIL, hash mismatch, faltante, extra o no consumible.
+- Pruebas de integración obligatorias (reconstructor → archivos → ledger): 17 casos + control; cada defecto FAIL/INCOMPLETE exit ≠ 0; control PASS exit 0 (tests/test_cli_fixtures.py y tests/test_reconstruct_replay_traces.py).
+- Checkout limpio verificado: hashes paquete 33/33 OK; trades regeneradas (exit 0, COMPLETO, 168 celdas, 5255 trades); ledger (exit 1, INCOMPLETE, 0 discrepancias, trazabilidad COMPLETO, n_trades_revisados=5255). Evidencia: C:\proyectos\binance-temp\audit_checkout_20261019\verificacion_checkout.txt.
+
+FEATURES_VERIFIED: suite completa 1274 tests OK (2 skipped); barrera de aislamiento hashes_equal=True, file_writes=0, datos sin cambios.
+
+DEFERRED_FEATURES: incorporar manifiestos temp/opencode a Git y/o publicar build_report de MINAUSDT/1h y NMRUSDT/1h para cerrar los 2 tail-edge pendientes y pasar el veredicto global a PASS.
+
+DOCUMENTATION_CONFLICTS: "ninguna traza fallida se publica" corregido: el código anterior SÍ escribía "equivalencia": "verificada" con trades de celdas falladas; el contrato fail-closed ahora lo impide y el ledger rechaza las trazas fallidas. Se distingue publicación (paquete), reproducción (regenerar trades desde paquete) y aceptación (veredicto PASS del ledger).
+
+VEREDICTOS SEPARADOS (no rebajados):
+- Replay BTC/ETH/SOL: PASS dentro de alcance explícito (6 celdas-combo, 168 celdas, equivalencia por celda, 5255 trades escala 1x reconciliadas, trazabilidad COMPLETO, 0 discrepancias).
+- Censo extendido MINA/NMR: INCOMPLETE (tail-edge MINAUSDT/1h y NMRUSDT/1h no verificable: falta build_report).
+- Global del ledger: INCOMPLETE (0 discrepancias, 2 incompletos declarados), exit 1.
+
+RESIDUAL MINA/NMR (preciso): falta build_report.json que cubra MINAUSDT/1h y NMRUSDT/1h (interval 1h, counts.excluded_no_entry == 1 cada uno). Las detecciones ya están en census_1h_detections.jsonl del paquete; lo que falta es el build_report que las ampare para clasificar_tail_edge (excluded_no_entry == n_tail_edge = 1). Impacto: global INCOMPLETE, no PASS; replay BTC/ETH/SOL reportado por separado como PASS.
+
+BACKLOG_UPDATED: este ID; sin cambio de fase activa ni autorizaciones. Gates sin avance.
+

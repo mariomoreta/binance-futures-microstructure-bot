@@ -474,20 +474,41 @@ def rango_mfe_mae(celdas: list) -> dict:
 DIR_DET_TO_EVENTO = {"up": "LONG", "down": "SHORT"}
 
 
+def familia_direccion_de_definicion(fam_def: str) -> tuple | None:
+    """Devuelve (familia, direccion, grupo) implícitos en la definición de
+    una detección, o None si no es una definición mapeable a evento.
+    Usado para verificar que el respaldo de una operación tiene familia,
+    dirección y grupo compatibles (sin cruzar resoluciones)."""
+    if fam_def in H1_SRC_DEFS:
+        return ("H1", "LONG", "continuation")
+    if fam_def in H3_SRC_DEFS:
+        return ("H3", "SHORT", "bearish-continuation")
+    if fam_def in H2_SRC_DEFS:
+        direccion = "SHORT" if fam_def == "FAILED_HIGH_CANDIDATE" else "LONG"
+        grupo = "correction-exhaustion" if fam_def == "FAILED_HIGH_CANDIDATE" \
+            else "correction-reversal"
+        return ("H2", direccion, grupo)
+    return None
+
+
 def vincular_trades_eventos(trades: list, manifiestos: dict,
                             detecciones: list,
                             bars_by: dict | None = None) -> dict:
     """Trazabilidad operación ← candidato. Cada trade escala 1.0 debe:
     - tener event_id presente en los event_ids del manifiesto (respaldo);
-    - H1/H3: entry_ms >= available_at de su detección vinculada;
-    - H2: entry_ms >= close_time de la barra de confirmación (conocida
-      antes de la entrada);
-    - placebo: entry_ms coincide con una open_time de las velas
-      (causalidad sintética: entrada en barra);
+    - tener entrada efectiva finita;
+    - H1/H3: entry_ms >= available_at de su detección vinculada (misma
+      resolución, familia y dirección);
+    - H2: confirmación y cierre conocido de su vela (close_time_ms finito),
+      entrada tras el cierre de la confirmación;
+    - placebo: entry_ms coincide con una open_time de las velas;
     - estado realizada/abierta coherente con exit_executed.
-    Devuelve veredicto con discrepancias (cada una con sección, clave,
-    motivo)."""
+    Campos temporales ausentes o no finitos → INCOMPLETE (nunca aceptación
+    implícita). Entrada anterior a disponibilidad → FAIL.
+    Devuelve veredicto con discrepancias (FAIL) e incompletos (INCOMPLETE),
+    cada uno con sección, clave y motivo."""
     discrep = []
+    incompletos = []
     ids_por_grupo = {}
     for (sym, res), man in manifiestos.items():
         for fam, g in man.get("groups", {}).items():
@@ -497,12 +518,15 @@ def vincular_trades_eventos(trades: list, manifiestos: dict,
                                 "clave": "%s/%s/%s" % (sym, res, fam),
                                 "motivo": "event_ids duplicados en manifiesto"})
             ids_por_grupo.setdefault((sym, res, fam), set(ids))
+    # Respaldos indexados por CLAVE QUE INCLUYE RESOLUCIÓN para evitar cruzar
+    # detecciones de resoluciones distintas que compartan símbolo y timestamp.
     dets_por_clave = {}
     for d in detecciones:
         ivo = DIR_DET_TO_EVENTO.get(d.get("direction", "").lower(),
-                                      d.get("direction"))
-        dets_por_clave.setdefault(
-            (d.get("symbol"), d.get("formation_time"), ivo), []).append(d)
+                                    d.get("direction"))
+        clave = (d.get("symbol"), d.get("formation_time"),
+                 d.get("source_interval"), ivo)
+        dets_por_clave.setdefault(clave, []).append(d)
     conf_h2 = {}
     if bars_by:
         for d in detecciones:
@@ -524,7 +548,8 @@ def vincular_trades_eventos(trades: list, manifiestos: dict,
             if bar is None:
                 continue
             ivo = "SHORT" if want_short else "LONG"
-            conf_h2[(d.get("symbol"), bar["open_time_ms"], ivo)] = bar
+            conf_h2[(d.get("symbol"), bar["open_time_ms"],
+                     d.get("source_interval"), ivo)] = bar
     opens_por = {}
     if bars_by:
         for key, bars in bars_by.items():
@@ -536,11 +561,14 @@ def vincular_trades_eventos(trades: list, manifiestos: dict,
         n += 1
         eid = t.get("event_id", "")
         sym, res, grp = t.get("symbol"), t.get("res"), t.get("group")
+        direccion = t.get("direction")
+        # 1) event_id presente en manifiesto (identidad compatible)
         if eid not in ids_por_grupo.get((sym, res, grp), set()):
             discrep.append({"seccion": "trazabilidad_operaciones",
                             "clave": eid or t.get("symbol"),
                             "motivo": "operación sin candidato en manifiesto"})
             continue
+        # 2) estado / exit_executed según contrato realizada o abierta
         if t.get("exit_executed") == bool(t.get("estado") == "abierta") \
                 and t.get("estado") is not None:
             discrep.append({"seccion": "trazabilidad_operaciones",
@@ -554,39 +582,82 @@ def vincular_trades_eventos(trades: list, manifiestos: dict,
                                 "motivo": "placebo: entry_ms no es una "
                                           "apertura de vela conocida"})
             continue
+        # 3) H2: confirmación y cierre conocido de su vela
         if grp in ("correction-exhaustion", "correction-reversal"):
-            bar = conf_h2.get((sym, t.get("event_time_ms"),
-                               t.get("direction")))
+            bar = conf_h2.get((sym, t.get("event_time_ms"), res, direccion))
             if bar is None:
-                discrep.append({"seccion": "trazabilidad_operaciones",
-                                "clave": eid,
-                                "motivo": "H2 sin confirmación "
-                                          "reconstruible"})
-            elif bar.get("close_time_ms") is not None \
-                    and t.get("entry_ms") is not None \
-                    and t["entry_ms"] < bar["close_time_ms"]:
-                discrep.append({"seccion": "trazabilidad_operaciones",
-                                "clave": eid,
-                                "motivo": "H2 entrando antes de conocerse "
-                                          "su confirmación"})
+                incompletos.append({"seccion": "trazabilidad_operaciones",
+                                    "clave": eid,
+                                    "motivo": "H2 sin confirmación "
+                                              "reconstruible"})
+            else:
+                ct = bar.get("close_time_ms")
+                ems = t.get("entry_ms")
+                ct_ok = finite_number(ct)
+                ems_ok = finite_number(ems)
+                if not ct_ok:
+                    incompletos.append({"seccion": "trazabilidad_operaciones",
+                                        "clave": eid,
+                                        "motivo": "H2 close_time_ms de la "
+                                                  "vela de confirmación ausente "
+                                                  "o no finito"})
+                if not ems_ok:
+                    incompletos.append({"seccion": "trazabilidad_operaciones",
+                                        "clave": eid,
+                                        "motivo": "H2 entry_ms ausente o no "
+                                                  "finito"})
+                elif ct_ok and ems < ct:
+                    discrep.append({"seccion": "trazabilidad_operaciones",
+                                    "clave": eid,
+                                    "motivo": "H2 entrando antes de conocerse "
+                                              "su confirmación "
+                                              "(entry_ms=%s < close_time_ms=%s)"
+                                              % (ems, ct)})
             continue
-        ds = dets_por_clave.get((sym, t.get("event_time_ms"),
-                                 t.get("direction")), [])
+        # 4) H1/H3: respaldo con símbolo, resolución, familia, dirección e
+        #    identidad compatibles.
+        clave_ds = (sym, t.get("event_time_ms"), res, direccion)
+        ds = dets_por_clave.get(clave_ds, [])
         if not ds:
-            discrep.append({"seccion": "trazabilidad_operaciones",
-                            "clave": eid,
-                            "motivo": "H1/H3 sin detección de respaldo"})
+            incompletos.append({"seccion": "trazabilidad_operaciones",
+                                "clave": eid,
+                                "motivo": "H1/H3 sin detección de respaldo "
+                                          "compatible (símbolo/resolución/"
+                                          "familia/dirección)"})
             continue
-        avail = max(d["available_at"] for d in ds)
-        if t.get("entry_ms") is not None and t["entry_ms"] < avail:
-            discrep.append({"seccion": "trazabilidad_operaciones",
-                            "clave": eid,
-                            "motivo": "entrada efectiva anterior a "
-                                      "disponibilidad (entry_ms=%s < "
-                                      "available_at=%s)"
-                                      % (t.get("entry_ms"), avail)})
+        fd = familia_direccion_de_definicion(
+            ds[0].get("definition_name", ""))
+        if fd is None or (fd[0], fd[1]) != (t.get("family"), direccion):
+            incompletos.append({"seccion": "trazabilidad_operaciones",
+                                "clave": eid,
+                                "motivo": "respaldo sin familia/dirección "
+                                          "compatibles con la operación"})
+        # 5) disponibilidad efectiva de la detección/candidato (no se deriva
+        #    igualándola a la entrada).
+        avail_vals = [d.get("available_at") for d in ds]
+        if not all(finite_number(v) for v in avail_vals):
+            incompletos.append({"seccion": "trazabilidad_operaciones",
+                                "clave": eid,
+                                "motivo": "available_at (disponibilidad) "
+                                          "ausente o no finito"})
+        else:
+            avail = max(avail_vals)
+            ems = t.get("entry_ms")
+            if not finite_number(ems):
+                incompletos.append({"seccion": "trazabilidad_operaciones",
+                                    "clave": eid,
+                                    "motivo": "entry_ms ausente o no finito"})
+            elif ems < avail:
+                discrep.append({"seccion": "trazabilidad_operaciones",
+                                "clave": eid,
+                                "motivo": "entrada efectiva anterior a "
+                                          "disponibilidad (entry_ms=%s < "
+                                          "available_at=%s)"
+                                          % (ems, avail)})
+    estado = ("COMPLETO" if not discrep and not incompletos
+              else ("COMPLETO_CON_DISCREPANCIAS" if discrep else "INCOMPLETE"))
     return {"n_trades_revisados": n, "discrepancias": discrep,
-            "estado": "COMPLETO" if not discrep else "COMPLETO_CON_DISCREPANCIAS"}
+            "incompletos": incompletos, "estado": estado}
 
 
 def verificar_multiplicidad_trades(trades: list, manifiesto: dict) -> list:
@@ -749,11 +820,14 @@ def veredicto_global(secciones: dict) -> dict:
     if t.get("estado") == "UNKNOWN":
         incompletitud.append({"seccion": "trazabilidad_operaciones",
                               "motivo": t.get("motivo",
-                                              "trades no reconstruidos")})
+                                              "trades no proporcionados")})
     else:
         for item in t.get("discrepancias", []):
             _add_discrep(item.get("seccion", "trazabilidad_operaciones"),
                          item.get("clave"), item.get("motivo"))
+        for item in t.get("incompletos", []):
+            incompletitud.append({"seccion": "trazabilidad_operaciones",
+                                  "motivo": item.get("motivo")})
 
     te = secciones.get("tail_edge", {})
     if te:
@@ -970,6 +1044,7 @@ class Ledger:
         self.inputs = {}  # descripcion -> {"path":..., "sha256":..., "exists":bool}
         self.incomplete = False
         self.incomplete_reasons = []
+        self.manif_traces = None  # reconstruction_manifest.json validado
 
     def _register_input(self, desc: str, path: Path | None):
         if path is None:
@@ -1068,6 +1143,18 @@ class Ledger:
                     self.incomplete = True
                     self.incomplete_reasons.append(
                         "trazas ausentes: %s" % tp)
+            # Registra el manifiesto de trazas para validación antes del uso.
+            mp = trades_dir / "reconstruction_manifest.json"
+            self._register_input("reconstruction_manifest", mp)
+            if mp.exists():
+                try:
+                    self.manif_traces = json.loads(
+                        mp.read_text(encoding="utf-8"))
+                except (ValueError, OSError):
+                    self.manif_traces = None
+                    self.incomplete = True
+                    self.incomplete_reasons.append(
+                        "reconstruction_manifest.json ilegible: %s" % mp)
 
     @property
     def base_dir(self) -> Path | None:
@@ -1196,6 +1283,109 @@ class Ledger:
                 if p.exists():
                     return json.loads(p.read_text(encoding="utf-8"))
         return None
+
+    def _validar_manifest_traces(self, trades_dir: Path) -> dict:
+        """Valida reconstruction_manifest.json ANTES de consumir las trazas:
+        - veredicto == COMPLETO (FAIL → trazas no consumibles).
+        - cobertura: los 6 combos esperados presentes y consumibles.
+        - hashes de cada trades_*.json coinciden con el manifiesto.
+        - no faltan trades esperados ni sobran archivos extra/obsoletos
+          de una ejecución previa.
+        - cada trades_*.json tiene equivalencia == "verificada" y consumible.
+        Devuelve {"valido": bool, "motivo": str, "discrepancias": [...],
+        "incompletos": [...]}."""
+        discrepancias = []
+        incompletos = []
+        mp = trades_dir / "reconstruction_manifest.json"
+        if not mp.exists():
+            incompletos.append({"seccion": "trazabilidad_operaciones",
+                                "motivo": "reconstruction_manifest.json "
+                                          "ausente (trazas no validadas)"})
+            return {"valido": False, "motivo": "manifiesto de trazas ausente",
+                    "discrepancias": discrepancias, "incompletos": incompletos}
+        try:
+            man = json.loads(mp.read_text(encoding="utf-8"))
+        except (ValueError, OSError) as exc:
+            incompletos.append({"seccion": "trazabilidad_operaciones",
+                                "motivo": "reconstruction_manifest.json "
+                                          "ilegible: %s" % exc})
+            return {"valido": False, "motivo": "manifiesto de trazas ilegible",
+                    "discrepancias": discrepancias, "incompletos": incompletos}
+        if man.get("veredicto") != "COMPLETO":
+            discrepancias.append({"seccion": "trazabilidad_operaciones",
+                                  "clave": "reconstruction_manifest",
+                                  "motivo": "veredicto de trazas = %s (se "
+                                            "requiere COMPLETO; FAIL = trazas "
+                                            "no consumibles)"
+                                  % man.get("veredicto")})
+            return {"valido": False,
+                    "motivo": "reconstruction_manifest veredicto %s: trazas "
+                              "no consumibles" % man.get("veredicto"),
+                    "discrepancias": discrepancias, "incompletos": incompletos}
+        cov = man.get("cobertura", {})
+        if cov.get("celdas_fail", 0) != 0:
+            discrepancias.append({"seccion": "trazabilidad_operaciones",
+                                  "clave": "reconstruction_manifest",
+                                  "motivo": "%d celdas sin equivalencia "
+                                            "demostrada" % cov.get("celdas_fail")})
+            return {"valido": False,
+                    "motivo": "celdas falladas sin equivalencia",
+                    "discrepancias": discrepancias, "incompletos": incompletos}
+        trades_sha = man.get("trades_sha256", {}) or {}
+        expected = ["trades_%s_%s.json" % (s, r) for (_, s, r) in COMBOS]
+        seen = set()
+        for fname in expected:
+            tp = trades_dir / fname
+            if not tp.exists():
+                incompletos.append({"seccion": "trazabilidad_operaciones",
+                                    "motivo": "traza esperada ausente: %s" % fname})
+                return {"valido": False,
+                        "motivo": "traza esperada ausente: %s" % fname,
+                        "discrepancias": discrepancias, "incompletos": incompletos}
+            h = sha256_file(tp)
+            if trades_sha.get(fname) != h:
+                discrepancias.append({"seccion": "trazabilidad_operaciones",
+                                      "clave": fname,
+                                      "motivo": "hash de traza no coincide "
+                                                "con reconstruction_manifest "
+                                                "(traza alterada después de "
+                                                "reconstruir)"})
+                return {"valido": False,
+                        "motivo": "traza alterada (hash mismatch): %s" % fname,
+                        "discrepancias": discrepancias, "incompletos": incompletos}
+            try:
+                tdata = json.loads(tp.read_text(encoding="utf-8"))
+            except (ValueError, OSError) as exc:
+                incompletos.append({"seccion": "trazabilidad_operaciones",
+                                    "motivo": "traza ilegible: %s (%s)"
+                                              % (fname, exc)})
+                return {"valido": False,
+                        "motivo": "traza ilegible: %s" % fname,
+                        "discrepancias": discrepancias, "incompletos": incompletos}
+            if tdata.get("equivalencia") != "verificada" \
+                    or not tdata.get("consumible"):
+                discrepancias.append({"seccion": "trazabilidad_operaciones",
+                                      "clave": fname,
+                                      "motivo": "traza no consumible "
+                                                "(equivalencia != verificada)"})
+                return {"valido": False,
+                        "motivo": "traza no consumible: %s" % fname,
+                        "discrepancias": discrepancias, "incompletos": incompletos}
+            seen.add(fname)
+        for p in trades_dir.glob("trades_*.json"):
+            if p.name not in seen:
+                discrepancias.append({"seccion": "trazabilidad_operaciones",
+                                      "clave": p.name,
+                                      "motivo": "traza extra/obsoleta de una "
+                                                "ejecución previa que no "
+                                                "pertenece a la reconstrucción "
+                                                "actual"})
+                return {"valido": False,
+                        "motivo": "traza obsoleta/extra: %s" % p.name,
+                        "discrepancias": discrepancias, "incompletos": incompletos}
+        return {"valido": True, "motivo": "trazas validadas contra "
+                                          "reconstruction_manifest",
+                "discrepancias": discrepancias, "incompletos": incompletos}
 
     def build(self):
         cells = self.data["cells"]
@@ -1420,38 +1610,57 @@ class Ledger:
         economicos = verificar_campos_economicos(self.data, self._manifiestos())
 
         # --- Trazabilidad hasta la operación (trades reconstruidos) ---
+        # El ledger valida reconstruction_manifest.json (veredicto,
+        # cobertura y hashes de las trazas) ANTES de consumir las trazas.
+        # Un manifiesto con veredicto FAIL, hashes que no coinciden,
+        # trazas faltantes/extra/obsoletas o archivos no consumibles
+        # hace que el ledger rechace las trazas (RECHAZADA → INCOMPLETE).
         mans = self._manifiestos()
         trazabilidad = {"estado": "UNKNOWN",
                         "motivo": "trades no proporcionados "
                                   "(--trades-dir o reconstruir con "
                                   "reconstruct_replay_traces.py)",
-                        "discrepancias": []}
-        if self.trades:
-            discrep_op = []
-            n_rev = 0
-            for (sym, res), tdata in self.trades.items():
-                trades = tdata.get("trades", [])
-                man = mans.get((sym, res), {})
-                dets = [x for x in self.detecciones
-                        if x.get("symbol") == sym
-                        and x.get("source_interval") == res]
-                bars = None
-                for d, s, r in COMBOS:
-                    if s == sym and r == res and self.base_dir is not None:
-                        cp = self.base_dir / d / ("candles_%s_%s.json" % (sym, res))
-                        if cp.exists():
-                            bars = json.loads(cp.read_text(encoding="utf-8"))
-                v = vincular_trades_eventos(trades, mans, dets,
-                                            {(sym, res): bars}
-                                            if bars else None)
-                n_rev += v["n_trades_revisados"]
-                discrep_op.extend(v["discrepancias"])
-                discrep_op.extend(verificar_multiplicidad_trades(trades, man))
-            trazabilidad = {
-                "estado": ("COMPLETO" if not discrep_op
-                           else "COMPLETO_CON_DISCREPANCIAS"),
-                "n_trades_revisados": n_rev,
-                "discrepancias": discrep_op}
+                        "discrepancias": [], "incompletos": []}
+        if self.trades_dir is not None:
+            vt = self._validar_manifest_traces(self.trades_dir)
+            if not vt["valido"]:
+                trazabilidad = {
+                    "estado": ("COMPLETO_CON_DISCREPANCIAS"
+                               if vt["discrepancias"] else "INCOMPLETE"),
+                    "motivo": vt["motivo"],
+                    "discrepancias": vt.get("discrepancias", []),
+                    "incompletos": vt.get("incompletos", []),
+                    "n_trades_revisados": 0}
+            elif self.trades:
+                discrep_op = []
+                incompletos_op = []
+                n_rev = 0
+                for (sym, res), tdata in self.trades.items():
+                    trades = tdata.get("trades", [])
+                    man = mans.get((sym, res), {})
+                    dets = [x for x in self.detecciones
+                            if x.get("symbol") == sym
+                            and x.get("source_interval") == res]
+                    bars = None
+                    for d, s, r in COMBOS:
+                        if s == sym and r == res and self.base_dir is not None:
+                            cp = self.base_dir / d / ("candles_%s_%s.json" % (sym, res))
+                            if cp.exists():
+                                bars = json.loads(cp.read_text(encoding="utf-8"))
+                    v = vincular_trades_eventos(trades, mans, dets,
+                                                {(sym, res): bars}
+                                                if bars else None)
+                    n_rev += v["n_trades_revisados"]
+                    discrep_op.extend(v["discrepancias"])
+                    incompletos_op.extend(v.get("incompletos", []))
+                    discrep_op.extend(verificar_multiplicidad_trades(trades, man))
+                trazabilidad = {
+                    "estado": ("COMPLETO" if not discrep_op and not incompletos_op
+                               else ("COMPLETO_CON_DISCREPANCIAS"
+                                     if discrep_op else "INCOMPLETE")),
+                    "n_trades_revisados": n_rev,
+                    "discrepancias": discrep_op,
+                    "incompletos": incompletos_op}
 
         # --- Tail-edge: exclusiones esperadas verificables ---
         tail_edge = clasificar_tail_edge(self.detecciones,
