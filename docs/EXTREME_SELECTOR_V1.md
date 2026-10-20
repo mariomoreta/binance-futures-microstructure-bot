@@ -55,3 +55,26 @@ change_24h_pct, quote_volume_24h, rank, dynamic_slots, state-votes;
 jamas backfill retrospectivo. Ranking historico solo desde su primera
 persistencia; lo anterior queda UNKNOWN para siempre. Sin autorizacion
 de sesiones nuevas, este contrato queda preparado, no iniciado.
+
+## 5. Continuacion propuesta (SOLO DOCUMENTADA; nada ejecutado aqui)
+
+Secuencia causal propuesta, sin iniciar corridas nuevas ni cambiar
+estrategia/umbrales/costes:
+
+1. **Selector de token extremo reutilizando capacidades actuales.** Reusar
+   `extreme_selector.py` (funciones puras) + `discovery.py`/`universe.py`
+   para seleccionar, EN T y con `available_at` conocible, el token candidato.
+   Requiere levantar el UNKNOWN de universo/ranking historico
+   (`UNIVERSE-HISTORY-ACQ-V1`, ver §4). NO se aprueban umbrales nuevos.
+2. **Decision versionada con evidencia conocida en T.** Emitir una decision
+   trazable por instante T, con la evidencia exactamente conocible en T (sin
+   informacion posterior). Versionada antes de evaluar.
+3. **Paper prospectivo** (Etapa 5, NO autorizado aqui): registrar decisiones y
+   sus resultados hacia adelante, sin ejecucion real ni credenciales.
+4. **Evaluacion posterior** de la esperanza ajustada al riesgo, comparando
+   contra placebo y contra el baseline, no contra si misma.
+
+Restricciones: sin Binance, sin monitor, sin paper prospectivo, sin ordenes,
+sin optimizacion automatica, sin cambios de estrategia/umbrales/costes/motor
+economico. Esta seccion es una PROPUESTA documentada; no declara nada
+evaluado ni implementado.

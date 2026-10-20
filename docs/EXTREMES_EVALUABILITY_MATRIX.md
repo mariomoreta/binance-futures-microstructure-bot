@@ -26,7 +26,7 @@ completa no es evaluable todavía (ver `docs/OFFLINE_EVAL_CENSUS_V2.md`,
 | Spread / profundidad y coste de ejecución | Comisiones por escenario oficiales; spread/slippage **UNKNOWN** | El coste de ejecución real no está modelado; sólo escenarios 1x/2x/3x como coste hipotético | Snapshots de order book (top of book / profundidad) o estimación de spread por instante |
 | Contexto BTC (régimen de mercado) | Series BTCUSDT 15m/1h en el paquete | Contexto BTC usado como símbolo, no como régimen explícito por instante | Serie de régimen BTC (retorno/volatilidad rolling) alineada causalmente |
 | Formación / disponibilidad de la señal | `formation_time_ms`, `available_at`, fronteras de entrada/salida (Paper Lab + censo) | **Verificado** para el censo mismo-grid; no generaliza a un universo mayor | Extender la reconstrucción causal al universo ampliado |
-| Funding y costes recurrentes | Calendario `FUNDING-CAL-V1` (BTC/ETH/SOL) + fallback de intervalo | Fuera de BTC/ETH/SOL el calendario es **UNKNOWN** (residual MINA/NMR sin `build_report`) | Calendarios de funding por contrato para el universo ampliado |
+| Funding y costes recurrentes | Calendario `FUNDING-CAL-V1` (BTC/ETH/SOL) + fallback de intervalo | Fuera de BTC/ETH/SOL el calendario es **UNKNOWN** | Calendarios de funding por contrato para el universo ampliado (colector `scripts/build_funding_calendar.py` ya existe; falta extender su cobertura) |
 | Resultado económico por operación | Motor `backtest-offline/v4.2` (realizado/abierto, costes ejecutados vs hipotéticos, funding asentado) | El motor no conoce universo/liquidez; sólo evalúa lo que el censo le entrega | Ingesta del universo/ranking/liquidez al pipeline de eventos |
 
 ## Qué NO hace esta matriz
@@ -43,3 +43,24 @@ Adquirir, con marca temporal de disponibilidad, (a) snapshots de universo y
 (b) series rolling-24h por símbolo; sin ellos la evaluación de elegibilidad
 en T permanece **UNKNOWN**. Detalle de secuencia en
 `docs/EXTREME_MOVERS_OBJECTIVE.md`.
+
+## Dos residuales distintos (no confundir)
+
+- **Residual MINA/NMR = tail-edge del CENSO, no un problema de funding.**
+  Lo que falta es `build_report.json` que ampare MINAUSDT/1h y NMRUSDT/1h
+  (interval 1h, `counts.excluded_no_entry == 1` cada uno). Las detecciones ya
+  están en `census_1h_detections.jsonl`; falta el `build_report` que las
+  clasifique. Afecta solo al censo externo al replay, no a las operaciones
+  evaluadas. Se cierra publicando ese `build_report`; NO requiere tocar el
+  calendario de funding.
+- **Cobertura de funding = otro residual.** El calendario `FUNDING-CAL-V1`
+  cubre BTC/ETH/SOL; fuera de ahí es UNKNOWN. Se cerraría extendiendo el
+  colector existente `scripts/build_funding_calendar.py` (ya implementado y
+  operativo), no reconstruyéndolo.
+
+**No reconstruir lo que ya existe:** el repositorio ya tiene colectores de
+universo (`src/microstructure_probe/universe.py`, `universe_manager.py`),
+descubrimiento (`discovery.py`), flujo/agresión (`flow.py`), libro
+(`book.py`) y calendario de funding (`scripts/build_funding_calendar.py`).
+Cualquier adquisición nueva debe EXTENDER esos componentes tras inspeccionar
+su cobertura actual, no crear reemplazos paralelos.
