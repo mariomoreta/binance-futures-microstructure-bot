@@ -5,6 +5,18 @@ implementation depends on validating Etapas 1–4 plus explicit human
 authorization per `docs/PAPER_TRADING.md` + `docs/RISK_RULES.md` +
 `docs/SAFETY_RULES.md`. This file designs the work breakdown only.
 
+## Estado actual (reconciliación 2026-10-19)
+
+Se ha construido el primer artefacto de Paper Lab como **replay histórico de ingeniería**, no como motor de paper en vivo. Este estado se documenta para no describir como pendiente lo que ya existe, sin afirmar que el motor de paper está completo.
+
+- **Artefato:** `frontend/src/data/paper-lab-replay-v1.json` (versión `PAPER-LAB-REPLAY-V1`, schema 1), determinista y reproducible byte-a-byte con `scripts/build_paper_lab_replay.py --check` (sha256 `7ba452c308378c7f26a20b12761625dcace6b839ba7576d0221bba0346f41826`). Fuente: paquete versionado `EVAL-CENSUS-V2` (`docs/evidence/eval-census-v2-package`) + trazas regeneradas por `scripts/reconstruct_replay_traces.py`. No lee DB canónica, no consulta Binance, falla cerrado ante contratos/hashes inválidos.
+- **Operación reproducida:** 1ª operación 1x no-baseline H1/H3 por `(event_time_ms, event_id)`, BTCUSDT 15m, familia H1, salida por horizon, funding completo, respaldo directo único del censo. Seleccionada antes de ver P&L; no es selección por rentabilidad. Regla en `scripts/build_paper_lab_replay.py`.
+- **Lógica pura:** `frontend/src/lib/paper-lab-replay.ts` (parser con validación estricta, `ReplayPlayer` paso a paso sin lookahead, utilidades de formato). Pruebas: `frontend/src/test/paper-lab-replay.test.ts` + `frontend/src/test/paper-lab-components.test.tsx`.
+- **UI:** `frontend/src/app/paper-lab/page.tsx` + `frontend/src/components/paper-lab/` (`PaperLabReplay`, `ReplayControls`, `ReplayChart`, `PaperLabPanels`). La ruta `/paper-lab` deja de ser placeholder y renderiza el replay.
+- **Qué NO es (límites actuales):** no es simulación prospectiva, no es paper en vivo contra el feed, no ejecuta órdenes, no gestiona posiciones, no hay ledger de caja ni funding recurrente ni risk engine. No valida el selector real de extremos sobre el universo: BTC/ETH/SOL son controles de mecánica, no prueba de cobertura.
+
+**Pendiente (motor completo, aún en diseño, no implementado ni autorizado):** position manager, cash/fees/funding/P&L ledger, risk + halts/kill-switch, comparación paper-vs-backtest, entry gates de la sección 7. Ninguno iniciado. Este estado no altera SUCCESS_GATES ni Fase 4/5; el replay es pantalla de ingeniería (observación), no entrada automática.
+
 ## 1. Simulation engine + fill model (pending)
 
 - Consume live public streams through the existing probe path (no new
