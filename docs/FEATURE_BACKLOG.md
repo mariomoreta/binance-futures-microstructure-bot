@@ -1,4 +1,44 @@
 
+## Correcciones de la entrega Backtest → Paper Lab — 2026-10-20 (bloques A/B/C, base `4e61587`)
+
+**1. Title:** Cierre de defectos de la entrega funcional Backtest → Paper Lab.
+ID: F-BT-01 (habilitante acotado); engancha con F-PAPER-01.
+**2. Approval status:** DECIDED dentro del alcance autorizado (sin Binance,
+monitor, paper prospectivo, ordenes, credenciales, optimizacion, ni cambios
+de estrategia/mapping/costes/umbrales/motor economico).
+**3. Implementation status:** IMPLEMENTED (acotado), por bloques.
+- **Bloque A (commit `84e6294`):** serialización portable del paquete
+  (`-text` en `.gitattributes` + renormalize); manifiesto hashea bytes
+  exactos; verificación estricta intacta.
+**4. Evaluation status:** A) Ejecución offline reproducible desde checkout
+limpio: EJECUTADA (`trades=15765`, `n_trades_1x=5255`, reconciliación OK).
+B) Estrategia completa de extremos: **NO EVALUADA**. C) Enlace a Paper Lab:
+DEMOSTRADO.
+**5. Limitaciones:** locales por bloque (ver DECISIONS/CURRENT_STATE).
+Bloque A: plataforma verificada = Windows + `core.autocrlf=false` (equiv.
+Linux por bytes); no se probó una máquina Linux real.
+**6. Evidence:** `.gitattributes`; `tests/test_dashboard_backtest.py::PackagePortabilityTest`;
+`docs/BACKTEST_READ_CONTRACT_V1.md` (amend. portabilidad); `docs/DECISIONS.md`
+§Bloque A; `docs/CURRENT_STATE.md` §Bloque A.
+**7. Last update:** 2026-10-20.
+
+### Cierre (siete campos, obligatorios) — Bloque A
+
+- `DECISIONS_REVIEWED` — contrato de lectura de backtest; entrega funcional
+  previa (`4e61587`); auditoría independiente del paquete.
+- `NEW_DECISIONS_RECORDED` — DECISIONS §"Serialización portable del paquete
+  EVAL-CENSUS-V2 (Bloque A)" (append-only).
+- `FEATURES_IMPLEMENTED` — F-BT-01 (paquete byte-portable).
+- `FEATURES_VERIFIED` — F-BT-01 (33/33 blobs == manifiesto; verify PASS desde
+  checkout limpio; alteración real rechazada; `PackagePortabilityTest`).
+- `DEFERRED_FEATURES` — mismas que la entrega base (motor paper completo,
+  F-PORT-01, auto-selección offline, evaluación completa de extremos,
+  residual MINA/NMR, W/LUMIA).
+- `BACKLOG_UPDATED` — yes: nueva sección de correcciones.
+- `DOCUMENTATION_CONFLICTS` — la entrega base describía el paquete como
+  "33 archivos, hashes OK" sin declarar el defecto de serialización en
+  checkout limpio; corregido por sección nueva, no por reescritura de historia.
+
 ## Backtest offline funcional en V2 + enlace a Paper Lab — 2026-10-20 (sin push aun)
 
 **1. Title:** Primera evaluacion offline versionada ejecutable desde V2

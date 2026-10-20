@@ -83,6 +83,27 @@ WITHOUT changing engine semantics or the `backtest_result/v4.x` envelope.
 This does not validate profitability, ranking or a full strategy. It only
 makes a versioned offline experiment reproducible and inspectable from V2.
 
+### Amendment — portable serialization of the evidence package (2026-10-20)
+
+The published package is a **sha256-verified artifact**; the verification
+read bytes, so those bytes must survive a clean checkout on any platform.
+
+- `.gitattributes` (repo root) marks
+  `docs/evidence/eval-census-v2-package/**` and its `package_manifest.json`
+  as `-text` (binary): git stores and delivers the EXACT bytes it hashed, with
+  no line-ending translation. Without this, `core.autocrlf=true` rewrote LF in
+  the blob and a clean checkout delivered different bytes (21/33 files failed
+  verification). Re-apply after editing: `git add --renormalize .`.
+- `verify_eval_package.py` and the executor keep STRICT raw-byte sha256
+  comparison: no normalization, no hash-ignoring. A real one-byte alteration
+  still fails verification (exit 1) and the executor fails closed
+  (`PACKAGE_VERIFICATION_FAILED`, no results written).
+- Distinguish numeric reproducibility (same trades/nets) from byte equality
+  (same file sha256). The portability fix concerns the latter.
+- Verified: a clean checkout with `core.autocrlf=false` reproduces the
+  manifest hashes 33/33 and the run (`trades=15765`, `n_trades_1x=5255`,
+  reconciliation True, `trades.json` sha256 `815b8a65...`).
+
 ## Amendment v4.1 — realized/open/marks split + funding assessment (2026-10-13, additive, engine still `backtest-offline/v4`)
 
 History above preserved. New fields are ADDITIVE; legacy

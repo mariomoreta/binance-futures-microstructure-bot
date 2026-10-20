@@ -19,6 +19,7 @@ import hashlib
 import importlib.util
 import json
 import math
+import shutil
 import subprocess
 import sys
 import tempfile
@@ -239,6 +240,77 @@ class DashboardBacktestTest(unittest.TestCase):
                  if c.get("group") == "bearish-continuation"]
         self.assertTrue(empty)
         self.assertEqual(empty[0]["status"], "sin_operaciones")
+
+
+class PackagePortabilityTest(unittest.TestCase):
+    """El paquete publicado debe ser byte-portable entre plataformas.
+
+    Regresion del defecto de serializacion: con core.autocrlf=true y sin
+    .gitattributes, git normalizaba a LF los finales de linea del blob, de
+    modo que un checkout limpio entregaba bytes distintos a los hasheados
+    (21/33 archivos). Estos tests fallan si vuelve a ocurrir.
+    """
+
+    PKG = "docs/evidence/eval-census-v2-package"
+
+    def _manifest(self) -> dict:
+        return json.loads((ROOT / self.PKG / "package_manifest.json")
+                          .read_text(encoding="utf-8"))["archivos"]
+
+    def _git(self, *args: str) -> subprocess.CompletedProcess:
+        return subprocess.run(["git", *args], cwd=ROOT, capture_output=True)
+
+    def test_gitattributes_marks_package_as_binary(self) -> None:
+        # -text en las rutas del paquete: git no traduce finales de linea.
+        attr = self._git("check-attr", "text", "--",
+                         f"{self.PKG}/package_manifest.json")
+        self.assertEqual(attr.returncode, 0, attr.stderr)
+        self.assertIn(b"text: unset", attr.stdout,
+                      "package_manifest.json debe ser -text (binario)")
+
+    def test_committed_blobs_hash_to_manifest(self) -> None:
+        # Cada blob DEL COMMIT (no del working tree) debe hashear al sha256
+        # declarado. Si autocrlf normaliza a LF, esto falla.
+        man = self._manifest()
+        bad = []
+        for rel, meta in man.items():
+            out = self._git("cat-file", "blob", f"HEAD:{self.PKG}/{rel}")
+            self.assertEqual(out.returncode, 0, f"blob ausente: {rel}")
+            if hashlib.sha256(out.stdout).hexdigest() != meta["sha256"]:
+                bad.append(rel)
+        self.assertEqual(bad, [], f"blobs que no hashean al manifiesto: {bad}")
+
+    def test_working_tree_matches_manifest_bytes(self) -> None:
+        for rel, meta in self._manifest().items():
+            p = ROOT / self.PKG / rel
+            self.assertTrue(p.exists(), rel)
+            self.assertEqual(_sha(p), meta["sha256"], rel)
+            self.assertEqual(p.stat().st_size, meta["bytes"], rel)
+
+    def test_verify_script_accepts_package(self) -> None:
+        r = subprocess.run(
+            [sys.executable, "scripts/verify_eval_package.py",
+             "--package", self.PKG], cwd=ROOT, capture_output=True)
+        self.assertEqual(r.returncode, 0, r.stdout + r.stderr)
+        self.assertIn(b"PASS", r.stdout)
+
+    def test_real_alteration_is_rejected(self) -> None:
+        # Copia aislada del paquete: alterar un byte debe romper la verificacion.
+        tmp = Path(tempfile.mkdtemp(prefix="pkgport_"))
+        try:
+            dst = tmp / "pkg"
+            shutil.copytree(ROOT / self.PKG, dst)
+            target = dst / "funding" / "funding_BTCUSDT.json"
+            raw = bytearray(target.read_bytes())
+            raw[len(raw) // 2] ^= 0x01
+            target.write_bytes(bytes(raw))
+            r = subprocess.run(
+                [sys.executable, "scripts/verify_eval_package.py",
+                 "--package", str(dst)], cwd=ROOT, capture_output=True)
+            self.assertNotEqual(r.returncode, 0, r.stdout)
+            self.assertIn(b"FAIL", r.stdout)
+        finally:
+            shutil.rmtree(tmp, ignore_errors=True)
 
 
 class PaperLabLinkTest(unittest.TestCase):

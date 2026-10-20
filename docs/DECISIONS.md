@@ -2125,3 +2125,40 @@ Estado verificado: veredicto global del ledger INCOMPLETE (0 discrepancias, 2 in
   ajenos); `next build` OK. Desde un checkout limpio (worktree de HEAD +
   archivos nuevos) el paquete publicado basta: `trades=15765`,
   `reconciliacion=True`, sin depender de `binance-temp` ni de ignorados.
+
+## 2026-10-20 (cont.) - Serializacion portable del paquete EVAL-CENSUS-V2 (Bloque A)
+
+- **Defecto (auditoria independiente, reproducido):** en un checkout limpio
+  Linux, 21/33 archivos del paquete no coincidian con
+  `package_manifest.json`. Causa RAÍZ: no existia `.gitattributes` y
+  `core.autocrlf=true` normalizaba a LF los finales de linea en el blob;
+  `build_eval_package.py` habia hasheado los bytes CRLF originales. En
+  Windows el working tree los restauraba a CRLF (12/33 LF puros coincidian
+  por ser archivos sin salto de linea interno). Reproduccion exacta: los 21
+  archivos coinciden si se convierte LF->CRLF el blob; los otros 12 no
+  dependen del salto de linea.
+- **Correccion:** `.gitattributes` raiz marca
+  `docs/evidence/eval-census-v2-package/**` y `package_manifest.json` como
+  `-text` (binario): git almacena y entrega los bytes EXACTOS, sin traduccion.
+  Renormalizado el paquete (`git add --renormalize`) para almacenar los bytes
+  canonicos que declara el manifiesto. La verificacion estricta por sha256 se
+  mantiene sin normalizaciones silenciosas.
+- **Distincion explicita:** reproducibilidad NUMERICA (mismos trades/netos)
+  != igualdad de BYTES (mismo sha256 de archivo). El defecto roto era el
+  segundo; el primero nunca estuvo en duda.
+- **Evidencia (commit `84e6294`):** los 33 blobs DEL COMMIT hashean al
+  manifiesto (0 discrepancias); `verify_eval_package.py` PASS desde worktree
+  limpio con `core.autocrlf=false` (simula Linux); ejecucion desde ese
+  checkout limpio: `trades=15765`, `n_trades_1x=5255`, `reconciliacion=True`,
+  `trades.json` sha256 `815b8a65...` (byte-identico a la corrida viva);
+  alteracion real de un byte -> `verify` FAIL (exit 1) y ejecutor
+  fail-closed (`PACKAGE_VERIFICATION_FAILED`, exit 3, sin `trades.json`).
+- **Regresiones:** `tests/test_dashboard_backtest.py::PackagePortabilityTest`
+  (5 tests): `.gitattributes` `-text`; blobs del commit == manifiesto;
+  working tree == manifiesto (bytes+sha256); `verify` PASS; alteracion real
+  rechazada. Fallan antes del fix (el test de blobs detecta la normalizacion
+  a LF).
+- **Plataforma verificada:** Windows (working tree + worktree limpio con
+  `core.autocrlf=false`, equivalente a un checkout Linux por bytes). NO se
+  probo una maquina Linux real; el argumento es por bytes de blob, que es
+  exactamente lo que git entrega en ambas plataformas tras `-text`.
