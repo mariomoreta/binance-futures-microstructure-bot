@@ -2,7 +2,7 @@
   "schema_version": 1,
   "artifact_version": "PAPER-LAB-REPLAY-V1",
   "label": "Paper Lab - replay historico interactivo; no simulacion prospectiva ni senal",
-  "replay_id": "PLR-BTCUSDT-LONG-1788903900000",
+  "replay_id": "PLR-BTCUSDT-LONG-1788903900000-continuation-1.0x",
   "engine_version": "backtest-offline/v4.2",
   "eligibility_rule": "primera operacion 1x no-baseline H1/H3 por (event_time_ms, event_id), realizada por stop/horizon, sin marca abierta, con respaldo directo unico del censo y funding completo; fijada antes de mirar P&L; no se elige por rentabilidad",
   "selection": {
@@ -12,6 +12,7 @@
     ],
     "eligible_families": [
       "H1",
+      "H2",
       "H3"
     ],
     "excluded_family_reason": "H2 requiere reconstruccion de confirmacion; esta entrega exige respaldo directo",
@@ -781,6 +782,7 @@
     "Velas OHLC cerradas; no se inventan ticks ni recorrido intrabar; paso discreto por vela.",
     "COST-ASSUME-v1: fee 5 bps, spread 1 bps y slippage 2 bps; supuestos, no mediciones.",
     "Sin take-profit ni trailing stop; solo niveles y cierre ejecutados por el replay.",
-    "H1/H3 del estudio fueron rechazadas economicamente; esta pantalla no aprueba H1/H2/H3."
+    "H1/H3 del estudio fueron rechazadas economicamente; esta pantalla no aprueba H1/H2/H3.",
+    "available_at es la disponibilidad del censo; la formacion es metadata."
   ]
 }

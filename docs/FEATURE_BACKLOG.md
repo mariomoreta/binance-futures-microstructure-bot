@@ -1,4 +1,64 @@
 
+## Backtest offline funcional en V2 + enlace a Paper Lab — 2026-10-20 (sin push aun)
+
+**1. Title:** Primera evaluacion offline versionada ejecutable desde V2
+(`eval-census-v2-trio`) + enlace operacion -> Paper Lab. ID: F-BT-01
+(habilitante acotado), engancha con F-PAPER-01 (replay, no motor paper).
+**2. Approval status:** DECIDED dentro del alcance autorizado (sin ejecucion
+real, sin Binance, sin optimizacion automatica, sin cambios de umbrales ni
+del motor economico). Protocolo de auto-seleccion offline: NO iniciado
+(fuera de alcance).
+**3. Implementation status:** IMPLEMENTED (acotado). Ejecutor
+`scripts/run_dashboard_backtest.py`; BFF `frontend/src/lib/backtest-control.ts`
++ rutas `api/v1/backtest/{run,status,results,replay}`; UI
+`frontend/src/components/backtest/BacktestWorkspace.tsx`; contrato de lectura
+`frontend/src/lib/backtest-results.ts`; enlace en
+`frontend/src/components/paper-lab/PaperLabSource.tsx`; generador extendido
+`scripts/build_paper_lab_replay.py --trades-json`; docs
+`docs/EXTREMES_EVALUABILITY_MATRIX.md`. F-BT-01 sigue siendo **no** un
+backtester completo de la estrategia de extremos.
+**4. Evaluation status:** A) Evaluacion offline sobre censo historico:
+EJECUTADA y revisable en V2 (15765 trades, reconciliacion por celda OK). B)
+Estrategia completa de extremos sobre universo/liquidez: **NO EVALUADA**
+(matriz deja el hueco explicito; sin ranking/liquidez/universe causal).
+C) Enlace a Paper Lab: DEMOSTRADO por test (ganadora/perdedora/abierta) y
+por enlace real; no es seleccion automatica.
+**5. Limitaciones:** in-sample/no-pristine (held-out por tiempo de evento,
+no pristino); costes por escenarios 1x/2x/3x (no apalancamiento, spread/
+slippage UNKNOWN); funding UNKNOWN fuera del calendario; no cartera conjunta
+(no se suman simbolos como portfolio); `summary.json` con metadatos de reloj
+no deterministas (aceptado); no valida edge ni rentabilidad.
+**6. Evidence:** `docs/BACKTEST_READ_CONTRACT_V1.md` (UNWIRED->WIRED),
+`docs/PAPER_LAB_PLAN_ETAPA5.md` (enlace), `docs/EXTREMES_EVALUABILITY_MATRIX.md`,
+`scripts/run_dashboard_backtest.py`, `frontend/.backtest-runs/` (ignorado),
+tests `tests/test_dashboard_backtest.py` + `frontend/src/test/backtest-*.test.ts`.
+Verificado: backend 1291 OK + frontend 400/400 + `tsc --noEmit` limpio +
+`eslint` 0 errores + `next build` OK (`BUILD_ID=eBIlrCEoIFTWay0VAx6VA`);
+checkout limpio reproduce trades=15765/reconciliacion=True con solo lo
+publicado.
+**7. Last update:** 2026-10-20.
+
+### Cierre (siete campos, obligatorios)
+
+- `DECISIONS_REVIEWED` — objetivo movers extremos; contratos backtest/
+  runtime/BFF; cierre Paper Lab 2026-10-20; correcciones acotadas de
+  causalidad/estados; DECISIONS §backtest de esta fecha.
+- `NEW_DECISIONS_RECORDED` — DECISIONS §"Backtest offline funcional en V2 +
+  enlace operacion -> Paper Lab" (append-only).
+- `FEATURES_IMPLEMENTED` — F-BT-01 (habilitante: ejecucion offline +
+  resultados + enlace a replay).
+- `FEATURES_VERIFIED` — F-BT-01 (tests + determinismo + checkout limpio);
+  enlace operacion->replay (winner/loser/open).
+- `DEFERRED_FEATURES` — F-PAPER-01 (motor paper completo), F-PORT-01,
+  protocolo de auto-seleccion offline, evaluacion completa de extremos,
+  residual MINA/NMR `build_report`, estudio W/LUMIA (separado).
+- `BACKLOG_UPDATED` — yes: nueva seccion + nota de supersesion de artefacto
+  en el item Paper Lab.
+- `DOCUMENTATION_CONFLICTS` — la entrada Paper Lab citaba sha256
+  `0db0c4d0...` y `/backtest` como stub (`FutureWorkspace`); ambos quedan
+  superados (artefacto `72af8007...`; `/backtest` funcional), corregidos por
+  nota de supersesion, no por reescritura de historia.
+
 ## Bot + Dashboard V2 para corridas de observacion — 2026-10-13 (review/bot-dashboard-v2-observacion, sin push aun)
 V2 (checkpoint 27b7af5, rama dash-v2-03-token-detail) como interfaz principal
 para observacion/evaluacion; dashboard Python pasa a LEGADO (funcional, no
@@ -172,6 +232,7 @@ frontend 314/314 + typecheck 0 + build OK.
 - **Estados:** estado del REPRODUCTOR (`sin_iniciar`/`reproduciendo`/`pausado`/`terminado`) separado del de POSICIÓN; reiniciar restablece ambos; avanzar manual con posición abierta muestra PAUSADO (no «REPOSO»).
 - **Gráfico/etiquetas:** SVG responsive (sin recorte a 360/390px), anti-solape de etiquetas (línea conserva su precio real) + leyenda, frontera contexto/replay en la primera vela del replay, eje con margen. Verificación geométrica de DOM (no visual): sin overflow de página, 0 elementos fuera de viewport, 0 textos SVG fuera de viewBox.
 - **Artefacto/build:** sha256 `0db0c4d0cf1767736cbeafbae62e12a10adce512e423520bb5046c58dfbfff99`; 7 pasos (3 velas + 4 eventos); `BUILD_ID=45NLJvJuWqcMjj2IFxW-E` servida en `127.0.0.1:3020/paper-lab`; mecánica económica sin cambios.
+- **Supersesión 2026-10-20 (nota, sin reescribir):** el artefacto fijo y el build anteriores quedan **superados** por las correcciones de enlace Backtest→Paper Lab: `replay_id` incorpora group+scale (enlaces únicos); sha256 `72af8007d5956244ec7b902c0b12f960cdc6993b6912b4749fff9fcfcb62f172` (`--check` PASS; ventana/pasos idénticos). `/backtest` deja de ser stub (`FutureWorkspace`) y es funcional. Detalle en la sección de esta fecha más arriba.
 
 ## Estudio retrospectivo de extremos — paquete W/LUMIA (auditoría 2026-10-21)
 
@@ -575,19 +636,27 @@ it does not replace them. Authority stays where it was recorded
   24h calibration review of thresholds vs real crossings.
 - **Origin / decision date:** `docs/ROADMAP.md` P1-14; SUCCESS_GATES G9.
 - **Approval status:** DECIDED (sequenced). **Implementation status:**
-  NOT IMPLEMENTED.
+  PARTIAL (2026-10-20): bounded offline evaluation (`eval-census-v2-trio`)
+  executable from V2 with versioned, hash-verified inputs, deterministic
+  results and operation→Paper Lab link. NOT a full backtester of the
+  extremes strategy (no causal universe/liquidity/ranking yet); no
+  calibration of thresholds; no profitability claim.
 - **Target phase:** P1-14.
 - **Dependencies:** P1-11C outcomes, classifier history, cost model.
-- **Affected subsystems:** new backtest module (Phase 2+ overlap noted in
-  roadmap — stays research-only).
-- **Required UI locations:** V2 Backtest nav/blocked explanation exists;
-  results UI TBD.
-- **Data/API requirements:** historical bars + outcome tables + fee model.
+- **Affected subsystems:** `scripts/run_dashboard_backtest.py` (allowlisted
+  executor) over `docs/evidence/eval-census-v2-package/`; V2 BFF
+  `frontend/src/lib/backtest-control.ts` + `api/v1/backtest/*`; UI
+  `frontend/src/components/backtest/`.
+- **Required UI locations:** V2 `/backtest` (functional since 2026-10-20;
+  no longer a stub); results + trade list + linked replay.
+- **Data/API requirements:** historical bars + outcome tables + fee model
+  (present for EVAL-CENSUS-V2); causal universe/liquidity/ranking (absent).
 - **Acceptance criteria:** no-lookahead replay proven; sensitivity noted.
 - **Evidence needed:** replay tests + calibration report.
-- **Docs:** `docs/ROADMAP.md`, `docs/SUCCESS_GATES.md`.
-- **Open questions:** cost/slippage assumptions.
-- **Last update:** 2026-10-08.
+- **Docs:** `docs/ROADMAP.md`, `docs/BACKTEST_READ_CONTRACT_V1.md`,
+  `docs/EXTREMES_EVALUABILITY_MATRIX.md`.
+- **Open questions:** cost/slippage assumptions; causal universe acquisition.
+- **Last update:** 2026-10-20.
 
 ## F-PAPER-01 — Forward paper validation (P1-15)
 

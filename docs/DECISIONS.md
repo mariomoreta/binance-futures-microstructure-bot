@@ -2073,3 +2073,55 @@ Estado verificado: veredicto global del ledger INCOMPLETE (0 discrepancias, 2 in
 - **Alcance no tocado:** sin Binance, sin adquisición, sin paper prospectivo, sin órdenes; sin cambios de estrategia/mapping/parámetros/costes/motor económico/DBs; Start/Stop, supervisión y atribución intactos; W/LUMIA sigue como estudio retrospectivo separado.
 
 
+
+## 2026-10-20 (cont.) — Backtest offline funcional en V2 + enlace operacion -> Paper Lab (presupuesto cero)
+
+> Sobre `79b3d8288b07bf115c93db19ce1444697d0dd5de`. Append-only; no reescribe entradas previas.
+
+- **Alcance:** la pantalla `/backtest` deja de ser reservada. Ejecuta UNA
+  evaluacion offline versionada y permite revisar sus operaciones y abrir
+  una de ellas en Paper Lab. Sin Binance, sin ordenes, sin credenciales,
+  sin ejecucion real, sin optimizacion automatica de parametros.
+- **Primer experimento soportado (unico):** `eval-census-v2-trio` sobre el
+  paquete publicado `docs/evidence/eval-census-v2-package/` (EVAL-CENSUS-V2,
+  33 archivos, sha256 verificado antes de correr). BTC/ETH/SOL, 15m+1h,
+  todas las familias y baseline, segmentos dev/oos, escalas 1x/2x/3x como
+  **escenarios de coste** (NO apalancamiento). Etiqueta: "Evaluacion
+  historica de reglas candidatas sobre dataset conocido", NO "backtest
+  completo del descubrimiento de extremos".
+- **Ejecucion controlada:** ejecutor `scripts/run_dashboard_backtest.py`
+  (`dashboard-backtest-executor/v1`) con lista permitida incrustada; el
+  cliente nunca envia rutas/simbolos/shell/codigo. Un job a la vez
+  (single-flight); estado persistido en disco (`pendiente`/`ejecutando`/
+  `completado`/`fallido`) para que refrescar/cerrar no pierda ni relanze.
+  Proceso huerfano `ejecutando` se reconcilia a `fallido`
+  (`PROCESS_INTERRUPTED`). Identidad/estado SEPARADOS del monitor Binance:
+  no reutiliza el controlador de runtime; no es una corrida Binance.
+- **Resultados en su propio directorio:** `frontend/.backtest-runs/`
+  (ignorado por git), fuera de datos operacionales y de DBs canonicas.
+  `trades.json` y `reconciliation.json` deterministas (byte-identicos);
+  `summary.json` difiere solo en metadatos de reloj (`generated_at_ms`/
+  `duration_ms`). Reconciliacion por celda `Σ net_pnl == total_net` (1e-9,
+  56 celdas). Sin sustitutos silenciosos: si no hay resultados, la UI
+  muestra el estado real (409), nunca datos simulados.
+- **Enlace operacion -> Paper Lab:** `Abrir replay` carga ESA operacion
+  (identidad `(event_id, group, segment, scale)`), no la fija. Reutiliza
+  `build_paper_lab_replay.py --trades-json` y el reproductor PAPER-LAB-REPLAY-V1;
+  conserva revelacion en `available_at`, formacion como metadata, costes
+  ejecutados vs hipoteticos y realizado/abierto. Operacion no soportada ->
+  422 `REPLAY_UNSUPPORTED` con motivo; sus datos siguen en la tabla.
+- **Artefacto fijo superseded:** `replay_id` incorpora group+scale (enlaces
+  unicos); sha256 `72af8007d5956244ec7b902c0b12f960cdc6993b6912b4749fff9fcfcb62f172`
+  (supersede `0db0c4d0...`). `--check` PASS; ventana/pasos identicos.
+- **No hace:** no evalua la estrategia completa de extremos; no hay
+  universo/liquidez/ranking causal. Se publica
+  `docs/EXTREMES_EVALUABILITY_MATRIX.md` (requisito -> dato -> limitacion ->
+  adquisicion siguiente); la matriz NO declara la evaluacion hecha.
+- **Contratos:** `docs/BACKTEST_READ_CONTRACT_V1.md` pasa de UNWIRED a WIRED
+  (rutas BFF, directorio de runs, determinismo, enlace a Paper Lab);
+  `docs/PAPER_LAB_PLAN_ETAPA5.md` documenta el enlace.
+- **Verificacion:** backend `python -m pytest tests` 1291 OK; frontend
+  vitest 400/400; `tsc --noEmit` limpio; `eslint src` 0 errores (3 warnings
+  ajenos); `next build` OK. Desde un checkout limpio (worktree de HEAD +
+  archivos nuevos) el paquete publicado basta: `trades=15765`,
+  `reconciliacion=True`, sin depender de `binance-temp` ni de ignorados.

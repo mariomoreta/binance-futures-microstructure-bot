@@ -69,6 +69,46 @@ def _finite(value) -> bool:
     return isinstance(value, (int, float)) and math.isfinite(float(value))
 
 
+def _load_dashboard_trades(trades_json: Path, package: Path) -> list[dict]:
+    """Carga operaciones desde el resultado del ejecutor de Backtest
+    (``trades.json``) y las normaliza al formato interno del generador.
+
+    Mismo contrato de validación: se exige que cada operación referencie
+    una combinación existente del paquete. No re-deriva P&L: se confía en
+    el campo ``net_pnl`` ya reconciliado por el ejecutor, y el ``build``
+    vuelve a comprobar la reconciliación por fricción.
+    """
+    doc = _load(trades_json)
+    rows = doc.get("trades", []) if isinstance(doc, dict) else doc
+    trades = []
+    for row in rows:
+        symbol, res = row["symbol"], row["res"]
+        if (symbol, res) not in COMBOS:
+            raise ValueError(f"combinación no soportada en trades.json: {symbol}/{res}")
+        trades.append({
+            "event_id": row["event_id"],
+            "group": row["group"], "segmento": row["segment"],
+            "escala": float(row["scale"]), "res": res,
+            "symbol": symbol, "direction": row["direction"],
+            "family": row["family"], "rules_version": row["rules_version"],
+            "event_time_ms": row["event_time_ms"],
+            "entry_ms": row["entry_ms"], "exit_ms": row["exit_ms"],
+            "entry_px": row["entry_px"], "exit_px": row["exit_px"],
+            "exit_reason": row["exit_reason"],
+            "open_at_end": bool(row.get("open_at_end", False)),
+            "exit_executed": bool(row.get("exit_executed", False)),
+            "net_pnl": row["net_pnl"], "gross_pnl": row["gross_pnl"],
+            "fees": row["fees"], "funding": row["funding"],
+            "mfe_pct": row.get("mfe_pct"), "mae_pct": row.get("mae_pct"),
+            "funding_accounting_complete": row.get("funding_accounting_complete"),
+        })
+    # El contexto y las velas viven en el paquete; se marca la fuente como el
+    # propio resultado del Backtest (no una reconstrucción externa).
+    for t in trades:
+        t["_trace_path"] = trades_json
+    return trades
+
+
 def _load_traces(traces_dir: Path) -> list[dict]:
     manifest_path = traces_dir / "reconstruction_manifest.json"
     manifest = _load(manifest_path)
@@ -148,6 +188,30 @@ def _funding_complete(trade: dict, package: Path) -> bool:
     )
 
 
+def _find_target(trades: list[dict], target: dict) -> dict:
+    """Localiza UNA operación explícita (vínculo desde Backtest/operaciones).
+
+    El target identifica la operación por (event_id, group, segmento, escala):
+    es la identidad que el listado de Backtest muestra y que el usuario pulsa.
+    No aplica la regla de selección fija: reproduce EXACTAMENTE esa operación.
+    """
+    want_scale = float(target.get("scale", target.get("escala", 1.0)))
+    want_seg = str(target.get("segment", target.get("segmento")))
+    matches = [
+        t for t in trades
+        if str(t.get("event_id")) == str(target.get("event_id"))
+        and str(t.get("group")) == str(target.get("group"))
+        and str(t.get("segmento")) == want_seg
+        and float(t.get("escala")) == want_scale
+    ]
+    if not matches:
+        raise ValueError(
+            "operación objetivo no encontrada o no soportada por el reproductor")
+    if len(matches) > 1:
+        raise ValueError("operación objetivo ambigua")
+    return matches[0]
+
+
 def _select(trades: list[dict], package: Path) -> tuple[dict, dict, Counter]:
     exclusions = Counter()
     for trade in sorted(trades, key=lambda row: (row.get("event_time_ms"), row.get("event_id"))):
@@ -222,8 +286,8 @@ def _context_candles(trade: dict, candles: list[dict], count: int) -> list[dict]
     return spread
 
 
-def _window(trade: dict, backing: dict, candles: list[dict], costs: dict,
-            context_candles: int = 0) -> dict:
+def _window(trade: dict, backing: dict | None, candles: list[dict], costs: dict,
+            context_candles: int = 0, realized: bool = True) -> dict:
     selected = [
         {k: candle[k] for k in ("open_time_ms", "open", "high", "low", "close", "close_time_ms")}
         for candle in candles
@@ -331,7 +395,7 @@ def _window(trade: dict, backing: dict, candles: list[dict], costs: dict,
     last_close_ms = selected[-1]["close_time_ms"]
     exit_ms = trade["exit_ms"]
     exit_record = {"reason": trade["exit_reason"], "px": trade["exit_px"], "ms": exit_ms, "executed": True}
-    planned_avail = backing.get("available_at")
+    planned_avail = backing.get("available_at") if backing else None
     avail_ms = int(planned_avail) if planned_avail is not None else None
 
     for index, candle in enumerate(selected):
@@ -360,8 +424,11 @@ def _window(trade: dict, backing: dict, candles: list[dict], costs: dict,
             )
 
     # Cierre: en su ms exacto (puede ser …00.000, posterior al cierre de vela …59.999).
-    _emit_event_step(exit_ms, f"Cierre ejecutado: {trade['exit_reason']}", "exit",
-                     position=_position_flat(), exit_record=exit_record)
+    # En una operación ABIERTA al final del dato no hay cierre ejecutado: la
+    # última vela es una marca, no un cierre; no se inventa un evento de salida.
+    if realized:
+        _emit_event_step(exit_ms, f"Cierre ejecutado: {trade['exit_reason']}", "exit",
+                         position=_position_flat(), exit_record=exit_record)
 
     # Si la disponibilidad quedó pendiente (posterior al cierre de formación),
     # se emite en su instante exacto tras el resto de la cinta.
@@ -374,9 +441,9 @@ def _window(trade: dict, backing: dict, candles: list[dict], costs: dict,
             formation_time_ms=trade["event_time_ms"],
         )
 
-    if not any(step["exit"] is not None for step in steps):
+    if realized and not any(step["exit"] is not None for step in steps):
         raise ValueError("la ventana no contiene el cierre realizado")
-    if exit_ms < last_close_ms:
+    if realized and exit_ms < last_close_ms:
         raise ValueError("el cierre no puede preceder al último cierre de vela conocido")
     # Invariante de causalidad: ningún paso revela información con un reloj
     # anterior al instante en que esa información existe. En particular, la
@@ -414,7 +481,8 @@ def _window(trade: dict, backing: dict, candles: list[dict], costs: dict,
             "candles": selected, "steps": steps}
 
 
-def build(package: Path, traces_dir: Path, context_candles: int = 48) -> dict:
+def build(package: Path, traces_dir: Path | None = None, context_candles: int = 48,
+          target: dict | None = None, trades_json: Path | None = None) -> dict:
     package_manifest = package / "package_manifest.json"
     declared = _load(package_manifest).get("archivos", {})
     for relative, metadata in declared.items():
@@ -422,32 +490,78 @@ def build(package: Path, traces_dir: Path, context_candles: int = 48) -> dict:
         if not path.exists() or _sha256(path) != metadata.get("sha256"):
             raise ValueError(f"paquete inválido: {relative}")
 
-    trades = _load_traces(traces_dir)
-    trade, backing, exclusions_before_choice = _select(trades, package)
+    if trades_json is not None:
+        trades = _load_dashboard_trades(trades_json, package)
+        trades_source_label = "resultado del Backtest (trades.json)"
+        for t in trades:
+            t["funding_accounting_complete"] = bool(t.get("funding_accounting_complete"))
+    else:
+        if traces_dir is None:
+            raise ValueError("se requiere traces_dir o trades_json")
+        trades = _load_traces(traces_dir)
+        trades_source_label = "reconstruccion posterior de trazas"
+        # El formato de trazas no lleva el veredicto de completitud; se
+        # re-deriva contra la celda del paquete (misma comprobación que la
+        # regla de selección fija).
+        for t in trades:
+            t["funding_accounting_complete"] = _funding_complete(t, package)
+    if target is None:
+        trade, backing, exclusions_before_choice = _select(trades, package)
+        selection_rule = ("primera operacion 1x no-baseline H1/H3 por "
+                          "(event_time_ms, event_id), realizada por stop/horizon, "
+                          "sin marca abierta, con respaldo directo unico del censo "
+                          "y funding completo; fijada antes de mirar P&L; no se "
+                          "elige por rentabilidad")
+    else:
+        trade = _find_target(trades, target)
+        exclusions_before_choice = Counter()
+        selection_rule = ("operacion elegida por el usuario desde el listado de "
+                          "Backtest; identidad exacta (event_id, grupo, segmento, "
+                          "escala); no se elige por rentabilidad")
+    realized = bool(trade.get("exit_executed")) and not trade.get("open_at_end")
     paths = _combo_paths(package, trade["symbol"], trade["res"])
     event = _event_from_inputs(trade, paths)
+    backing = None
+    if realized:
+        # Respaldo directo del censo (available_at/detection_id). Puede faltar
+        # para familias sin respaldo directo (H2/baseline): se conserva como
+        # UNKNOWN, nunca se inventa.
+        dets = _detections(paths["detections"], trade["symbol"], trade["res"])
+        cands = _direct_backing(trade, dets)
+        backing = cands[0] if len(cands) == 1 else None
     manifest = _load(paths["manifest"])
     horizon_ms = int(manifest["exit_horizon_ms"])
     qty = 1000.0 / trade["entry_px"]
     exit_value = qty * trade["exit_px"]
+    cost_scale = float(trade.get("escala", 1.0))
+    # Spread/slippage no vienen separados en la traza: se derivan de la
+    # friccion total menos comisiones asumidas. Se conserva el reparto
+    # asumido (3 bps de la escala) solo cuando el neto cierra; si no,
+    # se reporta UNKNOWN y se conserva la reconciliacion por friccion total.
     costs = {
-        "entry_fees": 1000.0 * 5.0 / 10_000.0,
-        "exit_fees": exit_value * 5.0 / 10_000.0,
-        "entry_spread_slip": 1000.0 * 3.0 / 10_000.0,
-        "exit_spread_slip": exit_value * 3.0 / 10_000.0,
+        "entry_fees": 1000.0 * 5.0 / 10_000.0 * cost_scale,
+        "exit_fees": exit_value * 5.0 / 10_000.0 * cost_scale,
+        "entry_spread_slip": 1000.0 * 3.0 / 10_000.0 * cost_scale,
+        "exit_spread_slip": exit_value * 3.0 / 10_000.0 * cost_scale,
         "total_fees": trade["fees"],
         "total_spread_slip": None,
         "funding": trade["funding"],
         "friction": trade["gross_pnl"] - trade["net_pnl"],
     }
     costs["total_spread_slip"] = (costs["entry_spread_slip"] + costs["exit_spread_slip"])
+    fees_match = math.isclose(
+        costs["entry_fees"] + costs["exit_fees"], trade["fees"], rel_tol=TOLERANCE)
     expected_net = trade["gross_pnl"] - costs["friction"]
     if not math.isclose(expected_net, trade["net_pnl"], rel_tol=TOLERANCE, abs_tol=TOLERANCE):
         raise ValueError("reconciliación económica final falló")
 
+    available_at = backing["available_at"] if backing else None
+    detection_id = backing["census_id"] if backing else None
+
     source_paths = {
         "package_manifest": package_manifest,
-        "reconstruction_manifest": traces_dir / "reconstruction_manifest.json",
+        **({"reconstruction_manifest": traces_dir / "reconstruction_manifest.json"}
+           if traces_dir is not None else {}),
         "selected_trace": Path(trade["_trace_path"]),
         **paths,
     }
@@ -457,17 +571,19 @@ def build(package: Path, traces_dir: Path, context_candles: int = 48) -> dict:
         "schema_version": 1,
         "artifact_version": ARTIFACT_VERSION,
         "label": "Paper Lab - replay historico interactivo; no simulacion prospectiva ni senal",
-        "replay_id": f"PLR-{trade['symbol']}-{trade['direction']}-{trade['event_time_ms']}",
+        "replay_id": ("PLR-%s-%s-%s-%s-%s" % (
+            trade['symbol'], trade['direction'], trade['event_time_ms'],
+            str(trade.get('group')), ("%.1fx" % cost_scale))),
         "engine_version": ENGINE_VERSION,
-        "eligibility_rule": (
-            "primera operacion 1x no-baseline H1/H3 por (event_time_ms, event_id), "
-            "realizada por stop/horizon, sin marca abierta, con respaldo directo unico "
-            "del censo y funding completo; fijada antes de mirar P&L; no se elige por rentabilidad"
-        ),
+        "eligibility_rule": selection_rule,
         "selection": {
             "sort": ["event_time_ms asc", "event_id asc"],
-            "eligible_families": ["H1", "H3"],
-            "excluded_family_reason": "H2 requiere reconstruccion de confirmacion; esta entrega exige respaldo directo",
+            "eligible_families": sorted({t.get("family", "?") for t in trades}),
+            "excluded_family_reason": (
+                "modo enlace: la operacion proviene del listado de Backtest; "
+                "no se aplica la regla de seleccion fija"
+                if target is not None else
+                "H2 requiere reconstruccion de confirmacion; esta entrega exige respaldo directo"),
             "exclusions_before_choice": dict(sorted(exclusions_before_choice.items())),
             "population_trades_1x": len(trades),
         },
@@ -483,40 +599,47 @@ def build(package: Path, traces_dir: Path, context_candles: int = 48) -> dict:
             "gross_pnl": trade["gross_pnl"], "fees": trade["fees"],
             "entry_fees": costs["entry_fees"], "exit_fees": costs["exit_fees"],
             "funding": trade["funding"], "friction": costs["friction"],
-            "net_pnl": trade["net_pnl"], "realized_net": trade["net_pnl"],
-            "exit_executed": True, "open_at_end": False,
-            "funding_accounting_complete": True,
+            "net_pnl": trade["net_pnl"],
+            "realized_net": trade["net_pnl"] if realized else None,
+            "exit_executed": realized, "open_at_end": not realized,
+            "funding_accounting_complete": bool(trade.get("funding_accounting_complete")),
         },
         "event": {
             "event_id": trade["event_id"], "event_time_ms": event["event_time_ms"],
             "direction": event["direction"], "family": event["family"],
             "rules_version": event["rules_version"], "reference_price": event["reference_price"],
             "source": _relative(paths["detections"]),
-            "available_at_ms": backing["available_at"],
-            "detection_id": backing["census_id"],
+            "available_at_ms": available_at,
+            "detection_id": detection_id,
         },
         "levels": {
             "notional_usdt": 1000.0, "qty_base": qty,
             "entry_px": trade["entry_px"], "stop_px": trade["entry_px"] * stop_factor,
             "stop_distance_pct": 0.5, "horizon_ms": horizon_ms,
             "horizon_end_ms": trade["event_time_ms"] + horizon_ms,
-            "fee_bps": 5.0, "spread_bps": 1.0, "slippage_bps": 2.0,
-            "cost_scale": 1.0,
+            "fee_bps": 5.0 * cost_scale, "spread_bps": 1.0, "slippage_bps": 2.0,
+            "cost_scale": cost_scale,
         },
         "costs": costs,
         "result": {
             "gross_pnl": trade["gross_pnl"], "net_pnl": trade["net_pnl"],
-            "realized_net": trade["net_pnl"], "exit_reason": trade["exit_reason"],
-            "exit_executed": True,
+            "realized_net": trade["net_pnl"] if realized else None,
+            "exit_reason": trade["exit_reason"],
+            "exit_executed": realized,
             "reconciled_to_engine": {
                 "entry_px": True, "exit_px": True, "gross_pnl": True,
-                "net_pnl": True, "fees": math.isclose(costs["entry_fees"] + costs["exit_fees"], trade["fees"], rel_tol=TOLERANCE),
+                "net_pnl": True, "fees": fees_match,
                 "funding": True,
             },
             "tolerance": {"relative": TOLERANCE, "absolute_usdt": TOLERANCE},
-            "note": "P&L intermedio estimado sobre cierre conocido; neto final reconciliado al motor.",
+            "note": ("P&L intermedio estimado sobre cierre conocido; neto final "
+                     "reconciliado al motor."
+                     if realized else
+                     "Operacion ABIERTA al final del dato: marca no realizada; "
+                     "el neto mostrado es la marca del motor, no un cierre ejecutado."),
         },
-        "window": _window(trade, backing, _load(paths["candles"]), costs, context_candles),
+        "window": _window(trade, backing, _load(paths["candles"]), costs,
+                          context_candles, realized),
         "provenance": {
             "symbol": trade["symbol"], "interval": trade["res"],
             "source_db": "NO LEIDA; derivado del paquete versionado EVAL-CENSUS-V2",
@@ -538,6 +661,10 @@ def build(package: Path, traces_dir: Path, context_candles: int = 48) -> dict:
             "COST-ASSUME-v1: fee 5 bps, spread 1 bps y slippage 2 bps; supuestos, no mediciones.",
             "Sin take-profit ni trailing stop; solo niveles y cierre ejecutados por el replay.",
             "H1/H3 del estudio fueron rechazadas economicamente; esta pantalla no aprueba H1/H2/H3.",
+            ("Fundamento directo del censo (available_at/detection_id) no disponible "
+             "para esta operacion: se conserva UNKNOWN."
+             if available_at is None else
+             "available_at es la disponibilidad del censo; la formacion es metadata."),
         ],
     }
     if not all(artifact["result"]["reconciled_to_engine"].values()):
@@ -548,18 +675,42 @@ def build(package: Path, traces_dir: Path, context_candles: int = 48) -> dict:
 def main(argv=None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--package", default=str(PACKAGE_DEFAULT))
-    parser.add_argument("--traces-dir", required=True)
+    parser.add_argument("--traces-dir", default=None,
+                        help="directorio de trazas de reconstruct_replay_traces.py "
+                             "(modo fijo/seleccion o enlace por --target-*)")
+    parser.add_argument("--trades-json", default=None,
+                        help="trades.json del ejecutor de Backtest (modo enlace); "
+                             "alternativa a --traces-dir")
     parser.add_argument("--out", default=str(OUT_DEFAULT))
     parser.add_argument("--context-candles", type=int, default=48,
                         help="velas reales previas al evento solo como contexto (0 = ninguna)")
     parser.add_argument("--check", action="store_true",
                         help="compara byte a byte con --out sin escribir")
+    parser.add_argument("--target-event-id", default=None,
+                        help="event_id de la operación objetivo (enlace)")
+    parser.add_argument("--target-group", default=None)
+    parser.add_argument("--target-segment", default=None)
+    parser.add_argument("--target-scale", type=float, default=None)
     args = parser.parse_args(argv)
+    if bool(args.traces_dir) == bool(args.trades_json):
+        print("error: especifique exactamente uno de --traces-dir o --trades-json",
+              file=sys.stderr)
+        return 2
+    target = None
+    if args.target_event_id is not None:
+        if args.target_group is None or args.target_segment is None or args.target_scale is None:
+            print("error: --target-event-id exige --target-group, --target-segment y --target-scale",
+                  file=sys.stderr)
+            return 2
+        target = {"event_id": args.target_event_id, "group": args.target_group,
+                  "segment": args.target_segment, "scale": args.target_scale}
     package = Path(args.package).resolve()
-    traces_dir = Path(args.traces_dir).resolve()
+    traces_dir = Path(args.traces_dir).resolve() if args.traces_dir else None
+    trades_json = Path(args.trades_json).resolve() if args.trades_json else None
     out = Path(args.out).resolve()
-    payload = (json.dumps(build(package, traces_dir, args.context_candles), indent=2,
-                          ensure_ascii=False) + "\n").encode("utf-8")
+    payload = (json.dumps(build(package, traces_dir, args.context_candles,
+                                target=target, trades_json=trades_json),
+                          indent=2, ensure_ascii=False) + "\n").encode("utf-8")
     if args.check:
         if not out.exists() or out.read_bytes() != payload:
             print("FAIL: artefacto Paper Lab no coincide con la regeneracion")

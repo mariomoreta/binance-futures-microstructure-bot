@@ -1,4 +1,30 @@
-## Cierre EVAL-CENSUS-V2 + selector + QA visual 3020 (2026-10-17, sin corridas)
+## Backtest offline funcional en V2 + enlace a Paper Lab (2026-10-20, sin push aun)
+La ruta `/backtest` deja de ser reservada y ejecuta UNA evaluacion offline
+versionada (`eval-census-v2-trio`) sobre el paquete publicado
+`docs/evidence/eval-census-v2-package/` (EVAL-CENSUS-V2, 33 archivos, sha256
+verificado antes de correr): BTC/ETH/SOL, 15m+1h, todas las familias+baseline,
+dev/oos, escalas 1x/2x/3x como ESCENARIOS DE COSTE (no apalancamiento).
+Ejecutor `scripts/run_dashboard_backtest.py` con lista permitida incrustada;
+single-flight, estado persistido (`pendiente`/`ejecutando`/`completado`/
+`fallido`), proceso huerfano reconciliado a `fallido`. Identidad/estado
+SEPARADOS del monitor Binance. Resultados en `frontend/.backtest-runs/`
+(ignorado, fuera de datos operacionales/DBs); `trades.json` +
+`reconciliation.json` deterministas (15765 trades; Σ net_pnl==total_net 1e-9,
+56 celdas); `summary.json` difiere solo en reloj. `Abrir replay` carga ESA
+operacion (event_id/group/segment/scale) via `build_paper_lab_replay.py
+--trades-json`, conservando causalidad/costes/realizado-abierto; operacion no
+soportada -> 422 con motivo, sin sustituir por un replay. Artefacto fijo
+superseded: sha256 `72af8007...f172` (replay_id gana group+scale). No evalua
+la estrategia completa de extremos (sin universo/liquidez/ranking causal);
+matriz en `docs/EXTREMES_EVALUABILITY_MATRIX.md` (preparatoria, no la declara
+hecha). Contrato `BACKTEST_READ_CONTRACT_V1.md` pasa de UNWIRED a WIRED;
+`PAPER_LAB_PLAN_ETAPA5.md` documenta el enlace. Verificado: backend 1291 OK +
+frontend 400/400 + `tsc --noEmit` limpio + `eslint` 0 errores (3 warnings
+ajenos) + `next build` OK (`BUILD_ID=eBIlrCEoIFTWay0VAx6VA`); desde checkout
+limpio el paquete publicado basta (trades=15765, reconciliacion=True).
+Resta: commit selectivo, push, re-servir 3020, capturas, entrega con SHA.
+
+
 Cierre de la fase de evaluacion offline sobre censo same-grid. Evidencia:
 docs/OFFLINE_EVAL_CENSUS_V2.md + artefacto publicado
 frontend/src/data/census-eval-v2.json (sha256 2b74a841...d37060, 73051 B,

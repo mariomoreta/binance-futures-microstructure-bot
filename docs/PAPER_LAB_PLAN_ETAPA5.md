@@ -26,6 +26,31 @@ Se distingue explícitamente cuatro estados. Ninguno implica que el motor de pap
 
 **Qué NO es:** no es simulación prospectiva, no es paper en vivo contra el feed, no ejecuta órdenes, no gestiona posiciones, no hay ledger de caja ni funding recurrente ni risk engine, no es selección automática en vivo. No valida el selector real de extremos sobre el universo: BTC/ETH/SOL son controles de mecánica, no prueba de cobertura.
 
+### Enlace operación → replay desde Backtest (2026-10-20, additive)
+
+Paper Lab admite ahora cargar UNA operación concreta elegida en `/backtest`,
+en lugar de la operación fija. Contrato:
+
+- **Entrada:** `/paper-lab?bt=<experimento>&event_id=<id>&group=<g>&segment=<s>&scale=<n>`.
+  Sin esos parámetros, la página carga el artefacto fijo versionado (sin
+  cambios de comportamiento).
+- **Materialización:** el BFF `GET /api/v1/backtest/replay` invoca
+  `scripts/build_paper_lab_replay.py --trades-json <run>/trades.json
+  --target-event-id … --target-group … --target-segment … --target-scale …`
+  y cachea por hash de identidad `(experimento, event_id, group, segment, scale)`.
+- **Reutiliza** parser, reproductor, componentes y contrato PAPER-LAB-REPLAY-V1;
+  conserva revelación en `available_at`, `formation` como metadata, estados
+  temporales/fronteras, contexto causal previo, costes ejecutados vs
+  hipotéticos y resultado final reconciliado. Sin recorrido intrabar
+  inventado.
+- **No soportado → explícito:** si una operación no es soportada por el
+  reproductor, se muestra el motivo (HTTP 422 `REPLAY_UNSUPPORTED`) y sus
+  datos permanecen en la tabla de Backtest; no se fabrica un replay.
+- **Identidad del artefacto fijo (supersede 2026-10-20):** el `replay_id`
+  incorpora ahora group+scale para que los enlaces sean únicos;
+  sha256 regenerado `72af8007d5956244ec7b902c0b12f960cdc6993b6912b4749fff9fcfcb62f172`
+  (supersede `0db0c4d0…`). `--check` PASS; ventana y pasos idénticos.
+
 ---
 
 ### Estudio retrospectivo de extremos — paquete W/LUMIA (auditoría, no segunda implementación)

@@ -51,8 +51,37 @@ purging overlaps and does NOT validate out-of-sample.
 
 ## Status
 
-UNWIRED on purpose. Wiring needs: a versioned real dataset id, an
-authorized study run, and frontend review of the exact backend SHA.
+UNWIRED on purpose for the engine envelope above. Wiring needs: a versioned
+real dataset id, an authorized study run, and frontend review of the exact
+backend SHA.
+
+## Amendment — WIRED via dashboard executor (2026-10-20, additive)
+
+The read path is now wired for a bounded, allowlisted offline experiment,
+WITHOUT changing engine semantics or the `backtest_result/v4.x` envelope.
+
+- Executor: `scripts/run_dashboard_backtest.py` (`dashboard-backtest-executor/v1`).
+  Allowlist `eval-census-v2-trio` over the published package
+  `docs/evidence/eval-census-v2-package/` (EVAL-CENSUS-V2, 33 files,
+  sha256-verified before any run). Client never supplies paths, symbols,
+  shell or code.
+- BFF (Dashboard V2, separate identity/state from the Binance monitor):
+  `frontend/src/lib/backtest-control.ts` + routes under
+  `frontend/src/app/api/v1/backtest/{run,status,results,replay}`.
+- Results live in `frontend/.backtest-runs/<experiment>/` (gitignored):
+  `job_state.json`, `job_pid.json`, `summary.json`, `trades.json`,
+  `reconciliation.json`, `replay_<hash>.json`.
+- `trades.json` is deterministic (byte-identical across runs);
+  `reconciliation.json` proves per-cell `Σ net_pnl == total_net` within
+  1e-9 for all 56 cells. `summary.json` differs only in wall-clock
+  metadata (`generated_at_ms`, `duration_ms`) — accepted and documented.
+- Operation → Paper Lab link: `build_paper_lab_replay.py --trades-json`
+  materializes PAPER-LAB-REPLAY-V1 for the EXACT operation
+  (event_id, group, segment, scale), preserving availability-time
+  revelation, formation-as-metadata and realized/open separation.
+
+This does not validate profitability, ranking or a full strategy. It only
+makes a versioned offline experiment reproducible and inspectable from V2.
 
 ## Amendment v4.1 — realized/open/marks split + funding assessment (2026-10-13, additive, engine still `backtest-offline/v4`)
 

@@ -23,7 +23,7 @@ it("parse: artifact version and schema are pinned", () => {
 
 it("identidad de la operacion elegida (regla determinista: primera por timestamp)", () => {
   const v = parsePaperLabReplay(a);
-  expect(v.replay_id).toBe("PLR-BTCUSDT-LONG-1788903900000");
+  expect(v.replay_id).toBe("PLR-BTCUSDT-LONG-1788903900000-continuation-1.0x");
   expect(v.trade.symbol).toBe("BTCUSDT");
   expect(v.trade.direction).toBe("LONG");
   expect(v.trade.family).toBe("H1");

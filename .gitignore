@@ -28,4 +28,7 @@ frontend/node_modules/
 frontend/.next/
 frontend/out/
 *.tsbuildinfo
+# Backtest V2: resultados de ejecuciones offline, aislados de datos
+# operacionales y de DBs canonicas. Nunca se commitean.
+frontend/.backtest-runs/
 

@@ -1,4 +1,20 @@
-## Corrección auditoría EVAL-CENSUS-V2 con evidencia verificable (2026-10-18, completada)
+## Backtest offline funcional en V2 + enlace a Paper Lab (2026-10-20, sin push aun)
+`/backtest` ejecuta una evaluacion offline versionada (unico experimento
+permitido `eval-census-v2-trio`) sobre el paquete publicado EVAL-CENSUS-V2
+(sha256 verificado antes de correr); estado/identidad separados del monitor
+Binance; single-flight con estado persistido; resultados deterministas en
+`frontend/.backtest-runs/` (ignorado). `Abrir replay` carga la operacion
+exacta en Paper Lab conservando causalidad y costes; no soportada -> 422 con
+motivo. Documentos: `docs/EXTREMES_EVALUABILITY_MATRIX.md` (matriz
+preparatoria, no declara evaluada la estrategia completa),
+`docs/BACKTEST_READ_CONTRACT_V1.md` (UNWIRED->WIRED),
+`docs/PAPER_LAB_PLAN_ETAPA5.md` (enlace). Verificado: backend 1291 OK +
+frontend 400/400 + typecheck + lint + build. Resta: commit selectivo, push,
+re-servir 3020, capturas, entrega con SHA. Fuera de alcance y no iniciado:
+protocolo de auto-seleccion offline sobre EVAL-CENSUS-V2; residual MINA/NMR
+(`build_report` INCOMPLETE); estudio W/LUMIA separado.
+
+
 Verificador rehecho con funciones puras (58 tests unittest: 45 puras + 3 PackageMode + 10 CLI fixtures, 0 fallos). Veredicto global PASS/FAIL/INCOMPLETE integrado. Estado actual: INCOMPLETE (0 discrepancias, 2 incompletos: MINAUSDT/1h y NMRUSDT/1h tail-edge). Causalidad VERIFICADA (9314/9314 OK, 6 UNKNOWN, 0 violaciones). Trazabilidad hasta operación: replay determinista, 0 celdas fail, 5255 trades escala 1.0 reconciliados exactamente, vinculados a eventos/candidatos. Paquete de evidencia publicado (docs/evidence/eval-census-v2-package/, 33 archivos, SHA256). Pruebas CLI: 10 casos de alteración + control; cada alteración FAIL/INCOMPLETE con exit ≠ 0, control PASS/exit 0. Campos económicos (E_net↔expectancy_net, etc.): 60 celdas, 0 discrepancias. Suite 1260 OK. Barrera aislamiento: hashes_equal=True, file_writes=0. Ledger publicado con veredicto, trazabilidad, tail-edge, campos económicos, descartes. Pendiente: incorporar manifiestos temp/opencode a Git para cerrar vínculo completo detección→operación y verificar los 2 tail-edge pendientes.
 
 ## Cierre EVAL-CENSUS-V2 + selector + QA visual 3020 (2026-10-17, sin corridas, sin push aun)

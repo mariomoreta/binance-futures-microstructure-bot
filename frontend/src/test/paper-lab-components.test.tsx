@@ -31,7 +31,7 @@ describe("Paper Lab visible replay", () => {
     render(<PaperLabReplay source={artifact} />);
     expect(screen.getByText("BTCUSDT")).toBeInTheDocument();
     expect(screen.getByText("LONG · familia H1")).toBeInTheDocument();
-    expect(screen.getAllByText("PLR-BTCUSDT-LONG-1788903900000").length).toBeGreaterThanOrEqual(1);
+    expect(screen.getAllByText("PLR-BTCUSDT-LONG-1788903900000-continuation-1.0x").length).toBeGreaterThanOrEqual(1);
     expect(screen.getByText(/cierre = venta/)).toBeInTheDocument();
     expect(screen.queryByText(/compra en espera/i)).not.toBeInTheDocument();
     expect(screen.getByText(/Control de mecánica \(BTC\)/)).toBeInTheDocument();

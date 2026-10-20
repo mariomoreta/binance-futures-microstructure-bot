@@ -15,7 +15,7 @@ const RESEARCH=[
  {href:"/market-archive",label:"Market Archive",icon:"▥"},
  {href:"/market-lab",label:"Market Lab",icon:"⌁"},
 ];
-const FUTURE=[{href:"/backtest",label:"Backtest (future)",icon:"◐"},{href:"/paper-lab",label:"Paper Lab",icon:"◑"}];
+const FUTURE=[{href:"/backtest",label:"Backtest",icon:"◐"},{href:"/paper-lab",label:"Paper Lab",icon:"◑"}];
 export function TopNav(){
  const pathname=usePathname();const [open,setOpen]=useState(false);
  useEffect(()=>{if(!open)return;const close=(event:KeyboardEvent)=>{if(event.key==="Escape"){setOpen(false);document.querySelector<HTMLButtonElement>(".v2-menu-button")?.focus()}};document.addEventListener("keydown",close);return()=>document.removeEventListener("keydown",close)},[open]);
