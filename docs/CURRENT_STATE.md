@@ -84,19 +84,21 @@ hecha). Contrato `BACKTEST_READ_CONTRACT_V1.md` pasa de UNWIRED a WIRED;
 frontend 400/400 + `tsc --noEmit` limpio + `eslint` 0 errores (3 warnings
 ajenos) + `next build` OK (`BUILD_ID=eBIlrCEoIFTWay0VAx6VA`); desde checkout
 limpio el paquete publicado basta (trades=15765, reconciliacion=True).
-Estado: commit+push de los cinco correctivos hechos en `acfcdb8`; dashboard re-servido en `http://127.0.0.1:3020` (PID 30464, `BUILD_ID=90xwf1YYwJM43jDR9wDKE`, `next build` + `tsc --noEmit` + `eslint` OK, HTTP 200 en `/api/v1/runtime`, `/backtest` y `/paper-lab` renderizados en escritorio). Queda: commitear y publicar la corrección de `control.guard` (ver párrafo siguiente) + entrega final con SHA.
+Estado: los cinco correctivos y la corrección de `control.guard` están commiteados+publiados en `2350396..<sha-final>`; dashboard re-servido en `http://127.0.0.1:3020` (PID 20520, `BUILD_ID=AsehgeVgvxmvEKw4SqIa-`, `next build` + `tsc --noEmit` + `eslint` OK, HTTP 200 en `/api/v1/runtime`, `/backtest` y `/paper-lab` renderizados en escritorio). Sin monitor ni backtest activo.
 
 ## Corrección de control.guard (exclusión de sección crítica) — 2026-10-20
 
 Se reprodujo y se resolvió en `frontend/src/lib/backtest-control.ts`:
-- `acquireGuard` ya no retira el guard solo por antigüedad (>30 s): verifica que el propietario (PID escrito en el guard) siga vivo mediante evidencia del SO (`process.kill(pid,0)`); si vive, conserva la exclusión y devuelve `GUARD_BUSY` aunque el guard sea antiguo (A). Si el propietario murió, retira el guard huérfano y recupera sin dos ganadores (C). Si la identidad del propietario es incierta (guard ilegible o sin PID válido), falla cerrado y conserva la exclusión (D).
-- `releaseGuard` ahora recibe el objeto `Guard` adquirido (`{path, pid, acquired_at_ms}`) y libera condicionada: solo elimina si el guard actual sigue teniendo el mismo PID (nunca borra el guard de un sucesor) (B).
+- Identidad única por adquisición: `Guard` ahora incluye un `token` aleatorio (`randomBytes`) generado al adquirir, escrito en el guard y devuelto en el handle. Dos adquisiciones del mismo PID tienen tokens distintos.
+- `acquireGuard` ya no retira el guard solo por antigüedad (>30 s): verifica que el propietario siga vivo mediante evidencia independiente del SO (`inspectPidLiveness` con `process.kill(pid,0)`). Si vive (aunque el guard sea antiguo), conserva la exclusión y devuelve null (A). Si el propietario murió (`gone`), retira el guard huérfano y recupera (C). Si el guard es ilegible, falta el token, o la inspección devuelve `EPERM`/error (proceso existe sin permisos o error de inspección), falla cerrado y conserva la exclusión con causa explícita (D1-D3). Nunca se asume muerte por EPERM.
+- `releaseGuard(Guard)` libera condicionada por identidad COMPLETA (mismo `pid`, mismo `token` y mismo `acquired_at_ms`). Una liberación antigua de otra adquisición (incluso con PID reutilizado) nunca borra el guard de una adquisición posterior (B).
+- La carrera lectura→borrado está protegida por `O_EXCL` (`openSync(path,"wx")`): mientras el guard exista con una identidad, ningún otro proceso puede adquirirlo.
 
 Pruebas dirigidas: `frontend/src/test/backtest-guard-regressions.test.ts` (A, B, C, D).
-- Fail-before (lógica previa): A, B y D reproducen el defecto (fallan); C pasa.
-- Pass-after (con corrección): las 4 pasan.
-- No-regresión: `backtest-defect-regressions.test.ts` 7/7 + `backtest-control.test.ts` 41/41 + `backtest-guard-regressions.test.ts` 4/4 = 52 pruebas vitest, 0 fallos. `tsc --noEmit` limpio; `eslint` 0 errores (3 warnings preexistentes); `next build` OK (`BUILD_ID=90xwf1YYwJM43jDR9wDKE`).
-- No se introdujo otro gestor de tareas; no hay cambios en DBs, backups ni secretos.
+- Fail-before (código previo `2350396`): A, B, D reproducen el defecto (fallan); C no existía como concurrencia real entre procesos.
+- Pass-after (con corrección): las 7 pasan (A, B, C-concurrencia real entre 6 procesos independientes con barrera de inicio, D1 ilegible, D2 sin token, D3 EPERM, D4 PID gone).
+- No-regresión: `backtest-defect-regressions.test.ts` 7/7 + `backtest-control.test.ts` 41/41 + `backtest-guard-regressions.test.ts` 7/7 = 55 pruebas vitest, 0 fallos. `tsc --noEmit` limpio; `eslint` 0 errores (3 warnings preexistentes); `next build` OK (`BUILD_ID=AsehgeVgvxmvEKw4SqIa-`); dashboard servido en `http://127.0.0.1:3020` (PID 20520), HTTP 200 en `/api/v1/runtime`, `/backtest`, `/paper-lab`.
+- No se introdujo otro gestor de tareas; no hay cambios en DBs, backups ni secretos. La inspección visual se limita a DOM/texto (no se declaró captura de PNG inexistente).
 
 
 Cierre de la fase de evaluacion offline sobre censo same-grid. Evidencia:

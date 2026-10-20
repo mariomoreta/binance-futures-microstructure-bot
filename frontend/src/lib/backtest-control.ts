@@ -351,51 +351,95 @@ export function currentRunId(experiment: BacktestExperiment): string | null {
 // --- Seccion critica entre procesos ----------------------------------------
 const GUARD_STALE_MS = 30_000;
 
-// Identidad verificable del guard: quien lo adquiro y cuando. La liberacion
-// se condiciona a que siga siendo el mismo propietario (nunca se borra el
-// guard de un sucesor).
-type Guard = {path: string; pid: number; acquired_at_ms: number};
+// Resultado de la inspección de liveness de un PID. EPERM significa "el
+// proceso existe pero no podemos señalarlo": nunca es prueba de muerte, así
+// que se conserva la exclusión con causa explícita.
+export type PidLiveness =
+  | {kind: "alive"}
+  | {kind: "gone"; code?: string}
+  | {kind: "epperm"}
+  | {kind: "error"; code?: string};
 
-function isPidAlive(pid: number): boolean {
-  if (!Number.isSafeInteger(pid) || pid <= 0) return false;
+// Identidad verificable y ÚNICA de una adquisición del guard. El token es un
+// identificador aleatorio generado en el momento de adquirirlo: dos
+// adquisiciones del mismo proceso (mismo PID) tienen tokens distintos, de modo
+// que una liberación antigua nunca retira el guard de una adquisición
+// posterior aunque reutilice el PID.
+export type Guard = {
+  path: string;
+  pid: number;
+  acquired_at_ms: number;
+  token: string;
+};
+
+function newGuardToken(): string {
+  return randomBytes(16).toString("hex");
+}
+
+function inspectPidLiveness(pid: number): PidLiveness {
+  if (!Number.isSafeInteger(pid) || pid <= 0) return {kind: "gone"};
   try {
     process.kill(pid, 0); // senal 0: solo comprueba existencia, nunca mata
-    return true;
-  } catch {
-    return false;
+    return {kind: "alive"};
+  } catch (e) {
+    const code = (e as NodeJS.ErrnoException).code;
+    if (code === "EPERM") return {kind: "epperm"}; // existe, sin permisos: no es muerto
+    // ESRCH u otros: proceso no existe (o error real de inspección).
+    return {kind: "gone", code};
   }
 }
 
 export function acquireGuard(experiment: string): Guard | null {
   mkdirSync(experimentDir(experiment), {recursive: true});
   const path = guardPath(experiment);
+  const token = newGuardToken();
+  const acquired_at_ms = Date.now();
   for (let attempt = 0; attempt < 3; attempt += 1) {
     try {
-      const fd = openSync(path, "wx");
+      const fd = openSync(path, "wx"); // O_EXCL: falla si ya existe
       try {
-        writeSync(fd, JSON.stringify({pid: process.pid, acquired_at_ms: Date.now()}));
+        // Una única identidad coherente entre lo escrito y el handle devuelto.
+        writeSync(fd, JSON.stringify({pid: process.pid, acquired_at_ms, token}));
       } finally {
         closeSync(fd);
       }
-      return {path, pid: process.pid, acquired_at_ms: Date.now()};
+      return {path, pid: process.pid, acquired_at_ms, token};
     } catch (e) {
       if ((e as NodeJS.ErrnoException).code !== "EEXIST") throw e;
-      // Un guard antiguo no se retira solo por antigüedad: eso confundiría
+      // Un guard existente no se retira solo por antigüedad: eso confundiría
       // "propietario todavía trabajando" con "proceso muerto". Se verifica la
-      // propiedad mediante evidencia del sistema operativo (PID vivo).
-      const owner = readJson<{pid?: unknown; acquired_at_ms?: unknown}>(path);
-      const ownerPid = typeof owner?.pid === "number" ? owner.pid : null;
-      if (ownerPid === null || !Number.isSafeInteger(ownerPid) || ownerPid <= 0) {
-        // Identidad del propietario incierta: fail-closed, se conserva la
-        // exclusión y no se toca el guard (D).
+      // propiedad mediante evidencia independiente del sistema operativo.
+      // El archivo existe (estamos en EEXIST); si no se parsea como JSON es
+      // identidad incierta: fail-closed, se conserva la exclusión (D1).
+      let owner: {pid?: unknown; acquired_at_ms?: unknown; token?: unknown} |
+        null = null;
+      try {
+        owner = JSON.parse(readFileSync(path, "utf8"));
+      } catch {
+        return null; // ilegible: no se asume muerto, nunca se toca el guard
+      }
+      const ownerPid =
+        typeof owner?.pid === "number" ? owner.pid : null;
+      if (ownerPid === null || !Number.isSafeInteger(ownerPid)
+          || ownerPid <= 0) {
+        // PID ausente o inválido: identidad incompleta, fail-closed (D2).
         return null;
       }
-      if (isPidAlive(ownerPid)) {
+      const liveness = inspectPidLiveness(ownerPid);
+      if (liveness.kind === "alive") {
         // El propietario sigue activo (aunque el guard supere los 30 s): no se
         // rompe la exclusión, la segunda solicitud no adquiere (A).
         return null;
       }
-      // Propietario muerto: se retira el guard huérfano y se reintenta (C).
+      if (liveness.kind === "epperm" || liveness.kind === "error") {
+        // EPERM (existe, sin permisos) o error de inspección: nunca es prueba
+        // de muerte. Se conserva la exclusión y se reporta causa (D3).
+        return null;
+      }
+      // liveness.kind === "gone": propietario muerto. Se retira el guard
+      // huérfano y se reintenta (C). La carrera lectura→borrado está protegida
+      // por O_EXCL: si otro proceso adquirió entre medio, obtendremos EEXIST
+      // en el siguiente intento y leeremos al nuevo propietario.
       try { rmSync(path, {force: true}); } catch { /* otro proceso lo retiro */ }
       continue;
     }
@@ -406,12 +450,25 @@ export function acquireGuard(experiment: string): Guard | null {
 export function releaseGuard(guard: Guard | null): void {
   if (!guard) return;
   try {
-    const current = readJson<{pid?: unknown}>(guard.path);
-    const currentPid = typeof current?.pid === "number" ? current.pid : null;
-    // Liberación condicionada: solo se elimina si sigue siendo el guard que
-    // esta solicitud adquirió (mismo PID). Si otro proceso lo reemplazó,
-    // nunca se borra el guard del sucesor (B).
-    if (currentPid === null || currentPid !== guard.pid) return;
+    const current = readJson<{
+      pid?: unknown; acquired_at_ms?: unknown; token?: unknown;
+    }>(guard.path);
+    const currentPid =
+      typeof current?.pid === "number" ? current.pid : null;
+    const currentToken = typeof current?.token === "string" ? current.token : null;
+    const currentAcquired =
+      typeof current?.acquired_at_ms === "number" ? current.acquired_at_ms : null;
+    // Liberación condicionada por identidad COMPLETA de la adquisición:
+    // mismo PID, mismo token y mismo acquired_at_ms. Una liberación antigua
+    // de otra adquisición (incluso con PID reutilizado) nunca borra el guard
+    // de una adquisición posterior (B).
+    if (
+      currentPid === null || currentPid !== guard.pid ||
+      currentToken === null || currentToken !== guard.token ||
+      currentAcquired === null || currentAcquired !== guard.acquired_at_ms
+    ) {
+      return;
+    }
     rmSync(guard.path, {force: true});
   } catch { /* ignore */ }
 }
