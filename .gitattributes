@@ -1,0 +1,14 @@
+# Serializacion estable del paquete de evidencia EVAL-CENSUS-V2.
+#
+# Los archivos de docs/evidence/ son un artefacto verificado por sha256
+# (docs/evidence/eval-census-v2-package/package_manifest.json). Git NO debe
+# traducir sus finales de linea: con core.autocrlf=true, git normalizaba a LF
+# en el blob y un checkout limpio (Linux) entregaba bytes distintos a los
+# hasheados, rompiendo la verificacion (21/33 archivos). Marcarlos como
+# binarios (-text) fuerza a git a almacenar y entregar los bytes EXACTOS.
+#
+# Reaplicar tras editar el paquete:  git add --renormalize .
+# Verificar:  python scripts/verify_eval_package.py --package docs/evidence/eval-census-v2-package
+
+docs/evidence/eval-census-v2-package/** -text
+docs/evidence/eval-census-v2-package/package_manifest.json -text
