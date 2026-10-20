@@ -18,7 +18,9 @@ export interface ReplayCandle {
 export interface ReplayEvent {
   at_ms: number;
   label: string;
-  kind: "signal" | "available" | "entry" | "exit";
+  kind: "detection" | "entry" | "exit";
+  /** Momento al que PERTENECE el patrón (metadata); no cuándo se conoce. */
+  formation_time_ms?: number;
 }
 
 export interface ReplayPosition {
@@ -176,6 +178,7 @@ export interface ReplayArtifact {
     interval: string;
     n_candles: number;
     n_context_candles: number;
+    initial_cursor_ms: number | null;
     context_candles: ReplayCandle[];
     candles: ReplayCandle[];
     steps: ReplayStep[];
@@ -242,6 +245,22 @@ export function parsePaperLabReplay(raw: unknown): ReplayArtifact {
       const at = Number(e.at_ms);
       if (!Number.isFinite(at) || at > Number(step.known_at_ms)) {
         throw new Error("PAPER_LAB_REPLAY_UNAVAILABLE: evento anticipado respecto a su instante");
+      }
+      const kind = String(e.kind ?? "");
+      if (kind !== "detection" && kind !== "entry" && kind !== "exit") {
+        throw new Error("PAPER_LAB_REPLAY_UNAVAILABLE: tipo de evento desconocido");
+      }
+      // La detección puede llevar su formación como METADATO, pero nunca puede
+      // revelarse antes de su propio instante (se conoce en `at_ms`).
+      const formation = e.formation_time_ms;
+      if (formation != null) {
+        const f = Number(formation);
+        if (!Number.isFinite(f) || f > at) {
+          throw new Error("PAPER_LAB_REPLAY_UNAVAILABLE: detección revelada antes de su formación");
+        }
+      }
+      if (kind === "detection" && formation == null) {
+        throw new Error("PAPER_LAB_REPLAY_UNAVAILABLE: detección sin hora de formación");
       }
     }
   }
@@ -345,6 +364,7 @@ export function parsePaperLabReplay(raw: unknown): ReplayArtifact {
       interval: String(win.interval ?? "UNKNOWN"),
       n_candles: Number(win.n_candles ?? candles.length),
       n_context_candles: Number(win.n_context_candles ?? 0),
+      initial_cursor_ms: win.initial_cursor_ms == null ? null : Number(win.initial_cursor_ms),
       context_candles: (Array.isArray(win.context_candles) ? win.context_candles : []).map((c: ReplayCandle) => c),
       candles: candles.map((c: ReplayCandle) => c),
       steps: steps as ReplayStep[],
@@ -534,9 +554,9 @@ export function replayPositionState(
   if (positionOpen) {
     return {state: "ABIERTA", label: "ABIERTA", entered, closed: false, positionOpen: true};
   }
-  // Antes de la entrada: distinguir "sin señal aún" de "seleccionada, en espera".
-  const hasSignal = events.some((e) => e.kind === "signal");
-  if (hasSignal) {
+  // Antes de la entrada: distinguir "sin detección aún" de "detectada, en espera".
+  const hasDetection = events.some((e) => e.kind === "detection");
+  if (hasDetection) {
     return {state: "EN_ESPERA", label: "SIN POSICIÓN / EN ESPERA", entered, closed: false, positionOpen: false};
   }
   return {state: "SIN_POSICION", label: "SIN POSICIÓN", entered, closed: false, positionOpen: false};
@@ -555,4 +575,38 @@ export function closeActionLabel(direction: string): string {
   if (direction === "LONG") return "cierre = venta";
   if (direction === "SHORT") return "cierre = compra";
   return "cierre = —";
+}
+
+// Estado del REPRODUCTOR (independiente del estado de posición). Cuatro
+// estados posibles, sin ambigüedad tras avanzar manualmente:
+//   sin_iniciar  — cursor en el inicio, nunca se reprodujo.
+//   reproduciendo — avanza solo.
+//   pausado      — detenido en el paso actual (incluye avance manual).
+//   terminado    — el cursor alcanzó el final.
+export type PlayerState = "sin_iniciar" | "reproduciendo" | "pausado" | "terminado";
+
+export function playerState(status: ReplayStatus, cursor: number, n: number): PlayerState {
+  if (cursor >= n) return "terminado";
+  if (status === "playing") return "reproduciendo";
+  if (cursor > 0) return "pausado";
+  return "sin_iniciar";
+}
+
+export function playerStateLabel(state: PlayerState): string {
+  switch (state) {
+    case "reproduciendo": return "REPRODUCIENDO";
+    case "pausado": return "PAUSADO";
+    case "terminado": return "TERMINADO";
+    default: return "SIN INICIAR";
+  }
+}
+
+// Velas de contexto CONOCIDAS en un instante dado (cierre <= cursor). El
+// contexto nunca se adelanta: si su cierre es posterior al cursor, no se muestra.
+export function contextCandlesKnownAt(
+  contextCandles: ReplayCandle[],
+  cursorMs: number | null,
+): ReplayCandle[] {
+  if (cursorMs == null) return [];
+  return contextCandles.filter((c) => c.close_time_ms != null && c.close_time_ms <= cursorMs);
 }

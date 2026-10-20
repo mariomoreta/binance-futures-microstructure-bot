@@ -30,8 +30,8 @@ export function PositionPanel({position, positionState, tradeDir, entryPx, stopP
       )}
       {open && position?.mark_px != null && <div className={s.row}><span className={s.k}>Marca al cierre conocido</span><span className={s.v}>{formatPrice(position.mark_px)}</span></div>}
       {positionState.state === "CERRADA" && <p className={s.note}>Posición cerrada: la entrada ya no está abierta. El resultado realizado aparece tras el cierre.</p>}
-      {positionState.state === "SIN_POSICION" && <p className={s.note}>Sin señal revelada todavía. Nada de la operación se anticipa antes de su instante.</p>}
-      {positionState.state === "EN_ESPERA" && <p className={s.note}>Operación seleccionada; la entrada aún no se ejecutó. Nada de la operación se anticipa antes de su instante.</p>}
+      {positionState.state === "SIN_POSICION" && <p className={s.note}>Sin detección revelada todavía. Nada de la operación se anticipa antes de su instante.</p>}
+      {positionState.state === "EN_ESPERA" && <p className={s.note}>Detección conocida; la entrada aún no se ejecutó. Nada de la operación se anticipa antes de su instante.</p>}
     </section>
   );
 }
@@ -88,7 +88,12 @@ export function EventLog({events}: EventLogProps) {
         {events.map((e, i) => (
           <div key={i} className={s.logEntry}>
             <span className={s.logTime}>{new Date(e.at_ms).toISOString()}</span>
-            <span className={s.logLabel}>{e.label}</span>
+            <span className={s.logLabel}>
+              {e.label}
+              {e.kind === "detection" && e.formation_time_ms != null && (
+                <span className={s.logMeta}> · formación {new Date(e.formation_time_ms).toISOString()}</span>
+              )}
+            </span>
             <span className={`${s.logKind} ${s[e.kind]}`}>{e.kind}</span>
           </div>
         ))}

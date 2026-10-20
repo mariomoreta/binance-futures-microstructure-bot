@@ -1,7 +1,7 @@
 "use client";
 import {useCallback, useEffect, useMemo, useRef, useState} from "react";
 import artifactJson from "@/artifacts/paper-lab-replay-v1.json";
-import {parsePaperLabReplay, msPerStep, replayPositionState, directionLabel, closeActionLabel, type ReplayStatus, type ReplayStepView, type ReplayCandle} from "@/lib/paper-lab-replay";
+import {parsePaperLabReplay, msPerStep, replayPositionState, directionLabel, closeActionLabel, playerState, playerStateLabel, contextCandlesKnownAt, type ReplayStatus, type ReplayStepView, type ReplayCandle, type ReplayEvent} from "@/lib/paper-lab-replay";
 import {formatPrice, formatMoney} from "@/lib/format";
 import {ReplayControls} from "./ReplayControls";
 import {ReplayChart} from "./ReplayChart";
@@ -27,6 +27,11 @@ export function ReplayUnavailable({message}: ReplayUnavailableProps) {
   );
 }
 
+function fmtUtc(ms: number | null | undefined): string {
+  if (ms == null) return "—";
+  return new Date(ms).toISOString().replace(/\.000Z$/, "Z");
+}
+
 export interface PaperLabReplayProps { source?: unknown; }
 export default function PaperLabReplay({source = artifactJson}: PaperLabReplayProps) {
   const [status, setStatus] = useState<ReplayStatus>("idle");
@@ -48,11 +53,22 @@ export default function PaperLabReplay({source = artifactJson}: PaperLabReplayPr
   const finished = cursor === n;
 
   // Todos los hooks van antes de cualquier retorno anticipado.
+  // Avance por el TEMPORIZADOR: nunca cambia el estado manual del reproductor.
+  const tickForward = useCallback(() => {
+    setCursor((c) => {
+      if (c >= n) return c;
+      const nc = Math.min(c + 1, n);
+      if (nc === n) setStatus("finished");
+      return nc;
+    });
+  }, [n]);
+  // Avance MANUAL (paso a paso): detiene la reproducción en el paso actual.
   const stepForward = useCallback(() => {
     if (finished) return;
     setCursor((c) => {
       const nc = Math.min(c + 1, n);
       if (nc === n) setStatus("finished");
+      else setStatus("paused");
       return nc;
     });
   }, [finished, n]);
@@ -65,15 +81,15 @@ export default function PaperLabReplay({source = artifactJson}: PaperLabReplayPr
   useEffect(() => {
     if (status !== "playing") { if (intervalRef.current != null) { clearInterval(intervalRef.current); intervalRef.current = null; } return; }
     const stepMs = msPerStep(speed);
-    intervalRef.current = window.setInterval(stepForward, stepMs) as unknown as number;
+    intervalRef.current = window.setInterval(tickForward, stepMs) as unknown as number;
     return () => { if (intervalRef.current != null) { clearInterval(intervalRef.current); intervalRef.current = null; } };
-  }, [status, speed, stepForward]);
+  }, [status, speed, tickForward]);
 
   if (!parsed) return <ReplayUnavailable message={parsedResult.error ?? "desconocido"} />;
 
   const { trade, event, levels, costs, result, window: w, provenance, eligibility_rule, replay_id, chosen_at_utc, limitations } = parsed;
   const revealedSteps = steps.slice(0, cursor);
-  const revealedEvents = revealedSteps.flatMap((s) => s.events);
+  const revealedEvents: ReplayEvent[] = revealedSteps.flatMap((s) => s.events);
   const lastStep = cursor > 0 ? steps[cursor - 1]! : null;
   const lastPosition = lastStep?.position_after ?? null;
   const lastExit = lastStep?.exit ?? null;
@@ -86,7 +102,7 @@ export default function PaperLabReplay({source = artifactJson}: PaperLabReplayPr
     progress: n === 0 ? 1 : cursor / n,
     step: lastStep,
     clockMs: lastStep?.known_at_ms ?? null,
-    clockUtc: (() => { const k = lastStep?.known_at_ms ?? null; return k != null ? new Date(k).toISOString().replace(/\.000Z$/, "Z") : null; })(),
+    clockUtc: fmtUtc(lastStep?.known_at_ms ?? null),
     // Solo los pasos de VELA aportan velas; los de EVENTO no.
     candles: revealedSteps.filter((s) => s.kind === "candle" && s.candle).map((s) => s.candle as ReplayCandle),
     events: revealedEvents,
@@ -99,6 +115,22 @@ export default function PaperLabReplay({source = artifactJson}: PaperLabReplayPr
     canRestart: true,
     canStepForward: !finished,
   } as const;
+
+  // Estado del REPRODUCTOR (independiente del estado de posición).
+  const pState = playerState(status, cursor, n);
+  const pLabel = playerStateLabel(pState);
+
+  // Instante inicial ANTES de la detección: la vista inicial muestra el contexto
+  // ya conocido en ese instante. No se simula un reloj sin definir.
+  const initialCursorMs = w.initial_cursor_ms;
+  // El contexto visible en un instante nunca incluye velas cuyo cierre sea posterior.
+  const clockForContext = cursor > 0 ? view.clockMs : initialCursorMs;
+  const contextVisible = contextCandlesKnownAt(w.context_candles, clockForContext);
+
+  // Detección revelada (solo cuando el replay la ha descubierto); su hora de
+  // formación se muestra como metadata, no como instante de revelación.
+  const detection = revealedEvents.find((e) => e.kind === "detection") ?? null;
+  const detectionRevealed = detection != null;
 
   const hasEntered = positionState.entered;
   const hasClosed = positionState.closed;
@@ -121,8 +153,8 @@ export default function PaperLabReplay({source = artifactJson}: PaperLabReplayPr
         Replay historico interactivo de una operacion registrada. No es seleccion automatica en vivo ni simulacion prospectiva.
       </p>
       <div className={s.statusRow}>
-        <span className={`${s.chip} ${view.finished ? s.pos : view.status === "playing" ? s.warn : ""}`}>
-          Replay: {view.finished ? "TERMINADO" : view.status === "playing" ? "REPRODUCIENDO" : view.status === "paused" ? "PAUSADO" : "REPOSO"}
+        <span className={`${s.chip} ${pState === "terminado" ? s.pos : pState === "reproduciendo" ? s.warn : ""}`}>
+          Reproducción: {pLabel}
         </span>
         <span className={s.chip}>Paso {view.cursor} de {view.n}</span>
         <span className={s.clock}>{view.clockUtc ?? "—"}</span>
@@ -135,9 +167,16 @@ export default function PaperLabReplay({source = artifactJson}: PaperLabReplayPr
         <span className={s.chip}>Control de mecánica (BTC) — no valida el selector de extremos</span>
         <span className={`${s.chip} ${s.mono}`}>{replay_id}</span>
       </div>
+      <p className={s.note}>
+        Estos chips describen el <strong>escenario seleccionado offline</strong> (símbolo, familia y dirección del caso elegido por regla fija).
+        No son una detección automática: la <strong>detección</strong> se revela en el replay solo cuando es conocida (paso «detección conocida»),
+        mostrando entonces su hora original de formación como metadata.
+      </p>
 
       <ReplayControls
         status={view.status}
+        playerState={pState}
+        playerLabel={pLabel}
         speed={speed}
         onPlay={handlePlay}
         onPause={handlePause}
@@ -160,10 +199,18 @@ export default function PaperLabReplay({source = artifactJson}: PaperLabReplayPr
               <button type="button" className={s.replay} onClick={() => setZoom(1)}>Reset</button>
             </div>
           </div>
+          <div className={s.chartLegend} aria-label="Leyenda del grafico">
+            <span><i className={s.swContext} aria-hidden="true"></i>contexto previo (atenuado)</span>
+            <span><i className={s.swReplay} aria-hidden="true"></i>velas del replay</span>
+            {hasEntered && <span><i className={s.swEntry} aria-hidden="true"></i>Entrada {formatPrice(entryPx)}</span>}
+            {hasEntered && !hasClosed && <span><i className={s.swStop} aria-hidden="true"></i>Stop {formatPrice(stopPx)}</span>}
+            {exitShown && exitPx != null && <span><i className={s.swExit} aria-hidden="true"></i>Cierre {formatPrice(exitPx)}</span>}
+            <span><i className={s.swCursor} aria-hidden="true"></i>cursor</span>
+          </div>
           <div className={s.chartWrap}>
             <ReplayChart
               candles={view.candles}
-              contextCandles={w.context_candles}
+              contextCandles={contextVisible}
               entryPx={hasEntered ? entryPx : null}
               stopPx={hasEntered && !hasClosed ? stopPx : null}
               exitPx={exitPx}
@@ -173,7 +220,10 @@ export default function PaperLabReplay({source = artifactJson}: PaperLabReplayPr
             />
           </div>
           <p className={s.note}>
-            Las {w.n_context_candles} velas atenuadas a la izquierda son contexto previo REAL (mismo paquete), solo informativo: no forman parte de la reproducción ni de posiciones/P&L. Solo se muestran velas cerradas conocidas hasta el cursor; sin ticks ni recorrido intrabar inventado. Los niveles de cierre aparecen solo tras el cierre.
+            Vista inicial: cursor en <span className={s.mono}>{fmtUtc(initialCursorMs)}</span>, anterior a la detección; solo se muestran las velas de contexto ya
+            conocidas hasta ese instante. Las {w.n_context_candles} velas atenuadas a la izquierda son contexto previo REAL (mismo paquete), solo informativo: no forman
+            parte de la reproducción ni de posiciones/P&L, y su cierre nunca supera el cursor. Solo se muestran velas cerradas conocidas hasta el cursor; sin ticks ni
+            recorrido intrabar inventado. Los niveles de cierre aparecen solo tras el cierre.
           </p>
         </section>
 
@@ -234,6 +284,18 @@ export default function PaperLabReplay({source = artifactJson}: PaperLabReplayPr
           />
         </section>
       </div>
+
+      <section className={s.card} aria-label="Revelación de la detección">
+        <h3>Revelación de la detección (formación vs disponibilidad)</h3>
+        <div className={s.row}><span className={s.k}>Hora de formación (metadata)</span><span className={`${s.v} ${s.mono}`}>{fmtUtc(event.event_time_ms)}</span></div>
+        <div className={s.row}><span className={s.k}>Disponible a partir de</span><span className={`${s.v} ${s.mono}`}>{fmtUtc(event.available_at_ms)}</span></div>
+        <div className={s.row}><span className={s.k}>Ejecución (entrada)</span><span className={`${s.v} ${s.mono}`}>{fmtUtc(trade.entry_ms)}</span></div>
+        <div className={s.row}><span className={s.k}>Estado en el replay</span><span className={s.v} data-revealed={detectionRevealed}>{detectionRevealed ? "Detección revelada" : "Detección aún no conocida"}</span></div>
+        <p className={s.note}>
+          La formación pertenece a un momento del patrón, pero <strong>no autoriza a revelar la detección</strong>: el patrón solo puede conocerse en su instante de
+          disponibilidad. La cinta lo revela en ese instante ({fmtUtc(event.available_at_ms)}) y muestra entonces su hora original de formación. La entrada es posterior.
+        </p>
+      </section>
 
       {hasClosed && (
         <section className={s.card} aria-label="Resumen final">

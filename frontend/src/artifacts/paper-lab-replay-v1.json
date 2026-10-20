@@ -493,6 +493,7 @@
         "close_time_ms": 1788903899999
       }
     ],
+    "initial_cursor_ms": 1788903899999,
     "candles": [
       {
         "open_time_ms": 1788903900000,
@@ -530,33 +531,6 @@
     "steps": [
       {
         "step": 0,
-        "kind": "event",
-        "candle": null,
-        "known_at_ms": 1788903900000,
-        "opens_at_ms": 1788903900000,
-        "closed_at_ms": null,
-        "events": [
-          {
-            "at_ms": 1788903900000,
-            "label": "Señal histórica formada (evento)",
-            "kind": "signal"
-          }
-        ],
-        "position_after": {
-          "open": false,
-          "entry_px": null,
-          "qty": null,
-          "mark_px": null,
-          "mark_ms": null
-        },
-        "mfe_pct": null,
-        "mae_pct": null,
-        "unrealized": null,
-        "exit": null,
-        "final_candle": false
-      },
-      {
-        "step": 1,
         "kind": "candle",
         "candle": {
           "open_time_ms": 1788903900000,
@@ -584,7 +558,7 @@
         "final_candle": false
       },
       {
-        "step": 2,
+        "step": 1,
         "kind": "event",
         "candle": null,
         "known_at_ms": 1788904799999,
@@ -593,8 +567,9 @@
         "events": [
           {
             "at_ms": 1788904799999,
-            "label": "Disponible tras cierre de formación",
-            "kind": "available"
+            "label": "Detección conocida (formación conservada como metadata)",
+            "kind": "detection",
+            "formation_time_ms": 1788903900000
           }
         ],
         "position_after": {
@@ -611,7 +586,7 @@
         "final_candle": false
       },
       {
-        "step": 3,
+        "step": 2,
         "kind": "event",
         "candle": null,
         "known_at_ms": 1788904800000,
@@ -643,7 +618,7 @@
         "final_candle": false
       },
       {
-        "step": 4,
+        "step": 3,
         "kind": "candle",
         "candle": {
           "open_time_ms": 1788904800000,
@@ -676,7 +651,7 @@
         "final_candle": false
       },
       {
-        "step": 5,
+        "step": 4,
         "kind": "candle",
         "candle": {
           "open_time_ms": 1788905700000,
@@ -709,7 +684,7 @@
         "final_candle": false
       },
       {
-        "step": 6,
+        "step": 5,
         "kind": "candle",
         "candle": {
           "open_time_ms": 1788906600000,
@@ -742,7 +717,7 @@
         "final_candle": true
       },
       {
-        "step": 7,
+        "step": 6,
         "kind": "event",
         "candle": null,
         "known_at_ms": 1788907500000,

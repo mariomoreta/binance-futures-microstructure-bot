@@ -61,6 +61,7 @@ git fetch origin
 # Verificar determinismo del artefacto Paper Lab (solo lectura, --check no escribe)
 python scripts/build_paper_lab_replay.py --traces-dir "C:\proyectos\binance-temp\paper_lab_audit_20261019_codex\traces" --out frontend/src/artifacts/paper-lab-replay-v1.json --check
 # Esperado: PASS: artefacto determinista sha256=96a5fa46499000a8aa223093a145bda49744157468ae80c56b4b126234e80882
+# (Tras las correcciones acotadas de 2026-10-20 el esperado es sha256=0db0c4d0cf1767736cbeafbae62e12a10adce512e423520bb5046c58dfbfff99)
 
 # Suite canonica (sin cambios de código en este alcance; ejecutar solo si se justifica)
 python run_tests.py
@@ -81,7 +82,7 @@ git grep -l audit_public_data  # esperado: sin resultados
 | Trades 5255 desglose | **Corregido** | Hipótesis 2991 (5 abiertas → 2986 realizadas); Placebo 2264 (2 abiertas → 2262 realizadas); total 5255 (7 abiertas → 5248 realizadas). `docs/ADDENDUM_CENSUS_EVAL_V2_CORRECCION.md`. |
 | MFE/MAE | **Corregido** | Excursión por posición, NO ganancia capturada por la salida. `docs/CURRENT_STATE.md`, `BACKTEST_READ_CONTRACT_V1.md`. |
 | V2 vistas | **Verificado** | `/movers` real; `/paper-lab` componente real; `/backtest` stub (FutureWorkspace). |
-| Paper Lab publicado en Git | **Cerrado 2026-10-20** | Artefacto, generador, parser/player, componentes, ruta y tests publicados. Artefacto determinista `--check` PASS sha256 `96a5fa46...`. |
+| Paper Lab publicado en Git | **Cerrado 2026-10-20** | Artefacto, generador, parser/player, componentes, ruta y tests publicados. Artefacto determinista `--check` PASS sha256 `96a5fa46...` → **`0db0c4d0...`** tras las correcciones acotadas de 2026-10-20. |
 | Paper Lab servido/revisado | **Cerrado 2026-10-20** | Servido en `127.0.0.1:3020/paper-lab` (sin monitor); sirve LONG (no la SHORT obsoleta); capturas desktop+mobile de 3 estados generadas. Inspección **visual** pendiente del revisor humano (APIs de visión del entorno caídas). |
 | Selector automático (protocolo) | **Pendiente** | Sobre EVAL-CENSUS-V2, info en T, sin lookahead, ventana incompleta → UNKNOWN. |
 | Adquisición escalonada | **Pendiente (protocolo solo)** | Universo ligero → candidatos → detalle limitado; fuentes gratuitas; sin colectores iniciados. |
@@ -93,12 +94,12 @@ git grep -l audit_public_data  # esperado: sin resultados
 |---|---|---|
 | Trabajo local | Componentes, page.tsx, format.ts, `paper-lab-replay.ts`, build script, artefacto, tests | No es motor de paper (sin position manager, ledger de caja, funding recurrente ni risk engine) |
 | Código publicado en Git | Artefacto + generador + parser/player + componentes + ruta + tests publicados | `/backtest` sigue stub |
-| Probado | `--check` PASS determinista; suite frontend 347/347; `tsc --noEmit` limpio; `eslint` 0 errores; `next build` OK | Umbrales siguen siendo HIPÓTESIS; no valida edge |
-| Servido y revisado | Servido en `127.0.0.1:3020/paper-lab` (sin monitor); capturas desktop+mobile de los 3 estados (`antes de entrada`/`abierta`/`cerrada`) | Inspección **visual** pendiente del revisor humano (modelo texto; APIs de visión caídas). Verificación de contenido por a11y-tree + texto |
+| Probado | `--check` PASS determinista; suite frontend 368/368; `tsc --noEmit` limpio; `eslint` 0 errores; `next build` OK | Umbrales siguen siendo HIPÓTESIS; no valida edge |
+| Servido y revisado | Servido en `127.0.0.1:3020/paper-lab` (sin monitor); capturas desktop+mobile de los 3 estados (`antes de entrada`/`abierta`/`cerrada`) | Inspección **visual** pendiente del revisor humano (modelo texto; APIs de visión caídas). Verificación de contenido por a11y-tree + texto + geometría de DOM |
 
-**Identidad del artefacto (verificada en código y en build servida):** **BTCUSDT 15m LONG H1** (no SHORT). `replay_id=PLR-BTCUSDT-LONG-1788903900000`, `event_time_ms=1788903900000` (2026-09-08T21:45:00Z), `entry_ms=1788904800000` (22:00:00Z), `exit_ms=1788907500000` (22:45:00Z, salida por `horizon`), `entry_px=78458.7`, `exit_px=78456.8`, `gross_pnl=-0.0242`, `net_pnl=-1.6242` (pérdida). 8 pasos (vela/evento) + 48 velas de contexto previo real (solo visuales). Frontera causal: pasos de vela vs pasos de evento; invariante `event.at_ms <= step.known_at_ms`.
+**Identidad del artefacto (verificada en código y en build servida):** **BTCUSDT 15m LONG H1** (no SHORT). `replay_id=PLR-BTCUSDT-LONG-1788903900000`, `event_time_ms=1788903900000` (2026-09-08T21:45:00Z), `entry_ms=1788904800000` (22:00:00Z), `exit_ms=1788907500000` (22:45:00Z, salida por `horizon`), `entry_px=78458.7`, `exit_px=78456.8`, `gross_pnl=-0.0242`, `net_pnl=-1.6242` (pérdida). **7 pasos (3 velas + 4 eventos)** + 48 velas de contexto previo real (solo visuales). Frontera causal: pasos de vela vs pasos de evento; la detección se revela en `available_at` con `formation_time` como metadata; `initial_cursor_ms` fija la vista inicial anterior a la detección. Invariantes `event.at_ms <= step.known_at_ms` y `formation_time_ms <= detection.at_ms`.
 
-**SHA/build/URL comprobados (2026-10-20):** sha256 del artefacto `96a5fa46499000a8aa223093a145bda49744157468ae80c56b4b126234e80882`; `BUILD_ID=jV0tcgCSIEFWga6_YmJW3`; URL local `http://127.0.0.1:3020/paper-lab` (servida la operación LONG, ya no la SHORT obsoleta). Capturas en la raíz del repo (no se commitean).
+**SHA/build/URL comprobados (2026-10-20, correcciones acotadas):** sha256 del artefacto `0db0c4d0cf1767736cbeafbae62e12a10adce512e423520bb5046c58dfbfff99` (anterior `96a5fa46...`); `BUILD_ID=45NLJvJuWqcMjj2IFxW-E` (anterior `jV0tcgCSIEFWga6_YmJW3`); URL local `http://127.0.0.1:3020/paper-lab` (servida la operación LONG). Capturas en la raíz del repo (no se commitean). Mecánica económica sin cambios.
 
 ---
 

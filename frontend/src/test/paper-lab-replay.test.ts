@@ -1,7 +1,11 @@
 // @vitest-environment node
 import {it, expect, describe} from "vitest";
 import artifact from "@/artifacts/paper-lab-replay-v1.json";
-import {parsePaperLabReplay, ReplayPlayer, msPerStep, replayPositionState, directionLabel, closeActionLabel} from "@/lib/paper-lab-replay";
+import {
+  parsePaperLabReplay, ReplayPlayer, msPerStep, replayPositionState,
+  directionLabel, closeActionLabel, playerState, playerStateLabel,
+  contextCandlesKnownAt,
+} from "@/lib/paper-lab-replay";
 
 const a = artifact as Record<string, unknown>;
 
@@ -32,41 +36,85 @@ it("identidad de la operacion elegida (regla determinista: primera por timestamp
   expect(v.trade.funding_accounting_complete).toBe(true);
 });
 
-it("tiempos causales: senal -> disponible -> entrada -> salida (sin lookahead)", () => {
+describe("revelacion causal: formacion vs disponibilidad vs entrada", () => {
+  const v = parsePaperLabReplay(a);
+
+  it("formation_time pertenece al patron; available_at es cuando puede conocerse", () => {
+    // La formacion es anterior a la disponibilidad, que es anterior a la entrada.
+    expect(v.event.event_time_ms).toBeLessThan(v.event.available_at_ms as number);
+    expect(v.event.available_at_ms as number).toBeLessThan(v.trade.entry_ms);
+  });
+
+  it("la cinta revela la deteccion SOLO en available_at, nunca en formation_time", () => {
+    const formationSteps = v.window.steps.filter(
+      (s) => s.known_at_ms === v.event.event_time_ms,
+    );
+    // No hay ningun paso (ni vela ni evento) con reloj == formation_time que revele la deteccion.
+    for (const s of formationSteps) {
+      expect(s.events.some((e) => e.kind === "detection")).toBe(false);
+    }
+  });
+
+  it("la formacion se conserva como metadata en el paso de deteccion revelada", () => {
+    const detectionSteps = v.window.steps.filter((s) => s.events.some((e) => e.kind === "detection"));
+    expect(detectionSteps).toHaveLength(1);
+    const step = detectionSteps[0]!;
+    expect(step.known_at_ms).toBe(v.event.available_at_ms);
+    const ev = step.events.find((e) => e.kind === "detection")!;
+    expect(ev.formation_time_ms).toBe(v.event.event_time_ms);
+    // La deteccion se conoce en su instante, no en el de formacion.
+    expect(ev.at_ms).toBe(v.event.available_at_ms);
+  });
+
+  it("hay un paso de vela de formacion conocido ANTES (o en) available_at", () => {
+    // La vela de formacion cierra en available_at; su presencia no revela deteccion.
+    const formationCandle = v.window.steps.find(
+      (s) => s.kind === "candle" && s.candle!.open_time_ms === v.event.event_time_ms,
+    )!;
+    expect(formationCandle).toBeDefined();
+    expect(formationCandle.events).toHaveLength(0);
+    expect(formationCandle.candle!.close_time_ms).toBe(v.event.available_at_ms);
+  });
+});
+
+it("tiempos causales: deteccion -> disponible -> entrada -> salida (sin lookahead)", () => {
   const v = parsePaperLabReplay(a);
   const { trade: t } = v;
   expect(t.event_time_ms).toBeLessThan(t.entry_ms);
   expect(t.entry_ms).toBeLessThanOrEqual(t.exit_ms);
-  // disponibilidad = cierre de vela de formacion; la entrada es la primera vela despues del evento
   expect(t.entry_ms).toBeGreaterThanOrEqual((v.event.available_at_ms as number) + 1);
-  // salida por horizonte en el instante del horizonte
   expect(t.exit_ms).toBe(t.event_time_ms + v.levels.horizon_ms);
 });
 
 it("niveles y costes originales del motor (sin TP ni trailing inventados)", () => {
   const v = parsePaperLabReplay(a);
-  expect(v.levels.stop_px).toBeLessThan(v.levels.entry_px); // LONG: stop por debajo
+  expect(v.levels.stop_px).toBeLessThan(v.levels.entry_px);
   expect(v.levels.stop_distance_pct).toBe(0.5);
   expect(v.levels.horizon_ms).toBe(3600000);
   expect(v.levels.notional_usdt).toBe(1000);
   expect(v.levels.fee_bps).toBe(5);
   expect(v.levels.spread_bps).toBe(1);
   expect(v.levels.slippage_bps).toBe(2);
-  // no take-profit ni trailing en el artefacto: el cierre es el motivo real del replay
   expect(v.trade.exit_reason).not.toBe("take_profit");
   expect(v.limitations.some((l: string) => /take-profit|trailing stop/i.test(l))).toBe(true);
 });
 
-it("reconciliacion economica final: neto coincide con el replay del motor", () => {
+describe("reconciliacion economica final: SIN cambios por esta correccion", () => {
   const v = parsePaperLabReplay(a);
-  const r = v.result.reconciled_to_engine;
-  expect(Object.keys(r).length).toBeGreaterThan(0);
-  expect(Object.values(r).every(Boolean)).toBe(true);
-  expect(v.result.net_pnl).toBe(v.trade.net_pnl);
-  expect(v.result.realized_net).toBe(v.trade.net_pnl);
-  expect(v.result.gross_pnl + (-1) * (v.costs.friction)).toBeCloseTo(v.result.net_pnl, 6);
-  expect(v.result.tolerance.relative).toBe(1e-9);
-  expect(v.result.tolerance.absolute_usdt).toBe(1e-9);
+  it("neto coincide con el replay del motor y con el valor registrado", () => {
+    const r = v.result.reconciled_to_engine;
+    expect(Object.values(r).every(Boolean)).toBe(true);
+    expect(v.result.net_pnl).toBe(v.trade.net_pnl);
+    expect(v.result.realized_net).toBe(v.trade.net_pnl);
+    expect(v.result.gross_pnl + (-1) * (v.costs.friction)).toBeCloseTo(v.result.net_pnl, 9);
+    // Valores exactos del motor (inalterados por la correccion de causalidad).
+    expect(v.trade.gross_pnl).toBeCloseTo(-0.02421656234419101, 12);
+    expect(v.trade.net_pnl).toBeCloseTo(-1.6241971890943157, 12);
+    expect(v.trade.fees).toBeCloseTo(0.9999878917188278, 12);
+    expect(v.trade.funding).toBe(0);
+    expect(v.trade.entry_px).toBe(78458.7);
+    expect(v.trade.exit_px).toBe(78456.8);
+  });
 });
 
 it("procedencia versionada: hashes completos y sin dependencia de DB canonica", () => {
@@ -78,38 +126,53 @@ it("procedencia versionada: hashes completos y sin dependencia de DB canonica", 
   for (const hash of Object.values(v.provenance.source_hashes)) expect(hash).toMatch(/^[0-9a-f]{64}$/);
 });
 
-it("contexto previo: velas reales, contiguas, solo contexto (no timeline)", () => {
+describe("contexto previo y vista inicial (antes de la deteccion)", () => {
   const v = parsePaperLabReplay(a);
-  expect(v.window.n_context_candles).toBeGreaterThan(0);
-  expect(v.window.context_candles).toHaveLength(v.window.n_context_candles);
-  // contexto contiguo: termina justo antes de la vela de formacion, sin huecos
   const ctx = v.window.context_candles;
-  const firstReplayOpen = v.window.candles[0]!.open_time_ms;
-  expect(firstReplayOpen - ctx[ctx.length - 1]!.close_time_ms!).toBe(1);
-  for (let i = 1; i < ctx.length; i++) {
-    expect(ctx[i]!.open_time_ms - ctx[i - 1]!.open_time_ms).toBe(15 * 60 * 1000);
-    expect(ctx[i]!.close_time_ms!).toBe(ctx[i]!.open_time_ms + 15 * 60 * 1000 - 1);
-  }
-  // todas son anteriores al evento y nunca forman parte de pasos (kind=candle)
-  for (const c of ctx) expect(c.close_time_ms!).toBeLessThan(v.trade.event_time_ms);
-  const stepCandleOpens = v.window.steps.filter((s) => s.kind === "candle").map((s) => s.candle!.open_time_ms);
-  for (const c of ctx) expect(stepCandleOpens).not.toContain(c.open_time_ms);
+
+  it("contexto: velas reales, contiguas, solo contexto (no timeline)", () => {
+    expect(v.window.n_context_candles).toBeGreaterThan(0);
+    expect(ctx).toHaveLength(v.window.n_context_candles);
+    const firstReplayOpen = v.window.candles[0]!.open_time_ms;
+    expect(firstReplayOpen - ctx[ctx.length - 1]!.close_time_ms!).toBe(1);
+    for (let i = 1; i < ctx.length; i++) {
+      expect(ctx[i]!.open_time_ms - ctx[i - 1]!.open_time_ms).toBe(15 * 60 * 1000);
+      expect(ctx[i]!.close_time_ms!).toBe(ctx[i]!.open_time_ms + 15 * 60 * 1000 - 1);
+    }
+    for (const c of ctx) expect(c.close_time_ms!).toBeLessThan(v.trade.event_time_ms);
+    const stepCandleOpens = v.window.steps.filter((s) => s.kind === "candle").map((s) => s.candle!.open_time_ms);
+    for (const c of ctx) expect(stepCandleOpens).not.toContain(c.open_time_ms);
+  });
+
+  it("el instante inicial es anterior a la deteccion y no revela nada de la operacion", () => {
+    const init = v.window.initial_cursor_ms!;
+    expect(init).toBeLessThan(v.event.event_time_ms);
+    // En el instante inicial, la deteccion aun no es conocida.
+    const revelado = v.window.steps.filter((s) => s.known_at_ms! <= init);
+    expect(revelado.some((s) => s.events.some((e) => e.kind === "detection"))).toBe(false);
+  });
+
+  it("todas las velas de contexto mostradas cumplen close_time_ms <= cursor", () => {
+    const init = v.window.initial_cursor_ms!;
+    const shownInit = contextCandlesKnownAt(ctx, init);
+    expect(shownInit.length).toBeGreaterThan(0);
+    for (const c of shownInit) expect(c.close_time_ms!).toBeLessThanOrEqual(init);
+    // A un instante intermedio, nunca se muestra contexto con cierre posterior.
+    const mid = v.trade.entry_ms;
+    for (const c of contextCandlesKnownAt(ctx, mid)) expect(c.close_time_ms!).toBeLessThanOrEqual(mid);
+  });
 });
 
 it("cinta de pasos: separa EVENTOS de VELAS y no anticipa nada", () => {
   const v = parsePaperLabReplay(a);
   const steps = v.window.steps;
-  // cada paso es de uno de los dos tipos, nunca ambos
   for (const s of steps) {
     if (s.kind === "candle") { expect(s.candle).not.toBeNull(); expect(s.events).toHaveLength(0); }
     else { expect(s.candle).toBeNull(); expect(s.events.length).toBeGreaterThanOrEqual(1); }
-    // invariante causal: ningun evento supera el reloj del paso
     for (const e of s.events) expect(e.at_ms).toBeLessThanOrEqual(s.known_at_ms!);
   }
-  // el reloj es monotono no decreciente
   const clocks = steps.map((s) => s.known_at_ms!);
   for (let i = 1; i < clocks.length; i++) expect(clocks[i]!).toBeGreaterThanOrEqual(clocks[i - 1]!);
-  // los eventos clave viven en pasos de evento, en su instante exacto
   const entryStep = steps.find((s) => s.events.some((e) => e.kind === "entry"));
   expect(entryStep!.kind).toBe("event");
   expect(entryStep!.known_at_ms).toBe(v.trade.entry_ms);
@@ -118,24 +181,36 @@ it("cinta de pasos: separa EVENTOS de VELAS y no anticipa nada", () => {
   expect(exitStep!.known_at_ms).toBe(v.trade.exit_ms);
 });
 
-describe("fronteras temporales (t-1 ms / t exacto / t+1 ms)", () => {
+describe("fronteras temporales de revelacion (t-1 ms / t exacto / t+1 ms)", () => {
   const v = parsePaperLabReplay(a);
   const steps = v.window.steps;
-  const n = steps.length;
 
-  // Devuelve el estado tras revelar todos los pasos cuyo reloj <= cursorMs.
   const stateAt = (cursorMs: number) => {
     const revealed = steps.filter((s) => s.known_at_ms! <= cursorMs);
     const events = revealed.flatMap((s) => s.events);
     const last = revealed[revealed.length - 1] ?? null;
     return {
       events,
+      detected: events.some((e) => e.kind === "detection"),
       entered: events.some((e) => e.kind === "entry"),
       exited: events.some((e) => e.kind === "exit"),
       position: last?.position_after ?? null,
       exit: last?.exit ?? null,
     };
   };
+
+  it("deteccion: no revelada en available_at-1ms, revelada en available_at y mas alla", () => {
+    const t = v.event.available_at_ms as number;
+    expect(stateAt(t - 1).detected).toBe(false);
+    expect(stateAt(t).detected).toBe(true);
+    expect(stateAt(t + 1).detected).toBe(true);
+  });
+
+  it("formacion (t-1) NO revela la deteccion (aunque el patron pertenezca a ese instante)", () => {
+    const formation = v.event.event_time_ms;
+    expect(stateAt(formation).detected).toBe(false);
+    expect(stateAt(formation + 1).detected).toBe(false);
+  });
 
   it("entrada: no conocida en t-1 ms, conocida en t y mas alla", () => {
     const t = v.trade.entry_ms;
@@ -152,21 +227,24 @@ describe("fronteras temporales (t-1 ms / t exacto / t+1 ms)", () => {
   });
 
   it("el instante justo antes del cierre de la ultima vela NO revela la salida", () => {
-    const t = v.trade.exit_ms; // 22:45:00.000
-    const beforeClose = t - 1; // 22:44:59.999 = cierre de la ultima vela
-    const s = stateAt(beforeClose);
+    const t = v.trade.exit_ms;
+    const s = stateAt(t - 1);
     expect(s.exited).toBe(false);
     expect(s.exit).toBeNull();
-    // la posicion seguia abierta: el resultado realizado aun no existe
     expect(s.position!.open).toBe(true);
   });
 
-  it("ningun paso revela un evento con reloj anterior a su instante", () => {
-    for (const s of steps) for (const e of s.events) expect(e.at_ms).toBeLessThanOrEqual(s.known_at_ms!);
-    // reforzado: existe un paso de vela cuyo reloj (…59.999) precede al evento de cierre
-    const candleBeforeExit = steps.find((s) => s.kind === "candle" && s.known_at_ms! === v.trade.exit_ms - 1);
-    expect(candleBeforeExit).toBeDefined();
-    expect(candleBeforeExit!.events).toHaveLength(0);
+  it("cambiar datos posteriores no altera la vista anterior al cursor", () => {
+    const cursorMs = v.trade.entry_ms;
+    const before = steps.filter((s) => s.known_at_ms! <= cursorMs).map((s) => ({kind: s.kind, clock: s.known_at_ms}));
+    // Alterar pasos posteriores al cursor no cambia nada anterior a el.
+    const tampered = steps.map((s, i) => (s.known_at_ms! > cursorMs ? {...s, events: [], exit: {...(s.exit ?? {reason: "x", px: 0, ms: 0, executed: true}), reason: "ALTERADO"}} : s));
+    const after = tampered.filter((s) => s.known_at_ms! <= cursorMs).map((s) => ({kind: s.kind, clock: s.known_at_ms}));
+    expect(after).toEqual(before);
+    const p1 = new ReplayPlayer(steps, {cursor: steps.filter((s) => s.known_at_ms! <= cursorMs).length, status: "paused"});
+    const p2 = new ReplayPlayer(tampered, {cursor: steps.filter((s) => s.known_at_ms! <= cursorMs).length, status: "paused"});
+    expect(p1.view().events).toEqual(p2.view().events);
+    expect(p1.view().candles).toEqual(p2.view().candles);
   });
 });
 
@@ -195,12 +273,9 @@ describe("ReplayPlayer (estado del replay, separado del monitor)", () => {
       p.stepForward();
       const view = p.view();
       expect(view.cursor).toBe(k);
-      // solo los pasos de vela aportan velas
       const candleSteps = steps.slice(0, k).filter((s) => s.kind === "candle");
       expect(view.candles).toHaveLength(candleSteps.length);
-      // nunca se revelan velas futuras
       for (const c of view.candles) expect(c.open_time_ms).toBeLessThanOrEqual(candleSteps[candleSteps.length - 1]!.candle!.open_time_ms);
-      // el cierre (salida) solo aparece en el ultimo paso
       if (steps[k - 1]!.kind !== "event" || !steps[k - 1]!.events.some((e) => e.kind === "exit")) {
         expect(view.exit).toBeNull();
       }
@@ -214,7 +289,7 @@ describe("ReplayPlayer (estado del replay, separado del monitor)", () => {
     }
   });
 
-  it("estados: SIN_POSICION -> EN_ESPERA -> ABIERTA -> CERRADA", () => {
+  it("estados de posicion: SIN_POSICION -> EN_ESPERA -> ABIERTA -> CERRADA", () => {
     const p = new ReplayPlayer(steps, { cursor: 0, status: "idle", speed: 1 });
     const seen: string[] = [p.view().positionState.state];
     for (let k = 1; k <= steps.length; k++) { p.stepForward(); seen.push(p.view().positionState.state); }
@@ -222,7 +297,6 @@ describe("ReplayPlayer (estado del replay, separado del monitor)", () => {
     expect(seen).toContain("EN_ESPERA");
     expect(seen).toContain("ABIERTA");
     expect(seen[seen.length - 1]).toBe("CERRADA");
-    // el orden es monotono en el sentido exigido
     expect(seen.indexOf("EN_ESPERA")).toBeLessThan(seen.indexOf("ABIERTA"));
     expect(seen.indexOf("ABIERTA")).toBeLessThan(seen.indexOf("CERRADA"));
   });
@@ -230,14 +304,12 @@ describe("ReplayPlayer (estado del replay, separado del monitor)", () => {
   it("no expone P&L final ni MFE/MAE final antes del cierre", () => {
     const sentinelSteps = steps.map((step, index) => index === steps.length - 1 ? {...step, mfe_pct: 999, mae_pct: 999} : step);
     const exitIdx = sentinelSteps.findIndex((s) => s.exit != null);
-    // un paso intermedio con posicion abierta y aun sin cierre
     const p = new ReplayPlayer(sentinelSteps, { cursor: exitIdx - 2, status: "paused", speed: 1 });
     const view = p.view();
     expect(view.finished).toBe(false);
     expect(view.exit).toBeNull();
     expect(view.position!.open).toBe(true);
     expect(view.unrealized).not.toBeNull();
-    // el bruto no realizado es el de la marca conocida, no el resultado realizado
     expect(view.unrealized!.gross).not.toBe(parsePaperLabReplay(a).trade.gross_pnl);
     expect(view.step!.mfe_pct).not.toBe(999);
     expect(view.step!.mae_pct).not.toBe(999);
@@ -257,7 +329,7 @@ describe("ReplayPlayer (estado del replay, separado del monitor)", () => {
 
   it("no retrocede y respeta limites", () => {
     const p = new ReplayPlayer(steps, { cursor: 0, status: "idle", speed: 1 });
-    p.stepBackward(); // en 0 no hace nada
+    p.stepBackward();
     expect(p.cursor).toBe(0);
     p.stepForward(); p.stepForward();
     expect(p.cursor).toBe(2);
@@ -267,49 +339,110 @@ describe("ReplayPlayer (estado del replay, separado del monitor)", () => {
   });
 });
 
+describe("estado del REPRODUCTOR (independiente del estado de posicion)", () => {
+  const v = parsePaperLabReplay(a);
+  const n = v.window.steps.length;
+
+  it("distingue sin_iniciar / reproduciendo / pausado / terminado", () => {
+    expect(playerState("idle", 0, n)).toBe("sin_iniciar");
+    expect(playerState("playing", 0, n)).toBe("reproduciendo");
+    expect(playerState("playing", 3, n)).toBe("reproduciendo");
+    expect(playerState("paused", 3, n)).toBe("pausado");
+    expect(playerState("idle", 3, n)).toBe("pausado"); // avanzar manualmente pausa
+    expect(playerState("paused", n, n)).toBe("terminado");
+    expect(playerState("playing", n, n)).toBe("terminado");
+    expect(playerStateLabel("sin_iniciar")).toBe("SIN INICIAR");
+    expect(playerStateLabel("reproduciendo")).toBe("REPRODUCIENDO");
+    expect(playerStateLabel("pausado")).toBe("PAUSADO");
+    expect(playerStateLabel("terminado")).toBe("TERMINADO");
+  });
+
+  it("estado del reproductor y estado de posicion son independientes", () => {
+    // Tras avanzar manualmente hasta la posicion abierta: reproductor pausado,
+    // posicion ABIERTA (no "REPOSO").
+    const p = new ReplayPlayer(v.window.steps, {cursor: 0, status: "idle"});
+    const open = v.window.steps.findIndex((s) => s.position_after.open);
+    for (let k = 0; k <= open; k++) p.stepForward();
+    const view = p.view();
+    expect(view.positionState.state).toBe("ABIERTA");
+    expect(playerState("idle", p.cursor, p.n)).toBe("pausado");
+    expect(playerStateLabel(playerState("idle", p.cursor, p.n))).not.toBe("REPOSO");
+  });
+
+  it("reiniciar restablece reproductor (sin_iniciar) y posicion (SIN_POSICION)", () => {
+    const p = new ReplayPlayer(v.window.steps, {cursor: 0, status: "idle"});
+    for (let k = 0; k < 4; k++) p.stepForward();
+    p.restart();
+    const view = p.view();
+    expect(playerState(p.status, p.cursor, p.n)).toBe("sin_iniciar");
+    expect(view.positionState.state).toBe("SIN_POSICION");
+    expect(view.cursor).toBe(0);
+  });
+});
+
 describe("direccion vs accion de cierre (nunca 'compra en espera')", () => {
   it("LONG cierra con venta; SHORT cierra con compra", () => {
     expect(directionLabel("LONG")).toBe("LONG");
     expect(directionLabel("SHORT")).toBe("SHORT");
     expect(closeActionLabel("LONG")).toBe("cierre = venta");
     expect(closeActionLabel("SHORT")).toBe("cierre = compra");
-    // la accion de cierre nunca describe un estado de espera
     for (const d of ["LONG", "SHORT"]) expect(closeActionLabel(d)).not.toMatch(/espera/i);
   });
 });
 
 describe("estado del replay derivado solo de lo revelado", () => {
-  const v = parsePaperLabReplay(a);
-  it("sin eventos -> SIN_POSICION; con senal -> EN_ESPERA", () => {
+  it("sin eventos -> SIN_POSICION; con deteccion -> EN_ESPERA", () => {
     expect(replayPositionState([], null, null, false).state).toBe("SIN_POSICION");
-    expect(replayPositionState([{at_ms: 1, label: "s", kind: "signal"}], null, null, false).state).toBe("EN_ESPERA");
+    expect(replayPositionState([{at_ms: 1, label: "d", kind: "detection", formation_time_ms: 0}], null, null, false).state).toBe("EN_ESPERA");
   });
 });
 
-it("rechaza artefato con schema no soportado", () => {
-  expect(() => parsePaperLabReplay({...a, schema_version: 2})).toThrow("UNSUPPORTED_PAPER_LAB_REPLAY_SCHEMA");
-});
-it("rechaza artefato con version desconocida", () => {
-  expect(() => parsePaperLabReplay({...a, artifact_version: "OTRO"})).toThrow("UNKNOWN_PAPER_LAB_REPLAY_ARTIFACT");
-});
-it("rechaza artefato sin trade", () => {
-  const b = {...a} as Record<string, unknown>;
-  delete b.trade;
-  expect(() => parsePaperLabReplay(b)).toThrow("PAPER_LAB_REPLAY_UNAVAILABLE");
-});
-it("rechaza numeros no finitos", () => {
-  expect(() => parsePaperLabReplay({...a, trade: {...(a.trade as object), net_pnl: "no-numero"}})).toThrow("trade.net_pnl");
-});
-it("rechaza paso de evento que anticipa su instante", () => {
-  const b = JSON.parse(JSON.stringify(a)) as Record<string, unknown>;
-  const win = (b.window as { steps: Array<{events: Array<{at_ms: number}>; known_at_ms: number}> });
-  win.steps[0]!.events[0]!.at_ms = win.steps[0]!.known_at_ms + 1000;
-  expect(() => parsePaperLabReplay(b)).toThrow("PAPER_LAB_REPLAY_UNAVAILABLE");
-});
-it("rechaza paso de evento con vela (no se rellena donde no la hay)", () => {
-  const b = JSON.parse(JSON.stringify(a)) as Record<string, unknown>;
-  const win = (b.window as { steps: Array<{kind: string; candle: unknown}> });
-  const ev = win.steps.find((s) => s.kind === "event")!;
-  ev.candle = {open_time_ms: 1, open: 1, high: 1, low: 1, close: 1, close_time_ms: 2};
-  expect(() => parsePaperLabReplay(b)).toThrow("PAPER_LAB_REPLAY_UNAVAILABLE");
+describe("rechazos de artefacto invalido o ausente", () => {
+  it("rechaza schema no soportado", () => {
+    expect(() => parsePaperLabReplay({...a, schema_version: 2})).toThrow("UNSUPPORTED_PAPER_LAB_REPLAY_SCHEMA");
+  });
+  it("rechaza version desconocida", () => {
+    expect(() => parsePaperLabReplay({...a, artifact_version: "OTRO"})).toThrow("UNKNOWN_PAPER_LAB_REPLAY_ARTIFACT");
+  });
+  it("rechaza artefacto sin trade", () => {
+    const b = {...a} as Record<string, unknown>;
+    delete b.trade;
+    expect(() => parsePaperLabReplay(b)).toThrow("PAPER_LAB_REPLAY_UNAVAILABLE");
+  });
+  it("rechaza artefacto ausente / no objeto", () => {
+    expect(() => parsePaperLabReplay(null)).toThrow("PAPER_LAB_REPLAY_UNAVAILABLE");
+    expect(() => parsePaperLabReplay(undefined)).toThrow("PAPER_LAB_REPLAY_UNAVAILABLE");
+    expect(() => parsePaperLabReplay("x")).toThrow("PAPER_LAB_REPLAY_UNAVAILABLE");
+  });
+  it("rechaza numeros no finitos", () => {
+    expect(() => parsePaperLabReplay({...a, trade: {...(a.trade as object), net_pnl: "no-numero"}})).toThrow("trade.net_pnl");
+  });
+  it("rechaza paso de evento que anticipa su instante", () => {
+    const b = JSON.parse(JSON.stringify(a)) as Record<string, unknown>;
+    const win = (b.window as { steps: Array<{kind: string; events: Array<{at_ms: number}>; known_at_ms: number}> });
+    const evStep = win.steps.find((s) => s.kind === "event")!;
+    evStep.events[0]!.at_ms = evStep.known_at_ms + 1000;
+    expect(() => parsePaperLabReplay(b)).toThrow("PAPER_LAB_REPLAY_UNAVAILABLE");
+  });
+  it("rechaza paso de evento con vela (no se rellena donde no la hay)", () => {
+    const b = JSON.parse(JSON.stringify(a)) as Record<string, unknown>;
+    const win = (b.window as { steps: Array<{kind: string; candle: unknown}> });
+    const ev = win.steps.find((s) => s.kind === "event")!;
+    ev.candle = {open_time_ms: 1, open: 1, high: 1, low: 1, close: 1, close_time_ms: 2};
+    expect(() => parsePaperLabReplay(b)).toThrow("PAPER_LAB_REPLAY_UNAVAILABLE");
+  });
+  it("rechaza deteccion revelada antes de su formacion", () => {
+    const b = JSON.parse(JSON.stringify(a)) as Record<string, unknown>;
+    const win = (b.window as { steps: Array<{events: Array<{kind: string; formation_time_ms?: number}>}> });
+    const step = win.steps.find((s) => s.events.some((e) => e.kind === "detection"))!;
+    step.events.find((e) => e.kind === "detection")!.formation_time_ms = Number.MAX_SAFE_INTEGER;
+    expect(() => parsePaperLabReplay(b)).toThrow("PAPER_LAB_REPLAY_UNAVAILABLE");
+  });
+  it("rechaza deteccion sin hora de formacion", () => {
+    const b = JSON.parse(JSON.stringify(a)) as Record<string, unknown>;
+    const win = (b.window as { steps: Array<{events: Array<{kind: string; formation_time_ms?: number}>}> });
+    const step = win.steps.find((s) => s.events.some((e) => e.kind === "detection"))!;
+    delete step.events.find((e) => e.kind === "detection")!.formation_time_ms;
+    expect(() => parsePaperLabReplay(b)).toThrow("PAPER_LAB_REPLAY_UNAVAILABLE");
+  });
 });

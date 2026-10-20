@@ -1,9 +1,11 @@
 "use client";
-import type {ReplayStatus} from "@/lib/paper-lab-replay";
+import type {ReplayStatus, PlayerState} from "@/lib/paper-lab-replay";
 import s from "./PaperLab.module.css";
 
 interface ReplayControlsProps {
   status: ReplayStatus;
+  playerState: PlayerState;
+  playerLabel: string;
   speed: number;
   onPlay: () => void;
   onPause: () => void;
@@ -14,21 +16,24 @@ interface ReplayControlsProps {
   canStepForward: boolean;
 }
 
-export function ReplayControls({status, speed, onPlay, onPause, onRestart, onStepForward, onSetSpeed, stepMs, canStepForward}: ReplayControlsProps) {
+export function ReplayControls({status, playerState, playerLabel, speed, onPlay, onPause, onRestart, onStepForward, onSetSpeed, stepMs, canStepForward}: ReplayControlsProps) {
   const playing = status === "playing";
-  const finished = status === "finished";
-  const paused = status === "paused";
+  const finished = playerState === "terminado";
+  const paused = playerState === "pausado";
+  const notStarted = playerState === "sin_iniciar";
+  // El botón principal reanuda o pausa según el estado real del reproductor.
+  const primaryLabel = finished ? "Finalizado" : playing ? "Pausar" : paused ? "Reanudar" : "Reproducir";
   return (
     <div className={s.controls} aria-label="Controles de reproduccion del replay">
       <div className={s.controlGroup}>
         <label>Replay</label>
-        <button type="button" className={`${s.replay} ${s.primary}`} onClick={playing ? onPause : onPlay} disabled={finished}>
-          {finished ? "Finalizado" : playing ? "Pausar" : paused ? "Reanudar" : "Reproducir"}
+        <button type="button" className={`${s.replay} ${s.primary}`} onClick={playing ? onPause : onPlay} disabled={finished} aria-label={primaryLabel}>
+          {primaryLabel}
         </button>
         <button type="button" className={s.replay} onClick={onStepForward} disabled={!canStepForward}>
           Paso a paso
         </button>
-        <button type="button" className={s.replay} onClick={onRestart} disabled={status === "idle"}>
+        <button type="button" className={s.replay} onClick={onRestart} disabled={notStarted}>
           Reiniciar
         </button>
       </div>
@@ -44,9 +49,9 @@ export function ReplayControls({status, speed, onPlay, onPause, onRestart, onSte
         <span className={s.mono}>{speed}x · {(stepMs / 1000).toFixed(2)} s de reloj por paso</span>
       </div>
       <div className={s.controlGroup}>
-        <label>Estado</label>
-        <span className={`${s.chip} ${finished ? s.pos : playing ? s.warn : ""}`}>
-          {finished ? "TERMINADO" : playing ? "REPRODUCIENDO" : paused ? "PAUSADO" : "REPOSO"}
+        <label>Estado del reproductor</label>
+        <span className={`${s.chip} ${playerState === "terminado" ? s.pos : playerState === "reproduciendo" ? s.warn : playerState === "pausado" ? s.info : ""}`} data-player={playerState}>
+          {playerLabel}
         </span>
       </div>
     </div>

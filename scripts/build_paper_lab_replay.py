@@ -262,8 +262,15 @@ def _window(trade: dict, backing: dict, candles: list[dict], costs: dict,
 
     # La cinta de pasos separa EVENTOS (instantáneos, en su ms exacto) de
     # VELAS (conocidas al cierre …59.999). Un evento nunca se anticipa al paso
-    # que cierra una vela: una señal a 04:00:00.000 NO es conocida con cursor
-    # 03:59:59.999; se revela en su propio paso de evento, en su instante.
+    # que cierra una vela: una detección disponible a 21:59:59.999 NO es
+    # conocida con cursor 21:44:59.999; se revela en su propio paso de evento,
+    # en su instante de disponibilidad.
+    #
+    # formation_time_ms (a qué momento pertenece el patrón) y available_at
+    # (cuándo puede conocerse) son distintos. La formación se conserva como
+    # METADATO visible al revelar la detección, pero NUNCA autoriza a mostrarla
+    # antes de available_at. entry_ms es la ejecución posterior, tampoco la
+    # autoriza a adelantarse.
     steps: list[dict] = []
     cursor = 0
 
@@ -297,8 +304,13 @@ def _window(trade: dict, backing: dict, candles: list[dict], costs: dict,
 
     def _emit_event_step(at_ms: int, label: str, kind: str, *, position: dict,
                          unrealized: dict | None = None,
-                         exit_record: dict | None = None) -> None:
+                         exit_record: dict | None = None,
+                         formation_time_ms: int | None = None) -> None:
         nonlocal cursor
+        event = {"at_ms": at_ms, "label": label, "kind": kind}
+        if formation_time_ms is not None:
+            # Metadata: a qué momento PERTENECE el patrón (no cuándo se conoce).
+            event["formation_time_ms"] = formation_time_ms
         steps.append({
             "step": cursor,
             "kind": "event",
@@ -306,7 +318,7 @@ def _window(trade: dict, backing: dict, candles: list[dict], costs: dict,
             "known_at_ms": at_ms,
             "opens_at_ms": at_ms,
             "closed_at_ms": None,
-            "events": [{"at_ms": at_ms, "label": label, "kind": kind}],
+            "events": [event],
             "position_after": position,
             "mfe_pct": running_mfe if position["open"] else None,
             "mae_pct": running_mae if position["open"] else None,
@@ -319,10 +331,8 @@ def _window(trade: dict, backing: dict, candles: list[dict], costs: dict,
     last_close_ms = selected[-1]["close_time_ms"]
     exit_ms = trade["exit_ms"]
     exit_record = {"reason": trade["exit_reason"], "px": trade["exit_px"], "ms": exit_ms, "executed": True}
-
-    # Paso de evento: señal histórica formada (antes de que exista la vela de formación).
-    _emit_event_step(trade["event_time_ms"], "Señal histórica formada (evento)", "signal",
-                     position=_position_flat())
+    planned_avail = backing.get("available_at")
+    avail_ms = int(planned_avail) if planned_avail is not None else None
 
     for index, candle in enumerate(selected):
         opened = candle["open_time_ms"] >= trade["entry_ms"]
@@ -337,14 +347,17 @@ def _window(trade: dict, backing: dict, candles: list[dict], costs: dict,
 
         _emit_candle_step(candle, opened, final_candle)
 
-        # Disponibilidad: al cierre de la vela de formación, en su ms exacto.
-        # Si la disponibilidad cae después del cierre, se emite al final en su
-        # propio instante (nunca se adelanta al paso de vela).
-        if index == 0 and backing.get("available_at") is not None:
-            avail_ms = int(backing["available_at"])
-            if avail_ms == candle["close_time_ms"]:
-                _emit_event_step(avail_ms, "Disponible tras cierre de formación", "available",
-                                 position=_position_flat())
+        # Detección: se revela SOLO en su instante de disponibilidad, nunca en
+        # formation_time_ms. Si la disponibilidad coincide con el cierre de la
+        # vela de formación, se emite justo después de esa vela.
+        if index == 0 and avail_ms is not None and avail_ms == candle["close_time_ms"]:
+            _emit_event_step(
+                avail_ms,
+                "Detección conocida (formación conservada como metadata)",
+                "detection",
+                position=_position_flat(),
+                formation_time_ms=trade["event_time_ms"],
+            )
 
     # Cierre: en su ms exacto (puede ser …00.000, posterior al cierre de vela …59.999).
     _emit_event_step(exit_ms, f"Cierre ejecutado: {trade['exit_reason']}", "exit",
@@ -352,39 +365,52 @@ def _window(trade: dict, backing: dict, candles: list[dict], costs: dict,
 
     # Si la disponibilidad quedó pendiente (posterior al cierre de formación),
     # se emite en su instante exacto tras el resto de la cinta.
-    planned_avail = backing.get("available_at")
-    if planned_avail is not None and int(planned_avail) > selected[0]["close_time_ms"]:
-        steps.append({
-            "step": cursor,
-            "kind": "event",
-            "candle": None,
-            "known_at_ms": int(planned_avail),
-            "opens_at_ms": int(planned_avail),
-            "closed_at_ms": None,
-            "events": [{"at_ms": int(planned_avail), "label": "Disponible (posterior al cierre de formación)", "kind": "available"}],
-            "position_after": _position_flat(),
-            "mfe_pct": None,
-            "mae_pct": None,
-            "unrealized": None,
-            "exit": None,
-            "final_candle": False,
-        })
-        cursor += 1
+    if avail_ms is not None and avail_ms > selected[0]["close_time_ms"]:
+        _emit_event_step(
+            avail_ms,
+            "Detección conocida (posterior al cierre de formación)",
+            "detection",
+            position=_position_flat(),
+            formation_time_ms=trade["event_time_ms"],
+        )
 
     if not any(step["exit"] is not None for step in steps):
         raise ValueError("la ventana no contiene el cierre realizado")
     if exit_ms < last_close_ms:
         raise ValueError("el cierre no puede preceder al último cierre de vela conocido")
     # Invariante de causalidad: ningún paso revela información con un reloj
-    # anterior al instante en que esa información existe.
+    # anterior al instante en que esa información existe. En particular, la
+    # formación NO puede revelarse antes de su disponibilidad.
     for step in steps:
         for event in step["events"]:
             if event["at_ms"] > step["known_at_ms"]:
                 raise ValueError(f"evento {event['kind']} anticipado respecto a su instante")
+            formation = event.get("formation_time_ms")
+            if formation is not None and event["kind"] == "detection":
+                if formation > event["at_ms"]:
+                    raise ValueError("detección revelada antes de su formación (imposible)")
+                if event["at_ms"] < avail_ms:
+                    raise ValueError("detección revelada antes de su disponibilidad")
+    # La formación nunca se revela antes de available_at en ningún paso:
+    # no debe existir un paso con reloj < available_at que contenga la detección.
+    if avail_ms is not None:
+        for step in steps:
+            has_detection = any(e["kind"] == "detection" for e in step["events"])
+            if has_detection and step["known_at_ms"] < avail_ms:
+                raise ValueError("la detección aparece antes de available_at")
     context = _context_candles(trade, candles, context_candles)
+    # Instante inicial del replay: ANTES de la detección. Todo lo que se muestra
+    # en la vista inicial debe ser conocido en este instante. El contexto previo
+    # termina justo antes de la vela de formación, así que el instante inicial es
+    # el último cierre de contexto conocido (o el open de la formación si no hay).
+    if context:
+        initial_cursor_ms = context[-1]["close_time_ms"]
+    else:
+        initial_cursor_ms = selected[0]["open_time_ms"]
     return {"symbol": trade["symbol"], "interval": trade["res"],
             "n_candles": len(selected), "n_context_candles": len(context),
             "context_candles": context,
+            "initial_cursor_ms": initial_cursor_ms,
             "candles": selected, "steps": steps}
 
 
