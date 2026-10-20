@@ -84,7 +84,19 @@ hecha). Contrato `BACKTEST_READ_CONTRACT_V1.md` pasa de UNWIRED a WIRED;
 frontend 400/400 + `tsc --noEmit` limpio + `eslint` 0 errores (3 warnings
 ajenos) + `next build` OK (`BUILD_ID=eBIlrCEoIFTWay0VAx6VA`); desde checkout
 limpio el paquete publicado basta (trades=15765, reconciliacion=True).
-Resta: commit selectivo, push, re-servir 3020, capturas, entrega con SHA.
+Estado: commit+push de los cinco correctivos hechos en `acfcdb8`; dashboard re-servido en `http://127.0.0.1:3020` (PID 30464, `BUILD_ID=90xwf1YYwJM43jDR9wDKE`, `next build` + `tsc --noEmit` + `eslint` OK, HTTP 200 en `/api/v1/runtime`, `/backtest` y `/paper-lab` renderizados en escritorio). Queda: commitear y publicar la corrección de `control.guard` (ver párrafo siguiente) + entrega final con SHA.
+
+## Corrección de control.guard (exclusión de sección crítica) — 2026-10-20
+
+Se reprodujo y se resolvió en `frontend/src/lib/backtest-control.ts`:
+- `acquireGuard` ya no retira el guard solo por antigüedad (>30 s): verifica que el propietario (PID escrito en el guard) siga vivo mediante evidencia del SO (`process.kill(pid,0)`); si vive, conserva la exclusión y devuelve `GUARD_BUSY` aunque el guard sea antiguo (A). Si el propietario murió, retira el guard huérfano y recupera sin dos ganadores (C). Si la identidad del propietario es incierta (guard ilegible o sin PID válido), falla cerrado y conserva la exclusión (D).
+- `releaseGuard` ahora recibe el objeto `Guard` adquirido (`{path, pid, acquired_at_ms}`) y libera condicionada: solo elimina si el guard actual sigue teniendo el mismo PID (nunca borra el guard de un sucesor) (B).
+
+Pruebas dirigidas: `frontend/src/test/backtest-guard-regressions.test.ts` (A, B, C, D).
+- Fail-before (lógica previa): A, B y D reproducen el defecto (fallan); C pasa.
+- Pass-after (con corrección): las 4 pasan.
+- No-regresión: `backtest-defect-regressions.test.ts` 7/7 + `backtest-control.test.ts` 41/41 + `backtest-guard-regressions.test.ts` 4/4 = 52 pruebas vitest, 0 fallos. `tsc --noEmit` limpio; `eslint` 0 errores (3 warnings preexistentes); `next build` OK (`BUILD_ID=90xwf1YYwJM43jDR9wDKE`).
+- No se introdujo otro gestor de tareas; no hay cambios en DBs, backups ni secretos.
 
 
 Cierre de la fase de evaluacion offline sobre censo same-grid. Evidencia:

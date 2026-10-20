@@ -351,7 +351,22 @@ export function currentRunId(experiment: BacktestExperiment): string | null {
 // --- Seccion critica entre procesos ----------------------------------------
 const GUARD_STALE_MS = 30_000;
 
-function acquireGuard(experiment: string): string | null {
+// Identidad verificable del guard: quien lo adquiro y cuando. La liberacion
+// se condiciona a que siga siendo el mismo propietario (nunca se borra el
+// guard de un sucesor).
+type Guard = {path: string; pid: number; acquired_at_ms: number};
+
+function isPidAlive(pid: number): boolean {
+  if (!Number.isSafeInteger(pid) || pid <= 0) return false;
+  try {
+    process.kill(pid, 0); // senal 0: solo comprueba existencia, nunca mata
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+export function acquireGuard(experiment: string): Guard | null {
   mkdirSync(experimentDir(experiment), {recursive: true});
   const path = guardPath(experiment);
   for (let attempt = 0; attempt < 3; attempt += 1) {
@@ -362,26 +377,43 @@ function acquireGuard(experiment: string): string | null {
       } finally {
         closeSync(fd);
       }
-      return path;
+      return {path, pid: process.pid, acquired_at_ms: Date.now()};
     } catch (e) {
       if ((e as NodeJS.ErrnoException).code !== "EEXIST") throw e;
-      // Un guard de un proceso muerto no puede bloquear para siempre: la
-      // seccion critica es corta. Solo se retira si es antiguo.
-      try {
-        if (Date.now() - statSync(path).mtimeMs > GUARD_STALE_MS) {
-          rmSync(path, {force: true});
-          continue;
-        }
-      } catch { /* otro proceso lo retiro */ }
-      return null;
+      // Un guard antiguo no se retira solo por antigüedad: eso confundiría
+      // "propietario todavía trabajando" con "proceso muerto". Se verifica la
+      // propiedad mediante evidencia del sistema operativo (PID vivo).
+      const owner = readJson<{pid?: unknown; acquired_at_ms?: unknown}>(path);
+      const ownerPid = typeof owner?.pid === "number" ? owner.pid : null;
+      if (ownerPid === null || !Number.isSafeInteger(ownerPid) || ownerPid <= 0) {
+        // Identidad del propietario incierta: fail-closed, se conserva la
+        // exclusión y no se toca el guard (D).
+        return null;
+      }
+      if (isPidAlive(ownerPid)) {
+        // El propietario sigue activo (aunque el guard supere los 30 s): no se
+        // rompe la exclusión, la segunda solicitud no adquiere (A).
+        return null;
+      }
+      // Propietario muerto: se retira el guard huérfano y se reintenta (C).
+      try { rmSync(path, {force: true}); } catch { /* otro proceso lo retiro */ }
+      continue;
     }
   }
   return null;
 }
 
-function releaseGuard(path: string | null): void {
-  if (!path) return;
-  try { rmSync(path, {force: true}); } catch { /* ignore */ }
+export function releaseGuard(guard: Guard | null): void {
+  if (!guard) return;
+  try {
+    const current = readJson<{pid?: unknown}>(guard.path);
+    const currentPid = typeof current?.pid === "number" ? current.pid : null;
+    // Liberación condicionada: solo se elimina si sigue siendo el guard que
+    // esta solicitud adquirió (mismo PID). Si otro proceso lo reemplazó,
+    // nunca se borra el guard del sucesor (B).
+    if (currentPid === null || currentPid !== guard.pid) return;
+    rmSync(guard.path, {force: true});
+  } catch { /* ignore */ }
 }
 
 // --- Exclusion entre procesos ----------------------------------------------
@@ -912,7 +944,7 @@ export function retentionReport(apply = false): {
     const candidates = runIds.filter((r) => !keep.has(r));
     if (candidates.length === 0) continue;
 
-    let guard: string | null = null;
+    let guard: Guard | null = null;
     if (apply) {
       guard = acquireGuard(exp);
       if (!guard) {
