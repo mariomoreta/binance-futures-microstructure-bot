@@ -94,9 +94,21 @@ git grep -l audit_public_data  # esperado: sin resultados
 | Trabajo local en curso | Componentes, page.tsx, format.ts, build script, tests (otro agente) | Todo **untracked / no publicado en Git** |
 | Código publicado en Git | Ninguno | — |
 | Probado | Artefacto determinista `--check` PASS; tests existen | Suite frontend no ejecutada por este agente; archivos no publicados |
-| Servido y revisado visualmente | — | No servido; no URL local verificada; monitor :3020 detenido |
+| Servido y revisado visualmente | — | No servido; no URL local verificada; monitor :3020 detenido; **no hay capturas de Paper Lab (`before/abierta/cerrada`) localizadas** |
 
-**SHA/build/URL solo si comprobados:** sha256 del artefacto `7ba452c308378c7f26a20b12761625dcace6b839ba7576d0221bba0346f41826` (verificado con `--check`). **No hay URL local verificada por este agente** (no se sirvió next).
+**Identidad del artefacto (verificada en código):** **BTCUSDT 15m LONG H1** (no SHORT). `replay_id=PLR-BTCUSDT-LONG-1788903900000`, `event_time_ms=1788903900000` (2026-09-08T21:45:00Z), `entry_ms=1788904800000` (22:00:00Z), `exit_ms=1788907500000` (22:45:00Z, salida por `horizon`), `entry_px=78458.7`, `exit_px=78456.8`, `net_pnl=-1.6242` (pérdida). 4 velas cerradas de 15m.
+
+**SHA/build/URL solo si comprobados:** sha256 del artefacto `7ba452c308378c7f26a20b12761625dcace6b839ba7576d0221bba0346f41826` (verificado con `--check`). **No hay URL local verificada por este agente** (no se sirvió next; no hay capturas de Paper Lab).
+
+---
+
+### Estudio retrospectivo de extremos — paquete W/LUMIA (auditoría, sin segunda implementación)
+
+- **Cobertura:** 1.499 velas 5m cerradas + 1.499 velas 1m cerradas por símbolo (WUSDT, LUMIAUSDT, BTCUSDT, GTCUSDT), corte `2026-10-12T10:57:19.690Z`, última vela 5m `10:54:59.999Z` (~5,2 días). Sin duplicados ni huecos. BTC = referencia sincronizada/control; GTC = contexto adicional, no validación independiente.
+- **Costes / compatibilidad con el motor:** `fundingIntervalHours=4` real para WUSDT y LUMIAUSDT (100 registros, jitter 7 ms). El motor asume `FUNDING_INTERVAL_MS = 8h`: **supuesto que no representa estos contratos**. Propuesta de fidelidad de replay: contabilizar cada liquidación de funding realmente cruzada con calendario/tasa del contrato, exposición vigente, signo, fuente/versionado; ausentes → UNKNOWN o exclusión. No cambiar el 8 global por 4.
+- **Casos (descriptivos, in-sample, `NOT_SIGNAL` en ex-post):** WUSDT subió sobrecomprada (RSI 80+) antes de corregir (−10,97% máx→último cierre); LUMIAUSDT ganadora de 24h que cayó, rebotó y siguió deteriorándose (mínimo conocido después → sesgo de entrada al mínimo).
+- **Qué falta para mostrar esos casos:** calendario de funding real por símbolo, spread/profundidad/coste estimado, fills reales, serie OOS, partición cronológica, vinculación `run_id`/`event_id` con `as_of`, snapshot por evento con hash del dataset. **Sin calibrar reglas ni seleccionar por beneficio.**
+- **Captura:** `binance_case_study/Casos_Binance_W_LUMIA.png` existe, **no inspeccionada visualmente** (`NOT_ASSESSED`).
 
 ## 8. Pendientes con responsable / dependencia
 
@@ -110,6 +122,7 @@ git grep -l audit_public_data  # esperado: sin resultados
 | Cerrar residual MINA/NMR (build_report) | Otro agente / censo | build_report MINAUSDT/1h y NMRUSDT/1h |
 | Protocolo de selección automática offline sobre EVAL-CENSUS-V2 | Este agente | Ninguna (datos existentes) |
 | Protocolo de adquisición escalonada (solo documento, sin colectores) | Este agente | Ninguna |
+| Estudio retrospectivo W/LUMIA: documentar qué falta para mostrar casos (funding real, spreads, fills, OOS) sin calibrar ni seleccionar por beneficio | Este agente | Paquete binance_case_study/ (ya presente, untracked) |
 
 ## 9. Próxima acción única hacia la simulación automática
 

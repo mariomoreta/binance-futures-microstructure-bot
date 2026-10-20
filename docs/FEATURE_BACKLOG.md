@@ -166,6 +166,18 @@ frontend 314/314 + typecheck 0 + build OK.
 **7. Last update:** 2026-10-20.
 **8. Dependencia para entrega:** artefacto determinista, parser/player/componentes y ruta V2, tests y evidencias, selección independiente del P&L, reconciliación P&L/costes al cierre, capturas antes de entrada/abierta/cerrada, SHA/build servido y URL local verificada (docs/PAPER_LAB_PLAN_ETAPA5.md).
 
+## Estudio retrospectivo de extremos — paquete W/LUMIA (auditoría 2026-10-21)
+
+**1. Title:** Auditoría del paquete existente `binance_case_study/` como estudio retrospectivo de extremos (WUSDT/LUMIAUSDT, controles BTCUSDT/GTCUSDT).
+**2. Approval status:** DECIDED (auditoría documental y de compatibilidad con el motor; no segunda implementación, no detección automática, no calibración).
+**3. Implementation status:** NOT IMPLEMENTED como funcionalidad de producto; EXISTENTE como paquete de datos (untracked, `binance_case_study/`, 12 archivos, hashes 12/12 OK vs `SHA256SUMS.txt`).
+**4. Evaluation status:** DESCRIPTIVE / IN-SAMPLE. 1.499 velas 5m cerradas + 1.499 velas 1m cerradas por símbolo, corte `2026-10-12T10:57:19.690Z` (~5,2 días), sin duplicados ni huecos. `fundingIntervalHours=4` real (W/LUMIA) vs supuesto 8h del motor (`FUNDING_INTERVAL_MS = 8h`) → incompatibilidad de fidelidad de replay. Casos documentados como `NOT_SIGNAL` (ex-post high/low no es señal). Sesgo de selección retrospectiva declarado. Sin OOS, sin calibración, sin rentabilidad.
+**5. Limitaciones:** no es detector automático; no se seleccionan ejemplos por beneficio; no se calibran reglas sobre estos casos; no hay spreads/profundidad/fills medidos; no hay serie OOS; `Casos_Binance_W_LUMIA.png` no inspeccionada visualmente (`NOT_ASSESSED`).
+**6. Evidence:** `binance_case_study/analysis_summary.json` (casos W/LUMIA con puntos forward 15m/30m/60m), `binance_case_study/supplemental_analysis.json` (funding 4h, calidad de series), `binance_case_study/Investigacion_Binance_W_LUMIA.md` (informe descriptivo), `docs/evidence/CASE_STUDY_WUSDT_LUMIA_*` (hashes, comparación, regresiones, entorno).
+**7. Qué falta para mostrar esos casos:** calendario de funding real por símbolo y tasa liquidada; spread/profundidad/coste estimado; fills reales; serie OOS; partición cronológica; vinculación `run_id`/`event_id` con `as_of`; snapshot por evento con hash del dataset.
+**8. Last update:** 2026-10-21.
+**9. Dependencia:** motor de backtest (backtest-offline/v4) para contabilizar funding real cruzado; no bloquea el replay de ingeniería del trío.
+
 ## DASH-V2-71B reviewer correction — 2026-10-11
 89232f7 independently reviewed: discovery/canonical 910, exit0. Strengthened
 existing purity test (missing historical-byte assertion, no new logs, env
