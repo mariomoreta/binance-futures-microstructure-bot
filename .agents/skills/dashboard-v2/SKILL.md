@@ -5,6 +5,15 @@ description: Implement or review Dashboard V2 slices in this Binance Futures rep
 
 # Dashboard V2
 
+## Current scope: desktop web only
+
+User decision 2026-10-20: read `docs/DESKTOP_FIRST_SCOPE_20261020.md`.
+Do not add phone/tablet layout work, 360/390 px QA/captures, Flutter or mobile
+acceptance requirements. They are DEFERRED until desktop functionality is
+completed, accepted and mobile is explicitly authorized. Preserve existing
+mobile code/tests/evidence. Desktop visual verification remains required.
+
+
 Use this skill only for Dashboard V2 architecture, design, API-contract,
 migration, or implementation work in this repository.
 

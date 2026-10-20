@@ -111,10 +111,13 @@ claim is allowed.
 
 ## Responsive behavior
 
-Desktop-first: 12-column grid, fixed utility/nav region, dense tables with
-column visibility controls. At narrower widths cards stack and tables use
-intentional horizontal scrolling; metrics are not silently removed. Mobile is
-readable inspection, not the primary trading-terminal layout.
+Current scope override (user decision 2026-10-20): DESKTOP WEB ONLY.
+See `docs/DESKTOP_FIRST_SCOPE_20261020.md`. Keep the desktop 12-column grid,
+utility/nav region and dense tables readable at desktop browser widths.
+Existing responsive behavior may remain, but phone/tablet layouts, 360/390 px
+QA/captures, Flutter and mobile acceptance are DEFERRED until the desktop
+functional scope is complete and explicitly accepted by the user.
+Historical mobile evidence is preserved; mobile is not a current work item.
 
 ## Visual acceptance
 

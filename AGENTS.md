@@ -1,5 +1,14 @@
 # AGENTS.md
 
+## Current scope — desktop web only (user decision 2026-10-20)
+
+Read `docs/DESKTOP_FIRST_SCOPE_20261020.md`. Mobile layouts, mobile viewport
+QA/captures (including 360/390 px), Flutter and phone access are DEFERRED.
+They are not acceptance gates for current work. Complete the desktop V2 and
+bot functional scope first; reopening mobile requires explicit user approval.
+Preserve existing code/tests and historical evidence; do not add mobile work.
+
+
 **Role:** Autonomous Research & Development Agent for the Binance Futures Market Intelligence project.
 **Canonical Workspace:** `C:\proyectos\binance-futures-microstructure-bot`
 

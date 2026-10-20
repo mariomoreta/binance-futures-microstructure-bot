@@ -1,3 +1,12 @@
+## Alcance vigente del usuario ? 2026-10-20
+
+Aplicar `docs/DESKTOP_FIRST_SCOPE_20261020.md`: desarrollar y validar solo
+web de escritorio. Movil/Flutter, optimizaciones y QA 360/390 px quedan
+DEFERRED hasta completar y aceptar el alcance funcional desktop del bot/V2.
+No son bloqueos ni tareas actuales. Conservar evidencias anteriores.
+Esta decision prevalece sobre las menciones historicas siguientes; no altera
+el bloque correctivo del agente ni declara implementado paper en caliente.
+
 ## Backtest offline funcional en V2 + enlace a Paper Lab (2026-10-20, sin push aun)
 `/backtest` ejecuta una evaluacion offline versionada (unico experimento
 permitido `eval-census-v2-trio`) sobre el paquete publicado EVAL-CENSUS-V2

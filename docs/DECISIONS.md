@@ -2215,3 +2215,17 @@ Estado verificado: veredicto global del ledger INCOMPLETE (0 discrepancias, 2 in
   cambio: la serializacion determinista se conserva).
 - **Limites:** la verificacion visual en navegador y las capturas quedan para
   el Bloque C. No se probo una maquina Linux real (argumento por bytes).
+
+
+## 2026-10-20 — SCOPE-DESKTOP-FIRST-20261020 (decision expresa del usuario)
+
+El alcance actual es dashboard V2 web de escritorio + flujo funcional del bot.
+Desarrollo movil/tablet, QA/capturas 360/390 px, Flutter y acceso desde telefono
+quedan DEFERRED; no bloquean entregas de escritorio. Prevalece sobre requisitos
+moviles historicos. Conservar codigo/tests/evidencia existentes sin nuevas
+optimizaciones moviles. Desktop debe completarse y aceptarse explicitamente
+antes de autorizar una fase movil; Flutter es opcion futura, no trabajo actual.
+Detalle y criterios: `docs/DESKTOP_FIRST_SCOPE_20261020.md`.
+Cambio solo documental: sin codigo funcional, servicios, corridas ni gates.
+CURRENT_STATE/FEATURE_BACKLOG/PAPER_LAB_PLAN estaban en edicion por el agente:
+no sobrescritos; deben reconciliar esta decision en su cierre.

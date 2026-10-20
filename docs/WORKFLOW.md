@@ -1,5 +1,13 @@
 # WORKFLOW
 
+## Active scope override (2026-10-20)
+
+`docs/DESKTOP_FIRST_SCOPE_20261020.md` governs current delivery: desktop web
+only. Visual verification remains required for desktop changes. Mobile
+layouts, 360/390 px QA/captures and Flutter are deferred and must not block
+acceptance or create tasks. Preserve historical mobile evidence.
+
+
 For every engineering task:
 
 ```text
