@@ -84,20 +84,33 @@ hecha). Contrato `BACKTEST_READ_CONTRACT_V1.md` pasa de UNWIRED a WIRED;
 frontend 400/400 + `tsc --noEmit` limpio + `eslint` 0 errores (3 warnings
 ajenos) + `next build` OK (`BUILD_ID=eBIlrCEoIFTWay0VAx6VA`); desde checkout
 limpio el paquete publicado basta (trades=15765, reconciliacion=True).
-Estado: los cinco correctivos y la corrección de `control.guard` están commiteados+publiados en `2350396..<sha-final>`; dashboard re-servido en `http://127.0.0.1:3020` (PID 20520, `BUILD_ID=AsehgeVgvxmvEKw4SqIa-`, `next build` + `tsc --noEmit` + `eslint` OK, HTTP 200 en `/api/v1/runtime`, `/backtest` y `/paper-lab` renderizados en escritorio). Sin monitor ni backtest activo.
+Estado: los cinco correctivos y la corrección final de `control.guard` están commiteados+publiados en `3b6340d..<sha-final>`; dashboard re-servido en `http://127.0.0.1:3020` (PID 13868, `BUILD_ID=w1DMYZv7af8n2jO6vXlyp`, `next build` + `tsc --noEmit` + `eslint` OK, HTTP 200 en `/api/v1/runtime`, `/backtest` y `/paper-lab` renderizados en escritorio). Sin monitor ni backtest activo.
 
-## Corrección de control.guard (exclusión de sección crítica) — 2026-10-20
+## Corrección final de control.guard (exclusión de sección crítica) — 2026-10-20
+
+Se aplicó la alternativa acotada solicitada: NUNCA se borra un guard huérfano automáticamente; se conserva la exclusión y se devuelve una causa explícita.
 
 Se reprodujo y se resolvió en `frontend/src/lib/backtest-control.ts`:
-- Identidad única por adquisición: `Guard` ahora incluye un `token` aleatorio (`randomBytes`) generado al adquirir, escrito en el guard y devuelto en el handle. Dos adquisiciones del mismo PID tienen tokens distintos.
-- `acquireGuard` ya no retira el guard solo por antigüedad (>30 s): verifica que el propietario siga vivo mediante evidencia independiente del SO (`inspectPidLiveness` con `process.kill(pid,0)`). Si vive (aunque el guard sea antiguo), conserva la exclusión y devuelve null (A). Si el propietario murió (`gone`), retira el guard huérfano y recupera (C). Si el guard es ilegible, falta el token, o la inspección devuelve `EPERM`/error (proceso existe sin permisos o error de inspección), falla cerrado y conserva la exclusión con causa explícita (D1-D3). Nunca se asume muerte por EPERM.
-- `releaseGuard(Guard)` libera condicionada por identidad COMPLETA (mismo `pid`, mismo `token` y mismo `acquired_at_ms`). Una liberación antigua de otra adquisición (incluso con PID reutilizado) nunca borra el guard de una adquisición posterior (B).
-- La carrera lectura→borrado está protegida por `O_EXCL` (`openSync(path,"wx")`): mientras el guard exista con una identidad, ningún otro proceso puede adquirirlo.
+- Identidad única por adquisición: `Guard` incluye `token` aleatorio (`randomBytes`) generado al adquirir, escrito en el guard y devuelto en el handle. Dos adquisiciones del mismo PID tienen tokens distintos.
+- `inspectPidLiveness`: solo `ESRCH` acredita ausencia (`gone`). `EPERM` conserva exclusión (proceso existe, sin permisos). Otros errores devuelven `error` y conservan exclusión. PID inválido devuelve `error` y no autoriza retirada.
+- `acquireGuard` retorna `AcquireResult` discriminado:
+  - `{kind: "acquired", guard}` si se creó el guard (no existía previo).
+  - `{kind: "rejected", reason: "OWNER_ALIVE"}` si el propietario vive (antigüedad no es muerte) (A).
+  - `{kind: "rejected", reason: "GUARD_ORPHANED"}` si el propietario murió (ESRCH): se CONSERVA el guard huérfano, no se borra automáticamente (C).
+  - `{kind: "rejected", reason: "IDENTITY_UNCERTAIN"}` si el guard es ilegible, falta token/PID, EPERM u otro error de inspección: se conserva la exclusión (D1-D5).
+  - La identidad completa (pid + token) se verifica ANTES de consultar liveness: sin token es evidencia insuficiente (D2).
+- `releaseGuard(Guard)` libera condicionada por identidad COMPLETA (mismo `pid`, mismo `token` y mismo `acquired_at_ms`). Una liberación antigua nunca borra el guard de una adquisición posterior (B).
+- La carrera lectura→borrado del punto 1 se elimina: no hay `rmSync` automático en `acquireGuard`, por lo que A y B no pueden leer el mismo guard huérfano y borrarse mutuamente. La recuperación solo puede hacerse por mantenimiento con todos los participantes detenidos.
 
-Pruebas dirigidas: `frontend/src/test/backtest-guard-regressions.test.ts` (A, B, C, D).
-- Fail-before (código previo `2350396`): A, B, D reproducen el defecto (fallan); C no existía como concurrencia real entre procesos.
-- Pass-after (con corrección): las 7 pasan (A, B, C-concurrencia real entre 6 procesos independientes con barrera de inicio, D1 ilegible, D2 sin token, D3 EPERM, D4 PID gone).
-- No-regresión: `backtest-defect-regressions.test.ts` 7/7 + `backtest-control.test.ts` 41/41 + `backtest-guard-regressions.test.ts` 7/7 = 55 pruebas vitest, 0 fallos. `tsc --noEmit` limpio; `eslint` 0 errores (3 warnings preexistentes); `next build` OK (`BUILD_ID=AsehgeVgvxmvEKw4SqIa-`); dashboard servido en `http://127.0.0.1:3020` (PID 20520), HTTP 200 en `/api/v1/runtime`, `/backtest`, `/paper-lab`.
+Pruebas dirigidas: `frontend/src/test/backtest-guard-regressions.test.ts` (A, B, C1, C2, D1-D5).
+- Fail-before (código previo `3b6340d`): A (propietario vivo >30s perdía el guard), C (carrera lectura→borrado al recuperar), D (EPERM/error tratado como muerte) reproducían el defecto.
+- Pass-after (con corrección): las 9 pasan:
+  - A: propietario activo >30s → OWNER_ALIVE, no adquiere, conserva.
+  - B: liberación tardía con token distinto → conserva guard de B (mismo PID).
+  - C1: 6 procesos concurrentes sobre guard huérfano → todos GUARD_ORPHANED, 0 adquirieron, guard se conserva (barrera de inicio, no hay borrado automático).
+  - C2: guard válido vivo (sección crítica del padre) + 6 procesos concurrentes → todos OWNER_ALIVE, exclusión durante toda la sección crítica, padre mantiene el guard vivo hasta completar la comprobación.
+  - D1: guard ilegible → IDENTITY_UNCERTAIN, conserva. D2: sin token → IDENTITY_UNCERTAIN, conserva. D3: EPERM → IDENTITY_UNCERTAIN, conserva. D4: PID gone (ESRCH) → GUARD_ORPHANED, conserva (no borra). D5: error desconocido (EACCES) → IDENTITY_UNCERTAIN, conserva.
+- No-regresión: `backtest-defect-regressions.test.ts` 7/7 + `backtest-control.test.ts` 41/41 + `backtest-guard-regressions.test.ts` 9/9 = 57 pruebas vitest, 0 fallos. `tsc --noEmit` limpio; `eslint` 0 errores (3 warnings preexistentes); `next build` OK (`BUILD_ID=w1DMYZv7af8n2jO6vXlyp`); dashboard servido en `http://127.0.0.1:3020` (PID 13868), HTTP 200 en `/api/v1/runtime`, `/backtest`, `/paper-lab`.
 - No se introdujo otro gestor de tareas; no hay cambios en DBs, backups ni secretos. La inspección visual se limita a DOM/texto (no se declaró captura de PNG inexistente).
 
 

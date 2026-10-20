@@ -10,7 +10,7 @@ base, 7/7 pasan con el arreglo. Verificado: frontend 452 passed / 1 skipped,
 (`BUILD_ID=7IfLc2UBHcbIAl2WG0t91`), `python run_tests.py -q` 1290 OK
 (2 skips), barrera de aislamiento limpia, e2e en navegador con dos corridas
 reales y replay enlazado (ver
-`docs/evidence/BACKTEST_V2_E2E_BROWSER_EVIDENCE.md`). Estado: los cinco correctivos y la corrección de `control.guard` están commiteados en `2350396..<sha-de-esta-sesión>`; dashboard re-servido en `http://127.0.0.1:3020` (`BUILD_ID=AsehgeVgvxmvEKw4SqIa-`, HTTP 200 en `/api/v1/runtime`, `/backtest`, `/paper-lab`). Fuera de alcance: sin Binance, monitor, paper prospectivo, órdenes, credenciales, optimización ni cambios de estrategia/mapping/costes/umbrales/motor.
+`docs/evidence/BACKTEST_V2_E2E_BROWSER_EVIDENCE.md`). Estado: los cinco correctivos y la corrección final de `control.guard` están commiteados en `3b6340d..<sha-de-esta-sesión>`; dashboard re-servido en `http://127.0.0.1:3020` (`BUILD_ID=w1DMYZv7af8n2jO6vXlyp`, HTTP 200 en `/api/v1/runtime`, `/backtest`, `/paper-lab`). Fuera de alcance: sin Binance, monitor, paper prospectivo, órdenes, credenciales, optimización ni cambios de estrategia/mapping/costes/umbrales/motor.
 
 Próxima fase (REGISTRADA, NO implementada, requiere autorización): paper lab
 con datos vivos — selector causal → decisión versionada → simulación →
@@ -36,9 +36,9 @@ motivo. Documentos: `docs/EXTREMES_EVALUABILITY_MATRIX.md` (matriz
 preparatoria, no declara evaluada la estrategia completa),
 `docs/BACKTEST_READ_CONTRACT_V1.md` (UNWIRED->WIRED),
 `docs/PAPER_LAB_PLAN_ETAPA5.md` (enlace). Verificado: backend 1291 OK +
-frontend 400/400 + typecheck + lint + build. Estado: los cinco correctivos y la corrección de `control.guard` están
-commiteados en `2350396..<sha-de-esta-sesión>`; dashboard re-servido en
-`http://127.0.0.1:3020` (`BUILD_ID=AsehgeVgvxmvEKw4SqIa-`, HTTP 200 en
+frontend 400/400 + typecheck + lint + build. Estado: los cinco correctivos y la corrección final de `control.guard` están
+commiteados en `3b6340d..<sha-de-esta-sesión>`; dashboard re-servido en
+`http://127.0.0.1:3020` (`BUILD_ID=w1DMYZv7af8n2jO6vXlyp`, HTTP 200 en
 `/backtest` y `/paper-lab`). Fuera de alcance y no iniciado:
 protocolo de auto-seleccion offline sobre EVAL-CENSUS-V2; residual MINA/NMR
 (`build_report` INCOMPLETE); estudio W/LUMIA separado.

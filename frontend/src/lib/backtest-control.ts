@@ -349,14 +349,15 @@ export function currentRunId(experiment: BacktestExperiment): string | null {
 }
 
 // --- Seccion critica entre procesos ----------------------------------------
-const GUARD_STALE_MS = 30_000;
 
-// Resultado de la inspección de liveness de un PID. EPERM significa "el
-// proceso existe pero no podemos señalarlo": nunca es prueba de muerte, así
-// que se conserva la exclusión con causa explícita.
+// Resultado de la inspección de liveness de un PID.
+//   - "alive": el proceso existe y puede señalarse.
+//   - "gone": SOLO ESRCH acredita que el proceso no existe (ausencia verificada).
+//   - "epperm": el proceso existe pero no tenemos permisos para señalarlo.
+//   - "error": cualquier otro error de inspección (no es prueba de muerte).
 export type PidLiveness =
   | {kind: "alive"}
-  | {kind: "gone"; code?: string}
+  | {kind: "gone"}
   | {kind: "epperm"}
   | {kind: "error"; code?: string};
 
@@ -377,19 +378,28 @@ function newGuardToken(): string {
 }
 
 function inspectPidLiveness(pid: number): PidLiveness {
-  if (!Number.isSafeInteger(pid) || pid <= 0) return {kind: "gone"};
+  if (!Number.isSafeInteger(pid) || pid <= 0) {
+    return {kind: "error", code: "INVALID_PID"}; // PID inválido: no autoriza retirada
+  }
   try {
     process.kill(pid, 0); // senal 0: solo comprueba existencia, nunca mata
     return {kind: "alive"};
   } catch (e) {
     const code = (e as NodeJS.ErrnoException).code;
+    if (code === "ESRCH") return {kind: "gone"}; // SOLO ESRCH acredita ausencia
     if (code === "EPERM") return {kind: "epperm"}; // existe, sin permisos: no es muerto
-    // ESRCH u otros: proceso no existe (o error real de inspección).
-    return {kind: "gone", code};
+    // Cualquier otro error: no es prueba de muerte, conserva exclusión.
+    return {kind: "error", code};
   }
 }
 
-export function acquireGuard(experiment: string): Guard | null {
+// Resultado de la adquisición del guard. Nunca se borra un guard huérfano
+// automáticamente: se conserva la exclusión y se devuelve una causa explícita.
+export type AcquireResult =
+  | {kind: "acquired"; guard: Guard}
+  | {kind: "rejected"; reason: "OWNER_ALIVE" | "GUARD_ORPHANED" | "IDENTITY_UNCERTAIN"};
+
+export function acquireGuard(experiment: string): AcquireResult {
   mkdirSync(experimentDir(experiment), {recursive: true});
   const path = guardPath(experiment);
   const token = newGuardToken();
@@ -403,48 +413,51 @@ export function acquireGuard(experiment: string): Guard | null {
       } finally {
         closeSync(fd);
       }
-      return {path, pid: process.pid, acquired_at_ms, token};
+      return {kind: "acquired", guard: {path, pid: process.pid, acquired_at_ms, token}};
     } catch (e) {
       if ((e as NodeJS.ErrnoException).code !== "EEXIST") throw e;
-      // Un guard existente no se retira solo por antigüedad: eso confundiría
-      // "propietario todavía trabajando" con "proceso muerto". Se verifica la
-      // propiedad mediante evidencia independiente del sistema operativo.
+      // Un guard existente NO se retira por antigüedad ni por propietario
+      // muerto: eso crearía la carrera lectura→borrado (A y B leen el mismo
+      // guard huérfano, uno lo elimina y el otro borra el guard nuevo).
+      // Se conserva el guard y se devuelve una causa explícita.
       // El archivo existe (estamos en EEXIST); si no se parsea como JSON es
-      // identidad incierta: fail-closed, se conserva la exclusión (D1).
+      // identidad incierta: fail-closed, se conserva la exclusión.
       let owner: {pid?: unknown; acquired_at_ms?: unknown; token?: unknown} |
         null = null;
       try {
         owner = JSON.parse(readFileSync(path, "utf8"));
       } catch {
-        return null; // ilegible: no se asume muerto, nunca se toca el guard
+        return {kind: "rejected", reason: "IDENTITY_UNCERTAIN"}; // ilegible: no se toca
       }
       const ownerPid =
         typeof owner?.pid === "number" ? owner.pid : null;
+      const ownerToken = typeof owner?.token === "string" ? owner.token : null;
+      // Identidad completa requerida ANTES de consultar liveness: sin token
+      // (o sin PID válido) no podemos verificar propiedad aunque el PID esté
+      // vivo -> evidencia insuficiente, conserva exclusión (D2).
       if (ownerPid === null || !Number.isSafeInteger(ownerPid)
-          || ownerPid <= 0) {
-        // PID ausente o inválido: identidad incompleta, fail-closed (D2).
-        return null;
+          || ownerPid <= 0 || ownerToken === null || ownerToken.length === 0) {
+        return {kind: "rejected", reason: "IDENTITY_UNCERTAIN"};
       }
       const liveness = inspectPidLiveness(ownerPid);
       if (liveness.kind === "alive") {
         // El propietario sigue activo (aunque el guard supere los 30 s): no se
         // rompe la exclusión, la segunda solicitud no adquiere (A).
-        return null;
+        return {kind: "rejected", reason: "OWNER_ALIVE"};
       }
       if (liveness.kind === "epperm" || liveness.kind === "error") {
         // EPERM (existe, sin permisos) o error de inspección: nunca es prueba
-        // de muerte. Se conserva la exclusión y se reporta causa (D3).
-        return null;
+        // de muerte. Se conserva la exclusión y se reporta causa explícita (D3/D5).
+        return {kind: "rejected", reason: "IDENTITY_UNCERTAIN"};
       }
-      // liveness.kind === "gone": propietario muerto. Se retira el guard
-      // huérfano y se reintenta (C). La carrera lectura→borrado está protegida
-      // por O_EXCL: si otro proceso adquirió entre medio, obtendremos EEXIST
-      // en el siguiente intento y leeremos al nuevo propietario.
-      try { rmSync(path, {force: true}); } catch { /* otro proceso lo retiro */ }
-      continue;
+      // liveness.kind === "gone": propietario muerto. Se CONSERVA el guard
+      // huérfano (no se borra automáticamente) y se reporta GUARD_ORPHANED.
+      // La recuperación solo puede hacerse por mantenimiento con todos los
+      // participantes detenidos, nunca automáticamente entre procesos (C).
+      return {kind: "rejected", reason: "GUARD_ORPHANED"};
     }
   }
-  return null;
+  return {kind: "rejected", reason: "IDENTITY_UNCERTAIN"};
 }
 
 export function releaseGuard(guard: Guard | null): void {
@@ -516,8 +529,9 @@ function releaseLockIfMatches(experiment: string, runId: string, token: string |
 export function releaseLockFor(
   experiment: BacktestExperiment, runId: string, token: string | null,
 ): boolean {
-  const guard = acquireGuard(experiment);
-  if (!guard) return false;
+  const result = acquireGuard(experiment);
+  if (result.kind !== "acquired") return false;
+  const guard = result.guard;
   try {
     return releaseLockIfMatches(experiment, runId, token);
   } finally {
@@ -583,10 +597,11 @@ export type StartResult = {started: boolean; state: BacktestJobState | null; err
 
 export function startJob(experiment: BacktestExperiment): StartResult {
   mkdirSync(experimentDir(experiment), {recursive: true});
-  const guard = acquireGuard(experiment);
-  if (!guard) {
+  const result = acquireGuard(experiment);
+  if (result.kind !== "acquired") {
     return {started: false, state: readJobState(experiment), error: "GUARD_BUSY"};
   }
+  const guard = result.guard;
   try {
     const lock = readLock(experiment);
     if (lock) {
@@ -1003,11 +1018,12 @@ export function retentionReport(apply = false): {
 
     let guard: Guard | null = null;
     if (apply) {
-      guard = acquireGuard(exp);
-      if (!guard) {
+      const result = acquireGuard(exp);
+      if (result.kind !== "acquired") {
         skipped.push({run: `${exp}/*`, reason: "GUARD_BUSY"});
         continue;
       }
+      guard = result.guard;
     }
     try {
       const pointer = readJson<{run_id?: unknown}>(join(base, "current.json"));
