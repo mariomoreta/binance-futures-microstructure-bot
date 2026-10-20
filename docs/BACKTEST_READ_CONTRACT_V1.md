@@ -225,3 +225,64 @@ review 4f1d92e)
   change is versioned in results: `engine_version` reads v4.2 and
   `config_hash` embeds it, so v4.1 and v4.2 executions never compare
   equal (a contract note alone does not distinguish runs).
+
+## Amendment v4.5 - bloqueo de ciclo de vida, identidad de ejecutor, hashes declarados, retencion e hipotesis/placebo (2026-10-20, Bloque B)
+
+Cinco defectos probados por reproduccion fall-antes/pasa-despues
+(`frontend/src/test/backtest-defect-regressions.test.ts`, 7/7 fallan en
+`37bde91`, 7/7 pasan con el arreglo). Ninguno cambia la semantica del motor
+(`backtest-offline/v4.2`), la estrategia, el mapping, los costes ni los
+umbrales: son de control de ejecucion, integridad de resultados y de
+presentacion.
+
+- **El bloqueo representa el ciclo de vida de UNA ejecucion.** Adquisicion,
+  liberacion y retencion quedan serializadas por un mutex corto por
+  experimento (`control.guard`, `O_EXCL`, obsoleto a 30 s). `run.lock` solo se
+  libera cuando el ejecutor de ESA corrida esta verificablemente ausente
+  (`GONE`) o es definitivamente ajeno (`PROCESS_NOT_OWNED` /
+  `PID_INSTANCE_MISMATCH`); `TIMEOUT` no libera por si mismo. Estado terminal
+  + presupuesto agotado NO equivalen a "proceso terminado": la identidad
+  dudosa conserva la exclusion y nunca se mata un proceso no propio.
+- **Nunca se confia en la identidad almacenada.** La identidad se verifica
+  contra evidencia del SO (`Get-CimInstance Win32_Process` en Windows, `/proc`
+  en Linux, `ps` como respaldo): PID vivo + hora de creacion + linea de
+  comandos con `--run-id`/`--executor-token`. Ajena, reciclada, contradictoria
+  o incompleta => `UNKNOWN` (`PROCESS_IDENTITY_UNKNOWN`), con exclusion
+  conservada y sin nueva ejecucion hasta confirmar la ausencia.
+- **Hashes declarados completos y vigentes.** `summary.json`, `trades.json` y
+  `reconciliation.json` deben declarar sha256 validos, presentes, completos y
+  concordantes con el contenido; falta/parcial/invalido/discordante =>
+  resultados no disponibles con causa explicita. Los hashes NUNCA se
+  recomputan como declarados. Se valida ademas schema e identidad de
+  corrida/experimento; una reconciliacion ilegible o invalida no es integral;
+  la cache de replay queda vinculada a la corrida y a los resultados
+  verificados.
+- **Retencion conservadora.** Solo se elimina lo terminal + (`GONE` |
+  `NOT_OWNED` | `INSTANCE_MISMATCH`), o activo + `GONE`. Se evalua CADA
+  candidato (no solo `current.json`); se preserva `_legacy`, el puntero
+  actual, la corrida referenciada por el lock y los directorios no
+  reconocidos; el modo reporte solo lee y reporta `would_remove`/`skipped`
+  sin modificar estados ni borrar.
+- **Hipotesis y placebo separados.** La UI muestra el resultado realizado de
+  hipotesis y el del placebo por separado; jamas los suma como beneficio de
+  estrategia. Cualquier suma tecnica se etiqueta como "suma aritmetica de
+  ledgers (control)" y "NO es cartera ni beneficio de una estrategia". Las
+  marcas de abiertas se mantienen aparte y los agregados conservan `UNKNOWN`
+  en vez de cero. 1x/2x/3x siguen siendo escenarios de costes.
+- **Reproducibilidad del fallo.** Evidencia en
+  `docs/evidence/BACKTEST_V2_DEFECT_REGRESSIONS_FAIL_BEFORE.txt` (base
+  `37bde91`, 7 fallos) y
+  `docs/evidence/BACKTEST_V2_DEFECT_REGRESSIONS_PASS_AFTER.txt` (7 pasan).
+
+## Amendment v4.6 - artefactos con identidad de corrida (2026-10-20, Bloque B)
+
+- `scripts/run_dashboard_backtest.py` escribe `run_id` y `experiment_id` en
+  `summary.json`, `trades.json` y `reconciliation.json`, y declara
+  `identity: "declared"`. Sin identidad de corrida, un artefacto completado es
+  explicitamente no disponible (`RESULT_IDENTITY_MISSING`) en lugar de
+  servirse como si fuera de la corrida actual.
+- `scripts/build_paper_lab_replay.py` acepta `--run-id` y emite
+  `provenance.backtest_run_id` + `backtest_run_id` raiz, y hashea
+  `backtest_trades` entre `source_paths`. El replay solo se materializa si la
+  operacion pertenece a ESA corrida y sus resultados verifican; el artefacto
+  viaja con la identidad de la corrida que lo respalda.

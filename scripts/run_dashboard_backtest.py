@@ -221,7 +221,10 @@ def run_experiment(experiment_id: str, out_dir: Path, context_candles: int = 48,
             "started_at_ms": int(started * 1000),
             "updated_at_ms": int(time.time() * 1000),
             "duration_ms": int((time.time() - started) * 1000),
-            "identity": "verified",
+            # Etiqueta DECLARADA por el propio ejecutor. No es prueba de
+            # identidad: el BFF solo acepta evidencia independiente del
+            # proceso (PID + instancia + token/run_id en su linea de comandos).
+            "identity": "declared",
         }
         payload.update(extra)
         tmp = state_path.with_suffix(".json.tmp")
@@ -373,6 +376,7 @@ def run_experiment(experiment_id: str, out_dir: Path, context_candles: int = 48,
         recon_all = all(x["match"] for x in recon_rows)
         summary = {
             "experiment_id": experiment_id,
+            "run_id": effective_run_id,
             "experiment_version": spec["package_version"],
             "label": spec["label"],
             "not_label": spec["not_label"],
@@ -409,6 +413,8 @@ def run_experiment(experiment_id: str, out_dir: Path, context_candles: int = 48,
         }
         reconciliation = {
             "ok": recon_all,
+            "run_id": effective_run_id,
+            "experiment_id": experiment_id,
             "cells": recon_rows,
             "note": ("sum_trades_net recompone total_net celda por celda con "
                      "tolerancia 1e-9; es la reconciliacion con el motor."),
@@ -417,6 +423,7 @@ def run_experiment(experiment_id: str, out_dir: Path, context_candles: int = 48,
             json.dumps(summary, indent=1, default=str), encoding="utf-8")
         (out_dir / "trades.json").write_text(
             json.dumps({"experiment_id": experiment_id,
+                        "run_id": effective_run_id,
                         "n_trades": len(all_trades),
                         "trades": all_trades}, indent=1, default=str),
             encoding="utf-8")

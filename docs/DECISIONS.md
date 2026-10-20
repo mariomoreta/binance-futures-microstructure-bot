@@ -2229,3 +2229,70 @@ Detalle y criterios: `docs/DESKTOP_FIRST_SCOPE_20261020.md`.
 Cambio solo documental: sin codigo funcional, servicios, corridas ni gates.
 CURRENT_STATE/FEATURE_BACKLOG/PAPER_LAB_PLAN estaban en edicion por el agente:
 no sobrescritos; deben reconciliar esta decision en su cierre.
+
+## Cinco defectos de Backtest V2: bloqueo de ciclo de vida, identidad del ejecutor, hashes declarados, retencion e hipotesis/placebo (2026-10-20, append-only, base `37bde91`)
+
+Decision de metodologia/control (no economica): se corrigen cinco defectos
+probados sin tocar motor, estrategia, mapping, costes ni umbrales.
+
+- **El bloqueo representa el ciclo de vida de UNA corrida, no del experimento.**
+  Adquisicion, liberacion y retencion se serializan con un mutex corto por
+  experimento (`control.guard`, `O_EXCL`, obsoleto a 30 s). `run.lock` se
+  libera solo cuando el ejecutor de ESA corrida esta verificablemente ausente
+  (`GONE`) o es definitivamente ajeno (`PROCESS_NOT_OWNED` /
+  `PID_INSTANCE_MISMATCH`); `TIMEOUT` no libera por si solo porque no afirma
+  que el proceso termino. Un estado terminal con presupuesto vencido NO
+  equivale a "proceso terminado": la identidad dudosa conserva la exclusion y
+  nunca se mata un proceso no propio. Evita ademas la carrera de doble clic y
+  de reinicio del BFF.
+- **La identidad del ejecutor nunca se confia de lo almacenado.** Se verifica
+  contra evidencia del SO: PID vivo + hora de creacion de instancia + linea de
+  comandos que contenga `--run-id`/`--executor-token`
+  (`Get-CimInstance Win32_Process` en Windows, `/proc` en Linux, `ps` como
+  respaldo). Ajena, reciclada, contradictoria o incompleta => `UNKNOWN`
+  (`PROCESS_IDENTITY_UNKNOWN`), con exclusion conservada y sin nueva
+  ejecucion hasta confirmar la ausencia. Se elimina la cache de evidencia de
+  PID (el reciclado podia devolver evidencia vieja). La hora de creacion usa
+  `ToFileTimeUtc()` (el formato local sumaba +4 h en esta maquina). Nunca se
+  inicia una ejecucion mientras pueda persistir el ejecutor anterior.
+- **Hashes declarados completos y vigentes.** `summary.json`, `trades.json` y
+  `reconciliation.json` deben declarar sha256 validos, presentes, completos y
+  concordantes con el contenido; falta/parcial/inv�lido/discordante =>
+  resultados no disponibles con causa explicita. Los hashes NUNCA se
+  recomputan como declarados. Se valida ademas schema e identidad de
+  corrida/experimento (`RESULT_IDENTITY_MISSING` si el artefacto no declara
+  `run_id`); una reconciliacion ilegible o invalida no es integral; la cache de
+  replay queda vinculada a la corrida y a los resultados verificados.
+  `reconcile` persiste con compare-and-set: antes, un write obsoleto podia
+  clobar el `completado` del ejecutor despues de una consulta CIM lenta.
+- **Retencion conservadora.** Solo se elimina terminal + (`GONE` |
+  `NOT_OWNED` | `INSTANCE_MISMATCH`) o activo + `GONE`. Se evalua CADA
+  candidato (no solo `current.json`) y se preserva `_legacy`, el puntero
+  actual, la corrida referenciada por el lock y los directorios no
+  reconocidos. El modo reporte solo lee y reporta `would_remove`/`skipped`:
+  no modifica estados ni borra.
+- **Hipotesis y placebo separados en la UI.** Se muestran por separado y jamas
+  se suman como beneficio de estrategia; cualquier suma tecnica se etiqueta
+  "suma aritmetica de ledgers (control)" y "NO es cartera ni beneficio de una
+  estrategia". Las marcas de abiertas se mantienen aparte y los agregados
+  conservan `UNKNOWN` en vez de cero (nulo propaga; conjunto vacio =
+  UNKNOWN). 1x/2x/3x siguen siendo escenarios de costes, no apalancamiento.
+- **Artefactos con identidad de corrida.** `scripts/run_dashboard_backtest.py`
+  escribe `run_id`+`experiment_id` en los tres JSON y declara
+  `identity: "declared"`; `scripts/build_paper_lab_replay.py --run-id` emite
+  `provenance.backtest_run_id` + `backtest_run_id` y hashea `backtest_trades`
+  entre `source_paths`.
+- **Evidencia de los cinco defectos:** `frontend/src/test/backtest-defect-regressions.test.ts`
+  (7/7 fallan en `37bde91`, 7/7 pasan con el arreglo;
+  `docs/evidence/BACKTEST_V2_DEFECT_REGRESSIONS_{FAIL_BEFORE,PASS_AFTER}.txt`),
+  `frontend/src/test/backtest-control.test.ts` (41), `backtest-results.test.ts`
+  (11), `backtest-workspace.test.tsx` (5), `backtest-integration.test.ts`
+  (gate `BACKTEST_INTEGRATION=1`, dos corridas reales) y e2e en navegador
+  (`docs/evidence/BACKTEST_V2_E2E_BROWSER_EVIDENCE.md`).
+- **Limites:** no se probo una maquina Linux real (el codigo usa `/proc` con
+  respaldo `ps`); la inspeccion visual se hizo sobre capturas de escritorio del
+  build servido. **Alcance escritorio vigente**
+  (`docs/DESKTOP_FIRST_SCOPE_20261020.md`, SCOPE-DESKTOP-FIRST-20261020): la QA,
+  las capturas y los criterios de aceptacion moviles quedan aplazados; esta
+  entrega no anade trabajo movil ni lo declara gate. No se declaran
+  rentabilidad ni edge: los umbrales siguen siendo HIPOTESIS.

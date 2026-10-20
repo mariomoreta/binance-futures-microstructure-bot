@@ -1,0 +1,182 @@
+﻿BACKTEST V2 - DEFECT REGRESSIONS: FAIL-BEFORE EVIDENCE
+======================================================
+Base auditada (worktree desnudo): 37bde91c8a77a5e12a5b02ea171b0be6c8e5bcda
+Archivo de prueba (identico en ambos arboles):
+  frontend/src/test/backtest-defect-regressions.test.ts
+Comando:
+  cd <worktree>/frontend && npx vitest run src/test/backtest-defect-regressions.test.ts --reporter=verbose
+Resultado: 1 archivo, 7 tests FALLADOS (los cinco defectos existen en la base).
+node.exe : [33m(!) Your Vite config uses features that are unsupported by `configLoader: 'native'`, which is planned 
+to become the default in a future major version of Vite:
+En línea: 1 Carácter: 1
++ & "C:\Program Files\nodejs/node.exe" "C:\Users\adonm\AppData\Roaming\ ...
++ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: ([33m(!) Your V...ersion of Vite::String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+  - `__dirname` (vitest.config.mts:5:41). Use `import.meta.dirname` instead
+Set `VITE_CONFIG_NATIVE_IGNORE_WARNING=true` to suppress this warning.[39m
+
+ RUN  v5.0.3 C:/Users/adonm/AppData/Local/Temp/opencode/bt-base-37bde91/frontend
+
+ ├ù src/test/backtest-defect-regressions.test.ts > defect 1+2: lock/identity must be run-scoped and OS-verified > a TERMINAL run with a LIVE executor does not authorize a duplicate 85ms
+   ΓåÆ expected true to be false // Object.is equality
+ ├ù src/test/backtest-defect-regressions.test.ts > defect 1+2: lock/identity must be run-scoped and OS-verified > a foreign live PID with a valid token is NOT 'ejecutando' 13ms
+   ΓåÆ expected 'ejecutando' to be 'fallido' // Object.is equality
+ ├ù src/test/backtest-defect-regressions.test.ts > defect 3: results require declared, complete hashes and identity > does NOT serve a completed run that declares no hashes 24ms
+   ΓåÆ expected true to be false // Object.is equality
+ ├ù src/test/backtest-defect-regressions.test.ts > defect 3: results require declared, complete hashes and identity > does NOT serve a completed run whose artifacts belong to another run 21ms
+   ΓåÆ expected true to be false // Object.is equality
+ ├ù src/test/backtest-defect-regressions.test.ts > defect 4: retention never removes a possibly-active run > preserves an ACTIVE candidate with a live owned executor 38ms
+   ΓåÆ expected false to be true // Object.is equality
+ ├ù src/test/backtest-defect-regressions.test.ts > defect 5: aggregates keep UNKNOWN instead of zero > a cell with missing economic data does not become zero 20ms
+   ΓåÆ expected +0 to be null
+ ├ù src/test/backtest-defect-regressions.test.ts > defect 5: aggregates keep UNKNOWN instead of zero > an empty set is UNKNOWN, not zero 4ms
+   ΓåÆ expected +0 to be null
+
+ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ» Failed Tests 7 ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»
+
+ FAIL  src/test/backtest-defect-regressions.test.ts > defect 1+2: lock/identity must be run-scoped and OS-verified > a 
+TERMINAL run with a LIVE executor does not authorize a duplicate
+AssertionError: expected true to be false // Object.is equality
+
+- Expected
++ Received
+
+- false
++ true
+
+ Γ¥» src/test/backtest-defect-regressions.test.ts:131:23
+    129|     setCurrent(runId);
+    130|     const r = mod.startJob(EXP);
+    131|     expect(r.started).toBe(false);
+       |                       ^
+    132|     expect(existsSync(join(expDir(), "run.lock"))).toBe(true);
+    133|     // El ejecutor vivo NO fue matado.
+
+ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»[1/7]ΓÄ»
+
+ FAIL  src/test/backtest-defect-regressions.test.ts > defect 1+2: lock/identity must be run-scoped and OS-verified > a 
+foreign live PID with a valid token is NOT 'ejecutando'
+AssertionError: expected 'ejecutando' to be 'fallido' // Object.is equality
+
+Expected: "fallido"
+Received: "ejecutando"
+
+ Γ¥» src/test/backtest-defect-regressions.test.ts:145:23
+    143|     setCurrent(runId);
+    144|     const s = mod.readJobState(EXP);
+    145|     expect(s?.status).toBe("fallido");
+       |                       ^
+    146|     expect(s?.identity).toBe("UNKNOWN");
+    147|   });
+
+ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»[2/7]ΓÄ»
+
+ FAIL  src/test/backtest-defect-regressions.test.ts > defect 3: results require declared, complete hashes and identity 
+> does NOT serve a completed run that declares no hashes
+AssertionError: expected true to be false // Object.is equality
+
+- Expected
++ Received
+
+- false
++ true
+
+ Γ¥» src/test/backtest-defect-regressions.test.ts:158:25
+    156|     setCurrent(runId);
+    157|     const r = mod.readResults(EXP);
+    158|     expect(r.available).toBe(false);
+       |                         ^
+    159|   });
+    160|
+
+ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»[3/7]ΓÄ»
+
+ FAIL  src/test/backtest-defect-regressions.test.ts > defect 3: results require declared, complete hashes and identity 
+> does NOT serve a completed run whose artifacts belong to another run
+AssertionError: expected true to be false // Object.is equality
+
+- Expected
++ Received
+
+- false
++ true
+
+ Γ¥» src/test/backtest-defect-regressions.test.ts:168:25
+    166|     setCurrent(runId);
+    167|     const r = mod.readResults(EXP);
+    168|     expect(r.available).toBe(false);
+       |                         ^
+    169|   });
+    170| });
+
+ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»[4/7]ΓÄ»
+
+ FAIL  src/test/backtest-defect-regressions.test.ts > defect 4: retention never removes a possibly-active run > 
+preserves an ACTIVE candidate with a live owned executor
+AssertionError: expected false to be true // Object.is equality
+
+- Expected
++ Received
+
+- true
++ false
+
+ Γ¥» src/test/backtest-defect-regressions.test.ts:187:55
+    185|     setCurrent("bt-run-0006");
+    186|     mod.retentionReport(true);
+    187|     expect(existsSync(join(expDir(), "bt-run-0001"))).toBe(true);
+       |                                                       ^
+    188|     expect(() => process.kill(child.pid!, 0)).not.toThrow();
+    189|   }, 120_000);
+
+ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»[5/7]ΓÄ»
+
+ FAIL  src/test/backtest-defect-regressions.test.ts > defect 5: aggregates keep UNKNOWN instead of zero > a cell with 
+missing economic data does not become zero
+AssertionError: expected +0 to be null
+
+- Expected:
+null
+
++ Received:
+0
+
+ Γ¥» src/test/backtest-defect-regressions.test.ts:206:26
+    204|     } as never;
+    205|     const c = countsByScale([cell], 1);
+    206|     expect(c.n_realized).toBeNull();
+       |                          ^
+    207|     expect(c.total_net_realized).toBeNull();
+    208|   });
+
+ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»[6/7]ΓÄ»
+
+ FAIL  src/test/backtest-defect-regressions.test.ts > defect 5: aggregates keep UNKNOWN instead of zero > an empty set 
+is UNKNOWN, not zero
+AssertionError: expected +0 to be null
+
+- Expected:
+null
+
++ Received:
+0
+
+ Γ¥» src/test/backtest-defect-regressions.test.ts:213:24
+    211|     const {countsByScale} = await import("@/lib/backtest-results");
+    212|     const c = countsByScale([], 1);
+    213|     expect(c.n_trades).toBeNull();
+       |                        ^
+    214|     expect(c.total_net_realized).toBeNull();
+    215|   });
+
+ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»[7/7]ΓÄ»
+
+
+ Test Files  1 failed (1)
+      Tests  7 failed (7)
+   Start at  17:29:46
+   Duration  724ms (setup 48%, tests 38%, transform 11%, import 2%, worker 1%)
+
+

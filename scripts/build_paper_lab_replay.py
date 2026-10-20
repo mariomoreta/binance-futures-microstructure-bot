@@ -482,7 +482,8 @@ def _window(trade: dict, backing: dict | None, candles: list[dict], costs: dict,
 
 
 def build(package: Path, traces_dir: Path | None = None, context_candles: int = 48,
-          target: dict | None = None, trades_json: Path | None = None) -> dict:
+          target: dict | None = None, trades_json: Path | None = None,
+          run_id: str | None = None) -> dict:
     package_manifest = package / "package_manifest.json"
     declared = _load(package_manifest).get("archivos", {})
     for relative, metadata in declared.items():
@@ -562,6 +563,8 @@ def build(package: Path, traces_dir: Path | None = None, context_candles: int = 
         "package_manifest": package_manifest,
         **({"reconstruction_manifest": traces_dir / "reconstruction_manifest.json"}
            if traces_dir is not None else {}),
+        **({"backtest_trades": trades_json}
+           if trades_json is not None else {}),
         "selected_trace": Path(trade["_trace_path"]),
         **paths,
     }
@@ -669,6 +672,10 @@ def build(package: Path, traces_dir: Path | None = None, context_candles: int = 
     }
     if not all(artifact["result"]["reconciled_to_engine"].values()):
         raise ValueError("campos del artefacto no reconciliados al motor")
+    # Identidad de la ejecucion de Backtest que respalda el replay. Solo en modo
+    # enlace (trades.json): el artefacto prueba a que run pertenece.
+    if run_id is not None:
+        artifact["backtest_run_id"] = str(run_id)
     return artifact
 
 
@@ -691,6 +698,8 @@ def main(argv=None) -> int:
     parser.add_argument("--target-group", default=None)
     parser.add_argument("--target-segment", default=None)
     parser.add_argument("--target-scale", type=float, default=None)
+    parser.add_argument("--run-id", default=None,
+                        help="identidad de la ejecucion de Backtest (modo enlace)")
     args = parser.parse_args(argv)
     if bool(args.traces_dir) == bool(args.trades_json):
         print("error: especifique exactamente uno de --traces-dir o --trades-json",
@@ -709,7 +718,8 @@ def main(argv=None) -> int:
     trades_json = Path(args.trades_json).resolve() if args.trades_json else None
     out = Path(args.out).resolve()
     payload = (json.dumps(build(package, traces_dir, args.context_candles,
-                                target=target, trades_json=trades_json),
+                                target=target, trades_json=trades_json,
+                                run_id=args.run_id),
                           indent=2, ensure_ascii=False) + "\n").encode("utf-8")
     if args.check:
         if not out.exists() or out.read_bytes() != payload:

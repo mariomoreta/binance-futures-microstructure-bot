@@ -50,6 +50,13 @@ en lugar de la operación fija. Contrato:
   incorpora ahora group+scale para que los enlaces sean únicos;
   sha256 regenerado `72af8007d5956244ec7b902c0b12f960cdc6993b6912b4749fff9fcfcb62f172`
   (supersede `0db0c4d0…`). `--check` PASS; ventana y pasos idénticos.
+- **Vinculación a la corrida (2026-10-20, Bloque B):** el enlace admite
+  `&run=<run_id>`; la materialización exige que la operación pertenezca a los
+  resultados verificados de ESA corrida (`TARGET_NOT_IN_RUN` si no) y el
+  artefacto viaja con `provenance.backtest_run_id` + `backtest_run_id`
+  (`build_paper_lab_replay.py --run-id`, `backtest_trades` en `source_paths`).
+  Sin `run`, se usa `current.json`. Un fallo muestra el motivo y no se
+  sustituye por el artefacto fijo ni por otro replay.
 
 ---
 

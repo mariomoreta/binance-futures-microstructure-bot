@@ -1,7 +1,7 @@
 import {describe, expect, it} from "vitest";
 import {
   parseBacktestSummary, parseBacktestTrades, utcOf, moneyOf, durationOf,
-  countsByScale, hypothesisPlacebo1x, summaryRowBreakdown,
+  countsByScale, hypothesisPlacebo1x, summaryRowBreakdown, openMarksOf,
 } from "@/lib/backtest-results";
 
 describe("backtest results parser (read-only adapter)", () => {
@@ -99,7 +99,7 @@ describe("backtest metrics: realized vs marks, hypothesis vs placebo", () => {
     expect(c.total_net_with_marks).toBeCloseTo(52.0);
     expect(c.total_net_realized).toBeCloseTo(50.0);
     // La marca (2.0) NO es beneficio realizado.
-    expect(c.total_net_with_marks - c.total_net_realized).toBeCloseTo(2.0);
+    expect(openMarksOf(c)).toBeCloseTo(2.0);
   });
 
   it("separates hypothesis from baseline(placebo); baseline is not a strategy", () => {
@@ -107,16 +107,57 @@ describe("backtest metrics: realized vs marks, hypothesis vs placebo", () => {
       cell({group: "continuation", n_trades: 2991, n_realized: 2986, n_open: 5}),
       cell({group: "baseline", n_trades: 2264, n_realized: 2262, n_open: 2}),
     ];
-    const {hypothesis, placebo, combined} = hypothesisPlacebo1x(cells);
+    const {hypothesis, placebo, ledger_sum} = hypothesisPlacebo1x(cells);
     expect(hypothesis.n_trades).toBe(2991);
     expect(hypothesis.n_realized).toBe(2986);
     expect(hypothesis.n_open).toBe(5);
     expect(placebo.n_trades).toBe(2264);
     expect(placebo.n_realized).toBe(2262);
     expect(placebo.n_open).toBe(2);
-    expect(combined.n_trades).toBe(5255);
-    expect(combined.n_realized).toBe(5248);
-    expect(combined.n_open).toBe(7);
+    // ledger_sum es solo una suma aritmetica de dos ledgers; NO es cartera ni
+    // beneficio de una unica estrategia (la UI debe rotularlo asi).
+    expect(ledger_sum.n_trades).toBe(5255);
+    expect(ledger_sum.n_realized).toBe(5248);
+    expect(ledger_sum.n_open).toBe(7);
+  });
+
+  it("open marks are marks, never realized profit", () => {
+    const cells = [cell({n_trades: 100, n_realized: 99, n_open: 1,
+      total_net: 52.0, total_net_realized: 50.0})];
+    const c = countsByScale(cells, 1);
+    expect(openMarksOf(c)).toBeCloseTo(2.0);
+    // Sin dato de marcas o de realizado, la marca no se inventa.
+    expect(openMarksOf({...c, total_net_with_marks: null})).toBeNull();
+    expect(openMarksOf({...c, total_net_realized: null})).toBeNull();
+  });
+
+  it("keeps UNKNOWN (null) when a cell lacks economic data, never 0", () => {
+    const cells = [
+      cell({n_trades: null, n_realized: null, n_open: null,
+        total_net: null, total_net_realized: null}),
+      cell({n_trades: 10, n_realized: 9, n_open: 1,
+        total_net: 5.0, total_net_realized: 4.0}),
+    ];
+    const c = countsByScale(cells, 1);
+    // Un valor ausente en cualquiera de las celdas invalida el agregado: no se
+    // puede presentar una suma parcial como si fuera el total.
+    expect(c.n_trades).toBeNull();
+    expect(c.n_realized).toBeNull();
+    expect(c.n_open).toBeNull();
+    expect(c.total_net_realized).toBeNull();
+    expect(c.total_net_with_marks).toBeNull();
+    expect(openMarksOf(c)).toBeNull();
+  });
+
+  it("an empty set is UNKNOWN, not zero trades nor zero PnL", () => {
+    const c = countsByScale([], 1);
+    expect(c).toEqual({n_trades: null, n_realized: null, n_open: null,
+      total_net_realized: null, total_net_with_marks: null});
+    const p = hypothesisPlacebo1x([]);
+    expect(p.hypothesis.n_trades).toBeNull();
+    expect(p.placebo.n_trades).toBeNull();
+    expect(p.ledger_sum.n_trades).toBeNull();
+    expect(p.ledger_sum.total_net_realized).toBeNull();
   });
 
   it("explains 70 rows as 56 result cells + 14 auxiliary, not independent results", () => {

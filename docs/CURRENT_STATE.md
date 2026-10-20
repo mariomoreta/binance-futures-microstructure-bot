@@ -1,3 +1,65 @@
+## Cinco defectos de Backtest V2 corregidos (2026-10-20, base `37bde91`)
+
+Estado factual: los cinco defectos probados están corregidos y verificados;
+commit/push pendientes de esta sesión (SHA final en la entrega).
+
+1. **Bloqueo = ciclo de vida de UNA corrida.** `control.guard` (mutex corto por
+   experimento, `O_EXCL`, obsoleto a 30 s) serializa adquisición, liberación y
+   retención. `run.lock` solo se libera cuando el ejecutor de ESA corrida está
+   verificablemente ausente (`GONE`) o es ajeno (`PROCESS_NOT_OWNED` /
+   `PID_INSTANCE_MISMATCH`); `TIMEOUT` no libera por sí solo. Estado terminal +
+   presupuesto vencido no equivalen a "proceso terminado": la identidad dudosa
+   conserva la exclusión y nunca se mata un proceso no propio.
+2. **Identidad nunca se confía de lo almacenado.** Se verifica contra el SO
+   (`Get-CimInstance Win32_Process` en Windows, `/proc` en Linux, `ps` como
+   respaldo): PID vivo + hora de creación (`ToFileTimeUtc`, sin el desfase de
+   +4 h) + línea de comandos con `--run-id`/`--executor-token`. Ajena,
+   reciclada, contradictoria o incompleta → `UNKNOWN`
+   (`PROCESS_IDENTITY_UNKNOWN`), con exclusión conservada. Sin caché de
+   evidencia de PID (el reciclado podía devolver evidencia vieja).
+3. **Hashes declarados completos y vigentes.** `summary.json`, `trades.json` y
+   `reconciliation.json` deben declarar sha256 válidos, presentes, completos y
+   concordantes; falta/parcial/inválido/discordante → resultados no
+   disponibles con causa explícita. Los hashes NUNCA se recomputan como
+   declarados. Se validan además schema e identidad de corrida/experimento; una
+   reconciliación ilegible no es integral; la caché de replay queda vinculada a
+   la corrida y a los resultados verificados. `reconcile` usa compare-and-set
+   (antes un write obsoleto podía clobar el `completado` del ejecutor tras una
+   consulta CIM lenta).
+4. **Retención conservadora.** Solo elimina terminal + (`GONE` | `NOT_OWNED` |
+   `INSTANCE_MISMATCH`) o activo + `GONE`; evalúa CADA candidato (no solo
+   `current.json`); preserva `_legacy`, el puntero actual, la corrida
+   referenciada por el lock y los directorios no reconocidos; el modo reporte
+   solo lee (`would_remove`/`skipped`) y no modifica estados ni borra.
+5. **Hipótesis y placebo separados.** La UI muestra ambos por separado y nunca
+   los suma como beneficio de estrategia; cualquier suma se etiqueta «suma
+   aritmética de ledgers (control)» y «NO es cartera ni beneficio de una
+   estrategia». Las marcas de abiertas quedan aparte; los agregados conservan
+   `UNKNOWN` en vez de cero; 1x/2x/3x siguen siendo escenarios de costes.
+
+Artefactos: `run_id` + `experiment_id` en los tres JSON (sin identidad →
+`RESULT_IDENTITY_MISSING`); el ejecutor declara `identity: "declared"`;
+`build_paper_lab_replay.py --run-id` emite `provenance.backtest_run_id` +
+`backtest_run_id` y hashea `backtest_trades`.
+
+Evidencia: `docs/evidence/BACKTEST_V2_DEFECT_REGRESSIONS_FAIL_BEFORE.txt`
+(base `37bde91`, 7 fallos) y `..._PASS_AFTER.txt` (7 pasan);
+`docs/evidence/BACKTEST_V2_E2E_BROWSER_EVIDENCE.md` + capturas de escritorio
+`BACKTEST_V2_FIX_DESKTOP_*.png` (alcance escritorio vigente,
+`docs/DESKTOP_FIRST_SCOPE_20261020.md`). Verificado: frontend 452 passed / 1 skipped;
+`tsc --noEmit` limpio; `eslint` 0 errores (3 warnings preexistentes);
+`next build` OK (`BUILD_ID=7IfLc2UBHcbIAl2WG0t91`); `python run_tests.py -q`
+1290 OK (2 skips); barrera `tests=1290 ok=True prohibited={} blocked=0 ro=1
+file_writes=0 hashes_equal=True data_diff/logs_diff vacíos`.
+E2E navegador (build servido en 3020): corrida 1
+`bt-eval-census-v2-trio-20261020213213876-614cf8ad` → `COMPLETADO`;
+segunda corrida `bt-eval-census-v2-trio-20261020213645692-d701b7ef` →
+`COMPLETADO` con resultados servidos; replay enlazado al run 200 con
+`backtest_run_id` correcto; `TARGET_NOT_IN_RUN` 422, `RESULT_NOT_READY` 409,
+`EXPERIMENT_NOT_ALLOWED` 400. Restos preexistentes no tocados: corridas
+anteriores en `frontend/.backtest-runs/` y `backtest-results/_legacy/` (sin
+`run_id` → no disponibles con causa explícita; no se borran).
+
 ## Backtest offline funcional en V2 + enlace a Paper Lab (2026-10-20, sin push aun)
 La ruta `/backtest` deja de ser reservada y ejecuta UNA evaluacion offline
 versionada (`eval-census-v2-trio`) sobre el paquete publicado

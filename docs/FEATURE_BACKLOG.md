@@ -1,4 +1,72 @@
 
+## Cinco defectos de Backtest V2 corregidos — 2026-10-20 (base `37bde91`)
+
+**1. Title:** Cierre de cinco defectos probados de la entrega Backtest →
+Paper Lab: ciclo de vida del bloqueo, identidad del ejecutor, hashes
+declarados, retención segura e hipótesis/placebo en la UI.
+ID: F-BT-01 (habilitante acotado); engancha con F-PAPER-01.
+**2. Approval status:** DECIDED dentro del alcance autorizado (sin Binance,
+monitor, paper prospectivo, órdenes, credenciales, optimización, ni cambios
+de estrategia, mapping, costes, umbrales o motor económico).
+**3. Implementation status:** IMPLEMENTED. `frontend/src/lib/backtest-control.ts`
+(bloqueo con guard por experimento, CAS en reconciliación, identidad por
+evidencia del SO, resultados estrictos, retención conservadora, caché de
+replay acotada), `frontend/src/lib/process-evidence.ts` (nuevo), `frontend/src/lib/backtest-results.ts`
+(agregados nulos + `ledger_sum` + `openMarksOf`), `BacktestWorkspace.tsx`
+(hipótesis/placebo separados), `scripts/run_dashboard_backtest.py`
+(artefactos con `run_id`/`experiment_id`), `scripts/build_paper_lab_replay.py`
+(`--run-id`, `backtest_run_id`, hash de `backtest_trades`).
+**4. Evaluation status:** A) Ejecución offline reproducible: EJECUTADA en
+navegador real (dos corridas consecutivas, 15765 trades, reconciliación OK).
+B) Estrategia completa de extremos: **NO EVALUADA**. C) Enlace a Paper Lab:
+DEMOSTRADO (artefacto enlazado al run correcto; identidad ajena → 422 con
+motivo). D) Reproducción fall-antes/pasa-después de los cinco defectos:
+EJECUTADA (7/7 fallan en `37bde91`, 7/7 pasan con el arreglo).
+**5. Limitaciones:** la inspección visual se hizo sobre capturas del build
+servido (DOM + lectura de imagen); no se auditó contraste WCAG. No se probó
+una máquina Linux real (argumento por bytes en `process-evidence.ts`).
+**6. Evidence:** `docs/evidence/BACKTEST_V2_DEFECT_REGRESSIONS_FAIL_BEFORE.txt`
+(base `37bde91`, 7 fallos), `..._PASS_AFTER.txt` (7 pasan),
+`docs/evidence/BACKTEST_V2_E2E_BROWSER_EVIDENCE.md` + 3 capturas de escritorio
+`docs/evidence/BACKTEST_V2_FIX_DESKTOP_*.png` (alcance escritorio vigente,
+`docs/DESKTOP_FIRST_SCOPE_20261020.md`: QA/capturas móviles aplazadas); contrato
+`docs/BACKTEST_READ_CONTRACT_V1.md` (amend. v4.5/v4.6);
+`frontend/src/test/backtest-defect-regressions.test.ts`,
+`backtest-control.test.ts` (41), `backtest-results.test.ts` (11),
+`backtest-workspace.test.tsx` (5), `backtest-integration.test.ts` (gate);
+`tests/test_dashboard_backtest.py`.
+Verificado: frontend 452 passed / 1 skipped (61 archivos + 1 omitido);
+`tsc --noEmit` limpio; `eslint` 0 errores (3 warnings preexistentes);
+`next build` OK (`BUILD_ID=7IfLc2UBHcbIAl2WG0t91`); `python run_tests.py -q`
+1290 OK (2 skips); barrera de aislamiento
+`tests=1290 ok=True prohibited={} blocked=0 ro=1 file_writes=0 hashes_equal=True
+data_diff/logs_diff vacíos`.
+**7. Last update:** 2026-10-20.
+
+### Cierre (siete campos, obligatorios)
+
+- `DECISIONS_REVIEWED` — `docs/BACKTEST_READ_CONTRACT_V1.md` (amend. B y
+  portabilidad), `docs/DECISIONS.md` §identidad/ejecución, entrega funcional
+  previa, auditoría independiente de los cinco defectos.
+- `NEW_DECISIONS_RECORDED` — DECISIONS §"Cinco defectos de Backtest V2:
+  bloqueo de ciclo de vida, identidad del ejecutor, hashes declarados,
+  retención e hipótesis/placebo" (append-only).
+- `FEATURES_IMPLEMENTED` — F-BT-01 (control de ejecución con identidad
+  verificable, resultados íntegros y presentación separada hipótesis/placebo).
+- `FEATURES_VERIFIED` — F-BT-01 (reproducción fall-antes/pasa-después 7/7;
+  452/1 frontend; e2e real de dos corridas + replay; 1290 OK backend; barrera
+  de aislamiento limpia).
+- `DEFERRED_FEATURES` — motor paper completo (F-PAPER-01), F-PORT-01,
+  protocolo de auto-selección offline, evaluación completa de extremos,
+  residual MINA/NMR, estudio W/LUMIA; próxima fase (solo registrada, no
+  implementada): paper lab con datos vivos, selector causal → decisión
+  versionada → simulación → gestión → cierre → exportación.
+- `BACKLOG_UPDATED` — yes: esta sección + cierre.
+- `DOCUMENTATION_CONFLICTS` — la UI sumaba hipótesis+placebo como beneficio y
+  presentaba ceros como si fueran datos; el contrato no declaraba la regla de
+  retención ni la exigencia de hashes completos/identidad de artefacto.
+  Corregido por amend. v4.5/v4.6 y por esta sección, sin reescribir historia.
+
 ## Correcciones de la entrega Backtest → Paper Lab — 2026-10-20 (bloques A/B/C, base `4e61587`)
 
 **1. Title:** Cierre de defectos de la entrega funcional Backtest → Paper Lab.

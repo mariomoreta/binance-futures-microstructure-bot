@@ -132,44 +132,80 @@ export const HYPOTHESIS_GROUPS = new Set([
 export const PLACEBO_GROUPS = new Set(["baseline"]);
 
 export type CellCounts = {
-  n_trades: number; n_realized: number; n_open: number;
-  total_net_realized: number; total_net_with_marks: number;
+  n_trades: number | null; n_realized: number | null; n_open: number | null;
+  total_net_realized: number | null; total_net_with_marks: number | null;
 };
 
-const zeroCounts = (): CellCounts => ({
-  n_trades: 0, n_realized: 0, n_open: 0, total_net_realized: 0, total_net_with_marks: 0,
+// Los agregados NO convierten la ausencia de un dato economico en 0: si una
+// celda no declara el valor, el agregado queda UNKNOWN (null). Un agregado sin
+// celdas tampoco es 0: no hay dato.
+const emptyCounts = (): CellCounts => ({
+  n_trades: null, n_realized: null, n_open: null,
+  total_net_realized: null, total_net_with_marks: null,
 });
+
+const add = (a: number | null, b: number | null): number | null =>
+  a === null || b === null || !Number.isFinite(a) || !Number.isFinite(b) ? null : a + b;
 
 function accumulate(acc: CellCounts, c: BacktestCell): CellCounts {
   return {
-    n_trades: acc.n_trades + (c.n_trades ?? 0),
-    n_realized: acc.n_realized + (c.n_realized ?? 0),
-    n_open: acc.n_open + (c.n_open ?? 0),
-    total_net_realized: acc.total_net_realized + (c.total_net_realized ?? 0),
-    total_net_with_marks: acc.total_net_with_marks + (c.total_net ?? 0),
+    n_trades: add(acc.n_trades, c.n_trades),
+    n_realized: add(acc.n_realized, c.n_realized),
+    n_open: add(acc.n_open, c.n_open),
+    total_net_realized: add(acc.total_net_realized, c.total_net_realized),
+    total_net_with_marks: add(acc.total_net_with_marks, c.total_net),
   };
+}
+
+// Suma de un CONJUNTO de celdas. Sin celdas no hay dato (UNKNOWN), y si
+// cualquiera de ellas omite un campo el agregado queda UNKNOWN: una suma
+// parcial no se presenta como total. No se usa `emptyCounts()` como semilla
+// porque un 0 inicial convertiria "no hay datos" en "cero".
+function sumCells(rows: BacktestCell[]): CellCounts {
+  if (rows.length === 0) return emptyCounts();
+  const first = rows[0]!;
+  const seed: CellCounts = {
+    n_trades: first.n_trades, n_realized: first.n_realized, n_open: first.n_open,
+    total_net_realized: first.total_net_realized,
+    total_net_with_marks: first.total_net,
+  };
+  return rows.slice(1).reduce(accumulate, seed);
 }
 
 // Agregado por ESCALA de coste (1x/2x/3x son escenarios de coste, NO
 // apalancamiento). Se separa lo REALIZADO de las MARCAS de abiertas: `total_net`
 // incluye marcas y NO debe presentarse como beneficio realizado.
 export function countsByScale(cells: BacktestCell[], scale: number): CellCounts {
-  return cells.filter((c) => c.segment && c.scale !== null && Math.abs(c.scale - scale) < 1e-9)
-    .reduce(accumulate, zeroCounts());
+  return sumCells(cells.filter((c) =>
+    c.segment && c.scale !== null && Math.abs(c.scale - scale) < 1e-9));
+}
+
+// Marcas de operaciones abiertas = valoracion a cierre - realizado. Es una
+// marca, NO un beneficio realizado; UNKNOWN si falta cualquiera de los dos.
+export function openMarksOf(c: CellCounts): number | null {
+  return c.total_net_with_marks === null || c.total_net_realized === null
+    ? null : c.total_net_with_marks - c.total_net_realized;
 }
 
 // Desglose 1x por HIPOTESIS y por PLACEBO (separados, no sumados como una
-// unica "estrategia"). Las celdas se agregan como EVENTOS de una misma familia
-// de reglas, no como una cartera: la exposicion conjunta no esta modelada.
+// unica "estrategia"). `ledger_sum` es una SUMA ARITMETICA de dos ledgers
+// distintos para control interno: no es una cartera ni el beneficio de una
+// estrategia, y la exposicion conjunta no esta modelada.
 export function hypothesisPlacebo1x(cells: BacktestCell[]):
-  {hypothesis: CellCounts; placebo: CellCounts; combined: CellCounts} {
+  {hypothesis: CellCounts; placebo: CellCounts; ledger_sum: CellCounts} {
   const one = cells.filter((c) => c.segment && c.scale !== null && Math.abs(c.scale - 1) < 1e-9);
-  const hypothesis = one.filter((c) => HYPOTHESIS_GROUPS.has(c.group)).reduce(accumulate, zeroCounts());
-  const placebo = one.filter((c) => PLACEBO_GROUPS.has(c.group)).reduce(accumulate, zeroCounts());
-  return {hypothesis, placebo, combined: accumulate(hypothesis, {
-    n_trades: placebo.n_trades, n_realized: placebo.n_realized, n_open: placebo.n_open,
-    total_net_realized: placebo.total_net_realized, total_net_with_marks: placebo.total_net_with_marks,
-  } as unknown as BacktestCell)};
+  const hypothesis = sumCells(one.filter((c) => HYPOTHESIS_GROUPS.has(c.group)));
+  const placebo = sumCells(one.filter((c) => PLACEBO_GROUPS.has(c.group)));
+  return {
+    hypothesis, placebo,
+    ledger_sum: {
+      n_trades: add(hypothesis.n_trades, placebo.n_trades),
+      n_realized: add(hypothesis.n_realized, placebo.n_realized),
+      n_open: add(hypothesis.n_open, placebo.n_open),
+      total_net_realized: add(hypothesis.total_net_realized, placebo.total_net_realized),
+      total_net_with_marks: add(hypothesis.total_net_with_marks, placebo.total_net_with_marks),
+    },
+  };
 }
 
 // Filas del summary: celdas con segmento (resultado) + auxiliares (agregados
@@ -180,7 +216,8 @@ export function summaryRowBreakdown(cells: BacktestCell[]):
   return {result_cells, auxiliary_rows: cells.length - result_cells, total: cells.length};
 }
 
-export function utcOf(ms: number | null): string {  return ms !== null && Number.isSafeInteger(ms) && ms > 0
+export function utcOf(ms: number | null): string {
+  return ms !== null && Number.isSafeInteger(ms) && ms > 0
     ? new Date(ms).toISOString().replace(/\.000Z$/, "Z") : "UNKNOWN";
 }
 export function moneyOf(v: number | null): string {

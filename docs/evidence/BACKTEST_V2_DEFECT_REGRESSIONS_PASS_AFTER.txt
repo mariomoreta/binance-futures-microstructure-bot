@@ -1,0 +1,33 @@
+﻿BACKTEST V2 - DEFECT REGRESSIONS: PASS-AFTER EVIDENCE
+=======================================================
+Arbol de trabajo corregido (5 defectos corregidos, mismo archivo de prueba).
+Comando:
+  cd frontend && npx vitest run src/test/backtest-defect-regressions.test.ts --reporter=verbose
+Resultado: 1 archivo, 7 tests PASADOS.
+node.exe : [33m(!) Your Vite config uses features that are unsupported by `configLoader: 'native'`, which is planned 
+to become the default in a future major version of Vite:
+En línea: 1 Carácter: 1
++ & "C:\Program Files\nodejs/node.exe" "C:\Users\adonm\AppData\Roaming\ ...
++ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: ([33m(!) Your V...ersion of Vite::String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+  - `__dirname` (vitest.config.mts:5:41). Use `import.meta.dirname` instead
+Set `VITE_CONFIG_NATIVE_IGNORE_WARNING=true` to suppress this warning.[39m
+
+ RUN  v5.0.3 C:/proyectos/binance-futures-microstructure-bot/frontend
+
+ Γ£ô src/test/backtest-defect-regressions.test.ts > defect 1+2: lock/identity must be run-scoped and OS-verified > a TERMINAL run with a LIVE executor does not authorize a duplicate 708ms
+ Γ£ô src/test/backtest-defect-regressions.test.ts > defect 1+2: lock/identity must be run-scoped and OS-verified > a foreign live PID with a valid token is NOT 'ejecutando' 584ms
+ Γ£ô src/test/backtest-defect-regressions.test.ts > defect 3: results require declared, complete hashes and identity > does NOT serve a completed run that declares no hashes 15ms
+ Γ£ô src/test/backtest-defect-regressions.test.ts > defect 3: results require declared, complete hashes and identity > does NOT serve a completed run whose artifacts belong to another run 19ms
+ Γ£ô src/test/backtest-defect-regressions.test.ts > defect 4: retention never removes a possibly-active run > preserves an ACTIVE candidate with a live owned executor 604ms
+ Γ£ô src/test/backtest-defect-regressions.test.ts > defect 5: aggregates keep UNKNOWN instead of zero > a cell with missing economic data does not become zero 16ms
+ Γ£ô src/test/backtest-defect-regressions.test.ts > defect 5: aggregates keep UNKNOWN instead of zero > an empty set is UNKNOWN, not zero 3ms
+
+ Test Files  1 passed (1)
+      Tests  7 passed (7)
+   Start at  17:29:55
+   Duration  2.43s (tests 86%, setup 11%, transform 3%, import 1%)
+
+

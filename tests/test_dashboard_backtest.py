@@ -217,10 +217,17 @@ class DashboardBacktestTest(unittest.TestCase):
         self.assertNotEqual(state["run_id"], state["experiment_id"])
         self.assertEqual(state["executor_token"], "0123456789abcdef")
         self.assertIsInstance(state["executor_pid"], int)
-        self.assertEqual(state["identity"], "verified")
+        # Etiqueta DECLARADA por el ejecutor: el BFF no la trata como prueba.
+        self.assertEqual(state["identity"], "declared")
         # Los hashes declarados son los de los archivos realmente escritos.
         for name, declared in state["result_hashes"].items():
             self.assertEqual(declared, _sha(out / name), name)
+        # Los artefactos declaran la MISMA ejecucion y experimento que el
+        # estado: sin identidad no se pueden servir como resultados.
+        for name in ("summary.json", "trades.json", "reconciliation.json"):
+            doc = json.loads((out / name).read_text(encoding="utf-8"))
+            self.assertEqual(doc["run_id"], "bt-run-abc-0001", name)
+            self.assertEqual(doc["experiment_id"], "test-synth", name)
 
     def test_executor_budget_expired_before_verification_fails_closed(self) -> None:
         # Presupuesto ya agotado: falla explicito (TIMEOUT) sin escribir resultados.
@@ -376,9 +383,10 @@ class PaperLabLinkTest(unittest.TestCase):
         import shutil
         shutil.rmtree(self.tmp, ignore_errors=True)
 
-    def _build(self, target: dict) -> dict:
+    def _build(self, target: dict, run_id: str = "bt-link-0001") -> dict:
         return paper_gen.build(self.pkg, None, 4, target=target,
-                               trades_json=self.out / "trades.json")
+                               trades_json=self.out / "trades.json",
+                               run_id=run_id)
 
     def test_link_reproduces_the_exact_operation(self) -> None:
         t = [x for x in self.trades if not x["open_at_end"]][0]
@@ -388,6 +396,8 @@ class PaperLabLinkTest(unittest.TestCase):
         self.assertEqual(art["trade"]["entry_ms"], t["entry_ms"])
         self.assertEqual(art["event"]["event_id"], t["event_id"])
         self.assertTrue(all(art["result"]["reconciled_to_engine"].values()))
+        # El artefacto prueba a que ejecucion de Backtest pertenece.
+        self.assertEqual(art["backtest_run_id"], "bt-link-0001")
 
     def test_winner_and_loser_links_differ(self) -> None:
         realized = [x for x in self.trades if not x["open_at_end"]]

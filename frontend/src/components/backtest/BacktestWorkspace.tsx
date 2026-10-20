@@ -4,7 +4,7 @@ import Link from "next/link";
 import {
   parseBacktestSummary, parseBacktestTrades,
   utcOf, moneyOf, pctOf, durationOf,
-  countsByScale, hypothesisPlacebo1x, summaryRowBreakdown,
+  countsByScale, hypothesisPlacebo1x, openMarksOf, summaryRowBreakdown,
   type BacktestSummary, type BacktestTrade,
 } from "@/lib/backtest-results";
 import s from "./Backtest.module.css";
@@ -126,6 +126,12 @@ export default function BacktestWorkspace() {
   const oneX = useMemo(() => countsByScale(summary?.cells ?? [], 1), [summary]);
   const hp = useMemo(() => hypothesisPlacebo1x(summary?.cells ?? []), [summary]);
   const rowBreakdown = useMemo(() => summaryRowBreakdown(summary?.cells ?? []), [summary]);
+  // Un dato ausente se muestra UNKNOWN; nunca se convierte en 0.
+  const countOf = (v: number | null) => (v === null ? "UNKNOWN" : String(v));
+  const marksOneX = openMarksOf(oneX);
+  const identityUnknown = job?.identity === "UNKNOWN"
+    && (status === "ejecutando" || status === "pendiente"
+      || job?.error === "PROCESS_IDENTITY_UNKNOWN");
 
   return (
     <section className={s.root} aria-label="Backtest offline controlado">
@@ -180,7 +186,13 @@ export default function BacktestWorkspace() {
           (<span className={s.mono}>{runId ?? "sin ejecución"}</span>); el bloqueo entre procesos impide dos ejecuciones simultáneas. Refrescar o cerrar el navegador
           no pierde ni relanza la tarea. Los fallos se muestran; nunca se sustituyen por mocks.</p>
         {runError && <p className={s.error} role="alert">Estado de la ejecución: {runError}
-          {runError === "DUPLICATE_IGNORED" && " (ya había una tarea en curso: no se lanzó otra)."}</p>}
+          {runError === "DUPLICATE_IGNORED" && " (ya había una tarea en curso: no se lanzó otra)."}
+          {runError === "ALREADY_RUNNING" && " (hay una ejecución con el ejecutor activo o con identidad no verificable: no se lanzó otra)."}
+          {runError === "GUARD_BUSY" && " (otra operación de control está en curso; reintente)."}</p>}
+        {identityUnknown && <p className={s.warn} role="status">
+          Identidad del ejecutor no verificable (UNKNOWN): no se declara «verificada» ni se lanza otra ejecución.
+          El estado y la exclusión se conservan hasta poder confirmar que no queda ningún proceso de la ejecución anterior.
+        </p>}
         {status === "fallido" && job?.error && <p className={s.error} role="alert">
           Backtest fallido: {job.error}{job.detail ? ` — ${job.detail}` : ""}</p>}
       </div>
@@ -190,9 +202,11 @@ export default function BacktestWorkspace() {
           <div className={s.card}>
             <h3>3. Resultados del experimento</h3>
             <div className={s.metrics}>
-              <div><small>Operaciones @1x</small><strong>{summary.n_trades_1x ?? "—"}</strong><span>realizadas {oneX.n_realized} + abiertas {oneX.n_open}</span></div>
-              <div><small>Beneficio REALIZADO @1x</small><strong>{moneyOf(hp.hypothesis.total_net_realized + hp.placebo.total_net_realized)}</strong><span>solo operaciones cerradas (sin marcas)</span></div>
-              <div><small>Marcas de abiertas @1x</small><strong>{moneyOf(oneX.total_net_with_marks - oneX.total_net_realized)}</strong><span>valoración a cierre, NO beneficio realizado</span></div>
+              <div><small>Operaciones @1x</small><strong>{summary.n_trades_1x ?? "—"}</strong><span>realizadas {countOf(oneX.n_realized)} + abiertas {countOf(oneX.n_open)}</span></div>
+              <div><small>Resultado REALIZADO @1x — hipótesis</small><strong>{moneyOf(hp.hypothesis.total_net_realized)}</strong><span>solo operaciones cerradas de las hipótesis (sin marcas)</span></div>
+              <div><small>Resultado REALIZADO @1x — placebo (referencia)</small><strong>{moneyOf(hp.placebo.total_net_realized)}</strong><span>ledger del baseline; NO es una estrategia</span></div>
+              <div><small>Marcas de abiertas @1x</small><strong>{moneyOf(marksOneX)}</strong><span>valoración a cierre, NO beneficio realizado</span></div>
+              <div><small>Suma aritmética de ledgers @1x (control)</small><strong>{moneyOf(hp.ledger_sum.total_net_realized)}</strong><span>suma técnica de dos ledgers distintos; NO es cartera ni beneficio de una estrategia</span></div>
               <div><small>Reconciliación con el motor</small><strong>{reconOk === true ? "OK" : reconOk === false ? "FALLA" : "UNKNOWN"}</strong><span>{summary.reconciliation_rows ?? "—"} celdas (56 resultado + 14 aux.)</span></div>
             </div>
             <p className={s.note}>
@@ -202,14 +216,15 @@ export default function BacktestWorkspace() {
               escenarios de coste, no 15 765 oportunidades independientes.
             </p>
             <div className={s.metrics}>
-              <div><small>Hipótesis @1x</small><strong>{hp.hypothesis.n_trades}</strong><span>{hp.hypothesis.n_realized} realizadas + {hp.hypothesis.n_open} abiertas · realizado {moneyOf(hp.hypothesis.total_net_realized)}</span></div>
-              <div><small>Placebo (baseline) @1x</small><strong>{hp.placebo.n_trades}</strong><span>{hp.placebo.n_realized} realizadas + {hp.placebo.n_open} abiertas · realizado {moneyOf(hp.placebo.total_net_realized)}</span></div>
-              <div><small>Combinado @1x</small><strong>{hp.combined.n_trades}</strong><span>{hp.combined.n_realized} realizadas + {hp.combined.n_open} abiertas</span></div>
+              <div><small>Hipótesis @1x</small><strong>{countOf(hp.hypothesis.n_trades)}</strong><span>{countOf(hp.hypothesis.n_realized)} realizadas + {countOf(hp.hypothesis.n_open)} abiertas · realizado {moneyOf(hp.hypothesis.total_net_realized)}</span></div>
+              <div><small>Placebo (baseline) @1x</small><strong>{countOf(hp.placebo.n_trades)}</strong><span>{countOf(hp.placebo.n_realized)} realizadas + {countOf(hp.placebo.n_open)} abiertas · realizado {moneyOf(hp.placebo.total_net_realized)}</span></div>
+              <div><small>Suma aritmética de ledgers @1x (control)</small><strong>{countOf(hp.ledger_sum.n_trades)}</strong><span>{countOf(hp.ledger_sum.n_realized)} realizadas + {countOf(hp.ledger_sum.n_open)} abiertas · NO es una cartera</span></div>
             </div>
             <p className={s.note}>
               Hipótesis y placebo se presentan SEPARADOS: el baseline es referencia, no una estrategia con la misma definición.
-              Las celdas se agregan como eventos de una misma familia de reglas y NO como una cartera: la exposición conjunta
-              no está modelada, así que no se suman símbolos ni grupos como si fueran un portafolio.
+              La «suma aritmética de ledgers» solo existe como control técnico de dos ledgers distintos; no se presenta como
+              beneficio de una estrategia. Las celdas se agregan como eventos de una misma familia de reglas y NO como una
+              cartera: la exposición conjunta no está modelada, así que no se suman símbolos ni grupos como si fueran un portafolio.
             </p>
             <p className={s.note}>
               Filas del summary: {rowBreakdown.result_cells} celdas de resultado (con segmento) + {rowBreakdown.auxiliary_rows} auxiliares

@@ -1,4 +1,25 @@
-## Alcance vigente del usuario ? 2026-10-20
+## Cinco defectos de Backtest V2 corregidos (2026-10-20, base `37bde91`)
+
+Trabajo actual (cerrado a la espera de push): cierre de los cinco defectos
+probados de la entrega Backtest → Paper Lab — bloqueo de ciclo de vida,
+identidad del ejecutor por evidencia del SO, hashes declarados completos,
+retención que nunca borra una corrida activa/UNKNOWN e hipótesis/placebo
+separados en la UI. Reproducción fall-antes/pasa-después: 7/7 fallan en la
+base, 7/7 pasan con el arreglo. Verificado: frontend 452 passed / 1 skipped,
+`tsc` limpio, `eslint` 0 errores, `next build` OK
+(`BUILD_ID=7IfLc2UBHcbIAl2WG0t91`), `python run_tests.py -q` 1290 OK
+(2 skips), barrera de aislamiento limpia, e2e en navegador con dos corridas
+reales y replay enlazado (ver
+`docs/evidence/BACKTEST_V2_E2E_BROWSER_EVIDENCE.md`). Pendiente de esta
+sesión: commit selectivo + push y cierre con SHA. Fuera de alcance: sin
+Binance, monitor, paper prospectivo, órdenes, credenciales, optimización ni
+cambios de estrategia/mapping/costes/umbrales/motor.
+
+Próxima fase (REGISTRADA, NO implementada, requiere autorización): paper lab
+con datos vivos — selector causal → decisión versionada → simulación →
+gestión → cierre → exportación. Ninguno de esos pasos está iniciado.
+
+## Alcance vigente del usuario — 2026-10-20
 
 Aplicar `docs/DESKTOP_FIRST_SCOPE_20261020.md`: desarrollar y validar solo
 web de escritorio. Movil/Flutter, optimizaciones y QA 360/390 px quedan
@@ -447,7 +468,9 @@ state (P1-13A PASS through P1-14B.x, DASH-V2 slices) as historical record —
 do not rewrite them. The CURRENT active work is the bounded corrective
 closeout tracked in the dated blocks at the top of this file (Etapas 1–5
 plus P1–P4 corrective priorities): backtest repair, isolation injection
-points, run linkage, documentation reconciliation. No P1-14C, no paper,
+points, run linkage, documentation reconciliation, and the five Backtest V2
+defects (block lifecycle, executor identity, declared hashes, retention,
+hypothesis/placebo). No P1-14C, no paper,
 no execution. Phase gates advance only per docs/SUCCESS_GATES.md.
 
 
