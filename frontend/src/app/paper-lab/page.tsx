@@ -1,2 +1,2 @@
-import {FutureWorkspace} from "@/components/future/FutureWorkspace";
-export default function PaperLabPage(){return <FutureWorkspace kind="paper"/>;}
+import PaperLabReplay from "@/components/paper-lab/PaperLabReplay";
+export default function PaperLabPage(){return <PaperLabReplay/>;}

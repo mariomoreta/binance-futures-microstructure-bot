@@ -1,0 +1,811 @@
+{
+  "schema_version": 1,
+  "artifact_version": "PAPER-LAB-REPLAY-V1",
+  "label": "Paper Lab - replay historico interactivo; no simulacion prospectiva ni senal",
+  "replay_id": "PLR-BTCUSDT-LONG-1788903900000",
+  "engine_version": "backtest-offline/v4.2",
+  "eligibility_rule": "primera operacion 1x no-baseline H1/H3 por (event_time_ms, event_id), realizada por stop/horizon, sin marca abierta, con respaldo directo unico del censo y funding completo; fijada antes de mirar P&L; no se elige por rentabilidad",
+  "selection": {
+    "sort": [
+      "event_time_ms asc",
+      "event_id asc"
+    ],
+    "eligible_families": [
+      "H1",
+      "H3"
+    ],
+    "excluded_family_reason": "H2 requiere reconstruccion de confirmacion; esta entrega exige respaldo directo",
+    "exclusions_before_choice": {
+      "baseline_comparator": 69
+    },
+    "population_trades_1x": 5255
+  },
+  "chosen_at_utc": "2026-09-08T21:45:00Z",
+  "trade": {
+    "symbol": "BTCUSDT",
+    "direction": "LONG",
+    "family": "H1",
+    "rules_version": "H1-v1",
+    "event_time_ms": 1788903900000,
+    "segment": "dev",
+    "group": "continuation",
+    "entry_ms": 1788904800000,
+    "exit_ms": 1788907500000,
+    "exit_reason": "horizon",
+    "entry_px": 78458.7,
+    "exit_px": 78456.8,
+    "filled_qty": 0.012745559128560631,
+    "filled_cost": 1000.0,
+    "gross_pnl": -0.02421656234419101,
+    "fees": 0.9999878917188278,
+    "entry_fees": 0.5,
+    "exit_fees": 0.4999878917188279,
+    "funding": 0.0,
+    "friction": 1.5999806267501246,
+    "net_pnl": -1.6241971890943157,
+    "realized_net": -1.6241971890943157,
+    "exit_executed": true,
+    "open_at_end": false,
+    "funding_accounting_complete": true
+  },
+  "event": {
+    "event_id": "BTCUSDT:1788903900000:LONG:H1:H1-v1:15",
+    "event_time_ms": 1788903900000,
+    "direction": "LONG",
+    "family": "H1",
+    "rules_version": "H1-v1",
+    "reference_price": 78458.7,
+    "source": "docs/evidence/eval-census-v2-package/detections/census_btc15_detections.jsonl",
+    "available_at_ms": 1788904799999,
+    "detection_id": "CENSUS-V1-15m-MOMENTUM_ACCELERATION_UP-v1-BTCUSDT-1788903900000-22"
+  },
+  "levels": {
+    "notional_usdt": 1000.0,
+    "qty_base": 0.012745559128560631,
+    "entry_px": 78458.7,
+    "stop_px": 78066.4065,
+    "stop_distance_pct": 0.5,
+    "horizon_ms": 3600000,
+    "horizon_end_ms": 1788907500000,
+    "fee_bps": 5.0,
+    "spread_bps": 1.0,
+    "slippage_bps": 2.0,
+    "cost_scale": 1.0
+  },
+  "costs": {
+    "entry_fees": 0.5,
+    "exit_fees": 0.4999878917188279,
+    "entry_spread_slip": 0.3,
+    "exit_spread_slip": 0.2999927350312967,
+    "total_fees": 0.9999878917188278,
+    "total_spread_slip": 0.5999927350312967,
+    "funding": 0.0,
+    "friction": 1.5999806267501246
+  },
+  "result": {
+    "gross_pnl": -0.02421656234419101,
+    "net_pnl": -1.6241971890943157,
+    "realized_net": -1.6241971890943157,
+    "exit_reason": "horizon",
+    "exit_executed": true,
+    "reconciled_to_engine": {
+      "entry_px": true,
+      "exit_px": true,
+      "gross_pnl": true,
+      "net_pnl": true,
+      "fees": true,
+      "funding": true
+    },
+    "tolerance": {
+      "relative": 1e-09,
+      "absolute_usdt": 1e-09
+    },
+    "note": "P&L intermedio estimado sobre cierre conocido; neto final reconciliado al motor."
+  },
+  "window": {
+    "symbol": "BTCUSDT",
+    "interval": "15m",
+    "n_candles": 4,
+    "n_context_candles": 48,
+    "context_candles": [
+      {
+        "open_time_ms": 1788860700000,
+        "open": 78738.0,
+        "high": 78772.4,
+        "low": 78700.0,
+        "close": 78728.4,
+        "close_time_ms": 1788861599999
+      },
+      {
+        "open_time_ms": 1788861600000,
+        "open": 78728.3,
+        "high": 78728.4,
+        "low": 78636.2,
+        "close": 78709.9,
+        "close_time_ms": 1788862499999
+      },
+      {
+        "open_time_ms": 1788862500000,
+        "open": 78709.8,
+        "high": 78969.6,
+        "low": 78700.0,
+        "close": 78814.8,
+        "close_time_ms": 1788863399999
+      },
+      {
+        "open_time_ms": 1788863400000,
+        "open": 78814.9,
+        "high": 78838.0,
+        "low": 78619.4,
+        "close": 78636.8,
+        "close_time_ms": 1788864299999
+      },
+      {
+        "open_time_ms": 1788864300000,
+        "open": 78636.8,
+        "high": 78662.7,
+        "low": 78529.4,
+        "close": 78529.4,
+        "close_time_ms": 1788865199999
+      },
+      {
+        "open_time_ms": 1788865200000,
+        "open": 78529.5,
+        "high": 78544.5,
+        "low": 78255.6,
+        "close": 78280.1,
+        "close_time_ms": 1788866099999
+      },
+      {
+        "open_time_ms": 1788866100000,
+        "open": 78280.1,
+        "high": 78462.2,
+        "low": 78271.5,
+        "close": 78413.1,
+        "close_time_ms": 1788866999999
+      },
+      {
+        "open_time_ms": 1788867000000,
+        "open": 78413.1,
+        "high": 78471.7,
+        "low": 78370.6,
+        "close": 78407.5,
+        "close_time_ms": 1788867899999
+      },
+      {
+        "open_time_ms": 1788867900000,
+        "open": 78407.4,
+        "high": 78435.7,
+        "low": 78337.1,
+        "close": 78400.0,
+        "close_time_ms": 1788868799999
+      },
+      {
+        "open_time_ms": 1788868800000,
+        "open": 78400.0,
+        "high": 78400.1,
+        "low": 78187.3,
+        "close": 78190.5,
+        "close_time_ms": 1788869699999
+      },
+      {
+        "open_time_ms": 1788869700000,
+        "open": 78190.4,
+        "high": 78367.7,
+        "low": 78190.4,
+        "close": 78345.1,
+        "close_time_ms": 1788870599999
+      },
+      {
+        "open_time_ms": 1788870600000,
+        "open": 78345.2,
+        "high": 78424.6,
+        "low": 78271.1,
+        "close": 78303.8,
+        "close_time_ms": 1788871499999
+      },
+      {
+        "open_time_ms": 1788871500000,
+        "open": 78303.8,
+        "high": 78453.3,
+        "low": 78270.0,
+        "close": 78419.7,
+        "close_time_ms": 1788872399999
+      },
+      {
+        "open_time_ms": 1788872400000,
+        "open": 78420.0,
+        "high": 78512.0,
+        "low": 78375.1,
+        "close": 78441.9,
+        "close_time_ms": 1788873299999
+      },
+      {
+        "open_time_ms": 1788873300000,
+        "open": 78442.0,
+        "high": 78457.3,
+        "low": 78276.6,
+        "close": 78307.5,
+        "close_time_ms": 1788874199999
+      },
+      {
+        "open_time_ms": 1788874200000,
+        "open": 78307.4,
+        "high": 78344.7,
+        "low": 77660.0,
+        "close": 77816.5,
+        "close_time_ms": 1788875099999
+      },
+      {
+        "open_time_ms": 1788875100000,
+        "open": 77816.4,
+        "high": 78069.9,
+        "low": 77600.1,
+        "close": 77936.5,
+        "close_time_ms": 1788875999999
+      },
+      {
+        "open_time_ms": 1788876000000,
+        "open": 77936.6,
+        "high": 78166.5,
+        "low": 77817.3,
+        "close": 78123.4,
+        "close_time_ms": 1788876899999
+      },
+      {
+        "open_time_ms": 1788876900000,
+        "open": 78123.5,
+        "high": 78354.2,
+        "low": 78123.4,
+        "close": 78307.1,
+        "close_time_ms": 1788877799999
+      },
+      {
+        "open_time_ms": 1788877800000,
+        "open": 78307.0,
+        "high": 78400.0,
+        "low": 78206.2,
+        "close": 78379.8,
+        "close_time_ms": 1788878699999
+      },
+      {
+        "open_time_ms": 1788878700000,
+        "open": 78379.7,
+        "high": 78591.9,
+        "low": 78350.0,
+        "close": 78524.8,
+        "close_time_ms": 1788879599999
+      },
+      {
+        "open_time_ms": 1788879600000,
+        "open": 78524.9,
+        "high": 78630.6,
+        "low": 78438.0,
+        "close": 78608.1,
+        "close_time_ms": 1788880499999
+      },
+      {
+        "open_time_ms": 1788880500000,
+        "open": 78608.1,
+        "high": 78680.0,
+        "low": 78415.0,
+        "close": 78425.5,
+        "close_time_ms": 1788881399999
+      },
+      {
+        "open_time_ms": 1788881400000,
+        "open": 78425.5,
+        "high": 78744.9,
+        "low": 78416.0,
+        "close": 78680.6,
+        "close_time_ms": 1788882299999
+      },
+      {
+        "open_time_ms": 1788882300000,
+        "open": 78680.7,
+        "high": 78871.2,
+        "low": 78636.4,
+        "close": 78870.0,
+        "close_time_ms": 1788883199999
+      },
+      {
+        "open_time_ms": 1788883200000,
+        "open": 78870.1,
+        "high": 78871.0,
+        "low": 78593.5,
+        "close": 78616.9,
+        "close_time_ms": 1788884099999
+      },
+      {
+        "open_time_ms": 1788884100000,
+        "open": 78616.9,
+        "high": 78646.3,
+        "low": 78540.0,
+        "close": 78599.8,
+        "close_time_ms": 1788884999999
+      },
+      {
+        "open_time_ms": 1788885000000,
+        "open": 78599.7,
+        "high": 78966.0,
+        "low": 78583.3,
+        "close": 78759.1,
+        "close_time_ms": 1788885899999
+      },
+      {
+        "open_time_ms": 1788885900000,
+        "open": 78759.1,
+        "high": 78846.2,
+        "low": 78616.9,
+        "close": 78700.0,
+        "close_time_ms": 1788886799999
+      },
+      {
+        "open_time_ms": 1788886800000,
+        "open": 78699.9,
+        "high": 78857.0,
+        "low": 78626.6,
+        "close": 78674.1,
+        "close_time_ms": 1788887699999
+      },
+      {
+        "open_time_ms": 1788887700000,
+        "open": 78674.0,
+        "high": 78684.1,
+        "low": 78506.9,
+        "close": 78559.9,
+        "close_time_ms": 1788888599999
+      },
+      {
+        "open_time_ms": 1788888600000,
+        "open": 78559.9,
+        "high": 78630.8,
+        "low": 78492.2,
+        "close": 78492.2,
+        "close_time_ms": 1788889499999
+      },
+      {
+        "open_time_ms": 1788889500000,
+        "open": 78492.2,
+        "high": 78610.1,
+        "low": 78458.9,
+        "close": 78467.9,
+        "close_time_ms": 1788890399999
+      },
+      {
+        "open_time_ms": 1788890400000,
+        "open": 78467.9,
+        "high": 78690.0,
+        "low": 78458.4,
+        "close": 78639.9,
+        "close_time_ms": 1788891299999
+      },
+      {
+        "open_time_ms": 1788891300000,
+        "open": 78639.9,
+        "high": 78783.0,
+        "low": 78633.0,
+        "close": 78697.6,
+        "close_time_ms": 1788892199999
+      },
+      {
+        "open_time_ms": 1788892200000,
+        "open": 78697.7,
+        "high": 78739.9,
+        "low": 78541.6,
+        "close": 78568.2,
+        "close_time_ms": 1788893099999
+      },
+      {
+        "open_time_ms": 1788893100000,
+        "open": 78568.2,
+        "high": 78619.3,
+        "low": 78230.5,
+        "close": 78399.1,
+        "close_time_ms": 1788893999999
+      },
+      {
+        "open_time_ms": 1788894000000,
+        "open": 78399.2,
+        "high": 78485.0,
+        "low": 78357.0,
+        "close": 78433.2,
+        "close_time_ms": 1788894899999
+      },
+      {
+        "open_time_ms": 1788894900000,
+        "open": 78433.1,
+        "high": 78495.6,
+        "low": 78308.2,
+        "close": 78441.2,
+        "close_time_ms": 1788895799999
+      },
+      {
+        "open_time_ms": 1788895800000,
+        "open": 78441.2,
+        "high": 78483.4,
+        "low": 78300.0,
+        "close": 78375.4,
+        "close_time_ms": 1788896699999
+      },
+      {
+        "open_time_ms": 1788896700000,
+        "open": 78375.4,
+        "high": 78417.1,
+        "low": 78285.0,
+        "close": 78407.3,
+        "close_time_ms": 1788897599999
+      },
+      {
+        "open_time_ms": 1788897600000,
+        "open": 78407.4,
+        "high": 78595.7,
+        "low": 78366.2,
+        "close": 78575.9,
+        "close_time_ms": 1788898499999
+      },
+      {
+        "open_time_ms": 1788898500000,
+        "open": 78575.8,
+        "high": 78580.0,
+        "low": 78412.4,
+        "close": 78550.6,
+        "close_time_ms": 1788899399999
+      },
+      {
+        "open_time_ms": 1788899400000,
+        "open": 78550.6,
+        "high": 78550.6,
+        "low": 78376.0,
+        "close": 78494.3,
+        "close_time_ms": 1788900299999
+      },
+      {
+        "open_time_ms": 1788900300000,
+        "open": 78494.4,
+        "high": 78525.0,
+        "low": 78431.1,
+        "close": 78447.9,
+        "close_time_ms": 1788901199999
+      },
+      {
+        "open_time_ms": 1788901200000,
+        "open": 78447.9,
+        "high": 78540.2,
+        "low": 78422.4,
+        "close": 78519.3,
+        "close_time_ms": 1788902099999
+      },
+      {
+        "open_time_ms": 1788902100000,
+        "open": 78519.3,
+        "high": 78586.6,
+        "low": 78468.0,
+        "close": 78495.5,
+        "close_time_ms": 1788902999999
+      },
+      {
+        "open_time_ms": 1788903000000,
+        "open": 78495.6,
+        "high": 78532.6,
+        "low": 78403.5,
+        "close": 78488.2,
+        "close_time_ms": 1788903899999
+      }
+    ],
+    "candles": [
+      {
+        "open_time_ms": 1788903900000,
+        "open": 78488.1,
+        "high": 78501.3,
+        "low": 78360.2,
+        "close": 78458.7,
+        "close_time_ms": 1788904799999
+      },
+      {
+        "open_time_ms": 1788904800000,
+        "open": 78458.7,
+        "high": 78658.6,
+        "low": 78420.7,
+        "close": 78475.1,
+        "close_time_ms": 1788905699999
+      },
+      {
+        "open_time_ms": 1788905700000,
+        "open": 78475.2,
+        "high": 78549.6,
+        "low": 78437.0,
+        "close": 78464.3,
+        "close_time_ms": 1788906599999
+      },
+      {
+        "open_time_ms": 1788906600000,
+        "open": 78464.4,
+        "high": 78503.7,
+        "low": 78430.6,
+        "close": 78456.8,
+        "close_time_ms": 1788907499999
+      }
+    ],
+    "steps": [
+      {
+        "step": 0,
+        "kind": "event",
+        "candle": null,
+        "known_at_ms": 1788903900000,
+        "opens_at_ms": 1788903900000,
+        "closed_at_ms": null,
+        "events": [
+          {
+            "at_ms": 1788903900000,
+            "label": "Señal histórica formada (evento)",
+            "kind": "signal"
+          }
+        ],
+        "position_after": {
+          "open": false,
+          "entry_px": null,
+          "qty": null,
+          "mark_px": null,
+          "mark_ms": null
+        },
+        "mfe_pct": null,
+        "mae_pct": null,
+        "unrealized": null,
+        "exit": null,
+        "final_candle": false
+      },
+      {
+        "step": 1,
+        "kind": "candle",
+        "candle": {
+          "open_time_ms": 1788903900000,
+          "open": 78488.1,
+          "high": 78501.3,
+          "low": 78360.2,
+          "close": 78458.7,
+          "close_time_ms": 1788904799999
+        },
+        "known_at_ms": 1788904799999,
+        "opens_at_ms": 1788903900000,
+        "closed_at_ms": 1788904799999,
+        "events": [],
+        "position_after": {
+          "open": false,
+          "entry_px": null,
+          "qty": null,
+          "mark_px": null,
+          "mark_ms": null
+        },
+        "mfe_pct": null,
+        "mae_pct": null,
+        "unrealized": null,
+        "exit": null,
+        "final_candle": false
+      },
+      {
+        "step": 2,
+        "kind": "event",
+        "candle": null,
+        "known_at_ms": 1788904799999,
+        "opens_at_ms": 1788904799999,
+        "closed_at_ms": null,
+        "events": [
+          {
+            "at_ms": 1788904799999,
+            "label": "Disponible tras cierre de formación",
+            "kind": "available"
+          }
+        ],
+        "position_after": {
+          "open": false,
+          "entry_px": null,
+          "qty": null,
+          "mark_px": null,
+          "mark_ms": null
+        },
+        "mfe_pct": null,
+        "mae_pct": null,
+        "unrealized": null,
+        "exit": null,
+        "final_candle": false
+      },
+      {
+        "step": 3,
+        "kind": "event",
+        "candle": null,
+        "known_at_ms": 1788904800000,
+        "opens_at_ms": 1788904800000,
+        "closed_at_ms": null,
+        "events": [
+          {
+            "at_ms": 1788904800000,
+            "label": "Entrada ejecutada al open",
+            "kind": "entry"
+          }
+        ],
+        "position_after": {
+          "open": true,
+          "entry_px": 78458.7,
+          "qty": 0.012745559128560631,
+          "mark_px": 78458.7,
+          "mark_ms": 1788904800000
+        },
+        "mfe_pct": 0.0,
+        "mae_pct": 0.0,
+        "unrealized": {
+          "gross": 0.0,
+          "fees_est": 1.6,
+          "net_est": -1.6,
+          "mark_px": 78458.7
+        },
+        "exit": null,
+        "final_candle": false
+      },
+      {
+        "step": 4,
+        "kind": "candle",
+        "candle": {
+          "open_time_ms": 1788904800000,
+          "open": 78458.7,
+          "high": 78658.6,
+          "low": 78420.7,
+          "close": 78475.1,
+          "close_time_ms": 1788905699999
+        },
+        "known_at_ms": 1788905699999,
+        "opens_at_ms": 1788904800000,
+        "closed_at_ms": 1788905699999,
+        "events": [],
+        "position_after": {
+          "open": true,
+          "entry_px": 78458.7,
+          "qty": 0.012745559128560631,
+          "mark_px": 78475.1,
+          "mark_ms": 1788905699999
+        },
+        "mfe_pct": 0.2547837269799381,
+        "mae_pct": 0.0484331246885304,
+        "unrealized": {
+          "gross": 0.20902716970850563,
+          "fees_est": 1.6001672217357668,
+          "net_est": -1.391140052027261,
+          "mark_px": 78475.1
+        },
+        "exit": null,
+        "final_candle": false
+      },
+      {
+        "step": 5,
+        "kind": "candle",
+        "candle": {
+          "open_time_ms": 1788905700000,
+          "open": 78475.2,
+          "high": 78549.6,
+          "low": 78437.0,
+          "close": 78464.3,
+          "close_time_ms": 1788906599999
+        },
+        "known_at_ms": 1788906599999,
+        "opens_at_ms": 1788905700000,
+        "closed_at_ms": 1788906599999,
+        "events": [],
+        "position_after": {
+          "open": true,
+          "entry_px": 78458.7,
+          "qty": 0.012745559128560631,
+          "mark_px": 78464.3,
+          "mark_ms": 1788906599999
+        },
+        "mfe_pct": 0.2547837269799381,
+        "mae_pct": 0.0484331246885304,
+        "unrealized": {
+          "gross": 0.07137513112001372,
+          "fees_est": 1.600057100104896,
+          "net_est": -1.5286819689848823,
+          "mark_px": 78464.3
+        },
+        "exit": null,
+        "final_candle": false
+      },
+      {
+        "step": 6,
+        "kind": "candle",
+        "candle": {
+          "open_time_ms": 1788906600000,
+          "open": 78464.4,
+          "high": 78503.7,
+          "low": 78430.6,
+          "close": 78456.8,
+          "close_time_ms": 1788907499999
+        },
+        "known_at_ms": 1788907499999,
+        "opens_at_ms": 1788906600000,
+        "closed_at_ms": 1788907499999,
+        "events": [],
+        "position_after": {
+          "open": true,
+          "entry_px": 78458.7,
+          "qty": 0.012745559128560631,
+          "mark_px": 78456.8,
+          "mark_ms": 1788907499999
+        },
+        "mfe_pct": 0.2547837269799381,
+        "mae_pct": 0.0484331246885304,
+        "unrealized": {
+          "gross": -0.02421656234419101,
+          "fees_est": 1.5999806267501246,
+          "net_est": -1.6241971890943157,
+          "mark_px": 78456.8
+        },
+        "exit": null,
+        "final_candle": true
+      },
+      {
+        "step": 7,
+        "kind": "event",
+        "candle": null,
+        "known_at_ms": 1788907500000,
+        "opens_at_ms": 1788907500000,
+        "closed_at_ms": null,
+        "events": [
+          {
+            "at_ms": 1788907500000,
+            "label": "Cierre ejecutado: horizon",
+            "kind": "exit"
+          }
+        ],
+        "position_after": {
+          "open": false,
+          "entry_px": null,
+          "qty": null,
+          "mark_px": null,
+          "mark_ms": null
+        },
+        "mfe_pct": null,
+        "mae_pct": null,
+        "unrealized": null,
+        "exit": {
+          "reason": "horizon",
+          "px": 78456.8,
+          "ms": 1788907500000,
+          "executed": true
+        },
+        "final_candle": false
+      }
+    ]
+  },
+  "provenance": {
+    "symbol": "BTCUSDT",
+    "interval": "15m",
+    "source_db": "NO LEIDA; derivado del paquete versionado EVAL-CENSUS-V2",
+    "db_sha256": null,
+    "events_file": "docs/evidence/eval-census-v2-package/combos/eval15_btc/events_BTCUSDT_15m.json",
+    "candles_file": "docs/evidence/eval-census-v2-package/combos/eval15_btc/candles_BTCUSDT_15m.json",
+    "manifest_file": "docs/evidence/eval-census-v2-package/combos/eval15_btc/manifest_BTCUSDT_15m.json",
+    "selection_file": "docs/evidence/eval-census-v2-package/combos/eval15_btc/selection_BTCUSDT_15m.json",
+    "funding_calendar": "docs/evidence/eval-census-v2-package/funding/funding_BTCUSDT.json",
+    "engine": "scripts/reconstruct_replay_traces.py + src/microstructure_probe/backtest_offline.py",
+    "engine_version": "backtest-offline/v4.2",
+    "source_hashes": {
+      "docs/evidence/eval-census-v2-package/package_manifest.json": "dabcf36d38be332ec7444676381cf20531029fed3a1737040553e3fdeb6e19e4",
+      "generated-traces/reconstruction_manifest.json": "2e6befa89bcee3910f73d756c886dfb291dc9cd061fe894ec40fea0e3461a0d4",
+      "generated-traces/trades_BTCUSDT_15m.json": "ef550fa54cf157dff3a0700179a7b2faf6990029360a21d0597a04c0fc664ce7",
+      "docs/evidence/eval-census-v2-package/combos/eval15_btc/events_BTCUSDT_15m.json": "3e28a186cb254e1ad9906132c49e5c6c13f4ef828d804fad1543746e98fdc267",
+      "docs/evidence/eval-census-v2-package/combos/eval15_btc/candles_BTCUSDT_15m.json": "3ad1fcebc50eb23fe20dcba3cd3deb3bf471113fe97d93010f94dec3a02a92f2",
+      "docs/evidence/eval-census-v2-package/combos/eval15_btc/manifest_BTCUSDT_15m.json": "d12862acf37db76cc3e9f6347d5df17e05291470adb3d187ae7e703ba68ddcf7",
+      "docs/evidence/eval-census-v2-package/combos/eval15_btc/selection_BTCUSDT_15m.json": "4a8420efd6506e2d0d3611e4b3b9204681831b37ca685d46bb62f00cffbd7538",
+      "docs/evidence/eval-census-v2-package/detections/census_btc15_detections.jsonl": "92ee95d30997f882e3bba9fa2654d9962ac687d12b9da94f17561d07d155ce6b",
+      "docs/evidence/eval-census-v2-package/funding/funding_BTCUSDT.json": "c33442ecb4bd239880c1650282ed5ab0596a7f2da9f2fb11754047162f08fe60"
+    },
+    "note": "Artefacto autocontenido; runtime sin DBs, temporales ni archivos ignorados."
+  },
+  "limitations": [
+    "Replay historico de una operacion registrada; no seleccion automatica en vivo ni simulacion prospectiva.",
+    "BTC/ETH/SOL son controles de mecanica; no validan el selector real de extremos.",
+    "Velas OHLC cerradas; no se inventan ticks ni recorrido intrabar; paso discreto por vela.",
+    "COST-ASSUME-v1: fee 5 bps, spread 1 bps y slippage 2 bps; supuestos, no mediciones.",
+    "Sin take-profit ni trailing stop; solo niveles y cierre ejecutados por el replay.",
+    "H1/H3 del estudio fueron rechazadas economicamente; esta pantalla no aprueba H1/H2/H3."
+  ]
+}

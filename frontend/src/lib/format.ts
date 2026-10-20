@@ -7,6 +7,16 @@ export function emDash(value: number | null | undefined): string {
     : String(value);
 }
 
+export function formatMoney(value: number | null | undefined): string {
+  if (value === null || value === undefined || Number.isNaN(value)) return "—";
+  return (value >= 0 ? "+" : "") + value.toFixed(2);
+}
+
+export function formatPct(value: number | null | undefined, digits = 2): string {
+  if (value === null || value === undefined || Number.isNaN(value)) return "—";
+  return (value > 0 ? "+" : "") + value.toFixed(digits) + "%";
+}
+
 export function formatCompact(value: number | null | undefined): string {
   if (value === null || value === undefined || Number.isNaN(value)) return "—";
   return new Intl.NumberFormat("en-US", {

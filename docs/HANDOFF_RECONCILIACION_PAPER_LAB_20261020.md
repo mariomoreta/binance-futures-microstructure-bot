@@ -16,9 +16,9 @@
 
 ## 2. Estado vigente y tarea activa
 
-**Estado vigente:** Fase 1 (Market Intelligence + Dashboard) avanzada; EVAL-CENSUS-V2 cerrado con veredicto global INCOMPLETE (residual MINA/NMR); selector extremo mecanismo probado con fixtures (no evaluado sobre censo); V2 con vistas reales (`/movers`, `/paper-lab`) y stub (`/backtest`); Paper Lab replay de ingeniería construido pero **no publicado en Git** (todo untracked).
+**Estado vigente (actualizado 2026-10-20):** Fase 1 (Market Intelligence + Dashboard) avanzada; EVAL-CENSUS-V2 cerrado con veredicto global INCOMPLETE (residual MINA/NMR); selector extremo mecanismo probado con fixtures (no evaluado sobre censo); V2 con vistas reales (`/movers`, `/paper-lab`) y stub (`/backtest`); Paper Lab replay de ingeniería **construido, publicado en Git, probado y servido** en `127.0.0.1:3020/paper-lab` (cierre funcional 2026-10-20). Persiste abierto **solo** el motor paper completo (Etapa 5), no autorizado.
 
-**Tarea activa:** definida y coordinar cierre con la entrega de Paper Lab del otro agente. No se abrió otra auditoría general.
+**Tarea activa:** protocolo de selección automática offline sobre EVAL-CENSUS-V2 (única acción siguiente). La entrega funcional de Paper Lab ya se cerró en esta rama. No se abrió otra auditoría general.
 
 ## 3. Documentos y código que son fuente de autoridad
 
@@ -59,8 +59,8 @@ git rev-parse HEAD
 git fetch origin
 
 # Verificar determinismo del artefacto Paper Lab (solo lectura, --check no escribe)
-python scripts/build_paper_lab_replay.py --package docs/evidence/eval-census-v2-package --traces-dir <traces_dir> --out frontend/src/data/paper-lab-replay-v1.json --check
-# Esperado: PASS: artefacto determinista sha256=7ba452c308378c7f26a20b12761625dcace6b839ba7576d0221bba0346f41826
+python scripts/build_paper_lab_replay.py --traces-dir "C:\proyectos\binance-temp\paper_lab_audit_20261019_codex\traces" --out frontend/src/artifacts/paper-lab-replay-v1.json --check
+# Esperado: PASS: artefacto determinista sha256=96a5fa46499000a8aa223093a145bda49744157468ae80c56b4b126234e80882
 
 # Suite canonica (sin cambios de código en este alcance; ejecutar solo si se justifica)
 python run_tests.py
@@ -71,7 +71,7 @@ git grep -l audit_public_data  # esperado: sin resultados
 
 `<traces_dir>`: directorio con `reconstruction_manifest.json` y `trades_*.json` (ej. `C:\proyectos\binance-temp\paper_lab_audit_20261019_codex\traces` o el paquete). No iniciar Binance ni paper prospectivo.
 
-## 6. Matriz: corregido / pendiente / dependencia de otro agente
+## 6. Matriz: corregido / pendiente / dependencia de otro agente (actualizada 2026-10-20)
 
 | Ítem | Estado | Detalle / respaldo |
 |---|---|---|
@@ -81,44 +81,44 @@ git grep -l audit_public_data  # esperado: sin resultados
 | Trades 5255 desglose | **Corregido** | Hipótesis 2991 (5 abiertas → 2986 realizadas); Placebo 2264 (2 abiertas → 2262 realizadas); total 5255 (7 abiertas → 5248 realizadas). `docs/ADDENDUM_CENSUS_EVAL_V2_CORRECCION.md`. |
 | MFE/MAE | **Corregido** | Excursión por posición, NO ganancia capturada por la salida. `docs/CURRENT_STATE.md`, `BACKTEST_READ_CONTRACT_V1.md`. |
 | V2 vistas | **Verificado** | `/movers` real; `/paper-lab` componente real; `/backtest` stub (FutureWorkspace). |
-| Paper Lab publicado en Git | **Pendiente (otro agente)** | Ningún archivo publicado (todos untracked). Artefacto determinista `--check` PASS sha256 `7ba452c3...`. |
-| Paper Lab servido/revisado visual | **Pendiente (otro agente)** | No confirmado por este agente; no URL local verificada. |
+| Paper Lab publicado en Git | **Cerrado 2026-10-20** | Artefacto, generador, parser/player, componentes, ruta y tests publicados. Artefacto determinista `--check` PASS sha256 `96a5fa46...`. |
+| Paper Lab servido/revisado | **Cerrado 2026-10-20** | Servido en `127.0.0.1:3020/paper-lab` (sin monitor); sirve LONG (no la SHORT obsoleta); capturas desktop+mobile de 3 estados generadas. Inspección **visual** pendiente del revisor humano (APIs de visión del entorno caídas). |
 | Selector automático (protocolo) | **Pendiente** | Sobre EVAL-CENSUS-V2, info en T, sin lookahead, ventana incompleta → UNKNOWN. |
 | Adquisición escalonada | **Pendiente (protocolo solo)** | Universo ligero → candidatos → detalle limitado; fuentes gratuitas; sin colectores iniciados. |
 | Residual MINA/NMR | **Pendiente (otro agente / build_report)** | Falta build_report MINAUSDT/1h y NMRUSDT/1h. Separado del replay del trío. |
 
-## 7. Estado verificable de Paper Lab (cuatro estados)
+## 7. Estado verificable de Paper Lab (cuatro estados, cierre funcional 2026-10-20)
 
 | Estado | Qué existe | Qué NO existe / no se afirma |
 |---|---|---|
-| Trabajo local en curso | Componentes, page.tsx, format.ts, build script, tests (otro agente) | Todo **untracked / no publicado en Git** |
-| Código publicado en Git | Ninguno | — |
-| Probado | Artefacto determinista `--check` PASS; tests existen | Suite frontend no ejecutada por este agente; archivos no publicados |
-| Servido y revisado visualmente | — | No servido; no URL local verificada; monitor :3020 detenido; **no hay capturas de Paper Lab (`before/abierta/cerrada`) localizadas** |
+| Trabajo local | Componentes, page.tsx, format.ts, `paper-lab-replay.ts`, build script, artefacto, tests | No es motor de paper (sin position manager, ledger de caja, funding recurrente ni risk engine) |
+| Código publicado en Git | Artefacto + generador + parser/player + componentes + ruta + tests publicados | `/backtest` sigue stub |
+| Probado | `--check` PASS determinista; suite frontend 347/347; `tsc --noEmit` limpio; `eslint` 0 errores; `next build` OK | Umbrales siguen siendo HIPÓTESIS; no valida edge |
+| Servido y revisado | Servido en `127.0.0.1:3020/paper-lab` (sin monitor); capturas desktop+mobile de los 3 estados (`antes de entrada`/`abierta`/`cerrada`) | Inspección **visual** pendiente del revisor humano (modelo texto; APIs de visión caídas). Verificación de contenido por a11y-tree + texto |
 
-**Identidad del artefacto (verificada en código):** **BTCUSDT 15m LONG H1** (no SHORT). `replay_id=PLR-BTCUSDT-LONG-1788903900000`, `event_time_ms=1788903900000` (2026-09-08T21:45:00Z), `entry_ms=1788904800000` (22:00:00Z), `exit_ms=1788907500000` (22:45:00Z, salida por `horizon`), `entry_px=78458.7`, `exit_px=78456.8`, `net_pnl=-1.6242` (pérdida). 4 velas cerradas de 15m.
+**Identidad del artefacto (verificada en código y en build servida):** **BTCUSDT 15m LONG H1** (no SHORT). `replay_id=PLR-BTCUSDT-LONG-1788903900000`, `event_time_ms=1788903900000` (2026-09-08T21:45:00Z), `entry_ms=1788904800000` (22:00:00Z), `exit_ms=1788907500000` (22:45:00Z, salida por `horizon`), `entry_px=78458.7`, `exit_px=78456.8`, `gross_pnl=-0.0242`, `net_pnl=-1.6242` (pérdida). 8 pasos (vela/evento) + 48 velas de contexto previo real (solo visuales). Frontera causal: pasos de vela vs pasos de evento; invariante `event.at_ms <= step.known_at_ms`.
 
-**SHA/build/URL solo si comprobados:** sha256 del artefacto `7ba452c308378c7f26a20b12761625dcace6b839ba7576d0221bba0346f41826` (verificado con `--check`). **No hay URL local verificada por este agente** (no se sirvió next; no hay capturas de Paper Lab).
+**SHA/build/URL comprobados (2026-10-20):** sha256 del artefacto `96a5fa46499000a8aa223093a145bda49744157468ae80c56b4b126234e80882`; `BUILD_ID=jV0tcgCSIEFWga6_YmJW3`; URL local `http://127.0.0.1:3020/paper-lab` (servida la operación LONG, ya no la SHORT obsoleta). Capturas en la raíz del repo (no se commitean).
 
 ---
 
 ### Estudio retrospectivo de extremos — paquete W/LUMIA (auditoría, sin segunda implementación)
 
 - **Cobertura:** 1.499 velas 5m cerradas + 1.499 velas 1m cerradas por símbolo (WUSDT, LUMIAUSDT, BTCUSDT, GTCUSDT), corte `2026-10-12T10:57:19.690Z`, última vela 5m `10:54:59.999Z` (~5,2 días). Sin duplicados ni huecos. BTC = referencia sincronizada/control; GTC = contexto adicional, no validación independiente.
-- **Costes / compatibilidad con el motor:** `fundingIntervalHours=4` real para WUSDT y LUMIAUSDT (100 registros, jitter 7 ms). El motor asume `FUNDING_INTERVAL_MS = 8h`: **supuesto que no representa estos contratos**. Propuesta de fidelidad de replay: contabilizar cada liquidación de funding realmente cruzada con calendario/tasa del contrato, exposición vigente, signo, fuente/versionado; ausentes → UNKNOWN o exclusión. No cambiar el 8 global por 4.
+- **Costes / compatibilidad con el motor (corregido 2026-10-20):** `fundingIntervalHours=4` real para WUSDT y LUMIAUSDT (100 registros, jitter 7 ms). El motor **ya acepta un `FundingCalendar` por contrato** (`src/microstructure_probe/backtest_offline.py`, `class FundingCalendar`); `FUNDING_INTERVAL_MS = 8h` es **solo el fallback cuando no se inyecta calendario** (`cfg.funding_calendar is None`), no un supuesto global inevitable. El `interval_ms` del calendario es cadencia nominal informativa: la contabilidad usa las liquidaciones realizadas, no el intervalo. Para W/LUMIA basta **inyectar su `FundingCalendar` real**; los datos ausentes siguen siendo UNKNOWN o exclusión. No cambiar el 8 global por 4 ni construir otro motor de contabilidad.
 - **Casos (descriptivos, in-sample, `NOT_SIGNAL` en ex-post):** WUSDT subió sobrecomprada (RSI 80+) antes de corregir (−10,97% máx→último cierre); LUMIAUSDT ganadora de 24h que cayó, rebotó y siguió deteriorándose (mínimo conocido después → sesgo de entrada al mínimo).
 - **Qué falta para mostrar esos casos:** calendario de funding real por símbolo, spread/profundidad/coste estimado, fills reales, serie OOS, partición cronológica, vinculación `run_id`/`event_id` con `as_of`, snapshot por evento con hash del dataset. **Sin calibrar reglas ni seleccionar por beneficio.**
 - **Captura:** `binance_case_study/Casos_Binance_W_LUMIA.png` existe, **no inspeccionada visualmente** (`NOT_ASSESSED`).
 
-## 8. Pendientes con responsable / dependencia
+## 8. Pendientes con responsable / dependencia (actualizado 2026-10-20)
 
 | Pendiente | Responsable | Dependencia |
 |---|---|---|
-| Publicar artefacto, parser, componentes, tests de Paper Lab en Git | Otro agente (Paper Lab) | — |
-| Servir y revisar visualmente Paper Lab; URL local verificada | Otro agente | Artefacto publicado |
-| Selección independiente del P&L + reconciliación P&L/costes al cierre | Otro agente | Artefacto determinista |
-| Capturas antes de entrada / abierta / cerrada | Otro agente | Sesión de replay servida |
-| SHA/build servido y URL local verificada | Otro agente | next build/start sobre la rama |
+| Publicar artefacto, parser, componentes, tests de Paper Lab en Git | **Cerrado 2026-10-20** (este agente) | — |
+| Servir y revisar visualmente Paper Lab; URL local verificada | **Cerrado 2026-10-20** (servido en `127.0.0.1:3020/paper-lab`; capturas generadas) | Build servida |
+| Selección independiente del P&L + reconciliación P&L/costes al cierre | **Cerrado 2026-10-20** | Artefacto determinista |
+| Capturas antes de entrada / abierta / cerrada | **Cerrado 2026-10-20** (desktop+mobile, 6 PNG) | Sesión de replay servida |
+| SHA/build servido y URL local verificada | **Cerrado 2026-10-20** | next build/start sobre la rama |
 | Cerrar residual MINA/NMR (build_report) | Otro agente / censo | build_report MINAUSDT/1h y NMRUSDT/1h |
 | Protocolo de selección automática offline sobre EVAL-CENSUS-V2 | Este agente | Ninguna (datos existentes) |
 | Protocolo de adquisición escalonada (solo documento, sin colectores) | Este agente | Ninguna |
@@ -126,7 +126,7 @@ git grep -l audit_public_data  # esperado: sin resultados
 
 ## 9. Próxima acción única hacia la simulación automática
 
-Definir y ejecutar (offline, sobre copia, presupuesto cero, sin órdenes ni capital) el protocolo de selección automática sobre EVAL-CENSUS-V2, usando solo información disponible en T (sin lookahead; ventana incompleta → UNKNOWN), emitiendo para cada candidato `WATCH` / `SIN_ENTRADA` / `DESCARTADO` con motivo versionado. Es la dependencia previa al motor paper completo (Etapa 5). Tras ello, coordinar cierre con la entrega de Paper Lab del otro agente.
+Definir y ejecutar (offline, sobre copia, presupuesto cero, sin órdenes ni capital) el protocolo de selección automática sobre EVAL-CENSUS-V2, usando solo información disponible en T (sin lookahead; ventana incompleta → UNKNOWN), emitiendo para cada candidato `WATCH` / `SIN_ENTRADA` / `DESCARTADO` con motivo versionado. Es la dependencia previa al motor paper completo (Etapa 5).
 
 ## 10. Vínculos (fuentes, no sustituto de código/evidencias)
 
