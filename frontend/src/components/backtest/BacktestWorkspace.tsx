@@ -4,6 +4,7 @@ import Link from "next/link";
 import {
   parseBacktestSummary, parseBacktestTrades,
   utcOf, moneyOf, pctOf, durationOf,
+  countsByScale, hypothesisPlacebo1x, summaryRowBreakdown,
   type BacktestSummary, type BacktestTrade,
 } from "@/lib/backtest-results";
 import s from "./Backtest.module.css";
@@ -122,6 +123,9 @@ export default function BacktestWorkspace() {
 
   const reconOk = summary?.reconciliation_ok ?? job?.reconciliation_ok ?? null;
   const status = job?.status ?? "sin_ejecutar";
+  const oneX = useMemo(() => countsByScale(summary?.cells ?? [], 1), [summary]);
+  const hp = useMemo(() => hypothesisPlacebo1x(summary?.cells ?? []), [summary]);
+  const rowBreakdown = useMemo(() => summaryRowBreakdown(summary?.cells ?? []), [summary]);
 
   return (
     <section className={s.root} aria-label="Backtest offline controlado">
@@ -186,11 +190,31 @@ export default function BacktestWorkspace() {
           <div className={s.card}>
             <h3>3. Resultados del experimento</h3>
             <div className={s.metrics}>
-              <div><small>Operaciones @1x</small><strong>{summary.n_trades_1x ?? "—"}</strong><span>realizadas + abiertas</span></div>
-              <div><small>Operaciones totales (1x/2x/3x)</small><strong>{summary.n_trades_total ?? "—"}</strong><span>escenarios de costes</span></div>
-              <div><small>Reconciliación con el motor</small><strong>{reconOk === true ? "OK" : reconOk === false ? "FALLA" : "UNKNOWN"}</strong><span>{summary.reconciliation_rows ?? "—"} celdas</span></div>
-              <div><small>Duración</small><strong>{durationOf(summary.duration_ms)}</strong><span className={s.mono}>{summary.engine_version}</span></div>
+              <div><small>Operaciones @1x</small><strong>{summary.n_trades_1x ?? "—"}</strong><span>realizadas {oneX.n_realized} + abiertas {oneX.n_open}</span></div>
+              <div><small>Beneficio REALIZADO @1x</small><strong>{moneyOf(hp.hypothesis.total_net_realized + hp.placebo.total_net_realized)}</strong><span>solo operaciones cerradas (sin marcas)</span></div>
+              <div><small>Marcas de abiertas @1x</small><strong>{moneyOf(oneX.total_net_with_marks - oneX.total_net_realized)}</strong><span>valoración a cierre, NO beneficio realizado</span></div>
+              <div><small>Reconciliación con el motor</small><strong>{reconOk === true ? "OK" : reconOk === false ? "FALLA" : "UNKNOWN"}</strong><span>{summary.reconciliation_rows ?? "—"} celdas (56 resultado + 14 aux.)</span></div>
             </div>
+            <p className={s.note}>
+              Escenarios de coste (NO apalancamiento): <span className={s.mono}>{(summary.scales ?? []).map((x) => `${x}x`).join(" · ")}</span>.
+              Los totales agregados de esta sección son <strong>@1x únicamente</strong>; 2x/3x solo escalan costes asumidos.
+              Operaciones totales (1x+2x+3x) = {summary.n_trades_total ?? "—"}: son el MISMO conjunto de operaciones bajo tres
+              escenarios de coste, no 15 765 oportunidades independientes.
+            </p>
+            <div className={s.metrics}>
+              <div><small>Hipótesis @1x</small><strong>{hp.hypothesis.n_trades}</strong><span>{hp.hypothesis.n_realized} realizadas + {hp.hypothesis.n_open} abiertas · realizado {moneyOf(hp.hypothesis.total_net_realized)}</span></div>
+              <div><small>Placebo (baseline) @1x</small><strong>{hp.placebo.n_trades}</strong><span>{hp.placebo.n_realized} realizadas + {hp.placebo.n_open} abiertas · realizado {moneyOf(hp.placebo.total_net_realized)}</span></div>
+              <div><small>Combinado @1x</small><strong>{hp.combined.n_trades}</strong><span>{hp.combined.n_realized} realizadas + {hp.combined.n_open} abiertas</span></div>
+            </div>
+            <p className={s.note}>
+              Hipótesis y placebo se presentan SEPARADOS: el baseline es referencia, no una estrategia con la misma definición.
+              Las celdas se agregan como eventos de una misma familia de reglas y NO como una cartera: la exposición conjunta
+              no está modelada, así que no se suman símbolos ni grupos como si fueran un portafolio.
+            </p>
+            <p className={s.note}>
+              Filas del summary: {rowBreakdown.result_cells} celdas de resultado (con segmento) + {rowBreakdown.auxiliary_rows} auxiliares
+              (agregados por escala, sin segmento) = {rowBreakdown.total}. No son {rowBreakdown.total} resultados independientes.
+            </p>
             <p className={s.note}>
               Paquete verificado: <span className={s.mono}>{summary.package_files_verified ?? "?"} archivos</span> ·
               manifest sha256 <span className={s.mono}>{(summary.package_manifest_sha256 ?? "").slice(0, 16)}…</span> ·
@@ -198,18 +222,23 @@ export default function BacktestWorkspace() {
             </p>
             <p className={s.note}>{summary.cost_model}</p>
             <p className={s.note}>{summary.placebo_note}</p>
+            <p className={s.note}>Motor <span className={s.mono}>{summary.engine_version}</span> ·
+              ejecutor <span className={s.mono}>{summary.executor_version}</span> ·
+              duración <span className={s.mono}>{durationOf(summary.duration_ms)}</span></p>
           </div>
 
           <div className={s.card}>
             <h3>Celdas agregadas (por símbolo, resolución, grupo, segmento y escala)</h3>
-            <p className={s.note}>Cada celda es independiente: NO se suma como cartera (la exposición conjunta no está modelada).
-              n=0 significa «sin operaciones»; una muestra insuficiente permanece identificada como tal.</p>
+            <p className={s.note}>Cada celda es un agregado; NO se suma como cartera (la exposición conjunta no está modelada).
+              n=0 significa «sin operaciones»; una muestra insuficiente permanece identificada como tal. Las celdas NO son
+              observaciones estadísticamente independientes: solo los ledgers de operaciones están separados.
+              «Neto» incluye las marcas de las abiertas; «Neto real.» es solo lo cerrado.</p>
             <div className={s.tableWrap}>
               <table>
                 <thead><tr>
                   <th>Símbolo</th><th>Res.</th><th>Grupo</th><th>Seg.</th><th>Esc.</th>
                   <th className={s.mono}>Eventos</th><th>Op.</th><th>Real.</th><th>Abiertas</th><th>Solapes</th>
-                  <th>E·neto</th><th>E·bruto</th><th>Neto</th><th>Costes</th><th>Funding</th>
+                  <th>E·neto</th><th>E·bruto</th><th>Neto</th><th>Neto real.</th><th>Costes</th><th>Funding</th>
                   <th>DD realizado</th><th>MFE</th><th>MAE</th><th className={s.mono}>config</th>
                 </tr></thead>
                 <tbody>
@@ -223,6 +252,7 @@ export default function BacktestWorkspace() {
                       <td className={s.num}>{moneyOf(c.expectancy_net)}</td>
                       <td className={s.num}>{moneyOf(c.expectancy_gross)}</td>
                       <td className={s.num}>{moneyOf(c.total_net)}</td>
+                      <td className={s.num}>{moneyOf(c.total_net_realized)}</td>
                       <td className={s.num}>{moneyOf(c.total_fees)}</td>
                       <td className={s.num}>{moneyOf(c.total_funding)}</td>
                       <td className={s.num}>{moneyOf(c.max_drawdown_realized)}</td>
@@ -232,7 +262,7 @@ export default function BacktestWorkspace() {
                     </tr>
                   ))}
                   {summary.cells.filter((c) => c.segment).length === 0 &&
-                    <tr><td colSpan={19} className={s.empty}>Sin celdas con operaciones.</td></tr>}
+                    <tr><td colSpan={20} className={s.empty}>Sin celdas con operaciones.</td></tr>}
                 </tbody>
               </table>
             </div>
@@ -254,7 +284,7 @@ export default function BacktestWorkspace() {
                 <thead><tr>
                   <th>ID</th><th>Símbolo</th><th>Familia</th><th>Dir.</th><th>Seg.</th><th>Esc.</th>
                   <th>Evento (formación)</th><th>Entrada</th><th>Salida</th><th>Duración</th><th>Motivo</th>
-                  <th>Estado</th><th>Bruto</th><th>Costes</th><th>Funding</th><th>Neto</th><th>Cobertura</th><th>Replay</th>
+                  <th>Estado</th><th>Bruto</th><th>Costes</th><th>Funding</th><th>Neto (marca)</th><th>Neto real.</th><th>Cobertura</th><th>Replay</th>
                 </tr></thead>
                 <tbody>
                   {visible.map((t) => (
@@ -272,6 +302,7 @@ export default function BacktestWorkspace() {
                       <td className={s.num}>{moneyOf(t.fees)}</td>
                       <td className={s.num}>{moneyOf(t.funding)}</td>
                       <td className={`${s.num} ${(t.net_pnl ?? 0) >= 0 ? "" : ""}`}>{moneyOf(t.net_pnl)}</td>
+                      <td className={s.num}>{t.realized_net === null ? "—" : moneyOf(t.realized_net)}</td>
                       <td>{t.coverage ?? "UNKNOWN"}</td>
                       <td>
                         <Link className={s.link}
@@ -281,7 +312,7 @@ export default function BacktestWorkspace() {
                       </td>
                     </tr>
                   ))}
-                  {visible.length === 0 && <tr><td colSpan={18} className={s.empty}>
+                  {visible.length === 0 && <tr><td colSpan={19} className={s.empty}>
                     {filter === "ganadoras" ? "Sin operaciones ganadoras en esta muestra."
                       : filter === "perdedoras" ? "Sin operaciones perdedoras en esta muestra."
                       : filter === "abiertas" ? "Sin operaciones abiertas."
@@ -292,6 +323,9 @@ export default function BacktestWorkspace() {
             {!showAll && filtered.length > visible.length &&
               <div className={s.row}><span className={s.note}>Mostrando {visible.length} de {filtered.length} operaciones (orden cronológico).</span>
                 <button className={s.ghost} type="button" onClick={() => setShowAll(true)}>Mostrar todas ({filtered.length})</button></div>}
+            <p className={s.note}>«Neto (marca)» es la valoración a cierre (incluye operaciones abiertas); «Neto real.» es el
+              resultado de las operaciones cerradas y queda vacío (—) para las abiertas. La cobertura y el funding faltantes
+              permanecen visibles como UNKNOWN; no se rellenan ni se estiman.</p>
           </div>
 
           {summary.limitations.length > 0 && (

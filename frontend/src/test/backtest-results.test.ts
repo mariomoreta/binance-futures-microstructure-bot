@@ -1,6 +1,7 @@
 import {describe, expect, it} from "vitest";
 import {
   parseBacktestSummary, parseBacktestTrades, utcOf, moneyOf, durationOf,
+  countsByScale, hypothesisPlacebo1x, summaryRowBreakdown,
 } from "@/lib/backtest-results";
 
 describe("backtest results parser (read-only adapter)", () => {
@@ -71,5 +72,61 @@ describe("backtest results parser (read-only adapter)", () => {
     expect(moneyOf(-1.5)).toBe("-1.50");
     expect(durationOf(null)).toBe("UNKNOWN");
     expect(durationOf(90_000)).toBe("1m 30s");
+  });
+});
+
+describe("backtest metrics: realized vs marks, hypothesis vs placebo", () => {
+  const cell = (over: Record<string, unknown>) => ({
+    symbol: "BTCUSDT", res: "15m", group: "continuation", label: "H1",
+    segment: "dev", scale: 1, n_events: 10, n_trades: 0, n_realized: 0, n_open: 0,
+    skipped_overlap: 0, n_expired: 0, n_mismatched: 0, exit_reasons: null,
+    expectancy_net: 0, expectancy_gross: 0, total_net: 0, total_net_realized: 0,
+    total_fees: 0, total_funding: 0, max_drawdown: 0, max_drawdown_realized: 0,
+    mfe_mean: 0, mae_mean: 0, config_hash: "x", n_trades_1x: 0, status: "ok", ...over,
+  }) as never;
+
+  it("counts 1x only and separates realized from open marks", () => {
+    const cells = [
+      cell({group: "continuation", n_trades: 100, n_realized: 99, n_open: 1,
+        total_net: 52.0, total_net_realized: 50.0}),
+      cell({group: "continuation", scale: 2, n_trades: 100, n_realized: 100, n_open: 0,
+        total_net: 40.0, total_net_realized: 40.0}),
+    ];
+    const c = countsByScale(cells, 1);
+    expect(c.n_trades).toBe(100);
+    expect(c.n_realized).toBe(99);
+    expect(c.n_open).toBe(1);
+    expect(c.total_net_with_marks).toBeCloseTo(52.0);
+    expect(c.total_net_realized).toBeCloseTo(50.0);
+    // La marca (2.0) NO es beneficio realizado.
+    expect(c.total_net_with_marks - c.total_net_realized).toBeCloseTo(2.0);
+  });
+
+  it("separates hypothesis from baseline(placebo); baseline is not a strategy", () => {
+    const cells = [
+      cell({group: "continuation", n_trades: 2991, n_realized: 2986, n_open: 5}),
+      cell({group: "baseline", n_trades: 2264, n_realized: 2262, n_open: 2}),
+    ];
+    const {hypothesis, placebo, combined} = hypothesisPlacebo1x(cells);
+    expect(hypothesis.n_trades).toBe(2991);
+    expect(hypothesis.n_realized).toBe(2986);
+    expect(hypothesis.n_open).toBe(5);
+    expect(placebo.n_trades).toBe(2264);
+    expect(placebo.n_realized).toBe(2262);
+    expect(placebo.n_open).toBe(2);
+    expect(combined.n_trades).toBe(5255);
+    expect(combined.n_realized).toBe(5248);
+    expect(combined.n_open).toBe(7);
+  });
+
+  it("explains 70 rows as 56 result cells + 14 auxiliary, not independent results", () => {
+    const cells = [
+      ...Array.from({length: 56}, () => cell({segment: "dev"})),
+      ...Array.from({length: 14}, () => cell({segment: null, scale: 1})),
+    ];
+    const r = summaryRowBreakdown(cells);
+    expect(r.result_cells).toBe(56);
+    expect(r.auxiliary_rows).toBe(14);
+    expect(r.total).toBe(70);
   });
 });

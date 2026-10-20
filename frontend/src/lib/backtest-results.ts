@@ -123,8 +123,64 @@ export function parseBacktestTrades(raw: unknown): BacktestTrade[] {
   });
 }
 
-export function utcOf(ms: number | null): string {
-  return ms !== null && Number.isSafeInteger(ms) && ms > 0
+// Grupos que son HIPOTESIS (variantes evaluadas) frente al PLACEBO (baseline).
+// El baseline es referencia, NO estrategia; no se comparan como si fueran la
+// misma cosa. La clasificacion es explicita, no inferida por rentabilidad.
+export const HYPOTHESIS_GROUPS = new Set([
+  "continuation", "bearish-continuation", "correction-exhaustion", "correction-reversal",
+]);
+export const PLACEBO_GROUPS = new Set(["baseline"]);
+
+export type CellCounts = {
+  n_trades: number; n_realized: number; n_open: number;
+  total_net_realized: number; total_net_with_marks: number;
+};
+
+const zeroCounts = (): CellCounts => ({
+  n_trades: 0, n_realized: 0, n_open: 0, total_net_realized: 0, total_net_with_marks: 0,
+});
+
+function accumulate(acc: CellCounts, c: BacktestCell): CellCounts {
+  return {
+    n_trades: acc.n_trades + (c.n_trades ?? 0),
+    n_realized: acc.n_realized + (c.n_realized ?? 0),
+    n_open: acc.n_open + (c.n_open ?? 0),
+    total_net_realized: acc.total_net_realized + (c.total_net_realized ?? 0),
+    total_net_with_marks: acc.total_net_with_marks + (c.total_net ?? 0),
+  };
+}
+
+// Agregado por ESCALA de coste (1x/2x/3x son escenarios de coste, NO
+// apalancamiento). Se separa lo REALIZADO de las MARCAS de abiertas: `total_net`
+// incluye marcas y NO debe presentarse como beneficio realizado.
+export function countsByScale(cells: BacktestCell[], scale: number): CellCounts {
+  return cells.filter((c) => c.segment && c.scale !== null && Math.abs(c.scale - scale) < 1e-9)
+    .reduce(accumulate, zeroCounts());
+}
+
+// Desglose 1x por HIPOTESIS y por PLACEBO (separados, no sumados como una
+// unica "estrategia"). Las celdas se agregan como EVENTOS de una misma familia
+// de reglas, no como una cartera: la exposicion conjunta no esta modelada.
+export function hypothesisPlacebo1x(cells: BacktestCell[]):
+  {hypothesis: CellCounts; placebo: CellCounts; combined: CellCounts} {
+  const one = cells.filter((c) => c.segment && c.scale !== null && Math.abs(c.scale - 1) < 1e-9);
+  const hypothesis = one.filter((c) => HYPOTHESIS_GROUPS.has(c.group)).reduce(accumulate, zeroCounts());
+  const placebo = one.filter((c) => PLACEBO_GROUPS.has(c.group)).reduce(accumulate, zeroCounts());
+  return {hypothesis, placebo, combined: accumulate(hypothesis, {
+    n_trades: placebo.n_trades, n_realized: placebo.n_realized, n_open: placebo.n_open,
+    total_net_realized: placebo.total_net_realized, total_net_with_marks: placebo.total_net_with_marks,
+  } as unknown as BacktestCell)};
+}
+
+// Filas del summary: celdas con segmento (resultado) + auxiliares (agregados
+// por escala sin segmento). 70 = 56 + 14, no 70 resultados independientes.
+export function summaryRowBreakdown(cells: BacktestCell[]):
+  {result_cells: number; auxiliary_rows: number; total: number} {
+  const result_cells = cells.filter((c) => c.segment).length;
+  return {result_cells, auxiliary_rows: cells.length - result_cells, total: cells.length};
+}
+
+export function utcOf(ms: number | null): string {  return ms !== null && Number.isSafeInteger(ms) && ms > 0
     ? new Date(ms).toISOString().replace(/\.000Z$/, "Z") : "UNKNOWN";
 }
 export function moneyOf(v: number | null): string {
