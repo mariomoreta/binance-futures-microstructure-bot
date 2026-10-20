@@ -2162,3 +2162,56 @@ Estado verificado: veredicto global del ledger INCOMPLETE (0 discrepancias, 2 in
   `core.autocrlf=false`, equivalente a un checkout Linux por bytes). NO se
   probo una maquina Linux real; el argumento es por bytes de blob, que es
   exactamente lo que git entrega en ambas plataformas tras `-text`.
+
+## 2026-10-20 (cont.) - Identidad de ejecucion, resultados/cache vinculados y ubicacion canonica (Bloque B)
+
+- **Defectos (auditoria independiente, confirmados en codigo):** `job_id`
+  era el `experiment_id` (no unico por ejecucion); la liveness se decidia
+  solo por existencia del PID; el single-flight era solo dentro del proceso
+  (sin bloqueo entre procesos); `BACKTEST_BUDGET_MS` estaba declarado sin
+  uso; el `spawn` no manejaba el evento `error`; `readResults` no verificaba
+  `result_hashes`; `materializeReplay` reutilizaba un cache por hash de
+  identidad NO vinculado a la ejecucion; los resultados vivian en
+  `frontend/.backtest-runs/` (divergente del contrato); `retentionReport`
+  solo reportaba.
+- **Identidad unica:** cada solicitud crea un `run_id` propio
+  (`bt-<experiment>-<ts>-<rnd>`), separado del `experiment_id`. Estado en
+  `backtest-results/<experiment>/<run_id>/`; puntero estable `current.json`.
+- **Exclusion ENTRE PROCESOS:** lock por archivo con creacion exclusiva
+  (`O_EXCL`). Un lock vivo impide un segundo lanzamiento aunque provenga de
+  otro proceso. Un lock abandonado (pid muerto o presupuesto vencido) se
+  cierra como fallido SIN relanzar.
+- **Identidad verificable:** la propiedad se prueba solo con
+  `executor_token` + `executor_pid` + `started_at_ms` juntos. Un PID vivo
+  pero no verificable (ajeno o reutilizado) se reporta como UNKNOWN
+  (`PROCESS_IDENTITY_UNKNOWN`), nunca como `ejecutando`, y NUNCA se mata.
+- **Presupuesto efectivo:** se aplica en el ejecutor (deadline -> `TIMEOUT`,
+  fail-closed) y en lectura (un `ejecutando` verificado que excede el
+  presupuesto se cierra `TIMEOUT`). Manejo explicito del error asincrono de
+  `spawn` (`SPAWN_FAILED`).
+- **Resultados y cache vinculados:** `readRunResults`/`readResults` verifican
+  `result_hashes` antes de servir (alterado -> `RESULT_INTEGRITY_FAILED`;
+  incompleto -> `RESULT_INCOMPLETE`). Las rutas aceptan `?run=<run_id>`. El
+  nombre del artefacto de replay deriva de `run_id` + hash de resultados +
+  identidad de operacion, y la operacion DEBE pertenecer a esa ejecucion
+  (`TARGET_NOT_IN_RUN`): una ejecucion nueva nunca reutiliza el replay previo.
+- **Ubicacion canonica unica:** `<repo>/backtest-results/` (ignorado por
+  git), coincidiendo codigo y contrato. La evidencia previa se PRESERVO
+  (copiada a `backtest-results/_legacy/`) y la ruta heredada se mantiene
+  ignorada; no se elimino evidencia. Retencion acotada que NUNCA elimina una
+  ejecucion activa; cuando solo reporta, no declara limpieza.
+- **Defecto adicional encontrado y corregido:** `PaperLabSource` seguia
+  mostrando la operacion ANTERIOR mientras cargaba o fallaba una identidad
+  nueva (el estado de fallo quedaba enmascarado por el estado previo). Ahora
+  el fallo de la identidad solicitada tiene prioridad y no se muestra la
+  operacion previa.
+- **Verificacion (commit `76763d7`):** backend `pytest tests/test_dashboard_backtest.py`
+  16 OK (incluye identidad/hashes del ejecutor y presupuesto); frontend
+  vitest 418/418; `tsc --noEmit` limpio; `eslint src` 0 errores (3 warnings
+  preexistentes); `next build` OK (`BUILD_ID=wzsmXGqnMRh6hnIP_xAan`).
+  Ejecucion real del ejecutor con los nuevos argumentos: `run_id` propio,
+  `executor_token`/`executor_pid` presentes, `identity=verified`,
+  `result_hashes` coincidentes; `trades.json` sha256 `815b8a65...` (sin
+  cambio: la serializacion determinista se conserva).
+- **Limites:** la verificacion visual en navegador y las capturas quedan para
+  el Bloque C. No se probo una maquina Linux real (argumento por bytes).

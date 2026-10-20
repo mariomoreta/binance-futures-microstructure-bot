@@ -14,6 +14,24 @@ re-servir 3020, capturas, entrega con SHA. Fuera de alcance y no iniciado:
 protocolo de auto-seleccion offline sobre EVAL-CENSUS-V2; residual MINA/NMR
 (`build_report` INCOMPLETE); estudio W/LUMIA separado.
 
+## Correcciones Backtest → Paper Lab, bloques A/B/C (2026-10-20, base `4e61587`)
+Cierre de 8 defectos de la entrega funcional, en tres bloques verificables.
+- **Bloque A (commit `84e6294`):** serialización portable del paquete
+  (`-text` + renormalize); verificación estricta intacta; regresión
+  `PackagePortabilityTest`. Push `4e61587..f28fd4e`.
+- **Bloque B (commit `76763d7`):** identidad de ejecución única, exclusión
+  entre procesos (`O_EXCL`), propiedad verificable (token+pid+started),
+  reconciliación sin auto-relanzar, UNKNOWN explícito, presupuesto efectivo,
+  error async de spawn, resultados/caché vinculados y verificados por hash,
+  ubicación canónica `<repo>/backtest-results/` (evidencia previa preservada),
+  retención acotada que nunca elimina una ejecución activa, y `PaperLabSource`
+  sin mostrar la operación previa en carga/fallo.
+- **Bloque C (pendiente):** métricas realizadas vs abiertas, hipótesis vs
+  placebo, escenarios de coste, conteos exactos, revisión visual + capturas
+  publicadas, entrega consolidada con SHAs.
+Fuera de alcance: sin Binance, monitor, paper prospectivo, órdenes,
+optimización, ni cambio de estrategia/umbrales/costes/motor económico.
+
 
 Verificador rehecho con funciones puras (58 tests unittest: 45 puras + 3 PackageMode + 10 CLI fixtures, 0 fallos). Veredicto global PASS/FAIL/INCOMPLETE integrado. Estado actual: INCOMPLETE (0 discrepancias, 2 incompletos: MINAUSDT/1h y NMRUSDT/1h tail-edge). Causalidad VERIFICADA (9314/9314 OK, 6 UNKNOWN, 0 violaciones). Trazabilidad hasta operación: replay determinista, 0 celdas fail, 5255 trades escala 1.0 reconciliados exactamente, vinculados a eventos/candidatos. Paquete de evidencia publicado (docs/evidence/eval-census-v2-package/, 33 archivos, SHA256). Pruebas CLI: 10 casos de alteración + control; cada alteración FAIL/INCOMPLETE con exit ≠ 0, control PASS/exit 0. Campos económicos (E_net↔expectancy_net, etc.): 60 celdas, 0 discrepancias. Suite 1260 OK. Barrera aislamiento: hashes_equal=True, file_writes=0. Ledger publicado con veredicto, trazabilidad, tail-edge, campos económicos, descartes. Pendiente: incorporar manifiestos temp/opencode a Git para cerrar vínculo completo detección→operación y verificar los 2 tail-edge pendientes.
 

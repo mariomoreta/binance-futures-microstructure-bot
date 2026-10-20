@@ -10,7 +10,15 @@ de estrategia/mapping/costes/umbrales/motor economico).
 - **Bloque A (commit `84e6294`):** serialización portable del paquete
   (`-text` en `.gitattributes` + renormalize); manifiesto hashea bytes
   exactos; verificación estricta intacta.
-**4. Evaluation status:** A) Ejecución offline reproducible desde checkout
+- **Bloque B (commit `76763d7`):** identidad de ejecución única, exclusión
+  entre procesos (`O_EXCL`), propiedad verificable, reconciliación sin
+  auto-relanzar, UNKNOWN explícito, presupuesto efectivo, error async de
+  spawn, resultados/caché vinculados y verificados por hash, ubicación
+  canónica `<repo>/backtest-results/` (evidencia previa preservada), retención
+  acotada segura, y `PaperLabSource` sin mostrar la operación previa en
+  carga/fallo.
+- **Bloque C:** pendiente (métricas, hipótesis vs placebo, escenarios de
+  coste, conteos, revisión visual + capturas, entrega).**4. Evaluation status:** A) Ejecución offline reproducible desde checkout
 limpio: EJECUTADA (`trades=15765`, `n_trades_1x=5255`, reconciliación OK).
 B) Estrategia completa de extremos: **NO EVALUADA**. C) Enlace a Paper Lab:
 DEMOSTRADO.
@@ -38,6 +46,24 @@ Linux por bytes); no se probó una máquina Linux real.
 - `DOCUMENTATION_CONFLICTS` — la entrega base describía el paquete como
   "33 archivos, hashes OK" sin declarar el defecto de serialización en
   checkout limpio; corregido por sección nueva, no por reescritura de historia.
+
+### Cierre (siete campos, obligatorios) — Bloque B
+
+- `DECISIONS_REVIEWED` — contrato de lectura de backtest (amend. portabilidad
+  y ejecución); entrega funcional previa; auditoría independiente.
+- `NEW_DECISIONS_RECORDED` — DECISIONS §"Identidad de ejecución,
+  resultados/caché vinculados y ubicación canónica (Bloque B)".
+- `FEATURES_IMPLEMENTED` — F-BT-01 (ejecución controlada: identidad única,
+  exclusión entre procesos, resultados/caché vinculados, ubicación canónica).
+- `FEATURES_VERIFIED` — F-BT-01 (`pytest tests/test_dashboard_backtest.py`
+  16 OK; frontend vitest 418/418; 25 tests de control + 4 de cambio de
+  operación; ejecución real con identidad verificada y hashes coincidentes).
+- `DEFERRED_FEATURES` — motor paper completo, F-PORT-01, auto-selección
+  offline, evaluación completa de extremos, residual MINA/NMR, W/LUMIA.
+- `BACKLOG_UPDATED` — yes: Bloques A/B/C y cierre B.
+- `DOCUMENTATION_CONFLICTS` — contrato y código divergían en la ubicación de
+  resultados (`frontend/.backtest-runs/` vs `<repo>/backtest-results/`);
+  reconciliado a la ubicación canónica del contrato, sin borrar evidencia.
 
 ## Backtest offline funcional en V2 + enlace a Paper Lab — 2026-10-20 (sin push aun)
 

@@ -68,10 +68,10 @@ WITHOUT changing engine semantics or the `backtest_result/v4.x` envelope.
 - BFF (Dashboard V2, separate identity/state from the Binance monitor):
   `frontend/src/lib/backtest-control.ts` + routes under
   `frontend/src/app/api/v1/backtest/{run,status,results,replay}`.
-- Results live in `frontend/.backtest-runs/<experiment>/` (gitignored):
-  `job_state.json`, `job_pid.json`, `summary.json`, `trades.json`,
-  `reconciliation.json`, `replay_<hash>.json`.
-- `trades.json` is deterministic (byte-identical across runs);
+- Results live in `<repo>/backtest-results/<experiment>/<run_id>/`
+  (gitignored; canonical location, see Amendment Bloque B):
+  `job_state.json`, `job_pid.json`, `current.json`, `summary.json`,
+  `trades.json`, `reconciliation.json`, `replay_<hash>.json`.- `trades.json` is deterministic (byte-identical across runs);
   `reconciliation.json` proves per-cell `Σ net_pnl == total_net` within
   1e-9 for all 56 cells. `summary.json` differs only in wall-clock
   metadata (`generated_at_ms`, `duration_ms`) — accepted and documented.
@@ -103,6 +103,46 @@ read bytes, so those bytes must survive a clean checkout on any platform.
 - Verified: a clean checkout with `core.autocrlf=false` reproduces the
   manifest hashes 33/33 and the run (`trades=15765`, `n_trades_1x=5255`,
   reconciliation True, `trades.json` sha256 `815b8a65...`).
+
+### Amendment — execution identity, run-bound results and canonical location (2026-10-20, Bloque B)
+
+Defects found by an independent audit, all fixed:
+
+- **Unique run identity.** Each request mints a `run_id`
+  (`bt-<experiment>-<ts>-<rnd>`) SEPARATE from `experiment_id`. `job_id` is
+  the run id, not the experiment. State lives at
+  `backtest-results/<experiment>/<run_id>/job_state.json`; a stable
+  `current.json` pointer names the active/latest run.
+- **Inter-process exclusion.** Single-flight is enforced with an EXCLUSIVE
+  lock file (`O_EXCL`), not in-process state, so two BFF processes (or a
+  double click racing a restart) cannot launch two runs. An abandoned lock
+  (dead owner pid or expired budget) is closed WITHOUT relaunching.
+- **Verifiable executor identity.** Ownership is proven only by
+  `executor_token` + `executor_pid` + `started_at_ms` together. A live-but-
+  unverifiable (foreign or recycled) PID is reported as `UNKNOWN`
+  (`PROCESS_IDENTITY_UNKNOWN`), never as `ejecutando`, and is never killed.
+- **Reconciliation without auto-relaunch.** A `pendiente`/`ejecutando`
+  state whose process is gone becomes `fallido` (`PROCESS_INTERRUPTED`).
+- **Effective budget.** `BACKTEST_BUDGET_MS` is enforced both in the
+  executor (deadline checks → `TIMEOUT`, fail-closed, no results) and at read
+  time (a live verified run past budget is closed `TIMEOUT`).
+- **Async spawn errors** are persisted (`SPAWN_FAILED`), never lost.
+- **Run-bound, integrity-verified results.** `readResults`/`readRunResults`
+  verify the declared `result_hashes` before serving; altered
+  (`RESULT_INTEGRITY_FAILED`) or incomplete (`RESULT_INCOMPLETE`) results fail
+  explicitly. Routes accept `?run=<run_id>` to target a specific execution.
+- **Run-bound replay cache.** The replay artifact name is derived from
+  `run_id` + result hash + operation identity, and the operation must belong
+  to that run's trades (`TARGET_NOT_IN_RUN`), so a new run never silently
+  reuses a previous run's replay.
+- **Canonical location.** Results live in `<repo>/backtest-results/`
+  (gitignored), matching this contract, not `frontend/.backtest-runs/`. The
+  prior evidence was preserved (copied to `backtest-results/_legacy/`) and the
+  old path kept gitignored; nothing was deleted.
+- **Bounded retention** never removes a run that is active (live lock or
+  `pendiente`/`ejecutando`); when it only reports, it never claims cleanup.
+- **Operation switching in Paper Lab** no longer keeps the previous operation
+  visible while a new identity loads or fails.
 
 ## Amendment v4.1 — realized/open/marks split + funding assessment (2026-10-13, additive, engine still `backtest-offline/v4`)
 

@@ -2398,3 +2398,13 @@ Definir y ejecutar (offline, sobre copia, presupuesto cero, sin órdenes ni capi
 - **Regresión:** `tests/test_dashboard_backtest.py::PackagePortabilityTest` (5 tests). Falla antes del fix.
 - **Límite:** plataforma verificada = Windows + worktree con `core.autocrlf=false` (equivalente Linux por bytes de blob). No se probó una máquina Linux real. Reproducibilidad NUMÉRICA ≠ igualdad de BYTES: el defecto era el segundo.
 
+**Bloque B — ejecución, resultados y ubicación (commit `76763d7`).**
+
+- **Identidad única de ejecución:** `run_id` propio por solicitud (`bt-<experiment>-<ts>-<rnd>`), separado del `experiment_id`; `job_id` = run. Estado en `backtest-results/<experiment>/<run_id>/` + puntero `current.json`.
+- **Exclusión entre procesos:** lock por archivo con creación exclusiva (`O_EXCL`). Un lock vivo no se puede duplicar ni por doble clic ni desde otro proceso; un lock abandonado (pid muerto/presupuesto vencido) se cierra como fallido **sin relanzar**.
+- **Propiedad verificable:** solo `executor_token`+`executor_pid`+`started_at_ms` juntos prueban identidad. PID vivo ajeno/reutilizado → `PROCESS_IDENTITY_UNKNOWN`, nunca `ejecutando`, nunca se mata.
+- **Presupuesto efectivo** (`BACKTEST_BUDGET_MS`): aplicado en el ejecutor (deadline → `TIMEOUT`, fail-closed) y en lectura. Error asíncrono de `spawn` → `SPAWN_FAILED` persistido.
+- **Resultados/caché vinculados a la ejecución:** hashes verificados antes de servir (`RESULT_INTEGRITY_FAILED`/`RESULT_INCOMPLETE` explícitos); `?run=<run_id>` para dirigir a una ejecución concreta; artefacto de replay nombrado por `run_id`+hash+identidad y la operación debe pertenecer a esa ejecución (`TARGET_NOT_IN_RUN`).
+- **Ubicación canónica única:** `<repo>/backtest-results/` (ignorado por git), coincidiendo código y contrato. Evidencia previa **preservada** en `backtest-results/_legacy/`; ruta heredada `frontend/.backtest-runs/` mantenida e ignorada. Nada borrado. Retención acotada que nunca elimina una ejecución activa.
+- **Defecto adicional corregido:** `PaperLabSource` ya no muestra la operación anterior durante carga/fallo de una identidad nueva.
+- **Verificado:** `pytest tests/test_dashboard_backtest.py` 16 OK; frontend vitest 418/418; `tsc` limpio; `eslint` 0 errores (3 warnings preexistentes); `next build` OK (`BUILD_ID=wzsmXGqnMRh6hnIP_xAan`). Ejecución real del ejecutor con los nuevos argumentos: `identity=verified`, `run_id` propio, `result_hashes` coincidentes, `trades.json` sha256 `815b8a65…` (sin cambio).
