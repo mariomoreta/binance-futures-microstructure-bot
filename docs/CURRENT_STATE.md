@@ -2310,3 +2310,36 @@ d. Comandos, estados, exits y hashes registrados en C:\proyectos\binance-temp\au
 - Las detecciones de MINA/NMR ya están en census_1h_detections.jsonl del paquete; no se trata de "manifestos de temp" genéricos, falta el build_report que las ampare.
 - Impacto: veredicto global INCOMPLETE, no PASS; replay BTC/ETH/SOL reportado por separado como PASS.
 
+---
+
+## Reconciliación documental — 2026-10-20 (presupuesto cero)
+
+### Correcciones al informe previo (commit b9c2733 solo publicó 12 líneas en PAPER_LAB_PLAN_ETAPA5.md; no era reconciliación completa)
+
+| Afirmación previa | Corrección | Evidencia de respaldo |
+|---|---|---|
+| "audit_public_data" / "39 tests" como entrega localizada | **audit_public_data NO LOCALIZADA** (ni en checkout ni en Git: `glob **/*audit_public_data*` → sin resultados). Los 39 tests son `tests/test_p14b_validation.py` (P1-14B.1–.11), real pero ajeno a esa entrega. | `git grep audit_public_data` vacío; conteo `def test_` en test_p14b_validation.py = 39. |
+| Esquema operativo descrito como v9 vigente | Operativo = **schema v10** (22 tablas); histórico = **schema v3** (16 tablas). v9 no es el estado operativo vigente. | `docs/DECISIONS.md` (línea ~1354): "operacional v10 (22 tablas), historico v3 (16 tablas)"; `docs/DASHBOARD_V2_27B7AF5_READ_HANDOFF.md`; `docs/ARCHITECTURE.md`. |
+| 5255 trades sin desglose | Hipótesis 1x: **2991 trades** (5 abiertas → **2986 realizadas**), 4161 skipped_overlap. Placebo 1x: **2264 trades** (2 abiertas → **2262 realizadas**), 4888 skipped_overlap. Total: **5255 trades** (7 abiertas → **5248 realizadas**). `realizadas = trades − abiertas`. | `docs/ADDENDUM_CENSUS_EVAL_V2_CORRECCION.md` (tabla hipótese/placebo/total y línea 88); `docs/CURRENT_STATE.md` §Veredictos separados (n_trades_revisados=5255). |
+| MFE/MAE presentado como ganancia | **MFE/MAE = excursión por posición, NO ganancia capturada por la salida.** Rango global 1x: MFE 0.0–1.04%, MAE 0.0–0.50%. Dirección n≥30: MFE 0.19–0.64%, MAE 0.16–0.42% (excursión, no captura). | `docs/CURRENT_STATE.md` (línea ~2217); `docs/BACKTEST_READ_CONTRACT_V1.md` (mfe_mean/mae_mean = excursión, salida alimenta MAE). |
+| V2 vistas declaradas sin inspeccionar | `/movers` es **real** (MoversDashboard + canonicalMarket). `/paper-lab` renderiza **componente real** (PaperLabReplay). `/backtest` es **stub** (`FutureWorkspace kind="backtest"`, no real). | `frontend/src/app/movers/page.tsx`; `frontend/src/app/paper-lab/page.tsx`; `frontend/src/app/backtest/page.tsx`. |
+| Paper Lab "no publicado" afirmado implícitamente | Confirmado explícito: **ningún archivo de Paper Lab publicado en Git** (`git ls-files` vacío para paper-lab-replay-v1.json, build_paper_lab_replay.py, paper-lab-replay.ts). Todo está **untracked** (trabajo de otro agente en curso). Artefacto determinista verificado: `build_paper_lab_replay.py --check` → PASS, sha256 `7ba452c308378c7f26a20b12761625dcace6b839ba7576d0221bba0346f41826`. No servido ni revisado visualmente por este agente. | `git ls-files` (vacío); re-ejecución --check estable; `docs/PAPER_LAB_PLAN_ETAPA5.md` sección "Estado actual". |
+
+### Hechos de identidad y concurrencia (verificados 2026-10-20, sin reset/clean/force)
+- Rama: `review/o1-funcional-v2-observacion`, al día con `origin/review/o1-funcional-v2-observacion` (`git fetch origin` sin cambios remotos nuevos).
+- Remoto: `https://github.com/mariomoreta/binance-futures-microstructure-bot.git` (fetch + push).
+- SHA inicial (este ciclo): `b9c27338dee21160da9a839894029c3c70b0e316`.
+- Cambios locales preexistentes (NO creados ni staged por este agente): `frontend/src/app/paper-lab/page.tsx`, `TopNav.tsx`, `format.ts` (modificados) + untracked Paper Lab (componentes, tests, build script, artefacto). Se preservan sin tocar.
+
+### Estado de Paper Lab (cuatro estados distinguidos, ver docs/PAPER_LAB_PLAN_ETAPA5.md)
+1. Trabajo local en curso: existe (otro agente), untracked, no publicado.
+2. Código publicado en Git: ninguno.
+3. Probado: artefacto determinista + tests existen, pero archivos untracked/no publicados y suite frontend no ejecutada por este agente.
+4. Servido y revisado visualmente: no confirmado por este agente (no se sirvió next, no hay URL local verificada, monitor :3020 detenido).
+
+### Selector: no sobreestimar el censo
+El censo EVAL-CENSUS-V2 evalúa reglas/variables que contiene; **no sustituye** universo histórico, ranking rolling24 ni liquidez ausentes. No se ejecuta evaluación completa del selector por faltar inputs. Se prepara protocolo de adquisición escalonado (universo ligero → candidatos → detalle limitado, fuentes gratuitas, sin colectores iniciados). Matriz detalle en `docs/HANDOFF_RECONCILIACION_PAPER_LAB_20261020.md`.
+
+### Próxima acción concreta
+Definir y ejecutar (offline, sobre copia, presupuesto cero, sin órdenes ni capital) el protocolo de selección automática sobre EVAL-CENSUS-V2 (info disponible en T, sin lookahead, ventana incompleta → UNKNOWN), emitiendo WATCH / SIN_ENTRADA / DESCARTADO con motivo versionado. Es la dependencia previa al motor paper completo (Etapa 5).
+

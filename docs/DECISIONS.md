@@ -2025,4 +2025,18 @@ Se corrigieron los defectos pendientes de la auditoría; el ledger y el reconstr
 
 Estado verificado: veredicto global del ledger INCOMPLETE (0 discrepancias, 2 incompletos: MINAUSDT/1h y NMRUSDT/1h tail-edge sin build_report), exit 1. El replay BTC/ETH/SOL está verificado (COMPLETO, 0 discrepancias, trazabilidad COMPLETO, 5255 trades) y se reporta por separado. El residual MINA/NMR es un gap de evidencia del censo externo al replay, no un defecto del replay; se cierra publicando el build_report de esos símbolos.
 
+## 2026-10-20 — Reconciliación plan → proyecto actual y ruta a selección automática + Paper Lab (presupuesto cero)
+
+- Identidad: rama `review/o1-funcional-v2-observacion`, remoto `https://github.com/mariomoreta/binance-futures-microstructure-bot.git`, SHA inicial `b9c27338dee21160da9a839894029c3c70b0e316`, HEAD igual tras commit documental. `git fetch origin` sin cambios remotos nuevos. Sin reset/clean/force.
+- `audit_public_data` NO LOCALIZADA (ni checkout ni Git); los 39 tests son `tests/test_p14b_validation.py` (P1-14B.1–.11), ajenos a esa entrega. Se mantiene como no localizada, no se reconstruye.
+- Esquema vigente: operativo **schema v10** (22 tablas) + histórico **schema v3** (16 tablas). No describir v9 como operativo vigente.
+- Trades 5255 desglosados: Hipótesis 2991 (5 abiertas → 2986 realizadas); Placebo 2264 (2 abiertas → 2262 realizadas); total 5255 (7 abiertas → 5248 realizadas). `realizadas = trades − abiertas`.
+- MFE/MAE = **excursión por posición, NO ganancia capturada por la salida** (rango global 1x MFE 0.0–1.04% / MAE 0.0–0.50%).
+- V2: `/movers` real; `/paper-lab` componente real; `/backtest` **stub** (FutureWorkspace). No declarar vistas inexistentes.
+- Paper Lab: **ningún archivo publicado en Git** (todos untracked, trabajo de otro agente en curso). Artefacto determinista verificado `--check` sha256 `7ba452c308378c7f26a20b12761625dcace6b839ba7576d0221bba0346f41826`. Cuatro estados distinguidos (local en curso / publicado en Git / probado / servido y revisado visualmente) en `docs/PAPER_LAB_PLAN_ETAPA5.md`. No servido ni revisado visualmente por este agente.
+- Selector: no sobreestimar el censo; no sustituye universo histórico/ranking rolling24/liquidez. Protocolo de adquisición escalonado preparado (universo ligero → candidatos → detalle limitado, fuentes gratuitas Binance públicas, sin colectores iniciados). Matriz en `docs/HANDOFF_RECONCILIACION_PAPER_LAB_20261020.md`.
+- Cambios concurrentes preservados: `frontend/src/app/paper-lab/page.tsx`, `TopNav.tsx`, `format.ts` y Paper Lab untracked no staged ni publicados por este agente.
+- Próxima acción única: protocolo de selección automática offline sobre EVAL-CENSUS-V2 (info en T, sin lookahead, ventana incompleta → UNKNOWN), emitiendo WATCH / SIN_ENTRADA / DESCARTADO con motivo versionado. Coordinar cierre con entrega de Paper Lab del otro agente.
+- Documentos afectados actualizados: `docs/PAPER_LAB_PLAN_ETAPA5.md`, `docs/CURRENT_STATE.md`, `docs/TASK_QUEUE.md`, `docs/DECISIONS.md`, `docs/FEATURE_BACKLOG.md`; informe compacto `docs/HANDOFF_RECONCILIACION_PAPER_LAB_20261020.md`.está verificado (COMPLETO, 0 discrepancias, trazabilidad COMPLETO, 5255 trades) y se reporta por separado. El residual MINA/NMR es un gap de evidencia del censo externo al replay, no un defecto del replay; se cierra publicando el build_report de esos símbolos.
+
 

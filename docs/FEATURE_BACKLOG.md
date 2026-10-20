@@ -137,18 +137,34 @@ selector extreme_selector.py, artefacto census-eval-v2.json force-added,
 scripts build_census_eval_inputs.py, tests test_causal_census.py +
 test_eval_horizon_grid.py + test_extreme_selector.py + census-eval.test.ts).
 **4. Evaluation status:** A) Reglas sobre censo historico: EVALUADO
-(0 celdas elegibles, H1/H3 RECHAZADAS, H2 fade RECHAZADO). B)
-Selector: MECANISMO probado con fixtures, NO evaluado. C) Estrategia
-completa extremos sobre universo/liquidez: NO EVALUADA (faltan datos).
+(0 celdas elegibles, H1/H3 RECHAZADAS, H2 fade RECHAZADO). Desglose 1x:
+Hipótesis 2991 trades (5 abiertas → 2986 realizadas, 4161 skipped_overlap);
+Placebo 2264 trades (2 abiertas → 2262 realizadas, 4888 skipped_overlap);
+Total 5255 trades (7 abiertas → 5248 realizadas). `realizadas = trades − abiertas`.
+B) Selector: MECANISMO probado con fixtures, NO evaluado sobre censo. C) Estrategia
+completa extremos sobre universo/liquidez: NO EVALUADA (faltan ranking/liquidez/market_cap).
 **5. Limitaciones:** in-sample/non-pristine, costes supuestos COST-ASSUME-v1,
-mapping candidato MAP-CANDIDATE-v2, sin prueba live, MFE/MAE no capturados,
-placebo una realizacion no distribucion, cross-celda no modelada, 6 detecciones
-tail-edge sin entry (honesto).
+mapping candidato MAP-CANDIDATE-v2, sin prueba live, **MFE/MAE = excursión por
+posición, NO ganancia capturada por la salida** (rango global 1x MFE 0.0–1.04% /
+MAE 0.0–0.50%; direccional n≥30 MFE 0.19–0.64% / MAE 0.16–0.42%), placebo una
+realización no distribución, cross-celda no modelada, 6 detecciones tail-edge
+sin entry (honesto), residual MINA/NMR sin build_report (INCOMPLETE separado).
 **6. Evidence:** docs/OFFLINE_EVAL_CENSUS_V2.md (seccion 7 matriz A/B/C),
 frontend/src/data/census-eval-v2.json (sha256 2b74a841...d37060),
 docs/evidence/VISUAL_QA_CENSUS_EVAL_V2.png, suites backend 1202 OK +
 frontend 314/314 + typecheck 0 + build OK.
 **7. Last update:** 2026-10-17.
+
+## Paper Lab — replay histórico de ingeniería (reconciliación 2026-10-20)
+
+**1. Title:** Primer replay histórico de Paper Lab sobre EVAL-CENSUS-V2 (PAPER-LAB-REPLAY-V1).
+**2. Approval status:** DECIDED (diseño Etapa 5, sin autorización de motor paper ni sesión live).
+**3. Implementation status:** PARCIAL (solo replay de ingeniería; motor paper completo NO implementado).
+**4. Evaluation status:** Artefacto determinista verificado (`scripts/build_paper_lab_replay.py --check` → PASS, sha256 `7ba452c308378c7f26a20b12761625dcace6b839ba7576d0221bba0346f41826`). Operación BTCUSDT 15m H1 reproducida antes de ver P&L. No es selección automática, ni paper en vivo, ni simulación prospectiva.
+**5. Limitaciones:** no lee DB canónica, no consulta Binance, no ejecuta órdenes, no gestiona posiciones, no hay ledger de caja/funding recurrente/risk engine, no valida selector real sobre universo. BTC/ETH/SOL = controles de mecánica.
+**6. Evidence:** `docs/PAPER_LAB_PLAN_ETAPA5.md` (sección Estado actual), `scripts/build_paper_lab_replay.py`, `frontend/src/lib/paper-lab-replay.ts`, `frontend/src/test/paper-lab-replay.test.ts`, `frontend/src/test/paper-lab-components.test.tsx` (todos untracked, no publicados en Git; no servidos ni revisados visualmente por este agente).
+**7. Last update:** 2026-10-20.
+**8. Dependencia para entrega:** artefacto determinista, parser/player/componentes y ruta V2, tests y evidencias, selección independiente del P&L, reconciliación P&L/costes al cierre, capturas antes de entrada/abierta/cerrada, SHA/build servido y URL local verificada (docs/PAPER_LAB_PLAN_ETAPA5.md).
 
 ## DASH-V2-71B reviewer correction — 2026-10-11
 89232f7 independently reviewed: discovery/canonical 910, exit0. Strengthened

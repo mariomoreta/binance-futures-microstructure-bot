@@ -1448,3 +1448,31 @@ Suite completa: 1274 tests OK (2 skipped). Barrera de aislamiento: hashes_equal=
 
 Pendiente (siguiente acción): incorporar manifiestos temp/opencode a Git y/o publicar el build_report de MINAUSDT/1h y NMRUSDT/1h para cerrar los 2 tail-edge y pasar el veredicto global a PASS; luego commit selectivo + push + entrega con SHA.
 
+## Reconciliación plan → proyecto actual y ruta a selección automática + Paper Lab (2026-10-20, presupuesto cero)
+
+### Estado de identidad (sin reset/clean/force)
+- Rama: `review/o1-funcional-v2-observacion`, al día con `origin/review/o1-funcional-v2-observacion` (`git fetch` sin cambios remotos nuevos).
+- Remoto: `https://github.com/mariomoreta/binance-futures-microstructure-bot.git` (fetch + push).
+- SHA de este ciclo (inicial): `b9c27338dee21160da9a839894029c3c70b0e316`.
+- Cambios locales preexistentes NO creados/stageados por este agente: `frontend/src/app/paper-lab/page.tsx`, `TopNav.tsx`, `format.ts` (modificados); Paper Lab (componentes, tests, build script, artefacto) todo **untracked**. Se preservan sin tocar.
+
+### Correcciones al informe previo (commit b9c2733 = solo 12 líneas en PAPER_LAB_PLAN_ETAPA5.md; no reconciliación completa)
+1. `audit_public_data` **NO LOCALIZADA** (ni checkout ni Git). Los 39 tests son `tests/test_p14b_validation.py` (P1-14B.1–.11), real pero ajeno a esa entrega.
+2. Esquema operativo vigente: **v10** (22 tablas) + histórico **v3** (16 tablas). No describir v9 como operativo.
+3. Trades 5255 desglosados: Hipótesis 2991 (5 abiertas → 2986 realizadas); Placebo 2264 (2 abiertas → 2262 realizadas); total 5255 (7 abiertas → 5248 realizadas). `realizadas = trades − abiertas`.
+4. MFE/MAE = **excursión**, NO ganancia capturada por la salida.
+5. V2: `/movers` real; `/paper-lab` componente real; `/backtest` **stub** (FutureWorkspace). No declarar vistas inexistentes.
+6. Paper Lab: **ningún archivo publicado en Git** (todos untracked). Artefacto determinista verificado `--check` sha256 `7ba452c3...`. No servido ni revisado visualmente por este agente.
+
+### Selector: no sobreestimar el censo
+EVAL-CENSUS-V2 evalúa reglas/variables que contiene; **no sustituye** universo histórico, ranking rolling24 ni liquidez ausentes. No ejecutar evaluación completa del selector por faltar inputs. Protocolo de adquisición escalonado preparado (universo ligero → candidatos → detalle limitado, fuentes gratuitas Binance públicas, sin colectores iniciados). Matriz detalle en `docs/HANDOFF_RECONCILIACION_PAPER_LAB_20261020.md`.
+
+### Paper Lab (cuatro estados, docs/PAPER_LAB_PLAN_ETAPA5.md)
+1. Trabajo local en curso: existe (otro agente), untracked, no publicado.
+2. Código publicado en Git: ninguno.
+3. Probado: artefacto determinista + tests existen, pero untracked/no publicados y suite frontend no ejecutada por este agente.
+4. Servido y revisado visualmente: no confirmado por este agente.
+
+### Próxima acción concreta (única)
+Definir y ejecutar (offline, sobre copia, presupuesto cero, sin órdenes ni capital) el protocolo de selección automática sobre EVAL-CENSUS-V2 (info disponible en T, sin lookahead, ventana incompleta → UNKNOWN), emitiendo WATCH / SIN_ENTRADA / DESCARTADO con motivo versionado. Dependencia previa al motor paper completo (Etapa 5). Coordinar cierre con la entrega de Paper Lab del otro agente (artefacto determinista, parser/player/componentes, tests, selección independiente del P&L, reconciliación P&L/costes, capturas, SHA/build servido y URL local verificada).
+
