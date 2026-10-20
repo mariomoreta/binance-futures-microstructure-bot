@@ -30,5 +30,8 @@ frontend/out/
 *.tsbuildinfo
 # Backtest V2: resultados de ejecuciones offline, aislados de datos
 # operacionales y de DBs canonicas. Nunca se commitean.
+# Ubicacion canonica unica: <repo>/backtest-results/ (ver DECISIONS Bloque B).
+backtest-results/
+# Ruta heredada (previo a Bloque B); se mantiene ignorada por si queda copia.
 frontend/.backtest-runs/
 

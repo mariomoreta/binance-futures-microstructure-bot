@@ -198,22 +198,30 @@ def _trade_row(t: dict, *, symbol: str, res: str, group: str, segment: str,
     }
 
 
-def run_experiment(experiment_id: str, out_dir: Path, context_candles: int = 48) -> int:
+def run_experiment(experiment_id: str, out_dir: Path, context_candles: int = 48,
+                   run_id: str | None = None, executor_token: str | None = None,
+                   budget_ms: int = 600_000) -> int:
     spec = EXPERIMENTS.get(experiment_id)
     out_dir.mkdir(parents=True, exist_ok=True)
     state_path = out_dir / "job_state.json"
     started = time.time()
+    effective_run_id = run_id or experiment_id
+    deadline = started + max(1, budget_ms) / 1000.0
 
     def write_state(status: str, **extra) -> None:
         payload = {
-            "job_id": experiment_id,
+            "job_id": effective_run_id,
+            "run_id": effective_run_id,
             "experiment_id": experiment_id,
             "status": status,
             "executor_version": EXECUTOR_VERSION,
             "engine_version": ENGINE_VERSION,
+            "executor_token": executor_token,
+            "executor_pid": os.getpid(),
             "started_at_ms": int(started * 1000),
             "updated_at_ms": int(time.time() * 1000),
             "duration_ms": int((time.time() - started) * 1000),
+            "identity": "verified",
         }
         payload.update(extra)
         tmp = state_path.with_suffix(".json.tmp")
@@ -227,6 +235,10 @@ def run_experiment(experiment_id: str, out_dir: Path, context_candles: int = 48)
         return 2
 
     package = (ROOT / spec["package"]).resolve()
+    if time.time() > deadline:
+        write_state("fallido", error="TIMEOUT",
+                    detail="Presupuesto agotado antes de verificar el paquete.")
+        return 5
     try:
         pkg_manifest = _load(package / "package_manifest.json")
         declared = pkg_manifest.get("archivos", {})
@@ -241,6 +253,10 @@ def run_experiment(experiment_id: str, out_dir: Path, context_candles: int = 48)
         all_trades = []
         recon_rows = []
         for symbol, res in spec["combos"]:
+            if time.time() > deadline:
+                write_state("fallido", error="TIMEOUT",
+                            detail="Presupuesto de ejecucion agotado durante el bucle.")
+                return 5
             combo_dir = spec["combos"] and COMBOS[(symbol, res)]
             base = package / "combos" / combo_dir
             events_path = base / f"events_{symbol}_{res}.json"
@@ -412,8 +428,7 @@ def run_experiment(experiment_id: str, out_dir: Path, context_candles: int = 48)
             "reconciliation.json": sha256_file(out_dir / "reconciliation.json"),
         }
         write_state("completado", n_trades=len(all_trades),
-                    reconciliation_ok=recon_all, result_hashes=result_hashes,
-                    run_id=f"BT-{experiment_id}-{int(started)}")
+                    reconciliation_ok=recon_all, result_hashes=result_hashes)
         print("backtest: %s completado; trades=%d reconciliacion=%s"
               % (experiment_id, len(all_trades), recon_all))
         return 0
@@ -430,9 +445,17 @@ def main(argv=None) -> int:
                     help="experiment_id de la lista permitida embebida")
     ap.add_argument("--out-dir", required=True)
     ap.add_argument("--context-candles", type=int, default=48)
+    ap.add_argument("--run-id", default=None,
+                    help="identidad de ejecucion unica (separada del experimento)")
+    ap.add_argument("--executor-token", default=None,
+                    help="token de propiedad de la ejecucion (prueba identidad)")
+    ap.add_argument("--budget-ms", type=int, default=600_000,
+                    help="presupuesto de ejecucion efectivo")
     args = ap.parse_args(argv)
     return run_experiment(args.experiment, Path(args.out_dir).resolve(),
-                          args.context_candles)
+                          args.context_candles, run_id=args.run_id,
+                          executor_token=args.executor_token,
+                          budget_ms=args.budget_ms)
 
 
 if __name__ == "__main__":

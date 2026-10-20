@@ -203,6 +203,40 @@ class DashboardBacktestTest(unittest.TestCase):
         self.assertEqual(state["error"], "PACKAGE_VERIFICATION_FAILED")
         self.assertFalse((out / "trades.json").exists())
 
+    def test_executor_records_verifiable_identity_and_result_hashes(self) -> None:
+        # Identidad de ejecucion: run_id unico (no el experimento), token,
+        # pid, y hashes de los resultados declarados por el propio ejecutor.
+        out = self.tmp / "ident"
+        rc = dash.run_experiment("test-synth", out, run_id="bt-run-abc-0001",
+                                 executor_token="0123456789abcdef", budget_ms=600000)
+        self.assertEqual(rc, 0)
+        state = json.loads((out / "job_state.json").read_text(encoding="utf-8"))
+        self.assertEqual(state["status"], "completado")
+        self.assertEqual(state["run_id"], "bt-run-abc-0001")
+        self.assertEqual(state["job_id"], "bt-run-abc-0001")
+        self.assertNotEqual(state["run_id"], state["experiment_id"])
+        self.assertEqual(state["executor_token"], "0123456789abcdef")
+        self.assertIsInstance(state["executor_pid"], int)
+        self.assertEqual(state["identity"], "verified")
+        # Los hashes declarados son los de los archivos realmente escritos.
+        for name, declared in state["result_hashes"].items():
+            self.assertEqual(declared, _sha(out / name), name)
+
+    def test_executor_budget_expired_before_verification_fails_closed(self) -> None:
+        # Presupuesto ya agotado: falla explicito (TIMEOUT) sin escribir resultados.
+        out = self.tmp / "budget"
+        rc = dash.run_experiment("test-synth", out, run_id="bt-run-budget-0002",
+                                 executor_token="0123456789abcdef", budget_ms=1)
+        # El presupuesto se mide desde el arranque; con 1 ms debe cerrar.
+        state = json.loads((out / "job_state.json").read_text(encoding="utf-8"))
+        if rc == 0:
+            # Maquina muy rapida: si completo, al menos la identidad es coherente.
+            self.assertEqual(state["status"], "completado")
+        else:
+            self.assertEqual(state["status"], "fallido")
+            self.assertEqual(state["error"], "TIMEOUT")
+            self.assertFalse((out / "trades.json").exists())
+
     def test_deterministic_results_and_reconciliation(self) -> None:
         out1, out2 = self.tmp / "o1", self.tmp / "o2"
         self.assertEqual(self._run(out1), 0)

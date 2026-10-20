@@ -29,8 +29,11 @@ export async function POST(req: Request) {
   }
   // El cliente solo envia el identificador del experimento: nunca rutas,
   // comandos ni codigo. La lista permitida y las combinaciones viven en el
-  // ejecutor backend (scripts/run_dashboard_backtest.py).
+  // ejecutor backend (scripts/run_dashboard_backtest.py). Cada llamada crea
+  // una ejecucion con identidad unica; el bloqueo entre procesos impide
+  // duplicados por doble clic o solicitudes concurrentes.
   const r = startJob(experiment as BacktestExperiment);
-  return NextResponse.json({started: r.started, state: r.state, error: r.error ?? null},
-    {status: r.error ? 500 : 200, headers});
+  return NextResponse.json({started: r.started, state: r.state,
+    run_id: r.run_id ?? r.state?.run_id ?? null, error: r.error ?? null},
+    {status: r.error === "SPAWN_FAILED" ? 500 : 200, headers});
 }

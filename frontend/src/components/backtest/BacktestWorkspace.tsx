@@ -20,6 +20,7 @@ type JobState = {
   error: string | null; detail: string | null;
   n_trades: number | null; reconciliation_ok: boolean | null;
   run_id: string | null; duration_ms: number | null; updated_at_ms: number | null;
+  identity?: "verified" | "UNKNOWN";
 };
 
 const STATUS_LABEL: Record<string, string> = {
@@ -29,6 +30,7 @@ const STATUS_LABEL: Record<string, string> = {
 
 export default function BacktestWorkspace() {
   const [job, setJob] = useState<JobState | null>(null);
+  const [runId, setRunId] = useState<string | null>(null);
   const [summary, setSummary] = useState<BacktestSummary | null>(null);
   const [trades, setTrades] = useState<BacktestTrade[]>([]);
   const [runError, setRunError] = useState<string | null>(null);
@@ -43,6 +45,7 @@ export default function BacktestWorkspace() {
       const j = await r.json();
       setJob(j.state ?? {status: "sin_ejecutar", error: null, detail: null,
         n_trades: null, reconciliation_ok: null, run_id: null, duration_ms: null, updated_at_ms: null});
+      if (j.run_id) setRunId(j.run_id);
       return (j.state?.status ?? "sin_ejecutar") as string;
     } catch {
       setJob({status: "sin_ejecutar", error: "STATUS_UNAVAILABLE", detail: null,
@@ -51,11 +54,13 @@ export default function BacktestWorkspace() {
     }
   }, []);
 
-  const loadResults = useCallback(async () => {
+  const loadResults = useCallback(async (targetRun?: string | null) => {
     try {
-      const r = await fetch(`/api/v1/backtest/results?experiment=${EXPERIMENT}`, {cache: "no-store"});
+      const q = targetRun ? `&run=${encodeURIComponent(targetRun)}` : "";
+      const r = await fetch(`/api/v1/backtest/results?experiment=${EXPERIMENT}${q}`, {cache: "no-store"});
       if (!r.ok) { setSummary(null); setTrades([]); return false; }
       const j = await r.json();
+      if (j.run_id) setRunId(j.run_id);
       setSummary(parseBacktestSummary(j.summary));
       setTrades(parseBacktestTrades({trades: j.trades}));
       return true;
@@ -93,6 +98,7 @@ export default function BacktestWorkspace() {
       const j = await r.json();
       if (!r.ok) setRunError(j.error ?? "RUN_FAILED");
       else if (j.started === false) setRunError("DUPLICATE_IGNORED");
+      else if (j.run_id) setRunId(j.run_id);
       setPollNonce((n) => n + 1);
     } catch {
       setRunError("RUN_FAILED");
@@ -158,7 +164,7 @@ export default function BacktestWorkspace() {
               {status === "ejecutando" || status === "pendiente" ? "Ejecutando…" : "Ejecutar backtest"}
             </button>
             <button className={s.ghost} type="button" onClick={() => setPollNonce((n) => n + 1)}>Actualizar estado</button>
-            {(status === "completado") && <button className={s.ghost} type="button" onClick={() => { setShowAll(false); loadResults(); }}>Recargar resultados</button>}
+            {(status === "completado") && <button className={s.ghost} type="button" onClick={() => { setShowAll(false); loadResults(runId); }}>Recargar resultados</button>}
           </div>
           <span className={`${s.chip} ${status === "completado" ? s.pos : status === "fallido" ? s.neg : status === "ejecutando" || status === "pendiente" ? s.warn : ""}`}
             data-job-status={status}>
@@ -166,7 +172,8 @@ export default function BacktestWorkspace() {
           </span>
         </div>
         <p className={s.note}>La tarea se ejecuta una sola vez (sin duplicados por doble clic o refresco), en un directorio propio
-          <span className={s.mono}> frontend/.backtest-runs/</span> aislado de datos operacionales y DBs canónicas. Refrescar o cerrar el navegador
+          <span className={s.mono}> backtest-results/</span> aislado de datos operacionales y DBs canónicas. Cada ejecución tiene identidad propia
+          (<span className={s.mono}>{runId ?? "sin ejecución"}</span>); el bloqueo entre procesos impide dos ejecuciones simultáneas. Refrescar o cerrar el navegador
           no pierde ni relanza la tarea. Los fallos se muestran; nunca se sustituyen por mocks.</p>
         {runError && <p className={s.error} role="alert">Estado de la ejecución: {runError}
           {runError === "DUPLICATE_IGNORED" && " (ya había una tarea en curso: no se lanzó otra)."}</p>}
@@ -268,7 +275,7 @@ export default function BacktestWorkspace() {
                       <td>{t.coverage ?? "UNKNOWN"}</td>
                       <td>
                         <Link className={s.link}
-                          href={`/paper-lab?bt=${EXPERIMENT}&event_id=${encodeURIComponent(t.event_id)}&group=${encodeURIComponent(t.group)}&segment=${encodeURIComponent(t.segment)}&scale=${t.scale}`}>
+                          href={`/paper-lab?bt=${EXPERIMENT}${runId ? `&run=${encodeURIComponent(runId)}` : ""}&event_id=${encodeURIComponent(t.event_id)}&group=${encodeURIComponent(t.group)}&segment=${encodeURIComponent(t.segment)}&scale=${t.scale}`}>
                           Abrir replay
                         </Link>
                       </td>
