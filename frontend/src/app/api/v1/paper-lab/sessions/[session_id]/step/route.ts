@@ -30,8 +30,20 @@ export async function POST(
     return NextResponse.json({error: "FORBIDDEN"}, {status: 403, headers});
   }
   const {session_id: sessionId} = await params;
+
+  let body: unknown;
+  try {
+    body = await req.json();
+  } catch {
+    body = {};
+  }
+  const requestId = (body as {request_id?: unknown})?.request_id;
+
+  const extra: string[] = ["--action", "step", "--session-id", sessionId];
+  if (requestId != null) extra.push("--request-id", String(requestId));
+
   const r = spawnSync(
-    PY, [SCRIPT, "--action", "step", "--session-id", sessionId],
+    PY, [SCRIPT, ...extra],
     {cwd: ROOT, encoding: "utf8", timeout: 30_000,
      maxBuffer: 8 * 1024 * 1024, windowsHide: true,
      env: {...process.env, PYTHONPATH: ROOT + "/src"}});

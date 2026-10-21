@@ -15,7 +15,9 @@ from __future__ import annotations
 import hashlib
 import json
 import os
+import sys
 import time
+import uuid
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
@@ -31,8 +33,362 @@ from microstructure_probe.backtest_offline import (  # noqa: E402
     run_backtest,
 )
 
-ENGINE_VERSION_PAPER = "paper-lab-engine/v1.1"
+ENGINE_VERSION_PAPER = "paper-lab-engine/v1.2"
 SESSION_DIR_NAME = "paper-lab-sessions"
+
+# --- Regla experimental causal, versionada y fijada antes de ejecutar -------
+# RULE-CAUSAL-V1: la decision de entrada se toma SOLO con informacion
+# disponible en/before T (prefijo conocido). Nunca usa velas futuras,
+# existencia de trade, salida, P&L ni comisiones como confirmacion.
+# Parametros no optimizados; no se declara ventaja.
+RULE_CAUSAL_V1 = "RULE-CAUSAL-V1"
+
+# Identidad de peticion para idempotencia (se inyecta desde el CLI/API).
+REQUEST_ID_HEADER = "X-Request-Id"
+
+# --- Politica de frescura real (Item 3) -----------------------------------
+# Fin de datos, dato obsoleto y desconexion son escenarios distintos.
+# La frescura se juzga contra el reloj de simulacion T (at_ms),
+# no contra fechas históricas del calendario.
+
+# Edad maxima admisible de un dato respecto de T (ms). Un dato mas viejo
+# que esto se considera obsoleto (stale) respecto de T.
+STALE_MAX_AGE_MS = 5 * 60 * 60 * 1000  # 5 horas de tolerancia
+
+# Umbral de desconexión: sin recibo de nuevas velas durante este lapso
+# se considera interrupción del feed.
+DISCONNECT_MAX_SILENCE_MS = 10 * 60 * 1000  # 10 minutos
+
+
+def evaluate_freshness_at(
+    candles: List[PaperCandle], at_ms: int,
+) -> Dict[str, Any]:
+    """Evalúa la frescura de los datos respecto al reloj de simulación T.
+
+    Devuelve un diccionario con:
+      - fresh: bool, todos los datos conocidos en T son frescos.
+      - stale_candles: velas conocidas en T pero obsoletas (received_at
+        muy anterior a T o disponible mucho antes sin actualización).
+      - disconnect: bool, hay indicio de interrupción del feed (silencio
+        prolongado sin recibir nuevas velas).
+      - end_of_data: bool, no hay más velas después de T (fin de fixture).
+      - newest_received_at: el received_at más reciente entre velas conocidas.
+      - reason: motivo legible; evidence: detalles comprobables.
+    """
+    prefix = _known_prefix_at(candles, at_ms)
+    if not prefix:
+        return {
+            "fresh": False, "stale_candles": [], "disconnect": False,
+            "end_of_data": False, "newest_received_at": None,
+            "reason": "NO_DATA_EN_T",
+            "evidence": {"at_ms": at_ms, "n_known": 0},
+        }
+
+    newest_received = max(
+        (c.received_at for c in prefix if c.received_at is not None),
+        default=None,
+    )
+
+    # Dato obsoleto: una vela conocida en T cuyo received_at es mucho más
+    # antiguo que T (el feed no la actualizó a tiempo).
+    stale: List[Dict[str, Any]] = []
+    for c in prefix:
+        if c.received_at is not None and (at_ms - c.received_at) > STALE_MAX_AGE_MS:
+            stale.append({
+                "open_time_ms": c.open_time_ms,
+                "received_at": c.received_at,
+                "age_ms": at_ms - c.received_at,
+            })
+
+    # Desconexión: silencio prolongado sin recibir nada nuevo.
+    disconnect = False
+    if newest_received is not None and (at_ms - newest_received) > DISCONNECT_MAX_SILENCE_MS:
+        disconnect = True
+
+    # Fin de datos: no hay velas con open_time_ms > T en la fixture.
+    end_of_data = not any(c.open_time_ms > at_ms for c in candles)
+
+    fresh = (not stale) and (not disconnect) and (not end_of_data)
+
+    if stale:
+        reason = "DATA_STALE"
+    elif disconnect:
+        reason = "FEED_INTERRUPTED"
+    elif end_of_data:
+        reason = "END_OF_DATA"
+    else:
+        reason = "FRESH"
+
+    return {
+        "fresh": fresh, "stale_candles": stale, "disconnect": disconnect,
+        "end_of_data": end_of_data, "newest_received_at": newest_received,
+        "reason": reason,
+        "evidence": {
+            "at_ms": at_ms, "n_known": len(prefix),
+            "newest_received_at": newest_received,
+            "stale_max_age_ms": STALE_MAX_AGE_MS,
+            "disconnect_max_silence_ms": DISCONNECT_MAX_SILENCE_MS,
+        },
+    }
+
+
+def _request_id() -> str:
+    return uuid.uuid4().hex
+
+
+# --- Disponibilidad causal de velas ----------------------------------------
+# Contrato de conocimiento (backtest-offline v4.2):
+#   - El open de una vela se conoce en su open_time_ms.
+#   - high/low/close solo se conocen en su close_time_ms (el siguiente
+#     open_time_ms del mismo simbolo, o None para la ultima / huecos).
+# En T solo son "conocidas" las velas con open_time_ms <= T. Son "plenamente
+# conocidas" (OHLC) las que ademas tienen close_time_ms <= T.
+
+
+def _known_prefix_at(candles: List[PaperCandle], at_ms: int) -> List[PaperCandle]:
+    """Velas cuyo open se conoce en/before at_ms (prefijo causal en T)."""
+    return [c for c in candles if c.open_time_ms <= at_ms]
+
+
+def _fully_known_at(candles: List[PaperCandle], at_ms: int) -> List[PaperCandle]:
+    """Velas cuyo OHLC completo se conoce en/before at_ms."""
+    return [
+        c for c in candles
+        if c.close_time_ms is not None and c.close_time_ms <= at_ms
+    ]
+
+
+# --- Regla de senal causal (senal, no admision, no simulacion) -------------
+
+
+def _evaluate_signal_causal_v1(
+    state: PaperSessionState, at_ms: int,
+) -> Tuple[str, str, Dict[str, Any]]:
+    """RULE-CAUSAL-V1: senal de entrada usando solo el prefijo conocido en T.
+
+    Devuelve (decision, motivo, evidencia). decision en
+    {SIN_ENTRADA, DESCARTADO, ENTRADA_SIMULADA}. Nunca usa velas futuras,
+    existencia de trade, salida, P&L o comisiones como confirmacion.
+
+    Logica:
+      - Sin velas conocidas en T -> SIN_ENTRADA (evidencia insuficiente).
+      - Velas conocidas pero ninguna plenamente conocida (close desconocido)
+        -> VIGILANDO-equivalente: SIN_ENTRADA con motivo de espera.
+      - Ultima vela plenamente conocida: si close opera a favor de la
+        direccion vs entry_px y el stop no esta vulnerado en T ->
+        ENTRADA_SIMULADA (senal, sujeto a admision de riesgo y simulacion).
+      - Si el stop ya esta vulnerado en T -> DESCARTADO.
+      - En cualquier otro caso -> SIN_ENTRADA.
+    """
+    config = state.config
+    prefix = _known_prefix_at(state.candles, at_ms)
+    fully = _fully_known_at(state.candles, at_ms)
+
+    evidence: Dict[str, Any] = {
+        "rule_version": RULE_CAUSAL_V1,
+        "at_ms": at_ms,
+        "n_prefix_candles": len(prefix),
+        "n_fully_known_candles": len(fully),
+        "candles": [
+            {
+                "open_time_ms": c.open_time_ms,
+                "open": c.open,
+                "high": c.high,
+                "low": c.low,
+                "close": c.close,
+                "close_time_ms": c.close_time_ms,
+                "open_known": c.open_time_ms <= at_ms,
+                "ohlc_known": (c.close_time_ms is not None
+                               and c.close_time_ms <= at_ms),
+            }
+            for c in prefix
+        ],
+    }
+
+    if not prefix:
+        return ("SIN_ENTRADA",
+                "Sin velas conocidas en T: prefijo vacio, no hay evidencia para decidir.",
+                evidence)
+
+    if not fully:
+        # Hay velas con open conocido pero ninguna con close conocido:
+        # aun no se puede confirmar direccion -> abstencion.
+        last = prefix[-1]
+        evidence["awaiting_close_of"] = last.open_time_ms
+        return ("SIN_ENTRADA",
+                f"Velas abiertas en T pero close todavia desconocido (ultima abierta @ {last.open_time_ms}): senal no confirmada, abstencion.",
+                evidence)
+
+    last = fully[-1]
+    is_long = config.direction == "LONG"
+    px = last.close
+    stop_px = config.stop_px
+    entry_px = config.entry_px
+
+    # Stop ya vulnerado en T (conocido por close <= T): descarte.
+    if is_long and last.low is not None and last.low <= stop_px:
+        evidence.update({
+            "trigger_px": px, "entry_px": entry_px,
+            "stop_px": stop_px, "breach_px": last.low,
+            "breach_candle_open_time_ms": last.open_time_ms,
+        })
+        return ("DESCARTADO",
+                f"Stop ya vulnerado en T (low={last.low} <= stop={stop_px} @ close_time={last.close_time_ms}): entrada descartada.",
+                evidence)
+    if (not is_long) and last.high is not None and last.high >= stop_px:
+        evidence.update({
+            "trigger_px": px, "entry_px": entry_px,
+            "stop_px": stop_px, "breach_px": last.high,
+            "breach_candle_open_time_ms": last.open_time_ms,
+        })
+        return ("DESCARTADO",
+                f"Stop ya vulnerado en T (high={last.high} >= stop={stop_px} @ close_time={last.close_time_ms}): entrada descartada.",
+                evidence)
+
+    # Senal de direccion: precio a favor vs entry_px en la vela plenamente conocida.
+    if is_long:
+        if px >= entry_px:
+            evidence.update({
+                "trigger_px": px, "entry_px": entry_px,
+                "stop_px": stop_px, "signal_candle_close_time_ms": last.close_time_ms,
+            })
+            return ("ENTRADA_SIMULADA",
+                    f"Senal RULE-CAUSAL-V1 en T: close={px} >= entry_px={entry_px}, stop no vulnerado.",
+                    evidence)
+        return ("SIN_ENTRADA",
+                f"Sin senal de entrada en T: close={px} < entry_px={entry_px} (LONG).",
+                evidence)
+    else:
+        if px <= entry_px:
+            evidence.update({
+                "trigger_px": px, "entry_px": entry_px,
+                "stop_px": stop_px, "signal_candle_close_time_ms": last.close_time_ms,
+            })
+            return ("ENTRADA_SIMULADA",
+                    f"Senal RULE-CAUSAL-V1 en T: close={px} <= entry_px={entry_px}, stop no vulnerado.",
+                    evidence)
+        return ("SIN_ENTRADA",
+                f"Sin senal de entrada en T: close={px} > entry_px={entry_px} (SHORT).",
+                evidence)
+
+
+def _admit_risk(config: PaperSessionConfig) -> Tuple[bool, str]:
+    """Admision por riesgo: comprueba parametros de entrada antes de simular.
+
+    No usa informacion de mercado futura. Solo reglas de admision estaticas.
+    """
+    if config.notional_usdt <= 0:
+        return False, "Notional no positivo: admision denegada."
+    if config.entry_px <= 0:
+        return False, "Precio de entrada no positivo: admision denegada."
+    if config.stop_px <= 0:
+        return False, "Precio de stop no positivo: admision denegada."
+    if config.stop_distance_pct <= 0:
+        return False, "stop_distance_pct no positivo: admision denegada."
+    if config.direction not in ("LONG", "SHORT"):
+        return False, "Direccion invalida: admision denegada."
+    # Stop debe estar alejado del precio de entrada (distancia minima).
+    if config.direction == "LONG" and config.stop_px >= config.entry_px:
+        return False, "Stop de LONG no por debajo del entry_px: admision denegada."
+    if config.direction == "SHORT" and config.stop_px <= config.entry_px:
+        return False, "Stop de SHORT no por encima del entry_px: admision denegada."
+    return True, "Admision de riesgo OK."
+
+
+# --- Adaptador a backtest_offline.run_backtest (mecánica compartida) -------
+
+
+def _build_study_event(state: PaperSessionState) -> StudyEvent:
+    """Construye un StudyEvent a partir de la configuracion de sesion."""
+    config = state.config
+    return StudyEvent(
+        symbol=config.symbol,
+        event_time_ms=state.clock_ms or 0,
+        direction=config.direction,
+        reference_price=config.entry_px,
+        family="H1",
+        rules_version="H1-v1",
+    )
+
+
+def _build_backtest_config(state: PaperSessionState) -> BacktestConfig:
+    """Construye un BacktestConfig a partir de la configuracion de sesion.
+
+    No se inyecta FundingCalendar a menos que exista uno real: si no hay
+    calendario de funding, run_backtest usaria el fallback sintético (8h).
+    Para cumplir "funding ausente = UNKNOWN", no se pasa calendario y el
+    resultado se sobrescribe despues.
+    """
+    config = state.config
+    return BacktestConfig(
+        family="H1",
+        rules_version="H1-v1",
+        exit_horizon_ms=config.horizon_ms,
+        stop_distance_pct=config.stop_distance_pct,
+        notional_usdt=config.notional_usdt,
+        fee_bps=config.fee_bps,
+        spread_bps=config.spread_bps,
+        slippage_bps=config.slippage_bps,
+        cost_scale=1.0,
+        max_concurrent=1,
+        funding_calendar=None,  # sin calendario real -> funding = UNKNOWN
+        funding_estimated_bps=None,  # contexto solo, nunca contabiliza
+    )
+
+
+def _to_bt_candles(candles: List[PaperCandle], symbol: str) -> List[Candle]:
+    """Convierte PaperCandle en Candle de backtest_offline."""
+    return [
+        Candle(
+            symbol=symbol,
+            open_time_ms=c.open_time_ms,
+            open=c.open,
+            high=c.high,
+            low=c.low,
+            close=c.close,
+            close_time_ms=c.close_time_ms,
+        )
+        for c in candles
+    ]
+
+
+def _run_backtest_on_prefix(
+    state: PaperSessionState, prefix: List[PaperCandle],
+    event_time_ms: int,
+) -> Optional[Dict[str, Any]]:
+    """Ejecuta run_backtest SOLO sobre el prefijo conocido en T.
+
+    run_backtest es la autoridad economica (entradas, salidas, costes,
+    funding, stops, horizonte), pero recibe unicamente velas disponibles
+    en/before T. Nunca ve velas futuras de la fixture.
+    """
+    config = state.config
+    if not prefix:
+        return None
+
+    # run_backtest requiere c.open_time_ms > ev.event_time_ms para el fill.
+    # El evento se situa justo antes de T para que el primer fill posible
+    # sea una vela del prefijo (conocida en T).
+    event = StudyEvent(
+        symbol=config.symbol,
+        event_time_ms=event_time_ms,
+        direction=config.direction,
+        reference_price=config.entry_px,
+        family="H1",
+        rules_version="H1-v1",
+    )
+    bt_config = _build_backtest_config(state)
+    bt_candles = _to_bt_candles(prefix, config.symbol)
+
+    result = run_backtest(
+        [event], bt_candles, bt_config,
+        dataset_id="paper-lab-fixture", segment="dev",
+    )
+
+    trades = result.get("trades", [])
+    if not trades:
+        return None
+    return trades[0]
 
 # Estados de sesión (ingeniería) --------------------------------------------
 # sin_iniciar → evaluando → en_espera → abierta → cerrada | detenida
@@ -80,6 +436,13 @@ class PaperCandle:
     low: float
     close: float
     close_time_ms: int
+    # --- Frescura real (Item 3) -------------------------------------------
+    # available_at: momento en que la vela esta disponible para lectura
+    #               (open conocido en open_time_ms; OHLC en close_time_ms).
+    # received_at:  momento en que el feed entrego la vela al sistema.
+    #               None si no se ha recibido (futuro/reserva de la fixture).
+    available_at: Optional[int] = None
+    received_at: Optional[int] = None
 
 
 @dataclass
@@ -239,71 +602,9 @@ def _build_backtest_config(state: PaperSessionState) -> BacktestConfig:
     )
 
 
-def _to_bt_candles(candles: List[PaperCandle]) -> List[Candle]:
-    return [
-        Candle(
-            symbol=c.context_candles and "UNKNOWN" or "PL",  # placeholder, se fija abajo
-            open_time_ms=c.open_time_ms,
-            open=c.open,
-            high=c.high,
-            low=c.low,
-            close=c.close,
-            close_time_ms=c.close_time_ms,
-        )
-        for c in candles
-    ]
-
-
-def _run_backtest_authoritative(
-    state: PaperSessionState, symbol: str,
-) -> Optional[Dict[str, Any]]:
-    """Ejecuta run_backtest sobre las velas de la sesión y devuelve el
-    resultado autoritativo (primera trade admitida o None).
-
-    Esta es la fuente de verdad económica: entradas, salidas, costes,
-    funding, stops y horizonte se derivan de run_backtest, no de lógica
-    duplicada en este módulo.
-    """
-    config = state.config
-    candles = state.candles
-    if not candles:
-        return None
-
-    # run_backtest requiere c.open_time_ms > ev.event_time_ms para el fill.
-    # El evento (detección) ocurre antes de la primera vela de la ventana.
-    event_time_ms = candles[0].open_time_ms - 1 if candles else 0
-
-    event = StudyEvent(
-        symbol=symbol,
-        event_time_ms=event_time_ms,
-        direction=config.direction,
-        reference_price=config.entry_px,
-        family="H1",
-        rules_version="H1-v1",
-    )
-    bt_config = _build_backtest_config(state)
-    bt_candles = [
-        Candle(
-            symbol=symbol,
-            open_time_ms=c.open_time_ms,
-            open=c.open,
-            high=c.high,
-            low=c.low,
-            close=c.close,
-            close_time_ms=c.close_time_ms,
-        )
-        for c in candles
-    ]
-
-    result = run_backtest(
-        [event], bt_candles, bt_config,
-        dataset_id="paper-lab-fixture", segment="dev",
-    )
-
-    trades = result.get("trades", [])
-    if not trades:
-        return None
-    return trades[0]
+# _run_backtest_authoritative reemplazado por _run_backtest_on_prefix:
+# este recibe un prefijo conocido en T y un event_time_ms causales,
+# sin acceso a la reserva de futuros de la fixture.
 
 
 def _map_bt_trade_to_paper_result(
@@ -476,24 +777,55 @@ def evaluate_session(
     hypothesis_id: Optional[str] = None,
     hypothesis_version: Optional[str] = None,
     rule_version: Optional[str] = None,
+    at_ms: Optional[int] = None,
 ) -> PaperSessionState:
-    """Evalúa la evidencia disponible en T y retorna una decisión.
+    """Evalúa la evidencia disponible en T y retorna una decisión causal.
 
-    Usa run_backtest como autoridad económica: si se admite una operación
-    → ENTRADA_SIMULADA y se avanza a en_espera. Si no se admite → SIN_ENTRADA
-    o DESCARTADO con motivo registrado, sin abrir posición.
+    Tres fases separadas, sin superposición de responsabilidades:
+      1. Señal (RULE-CAUSAL-V1): solo información disponible en/before T.
+      2. Admisión por riesgo: parámetros estáticos, sin mercado.
+      3. Simulación económica: run_backtest sobre el prefijo conocido en T.
+
+    Nunca usa velas futuras, existencia de trade, salida, P&L ni comisiones
+    como confirmación. run_backtest recibe únicamente velas conocidas en T.
 
     Transiciones:
       sin_iniciar → evaluando → en_espera (ENTRADA_SIMULADA)
       sin_iniciar → evaluando → cerrada (SIN_ENTRADA / DESCARTADO, sin posición)
+
+    Parametros:
+      at_ms: tiempo de evaluacion T. Si es None, usa state.clock_ms o _now_ms().
     """
     if state.status not in ("sin_iniciar", "evaluando"):
         return state
 
+    now = _now_ms()
+
+    # --- Modo de reloj de simulación --------------------------------------
+    # Si at_ms se proporciona (modo causal), se usa como T y el evento se
+    # sitúa justo antes de T. Si no se proporciona (compatibilidad hacia
+    # atrás), se evalúa sobre todas las velas con el evento justo antes de
+    # la primera vela (comportamiento histórico).
+    if at_ms is not None:
+        # Modo causal: T explícito, prefijo conocido en T.
+        signal_at_ms = at_ms
+        event_time_ms = at_ms - 1
+        clock_for_state = at_ms
+    else:
+        # Compatibilidad hacia atrás: todas las velas son "conocidas",
+        # evento justo antes de la primera vela.
+        signal_at_ms = _now_ms()
+        if state.candles:
+            event_time_ms = state.candles[0].open_time_ms - 1
+        else:
+            event_time_ms = 0
+        clock_for_state = state.clock_ms or _now_ms()
+
+    # Copia de trabajo en estado evaluando.
     next_state = PaperSessionState(
         session_id=state.session_id,
         created_at_ms=state.created_at_ms,
-        updated_at_ms=_now_ms(),
+        updated_at_ms=now,
         status="evaluando",
         config=state.config,
         candles=state.candles,
@@ -503,7 +835,7 @@ def evaluate_session(
         costs=state.costs,
         events=list(state.events),
         result=state.result,
-        clock_ms=state.clock_ms,
+        clock_ms=clock_for_state,
         config_hash=state.config_hash,
         input_hash=state.input_hash,
         engine_version=state.engine_version,
@@ -512,35 +844,68 @@ def evaluate_session(
         authoritative=None,
     )
 
-    # Ejecutar run_backtest para decidir si la entrada es admisible.
-    bt_result = _run_backtest_authoritative(next_state, next_state.config.symbol)
+    # ---- Fase 1: Señal causal (solo prefijo conocido en T) ----
+    signal, signal_reason, signal_evidence = _evaluate_signal_causal_v1(
+        next_state, signal_at_ms)
 
-    evidence: Dict[str, Any] = {
-        "evaluated_at_ms": _now_ms(),
-        "rule_version": rule_version,
-        "n_candles": len(next_state.candles),
-        "horizon_ms": next_state.config.horizon_ms,
-        "stop_distance_pct": next_state.config.stop_distance_pct,
-    }
+    # ---- Fase 2: Admisión por riesgo (estática, sin mercado) ----
+    risk_ok, risk_reason = _admit_risk(next_state.config)
 
-    if bt_result is None:
-        # No se admitió ninguna operación. run_backtest ya filtró por
-        # familia/regla/horizonte; si no hay trade, no hay fill posible
-        # con los datos disponibles → SIN_ENTRADA.
-        decision = "SIN_ENTRADA"
-        reason = "No hay fill posible con los datos disponibles: run_backtest no admitió ninguna operación."
+    # ---- Fase 3: Simulación económica (run_backtest sobre prefijo conocido) ----
+    bt_result: Optional[Dict[str, Any]] = None
+    fill_entry_px = next_state.config.entry_px
+    fill_entry_ms = None
+    fill_qty = None
+    fill_cost = None
+    entry_fees = 0.0
+    entry_spread_slip = 0.0
 
+    if signal == "ENTRADA_SIMULADA" and risk_ok:
+        prefix = _known_prefix_at(next_state.candles, signal_at_ms)
+        # El evento se sitúa justo antes de T: el primer fill posible es una
+        # vela del prefijo (conocida en T), nunca una vela futura.
+        bt_result = _run_backtest_on_prefix(
+            next_state, prefix, event_time_ms=event_time_ms)
+        if bt_result is not None:
+            fill_entry_px = bt_result["entry_px"]
+            fill_entry_ms = bt_result["entry_ms"]
+            fill_qty = bt_result["filled_qty"]
+            fill_cost = bt_result["filled_cost"]
+            entry_fees = bt_result.get("entry_fees", 0.0)
+            entry_spread_slip = bt_result.get("entry_spread_slip", 0.0)
+
+    # Construir decision final.
+    if bt_result is not None:
+        # Entrada admitida: senal + riesgo + fill posible en prefijo conocido.
+        decision = "ENTRADA_SIMULADA"
+        reason = (
+            f"Senal {RULE_CAUSAL_V1} confirmada en T y fill posible en el "
+            f"prefijo conocido (entry_ms={fill_entry_ms}): entrada ejecutable."
+        )
+        evidence = dict(signal_evidence)
+        evidence.update({
+            "evaluated_at_ms": now,
+            "at_ms": signal_at_ms,
+            "rule_version": rule_version or RULE_CAUSAL_V1,
+            "admit_risk": risk_ok,
+            "risk_reason": risk_reason,
+            "entry_fill_px": fill_entry_px,
+            "entry_fill_ms": fill_entry_ms,
+            "entry_fill_qty": fill_qty,
+            "entry_fill_cost": fill_cost,
+        })
+        status = "en_espera"
         next_state = PaperSessionState(
             session_id=next_state.session_id,
             created_at_ms=next_state.created_at_ms,
-            updated_at_ms=_now_ms(),
-            status="cerrada",
+            updated_at_ms=now,
+            status=status,
             config=PaperSessionConfig(
                 symbol=next_state.config.symbol,
                 interval=next_state.config.interval,
                 direction=next_state.config.direction,
                 notional_usdt=next_state.config.notional_usdt,
-                entry_px=next_state.config.entry_px,
+                entry_px=fill_entry_px,
                 stop_px=next_state.config.stop_px,
                 stop_distance_pct=next_state.config.stop_distance_pct,
                 horizon_ms=next_state.config.horizon_ms,
@@ -549,55 +914,79 @@ def evaluate_session(
                 slippage_bps=next_state.config.slippage_bps,
                 hypothesis_id=hypothesis_id,
                 hypothesis_version=hypothesis_version,
-                rule_version=rule_version,
+                rule_version=rule_version or RULE_CAUSAL_V1,
                 decision=decision,
                 decision_reason=reason,
                 decision_evidence=evidence,
             ),
             candles=next_state.candles,
             context_candles=next_state.context_candles,
-            cursor=next_state.cursor,
+            cursor=0,
             position=next_state.position,
-            costs=next_state.costs,
+            costs=PaperCosts(
+                fee_bps=next_state.config.fee_bps,
+                spread_bps=next_state.config.spread_bps,
+                entry_fees=entry_fees,
+                exit_fees=0.0,
+                entry_spread_slip=entry_spread_slip,
+                exit_spread_slip=0.0,
+                funding=None,
+                friction=entry_fees + entry_spread_slip,
+                exit_fees_estimated=0.0,
+                exit_spread_slip_estimated=0.0,
+            ),
             events=list(next_state.events) + [
                 PaperEvent(
-                    at_ms=_now_ms(),
-                    label=f"Decisión: {decision}",
+                    at_ms=fill_entry_ms if fill_entry_ms is not None else now,
+                    label=f"Decisión: ENTRADA_SIMULADA @ {fill_entry_px:.2f}",
                     kind="protection",
-                    detail=reason,
+                    detail=(f"qty={fill_qty:.8f} notional={next_state.config.notional_usdt} "
+                            f"entry_ms={fill_entry_ms} rule={rule_version or RULE_CAUSAL_V1} "
+                            f"at_ms={signal_at_ms}"),
                 )
             ],
             result=None,
-            clock_ms=next_state.clock_ms,
+            clock_ms=fill_entry_ms if fill_entry_ms is not None else clock_for_state,
             config_hash=next_state.config_hash,
             input_hash=next_state.input_hash,
             engine_version=next_state.engine_version,
             limitations=list(next_state.limitations),
             revision=next_state.revision + 1,
-            authoritative=None,
+            authoritative=bt_result,
         )
         return next_state
 
-    # Operación admitida → ENTRADA_SIMULADA, avanzar a en_espera.
-    entry_px = bt_result["entry_px"]
-    entry_ms = bt_result["entry_ms"]
-    qty = bt_result["filled_qty"]
-    entry_cost = bt_result["filled_cost"]
-
-    entry_fees = bt_result.get("entry_fees", 0.0)
-    entry_spread_slip = bt_result.get("entry_spread_slip", 0.0)
+    # No hay entrada: si la senal era ENTRADA_SIMULADA pero no hubo fill
+    # posible en el prefijo conocido -> SIN_ENTRADA (senal sin confirmación
+    # económica). En cualquier otro caso, la senal ya especificó el caso.
+    if signal == "ENTRADA_SIMULADA":
+        decision = "SIN_ENTRADA"
+        reason = ("Senal de entrada en T pero sin fill posible en el "
+                  "prefijo conocido: run_backtest no admitió operación "
+                  "con datos disponibles en T.")
+    else:
+        decision = signal
+        reason = signal_reason
+    evidence = dict(signal_evidence)
+    evidence.update({
+        "evaluated_at_ms": now,
+        "at_ms": signal_at_ms,
+        "rule_version": rule_version or RULE_CAUSAL_V1,
+        "admit_risk": risk_ok,
+        "risk_reason": risk_reason,
+    })
 
     next_state = PaperSessionState(
         session_id=next_state.session_id,
         created_at_ms=next_state.created_at_ms,
-        updated_at_ms=_now_ms(),
-        status="en_espera",
+        updated_at_ms=now,
+        status="cerrada",
         config=PaperSessionConfig(
             symbol=next_state.config.symbol,
             interval=next_state.config.interval,
             direction=next_state.config.direction,
             notional_usdt=next_state.config.notional_usdt,
-            entry_px=entry_px,
+            entry_px=next_state.config.entry_px,
             stop_px=next_state.config.stop_px,
             stop_distance_pct=next_state.config.stop_distance_pct,
             horizon_ms=next_state.config.horizon_ms,
@@ -606,44 +995,32 @@ def evaluate_session(
             slippage_bps=next_state.config.slippage_bps,
             hypothesis_id=hypothesis_id,
             hypothesis_version=hypothesis_version,
-            rule_version=rule_version,
-            decision="ENTRADA_SIMULADA",
-            decision_reason="run_backtest admitió la operación: entrada ejecutable tras el evento en T.",
+            rule_version=rule_version or RULE_CAUSAL_V1,
+            decision=decision,
+            decision_reason=reason,
             decision_evidence=evidence,
         ),
         candles=next_state.candles,
         context_candles=next_state.context_candles,
-        cursor=0,
+        cursor=next_state.cursor,
         position=next_state.position,
-        costs=PaperCosts(
-            fee_bps=next_state.config.fee_bps,
-            spread_bps=next_state.config.spread_bps,
-            entry_fees=entry_fees,
-            exit_fees=0.0,
-            entry_spread_slip=entry_spread_slip,
-            exit_spread_slip=0.0,
-            funding=None,
-            friction=entry_fees + entry_spread_slip,
-            exit_fees_estimated=0.0,
-            exit_spread_slip_estimated=0.0,
-        ),
+        costs=next_state.costs,
         events=list(next_state.events) + [
             PaperEvent(
-                at_ms=entry_ms,
-                label=f"Decisión: ENTRADA_SIMULADA @ {entry_px:.2f}",
+                at_ms=now,
+                label=f"Decisión: {decision}",
                 kind="protection",
-                detail=(f"qty={qty:.8f} notional={next_state.config.notional_usdt} "
-                        f"entry_ms={entry_ms} rule={rule_version}"),
+                detail=reason,
             )
         ],
         result=None,
-        clock_ms=entry_ms,
+        clock_ms=next_state.clock_ms,
         config_hash=next_state.config_hash,
         input_hash=next_state.input_hash,
         engine_version=next_state.engine_version,
         limitations=list(next_state.limitations),
         revision=next_state.revision + 1,
-        authoritative=bt_result,
+        authoritative=None,
     )
     return next_state
 
@@ -1259,6 +1636,8 @@ def session_to_dict(state: PaperSessionState) -> Dict[str, Any]:
                 "open_time_ms": c.open_time_ms, "open": c.open,
                 "high": c.high, "low": c.low, "close": c.close,
                 "close_time_ms": c.close_time_ms,
+                "available_at": c.available_at,
+                "received_at": c.received_at,
             } for c in state.candles
         ],
         "context_candles": [
@@ -1266,6 +1645,8 @@ def session_to_dict(state: PaperSessionState) -> Dict[str, Any]:
                 "open_time_ms": c.open_time_ms, "open": c.open,
                 "high": c.high, "low": c.low, "close": c.close,
                 "close_time_ms": c.close_time_ms,
+                "available_at": c.available_at,
+                "received_at": c.received_at,
             } for c in state.context_candles
         ],
         "cursor": state.cursor,
@@ -1356,8 +1737,26 @@ def session_from_dict(d: Dict[str, Any]) -> PaperSessionState:
         decision_reason=cfg.get("decision_reason"),
         decision_evidence=cfg.get("decision_evidence"),
     )
-    candles = [PaperCandle(**c) for c in d.get("candles", [])]
-    context = [PaperCandle(**c) for c in d.get("context_candles", [])]
+    # _request_id y _content_hash son campos internos de idempotencia:
+    # nunca forman parte del estado hidratado.
+    candles = [
+        PaperCandle(
+            open_time_ms=c["open_time_ms"], open=c["open"],
+            high=c["high"], low=c["low"], close=c["close"],
+            close_time_ms=c["close_time_ms"],
+            available_at=c.get("available_at"),
+            received_at=c.get("received_at"),
+        ) for c in d.get("candles", [])
+    ]
+    context = [
+        PaperCandle(
+            open_time_ms=c["open_time_ms"], open=c["open"],
+            high=c["high"], low=c["low"], close=c["close"],
+            close_time_ms=c["close_time_ms"],
+            available_at=c.get("available_at"),
+            received_at=c.get("received_at"),
+        ) for c in d.get("context_candles", [])
+    ]
     pos = d["position"]
     position = PaperPosition(
         open=pos["open"], direction=pos.get("direction"),
@@ -1433,7 +1832,80 @@ def session_from_dict(d: Dict[str, Any]) -> PaperSessionState:
     )
 
 
-# --- Persistencia (directorio aislado, fuera de datos operacionales) -----
+# --- Persistencia atomica por sesion (Item 2) -----------------------------
+# Cargar -> validar revision -> aplicar acción -> persistir como operación
+# indivisible. File lock para exclusión del ciclo completo entre procesos.
+# Temp únicos por (sesion, PID, token) para evitar colisiones. Falla explícita
+# ante archivo ilegible, revisión incompatible o identidad incierta.
+# Idempotencia por identidad de petición (request_id).
+
+_IS_WINDOWS = os.name == "nt"
+
+
+class _FileLock:
+    """Lock de exclusión mutua entre procesos sobre un archivo auxiliar.
+
+    Windows: msvcrt.locking (exclusivo, bloqueante con reintentos).
+    POSIX: fcntl.flock (exclusivo, no bloqueante con reintentos).
+    """
+
+    def __init__(self, lock_path: Path):
+        self.lock_path = lock_path
+        self._fd = None
+        self._owned = False
+
+    def acquire(self, timeout_s: float = 10.0) -> bool:
+        import time
+        deadline = time.time() + timeout_s
+        while True:
+            try:
+                if _IS_WINDOWS:
+                    import msvcrt
+                    self._fd = os.open(str(self.lock_path),
+                                       os.O_CREAT | os.O_RDWR,
+                                       0o644)
+                    # msvcrt.locking: bloqueante, espera hasta liberarse.
+                    msvcrt.locking(self._fd, msvcrt.LK_LOCK, 1)
+                    self._owned = True
+                    return True
+                else:
+                    import fcntl
+                    self._fd = os.open(str(self.lock_path),
+                                       os.O_CREAT | os.O_RDWR,
+                                       0o644)
+                    fcntl.flock(self._fd, fcntl.LOCK_EX | fcntl.LOCK_NB)
+                    self._owned = True
+                    return True
+            except (OSError, IOError):
+                pass
+            if time.time() >= deadline:
+                return False
+            time.sleep(0.05)
+
+    def release(self):
+        if self._fd is not None:
+            try:
+                if _IS_WINDOWS:
+                    import msvcrt
+                    if self._owned:
+                        msvcrt.locking(self._fd, msvcrt.LK_UNLCK, 1)
+                else:
+                    import fcntl
+                    fcntl.flock(self._fd, fcntl.LOCK_UN)
+                os.close(self._fd)
+            except OSError:
+                pass
+            self._fd = None
+            self._owned = False
+
+
+def _session_lock_path(sessions_dir: Path, session_id: str) -> Path:
+    return sessions_dir / f".{session_id}.lock"
+
+
+def _session_lock(sessions_dir: Path, session_id: str) -> _FileLock:
+    return _FileLock(_session_lock_path(sessions_dir, session_id))
+
 
 def _sessions_dir(root: str | Path) -> Path:
     return Path(root) / SESSION_DIR_NAME
@@ -1444,42 +1916,209 @@ def _session_path(sessions_dir: Path, session_id: str) -> Path:
     return sessions_dir / f"{session_id}.json"
 
 
-def save_session(state: PaperSessionState,
-                 root: str | Path = ".",
-                 expected_revision: Optional[int] = None) -> None:
-    """Guarda la sesión de forma atómica con control de revisión.
+def _unique_tmp_path(path: Path) -> Path:
+    """Nombre de temporal único: sesion + PID + token aleatorio."""
+    token = uuid.uuid4().hex[:12]
+    pid = os.getpid()
+    return path.with_name(f"{path.stem}.{pid}.{token}.json.tmp")
 
-    Si se pasa expected_revision y no coincide con la revisión almacenada,
-    se lanza ValueError (optimistic locking: evitar pérdida de eventos por
-    carga→modificar→guardar concurrente).
+
+@dataclass
+class SessionSaveResult:
+    ok: bool
+    state: PaperSessionState
+    error_code: Optional[str] = None
+    error_detail: Optional[str] = None
+    # Idempotencia: si la petición ya fue procesada, se devuelve el estado
+    # almacenado sin repetir efectos.
+    idempotent_repeat: bool = False
+
+
+def _read_stored_revision(path: Path) -> Tuple[Optional[int], Optional[Dict[str, Any]], Optional[str]]:
+    """Lee la revisión almacenada y el payload completo.
+
+    Devuelve (revision, payload, error_code). Si el archivo es ilegible,
+    devuelve (None, None, "UNREADABLE_FILE").
+    """
+    try:
+        raw = path.read_text(encoding="utf-8")
+    except FileNotFoundError:
+        return None, None, None
+    except Exception:
+        return None, None, "UNREADABLE_FILE"
+    try:
+        d = json.loads(raw)
+    except Exception:
+        return None, None, "UNREADABLE_FILE"
+    return d.get("revision", 0), d, None
+
+
+def _content_hash(state: PaperSessionState) -> str:
+    """Hash del contenido económico de la sesión para idempotencia."""
+    payload = json.dumps(
+        {
+            "session_id": state.session_id,
+            "status": state.status,
+            "revision": state.revision,
+            "config": {
+                "symbol": state.config.symbol,
+                "direction": state.config.direction,
+                "decision": state.config.decision,
+                "decision_reason": state.config.decision_reason,
+                "rule_version": state.config.rule_version,
+                "entry_px": state.config.entry_px,
+                "stop_px": state.config.stop_px,
+                "horizon_ms": state.config.horizon_ms,
+            },
+            "position": {
+                "open": state.position.open,
+                "entry_px": state.position.entry_px,
+                "entry_qty": state.position.entry_qty,
+                "entry_ms": state.position.entry_ms,
+            },
+            "result": None if state.result is None else {
+                "exit_executed": state.result.exit_executed,
+                "exit_reason": state.result.exit_reason,
+                "net_pnl": state.result.net_pnl,
+                "realized_net": state.result.realized_net,
+                "open_at_end": state.result.open_at_end,
+            },
+            "events_count": len(state.events),
+        },
+        sort_keys=True, default=str,
+    )
+    return hashlib.sha256(payload.encode("utf-8")).hexdigest()
+
+
+def save_session(
+    state: PaperSessionState,
+    root: str | Path = ".",
+    expected_revision: Optional[int] = None,
+    request_id: Optional[str] = None,
+) -> SessionSaveResult:
+    """Guarda la sesión de forma atomica con control de revisión e idempotencia.
+
+    Operación indivisible (cargar → validar revisión → aplicar → persistir)
+    protegida por file lock por sesión.
+
+    Parámetros:
+      expected_revision: revisión esperada (optimistic locking). Si no
+         coincide con la almacenada → REVISION_CONFLICT.
+      request_id: identidad de petición para idempotencia.
+         - Misma request_id + mismo contenido → mismo resultado, sin repetir
+           efectos (devuelve el estado ya persistido, idempotent_repeat=True).
+         - Misma request_id + contenido distinto → REQUEST_CONTENT_CONFLICT.
+         - Diferente request_id → guarda normalmente.
+
+    Falla explícitamente (ok=False) ante:
+      - Archivo ilegible → UNREADABLE_FILE
+      - Revisión incompatible → REVISION_CONFLICT
+      - Identidad incierta / contenido no coincide con request_id →
+        REQUEST_CONTENT_CONFLICT o IDENTITY_UNCERTAIN
     """
     sessions_dir = _sessions_dir(root)
     sessions_dir.mkdir(parents=True, exist_ok=True)
     path = _session_path(sessions_dir, state.session_id)
+    lock_path = _session_lock_path(sessions_dir, state.session_id)
 
-    # Control de revisión: leer la revisión almacenada si existe.
-    if expected_revision is not None and path.exists():
-        try:
-            stored = json.loads(path.read_text(encoding="utf-8"))
-            stored_rev = stored.get("revision", 0)
+    lock = _FileLock(lock_path)
+    if not lock.acquire(timeout_s=10.0):
+        return SessionSaveResult(
+            ok=False, state=state,
+            error_code="LOCK_TIMEOUT",
+            error_detail=f"No se pudo adquirir el lock de sesión: {state.session_id}",
+        )
+
+    try:
+        # --- Leer estado almacenado (bajo lock) -------------------------
+        stored_rev, stored_payload, read_error = _read_stored_revision(path)
+
+        if read_error is not None:
+            return SessionSaveResult(
+                ok=False, state=state,
+                error_code=read_error,
+                error_detail=f"No se puede leer la sesión almacenada: {path}",
+            )
+
+        # --- Control de revisión ---------------------------------------
+        if expected_revision is not None and stored_rev is not None:
             if stored_rev != expected_revision:
-                raise ValueError(
-                    f"REVISION_CONFLICT: almacenada={stored_rev}, "
-                    f"esperada={expected_revision}")
-        except ValueError:
-            raise
-        except Exception:
-            pass  # si no se puede leer, continuar con escritura atómica
+                return SessionSaveResult(
+                    ok=False, state=state,
+                    error_code="REVISION_CONFLICT",
+                    error_detail=(
+                        f"Revisión incompatible: almacenada={stored_rev}, "
+                        f"esperada={expected_revision}"),
+                )
 
-    tmp = path.with_suffix(".json.tmp")
-    payload = json.dumps(session_to_dict(state), indent=1, default=str)
-    tmp.write_text(payload, encoding="utf-8")
-    os.replace(tmp, path)
+        # --- Idempotencia por identidad de petición --------------------
+        if request_id is not None and stored_payload is not None:
+            stored_req_id = stored_payload.get("_request_id")
+            stored_content_hash = stored_payload.get("_content_hash")
+            if stored_req_id == request_id:
+                if stored_content_hash == _content_hash(state):
+                    # Misma petición, mismo contenido: idempotente.
+                    # No repetir efectos: devolver el estado almacenado.
+                    try:
+                        stored_state = session_from_dict(stored_payload)
+                    except Exception:
+                        stored_state = state
+                    return SessionSaveResult(
+                        ok=True, state=stored_state,
+                        idempotent_repeat=True,
+                    )
+                else:
+                    # Misma clave, contenido distinto: conflicto explícito.
+                    return SessionSaveResult(
+                        ok=False, state=state,
+                        error_code="REQUEST_CONTENT_CONFLICT",
+                        error_detail=(
+                            f"Idempotencia: misma request_id={request_id} "
+                            f"con contenido distinto al ya procesado."),
+                    )
+
+        # --- Escritura atómica (temporal único + os.replace) -----------
+        # Marcar identidad de petición y hash de contenido en el payload.
+        payload_dict = session_to_dict(state)
+        if request_id is not None:
+            payload_dict["_request_id"] = request_id
+            payload_dict["_content_hash"] = _content_hash(state)
+
+        tmp = _unique_tmp_path(path)
+        try:
+            payload_text = json.dumps(payload_dict, indent=1, default=str)
+            tmp.write_text(payload_text, encoding="utf-8")
+            os.replace(tmp, path)
+        except Exception as exc:
+            # Limpiar temporal si queda; no dejar estado parcial.
+            try:
+                tmp.unlink(missing_ok=True)  # type: ignore[attr-defined]
+            except Exception:
+                pass
+            return SessionSaveResult(
+                ok=False, state=state,
+                error_code="WRITE_FAILED",
+                error_detail=f"No se pudo persistir la sesión: {exc}",
+            )
+
+        # Devolver el estado guardado (con revision actualizada del payload).
+        try:
+            saved_state = session_from_dict(payload_dict)
+        except Exception:
+            saved_state = state
+        return SessionSaveResult(ok=True, state=saved_state)
+    finally:
+        lock.release()
 
 
 def load_session(session_id: str,
                  root: str | Path = ".") -> Optional[PaperSessionState]:
-    """Carga una sesión completa por ID. Devuelve None si no existe."""
+    """Carga una sesión completa por ID. Devuelve None si no existe.
+
+    Falla explícitamente (lanza ValueError) si el archivo existe pero es
+    ilegible: nunca se devuelve un estado fabricado a partir de datos
+    corruptos.
+    """
     sessions_dir = _sessions_dir(root)
     path = _session_path(sessions_dir, session_id)
     if not path.exists():
@@ -1487,8 +2126,9 @@ def load_session(session_id: str,
     try:
         d = json.loads(path.read_text(encoding="utf-8"))
         return session_from_dict(d)
-    except Exception:
-        return None
+    except Exception as exc:
+        raise ValueError(
+            f"IDENTITY_UNCERTAIN: sesión {session_id} ilegible: {exc}")
 
 
 def list_sessions(root: str | Path = ".") -> List[Dict[str, Any]]:

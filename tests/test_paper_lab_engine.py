@@ -15,6 +15,7 @@ import json
 import os
 import sys
 import tempfile
+from pathlib import Path
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, os.path.join(ROOT, "src"))
@@ -23,8 +24,11 @@ from microstructure_probe.paper_lab_engine import (  # noqa: E402
     ENGINE_VERSION_PAPER,
     PaperCandle,
     PaperSessionConfig,
+    PaperSessionState,
+    RULE_CAUSAL_V1,
     create_session,
     evaluate_session,
+    evaluate_freshness_at,
     list_sessions,
     load_session,
     manual_exit,
@@ -34,6 +38,7 @@ from microstructure_probe.paper_lab_engine import (  # noqa: E402
     session_from_dict,
     step_forward,
     stop_session,
+    _now_ms,
 )
 
 # --- helpers ----------------------------------------------------------------
@@ -123,7 +128,7 @@ def test_evaluate_sin_entrada_sin_posicion():
     assert r.position.open is False
     assert r.result is None
     assert r.config.decision_reason is not None
-    assert "run_backtest no admitió ninguna operación" in r.config.decision_reason
+    assert "run_backtest no admitió operación" in r.config.decision_reason
 
 
 def test_step_forward_ejecuta_entrada():
@@ -308,7 +313,11 @@ def test_list_sessions_vacio():
 
 
 def test_financiamiento_ausente_es_unknown():
-    """Funding sin calendario real → UNKNOWN (None), no cero por defecto."""
+    """Funding sin calendario real → UNKNOWN (None), no cero por defecto.
+
+    Usa velas donde el stop NO está vulnerado en T (regla causal) para que
+    la entrada se admita y el funding se verifique como desconocido.
+    """
     config = mk_config()
     candles = up_candles(3)
     s = create_session(config, candles)
@@ -316,19 +325,237 @@ def test_financiamiento_ausente_es_unknown():
                          hypothesis_version="1.0", rule_version="RULE-v1")
     # Sin calendario de funding → funding es None (UNKNOWN)
     assert s.costs.funding is None
-    # Después de entrar y salir por stop
+    # Entrar y avanzar hasta fin de datos (open_at_end)
     r = step_forward(s)  # entrada
-    candles_stop = [
+    assert r.status == "abierta", f"esperaba abierta, obtuvo {r.status}"
+    r = step_forward(r)  # gestión vela 0
+    r = step_forward(r)  # gestión vela 1
+    r = step_forward(r)  # fin de datos → open_at_end
+    assert r.status == "cerrada"
+    assert r.result.open_at_end is True
+    assert r.result.exit_executed is False
+    assert r.result.funding is None, f"esperaba None, obtuvo {r.result.funding}"
+
+
+def test_evaluate_invariance_diferentes_futuros():
+    """1A: Mismo prefijo conocido y futuros diferentes → misma decisión.
+
+    Dos fixtures con el mismo prefijo hasta T pero velas futuras distintas
+    deben producir la misma decisión, evidencias y estado hasta T.
+    """
+    # Prefijo: 2 velas conocidas en T=1800000 (close de vela 1 conocido)
+    prefix = [
         mk_candle(0, 100, 102, 99, 101),
-        mk_candle(900000, 101, 101, 94, 100),
+        mk_candle(900000, 101, 103, 100, 102),
     ]
-    s2 = create_session(mk_config(stop_px=95.0), candles_stop)
-    s2 = evaluate_session(s2, hypothesis_id="ENG-FIXTURE-v1",
-                          hypothesis_version="1.0", rule_version="RULE-v1")
-    r2 = step_forward(s2)  # entrada
-    r2 = step_forward(r2)  # gestión
-    r2 = step_forward(r2)  # stop
-    assert r2.result.funding is None, f"esperaba None, obtuvo {r2.result.funding}"
+    # Futuro A: velas que suben
+    futuro_a = prefix + [
+        mk_candle(1800000, 102, 104, 101, 103),
+        mk_candle(2700000, 103, 105, 102, 104),
+    ]
+    # Futuro B: velas que caen (diferentes del futuro A)
+    futuro_b = prefix + [
+        mk_candle(1800000, 102, 102, 98, 99),
+        mk_candle(2700000, 99, 99, 95, 96),
+    ]
+
+    config = mk_config(entry_px=100.0, stop_px=95.0)
+
+    # Evaluar en T=1799999 (close de vela 1 conocido, vela 2 aún no abierta)
+    s_a = create_session(config, futuro_a)
+    r_a = evaluate_session(s_a, at_ms=1799999,
+                           hypothesis_id="H1", hypothesis_version="1.0",
+                           rule_version=RULE_CAUSAL_V1)
+    s_b = create_session(config, futuro_b)
+    r_b = evaluate_session(s_b, at_ms=1799999,
+                           hypothesis_id="H1", hypothesis_version="1.0",
+                           rule_version=RULE_CAUSAL_V1)
+
+    # Misma decisión
+    assert r_a.config.decision == r_b.config.decision
+    assert r_a.status == r_b.status
+    # Misma evidencia hasta T (mismo n_prefix_candles, mismos datos de prefix)
+    ea = r_a.config.decision_evidence
+    eb = r_b.config.decision_evidence
+    assert ea["n_prefix_candles"] == eb["n_prefix_candles"]
+    assert ea["n_fully_known_candles"] == eb["n_fully_known_candles"]
+    assert ea["at_ms"] == eb["at_ms"] == 1799999
+    # Los futuros no aparecen en la evidencia
+    assert len(ea["candles"]) == 2  # solo el prefijo
+    assert len(eb["candles"]) == 2
+    # El estado hasta T es idéntico
+    assert r_a.clock_ms == r_b.clock_ms == 1799999
+    assert r_a.cursor == r_b.cursor == 0
+
+
+def test_evaluate_causal_no_futuros_en_respuesta():
+    """1D: Datos futuros no aparecen en la decisión ni en la evidencia."""
+    config = mk_config(entry_px=100.0, stop_px=95.0)
+    # 3 velas: las 2 primeras conocidas en T, la 3ª es futuro
+    todas = [
+        mk_candle(0, 100, 102, 99, 101),
+        mk_candle(900000, 101, 103, 100, 102),
+        mk_candle(1800000, 102, 104, 101, 103),  # futuro respecto de T
+    ]
+    s = create_session(config, todas)
+    r = evaluate_session(s, at_ms=1799999,
+                         hypothesis_id="H1", hypothesis_version="1.0",
+                         rule_version=RULE_CAUSAL_V1)
+
+    # Solo las 2 velas del prefijo en la evidencia
+    ev = r.config.decision_evidence
+    assert ev["n_prefix_candles"] == 2
+    assert ev["at_ms"] == 1799999
+    assert len(ev["candles"]) == 2
+    assert ev["candles"][1]["open_time_ms"] == 900000
+    # La vela futura (open_time_ms=1800000) no está en el prefijo evaluado
+    futures_in_evidence = [c for c in ev["candles"]
+                           if c["open_time_ms"] >= 1800000]
+    assert len(futures_in_evidence) == 0
+
+
+def test_freshness_stale_data_respecto_a_T():
+    """3: Dato verdaderamente obsoleto respecto de T, no solo fecha histórica."""
+    config = mk_config()
+    # Vela recibida hace mucho tiempo antes de T -> obsoleta
+    old_received = 1000000000000  # año 2001 en ms
+    T = 1800000000000  # año ~2027
+    candles = [
+        PaperCandle(open_time_ms=0, open=100, high=102, low=99, close=101,
+                    close_time_ms=899999, available_at=0, received_at=old_received),
+    ]
+    s = create_session(config, candles)
+    # Marcar received_at antiguo
+    s.candles[0].received_at = old_received
+
+    freshness = evaluate_freshness_at(s.candles, T)
+    assert freshness["reason"] == "DATA_STALE"
+    assert freshness["fresh"] is False
+    assert len(freshness["stale_candles"]) == 1
+    assert freshness["stale_candles"][0]["open_time_ms"] == 0
+    assert freshness["stale_candles"][0]["age_ms"] > 0
+
+
+def test_freshness_disconnect_por_silencio():
+    """3: Interrupción del feed — silencio prolongado sin recibir nuevas velas."""
+    config = mk_config()
+    T = 1800000000000
+    # Último recibido hace 20 min: no es stale (< 5h) pero sí disconnect (> 10 min)
+    received_at = T - 20 * 60 * 1000
+    candles = [
+        PaperCandle(open_time_ms=0, open=100, high=102, low=99, close=101,
+                    close_time_ms=899999, available_at=0, received_at=received_at),
+    ]
+    s = create_session(config, candles)
+    s.candles[0].received_at = received_at
+
+    freshness = evaluate_freshness_at(s.candles, T)
+    assert freshness["disconnect"] is True
+    assert freshness["reason"] == "FEED_INTERRUPTED"
+    assert freshness["fresh"] is False
+
+
+def test_freshness_end_of_data_separado_de_stale():
+    """3: Fin de datos es distinto de dato obsoleto y desconexión."""
+    config = mk_config()
+    T = 1800000
+    # Datos frescos pero sin más velas después de T -> fin de datos
+    candles = [
+        PaperCandle(open_time_ms=0, open=100, high=102, low=99, close=101,
+                    close_time_ms=899999, available_at=0, received_at=T - 1000),
+        PaperCandle(open_time_ms=900000, open=101, high=103, low=100, close=102,
+                    close_time_ms=1799999, available_at=900000,
+                    received_at=T - 1000),
+    ]
+    s = create_session(config, candles)
+    freshness = evaluate_freshness_at(s.candles, T)
+    assert freshness["end_of_data"] is True
+    assert freshness["disconnect"] is False
+    assert freshness["stale_candles"] == []
+    assert freshness["reason"] == "END_OF_DATA"
+
+
+def test_save_idempotencia_misma_peticion():
+    """2E: Misma petición repetida → mismo resultado, sin repetir efectos."""
+    with tempfile.TemporaryDirectory() as tmpdir:
+        config = mk_config()
+        candles = up_candles(3)
+        s = create_session(config, candles)
+        request_id = "req-idempotent-001"
+
+        # Primera guarda
+        res1 = save_session(s, tmpdir, request_id=request_id)
+        assert res1.ok is True
+        assert res1.idempotent_repeat is False
+        rev1 = res1.state.revision
+
+        # Segunda guarda con misma request_id y mismo contenido
+        res2 = save_session(res1.state, tmpdir, expected_revision=rev1,
+                            request_id=request_id)
+        assert res2.ok is True
+        assert res2.idempotent_repeat is True  # repetición detectada
+        # La revisión no debe incrementar (sin repetir efectos)
+        assert res2.state.revision == rev1
+
+
+def test_save_conflicto_misma_clave_contenido_distinto():
+    """2E: Misma clave con otro contenido → conflicto explícito."""
+    with tempfile.TemporaryDirectory() as tmpdir:
+        config = mk_config()
+        candles = up_candles(3)
+        s = create_session(config, candles)
+        request_id = "req-conflict-001"
+
+        res1 = save_session(s, tmpdir, request_id=request_id)
+        assert res1.ok is True
+
+        # Modificar el estado (otro contenido) con la misma request_id
+        s2 = PaperSessionState(
+            session_id=s.session_id, created_at_ms=s.created_at_ms,
+            updated_at_ms=_now_ms(), status="cerrada", config=s.config,
+            candles=s.candles, context_candles=s.context_candles,
+            cursor=s.cursor, position=s.position, costs=s.costs,
+            events=s.events, result=s.result, clock_ms=s.clock_ms,
+            config_hash=s.config_hash, input_hash=s.input_hash,
+            engine_version=s.engine_version, limitations=s.limitations,
+            revision=s.revision + 1, authoritative=s.authoritative,
+        )
+        res2 = save_session(s2, tmpdir, expected_revision=s.revision,
+                            request_id=request_id)
+        assert res2.ok is False
+        assert res2.error_code == "REQUEST_CONTENT_CONFLICT"
+
+
+def test_save_conflicto_revision_incompatible():
+    """2E: Revisión incompatible → conflicto explícito."""
+    with tempfile.TemporaryDirectory() as tmpdir:
+        config = mk_config()
+        candles = up_candles(3)
+        s = create_session(config, candles)
+
+        res1 = save_session(s, tmpdir)
+        assert res1.ok is True
+
+        # Intento de guardar con revisión obsoleta
+        res2 = save_session(s, tmpdir, expected_revision=999)
+        assert res2.ok is False
+        assert res2.error_code == "REVISION_CONFLICT"
+
+
+def test_save_archivo_ilegible_falla_explicitamente():
+    """2: Archivo ilegible → falla explícita, no continuar como válido."""
+    with tempfile.TemporaryDirectory() as tmpdir:
+        sessions_dir = Path(tmpdir) / "paper-lab-sessions"
+        sessions_dir.mkdir(parents=True, exist_ok=True)
+        # Escribir basura en el archivo de la sesión
+        bad_path = sessions_dir / "PL-BAD-SESSION.json"
+        bad_path.write_text("{esto no es json valido", encoding="utf-8")
+
+        try:
+            load_session("PL-BAD-SESSION", tmpdir)
+            assert False, "debería haber lanzado ValueError"
+        except ValueError as exc:
+            assert "IDENTITY_UNCERTAIN" in str(exc) or "ilegible" in str(exc)
 
 
 if __name__ == "__main__":
@@ -346,4 +573,13 @@ if __name__ == "__main__":
     test_session_id_traversal_rechazado()
     test_list_sessions_vacio()
     test_financiamiento_ausente_es_unknown()
+    test_evaluate_invariance_diferentes_futuros()
+    test_evaluate_causal_no_futuros_en_respuesta()
+    test_freshness_stale_data_respecto_a_T()
+    test_freshness_disconnect_por_silencio()
+    test_freshness_end_of_data_separado_de_stale()
+    test_save_idempotencia_misma_peticion()
+    test_save_conflicto_misma_clave_contenido_distinto()
+    test_save_conflicto_revision_incompatible()
+    test_save_archivo_ilegible_falla_explicitamente()
     print("Todas las pruebas del motor de ingeniería pasaron.")

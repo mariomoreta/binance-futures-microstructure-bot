@@ -57,6 +57,7 @@ from microstructure_probe.paper_lab_engine import (  # noqa: E402
     session_to_dict,
     step_forward,
     stop_session,
+    SessionSaveResult,
 )
 
 SESSIONS_DEFAULT = ROOT / "paper-lab-sessions"
@@ -123,6 +124,10 @@ def main(argv=None) -> int:
                     help="version de hipotesis (create/evaluate)")
     ap.add_argument("--rule-version", default=None,
                     help="version de regla experimental (evaluate)")
+    ap.add_argument("--at-ms", default=None, type=int,
+                    help="reloj de simulacion T en ms para evaluacion causal (evaluate)")
+    ap.add_argument("--request-id", default=None,
+                    help="identidad de peticion para idempotencia (guardar/step/exit/restart/stop)")
     ap.add_argument("--sessions-dir", default=None,
                     help="directorio de sesiones (default: ./paper-lab-sessions)")
     args = ap.parse_args(argv)
@@ -159,7 +164,14 @@ def main(argv=None) -> int:
                 hypothesis_version=args.hypothesis_version,
                 rule_version=args.rule_version,
             )
-            save_session(state, str(sessions_dir))
+            res = save_session(state, str(sessions_dir),
+                               request_id=args.request_id)
+            if not res.ok:
+                print(json.dumps(_fail(res.error_code or "SAVE_FAILED",
+                                       res.error_detail or "fallo al guardar")),
+                      file=sys.stderr)
+                return 3
+            state = res.state
             print(json.dumps(_ok({
                 "session": session_to_dict(state),
             }), indent=1))
@@ -183,11 +195,23 @@ def main(argv=None) -> int:
                 hypothesis_id=args.hypothesis_id,
                 hypothesis_version=args.hypothesis_version,
                 rule_version=args.rule_version,
+                at_ms=args.at_ms,
             )
-            save_session(state, str(sessions_dir),
-                         expected_revision=rev_before)
+            res = save_session(state, str(sessions_dir),
+                               expected_revision=rev_before,
+                               request_id=args.request_id)
+            if not res.ok:
+                print(json.dumps(_fail(res.error_code or "SAVE_FAILED",
+                                       res.error_detail or "fallo al guardar")),
+                      file=sys.stderr)
+                return 3
+            state = res.state
+            if res.idempotent_repeat:
+                # Repetición idempotente: no se repiten efectos.
+                pass
             print(json.dumps(_ok({
                 "session": session_to_dict(state),
+                "idempotent_repeat": res.idempotent_repeat,
             }), indent=1))
             return 0
 
@@ -208,6 +232,18 @@ def main(argv=None) -> int:
                               indent=1))
             return 0
 
+        def _save_with_revision(state: PaperSessionState,
+                                expected_rev: int) -> PaperSessionState:
+            res = save_session(state, str(sessions_dir),
+                               expected_revision=expected_rev,
+                               request_id=args.request_id)
+            if not res.ok:
+                print(json.dumps(_fail(res.error_code or "SAVE_FAILED",
+                                       res.error_detail or "fallo al guardar")),
+                      file=sys.stderr)
+                raise SystemExit(3)
+            return res.state
+
         if args.action == "step":
             state = load_session(args.session_id, str(sessions_dir))
             if state is None:
@@ -217,8 +253,7 @@ def main(argv=None) -> int:
                 return 4
             expected_rev = state.revision
             state = step_forward(state)
-            save_session(state, str(sessions_dir),
-                         expected_revision=expected_rev)
+            state = _save_with_revision(state, expected_rev)
             print(json.dumps(_ok({
                 "session": session_to_dict(state),
             }), indent=1))
@@ -233,8 +268,7 @@ def main(argv=None) -> int:
                 return 4
             expected_rev = state.revision
             state = manual_exit(state)
-            save_session(state, str(sessions_dir),
-                         expected_revision=expected_rev)
+            state = _save_with_revision(state, expected_rev)
             print(json.dumps(_ok({
                 "session": session_to_dict(state),
             }), indent=1))
@@ -249,8 +283,7 @@ def main(argv=None) -> int:
                 return 4
             expected_rev = state.revision
             state = restart_session(state)
-            save_session(state, str(sessions_dir),
-                         expected_revision=expected_rev)
+            state = _save_with_revision(state, expected_rev)
             print(json.dumps(_ok({
                 "session": session_to_dict(state),
             }), indent=1))
@@ -265,8 +298,7 @@ def main(argv=None) -> int:
                 return 4
             expected_rev = state.revision
             state = stop_session(state)
-            save_session(state, str(sessions_dir),
-                         expected_revision=expected_rev)
+            state = _save_with_revision(state, expected_rev)
             print(json.dumps(_ok({
                 "session": session_to_dict(state),
             }), indent=1))

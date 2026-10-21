@@ -44,6 +44,8 @@ export async function POST(
   const hypothesisId = (body as {hypothesis_id?: unknown})?.hypothesis_id;
   const hypothesisVersion = (body as {hypothesis_version?: unknown})?.hypothesis_version;
   const ruleVersion = (body as {rule_version?: unknown})?.rule_version;
+  const atMs = (body as {at_ms?: unknown})?.at_ms;
+  const requestId = (body as {request_id?: unknown})?.request_id;
 
   const extra: string[] = ["--session-id", sessionId];
   if (hypothesisId != null) extra.push("--hypothesis-id", String(hypothesisId));
@@ -51,6 +53,8 @@ export async function POST(
     extra.push("--hypothesis-version", String(hypothesisVersion));
   }
   if (ruleVersion != null) extra.push("--rule-version", String(ruleVersion));
+  if (atMs != null) extra.push("--at-ms", String(atMs));
+  if (requestId != null) extra.push("--request-id", String(requestId));
 
   const r = spawnSync(
     PY, [SCRIPT, "--action", "evaluate", ...extra],

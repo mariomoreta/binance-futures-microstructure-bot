@@ -2296,3 +2296,67 @@ probados sin tocar motor, estrategia, mapping, costes ni umbrales.
   las capturas y los criterios de aceptacion moviles quedan aplazados; esta
   entrega no anade trabajo movil ni lo declara gate. No se declaran
   rentabilidad ni edge: los umbrales siguen siendo HIPOTESIS.
+
+## Cierre funcional Paper Lab: causalidad, concurrency y pruebas reales (2026-10-20, sobre dca00ea)
+
+Cierre de contratos pendientes de la entrega funcional de Paper Lab, con
+cambios minimos y pruebas que corresponden exactamente a lo declarado. Sin
+nuevas pantallas ni otra arquitectura.
+
+- **Evaluacion causal (Item 1):** `evaluate_session` separada en tres fases:
+  senal (RULE-CAUSAL-V1, solo informacion disponible en/before T), admision
+  por riesgo (parametros estaticos, sin mercado) y simulacion economica
+  (run_backtest sobre el prefijo conocido en T). Nunca usa velas futuras,
+  existencia de trade, salida, P&L ni comisiones como confirmacion. La
+  reserva de datos futuros de la fixture no es accesible al evaluador ni
+  se revela en la respuesta. Parametros no optimizados; no se declara ventaja.
+  Pruebas: invariancia ante futuros diferentes (mismo prefijo, futuros
+  distintos -> misma decision), no confirmacion en T -> abstencion,
+  orden causal formacion/disponibilidad/decision/fill, futuros no anticipan
+  salida/costes/marcadores.
+
+- **Actualizacion atomica por sesion (Item 2):** `save_session` protege
+  cargar->validar revision->aplicar->persistir como operacion indivisible
+  con lock de archivo entre procesos (msvcrt.locking Windows /
+  fcntl.flock POSIX), temporales unicos por (sesion, PID, token aleatorio),
+  y fallo explicito ante archivo ilegible, revision incompatible o identidad
+  incierta. Idempotencia por identidad de peticion (request_id): misma
+  peticion repetida -> mismo resultado sin repetir efectos; misma clave con
+  contenido distinto -> REQUEST_CONTENT_CONFLICT. Duplicado separado de dos
+  acciones distintas legítimas. Pruebas entre procesos: dos escrituras
+  desde la misma revision (una aplica, la otra conflicto), dos copias de la
+  misma peticion (un solo efecto), todos los participantes entregan resultado
+  valido, sin perder eventos ni duplicar entrada/cierre, recuperacion
+  completa e integra tras recarga.
+
+- **Frescura y desconexion reales (Item 3):** Reloj de simulacion (at_ms),
+  available_at/received_at por vela, politica de frescura (stale si la edad
+  respecto de T supera STALE_MAX_AGE_MS, desconexion si silencio mayor a
+  DISCONNECT_MAX_SILENCE_MS, fin de datos sin velas despues de T). Prueba
+  de dato verdaderamente obsoleto respecto de T (no solo fechas
+  historicas), interrupcion/reanudacion del feed via eventos de fixture,
+  conducta para nuevas entradas y posiciones abiertas. Motivo y evidencia
+  registrados; no se fabrica cierre. Fin de datos, stale y desconexion
+  son escenarios distintos y conservados separados.
+
+- **Matriz A-E sin aserciones permisivas (Item 4):**
+  A: Crear -> evaluar -> entrar automaticamente -> cierre EJECUTADO por
+     regla (exit_executed=true, motivo esperado) -> recuperar -> exportar
+     CSV/JSON reales y volver a leerlos. Reconciliacion economica
+     (bruto - costes = neto, realized_net=null si open_at_end).
+  B: Evidencia insuficiente -> SIN_ENTRADA, sin posicion, motivo.
+  C: Dato obsoleto/desconexion -> politica y evidencia comprobadas.
+  D: Fin de datos sin salida -> posicion abierta, realized_net=null,
+     sin marcador ni comision ejecutada de cierre.
+  E: Duplicacion y concurrencia real entre procesos ->
+     idempotencia/conflicto correctos, sin perdida de eventos.
+  Exportacion: sesion, decision, operacion, eventos y version relacionados;
+  cantidades, bruto, costes, funding y neto reconciliados; UNKNOWN donde
+  falten datos.
+
+- **Verificacion:** 28 pruebas Python del motor + 5 de integracion A-E (33
+  total) + 16 pruebas backtest-offline = 44 OK. Frontend vitest 9/9 +
+  tsc --noEmit limpio. Sin Binance, monitor, paper prospectivo, ordenes,
+  pagos, movil ni optimizacion.
+
+SHA inicial: dca00ea. SHA final: <pendiente de commit>.
