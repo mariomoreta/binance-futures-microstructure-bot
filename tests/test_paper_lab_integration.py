@@ -192,16 +192,25 @@ def test_A_flujo_completo_ejecutado_export_real():
         sid = session["session_id"]
         assert session["position"]["open"] is False
 
-        # 2. Evaluar evidencia → ENTRADA_SIMULADA
+        # 2. Evaluar evidencia en T = close de la primera vela conocida
+        #    (899999): su OHLC es conocido, el open de la vela futura (900000)
+        #    sigue desconocido -> senal confirmada, entrada PENDIENTE.
         r = run_cli(["--action", "evaluate", "--session-id", sid,
-                     "--rule-version", "ENG-RULE-A"], sd)
+                     "--rule-version", "ENG-RULE-A",
+                     "--at-ms", str(STOP_CANDLES[0]["close_time_ms"])], sd)
         assert r["ok"], r
         session = r["data"]["session"]
         assert session["status"] == "en_espera", session["status"]
         assert session["config"]["decision"] == "ENTRADA_SIMULADA"
         assert session["config"]["rule_version"] == "ENG-RULE-A"
         assert session["config"]["decision_evidence"] is not None
+        ev = session["config"]["decision_evidence"]
+        assert ev["at_ms"] == STOP_CANDLES[0]["close_time_ms"]
+        assert ev["decision_at_ms"] == STOP_CANDLES[0]["close_time_ms"]
+        assert ev["available_at_ms"] is not None
+        # Sin fill en T: sin precio de entrada, cantidad ni costes ejecutados.
         assert session["position"]["open"] is False
+        assert session["result"] is None
         rev_eval = session["revision"]
 
         # 3. Entrar automáticamente (primer step)
@@ -293,9 +302,13 @@ def test_A_flujo_completo_ejecutado_export_real():
 
 
 def test_B_sin_entrada_sin_posicion():
-    """B: Evidencia insuficiente → SIN_ENTRADA, sin posición, con motivo."""
+    """B: Evidencia insuficiente → SIN_ENTRADA, sin posición, con motivo.
+
+    En T donde el close de la única vela conocida aún no está disponible,
+    la evaluación se abstiene (SIN_ENTRADA) sin abrir posición.
+    """
     with tempfile.TemporaryDirectory() as sd:
-        config = mk_config(horizon_ms=0)
+        config = mk_config()
         r = run_cli(["--action", "create", "--config-json",
                      json.dumps(config),
                      "--candles-json", json.dumps(UP_CANDLES)], sd)
@@ -303,18 +316,20 @@ def test_B_sin_entrada_sin_posicion():
         session = r["data"]["session"]
         sid = session["session_id"]
 
-        # Evaluar → SIN_ENTRADA (horizon_ms=0 impide cualquier fill)
+        # T entre el open y el close de la vela 0: open conocido, close NO.
+        # Evidencia insuficiente -> SIN_ENTRADA, sin posición.
+        t_insuficiente = UP_CANDLES[0]["close_time_ms"] - 1  # 899998
         r = run_cli(["--action", "evaluate", "--session-id", sid,
-                     "--rule-version", "ENG-RULE-B"], sd)
+                     "--rule-version", "ENG-RULE-B",
+                     "--at-ms", str(t_insuficiente)], sd)
         assert r["ok"], r
         session = r["data"]["session"]
-        assert session["status"] == "cerrada"
+        assert session["status"] == "sin_iniciar", session["status"]
         assert session["config"]["decision"] == "SIN_ENTRADA"
         assert session["position"]["open"] is False
         assert session["result"] is None
         assert session["config"]["decision_reason"] is not None
-        assert "run_backtest no admitió operación" in \
-            session["config"]["decision_reason"]
+        assert "close" in session["config"]["decision_reason"].lower()
 
         # Recuperar y verificar que no hay posición ni resultado
         r = run_cli(["--action", "get", "--session-id", sid], sd)
@@ -370,9 +385,14 @@ def test_D_fin_datos_posicion_abierta_no_realizada():
         sid = session["session_id"]
 
         r = run_cli(["--action", "evaluate", "--session-id", sid,
-                     "--rule-version", "ENG-RULE-D"], sd)
+                     "--rule-version", "ENG-RULE-D",
+                     "--at-ms", str(UP_CANDLES[0]["close_time_ms"])], sd)
         session = r["data"]["session"]
         assert session["config"]["decision"] == "ENTRADA_SIMULADA"
+        # Señal confirmada pero entrada pendiente (open futuro desconocido en T).
+        assert session["status"] == "en_espera"
+        assert session["position"]["open"] is False
+        assert session["result"] is None
 
         # Avanzar hasta agotar datos
         for _ in range(6):
@@ -428,13 +448,16 @@ def test_E_concurrencia_y_idempotencia_entre_procesos():
         session = r["data"]["session"]
         sid = session["session_id"]
 
-        # Evaluar (revisión conocida)
+        # Evaluar en T = close de la primera vela (899999): senal confirmada,
+        # entrada pendiente (el open de 900000 sigue desconocido en T).
         r = run_cli(["--action", "evaluate", "--session-id", sid,
-                     "--rule-version", "ENG-RULE-E"], sd)
+                     "--rule-version", "ENG-RULE-E",
+                     "--at-ms", str(UP_CANDLES[0]["close_time_ms"])], sd)
         assert r["ok"], r
         session = r["data"]["session"]
         rev_after_eval = session["revision"]
         assert session["status"] == "en_espera"
+        assert session["config"]["decision"] == "ENTRADA_SIMULADA"
 
         # --- E.1: Dos escrituras desde la misma revisión: solo una aplica ---
         # Lanzar dos steps concurrentes (subprocesos independientes) con la

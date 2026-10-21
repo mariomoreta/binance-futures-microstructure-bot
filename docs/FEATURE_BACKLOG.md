@@ -1,10 +1,30 @@
+## F-PAPER-02 — Causa del fill, controles reales y stop único en Paper Lab (2026-10-21)
+
+**1. Title:** Corrección de los tres bloqueos revisados de Paper Lab sobre `2a17088`: información futura en el fill, controles `canStep`/`onDecide` desconectados y salida por stop como economía paralela sin política de hueco.
+**2. Approval status:** DECIDED dentro del alcance autorizado (desktop-only, fixtures, sin Binance/monitor/paper prospectivo/órdenes/pagos/optimización, sin cambios de estrategia, umbrales, costes ni motor económico).
+**3. Implementation status:** IMPLEMENTED en `src/microstructure_probe/paper_lab_engine.py`, `frontend/src/lib/paper-lab-live.ts`, `frontend/src/components/paper-lab-live/PaperLabLive.tsx`, con pruebas en `tests/test_paper_lab_engine.py`, `tests/test_paper_lab_integration.py`, `frontend/src/test/paper-lab-live-api.test.ts`.
+**4. Evaluation status:** VERIFICADO por pruebas focalizadas — motor 26/26, integración A–E 5/5 (CLI real con almacenamiento temporal aislado), API frontend 9/9, `tsc --noEmit` exit 0. Regresión obligatoria: `T=899999` con aperturas futuras 110 vs 50 produce estado público idéntico hasta T (excluyendo `session_id`/`created`/`updated`/`revision`/`input_hash`) y rellena después al precio revelado. NO evaluado: navegador real sobre los controles, suite completa re-ejecutada, rentabilidad.
+**5. Limitaciones:** pasada de navegador de `/paper-lab-live` pendiente (no ejecutada, no se declara); dos errores `react-hooks` por `useMemo` condicional (~324/330) preexistentes y no corregidos; la suite completa no se re-ejecutó por el alcance acotado; el MVP sigue sin motor paper completo (position manager, ledger, funding recurrente, risk engine); funding ausente permanece `UNKNOWN`.
+**6. Evidence:** `docs/CURRENT_STATE.md` §"Correcciones Paper Lab: fill causal, controles reales y stop compartido"; `docs/DECISIONS.md` §2026-10-21 causalidad/controles/stop; `tests/test_paper_lab_engine.py` (regresión de futuro en T, gap LONG/SHORT, salida manual de 4 velas); `tests/test_paper_lab_integration.py` (`--at-ms`, escenarios A–E); `frontend/src/test/paper-lab-live-api.test.ts`.
+**7. Last update:** 2026-10-21.
+
+### Cierre (siete campos, obligatorios)
+
+- `DECISIONS_REVIEWED` — AGENTS, WORKFLOW, CURRENT_STATE, TASK_QUEUE, DECISIONS (entrada F-CHART-BINANCE-01 que exige cerrar estos tres bloqueos antes del gráfico), FEATURE_BACKLOG (F-CHART-BINANCE-01, F-PAPER-01) y `docs/backtest_offline` como mecánica canónica.
+- `NEW_DECISIONS_RECORDED` — DECISIONS §"2026-10-21 — Causalidad del fill, controles reales y mecánica de stop única en Paper Lab" (append-only): prefijo causal, entrada pendiente sin fill, `can_step` del backend, `_finalize_exit` compartido y política gap.
+- `FEATURES_IMPLEMENTED` — F-PAPER-02 (fill causal, entrada pendiente con reloj monótono, `can_step` publicado, `onDecide` conectado, stop/gap con mecánica económica única).
+- `FEATURES_VERIFIED` — F-PAPER-02 en pruebas focalizadas (26 motor, 5 integración, 9 API frontend, `tsc` limpio) y regresión de futuro en T.
+- `DEFERRED_FEATURES` — verificación en navegador real de los controles; motor paper completo (F-PAPER-01); contrato/gráfico Lightweight Charts (F-CHART-BINANCE-01); selector, riesgo/caja/funding recurrente y evaluación prospectiva.
+- `BACKLOG_UPDATED` — yes: este bloque + `CURRENT_STATE`, `TASK_QUEUE` y `DECISIONS`.
+- `DOCUMENTATION_CONFLICTS` — el cierre de `2a17088` declaraba el recorrido HTTP completo sin acreditar los tres bloqueos; aquí se registra la corrección real y se conserva que la validación por navegador **no** se ejecutó, para no convertir pruebas de componente en aceptación visual.
+
 ## F-CHART-BINANCE-01 — Búsqueda, gráfico vivo e indicadores compartidos (2026-10-21)
 
 - Approval status: objetivo y documentación ACORDADOS por el usuario; esta entrega no autoriza corrida Binance.
 - Implementation status: NOT IMPLEMENTED para este contrato gráfico; existen probe, lectores, Backtest/replay y MVP de fixtures que se deben reutilizar.
 - Evaluation status: NOT EVALUATED como recorrido gráfico/paper vivo; no rentabilidad demostrada.
 - Contrato y aceptación: [Acuerdos de gráfico Binance V1](ACUERDOS_GRAFICO_BINANCE_V1.md).
-- Dependencias: tres bloqueos revisados de Paper Lab 2a17088; contrato causal, catálogo/cobertura, suscripciones por consumidor, retención y recuperación. Selector/riesgo/caja/funding tienen pendientes separados.
+- Dependencias: tres bloqueos revisados de Paper Lab 2a17088 *(cerrados 2026-10-21 con F-PAPER-02, verificado por pruebas focalizadas; validación de navegador pendiente)*; contrato causal, catálogo/cobertura, suscripciones por consumidor, retención y recuperación. Selector/riesgo/caja/funding tienen pendientes separados.
 - Primera versión: escritorio, velas/volumen/zoom/histórico y eventos backend. Arrastre de stops, móvil y REA productivo fuera de esta versión.
 
 ### Cierre documental (siete campos)

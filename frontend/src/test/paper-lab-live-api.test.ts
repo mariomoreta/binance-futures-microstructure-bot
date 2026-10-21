@@ -61,8 +61,11 @@ function mkState(overrides: Partial<PaperSessionState> = {}): PaperSessionState 
 }
 
 describe("sessionView (vista derivada para UI)", () => {
-  it("estado sin_iniciar: puede decidir, no puede entrar", () => {
-    const s = mkState({status: "sin_iniciar"});
+  it("estado sin_iniciar sin decision: puede decidir, no puede entrar ni avanzar", () => {
+    const s = mkState({
+      status: "sin_iniciar",
+      config: { ...mkState().config, decision: null },
+    });
     const v = sessionView(s);
     expect(v.status).toBe("sin_iniciar");
     expect(v.canDecide).toBe(true);
@@ -72,11 +75,12 @@ describe("sessionView (vista derivada para UI)", () => {
     expect(v.progress).toBe(0);
   });
 
-  it("estado en_espera con decision: puede entrar", () => {
+  it("estado en_espera con decision: puede entrar y avanzar para revelar el precio", () => {
     const s = mkState({status: "en_espera"});
     const v = sessionView(s);
     expect(v.canEnter).toBe(true);
-    expect(v.canStep).toBe(false);
+    // Puede avanzar (revelar la vela donde se ejecuta el fill) mientras espera entrada.
+    expect(v.canStep).toBe(true);
     expect(v.canExit).toBe(false);
   });
 

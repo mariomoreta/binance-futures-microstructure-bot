@@ -1,8 +1,20 @@
+## Paper Lab — tres bloqueos de `2a17088` cerrados (2026-10-21)
+
+`CURRENT_PHASE`: dashboard V2 de escritorio + Paper Lab sobre fixtures (observación; sin Binance, sin órdenes).
+`CURRENT_OBJECTIVE`: cerrar los tres bloqueos revisados de `2a17088` —fill resuelto con velas futuras, controles de vigilancia/reevaluación desconectados (`canStep`/`onDecide`) y salida stop como economía paralela sin política de hueco— y dejar el recorrido causal completo desde los controles.
+`ACTIVE_TASK`: entrega de la corrección: documentación, commit selectivo, push y re-servicio del dashboard con `BUILD_ID` verificado.
+`NEXT_TASKS`:
+1. Reanudar el punto 2 de "Prioridad del recorrido gráfico/paper": inventariar velas/indicadores existentes y fijar contrato de datos/tiempos/IDs.
+2. Gráfico Lightweight Charts con fixtures, velas, volumen, zoom, histórico y marcas backend (instalación y QA de escritorio en ese bloque; **no** en esta entrega).
+3. Pasada real de navegador sobre los controles de `/paper-lab-live` (crear → evaluar → avanzar → reevaluar → entrada pendiente → revelar precio → gestión → cierre), hoy pendiente y declarada como no ejecutada.
+
+Estado de la corrección (detalle en `docs/CURRENT_STATE.md` y `docs/DECISIONS.md`, 2026-10-21): el diseño causal solo pasa el prefijo conocido en T a `run_backtest`, una señal sin precio ejecutable queda como entrada pendiente sin fill/cantidad/coste, el backend publica `can_step`, `onDecide` va al backend con `request_id` + `expected_revision`, y stop/gap/`_finalize_exit_from_bt`/`manual_exit` comparten `_finalize_exit`. Pruebas focalizadas: motor 26/26, integración A–E 5/5, API frontend 9/9, `tsc --noEmit` limpio. Sin suite completa ni rebuild en esta tarea hasta el commit. Sigue sin ser rentabilidad ni paper Binance vivo.
+
 ## Prioridad del recorrido gráfico/paper — 2026-10-21
 
 Contrato de objetivo: [Acuerdos de gráfico Binance V1](ACUERDOS_GRAFICO_BINANCE_V1.md) (F-CHART-BINANCE-01). Plan documentado; no declarar código implementado.
 Orden para este recorrido, sin reabrir ni duplicar colectores/Backtest:
-1. Cerrar los tres bloqueos revisados de Paper Lab en 2a17088: futuro en fills, controles de vigilancia/reevaluación y stop/gap compartido. Evidencia integrada con mismo prefijo/futuros distintos, controles reales y salida reconciliada.
+1. Cerrar los tres bloqueos revisados de Paper Lab en 2a17088: futuro en fills, controles de vigilancia/reevaluación y stop/gap compartido. Evidencia integrada con mismo prefijo/futuros distintos, controles reales y salida reconciliada. *(CERRADO 2026-10-21: ver sección superior; la verificación de navegador queda pendiente.)*
 2. Inventariar velas/indicadores existentes y fijar contrato de datos/tiempos/IDs.
 3. Gráfico Lightweight Charts compartido con fixtures, velas, volumen, zoom, histórico y marcas backend; QA escritorio.
 4. Búsqueda del catálogo Binance Futures y adaptación del feed existente, histórico paginado/caché acotada, reconexión y suscripciones por consumidor. Abrir pestaña no inicia monitor ni orden.

@@ -15,6 +15,7 @@ import json
 import os
 import sys
 import tempfile
+from typing import Any, Dict
 from pathlib import Path
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -36,6 +37,7 @@ from microstructure_probe.paper_lab_engine import (  # noqa: E402
     save_session,
     session_to_dict,
     session_from_dict,
+    session_to_public_dict,
     step_forward,
     stop_session,
     _now_ms,
@@ -95,11 +97,13 @@ def test_create_session_sin_iniciar():
 
 
 def test_evaluate_admite_entrada_automatica():
-    """A: evaluate con run_backtest admite operación → ENTRADA_SIMULADA → en_espera.
+    """A: evaluate con run_backtest → ENTRADA_SIMULADA → en_espera PENDIENTE.
 
-    Se pasa at_ms = close_time de la primera vela conocida para que el reloj
-    de simulación tenga al menos una vela plenamente conocida (su close) y una
-    vela futura donde fill.
+    Se pasa at_ms = close_time de la primera vela conocida (su OHLC conocido)
+    y hay una vela futura donde ocurriria el fill. En T la senal se confirma
+    pero el open de esa vela futura AUN NO se conoce, por lo que NO hay
+    entry_fill_px, cantidad ejecutada ni costes ejecutados: la entrada queda
+    pendiente hasta que step_forward revele el precio.
     """
     config = mk_config()
     candles = up_candles(3)
@@ -116,10 +120,31 @@ def test_evaluate_admite_entrada_automatica():
     assert r.config.decision_reason is not None
     assert r.config.decision_evidence is not None
     assert r.config.rule_version == "RULE-v1"
-    assert r.authoritative is not None  # run_backtest resultado
+    # Causal: sin fill en T (el open futuro se desconoce), queda pendiente.
+    assert r.authoritative is None  # no se consulta el open de la vela futura en T
+    ev = r.config.decision_evidence
+    assert ev["decision_at_ms"] == T  # decision_at registrado al confirmar
+    assert ev["available_at_ms"] is not None  # precio disponible al revelar la vela futura
+    assert ev["entry_fill_px"] is None
+    assert ev["entry_fill_ms"] is None
+    assert r.position.entry_px is None  # sin entrada ejecutada
+    # Sin costes de entrada ejecutados (pendiente)
+    assert r.costs.entry_fees_executed == 0.0
+    assert r.costs.entry_spread_slip_executed == 0.0
     assert r.revision == 2  # create(0) + evaluando(1) + en_espera(2)
-    # entry_ms debe ser >= signal_at_ms (no entrada retroactiva)
-    assert r.authoritative["entry_ms"] >= T
+
+    # Al avanzar se revela el open de la vela futura y se ejecuta el fill.
+    entered = step_forward(r)
+    assert entered.status == "abierta", f"esperaba abierta, obtuvo {entered.status}"
+    assert entered.position.entry_px is not None
+    assert entered.position.entry_ms is not None
+    assert entered.position.entry_ms >= T  # no entrada retroactiva
+    assert entered.position.entry_qty is not None
+    assert any(e.kind == "entry" for e in entered.events)
+    assert entered.revision > r.revision
+    # Reloj y cursor monotónicos al pasar de pendiente a abierta.
+    assert entered.clock_ms is not None and entered.clock_ms >= T
+    assert entered.cursor >= r.cursor
 
 
 def test_evaluate_sin_entrada_sin_posicion():
@@ -226,9 +251,14 @@ def test_step_forward_salida_horizonte():
 
 
 def test_salida_manual():
-    """A: cierre manual congela el resultado (intervención manual, no sustituye aceptación)."""
+    """A: cierre manual congela el resultado (intervención manual, no sustituye aceptación).
+
+    Usa 4 velas para que, tras entrar en la vela 1, quede una vela (2) donde
+    marcar antes del cierre manual (con 3 velas los datos se agotarían en
+    open_at_end justo tras la entrada).
+    """
     config = mk_config()
-    candles = up_candles(3)
+    candles = up_candles(4)
     s = create_session(config, candles)
     T = candles[0].close_time_ms
     s = evaluate_session(s, hypothesis_id="ENG-FIXTURE-v1",
@@ -236,7 +266,8 @@ def test_salida_manual():
                          at_ms=T)
     r = step_forward(s)  # entrada
     assert r.status == "abierta"
-    r = step_forward(r)  # avance, marca
+    r = step_forward(r)  # avance, marca (vela 2)
+    assert r.status == "abierta"
     m = manual_exit(r)
     assert m.status == "cerrada"
     assert m.position.open is False
@@ -601,6 +632,109 @@ def test_save_archivo_ilegible_falla_explicitamente():
             assert "IDENTITY_UNCERTAIN" in str(exc) or "ilegible" in str(exc)
 
 
+def _public_without_ids(d: Dict[str, Any]) -> Dict[str, Any]:
+    d = dict(d)
+    # IDs y metadatos no economicos: input_hash resume todas las velas
+    # (incluidas las futuras), por lo que difiere entre escenarios sin que
+    # el estado economico hasta T lo haga.
+    for k in ("session_id", "created_at_ms", "updated_at_ms", "revision",
+              "input_hash"):
+        d.pop(k, None)
+    return d
+
+
+def test_regresion_open_futuro_diferente_estado_publico_igual_hasta_T():
+    """Regresion bloqueo 1: en T=899999 el open de 900000 se desconoce.
+
+    Dos escenarios con el mismo prefijo hasta T pero open futuro diferente
+    deben producir el mismo estado publico hasta T (excluyendo ids/metadatos
+    no economicos). Al avanzar, cada escenario ejecuta segun su precio
+    recien disponible.
+    """
+    prefix = [mk_candle(0, 100, 102, 99, 101)]  # close conocido en T=899999
+    futuro_alto = prefix + [mk_candle(900000, 110, 112, 108, 111)]   # open=110
+    futuro_bajo = prefix + [mk_candle(900000, 50, 52, 48, 51)]       # open=50
+
+    config = mk_config(entry_px=100.0, stop_px=95.0)
+
+    s_a = create_session(config, futuro_alto)
+    r_a = evaluate_session(s_a, at_ms=899999, hypothesis_id="H1",
+                           hypothesis_version="1.0", rule_version=RULE_CAUSAL_V1)
+    s_b = create_session(config, futuro_bajo)
+    r_b = evaluate_session(s_b, at_ms=899999, hypothesis_id="H1",
+                           hypothesis_version="1.0", rule_version=RULE_CAUSAL_V1)
+
+    assert r_a.config.decision == r_b.config.decision == "ENTRADA_SIMULADA"
+    assert r_a.status == r_b.status == "en_espera"
+    assert r_a.clock_ms == r_b.clock_ms == 899999
+    assert r_a.cursor == r_b.cursor == 0
+    ea, eb = r_a.config.decision_evidence, r_b.config.decision_evidence
+    assert ea["decision_at_ms"] == eb["decision_at_ms"] == 899999
+    assert ea["available_at_ms"] == eb["available_at_ms"] == 900000
+    assert ea["entry_fill_px"] is None and eb["entry_fill_px"] is None
+    assert ea["entry_fill_ms"] is None and eb["entry_fill_ms"] is None
+    # Estado publico equivalente hasta T (vela futura no revelada).
+    assert _public_without_ids(session_to_public_dict(r_a, 899999)) == \
+        _public_without_ids(session_to_public_dict(r_b, 899999))
+
+    # Al avanzar, cada escenario ejecuta segun el precio recien disponible.
+    e_a = step_forward(r_a)
+    e_b = step_forward(r_b)
+    assert e_a.status == "abierta" and e_b.status == "abierta"
+    assert abs(e_a.position.entry_px - 110.0) < 0.01  # open de futuro_alto
+    assert abs(e_b.position.entry_px - 50.0) < 0.01   # open de futuro_bajo
+    assert e_a.position.entry_ms == e_b.position.entry_ms == 900000
+
+
+def test_stop_gap_long_apertura_por_debajo_del_stop():
+    """LONG: apertura de vela posterior por debajo del stop -> salida al open
+    (gap), no al stop_px. Mecanica compartida con run_backtest."""
+    config = mk_config(entry_px=100.0, stop_px=95.0, stop_distance_pct=5.0)
+    candles = [
+        mk_candle(0, 100, 102, 99, 101),        # c0: entrada (close=101>=100)
+        mk_candle(900000, 99, 100, 98, 99),     # c1: entrada @ open 99; stop dinamico 94.05
+        mk_candle(1800000, 90, 92, 88, 91),    # c2: open=90 <= 94.05 -> gap salida @90
+    ]
+    s = create_session(config, candles)
+    T = candles[0].close_time_ms
+    s = evaluate_session(s, at_ms=T, hypothesis_id="H1",
+                         hypothesis_version="1.0", rule_version=RULE_CAUSAL_V1)
+    assert s.status == "en_espera"
+    r = step_forward(s)  # entrada @ c1.open=99
+    assert r.status == "abierta"
+    assert abs(r.position.entry_px - 99.0) < 0.01
+    assert r.position.entry_ms == 900000
+    r = step_forward(r)  # c2: gap open=90 <= 94.05 -> salida @90
+    assert r.status == "cerrada"
+    assert r.result.exit_reason == "stop"
+    assert r.result.exit_executed is True
+    assert abs(r.result.exit_px - 90.0) < 0.01  # salida al open (gap)
+
+
+def test_stop_gap_short_apertura_por_encima_del_stop():
+    """SHORT: apertura de vela posterior por encima del stop -> salida al open (gap)."""
+    config = mk_config(direction="SHORT", entry_px=102.0, stop_px=107.0,
+                       stop_distance_pct=5.0)
+    candles = [
+        mk_candle(0, 102, 103, 101, 101),      # c0: entrada SHORT (close=101<=102)
+        mk_candle(900000, 104, 106, 102, 104), # c1: entrada @ open 104; stop dinamico 109.2
+        mk_candle(1800000, 116, 118, 114, 117), # c2: open=116 >= 109.2 -> gap salida @116
+    ]
+    s = create_session(config, candles)
+    T = candles[0].close_time_ms
+    s = evaluate_session(s, at_ms=T, hypothesis_id="H1",
+                         hypothesis_version="1.0", rule_version=RULE_CAUSAL_V1)
+    assert s.status == "en_espera"
+    r = step_forward(s)  # entrada @ c1.open=104
+    assert r.status == "abierta"
+    assert abs(r.position.entry_px - 104.0) < 0.01
+    r = step_forward(r)  # c2: gap open=116 >= 109.2 -> salida @116
+    assert r.status == "cerrada"
+    assert r.result.exit_reason == "stop"
+    assert r.result.exit_executed is True
+    assert abs(r.result.exit_px - 116.0) < 0.01  # salida al open (gap)
+
+
 if __name__ == "__main__":
     test_create_session_sin_iniciar()
     test_evaluate_admite_entrada_automatica()
@@ -618,6 +752,9 @@ if __name__ == "__main__":
     test_financiamiento_ausente_es_unknown()
     test_evaluate_invariance_diferentes_futuros()
     test_evaluate_causal_no_futuros_en_respuesta()
+    test_regresion_open_futuro_diferente_estado_publico_igual_hasta_T()
+    test_stop_gap_long_apertura_por_debajo_del_stop()
+    test_stop_gap_short_apertura_por_encima_del_stop()
     test_freshness_stale_data_respecto_a_T()
     test_freshness_disconnect_por_silencio()
     test_freshness_end_of_data_separado_de_stale()

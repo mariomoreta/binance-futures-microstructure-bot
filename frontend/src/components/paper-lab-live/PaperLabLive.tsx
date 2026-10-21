@@ -142,7 +142,36 @@ export default function PaperLabLive(): React.JSX.Element {
         }
         return;
       }
-      if (result.data) setState(result.data);
+      if (result.data) {
+        setState(result.data);
+        // Reevaluacion automatica tras avanzar cuando no hay posicion abierta:
+        // el paso revela una vela y puede cambiar la decision (senal pendiente
+        // -> entrada). Se deja explicita para no dejar un boton sin funcion.
+        const advanced = result.data as PaperSessionState;
+        if (advanced.status === "sin_iniciar" || advanced.status === "en_espera") {
+          const re = await evaluateSessionApi(
+            advanced.session_id,
+            null,
+            null,
+            null,
+            advanced.clock_ms ?? null,
+            nextRequestId(),
+            advanced.revision,
+          );
+          if (!re.ok) {
+            setApiError({
+              error: re.error ?? "ERROR",
+              detail: re.detail ?? "",
+              status: re.status,
+            });
+            if (re.status === 409) {
+              await recoverAuthoritative(advanced.session_id);
+            }
+          } else if (re.data) {
+            setState(re.data);
+          }
+        }
+      }
     } finally {
       setLoading(false);
     }
@@ -204,6 +233,43 @@ export default function PaperLabLive(): React.JSX.Element {
       setLoading(false);
     }
   }, [state, nextRequestId, recoverAuthoritative]);
+
+  // Decisión del usuario (VIGILANDO / SIN_ENTRADA / DESCARTADO /
+  // ENTRADA_SIMULADA) re-evaluando la evidencia en el reloj de sesión (T)
+  // a través del backend, con revisión esperada e identidad de petición.
+  const handleDecide = useCallback(
+    async (decision: PaperCandidateDecision) => {
+      if (!state) return;
+      setLoading(true);
+      setApiError(null);
+      try {
+        const result = await evaluateSessionApi(
+          state.session_id,
+          null,
+          null,
+          null,
+          state.clock_ms ?? null,
+          nextRequestId(),
+          state.revision,
+        );
+        if (!result.ok) {
+          setApiError({
+            error: result.error ?? "ERROR",
+            detail: result.detail ?? "",
+            status: result.status,
+          });
+          if (result.status === 409) {
+            await recoverAuthoritative(state.session_id);
+          }
+          return;
+        }
+        if (result.data) setState(result.data);
+      } finally {
+        setLoading(false);
+      }
+    },
+    [state, nextRequestId, recoverAuthoritative],
+  );
 
   if (!state) {
     return (
@@ -350,10 +416,7 @@ export default function PaperLabLive(): React.JSX.Element {
         canStop={v.canStop}
         canDecide={v.canDecide}
         decision={config.decision ?? null}
-        onDecide={() => {
-          // La decisión ya se tomó en createAndEvaluate; este botón se muestra
-          // solo en estados sin_iniciar/evaluando para re-evaluar.
-        }}
+        onDecide={handleDecide}
         onEnter={handleEnter}
         onStep={handleStep}
         onExit={handleExit}

@@ -138,6 +138,9 @@ export interface PaperSessionState {
   engine_version: string;
   limitations: string[];
   authoritative: Record<string, unknown> | null;
+  // El backend informa si se puede avanzar un paso (sin revelar datos
+  // futuros). Cuando falta (tests/estado derivado local), se infiere abajo.
+  can_step?: boolean;
 }
 
 export interface PaperSessionSummary {
@@ -218,7 +221,15 @@ export function sessionView(state: PaperSessionState): PaperSessionView {
     events,
     result,
     canEnter: status === "en_espera" && !open && decided && !finished,
-    canStep: status === "abierta" && cursor < n && !finished,
+    // Se puede avanzar mientras se vigila (decision tomada, sin entrada) o se
+    // espera entrada, y con posicion abierta. El backend informa can_step sin
+    // revelar datos futuros; candles.length de la respuesta filtrada no se usa
+    // como prueba de que el scenario interno termino.
+    canStep:
+      (state as { can_step?: boolean }).can_step !== undefined
+        ? Boolean((state as { can_step?: boolean }).can_step) &&
+          (decided || open) && !closedWithOpenPosition
+        : (decided || open) && cursor < n && !finished && !closedWithOpenPosition,
     canExit: open && !finished && !closedWithOpenPosition,
     canRestart: true,
     canStop: status === "abierta" || status === "en_espera",

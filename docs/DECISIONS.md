@@ -2456,3 +2456,19 @@ Se usará Lightweight Charts como biblioteca visual; Phinvio es referencia funci
 Base 2a17088 revisada: el cierre HTTP reportado no sustituye corregir futuros en _run_backtest_on_prefix, controles canStep/onDecide y salida stop paralela sin gap canónico. Se mantienen pendientes hasta evidencia correctiva. Primero cerrar esas dependencias, después gráfico con fixtures, adaptador y ventana autorizada por separado. Selector automático y rentabilidad son evaluaciones distintas.
 
 Este commit es documental; no instala, ejecuta ni promueve gates. REA opcional de investigación, sin dependencia productiva. Presupuesto cero y desktop-only vigentes.
+
+## 2026-10-21 — Causalidad del fill, controles reales y mecánica de stop única en Paper Lab
+
+Cierra los tres bloqueos revisados de `2a17088` sin cambiar reglas de estrategia, costes, umbrales ni el motor económico canónico.
+
+**1. La evaluación solo recibe el prefijo conocido en T.** `_run_backtest_on_prefix` se limita al `prefix` (antes se le pasaba el histórico completo, y `known_close_cutoff` no filtraba aperturas futuras: filtraba close/high/low). `run_backtest` rellena en `c.open` de velas con `open_time_ms > event_time_ms`, así que pasar velas futuras filtraba el precio de entrada. Se registra `decision_at_ms` y `available_at_ms` en la decisión.
+
+**2. Señal sin precio ejecutable = entrada pendiente, no resultado.** Se mantiene `ENTRADA_SIMULADA`/`en_espera` con `entry_fill_px|entry_fill_ms|entry_qty|entry_cost = null`; el estado público no puede mostrar fill, cantidad ni coste ejecutados antes de que el reloj revele el precio. El fill ocurre en `step_forward`, que revela la siguiente vela con `open_time_ms > base_clock` y avanza `cursor`/`clock_ms` de forma monótona (sin retroceso ni salto sobre la entrada). `_run_backtest_at_clock(state, clock_ms)` resuelve `horizon` y stop sobre el prefijo conocido en cada paso, para que la decisión sea causal también durante la gestión.
+
+**3. El backend declara si se puede avanzar.** `session_to_public_dict` publica `can_step` (estado `sin_iniciar`/`en_espera`/`abierta` y `cursor < len(candles)`). El frontend lo prefiere; la derivación local es solo respaldo. Así se puede avanzar mientras se vigila o se espera entrada sin depender del `candles.length` de una respuesta filtrada. `onDecide` llama al backend con `request_id` nuevo y `expected_revision`, y la reevaluación posterior al `step` es explícita y limitada a `sin_iniciar`/`en_espera`.
+
+**4. Un solo mecanismo económico de salida.** `_finalize_exit` es la única vía de cierre (stop, gap, `_finalize_exit_from_bt`, `manual_exit`): mismas fees, mismo funding, mismo net. La política de hueco es explícita: LONG con apertura ≤ stop dinámico o SHORT con apertura ≥ stop dinámico cierran a la apertura (`open_time_ms`); sin hueco, el cruce intradía cierra en el stop (`close_time_ms`). Se distinguen instante observado, instante de evaluación y convención de fill OHLC. Funding ausente permanece `UNKNOWN`; no se contabiliza cero por defecto.
+
+**Evidencia mínima aceptada:** en `T=899999`, dos escenarios con apertura futura `900000` distinta (110 vs 50) deben publicar estado idéntico hasta T (comparando sin `session_id`/`created`/`updated`/`revision`/`input_hash`) y solo después rellenar al precio revelado. Se añadieron pruebas de gap LONG y SHORT, y el test de salida manual se amplió a 4 velas para que la salida no dependa de datos futuros.
+
+**Alcance y límites:** desktop-only; sin Binance, monitor, paper prospectivo, órdenes, pagos, optimización ni cambios de umbrales. No se instala Lightweight Charts en esta entrega. La suite completa no se re-ejecutó (cambio acotado a Paper Lab); se ejecutaron 26 pruebas de motor, 5 de integración A–E vía CLI con almacenamiento aislado, 9 de API frontend y `tsc --noEmit`. La pasada de navegador sobre los controles queda pendiente y **no se declara ejecutada**.
