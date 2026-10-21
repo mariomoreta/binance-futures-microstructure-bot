@@ -2405,3 +2405,43 @@ sin nuevas pantallas ni otra arquitectura.
   Desplegado en http://127.0.0.1:3020 (PID 29944, PID anterior 13868 detenido).
   Rutas /paper-lab-live y /paper-lab sirven HTTP 200. Sin Binance, monitor,
   paper prospectivo, ordenes, pagos, movil ni optimizacion.
+
+## 2026-10-21 — Flujo integrado Paper Lab extremo a extremo + contrato CLI/BFF 409 (commit 1892c23, push realizado)
+
+Sobre HEAD `7a3db9c` (rama `review/o1-funcional-v2-observacion`, ya publicada y al día con origin). Cambios locales pendientes resueltos y publicados en commit `1892c23` (9 archivos).
+
+**Causa del bloqueo HTTP:** ninguna variante de `evaluate` conseguía `ENTRADA_SIMULADA` vía HTTP. Primera transición que fallaba: `evaluate` con `at_ms` en el pasado devolvía `DESCARTADO` (stop ya vulnerado en T) y sin `at_ms` devolvía `SIN_ENTRADA` (ningún close conocido en T=0). Causa concreta: el cliente no revelaba información nueva antes de confirmar señal; el reloj de sesión no avanzaba al revelar la vela 1 antes de reevaluar.
+
+**Correcciones (solo lo necesario):**
+1. `step_forward` detecta ahora stop con la vela actual (OHLC conocido en T) usando el mismo stop dinámico que `run_backtest` (`entry × (1 ∓ pct)`), no el `stop_px` estático. Añade `_finalize_stop_exit` con costes ejecutados consistentes. Señal confirmada y fill ejecutado son estados distintos (`en_espera` → `abierta`). El reloj avanza desde el backend con cada `step_forward` (no saltos manuales del test). `entry_ms >= decision_at` invariante respetado.
+2. `known_close_cutoff` en `run_backtest` (default `horizon_end`, compatible hacia atrás) restringe close/alta/baja a velas cuyo cierre se conoce en T — usado por la evaluación causal del Paper Lab.
+3. Las 5 routes del BFF (`evaluate`, `step`, `exit`, `restart`, `stop`) y el helper `runPython` (crear) parsean ahora **stdout Y stderr** del CLI Python. Cuando el CLI sale con código ≠ 0, el JSON de error estructurado puede estar en stderr; se intenta parsear ambos antes de rendirse. Mapeo: `REVISION_CONFLICT` / `REQUEST_CONTENT_CONFLICT` → HTTP 409; `SESSION_NOT_FOUND` → 404; `LOCK_TIMEOUT` / `WRITE_FAILED` → 503; error inesperado distinguible del conflicto. El cliente muestra el error y recupera el estado autoritativo vía GET.
+
+**Demostración integrada HTTP real (servidor PID 31072, BUILD_ID `jhFu3mEN9yZAntBo_sWsC`, URL `http://127.0.0.1:3020`, sin Binance, fixtures sintéticas):**
+- `crear`: sesión `PL-...`, rev=0, `sin_iniciar`, clock=0, cursor=0, decisión=null.
+- `evaluar sin señal` (T=0, sin at_ms): `SIN_ENTRADA`, `sin_iniciar`, rev=2.
+- `avanzar` (step): reloj avanza a 899999, cursor=1, rev=3 (nueva información revelada).
+- `confirmar señal` (evaluate con señal): `ENTRADA_SIMULADA` en T=899999, entry_fill_px=101, entry_fill_ms=900000, `en_espera`, rev=5.
+- `esperar fill + entrar` (step): `abierta`, entry_px=101, entry_ms=900000 (>= decision_at 899999 ✓), rev=6.
+- `gestionar` (step): marca actualizada, `abierta`, rev=7.
+- `cerrar por regla` (step): `cerrada`, exit_reason=`stop`, exit_executed=true, exit_px=95.95, realized_net=-51.56, net_pnl=-51.56, exit_fees_executed=0.475, open_at_end=false, rev=9.
+- `recuperar/exportar` (GET): estado idéntico, rev=9, resultado idéntico. CSV/JSON serializables del GET.
+
+**Pruebas de conflicto HTTP real:**
+- Dos steps concurrentes, misma revisión: uno HTTP 200 (entra), otro HTTP 409 `REVISION_CONFLICT`; sin entrada duplicada (1 solo event `kind=entry`).
+- Misma request_id con contenido distinto: HTTP 409 `REQUEST_CONTENT_CONFLICT`.
+- Revisión obsoleta: HTTP 409 `REVISION_CONFLICT`.
+- Sesión inexistente: HTTP 404 `SESSION_NOT_FOUND`.
+- Caso D (fin de datos, posición abierta, stop no vulnerado, horizon muy largo): `exit_executed=false`, `realized_net=null`, `open_at_end=true`, `exit_fees_executed=0`, posición sigue abierta, GET idéntico.
+
+**Pruebas ejecutadas (árbol actual, 2026-10-21):**
+- Motor Python: 23/23 (`test_paper_lab_engine.py`) — todas pasan.
+- Suite completa: `python run_tests.py -q` → 1290 OK / 2 skipped / exit 0.
+- Frontend: `tsc --noEmit` limpio; `npm test` → 470 passed / 1 skipped; `next build` OK (`BUILD_ID=jhFu3mEN9yZAntBo_sWsC`).
+- Servidor: PID 31072, escuchando en 127.0.0.1:3020, `/api/v1/runtime` y `/paper-lab-live` sirven HTTP 200.
+
+**Limitaciones restantes:**
+- El recorrido completo vía **navegador interactivo** (no solo endpoints HTTP) no se grabó como evidencia visual; se verificó por HTTP/DOM y texto, no por captura de navegador.
+- Motor paper completo (Etapa 5: position manager, ledger de caja, funding recurrente, risk engine) sigue NO implementado; este MVP es pantalla de ingeniería sobre fixtures.
+- No se presentaron pruebas Python como verificación del dashboard; Python verifica motor/CLI, HTTP verifica el BFF real.
+- SHA final publicado: `1892c23` (remoto `origin/review/o1-funcional-v2-observacion` igual que local).

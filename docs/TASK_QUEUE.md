@@ -12,7 +12,7 @@ base, 7/7 pasan con el arreglo. Verificado: frontend 452 passed / 1 skipped,
 reales y replay enlazado (ver
 `docs/evidence/BACKTEST_V2_E2E_BROWSER_EVIDENCE.md`). Estado: los cinco correctivos y la corrección final de `control.guard` están commiteados en `3b6340d..<sha-de-esta-sesión>`; dashboard re-servido en `http://127.0.0.1:3020` (`BUILD_ID=w1DMYZv7af8n2jO6vXlyp`, HTTP 200 en `/api/v1/runtime`, `/backtest`, `/paper-lab`). Fuera de alcance: sin Binance, monitor, paper prospectivo, órdenes, credenciales, optimización ni cambios de estrategia/mapping/costes/umbrales/motor.
 
-## MVP Paper Lab en caliente — ingeniería, reconducido (IMPLEMENTADO, commit b914f2d)
+## MVP Paper Lab en caliente — ingeniería, reconducido (IMPLEMENTADO, commit 1892c23, push realizado)
 
 Backend Python como fuente de verdad
 (src/microstructure_probe/paper_lab_engine.py), frontend como cliente de API
@@ -26,15 +26,34 @@ request_id e idempotencia hasta el navegador. Reloj de simulación causal en
 el camino dashboard → BFF → Python. Sin información futura en respuestas
 públicas.
 
-Pruebas: 28 Python del motor + 5 integración A-E (CLI con almacenamiento real)
-+ 16 backtest-offline = 44 OK. Frontend vitest 9/9 + tsc --noEmit limpio.
+Flujo integrado extremo a extremo verificado por HTTP real (servidor PID 31072,
+BUILD_ID jhFu3mEN9yZAntBo_sWsC, http://127.0.0.1:3020):
+crear → evaluar sin señal (SIN_ENTRADA) → avanzar (revelar vela) → evaluar con
+señal (ENTRADA_SIMULADA) → step ejecuta entrada → step gestiona → step cierra
+por stop → GET recupera estado idéntico. Tiempos: decision_at=899999,
+entry_ms=900000 (>= decision_at), exit_px=95.95, exit_reason=stop,
+exit_executed=true, realized_net=-51.56, total ~952ms. Conflictos HTTP reales:
+dos steps concurrentes misma revisión → uno 200, otro 409 REVISION_CONFLICT;
+sin entrada duplicada. Misma request_id con contenido distinto →
+409 REQUEST_CONTENT_CONFLICT. Revisión obsoleta → 409. Sesión inexistente → 404.
+Caso D (fin de datos, posición abierta): exit_executed=false,
+realized_net=null, open_at_end=true, exit_fees_executed=0, posición sigue
+abierta, GET idéntico.
+
+Pruebas: 23 Python del motor + 5 integración A-E (CLI con almacenamiento real)
++ 16 backtest-offline = parte de las 1290 OK totales (2 skipped). Frontend
+vitest 470 passed / 1 skipped + tsc --noEmit limpio.
 No es motor paper completo (Etapa 5): no hay position manager, ledger de caja,
 funding recurrente ni risk engine.
 
-Corrección acotada (2026-10-21): reloj causal sin fallback a hora actual;
-session_to_public_dict filtra velas futuras; request_id/conflicto HTTP 409 en
-BFF; fin de datos no es cierre ejecutado (mark_px no sustituye exit_px;
-realized_net null si open_at_end).
+Corrección acotada (2026-10-21): `step_forward` detecta stop con la vela actual
+(OHLC conocido en T) usando el mismo stop dinámico que `run_backtest`
+(`entry × (1 ∓ pct)`), no el `stop_px` estático; añade `_finalize_stop_exit`
+con costes ejecutados consistentes. `known_close_cutoff` en `run_backtest`
+(default `horizon_end`, compatible hacia atrás). Las 5 routes del BFF +
+helper `runPython` parsean stdout Y stderr del CLI para mapear
+REVISION_CONFLICT/REQUEST_CONTENT_CONFLICT a HTTP 409 incluso cuando el CLI
+sale con código ≠ 0.
 
 ## Próxima fase (REGISTRADA, NO implementada, requiere autorización): paper lab
 con datos vivos — selector causal → decisión versionada → simulación →

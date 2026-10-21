@@ -162,32 +162,58 @@ Artefactos nuevos:
 - `frontend/src/app/paper-lab-live/page.tsx` — página `/paper-lab-live`.
 - `frontend/src/test/paper-lab-live-api.test.ts` — 9 pruebas de sessionView/
   format helpers.
-- `tests/test_paper_lab_engine.py` — 14 pruebas del motor Python (entrada,
-  stop, horizonte, manual, open_at_end, reinicio, detención, persistencia,
-  validación de identificadores, serialización roundtrip).
+- `tests/test_paper_lab_engine.py` — 23 pruebas del motor Python (entrada,
+  stop con vela actual, horizonte, manual, open_at_end, reinicio, detención,
+  persistencia, validación de identificadores, serialización roundtrip,
+  idempotencia, conflicto de revisión, archivo ilegible, frescura stale/
+  disconnect/end_of_data, invariancia causal).
 - `tests/test_paper_lab_integration.py` — 5 pruebas de integración A–E vía CLI
   con almacenamiento temporal real: flujo completo (A), SIN_ENTRADA (B),
   datos obsoletos (C), fin de datos con posición abierta (D), acción duplicada
   sin duplicar operación (E).
 
-Flujos verificados:
+Flujos verificados (motor Python CLI + HTTP real vs BFF):
 - Entrada automática tras decisión ENTRADA_SIMULADA (backend evalúa evidencia
-  en T mediante run_backtest).
+  en T mediante run_backtest). Demostrado vía HTTP: crear → evaluar sin señal
+  (SIN_ENTRADA) → avanzar (revelar vela) → evaluar con señal
+  (ENTRADA_SIMULADA) → step ejecuta entrada → step gestiona → step cierra por
+  stop → GET recupera estado idéntico. Tiempos: decision_at=899999, entry_ms=900000
+  (>= decision_at), exit_px=95.95, exit_reason=stop, exit_executed=true,
+  realized_net=-51.56, total ~952ms.
 - Salida por stop (precio distinto de la marca), por horizonte, manual.
 - open_at_end: datos agotados con posición abierta → permanece no realizada,
-  sin cierre inventado ni comisión de salida.
+  sin cierre inventado ni comisión de salida. Demostrado vía HTTP:
+  exit_executed=false, realized_net=null, open_at_end=true,
+  exit_fees_executed=0, posición sigue abierta, GET idéntico.
 - Reinicio, detención, persistencia y recarga tras refresco.
 - Identificadores con traversal rechazados.
 - Control de revisión: acción duplicada con revisión obsoleta detectada.
+- Conflictos HTTP reales: dos steps concurrentes misma revisión → uno 200,
+  otro 409 REVISION_CONFLICT; sin entrada duplicada. Misma request_id con
+  contenido distinto → 409 REQUEST_CONTENT_CONFLICT. Revisión obsoleta → 409.
+  Sesión inexistente → 404 SESSION_NOT_FOUND.
 
 Verificado: tsc --noEmit limpio, eslint 0 errores (warnings preexistentes),
-next build OK (rutas /api/v1/paper-lab/sessions* y /paper-lab-live),
-470 pruebas vitest pass (1 skip), 14 pruebas Python del motor pass,
-5 pruebas de integración A-E pass.
+next build OK (BUILD_ID=jhFu3mEN9yZAntBo_sWsC, servidor PID 31072 en
+http://127.0.0.1:3020), 470 pruebas vitest pass (1 skip), 23 pruebas Python
+del motor pass, suite completa python run_tests.py -q: 1290 OK / 2 skip /
+exit 0. Rutas /api/v1/paper-lab/sessions* y /paper-lab-live sirven HTTP 200.
 
 Estado: motor paper completo (Etapa 5) AÚN NO implementado. Este MVP es
 pantalla de ingeniería sobre fixtures; la primera ventana con datos Binance
 en caliente requiere autorización explícita y no se inicia aquí.
+
+Cambio known_close_cutoff: `run_backtest` acepta `known_close_cutoff` opcional
+(default `horizon_end`, compatible hacia atrás); solo velas con
+close_time_ms <= cutoff se consideran OHLC conocido. Usado por la evaluación
+causal del Paper Lab (se pasa `known_close_cutoff=at_ms`). Sin regresiones en
+la suite.
+
+Corrección contrato CLI/BFF (este bloque): las 5 routes del BFF
+(evaluate, step, exit, restart, stop) + helper runPython parsean stdout Y
+stderr del CLI Python, de modo que REVISION_CONFLICT / REQUEST_CONTENT_CONFLICT
+se mapean a HTTP 409 incluso cuando el CLI sale con código ≠ 0. Verificado con
+procesos reales concurrentes.
 
 Se reprodujo y se resolvió en `frontend/src/lib/backtest-control.ts`:
 - Identidad única por adquisición: `Guard` incluye `token` aleatorio (`randomBytes`) generado al adquirir, escrito en el guard y devuelto en el handle. Dos adquisiciones del mismo PID tienen tokens distintos.

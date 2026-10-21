@@ -360,19 +360,26 @@ frontend 314/314 + typecheck 0 + build OK.
 **7. Last update:** 2026-10-20.
 **8. Estado de entrega (cerrado 2026-10-20):** artefacto determinista, parser/player/componentes y ruta V2, tests y evidencias, selección independiente del P&L, reconciliación P&L/costes al cierre, capturas antes de entrada/abierta/cerrada, SHA/build servido y URL local verificada. Pendiente **fuera de este ítem:** motor paper completo (Etapa 5), no autorizado.
 
-### Corrección acotada: camino real dashboard → BFF → Python (2026-10-21, sobre ec0416a)
+### Corrección acotada: camino real dashboard → BFF → Python (2026-10-21, sobre ec0416a) — cierre funcional
 
-**1. Title:** Corrección de defectos en el recorrido real cliente/BFF/backend de Paper Lab.
+**1. Title:** Corrección de defectos en el recorrido real cliente/BFF/backend de Paper Lab + flujo integrado extremo a extremo verificado por HTTP real.
 **2. Approval status:** DECIDED (dentro del alcance autorizado, sin Binance ni motor paper).
-**3. Implementation status:** IMPLEMENTED.
-**4. Evaluation status:** 44 pruebas Python OK + 9 frontend vitest OK + tsc --noEmit limpio. Build de producción Next.js exitoso. Desplegado en http://127.0.0.1:3020 (PID 29944).
-   - Reloj causal: create_session fija clock_ms al close_time de la ultima vela de contexto; evaluate_session rechaza sin at_ms/clock_ms; nunca usa hora actual.
-   - Sin información futura: session_to_public_dict filtra a solo lo conocido en T en todas las respuestas públicas (incluido GET).
-   - Request_id e idempotencia en BFF; conflictos HTTP 409; BFF interpreta respuesta del CLI incluso con salida != 0.
+**3. Implementation status:** IMPLEMENTED. Commit `1892c23` publicado en `review/o1-funcional-v2-observacion` (push `7a3db9c → 1892c23`).
+**4. Evaluation status:**
+   - Motor Python: 23/23 (`test_paper_lab_engine.py`) — todas pasan.
+   - Suite completa: `python run_tests.py -q` → 1290 OK / 2 skipped / exit 0.
+   - Frontend: `tsc --noEmit` limpio; `npm test` → 470 passed / 1 skipped; `next build` OK (`BUILD_ID=jhFu3mEN9yZAntBo_sWsC`).
+   - Servidor: PID 31072, `http://127.0.0.1:3020`; `/api/v1/runtime` y `/paper-lab-live` sirven HTTP 200.
+   - **Flujo integrado HTTP real (crear → evaluar sin señal → avanzar → confirmar señal → entrar → gestionar → cerrar → recuperar/exportar):** todos los pasos 200. Tiempos: decision_at=899999, entry_ms=900000 (>= decision_at), exit_px=95.95, exit_reason=stop, exit_executed=true, realized_net=-51.56, total ~952ms.
+   - **Conflictos HTTP reales:** dos steps concurrentes misma revisión → uno 200, otro 409 REVISION_CONFLICT; sin entrada duplicada. Misma request_id con contenido distinto → 409 REQUEST_CONTENT_CONFLICT. Revisión obsoleta → 409. Sesión inexistente → 404.
+   - **Caso D (fin de datos, posición abierta):** exit_executed=false, realized_net=null, open_at_end=true, exit_fees_executed=0, posición sigue abierta, GET idéntico.
+   - Reloj causal: `create_session` fija clock_ms al close_time de la última vela de contexto; `evaluate_session` rechaza sin `at_ms`/`clock_ms`; nunca usa hora actual.
+   - Sin información futura: `session_to_public_dict` filtra a solo lo conocido en T en todas las respuestas públicas (incluido GET).
+   - Request_id e idempotencia en BFF; conflictos HTTP 409; BFF interpreta respuesta del CLI incluso con salida != 0 (parsea stdout Y stderr).
    - Fin de datos no es cierre ejecutado: mark_px no sustituye exit_px; realized_net null si open_at_end.
-**5. Limitaciones:** sin Binance, monitor, paper prospectivo, órdenes, pagos, móvil ni optimización.
-**6. Evidence:** docs/DECISIONS.md (entrada 2026-10-21), tests/test_paper_lab_engine.py,
-   tests/test_paper_lab_integration.py, frontend/src/test/paper-lab-live-api.test.ts.
+   - `known_close_cutoff` en `run_backtest` (default `horizon_end`, compatible hacia atrás).
+**5. Limitaciones:** sin Binance, monitor, paper prospectivo, órdenes, pagos, móvil ni optimización. Recorrido vía navegador interactivo no grabado como evidencia visual (verificado por HTTP/DOM y texto). Motor paper completo (Etapa 5) sigue NO implementado.
+**6. Evidence:** docs/DECISIONS.md (entrada 2026-10-21), docs/CURRENT_STATE.md (sección MVP Paper Lab), tests/test_paper_lab_engine.py, tests/test_paper_lab_integration.py, frontend/src/test/paper-lab-live-api.test.ts.
 **7. Last update:** 2026-10-21.
 
 ### Correcciones acotadas de Paper Lab (2026-10-20, sobre `d9359e3`)
