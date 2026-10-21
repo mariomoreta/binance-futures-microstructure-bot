@@ -1,3 +1,16 @@
+## Piloto Anti Slop (opcional, no altera la fase) — 2026-10-21 (F-TOOL-ANTISLOP-01)
+
+`CURRENT_PHASE` y `CURRENT_OBJECTIVE` **no cambian**: siguen siendo el dashboard V2 de escritorio y el recorrido causal de Paper Lab. Este piloto solo añade una revisión estilística opcional.
+
+`ACTIVE_TASK` del piloto: entrega documentada y commiteada de `.opencode/skills/antislop{,-code}/`, `.opencode/commands/antislop.md` y `docs/ANTISLOP_PILOT.md`, con verificación real de descubrimiento en OpenCode.
+
+`NEXT_TASKS` del piloto:
+1. Re-ejecutar `/antislop` en una sesión nueva con el comando endurecido y registrar si termina sin derivar al asistente de modo (pendiente, no declarado).
+2. Si se actualiza el upstream, re-descargar en el nuevo commit, recalcular SHA-256 y actualizar `docs/ANTISLOP_PILOT.md`.
+3. Retirar el piloto si estorba: borrar los dos directorios, el comando y la línea de `AGENTS.md`.
+
+Los `NEXT_TASKS` funcionales de la fase (inventario de velas/indicadores y contrato de datos/tiempos/IDs; Lightweight Charts) siguen como están en la sección siguiente.
+
 ## Paper Lab — tres bloqueos de `2a17088` cerrados (2026-10-21)
 
 `CURRENT_PHASE`: dashboard V2 de escritorio + Paper Lab sobre fixtures (observación; sin Binance, sin órdenes).

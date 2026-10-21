@@ -1,3 +1,23 @@
+## F-TOOL-ANTISLOP-01 — Anti Slop opcional para presentación y comentarios (2026-10-21)
+
+**1. Title:** Integración local y opcional de Anti Slop en OpenCode como revisión de presentación y comentarios, sin puerta funcional ni dependencia del runtime.
+**2. Approval status:** DECIDED por instrucción explícita del usuario en modo piloto acotado (solo este repositorio, solo núcleo + `antislop-code`, sin configuración global, sin otro modelo, sin subagentes, sin tocar lo funcional pendiente).
+**3. Implementation status:** IMPLEMENTED — `.opencode/skills/antislop/{SKILL.md,VERSION,LICENSE,LOCAL_CONDITIONS.md}`, `.opencode/skills/antislop-code/{SKILL.md,LICENSE}`, `.opencode/commands/antislop.md`, `docs/ANTISLOP_PILOT.md` y una línea de uso opcional en `AGENTS.md`. Upstream fijado a `439a2ef5b9dd0ebe74e8113ff43f5928d0fe2a6a` (v3.2.21, MIT) con SHA-256 registrados.
+**4. Evaluation status:** VERIFICADO PARCIALMENTE — OpenCode `v2.0.32` descubre ambas skills sin reiniciar y `/api/command` del proyecto registra `antislop`; revisión piloto manual sobre `dashboard.py` con 2 hallazgos y 5 comentarios técnicos preservados; dos ejecuciones headless cargaron el núcleo sin editar archivos y no entregaron informe (timeout de 300 s y error de proveedor `503`). NO evaluado: ejecución end-to-end completa del comando, ahorro de tokens, calidad de salida con modelos distintos.
+**5. Limitaciones:** No es puerta de aceptación ni prueba de causalidad, seguridad, economía o rentabilidad. El núcleo upstream contiene instrucciones de instalación/modo que aquí solo se neutralizan por documento local y por el propio comando; el aviso automático de skills puede ofrecerlas en tareas no relacionadas. Sin CI ni hooks. Sin medición de tokens (solo bytes).
+**6. Evidence:** `docs/ANTISLOP_PILOT.md` (origen, commit, licencia, hashes, uso y retirada); `docs/CURRENT_STATE.md` § piloto; `docs/DECISIONS.md` 2026-10-21 Anti Slop; `.opencode/skills/antislop/LOCAL_CONDITIONS.md`; `.opencode/commands/antislop.md`.
+**7. Last update:** 2026-10-21.
+
+### Cierre (siete campos, obligatorios)
+
+- `DECISIONS_REVIEWED` — AGENTS, WORKFLOW, CURRENT_STATE, TASK_QUEUE, DECISIONS, FEATURE_BACKLOG (F-PAPER-02, F-CHART-BINANCE-01) y `docs/DESKTOP_FIRST_SCOPE_20261020.md` (alcance vigente escritorio).
+- `NEW_DECISIONS_RECORDED` — DECISIONS §2026-10-21 Anti Slop opcional local: alcance mínimo, upstream intacto con licencia, condiciones locales separadas, comando bajo demanda, precedencia del proyecto, PASS sin valor funcional y verificación parcial declarada.
+- `FEATURES_IMPLEMENTED` — F-TOOL-ANTISLOP-01 (piloto de revisión estilística opcional).
+- `FEATURES_VERIFIED` — descubrimiento de skills y registro del comando en OpenCode `v2.0.32`; revisión piloto sobre archivo publicado sin editarlo; ninguna edición de archivos durante la ejecución headless.
+- `DEFERRED_FEATURES` — ejecución end-to-end completa del comando; skills `antislop-ui`, `antislop-copywriting`, `antislop-human`, `antislop-layoutmobile`; integración en CI/hooks; medición de tokens; cualquier trabajo móvil/Flutter.
+- `BACKLOG_UPDATED` — yes: este bloque + `CURRENT_STATE`, `TASK_QUEUE`, `DECISIONS`, `docs/ANTISLOP_PILOT.md` y la línea opcional de `AGENTS.md`.
+- `DOCUMENTATION_CONFLICTS` — el núcleo upstream declara "load always" y ofrece un asistente de instalación que escribe en `AGENTS.md` y lee preferencias globales; este piloto lo contradice a propósito y lo deja registrado en las condiciones locales. No se declara validación end-to-end que no se completó.
+
 ## F-PAPER-02 — Causa del fill, controles reales y stop único en Paper Lab (2026-10-21)
 
 **1. Title:** Corrección de los tres bloqueos revisados de Paper Lab sobre `2a17088`: información futura en el fill, controles `canStep`/`onDecide` desconectados y salida por stop como economía paralela sin política de hueco.

@@ -62,6 +62,8 @@ Read before acting (in this order for a new session):
 
 Detailed references: `docs/ARCHITECTURE.md`, `docs/MARKET_DATA.md`, `docs/FEATURE_MODEL.md`, `docs/MARKET_STATES.md`, `docs/EVENT_LABELING.md`, `docs/PAPER_TRADING.md`, `docs/POSITION_MANAGEMENT.md`, `docs/RISK_RULES.md`, `docs/DASHBOARD_SPEC.md`, `docs/ROADMAP.md`, `docs/SAFETY_RULES.md`, `docs/WORKFLOW.md`, `docs/COMMANDS.md`.
 
+Optional style review only (never auto-load; not a functional, safety or economic gate): `/antislop <archivo o alcance>` — see `docs/ANTISLOP_PILOT.md`.
+
 Dashboard V2 reference set (planned architecture; not an implemented frontend):
 `docs/DASHBOARD_V2_AGENT_HANDOFF.md`,
 `docs/DASHBOARD_V2_PROGRESS.md`,

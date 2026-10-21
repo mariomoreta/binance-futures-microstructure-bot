@@ -1,3 +1,15 @@
+## Piloto Anti Slop en OpenCode (opcional) — 2026-10-21 (F-TOOL-ANTISLOP-01)
+
+Integración local y opcional de Anti Slop (`miqdadbadjuber/anti-slop`, commit `439a2ef5b9dd0ebe74e8113ff43f5928d0fe2a6a`, versión `3.2.21`, licencia MIT) como revisión de **presentación y comentarios**. No es puerta funcional y no sustituye pruebas, causalidad, seguridad, economía ni rentabilidad.
+
+- Instalado solo en este repositorio: `.opencode/skills/antislop/` (núcleo, `VERSION`, `LICENSE` y condiciones locales) y `.opencode/skills/antislop-code/`. No se instalaron `antislop-ui`, `antislop-copywriting`, `antislop-human` ni `antislop-layoutmobile`; no se ejecutó el instalador; no se tocó configuración global, proveedores, modelos ni permisos.
+- Comando bajo demanda `/antislop <archivo o alcance>` en `.opencode/commands/antislop.md`: auditoría sin editar por defecto, `during` solo con instrucción explícita, máximo 5 hallazgos con ubicación/regla/motivo/propuesta, sin barrido del repositorio, sin fijar modelo y sin subagentes.
+- Precedencia del proyecto: no elimina explicaciones de causalidad, concurrencia, seguridad, costes, funding, unidades o limitaciones; no acorta documentación técnica por longitud; no toca lógica, nombres, imports, umbrales, estrategias ni pruebas; no exige otro `DESIGN.md` ni prohíbe rejilla, colores direccionales o niveles del gráfico.
+- Verificación real en OpenCode `v2.0.32`: tras escribir los archivos, la sesión activa recibió las skills `antislop` y `antislop-code` en su lista disponible **sin reiniciar**, y `/api/command` del proyecto devuelve `antislop` con su descripción. Descubrimiento y registro observados, no supuestos.
+- Ejecuciones headless de prueba (`opencode run --standalone "/antislop <archivo>"`): en ambas el agente cargó el núcleo con la herramienta `skill` y **no editó ningún archivo**. La primera (`scripts/paper_lab_session.py`) no terminó en 300 s y derivó a buscar `settings.json`/`antislop.md`; se endureció el comando con precedencia explícita. La segunda (`docs/COMMANDS.md`) terminó en error de proveedor (`Endpoint is unavailable`, exit 1). La entrega final del comando queda **no verificada** y así se declara.
+- Revisión piloto entregada en esta sesión sobre `src/microstructure_probe/dashboard.py` (archivo publicado y estable, sin editar): 2 hallazgos (banners decorativos y una etiqueta redundante) y 5 comentarios técnicos que deben conservarse. Detalle, hashes y retirada en `docs/ANTISLOP_PILOT.md`.
+- Límites vigentes: sin CI, sin hooks, sin dependencia del runtime del bot, sin ahorro de tokens medido. Un PASS de Antislop no acredita causalidad, seguridad, economía ni rentabilidad.
+
 ## Estado vigente del objetivo gráfico — 2026-10-21 (F-CHART-BINANCE-01)
 
 [Acuerdos de gráfico Binance V1](ACUERDOS_GRAFICO_BINANCE_V1.md) reúne búsqueda de contratos Binance Futures, histórico paginado, velas vivas, indicadores backend compartidos y eventos de operaciones. REQUISITOS ACORDADOS; implementación del gráfico Lightweight Charts y aceptación viva PENDIENTES. Abrir un símbolo no abre una operación ni arranca el monitor; servicio detenido implica histórico/estado desconectado.

@@ -2485,3 +2485,16 @@ La pasada real de navegador (Chromium/Playwright) sobre `/paper-lab-live` encont
 **Decisión sobre fixtures:** no se modifican datos de fixtures. Se acepta y documenta que BTC LONG termina en fin de datos con posición abierta (caso D) y que ETH SHORT se abstiene en el primer cierre con la regla causal; stop/gap/horizonte se acreditan con pruebas unitarias e integración CLI, no con el recorrido de navegador. Cambiar velas para "hacer visible" una salida habría alterado el escenario en lugar de corregir el defecto.
 
 **Regresión:** la prueba de `T=899999` congela `_now_ms`; antes comparaba marcas de reloj de pared y podía fallar sin que cambiara nada económico.
+
+## 2026-10-21 — Anti Slop como revisión opcional local (piloto, sin puerta)
+
+Se incorpora Anti Slop (`miqdadbadjuber/anti-slop`, commit `439a2ef5b9dd0ebe74e8113ff43f5928d0fe2a6a`, versión `3.2.21`, licencia MIT) como **revisión estilística opcional**, nunca como puerta de aceptación.
+
+1. **Alcance mínimo y fijado.** Solo el núcleo (`skills/antislop`) y `antislop-code`; sin skills de UI, copy, personas o móvil; sin plugins ni instalador; sin paquetes en el runtime del bot. Los archivos upstream se conservan intactos y cada skill lleva su `LICENSE`; procedencia, bytes y SHA-256 quedan en `docs/ANTISLOP_PILOT.md`.
+2. **Solo local y desactivable.** Instalación en `.opencode/skills/` de este repositorio; nada global, ningún otro proyecto, ningún proveedor/modelo/permiso modificado. Retirada = borrar dos directorios, el comando y la línea de `AGENTS.md`.
+3. **Condiciones propias en documento separado.** `LOCAL_CONDITIONS.md` y `docs/ANTISLOP_PILOT.md` desactivan el asistente de primera ejecución, la lectura/escritura de preferencias globales y la creación de `anti-slop/audit-*.md`. El modo lo fija la invocación: auditoría por defecto, `during` solo explícito.
+4. **Uso bajo demanda.** `/antislop <archivo o alcance>`; máximo 5 hallazgos; sin barrido del repositorio ni carga de todas las skills; sin fijar modelo ni lanzar subagentes.
+5. **Precedencia del proyecto.** Antislop no puede borrar comentarios de causalidad, concurrencia, seguridad, costes, funding, unidades o limitaciones, ni acortar documentación técnica por longitud, ni quitar licencias/pragmas/`type: ignore`, ni cambiar lógica, nombres, imports, umbrales, estrategias o pruebas, ni rediseñar pantallas, ni prohibir rejilla/colores direccionales/niveles, ni activar móvil/Flutter, ni exigir otro `DESIGN.md` (los documentos de diseño existentes cumplen esa función).
+6. **Un PASS no acredita nada funcional.** La revisión separa estilo de corrección; la evidencia sigue siendo pruebas, código y recorrido real, no un veredicto de Antislop.
+7. **Verificación honesta.** Descubrimiento de las skills y registro del comando comprobados en OpenCode `v2.0.32`. Dos ejecuciones headless cargaron el núcleo sin editar archivos: la primera no terminó en 300 s y derivó hacia el asistente de modo (se endureció el comando con precedencia explícita), la segunda falló por error de proveedor (`Endpoint is unavailable`). La validación end-to-end del comando queda incompleta y así se declara.
+
