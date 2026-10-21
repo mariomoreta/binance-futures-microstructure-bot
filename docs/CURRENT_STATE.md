@@ -86,31 +86,54 @@ ajenos) + `next build` OK (`BUILD_ID=eBIlrCEoIFTWay0VAx6VA`); desde checkout
 limpio el paquete publicado basta (trades=15765, reconciliacion=True).
 Estado: los cinco correctivos y la corrección final de `control.guard` están commiteados+publiados en `3b6340d..<sha-final>`; dashboard re-servido en `http://127.0.0.1:3020` (PID 13868, `BUILD_ID=w1DMYZv7af8n2jO6vXlyp`, `next build` + `tsc --noEmit` + `eslint` OK, HTTP 200 en `/api/v1/runtime`, `/backtest` y `/paper-lab` renderizados en escritorio). Sin monitor ni backtest activo.
 
-## MVP Paper Lab en caliente — ingeniería (2026-10-20, commit 906a575)
+## MVP Paper Lab en caliente — ingeniería, reconducido (2026-10-20, commit 84941e8)
 
-Se implementó y publicó el MVP de ingeniería del Paper Lab en caliente, exclusivamente
-para escritorio, sobre fixtures (sin Binance en vivo, sin órdenes reales, sin capital real).
+Se recondujo el MVP del Paper Lab en caliente: el backend Python es ahora la
+fuente de verdad y el frontend es un cliente de API delgado. Exclusivamente
+para escritorio, sobre fixtures (sin Binance en vivo, sin órdenes reales,
+sin capital real).
 
 Artefactos nuevos:
-- `frontend/src/lib/paper-lab-live.ts` — motor de simulación paper: entrada,
-  gestión y salida sobre velas de fixture con P&L realizado/no realizado,
-  costes (fees, spread/slippage), stop, horizonte y cierre manual.
-- `frontend/src/lib/paper-fixtures.ts` — 3 fixtures determinísticas
-  (BTC LONG por horizonte, ETH SHORT por stop, SOL LONG cierre manual).
+- `src/microstructure_probe/paper_lab_engine.py` — motor de sesiones de
+  ingeniería con orquestación incremental: reloj de sesión, configuración
+  versionada (config_hash), decisiones (VIGILANDO/SIN_ENTRADA/DESCARTADO/
+  ENTRADA_SIMULADA), posiciones, fills, costes, eventos y resultados.
+  Reutiliza primitivas de `backtest_offline.py` (no segundo motor económico).
+- `scripts/paper_lab_session.py` — CLI para operaciones de sesión
+  (list/create/get/step/exit/restart/stop) con validación de session_id contra
+  traversal y escritura atómica delegada al backend.
+- `frontend/src/app/api/v1/paper-lab/sessions/route.ts` — GET listado +
+  POST creación. `sessions/[session_id]/route.ts` — GET recuperación completa.
+  `sessions/[session_id]/step|exit|restart|stop/route.ts` — POST acciones.
+  Protección de origen (127.0.0.1:3020), confinamiento de directorio aislado.
+- `frontend/src/lib/paper-lab-live.ts` — tipos compartidos y cliente de API
+  (sin "use client", sin lógica de simulación).
 - `frontend/src/components/paper-lab-live/` — componentes UI desktop-first:
   selector de fixtures, gráfico de velas con niveles, paneles de posición/P&L,
-  registro de eventos, controles de sesión, persistencia de sesiones,
-  exportación JSON/CSV.
+  registro de eventos, controles de sesión (con botones de decisión),
+  persistencia, exportación JSON/CSV.
 - `frontend/src/app/paper-lab-live/page.tsx` — página `/paper-lab-live`.
-- `frontend/src/app/api/v1/paper-lab/sessions/route.ts` — API guardar/listar sesiones.
-- `frontend/src/test/paper-lab-live.test.ts` + `paper-lab-live-components.test.tsx` — pruebas.
+- `frontend/src/test/paper-lab-live-api.test.ts` — 9 pruebas de sessionView/
+  format helpers.
+- `tests/test_paper_lab_engine.py` — 14 pruebas del motor Python (entrada,
+  stop, horizonte, manual, open_at_end, reinicio, detención, persistencia,
+  validación de identificadores, serialización roundtrip).
 
-Verificado: tsc --noEmit limpio, eslint 0 errores (5 warnings preexistentes),
-next build OK, 489 pruebas vitest pass (1 skip), ruta `/paper-lab-live` en el build.
+Flujos verificados:
+- Entrada automática tras decisión ENTRADA_SIMULADA.
+- Salida por stop (precio distinto de la marca), por horizonte, manual.
+- open_at_end: datos agotados con posición abierta → permanece no realizada,
+  sin cierre inventado.
+- Reinicio, detención, persistencia y recarga tras refresco.
+- Identificadores con traversal rechazados.
 
-Estado: motor paper completo (Etapa 5) AÚN NO implementado. Este MVP es pantalla
-de ingeniería sobre fixtures; la primera ventana con datos Binance en caliente
-requiere autorización explícita y no se inicia aquí.
+Verificado: tsc --noEmit limpio, eslint 0 errores (warnings preexistentes),
+next build OK (rutas /api/v1/paper-lab/sessions* y /paper-lab-live),
+470 pruebas vitest pass (1 skip), 14 pruebas Python del motor pass.
+
+Estado: motor paper completo (Etapa 5) AÚN NO implementado. Este MVP es
+pantalla de ingeniería sobre fixtures; la primera ventana con datos Binance
+en caliente requiere autorización explícita y no se inicia aquí.
 
 Se reprodujo y se resolvió en `frontend/src/lib/backtest-control.ts`:
 - Identidad única por adquisición: `Guard` incluye `token` aleatorio (`randomBytes`) generado al adquirir, escrito en el guard y devuelto en el handle. Dos adquisiciones del mismo PID tienen tokens distintos.
