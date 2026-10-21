@@ -1,19 +1,18 @@
 "use client";
 import {useCallback, useState} from "react";
-import type {PaperSessionConfig, PaperCandle} from "@/lib/paper-lab-live";
+import type {PaperCandle, PaperSessionConfig} from "@/lib/paper-lab-live";
 import {PAPER_FIXTURES, FIXTURE_IDS, type PaperFixtureEntry} from "@/lib/paper-fixtures";
 import s from "./PaperLabLive.module.css";
 
 interface FixtureSelectorProps {
-  onSelect: (id: string, entry: PaperFixtureEntry) => void;
+  onSelect: (id: string) => void;
   selectedId: string | null;
 }
 export function FixtureSelector({onSelect, selectedId}: FixtureSelectorProps) {
   const [viewAll, setViewAll] = useState(false);
 
   const handleSelect = useCallback((id: string) => {
-    const entry = PAPER_FIXTURES[id];
-    if (entry) onSelect(id, entry);
+    onSelect(id);
   }, [onSelect]);
 
   return (
@@ -21,8 +20,8 @@ export function FixtureSelector({onSelect, selectedId}: FixtureSelectorProps) {
       <h3>Seleccion de operacion</h3>
       <p className={s.note}>
         Elija una operacion de fixture para simular. Los datos son sinteticos de
-        ingenieria (sin Binance en vivo, sin capital real). El frontend no
-        decide operaciones: solo ejecuta la simulacion que usted pide.
+        ingenieria (sin Binance en vivo, sin capital real). El backend ejecuta
+        la simulacion; el frontend solo presenta.
       </p>
       <div className={s.fixtureGrid}>
         {FIXTURE_IDS.map((id) => {
