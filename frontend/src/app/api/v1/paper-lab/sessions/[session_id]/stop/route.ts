@@ -55,6 +55,17 @@ export async function POST(
   } catch {
     parseError = (r.stdout || "").trim().slice(-200);
   }
+  // Cuando el CLI sale con codigo != 0, el JSON de error estructurado puede
+  // estar en stderr (el CLI imprime errores a stderr). Intentar parsearlo
+  // para poder mapear REVISION_CONFLICT -> 409, etc.
+  if (data === null && r.status !== 0) {
+    try {
+      data = JSON.parse(r.stderr) as PyResult;
+      parseError = null;
+    } catch {
+      parseError = (parseError || "") + " | stderr=" + (r.stderr || "").trim().slice(-200);
+    }
+  }
   if (data === null) {
     return NextResponse.json(
       {error: "PYTHON_BAD_JSON", detail: parseError ?? r.stderr.slice(-500)},

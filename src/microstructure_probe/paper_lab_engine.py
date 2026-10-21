@@ -355,6 +355,7 @@ def _to_bt_candles(candles: List[PaperCandle], symbol: str) -> List[Candle]:
 def _run_backtest_on_prefix(
     state: PaperSessionState, prefix: List[PaperCandle],
     event_time_ms: int,
+    known_close_cutoff: Optional[int] = None,
 ) -> Optional[Dict[str, Any]]:
     """Ejecuta run_backtest SOLO sobre el prefijo conocido en T.
 
@@ -378,13 +379,24 @@ def _run_backtest_on_prefix(
         rules_version="H1-v1",
     )
     bt_config = _build_backtest_config(state)
-    bt_candles = _to_bt_candles(prefix, config.symbol)
+    # Pasar TODAS las velas (contexto + operacion) para que run_backtest
+    # pueda encontrar fills en velas futuras cuyo open se conoce.
+    # known_close_cutoff restringe el uso de close/alta/baja a velas cuyo
+    # close ya se conoce en T.
+    all_candles_for_bt = list(state.context_candles) + list(state.candles)
+    seen_opens_bt = set()
+    merged_candles_for_bt = []
+    for c in sorted(all_candles_for_bt, key=lambda c: c.open_time_ms):
+        if c.open_time_ms not in seen_opens_bt:
+            seen_opens_bt.add(c.open_time_ms)
+            merged_candles_for_bt.append(c)
+    bt_candles = _to_bt_candles(merged_candles_for_bt, config.symbol)
 
     result = run_backtest(
         [event], bt_candles, bt_config,
         dataset_id="paper-lab-fixture", segment="dev",
+        known_close_cutoff=known_close_cutoff,
     )
-
     trades = result.get("trades", [])
     if not trades:
         return None
@@ -701,9 +713,7 @@ def create_session(
         if last_ctx_close is not None:
             initial_clock_ms = last_ctx_close
     elif candles:
-        last_close = candles[-1].close_time_ms
-        if last_close is not None:
-            initial_clock_ms = last_close
+        initial_clock_ms = candles[0].open_time_ms
 
     cfg_dict = {
         "symbol": config.symbol, "interval": config.interval,
@@ -834,9 +844,20 @@ def evaluate_session(
             "porque consideraría todo el histórico conocido."
         )
 
-    # Prefijo conocido en T (usado tanto para la señal como para run_backtest).
-    prefix = _known_prefix_at(state.candles, signal_at_ms)
-    event_time_ms = prefix[0].open_time_ms - 1 if prefix else 0
+    # Prefijo conocido en T: fusion de contexto y velas de operacion,
+    # ordenados y sin duplicados por open_time_ms.
+    all_candles = list(state.context_candles) + list(state.candles)
+    seen_opens = set()
+    merged_candles = []
+    for c in sorted(all_candles, key=lambda c: c.open_time_ms):
+        if c.open_time_ms not in seen_opens:
+            seen_opens.add(c.open_time_ms)
+            merged_candles.append(c)
+    prefix = _known_prefix_at(merged_candles, signal_at_ms)
+    fully = _fully_known_at(merged_candles, signal_at_ms)
+    # El evento se sitúa en T (tiempo de la señal), no antes de la primera
+    # vela. Esto garantiza entry_ms >= signal_at_ms (no entrada retroactiva).
+    event_time_ms = signal_at_ms
     clock_for_state = signal_at_ms
 
     # Copia de trabajo en estado evaluando.
@@ -879,11 +900,12 @@ def evaluate_session(
     entry_spread_slip = 0.0
 
     if signal == "ENTRADA_SIMULADA" and risk_ok:
-        prefix = _known_prefix_at(next_state.candles, signal_at_ms)
-        # El evento se sitúa justo antes de T: el primer fill posible es una
-        # vela del prefijo (conocida en T), nunca una vela futura.
+        prefix = _known_prefix_at(merged_candles, signal_at_ms)
+        # El evento se sitúa en T: el primer fill posible es una vela del
+        # prefijo con open_time_ms > event_time_ms, nunca una vela anterior.
         bt_result = _run_backtest_on_prefix(
-            next_state, prefix, event_time_ms=event_time_ms)
+            next_state, prefix, event_time_ms=event_time_ms,
+            known_close_cutoff=signal_at_ms)
         if bt_result is not None:
             fill_entry_px = bt_result["entry_px"]
             fill_entry_ms = bt_result["entry_ms"]
@@ -974,17 +996,135 @@ def evaluate_session(
         )
         return next_state
 
-    # No hay entrada: si la senal era ENTRADA_SIMULADA pero no hubo fill
-    # posible en el prefijo conocido -> SIN_ENTRADA (senal sin confirmación
-    # económica). En cualquier otro caso, la senal ya especificó el caso.
+    # No hay entrada.
     if signal == "ENTRADA_SIMULADA":
-        decision = "SIN_ENTRADA"
+        # Senal confirmada pero sin fill posible en el prefijo conocido:
+        # permanece en en_espera (pendiente de fill), no cierra.
+        decision = "ENTRADA_SIMULADA"
         reason = ("Senal de entrada en T pero sin fill posible en el "
-                  "prefijo conocido: run_backtest no admitió operación "
-                  "con datos disponibles en T.")
-    else:
+                  "prefijo conocido: run_backtest no admite operacion con "
+                  "datos disponibles en T. Senal pendiente de fill.")
+        evidence = dict(signal_evidence)
+        evidence.update({
+            "evaluated_at_ms": now,
+            "at_ms": signal_at_ms,
+            "rule_version": rule_version or RULE_CAUSAL_V1,
+            "admit_risk": risk_ok,
+            "risk_reason": risk_reason,
+        })
+        next_state = PaperSessionState(
+            session_id=next_state.session_id,
+            created_at_ms=next_state.created_at_ms,
+            updated_at_ms=now,
+            status="en_espera",  # pendiente de fill, no cierra
+            config=PaperSessionConfig(
+                symbol=next_state.config.symbol,
+                interval=next_state.config.interval,
+                direction=next_state.config.direction,
+                notional_usdt=next_state.config.notional_usdt,
+                entry_px=next_state.config.entry_px,
+                stop_px=next_state.config.stop_px,
+                stop_distance_pct=next_state.config.stop_distance_pct,
+                horizon_ms=next_state.config.horizon_ms,
+                fee_bps=next_state.config.fee_bps,
+                spread_bps=next_state.config.spread_bps,
+                slippage_bps=next_state.config.slippage_bps,
+                hypothesis_id=hypothesis_id,
+                hypothesis_version=hypothesis_version,
+                rule_version=rule_version or RULE_CAUSAL_V1,
+                decision=decision,
+                decision_reason=reason,
+                decision_evidence=evidence,
+            ),
+            candles=next_state.candles,
+            context_candles=next_state.context_candles,
+            cursor=next_state.cursor,
+            position=next_state.position,
+            costs=next_state.costs,
+            events=list(next_state.events) + [
+                PaperEvent(
+                    at_ms=now,
+                    label=f"Decision: {decision} (pendiente de fill)",
+                    kind="protection",
+                    detail=reason,
+                )
+            ],
+            result=None,
+            clock_ms=next_state.clock_ms,
+            config_hash=next_state.config_hash,
+            input_hash=next_state.input_hash,
+            engine_version=next_state.engine_version,
+            limitations=list(next_state.limitations),
+            revision=next_state.revision + 1,
+            authoritative=None,
+        )
+        return next_state
+
+    # Senal SIN_ENTRADA porque no hay suficientes datos (not prefix o not
+    # fully): sesion temporal, no cierra. Espera a que lleguen mas datos.
+    if not prefix or not fully:
         decision = signal
         reason = signal_reason
+        evidence = dict(signal_evidence)
+        evidence.update({
+            "evaluated_at_ms": now,
+            "at_ms": signal_at_ms,
+            "rule_version": rule_version or RULE_CAUSAL_V1,
+            "admit_risk": risk_ok,
+            "risk_reason": risk_reason,
+        })
+        next_state = PaperSessionState(
+            session_id=next_state.session_id,
+            created_at_ms=next_state.created_at_ms,
+            updated_at_ms=now,
+            status="sin_iniciar",  # sesion temporal, espera mas datos
+            config=PaperSessionConfig(
+                symbol=next_state.config.symbol,
+                interval=next_state.config.interval,
+                direction=next_state.config.direction,
+                notional_usdt=next_state.config.notional_usdt,
+                entry_px=next_state.config.entry_px,
+                stop_px=next_state.config.stop_px,
+                stop_distance_pct=next_state.config.stop_distance_pct,
+                horizon_ms=next_state.config.horizon_ms,
+                fee_bps=next_state.config.fee_bps,
+                spread_bps=next_state.config.spread_bps,
+                slippage_bps=next_state.config.slippage_bps,
+                hypothesis_id=hypothesis_id,
+                hypothesis_version=hypothesis_version,
+                rule_version=rule_version or RULE_CAUSAL_V1,
+                decision=decision,
+                decision_reason=reason,
+                decision_evidence=evidence,
+            ),
+            candles=next_state.candles,
+            context_candles=next_state.context_candles,
+            cursor=next_state.cursor,
+            position=next_state.position,
+            costs=next_state.costs,
+            events=list(next_state.events) + [
+                PaperEvent(
+                    at_ms=now,
+                    label=f"Decision: {decision} (esperando datos)",
+                    kind="protection",
+                    detail=reason,
+                )
+            ],
+            result=None,
+            clock_ms=next_state.clock_ms,
+            config_hash=next_state.config_hash,
+            input_hash=next_state.input_hash,
+            engine_version=next_state.engine_version,
+            limitations=list(next_state.limitations),
+            revision=next_state.revision + 1,
+            authoritative=None,
+        )
+        return next_state
+
+    # Senal SIN_ENTRADA definitiva (stop vulnerado o precio no a favor):
+    # cierra sesion con motivo.
+    decision = signal
+    reason = signal_reason
     evidence = dict(signal_evidence)
     evidence.update({
         "evaluated_at_ms": now,
@@ -1131,8 +1271,53 @@ def step_forward(state: PaperSessionState) -> PaperSessionState:
         return state
 
     # Si está en_espera, el primer paso ejecuta la entrada.
+    # Si est\xe1 en_espera, el primer paso ejecuta la entrada.
+    # Si authoritative es None (fill todav\xe1a no disponible), re-ejecutar
+    # run_backtest con el reloj avanzado para ver si ahora se puede llenar.
     if state.status == "en_espera" and not state.position.open:
-        return _apply_entry(state)
+        ev_time = state.config.decision_evidence.get("at_ms") if state.config.decision_evidence else None
+        bt_result = state.authoritative
+        if bt_result is None and ev_time is not None:
+            # Re-ejecutar run_backtest con reloj actualizado
+            all_candles = list(state.context_candles) + list(state.candles)
+            seen_opens = set()
+            merged_candles = []
+            for c in sorted(all_candles, key=lambda c: c.open_time_ms):
+                if c.open_time_ms not in seen_opens:
+                    seen_opens.add(c.open_time_ms)
+                    merged_candles.append(c)
+            next_cursor = min(len(state.candles), state.cursor + 1)
+            next_candle = state.candles[next_cursor - 1] if next_cursor > 0 else None
+            next_clock_ms = (next_candle.close_time_ms if next_candle and next_candle.close_time_ms
+                             is not None else next_candle.open_time_ms) if next_candle else None
+            prefix = [c for c in merged_candles if c.open_time_ms <= (next_clock_ms or 0)]
+            bt_result = _run_backtest_on_prefix(state, prefix, event_time_ms=ev_time,
+                                                known_close_cutoff=next_clock_ms or 0)
+        if bt_result is not None:
+            state_with_bt = PaperSessionState(
+                session_id=state.session_id,
+                created_at_ms=state.created_at_ms,
+                updated_at_ms=state.updated_at_ms,
+                status=state.status,
+                config=state.config,
+                candles=state.candles,
+                context_candles=state.context_candles,
+                cursor=state.cursor,
+                position=state.position,
+                costs=state.costs,
+                events=list(state.events),
+                result=state.result,
+                clock_ms=state.clock_ms,
+                config_hash=state.config_hash,
+                input_hash=state.input_hash,
+                engine_version=state.engine_version,
+                limitations=list(state.limitations),
+                revision=state.revision,
+                authoritative=bt_result,
+            )
+            return _apply_entry(state_with_bt)
+        # Fill a\u00fan no disponible: permanecer en en_espera.
+        return state
 
     config = state.config
     candles = state.candles
@@ -1248,6 +1433,26 @@ def step_forward(state: PaperSessionState) -> PaperSessionState:
             authoritative=next_state.authoritative,
         )
 
+        # --- Detección de stop con la vela actual (conocida en T) ---
+        # run_backtest no puede confirmar el stop durante evaluate si la
+        # vela de salida aún no está plenamente conocida. Al avanzar, la
+        # vela actual sí tiene OHLC conocido: si vulnera el stop, salida.
+        # Usa el mismo stop dinámico que run_backtest (entry × (1 ∓ pct)),
+        # no el stop_px estático del config, para conservar la mecánica
+        # económica compartida.
+        if (candle is not None and candle.close_time_ms is not None
+                and next_state.position.entry_px is not None):
+            entry_px = next_state.position.entry_px
+            pct = config.stop_distance_pct / 100.0
+            if config.direction == "LONG" and candle.low is not None:
+                dynamic_stop = entry_px * (1.0 - pct)
+                if candle.low <= dynamic_stop:
+                    return _finalize_stop_exit(next_state, candle, dynamic_stop)
+            if config.direction == "SHORT" and candle.high is not None:
+                dynamic_stop = entry_px * (1.0 + pct)
+                if candle.high >= dynamic_stop:
+                    return _finalize_stop_exit(next_state, candle, dynamic_stop)
+
         # Evaluar salida con la autoridad de run_backtest.
         bt = next_state.authoritative
         if bt and bt.get("exit_executed"):
@@ -1262,6 +1467,110 @@ def step_forward(state: PaperSessionState) -> PaperSessionState:
         return _finalize_open_at_end(next_state)
 
     return next_state
+
+
+def _finalize_stop_exit(
+    state: PaperSessionState, candle: PaperCandle, stop_px: float,
+) -> PaperSessionState:
+    """Finaliza la sesión con salida ejecutada por stop detectado en la
+    vela actual (OHLC conocido en T). Costes ejecutados consistentes con la
+    mecánica compartida de backtest_offline."""
+    config = state.config
+    position = state.position
+    entry_px = position.entry_px or 0.0
+    qty = position.entry_qty or 0.0
+
+    exit_px = stop_px
+    exit_ms = candle.close_time_ms if candle.close_time_ms is not None \
+        else candle.open_time_ms
+    exit_reason = "stop"
+
+    gross = _gross_pnl(config.direction, entry_px, exit_px, qty)
+    entry_fees_executed = state.costs.entry_fees_executed
+    entry_spread_slip_executed = state.costs.entry_spread_slip_executed
+    exit_fees_executed = exit_px * qty * (config.fee_bps / 10000.0)
+    exit_spread_slip_executed = exit_px * qty * (
+        (config.spread_bps + config.slippage_bps) / 10000.0
+    )
+    friction_executed = (
+        entry_fees_executed + exit_fees_executed +
+        entry_spread_slip_executed + exit_spread_slip_executed
+    )
+    net = gross - friction_executed
+
+    events = list(state.events)
+    events.append(PaperEvent(
+        at_ms=exit_ms,
+        label=f"Salida stop @ {exit_px:.2f}",
+        kind="exit",
+        detail=f"razon=stop P&L neto={net:.2f}",
+    ))
+
+    result = PaperTradeResult(
+        symbol=config.symbol, direction=config.direction,
+        entry_px=entry_px, exit_px=exit_px,
+        entry_ms=position.entry_ms or 0, exit_ms=exit_ms,
+        exit_reason=exit_reason, exit_executed=True, qty=qty,
+        filled_cost=position.entry_cost or 0.0,
+        gross_pnl=gross,
+        fees=entry_fees_executed + exit_fees_executed,
+        spread_slip=entry_spread_slip_executed + exit_spread_slip_executed,
+        funding=None,
+        friction=friction_executed,
+        net_pnl=net,
+        realized_net=net,
+        open_at_end=False,
+        entry_fees_executed=entry_fees_executed,
+        exit_fees_executed=exit_fees_executed,
+        entry_spread_slip_executed=entry_spread_slip_executed,
+        exit_spread_slip_executed=exit_spread_slip_executed,
+        exit_fees_estimated=0.0,
+        exit_spread_slip_estimated=0.0,
+    )
+
+    return PaperSessionState(
+        session_id=state.session_id,
+        created_at_ms=state.created_at_ms,
+        updated_at_ms=_now_ms(),
+        status="cerrada",
+        config=state.config,
+        candles=state.candles,
+        context_candles=state.context_candles,
+        cursor=state.cursor,
+        position=PaperPosition(
+            open=False, direction=position.direction,
+            entry_px=position.entry_px, entry_qty=position.entry_qty,
+            entry_cost=position.entry_cost, entry_ms=position.entry_ms,
+            stop_px=position.stop_px, mark_px=exit_px, mark_ms=exit_ms,
+            unrealized_gross=gross, unrealized_net=net,
+            mfe_pct=position.mfe_pct, mae_pct=position.mae_pct,
+        ),
+        costs=PaperCosts(
+            fee_bps=state.costs.fee_bps,
+            spread_bps=state.costs.spread_bps,
+            entry_fees=entry_fees_executed,
+            exit_fees=exit_fees_executed,
+            entry_spread_slip=entry_spread_slip_executed,
+            exit_spread_slip=exit_spread_slip_executed,
+            funding=None,
+            friction=friction_executed,
+            entry_fees_executed=entry_fees_executed,
+            exit_fees_executed=exit_fees_executed,
+            entry_spread_slip_executed=entry_spread_slip_executed,
+            exit_spread_slip_executed=exit_spread_slip_executed,
+            exit_fees_estimated=0.0,
+            exit_spread_slip_estimated=0.0,
+        ),
+        events=events,
+        result=result,
+        clock_ms=exit_ms,
+        config_hash=state.config_hash,
+        input_hash=state.input_hash,
+        engine_version=state.engine_version,
+        limitations=list(state.limitations),
+        revision=state.revision + 1,
+        authoritative=state.authoritative,
+    )
 
 
 def _finalize_exit_from_bt(

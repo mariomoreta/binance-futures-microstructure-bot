@@ -519,8 +519,15 @@ def _close_times(series: List[Candle]) -> List[Optional[int]]:
 def run_backtest(events: List[StudyEvent], candles: List[Candle],
                  config: BacktestConfig,
                  dataset_id: str = "synthetic-fixture",
-                 segment: str = "dev") -> Dict[str, Any]:
-    """Chronological causal replay. Versioned, reproducible result dict."""
+                 segment: str = "dev",
+                 known_close_cutoff: Optional[int] = None) -> Dict[str, Any]:
+    """Chronological causal replay. Versioned, reproducible result dict.
+
+    Known close cutoff: when provided, only candles with close_time_ms <=
+    known_close_cutoff are considered to have known close/high/low. This is
+    used for causal evaluation where the evaluation time T limits what is
+    known. If None, defaults to horizon_end (backward compatible).
+    """
     _check_supported(config)
     ordered_events = sorted(events, key=lambda e: (e.event_time_ms, e.symbol))
     by_symbol: Dict[str, List[Candle]] = {}
@@ -614,10 +621,11 @@ def run_backtest(events: List[StudyEvent], candles: List[Candle],
 
         for i in fill_idx:
             c = series[i]
+            known_close_cutoff_here = known_close_cutoff if known_close_cutoff is not None else horizon_end
             if c.open_time_ms > horizon_end:
                 break  # past the window: nothing here is usable (R1/R2)
             ct = closes[ev.symbol][i]
-            known_close = ct is not None and ct <= horizon_end
+            known_close = ct is not None and ct <= known_close_cutoff_here
             # (1) Existing position resolves against the KNOWN open first
             # (R3/R4): a gap through the stop exits AT the open; a later
             # recovery cannot upgrade it; a stopped position takes no fills.

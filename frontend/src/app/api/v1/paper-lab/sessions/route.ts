@@ -38,16 +38,20 @@ function runPython(action: string, extra: string[]): {ok: boolean; data?: unknow
     {cwd: ROOT, encoding: "utf8", timeout: 30_000,
      maxBuffer: 8 * 1024 * 1024, windowsHide: true,
      env: {...process.env, PYTHONPATH: ROOT + "/src"}});
-  if (r.status !== 0) {
-    return {ok: false, error: "PYTHON_FAILED",
-      detail: (r.stderr || "").trim().slice(-500)};
+  // Cuando el CLI sale con codigo != 0, el JSON de error estructurado puede
+  // estar en stdout o stderr. Intentar parsear ambos antes de rendirse.
+  let raw = (r.stdout || "").trim();
+  if (!raw && r.status !== 0) raw = (r.stderr || "").trim();
+  if (raw) {
+    try {
+      return JSON.parse(raw) as {ok: boolean; data?: unknown};
+    } catch {
+      return {ok: false, error: "PYTHON_BAD_JSON",
+        detail: raw.slice(-200)};
+    }
   }
-  try {
-    return JSON.parse(r.stdout) as {ok: boolean; data?: unknown};
-  } catch {
-    return {ok: false, error: "PYTHON_BAD_JSON",
-      detail: (r.stdout || "").trim().slice(-200)};
-  }
+  return {ok: false, error: "PYTHON_FAILED",
+    detail: (r.stderr || "").trim().slice(-500)};
 }
 
 export async function GET(req: Request): Promise<NextResponse> {
