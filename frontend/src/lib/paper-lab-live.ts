@@ -276,6 +276,8 @@ export async function evaluateSessionApi(
   hypothesisId?: string | null,
   hypothesisVersion?: string | null,
   ruleVersion?: string | null,
+  atMs?: number | null,
+  requestId?: string | null,
 ): Promise<PaperSessionState | null> {
   const r = await apiJson(`/${encodeURIComponent(sessionId)}/evaluate`,
     {
@@ -284,6 +286,8 @@ export async function evaluateSessionApi(
         hypothesis_id: hypothesisId ?? null,
         hypothesis_version: hypothesisVersion ?? null,
         rule_version: ruleVersion ?? null,
+        at_ms: atMs ?? null,
+        request_id: requestId ?? null,
       }),
     });
   if (!r.ok || !r.data) return null;
@@ -299,37 +303,53 @@ export async function getSessionApi(sessionId: string):
   return data.session as PaperSessionState;
 }
 
-export async function stepSessionApi(sessionId: string):
-  Promise<PaperSessionState | null> {
+export async function stepSessionApi(
+  sessionId: string, requestId?: string | null,
+): Promise<PaperSessionState | null> {
   const r = await apiJson(`/${encodeURIComponent(sessionId)}/step`,
-    {method: "POST"});
+    {
+      method: "POST",
+      body: JSON.stringify({request_id: requestId ?? null}),
+    });
   if (!r.ok || !r.data) return null;
   const data = r.data as {session?: unknown};
   return data.session as PaperSessionState;
 }
 
-export async function exitSessionApi(sessionId: string):
-  Promise<PaperSessionState | null> {
+export async function exitSessionApi(
+  sessionId: string, requestId?: string | null,
+): Promise<PaperSessionState | null> {
   const r = await apiJson(`/${encodeURIComponent(sessionId)}/exit`,
-    {method: "POST"});
+    {
+      method: "POST",
+      body: JSON.stringify({request_id: requestId ?? null}),
+    });
   if (!r.ok || !r.data) return null;
   const data = r.data as {session?: unknown};
   return data.session as PaperSessionState;
 }
 
-export async function restartSessionApi(sessionId: string):
-  Promise<PaperSessionState | null> {
+export async function restartSessionApi(
+  sessionId: string, requestId?: string | null,
+): Promise<PaperSessionState | null> {
   const r = await apiJson(`/${encodeURIComponent(sessionId)}/restart`,
-    {method: "POST"});
+    {
+      method: "POST",
+      body: JSON.stringify({request_id: requestId ?? null}),
+    });
   if (!r.ok || !r.data) return null;
   const data = r.data as {session?: unknown};
   return data.session as PaperSessionState;
 }
 
-export async function stopSessionApi(sessionId: string):
-  Promise<PaperSessionState | null> {
+export async function stopSessionApi(
+  sessionId: string, requestId?: string | null,
+): Promise<PaperSessionState | null> {
   const r = await apiJson(`/${encodeURIComponent(sessionId)}/stop`,
-    {method: "POST"});
+    {
+      method: "POST",
+      body: JSON.stringify({request_id: requestId ?? null}),
+    });
   if (!r.ok || !r.data) return null;
   const data = r.data as {session?: unknown};
   return data.session as PaperSessionState;

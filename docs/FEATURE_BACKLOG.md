@@ -360,6 +360,21 @@ frontend 314/314 + typecheck 0 + build OK.
 **7. Last update:** 2026-10-20.
 **8. Estado de entrega (cerrado 2026-10-20):** artefacto determinista, parser/player/componentes y ruta V2, tests y evidencias, selección independiente del P&L, reconciliación P&L/costes al cierre, capturas antes de entrada/abierta/cerrada, SHA/build servido y URL local verificada. Pendiente **fuera de este ítem:** motor paper completo (Etapa 5), no autorizado.
 
+### Corrección acotada: camino real dashboard → BFF → Python (2026-10-21, sobre ec0416a)
+
+**1. Title:** Corrección de defectos en el recorrido real cliente/BFF/backend de Paper Lab.
+**2. Approval status:** DECIDED (dentro del alcance autorizado, sin Binance ni motor paper).
+**3. Implementation status:** IMPLEMENTED.
+**4. Evaluation status:** 44 pruebas Python OK + 9 frontend vitest OK + tsc --noEmit limpio.
+   - Reloj causal: evaluate_session rechaza sin at_ms/clock_ms; nunca usa hora actual.
+   - Sin información futura: session_to_public_dict filtra a solo lo conocido en T.
+   - Request_id e idempotencia en BFF; conflictos HTTP 409.
+   - Fin de datos no es cierre ejecutado: mark_px no sustituye exit_px.
+**5. Limitaciones:** sin Binance, monitor, paper prospectivo, órdenes, pagos, móvil ni optimización.
+**6. Evidence:** docs/DECISIONS.md (entrada 2026-10-21), tests/test_paper_lab_engine.py,
+   tests/test_paper_lab_integration.py, frontend/src/test/paper-lab-live-api.test.ts.
+**7. Last update:** 2026-10-21.
+
 ### Correcciones acotadas de Paper Lab (2026-10-20, sobre `d9359e3`)
 
 - **Causalidad de revelación:** eliminado el paso `signal` anticipado en `event_time_ms`; la detección se revela en `available_at` con `formation_time_ms` como metadata. `initial_cursor_ms` (anterior a la detección) define la vista inicial con el contexto ya conocido. Invariantes de generador/parser + tests t−1/t/t+1, formación, fronteras de entrada/salida y «datos posteriores no alteran la vista anterior al cursor».

@@ -25,11 +25,19 @@ export default function PaperLabLive(): React.JSX.Element {
   const [loading, setLoading] = useState(false);
   const [fixtureId, setFixtureId] = useState<string | null>(null);
 
+  // Genera un request_id único por acción lógica (idempotencia entre reintentos).
+  const [requestIdCounter, setRequestIdCounter] = useState(0);
+  const nextRequestId = useCallback(() => {
+    const id = "req-" + Date.now() + "-" + requestIdCounter;
+    setRequestIdCounter((n) => n + 1);
+    return id;
+  }, [requestIdCounter]);
+
   // Cargar sesiones guardadas al montar (persistencia real, survives refresh).
   useEffect(() => {
     listSessionsApi().then((sessions) => {
       setSavedSessions(sessions);
-    }).catch(() => {/* persistencia opcional */});
+    }).catch(() => { /* persistencia opcional */ });
   }, []);
 
   const createAndEvaluate = useCallback(async (
@@ -48,14 +56,15 @@ export default function PaperLabLive(): React.JSX.Element {
       setState(created);
 
       // 2. Evaluar evidencia en T vía backend (run_backtest como autoridad).
-      //    Esto transiciona sin_iniciar → evaluando → en_espera (o cerrada).
+      //    Se envía at_ms = reloj de sesión (created.clock_ms) para que el
+      //    backend use el reloj de simulación y no la hora actual.
       const evaluated = await evaluateSessionApi(created.session_id, null,
-        null, ruleVersion);
+        null, ruleVersion, created.clock_ms ?? null, nextRequestId());
       if (evaluated) setState(evaluated);
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [nextRequestId]);
 
   const handleSelectFixture = useCallback(async (id: string) => {
     // Regla experimental versionada, fijada antes de ejecutar.
@@ -88,56 +97,56 @@ export default function PaperLabLive(): React.JSX.Element {
     // (step_forward con status en_espera aplica la entrada).
     setLoading(true);
     try {
-      const next = await stepSessionApi(state.session_id);
+      const next = await stepSessionApi(state.session_id, nextRequestId());
       if (next) setState(next);
     } finally {
       setLoading(false);
     }
-  }, [state]);
+  }, [state, nextRequestId]);
 
   const handleStep = useCallback(async () => {
     if (!state) return;
     setLoading(true);
     try {
-      const next = await stepSessionApi(state.session_id);
+      const next = await stepSessionApi(state.session_id, nextRequestId());
       if (next) setState(next);
     } finally {
       setLoading(false);
     }
-  }, [state]);
+  }, [state, nextRequestId]);
 
   const handleExit = useCallback(async () => {
     if (!state) return;
     setLoading(true);
     try {
-      const next = await exitSessionApi(state.session_id);
+      const next = await exitSessionApi(state.session_id, nextRequestId());
       if (next) setState(next);
     } finally {
       setLoading(false);
     }
-  }, [state]);
+  }, [state, nextRequestId]);
 
   const handleRestart = useCallback(async () => {
     if (!state) return;
     setLoading(true);
     try {
-      const next = await restartSessionApi(state.session_id);
+      const next = await restartSessionApi(state.session_id, nextRequestId());
       if (next) setState(next);
     } finally {
       setLoading(false);
     }
-  }, [state]);
+  }, [state, nextRequestId]);
 
   const handleStop = useCallback(async () => {
     if (!state) return;
     setLoading(true);
     try {
-      const next = await stopSessionApi(state.session_id);
+      const next = await stopSessionApi(state.session_id, nextRequestId());
       if (next) setState(next);
     } finally {
       setLoading(false);
     }
-  }, [state]);
+  }, [state, nextRequestId]);
 
   if (!state) {
     return (
@@ -164,12 +173,17 @@ export default function PaperLabLive(): React.JSX.Element {
   const finished = status === "cerrada" || status === "detenida";
   const entryPx = config.entry_px;
   const stopPx = config.stop_px;
-  const exitPx = result?.exit_px ?? position.mark_px ?? null;
-  const exitShown = finished && !!exitPx;
+  // Salida ejecutada SOLO cuando run_backtest confirmó un fill de salida.
+  // Nunca se usa position.mark_px como sustituto de precio de salida ejecutado.
+  const exitExecuted = result?.exit_executed === true;
+  const exitPx = exitExecuted ? (result?.exit_px ?? null) : null;
+  const exitShown = finished && exitExecuted && exitPx != null;
   const gross = result?.gross_pnl ?? position.unrealized_gross ?? null;
-  const net = result?.net_pnl ?? position.unrealized_net ?? null;
+  // "P&L neto realizado" usa realized_net; si es null (open_at_end), es "No realizado".
+  const net = exitExecuted ? (result?.net_pnl ?? null) : null;
+  const unrealized = position.unrealized_net;
 
-  const decisionLabel = (d?: PaperCandidateDecision | null) => {
+  const decisionLabel = (d?: PaperCandidateDecision | null): string => {
     if (!d) return "—";
     const map: Record<string, string> = {
       VIGILANDO: "VIGILANDO",
@@ -180,7 +194,26 @@ export default function PaperLabLive(): React.JSX.Element {
     return map[d] ?? d;
   };
 
-  const fundingLabel = (f: number | null) => f == null ? "UNKNOWN (sin calendario)" : formatMoneyPL(f);
+  const fundingLabel = (f: number | null): string =>
+    f == null ? "UNKNOWN (sin calendario)" : formatMoneyPL(f);
+
+  // Velas conocidas en T (open_time_ms <= clock_ms) para el gráfico causal.
+  const knownCandles = useMemo(() => {
+    const T = clock_ms ?? 0;
+    return state.candles.filter((c) => c.open_time_ms <= T);
+  }, [state.candles, clock_ms]);
+
+  // Velas de contexto conocidas en T.
+  const knownContext = useMemo(() => {
+    const T = clock_ms ?? 0;
+    return state.context_candles.filter((c) => c.open_time_ms <= T);
+  }, [state.context_candles, clock_ms]);
+
+  // Clase CSS para el P&L neto realizado.
+  let netClass = s.v;
+  if (net != null) {
+    netClass = net >= 0 ? s.v + " " + s.pos : s.v + " " + s.neg;
+  }
 
   return (
     <section className={s.root} aria-label="Paper Lab ingeniería — simulación paper">
@@ -269,8 +302,8 @@ export default function PaperLabLive(): React.JSX.Element {
           </div>
           <div className={s.chartWrap}>
             <LiveChart
-              candles={state.candles}
-              contextCandles={state.context_candles}
+              candles={knownCandles}
+              contextCandles={knownContext}
               entryPx={open ? entryPx : null}
               stopPx={open ? stopPx : null}
               exitPx={exitPx}
@@ -280,8 +313,9 @@ export default function PaperLabLive(): React.JSX.Element {
             />
           </div>
           <p className={s.note}>
-            Solo velas cerradas conocidas hasta el cursor; sin ticks ni
-            recorrido intrabar inventado. Los niveles aparecen cuando son relevantes.
+            Solo velas conocidas en T (open_time_ms menor o igual al reloj de
+            simulación); sin ticks ni recorrido intrabar inventado. Los niveles
+            aparecen cuando son relevantes.
           </p>
         </section>
 
@@ -293,8 +327,9 @@ export default function PaperLabLive(): React.JSX.Element {
             finished={finished}
             entered={open}
             costs={costs}
-            unrealized={position.unrealized_net}
+            unrealized={unrealized}
             result={result}
+            exitExecuted={exitExecuted}
           />
         </section>
       </div>
@@ -338,18 +373,19 @@ export default function PaperLabLive(): React.JSX.Element {
           <div className={s.row}><span className={s.k}>Dirección</span><span className={s.v}>{result.direction}</span></div>
           <div className={s.row}><span className={s.k}>Decisión</span><span className={s.v}>{decisionLabel(config.decision)}</span></div>
           <div className={s.row}><span className={s.k}>Entrada</span><span className={s.v}>{formatPricePL(result.entry_px)}</span></div>
-          <div className={s.row}><span className={s.k}>Salida</span><span className={s.v}>{result.exit_px != null ? formatPricePL(result.exit_px) : "—"}</span></div>
+          <div className={s.row}><span className={s.k}>Salida</span><span className={s.v}>{exitPx != null ? formatPricePL(exitPx) : "—"}</span></div>
           <div className={s.row}><span className={s.k}>Motivo de salida</span><span className={s.v}>{result.exit_reason ?? "—"}</span></div>
           <div className={s.row}><span className={s.k}>Salida ejecutada</span><span className={s.v}>{result.exit_executed ? "Sí" : "No"}</span></div>
           <div className={s.row}><span className={s.k}>Posición abierta al final</span><span className={s.v}>{result.open_at_end ? "Sí" : "No"}</span></div>
-          <div className={s.row}><span className={s.k}>P&L bruto</span><span className={`${s.v} ${result.gross_pnl >= 0 ? s.pos : s.neg}`}>{formatMoneyPL(result.gross_pnl)}</span></div>
+          <div className={s.row}><span className={s.k}>P&L bruto</span><span className={result.gross_pnl >= 0 ? s.v + " " + s.pos : s.v + " " + s.neg}>{formatMoneyPL(result.gross_pnl)}</span></div>
           <div className={s.row}><span className={s.k}>Costes totales (ejecutados)</span><span className={s.v}>{formatMoneyPL(result.friction)}</span></div>
           <div className={s.row}><span className={s.k}>Funding</span><span className={s.v}>{fundingLabel(result.funding)}</span></div>
-          <div className={s.row}><span className={s.k}>P&L neto realizado</span><span className={`${s.v} ${result.net_pnl >= 0 ? s.pos : s.neg}`}>{formatMoneyPL(result.net_pnl)}</span></div>
+          <div className={s.row}><span className={s.k}>P&L neto realizado</span><span className={netClass}>{net != null ? formatMoneyPL(net) : "No realizado"}</span></div>
           <p className={s.note}>
-            Resultado congelado al cierre. Si el motivo es fin de datos, la
-            posición permanece abierta y no realizada (sin comisión de salida
-            inventada). Puede exportarlo o iniciar una nueva sesión.
+            {result.open_at_end
+              ? "Fin de datos: la posición permanece abierta y no realizada (sin comisión de salida inventada)."
+              : "Resultado congelado al cierre."}
+            Puede exportarlo o iniciar una nueva sesión.
           </p>
         </section>
       )}

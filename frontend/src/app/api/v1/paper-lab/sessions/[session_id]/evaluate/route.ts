@@ -75,7 +75,8 @@ export async function POST(
       {status: 500, headers});
   }
   if (!data.ok) {
-    const status = data.error === "SESSION_NOT_FOUND" ? 404 : 400;
+    const status = data.error === "SESSION_NOT_FOUND" ? 404 :
+      (data.error === "REVISION_CONFLICT" || data.error === "REQUEST_CONTENT_CONFLICT") ? 409 : 400;
     return NextResponse.json({error: data.error, detail: data.detail},
       {status, headers});
   }

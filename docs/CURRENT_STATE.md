@@ -3,6 +3,26 @@
 Estado factual: los cinco defectos probados están corregidos y verificados;
 commit/push pendientes de esta sesión (SHA final en la entrega).
 
+## Correccion acotada Paper Lab: camino real dashboard → BFF → Python (2026-10-21, sobre ec0416a)
+
+Correccion de defectos en el recorrido real cliente/BFF/backend de Paper Lab:
+
+- **Reloj causal:** `evaluate_session` rechaza si falta `at_ms` y `clock_ms`;
+  nunca usa hora actual. `create_session` fija `clock_ms` al close_time de la
+  ultima vela. Cliente envia `at_ms` en evaluacion.
+- **Sin informacion futura:** `session_to_public_dict` filtra velas a solo
+  las conocidas en T (open_time_ms <= T); velas abiertas solo muestran open,
+  nunca high/low/close finales.
+- **Revision e idempotencia al navegador:** request_id en cada accion;
+  conflictos devuelven HTTP 409 (no 500).
+- **Fin de datos != cierre ejecutado:** mark_px nunca sustituye precio de
+  salida; realized_net null si open_at_end; se distingue sesion terminada de
+  posicion cerrada.
+- **Pruebas:** 44 Python OK (28 motor + 5 integracion A-E + 16 backtest-offline);
+  9 frontend vitest OK; tsc --noEmit limpio.
+
+SHA inicial: ec0416a. SHA final: <pendiente de commit>.
+
 1. **Bloqueo = ciclo de vida de UNA corrida.** `control.guard` (mutex corto por
    experimento, `O_EXCL`, obsoleto a 30 s) serializa adquisición, liberación y
    retención. `run.lock` solo se libera cuando el ejecutor de ESA corrida está

@@ -690,6 +690,18 @@ def create_session(
     now = _now_ms()
     session_id = _new_session_id(config.symbol, config.direction)
 
+    # Reloj de simulacion: se establece al close_time de la ULTIMA vela
+    # conocida, de modo que el backend posee T desde la creacion y la primera
+    # evaluacion pueda consumir todas las velas de la fixture como conocidas
+    # (close_time <= T). Esto evita considerar el historico completo por usar
+    # la hora actual, manteniendo la causalidad: T es fin de la fixture, no
+    # el reloj de pared.
+    initial_clock_ms: Optional[int] = None
+    if candles:
+        last_close = candles[-1].close_time_ms
+        if last_close is not None:
+            initial_clock_ms = last_close
+
     cfg_dict = {
         "symbol": config.symbol, "interval": config.interval,
         "direction": config.direction, "notional_usdt": config.notional_usdt,
@@ -755,7 +767,7 @@ def create_session(
         ),
         events=[],
         result=None,
-        clock_ms=None,
+        clock_ms=initial_clock_ms,
         config_hash=config_hash,
         input_hash=in_hash,
         engine_version=ENGINE_VERSION_PAPER,
@@ -802,24 +814,27 @@ def evaluate_session(
     now = _now_ms()
 
     # --- Modo de reloj de simulación --------------------------------------
-    # Si at_ms se proporciona (modo causal), se usa como T y el evento se
-    # sitúa justo antes de T. Si no se proporciona (compatibilidad hacia
-    # atrás), se evalúa sobre todas las velas con el evento justo antes de
-    # la primera vela (comportamiento histórico).
+    # El backend posee el reloj de simulación. Se usa at_ms si se proporciona;
+    # en caso contrario, el reloj válido de la sesión (state.clock_ms). Nunca
+    # se recurre a la hora actual, lo cual consideraría todo el histórico
+    # como conocido y rompería la causalidad.
     if at_ms is not None:
         # Modo causal: T explícito, prefijo conocido en T.
         signal_at_ms = at_ms
-        event_time_ms = at_ms - 1
-        clock_for_state = at_ms
+    elif state.clock_ms is not None:
+        # Reloj válido de la sesión (establecido en create_session).
+        signal_at_ms = state.clock_ms
     else:
-        # Compatibilidad hacia atrás: todas las velas son "conocidas",
-        # evento justo antes de la primera vela.
-        signal_at_ms = _now_ms()
-        if state.candles:
-            event_time_ms = state.candles[0].open_time_ms - 1
-        else:
-            event_time_ms = 0
-        clock_for_state = state.clock_ms or _now_ms()
+        raise ValueError(
+            "CLOCK_REQUIRED: se requiere at_ms o un clock_ms válido en la "
+            "sesión para evaluar causalmente. No se puede usar la hora actual "
+            "porque consideraría todo el histórico conocido."
+        )
+
+    # Prefijo conocido en T (usado tanto para la señal como para run_backtest).
+    prefix = _known_prefix_at(state.candles, signal_at_ms)
+    event_time_ms = prefix[0].open_time_ms - 1 if prefix else 0
+    clock_for_state = signal_at_ms
 
     # Copia de trabajo en estado evaluando.
     next_state = PaperSessionState(
@@ -946,7 +961,7 @@ def evaluate_session(
                 )
             ],
             result=None,
-            clock_ms=fill_entry_ms if fill_entry_ms is not None else clock_for_state,
+            clock_ms=clock_for_state,
             config_hash=next_state.config_hash,
             input_hash=next_state.input_hash,
             engine_version=next_state.engine_version,
@@ -1717,6 +1732,162 @@ def session_to_dict(state: PaperSessionState) -> Dict[str, Any]:
         "engine_version": state.engine_version,
         "limitations": list(state.limitations),
         "authoritative": state.authoritative,
+    }
+
+
+def session_to_public_dict(
+    state: PaperSessionState, at_ms: Optional[int] = None,
+) -> Dict[str, Any]:
+    """Serializa la sesión para respuesta pública (API/evidencia/gráfico).
+
+    Solo incluye información disponible en T:
+      - Velas con open_time_ms <= T (conocidas en T).
+      - Para velas aún abiertas (close_time_ms > T o close_time_ms None),
+        solo se publican open_time_ms y open; nunca high/low/close finales.
+      - decision_evidence y authoritative se filtran para no revelar futuros.
+      - clock_ms se publica como T (reloj de simulación).
+
+    El almacenamiento interno sigue usando session_to_dict (con todas las
+    velas necesarias para avanzar la fixture).
+    """
+    if at_ms is None:
+        at_ms = state.clock_ms
+
+    # Velas conocidas en T (open disponible).
+    known_candles = [c for c in state.candles if c.open_time_ms <= at_ms]
+
+    def _public_candle(c: PaperCandle) -> Dict[str, Any]:
+        entry: Dict[str, Any] = {
+            "open_time_ms": c.open_time_ms,
+            "open": c.open,
+            "available_at": c.available_at,
+            "received_at": c.received_at,
+        }
+        # Solo publicar OHLC si la vela está plenamente conocida en T.
+        if c.close_time_ms is not None and c.close_time_ms <= at_ms:
+            entry["high"] = c.high
+            entry["low"] = c.low
+            entry["close"] = c.close
+            entry["close_time_ms"] = c.close_time_ms
+        else:
+            entry["high"] = None
+            entry["low"] = None
+            entry["close"] = None
+            entry["close_time_ms"] = None
+        return entry
+
+    # Filtrar authoritative: no publicar datos de trades futuros.
+    authoritative_public: Optional[Dict[str, Any]] = None
+    if state.authoritative is not None:
+        auth = state.authoritative
+        if at_ms is not None:
+            # Solo incluir fills/exits con entry_ms <= T y exit_ms <= T.
+            if auth.get("entry_ms", 0) > at_ms:
+                authoritative_public = None  # entrada futura, no revelar
+            else:
+                authoritative_public = dict(auth)
+                if auth.get("exit_ms") is not None and auth["exit_ms"] > at_ms:
+                    authoritative_public["exit_px"] = None
+                    authoritative_public["exit_ms"] = None
+                    authoritative_public["exit_reason"] = None
+                    authoritative_public["exit_executed"] = False
+        else:
+            authoritative_public = dict(auth)
+
+    return {
+        "session_id": state.session_id,
+        "created_at_ms": state.created_at_ms,
+        "updated_at_ms": state.updated_at_ms,
+        "status": state.status,
+        "revision": state.revision,
+        "clock_ms": at_ms,
+        "config": {
+            "symbol": state.config.symbol,
+            "interval": state.config.interval,
+            "direction": state.config.direction,
+            "notional_usdt": state.config.notional_usdt,
+            "entry_px": state.config.entry_px,
+            "stop_px": state.config.stop_px,
+            "stop_distance_pct": state.config.stop_distance_pct,
+            "horizon_ms": state.config.horizon_ms,
+            "fee_bps": state.config.fee_bps,
+            "spread_bps": state.config.spread_bps,
+            "slippage_bps": state.config.slippage_bps,
+            "hypothesis_id": state.config.hypothesis_id,
+            "hypothesis_version": state.config.hypothesis_version,
+            "rule_version": state.config.rule_version,
+            "decision": state.config.decision,
+            "decision_reason": state.config.decision_reason,
+            "decision_evidence": state.config.decision_evidence,
+        },
+        "candles": [_public_candle(c) for c in known_candles],
+        "context_candles": [_public_candle(c) for c in state.context_candles
+                            if c.open_time_ms <= at_ms],
+        "cursor": state.cursor,
+        "position": {
+            "open": state.position.open,
+            "direction": state.position.direction,
+            "entry_px": state.position.entry_px,
+            "entry_qty": state.position.entry_qty,
+            "entry_cost": state.position.entry_cost,
+            "entry_ms": state.position.entry_ms,
+            "stop_px": state.position.stop_px,
+            "mark_px": state.position.mark_px,
+            "mark_ms": state.position.mark_ms,
+            "unrealized_gross": state.position.unrealized_gross,
+            "unrealized_net": state.position.unrealized_net,
+            "mfe_pct": state.position.mfe_pct,
+            "mae_pct": state.position.mae_pct,
+        },
+        "costs": {
+            "fee_bps": state.costs.fee_bps,
+            "spread_bps": state.costs.spread_bps,
+            "entry_fees": state.costs.entry_fees,
+            "exit_fees": state.costs.exit_fees,
+            "entry_spread_slip": state.costs.entry_spread_slip,
+            "exit_spread_slip": state.costs.exit_spread_slip,
+            "funding": state.costs.funding,
+            "friction": state.costs.friction,
+            "entry_fees_executed": state.costs.entry_fees_executed,
+            "exit_fees_executed": state.costs.exit_fees_executed,
+            "entry_spread_slip_executed": state.costs.entry_spread_slip_executed,
+            "exit_spread_slip_executed": state.costs.exit_spread_slip_executed,
+            "exit_fees_estimated": state.costs.exit_fees_estimated,
+            "exit_spread_slip_estimated": state.costs.exit_spread_slip_estimated,
+        },
+        "events": [
+            {"at_ms": e.at_ms, "label": e.label, "kind": e.kind,
+             "detail": e.detail} for e in state.events
+        ],
+        "result": (None if state.result is None else {
+            "symbol": state.result.symbol,
+            "direction": state.result.direction,
+            "entry_px": state.result.entry_px,
+            "exit_px": state.result.exit_px,
+            "entry_ms": state.result.entry_ms,
+            "exit_ms": state.result.exit_ms,
+            "exit_reason": state.result.exit_reason,
+            "exit_executed": state.result.exit_executed,
+            "qty": state.result.qty,
+            "filled_cost": state.result.filled_cost,
+            "gross_pnl": state.result.gross_pnl,
+            "fees": state.result.fees,
+            "spread_slip": state.result.spread_slip,
+            "funding": state.result.funding,
+            "friction": state.result.friction,
+            "net_pnl": state.result.net_pnl,
+            "realized_net": state.result.realized_net,
+            "open_at_end": state.result.open_at_end,
+            "entry_fees_executed": state.result.entry_fees_executed,
+            "exit_fees_executed": state.result.exit_fees_executed,
+            "entry_spread_slip_executed": state.result.entry_spread_slip_executed,
+            "exit_spread_slip_executed": state.result.exit_spread_slip_executed,
+            "exit_fees_estimated": state.result.exit_fees_estimated,
+            "exit_spread_slip_estimated": state.result.exit_spread_slip_estimated,
+        }),
+        "engine_version": state.engine_version,
+        "limitations": list(state.limitations),
+        "authoritative": authoritative_public,
     }
 
 

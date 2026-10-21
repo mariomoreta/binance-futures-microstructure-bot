@@ -9,9 +9,10 @@ interface PnLPanelProps {
   costs: PaperCosts;
   unrealized: number | null;
   result: PaperTradeResult | null;
+  exitExecuted: boolean;
 }
-export function PnLPanel({finished, entered, costs, unrealized, result}: PnLPanelProps) {
-  const realized = finished && !!result;
+export function PnLPanel({finished, entered, costs, unrealized, result, exitExecuted}: PnLPanelProps) {
+  const realized = exitExecuted && !!result;
   const gross = realized ? result?.gross_pnl ?? null : unrealized ?? null;
   const net = realized ? result?.net_pnl ?? null : null;
   return (

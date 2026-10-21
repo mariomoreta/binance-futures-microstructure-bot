@@ -55,6 +55,7 @@ from microstructure_probe.paper_lab_engine import (  # noqa: E402
     restart_session,
     save_session,
     session_to_dict,
+    session_to_public_dict,
     step_forward,
     stop_session,
     SessionSaveResult,
@@ -173,7 +174,7 @@ def main(argv=None) -> int:
                 return 3
             state = res.state
             print(json.dumps(_ok({
-                "session": session_to_dict(state),
+                "session": session_to_public_dict(state),
             }), indent=1))
             return 0
 
@@ -210,7 +211,7 @@ def main(argv=None) -> int:
                 # Repetición idempotente: no se repiten efectos.
                 pass
             print(json.dumps(_ok({
-                "session": session_to_dict(state),
+                "session": session_to_public_dict(state),
                 "idempotent_repeat": res.idempotent_repeat,
             }), indent=1))
             return 0
@@ -255,7 +256,7 @@ def main(argv=None) -> int:
             state = step_forward(state)
             state = _save_with_revision(state, expected_rev)
             print(json.dumps(_ok({
-                "session": session_to_dict(state),
+                "session": session_to_public_dict(state),
             }), indent=1))
             return 0
 
@@ -270,7 +271,7 @@ def main(argv=None) -> int:
             state = manual_exit(state)
             state = _save_with_revision(state, expected_rev)
             print(json.dumps(_ok({
-                "session": session_to_dict(state),
+                "session": session_to_public_dict(state),
             }), indent=1))
             return 0
 
@@ -285,7 +286,7 @@ def main(argv=None) -> int:
             state = restart_session(state)
             state = _save_with_revision(state, expected_rev)
             print(json.dumps(_ok({
-                "session": session_to_dict(state),
+                "session": session_to_public_dict(state),
             }), indent=1))
             return 0
 
@@ -300,7 +301,7 @@ def main(argv=None) -> int:
             state = stop_session(state)
             state = _save_with_revision(state, expected_rev)
             print(json.dumps(_ok({
-                "session": session_to_dict(state),
+                "session": session_to_public_dict(state),
             }), indent=1))
             return 0
 
