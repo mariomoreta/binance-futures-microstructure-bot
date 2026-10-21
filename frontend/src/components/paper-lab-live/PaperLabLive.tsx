@@ -20,6 +20,9 @@ import s from "./PaperLabLive.module.css";
 
 type ApiError = { error: string; detail: string; status: number } | null;
 
+/** Referencia estable para que los hooks no cambien de orden entre renders. */
+const EMPTY_CANDLES: PaperCandle[] = [];
+
 interface PaperLabLiveProps {}
 export default function PaperLabLive(): React.JSX.Element {
   const [state, setState] = useState<PaperSessionState | null>(null);
@@ -271,6 +274,22 @@ export default function PaperLabLive(): React.JSX.Element {
     [state, nextRequestId, recoverAuthoritative],
   );
 
+  // Velas conocidas en T (open_time_ms <= clock_ms) para el gráfico causal.
+  // Estos hooks deben ejecutarse en TODOS los renders, incluso cuando aún no
+  // hay sesión: un early return previo cambiaba el número de hooks y rompía
+  // la página (React #310) al seleccionar la primera fixture.
+  const candlesForView = state?.candles ?? EMPTY_CANDLES;
+  const contextForView = state?.context_candles ?? EMPTY_CANDLES;
+  const clockForView = state?.clock_ms ?? 0;
+  const knownCandles = useMemo(() => {
+    return candlesForView.filter((c) => c.open_time_ms <= clockForView);
+  }, [candlesForView, clockForView]);
+
+  // Velas de contexto conocidas en T.
+  const knownContext = useMemo(() => {
+    return contextForView.filter((c) => c.open_time_ms <= clockForView);
+  }, [contextForView, clockForView]);
+
   if (!state) {
     return (
       <section className={s.root} aria-label="Paper Lab ingeniería (fixtures)">
@@ -319,18 +338,6 @@ export default function PaperLabLive(): React.JSX.Element {
 
   const fundingLabel = (f: number | null): string =>
     f == null ? "UNKNOWN (sin calendario)" : formatMoneyPL(f);
-
-  // Velas conocidas en T (open_time_ms <= clock_ms) para el gráfico causal.
-  const knownCandles = useMemo(() => {
-    const T = clock_ms ?? 0;
-    return state.candles.filter((c) => c.open_time_ms <= T);
-  }, [state.candles, clock_ms]);
-
-  // Velas de contexto conocidas en T.
-  const knownContext = useMemo(() => {
-    const T = clock_ms ?? 0;
-    return state.context_candles.filter((c) => c.open_time_ms <= T);
-  }, [state.context_candles, clock_ms]);
 
   // Clase CSS para el P&L neto realizado.
   let netClass = s.v;

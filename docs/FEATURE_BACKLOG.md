@@ -18,6 +18,16 @@
 - `BACKLOG_UPDATED` — yes: este bloque + `CURRENT_STATE`, `TASK_QUEUE` y `DECISIONS`.
 - `DOCUMENTATION_CONFLICTS` — el cierre de `2a17088` declaraba el recorrido HTTP completo sin acreditar los tres bloqueos; aquí se registra la corrección real y se conserva que la validación por navegador **no** se ejecutó, para no convertir pruebas de componente en aceptación visual.
 
+### Ampliación 2026-10-21 — verificación real en navegador (sobre `3acf511`)
+
+**1. Title:** Corrección de cuatro defectos de control descubiertos al operar `/paper-lab-live` en Chromium real: orden de hooks, cierre prematuro por gate de evidencia, cursor sobre la serie fusionada y controles duplicados.
+**2. Approval status:** DECIDED dentro del alcance autorizado (desktop-only, fixtures, sin Binance/monitor/órdenes; sin cambios de reglas, costes, umbrales ni motor económico; fixtures sin modificar).
+**3. Implementation status:** IMPLEMENTED en `frontend/src/components/paper-lab-live/PaperLabLive.tsx`, `frontend/src/components/paper-lab-live/SessionControls.tsx`, `src/microstructure_probe/paper_lab_engine.py` y `tests/test_paper_lab_engine.py`.
+**4. Evaluation status:** VERIFICADO — motor 27/27 (5 corridas consecutivas sin flake), integración A–E 5/5, frontend Paper Lab 67/67, `tsc --noEmit` limpio, `eslint` del panel 0 errores, y recorrido real en navegador (crear → abstención sin evidencia → señal pendiente → entrada → gestión → cierre manual) con `decision_at=1788920099999`, `available_at=1788920100000`, entrada @143.355, salida manual @145.08042078, `realized_net=10.4263712`, `funding=UNKNOWN`. NO evaluado: stop/gap por navegador (cubierto por pruebas), horizonte por navegador (fixture termina en fin de datos).
+**5. Limitaciones:** BTC LONG termina en `open_at_end` (caso D) y ETH SHORT se abstiene en el primer cierre bajo la regla causal; sus salidas etiquetadas no son alcanzables desde la UI sin cambiar fixtures, y no se cambiaron. Motor paper completo (F-PAPER-01) sigue fuera de alcance. Suite completa no re-ejecutada.
+**6. Evidence:** `docs/CURRENT_STATE.md` §"Correcciones Paper Lab tras verificación real en navegador"; `docs/DECISIONS.md` §2026-10-21 verificación en navegador; `tests/test_paper_lab_engine.py` (nuevo `test_evaluate_con_contexto_sin_vela_de_operacion_no_cierra`, cursor `==2` + `can_step` tras el fill, `_now_ms` congelado en la regresión); build servido `cqYJQQU1Vh-vQGU-6bioV`, PID 23688.
+**7. Last update:** 2026-10-21.
+
 ## F-CHART-BINANCE-01 — Búsqueda, gráfico vivo e indicadores compartidos (2026-10-21)
 
 - Approval status: objetivo y documentación ACORDADOS por el usuario; esta entrega no autoriza corrida Binance.

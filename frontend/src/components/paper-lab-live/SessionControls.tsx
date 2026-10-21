@@ -24,7 +24,6 @@ export function SessionControls({
   decision, onDecide, onEnter, onStep, onExit, onRestart, onStop, stepMs,
 }: SessionControlsProps) {
   const finished = status === "cerrada" || status === "detenida";
-  const primaryLabel = finished ? "Finalizada" : canEnter ? "Entrar" : "Avanzar paso";
   const decided = decision != null;
   return (
     <div className={s.controls} aria-label="Controles de sesion paper">
@@ -46,11 +45,11 @@ export function SessionControls({
             </button>
           </>
         )}
-        {!canDecide || decided} && (
-          <button type="button" className={`${s.live} ${s.primary}`} onClick={onEnter} disabled={!canEnter || finished} aria-label={primaryLabel}>
-            {primaryLabel}
+        {(!canDecide || decided) && canEnter && !finished && (
+          <button type="button" className={`${s.live} ${s.primary}`} onClick={onEnter} aria-label="Entrar">
+            Entrar
           </button>
-        )
+        )}
         <button type="button" className={s.live} onClick={onStep} disabled={!canStep || finished}>
           Paso a paso
         </button>

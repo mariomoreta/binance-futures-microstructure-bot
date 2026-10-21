@@ -145,6 +145,11 @@ def test_evaluate_admite_entrada_automatica():
     # Reloj y cursor monotónicos al pasar de pendiente a abierta.
     assert entered.clock_ms is not None and entered.clock_ms >= T
     assert entered.cursor >= r.cursor
+    # El cursor cuenta velas de OPERACIÓN reveladas (2: la vela de la señal y
+    # la que reveló el precio de fill), no el índice de la serie fusionada con
+    # el contexto. Con el índice fusionado, can_step quedaba en false al abrir.
+    assert entered.cursor == 2, f"esperaba cursor=2, obtuvo {entered.cursor}"
+    assert session_to_public_dict(entered)["can_step"] is True
 
 
 def test_evaluate_sin_entrada_sin_posicion():
@@ -166,6 +171,30 @@ def test_evaluate_sin_entrada_sin_posicion():
     assert r.result is None
     assert r.config.decision_reason is not None
     assert "abst" in r.config.decision_reason.lower() or "esperando" in r.config.decision_reason.lower()
+
+
+def test_evaluate_con_contexto_sin_vela_de_operacion_no_cierra():
+    """Contexto conocido + cero velas de operación conocidas: la sesión sigue
+    avanzable (sin_iniciar), no se cierra por una abstención sin evidencia.
+
+    Regresión del bloqueo de "Paso a paso": el gate de evidencia insuficiente
+    usaba el prefijo fusionado con el contexto y cerraba la sesión, dejando
+    can_step=false sin haber revelado ninguna vela de operación.
+    """
+    config = mk_config()
+    ctx = [mk_candle(-15 * 60 * 1000, 100.0, 101.0, 99.0, 100.0)]
+    candles = up_candles(3, start=0)
+    s = create_session(config, candles, ctx)
+    # El reloj inicial es el cierre de la última vela de contexto: ninguna
+    # vela de operación es conocida aún.
+    r = evaluate_session(s, rule_version="RULE-v1")
+    assert r.status == "sin_iniciar", f"esperaba sin_iniciar, obtuvo {r.status}"
+    assert r.config.decision == "SIN_ENTRADA"
+    assert r.position.open is False
+    assert session_to_public_dict(r)["can_step"] is True
+    advanced = step_forward(r)
+    assert advanced.cursor > r.cursor
+    assert advanced.clock_ms is not None and advanced.clock_ms >= r.clock_ms
 
 
 def test_step_forward_ejecuta_entrada():
@@ -643,14 +672,21 @@ def _public_without_ids(d: Dict[str, Any]) -> Dict[str, Any]:
     return d
 
 
-def test_regresion_open_futuro_diferente_estado_publico_igual_hasta_T():
+def test_regresion_open_futuro_diferente_estado_publico_igual_hasta_T(monkeypatch):
     """Regresion bloqueo 1: en T=899999 el open de 900000 se desconoce.
 
     Dos escenarios con el mismo prefijo hasta T pero open futuro diferente
     deben producir el mismo estado publico hasta T (excluyendo ids/metadatos
     no economicos). Al avanzar, cada escenario ejecuta segun su precio
     recien disponible.
+
+    El reloj de pared se congela: si no, los eventos/evaluated_at_ms de dos
+    evaluaciones seguidas pueden caer en milisegundos distintos y la
+    comparacion fallaria sin que cambie nada economico.
     """
+    import microstructure_probe.paper_lab_engine as ple
+    monkeypatch.setattr(ple, "_now_ms", lambda: 1_000_000)
+
     prefix = [mk_candle(0, 100, 102, 99, 101)]  # close conocido en T=899999
     futuro_alto = prefix + [mk_candle(900000, 110, 112, 108, 111)]   # open=110
     futuro_bajo = prefix + [mk_candle(900000, 50, 52, 48, 51)]       # open=50

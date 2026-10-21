@@ -158,6 +158,20 @@ def _fully_known_at(candles: List[PaperCandle], at_ms: int) -> List[PaperCandle]
     ]
 
 
+def _merge_candles(
+    context_candles: List[PaperCandle], candles: List[PaperCandle],
+) -> List[PaperCandle]:
+    """Serie unica contexto+operacion, ordenada y sin duplicados por open."""
+    seen = set()
+    merged: List[PaperCandle] = []
+    for c in sorted(list(context_candles) + list(candles),
+                    key=lambda c: c.open_time_ms):
+        if c.open_time_ms not in seen:
+            seen.add(c.open_time_ms)
+            merged.append(c)
+    return merged
+
+
 # --- Regla de senal causal (senal, no admision, no simulacion) -------------
 
 
@@ -846,15 +860,8 @@ def evaluate_session(
 
     # Prefijo conocido en T: fusion de contexto y velas de operacion,
     # ordenados y sin duplicados por open_time_ms.
-    all_candles = list(state.context_candles) + list(state.candles)
-    seen_opens = set()
-    merged_candles = []
-    for c in sorted(all_candles, key=lambda c: c.open_time_ms):
-        if c.open_time_ms not in seen_opens:
-            seen_opens.add(c.open_time_ms)
-            merged_candles.append(c)
+    merged_candles = _merge_candles(state.context_candles, state.candles)
     prefix = _known_prefix_at(merged_candles, signal_at_ms)
-    fully = _fully_known_at(merged_candles, signal_at_ms)
     # El evento se sitúa en T (tiempo de la señal), no antes de la primera
     # vela. Esto garantiza entry_ms >= signal_at_ms (no entrada retroactiva).
     event_time_ms = signal_at_ms
@@ -1074,9 +1081,17 @@ def evaluate_session(
         )
         return next_state
 
-    # Senal SIN_ENTRADA porque no hay suficientes datos (not prefix o not
-    # fully): sesion temporal, no cierra. Espera a que lleguen mas datos.
-    if not prefix or not fully:
+    # Senal SIN_ENTRADA porque no hay evidencia suficiente EN LAS VELAS DE
+    # OPERACION (que son las que evalua la senal): sesion temporal, no cierra.
+    # Espera a que el reloj revele mas velas de operacion.
+    #
+    # Importante: el gate usa el prefijo de operacion, no el fusionado con el
+    # contexto. Con contexto presente y cero velas de operacion conocidas, el
+    # prefijo fusionado no esta vacio y la sesion se cerraba en la primera
+    # evaluacion (sin evidencia real), dejando el escenario sin "Paso a paso".
+    op_prefix = _known_prefix_at(next_state.candles, signal_at_ms)
+    op_fully = _fully_known_at(next_state.candles, signal_at_ms)
+    if not op_prefix or not op_fully:
         decision = signal
         reason = signal_reason
         evidence = dict(signal_evidence)
@@ -1289,13 +1304,7 @@ def _run_backtest_at_clock(
         event_time_ms = state.position.entry_ms or 0
     if not event_time_ms:
         return None
-    all_candles = list(state.context_candles) + list(state.candles)
-    seen = set()
-    merged = []
-    for c in sorted(all_candles, key=lambda c: c.open_time_ms):
-        if c.open_time_ms not in seen:
-            seen.add(c.open_time_ms)
-            merged.append(c)
+    merged = _merge_candles(state.context_candles, state.candles)
     prefix = [c for c in merged if c.open_time_ms <= clock_ms]
     return _run_backtest_on_prefix(state, prefix, event_time_ms=event_time_ms,
                                    known_close_cutoff=clock_ms or 0)
@@ -1325,26 +1334,23 @@ def step_forward(state: PaperSessionState) -> PaperSessionState:
         next_cursor = state.cursor
         next_clock_ms = state.clock_ms
         if bt_result is None and ev_time is not None:
-            # Re-ejecutar run_backtest con el reloj avanzado: revelar la
-            # siguiente vela cuyo open es posterior al reloj T. El fill solo
-            # es posible cuando ese open se conoce (open_time_ms <= nuevo T);
-            # nunca se consulta el open de una vela futura.
-            all_candles = list(state.context_candles) + list(state.candles)
-            seen_opens = set()
-            merged_candles = []
-            for c in sorted(all_candles, key=lambda c: c.open_time_ms):
-                if c.open_time_ms not in seen_opens:
-                    seen_opens.add(c.open_time_ms)
-                    merged_candles.append(c)
+            # Revelar la siguiente vela de operación cuyo open aún no se
+            # conoce (open_time_ms > reloj). El cursor indexa las velas de
+            # operación (state.candles), no la serie fusionada con el
+            # contexto: usar el índice fusionado dejaba cursor=50 sobre 8
+            # velas y desactivaba can_step justo al abrir la posición.
             base_clock = state.clock_ms if state.clock_ms is not None else ev_time
-            next_candle = next(
-                (c for c in merged_candles if c.open_time_ms > base_clock),
+            reveal_idx = next(
+                (i for i in range(state.cursor, len(state.candles))
+                 if state.candles[i].open_time_ms > base_clock),
                 None,
             )
-            if next_candle is not None:
-                next_cursor = merged_candles.index(next_candle) + 1
-                next_clock_ms = next_candle.close_time_ms if next_candle.close_time_ms is not None \
-                    else next_candle.open_time_ms
+            if reveal_idx is not None:
+                revealed = state.candles[reveal_idx]
+                next_cursor = max(state.cursor + 1, reveal_idx + 1)
+                next_clock_ms = revealed.close_time_ms if revealed.close_time_ms is not None \
+                    else revealed.open_time_ms
+                merged_candles = _merge_candles(state.context_candles, state.candles)
                 prefix = [c for c in merged_candles if c.open_time_ms <= next_clock_ms]
                 bt_result = _run_backtest_on_prefix(state, prefix, event_time_ms=ev_time,
                                                     known_close_cutoff=next_clock_ms or 0)

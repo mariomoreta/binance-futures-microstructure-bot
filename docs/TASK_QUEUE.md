@@ -6,9 +6,11 @@
 `NEXT_TASKS`:
 1. Reanudar el punto 2 de "Prioridad del recorrido gráfico/paper": inventariar velas/indicadores existentes y fijar contrato de datos/tiempos/IDs.
 2. Gráfico Lightweight Charts con fixtures, velas, volumen, zoom, histórico y marcas backend (instalación y QA de escritorio en ese bloque; **no** en esta entrega).
-3. Pasada real de navegador sobre los controles de `/paper-lab-live` (crear → evaluar → avanzar → reevaluar → entrada pendiente → revelar precio → gestión → cierre), hoy pendiente y declarada como no ejecutada.
+3. Revisar el contenido de las fixtures bajo la regla causal (BTC termina en fin de datos; ETH se abstiene en el primer cierre) antes de usarlas como demostración de stop/horizonte.
 
-Estado de la corrección (detalle en `docs/CURRENT_STATE.md` y `docs/DECISIONS.md`, 2026-10-21): el diseño causal solo pasa el prefijo conocido en T a `run_backtest`, una señal sin precio ejecutable queda como entrada pendiente sin fill/cantidad/coste, el backend publica `can_step`, `onDecide` va al backend con `request_id` + `expected_revision`, y stop/gap/`_finalize_exit_from_bt`/`manual_exit` comparten `_finalize_exit`. Pruebas focalizadas: motor 26/26, integración A–E 5/5, API frontend 9/9, `tsc --noEmit` limpio. Sin suite completa ni rebuild en esta tarea hasta el commit. Sigue sin ser rentabilidad ni paper Binance vivo.
+Estado de la corrección (detalle en `docs/CURRENT_STATE.md` y `docs/DECISIONS.md`, 2026-10-21): el diseño causal solo pasa el prefijo conocido en T a `run_backtest`, una señal sin precio ejecutable queda como entrada pendiente sin fill/cantidad/coste, el backend publica `can_step`, `onDecide` va al backend con `request_id` + `expected_revision`, y stop/gap/`_finalize_exit_from_bt`/`manual_exit` comparten `_finalize_exit`.
+
+La pasada real de navegador (Playwright/Chromium) ya se ejecutó sobre `http://127.0.0.1:3020/paper-lab-live` (build `cqYJQQU1Vh-vQGU-6bioV`, PID 23688): crear → abstención sin evidencia → señal pendiente → entrada → gestión → cierre manual, con orden de hooks, `can_step` y cursor corregidos. Pruebas focalizadas finales: motor 27/27, integración A–E 5/5, frontend Paper Lab 67/67, `tsc --noEmit` limpio, `eslint` del panel 0 errores. Sigue sin ser rentabilidad ni paper Binance vivo.
 
 ## Prioridad del recorrido gráfico/paper — 2026-10-21
 

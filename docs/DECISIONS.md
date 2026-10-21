@@ -2472,3 +2472,16 @@ Cierra los tres bloqueos revisados de `2a17088` sin cambiar reglas de estrategia
 **Evidencia mínima aceptada:** en `T=899999`, dos escenarios con apertura futura `900000` distinta (110 vs 50) deben publicar estado idéntico hasta T (comparando sin `session_id`/`created`/`updated`/`revision`/`input_hash`) y solo después rellenar al precio revelado. Se añadieron pruebas de gap LONG y SHORT, y el test de salida manual se amplió a 4 velas para que la salida no dependa de datos futuros.
 
 **Alcance y límites:** desktop-only; sin Binance, monitor, paper prospectivo, órdenes, pagos, optimización ni cambios de umbrales. No se instala Lightweight Charts en esta entrega. La suite completa no se re-ejecutó (cambio acotado a Paper Lab); se ejecutaron 26 pruebas de motor, 5 de integración A–E vía CLI con almacenamiento aislado, 9 de API frontend y `tsc --noEmit`. La pasada de navegador sobre los controles queda pendiente y **no se declara ejecutada**.
+
+## 2026-10-21 — Verificación en navegador Paper Lab: cuatro defectos de control corregidos
+
+La pasada real de navegador (Chromium/Playwright) sobre `/paper-lab-live` encontró defectos que las pruebas de API no podían ver. Se corrigen sin tocar reglas, costes, umbrales ni el motor económico.
+
+1. **Orden de hooks.** `PaperLabLive` devolvía antes de dos `useMemo` cuando no había sesión; al crear la primera sesión el número de hooks cambiaba y React abortaba la página (error #310, "This page couldn't load"). Los hooks pasan antes del `return` con referencias estables. Los dos errores `react-hooks` que se habían declarado preexistentes eran este defecto.
+2. **Gate de evidencia insuficiente.** `evaluate_session` decidía "hay datos" con el prefijo fusionado (contexto incluido) mientras la señal evalúa solo velas de operación: con contexto presente y cero velas de operación la sesión se cerraba en la primera evaluación, dejando `can_step=false` y el escenario inavanzable. El gate usa el prefijo de operación; la sesión sigue `sin_iniciar` hasta tener evidencia real. Cerrar por "no hay más datos" cuando el escenario aún no ha revelado ninguna vela de operación era una clasificación falsa.
+3. **Cursor sobre velas de operación.** Al rellenar una entrada pendiente, el cursor se calculaba con el índice de la serie fusionada: `cursor=50` con 8 velas de operación, y `can_step` (cursor < velas) quedaba desactivado justo al abrir. El cursor cuenta velas de operación reveladas (`reveal_idx + 1`), monótono, y la fusión se centraliza en `_merge_candles`.
+4. **Controles.** `SessionControls` emitía el texto `&& (` por un paréntesis mal colocado y un botón primario siempre visible que duplicaba a "Paso a paso". Queda un único control de avance y el primario solo como "Entrar" con entrada pendiente.
+
+**Decisión sobre fixtures:** no se modifican datos de fixtures. Se acepta y documenta que BTC LONG termina en fin de datos con posición abierta (caso D) y que ETH SHORT se abstiene en el primer cierre con la regla causal; stop/gap/horizonte se acreditan con pruebas unitarias e integración CLI, no con el recorrido de navegador. Cambiar velas para "hacer visible" una salida habría alterado el escenario en lugar de corregir el defecto.
+
+**Regresión:** la prueba de `T=899999` congela `_now_ms`; antes comparaba marcas de reloj de pared y podía fallar sin que cambiara nada económico.
