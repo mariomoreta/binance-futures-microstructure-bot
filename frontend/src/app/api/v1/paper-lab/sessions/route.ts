@@ -9,10 +9,13 @@ import {join} from "node:path";
 //
 // Seguridad:
 // - session_id validado contra traversal/alias antes de tocar el FS.
-// - Escritura atómica delegada al backend Python (tmp + os.replace).
+// - Escritura atómica delegada al backend Python (tmp + os.replace) con
+//   control de revisión (optimistic locking).
 // - Escritura SOLO en el directorio aislado de sesiones de ingeniería.
 // - Lista permitida de acciones; no se aceptan rutas ni comandos arbitrarios.
 // - Origen local (mismo criterio que el resto del BFF).
+// - Nunca aceptar estado económico del cliente como autoridad: la decisión
+//   se obtiene de run_backtest sobre evidencia en T (ruta /evaluate).
 const ROOT = process.env.PAPER_LAB_SESSIONS_ROOT ??
   "C:/proyectos/binance-futures-microstructure-bot";
 const PY = process.env.PAPER_LAB_PYTHON ?? "python";
@@ -74,9 +77,10 @@ export async function POST(req: Request): Promise<NextResponse> {
   const context = (body as {context?: unknown})?.context;
   const hypothesisId = (body as {hypothesis_id?: unknown})?.hypothesis_id;
   const hypothesisVersion = (body as {hypothesis_version?: unknown})?.hypothesis_version;
-  const decision = (body as {decision?: unknown})?.decision;
-  const decisionReason = (body as {decision_reason?: unknown})?.decision_reason;
+  const ruleVersion = (body as {rule_version?: unknown})?.rule_version;
 
+  // create NO acepta decision del cliente: la decisión se obtiene vía
+  // POST /sessions/[session_id]/evaluate con run_backtest sobre evidencia en T.
   const extra: string[] = ["--config-json", JSON.stringify(cfg ?? {})];
   if (candles != null) extra.push("--candles-json", JSON.stringify(candles));
   if (context != null) extra.push("--context-json", JSON.stringify(context));
@@ -84,10 +88,7 @@ export async function POST(req: Request): Promise<NextResponse> {
   if (hypothesisVersion != null) {
     extra.push("--hypothesis-version", String(hypothesisVersion));
   }
-  if (decision != null) extra.push("--decision", String(decision));
-  if (decisionReason != null) {
-    extra.push("--decision-reason", String(decisionReason));
-  }
+  if (ruleVersion != null) extra.push("--rule-version", String(ruleVersion));
 
   const r = runPython("create", extra);
   if (!r.ok) {

@@ -41,16 +41,21 @@ function mkState(overrides: Partial<PaperSessionState> = {}): PaperSessionState 
     },
     costs: {
       fee_bps: 5, spread_bps: 1, entry_fees: 0.5, exit_fees: 0,
-      entry_spread_slip: 0.3, exit_spread_slip: 0, funding: 0,
+      entry_spread_slip: 0.3, exit_spread_slip: 0, funding: null,
       friction: 0.8,
+      entry_fees_executed: 0.5, exit_fees_executed: 0,
+      entry_spread_slip_executed: 0.3, exit_spread_slip_executed: 0,
+      exit_fees_estimated: 0, exit_spread_slip_estimated: 0,
     },
     events: [],
     result: null,
     clock_ms: null,
     config_hash: "abc123def456",
     input_hash: "def456ghi789",
-    engine_version: "paper-lab-engine/v1.0",
+    engine_version: "paper-lab-engine/v1.1",
     limitations: ["engineering-fixture-only"],
+    revision: 0,
+    authoritative: null,
   };
   return {...base, ...overrides};
 }

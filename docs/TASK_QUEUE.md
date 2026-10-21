@@ -12,16 +12,19 @@ base, 7/7 pasan con el arreglo. Verificado: frontend 452 passed / 1 skipped,
 reales y replay enlazado (ver
 `docs/evidence/BACKTEST_V2_E2E_BROWSER_EVIDENCE.md`). Estado: los cinco correctivos y la corrección final de `control.guard` están commiteados en `3b6340d..<sha-de-esta-sesión>`; dashboard re-servido en `http://127.0.0.1:3020` (`BUILD_ID=w1DMYZv7af8n2jO6vXlyp`, HTTP 200 en `/api/v1/runtime`, `/backtest`, `/paper-lab`). Fuera de alcance: sin Binance, monitor, paper prospectivo, órdenes, credenciales, optimización ni cambios de estrategia/mapping/costes/umbrales/motor.
 
-## MVP Paper Lab en caliente — ingeniería, reconducido (IMPLEMENTADO, commit 84941e8)
+## MVP Paper Lab en caliente — ingeniería, reconducido (IMPLEMENTADO, commit 1f79d71)
 
-Backend Python como fuente de verdad (src/microstructure_probe/paper_lab_engine.py),
-frontend como cliente de API delgado. Sobre fixtures (sin Binance en vivo).
-Motor de sesiones de ingeniería con configuracion versionada, decisiones
-(VIGILANDO/SIN_ENTRADA/DESCARTADO/ENTRADA_SIMULADA), posiciones, fills,
-costes, eventos y resultados. API Next.js con proteccion de origen y
-confinamiento de directorio. Pruebas: 14 Python del motor + 9 frontend
-sessionView/format. No es motor paper completo (Etapa 5): no hay position
-manager, ledger de caja, funding recurrente ni risk engine.
+Backend Python como fuente de verdad
+(src/microstructure_probe/paper_lab_engine.py), frontend como cliente de API
+delgado. Sobre fixtures (sin Binance en vivo). Motor de sesiones de ingeniería
+con configuración versionada, decisiones (VIGILANDO/SIN_ENTRADA/DESCARTADO/
+ENTRADA_SIMULADA), posiciones, fills, costes ejecutados vs estimados, eventos
+y resultados. La mecánica económica se delega a `backtest_offline.run_backtest`
+(no segundo motor económico). API Next.js con protección de origen y
+confinamiento de directorio. Control de revisión (optimistic locking).
+Pruebas: 14 Python del motor + 5 integración A-E (CLI con almacenamiento real)
++ 9 frontend sessionView/format. No es motor paper completo (Etapa 5): no hay
+position manager, ledger de caja, funding recurrente ni risk engine.
 
 ## Próxima fase (REGISTRADA, NO implementada, requiere autorización): paper lab
 con datos vivos — selector causal → decisión versionada → simulación →

@@ -1,12 +1,11 @@
 "use client";
 import {useCallback, useEffect, useMemo, useState} from "react";
 import {
-  createSessionApi, exitSessionApi, formatMoneyPL, formatPricePL,
-  formatPctPL, fmtUtcPL, getSessionApi, listSessionsApi,
+  createSessionApi, evaluateSessionApi, exitSessionApi, formatMoneyPL,
+  formatPricePL, formatPctPL, fmtUtcPL, getSessionApi, listSessionsApi,
   restartSessionApi, sessionView, stepSessionApi, stopSessionApi,
   type PaperCandidateDecision, type PaperSessionConfig,
   type PaperSessionState, type PaperCandle,
-  type PaperSessionSummary,
 } from "@/lib/paper-lab-live";
 import {PAPER_FIXTURES, FIXTURE_IDS} from "@/lib/paper-fixtures";
 import {FixtureSelector} from "./FixtureSelector";
@@ -22,7 +21,7 @@ import s from "./PaperLabLive.module.css";
 interface PaperLabLiveProps {}
 export default function PaperLabLive(): React.JSX.Element {
   const [state, setState] = useState<PaperSessionState | null>(null);
-  const [savedSessions, setSavedSessions] = useState<PaperSessionSummary[]>([]);
+  const [savedSessions, setSavedSessions] = useState<import("@/lib/paper-lab-live").PaperSessionSummary[]>([]);
   const [loading, setLoading] = useState(false);
   const [fixtureId, setFixtureId] = useState<string | null>(null);
 
@@ -33,49 +32,39 @@ export default function PaperLabLive(): React.JSX.Element {
     }).catch(() => {/* persistencia opcional */});
   }, []);
 
-  const createWithDecision = useCallback(async (
+  const createAndEvaluate = useCallback(async (
     id: string,
-    decision: PaperCandidateDecision | null,
+    ruleVersion: string | null,
   ) => {
     const entry = PAPER_FIXTURES[id];
     if (!entry) return;
     setLoading(true);
     try {
+      // 1. Crear sesión en sin_iniciar (sin decisión del cliente).
       const created = await createSessionApi(entry.config, entry.candles,
         entry.context);
-      if (created) {
-        // Si se especifica decision, recrear con la decision fijada
-        if (decision) {
-          const decided = await createSessionApi({
-            ...created.config,
-            decision,
-            hypothesis_id: "ENGINEERING-FIXTURE-v1",
-            hypothesis_version: "1.0",
-          }, created.candles, created.context_candles);
-          if (decided) {
-            setFixtureId(id);
-            setState(decided);
-          }
-        } else {
-          setFixtureId(id);
-          setState(created);
-        }
-      }
+      if (!created) return;
+      setFixtureId(id);
+      setState(created);
+
+      // 2. Evaluar evidencia en T vía backend (run_backtest como autoridad).
+      //    Esto transiciona sin_iniciar → evaluando → en_espera (o cerrada).
+      const evaluated = await evaluateSessionApi(created.session_id, null,
+        null, ruleVersion);
+      if (evaluated) setState(evaluated);
     } finally {
       setLoading(false);
     }
   }, []);
 
   const handleSelectFixture = useCallback(async (id: string) => {
-    await createWithDecision(id, null);
-  }, [createWithDecision]);
-
-  const handleDecide = useCallback(async (decision: PaperCandidateDecision) => {
-    if (!fixtureId) return;
-    await createWithDecision(fixtureId, decision);
-  }, [fixtureId, createWithDecision]);
+    // Regla experimental versionada, fijada antes de ejecutar.
+    // Usamos una regla de ingeniería (control, no estrategia aprobada).
+    await createAndEvaluate(id, "ENGINEERING-FIXTURE-RULE-v1");
+  }, [createAndEvaluate]);
 
   const handleSaveSession = useCallback(async () => {
+    if (!state) return;
     const sessions = await listSessionsApi();
     setSavedSessions(sessions);
   }, [state]);
@@ -95,6 +84,8 @@ export default function PaperLabLive(): React.JSX.Element {
 
   const handleEnter = useCallback(async () => {
     if (!state) return;
+    // La entrada se ejecuta al pasar de en_espera a abierta en el backend
+    // (step_forward con status en_espera aplica la entrada).
     setLoading(true);
     try {
       const next = await stepSessionApi(state.session_id);
@@ -158,9 +149,9 @@ export default function PaperLabLive(): React.JSX.Element {
         <h1 className={s.title}>Paper Lab — simulación sobre fixtures</h1>
         <p className={s.subtitle}>
           Backend como fuente de verdad. Seleccione una fixture para iniciar
-          un escenario, luego decida (VIGILANDO / SIN_ENTRADA / DESCARTADO /
-          ENTRADA_SIMULADA) y el backend ejecuta entrada, gestión y cierre.
-          Sin capital real ni órdenes Binance.
+          un escenario, el backend evalúa la evidencia en T y decide
+          (VIGILANDO / SIN_ENTRADA / DESCARTADO / ENTRADA_SIMULADA), luego
+          ejecuta entrada, gestión y cierre. Sin capital real ni órdenes Binance.
         </p>
         <FixtureSelector onSelect={handleSelectFixture} selectedId={null} />
       </section>
@@ -188,6 +179,8 @@ export default function PaperLabLive(): React.JSX.Element {
     };
     return map[d] ?? d;
   };
+
+  const fundingLabel = (f: number | null) => f == null ? "UNKNOWN (sin calendario)" : formatMoneyPL(f);
 
   return (
     <section className={s.root} aria-label="Paper Lab ingeniería — simulación paper">
@@ -219,6 +212,7 @@ export default function PaperLabLive(): React.JSX.Element {
             status === "cerrada" ? "CERRADA" : "DETENIDA"}
         </span>
         <span className={s.chip}>Decisión: {decisionLabel(config.decision)}</span>
+        <span className={s.chip}>Rev. {state.revision}</span>
         <span className={s.chip}>Paso {v.cursor} de {v.n}</span>
         <span className={s.clock}>{v.clockUtc ?? "—"}</span>
       </div>
@@ -231,6 +225,9 @@ export default function PaperLabLive(): React.JSX.Element {
         <span className={s.chip}>Fees {config.fee_bps} bps · spread+slip {(config.spread_bps + config.slippage_bps)} bps</span>
         {config.hypothesis_id && (
           <span className={s.chip}>Hipótesis {config.hypothesis_id} v{config.hypothesis_version ?? "—"}</span>
+        )}
+        {config.rule_version && (
+          <span className={s.chip}>Regla {config.rule_version}</span>
         )}
         <span className={s.mono}>{state.session_id}</span>
         <span className={s.mono}>config={state.config_hash}</span>
@@ -245,7 +242,10 @@ export default function PaperLabLive(): React.JSX.Element {
         canStop={v.canStop}
         canDecide={v.canDecide}
         decision={config.decision ?? null}
-        onDecide={handleDecide}
+        onDecide={() => {
+          // La decisión ya se tomó en createAndEvaluate; este botón se muestra
+          // solo en estados sin_iniciar/evaluando para re-evaluar.
+        }}
         onEnter={handleEnter}
         onStep={handleStep}
         onExit={handleExit}
@@ -340,11 +340,17 @@ export default function PaperLabLive(): React.JSX.Element {
           <div className={s.row}><span className={s.k}>Entrada</span><span className={s.v}>{formatPricePL(result.entry_px)}</span></div>
           <div className={s.row}><span className={s.k}>Salida</span><span className={s.v}>{result.exit_px != null ? formatPricePL(result.exit_px) : "—"}</span></div>
           <div className={s.row}><span className={s.k}>Motivo de salida</span><span className={s.v}>{result.exit_reason ?? "—"}</span></div>
-          <div className={s.row}><span className={s.k}>P&L bruto</span><span className={`${s.v} ${result.gross_pnl >= 0 ? s.pos : s.neg}`}>{formatMoneyPL(result.gross_pnl)}</span></div>
-          <div className={s.row}><span className={s.k}>Costes totales</span><span className={s.v}>{formatMoneyPL(result.friction)}</span></div>
-          <div className={s.row}><span className={s.k}>P&L neto realizado</span><span className={`${s.v} ${result.net_pnl >= 0 ? s.pos : s.neg}`}>{formatMoneyPL(result.net_pnl)}</span></div>
           <div className={s.row}><span className={s.k}>Salida ejecutada</span><span className={s.v}>{result.exit_executed ? "Sí" : "No"}</span></div>
-          <p className={s.note}>Resultado congelado al cierre. Puede exportarlo o iniciar una nueva sesión.</p>
+          <div className={s.row}><span className={s.k}>Posición abierta al final</span><span className={s.v}>{result.open_at_end ? "Sí" : "No"}</span></div>
+          <div className={s.row}><span className={s.k}>P&L bruto</span><span className={`${s.v} ${result.gross_pnl >= 0 ? s.pos : s.neg}`}>{formatMoneyPL(result.gross_pnl)}</span></div>
+          <div className={s.row}><span className={s.k}>Costes totales (ejecutados)</span><span className={s.v}>{formatMoneyPL(result.friction)}</span></div>
+          <div className={s.row}><span className={s.k}>Funding</span><span className={s.v}>{fundingLabel(result.funding)}</span></div>
+          <div className={s.row}><span className={s.k}>P&L neto realizado</span><span className={`${s.v} ${result.net_pnl >= 0 ? s.pos : s.neg}`}>{formatMoneyPL(result.net_pnl)}</span></div>
+          <p className={s.note}>
+            Resultado congelado al cierre. Si el motivo es fin de datos, la
+            posición permanece abierta y no realizada (sin comisión de salida
+            inventada). Puede exportarlo o iniciar una nueva sesión.
+          </p>
         </section>
       )}
     </section>

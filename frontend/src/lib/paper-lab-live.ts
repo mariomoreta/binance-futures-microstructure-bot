@@ -34,12 +34,18 @@ export interface PaperCandle {
 export interface PaperCosts {
   fee_bps: number;
   spread_bps: number;
-  entry_fees: number;
-  exit_fees: number;
-  entry_spread_slip: number;
-  exit_spread_slip: number;
-  funding: number;
-  friction: number;
+  entry_fees: number;      // ejecutados
+  exit_fees: number;       // ejecutados (0 si no hay salida)
+  entry_spread_slip: number;  // ejecutados
+  exit_spread_slip: number;   // ejecutados (0 si no hay salida)
+  funding: number | null;  // devengado (null = UNKNOWN sin calendario)
+  friction: number;        // total ejecutado
+  entry_fees_executed: number;
+  exit_fees_executed: number;
+  entry_spread_slip_executed: number;
+  exit_spread_slip_executed: number;
+  exit_fees_estimated: number;
+  exit_spread_slip_estimated: number;
 }
 
 export interface PaperPosition {
@@ -77,13 +83,19 @@ export interface PaperTradeResult {
   qty: number;
   filled_cost: number;
   gross_pnl: number;
-  fees: number;
-  spread_slip: number;
-  funding: number;
-  friction: number;
+  fees: number;           // ejecutados
+  spread_slip: number;    // ejecutados
+  funding: number | null; // devengado (null = UNKNOWN)
+  friction: number;       // total ejecutado
   net_pnl: number;
   realized_net: number | null;
   open_at_end: boolean;
+  entry_fees_executed: number;
+  exit_fees_executed: number;
+  entry_spread_slip_executed: number;
+  exit_spread_slip_executed: number;
+  exit_fees_estimated: number;
+  exit_spread_slip_estimated: number;
 }
 
 export interface PaperSessionConfig {
@@ -100,8 +112,10 @@ export interface PaperSessionConfig {
   slippage_bps: number;
   hypothesis_id?: string | null;
   hypothesis_version?: string | null;
+  rule_version?: string | null;
   decision?: PaperCandidateDecision | null;
   decision_reason?: string | null;
+  decision_evidence?: Record<string, unknown> | null;
 }
 
 export interface PaperSessionState {
@@ -109,6 +123,7 @@ export interface PaperSessionState {
   created_at_ms: number;
   updated_at_ms: number;
   status: PaperSessionStatus;
+  revision: number;
   config: PaperSessionConfig;
   candles: PaperCandle[];
   context_candles: PaperCandle[];
@@ -122,11 +137,13 @@ export interface PaperSessionState {
   input_hash: string | null;
   engine_version: string;
   limitations: string[];
+  authoritative: Record<string, unknown> | null;
 }
 
 export interface PaperSessionSummary {
   session_id: string;
   status: PaperSessionStatus;
+  revision: number;
   created_at_ms: number;
   updated_at_ms: number;
   symbol: string;
@@ -186,6 +203,8 @@ export function sessionView(state: PaperSessionState): PaperSessionView {
   const open = position.open === true;
   const finished = status === "cerrada" || status === "detenida";
   const decided = state.config.decision != null;
+  // En cerrado con posición abierta (open_at_end) no se puede salir ni entrar.
+  const closedWithOpenPosition = finished && open && result?.open_at_end;
   return {
     status,
     cursor,
@@ -198,9 +217,9 @@ export function sessionView(state: PaperSessionState): PaperSessionView {
     costs,
     events,
     result,
-    canEnter: status === "en_espera" && !open && decided,
+    canEnter: status === "en_espera" && !open && decided && !finished,
     canStep: status === "abierta" && cursor < n && !finished,
-    canExit: open && !finished,
+    canExit: open && !finished && !closedWithOpenPosition,
     canRestart: true,
     canStop: status === "abierta" || status === "en_espera",
     canDecide: status === "sin_iniciar" || status === "evaluando",
@@ -247,6 +266,26 @@ export async function createSessionApi(
     method: "POST",
     body: JSON.stringify({config, candles, context: contextCandles}),
   });
+  if (!r.ok || !r.data) return null;
+  const data = r.data as {session?: unknown};
+  return data.session as PaperSessionState;
+}
+
+export async function evaluateSessionApi(
+  sessionId: string,
+  hypothesisId?: string | null,
+  hypothesisVersion?: string | null,
+  ruleVersion?: string | null,
+): Promise<PaperSessionState | null> {
+  const r = await apiJson(`/${encodeURIComponent(sessionId)}/evaluate`,
+    {
+      method: "POST",
+      body: JSON.stringify({
+        hypothesis_id: hypothesisId ?? null,
+        hypothesis_version: hypothesisVersion ?? null,
+        rule_version: ruleVersion ?? null,
+      }),
+    });
   if (!r.ok || !r.data) return null;
   const data = r.data as {session?: unknown};
   return data.session as PaperSessionState;

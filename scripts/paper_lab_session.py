@@ -1,23 +1,26 @@
 """Ejecutor de sesiones Paper Lab (ingeniería) — CLI para el BFF de Next.js.
 
-Orquesta sesiones de ingeniería sobre fixtures: crear, avanzar paso,
-salida manual, reiniciar, detener, listar y recuperar. Llama al motor
-``src/microstructure_probe/paper_lab_engine.py``. No hay Binance, no hay
-feed vivo, no hay ordenes reales, no hay capital real.
+Orquesta sesiones de ingeniería sobre fixtures: crear, evaluar evidencia,
+entrar automáticamente, avanzar paso, salida manual, reiniciar, detener,
+listar y recuperar. Llama al motor ``src/microstructure_probe/paper_lab_engine.py``.
+No hay Binance, no hay feed vivo, no hay ordenes reales, no hay capital real.
 
 Contrato de seguridad:
-- Solo acepta acciones de una lista permitida embebida. No se aceptan
-  rutas, comandos ni código arbitrarios del cliente.
-- session_id validado contra traversal/alias antes de tocar el sistema
-  de archivos.
-- Escritura atómica (tmp + os.replace). Escritura SOLO en el directorio
-  aislado de sesiones de ingeniería.
+- Solo acepta acciones de una lista permitida embebida.
+- session_id validado contra traversal/alias antes de tocar el FS.
+- Escritura atómica (tmp + os.replace) con control de revisión (optimistic
+  locking) para evitar pérdida en carga→modificar→guardar.
+- Escritura SOLO en el directorio aislado de sesiones de ingeniería.
 - Determinista: mismos inputs -> mismos estados y resultados.
+- Nunca acepta estado económico del cliente como autoridad: la decisión
+  se obtiene de run_backtest sobre evidencia en T.
 
 Uso (desde la raíz del repo):
   python scripts/paper_lab_session.py --action list
-  python scripts/paper_lab_session.py --action create --session-id PL-... \
-      --config-json '{"symbol":"BTCUSDT",...}'
+  python scripts/paper_lab_session.py --action create \
+      --config-json '{"symbol":"BTCUSDT",...}' --candles-json '...'
+  python scripts/paper_lab_session.py --action evaluate --session-id PL-... \
+      --hypothesis-id H1-v1 --rule-version rule-v1
   python scripts/paper_lab_session.py --action step --session-id PL-...
   python scripts/paper_lab_session.py --action exit --session-id PL-...
   python scripts/paper_lab_session.py --action get --session-id PL-...
@@ -45,6 +48,7 @@ from microstructure_probe.paper_lab_engine import (  # noqa: E402
     PaperCandle,
     PaperSessionConfig,
     create_session,
+    evaluate_session,
     list_sessions,
     load_session,
     manual_exit,
@@ -57,7 +61,7 @@ from microstructure_probe.paper_lab_engine import (  # noqa: E402
 
 SESSIONS_DEFAULT = ROOT / "paper-lab-sessions"
 ALLOWED_ACTIONS = {
-    "list", "create", "get", "step", "exit", "restart", "stop",
+    "list", "create", "evaluate", "get", "step", "exit", "restart", "stop",
 }
 
 
@@ -82,8 +86,11 @@ def _parse_config(raw: str) -> PaperSessionConfig:
         slippage_bps=float(d["slippage_bps"]),
         hypothesis_id=d.get("hypothesis_id"),
         hypothesis_version=d.get("hypothesis_version"),
-        decision=d.get("decision"),
-        decision_reason=d.get("decision_reason"),
+        rule_version=d.get("rule_version"),
+        # create NO acepta decision: viene de evaluate.
+        decision=None,
+        decision_reason=None,
+        decision_evidence=None,
     )
 
 
@@ -100,7 +107,8 @@ def _parse_candles(raw: str) -> List[PaperCandle]:
 def main(argv=None) -> int:
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument("--action", required=True,
-                    help="list | create | get | step | exit | restart | stop")
+                    help="list | create | evaluate | get | step | exit | "
+                         "restart | stop")
     ap.add_argument("--session-id", default=None,
                     help="identidad de sesion (validada, sin traversal)")
     ap.add_argument("--config-json", default=None,
@@ -110,13 +118,11 @@ def main(argv=None) -> int:
     ap.add_argument("--context-json", default=None,
                     help="JSON de velas de contexto (solo create)")
     ap.add_argument("--hypothesis-id", default=None,
-                    help="identidad de hipotesis experimental (solo create)")
+                    help="identidad de hipotesis experimental (create/evaluate)")
     ap.add_argument("--hypothesis-version", default=None,
-                    help="version de hipotesis (solo create)")
-    ap.add_argument("--decision", default=None,
-                    help="VIGILANDO | SIN_ENTRADA | DESCARTADO | ENTRADA_SIMULADA")
-    ap.add_argument("--decision-reason", default=None,
-                    help="motivo de la decision")
+                    help="version de hipotesis (create/evaluate)")
+    ap.add_argument("--rule-version", default=None,
+                    help="version de regla experimental (evaluate)")
     ap.add_argument("--sessions-dir", default=None,
                     help="directorio de sesiones (default: ./paper-lab-sessions)")
     args = ap.parse_args(argv)
@@ -151,10 +157,35 @@ def main(argv=None) -> int:
                 config, candles, context,
                 hypothesis_id=args.hypothesis_id,
                 hypothesis_version=args.hypothesis_version,
-                decision=args.decision,
-                decision_reason=args.decision_reason,
+                rule_version=args.rule_version,
             )
             save_session(state, str(sessions_dir))
+            print(json.dumps(_ok({
+                "session": session_to_dict(state),
+            }), indent=1))
+            return 0
+
+        if args.action == "evaluate":
+            if not args.session_id:
+                print(json.dumps(_fail("SESSION_ID_REQUIRED",
+                                       "session-id es requerido para evaluar")),
+                      file=sys.stderr)
+                return 2
+            state = load_session(args.session_id, str(sessions_dir))
+            if state is None:
+                print(json.dumps(_fail("SESSION_NOT_FOUND",
+                                       "sesion no existe")),
+                      file=sys.stderr)
+                return 4
+            rev_before = state.revision
+            state = evaluate_session(
+                state,
+                hypothesis_id=args.hypothesis_id,
+                hypothesis_version=args.hypothesis_version,
+                rule_version=args.rule_version,
+            )
+            save_session(state, str(sessions_dir),
+                         expected_revision=rev_before)
             print(json.dumps(_ok({
                 "session": session_to_dict(state),
             }), indent=1))
@@ -184,8 +215,10 @@ def main(argv=None) -> int:
                                        "sesion no existe")),
                       file=sys.stderr)
                 return 4
+            expected_rev = state.revision
             state = step_forward(state)
-            save_session(state, str(sessions_dir))
+            save_session(state, str(sessions_dir),
+                         expected_revision=expected_rev)
             print(json.dumps(_ok({
                 "session": session_to_dict(state),
             }), indent=1))
@@ -198,8 +231,10 @@ def main(argv=None) -> int:
                                        "sesion no existe")),
                       file=sys.stderr)
                 return 4
+            expected_rev = state.revision
             state = manual_exit(state)
-            save_session(state, str(sessions_dir))
+            save_session(state, str(sessions_dir),
+                         expected_revision=expected_rev)
             print(json.dumps(_ok({
                 "session": session_to_dict(state),
             }), indent=1))
@@ -212,8 +247,10 @@ def main(argv=None) -> int:
                                        "sesion no existe")),
                       file=sys.stderr)
                 return 4
+            expected_rev = state.revision
             state = restart_session(state)
-            save_session(state, str(sessions_dir))
+            save_session(state, str(sessions_dir),
+                         expected_revision=expected_rev)
             print(json.dumps(_ok({
                 "session": session_to_dict(state),
             }), indent=1))
@@ -226,8 +263,10 @@ def main(argv=None) -> int:
                                        "sesion no existe")),
                       file=sys.stderr)
                 return 4
+            expected_rev = state.revision
             state = stop_session(state)
-            save_session(state, str(sessions_dir))
+            save_session(state, str(sessions_dir),
+                         expected_revision=expected_rev)
             print(json.dumps(_ok({
                 "session": session_to_dict(state),
             }), indent=1))

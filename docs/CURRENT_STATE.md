@@ -86,7 +86,7 @@ ajenos) + `next build` OK (`BUILD_ID=eBIlrCEoIFTWay0VAx6VA`); desde checkout
 limpio el paquete publicado basta (trades=15765, reconciliacion=True).
 Estado: los cinco correctivos y la corrección final de `control.guard` están commiteados+publiados en `3b6340d..<sha-final>`; dashboard re-servido en `http://127.0.0.1:3020` (PID 13868, `BUILD_ID=w1DMYZv7af8n2jO6vXlyp`, `next build` + `tsc --noEmit` + `eslint` OK, HTTP 200 en `/api/v1/runtime`, `/backtest` y `/paper-lab` renderizados en escritorio). Sin monitor ni backtest activo.
 
-## MVP Paper Lab en caliente — ingeniería, reconducido (2026-10-20, commit 84941e8)
+## MVP Paper Lab en caliente — ingeniería, reconducido (2026-10-20, commit 1f79d71)
 
 Se recondujo el MVP del Paper Lab en caliente: el backend Python es ahora la
 fuente de verdad y el frontend es un cliente de API delgado. Exclusivamente
@@ -95,15 +95,19 @@ sin capital real).
 
 Artefactos nuevos:
 - `src/microstructure_probe/paper_lab_engine.py` — motor de sesiones de
-  ingeniería con orquestación incremental: reloj de sesión, configuración
-  versionada (config_hash), decisiones (VIGILANDO/SIN_ENTRADA/DESCARTADO/
-  ENTRADA_SIMULADA), posiciones, fills, costes, eventos y resultados.
-  Reutiliza primitivas de `backtest_offline.py` (no segundo motor económico).
+  ingeniería con orquestación incremental. La mecánica económica (entradas,
+  salidas, costes, funding, stops, horizonte) se delega a
+  `backtest_offline.run_backtest` (no segundo motor económico).
+  Incluye: reloj de sesión, configuración versionada (config_hash),
+  decisiones (VIGILANDO/SIN_ENTRADA/DESCARTADO/ENTRADA_SIMULADA),
+  posiciones, fills, costes ejecutados vs estimados, eventos y resultados.
 - `scripts/paper_lab_session.py` — CLI para operaciones de sesión
-  (list/create/get/step/exit/restart/stop) con validación de session_id contra
-  traversal y escritura atómica delegada al backend.
+  (list/create/evaluate/get/step/exit/restart/stop) con validación de
+  session_id contra traversal, escritura atómica y control de revisión
+  (optimistic locking).
 - `frontend/src/app/api/v1/paper-lab/sessions/route.ts` — GET listado +
   POST creación. `sessions/[session_id]/route.ts` — GET recuperación completa.
+  `sessions/[session_id]/evaluate/route.ts` — POST evaluación de evidencia en T.
   `sessions/[session_id]/step|exit|restart|stop/route.ts` — POST acciones.
   Protección de origen (127.0.0.1:3020), confinamiento de directorio aislado.
 - `frontend/src/lib/paper-lab-live.ts` — tipos compartidos y cliente de API
@@ -118,18 +122,25 @@ Artefactos nuevos:
 - `tests/test_paper_lab_engine.py` — 14 pruebas del motor Python (entrada,
   stop, horizonte, manual, open_at_end, reinicio, detención, persistencia,
   validación de identificadores, serialización roundtrip).
+- `tests/test_paper_lab_integration.py` — 5 pruebas de integración A–E vía CLI
+  con almacenamiento temporal real: flujo completo (A), SIN_ENTRADA (B),
+  datos obsoletos (C), fin de datos con posición abierta (D), acción duplicada
+  sin duplicar operación (E).
 
 Flujos verificados:
-- Entrada automática tras decisión ENTRADA_SIMULADA.
+- Entrada automática tras decisión ENTRADA_SIMULADA (backend evalúa evidencia
+  en T mediante run_backtest).
 - Salida por stop (precio distinto de la marca), por horizonte, manual.
 - open_at_end: datos agotados con posición abierta → permanece no realizada,
-  sin cierre inventado.
+  sin cierre inventado ni comisión de salida.
 - Reinicio, detención, persistencia y recarga tras refresco.
 - Identificadores con traversal rechazados.
+- Control de revisión: acción duplicada con revisión obsoleta detectada.
 
 Verificado: tsc --noEmit limpio, eslint 0 errores (warnings preexistentes),
 next build OK (rutas /api/v1/paper-lab/sessions* y /paper-lab-live),
-470 pruebas vitest pass (1 skip), 14 pruebas Python del motor pass.
+470 pruebas vitest pass (1 skip), 14 pruebas Python del motor pass,
+5 pruebas de integración A-E pass.
 
 Estado: motor paper completo (Etapa 5) AÚN NO implementado. Este MVP es
 pantalla de ingeniería sobre fixtures; la primera ventana con datos Binance
