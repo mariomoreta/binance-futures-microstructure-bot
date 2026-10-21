@@ -12,7 +12,7 @@ base, 7/7 pasan con el arreglo. Verificado: frontend 452 passed / 1 skipped,
 reales y replay enlazado (ver
 `docs/evidence/BACKTEST_V2_E2E_BROWSER_EVIDENCE.md`). Estado: los cinco correctivos y la corrección final de `control.guard` están commiteados en `3b6340d..<sha-de-esta-sesión>`; dashboard re-servido en `http://127.0.0.1:3020` (`BUILD_ID=w1DMYZv7af8n2jO6vXlyp`, HTTP 200 en `/api/v1/runtime`, `/backtest`, `/paper-lab`). Fuera de alcance: sin Binance, monitor, paper prospectivo, órdenes, credenciales, optimización ni cambios de estrategia/mapping/costes/umbrales/motor.
 
-## MVP Paper Lab en caliente — ingeniería, reconducido (IMPLEMENTADO, commit ec0416a)
+## MVP Paper Lab en caliente — ingeniería, reconducido (IMPLEMENTADO, commit b914f2d)
 
 Backend Python como fuente de verdad
 (src/microstructure_probe/paper_lab_engine.py), frontend como cliente de API

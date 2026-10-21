@@ -2359,17 +2359,17 @@ nuevas pantallas ni otra arquitectura.
   tsc --noEmit limpio. Sin Binance, monitor, paper prospectivo, ordenes,
   pagos, movil ni optimizacion.
 
-SHA inicial: dca00ea. SHA final: ec0416a (commit en review/o1-funcional-v2-observacion).
+SHA inicial: dca00ea. SHA final: b914f2d (commit en review/o1-funcional-v2-observacion).
 
 ## Correccion acotada: camino real dashboard → BFF → Python (2026-10-21, sobre ec0416a)
 
 Correccion de defectos en el recorrido real cliente/BFF/backend de Paper Lab,
 sin nuevas pantallas ni otra arquitectura.
 
-- **Reloj causal en el camino real:** `evaluate_session` rechaza explicitamente
-  cuando falta `at_ms` y no hay `clock_ms` en la sesion; nunca usa `_now_ms()`
-  (que consideraba todo el historico conocido). `create_session` fija
-  `clock_ms` al close_time de la ultima vela de la fixture. El cliente
+- **Reloj causal en el camino real:** `create_session` fija `clock_ms` al
+  close_time de la ultima vela de CONTEXTO (frontera inicial), no al cierre
+  de toda la fixture. `evaluate_session` rechaza explicitamente cuando falta
+  `at_ms` y `clock_ms`; nunca usa `_now_ms()`. El cliente
   `evaluateSessionApi` envia `at_ms` desde el reloj de sesion.
   Senal y posibilidad de fill son estados distintos: una senal valida puede
   quedar esperando un precio ejecutable posterior.
@@ -2377,15 +2377,20 @@ sin nuevas pantallas ni otra arquitectura.
 - **Informacion futura:** `session_to_public_dict` serializa solo informacion
   disponible en T: velas con open_time_ms <= T; para velas abiertas solo
   open_time_ms y open (nunca high/low/close finales). `authoritative` se filtra
-  para no revelar salidas futuras. El almacenamiento interno conserva todas
-  las velas para avanzar la fixture.
+  para no revelar salidas futuras. `config_hash` y `input_hash` se incluyen
+  en la respuesta pública. El almacenamiento interno conserva todas las
+  velas para avanzar la fixture. TODAS las respuestas públicas (crear,
+  evaluar, consultar, avanzar, recuperar, exportar) usan `session_to_public_dict`.
 
 - **Revision e idempotencia hasta el navegador:** Cada accion logica lleva
-  `request_id` y revision esperada. Un reintento reutiliza su `request_id`.
-  Mismo request_id + mismo contenido -> mismo efecto sin duplicacion. Misma
-  clave + contenido distinto -> REQUEST_CONTENT_CONFLICT. Dos acciones
+  `request_id` y revision esperada (`--expected-revision` en el CLI,
+  propagado por el BFF). Un reintento reutiliza su `request_id`.
+  Mismo request_id + mismo contenido -> mismo efecto sin duplicacion.
+  Misma clave + contenido distinto -> REQUEST_CONTENT_CONFLICT. Dos acciones
   incompatibles sobre la misma revision -> una aplica, la otra informa
-  conflicto (HTTP 409, no PYTHON_FAILED/500).
+  conflicto (HTTP 409, no PYTHON_FAILED/500). El BFF interpreta la respuesta
+  estructurada del CLI incluso con salida distinta de cero. El frontend
+  muestra los conflictos y recupera el estado autoritativo vía GET.
 
 - **Fin de datos no es cierre ejecutado:** `position.mark_px` nunca se usa
   como sustituto de precio de salida ejecutado. Marcador de cierre solo cuando
@@ -2396,7 +2401,7 @@ sin nuevas pantallas ni otra arquitectura.
 
 - **Pruebas y verificacion:** 44 pruebas Python (28 motor + 5 integracion A-E +
   16 backtest-offline) + 9 frontend vitest + tsc --noEmit limpio. Conteo
-  corregido: 28 + 5 + 16 = 49, no 44. Sin Binance, monitor, paper prospectivo,
-  ordenes, pagos, movil ni optimizacion.
-
-SHA inicial: ec0416a. SHA final: <pendiente de commit>.
+  corregido: 28 + 5 + 16 = 49, no 44. Build de producción Next.js exitoso.
+  Desplegado en http://127.0.0.1:3020 (PID 29944, PID anterior 13868 detenido).
+  Rutas /paper-lab-live y /paper-lab sirven HTTP 200. Sin Binance, monitor,
+  paper prospectivo, ordenes, pagos, movil ni optimizacion.

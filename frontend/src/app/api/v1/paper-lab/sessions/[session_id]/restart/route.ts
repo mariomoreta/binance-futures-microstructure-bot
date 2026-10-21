@@ -37,8 +37,10 @@ export async function POST(
     body = {};
   }
   const requestId = (body as {request_id?: unknown})?.request_id;
+  const expectedRevision = (body as {expected_revision?: unknown})?.expected_revision;
 
   const extra: string[] = ["--action", "restart", "--session-id", sessionId];
+  if (expectedRevision != null) extra.push("--expected-revision", String(expectedRevision));
   if (requestId != null) extra.push("--request-id", String(requestId));
 
   const r = spawnSync(
@@ -46,17 +48,16 @@ export async function POST(
     {cwd: ROOT, encoding: "utf8", timeout: 30_000,
      maxBuffer: 8 * 1024 * 1024, windowsHide: true,
      env: {...process.env, PYTHONPATH: ROOT + "/src"}});
-  if (r.status !== 0) {
-    return NextResponse.json(
-      {error: "PYTHON_FAILED", detail: (r.stderr || "").trim().slice(-500)},
-      {status: 500, headers});
-  }
-  let data: PyResult;
+  let data: PyResult | null = null;
+  let parseError: string | null = null;
   try {
     data = JSON.parse(r.stdout) as PyResult;
   } catch {
+    parseError = (r.stdout || "").trim().slice(-200);
+  }
+  if (data === null) {
     return NextResponse.json(
-      {error: "PYTHON_BAD_JSON", detail: (r.stdout || "").trim().slice(-200)},
+      {error: "PYTHON_BAD_JSON", detail: parseError ?? r.stderr.slice(-500)},
       {status: 500, headers});
   }
   if (!data.ok) {

@@ -18,12 +18,15 @@ import {ExportPanel} from "./ExportPanel";
 import {SessionPersistence} from "./SessionPersistence";
 import s from "./PaperLabLive.module.css";
 
+type ApiError = { error: string; detail: string; status: number } | null;
+
 interface PaperLabLiveProps {}
 export default function PaperLabLive(): React.JSX.Element {
   const [state, setState] = useState<PaperSessionState | null>(null);
   const [savedSessions, setSavedSessions] = useState<import("@/lib/paper-lab-live").PaperSessionSummary[]>([]);
   const [loading, setLoading] = useState(false);
   const [fixtureId, setFixtureId] = useState<string | null>(null);
+  const [apiError, setApiError] = useState<ApiError>(null);
 
   // Genera un request_id único por acción lógica (idempotencia entre reintentos).
   const [requestIdCounter, setRequestIdCounter] = useState(0);
@@ -36,8 +39,19 @@ export default function PaperLabLive(): React.JSX.Element {
   // Cargar sesiones guardadas al montar (persistencia real, survives refresh).
   useEffect(() => {
     listSessionsApi().then((sessions) => {
-      setSavedSessions(sessions);
+      if (sessions.ok) setSavedSessions(sessions.data ?? []);
     }).catch(() => { /* persistencia opcional */ });
+  }, []);
+
+  // Recupera el estado autoritativo desde el backend y lo establece.
+  const recoverAuthoritative = useCallback(async (sessionId: string) => {
+    const loaded = await getSessionApi(sessionId);
+    if (loaded.ok && loaded.data) {
+      setState(loaded.data);
+      setApiError(null);
+      return loaded.data;
+    }
+    return null;
   }, []);
 
   const createAndEvaluate = useCallback(async (
@@ -47,20 +61,21 @@ export default function PaperLabLive(): React.JSX.Element {
     const entry = PAPER_FIXTURES[id];
     if (!entry) return;
     setLoading(true);
+    setApiError(null);
     try {
       // 1. Crear sesión en sin_iniciar (sin decisión del cliente).
       const created = await createSessionApi(entry.config, entry.candles,
         entry.context);
-      if (!created) return;
+      if (!created.ok || !created.data) return;
       setFixtureId(id);
-      setState(created);
+      setState(created.data);
 
       // 2. Evaluar evidencia en T vía backend (run_backtest como autoridad).
-      //    Se envía at_ms = reloj de sesión (created.clock_ms) para que el
+      //    Se envía at_ms = reloj de sesión (created.data.clock_ms) para que el
       //    backend use el reloj de simulación y no la hora actual.
-      const evaluated = await evaluateSessionApi(created.session_id, null,
-        null, ruleVersion, created.clock_ms ?? null, nextRequestId());
-      if (evaluated) setState(evaluated);
+      const evaluated = await evaluateSessionApi(created.data.session_id, null,
+        null, ruleVersion, created.data.clock_ms ?? null, nextRequestId());
+      if (evaluated.ok && evaluated.data) setState(evaluated.data);
     } finally {
       setLoading(false);
     }
@@ -69,22 +84,24 @@ export default function PaperLabLive(): React.JSX.Element {
   const handleSelectFixture = useCallback(async (id: string) => {
     // Regla experimental versionada, fijada antes de ejecutar.
     // Usamos una regla de ingeniería (control, no estrategia aprobada).
+    setApiError(null);
     await createAndEvaluate(id, "ENGINEERING-FIXTURE-RULE-v1");
   }, [createAndEvaluate]);
 
   const handleSaveSession = useCallback(async () => {
     if (!state) return;
     const sessions = await listSessionsApi();
-    setSavedSessions(sessions);
+    if (sessions.ok) setSavedSessions(sessions.data ?? []);
   }, [state]);
 
   const handleLoadSession = useCallback(async (sessionId: string) => {
     setLoading(true);
+    setApiError(null);
     try {
       const loaded = await getSessionApi(sessionId);
-      if (loaded) {
+      if (loaded.ok && loaded.data) {
         setFixtureId(null);
-        setState(loaded);
+        setState(loaded.data);
       }
     } finally {
       setLoading(false);
@@ -93,60 +110,100 @@ export default function PaperLabLive(): React.JSX.Element {
 
   const handleEnter = useCallback(async () => {
     if (!state) return;
-    // La entrada se ejecuta al pasar de en_espera a abierta en el backend
-    // (step_forward con status en_espera aplica la entrada).
     setLoading(true);
+    setApiError(null);
     try {
-      const next = await stepSessionApi(state.session_id, nextRequestId());
-      if (next) setState(next);
+      // La entrada se ejecuta al pasar de en_espera a abierta en el backend
+      // (step_forward con status en_espera aplica la entrada).
+      const result = await stepSessionApi(state.session_id, nextRequestId(), state.revision);
+      if (!result.ok) {
+        setApiError({ error: result.error ?? "ERROR", detail: result.detail ?? "", status: result.status });
+        if (result.status === 409) {
+          await recoverAuthoritative(state.session_id);
+        }
+        return;
+      }
+      if (result.data) setState(result.data);
     } finally {
       setLoading(false);
     }
-  }, [state, nextRequestId]);
+  }, [state, nextRequestId, recoverAuthoritative]);
 
   const handleStep = useCallback(async () => {
     if (!state) return;
     setLoading(true);
+    setApiError(null);
     try {
-      const next = await stepSessionApi(state.session_id, nextRequestId());
-      if (next) setState(next);
+      const result = await stepSessionApi(state.session_id, nextRequestId(), state.revision);
+      if (!result.ok) {
+        setApiError({ error: result.error ?? "ERROR", detail: result.detail ?? "", status: result.status });
+        if (result.status === 409) {
+          await recoverAuthoritative(state.session_id);
+        }
+        return;
+      }
+      if (result.data) setState(result.data);
     } finally {
       setLoading(false);
     }
-  }, [state, nextRequestId]);
+  }, [state, nextRequestId, recoverAuthoritative]);
 
   const handleExit = useCallback(async () => {
     if (!state) return;
     setLoading(true);
+    setApiError(null);
     try {
-      const next = await exitSessionApi(state.session_id, nextRequestId());
-      if (next) setState(next);
+      const result = await exitSessionApi(state.session_id, nextRequestId(), state.revision);
+      if (!result.ok) {
+        setApiError({ error: result.error ?? "ERROR", detail: result.detail ?? "", status: result.status });
+        if (result.status === 409) {
+          await recoverAuthoritative(state.session_id);
+        }
+        return;
+      }
+      if (result.data) setState(result.data);
     } finally {
       setLoading(false);
     }
-  }, [state, nextRequestId]);
+  }, [state, nextRequestId, recoverAuthoritative]);
 
   const handleRestart = useCallback(async () => {
     if (!state) return;
     setLoading(true);
+    setApiError(null);
     try {
-      const next = await restartSessionApi(state.session_id, nextRequestId());
-      if (next) setState(next);
+      const result = await restartSessionApi(state.session_id, nextRequestId(), state.revision);
+      if (!result.ok) {
+        setApiError({ error: result.error ?? "ERROR", detail: result.detail ?? "", status: result.status });
+        if (result.status === 409) {
+          await recoverAuthoritative(state.session_id);
+        }
+        return;
+      }
+      if (result.data) setState(result.data);
     } finally {
       setLoading(false);
     }
-  }, [state, nextRequestId]);
+  }, [state, nextRequestId, recoverAuthoritative]);
 
   const handleStop = useCallback(async () => {
     if (!state) return;
     setLoading(true);
+    setApiError(null);
     try {
-      const next = await stopSessionApi(state.session_id, nextRequestId());
-      if (next) setState(next);
+      const result = await stopSessionApi(state.session_id, nextRequestId(), state.revision);
+      if (!result.ok) {
+        setApiError({ error: result.error ?? "ERROR", detail: result.detail ?? "", status: result.status });
+        if (result.status === 409) {
+          await recoverAuthoritative(state.session_id);
+        }
+        return;
+      }
+      if (result.data) setState(result.data);
     } finally {
       setLoading(false);
     }
-  }, [state, nextRequestId]);
+  }, [state, nextRequestId, recoverAuthoritative]);
 
   if (!state) {
     return (
@@ -215,6 +272,22 @@ export default function PaperLabLive(): React.JSX.Element {
     netClass = net >= 0 ? s.v + " " + s.pos : s.v + " " + s.neg;
   }
 
+  // Mostrar error de API (conflicto de revisión, etc.) si lo hay.
+  const errorBanner = apiError ? (
+    <div className={s.errorBanner} role="alert">
+      <strong>Error del backend:</strong> {apiError.error}
+      {apiError.detail && (
+        <span> — {apiError.detail}</span>
+      )}
+      <button type="button" className={s.live} onClick={() => {
+        setApiError(null);
+        if (state) recoverAuthoritative(state.session_id);
+      }}>
+        Recuperar estado autoritativo
+      </button>
+    </div>
+  ) : null;
+
   return (
     <section className={s.root} aria-label="Paper Lab ingeniería — simulación paper">
       <div className={s.labelStrip}>
@@ -227,6 +300,8 @@ export default function PaperLabLive(): React.JSX.Element {
         posición → gestión → cierre/exportación. El backend ejecuta; el
         frontend solo presenta.
       </p>
+
+      {errorBanner}
 
       {loading && (
         <p className={s.note}>Procesando en el backend…</p>

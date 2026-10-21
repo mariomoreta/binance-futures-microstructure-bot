@@ -46,6 +46,7 @@ export async function POST(
   const ruleVersion = (body as {rule_version?: unknown})?.rule_version;
   const atMs = (body as {at_ms?: unknown})?.at_ms;
   const requestId = (body as {request_id?: unknown})?.request_id;
+  const expectedRevision = (body as {expected_revision?: unknown})?.expected_revision;
 
   const extra: string[] = ["--session-id", sessionId];
   if (hypothesisId != null) extra.push("--hypothesis-id", String(hypothesisId));
@@ -54,6 +55,7 @@ export async function POST(
   }
   if (ruleVersion != null) extra.push("--rule-version", String(ruleVersion));
   if (atMs != null) extra.push("--at-ms", String(atMs));
+  if (expectedRevision != null) extra.push("--expected-revision", String(expectedRevision));
   if (requestId != null) extra.push("--request-id", String(requestId));
 
   const r = spawnSync(
@@ -61,22 +63,25 @@ export async function POST(
     {cwd: ROOT, encoding: "utf8", timeout: 30_000,
      maxBuffer: 8 * 1024 * 1024, windowsHide: true,
      env: {...process.env, PYTHONPATH: ROOT + "/src"}});
-  if (r.status !== 0) {
-    return NextResponse.json(
-      {error: "PYTHON_FAILED", detail: (r.stderr || "").trim().slice(-500)},
-      {status: 500, headers});
-  }
-  let data: PyResult;
+  // El CLI siempre escribe JSON estructurado en stdout, incluso con
+  // salida distinta de cero (errores de revisión, contenido, validación).
+  // Hay que interpretarlo antes de asumir un fallo de proceso.
+  let data: PyResult | null = null;
+  let parseError: string | null = null;
   try {
     data = JSON.parse(r.stdout) as PyResult;
   } catch {
+    parseError = (r.stdout || "").trim().slice(-200);
+  }
+  if (data === null) {
     return NextResponse.json(
-      {error: "PYTHON_BAD_JSON", detail: (r.stdout || "").trim().slice(-200)},
+      {error: "PYTHON_BAD_JSON", detail: parseError ?? r.stderr.slice(-500)},
       {status: 500, headers});
   }
   if (!data.ok) {
     const status = data.error === "SESSION_NOT_FOUND" ? 404 :
-      (data.error === "REVISION_CONFLICT" || data.error === "REQUEST_CONTENT_CONFLICT") ? 409 : 400;
+      (data.error === "REVISION_CONFLICT" || data.error === "REQUEST_CONTENT_CONFLICT") ? 409 :
+      (data.error === "LOCK_TIMEOUT" || data.error === "WRITE_FAILED") ? 503 : 400;
     return NextResponse.json({error: data.error, detail: data.detail},
       {status, headers});
   }

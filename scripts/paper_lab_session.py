@@ -127,6 +127,8 @@ def main(argv=None) -> int:
                     help="version de regla experimental (evaluate)")
     ap.add_argument("--at-ms", default=None, type=int,
                     help="reloj de simulacion T en ms para evaluacion causal (evaluate)")
+    ap.add_argument("--expected-revision", default=None, type=int,
+                    help="revision esperada para control de optimista (step/exit/restart/stop)")
     ap.add_argument("--request-id", default=None,
                     help="identidad de peticion para idempotencia (guardar/step/exit/restart/stop)")
     ap.add_argument("--sessions-dir", default=None,
@@ -198,8 +200,10 @@ def main(argv=None) -> int:
                 rule_version=args.rule_version,
                 at_ms=args.at_ms,
             )
+            expected_rev = args.expected_revision \
+                if args.expected_revision is not None else rev_before
             res = save_session(state, str(sessions_dir),
-                               expected_revision=rev_before,
+                               expected_revision=expected_rev,
                                request_id=args.request_id)
             if not res.ok:
                 print(json.dumps(_fail(res.error_code or "SAVE_FAILED",
@@ -229,8 +233,9 @@ def main(argv=None) -> int:
                                        "sesion no existe")),
                       file=sys.stderr)
                 return 4
-            print(json.dumps(_ok({"session": session_to_dict(state)}),
-                              indent=1))
+            print(json.dumps(_ok({
+                "session": session_to_public_dict(state, state.clock_ms),
+            }), indent=1))
             return 0
 
         def _save_with_revision(state: PaperSessionState,
@@ -245,6 +250,11 @@ def main(argv=None) -> int:
                 raise SystemExit(3)
             return res.state
 
+        def _expected_rev_for(state: PaperSessionState) -> int:
+            return args.expected_revision \
+                if args.expected_revision is not None \
+                else state.revision
+
         if args.action == "step":
             state = load_session(args.session_id, str(sessions_dir))
             if state is None:
@@ -252,7 +262,7 @@ def main(argv=None) -> int:
                                        "sesion no existe")),
                       file=sys.stderr)
                 return 4
-            expected_rev = state.revision
+            expected_rev = _expected_rev_for(state)
             state = step_forward(state)
             state = _save_with_revision(state, expected_rev)
             print(json.dumps(_ok({
@@ -267,7 +277,7 @@ def main(argv=None) -> int:
                                        "sesion no existe")),
                       file=sys.stderr)
                 return 4
-            expected_rev = state.revision
+            expected_rev = _expected_rev_for(state)
             state = manual_exit(state)
             state = _save_with_revision(state, expected_rev)
             print(json.dumps(_ok({
@@ -282,7 +292,7 @@ def main(argv=None) -> int:
                                        "sesion no existe")),
                       file=sys.stderr)
                 return 4
-            expected_rev = state.revision
+            expected_rev = _expected_rev_for(state)
             state = restart_session(state)
             state = _save_with_revision(state, expected_rev)
             print(json.dumps(_ok({
@@ -297,7 +307,7 @@ def main(argv=None) -> int:
                                        "sesion no existe")),
                       file=sys.stderr)
                 return 4
-            expected_rev = state.revision
+            expected_rev = _expected_rev_for(state)
             state = stop_session(state)
             state = _save_with_revision(state, expected_rev)
             print(json.dumps(_ok({

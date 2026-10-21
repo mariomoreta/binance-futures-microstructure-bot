@@ -21,7 +21,30 @@ Correccion de defectos en el recorrido real cliente/BFF/backend de Paper Lab:
 - **Pruebas:** 44 Python OK (28 motor + 5 integracion A-E + 16 backtest-offline);
   9 frontend vitest OK; tsc --noEmit limpio.
 
-SHA inicial: ec0416a. SHA final: <pendiente de commit>.
+SHA inicial: ec0416a. SHA final: b914f2d (commit en review/o1-funcional-v2-observacion).
+
+## Correccion acotada Paper Lab: camino real dashboard → BFF → Python (2026-10-21, sobre ec0416a)
+
+Correccion de defectos en el recorrido real cliente/BFF/backend de Paper Lab:
+
+- **Reloj causal:** `create_session` fija `clock_ms` al close_time de la
+  ultima vela de contexto (no al final de la fixture). `evaluate_session`
+  rechaza si falta `at_ms` y `clock_ms`; nunca usa hora actual. Cliente envia
+  `at_ms` en evaluacion.
+- **Sin informacion futura:** `session_to_public_dict` filtra velas a solo
+  las conocidas en T en TODAS las respuestas publicas (incluido GET).
+- **Revision e idempotencia al navegador:** request_id en cada accion;
+  conflictos devuelven HTTP 409; BFF interpreta respuesta del CLI incluso
+  con salida != 0.
+- **Fin de datos != cierre ejecutado:** mark_px nunca sustituye precio de
+  salida; realized_net null si open_at_end; se distingue sesion terminada
+  de posicion cerrada.
+- **Pruebas:** 44 Python OK (28 motor + 5 integracion A-E + 16 backtest-offline);
+  9 frontend vitest OK; tsc --noEmit limpio; build de produccion Next.js exitoso.
+  Desplegado en http://127.0.0.1:3020 (PID 29944). /paper-lab-live y /paper-lab
+  sirven HTTP 200.
+
+SHA inicial: ec0416a. SHA final: b914f2d.
 
 1. **Bloqueo = ciclo de vida de UNA corrida.** `control.guard` (mutex corto por
    experimento, `O_EXCL`, obsoleto a 30 s) serializa adquisición, liberación y

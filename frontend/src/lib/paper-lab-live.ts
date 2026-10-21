@@ -230,8 +230,16 @@ export function sessionView(state: PaperSessionState): PaperSessionView {
 
 const API_BASE = "/api/v1/paper-lab/sessions";
 
-async function apiJson(path: string, opts?: RequestInit):
-  Promise<{ok: boolean; data?: unknown; error?: string; detail?: string}> {
+type ApiResult<T> = {
+  ok: boolean;
+  data?: T;
+  error?: string;
+  detail?: string;
+  status: number;
+};
+
+async function apiJson<T = unknown>(path: string, opts?: RequestInit):
+  Promise<ApiResult<T>> {
   const r = await fetch(`${API_BASE}${path}`, {
     cache: "no-store",
     headers: {"Content-Type": "application/json"},
@@ -244,31 +252,40 @@ async function apiJson(path: string, opts?: RequestInit):
     body = null;
   }
   if (!r.ok) {
-    return {ok: false, error: (body as {error?: string})?.error,
-      detail: (body as {detail?: string})?.detail};
+    return {ok: false, data: undefined,
+      error: (body as {error?: string})?.error,
+      detail: (body as {detail?: string})?.detail,
+      status: r.status};
   }
-  return {ok: true, data: body};
+  return {ok: true, data: body as T, status: r.status};
 }
 
-export async function listSessionsApi(): Promise<PaperSessionSummary[]> {
+export async function listSessionsApi(): Promise<ApiResult<PaperSessionSummary[]>> {
   const r = await apiJson("");
-  if (!r.ok || !r.data) return [];
+  if (!r.ok) {
+    return {ok: false, data: undefined, error: r.error, detail: r.detail, status: r.status};
+  }
   const data = r.data as {sessions?: unknown};
-  return Array.isArray(data.sessions) ? (data.sessions as PaperSessionSummary[]) : [];
+  return {
+    ok: true,
+    data: Array.isArray(data.sessions) ? (data.sessions as PaperSessionSummary[]) : [],
+    status: r.status,
+  };
 }
 
 export async function createSessionApi(
   config: PaperSessionConfig,
   candles: PaperCandle[],
   contextCandles: PaperCandle[] = [],
-): Promise<PaperSessionState | null> {
-  const r = await apiJson("", {
+): Promise<ApiResult<PaperSessionState>> {
+  const r = await apiJson<{session?: PaperSessionState}>("", {
     method: "POST",
     body: JSON.stringify({config, candles, context: contextCandles}),
   });
-  if (!r.ok || !r.data) return null;
-  const data = r.data as {session?: unknown};
-  return data.session as PaperSessionState;
+  if (!r.ok || !r.data) {
+    return {ok: false, data: undefined, error: r.error, detail: r.detail, status: r.status};
+  }
+  return {ok: true, data: r.data.session!, status: r.status};
 }
 
 export async function evaluateSessionApi(
@@ -278,8 +295,9 @@ export async function evaluateSessionApi(
   ruleVersion?: string | null,
   atMs?: number | null,
   requestId?: string | null,
-): Promise<PaperSessionState | null> {
-  const r = await apiJson(`/${encodeURIComponent(sessionId)}/evaluate`,
+  expectedRevision?: number | null,
+): Promise<ApiResult<PaperSessionState>> {
+  const r = await apiJson<{session?: PaperSessionState}>(`/${encodeURIComponent(sessionId)}/evaluate`,
     {
       method: "POST",
       body: JSON.stringify({
@@ -288,69 +306,96 @@ export async function evaluateSessionApi(
         rule_version: ruleVersion ?? null,
         at_ms: atMs ?? null,
         request_id: requestId ?? null,
+        expected_revision: expectedRevision ?? null,
       }),
     });
-  if (!r.ok || !r.data) return null;
-  const data = r.data as {session?: unknown};
-  return data.session as PaperSessionState;
+  if (!r.ok || !r.data) {
+    return {ok: false, data: undefined, error: r.error, detail: r.detail, status: r.status};
+  }
+  return {ok: true, data: r.data.session!, status: r.status};
 }
 
 export async function getSessionApi(sessionId: string):
-  Promise<PaperSessionState | null> {
-  const r = await apiJson(`/${encodeURIComponent(sessionId)}`);
-  if (!r.ok || !r.data) return null;
-  const data = r.data as {session?: unknown};
-  return data.session as PaperSessionState;
+  Promise<ApiResult<PaperSessionState>> {
+  const r = await apiJson<{session?: PaperSessionState}>(`/${encodeURIComponent(sessionId)}`);
+  if (!r.ok || !r.data) {
+    return {ok: false, data: undefined, error: r.error, detail: r.detail, status: r.status};
+  }
+  return {ok: true, data: r.data.session!, status: r.status};
 }
 
 export async function stepSessionApi(
-  sessionId: string, requestId?: string | null,
-): Promise<PaperSessionState | null> {
-  const r = await apiJson(`/${encodeURIComponent(sessionId)}/step`,
+  sessionId: string,
+  requestId?: string | null,
+  expectedRevision?: number | null,
+): Promise<ApiResult<PaperSessionState>> {
+  const r = await apiJson<{session?: PaperSessionState}>(`/${encodeURIComponent(sessionId)}/step`,
     {
       method: "POST",
-      body: JSON.stringify({request_id: requestId ?? null}),
+      body: JSON.stringify({
+        request_id: requestId ?? null,
+        expected_revision: expectedRevision ?? null,
+      }),
     });
-  if (!r.ok || !r.data) return null;
-  const data = r.data as {session?: unknown};
-  return data.session as PaperSessionState;
+  if (!r.ok || !r.data) {
+    return {ok: false, data: undefined, error: r.error, detail: r.detail, status: r.status};
+  }
+  return {ok: true, data: r.data.session!, status: r.status};
 }
 
 export async function exitSessionApi(
-  sessionId: string, requestId?: string | null,
-): Promise<PaperSessionState | null> {
-  const r = await apiJson(`/${encodeURIComponent(sessionId)}/exit`,
+  sessionId: string,
+  requestId?: string | null,
+  expectedRevision?: number | null,
+): Promise<ApiResult<PaperSessionState>> {
+  const r = await apiJson<{session?: PaperSessionState}>(`/${encodeURIComponent(sessionId)}/exit`,
     {
       method: "POST",
-      body: JSON.stringify({request_id: requestId ?? null}),
+      body: JSON.stringify({
+        request_id: requestId ?? null,
+        expected_revision: expectedRevision ?? null,
+      }),
     });
-  if (!r.ok || !r.data) return null;
-  const data = r.data as {session?: unknown};
-  return data.session as PaperSessionState;
+  if (!r.ok || !r.data) {
+    return {ok: false, data: undefined, error: r.error, detail: r.detail, status: r.status};
+  }
+  return {ok: true, data: r.data.session!, status: r.status};
 }
 
 export async function restartSessionApi(
-  sessionId: string, requestId?: string | null,
-): Promise<PaperSessionState | null> {
-  const r = await apiJson(`/${encodeURIComponent(sessionId)}/restart`,
+  sessionId: string,
+  requestId?: string | null,
+  expectedRevision?: number | null,
+): Promise<ApiResult<PaperSessionState>> {
+  const r = await apiJson<{session?: PaperSessionState}>(`/${encodeURIComponent(sessionId)}/restart`,
     {
       method: "POST",
-      body: JSON.stringify({request_id: requestId ?? null}),
+      body: JSON.stringify({
+        request_id: requestId ?? null,
+        expected_revision: expectedRevision ?? null,
+      }),
     });
-  if (!r.ok || !r.data) return null;
-  const data = r.data as {session?: unknown};
-  return data.session as PaperSessionState;
+  if (!r.ok || !r.data) {
+    return {ok: false, data: undefined, error: r.error, detail: r.detail, status: r.status};
+  }
+  return {ok: true, data: r.data.session!, status: r.status};
 }
 
 export async function stopSessionApi(
-  sessionId: string, requestId?: string | null,
-): Promise<PaperSessionState | null> {
-  const r = await apiJson(`/${encodeURIComponent(sessionId)}/stop`,
+  sessionId: string,
+  requestId?: string | null,
+  expectedRevision?: number | null,
+): Promise<ApiResult<PaperSessionState>> {
+  const r = await apiJson<{session?: PaperSessionState}>(`/${encodeURIComponent(sessionId)}/stop`,
     {
       method: "POST",
-      body: JSON.stringify({request_id: requestId ?? null}),
+      body: JSON.stringify({
+        request_id: requestId ?? null,
+        expected_revision: expectedRevision ?? null,
+      }),
     });
-  if (!r.ok || !r.data) return null;
-  const data = r.data as {session?: unknown};
-  return data.session as PaperSessionState;
+  if (!r.ok || !r.data) {
+    return {ok: false, data: undefined, error: r.error, detail: r.detail, status: r.status};
+  }
+  return {ok: true, data: r.data.session!, status: r.status};
 }

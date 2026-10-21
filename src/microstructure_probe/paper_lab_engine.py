@@ -690,14 +690,17 @@ def create_session(
     now = _now_ms()
     session_id = _new_session_id(config.symbol, config.direction)
 
-    # Reloj de simulacion: se establece al close_time de la ULTIMA vela
-    # conocida, de modo que el backend posee T desde la creacion y la primera
-    # evaluacion pueda consumir todas las velas de la fixture como conocidas
-    # (close_time <= T). Esto evita considerar el historico completo por usar
-    # la hora actual, manteniendo la causalidad: T es fin de la fixture, no
-    # el reloj de pared.
+    # Reloj de simulacion: se establece al close_time de la ULTIMA vela de
+    # CONTEXTO (frontera inicial), no al cierre de toda la fixture. De este
+    # modo la primera evaluacion solo conoce el contexto ya disponible y no
+    # los datos posteriores que se revelaran al avanzar. El reloj pertenece al
+    # backend y avanza de forma monotonica con cada step_forward.
     initial_clock_ms: Optional[int] = None
-    if candles:
+    if context_candles:
+        last_ctx_close = context_candles[-1].close_time_ms
+        if last_ctx_close is not None:
+            initial_clock_ms = last_ctx_close
+    elif candles:
         last_close = candles[-1].close_time_ms
         if last_close is not None:
             initial_clock_ms = last_close
@@ -1752,6 +1755,9 @@ def session_to_public_dict(
     """
     if at_ms is None:
         at_ms = state.clock_ms
+    # Si no hay reloj de simulación, ninguna vela se considera conocida.
+    if at_ms is None:
+        at_ms = -1
 
     # Velas conocidas en T (open disponible).
     known_candles = [c for c in state.candles if c.open_time_ms <= at_ms]
@@ -1801,6 +1807,8 @@ def session_to_public_dict(
         "status": state.status,
         "revision": state.revision,
         "clock_ms": at_ms,
+        "config_hash": state.config_hash,
+        "input_hash": state.input_hash,
         "config": {
             "symbol": state.config.symbol,
             "interval": state.config.interval,

@@ -365,11 +365,11 @@ frontend 314/314 + typecheck 0 + build OK.
 **1. Title:** Corrección de defectos en el recorrido real cliente/BFF/backend de Paper Lab.
 **2. Approval status:** DECIDED (dentro del alcance autorizado, sin Binance ni motor paper).
 **3. Implementation status:** IMPLEMENTED.
-**4. Evaluation status:** 44 pruebas Python OK + 9 frontend vitest OK + tsc --noEmit limpio.
-   - Reloj causal: evaluate_session rechaza sin at_ms/clock_ms; nunca usa hora actual.
-   - Sin información futura: session_to_public_dict filtra a solo lo conocido en T.
-   - Request_id e idempotencia en BFF; conflictos HTTP 409.
-   - Fin de datos no es cierre ejecutado: mark_px no sustituye exit_px.
+**4. Evaluation status:** 44 pruebas Python OK + 9 frontend vitest OK + tsc --noEmit limpio. Build de producción Next.js exitoso. Desplegado en http://127.0.0.1:3020 (PID 29944).
+   - Reloj causal: create_session fija clock_ms al close_time de la ultima vela de contexto; evaluate_session rechaza sin at_ms/clock_ms; nunca usa hora actual.
+   - Sin información futura: session_to_public_dict filtra a solo lo conocido en T en todas las respuestas públicas (incluido GET).
+   - Request_id e idempotencia en BFF; conflictos HTTP 409; BFF interpreta respuesta del CLI incluso con salida != 0.
+   - Fin de datos no es cierre ejecutado: mark_px no sustituye exit_px; realized_net null si open_at_end.
 **5. Limitaciones:** sin Binance, monitor, paper prospectivo, órdenes, pagos, móvil ni optimización.
 **6. Evidence:** docs/DECISIONS.md (entrada 2026-10-21), tests/test_paper_lab_engine.py,
    tests/test_paper_lab_integration.py, frontend/src/test/paper-lab-live-api.test.ts.
