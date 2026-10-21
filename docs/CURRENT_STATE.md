@@ -1,3 +1,11 @@
+## Estado vigente del objetivo gráfico — 2026-10-21 (F-CHART-BINANCE-01)
+
+[Acuerdos de gráfico Binance V1](ACUERDOS_GRAFICO_BINANCE_V1.md) reúne búsqueda de contratos Binance Futures, histórico paginado, velas vivas, indicadores backend compartidos y eventos de operaciones. REQUISITOS ACORDADOS; implementación del gráfico Lightweight Charts y aceptación viva PENDIENTES. Abrir un símbolo no abre una operación ni arranca el monitor; servicio detenido implica histórico/estado desconectado.
+
+Base revisada: `2a17088` (funcional `1892c23`). Hay Backtest/replay y un MVP Paper Lab sobre fixtures. El informe de cierre declara HTTP integrado y conflictos 409; la revisión de código conserva tres bloqueos: _run_backtest_on_prefix usa todas las velas; controles de vigilancia/reevaluación no conectados (canStep/onDecide); salida stop paralela sin política gap canónica. Por tanto no se acepta todavía el recorrido causal completo desde los controles. No equivale a rentabilidad ni a paper Binance vivo.
+
+Este registro tiene precedencia para este objetivo sobre cierres históricos contradictorios; conserva su historia. Cambio exclusivamente documental: sin ejecución de tests/corridas, cambios de código, rebuild, servicios ni gates. Siguiente: corregir esos tres bloqueos y demostrar el flujo; luego contrato/gráfico compartido. Selector, riesgo/caja/funding recurrente y evaluación prospectiva conservan pendientes propios.
+
 ## Cinco defectos de Backtest V2 corregidos (2026-10-20, base `37bde91`)
 
 Estado factual: los cinco defectos probados están corregidos y verificados;

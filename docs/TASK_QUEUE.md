@@ -1,3 +1,15 @@
+## Prioridad del recorrido gráfico/paper — 2026-10-21
+
+Contrato de objetivo: [Acuerdos de gráfico Binance V1](ACUERDOS_GRAFICO_BINANCE_V1.md) (F-CHART-BINANCE-01). Plan documentado; no declarar código implementado.
+Orden para este recorrido, sin reabrir ni duplicar colectores/Backtest:
+1. Cerrar los tres bloqueos revisados de Paper Lab en 2a17088: futuro en fills, controles de vigilancia/reevaluación y stop/gap compartido. Evidencia integrada con mismo prefijo/futuros distintos, controles reales y salida reconciliada.
+2. Inventariar velas/indicadores existentes y fijar contrato de datos/tiempos/IDs.
+3. Gráfico Lightweight Charts compartido con fixtures, velas, volumen, zoom, histórico y marcas backend; QA escritorio.
+4. Búsqueda del catálogo Binance Futures y adaptación del feed existente, histórico paginado/caché acotada, reconexión y suscripciones por consumidor. Abrir pestaña no inicia monitor ni orden.
+5. Ventana pública acotada solo tras autorización separada y preflight. Completar después selector y gestión/riesgo/caja/funding/evaluación, sin declarar estrategia rentable.
+
+Alcance actual de este registro: documentación. Sin instalación REA/bibliotecas, adquisición, monitor ni nuevas corridas. Móvil/Flutter/IA diferidos. No cambia SUCCESS_GATES.
+
 ## Cinco defectos de Backtest V2 corregidos (2026-10-20, base `37bde91`)
 
 Trabajo actual (cerrado a la espera de push): cierre de los cinco defectos

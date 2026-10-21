@@ -2445,3 +2445,14 @@ Sobre HEAD `7a3db9c` (rama `review/o1-funcional-v2-observacion`, ya publicada y 
 - Motor paper completo (Etapa 5: position manager, ledger de caja, funding recurrente, risk engine) sigue NO implementado; este MVP es pantalla de ingeniería sobre fixtures.
 - No se presentaron pruebas Python como verificación del dashboard; Python verifica motor/CLI, HTTP verifica el BFF real.
 - SHA final publicado: `1892c23` (remoto `origin/review/o1-funcional-v2-observacion` igual que local).
+
+
+## 2026-10-21 — F-CHART-BINANCE-01: gráfico bajo demanda con fuente backend compartida
+
+Decisión del usuario: buscar un contrato elegible y ver histórico y actualizaciones vivas, indicadores y operaciones en el dashboard web de escritorio. Especificación: [Acuerdos de gráfico Binance V1](ACUERDOS_GRAFICO_BINANCE_V1.md).
+
+Se usará Lightweight Charts como biblioteca visual; Phinvio es referencia funcional, no proveedor de precios ni motor de operaciones. Catálogo/histórico y datos bajo demanda desde Binance público mediante infraestructura existente. Bot y gráfico comparten valores y tiempos canónicos; frontend no decide. Velas abiertas/provisionales separadas de cerradas; fills y cierres se dibujan solo cuando el backend los ejecuta. Cerrar pestaña no detiene el bot; abrir gráfico no inicia monitor/operación. Caché/retención acotadas, trazabilidad durable para evaluación y reconstrucción de huecos. Stops arrastrables posteriores a la primera versión y sujetos a validación backend.
+
+Base 2a17088 revisada: el cierre HTTP reportado no sustituye corregir futuros en _run_backtest_on_prefix, controles canStep/onDecide y salida stop paralela sin gap canónico. Se mantienen pendientes hasta evidencia correctiva. Primero cerrar esas dependencias, después gráfico con fixtures, adaptador y ventana autorizada por separado. Selector automático y rentabilidad son evaluaciones distintas.
+
+Este commit es documental; no instala, ejecuta ni promueve gates. REA opcional de investigación, sin dependencia productiva. Presupuesto cero y desktop-only vigentes.

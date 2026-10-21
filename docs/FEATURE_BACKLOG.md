@@ -1,3 +1,21 @@
+## F-CHART-BINANCE-01 — Búsqueda, gráfico vivo e indicadores compartidos (2026-10-21)
+
+- Approval status: objetivo y documentación ACORDADOS por el usuario; esta entrega no autoriza corrida Binance.
+- Implementation status: NOT IMPLEMENTED para este contrato gráfico; existen probe, lectores, Backtest/replay y MVP de fixtures que se deben reutilizar.
+- Evaluation status: NOT EVALUATED como recorrido gráfico/paper vivo; no rentabilidad demostrada.
+- Contrato y aceptación: [Acuerdos de gráfico Binance V1](ACUERDOS_GRAFICO_BINANCE_V1.md).
+- Dependencias: tres bloqueos revisados de Paper Lab 2a17088; contrato causal, catálogo/cobertura, suscripciones por consumidor, retención y recuperación. Selector/riesgo/caja/funding tienen pendientes separados.
+- Primera versión: escritorio, velas/volumen/zoom/histórico y eventos backend. Arrastre de stops, móvil y REA productivo fuera de esta versión.
+
+### Cierre documental (siete campos)
+- DECISIONS_REVIEWED: AGENTS, WORKFLOW, MASTER_PLAN, SUCCESS_GATES, DESKTOP_FIRST_SCOPE, CURRENT_STATE, TASK_QUEUE, DECISIONS y FEATURE_BACKLOG.
+- NEW_DECISIONS_RECORDED: objetivo de búsqueda/gráfico vivo bajo demanda, fuente compartida, contrato y secuencia en DECISIONS y documento enlazado.
+- FEATURES_IMPLEMENTED: documentación y enlaces; ninguna funcionalidad gráfica nueva.
+- FEATURES_VERIFIED: identidad/rama/remoto, revisión de código referida, preservación y enlaces locales de estos documentos; sin suite ni QA visual ejecutados en esta tarea documental.
+- DEFERRED_FEATURES: implementación del contrato, ventana Binance, selector/gestión paper completos, stops arrastrables, móvil/Flutter e IA.
+- BACKLOG_UPDATED: este ID y prioridad enlazada en CURRENT_STATE/TASK_QUEUE.
+- DOCUMENTATION_CONFLICTS: se explicita que el cierre reportado 2a17088 no acredita resolver los tres bloqueos revisados; registros anteriores preservados, sin DONE global ni gates.
+
 
 ## Cinco defectos de Backtest V2 corregidos — 2026-10-20 (base `37bde91`)
 
