@@ -93,11 +93,11 @@ CACHE_DB = Path("data") / "market-cache" / "market_cache.db"
 STATES = ("CONNECTING", "RECEIVING", "STALE", "DISCONNECTED", "RECOVERING")
 ABORT_REASONS = {
     "MAX_RECONNECTS", "TRANSPORT_ENDED", "SERVICE_EXIT", "INTERRUPTED",
-    "HEALTH_UNREACHABLE", "MAX_EVENTS",
+    "HEALTH_UNREACHABLE", "MAX_EVENTS", "BROWSER_NOT_ATTACHED",
 }
 HARD_FAIL_REASONS = {
     "PREFLIGHT_FAILED", "SERVICE_START_FAILED", "IDENTITY_MISMATCH",
-    "SUBSCRIBE_FAILED",
+    "SUBSCRIBE_FAILED", "BROWSER_NOT_ATTACHED",
 }
 
 ISO_RE = re.compile(r"(\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d+)?Z)")
@@ -304,10 +304,42 @@ class SseClient:
 # ---------------------------------------------------------------------------
 # plan
 # ---------------------------------------------------------------------------
+def _consumer_allocation(symbols: List[str], no_bff: bool,
+                         browser: bool) -> Dict[str, Any]:
+    """Reparto de consumidores SSE: el navegador cuenta en el mismo presupuesto.
+
+    Con BFF el simbolo primario se consume por el BFF (el mismo camino que usa
+    el grafico) y el servicio directo atiende los secundarios; asi el total
+    propio es 2 y con el navegador se llega a 3, sin duplicar el primario.
+    """
+    service = (symbols if no_bff else (symbols[1:] or symbols[:1]))
+    bff = [] if no_bff else symbols[:1]
+    browser_consumers = 1 if browser else 0
+    per_stream: Dict[str, int] = {}
+    for symbol in service:
+        per_stream[symbol] = per_stream.get(symbol, 0) + 1
+    for symbol in bff:
+        per_stream[symbol] = per_stream.get(symbol, 0) + 1
+    for symbol in bff:
+        per_stream[symbol] += browser_consumers
+    total = len(service) + len(bff) + browser_consumers
+    return {
+        "service": len(service),
+        "bff": len(bff),
+        "browser": browser_consumers,
+        "total": total,
+        "service_symbols": service,
+        "bff_symbols": bff,
+        "per_stream": per_stream,
+    }
+
+
 def plan(args: argparse.Namespace) -> Dict[str, Any]:
     symbols = parse_symbols(args.symbols)
     interval = args.interval
     duration = float(args.duration)
+    browser = bool(getattr(args, "browser_consumer", False))
+    allocation = _consumer_allocation(symbols, bool(args.no_bff), browser)
     return {
         "contract_version": STREAM_CONTRACT_VERSION,
         "mode": "LIVE_WINDOW_PLAN" if not args.execute else "LIVE_WINDOW_EXECUTE",
@@ -331,10 +363,13 @@ def plan(args: argparse.Namespace) -> Dict[str, Any]:
             "max_events": int(args.max_events),
             "max_reconnects": int(args.max_reconnects),
             "ws_connections": 1,
-            "sse_consumers": {"service": len(symbols), "bff": 1 if not args.no_bff else 0},
+            "sse_consumers": allocation,
+            "browser_consumers": allocation["browser"],
             "max_subscriptions": MAX_SUBSCRIPTIONS,
             "max_consumers_per_stream": MAX_CONSUMERS_PER_STREAM,
             "bars_per_consumer": DEFAULT_BARS,
+            "await_browser_consumers": int(getattr(args, "await_consumers", 0) or 0),
+            "await_browser_timeout_s": float(getattr(args, "await_timeout", 0) or 0),
             "rest": ("snapshot desde el almacen existente (allow_fetch=False); "
                      "paginacion manual 1 peticion <=1000 velas; reparacion de huecos "
                      "<=2 paginas x 500 velas y <=6/min"),
@@ -345,6 +380,8 @@ def plan(args: argparse.Namespace) -> Dict[str, Any]:
             "aceptacion de cadena alcanzada (provisional+cierre+siguiente) tras la espera de captura",
             "duracion o max_messages/max_events alcanzados",
             "reconexiones > max_reconnects",
+            "el navegador no se adjunta antes de abrir los consumidores propios "
+            "(BROWSER_NOT_ATTACHED, sin contacto con Binance)",
             "identity_mismatch o simbolo/intervalo distinto del solicitado",
             "servicio caido o transporte sin consumidores",
             "cualquier senal de credenciales, orden o escritura en DB canonica",
@@ -369,7 +406,8 @@ def plan(args: argparse.Namespace) -> Dict[str, Any]:
             "primera/ultima recepcion (ms UTC) y edad; cadencia medida por event_ms",
             "huecos detectados/reparados/parciales y contadores invalid/identity_mismatch",
             "reconexiones, ultimo error de socket y motivo de parada",
-            "health antes de retirar consumidores y despues (consumers=0)",
+            "health antes de retirar consumidores y despues (queda solo el navegador)",
+            "maximo de consumidores observado frente al presupuesto declarado",
             "tamano/mtime de DBs canonicas y cache antes/despues",
         ],
         "commands": {
@@ -453,6 +491,41 @@ def stream_acceptance(service: Dict[str, Any], symbols: List[str],
     }
 
 
+def _merge_consumers(run: Dict[str, Any]) -> Dict[str, Any]:
+    """Une la evidencia de todos los consumidores SSE del script.
+
+    Con ``--browser-consumer`` el primario llega por el BFF y el secundario por
+    el servicio; sumar los dos estados (sin duplicar eventos) permite evaluar
+    identidad, ciclo de vela, huecos y estado con una sola vista.
+    """
+    states = [state for state in (run.get("consumers") or {}).values()
+              if isinstance(state, dict)]
+    events: List[Dict[str, Any]] = []
+    seen = set()
+    for state in states:
+        for event in state.get("events") or []:
+            key = (event.get("symbol"), event.get("open_time_ms"),
+                   event.get("closed"), event.get("seq"))
+            if key in seen:
+                continue
+            seen.add(key)
+            events.append(event)
+    events.sort(key=lambda event: int(event.get("recv_ms") or 0))
+    statuses = [(int(state.get("last_status_recv_ms") or 0), state.get("last_status"))
+                for state in states if state.get("last_status")]
+    statuses.sort(key=lambda item: item[0])
+    firsts = [int(s["first_event_ms"]) for s in states if s.get("first_event_ms")]
+    lasts = [int(s["last_event_ms"]) for s in states if s.get("last_event_ms")]
+    return {
+        "events": events,
+        "hello": [item for state in states for item in (state.get("hello") or [])],
+        "gaps": [item for state in states for item in (state.get("gaps") or [])],
+        "last_status": statuses[-1][1] if statuses else None,
+        "first_event_ms": min(firsts) if firsts else None,
+        "last_event_ms": max(lasts) if lasts else None,
+    }
+
+
 LABEL_TO_STATE = {
     "CONECTANDO": "CONNECTING", "RECIBIENDO": "RECEIVING", "OBSOLETO": "STALE",
     "DESCONECTADO": "DISCONNECTED", "RECUPERANDO": "RECOVERING",
@@ -519,7 +592,7 @@ def evaluate_acceptance(run: Dict[str, Any], dom: Optional[Dict[str, Any]] = Non
     step = _step_ms(interval)
     budget = run.get("budget") or {}
     transport = run.get("transport") or {}
-    service = (run.get("consumers") or {}).get("service") or {}
+    service = _merge_consumers(run)
     bff = (run.get("consumers") or {}).get("bff")
     run_service = run.get("service") or {}
     acceptance = stream_acceptance(service, symbols, interval)
@@ -627,9 +700,22 @@ def evaluate_acceptance(run: Dict[str, Any], dom: Optional[Dict[str, Any]] = Non
         f"{[g.get('status') or g.get('reason') for g in unresolved_gaps]}")
 
     after_close = run_service.get("health_after_close") or {}
+    expected_after = int(budget.get("browser_consumers") or 0)
     add("consumers_released", bool(after_close)
-        and int(after_close.get("consumers") or 0) == 0,
-        f"consumers_tras_cerrar={after_close.get('consumers')}")
+        and int(after_close.get("consumers") or 0) == expected_after,
+        f"consumers_tras_cerrar={after_close.get('consumers')} esperado={expected_after}")
+    declared = int((budget.get("sse_consumers") or {}).get("total") or 0)
+    peak = max([int(s.get("consumers") or 0) for s in samples]
+               + [int(before.get("consumers") or 0),
+                  int((run_service.get("health_before_close") or {}).get("consumers") or 0)]
+               + [0])
+    before_close_consumers = int(
+        (run_service.get("health_before_close") or {}).get("consumers") or 0)
+    budget_ok = peak <= declared
+    if expected_after > 0:
+        budget_ok = budget_ok and before_close_consumers == declared
+    add("consumer_budget", budget_ok,
+        f"pico={peak} declarado={declared} antes_de_cerrar={before_close_consumers}")
     stopped = run_service.get("after_stop") or {}
     add("service_stopped", bool(stopped.get("process_exited"))
         and bool(stopped.get("port_closed")) and bool(stopped.get("pidfile_removed")),
@@ -839,8 +925,9 @@ async def _pump(client: SseClient, queue: "asyncio.Queue[Tuple[str, str, Any, in
 
 def _new_consumer_state() -> Dict[str, Any]:
     return {"hello": [], "snapshot": None, "snapshots": {}, "events": [], "gaps": [],
-            "last_status": None, "counts": {"candle": 0, "closed": 0, "status": 0,
-                                            "heartbeat": 0, "gap": 0, "error": 0},
+            "last_status": None, "last_status_recv_ms": None,
+            "counts": {"candle": 0, "closed": 0, "status": 0,
+                       "heartbeat": 0, "gap": 0, "error": 0},
             "first_event_ms": None, "last_event_ms": None, "errors": []}
 
 
@@ -886,6 +973,7 @@ def _apply_event(state: Dict[str, Any], event: str, payload: Any, recv_ms: int,
     elif event == "status":
         state["counts"]["status"] += 1
         state["last_status"] = payload
+        state["last_status_recv_ms"] = recv_ms
     elif event == "heartbeat":
         state["counts"]["heartbeat"] += 1
     elif event == "error":
@@ -945,6 +1033,7 @@ async def run_window(args: argparse.Namespace) -> Dict[str, Any]:
         "preflight": {},
         "service": {"pid": None, "port": args.port, "started": False,
                     "health_before_consumer": None, "health_samples": [],
+                    "browser_wait": None, "health_after_browser_wait": None,
                     "health_before_close": None, "health_after_close": None,
                     "after_stop": None, "stderr_tail": None},
         "consumers": {},
@@ -1018,8 +1107,44 @@ async def run_window(args: argparse.Namespace) -> Dict[str, Any]:
         _progress(f"servicio PID {proc.pid} en {base_url}; "
                   f"socket.connected={stops['health_before_consumer'].get('connected')}")
 
+        await_consumers = int(getattr(args, "await_consumers", 0) or 0)
+        if await_consumers > 0:
+            wait: Dict[str, Any] = {"expected": await_consumers, "samples": [],
+                                    "ok": False, "waited_ms": None}
+            wait_started = time.monotonic()
+            await_timeout = float(getattr(args, "await_timeout", 90.0) or 0)
+            wait_deadline = wait_started + await_timeout
+            stable = 0
+            while time.monotonic() < wait_deadline:
+                probe = await asyncio.to_thread(_http_json, f"{base_url}/health", timeout=3.0)
+                observed = (int((probe.get("json") or {}).get("consumers") or 0)
+                            if probe["ok"] else None)
+                wait["samples"].append({"t_ms": now_ms(), "consumers": observed})
+                if observed == await_consumers:
+                    stable += 1
+                    if stable >= 2:
+                        wait["ok"] = True
+                        break
+                else:
+                    stable = 0
+                await asyncio.sleep(1.0)
+            wait["waited_ms"] = int((time.monotonic() - wait_started) * 1000)
+            stops["browser_wait"] = wait
+            if not wait["ok"]:
+                _progress(f"el navegador no se adjunto en {await_timeout:.0f} s: "
+                          "se para antes de abrir consumidores propios")
+                stop_reason = "BROWSER_NOT_ATTACHED"
+                raise _Abort
+            _progress(f"navegador adjunto (consumers={await_consumers}); "
+                      f"abriendo consumidores propios")
+            stops["health_after_browser_wait"] = _compact_health(
+                (await asyncio.to_thread(_http_json, f"{base_url}/health", timeout=3.0)).get("json"))
+
         run["consumers"]["service"] = _new_consumer_state()
-        for symbol in symbols:
+        service_symbols = _consumer_allocation(
+            symbols, bool(args.no_bff), bool(getattr(args, "browser_consumer", False))
+        )["service_symbols"]
+        for symbol in service_symbols:
             client = SseClient(args.host, args.port,
                                f"/stream?symbol={symbol}&interval={args.interval}"
                                f"&bars={DEFAULT_BARS}", label="service")
@@ -1064,7 +1189,7 @@ async def run_window(args: argparse.Namespace) -> Dict[str, Any]:
                 label = None
             if label is not None:
                 state = run["consumers"].setdefault(label, _new_consumer_state())
-                _apply_event(state, event, payload, recv_ms, keep_events=label == "service")
+                _apply_event(state, event, payload, recv_ms, keep_events=True)
                 if event in ("candle", "closed"):
                     processed += 1
                 if event in ("hello", "candle", "closed"):
@@ -1106,12 +1231,12 @@ async def run_window(args: argparse.Namespace) -> Dict[str, Any]:
                 stop_reason = "MAX_EVENTS"
                 break
 
-            service_state = run["consumers"].get("service") or {}
             bff_counts = ((run["consumers"].get("bff") or {}).get("counts") or {})
             bff_updates = (int(bff_counts.get("candle") or 0)
                            + int(bff_counts.get("closed") or 0))
             if accepted_at is None \
-                    and stream_acceptance(service_state, symbols, args.interval)["ok"] \
+                    and stream_acceptance(_merge_consumers(run), symbols,
+                                          args.interval)["ok"] \
                     and (args.no_bff or bff_updates > 0):
                 accepted_at = now
                 _progress("ACEPTACION DE CADENA ALCANZADA (provisional + cierre + "
@@ -1132,20 +1257,23 @@ async def run_window(args: argparse.Namespace) -> Dict[str, Any]:
             (await asyncio.to_thread(_http_json, f"{base_url}/health", timeout=4.0)).get("json"))
         for client in clients:
             client.close()
+        expected_after_close = 1 if getattr(args, "browser_consumer", False) else 0
         release_started = time.monotonic()
         health_after = {}
         while time.monotonic() - release_started < 8.0:
             candidate = await asyncio.to_thread(_http_json, f"{base_url}/health", timeout=4.0)
             health_after = _compact_health(candidate.get("json"))
-            if int(health_after.get("consumers") or 0) == 0:
+            if int(health_after.get("consumers") or 0) == expected_after_close:
                 break
             await asyncio.sleep(0.25)
         stops["health_after_close"] = health_after
         stops["release_wait_ms"] = int((time.monotonic() - release_started) * 1000)
+        stops["consumers_expected_after_close"] = expected_after_close
         stops["consumers_released"] = int(
-            (stops["health_after_close"] or {}).get("consumers") or 0) == 0
-        _progress(f"parada: {stop_reason}; consumidores liberados="
-                  f"{stops['consumers_released']}")
+            (stops["health_after_close"] or {}).get("consumers") or 0) == expected_after_close
+        _progress(f"parada: {stop_reason}; consumidores_tras_cerrar="
+                  f"{(stops['health_after_close'] or {}).get('consumers')} "
+                  f"(esperado {expected_after_close})")
     except _Abort:
         pass
     except asyncio.CancelledError:
@@ -1211,9 +1339,7 @@ def _close_run(run: Dict[str, Any], stop_reason: str, args: argparse.Namespace) 
     run["stop_reason"] = stop_reason
     run["finished_at_ms"] = finished
     run["duration_s"] = round((finished - int(run.get("started_at_ms") or finished)) / 1000, 2)
-    service_state = run["consumers"].get("service") or next(
-        (s for k, s in run["consumers"].items() if k.startswith("service:")), {})
-    run["target"]["cadence"] = _cadence(service_state)
+    run["target"]["cadence"] = _cadence(_merge_consumers(run))
     dom, visual = _load_browser_evidence(
         getattr(args, "dom_first", None), getattr(args, "dom_last", None),
         getattr(args, "dom_after_stop", None), getattr(args, "visual_review", None),
@@ -1334,6 +1460,14 @@ def main(argv: Optional[List[str]] = None) -> int:
                              "(nunca acredita Binance)")
     parser.add_argument("--no-bff", action="store_true",
                         help="omite el BFF (el veredicto nunca podra ser PASS)")
+    parser.add_argument("--browser-consumer", action="store_true",
+                        help="el navegador ocupa uno de los 3 consumidores SSE; "
+                             "deja libre su plaza y esperalo antes de abrir los propios")
+    parser.add_argument("--await-consumers", type=int, default=0,
+                        help="espera a que /health muestre N consumidores antes de "
+                             "abrir los del script (0 = no espera)")
+    parser.add_argument("--await-timeout", type=float, default=90.0,
+                        help="segundos maximos de espera del navegador")
     parser.add_argument("--out", default=None, help="ruta JSON de evidencia")
     parser.add_argument("--execute", action="store_true",
                         help="abre la conexion real (requiere autorizacion)")

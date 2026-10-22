@@ -2669,3 +2669,36 @@ pagos, móvil y REA. La ejecución end-to-end de `/antislop` sigue PENDIENTE.
 
 La ejecución real de la ventana sigue requiriendo autorización humana separada.
 
+## 2026-10-22 — Corrección de contabilidad de consumidores SSE en la ventana (incluye el navegador)
+
+**Contexto.** El procedimiento de `ab753a1` declaraba «3 consumidores: servicio
+(2 símbolos) + BFF (1 símbolo)», pero no contaba al navegador que abre el
+`EventSource` del gráfico. Con la ventana en marcha el total real habría sido 4.
+
+**Decisión (sin ampliar el límite autorizado).**
+
+1. El presupuesto de la ventana es **3 consumidores SSE simultáneos**: 1 del
+   servicio (MINAUSDT), 1 del BFF (BTCUSDT, el primario) y 1 del navegador en
+   `/market-lab`. Por stream: BTCUSDT 2, MINAUSDT 1 (`MAX_CONSUMERS_PER_STREAM=4`
+   deja 2 de margen en BTCUSDT).
+2. El primario se consume por el **camino real del gráfico** (BFF), no por una
+   segunda conexión directa al servicio; así el script no duplica el stream.
+3. `--browser-consumer --await-consumers 1 --await-timeout 90`: el script arranca
+   el servicio, imprime el PID y **espera** a que `/health` muestre 1 consumidor
+   estable (2 muestras) antes de abrir los suyos. Si no aparece, para con
+   `BROWSER_NOT_ATTACHED` sin contacto con Binance y el JSON lo declara.
+4. Al cerrar, el residual esperado tras retirar los consumidores del script es
+   **1** (el navegador). `consumers_released` compara con ese valor y
+   `consumer_budget` exige pico ≤ 3 y `consumers=3` justo antes del cierre. Sin
+   navegador (pruebas) el esperado sigue siendo `0`.
+5. El cambio de contrato que dispara el `EventSource` es **acción del operador**
+   (el hook no reintenta cuando el servicio arranca tarde) y se registra como tal;
+   no se presenta como reconexión automática.
+
+**Efecto.** La ventana sigue midiendo la misma cadena (Binance → hub → servicio →
+BFF → gráfico) con un presupuesto estricto de 3 consumidores, y el veredicto no
+puede ser `PASS` sin evidencia DOM del navegador que ocupa la tercera plaza.
+
+**Estado.** Implementado y probado con transporte controlado
+(`tests/test_market_stream_window.py`, 24 pruebas). No acredita recepción real de
+Binance por sí solo.

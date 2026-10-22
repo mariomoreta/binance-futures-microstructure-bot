@@ -82,13 +82,15 @@ def _dom(candles: int, *, state: str = "RECIBIENDO", live: str = "LIVE",
 
 
 def _run_fixture() -> dict:
-    service_events = [
+    bff_events = [
         _event("BTCUSDT", T0, seq=1),
         _event("BTCUSDT", T0, seq=2),
         _event("BTCUSDT", T0, seq=3),
         _event("BTCUSDT", T0, closed=True, seq=4),
         _event("BTCUSDT", T0 + STEP, seq=5),
         _event("BTCUSDT", T0 + STEP, seq=6),
+    ]
+    service_events = [
         _event("MINAUSDT", T0, seq=1),
         _event("MINAUSDT", T0 + STEP, seq=2),
     ]
@@ -101,7 +103,12 @@ def _run_fixture() -> dict:
         "stop_reason": "ACCEPTANCE_REACHED",
         "target": {"symbols": ["BTCUSDT", "MINAUSDT"], "interval": "1m",
                    "primary": "BTCUSDT"},
-        "budget": {"bff": True, "duration_s": 180.0, "max_messages": 1200},
+        "budget": {"bff": True, "duration_s": 180.0, "max_messages": 1200,
+                   "sse_consumers": {"service": 1, "bff": 1, "browser": 1,
+                                     "total": 3, "service_symbols": ["MINAUSDT"],
+                                     "bff_symbols": ["BTCUSDT"],
+                                     "per_stream": {"BTCUSDT": 2, "MINAUSDT": 1}},
+                   "browser_consumers": 1},
         "preflight": {"ok": True, "error": None, "port_free": True},
         "service": {
             "pid": 4242,
@@ -115,35 +122,36 @@ def _run_fixture() -> dict:
                                              "live": True, "state": "RECEIVING"}]}],
             "health_before_close": {"consumers": 3,
                                     "counters": {"invalid": 0, "identity_mismatch": 0}},
-            "health_after_close": {"consumers": 0, "counters": {}},
+            "health_after_close": {"consumers": 1, "counters": {}},
+            "consumers_expected_after_close": 1,
             "after_stop": {"process_exited": True, "exit_code": 0,
                            "port_closed": True, "pidfile_removed": True,
                            "health_refused": True},
         },
         "consumers": {
             "service": {
-                "hello": [{"identity": _identity("BTCUSDT")},
-                          {"identity": _identity("MINAUSDT")}],
-                "snapshot": {"symbol": "BTCUSDT", "interval": "1m", "candles": 299},
-                "snapshots": {"BTCUSDT": {"symbol": "BTCUSDT", "candles": 299},
-                              "MINAUSDT": {"symbol": "MINAUSDT", "candles": 299}},
+                "hello": [{"identity": _identity("MINAUSDT")}],
+                "snapshot": {"symbol": "MINAUSDT", "interval": "1m", "candles": 299},
+                "snapshots": {"MINAUSDT": {"symbol": "MINAUSDT", "candles": 299}},
                 "events": service_events,
                 "gaps": [],
-                "last_status": {"live": True, "connection": {"state": "RECEIVING"}},
-                "counts": {"candle": 7, "closed": 1, "status": 8, "heartbeat": 2,
+                "last_status": {"live": False, "connection": {"state": "RECEIVING"}},
+                "last_status_recv_ms": T0 + 400,
+                "counts": {"candle": 1, "closed": 1, "status": 8, "heartbeat": 2,
                            "gap": 0, "error": 0},
                 "first_event_ms": T0 + 500,
-                "last_event_ms": T0 + STEP + 500,
+                "last_event_ms": T0 + STEP + 2500,
                 "errors": [],
             },
             "bff": {
                 "hello": [{"identity": _identity("BTCUSDT")}],
                 "snapshot": {"symbol": "BTCUSDT", "interval": "1m", "candles": 299},
                 "snapshots": {"BTCUSDT": {"symbol": "BTCUSDT", "candles": 299}},
-                "events": [],
+                "events": bff_events,
                 "gaps": [],
                 "last_status": {"live": True},
-                "counts": {"candle": 5, "closed": 1, "status": 6, "heartbeat": 2,
+                "last_status_recv_ms": T0 + 900,
+                "counts": {"candle": 6, "closed": 1, "status": 6, "heartbeat": 2,
                            "gap": 0, "error": 0},
                 "first_event_ms": T0 + 500,
                 "last_event_ms": T0 + STEP + 500,
@@ -189,13 +197,36 @@ class AcceptanceTests(unittest.TestCase):
         self.assertIn("REQUIERE AUTORIZACION", payload["authorization"])
         self.assertEqual(payload["chain"][1].split(":")[0], "hub+servicio")
         self.assertGreaterEqual(payload["budget"]["duration_s"], 120.0)
-        self.assertEqual(payload["budget"]["sse_consumers"], {"service": 2, "bff": 1})
+        consumers = payload["budget"]["sse_consumers"]
+        self.assertEqual(consumers["total"], 2)
+        self.assertEqual(consumers["service"], 1)
+        self.assertEqual(consumers["bff"], 1)
+        self.assertEqual(consumers["browser"], 0)
+        self.assertEqual(consumers["per_stream"], {"BTCUSDT": 1, "MINAUSDT": 1})
         self.assertGreaterEqual(len(payload["acceptance"]), 7)
         self.assertIn("--finalize", payload["commands"]["finalize"])
+
+    def test_plan_counts_browser_inside_consumer_budget(self):
+        import argparse
+        args = argparse.Namespace(
+            symbols="BTCUSDT,MINAUSDT", interval="1m", duration=180.0,
+            hold_seconds=20.0, max_messages=1200, max_events=6000,
+            max_reconnects=3, port=8791, no_bff=False, execute=False,
+            browser_consumer=True, await_consumers=1, await_timeout=90.0)
+        consumers = window.plan(args)["budget"]["sse_consumers"]
+        self.assertEqual(consumers["total"], 3)
+        self.assertEqual(consumers["service"], 1)
+        self.assertEqual(consumers["bff"], 1)
+        self.assertEqual(consumers["browser"], 1)
+        self.assertEqual(consumers["per_stream"], {"BTCUSDT": 2, "MINAUSDT": 1})
+        self.assertEqual(consumers["service_symbols"], ["MINAUSDT"])
+        self.assertEqual(consumers["bff_symbols"], ["BTCUSDT"])
+        self.assertLessEqual(consumers["total"], window.MAX_CONSUMERS_PER_STREAM * 2)
 
     def test_zero_messages_never_passes(self):
         run = _run_fixture()
         run["consumers"]["service"]["events"] = []
+        run["consumers"]["bff"]["events"] = []
         run["stop_reason"] = "DURATION"
         result = window.evaluate_acceptance(run, _after())
         self.assertEqual(result["verdict"], "FAIL")
@@ -204,7 +235,7 @@ class AcceptanceTests(unittest.TestCase):
 
     def test_budget_exhausted_without_close_fails(self):
         run = _run_fixture()
-        run["consumers"]["service"]["events"] = [
+        run["consumers"]["bff"]["events"] = [
             _event("BTCUSDT", T0, seq=1), _event("BTCUSDT", T0, seq=2),
         ]
         run["stop_reason"] = "DURATION"
@@ -215,7 +246,7 @@ class AcceptanceTests(unittest.TestCase):
 
     def test_aborted_acquisition_is_unknown_not_pass(self):
         run = _run_fixture()
-        run["consumers"]["service"]["events"] = [_event("BTCUSDT", T0, seq=1)]
+        run["consumers"]["bff"]["events"] = [_event("BTCUSDT", T0, seq=1)]
         run["stop_reason"] = "MAX_RECONNECTS"
         result = window.evaluate_acceptance(run, _after())
         self.assertEqual(result["verdict"], "UNKNOWN")
@@ -264,10 +295,7 @@ class AcceptanceTests(unittest.TestCase):
 
     def test_identity_mismatch_fails(self):
         run = _run_fixture()
-        run["consumers"]["service"]["hello"] = [
-            {"identity": _identity("BTCUSDT", "5m")},
-            {"identity": _identity("MINAUSDT")},
-        ]
+        run["consumers"]["bff"]["hello"] = [{"identity": _identity("BTCUSDT", "5m")}]
         result = window.evaluate_acceptance(run, _after())
         self.assertEqual(result["verdict"], "FAIL")
         self.assertIn("identity_exact", result["failed"])
@@ -275,9 +303,22 @@ class AcceptanceTests(unittest.TestCase):
     def test_bff_disabled_is_unknown(self):
         run = _run_fixture()
         run["budget"]["bff"] = False
-        run["consumers"].pop("bff")
+        run["budget"]["browser_consumers"] = 0
+        run["budget"]["sse_consumers"] = {
+            "service": 2, "bff": 0, "browser": 0, "total": 2,
+            "service_symbols": ["BTCUSDT", "MINAUSDT"], "bff_symbols": [],
+            "per_stream": {"BTCUSDT": 1, "MINAUSDT": 1},
+        }
+        service = run["consumers"].pop("bff")
+        run["consumers"]["service"]["events"] = service["events"] + run["consumers"]["service"]["events"]
+        run["consumers"]["service"]["hello"] = [
+            {"identity": _identity("BTCUSDT")}, {"identity": _identity("MINAUSDT")}]
+        run["service"]["health_before_close"]["consumers"] = 2
+        run["service"]["health_samples"][0]["consumers"] = 2
+        run["service"]["health_after_close"]["consumers"] = 0
+        run["service"]["consumers_expected_after_close"] = 0
         result = window.evaluate_acceptance(run, _after())
-        self.assertEqual(result["verdict"], "UNKNOWN")
+        self.assertEqual(result["verdict"], "UNKNOWN", result["verdict_reasons"])
         self.assertIn("bff_delivered", result["missing"])
 
     def test_bff_without_updates_fails(self):
@@ -294,6 +335,20 @@ class AcceptanceTests(unittest.TestCase):
         result = window.evaluate_acceptance(run, _after())
         self.assertEqual(result["verdict"], "FAIL")
         self.assertIn("service_stopped", result["failed"])
+
+    def test_browser_slot_must_be_free_after_script_closes(self):
+        run = _run_fixture()
+        run["service"]["health_after_close"]["consumers"] = 0
+        result = window.evaluate_acceptance(run, _after())
+        self.assertEqual(result["verdict"], "FAIL")
+        self.assertIn("consumers_released", result["failed"])
+
+    def test_consumer_peak_above_budget_fails(self):
+        run = _run_fixture()
+        run["service"]["health_samples"][0]["consumers"] = 4
+        result = window.evaluate_acceptance(run, _after())
+        self.assertEqual(result["verdict"], "FAIL")
+        self.assertIn("consumer_budget", result["failed"])
 
     def test_canonical_db_change_fails(self):
         run = _run_fixture()
@@ -563,6 +618,53 @@ class OrchestrationTests(unittest.TestCase):
                     (target / "market-stream-window-loopback.json").write_text(
                         json.dumps(run, ensure_ascii=False, indent=2) + "\n",
                         encoding="utf-8")
+
+        asyncio.run(scenario())
+
+    def test_missing_browser_aborts_before_opening_own_consumers(self):
+        """Con `--await-consumers 1` y sin navegador, para sin contactar Binance."""
+        import argparse
+        import os
+
+        def free_port() -> int:
+            import socket as _socket
+            with _socket.socket(_socket.AF_INET, _socket.SOCK_STREAM) as sock:
+                sock.bind(("127.0.0.1", 0))
+                return int(sock.getsockname()[1])
+
+        async def scenario():
+            with tempfile.TemporaryDirectory() as tmp:
+                cached_env = {key: os.environ.get(key) for key in (
+                    "MICROPROBE_MARKET_CACHE_DB", "MICROPROBE_MARKET_STREAM_PID")}
+                os.environ["MICROPROBE_MARKET_CACHE_DB"] = str(Path(tmp) / "cache.db")
+                os.environ["MICROPROBE_MARKET_STREAM_PID"] = str(Path(tmp) / "service.json")
+                MarketCache(Path(tmp) / "cache.db").init_db()
+                port = free_port()
+                args = argparse.Namespace(
+                    symbols="BTCUSDT,MINAUSDT", interval="1m", duration=20.0,
+                    hold_seconds=0.5, max_messages=40, max_events=400,
+                    max_reconnects=1, port=port, host="127.0.0.1",
+                    dashboard_url="http://127.0.0.1:3020", no_bff=False,
+                    base_url="ws://127.0.0.1:1", execute=True,
+                    out=None, dom_first=None, dom_last=None, dom_after_stop=None,
+                    visual_review=None, screenshot=None, finalize=None,
+                    browser_consumer=True, await_consumers=1, await_timeout=3.0)
+                try:
+                    run = await window.run_window(args)
+                finally:
+                    for key, value in cached_env.items():
+                        if value is None:
+                            os.environ.pop(key, None)
+                        else:
+                            os.environ[key] = value
+                self.assertEqual(run["stop_reason"], "BROWSER_NOT_ATTACHED")
+                self.assertFalse(run["acquisition_finished"])
+                self.assertEqual(run["consumers"], {})
+                wait = run["service"]["browser_wait"]
+                self.assertFalse(wait["ok"])
+                self.assertLessEqual(wait["waited_ms"], 8000)
+                self.assertTrue(run["service"]["after_stop"]["process_exited"])
+                self.assertTrue(run["service"]["after_stop"]["port_closed"])
 
         asyncio.run(scenario())
 

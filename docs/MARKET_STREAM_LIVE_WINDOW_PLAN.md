@@ -40,14 +40,29 @@ wss://fstream.binance.com/market/stream?streams=btcusdt@kline_1m/minausdt@kline_
 KlineStreamHub  (anillo en memoria, 300 velas cerradas por stream)
         ▼
 MarketStreamService  http://127.0.0.1:8791   (/health, /stream, /shutdown)
-        ├──────────────► consumidor SSE "service" (BTCUSDT y MINAUSDT)   ← script
+        ├──────────────► consumidor SSE "service" (MINAUSDT)             ← script
         └──► BFF Next  http://127.0.0.1:3020/api/v1/market-stream
                      ├──► consumidor SSE "bff" (BTCUSDT)                 ← script
                      └──► EventSource del gráfico en /market-lab         ← navegador
 ```
 
+El primario (`BTCUSDT`) se consume por el **mismo camino que usa el gráfico**
+(BFF); el servicio directo atiende el secundario. Así el script abre **2**
+consumidores y el navegador ocupa el **tercero**: nunca hay más de 3.
+
 El script orquesta y recoge evidencia; **no** importa el hub para la ejecución,
 **no** crea otro servicio y **no** escribe velas.
+
+### Corrección registrada antes de ejecutar (2026-10-22)
+
+El presupuesto publicado en `ab753a1` declaraba «3 consumidores: servicio (2
+símbolos) + BFF (1)» **sin contar al navegador**, lo que habría dado 4. Se
+corrige sin ampliar el límite: el script baja a 2 (servicio=MINAUSDT, BFF=BTCUSDT)
+y el navegador ocupa la tercera plaza. Además el script **espera** a que
+`/health` muestre ese consumidor del navegador antes de abrir los suyos
+(`--await-consumers 1`, 90 s); si no aparece, para con `BROWSER_NOT_ATTACHED`
+sin abrir conexión con Binance. Los 2 s de espera a que el servicio libere un
+consumidor cerrado (lectura perezosa, ~5 s) evitan picos transitorios de 4.
 
 ## 3. Presupuesto de la ventana
 
@@ -61,7 +76,8 @@ El script orquesta y recoge evidencia; **no** importa el hub para la ejecución,
 | Mensajes máximos (vela) | **1200** | ~3× el peor caso de 2 streams a 4/s durante 180 s |
 | Eventos SSE máximos | **6000** | `candle`+`status`+`heartbeat` de 3 consumidores |
 | Reconexiones máximas | **3** | por encima, se para y se declara |
-| Consumidores SSE | 3: servicio (2 símbolos) + BFF (1 símbolo) | el gráfico usa uno por contrato |
+| Consumidores SSE | **3** en total: 1 servicio (MINAUSDT) + 1 BFF (BTCUSDT) + 1 navegador en `/market-lab` | el navegador cuenta en el mismo presupuesto; `stats` por stream: BTCUSDT 2, MINAUSDT 1 |
+| Espera al navegador | 90 s máx, exige `consumers=1` estable (2 muestras) antes de abrir los del script | garantiza que el tercer consumidor es el navegador y que no hay picos |
 | `bars` por consumidor | 300 | mismo tamaño que el gráfico |
 | Persistencia | ninguna | anillo en memoria |
 | REST de snapshot | 0 (lectura de almacén existente, `allow_fetch=False`) | no descarga velas |
@@ -115,13 +131,18 @@ $env:PYTHONPATH="src"
 python -X utf8 scripts/market_stream_window.py --execute `
     --symbols BTCUSDT,MINAUSDT --interval 1m --duration 180 --hold-seconds 20 `
     --max-messages 1200 --max-events 6000 --max-reconnects 3 `
+    --browser-consumer --await-consumers 1 --await-timeout 90 `
     --out docs/evidence/market-stream-window-2026-10-22.json
 ```
 
-En cuanto el script imprima `servicio PID … en http://127.0.0.1:8791`, cambia el
-contrato en el panel (`MINAUSDT` y vuelve a `BTCUSDT`, o cambia a `5m` y vuelve a
-`1m`) para que el hook vuelva a consultar `/status` y abra el `EventSource`.
-El panel debe pasar a `RECIBIENDO` y mostrar `LIVE`.
+El script arranca el servicio (sin consumidores, `attempts=0`), imprime
+`servicio PID … en http://127.0.0.1:8791` y **espera**: no abre su conexión con
+Binance hasta que `/health` muestre `consumers=1` (el navegador). En ese momento
+cambia el contrato en el panel (`MINAUSDT` y vuelve a `BTCUSDT`, o cambia a `5m`
+y vuelve a `1m`) para que el hook vuelva a consultar `/status` y abra el
+`EventSource`; el cambio de contrato es una acción del operador, no una
+reconexión automática. El panel debe pasar a `RECIBIENDO` y mostrar `LIVE`. Al
+verlo, el script abre sus 2 consumidores (total 3) y la conexión combinada.
 
 ### Paso 4 — Captura DOM #1 (en cuanto haya `LIVE`)
 
@@ -183,7 +204,8 @@ insuficiente (`UNKNOWN`), nunca como `PASS`.
 
 ### Paso 6 — Parada y captura DOM #3
 
-El script cierra los consumidores, comprueba `/health` con `consumers=0`, para el
+El script cierra sus consumidores, comprueba `/health` con `consumers=1` (queda
+solo el navegador; en una ejecución sin navegador el esperado es `0`), para el
 servicio y verifica: proceso terminado, puerto 8791 cerrado, PID file eliminado y
 `/health` rechazado. Espera hasta **40 s** (el hook reintenta cada 5 s hasta 6
 veces) y captura de nuevo con el mismo snippet como `…-dom-stop.json`: debe decir
@@ -235,7 +257,8 @@ con Binance.
 | `live_status_seen` | script | `live=true` con estado `RECEIVING` |
 | `bff_delivered` | script | `hello` + `snapshot` + ≥1 vela por `/api/v1/market-stream` |
 | `coverage_intact` | script | sin huecos `partial`/`failed` ni `BUFFER_OVERFLOW` |
-| `consumers_released` | script | `/health` con `consumers=0` tras cerrar los consumidores |
+| `consumers_released` | script | `/health` con `consumers=1` tras cerrar los del script (queda el navegador; sin navegador, `0`) |
+| `consumer_budget` | script | pico observado ≤ 3 declarados y, con navegador, `consumers=3` justo antes de cerrar |
 | `service_stopped` | script | proceso terminado, puerto cerrado, PID file eliminado |
 | `canonical_dbs_unchanged` | script | tamaño y mtime de `microprobe.db` y `historical.db` idénticos |
 | `dom_identity` | navegador | `Binance USD-M · SYMBOL · 1m · market-stream/v1` en el panel |
