@@ -986,7 +986,7 @@ def evaluate_session(
             ),
             events=list(next_state.events) + [
                 PaperEvent(
-                    at_ms=fill_entry_ms if fill_entry_ms is not None else now,
+                    at_ms=fill_entry_ms if fill_entry_ms is not None else signal_at_ms,
                     label=f"Decisión: ENTRADA_SIMULADA @ {fill_entry_px:.2f}",
                     kind="protection",
                     detail=(f"qty={fill_qty:.8f} notional={next_state.config.notional_usdt} "
@@ -1064,7 +1064,7 @@ def evaluate_session(
             costs=next_state.costs,
             events=list(next_state.events) + [
                 PaperEvent(
-                    at_ms=now,
+                    at_ms=signal_at_ms,
                     label=f"Decision: {decision} (pendiente de fill)",
                     kind="protection",
                     detail=reason,
@@ -1133,7 +1133,7 @@ def evaluate_session(
             costs=next_state.costs,
             events=list(next_state.events) + [
                 PaperEvent(
-                    at_ms=now,
+                    at_ms=signal_at_ms,
                     label=f"Decision: {decision} (esperando datos)",
                     kind="protection",
                     detail=reason,
@@ -1194,7 +1194,7 @@ def evaluate_session(
         costs=next_state.costs,
         events=list(next_state.events) + [
             PaperEvent(
-                at_ms=now,
+                at_ms=signal_at_ms,
                 label=f"Decisión: {decision}",
                 kind="protection",
                 detail=reason,
@@ -2049,8 +2049,13 @@ def session_to_public_dict(
             "exit_spread_slip_estimated": state.costs.exit_spread_slip_estimated,
         },
         "events": [
-            {"at_ms": e.at_ms, "label": e.label, "kind": e.kind,
-             "detail": e.detail} for e in state.events
+            # event_id estable dentro de la sesion (indice + kind + tiempo
+            # de simulacion). Permite reconciliar marcas del grafico y
+            # exportaciones sin depender del orden de render.
+            {"event_id": f"{state.session_id}:ev:{idx}:{e.kind}:{e.at_ms}",
+             "at_ms": e.at_ms, "label": e.label, "kind": e.kind,
+             "detail": e.detail}
+            for idx, e in enumerate(state.events)
         ],
         "result": (None if state.result is None else {
             "symbol": state.result.symbol,

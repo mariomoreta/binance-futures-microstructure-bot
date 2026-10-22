@@ -669,6 +669,11 @@ def _public_without_ids(d: Dict[str, Any]) -> Dict[str, Any]:
     for k in ("session_id", "created_at_ms", "updated_at_ms", "revision",
               "input_hash"):
         d.pop(k, None)
+    # event_id es identidad no economica derivada del session_id.
+    d["events"] = [
+        {k: v for k, v in e.items() if k != "event_id"}
+        for e in d.get("events", [])
+    ]
     return d
 
 
@@ -936,6 +941,63 @@ def test_continuacion_sin_stop_y_fin_de_datos_abierto():
     assert session_to_public_dict(r)["can_step"] is False
 
 
+def test_public_dict_event_ids_estables_y_tiempo_de_simulacion():
+    """Contrato paper-chart/v1: event_id estable y eventos en reloj simulado."""
+    config = mk_config()
+    candles = up_candles(3)
+    s = create_session(config, candles)
+    T = candles[0].close_time_ms
+    r = evaluate_session(s, hypothesis_id="ENG-FIXTURE-v1",
+                         hypothesis_version="1.0", rule_version="RULE-v1",
+                         at_ms=T)
+    assert r.status == "en_espera"
+    pub = session_to_public_dict(r)
+    assert pub["events"]
+    ids = [e["event_id"] for e in pub["events"]]
+    assert len(ids) == len(set(ids))
+    for idx, e in enumerate(pub["events"]):
+        assert e["event_id"] == \
+            f"{r.session_id}:ev:{idx}:{e['kind']}:{e['at_ms']}"
+    # La decision de simulacion no usa el reloj de pared: ocurre en T.
+    protection = [e for e in pub["events"] if e["kind"] == "protection"]
+    assert protection
+    assert all(e["at_ms"] == T for e in protection)
+    # Serializar dos veces no cambia IDs ni eventos (no duplica al refrescar).
+    assert session_to_public_dict(r)["events"] == pub["events"]
+
+
+def test_public_dict_evento_sin_datos_usa_tiempo_simulacion():
+    """El evento de abstención sin prefijo no usa reloj de pared."""
+    config = mk_config()
+    candles = up_candles(3)
+    s = create_session(config, candles)
+    T = candles[0].open_time_ms - 1
+    r = evaluate_session(s, hypothesis_id="ENG-FIXTURE-v1",
+                         hypothesis_version="1.0", rule_version="RULE-v1",
+                         at_ms=T)
+    pub = session_to_public_dict(r)
+    protection = [e for e in pub["events"] if e["kind"] == "protection"]
+    assert protection
+    assert all(e["at_ms"] == T for e in protection)
+
+
+def test_public_dict_vela_solo_open_sin_ohlc():
+    """La vela revelada solo por su open no publica OHLC futuro ni ceros."""
+    config = mk_config()
+    candles = up_candles(3)
+    s = create_session(config, candles)
+    pub = session_to_public_dict(s, at_ms=candles[1].open_time_ms)
+    assert len(pub["candles"]) == 2
+    assert pub["candles"][-1]["open_time_ms"] == candles[1].open_time_ms
+    assert pub["candles"][-1]["open"] == candles[1].open
+    assert pub["candles"][-1]["high"] is None
+    assert pub["candles"][-1]["low"] is None
+    assert pub["candles"][-1]["close"] is None
+    assert pub["candles"][-1]["close_time_ms"] is None
+    # La vela futura no aparece.
+    assert all(c["open_time_ms"] <= candles[1].open_time_ms for c in pub["candles"])
+
+
 if __name__ == "__main__":
     test_create_session_sin_iniciar()
     test_evaluate_admite_entrada_automatica()
@@ -959,6 +1021,8 @@ if __name__ == "__main__":
     test_stop_entrada_no_se_omite_y_gap_posterior_no_la_sustituye_long()
     test_stop_entrada_no_se_omite_y_gap_posterior_no_la_sustituye_short()
     test_continuacion_sin_stop_y_fin_de_datos_abierto()
+    test_public_dict_event_ids_estables_y_tiempo_de_simulacion()
+    test_public_dict_vela_solo_open_sin_ohlc()
     test_freshness_stale_data_respecto_a_T()
     test_freshness_disconnect_por_silencio()
     test_freshness_end_of_data_separado_de_stale()
