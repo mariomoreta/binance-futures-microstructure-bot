@@ -1,3 +1,44 @@
+## Paper Lab — orden temporal del stop, stop efectivo y paridad canónica (2026-10-21, F-PAPER-03)
+
+Corrección económica cerrada en `src/microstructure_probe/paper_lab_engine.py` sobre la base `5572ee3` (commit inicial del bloque: `d48a224`). No se tocó `backtest_offline` (autoridad canónica), ni reglas de señal, umbrales, costes o funding. Sin Binance, monitor, paper prospectivo, órdenes, pagos, móvil ni Lightweight Charts.
+
+**Defecto reproducido (LONG, 15m).** Fixture: V0 `t=0 O100 H102 L99 C101`; V1 `t=900000 O101 H103 L90 C102`; V2 `t=1800000 O80 H85 L75 C82`; `close_time = open + 899999`; notional 1000, referencia 100, stop config 95, `stop_distance_pct=5`, horizonte 3h, fee 5 bps, spread 1 bps, slippage 2 bps. En `d48a224` Paper Lab cerraba en el gap de V2 a 80 y publicaba stop 95; `run_backtest` cerraba en 95.95 a `1800000`. Causa: el bloque ad-hoc de gap/rango de `step_forward` preemptaba a la autoridad y trataba el OHLC de una vela como conocido en su `close_time_ms`, colapsando la revelación de open y cierre.
+
+**Corrección.**
+- Un paso revela el `open_time_ms` de la siguiente vela de operación; en ese instante se conoce el cierre de la anterior, pero no el OHLC de la revelada (se publica `null` hasta su cierre).
+- Se elimina el bloque ad-hoc y `_finalize_stop_exit`; `_run_backtest_at_clock` (prefijo conocido, `known_close_cutoff=clock`) resuelve stop, gap, horizonte y fin de datos. El stop de la vela de entrada se resuelve antes que el gap posterior.
+- `PaperPosition.stop_px` y el evento de entrada publican el stop efectivo `entry × (1 ∓ pct)`; el `stop_px` del config queda como referencia de señal/veto pre-trade.
+- `open_at_end` usa la marca conocida por la autoridad; no inventa salida, comisión ni realized.
+- `can_step` permite el paso final de fin de datos; el frontend muestra `position.stop_px`/`position.entry_px` y el gráfico ignora velas sin OHLC (evita la escala en 0).
+
+**Paridad canónica vs Paper Lab (mismo cutoff).**
+
+| Campo | `run_backtest` | Paper Lab |
+|---|---|---|
+| Entrada | 101.00 | 101.00 |
+| Stop que gobierna | 95.95 | 95.95 |
+| Salida | 95.95 @ 1800000 | 95.95 @ 1800000 |
+| Motivo | stop | stop |
+| Bruto | -50.00 | -50.00 |
+| Fees | 0.975 | 0.975 |
+| Spread+slip | 0.585 | 0.585 |
+| Funding | UNKNOWN (`None`) | UNKNOWN (`None`) |
+| Neto / realizado | -51.56 / -51.56 | -51.56 / -51.56 |
+
+Además: SHORT entrada 99, stop 103.95, salida 103.95 @ 1800000, neto -51.64; gap legítimo (sin stop previo) salida al open 90; continuación sin stop termina en `open_at_end` con marca 105 y `realized_net=null`. Todos contrastados contra `run_backtest` con el mismo cutoff.
+
+**Pruebas.** Motor 30/30 e integración A–E 5/5 (focalizadas); suite completa `python run_tests.py -q` 1290 OK (2 skipped), exit 0; frontend `npm test` 471 passed + 1 skipped, `tsc --noEmit` exit 0. Nuevas regresiones: LONG/SHORT con orden temporal, continuación/fin de datos y `live-chart` con vela solo-open.
+
+**Navegador real (controles).** `http://127.0.0.1:3020/paper-lab-live`, build `MzvbhIwIOPI7PNIKJlAve`, PID 24060, servido tras comprobar `runtime running=false/COMPLETED`, `frontend/.backtest-runs/eval-census-v2-trio/job_state.json=completado` y ausencia de procesos Python activos (sin trabajos activos), reemplazando solo la instancia identificada. Sesión `PL-BTCUSDT-LONG-1792627398136-5241b33a`; fixture nueva `btc_long_stop_order`. Secuencia con clics reales: seleccionar → `Paso a paso` ×2 (`sin_iniciar`→`en_espera`, ENTRADA_SIMULADA) → `Entrar` (ABIERTA, entrada 101.00, stop 95.95, rev 9) → `Paso a paso` ×1 (CERRADA, rev 11, reloj 2026-09-09T04:45:00Z) sin pulsar `Cerrar posicion`. Resultado: salida stop 95.95 (no 80), bruto -50.00, costes +1.56, funding UNKNOWN, neto realizado -51.56; eventos Entrada @04:30 y Salida stop @95.95 (sin marca intermedia 80). Gráfico: `Entrada 101.00`, `Stop 95.95`, `Cierre 95.95`; eje 103.00/96.50/90.00.
+
+**HTTP.** `GET /api/v1/paper-lab/sessions/PL-BTCUSDT-LONG-1792627398136-5241b33a` → 200; `status=cerrada`, `revision=11`, `stop_px=95.94999999999999`, `exit_px=95.94999999999999`, `exit_ms=1788929100000`, `exit_executed=true`, `fees=0.975`, `slip=0.585`, `funding=null`, `net=realized=-51.560000000000116`, `open_at_end=false`, `can_step=false`; `authoritative` del cierre también 95.95 @ 1788929100000.
+
+**Inspección visual.** Capturas locales en `.playwright-mcp/paper-lab-stop-order-{pending,open,closed,closed-full,closed-chart}.png`. No hubo proveedor de visión disponible (OpenRouter sin autenticación; NVIDIA 401), así que **no se declara inspección visual por modelo**: se verificó DOM/geometría (1280×720, sin overflow horizontal, sin texto recortado, etiquetas de nivel con caja) y HTTP. Las capturas quedan para revisión humana.
+
+**Anti Slop (estado separado, sin cambios).** Sigue instalado/registrado y con descubrimiento verificado; la ejecución end-to-end de `/antislop` continúa **PENDIENTE** y no se reintentó en este bloque. No se usó para esta corrección económica ni se declara validación funcional por estilo.
+
+**Siguiente.** Contrato de datos/tiempos/IDs y Lightweight Charts según `docs/ACUERDOS_GRAFICO_BINANCE_V1.md` (no instalado). Sin reabrir móvil.
+
 ## Piloto Anti Slop en OpenCode (opcional) — 2026-10-21 (F-TOOL-ANTISLOP-01)
 
 Integración local y opcional de Anti Slop (`miqdadbadjuber/anti-slop`, commit `439a2ef5b9dd0ebe74e8113ff43f5928d0fe2a6a`, versión `3.2.21`, licencia MIT) como revisión de **presentación y comentarios**. No es puerta funcional y no sustituye pruebas, causalidad, seguridad, economía ni rentabilidad.

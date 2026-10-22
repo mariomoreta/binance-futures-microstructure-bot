@@ -1,9 +1,29 @@
+## F-PAPER-03 — Orden temporal del stop, stop efectivo y paridad canónica en Paper Lab (2026-10-21)
+
+**1. Title:** Corrección de la salida por stop de Paper Lab para que respete el orden temporal (stop de la vela de entrada antes que un gap posterior), publique el stop efectivo que gobierna la operación y coincida con `run_backtest` en precio, tiempo y costes.
+**2. Approval status:** DECIDED dentro del alcance autorizado (desktop-only, fixtures, sin Binance/monitor/paper prospectivo/órdenes/pagos/optimización; sin cambios de estrategia, umbrales ni motor canónico).
+**3. Implementation status:** IMPLEMENTED en `src/microstructure_probe/paper_lab_engine.py` (revelado open/close, autoridad única, stop efectivo, `open_at_end`, `can_step`), `frontend/src/components/paper-lab-live/{PaperLabLive,LiveChart}.tsx`, `frontend/src/lib/paper-fixtures.ts` (fixture `btc_long_stop_order`), `tests/test_paper_lab_engine.py` y `frontend/src/test/live-chart.test.tsx`.
+**4. Evaluation status:** VERIFICADO — paridad exacta con `run_backtest` en LONG (95.95 @ 1800000, neto -51.56), SHORT (103.95, -51.64), gap legítimo (90) y fin de datos (`open_at_end`, `realized` null); motor 30/30, integración 5/5, suite completa 1290 OK (2 skipped), frontend 471 passed + 1 skipped, `tsc --noEmit` 0; navegador real con cierre automático por `Paso a paso` (sesión `PL-BTCUSDT-LONG-1792627398136-5241b33a`): entrada 101.00, stop 95.95, salida 95.95, neto -51.56, funding UNKNOWN; HTTP 200 con los mismos valores. NO evaluado: inspección visual por modelo (sin proveedor de visión), rentabilidad, motor paper completo.
+**5. Limitaciones:** La verificación visual se limita a DOM/geometría y capturas locales; no hubo modelo de visión disponible. `open_at_end` mantiene el neto no realizado sin costes hipotéticos de salida (coherente con el contrato existente; no se cambia aquí). Funding ausente sigue UNKNOWN. Sin Lightweight Charts, móvil ni paper prospectivo.
+**6. Evidence:** `docs/CURRENT_STATE.md` § F-PAPER-03; `docs/DECISIONS.md` 2026-10-21 orden temporal/stop efectivo; `tests/test_paper_lab_engine.py` (LONG/SHORT/continuación/fin de datos); `frontend/src/test/live-chart.test.tsx`; capturas `.playwright-mcp/paper-lab-stop-order-*.png`; build `MzvbhIwIOPI7PNIKJlAve`, PID 24060.
+**7. Last update:** 2026-10-21.
+
+### Cierre (siete campos, obligatorios)
+
+- `DECISIONS_REVIEWED` — AGENTS, WORKFLOW, CURRENT_STATE, TASK_QUEUE, DECISIONS (mecánica canónica `backtest_offline` y entradas previas de Paper Lab), FEATURE_BACKLOG (F-PAPER-02, F-CHART-BINANCE-01), `docs/ACUERDOS_GRAFICO_BINANCE_V1.md` y `docs/DESKTOP_FIRST_SCOPE_20261020.md`.
+- `NEW_DECISIONS_RECORDED` — DECISIONS §"2026-10-21 — Paper Lab: orden temporal del stop, stop efectivo y paridad canónica": revelado open/close, autoridad única, stop efectivo publicado, `open_at_end` y alcance.
+- `FEATURES_IMPLEMENTED` — F-PAPER-03 (orden temporal, stop efectivo, paridad, fixture de cierre automático, gráfico sin velas `null`).
+- `FEATURES_VERIFIED` — paridad canónica LONG/SHORT/gap/continuación; 35 pruebas focalizadas; 1290 backend OK; 471 frontend; typecheck 0; navegador real y HTTP 200 con cierre automático.
+- `DEFERRED_FEATURES` — inspección visual por modelo; F-PAPER-01 (motor paper completo); F-CHART-BINANCE-01 (contrato/gráfico Lightweight Charts); selector/riesgo/caja/funding recurrente; ejecución end-to-end de `/antislop`; móvil/Flutter.
+- `BACKLOG_UPDATED` — yes: este bloque + `CURRENT_STATE`, `TASK_QUEUE`, `DECISIONS`; F-TOOL-ANTISLOP-01 y F-CHART-BINANCE-01 reconciliados.
+- `DOCUMENTATION_CONFLICTS` — F-PAPER-02 declaraba la validación de navegador pendiente; F-PAPER-03 la cubre para el cierre automático por stop, pero no la convierte en validación visual por modelo ni en aceptación de rentabilidad. Se preserva el historial.
+
 ## F-TOOL-ANTISLOP-01 — Anti Slop opcional para presentación y comentarios (2026-10-21)
 
 **1. Title:** Integración local y opcional de Anti Slop en OpenCode como revisión de presentación y comentarios, sin puerta funcional ni dependencia del runtime.
 **2. Approval status:** DECIDED por instrucción explícita del usuario en modo piloto acotado (solo este repositorio, solo núcleo + `antislop-code`, sin configuración global, sin otro modelo, sin subagentes, sin tocar lo funcional pendiente).
 **3. Implementation status:** IMPLEMENTED — `.opencode/skills/antislop/{SKILL.md,VERSION,LICENSE,LOCAL_CONDITIONS.md}`, `.opencode/skills/antislop-code/{SKILL.md,LICENSE}`, `.opencode/commands/antislop.md`, `docs/ANTISLOP_PILOT.md` y una línea de uso opcional en `AGENTS.md`. Upstream fijado a `439a2ef5b9dd0ebe74e8113ff43f5928d0fe2a6a` (v3.2.21, MIT) con SHA-256 registrados.
-**4. Evaluation status:** VERIFICADO PARCIALMENTE — OpenCode `v2.0.32` descubre ambas skills sin reiniciar y `/api/command` del proyecto registra `antislop`; revisión piloto manual sobre `dashboard.py` con 2 hallazgos y 5 comentarios técnicos preservados; dos ejecuciones headless cargaron el núcleo sin editar archivos y no entregaron informe (timeout de 300 s y error de proveedor `503`). NO evaluado: ejecución end-to-end completa del comando, ahorro de tokens, calidad de salida con modelos distintos.
+**4. Evaluation status:** VERIFICADO PARCIALMENTE — OpenCode `v2.0.32` descubre ambas skills sin reiniciar y `/api/command` del proyecto registra `antislop`; revisión piloto manual sobre `dashboard.py` con 2 hallazgos y 5 comentarios técnicos preservados; dos ejecuciones headless cargaron el núcleo sin editar archivos y no entregaron informe (timeout de 300 s y error de proveedor `503`). NO evaluado: ejecución end-to-end completa del comando, ahorro de tokens, calidad de salida con modelos distintos. En el bloque F-PAPER-03 (2026-10-21) no se reintentó: sigue PENDIENTE.
 **5. Limitaciones:** No es puerta de aceptación ni prueba de causalidad, seguridad, economía o rentabilidad. El núcleo upstream contiene instrucciones de instalación/modo que aquí solo se neutralizan por documento local y por el propio comando; el aviso automático de skills puede ofrecerlas en tareas no relacionadas. Sin CI ni hooks. Sin medición de tokens (solo bytes).
 **6. Evidence:** `docs/ANTISLOP_PILOT.md` (origen, commit, licencia, hashes, uso y retirada); `docs/CURRENT_STATE.md` § piloto; `docs/DECISIONS.md` 2026-10-21 Anti Slop; `.opencode/skills/antislop/LOCAL_CONDITIONS.md`; `.opencode/commands/antislop.md`.
 **7. Last update:** 2026-10-21.
@@ -54,7 +74,7 @@
 - Implementation status: NOT IMPLEMENTED para este contrato gráfico; existen probe, lectores, Backtest/replay y MVP de fixtures que se deben reutilizar.
 - Evaluation status: NOT EVALUATED como recorrido gráfico/paper vivo; no rentabilidad demostrada.
 - Contrato y aceptación: [Acuerdos de gráfico Binance V1](ACUERDOS_GRAFICO_BINANCE_V1.md).
-- Dependencias: tres bloqueos revisados de Paper Lab 2a17088 *(cerrados 2026-10-21 con F-PAPER-02, verificado por pruebas focalizadas; validación de navegador pendiente)*; contrato causal, catálogo/cobertura, suscripciones por consumidor, retención y recuperación. Selector/riesgo/caja/funding tienen pendientes separados.
+- Dependencias: tres bloqueos revisados de Paper Lab 2a17088 *(cerrados 2026-10-21 con F-PAPER-02; el recorrido de navegador de los controles se ejecutó en `d48a224` y el cierre automático por stop se verificó con F-PAPER-03; el contrato gráfico sigue NO implementado)*; contrato causal, catálogo/cobertura, suscripciones por consumidor, retención y recuperación. Selector/riesgo/caja/funding tienen pendientes separados.
 - Primera versión: escritorio, velas/volumen/zoom/histórico y eventos backend. Arrastre de stops, móvil y REA productivo fuera de esta versión.
 
 ### Cierre documental (siete campos)

@@ -771,6 +771,171 @@ def test_stop_gap_short_apertura_por_encima_del_stop():
     assert abs(r.result.exit_px - 116.0) < 0.01  # salida al open (gap)
 
 
+def _canonical_trade(direction, candles, entry_px=100.0,
+                     horizon_ms=3 * 60 * 60 * 1000):
+    """Ejecuta la autoridad economica (run_backtest) sobre la misma fixture.
+
+    El cutoff es el open de la segunda vela: instante de conocimiento del
+    cierre de la vela de entrada (misma semantica que el reloj de Paper Lab).
+    """
+    from microstructure_probe.backtest_offline import (
+        BacktestConfig, Candle, StudyEvent, run_backtest,
+    )
+    ev = StudyEvent(symbol="BTCUSDT", event_time_ms=candles[0].close_time_ms,
+                    direction=direction, reference_price=entry_px,
+                    family="H1", rules_version="H1-v1")
+    cfg = BacktestConfig(
+        family="H1", rules_version="H1-v1", exit_horizon_ms=horizon_ms,
+        stop_distance_pct=5.0, notional_usdt=1000.0, fee_bps=5.0,
+        spread_bps=1.0, slippage_bps=2.0, cost_scale=1.0,
+        max_concurrent=1, funding_calendar=None, funding_estimated_bps=None,
+    )
+    bt = [Candle(symbol="BTCUSDT", open_time_ms=c.open_time_ms,
+                 open=c.open, high=c.high, low=c.low, close=c.close,
+                 close_time_ms=c.close_time_ms) for c in candles]
+    cutoff = candles[2].open_time_ms if len(candles) > 2 else None
+    return run_backtest([ev], bt, cfg, known_close_cutoff=cutoff)["trades"][0]
+
+
+def test_stop_entrada_no_se_omite_y_gap_posterior_no_la_sustituye_long():
+    """LONG: la vela de entrada gestiona su stop antes que el gap posterior.
+
+    Fixture de regresion: V0 cierra en 101 (senal), V1 abre 101 y su low 90
+    atraviesa el stop efectivo 95.95, V2 abre en 80 (gap que tambien cruza el
+    stop). El cierre de V1 se conoce al revelarse el open de V2; en ese mismo
+    instante el stop de V1 (95.95) precede al gap de V2 (80). Una salida
+    posterior no sustituye a una anterior.
+    """
+    config = mk_config(entry_px=100.0, stop_px=95.0, stop_distance_pct=5.0)
+    candles = [
+        mk_candle(0, 100, 102, 99, 101),       # V0: cierre conocido en T=899999
+        mk_candle(900000, 101, 103, 90, 102),  # V1: entrada @101, low 90 < 95.95
+        mk_candle(1800000, 80, 85, 75, 82),    # V2: gap @80
+    ]
+    s = create_session(config, candles)
+    s = evaluate_session(s, at_ms=candles[0].close_time_ms,
+                         hypothesis_id="H1", hypothesis_version="1.0",
+                         rule_version=RULE_CAUSAL_V1)
+    assert s.status == "en_espera"
+
+    r = step_forward(s)
+    assert r.status == "abierta"
+    assert abs(r.position.entry_px - 101.0) < 1e-9
+    assert r.position.entry_ms == 900000
+    # El stop publicado es el efectivo que gobierna la operacion, no el
+    # stop_px de referencia del config (95).
+    assert abs(r.position.stop_px - 95.95) < 1e-9
+    assert session_to_public_dict(r)["position"]["stop_px"] == r.position.stop_px
+    # El low de la vela de entrada aun no se usa: su cierre no se conoce.
+    assert r.clock_ms == 900000
+
+    r = step_forward(r)
+    assert r.status == "cerrada"
+    assert r.clock_ms == 1800000
+    assert r.result is not None and r.result.exit_executed is True
+    assert r.result.exit_reason == "stop"
+    assert abs(r.result.exit_px - 95.95) < 1e-9
+    assert r.result.exit_px != 80.0
+    assert r.result.exit_ms == 1800000          # conocimiento del cierre de V1
+    assert r.result.exit_ms != candles[1].close_time_ms
+    assert r.result.funding is None              # funding UNKNOWN
+    assert r.result.realized_net == r.result.net_pnl
+    assert abs(r.result.gross_pnl - (-50.0)) < 1e-9
+    assert abs(r.result.fees - 0.975) < 1e-9
+    assert abs(r.result.spread_slip - 0.585) < 1e-6
+    assert abs(r.result.net_pnl - (-51.56)) < 1e-6
+
+    bt = _canonical_trade("LONG", candles)
+    assert abs(r.result.exit_px - bt["exit_px"]) < 1e-9
+    assert r.result.exit_ms == bt["exit_ms"]
+    assert abs(r.result.gross_pnl - bt["gross_pnl"]) < 1e-9
+    assert abs(r.result.fees - bt["fees"]) < 1e-9
+    assert abs(r.result.spread_slip - bt["spread_slip_cost"]) < 1e-6
+    assert abs(r.result.net_pnl - bt["net_pnl"]) < 1e-6
+
+
+def test_stop_entrada_no_se_omite_y_gap_posterior_no_la_sustituye_short():
+    """SHORT espejo: stop efectivo 103.95 antes del gap al alza en 120."""
+    config = mk_config(direction="SHORT", entry_px=100.0, stop_px=105.0,
+                       stop_distance_pct=5.0)
+    candles = [
+        mk_candle(0, 100, 101, 98, 99),         # V0: cierre conocido en T
+        mk_candle(900000, 99, 110, 98, 105),    # V1: entrada @99, high 110 > 103.95
+        mk_candle(1800000, 120, 125, 118, 122), # V2: gap @120
+    ]
+    s = create_session(config, candles)
+    s = evaluate_session(s, at_ms=candles[0].close_time_ms,
+                         hypothesis_id="H1", hypothesis_version="1.0",
+                         rule_version=RULE_CAUSAL_V1)
+    assert s.status == "en_espera"
+
+    r = step_forward(s)
+    assert r.status == "abierta"
+    assert abs(r.position.entry_px - 99.0) < 1e-9
+    assert abs(r.position.stop_px - 103.95) < 1e-9
+
+    r = step_forward(r)
+    assert r.status == "cerrada"
+    assert r.result.exit_reason == "stop"
+    assert abs(r.result.exit_px - 103.95) < 1e-9
+    assert r.result.exit_px != 120.0
+    assert r.result.exit_ms == 1800000
+    assert r.result.realized_net == r.result.net_pnl
+    assert abs(r.result.net_pnl - (-51.64)) < 1e-6
+
+    bt = _canonical_trade("SHORT", candles)
+    assert abs(r.result.exit_px - bt["exit_px"]) < 1e-9
+    assert r.result.exit_ms == bt["exit_ms"]
+    assert abs(r.result.net_pnl - bt["net_pnl"]) < 1e-6
+
+
+def test_continuacion_sin_stop_y_fin_de_datos_abierto():
+    """Sin stop: la posicion sigue abierta y termina en open_at_end no realizado.
+
+    El open de cada vela se revela antes que su cierre; la marca usa solo el
+    open revelado. Al agotarse la serie no se inventa salida ni comision de
+    salida, y realized_net queda en None.
+    """
+    config = mk_config(entry_px=100.0, stop_px=95.0,
+                       horizon_ms=24 * 60 * 60 * 1000)
+    candles = [
+        mk_candle(0, 100, 102, 99, 101),
+        mk_candle(900000, 101, 104, 100, 103),  # entrada @101
+        mk_candle(1800000, 103, 106, 102, 105),
+        mk_candle(2700000, 105, 108, 104, 107),
+    ]
+    s = create_session(config, candles)
+    s = evaluate_session(s, at_ms=candles[0].close_time_ms,
+                         hypothesis_id="H1", hypothesis_version="1.0",
+                         rule_version=RULE_CAUSAL_V1)
+    r = step_forward(s)
+    assert r.status == "abierta"
+
+    r = step_forward(r)
+    assert r.status == "abierta"
+    assert r.clock_ms == 1800000
+    assert r.position.mark_px == 103.0        # open revelado, no close futuro
+    assert r.position.unrealized_net is not None
+    assert r.result is None
+
+    r = step_forward(r)
+    assert r.status == "abierta"
+    assert r.position.mark_px == 105.0
+    assert session_to_public_dict(r)["can_step"] is True
+
+    r = step_forward(r)                        # paso final: fin de datos
+    assert r.status == "cerrada"
+    assert r.result.open_at_end is True
+    assert r.result.exit_executed is False
+    assert r.result.realized_net is None
+    assert r.result.exit_fees_executed == 0.0
+    assert r.result.exit_fees_estimated == 0.0
+    assert r.position.open is True
+    assert abs(r.result.exit_px - 105.0) < 1e-9
+    assert r.result.exit_ms == 2700000
+    assert session_to_public_dict(r)["can_step"] is False
+
+
 if __name__ == "__main__":
     test_create_session_sin_iniciar()
     test_evaluate_admite_entrada_automatica()
@@ -791,6 +956,9 @@ if __name__ == "__main__":
     test_regresion_open_futuro_diferente_estado_publico_igual_hasta_T()
     test_stop_gap_long_apertura_por_debajo_del_stop()
     test_stop_gap_short_apertura_por_encima_del_stop()
+    test_stop_entrada_no_se_omite_y_gap_posterior_no_la_sustituye_long()
+    test_stop_entrada_no_se_omite_y_gap_posterior_no_la_sustituye_short()
+    test_continuacion_sin_stop_y_fin_de_datos_abierto()
     test_freshness_stale_data_respecto_a_T()
     test_freshness_disconnect_por_silencio()
     test_freshness_end_of_data_separado_de_stale()

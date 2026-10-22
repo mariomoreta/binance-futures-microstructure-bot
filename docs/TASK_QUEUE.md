@@ -1,3 +1,19 @@
+## Paper Lab — corrección económica del stop y cierre automático verificado (2026-10-21, F-PAPER-03)
+
+`CURRENT_PHASE`: dashboard V2 de escritorio + Paper Lab sobre fixtures (observación; sin Binance, sin órdenes).
+
+`CURRENT_OBJECTIVE`: paridad económica Paper Lab ↔ `run_backtest` en el orden temporal del stop, publicación del stop efectivo que gobierna la operación y cierre automático desde los controles reales.
+
+`ACTIVE_TASK`: entrega documentada y commiteada de la corrección, pruebas completas, build re-servido y evidencia de navegador/HTTP.
+
+Estado: cerrado y documentado en `docs/CURRENT_STATE.md` y `docs/DECISIONS.md` (2026-10-21). Base `5572ee3`; commit inicial del bloque `d48a224`. Build `MzvbhIwIOPI7PNIKJlAve`, PID 24060, `http://127.0.0.1:3020/paper-lab-live`. Python 1290 OK (2 skipped, exit 0); frontend 471 passed + 1 skipped; `tsc --noEmit` 0. Evidencia de navegador con sesión `PL-BTCUSDT-LONG-1792627398136-5241b33a`: entrada 101.00, stop 95.95, cierre automático por stop 95.95 (no gap 80), neto realizado -51.56, funding UNKNOWN.
+
+`NEXT_TASKS`:
+1. Inventariar velas/indicadores existentes y fijar contrato de datos/tiempos/IDs (punto 2 de "Prioridad del recorrido gráfico/paper").
+2. Lightweight Charts con fixtures, velas, volumen, zoom, histórico y marcas backend; instalación y QA de escritorio en ese bloque (**no** en esta entrega; no instalado).
+3. Re-ejecutar `/antislop` end-to-end en una sesión nueva y registrar el resultado; si vuelve a derivar, registrarlo como defecto de integración. Queda PENDIENTE y no se reintentó en este bloque.
+4. Revisar las fixtures restantes bajo la regla causal antes de usarlas como demostración de stop/horizonte (BTC horizonte termina en fin de datos; ETH se abstiene en el primer cierre).
+
 ## Piloto Anti Slop (opcional, no altera la fase) — 2026-10-21 (F-TOOL-ANTISLOP-01)
 
 `CURRENT_PHASE` y `CURRENT_OBJECTIVE` **no cambian**: siguen siendo el dashboard V2 de escritorio y el recorrido causal de Paper Lab. Este piloto solo añade una revisión estilística opcional.
@@ -5,7 +21,7 @@
 `ACTIVE_TASK` del piloto: entrega documentada y commiteada de `.opencode/skills/antislop{,-code}/`, `.opencode/commands/antislop.md` y `docs/ANTISLOP_PILOT.md`, con verificación real de descubrimiento en OpenCode.
 
 `NEXT_TASKS` del piloto:
-1. Re-ejecutar `/antislop` en una sesión nueva con el comando endurecido y registrar si termina sin derivar al asistente de modo (pendiente, no declarado).
+1. Re-ejecutar `/antislop` en una sesión nueva con el comando endurecido y registrar si termina sin derivar al asistente de modo (pendiente, no declarado; no reintentado en el bloque F-PAPER-03 del 2026-10-21).
 2. Si se actualiza el upstream, re-descargar en el nuevo commit, recalcular SHA-256 y actualizar `docs/ANTISLOP_PILOT.md`.
 3. Retirar el piloto si estorba: borrar los dos directorios, el comando y la línea de `AGENTS.md`.
 

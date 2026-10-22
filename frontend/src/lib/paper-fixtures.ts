@@ -126,6 +126,42 @@ export const FIXTURE_SOL_LONG_MANUAL: {
   return {config, candles, context: contextBefore(start, 48, base)};
 })();
 
+// ---------- Fixture 4: BTCUSDT 15m LONG, stop de la vela de entrada ----------
+// Regresión de orden temporal: la vela de entrada (V2) toca el stop efectivo
+// (low 90 < 95.95) y la siguiente abre con gap por debajo (80). La salida debe
+// resolverse en el stop efectivo 95.95 al conocerse el cierre de V2, no en el
+// gap posterior de V3.
+export const FIXTURE_BTC_LONG_STOP_ORDER: {
+  config: PaperSessionConfig;
+  candles: PaperCandle[];
+  context: PaperCandle[];
+} = (() => {
+  const start = 1788926400000; // 2026-09-09T04:00:00Z
+  const base = 100.0;
+  const step = 15 * 60 * 1000;
+  const candles = [
+    candle(start + 0 * step, 100, 102, 99, 101),  // V0: señal (close >= 100)
+    candle(start + 1 * step, 101, 103, 100, 102), // V1: decisión en su open
+    candle(start + 2 * step, 101, 103, 90, 102),  // V2: fill @101, low 90
+    candle(start + 3 * step, 80, 85, 75, 82),     // V3: gap @80
+    candle(start + 4 * step, 82, 86, 81, 84),
+  ];
+  const config: PaperSessionConfig = {
+    symbol: "BTCUSDT",
+    interval: "15m",
+    direction: "LONG",
+    notional_usdt: 1000,
+    entry_px: base,
+    stop_px: 95, // referencia de la señal; el stop efectivo es 101 * 0.95
+    stop_distance_pct: 5,
+    horizon_ms: 3 * 60 * 60 * 1000,
+    fee_bps: 5,
+    spread_bps: 1,
+    slippage_bps: 2,
+  };
+  return {config, candles, context: contextBefore(start, 48, base)};
+})();
+
 // ---------- Catalogo de fixtures disponibles ----------
 export const PAPER_FIXTURES: Record<string, {
   config: PaperSessionConfig;
@@ -144,6 +180,10 @@ export const PAPER_FIXTURES: Record<string, {
   sol_long_manual: {
     ...FIXTURE_SOL_LONG_MANUAL,
     label: "SOLUSDT 15m LONG — cierre manual en beneficio",
+  },
+  btc_long_stop_order: {
+    ...FIXTURE_BTC_LONG_STOP_ORDER,
+    label: "BTCUSDT 15m LONG — stop de la vela de entrada (orden temporal)",
   },
 };
 

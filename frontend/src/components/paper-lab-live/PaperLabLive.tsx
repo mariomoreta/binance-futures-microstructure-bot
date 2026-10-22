@@ -313,8 +313,10 @@ export default function PaperLabLive(): React.JSX.Element {
   const v = sessionView(state);
   const open = position.open === true;
   const finished = status === "cerrada" || status === "detenida";
-  const entryPx = config.entry_px;
-  const stopPx = config.stop_px;
+  const entryPx = position.entry_px ?? config.entry_px;
+  // Stop publicado = nivel efectivo que gobierna la operación (entry real ×
+  // (1 ∓ pct)), calculado por el backend; config.stop_px es solo referencia.
+  const stopPx = position.stop_px ?? config.stop_px;
   // Salida ejecutada SOLO cuando run_backtest confirmó un fill de salida.
   // Nunca se usa position.mark_px como sustituto de precio de salida ejecutado.
   const exitExecuted = result?.exit_executed === true;

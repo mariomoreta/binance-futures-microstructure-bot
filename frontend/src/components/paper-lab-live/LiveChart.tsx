@@ -20,7 +20,12 @@ const LABEL_GAP = 13;
 
 function extent(all: PaperCandle[], marks: (number | null | false)[]) {
   let lo = Infinity, hi = -Infinity;
-  for (const c of all) { lo = Math.min(lo, c.low); hi = Math.max(hi, c.high); }
+  for (const c of all) {
+    // Una vela revelada solo por su open (close/high/low aun desconocidos en
+    // T) llega con null; no debe contaminar la escala ni dibujarse.
+    if (c.high == null || c.low == null || c.close == null) continue;
+    lo = Math.min(lo, c.low); hi = Math.max(hi, c.high);
+  }
   for (const v of marks) if (typeof v === "number" && Number.isFinite(v)) { lo = Math.min(lo, v); hi = Math.max(hi, v); }
   if (!Number.isFinite(lo) || !Number.isFinite(hi)) return {lo: 0, hi: 1, span: 1};
   const span = (hi - lo) || (hi * 0.001) || 1;
@@ -41,7 +46,12 @@ export function LiveChart({
   const all = [...contextCandles, ...candles];
   const ex = extent(all, [entryPx, stopPx, exitShown ? exitPx : false]);
   const t0 = all[0]?.open_time_ms ?? 0;
-  const t1 = all[all.length - 1]?.close_time_ms ?? t0 + 3_600_000;
+  const lastKnown = all[all.length - 1];
+  // Si la ultima vela solo tiene open conocido, su cierre aun no existe:
+  // extender el eje hasta el final de su intervalo para situar el cursor.
+  const t1 = lastKnown
+    ? (lastKnown.close_time_ms ?? lastKnown.open_time_ms + 15 * 60 * 1000)
+    : t0 + 3_600_000;
   const full = Math.max(t1 - t0, 1);
   const z = Math.max(1, zoom);
   const viewSpan = full / z;
