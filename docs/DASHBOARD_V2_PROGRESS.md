@@ -232,3 +232,12 @@ static foundation (DASH-V2-00/01/02); no integration.
 - Recovery fixes applied: removed both route templates (root CSS-hack banner suppressor + movers children-ignoring override); /movers now composes MoversDashboard directly in page.tsx; AppShell foundation banner replaced by a compact demo strip; fixed summary double-% unit bug. Rankings scope note kept as designed (filtered dataset, explicitly labeled).
 - Python backend, databases, runtime registry and formal P1-10R evidence: unchanged.
 - P1-10R last observed RUNNING (PID 19084, read-only checks); no PASS/FAIL conclusion made.
+
+
+## Accesos directos V2 — 2026-10-21 (F-NAV-V2-ACCESS-01)
+
+La navegación incorpora `Mercado / Gráficos` -> `/market-lab` en Terminal, `Paper Lab — Simulación` -> `/paper-lab-live` y `Replay histórico` -> `/paper-lab` en Laboratorios. Se elimina el rótulo ambiguo Future workspace para estas capacidades existentes. ContractExplorer aparece antes del contenido histórico previo en /market-lab. Se preservan rutas y motores.
+
+Verificado: navigation.test.tsx 4/4, tsc --noEmit y eslint de los dos archivos exit 0; next build exit 0 (13 advertencias de tracing preexistente en rutas no modificadas). BUILD_ID `3ThnqxocDEmcursE2ZYpu`, servidor propio PID 32104 (sustituye solo PID 16164 tras revalidar PID+creation time+comando y ausencia de monitor/Python). HTTP /overview, /market-lab, /paper-lab-live y /paper-lab 200; enlaces exactos y BUILD_ID comprobados en HTML servido. El cambio de navegación es de bajo impacto; backend y DB no cambiaron, no se repite su suite. Inspección visual/clics de navegador NO realizada: no hay herramienta de navegador disponible para esta sesión; verificación por pruebas de componente y HTML servido, sin PASS visual.
+
+ESTADO DEL OBJETIVO VIVO: estos accesos NO implementan streaming. Mercado consulta histórico REST bajo demanda; Paper Lab usa fixtures; Replay reproduce histórico. El usuario reitera el objetivo de buscar contratos Futures elegibles y verlos actualizarse en vivo. Pendiente: adaptar feed existente, gestión compartida de suscripciones, vela provisional/cerrada, reconexión y reparación de huecos, frescura visible e indicadores backend compartidos; pruebas controladas y ventana acotada. No suscribir todo el universo a máxima resolución por pestaña ni confundir catálogo completo con seguimiento permanente. Abrir gráfico nunca abre una operación. Contrato rector: [ACUERDOS_GRAFICO_BINANCE_V1](ACUERDOS_GRAFICO_BINANCE_V1.md). Sin adquisición, monitor, paper prospectivo, órdenes, pagos, móvil ni gates en este cambio.

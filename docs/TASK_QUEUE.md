@@ -1,3 +1,9 @@
+## Próximo recorrido — 2026-10-21
+
+F-NAV-V2-ACCESS-01: accesos corregidos y servidos; ver CURRENT_STATE. No volver a pedir al usuario rutas ocultas: Mercado / Gráficos, Paper Lab — Simulación y Replay histórico están en navegación.
+
+Siguiente objetivo funcional del usuario: gráfico Binance con actualización continua para contratos elegibles, reutilizando feed/lector/gráfico existentes. Primero definir ciclo de suscripción y recuperación + pruebas controladas; luego ventana acotada. Se conservan las restricciones y autorizaciones específicas de corridas; este cambio no inicia ninguna. Indicadores compartidos y paper vivo son capacidades posteriores explícitas, no prometidas por la entrega del explorador histórico.
+
 ## Market Lab — explorador de contratos USD-M e histórico paginado (2026-10-21, F-CHART-BINANCE-02)
 
 `CURRENT_PHASE`: dashboard V2 de escritorio + observación con REST público acotado (sin websocket, sin monitor, sin órdenes).

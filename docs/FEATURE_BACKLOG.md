@@ -1,3 +1,15 @@
+## F-NAV-V2-ACCESS-01 — Acceso directo a mercado y simulación
+
+Approval: DECIDED por petición del usuario. Implementation: IMPLEMENTED (navegación + orden del explorador). Verified: pruebas de navegación 4/4, typecheck/lint/build y HTML servido; VISUAL NOT VERIFIED. No cambia mercados, estrategia ni motor económico. Fuente base 25a0f01.
+
+- DECISIONS_REVIEWED: AGENTS, WORKFLOW, skill dashboard-v2, CURRENT_STATE, TASK_QUEUE, FEATURE_BACKLOG, diseño/progreso/decisiones V2.
+- NEW_DECISIONS_RECORDED: nombres y rutas distintos para mercado, simulación y replay; feed continuo se mantiene pendiente explícito.
+- FEATURES_IMPLEMENTED: tres accesos visibles y explorador primero en /market-lab.
+- FEATURES_VERIFIED: 4/4 navegación; tsc/eslint/build exit 0; cuatro páginas HTTP 200 con enlaces y BUILD_ID 3ThnqxocDEmcursE2ZYpu. Sin inspección visual ni clics de navegador en esta sesión.
+- DEFERRED_FEATURES: feed continuo, indicadores compartidos y paper prospectivo; móvil/Flutter e IA diferidos.
+- BACKLOG_UPDATED: este ID, CURRENT_STATE y TASK_QUEUE.
+- DOCUMENTATION_CONFLICTS: se aclara que el enlace Paper Lab anterior abría solo replay; gráfico existente y catálogo NO significan LIVE. Historia preservada.
+
 ## F-CHART-BINANCE-02 — Búsqueda de contratos USD-M e histórico paginado bajo demanda (2026-10-21, base `9689f3e`)
 
 **1. Title:** Explorador de contratos Binance USD-M Futures con catálogo cacheado, histórico leído de lo almacenado y adquirido solo el bloque faltante, paginación hacia atrás que conserva el encuadre y gráfico reutilizado, sin feed continuo ni indicadores.
