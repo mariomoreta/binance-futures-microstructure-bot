@@ -1,8 +1,50 @@
+## Market Lab — actualización continua de velas (2026-10-21, F-CHART-BINANCE-03)
+
+`CURRENT_PHASE`: dashboard V2 de escritorio + observación (WS público bajo
+demanda, sin monitor, sin órdenes).
+
+`CURRENT_OBJECTIVE`: que la vela en formación del contrato seleccionado se
+actualice sola, con conexión compartida, estados honestos, reconexión y
+reparación declarada de huecos, reutilizando el explorador y el gráfico.
+
+`ACTIVE_TASK`: entrega documentada y commiteada del hub `market-stream/v1`, el
+servicio SSE local, el panel de estado del feed, las pruebas A–I con transporte
+controlado, el build re-servido y el plan de ventana viva (no ejecutada).
+
+Estado: cerrado como **implementado + probado con transporte controlado +
+servido**; **NO verificado con Binance** (ventana viva pendiente de autorización
+explícita). Base `469e282`; BUILD_ID `n6FZutTsk5m8FFilTlxIo`, PID 18112,
+`http://127.0.0.1:3020/market-lab`; suite backend 1405 passed + 2 skipped
+(focalizado 28/28); frontend 538 passed + 1 skipped; `tsc` 0; `eslint` 0
+errores/5 warnings preexistentes; `next build` OK. Sin inspección visual por
+modelo: no se declara PASS visual. Servicio continuo **detenido**.
+
+`NEXT_TASKS`:
+1. Autorizar y ejecutar la ventana viva acotada de
+   `docs/MARKET_STREAM_LIVE_WINDOW_PLAN.md` (1 conexión, `BTCUSDT` + `MINAUSDT`
+   1m, 60 s, 400 mensajes) y registrar recepción, cadencia y cierre reales.
+2. Solo tras esa ventana: decidir si el servicio se deja arrancado por defecto o
+   sigue siendo arranque manual (hoy manual y detenido).
+3. Decidir política de retención/poda de `data/market-cache/` antes de uso
+   intensivo (hoy sin poda automática; retirada manual documentada).
+4. Indicadores compartidos sobre el mismo feed: **capacidad posterior, no
+   prometida**; requiere su propio contrato, presupuesto y autorización.
+5. Re-ejecutar `/antislop` end-to-end en una sesión nueva; sigue PENDIENTE.
+6. Revisar el fallo intermitente de `backtest-guard-regressions` (C1) bajo carga
+   de suite completa; no se tocó en este bloque.
+7. Mantener diferido: stops/objetivos arrastrables, móvil/Flutter, F-PAPER-01,
+   ejecución con capital.
+
 ## Próximo recorrido — 2026-10-21
 
 F-NAV-V2-ACCESS-01: accesos corregidos y servidos; ver CURRENT_STATE. No volver a pedir al usuario rutas ocultas: Mercado / Gráficos, Paper Lab — Simulación y Replay histórico están en navegación.
 
 Siguiente objetivo funcional del usuario: gráfico Binance con actualización continua para contratos elegibles, reutilizando feed/lector/gráfico existentes. Primero definir ciclo de suscripción y recuperación + pruebas controladas; luego ventana acotada. Se conservan las restricciones y autorizaciones específicas de corridas; este cambio no inicia ninguna. Indicadores compartidos y paper vivo son capacidades posteriores explícitas, no prometidas por la entrega del explorador histórico.
+
+> Actualización 2026-10-21: el ciclo de suscripción, la reconexión, la
+> reparación de huecos y las pruebas controladas A–I están entregados en
+> `F-CHART-BINANCE-03` (ver arriba). Lo único pendiente de este objetivo es la
+> **ventana viva acotada**, que requiere autorización explícita.
 
 ## Market Lab — explorador de contratos USD-M e histórico paginado (2026-10-21, F-CHART-BINANCE-02)
 

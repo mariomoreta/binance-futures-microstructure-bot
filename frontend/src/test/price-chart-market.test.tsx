@@ -155,7 +155,7 @@ describe("PriceChart — modo mercado (market-chart/v1)", () => {
 
   it("dibuja velas + volumen, sin niveles de operación ni contexto", async () => {
     render(<PriceChart model={buildMarketChartModel(payload())} />);
-    await waitFor(() => expect(h.chart.addSeries).toHaveBeenCalledTimes(2));
+    await waitFor(() => expect(h.chart.addSeries).toHaveBeenCalledTimes(3));
     const candles = h.series[0]!;
     const volume = h.series[1]!;
     await waitFor(() => expect(candles.setData).toHaveBeenCalled());
@@ -185,6 +185,38 @@ describe("PriceChart — modo mercado (market-chart/v1)", () => {
     expect(markers.map((m: {text?: string}) => m.text)).toContain("provisional");
     expect(screen.getByTestId("market-chart-coverage").textContent)
       .toContain("1 provisional");
+  });
+
+  it("dibuja la vela en formación en serie aparte y la actualiza sin reescribir cerradas", async () => {
+    const first = buildMarketChartModel(payload([
+      candle(T0),
+      {...candle(T0 + H), provisional: true, close_time_ms: null},
+    ]));
+    const {rerender} = render(<PriceChart model={first} />);
+    await waitFor(() => expect(h.chart.addSeries).toHaveBeenCalledTimes(3));
+    const candles = h.series[0]!;
+    const provisional = h.series[2]!;
+    await waitFor(() => expect(provisional.setData).toHaveBeenCalled());
+    expect(provisional.setData.mock.calls.at(-1)![0]).toEqual([
+      {time: (T0 + H) / 1000, open: 100, high: 101, low: 99, close: 100.5},
+    ]);
+    const closedSetDataCalls = candles.setData.mock.calls.length;
+
+    // Tick de la misma vela en formación: solo cambia la serie provisional.
+    const tick = buildMarketChartModel(payload([
+      candle(T0),
+      {...candle(T0 + H, "100.9"), provisional: true, close_time_ms: null},
+    ]));
+    rerender(<PriceChart model={tick} />);
+    await waitFor(() => expect(
+      provisional.setData.mock.calls.at(-1)![0][0].close).toBe(100.9));
+    expect(candles.setData).toHaveBeenCalledTimes(closedSetDataCalls);
+
+    // Cierre: la provisional desaparece y la cerrada se anexa con update().
+    const closed = buildMarketChartModel(payload([candle(T0), candle(T0 + H)]));
+    rerender(<PriceChart model={closed} />);
+    await waitFor(() => expect(provisional.setData.mock.calls.at(-1)![0]).toEqual([]));
+    expect(candles.update).toHaveBeenCalled();
   });
 
   it("ajusta el encuadre inicial una sola vez y respeta el zoom en updates", async () => {

@@ -45,3 +45,11 @@
 .identity b{color:#eaf7ff}
 .foot{font-size:11px;color:#8fa9bd;line-height:1.6;margin:0}
 .hint{font-size:11px;color:#8fa9bd}
+
+.stream{margin-top:14px;background:#0a1f2e;border:1px solid #24455b;border-radius:6px;padding:12px;display:grid;gap:10px}
+.streamRow{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:10px}
+.streamRow div{background:#0b2133;border:1px solid #223f53;border-radius:5px;padding:9px}
+.streamRow small{display:block;color:#8fa9bd;font-size:10px;letter-spacing:.06em;text-transform:uppercase}
+.streamRow b{display:block;margin-top:5px;font:12px var(--font-mono,monospace);font-weight:600;overflow-wrap:anywhere}
+.gaps{margin:0;padding-left:18px;color:#f3c67a;font:11px var(--font-mono,monospace);line-height:1.7}
+.stream code{background:#122f42;border:1px solid #2f7fa6;border-radius:4px;padding:1px 5px;font-size:10px}

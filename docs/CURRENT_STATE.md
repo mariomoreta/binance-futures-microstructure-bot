@@ -1,3 +1,105 @@
+## Actualización continua de velas en el explorador de mercado (2026-10-21, F-CHART-BINANCE-03)
+
+Vela en formación actualizándose sin recargar la página en `/market-lab`, sobre
+el explorador ya entregado. Base `469e282` (rama
+`review/o1-funcional-v2-observacion`); encadena el bloque anterior
+`F-CHART-BINANCE-02` (`25c8c8c`, `25a0f01`). Escritorio, presupuesto cero,
+observación. Sin indicadores nuevos, sin selección automática, sin paper con
+datos vivos, sin riesgo/estrategias/optimización, sin órdenes, sin capital, sin
+pagos, sin móvil, sin REA. **La conexión continua a Binance no se ha abierto**:
+la ventana viva está preparada y requiere autorización aparte.
+
+**Contrato antes de implementar.** `docs/MARKET_STREAM_CONTRACT_V1.md` (14
+secciones: identidad `(venue, symbol, interval)`; tiempos UTC en ms con unidad
+declarada; provisional vs cerrada; orden/dedupe/mensajes tardíos; snapshot +
+stream con buffer y reconciliación; estados y frescura; errores y recuperación;
+tabla de presupuesto; ciclo de vida y separación de planos; almacenamiento y
+retención; eventos SSE; `/health`; fuera de alcance; camino de retirada).
+
+**Backend (autoridad).** `src/microstructure_probe/market_stream.py`:
+`KlineStreamHub` (suscripciones con refcount, anillo de 300 velas cerradas por
+suscripción, contadores, detección de huecos, reparación REST acotada) y
+`BinanceKlineTransport` (una sola conexión combinada a
+`wss://fstream.binance.com/market/stream?streams=…`, backoff 1 s → 30 s con
+jitter ±25 %, presupuesto de 20 fallos, `serverShutdown`, frames de control
+≤ 2/s). `src/microstructure_probe/market_stream_service.py`: servidor SSE en
+loopback (biblioteca estándar, sin dependencias nuevas) con `/health`,
+`/stream` y `/shutdown`; snapshot desde el almacén existente con
+`series_payload(allow_fetch=False)` (no duplica REST ni inventa velas); PID file
+`data/market-stream/service.json`. Scripts `scripts/market_stream_service.py`
+(arranque/parada explícitos) y `scripts/market_stream_window.py` (ventana viva:
+sin `--execute` solo imprime el plan). La suscripción canónica del bot no se
+tocó y el monitor no se arranca al abrir una página.
+
+**Frontend (solo presenta).** BFF `GET /api/v1/market-stream` (proxy SSE con
+validación de símbolo/intervalo/rango y 503 `STREAM_SERVICE_DOWN` si el servicio
+está parado) y `GET /api/v1/market-stream/status` (siempre 200 con
+`available`). `market-stream.ts` (tipos `market-stream/v1`, fusión por
+`open_time` donde la cerrada gana sobre la provisional, `LIVE` calculado con las
+cuatro condiciones), `use-market-stream.ts` (una `EventSource` por gráfico,
+sin reabrir al paginar, cierre al desmontar, tope de 6 reintentos),
+`PriceChart.tsx` (serie propia ámbar translúcida para la vela en formación;
+actualización incremental de la cola sin reescribir cerradas) y
+`ContractExplorer.tsx` (panel de estado: fuente/identidad, estado, LIVE, última
+actualización recibida, velas en pantalla, huecos, aviso de servicio detenido).
+
+**Estados separados.**
+
+- **Implementado:** feed continuo bajo demanda con conexión compartida,
+  snapshot+stream coordinados, provisional/cerrada real, reconexión con backoff,
+  reparación de huecos acotada y declarada, frescura y estados honestos,
+  presupuesto y límites, panel de estado y aviso de servicio detenido.
+- **Probado con transporte controlado (sin Binance):** backend
+  `tests/test_market_stream.py` **28/28** (A snapshot+novedades concurrentes sin
+  huecos ni duplicados; B provisional → cierre → nueva; C cambio de
+  símbolo/intervalo sin contaminación; D tardíos/duplicados/inválidos/identidad;
+  E desconexión → obsolescencia → estado honesto; F reparación completa,
+  parcial y fallida; G dos consumidores y liberación con gracia; H recarga sin
+  suscripciones duplicadas; I servicio detenido sin falso LIVE; más URL/backoff,
+  frames de control y HTTP/SSE en puerto efímero). Suite backend completa
+  `pytest tests -q` **1405 passed, 2 skipped**. Frontend
+  `market-stream-contract.test.ts` + `use-market-stream.test.tsx` +
+  `price-chart-market.test.tsx` (serie provisional y no reescritura de
+  cerradas) + `contract-explorer.test.tsx`; suite completa **538 passed + 1
+  skipped (539)**; `tsc --noEmit` 0 errores; `eslint src` 0 errores y 5 warnings
+  preexistentes; `next build` OK.
+- **Servido:** BUILD_ID **`n6FZutTsk5m8FFilTlxIo`**, PID **18112**,
+  `http://127.0.0.1:3020`. Se paró únicamente la instancia identificada
+  (PID 32104, `next start -p 3020`, comprobando antes `job_state.json=completado`,
+  0 procesos Python y puerto libre) y se reconstruyó. HTTP 200 en `/market-lab`,
+  `/overview` y `/paper-lab-live` con el BUILD_ID servido.
+- **Verificado con Binance:** **NO**. No se abrió ninguna conexión continua. La
+  ventana acotada (1 conexión, 2 símbolos, 1 min, 400 mensajes) está descrita en
+  `docs/MARKET_STREAM_LIVE_WINDOW_PLAN.md` y su script solo se ejecutó en modo
+  plan. Por tanto la recepción real, la cadencia de la vela en formación y la
+  confirmación de cierre **no** están verificadas: no se declaran.
+
+**Comprobación en navegador (DOM/red, sin PASS visual).** `/market-lab` servido:
+`MINA` → `MINAUSDT` (PERPETUAL/TRADING/elegible) → 299 velas con 1 provisional y
+`COVERED`; panel de feed con `DESCONECTADO · servicio detenido`, `no LIVE`,
+`sin mensajes`, `299 cargadas · 1 provisional` y el aviso de servicio detenido.
+Red observada: **1** petición `market-series`, **1** `market-stream/status`,
+**0** intentos de `EventSource` (el estado dijo `available:false`), y el proxy
+`/api/v1/market-stream` responde **503** `STREAM_SERVICE_DOWN` si se fuerza. El
+histórico sigue visible y **no** se declara LIVE: caso I verificado en el
+navegador. Sin inspección por modelo de visión (sigue sin proveedor): no hay
+PASS visual.
+
+**Smoke del servicio local (sin suscriptores, sin Binance).** Arrancado en
+`127.0.0.1:8799`: `/health` 200 con `socket.connected=false`, `attempts=0`,
+`streams=[]`, `consumers=0` y `persistence=MEMORY_ONLY`; PID file escrito con el
+PID real. `--stop` devolvió 200, borró el PID file, liberó el puerto y no dejó
+procesos Python. **El servicio continuo queda detenido.**
+
+**Presupuesto y no contaminación.** Esta sesión hizo 2 peticiones REST de velas
+(la del navegador y una comprobación explícita), 0 reintentos, 0 fallos; el
+ledger acumulado del caché aislado queda en **25 peticiones, 0 reintentos, 0
+fallos** (`market_klines` 1795 filas, `market_cache.db` 442 368 B). `data/
+historical/historical.db` y `data/microprobe.db` siguen con mtime
+**2026-10-15 11:46:27** (sin escrituras). No se persisten actualizaciones del
+feed (crecimiento en disco del feed: 0). No se crearon sesiones Paper Lab ni se
+tocó su motor.
+
 ## Accesos directos V2 — 2026-10-21 (F-NAV-V2-ACCESS-01)
 
 La navegación incorpora `Mercado / Gráficos` -> `/market-lab` en Terminal, `Paper Lab — Simulación` -> `/paper-lab-live` y `Replay histórico` -> `/paper-lab` en Laboratorios. Se elimina el rótulo ambiguo Future workspace para estas capacidades existentes. ContractExplorer aparece antes del contenido histórico previo en /market-lab. Se preservan rutas y motores.

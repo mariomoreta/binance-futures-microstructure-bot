@@ -20,6 +20,7 @@
 
 import {msToChartSecond} from "./paper-chart-contract";
 import type {OpenOnlyChartCandle} from "./paper-chart-contract";
+import type {MarketChartStream} from "./market-stream";
 
 export const MARKET_CHART_CONTRACT_VERSION = "market-chart/v1" as const;
 export type MarketChartContractVersion = typeof MARKET_CHART_CONTRACT_VERSION;
@@ -261,6 +262,8 @@ export interface MarketChartModel {
     limits: string;
   };
   notes: string[];
+  /** Feed continuo (`market-stream/v1`); `null` = solo histórico REST. */
+  stream: MarketChartStream | null;
 }
 
 function numFromText(value: unknown): number | null {
@@ -283,7 +286,7 @@ function dedupeByOpenTime<T extends {open_time_ms: number}>(items: T[]): T[] {
 
 export function buildMarketChartModel(
   payload: MarketSeriesPayload,
-  opts: {contract?: MarketContractRow | null} = {},
+  opts: {contract?: MarketContractRow | null; stream?: MarketChartStream | null} = {},
 ): MarketChartModel {
   const closed: MarketClosedCandle[] = [];
   const provisional: MarketProvisionalCandle[] = [];
@@ -422,6 +425,10 @@ export function buildMarketChartModel(
       limits,
     },
     notes: payload.notes ?? [],
+    // `stream` es la extensión versionada independiente (`market-stream/v1`).
+    // `capabilities.live` sigue siendo `false`: el modelo es histórico y el
+    // estado del feed se declara aparte, nunca se deduce de un socket.
+    stream: opts.stream ?? null,
   };
 }
 

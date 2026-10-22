@@ -2558,3 +2558,77 @@ La navegación incorpora `Mercado / Gráficos` -> `/market-lab` en Terminal, `Pa
 Verificado: navigation.test.tsx 4/4, tsc --noEmit y eslint de los dos archivos exit 0; next build exit 0 (13 advertencias de tracing preexistente en rutas no modificadas). BUILD_ID `3ThnqxocDEmcursE2ZYpu`, servidor propio PID 32104 (sustituye solo PID 16164 tras revalidar PID+creation time+comando y ausencia de monitor/Python). HTTP /overview, /market-lab, /paper-lab-live y /paper-lab 200; enlaces exactos y BUILD_ID comprobados en HTML servido. El cambio de navegación es de bajo impacto; backend y DB no cambiaron, no se repite su suite. Inspección visual/clics de navegador NO realizada: no hay herramienta de navegador disponible para esta sesión; verificación por pruebas de componente y HTML servido, sin PASS visual.
 
 ESTADO DEL OBJETIVO VIVO: estos accesos NO implementan streaming. Mercado consulta histórico REST bajo demanda; Paper Lab usa fixtures; Replay reproduce histórico. El usuario reitera el objetivo de buscar contratos Futures elegibles y verlos actualizarse en vivo. Pendiente: adaptar feed existente, gestión compartida de suscripciones, vela provisional/cerrada, reconexión y reparación de huecos, frescura visible e indicadores backend compartidos; pruebas controladas y ventana acotada. No suscribir todo el universo a máxima resolución por pestaña ni confundir catálogo completo con seguimiento permanente. Abrir gráfico nunca abre una operación. Contrato rector: [ACUERDOS_GRAFICO_BINANCE_V1](ACUERDOS_GRAFICO_BINANCE_V1.md). Sin adquisición, monitor, paper prospectivo, órdenes, pagos, móvil ni gates en este cambio.
+
+
+## 2026-10-21 — Actualización continua de velas (`market-stream/v1`)
+
+Bloque `F-CHART-BINANCE-03`, sobre el explorador histórico ya entregado. La
+conexión continua a Binance **no se abrió**: se implementó, se probó con
+transporte simulado y se dejó preparada una ventana acotada.
+
+1. **Contrato antes de código.** `docs/MARKET_STREAM_CONTRACT_V1.md` fija
+   identidad `(venue, symbol, interval)`, tiempos UTC en ms, provisional vs
+   cerrada, orden/dedupe, snapshot+stream, estados, presupuesto, almacenamiento
+   y retirada. Sin contrato escrito no se implementó nada.
+2. **Servicio de datos dedicado, separado del bot.** Un proceso propio
+   (`market_stream_service.py` + hub/transporte) y no `probe.py`: el monitor del
+   bot, el trío canónico y las sesiones Paper Lab no se arrancan, modifican ni
+   consultan al abrir un gráfico. Cuatro planos separados: (A) servicio de
+   datos, (B) monitor del bot, (C) sesiones paper, (D) estado de conexión del
+   navegador.
+3. **Una sola conexión combinada.** `wss://fstream.binance.com/market/stream?
+   streams=…` con refcount por `(symbol, interval)`: dos pestañas o dos
+   consumidores comparten socket y suscripción. La ruta `/market` es la que
+   recibe `kline` según la documentación oficial (las conexiones sin
+   `/public|/market|/private` solo reciben *Public*). Se elige `/stream?streams=`
+   porque el conjunto de streams cambia en caliente (`SUBSCRIBE`/`UNSUBSCRIBE`).
+4. **Sin dependencias nuevas.** El SSE se sirve con `asyncio.start_server` y
+   *chunked transfer* de la biblioteca estándar; el único requisito declarado es
+   `websockets`. `aiohttp` está instalado pero **no declarado**: no se usa.
+5. **El snapshot no se inventa ni se duplica.** Se lee del almacén existente con
+   `series_payload(allow_fetch=False)`; si no hay cobertura se publica
+   `NO_COVERAGE` y no se dibuja nada. El REST del explorador sigue siendo el
+   único que adquiere histórico.
+6. **Reconciliación explícita.** Al suscribir: `subscribe → buffer →
+   snapshot → deliver_from_ms = observed.end_ms → flush` deduplicado por
+   `open_time`, con la cerrada ganando. Desbordar el buffer (`PENDING_MAX=256`)
+   se declara como `gap` con `reason="BUFFER_OVERFLOW"`: nunca se pierde en
+   silencio.
+7. **Sin persistencia del feed.** Anillo en memoria de 300 velas cerradas por
+   suscripción, liberado tras 30 s sin consumidores. Crecimiento en disco: 0.
+   Las actualizaciones no se guardan ni se rellenan con interpolación.
+8. **Reparación acotada y declarada.** Los huecos se detectan al cerrar vela y
+   se reparan por REST con `paginate_klines` (`max_pages=2`, `limit=500`,
+   ≤ 6/min, ≥ 15 s entre intentos), en memoria, publicando
+   `complete|partial|failed` con los tramos faltantes. Una reparación parcial se
+   muestra como parcial.
+9. **`LIVE` es una conclusión, no un socket.** Solo si estado `RECEIVING` **y**
+   socket conectado **y** última actualización del `(symbol, interval)` pedido
+   **y** antigüedad ≤ 10 s. Entre 10 s y 60 s es `OBSOLETO`; sin socket o > 60 s
+   es `DESCONECTADO`; durante reparación, `RECUPERANDO`. El frontend recalcula la
+   condición con los datos del backend y no puede elevarla.
+10. **Reconexión con presupuesto.** Backoff 1 s → 30 s con jitter ±25 %,
+    `RETRY_BUDGET=20` fallos consecutivos → `DESCONECTADO` con
+    `RETRY_BUDGET_EXHAUSTED` y reanudación al aparecer un consumidor nuevo.
+    `serverShutdown` reconecta de inmediato. Frames de control ≤ 2/s.
+11. **Límites duros.** `MAX_SUBSCRIPTIONS=6`, `MAX_CONSUMERS_PER_STREAM=4`,
+    `MAX_TOTAL_CONSUMERS=12`, `CONSUMER_QUEUE_MAX=256` (consumidor lento se
+    cierra y al volver re-sincroniza por snapshot). El catálogo completo nunca
+    se sigue: abrir el explorador no suscribe el universo.
+12. **Cambio de símbolo/intervalo sin contaminación.** El backend enruta por
+    identidad y descarta `identity_mismatch`; el frontend aborta la conexión
+    anterior y descarta el estado acumulado si no pertenece al símbolo/intervalo
+    actual. Paginar hacia atrás **no** reabre el feed (`from_ms/to_ms` solo se
+    usan al abrir).
+13. **Vela en formación visible y distinta.** Se dibuja en una serie propia
+    ámbar translúcida; al cerrarse desaparece de esa serie y se anexa a las
+    cerradas con `update()` (sin reescribir la historia). Nunca se reabre una
+    cerrada ni se inventa `close_time`.
+14. **Estados de verificación separados.** Implementado / probado con transporte
+    controlado / servido / verificado con Binance se documentan por separado. La
+    ventana viva queda **preparada y no ejecutada**; no se declara recepción
+    real a partir de fixtures.
+
+Fuera de alcance en este bloque: indicadores compartidos, selección automática,
+paper con datos vivos, riesgo, estrategias, optimización, órdenes, capital,
+pagos, móvil y REA. La ejecución end-to-end de `/antislop` sigue PENDIENTE.

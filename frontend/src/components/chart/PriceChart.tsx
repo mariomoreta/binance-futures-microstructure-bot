@@ -42,6 +42,8 @@ type Bundle = {
   chart: IChartApi;
   context: ISeriesApi<"Candlestick"> | null;
   candles: ISeriesApi<"Candlestick">;
+  /** Vela en formación: serie aparte, visible y claramente distinguible. */
+  provisional: ISeriesApi<"Candlestick"> | null;
   open: ISeriesApi<"Line"> | null;
   volume: ISeriesApi<"Histogram"> | null;
   markers: ISeriesMarkersPluginApi<Time>;
@@ -301,6 +303,14 @@ export function PriceChart({
     bundle.contextData = contextData;
     bundle.candleData = candleData;
 
+    // Vela en formación (solo mercado): serie ámbar translúcida, separada de
+    // las cerradas para que la diferencia sea visible. Se reemplaza en cada
+    // actualización (0 o 1 vela) y desaparece cuando el backend la cierra.
+    if (bundle.provisional) {
+      const provisionalData = market ? next.candles.provisional.map(toCandleData) : [];
+      bundle.provisional.setData(provisionalData);
+    }
+
     if (prepended && logical) {
       const shift = candleData.length - previousLength;
       const scale = bundle.chart.timeScale() as unknown as {
@@ -511,11 +521,24 @@ export function PriceChart({
           scaleMargins: {top: 0.82, bottom: 0},
         });
       }
+      // Serie propia de la vela en formación (solo mercado): ámbar translúcido
+      // para que se distinga de una vela cerrada. Se crea después del volumen
+      // para no desplazar los índices existentes de las series.
+      const provisionalSeries = market
+        ? chart.addSeries(lib.CandlestickSeries, {
+          upColor: "rgba(251,191,36,0.28)", downColor: "rgba(251,191,36,0.28)",
+          borderUpColor: "#fbbf24", borderDownColor: "#fbbf24",
+          wickUpColor: "#fbbf24", wickDownColor: "#fbbf24",
+          priceLineVisible: false,
+          lastValueVisible: false,
+        })
+        : null;
 
       const created: Bundle = {
         chart,
         context: contextSeries,
         candles: candleSeries,
+        provisional: provisionalSeries,
         open: openSeries,
         volume: volumeSeries,
         markers: lib.createSeriesMarkers(candleSeries, []),

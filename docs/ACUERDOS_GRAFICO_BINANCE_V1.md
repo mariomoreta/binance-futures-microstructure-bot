@@ -67,3 +67,40 @@ Sobre la base `9689f3e` se ejecutan los puntos 1, 3 y 6 del flujo («búsqueda d
 - **Marcas de operación — AUSENTES POR CONSTRUCCIÓN.** `operation=null`, `session_id=null` y prueba explícita de que ninguna marca de Paper Lab se filtra al gráfico de mercado.
 
 Aceptación de este bloque (A–H) y estados implementado/probado/servido/visual en `docs/CURRENT_STATE.md`; contrato completo (esquemas, presupuesto, caché, retirada) en `docs/MARKET_EXPLORER_CONTRACT_V1.md`. El paso 4b (adaptar el feed existente a contrato vivo con reconexión y huecos) y el paso 5 (ventana pública continua, preflight y presupuesto de almacenamiento) **siguen sin autorización y sin ejecutar**. Verificación real: 16 peticiones públicas en total, 0 reintentos, 0 fallos; sin monitor, sin sesiones paper nuevas y sin órdenes.
+
+
+## Actualización 2026-10-21 — paso 4b implementado (feed continuo bajo demanda)
+
+El punto 4 anterior (feed vivo) queda **implementado y probado con transporte
+controlado**, no verificado con Binance. Detalle normativo en
+[`MARKET_STREAM_CONTRACT_V1.md`](MARKET_STREAM_CONTRACT_V1.md); estados,
+evidencia y límites en `docs/CURRENT_STATE.md` § actualización continua.
+
+- **Punto 4 (feed vivo) — IMPLEMENTADO, no verificado con Binance.** Servicio
+  local dedicado (`src/microstructure_probe/market_stream.py` +
+  `market_stream_service.py`) con **una** conexión combinada a
+  `wss://fstream.binance.com/market`, suscripciones compartidas por
+  `(symbol, interval)` con refcount y SSE hacia el BFF. No arranca el monitor
+  del bot, no toca el trío canónico y no abre posiciones.
+- **Punto 5 (vela en formación continua) — IMPLEMENTADO.** La vela provisional
+  se actualiza por eventos `candle`; al cerrarse (`closed`) pasa a la serie de
+  cerradas y la provisional desaparece. Se dibuja en serie propia ámbar para
+  que la diferencia sea visible; nunca se inventa `close_time_ms`.
+- **Estados honestos.** `CONECTANDO` / `RECIBIENDO` / `OBSOLETO` /
+  `DESCONECTADO` / `RECUPERANDO`; `LIVE` solo con estado `RECIBIENDO`, socket
+  conectado, identidad correcta y antigüedad ≤ 10 s. Con el servicio detenido se
+  conserva el histórico y se declara «servicio detenido», sin falso LIVE.
+- **Huecos y reconexión.** Backoff 1 s → 30 s con jitter y presupuesto de 20
+  fallos; reparación REST acotada (2 páginas × 500 velas, ≤ 6/min) publicada
+  como `complete|partial|failed`. Nada se rellena por interpolación.
+- **Ventana pública continua — PREPARADA, NO EJECUTADA.**
+  `docs/MARKET_STREAM_LIVE_WINDOW_PLAN.md` fija 1 conexión, 2 símbolos
+  (`BTCUSDT` + `MINAUSDT`), `1m`, 60 s, 400 mensajes y las reglas de parada.
+  Requiere autorización humana explícita.
+- **Indicadores — siguen NO IMPLEMENTADOS** para este flujo; requieren su
+  propio contrato y presupuesto.
+
+Presupuesto de esta entrega: 2 peticiones REST de velas (0 reintentos, 0
+fallos), ledger acumulado 25/0/0; `historical.db` y `microprobe.db` sin
+escrituras (mtime 2026-10-15 11:46:27); feed sin persistencia (0 bytes en
+disco).

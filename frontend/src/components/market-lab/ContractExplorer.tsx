@@ -21,6 +21,14 @@ import {
   type MarketSeriesPayload,
 } from "@/lib/market-chart-contract";
 import {
+  buildStreamMeta,
+  describeGap,
+  livePermitted,
+  mergeStreamIntoSeries,
+  streamStateLabel,
+} from "@/lib/market-stream";
+import {useMarketStream} from "@/lib/use-market-stream";
+import {
   EXPLORER_PAGE_BARS,
   contractLabel,
   describeCoverage,
@@ -183,10 +191,26 @@ export function ContractExplorer() {
       {earlier: true});
   }, [earlierExhausted, interval, loadSeries, loadingEarlier, selected, window]);
 
-  const model = useMemo(() => (series
-    ? buildMarketChartModel(series, {contract: series.contract ?? selected})
-    : null), [series, selected]);
-
+  // Feed continuo: se abre solo con el gráfico ya cargado y se cierra al
+  // desmontar o cambiar de símbolo/intervalo. Es visualización: no arranca el
+  // monitor ni simulación alguna.
+  const streamView = useMarketStream({
+    symbol: selected?.symbol ?? null,
+    interval,
+    fromMs: series?.requested.from_ms ?? null,
+    toMs: series?.requested.to_ms ?? null,
+    enabled: Boolean(selected && series && seriesState === "ready"),
+  });
+  const mergedSeries = useMemo(
+    () => (series ? mergeStreamIntoSeries(series, streamView) : null),
+    [series, streamView],
+  );
+  const streamMeta = useMemo(() => buildStreamMeta(streamView), [streamView]);
+  const model = useMemo(() => (mergedSeries
+    ? buildMarketChartModel(mergedSeries, {
+      contract: mergedSeries.contract ?? selected, stream: streamMeta,
+    })
+    : null), [mergedSeries, selected, streamMeta]);
   const stale = catalog?.catalog.stale === true;
   const resultCount = catalog?.result_count ?? 0;
 
@@ -213,11 +237,14 @@ export function ContractExplorer() {
       </header>
 
       <p className={s.notice}>
-        <strong>HISTÓRICO / CONSULTA BAJO DEMANDA</strong> — datos Binance USD-M
-        Futures por REST público, sin websocket, sin feed continuo y sin monitor.
-        No es LIVE. El volumen se muestra solo si la fuente lo publica y en su
-        unidad. Las velas adquiridas se guardan únicamente en la caché aislada
-        del explorador; no se escriben en las bases canónicas.
+        <strong>HISTÓRICO + FEED BAJO DEMANDA</strong> — datos Binance USD-M
+        Futures: histórico paginado por REST público y, si el servicio local de
+        datos está arrancado, la vela en formación por WebSocket público. Solo
+        se escribe LIVE cuando el backend declara RECIBIENDO con datos frescos
+        del símbolo e intervalo actuales; un socket abierto no basta. El volumen
+        se muestra solo si la fuente lo publica y en su unidad. Las velas
+        adquiridas por REST se guardan únicamente en la caché aislada del
+        explorador; el feed no persiste nada.
       </p>
 
       <form
@@ -431,15 +458,92 @@ export function ContractExplorer() {
             </div>
           )}
 
-          {model && series && series.candles.length > 0 && (
+          {model && mergedSeries && mergedSeries.candles.length > 0 && (
             <PriceChart
               model={model}
               height={360}
               onRequestEarlier={requestEarlier}
               loadingEarlier={loadingEarlier}
-              earlierExhausted={earlierExhausted || series.coverage.exhausted_before}
+              earlierExhausted={earlierExhausted || mergedSeries.coverage.exhausted_before}
             />
           )}
+
+          <section className={s.stream} aria-label="Estado del feed de velas"
+            data-testid="explorer-stream">
+            <div className={s.streamRow}>
+              <div>
+                <small>Fuente / identidad</small>
+                <b>Binance USD-M · {selected.symbol} · {interval} · market-stream/v1</b>
+              </div>
+              <div>
+                <small>Estado del feed</small>
+                <b data-testid="explorer-stream-state">
+                  {streamView.available === false
+                    ? "DESCONECTADO · servicio detenido"
+                    : streamView.status
+                      ? streamStateLabel(streamView.status.connection.state)
+                      : streamView.available === null ? "CONECTANDO" : "SIN FEED"}
+                </b>
+              </div>
+              <div>
+                <small>LIVE</small>
+                <b data-testid="explorer-stream-live">
+                  {livePermitted(streamView.status) ? "LIVE" : "no LIVE"}
+                </b>
+              </div>
+              <div>
+                <small>Última actualización recibida</small>
+                <b data-testid="explorer-stream-updated">
+                  {streamView.status?.last_message_ms
+                    ? formatUtc(streamView.status.last_message_ms)
+                    : "sin mensajes"}
+                  {typeof streamView.status?.age_ms === "number"
+                    ? ` · hace ${Math.max(0, Math.round(streamView.status.age_ms / 1000))} s`
+                    : ""}
+                </b>
+              </div>
+              <div>
+                <small>Velas en pantalla</small>
+                <b data-testid="explorer-stream-count">
+                  {`${mergedSeries?.candles.length ?? 0} cargadas · `}
+                  {`${mergedSeries ? mergedSeries.candles.filter((c) => c.provisional).length : 0} provisional`}
+                </b>
+              </div>
+            </div>
+
+            {streamView.available === false && (
+              <p className={s.warn} role="status" data-testid="explorer-stream-down">
+                Servicio de datos detenido: se conserva el histórico ya cargado y
+                no se declara LIVE. El monitor del bot y las sesiones Paper Lab no
+                dependen de este feed. Arranque manual:
+                {" "}<code>python scripts/market_stream_service.py --port 8791</code>.
+              </p>
+            )}
+            {streamView.error && streamView.available !== false && (
+              <p className={s.warn} role="status" data-testid="explorer-stream-error">
+                Feed: {streamView.error}
+                {streamView.attempts > 0 ? ` · reintento ${streamView.attempts}` : ""}
+              </p>
+            )}
+            {streamView.gaps.length > 0 && (
+              <ul className={s.gaps} data-testid="explorer-stream-gaps">
+                {streamView.gaps.map((gap, index) => (
+                  <li key={`${gap.reason}-${gap.expected_from_ms}-${index}`}>
+                    {describeGap(gap)}
+                  </li>
+                ))}
+              </ul>
+            )}
+
+            <p className={s.hint}>
+              Una sola conexión al exchange para todos los gráficos y pestañas;
+              cambiar de símbolo o intervalo descarta respuestas antiguas y libera
+              solo las suscripciones sin consumidores. Sin persistencia de
+              actualizaciones; los huecos se reparan por REST acotado y se
+              informan aunque la reparación sea parcial. Abrir el gráfico no abre
+              posiciones ni inicia simulación.
+            </p>
+          </section>
 
           <p className={s.foot}>
             Paginación: bloques de {EXPLORER_PAGE_BARS} velas, 1 petición por

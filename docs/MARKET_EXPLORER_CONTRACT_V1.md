@@ -258,3 +258,32 @@ canónico, plan de bloque, cobertura, presupuesto, 429, errores, CLI).
    terceros). No requiere migración: nada canónico depende de él.
 6. Retirar las pruebas `frontend/src/test/{market-chart-contract,market-explorer,price-chart-market,contract-explorer}.test.*`
    y la sección de este documento en `CURRENT_STATE`/`FEATURE_BACKLOG`.
+7. Feed continuo: borrar `src/microstructure_probe/market_stream.py`,
+   `src/microstructure_probe/market_stream_service.py`,
+   `scripts/market_stream_service.py`, `scripts/market_stream_window.py`,
+   `frontend/src/app/api/v1/market-stream/`,
+   `frontend/src/lib/{market-stream,use-market-stream,stream-bridge}.ts` y
+   `frontend/src/test/{market-stream-contract,use-market-stream}.test.*`; quitar
+   el panel de estado de `ContractExplorer.tsx` y la serie provisional de
+   `PriceChart.tsx`. Borrar `data/market-stream/` (PID file) y detener el
+   servicio. Nada canónico depende de él y no hay datos que migrar.
+
+## 10. Extensión 2026-10-21 — feed continuo (`market-stream/v1`)
+
+Este contrato cubre el **histórico** por REST. El feed continuo es un contrato
+aparte, versionado e independiente: `docs/MARKET_STREAM_CONTRACT_V1.md`.
+
+- Una sola conexión combinada (`/market/stream?streams=…`) compartida por todos
+  los consumidores, con refcount por `(symbol, interval)`.
+- El snapshot se lee del mismo almacén con `allow_fetch=False`: el explorador
+  sigue siendo el único que adquiere histórico. Si no hay cobertura se publica
+  `NO_COVERAGE` y no se dibuja nada.
+- Reconciliación `subscribe → buffer → snapshot → flush` sin huecos ni
+  duplicados; desbordamiento declarado como `gap`.
+- `market-chart/v1` gana un bloque opcional `stream` (estado, frescura, huecos);
+  `capabilities.live` **sigue siendo `false`**: LIVE se declara en el bloque del
+  feed y exige frescura real, no un socket abierto.
+- Sin persistencia de actualizaciones (anillo en memoria, 0 bytes en disco) y
+  reparación REST acotada que se publica como `complete|partial|failed`.
+- Probado con transporte controlado; **no verificado con Binance**. La ventana
+  viva está en `docs/MARKET_STREAM_LIVE_WINDOW_PLAN.md` y requiere autorización.
