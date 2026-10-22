@@ -53,3 +53,17 @@ Base documental revisada: 2a170887a5b232bba4930daa15437764160dea31. La lectura d
 ## Actualización 2026-10-21 — implementación parcial sobre fixtures
 
 Sobre la base `ac716d3`, los pasos 2–3 de la secuencia se ejecutaron **solo para Paper Lab y solo con fixtures**: se inventariaron los productores existentes, se fijó el contrato `paper-chart/v1` (`docs/PAPER_CHART_CONTRACT_V1.md`) y se implementó el gráfico interactivo con `lightweight-charts@5.2.1` (Apache-2.0, TradingView) en `/paper-lab-live`. No se ejecutó corrida Binance, adquisición, feed vivo, búsqueda de contratos, histórico paginado ni indicadores (el backend no produce volumen ni indicadores para Paper Lab). Los estados implementado/probado/servido/visual y la aceptación A–H con controles reales están en `docs/CURRENT_STATE.md`, `docs/DECISIONS.md` y `docs/FEATURE_BACKLOG.md`. La inspección visual por modelo no estuvo disponible: no se declara PASS visual. Los pasos 4–6 de la secuencia siguen sin ejecutarse.
+
+## Actualización 2026-10-21 — paso 4 parcial: búsqueda de contratos e histórico paginado (REST público acotado)
+
+Sobre la base `9689f3e` se ejecutan los puntos 1, 3 y 6 del flujo («búsqueda de un símbolo») con un **alcance explícitamente menor** que el acuerdo completo:
+
+- **Punto 1 (catálogo) — IMPLEMENTADO.** Catálogo USD-M desde `/fapi/v1/exchangeInfo`, cacheado 6 h en `data/market-cache/market_cache.db`, con identidad (`base/quote/margin`), `contract_type`, `status`, `onboard_ms`, precisión y motivos de exclusión. Spot nunca se mezcla (`spot_included=false`). Refresco = 1 petición; el BFF solo lo fuerza con `refresh=1`.
+- **Punto 3 (cobertura y adquisición) — IMPLEMENTADO PARCIAL.** Se lee primero `historical.db` (solo lectura) y después la caché del explorador; solo se pide a Binance el bloque que falta, con bloques de 300 velas, `pages ≤ 2`, concurrencia 1, timeout 20 s y presupuesto rolling de 30 peticiones/minuto. Los huecos reales, los tramos sin cobertura y el fin de histórico se distinguen y se muestran; no se interpolan velas.
+- **Punto 6 (paginación y cambio de símbolo) — IMPLEMENTADO.** «Cargar anteriores» pide el bloque inmediatamente anterior; al llegar, el gráfico conserva el rango visible. Cambiar de símbolo o intervalo aborta y descarta la respuesta anterior (AbortController + secuencia).
+- **Punto 4 (feed vivo / actualizaciones) — NO IMPLEMENTADO.** Sin websocket, sin suscripciones y sin reconciliación snapshot/stream. La vela en formación se marca `provisional` con `close_time_ms=null`, pero no se refresca sola: **no se rotula LIVE** en ningún estado.
+- **Punto 5 (vela en formación continua) — NO IMPLEMENTADO.** Se consulta al pedir; no hay reloj de actualización.
+- **Indicadores — NO IMPLEMENTADOS.** El contrato `market-chart/v1` publica `indicators=[]`; no se calculan en el navegador.
+- **Marcas de operación — AUSENTES POR CONSTRUCCIÓN.** `operation=null`, `session_id=null` y prueba explícita de que ninguna marca de Paper Lab se filtra al gráfico de mercado.
+
+Aceptación de este bloque (A–H) y estados implementado/probado/servido/visual en `docs/CURRENT_STATE.md`; contrato completo (esquemas, presupuesto, caché, retirada) en `docs/MARKET_EXPLORER_CONTRACT_V1.md`. El paso 4b (adaptar el feed existente a contrato vivo con reconexión y huecos) y el paso 5 (ventana pública continua, preflight y presupuesto de almacenamiento) **siguen sin autorización y sin ejecutar**. Verificación real: 16 peticiones públicas en total, 0 reintentos, 0 fallos; sin monitor, sin sesiones paper nuevas y sin órdenes.

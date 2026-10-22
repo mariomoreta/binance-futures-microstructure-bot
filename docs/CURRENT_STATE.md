@@ -1,3 +1,47 @@
+## Explorador de contratos USD-M e histórico paginado bajo demanda (2026-10-21, F-CHART-BINANCE-02)
+
+Sección «Contract explorer» en `/market-lab` con búsqueda de contratos Binance **USD-M Futures** e histórico por REST público **bajo demanda**. Base `9689f3e`. Escritorio, presupuesto cero, observación. Sin websocket, sin monitor, sin feed continuo, sin paper prospectivo, sin órdenes, sin indicadores y sin móvil. No se tocaron reglas, umbrales, costes, funding ni la mecánica canónica de `backtest_offline`; `paper-chart/v1` y sus testids se conservan intactos.
+
+**Backend.** `src/microstructure_probe/market_cache.py` (sqlite aislado en `data/market-cache/market_cache.db`, override `MICROPROBE_MARKET_CACHE_DB`; rechaza rutas canónicas), `market_explorer.py` (catálogo, elegibilidad con motivos, cobertura, plan del bloque faltante, adquisición acotada, payload `market-series/v1`) y `scripts/market_explorer.py` (CLI `catalog|series`). Reutiliza `discovery.py` (criterio PERPETUAL/TRADING/USDT), `history_client.py` (`exchange_info`, `paginate_klines`, `earliest_bar`, limitador, 429/418) y **lee** `data/historical/historical.db` sin escribir. Presupuesto: catálogo TTL 6 h y 1 petición por refresco; bloques de 300 velas, `pages ≤ 2`, concurrencia 1, timeout 20 s, 30 peticiones/minuto en ventana móvil, 0 reintentos propios.
+
+**Frontend.** BFF `GET /api/v1/market-contracts` y `GET /api/v1/market-series` (validación de símbolo/intervalo/fuente/rango, origen permitido, `no-store`), cliente `market-explorer.ts`, contrato `market-chart/v1` (`market-chart-contract.ts`) y componente `PriceChart.tsx` generalizado por unión discriminada: `PaperChart.tsx` pasa a ser una fachada para no romper importaciones ni testids. `ContractExplorer.tsx` añade búsqueda, estados y paginación. La vela no cerrada se marca `provisional` con `close_time_ms=null`; el volumen solo se dibuja si la fuente lo publica, con unidad declarada; `operation=null`/`session_id=null` y guarda explícita contra marcas de Paper Lab.
+
+**Correcciones incluidas en Paper Lab.** (a) El selector de persistencia ya se renderiza en la pantalla inicial, así que una sesión guardada se puede listar y recuperar **sin crear otra fixture** (antes exigía seleccionar una fixture primero). (b) El encuadre inicial se difiere hasta que el contenedor tiene ancho real y solo se aplica una vez; las actualizaciones y los bloques antepuestos ya no reencuadran. Ambas con prueba nueva; la recuperación se verificó además con clic real sobre el build servido (solo `GET` de lista y de sesión: 0 mutaciones).
+
+**Estados separados.**
+- **Implementado:** catálogo cacheado con búsqueda y motivos; histórico leído de canónico+caché, adquisición del bloque faltante y paginación; cobertura con huecos/ausencia/fin de histórico; gráfico de mercado sin indicadores ni marcas de operación; errores y presupuesto explícitos en la UI; correcciones (a) y (b).
+- **Probado:** backend completo `pytest tests -q` **1375 passed, 2 skipped** (33 subtests); focalizado `tests/test_market_explorer.py` **41/41** (incluye regresión de «primer refresco sin eventos inventados» y de diff sobre catálogo completo >500). Frontend `vitest run` **520 passed + 1 skipped (521)**; `tsc --noEmit` 0 errores; `eslint src` 0 errores y 5 warnings preexistentes (ninguno en archivos nuevos); `next build` OK.
+- **Servido:** build `9xXiQvrFIA0YaC3Vc_61F`, PID 16164, `http://127.0.0.1:3020/market-lab`, HTTP 200. Reemplazó únicamente la instancia identificada del proyecto (listener 27612 / lanzador 24664) tras comprobar `job_state.json=completado`, ausencia de procesos Python activos y puerto libre. Logs en `%TEMP%\opencode\dashboard-start.{out,err}.log`.
+- **Inspección visual:** DOM/geometría/HTTP y capturas locales. **No** hubo inspección por modelo de visión (OpenRouter sin autenticación; NVIDIA 401), así que **no se declara PASS visual**. Evidencia objetiva sustitutiva: 7 `<canvas>` en el gráfico, 6.688 muestras opacas en el canvas principal (papel) y recuento de píxeles de color de vela con `bounding box` 220–1380 × 520–698 (mercado); tras paginar, la diferencia entre capturas es de 11.189 píxeles (1,6 % del área), compatible con «no reencuadre».
+
+**Verificación REST acotada (2026-10-22T02:00–02:10Z).** Ledger del propio caché: **16 peticiones públicas, 0 reintentos, 0 fallos**; 4 de catálogo (`exchangeInfo`) y 12 de velas (BTCUSDT 5, MINAUSDT 7).
+
+| Consulta | Peticiones | Resultado |
+|---|---|---|
+| Catálogo `exchangeInfo` | 1 por refresco (4 en total, incluidos los forzados de verificación) | 931 contratos; `stale=false`; 0 eventos de listado/baja espurios tras la corrección |
+| BTCUSDT 1h, bloque de 300 | 1 (ventana actual) + 1 (bloque anterior) | 299 velas `COVERED` sin huecos; 299 → 556 al paginar; última vela `provisional` |
+| MINAUSDT 1h, bloque de 300 | 1 (ventana actual) + 1 (bloque anterior) | 299 `COVERED`; 556 velas con **43 huecos reales** del canónico (`PARTIAL`) |
+
+Caché resultante: 598 velas, 931 contratos, 316 KB, 0 eventos. Sin escrituras en `data/microhistorical*`/`data/microprobe.db` (solo lectura). Sin sesiones paper nuevas: `/api/v1/paper-lab/sessions` respondió solo a `GET`.
+
+| Caso | Evidencia |
+|---|---|
+| A. Buscar y seleccionar | Navegador: `MINA` → 1 fila `MINAUSDT` (PERPETUAL/TRADING/elegible) → «Ver histórico» → 1 petición. Prueba `contract-explorer.test.tsx`. |
+| B. Histórico ordenado sin duplicados | `market-chart-contract.test.ts`: orden ascendente, dedupe por `open_time` (gana la última), provisional separada. |
+| C. Bloque anterior sin perder el rango | Navegador: 299 → 556 velas con `setVisibleLogicalRange` desplazado +2 velas en la prueba; diferencia de píxeles 1,6 %. |
+| D. Cambio de símbolo/intervalo | Pruebas con promesas diferidas: la respuesta vieja (BTC 1h) llega después de la nueva (ETH 1h) y se descarta; `4h` anula la de `1h`. |
+| E. Error, rate limit, sin cobertura | UI muestra `SERIES_UNAVAILABLE`, `RATE_BUDGET_EXHAUSTED` («no se reintenta en bucle») y «Sin cobertura» sin rellenar datos; HTTP 400 para `interval=1M`, 403 para origen ajeno. |
+| F. Volumen con unidad | `base_volume + quote_volume · base MINA/BTC` en la ficha; `mark_klines` declara `available=false` con motivo. |
+| G. Recuperar sesión sin nueva fixture | Pantalla inicial lista 4+ sesiones; seleccionar una carga el estado y dibuja el gráfico (`48 contexto · 3 cerradas · 0 solo-open`), con 0 `POST`. |
+| H. Encuadre inicial correcto | Prueba: `fitContent` una sola vez con ancho real, diferido con ancho 0 (se aplica al recibir `ResizeObserver`), y nunca en updates ni al anteponer. |
+
+**Triage `npm audit` (frontend).** 5 vulnerabilidades **high**, todas en la cadena de desarrollo `eslint-config-next → @next/eslint-plugin-next → fast-glob → micromatch → braces` (ReDoS en herramientas de lint, no en el bundle servido). `npm audit --omit=dev` → **0**. La «corrección» que ofrece npm es un downgrade a `eslint-config-next@14.2.35` (`isSemVerMajor`), incompatible con Next 16: **no se aplica**; se documenta como residual.
+
+**Límites y residuales.** Sin feed continuo: la última vela no se refresca sola y la vista no es LIVE. `1M` excluido (mes calendario). Los huecos del canónico se muestran como huecos (p. ej. 43 en MINAUSDT) y no se rellenan. Caché sin poda automática (retirada manual documentada). Sin indicadores ni objetivos. Sin inspección visual por modelo. 5 vulnerabilidades altas de dev sin abordar por decisión razonada. Suite frontend con un fallo intermitente preexistente en `backtest-guard-regressions` (barrier de concurrencia, 23 s) que pasa en aislamiento; no se tocó ese código.
+
+**Siguiente (no ejecutado, requiere autorización separada).** Adaptar el feed existente a contrato vivo (websocket, reconexión, huecos, indicadores compartidos) y evaluar el preflight/almacenamiento de una ventana pública continua. No se autoriza ejecución ni capital.
+
+
 ## Gráfico Paper Lab interactivo con Lightweight Charts y contrato `paper-chart/v1` (2026-10-21, F-CHART-BINANCE-01)
 
 Contrato versionado e interfaz de gráfico **sobre fixtures**. Base `ac716d35ac5844fa25bf79d6e8d7e1b497ab1858`. Sin Binance vivo, sin monitor ni adquisición, sin paper prospectivo, sin órdenes, pagos, optimización ni móvil. No se reabrió Backtest ni `control.guard`; no se tocaron reglas, umbrales, costes, funding ni la corrección económica de F-PAPER-03.

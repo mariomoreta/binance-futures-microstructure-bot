@@ -1,0 +1,12 @@
+/* Estilos del componente de gráfico reutilizable (Paper Lab y explorador de
+   mercado). Copiados de PaperLabLive.module.css para no acoplar el componente
+   compartido al módulo CSS de una página concreta. */
+
+.chartFrame{display:flex;flex-direction:column;gap:var(--space-1)}
+.chartMeta{display:flex;align-items:center;gap:12px;flex-wrap:wrap;font:10px var(--font-mono);color:var(--text-3);padding:2px 2px 0}
+.chartBadge{border:1px solid #a86f16;border-radius:3px;padding:1px 5px;color:#fbbf24;letter-spacing:.04em}
+.chartBadgeMarket{border-color:#2c7fa8;color:#7fd0f8}
+.chartCanvas{width:100%;min-width:0;position:relative}
+.chartFit{background:#0b2334;border:1px solid #285575;color:#b9e2ff;padding:2px 8px;border-radius:4px;font:10px var(--font-mono);cursor:pointer}
+.chartFit:disabled{opacity:.55;cursor:default}
+.note{color:var(--text-3);font-size:11px;margin-top:8px;line-height:1.5}

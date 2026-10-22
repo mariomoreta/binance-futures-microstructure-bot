@@ -1,3 +1,20 @@
+## Market Lab — explorador de contratos USD-M e histórico paginado (2026-10-21, F-CHART-BINANCE-02)
+
+`CURRENT_PHASE`: dashboard V2 de escritorio + observación con REST público acotado (sin websocket, sin monitor, sin órdenes).
+
+`CURRENT_OBJECTIVE`: buscar contratos Binance USD-M Futures y visualizar su histórico paginado bajo demanda reutilizando el gráfico, sin feed continuo, sin indicadores y sin mezclar marcas de Paper Lab.
+
+`ACTIVE_TASK`: entrega documentada y commiteada del catálogo cacheado, el histórico bajo demanda, la paginación, las correcciones (a)/(b) de Paper Lab, las pruebas A–H y la verificación REST acotada.
+
+Estado: cerrado y documentado en `docs/CURRENT_STATE.md`, `docs/DECISIONS.md`, `docs/MARKET_EXPLORER_CONTRACT_V1.md`, `docs/ACUERDOS_GRAFICO_BINANCE_V1.md` y `docs/FEATURE_BACKLOG.md`. Base `9689f3e`; build `9xXiQvrFIA0YaC3Vc_61F`, PID 16164, `http://127.0.0.1:3020/market-lab`, HTTP 200. Backend `pytest tests -q` 1375 passed + 2 skipped; focalizado 41/41; frontend 520 passed + 1 skipped; `tsc --noEmit` 0; `eslint src` 0 errores/5 warnings preexistentes. REST público: 16 peticiones, 0 reintentos, 0 fallos; catálogo 931 contratos; BTCUSDT y MINAUSDT 1h verificados (299 → 556 velas al paginar; 43 huecos reales del canónico en MINAUSDT). Sin inspección visual por modelo: no se declara PASS visual.
+
+`NEXT_TASKS`:
+1. Adaptar el feed existente a un contrato de gráfico vivo con reconexión, recuperación de huecos e indicadores compartidos (**requiere autorización separada; no ejecutado**).
+2. Decidir política de retención/poda de `data/market-cache/` antes de uso intensivo (hoy sin poda automática; retirada manual documentada).
+3. Re-ejecutar `/antislop` end-to-end en una sesión nueva y registrar el resultado; sigue PENDIENTE.
+4. Revisar el fallo intermitente de `backtest-guard-regressions` (C1) bajo carga de suite completa; no se tocó en este bloque.
+5. Mantener diferido: stops/objetivos arrastrables, móvil/Flutter, F-PAPER-01, ejecución con capital.
+
 ## Paper Lab — contrato de gráfico v1 y Lightweight Charts sobre fixtures (2026-10-21, F-CHART-BINANCE-01)
 
 `CURRENT_PHASE`: dashboard V2 de escritorio + Paper Lab sobre fixtures (observación; sin Binance, sin órdenes).

@@ -244,3 +244,31 @@ neto -51.56, sin salida posterior a 80.
   puede omitir la primera vela de contexto hasta pulsar `Ajustar`; 5 avisos de
   `npm audit` no abordados; sin móvil/Flutter. `open_at_end` mantiene
   `realized_net=null` y no genera marcador de salida.
+
+## Actualización 2026-10-21 — componente compartido y correcciones de encuadre/persistencia
+
+Contrato `paper-chart/v1`: **sin cambios**. Lo que cambia es el componente que lo
+dibuja y dos defectos detectados en la verificación real.
+
+- **Componente único.** `frontend/src/components/chart/PriceChart.tsx` acepta la
+  unión `PaperChartModel | MarketChartModel` discriminada por
+  `contract_version`, y `frontend/src/components/paper-lab-live/PaperChart.tsx`
+  queda como reexportación. Los `data-testid` `paper-chart*`, las líneas de
+  entrada/stop/salida, las marcas de contexto y la regla de vela solo-open se
+  conservan; las pruebas de Paper Lab siguen pasando sin cambios de aserción.
+- **Corregido: recuperar sesión desde la pantalla inicial.** El selector de
+  persistencia se renderiza también cuando no hay sesión cargada, así que una
+  sesión guardada se puede listar y cargar sin crear una fixture previa. La carga
+  hace `GET` del estado autoritativo y no re-evalúa la decisión. Verificado con
+  clic real: 0 `POST` durante la recuperación.
+- **Corregido: encuadre inicial.** `fitContent` se aplica una sola vez, con ancho
+  real del contenedor; si el ancho es 0 se difiere y se reintenta al recibir
+  `ResizeObserver`. Las actualizaciones de estado y los bloques antepuestos ya no
+  reencuadran, y `Ajustar` sigue reencuadrando de forma explícita.
+- **Sigue fuera de contrato para Paper Lab:** `volume`/`indicators`/`target` son
+  `UNKNOWN`/`[]`/`UNKNOWN` porque el backend de este flujo no los produce. El
+  volumen y los indicadores del modo mercado (`market-chart/v1`) son otra rama
+  del componente y otra fuente; se documentan en
+  `docs/MARKET_EXPLORER_CONTRACT_V1.md`, no aquí.
+- **Inspección visual:** sigue sin proveedor de visión; DOM/geometría/HTTP y
+  capturas, **no** PASS visual.

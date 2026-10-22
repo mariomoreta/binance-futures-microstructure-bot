@@ -1,4 +1,4 @@
-import {afterEach, beforeEach, describe, expect, it, vi} from "vitest";
+import {afterEach, beforeAll, beforeEach, describe, expect, it, vi} from "vitest";
 import {cleanup, render, screen, waitFor} from "@testing-library/react";
 import type {PaperChartModel} from "@/lib/paper-chart-contract";
 import type {PaperSessionState} from "@/lib/paper-lab-live";
@@ -53,6 +53,18 @@ vi.mock("lightweight-charts", () => ({
     return plugin;
   }),
 }));
+
+// jsdom no calcula layout. El encuadre inicial se difiere hasta que el
+// contenedor tiene ancho real (comportamiento de producción); aquí se simula
+// un contenedor ya maquetado para poder verificar el ajuste inicial.
+beforeAll(() => {
+  Object.defineProperty(HTMLElement.prototype, "clientWidth", {
+    configurable: true,
+    get() {
+      return 800;
+    },
+  });
+});
 
 function state(overrides: Partial<PaperSessionState> = {}): PaperSessionState {
   return {

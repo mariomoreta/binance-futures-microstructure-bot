@@ -92,11 +92,12 @@ export default function PaperLabLive(): React.JSX.Element {
     await createAndEvaluate(id, "ENGINEERING-FIXTURE-RULE-v1");
   }, [createAndEvaluate]);
 
+  // Refresca la lista de sesiones guardadas. No requiere una sesión activa:
+  // la pantalla inicial debe poder listar/recuperar sin crear otra fixture.
   const handleSaveSession = useCallback(async () => {
-    if (!state) return;
     const sessions = await listSessionsApi();
     if (sessions.ok) setSavedSessions(sessions.data ?? []);
-  }, [state]);
+  }, []);
 
   const handleLoadSession = useCallback(async (sessionId: string) => {
     setLoading(true);
@@ -104,8 +105,16 @@ export default function PaperLabLive(): React.JSX.Element {
     try {
       const loaded = await getSessionApi(sessionId);
       if (loaded.ok && loaded.data) {
+        // Se recupera el estado autoritativo del backend: no se crea fixture
+        // nueva ni se re-evalúa la decisión.
         setFixtureId(null);
         setState(loaded.data);
+      } else {
+        setApiError({
+          error: loaded.error ?? "SESSION_LOAD_FAILED",
+          detail: loaded.detail ?? "",
+          status: loaded.status,
+        });
       }
     } finally {
       setLoading(false);
@@ -316,6 +325,21 @@ export default function PaperLabLive(): React.JSX.Element {
           ejecuta entrada, gestión y cierre. Sin capital real ni órdenes Binance.
         </p>
         <FixtureSelector onSelect={handleSelectFixture} selectedId={null} />
+        <p className={s.note} data-testid="initial-session-recovery-note">
+          También puedes recuperar una sesión ya guardada sin crear otra fixture.
+          La carga pide el estado autoritativo al backend y no re-evalúa la
+          decisión.
+        </p>
+        <SessionPersistence
+          sessions={savedSessions}
+          onLoad={handleLoadSession}
+          onSave={handleSaveSession}
+        />
+        {apiError && (
+          <p className={s.errorBanner} role="alert" data-testid="initial-session-error">
+            {apiError.error}: {apiError.detail}
+          </p>
+        )}
       </section>
     );
   }
