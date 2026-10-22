@@ -22,7 +22,7 @@ Sección «Contract explorer» en `/market-lab` con búsqueda de contratos Binan
 | BTCUSDT 1h, bloque de 300 | 1 (ventana actual) + 1 (bloque anterior) | 299 velas `COVERED` sin huecos; 299 → 556 al paginar; última vela `provisional` |
 | MINAUSDT 1h, bloque de 300 | 1 (ventana actual) + 1 (bloque anterior) | 299 `COVERED`; 556 velas con **43 huecos reales** del canónico (`PARTIAL`) |
 
-Caché resultante: 598 velas, 931 contratos, 316 KB, 0 eventos. Sin escrituras en `data/microhistorical*`/`data/microprobe.db` (solo lectura). Sin sesiones paper nuevas: `/api/v1/paper-lab/sessions` respondió solo a `GET`.
+Caché resultante: 598 velas, 931 contratos, 316 KB, 0 eventos. Sin escrituras en `data/historical/historical.db` ni en `data/microprobe.db` (solo lectura; sus mtimes siguen en 2026-10-15). Sin sesiones paper nuevas: `/api/v1/paper-lab/sessions` respondió solo a `GET`.
 
 | Caso | Evidencia |
 |---|---|
