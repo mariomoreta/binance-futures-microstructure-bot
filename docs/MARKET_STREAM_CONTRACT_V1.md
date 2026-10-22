@@ -243,3 +243,17 @@ simula aquí.
    `tests/test_market_stream.py`.
 4. Borrar `data/market-stream/` (PID/log del servicio propio).
 5. No hay migración de datos: no existe almacenamiento nuevo que retirar.
+6. Borrar `scripts/market_stream_window.py`, `tests/test_market_stream_window.py`,
+   `frontend/src/app/api/v1/market-stream/route.test.ts` y
+   `docs/MARKET_STREAM_LIVE_WINDOW_PLAN.md`.
+
+## 15. Verificación de la cadena real
+
+La ventana que recorre `Binance → hub → servicio SSE → BFF → gráfico` está
+descrita en [`MARKET_STREAM_LIVE_WINDOW_PLAN.md`](MARKET_STREAM_LIVE_WINDOW_PLAN.md):
+presupuesto, comandos, capturas DOM, reglas de parada y semántica
+`PASS`/`FAIL`/`UNKNOWN`. El script `scripts/market_stream_window.py` reutiliza
+este servicio (no crea otro) y separa adquisición de veredicto. Hasta que esa
+ventana se ejecute con autorización, la recepción real de Binance permanece
+`UNKNOWN`.
+

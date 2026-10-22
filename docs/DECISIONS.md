@@ -2632,3 +2632,40 @@ transporte simulado y se dejó preparada una ventana acotada.
 Fuera de alcance en este bloque: indicadores compartidos, selección automática,
 paper con datos vivos, riesgo, estrategias, optimización, órdenes, capital,
 pagos, móvil y REA. La ejecución end-to-end de `/antislop` sigue PENDIENTE.
+
+## 2026-10-22 - Ventana de verificación por el camino real (`F-CHART-BINANCE-04`)
+
+1. **La ventana usa el servicio, no el hub.** El script
+   `scripts/market_stream_window.py` deja de importar `KlineStreamHub`/transporte
+   para la ejecución: arranca `scripts/market_stream_service.py`, espera
+   `/health` y consume su SSE. Así la ventana recorre exactamente la cadena del
+   navegador y no una variante. No se crea otro servicio ni otro gestor.
+2. **Dos consumidores, un gráfico.** SSE directo al servicio por símbolo
+   (identidad y aislamiento) y SSE a través del BFF solo para el símbolo primario,
+   que es lo que hace el navegador. El BFF se valida además con pruebas de ruta.
+3. **Adquisición y veredicto separados.** `acquisition_finished` mide recepción,
+   provisional, cierre y siguiente. El veredicto añade cadena completa y evidencia
+   DOM. Cero mensajes o cadena incompleta **nunca** producen `PASS`; cadena
+   completa sin DOM es `UNKNOWN`; contradicción DOM/stream es `FAIL`.
+4. **La evidencia DOM es explícita y acotada.** Se captura con un snippet
+   documentado sobre `data-testid` del panel (`explorer-stream*`), antes del
+   cierre y después, más una captura tras parar el servicio. Requiere
+   `navigation_count=1` y `reload_count=0`: la página no se recarga durante la
+   ventana. La revisión visual es un campo aparte y no altera el veredicto.
+5. **Presupuesto.** ≤180 s, 1200 mensajes de vela, 6000 eventos SSE, 1 conexión
+   WS, 2 streams, 3 consumidores, `bars=300`, sin persistencia, 1 paginación
+   manual y la reparación de huecos ya contemplada. Parada temprana al observar
+   provisional + cierre + siguiente (con 20 s de margen para la captura DOM).
+6. **Transporte de prueba etiquetado.** `--base-url ws://127.0.0.1:…` permite
+   probar el orquestador completo contra un WS local. El JSON lo marca como
+   `transport.origin=loopback_test` y el check `transport_origin` lo declara: un
+   `PASS` así es transporte controlado, **no** recepción de Binance.
+7. **Limpieza verificada, no supuesta.** El script comprueba `/health` antes de
+   retirar consumidores y después (`consumers=0`, con espera acotada porque el
+   servicio libera al expirar su espera de lectura, ≤5 s), para el servicio y
+   verifica
+   proceso terminado, puerto cerrado, PID file eliminado y `/health` rechazado;
+   además compara tamaño/mtime de las DB canónicas.
+
+La ejecución real de la ventana sigue requiriendo autorización humana separada.
+

@@ -1,3 +1,58 @@
+## Ventana viva por el camino real — preparada y probada sin Binance (2026-10-22, F-CHART-BINANCE-04)
+
+Prepara (sin ejecutar) la ventana que demuestra datos Binance recorriendo la
+cadena real `Binance → hub → servicio SSE → BFF → /market-lab`. Base `a2d0824`
+(rama `review/o1-funcional-v2-observacion`). Escritorio, presupuesto cero,
+observación. **La conexión continua a Binance sigue sin abrirse.**
+
+**Corrección de diseño.** El script anterior hablaba directamente con el hub y
+saltaba HTTP/SSE. Ahora `scripts/market_stream_window.py` **reutiliza** el
+servicio existente `scripts/market_stream_service.py`: lo arranca, espera
+`/health`, abre un consumidor SSE por símbolo contra el servicio y otro contra el
+BFF `/api/v1/market-stream`, y lo para. No hay segundo servicio ni segundo
+gestor; el script solo orquesta y recoge evidencia.
+
+**Presupuesto propuesto.** 1 conexión WS combinada; 2 streams (`BTCUSDT` del
+trío + `MINAUSDT` fuera del trío); intervalo `1m`; duración máxima 180 s;
+`--hold-seconds 20` tras aceptar; `--max-messages 1200`; `--max-events 6000`;
+`--max-reconnects 3`; 3 consumidores SSE (2 al servicio, 1 al BFF); `bars=300`;
+snapshot desde el almacén existente sin REST; 1 paginación manual; reparación de
+huecos acotada ya contemplada; sin persistencia.
+
+**Adquisición separada del veredicto.** `evaluate_acceptance` es una función pura
+y probada: `PASS` exige cadena completa **y** evidencia DOM; cadena completa sin
+DOM (o sin BFF) → `UNKNOWN`; cero mensajes, identidad incorrecta, BFF caído,
+hueco sin reparar, cierre sucio o DB canónica tocada → `FAIL`; adquisición
+interrumpida antes del cierre → `UNKNOWN`. La revisión visual es un campo aparte
+y nunca sustituye a DOM ni a Binance.
+
+**Evidencia controlada (sin Binance).** `tests/test_market_stream_window.py`
+20/20: evaluador (cero mensajes, presupuesto agotado, aborto, DOM ausente,
+DOM contradictorio, hueco, identidad, BFF omitido/caído, parada sucia, DB tocada),
+`--finalize` y **cadena completa controlada** con un WS local que imita el mensaje
+combinado de Binance, arrancando el servicio real como subproceso.
+`docs/evidence/market-stream-window-loopback-2026-10-22.json` registra esa
+ejecución: `ACCEPTANCE_REACHED`, `acquisition_finished=true`, servicio parado,
+puerto cerrado, PID file eliminado, `verdict=UNKNOWN` por falta de BFF/DOM y
+`transport.origin=loopback_test`. BFF: 5/5 en
+`frontend/src/app/api/v1/market-stream/route.test.ts` (reenvío SSE, 503
+`STREAM_SERVICE_DOWN`, rechazo de identidad/ventana/origen). Focalizado backend
+`tests/test_market_stream.py` + nuevo: 48/48; `tsc --noEmit` 0; `eslint` 0.
+
+**Servido.** Preflight real contra el dashboard ya servido: `/market-lab` 200,
+`BUILD_ID` `n6FZutTsk5m8FFilTlxIo` presente en el HTML, `/status` 200 con
+`available=false` (servicio detenido, correcto), puerto 8791 libre. No se
+reconstruyó el frontend (solo se añadió una prueba).
+
+**Seguridad y limpieza.** `data/microprobe.db` y `data/historical/historical.db`
+conservan tamaño y mtime `2026-10-15 11:46:27`. No se arrancó el monitor, no se
+crearon sesiones Paper Lab, no hay procesos ni listeners residuales. El servicio
+continúa **detenido**.
+
+`NEXT`: autorizar (o no) la ejecución de `docs/MARKET_STREAM_LIVE_WINDOW_PLAN.md`
+con los tres comandos ya fijados y registrar el resultado como verificado con
+Binance solo si se mide.
+
 ## Actualización continua de velas en el explorador de mercado (2026-10-21, F-CHART-BINANCE-03)
 
 Vela en formación actualizándose sin recargar la página en `/market-lab`, sobre

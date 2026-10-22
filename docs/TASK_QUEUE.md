@@ -1,3 +1,38 @@
+## Market Lab — ventana por el camino real preparada (2026-10-22, F-CHART-BINANCE-04)
+
+`CURRENT_PHASE`: dashboard V2 de escritorio + observación (WS público bajo
+demanda, sin monitor, sin órdenes).
+
+`CURRENT_OBJECTIVE`: poder demostrar, con una sola ventana acotada y autorizada,
+que un mensaje real de Binance llega al gráfico por la cadena real, sin abrir esa
+conexión todavía.
+
+`ACTIVE_TASK`: entrega del orquestador sobre el servicio existente, el evaluador
+de aceptación separado de la adquisición, las pruebas controladas de la cadena y
+el procedimiento exacto con presupuesto, reglas de parada y limpieza.
+
+Estado: cerrado como **implementado + probado con transporte controlado +
+servido**; **NO verificado con Binance** (la ventana sigue pendiente de
+autorización explícita). Base `a2d0824`; BUILD_ID `n6FZutTsk5m8FFilTlxIo` servido
+por 3020; focalizado backend 48/48; BFF 5/5; `tsc --noEmit` 0; `eslint` 0; DBs
+canónicas con mtime 2026-10-15 11:46:27; servicio **detenido**.
+
+`NEXT_TASKS`:
+1. **Decisión humana**: ejecutar o no la ventana de
+   `docs/MARKET_STREAM_LIVE_WINDOW_PLAN.md` (1 conexión, `BTCUSDT` + `MINAUSDT`
+   1m, ≤180 s, 1200 mensajes, 3 consumidores SSE) con las capturas DOM indicadas.
+2. Si se ejecuta: registrar `PASS`/`FAIL`/`UNKNOWN` con el `--finalize` del script
+   y actualizar `CURRENT_STATE` sin mezclar los cuatro planos de verificación.
+3. Solo tras esa ventana: decidir si el servicio se deja arrancado por defecto o
+   sigue siendo arranque manual (hoy manual y detenido).
+4. Decidir política de retención/poda de `data/market-cache/` antes de uso
+   intensivo (hoy sin poda automática).
+5. Indicadores compartidos sobre el mismo feed: capacidad posterior, requiere su
+   propio contrato, presupuesto y autorización.
+6. Re-ejecutar `/antislop` end-to-end en una sesión nueva; sigue PENDIENTE.
+7. Mantener diferido: stops/objetivos arrastrables, móvil/Flutter, F-PAPER-01,
+   ejecución con capital.
+
 ## Market Lab — actualización continua de velas (2026-10-21, F-CHART-BINANCE-03)
 
 `CURRENT_PHASE`: dashboard V2 de escritorio + observación (WS público bajo

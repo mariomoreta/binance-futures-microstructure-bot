@@ -1,108 +1,315 @@
-# Ventana viva acotada — `market-stream/v1` (PREPARADA, NO EJECUTADA)
+# Ventana viva acotada por el camino real — `market-stream/v1` (PREPARADA, NO EJECUTADA)
 
-Estado: **plan escrito; la conexión Binance continua NO se ha abierto en este
-bloque.** Este documento fija qué se mediría, con qué límites y cómo se pararía.
-Requiere autorización humana explícita y separada.
+Estado: **procedimiento escrito y probado con transporte controlado; la conexión
+Binance continua NO se ha abierto en este bloque.** Requiere autorización humana
+explícita y separada.
 
-Contrato de referencia: [`MARKET_STREAM_CONTRACT_V1.md`](MARKET_STREAM_CONTRACT_V1.md).
+A diferencia del plan anterior (que hablaba directamente con el hub), la ventana
+usa **el servicio existente** `scripts/market_stream_service.py` y se conecta a él
+como un consumidor SSE más. No hay segundo servicio, segundo gestor ni segunda
+copia de la lógica de adquisición.
+
+Contrato: [`MARKET_STREAM_CONTRACT_V1.md`](MARKET_STREAM_CONTRACT_V1.md).
 Script: `scripts/market_stream_window.py` (sin `--execute` solo imprime el plan).
 
-## 1. Objetivo de la ventana
+## 1. Qué demuestra la ventana
 
-Verificar con Binance real, en el menor tiempo y ancho posible, exactamente tres
-cosas que las pruebas con transporte simulado no pueden demostrar:
+Con Binance real, en una sola conexión y en el menor tiempo posible:
 
-1. que la ruta `wss://fstream.binance.com/market` entrega `kline` para el par
-   `(símbolo, intervalo)` suscrito con la identidad y unidades esperadas;
-2. la cadencia real de actualización de la vela en formación (la documentación
-   pública es contradictoria: 1000–2000 ms frente a 250 ms en la referencia de
-   la API) — se **mide**, no se asume;
-3. que el cierre de vela llega con `x=true` y `T` coherente con
-   `open_time + intervalo_ms - 1`, sin huecos en la secuencia.
+1. que la ruta pública `wss://fstream.binance.com/market` entrega `kline` para el
+   par `(símbolo, intervalo)` suscrito, con la identidad y unidades esperadas;
+2. la **cadencia real** de actualización de la vela en formación (la
+   documentación pública es contradictoria: 1000–2000 ms frente a 250 ms) — se
+   mide, no se asume;
+3. que el cierre llega con `x=true` y `close_time_ms == open_time_ms + intervalo - 1`;
+4. que la vela siguiente aparece en la misma secuencia (`open_time + intervalo`);
+5. que esos mensajes atraviesan la cadena real hasta el BFF:
+   `Binance → hub → servicio SSE → /api/v1/market-stream → /market-lab`;
+6. que el panel del navegador declara `RECIBIENDO`/`LIVE` solo cuando se cumplen
+   sus condiciones, que la vela nueva aparece **sin recargar** la página y que,
+   al detener el servicio, `LIVE` desaparece y el histórico sigue visible.
 
-No es una prueba de rentabilidad, de señal, ni de ejecución.
+No es una prueba de rentabilidad, señal, indicadores ni ejecución.
 
-## 2. Alcance y presupuesto
+## 2. Cadena y consumidores
 
-| Parámetro | Valor |
-|---|---|
-| Conexiones WS | **1** (combinada, `?streams=`) |
-| Streams | **2**: un contrato del trío canónico + uno elegible fuera del trío |
-| Símbolos por defecto | `BTCUSDT` (trío) y `MINAUSDT` (fuera del trío, con histórico ya verificado en el explorador) |
-| Intervalo | `1m` (el más exigente por cadencia sin multiplicar streams) |
-| Duración máxima | **60 s** |
-| Mensajes máximos | **400** |
-| Reconexiones máximas | **3** |
-| Persistencia | ninguna (anillo en memoria, 300 velas cerradas por stream) |
-| REST de reparación | máximo 2 páginas × 500 velas, ≤ 6 peticiones/min, solo si aparece un hueco |
-| Escrituras en DB | ninguna (`historical.db` y `microprobe.db` intactas; sin caché del explorador) |
-| Monitor del bot | no se arranca, no se modifica, suscripción canónica intacta |
-| Sesiones Paper Lab | no se crean ni se tocan |
+```text
+wss://fstream.binance.com/market/stream?streams=btcusdt@kline_1m/minausdt@kline_1m
+        │  1 conexión combinada
+        ▼
+KlineStreamHub  (anillo en memoria, 300 velas cerradas por stream)
+        ▼
+MarketStreamService  http://127.0.0.1:8791   (/health, /stream, /shutdown)
+        ├──────────────► consumidor SSE "service" (BTCUSDT y MINAUSDT)   ← script
+        └──► BFF Next  http://127.0.0.1:3020/api/v1/market-stream
+                     ├──► consumidor SSE "bff" (BTCUSDT)                 ← script
+                     └──► EventSource del gráfico en /market-lab         ← navegador
+```
 
-El servicio HTTP (`scripts/market_stream_service.py`) **no** se usa en la
-ventana: el script habla con el hub y el transporte directamente, así que no
-queda ningún puerto escuchando ni proceso hijo.
+El script orquesta y recoge evidencia; **no** importa el hub para la ejecución,
+**no** crea otro servicio y **no** escribe velas.
 
-## 3. Comando exacto (solo tras autorización)
+## 3. Presupuesto de la ventana
+
+| Parámetro | Valor | Por qué |
+|---|---|---|
+| Conexiones WS a Binance | **1** (combinada) | mínimo indispensable |
+| Streams | **2** (`BTCUSDT` del trío + `MINAUSDT` fuera del trío) | identidad y aislamiento |
+| Intervalo | `1m` | un solo cambio de minuto ya prueba provisional → cierre → siguiente |
+| Duración máxima | **180 s** | garantiza ≥1–2 fronteras de minuto aunque se empiece justo después de una |
+| Espera tras aceptar (`--hold-seconds`) | **20 s** | capturar el DOM sin alargar la ventana |
+| Mensajes máximos (vela) | **1200** | ~3× el peor caso de 2 streams a 4/s durante 180 s |
+| Eventos SSE máximos | **6000** | `candle`+`status`+`heartbeat` de 3 consumidores |
+| Reconexiones máximas | **3** | por encima, se para y se declara |
+| Consumidores SSE | 3: servicio (2 símbolos) + BFF (1 símbolo) | el gráfico usa uno por contrato |
+| `bars` por consumidor | 300 | mismo tamaño que el gráfico |
+| Persistencia | ninguna | anillo en memoria |
+| REST de snapshot | 0 (lectura de almacén existente, `allow_fetch=False`) | no descarga velas |
+| REST de paginación (manual) | 1 petición ≤ 1000 velas | la hace el operador al pulsar "cargar anteriores" |
+| REST de reparación de huecos | ≤ 2 páginas × 500 velas, ≤ 6/min | solo si aparece un hueco |
+| Escrituras en DB canónica | **ninguna** | el script compara tamaño/mtime antes y después |
+| Monitor del bot / Paper Lab | no se arranca, no se toca | observación pura |
+
+Parada temprana: en cuanto se observa **provisional (≥2 actualizaciones) + cierre
++ vela siguiente** en el consumidor del servicio **y** al menos una vela por el
+BFF, el script espera `--hold-seconds` y cierra. Si no, para por duración o
+presupuesto y lo declara.
+
+## 4. Procedimiento exacto (solo tras autorización)
+
+### Paso 0 — Estado de partida
+
+```powershell
+cd C:\proyectos\binance-futures-microstructure-bot
+git rev-parse --short HEAD
+# servicio detenido y puerto libre
+python -X utf8 scripts/market_stream_service.py --port 8791 --stop
+Get-NetTCPConnection -LocalPort 8791 -ErrorAction SilentlyContinue
+# dashboard sirviendo (instancia ya construida)
+Invoke-WebRequest http://127.0.0.1:3020/market-lab -UseBasicParsing | Select-Object StatusCode
+```
+
+El preflight del script exige: puerto 8791 libre, `/api/v1/market-stream/status`
+HTTP 200, y que el `BUILD_ID` de `frontend/.next/BUILD_ID` aparezca en el HTML
+servido por 3020. Si algo falla, no se abre nada.
+
+### Paso 1 — Plan (no abre red)
 
 ```powershell
 $env:PYTHONPATH="src"
-python -X utf8 scripts/market_stream_window.py --symbols BTCUSDT,MINAUSDT `
-    --interval 1m --duration 60 --max-messages 400 --max-reconnects 3 `
-    --execute --out docs/evidence/market-stream-window-2026-10-21.json
+python -X utf8 scripts/market_stream_window.py
 ```
 
-Sin `--execute` imprime el plan y no abre ninguna conexión (verificado).
+### Paso 2 — Abrir el gráfico ANTES de arrancar el servicio
 
-## 4. Métricas a registrar
+En el navegador: `http://127.0.0.1:3020/market-lab`, contrato `BTCUSDT`, intervalo
+`1m`. El panel mostrará `DESCONECTADO · servicio detenido` (correcto: aún no hay
+servicio). **No recargues la página en toda la ventana**: el hook solo reintenta
+al cambiar de contrato/intervalo, y la captura DOM exige `navigation_count = 1` y
+`reload_count = 0`.
 
-- mensajes por stream y total; velas provisionales frente a cerradas;
-- primera y última recepción (ms UTC), edad final y `last_kline_open_ms`;
-- huecos detectados / reparados / parciales / fallidos (con tramos faltantes);
-- reconexiones, último error de socket y motivo de parada;
-- contadores `invalid`, `unrouted`, `identity_mismatch`, `late`,
-  `out_of_order`, `duplicate`;
-- memoria estimada del anillo por stream (`ring × 192 B`, tope 300 velas);
-- cadencia medida: diferencia entre `event_ms` consecutivos de la misma vela.
+### Paso 3 — Ventana
 
-## 5. Reglas de parada
+```powershell
+$env:PYTHONPATH="src"
+python -X utf8 scripts/market_stream_window.py --execute `
+    --symbols BTCUSDT,MINAUSDT --interval 1m --duration 180 --hold-seconds 20 `
+    --max-messages 1200 --max-events 6000 --max-reconnects 3 `
+    --out docs/evidence/market-stream-window-2026-10-22.json
+```
 
-Se para (y se documenta el motivo) si ocurre cualquiera de:
+En cuanto el script imprima `servicio PID … en http://127.0.0.1:8791`, cambia el
+contrato en el panel (`MINAUSDT` y vuelve a `BTCUSDT`, o cambia a `5m` y vuelve a
+`1m`) para que el hook vuelva a consultar `/status` y abra el `EventSource`.
+El panel debe pasar a `RECIBIENDO` y mostrar `LIVE`.
 
-1. se alcanza la duración (60 s) o el número de mensajes (400);
-2. reconexiones > 3;
-3. error de protocolo repetido o `identity_mismatch` en un mensaje;
-4. el exchange pide credenciales o el flujo requeriría una orden o cuenta
-   privada (**no contemplado: se aborta el bloque**);
-5. cualquier indicio de escritura en bases canónicas o de arranque del monitor.
+### Paso 4 — Captura DOM #1 (en cuanto haya `LIVE`)
 
-No hay reintentos en bucle: el transporte ya aplica backoff 1 s → 30 s con
-jitter y presupuesto de 20 fallos consecutivos.
+Consola del navegador (DevTools → Console), con el panel visible:
 
-## 6. Evidencia a capturar
+```js
+(() => {
+  const text = (id) => document.querySelector(`[data-testid="${id}"]`)?.textContent?.trim() ?? null;
+  const count = text("explorer-stream-count") ?? "";
+  const match = /(\d+)\s+cargadas\s+·\s+(\d+)\s+provisional/.exec(count);
+  const nav = performance.getEntriesByType("navigation");
+  const data = {
+    captured_at_ms: Date.now(),
+    url: location.href,
+    identity: /Binance USD-M · [A-Z0-9]+ · \d+[mhd] · market-stream\/v1/
+      .exec(text("explorer-stream") ?? "")?.[0] ?? null,
+    state: text("explorer-stream-state"),
+    live: text("explorer-stream-live"),
+    updated: text("explorer-stream-updated"),
+    candles: match ? Number(match[1]) : null,
+    provisional: match ? Number(match[2]) : null,
+    down: text("explorer-stream-down"),
+    error: text("explorer-stream-error"),
+    navigation_count: nav.length,
+    reload_count: nav.filter((entry) => entry.type === "reload").length,
+  };
+  console.log(JSON.stringify(data, null, 2));
+  return data;
+})()
+```
 
-- JSON del script (`docs/evidence/…`) con `health` inicial y final;
-- `git status` antes/después mostrando que no se crearon ficheros de datos;
-- mtime de `data/historical/historical.db` y `data/microprobe.db` sin cambios;
-- lista de procesos Python antes/después (sin residuos);
-- si se abre el dashboard durante la ventana, captura del panel de estado del
-  feed con `RECIBIENDO`/`no LIVE`/`LIVE` según corresponda y el texto de
-  antigüedad.
+Copia el JSON a `docs/evidence/market-stream-window-2026-10-22-dom-1.json`.
+Anota `candles` e `identity`: son la referencia de la paginación.
 
-## 7. Qué NO demuestra la ventana
+### Paso 5 — Captura DOM #2 (tras el cambio de minuto)
 
-- No valida la frescura en producción ni el comportamiento bajo rate limits del
-  exchange (solo el presupuesto local).
-- No valida la UI de forma visual sin un modelo de visión disponible.
+Cuando el gráfico muestre una vela nueva (el contador de velas sube y sigue
+habiendo exactamente 1 provisional):
+
+1. pulsa **“cargar anteriores”** una vez y confirma que el contador sube sin
+   cambiar de contrato ni recargar;
+2. ejecuta el mismo snippet con el bloque `pagination` añadido (sustituye
+   `before` por lo anotado en el paso 4):
+
+```js
+// … mismo cuerpo que el snippet anterior, añadiendo antes de console.log:
+data.pagination = {
+  candles_before: 300,                                 // <- paso 4
+  candles_after: data.candles,
+  same_identity: data.identity === "Binance USD-M · BTCUSDT · 1m · market-stream/v1",
+  exhausted: false,                                    // true solo si el gráfico avisa de que no hay más historia
+  error: data.error,
+};
+```
+
+Guarda el resultado como `…-dom-2.json`. Si el cierre llega antes de que puedas
+capturar #1, la comprobación `dom_candles_grew` quedará como evidencia
+insuficiente (`UNKNOWN`), nunca como `PASS`.
+
+### Paso 6 — Parada y captura DOM #3
+
+El script cierra los consumidores, comprueba `/health` con `consumers=0`, para el
+servicio y verifica: proceso terminado, puerto 8791 cerrado, PID file eliminado y
+`/health` rechazado. Espera hasta **40 s** (el hook reintenta cada 5 s hasta 6
+veces) y captura de nuevo con el mismo snippet como `…-dom-stop.json`: debe decir
+`DESCONECTADO · servicio detenido`, sin `LIVE`, con las mismas velas o más y el
+aviso honesto de que el histórico sigue disponible.
+
+### Paso 7 — Veredicto (offline, sin red)
+
+```powershell
+$env:PYTHONPATH="src"
+python -X utf8 scripts/market_stream_window.py --finalize `
+    docs/evidence/market-stream-window-2026-10-22.json `
+    --dom-first docs/evidence/market-stream-window-2026-10-22-dom-1.json `
+    --dom-last  docs/evidence/market-stream-window-2026-10-22-dom-2.json `
+    --dom-after-stop docs/evidence/market-stream-window-2026-10-22-dom-stop.json
+```
+
+Exit codes: `0` PASS, `1` FAIL, `2` UNKNOWN. La revisión visual, si existe, se
+añade con `--visual-review pass|fail --screenshot <ruta>` y se registra **aparte**:
+nunca sustituye a la evidencia DOM ni a la de Binance.
+
+### Paso 8 — Limpieza y registro
+
+```powershell
+Get-Process python -ErrorAction SilentlyContinue
+Get-NetTCPConnection -LocalPort 8791 -ErrorAction SilentlyContinue
+Get-ChildItem data\microprobe.db,data\historical\historical.db | Select-Object Name,Length,LastWriteTime
+python -X utf8 scripts/market_stream_service.py --port 8791 --stop   # idempotente
+```
+
+Registrar en `docs/CURRENT_STATE.md` el estado alcanzado, sin mezclar los cuatro
+planos: implementado / probado con transporte controlado / servido / verificado
+con Binance.
+
+## 5. Aceptación: check del script ↔ criterio
+
+| Check | Fuente | Criterio |
+|---|---|---|
+| `preflight` | script | puerto libre, dashboard 200 y build servido |
+| `service_started` | script | `/health` responde con PID y puerto |
+| `no_socket_without_consumer` | script | al arrancar, `socket.connected=false`, `attempts=0`, `consumers=0` |
+| `socket_connected` | script | alguna muestra de `/health` con `connected=true` |
+| `messages_primary` / `messages_secondary` | script | ≥1 evento de vela por símbolo |
+| `identity_exact` | script | `venue=binance`, `market_type=usd_m_futures`, `symbol` e `interval` exactos en `hello` y en las velas |
+| `no_protocol_errors` | script | `invalid=0`, `identity_mismatch=0` en `/health` |
+| `provisional_updates` | script | ≥2 actualizaciones con la misma `open_time_ms` |
+| `close_confirmed` | script | `close_time_ms == open_time_ms + intervalo - 1` |
+| `next_candle` | script | vela con `open_time_ms == cerrada + intervalo` y `seq` posterior |
+| `live_status_seen` | script | `live=true` con estado `RECEIVING` |
+| `bff_delivered` | script | `hello` + `snapshot` + ≥1 vela por `/api/v1/market-stream` |
+| `coverage_intact` | script | sin huecos `partial`/`failed` ni `BUFFER_OVERFLOW` |
+| `consumers_released` | script | `/health` con `consumers=0` tras cerrar los consumidores |
+| `service_stopped` | script | proceso terminado, puerto cerrado, PID file eliminado |
+| `canonical_dbs_unchanged` | script | tamaño y mtime de `microprobe.db` y `historical.db` idénticos |
+| `dom_identity` | navegador | `Binance USD-M · SYMBOL · 1m · market-stream/v1` en el panel |
+| `dom_state_live` | navegador | capturas #1 y #2 en `RECIBIENDO`/`LIVE` |
+| `dom_update_fresh` | navegador | marca UTC del panel dentro de la ventana y edad ≤ 15 s |
+| `dom_candles_grew` | navegador | captura #1 antes del cierre, #2 después, y el contador sube con 1 provisional |
+| `dom_pagination_preserved` | navegador | el contador crece al paginar, misma identidad, sin error |
+| `dom_no_reload` | navegador | `navigation_count=1`, `reload_count=0` en ambas capturas |
+| `dom_after_stop` | navegador | tras parar: `DESCONECTADO`, sin `LIVE`, velas ≥ captura #2, aviso presente |
+| `transport_origin` | script | informativo: `binance` o `loopback_test` (no afecta al veredicto) |
+
+## 6. Adquisición y veredicto son cosas distintas
+
+`acquisition_finished` responde solo a: hubo mensajes, se vio la vela provisional,
+el cierre y la vela siguiente, y el servicio se detuvo. El **veredicto** añade la
+cadena completa y la evidencia del navegador:
+
+| Situación | Veredicto |
+|---|---|
+| Cero mensajes, identidad incorrecta, servicio/BFF caídos, DB canónica tocada, cierre limpio fallido | **FAIL** |
+| Mensajes pero sin cierre/siguiente habiendo agotado duración o presupuesto | **FAIL** |
+| Cadena backend completa pero sin evidencia DOM (o BFF omitido) | **UNKNOWN** |
+| Adquisición interrumpida por reconexiones/límite antes de ver cierre | **UNKNOWN** |
+| Hueco no reparado | **FAIL** (`coverage_intact`) |
+| Cadena + DOM completos | **PASS** |
+
+Regla dura: **cero mensajes o cadena incompleta nunca producen `PASS`**. La
+revisión visual es un campo aparte (`visual_review`) y no altera el veredicto.
+
+## 7. Evidencia que queda en disco
+
+- `docs/evidence/market-stream-window-<fecha>.json`: objetivo, presupuesto,
+  preflight, banner y PID, `/health` antes del consumidor, muestras (2 s), eventos
+  compactos de vela, `hello`/`snapshot`, huecos, cadencia medida, `/health` antes
+  y después de retirar consumidores, estado tras la parada, DBs antes/después,
+  checks y veredicto.
+- `…-dom-1.json`, `…-dom-2.json`, `…-dom-stop.json`: capturas del panel.
+- Nada más: no se escriben velas, ni caché, ni sesiones Paper Lab.
+
+## 8. Reglas de parada
+
+1. aceptación alcanzada + espera de captura;
+2. duración (180 s), mensajes (1200) o eventos (6000);
+3. reconexiones > 3;
+4. `identity_mismatch` o símbolo/intervalo distinto del solicitado;
+5. servicio caído (`SERVICE_EXIT`), `/health` inalcanzable 5 sondeos o transporte
+   terminado;
+6. cualquier indicio de credenciales, orden, cuenta privada o escritura en DB
+   canónica → se aborta y se registra.
+
+No hay reintentos en bucle: el transporte aplica backoff 1 s → 30 s con jitter y
+presupuesto de 20 fallos consecutivos.
+
+## 9. Qué NO demuestra
+
+- No generaliza al universo ni a otros intervalos: dos símbolos y `1m`.
 - No valida rentabilidad, señal, indicadores ni ejecución.
-- Un único intervalo y dos símbolos no generalizan al universo completo: abrir
-  el catálogo no debe suscribir el universo, y no se hará.
+- No valida rate limits del exchange más allá del presupuesto local.
+- No sustituye la revisión visual: el DOM prueba estado y contadores, no píxeles.
+- Un `PASS` con `transport.origin = loopback_test` es **transporte controlado**,
+  no recepción de Binance.
 
-## 8. Después de la ventana
+## 10. Evidencia controlada ya obtenida (sin Binance)
 
-1. Parar el proceso (el script lo hace en `finally`), comprobar 0 procesos
-   Python y 0 listeners en el puerto del servicio.
-2. Registrar en `docs/CURRENT_STATE.md` el estado **verificado con Binance**
-   (o el fallo concreto), separado de "probado con transporte controlado".
-3. Dejar el servicio continuo **detenido** y el dashboard sirviendo histórico.
-   El arranque es manual y explícito.
+- `tests/test_market_stream_window.py` (20 pruebas): evaluador puro, `--finalize`,
+  cliente SSE contra el servicio real en puerto efímero y **cadena completa
+  controlada** con un WS local que imita el mensaje combinado de Binance.
+- `docs/evidence/market-stream-window-loopback-2026-10-22.json`: ejecución real
+  del orquestador sobre ese WS local. `stop_reason=ACCEPTANCE_REACHED`,
+  `acquisition_finished=true`, servicio parado y puerto cerrado, `verdict=UNKNOWN`
+  por falta de BFF y de DOM. `transport.origin=loopback_test`.
+- `frontend/src/app/api/v1/market-stream/route.test.ts` (5 pruebas): el BFF
+  reenvía el SSE, devuelve `503 STREAM_SERVICE_DOWN` si el servicio no responde y
+  rechaza identidad/ventana/origen inválidos antes de llamar al servicio.
+
+Nada de esto acredita recepción real de Binance ni el gráfico del navegador: eso
+es exactamente lo que autoriza y mide la ventana.
