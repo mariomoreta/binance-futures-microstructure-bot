@@ -8,8 +8,9 @@ import {
   type PaperSessionState, type PaperCandle,
 } from "@/lib/paper-lab-live";
 import {PAPER_FIXTURES, FIXTURE_IDS} from "@/lib/paper-fixtures";
+import {buildPaperChartModel} from "@/lib/paper-chart-contract";
 import {FixtureSelector} from "./FixtureSelector";
-import {LiveChart} from "./LiveChart";
+import {PaperChart} from "./PaperChart";
 import {PositionPanel} from "./PositionPanel";
 import {PnLPanel} from "./PnLPanel";
 import {EventLog} from "./EventLog";
@@ -290,6 +291,16 @@ export default function PaperLabLive(): React.JSX.Element {
     return contextForView.filter((c) => c.open_time_ms <= clockForView);
   }, [contextForView, clockForView]);
 
+  // Modelo presentacional versionado (paper-chart/v1). Solo deriva de campos
+  // del backend; no calcula decisiones, fills, stops ni P&L.
+  const chartModel = useMemo(() => {
+    if (!state) return null;
+    return buildPaperChartModel(
+      {...state, candles: knownCandles, context_candles: knownContext},
+      {fixtureId},
+    );
+  }, [state, knownCandles, knownContext, fixtureId]);
+
   if (!state) {
     return (
       <section className={s.root} aria-label="Paper Lab ingeniería (fixtures)">
@@ -437,32 +448,33 @@ export default function PaperLabLive(): React.JSX.Element {
       <div className={s.grid}>
         <section className={s.card} style={{gridColumn: "1 / -1"}} aria-label="Gráfico paper">
           <div className={s.chartHead}>
-            <h3>Gráfico — velas y niveles ({config.interval}, cerrado)</h3>
+            <h3>Gráfico — velas, niveles y eventos ({config.interval}, simulación)</h3>
           </div>
           <div className={s.chartLegend} aria-label="Leyenda del gráfico">
-            <span><i className={s.swContext} aria-hidden="true"></i>contexto previo (atenuado)</span>
-            <span><i className={s.swReplay} aria-hidden="true"></i>velas de operación</span>
-            {open && <span><i className={s.swEntry} aria-hidden="true"></i>Entrada {formatPricePL(entryPx)}</span>}
-            {open && !finished && <span><i className={s.swStop} aria-hidden="true"></i>Stop {formatPricePL(stopPx)}</span>}
-            {exitShown && exitPx != null && <span><i className={s.swExit} aria-hidden="true"></i>Cierre {formatPricePL(exitPx)}</span>}
-            <span><i className={s.swCursor} aria-hidden="true"></i>cursor</span>
+            <span><i className={s.swContext} aria-hidden="true"></i>contexto conocido</span>
+            <span><i className={s.swReplay} aria-hidden="true"></i>velas reveladas</span>
+            <span><i className={s.swOpen} aria-hidden="true"></i>solo-open (open, sin OHLC)</span>
+            {chartModel?.operation.signal && <span><i className={s.swSignal} aria-hidden="true"></i>señal</span>}
+            {chartModel?.operation.pending_entry && <span><i className={s.swPending} aria-hidden="true"></i>entrada pendiente (no ejecutada)</span>}
+            {chartModel?.operation.entry && (
+              <span><i className={s.swEntry} aria-hidden="true"></i>Entrada {formatPricePL(chartModel.operation.entry.px)}</span>
+            )}
+            {chartModel?.operation.stop_effective_px != null && (
+              <span><i className={s.swStop} aria-hidden="true"></i>Stop efectivo {formatPricePL(chartModel.operation.stop_effective_px)}</span>
+            )}
+            {chartModel?.operation.exit && (
+              <span><i className={s.swExit} aria-hidden="true"></i>Salida {formatPricePL(chartModel.operation.exit.px)} ({chartModel.operation.exit.reason ?? "—"})</span>
+            )}
           </div>
           <div className={s.chartWrap}>
-            <LiveChart
-              candles={knownCandles}
-              contextCandles={knownContext}
-              entryPx={open ? entryPx : null}
-              stopPx={open ? stopPx : null}
-              exitPx={exitPx}
-              exitShown={exitShown}
-              currentTimeMs={clock_ms}
-              direction={config.direction}
-            />
+            {chartModel && <PaperChart model={chartModel} />}
           </div>
           <p className={s.note}>
-            Solo velas conocidas en T (open_time_ms menor o igual al reloj de
-            simulación); sin ticks ni recorrido intrabar inventado. Los niveles
-            aparecen cuando son relevantes.
+            Solo velas conocidas en T; la vela solo-open se marca como punto
+            ámbar (open conocido, high/low/close UNKNOWN) y no se interpola.
+            Entrada y stop salen de position.entry_px/stop_px efectivos; la
+            salida solo se dibuja con exit_executed=true. Volumen e indicadores
+            no los produce el backend en esta fase: se muestran como UNKNOWN.
           </p>
         </section>
 

@@ -25,10 +25,14 @@ export type PaperExitReason = "stop" | "horizon" | "manual";
 export interface PaperCandle {
   open_time_ms: number;
   open: number;
-  high: number;
-  low: number;
-  close: number;
-  close_time_ms: number;
+  // Una vela revelada solo por su apertura (sin cierre conocido en T) llega
+  // con high/low/close/close_time_ms = null. No son ceros: son UNKNOWN.
+  high: number | null;
+  low: number | null;
+  close: number | null;
+  close_time_ms: number | null;
+  available_at?: number | null;
+  received_at?: number | null;
 }
 
 export interface PaperCosts {
@@ -69,6 +73,9 @@ export interface PaperEvent {
   label: string;
   kind: "entry" | "exit" | "stop" | "protection" | "mark" | "horizon";
   detail?: string;
+  // Identidad estable del evento en la sesión (la produce el backend en la
+  // representación pública). Opcional para estados persistidos antiguos.
+  event_id?: string;
 }
 
 export interface PaperTradeResult {

@@ -42,13 +42,24 @@ button.live.success{background:#14301e;border-color:#3a5a3f;color:#9fd69f}
 .row .v.warn{color:var(--warning)}
 .mono{font-family:var(--font-mono);font-size:11px;color:var(--text-2)}
 .note{color:var(--text-3);font-size:11px;margin-top:8px;line-height:1.5}
-.chartWrap{border:1px solid var(--border);border-radius:6px;background:var(--bg-1);min-height:260px;position:relative;overflow-x:auto;overflow-y:hidden}
+.chartWrap{border:1px solid var(--border);border-radius:6px;background:var(--bg-1);min-height:260px;position:relative;overflow:hidden}
 .chartWrap svg{display:block;width:100%;height:auto}
+.chartFrame{display:flex;flex-direction:column;gap:var(--space-1)}
+.chartMeta{display:flex;align-items:center;gap:12px;flex-wrap:wrap;font:10px var(--font-mono);color:var(--text-3);padding:2px 2px 0}
+.chartMeta > span{white-space:nowrap}
+.chartBadge{border:1px solid #a86f16;border-radius:3px;padding:1px 5px;color:#fbbf24;letter-spacing:.04em}
+.chartCanvas{width:100%;min-width:0;position:relative}
+.chartCanvas canvas{display:block}
+.chartFit{background:#0b2334;border:1px solid #285575;color:#b9e2ff;padding:2px 8px;border-radius:4px;font:10px var(--font-mono);cursor:pointer}
+.chartFit:hover{border-color:#38bdf8}
 .chartLegend{display:flex;align-items:center;gap:14px;flex-wrap:wrap;margin:0 0 var(--space-2);font-size:10.5px;color:var(--text-3);font-family:var(--font-mono)}
 .chartLegend span{display:inline-flex;align-items:center;gap:5px;white-space:nowrap}
 .chartLegend i{display:inline-block;width:14px;height:0;border-top-width:2px;border-top-style:solid}
 .swContext{border-top-color:#4b5c6b;border-top-style:dashed}
 .swReplay{border-top-color:#7fd0f8}
+.swOpen{border-top-color:#fbbf24;border-top-style:dotted}
+.swSignal{border-top-color:#fbbf24;border-top-style:dotted}
+.swPending{border-top-color:#fbbf24;border-top-style:dashed}
 .swEntry{border-top-color:#7fd0f8;border-top-style:dashed}
 .swStop{border-top-color:#fb7185;border-top-style:dashed}
 .swExit{border-top-color:#38bdf8;border-top-style:dashed}

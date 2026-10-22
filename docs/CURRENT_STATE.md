@@ -1,4 +1,37 @@
-## Paper Lab — orden temporal del stop, stop efectivo y paridad canónica (2026-10-21, F-PAPER-03)
+## Gráfico Paper Lab interactivo con Lightweight Charts y contrato `paper-chart/v1` (2026-10-21, F-CHART-BINANCE-01)
+
+Contrato versionado e interfaz de gráfico **sobre fixtures**. Base `ac716d35ac5844fa25bf79d6e8d7e1b497ab1858`. Sin Binance vivo, sin monitor ni adquisición, sin paper prospectivo, sin órdenes, pagos, optimización ni móvil. No se reabrió Backtest ni `control.guard`; no se tocaron reglas, umbrales, costes, funding ni la corrección económica de F-PAPER-03.
+
+**Contrato.** `paper-chart/v1` en `frontend/src/lib/paper-chart-contract.ts`, documentado en `docs/PAPER_CHART_CONTRACT_V1.md`. Identidad `source="fixture"`, `venue=null`/`venue_status="UNKNOWN"`, `market_type="simulated_futures"`, símbolo, intervalo, `session_id` y `fixture_id`. Tiempos en ms Unix UTC con reloj de simulación explícito; la biblioteca recibe segundos mediante `floor(ms/1000)` y el ms exacto se conserva en el modelo, los IDs y el detalle. Velas cerradas vs. solo-open (`high/low/close/close_time_ms=null`, nunca ceros); el adaptador re-filtra por `clock_ms`, ordena y deduplica. `volume=null`/`UNKNOWN`, `indicators=[]`, objetivo `UNKNOWN`.
+
+**Backend.** `session_to_public_dict` publica `event_id` estable `session_id:ev:<índice>:<kind>:<at_ms>`; los eventos de decisión (`protection`) usan tiempo de simulación (`signal_at_ms`) en todas sus ramas, no reloj de pared; la hora de pared queda en `evaluated_at_ms` y `updated_at_ms`. `PaperCandle.high/low/close/close_time_ms` son nullable y se añaden `available_at`/`received_at` opcionales. La economía no cambia.
+
+**Frontend.** `Lightweight Charts 5.2.1` exacto (Apache-2.0, TradingView, aviso en `frontend/THIRD_PARTY_NOTICES.md` y `frontend/THIRD_PARTY_LICENSES/`; `fancy-canvas@2.1.0` MIT). Componente reutilizable `PaperChart.tsx` con import dinámico solo cliente, `autoSize`, limpieza de suscripciones/plugins/chart, actualización incremental y reinicio completo al cambiar de sesión. Marcadores de señal/entrada/salida, líneas informativas de entrada/stop/salida/pendiente, zoom/pan/ajuste y cursor fecha·precio. Entrada y stop salen de `position.entry_px`/`position.stop_px`; la salida solo con `exit_executed=true`; `open_at_end` no produce salida ni realizado. Se eliminó el `LiveChart` anterior. No se dibujan volumen, indicadores, objetivos ni niveles ausentes.
+
+**Estados separados.**
+- **Implementado:** contrato v1, adaptador, componente, integración en la pantalla, marcadores/líneas, estados FIXTURE/SIMULACIÓN, reloj, cobertura, ajuste y lectura de cursor; `event_id` y tiempos de simulación en el backend.
+- **Probado:** backend focalizado 38/38; suite completa `python run_tests.py -q` 1290 OK (2 skipped); frontend `npm test` 484 passed + 1 skipped; `tsc --noEmit` 0; `eslint src` 0 errores y 5 warnings preexistentes. Pruebas nuevas: contrato (identidad, ms→s, sin futuros, solo-open, deduplicación, operación, `open_at_end`), wiring del componente con biblioteca mockeada y eventos públicos (`event_id`/tiempo de simulación).
+- **Servido:** build `PPE-Io-M4ivYg3dvJRqwh`, PID 27612, `http://127.0.0.1:3020/paper-lab-live`, HTTP 200. Se reemplazó solo el listener anterior (31640) tras comprobar `runtime running=false/COMPLETED`, job `completado` y ausencia de trabajos activos. Logs fuera de `.next`.
+- **Inspección visual:** DOM/geometría/HTTP y capturas locales; **no** hubo inspección por modelo de visión (proveedor sin autenticación), así que **no se declara PASS visual**. Capturas: `.playwright-mcp/paper-chart-{A-inicio,B-pendiente,C-fill,D-cierre-auto,E-open-at-end,F-recuperacion,G-cambio-sesion,H-zoom}.png`.
+
+**Navegador de escritorio (1440×900, build final, controles reales).**
+
+| Caso | Evidencia |
+|---|---|
+| A. Inicio sin futuros | Sesión `PL-BTCUSDT-LONG-1792631052590-413d566e`: 48 contexto, 0 cerradas, 0 solo-open; reloj 2026-09-08T21:59:59.999Z; ventana 10:00→21:45; sin entrada/stop/salida. |
+| B. Señal pendiente | 2× `Paso a paso` → EN ESPERA; 1 cerrada + 1 solo-open; señal y “entrada pendiente (no ejecutada)”; sin fill ni stop efectivo. |
+| C. Fill | `Entrar` → ABIERTA; entrada 78,537.18, stop 78,144.49; rev. 9; sin salida. |
+| D. Cierre automático | Fixture stop: `PL-BTCUSDT-LONG-1792631699330-f0747528`; ABIERTA 101.00/95.95 → 1 paso → CERRADA rev. 11; salida stop 95.95 @1788929100000; bruto -50, fees 0.975, spread+slip 0.585, funding null, neto/realizado -51.560000000000116, `open_at_end=false`; sin salida 80. |
+| E. Fin de datos abierto | Sesión A: 10 pasos más → CERRADA con 11 cerradas + 1 solo-open; `open_at_end`; sin marcador de salida; “No realizado”; `realized_net=null`. |
+| F. Refresco/recuperación | Recarga real de la página y carga de la sesión C desde persistencia: ABIERTA, entrada 78,537.18, stop 78,144.49, sin salida. |
+| G. Cambio de sesión | Carga de `PL-BTCUSDT-LONG-1792627398136-5241b33a` (cerrada): gráfico 101.00/95.95/salida 95.95; sin rastros de 78,537.18/78,144.49. |
+| H. Zoom/pan/ajuste/cursor | Rueda: inicio 17:00→17:30; arrastre: 16:45→04:00; `Ajustar`: 16:00→04:45; cursor `2026-09-08T23:15:00Z · 100.00`; canvas 1188×340. |
+
+**Límites y residuales.** Solo fixtures (sin venue Binance real); sin volumen, indicadores ni objetivo porque el backend no los produce; stops/objetivos arrastrables diferidos; el selector de persistencia solo se renderiza cuando ya hay una sesión, así que recuperar tras un refresco exige seleccionar una fixture primero y luego cargar la sesión guardada; tras pasos incrementales el ajuste inicial puede omitir la primera vela de contexto hasta pulsar `Ajustar`; `npm` reporta 5 vulnerabilidades altas (no abordadas en este bloque); el lockfile se parcheó preservando su formato, sin reescritura masiva. Sin móvil/Flutter.
+
+**Siguiente (no ejecutado).** Reutilizar `paper-chart/v1` para búsqueda de contratos, histórico paginado y adaptación del feed existente; después, evaluación prospectiva versionada. No se autoriza ventana Binance ni ejecución.
+
+
 
 Corrección económica cerrada en `src/microstructure_probe/paper_lab_engine.py` sobre la base `5572ee3` (commit inicial del bloque: `d48a224`). No se tocó `backtest_offline` (autoridad canónica), ni reglas de señal, umbrales, costes o funding. Sin Binance, monitor, paper prospectivo, órdenes, pagos, móvil ni Lightweight Charts.
 

@@ -49,3 +49,7 @@ El adaptador debe mapear milisegundos internos a las unidades del gráfico expl�
 
 ## Estado y evidencia del registro
 Base documental revisada: 2a170887a5b232bba4930daa15437764160dea31. La lectura del checkout confirma ausencia de lightweight-charts en frontend/package.json a esta base. Este bloque modifica solo documentación; no instala paquetes, inicia servicios, prueba una nueva corrida ni valida visualmente el dashboard. Los tres bloqueos citados son revisión de código, no reproducción de pruebas realizada aquí. El informe anterior declara pruebas y HTTP integrado; eso no resuelve las discrepancias de código por sí solo.
+
+## Actualización 2026-10-21 — implementación parcial sobre fixtures
+
+Sobre la base `ac716d3`, los pasos 2–3 de la secuencia se ejecutaron **solo para Paper Lab y solo con fixtures**: se inventariaron los productores existentes, se fijó el contrato `paper-chart/v1` (`docs/PAPER_CHART_CONTRACT_V1.md`) y se implementó el gráfico interactivo con `lightweight-charts@5.2.1` (Apache-2.0, TradingView) en `/paper-lab-live`. No se ejecutó corrida Binance, adquisición, feed vivo, búsqueda de contratos, histórico paginado ni indicadores (el backend no produce volumen ni indicadores para Paper Lab). Los estados implementado/probado/servido/visual y la aceptación A–H con controles reales están en `docs/CURRENT_STATE.md`, `docs/DECISIONS.md` y `docs/FEATURE_BACKLOG.md`. La inspección visual por modelo no estuvo disponible: no se declara PASS visual. Los pasos 4–6 de la secuencia siguen sin ejecutarse.

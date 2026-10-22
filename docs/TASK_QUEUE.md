@@ -1,3 +1,20 @@
+## Paper Lab — contrato de gráfico v1 y Lightweight Charts sobre fixtures (2026-10-21, F-CHART-BINANCE-01)
+
+`CURRENT_PHASE`: dashboard V2 de escritorio + Paper Lab sobre fixtures (observación; sin Binance, sin órdenes).
+
+`CURRENT_OBJECTIVE`: contrato versionado de datos/tiempos/IDs y gráfico financiero interactivo alimentado solo por el backend, primero sobre fixtures, con la corrección económica de F-PAPER-03 preservada.
+
+`ACTIVE_TASK`: entrega documentada y commiteada del contrato `paper-chart/v1`, el componente Lightweight Charts, pruebas, build re-servido y evidencia de navegador A–H.
+
+Estado: cerrado y documentado en `docs/CURRENT_STATE.md`, `docs/DECISIONS.md`, `docs/PAPER_CHART_CONTRACT_V1.md` y `docs/FEATURE_BACKLOG.md`. Base `ac716d3`; build `PPE-Io-M4ivYg3dvJRqwh`, PID 27612, `http://127.0.0.1:3020/paper-lab-live`, HTTP 200. Backend focalizado 38/38; suite completa 1290 OK (2 skipped); frontend 484 passed + 1 skipped; `tsc --noEmit` 0; `eslint` 0 errores. Aceptación A–H con controles reales (contexto sin futuros, señal pendiente sin fill, fill 78,537.18/78,144.49, cierre automático 95.95/-51.56 sin salida 80, fin de datos sin cierre inventado, recuperación tras refresco, cambio de sesión sin residuos, zoom/pan/ajuste y cursor fecha·precio). Inspección visual por modelo no disponible: no se declara PASS visual.
+
+`NEXT_TASKS`:
+1. Reutilizar `paper-chart/v1` para búsqueda de contratos elegibles e histórico paginado bajo demanda (no ejecutado en este bloque).
+2. Adaptar el feed existente a un contrato de gráfico vivo con procedencia, frescura, desconexión y reconexión (requiere autorización separada; no ejecutado).
+3. Re-ejecutar `/antislop` end-to-end en una sesión nueva y registrar el resultado; sigue PENDIENTE.
+4. Revisar fixtures restantes bajo la regla causal antes de usarlas como demostración de stop/horizonte.
+5. Mantener diferido: stops/objetivos arrastrables, móvil/Flutter, F-PAPER-01.
+
 ## Paper Lab — corrección económica del stop y cierre automático verificado (2026-10-21, F-PAPER-03)
 
 `CURRENT_PHASE`: dashboard V2 de escritorio + Paper Lab sobre fixtures (observación; sin Binance, sin órdenes).

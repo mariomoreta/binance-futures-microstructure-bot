@@ -233,6 +233,19 @@ completeness, counterevidence and risks. Direction/zone/invalidation/targets/
 horizon/cost/sizing/paper results remain nullable and versioned. Endpoint must
 return an honest empty/blocked state until P1-12/P1-13A exist.
 
+### Paper Lab chart payload (`paper-chart/v1`)
+
+The existing `GET /api/v1/paper-lab/sessions/{id}` public session payload is the
+only source for the Paper Lab chart. The frontend adapter
+(`frontend/src/lib/paper-chart-contract.ts`) maps it to the versioned
+`paper-chart/v1` view model documented in `docs/PAPER_CHART_CONTRACT_V1.md`:
+fixture identity (`venue: null`/`UNKNOWN`, `market_type: "simulated_futures"`),
+explicit ms UTC times plus simulation clock, closed vs. open-only candles with
+nullable OHLC, stable `event_id`, effective entry/stop and `exit_executed`-only
+exit, `volume: null`/`UNKNOWN`, `indicators: []` and backend-provided
+`can_step`. No new endpoint is introduced; the chart never computes decisions,
+fills, stops or P&L.
+
 ## Security, caching and errors
 
 Read endpoints: same-origin BFF allowlist, bounded timeout/body, no open proxy;

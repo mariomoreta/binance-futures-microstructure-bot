@@ -1,3 +1,23 @@
+## F-CHART-BINANCE-01 — Contrato `paper-chart/v1` y gráfico Lightweight Charts sobre fixtures (2026-10-21, base `ac716d3`)
+
+**1. Title:** Contrato versionado de datos, tiempos e IDs para el gráfico de `/paper-lab-live` y gráfico financiero interactivo alimentado solo por el backend existente, primero sobre fixtures.
+**2. Approval status:** DECIDED dentro del alcance autorizado (escritorio, fixtures, sin Binance/monitor/adquisición/paper prospectivo/órdenes/pagos/optimización; sin cambios de estrategia, umbrales, costes, funding ni motor canónico; móvil diferido).
+**3. Implementation status:** IMPLEMENTED (rebanada sobre fixtures) — `frontend/src/lib/paper-chart-contract.ts`, `frontend/src/components/paper-lab-live/PaperChart.tsx`, integración en `PaperLabLive.tsx`, `paper-lab-live.ts` (velas nullable, `event_id`), `src/microstructure_probe/paper_lab_engine.py` (`event_id` público y tiempo de simulación en eventos de decisión), `docs/PAPER_CHART_CONTRACT_V1.md`, `frontend/THIRD_PARTY_NOTICES.md` y `frontend/THIRD_PARTY_LICENSES/`. Se eliminó el `LiveChart` previo. Contrato vivo/búsqueda/indicadores/volumen siguen NO implementados.
+**4. Evaluation status:** VERIFICADO en fixtures — backend focalizado 38/38, suite completa 1290 OK (2 skipped), frontend 484 passed + 1 skipped, `tsc --noEmit` 0, `eslint` 0 errores (5 warnings preexistentes); build `PPE-Io-M4ivYg3dvJRqwh`, PID 27612, HTTP 200; aceptación A–H con controles reales (incluida la regresión 101 → 95.95 → -51.56 sin salida 80 y `open_at_end` sin cierre inventado). NO evaluado: inspección visual por modelo (proveedor sin autenticación), búsqueda de contratos, histórico paginado, feed vivo, desconexión/reconexión, volumen/indicadores, rentabilidad.
+**5. Limitaciones:** solo fixtures (sin venue Binance real); `volume`/`indicators`/`target` ausentes porque el backend no los produce; el selector de persistencia solo aparece con sesión activa, así que recuperar tras refresco exige seleccionar una fixture primero; el ajuste inicial tras pasos incrementales puede omitir la primera vela de contexto hasta `Ajustar`; 5 vulnerabilidades `npm audit` no abordadas; sin móvil/Flutter.
+**6. Evidence:** `docs/PAPER_CHART_CONTRACT_V1.md`; `docs/CURRENT_STATE.md` § gráfico Paper Lab; `docs/DECISIONS.md` §2026-10-21 gráfico Paper Lab; `frontend/src/test/paper-chart-contract.test.ts`; `frontend/src/test/paper-chart.test.tsx`; `tests/test_paper_lab_engine.py` (`event_id`, solo-open, tiempo de simulación); capturas `.playwright-mcp/paper-chart-{A..H}*.png`.
+**7. Last update:** 2026-10-21.
+
+### Cierre (siete campos, obligatorios)
+
+- `DECISIONS_REVIEWED` — AGENTS, WORKFLOW, CURRENT_STATE, TASK_QUEUE, DECISIONS, `docs/ACUERDOS_GRAFICO_BINANCE_V1.md`, `docs/DASHBOARD_V2_API_CONTRACTS.md`, `docs/DESKTOP_FIRST_SCOPE_20261020.md` y este backlog (F-PAPER-02, F-PAPER-03, F-CHART-BINANCE-01).
+- `NEW_DECISIONS_RECORDED` — DECISIONS §"2026-10-21 — Gráfico Paper Lab: contrato `paper-chart/v1` y Lightweight Charts 5.2.1": auditoría previa, identidad/UNKNOWN, ms→s, solo-open, stop/salida/realizado, `event_id` y tiempo de simulación, biblioteca fijada y licencias, montaje cliente y limpieza, verificación honesta y residuales.
+- `FEATURES_IMPLEMENTED` — contrato `paper-chart/v1`; adaptador y componente; marcadores/líneas; estados de cobertura; `event_id` público; tiempos de simulación en eventos de decisión; avisos de licencia.
+- `FEATURES_VERIFIED` — A–H en navegador real sobre el build servido; pruebas de contrato/wiring/backend; typecheck, lint y builds; cierre automático y `open_at_end` reconciliados con la API.
+- `DEFERRED_FEATURES` — búsqueda de contratos, histórico paginado, feed vivo y reconexión; volumen/indicadores (sin productor); objetivo (no existe); stops/objetivos arrastrables; F-PAPER-01; móvil/Flutter; ejecución end-to-end de `/antislop`.
+- `BACKLOG_UPDATED` — yes: este bloque, la sección histórica de F-CHART-BINANCE-01 y las actualizaciones de `CURRENT_STATE`, `TASK_QUEUE` y `DECISIONS`.
+- `DOCUMENTATION_CONFLICTS` — el registro previo de F-CHART-BINANCE-01 declaraba "NOT IMPLEMENTED" y ausencia de `lightweight-charts`; se actualiza a implementación parcial sobre fixtures preservando que el contrato vivo, la búsqueda y los indicadores siguen NO implementados. La falta de inspección visual por modelo se declara; DOM/geometría/HTTP y capturas no se convierten en PASS visual. El residual del selector de persistencia se documenta, no se corrige aquí.
+
 ## F-PAPER-03 — Orden temporal del stop, stop efectivo y paridad canónica en Paper Lab (2026-10-21)
 
 **1. Title:** Corrección de la salida por stop de Paper Lab para que respete el orden temporal (stop de la vela de entrada antes que un gap posterior), publique el stop efectivo que gobierna la operación y coincida con `run_backtest` en precio, tiempo y costes.
@@ -71,10 +91,10 @@
 ## F-CHART-BINANCE-01 — Búsqueda, gráfico vivo e indicadores compartidos (2026-10-21)
 
 - Approval status: objetivo y documentación ACORDADOS por el usuario; esta entrega no autoriza corrida Binance.
-- Implementation status: NOT IMPLEMENTED para este contrato gráfico; existen probe, lectores, Backtest/replay y MVP de fixtures que se deben reutilizar.
-- Evaluation status: NOT EVALUATED como recorrido gráfico/paper vivo; no rentabilidad demostrada.
+- Implementation status: PARCIAL (2026-10-21) — contrato `paper-chart/v1` y gráfico Lightweight Charts implementados sobre fixtures (ver entrada superior de este backlog); el contrato vivo, la búsqueda de contratos, el histórico paginado y los indicadores siguen NO implementados.
+- Evaluation status: VERIFICADO en fixtures (aceptación A–H, pruebas focalizadas, build servido); NO EVALUATED para feed vivo ni rentabilidad.
 - Contrato y aceptación: [Acuerdos de gráfico Binance V1](ACUERDOS_GRAFICO_BINANCE_V1.md).
-- Dependencias: tres bloqueos revisados de Paper Lab 2a17088 *(cerrados 2026-10-21 con F-PAPER-02; el recorrido de navegador de los controles se ejecutó en `d48a224` y el cierre automático por stop se verificó con F-PAPER-03; el contrato gráfico sigue NO implementado)*; contrato causal, catálogo/cobertura, suscripciones por consumidor, retención y recuperación. Selector/riesgo/caja/funding tienen pendientes separados.
+- Dependencias: tres bloqueos revisados de Paper Lab 2a17088 *(cerrados 2026-10-21 con F-PAPER-02; el recorrido de navegador de los controles se ejecutó en `d48a224` y el cierre automático por stop se verificó con F-PAPER-03; la rebanada de contrato/gráfico sobre fixtures se implementó en la entrada superior de 2026-10-21; el contrato vivo/búsqueda/indicadores siguen pendientes)*; contrato causal, catálogo/cobertura, suscripciones por consumidor, retención y recuperación. Selector/riesgo/caja/funding tienen pendientes separados.
 - Primera versión: escritorio, velas/volumen/zoom/histórico y eventos backend. Arrastre de stops, móvil y REA productivo fuera de esta versión.
 
 ### Cierre documental (siete campos)
