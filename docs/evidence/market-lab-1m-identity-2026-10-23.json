@@ -1,0 +1,31 @@
+{
+  "kind": "browser_identity_evidence",
+  "purpose": "El selector del explorador ofrece 1m y el grafico adopta BTCUSDT/1m (servicio detenido)",
+  "captured_at_ms": 1792802686907,
+  "captured_at_utc": "2026-10-24T00:44:46.907Z",
+  "url": "http://127.0.0.1:3020/market-lab",
+  "source_sha": "a23a38ce3e35209263467f162c0d488ba26c0216",
+  "source_sha_note": "commit que introduce 1m en el selector; la captura se tomo con ese arbol antes de commitear y el contenido no cambio despues",
+  "build_id": "eiXlHvN4lJBLWcuOopsh_",
+  "dashboard_pid": 33960,
+  "interval": "1m",
+  "interval_options": ["1m", "15m", "1h", "4h", "1d"],
+  "default_interval_before_change": "1h",
+  "stream_identity": "Binance USD-M · BTCUSDT · 1m · market-stream/v1",
+  "state": "DESCONECTADO · servicio detenido",
+  "live": "no LIVE",
+  "updated": "sin mensajes",
+  "count": "299 cargadas · 1 provisional",
+  "down": "Servicio de datos detenido: se conserva el histórico ya cargado y no se declara LIVE. El monitor del bot y las sesiones Paper Lab no dependen de este feed. Arranque manual: python scripts/market_stream_service.py --port 8791.",
+  "coverage": "Estado COVERED · 299/299 velas · sin huecos",
+  "provenance": "Ventana solicitada (UTC)2026-10-23T19:45:42.794Z → 2026-10-24T00:44:42.794ZCoberturaEstado COVERED · 299/299 velas · sin huecosFrescura (adquisición, no feed)2026-10-24T00:44:00Z (provisional) · guardado 2026-10-24T00:44:43.114ZVolumenbase_volume + quote_volume · base BTCAlmacenamientocanónico 0 · caché 299Adquisición1 petición(es) · 299 velas guardadas · 3/30 en ventana",
+  "navigation_count": 1,
+  "reload_count": 0,
+  "browser": "Chromium (Playwright MCP), viewport de escritorio",
+  "notes": [
+    "La seleccion de 1m fue una interaccion real en el <select> (no un cambio de estado sintetico).",
+    "El historico se adquiere por REST publico y se guarda solo en la cache aislada del explorador (1 peticion, 299 velas).",
+    "Sin servicio no hay EventSource: el panel declara DESCONECTADO y no LIVE.",
+    "Esta evidencia acredita el camino de usuario al intervalo 1m, no recepcion de Binance."
+  ]
+}
