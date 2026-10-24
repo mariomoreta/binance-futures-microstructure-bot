@@ -3118,6 +3118,14 @@ de la primera vela previa, aunque el extremo reciente cambie; (c) el explorador
 usa guard síncrono de petición en vuelo y clave de rango, distingue cancelación /
 agotamiento / fallo y conserva el gráfico con reintento manual.
 
+**Segunda observación del mismo defecto (previa a la corrección).** `ACTUSDT` 1h
+encadenó 6 peticiones REST públicas el 2026-10-24 entre `12:07:10.299Z` y
+`12:07:27.733Z` (17,4 s, ids 54–59 del `market_fetch_ledger`) y añadió 1.799
+velas a la caché derivada (el símbolo no tenía filas). Cliente `UNKNOWN`; no
+consta ninguna ejecución de navegador en este bloque. Evidencia:
+`docs/evidence/market-lab-pagination-cascade-2026-10-24.json`, que también fija
+la cadena de 12 de `0GUSDT` (ids 42–53, 31,4 s).
+
 **Pruebas.** Backend: `tests/test_market_stream.py` 29/29,
 `test_market_stream_window.py` 25/25, `test_market_stream_transport.py` 13/13.
 Frontend focalizado: gate 5/5, `price-chart-market` 9/9 (incluye la regresión de

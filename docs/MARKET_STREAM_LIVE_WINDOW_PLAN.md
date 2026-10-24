@@ -443,6 +443,12 @@ medido, con la causa y la corrección demostradas por separado.
   REST públicas (`01:43:47Z`–`01:44:18Z`) que añadieron 3.552 velas a la caché
   derivada (47 → 3.599 filas), sin perder filas previas; DBs canónicas intactas.
   Se ejecutó `wal_checkpoint(TRUNCATE)`. El cliente exacto queda `UNKNOWN`.
+- Segunda observación del mismo defecto antes de la corrección: `ACTUSDT` 1h
+  encadenó 6 peticiones REST públicas (`12:07:10.299Z`–`12:07:27.733Z`, 17,4 s,
+  ids 54–59 del `market_fetch_ledger`) y añadió 1.799 velas (la caché no tenía
+  filas de ese símbolo). Cliente `UNKNOWN`; no consta ninguna ejecución de
+  navegador en el bloque de corrección. DBs canónicas intactas. Evidencia:
+  `docs/evidence/market-lab-pagination-cascade-2026-10-24.json`.
 - Riesgo residual corregido el 2026-10-24 (§12.6): el transporte ya no puede
   caer al endpoint público y la paginación está acotada a una página por gesto.
   La evidencia histórica de esta sección **no** se borra ni se reinterpreta.

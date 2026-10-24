@@ -141,13 +141,17 @@ Evidencia: `docs/evidence/market-stream-transport-failclosed-2026-10-24.json`.
 no se repite sin autorización.
 
 **5. Limitaciones:** la primera interacción de la cadena de 12 sigue `UNKNOWN`
-(la evidencia de la ventana no registra acciones de UI); la corrección se
-acredita por reproducción del mecanismo, no por una nueva ventana; el servicio
+(la evidencia de la ventana no registra acciones de UI); una segunda cadena
+observada antes de la corrección (`ACTUSDT`, 6 peticiones en 17,4 s, ids 54–59)
+confirma el mismo patrón; la corrección se acredita por reproducción del
+mecanismo, no por una nueva ventana; el servicio
 sigue manual y detenido por defecto; los 5 `high` de cadena de desarrollo siguen;
 `next build` se detiene una vez con el aviso de seguridad y completa al
 reintentar.
 
 **6. Evidence:** `docs/evidence/market-stream-transport-failclosed-2026-10-24.json`;
+`docs/evidence/market-lab-pagination-cascade-2026-10-24.json` (cadenas
+observadas `0GUSDT` 12 y `ACTUSDT` 6, leídas en modo solo-lectura);
 `docs/evidence/nextjs-security-diagnosis-2026-10-24.json` (advisories desde
 `api.github.com/advisories` + lock + manifiestos + sondas locales);
 `tests/test_market_stream_transport.py`; `tests/test_market_stream.py`;

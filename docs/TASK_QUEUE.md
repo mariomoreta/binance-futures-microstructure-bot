@@ -16,10 +16,13 @@ explorador no abre peticiones concurrentes ni repite el mismo rango; cancelació
 agotamiento y fallo se distinguen y el fallo conserva el gráfico con reintento
 manual. Causa de la cadena de 12: el evento de rango disparaba la descarga tras
 anteponer cuando `isSuffix` fallaba por un tick del feed (la primera interacción
-de la cadena sigue `UNKNOWN`). Pruebas: backend 29/29 + 25/25 + 13/13; frontend
+de la cadena sigue `UNKNOWN`; una segunda cadena de 6 peticiones en `ACTUSDT`,
+17,4 s, confirma el patrón antes de la corrección). Pruebas: backend 29/29 +
+25/25 + 13/13; frontend
 gate 5/5, PriceChart 9/9, explorador 12/12, contrato 13/13; `tsc`/`eslint` 0;
 `next build` OK. Evidencia:
-`docs/evidence/market-stream-transport-failclosed-2026-10-24.json` y
+`docs/evidence/market-stream-transport-failclosed-2026-10-24.json`,
+`docs/evidence/market-lab-pagination-cascade-2026-10-24.json` y
 `docs/evidence/nextjs-security-diagnosis-2026-10-24.json` (advisories verificadas
 en la API oficial y contrastadas con `package-lock.json`; actualización **no**
 ejecutada).
