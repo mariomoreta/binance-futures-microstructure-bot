@@ -1,3 +1,48 @@
+## Market Lab — transporte aislado y paginación acotada (2026-10-24, base `5dec9ff`, sin ventana)
+
+`CURRENT_PHASE`: dashboard V2 de escritorio + observación (WS público solo bajo
+autorización explícita; sin monitor, sin órdenes).
+
+`CURRENT_OBJECTIVE`: eliminar las conexiones accidentales y las descargas
+encadenadas sin abrir Binance ni actualizar Next.js.
+
+`ACTIVE_TASK`: **cerrado**. (1) `--transport` obligatorio y falla cerrado:
+`local` exige WS loopback, desactiva la reparación REST y no tiene fallback;
+`public` es la activación explícita; sin transporte válido el servicio sale con
+código 2 (`TRANSPORT_CONFIG`) antes de abrir ningún socket. (2) La paginación se
+decide al terminar un gesto (`frontend/src/lib/earlier-gate.ts`), el encuadre se
+conserva por índice exacto aunque el feed actualice la última vela, y el
+explorador no abre peticiones concurrentes ni repite el mismo rango; cancelación,
+agotamiento y fallo se distinguen y el fallo conserva el gráfico con reintento
+manual. Causa de la cadena de 12: el evento de rango disparaba la descarga tras
+anteponer cuando `isSuffix` fallaba por un tick del feed (la primera interacción
+de la cadena sigue `UNKNOWN`). Pruebas: backend 29/29 + 25/25 + 13/13; frontend
+gate 5/5, PriceChart 9/9, explorador 12/12, contrato 13/13; `tsc`/`eslint` 0;
+`next build` OK. Evidencia:
+`docs/evidence/market-stream-transport-failclosed-2026-10-24.json` y
+`docs/evidence/nextjs-security-diagnosis-2026-10-24.json` (advisories verificadas
+en la API oficial y contrastadas con `package-lock.json`; actualización **no**
+ejecutada).
+
+`NEXT_TASKS`:
+1. **Nueva ventana (solo con autorización explícita)**: repetir el procedimiento
+   corregido; capturar #2 con `LIVE` (paginar antes del cierre o ampliar el
+   `hold`) y #3 con el aviso de desconexión ya visible. Sin autorización no se
+   repite; el `FAIL` medido se mantiene.
+2. **Decisión de seguridad Next.js**: evaluar la actualización a `16.4.1`
+   (patch) cuando el operador lo autorice. Condiciones actuales no cumplidas:
+   sin Server Actions registradas, sin `cacheComponents`, `sharp 0.35.5`,
+   SVG rechazado por el optimizador, win32 y `127.0.0.1`.
+3. Revisión visual por modelo de las capturas controladas (hoy `NOT_REVIEWED`).
+4. Retención/poda de `data/market-cache/` antes de uso intensivo.
+5. Decidir si el servicio se deja arrancado por defecto o sigue manual (hoy
+   manual y detenido).
+6. Indicadores compartidos: capacidad posterior con contrato y presupuesto
+   propios.
+7. Re-ejecutar `/antislop` end-to-end en sesión nueva; sigue PENDIENTE.
+8. Mantener diferido: stops/objetivos arrastrables, móvil/Flutter, F-PAPER-01,
+   ejecución con capital.
+
 ## Market Lab — cierre del expediente F-CHART-BINANCE-04 con causa demostrada (2026-10-24, base `965ab87`)
 
 `CURRENT_PHASE`: dashboard V2 de escritorio + observación (WS público bajo

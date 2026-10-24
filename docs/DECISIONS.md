@@ -2785,3 +2785,45 @@ y muestra la causa de inmediato; cerrar la pestaña libera al consumidor en
 milisegundos; el BFF cierra el stream cuando el upstream muere. La paginación
 deja de fingir crecimiento. No cambia estrategia, economía, riesgo ni ejecución;
 no se abre conexión Binance nueva; no se actualiza Next.js (diagnóstico aparte).
+
+## 2026-10-24 — Transporte falla cerrado y paginación acotada a un gesto
+
+**Contexto.** Dos defectos del diagnóstico anterior quedaban abiertos: (1) el
+servicio construía `BinanceKlineTransport()` contra el endpoint público y
+`build_recovery(_rest_client())` cuando no se pasaba `--base-url`, así que dos
+arranques "de prueba" abrieron el WS público sin declararlo; (2) una sola
+interacción en `/market-lab` encadenó 12 peticiones REST de "anteriores"
+(`0GUSDT` 1h, 31,4 s) porque la descarga se decidía en el evento de rango:
+anteponer velas también emite ese evento y, si el feed había actualizado la
+última vela, `isSuffix()` fallaba, no se desplazaba el rango lógico y la vista
+caía sobre el bloque recién antepuesto, que volvía a pedir otra página.
+
+**Decisión.**
+
+1. El servicio no arranca sin transporte explícito. `--transport local` exige
+   `--base-url ws://127.0.0.1|localhost|::1:<puerto>`, desactiva la reparación
+   REST y no tiene fallback al endpoint público; `--transport public` es la
+   única activación del WS de Binance. Sin transporte válido sale con código 2
+   (`TRANSPORT_CONFIG`) antes de abrir cualquier socket. `/health` declara
+   `transport.mode` y `transport.base_url`. El orquestador de ventana pasa el
+   modo; no se crea un segundo gestor.
+2. La paginación automática solo se evalúa al terminar un gesto del usuario
+   (rueda con debounce 250 ms, `pointerup`, `keyup`) mediante
+   `frontend/src/lib/earlier-gate.ts`: exige gesto nuevo, respeta un cooldown de
+   600 ms, comprueba el borde y no repite el mismo ancla salvo que el intento
+   anterior haya fallado. Los cambios de rango provocados por anteponer velas no
+   incrementan el contador de gestos y no pueden disparar descargas.
+3. Anteponer conserva el encuadre por índice exacto de la primera vela que ya
+   estaba, aunque el extremo reciente haya cambiado; el explorador mantiene un
+   guard síncrono de petición en vuelo y una clave de rango, y distingue
+   cancelación (sin error ni agotamiento), agotamiento (`added === 0` o
+   `exhausted_before`) e intento fallido (aviso + gráfico conservado + reintento
+   manual habilitado).
+
+**Consecuencias.** Una configuración local ausente o incorrecta produce cero
+conexiones públicas (probado con exit 2 y con un servicio real sobre WS falso
+local sin resoluciones de `fstream.binance.com`); una interacción consume como
+máximo una página y los reintentos legítimos siguen disponibles. No cambia
+estrategia, economía, riesgo ni ejecución; no se abre conexión Binance nueva; no
+se actualiza Next.js. El veredicto medido de la ventana sigue `FAIL` y su
+evidencia no se reescribe.

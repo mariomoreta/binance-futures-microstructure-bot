@@ -443,5 +443,31 @@ medido, con la causa y la corrección demostradas por separado.
   REST públicas (`01:43:47Z`–`01:44:18Z`) que añadieron 3.552 velas a la caché
   derivada (47 → 3.599 filas), sin perder filas previas; DBs canónicas intactas.
   Se ejecutó `wal_checkpoint(TRUNCATE)`. El cliente exacto queda `UNKNOWN`.
-- Riesgo residual no corregido: una sola interacción puede encadenar varias
-  descargas de "anteriores" en lugar de una; anotado en `docs/TASK_QUEUE.md`.
+- Riesgo residual corregido el 2026-10-24 (§12.6): el transporte ya no puede
+  caer al endpoint público y la paginación está acotada a una página por gesto.
+  La evidencia histórica de esta sección **no** se borra ni se reinterpreta.
+
+### 12.6 Corrección de los dos defectos (2026-10-24, sin ventana real)
+
+1. **Transporte aislado y falla cerrado.** `market_stream_service.py` exige
+   `--transport local|public`. `local` valida `ws://` loopback, desactiva la
+   reparación REST y no tiene fallback; `public` es la activación explícita del
+   WS de Binance. Sin transporte válido: exit 2 (`TRANSPORT_CONFIG`) y cero
+   sockets. El orquestador de ventana pasa `--transport local` con `--base-url`
+   y `--transport public` sin él. Evidencia:
+   `docs/evidence/market-stream-transport-failclosed-2026-10-24.json` y
+   `tests/test_market_stream_transport.py` (incluye un servicio real con WS
+   falso local: cero resoluciones de `fstream.binance.com`).
+2. **Paginación acotada a una página por interacción.** La descarga ya no se
+   decide en el evento de rango (anteponer velas también lo emite): se evalúa al
+   **terminar un gesto** (rueda con debounce, `pointerup`, `keyup`) con la puerta
+   `frontend/src/lib/earlier-gate.ts` (gesto nuevo + cooldown + borde + ancla).
+   Además, anteponer conserva el encuadre por índice exacto aunque el feed haya
+   actualizado la última vela (antes `isSuffix` fallaba y la vista caía sobre el
+   bloque nuevo). En el explorador: guard síncrono de petición en vuelo, mismo
+   rango no repetido, y distinción cancelación / agotamiento / fallo con
+   reintento manual habilitado. Evidencia: pruebas de `earlier-gate`,
+   `price-chart-market` (incluye la reproducción del disparador) y
+   `contract-explorer` (dos clics → una petición; fallo → gráfico conservado).
+
+El veredicto medido de la ventana sigue `FAIL`; esta corrección no lo cambia.

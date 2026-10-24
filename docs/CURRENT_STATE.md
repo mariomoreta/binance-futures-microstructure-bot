@@ -3085,3 +3085,62 @@ descargas de "anteriores" (12 medidas); pendiente de investigar.
 acreditado solo por la captura #1 de la ventana); inspección visual
 `NOT_REVIEWED` (modelo de texto, sin proveedor de visión); repetición de la
 ventana pendiente; los 5 `high` de cadena de desarrollo siguen sin abordar.
+
+## Transporte aislado y paginación acotada — cierre de los dos defectos (2026-10-24, base `5dec9ff`, sin ventana)
+
+**1. Transporte falla cerrado (causa de las conexiones accidentales).** El
+servicio construía `BinanceKlineTransport()` (endpoint público) y
+`build_recovery(_rest_client())` cuando no había `--base-url`: los dos arranques
+"de diagnóstico" del bloque anterior abrieron el WS público sin declararlo. Ahora
+`--transport` es obligatorio: `local` exige `ws://127.0.0.1|localhost|::1:<puerto>`,
+desactiva la reparación REST y no tiene fallback; `public` es la activación
+explícita. Sin transporte válido el proceso sale con código 2
+(`TRANSPORT_CONFIG`) antes de abrir nada. El orquestador de ventana pasa el modo
+y `/health` publica `transport.mode`/`transport.base_url`. Evidencia:
+`docs/evidence/market-stream-transport-failclosed-2026-10-24.json` (6/6 casos
+inválidos → exit 2) y `tests/test_market_stream_transport.py` (13/13; el test de
+runtime arranca el servicio real sobre un WS falso local y verifica cero
+resoluciones de `fstream.binance.com` y liberación del consumidor).
+
+**2. Paginación: disparador identificado y acotado.** La cadena de 12 peticiones
+(`market_fetch_ledger` ids 42–53, `1792806227319` → `1792806258691`, 31,4 s) se
+disparaba desde el evento de rango: al anteponer un bloque, si el feed había
+actualizado la última vela, `isSuffix()` fallaba, no se desplazaba el rango
+lógico y la vista caía sobre el bloque recién antepuesto (borde izquierdo), que
+volvía a pedir otra página; cada vuelta cambiaba el ancla y saltaba el guard
+anterior. Reproducido en `price-chart-market.test.tsx` ("anteponer con el extremo
+reciente actualizado"). La primera interacción de la cadena sigue `UNKNOWN`: la
+evidencia de la ventana no registra acciones de UI. Corrección: (a) la descarga
+se decide al terminar un gesto (rueda con debounce 250 ms, `pointerup`, `keyup`)
+con `frontend/src/lib/earlier-gate.ts` (gesto nuevo, cooldown 600 ms, borde,
+ancla distinta o intento fallido); (b) el encuadre se conserva por índice exacto
+de la primera vela previa, aunque el extremo reciente cambie; (c) el explorador
+usa guard síncrono de petición en vuelo y clave de rango, distingue cancelación /
+agotamiento / fallo y conserva el gráfico con reintento manual.
+
+**Pruebas.** Backend: `tests/test_market_stream.py` 29/29,
+`test_market_stream_window.py` 25/25, `test_market_stream_transport.py` 13/13.
+Frontend focalizado: gate 5/5, `price-chart-market` 9/9 (incluye la regresión de
+múltiples eventos de rango tras anteponer → una sola petición), explorador 12/12
+(dos clics en el mismo tick → una petición; fallo → gráfico conservado +
+reintento), contrato 13/13. `tsc --noEmit` 0, `eslint` 0 en los archivos tocados,
+`next build` OK (un aborto esperado por el aviso de seguridad y reintento).
+
+**Estado servido.** Dashboard reiniciado sobre el build nuevo: PID 32712,
+`BUILD_ID=y_fx2dQ35CUiQeOHtUhfl` presente en el HTML de `/market-lab` (HTTP 200);
+servicio 8791 **detenido**; sin ventana Binance. DBs canónicas intactas
+(`microprobe.db`/`historical.db` mtime 2026-10-15); no se borró evidencia previa.
+
+**Seguridad Next.js (verificada, sin actualizar).** Tres advisories consultadas
+en la API oficial de GitHub (`api.github.com/advisories`):
+`GHSA-2464-fhr4-w9xw` (critical; `next >=16.0.0 <=16.4.0`, parche `16.4.1`;
+requiere Image Optimization con SVG + `sharp < 0.35.5` + Linux glibc),
+`GHSA-673q-mjm6-r5xr` (critical; `>=16.0.0 <=16.4.0`, parche `16.4.1`; requiere
+`use cache` con typed arrays) y `GHSA-p3m5-59mp-jv5r` (CVE-2026-94482, high;
+`>=16.0.0 <=16.4.0`, parche `16.4.1`; requiere al menos una Server Action).
+Contraste con `package-lock.json`: `next 16.4.0` (afectado), `sharp 0.35.5`
+instalado (versión del workaround), `server-reference-manifest` sin acciones
+registradas, `next.config.ts` sin `cacheComponents`; sondas en el servidor real:
+`/_next/image` con SVG local y remoto → 400, POST de Server Action → 400. No se
+deduce solo por búsqueda de texto. Actualización a 16.4.1 **no ejecutada**.
+Evidencia: `docs/evidence/nextjs-security-diagnosis-2026-10-24.json`.

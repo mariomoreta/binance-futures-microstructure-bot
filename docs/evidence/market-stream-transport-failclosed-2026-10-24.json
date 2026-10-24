@@ -1,0 +1,70 @@
+{
+  "contract_version": "market-stream-transport-evidence/v1",
+  "generated_at_ms": 1792844696751,
+  "rule": "sin --transport el servicio no arranca (exit 2) y no hay fallback al endpoint publico; 'local' exige WS loopback",
+  "cases": {
+    "no_transport": {
+      "argv": [],
+      "exit": 2,
+      "stdout": "",
+      "stderr": "{\"service\": \"market-stream-service/v1\", \"error\": \"TRANSPORT_CONFIG\", \"detail\": \"transporte no especificado: use --transport local --base-url ws://127.0.0.1:<puerto> o --transport public (conexion publica explicita)\"}",
+      "elapsed_ms": 411
+    },
+    "local_without_base_url": {
+      "argv": [
+        "--transport",
+        "local"
+      ],
+      "exit": 2,
+      "stdout": "",
+      "stderr": "{\"service\": \"market-stream-service/v1\", \"error\": \"TRANSPORT_CONFIG\", \"detail\": \"transporte local sin --base-url: no se usa el endpoint publico como respaldo\"}",
+      "elapsed_ms": 438
+    },
+    "local_public_url": {
+      "argv": [
+        "--transport",
+        "local",
+        "--base-url",
+        "wss://fstream.binance.com"
+      ],
+      "exit": 2,
+      "stdout": "",
+      "stderr": "{\"service\": \"market-stream-service/v1\", \"error\": \"TRANSPORT_CONFIG\", \"detail\": \"--base-url no es un WS loopback valido: 'wss://fstream.binance.com' (se espera ws://127.0.0.1:<puerto>)\"}",
+      "elapsed_ms": 445
+    },
+    "local_remote_host": {
+      "argv": [
+        "--transport",
+        "local",
+        "--base-url",
+        "ws://192.168.1.10:8799"
+      ],
+      "exit": 2,
+      "stdout": "",
+      "stderr": "{\"service\": \"market-stream-service/v1\", \"error\": \"TRANSPORT_CONFIG\", \"detail\": \"--base-url no es un WS loopback valido: 'ws://192.168.1.10:8799' (se espera ws://127.0.0.1:<puerto>)\"}",
+      "elapsed_ms": 419
+    },
+    "base_url_without_transport": {
+      "argv": [
+        "--base-url",
+        "ws://127.0.0.1:8799"
+      ],
+      "exit": 2,
+      "stdout": "",
+      "stderr": "{\"service\": \"market-stream-service/v1\", \"error\": \"TRANSPORT_CONFIG\", \"detail\": \"transporte no especificado: use --transport local --base-url ws://127.0.0.1:<puerto> o --transport public (conexion publica explicita)\"}",
+      "elapsed_ms": 406
+    },
+    "public_with_base_url": {
+      "argv": [
+        "--transport",
+        "public",
+        "--base-url",
+        "ws://127.0.0.1:8799"
+      ],
+      "exit": 2,
+      "stdout": "",
+      "stderr": "{\"service\": \"market-stream-service/v1\", \"error\": \"TRANSPORT_CONFIG\", \"detail\": \"--transport public no admite --base-url\"}",
+      "elapsed_ms": 441
+    }
+  }
+}

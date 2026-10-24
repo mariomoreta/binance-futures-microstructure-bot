@@ -1,78 +1,123 @@
 {
-  "generated_at": "2026-10-24",
-  "scope": "diagnostico unicamente; no se actualiza nada",
-  "installed": {
-    "next": "16.4.0",
-    "package_json_range": "^16.4.0",
-    "package_lock": "16.4.0",
-    "runtime": "next start -p 3020 -H 127.0.0.1 (Windows, win32)",
-    "sharp": "no instalado"
-  },
-  "build_nudge": {
-    "observed": true,
-    "message": "SecurityFatalError: Your version of Next.js is affected by a known security vulnerability (build detenido; el mismo comando debe reintentarse)",
-    "suggested_command": "next upgrade --agent=security --internal-nudge-id=7c7d553d-...",
-    "executed": false,
-    "reason": "el operador prohibio la actualizacion automatica y la actualizacion mayor; el build se completo reintentando el mismo comando"
-  },
+  "contract_version": "nextjs-security-diagnosis/v2",
+  "generated_at_ms": 1792844699317,
+  "scope": "verificacion de fuentes oficiales + contraste con package-lock; NO se ejecuta ninguna actualizacion",
   "advisories": [
     {
+      "source": "https://api.github.com/advisories/GHSA-2464-fhr4-w9xw",
+      "http": 200,
       "id": "GHSA-2464-fhr4-w9xw",
-      "cve": "CVE-2026-96889",
+      "cve": null,
       "severity": "critical",
-      "cvss_v4": 9.5,
-      "title": "Unauthenticated Remote Code Execution in Image Optimization API when SVG files are used",
-      "affected": ">=10.0.0 <=15.5.27 y >=16.0.0 <=16.4.0",
-      "patched": ["15.5.28", "16.4.1"],
-      "prerequisites": [
-        "Image Optimization API en uso (next/image o /_next/image)",
-        "procesamiento de SVG por sharp < 0.35.5",
-        "Linux con glibc (la memoria/ejecucion depende de la cadena glibc)"
+      "summary": "Next.js: Unauthenticated Remote Code Execution in Image Optimization API when SVG files are used",
+      "published_at": "2026-10-22T15:52:53Z",
+      "html_url": "https://github.com/advisories/GHSA-2464-fhr4-w9xw",
+      "vulnerabilities": [
+        {
+          "package": "next",
+          "ecosystem": "npm",
+          "vulnerable": ">= 10.0.0, <= 15.5.27",
+          "first_patched": "15.5.28"
+        },
+        {
+          "package": "next",
+          "ecosystem": "npm",
+          "vulnerable": ">= 16.0.0, <= 16.4.0",
+          "first_patched": "16.4.1"
+        }
       ],
-      "exposure_in_this_app": "no: 0 importaciones de next/image, sin configuracion images, sharp no instalado, plataforma win32 y servidor ligado a 127.0.0.1",
-      "verdict": "no alcanzable por la aplicacion actual; el paquete instalado sigue afectado"
+      "description": "## Impact\n\nA memory-related vulnerability has been discovered in an upstream library used for Image Optimization can lead to possible remote code execution (RCE) when Next.js runs on glibc-based Linux.\n\n## Workaround\n\nEnsure the version of `sharp` used by Next.js is greater than or equal to `0.35.5`. Fresh installs automatically get a fixed version of `sharp`.\nUpgrading Next.js to the patched versions will ensure package managers automatically provide a fixed version of `sharp` to Next.js."
     },
     {
+      "source": "https://api.github.com/advisories/GHSA-673q-mjm6-r5xr",
+      "http": 200,
       "id": "GHSA-673q-mjm6-r5xr",
+      "cve": null,
       "severity": "critical",
-      "cvss_v4": 9.5,
-      "title": "Unauthenticated Remote Code Execution in `use cache` functions returning typed arrays",
-      "affected": ">=16.0.0 <=16.4.0",
-      "patched": ["16.4.1"],
-      "prerequisites": [
-        "App Router con Cache Component ('use cache') que devuelve varios typed arrays"
+      "summary": "Next.js: Unauthenticated Remote Code Execution in `use cache` functions returning typed arrays",
+      "published_at": "2026-10-22T16:42:31Z",
+      "html_url": "https://github.com/advisories/GHSA-673q-mjm6-r5xr",
+      "vulnerabilities": [
+        {
+          "package": "next",
+          "ecosystem": "npm",
+          "vulnerable": ">= 16.0.0, <= 16.4.0",
+          "first_patched": "16.4.1"
+        }
       ],
-      "exposure_in_this_app": "no: 0 directivas 'use cache' en src; cacheComponents no configurado",
-      "verdict": "no alcanzable por la aplicacion actual"
+      "description": "## Impact\n\nA vulnerability in applications using App router with Cache Component can lead to remote code execution. The application needs to have a `use cache` function that returns multiple typed arrays.\n\n## Workaround\n\nThere is no known workaround for affected applications with such `use cache` functions. You should upgrade immediately even if your application does not have similar functions."
     },
     {
+      "source": "https://api.github.com/advisories/GHSA-p3m5-59mp-jv5r",
+      "http": 200,
       "id": "GHSA-p3m5-59mp-jv5r",
+      "cve": "CVE-2026-94482",
       "severity": "high",
-      "title": "Denial of Service in App Router using Server Actions",
-      "affected": ">=16.0.0 <=16.4.0",
-      "patched": ["16.4.1"],
-      "prerequisites": ["endpoint de Server Actions en uso"],
-      "exposure_in_this_app": "no: 0 directivas 'use server' en src",
-      "verdict": "no alcanzable por la aplicacion actual"
+      "summary": "Next.js: Denial of Service in App Router using Server Actions",
+      "published_at": "2026-10-22T15:50:34Z",
+      "html_url": "https://github.com/advisories/GHSA-p3m5-59mp-jv5r",
+      "vulnerabilities": [
+        {
+          "package": "next",
+          "ecosystem": "npm",
+          "vulnerable": ">= 13.0.0, <= 15.5.27",
+          "first_patched": "15.5.28"
+        },
+        {
+          "package": "next",
+          "ecosystem": "npm",
+          "vulnerable": ">= 16.0.0, <= 16.4.0",
+          "first_patched": "16.4.1"
+        }
+      ],
+      "description": "## Impact\n\nCrafted requests targeting Next.js applications using App Router with at least one Server Action can lead to excessive CPU usage blocking processing of further requests in the same process.\n\n## Workarounds\n\nNo workaround exists besides upgrading. Applications using Pages Router or not using Server Actions are not vulnerable."
     }
   ],
-  "npm_audit": {
-    "next": "critical (GHSA-2464-fhr4-w9xw)",
-    "undici": "moderate (GHSA-4qv8-2p9j-2685, EventSource parser DoS; cadena de desarrollo de Next)",
-    "zod": "high (GHSA-mrhx-c7xc-m3w5, memoria con colecciones sobredimensionadas; cadena de desarrollo)",
-    "preexisting": "los 5 high de cadena de desarrollo ya documentados siguen; no se tocan en este bloque"
+  "installed": {
+    "next": "16.4.0",
+    "package_json": "^16.4.0",
+    "sharp_lock": "0.35.5",
+    "sharp_optional": true,
+    "sharp_installed": "0.35.5",
+    "platform": "win32"
   },
-  "recommendation": {
-    "action": "actualizar next a 16.4.1 (patch, mismo major) cuando el operador lo autorice",
-    "why": "16.4.1 parchea las tres advisories de Next; el rango ^16.4.0 ya lo permitiria en una instalacion nueva, pero package-lock.json fija 16.4.0",
-    "steps": [
-      "npm install next@16.4.1 (o editar el lock de forma controlada)",
-      "npm audit para confirmar que next deja de aparecer",
-      "npx tsc --noEmit, suites focalizadas y npm run build",
-      "reiniciar el dashboard y verificar /market-lab"
-    ],
-    "not_executed": true
+  "build_artifacts": {
+    "server_reference_manifest": {
+      "node": {},
+      "edge": {},
+      "encryptionKey": "YRVAo9uBqOY+f23gk/cWMVj0aF9QDWw5Bl+Da1kKtLc="
+    },
+    "server_actions_registered": false,
+    "cache_components_configured": false,
+    "next_config": "import type { NextConfig } from \"next\";\n\nconst nextConfig: NextConfig = {\n  // DASH-V2-00: static foundation only. No API routes, no rewrites to the\n  // Python backend, no external fetch. BFF arrives in a later slice.\n};\n\nexport default nextConfig;"
   },
-  "residual_risk": "bajo en el estado actual (win32, 127.0.0.1, sin next/image, sin Server Actions, sin use cache); el riesgo sube si se habilita next/image con SVG, se despliega en Linux glibc o se exponen Server Actions",
+  "runtime_probes": {
+    "market_lab": {
+      "status": 200,
+      "content_type": "text/html; charset=utf-8",
+      "body": "<!DOCTYPE html><html lang=\"en\"><head><meta charSet=\"utf-8\"/><meta name=\"viewport\" content=\"width=device-width, initial-scale=1\"/><link rel=\"stylesheet\" href=\"/_next/static/chunks/3_8aymm1if0i9.css\" data-precedence=\"next\"/><link rel=\"stylesheet\" href=\"/_next/static/chunks/1gp1oq6zv0ov9.css\" data-precedence=\"next\"/><link rel=\"preload\" as=\"script\" fetchPriority=\"low\" href=\"/_next/static/chunks/1x6obp"
+    },
+    "image_local_svg": {
+      "status": 400,
+      "content_type": null,
+      "body": "\"url\" parameter is valid but image type is not allowed"
+    },
+    "image_remote_svg": {
+      "status": 400,
+      "content_type": null,
+      "body": "\"url\" parameter is not allowed"
+    },
+    "server_action_post": {
+      "status": 400,
+      "content_type": "text/plain",
+      "body": "Invalid Server Action request."
+    }
+  },
+  "conclusion": {
+    "package_affected": "next 16.4.0 esta dentro de >=16.0.0 <=16.4.0",
+    "upgrade_available": "16.4.1 (patch) corrige las tres",
+    "executed": false,
+    "exposure": "condiciones no cumplidas en el build actual: sin Server Actions registradas, sin cacheComponents, sharp 0.35.5 (>= 0.35.5), SVG rechazado por el optimizador, win32 y 127.0.0.1; el paquete sigue afectado y el riesgo sube si se habilita next/image con SVG, se despliega en glibc Linux o se anaden Server Actions"
+  },
   "visual_review": "NOT_REVIEWED"
 }

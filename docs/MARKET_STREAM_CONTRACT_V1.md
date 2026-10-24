@@ -180,6 +180,13 @@ el BFF aborta el upstream y el servicio decrementa el refcount.
 - **Servicio de datos** (`market_stream_service.py`): arranque y parada
   explícitos (`--port`, `--stop`, PID en `data/market-stream/service.json`).
   Escucha **solo** en `127.0.0.1`.
+- **Transporte explícito y falla cerrado** (desde 2026-10-24): `--transport` es
+  obligatorio. `--transport local` exige `--base-url ws://127.0.0.1:<puerto>` (o
+  `localhost`/`::1`), desactiva la reparación REST y **nunca** cae al endpoint
+  público. `--transport public` es la única activación del WS público de
+  Binance. Sin `--transport` (o con una combinación inválida) el proceso sale
+  con código 2 y `error=TRANSPORT_CONFIG` antes de abrir cualquier socket.
+  `/health` declara `transport.mode` y `transport.base_url`.
 - **Monitor del bot**: proceso distinto, suscripciones intactas. Abrir un
   gráfico no lo arranca ni lo detiene.
 - **Sesiones paper**: sin cambios; el stream no escribe sesiones ni resultados.

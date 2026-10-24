@@ -106,6 +106,89 @@ sola interacción puede encadenar varias descargas de "anteriores".
   anteriores citan BUILD_ID `eiXlHvN4lJBLWcuOopsh_`: histórico válido, sustituido
   por `XozH8PXJA4yZR59XphpyH`.
 
+## Transporte aislado y paginación acotada (2026-10-24, base `5dec9ff`, sin ventana)
+
+**1. Title:** Eliminar las conexiones accidentales al endpoint público y las
+descargas encadenadas de "anteriores" sin abrir una nueva ventana Binance ni
+actualizar Next.js.
+
+**2. Approval status:** DECIDED dentro del alcance autorizado (escritorio,
+presupuesto cero, observación; sin nueva conexión Binance, sin actualización de
+Next.js, sin cambios económicos/estrategia).
+
+**3. Implementation status:** IMPLEMENTED —
+`market_stream_service.py` exige `--transport local|public`: `local` valida
+`ws://127.0.0.1|localhost|::1:<puerto>`, desactiva `build_recovery` y no tiene
+fallback; `public` es la activación explícita; sin transporte válido, exit 2
+(`TRANSPORT_CONFIG`) antes de abrir sockets. `/health` declara
+`transport.mode/base_url`; el orquestador de ventana pasa el modo. Paginación:
+`frontend/src/lib/earlier-gate.ts` decide al terminar un gesto (rueda con
+debounce 250 ms, `pointerup`, `keyup`); `PriceChart.tsx` conserva el encuadre por
+índice exacto de la primera vela previa aunque el feed actualice la última;
+`ContractExplorer.tsx` añade guard síncrono de petición en vuelo, clave de rango
+y distinción cancelación/agotamiento/fallo con reintento manual.
+
+**4. Evaluation status:** VERIFIED sin red pública. Backend: 29/29 + 25/25 +
+13/13 (incluye servicio real con WS falso local, cero resoluciones de
+`fstream.binance.com`, liberación del consumidor). Frontend: gate 5/5, PriceChart
+9/9 (regresión: múltiples eventos de rango tras anteponer → una sola petición;
+anteponer con extremo reciente actualizado conserva encuadre), explorador 12/12
+(dos clics en el mismo tick → una petición; fallo → gráfico conservado y
+reintento), contrato 13/13. `tsc --noEmit` 0, `eslint` 0 en los archivos tocados,
+`next build` OK. CLI: 6/6 configuraciones inválidas → exit 2 sin sockets.
+Evidencia: `docs/evidence/market-stream-transport-failclosed-2026-10-24.json`.
+**NO verificado con Binance**: el veredicto medido de la ventana sigue `FAIL` y
+no se repite sin autorización.
+
+**5. Limitaciones:** la primera interacción de la cadena de 12 sigue `UNKNOWN`
+(la evidencia de la ventana no registra acciones de UI); la corrección se
+acredita por reproducción del mecanismo, no por una nueva ventana; el servicio
+sigue manual y detenido por defecto; los 5 `high` de cadena de desarrollo siguen;
+`next build` se detiene una vez con el aviso de seguridad y completa al
+reintentar.
+
+**6. Evidence:** `docs/evidence/market-stream-transport-failclosed-2026-10-24.json`;
+`docs/evidence/nextjs-security-diagnosis-2026-10-24.json` (advisories desde
+`api.github.com/advisories` + lock + manifiestos + sondas locales);
+`tests/test_market_stream_transport.py`; `tests/test_market_stream.py`;
+`tests/test_market_stream_window.py`; `frontend/src/lib/earlier-gate.ts` (+ test);
+`frontend/src/components/chart/PriceChart.tsx` (+ test);
+`frontend/src/components/market-lab/ContractExplorer.tsx` (+ test);
+`scripts/market_stream_window.py`; `docs/MARKET_STREAM_CONTRACT_V1.md` §9;
+`docs/MARKET_STREAM_LIVE_WINDOW_PLAN.md` §12.6.
+
+**7. Last update:** 2026-10-24.
+
+### Cierre (siete campos, obligatorios)
+
+- `DECISIONS_REVIEWED` — AGENTS, WORKFLOW, `CURRENT_STATE`, `TASK_QUEUE`,
+  `DECISIONS` (2026-10-24 cierre/error del BFF, frescura local, liberación
+  inmediata, bloque anterior), `MARKET_STREAM_CONTRACT_V1`, `MARKET_STREAM_LIVE_WINDOW_PLAN`
+  §12, `SAFETY_RULES`, `DESKTOP_FIRST_SCOPE_20261020` y este backlog.
+- `NEW_DECISIONS_RECORDED` — DECISIONS 2026-10-24: el servicio no arranca sin
+  transporte explícito (falla cerrado, sin fallback público); `local` exige
+  loopback y desactiva la reparación REST; la paginación automática se decide
+  solo al terminar un gesto y nunca por el cambio de rango que provoca anteponer.
+- `FEATURES_IMPLEMENTED` — resolución/validación de transporte en el servicio
+  (+ `/health`), puerta `earlier-gate`, evaluación al final del gesto, anclaje
+  exacto del encuadre al anteponer, guard de petición en vuelo y estados
+  cancelación/agotamiento/fallo en el explorador, pruebas y evidencia.
+- `FEATURES_VERIFIED` — 6/6 configuraciones inválidas sin sockets; servicio real
+  con WS local sin resoluciones públicas y liberación del consumidor; una página
+  por gesto; dos clics → una petición; fallo → gráfico conservado + reintento;
+  `tsc`/`eslint` 0; build OK; `/market-lab` 200.
+- `DEFERRED_FEATURES` — nueva ventana real (requiere autorización); actualización
+  de Next.js a 16.4.1 (decisión pendiente); revisión visual por modelo;
+  retención del caché; indicadores compartidos; paper con datos vivos;
+  móvil/Flutter; REA; `/antislop` end-to-end.
+- `BACKLOG_UPDATED` — yes: esta sección, `CURRENT_STATE`, `TASK_QUEUE`,
+  `DECISIONS`, `MARKET_STREAM_CONTRACT_V1` §9, `MARKET_STREAM_LIVE_WINDOW_PLAN`
+  §12.5–§12.6.
+- `DOCUMENTATION_CONFLICTS` — el diagnóstico previo decía "`sharp` no instalado";
+  el lock y `node_modules` muestran `sharp 0.35.5` (opcional de Next), que es la
+  versión del workaround. La sección histórica de la ventana se conserva tal
+  cual; el `FAIL` medido no se reinterpreta.
+
 ## F-CHART-BINANCE-03 — Actualización continua de velas en el explorador (2026-10-21, base `469e282`)
 
 **1. Title:** Vela en formación actualizándose sin recargar la página para el contrato seleccionado, con conexión compartida backend, snapshot+stream reconciliados, reconexión con backoff, reparación acotada de huecos, estados honestos (CONECTANDO/RECIBIENDO/OBSOLETO/DESCONECTADO/RECUPERANDO) y `LIVE` condicionado a frescura real.
