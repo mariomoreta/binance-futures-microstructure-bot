@@ -119,5 +119,14 @@
     "executed": false,
     "exposure": "condiciones no cumplidas en el build actual: sin Server Actions registradas, sin cacheComponents, sharp 0.35.5 (>= 0.35.5), SVG rechazado por el optimizador, win32 y 127.0.0.1; el paquete sigue afectado y el riesgo sube si se habilita next/image con SVG, se despliega en glibc Linux o se anaden Server Actions"
   },
-  "visual_review": "NOT_REVIEWED"
+  "visual_review": "NOT_REVIEWED",
+  "npm_audit": {
+    "rerun_in_this_block": false,
+    "recorded_2026-10-24": {
+      "next": "critical (GHSA-2464-fhr4-w9xw)",
+      "undici": "moderate (GHSA-4qv8-2p9j-2685, EventSource parser DoS; cadena de desarrollo de Next)",
+      "zod": "high (GHSA-mrhx-c7xc-m3w5, memoria con colecciones sobredimensionadas; cadena de desarrollo)",
+      "preexisting": "los 5 high de cadena de desarrollo ya documentados siguen; no se tocan en este bloque"
+    }
+  }
 }
