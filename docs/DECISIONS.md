@@ -2827,3 +2827,45 @@ máximo una página y los reintentos legítimos siguen disponibles. No cambia
 estrategia, economía, riesgo ni ejecución; no se abre conexión Binance nueva; no
 se actualiza Next.js. El veredicto medido de la ventana sigue `FAIL` y su
 evidencia no se reescribe.
+
+## 2026-10-24 — Segunda ventana real desde `2f2f9ea`: FAIL de aceptación; medición de liberación/reconexión y acciones del navegador automatizadas
+
+**Contexto.** La ventana autorizada se ejecutó una sola vez entre
+`14:04:37.065Z` y `14:05:43.957Z` (66,89 s de 180 s) con `--transport public`,
+`BTCUSDT` + `MINAUSDT` 1m, una conexión WS combinada (1 intento, 0
+reconexiones) y tres consumidores SSE (navegador + BFF + servicio). La cadena
+real pasó: 58 mensajes / 58 aplicados / 2 cierres, 46 eventos `BTCUSDT` y 12
+`MINAUSDT`, 38 actualizaciones provisionales de la misma apertura, cierre y
+siguiente vela, BFF con 46 eventos e identidad `BTCUSDT/1m`, 0 huecos, pico de
+consumidores 3, parada limpia y DBs canónicas intactas; 2 peticiones REST
+públicas de velas (inicial de 299 + paginación de 300) y catálogo desde caché.
+El parche de medición (`--release-browser`, `--release-timeout`,
+`--reconnect-timeout`) se aplicó antes de conectar y no cambia producto.
+
+**Decisión.**
+
+1. Se mantiene el veredicto medido `FAIL` y **no se repite** la ventana. Fallan
+   `consumers_released` (la desconexión del navegador no se ejecutó dentro de
+   los 20 s), `browser_reconnected`, `dom_state_live`, `dom_update_fresh`,
+   `dom_pagination_preserved` y `dom_after_stop`; falta `dom_candles_grew`
+   porque la captura #1 llegó ~2 s después del cierre. La paginación terminó
+   después del `hold` de 20 s y la captura #2 se tomó con el servicio ya
+   parado.
+2. `browser_reconnected` exige `consumers_after_close == 0` y
+   `consumers_after_reconnect == 1`. Un `consumers=1` sin liberación previa no
+   acredita una reconexión; el check se corrigió y el veredicto sigue `FAIL`.
+3. La próxima ventana, solo con autorización explícita, debe automatizar el
+   lado navegador (capturas, paginación, desconexión y reconexión al aviso) y
+   separar la paginación de la fase de liberación o dimensionar el `hold` con la
+   latencia medida. No se amplían límites ni se relanza la ventana.
+4. El aviso `explorer-stream-down` con el SSE del BFF abierto se investiga como
+   observación de producto; no se cambia producto en esta tarea.
+
+**Consecuencias.** La recepción real y la cadena hasta el gráfico quedan
+acreditadas por la evidencia; la aceptación end-to-end no. El fallo es del
+procedimiento de captura/liberación, no de los datos. El ensayo local previo
+hizo, por un defecto del arnés (doble `addInitScript` del reloj), 1 petición
+pública `exchangeInfo` y 1 de 299 velas 1m; la ventana real no usó reloj falso
+ni WS falso y Binance atendió `SUBSCRIBE` (`MINAUSDT` 12 eventos). Sin cambios
+de estrategia, economía, riesgo ni ejecución; sin conexión Binance continua ni
+nueva ventana.

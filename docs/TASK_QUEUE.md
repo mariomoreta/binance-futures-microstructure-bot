@@ -1,3 +1,39 @@
+## Segunda ventana real cerrada (2026-10-24 14:04Z, base `2f2f9ea`): FAIL de aceptación
+
+`CURRENT_PHASE`: dashboard V2 de escritorio + observación (WS público solo bajo
+autorización explícita; sin monitor, sin órdenes).
+
+`CURRENT_OBJECTIVE`: cerrar la ventana ejecutada sin repetirla y convertir el
+lado navegador en un paso automatizado y acotado.
+
+`ACTIVE_TASK`: **cerrado**. La ventana de `14:04:37.065Z` a `14:05:43.957Z`
+(66,89 s de 180 s) midió la cadena real (BTCUSDT 46 eventos, MINAUSDT 12,
+cierre + siguiente vela, BFF 46, 0 huecos, 3 consumidores, parada limpia, DBs
+intactas) y 2 peticiones REST de velas; el veredicto es `FAIL` por
+`consumers_released` (la desconexión del navegador no se ejecutó en los 20 s),
+`browser_reconnected`, `dom_state_live`, `dom_update_fresh`,
+`dom_pagination_preserved` y `dom_after_stop`, con `dom_candles_grew` ausente.
+La captura #2 llegó después de la parada porque la paginación superó el `hold`
+de 20 s. Evidencia: `docs/evidence/market-stream-window-2026-10-24.json` + tres
+DOM. No se repite la ventana.
+
+`NEXT_TASKS`:
+1. **Automatizar el lado navegador** (sin abrir Binance; probar con transporte
+   local): un script de Playwright que capture #1, pagine y capture #2 dentro
+   del `hold`, desconecte al aviso y reconecte, y capture #3 al aparecer el
+   aviso; medir la latencia de la paginación para dimensionar el `hold`.
+2. **Aviso de servicio detenido**: revisar por qué `explorer-stream-down` no
+   apareció con el SSE del BFF abierto (hook/`/status`), sin cambiar el
+   producto sin decisión.
+3. **Nueva ventana solo con autorización explícita** y procedimiento revisado;
+   sin autorización no se repite y el `FAIL` medido se mantiene.
+4. **Decisión de seguridad Next.js**: evaluar `16.4.1` cuando el operador lo
+   autorice (condiciones actuales no cumplidas).
+5. Revisión visual por modelo (`NOT_REVIEWED`).
+6. Retención/poda de `data/market-cache/`.
+7. Indicadores compartidos y paper prospectivo: fuera de alcance hasta nueva
+   autorización.
+
 ## Market Lab — transporte aislado y paginación acotada (2026-10-24, base `5dec9ff`, sin ventana)
 
 `CURRENT_PHASE`: dashboard V2 de escritorio + observación (WS público solo bajo

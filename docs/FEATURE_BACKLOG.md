@@ -1898,3 +1898,80 @@ RESIDUAL MINA/NMR (preciso): falta build_report.json que cubra MINAUSDT/1h y NMR
 
 BACKLOG_UPDATED: este ID; sin cambio de fase activa ni autorizaciones. Gates sin avance.
 
+
+## F-CHART-BINANCE-04 — Segunda ventana real (2026-10-24 14:04Z, base `2f2f9ea`): FAIL de aceptación
+
+**1. Title:** Ejecutar una sola ventana acotada por el camino real
+(`Binance → hub → servicio SSE → BFF → /market-lab`) con el parche de medición
+de liberación/reconexión y evidencia DOM explícita.
+
+**2. Approval status:** DECIDED y ejecutado una vez el 2026-10-24 con
+autorización explícita del operador; sin repetición, sin ampliación de límites,
+sin monitor/paper/órdenes/móvil.
+
+**3. Implementation status:** IMPLEMENTED — orquestador
+`scripts/market_stream_window.py` con `--release-browser`,
+`--release-timeout` y `--reconnect-timeout` (medición; sin cambios de producto),
+`--finalize` con evidencia DOM y checks puros; `scripts/market_stream_service.py`
+y el explorador existentes. No implementado: automatización del lado navegador
+(capturas/desconexión/reconexión), repetición automática, indicadores, paper
+prospectivo.
+
+**4. Evaluation status:** **EJECUTADO UNA VEZ CON BINANCE REAL — veredicto
+`FAIL` (exit 1), `acquired=true`.** Ventana `14:04:37.065Z`–`14:05:43.957Z`
+(66,89 s de 180 s): 1 intento de socket, 0 reconexiones, 58 mensajes / 58
+aplicados / 2 cierres, 46 eventos `BTCUSDT` + 12 `MINAUSDT`, 38 actualizaciones
+provisionales de la misma apertura, cierre `1792850640000` y siguiente vela
+`1792850700000`, BFF con 46 eventos e identidad `BTCUSDT/1m`, 0 huecos, pico de
+consumidores 3, parada limpia (exit 0, puerto cerrado, PID file eliminado,
+`/health` rechazado), DBs canónicas intactas y 2 peticiones REST públicas de
+velas (inicial de 299 + paginación de 300; catálogo desde caché, sin
+`exchangeInfo`). Fallan `consumers_released` (la desconexión del navegador no se
+ejecutó en los 20 s), `browser_reconnected` (sin liberación previa),
+`dom_state_live` y `dom_update_fresh` (captura #2 `OBSOLETO`/`no LIVE`, 35 s
+después de la parada), `dom_pagination_preserved` (error de frescura) y
+`dom_after_stop` (sin aviso); falta `dom_candles_grew` (la captura #1 llegó ~2 s
+después del cierre). `visual_review=NOT_REVIEWED`. Evidencia:
+`docs/evidence/market-stream-window-2026-10-24.json` + `.-dom-1.json`,
+`.-dom-2.json`, `.-dom-stop.json`.
+
+**5. Limitaciones:** la ventana no ejecutó la secuencia de liberación/reconexión
+(el operador quedó bloqueado en la paginación); la paginación superó el `hold`
+de 20 s; la captura #1 no precede al cierre por adjuntar la página cerca del
+borde de minuto; el aviso de servicio detenido no apareció con el SSE del BFF
+abierto; una ventana de minutos no generaliza al universo ni a otros intervalos.
+
+**6. Evidence:** `docs/evidence/market-stream-window-2026-10-24.json`;
+`docs/evidence/market-stream-window-2026-10-24-dom-1.json`;
+`docs/evidence/market-stream-window-2026-10-24-dom-2.json`;
+`docs/evidence/market-stream-window-2026-10-24-dom-stop.json`;
+`scripts/market_stream_window.py`; `tests/test_market_stream_window.py`;
+`docs/MARKET_STREAM_LIVE_WINDOW_PLAN.md` (§13); `docs/CURRENT_STATE.md`;
+`docs/TASK_QUEUE.md`; `docs/DECISIONS.md` (2026-10-24).
+
+**7. Last update:** 2026-10-24.
+
+### Cierre (siete campos, obligatorios)
+
+- `DECISIONS_REVIEWED` — AGENTS, WORKFLOW, CURRENT_STATE, TASK_QUEUE,
+  DECISIONS (2026-10-22/23/24), `MARKET_STREAM_LIVE_WINDOW_PLAN` §13,
+  `SAFETY_RULES`, `DESKTOP_FIRST_SCOPE_20261020` y este backlog.
+- `NEW_DECISIONS_RECORDED` — DECISIONS 2026-10-24: parche de medición
+  autorizado (release/reconnect) y `browser_reconnected` exige liberación
+  previa; la ventana se ejecutó una vez y su veredicto `FAIL` no se rebaja.
+- `FEATURES_IMPLEMENTED` — orquestador con liberación/reconexión y finalize;
+  evidencia DOM; sin cambios de producto.
+- `FEATURES_VERIFIED` — cadena real Binance → hub → SSE → BFF → DOM con
+  `LIVE` e identidad exacta, cierre y siguiente vela, 46 eventos en el BFF,
+  3 consumidores, parada limpia y DBs intactas; pruebas 25/25 del orquestador.
+- `DEFERRED_FEATURES` — automatización del lado navegador; aviso de servicio
+  detenido; repetición de la ventana (solo con autorización); revisión visual;
+  retención del caché; indicadores; paper con datos vivos; móvil/Flutter; REA;
+  `/antislop` end-to-end.
+- `BACKLOG_UPDATED` — yes: este bloque, `CURRENT_STATE`, `TASK_QUEUE`,
+  `DECISIONS`, `MARKET_STREAM_LIVE_WINDOW_PLAN` §13.
+- `DOCUMENTATION_CONFLICTS` — el plan asumía que la paginación cabría en el
+  `hold` de 20 s y que el aviso de servicio detenido aparecería al parar; la
+  ejecución real mostró lo contrario. El `browser_reconnected=True` inicial se
+  corrigió a `False` porque no hubo liberación previa; el veredicto sigue `FAIL`.
+  La cadena real se acredita; la aceptación end-to-end no.

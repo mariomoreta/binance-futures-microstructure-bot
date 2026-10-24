@@ -1,3 +1,40 @@
+## Segunda ventana real ejecutada (2026-10-24 14:04Z, base `2f2f9ea`): cadena correcta, aceptación FAIL (F-CHART-BINANCE-04)
+
+Ejecutada **una sola** ventana autorizada el 2026-10-24 entre `14:04:37.065Z` y
+`14:05:43.957Z` (66,89 s de 180 s), base `2f2f9ea`, BUILD_ID
+`y_fx2dQ35CUiQeOHtUhfl` servido por PID 32712, intervalo `1m`, símbolos
+`BTCUSDT` + `MINAUSDT`, una conexión WS combinada (`--transport public`, 1
+intento, 0 reconexiones) y tres consumidores SSE (navegador + BFF + servicio).
+Sin monitor, sin paper, sin órdenes, sin móvil.
+
+**Cadena medida (real).** 58 mensajes / 58 aplicados / 2 cierres; 46 eventos de
+vela `BTCUSDT` y 12 `MINAUSDT`; 38 actualizaciones provisionales de la misma
+apertura; cierre `1792850640000` y siguiente vela `1792850700000`; BFF con 46
+eventos e identidad `BTCUSDT/1m`; 0 huecos; pico de consumidores 3 y residual 1;
+parada limpia (exit 0, puerto 8791 cerrado, PID file eliminado, `/health`
+rechazado); DBs canónicas intactas. La paginación del navegador subió el gráfico
+de 300 a 600 velas con identidad preservada, pero terminó después del `hold` de
+20 s. 2 peticiones REST públicas de velas (inicial de 299 + paginación de 300);
+el catálogo se sirvió de caché (`catalog_fetched_at_ms` 13:53:27Z, sin
+`exchangeInfo` en la ventana).
+
+**Veredicto medido: `FAIL` (exit 1), `acquired=true`.** Fallan
+`consumers_released` (la desconexión del navegador no se ejecutó en los 20 s),
+`browser_reconnected` (sin liberación previa no acredita reconexión),
+`dom_state_live` y `dom_update_fresh` (captura #2 `OBSOLETO`/`no LIVE`, 35 s
+después de la parada), `dom_pagination_preserved` (error de frescura) y
+`dom_after_stop` (sin aviso `explorer-stream-down`); falta `dom_candles_grew`
+(la captura #1 llegó ~2 s después del cierre). La cadena real sí llegó al
+gráfico; el fallo es del procedimiento de captura/liberación, no de los datos.
+`visual_review=NOT_REVIEWED`.
+
+**Hallazgo abierto.** El lado navegador (capturas, paginación, desconexión y
+reconexión) debe automatizarse y acotarse dentro de la ventana, o separarse en
+fases; el `hold` de 20 s no cubre una paginación lenta. El aviso de servicio
+detenido sigue dependiendo de que el BFF cierre el SSE o de que el hook
+reconsulte `/status`. No se repite la ventana sin autorización explícita.
+Evidencia: `docs/evidence/market-stream-window-2026-10-24.json` y sus tres DOM.
+
 ## Ventana viva ejecutada una vez: cadena real hasta el navegador, veredicto FAIL por la evidencia DOM (2026-10-24, F-CHART-BINANCE-04)
 
 Ejecutada **una sola** ventana autorizada el 2026-10-24 entre `00:47:04Z` y

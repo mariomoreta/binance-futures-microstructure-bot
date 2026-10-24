@@ -370,6 +370,9 @@ def plan(args: argparse.Namespace) -> Dict[str, Any]:
             "bars_per_consumer": DEFAULT_BARS,
             "await_browser_consumers": int(getattr(args, "await_consumers", 0) or 0),
             "await_browser_timeout_s": float(getattr(args, "await_timeout", 0) or 0),
+            "release_browser": bool(getattr(args, "release_browser", False)),
+            "release_timeout_s": float(getattr(args, "release_timeout", 0) or 0),
+            "reconnect_timeout_s": float(getattr(args, "reconnect_timeout", 0) or 0),
             "rest": ("snapshot desde el almacen existente (allow_fetch=False); "
                      "paginacion manual 1 peticion <=1000 velas; reparacion de huecos "
                      "<=2 paginas x 500 velas y <=6/min"),
@@ -394,6 +397,7 @@ def plan(args: argparse.Namespace) -> Dict[str, Any]:
             "A5 LIVE solo con RECEIVING + socket + identidad + age <= fresh_ms",
             "A6 paginacion conserva historico (DOM: velas crecen, misma identidad)",
             "A7 servicio detenido: DOM pasa a DESCONECTADO, LIVE desaparece y el historico sigue visible",
+            "A8 (--release-browser) consumidores=0 con el servicio vivo y reconexion=1 verificada",
         ],
         "browser_evidence": [
             "captura DOM #1 tras ver LIVE (snippet documentado, no inventado)",
@@ -700,10 +704,21 @@ def evaluate_acceptance(run: Dict[str, Any], dom: Optional[Dict[str, Any]] = Non
         f"{[g.get('status') or g.get('reason') for g in unresolved_gaps]}")
 
     after_close = run_service.get("health_after_close") or {}
-    expected_after = int(budget.get("browser_consumers") or 0)
+    release_browser = bool(budget.get("release_browser"))
+    expected_after = 0 if release_browser else int(budget.get("browser_consumers") or 0)
     add("consumers_released", bool(after_close)
         and int(after_close.get("consumers") or 0) == expected_after,
         f"consumers_tras_cerrar={after_close.get('consumers')} esperado={expected_after}")
+    if release_browser:
+        reconnected = run_service.get("health_after_reconnect") or {}
+        released = bool(after_close) and int(after_close.get("consumers") or 0) == 0
+        add("browser_reconnected", released and bool(reconnected)
+            and int(reconnected.get("consumers") or 0) == 1,
+            f"liberado={released} consumers_tras_cerrar={after_close.get('consumers')} "
+            f"consumers_tras_reconectar={reconnected.get('consumers')} esperado=1")
+    else:
+        add("browser_reconnected", None,
+            "no aplica (sin --release-browser)", required=False)
     declared = int((budget.get("sse_consumers") or {}).get("total") or 0)
     peak = max([int(s.get("consumers") or 0) for s in samples]
                + [int(before.get("consumers") or 0),
@@ -712,7 +727,7 @@ def evaluate_acceptance(run: Dict[str, Any], dom: Optional[Dict[str, Any]] = Non
     before_close_consumers = int(
         (run_service.get("health_before_close") or {}).get("consumers") or 0)
     budget_ok = peak <= declared
-    if expected_after > 0:
+    if int(budget.get("browser_consumers") or 0) > 0:
         budget_ok = budget_ok and before_close_consumers == declared
     add("consumer_budget", budget_ok,
         f"pico={peak} declarado={declared} antes_de_cerrar={before_close_consumers}")
@@ -1056,6 +1071,7 @@ async def run_window(args: argparse.Namespace) -> Dict[str, Any]:
                     "health_before_consumer": None, "health_samples": [],
                     "browser_wait": None, "health_after_browser_wait": None,
                     "health_before_close": None, "health_after_close": None,
+                    "health_after_reconnect": None,
                     "after_stop": None, "stderr_tail": None},
         "consumers": {},
         "stop_reason": None,
@@ -1290,10 +1306,17 @@ async def run_window(args: argparse.Namespace) -> Dict[str, Any]:
             (await asyncio.to_thread(_http_json, f"{base_url}/health", timeout=4.0)).get("json"))
         for client in clients:
             client.close()
-        expected_after_close = 1 if getattr(args, "browser_consumer", False) else 0
+        release_browser = bool(getattr(args, "release_browser", False))
+        expected_after_close = 0 if release_browser else (
+            1 if getattr(args, "browser_consumer", False) else 0)
+        release_limit = (float(getattr(args, "release_timeout", 0) or 30.0)
+                         if release_browser else 8.0)
+        if release_browser:
+            _progress("desconecta la suscripcion del navegador ahora; "
+                      "esperando consumers=0 con el servicio vivo")
         release_started = time.monotonic()
         health_after = {}
-        while time.monotonic() - release_started < 8.0:
+        while time.monotonic() - release_started < release_limit:
             candidate = await asyncio.to_thread(_http_json, f"{base_url}/health", timeout=4.0)
             health_after = _compact_health(candidate.get("json"))
             if int(health_after.get("consumers") or 0) == expected_after_close:
@@ -1307,6 +1330,27 @@ async def run_window(args: argparse.Namespace) -> Dict[str, Any]:
         _progress(f"parada: {stop_reason}; consumidores_tras_cerrar="
                   f"{(stops['health_after_close'] or {}).get('consumers')} "
                   f"(esperado {expected_after_close})")
+        if release_browser:
+            _progress("reconecta la suscripcion del navegador ahora; "
+                      "esperando consumers=1")
+            reconnect_limit = float(getattr(args, "reconnect_timeout", 0) or 30.0)
+            reconnect_started = time.monotonic()
+            health_reconnect = {}
+            while time.monotonic() - reconnect_started < reconnect_limit:
+                candidate = await asyncio.to_thread(
+                    _http_json, f"{base_url}/health", timeout=4.0)
+                health_reconnect = _compact_health(candidate.get("json"))
+                if int(health_reconnect.get("consumers") or 0) == 1:
+                    break
+                await asyncio.sleep(0.25)
+            stops["health_after_reconnect"] = health_reconnect
+            stops["reconnect_wait_ms"] = int(
+                (time.monotonic() - reconnect_started) * 1000)
+            stops["consumers_reconnected"] = int(
+                (stops["health_after_reconnect"] or {}).get("consumers") or 0) == 1
+            _progress("consumidores_tras_reconectar="
+                      f"{(stops['health_after_reconnect'] or {}).get('consumers')} "
+                      "(esperado 1)")
     except _Abort:
         pass
     except asyncio.CancelledError:
@@ -1501,6 +1545,14 @@ def main(argv: Optional[List[str]] = None) -> int:
                              "abrir los del script (0 = no espera)")
     parser.add_argument("--await-timeout", type=float, default=90.0,
                         help="segundos maximos de espera del navegador")
+    parser.add_argument("--release-browser", action="store_true",
+                        help="tras cerrar los consumidores propios espera a que el "
+                             "navegador se desconecte (consumers=0) y reconecte "
+                             "(consumers=1) antes de parar el servicio")
+    parser.add_argument("--release-timeout", type=float, default=30.0,
+                        help="segundos maximos esperando consumers=0")
+    parser.add_argument("--reconnect-timeout", type=float, default=30.0,
+                        help="segundos maximos esperando consumers=1 tras reconectar")
     parser.add_argument("--out", default=None, help="ruta JSON de evidencia")
     parser.add_argument("--execute", action="store_true",
                         help="abre la conexion real (requiere autorizacion)")

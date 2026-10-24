@@ -477,3 +477,79 @@ medido, con la causa y la corrección demostradas por separado.
    `contract-explorer` (dos clics → una petición; fallo → gráfico conservado).
 
 El veredicto medido de la ventana sigue `FAIL`; esta corrección no lo cambia.
+
+## 13. Segunda ventana real (2026-10-24 14:04Z, base `2f2f9ea`): FAIL de aceptación
+
+**Autorización.** Una sola ventana desde `2f2f9ea` con el procedimiento existente
+actualizado y el parche de medición autorizado antes de conectar
+(`--release-browser`, `--release-timeout`, `--reconnect-timeout`; sin cambios de
+producto). Sin relanzamiento y sin segunda ventana.
+
+**Identidad de la ejecución.** HEAD `2f2f9ea` en
+`review/o1-funcional-v2-observacion`; dashboard PID 32712 en `127.0.0.1:3020`
+con `BUILD_ID=y_fx2dQ35CUiQeOHtUhfl`; servicio PID 3020 en `127.0.0.1:8791`
+con `--transport public`; `started=2026-10-24T14:04:37.065Z`,
+`finished=2026-10-24T14:05:43.957Z`, `duration_s=66.89` (de 180 s
+autorizados); `stop_reason=ACCEPTANCE_REACHED`; `transport.origin=binance`.
+
+**Presupuesto consumido.** 1 conexión WS combinada (1 intento, 0 reconexiones);
+2 streams `BTCUSDT` + `MINAUSDT` 1m; 3 consumidores SSE (navegador 1, BFF 1,
+servicio 1; por stream `BTCUSDT` 2 y `MINAUSDT` 1); 58 mensajes, 58 aplicados y
+2 cierres; 46 eventos de vela `BTCUSDT` y 12 `MINAUSDT`; 38 actualizaciones
+provisionales de la misma apertura; 0 huecos; 2 peticiones REST públicas de
+velas (1 carga inicial de 299 y 1 paginación de 300; catálogo desde caché con
+`catalog_fetched_at_ms=1792850007876`, sin `exchangeInfo` en la ventana); sin
+monitor, sin paper, sin órdenes, sin móvil.
+
+**Cadena medida (real).** Pasan `socket_connected`, `messages_primary`,
+`messages_secondary`, `identity_exact`, `no_protocol_errors`,
+`provisional_updates`, `close_confirmed` (`close_time_ms=1792850640000`),
+`next_candle` (`next_open_ms=1792850700000`), `live_status_seen=RECEIVING`,
+`bff_delivered` (46 eventos, identidad `BTCUSDT/1m`), `coverage_intact` (0
+huecos), `consumer_budget` (pico 3 = declarado 3), `service_stopped` (exit 0,
+puerto cerrado, PID file eliminado, `/health` rechazado) y
+`canonical_dbs_unchanged`. La cadena real Binance → hub → servicio → BFF →
+navegador funciona en esta ventana.
+
+**Criterios DOM medidos.** Captura #1 a las `14:05:02.749Z`: identidad exacta,
+`RECIBIENDO`, `LIVE`, 300 velas, 1 provisional, `nav=1`, `reload=0`. Captura #2
+a las `14:06:16.349Z`: misma identidad, 600 velas (paginación `300→600`), pero
+`OBSOLETO`/`no LIVE` con `age_ms=35000` y error de frescura; se capturó
+**después** de la parada del servicio (`14:05:43.957Z`) porque la paginación
+terminó fuera del `hold` de 20 s. Captura #3 a las `14:07:08.459Z`:
+`DESCONECTADO`, `no LIVE`, 600 velas conservadas, sin aviso
+`explorer-stream-down`.
+
+**Veredicto medido: `FAIL` (exit 1), `acquired=true`.** Fallan
+`consumers_released` (1 ≠ 0: la desconexión del navegador no se ejecutó dentro
+de los 20 s), `browser_reconnected` (sin liberación previa, el `consumers=1` no
+acredita una reconexión), `dom_state_live`, `dom_update_fresh`,
+`dom_pagination_preserved` (error de frescura) y `dom_after_stop` (sin aviso);
+falta `dom_candles_grew` (las capturas no rodean el cierre: #1 llegó ~2 s
+después del cierre de las 14:05:00). `visual_review=NOT_REVIEWED`.
+
+**Causas y lección.** (1) La operadora quedó bloqueada en la captura de la
+paginación; la ventana de liberación (20 s) expiró con `consumers=1`. (2) La
+petición de paginación superó el `hold` de 20 s; la captura #2 cayó después de
+la parada. (3) La página se adjuntó cerca del borde de minuto y `LIVE` apareció
+con el cierre, así que #1 no precede al cierre. La desconexión/reconexión
+funciona (probada antes de la ventana con el mismo mecanismo del navegador:
+`consumers=0` con el servicio vivo y `consumers=1` con recepción), pero **no se
+ejecutó dentro de la ventana**. Lección: las acciones del navegador deben estar
+automatizadas y acotadas (desconectar al aviso y capturar dentro del `hold`) o
+la ventana debe separar la paginación de la fase de liberación; el `hold` debe
+cubrir la latencia de la paginación. No se repite la ventana; una nueva requiere
+autorización explícita y procedimiento revisado.
+
+**Desviaciones declaradas del ensayo local previo.** El ensayo con transporte
+local (autorizado, sin Binance) hizo, por un defecto del arnés (doble
+`addInitScript` del reloj desplazado), 1 petición pública `exchangeInfo` y 1
+petición pública de 299 velas 1m a las `13:53Z`/`13:56Z`; el WS falso no
+implementaba `SUBSCRIBE` (por eso `MINAUSDT` quedó `CONNECTING` en el ensayo).
+La ventana real no usó reloj falso ni WS falso: Binance atendió `SUBSCRIBE`
+(`MINAUSDT` 12 eventos). Sin cambios de producto.
+
+**Evidencia.** `docs/evidence/market-stream-window-2026-10-24.json` +
+`docs/evidence/market-stream-window-2026-10-24-dom-1.json`,
+`docs/evidence/market-stream-window-2026-10-24-dom-2.json` y
+`docs/evidence/market-stream-window-2026-10-24-dom-stop.json`.
