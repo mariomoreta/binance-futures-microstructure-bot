@@ -1,0 +1,20 @@
+{
+  "captured_at_ms": 1792877226902,
+  "url": "http://127.0.0.1:3020/market-lab",
+  "identity": "Binance USD-M · BTCUSDT · 1m · market-stream/v1",
+  "state": "RECIBIENDO",
+  "live": "LIVE",
+  "updated": "2026-10-24T21:27:06.865Z · hace 0 s",
+  "count_text": "298 cargadas · 1 provisional",
+  "candles": 298,
+  "provisional": 1,
+  "down": null,
+  "error": null,
+  "navigation_count": 1,
+  "reload_count": 0,
+  "chart_window": "Ventana 2026-10-24T16:30:00Z → 2026-10-24T21:27:00Z",
+  "chart_earlier": "Cargar anteriores",
+  "chart_coverage": "297 cerradas · 1 provisional · PARTIAL · sin huecos · 1 ausencia(s)",
+  "initial_series": 1,
+  "initial_opens": 297
+}

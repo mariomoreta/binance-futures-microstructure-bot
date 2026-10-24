@@ -3189,3 +3189,65 @@ registradas, `next.config.ts` sin `cacheComponents`; sondas en el servidor real:
 `/_next/image` con SVG local y remoto → 400, POST de Server Action → 400. No se
 deduce solo por búsqueda de texto. Actualización a 16.4.1 **no ejecutada**.
 Evidencia: `docs/evidence/nextjs-security-diagnosis-2026-10-24.json`.
+
+## Aceptación local automatizada: dos recorridos consecutivos PASS (2026-10-24, base `6be44b9`, sin ventana Binance)
+
+**Hecho.** El procedimiento completo `WS público -> servicio SSE -> BFF ->
+/market-lab` se ejecutó dos veces consecutivas con transporte loopback y
+aislamiento de red real, sin abrir ninguna ventana Binance. Ambos recorridos
+terminaron `PASS` procedural y el finalizer dio `PASS` con `failed=[]` y
+`missing=[]`. Evidencia: `docs/evidence/local-acceptance-2026-10-24/`
+(`summary.json`, `run-1/`, `run-2/`), con
+`summary.git_sha=6be44b96b11a9362f2ec128947034f782726e971`,
+`build_id=FE1Eg1exjGrbZJpHz5vRO`, `transport=loopback_test` y
+`binance_accredited=false`.
+
+**Arnés.** `scripts/market_stream_local_acceptance.py`: cache temporal
+(`MICROPROBE_MARKET_CACHE_DB`) con 2 contratos (1m 7 días, 1h 30 días) y
+catálogo de 2 entradas; raíz sombra `MARKET_EXPLORER_ROOT` con
+`sitecustomize.py` que bloquea/registra conexiones no loopback y wrapper del
+explorador con `--no-fetch` (`fetch.allowed=false`,
+`catalog.refresh.reason=DISABLED`); proxy 8793 que registra/rechaza intentos
+públicos; allowlist del navegador solo `127.0.0.1:3020`; WS falso 8794 en reloj
+real; servicio real 8792 con `--transport local`; dashboard en 3020. Fases con
+máximo propio y límite global 180 s; sin esperas manuales de 20 s.
+
+**Resultado.** Recorrido 1: 83.0 s; recorrido 2: 115.5 s. Cero intentos
+públicos (`proxy=0`, `guard=0`, `browser=0`), cero consumidores residuales,
+parada limpia, paginación `298 -> 599` con 1 petición y 300 aperturas nuevas
+únicas, amplitud de ventana preservada, actualizaciones ≤10 s con el servicio
+vivo, reconexión `consumers=0 -> 1` con `updated` posterior (2 intentos, ~3.8 s
+observados) y aviso `explorer-stream-down` con causa real (`TypeError:
+ECONNREFUSED`), 599 velas conservadas y `nav=1`/`reload=0`. El
+`orchestrator_exit=2` es el `UNKNOWN` previo al `--finalize`; no es el veredicto.
+
+**Correcciones de soporte (sin cambios económicos).**
+
+1. `scripts/market_stream_window.py`: `--post-reconnect-signal` mantiene el
+   servicio vivo tras `consumers=1` hasta la captura DOM de reconexión;
+   `--dashboard-url` usa host/puerto reales; `_service_env` conserva el
+   `PYTHONPATH` del arnés.
+2. `frontend/src/lib/use-market-stream.ts`: al error del `EventSource` con el
+   stream abierto consulta el endpoint de estado; si `available=false`, cierra
+   y declara el aviso con la causa real. El 503 JSON del BFF es fatal para
+   `EventSource` (no reintenta), por lo que sin esta consulta el aviso no
+   aparecía. La causa de frescura no sobrescribe el aviso terminal.
+3. `ContractExplorer` incluye el detalle real en el aviso.
+
+**Pruebas.** Backend: 71/71 (`test_market_stream_window` 29,
+`test_market_stream_transport` 13, `test_market_stream` 29). Frontend
+focalizado: 23/23 (`use-market-stream` + `contract-explorer`), `tsc --noEmit`
+0, `eslint` 0 errores (5 avisos preexistentes). La integración son los dos
+recorridos del arnés.
+
+**Estado servido (canónico).** Dashboard reiniciado sin el entorno de prueba:
+PID 30216 en `127.0.0.1:3020`, `BUILD_ID=FE1Eg1exjGrbZJpHz5vRO` en
+`/market-lab` (HTTP 200), `/api/v1/market-contracts` devuelve 931 entradas
+(catálogo canónico, no las 2 de prueba), `/api/v1/market-stream/status` HTTP 200
+`available=false` y servicio 8791/8792 detenido. DBs canónicas intactas; sin
+monitor, paper, órdenes, pagos ni móvil.
+
+**Límite.** El WS es falso y loopback: este PASS **no acredita recepción de
+Binance**. El check `transport_origin` es `required=false` y queda `ok=false`;
+la acreditación real sigue exigiendo `--transport public` y autorización humana
+explícita. La actualización de Next.js 16.4.1 sigue **no ejecutada**.

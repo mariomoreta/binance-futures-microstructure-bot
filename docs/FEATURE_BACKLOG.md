@@ -1975,3 +1975,59 @@ abierto; una ventana de minutos no generaliza al universo ni a otros intervalos.
   ejecución real mostró lo contrario. El `browser_reconnected=True` inicial se
   corrigió a `False` porque no hubo liberación previa; el veredicto sigue `FAIL`.
   La cadena real se acredita; la aceptación end-to-end no.
+
+## Aceptación local automatizada (2026-10-24, base `6be44b9`, sin ventana Binance)
+
+**1. Feature / decision ID:** F-STREAM-LOCAL-ACCEPTANCE-01 (arnés local
+automatizado) y F-STREAM-DOWN-NOTICE-02 (aviso de servicio detenido con causa).
+
+**2. Approval status:** aprobado por el alcance vigente (sin ventana real; sin
+cambios económicos). La ventana real sigue requiriendo autorización explícita.
+
+**3. Implementation status:** implementado. `scripts/market_stream_local_acceptance.py`;
+`--post-reconnect-signal` y `--dashboard-url` en `scripts/market_stream_window.py`;
+consulta de estado en `frontend/src/lib/use-market-stream.ts`; detalle real en
+`ContractExplorer`; regresión del hook.
+
+**4. Verification status:** verificado con dos recorridos consecutivos `PASS`
+(`docs/evidence/local-acceptance-2026-10-24/`), cero intentos públicos, cero
+consumidores residuales, parada limpia, finalizer `PASS`, aviso con causa real,
+histórico conservado y sin recarga. Pruebas: backend 71/71, frontend focalizado
+23/23, `tsc` 0, `eslint` 0 errores.
+
+**5. Deferred:** ventana Binance real (solo con autorización); actualización
+Next.js 16.4.1 (worktree separado); revisión visual humana; retención de caché;
+indicadores; paper con datos vivos; móvil/Flutter; REA; `/antislop` end-to-end.
+
+**6. Evidence / references:** `docs/MARKET_STREAM_LIVE_WINDOW_PLAN.md` §14;
+`docs/CURRENT_STATE.md` (2026-10-24); `docs/TASK_QUEUE.md` (2026-10-24);
+`docs/DECISIONS.md` (2026-10-24); `docs/evidence/local-acceptance-2026-10-24/`.
+
+**7. Last update:** 2026-10-24.
+
+### Cierre (siete campos, obligatorios)
+
+- `DECISIONS_REVIEWED` — AGENTS, WORKFLOW, CURRENT_STATE, TASK_QUEUE,
+  DECISIONS (2026-10-24), `MARKET_STREAM_LIVE_WINDOW_PLAN` §14, `SAFETY_RULES`,
+  `DESKTOP_FIRST_SCOPE_20261020` y este backlog.
+- `NEW_DECISIONS_RECORDED` — DECISIONS 2026-10-24: aceptación local
+  automatizada con transporte loopback y aislamiento real; el aviso de servicio
+  detenido se declara al consultar el estado (el 503 del BFF es fatal para
+  `EventSource`); `--post-reconnect-signal` coordina la captura DOM con la
+  parada; el PASS local **no** acredita Binance.
+- `FEATURES_IMPLEMENTED` — arnés local; señal post-reconexión; consulta de
+  estado del hook; detalle de causa en el aviso; regresión del hook.
+- `FEATURES_VERIFIED` — dos recorridos consecutivos `PASS` procedural;
+  `298 -> 599` con 1 petición; `consumers=0 -> 1` con actualización posterior;
+  aviso `TypeError: ECONNREFUSED`; 599 velas conservadas; `nav=1`, `reload=0`;
+  cero peticiones públicas; DBs canónicas intactas.
+- `DEFERRED_FEATURES` — ventana real (autorización); Next.js 16.4.1; revisión
+  visual; retención de caché; indicadores; paper con datos vivos; móvil;
+  REA; `/antislop`.
+- `BACKLOG_UPDATED` — yes: este bloque, `MARKET_STREAM_LIVE_WINDOW_PLAN` §14,
+  `CURRENT_STATE`, `TASK_QUEUE`, `DECISIONS`.
+- `DOCUMENTATION_CONFLICTS` — el `orchestrator_exit=2` es el `UNKNOWN` previo
+  al `--finalize` (el veredicto final es `PASS`); el check `transport_origin`
+  queda `ok=false` con `required=false` por el transporte loopback, por lo que
+  el PASS local no es una acreditación Binance. El dashboard se restauró al
+  entorno canónico (catálogo 931, no las 2 entradas de prueba).

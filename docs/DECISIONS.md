@@ -2869,3 +2869,55 @@ pública `exchangeInfo` y 1 de 299 velas 1m; la ventana real no usó reloj falso
 ni WS falso y Binance atendió `SUBSCRIBE` (`MINAUSDT` 12 eventos). Sin cambios
 de estrategia, economía, riesgo ni ejecución; sin conexión Binance continua ni
 nueva ventana.
+
+## 2026-10-24 — Aceptación local automatizada con transporte loopback y aislamiento real; aviso de servicio detenido con causa
+
+**Contexto.** El procedimiento de la ventana real falló por la secuencia del
+navegador, no por los datos: las capturas, la paginación, la desconexión y la
+reconexión no estaban automatizadas y el `hold` de 20 s se agotaba antes de la
+paginación. Antes de pedir otra ventana Binance se decidió probar el mismo
+camino `WS -> servicio SSE -> BFF -> /market-lab` en local, con transporte
+loopback y aislamiento de red real, y coordinar todo por condiciones observadas
+en lugar de esperas manuales.
+
+**Decisión.**
+
+1. Se añade `scripts/market_stream_local_acceptance.py` como procedimiento de
+   aceptación local: cache y catálogo temporales vía
+   `MICROPROBE_MARKET_CACHE_DB`, raíz sombra `MARKET_EXPLORER_ROOT` con
+   `sitecustomize.py` que bloquea y registra conexiones no loopback, wrapper del
+   explorador con `--no-fetch` (`fetch.allowed=false`,
+   `catalog.refresh.reason=DISABLED`), proxy bloqueante, allowlist del navegador
+   solo `127.0.0.1:3020`, WS falso en reloj real y servicio real con
+   `--transport local`. Cualquier intento público debe fallar el recorrido y
+   quedar registrado; nunca debe alcanzar Binance en silencio.
+2. El orquestador añade `--post-reconnect-signal`: tras observar `consumers=1`
+   mantiene el servicio vivo hasta la captura DOM de reconexión, sin ampliar el
+   límite global de 180 s ni sustituir condiciones observadas por esperas fijas.
+3. El hook `useMarketStream` consulta `/api/v1/market-stream/status` cuando el
+   `EventSource` falla con el stream ya abierto; si `available=false`, cierra y
+   declara el aviso con la causa real. El 503 JSON del BFF es fatal para
+   `EventSource` (no reintenta), por lo que sin esta consulta el aviso
+   `explorer-stream-down` no aparecía. La causa de frescura no sobrescribe el
+   aviso terminal.
+4. El PASS local es procedural y **no acredita recepción de Binance**: el check
+   `transport_origin` queda `ok=false` con `required=false` por el origen
+   `loopback_test`. La ventana real sigue exigiendo `--transport public` y
+   autorización humana explícita.
+5. No se cambia estrategia, economía, riesgo, paper, órdenes ni móvil. La
+   actualización de Next.js 16.4.1 sigue no ejecutada.
+
+**Resultado.** Dos recorridos consecutivos `PASS` procedural (83,0 s y 115,5 s;
+límite 180 s), cero intentos públicos, cero consumidores residuales, parada
+limpia, finalizer `PASS`, paginación `298 -> 599` con 1 petición, reconexión
+`consumers=0 -> 1` con actualización posterior y aviso
+`Servicio de datos detenido (TypeError: ECONNREFUSED)` con 599 velas
+conservadas y `nav=1`/`reload=0`. Evidencia en
+`docs/evidence/local-acceptance-2026-10-24/` con
+`summary.git_sha=6be44b96b11a9362f2ec128947034f782726e971`.
+
+**Consecuencias.** El procedimiento queda listo para una futura ventana real,
+pero no se solicita ni se abre en este bloque. El `orchestrator_exit=2` es el
+`UNKNOWN` previo al `--finalize` y no debe leerse como veredicto. El dashboard se
+restauró al entorno canónico (catálogo 931, no las 2 entradas de prueba) y el
+servicio 8791/8792 quedó detenido.

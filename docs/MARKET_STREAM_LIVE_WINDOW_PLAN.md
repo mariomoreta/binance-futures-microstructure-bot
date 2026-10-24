@@ -553,3 +553,104 @@ La ventana real no usó reloj falso ni WS falso: Binance atendió `SUBSCRIBE`
 `docs/evidence/market-stream-window-2026-10-24-dom-1.json`,
 `docs/evidence/market-stream-window-2026-10-24-dom-2.json` y
 `docs/evidence/market-stream-window-2026-10-24-dom-stop.json`.
+
+## 14. Aceptación local automatizada: dos recorridos consecutivos PASS (2026-10-24, base `6be44b9`, sin ventana Binance)
+
+**Objetivo.** Demostrar el procedimiento completo `WS público -> servicio SSE ->
+BFF -> /market-lab` sin abrir una ventana real: transporte loopback, catálogo e
+histórico preparados, aislamiento de red real y coordinación por condiciones
+observadas (sin esperas manuales de 20 s). Este bloque NO solicita ni ejecuta
+una ventana Binance.
+
+**Arnés.** `scripts/market_stream_local_acceptance.py`:
+
+- cache temporal vía `MICROPROBE_MARKET_CACHE_DB` (2 contratos, 1m 7 días y 1h
+  30 días; catálogo de 2 entradas), sin tocar las DBs canónicas;
+- raíz sombra `MARKET_EXPLORER_ROOT` con `sitecustomize.py` que bloquea y
+  registra cualquier conexión no loopback, y un wrapper del explorador que
+  añade `--no-fetch` (respuestas con `fetch.allowed=false` y
+  `catalog.refresh.reason=DISABLED`);
+- proxy local 8793 que registra y rechaza intentos públicos; allowlist del
+  navegador solo `127.0.0.1:3020` (cualquier otro origen se aborta y registra);
+- WS falso 8794 en reloj real (`SUBSCRIBE`/`UNSUBSCRIBE`, provisional, cierre y
+  siguiente vela), servicio real 8792 con `--transport local`, dashboard en
+  3020 con el build nuevo;
+- fases con máximo propio y límite global 180 s: `minute_phase`, `page_ready`,
+  `acceptance`, `pagination`, `release`, `reconnect`, `down_notice`.
+
+**Procedimiento ejecutado (por recorrido).** Espera a la fase de minuto; abre
+`/market-lab`; selecciona BTCUSDT/1m; espera identidad exacta + `LIVE`; captura
+#1; pagina una vez y verifica una sola petición, velas nuevas únicas, amplitud
+de ventana preservada y actualizaciones recientes; captura #2 con el servicio
+vivo; al aviso del orquestador desconecta la suscripción y comprueba
+`consumers=0` con el servicio vivo; al aviso de reconexión reabre el
+`EventSource`, comprueba `consumers=1` y una actualización posterior a la
+reconexión; captura de reconexión; escribe la señal `--post-reconnect-signal`
+para que el orquestador no pare el servicio durante la captura; tras la parada
+verifica puerto cerrado, PID eliminado, `/health` rechazado, aviso
+`explorer-stream-down` con causa real, histórico conservado y sin recarga.
+
+**Cambios de soporte (no económicos).**
+
+1. Orquestador `--post-reconnect-signal`: tras observar `consumers=1` mantiene
+   el servicio vivo hasta la señal del arnés (máximo `--reconnect-timeout`),
+   eliminando la carrera entre la captura DOM de reconexión y la parada limpia.
+2. `--dashboard-url` usa host/puerto reales para el consumidor BFF;
+   `_service_env` conserva el `PYTHONPATH` del arnés en el hijo.
+3. Hook `useMarketStream`: al error del `EventSource` con el stream ya abierto
+   consulta `/api/v1/market-stream/status`; si `available=false`, cierra y
+   declara el aviso con la causa real. El BFF responde 503 JSON cuando el
+   servicio está caído; para `EventSource` eso es fatal (no reintenta), por lo
+   que sin esta consulta `attempts` se quedaba en 1 y el aviso no aparecía.
+   La causa de frescura ya no sobrescribe el aviso terminal.
+4. `ContractExplorer` muestra el detalle real en el aviso (`TypeError:
+   ECONNREFUSED` en este recorrido).
+
+**Resultado medido (dos recorridos consecutivos, mismo build).**
+
+- `summary.json.git_sha = 6be44b96b11a9362f2ec128947034f782726e971`,
+  `build_id = FE1Eg1exjGrbZJpHz5vRO`, `transport = loopback_test`,
+  `binance_accredited = false`.
+- Recorrido 1: `PASS` procedural, 83.0 s; recorrido 2: `PASS` procedural,
+  115.5 s (ambos por debajo del límite global de 180 s).
+- Cero intentos públicos en los dos recorridos (`proxy=0`, `guard=0`,
+  `browser=0`); cero consumidores residuales; parada limpia; finalizer `PASS`
+  con `failed=[]` y `missing=[]`.
+- Paginación: `298 -> 599` velas, 1 petición, 300 aperturas nuevas únicas,
+  amplitud de ventana preservada, identidad intacta; actualizaciones recientes
+  (≤10 s) con el servicio vivo.
+- Reconexión: `consumers=0` con el servicio vivo y `consumers=1` tras reabrir;
+  la primera reapertura puede coincidir con el cierre del SSE anterior en el
+  BFF, por lo que el arnés reabre dentro de la misma fase (2 intentos, ~3.8 s
+  observados); la captura de reconexión muestra `LIVE` con `updated` posterior.
+- Parada: `explorer-stream-down` con `Servicio de datos detenido (TypeError:
+  ECONNREFUSED)`, estado `DESCONECTADO · servicio detenido`, 599 velas
+  conservadas, `nav=1`, `reload=0`.
+- El `orchestrator_exit=2` es esperado: el orquestador escribe `UNKNOWN` antes
+  de que el arnés aporte la evidencia DOM; el `--finalize` posterior actualiza
+  el veredicto a `PASS`. El código de salida del orquestador no es el veredicto
+  de aceptación.
+
+**Diagnóstico cerrado.** (1) El fallo de la segunda ventana real fue del
+procedimiento de captura/liberación, no de los datos: la secuencia del navegador
+no se ejecutó dentro del `hold` y la paginación lo superó. El arnés sustituye
+las esperas manuales por condiciones observadas y señalización. (2) El aviso
+`explorer-stream-down` era un hueco funcional: el 503 JSON del BFF es fatal para
+`EventSource`; ahora se consulta el estado y se declara la causa real. (3) La
+reconexión puede necesitar una reapertura adicional por la carrera con el cierre
+del SSE anterior; se resuelve dentro de la fase, sin ampliar el presupuesto.
+
+**Límites.** El WS es falso y loopback: este PASS **no acredita recepción de
+Binance**. El check `transport_origin` es `required=false` y queda en `ok=false`
+(`origen=loopback_test`), por eso el finalizer local puede dar `PASS`; la
+acreditación real sigue exigiendo `--transport public` y autorización humana
+explícita. No se tocaron economía, riesgo, paper, órdenes ni móvil. La
+actualización de Next.js 16.4.1 sigue **no ejecutada** (ver el diagnóstico de
+seguridad en `docs/CURRENT_STATE.md`); el build usado es
+`FE1Eg1exjGrbZJpHz5vRO`.
+
+**Evidencia.** `docs/evidence/local-acceptance-2026-10-24/summary.json`,
+`run-1/` y `run-2/` (`run.json`, `local.json`, `dom-1.json`, `dom-2.json`,
+`dom-reconnected.json`, `dom-stop.json`, `network.json`). Los `.log` del
+orquestador y del finalize quedan solo en local porque `.gitignore` ignora
+`*.log`; el veredicto y las fases están en `run.json`/`local.json`.

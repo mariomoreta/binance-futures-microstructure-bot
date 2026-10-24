@@ -1,0 +1,173 @@
+{
+  "index": 2,
+  "started_at_ms": 1792877298374,
+  "finished_at_ms": 1792877413843,
+  "elapsed_s": 115.472,
+  "phases_s": {
+    "dashboard_verify": 0.886,
+    "minute_phase": 41.017,
+    "page_ready": 3.26,
+    "acceptance": 54.267,
+    "pagination": 1.319,
+    "release": 0.046,
+    "reconnect": 3.767,
+    "down_notice": 2.471,
+    "run": 115.471
+  },
+  "marks_s": {
+    "minute_phase": 41.904,
+    "service_up": 43.443,
+    "page_ready": 48.392,
+    "acceptance": 102.675,
+    "pagination": 103.993,
+    "release": 104.763,
+    "reconnect": 108.769,
+    "orchestrator_exit": 112.51,
+    "down_notice": 114.981
+  },
+  "run_json": "docs\\evidence\\local-acceptance-2026-10-24\\run-2\\run.json",
+  "verdict": "PASS",
+  "failed": [],
+  "missing": [],
+  "orchestrator_exit": 2,
+  "post_reconnect_signal_seen": true,
+  "transport_origin": "loopback_test",
+  "binance_accredited": false,
+  "procedural_pass": true,
+  "local_checks": {
+    "zero_public_attempts": true,
+    "all_series_local": true,
+    "catalog_local": true,
+    "one_pagination_request": true,
+    "pagination_new_unique": true,
+    "pagination_grew": true,
+    "framing_preserved": true,
+    "recent_updates": true,
+    "service_active_at_capture2": true,
+    "hold_signal_seen": true,
+    "consumers_released": true,
+    "browser_reconnected": true,
+    "down_notice": true,
+    "down_cause": true,
+    "history_preserved": true,
+    "no_reload": true,
+    "clean_stop": true,
+    "canonical_dbs_unchanged": true,
+    "finalizer_pass": true,
+    "dom_checks": {
+      "dom_identity": true,
+      "dom_state_live": true,
+      "dom_update_fresh": true,
+      "dom_candles_grew": true,
+      "dom_pagination_preserved": true,
+      "dom_no_reload": true,
+      "dom_after_stop": true
+    },
+    "phases_within_limits": {
+      "minute_phase": true,
+      "page_ready": true,
+      "acceptance": true,
+      "pagination": true,
+      "release": true,
+      "reconnect": true,
+      "down_notice": true
+    },
+    "global_budget": true
+  },
+  "public_attempts": {
+    "proxy": 0,
+    "guard": 0,
+    "browser": 0
+  },
+  "residual_consumers": 0,
+  "clean_stop": true,
+  "harness_debug": {
+    "disconnect": true,
+    "reconnect": 2,
+    "wrapper_after_disconnect": {
+      "current": {
+        "url": "/api/v1/market-stream?symbol=BTCUSDT&interval=1m&from_ms=1792859403503&to_ms=1792877343503",
+        "readyState": 0,
+        "native": false,
+        "listeners": [
+          "hello",
+          "snapshot",
+          "candle",
+          "closed",
+          "status",
+          "gap",
+          "heartbeat",
+          "error"
+        ]
+      },
+      "instances": [
+        {
+          "url": "/api/v1/market-stream?symbol=BTCUSDT&interval=1m&from_ms=1792859403503&to_ms=1792877343503",
+          "readyState": 0,
+          "native": false
+        }
+      ]
+    },
+    "wrapper_after_reconnect": {
+      "current": {
+        "url": "/api/v1/market-stream?symbol=BTCUSDT&interval=1m&from_ms=1792859403503&to_ms=1792877343503",
+        "readyState": 0,
+        "native": true,
+        "listeners": [
+          "hello",
+          "snapshot",
+          "candle",
+          "closed",
+          "status",
+          "gap",
+          "heartbeat",
+          "error"
+        ]
+      },
+      "instances": [
+        {
+          "url": "/api/v1/market-stream?symbol=BTCUSDT&interval=1m&from_ms=1792859403503&to_ms=1792877343503",
+          "readyState": 0,
+          "native": true
+        }
+      ]
+    }
+  },
+  "cache": {
+    "cache_db": "C:\\Users\\adonm\\AppData\\Local\\Temp\\opencode\\market-acceptance\\market_cache.db",
+    "seeded": {
+      "BTCUSDT": {
+        "1m": 10080,
+        "1h": 720
+      },
+      "MINAUSDT": {
+        "1m": 10080,
+        "1h": 720
+      }
+    },
+    "catalog_entries": 2,
+    "last_closed_1m": 1792877220000
+  },
+  "dashboard": {
+    "catalog_entries": 2,
+    "refresh": {
+      "refreshed": false,
+      "reason": "DISABLED",
+      "requests": 0
+    },
+    "series_candles": 298,
+    "fetch": {
+      "allowed": false,
+      "performed": false,
+      "status": "not_requested",
+      "error": null,
+      "requests": 0,
+      "pages": 0,
+      "retries": 0,
+      "failures": 0,
+      "detail": null,
+      "bars_stored": 0,
+      "retry_after_ms": null
+    }
+  }
+}

@@ -1942,3 +1942,37 @@ Definir y ejecutar (offline, sobre copia, presupuesto cero, sin órdenes ni capi
 
 Tras ello, continuar con el motor de paper completo (Etapa 5); el replay histórico ya está entregado en esta rama.
 
+
+## Aceptación local automatizada completada (2026-10-24, base `6be44b9`, sin ventana Binance)
+
+**Estado.** Completada. Dos recorridos consecutivos `PASS` procedural del camino
+`WS público -> servicio SSE -> BFF -> /market-lab` con transporte loopback y
+aislamiento de red real; finalizer `PASS`, `failed=[]`, `missing=[]`. Cero
+intentos públicos, cero consumidores residuales, parada limpia, paginación
+`298 -> 599` con 1 petición, reconexión `consumers=0 -> 1` con actualización
+posterior y aviso de servicio detenido con causa real. Evidencia:
+`docs/evidence/local-acceptance-2026-10-24/` (SHA `6be44b9`,
+`build_id=FE1Eg1exjGrbZJpHz5vRO`).
+
+**Arnés.** `scripts/market_stream_local_acceptance.py` (cache/catálogo
+temporales, raíz sombra con guarda `sitecustomize` y explorador `--no-fetch`,
+proxy bloqueante, allowlist del navegador, WS falso en reloj real, fases con
+máximos y límite global 180 s). Soporte: `--post-reconnect-signal` en el
+orquestador; hook `useMarketStream` consulta el estado al error del
+`EventSource` y declara el aviso con la causa real.
+
+**Pruebas.** Backend 71/71; frontend focalizado 23/23; `tsc --noEmit` 0;
+`eslint` 0 errores (5 avisos preexistentes).
+
+**Estado servido.** Dashboard canónico en 3020 (PID 30216,
+`BUILD_ID=FE1Eg1exjGrbZJpHz5vRO`, `/market-lab` 200, catálogo 931 entradas);
+servicio 8791/8792 detenido; DBs canónicas intactas.
+
+**NEXT_TASKS (solo con autorización explícita).**
+
+1. Ventana real `--transport public` con el procedimiento automatizado ya
+   probado; no se solicita ni se abre en este bloque. La acreditación Binance
+   sigue pendiente y el PASS local no la sustituye.
+2. Decidir en un worktree separado la actualización de Next.js 16.4.1
+   (advisories ya diagnosticados); no ejecutada aquí.
+3. Sin móvil/Flutter, sin economía, sin paper con datos vivos, sin órdenes.
