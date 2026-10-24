@@ -379,3 +379,69 @@ No es un fallo de datos: la cadena real llegó al gráfico.
 ventana):** paginar antes del cierre o ampliar `--hold-seconds`; hacer que el BFF
 cierre el SSE al caer el upstream o que el hook reconsulte `/status`; investigar
 por qué la paginación subió el contador `300→303` con ~45 KB nuevos en caché.
+
+## 12. Remediación posterior a la ventana (2026-10-24, sin nueva ventana)
+
+Autorizada como corrección acotada, **sin repetir la ventana** y sin abrir
+conexión Binance nueva. El veredicto `FAIL` de §11 se mantiene y su evidencia no
+se reescribe. Base `965ab87`.
+
+### 12.1 Causa demostrada
+
+1. **BFF** (`frontend/src/app/api/v1/market-stream/route.ts`): devolvía
+   `upstream.body` en crudo. No declaraba el fin ni el error del upstream, no
+   emitía causa y no abortaba el upstream al cancelar el cliente. Con el SSE
+   abierto, el navegador no tenía señal de que el feed había muerto.
+2. **Hook** (`frontend/src/lib/use-market-stream.ts`): `onerror` solo
+   incrementaba `attempts` (sin cambio visible) y `LIVE` se derivaba de un
+   `status` congelado. Sin mensajes nuevos el panel podía seguir pareciendo vivo
+   o quedarse mudo sin causa hasta agotar 6 reintentos (≈30 s) o indefinidamente
+   si el SSE del BFF seguía abierto.
+
+### 12.2 Corrección
+
+- BFF: `AbortController` + escucha de `req.signal`, bombeo de frames del
+  upstream, frames `event: error` con `STREAM_UPSTREAM_CLOSED` /
+  `STREAM_UPSTREAM_ERROR`, `cancel()` aborta el upstream y libera el lector.
+- Hook: frescura local con ticker de 1 s (STALE > `fresh_ms`, DISCONNECTED >
+  `stale_ms`, `LIVE` = `live && age <= fresh`), causa inmediata en `onerror` y en
+  `event: error` con código; el heartbeat limpia el error.
+- Servicio: al cerrar el cliente se despierta el bucle del consumidor (sin
+  esperar al heartbeat de 5 s); la liberación es inmediata.
+- Paginación: se pide el bloque estrictamente anterior al borde cargado
+  (`to = anchor - step`, `from = to - 299·step`) y se antepone con
+  `mergeEarlierSeries` (dedupe por `open_time`, gana la fila ya cargada,
+  cobertura/huecos recalculados, `added` = velas únicas). `added === 0` o bloque
+  agotado marca `earlierExhausted`; no se exige `+300`.
+
+### 12.3 Medido con transporte controlado (sin Binance)
+
+| Medición | Resultado | Evidencia |
+|---|---|---|
+| Cliente cierra, servicio vivo | consumidores 1 → **0 en 14 ms** | `market-stream-controlled-disconnect-2026-10-24.json` |
+| Servicio se detiene | EOF + `event: error` `STREAM_UPSTREAM_ERROR` en **6025 ms** | ídem |
+| DOM real tras parada | `DESCONECTADO` + causa en **12 ms** | `market-lab-controlled-disconnect-2026-10-24.json` |
+| Paginación (bloque almacenado) | 300 devueltas, 0 solapan, merge conserva el extremo reciente | `pagination-300-303-2026-10-24.json` |
+| Pruebas | backend 29/29 + 25/25; frontend focalizado 28/28; contrato 13/13; `tsc`/`eslint` 0 | — |
+
+La captura `LIVE` del transporte controlado **no** acredita recepción real; eso
+sigue acreditado solo por la captura #1 de §11.
+
+### 12.4 Pendiente (requiere nueva autorización de ventana)
+
+Repetir la ventana real con el procedimiento corregido: capturar #2 con `LIVE`
+(paginar antes del cierre o ampliar el `hold`) y #3 con el aviso de desconexión
+ya visible. Sin esa repetición, `F-CHART-BINANCE-04` sigue `FAIL` en su veredicto
+medido, con la causa y la corrección demostradas por separado.
+
+### 12.5 Desviaciones del diagnóstico (declaradas)
+
+- Dos arranques del servicio sin `--base-url` abrieron el WS público de Binance
+  ~9 s y ~30 s (sin claves, sin API privada, sin órdenes); no son ventana de
+  aceptación ni evidencia.
+- Una página `/market-lab` con `0GUSDT` 1h seleccionado encadenó 12 peticiones
+  REST públicas (`01:43:47Z`–`01:44:18Z`) que añadieron 3.552 velas a la caché
+  derivada (47 → 3.599 filas), sin perder filas previas; DBs canónicas intactas.
+  Se ejecutó `wal_checkpoint(TRUNCATE)`. El cliente exacto queda `UNKNOWN`.
+- Riesgo residual no corregido: una sola interacción puede encadenar varias
+  descargas de "anteriores" en lugar de una; anotado en `docs/TASK_QUEUE.md`.

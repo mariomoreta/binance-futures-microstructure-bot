@@ -2747,3 +2747,41 @@ sustituye la prueba por otro intervalo ni se amplían límites. Las correcciones
 (paginar antes del cierre o ampliar el `hold`; aviso de servicio detenido con
 SSE del BFF abierto; investigar la paginación `300→303`) quedan en
 `docs/TASK_QUEUE.md` como trabajo posterior, no como parte de esta ejecución.
+
+
+## 2026-10-24 — Cierre del bloque F-CHART-BINANCE-04: propagación explícita, frescura local y paginación por bloque anterior
+
+**Contexto.** La ventana real del 2026-10-24 quedó en `FAIL` medido: la cadena
+Binance → hub → SSE → BFF → DOM funcionó (captura #1 con `LIVE`), pero la captura
+#2 se tomó después de la parada y la #3 no mostró el aviso de servicio detenido.
+El análisis de código mostró dos defectos independientes: el BFF devolvía
+`upstream.body` en crudo (sin declarar fin/error ni abortar el upstream al
+cancelar el cliente) y el hook no cambiaba nada visible en `onerror`, derivando
+`LIVE` de un `status` congelado. Además, la paginación pedía `to = borde
+reciente`, por lo que la respuesta repetía la ventana cargada y el contador
+`300→303` no era historia nueva.
+
+**Decisión.**
+
+1. El BFF nunca reenvía el cuerpo del upstream en crudo: bombea frames, declara
+   `event: error` con código cuando el upstream termina o falla y aborta el
+   upstream cuando el cliente cancela o la petición se aborta.
+2. El hook calcula la frescura localmente con un ticker de 1 s (`LIVE` solo si
+   `live && age <= fresh_ms`) y muestra la causa de desconexión en cuanto llega
+   (`onerror` o `event: error` con código), sin esperar a agotar reintentos.
+3. El servicio despierta el bucle del consumidor al detectar el cierre del
+   cliente, sin esperar al heartbeat de 5 s.
+4. La paginación pide el bloque estrictamente anterior al borde cargado
+   (`to = anchor - step`, `from = to - 299·step`) y antepone por `open_time` con
+   dedupe (gana la fila ya cargada), recalculando cobertura y huecos. Solo las
+   velas únicas cuentan; no se exige `+300`. Un bloque sin velas nuevas marca el
+   histórico como agotado.
+5. El veredicto medido de la ventana no se rebaja ni se sustituye: la corrección
+   se acredita con transporte controlado y la ventana se repite solo con nueva
+   autorización explícita.
+
+**Consecuencias.** El panel retira `LIVE` por frescura aunque el stream enmudezca
+y muestra la causa de inmediato; cerrar la pestaña libera al consumidor en
+milisegundos; el BFF cierra el stream cuando el upstream muere. La paginación
+deja de fingir crecimiento. No cambia estrategia, economía, riesgo ni ejecución;
+no se abre conexión Binance nueva; no se actualiza Next.js (diagnóstico aparte).

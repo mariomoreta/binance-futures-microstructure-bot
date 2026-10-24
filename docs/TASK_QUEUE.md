@@ -1,3 +1,47 @@
+## Market Lab — cierre del expediente F-CHART-BINANCE-04 con causa demostrada (2026-10-24, base `965ab87`)
+
+`CURRENT_PHASE`: dashboard V2 de escritorio + observación (WS público bajo
+demanda, sin monitor, sin órdenes).
+
+`CURRENT_OBJECTIVE`: cerrar el bloque de la ventana `FAIL` **sin repetirla**:
+propagar cierre/error/cancelación entre servicio, BFF y navegador; retirar `LIVE`
+por frescura con causa inmediata; corregir la paginación `300→303`.
+
+`ACTIVE_TASK`: **cerrado** el bloque de correcciones acotadas. El veredicto
+medido de la ventana sigue `FAIL` y su evidencia no se reescribe. Causa: el BFF
+devolvía `upstream.body` en crudo (sin fin/error/causa ni aborto al cancelar) y
+el hook no cambiaba nada visible en `onerror`. Corrección: BFF con
+`AbortController` + frames `event: error` + `cancel()`; hook con frescura local
+(ticker 1 s) y causa inmediata; servicio despierta al consumidor al cerrar el
+cliente; paginación pide el bloque estrictamente anterior y antepone con
+`mergeEarlierSeries`. Medido con transporte controlado: liberación 1 → 0 en
+14 ms (servicio vivo), EOF + causa en 6025 ms al parar, DOM `DESCONECTADO` con
+causa en 12 ms. Base `965ab87`; BUILD_ID `XozH8PXJA4yZR59XphpyH` (PID 33444);
+backend 29/29 + 25/25; frontend focalizado 28/28; contrato 13/13; `tsc`/`eslint`
+0; DBs canónicas intactas; servicio 8791 **detenido**.
+
+`NEXT_TASKS`:
+1. **Nueva ventana (solo con autorización explícita)**: repetir el procedimiento
+   corregido; capturar #2 con `LIVE` (paginar antes del cierre o ampliar el
+   `hold`) y #3 con el aviso de desconexión ya visible. Sin autorización no se
+   repite; el `FAIL` actual se mantiene.
+   - Antes de repetirla, investigar la cadena de 12 descargas de "anteriores"
+     observada el 2026-10-24 (3.552 velas de `0GUSDT` 1h añadidas a la caché
+     derivada): una sola interacción no debería encadenar más de un bloque.
+2. **Decisión de seguridad Next.js**: evaluar la actualización a `16.4.1`
+   (patch) cuando el operador lo autorice; hoy la app no cumple los prerrequisitos
+   de las tres advisories. Diagnóstico en
+   `docs/evidence/nextjs-security-diagnosis-2026-10-24.json`.
+3. Revisión visual por modelo de las capturas controladas (hoy `NOT_REVIEWED`).
+4. Retención/poda de `data/market-cache/` antes de uso intensivo.
+5. Decidir si el servicio se deja arrancado por defecto o sigue manual (hoy
+   manual y detenido).
+6. Indicadores compartidos: capacidad posterior con contrato y presupuesto
+   propios.
+7. Re-ejecutar `/antislop` end-to-end en sesión nueva; sigue PENDIENTE.
+8. Mantener diferido: stops/objetivos arrastrables, móvil/Flutter, F-PAPER-01,
+   ejecución con capital.
+
 ## Market Lab — ventana real ejecutada, veredicto FAIL por evidencia DOM (2026-10-24, F-CHART-BINANCE-04)
 
 `CURRENT_PHASE`: dashboard V2 de escritorio + observación (WS público bajo

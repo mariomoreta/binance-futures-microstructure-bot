@@ -3000,3 +3000,88 @@ Definir y ejecutar (offline, sobre copia, presupuesto cero, sin órdenes ni capi
 - **Ubicación canónica única:** `<repo>/backtest-results/` (ignorado por git), coincidiendo código y contrato. Evidencia previa **preservada** en `backtest-results/_legacy/`; ruta heredada `frontend/.backtest-runs/` mantenida e ignorada. Nada borrado. Retención acotada que nunca elimina una ejecución activa.
 - **Defecto adicional corregido:** `PaperLabSource` ya no muestra la operación anterior durante carga/fallo de una identidad nueva.
 - **Verificado:** `pytest tests/test_dashboard_backtest.py` 16 OK; frontend vitest 418/418; `tsc` limpio; `eslint` 0 errores (3 warnings preexistentes); `next build` OK (`BUILD_ID=wzsmXGqnMRh6hnIP_xAan`). Ejecución real del ejecutor con los nuevos argumentos: `identity=verified`, `run_id` propio, `result_hashes` coincidentes, `trades.json` sha256 `815b8a65…` (sin cambio).
+
+
+## Cierre del bloque F-CHART-BINANCE-04 (2026-10-24, base `965ab87`, sin nueva ventana)
+
+**Causa demostrada.** El BFF devolvía `upstream.body` en crudo: no declaraba fin ni
+error del upstream, no emitía causa y no abortaba el upstream al cancelar el
+cliente; con el SSE abierto el navegador no tenía señal de que el feed había
+muerto. El hook, ante `onerror`, solo incrementaba `attempts` (sin cambio
+visible) y derivaba `LIVE` de un `status` congelado: sin mensajes nuevos podía
+parecer vivo o quedarse mudo sin causa hasta agotar 6 reintentos (≈30 s) o
+indefinidamente. El `consumers_tras_cerrar = 1` de la ventana era el propio
+navegador (consumidor legítimo con la pestaña abierta); la parada forzada del
+proceso no se usa como prueba de liberación.
+
+**Corrección.** BFF con `AbortController` + `req.signal`, bombeo de frames,
+`event: error` con `STREAM_UPSTREAM_CLOSED`/`STREAM_UPSTREAM_ERROR`, `cancel()`
+aborta el upstream. Hook con frescura local (ticker 1 s: `STALE` > 10 s,
+`DISCONNECTED` > 60 s, `LIVE` = `live && age <= fresh`) y causa inmediata en
+`onerror`/`event: error` con código. Servicio: al cerrar el cliente se despierta
+el bucle del consumidor (sin esperar el heartbeat de 5 s). Paginación: se pide el
+bloque estrictamente anterior (`to = anchor - step`, `from = to - 299·step`) y se
+antepone con `mergeEarlierSeries` (dedupe por `open_time`, gana la fila cargada,
+cobertura/huecos recalculados, `added` = únicas); `added === 0` marca
+`earlierExhausted`; no se exige `+300`.
+
+**Medido con transporte controlado (WS falso local + servicio real + BFF real,
+cero Binance).** Cliente cierra con el servicio vivo: consumidores 1 → 0 en
+**14 ms**. Servicio se detiene: EOF en el cliente + `event: error`
+`STREAM_UPSTREAM_ERROR` en **6025 ms**. DOM real del panel: `LIVE` con el feed
+controlado y **12 ms** tras `POST /shutdown` → `DESCONECTADO`, `no LIVE` y causa
+visible. Evidencia: `docs/evidence/market-stream-controlled-disconnect-2026-10-24.json`,
+`docs/evidence/market-lab-controlled-disconnect-2026-10-24.json` (+ PNG) y
+`docs/evidence/market-lab-disconnect-planes-2026-10-24.md`.
+
+**Paginación `300→303`.** Con copia de la caché y sin red: con el bloque anterior
+ausente, la petición antigua devuelve otra vez la ventana reciente (302
+solapadas, 0 nuevas) y el contador solo crece por el stream (300 → 303 medido);
+la petición nueva devuelve 0 (no hay historia) y no finge crecimiento. Con el
+bloque almacenado, la petición nueva devuelve exactamente 300 anteriores (0
+solapan) y el merge conserva el extremo reciente. Evidencia:
+`docs/evidence/pagination-300-303-2026-10-24.json`. Exigir `+300` era un
+criterio equivocado.
+
+**Pruebas.** `tests/test_market_stream.py` 29/29 (incluye liberación inmediata al
+cerrar el SSE); `tests/test_market_stream_window.py` 25/25; frontend focalizado
+28/28 (BFF 8, hook 10, explorador 10); `market-chart-contract` 13/13;
+`tsc --noEmit` 0; `eslint` 0 en los archivos tocados; `next build` OK.
+
+**Estado servido.** `BUILD_ID=XozH8PXJA4yZR59XphpyH`, dashboard PID 33444 en
+`127.0.0.1:3020`, `/market-lab` HTTP 200; servicio `8791` **detenido**; DBs
+canónicas intactas (solo se copió `market_cache.db` a temp para la traza).
+
+**Diagnóstico de seguridad Next.js (sin actualizar).** Instalado `next 16.4.0`
+(lock 16.4.0; rango `^16.4.0`). Tres advisories: `GHSA-2464-fhr4-w9xw`
+(critical, Image Optimization + SVG, glibc Linux), `GHSA-673q-mjm6-r5xr`
+(critical, `use cache` con typed arrays) y `GHSA-p3m5-59mp-jv5r` (high, Server
+Actions DoS); parcheadas en **16.4.1**. La app actual no cumple los prerrequisitos
+(0 usos de `next/image`, `sharp` no instalado, win32, 127.0.0.1, 0 `"use cache"`,
+0 `"use server"`). El `next build` se detiene una vez con el aviso de seguridad y
+completa al reintentar. Evidencia:
+`docs/evidence/nextjs-security-diagnosis-2026-10-24.json`. Actualización
+**no ejecutada** (prohibida por el operador en este bloque).
+
+**Veredicto.** El `FAIL` medido de la ventana sigue siendo el veredicto de
+`F-CHART-BINANCE-04`; la corrección se acredita por separado con transporte
+controlado. Repetir la ventana requiere autorización explícita.
+
+**Desviaciones declaradas.** Durante el diagnóstico se arrancó dos veces el
+servicio sin `--base-url` (inspección del DOM y sonda SSE): abrió el WS público
+de Binance ~9 s y ~30 s, sin claves, sin API privada y sin órdenes; no es una
+ventana de aceptación y **no se usa como evidencia**. Además, una página
+`/market-lab` con `0GUSDT` 1h seleccionado encadenó 12 peticiones REST públicas
+(`01:43:47Z`–`01:44:18Z`) que **añadieron 3.552 velas** a la caché derivada
+`data/market-cache/market_cache.db` (`0GUSDT` 1h: 47 → 3.599 filas; 12 filas en
+`market_fetch_ledger`), sin perder filas previas. Las DBs canónicas
+(`microprobe.db`, `historical.db`) siguen intactas (mtime 2026-10-15); la caché
+es derivada y las velas son historia real. Se ejecutó
+`wal_checkpoint(TRUNCATE)` para dejarla consistente. El veredicto de la ventana
+no cambia. Riesgo residual: una sola interacción puede encadenar varias
+descargas de "anteriores" (12 medidas); pendiente de investigar.
+
+**Límites.** Las capturas controladas no acreditan recepción real (eso sigue
+acreditado solo por la captura #1 de la ventana); inspección visual
+`NOT_REVIEWED` (modelo de texto, sin proveedor de visión); repetición de la
+ventana pendiente; los 5 `high` de cadena de desarrollo siguen sin abordar.

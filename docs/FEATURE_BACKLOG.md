@@ -18,6 +18,94 @@
 - `BACKLOG_UPDATED` — yes: este bloque, `CURRENT_STATE`, `TASK_QUEUE`, `DECISIONS`, `MARKET_STREAM_LIVE_WINDOW_PLAN` (resultado), `MARKET_EXPLORER_CONTRACT_V1` (selector de la UI).
 - `DOCUMENTATION_CONFLICTS` — el plan asumía que la captura #2 cabría en los 20 s de espera y que el aviso de servicio detenido aparecería siempre al parar; la ejecución real mostró lo contrario y queda registrado como limitación, no como `PASS`. `CURRENT_STATE`/`TASK_QUEUE` de F-03 citan 60 s/400 mensajes: histórico válido, sustituido por 180 s/1200 mensajes. La recepción real se acredita con la evidencia de esta ventana; el veredicto global es `FAIL` por los dos checks DOM, nunca `PASS`.
 
+### Corrección del cierre de F-CHART-BINANCE-04 (2026-10-24, base `965ab87`)
+
+**1. Title:** Cerrar el expediente de la ventana `FAIL` sin repetirla: propagar
+cierre/error/cancelación entre servicio, BFF y navegador, retirar `LIVE` por
+frescura con causa inmediata y corregir la paginación `300→303`.
+
+**2. Approval status:** DECIDED dentro del alcance autorizado (escritorio,
+presupuesto cero, observación; sin nueva conexión Binance, sin actualización
+automática/mayor, sin cambios económicos ni de estrategia).
+
+**3. Implementation status:** IMPLEMENTED — BFF con `AbortController` +
+`req.signal` + bombeo de frames + `event: error`
+(`STREAM_UPSTREAM_CLOSED`/`STREAM_UPSTREAM_ERROR`) + `cancel()` aborta el
+upstream; hook con frescura local (ticker 1 s) y causa inmediata en
+`onerror`/`event: error` con código; servicio despierta el consumidor al cerrar
+el cliente; `mergeEarlierSeries` + petición del bloque estrictamente anterior en
+`ContractExplorer.tsx`. No implementados: repetición de la ventana, indicadores,
+paper prospectivo, móvil.
+
+**4. Evaluation status:** VERIFIED con transporte controlado (WS falso local +
+servicio real + BFF real; cero Binance): consumidores 1 → 0 en 14 ms con el
+servicio vivo; EOF + `event: error` `STREAM_UPSTREAM_ERROR` en 6025 ms al parar;
+DOM real `DESCONECTADO` + causa en 12 ms. Paginación: con el bloque almacenado la
+petición nueva devuelve 300 anteriores (0 solapan) y el merge conserva el extremo
+reciente; con el bloque ausente no finge crecimiento. Pruebas: backend 29/29 +
+25/25, frontend focalizado 28/28, contrato 13/13, `tsc`/`eslint` 0, `next build`
+OK (`BUILD_ID=XozH8PXJA4yZR59XphpyH`, `/market-lab` 200). **NO re-verificado con
+Binance**: la ventana real no se repite sin autorización y su veredicto sigue
+`FAIL`. Inspección visual `NOT_REVIEWED`.
+
+**5. Limitaciones:** las capturas controladas no acreditan recepción real; el
+detalle de causa del upstream es técnico (`TypeError: UND_ERR_SOCKET`); el
+`hold` de 20 s sigue sin cubrir una paginación que termine después del cierre
+(hay que paginar antes); los 5 `high` de cadena de desarrollo siguen; el primer
+`next build` se detiene con el aviso de seguridad y completa al reintentar.
+Desviación del diagnóstico: 12 peticiones REST reales encadenadas por una página
+`/market-lab` con `0GUSDT` 1h seleccionado añadieron 3.552 velas a la caché
+derivada (sin perder filas previas; DBs canónicas intactas) y revelaron que una
+sola interacción puede encadenar varias descargas de "anteriores".
+
+**6. Evidence:** `docs/evidence/market-stream-controlled-disconnect-2026-10-24.json`;
+`docs/evidence/market-lab-controlled-disconnect-2026-10-24.json` (+ PNG
+`market-lab-controlled-live-2026-10-24.png` y `...-down-2026-10-24.png`);
+`docs/evidence/market-lab-disconnect-planes-2026-10-24.md`;
+`docs/evidence/pagination-300-303-2026-10-24.json`;
+`docs/evidence/nextjs-security-diagnosis-2026-10-24.json`;
+`frontend/src/app/api/v1/market-stream/route.ts` (+ test);
+`frontend/src/lib/use-market-stream.ts`;
+`frontend/src/lib/market-chart-contract.ts`;
+`frontend/src/components/market-lab/ContractExplorer.tsx`;
+`src/microstructure_probe/market_stream_service.py`;
+`tests/test_market_stream.py`; `docs/MARKET_STREAM_LIVE_WINDOW_PLAN.md` §12.
+
+**7. Last update:** 2026-10-24.
+
+#### Cierre (siete campos, obligatorios)
+
+- `DECISIONS_REVIEWED` — AGENTS, WORKFLOW, `CURRENT_STATE`, `TASK_QUEUE`,
+  `DECISIONS` (2026-10-22 presupuesto de consumidores; 2026-10-23 selector
+  `1m`; 2026-10-24 veredicto `FAIL`), `MARKET_STREAM_CONTRACT_V1` §15,
+  `MARKET_STREAM_LIVE_WINDOW_PLAN` §11, `MARKET_EXPLORER_CONTRACT_V1`,
+  `SAFETY_RULES`, `DESKTOP_FIRST_SCOPE_20261020` y este backlog.
+- `NEW_DECISIONS_RECORDED` — DECISIONS 2026-10-24: el cierre/error del upstream
+  se declara explícitamente en el BFF (nunca se reenvía el cuerpo en crudo); el
+  hook calcula la frescura localmente y muestra la causa sin esperar reintentos;
+  el consumidor se libera al cerrar el cliente sin esperar al heartbeat; la
+  paginación pide el bloque estrictamente anterior y cuenta velas únicas (no
+  exige `+300`).
+- `FEATURES_IMPLEMENTED` — BFF pump/abort/causa; hook de frescura y causa
+  inmediata; liberación inmediata del consumidor; `mergeEarlierSeries` y
+  petición anterior; pruebas nuevas (BFF, hook, contrato, explorador, servicio);
+  documentación y evidencia.
+- `FEATURES_VERIFIED` — liberación 14 ms; EOF + causa 6025 ms; DOM 12 ms;
+  paginación 300 únicas/0 solape con extremo reciente preservado; 300→303
+  unitario; `tsc`/`eslint` 0; build y `/market-lab` 200.
+- `DEFERRED_FEATURES` — repetición de la ventana real (requiere autorización);
+  actualización de Next.js a 16.4.1 (decisión pendiente); revisión visual por
+  modelo; retención del caché; indicadores compartidos; paper con datos vivos;
+  móvil/Flutter; REA; `/antislop` end-to-end.
+- `BACKLOG_UPDATED` — yes: esta sección, `CURRENT_STATE`, `TASK_QUEUE`,
+  `DECISIONS` y `MARKET_STREAM_LIVE_WINDOW_PLAN` §12.
+- `DOCUMENTATION_CONFLICTS` — el plan de la ventana asumía que el aviso de
+  servicio detenido aparecería siempre al parar; la ejecución real mostró lo
+  contrario y ahora la causa está demostrada y corregida, pero el veredicto
+  medido sigue `FAIL` hasta repetir la ventana. `TASK_QUEUE`/`CURRENT_STATE`
+  anteriores citan BUILD_ID `eiXlHvN4lJBLWcuOopsh_`: histórico válido, sustituido
+  por `XozH8PXJA4yZR59XphpyH`.
+
 ## F-CHART-BINANCE-03 — Actualización continua de velas en el explorador (2026-10-21, base `469e282`)
 
 **1. Title:** Vela en formación actualizándose sin recargar la página para el contrato seleccionado, con conexión compartida backend, snapshot+stream reconciliados, reconexión con backoff, reparación acotada de huecos, estados honestos (CONECTANDO/RECIBIENDO/OBSOLETO/DESCONECTADO/RECUPERANDO) y `LIVE` condicionado a frescura real.

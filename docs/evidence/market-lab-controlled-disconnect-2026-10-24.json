@@ -1,0 +1,34 @@
+{
+  "transport": "controlled_loopback",
+  "binance_contact": "none",
+  "symbol": "ETHUSDT",
+  "interval": "1h",
+  "steps": {
+    "live": {
+      "panel": {
+        "state": "RECIBIENDO",
+        "live": "LIVE",
+        "updated": "2026-10-24T01:45:11.907Z · hace 0 s",
+        "down": null,
+        "error": null,
+        "status": "FUENTE / IDENTIDAD\nBinance USD-M · ETHUSDT · 1h · market-stream/v1\nESTADO DEL FEED\nRECIBIENDO\nLIVE\nLIVE\nÚLTIMA ACTUALIZACIÓN RECIBIDA\n2026-10-24T01:45:11.907Z · hace 0 s\nVELAS EN PANTALLA\n300 cargadas · 0 provisional\n\nUna sola conexión al exchange para todos los gráficos y pestañas; cambiar de símbolo o intervalo descarta respuestas antiguas y libera solo las suscripciones sin consumidores. Sin persistencia de actualizaciones; los huecos se reparan por REST acotado y se informan aunque la reparación sea parcial. Abrir el gráfico no abre posiciones ni inicia simulación."
+      },
+      "consumers": 1,
+      "socket": true
+    },
+    "shutdown_http": 200,
+    "after_stop": {
+      "elapsed_ms": 12,
+      "panel": {
+        "state": "DESCONECTADO",
+        "live": "no LIVE",
+        "updated": "2026-10-24T01:45:11.907Z · hace 0 s",
+        "down": null,
+        "error": "Feed: TypeError: UND_ERR_SOCKET · reintento 2",
+        "status": "FUENTE / IDENTIDAD\nBinance USD-M · ETHUSDT · 1h · market-stream/v1\nESTADO DEL FEED\nDESCONECTADO\nLIVE\nno LIVE\nÚLTIMA ACTUALIZACIÓN RECIBIDA\n2026-10-24T01:45:11.907Z · hace 0 s\nVELAS EN PANTALLA\n300 cargadas · 0 provisional\n\nFeed: TypeError: UND_ERR_SOCKET · reintento 2\n\nUna sola conexión al exchange para todos los gráficos y pestañas; cambiar de símbolo o intervalo descarta respuestas antiguas y libera solo las suscripciones sin consumidores. Sin persistencia de actualizaciones; los huecos se reparan por REST acotado y se informan aunque la reparación sea parcial. Abrir el gráfico no abre posiciones ni inicia simulación."
+      }
+    }
+  },
+  "service_exit": 0,
+  "health_after_stop": "URLError"
+}

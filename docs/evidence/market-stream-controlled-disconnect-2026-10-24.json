@@ -1,0 +1,55 @@
+{
+  "transport": "controlled_loopback",
+  "binance_contact": "none",
+  "symbol": "ZZZUSDT",
+  "interval": "1h",
+  "phases": {
+    "client_open": {
+      "status_line": "HTTP/1.1 200 OK",
+      "candle_received": true,
+      "head": "HTTP/1.1 200 OK\r\nvary: rsc, next-router-state-tree, next-router-prefetch, next-router-segment-prefetch\r\ncache-control: no-store, no-transform\r\nconnection: keep-alive\r\ncontent-type: text/event-stream; charset=utf-8\r\nx-accel-buffering: no\r\nDate: Sat, 24 Oct 2026 01:39:23 GMT\r\nTransfer-Encoding: chunked\r\n\r\n2ae\r\nretry: 5000\n\nevent: hello\ndata: {\"contract_version\":\"market-stream/v1\",\"service\":\"market-stream-service/v1\",\"identity\":{\"symbol\":\"ZZZUSDT\",\"symbol_canonical\":\"ZZZUSDT\",\"interval\":\"1h\",\"venue\":\"binance\",\"market_type\":\"usd_m_futures\",\"source\":\"ws_kline\"},\"policy\":{\"fresh_ms\":10000,\"stale_ms\":60000,\"live_requires\":\"RECEIVING + socket + identidad + age<=fresh_ms\"},\"limits\":{\"max_subscriptions\":6,\"max_consumers\":12,\"max_consumers_per_stream\":4,\"ring_size\":300,\"pending_max\":256,\"consumer_queue_max\":256,\"fresh_ms\":10000,\"stale_ms\":60000,\"recovery_max_pages\":2,\"recovery_page_limit\":500,\"recovery_max_per_minute\":6,\"persistence\":\"MEMORY_ONLY\"},\"pid\":29016,\"started_at_ms\":1792805963134}\n\n\r\n375\r\nevent: snapshot\ndata: {\"symbol\":\"ZZZUSDT\",\"interval\":\"1h\",\"window\":{\"from_ms\":1791729563253,\"to_ms\":1792805963253},\"candles\":[],\"observed\":{\"start_ms\":null,\"end_ms\":null},\"coverage\":{\"state\":\"NO_CO"
+    },
+    "consumer_attached": {
+      "reached": true,
+      "elapsed_ms": 22,
+      "consumers": 1
+    },
+    "consumer_released_after_client_close": {
+      "reached": true,
+      "elapsed_ms": 14,
+      "consumers": 0,
+      "wall_ms": 15,
+      "service_alive": true
+    },
+    "second_client": {
+      "candle_received": true
+    },
+    "second_client_attached": {
+      "reached": true,
+      "elapsed_ms": 13,
+      "consumers": 1
+    },
+    "service_stop": {
+      "shutdown_http": 200,
+      "client_eof": true,
+      "client_close_ms": 6025,
+      "error_frame": true,
+      "error_code": "STREAM_UPSTREAM_ERROR",
+      "tail": "last_message_ms\":1792805969269,\"last_kline_open_ms\":1792803600000,\"closed_through_ms\":null,\"age_ms\":1,\"live\":true,\"recovering\":false,\"generated_at_ms\":1792805969270}\n\n\r\n143\r\nevent: status\ndata: {\"symbol\":\"ZZZUSDT\",\"interval\":\"1h\",\"connection\":{\"state\":\"DISCONNECTED\",\"socket_connected\":false,\"fresh_ms\":10000,\"stale_ms\":60000},\"last_message_ms\":1792805969269,\"last_kline_open_ms\":1792803600000,\"closed_through_ms\":null,\"age_ms\":33,\"live\":false,\"recovering\":false,\"generated_at_ms\":1792805969302}\n\n\r\n5a\r\nevent: error\ndata: {\"code\":\"STREAM_UPSTREAM_ERROR\",\"detail\":\"TypeError: UND_ERR_SOCKET\"}\n\n\r\n0\r\n\r\n"
+    }
+  },
+  "service_pid": 29016,
+  "health_before": {
+    "consumers": 0,
+    "socket": {
+      "connected": false,
+      "since_ms": null,
+      "attempts": 0,
+      "reconnects": 0,
+      "last_error": null,
+      "route": "/market"
+    }
+  },
+  "service_exit": 0,
+  "health_after_stop": "URLError"
+}

@@ -1,0 +1,66 @@
+{
+  "transport": "controlled_cache_copy",
+  "network": "none",
+  "source_db": "data/market-cache/market_cache.db (copiada a temp)",
+  "synthetic_older_rows": 300,
+  "loaded_series": {
+    "count": 302,
+    "first": 1792784760000,
+    "last": 1792802820000
+  },
+  "before_block_stored": {
+    "old_request": {
+      "from_ms": 1792766760000,
+      "to_ms": 1792802820000,
+      "returned": 302,
+      "overlap_with_loaded": 302,
+      "unique_new": 0,
+      "observed": {
+        "start_ms": 1792784760000,
+        "end_ms": 1792802820000
+      }
+    },
+    "new_request": {
+      "from_ms": 1792766760000,
+      "to_ms": 1792784700000,
+      "returned": 0,
+      "overlap_with_loaded": 0,
+      "unique_new": 0,
+      "observed": {
+        "start_ms": null,
+        "end_ms": null
+      }
+    },
+    "note": "la peticion antigua (to = borde reciente) devuelve otra vez la ventana cargada: solapamiento total y 0 velas nuevas; el contador solo crece por las actualizaciones del stream (300 -> 303 medido en la ventana)"
+  },
+  "after_block_stored": {
+    "old_request": {
+      "from_ms": 1792766760000,
+      "to_ms": 1792802820000,
+      "returned": 602,
+      "overlap_with_loaded": 302,
+      "unique_new": 300,
+      "observed": {
+        "start_ms": 1792766760000,
+        "end_ms": 1792802820000
+      }
+    },
+    "new_request": {
+      "from_ms": 1792766760000,
+      "to_ms": 1792784700000,
+      "returned": 300,
+      "overlap_with_loaded": 0,
+      "unique_new": 300,
+      "observed": {
+        "start_ms": 1792766760000,
+        "end_ms": 1792784700000
+      }
+    },
+    "merge": {
+      "result_count": 602,
+      "recent_edge_preserved": true,
+      "recent_edge_ms": 1792802820000
+    }
+  },
+  "verdict": "con la peticion antigua la respuesta repite la ventana reciente (solapamiento); la nueva pide el bloque estrictamente anterior y se antepone sin perder el extremo reciente"
+}
