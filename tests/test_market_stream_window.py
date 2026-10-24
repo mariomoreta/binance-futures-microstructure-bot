@@ -17,6 +17,7 @@ from __future__ import annotations
 import asyncio
 import importlib.util
 import json
+import os
 import tempfile
 import unittest
 from datetime import datetime, timezone
@@ -222,6 +223,40 @@ class AcceptanceTests(unittest.TestCase):
         self.assertEqual(consumers["service_symbols"], ["MINAUSDT"])
         self.assertEqual(consumers["bff_symbols"], ["BTCUSDT"])
         self.assertLessEqual(consumers["total"], window.MAX_CONSUMERS_PER_STREAM * 2)
+
+    def test_plan_uses_dashboard_url_and_hold_signal(self):
+        import argparse
+        args = argparse.Namespace(
+            symbols="BTCUSDT,MINAUSDT", interval="1m", duration=75.0,
+            hold_seconds=20.0, max_messages=1200, max_events=6000,
+            max_reconnects=3, port=8792, no_bff=False, execute=False,
+            dashboard_url="http://127.0.0.1:3021",
+            hold_signal=str(ROOT / "tmp-hold.signal"))
+        payload = window.plan(args)
+        self.assertIn("http://127.0.0.1:3021/api/v1/market-stream", payload["chain"][2])
+        self.assertEqual(payload["budget"]["dashboard_url"], "http://127.0.0.1:3021")
+        self.assertEqual(payload["budget"]["hold_signal"], str(ROOT / "tmp-hold.signal"))
+
+    def test_dashboard_endpoint_follows_url_port(self):
+        self.assertEqual(window._dashboard_endpoint("http://127.0.0.1:3021"),
+                         ("127.0.0.1", 3021))
+        self.assertEqual(window._dashboard_endpoint("http://localhost:3020/"),
+                         ("localhost", 3020))
+
+    def test_service_env_preserves_existing_pythonpath(self):
+        env = window._service_env({"PYTHONPATH": "guard", "OTHER": "1"})
+        parts = env["PYTHONPATH"].split(os.pathsep)
+        self.assertIn("guard", parts)
+        self.assertIn(str(ROOT / "src"), parts)
+        self.assertEqual(env["OTHER"], "1")
+
+    def test_hold_signal_ready_observes_file(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp) / "hold.signal"
+            self.assertFalse(window.hold_signal_ready(str(path)))
+            path.write_text("1", encoding="utf-8")
+            self.assertTrue(window.hold_signal_ready(str(path)))
+        self.assertFalse(window.hold_signal_ready(None))
 
     def test_browser_wait_requires_primary_symbol_only(self):
         ready = window.consumer_wait_ready

@@ -583,9 +583,10 @@ export function ContractExplorer() {
 
             {streamView.available === false && (
               <p className={s.warn} role="status" data-testid="explorer-stream-down">
-                Servicio de datos detenido: se conserva el histórico ya cargado y
-                no se declara LIVE. El monitor del bot y las sesiones Paper Lab no
-                dependen de este feed. Arranque manual:
+                Servicio de datos detenido
+                {streamView.error ? ` (${streamView.error})` : ""}: se conserva el
+                histórico ya cargado y no se declara LIVE. El monitor del bot y las
+                sesiones Paper Lab no dependen de este feed. Arranque manual:
                 {" "}<code>python scripts/market_stream_service.py --port 8791</code>.
               </p>
             )}

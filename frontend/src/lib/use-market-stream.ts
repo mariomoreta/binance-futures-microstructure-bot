@@ -64,6 +64,9 @@ export function useMarketStream(options: UseMarketStreamOptions): MarketStreamVi
       if (last === null) return;
       const age = Math.max(0, Date.now() - last);
       setView((previous) => {
+        // El aviso de servicio detenido es terminal: no se sobrescribe con la
+        // causa de frescura mientras el EventSource sigue reintentando.
+        if (previous.available === false) return previous;
         const status = previous.status;
         if (!status) return previous;
         const fresh = status.connection.fresh_ms;
@@ -246,6 +249,29 @@ export function useMarketStream(options: UseMarketStreamOptions): MarketStreamVi
             connection: {...previous.status.connection, state: "DISCONNECTED"},
           } : null,
         }));
+        // El BFF responde 503 (JSON) cuando el servicio esta detenido. Para
+        // EventSource eso es un fallo fatal y no reintenta: sin esta consulta
+        // `attempts` se queda en 1 y el aviso de servicio detenido nunca
+        // aparece. Se pregunta al endpoint de estado, que si responde 200 con
+        // `available:false` declara la causa real y cierra el stream.
+        void (async () => {
+          try {
+            const response = await fetch(STATUS_URL, {
+              cache: "no-store", signal: controller.signal,
+            });
+            const data = await response.json() as {
+              available?: boolean; detail?: string | null;
+            };
+            if (disposed) return;
+            if (data.available === false) {
+              es.close();
+              if (source === es) source = null;
+              fail(data.detail ?? "servicio de datos detenido");
+            }
+          } catch {
+            // Sin estado disponible: se mantiene el reintento normal.
+          }
+        })();
       };
     };
 

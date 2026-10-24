@@ -158,6 +158,44 @@ describe("useMarketStream — conexión y estados", () => {
     expect(screen.getByTestId("live").textContent).toBe("no");
   });
 
+  it("si el servicio cae con el stream abierto, declara el aviso sin esperar 6 reintentos", async () => {
+    // El BFF responde 503 JSON cuando el servicio esta detenido; EventSource
+    // trata esa respuesta como fatal y no reintenta. El hook consulta /status
+    // en el primer error para declarar la causa real en vez de quedarse en
+    // `available:true` con el aviso `explorer-stream-down` ausente.
+    const fetchMock = vi.fn()
+      .mockResolvedValueOnce({
+        ok: true, json: () => Promise.resolve({available: true}),
+      })
+      .mockResolvedValueOnce({
+        ok: true,
+        json: () => Promise.resolve({available: false, detail: "ECONNREFUSED"}),
+      });
+    vi.stubGlobal("fetch", fetchMock);
+    render(<Probe symbol="BTCUSDT" interval="1h" />);
+    await waitFor(() => expect(FakeEventSource.instances).toHaveLength(1));
+    const source = FakeEventSource.instances[0]!;
+    act(() => {
+      source.onopen?.();
+      source.emit("status", statusEvent);
+    });
+    expect(screen.getByTestId("available").textContent).toBe("true");
+    expect(screen.getByTestId("state").textContent).toBe("RECEIVING");
+
+    await act(async () => {
+      source.onerror?.();
+      await Promise.resolve();
+      await Promise.resolve();
+    });
+
+    await waitFor(() => expect(screen.getByTestId("available").textContent).toBe("false"));
+    expect(screen.getByTestId("error").textContent).toBe("ECONNREFUSED");
+    expect(screen.getByTestId("state").textContent).toBe("DISCONNECTED");
+    expect(screen.getByTestId("live").textContent).toBe("no");
+    expect(source.closed).toBe(true);
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+  });
+
   it("cambiar de símbolo cierra la conexión anterior y abre otra", async () => {
     const {rerender} = render(<Probe symbol="BTCUSDT" interval="1h" />);
     await waitFor(() => expect(FakeEventSource.instances).toHaveLength(1));

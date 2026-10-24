@@ -124,6 +124,39 @@ def _host_header(url: str) -> str:
     return urlsplit(url).netloc or "127.0.0.1"
 
 
+def _dashboard_endpoint(url: str) -> Tuple[str, int]:
+    """Host/puerto reales del dashboard: el consumidor BFF del script debe
+    hablar con la misma instancia que el navegador (no un 3020 fijo)."""
+    parts = urlsplit(url)
+    host = parts.hostname or "127.0.0.1"
+    port = parts.port or (443 if parts.scheme == "https" else 80)
+    return host, int(port)
+
+
+def _service_env(base: Optional[Dict[str, str]] = None) -> Dict[str, str]:
+    """Entorno del servicio conservando el PYTHONPATH existente.
+
+    El arnes local antepone un directorio con `sitecustomize` que bloquea
+    conexiones publicas; sobrescribir PYTHONPATH lo desactivaria en el hijo.
+    """
+    env = dict(os.environ if base is None else base)
+    existing = env.get("PYTHONPATH")
+    env["PYTHONPATH"] = os.pathsep.join(
+        part for part in (existing, str(ROOT / "src")) if part)
+    return env
+
+
+def hold_signal_ready(path: Optional[str]) -> bool:
+    """Coordinacion por condicion: el arnes escribe el fichero tras capturar
+    el DOM #2 y el script avanza sin esperar el maximo fijo."""
+    if not path:
+        return False
+    try:
+        return Path(path).exists()
+    except OSError:
+        return False
+
+
 def _port_open(host: str, port: int, timeout: float = 0.5) -> bool:
     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
         sock.settimeout(timeout)
@@ -339,6 +372,7 @@ def plan(args: argparse.Namespace) -> Dict[str, Any]:
     interval = args.interval
     duration = float(args.duration)
     browser = bool(getattr(args, "browser_consumer", False))
+    dashboard_url = str(getattr(args, "dashboard_url", DEFAULT_DASHBOARD)).rstrip("/")
     allocation = _consumer_allocation(symbols, bool(args.no_bff), browser)
     return {
         "contract_version": STREAM_CONTRACT_VERSION,
@@ -348,7 +382,7 @@ def plan(args: argparse.Namespace) -> Dict[str, Any]:
         "chain": [
             "binance: wss://fstream.binance.com/market/stream?streams=... (una conexion combinada)",
             f"hub+servicio: {SERVICE_VERSION} en http://127.0.0.1:{args.port} (reutilizado, no recreado)",
-            "bff: http://127.0.0.1:3020/api/v1/market-stream (proxy SSE)",
+            f"bff: {dashboard_url}/api/v1/market-stream (proxy SSE)",
             "grafico: /market-lab -> panel explorer-stream + vela provisional",
         ],
         "symbols": symbols,
@@ -359,6 +393,8 @@ def plan(args: argparse.Namespace) -> Dict[str, Any]:
         "budget": {
             "duration_s": duration,
             "hold_after_acceptance_s": float(args.hold_seconds),
+            "hold_signal": getattr(args, "hold_signal", None),
+            "dashboard_url": dashboard_url,
             "max_messages": int(args.max_messages),
             "max_events": int(args.max_events),
             "max_reconnects": int(args.max_reconnects),
@@ -1109,8 +1145,7 @@ async def run_window(args: argparse.Namespace) -> Dict[str, Any]:
             _progress("AVISO: transporte loopback de prueba; este JSON NO acredita "
                       "recepcion de Binance")
 
-        env = dict(os.environ)
-        env["PYTHONPATH"] = str(ROOT / "src")
+        env = _service_env()
         safety = float(args.duration) + float(args.hold_seconds) + 60.0
         argv = [sys.executable, "-X", "utf8", str(SERVICE_SCRIPT),
                 "--port", str(args.port), "--max-seconds", str(safety)]
@@ -1209,7 +1244,8 @@ async def run_window(args: argparse.Namespace) -> Dict[str, Any]:
             primary = symbols[0]
             bff_state = _new_consumer_state()
             run["consumers"]["bff"] = bff_state
-            client = SseClient("127.0.0.1", 3020,
+            bff_host, bff_port = _dashboard_endpoint(args.dashboard_url)
+            client = SseClient(bff_host, bff_port,
                                f"/api/v1/market-stream?symbol={primary}"
                                f"&interval={args.interval}&bars={DEFAULT_BARS}",
                                label="bff", host_header=_host_header(args.dashboard_url))
@@ -1227,6 +1263,7 @@ async def run_window(args: argparse.Namespace) -> Dict[str, Any]:
         deadline = time.monotonic() + float(args.duration)
         next_health = 0.0
         accepted_at: Optional[float] = None
+        hold_signal = getattr(args, "hold_signal", None)
         processed = 0
         stop_reason = "DURATION"
 
@@ -1291,9 +1328,14 @@ async def run_window(args: argparse.Namespace) -> Dict[str, Any]:
                 _progress("ACEPTACION DE CADENA ALCANZADA (provisional + cierre + "
                           f"siguiente); captura el DOM ahora: quedan "
                           f"{int(args.hold_seconds)} s")
-            if accepted_at is not None and now - accepted_at >= float(args.hold_seconds):
-                stop_reason = "ACCEPTANCE_REACHED"
-                break
+            if accepted_at is not None:
+                signal_ready = hold_signal_ready(hold_signal)
+                elapsed = now - accepted_at
+                if signal_ready or elapsed >= float(args.hold_seconds):
+                    stops["hold_signal_seen"] = signal_ready
+                    stops["hold_elapsed_ms"] = int(elapsed * 1000)
+                    stop_reason = "ACCEPTANCE_REACHED"
+                    break
             if now >= deadline:
                 stop_reason = "DURATION"
                 break
@@ -1351,6 +1393,18 @@ async def run_window(args: argparse.Namespace) -> Dict[str, Any]:
             _progress("consumidores_tras_reconectar="
                       f"{(stops['health_after_reconnect'] or {}).get('consumers')} "
                       "(esperado 1)")
+            post_signal = getattr(args, "post_reconnect_signal", None)
+            if post_signal and stops.get("consumers_reconnected"):
+                hold_started = time.monotonic()
+                held = False
+                while time.monotonic() - hold_started < reconnect_limit:
+                    if Path(post_signal).exists():
+                        held = True
+                        break
+                    await asyncio.sleep(0.1)
+                stops["post_reconnect_signal_seen"] = held
+                stops["post_reconnect_hold_ms"] = int(
+                    (time.monotonic() - hold_started) * 1000)
     except _Abort:
         pass
     except asyncio.CancelledError:
@@ -1525,7 +1579,8 @@ def main(argv: Optional[List[str]] = None) -> int:
     parser.add_argument("--interval", default=DEFAULT_INTERVAL)
     parser.add_argument("--duration", type=float, default=DEFAULT_DURATION_S)
     parser.add_argument("--hold-seconds", type=float, default=DEFAULT_HOLD_S,
-                        help="espera tras aceptar para capturar el DOM")
+                        help="maximo tras aceptar para capturar el DOM; con "
+                             "--hold-signal se avanza al aparecer el fichero")
     parser.add_argument("--max-messages", type=int, default=DEFAULT_MAX_MESSAGES)
     parser.add_argument("--max-events", type=int, default=DEFAULT_MAX_EVENTS)
     parser.add_argument("--max-reconnects", type=int, default=DEFAULT_MAX_RECONNECTS)
@@ -1553,6 +1608,12 @@ def main(argv: Optional[List[str]] = None) -> int:
                         help="segundos maximos esperando consumers=0")
     parser.add_argument("--reconnect-timeout", type=float, default=30.0,
                         help="segundos maximos esperando consumers=1 tras reconectar")
+    parser.add_argument("--hold-signal", default=None,
+                        help="fichero de coordinacion: al existir se avanza sin "
+                             "esperar el maximo de --hold-seconds (lo escribe el arnes)")
+    parser.add_argument("--post-reconnect-signal", default=None,
+                        help="fichero de coordinacion: tras consumers=1 el servicio "
+                             "sigue vivo hasta que exista (captura DOM de reconexion)")
     parser.add_argument("--out", default=None, help="ruta JSON de evidencia")
     parser.add_argument("--execute", action="store_true",
                         help="abre la conexion real (requiere autorizacion)")
