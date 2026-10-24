@@ -56,25 +56,70 @@ export async function GET(req: Request) {
   if (bars !== undefined) upstreamParams.set("bars", String(bars));
 
   let upstream: Response;
+  const abort = new AbortController();
+  const abortUpstream = () => {
+    if (!abort.signal.aborted) abort.abort();
+  };
+  // El navegador cierra la pestaña/EventSource: se aborta el lector del servicio
+  // para que libere el consumidor aunque el proceso siga vivo.
+  req.signal.addEventListener("abort", abortUpstream);
+  if (req.signal.aborted) abortUpstream();
   try {
     upstream = await fetch(`${streamServiceUrl()}/stream?${upstreamParams.toString()}`, {
       headers: {Accept: "text/event-stream"},
       cache: "no-store",
-      signal: req.signal,
+      signal: abort.signal,
     });
   } catch (error) {
+    req.signal.removeEventListener("abort", abortUpstream);
     return NextResponse.json({
       error: "STREAM_SERVICE_DOWN",
       detail: streamErrorDetail(error),
     }, {status: 503, headers});
   }
   if (!upstream.ok || !upstream.body) {
+    req.signal.removeEventListener("abort", abortUpstream);
     return NextResponse.json({
       error: "STREAM_SERVICE_DOWN",
       detail: `HTTP ${upstream.status}`,
     }, {status: 503, headers});
   }
-  return new Response(upstream.body, {
+  // Se reenvía el SSE frame a frame y se declara la causa cuando el servicio
+  // cierra o falla: el navegador no debe quedarse con un socket abierto y
+  // mudo. `cancel()` propaga la desconexión del cliente al lector upstream.
+  const encoder = new TextEncoder();
+  const errorFrame = (code: string, detail: string) => encoder.encode(
+    `event: error\ndata: ${JSON.stringify({code, detail})}\n\n`);
+  const body = new ReadableStream<Uint8Array>({
+    async start(controller) {
+      const reader = upstream.body!.getReader();
+      const enqueue = (chunk: Uint8Array) => {
+        try { controller.enqueue(chunk); } catch { /* cliente ya cerrado */ }
+      };
+      try {
+        for (;;) {
+          const {done, value} = await reader.read();
+          if (done) {
+            enqueue(errorFrame("STREAM_UPSTREAM_CLOSED",
+              "el servicio de datos cerró el stream"));
+            break;
+          }
+          enqueue(value);
+        }
+      } catch (error) {
+        enqueue(errorFrame("STREAM_UPSTREAM_ERROR", streamErrorDetail(error)));
+      } finally {
+        req.signal.removeEventListener("abort", abortUpstream);
+        try { reader.releaseLock(); } catch { /* ya liberado */ }
+        try { controller.close(); } catch { /* ya cerrado */ }
+      }
+    },
+    cancel() {
+      req.signal.removeEventListener("abort", abortUpstream);
+      abortUpstream();
+    },
+  });
+  return new Response(body, {
     status: 200,
     headers: {
       "Content-Type": "text/event-stream; charset=utf-8",

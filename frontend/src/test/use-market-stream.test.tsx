@@ -175,4 +175,69 @@ describe("useMarketStream — conexión y estados", () => {
     unmount();
     expect(source.closed).toBe(true);
   });
+
+  it("retira LIVE por frescura aunque el stream siga mudo", async () => {
+    vi.useFakeTimers();
+    try {
+      render(<Probe symbol="BTCUSDT" interval="1h" />);
+      await act(async () => { await Promise.resolve(); });
+      expect(FakeEventSource.instances).toHaveLength(1);
+      const source = FakeEventSource.instances[0]!;
+      act(() => {
+        source.onopen?.();
+        source.emit("status", statusEvent);
+      });
+      expect(screen.getByTestId("state").textContent).toBe("RECEIVING");
+      expect(screen.getByTestId("live").textContent).toBe("LIVE");
+
+      // 11 s sin eventos (ni heartbeat): OBSOLETO y LIVE retirado.
+      act(() => { vi.advanceTimersByTime(11_000); });
+      expect(screen.getByTestId("state").textContent).toBe("STALE");
+      expect(screen.getByTestId("live").textContent).toBe("no");
+      expect(screen.getByTestId("error").textContent).toContain("frescura");
+
+      // 61 s: DESCONECTADO con causa, sin haber agotado reintentos.
+      act(() => { vi.advanceTimersByTime(50_000); });
+      expect(screen.getByTestId("state").textContent).toBe("DISCONNECTED");
+      expect(screen.getByTestId("live").textContent).toBe("no");
+      expect(screen.getByTestId("error").textContent).toContain("desconectado");
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it("onerror declara la causa y retira LIVE antes de agotar reintentos", async () => {
+    render(<Probe symbol="BTCUSDT" interval="1h" />);
+    await waitFor(() => expect(FakeEventSource.instances).toHaveLength(1));
+    const source = FakeEventSource.instances[0]!;
+    act(() => {
+      source.onopen?.();
+      source.emit("status", statusEvent);
+    });
+    expect(screen.getByTestId("live").textContent).toBe("LIVE");
+
+    act(() => source.onerror?.());
+    expect(screen.getByTestId("state").textContent).toBe("DISCONNECTED");
+    expect(screen.getByTestId("live").textContent).toBe("no");
+    expect(screen.getByTestId("error").textContent).toContain("reintentando (1/6)");
+    expect(screen.getByTestId("available").textContent).toBe("true");
+  });
+
+  it("un error del backend se muestra tal cual y retira LIVE", async () => {
+    render(<Probe symbol="BTCUSDT" interval="1h" />);
+    await waitFor(() => expect(FakeEventSource.instances).toHaveLength(1));
+    const source = FakeEventSource.instances[0]!;
+    act(() => {
+      source.onopen?.();
+      source.emit("status", statusEvent);
+    });
+
+    act(() => source.emit("error", {
+      code: "STREAM_UPSTREAM_CLOSED", detail: "el servicio de datos cerró el stream",
+    }));
+    expect(screen.getByTestId("state").textContent).toBe("DISCONNECTED");
+    expect(screen.getByTestId("live").textContent).toBe("no");
+    expect(screen.getByTestId("error").textContent)
+      .toBe("el servicio de datos cerró el stream");
+  });
 });

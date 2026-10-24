@@ -13,7 +13,8 @@
 import {useEffect, useRef, useState} from "react";
 import {
   emptyStreamView, type MarketStreamCandle, type MarketStreamGap,
-  type MarketStreamSnapshot, type MarketStreamStatus, type MarketStreamView,
+  type MarketStreamSnapshot, type MarketStreamState, type MarketStreamStatus,
+  type MarketStreamView,
 } from "./market-stream";
 
 const MAX_ATTEMPTS = 6;
@@ -43,12 +44,56 @@ export function useMarketStream(options: UseMarketStreamOptions): MarketStreamVi
   const {symbol, interval, fromMs, toMs, enabled} = options;
   const [view, setView] = useState<MarketStreamView>(emptyStreamView);
   const windowRef = useRef<{fromMs: number | null; toMs: number | null}>({fromMs, toMs});
+  // Instante local del ultimo evento SSE recibido. La frescura se calcula aqui
+  // para retirar LIVE aunque el stream se quede mudo sin cerrar.
+  const lastEventAt = useRef<number | null>(null);
 
   // La ventana solo se usa al abrir la conexión: paginar hacia atrás no debe
   // reabrir el feed ni duplicar suscripciones.
   useEffect(() => {
     windowRef.current = {fromMs, toMs};
   }, [fromMs, toMs]);
+
+  // Reloj local de frescura: si no llega ningun evento (ni heartbeat), el panel
+  // pasa a OBSOLETO y luego a DESCONECTADO con la causa, sin depender de que se
+  // agoten los reintentos del EventSource.
+  useEffect(() => {
+    if (!enabled) return;
+    const timer = setInterval(() => {
+      const last = lastEventAt.current;
+      if (last === null) return;
+      const age = Math.max(0, Date.now() - last);
+      setView((previous) => {
+        const status = previous.status;
+        if (!status) return previous;
+        const fresh = status.connection.fresh_ms;
+        const stale = status.connection.stale_ms;
+        const state: MarketStreamState = age > stale
+          ? "DISCONNECTED"
+          : age > fresh ? "STALE" : status.connection.state;
+        const cause = age > stale
+          ? `sin mensajes del feed desde hace ${Math.round(age / 1000)} s: desconectado`
+          : age > fresh
+            ? `sin mensajes del feed desde hace ${Math.round(age / 1000)} s: LIVE retirado por frescura`
+            : previous.error;
+        if (status.age_ms === age && status.connection.state === state
+            && previous.error === cause) {
+          return previous;
+        }
+        return {
+          ...previous,
+          error: cause,
+          status: {
+            ...status,
+            age_ms: age,
+            live: status.live && age <= fresh,
+            connection: {...status.connection, state},
+          },
+        };
+      });
+    }, 1000);
+    return () => clearInterval(timer);
+  }, [enabled]);
 
   useEffect(() => {
     if (!enabled || !symbol || !interval) {
@@ -58,6 +103,8 @@ export function useMarketStream(options: UseMarketStreamOptions): MarketStreamVi
     let source: EventSource | null = null;
     let attempts = 0;
     const controller = new AbortController();
+    lastEventAt.current = Date.now();
+    const touch = () => { lastEventAt.current = Date.now(); };
 
     const fail = (detail: string) => {
       if (disposed) return;
@@ -93,31 +140,37 @@ export function useMarketStream(options: UseMarketStreamOptions): MarketStreamVi
 
       es.addEventListener("hello", () => {
         if (disposed) return;
+        touch();
         setView((previous) => ({...previous, available: true, error: null}));
       });
       es.addEventListener("snapshot", (event) => {
         const payload = parseEvent<MarketStreamSnapshot>(event);
         if (!payload || disposed) return;
+        touch();
         setView((previous) => ({...previous, snapshot: payload, available: true}));
       });
       es.addEventListener("candle", (event) => {
         const candle = parseEvent<MarketStreamCandle>(event);
         if (!candle || disposed) return;
+        touch();
         pushUpdate(candle);
       });
       es.addEventListener("closed", (event) => {
         const candle = parseEvent<MarketStreamCandle>(event);
         if (!candle || disposed) return;
+        touch();
         pushUpdate({...candle, closed: true});
       });
       es.addEventListener("status", (event) => {
         const status = parseEvent<MarketStreamStatus>(event);
         if (!status || disposed) return;
+        touch();
         setView((previous) => ({...previous, status, available: true, error: null}));
       });
       es.addEventListener("gap", (event) => {
         const gap = parseEvent<MarketStreamGap>(event);
         if (!gap || disposed) return;
+        touch();
         setView((previous) => ({
           ...previous, available: true,
           gaps: [...previous.gaps, gap].slice(-MAX_GAPS),
@@ -131,10 +184,13 @@ export function useMarketStream(options: UseMarketStreamOptions): MarketStreamVi
           now_ms?: number;
         }>(event);
         if (!beat || disposed) return;
+        touch();
         setView((previous) => {
           if (!previous.status) return previous;
           return {
             ...previous,
+            available: true,
+            error: null,
             status: {
               ...previous.status,
               connection: beat.connection ?? previous.status.connection,
@@ -148,13 +204,18 @@ export function useMarketStream(options: UseMarketStreamOptions): MarketStreamVi
         });
       });
       es.addEventListener("error", (event) => {
-        // Evento `error` del propio stream (p. ej. MAX_CONSUMERS) o de red.
+        // Evento `error` del propio stream (p. ej. MAX_CONSUMERS, upstream
+        // cerrado) o de red. Se declara la causa y se retira LIVE al instante.
         if (disposed) return;
         const payload = parseEvent<{code?: string; detail?: string}>(event as MessageEvent);
         if (payload?.code) {
           setView((previous) => ({
             ...previous, available: true,
             error: payload.detail ?? payload.code ?? "error del feed",
+            status: previous.status ? {
+              ...previous.status, live: false,
+              connection: {...previous.status.connection, state: "DISCONNECTED"},
+            } : null,
           }));
         }
       });
@@ -162,6 +223,7 @@ export function useMarketStream(options: UseMarketStreamOptions): MarketStreamVi
       es.onopen = () => {
         if (disposed) return;
         attempts = 0;
+        touch();
         setView((previous) => ({...previous, available: true, attempts: 0}));
       };
       es.onerror = () => {
@@ -173,7 +235,17 @@ export function useMarketStream(options: UseMarketStreamOptions): MarketStreamVi
           fail("servicio de datos detenido o inaccesible tras varios intentos");
           return;
         }
-        setView((previous) => ({...previous, attempts}));
+        // La causa no espera al ultimo reintento: si el backend ya la declaro
+        // (p. ej. upstream cerrado) se conserva; si no, se informa del reintento.
+        setView((previous) => ({
+          ...previous, attempts,
+          error: previous.error
+            ?? `conexión con el feed interrumpida; reintentando (${attempts}/${MAX_ATTEMPTS})`,
+          status: previous.status ? {
+            ...previous.status, live: false,
+            connection: {...previous.status.connection, state: "DISCONNECTED"},
+          } : null,
+        }));
       };
     };
 

@@ -318,6 +318,16 @@ class MarketStreamService:
         await writer.drain()
         disconnected = asyncio.create_task(_wait_eof(reader))
         self._client_tasks.add(disconnected)
+
+        def _wake_on_disconnect(_task: "asyncio.Task[None]") -> None:
+            # El cliente cerro: despierta el bucle del consumidor en vez de
+            # esperar al timeout del heartbeat. La liberacion es inmediata.
+            try:
+                consumer.queue.put_nowait(None)
+            except asyncio.QueueFull:  # pragma: no cover - cola llena
+                pass
+
+        disconnected.add_done_callback(_wake_on_disconnect)
         try:
             await self._write_sse(writer, "retry: 5000\n\n")
             health = self._health_payload()

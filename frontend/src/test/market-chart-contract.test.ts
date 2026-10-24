@@ -2,6 +2,7 @@ import {describe, expect, it} from "vitest";
 import {
   MARKET_CHART_CONTRACT_VERSION,
   buildMarketChartModel,
+  mergeEarlierSeries,
   paperMarkersLeaked,
   type MarketSeriesPayload,
 } from "@/lib/market-chart-contract";
@@ -226,5 +227,86 @@ describe("market-chart/v1 — adaptación del payload del backend", () => {
     expect(model.markers).toEqual([]);
     expect(model.volume).toBeNull();
     expect(model.capabilities.coverage_state).toBe("NO_COVERAGE");
+  });
+});
+
+describe("mergeEarlierSeries — anteponer histórico sin perder el extremo reciente", () => {
+  const bars = (from: number, count: number, close = "100.5") =>
+    Array.from({length: count}, (_, index) => candle(from + index * HOUR, {close}));
+
+  it("antepone el bloque y conserva la fila reciente ya cargada", () => {
+    const previous = payload({
+      candles: [candle(T0, {close: "100.5"}), candle(T0 + HOUR, {close: "101.5"})],
+    });
+    // El bloque solapa T0 y T0+HOUR con valores distintos: manda lo cargado.
+    const block = payload({
+      requested: {from_ms: T0 - 2 * HOUR, to_ms: T0 + HOUR},
+      candles: [
+        candle(T0 - 2 * HOUR, {close: "98"}),
+        candle(T0 - HOUR, {close: "99"}),
+        candle(T0, {close: "999"}),
+        candle(T0 + HOUR, {close: "999"}),
+      ],
+    });
+
+    const merged = mergeEarlierSeries(previous, block);
+
+    expect(merged.added).toBe(2);
+    expect(merged.payload.candles.map((row) => row.open_time_ms))
+      .toEqual([T0 - 2 * HOUR, T0 - HOUR, T0, T0 + HOUR]);
+    expect(merged.payload.candles.at(-1)?.close).toBe("101.5");
+    expect(merged.payload.candles.at(-1)?.open_time_ms).toBe(T0 + HOUR);
+    expect(merged.payload.requested).toEqual({from_ms: T0 - 2 * HOUR, to_ms: T0 + HOUR});
+    expect(merged.payload.observed).toEqual({start_ms: T0 - 2 * HOUR, end_ms: T0 + HOUR});
+    expect(merged.payload.coverage.state).toBe("COVERED");
+    expect(merged.payload.coverage.actual_bars).toBe(4);
+    expect(merged.payload.coverage.expected_bars).toBe(4);
+    expect(merged.payload.coverage.gaps).toEqual([]);
+    // El extremo reciente (frescura) no lo reescribe el bloque antiguo.
+    expect(merged.payload.freshness.newest_open_ms).toBe(T0 + HOUR);
+  });
+
+  it("300 -> 303: cuenta velas únicas y no exige +300 por página", () => {
+    const previous = payload({candles: bars(T0, 300)});
+    // Respuesta de 300 velas que solapa 297 con lo ya cargado.
+    const block = payload({
+      requested: {from_ms: T0 - 300 * HOUR, to_ms: T0 - HOUR},
+      candles: bars(T0 - 3 * HOUR, 300),
+    });
+
+    const merged = mergeEarlierSeries(previous, block);
+
+    expect(merged.added).toBe(3);
+    expect(merged.payload.candles).toHaveLength(303);
+    expect(merged.payload.candles[0]?.open_time_ms).toBe(T0 - 3 * HOUR);
+    expect(merged.payload.candles.at(-1)?.open_time_ms).toBe(T0 + 299 * HOUR);
+  });
+
+  it("un hueco real se declara como PARTIAL y no se interpola", () => {
+    const previous = payload({
+      candles: [candle(T0, {close: "100.5"}), candle(T0 + HOUR, {close: "101.5"})],
+    });
+    const block = payload({
+      requested: {from_ms: T0 - 5 * HOUR, to_ms: T0 - 3 * HOUR},
+      candles: [candle(T0 - 5 * HOUR), candle(T0 - 4 * HOUR), candle(T0 - 3 * HOUR)],
+    });
+
+    const merged = mergeEarlierSeries(previous, block);
+
+    expect(merged.added).toBe(3);
+    expect(merged.payload.coverage.state).toBe("PARTIAL");
+    expect(merged.payload.coverage.gaps).toEqual([[T0 - 2 * HOUR, T0 - HOUR]]);
+    expect(merged.payload.coverage.gap_count).toBe(1);
+    expect(merged.payload.candles).toHaveLength(5);
+  });
+
+  it("no mezcla símbolos ni intervalos distintos", () => {
+    const previous = payload();
+    const block = payload({symbol: "ETHUSDT", candles: [candle(T0 - HOUR)]});
+
+    const merged = mergeEarlierSeries(previous, block);
+
+    expect(merged.added).toBe(0);
+    expect(merged.payload).toBe(previous);
   });
 });

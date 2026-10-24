@@ -209,14 +209,75 @@ describe("ContractExplorer — búsqueda, selección y paginación (A/C/D/E)", (
     fireEvent.click(await screen.findByTestId("chart-earlier-trigger"));
     await waitFor(() => expect(api.fetchSeriesApi).toHaveBeenCalledTimes(2));
     const secondArgs = api.fetchSeriesApi.mock.calls[1]![0] as {fromMs: number; toMs: number};
-    expect(secondArgs.toMs).toBe(firstArgs.toMs);
-    expect(secondArgs.fromMs).toBe(firstArgs.fromMs - 300 * H);
+    // Bloque estrictamente anterior al borde cargado: no repite la ventana
+    // reciente (eso producía solapamiento y el contador no crecía).
+    expect(firstArgs.toMs).toBeGreaterThan(T0);
+    expect(secondArgs.toMs).toBe(T0 - H);
+    expect(secondArgs.fromMs).toBe(T0 - 300 * H);
 
     await act(async () => {
       second.resolve({ok: true, data: series("BTCUSDT", "1h", [T0 - 2 * H, T0 - H, T0, T0 + H]), status: 200});
     });
     const chart = await screen.findByTestId("chart-stub");
+    // Antepone el bloque y conserva el extremo reciente (T0+H una sola vez).
     expect(chart.getAttribute("data-bars")).toBe("4");
+  });
+
+  it("C2: solapamiento legítimo no exige +300 velas ni declara pérdida", async () => {
+    const bars300 = Array.from({length: 300}, (_, index) => T0 + index * H);
+    const first = deferred<{ok: boolean; data?: MarketSeriesPayload; status: number}>();
+    api.fetchSeriesApi.mockReturnValueOnce(first.promise);
+    render(<ContractExplorer/>);
+    await waitFor(() => expect(screen.getByTestId("explorer-row-BTCUSDT")).toBeTruthy());
+    await selectSymbol("BTCUSDT");
+    await waitFor(() => expect(api.fetchSeriesApi).toHaveBeenCalledTimes(1));
+    await act(async () => {
+      first.resolve({ok: true, data: series("BTCUSDT", "1h", bars300), status: 200});
+    });
+    expect((await screen.findByTestId("chart-stub")).getAttribute("data-bars")).toBe("300");
+
+    // Respuesta de 300 velas que solapa 297: solo 3 son nuevas por delante.
+    const overlapping = Array.from({length: 300}, (_, index) => T0 - 3 * H + index * H);
+    const second = deferred<{ok: boolean; data?: MarketSeriesPayload; status: number}>();
+    api.fetchSeriesApi.mockReturnValueOnce(second.promise);
+    fireEvent.click(await screen.findByTestId("chart-earlier-trigger"));
+    await waitFor(() => expect(api.fetchSeriesApi).toHaveBeenCalledTimes(2));
+    await act(async () => {
+      second.resolve({ok: true, data: series("BTCUSDT", "1h", overlapping), status: 200});
+    });
+
+    const chart = await screen.findByTestId("chart-stub");
+    // 300 + 3 únicas = 303: el contador refleja velas reales, no el tamaño
+    // nominal de la página.
+    expect(chart.getAttribute("data-bars")).toBe("303");
+    expect(chart.getAttribute("data-symbol")).toBe("BTCUSDT");
+    expect((screen.getByTestId("chart-earlier-trigger") as HTMLButtonElement).disabled).toBe(false);
+  });
+
+  it("C3: un bloque sin velas nuevas marca el histórico como agotado", async () => {
+    const bars = [T0, T0 + H, T0 + 2 * H];
+    const first = deferred<{ok: boolean; data?: MarketSeriesPayload; status: number}>();
+    api.fetchSeriesApi.mockReturnValueOnce(first.promise);
+    render(<ContractExplorer/>);
+    await waitFor(() => expect(screen.getByTestId("explorer-row-BTCUSDT")).toBeTruthy());
+    await selectSymbol("BTCUSDT");
+    await waitFor(() => expect(api.fetchSeriesApi).toHaveBeenCalledTimes(1));
+    await act(async () => {
+      first.resolve({ok: true, data: series("BTCUSDT", "1h", bars), status: 200});
+    });
+
+    const second = deferred<{ok: boolean; data?: MarketSeriesPayload; status: number}>();
+    api.fetchSeriesApi.mockReturnValueOnce(second.promise);
+    fireEvent.click(await screen.findByTestId("chart-earlier-trigger"));
+    await waitFor(() => expect(api.fetchSeriesApi).toHaveBeenCalledTimes(2));
+    await act(async () => {
+      // El backend devuelve lo mismo ya cargado: no hay historia anterior.
+      second.resolve({ok: true, data: series("BTCUSDT", "1h", bars), status: 200});
+    });
+
+    const chart = await screen.findByTestId("chart-stub");
+    expect(chart.getAttribute("data-bars")).toBe("3");
+    await waitFor(() => expect((screen.getByTestId("chart-earlier-trigger") as HTMLButtonElement).disabled).toBe(true));
   });
 
   it("D: descarta respuestas tardías al cambiar de símbolo", async () => {

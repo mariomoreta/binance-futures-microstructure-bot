@@ -16,6 +16,7 @@ import {useCallback, useEffect, useMemo, useRef, useState} from "react";
 import {PriceChart} from "@/components/chart/PriceChart";
 import {
   buildMarketChartModel,
+  mergeEarlierSeries,
   type MarketCatalogPayload,
   type MarketContractRow,
   type MarketSeriesPayload,
@@ -138,16 +139,30 @@ export function ContractExplorer() {
       return;
     }
     const data = result.data ?? null;
-    if (opts.earlier && data) {
-      const previousStart = seriesRef.current?.observed?.start_ms ?? null;
-      const nextStart = data.observed?.start_ms ?? null;
-      const addedBars = (data.fetch?.bars_stored ?? 0) > 0;
-      if (nextStart !== null && nextStart === previousStart && !addedBars) {
+    if (!data) {
+      setSeriesState("error");
+      setSeriesError("Respuesta vacía del histórico.");
+      return;
+    }
+    if (opts.earlier) {
+      // Anteponer, no sustituir: el extremo reciente (y sus actualizaciones)
+      // sigue siendo el mismo; el bloque solo añade velas más antiguas.
+      const merged = seriesRef.current
+        ? mergeEarlierSeries(seriesRef.current, data)
+        : {payload: data, added: data.candles.length};
+      setSeries(merged.payload);
+      setWindow({
+        fromMs: merged.payload.requested.from_ms,
+        toMs: merged.payload.requested.to_ms,
+      });
+      // Sin velas nuevas y sin más historia detrás, no queda bloque anterior.
+      if (merged.added === 0 || data.coverage.exhausted_before) {
         setEarlierExhausted(true);
       }
+    } else {
+      setSeries(data);
+      setWindow(target);
     }
-    setSeries(data);
-    setWindow(target);
     setSeriesState("ready");
   }, [interval, selected]);
 
@@ -187,9 +202,19 @@ export function ContractExplorer() {
   const requestEarlier = useCallback((beforeMs: number) => {
     if (!selected || loadingEarlier || earlierExhausted) return;
     const step = intervalMsOf(interval);
-    const from = (window?.fromMs ?? beforeMs) - EXPLORER_PAGE_BARS * step;
-    void loadSeries({fromMs: Math.max(0, from), toMs: window?.toMs ?? Date.now()},
-      {earlier: true});
+    // Bloque estrictamente anterior al borde ya cargado. Pedir hasta
+    // `window.toMs` devolvía la misma ventana reciente (solapamiento) y el
+    // contador no crecía: no era pérdida de histórico, era una petición mal
+    // encuadrada.
+    const anchor = beforeMs > 0 ? beforeMs : (window?.fromMs ?? 0);
+    if (!anchor) return;
+    const toMs = anchor - step;
+    const fromMs = toMs - (EXPLORER_PAGE_BARS - 1) * step;
+    if (toMs <= 0) {
+      setEarlierExhausted(true);
+      return;
+    }
+    void loadSeries({fromMs: Math.max(0, fromMs), toMs}, {earlier: true});
   }, [earlierExhausted, interval, loadSeries, loadingEarlier, selected, window]);
 
   // Feed continuo: se abre solo con el gráfico ya cargado y se cierra al

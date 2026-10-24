@@ -804,6 +804,51 @@ class ServiceEndpointTests(unittest.TestCase):
 
         self._run(scenario())
 
+    def test_client_close_releases_consumer_immediately(self):
+        """Cerrar el SSE libera al consumidor sin esperar al heartbeat (5 s)."""
+
+        async def scenario():
+            class NullTransport:
+                async def run(self, stop):
+                    await stop.wait()
+
+            with tempfile.TemporaryDirectory() as tmp:
+                cache = MarketCache(Path(tmp) / "cache.db")
+                cache.init_db()
+                hub = KlineStreamHub(clock=Clock())
+                service = MarketStreamService(
+                    hub=hub, transport=NullTransport(), cache=cache,
+                    port=0, pid_path=Path(tmp) / "service.json",
+                )
+                await service.start()
+                reader, writer = await asyncio.open_connection(
+                    "127.0.0.1", service.port)
+                writer.write(
+                    b"GET /stream?symbol=BTCUSDT&interval=1m&bars=5 HTTP/1.1\r\n"
+                    b"Host: local\r\n\r\n"
+                )
+                await writer.drain()
+                buffered = b""
+                while b"event: snapshot" not in buffered:
+                    part = await asyncio.wait_for(reader.read(4096), timeout=5.0)
+                    if not part:
+                        break
+                    buffered += part
+                self.assertEqual(hub.health()["consumers"], 1)
+
+                writer.close()
+                await writer.wait_closed()
+                loop = asyncio.get_running_loop()
+                deadline = loop.time() + 1.0
+                while loop.time() < deadline:
+                    if hub.health()["consumers"] == 0:
+                        break
+                    await asyncio.sleep(0.02)
+                self.assertEqual(hub.health()["consumers"], 0)
+                await service.stop()
+
+        self._run(scenario())
+
 
 if __name__ == "__main__":
     unittest.main()

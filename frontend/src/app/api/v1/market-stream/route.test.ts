@@ -24,7 +24,7 @@ afterEach(() => {
 });
 
 describe("BFF /api/v1/market-stream (cadena servicio -> navegador)", () => {
-  it("reenvia el SSE del servicio sin transformarlo", async () => {
+  it("reenvia los frames del servicio y declara el cierre del upstream", async () => {
     const fetchMock = vi.fn(async () => new Response(
       streamOf("event: hello\ndata: {\"contract_version\":\"market-stream/v1\"}\n\n",
         "event: candle\ndata: {\"open_time_ms\":1}\n\n"),
@@ -39,10 +39,64 @@ describe("BFF /api/v1/market-stream (cadena servicio -> navegador)", () => {
     const body = await response.text();
     expect(body).toContain("event: hello");
     expect(body).toContain("event: candle");
+    // El servicio cerró: el navegador recibe la causa y el stream termina.
+    expect(body).toContain("event: error");
+    expect(body).toContain("STREAM_UPSTREAM_CLOSED");
 
     const [url, init] = fetchMock.mock.calls[0] as unknown as [string, RequestInit];
     expect(url).toContain("/stream?symbol=BTCUSDT&interval=1m");
     expect(init.cache).toBe("no-store");
+  });
+
+  it("declara STREAM_UPSTREAM_ERROR si el cuerpo del servicio falla", async () => {
+    const failing = new ReadableStream<Uint8Array>({
+      pull() {
+        throw new Error("socket hang up");
+      },
+    });
+    vi.stubGlobal("fetch", vi.fn(async () => new Response(failing, {status: 200})));
+
+    const response = await GET(request());
+    const body = await response.text();
+
+    expect(body).toContain("event: error");
+    expect(body).toContain("STREAM_UPSTREAM_ERROR");
+    expect(body).toContain("socket hang up");
+  });
+
+  it("aborta el lector del servicio cuando el navegador cancela", async () => {
+    const captured: {signal?: AbortSignal} = {};
+    vi.stubGlobal("fetch", vi.fn(async (_url: string, init: RequestInit) => {
+      captured.signal = init.signal as AbortSignal;
+      return new Response(streamOf("event: hello\ndata: {}\n\n"), {status: 200});
+    }));
+    const browser = new AbortController();
+    const req = new Request(
+      "http://127.0.0.1:3020/api/v1/market-stream?symbol=BTCUSDT&interval=1m",
+      {headers: HOST, signal: browser.signal});
+
+    const response = await GET(req);
+    expect(captured.signal?.aborted).toBe(false);
+    await response.body?.cancel();
+
+    expect(captured.signal?.aborted).toBe(true);
+  });
+
+  it("aborta el upstream si el navegador ya se desconectó al abrir", async () => {
+    const captured: {signal?: AbortSignal} = {};
+    vi.stubGlobal("fetch", vi.fn(async (_url: string, init: RequestInit) => {
+      captured.signal = init.signal as AbortSignal;
+      return new Response(streamOf("event: hello\ndata: {}\n\n"), {status: 200});
+    }));
+    const browser = new AbortController();
+    const req = new Request(
+      "http://127.0.0.1:3020/api/v1/market-stream?symbol=BTCUSDT&interval=1m",
+      {headers: HOST, signal: browser.signal});
+    browser.abort();
+
+    await GET(req);
+
+    expect(captured.signal?.aborted).toBe(true);
   });
 
   it("declara 503 STREAM_SERVICE_DOWN si el servicio no responde", async () => {

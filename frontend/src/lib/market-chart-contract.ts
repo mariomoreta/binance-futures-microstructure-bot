@@ -284,6 +284,76 @@ function dedupeByOpenTime<T extends {open_time_ms: number}>(items: T[]): T[] {
   return [...byTime.values()].sort((a, b) => a.open_time_ms - b.open_time_ms);
 }
 
+/**
+ * Antepone un bloque histórico al ya cargado sin perder el extremo reciente.
+ *
+ * - Deduplica por apertura conservando la fila ya cargada: el extremo reciente
+ *   manda y una provisional nunca reabre una cerrada.
+ * - Recalcula rango observado y cobertura sobre la rejilla real; los huecos se
+ *   declaran, no se interpolan.
+ * - `exhausted_before` lo informa el bloque anterior (es quien mira más atrás).
+ * - Devuelve `added` (velas únicas nuevas) para no exigir +300 cuando la
+ *   respuesta solapa con lo ya cargado: solapamiento legítimo no es pérdida.
+ */
+export function mergeEarlierSeries(
+  previous: MarketSeriesPayload,
+  block: MarketSeriesPayload,
+): {payload: MarketSeriesPayload; added: number} {
+  if (block.symbol !== previous.symbol || block.interval !== previous.interval) {
+    return {payload: previous, added: 0};
+  }
+  const byTime = new Map<number, MarketSeriesCandle>();
+  for (const candle of previous.candles) byTime.set(candle.open_time_ms, candle);
+  let added = 0;
+  for (const candle of block.candles) {
+    if (!byTime.has(candle.open_time_ms)) {
+      byTime.set(candle.open_time_ms, candle);
+      added += 1;
+    }
+  }
+  const candles = [...byTime.values()].sort((a, b) => a.open_time_ms - b.open_time_ms);
+  const step = previous.interval_ms;
+  const start = candles[0]?.open_time_ms ?? null;
+  const end = candles[candles.length - 1]?.open_time_ms ?? null;
+  const expected = start !== null && end !== null && step > 0
+    ? Math.round((end - start) / step) + 1
+    : candles.length;
+  const gaps: number[][] = [];
+  for (let index = 1; index < candles.length; index += 1) {
+    const previousOpen = candles[index - 1]!.open_time_ms;
+    const open = candles[index]!.open_time_ms;
+    if (open - previousOpen > step) gaps.push([previousOpen + step, open - step]);
+  }
+  const covered = previous.coverage.state === "COVERED"
+    && block.coverage.state === "COVERED" && gaps.length === 0;
+  return {
+    added,
+    payload: {
+      ...previous,
+      requested: {
+        from_ms: Math.min(previous.requested.from_ms, block.requested.from_ms),
+        to_ms: Math.max(previous.requested.to_ms, block.requested.to_ms),
+      },
+      observed: {start_ms: start, end_ms: end},
+      candles,
+      coverage: {
+        ...previous.coverage,
+        state: covered ? "COVERED" : (candles.length > 0 ? "PARTIAL" : "NO_COVERAGE"),
+        observed_start_ms: start,
+        observed_end_ms: end,
+        expected_bars: expected,
+        actual_bars: candles.length,
+        gap_count: gaps.length,
+        gaps,
+        absent_ranges: covered ? [] : previous.coverage.absent_ranges,
+        exhausted_before: block.coverage.exhausted_before,
+        earliest_available_ms: block.coverage.earliest_available_ms
+          ?? previous.coverage.earliest_available_ms,
+      },
+    },
+  };
+}
+
 export function buildMarketChartModel(
   payload: MarketSeriesPayload,
   opts: {contract?: MarketContractRow | null; stream?: MarketChartStream | null} = {},
