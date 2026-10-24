@@ -2702,3 +2702,25 @@ puede ser `PASS` sin evidencia DOM del navegador que ocupa la tercera plaza.
 **Estado.** Implementado y probado con transporte controlado
 (`tests/test_market_stream_window.py`, 24 pruebas). No acredita recepción real de
 Binance por sí solo.
+
+## 2026-10-23 — El selector del explorador ofrece `1m` (alineado con el backend)
+
+**Contexto.** `EXPLORABLE_INTERVALS` ya incluía `1m`, pero el selector de
+`ContractExplorer` solo ofrecía `15m, 1h, 4h, 1d`. La ventana de verificación por
+el camino real exige abrir el gráfico en `BTCUSDT`/`1m`; sin la opción no existía
+camino de usuario y la evidencia DOM habría sido imposible (o de otra identidad).
+
+**Decisión.** Añadir `{id: "1m", ms: 60_000}` al array `INTERVALS` del componente,
+conservando `15m, 1h, 4h, 1d` y el valor predeterminado `1h`. No se toca el
+backend (ya validaba `1m`), ni el contrato `market-stream/v1`, ni la ventana de
+300 velas, ni el presupuesto de peticiones. `5m` sigue disponible por API pero no
+se ofrece en el selector (fuera del alcance de este arreglo mínimo).
+
+**Pruebas.** `frontend/src/test/contract-explorer-intervals.test.tsx`: opciones y
+predeterminado, histórico y suscripción con `symbol=BTCUSDT&interval=1m`, cierre
+de la suscripción anterior y descarte de la respuesta tardía al cambiar de
+temporalidad, y ausencia de `LIVE` con el servicio detenido. `tsc --noEmit` y
+`eslint` sin errores.
+
+**Efecto.** El gráfico puede mostrar la misma identidad que mide el script
+(`Binance USD-M · BTCUSDT · 1m · market-stream/v1`), requisito de la ventana.

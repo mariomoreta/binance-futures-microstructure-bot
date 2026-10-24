@@ -41,6 +41,7 @@ import {
 import s from "./ContractExplorer.module.css";
 
 const INTERVALS = [
+  {id: "1m", ms: 60_000},
   {id: "15m", ms: 900_000},
   {id: "1h", ms: 3_600_000},
   {id: "4h", ms: 14_400_000},

@@ -159,6 +159,7 @@ Invariantes del componente:
 | Catálogo TTL | 6 h (`CATALOG_TTL_MS`) | `market_cache.py` |
 | Peticiones por refresco de catálogo | 1 (`exchangeInfo`) | `market_explorer.refresh_catalog` |
 | Intervals explorables | `1m, 5m, 15m, 1h, 4h, 1d` (`1M` excluido: mes calendario no tiene ms fijos) | `market_explorer.EXPLORABLE_INTERVALS` |
+| Intervals del selector de la UI | `1m, 15m, 1h, 4h, 1d` (predeterminado `1h`; `5m` sigue disponible por API pero no se ofrece en el selector) | `ContractExplorer.tsx` (`INTERVALS`) |
 | Tamaño de bloque de la UI | 300 velas (`EXPLORER_PAGE_BARS`) | `frontend/src/lib/market-explorer.ts` |
 | `page_limit` aceptado | 50–1000 en el BFF (la CLI recorta a ≤1000); la UI envía 300 | BFF + `scripts/market_explorer.py` |
 | `pages` por petición | 1–2 | `MAX_PAGES_PER_REQUEST=2` |
@@ -215,7 +216,7 @@ Validación del BFF: `symbol` `^[A-Z0-9]{2,32}$`, `interval` en el conjunto,
 | A. Buscar y seleccionar contrato | `frontend/src/test/contract-explorer.test.tsx` («A: busca, selecciona…») |
 | B. Histórico ordenado sin duplicados | `frontend/src/test/market-chart-contract.test.ts` («ordena, deduplica…») |
 | C. Página anterior conservando el rango visible | `price-chart-market.test.tsx` («al anteponer…») + `contract-explorer.test.tsx` («C: pide el bloque anterior…») |
-| D. Cambio de símbolo/intervalo sin contaminación | `contract-explorer.test.tsx` («D: descarta respuestas tardías…», «D: cambiar la temporalidad…») |
+| D. Cambio de símbolo/intervalo sin contaminación | `contract-explorer.test.tsx` («D: descarta respuestas tardías…», «D: cambiar la temporalidad…») + `contract-explorer-intervals.test.tsx` (1m en histórico y suscripción, cierre de la suscripción previa, sin LIVE con el servicio detenido) |
 | E. Error, rate limit y falta de cobertura | `contract-explorer.test.tsx` («E: …») |
 | F. Volumen con unidad | `market-chart-contract.test.ts` + `price-chart-market.test.tsx` |
 | G. Recuperar sesión paper sin crear fixture | `frontend/src/test/paper-lab-initial-recovery.test.tsx` |

@@ -1011,6 +1011,27 @@ async def _wait_health(base_url: str, timeout: float = 20.0) -> Optional[Dict[st
     return None
 
 
+def consumer_wait_ready(payload: Optional[Dict[str, Any]], expected: int,
+                        primary: Optional[str]) -> Optional[bool]:
+    """El navegador esta adjunto y en el simbolo primario.
+
+    ``None`` = el payload no detalla streams (se acepta el conteo). Exigir que
+    el unico consumidor sea el primario evita arrancar durante el cambio de
+    contrato del operador (MINAUSDT transitorio) y mantiene el pico en 3.
+    """
+    if not isinstance(payload, dict):
+        return False
+    if int(payload.get("consumers") or 0) != expected:
+        return False
+    streams = payload.get("streams")
+    if not isinstance(streams, list) or not streams:
+        return None
+    active = [item for item in streams if int(item.get("consumers") or 0) > 0]
+    if len(active) != expected:
+        return False
+    return all(item.get("symbol") == primary for item in active)
+
+
 async def run_window(args: argparse.Namespace) -> Dict[str, Any]:
     symbols = parse_symbols(args.symbols)
     started = now_ms()
@@ -1117,10 +1138,20 @@ async def run_window(args: argparse.Namespace) -> Dict[str, Any]:
             stable = 0
             while time.monotonic() < wait_deadline:
                 probe = await asyncio.to_thread(_http_json, f"{base_url}/health", timeout=3.0)
-                observed = (int((probe.get("json") or {}).get("consumers") or 0)
-                            if probe["ok"] else None)
-                wait["samples"].append({"t_ms": now_ms(), "consumers": observed})
-                if observed == await_consumers:
+                payload = probe.get("json") if probe["ok"] else None
+                observed = (int((payload or {}).get("consumers") or 0)
+                            if isinstance(payload, dict) else None)
+                ready = consumer_wait_ready(payload, await_consumers, symbols[0])
+                wait["samples"].append({
+                    "t_ms": now_ms(),
+                    "consumers": observed,
+                    "streams": [{"symbol": item.get("symbol"),
+                                 "consumers": item.get("consumers")}
+                                for item in ((payload or {}).get("streams") or [])]
+                    if isinstance(payload, dict) else [],
+                    "ready": ready,
+                })
+                if ready is not False:
                     stable += 1
                     if stable >= 2:
                         wait["ok"] = True

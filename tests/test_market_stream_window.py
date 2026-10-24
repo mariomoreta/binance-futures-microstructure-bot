@@ -223,6 +223,23 @@ class AcceptanceTests(unittest.TestCase):
         self.assertEqual(consumers["bff_symbols"], ["BTCUSDT"])
         self.assertLessEqual(consumers["total"], window.MAX_CONSUMERS_PER_STREAM * 2)
 
+    def test_browser_wait_requires_primary_symbol_only(self):
+        ready = window.consumer_wait_ready
+        self.assertFalse(ready(None, 1, "BTCUSDT"))
+        self.assertFalse(ready({"consumers": 0, "streams": []}, 1, "BTCUSDT"))
+        # Cambio de contrato en curso: el consumidor aun es MINAUSDT.
+        self.assertFalse(ready({"consumers": 1, "streams": [
+            {"symbol": "MINAUSDT", "consumers": 1}]}, 1, "BTCUSDT"))
+        # Transitorio: el anterior no se ha liberado y el nuevo ya esta.
+        self.assertFalse(ready({"consumers": 2, "streams": [
+            {"symbol": "MINAUSDT", "consumers": 1},
+            {"symbol": "BTCUSDT", "consumers": 1}]}, 1, "BTCUSDT"))
+        self.assertTrue(ready({"consumers": 1, "streams": [
+            {"symbol": "BTCUSDT", "consumers": 1},
+            {"symbol": "MINAUSDT", "consumers": 0}]}, 1, "BTCUSDT"))
+        # Sin detalle de streams se acepta el conteo.
+        self.assertIsNone(ready({"consumers": 1}, 1, "BTCUSDT"))
+
     def test_zero_messages_never_passes(self):
         run = _run_fixture()
         run["consumers"]["service"]["events"] = []

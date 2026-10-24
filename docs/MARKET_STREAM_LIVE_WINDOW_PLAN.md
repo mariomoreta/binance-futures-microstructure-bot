@@ -60,9 +60,12 @@ símbolos) + BFF (1)» **sin contar al navegador**, lo que habría dado 4. Se
 corrige sin ampliar el límite: el script baja a 2 (servicio=MINAUSDT, BFF=BTCUSDT)
 y el navegador ocupa la tercera plaza. Además el script **espera** a que
 `/health` muestre ese consumidor del navegador antes de abrir los suyos
-(`--await-consumers 1`, 90 s); si no aparece, para con `BROWSER_NOT_ATTACHED`
-sin abrir conexión con Binance. Los 2 s de espera a que el servicio libere un
-consumidor cerrado (lectura perezosa, ~5 s) evitan picos transitorios de 4.
+(`--await-consumers 1`, 90 s); la espera exige además que **el único consumidor
+sea el símbolo primario** (`BTCUSDT`), para no arrancar durante el cambio de
+contrato del operador ni contar el `MINAUSDT` transitorio. Si no aparece, para
+con `BROWSER_NOT_ATTACHED` sin abrir conexión con Binance. Los 2 s de espera a
+que el servicio libere un consumidor cerrado (lectura perezosa, ~5 s) evitan
+picos transitorios de 4.
 
 ## 3. Presupuesto de la ventana
 
@@ -137,12 +140,13 @@ python -X utf8 scripts/market_stream_window.py --execute `
 
 El script arranca el servicio (sin consumidores, `attempts=0`), imprime
 `servicio PID … en http://127.0.0.1:8791` y **espera**: no abre su conexión con
-Binance hasta que `/health` muestre `consumers=1` (el navegador). En ese momento
-cambia el contrato en el panel (`MINAUSDT` y vuelve a `BTCUSDT`, o cambia a `5m`
-y vuelve a `1m`) para que el hook vuelva a consultar `/status` y abra el
-`EventSource`; el cambio de contrato es una acción del operador, no una
-reconexión automática. El panel debe pasar a `RECIBIENDO` y mostrar `LIVE`. Al
-verlo, el script abre sus 2 consumidores (total 3) y la conexión combinada.
+Binance hasta que `/health` muestre `consumers=1` y ese único consumidor sea
+`BTCUSDT` (el navegador ya asentado). En ese momento cambia el contrato en el
+panel (`MINAUSDT` y vuelve a `BTCUSDT`) para que el hook vuelva a consultar
+`/status` y abra el `EventSource`; el cambio de contrato es una acción del
+operador, no una reconexión automática. El panel debe pasar a `RECIBIENDO` y
+mostrar `LIVE`. Al verlo, el script abre sus 2 consumidores (total 3) y la
+conexión combinada.
 
 ### Paso 4 — Captura DOM #1 (en cuanto haya `LIVE`)
 
