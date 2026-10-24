@@ -50,6 +50,51 @@ MAX_REQUEST_BYTES = 16 * 1024
 MAX_BARS = 1000
 MIN_BARS = 1
 SERVICE_VERSION = "market-stream-service/v1"
+TRANSPORT_LOCAL = "local"
+TRANSPORT_PUBLIC = "public"
+LOOPBACK_HOSTS = ("127.0.0.1", "localhost", "::1")
+
+
+class TransportConfigError(ValueError):
+    """Configuracion de transporte ausente o invalida: el servicio no arranca."""
+
+
+def resolve_transport(mode: Optional[str], base_url: Optional[str]) -> Dict[str, Any]:
+    """Valida el transporte **sin abrir conexiones** (falla cerrado).
+
+    - ``local``: exige un ``--base-url`` ws:// loopback; nunca cae al endpoint
+      publico y desactiva la reparacion REST.
+    - ``public``: activacion explicita del WS publico de Binance (sin base_url).
+    Cualquier otra combinacion lanza ``TransportConfigError`` antes de crear el
+    servicio, de modo que una configuracion ausente o incorrecta produce cero
+    conexiones publicas.
+    """
+
+    if mode == TRANSPORT_LOCAL:
+        if not base_url:
+            raise TransportConfigError(
+                "transporte local sin --base-url: no se usa el endpoint publico "
+                "como respaldo")
+        parts = urlsplit(base_url)
+        hostname = (parts.hostname or "").lower()
+        if parts.scheme != "ws" or hostname not in LOOPBACK_HOSTS:
+            raise TransportConfigError(
+                f"--base-url no es un WS loopback valido: {base_url!r} "
+                "(se espera ws://127.0.0.1:<puerto>)")
+        if not parts.port:
+            raise TransportConfigError(
+                "--base-url local requiere puerto explicito")
+        return {"mode": TRANSPORT_LOCAL, "base_url": base_url, "recovery": False}
+
+    if mode == TRANSPORT_PUBLIC:
+        if base_url:
+            raise TransportConfigError(
+                "--transport public no admite --base-url")
+        return {"mode": TRANSPORT_PUBLIC, "base_url": None, "recovery": True}
+
+    raise TransportConfigError(
+        "transporte no especificado: use --transport local --base-url "
+        "ws://127.0.0.1:<puerto> o --transport public (conexion publica explicita)")
 
 
 def _pid_path() -> Path:
@@ -111,6 +156,7 @@ class MarketStreamService:
         port: int = DEFAULT_PORT,
         token: Optional[str] = None,
         base_url: Optional[str] = None,
+        transport_mode: Optional[str] = None,
         pid_path: Optional[Path] = None,
         max_seconds: Optional[float] = None,
     ) -> None:
@@ -118,10 +164,23 @@ class MarketStreamService:
         self.port = int(port)
         self.token = token or os.environ.get("MICROPROBE_STREAM_TOKEN") or None
         self.cache = cache or MarketCache()
-        self.hub = hub or KlineStreamHub(recovery=build_recovery(_rest_client()))
-        self.transport = transport or BinanceKlineTransport(
-            self.hub, **({"base_url": base_url} if base_url else {})
-        )
+        if transport is not None:
+            # Transporte inyectado (pruebas): no se crea ninguna conexion.
+            self.hub = hub or KlineStreamHub()
+            self.transport = transport
+            self.transport_mode = transport_mode or "injected"
+            self.transport_base_url = base_url
+        else:
+            # Sin transporte inyectado el modo es obligatorio y se valida antes
+            # de abrir nada: no existe fallback al endpoint publico.
+            plan = resolve_transport(transport_mode, base_url)
+            self.transport_mode = plan["mode"]
+            self.transport_base_url = plan["base_url"]
+            self.hub = hub or KlineStreamHub(
+                recovery=(build_recovery(_rest_client())
+                          if plan["recovery"] else None))
+            kwargs = {"base_url": plan["base_url"]} if plan["base_url"] else {}
+            self.transport = BinanceKlineTransport(self.hub, **kwargs)
         self.pid_path = Path(pid_path) if pid_path is not None else _pid_path()
         self.max_seconds = max_seconds
         self.started_at_ms = _now_ms()
@@ -461,6 +520,8 @@ class MarketStreamService:
             "requests_total": self.requests_total,
             "intervals": list(EXPLORABLE_INTERVALS),
             "persistence": "MEMORY_ONLY",
+            "transport": {"mode": self.transport_mode,
+                          "base_url": self.transport_base_url},
             "generated_at_ms": _now_ms(),
             "times": {"unit": "ms", "epoch": "unix_utc"},
         })
@@ -535,6 +596,10 @@ def main(argv: Optional[list[str]] = None) -> int:
     parser = argparse.ArgumentParser(description="Servicio local market-stream/v1 (SSE)")
     parser.add_argument("--port", type=int, default=int(os.environ.get("MICROPROBE_STREAM_PORT", DEFAULT_PORT)))
     parser.add_argument("--host", default=DEFAULT_HOST)
+    parser.add_argument("--transport", choices=(TRANSPORT_LOCAL, TRANSPORT_PUBLIC),
+                       default=None,
+                       help="transporte explicito: local (requiere --base-url "
+                            "loopback) o public (WS publico de Binance)")
     parser.add_argument("--base-url", default=None)
     parser.add_argument("--max-seconds", type=float, default=None,
                        help="parada automatica (solo ventana acotada autorizada)")
@@ -546,9 +611,17 @@ def main(argv: Optional[list[str]] = None) -> int:
         print(json.dumps(result, ensure_ascii=False))
         return 0 if result.get("ok") else 1
 
+    try:
+        plan = resolve_transport(args.transport, args.base_url)
+    except TransportConfigError as exc:
+        print(json.dumps({"service": SERVICE_VERSION,
+                          "error": "TRANSPORT_CONFIG",
+                          "detail": str(exc)}, ensure_ascii=False), file=sys.stderr)
+        return 2
+
     service = MarketStreamService(
-        host=args.host, port=args.port, base_url=args.base_url,
-        max_seconds=args.max_seconds,
+        host=args.host, port=args.port, base_url=plan["base_url"],
+        transport_mode=plan["mode"], max_seconds=args.max_seconds,
     )
 
     async def _main() -> None:
@@ -557,6 +630,8 @@ def main(argv: Optional[list[str]] = None) -> int:
             "service": SERVICE_VERSION, "pid": os.getpid(),
             "url": f"http://{service.host}:{service.port}",
             "contract_version": STREAM_CONTRACT_VERSION,
+            "transport": {"mode": service.transport_mode,
+                          "base_url": service.transport_base_url},
         }, ensure_ascii=False), flush=True)
         try:
             await service.stop_event.wait()

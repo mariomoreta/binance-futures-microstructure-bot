@@ -16,6 +16,12 @@ import type {
 import type {PaperChartModel} from "@/lib/paper-chart-contract";
 import {msToChartSecond} from "@/lib/paper-chart-contract";
 import type {MarketChartModel} from "@/lib/market-chart-contract";
+import {
+  initialEarlierGate,
+  recordEarlierRequest,
+  shouldRequestEarlier,
+  type EarlierGateState,
+} from "@/lib/earlier-gate";
 import {formatPrice} from "@/lib/format";
 import {fmtUtcPL} from "@/lib/paper-lab-live";
 import s from "./PriceChart.module.css";
@@ -58,8 +64,9 @@ type Bundle = {
   // real. Nunca se reencuadra en actualizaciones normales: se respeta el zoom
   // y el desplazamiento del usuario.
   pendingFit: boolean;
-  userTouched: boolean;
-  lastEarlierRequest: number | null;
+  /** Gestos del usuario (rueda, arrastre, teclado) desde el montaje. */
+  gestureSeq: number;
+  earlierGate: EarlierGateState;
 };
 
 // Carga diferida: la biblioteca solo se monta en el cliente y una sola vez
@@ -224,17 +231,21 @@ interface PriceChartProps {
   onRequestEarlier?: (beforeMs: number) => void;
   loadingEarlier?: boolean;
   earlierExhausted?: boolean;
+  /** El último intento de bloque anterior falló: se permite reintentar. */
+  earlierFailed?: boolean;
 }
 
 export function PriceChart({
   model, height = 340, onRequestEarlier, loadingEarlier = false,
-  earlierExhausted = false,
+  earlierExhausted = false, earlierFailed = false,
 }: PriceChartProps) {
   const hostRef = useRef<HTMLDivElement | null>(null);
   const bundleRef = useRef<Bundle | null>(null);
   const latestModel = useRef(model);
   const applyRef = useRef<((m: PriceChartModel, fit: boolean) => void) | null>(null);
-  const propsRef = useRef({model, onRequestEarlier, loadingEarlier, earlierExhausted});
+  const propsRef = useRef({
+    model, onRequestEarlier, loadingEarlier, earlierExhausted, earlierFailed,
+  });
   const [ready, setReady] = useState(false);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [cursor, setCursor] = useState<{ms: number; price: number | null} | null>(null);
@@ -243,8 +254,10 @@ export function PriceChart({
   // Props vigentes para los manejadores de eventos estables del gráfico.
   // Se sincronizan en un efecto (nunca durante el render).
   useEffect(() => {
-    propsRef.current = {model, onRequestEarlier, loadingEarlier, earlierExhausted};
-  }, [model, onRequestEarlier, loadingEarlier, earlierExhausted]);
+    propsRef.current = {
+      model, onRequestEarlier, loadingEarlier, earlierExhausted, earlierFailed,
+    };
+  }, [model, onRequestEarlier, loadingEarlier, earlierExhausted, earlierFailed]);
 
   const tryInitialFit = useCallback((bundle: Bundle, force: boolean) => {
     if (!bundle.pendingFit && !force) return;
@@ -268,10 +281,16 @@ export function PriceChart({
     const previousLength = bundle.candleData.length;
 
     // Al anteponer un bloque anterior (paginación hacia atrás) se conserva el
-    // encuadre desplazando el rango lógico visible por las velas añadidas.
+    // encuadre desplazando el rango lógico visible por las velas añadidas. La
+    // detección no exige que el extremo reciente sea idéntico: el feed puede
+    // haber actualizado la última vela y aun así se antepone.
+    const previousFirst = bundle.candleData[0]?.time ?? null;
+    const nextFirst = candleData[0]?.time ?? null;
     const prepended = !newIdentity && !newMode
-      && isSuffix(bundle.candleData, candleData)
-      && candleData.length > previousLength;
+      && candleData.length > previousLength
+      && (isSuffix(bundle.candleData, candleData)
+        || (previousFirst != null && nextFirst != null
+          && nextFirst < previousFirst));
     let logical: {from: number; to: number} | null = null;
     if (prepended) {
       const scale = bundle.chart.timeScale() as unknown as {
@@ -312,11 +331,14 @@ export function PriceChart({
     }
 
     if (prepended && logical) {
-      const shift = candleData.length - previousLength;
+      // Desplazamiento exacto: índice de la primera vela que ya estaba. Si el
+      // extremo reciente cambió, contar longitudes desalinearía el encuadre.
+      const shift = previousFirst != null
+        ? candleData.findIndex((c) => c.time === previousFirst) : -1;
       const scale = bundle.chart.timeScale() as unknown as {
         setVisibleLogicalRange?: (r: {from: number; to: number}) => void;
       };
-      if (typeof scale.setVisibleLogicalRange === "function") {
+      if (shift > 0 && typeof scale.setVisibleLogicalRange === "function") {
         scale.setVisibleLogicalRange({from: logical.from + shift,
           to: logical.to + shift});
       }
@@ -430,12 +452,6 @@ export function PriceChart({
     }
 
     if (newIdentity || newMode) bundle.pendingFit = true;
-    const observedStart = isMarketChartModel(next)
-      ? next.capabilities.earlier_from_ms : null;
-    if (bundle.lastEarlierRequest != null
-      && bundle.lastEarlierRequest !== observedStart) {
-      bundle.lastEarlierRequest = null;
-    }
     tryInitialFit(bundle, fit);
   }, [tryInitialFit]);
 
@@ -447,6 +463,7 @@ export function PriceChart({
     let observer: ResizeObserver | null = null;
     let onCrosshair: MouseEventHandler<Time> | null = null;
     let onRange: TimeRangeChangeEventHandler<Time> | null = null;
+    let detachGestures: (() => void) | null = null;
     setLoadError(null);
 
     loadChartLib().then((lib) => {
@@ -550,15 +567,14 @@ export function PriceChart({
         lineSignature: "",
         market,
         pendingFit: true,
-        userTouched: false,
-        lastEarlierRequest: null,
+        gestureSeq: 0,
+        earlierGate: initialEarlierGate(),
       };
       bundle = created;
       bundleRef.current = created;
       applyRef.current = (m, fit) => applyModel(lib, created, m, fit);
 
       const crosshairHandler: MouseEventHandler<Time> = (param) => {
-        created.userTouched = true;
         if (param.time == null || param.point == null) {
           setCursor(null);
           return;
@@ -594,23 +610,73 @@ export function PriceChart({
         const from = timeToMs(range.from);
         const to = timeToMs(range.to);
         setVisible(from != null && to != null ? {from, to} : null);
-        const props = propsRef.current;
-        const current = props.model;
-        if (!isMarketChartModel(current)) return;
-        if (from == null || !props.onRequestEarlier) return;
-        if (props.loadingEarlier || props.earlierExhausted) return;
-        // Solo tras interacción del usuario: el encuadre inicial y las
-        // actualizaciones normales no disparan descargas.
-        if (!created.userTouched) return;
-        const observedStart = current.capabilities.earlier_from_ms;
-        if (observedStart == null) return;
-        if (from > observedStart + 3 * current.identity.interval_ms) return;
-        if (created.lastEarlierRequest === observedStart) return;
-        created.lastEarlierRequest = observedStart;
-        props.onRequestEarlier(observedStart);
+        // La descarga NO se decide aquí: anteponer velas también emite cambios
+        // de rango y encadenaría páginas. Se decide al terminar un gesto.
       };
       onRange = rangeHandler;
       chart.timeScale().subscribeVisibleTimeRangeChange(rangeHandler);
+
+      // Una interacción (rueda, arrastre o teclado) consume como máximo una
+      // página. La evaluación ocurre al terminar el gesto y lee el rango
+      // visible actual; los cambios de rango por anteponer velas no disparan
+      // descargas porque no incrementan `gestureSeq`.
+      let wheelTimer: ReturnType<typeof setTimeout> | null = null;
+      const evaluateEarlier = () => {
+        const props = propsRef.current;
+        const current = props.model;
+        if (!isMarketChartModel(current) || !props.onRequestEarlier) return;
+        const anchor = current.capabilities.earlier_from_ms;
+        if (anchor == null) return;
+        const range = chart.timeScale().getVisibleRange();
+        const from = range ? timeToMs(range.from) : null;
+        const now = Date.now();
+        const input = {
+          from_ms: from,
+          earlier_from_ms: anchor,
+          interval_ms: current.identity.interval_ms,
+          loading: props.loadingEarlier,
+          exhausted: props.earlierExhausted,
+          failed: props.earlierFailed,
+          gesture_seq: created.gestureSeq,
+          now_ms: now,
+          gate: created.earlierGate,
+        };
+        if (!shouldRequestEarlier(input)) return;
+        created.earlierGate = recordEarlierRequest(
+          created.earlierGate, anchor, created.gestureSeq, now);
+        props.onRequestEarlier(anchor);
+      };
+      const bumpGesture = () => { created.gestureSeq += 1; };
+      const onWheel = () => {
+        bumpGesture();
+        if (wheelTimer) clearTimeout(wheelTimer);
+        wheelTimer = setTimeout(() => {
+          wheelTimer = null;
+          evaluateEarlier();
+        }, 250);
+      };
+      const onPointerDown = () => { bumpGesture(); };
+      const onPointerUp = () => { evaluateEarlier(); };
+      const onKeyUp = (event: KeyboardEvent) => {
+        if (!["ArrowLeft", "ArrowRight", "Home", "End", "+", "-", "="]
+          .includes(event.key)) return;
+        bumpGesture();
+        evaluateEarlier();
+      };
+      host.addEventListener("wheel", onWheel, {passive: true});
+      host.addEventListener("pointerdown", onPointerDown);
+      host.addEventListener("pointerup", onPointerUp);
+      host.addEventListener("pointercancel", onPointerUp);
+      host.addEventListener("keyup", onKeyUp);
+      detachGestures = () => {
+        host.removeEventListener("wheel", onWheel);
+        host.removeEventListener("pointerdown", onPointerDown);
+        host.removeEventListener("pointerup", onPointerUp);
+        host.removeEventListener("pointercancel", onPointerUp);
+        host.removeEventListener("keyup", onKeyUp);
+        if (wheelTimer) clearTimeout(wheelTimer);
+        wheelTimer = null;
+      };
 
       if (typeof ResizeObserver !== "undefined") {
         observer = new ResizeObserver(() => {
@@ -630,6 +696,7 @@ export function PriceChart({
     return () => {
       cancelled = true;
       if (observer) observer.disconnect();
+      detachGestures?.();
       if (bundle) {
         if (onCrosshair) bundle.chart.unsubscribeCrosshairMove(onCrosshair);
         if (onRange) bundle.chart.timeScale().unsubscribeVisibleTimeRangeChange(onRange);

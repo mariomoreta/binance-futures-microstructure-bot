@@ -1,5 +1,5 @@
 import {afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi} from "vitest";
-import {cleanup, render, screen, waitFor} from "@testing-library/react";
+import {cleanup, fireEvent, render, screen, waitFor} from "@testing-library/react";
 import {buildMarketChartModel, type MarketSeriesPayload} from "@/lib/market-chart-contract";
 import {PriceChart} from "@/components/chart/PriceChart";
 
@@ -15,6 +15,7 @@ const h = vi.hoisted(() => {
     priceScale: ReturnType<typeof vi.fn>;
   };
   const series: SeriesMock[] = [];
+  const state = {range: {from: 0, to: 0}};
   const makeSeries = (): SeriesMock => {
     const s = {
       setData: vi.fn(),
@@ -34,6 +35,7 @@ const h = vi.hoisted(() => {
     unsubscribeVisibleTimeRangeChange: vi.fn(),
     getVisibleLogicalRange: vi.fn(() => ({from: 5, to: 6})),
     setVisibleLogicalRange: vi.fn(),
+    getVisibleRange: vi.fn(() => state.range),
   };
   const chart = {
     addSeries: vi.fn(() => makeSeries()),
@@ -42,7 +44,7 @@ const h = vi.hoisted(() => {
     unsubscribeCrosshairMove: vi.fn(),
     remove: vi.fn(),
   };
-  return {series, markerPlugins, timeScale, chart, makeSeries};
+  return {series, markerPlugins, timeScale, chart, makeSeries, state};
 });
 
 vi.mock("lightweight-charts", () => ({
@@ -148,6 +150,7 @@ describe("PriceChart — modo mercado (market-chart/v1)", () => {
     hostWidth = 800;
     h.series.length = 0;
     h.markerPlugins.length = 0;
+    h.state.range = {from: 0, to: 0};
     vi.clearAllMocks();
     h.chart.addSeries.mockImplementation(() => h.makeSeries());
   });
@@ -246,6 +249,22 @@ describe("PriceChart — modo mercado (market-chart/v1)", () => {
     expect(h.timeScale.fitContent).toHaveBeenCalledTimes(1);
   });
 
+  it("anteponer con el extremo reciente actualizado también conserva el encuadre", async () => {
+    // Causa reproducida de la cadena: si el feed actualiza la última vela, la
+    // detección estricta por sufijo fallaba, no se desplazaba el rango lógico
+    // y la vista caía sobre el bloque recién antepuesto (borde izquierdo).
+    const first = buildMarketChartModel(payload([candle(T0 + 2 * H), candle(T0 + 3 * H)]));
+    const {rerender} = render(<PriceChart model={first} />);
+    await waitFor(() => expect(h.timeScale.fitContent).toHaveBeenCalledTimes(1));
+    const prepended = buildMarketChartModel(payload([
+      candle(T0), candle(T0 + H), candle(T0 + 2 * H),
+      candle(T0 + 3 * H, "100.9"),
+    ]));
+    rerender(<PriceChart model={prepended} />);
+    await waitFor(() => expect(h.timeScale.setVisibleLogicalRange).toHaveBeenCalled());
+    expect(h.timeScale.setVisibleLogicalRange).toHaveBeenCalledWith({from: 7, to: 8});
+  });
+
   it("difiere el encuadre si el contenedor aún no tiene ancho", async () => {
     hostWidth = 0;
     const callbacks: Array<() => void> = [];
@@ -281,5 +300,52 @@ describe("PriceChart — modo mercado (market-chart/v1)", () => {
     expect(handler).toHaveBeenCalledWith(T0);
     rerender(<PriceChart model={buildMarketChartModel(payload())} />);
     expect(screen.queryByTestId("market-chart-earlier")).toBeNull();
+  });
+
+  it("una interacción pide como máximo una página y anteponer no encadena", async () => {
+    const handler = vi.fn();
+    // Borde izquierdo visible = inicio del histórico observado (T0).
+    h.state.range = {from: T0 / 1000, to: (T0 + H) / 1000};
+    const first = buildMarketChartModel(payload());
+    const {rerender} = render(
+      <PriceChart model={first} onRequestEarlier={handler} />);
+    await waitFor(() => expect(h.chart.addSeries).toHaveBeenCalledTimes(3));
+
+    // Un gesto de rueda en el borde -> exactamente una petición.
+    fireEvent.wheel(screen.getByTestId("market-chart"));
+    await waitFor(() => expect(handler).toHaveBeenCalledTimes(1));
+    expect(handler).toHaveBeenCalledWith(T0);
+
+    // Anteponer una página mueve el rango visible y emite varios eventos; sin
+    // gesto nuevo no se pide nada (ni cascada ni repetición del mismo rango).
+    const prepended = buildMarketChartModel(payload([
+      candle(T0 - 2 * H), candle(T0 - H), candle(T0), candle(T0 + H),
+    ], {
+      requested: {from_ms: T0 - 4 * H, to_ms: T0 + H},
+      observed: {start_ms: T0 - 2 * H, end_ms: T0 + H},
+      coverage: {
+        ...payload().coverage,
+        observed_start_ms: T0 - 2 * H,
+        observed_end_ms: T0 + H,
+        expected_bars: 4,
+        actual_bars: 4,
+        absent_ranges: [],
+      },
+    }));
+    rerender(<PriceChart model={prepended} onRequestEarlier={handler} />);
+    const rangeHandler = h.timeScale.subscribeVisibleTimeRangeChange
+      .mock.calls.at(-1)![0] as (range: {from: number; to: number}) => void;
+    h.state.range = {from: (T0 - 2 * H) / 1000, to: (T0 + H) / 1000};
+    rangeHandler(h.state.range);
+    rangeHandler({from: (T0 - 2 * H) / 1000, to: (T0 + 2 * H) / 1000});
+    rangeHandler({from: (T0 - H) / 1000, to: (T0 + H) / 1000});
+    await new Promise((resolve) => setTimeout(resolve, 80));
+    expect(handler).toHaveBeenCalledTimes(1);
+
+    // Un gesto nuevo sí puede pedir el bloque siguiente (ancla distinta).
+    await new Promise((resolve) => setTimeout(resolve, 700));
+    fireEvent.wheel(screen.getByTestId("market-chart"));
+    await waitFor(() => expect(handler).toHaveBeenCalledTimes(2));
+    expect(handler).toHaveBeenLastCalledWith(T0 - 2 * H);
   });
 });

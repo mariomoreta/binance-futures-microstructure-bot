@@ -1099,7 +1099,9 @@ async def run_window(args: argparse.Namespace) -> Dict[str, Any]:
         argv = [sys.executable, "-X", "utf8", str(SERVICE_SCRIPT),
                 "--port", str(args.port), "--max-seconds", str(safety)]
         if args.base_url:
-            argv.extend(["--base-url", args.base_url])
+            argv.extend(["--transport", "local", "--base-url", args.base_url])
+        else:
+            argv.extend(["--transport", "public"])
         proc = await asyncio.create_subprocess_exec(
             *argv, cwd=str(ROOT), env=env,
             stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.PIPE)

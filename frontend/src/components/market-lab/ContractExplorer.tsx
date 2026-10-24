@@ -68,12 +68,16 @@ export function ContractExplorer() {
   const [seriesError, setSeriesError] = useState<string | null>(null);
   const [loadingEarlier, setLoadingEarlier] = useState(false);
   const [earlierExhausted, setEarlierExhausted] = useState(false);
+  const [earlierFailed, setEarlierFailed] = useState(false);
+  const [earlierError, setEarlierError] = useState<string | null>(null);
 
   const catalogSeq = useRef(0);
   const seriesSeq = useRef(0);
   const catalogAbort = useRef<AbortController | null>(null);
   const seriesAbort = useRef<AbortController | null>(null);
   const seriesRef = useRef<MarketSeriesPayload | null>(null);
+  const loadingEarlierRef = useRef(false);
+  const earlierKeyRef = useRef<string | null>(null);
   const liveRef = useRef<HTMLParagraphElement | null>(null);
   const [announce, setAnnounce] = useState("");
 
@@ -116,9 +120,14 @@ export function ContractExplorer() {
     seriesAbort.current?.abort();
     const controller = new AbortController();
     seriesAbort.current = controller;
-    if (opts.earlier) setLoadingEarlier(true);
-    else setSeriesState("loading");
-    setSeriesError(null);
+    if (opts.earlier) {
+      loadingEarlierRef.current = true;
+      setLoadingEarlier(true);
+      setEarlierError(null);
+    } else {
+      setSeriesState("loading");
+      setSeriesError(null);
+    }
     const result = await fetchSeriesApi({
       symbol: selected.symbol,
       interval,
@@ -129,22 +138,46 @@ export function ContractExplorer() {
       pageLimit: EXPLORER_PAGE_BARS,
       signal: controller.signal,
     });
-    if (opts.earlier) setLoadingEarlier(false);
+    if (opts.earlier) {
+      loadingEarlierRef.current = false;
+      earlierKeyRef.current = null;
+      setLoadingEarlier(false);
+    }
     // Cambio de símbolo/intervalo: la respuesta anterior se descarta.
     if (seq !== seriesSeq.current) return;
     if (!result.ok) {
-      if (result.error === "ABORTED") return;
+      if (result.error === "ABORTED") {
+        // Cancelación: no es fallo ni agotamiento; un reintento es legítimo.
+        if (opts.earlier) setEarlierFailed(false);
+        return;
+      }
+      const detail = [result.error, result.detail].filter(Boolean).join(" · ");
+      if (opts.earlier) {
+        // El bloque anterior falla: se conserva el gráfico ya cargado y se
+        // permite reintentar (no se marca como agotado).
+        setEarlierFailed(true);
+        setEarlierError(detail);
+        setAnnounce("No se pudo cargar el bloque anterior; puedes reintentar.");
+        return;
+      }
       setSeriesState("error");
-      setSeriesError([result.error, result.detail].filter(Boolean).join(" · "));
+      setSeriesError(detail);
       return;
     }
     const data = result.data ?? null;
     if (!data) {
+      if (opts.earlier) {
+        setEarlierFailed(true);
+        setEarlierError("Respuesta vacía del histórico.");
+        return;
+      }
       setSeriesState("error");
       setSeriesError("Respuesta vacía del histórico.");
       return;
     }
     if (opts.earlier) {
+      setEarlierFailed(false);
+      setEarlierError(null);
       // Anteponer, no sustituir: el extremo reciente (y sus actualizaciones)
       // sigue siendo el mismo; el bloque solo añade velas más antiguas.
       const merged = seriesRef.current
@@ -200,7 +233,8 @@ export function ContractExplorer() {
   }, [applySelection, interval, selected]);
 
   const requestEarlier = useCallback((beforeMs: number) => {
-    if (!selected || loadingEarlier || earlierExhausted) return;
+    // Guard síncrono: dos eventos del mismo gesto no abren dos peticiones.
+    if (!selected || loadingEarlierRef.current || earlierExhausted) return;
     const step = intervalMsOf(interval);
     // Bloque estrictamente anterior al borde ya cargado. Pedir hasta
     // `window.toMs` devolvía la misma ventana reciente (solapamiento) y el
@@ -214,8 +248,11 @@ export function ContractExplorer() {
       setEarlierExhausted(true);
       return;
     }
+    const key = `${Math.max(0, fromMs)}:${toMs}`;
+    if (earlierKeyRef.current === key) return;
+    earlierKeyRef.current = key;
     void loadSeries({fromMs: Math.max(0, fromMs), toMs}, {earlier: true});
-  }, [earlierExhausted, interval, loadSeries, loadingEarlier, selected, window]);
+  }, [earlierExhausted, interval, loadSeries, selected, window]);
 
   // Feed continuo: se abre solo con el gráfico ya cargado y se cierra al
   // desmontar o cambiar de símbolo/intervalo. Es visualización: no arranca el
@@ -428,6 +465,12 @@ export function ContractExplorer() {
               Se muestra solo lo que ya estaba almacenado; no se reintenta en bucle.
             </p>
           )}
+          {earlierError && (
+            <p className={s.warn} role="status" data-testid="explorer-earlier-error">
+              Bloque anterior no disponible ({earlierError}). El gráfico cargado se
+              conserva; pulsa «Cargar anteriores» para reintentar.
+            </p>
+          )}
           {series && series.candles.length === 0 && seriesState === "ready" && (
             <p className={s.empty} role="status" data-testid="explorer-no-coverage">
               Sin cobertura para {selected.symbol} {interval} en la ventana
@@ -491,6 +534,7 @@ export function ContractExplorer() {
               onRequestEarlier={requestEarlier}
               loadingEarlier={loadingEarlier}
               earlierExhausted={earlierExhausted || mergedSeries.coverage.exhausted_before}
+              earlierFailed={earlierFailed}
             />
           )}
 

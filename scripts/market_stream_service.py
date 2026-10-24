@@ -5,9 +5,13 @@ monitor del bot.
 
 Uso (desde la raiz del repo):
 
-  python scripts/market_stream_service.py --port 8791
+  python scripts/market_stream_service.py --port 8791 --transport local --base-url ws://127.0.0.1:8799
+  python scripts/market_stream_service.py --port 8791 --transport public
   python scripts/market_stream_service.py --port 8791 --stop
-  python scripts/market_stream_service.py --port 8791 --max-seconds 60
+
+Sin --transport el servicio no arranca (exit 2): no hay fallback al endpoint
+publico. ``local`` exige un WS loopback y desactiva la reparacion REST;
+``public`` es la activacion explicita del WS publico de Binance.
 
 La ventana viva contra Binance NO esta autorizada por este script: se prepara y
 se ejecuta solo cuando la instruccion humana lo pida.

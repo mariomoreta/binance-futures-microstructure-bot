@@ -396,4 +396,67 @@ describe("ContractExplorer — búsqueda, selección y paginación (A/C/D/E)", (
     expect((await screen.findByTestId("explorer-no-coverage")).textContent)
       .toContain("Sin cobertura");
   });
+
+  it("F: dos eventos del mismo gesto no abren dos peticiones", async () => {
+    const first = deferred<{ok: boolean; data?: MarketSeriesPayload; status: number}>();
+    api.fetchSeriesApi.mockReturnValueOnce(first.promise);
+    render(<ContractExplorer/>);
+    await waitFor(() => expect(screen.getByTestId("explorer-row-BTCUSDT")).toBeTruthy());
+    await selectSymbol("BTCUSDT");
+    await waitFor(() => expect(api.fetchSeriesApi).toHaveBeenCalledTimes(1));
+    await act(async () => {
+      first.resolve({ok: true, data: series("BTCUSDT", "1h", [T0, T0 + H]), status: 200});
+    });
+
+    const second = deferred<{ok: boolean; data?: MarketSeriesPayload; status: number}>();
+    api.fetchSeriesApi.mockReturnValueOnce(second.promise);
+    // Dos clics en el mismo tick (antes de que React deshabilite el botón).
+    await act(async () => {
+      const button = screen.getByTestId("chart-earlier-trigger");
+      button.click();
+      button.click();
+    });
+    await waitFor(() => expect(api.fetchSeriesApi).toHaveBeenCalledTimes(2));
+    // Sin el guard síncrono serían 3 (dos bloques anteriores en paralelo).
+    expect(api.fetchSeriesApi).toHaveBeenCalledTimes(2);
+    await act(async () => {
+      second.resolve({ok: true, data: series("BTCUSDT", "1h", [T0 - H, T0, T0 + H]), status: 200});
+    });
+    expect((await screen.findByTestId("chart-stub")).getAttribute("data-bars")).toBe("3");
+  });
+
+  it("F: un fallo al cargar el bloque anterior conserva el gráfico y permite reintentar", async () => {
+    const first = deferred<{ok: boolean; data?: MarketSeriesPayload; status: number}>();
+    api.fetchSeriesApi.mockReturnValueOnce(first.promise);
+    render(<ContractExplorer/>);
+    await waitFor(() => expect(screen.getByTestId("explorer-row-BTCUSDT")).toBeTruthy());
+    await selectSymbol("BTCUSDT");
+    await waitFor(() => expect(api.fetchSeriesApi).toHaveBeenCalledTimes(1));
+    await act(async () => {
+      first.resolve({ok: true, data: series("BTCUSDT", "1h", [T0, T0 + H]), status: 200});
+    });
+
+    // Fallo del bloque anterior: no sustituye el gráfico ni marca agotado.
+    api.fetchSeriesApi.mockResolvedValueOnce({
+      ok: false, status: 502, error: "SERIES_UNAVAILABLE", detail: "sin red",
+    });
+    fireEvent.click(await screen.findByTestId("chart-earlier-trigger"));
+    const notice = await screen.findByTestId("explorer-earlier-error");
+    expect(notice.textContent).toContain("SERIES_UNAVAILABLE");
+    expect(screen.getByTestId("chart-stub").getAttribute("data-bars")).toBe("2");
+    expect(screen.queryByTestId("explorer-series-error")).toBeNull();
+    const trigger = screen.getByTestId("chart-earlier-trigger") as HTMLButtonElement;
+    expect(trigger.disabled).toBe(false);
+
+    // Reintento legítimo del usuario: mismo bloque, ahora sí.
+    api.fetchSeriesApi.mockResolvedValueOnce({
+      ok: true,
+      data: series("BTCUSDT", "1h", [T0 - H, T0, T0 + H]),
+      status: 200,
+    });
+    fireEvent.click(trigger);
+    await waitFor(() => expect(
+      screen.getByTestId("chart-stub").getAttribute("data-bars")).toBe("3"));
+    expect(screen.queryByTestId("explorer-earlier-error")).toBeNull();
+  });
 });
