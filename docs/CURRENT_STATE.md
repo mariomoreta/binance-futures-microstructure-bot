@@ -3306,6 +3306,31 @@ intervalo `1m`) y al menos un mensaje de vela del símbolo primario. En modo
 acredita recepción de Binance. La ventana pública sigue sin ejecutarse; queda
 pendiente de autorización humana explícita.
 
+**Preflight cerrados antes de la ventana pública.**
+
+1. **Presupuesto REST efectivo (máximo 2 solicitudes de velas, 300 cada una,
+   incluyendo carga inicial, paginación y recuperación).**
+   - `scripts/market_stream_window.py` arranca el servicio en modo public con
+     `--no-recovery`: la reparación REST queda desactivada, por lo que el
+     servicio no realiza solicitudes públicas de velas de recuperación.
+   - `src/microstructure_probe/market_stream_service.py` acepta
+     `--no-recovery` y fuerza `recovery=False` incluso en modo public.
+   - `scripts/market_stream_local_acceptance.py` rastrea
+     `rest_market_requests` (peticiones a `/api/v1/market-series`) y exige
+     `rest_market_budget <= 2`. Cualquier hueco de cobertura impide PASS
+     (check `coverage_intact` del evaluador).
+   - Verificado con transporte local: regresión PASS, `rest_market_budget:
+     true`, `global_deadline_respected: true`, `zero_public_attempts: true`.
+
+2. **Entorno del dashboard.** `MICROPROBE_STREAM_URL` debe heredarlo el
+   proceso Next.js al arrancar; establecerlo solo en la terminal del arnés no
+   modifica el servidor existente. Para la ventana pública se sustituye
+   únicamente la instancia del dashboard en `127.0.0.1:3020` (PID identificada
+   por puerto), tras comprobar ausencia de trabajos activos de monitor,
+   backtest o sesiones. Se conserva el valor anterior y se restaura el servidor
+   con su configuración original tras la ventana; no basta con `Remove-Item` en
+   la terminal.
+
 **Procedimiento de la próxima ventana Binance (preparado, no conectado).**
 Comando (PowerShell, ruta absoluta bajo `$env:TEMP`):
 

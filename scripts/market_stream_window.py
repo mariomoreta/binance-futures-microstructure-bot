@@ -1152,7 +1152,10 @@ async def run_window(args: argparse.Namespace) -> Dict[str, Any]:
         if args.base_url:
             argv.extend(["--transport", "local", "--base-url", args.base_url])
         else:
-            argv.extend(["--transport", "public"])
+            # Ventana public: desactivar recuperacion REST para respetar el
+            # presupuesto compartido de max 2 solicitudes de velas. Cualquier
+            # hueco de cobertura impide PASS (check coverage_intact).
+            argv.extend(["--transport", "public", "--no-recovery"])
         proc = await asyncio.create_subprocess_exec(
             *argv, cwd=str(ROOT), env=env,
             stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.PIPE)

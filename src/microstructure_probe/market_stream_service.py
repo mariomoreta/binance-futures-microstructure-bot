@@ -159,6 +159,7 @@ class MarketStreamService:
         transport_mode: Optional[str] = None,
         pid_path: Optional[Path] = None,
         max_seconds: Optional[float] = None,
+        no_recovery: bool = False,
     ) -> None:
         self.host = host
         self.port = int(port)
@@ -178,7 +179,7 @@ class MarketStreamService:
             self.transport_base_url = plan["base_url"]
             self.hub = hub or KlineStreamHub(
                 recovery=(build_recovery(_rest_client())
-                          if plan["recovery"] else None))
+                          if plan["recovery"] and not no_recovery else None))
             kwargs = {"base_url": plan["base_url"]} if plan["base_url"] else {}
             self.transport = BinanceKlineTransport(self.hub, **kwargs)
         self.pid_path = Path(pid_path) if pid_path is not None else _pid_path()
@@ -603,6 +604,9 @@ def main(argv: Optional[list[str]] = None) -> int:
     parser.add_argument("--base-url", default=None)
     parser.add_argument("--max-seconds", type=float, default=None,
                        help="parada automatica (solo ventana acotada autorizada)")
+    parser.add_argument("--no-recovery", action="store_true",
+                       help="desactiva la reparacion REST (recomendado para "
+                            "ventana publica con presupuesto de REST limitado)")
     parser.add_argument("--stop", action="store_true", help="detiene el servicio en --port")
     args = parser.parse_args(argv)
 
@@ -622,6 +626,7 @@ def main(argv: Optional[list[str]] = None) -> int:
     service = MarketStreamService(
         host=args.host, port=args.port, base_url=plan["base_url"],
         transport_mode=plan["mode"], max_seconds=args.max_seconds,
+        no_recovery=args.no_recovery,
     )
 
     async def _main() -> None:
