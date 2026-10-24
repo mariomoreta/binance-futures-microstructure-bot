@@ -3295,3 +3295,32 @@ económicos. Los DBs canónicos y los archivos ajenos se preservaron.
 
 **Estado del parche de seguridad (2026-10-24).** Parche de seguridad integrado
 y servido; aceptación real automatizada del gráfico pendiente.
+
+**Acreditación de Binance en modo `--transport public`.** Activar
+`--transport public` por sí solo **no acredita** recepción de Binance. El
+arnés solo acredita (`binance_accredited = true`) cuando el servicio recibe e
+identifica eventos reales de Binance: identidad exacta
+(`venue=binance`, `market_type=usd_m_futures`, símbolos `BTCUSDT`/`MINAUSDT`,
+intervalo `1m`) y al menos un mensaje de vela del símbolo primario. En modo
+`local` (loopback) `binance_accredited` es siempre `false` y el PASS no
+acredita recepción de Binance. La ventana pública sigue sin ejecutarse; queda
+pendiente de autorización humana explícita.
+
+**Procedimiento de la próxima ventana Binance (preparado, no conectado).**
+Comando (PowerShell, ruta absoluta bajo `$env:TEMP`):
+
+```powershell
+$env:MICROPROBE_STREAM_URL = "http://127.0.0.1:8792"
+python -X utf8 scripts/market_stream_local_acceptance.py --transport public `
+    --runs 1 --out-dir docs/evidence/local-acceptance-2026-10-24-public `
+    --workdir "$env:TEMP\opencode\market-acceptance" `
+    --dashboard-url http://127.0.0.1:3020 --service-port 8792 `
+    --duration 75.0 --hold-seconds 20.0 --await-timeout 45.0 `
+    --release-timeout 15.0 --reconnect-timeout 15.0
+# Restaurar entorno: quitar MICROPROBE_STREAM_URL tras la ejecución
+Remove-Item Env:MICROPROBE_STREAM_URL -ErrorAction SilentlyContinue
+```
+
+Sustituye únicamente la instancia del dashboard en `127.0.0.1:3020`
+(PID identificada por puerto; comando `npm start` en `frontend/`). No hay
+trabajos activos de monitor, backtest ni sesiones que se vean afectados.

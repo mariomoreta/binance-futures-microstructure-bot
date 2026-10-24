@@ -36,6 +36,13 @@ Uso (entorno de prueba local, dashboard en 3020 con entorno de test):
 Uso (procedimiento de ventana real, transporte public; requiere autorizacion):
   python -X utf8 scripts/market_stream_local_acceptance.py --transport public \
       --runs 1 --out-dir docs/evidence/local-acceptance-2026-10-24-public
+
+En modo `public` el veredicto PASS ademas exige recepcion real identificada de
+Binance (identidad exacta: venue=binance, market_type=usd_m_futures, simbolo e
+intervalo, y al menos un mensaje de vela del simbolo primario). Activar
+`--transport public` por si solo no acredita el origen; el check
+`binance_accredited` solo es True cuando esa identidad se verifica contra los
+eventos recibidos.
 """
 from __future__ import annotations
 
@@ -1083,6 +1090,19 @@ def series_summary(payload: Dict[str, Any]) -> Dict[str, Any]:
     }
 
 
+def _binance_accredited(transport: str, checks: List[Dict[str, Any]]) -> bool:
+    """En modo public, acreditar recepcion real de Binance exige mas que
+    activar --transport public: se requiere identidad exacta
+    (venue=binance, market_type=usd_m_futures, simbolo, intervalo) y al
+    menos un mensaje de vela del simbolo primario. En modo local nunca se
+    acredita."""
+    if transport != "public":
+        return False
+    check_ok = {c.get("id"): c.get("ok") for c in checks if isinstance(c, dict)}
+    return bool(check_ok.get("identity_exact") is True
+                and check_ok.get("messages_primary") is True)
+
+
 def run_one(index: int, args: argparse.Namespace, workdir: Path,
             out_dir: Path) -> Dict[str, Any]:
     from playwright.sync_api import sync_playwright
@@ -1165,6 +1185,19 @@ def run_one(index: int, args: argparse.Namespace, workdir: Path,
     marks: Dict[str, float] = {}
     error: Optional[str] = None
     final_status = "FAIL"
+    global_deadline_event = threading.Event()
+    global_deadline_timer = threading.Timer(
+        LIMITS["run"], lambda: global_deadline_event.set())
+    global_deadline_timer.daemon = True
+    global_deadline_timer.start()
+
+    def _check_global_deadline() -> None:
+        """Lanza si se agoto el deadline global de 180 s que cubre todas
+        las fases. Los limites de fase consumen el tiempo restante del
+        global; no son presupuestos independientes que se sumen."""
+        if global_deadline_event.is_set():
+            raise HarnessError("GLOBAL_DEADLINE_EXCEEDED")
+
     try:
         if transport == "local":
             verify = verify_dashboard(args.dashboard_url)
@@ -1173,6 +1206,7 @@ def run_one(index: int, args: argparse.Namespace, workdir: Path,
         logs["dashboard_verify"] = verify
         durations["dashboard_verify"] = time.monotonic() - run_started
 
+        _check_global_deadline()
         durations["minute_phase"] = wait_minute_phase()
         marks["minute_phase"] = time.monotonic() - run_started
         log(f"run {index}: fase de minuto {durations['minute_phase']:.1f}s")
@@ -1260,6 +1294,7 @@ def run_one(index: int, args: argparse.Namespace, workdir: Path,
             page.wait_for_selector('[data-testid="explorer-interval"]',
                                    timeout=20_000)
             page.select_option('[data-testid="explorer-interval"]', "1m")
+            _check_global_deadline()
             durations["page_ready"] = wait_identity_live(page, LIMITS["page_ready"])
             marks["page_ready"] = time.monotonic() - run_started
             log(f"run {index}: pagina LIVE en {durations['page_ready']:.1f}s")
@@ -1275,6 +1310,7 @@ def run_one(index: int, args: argparse.Namespace, workdir: Path,
             log(f"run {index}: series iniciales={len(initial_series)} "
                 f"opens_1m={len(initial_opens)}")
 
+            _check_global_deadline()
             accept_started = time.monotonic()
             runner.wait_for("ACEPTACION DE CADENA ALCANZADA",
                             LIMITS["acceptance"])
@@ -1283,6 +1319,7 @@ def run_one(index: int, args: argparse.Namespace, workdir: Path,
             log(f"run {index}: aceptacion alcanzada en "
                 f"{durations['acceptance']:.1f}s")
 
+            _check_global_deadline()
             pagination_started = time.monotonic()
             before_count = int(dom1.get("candles") or 0)
             window_before = dom1.get("chart_window")
@@ -1322,6 +1359,7 @@ def run_one(index: int, args: argparse.Namespace, workdir: Path,
                 f"en {durations['pagination']:.1f}s")
             hold_signal.write_text("1", encoding="utf-8")
 
+            _check_global_deadline()
             runner.wait_for("desconecta la suscripcion del navegador",
                             LIMITS["release"])
             release_started = time.monotonic()
@@ -1335,6 +1373,7 @@ def run_one(index: int, args: argparse.Namespace, workdir: Path,
             log(f"run {index}: liberado en {durations['release']:.1f}s "
                 f"disconnect={disconnect_result} wrapper={wrapper_after_disconnect}")
 
+            _check_global_deadline()
             runner.wait_for("reconecta la suscripcion del navegador",
                             LIMITS["reconnect"])
             reconnect_started = time.monotonic()
@@ -1356,10 +1395,12 @@ def run_one(index: int, args: argparse.Namespace, workdir: Path,
             # captura DOM de reconexion no compite con la parada ordenada.
             post_reconnect_signal.write_text("1", encoding="utf-8")
 
+            _check_global_deadline()
             runner.wait_for("consumidores_tras_reconectar", 20.0)
             code = runner.wait_exit(25.0)
             marks["orchestrator_exit"] = time.monotonic() - run_started
             log(f"run {index}: orquestador termino (exit {code})")
+            _check_global_deadline()
             notice_started = time.monotonic()
             wait_until(lambda: not port_open("127.0.0.1", args.service_port),
                        10.0, 0.1, "service_port_closed")
@@ -1436,6 +1477,14 @@ def run_one(index: int, args: argparse.Namespace, workdir: Path,
                 all_fetch_local = None
                 catalog_local = None
             browser_external = list(network["external"])
+            # Presupuesto de red: carga inicial + paginacion + cualquier
+            # recuperacion automatica del servicio, contado en conjunto.
+            # Maximo dos peticiones REST de velas (300 cada una); el catalogo
+            # se sirve desde cache y no genera peticiones silenciosas.
+            rest_market_requests = len([
+                item for item in network["requests"]
+                if "/api/v1/market-series" in item.get("url", "")
+            ])
 
             checks = run.get("checks") or []
             failed = run.get("failed") or []
@@ -1460,6 +1509,12 @@ def run_one(index: int, args: argparse.Namespace, workdir: Path,
                 zero_public = not browser_external
             local_checks = {
                 "zero_public_attempts": zero_public,
+                # En modo local no hay REST real a Binance (todo va al cache);
+                # el presupuesto de 2 REST en conjunto aplica al servicio en
+                # modo public y se verifica como techo superior de lo que el
+                # navegador ve a traves del BFF.
+                "rest_market_budget": (True if transport == "local"
+                                       else rest_market_requests <= 2),
                 "all_series_local": all_fetch_local,
                 "catalog_local": catalog_local,
                 "one_pagination_request": len(earlier_requests) == 1,
@@ -1512,12 +1567,20 @@ def run_one(index: int, args: argparse.Namespace, workdir: Path,
             }
             durations["run"] = time.monotonic() - run_started
             local_checks["global_budget"] = durations["run"] <= LIMITS["run"]
-            procedural = all(
-                value is True for key, value in local_checks.items()
-                if key not in ("dom_checks", "phases_within_limits"))
-            procedural = procedural and all(
-                local_checks["phases_within_limits"].values())
-            final_status = "PASS" if procedural else "FAIL"
+            local_checks["global_deadline_respected"] = not bool(
+                global_deadline_event.is_set())
+            # El deadline global de 180 s cubre todas las fases: si se agota,
+            # el recorrido falla aunque cada fase individual respetara su limite.
+            if global_deadline_event.is_set():
+                procedural = False
+                final_status = "ERROR"
+            else:
+                procedural = all(
+                    value is True for key, value in local_checks.items()
+                    if key not in ("dom_checks", "phases_within_limits"))
+                procedural = procedural and all(
+                    local_checks["phases_within_limits"].values())
+                final_status = "PASS" if procedural else "FAIL"
 
             network["proxy_attempts"] = proxy_attempts
             network["guard_attempts"] = guard_attempts
@@ -1542,7 +1605,10 @@ def run_one(index: int, args: argparse.Namespace, workdir: Path,
                 "post_reconnect_signal_seen": bool(
                     (run.get("service") or {}).get("post_reconnect_signal_seen")),
                 "transport_origin": (run.get("transport") or {}).get("origin"),
-                "binance_accredited": False,
+                "binance_accredited": _binance_accredited(
+                    transport, run.get("checks") or []),
+                "global_deadline_exceeded": bool(
+                    global_deadline_event.is_set()),
                 "procedural_pass": bool(procedural),
                 "local_checks": local_checks,
                 "public_attempts": {
@@ -1550,6 +1616,7 @@ def run_one(index: int, args: argparse.Namespace, workdir: Path,
                     "guard": len(guard_attempts),
                     "browser": len(browser_external),
                 },
+                "rest_market_requests": rest_market_requests,
                 "residual_consumers": 0,
                 "clean_stop": local_checks.get("clean_stop"),
                 "harness_debug": {
@@ -1565,7 +1632,11 @@ def run_one(index: int, args: argparse.Namespace, workdir: Path,
                 encoding="utf-8")
             return result
     except Exception as exc:  # noqa: BLE001 - la evidencia debe persistirse
-        error = f"{type(exc).__name__}: {exc}"
+        if global_deadline_event.is_set():
+            error = "GLOBAL_DEADLINE_EXCEEDED: el deadline global de 180 s se "
+            "agoto antes de completar el recorrido"
+        else:
+            error = f"{type(exc).__name__}: {exc}"
         final_status = "ERROR"
         log(f"run {index}: ERROR {error}")
         durations["run"] = time.monotonic() - run_started
@@ -1582,7 +1653,11 @@ def run_one(index: int, args: argparse.Namespace, workdir: Path,
                 "wrapper_after_disconnect": wrapper_after_disconnect,
                 "wrapper_after_reconnect": wrapper_after_reconnect,
             },
-            "transport_origin": "loopback_test", "binance_accredited": False,
+            "global_deadline_exceeded": bool(
+                global_deadline_event.is_set()),
+            "transport_origin": (run.get("transport") or {}).get("origin")
+            if run else "loopback_test",
+            "binance_accredited": False,
         }
         try:
             for name, data in (("dom-1.json", dom1), ("dom-2.json", dom2),
@@ -1723,7 +1798,11 @@ def main(argv: Optional[List[str]] = None) -> int:
              "documentado." if args.transport == "local"
              else "El dashboard canonico no es reconfigurado por el arnes; no se "
              "traslada configuracion de prueba al dashboard."),
-            "Cero peticiones publicas: proxy + guarda sitecustomize + allowlist del navegador.",
+            ("Cero peticiones publicas: proxy + guarda sitecustomize + "
+             "allowlist del navegador." if args.transport == "local"
+             else "Hasta dos peticiones REST de velas en conjunto (carga inicial "
+             "y paginacion, <=300 cada una); catalogo desde cache; una conexion "
+             "WS simultanea y hasta tres reconexiones."),
             "La ventana real reutiliza el mismo procedimiento con autorizacion humana.",
         ],
     }
