@@ -1,3 +1,49 @@
+## Ventana viva ejecutada una vez: cadena real hasta el navegador, veredicto FAIL por la evidencia DOM (2026-10-24, F-CHART-BINANCE-04)
+
+Ejecutada **una sola** ventana autorizada el 2026-10-24 entre `00:47:04Z` y
+`00:48:27Z` (83,46 s de 180 s), base `4956dee`, BUILD_ID
+`eiXlHvN4lJBLWcuOopsh_` servido por PID 33960, intervalo `1m`, símbolos
+`BTCUSDT` + `MINAUSDT`, una conexión WS combinada y tres consumidores SSE
+(navegador + BFF + servicio). Sin monitor, sin paper, sin órdenes, sin móvil.
+
+**Cadena medida (real, no simulada).** Un solo intento de socket, **0
+reconexiones**; contadores del servicio con `messages=applied` sin descuadre;
+96 eventos de vela de `BTCUSDT` y 14 de `MINAUSDT`; 50 actualizaciones
+provisionales sobre la misma apertura; **cierre confirmado** de la vela
+`1792802820000` y **siguiente vela** `1792802880000`; `BFF` entregó 96 eventos
+con identidad `BTCUSDT/1m`; 0 huecos; pico de consumidores **3** y residual
+**1** (el navegador) al cerrar. Cadencia medida (no asumida): mediana 418 ms,
+mínimo 250 ms, máximo 12041 ms. Parada limpia: exit 0, puerto 8791 cerrado, PID
+file eliminado, `/health` rechazado; `microprobe.db` y `historical.db` con mtime
+2026-10-15 11:46:27 (intactas); `market_cache.db` sí cambió (caché aislada del
+explorador por la paginación REST, comportamiento esperado).
+
+**Evidencia DOM (navegador real, Chromium de escritorio).** Captura #1 a las
+`00:47:46Z`: `Binance USD-M · BTCUSDT · 1m · market-stream/v1`, `RECIBIENDO`,
+`LIVE`, 299 velas, `nav=1`/`reload=0`. Captura #2 a las `00:48:29Z`: misma
+identidad, 303 velas y paginación `300→303` con identidad preservada y sin
+error, **pero ya con el servicio parado** (`DESCONECTADO`/`no LIVE`). Captura
+#3 a las `00:50:06Z`: `DESCONECTADO`, `no LIVE`, 303 velas conservadas, sin
+aviso de "servicio detenido".
+
+**Veredicto medido: `FAIL` (exit 1).** `acquired=true`; los 19 checks de cadena,
+servicio, presupuesto y DBs pasan (`dom_identity`, `dom_update_fresh`,
+`dom_candles_grew` 299→303, `dom_pagination_preserved`, `dom_no_reload` también).
+Fallan solo dos checks obligatorios del navegador:
+`dom_state_live` (la captura #2 llegó 7 s después de la parada: la espera de
+20 s expiró mientras se completaba la paginación) y `dom_after_stop` (no
+apareció el aviso `explorer-stream-down` porque el `EventSource` del BFF siguió
+abierto y no se agotaron los reintentos ni se reconsultó `/status`). **No es un
+fallo de datos**: la cadena real llegó al gráfico; es un fallo del procedimiento
+de captura y del aviso de servicio detenido.
+
+**Hallazgos abiertos.** (1) La paginación subió el contador `300→303` mientras
+la caché creció ~45 KB: el bloque anterior no se reflejó como +300 en pantalla;
+requiere análisis aparte. (2) El aviso "servicio detenido" no aparece si el
+servicio muere con la página abierta. (3) La espera de 20 s es insuficiente si
+la paginación se hace después del cierre. **No se repite la ventana** sin nueva
+autorización explícita.
+
 ## Ventana viva por el camino real — preparada y probada sin Binance (2026-10-22, F-CHART-BINANCE-04)
 
 Prepara (sin ejecutar) la ventana que demuestra datos Binance recorriendo la

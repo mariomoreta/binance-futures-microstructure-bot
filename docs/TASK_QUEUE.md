@@ -1,3 +1,45 @@
+## Market Lab — ventana real ejecutada, veredicto FAIL por evidencia DOM (2026-10-24, F-CHART-BINANCE-04)
+
+`CURRENT_PHASE`: dashboard V2 de escritorio + observación (WS público bajo
+demanda, sin monitor, sin órdenes).
+
+`CURRENT_OBJECTIVE`: demostrar con una sola ventana acotada que un mensaje real
+de Binance llega al gráfico por la cadena real. **Conseguido en la cadena; no
+acreditado por el veredicto** por dos checks DOM.
+
+`ACTIVE_TASK`: cerrar el expediente de la ventana ejecutada el 2026-10-24
+(`00:47:04Z`–`00:48:27Z`, 83,46 s, 3 consumidores, 1 WS, `BTCUSDT`+`MINAUSDT`
+1m) con veredicto `FAIL` (exit 1): `acquired=true`, 19 checks de cadena/servicio/
+presupuesto/DBs en verde y solo `dom_state_live` + `dom_after_stop` en rojo.
+Evidencia: `docs/evidence/market-stream-window-2026-10-23.json` y las tres
+capturas `…-dom-1.json`, `…-dom-2.json`, `…-dom-stop.json`.
+
+Estado: **implementado + probado con transporte controlado + servido + ventana
+real ejecutada una vez**, con veredicto medido `FAIL` (no `PASS`). Base
+`4956dee`; BUILD_ID `eiXlHvN4lJBLWcuOopsh_` (PID 33960); focalizado backend
+53/53; explorador 12/12; `tsc --noEmit` 0; `eslint` 0; DBs canónicas con mtime
+2026-10-15 11:46:27; servicio **detenido**, puerto 8791 libre, PID file ausente.
+
+`NEXT_TASKS`:
+1. **Corregir el procedimiento de captura**: paginar antes del cierre o ampliar
+   `--hold-seconds` (solo con nueva autorización de ventana), y capturar #2
+   mientras el panel siga en `LIVE`. Sin nueva autorización no se repite.
+2. **Aviso de servicio detenido**: el panel pasa a `DESCONECTADO` pero no muestra
+   `explorer-stream-down` si el BFF mantiene el SSE abierto; decidir si el BFF
+   debe cerrar el stream al caer el upstream o si el hook debe reconsultar
+   `/status` periódicamente.
+3. **Paginación del explorador**: el contador subió `300→303` con ~45 KB nuevos
+   en caché; verificar si el bloque anterior se antepone de verdad (posible
+   defecto, no corregido en la ventana).
+4. Decidir si el servicio se deja arrancado por defecto o sigue manual (hoy
+   manual y detenido).
+5. Retención/poda de `data/market-cache/` antes de uso intensivo.
+6. Indicadores compartidos: capacidad posterior con contrato y presupuesto
+   propios.
+7. Re-ejecutar `/antislop` end-to-end en sesión nueva; sigue PENDIENTE.
+8. Mantener diferido: stops/objetivos arrastrables, móvil/Flutter, F-PAPER-01,
+   ejecución con capital.
+
 ## Market Lab — ventana por el camino real preparada (2026-10-22, F-CHART-BINANCE-04)
 
 `CURRENT_PHASE`: dashboard V2 de escritorio + observación (WS público bajo

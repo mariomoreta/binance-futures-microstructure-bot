@@ -1,0 +1,15 @@
+{
+  "captured_at_ms": 1792803006805,
+  "url": "http://127.0.0.1:3020/market-lab",
+  "identity": "Binance USD-M · BTCUSDT · 1m · market-stream/v1",
+  "state": "DESCONECTADO",
+  "live": "no LIVE",
+  "updated": "2026-10-24T00:48:21.718Z · hace 0 s",
+  "candles": 303,
+  "provisional": 1,
+  "down": null,
+  "error": null,
+  "navigation_count": 1,
+  "reload_count": 0,
+  "operator_note": "Captura tras la parada (00:50:06Z, 105 s despues del ultimo status). El panel muestra DESCONECTADO y no LIVE, conserva las 303 velas y la identidad, pero NO muestra el aviso 'servicio detenido': el EventSource del BFF sigue abierto (sin evento error) y el hook solo declara available=false tras 6 fallos de reconexion o al consultar /status."
+}

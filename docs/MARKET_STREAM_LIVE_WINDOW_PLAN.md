@@ -340,3 +340,42 @@ presupuesto de 20 fallos consecutivos.
 
 Nada de esto acredita recepción real de Binance ni el gráfico del navegador: eso
 es exactamente lo que autoriza y mide la ventana.
+
+## 11. Resultado de la ejecución real (2026-10-24, una sola ventana)
+
+Ejecutada **una vez** con autorización explícita; sin repetición automática ni
+ampliación de límites. Base `4956dee`, BUILD_ID `eiXlHvN4lJBLWcuOopsh_` (PID
+33960), `BTCUSDT` + `MINAUSDT` 1m.
+
+| Concepto | Medido |
+|---|---|
+| Ventana | `2026-10-24T00:47:04Z` → `00:48:27Z` (83,46 s de 180 s) |
+| Conexión WS | 1 combinada, **1 intento, 0 reconexiones** |
+| Consumidores SSE | navegador `BTCUSDT`, BFF `BTCUSDT`, servicio `MINAUSDT`; pico **3**, residual **1** |
+| Eventos | 96 `BTCUSDT` + 14 `MINAUSDT` (servicio y BFF alineados) |
+| Provisional | 50 actualizaciones sobre la misma apertura |
+| Cierre / siguiente | `1792802820000` / `1792802880000` |
+| Huecos | 0 (sin reparaciones) |
+| Cadencia medida | mediana 418 ms · mínimo 250 ms · máximo 12041 ms |
+| Parada | exit 0, puerto 8791 cerrado, PID file eliminado, `/health` rechazado |
+| DBs | `microprobe.db` y `historical.db` intactas (mtime 2026-10-15 11:46:27); `market_cache.db` actualizada por la paginación REST |
+
+**Evidencia DOM.** #1 `00:47:46Z`: `Binance USD-M · BTCUSDT · 1m ·
+market-stream/v1`, `RECIBIENDO`, `LIVE`, 299 velas, `nav=1`/`reload=0`. #2
+`00:48:29Z`: misma identidad, 303 velas, paginación `300→303` con identidad
+preservada y sin error, **pero ya con el servicio parado**. #3 `00:50:06Z`:
+`DESCONECTADO`, `no LIVE`, 303 velas conservadas, sin aviso
+`explorer-stream-down`.
+
+**Veredicto: `FAIL` (exit 1).** `acquired=true`; pasan los 19 checks de cadena,
+servicio, presupuesto y DBs (incluidos `dom_identity`, `dom_update_fresh`,
+`dom_candles_grew` 299→303, `dom_pagination_preserved` y `dom_no_reload`).
+Fallan solo `dom_state_live` (captura #2 posterior a la parada: la espera de 20 s
+expiró durante la paginación) y `dom_after_stop` (el aviso de servicio detenido
+no apareció porque el SSE del BFF siguió abierto y no se agotaron los reintentos).
+No es un fallo de datos: la cadena real llegó al gráfico.
+
+**Correcciones propuestas (no ejecutadas, requieren nueva autorización de
+ventana):** paginar antes del cierre o ampliar `--hold-seconds`; hacer que el BFF
+cierre el SSE al caer el upstream o que el hook reconsulte `/status`; investigar
+por qué la paginación subió el contador `300→303` con ~45 KB nuevos en caché.

@@ -2724,3 +2724,26 @@ temporalidad, y ausencia de `LIVE` con el servicio detenido. `tsc --noEmit` y
 
 **Efecto.** El gráfico puede mostrar la misma identidad que mide el script
 (`Binance USD-M · BTCUSDT · 1m · market-stream/v1`), requisito de la ventana.
+
+## 2026-10-24 — La ventana real se ejecutó una vez y el veredicto medido es FAIL por la evidencia DOM
+
+**Contexto.** Con autorización explícita se ejecutó la única ventana prevista
+(`BTCUSDT` + `MINAUSDT` 1m, 180 s máx., 1 conexión WS, 3 consumidores SSE
+incluido el navegador). La cadena real quedó medida: 96 eventos `BTCUSDT` + 14
+`MINAUSDT`, cierre y siguiente vela, 96 eventos en el BFF, 0 huecos, pico 3 y
+residual 1, parada limpia y DBs canónicas intactas. El panel mostró `LIVE` con
+la identidad exacta (`Binance USD-M · BTCUSDT · 1m · market-stream/v1`).
+
+**Decisión.** Se registra el resultado tal como lo mide el evaluador:
+**`FAIL` (exit 1)**, sin rebajarlo a `UNKNOWN` ni presentarlo como `PASS`. Fallan
+solo dos checks obligatorios del navegador: `dom_state_live` (la captura #2 se
+tomó 7 s después de la parada, porque la espera de 20 s expiró durante la
+paginación) y `dom_after_stop` (el aviso `explorer-stream-down` no apareció: el
+SSE del BFF siguió abierto y no se agotaron los reintentos ni se reconsultó
+`/status`).
+
+**No se repite la ventana** sin nueva autorización explícita del operador; no se
+sustituye la prueba por otro intervalo ni se amplían límites. Las correcciones
+(paginar antes del cierre o ampliar el `hold`; aviso de servicio detenido con
+SSE del BFF abierto; investigar la paginación `300→303`) quedan en
+`docs/TASK_QUEUE.md` como trabajo posterior, no como parte de esta ejecución.
