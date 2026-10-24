@@ -24,11 +24,18 @@ El arnes:
 
 El JSON resultante NO acredita recepcion de Binance: el transporte es loopback.
 Para la ventana real se reutiliza el mismo procedimiento con `--transport public`
-y autorizacion humana explicita.
+y autorizacion humana explicita. En modo `public` el arnes no prepara cache
+temporal, no inyecta `sitecustomize` ni wrapper en el dashboard, no lanza WS
+falso ni proxy, y no traslada configuracion de prueba al dashboard canonico;
+el dashboard debe estar ya arrancado por el operador con el entorno adecuado.
 
-Uso (el dashboard debe estar arrancado con el entorno de prueba; ver docs):
+Uso (entorno de prueba local, dashboard en 3020 con entorno de test):
   python -X utf8 scripts/market_stream_local_acceptance.py --runs 2 \
       --out-dir docs/evidence/local-acceptance-2026-10-24
+
+Uso (procedimiento de ventana real, transporte public; requiere autorizacion):
+  python -X utf8 scripts/market_stream_local_acceptance.py --transport public \
+      --runs 1 --out-dir docs/evidence/local-acceptance-2026-10-24-public
 """
 from __future__ import annotations
 
@@ -822,7 +829,6 @@ class OrchestratorRunner:
             "--max-reconnects", "3",
             "--port", str(self.args.service_port),
             "--dashboard-url", self.args.dashboard_url,
-            "--base-url", f"ws://127.0.0.1:{self.args.fake_port}",
             "--browser-consumer", "--await-consumers", "1",
             "--await-timeout", str(self.args.await_timeout),
             "--release-browser",
@@ -830,6 +836,9 @@ class OrchestratorRunner:
             "--reconnect-timeout", str(self.args.reconnect_timeout),
             "--out", str(self.run_json),
         ]
+        if getattr(self.args, "transport", "local") == "local":
+            cmd.extend(["--base-url",
+                        f"ws://127.0.0.1:{self.args.fake_port}"])
         log("orquestador: " + " ".join(cmd))
         self.proc = subprocess.Popen(
             cmd, cwd=str(ROOT), env=self.env, stdout=subprocess.PIPE,
@@ -934,6 +943,25 @@ def verify_dashboard(dashboard_url: str) -> Dict[str, Any]:
         raise HarnessError(f"DASHBOARD_TEST_CACHE_EMPTY:candles={len(candles)}")
     return {"catalog_entries": entries, "refresh": refresh,
             "series_candles": len(candles), "fetch": fetch}
+
+
+def verify_dashboard_public(dashboard_url: str) -> Dict[str, Any]:
+    """Verifica que el dashboard canonico esta arriba y sirve contratos.
+
+    No exige el entorno de prueba local (catalogo 2, fetch deshabilitado);
+    el dashboard canonico tiene el catalogo completo. Solo confirma que
+    responde HTTP 200 en /market-lab y en /api/v1/market-contracts.
+    """
+    base = dashboard_url.rstrip("/")
+    req = urllib.request.Request(f"{base}/market-lab", method="GET")
+    with urllib.request.urlopen(req, timeout=20.0) as resp:
+        status = resp.status
+    if status != 200:
+        raise HarnessError(f"DASHBOARD_NOT_RESPONDING:market-lab={status}")
+    catalog = http_json(f"{base}/api/v1/market-contracts?q=BTCUSDT&limit=20",
+                        timeout=20.0)
+    entries = ((catalog.get("catalog") or {}).get("entries"))
+    return {"market_lab": status, "catalog_entries": entries}
 
 
 def wait_minute_phase(limit_s: float = 60.0) -> float:
@@ -1071,28 +1099,47 @@ def run_one(index: int, args: argparse.Namespace, workdir: Path,
         if path.exists():
             path.unlink()
 
-    cache_info = seed_cache(workdir / "market_cache.db", started_ms)
-    shadow = prepare_shadow(workdir)
-    log(f"run {index}: cache {cache_info['seeded']} catalogo={cache_info['catalog_entries']}")
+    transport = getattr(args, "transport", "local")
+    fake = None
+    proxy = None
+    shadow = None
+    cache_info = None
+    if transport == "local":
+        cache_info = seed_cache(workdir / "market_cache.db", started_ms)
+        shadow = prepare_shadow(workdir)
+        log(f"run {index}: cache {cache_info['seeded']} catalogo={cache_info['catalog_entries']}")
 
-    fake = FakeKlineServer(args.fake_port, Path(shadow["fake_log"]))
-    proxy = ProxyServer(args.proxy_port, Path(shadow["proxy_log"]))
-    fake.start()
-    proxy.start()
+        fake = FakeKlineServer(args.fake_port, Path(shadow["fake_log"]))
+        proxy = ProxyServer(args.proxy_port, Path(shadow["proxy_log"]))
+        fake.start()
+        proxy.start()
 
-    env = os.environ.copy()
-    env["PYTHONPATH"] = os.pathsep.join(
-        part for part in (shadow["src"], str(ROOT / "src"),
-                          env.get("PYTHONPATH", "")) if part)
-    env["MICROPROBE_TEST_CANON_SRC"] = shadow["canon_src"]
-    env["MICROPROBE_TEST_CANON_SCRIPT"] = shadow["canon_script"]
-    env["MICROPROBE_TEST_CONN_LOG"] = shadow["conn_log"]
-    env["MICROPROBE_MARKET_CACHE_DB"] = cache_info["cache_db"]
-    env["MICROPROBE_MARKET_STREAM_PID"] = str(workdir / "service.json")
-    env["MICROPROBE_STREAM_URL"] = f"http://127.0.0.1:{args.service_port}"
-    env["HTTP_PROXY"] = f"http://127.0.0.1:{args.proxy_port}"
-    env["HTTPS_PROXY"] = f"http://127.0.0.1:{args.proxy_port}"
-    env["NO_PROXY"] = "127.0.0.1,localhost,::1"
+        env = os.environ.copy()
+        env["PYTHONPATH"] = os.pathsep.join(
+            part for part in (shadow["src"], str(ROOT / "src"),
+                              env.get("PYTHONPATH", "")) if part)
+        env["MICROPROBE_TEST_CANON_SRC"] = shadow["canon_src"]
+        env["MICROPROBE_TEST_CANON_SCRIPT"] = shadow["canon_script"]
+        env["MICROPROBE_TEST_CONN_LOG"] = shadow["conn_log"]
+        env["MICROPROBE_MARKET_CACHE_DB"] = cache_info["cache_db"]
+        env["MICROPROBE_MARKET_STREAM_PID"] = str(workdir / "service.json")
+        env["MICROPROBE_STREAM_URL"] = f"http://127.0.0.1:{args.service_port}"
+        env["HTTP_PROXY"] = f"http://127.0.0.1:{args.proxy_port}"
+        env["HTTPS_PROXY"] = f"http://127.0.0.1:{args.proxy_port}"
+        env["NO_PROXY"] = "127.0.0.1,localhost,::1"
+    else:
+        # Modo public: no se toca el dashboard canonico. No se prepara cache
+        # temporal, ni shadow, ni sitecustomize, ni wrapper del explorador.
+        # El servicio se conecta directamente a Binance (--transport public),
+        # por tanto no se heredan los proxies de prueba ni el cache temporal.
+        env = os.environ.copy()
+        env["PYTHONPATH"] = str(ROOT / "src")
+        env["MICROPROBE_STREAM_URL"] = f"http://127.0.0.1:{args.service_port}"
+        for key in ("HTTP_PROXY", "HTTPS_PROXY", "NO_PROXY",
+                    "MICROPROBE_MARKET_CACHE_DB", "MARKET_EXPLORER_ROOT",
+                    "MICROPROBE_TEST_CANON_SRC", "MICROPROBE_TEST_CANON_SCRIPT",
+                    "MICROPROBE_TEST_CONN_LOG"):
+            env.pop(key, None)
 
     run_json = run_dir / "run.json"
     stderr_log = run_dir / "orchestrator.log"
@@ -1119,7 +1166,10 @@ def run_one(index: int, args: argparse.Namespace, workdir: Path,
     error: Optional[str] = None
     final_status = "FAIL"
     try:
-        verify = verify_dashboard(args.dashboard_url)
+        if transport == "local":
+            verify = verify_dashboard(args.dashboard_url)
+        else:
+            verify = verify_dashboard_public(args.dashboard_url)
         logs["dashboard_verify"] = verify
         durations["dashboard_verify"] = time.monotonic() - run_started
 
@@ -1369,17 +1419,23 @@ def run_one(index: int, args: argparse.Namespace, workdir: Path,
                 encoding="utf-8")
             run = json.loads(run_json.read_text(encoding="utf-8"))
 
-            proxy_attempts = read_jsonl(Path(shadow["proxy_log"]))
-            guard_attempts = read_jsonl(Path(shadow["conn_log"]))
+            if transport == "local":
+                proxy_attempts = read_jsonl(Path(shadow["proxy_log"]))
+                guard_attempts = read_jsonl(Path(shadow["conn_log"]))
+                all_fetch_local = all(
+                    item.get("fetch_allowed") is False
+                    and item.get("fetch_performed") is False
+                    for item in network["series"] if item.get("candles") is not None
+                ) and bool(network["series"])
+                catalog_local = all(
+                    (item.get("refresh") or {}).get("requests") == 0
+                    for item in network["catalog"]) and bool(network["catalog"])
+            else:
+                proxy_attempts = []
+                guard_attempts = []
+                all_fetch_local = None
+                catalog_local = None
             browser_external = list(network["external"])
-            all_fetch_local = all(
-                item.get("fetch_allowed") is False
-                and item.get("fetch_performed") is False
-                for item in network["series"] if item.get("candles") is not None
-            ) and bool(network["series"])
-            catalog_local = all(
-                (item.get("refresh") or {}).get("requests") == 0
-                for item in network["catalog"]) and bool(network["catalog"])
 
             checks = run.get("checks") or []
             failed = run.get("failed") or []
@@ -1396,10 +1452,14 @@ def run_one(index: int, args: argparse.Namespace, workdir: Path,
             socket2 = (health2 or {}).get("socket") or {}
             span_before = window_span_ms(window_before)
             span_after = window_span_ms(window_after)
+            if transport == "local":
+                zero_public = (not proxy_attempts and not guard_attempts
+                               and not browser_external and all_fetch_local
+                               and catalog_local)
+            else:
+                zero_public = not browser_external
             local_checks = {
-                "zero_public_attempts": (
-                    not proxy_attempts and not guard_attempts
-                    and not browser_external and all_fetch_local and catalog_local),
+                "zero_public_attempts": zero_public,
                 "all_series_local": all_fetch_local,
                 "catalog_local": catalog_local,
                 "one_pagination_request": len(earlier_requests) == 1,
@@ -1569,8 +1629,10 @@ def run_one(index: int, args: argparse.Namespace, workdir: Path,
                 pass
         except Exception:  # noqa: BLE001
             pass
-        fake.stop()
-        proxy.stop()
+        if fake is not None:
+            fake.stop()
+        if proxy is not None:
+            proxy.stop()
         log(f"run {index}: fin procedural={final_status}")
 
 
@@ -1600,6 +1662,10 @@ def main(argv: Optional[List[str]] = None) -> int:
     parser.add_argument("--out-dir", default=None)
     parser.add_argument("--workdir", default=str(DEFAULT_WORKDIR))
     parser.add_argument("--dashboard-url", default=DEFAULT_DASHBOARD)
+    parser.add_argument("--transport", choices=["local", "public"],
+                        default="local",
+                        help="local: entorno de prueba aislado; public: transporte real "
+                             "sin tocar el dashboard canonico (requiere autorizacion).")
     parser.add_argument("--service-port", type=int, default=DEFAULT_SERVICE_PORT)
     parser.add_argument("--fake-port", type=int, default=DEFAULT_FAKE_PORT)
     parser.add_argument("--proxy-port", type=int, default=DEFAULT_PROXY_PORT)
@@ -1639,7 +1705,7 @@ def main(argv: Optional[List[str]] = None) -> int:
         "generated_at_ms": now_ms(),
         "dashboard_url": args.dashboard_url,
         "service_port": args.service_port,
-        "transport": "loopback_test",
+        "transport": args.transport,
         "binance_accredited": False,
         "git_sha": git_sha(),
         "build_id": build_id(),
@@ -1649,8 +1715,14 @@ def main(argv: Optional[List[str]] = None) -> int:
                                     for item in results)),
         "limits_s": LIMITS,
         "notes": [
-            "Transporte local loopback: este arnes NO acredita recepcion de Binance.",
-            "El dashboard debe estar arrancado con el entorno de prueba documentado.",
+            ("Transporte local loopback: este arnes NO acredita recepcion de "
+             "Binance." if args.transport == "local"
+             else "Transporte public: el servicio se conecta a Binance; requiere "
+             "autorizacion humana explicita."),
+            ("El dashboard debe estar arrancado con el entorno de prueba "
+             "documentado." if args.transport == "local"
+             else "El dashboard canonico no es reconfigurado por el arnes; no se "
+             "traslada configuracion de prueba al dashboard."),
             "Cero peticiones publicas: proxy + guarda sitecustomize + allowlist del navegador.",
             "La ventana real reutiliza el mismo procedimiento con autorizacion humana.",
         ],

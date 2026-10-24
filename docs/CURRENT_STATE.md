@@ -3251,3 +3251,47 @@ monitor, paper, órdenes, pagos ni móvil.
 Binance**. El check `transport_origin` es `required=false` y queda `ok=false`;
 la acreditación real sigue exigiendo `--transport public` y autorización humana
 explícita. La actualización de Next.js 16.4.1 sigue **no ejecutada**.
+
+## Integración del parche de seguridad Next.js 16.4.1 (2026-10-24, SHA integrado `9991552`)
+
+**Rama integrada.** `review/o1-nextjs-16.4.1-security` hasta `9991552` se integró en
+`review/o1-funcional-v2-observacion` por **fast-forward** (destino `2703891` era ancestro
+del origen; no hubo divergencia, ni merge, ni reset, ni force). Push normal a
+`origin/review/o1-funcional-v2-observacion`.
+
+**Alcance publicado.** Solo dos archivos de dependencias más la evidencia del
+recorrido aislado:
+- `frontend/package.json`: `next` `^16.4.0` → `^16.4.1`.
+- `frontend/package-lock.json`: `next`, `@next/env` y los ocho `@next/swc-*` de
+  plataforma a `16.4.1` (82 líneas cambiadas; sin `npm audit fix`, sin `--force`,
+  sin upgrade general).
+- `docs/evidence/local-acceptance-2026-10-24-nextjs-16.4.1/`: un recorrido
+  automatizado PASS con transporte loopback, cero peticiones públicas.
+- No hay archivos ajenos ni cambios de producto en el commit de seguridad.
+
+**Verificación.** `npm ci` desde el lockfile (exit 0); `next build` completó al
+primer intento con Next.js 16.4.1 y sin `SecurityFatalError`;
+`npm audit --omit=dev` → 0 vulnerabilidades (2 altas restantes solo en la
+cadena de desarrollo: undici vía jsdom, zod vía plugins de ESLint). Pruebas de
+mercado/SSE/Paper Lab/Backtest ya acreditadas en el worktree (247 passed, 1
+skipped) y no repetidas por no haber cambios de producto.
+
+**Despliegue.** Instancia previa del dashboard en `127.0.0.1:3020` (PID 31312)
+detenida y reemplazada únicamente por esa instancia del proyecto (ahora PID
+21512), sin afectar monitor, backtest ni sesiones. Variables de ensayo y proxies
+eliminadas del entorno antes de arrancar.
+
+**Estado servido (canónico).** `BUILD_ID=r1bBrZkP65q5w79uMhJsF` (lítera, coincide
+en `/market-lab`); Next.js 16.4.1. Endpoints comprobados: `/market-lab` 200,
+`/paper-lab-live` 200, `/paper-lab` 200, `/backtest` 200.
+`/api/v1/market-contracts` devuelve 931 entradas desde caché; 
+`/api/v1/market-stream/status` HTTP 200 `available=false` (servicio de stream
+detenido, no se arrancó). Solo el puerto 3020 ocupado; 8791/8792/8793/8794
+libres, sin procesos residuales de ensayo.
+
+**Límites.** Sin conexiones públicas Binance, sin nueva ventana, sin monitor,
+sin paper prospectivo, sin órdenes, sin pagos, sin móvil, sin cambios
+económicos. Los DBs canónicos y los archivos ajenos se preservaron.
+
+**Estado del parche de seguridad (2026-10-24).** Parche de seguridad integrado
+y servido; aceptación real automatizada del gráfico pendiente.
