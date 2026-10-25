@@ -1,0 +1,149 @@
+{
+  "index": 1,
+  "started_at_ms": 1792935015350,
+  "finished_at_ms": 1792935135015,
+  "elapsed_s": 119.671,
+  "phases_s": {
+    "dashboard_verify": 0.447,
+    "minute_phase": 44.606,
+    "preflight": 0.007,
+    "page_ready": 6.397,
+    "acceptance": 49.119,
+    "pagination": 2.916,
+    "release": 0.02,
+    "reconnect": 3.399,
+    "down_notice": 2.461,
+    "run": 119.67
+  },
+  "marks_s": {
+    "minute_phase": 45.053,
+    "preflight": 47.389,
+    "service_up": 50.045,
+    "page_ready": 56.442,
+    "acceptance": 105.599,
+    "pagination": 108.515,
+    "release": 109.049,
+    "reconnect": 112.699,
+    "orchestrator_exit": 116.69,
+    "down_notice": 119.151
+  },
+  "run_json": "C:\\Users\\adonm\\AppData\\Local\\Temp\\opencode\\market-acceptance\\window-public-2026-10-25\\run-1\\run.json",
+  "verdict": "PASS",
+  "failed": [],
+  "missing": [],
+  "orchestrator_exit": 2,
+  "post_reconnect_signal_seen": true,
+  "transport_origin": "binance",
+  "binance_accredited": true,
+  "global_deadline_exceeded": false,
+  "procedural_pass": false,
+  "local_checks": {
+    "zero_public_attempts": true,
+    "rest_market_budget": false,
+    "preflight_ok": true,
+    "all_series_local": null,
+    "catalog_local": null,
+    "one_pagination_request": true,
+    "pagination_new_unique": true,
+    "pagination_grew": true,
+    "framing_preserved": true,
+    "recent_updates": true,
+    "service_active_at_capture2": true,
+    "hold_signal_seen": true,
+    "consumers_released": true,
+    "browser_reconnected": true,
+    "down_notice": true,
+    "down_cause": true,
+    "history_preserved": true,
+    "no_reload": true,
+    "clean_stop": true,
+    "canonical_dbs_unchanged": true,
+    "finalizer_pass": true,
+    "dom_checks": {
+      "dom_identity": true,
+      "dom_state_live": true,
+      "dom_update_fresh": true,
+      "dom_candles_grew": true,
+      "dom_pagination_preserved": true,
+      "dom_no_reload": true,
+      "dom_after_stop": true
+    },
+    "phases_within_limits": {
+      "minute_phase": true,
+      "preflight": true,
+      "page_ready": true,
+      "acceptance": true,
+      "pagination": true,
+      "release": true,
+      "reconnect": true,
+      "down_notice": true
+    },
+    "global_budget": true,
+    "global_deadline_respected": true
+  },
+  "public_attempts": {
+    "proxy": 0,
+    "guard": 0,
+    "browser": 0
+  },
+  "rest_market_requests": 3,
+  "residual_consumers": 0,
+  "clean_stop": true,
+  "harness_debug": {
+    "disconnect": true,
+    "reconnect": 2,
+    "wrapper_after_disconnect": {
+      "current": {
+        "url": "/api/v1/market-stream?symbol=BTCUSDT&interval=1m&from_ms=1792917122727&to_ms=1792935062727",
+        "readyState": 0,
+        "native": false,
+        "listeners": [
+          "hello",
+          "snapshot",
+          "candle",
+          "closed",
+          "status",
+          "gap",
+          "heartbeat",
+          "error"
+        ]
+      },
+      "instances": [
+        {
+          "url": "/api/v1/market-stream?symbol=BTCUSDT&interval=1m&from_ms=1792917122727&to_ms=1792935062727",
+          "readyState": 0,
+          "native": false
+        }
+      ]
+    },
+    "wrapper_after_reconnect": {
+      "current": {
+        "url": "/api/v1/market-stream?symbol=BTCUSDT&interval=1m&from_ms=1792917122727&to_ms=1792935062727",
+        "readyState": 0,
+        "native": true,
+        "listeners": [
+          "hello",
+          "snapshot",
+          "candle",
+          "closed",
+          "status",
+          "gap",
+          "heartbeat",
+          "error"
+        ]
+      },
+      "instances": [
+        {
+          "url": "/api/v1/market-stream?symbol=BTCUSDT&interval=1m&from_ms=1792917122727&to_ms=1792935062727",
+          "readyState": 0,
+          "native": true
+        }
+      ]
+    }
+  },
+  "cache": null,
+  "dashboard": {
+    "market_lab": 200,
+    "catalog_entries": 932
+  }
+}

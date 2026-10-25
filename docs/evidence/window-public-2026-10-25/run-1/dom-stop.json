@@ -1,0 +1,18 @@
+{
+  "captured_at_ms": 1792935134499,
+  "url": "http://127.0.0.1:3020/market-lab",
+  "identity": "Binance USD-M · BTCUSDT · 1m · market-stream/v1",
+  "state": "DESCONECTADO · servicio detenido",
+  "live": "no LIVE",
+  "updated": "2026-10-25T13:32:07.831Z · hace 6 s",
+  "count_text": "600 cargadas · 1 provisional",
+  "candles": 600,
+  "provisional": 1,
+  "down": "Servicio de datos detenido (TypeError: ECONNREFUSED): se conserva el histórico ya cargado y no se declara LIVE. El monitor del bot y las sesiones Paper Lab no dependen de este feed. Arranque manual: python scripts/market_stream_service.py --port 8791.",
+  "error": null,
+  "navigation_count": 1,
+  "reload_count": 0,
+  "chart_window": "Ventana 2026-10-25T08:35:00Z → 2026-10-25T13:32:00Z",
+  "chart_earlier": "Cargar anteriores",
+  "chart_coverage": "599 cerradas · 1 provisional · PARTIAL · sin huecos · 1 ausencia(s)"
+}

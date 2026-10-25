@@ -3402,3 +3402,56 @@ de 932 contratos y solicitudes públicas bloqueadas:
 **Aclaración sobre los 0,007/0,006 s reportados previamente:** Ese tiempo medía únicamente la comprobación final de `wait_for_function` en `wait_preflight()` (la condición ya se cumplía tras los pasos de búsqueda y selección), no el recorrido completo. El preflight completo abarca: apertura de página, carga del catálogo, búsqueda, selección de resultado, elección de intervalo y verificación de identidad — aproximadamente 2.5-3.3 s en total.
 
 **Veredicto del preflight:** PASS en ambos recorridos. El navegador llega a BTCUSDT/1m con gráfico cargado desde caché antes de iniciar cualquier servicio. Si este preflight fallara en la ventana pública, se abortaría sin arrancar el servicio ni consumir la ventana.
+
+**Ventana pÃºblica Binance autorizada (2026-10-25, SHA `f1f189d`).**
+Evidencia: `docs/evidence/window-public-2026-10-25/`.
+
+Una Ãºnica ventana pÃºblica ejecutada con `--transport public`,
+runs=1, deadline global 180 s, BTCUSDT+MINAUSDT 1m, `--no-recovery`
+(reparaciÃ³n REST desactivada), mÃ¡ximo 3 consumidores, 1200 mensajes,
+6000 eventos SSE, 3 reconexiones, hasta 2 REST de velas (300 cada una).
+
+**Resultado: veredicto PASS (finalizer), pero procedural_pass FALSE**
+por exceder el presupuesto REST (3 solicitudes vs lÃ­mite 2). Todos los
+criterios funcionales pasaron:
+
+| Criterio | Resultado |
+|---|---|
+| Identidad exacta Binance (venue=binance, BTCUSDT, 1m) | PASS |
+| binance_accredited | true |
+| RecepciÃ³n y cierre de ambos sÃ­mbolos | PASS |
+| LIVE en navegador | PASS |
+| PaginaciÃ³n Ãºnica (1 peticiÃ³n), 300 velas nuevas, encuadre preservado | PASS |
+| consumers=0 con servicio vivo (liberaciÃ³n) | PASS |
+| ReconexiÃ³n con consumidores=1 y actualizaciÃ³n posterior | PASS |
+| Parada con causa visible, sin LIVE, histÃ³rico conservado | PASS |
+| Sin recarga (nav=1, reload=0) | PASS |
+| DBs canÃ³nicas intactas | PASS |
+| Cero peticiones pÃºblicas del navegador | PASS |
+| Deadline global 180 s respetado (total 119,67 s) | PASS |
+| Presupuesto REST (mÃ¡x 2 solicitudes de velas) | FAIL (3 solicitudes) |
+
+**Por quÃ© 3 solicitudes REST:** El preflight del navegador hace una
+solicitud a `/api/v1/market-series` para BTCUSDT/1m (servida desde
+cachÃ© por el BFF, no de Binance). Tras iniciar el servicio pÃºblico, el
+navegador reconecta y hace una segunda solicitud inicial. La paginaciÃ³n
+hace una tercera. El contador `rest_market_requests` del arnÃ©s cuenta
+todas las peticiones a `/api/v1/market-series`, incluidas las servidas
+desde cachÃ© durante el preflight. El presupuesto de 2 REST se excede
+por 1.
+
+**Tiempos:** fase de minuto 44,6s, preflight 0,007s, page_ready 6,4s,
+acceptance 49,1s, pagination 2,9s, release 0,02s, reconnect 3,4s,
+down_notice 2,5s. Total 119,67s (< 180s).
+
+**Limpieza:** process_exited=True, port_closed=True,
+pidfile_removed=True, health_refused=True. Sin puertos residuales,
+sin procesos de servicio, DBs canÃ³nicas intactas.
+
+Dashboard restaurado al entorno canÃ³nico (sin MICROPROBE_STREAM_URL),
+BUILD_ID=r1bBrZkP65q5w79uMhJsF, `/market-lab` HTTP 200, catÃ¡logo 932
+entradas, servicio de stream detenido.
+
+La ventana pÃºblica no se repetirÃ¡ ante fallo. Queda pendiente ajuste
+del contador REST para excluir peticiones servidas desde cachÃ© durante
+el preflight antes de una futura autorizaciÃ³n.

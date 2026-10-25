@@ -1,0 +1,3190 @@
+{
+  "contract_version": "market-stream/v1",
+  "mode": "LIVE_WINDOW_EXECUTE",
+  "authorization": "AUTORIZADA POR EL OPERADOR",
+  "started_at_ms": 1792935063188,
+  "finished_at_ms": 1792935130969,
+  "duration_s": 67.78,
+  "target": {
+    "symbols": [
+      "BTCUSDT",
+      "MINAUSDT"
+    ],
+    "interval": "1m",
+    "primary": "BTCUSDT",
+    "bars": 300,
+    "port": 8792,
+    "cadence": {
+      "updates": 115,
+      "median_delta_ms": 457,
+      "min_delta_ms": 252,
+      "max_delta_ms": 9329
+    }
+  },
+  "transport": {
+    "origin": "binance",
+    "base_url": null
+  },
+  "budget": {
+    "duration_s": 75.0,
+    "hold_after_acceptance_s": 20.0,
+    "hold_signal": "C:\\Users\\adonm\\AppData\\Local\\Temp\\opencode\\market-acceptance\\hold-1.signal",
+    "dashboard_url": "http://127.0.0.1:3020",
+    "max_messages": 1200,
+    "max_events": 6000,
+    "max_reconnects": 3,
+    "ws_connections": 1,
+    "sse_consumers": {
+      "service": 1,
+      "bff": 1,
+      "browser": 1,
+      "total": 3,
+      "service_symbols": [
+        "MINAUSDT"
+      ],
+      "bff_symbols": [
+        "BTCUSDT"
+      ],
+      "per_stream": {
+        "MINAUSDT": 1,
+        "BTCUSDT": 2
+      }
+    },
+    "browser_consumers": 1,
+    "max_subscriptions": 6,
+    "max_consumers_per_stream": 4,
+    "bars_per_consumer": 300,
+    "await_browser_consumers": 1,
+    "await_browser_timeout_s": 45.0,
+    "release_browser": true,
+    "release_timeout_s": 15.0,
+    "reconnect_timeout_s": 15.0,
+    "rest": "snapshot desde el almacen existente (allow_fetch=False); paginacion manual 1 peticion <=1000 velas; reparacion de huecos <=2 paginas x 500 velas y <=6/min",
+    "persistence": "NONE (anillo en memoria, 300 velas cerradas por stream)",
+    "ring_size": 300,
+    "bff": true
+  },
+  "preflight": {
+    "ok": true,
+    "error": null,
+    "port_free": true,
+    "dashboard": {
+      "status": 200,
+      "error": null,
+      "available": false
+    },
+    "build": {
+      "file": "r1bBrZkP65q5w79uMhJsF",
+      "page_status": 200,
+      "served": true
+    },
+    "db_before": {
+      "canonical": [
+        {
+          "path": "C:\\proyectos\\binance-futures-microstructure-bot\\data\\microprobe.db",
+          "exists": true,
+          "size": 238927872,
+          "mtime_ms": 1792122387932
+        },
+        {
+          "path": "C:\\proyectos\\binance-futures-microstructure-bot\\data\\historical\\historical.db",
+          "exists": true,
+          "size": 19181568,
+          "mtime_ms": 1792122387393
+        }
+      ],
+      "cache": {
+        "path": "C:\\proyectos\\binance-futures-microstructure-bot\\data\\market-cache\\market_cache.db",
+        "exists": true,
+        "size": 1683456,
+        "mtime_ms": 1792934984942
+      }
+    }
+  },
+  "service": {
+    "pid": 28824,
+    "port": 8792,
+    "started": true,
+    "health_before_consumer": {
+      "connected": false,
+      "attempts": 0,
+      "reconnects": 0,
+      "last_error": null,
+      "consumers": 0,
+      "streams": [],
+      "counters": {},
+      "generated_at_ms": 1792935065287
+    },
+    "health_samples": [
+      {
+        "connected": false,
+        "attempts": 0,
+        "reconnects": 0,
+        "last_error": null,
+        "consumers": 3,
+        "streams": [
+          {
+            "symbol": "BTCUSDT",
+            "interval": "1m",
+            "consumers": 2,
+            "state": "CONNECTING",
+            "live": false,
+            "age_ms": null,
+            "gaps": 0,
+            "recoveries": 0
+          },
+          {
+            "symbol": "MINAUSDT",
+            "interval": "1m",
+            "consumers": 1,
+            "state": "CONNECTING",
+            "live": false,
+            "age_ms": null,
+            "gaps": 0,
+            "recoveries": 0
+          }
+        ],
+        "counters": {},
+        "generated_at_ms": 1792935067320,
+        "t_ms": 1792935067321
+      },
+      {
+        "connected": false,
+        "attempts": 0,
+        "reconnects": 0,
+        "last_error": null,
+        "consumers": 3,
+        "streams": [
+          {
+            "symbol": "BTCUSDT",
+            "interval": "1m",
+            "consumers": 2,
+            "state": "CONNECTING",
+            "live": false,
+            "age_ms": null,
+            "gaps": 0,
+            "recoveries": 0
+          },
+          {
+            "symbol": "MINAUSDT",
+            "interval": "1m",
+            "consumers": 1,
+            "state": "CONNECTING",
+            "live": false,
+            "age_ms": null,
+            "gaps": 0,
+            "recoveries": 0
+          }
+        ],
+        "counters": {},
+        "generated_at_ms": 1792935069378,
+        "t_ms": 1792935069379
+      },
+      {
+        "connected": true,
+        "attempts": 1,
+        "reconnects": 0,
+        "last_error": null,
+        "consumers": 3,
+        "streams": [
+          {
+            "symbol": "BTCUSDT",
+            "interval": "1m",
+            "consumers": 2,
+            "state": "CONNECTING",
+            "live": false,
+            "age_ms": null,
+            "gaps": 0,
+            "recoveries": 0
+          },
+          {
+            "symbol": "MINAUSDT",
+            "interval": "1m",
+            "consumers": 1,
+            "state": "RECEIVING",
+            "live": true,
+            "age_ms": 4,
+            "gaps": 0,
+            "recoveries": 0
+          }
+        ],
+        "counters": {
+          "messages": 1,
+          "applied": 1
+        },
+        "generated_at_ms": 1792935071409,
+        "t_ms": 1792935071410
+      },
+      {
+        "connected": true,
+        "attempts": 1,
+        "reconnects": 0,
+        "last_error": null,
+        "consumers": 3,
+        "streams": [
+          {
+            "symbol": "BTCUSDT",
+            "interval": "1m",
+            "consumers": 2,
+            "state": "RECEIVING",
+            "live": true,
+            "age_ms": 1016,
+            "gaps": 0,
+            "recoveries": 0
+          },
+          {
+            "symbol": "MINAUSDT",
+            "interval": "1m",
+            "consumers": 1,
+            "state": "RECEIVING",
+            "live": true,
+            "age_ms": 2536,
+            "gaps": 0,
+            "recoveries": 0
+          }
+        ],
+        "counters": {
+          "messages": 5,
+          "applied": 5
+        },
+        "generated_at_ms": 1792935073941,
+        "t_ms": 1792935073942
+      },
+      {
+        "connected": true,
+        "attempts": 1,
+        "reconnects": 0,
+        "last_error": null,
+        "consumers": 3,
+        "streams": [
+          {
+            "symbol": "BTCUSDT",
+            "interval": "1m",
+            "consumers": 2,
+            "state": "RECEIVING",
+            "live": true,
+            "age_ms": 25,
+            "gaps": 0,
+            "recoveries": 0
+          },
+          {
+            "symbol": "MINAUSDT",
+            "interval": "1m",
+            "consumers": 1,
+            "state": "RECEIVING",
+            "live": true,
+            "age_ms": 67,
+            "gaps": 0,
+            "recoveries": 0
+          }
+        ],
+        "counters": {
+          "messages": 11,
+          "applied": 11
+        },
+        "generated_at_ms": 1792935075991,
+        "t_ms": 1792935075992
+      },
+      {
+        "connected": true,
+        "attempts": 1,
+        "reconnects": 0,
+        "last_error": null,
+        "consumers": 3,
+        "streams": [
+          {
+            "symbol": "BTCUSDT",
+            "interval": "1m",
+            "consumers": 2,
+            "state": "RECEIVING",
+            "live": true,
+            "age_ms": 337,
+            "gaps": 0,
+            "recoveries": 0
+          },
+          {
+            "symbol": "MINAUSDT",
+            "interval": "1m",
+            "consumers": 1,
+            "state": "RECEIVING",
+            "live": true,
+            "age_ms": 24,
+            "gaps": 0,
+            "recoveries": 0
+          }
+        ],
+        "counters": {
+          "messages": 19,
+          "applied": 19
+        },
+        "generated_at_ms": 1792935078236,
+        "t_ms": 1792935078237
+      },
+      {
+        "connected": true,
+        "attempts": 1,
+        "reconnects": 0,
+        "last_error": null,
+        "consumers": 3,
+        "streams": [
+          {
+            "symbol": "BTCUSDT",
+            "interval": "1m",
+            "consumers": 2,
+            "state": "RECEIVING",
+            "live": true,
+            "age_ms": 173,
+            "gaps": 0,
+            "recoveries": 0
+          },
+          {
+            "symbol": "MINAUSDT",
+            "interval": "1m",
+            "consumers": 1,
+            "state": "RECEIVING",
+            "live": true,
+            "age_ms": 26,
+            "gaps": 0,
+            "recoveries": 0
+          }
+        ],
+        "counters": {
+          "messages": 25,
+          "applied": 25
+        },
+        "generated_at_ms": 1792935080318,
+        "t_ms": 1792935080319
+      },
+      {
+        "connected": true,
+        "attempts": 1,
+        "reconnects": 0,
+        "last_error": null,
+        "consumers": 3,
+        "streams": [
+          {
+            "symbol": "BTCUSDT",
+            "interval": "1m",
+            "consumers": 2,
+            "state": "RECEIVING",
+            "live": true,
+            "age_ms": 3,
+            "gaps": 0,
+            "recoveries": 0
+          },
+          {
+            "symbol": "MINAUSDT",
+            "interval": "1m",
+            "consumers": 1,
+            "state": "RECEIVING",
+            "live": true,
+            "age_ms": 2019,
+            "gaps": 0,
+            "recoveries": 0
+          }
+        ],
+        "counters": {
+          "messages": 31,
+          "applied": 31
+        },
+        "generated_at_ms": 1792935082572,
+        "t_ms": 1792935082573
+      },
+      {
+        "connected": true,
+        "attempts": 1,
+        "reconnects": 0,
+        "last_error": null,
+        "consumers": 3,
+        "streams": [
+          {
+            "symbol": "BTCUSDT",
+            "interval": "1m",
+            "consumers": 2,
+            "state": "RECEIVING",
+            "live": true,
+            "age_ms": 1157,
+            "gaps": 0,
+            "recoveries": 0
+          },
+          {
+            "symbol": "MINAUSDT",
+            "interval": "1m",
+            "consumers": 1,
+            "state": "RECEIVING",
+            "live": true,
+            "age_ms": 24,
+            "gaps": 0,
+            "recoveries": 0
+          }
+        ],
+        "counters": {
+          "messages": 36,
+          "applied": 36
+        },
+        "generated_at_ms": 1792935084697,
+        "t_ms": 1792935084698
+      },
+      {
+        "connected": true,
+        "attempts": 1,
+        "reconnects": 0,
+        "last_error": null,
+        "consumers": 3,
+        "streams": [
+          {
+            "symbol": "BTCUSDT",
+            "interval": "1m",
+            "consumers": 2,
+            "state": "RECEIVING",
+            "live": true,
+            "age_ms": 3,
+            "gaps": 0,
+            "recoveries": 0
+          },
+          {
+            "symbol": "MINAUSDT",
+            "interval": "1m",
+            "consumers": 1,
+            "state": "RECEIVING",
+            "live": true,
+            "age_ms": 2174,
+            "gaps": 0,
+            "recoveries": 0
+          }
+        ],
+        "counters": {
+          "messages": 41,
+          "applied": 41
+        },
+        "generated_at_ms": 1792935086847,
+        "t_ms": 1792935086848
+      },
+      {
+        "connected": true,
+        "attempts": 1,
+        "reconnects": 0,
+        "last_error": null,
+        "consumers": 3,
+        "streams": [
+          {
+            "symbol": "BTCUSDT",
+            "interval": "1m",
+            "consumers": 2,
+            "state": "RECEIVING",
+            "live": true,
+            "age_ms": 14,
+            "gaps": 0,
+            "recoveries": 0
+          },
+          {
+            "symbol": "MINAUSDT",
+            "interval": "1m",
+            "consumers": 1,
+            "state": "RECEIVING",
+            "live": true,
+            "age_ms": 1566,
+            "gaps": 0,
+            "recoveries": 0
+          }
+        ],
+        "counters": {
+          "messages": 48,
+          "applied": 48
+        },
+        "generated_at_ms": 1792935088910,
+        "t_ms": 1792935088911
+      },
+      {
+        "connected": true,
+        "attempts": 1,
+        "reconnects": 0,
+        "last_error": null,
+        "consumers": 3,
+        "streams": [
+          {
+            "symbol": "BTCUSDT",
+            "interval": "1m",
+            "consumers": 2,
+            "state": "RECEIVING",
+            "live": true,
+            "age_ms": 20,
+            "gaps": 0,
+            "recoveries": 0
+          },
+          {
+            "symbol": "MINAUSDT",
+            "interval": "1m",
+            "consumers": 1,
+            "state": "RECEIVING",
+            "live": true,
+            "age_ms": 782,
+            "gaps": 0,
+            "recoveries": 0
+          }
+        ],
+        "counters": {
+          "messages": 55,
+          "applied": 55
+        },
+        "generated_at_ms": 1792935091206,
+        "t_ms": 1792935091207
+      },
+      {
+        "connected": true,
+        "attempts": 1,
+        "reconnects": 0,
+        "last_error": null,
+        "consumers": 3,
+        "streams": [
+          {
+            "symbol": "BTCUSDT",
+            "interval": "1m",
+            "consumers": 2,
+            "state": "RECEIVING",
+            "live": true,
+            "age_ms": 411,
+            "gaps": 0,
+            "recoveries": 0
+          },
+          {
+            "symbol": "MINAUSDT",
+            "interval": "1m",
+            "consumers": 1,
+            "state": "RECEIVING",
+            "live": true,
+            "age_ms": 2,
+            "gaps": 0,
+            "recoveries": 0
+          }
+        ],
+        "counters": {
+          "messages": 59,
+          "applied": 59
+        },
+        "generated_at_ms": 1792935093209,
+        "t_ms": 1792935093209
+      },
+      {
+        "connected": true,
+        "attempts": 1,
+        "reconnects": 0,
+        "last_error": null,
+        "consumers": 3,
+        "streams": [
+          {
+            "symbol": "BTCUSDT",
+            "interval": "1m",
+            "consumers": 2,
+            "state": "RECEIVING",
+            "live": true,
+            "age_ms": 22,
+            "gaps": 0,
+            "recoveries": 0
+          },
+          {
+            "symbol": "MINAUSDT",
+            "interval": "1m",
+            "consumers": 1,
+            "state": "RECEIVING",
+            "live": true,
+            "age_ms": 2944,
+            "gaps": 0,
+            "recoveries": 0
+          }
+        ],
+        "counters": {
+          "messages": 65,
+          "applied": 65
+        },
+        "generated_at_ms": 1792935096151,
+        "t_ms": 1792935096152
+      },
+      {
+        "connected": true,
+        "attempts": 1,
+        "reconnects": 0,
+        "last_error": null,
+        "consumers": 3,
+        "streams": [
+          {
+            "symbol": "BTCUSDT",
+            "interval": "1m",
+            "consumers": 2,
+            "state": "RECEIVING",
+            "live": true,
+            "age_ms": 422,
+            "gaps": 0,
+            "recoveries": 0
+          },
+          {
+            "symbol": "MINAUSDT",
+            "interval": "1m",
+            "consumers": 1,
+            "state": "RECEIVING",
+            "live": true,
+            "age_ms": 5026,
+            "gaps": 0,
+            "recoveries": 0
+          }
+        ],
+        "counters": {
+          "messages": 69,
+          "applied": 69
+        },
+        "generated_at_ms": 1792935098233,
+        "t_ms": 1792935098234
+      },
+      {
+        "connected": true,
+        "attempts": 1,
+        "reconnects": 0,
+        "last_error": null,
+        "consumers": 3,
+        "streams": [
+          {
+            "symbol": "BTCUSDT",
+            "interval": "1m",
+            "consumers": 2,
+            "state": "RECEIVING",
+            "live": true,
+            "age_ms": 21,
+            "gaps": 0,
+            "recoveries": 0
+          },
+          {
+            "symbol": "MINAUSDT",
+            "interval": "1m",
+            "consumers": 1,
+            "state": "RECEIVING",
+            "live": true,
+            "age_ms": 7432,
+            "gaps": 0,
+            "recoveries": 0
+          }
+        ],
+        "counters": {
+          "messages": 73,
+          "applied": 73
+        },
+        "generated_at_ms": 1792935100639,
+        "t_ms": 1792935100640
+      },
+      {
+        "connected": true,
+        "attempts": 1,
+        "reconnects": 0,
+        "last_error": null,
+        "consumers": 3,
+        "streams": [
+          {
+            "symbol": "BTCUSDT",
+            "interval": "1m",
+            "consumers": 2,
+            "state": "RECEIVING",
+            "live": true,
+            "age_ms": 1014,
+            "gaps": 0,
+            "recoveries": 0
+          },
+          {
+            "symbol": "MINAUSDT",
+            "interval": "1m",
+            "consumers": 1,
+            "state": "RECEIVING",
+            "live": true,
+            "age_ms": 1015,
+            "gaps": 0,
+            "recoveries": 0
+          }
+        ],
+        "counters": {
+          "messages": 78,
+          "applied": 78
+        },
+        "generated_at_ms": 1792935103551,
+        "t_ms": 1792935103552
+      },
+      {
+        "connected": true,
+        "attempts": 1,
+        "reconnects": 0,
+        "last_error": null,
+        "consumers": 3,
+        "streams": [
+          {
+            "symbol": "BTCUSDT",
+            "interval": "1m",
+            "consumers": 2,
+            "state": "RECEIVING",
+            "live": true,
+            "age_ms": 25,
+            "gaps": 0,
+            "recoveries": 0
+          },
+          {
+            "symbol": "MINAUSDT",
+            "interval": "1m",
+            "consumers": 1,
+            "state": "RECEIVING",
+            "live": true,
+            "age_ms": 3215,
+            "gaps": 0,
+            "recoveries": 0
+          }
+        ],
+        "counters": {
+          "messages": 80,
+          "applied": 80
+        },
+        "generated_at_ms": 1792935105751,
+        "t_ms": 1792935105752
+      },
+      {
+        "connected": true,
+        "attempts": 1,
+        "reconnects": 0,
+        "last_error": null,
+        "consumers": 3,
+        "streams": [
+          {
+            "symbol": "BTCUSDT",
+            "interval": "1m",
+            "consumers": 2,
+            "state": "RECEIVING",
+            "live": true,
+            "age_ms": 22,
+            "gaps": 0,
+            "recoveries": 0
+          },
+          {
+            "symbol": "MINAUSDT",
+            "interval": "1m",
+            "consumers": 1,
+            "state": "RECEIVING",
+            "live": true,
+            "age_ms": 767,
+            "gaps": 0,
+            "recoveries": 0
+          }
+        ],
+        "counters": {
+          "messages": 85,
+          "applied": 85
+        },
+        "generated_at_ms": 1792935108120,
+        "t_ms": 1792935108121
+      },
+      {
+        "connected": true,
+        "attempts": 1,
+        "reconnects": 0,
+        "last_error": null,
+        "consumers": 3,
+        "streams": [
+          {
+            "symbol": "BTCUSDT",
+            "interval": "1m",
+            "consumers": 2,
+            "state": "RECEIVING",
+            "live": true,
+            "age_ms": 3,
+            "gaps": 0,
+            "recoveries": 0
+          },
+          {
+            "symbol": "MINAUSDT",
+            "interval": "1m",
+            "consumers": 1,
+            "state": "RECEIVING",
+            "live": true,
+            "age_ms": 2907,
+            "gaps": 0,
+            "recoveries": 0
+          }
+        ],
+        "counters": {
+          "messages": 89,
+          "applied": 89
+        },
+        "generated_at_ms": 1792935110260,
+        "t_ms": 1792935110261
+      },
+      {
+        "connected": true,
+        "attempts": 1,
+        "reconnects": 0,
+        "last_error": null,
+        "consumers": 3,
+        "streams": [
+          {
+            "symbol": "BTCUSDT",
+            "interval": "1m",
+            "consumers": 2,
+            "state": "RECEIVING",
+            "live": true,
+            "age_ms": 724,
+            "gaps": 0,
+            "recoveries": 0
+          },
+          {
+            "symbol": "MINAUSDT",
+            "interval": "1m",
+            "consumers": 1,
+            "state": "RECEIVING",
+            "live": true,
+            "age_ms": 5033,
+            "gaps": 0,
+            "recoveries": 0
+          }
+        ],
+        "counters": {
+          "messages": 92,
+          "applied": 92
+        },
+        "generated_at_ms": 1792935112386,
+        "t_ms": 1792935112387
+      },
+      {
+        "connected": true,
+        "attempts": 1,
+        "reconnects": 0,
+        "last_error": null,
+        "consumers": 3,
+        "streams": [
+          {
+            "symbol": "BTCUSDT",
+            "interval": "1m",
+            "consumers": 2,
+            "state": "RECEIVING",
+            "live": true,
+            "age_ms": 3,
+            "gaps": 0,
+            "recoveries": 0
+          },
+          {
+            "symbol": "MINAUSDT",
+            "interval": "1m",
+            "consumers": 1,
+            "state": "RECEIVING",
+            "live": true,
+            "age_ms": 1795,
+            "gaps": 0,
+            "recoveries": 0
+          }
+        ],
+        "counters": {
+          "messages": 99,
+          "applied": 99
+        },
+        "generated_at_ms": 1792935114446,
+        "t_ms": 1792935114447
+      },
+      {
+        "connected": true,
+        "attempts": 1,
+        "reconnects": 0,
+        "last_error": null,
+        "consumers": 3,
+        "streams": [
+          {
+            "symbol": "BTCUSDT",
+            "interval": "1m",
+            "consumers": 2,
+            "state": "RECEIVING",
+            "live": true,
+            "age_ms": 23,
+            "gaps": 0,
+            "recoveries": 0
+          },
+          {
+            "symbol": "MINAUSDT",
+            "interval": "1m",
+            "consumers": 1,
+            "state": "RECEIVING",
+            "live": true,
+            "age_ms": 2493,
+            "gaps": 0,
+            "recoveries": 0
+          }
+        ],
+        "counters": {
+          "messages": 104,
+          "applied": 104
+        },
+        "generated_at_ms": 1792935116981,
+        "t_ms": 1792935116981
+      },
+      {
+        "connected": true,
+        "attempts": 1,
+        "reconnects": 0,
+        "last_error": null,
+        "consumers": 3,
+        "streams": [
+          {
+            "symbol": "BTCUSDT",
+            "interval": "1m",
+            "consumers": 2,
+            "state": "RECEIVING",
+            "live": true,
+            "age_ms": 2,
+            "gaps": 0,
+            "recoveries": 0
+          },
+          {
+            "symbol": "MINAUSDT",
+            "interval": "1m",
+            "consumers": 1,
+            "state": "RECEIVING",
+            "live": true,
+            "age_ms": 4639,
+            "gaps": 0,
+            "recoveries": 0
+          }
+        ],
+        "counters": {
+          "messages": 110,
+          "applied": 110
+        },
+        "generated_at_ms": 1792935119126,
+        "t_ms": 1792935119127
+      },
+      {
+        "connected": true,
+        "attempts": 1,
+        "reconnects": 0,
+        "last_error": null,
+        "consumers": 3,
+        "streams": [
+          {
+            "symbol": "BTCUSDT",
+            "interval": "1m",
+            "consumers": 2,
+            "state": "RECEIVING",
+            "live": true,
+            "age_ms": 198,
+            "gaps": 0,
+            "recoveries": 0
+          },
+          {
+            "symbol": "MINAUSDT",
+            "interval": "1m",
+            "consumers": 1,
+            "state": "RECEIVING",
+            "live": true,
+            "age_ms": 7458,
+            "gaps": 0,
+            "recoveries": 0
+          }
+        ],
+        "counters": {
+          "messages": 115,
+          "applied": 115,
+          "closed": 1
+        },
+        "generated_at_ms": 1792935121945,
+        "t_ms": 1792935121946
+      },
+      {
+        "connected": true,
+        "attempts": 1,
+        "reconnects": 0,
+        "last_error": null,
+        "consumers": 3,
+        "streams": [
+          {
+            "symbol": "BTCUSDT",
+            "interval": "1m",
+            "consumers": 2,
+            "state": "RECEIVING",
+            "live": true,
+            "age_ms": 783,
+            "gaps": 0,
+            "recoveries": 0
+          },
+          {
+            "symbol": "MINAUSDT",
+            "interval": "1m",
+            "consumers": 1,
+            "state": "RECEIVING",
+            "live": true,
+            "age_ms": 12,
+            "gaps": 0,
+            "recoveries": 0
+          }
+        ],
+        "counters": {
+          "messages": 121,
+          "applied": 121,
+          "closed": 2
+        },
+        "generated_at_ms": 1792935124356,
+        "t_ms": 1792935124357
+      }
+    ],
+    "browser_wait": {
+      "expected": 1,
+      "samples": [
+        {
+          "t_ms": 1792935065290,
+          "consumers": 0,
+          "streams": [],
+          "ready": false
+        },
+        {
+          "t_ms": 1792935066299,
+          "consumers": 1,
+          "streams": [
+            {
+              "symbol": "BTCUSDT",
+              "consumers": 1
+            }
+          ],
+          "ready": true
+        },
+        {
+          "t_ms": 1792935067303,
+          "consumers": 1,
+          "streams": [
+            {
+              "symbol": "BTCUSDT",
+              "consumers": 1
+            }
+          ],
+          "ready": true
+        }
+      ],
+      "ok": true,
+      "waited_ms": 2014
+    },
+    "health_after_browser_wait": {
+      "connected": false,
+      "attempts": 0,
+      "reconnects": 0,
+      "last_error": null,
+      "consumers": 1,
+      "streams": [
+        {
+          "symbol": "BTCUSDT",
+          "interval": "1m",
+          "consumers": 1,
+          "state": "CONNECTING",
+          "live": false,
+          "age_ms": null,
+          "gaps": 0,
+          "recoveries": 0
+        }
+      ],
+      "counters": {},
+      "generated_at_ms": 1792935067304
+    },
+    "health_before_close": {
+      "connected": true,
+      "attempts": 1,
+      "reconnects": 0,
+      "last_error": null,
+      "consumers": 3,
+      "streams": [
+        {
+          "symbol": "BTCUSDT",
+          "interval": "1m",
+          "consumers": 2,
+          "state": "RECEIVING",
+          "live": true,
+          "age_ms": 799,
+          "gaps": 0,
+          "recoveries": 0
+        },
+        {
+          "symbol": "MINAUSDT",
+          "interval": "1m",
+          "consumers": 1,
+          "state": "RECEIVING",
+          "live": true,
+          "age_ms": 28,
+          "gaps": 0,
+          "recoveries": 0
+        }
+      ],
+      "counters": {
+        "messages": 121,
+        "applied": 121,
+        "closed": 2
+      },
+      "generated_at_ms": 1792935124372
+    },
+    "health_after_close": {
+      "connected": true,
+      "attempts": 1,
+      "reconnects": 0,
+      "last_error": null,
+      "consumers": 0,
+      "streams": [
+        {
+          "symbol": "BTCUSDT",
+          "interval": "1m",
+          "consumers": 0,
+          "state": "RECEIVING",
+          "live": true,
+          "age_ms": 1070,
+          "gaps": 0,
+          "recoveries": 0
+        },
+        {
+          "symbol": "MINAUSDT",
+          "interval": "1m",
+          "consumers": 0,
+          "state": "RECEIVING",
+          "live": true,
+          "age_ms": 299,
+          "gaps": 0,
+          "recoveries": 0
+        }
+      ],
+      "counters": {
+        "messages": 121,
+        "applied": 121,
+        "closed": 2
+      },
+      "generated_at_ms": 1792935124643
+    },
+    "health_after_reconnect": {
+      "connected": true,
+      "attempts": 1,
+      "reconnects": 0,
+      "last_error": null,
+      "consumers": 1,
+      "streams": [
+        {
+          "symbol": "BTCUSDT",
+          "interval": "1m",
+          "consumers": 1,
+          "state": "RECEIVING",
+          "live": true,
+          "age_ms": 3796,
+          "gaps": 0,
+          "recoveries": 0
+        },
+        {
+          "symbol": "MINAUSDT",
+          "interval": "1m",
+          "consumers": 0,
+          "state": "RECEIVING",
+          "live": true,
+          "age_ms": 3025,
+          "gaps": 0,
+          "recoveries": 0
+        }
+      ],
+      "counters": {
+        "messages": 121,
+        "applied": 121,
+        "closed": 2,
+        "unrouted": 7
+      },
+      "generated_at_ms": 1792935127369
+    },
+    "after_stop": {
+      "process_exited": true,
+      "exit_code": 0,
+      "port_closed": true,
+      "pidfile_removed": true,
+      "health_refused": true
+    },
+    "stderr_tail": "",
+    "banner": {
+      "service": "market-stream-service/v1",
+      "pid": 28824,
+      "url": "http://127.0.0.1:8792",
+      "contract_version": "market-stream/v1",
+      "transport": {
+        "mode": "public",
+        "base_url": null
+      }
+    },
+    "hold_signal_seen": true,
+    "hold_elapsed_ms": 3402,
+    "release_wait_ms": 271,
+    "consumers_expected_after_close": 0,
+    "consumers_released": true,
+    "reconnect_wait_ms": 2725,
+    "consumers_reconnected": true,
+    "post_reconnect_signal_seen": true,
+    "post_reconnect_hold_ms": 734,
+    "shutdown": {
+      "status": 200,
+      "error": null
+    }
+  },
+  "consumers": {
+    "service": {
+      "hello": [
+        {
+          "recv_ms": 1792935067318,
+          "identity": {
+            "symbol": "MINAUSDT",
+            "symbol_canonical": "MINAUSDT",
+            "interval": "1m",
+            "venue": "binance",
+            "market_type": "usd_m_futures",
+            "source": "ws_kline"
+          },
+          "policy": {
+            "fresh_ms": 10000,
+            "stale_ms": 60000,
+            "live_requires": "RECEIVING + socket + identidad + age<=fresh_ms"
+          },
+          "limits": {
+            "max_subscriptions": 6,
+            "max_consumers": 12,
+            "max_consumers_per_stream": 4,
+            "ring_size": 300,
+            "pending_max": 256,
+            "consumer_queue_max": 256,
+            "fresh_ms": 10000,
+            "stale_ms": 60000,
+            "recovery_max_pages": 2,
+            "recovery_page_limit": 500,
+            "recovery_max_per_minute": 6,
+            "persistence": "MEMORY_ONLY"
+          }
+        }
+      ],
+      "snapshot": {
+        "recv_ms": 1792935067361,
+        "symbol": "MINAUSDT",
+        "interval": "1m",
+        "candles": 0,
+        "observed": {
+          "start_ms": null,
+          "end_ms": null
+        },
+        "coverage": {
+          "state": "NO_COVERAGE",
+          "observed_start_ms": null,
+          "observed_end_ms": null,
+          "expected_bars": 0,
+          "actual_bars": 0,
+          "gap_count": null,
+          "gaps": [],
+          "absent_ranges": [
+            [
+              1792917127308,
+              1792935067308
+            ]
+          ],
+          "exhausted_before": false,
+          "earliest_available_ms": null,
+          "history_end_ms": null,
+          "note": "Sin velas almacenadas en el rango solicitado."
+        },
+        "volume_available": false,
+        "source": "cache"
+      },
+      "snapshots": {
+        "MINAUSDT": {
+          "recv_ms": 1792935067361,
+          "symbol": "MINAUSDT",
+          "interval": "1m",
+          "candles": 0,
+          "observed": {
+            "start_ms": null,
+            "end_ms": null
+          },
+          "coverage": {
+            "state": "NO_COVERAGE",
+            "observed_start_ms": null,
+            "observed_end_ms": null,
+            "expected_bars": 0,
+            "actual_bars": 0,
+            "gap_count": null,
+            "gaps": [],
+            "absent_ranges": [
+              [
+                1792917127308,
+                1792935067308
+              ]
+            ],
+            "exhausted_before": false,
+            "earliest_available_ms": null,
+            "history_end_ms": null,
+            "note": "Sin velas almacenadas en el rango solicitado."
+          },
+          "volume_available": false,
+          "source": "cache"
+        }
+      },
+      "events": [
+        {
+          "event": "candle",
+          "recv_ms": 1792935071406,
+          "symbol": "MINAUSDT",
+          "interval": "1m",
+          "open_time_ms": 1792935060000,
+          "close_time_ms": null,
+          "closed": false,
+          "event_ms": 1792935071245,
+          "received_ms": 1792935071405,
+          "seq": 1
+        },
+        {
+          "event": "candle",
+          "recv_ms": 1792935075925,
+          "symbol": "MINAUSDT",
+          "interval": "1m",
+          "open_time_ms": 1792935060000,
+          "close_time_ms": null,
+          "closed": false,
+          "event_ms": 1792935075763,
+          "received_ms": 1792935075924,
+          "seq": 2
+        },
+        {
+          "event": "candle",
+          "recv_ms": 1792935076286,
+          "symbol": "MINAUSDT",
+          "interval": "1m",
+          "open_time_ms": 1792935060000,
+          "close_time_ms": null,
+          "closed": false,
+          "event_ms": 1792935076123,
+          "received_ms": 1792935076285,
+          "seq": 3
+        },
+        {
+          "event": "candle",
+          "recv_ms": 1792935077433,
+          "symbol": "MINAUSDT",
+          "interval": "1m",
+          "open_time_ms": 1792935060000,
+          "close_time_ms": null,
+          "closed": false,
+          "event_ms": 1792935077271,
+          "received_ms": 1792935077432,
+          "seq": 4
+        },
+        {
+          "event": "candle",
+          "recv_ms": 1792935078213,
+          "symbol": "MINAUSDT",
+          "interval": "1m",
+          "open_time_ms": 1792935060000,
+          "close_time_ms": null,
+          "closed": false,
+          "event_ms": 1792935078048,
+          "received_ms": 1792935078212,
+          "seq": 5
+        },
+        {
+          "event": "candle",
+          "recv_ms": 1792935080293,
+          "symbol": "MINAUSDT",
+          "interval": "1m",
+          "open_time_ms": 1792935060000,
+          "close_time_ms": null,
+          "closed": false,
+          "event_ms": 1792935080132,
+          "received_ms": 1792935080292,
+          "seq": 6
+        },
+        {
+          "event": "candle",
+          "recv_ms": 1792935080554,
+          "symbol": "MINAUSDT",
+          "interval": "1m",
+          "open_time_ms": 1792935060000,
+          "close_time_ms": null,
+          "closed": false,
+          "event_ms": 1792935080392,
+          "received_ms": 1792935080553,
+          "seq": 7
+        },
+        {
+          "event": "candle",
+          "recv_ms": 1792935083349,
+          "symbol": "MINAUSDT",
+          "interval": "1m",
+          "open_time_ms": 1792935060000,
+          "close_time_ms": null,
+          "closed": false,
+          "event_ms": 1792935083188,
+          "received_ms": 1792935083348,
+          "seq": 8
+        },
+        {
+          "event": "candle",
+          "recv_ms": 1792935084673,
+          "symbol": "MINAUSDT",
+          "interval": "1m",
+          "open_time_ms": 1792935060000,
+          "close_time_ms": null,
+          "closed": false,
+          "event_ms": 1792935084512,
+          "received_ms": 1792935084673,
+          "seq": 9
+        },
+        {
+          "event": "candle",
+          "recv_ms": 1792935087345,
+          "symbol": "MINAUSDT",
+          "interval": "1m",
+          "open_time_ms": 1792935060000,
+          "close_time_ms": null,
+          "closed": false,
+          "event_ms": 1792935087184,
+          "received_ms": 1792935087344,
+          "seq": 10
+        },
+        {
+          "event": "candle",
+          "recv_ms": 1792935090424,
+          "symbol": "MINAUSDT",
+          "interval": "1m",
+          "open_time_ms": 1792935060000,
+          "close_time_ms": null,
+          "closed": false,
+          "event_ms": 1792935090263,
+          "received_ms": 1792935090424,
+          "seq": 11
+        },
+        {
+          "event": "candle",
+          "recv_ms": 1792935092486,
+          "symbol": "MINAUSDT",
+          "interval": "1m",
+          "open_time_ms": 1792935060000,
+          "close_time_ms": null,
+          "closed": false,
+          "event_ms": 1792935092324,
+          "received_ms": 1792935092486,
+          "seq": 12
+        },
+        {
+          "event": "candle",
+          "recv_ms": 1792935092854,
+          "symbol": "MINAUSDT",
+          "interval": "1m",
+          "open_time_ms": 1792935060000,
+          "close_time_ms": null,
+          "closed": false,
+          "event_ms": 1792935092692,
+          "received_ms": 1792935092854,
+          "seq": 13
+        },
+        {
+          "event": "candle",
+          "recv_ms": 1792935093207,
+          "symbol": "MINAUSDT",
+          "interval": "1m",
+          "open_time_ms": 1792935060000,
+          "close_time_ms": null,
+          "closed": false,
+          "event_ms": 1792935093048,
+          "received_ms": 1792935093207,
+          "seq": 14
+        },
+        {
+          "event": "candle",
+          "recv_ms": 1792935102537,
+          "symbol": "MINAUSDT",
+          "interval": "1m",
+          "open_time_ms": 1792935060000,
+          "close_time_ms": null,
+          "closed": false,
+          "event_ms": 1792935102377,
+          "received_ms": 1792935102536,
+          "seq": 15
+        },
+        {
+          "event": "candle",
+          "recv_ms": 1792935107354,
+          "symbol": "MINAUSDT",
+          "interval": "1m",
+          "open_time_ms": 1792935060000,
+          "close_time_ms": null,
+          "closed": false,
+          "event_ms": 1792935107187,
+          "received_ms": 1792935107353,
+          "seq": 16
+        },
+        {
+          "event": "candle",
+          "recv_ms": 1792935112652,
+          "symbol": "MINAUSDT",
+          "interval": "1m",
+          "open_time_ms": 1792935060000,
+          "close_time_ms": null,
+          "closed": false,
+          "event_ms": 1792935112484,
+          "received_ms": 1792935112651,
+          "seq": 17
+        },
+        {
+          "event": "candle",
+          "recv_ms": 1792935114488,
+          "symbol": "MINAUSDT",
+          "interval": "1m",
+          "open_time_ms": 1792935060000,
+          "close_time_ms": null,
+          "closed": false,
+          "event_ms": 1792935114321,
+          "received_ms": 1792935114487,
+          "seq": 18
+        },
+        {
+          "event": "closed",
+          "recv_ms": 1792935123176,
+          "symbol": "MINAUSDT",
+          "interval": "1m",
+          "open_time_ms": 1792935060000,
+          "close_time_ms": 1792935119999,
+          "closed": true,
+          "event_ms": 1792935123001,
+          "received_ms": 1792935123175,
+          "seq": 19
+        },
+        {
+          "event": "candle",
+          "recv_ms": 1792935124345,
+          "symbol": "MINAUSDT",
+          "interval": "1m",
+          "open_time_ms": 1792935120000,
+          "close_time_ms": null,
+          "closed": false,
+          "event_ms": 1792935124177,
+          "received_ms": 1792935124344,
+          "seq": 20
+        }
+      ],
+      "gaps": [],
+      "last_status": {
+        "symbol": "MINAUSDT",
+        "interval": "1m",
+        "connection": {
+          "state": "RECEIVING",
+          "socket_connected": true,
+          "fresh_ms": 10000,
+          "stale_ms": 60000
+        },
+        "last_message_ms": 1792935123175,
+        "last_kline_open_ms": 1792935060000,
+        "closed_through_ms": 1792935120000,
+        "age_ms": 0,
+        "live": true,
+        "recovering": false,
+        "generated_at_ms": 1792935123175
+      },
+      "last_status_recv_ms": 1792935123176,
+      "counts": {
+        "candle": 19,
+        "closed": 1,
+        "status": 20,
+        "heartbeat": 3,
+        "gap": 0,
+        "error": 0
+      },
+      "first_event_ms": 1792935071406,
+      "last_event_ms": 1792935124345,
+      "errors": []
+    },
+    "bff": {
+      "hello": [
+        {
+          "recv_ms": 1792935067318,
+          "identity": {
+            "symbol": "BTCUSDT",
+            "symbol_canonical": "BTCUSDT",
+            "interval": "1m",
+            "venue": "binance",
+            "market_type": "usd_m_futures",
+            "source": "ws_kline"
+          },
+          "policy": {
+            "fresh_ms": 10000,
+            "stale_ms": 60000,
+            "live_requires": "RECEIVING + socket + identidad + age<=fresh_ms"
+          },
+          "limits": {
+            "max_subscriptions": 6,
+            "max_consumers": 12,
+            "max_consumers_per_stream": 4,
+            "ring_size": 300,
+            "pending_max": 256,
+            "consumer_queue_max": 256,
+            "fresh_ms": 10000,
+            "stale_ms": 60000,
+            "recovery_max_pages": 2,
+            "recovery_page_limit": 500,
+            "recovery_max_per_minute": 6,
+            "persistence": "MEMORY_ONLY"
+          }
+        }
+      ],
+      "snapshot": {
+        "recv_ms": 1792935067351,
+        "symbol": "BTCUSDT",
+        "interval": "1m",
+        "candles": 298,
+        "observed": {
+          "start_ms": 1792917180000,
+          "end_ms": 1792935000000
+        },
+        "coverage": {
+          "state": "PARTIAL",
+          "observed_start_ms": 1792917180000,
+          "observed_end_ms": 1792935000000,
+          "expected_bars": 298,
+          "actual_bars": 298,
+          "gap_count": 0,
+          "gaps": [],
+          "absent_ranges": [
+            [
+              1792935060000,
+              1792935067315
+            ]
+          ],
+          "exhausted_before": false,
+          "earliest_available_ms": null,
+          "history_end_ms": null,
+          "note": "Huecos = puntos de rejilla ausentes dentro del rango observado. Ausencia = el rango solicitado excede lo almacenado. Ninguno se rellena ni se interpola."
+        },
+        "volume_available": true,
+        "source": "cache"
+      },
+      "snapshots": {
+        "BTCUSDT": {
+          "recv_ms": 1792935067351,
+          "symbol": "BTCUSDT",
+          "interval": "1m",
+          "candles": 298,
+          "observed": {
+            "start_ms": 1792917180000,
+            "end_ms": 1792935000000
+          },
+          "coverage": {
+            "state": "PARTIAL",
+            "observed_start_ms": 1792917180000,
+            "observed_end_ms": 1792935000000,
+            "expected_bars": 298,
+            "actual_bars": 298,
+            "gap_count": 0,
+            "gaps": [],
+            "absent_ranges": [
+              [
+                1792935060000,
+                1792935067315
+              ]
+            ],
+            "exhausted_before": false,
+            "earliest_available_ms": null,
+            "history_end_ms": null,
+            "note": "Huecos = puntos de rejilla ausentes dentro del rango observado. Ausencia = el rango solicitado excede lo almacenado. Ninguno se rellena ni se interpola."
+          },
+          "volume_available": true,
+          "source": "cache"
+        }
+      },
+      "events": [
+        {
+          "event": "candle",
+          "recv_ms": 1792935071773,
+          "symbol": "BTCUSDT",
+          "interval": "1m",
+          "open_time_ms": 1792935060000,
+          "close_time_ms": null,
+          "closed": false,
+          "event_ms": 1792935071610,
+          "received_ms": 1792935071772,
+          "seq": 1
+        },
+        {
+          "event": "candle",
+          "recv_ms": 1792935072400,
+          "symbol": "BTCUSDT",
+          "interval": "1m",
+          "open_time_ms": 1792935060000,
+          "close_time_ms": null,
+          "closed": false,
+          "event_ms": 1792935072065,
+          "received_ms": 1792935072229,
+          "seq": 2
+        },
+        {
+          "event": "candle",
+          "recv_ms": 1792935072615,
+          "symbol": "BTCUSDT",
+          "interval": "1m",
+          "open_time_ms": 1792935060000,
+          "close_time_ms": null,
+          "closed": false,
+          "event_ms": 1792935072454,
+          "received_ms": 1792935072613,
+          "seq": 3
+        },
+        {
+          "event": "candle",
+          "recv_ms": 1792935072927,
+          "symbol": "BTCUSDT",
+          "interval": "1m",
+          "open_time_ms": 1792935060000,
+          "close_time_ms": null,
+          "closed": false,
+          "event_ms": 1792935072762,
+          "received_ms": 1792935072925,
+          "seq": 4
+        },
+        {
+          "event": "candle",
+          "recv_ms": 1792935074072,
+          "symbol": "BTCUSDT",
+          "interval": "1m",
+          "open_time_ms": 1792935060000,
+          "close_time_ms": null,
+          "closed": false,
+          "event_ms": 1792935073909,
+          "received_ms": 1792935074070,
+          "seq": 5
+        },
+        {
+          "event": "candle",
+          "recv_ms": 1792935074623,
+          "symbol": "BTCUSDT",
+          "interval": "1m",
+          "open_time_ms": 1792935060000,
+          "close_time_ms": null,
+          "closed": false,
+          "event_ms": 1792935074459,
+          "received_ms": 1792935074621,
+          "seq": 6
+        },
+        {
+          "event": "candle",
+          "recv_ms": 1792935074945,
+          "symbol": "BTCUSDT",
+          "interval": "1m",
+          "open_time_ms": 1792935060000,
+          "close_time_ms": null,
+          "closed": false,
+          "event_ms": 1792935074782,
+          "received_ms": 1792935074944,
+          "seq": 7
+        },
+        {
+          "event": "candle",
+          "recv_ms": 1792935075451,
+          "symbol": "BTCUSDT",
+          "interval": "1m",
+          "open_time_ms": 1792935060000,
+          "close_time_ms": null,
+          "closed": false,
+          "event_ms": 1792935075288,
+          "received_ms": 1792935075449,
+          "seq": 8
+        },
+        {
+          "event": "candle",
+          "recv_ms": 1792935075967,
+          "symbol": "BTCUSDT",
+          "interval": "1m",
+          "open_time_ms": 1792935060000,
+          "close_time_ms": null,
+          "closed": false,
+          "event_ms": 1792935075804,
+          "received_ms": 1792935075966,
+          "seq": 9
+        },
+        {
+          "event": "candle",
+          "recv_ms": 1792935076302,
+          "symbol": "BTCUSDT",
+          "interval": "1m",
+          "open_time_ms": 1792935060000,
+          "close_time_ms": null,
+          "closed": false,
+          "event_ms": 1792935076138,
+          "received_ms": 1792935076300,
+          "seq": 10
+        },
+        {
+          "event": "candle",
+          "recv_ms": 1792935076794,
+          "symbol": "BTCUSDT",
+          "interval": "1m",
+          "open_time_ms": 1792935060000,
+          "close_time_ms": null,
+          "closed": false,
+          "event_ms": 1792935076631,
+          "received_ms": 1792935076792,
+          "seq": 11
+        },
+        {
+          "event": "candle",
+          "recv_ms": 1792935077045,
+          "symbol": "BTCUSDT",
+          "interval": "1m",
+          "open_time_ms": 1792935060000,
+          "close_time_ms": null,
+          "closed": false,
+          "event_ms": 1792935076883,
+          "received_ms": 1792935077043,
+          "seq": 12
+        },
+        {
+          "event": "candle",
+          "recv_ms": 1792935077384,
+          "symbol": "BTCUSDT",
+          "interval": "1m",
+          "open_time_ms": 1792935060000,
+          "close_time_ms": null,
+          "closed": false,
+          "event_ms": 1792935077224,
+          "received_ms": 1792935077383,
+          "seq": 13
+        },
+        {
+          "event": "candle",
+          "recv_ms": 1792935077902,
+          "symbol": "BTCUSDT",
+          "interval": "1m",
+          "open_time_ms": 1792935060000,
+          "close_time_ms": null,
+          "closed": false,
+          "event_ms": 1792935077737,
+          "received_ms": 1792935077899,
+          "seq": 14
+        },
+        {
+          "event": "candle",
+          "recv_ms": 1792935078671,
+          "symbol": "BTCUSDT",
+          "interval": "1m",
+          "open_time_ms": 1792935060000,
+          "close_time_ms": null,
+          "closed": false,
+          "event_ms": 1792935078512,
+          "received_ms": 1792935078669,
+          "seq": 15
+        },
+        {
+          "event": "candle",
+          "recv_ms": 1792935079237,
+          "symbol": "BTCUSDT",
+          "interval": "1m",
+          "open_time_ms": 1792935060000,
+          "close_time_ms": null,
+          "closed": false,
+          "event_ms": 1792935079070,
+          "received_ms": 1792935079236,
+          "seq": 16
+        },
+        {
+          "event": "candle",
+          "recv_ms": 1792935079492,
+          "symbol": "BTCUSDT",
+          "interval": "1m",
+          "open_time_ms": 1792935060000,
+          "close_time_ms": null,
+          "closed": false,
+          "event_ms": 1792935079329,
+          "received_ms": 1792935079491,
+          "seq": 17
+        },
+        {
+          "event": "candle",
+          "recv_ms": 1792935079812,
+          "symbol": "BTCUSDT",
+          "interval": "1m",
+          "open_time_ms": 1792935060000,
+          "close_time_ms": null,
+          "closed": false,
+          "event_ms": 1792935079650,
+          "received_ms": 1792935079811,
+          "seq": 18
+        },
+        {
+          "event": "candle",
+          "recv_ms": 1792935080147,
+          "symbol": "BTCUSDT",
+          "interval": "1m",
+          "open_time_ms": 1792935060000,
+          "close_time_ms": null,
+          "closed": false,
+          "event_ms": 1792935079984,
+          "received_ms": 1792935080145,
+          "seq": 19
+        },
+        {
+          "event": "candle",
+          "recv_ms": 1792935080646,
+          "symbol": "BTCUSDT",
+          "interval": "1m",
+          "open_time_ms": 1792935060000,
+          "close_time_ms": null,
+          "closed": false,
+          "event_ms": 1792935080483,
+          "received_ms": 1792935080644,
+          "seq": 20
+        },
+        {
+          "event": "candle",
+          "recv_ms": 1792935081214,
+          "symbol": "BTCUSDT",
+          "interval": "1m",
+          "open_time_ms": 1792935060000,
+          "close_time_ms": null,
+          "closed": false,
+          "event_ms": 1792935081051,
+          "received_ms": 1792935081212,
+          "seq": 21
+        },
+        {
+          "event": "candle",
+          "recv_ms": 1792935081730,
+          "symbol": "BTCUSDT",
+          "interval": "1m",
+          "open_time_ms": 1792935060000,
+          "close_time_ms": null,
+          "closed": false,
+          "event_ms": 1792935081565,
+          "received_ms": 1792935081728,
+          "seq": 22
+        },
+        {
+          "event": "candle",
+          "recv_ms": 1792935082037,
+          "symbol": "BTCUSDT",
+          "interval": "1m",
+          "open_time_ms": 1792935060000,
+          "close_time_ms": null,
+          "closed": false,
+          "event_ms": 1792935081873,
+          "received_ms": 1792935082036,
+          "seq": 23
+        },
+        {
+          "event": "candle",
+          "recv_ms": 1792935082571,
+          "symbol": "BTCUSDT",
+          "interval": "1m",
+          "open_time_ms": 1792935060000,
+          "close_time_ms": null,
+          "closed": false,
+          "event_ms": 1792935082407,
+          "received_ms": 1792935082569,
+          "seq": 24
+        },
+        {
+          "event": "candle",
+          "recv_ms": 1792935082832,
+          "symbol": "BTCUSDT",
+          "interval": "1m",
+          "open_time_ms": 1792935060000,
+          "close_time_ms": null,
+          "closed": false,
+          "event_ms": 1792935082668,
+          "received_ms": 1792935082830,
+          "seq": 25
+        },
+        {
+          "event": "candle",
+          "recv_ms": 1792935083115,
+          "symbol": "BTCUSDT",
+          "interval": "1m",
+          "open_time_ms": 1792935060000,
+          "close_time_ms": null,
+          "closed": false,
+          "event_ms": 1792935082951,
+          "received_ms": 1792935083113,
+          "seq": 26
+        },
+        {
+          "event": "candle",
+          "recv_ms": 1792935083541,
+          "symbol": "BTCUSDT",
+          "interval": "1m",
+          "open_time_ms": 1792935060000,
+          "close_time_ms": null,
+          "closed": false,
+          "event_ms": 1792935083383,
+          "received_ms": 1792935083540,
+          "seq": 27
+        },
+        {
+          "event": "candle",
+          "recv_ms": 1792935085133,
+          "symbol": "BTCUSDT",
+          "interval": "1m",
+          "open_time_ms": 1792935060000,
+          "close_time_ms": null,
+          "closed": false,
+          "event_ms": 1792935084970,
+          "received_ms": 1792935085131,
+          "seq": 28
+        },
+        {
+          "event": "candle",
+          "recv_ms": 1792935085446,
+          "symbol": "BTCUSDT",
+          "interval": "1m",
+          "open_time_ms": 1792935060000,
+          "close_time_ms": null,
+          "closed": false,
+          "event_ms": 1792935085282,
+          "received_ms": 1792935085444,
+          "seq": 29
+        },
+        {
+          "event": "candle",
+          "recv_ms": 1792935085897,
+          "symbol": "BTCUSDT",
+          "interval": "1m",
+          "open_time_ms": 1792935060000,
+          "close_time_ms": null,
+          "closed": false,
+          "event_ms": 1792935085734,
+          "received_ms": 1792935085895,
+          "seq": 30
+        },
+        {
+          "event": "candle",
+          "recv_ms": 1792935086194,
+          "symbol": "BTCUSDT",
+          "interval": "1m",
+          "open_time_ms": 1792935060000,
+          "close_time_ms": null,
+          "closed": false,
+          "event_ms": 1792935086031,
+          "received_ms": 1792935086193,
+          "seq": 31
+        },
+        {
+          "event": "candle",
+          "recv_ms": 1792935086845,
+          "symbol": "BTCUSDT",
+          "interval": "1m",
+          "open_time_ms": 1792935060000,
+          "close_time_ms": null,
+          "closed": false,
+          "event_ms": 1792935086682,
+          "received_ms": 1792935086844,
+          "seq": 32
+        },
+        {
+          "event": "candle",
+          "recv_ms": 1792935087132,
+          "symbol": "BTCUSDT",
+          "interval": "1m",
+          "open_time_ms": 1792935060000,
+          "close_time_ms": null,
+          "closed": false,
+          "event_ms": 1792935086971,
+          "received_ms": 1792935087130,
+          "seq": 33
+        },
+        {
+          "event": "candle",
+          "recv_ms": 1792935087423,
+          "symbol": "BTCUSDT",
+          "interval": "1m",
+          "open_time_ms": 1792935060000,
+          "close_time_ms": null,
+          "closed": false,
+          "event_ms": 1792935087264,
+          "received_ms": 1792935087421,
+          "seq": 34
+        },
+        {
+          "event": "candle",
+          "recv_ms": 1792935087751,
+          "symbol": "BTCUSDT",
+          "interval": "1m",
+          "open_time_ms": 1792935060000,
+          "close_time_ms": null,
+          "closed": false,
+          "event_ms": 1792935087589,
+          "received_ms": 1792935087750,
+          "seq": 35
+        },
+        {
+          "event": "candle",
+          "recv_ms": 1792935088049,
+          "symbol": "BTCUSDT",
+          "interval": "1m",
+          "open_time_ms": 1792935060000,
+          "close_time_ms": null,
+          "closed": false,
+          "event_ms": 1792935087889,
+          "received_ms": 1792935088048,
+          "seq": 36
+        },
+        {
+          "event": "candle",
+          "recv_ms": 1792935088349,
+          "symbol": "BTCUSDT",
+          "interval": "1m",
+          "open_time_ms": 1792935060000,
+          "close_time_ms": null,
+          "closed": false,
+          "event_ms": 1792935088186,
+          "received_ms": 1792935088347,
+          "seq": 37
+        },
+        {
+          "event": "candle",
+          "recv_ms": 1792935088897,
+          "symbol": "BTCUSDT",
+          "interval": "1m",
+          "open_time_ms": 1792935060000,
+          "close_time_ms": null,
+          "closed": false,
+          "event_ms": 1792935088735,
+          "received_ms": 1792935088896,
+          "seq": 38
+        },
+        {
+          "event": "candle",
+          "recv_ms": 1792935089177,
+          "symbol": "BTCUSDT",
+          "interval": "1m",
+          "open_time_ms": 1792935060000,
+          "close_time_ms": null,
+          "closed": false,
+          "event_ms": 1792935089014,
+          "received_ms": 1792935089175,
+          "seq": 39
+        },
+        {
+          "event": "candle",
+          "recv_ms": 1792935089696,
+          "symbol": "BTCUSDT",
+          "interval": "1m",
+          "open_time_ms": 1792935060000,
+          "close_time_ms": null,
+          "closed": false,
+          "event_ms": 1792935089533,
+          "received_ms": 1792935089694,
+          "seq": 40
+        },
+        {
+          "event": "candle",
+          "recv_ms": 1792935090032,
+          "symbol": "BTCUSDT",
+          "interval": "1m",
+          "open_time_ms": 1792935060000,
+          "close_time_ms": null,
+          "closed": false,
+          "event_ms": 1792935089869,
+          "received_ms": 1792935090031,
+          "seq": 41
+        },
+        {
+          "event": "candle",
+          "recv_ms": 1792935090580,
+          "symbol": "BTCUSDT",
+          "interval": "1m",
+          "open_time_ms": 1792935060000,
+          "close_time_ms": null,
+          "closed": false,
+          "event_ms": 1792935090416,
+          "received_ms": 1792935090578,
+          "seq": 42
+        },
+        {
+          "event": "candle",
+          "recv_ms": 1792935090855,
+          "symbol": "BTCUSDT",
+          "interval": "1m",
+          "open_time_ms": 1792935060000,
+          "close_time_ms": null,
+          "closed": false,
+          "event_ms": 1792935090694,
+          "received_ms": 1792935090853,
+          "seq": 43
+        },
+        {
+          "event": "candle",
+          "recv_ms": 1792935091187,
+          "symbol": "BTCUSDT",
+          "interval": "1m",
+          "open_time_ms": 1792935060000,
+          "close_time_ms": null,
+          "closed": false,
+          "event_ms": 1792935091025,
+          "received_ms": 1792935091186,
+          "seq": 44
+        },
+        {
+          "event": "candle",
+          "recv_ms": 1792935092799,
+          "symbol": "BTCUSDT",
+          "interval": "1m",
+          "open_time_ms": 1792935060000,
+          "close_time_ms": null,
+          "closed": false,
+          "event_ms": 1792935092636,
+          "received_ms": 1792935092798,
+          "seq": 45
+        },
+        {
+          "event": "candle",
+          "recv_ms": 1792935093375,
+          "symbol": "BTCUSDT",
+          "interval": "1m",
+          "open_time_ms": 1792935060000,
+          "close_time_ms": null,
+          "closed": false,
+          "event_ms": 1792935093213,
+          "received_ms": 1792935093373,
+          "seq": 46
+        },
+        {
+          "event": "candle",
+          "recv_ms": 1792935093775,
+          "symbol": "BTCUSDT",
+          "interval": "1m",
+          "open_time_ms": 1792935060000,
+          "close_time_ms": null,
+          "closed": false,
+          "event_ms": 1792935093616,
+          "received_ms": 1792935093774,
+          "seq": 47
+        },
+        {
+          "event": "candle",
+          "recv_ms": 1792935094163,
+          "symbol": "BTCUSDT",
+          "interval": "1m",
+          "open_time_ms": 1792935060000,
+          "close_time_ms": null,
+          "closed": false,
+          "event_ms": 1792935094002,
+          "received_ms": 1792935094161,
+          "seq": 48
+        },
+        {
+          "event": "candle",
+          "recv_ms": 1792935094518,
+          "symbol": "BTCUSDT",
+          "interval": "1m",
+          "open_time_ms": 1792935060000,
+          "close_time_ms": null,
+          "closed": false,
+          "event_ms": 1792935094355,
+          "received_ms": 1792935094517,
+          "seq": 49
+        },
+        {
+          "event": "candle",
+          "recv_ms": 1792935095126,
+          "symbol": "BTCUSDT",
+          "interval": "1m",
+          "open_time_ms": 1792935060000,
+          "close_time_ms": null,
+          "closed": false,
+          "event_ms": 1792935094964,
+          "received_ms": 1792935095124,
+          "seq": 50
+        },
+        {
+          "event": "candle",
+          "recv_ms": 1792935096131,
+          "symbol": "BTCUSDT",
+          "interval": "1m",
+          "open_time_ms": 1792935060000,
+          "close_time_ms": null,
+          "closed": false,
+          "event_ms": 1792935095972,
+          "received_ms": 1792935096129,
+          "seq": 51
+        },
+        {
+          "event": "candle",
+          "recv_ms": 1792935096466,
+          "symbol": "BTCUSDT",
+          "interval": "1m",
+          "open_time_ms": 1792935060000,
+          "close_time_ms": null,
+          "closed": false,
+          "event_ms": 1792935096305,
+          "received_ms": 1792935096464,
+          "seq": 52
+        },
+        {
+          "event": "candle",
+          "recv_ms": 1792935096948,
+          "symbol": "BTCUSDT",
+          "interval": "1m",
+          "open_time_ms": 1792935060000,
+          "close_time_ms": null,
+          "closed": false,
+          "event_ms": 1792935096786,
+          "received_ms": 1792935096947,
+          "seq": 53
+        },
+        {
+          "event": "candle",
+          "recv_ms": 1792935097451,
+          "symbol": "BTCUSDT",
+          "interval": "1m",
+          "open_time_ms": 1792935060000,
+          "close_time_ms": null,
+          "closed": false,
+          "event_ms": 1792935097287,
+          "received_ms": 1792935097450,
+          "seq": 54
+        },
+        {
+          "event": "candle",
+          "recv_ms": 1792935097813,
+          "symbol": "BTCUSDT",
+          "interval": "1m",
+          "open_time_ms": 1792935060000,
+          "close_time_ms": null,
+          "closed": false,
+          "event_ms": 1792935097650,
+          "received_ms": 1792935097811,
+          "seq": 55
+        },
+        {
+          "event": "candle",
+          "recv_ms": 1792935098821,
+          "symbol": "BTCUSDT",
+          "interval": "1m",
+          "open_time_ms": 1792935060000,
+          "close_time_ms": null,
+          "closed": false,
+          "event_ms": 1792935098660,
+          "received_ms": 1792935098820,
+          "seq": 56
+        },
+        {
+          "event": "candle",
+          "recv_ms": 1792935099625,
+          "symbol": "BTCUSDT",
+          "interval": "1m",
+          "open_time_ms": 1792935060000,
+          "close_time_ms": null,
+          "closed": false,
+          "event_ms": 1792935099462,
+          "received_ms": 1792935099624,
+          "seq": 57
+        },
+        {
+          "event": "candle",
+          "recv_ms": 1792935099892,
+          "symbol": "BTCUSDT",
+          "interval": "1m",
+          "open_time_ms": 1792935060000,
+          "close_time_ms": null,
+          "closed": false,
+          "event_ms": 1792935099734,
+          "received_ms": 1792935099890,
+          "seq": 58
+        },
+        {
+          "event": "candle",
+          "recv_ms": 1792935100620,
+          "symbol": "BTCUSDT",
+          "interval": "1m",
+          "open_time_ms": 1792935060000,
+          "close_time_ms": null,
+          "closed": false,
+          "event_ms": 1792935100457,
+          "received_ms": 1792935100618,
+          "seq": 59
+        },
+        {
+          "event": "candle",
+          "recv_ms": 1792935101021,
+          "symbol": "BTCUSDT",
+          "interval": "1m",
+          "open_time_ms": 1792935060000,
+          "close_time_ms": null,
+          "closed": false,
+          "event_ms": 1792935100856,
+          "received_ms": 1792935101019,
+          "seq": 60
+        },
+        {
+          "event": "candle",
+          "recv_ms": 1792935101701,
+          "symbol": "BTCUSDT",
+          "interval": "1m",
+          "open_time_ms": 1792935060000,
+          "close_time_ms": null,
+          "closed": false,
+          "event_ms": 1792935101539,
+          "received_ms": 1792935101700,
+          "seq": 61
+        },
+        {
+          "event": "candle",
+          "recv_ms": 1792935102275,
+          "symbol": "BTCUSDT",
+          "interval": "1m",
+          "open_time_ms": 1792935060000,
+          "close_time_ms": null,
+          "closed": false,
+          "event_ms": 1792935102114,
+          "received_ms": 1792935102274,
+          "seq": 62
+        },
+        {
+          "event": "candle",
+          "recv_ms": 1792935102538,
+          "symbol": "BTCUSDT",
+          "interval": "1m",
+          "open_time_ms": 1792935060000,
+          "close_time_ms": null,
+          "closed": false,
+          "event_ms": 1792935102375,
+          "received_ms": 1792935102537,
+          "seq": 63
+        },
+        {
+          "event": "candle",
+          "recv_ms": 1792935104460,
+          "symbol": "BTCUSDT",
+          "interval": "1m",
+          "open_time_ms": 1792935060000,
+          "close_time_ms": null,
+          "closed": false,
+          "event_ms": 1792935104292,
+          "received_ms": 1792935104458,
+          "seq": 64
+        },
+        {
+          "event": "candle",
+          "recv_ms": 1792935105728,
+          "symbol": "BTCUSDT",
+          "interval": "1m",
+          "open_time_ms": 1792935060000,
+          "close_time_ms": null,
+          "closed": false,
+          "event_ms": 1792935105559,
+          "received_ms": 1792935105726,
+          "seq": 65
+        },
+        {
+          "event": "candle",
+          "recv_ms": 1792935106329,
+          "symbol": "BTCUSDT",
+          "interval": "1m",
+          "open_time_ms": 1792935060000,
+          "close_time_ms": null,
+          "closed": false,
+          "event_ms": 1792935106162,
+          "received_ms": 1792935106327,
+          "seq": 66
+        },
+        {
+          "event": "candle",
+          "recv_ms": 1792935106678,
+          "symbol": "BTCUSDT",
+          "interval": "1m",
+          "open_time_ms": 1792935060000,
+          "close_time_ms": null,
+          "closed": false,
+          "event_ms": 1792935106511,
+          "received_ms": 1792935106676,
+          "seq": 67
+        },
+        {
+          "event": "candle",
+          "recv_ms": 1792935107241,
+          "symbol": "BTCUSDT",
+          "interval": "1m",
+          "open_time_ms": 1792935060000,
+          "close_time_ms": null,
+          "closed": false,
+          "event_ms": 1792935107072,
+          "received_ms": 1792935107239,
+          "seq": 68
+        },
+        {
+          "event": "candle",
+          "recv_ms": 1792935108099,
+          "symbol": "BTCUSDT",
+          "interval": "1m",
+          "open_time_ms": 1792935060000,
+          "close_time_ms": null,
+          "closed": false,
+          "event_ms": 1792935107932,
+          "received_ms": 1792935108098,
+          "seq": 69
+        },
+        {
+          "event": "candle",
+          "recv_ms": 1792935108829,
+          "symbol": "BTCUSDT",
+          "interval": "1m",
+          "open_time_ms": 1792935060000,
+          "close_time_ms": null,
+          "closed": false,
+          "event_ms": 1792935108661,
+          "received_ms": 1792935108828,
+          "seq": 70
+        },
+        {
+          "event": "candle",
+          "recv_ms": 1792935109275,
+          "symbol": "BTCUSDT",
+          "interval": "1m",
+          "open_time_ms": 1792935060000,
+          "close_time_ms": null,
+          "closed": false,
+          "event_ms": 1792935109107,
+          "received_ms": 1792935109274,
+          "seq": 71
+        },
+        {
+          "event": "candle",
+          "recv_ms": 1792935109693,
+          "symbol": "BTCUSDT",
+          "interval": "1m",
+          "open_time_ms": 1792935060000,
+          "close_time_ms": null,
+          "closed": false,
+          "event_ms": 1792935109528,
+          "received_ms": 1792935109692,
+          "seq": 72
+        },
+        {
+          "event": "candle",
+          "recv_ms": 1792935110258,
+          "symbol": "BTCUSDT",
+          "interval": "1m",
+          "open_time_ms": 1792935060000,
+          "close_time_ms": null,
+          "closed": false,
+          "event_ms": 1792935110088,
+          "received_ms": 1792935110257,
+          "seq": 73
+        },
+        {
+          "event": "candle",
+          "recv_ms": 1792935110931,
+          "symbol": "BTCUSDT",
+          "interval": "1m",
+          "open_time_ms": 1792935060000,
+          "close_time_ms": null,
+          "closed": false,
+          "event_ms": 1792935110763,
+          "received_ms": 1792935110929,
+          "seq": 74
+        },
+        {
+          "event": "candle",
+          "recv_ms": 1792935111384,
+          "symbol": "BTCUSDT",
+          "interval": "1m",
+          "open_time_ms": 1792935060000,
+          "close_time_ms": null,
+          "closed": false,
+          "event_ms": 1792935111216,
+          "received_ms": 1792935111383,
+          "seq": 75
+        },
+        {
+          "event": "candle",
+          "recv_ms": 1792935111663,
+          "symbol": "BTCUSDT",
+          "interval": "1m",
+          "open_time_ms": 1792935060000,
+          "close_time_ms": null,
+          "closed": false,
+          "event_ms": 1792935111495,
+          "received_ms": 1792935111662,
+          "seq": 76
+        },
+        {
+          "event": "candle",
+          "recv_ms": 1792935112437,
+          "symbol": "BTCUSDT",
+          "interval": "1m",
+          "open_time_ms": 1792935060000,
+          "close_time_ms": null,
+          "closed": false,
+          "event_ms": 1792935112266,
+          "received_ms": 1792935112435,
+          "seq": 77
+        },
+        {
+          "event": "candle",
+          "recv_ms": 1792935112818,
+          "symbol": "BTCUSDT",
+          "interval": "1m",
+          "open_time_ms": 1792935060000,
+          "close_time_ms": null,
+          "closed": false,
+          "event_ms": 1792935112650,
+          "received_ms": 1792935112816,
+          "seq": 78
+        },
+        {
+          "event": "candle",
+          "recv_ms": 1792935113573,
+          "symbol": "BTCUSDT",
+          "interval": "1m",
+          "open_time_ms": 1792935060000,
+          "close_time_ms": null,
+          "closed": false,
+          "event_ms": 1792935113405,
+          "received_ms": 1792935113571,
+          "seq": 79
+        },
+        {
+          "event": "candle",
+          "recv_ms": 1792935113912,
+          "symbol": "BTCUSDT",
+          "interval": "1m",
+          "open_time_ms": 1792935060000,
+          "close_time_ms": null,
+          "closed": false,
+          "event_ms": 1792935113744,
+          "received_ms": 1792935113910,
+          "seq": 80
+        },
+        {
+          "event": "candle",
+          "recv_ms": 1792935114182,
+          "symbol": "BTCUSDT",
+          "interval": "1m",
+          "open_time_ms": 1792935060000,
+          "close_time_ms": null,
+          "closed": false,
+          "event_ms": 1792935114013,
+          "received_ms": 1792935114180,
+          "seq": 81
+        },
+        {
+          "event": "candle",
+          "recv_ms": 1792935114445,
+          "symbol": "BTCUSDT",
+          "interval": "1m",
+          "open_time_ms": 1792935060000,
+          "close_time_ms": null,
+          "closed": false,
+          "event_ms": 1792935114277,
+          "received_ms": 1792935114443,
+          "seq": 82
+        },
+        {
+          "event": "candle",
+          "recv_ms": 1792935114898,
+          "symbol": "BTCUSDT",
+          "interval": "1m",
+          "open_time_ms": 1792935060000,
+          "close_time_ms": null,
+          "closed": false,
+          "event_ms": 1792935114734,
+          "received_ms": 1792935114897,
+          "seq": 83
+        },
+        {
+          "event": "candle",
+          "recv_ms": 1792935115500,
+          "symbol": "BTCUSDT",
+          "interval": "1m",
+          "open_time_ms": 1792935060000,
+          "close_time_ms": null,
+          "closed": false,
+          "event_ms": 1792935115332,
+          "received_ms": 1792935115499,
+          "seq": 84
+        },
+        {
+          "event": "candle",
+          "recv_ms": 1792935116209,
+          "symbol": "BTCUSDT",
+          "interval": "1m",
+          "open_time_ms": 1792935060000,
+          "close_time_ms": null,
+          "closed": false,
+          "event_ms": 1792935116041,
+          "received_ms": 1792935116208,
+          "seq": 85
+        },
+        {
+          "event": "candle",
+          "recv_ms": 1792935116958,
+          "symbol": "BTCUSDT",
+          "interval": "1m",
+          "open_time_ms": 1792935060000,
+          "close_time_ms": null,
+          "closed": false,
+          "event_ms": 1792935116793,
+          "received_ms": 1792935116957,
+          "seq": 86
+        },
+        {
+          "event": "candle",
+          "recv_ms": 1792935117551,
+          "symbol": "BTCUSDT",
+          "interval": "1m",
+          "open_time_ms": 1792935060000,
+          "close_time_ms": null,
+          "closed": false,
+          "event_ms": 1792935117382,
+          "received_ms": 1792935117549,
+          "seq": 87
+        },
+        {
+          "event": "candle",
+          "recv_ms": 1792935117918,
+          "symbol": "BTCUSDT",
+          "interval": "1m",
+          "open_time_ms": 1792935060000,
+          "close_time_ms": null,
+          "closed": false,
+          "event_ms": 1792935117751,
+          "received_ms": 1792935117917,
+          "seq": 88
+        },
+        {
+          "event": "candle",
+          "recv_ms": 1792935118223,
+          "symbol": "BTCUSDT",
+          "interval": "1m",
+          "open_time_ms": 1792935060000,
+          "close_time_ms": null,
+          "closed": false,
+          "event_ms": 1792935118054,
+          "received_ms": 1792935118222,
+          "seq": 89
+        },
+        {
+          "event": "candle",
+          "recv_ms": 1792935118553,
+          "symbol": "BTCUSDT",
+          "interval": "1m",
+          "open_time_ms": 1792935060000,
+          "close_time_ms": null,
+          "closed": false,
+          "event_ms": 1792935118385,
+          "received_ms": 1792935118552,
+          "seq": 90
+        },
+        {
+          "event": "candle",
+          "recv_ms": 1792935118837,
+          "symbol": "BTCUSDT",
+          "interval": "1m",
+          "open_time_ms": 1792935060000,
+          "close_time_ms": null,
+          "closed": false,
+          "event_ms": 1792935118673,
+          "received_ms": 1792935118836,
+          "seq": 91
+        },
+        {
+          "event": "candle",
+          "recv_ms": 1792935119125,
+          "symbol": "BTCUSDT",
+          "interval": "1m",
+          "open_time_ms": 1792935060000,
+          "close_time_ms": null,
+          "closed": false,
+          "event_ms": 1792935118957,
+          "received_ms": 1792935119124,
+          "seq": 92
+        },
+        {
+          "event": "candle",
+          "recv_ms": 1792935119422,
+          "symbol": "BTCUSDT",
+          "interval": "1m",
+          "open_time_ms": 1792935060000,
+          "close_time_ms": null,
+          "closed": false,
+          "event_ms": 1792935119253,
+          "received_ms": 1792935119421,
+          "seq": 93
+        },
+        {
+          "event": "closed",
+          "recv_ms": 1792935120676,
+          "symbol": "BTCUSDT",
+          "interval": "1m",
+          "open_time_ms": 1792935060000,
+          "close_time_ms": 1792935119999,
+          "closed": true,
+          "event_ms": 1792935120512,
+          "received_ms": 1792935120674,
+          "seq": 94
+        },
+        {
+          "event": "candle",
+          "recv_ms": 1792935120942,
+          "symbol": "BTCUSDT",
+          "interval": "1m",
+          "open_time_ms": 1792935120000,
+          "close_time_ms": null,
+          "closed": false,
+          "event_ms": 1792935120775,
+          "received_ms": 1792935120941,
+          "seq": 95
+        },
+        {
+          "event": "candle",
+          "recv_ms": 1792935123815,
+          "symbol": "BTCUSDT",
+          "interval": "1m",
+          "open_time_ms": 1792935120000,
+          "close_time_ms": null,
+          "closed": false,
+          "event_ms": 1792935121177,
+          "received_ms": 1792935121344,
+          "seq": 96
+        },
+        {
+          "event": "candle",
+          "recv_ms": 1792935123815,
+          "symbol": "BTCUSDT",
+          "interval": "1m",
+          "open_time_ms": 1792935120000,
+          "close_time_ms": null,
+          "closed": false,
+          "event_ms": 1792935121580,
+          "received_ms": 1792935121747,
+          "seq": 97
+        },
+        {
+          "event": "candle",
+          "recv_ms": 1792935123815,
+          "symbol": "BTCUSDT",
+          "interval": "1m",
+          "open_time_ms": 1792935120000,
+          "close_time_ms": null,
+          "closed": false,
+          "event_ms": 1792935121909,
+          "received_ms": 1792935122076,
+          "seq": 98
+        },
+        {
+          "event": "candle",
+          "recv_ms": 1792935123815,
+          "symbol": "BTCUSDT",
+          "interval": "1m",
+          "open_time_ms": 1792935120000,
+          "close_time_ms": null,
+          "closed": false,
+          "event_ms": 1792935122478,
+          "received_ms": 1792935122642,
+          "seq": 99
+        },
+        {
+          "event": "candle",
+          "recv_ms": 1792935123815,
+          "symbol": "BTCUSDT",
+          "interval": "1m",
+          "open_time_ms": 1792935120000,
+          "close_time_ms": null,
+          "closed": false,
+          "event_ms": 1792935122877,
+          "received_ms": 1792935123044,
+          "seq": 100
+        },
+        {
+          "event": "candle",
+          "recv_ms": 1792935123815,
+          "symbol": "BTCUSDT",
+          "interval": "1m",
+          "open_time_ms": 1792935120000,
+          "close_time_ms": null,
+          "closed": false,
+          "event_ms": 1792935123406,
+          "received_ms": 1792935123573,
+          "seq": 101
+        }
+      ],
+      "gaps": [],
+      "last_status": {
+        "symbol": "BTCUSDT",
+        "interval": "1m",
+        "connection": {
+          "state": "RECEIVING",
+          "socket_connected": true,
+          "fresh_ms": 10000,
+          "stale_ms": 60000
+        },
+        "last_message_ms": 1792935123573,
+        "last_kline_open_ms": 1792935120000,
+        "closed_through_ms": 1792935120000,
+        "age_ms": 1,
+        "live": true,
+        "recovering": false,
+        "generated_at_ms": 1792935123574
+      },
+      "last_status_recv_ms": 1792935123815,
+      "counts": {
+        "candle": 100,
+        "closed": 1,
+        "status": 102,
+        "heartbeat": 0,
+        "gap": 0,
+        "error": 0
+      },
+      "first_event_ms": 1792935071773,
+      "last_event_ms": 1792935123815,
+      "errors": []
+    }
+  },
+  "stop_reason": "ACCEPTANCE_REACHED",
+  "storage": {
+    "canonical_dbs_unchanged": true,
+    "canonical_changed": [],
+    "cache_changed": true,
+    "before": {
+      "canonical": [
+        {
+          "path": "C:\\proyectos\\binance-futures-microstructure-bot\\data\\microprobe.db",
+          "exists": true,
+          "size": 238927872,
+          "mtime_ms": 1792122387932
+        },
+        {
+          "path": "C:\\proyectos\\binance-futures-microstructure-bot\\data\\historical\\historical.db",
+          "exists": true,
+          "size": 19181568,
+          "mtime_ms": 1792122387393
+        }
+      ],
+      "cache": {
+        "path": "C:\\proyectos\\binance-futures-microstructure-bot\\data\\market-cache\\market_cache.db",
+        "exists": true,
+        "size": 1683456,
+        "mtime_ms": 1792934984942
+      }
+    },
+    "after": {
+      "canonical": [
+        {
+          "path": "C:\\proyectos\\binance-futures-microstructure-bot\\data\\microprobe.db",
+          "exists": true,
+          "size": 238927872,
+          "mtime_ms": 1792122387932
+        },
+        {
+          "path": "C:\\proyectos\\binance-futures-microstructure-bot\\data\\historical\\historical.db",
+          "exists": true,
+          "size": 19181568,
+          "mtime_ms": 1792122387393
+        }
+      ],
+      "cache": {
+        "path": "C:\\proyectos\\binance-futures-microstructure-bot\\data\\market-cache\\market_cache.db",
+        "exists": true,
+        "size": 1724416,
+        "mtime_ms": 1792935123765
+      }
+    }
+  },
+  "limitations": [
+    "una ventana de pocos minutos no generaliza al universo ni a otros intervalos",
+    "la cadencia se mide, no se asume (la documentacion publica es contradictoria)",
+    "el DOM se captura por el operador; sin esa evidencia el veredicto es UNKNOWN",
+    "la revision visual es evidencia distinta y no prueba por si sola la cadena",
+    "no valida rentabilidad, senal, indicadores ni ejecucion"
+  ],
+  "checks": [
+    {
+      "id": "preflight",
+      "ok": true,
+      "required": true,
+      "source": "script",
+      "detail": "preflight=ok"
+    },
+    {
+      "id": "service_started",
+      "ok": true,
+      "required": true,
+      "source": "script",
+      "detail": "pid=28824 port=8792"
+    },
+    {
+      "id": "no_socket_without_consumer",
+      "ok": true,
+      "required": true,
+      "source": "script",
+      "detail": "connected=False attempts=0"
+    },
+    {
+      "id": "socket_connected",
+      "ok": true,
+      "required": true,
+      "source": "script",
+      "detail": "muestras=26 conectadas=24"
+    },
+    {
+      "id": "messages_primary",
+      "ok": true,
+      "required": true,
+      "source": "script",
+      "detail": "simbolo=BTCUSDT eventos=101"
+    },
+    {
+      "id": "messages_secondary",
+      "ok": true,
+      "required": true,
+      "source": "script",
+      "detail": "simbolo=MINAUSDT eventos=20"
+    },
+    {
+      "id": "identity_exact",
+      "ok": true,
+      "required": true,
+      "source": "script",
+      "detail": "hello=['BTCUSDT', 'MINAUSDT'] fuera_de_identidad=[]"
+    },
+    {
+      "id": "no_protocol_errors",
+      "ok": true,
+      "required": true,
+      "source": "script",
+      "detail": "identity_mismatch=0 invalid=0"
+    },
+    {
+      "id": "provisional_updates",
+      "ok": true,
+      "required": true,
+      "source": "script",
+      "detail": "max_actualizaciones_misma_apertura=93"
+    },
+    {
+      "id": "close_confirmed",
+      "ok": true,
+      "required": true,
+      "source": "script",
+      "detail": "close_time_ms/candle=1792935060000"
+    },
+    {
+      "id": "next_candle",
+      "ok": true,
+      "required": true,
+      "source": "script",
+      "detail": "next_open_ms=1792935120000"
+    },
+    {
+      "id": "live_status_seen",
+      "ok": true,
+      "required": true,
+      "source": "script",
+      "detail": "ultimo_estado=RECEIVING"
+    },
+    {
+      "id": "bff_delivered",
+      "ok": true,
+      "required": true,
+      "source": "script",
+      "detail": "eventos_vela=101 identidad=BTCUSDT/1m"
+    },
+    {
+      "id": "coverage_intact",
+      "ok": true,
+      "required": true,
+      "source": "script",
+      "detail": "huecos=0 sin_resolver=[]"
+    },
+    {
+      "id": "consumers_released",
+      "ok": true,
+      "required": true,
+      "source": "script",
+      "detail": "consumers_tras_cerrar=0 esperado=0"
+    },
+    {
+      "id": "browser_reconnected",
+      "ok": true,
+      "required": true,
+      "source": "script",
+      "detail": "liberado=True consumers_tras_cerrar=0 consumers_tras_reconectar=1 esperado=1"
+    },
+    {
+      "id": "consumer_budget",
+      "ok": true,
+      "required": true,
+      "source": "script",
+      "detail": "pico=3 declarado=3 antes_de_cerrar=3"
+    },
+    {
+      "id": "service_stopped",
+      "ok": true,
+      "required": true,
+      "source": "script",
+      "detail": "exited=True port_closed=True pidfile_removed=True"
+    },
+    {
+      "id": "canonical_dbs_unchanged",
+      "ok": true,
+      "required": true,
+      "source": "script",
+      "detail": "cambiadas=[]"
+    },
+    {
+      "id": "transport_origin",
+      "ok": true,
+      "required": false,
+      "source": "script",
+      "detail": "origen=binance base_url=None"
+    },
+    {
+      "id": "dom_identity",
+      "ok": true,
+      "required": true,
+      "source": "browser",
+      "detail": "first='Binance USD-M · BTCUSDT · 1m · market-stream/v1' last='Binance USD-M · BTCUSDT · 1m · market-stream/v1'"
+    },
+    {
+      "id": "dom_state_live",
+      "ok": true,
+      "required": true,
+      "source": "browser",
+      "detail": "first=RECEIVING/LIVE last=RECEIVING/LIVE"
+    },
+    {
+      "id": "dom_update_fresh",
+      "ok": true,
+      "required": true,
+      "source": "browser",
+      "detail": "first=1792935071772 last=1792935123573 age_ms=0"
+    },
+    {
+      "id": "dom_candles_grew",
+      "ok": true,
+      "required": true,
+      "source": "browser",
+      "detail": "299->600 provisional=1"
+    },
+    {
+      "id": "dom_pagination_preserved",
+      "ok": true,
+      "required": true,
+      "source": "browser",
+      "detail": "antes=299 despues=600 misma_identidad=True error=None agotado=False"
+    },
+    {
+      "id": "dom_no_reload",
+      "ok": true,
+      "required": true,
+      "source": "browser",
+      "detail": "nav=1 reload=0"
+    },
+    {
+      "id": "dom_after_stop",
+      "ok": true,
+      "required": true,
+      "source": "browser",
+      "detail": "estado='DESCONECTADO · servicio detenido' live='no LIVE' velas=600 aviso=True"
+    }
+  ],
+  "failed": [],
+  "missing": [],
+  "verdict": "PASS",
+  "verdict_reasons": [],
+  "acquisition_finished": true,
+  "visual_review": "NOT_REVIEWED",
+  "visual_screenshots": [],
+  "finalized_at_ms": 1792935134948
+}
