@@ -1,3 +1,49 @@
+## Presupuesto REST upstream — reconciliación de alcance corregido (2026-10-25, base `309aee1`, commit `2edb56c`)
+
+Cierre de la verificación pedida por el operador sobre el alcance real del
+control de presupuesto del bloque `1b36647`/`309aee1`, con corrección aplicada
+reutilizando mecanismos existentes y demostración con transporte local
+(127.0.0.1; **0 llamadas Binance, ventana no abierta ni solicitada**).
+
+- `DECISIONS_REVIEWED` — AGENTS, WORKFLOW, CURRENT_STATE, TASK_QUEUE,
+  DECISIONS 2026-10-25, SAFETY_RULES, DESKTOP_FIRST_SCOPE_20261020 y este
+  backlog (F-CHART-BINANCE-04 y su presupuesto REST).
+- `NEW_DECISIONS_RECORDED` — DECISIONS 2026-10-25: reserva transaccional por
+  intento (`BEGIN IMMEDIATE`) en el ledger compartido `market_fetch_ledger`;
+  `LedgerAttemptGate` en `HistoryClient` con `UpstreamBudgetExceeded` antes de
+  abrir socket; columnas `execution_id`/`detail` (históricas NULL = UNKNOWN);
+  BFF propaga `--execution-id bff-<uuid>`; defecto latente `_window_weight`
+  corregido; `build_recovery` y el régimen de peso Binance quedan fuera del
+  presupuesto compartido, documentado.
+- `FEATURES_IMPLEMENTED` — `MarketCache.reserve_fetch_attempt`/
+  `complete_fetch_row`/`window_usage`/`fetch_rows_by_execution` (+ migración
+  idempotente); gancho `attempt_gate` en `HistoryClient.get()`;
+  `LedgerAttemptGate` + `build_client` en `market_explorer` con presupuesto por
+  intento (páginas y reintentos, sin doble conteo); CLI
+  `--execution-id`/`--max-upstream`/`--api-base` (solo loopback);
+  `scripts/rest_budget_scope_demo.py`.
+- `FEATURES_VERIFIED` — `tests/test_budget_scope_shared.py` (10): dos procesos
+  reales del CLI concurrentes comparten límite=2 (2 upstream), tercer intento
+  bloqueado antes del transporte (0 hits nuevos), reintentos (500→reintento)
+  consumen 2 cupos y el 4.º intento de otro proceso se bloquea, filas
+  sobreviven y reconstruyen el consumo por `execution_id`, carrera de 3 con
+  2 concedidas/1 denegada. Baseline focalizado: **147 passed**
+  (`pytest -k "explorer or history_client or budget or market_stream"`);
+  `tsc`/`eslint` 0; vitest explorador 48/48; migración aplicada y verificada
+  en `data/market-cache/market_cache.db` real con `--no-fetch` (0 upstream).
+- `DEFERRED_FEATURES` — conectar `build_recovery` al ledger compartido
+  (requiere autorización el operador); automatización del lado navegador
+  (F-CHART-BINANCE-04 sigue activa); repetición de ventana Binance (sin
+  autorización); móvil/Flutter (deferido por alcance de escritorio).
+- `BACKLOG_UPDATED` — yes: este bloque, `CURRENT_STATE`, `TASK_QUEUE`,
+  `DECISIONS`, evidencia `docs/evidence/rest-budget-scope-2026-10-25.json`.
+- `DOCUMENTATION_CONFLICTS` — el estado previo (`309aee1`) describía el
+  presupuesto como medido por upstream real, pero la medición por intento era
+  en memoria y la compartición era postenvío con carrera; el "2 upstream" del
+  arnés de ventana era un techo del navegador, no un límite del backend. El
+  veredicto `FAIL` de la ventana 2026-10-24 se mantiene intacto; ningún
+  resultado histórico se reescribe.
+
 ## F-CHART-BINANCE-04 — Ventana viva ejecutada una vez por el camino real (2026-10-24, base `4956dee`)
 
 **1. Title:** Demostrar con una sola ventana acotada que un mensaje real de Binance recorre `Binance → hub → servicio SSE → BFF → gráfico` de `/market-lab`, con adquisición separada del veredicto, evidencia DOM explícita y parada limpia.
