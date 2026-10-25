@@ -14,12 +14,10 @@ def compute_rest_market_budget(transport: str,
                                upstream_binance_requests: int | None) -> bool | None:
     """Réplica de la lógica de presupuesto del arnés.
 
-    En modo local (WS loopback) no hay Binance, así que 0 upstream es un
-    hecho, no una suposición. En modo public, si no hay registros del
-    servicio Python, upstream es None (desconocido), no cero.
+    En modo local (WS loopback) no hay Binance. upstream=0 es un hecho
+    (caché completa). upstream=None es desconocido (no hay registros).
+    En modo public, upstream=None también es UNKNOWN.
     """
-    if transport == "local":
-        return True
     if upstream_binance_requests is None:
         return None
     return upstream_binance_requests <= 2
@@ -38,9 +36,10 @@ def classify_upstream(bff_market_requests: int,
 
 class TestRestBudget(unittest.TestCase):
 
-    # Caché completa: 0 upstream (modo local, WS loopback, sabemos que no hay Binance)
+    # Caché completa: 0 upstream → OK (modo local y public)
     def test_cache_complete_zero_upstream(self):
         self.assertTrue(compute_rest_market_budget("local", 0))
+        self.assertTrue(compute_rest_market_budget("public", 0))
 
     # Consulta con descarga: contabilización real
     def test_download_consultation_counts_real(self):
@@ -50,9 +49,7 @@ class TestRestBudget(unittest.TestCase):
 
     # Reintentos o varias páginas: todos cuentan
     def test_retries_and_multiple_pages_all_count(self):
-        # 3 solicitudes upstream (página inicial + paginación + reintento)
         self.assertFalse(compute_rest_market_budget("public", 3))
-        # 4 solicitudes (inicial + 2 páginas + reintento)
         self.assertFalse(compute_rest_market_budget("public", 4))
 
     # Origen no verificable: UNKNOWN (no asume cero por falta de registros)
@@ -65,11 +62,28 @@ class TestRestBudget(unittest.TestCase):
         self.assertFalse(compute_rest_market_budget("public", 3))
         self.assertFalse(compute_rest_market_budget("public", 10))
 
-    # Transporte local: WS loopback, sabemos que no hay Binance
-    def test_local_transport_always_ok(self):
+    # Transporte local: caché completa = 0 upstream attempts
+    def test_local_cache_zero_upstream(self):
         self.assertTrue(compute_rest_market_budget("local", 0))
-        self.assertTrue(compute_rest_market_budget("local", 5))
-        self.assertTrue(compute_rest_market_budget("local", 100))
+
+    # Transporte local: descarga = 1 upstream attempt
+    def test_local_download_one_upstream(self):
+        self.assertTrue(compute_rest_market_budget("local", 1))
+
+    # Transporte local: reintentos contabilizados (2 upstream = OK, 3 = EXCEEDED)
+    def test_local_retries_counted(self):
+        self.assertTrue(compute_rest_market_budget("local", 2))
+        self.assertFalse(compute_rest_market_budget("local", 3))
+
+    # Transporte local: tercera solicitud bloqueada (3 = FAIL)
+    def test_local_third_blocked(self):
+        self.assertFalse(compute_rest_market_budget("local", 3))
+        self.assertFalse(compute_rest_market_budget("local", 4))
+
+    # Transporte local: evidencia ausente = UNKNOWN
+    def test_local_evidence_absent_unknown(self):
+        self.assertIsNone(compute_rest_market_budget("local", None))
+        self.assertEqual(classify_upstream(0, 0, None), "UNKNOWN")
 
     # Tres métricas distintas: BFF vs caché vs upstream
     def test_three_distinct_metrics(self):

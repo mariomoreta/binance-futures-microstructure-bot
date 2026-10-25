@@ -83,7 +83,8 @@ class HistoryClient:
                  max_retries: int = 5,
                  max_429: int = 2,
                  sleep: Callable[[float], None] = time.sleep,
-                 opener: Optional[Callable] = None) -> None:
+                 opener: Optional[Callable] = None,
+                 execution_id: Optional[str] = None) -> None:
         self.base_url = base_url.rstrip("/")
         self.max_weight = max_weight_per_minute
         self.timeout = request_timeout
@@ -95,6 +96,8 @@ class HistoryClient:
         self._window_start = time.monotonic()
         self._window_weight = 0
         self._429_seen = 0
+        self.execution_id = execution_id or f"exec-{int(time.monotonic() * 1000)}"
+        self.upstream_requests: List[Dict[str, Any]] = []
 
     def _window_reset_if_needed(self) -> None:
         now = time.monotonic()
@@ -120,19 +123,39 @@ class HistoryClient:
         attempts_5xx = 0
         while True:
             self._admit(weight)
+            # Registrar cada intento upstream ANTES de enviarlo.
+            upstream_entry: Dict[str, Any] = {
+                "execution_id": self.execution_id,
+                "endpoint": url,
+                "symbol": params.get("symbol"),
+                "range": f"{params.get('startTime', '')}-{params.get('endTime', '')}",
+                "page": params.get("limit"),
+                "retry": attempts_5xx,
+                "result": "pending",
+                "duration_ms": None,
+            }
+            self.upstream_requests.append(upstream_entry)
             try:
+                t0 = time.monotonic()
                 with self._opener(req, timeout=self.timeout) as resp:
                     raw = resp.read().decode("utf-8")
                     hdrs = {k.lower(): v for k, v in resp.headers.items()}
                     payload = json.loads(raw)
+                upstream_entry["result"] = "ok"
+                upstream_entry["duration_ms"] = int((time.monotonic() - t0) * 1000)
             except urllib.error.HTTPError as exc:
                 self.stats.failures += 1
+                upstream_entry["result"] = f"http_{exc.code}"
                 if exc.code == 418:
+                    upstream_entry["duration_ms"] = int(
+                        (time.monotonic() - t0) * 1000)
                     raise RateLimitExceeded(
                         f"HTTP 418 IP ban on {path} — aborting") from exc
                 if exc.code == 429:
                     self._429_seen += 1
                     if self._429_seen > self.max_429:
+                        upstream_entry["duration_ms"] = int(
+                            (time.monotonic() - t0) * 1000)
                         raise RateLimitExceeded(
                             f"HTTP 429 budget exhausted on {path}") from exc
                     retry_after = exc.headers.get("Retry-After") if \
@@ -142,14 +165,33 @@ class HistoryClient:
                     except (TypeError, ValueError):
                         delay = 60.0
                     self.stats.retries += 1
+                    upstream_entry["result"] = f"http_429_retry_{attempts_5xx + 1}"
+                    upstream_entry["duration_ms"] = int(
+                        (time.monotonic() - t0) * 1000)
                     self._sleep(min(delay, 65.0))
                     continue
                 if 500 <= exc.code < 600 and attempts_5xx < self.max_retries:
                     attempts_5xx += 1
                     self.stats.retries += 1
+                    upstream_entry["result"] = f"http_5xx_retry_{attempts_5xx}"
+                    upstream_entry["duration_ms"] = int(
+                        (time.monotonic() - t0) * 1000)
                     self._sleep(_backoff(attempts_5xx))
                     continue
+                upstream_entry["duration_ms"] = int(
+                    (time.monotonic() - t0) * 1000)
                 raise
+            except (urllib.error.URLError, TimeoutError, ConnectionError,
+                    json.JSONDecodeError) as exc:
+                self.stats.failures += 1
+                upstream_entry["result"] = "connection_error"
+                upstream_entry["duration_ms"] = int(
+                    (time.monotonic() - t0) * 1000)
+                if attempts_5xx >= self.max_retries:
+                    raise
+                attempts_5xx += 1
+                self.stats.retries += 1
+                self._sleep(_backoff(attempts_5xx))
             except (urllib.error.URLError, TimeoutError, ConnectionError,
                     json.JSONDecodeError) as exc:
                 self.stats.failures += 1

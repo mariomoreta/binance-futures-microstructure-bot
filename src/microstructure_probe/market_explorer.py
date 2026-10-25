@@ -372,16 +372,20 @@ def plan_missing_block(bars: Sequence[Dict[str, Any]], from_ms: int, to_ms: int,
 def fetch_block(cache: MarketCache, client: HistoryClient, symbol: str,
                 interval: str, source: str, start_ms: int, end_ms: int,
                 pages: int, now_ms: int,
-                page_limit: int = PAGE_LIMIT) -> Dict[str, Any]:
+                page_limit: int = PAGE_LIMIT,
+                max_upstream_requests: Optional[int] = None) -> Dict[str, Any]:
     """Adquiere un bloque acotado y lo persiste SOLO en la cache aislada."""
+    max_upstream = max_upstream_requests if max_upstream_requests is not None \
+        else MAX_FETCH_REQUESTS_PER_WINDOW
     window_used = cache.requests_in_window(now_ms)
     planned = int(pages)
-    if window_used + planned > MAX_FETCH_REQUESTS_PER_WINDOW:
+    if window_used + planned > max_upstream:
         return {"performed": False, "status": "budget_exhausted",
                 "error": "RATE_BUDGET_EXHAUSTED", "requests": 0, "pages": 0,
                 "retries": 0, "failures": 0,
-                "detail": (f"presupuesto agotado: {window_used} peticiones en la"
-                           f" ventana de {ROLLING_WINDOW_MS} ms"),
+                "detail": (f"presupuesto de upstream agotado: "
+                           f"{window_used} peticiones en la ventana de "
+                           f"{ROLLING_WINDOW_MS} ms, límite {max_upstream}"),
                 "retry_after_ms": ROLLING_WINDOW_MS}
     before = client.stats.requests
     try:
@@ -494,7 +498,9 @@ def series_payload(cache: MarketCache, client: Optional[HistoryClient] = None,
                    probe_earliest: bool = False,
                    now_ms: Optional[int] = None,
                    history_db: Optional[Path] = None,
-                   limit: int = MAX_SERIES_LIMIT) -> Dict[str, Any]:
+                   limit: int = MAX_SERIES_LIMIT,
+                   max_upstream_requests: Optional[int] = None) -> Dict[str, Any]:
+    """Vela a vela, solo lo almacenado o adquirido; nunca simulado."""
     """Vela a vela, solo lo almacenado o adquirido; nunca simulado."""
     now = int(now_ms if now_ms is not None else time.time() * 1000)
     sym = str(symbol or "").strip().upper()
@@ -527,7 +533,8 @@ def series_payload(cache: MarketCache, client: Optional[HistoryClient] = None,
         block = plan_missing_block(stored, start, end, step, pages, page_limit)
         if block is not None:
             fetch_info = fetch_block(cache, client, sym, interval, source,
-                                     block[0], block[1], pages, now, page_limit)
+                                     block[0], block[1], pages, now, page_limit,
+                                     max_upstream_requests=max_upstream_requests)
             fetch_info["allowed"] = True
             fetch_info["block"] = [block[0], block[1]]
             stored, storage_info = read_stored(cache, sym, interval, source,
