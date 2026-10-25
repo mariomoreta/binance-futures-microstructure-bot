@@ -1540,8 +1540,12 @@ def run_one(index: int, args: argparse.Namespace, workdir: Path,
             ])
             # Con --no-recovery el servicio no hace REST a Binance; con
             # --transport local tampoco hay Binance. En modo public sin
-            # --no-recovery habría que inspeccionar los logs del servicio.
-            upstream_binance_requests = 0
+            # --no-recovery, el BFF puede hacer peticiones REST a Binance a
+            # través del HistoryClient, pero esas peticiones NO aparecen en el
+            # network.json del navegador (solo registra peticiones del
+            # navegador al BFF). Sin registros del servicio Python, el
+            # upstream es desconocido, no cero.
+            upstream_binance_requests = None
 
             checks = run.get("checks") or []
             failed = run.get("failed") or []
@@ -1569,9 +1573,14 @@ def run_one(index: int, args: argparse.Namespace, workdir: Path,
                 # En modo local no hay REST real a Binance (todo va al cache);
                 # el presupuesto de 2 REST en conjunto aplica al servicio en
                 # modo public y se mide por solicitudes upstream reales a
-                # Binance, no por llamadas del navegador al BFF.
+                # Binance, no por llamadas del navegador al BFF. Si no hay
+                # registros del servicio Python (upstream es None), el
+                # presupuesto es UNKNOWN, no se asume cumplido.
                 "rest_market_budget": (True if transport == "local"
-                                       else upstream_binance_requests <= 2),
+                                       else (None if upstream_binance_requests
+                                             is None
+                                             else upstream_binance_requests
+                                             <= 2)),
                 "preflight_ok": bool(durations.get("preflight") is not None),
                 "all_series_local": all_fetch_local,
                 "catalog_local": catalog_local,

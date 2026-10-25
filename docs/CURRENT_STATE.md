@@ -3456,7 +3456,7 @@ La ventana pÃºblica no se repetirÃ¡ ante fallo. Queda pendiente ajuste
 del contador REST para excluir peticiones servidas desde cachÃ© durante
 el preflight antes de una futura autorizaciÃ³n.
 
-**Addendum: reconciliaciÃ³n de presupuesto REST (SHA `d9e651a`).**
+**Addendum: reconciliaciÃ³n de presupuesto REST (SHA `d49216f`).**
 
 Se separaron tres mÃ©tricas de red en el arnés
 (`scripts/market_stream_local_acceptance.py`):
@@ -3464,27 +3464,68 @@ Se separaron tres mÃ©tricas de red en el arnés
 | MÃ©trica | DefiniciÃ³n | Valor en ventana pÃºblica |
 |---|---|---|
 | `bff_market_requests` | Llamadas del navegador al BFF (`/api/v1/market-series`) | 3 |
-| `cache_reads` | Lecturas servidas íntegramente desde cachÃ© del servicio (`fetch_performed=True`) | 2 |
-| `upstream_binance_requests` | Solicitudes HTTP realmente enviadas a Binance (incluidos reintentos y recuperaciÃ³n) | 0 |
+| `cache_reads` | Lecturas con `fetch_performed=True` en respuesta del BFF | 2 |
+| `upstream_binance_requests` | Solicitudes HTTP realmente enviadas a Binance | UNKNOWN |
 
-**AnÃ¡lisis:**
+**Detalle de las 3 llamadas al BFF:**
 
-1. Las 3 llamadas al BFF fueron:
-   - Carga inicial 1h (grÃ¡fico base): servida desde cachÃ© del servicio
-   - Carga inicial 1m (tras preflight): servida desde cachÃ© del servicio
-   - PaginaciÃ³n 1m (Cargar anteriores): servida desde cachÃ© del servicio
+| # | Timestamp (ms) | Símbolo | Intervalo | Rango (from_ms → to_ms) | Fuente | fetch_performed | Solicitudes upstream acreditadas |
+|---|---|---|---|---|---|---|---|
+| 1 | 1792935062704 | BTCUSDT | 1h | 1791858662696 → 1792935062696 | Navegador → BFF | True | No acreditadas (sin registro del servicio Python) |
+| 2 | 1792935062731 | BTCUSDT | 1m | 1792917122727 → 1792935062727 | Navegador → BFF | True | No acreditadas (sin registro del servicio Python) |
+| 3 | 1792935121013 | BTCUSDT | 1m | 1792899180000 → 1792917120000 | Navegador → BFF | True | No acreditadas (sin registro del servicio Python) |
 
-2. Con `--no-recovery`, el servicio no hace REST a Binance. Todas las lecturas de velas provienen del cachÃ© local del servicio (SQLite). **Upstream a Binance: 0.**
+**Rutas de solicitud REST:**
 
-3. El presupuesto autorizado es de mÃ¡ximo 2 solicitudes pÃºblicas de velas (hasta 300 cada una) enviadas directamente a Binance. Como `upstream_binance_requests = 0`, el presupuesto se cumple (0 ≤ 2).
+1. **RecuperaciÃ³n REST del stream de market-stream**: desactivada con
+   `--no-recovery`. El servicio de market-stream no hace peticiones REST a
+   Binance para recuperar velas perdidas.
+
+2. **Descargas REST del explorador histÃ³rico**: el BFF (`market_explorer.py`)
+   puede hacer peticiones REST a Binance a travÃ©s del `HistoryClient` cuando
+   `fetch_block` es invocado desde `series_payload`. El campo
+   `fetch_performed=True` en la respuesta del BFF indica que `fetch_block`
+   se ejecutÃ³, lo que intenta llamar a `client.paginate_klines()` ->
+   `urllib.request.urlopen()` a `https://fapi.binance.com`. Sin embargo, el
+   `network.json` del navegador sÃ³lo registra peticiones del navegador al
+   BFF (puerto 3020), no las peticiones del proceso Python del BFF a Binance.
+   No hay registros de solicitudes HTTP upstream a Binance en la evidencia
+   conservada.
+
+**Fundamento de upstream_binance_requests:**
+
+Ausencia de registro NO equivale a cero. No hay registros de solicitudes
+HTTP a `fapi.binance.com` en el `network.json` del navegador, en el
+`orchestrator.log`, ni en el `run.json`. El `fetch_performed=True` sÃ³lo
+indica que `fetch_block` fue llamado (se intentÃ³ una peticiÃ³n), no que la
+peticiones HTTP se enviaron exitosamente a Binance.
+
+Por lo tanto, `upstream_binance_requests = None` (UNKNOWN), no 0.
+
+**Resultado reconciliado del presupuesto REST:**
+
+| MÃ©trica | Valor |
+|---|---|
+| Solicitudes upstream a Binance | UNKNOWN (sin registros) |
+| Presupuesto autorizado | Máx. 2 solicitudes pÃºblicas de velas (≤300 cada una) |
+| Cumple presupuesto | UNKNOWN (no se puede determinar) |
 
 **CorrecciÃ³n del evaluador:**
-- `rest_market_budget` ahora mide `upstream_binance_requests <= 2`, no llamadas al BFF.
+- `rest_market_budget` ahora mide `upstream_binance_requests <= 2`, no
+  llamadas al BFF. Si `upstream_binance_requests` es `None` (desconocido),
+  el presupuesto es `None` (UNKNOWN), no se asume cumplido.
 - `bff_market_requests` se mantiene como mÃ©trica distinta (informativa).
 - `cache_reads` se mantiene como mÃ©trica distinta (informativa).
-- El veredicto global integra aceptaciÃ³n funcional y cumplimiento de lÃ­mites.
+- El veredicto global integra aceptaciÃ³n funcional y cumplimiento de
+  lÃ­mites, evitando `procedural_pass=True` junto a presupuesto
+  desconocido.
 
-**Resultado reconciliado:** Con el contador correcto (upstream=0), la ventana pÃºblica cumple el presupuesto REST. El FAIL original de `procedural_pass` se debía a contar llamadas al BFF en lugar de solicitudes upstream a Binance.
+**Resultado global reconciliado: UNKNOWN**
+
+El `procedural_pass=FALSE` del `local.json` original se mantiene tal cual
+(FAIL del presupuesto REST por contar llamadas al BFF en lugar de
+upstream real). Con la correcciÃ³n del evaluador, el presupuesto REST
+serÃ­a UNKNOWN (no se puede determinar si se cumpliÃ³ o no), no PASS.
 
 **Regresiones locales** (`tests/test_market_stream_budget.py`, 7 tests):
 - `test_cache_complete_zero_upstream`: cachÃ© completa → 0 upstream → OK
