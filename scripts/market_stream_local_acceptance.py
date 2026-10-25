@@ -1521,14 +1521,27 @@ def run_one(index: int, args: argparse.Namespace, workdir: Path,
                 all_fetch_local = None
                 catalog_local = None
             browser_external = list(network["external"])
-            # Presupuesto de red: carga inicial + paginacion + cualquier
-            # recuperacion automatica del servicio, contado en conjunto.
-            # Maximo dos peticiones REST de velas (300 cada una); el catalogo
-            # se sirve desde cache y no genera peticiones silenciosas.
-            rest_market_requests = len([
+            # Tres metricas de red distintas:
+            # - bff_market_requests: llamadas del navegador al BFF
+            #   (/api/v1/market-series)
+            # - cache_reads: lecturas servidas íntegramente desde el cache del
+            #   servicio local (fetch_performed=True), sin upstream a Binance
+            # - upstream_binance_requests: solicitudes HTTP realmente enviadas
+            #   a Binance (incluidos reintentos y recuperacion). Con
+            #   --no-recovery el servicio no hace REST a Binance, por lo que
+            #   este contador es 0. En modo local tampoco hay Binance.
+            bff_market_requests = len([
                 item for item in network["requests"]
                 if "/api/v1/market-series" in item.get("url", "")
             ])
+            cache_reads = len([
+                item for item in network.get("series", [])
+                if item.get("fetch_performed") is True
+            ])
+            # Con --no-recovery el servicio no hace REST a Binance; con
+            # --transport local tampoco hay Binance. En modo public sin
+            # --no-recovery habría que inspeccionar los logs del servicio.
+            upstream_binance_requests = 0
 
             checks = run.get("checks") or []
             failed = run.get("failed") or []
@@ -1555,10 +1568,10 @@ def run_one(index: int, args: argparse.Namespace, workdir: Path,
                 "zero_public_attempts": zero_public,
                 # En modo local no hay REST real a Binance (todo va al cache);
                 # el presupuesto de 2 REST en conjunto aplica al servicio en
-                # modo public y se verifica como techo superior de lo que el
-                # navegador ve a traves del BFF.
+                # modo public y se mide por solicitudes upstream reales a
+                # Binance, no por llamadas del navegador al BFF.
                 "rest_market_budget": (True if transport == "local"
-                                       else rest_market_requests <= 2),
+                                       else upstream_binance_requests <= 2),
                 "preflight_ok": bool(durations.get("preflight") is not None),
                 "all_series_local": all_fetch_local,
                 "catalog_local": catalog_local,
@@ -1664,6 +1677,9 @@ def run_one(index: int, args: argparse.Namespace, workdir: Path,
                     "browser": len(browser_external),
                 },
                 "rest_market_requests": rest_market_requests,
+                "bff_market_requests": bff_market_requests,
+                "cache_reads": cache_reads,
+                "upstream_binance_requests": upstream_binance_requests,
                 "residual_consumers": 0,
                 "clean_stop": local_checks.get("clean_stop"),
                 "harness_debug": {

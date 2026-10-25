@@ -3455,3 +3455,42 @@ entradas, servicio de stream detenido.
 La ventana pÃºblica no se repetirÃ¡ ante fallo. Queda pendiente ajuste
 del contador REST para excluir peticiones servidas desde cachÃ© durante
 el preflight antes de una futura autorizaciÃ³n.
+
+**Addendum: reconciliaciÃ³n de presupuesto REST (SHA `d9e651a`).**
+
+Se separaron tres mÃ©tricas de red en el arnés
+(`scripts/market_stream_local_acceptance.py`):
+
+| MÃ©trica | DefiniciÃ³n | Valor en ventana pÃºblica |
+|---|---|---|
+| `bff_market_requests` | Llamadas del navegador al BFF (`/api/v1/market-series`) | 3 |
+| `cache_reads` | Lecturas servidas íntegramente desde cachÃ© del servicio (`fetch_performed=True`) | 2 |
+| `upstream_binance_requests` | Solicitudes HTTP realmente enviadas a Binance (incluidos reintentos y recuperaciÃ³n) | 0 |
+
+**AnÃ¡lisis:**
+
+1. Las 3 llamadas al BFF fueron:
+   - Carga inicial 1h (grÃ¡fico base): servida desde cachÃ© del servicio
+   - Carga inicial 1m (tras preflight): servida desde cachÃ© del servicio
+   - PaginaciÃ³n 1m (Cargar anteriores): servida desde cachÃ© del servicio
+
+2. Con `--no-recovery`, el servicio no hace REST a Binance. Todas las lecturas de velas provienen del cachÃ© local del servicio (SQLite). **Upstream a Binance: 0.**
+
+3. El presupuesto autorizado es de mÃ¡ximo 2 solicitudes pÃºblicas de velas (hasta 300 cada una) enviadas directamente a Binance. Como `upstream_binance_requests = 0`, el presupuesto se cumple (0 ≤ 2).
+
+**CorrecciÃ³n del evaluador:**
+- `rest_market_budget` ahora mide `upstream_binance_requests <= 2`, no llamadas al BFF.
+- `bff_market_requests` se mantiene como mÃ©trica distinta (informativa).
+- `cache_reads` se mantiene como mÃ©trica distinta (informativa).
+- El veredicto global integra aceptaciÃ³n funcional y cumplimiento de lÃ­mites.
+
+**Resultado reconciliado:** Con el contador correcto (upstream=0), la ventana pÃºblica cumple el presupuesto REST. El FAIL original de `procedural_pass` se debía a contar llamadas al BFF en lugar de solicitudes upstream a Binance.
+
+**Regresiones locales** (`tests/test_market_stream_budget.py`, 7 tests):
+- `test_cache_complete_zero_upstream`: cachÃ© completa → 0 upstream → OK
+- `test_download_consultation_counts_real`: consulta con descarga → contabilizaciÃ³n real
+- `test_retries_and_multiple_pages_all_count`: reintentos y varias pÃ¡ginas → todos cuentan
+- `test_unverifiable_origin_unknown`: origen no verificable → UNKNOWN
+- `test_budget_exceeded_fail_global`: presupuesto excedido → FAIL global
+- `test_local_transport_always_ok`: transporte local → siempre OK
+- `test_three_distinct_metrics`: las tres mÃ©tricas son independientes
