@@ -3349,3 +3349,30 @@ Remove-Item Env:MICROPROBE_STREAM_URL -ErrorAction SilentlyContinue
 Sustituye únicamente la instancia del dashboard en `127.0.0.1:3020`
 (PID identificada por puerto; comando `npm start` en `frontend/`). No hay
 trabajos activos de monitor, backtest ni sesiones que se vean afectados.
+
+**Diagnóstico y corrección del fallo de la ventana pública (SHA `5fd7a29`).**
+
+**Causa demostrada:** El navegador no encontraba
+`[data-testid="explorer-open-BTCUSDT"]` porque el catálogo canónico tiene 931
+entradas y el explorador las devuelve paginadas (20 por página, orden
+alfabético). BTCUSDT comienza por "B" y no aparece en la primera página (hay
+contratos comenzando por "0" y "1" antes). El botón `explorer-open-BTCUSDT`
+simplemente no existía en el DOM de la primera página.
+
+**Corrección mínima aplicada** en `scripts/market_stream_local_acceptance.py`:
+
+1. **Flujo de usuario real:** en lugar de esperar directamente el botón, el
+   arnés ahora busca "BTCUSDT" en el input de catálogo, pulsa búsqueda y
+   entonces espera y hace clic en `explorer-open-BTCUSDT`. Esto funciona
+   con cualquier tamaño de catálogo.
+2. **Preflight obligatorio:** antes de iniciar el servicio público, el
+   navegador debe estar ya en BTCUSDT/1m con el gráfico cargado
+   (`explorer-selected` contiene "BTCUSDT" y el interval selector vale "1m").
+   Si el preflight falla, se aborta sin arrancar el servicio ni consumir la
+   ventana.
+3. **Verificación local:** dos recorridos consecutivos PASS con transporte
+   loopback (83s y 115s), `preflight_ok: true`, `zero_public_attempts: true`,
+   `rest_market_budget: true`, `global_deadline_respected: true`.
+
+**Resultado del preflight:** PASS en ambos recorridos locales. El navegador
+llega a BTCUSDT/1m con gráfico cargado antes de iniciar el servicio.

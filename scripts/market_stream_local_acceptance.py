@@ -1016,6 +1016,32 @@ def wait_identity_live(page, timeout: float) -> float:
     return time.monotonic() - started
 
 
+def wait_preflight(page, timeout: float) -> float:
+    """Espera a que el navegador esté en BTCUSDT/1m con el gráfico cargado.
+
+    Preflight obligatorio antes de arrancar el servicio público: el usuario
+    debe haber buscado y seleccionado BTCUSDT, elegido el intervalo 1m y tener
+    el gráfico listo. Si esto falla, se aborta sin iniciar el servicio ni
+    consumir la ventana.
+    """
+    started = time.monotonic()
+    page.wait_for_function(
+        """() => {
+          const selected = (id) => {
+            const node = document.querySelector(`[data-testid="${id}"]`);
+            return node ? (node.textContent || "").trim() : "";
+          };
+          const selText = selected("explorer-selected");
+          const intervalNode = document.querySelector(
+            '[data-testid="explorer-interval"]');
+          return selText.includes("BTCUSDT")
+            && intervalNode !== null
+            && intervalNode.value === "1m";
+        }""",
+        timeout=int(timeout * 1000))
+    return time.monotonic() - started
+
+
 def wait_count_above(page, before: int, timeout: float) -> float:
     started = time.monotonic()
     page.wait_for_function(
@@ -1211,13 +1237,7 @@ def run_one(index: int, args: argparse.Namespace, workdir: Path,
         marks["minute_phase"] = time.monotonic() - run_started
         log(f"run {index}: fase de minuto {durations['minute_phase']:.1f}s")
 
-        runner = OrchestratorRunner(args, run_json, stderr_log, env, hold_signal,
-                                    post_reconnect_signal)
-        runner.start()
-        wait_until(lambda: service_health(args.service_port) is not None,
-                   20.0, 0.1, "service_up")
-        marks["service_up"] = time.monotonic() - run_started
-        log(f"run {index}: servicio {args.service_port} arriba")
+        # El servicio se inicia tras el preflight del navegador (ver abajo).
 
         def process_responses(items: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
             summaries: List[Dict[str, Any]] = []
@@ -1288,12 +1308,36 @@ def run_one(index: int, args: argparse.Namespace, workdir: Path,
             page.add_init_script(WRAPPER_JS)
             page.goto(f"{args.dashboard_url.rstrip('/')}/market-lab",
                       wait_until="domcontentloaded", timeout=30_000)
+
+            # PREFLIGHT: buscar BTCUSDT, seleccionar, intervalo 1m, gráfico
+            # cargado. Identidad estable: búsqueda por símbolo, no por posición.
+            # Si el preflight falla, se aborta sin arrancar el servicio.
+            page.wait_for_selector('[data-testid="explorer-catalog-state"]',
+                                   timeout=30_000)
+            page.fill('[data-testid="explorer-query"]', "BTCUSDT")
+            page.click('[data-testid="explorer-search"]')
             page.wait_for_selector('[data-testid="explorer-open-BTCUSDT"]',
                                    timeout=30_000)
             page.click('[data-testid="explorer-open-BTCUSDT"]')
             page.wait_for_selector('[data-testid="explorer-interval"]',
                                    timeout=20_000)
             page.select_option('[data-testid="explorer-interval"]', "1m")
+            _check_global_deadline()
+            durations["preflight"] = wait_preflight(page, LIMITS["page_ready"])
+            marks["preflight"] = time.monotonic() - run_started
+            log(f"run {index}: preflight BTCUSDT/1m en "
+                f"{durations['preflight']:.1f}s")
+
+            # Iniciar servicio DESPUÉS del preflight del navegador. Si el
+            # preflight falló, nunca se llega aquí.
+            runner = OrchestratorRunner(args, run_json, stderr_log, env,
+                                        hold_signal, post_reconnect_signal)
+            runner.start()
+            wait_until(lambda: service_health(args.service_port) is not None,
+                       20.0, 0.1, "service_up")
+            marks["service_up"] = time.monotonic() - run_started
+            log(f"run {index}: servicio {args.service_port} arriba")
+
             _check_global_deadline()
             durations["page_ready"] = wait_identity_live(page, LIMITS["page_ready"])
             marks["page_ready"] = time.monotonic() - run_started
@@ -1515,6 +1559,7 @@ def run_one(index: int, args: argparse.Namespace, workdir: Path,
                 # navegador ve a traves del BFF.
                 "rest_market_budget": (True if transport == "local"
                                        else rest_market_requests <= 2),
+                "preflight_ok": bool(durations.get("preflight") is not None),
                 "all_series_local": all_fetch_local,
                 "catalog_local": catalog_local,
                 "one_pagination_request": len(earlier_requests) == 1,
@@ -1552,6 +1597,8 @@ def run_one(index: int, args: argparse.Namespace, workdir: Path,
                 "phases_within_limits": {
                     "minute_phase": durations.get("minute_phase", 999)
                     <= LIMITS["minute_phase"],
+                    "preflight": durations.get("preflight", 999)
+                    <= LIMITS["page_ready"],
                     "page_ready": durations.get("page_ready", 999)
                     <= LIMITS["page_ready"],
                     "acceptance": durations.get("acceptance", 999)
