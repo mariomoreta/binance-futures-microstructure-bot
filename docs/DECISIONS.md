@@ -2921,3 +2921,43 @@ pero no se solicita ni se abre en este bloque. El `orchestrator_exit=2` es el
 `UNKNOWN` previo al `--finalize` y no debe leerse como veredicto. El dashboard se
 restauró al entorno canónico (catálogo 931, no las 2 entradas de prueba) y el
 servicio 8791/8792 quedó detenido.
+
+## 2026-10-25 — Presupuesto REST upstream: reserva transaccional por intento con execution_id (base `309aee1`)
+
+Decisión tomada tras verificar el alcance real del control de presupuesto del
+bloque `1b36647`/`309aee1` (verificación pedida por el operador, transporte
+local, sin abrir Binance). Alcance entonces: (1) el contador compartido
+`market_fetch_ledger` se contabilizaba DESPUÉS de la petición (postenvio), sin
+reserva, con carrera entre procesos; (2) el registro por intento
+(`HistoryClient.upstream_requests`) era lista en memoria que moría con el
+proceso; (3) el dashboard → BFF → CLI no propagaba `execution_id`; (4) el
+limitador per-instancia de peso no acumulaba `_window_weight` (defecto latente
+demostrado: el test `test_third_request_blocked_before_send` ya fallaba en la
+base; nunca bloqueaba). El "2 upstream" del arnés de ventana era un techo del
+navegador, no un límite del backend.
+
+Corrección aplicada reutilizando los mecanismos existentes (sin nueva
+arquitectura): `MarketCache.reserve_fetch_attempt` (chequeo + INSERT con
+`BEGIN IMMEDIATE` en una transacción — los procesos concurrentes que comparten
+la cache no superan el límite), `LedgerAttemptGate` conectado como
+`attempt_gate` de `HistoryClient` (incluso dentro de un bloque de éxito de
+`get()`, cada intento reserva ANTES del transporte y la denegación lanza
+`UpstreamBudgetExceeded` antes de abrir socket, auditada en el ledger con
+`requests=0`), migración idempotente de `market_fetch_ledger` con columnas
+`execution_id`/`detail` (filas históricas quedan NULL = UNKNOWN, nunca
+reescritas), CLI `--execution-id`/`--max-upstream`/`--api-base` (solo loopback
+para transporte de prueba) y BFF `market-series`/`market-contracts` emitiendo
+`--execution-id bff-<uuid>` por petición. Se restauró también la acumulación
+de peso del limitador per-instancia (autopacing de peso Binance, distinto del
+presupuesto compartido de intentos).
+
+Ambitos excluidos y documentados: `build_recovery` (reparación REST del
+servicio de stream) usa su propio cliente sin puerta al ledger compartido; el
+reglamento per-instancia sigue siendo de peso (no de cupos). Demostración con
+transporte local: `docs/evidence/rest-budget-scope-2026-10-25.json` y
+`tests/test_budget_scope_shared.py` (procesos reales del CLI, límite=2
+compartido entre dos procesos concurrentes, tercer intento bloqueado antes del
+transporte, reintentos que consumen cupo, reconstrucción del consumo desde el
+ledger persistido). Sin cambios de estrategia, economía, riesgo, paper,
+órdenes ni móvil; ventana Binance de Tercera no abierta ni solicitada.
+

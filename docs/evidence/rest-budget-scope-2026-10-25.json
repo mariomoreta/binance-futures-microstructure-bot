@@ -1,0 +1,646 @@
+{
+  "what": "presupuesto REST upstream compartido entre procesos (reserva por intento antes del transporte)",
+  "transport": "local: 127.0.0.1 (server HTTP temporario); no se abrio Binance",
+  "binance_calls": 0,
+  "started_at_ms": 1792948406696,
+  "finished_at_ms": 1792948409709,
+  "scenario_a_shared_limit": {
+    "limit": 2,
+    "concurrent_processes": true,
+    "p1": {
+      "ok": true,
+      "data": {
+        "contract_version": "market-series/v1",
+        "venue": "binance",
+        "market_type": "usd_m_futures",
+        "api_family": "fapi",
+        "source": "klines",
+        "endpoint": "/fapi/v1/klines",
+        "symbol": "DEMOUSDT",
+        "interval": "1h",
+        "interval_ms": 3600000,
+        "contract": null,
+        "requested": {
+          "from_ms": 1792736006942,
+          "to_ms": 1792948406942
+        },
+        "observed": {
+          "start_ms": null,
+          "end_ms": null
+        },
+        "candles": [],
+        "coverage": {
+          "state": "NO_COVERAGE",
+          "observed_start_ms": null,
+          "observed_end_ms": null,
+          "expected_bars": 0,
+          "actual_bars": 0,
+          "gap_count": null,
+          "gaps": [],
+          "absent_ranges": [
+            [
+              1792736006942,
+              1792948406942
+            ]
+          ],
+          "exhausted_before": false,
+          "earliest_available_ms": null,
+          "history_end_ms": null,
+          "note": "Sin velas almacenadas en el rango solicitado."
+        },
+        "volume": {
+          "available": false,
+          "base_asset": null,
+          "quote_asset": null,
+          "fields": [
+            "base_volume",
+            "quote_volume"
+          ],
+          "reason": "SIN_VOLUMEN_EN_LO_ALMACENADO"
+        },
+        "freshness": {
+          "state": "HISTORICAL_ON_DEMAND",
+          "newest_open_ms": null,
+          "newest_close_ms": null,
+          "fetched_at_ms": null,
+          "age_ms": null,
+          "provisional": null,
+          "note": "Sin velas: no hay frescura que declarar."
+        },
+        "fetch": {
+          "performed": true,
+          "status": "ok",
+          "error": null,
+          "requests": 1,
+          "pages": 1,
+          "bars_stored": 2,
+          "skipped_ranges": [],
+          "retries": 0,
+          "failures": 0,
+          "detail": null,
+          "retry_after_ms": null,
+          "allowed": true,
+          "block": [
+            1792736006942,
+            1792948406942
+          ]
+        },
+        "budget": {
+          "window_ms": 60000,
+          "max_requests_per_window": 2,
+          "used_in_window": 2,
+          "max_pages_per_request": 2,
+          "page_limit": 300,
+          "concurrency": 1,
+          "enforcement": "ledger_shared_reserve_before_send",
+          "execution_id": "demo-A-P1"
+        },
+        "storage": {
+          "canonical_error": "CANONICAL_MISSING",
+          "canonical_rows": 0,
+          "cache_rows": 0
+        },
+        "times": {
+          "unit": "ms",
+          "epoch": "unix_utc"
+        },
+        "labels": {
+          "mode": "HISTORICAL_ON_DEMAND",
+          "live": false,
+          "banner": "HISTORICO / CONSULTA BAJO DEMANDA"
+        },
+        "generated_at_ms": 1792948406942,
+        "notes": [
+          "Historico consultado bajo demanda: sin websocket, sin feed continuo, sin monitor. No es LIVE ni es estado actual.",
+          "La vela no cerrada se marca provisional y no publica close_time_ms (desconocido en T).",
+          "No se fabrican indicadores, objetivos, senales ni marcas de operaciones sobre datos de mercado."
+        ]
+      }
+    },
+    "p2": {
+      "ok": true,
+      "data": {
+        "contract_version": "market-series/v1",
+        "venue": "binance",
+        "market_type": "usd_m_futures",
+        "api_family": "fapi",
+        "source": "klines",
+        "endpoint": "/fapi/v1/klines",
+        "symbol": "DEMOUSDT",
+        "interval": "1h",
+        "interval_ms": 3600000,
+        "contract": null,
+        "requested": {
+          "from_ms": 1792736006957,
+          "to_ms": 1792948406957
+        },
+        "observed": {
+          "start_ms": null,
+          "end_ms": null
+        },
+        "candles": [],
+        "coverage": {
+          "state": "NO_COVERAGE",
+          "observed_start_ms": null,
+          "observed_end_ms": null,
+          "expected_bars": 0,
+          "actual_bars": 0,
+          "gap_count": null,
+          "gaps": [],
+          "absent_ranges": [
+            [
+              1792736006957,
+              1792948406957
+            ]
+          ],
+          "exhausted_before": false,
+          "earliest_available_ms": null,
+          "history_end_ms": null,
+          "note": "Sin velas almacenadas en el rango solicitado."
+        },
+        "volume": {
+          "available": false,
+          "base_asset": null,
+          "quote_asset": null,
+          "fields": [
+            "base_volume",
+            "quote_volume"
+          ],
+          "reason": "SIN_VOLUMEN_EN_LO_ALMACENADO"
+        },
+        "freshness": {
+          "state": "HISTORICAL_ON_DEMAND",
+          "newest_open_ms": null,
+          "newest_close_ms": null,
+          "fetched_at_ms": null,
+          "age_ms": null,
+          "provisional": null,
+          "note": "Sin velas: no hay frescura que declarar."
+        },
+        "fetch": {
+          "performed": true,
+          "status": "ok",
+          "error": null,
+          "requests": 1,
+          "pages": 1,
+          "bars_stored": 2,
+          "skipped_ranges": [],
+          "retries": 0,
+          "failures": 0,
+          "detail": null,
+          "retry_after_ms": null,
+          "allowed": true,
+          "block": [
+            1792736006957,
+            1792948406957
+          ]
+        },
+        "budget": {
+          "window_ms": 60000,
+          "max_requests_per_window": 2,
+          "used_in_window": 2,
+          "max_pages_per_request": 2,
+          "page_limit": 300,
+          "concurrency": 1,
+          "enforcement": "ledger_shared_reserve_before_send",
+          "execution_id": "demo-A-P2"
+        },
+        "storage": {
+          "canonical_error": "CANONICAL_MISSING",
+          "canonical_rows": 0,
+          "cache_rows": 0
+        },
+        "times": {
+          "unit": "ms",
+          "epoch": "unix_utc"
+        },
+        "labels": {
+          "mode": "HISTORICAL_ON_DEMAND",
+          "live": false,
+          "banner": "HISTORICO / CONSULTA BAJO DEMANDA"
+        },
+        "generated_at_ms": 1792948406957,
+        "notes": [
+          "Historico consultado bajo demanda: sin websocket, sin feed continuo, sin monitor. No es LIVE ni es estado actual.",
+          "La vela no cerrada se marca provisional y no publica close_time_ms (desconocido en T).",
+          "No se fabrican indicadores, objetivos, senales ni marcas de operaciones sobre datos de mercado."
+        ]
+      }
+    },
+    "p3": {
+      "ok": true,
+      "data": {
+        "contract_version": "market-series/v1",
+        "venue": "binance",
+        "market_type": "usd_m_futures",
+        "api_family": "fapi",
+        "source": "klines",
+        "endpoint": "/fapi/v1/klines",
+        "symbol": "DEMOUSDT",
+        "interval": "1h",
+        "interval_ms": 3600000,
+        "contract": null,
+        "requested": {
+          "from_ms": 1792736007401,
+          "to_ms": 1792948407401
+        },
+        "observed": {
+          "start_ms": null,
+          "end_ms": null
+        },
+        "candles": [],
+        "coverage": {
+          "state": "NO_COVERAGE",
+          "observed_start_ms": null,
+          "observed_end_ms": null,
+          "expected_bars": 0,
+          "actual_bars": 0,
+          "gap_count": null,
+          "gaps": [],
+          "absent_ranges": [
+            [
+              1792736007401,
+              1792948407401
+            ]
+          ],
+          "exhausted_before": false,
+          "earliest_available_ms": null,
+          "history_end_ms": null,
+          "note": "Sin velas almacenadas en el rango solicitado."
+        },
+        "volume": {
+          "available": false,
+          "base_asset": null,
+          "quote_asset": null,
+          "fields": [
+            "base_volume",
+            "quote_volume"
+          ],
+          "reason": "SIN_VOLUMEN_EN_LO_ALMACENADO"
+        },
+        "freshness": {
+          "state": "HISTORICAL_ON_DEMAND",
+          "newest_open_ms": null,
+          "newest_close_ms": null,
+          "fetched_at_ms": null,
+          "age_ms": null,
+          "provisional": null,
+          "note": "Sin velas: no hay frescura que declarar."
+        },
+        "fetch": {
+          "performed": false,
+          "status": "budget_exhausted",
+          "error": "RATE_BUDGET_EXHAUSTED",
+          "requests": 0,
+          "pages": 0,
+          "retries": 0,
+          "failures": 0,
+          "detail": "presupuesto de upstream agotado: 2 peticiones en la ventana de 60000 ms, límite 2",
+          "retry_after_ms": 60000,
+          "allowed": true,
+          "block": [
+            1792736007401,
+            1792948407401
+          ]
+        },
+        "budget": {
+          "window_ms": 60000,
+          "max_requests_per_window": 2,
+          "used_in_window": 2,
+          "max_pages_per_request": 2,
+          "page_limit": 300,
+          "concurrency": 1,
+          "enforcement": "ledger_shared_reserve_before_send",
+          "execution_id": "demo-A-P3"
+        },
+        "storage": {
+          "canonical_error": "CANONICAL_MISSING",
+          "canonical_rows": 0,
+          "cache_rows": 0
+        },
+        "times": {
+          "unit": "ms",
+          "epoch": "unix_utc"
+        },
+        "labels": {
+          "mode": "HISTORICAL_ON_DEMAND",
+          "live": false,
+          "banner": "HISTORICO / CONSULTA BAJO DEMANDA"
+        },
+        "generated_at_ms": 1792948407401,
+        "notes": [
+          "Historico consultado bajo demanda: sin websocket, sin feed continuo, sin monitor. No es LIVE ni es estado actual.",
+          "La vela no cerrada se marca provisional y no publica close_time_ms (desconocido en T).",
+          "No se fabrican indicadores, objetivos, senales ni marcas de operaciones sobre datos de mercado."
+        ]
+      }
+    },
+    "upstream_hits_p1_p2": 2,
+    "upstream_hits_total": 2,
+    "window_after": {
+      "used_in_window": 2,
+      "max_requests_per_window": 30,
+      "window_ms": 60000
+    },
+    "reconstruction": [
+      {
+        "execution_id": "demo-A-P1",
+        "rows": [
+          {
+            "id": 1,
+            "at_ms": 1792948406994,
+            "symbol": "DEMOUSDT",
+            "requests": 1,
+            "status": "ok",
+            "detail": "{\"duration_ms\": 52, \"endpoint\": \"http://127.0.0.1:64146/fapi/v1/klines?symbol=DEMOUSDT&interval=1h&startTime=1792736006942&endTime=1792948406942&limit=300\", \"interval\": \"1h\", \"page\": 300, \"range\": \"1792736006942-1792948406942\", \"result\": \"ok\", \"retry\": 0, \"symbol\": \"DEMOUSDT\"}"
+          }
+        ],
+        "requests_sum": 1
+      },
+      {
+        "execution_id": "demo-A-P2",
+        "rows": [
+          {
+            "id": 2,
+            "at_ms": 1792948407019,
+            "symbol": "DEMOUSDT",
+            "requests": 1,
+            "status": "ok",
+            "detail": "{\"duration_ms\": 31, \"endpoint\": \"http://127.0.0.1:64146/fapi/v1/klines?symbol=DEMOUSDT&interval=1h&startTime=1792736006957&endTime=1792948406957&limit=300\", \"interval\": \"1h\", \"page\": 300, \"range\": \"1792736006957-1792948406957\", \"result\": \"ok\", \"retry\": 0, \"symbol\": \"DEMOUSDT\"}"
+          }
+        ],
+        "requests_sum": 1
+      },
+      {
+        "execution_id": "demo-A-P3",
+        "rows": [],
+        "requests_sum": 0
+      }
+    ]
+  },
+  "scenario_b_retry_budget": {
+    "limit": 2,
+    "retry_process": true,
+    "p4": {
+      "ok": true,
+      "data": {
+        "contract_version": "market-series/v1",
+        "venue": "binance",
+        "market_type": "usd_m_futures",
+        "api_family": "fapi",
+        "source": "klines",
+        "endpoint": "/fapi/v1/klines",
+        "symbol": "DEMOUSDT",
+        "interval": "1h",
+        "interval_ms": 3600000,
+        "contract": null,
+        "requested": {
+          "from_ms": 1792736007822,
+          "to_ms": 1792948407822
+        },
+        "observed": {
+          "start_ms": null,
+          "end_ms": null
+        },
+        "candles": [],
+        "coverage": {
+          "state": "NO_COVERAGE",
+          "observed_start_ms": null,
+          "observed_end_ms": null,
+          "expected_bars": 0,
+          "actual_bars": 0,
+          "gap_count": null,
+          "gaps": [],
+          "absent_ranges": [
+            [
+              1792736007822,
+              1792948407822
+            ]
+          ],
+          "exhausted_before": false,
+          "earliest_available_ms": null,
+          "history_end_ms": null,
+          "note": "Sin velas almacenadas en el rango solicitado."
+        },
+        "volume": {
+          "available": false,
+          "base_asset": null,
+          "quote_asset": null,
+          "fields": [
+            "base_volume",
+            "quote_volume"
+          ],
+          "reason": "SIN_VOLUMEN_EN_LO_ALMACENADO"
+        },
+        "freshness": {
+          "state": "HISTORICAL_ON_DEMAND",
+          "newest_open_ms": null,
+          "newest_close_ms": null,
+          "fetched_at_ms": null,
+          "age_ms": null,
+          "provisional": null,
+          "note": "Sin velas: no hay frescura que declarar."
+        },
+        "fetch": {
+          "performed": true,
+          "status": "ok",
+          "error": null,
+          "requests": 1,
+          "pages": 1,
+          "bars_stored": 2,
+          "skipped_ranges": [],
+          "retries": 0,
+          "failures": 0,
+          "detail": null,
+          "retry_after_ms": null,
+          "allowed": true,
+          "block": [
+            1792736007822,
+            1792948407822
+          ]
+        },
+        "budget": {
+          "window_ms": 60000,
+          "max_requests_per_window": 2,
+          "used_in_window": 2,
+          "max_pages_per_request": 2,
+          "page_limit": 300,
+          "concurrency": 1,
+          "enforcement": "ledger_shared_reserve_before_send",
+          "execution_id": "demo-B-P4"
+        },
+        "storage": {
+          "canonical_error": "CANONICAL_MISSING",
+          "canonical_rows": 0,
+          "cache_rows": 0
+        },
+        "times": {
+          "unit": "ms",
+          "epoch": "unix_utc"
+        },
+        "labels": {
+          "mode": "HISTORICAL_ON_DEMAND",
+          "live": false,
+          "banner": "HISTORICO / CONSULTA BAJO DEMANDA"
+        },
+        "generated_at_ms": 1792948407822,
+        "notes": [
+          "Historico consultado bajo demanda: sin websocket, sin feed continuo, sin monitor. No es LIVE ni es estado actual.",
+          "La vela no cerrada se marca provisional y no publica close_time_ms (desconocido en T).",
+          "No se fabrican indicadores, objetivos, senales ni marcas de operaciones sobre datos de mercado."
+        ]
+      }
+    },
+    "upstream_hits_after_retry": 2,
+    "p5": {
+      "ok": true,
+      "data": {
+        "contract_version": "market-series/v1",
+        "venue": "binance",
+        "market_type": "usd_m_futures",
+        "api_family": "fapi",
+        "source": "klines",
+        "endpoint": "/fapi/v1/klines",
+        "symbol": "DEMOUSDT",
+        "interval": "1h",
+        "interval_ms": 3600000,
+        "contract": null,
+        "requested": {
+          "from_ms": 1792736009495,
+          "to_ms": 1792948409495
+        },
+        "observed": {
+          "start_ms": null,
+          "end_ms": null
+        },
+        "candles": [],
+        "coverage": {
+          "state": "NO_COVERAGE",
+          "observed_start_ms": null,
+          "observed_end_ms": null,
+          "expected_bars": 0,
+          "actual_bars": 0,
+          "gap_count": null,
+          "gaps": [],
+          "absent_ranges": [
+            [
+              1792736009495,
+              1792948409495
+            ]
+          ],
+          "exhausted_before": false,
+          "earliest_available_ms": null,
+          "history_end_ms": null,
+          "note": "Sin velas almacenadas en el rango solicitado."
+        },
+        "volume": {
+          "available": false,
+          "base_asset": null,
+          "quote_asset": null,
+          "fields": [
+            "base_volume",
+            "quote_volume"
+          ],
+          "reason": "SIN_VOLUMEN_EN_LO_ALMACENADO"
+        },
+        "freshness": {
+          "state": "HISTORICAL_ON_DEMAND",
+          "newest_open_ms": null,
+          "newest_close_ms": null,
+          "fetched_at_ms": null,
+          "age_ms": null,
+          "provisional": null,
+          "note": "Sin velas: no hay frescura que declarar."
+        },
+        "fetch": {
+          "performed": false,
+          "status": "budget_exhausted",
+          "error": "RATE_BUDGET_EXHAUSTED",
+          "requests": 0,
+          "pages": 0,
+          "retries": 0,
+          "failures": 0,
+          "detail": "presupuesto de upstream agotado: 2 peticiones en la ventana de 60000 ms, límite 2",
+          "retry_after_ms": 60000,
+          "allowed": true,
+          "block": [
+            1792736009495,
+            1792948409495
+          ]
+        },
+        "budget": {
+          "window_ms": 60000,
+          "max_requests_per_window": 2,
+          "used_in_window": 2,
+          "max_pages_per_request": 2,
+          "page_limit": 300,
+          "concurrency": 1,
+          "enforcement": "ledger_shared_reserve_before_send",
+          "execution_id": "demo-B-P5"
+        },
+        "storage": {
+          "canonical_error": "CANONICAL_MISSING",
+          "canonical_rows": 0,
+          "cache_rows": 0
+        },
+        "times": {
+          "unit": "ms",
+          "epoch": "unix_utc"
+        },
+        "labels": {
+          "mode": "HISTORICAL_ON_DEMAND",
+          "live": false,
+          "banner": "HISTORICO / CONSULTA BAJO DEMANDA"
+        },
+        "generated_at_ms": 1792948409495,
+        "notes": [
+          "Historico consultado bajo demanda: sin websocket, sin feed continuo, sin monitor. No es LIVE ni es estado actual.",
+          "La vela no cerrada se marca provisional y no publica close_time_ms (desconocido en T).",
+          "No se fabrican indicadores, objetivos, senales ni marcas de operaciones sobre datos de mercado."
+        ]
+      }
+    },
+    "upstream_hits_total": 2,
+    "window_after": {
+      "used_in_window": 2,
+      "max_requests_per_window": 30,
+      "window_ms": 60000
+    },
+    "reconstruction": [
+      {
+        "execution_id": "demo-B-P4",
+        "rows": [
+          {
+            "id": 1,
+            "at_ms": 1792948407849,
+            "symbol": "DEMOUSDT",
+            "requests": 1,
+            "status": "http_5xx_retry_1",
+            "detail": "{\"duration_ms\": 30, \"endpoint\": \"http://127.0.0.1:64149/fapi/v1/klines?symbol=DEMOUSDT&interval=1h&startTime=1792736007822&endTime=1792948407822&limit=300\", \"interval\": \"1h\", \"page\": 300, \"range\": \"1792736007822-1792948407822\", \"result\": \"http_5xx_retry_1\", \"retry\": 0, \"symbol\": \"DEMOUSDT\"}"
+          },
+          {
+            "id": 2,
+            "at_ms": 1792948409179,
+            "symbol": "DEMOUSDT",
+            "requests": 1,
+            "status": "ok",
+            "detail": "{\"duration_ms\": 22, \"endpoint\": \"http://127.0.0.1:64149/fapi/v1/klines?symbol=DEMOUSDT&interval=1h&startTime=1792736007822&endTime=1792948407822&limit=300\", \"interval\": \"1h\", \"page\": 300, \"range\": \"1792736007822-1792948407822\", \"result\": \"ok\", \"retry\": 1, \"symbol\": \"DEMOUSDT\"}"
+          }
+        ],
+        "requests_sum": 2
+      },
+      {
+        "execution_id": "demo-B-P5",
+        "rows": [],
+        "requests_sum": 0
+      }
+    ]
+  },
+  "cli": "scripts/market_explorer.py --action series ... --max-upstream 2 --execution-id ... --api-base http://127.0.0.1:<port>",
+  "ledger_table": "data/market-cache/market_cache.db -> market_fetch_ledger (execution_id, detail JSON)",
+  "notes": [
+    "Reserva transaccional BEGIN IMMEDIATE: chequeo+insercion en una transaccion, de modo que procesos concurrentes no pasan de limite.",
+    "Un intento bloqueado NO consume cupo (fila requests=0) y nunca abre conexion (upstream_hits no crece).",
+    "Filas historicas del ledger sin execution_id quedan NULL (= UNKNOWN, no se reescriben)."
+  ]
+}

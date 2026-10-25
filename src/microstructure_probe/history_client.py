@@ -12,7 +12,7 @@ Measured 2026-10-07 (limit=2 probes, x-mbx-used-weight-1m deltas):
   markPriceKlines limit=2 .... ~1    (12-field arrays, volume fields "0"/0)
   aggTrades limit=2 .......... ~20   (dicts {a,p,q,nq,f,l,T,m}, fromId paging)
   openInterestHist limit=2 ... data-pool (no weight header on market-data
-                                 host; periods 5m..1d, availability limited)
+                                  host; periods 5m..1d, availability limited)
   exchangeInfo ............... ~1    (REQUEST_WEIGHT pool 2400/min)
 
 Conservative assumed per-request weights (upper bounds; the limiter ALSO
@@ -66,6 +66,15 @@ class RateLimitExceeded(RuntimeError):
     """Raised on 418 (IP ban) or exhausted 429 budget — abort, never spin."""
 
 
+class UpstreamBudgetExceeded(RateLimitExceeded):
+    """Presupuesto upstream EJERCIDO antes del envío: ningún byte sale.
+
+    La puerta del presupuesto (``attempt_gate``) denegó la reserva; el
+    intento queda registrado como bloqueado y se aborta sin transporte
+    (nunca se envía la petición)."""
+
+
+
 @dataclass
 class RequestStats:
     requests: int = 0
@@ -77,14 +86,18 @@ class RequestStats:
 class HistoryClient:
     """Bounded, resumable public-REST client with limiter + backoff."""
 
-    def __init__(self, base_url: str = BASE_URL,
-                 max_weight_per_minute: int = 1200,
-                 request_timeout: float = 20.0,
-                 max_retries: int = 5,
-                 max_429: int = 2,
-                 sleep: Callable[[float], None] = time.sleep,
-                 opener: Optional[Callable] = None,
-                 execution_id: Optional[str] = None) -> None:
+    def __init__(
+        self,
+        base_url: str = BASE_URL,
+        max_weight_per_minute: int = 1200,
+        request_timeout: float = 20.0,
+        max_retries: int = 5,
+        max_429: int = 2,
+        sleep: Callable[[float], None] = time.sleep,
+        opener: Optional[Callable] = None,
+        execution_id: Optional[str] = None,
+        attempt_gate: Optional[Any] = None,
+    ) -> None:
         self.base_url = base_url.rstrip("/")
         self.max_weight = max_weight_per_minute
         self.timeout = request_timeout
@@ -92,6 +105,7 @@ class HistoryClient:
         self.max_429 = max_429
         self._sleep = sleep
         self._opener = opener or urllib.request.urlopen
+        self.attempt_gate = attempt_gate
         self.stats = RequestStats()
         self._window_start = time.monotonic()
         self._window_weight = 0
@@ -113,8 +127,7 @@ class HistoryClient:
             self._sleep(min(wait, 5.0))
             self._window_reset_if_needed()
 
-    def get(self, path: str, params: Dict[str, Any],
-            weight: int) -> Tuple[Any, Dict[str, str]]:
+    def get(self, path: str, params: Dict[str, Any], weight: int) -> Tuple[Any, Dict[str, str]]:
         """GET with limiter, retries, 429/418 handling. Returns (json, hdrs)."""
         query = urllib.parse.urlencode(params)
         url = self.base_url + path + ("?" + query if query else "")
@@ -128,6 +141,7 @@ class HistoryClient:
                 "execution_id": self.execution_id,
                 "endpoint": url,
                 "symbol": params.get("symbol"),
+                "interval": params.get("interval"),
                 "range": f"{params.get('startTime', '')}-{params.get('endTime', '')}",
                 "page": params.get("limit"),
                 "retry": attempts_5xx,
@@ -135,84 +149,84 @@ class HistoryClient:
                 "duration_ms": None,
             }
             self.upstream_requests.append(upstream_entry)
+            # Reserva de presupuesto ANTES del transporte: si la puerta
+            # deniega, aqui se aborta sin abrir ninguna conexion.
+            if self.attempt_gate is not None:
+                self.attempt_gate.before_send(upstream_entry)
             try:
-                t0 = time.monotonic()
-                with self._opener(req, timeout=self.timeout) as resp:
-                    raw = resp.read().decode("utf-8")
-                    hdrs = {k.lower(): v for k, v in resp.headers.items()}
-                    payload = json.loads(raw)
-                upstream_entry["result"] = "ok"
-                upstream_entry["duration_ms"] = int((time.monotonic() - t0) * 1000)
-            except urllib.error.HTTPError as exc:
-                self.stats.failures += 1
-                upstream_entry["result"] = f"http_{exc.code}"
-                if exc.code == 418:
-                    upstream_entry["duration_ms"] = int(
-                        (time.monotonic() - t0) * 1000)
-                    raise RateLimitExceeded(
-                        f"HTTP 418 IP ban on {path} — aborting") from exc
-                if exc.code == 429:
-                    self._429_seen += 1
-                    if self._429_seen > self.max_429:
-                        upstream_entry["duration_ms"] = int(
-                            (time.monotonic() - t0) * 1000)
+                hdrs: Dict[str, str] = {}
+                t0: Optional[float] = None
+                try:
+                    t0 = time.monotonic()
+                    with self._opener(req, timeout=self.timeout) as resp:
+                        raw = resp.read().decode("utf-8")
+                        hdrs = {k.lower(): v for k, v in resp.headers.items()}
+                        payload = json.loads(raw)
+                    upstream_entry["result"] = "ok"
+                    upstream_entry["duration_ms"] = int((time.monotonic() - t0) * 1000)
+                except urllib.error.HTTPError as exc:
+                    self.stats.failures += 1
+                    started = t0 if t0 is not None else time.monotonic()
+                    upstream_entry["result"] = f"http_{exc.code}"
+                    upstream_entry["duration_ms"] = int((time.monotonic() - started) * 1000)
+                    if exc.code == 418:
                         raise RateLimitExceeded(
-                            f"HTTP 429 budget exhausted on {path}") from exc
-                    retry_after = exc.headers.get("Retry-After") if \
-                        exc.headers else None
-                    try:
-                        delay = float(retry_after) if retry_after else 60.0
-                    except (TypeError, ValueError):
-                        delay = 60.0
-                    self.stats.retries += 1
-                    upstream_entry["result"] = f"http_429_retry_{attempts_5xx + 1}"
-                    upstream_entry["duration_ms"] = int(
-                        (time.monotonic() - t0) * 1000)
-                    self._sleep(min(delay, 65.0))
-                    continue
-                if 500 <= exc.code < 600 and attempts_5xx < self.max_retries:
+                            f"HTTP 418 IP ban on {path} — aborting") from exc
+                    if exc.code == 429:
+                        self._429_seen += 1
+                        if self._429_seen > self.max_429:
+                            raise RateLimitExceeded(
+                                f"HTTP 429 budget exhausted on {path}") from exc
+                        retry_after = exc.headers.get("Retry-After") if \
+                            exc.headers else None
+                        try:
+                            delay = float(retry_after) if retry_after else 60.0
+                        except (TypeError, ValueError):
+                            delay = 60.0
+                        self.stats.retries += 1
+                        upstream_entry["result"] = f"http_429_retry_{attempts_5xx + 1}"
+                        upstream_entry["duration_ms"] = int(
+                            (time.monotonic() - started) * 1000)
+                        self._sleep(min(delay, 65.0))
+                        continue
+                    if 500 <= exc.code < 600 and attempts_5xx < self.max_retries:
+                        attempts_5xx += 1
+                        self.stats.retries += 1
+                        upstream_entry["result"] = f"http_5xx_retry_{attempts_5xx}"
+                        upstream_entry["duration_ms"] = int(
+                            (time.monotonic() - started) * 1000)
+                        self._sleep(_backoff(attempts_5xx))
+                        continue
+                    raise
+                except (urllib.error.URLError, TimeoutError, ConnectionError,
+                        json.JSONDecodeError) as exc:
+                    self.stats.failures += 1
+                    started = t0 if t0 is not None else time.monotonic()
+                    upstream_entry["result"] = "connection_error"
+                    upstream_entry["duration_ms"] = int((time.monotonic() - started) * 1000)
+                    if attempts_5xx >= self.max_retries:
+                        raise
                     attempts_5xx += 1
                     self.stats.retries += 1
-                    upstream_entry["result"] = f"http_5xx_retry_{attempts_5xx}"
-                    upstream_entry["duration_ms"] = int(
-                        (time.monotonic() - t0) * 1000)
                     self._sleep(_backoff(attempts_5xx))
                     continue
-                upstream_entry["duration_ms"] = int(
-                    (time.monotonic() - t0) * 1000)
-                raise
-            except (urllib.error.URLError, TimeoutError, ConnectionError,
-                    json.JSONDecodeError) as exc:
-                self.stats.failures += 1
-                upstream_entry["result"] = "connection_error"
-                upstream_entry["duration_ms"] = int(
-                    (time.monotonic() - t0) * 1000)
-                if attempts_5xx >= self.max_retries:
-                    raise
-                attempts_5xx += 1
-                self.stats.retries += 1
-                self._sleep(_backoff(attempts_5xx))
-            except (urllib.error.URLError, TimeoutError, ConnectionError,
-                    json.JSONDecodeError) as exc:
-                self.stats.failures += 1
-                if attempts_5xx >= self.max_retries:
-                    raise
-                attempts_5xx += 1
-                self.stats.retries += 1
-                self._sleep(_backoff(attempts_5xx))
-                continue
-            self.stats.requests += 1
-            self.stats.weight_spent += weight
-            self._window_weight += weight
-            used = hdrs.get("x-mbx-used-weight-1m")
-            try:
-                if used is not None and int(used) >= WEIGHT_HARD_STOP:
-                    self._sleep(60.0)
-                    self._window_start = time.monotonic()
-                    self._window_weight = 0
-            except (TypeError, ValueError):
-                pass
-            return payload, hdrs
+                self.stats.requests += 1
+                self.stats.weight_spent += weight
+                self._window_weight += weight
+                used = hdrs.get("x-mbx-used-weight-1m")
+                try:
+                    if used is not None and int(used) >= WEIGHT_HARD_STOP:
+                        self._sleep(60.0)
+                        self._window_start = time.monotonic()
+                        self._window_weight = 0
+                except (TypeError, ValueError):
+                    pass
+                return payload, hdrs
+            finally:
+                # Cada intento (ok, error o reintento) cierra su fila del
+                # ledger con el resultado real.
+                if self.attempt_gate is not None:
+                    self.attempt_gate.after_send(upstream_entry)
 
     def klines(self, symbol: str, interval: str, start_ms: int,
                end_ms: int, limit: int = 1000,

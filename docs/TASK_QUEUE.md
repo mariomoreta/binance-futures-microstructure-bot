@@ -1,3 +1,44 @@
+## Presupuesto REST upstream — alcance verificado y corregido (2026-10-25, base `309aee1`, sin Binance)
+
+`CURRENT_PHASE`: dashboard V2 de escritorio + observación (WS público solo bajo
+autorización explícita; sin monitor, sin órdenes).
+
+`CURRENT_OBJECTIVE`: verificar el alcance del control de presupuesto REST y
+corregir lo insuficiente reutilizando mecanismos existentes.
+
+`ACTIVE_TASK`: **cerrado**. Verificado en `309aee1` y corregido: (1) reserva
+transaccional por intento (`BEGIN IMMEDIATE`) en el ledger compartido
+`market_fetch_ledger`, en lugar de contabilizar tras el envío; (2) cada
+intento HTTP —páginas y reintentos— reserva ANTES del transporte
+(`LedgerAttemptGate` + `UpstreamBudgetExceeded` sin abrir socket; bloqueo
+auditado con `requests=0`); (3) filas persistidas y vinculadas a
+`execution_id` (migración idempotente, históricas NULL = UNKNOWN);
+(4) dashboard → BFF → CLI propaga `--execution-id bff-<uuid>`; (5)
+defecto latente del limitador per-instancia corregido (`_window_weight` nunca
+acumulaba). Alcance excluido: `build_recovery` y el régimen de peso Binance siguen
+fuera del presupuesto compartido, documentado. Demostrado con transporte
+local: dos procesos reales del CLI comparten límite=2 (2 upstream), tercer
+intento bloqueado antes del transporte (0 hits), reintentos (500→reintento)
+consumen 2 cupos y bloquean al 4º, reconstrucción del consumo desde el ledger
+tras la muerte de los procesos. Baseline: 147 pruebas focalizadas PASS;
+`tsc`/`eslint` 0; vitest explorador 48/48. Evidencia:
+`docs/evidence/rest-budget-scope-2026-10-25.json`. 0 llamadas Binance.
+
+`NEXT_TASKS`:
+1. **Automatizar el lado navegador** (última sección superior): sigue siendo
+   la siguiente tarea activa de la F-CHART-BINANCE-04; el veredicto `FAIL`
+   medido de la ventana 2026-10-24 se mantiene y no se repite la ventana sin
+   autorización explícita.
+2. Las demás tareas de la sección "Segunda ventana real cerrada (2026-10-24
+   14:04Z)" siguen vigentes tal cual (aviso de servicio detenido, decisión de
+   seguridad Next.js 16.4.1, revisión visual NOT_REVIEWED, retención de
+   `data/market-cache/`).
+3. Vecino opcional del presupuesto: conectar `build_recovery` al ledger
+   compartido si el operador autoriza ampliar el alcance (hoy documentado
+   como fuera).
+4. Mantener diferido: stops/objetivos arrastrables, móvil/Flutter, F-PAPER-01,
+   ejecución con capital.
+
 ## Segunda ventana real cerrada (2026-10-24 14:04Z, base `2f2f9ea`): FAIL de aceptación
 
 `CURRENT_PHASE`: dashboard V2 de escritorio + observación (WS público solo bajo

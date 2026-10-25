@@ -1,3 +1,65 @@
+## Presupuesto REST upstream: alcance verificado y corregido (2026-10-25, base `309aee1`)
+
+Verificación informativa del bloque anterior (`1b36647`/`309aee1`), solicitada
+por el operador, con **transporte local** y sin abrir Binance (0 llamadas
+Binance; servidor HTTP en 127.0.0.1 para los procesos). Alcance verificado en
+`309aee1` y su **corrección aplicada reutilizando mecanismos existentes**:
+
+1. **Compartido entre procesos**: el contador con presupuesto efectivo vive en
+   `market_fetch_ledger` (SQLite) y ya era compartido, pero se registraba
+   DESPUÉS de la petición (postenvio). CORREGIDO: nueva reserva transaccional
+   `reserve_fetch_attempt` (CHECK + INSERT en una transacción
+   `BEGIN IMMEDIATE`): cada intento HTTP reserva 1 cupo ANTES de enviarlo, así
+   que dos procesos concurrentes no pueden superar el límite.
+2. **Cada intento (páginas y reintentos) reserva antes del transporte**: nuevo
+   `LedgerAttemptGate` conectado a `HistoryClient` como `attempt_gate`. La
+   denegación lanza `UpstreamBudgetExceeded` (nueva subclase con
+   `RateLimitExceeded`) antes de abrir socket; el intento bloqueado queda
+   auditado en el ledger con `requests=0` (no consume). Sin la puerta el
+   registro por intento era lista en memoria (`upstream_requests`) que
+   moría con el proceso.
+3. **Registros persistidos por execution_id**: `market_fetch_ledger`
+   ampliado con columnas `execution_id` y `detail` (ALTER idempotente; las
+   filas históricas quedan `NULL` = UNKNOWN, no se reescriben). La fila se
+   cierra tras el intento con resultado, reintento, duración, endpoint y
+   rango reales (JSON en `detail`). Un CLI sin `--execution-id` deja
+   `NULL` (UNKNOWN) — no se inventa identidad.
+4. **Camino real dashboard → BFF → CLI**: CORREGIDO. `market-series` y
+   `market-contracts` generan `--execution-id bff-<uuid>` por petición y el
+   CLI lo propaga (`build_client(cache, execution_id)` con puerta al ledger).
+   El límite sigue siendo el existente: 30/min compartido, recortado por el
+   CLI (nuevo `--max-upstream`) y el `pages ≤ 2` del BFF. El "2 upstream" del
+   arnés de ventana era y sigue siendo un techo del navegador, no un límite
+   del backend (`F-CHART-BINANCE-04` visible en el JSON de evidencia).
+5. **Defecto latente corregido**: el limitador per-instancia de peso
+   (`_window_weight`) no acumulaba peso (verificado en `309aee1` con el test
+   ya fallado `test_third_request_blocked_before_send`: nunca bloqueaba más
+   que esperas). Se restauró la acumulación en el éxito; sigue siendo
+   autopacing de peso Binance, NO presupuesto compartido de intentos.
+
+**Alcance que sigue fuera de este control** (documentado, sin cambios): la
+reparación REST del servicio de stream (`build_recovery` en
+`market_stream.py`) usa su propio cliente sin puerta al ledger compartido; el
+catálogo con gate igualmente queda al default 30/min; `--api-base` solo
+admite `http://127.0.0.1|localhost` (sin red pública).
+
+**Pruebas focalizadas**: `tests/test_budget_scope_shared.py` (10) — dos
+procesos reales del CLI concurrentes comparten límite=2 (2 upstream), un
+tercer intento bloqueado antes del transporte (0 hits nuevos), los reintentos
+(500→reintento) consumen 2 cupos y además bloquean al tercer
+proceso, las filas sobreviven a cada proceso y reconstruyen el consumo por
+`execution_id` (`requests_sum` exacto); carrera de 3 contendientes con
+límite=2: 2 concedidas/1 denegada. `tests/test_history_client_budget.py`
+(5, corregido el test que reclamaba bloqueo imposible) +
+`tests/test_market_explorer.py` + `tests/test_market_stream_budget.py` +
+`tests/test_market_stream*.py` + `tests/test_history.py`:
+**147 passed** (`pytest -k "explorer or history_client or budget or
+market_stream"`). Frontend: `tsc` 0, `eslint` 0, vitest explorador 48/48.
+Migración aplicada a `data/market-cache/market_cache.db` real y verificada con
+`--no-fetch` (0 upstream). Evidencia:
+`docs/evidence/rest-budget-scope-2026-10-25.json`.
+
+
 ## Segunda ventana real ejecutada (2026-10-24 14:04Z, base `2f2f9ea`): cadena correcta, aceptación FAIL (F-CHART-BINANCE-04)
 
 Ejecutada **una sola** ventana autorizada el 2026-10-24 entre `14:04:37.065Z` y

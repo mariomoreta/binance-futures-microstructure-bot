@@ -1,3 +1,4 @@
+import {randomUUID} from "node:crypto";
 import {NextResponse} from "next/server";
 import {explorerOriginAllowed, runMarketExplorer, statusForError} from "@/lib/explorer-bridge";
 
@@ -69,6 +70,10 @@ export async function GET(req: Request) {
     "--source", source,
     "--pages", String(pages ?? 1),
     "--page-limit", String(pageLimit ?? 300),
+    // Un id de ejecucion por peticion: vincula las filas del ledger de
+    // presupuesto (reservadas por intento, antes del transporte) con la
+    // consulta que llego del dashboard.
+    "--execution-id", `bff-${randomUUID()}`,
   ];
   if (fromMs !== undefined) args.push("--from-ms", String(fromMs));
   if (toMs !== undefined) args.push("--to-ms", String(toMs));

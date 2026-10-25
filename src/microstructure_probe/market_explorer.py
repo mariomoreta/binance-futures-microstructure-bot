@@ -31,13 +31,21 @@ T), nunca un cierre inventado.
 
 from __future__ import annotations
 
+import json
 import re
 import sqlite3
 import time
+import urllib.parse
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Sequence, Tuple
 
-from .history_client import INTERVAL_MS, HistoryClient, RateLimitExceeded
+from .history_client import (
+    INTERVAL_MS,
+    HistoryClient,
+    RateLimitExceeded,
+    UpstreamBudgetExceeded,
+)
+
 from .market_cache import (
     CATALOG_TTL_MS,
     MAX_FETCH_REQUESTS_PER_WINDOW,
@@ -138,14 +146,20 @@ def refresh_catalog(cache: MarketCache, client: HistoryClient,
     try:
         payload, _ = client.exchange_info()
     except RateLimitExceeded as exc:
-        cache.record_fetch(now, None, None, "exchange_info", 1, 0, 1,
-                           "rate_limited", str(exc))
+        if _gate_records_client(client):
+            pass  # ledger por intento ya escrito por la puerta
+        else:
+            cache.record_fetch(now, None, None, "exchange_info", 1, 0, 1,
+                               "rate_limited", str(exc))
         return {"refreshed": False, "reason": "RATE_LIMITED",
                 "entries": count, "fetched_at_ms": fetched_at, "age_ms": age,
                 "requests": 1, "detail": str(exc)}
     except Exception as exc:  # noqa: BLE001 - se reporta, no se inventa
-        cache.record_fetch(now, None, None, "exchange_info", 1, 0, 1,
-                           "error", str(exc))
+        if _gate_records_client(client):
+            pass  # ledger por intento ya escrito por la puerta
+        else:
+            cache.record_fetch(now, None, None, "exchange_info", 1, 0, 1,
+                               "error", str(exc))
         return {"refreshed": False, "reason": "REFRESH_FAILED",
                 "entries": count, "fetched_at_ms": fetched_at, "age_ms": age,
                 "requests": 1, "detail": str(exc)}
@@ -155,12 +169,19 @@ def refresh_catalog(cache: MarketCache, client: HistoryClient,
     cache.set_meta("catalog_fetched_at_ms", now)
     cache.set_meta("catalog_entries", len(entries))
     cache.set_meta("catalog_endpoint", "/fapi/v1/exchangeInfo")
-    cache.record_fetch(now, None, None, "exchange_info", 1, 0, 0, "ok",
-                       f"entries={len(entries)}")
+    if not _gate_records_client(client):
+        cache.record_fetch(now, None, None, "exchange_info", 1, 0, 0, "ok",
+                           f"entries={len(entries)}")
     _record_catalog_diff(cache, previous, entries, now)
 
     return {"refreshed": True, "reason": "REFRESHED", "entries": len(entries),
             "fetched_at_ms": now, "age_ms": 0, "requests": 1}
+
+
+def _gate_records_client(client: Any) -> bool:
+    """True si el cliente lleva puerta del ledger conectada (contabilidad
+    por intento ya sustituye al registro agregado legacy)."""
+    return getattr(client, "attempt_gate", None) is not None
 
 
 def _record_catalog_diff(cache: MarketCache, previous: Sequence[Dict[str, Any]],
@@ -342,7 +363,77 @@ def _default_history_db() -> Path:
 # --- adquisicion acotada de faltantes ---------------------------------------
 
 
+class LedgerAttemptGate:
+    """Presupuesto upstream compartido: UNA reserva por intento HTTP.
+
+    Proceso de cada intento (incluidos reintentos y paginas):
+      1. ``before_send`` (HistoryClient lo llama ANTES del transporte):
+         reserva transaccional de 1 intento en ``market_fetch_ledger`` con
+         execution_id. Denegada -> fila ``budget_blocked`` (requests=0) y
+         ``UpstreamBudgetExceeded``: el intento muere sin abrir socket.
+      2. Transporte real (solo si la reserva fue concedida).
+      3. ``after_send``: la fila reservada se cierra con el resultado real
+         (ok / http_429_retry_N / http_5xx_retry_N / connection_error / ...).
+
+    El limite sigue siendo la ventana rolling del ledger (compartida entre
+    procesos que apuntan a la misma cache), no el contador en memoria del
+    cliente, que solo mide la instancia propia.
+    """
+
+    def __init__(self, cache: MarketCache, execution_id: Optional[str],
+                 max_requests: int = MAX_FETCH_REQUESTS_PER_WINDOW) -> None:
+        self.cache = cache
+        self.execution_id = execution_id
+        self.max_requests = int(max_requests)
+
+    def before_send(self, entry: Dict[str, Any]) -> None:
+        attempt = {
+            "endpoint": entry.get("endpoint"),
+            "symbol": entry.get("symbol"),
+            "interval": entry.get("interval"),
+            "range": entry.get("range"),
+            "page": entry.get("page"),
+            "retry": entry.get("retry"),
+        }
+        row_id = self.cache.reserve_fetch_attempt(
+            int(time.time() * 1000), symbol=entry.get("symbol"),
+            detail=json.dumps(attempt, sort_keys=True),
+            max_requests=self.max_requests, execution_id=self.execution_id,
+        )
+        if row_id is None:
+            entry["result"] = "budget_blocked"
+            usage = self.cache.window_usage(max_requests=self.max_requests)
+            raise UpstreamBudgetExceeded(
+                f"bloqueado ANTES del transporte: {usage['used_in_window']}"
+                f" upstream en la ventana compartida, limite"
+                f" {self.max_requests}"
+            )
+        entry["_ledger_row_id"] = row_id
+
+    def after_send(self, entry: Dict[str, Any]) -> None:
+        row_id = entry.pop("_ledger_row_id", None)
+        if row_id is None:
+            return
+        detail = {
+            "endpoint": entry.get("endpoint"),
+            "symbol": entry.get("symbol"),
+            "interval": entry.get("interval"),
+            "range": entry.get("range"),
+            "page": entry.get("page"),
+            "retry": entry.get("retry"),
+            "result": entry.get("result"),
+            "duration_ms": entry.get("duration_ms"),
+        }
+        self.cache.complete_fetch_row(
+            int(row_id), status=str(entry.get("result")),
+            retries=int(entry.get("retry") or 0),
+            note=json.dumps(detail, sort_keys=True),
+            detail=json.dumps(detail, sort_keys=True),
+        )
+
+
 def plan_missing_block(bars: Sequence[Dict[str, Any]], from_ms: int, to_ms: int,
+
                        step: int, pages: int,
                        page_limit: int = PAGE_LIMIT) -> Optional[Tuple[int, int]]:
     """Bloque anterior inmediato a cubrir (scroll-back), acotado por paginas.
@@ -374,7 +465,14 @@ def fetch_block(cache: MarketCache, client: HistoryClient, symbol: str,
                 pages: int, now_ms: int,
                 page_limit: int = PAGE_LIMIT,
                 max_upstream_requests: Optional[int] = None) -> Dict[str, Any]:
-    """Adquiere un bloque acotado y lo persiste SOLO en la cache aislada."""
+    """Adquiere un bloque acotado y lo persiste SOLO en la cache aislada.
+
+    Presupuesto: (1) chequeo rapido de ventana antes de planificar; (2)
+    cada intento HTTP reserva 1 cupo en el ledger compartido justo antes
+    del transporte (``LedgerAttemptGate``), incluidos reintentos y paginas;
+    con puerta activa el ledger por intento ES la contabilidad y no se
+    escribe agregado posterior (evita doble conteo).
+    """
     max_upstream = max_upstream_requests if max_upstream_requests is not None \
         else MAX_FETCH_REQUESTS_PER_WINDOW
     window_used = cache.requests_in_window(now_ms)
@@ -387,21 +485,38 @@ def fetch_block(cache: MarketCache, client: HistoryClient, symbol: str,
                            f"{window_used} peticiones en la ventana de "
                            f"{ROLLING_WINDOW_MS} ms, límite {max_upstream}"),
                 "retry_after_ms": ROLLING_WINDOW_MS}
+    gate_capable = hasattr(client, "attempt_gate")
+    gate: Optional[LedgerAttemptGate] = None
+    if gate_capable:
+        gate = LedgerAttemptGate(cache, getattr(client, "execution_id", None),
+                                 max_requests=max_upstream)
+        client.attempt_gate = gate  # type: ignore[attr-defined]
     before = client.stats.requests
     try:
         rows, meta = client.paginate_klines(
             symbol, interval, start_ms, end_ms, source=source,
             limit=page_limit, max_pages=planned)
+    except UpstreamBudgetExceeded as exc:
+        # Sin transporte: la reserva fue denegada. La puerta ya escribio la
+        # fila auditada (requests=0); no se agrega ningun consumo.
+        return {"performed": True, "status": "budget_blocked",
+                "error": "BLOCKED_BEFORE_TRANSPORT", "requests": 0,
+                "pages_planned": planned,
+                "pages": 0,
+                "retries": client.stats.retries, "failures": client.stats.failures,
+                "detail": str(exc), "retry_after_ms": None}
     except RateLimitExceeded as exc:
-        cache.record_fetch(now_ms, symbol, interval, source, 1, 0, 1,
-                           "rate_limited", str(exc))
+        if not gate_capable:
+            cache.record_fetch(now_ms, symbol, interval, source, 1, 0, 1,
+                               "rate_limited", str(exc))
         return {"performed": True, "status": "rate_limited",
                 "error": "RATE_LIMIT_ABORTED", "requests": 1, "pages": 0,
                 "retries": client.stats.retries, "failures": client.stats.failures,
                 "detail": str(exc), "retry_after_ms": None}
     except Exception as exc:  # noqa: BLE001 - se reporta, no se inventa
-        cache.record_fetch(now_ms, symbol, interval, source, 1, 0, 1,
-                           "error", str(exc))
+        if not gate_capable:
+            cache.record_fetch(now_ms, symbol, interval, source, 1, 0, 1,
+                               "error", str(exc))
         return {"performed": True, "status": "error", "error": "FETCH_FAILED",
                 "requests": 1, "pages": 0,
                 "retries": client.stats.retries, "failures": client.stats.failures,
@@ -411,9 +526,10 @@ def fetch_block(cache: MarketCache, client: HistoryClient, symbol: str,
     bars = [normalize(row) for row in rows if isinstance(row, list) and row]
     stored = cache.upsert_klines(symbol, interval, source, bars, now_ms)
     requests = max(0, client.stats.requests - before)
-    cache.record_fetch(now_ms, symbol, interval, source, requests,
-                       retries=0, failures=0, status="ok",
-                       note=f"pages={meta.get('pages')} bars={stored}")
+    if not gate_capable:
+        cache.record_fetch(now_ms, symbol, interval, source, requests,
+                           retries=0, failures=0, status="ok",
+                           note=f"pages={meta.get('pages')} bars={stored}")
     return {"performed": True, "status": "ok", "error": None,
             "requests": requests, "pages": int(meta.get("pages") or 0),
             "bars_stored": stored,
@@ -519,6 +635,15 @@ def series_payload(cache: MarketCache, client: Optional[HistoryClient] = None,
     contract = _contract_info(cache, sym)
     stored, storage_info = read_stored(cache, sym, interval, source, start, end,
                                        history_db, limit)
+    # Puerta per-intento para TODO lo que este cliente toque en el payload
+    # (probe y fetching). En clientes que no son HistoryClient (fakes de
+    # prueba) no hay puerta y se conserva el registro agregado legacy.
+    resolved_max_upstream = max_upstream_requests if max_upstream_requests \
+        is not None else MAX_FETCH_REQUESTS_PER_WINDOW
+    if hasattr(client, "attempt_gate") and getattr(client, "attempt_gate") is None:
+        client.attempt_gate = LedgerAttemptGate(  # type: ignore[attr-defined]
+            cache, getattr(client, "execution_id", None),
+            max_requests=resolved_max_upstream)
     fetch_info: Dict[str, Any] = {"allowed": bool(allow_fetch), "performed": False,
                                   "status": "not_requested", "error": None,
                                   "requests": 0, "pages": 0, "retries": 0,
@@ -579,11 +704,14 @@ def series_payload(cache: MarketCache, client: Optional[HistoryClient] = None,
         "fetch": fetch_info,
         "budget": {
             "used_in_window": cache.requests_in_window(now),
-            "max_requests_per_window": MAX_FETCH_REQUESTS_PER_WINDOW,
+            "max_requests_per_window": resolved_max_upstream,
             "window_ms": ROLLING_WINDOW_MS,
             "max_pages_per_request": MAX_PAGES_PER_REQUEST,
             "max_page_limit": PAGE_LIMIT,
             "concurrency": MAX_CONCURRENCY,
+            "enforcement": "ledger_shared_reserve_before_send",
+            "execution_id": getattr(client, "execution_id", None)
+            if client is not None else None,
         },
         "storage": storage_info,
         "times": {"unit": "ms", "epoch": "unix_utc"},
@@ -667,7 +795,11 @@ def _earliest_known(cache: MarketCache, symbol: str, interval: str,
 
 def _probe_earliest(cache: MarketCache, client: HistoryClient, symbol: str,
                     interval: str, source: str, now_ms: int) -> Dict[str, Any]:
-    """Una peticion acotada para conocer el inicio de historico disponible."""
+    """Una peticion acotada para conocer el inicio de historico disponible.
+
+    Con puerta conectada, el intento queda en el ledger per-intento
+    (execution_id incluido) y aqui no se agrega ningun registro duplicado.
+    """
     known = _earliest_known(cache, symbol, interval, source)
     if known is not None:
         return {"performed": False, "earliest_available_ms": known,
@@ -681,14 +813,39 @@ def _probe_earliest(cache: MarketCache, client: HistoryClient, symbol: str,
         return {"performed": True, "earliest_available_ms": None, "requests": 1,
                 "detail": str(exc)}
     value = int(first[0]) if first else None
-    cache.record_fetch(now_ms, symbol, interval, source, 1, 0, 0, "ok",
-                       "earliest_probe")
+    if not _gate_records_client(client):
+        cache.record_fetch(now_ms, symbol, interval, source, 1, 0, 0, "ok",
+                           "earliest_probe")
     if value is not None:
         cache.set_meta(f"earliest:{symbol}:{interval}:{source}", value)
     return {"performed": True, "earliest_available_ms": value, "requests": 1,
             "detail": None}
 
 
-def build_client() -> HistoryClient:
-    """Cliente REST publico para el CLI (limiter + politica 429/418 ya probada)."""
-    return HistoryClient(request_timeout=REQUEST_TIMEOUT_S)
+def build_client(cache: Optional[MarketCache] = None,
+                 execution_id: Optional[str] = None,
+                 api_base: Optional[str] = None) -> HistoryClient:
+    """Cliente REST publico para el CLI (limiter + politica 429/418 ya probada).
+
+    Con ``cache`` el cliente lleva la puerta del ledger compartido: cada
+    intento HTTP (paginas y reintentos) reserva 1 cupo ANTES del transporte
+    con ``execution_id``. Sin ``cache`` el control queda per-instancia
+    (contador en memoria), alcance declarado y acotado.
+    """
+    from .history_client import BASE_URL as DEFAULT_BASE_URL
+    base_url = DEFAULT_BASE_URL
+    if api_base is not None:
+        parsed = urllib.parse.urlparse(api_base)
+        host = parsed.hostname or ""
+        if parsed.scheme != "http" or host not in ("127.0.0.1", "localhost"):
+            raise ValueError(
+                f"INVALID_API_BASE: solo transporte local loopback http://"
+                f" se admite para pruebas ({api_base!r})")
+        base_url = api_base.rstrip("/")
+    gate = None
+    if cache is not None:
+        gate = LedgerAttemptGate(cache, execution_id,
+                                 max_requests=MAX_FETCH_REQUESTS_PER_WINDOW)
+    return HistoryClient(request_timeout=REQUEST_TIMEOUT_S,
+                         execution_id=execution_id, attempt_gate=gate,
+                         base_url=base_url)

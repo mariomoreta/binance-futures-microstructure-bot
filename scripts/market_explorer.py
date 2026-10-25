@@ -81,6 +81,15 @@ def main(argv: Optional[list] = None) -> int:
                     help="velas por pagina (maximo del endpoint)")
     ap.add_argument("--no-fetch", action="store_true",
                     help="solo lectura de lo almacenado; no consulta Binance")
+    ap.add_argument("--execution-id", default=None,
+                    help="identificador de ejecucion para vincular las filas"
+                         " del ledger (sin valor queda NULL = UNKNOWN)")
+    ap.add_argument("--max-upstream", type=int, default=None,
+                    help="limite de upstream en la ventana rolling"
+                         " (default: 30 peticiones/min compartido)")
+    ap.add_argument("--api-base", default=None,
+                    help="base http://127.0.0.1:PORT para pruebas con"
+                         " transporte local (default: fapi.binance.com)")
     ap.add_argument("--probe-earliest", action="store_true",
                     help="una peticion extra para conocer el inicio de historico")
     ap.add_argument("--now-ms", type=int, default=None,
@@ -116,7 +125,9 @@ def main(argv: Optional[list] = None) -> int:
                                        "limit debe estar entre 1 y 500")),
                       file=sys.stderr)
                 return 2
-            client = build_client()
+            client = build_client(cache=cache,
+                                  execution_id=args.execution_id,
+                                  api_base=args.api_base)
             data = catalog_payload(
                 cache, client, query=args.query, limit=int(args.limit),
                 eligible_only=bool(args.eligible_only), refresh=bool(args.refresh),
@@ -130,7 +141,9 @@ def main(argv: Optional[list] = None) -> int:
             print(json.dumps(_fail("INVALID_SOURCE", str(args.source))),
                   file=sys.stderr)
             return 2
-        client = build_client()
+        client = build_client(cache=cache,
+                              execution_id=args.execution_id,
+                              api_base=args.api_base)
         data = series_payload(
             cache, client if not args.no_fetch else None,
             symbol=args.symbol, interval=args.interval, source=args.source,
@@ -138,14 +151,18 @@ def main(argv: Optional[list] = None) -> int:
             allow_fetch=not args.no_fetch, page_limit=page_limit,
             bars=int(args.bars), probe_earliest=bool(args.probe_earliest),
             now_ms=now_ms, history_db=history_db,
+            max_upstream_requests=args.max_upstream,
         )
         data["budget"] = {
             "window_ms": 60_000,
-            "max_requests_per_window": MAX_FETCH_REQUESTS_PER_WINDOW,
+            "max_requests_per_window": args.max_upstream
+            if args.max_upstream is not None else MAX_FETCH_REQUESTS_PER_WINDOW,
             "used_in_window": cache.requests_in_window(now_ms),
             "max_pages_per_request": MAX_PAGES_PER_REQUEST,
             "page_limit": page_limit,
             "concurrency": 1,
+            "enforcement": "ledger_shared_reserve_before_send",
+            "execution_id": args.execution_id,
         }
         print(json.dumps(_ok(data)))
         return 0

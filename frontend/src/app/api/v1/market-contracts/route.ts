@@ -1,3 +1,4 @@
+import {randomUUID} from "node:crypto";
 import {NextResponse} from "next/server";
 import {explorerOriginAllowed, runMarketExplorer, statusForError} from "@/lib/explorer-bridge";
 
@@ -28,7 +29,8 @@ export async function GET(req: Request) {
     return NextResponse.json({error: "INVALID_LIMIT", detail: "limit debe estar entre 1 y 50"},
       {status: 400, headers});
   }
-  const args = ["--action", "catalog", "--query", query, "--limit", String(limit)];
+  const args = ["--action", "catalog", "--query", query, "--limit", String(limit),
+    "--execution-id", `bff-${randomUUID()}`];
   if (params.get("eligible") === "1") args.push("--eligible-only");
   if (params.get("refresh") === "1") args.push("--refresh");
   const result = runMarketExplorer(args);

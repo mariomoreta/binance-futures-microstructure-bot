@@ -14,7 +14,13 @@ Tablas (schema v1):
                       preservar el valor exacto publicado por el exchange).
   market_fetch_ledger — ledger append-only de peticiones para presupuesto
                       (rolling window) y auditoria. Sin el no hay rate limit
-                      compartido entre invocaciones del CLI.
+                      compartido entre invocaciones del CLI. Con
+                      ``reserve_fetch_attempt`` cada intento upstream se
+                      RESERVA (transaccion BEGIN IMMEDIATE) antes de enviarlo,
+                      de forma que el limite es compartido entre procesos
+                      concurrentes; las filas dan execution_id para reconstruir
+                      el consumo por ejecucion. Filas historicas sin
+                      execution_id quedan NULL (= UNKNOWN: no se reescriben).
   contract_events   — episodios de contrato observados en el catalogo
                       (listado/baja) para trazabilidad, sin inferir estado.
 
@@ -27,6 +33,7 @@ from __future__ import annotations
 import json
 import os
 import sqlite3
+import time
 from pathlib import Path
 from typing import Any, Dict, Iterable, List, Optional, Sequence, Tuple
 
@@ -120,6 +127,17 @@ class MarketCache:
                 "  failures INTEGER NOT NULL DEFAULT 0,"
                 "  status TEXT NOT NULL DEFAULT 'ok', note TEXT)"
             )
+            # Migracion acotada: vinculo de ejecucion por fila del intento.
+            # Las filas historicas quedan NULL (= UNKNOWN, no se reescriben).
+            for column, decl in (("execution_id", "TEXT"), ("detail", "TEXT")):
+                try:
+                    con.execute(
+                        f"ALTER TABLE market_fetch_ledger ADD COLUMN"
+                        f" {column} {decl}"
+                    )
+                except sqlite3.OperationalError as exc:
+                    if "duplicate column" not in str(exc).lower():
+                        raise
             con.execute(
                 "CREATE TABLE IF NOT EXISTS contract_events"
                 " (id INTEGER PRIMARY KEY AUTOINCREMENT, at_ms INTEGER NOT NULL,"
@@ -387,16 +405,110 @@ class MarketCache:
     def record_fetch(self, at_ms: int, symbol: Optional[str],
                      interval: Optional[str], source: Optional[str],
                      requests: int, retries: int = 0, failures: int = 0,
-                     status: str = "ok", note: Optional[str] = None) -> None:
+                     status: str = "ok", note: Optional[str] = None,
+                     execution_id: Optional[str] = None,
+                     detail: Optional[str] = None) -> None:
         con = self._con()
         try:
             con.execute(
                 "INSERT INTO market_fetch_ledger (at_ms, symbol, interval,"
-                " source, requests, retries, failures, status, note)"
-                " VALUES (?,?,?,?,?,?,?,?,?)",
+                " source, requests, retries, failures, status, note,"
+                " execution_id, detail)"
+                " VALUES (?,?,?,?,?,?,?,?,?,?,?)",
                 (int(at_ms), symbol, interval, source, int(requests),
-                 int(retries), int(failures), str(status), note),
+                 int(retries), int(failures), str(status), note,
+                 execution_id, detail),
             )
+            con.commit()
+        finally:
+            con.close()
+
+    def reserve_fetch_attempt(self, at_ms: int, symbol: Optional[str],
+                              detail: Optional[str],
+                              max_requests: int = MAX_FETCH_REQUESTS_PER_WINDOW,
+                              window_ms: int = ROLLING_WINDOW_MS,
+                              attempts: int = 1,
+                              execution_id: Optional[str] = None,
+                              ) -> Optional[int]:
+        """Reserva ``attempts`` upstream en la ventana compartida.
+
+        Chequeo e insercion en UNA transaccion (BEGIN IMMEDIATE), de modo que
+        dos procesos concurrentes que comparten el archivo del ledger
+        nunca pasan ambos si el limite no alcanza. En denegacion queda una
+        fila ``budget_blocked`` con ``requests=0`` (auditoria sin consumo).
+        Devuelve el id de fila reservado, o None si la reserva fue denegada.
+        """
+        con = self._con()
+        try:
+            try:
+                con.execute("BEGIN IMMEDIATE")
+                row = con.execute(
+                    "SELECT COALESCE(SUM(requests), 0) n FROM"
+                    " market_fetch_ledger WHERE at_ms > ?",
+                    (int(at_ms) - int(window_ms),),
+                ).fetchone()
+                used = int(row["n"] or 0)
+                if used + int(attempts) > int(max_requests):
+                    blocked = {
+                        "status": "blocked_pre_send",
+                        "used_in_window": used,
+                        "max_requests": int(max_requests),
+                        "requested": int(attempts),
+                    }
+                    con.execute(
+                        "INSERT INTO market_fetch_ledger (at_ms, symbol,"
+                        " requests, retries, failures, status, note,"
+                        " execution_id, detail)"
+                        " VALUES (?,?,0,0,0,'budget_blocked',?,?,?)",
+                        (int(at_ms), symbol, json.dumps(blocked, sort_keys=True),
+                         execution_id, detail),
+                    )
+                    con.commit()
+                    return None
+                con.execute(
+                    "INSERT INTO market_fetch_ledger (at_ms, symbol, requests,"
+                    " retries, failures, status, note, execution_id, detail)"
+                    " VALUES (?,?,?,0,0,'reserved',?,?,?)",
+                    (int(at_ms), symbol, int(attempts), None, execution_id,
+                     detail),
+                )
+                new_id = int(con.execute(
+                    "SELECT last_insert_rowid()").fetchone()[0])
+                con.commit()
+                return new_id
+            except BaseException:
+                con.rollback()
+                raise
+        finally:
+            con.close()
+
+    def complete_fetch_row(self, row_id: int, status: str,
+                           retries: int = 0, failures: int = 0,
+                           requests: Optional[int] = None,
+                           note: Optional[str] = None,
+                           detail: Optional[str] = None) -> None:
+        """Cierra la fila reservada con el resultado real del intento."""
+        con = self._con()
+        try:
+            if requests is None:
+                con.execute(
+                    "UPDATE market_fetch_ledger SET status=?, retries=?,"
+                    " failures=?, note=? WHERE id=?",
+                    (str(status), int(retries), int(failures), note,
+                     int(row_id)),
+                )
+            else:
+                con.execute(
+                    "UPDATE market_fetch_ledger SET status=?, retries=?,"
+                    " failures=?, requests=?, note=? WHERE id=?",
+                    (str(status), int(retries), int(failures),
+                     int(requests), note, int(row_id)),
+                )
+            if detail is not None:
+                con.execute(
+                    "UPDATE market_fetch_ledger SET detail=? WHERE id=?",
+                    (detail, int(row_id)),
+                )
             con.commit()
         finally:
             con.close()
@@ -413,13 +525,38 @@ class MarketCache:
         finally:
             con.close()
 
+    def window_usage(self, now_ms: Optional[int] = None,
+                     window_ms: int = ROLLING_WINDOW_MS,
+                     max_requests: int = MAX_FETCH_REQUESTS_PER_WINDOW
+                     ) -> Dict[str, Any]:
+        """Uso corriente de la ventana compartida (para mensajes y payload)."""
+        now = int(now_ms if now_ms is not None else time.time() * 1000)
+        return {"used_in_window": self.requests_in_window(now, window_ms),
+                "max_requests_per_window": int(max_requests),
+                "window_ms": int(window_ms)}
+
     def fetch_ledger(self, limit: int = 20) -> List[Dict[str, Any]]:
         con = self._con()
         try:
             rows = con.execute(
                 "SELECT id, at_ms, symbol, interval, source, requests, retries,"
-                " failures, status, note FROM market_fetch_ledger"
+                " failures, status, note, execution_id, detail"
+                " FROM market_fetch_ledger"
                 " ORDER BY id DESC LIMIT ?", (max(1, int(limit)),),
+            ).fetchall()
+            return [_row_to_dict(r) for r in rows]
+        finally:
+            con.close()
+
+    def fetch_rows_by_execution(self, execution_id: str) -> List[Dict[str, Any]]:
+        """Filas del ledger de UNA ejecucion, en orden cronologico exacto."""
+        con = self._con()
+        try:
+            rows = con.execute(
+                "SELECT id, at_ms, symbol, interval, source, requests, retries,"
+                " failures, status, note, execution_id, detail"
+                " FROM market_fetch_ledger WHERE execution_id = ?"
+                " ORDER BY id ASC", (execution_id,),
             ).fetchall()
             return [_row_to_dict(r) for r in rows]
         finally:
