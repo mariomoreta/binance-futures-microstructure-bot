@@ -1,0 +1,59 @@
+{
+  "generated_at_ms": 1792891000000,
+  "dashboard_url": "http://127.0.0.1:3020",
+  "build_id": "r1bBrZkP65q5w79uMhJsF",
+  "next_version": "16.4.1",
+  "catalog_entries": 932,
+  "transport": "canonical_dashboard_no_service",
+  "public_connection": false,
+  "binance_accredited": false,
+  "runs": [
+    {
+      "run_index": 1,
+      "total_elapsed_s": 2.465,
+      "page_url": "http://127.0.0.1:3020/market-lab",
+      "identity_exact": true,
+      "interval_value": "1m",
+      "candles_count": 0,
+      "public_request_count": 0,
+      "console_errors": 0,
+      "page_errors": 0,
+      "preflight_pass": true,
+      "marks_ms": {
+        "page_open_ms": 183,
+        "catalog_state_ms": 67,
+        "search_and_select_ms": 1320,
+        "interval_select_ms": 25,
+        "identity_and_graph_ms": 9
+      },
+      "catalog_state_text": "cat\u00e1logo: consultando",
+      "identity": "BTCUSDT \u00b7 BTC/USDT \u00b7 PERPETUAL \u00b7 TRADING \u00b7 elegibleFuente: binance \u00b7 fapi \u00b7 /fapi/v1/klines \u00b7 origen de las velas: klines"
+    },
+    {
+      "run_index": 2,
+      "total_elapsed_s": 3.326,
+      "page_url": "http://127.0.0.1:3020/market-lab",
+      "identity_exact": true,
+      "interval_value": "1m",
+      "candles_count": 0,
+      "public_request_count": 0,
+      "console_errors": 0,
+      "page_errors": 0,
+      "preflight_pass": true,
+      "marks_ms": {
+        "page_open_ms": 1092,
+        "catalog_state_ms": 62,
+        "search_and_select_ms": 1232,
+        "interval_select_ms": 23,
+        "identity_and_graph_ms": 9
+      },
+      "catalog_state_text": "cat\u00e1logo: consultando",
+      "identity": "BTCUSDT \u00b7 BTC/USDT \u00b7 PERPETUAL \u00b7 TRADING \u00b7 elegibleFuente: binance \u00b7 fapi \u00b7 /fapi/v1/klines \u00b7 origen de las velas: klines"
+    }
+  ],
+  "all_pass": true,
+  "residual_processes": 0,
+  "residual_ports": [],
+  "canonical_dbs_unchanged": true,
+  "note": "Preflight del navegador contra el dashboard can\u00f3nico (932 contratos, sin servicio de stream, sin conexi\u00f3n p\u00fablica). Los 0,007/0,006 s reportados previamente eran s\u00f3lo el tiempo de la comprobaci\u00f3n final de wait_for_function; el preflight completo abarca la apertura de p\u00e1gina, carga del cat\u00e1logo, b\u00fasqueda, selecci\u00f3n, intervalo y verificaci\u00f3n de identidad."
+}

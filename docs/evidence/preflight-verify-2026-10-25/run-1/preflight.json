@@ -1,0 +1,525 @@
+{
+  "run_index": 1,
+  "started_at_ms": 1792934044029,
+  "elapsed_ms": 2464,
+  "total_elapsed_s": 2.465,
+  "page_url": "http://127.0.0.1:3020/market-lab",
+  "build_id": null,
+  "marks_ms": {
+    "page_open_ms": 183,
+    "catalog_state_ms": 67,
+    "search_and_select_ms": 1320,
+    "interval_select_ms": 25,
+    "identity_and_graph_ms": 9
+  },
+  "catalog_state_text": "catálogo: consultando",
+  "identity": "BTCUSDT · BTC/USDT · PERPETUAL · TRADING · elegibleFuente: binance · fapi · /fapi/v1/klines · origen de las velas: klines",
+  "identity_exact": true,
+  "interval_value": "1m",
+  "candles_count": 0,
+  "requests": [
+    {
+      "url": "http://127.0.0.1:3020/market-lab",
+      "method": "GET",
+      "resource_type": "document",
+      "at_ms": 1792934044674
+    },
+    {
+      "url": "http://127.0.0.1:3020/_next/static/chunks/3_8aymm1if0i9.css",
+      "method": "GET",
+      "resource_type": "stylesheet",
+      "at_ms": 1792934044706
+    },
+    {
+      "url": "http://127.0.0.1:3020/_next/static/chunks/1gp1oq6zv0ov9.css",
+      "method": "GET",
+      "resource_type": "stylesheet",
+      "at_ms": 1792934044707
+    },
+    {
+      "url": "http://127.0.0.1:3020/_next/static/chunks/1x6obpmlu1_c2.js",
+      "method": "GET",
+      "resource_type": "script",
+      "at_ms": 1792934044707
+    },
+    {
+      "url": "http://127.0.0.1:3020/_next/static/chunks/1-nqmp1rl8kqt.js",
+      "method": "GET",
+      "resource_type": "script",
+      "at_ms": 1792934044707
+    },
+    {
+      "url": "http://127.0.0.1:3020/_next/static/chunks/01s_f_3qlcqtb.js",
+      "method": "GET",
+      "resource_type": "script",
+      "at_ms": 1792934044707
+    },
+    {
+      "url": "http://127.0.0.1:3020/_next/static/chunks/15-4zppjwtoxq.js",
+      "method": "GET",
+      "resource_type": "script",
+      "at_ms": 1792934044707
+    },
+    {
+      "url": "http://127.0.0.1:3020/_next/static/chunks/turbopack-3-ry682tkyiqk.js",
+      "method": "GET",
+      "resource_type": "script",
+      "at_ms": 1792934044707
+    },
+    {
+      "url": "http://127.0.0.1:3020/_next/static/chunks/2jvvrzvgg8oko.js",
+      "method": "GET",
+      "resource_type": "script",
+      "at_ms": 1792934044708
+    },
+    {
+      "url": "http://127.0.0.1:3020/_next/static/chunks/0lmpwnn-66cbj.js",
+      "method": "GET",
+      "resource_type": "script",
+      "at_ms": 1792934044709
+    },
+    {
+      "url": "http://127.0.0.1:3020/_next/static/chunks/32do_7bis0ma_.js",
+      "method": "GET",
+      "resource_type": "script",
+      "at_ms": 1792934044709
+    },
+    {
+      "url": "http://127.0.0.1:3020/api/v1/market-snapshot",
+      "method": "GET",
+      "resource_type": "fetch",
+      "at_ms": 1792934044924
+    },
+    {
+      "url": "http://127.0.0.1:3020/api/v1/market-contracts?limit=20",
+      "method": "GET",
+      "resource_type": "fetch",
+      "at_ms": 1792934044924
+    },
+    {
+      "url": "http://127.0.0.1:3020/overview?_rsc=X9HzTVEId8mSRnpk",
+      "method": "GET",
+      "resource_type": "fetch",
+      "at_ms": 1792934044926
+    },
+    {
+      "url": "http://127.0.0.1:3020/movers?_rsc=X9HzTVEId8mSRnpk",
+      "method": "GET",
+      "resource_type": "fetch",
+      "at_ms": 1792934044927
+    },
+    {
+      "url": "http://127.0.0.1:3020/search?_rsc=X9HzTVEId8mSRnpk",
+      "method": "GET",
+      "resource_type": "fetch",
+      "at_ms": 1792934044927
+    },
+    {
+      "url": "http://127.0.0.1:3020/opportunities?_rsc=X9HzTVEId8mSRnpk",
+      "method": "GET",
+      "resource_type": "fetch",
+      "at_ms": 1792934044927
+    },
+    {
+      "url": "http://127.0.0.1:3020/api/v1/runtime",
+      "method": "GET",
+      "resource_type": "fetch",
+      "at_ms": 1792934044927
+    },
+    {
+      "url": "http://127.0.0.1:3020/market-lab?_rsc=i4lWtWTmR_b00Sav",
+      "method": "GET",
+      "resource_type": "fetch",
+      "at_ms": 1792934044947
+    },
+    {
+      "url": "http://127.0.0.1:3020/api/v1/market-contracts?q=BTCUSDT&limit=20",
+      "method": "GET",
+      "resource_type": "fetch",
+      "at_ms": 1792934045442
+    },
+    {
+      "url": "http://127.0.0.1:3020/market-archive?_rsc=X9HzTVEId8mSRnpk",
+      "method": "GET",
+      "resource_type": "fetch",
+      "at_ms": 1792934045912
+    },
+    {
+      "url": "http://127.0.0.1:3020/system?_rsc=X9HzTVEId8mSRnpk",
+      "method": "GET",
+      "resource_type": "fetch",
+      "at_ms": 1792934045913
+    },
+    {
+      "url": "http://127.0.0.1:3020/historical-research?_rsc=X9HzTVEId8mSRnpk",
+      "method": "GET",
+      "resource_type": "fetch",
+      "at_ms": 1792934045914
+    },
+    {
+      "url": "http://127.0.0.1:3020/backtest?_rsc=X9HzTVEId8mSRnpk",
+      "method": "GET",
+      "resource_type": "fetch",
+      "at_ms": 1792934045919
+    },
+    {
+      "url": "http://127.0.0.1:3020/paper-lab-live?_rsc=X9HzTVEId8mSRnpk",
+      "method": "GET",
+      "resource_type": "fetch",
+      "at_ms": 1792934045965
+    },
+    {
+      "url": "http://127.0.0.1:3020/paper-lab?_rsc=X9HzTVEId8mSRnpk",
+      "method": "GET",
+      "resource_type": "fetch",
+      "at_ms": 1792934045966
+    },
+    {
+      "url": "http://127.0.0.1:3020/overview?_rsc=0RzGQ1XPb_jETa1S",
+      "method": "GET",
+      "resource_type": "fetch",
+      "at_ms": 1792934045969
+    },
+    {
+      "url": "http://127.0.0.1:3020/movers?_rsc=0RzGQ1XPb_jETa1S",
+      "method": "GET",
+      "resource_type": "fetch",
+      "at_ms": 1792934045993
+    },
+    {
+      "url": "http://127.0.0.1:3020/_next/static/chunks/1txfxr13huybu.css",
+      "method": "GET",
+      "resource_type": "stylesheet",
+      "at_ms": 1792934046008
+    },
+    {
+      "url": "http://127.0.0.1:3020/search?_rsc=0RzGQ1XPb_jETa1S",
+      "method": "GET",
+      "resource_type": "fetch",
+      "at_ms": 1792934046008
+    },
+    {
+      "url": "http://127.0.0.1:3020/opportunities?_rsc=0RzGQ1XPb_jETa1S",
+      "method": "GET",
+      "resource_type": "fetch",
+      "at_ms": 1792934046009
+    },
+    {
+      "url": "http://127.0.0.1:3020/_next/static/chunks/0b3hny-3id31k.css",
+      "method": "GET",
+      "resource_type": "stylesheet",
+      "at_ms": 1792934046018
+    },
+    {
+      "url": "http://127.0.0.1:3020/system?_rsc=0RzGQ1XPb_jETa1S",
+      "method": "GET",
+      "resource_type": "fetch",
+      "at_ms": 1792934046019
+    },
+    {
+      "url": "http://127.0.0.1:3020/_next/static/chunks/19bcz85azn1id.css",
+      "method": "GET",
+      "resource_type": "stylesheet",
+      "at_ms": 1792934046027
+    },
+    {
+      "url": "http://127.0.0.1:3020/historical-research?_rsc=0RzGQ1XPb_jETa1S",
+      "method": "GET",
+      "resource_type": "fetch",
+      "at_ms": 1792934046027
+    },
+    {
+      "url": "http://127.0.0.1:3020/market-archive?_rsc=0RzGQ1XPb_jETa1S",
+      "method": "GET",
+      "resource_type": "fetch",
+      "at_ms": 1792934046039
+    },
+    {
+      "url": "http://127.0.0.1:3020/backtest?_rsc=dbVY_pL8mjJ2PtLP",
+      "method": "GET",
+      "resource_type": "fetch",
+      "at_ms": 1792934046042
+    },
+    {
+      "url": "http://127.0.0.1:3020/paper-lab-live?_rsc=T2m1UprfwqOp1b25",
+      "method": "GET",
+      "resource_type": "fetch",
+      "at_ms": 1792934046043
+    },
+    {
+      "url": "http://127.0.0.1:3020/paper-lab?_rsc=2U3m_T85ZPYVbPhf",
+      "method": "GET",
+      "resource_type": "fetch",
+      "at_ms": 1792934046049
+    },
+    {
+      "url": "http://127.0.0.1:3020/_next/static/chunks/348rvf3v5j6su.js",
+      "method": "GET",
+      "resource_type": "script",
+      "at_ms": 1792934046061
+    },
+    {
+      "url": "http://127.0.0.1:3020/_next/static/chunks/09z06hhu15_vc.js",
+      "method": "GET",
+      "resource_type": "script",
+      "at_ms": 1792934046063
+    },
+    {
+      "url": "http://127.0.0.1:3020/_next/static/chunks/1fqar5k6qqfwt.js",
+      "method": "GET",
+      "resource_type": "script",
+      "at_ms": 1792934046063
+    },
+    {
+      "url": "http://127.0.0.1:3020/_next/static/chunks/31u53ku2vu3qb.js",
+      "method": "GET",
+      "resource_type": "script",
+      "at_ms": 1792934046066
+    },
+    {
+      "url": "http://127.0.0.1:3020/_next/static/chunks/1a0qtn4gplvl3.js",
+      "method": "GET",
+      "resource_type": "script",
+      "at_ms": 1792934046066
+    },
+    {
+      "url": "http://127.0.0.1:3020/api/v1/market-series?symbol=BTCUSDT&interval=1h&from_ms=1791857646315&to_ms=1792934046315&bars=300&pages=1&page_limit=300&source=klines",
+      "method": "GET",
+      "resource_type": "fetch",
+      "at_ms": 1792934046327
+    },
+    {
+      "url": "http://127.0.0.1:3020/api/v1/market-series?symbol=BTCUSDT&interval=1m&from_ms=1792916106355&to_ms=1792934046355&bars=300&pages=1&page_limit=300&source=klines",
+      "method": "GET",
+      "resource_type": "fetch",
+      "at_ms": 1792934046357
+    }
+  ],
+  "responses": [
+    {
+      "url": "http://127.0.0.1:3020/market-lab",
+      "status": 200,
+      "at_ms": 1792934044698
+    },
+    {
+      "url": "http://127.0.0.1:3020/_next/static/chunks/3_8aymm1if0i9.css",
+      "status": 200,
+      "at_ms": 1792934044716
+    },
+    {
+      "url": "http://127.0.0.1:3020/_next/static/chunks/1gp1oq6zv0ov9.css",
+      "status": 200,
+      "at_ms": 1792934044717
+    },
+    {
+      "url": "http://127.0.0.1:3020/_next/static/chunks/1x6obpmlu1_c2.js",
+      "status": 200,
+      "at_ms": 1792934044835
+    },
+    {
+      "url": "http://127.0.0.1:3020/_next/static/chunks/1-nqmp1rl8kqt.js",
+      "status": 200,
+      "at_ms": 1792934044836
+    },
+    {
+      "url": "http://127.0.0.1:3020/_next/static/chunks/turbopack-3-ry682tkyiqk.js",
+      "status": 200,
+      "at_ms": 1792934044837
+    },
+    {
+      "url": "http://127.0.0.1:3020/_next/static/chunks/2jvvrzvgg8oko.js",
+      "status": 200,
+      "at_ms": 1792934044838
+    },
+    {
+      "url": "http://127.0.0.1:3020/_next/static/chunks/0lmpwnn-66cbj.js",
+      "status": 200,
+      "at_ms": 1792934044839
+    },
+    {
+      "url": "http://127.0.0.1:3020/_next/static/chunks/32do_7bis0ma_.js",
+      "status": 200,
+      "at_ms": 1792934044839
+    },
+    {
+      "url": "http://127.0.0.1:3020/_next/static/chunks/15-4zppjwtoxq.js",
+      "status": 200,
+      "at_ms": 1792934044840
+    },
+    {
+      "url": "http://127.0.0.1:3020/_next/static/chunks/01s_f_3qlcqtb.js",
+      "status": 200,
+      "at_ms": 1792934044841
+    },
+    {
+      "url": "http://127.0.0.1:3020/api/v1/market-snapshot",
+      "status": 200,
+      "at_ms": 1792934044932
+    },
+    {
+      "url": "http://127.0.0.1:3020/api/v1/market-contracts?limit=20",
+      "status": 200,
+      "at_ms": 1792934045281
+    },
+    {
+      "url": "http://127.0.0.1:3020/api/v1/runtime",
+      "status": 200,
+      "at_ms": 1792934045542
+    },
+    {
+      "url": "http://127.0.0.1:3020/overview?_rsc=X9HzTVEId8mSRnpk",
+      "status": 200,
+      "at_ms": 1792934045555
+    },
+    {
+      "url": "http://127.0.0.1:3020/movers?_rsc=X9HzTVEId8mSRnpk",
+      "status": 200,
+      "at_ms": 1792934045556
+    },
+    {
+      "url": "http://127.0.0.1:3020/search?_rsc=X9HzTVEId8mSRnpk",
+      "status": 200,
+      "at_ms": 1792934045557
+    },
+    {
+      "url": "http://127.0.0.1:3020/opportunities?_rsc=X9HzTVEId8mSRnpk",
+      "status": 200,
+      "at_ms": 1792934045557
+    },
+    {
+      "url": "http://127.0.0.1:3020/market-lab?_rsc=i4lWtWTmR_b00Sav",
+      "status": 200,
+      "at_ms": 1792934045565
+    },
+    {
+      "url": "http://127.0.0.1:3020/api/v1/market-contracts?q=BTCUSDT&limit=20",
+      "status": 200,
+      "at_ms": 1792934045896
+    },
+    {
+      "url": "http://127.0.0.1:3020/market-archive?_rsc=X9HzTVEId8mSRnpk",
+      "status": 200,
+      "at_ms": 1792934045926
+    },
+    {
+      "url": "http://127.0.0.1:3020/system?_rsc=X9HzTVEId8mSRnpk",
+      "status": 200,
+      "at_ms": 1792934045936
+    },
+    {
+      "url": "http://127.0.0.1:3020/historical-research?_rsc=X9HzTVEId8mSRnpk",
+      "status": 200,
+      "at_ms": 1792934045954
+    },
+    {
+      "url": "http://127.0.0.1:3020/overview?_rsc=0RzGQ1XPb_jETa1S",
+      "status": 200,
+      "at_ms": 1792934045986
+    },
+    {
+      "url": "http://127.0.0.1:3020/movers?_rsc=0RzGQ1XPb_jETa1S",
+      "status": 200,
+      "at_ms": 1792934046000
+    },
+    {
+      "url": "http://127.0.0.1:3020/backtest?_rsc=X9HzTVEId8mSRnpk",
+      "status": 200,
+      "at_ms": 1792934046005
+    },
+    {
+      "url": "http://127.0.0.1:3020/paper-lab-live?_rsc=X9HzTVEId8mSRnpk",
+      "status": 200,
+      "at_ms": 1792934046009
+    },
+    {
+      "url": "http://127.0.0.1:3020/paper-lab?_rsc=X9HzTVEId8mSRnpk",
+      "status": 200,
+      "at_ms": 1792934046012
+    },
+    {
+      "url": "http://127.0.0.1:3020/search?_rsc=0RzGQ1XPb_jETa1S",
+      "status": 200,
+      "at_ms": 1792934046016
+    },
+    {
+      "url": "http://127.0.0.1:3020/opportunities?_rsc=0RzGQ1XPb_jETa1S",
+      "status": 200,
+      "at_ms": 1792934046024
+    },
+    {
+      "url": "http://127.0.0.1:3020/_next/static/chunks/1txfxr13huybu.css",
+      "status": 200,
+      "at_ms": 1792934046027
+    },
+    {
+      "url": "http://127.0.0.1:3020/system?_rsc=0RzGQ1XPb_jETa1S",
+      "status": 200,
+      "at_ms": 1792934046031
+    },
+    {
+      "url": "http://127.0.0.1:3020/_next/static/chunks/0b3hny-3id31k.css",
+      "status": 200,
+      "at_ms": 1792934046035
+    },
+    {
+      "url": "http://127.0.0.1:3020/historical-research?_rsc=0RzGQ1XPb_jETa1S",
+      "status": 200,
+      "at_ms": 1792934046040
+    },
+    {
+      "url": "http://127.0.0.1:3020/_next/static/chunks/19bcz85azn1id.css",
+      "status": 200,
+      "at_ms": 1792934046042
+    },
+    {
+      "url": "http://127.0.0.1:3020/market-archive?_rsc=0RzGQ1XPb_jETa1S",
+      "status": 200,
+      "at_ms": 1792934046046
+    },
+    {
+      "url": "http://127.0.0.1:3020/backtest?_rsc=dbVY_pL8mjJ2PtLP",
+      "status": 200,
+      "at_ms": 1792934046051
+    },
+    {
+      "url": "http://127.0.0.1:3020/paper-lab-live?_rsc=T2m1UprfwqOp1b25",
+      "status": 200,
+      "at_ms": 1792934046054
+    },
+    {
+      "url": "http://127.0.0.1:3020/paper-lab?_rsc=2U3m_T85ZPYVbPhf",
+      "status": 200,
+      "at_ms": 1792934046057
+    },
+    {
+      "url": "http://127.0.0.1:3020/_next/static/chunks/348rvf3v5j6su.js",
+      "status": 200,
+      "at_ms": 1792934046067
+    },
+    {
+      "url": "http://127.0.0.1:3020/_next/static/chunks/09z06hhu15_vc.js",
+      "status": 200,
+      "at_ms": 1792934046072
+    },
+    {
+      "url": "http://127.0.0.1:3020/_next/static/chunks/31u53ku2vu3qb.js",
+      "status": 200,
+      "at_ms": 1792934046072
+    },
+    {
+      "url": "http://127.0.0.1:3020/_next/static/chunks/1fqar5k6qqfwt.js",
+      "status": 200,
+      "at_ms": 1792934046074
+    },
+    {
+      "url": "http://127.0.0.1:3020/_next/static/chunks/1a0qtn4gplvl3.js",
+      "status": 200,
+      "at_ms": 1792934046076
+    }
+  ],
+  "console": [],
+  "page_errors": [],
+  "public_requests": [],
+  "public_request_count": 0,
+  "preflight_pass": true
+}

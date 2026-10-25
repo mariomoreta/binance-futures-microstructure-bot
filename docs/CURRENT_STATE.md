@@ -3376,3 +3376,29 @@ simplemente no existía en el DOM de la primera página.
 
 **Resultado del preflight:** PASS en ambos recorridos locales. El navegador
 llega a BTCUSDT/1m con gráfico cargado antes de iniciar el servicio.
+
+**Preflight contra el dashboard canónico (2026-10-25, SHA `d9e651a`).**
+Evidencia: `docs/evidence/preflight-verify-2026-10-25/`.
+
+Dos recorridos consecutivos PASS contra el dashboard canónico con catálogo real
+de 932 contratos y solicitudes públicas bloqueadas:
+
+| Run | Total (s) | page_open (ms) | catalog_state (ms) | search_and_select (ms) | interval_select (ms) | identity_and_graph (ms) | public_requests |
+|-----|-----------|----------------|--------------------|------------------------|----------------------|-------------------------|-----------------|
+| 1   | 2.465     | 183            | 67                 | 1320                   | 25                   | 9                       | 0               |
+| 2   | 3.326     | 1092           | 62                 | 1232                   | 23                   | 9                       | 0               |
+
+**Resultado de cada paso:**
+- `/market-lab`: HTTP 200, `BUILD_ID=r1bBrZkP65q5w79uMhJsF` (Next.js 16.4.1)
+- Catálogo: 932 entradas, estado "catálogo: consultando" (desde caché, sin refresco)
+- Búsqueda "BTCUSDT": botón `explorer-open-BTCUSDT` encontrado y clickeado
+- Identidad exacta: `BTCUSDT · BTC/USDT · PERPETUAL · TRADING · elegible`, fuente `binance · fapi · /fapi/v1/klines · origen de las velas: klines`
+- Intervalo: `1m`
+- Gráfico: vela provisional desde caché (candles_count=0, servicio no arrancado)
+- Peticiones públicas: 0 (cero)
+- Errores de consola: 0, errores de página: 0
+- Procesos residuales: 0, puertos 8791-8794 libres
+
+**Aclaración sobre los 0,007/0,006 s reportados previamente:** Ese tiempo medía únicamente la comprobación final de `wait_for_function` en `wait_preflight()` (la condición ya se cumplía tras los pasos de búsqueda y selección), no el recorrido completo. El preflight completo abarca: apertura de página, carga del catálogo, búsqueda, selección de resultado, elección de intervalo y verificación de identidad — aproximadamente 2.5-3.3 s en total.
+
+**Veredicto del preflight:** PASS en ambos recorridos. El navegador llega a BTCUSDT/1m con gráfico cargado desde caché antes de iniciar cualquier servicio. Si este preflight fallara en la ventana pública, se abortaría sin arrancar el servicio ni consumir la ventana.
