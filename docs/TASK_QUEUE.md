@@ -1,4 +1,22 @@
-## market-indicators/v1: hilo incremental + demo pública PASSED (2026-10-25, base `2ffdede`, sin Binance)
+## Operativo restaurado tras la demo (2026-10-25, HEAD `9a995b9`, sin Binance)
+
+La instancia huérfana de la demo en 3020 (linaje 31888→38744→31048 con entorno
+de ensayo) fue reemplazada por el dashboard canónico: node **32124**, env
+limpio, `Ready in 372ms`. Verificado: `/market-lab` y `/` HTTP 200; catálogo
+canónico solo desde caché (932 contratos, `fetched_at_ms` sin cambios;
+`market_fetch_ledger` 86→86 = **0 huellas públicas**); servicio local de datos
+**detenido** (`/api/v1/market-stream/status` → `available:false`); sin
+escuchas en 8792/65375; único proceso `next` del sistema = el canónico.
+Evidencias intactas en su ruta aislada; DBs canónicas sin escritura.
+
+Separación de acreditaciones (obligatoria al leer cualquier informe del
+bloque): **indicadores PASS con transporte local** (fake WS loopback, NO
+Binance real); **recepción incremental Binance NO acreditada aún**;
+**inspección visual** hecha por el agente (3 capturas, consistente con el
+DOM) y **separada de la verificación DOM 15/15**. Servidor final: SHA
+`9a995b9`, BUILD_ID `e_lib1MO18w7gv6PJG2rm`.
+
+## market-indicators/v1: hilo incremental + demo de entrega (transporte local) PASSED (2026-10-25, base `2ffdede`, sin Binance)
 
 `CURRENT_PHASE`: dashboard V2 de escritorio + observación (WS público solo bajo
 autorización explícita; sin monitor, sin órdenes).

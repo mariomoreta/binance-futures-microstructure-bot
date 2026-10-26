@@ -74,7 +74,8 @@ env produce comparaciones de otra corrida — aprendizaje 2026-10-25).
 `docs/DECISIONS.md` (2026-10-25, cuatro entradas); `docs/CURRENT_STATE.md`;
 `docs/TASK_QUEUE.md`.
 
-**7. Last update:** 2026-10-25 (demo pública PASS).
+**7. Last update:** 2026-10-25 (demo de entrega PASS; caso canónico
+restaurado en 3020 con 0 huellas públicas).
 
 ### Cierre (siete campos, obligatorios)
 
@@ -98,7 +99,7 @@ env produce comparaciones de otra corrida — aprendizaje 2026-10-25).
   `rel_volume_10`, `vwap_typical_10`, `vwap_dev_bps_10`; bloque versionado;
   integración payload→modelo→badge con UNKNOWN con motivo y valores al
   cursor; hilo incremental backend+frontend sin recarga; badge con
-  unidades; demo pública local con 0 solicitudes externas; demo y
+  unidades; demo de entrega local con 0 solicitudes externas; demo y
   evidencia local.
 - `FEATURES_VERIFIED` — backend 19 `test_kline_indicators` + 34
   `test_market_stream` + 171 regresión de la sesión PASS; frontend 592
@@ -122,7 +123,7 @@ env produce comparaciones de otra corrida — aprendizaje 2026-10-25).
   realidad (indicadores versionados del backend; automatización
   implementada en `market_stream_local_acceptance.py`, PASS×2). El FAIL del
   2026-10-24 sigue vigente; ningún resultado histórico reescrito. Los
-  primeros fallos de la demo pública (`TIMEOUT_WAITING_series_1m`,
+  primeros fallos de la demo de entrega (`TIMEOUT_WAITING_series_1m`,
   gap FAIL) NO implicaban defecto de código: huérfano de servidor ajeno en
   3020 documentado en DECISIONS; la demo endurecida ahora lo detecta.
 

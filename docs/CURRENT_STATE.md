@@ -1,4 +1,42 @@
-## market-indicators/v1: hilo incremental por cierre + demo pública del navegador PASADA (2026-10-25, base `2ffdede`)
+## Estado operativo canónico restaurado (2026-10-25, HEAD `9a995b9`)
+
+Tras el cierre del bloque, la instancia identificada que seguía en 3020 era
+huérfana de la demo (linaje `npm run start` 31888 → cmd 38744 → node 31048,
+con padre 33296 ya muerto = `cmd /c npm run start` de la corrida) y heredaba
+el entorno de ensayo de la misma. Se reemplazó SOLO esa instancia, tras
+verificar ausencia de trabajos activos:
+
+1. **Identificación y reemplazo:** 3020 sin `LISTENING` tras
+   `taskkill /F /T /PID 31888` (árbol completo, sin nietos). Servidor
+   canónico reiniciado con env limpio (sin `MICROPROBE_*` ni
+   `MARKET_EXPLORER_*`), linaje propio 21616 → 27576 → 13704 → **node
+   32124**, banner `Ready in 372ms`, escucha `127.0.0.1:3020`.
+2. **Verificación canónica:** `/market-lab` y `/` = HTTP 200. Catálogo
+   canónico servido solo desde caché (932 contratos,
+   `fetched_at_ms=1792978122571` sin cambios, TTL 6 h vigente):
+   **0 huellas públicas** (`market_fetch_ledger` 86 → 86 antes/después de
+   las llamadas). Servicio de datos local: `/api/v1/market-stream/status`
+   → `available:false` (ECONNREFUSED) → **será visto como "servicio
+   detenido" por la UI**; sin escuchas en 8792 ni 65375, y el único proceso
+   `next` del sistema es el canónico 32124. Evidencias intactas en
+   `docs/evidence/indicators-v1-public-2026-10-25/`; DBs canónicas solo
+   tocadas en lectura (configuración del cache prohíbe DBs canónicas).
+3. **Acreditaciones, separación explícita:**
+   - Indicadores `market-indicators/v1`: **PASS con transporte local**
+     (fake WS en loopback, caché de ensayo, guardia DNS del navegador).
+   - Recepción incremental Binance de indicadores: **todavía no
+     acreditada** (la demo no acredita Binance real; ventana requiere
+     autorización explícita).
+   - Inspección visual: realizada por el agente sobre las 3 capturas y
+     consistente con el DOM; **estado: complementaria del DOM, no
+     equivalente (DOM ≠ visual)**; revisión del operador sigue pendiente
+     en TASK_QUEUE.
+   - **Servidor final:** SHA fuente del árbol `9a995b9` (el frontend
+     servido es exactamente el de `37c7b61`/`9a995b9`; `9a995b9` no tocó
+     frontend), BUILD_ID servido `e_lib1MO18w7gv6PJG2rm`
+     (.next construida por la demo sobre ese mismo código de frontend).
+
+## market-indicators/v1: hilo incremental por cierre + demo de entrega del navegador (transporte local) PASADA (2026-10-25, base `2ffdede`)
 
 Cierre del bloque indicadores sobre la integración del 2026-10-25
 (`09632f4`): contrato verificado, recalculo incremental en el servicio,
@@ -21,7 +59,8 @@ demo de navegador con transporte local. Todo con **0 llamadas Binance**
    `use-market-stream.ts`): `applyStreamIndicators` sanitiza, guarda
    identidad y une filas (nuevo gana) SIN recalcular ni recargar. Badge con
    UNIDADES (`ret ...bps · vel ...bps · relvol N.xxx · vwapdev ...bps`).
-3. **Demo pública PASSED** (`scripts/indicators_v1_public_demo.py` →
+3. **Demo de entrega PASSED (navegador con transporte local; sin Binance
+   real)** (`scripts/indicators_v1_public_demo.py` →
    `docs/evidence/indicators-v1-public-2026-10-25/`): veredicto PASS,
    15/15 verificaciones DOM contra el backend real (1 carga de página;
    valores del badge = fila del backend al cursor; fila GAP →

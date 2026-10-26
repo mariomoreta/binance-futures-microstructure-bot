@@ -3037,3 +3037,32 @@ Continuación de 2ffdede con cuatro cierres del bloque indicadores: verificació
 
 3. **Decisión de infraestructura:** una demo de navegador solo produce evidencia válida si el dashboard en `DASHBOARD_PORT` es EXACTAMENTE el servido por la corrida. `scripts/indicators_v1_public_demo.py` ahora (a) aborta si 3020 está ocupado ANTES de `next start`, (b) aborta si el `next start` propio muere con `EADDRINUSE` o no muestra su banner Ready en el log de la corrida (identidad verificada por el log, no por árbol de procesos), (c) aborta si el reemplazo previo del dashboard no deja el puerto libre. el diagnóstico usó réplicas offline deterministas de `series_payload` sobre la misma DB (CLI y directo, idénticos) para aislar al servidor como única variable.
 
+## 2026-10-25 — Restauración del caso canónico en 3020 y terminología de la demo
+
+1. **Solo la instancia identificada fue reemplazada.** El servidor que
+   quedaba en 3020 era huérfano de la demo (linaje `npm run start` 31888 →
+   cmd 38744 → node 31048; su padre 33296 ya estaba muerto) y llevaba el
+   entorno de ensayo heredado. Tras verificar que no había trabajos activos
+   (sin python, sin servicio en 8792, sin fake WS en 65375) se mató el árbol
+   completo con `taskkill /F /T /PID 31888` y el dashboard canónico se
+   reinició con env limpio (sin `MICROPROBE_*`/`MARKET_EXPLORER_*`): node
+   **32124**, banner `Ready in 372ms`. Verificación: `/market-lab` y `/`
+   HTTP 200, catálogo canónico servido solo desde caché (932 contratos,
+   `fetched_at_ms` sin cambios, TTL vigente; `market_fetch_ledger` 86→86 =
+   **0 huellas públicas**), servicio local de datos **detenido**
+   (`/api/v1/market-stream/status` → `available:false`), sin ensayo ni
+   huéfanos: único proceso `next` del sistema es el canónico. DBs canónicas
+   solo leídas (el constructor del cache además rechaza DBs canónicas).
+   Evidencia del bloque intacta en su ruta aislada.
+2. **Terminología fijada para no confundir con Binance real:** "demo
+   pública" se corrige a **demo de entrega** (dashboard en el navegador con
+   transporte 100% local: fake WS de klines en loopback, caché de ensayo,
+   guardia DNS; **no acredita nada sobre Binance real**). CURRENT_STATE,
+   TASK_QUEUE y FEATURE_BACKLOG ya usan el término. Separación pendiente
+   reafirmada: indicadores = PASS con transporte local; recepción
+   incremental sobre Binance real = NO acreditada (requiere ventana de
+   operador); inspección visual = hecha por el agente, separada del DOM
+   15/15. Servidor final canónico: SHA `9a995b9`, BUILD_ID
+   `e_lib1MO18w7gv6PJG2rm` (build de la demo sobre el mismo frontend de
+   `37c7b61`; `9a995b9` no tocó frontend).
+
