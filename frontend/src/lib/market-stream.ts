@@ -14,6 +14,7 @@
 //    publica.
 
 import type {MarketSeriesCandle, MarketSeriesPayload} from "./market-chart-contract";
+import {applyStreamIndicators} from "./market-chart-contract";
 
 export const MARKET_STREAM_CONTRACT_VERSION = "market-stream/v1";
 
@@ -95,6 +96,12 @@ export interface MarketStreamSnapshot {
   coverage?: {state?: string} | null;
   source?: string;
   generated_at_ms?: number;
+  /**
+   * market-indicators/v1 calculado por el backend sobre la ventana del
+   * snapshot (velas cerradas); opacidad `unknown`: el navegador no valida
+   * aquí, la sanitización ocurre en `applyStreamIndicators`.
+   */
+  indicators?: unknown;
 }
 
 /** Metadatos del feed incorporados al modelo del gráfico. */
@@ -121,6 +128,8 @@ export interface MarketStreamView {
   snapshot: MarketStreamSnapshot | null;
   updates: MarketStreamCandle[];
   gaps: MarketStreamGap[];
+  /** Último bloque `market-indicators/v1` recibido por el stream (raw). */
+  indicators: unknown;
   error: string | null;
   attempts: number;
 }
@@ -128,7 +137,7 @@ export interface MarketStreamView {
 export function emptyStreamView(): MarketStreamView {
   return {
     available: null, status: null, snapshot: null,
-    updates: [], gaps: [], error: null, attempts: 0,
+    updates: [], gaps: [], indicators: null, error: null, attempts: 0,
   };
 }
 
@@ -242,18 +251,22 @@ export function mergeStreamIntoSeries(
     const row = streamCandleToSeriesRow(candle);
     if (row) incoming.push(row);
   }
-  if (incoming.length === 0) return payload;
-  const candles = mergeCandleRows(payload.candles, incoming);
+  // Indicadores versionados del feed (recalculados en el backend al cerrar
+  // una vela): solo se aceptan del mismo símbolo/intervalo, sin recálculo
+  // local y uniendo filas; si no hay velas nuevas igual se actualizan.
+  const withIndicators = applyStreamIndicators(payload, view.indicators);
+  if (incoming.length === 0) return withIndicators;
+  const candles = mergeCandleRows(withIndicators.candles, incoming);
   const last = candles[candles.length - 1];
   return {
-    ...payload,
+    ...withIndicators,
     candles,
     observed: {
       start_ms: candles[0]?.open_time_ms ?? null,
       end_ms: last?.open_time_ms ?? null,
     },
     freshness: {
-      ...payload.freshness,
+      ...withIndicators.freshness,
       newest_open_ms: last?.open_time_ms ?? null,
       newest_close_ms: last && !last.provisional ? last.close_time_ms : null,
       provisional: last ? last.provisional : null,

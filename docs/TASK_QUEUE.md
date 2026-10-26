@@ -1,3 +1,44 @@
+## market-indicators/v1: hilo incremental + demo pública PASSED (2026-10-25, base `2ffdede`, sin Binance)
+
+`CURRENT_PHASE`: dashboard V2 de escritorio + observación (WS público solo bajo
+autorización explícita; sin monitor, sin órdenes).
+
+`CURRENT_OBJECTIVE`: cerrar la entrega pública de `market-indicators/v1`
+(contrato verificado, hilo incremental por cierre y demo de navegador con
+transporte local) y sostener las tareas top del presupuesto.
+
+`ACTIVE_TASK`: **cerrado**. Recalculo incremental en el servicio
+(`market_stream_service.py`: snapshot lleva el bloque; en cada `closed`
+fusión por `open_time`, recálculo y frame SSE `event: indicators` antes de
+`closed`; vela provisional excluida) + frontend sin recarga
+(`applyStreamIndicators`: sanitización, guard de identidad, unión nuevo
+gana, badge con unidades). Demo `scripts/indicators_v1_public_demo.py`:
+**PASS 15/15** verificaciones DOM (valores badge=backend al cursor,
+GAP→UNKNOWN con motivo, cierre sin reload, provisional excluido,
+BTCUSDT→MINAUSDT sin arrastre), **0 solicitudes Binance** probadas (browser_external 0, ledger 0, guardia DNS), BUILD_ID
+`e_lib1MO18w7gv6PJG2rm`, URL `http://127.0.0.1:3020`,
+`docs/evidence/indicators-v1-public-2026-10-25/` (3 capturas + logs).
+Aprendizaje de infraestructura registrado en DECISIONS: un `next start`
+huérfano en 3020 con cache de otra corrida falseaba las comparaciones; la
+demo ahora verifica la identidad del dashboard y aborta lo contrario.
+Gates: backend 171 PASS, frontend 592 PASS/1 skip, `tsc`/`eslint` 0.
+
+`NEXT_TASKS`:
+1. **Nueva ventana Binance (solo con autorización explícita)** reutilizando
+   el arnés automatizado ya implementado (`market_stream_local_acceptance.py
+   --transport public`): el `FAIL` medido de 2026-10-24 se mantiene.
+2. Las tareas de la sección top del presupuesto (aviso de servicio detenido,
+   Next.js 16.4.1, retención de caché, `build_recovery` al
+   ledger como vecino opcional) siguen vigentes tal cual.
+3. Revisión visual de las 3 capturas del demo por el operador (la verificación
+   DOM ya está hecha y distinguida; la visual queda en evidencia).
+4. Volatilidad realizada y estructura sobre velas cerradas: siguiente
+   subconjunto DESPUÉS de decidir ventana/semántica (no la heredada del feed);
+   sin optimizar nada.
+5. Fuentes ausentes (aggTrades/libro/OI/contexto BTC en el canal de velas)
+   y F-PAPER-01: diferidos hasta nueva autorización; mantener diferido
+   stops/objetivos arrastrables y móvil/Flutter.
+
 ## Indicadores compartidos — primera integración vertical (2026-10-25, base `09632f4`, sin Binance)
 
 `CURRENT_PHASE`: dashboard V2 de escritorio + observación (WS público solo bajo
@@ -24,20 +65,6 @@ y la automatización del navegador ya está implementada (solo falta ejecutarla
 con autorización en ventana real). Pruebas: backend `test_kline_indicators` 18
 + explorador 56; frontend 51/51 en 4 suites, `tsc`/`eslint` 0. Evidencia:
 `docs/evidence/indicators-v1-2026-10-25.json` (0 llamadas Binance).
-
-`NEXT_TASKS`:
-1. **Nueva ventana Binance (solo con autorización explícita)** reutilizando
-   el arnés automatizado ya implementado (`market_stream_local_acceptance.py
-   --transport public`): el `FAIL` medido de 2026-10-24 se mantiene.
-2. Las tareas de la sección top del presupuesto (aviso de servicio detenido,
-   Next.js 16.4.1, revisión visual, retención de caché, `build_recovery` al
-   ledger como vecino opcional) siguen vigentes tal cual.
-3. Volatilidad realizada y estructura sobre velas cerradas: siguiente
-   subconjunto DESPUÉS de decidir ventana/semántica (no la heredada del feed);
-   sin optimizar nada.
-4. Fuentes ausentes (aggTrades/libro/OI/contexto BTC en el canal de velas)
-   y F-PAPER-01: diferidos hasta nueva autorización; mantener diferido
-   stops/objetivos arrastrables y móvil/Flutter.
 
 ## Presupuesto REST upstream — alcance verificado y corregido (2026-10-25, base `309aee1`, sin Binance)
 

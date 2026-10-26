@@ -1,11 +1,13 @@
 import {describe, expect, it} from "vitest";
 import {
+  applyStreamIndicators,
   buildMarketChartModel,
   marketIndicatorAtCursor,
   marketIndicatorsBadgeText,
   mergeEarlierSeries,
   mergeIndicatorBlocks,
   parseMarketIndicators,
+  sanitizeIndicatorsBlock,
   type MarketIndicatorsBlock,
   type MarketSeriesPayload,
 } from "@/lib/market-chart-contract";
@@ -154,7 +156,7 @@ describe("market-indicators/v1 — badge de valores al cursor", () => {
   it("presenta versión y valores formateados en la fila exacta", () => {
     expect(marketIndicatorsBadgeText(indicatorBlock({
       series: [indicatorRow(T0, {log_return_bps: -3.214567})],
-    }), T0)).toBe("Indicadores: ret -3.21");
+    }), T0)).toBe("Indicadores: ret -3.21bps");
   });
 
   it("UNKNOWN con el motivo del backend, nunca cero ni recálculo", () => {
@@ -253,5 +255,66 @@ describe("market-indicators/v1 — cambio de identidad no arrastra valores", () 
     const mixed = basePayload({symbol: "ETHUSDT",
       indicators: indicatorBlock()});
     expect(buildMarketChartModel(mixed).indicators).toBeNull();
+  });
+});
+
+describe("market-indicators/v1 — bloque incremental del stream por cierre", () => {
+  it("con la misma identidad une filas (nuevo gana) sin recalcular", () => {
+    const payload = basePayload({indicators: indicatorBlock({
+      series: [indicatorRow(T0, {log_return_bps: 1})],
+    })});
+    const streamBlock = indicatorBlock({
+      identity: {symbol: "BTCUSDT", interval: "1h", interval_ms: HOUR,
+        source: "ws_kline"},
+      series: [
+        indicatorRow(T0 + HOUR, {log_return_bps: 7, rel_volume_10: 1.5}),
+        indicatorRow(T0, {log_return_bps: 999}),
+      ],
+    });
+    const merged = applyStreamIndicators(payload, streamBlock);
+    expect(merged.indicators!.series.map((r) => r.open_time_ms))
+      .toEqual([T0, T0 + HOUR]);
+    expect(merged.indicators!.series.find((r) => r.open_time_ms === T0)!
+      .values.log_return_bps).toBe(999);
+    expect(merged.indicators!.identity.interval_ms).toBe(HOUR);
+  });
+
+  it("identidad ajena del stream se descarta: payload intacto", () => {
+    const payload = basePayload({indicators: indicatorBlock({
+      series: [indicatorRow(T0, {log_return_bps: 1})],
+    })});
+    const merged = applyStreamIndicators(payload, indicatorBlock({
+      identity: {symbol: "ETHUSDT", interval: "1h",
+        interval_ms: HOUR, source: "ws_kline"},
+      series: [indicatorRow(T0, {log_return_bps: 42})],
+    }));
+    expect(merged).toBe(payload);
+  });
+
+  it("bloque corrupto del stream no corrompe el payload", () => {
+    const payload = basePayload({indicators: indicatorBlock({
+      series: [indicatorRow(T0, {log_return_bps: 1})],
+    })});
+    expect(applyStreamIndicators(payload, null)).toBe(payload);
+    expect(applyStreamIndicators(payload, {contract_version: "x"}))
+      .toBe(payload);
+    // version/estructura ok pero filas basura: sin filas y bloque cambiado
+    const sanitized = sanitizeIndicatorsBlock(indicatorBlock({
+      series: [
+        "oops", null,
+      ] as unknown as MarketIndicatorsBlock["series"],
+    }))!;
+    expect(sanitized.series).toEqual([]);
+  });
+
+  it("payload sin bloque recibe el del stream con identidad verificada", () => {
+    const payload = basePayload();
+    const merged = applyStreamIndicators(payload, indicatorBlock({
+      identity: {symbol: "BTCUSDT", interval: "1h",
+        interval_ms: HOUR, source: "ws_kline"},
+      series: [indicatorRow(T0, {log_return_bps: 3})],
+    }));
+    expect(merged.indicators!.series[0]!.values.log_return_bps).toBe(3);
+    expect(merged.indicators!.identity.source).toBe("ws_kline");
   });
 });

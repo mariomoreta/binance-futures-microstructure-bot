@@ -315,7 +315,7 @@ Fórmulas y unidades (todas sobre la rejilla cerrada `t−k·interval … t`):
 | Indicador | Fórmula | Unidad | Ventana | Requiere |
 |---|---|---|---|---|
 | `log_return_bps` | `10000·ln(close_t/close_{t−1})` | bps | 1 | vela anterior en la rejilla, cerrada |
-| `velocity_bps_5` | `10000·ln(close_t/close_{t−4})` | bps | 5 | 5 velas cerradas contiguas |
+| `velocity_bps_5` | `10000·ln(close_t/close_{t−4})` | bps | 5 velas | 5 CIERRES cerrados contiguos (t−4..t): retorno acumulado de 4 saltos de intervalo; NO es el retorno de 5 intervalos completos (ese requeriría 6 cierres, t−5→t). Ventana validada por TIEMPO (rejilla de `open_time`), no por posición del arreglo |
 | `rel_volume_10` | `v_t / mean(v_{t−9..t−1})` | ratio | 10 (baseline excluye t) | baseline contigua con `base_volume` |
 | `vwap_typical_10` | `Σ(tp·v)/Σ(v)` sobre `t−9..t`, `tp=(h+l+c)/3` | precio (quote) | 10 | ventana contigua con volumen |
 | `vwap_dev_bps_10` | `10000·(close_t/vwap_typical_10 − 1)` | bps | 10 | `vwap_typical_10` de la vela |
@@ -347,3 +347,30 @@ Reglas duras:
 Añadir/migrar indicadores = nueva definición en el bloque con versión nueva;
 consumidores ignoran lo que no reconozcan; retirada: dejar de emitir el
 bloque (el gráfico vuelve a `indicators: null` con honestidad).
+
+### 11b. Actualización incremental por cierre (market-stream/v1, aditivo) — 2026-10-25
+
+Limitación previa declarada: los indicadores solo se calculaban al consultar
+histórico (`series_payload`), y la vela que cerraba por el stream actualizaba
+velas pero no el bloque. Implementación mínima, REUTILIZANDO el servicio
+existente (sin contratos nuevos y sin Binance):
+
+1. **`snapshot` SSE:** campo aditivo `indicators` = el MISMO bloque que
+   calcula `series_payload` (`allow_fetch=False`, `client=None`, 0 upstream).
+2. **Nuevo frame `event: indicators`:** al confirmarse un cierre
+   (`event: closed`), el servicio recalcula el bloque sobre la ventana
+   de la SESIÓN (velas cerradas del snapshot + cierres deduplicados y
+   ordenados por `open_time` — continuidad temporal, no posiciones del
+   arreglo) y lo emite antes del frame `closed`. La vela provisional no
+   entra (no se añade; no recalcula; el último valor confirmado no cambia). Un
+   fallo de cálculo omite el frame sin romper el stream.
+3. **Frontend:** `useMarketStream` escucha `indicators`
+   (identidad de la conexión) y `mergeStreamIntoSeries` aplica
+   `applyStreamIndicators` (`market-chart-contract.ts`): sanitización +
+   guard de identidad + unión de filas (nuevo gana), SIN recálculo del
+   navegador y sin recarga. Bloque corrupto o de otra identidad: descartado
+   entero. Las filas de velas ya cerradas nunca cambian tras el cierre; el
+   bloque nuevo solo añade/completa la fila recién cerrada.
+4. **Badge con unidad visible:** `ret ±nn.nnbps`, `vel ±nn.nnbps`,
+   `relvol n.nnnx`, `vwapdev ±nn.nnbps`; UNKNOWN(motivo) sin unidad, porque
+   no es valor.

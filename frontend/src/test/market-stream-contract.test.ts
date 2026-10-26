@@ -138,6 +138,52 @@ describe("market-stream — snapshot + feed sobre el histórico", () => {
     expect(merged.coverage.state).toBe("COVERED");
   });
 
+  it("el indicador del stream cierra velas en el payload sin recalcular", () => {
+    const view: MarketStreamView = {
+      ...emptyStreamView(),
+      updates: [streamCandle({open_time_ms: T0 + 2 * H, closed: true,
+        close_time_ms: T0 + 3 * H - 1, close: 102.5, seq: 2})],
+      indicators: {
+        contract_version: "market-indicators/v1",
+        availability: "CLOSED_CANDLES_ONLY",
+        provisional_policy: {included: false, reason: "PROVISIONAL_EXCLUDED"},
+        computed_over: "payload_window",
+        identity: {symbol: "BTCUSDT", interval: "1h", interval_ms: H,
+          source: "ws_kline"},
+        definitions: [], supported: ["log_return_bps"], declined: [],
+        series: [{open_time_ms: T0 + 2 * H,
+          available_at_ms: T0 + 3 * H,
+          values: {log_return_bps: 12.34}, unknown: {}}],
+        generated_at_ms: T0 + H,
+      },
+    };
+    const merged = mergeStreamIntoSeries(payload(), view);
+    const mergedIndicators = merged.indicators!;
+    expect(mergedIndicators.identity.symbol).toBe("BTCUSDT");
+    expect(mergedIndicators.identity.source).toBe("ws_kline");
+    const updated = mergedIndicators.series.find(
+      (r) => r.open_time_ms === T0 + 2 * H)!;
+    expect(updated.values.log_return_bps).toBe(12.34);
+  });
+
+  it("un bloque de indicadores ajeno por identidad no se mezcla", () => {
+    const view: MarketStreamView = {
+      ...emptyStreamView(),
+      indicators: {
+        contract_version: "market-indicators/v1",
+        availability: "CLOSED_CANDLES_ONLY",
+        provisional_policy: {included: false, reason: "PROVISIONAL_EXCLUDED"},
+        computed_over: "payload_window",
+        identity: {symbol: "ETHUSDT", interval: "1h", interval_ms: H,
+          source: "ws_kline"},
+        definitions: [], supported: ["log_return_bps"], declined: [],
+        series: [], generated_at_ms: T0,
+      },
+    };
+    const source = payload();
+    expect(mergeStreamIntoSeries(source, view)).toBe(source);
+  });
+
   it("sin eventos devuelve el mismo payload (identidad estable)", () => {
     const source = payload();
     expect(mergeStreamIntoSeries(source, emptyStreamView())).toBe(source);

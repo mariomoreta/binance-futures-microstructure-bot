@@ -21,19 +21,29 @@ actualizada; frontend: tipos y guard en `market-chart-contract.ts`
 `marketIndicatorsBadgeText`, fusión de bloques en `mergeEarlierSeries`),
 badge `market-chart-indicators` en `MarketMeta` con valores al cursor,
 nota y resumen a11y actualizados. Demo local `scripts/indicators_v1_demo.py`.
-Docs: §11 del contrato del explorador, `SHARED_INDICATORS_V1.md`,
-CURRENT_STATE, TASK_QUEUE, DECISIONS (dos entradas), este backlog.
+Continuación (base `2ffdede`): hilo incremental backend
+(`market_stream_service.py`: snapshot pasa el bloque; en cada `closed`
+fusiona la vela por `open_time`, recalcula y emite `event: indicators`) +
+frontend (`applyStreamIndicators` con guard de identidad, nuevo gana, sin
+recarga); badge con UNIDADES visibles; demo de navegador
+`scripts/indicators_v1_public_demo.py` con transporte local + guardia de 0
+solicitudes externas y verificación de identidad del dashboard en 3020.
+Docs: §11/§11b del contrato del explorador, `SHARED_INDICATORS_V1.md` (§4bis),
+CURRENT_STATE, TASK_QUEUE, DECISIONS (cuatro entradas), este backlog.
 
 **4. Evaluation status:** VERIFIED con datos locales (0 peticiones upstream,
-0 llamadas Binance). Backend: `tests/test_kline_indicators.py` 18/18
-(fórmulas exactas, sin lookahead, provisional excluido y frontera de cierre,
-huecos/warmup con motivo sin ceros, volumen ausente, contract,
-integración de `series_payload`); regresión del explorador/presupuesto
-56/56. Frontend: `market-indicators.test.ts` 15/15,
-`price-chart-market.test.tsx` 11/11 (badge sin bloque y con cursor),
-`market-chart-contract` 13/13, `contract-explorer` 12/12; `tsc` 0,
-`eslint` 0. Evidencia: `docs/evidence/indicators-v1-2026-10-25.json`
-(series continua / hueco+volumen ausente / mark_klines sin volumen).
+0 llamadas Binance). Backend: `tests/test_kline_indicators.py` 19/19
+(velocidad 5 velas = 4 saltos validada por TIEMPO, sin lookahead,
+provisional excluido y frontera de cierre, huecos/warmup con motivo sin
+ceros, volumen ausente, contract, integración de `series_payload`);
+regresión completa de la sesión 171 PASS (kline/explorer/history_client/
+budget/market_stream), `test_market_stream.py` 34/34 con el hilo
+incremental. Frontend 592 passed/1 skipped (incluye
+`market-stream-contract.test.ts`, badge con unidades en
+`price-chart-market.test.tsx`), `tsc` 0, `eslint` 0. Demo de navegador:
+PASS 15/15 verificaciones DOM (evidencia
+`docs/evidence/indicators-v1-public-2026-10-25/`, 0 externas,
+BUILD_ID `e_lib1MO18w7gv6PJG2rm`).
 NO evaluado: rentabilidad, señales, estrategia (fuera de alcance por diseño).
 
 **5. Limitaciones:** warmup por payload (las primeras velas del rango
@@ -42,22 +52,36 @@ la ventana); `vwap_typical_10` es aproximación por precio típico y NO el
 VWAP de negociación; sin indicadores provisionales en V1 (la vela en
 formación se excluye, no se estima); flow/spread/profundidad/OI/contexto
 BTC siguen sin fuente en este canal; el badge es de lectura bajo cursor,
-no un panel independiente.
+no un panel independiente; el recalculo incremental aplica SOLO al
+intervalo conectado por el stream (ventana de sesión), no a otros.
+Demo: requiere ser la ÚNICA servida en 3020 (aborta si el puerto está
+ocupado por un servidor ajeno; un servidor ajeno con su propio cache
+env produce comparaciones de otra corrida — aprendizaje 2026-10-25).
 
 **6. Evidence:** `docs/evidence/indicators-v1-2026-10-25.json`;
-`tests/test_kline_indicators.py`; `frontend/src/test/market-indicators.test.ts`;
+`docs/evidence/indicators-v1-public-2026-10-25/` (evidence.json PASS 15/15,
+0 externas, 3 capturas, logs de build/serve/service);
+`tests/test_kline_indicators.py`; `tests/test_market_stream.py`;
+`frontend/src/test/market-indicators.test.ts`;
+`frontend/src/test/market-stream-contract.test.ts`;
 `frontend/src/test/price-chart-market.test.tsx`;
-`docs/SHARED_INDICATORS_V1.md`; §11 `docs/MARKET_EXPLORER_CONTRACT_V1.md`;
-`scripts/indicators_v1_demo.py`; `docs/DECISIONS.md` (2026-10-25, dos
-entradas); `docs/CURRENT_STATE.md`; `docs/TASK_QUEUE.md`.
+`frontend/src/lib/market-chart-contract.ts`; `frontend/src/lib/market-stream.ts`;
+`frontend/src/lib/use-market-stream.ts`;
+`src/microstructure_probe/market_stream_service.py`;
+`scripts/indicators_v1_public_demo.py`;
+`docs/SHARED_INDICATORS_V1.md`; §11 y §11b
+`docs/MARKET_EXPLORER_CONTRACT_V1.md`; `scripts/indicators_v1_demo.py`;
+`docs/DECISIONS.md` (2026-10-25, cuatro entradas); `docs/CURRENT_STATE.md`;
+`docs/TASK_QUEUE.md`.
 
-**7. Last update:** 2026-10-25.
+**7. Last update:** 2026-10-25 (demo pública PASS).
 
 ### Cierre (siete campos, obligatorios)
 
 - `DECISIONS_REVIEWED` — AGENTS, WORKFLOW, CURRENT_STATE, TASK_QUEUE,
-  DECISIONS (2026-10-25 ×3: presupuesto, precisiones, indicadores),
-  `MARKET_EXPLORER_CONTRACT_V1` §3/§8/§11, `SHARED_INDICATORS_V1` (nuevo),
+  DECISIONS (2026-10-25 ×4: presupuesto, precisiones, indicadores,
+  incremental + causa raíz del servidor ajeno),
+  `MARKET_EXPLORER_CONTRACT_V1` §3/§8/§11/§11b, `SHARED_INDICATORS_V1`,
   `SAFETY_RULES`, `DESKTOP_FIRST_SCOPE_20261020` y este backlog.
 - `NEW_DECISIONS_RECORDED` — DECISIONS 2026-10-25: que solo se calcula lo
   derivable de velas cerradas auditadas y todo lo demás viaja `declined[]`
@@ -65,31 +89,42 @@ entradas); `docs/CURRENT_STATE.md`; `docs/TASK_QUEUE.md`.
   fusión de bloques por unión de filas validadas sin recálculo;
   `execution_id` = atribución por petición (no corrida, no ámbito del
   presupuesto, que es la ventana del ledger filtrada solo por tiempo);
-  automatización del navegador registrada como implementada (6be44b9) y
-  pendiente solo su ejecución autorizada en ventana real.
+  velocidad = 5 velas cerradas (4 saltos) validada por tiempo, no posición;
+  recalculo incremental en el servicio por cierre con frame SSE
+  `indicators` (vela provisional nunca entra en la ventana);
+  identidad del dashboard del demo verificada (aborta si 3020 es de otro
+  servidor; un huérfano con cache de otra corrida falsea comparaciones).
 - `FEATURES_IMPLEMENTED` — subconjunto `log_return_bps`, `velocity_bps_5`,
   `rel_volume_10`, `vwap_typical_10`, `vwap_dev_bps_10`; bloque versionado;
   integración payload→modelo→badge con UNKNOWN con motivo y valores al
-  cursor; demo y evidencia local.
-- `FEATURES_VERIFIED` — 18 backend + 51 frontend focalizados PASS; badge
-  muestra valores exactos del backend y `UNKNOWN(...)` en hueco; identidad
-  cruzada descartada (símbolo/intervalo distinto no filtra valores
-  anteriores); fusión sin recálculo; sin ceros inventados.
+  cursor; hilo incremental backend+frontend sin recarga; badge con
+  unidades; demo pública local con 0 solicitudes externas; demo y
+  evidencia local.
+- `FEATURES_VERIFIED` — backend 19 `test_kline_indicators` + 34
+  `test_market_stream` + 171 regresión de la sesión PASS; frontend 592
+  PASS/1 skip, `tsc`/`eslint` 0; demo PASS 15/15 verificaciones DOM
+  (badge=backend al cursor, GAP→`UNKNOWN(GAP_IN_WINDOW)`, cierre actualiza
+  sin reload, provisional excluido, símbolo sin arrastre), 0 externas,
+  3 capturas.
 - `DEFERRED_FEATURES` — fuentes reales de aggTrades/libro/OI/contexto BTC en
   el canal de velas (requieren nueva autorización y presupuesto explícito);
   volatilidad realizada y estructura de velas cerradas (decisión de
   ventana/semántica); indicadores provisionales (`F-…` posterior);
   `build_recovery` al ledger (vecino opcional del presupuesto); evaluador
-  (no existe aún; el bloque ya le sirve de contrato).
-- `BACKLOG_UPDATED` — yes: este bloque, `SHARED_INDICATORS_V1.md` (nuevo),
-  `MARKET_EXPLORER_CONTRACT_V1.md` §11 (nueva), CURRENT_STATE, TASK_QUEUE,
+  (no existe aún; el bloque ya le sirve de contrato); revisión visual de
+  las capturas por el operador (la demo distingue DOM vs visual).
+- `BACKLOG_UPDATED` — yes: este bloque, `SHARED_INDICATORS_V1.md` (§4bis),
+  `MARKET_EXPLORER_CONTRACT_V1.md` §11/§11b, CURRENT_STATE, TASK_QUEUE,
   DECISIONS.
 - `DOCUMENTATION_CONFLICTS` — el estado previo decía "no se dibujan
   indicadores ni se fabrican" y decía "automatizar el lado navegador" como
   tarea pendiente: la nota del gráfico y la tarea fueron actualizadas a la
   realidad (indicadores versionados del backend; automatización
   implementada en `market_stream_local_acceptance.py`, PASS×2). El FAIL del
-  2026-10-24 sigue vigente; ningún resultado histórico reescrito.
+  2026-10-24 sigue vigente; ningún resultado histórico reescrito. Los
+  primeros fallos de la demo pública (`TIMEOUT_WAITING_series_1m`,
+  gap FAIL) NO implicaban defecto de código: huérfano de servidor ajeno en
+  3020 documentado en DECISIONS; la demo endurecida ahora lo detecta.
 
 ## Presupuesto REST upstream — reconciliación de alcance corregido (2026-10-25, base `309aee1`, commit `2edb56c`)
 

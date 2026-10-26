@@ -198,6 +198,25 @@ class NoLookaheadAndProvisionalTest(unittest.TestCase):
         self.assertEqual(block["provisional_policy"]["reason"],
                          "PROVISIONAL_EXCLUDED")
 
+    def test_velocity_window_is_temporal_not_positional(self) -> None:
+        # 5 velas CONSECUTIVAS EN EL ARREGLO pero con la rejilla temporal
+        # discontinua (falta T0+3): la velocidad NO se calcula por posición,
+        # se valida por tiempo y el hueco interior se declara como tal.
+        opens = [0, 1, 2, 4, 5]
+        bars = [_bar(T0 + i * STEP, 100.0 + i) for i in opens]
+        block = KI.compute_kline_indicators(bars, STEP, T0 + 6 * STEP)
+        last = _row(block, T0 + 5 * STEP)
+        self.assertEqual(last["unknown"]["velocity_bps_5"], "GAP_IN_WINDOW")
+        self.assertNotIn("velocity_bps_5", last["values"])
+        # Y lo mismo para las ventanas de volumen relativo y VWAP del mismo
+        # hueco: motivo declarado, nunca valor con posiciones inventadas.
+        self.assertEqual(last["unknown"]["rel_volume_10"], "GAP_IN_WINDOW")
+        self.assertEqual(last["unknown"]["vwap_typical_10"], "GAP_IN_WINDOW")
+        # El retorno logaritmico puntual usa el vecino TEMPORAL real
+        # (T0+4 existe), no la posición del arreglo: valor, no hueco.
+        self.assertNotIn("log_return_bps", last["unknown"])
+        self.assertIn("log_return_bps", last["values"])
+
     def test_equal_boundary_counts_as_closed(self) -> None:
         bars = [_bar(T0, 100.0)]
         # open_time + step == now: ya cerro (regla compartida con

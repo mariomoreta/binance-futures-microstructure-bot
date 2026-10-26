@@ -238,7 +238,7 @@ describe("PriceChart — modo mercado (market-chart/v1)", () => {
     candleAt((T0 / 1000) as never);
     await waitFor(() => expect(
       screen.getByTestId("market-chart-indicators").textContent,
-    ).toBe("Indicadores: ret 12.50 · vel 40.11 · relvol 1.850 · vwapdev -3.25"));
+    ).toBe("Indicadores: ret 12.50bps · vel 40.11bps · relvol 1.850x · vwapdev -3.25bps"));
 
     // Vela con hueco en el backend: UNKNOWN con motivo, nunca cero.
     candleAt(((T0 + H) / 1000) as never);

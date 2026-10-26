@@ -396,21 +396,18 @@ export function mergeEarlierSeries(
 }
 
 /**
- * Lectura del bloque de indicadores del payload. El navegador NO recalcula:
- * presencia, versión, identidad y filas finitas se validan, y un bloque que
- * no corresponda (versión, identidad o filas corruptas) se descarta entero
- * (`null`), nunca se muestra con datos que no sean del backend.
+ * Validacion del bloque de indicadores sin identidad conectada: version,
+ * filas finitas. Un bloque que no corresponda (version o filas corruptas)
+ * se descarta entero (`null`), nunca se muestra con datos que no sean del
+ * backend.
  */
-export function parseMarketIndicators(
-  payload: MarketSeriesPayload,
+export function sanitizeIndicatorsBlock(
+  raw: unknown,
 ): MarketIndicatorsBlock | null {
-  const raw = (payload as {indicators?: unknown}).indicators;
   if (raw == null || typeof raw !== "object") return null;
   const block = raw as MarketIndicatorsBlock;
   if (block.contract_version !== "market-indicators/v1") return null;
-  if (block.identity?.symbol !== payload.symbol
-    || block.identity?.interval !== payload.interval
-    || block.identity?.interval_ms !== payload.interval_ms) return null;
+  if (!block.identity || typeof block.identity !== "object") return null;
   if (!Array.isArray(block.series)) return null;
   const series: MarketIndicatorRow[] = [];
   for (const row of block.series) {
@@ -443,6 +440,24 @@ export function parseMarketIndicators(
   };
 }
 
+/**
+ * Lectura del bloque de indicadores del payload. El navegador NO recalcula:
+ * presencia, versión, identidad y filas finitas se validan, y un bloque que
+ * no corresponda (versión, identidad o filas corruptas) se descarta entero
+ * (`null`), nunca se muestra con datos que no sean del backend.
+ */
+export function parseMarketIndicators(
+  payload: MarketSeriesPayload,
+): MarketIndicatorsBlock | null {
+  const block = sanitizeIndicatorsBlock(
+    (payload as {indicators?: unknown}).indicators);
+  if (!block) return null;
+  if (block.identity?.symbol !== payload.symbol
+    || block.identity?.interval !== payload.interval
+    || block.identity?.interval_ms !== payload.interval_ms) return null;
+  return block;
+}
+
 /** Fila de indicadores para la vela exacta bajo el cursor (o null). */
 export function marketIndicatorAtCursor(
   block: MarketIndicatorsBlock | null,
@@ -460,6 +475,14 @@ const INDICATOR_LABELS: Record<string, string> = {
   vwap_dev_bps_10: "vwapdev",
 };
 
+const INDICATOR_UNITS: Record<string, string> = {
+  log_return_bps: "bps",
+  velocity_bps_5: "bps",
+  rel_volume_10: "x",
+  vwap_typical_10: "",
+  vwap_dev_bps_10: "bps",
+};
+
 const INDICATOR_DECIMALS: Record<string, number> = {
   log_return_bps: 2,
   velocity_bps_5: 2,
@@ -470,12 +493,12 @@ const INDICATOR_DECIMALS: Record<string, number> = {
 
 function formatIndicatorValue(name: string, value: number): string {
   const decimals = INDICATOR_DECIMALS[name] ?? 3;
-  return value.toFixed(decimals);
+  return `${value.toFixed(decimals)}${INDICATOR_UNITS[name] ?? ""}`;
 }
 
 /**
- * Texto compacto y honesto para el badge de indicadores:
- * `market-indicators/v1 · ret 12.30 · relvol UNKNOWN(GAP_IN_WINDOW)` ...
+ * Texto compacto y honesto para el badge de indicadores, con UNIDAD visible:
+ * `market-indicators/v1 · ret 12.30bps · relvol UNKNOWN(GAP_IN_WINDOW)` ...
  * El navegador solo lee lo que el backend ya calculó: sin UNKNOWN no se
  * imprime valor y nunca se substituye con 0 ni con re-cálculo local.
  */
@@ -532,6 +555,30 @@ export function mergeIndicatorBlocks(
     computed_over: "per_block_payload_windows",
     series,
   };
+}
+
+/**
+ * Incorpora el bloque de indicadores que llega por el stream (recalculado en
+ * el backend al cerrarse una vela) al payload. Identidad: solo se acepta un
+ * bloque del MISMO símbolo/intervalo; las filas se unen (nuevo gana) sin
+ * recalcular nada en el navegador.
+ */
+export function applyStreamIndicators(
+  payload: MarketSeriesPayload,
+  raw: unknown,
+): MarketSeriesPayload {
+  const incoming = sanitizeIndicatorsBlock(raw);
+  if (!incoming) return payload;
+  if (incoming.identity?.symbol !== payload.symbol
+    || incoming.identity?.interval !== payload.interval
+    || incoming.identity?.interval_ms !== payload.interval_ms) {
+    return payload;
+  }
+  const merged = mergeIndicatorBlocks(
+    payload.indicators ?? null, incoming)
+    ?? payload.indicators ?? null;
+  if (merged === payload.indicators) return payload;
+  return {...payload, indicators: merged};
 }
 
 export function buildMarketChartModel(

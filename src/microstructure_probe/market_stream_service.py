@@ -12,7 +12,8 @@ Uso (PowerShell, desde la raiz del repositorio):
 Endpoints (solo 127.0.0.1):
 
     GET  /health          estado de conexion, streams, contadores y limites
-    GET  /stream?...      SSE: hello, snapshot, candle, closed, gap, status, heartbeat
+    GET  /stream?...      SSE: hello, snapshot, candle, closed, indicators,
+                          gap, status, heartbeat
     POST /shutdown        parada ordenada (loopback; token opcional)
 
 El servidor HTTP es de biblioteca estandar (``asyncio.start_server``) para no
@@ -33,6 +34,7 @@ from pathlib import Path
 from typing import Any, Dict, Optional, Tuple
 from urllib.parse import parse_qs, urlsplit
 
+from .kline_indicators import compute_kline_indicators
 from .market_cache import MarketCache
 from .market_explorer import EXPLORABLE_INTERVALS, series_payload
 from .market_stream import (
@@ -42,6 +44,7 @@ from .market_stream import (
     BinanceKlineTransport,
     KlineStreamHub,
     build_recovery,
+    interval_ms,
 )
 
 DEFAULT_PORT = 8791
@@ -141,6 +144,68 @@ def _parse_ms(values: Dict[str, list], key: str) -> Optional[int]:
     except (TypeError, ValueError):
         return None
     return value if value > 0 else None
+
+
+def _session_candle(result: Dict[str, Any]) -> Optional[Dict[str, Any]]:
+    """Vela cerrada del snapshot en formato de calculo (open_time, OHLCV)."""
+    try:
+        open_ms = int(result.get("open_time_ms"))
+    except (TypeError, ValueError):
+        return None
+    if result.get("closed") is not True:
+        return None
+    return {
+        "open_time": open_ms,
+        "high": result.get("high"),
+        "low": result.get("low"),
+        "close": result.get("close"),
+        "base_volume": result.get("base_volume"),
+    }
+
+
+def _merge_closed(candles: list, payload: Dict[str, Any]) -> list:
+    """Fusiona una vela cerrada del stream en la ventana de la sesion.
+
+    La fila del mismo ``open_time_ms`` se reemplaza; el orden queda por
+    ``open_time`` (continuidad temporal, no posiciones del arreglo).
+    """
+    try:
+        open_ms = int(payload["open_time_ms"])
+    except (KeyError, TypeError, ValueError):
+        return candles
+    candle = _session_candle({
+        "open_time_ms": open_ms,
+        "closed": True,
+        "high": payload.get("high"),
+        "low": payload.get("low"),
+        "close": payload.get("close"),
+        "base_volume": payload.get("base_volume"),
+    })
+    if candle is None:
+        return candles
+    kept = [c for c in candles if c["open_time"] != open_ms]
+    kept.append(candle)
+    kept.sort(key=lambda c: c["open_time"])
+    return kept
+
+
+def _session_indicators(symbol: str, interval: str,
+                        candles: list) -> Optional[Dict[str, Any]]:
+    """Recalcula el bloque versionado sobre la ventana de la sesion.
+
+    La vela provisional NUNCA entra: esta lista solo contiene velas cerradas.
+    Un fallo de calculo no rompe el stream: se omite el frame y se conserva
+    el ultimo bloque publicado en el cliente.
+    """
+    step = interval_ms(interval)
+    if not step:
+        return None
+    try:
+        return compute_kline_indicators(
+            candles, int(step), _now_ms(), symbol=symbol, interval=interval,
+            source="ws_kline")
+    except Exception:  # pragma: no cover - calculo defensivo
+        return None
 
 
 class MarketStreamService:
@@ -419,8 +484,16 @@ class MarketStreamService:
                     "coverage": {"state": "NO_COVERAGE", "exhausted_before": False,
                                  "gaps": [], "reason": "ALMACEN_NO_DISPONIBLE"},
                     "volume": {"available": False, "reason": "SIN_SNAPSHOT"},
+                    "indicators": None,
                     "source": "cache", "generated_at_ms": _now_ms(),
                 }
+            # Ventana de la sesion: velas cerradas del snapshot (la provisional
+            # queda excluida) que los cierres del stream iran actualizando.
+            session_candles = [
+                bar for bar in (
+                    _session_candle(c) for c in snapshot.get("candles") or [])
+                if bar is not None
+            ]
             await self._write_sse(writer, _sse_frame("snapshot", snapshot))
             last_open = int((snapshot.get("observed") or {}).get("end_ms") or 0) or None
             self.hub.ready(consumer, last_open)
@@ -448,6 +521,16 @@ class MarketStreamService:
                 if item is None:
                     break
                 event, payload = item
+                if event == "closed":
+                    # Recalculo incremental: al confirmarse una vela, el
+                    # bloque versionado se vuelve a emitir desde el backend
+                    # (la vela provisional nunca entra en la ventana). Es
+                    # aditivo: no cambia el frame `closed` que le sigue.
+                    session_candles = _merge_closed(session_candles, payload)
+                    block = _session_indicators(symbol, interval, session_candles)
+                    if block is not None:
+                        await self._write_sse(
+                            writer, _sse_frame("indicators", block))
                 await self._write_sse(writer, _sse_frame(event, payload))
         except (ConnectionError, asyncio.CancelledError):
             pass
@@ -491,6 +574,9 @@ class MarketStreamService:
                 "coverage": payload.get("coverage") or {},
                 "volume": payload.get("volume") or {},
                 "freshness": payload.get("freshness") or {},
+                # market-indicators/v1: mismo bloque del payload REST, ya
+                # calculado con client=None (allow_fetch=False): cero upstream.
+                "indicators": payload.get("indicators"),
                 "source": "cache",
                 "generated_at_ms": payload.get("generated_at_ms") or _now_ms(),
             }

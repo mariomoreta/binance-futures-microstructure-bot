@@ -21,6 +21,7 @@ from __future__ import annotations
 
 import asyncio
 import json
+import math
 import sys
 import tempfile
 import unittest
@@ -28,6 +29,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "src"))
 
+from microstructure_probe import market_stream_service as service_mod  # noqa: E402
 from microstructure_probe.market_cache import MarketCache  # noqa: E402
 from microstructure_probe.market_stream import (  # noqa: E402
     FRESH_MS,
@@ -845,6 +847,185 @@ class ServiceEndpointTests(unittest.TestCase):
                         break
                     await asyncio.sleep(0.02)
                 self.assertEqual(hub.health()["consumers"], 0)
+                await service.stop()
+
+        self._run(scenario())
+
+
+def _cache_bar(open_ms: int, close: float, base_volume: str = "10.0") -> dict:
+    """Vela cerrada en formato de almacen (upsert_klines)."""
+    return {
+        "open_time": open_ms,
+        "open": str(close - 0.5),
+        "high": str(close + 0.5),
+        "low": str(close - 0.6),
+        "close": str(close),
+        "base_volume": base_volume,
+        "quote_volume": "1000.0",
+        "trade_count": 50,
+        "close_time": open_ms + STEP - 1,
+        "fetched_at": open_ms,
+    }
+
+
+class SessionIndicatorsTests(unittest.TestCase):
+    """Recalculo incremental: ventana de sesion y bloque versionado."""
+
+    def test_session_candle_rejects_provisional_and_garbage(self):
+        provisional = service_mod._session_candle(
+            {"closed": False, "open_time_ms": T0})
+        self.assertIsNone(provisional)
+        self.assertIsNone(service_mod._session_candle({"closed": True}))
+        bar = service_mod._session_candle({
+            "closed": True, "open_time_ms": T0, "high": 101.0,
+            "low": 99.0, "close": 100.5, "base_volume": 12.5,
+        })
+        self.assertEqual(bar["open_time"], T0)
+        self.assertEqual(bar["close"], 100.5)
+
+    def test_merge_closed_replaces_and_sorts_by_open_time(self):
+        candles = service_mod._merge_closed([], {
+            "open_time_ms": T0, "close": 100.0, "high": 101.0,
+            "low": 99.0, "base_volume": 10.0,
+        })
+        candles = service_mod._merge_closed(candles, {
+            "open_time_ms": T0 + 2 * STEP, "close": 101.0, "high": 102.0,
+            "low": 100.0, "base_volume": 11.0,
+        })
+        candles = service_mod._merge_closed(candles, {
+            "open_time_ms": T0 + STEP, "close": 100.5, "high": 101.0,
+            "low": 99.0, "base_volume": 10.5,
+        })
+        self.assertEqual([c["open_time"] for c in candles],
+                         [T0, T0 + STEP, T0 + 2 * STEP])
+        candles = service_mod._merge_closed(candles, {
+            "open_time_ms": T0 + STEP, "close": 100.75, "high": 101.5,
+            "low": 99.5, "base_volume": 10.75,
+        })
+        self.assertEqual(len(candles), 3)
+        self.assertEqual(candles[1]["close"], 100.75)
+
+    def test_session_indicators_warmup_gap_and_temporal_grid(self):
+        # 3 velas con hueco: la ventana se valida por TIEMPO (rejilla), no
+        # por posiciones del arreglo: el hueco interior es GAP_IN_WINDOW y
+        # el calentamiento INSUFICIENT_CANDLES; nunca cero.
+        candles = [
+            {"open_time": T0, "high": 101.0, "low": 99.0, "close": 100.0,
+             "base_volume": 10.0},
+            {"open_time": T0 + STEP, "high": 101.0, "low": 99.0,
+             "close": 100.5, "base_volume": 10.0},
+            {"open_time": T0 + 3 * STEP, "high": 101.0, "low": 99.0,
+             "close": 101.0, "base_volume": 10.0},
+        ]
+        block = service_mod._session_indicators("TESTUSDT", "1m", candles)
+        self.assertEqual(block["contract_version"], "market-indicators/v1")
+        self.assertEqual(block["identity"]["source"], "ws_kline")
+        last = block["series"][-1]
+        self.assertEqual(last["unknown"]["velocity_bps_5"], "GAP_IN_WINDOW")
+        self.assertNotIn("velocity_bps_5", last["values"])
+        self.assertEqual(
+            last["unknown"]["rel_volume_10"], "GAP_IN_WINDOW")
+        self.assertNotIn("rel_volume_10", last["values"])
+        self.assertEqual(
+            block["series"][1]["values"]["log_return_bps"],
+            round(10000 * math.log(100.5 / 100.0), 6))
+        self.assertEqual(block["series"][0]["unknown"]["velocity_bps_5"],
+                         "INSUFICIENT_CANDLES")
+
+    def test_session_indicators_skips_invalid_interval(self):
+        self.assertIsNone(
+            service_mod._session_indicators("TESTUSDT", "17m", []))
+
+
+class ServiceSseIndicatorsTests(unittest.TestCase):
+    """SSE de extremo a extremo: snapshot con bloque + frame por cierre."""
+
+    def _run(self, coro):
+        return asyncio.run(coro)
+
+    def test_snapshot_carries_block_and_close_emits_indicators_frame(self):
+        async def scenario():
+            class NullTransport:
+                async def run(self, stop):
+                    await stop.wait()
+
+            with tempfile.TemporaryDirectory() as tmp:
+                cache = MarketCache(Path(tmp) / "cache.db")
+                cache.init_db()
+                cache.upsert_klines(
+                    "BTCUSDT", "1m", "klines",
+                    [_cache_bar(T0 + i * STEP, 100.0 + i) for i in range(6)],
+                    T0)
+                hub = KlineStreamHub(clock=Clock(T0 + 9 * STEP))
+                service = MarketStreamService(
+                    hub=hub, transport=NullTransport(), cache=cache,
+                    port=0, pid_path=Path(tmp) / "service.json",
+                )
+                await service.start()
+                reader, writer = await asyncio.open_connection(
+                    "127.0.0.1", service.port)
+                writer.write(
+                    ("GET /stream?symbol=BTCUSDT&interval=1m&bars=10"
+                     f"&from_ms={T0}&to_ms={T0 + 9 * STEP} HTTP/1.1\r\n"
+                     "Host: local\r\n\r\n").encode("ascii")
+                )
+                await writer.drain()
+
+                async def read_until(marker: bytes, budget: int = 65536) -> bytes:
+                    buffered = b""
+                    while marker not in buffered:
+                        part = await asyncio.wait_for(
+                            reader.read(4096), timeout=5.0)
+                        if not part:
+                            break
+                        buffered += part
+                    return buffered
+
+                buffered = await read_until(b"event: snapshot")
+                # El frame SSE puede llegar troceado: se sigue leyendo hasta
+                # el fin de linea del propio frame (\n\n tras el snapshot).
+                tail = buffered.index(b"event: snapshot")
+                while b"\n\n" not in buffered[tail:]:
+                    buffered += await asyncio.wait_for(
+                        reader.read(4096), timeout=5.0)
+                snapshot_frame = buffered[tail:]
+                body = json.loads(snapshot_frame.split(b"data: ", 1)[1]
+                                  .split(b"\n\n", 1)[0])
+                self.assertEqual(
+                    body["indicators"]["contract_version"],
+                    "market-indicators/v1")
+                self.assertEqual(body["indicators"]["identity"]["symbol"],
+                                 "BTCUSDT")
+
+                # Cierre por stream: frame indicators ANTES de closed, con la
+                # vela nueva ya en el bloque (7 filas) y su fila completa.
+                hub.on_socket_open()
+                hub.on_message(kline(open_ms=T0 + 6 * STEP, closed=True,
+                                     close=106.0, event_ms=T0 + 7 * STEP - 1))
+                buffered = await read_until(b"event: indicators")
+                self.assertIsNotNone(buffered)
+                indicators_frames = [
+                    frame.split(b"data: ", 1)[1].split(b"\n\n", 1)[0]
+                    for frame in buffered.split(b"event: ", 1)[1:]
+                    if frame.startswith(b"indicators\ndata: ")
+                ]
+                self.assertTrue(indicators_frames)
+                block = json.loads(indicators_frames[-1])
+                self.assertEqual(block["identity"]["source"], "ws_kline")
+                self.assertEqual(len(block["series"]), 7)
+                last = block["series"][-1]
+                self.assertEqual(last["open_time_ms"], T0 + 6 * STEP)
+                self.assertNotIn("velocity_bps_5", last["unknown"])
+                self.assertIn("velocity_bps_5", last["values"])
+                # La vela provisional NO recalcula ni emite el frame.
+                hub.on_message(kline(open_ms=T0 + 7 * STEP, closed=False,
+                                     close=106.5, event_ms=T0 + 7 * STEP + 1))
+                segment = await read_until(b"event: candle")
+                self.assertIn(b"event: candle", segment)
+                # En el tramo nuevo no hay ningun frame indicators: el
+                # recalculo ocurre solo con velas cerradas.
+                self.assertEqual(segment.count(b"event: indicators"), 0)
+                writer.close()
                 await service.stop()
 
         self._run(scenario())

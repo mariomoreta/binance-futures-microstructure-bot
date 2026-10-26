@@ -1,0 +1,250 @@
+{
+  "evidence_dir": "C:\\proyectos\\binance-futures-microstructure-bot\\docs\\evidence\\indicators-v1-public-2026-10-25",
+  "dashboard_replacement": {
+    "old_pid": null,
+    "old_process": null,
+    "stopped": null
+  },
+  "close_request": "waiting minute boundary",
+  "browser_external_requests": [],
+  "series_urls": [
+    "http://127.0.0.1:3020/api/v1/market-series?symbol=BTCUSDT&interval=1h&from_ms=1791909040204&to_ms=1792985440204&bars=300&pages=1&page_limit=300&source=klines",
+    "http://127.0.0.1:3020/api/v1/market-series?symbol=BTCUSDT&interval=1h&from_ms=1791909040204&to_ms=1792985440204&bars=300&pages=1&page_limit=300&source=klines",
+    "http://127.0.0.1:3020/api/v1/market-series?symbol=BTCUSDT&interval=1m&from_ms=1792967504209&to_ms=1792985444209&bars=300&pages=1&page_limit=300&source=klines",
+    "http://127.0.0.1:3020/api/v1/market-series?symbol=BTCUSDT&interval=1m&from_ms=1792967504209&to_ms=1792985444209&bars=300&pages=1&page_limit=300&source=klines",
+    "http://127.0.0.1:3020/api/v1/market-series?symbol=MINAUSDT&interval=1m&from_ms=1792967534265&to_ms=1792985474265&bars=300&pages=1&page_limit=300&source=klines",
+    "http://127.0.0.1:3020/api/v1/market-series?symbol=MINAUSDT&interval=1m&from_ms=1792967534265&to_ms=1792985474265&bars=300&pages=1&page_limit=300&source=klines"
+  ],
+  "sse_frames": 1,
+  "sse_errors": [],
+  "navigator_loads": 1,
+  "zero_public": {
+    "python_denied_attempts": [],
+    "ledger": {
+      "rows": 0,
+      "requests": 0
+    },
+    "browser_external_requests": 0
+  },
+  "dom_checks": [
+    {
+      "check": "initial_navigation_single_load",
+      "ok": true,
+      "detail": {
+        "loads": 1
+      }
+    },
+    {
+      "check": "payload_indicators_v1",
+      "ok": true,
+      "detail": {
+        "identity": {
+          "symbol": "BTCUSDT",
+          "interval": "1h",
+          "interval_ms": 3600000,
+          "source": "klines"
+        }
+      }
+    },
+    {
+      "check": "units_and_values_match_backend_1h",
+      "ok": true,
+      "detail": {
+        "open_time_ms": 1792980000000,
+        "cursor_ms": 1792980000000,
+        "badge": "Indicadores: ret -5.92bps · vel -0.24bps · relvol 1.000x · vwapdev -2.54bps",
+        "backend": {
+          "values": {
+            "log_return_bps": -5.919798,
+            "velocity_bps_5": -0.244061,
+            "rel_volume_10": 1,
+            "vwap_typical_10": 99999.219,
+            "vwap_dev_bps_10": -2.53992
+          },
+          "unknown": {}
+        }
+      }
+    },
+    {
+      "check": "backend_declares_insufficient_warmup",
+      "ok": true,
+      "detail": {
+        "insufficient_rows": 10
+      }
+    },
+    {
+      "check": "warmup_over_shows_unknown_reason",
+      "ok": true,
+      "detail": {
+        "open_time_ms": 1791943200000,
+        "cursor_ms": 1791943200000,
+        "badge": "Indicadores: ret 2.46bps · vel 4.79bps · relvol UNKNOWN(INSUFICIENT_CANDLES) · vwapdev 1.78bps",
+        "backend": {
+          "values": {
+            "log_return_bps": 2.460845,
+            "velocity_bps_5": 4.788256,
+            "vwap_typical_10": 100000.849667,
+            "vwap_dev_bps_10": 1.775018
+          },
+          "unknown": {
+            "rel_volume_10": "INSUFICIENT_CANDLES"
+          }
+        }
+      }
+    },
+    {
+      "check": "interval_change_payload_identity",
+      "ok": true,
+      "detail": {
+        "identity": {
+          "symbol": "BTCUSDT",
+          "interval": "1m",
+          "interval_ms": 60000,
+          "source": "klines"
+        }
+      }
+    },
+    {
+      "check": "backend_declares_gap_in_window",
+      "ok": true,
+      "detail": {
+        "gap_rows": 10
+      }
+    },
+    {
+      "check": "gap_shows_unknown_gap_in_window",
+      "ok": true,
+      "detail": {
+        "open_time_ms": 1792983480000,
+        "cursor_ms": 1792983480000,
+        "badge": "Indicadores: ret 0.12bps · vel 0.43bps · relvol UNKNOWN(GAP_IN_WINDOW) · vwapdev UNKNOWN(GAP_IN_WINDOW) · vwap_typical_10 UNKNOWN(GAP_IN_WINDOW)",
+        "backend": {
+          "values": {
+            "log_return_bps": 0.122034,
+            "velocity_bps_5": 0.429127
+          },
+          "unknown": {
+            "rel_volume_10": "GAP_IN_WINDOW",
+            "vwap_typical_10": "GAP_IN_WINDOW",
+            "vwap_dev_bps_10": "GAP_IN_WINDOW"
+          }
+        }
+      }
+    },
+    {
+      "check": "close_updates_values_without_reload",
+      "ok": true,
+      "detail": {
+        "open_time_ms": 1792985400000,
+        "cursor_ms": 1792985400000,
+        "badge": "Indicadores: ret 0.30bps · vel 0.71bps · relvol 0.030x · vwapdev 0.95bps",
+        "backend": {
+          "values": {
+            "log_return_bps": 0.298912,
+            "velocity_bps_5": 0.714805,
+            "rel_volume_10": 0.030279,
+            "vwap_typical_10": 100021.363031,
+            "vwap_dev_bps_10": 0.946495
+          },
+          "unknown": {}
+        }
+      }
+    },
+    {
+      "check": "no_reload_across_close",
+      "ok": true,
+      "detail": {
+        "count": 1
+      }
+    },
+    {
+      "check": "provisional_tick_does_not_change_confirmed",
+      "ok": true,
+      "detail": {
+        "before": "Indicadores: ret 0.30bps · vel 0.71bps · relvol 0.030x · vwapdev 0.95bps",
+        "after": "Indicadores: ret 0.30bps · vel 0.71bps · relvol 0.030x · vwapdev 0.95bps"
+      }
+    },
+    {
+      "check": "provisional_candle_excluded_from_block",
+      "ok": true,
+      "detail": {
+        "cursor_ms": 1792985460000,
+        "badge": "Indicadores: vela provisional excluida (politica del bloque)"
+      }
+    },
+    {
+      "check": "symbol_change_payload_identity",
+      "ok": true,
+      "detail": {
+        "identity": {
+          "symbol": "MINAUSDT",
+          "interval": "1m",
+          "interval_ms": 60000,
+          "source": "klines"
+        }
+      }
+    },
+    {
+      "check": "symbol_change_clears_previous_values",
+      "ok": true,
+      "detail": {
+        "open_time_ms": 1792985340000,
+        "cursor_ms": 1792985340000,
+        "badge": "Indicadores: ret 4.19bps · vel 18.50bps · relvol 1.000x · vwapdev 23.91bps",
+        "backend": {
+          "values": {
+            "log_return_bps": 4.192017,
+            "velocity_bps_5": 18.501454,
+            "rel_volume_10": 1,
+            "vwap_typical_10": 1.057018,
+            "vwap_dev_bps_10": 23.906296
+          },
+          "unknown": {}
+        }
+      }
+    },
+    {
+      "check": "no_reload_after_symbol_change",
+      "ok": true,
+      "detail": {
+        "count": 1
+      }
+    }
+  ],
+  "final": {
+    "verdict": "PASS",
+    "sha": "2ffdedeb97532d8dd6c4625b3fcb2dfa41eef446",
+    "build_id": "e_lib1MO18w7gv6PJG2rm",
+    "url": "http://127.0.0.1:3020",
+    "service_port": 8792,
+    "fake_ws_port": 65375,
+    "transport": "local loopback (0 publicas; FAIL 2026-10-24 sin tocar)",
+    "dom_vs_visual": {
+      "dom": "selectores exactos+valores comparados contra el backend (dom_checks, todos PASS/FAIL)",
+      "visual": "capturas para revision aparte: shot-1h-values.png, shot-1m-close.png, shot-mina-values.png (la demo no reemplaza la revision visual)"
+    },
+    "seed": {
+      "cache_db": "C:\\Users\\adonm\\AppData\\Local\\Temp\\indicators_public_demo_ejrth3r1\\market_cache.db",
+      "seeded": {
+        "BTCUSDT": {
+          "1m": 10080,
+          "1h": 720
+        },
+        "MINAUSDT": {
+          "1m": 10080,
+          "1h": 720
+        }
+      },
+      "catalog_entries": 2,
+      "last_closed_1m": 1792985340000,
+      "deleted_1m_open_times": [
+        1792983000000,
+        1792983060000,
+        1792983120000
+      ],
+      "deleted_rows": 3
+    },
+    "generated_at": "2026-10-26T03:31:21.302959+00:00"
+  }
+}

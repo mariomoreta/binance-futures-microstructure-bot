@@ -1,4 +1,50 @@
+## market-indicators/v1: hilo incremental por cierre + demo pública del navegador PASADA (2026-10-25, base `2ffdede`)
+
+Cierre del bloque indicadores sobre la integración del 2026-10-25
+(`09632f4`): contrato verificado, recalculo incremental en el servicio,
+demo de navegador con transporte local. Todo con **0 llamadas Binance**
+(fake WS en loopback, guardia DNS en el navegador, ledger 0). Desktop.
+
+1. **Contrato verificado (no se dobló):** `velocity_bps_5` = 5 velas
+   cerradas (t−4..t, 4 saltos), ventana validada POR TIEMPO (rejilla de
+   `open_time`) — `test_velocity_window_is_temporal_not_positional`.
+   Contexto BTC: fuente requerida vs solicitudes realmente necesarias (0 si
+   ya está en cache; nunca "+N upstream" fijo). Huecos del grid → UNKNOWN
+   declarado (`GAP_IN_WINDOW`/`INSUFICIENT_CANDLES`), nunca reparado.
+2. **Recalculo incremental backend** (`src/microstructure_probe/
+   market_stream_service.py`): `snapshot` SSE lleva el MISMO bloque
+   (`series_payload(allow_fetch=False)`); en cada `closed` el servicio
+   fusiona la vela por `open_time` (continuidad temporal, no posiciones),
+   recalcula con `kline_indicators` y emite `event: indicators` ANTES de
+   `closed`; la vela provisional NUNCA entra a la ventana de sesión.
+   Frontend (`market-chart-contract.ts`/`market-stream.ts`/
+   `use-market-stream.ts`): `applyStreamIndicators` sanitiza, guarda
+   identidad y une filas (nuevo gana) SIN recalcular ni recargar. Badge con
+   UNIDADES (`ret ...bps · vel ...bps · relvol N.xxx · vwapdev ...bps`).
+3. **Demo pública PASSED** (`scripts/indicators_v1_public_demo.py` →
+   `docs/evidence/indicators-v1-public-2026-10-25/`): veredicto PASS,
+   15/15 verificaciones DOM contra el backend real (1 carga de página;
+   valores del badge = fila del backend al cursor; fila GAP →
+   `UNKNOWN(GAP_IN_WINDOW)`; el cierre actualiza el badge sin
+   reload; provisional excluido; cambio BTCUSDT→MINAUSDT limpia valores sin
+   recarga), 0 solicitudes Binance probadas (browser_external 0, ledger 0),
+   BUILD_ID `e_lib1MO18w7gv6PJG2rm`, URL servida `http://127.0.0.1:3020`
+   (puerto libre al terminar). Capturas `shot-1h-values.png`,
+   `shot-1m-close.png`, `shot-mina-values.png`: revisión visual del
+   operador aparte (la demo no la sustituye; DOM ≠ visual).
+4. **Lección de infraestructura (importante):** los primeros fallos de la
+   demo NO eran código: un `next start` huérfano de una corrida previa
+   vivía en 3020 con el cache de OTRA ejecución y envenenaba el payload de
+   comparación (precios deterministas iguales, huecos en otras filas). La
+   demo ahora valida la identidad del dashboard (aborta con 3020 ocupado,
+   `EADDRINUSE` o sin banner Ready propio). Ver DECISIONS 2026-10-25.
+5. **Pruebas de cierre:** backend 171 PASS (kline/explorer/history_client/
+   budget/market_stream; `test_kline_indicators` 19, `test_market_stream`
+   34); frontend 592 PASS/1 skipped; `tsc --noEmit` 0; `eslint` 0 en los
+   archivos tocados. COMMIT del bloque (ver TASK_QUEUE).
+
 ## Indicadores compartidos V1: primera integración vertical (2026-10-25, base `09632f4`)
+
 
 Inventario verificado de los motores de Fase 1 y su integración como
 indicadores compartidos sobre velas cerradas en `/market-lab`. Documentado en

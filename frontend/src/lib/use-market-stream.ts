@@ -150,7 +150,27 @@ export function useMarketStream(options: UseMarketStreamOptions): MarketStreamVi
         const payload = parseEvent<MarketStreamSnapshot>(event);
         if (!payload || disposed) return;
         touch();
-        setView((previous) => ({...previous, snapshot: payload, available: true}));
+        setView((previous) => ({
+          ...previous, snapshot: payload, available: true,
+          // El snapshot ya trae el bloque versionado calculado por el
+          // backend (market-indicators/v1) sobre velas cerradas;
+          // los eventos `indicators` posteriores lo reemplazan.
+          indicators: payload.indicators ?? previous.indicators,
+        }));
+      });
+      // Recalculo incremental por cierre: el backend publica el bloque
+      // versionado al confirmarse una vela; solo se acepta el mismo
+      // símbolo/intervalo de esta conexión.
+      es.addEventListener("indicators", (event) => {
+        const block = parseEvent<Record<string, unknown>>(event);
+        if (!block || disposed) return;
+        const identity = block["identity"] as
+          {symbol?: unknown; interval?: unknown} | undefined;
+        if (identity?.symbol !== symbol || identity?.interval !== interval) {
+          return;
+        }
+        touch();
+        setView((previous) => ({...previous, indicators: block}));
       });
       es.addEventListener("candle", (event) => {
         const candle = parseEvent<MarketStreamCandle>(event);
