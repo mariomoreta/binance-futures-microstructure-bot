@@ -13,7 +13,7 @@ Endpoints (solo 127.0.0.1):
 
     GET  /health          estado de conexion, streams, contadores y limites
     GET  /stream?...      SSE: hello, snapshot, candle, closed, indicators,
-                          gap, status, heartbeat
+                          context, gap, status, heartbeat
     POST /shutdown        parada ordenada (loopback; token opcional)
 
 El servidor HTTP es de biblioteca estandar (``asyncio.start_server``) para no
@@ -31,9 +31,13 @@ import time
 import urllib.error
 import urllib.request
 from pathlib import Path
-from typing import Any, Dict, Optional, Tuple
+from typing import Any, Dict, Optional, Sequence, Tuple
 from urllib.parse import parse_qs, urlsplit
 
+from .kline_btc_context import (
+    BTC_BENCHMARK_SYMBOL,
+    compute_btc_context,
+)
 from .kline_indicators import compute_kline_indicators
 from .market_cache import MarketCache
 from .market_explorer import EXPLORABLE_INTERVALS, series_payload
@@ -204,6 +208,35 @@ def _session_indicators(symbol: str, interval: str,
         return compute_kline_indicators(
             candles, int(step), _now_ms(), symbol=symbol, interval=interval,
             source="ws_kline")
+    except Exception:  # pragma: no cover - calculo defensivo
+        return None
+
+
+def _session_context(symbol: str, interval: str, session_candles: list,
+                     btc_candles: list, token_block: Dict[str, Any],
+                     btc_sources: Sequence[str],
+                     btc_subscription: Dict[str, Any],
+                     rest_upstream_requests: int = 0,
+                     btc_symbol: str = BTC_BENCHMARK_SYMBOL,
+                     ) -> Optional[Dict[str, Any]]:
+    """Recalcula el bloque de contexto BTC de la sesion.
+
+    Solo velas cerradas de la ventana AMBAS series; los unknown con motivo
+    declaran la falta, nunca arrastran valores viejos como nuevos.
+    """
+    step = interval_ms(interval)
+    if not step:
+        return None
+    try:
+        return compute_btc_context(
+            session_candles, btc_candles, int(step), _now_ms(),
+            symbol=symbol, interval=interval, token_source="ws_kline",
+            token_indicators=(token_block.get("series")
+                              if token_block else None),
+            btc_sources=btc_sources,
+            btc_subscription=btc_subscription,
+            rest_upstream_requests=rest_upstream_requests,
+            btc_symbol=btc_symbol)
     except Exception:  # pragma: no cover - calculo defensivo
         return None
 
@@ -431,6 +464,22 @@ class MarketStreamService:
                                                    "interval": interval})
             return
         self.consumers_served += 1
+        # Contexto BTC compartido: la suscripcion del benchmark vive en el
+        # MISMO hub combinado (refcount por simbolo/intervalo, un solo
+        # socket). Cuando el token ES el benchmark no se abre ninguna
+        # segunda suscripcion: la propia sesion del token es la serie BTC.
+        btc_consumer = None
+        btc_error: Optional[str] = None
+        btc_shared = False
+        btc_sources: list = []
+        if symbol != BTC_BENCHMARK_SYMBOL:
+            before = self.hub.subscription_info(BTC_BENCHMARK_SYMBOL, interval)
+            btc_consumer, btc_error = self.hub.subscribe(
+                BTC_BENCHMARK_SYMBOL, interval,
+                consumer_id=(f"sse-btc-{os.getpid()}-"
+                             f"{self.consumers_served + 1}-{_now_ms()}"))
+            if btc_consumer is not None:
+                btc_shared = before["consumers"] > 0
         head = (
             "HTTP/1.1 200 OK\r\n"
             "Content-Type: text/event-stream; charset=utf-8\r\n"
@@ -453,6 +502,8 @@ class MarketStreamService:
                 pass
 
         disconnected.add_done_callback(_wake_on_disconnect)
+        token_task: Optional[asyncio.Task] = None
+        btc_task: Optional[asyncio.Task] = None
         try:
             await self._write_sse(writer, "retry: 5000\n\n")
             health = self._health_payload()
@@ -485,6 +536,7 @@ class MarketStreamService:
                                  "gaps": [], "reason": "ALMACEN_NO_DISPONIBLE"},
                     "volume": {"available": False, "reason": "SIN_SNAPSHOT"},
                     "indicators": None,
+                    "context_btc": None,
                     "source": "cache", "generated_at_ms": _now_ms(),
                 }
             # Ventana de la sesion: velas cerradas del snapshot (la provisional
@@ -494,18 +546,57 @@ class MarketStreamService:
                     _session_candle(c) for c in snapshot.get("candles") or [])
                 if bar is not None
             ]
+            # Serie BTC de la sesion: mismas reglas (solo cerradas del cache
+            # al abrir; los cierres del stream compartido las actualizan).
+            btc_snapshot = None
+            btc_candles: list = []
+            if btc_consumer is not None or btc_error is not None:
+                btc_sources = ["cache"]
+                btc_snapshot = await self._snapshot(
+                    BTC_BENCHMARK_SYMBOL, interval, from_ms, to_ms, bars)
+                if btc_snapshot is not None:
+                    btc_candles = [
+                        bar for bar in (
+                            _session_candle(c)
+                            for c in btc_snapshot.get("candles") or [])
+                        if bar is not None
+                    ]
             await self._write_sse(writer, _sse_frame("snapshot", snapshot))
             last_open = int((snapshot.get("observed") or {}).get("end_ms") or 0) or None
             self.hub.ready(consumer, last_open)
+            last_block = snapshot.get("indicators") or None
+            if btc_consumer is not None:
+                btc_last_open = None
+                if btc_snapshot is not None:
+                    btc_last_open = int(
+                        (btc_snapshot.get("observed") or {}).get("end_ms") or 0
+                    ) or None
+                self.hub.ready(btc_consumer, btc_last_open)
             status = self.hub.consumer_status(consumer)
             if status is not None:
                 await self._write_sse(writer, _sse_frame("status", status))
+
+            def _btc_subscription_info() -> Dict[str, Any]:
+                if btc_consumer is None:
+                    return {"shared": False, "live": False,
+                            "reason": btc_error or None}
+                live = not btc_consumer.closed \
+                    and self.hub.subscription_info(
+                        BTC_BENCHMARK_SYMBOL, interval)["consumers"] > 0
+                return {"shared": btc_shared, "live": live}
+
+            token_task = asyncio.ensure_future(consumer.queue.get())
+            btc_task = (asyncio.ensure_future(btc_consumer.queue.get())
+                        if btc_consumer is not None else None)
             while not consumer.closed and not self.stop_event.is_set():
                 if disconnected.done():
                     break
-                try:
-                    item = await asyncio.wait_for(consumer.queue.get(), timeout=5.0)
-                except asyncio.TimeoutError:
+                wait = {token_task}
+                if btc_task is not None:
+                    wait.add(btc_task)
+                done, _pending = await asyncio.wait(
+                    wait, timeout=5.0, return_when=asyncio.FIRST_COMPLETED)
+                if not done:
                     current = self.hub.consumer_status(consumer)
                     if current is None:
                         break
@@ -518,24 +609,62 @@ class MarketStreamService:
                         "last_kline_open_ms": current["last_kline_open_ms"],
                     }))
                     continue
-                if item is None:
-                    break
-                event, payload = item
-                if event == "closed":
-                    # Recalculo incremental: al confirmarse una vela, el
-                    # bloque versionado se vuelve a emitir desde el backend
-                    # (la vela provisional nunca entra en la ventana). Es
-                    # aditivo: no cambia el frame `closed` que le sigue.
-                    session_candles = _merge_closed(session_candles, payload)
-                    block = _session_indicators(symbol, interval, session_candles)
-                    if block is not None:
-                        await self._write_sse(
-                            writer, _sse_frame("indicators", block))
-                await self._write_sse(writer, _sse_frame(event, payload))
+                if token_task in done:
+                    item = token_task.result()
+                    token_task = asyncio.ensure_future(consumer.queue.get())
+                    if item is None:
+                        break
+                    event, payload = item
+                    if event == "closed":
+                        # Recalculo incremental: al confirmarse una vela, el
+                        # bloque versionado se vuelve a emitir desde el backend
+                        # (la vela provisional nunca entra en la ventana). Es
+                        # aditivo: no cambia el frame `closed` que le sigue.
+                        session_candles = _merge_closed(session_candles, payload)
+                        block = _session_indicators(symbol, interval,
+                                                    session_candles)
+                        if block is not None:
+                            await self._write_sse(
+                                writer, _sse_frame("indicators", block))
+                            last_block = block
+                        if symbol != BTC_BENCHMARK_SYMBOL:
+                            ctx = _session_context(
+                                symbol, interval, session_candles, btc_candles,
+                                last_block, btc_sources,
+                                _btc_subscription_info())
+                            if ctx is not None:
+                                await self._write_sse(
+                                    writer, _sse_frame("context", ctx))
+                    await self._write_sse(writer, _sse_frame(event, payload))
+                elif btc_task is not None and btc_task in done:
+                    item = btc_task.result()
+                    btc_task = asyncio.ensure_future(btc_consumer.queue.get())
+                    if item is None:
+                        break
+                    event, payload = item
+                    if event == "closed":
+                        btc_candles = _merge_closed(btc_candles, payload)
+                        if "ws_kline" not in btc_sources:
+                            btc_sources.append("ws_kline")
+                        if last_block is not None:
+                            ctx = _session_context(
+                                symbol, interval, session_candles, btc_candles,
+                                last_block, btc_sources,
+                                _btc_subscription_info())
+                            if ctx is not None:
+                                await self._write_sse(
+                                    writer, _sse_frame("context", ctx))
+                    # Los frames de BTC (candle/status/gap) no se reenvian:
+                    # solo su efecto sobre el bloque `context`.
         except (ConnectionError, asyncio.CancelledError):
             pass
         finally:
             self.hub.unsubscribe(consumer)
+            if btc_consumer is not None:
+                self.hub.unsubscribe(btc_consumer)
+            for drain_task in (token_task, btc_task):
+                if drain_task is not None and not drain_task.done():
+                    drain_task.cancel()
             disconnected.cancel()
             self._client_tasks.discard(disconnected)
 
@@ -577,6 +706,9 @@ class MarketStreamService:
                 # market-indicators/v1: mismo bloque del payload REST, ya
                 # calculado con client=None (allow_fetch=False): cero upstream.
                 "indicators": payload.get("indicators"),
+                # market-btc-context/v1: bloque hermano aditivo (solo cuando
+                # el token no es BTC); cero upstream ademas.
+                "context_btc": payload.get("context_btc"),
                 "source": "cache",
                 "generated_at_ms": payload.get("generated_at_ms") or _now_ms(),
             }

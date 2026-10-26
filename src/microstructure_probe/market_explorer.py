@@ -46,7 +46,8 @@ from .history_client import (
     UpstreamBudgetExceeded,
 )
 
-from .kline_indicators import compute_kline_indicators
+#: Benchmark del contexto compartido (mismo canal de velas, sin colector
+#: nuevo). Se define en kline_btc_context y se reexporta aqui por conveniencia.
 
 from .market_cache import (
     CATALOG_TTL_MS,
@@ -58,6 +59,9 @@ from .market_cache import (
 
 MARKET_SERIES_CONTRACT_VERSION = "market-series/v1"
 MARKET_CATALOG_CONTRACT_VERSION = "market-catalog/v1"
+
+from .kline_btc_context import BTC_BENCHMARK_SYMBOL, compute_btc_context
+from .kline_indicators import compute_kline_indicators
 
 VENUE = "binance"
 MARKET_TYPE = "usd_m_futures"
@@ -674,6 +678,23 @@ def series_payload(cache: MarketCache, client: Optional[HistoryClient] = None,
     # velas cerradas del PROPIO rango del payload; el navegador no recalcula.
     indicators = compute_kline_indicators(stored, step, now, sym, interval,
                                           source)
+    # Contexto BTC compartido (market-btc-context/v1): velas cerradas de
+    # BTC en la MISMA rejilla e intervalo, leidas del almacen con
+    # client=None (sin upstream REST; 0 peticiones). Cuando el token ES
+    # BTC el contexto no se emite (no hay comparacion consigo mismo).
+    context_btc = None
+    if sym != BTC_BENCHMARK_SYMBOL:
+        try:
+            btc_stored, _ = read_stored(cache, BTC_BENCHMARK_SYMBOL, interval,
+                                        source, start, end, history_db, limit)
+        except Exception:
+            btc_stored = []
+        context_btc = compute_btc_context(
+            stored, btc_stored, step, now, sym, interval, token_source=source,
+            token_indicators=indicators.get("series") if indicators else None,
+            btc_sources=(["cache"] if btc_stored else []),
+            rest_upstream_requests=0,
+        )
     base_asset = (contract or {}).get("base_asset")
     volume_available = source == "klines" and any(
         c["base_volume"] is not None for c in candles)
@@ -696,6 +717,7 @@ def series_payload(cache: MarketCache, client: Optional[HistoryClient] = None,
         },
         "candles": candles,
         "indicators": indicators,
+        "context_btc": context_btc,
         "coverage": coverage,
         "volume": {
             "available": volume_available,

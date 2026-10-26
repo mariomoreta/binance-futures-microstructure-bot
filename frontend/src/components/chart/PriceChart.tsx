@@ -16,7 +16,10 @@ import type {
 import type {PaperChartModel} from "@/lib/paper-chart-contract";
 import {msToChartSecond} from "@/lib/paper-chart-contract";
 import type {MarketChartModel} from "@/lib/market-chart-contract";
-import {marketIndicatorsBadgeText} from "@/lib/market-chart-contract";
+import {
+  marketBtcContextBadgeText,
+  marketIndicatorsBadgeText,
+} from "@/lib/market-chart-contract";
 import {
   initialEarlierGate,
   recordEarlierRequest,
@@ -25,6 +28,7 @@ import {
 } from "@/lib/earlier-gate";
 import {formatPrice} from "@/lib/format";
 import {fmtUtcPL} from "@/lib/paper-lab-live";
+import BtcCompareStrip from "@/components/market-lab/BtcCompareStrip";
 import s from "./PriceChart.module.css";
 
 /** Unión versionada: `paper-chart/v1` (fixtures) | `market-chart/v1` (Binance). */
@@ -198,6 +202,12 @@ function MarketMeta({
             (candle) => candle.open_time_ms === cursor.ms),
         )}
       </span>
+      {model.context_btc && (
+        <span data-testid={id("-btc-context")}
+          title="market-btc-context/v1: movimiento de BTC junto al token sobre velas cerradas alineadas; contexto informativo, no es señal">
+          {marketBtcContextBadgeText(model.context_btc, cursor?.ms ?? null)}
+        </span>
+      )}
       {onRequestEarlier && (
         <button type="button" className={s.chartFit}
           onClick={() => onRequestEarlier(model.capabilities.earlier_from_ms ?? 0)}
@@ -778,6 +788,7 @@ export function PriceChart({
       {loadError && (
         <p className={s.note} role="alert">Gráfico no disponible: {loadError}</p>
       )}
+      {isMarketChartModel(model) && <BtcCompareStrip block={model.context_btc} />}
       <p className={s.note}>
         {isMarketChartModel(model) ? (
           <>

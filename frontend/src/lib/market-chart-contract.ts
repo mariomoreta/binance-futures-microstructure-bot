@@ -135,6 +135,8 @@ export interface MarketSeriesPayload {
   observed: {start_ms: number | null; end_ms: number | null};
   candles: MarketSeriesCandle[];
   indicators?: MarketIndicatorsBlock | null;
+  /** market-btc-context/v1 aditivo; null cuando no aplica (token = BTC). */
+  context_btc?: MarketContextBtcBlock | null;
   coverage: {
     state: MarketCoverageState;
     observed_start_ms: number | null;
@@ -291,6 +293,8 @@ export interface MarketChartModel {
   markers: MarketChartMarker[];
   /** Bloque `market-indicators/v1` del backend; null = sin indicadores. */
   indicators: MarketIndicatorsBlock | null;
+  /** Bloque `market-btc-context/v1` aditivo; null = sin contexto BTC. */
+  context_btc: MarketContextBtcBlock | null;
   capabilities: {
     mode: "market";
     live: false;
@@ -391,6 +395,8 @@ export function mergeEarlierSeries(
       },
       indicators: mergeIndicatorBlocks(
         parseMarketIndicators(previous), parseMarketIndicators(block)),
+      context_btc: mergeContextBtcBlocks(
+        parseContextBtc(previous), parseContextBtc(block)),
     },
   };
 }
@@ -558,6 +564,284 @@ export function mergeIndicatorBlocks(
 }
 
 /**
+ * market-btc-context/v1 — bloque versionado ADITIVO y independiente:
+ * movimiento del token junto al de BTC sobre velas CERRADAS alineadas por
+ * `open_time_ms`. Contexto informativo: NO es señal, no es filtro de
+ * entrada y la diferencia de retornos NO es "alpha" ni rentabilidad. El
+ * navegador solo lee lo que el backend ya calculó.
+ */
+export const MARKET_BTC_CONTEXT_VERSION = "market-btc-context/v1" as const;
+
+export interface MarketContextBtcRow {
+  open_time_ms: number;
+  available_at_ms: number;
+  values: Record<string, number>;
+  unknown: Record<string, string>;
+}
+
+export interface MarketContextBtcNormalizedRow {
+  open_time_ms: number;
+  token_pct: number;
+  btc_pct: number;
+}
+
+export interface MarketContextBtcBlock {
+  contract_version: typeof MARKET_BTC_CONTEXT_VERSION;
+  availability: string;
+  identity: {
+    symbol: string;
+    interval: string;
+    interval_ms: number;
+    source: string;
+  };
+  context: {
+    symbol: string;
+    venue: string;
+    market_type: string;
+    interval: string;
+    interval_ms: number;
+    same_asset_as_token: boolean;
+    subscription: {reuses_token_stream?: boolean; shared?: boolean;
+      live?: boolean; reason?: string | null};
+    sources: string[];
+    horizon_candles: number;
+    timeframe: {
+      aligned_by: string;
+      token_window: {first: number; last: number};
+      btc_observed: {first: number | null; last: number | null};
+      expected_grid: number;
+      present_grid: number;
+      gaps: number[][];
+    };
+    freshness: {
+      btc_last_closed_open_ms: number | null;
+      btc_last_available_at_ms: number | null;
+      age_ms: number | null;
+      threshold_ms: number;
+      lagging: boolean;
+      note: string;
+    };
+    acquisition: {rest_upstream_requests: number; mode: string;
+      note: string};
+  };
+  definitions: MarketIndicatorDefinition[];
+  supported: string[];
+  labels: Record<string, string>;
+  series: MarketContextBtcRow[];
+  normalized: {
+    base_open_time_ms: number;
+    unit: string;
+    series: MarketContextBtcNormalizedRow[];
+  } | null;
+  generated_at_ms: number;
+}
+
+/**
+ * Validación sin identidad conectada: versión + filas finitas. Un bloque
+ * corrupto (`version` distinta, filas no finitas) se descarta entero (`null`)
+ * — nunca se mezcla con datos del navegador.
+ */
+export function sanitizeContextBtc(
+  raw: unknown,
+): MarketContextBtcBlock | null {
+  if (raw == null || typeof raw !== "object") return null;
+  const block = raw as MarketContextBtcBlock;
+  if (block.contract_version !== "market-btc-context/v1") return null;
+  if (!block.identity || typeof block.identity !== "object") return null;
+  if (!block.context || typeof block.context !== "object") return null;
+  if (!Array.isArray(block.series)) return null;
+  const series: MarketContextBtcRow[] = [];
+  for (const row of block.series) {
+    if (row == null || typeof row !== "object") continue;
+    const openTime = finiteOrNull(row.open_time_ms);
+    if (openTime == null) continue;
+    const values: Record<string, number> = {};
+    const unknown: Record<string, string> = {};
+    for (const [name, value] of Object.entries(row.values ?? {})) {
+      const parsed = finiteOrNull(value);
+      if (parsed != null) values[name] = parsed;
+    }
+    for (const [name, reason] of Object.entries(row.unknown ?? {})) {
+      if (typeof reason === "string" && reason !== "") unknown[name] = reason;
+    }
+    series.push({
+      open_time_ms: openTime,
+      available_at_ms: finiteOrNull(row.available_at_ms)
+        ?? (openTime + (block.identity.interval_ms ?? 0)),
+      values,
+      unknown,
+    });
+  }
+  let normalized: MarketContextBtcBlock["normalized"] = null;
+  const rawNorm = block.normalized as
+    | {base_open_time_ms?: unknown; unit?: unknown; series?: unknown}
+    | null | undefined;
+  if (rawNorm && typeof rawNorm === "object" && Array.isArray(rawNorm.series)) {
+    const base = finiteOrNull(rawNorm.base_open_time_ms);
+    if (base != null) {
+      const points: MarketContextBtcNormalizedRow[] = [];
+      for (const point of rawNorm.series) {
+        if (point == null || typeof point !== "object") continue;
+        const time = finiteOrNull(point.open_time_ms);
+        const tokenPct = finiteOrNull(point.token_pct);
+        const btcPct = finiteOrNull(point.btc_pct);
+        if (time == null || tokenPct == null || btcPct == null) continue;
+        points.push({open_time_ms: time, token_pct: tokenPct, btc_pct: btcPct});
+      }
+      normalized = {base_open_time_ms: base,
+        unit: typeof rawNorm.unit === "string" ? rawNorm.unit : "percent_from_base",
+        series: points};
+    }
+  }
+  return {
+    ...block,
+    availability: typeof block.availability === "string"
+      ? block.availability : "CLOSED_CANDLES_ONLY",
+    context: {
+      ...block.context,
+      sources: Array.isArray(block.context.sources)
+        ? block.context.sources.filter((s): s is string => typeof s === "string")
+        : [],
+      timeframe: {...block.context.timeframe},
+      freshness: {...block.context.freshness},
+      acquisition: {...block.context.acquisition},
+    },
+    definitions: Array.isArray(block.definitions) ? block.definitions : [],
+    supported: Array.isArray(block.supported) ? block.supported : [],
+    labels: block.labels && typeof block.labels === "object" ? block.labels : {},
+    series,
+    normalized,
+  };
+}
+
+/** Lectura del bloque de contexto del payload con guard de identidad. */
+export function parseContextBtc(
+  payload: MarketSeriesPayload,
+): MarketContextBtcBlock | null {
+  const block = sanitizeContextBtc(
+    (payload as {context_btc?: unknown}).context_btc);
+  if (!block) return null;
+  if (block.identity?.symbol !== payload.symbol
+    || block.identity?.interval !== payload.interval
+    || block.identity?.interval_ms !== payload.interval_ms) return null;
+  return block;
+}
+
+/** Fila de contexto para la vela exacta bajo el cursor (o null). */
+export function marketContextAtCursor(
+  block: MarketContextBtcBlock | null,
+  openTimeMs: number | null | undefined,
+): MarketContextBtcRow | null {
+  if (!block || openTimeMs == null) return null;
+  return block.series.find((row) => row.open_time_ms === openTimeMs) ?? null;
+}
+
+const CONTEXT_LABELS: Record<string, string> = {
+  ret_btc_bps_5: "retBTC",
+  ret_diff_bps_5: "diff",
+};
+
+const CONTEXT_UNITS: Record<string, string> = {
+  ret_btc_bps_5: "bps",
+  ret_diff_bps_5: "bps",
+};
+
+const CONTEXT_DECIMALS: Record<string, number> = {
+  ret_btc_bps_5: 2,
+  ret_diff_bps_5: 2,
+};
+
+function formatContextValue(name: string, value: number): string {
+  const decimals = CONTEXT_DECIMALS[name] ?? 2;
+  return `${value.toFixed(decimals)}${CONTEXT_UNITS[name] ?? ""}`;
+}
+
+/**
+ * Badge del contexto BTC con UNIDAD: `diff ±nn.nnbps`, UNKNOWN(motivo)
+ * sin unidad (no es valor). La diferencia de retornos se etiqueta tal cual:
+ * no es alpha ni rentabilidad.
+ */
+export function marketBtcContextBadgeText(
+  block: MarketContextBtcBlock | null,
+  openTimeMs: number | null | undefined,
+): string {
+  if (!block) {
+    return "Contexto BTC: no disponible (sin bloque market-btc-context/v1)";
+  }
+  const row = marketContextAtCursor(block, openTimeMs);
+  if (!row) return "Contexto BTC: sin fila para la vela bajo el cursor";
+  const parts: string[] = [];
+  for (const name of block.supported) {
+    const label = CONTEXT_LABELS[name] ?? name;
+    const value = row.values[name];
+    if (value != null && Number.isFinite(value)) {
+      parts.push(`${label} ${formatContextValue(name, value)}`);
+      continue;
+    }
+    const reason = row.unknown[name];
+    if (reason) parts.push(`${label} UNKNOWN(${reason})`);
+  }
+  for (const [name, reason] of Object.entries(row.unknown)) {
+    if (!block.supported.includes(name)) {
+      parts.push(`${name} UNKNOWN(${reason})`);
+    }
+  }
+  if (block.context?.freshness?.lagging === true) {
+    parts.push("BTC atras del cierre esperado");
+  }
+  return `Contexto BTC: ${parts.join(" · ")} (diferencia de retornos, no rentabilidad)`;
+}
+
+/**
+ * Une dos bloques de contexto (block = el más reciente). Alineación por
+ * `open_time_ms` (nuevo gana); las filas ya cerradas no cambian de valor.
+ * El encabezado de causalidad y `normalized` (base común POR BLOQUE) viajan
+ * DEL BLOQUE MÁS RECIENTE: bases distintas no se mezclan.
+ */
+export function mergeContextBtcBlocks(
+  previous: MarketContextBtcBlock | null,
+  block: MarketContextBtcBlock | null,
+): MarketContextBtcBlock | null {
+  if (!previous && !block) return null;
+  if (!previous) return block;
+  if (!block) return previous;
+  if (previous.identity.symbol !== block.identity.symbol
+    || previous.identity.interval !== block.identity.interval
+    || previous.identity.interval_ms !== block.identity.interval_ms) {
+    return null;
+  }
+  if (previous.context?.symbol !== block.context?.symbol) return null;
+  const byTime = new Map<number, MarketContextBtcRow>();
+  for (const row of previous.series) byTime.set(row.open_time_ms, row);
+  for (const row of block.series) byTime.set(row.open_time_ms, row);
+  const series = [...byTime.values()].sort(
+    (a, b) => a.open_time_ms - b.open_time_ms);
+  return {...block, series};
+}
+
+/**
+ * Incorpora el bloque de contexto que llega por el stream (`event: context`,
+ * recalculado en el backend al cerrar velas del token O de BTC). Identidad:
+ * solo se acepta del MISMO símbolo/intervalo del payload; filas se unen
+ * (nuevo gana) sin recálculo del navegador.
+ */
+export function applyStreamContextBtc(
+  payload: MarketSeriesPayload,
+  raw: unknown,
+): MarketSeriesPayload {
+  const incoming = sanitizeContextBtc(raw);
+  if (!incoming) return payload;
+  if (incoming.identity?.symbol !== payload.symbol
+    || incoming.identity?.interval !== payload.interval
+    || incoming.identity?.interval_ms !== payload.interval_ms) {
+    return payload;
+  }
+  const merged = mergeContextBtcBlocks(parseContextBtc(payload), incoming);
+  if (merged == null) return payload;
+  return {...payload, context_btc: merged};
+}
+
+/**
  * Incorpora el bloque de indicadores que llega por el stream (recalculado en
  * el backend al cerrarse una vela) al payload. Identidad: solo se acepta un
  * bloque del MISMO símbolo/intervalo; las filas se unen (nuevo gana) sin
@@ -712,6 +996,7 @@ export function buildMarketChartModel(
     operation: null,
     markers,
     indicators: parseMarketIndicators(payload),
+    context_btc: parseContextBtc(payload),
     capabilities: {
       mode: "market",
       live: false,

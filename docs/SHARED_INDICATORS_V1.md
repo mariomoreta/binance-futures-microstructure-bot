@@ -142,7 +142,37 @@ anclado en `market-chart-contract` (13) + `market-stream-contract`
 Evidencia con transporte local y `client=None` (0 upstream):
 `docs/evidence/indicators-v1-2026-10-25.json`.
 
-## 6. Qué queda pendiente (declarado)
+## 6. Contexto BTC compartido (`market-btc-context/v1`, 2026-10-26)
+
+Bloque ADITIVO e independiente de `market-indicators/v1` (no se modifica ni
+se toca su lista `declined`). Muestra el movimiento del token junto al de BTC
+usando velas CERRADAS de ambos disponibles en el mismo instante. Es contexto
+informativo: no es una señal, no es un filtro de entrada y la diferencia de
+retornos NO se presenta como "alpha" ni rentabilidad.
+
+- Mismo venue (Binance USD-M) y mismo intervalo que la sesión del token;
+  alineación por `open_time_ms` (rejilla común), nunca por posición del
+  arreglo; solo velas cerradas conocidas en T.
+- La suscripción de BTC vive en el MISMO hub compartido
+  (`KlineStreamHub`, refcount por `(symbol, interval)`, un solo socket
+  combinado). Si el token ES BTC no se crea ninguna segunda suscripción y no
+  se emite el bloque (no hay comparación consigo mismo).
+- Backend = única autoridad: `src/microstructure_probe/kline_btc_context.py`
+  calcula `ret_btc_bps_5` (10000·ln(close_t^BTC / close_{t−4}^BTC), bps) y
+  `ret_diff_bps_5` (velocity_bps_5(token) − ret_btc_bps_5, bps), ambas sobre
+  la rejilla del token. El navegador no recalcula.
+- Campo aditivo `context_btc` en `series_payload` (client=None, 0 upstream
+  REST) y frame SSE `event: context` (recalculado al cerrar el token o BTC).
+- Si falta BTC o hay hueco/retardo: `unknown` con motivo `BTC_*`, nunca cero
+  ni arrastre silencioso de valores antiguos.
+- Comparación normalizada: `normalized` con base común declarada (porcentaje
+  desde base, calculada en el backend).
+- Coste real de adquisición: caché + WS del canal existente (`client=None`),
+  por tanto 0 peticiones REST en este bloque. El REST de tramos faltantes de
+  BTC no se ejecuta aquí; su número de páginas depende del tramo faltante, no
+  es una cifra fija.
+
+## 7. Qué queda pendiente (declarado)
 
 - Volatilidad realizada, rango y estructura sobre velas cerradas: requiere
   decisión de ventana/semántica (no la heredada del feed).

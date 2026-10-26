@@ -14,7 +14,7 @@
 //    publica.
 
 import type {MarketSeriesCandle, MarketSeriesPayload} from "./market-chart-contract";
-import {applyStreamIndicators} from "./market-chart-contract";
+import {applyStreamContextBtc, applyStreamIndicators} from "./market-chart-contract";
 
 export const MARKET_STREAM_CONTRACT_VERSION = "market-stream/v1";
 
@@ -102,6 +102,12 @@ export interface MarketStreamSnapshot {
    * aquí, la sanitización ocurre en `applyStreamIndicators`.
    */
   indicators?: unknown;
+  /**
+   * market-btc-context/v1 aditivo del snapshot (velas BTC cerradas en la
+   * misma rejilla); bloque hermano independiente. La sanitización ocurre en
+   * `applyStreamContextBtc`.
+   */
+  context_btc?: unknown;
 }
 
 /** Metadatos del feed incorporados al modelo del gráfico. */
@@ -130,6 +136,8 @@ export interface MarketStreamView {
   gaps: MarketStreamGap[];
   /** Último bloque `market-indicators/v1` recibido por el stream (raw). */
   indicators: unknown;
+  /** Último bloque `market-btc-context/v1` recibido por el stream (raw). */
+  btc_context: unknown;
   error: string | null;
   attempts: number;
 }
@@ -137,7 +145,8 @@ export interface MarketStreamView {
 export function emptyStreamView(): MarketStreamView {
   return {
     available: null, status: null, snapshot: null,
-    updates: [], gaps: [], indicators: null, error: null, attempts: 0,
+    updates: [], gaps: [], indicators: null, btc_context: null,
+    error: null, attempts: 0,
   };
 }
 
@@ -255,18 +264,21 @@ export function mergeStreamIntoSeries(
   // una vela): solo se aceptan del mismo símbolo/intervalo, sin recálculo
   // local y uniendo filas; si no hay velas nuevas igual se actualizan.
   const withIndicators = applyStreamIndicators(payload, view.indicators);
-  if (incoming.length === 0) return withIndicators;
-  const candles = mergeCandleRows(withIndicators.candles, incoming);
+  // Contexto BTC versionado del feed (aditivo; se recalcula al cerrar el
+  // token o BTC): mismo guard de identidad que los indicadores.
+  const withContext = applyStreamContextBtc(withIndicators, view.btc_context);
+  if (incoming.length === 0) return withContext;
+  const candles = mergeCandleRows(withContext.candles, incoming);
   const last = candles[candles.length - 1];
   return {
-    ...withIndicators,
+    ...withContext,
     candles,
     observed: {
       start_ms: candles[0]?.open_time_ms ?? null,
       end_ms: last?.open_time_ms ?? null,
     },
     freshness: {
-      ...withIndicators.freshness,
+      ...withContext.freshness,
       newest_open_ms: last?.open_time_ms ?? null,
       newest_close_ms: last && !last.provisional ? last.close_time_ms : null,
       provisional: last ? last.provisional : null,

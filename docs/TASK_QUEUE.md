@@ -1,20 +1,50 @@
-## Operativo restaurado tras la demo (2026-10-25, HEAD `9a995b9`, sin Binance)
+## Operativo restaurado tras el bloque de contexto BTC (2026-10-26, HEAD `3c2e7ab`, sin Binance)
 
-La instancia huérfana de la demo en 3020 (linaje 31888→38744→31048 con entorno
-de ensayo) fue reemplazada por el dashboard canónico: node **32124**, env
-limpio, `Ready in 372ms`. Verificado: `/market-lab` y `/` HTTP 200; catálogo
-canónico solo desde caché (932 contratos, `fetched_at_ms` sin cambios;
-`market_fetch_ledger` 86→86 = **0 huellas públicas**); servicio local de datos
+El dashboard canónico se restauró en 127.0.0.1:3020 tras el trabajo del
+bloque, con entorno limpio (sin `MICROPROBE_*`/`MARKET_EXPLORER_*`),
+frontend recompilado (`next build`) y el servidor previo detenido:
+node **8776**, `Ready`, escucha `127.0.0.1:3020`. Verificado: `/market-lab`
+y `/` HTTP 200; catálogo canónico solo desde caché (932 contratos, TTL 6 h
+vigente; `market_fetch_ledger` sin crecimiento); servicio local de datos
 **detenido** (`/api/v1/market-stream/status` → `available:false`); sin
 escuchas en 8792/65375; único proceso `next` del sistema = el canónico.
-Evidencias intactas en su ruta aislada; DBs canónicas sin escritura.
+Evidencias intactas en sus rutas aisladas; DBs canónicas sin escritura.
 
-Separación de acreditaciones (obligatoria al leer cualquier informe del
-bloque): **indicadores PASS con transporte local** (fake WS loopback, NO
-Binance real); **recepción incremental Binance NO acreditada aún**;
-**inspección visual** hecha por el agente (3 capturas, consistente con el
-DOM) y **separada de la verificación DOM 15/15**. Servidor final: SHA
-`9a995b9`, BUILD_ID `e_lib1MO18w7gv6PJG2rm`.
+Separación de acreditaciones (obligatoria al leer cualquier informe):
+**indicadores `market-indicators/v1` PASS con transporte local**; **contexto
+BTC compartido `market-btc-context/v1` PASS con transporte local**;
+**recepción incremental Binance NO acreditada aún** (ventana requiere
+autorización explícita); **inspección visual** hecha por el agente y
+**separada del DOM**; revisión del operador de las capturas sigue pendiente
+en TASK_QUEUE. Servidor final: SHA `3c2e7ab`, BUILD_ID
+`Bibj_gkaZK9si2ABtSsAb`.
+
+## Contexto BTC compartido `market-btc-context/v1` (2026-10-26, base `3c2e7ab`, sin Binance)
+
+`CURRENT_PHASE`: dashboard V2 de escritorio + observación (WS público solo bajo
+autorización explícita; sin monitor, sin órdenes).
+
+`CURRENT_OBJECTIVE`: bloque de contexto BTC compartido cerrado y
+documentado (bloque aditivo `context_btc` + frame SSE `event: context`,
+suscripción BTC compartida sin duplicar, demo de transporte local PASS,
+0 peticiones públicas).
+
+`ACTIVE_TASK`: **cerrado**. Backend `kline_btc_context.py` (`ret_btc_bps_5`,
+`ret_diff_bps_5`, alineación por `open_time_ms`, `unknown(BTC_*)` sin
+arrastre, base común declarada); integración `series_payload.context_btc`
+(client=None, 0 upstream); frame SSE `event: context` y suscripción BTC
+compartida en `market_stream_service`; frontend
+`market-chart-contract.ts`/`market-stream.ts`/`use-market-stream.ts` +
+`PriceChart.tsx` (badge con unidad + tira normalizada `BtcCompareStrip`).
+Pruebas: 13 unidad + integración `series_payload`; 6 SSE del servicio
+(snapshot, cierre token/BTC, suscripción compartida, símbolo=BTC sin
+bloque, intervalo inválido). Demo
+`scripts/btc_context_public_demo.py`: **PASS 12/12**, 0 peticiones
+públicas (browser_external 0, ledger 0, 1 carga de página, sin recarga),
+evidencia en `docs/evidence/btc-context-public-2026-10-26/`.
+Documentación: `SHARED_INDICATORS_V1.md` §6, `BTC_CONTEXT_V1_PLAN.md`,
+DECISIONS 2026-10-26, CURRENT_STATE, TASK_QUEUE.
+Gates: backend 171 PASS, frontend 592 PASS/1 skip, `tsc`/`eslint` 0.
 
 ## market-indicators/v1: hilo incremental + demo de entrega (transporte local) PASSED (2026-10-25, base `2ffdede`, sin Binance)
 

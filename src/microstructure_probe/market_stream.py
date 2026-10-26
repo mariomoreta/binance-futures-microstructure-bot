@@ -408,6 +408,17 @@ class KlineStreamHub:
                 return sub
         return None
 
+    def subscription_info(self, symbol: str, interval: str) -> Dict[str, Any]:
+        """observacion READ-ONLY: consumidores de una suscripcion.
+
+        Sirve para acreditar suscripciones COMPARTIDAS (no se duplica la
+        suscripcion del benchmark) sin alterar el refcount.
+        """
+        sub = self.subs.get((str(symbol or "").strip().upper(),
+                             str(interval or "").strip()))
+        return {"exists": sub is not None,
+                "consumers": len(sub.consumers) if sub is not None else 0}
+
     def _drop(self, key: Tuple[str, str]) -> None:
         self.subs.pop(key, None)
         self._notify_change()

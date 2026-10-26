@@ -1,40 +1,68 @@
-## Estado operativo canónico restaurado (2026-10-25, HEAD `9a995b9`)
+## Estado operativo canónico restaurado (2026-10-26, HEAD `3c2e7ab`)
 
-Tras el cierre del bloque, la instancia identificada que seguía en 3020 era
-huérfana de la demo (linaje `npm run start` 31888 → cmd 38744 → node 31048,
-con padre 33296 ya muerto = `cmd /c npm run start` de la corrida) y heredaba
-el entorno de ensayo de la misma. Se reemplazó SOLO esa instancia, tras
-verificar ausencia de trabajos activos:
+Tras el trabajo del bloque de contexto BTC compartido, el dashboard canónico
+se restauró en 127.0.0.1:3020 con entorno limpio (sin `MICROPROBE_*` ni
+`MARKET_EXPLORER_*`), frontend recompilado (`next build`) y el servidor previo
+detenido:
 
-1. **Identificación y reemplazo:** 3020 sin `LISTENING` tras
-   `taskkill /F /T /PID 31888` (árbol completo, sin nietos). Servidor
-   canónico reiniciado con env limpio (sin `MICROPROBE_*` ni
-   `MARKET_EXPLORER_*`), linaje propio 21616 → 27576 → 13704 → **node
-   32124**, banner `Ready in 372ms`, escucha `127.0.0.1:3020`.
-2. **Verificación canónica:** `/market-lab` y `/` = HTTP 200. Catálogo
-   canónico servido solo desde caché (932 contratos,
-   `fetched_at_ms=1792978122571` sin cambios, TTL 6 h vigente):
-   **0 huellas públicas** (`market_fetch_ledger` 86 → 86 antes/después de
-   las llamadas). Servicio de datos local: `/api/v1/market-stream/status`
-   → `available:false` (ECONNREFUSED) → **será visto como "servicio
-   detenido" por la UI**; sin escuchas en 8792 ni 65375, y el único proceso
-   `next` del sistema es el canónico 32124. Evidencias intactas en
-   `docs/evidence/indicators-v1-public-2026-10-25/`; DBs canónicas solo
-   tocadas en lectura (configuración del cache prohíbe DBs canónicas).
+1. **Servidor final canónico:** node en `127.0.0.1:3020`, env limpio,
+   `next build` aplicado, banner `Ready`, BUILD_ID servido
+   `Bibj_gkaZK9si2ABtSsAb` (SHA fuente del árbol `3c2e7ab`; frontend del
+   commit `3c2e7ab`). `/market-lab` y `/` = HTTP 200. Catálogo canónico
+   servido solo desde caché (932 contratos, TTL 6 h vigente):
+   **0 huellas públicas** (`market_fetch_ledger` sin crecimiento por las
+   consultas de verificación).
+2. **Servicio de datos local detenido:** `/api/v1/market-stream/status`
+   → `available:false` (ECONNREFUSED); sin escuchas en 8792 ni 65375; el
+   único proceso `next` del sistema es el canónico. Evidencia del bloque
+   anterior intacta en `docs/evidence/indicators-v1-public-2026-10-25/`;
+   evidencia del bloque actual en
+   `docs/evidence/btc-context-public-2026-10-26/`; DBs canónicas solo
+   leídas en la verificación (el constructor del cache prohíbe DBs
+   canónicas).
 3. **Acreditaciones, separación explícita:**
    - Indicadores `market-indicators/v1`: **PASS con transporte local**
      (fake WS en loopback, caché de ensayo, guardia DNS del navegador).
    - Recepción incremental Binance de indicadores: **todavía no
      acreditada** (la demo no acredita Binance real; ventana requiere
      autorización explícita).
-   - Inspección visual: realizada por el agente sobre las 3 capturas y
+   - Inspección visual: realizada por el agente sobre las capturas y
      consistente con el DOM; **estado: complementaria del DOM, no
-     equivalente (DOM ≠ visual)**; revisión del operador sigue pendiente
-     en TASK_QUEUE.
-   - **Servidor final:** SHA fuente del árbol `9a995b9` (el frontend
-     servido es exactamente el de `37c7b61`/`9a995b9`; `9a995b9` no tocó
-     frontend), BUILD_ID servido `e_lib1MO18w7gv6PJG2rm`
-     (.next construida por la demo sobre ese mismo código de frontend).
+     equivalente (DOM ≠ visual)**.
+
+## Contexto BTC compartido `market-btc-context/v1` (2026-10-26, base `3c2e7ab`)
+
+Bloque ADITIVO e independiente de `market-indicators/v1` (documentado en
+`docs/SHARED_INDICATORS_V1.md` §6 y `docs/BTC_CONTEXT_V1_PLAN.md`):
+muestra el movimiento del token junto al de BTC sobre velas CERRADAS
+alineadas por `open_time_ms`. Contexto informativo: no es señal, no es filtro
+de entrada y la diferencia de retornos no es "alpha" ni rentabilidad.
+
+1. **Backend:** `src/microstructure_probe/kline_btc_context.py`
+   (`compute_btc_context`): `ret_btc_bps_5` y `ret_diff_bps_5` sobre la
+   rejilla del token, sin lookahead, `unknown` con motivo `BTC_*` (nunca
+   cero ni arrastre), base común declarada para la normalización.
+2. **Integración REST:** `series_payload` gana el campo aditivo
+   `context_btc` (client=None → **0 upstream REST**; cuando el token es BTC
+   no se emite). El navegador no recalcula.
+3. **Integración stream:** `market_stream_service` gana el frame SSE
+   `event: context` (recalculado al cerrar token o BTC) y la suscripción BTC
+   vive en el mismo hub combinado (refcount, sin duplicar).
+4. **Frontend:** `market-chart-contract.ts` (`sanitizeContextBtc`,
+   `parseContextBtc`, `applyStreamContextBtc`, badge con unidad),
+   `market-stream.ts`, `use-market-stream.ts` (listener `context`),
+   `PriceChart.tsx` (badge junto al de indicadores + tira normalizada
+   `BtcCompareStrip`).
+5. **Pruebas con transporte local:** 13 pruebas de unidad del módulo +
+   integración `series_payload`; 6 pruebas SSE del servicio (snapshot,
+   frame por cierre de token y de BTC, suscripción compartida/no
+   duplicada, símbolo=BTC sin bloque, intervalo inválido); demo
+   `scripts/btc_context_public_demo.py` → **PASS 12/12**, 0 peticiones
+   públicas (browser_external 0, ledger 0), 1 carga de página, sin recarga
+   en actualizaciones, capturas en
+   `docs/evidence/btc-context-public-2026-10-26/`.
+6. **Acreditaciones:** bloque **PASS con transporte local**; recepción
+   incremental Binance real NO acreditada (requiere ventana de operador).
 
 ## market-indicators/v1: hilo incremental por cierre + demo de entrega del navegador (transporte local) PASADA (2026-10-25, base `2ffdede`)
 

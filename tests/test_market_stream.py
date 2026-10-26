@@ -24,6 +24,7 @@ import json
 import math
 import sys
 import tempfile
+import time
 import unittest
 from pathlib import Path
 
@@ -1029,6 +1030,351 @@ class ServiceSseIndicatorsTests(unittest.TestCase):
                 await service.stop()
 
         self._run(scenario())
+
+
+class ServiceSseContextTests(unittest.TestCase):
+    """Contexto BTC compartido por SSE: snapshot + frame `context`."""
+
+    def _run(self, coro):
+        return asyncio.run(coro)
+
+    async def _read_snapshot_body(self, reader):
+        """Lee el frame `event: snapshot` completo (resiste chunked SSE)."""
+        buffered = b""
+        while b"event: snapshot" not in buffered:
+            part = await asyncio.wait_for(reader.read(4096), timeout=5.0)
+            if not part:
+                break
+            buffered += part
+        tail = buffered.index(b"event: snapshot")
+        # Seguir leyendo hasta cerrar el frame SSE (\n\n tras el data).
+        while b"\n\n" not in buffered[tail:]:
+            part = await asyncio.wait_for(reader.read(4096), timeout=5.0)
+            if not part:
+                break
+            buffered += part
+        frame = buffered[tail:]
+        return json.loads(
+            frame.split(b"data: ", 1)[1].split(b"\n\n", 1)[0])
+
+    async def _read_context_after_close(self, reader, wait_ms: int = 400):
+        """Tras un cierre del hub, lee hasta hallar un frame `event: context`
+        con la fila de la vela nueva (resiste chunked SSE y heartbeats)."""
+        import time as _time
+        buffered = b""
+        deadline = _time.monotonic() + 10.0
+        while _time.monotonic() < deadline:
+            try:
+                part = await asyncio.wait_for(
+                    reader.read(4096), timeout=2.0)
+            except asyncio.TimeoutError:
+                # Sigue esperando: puede haber un heartbeat entre medio.
+                continue
+            if not part:
+                break
+            buffered += part
+            contexts = [
+                frame.split(b"data: ", 1)[1].split(b"\n\n", 1)[0]
+                for frame in buffered.split(b"event: ")
+                if frame.startswith(b"context\ndata: ")
+            ]
+            for raw in contexts:
+                try:
+                    ctx = json.loads(raw)
+                except ValueError:
+                    continue
+                rows = {r["open_time_ms"]: r for r in ctx.get("series", [])}
+                if wait_ms in rows and "ret_btc_bps_5" in rows[wait_ms]["values"]:
+                    return ctx
+        raise AssertionError("no se encontro frame context con la fila nueva")
+
+    async def _read_any_context_after_close(self, reader):
+        """Tras un cierre del hub, lee hasta hallar cualquier frame
+        `event: context` (resiste chunked SSE y heartbeats)."""
+        import time as _time
+        buffered = b""
+        deadline = _time.monotonic() + 10.0
+        while _time.monotonic() < deadline:
+            try:
+                part = await asyncio.wait_for(
+                    reader.read(4096), timeout=2.0)
+            except asyncio.TimeoutError:
+                continue
+            if not part:
+                break
+            buffered += part
+            contexts = [
+                frame.split(b"data: ", 1)[1].split(b"\n\n", 1)[0]
+                for frame in buffered.split(b"event: ")
+                if frame.startswith(b"context\ndata: ")
+            ]
+            for raw in contexts:
+                try:
+                    return json.loads(raw)
+                except ValueError:
+                    continue
+        raise AssertionError("no se encontro frame context tras el cierre")
+
+    def test_snapshot_carries_context_for_non_btc_token(self):
+        async def scenario():
+            class NullTransport:
+                async def run(self, stop):
+                    await stop.wait()
+
+            with tempfile.TemporaryDirectory() as tmp:
+                cache = MarketCache(Path(tmp) / "cache.db")
+                cache.init_db()
+                cache.upsert_klines(
+                    "MINAUSDT", "1m", "klines",
+                    [_cache_bar(T0 + i * STEP, 1.0 + i) for i in range(6)],
+                    T0)
+                cache.upsert_klines(
+                    "BTCUSDT", "1m", "klines",
+                    [_cache_bar(T0 + i * STEP, 50.0 + i) for i in range(7)],
+                    T0)
+                hub = KlineStreamHub(clock=Clock(T0 + 9 * STEP))
+                service = MarketStreamService(
+                    hub=hub, transport=NullTransport(), cache=cache,
+                    port=0, pid_path=Path(tmp) / "service.json",
+                )
+                await service.start()
+                reader, writer = await asyncio.open_connection(
+                    "127.0.0.1", service.port)
+                writer.write(
+                    ("GET /stream?symbol=MINAUSDT&interval=1m&bars=10"
+                     f"&from_ms={T0}&to_ms={T0 + 9 * STEP} HTTP/1.1\r\n"
+                     "Host: local\r\n\r\n").encode("ascii")
+                )
+                await writer.drain()
+
+                body = await self._read_snapshot_body(reader)
+                ctx = body["context_btc"]
+                self.assertIsNotNone(ctx)
+                self.assertEqual(ctx["contract_version"],
+                                 "market-btc-context/v1")
+                self.assertEqual(ctx["identity"]["symbol"], "MINAUSDT")
+                self.assertEqual(ctx["context"]["symbol"], "BTCUSDT")
+                self.assertEqual(ctx["context"]["sources"], ["cache"])
+                self.assertEqual(
+                    ctx["context"]["acquisition"]["rest_upstream_requests"],
+                    0)
+                # MINAUSDT es el primer consumidor de BTC: aun no comparte.
+                self.assertFalse(ctx["context"]["subscription"]["shared"])
+                self.assertEqual(
+                    body["indicators"]["contract_version"],
+                    "market-indicators/v1")
+                writer.close()
+                await service.stop()
+
+        self._run(scenario())
+
+    def test_snapshot_omits_context_for_btc_token(self):
+        async def scenario():
+            class NullTransport:
+                async def run(self, stop):
+                    await stop.wait()
+
+            with tempfile.TemporaryDirectory() as tmp:
+                cache = MarketCache(Path(tmp) / "cache.db")
+                cache.init_db()
+                cache.upsert_klines(
+                    "BTCUSDT", "1m", "klines",
+                    [_cache_bar(T0 + i * STEP, 50.0 + i) for i in range(7)],
+                    T0)
+                hub = KlineStreamHub(clock=Clock(T0 + 9 * STEP))
+                service = MarketStreamService(
+                    hub=hub, transport=NullTransport(), cache=cache,
+                    port=0, pid_path=Path(tmp) / "service.json",
+                )
+                await service.start()
+                reader, writer = await asyncio.open_connection(
+                    "127.0.0.1", service.port)
+                writer.write(
+                    ("GET /stream?symbol=BTCUSDT&interval=1m&bars=10"
+                     f"&from_ms={T0}&to_ms={T0 + 9 * STEP} HTTP/1.1\r\n"
+                     "Host: local\r\n\r\n").encode("ascii")
+                )
+                await writer.drain()
+
+                body = await self._read_snapshot_body(reader)
+                self.assertIsNone(body["context_btc"])
+                writer.close()
+                await service.stop()
+
+        self._run(scenario())
+
+    def test_close_emits_context_frame_before_closed(self):
+        async def scenario():
+            class NullTransport:
+                async def run(self, stop):
+                    await stop.wait()
+
+            with tempfile.TemporaryDirectory() as tmp:
+                cache = MarketCache(Path(tmp) / "cache.db")
+                cache.init_db()
+                cache.upsert_klines(
+                    "MINAUSDT", "1m", "klines",
+                    [_cache_bar(T0 + i * STEP, 1.0 + i) for i in range(6)],
+                    T0)
+                cache.upsert_klines(
+                    "BTCUSDT", "1m", "klines",
+                    [_cache_bar(T0 + i * STEP, 50.0 + i) for i in range(7)],
+                    T0)
+                hub = KlineStreamHub(clock=Clock(T0 + 9 * STEP))
+                service = MarketStreamService(
+                    hub=hub, transport=NullTransport(), cache=cache,
+                    port=0, pid_path=Path(tmp) / "service.json",
+                )
+                await service.start()
+                reader, writer = await asyncio.open_connection(
+                    "127.0.0.1", service.port)
+                writer.write(
+                    ("GET /stream?symbol=MINAUSDT&interval=1m&bars=10"
+                     f"&from_ms={T0}&to_ms={T0 + 9 * STEP} HTTP/1.1\r\n"
+                     "Host: local\r\n\r\n").encode("ascii")
+                )
+                await writer.drain()
+                await self._read_snapshot_body(reader)
+
+                hub.on_socket_open()
+                hub.on_message(kline(symbol="MINAUSDT",
+                                     open_ms=T0 + 6 * STEP, closed=True,
+                                     close=106.0,
+                                     event_ms=T0 + 7 * STEP - 1))
+                ctx = await self._read_context_after_close(
+                    reader, wait_ms=T0 + 6 * STEP)
+                self.assertEqual(ctx["identity"]["symbol"], "MINAUSDT")
+                rows = {r["open_time_ms"]: r for r in ctx["series"]}
+                row_new = rows[T0 + 6 * STEP]
+                self.assertIn("ret_btc_bps_5", row_new["values"])
+                self.assertNotIn("ret_btc_bps_5", row_new["unknown"])
+                writer.close()
+                await service.stop()
+
+        self._run(scenario())
+
+    def test_btc_close_emits_context_frame(self):
+        async def scenario():
+            class NullTransport:
+                async def run(self, stop):
+                    await stop.wait()
+
+            with tempfile.TemporaryDirectory() as tmp:
+                cache = MarketCache(Path(tmp) / "cache.db")
+                cache.init_db()
+                cache.upsert_klines(
+                    "MINAUSDT", "1m", "klines",
+                    [_cache_bar(T0 + i * STEP, 1.0 + i) for i in range(6)],
+                    T0)
+                cache.upsert_klines(
+                    "BTCUSDT", "1m", "klines",
+                    [_cache_bar(T0 + i * STEP, 50.0 + i) for i in range(7)],
+                    T0)
+                hub = KlineStreamHub(clock=Clock(T0 + 9 * STEP))
+                service = MarketStreamService(
+                    hub=hub, transport=NullTransport(), cache=cache,
+                    port=0, pid_path=Path(tmp) / "service.json",
+                )
+                await service.start()
+                reader, writer = await asyncio.open_connection(
+                    "127.0.0.1", service.port)
+                writer.write(
+                    ("GET /stream?symbol=MINAUSDT&interval=1m&bars=10"
+                     f"&from_ms={T0}&to_ms={T0 + 9 * STEP} HTTP/1.1\r\n"
+                     "Host: local\r\n\r\n").encode("ascii")
+                )
+                await writer.drain()
+                await self._read_snapshot_body(reader)
+
+                hub.on_socket_open()
+                hub.on_message(kline(symbol="BTCUSDT",
+                                     open_ms=T0 + 6 * STEP, closed=True,
+                                     close=66.0,
+                                     event_ms=T0 + 7 * STEP - 1))
+                ctx = await self._read_any_context_after_close(reader)
+                self.assertEqual(ctx["context"]["symbol"], "BTCUSDT")
+                rows = {r["open_time_ms"]: r for r in ctx["series"]}
+                # Cierre de BTC en T0+6 actualiza las filas existentes del
+                # token (rejilla del token: T0..T0+5). La fila T0+5 ahora
+                # tiene ventana BTC completa: ret_btc =
+                # 10000*ln(close_T0+5^BTC / close_T0+1^BTC) =
+                # 10000*ln(55/51).
+                expected = round(10000 * math.log(55.0 / 51.0), 6)
+                self.assertEqual(
+                    rows[T0 + 5 * STEP]["values"]["ret_btc_bps_5"], expected)
+                writer.close()
+                await service.stop()
+
+        self._run(scenario())
+
+    def test_btc_subscription_is_shared_not_duplicated(self):
+        async def scenario():
+            class NullTransport:
+                async def run(self, stop):
+                    await stop.wait()
+
+            with tempfile.TemporaryDirectory() as tmp:
+                cache = MarketCache(Path(tmp) / "cache.db")
+                cache.init_db()
+                cache.upsert_klines(
+                    "MINAUSDT", "1m", "klines",
+                    [_cache_bar(T0 + i * STEP, 1.0 + i) for i in range(6)],
+                    T0)
+                cache.upsert_klines(
+                    "ETHUSDT", "1m", "klines",
+                    [_cache_bar(T0 + i * STEP, 2.0 + i) for i in range(6)],
+                    T0)
+                cache.upsert_klines(
+                    "BTCUSDT", "1m", "klines",
+                    [_cache_bar(T0 + i * STEP, 50.0 + i) for i in range(7)],
+                    T0)
+                hub = KlineStreamHub(clock=Clock(T0 + 9 * STEP))
+                service = MarketStreamService(
+                    hub=hub, transport=NullTransport(), cache=cache,
+                    port=0, pid_path=Path(tmp) / "service.json",
+                )
+                await service.start()
+                reader, writer = await asyncio.open_connection(
+                    "127.0.0.1", service.port)
+                writer.write(
+                    ("GET /stream?symbol=MINAUSDT&interval=1m&bars=10"
+                     f"&from_ms={T0}&to_ms={T0 + 9 * STEP} HTTP/1.1\r\n"
+                     "Host: local\r\n\r\n").encode("ascii")
+                )
+                await writer.drain()
+                await self._read_snapshot_body(reader)
+                # MINAUSDT es el primero: un consumidor BTC, no compartido.
+                self.assertEqual(
+                    hub.subscription_info("BTCUSDT", "1m")["consumers"], 1)
+
+                # Segunda sesion ETHUSDT: reusa la misma suscripcion BTC.
+                reader2, writer2 = await asyncio.open_connection(
+                    "127.0.0.1", service.port)
+                writer2.write(
+                    ("GET /stream?symbol=ETHUSDT&interval=1m&bars=10"
+                     f"&from_ms={T0}&to_ms={T0 + 9 * STEP} HTTP/1.1\r\n"
+                     "Host: local\r\n\r\n").encode("ascii")
+                )
+                await writer2.drain()
+                await self._read_snapshot_body(reader2)
+                self.assertEqual(
+                    hub.subscription_info("BTCUSDT", "1m")["consumers"], 2)
+
+                # Cerrar la vista de ETH: libera solo SU consumidor y su BTC.
+                writer2.close()
+                reader2.feed_eof()
+                await asyncio.sleep(0.2)  # deja que el bucle SSE de ETH termine
+                # MINAUSDT sigue viva: solo un consumidor BTC restante.
+                self.assertEqual(
+                    hub.subscription_info("BTCUSDT", "1m")["consumers"], 1)
+                await service.stop()
+
+        self._run(scenario())
+
+    def test_context_frame_skips_invalid_interval(self):
+        self.assertIsNone(
+            service_mod._session_context("TESTUSDT", "17m", [], [], None, [],
+                                         {}, 0))
 
 
 if __name__ == "__main__":

@@ -156,6 +156,9 @@ export function useMarketStream(options: UseMarketStreamOptions): MarketStreamVi
           // backend (market-indicators/v1) sobre velas cerradas;
           // los eventos `indicators` posteriores lo reemplazan.
           indicators: payload.indicators ?? previous.indicators,
+          // market-btc-context/v1 aditivo del snapshot; los eventos
+          // `context` posteriores lo reemplazan.
+          btc_context: payload.context_btc ?? previous.btc_context,
         }));
       });
       // Recalculo incremental por cierre: el backend publica el bloque
@@ -171,6 +174,19 @@ export function useMarketStream(options: UseMarketStreamOptions): MarketStreamVi
         }
         touch();
         setView((previous) => ({...previous, indicators: block}));
+      });
+      es.addEventListener("context", (event) => {
+        // market-btc-context/v1: recalculado en el backend al cerrar la
+        // vela del token o la de BTC; solo misma identidad de la conexión.
+        const block = parseEvent<Record<string, unknown>>(event);
+        if (!block || disposed) return;
+        const identity = block["identity"] as
+          {symbol?: unknown; interval?: unknown} | undefined;
+        if (identity?.symbol !== symbol || identity?.interval !== interval) {
+          return;
+        }
+        touch();
+        setView((previous) => ({...previous, btc_context: block}));
       });
       es.addEventListener("candle", (event) => {
         const candle = parseEvent<MarketStreamCandle>(event);

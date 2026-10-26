@@ -3066,3 +3066,29 @@ Continuación de 2ffdede con cuatro cierres del bloque indicadores: verificació
    `e_lib1MO18w7gv6PJG2rm` (build de la demo sobre el mismo frontend de
    `37c7b61`; `9a995b9` no tocó frontend).
 
+## 2026-10-26 — Contexto BTC compartido `market-btc-context/v1` (transporte local, PASS)
+
+1. **Bloque aditivo, sin romper `market-indicators/v1`.** `context_btc` es un
+   campo hermano del payload `market-series` y `event: context` un frame
+   hermano del SSE; `market-indicators/v1` y su lista `declined` (incluido
+   `btc_context` con motivo `SECOND_SYMBOL_KLINES_REQUIRED`) quedan intactos:
+   el contexto BTC declara SU propia fuente en `context.sources` y su coste
+   real en `context.acquisition`.
+2. **Suscripción compartida, no duplicada.** BTC viaja en el mismo hub
+   combinado (`KlineStreamHub`, refcount por `(symbol, interval)`). Si el
+   token es BTC no hay bloque ni segunda suscripción (no hay comparación
+   consigo mismo). Acreditado por prueba: dos sesiones comparten un único
+   consumidor BTC; cerrar una vista libera solo sus consumidores.
+3. **Contexto informativo, sin Binance real.** `ret_btc_bps_5` y
+   `ret_diff_bps_5` se calculan sobre velas cerradas alineadas por
+   `open_time_ms`; huecos/ausencia/retardo declaran `unknown(BTC_*)`, nunca
+   cero ni arrastre. La diferencia de retornos se etiqueta tal cual, no como
+   "alpha" ni rentabilidad. Todo con transporte local (fake WS loopback,
+   caché de ensayo, guardia DNS): **demo PASS 12/12, 0 peticiones públicas
+   (browser_external 0, ledger 0)**. Recepción incremental Binance real: NO
+   acreditada (requiere ventana de operador).
+4. **Servidor final canónico:** SHA `3c2e7ab` (HEAD tras el bloque),
+   BUILD_ID `Bibj_gkaZK9si2ABtSsAb` (frontend recompilado con `next build`
+   sobre `3c2e7ab`). Dashboard en `127.0.0.1:3020` con env limpio, servicio
+   de datos detenido (8792 sin escuchas).
+
