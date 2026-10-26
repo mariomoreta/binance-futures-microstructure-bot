@@ -16,6 +16,7 @@ import type {
 import type {PaperChartModel} from "@/lib/paper-chart-contract";
 import {msToChartSecond} from "@/lib/paper-chart-contract";
 import type {MarketChartModel} from "@/lib/market-chart-contract";
+import {marketIndicatorsBadgeText} from "@/lib/market-chart-contract";
 import {
   initialEarlierGate,
   recordEarlierRequest,
@@ -184,8 +185,18 @@ function MarketMeta({
         {model.times.age_ms != null
           ? ` · adquisición hace ${formatAgeShort(model.times.age_ms)}` : ""}
       </span>
-      <span title="El explorador no produce indicadores ni señales">
-        Indicadores: ninguno
+      <span data-testid={id("-indicators")}
+        title={
+          model.indicators
+            ? "Indicadores versionados en velas cerradas (market-indicators/v1), calculados por el backend"
+            : "Este payload no lleva bloque market-indicators/v1"
+        }>
+        {marketIndicatorsBadgeText(
+          model.indicators,
+          cursor?.ms ?? null,
+          cursor?.ms != null && model.candles.provisional.some(
+            (candle) => candle.open_time_ms === cursor.ms),
+        )}
       </span>
       {onRequestEarlier && (
         <button type="button" className={s.chartFit}
@@ -729,6 +740,9 @@ export function PriceChart({
       model.volume_status === "AVAILABLE"
         ? `volumen en ${model.volume_unit ?? "unidad UNKNOWN"}`
         : "volumen no disponible",
+      model.indicators
+        ? `indicadores ${model.indicators.contract_version} en velas cerradas`
+        : "indicadores ausentes",
     ].join(" · ")
     : [
       `Gráfico ${model.identity.symbol} ${model.identity.interval}`,
@@ -769,9 +783,11 @@ export function PriceChart({
           <>
             {model.capabilities.limits}. Histórico consultado bajo demanda sobre
             REST público: no es un feed continuo y no se rotula como LIVE. La
-            vela actual se marca provisional y no publica cierre. No se dibujan
-            indicadores, objetivos ni marcas de operaciones; el volumen se
-            muestra solo si la fuente lo publica, en la unidad declarada.
+            vela actual se marca provisional y no publica cierre. Los
+            indicadores en velas cerradas los calcula el backend
+            (market-indicators/v1): sin señales, sin objetivos y sin marcas de
+            operaciones; el volumen se muestra solo si la fuente lo publica,
+            en la unidad declarada.
           </>
         ) : (
           <>

@@ -83,13 +83,50 @@ export interface MarketSeriesCandle {
   storage: string | null;
 }
 
+/** market-indicators/v1: bloque versionado calculado por el backend. */
+export interface MarketIndicatorDefinition {
+  name: string;
+  formula: string;
+  unit: string;
+  window_candles: number;
+  requires: string;
+}
+
+export interface MarketIndicatorRow {
+  open_time_ms: number;
+  available_at_ms: number;
+  /** Solo valores numéricos finitos; lo faltante está en `unknown`. */
+  values: Record<string, number>;
+  /** Motivos UNKNOWN por indicador; nunca cero substituto. */
+  unknown: Record<string, string>;
+}
+
+export interface MarketIndicatorsBlock {
+  contract_version: "market-indicators/v1";
+  availability: string;
+  provisional_policy: {included: boolean; reason: string;
+    // brand de honestidad extra (permitir campos declarados después)
+    [extra: string]: unknown};
+  computed_over: string;
+  identity: {
+    symbol: string;
+    interval: string;
+    interval_ms: number;
+    source: string;
+  };
+  definitions: MarketIndicatorDefinition[];
+  supported: string[];
+  declined: Array<{name: string; reason: string}>;
+  series: MarketIndicatorRow[];
+  generated_at_ms: number;
+}
+
 export interface MarketSeriesPayload {
   contract_version: string;
   venue: string;
   market_type: string;
   api_family: string;
-  source: string;
-  endpoint: string;
+  source: string;  endpoint: string;
   symbol: string;
   interval: string;
   interval_ms: number;
@@ -97,6 +134,7 @@ export interface MarketSeriesPayload {
   requested: {from_ms: number; to_ms: number};
   observed: {start_ms: number | null; end_ms: number | null};
   candles: MarketSeriesCandle[];
+  indicators?: MarketIndicatorsBlock | null;
   coverage: {
     state: MarketCoverageState;
     observed_start_ms: number | null;
@@ -251,7 +289,8 @@ export interface MarketChartModel {
   operation: null;
   /** Solo marcas derivadas del propio histórico (p. ej. vela provisional). */
   markers: MarketChartMarker[];
-  indicators: never[];
+  /** Bloque `market-indicators/v1` del backend; null = sin indicadores. */
+  indicators: MarketIndicatorsBlock | null;
   capabilities: {
     mode: "market";
     live: false;
@@ -350,7 +389,148 @@ export function mergeEarlierSeries(
         earliest_available_ms: block.coverage.earliest_available_ms
           ?? previous.coverage.earliest_available_ms,
       },
+      indicators: mergeIndicatorBlocks(
+        parseMarketIndicators(previous), parseMarketIndicators(block)),
     },
+  };
+}
+
+/**
+ * Lectura del bloque de indicadores del payload. El navegador NO recalcula:
+ * presencia, versión, identidad y filas finitas se validan, y un bloque que
+ * no corresponda (versión, identidad o filas corruptas) se descarta entero
+ * (`null`), nunca se muestra con datos que no sean del backend.
+ */
+export function parseMarketIndicators(
+  payload: MarketSeriesPayload,
+): MarketIndicatorsBlock | null {
+  const raw = (payload as {indicators?: unknown}).indicators;
+  if (raw == null || typeof raw !== "object") return null;
+  const block = raw as MarketIndicatorsBlock;
+  if (block.contract_version !== "market-indicators/v1") return null;
+  if (block.identity?.symbol !== payload.symbol
+    || block.identity?.interval !== payload.interval
+    || block.identity?.interval_ms !== payload.interval_ms) return null;
+  if (!Array.isArray(block.series)) return null;
+  const series: MarketIndicatorRow[] = [];
+  for (const row of block.series) {
+    if (row == null || typeof row !== "object") continue;
+    const openTime = finiteOrNull(row.open_time_ms);
+    if (openTime == null) continue;
+    const values: Record<string, number> = {};
+    const unknown: Record<string, string> = {};
+    for (const [name, value] of Object.entries(row.values ?? {})) {
+      const parsed = finiteOrNull(value);
+      if (parsed != null) values[name] = parsed;
+    }
+    for (const [name, reason] of Object.entries(row.unknown ?? {})) {
+      if (typeof reason === "string" && reason !== "") unknown[name] = reason;
+    }
+    series.push({
+      open_time_ms: openTime,
+      available_at_ms: finiteOrNull(row.available_at_ms)
+        ?? (openTime + (block.identity.interval_ms ?? 0)),
+      values,
+      unknown,
+    });
+  }
+  return {
+    ...block,
+    definitions: block.definitions ?? [],
+    supported: block.supported ?? [],
+    declined: block.declined ?? [],
+    series,
+  };
+}
+
+/** Fila de indicadores para la vela exacta bajo el cursor (o null). */
+export function marketIndicatorAtCursor(
+  block: MarketIndicatorsBlock | null,
+  openTimeMs: number | null | undefined,
+): MarketIndicatorRow | null {
+  if (!block || openTimeMs == null) return null;
+  return block.series.find((row) => row.open_time_ms === openTimeMs) ?? null;
+}
+
+const INDICATOR_LABELS: Record<string, string> = {
+  log_return_bps: "ret",
+  velocity_bps_5: "vel",
+  rel_volume_10: "relvol",
+  vwap_typical_10: "vwap",
+  vwap_dev_bps_10: "vwapdev",
+};
+
+const INDICATOR_DECIMALS: Record<string, number> = {
+  log_return_bps: 2,
+  velocity_bps_5: 2,
+  rel_volume_10: 3,
+  vwap_typical_10: 4,
+  vwap_dev_bps_10: 2,
+};
+
+function formatIndicatorValue(name: string, value: number): string {
+  const decimals = INDICATOR_DECIMALS[name] ?? 3;
+  return value.toFixed(decimals);
+}
+
+/**
+ * Texto compacto y honesto para el badge de indicadores:
+ * `market-indicators/v1 · ret 12.30 · relvol UNKNOWN(GAP_IN_WINDOW)` ...
+ * El navegador solo lee lo que el backend ya calculó: sin UNKNOWN no se
+ * imprime valor y nunca se substituye con 0 ni con re-cálculo local.
+ */
+export function marketIndicatorsBadgeText(
+  block: MarketIndicatorsBlock | null,
+  openTimeMs: number | null | undefined,
+  provisionalHere: boolean = false,
+): string {
+  if (!block) return "Indicadores: ninguno (market-indicators/v1 ausente)";
+  const row = marketIndicatorAtCursor(block, openTimeMs);
+  if (!row) {
+    if (provisionalHere) {
+      return "Indicadores: vela provisional excluida (politica del bloque)";
+    }
+    return "Indicadores: sin fila para la vela bajo el cursor";
+  }
+  const parts: string[] = [];
+  for (const name of block.supported) {
+    const label = INDICATOR_LABELS[name] ?? name;
+    const value = row.values[name];
+    if (value != null && Number.isFinite(value)) {
+      parts.push(`${label} ${formatIndicatorValue(name, value)}`);
+      continue;
+    }
+    const reason = row.unknown[name];
+    if (reason) parts.push(`${label} UNKNOWN(${reason})`);
+  }
+  for (const [name, reason] of Object.entries(row.unknown)) {
+    if (!block.supported.includes(name)) {
+      parts.push(`${name} UNKNOWN(${reason})`);
+    }
+  }
+  return `Indicadores: ${parts.join(" · ")}`;
+}
+
+/** Une los bloques de indicadores de dos payloads (block = más reciente). */
+export function mergeIndicatorBlocks(
+  previous: MarketIndicatorsBlock | null,
+  block: MarketIndicatorsBlock | null,
+): MarketIndicatorsBlock | null {
+  if (!previous && !block) return null;
+  if (!previous) return block;
+  if (!block) return previous;
+  if (previous.identity.symbol !== block.identity.symbol
+    || previous.identity.interval !== block.identity.interval
+    || previous.identity.interval_ms !== block.identity.interval_ms) return null;
+  const byTime = new Map<number, MarketIndicatorRow>();
+  for (const row of previous.series) byTime.set(row.open_time_ms, row);
+  for (const row of block.series) byTime.set(row.open_time_ms, row);
+  const series = [...byTime.values()].sort(
+    (a, b) => a.open_time_ms - b.open_time_ms);
+  return {
+    ...block,
+    computed_over: "per_block_payload_windows",
+    series,
   };
 }
 
@@ -484,7 +664,7 @@ export function buildMarketChartModel(
     storage: payload.storage ?? null,
     operation: null,
     markers,
-    indicators: [],
+    indicators: parseMarketIndicators(payload),
     capabilities: {
       mode: "market",
       live: false,

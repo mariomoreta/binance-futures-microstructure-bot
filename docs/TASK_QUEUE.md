@@ -1,3 +1,44 @@
+## Indicadores compartidos — primera integración vertical (2026-10-25, base `09632f4`, sin Binance)
+
+`CURRENT_PHASE`: dashboard V2 de escritorio + observación (WS público solo bajo
+autorización explícita; sin monitor, sin órdenes).
+
+`CURRENT_OBJECTIVE`: primera integración vertical de indicadores compartidos
+en `/market-lab` con el backend como autoridad y salida versionada única.
+
+`ACTIVE_TASK`: **cerrado**. Inventario verificado (retornos/velocidad P1-04/05
+mark price, flow P1-06 aggTrades, spread/profundidad P1-07 libro, OI P1-07
+REST, VWAP P1-08 flow: ninguna de esas fuentes viaja en el canal de velas →
+declinados con motivo, no derivables de OHLC; volumen relativo nuevo).
+Subconjunto `market-indicators/v1` sobre velas cerradas: `log_return_bps`,
+`velocity_bps_5`, `rel_volume_10`, `vwap_typical_10` + `vwap_dev_bps_10`
+(aproximación típica, no el VWAP de negociación). Hueco/warmup → UNKNOWN con
+motivo, sin ceros; sin lookahead; vela provisional excluida (sin indicadores
+provisionales en V1); disponibilidad al cierre (`available_at_ms`). Integrado:
+payload con bloque opcional, modelo con guard de identidad, badge con valores
+al cursor, fusión de bloques sin recálculo, sin arrastre al cambiar
+símbolo/intervalo. Precisiones de la pasada anterior documentadas:
+`execution_id` es etiqueta de atribución por petición (no id de corrida; el
+ámbito compartido es la ventana de 60 s del ledger, filtrada solo por tiempo)
+y la automatización del navegador ya está implementada (solo falta ejecutarla
+con autorización en ventana real). Pruebas: backend `test_kline_indicators` 18
++ explorador 56; frontend 51/51 en 4 suites, `tsc`/`eslint` 0. Evidencia:
+`docs/evidence/indicators-v1-2026-10-25.json` (0 llamadas Binance).
+
+`NEXT_TASKS`:
+1. **Nueva ventana Binance (solo con autorización explícita)** reutilizando
+   el arnés automatizado ya implementado (`market_stream_local_acceptance.py
+   --transport public`): el `FAIL` medido de 2026-10-24 se mantiene.
+2. Las tareas de la sección top del presupuesto (aviso de servicio detenido,
+   Next.js 16.4.1, revisión visual, retención de caché, `build_recovery` al
+   ledger como vecino opcional) siguen vigentes tal cual.
+3. Volatilidad realizada y estructura sobre velas cerradas: siguiente
+   subconjunto DESPUÉS de decidir ventana/semántica (no la heredada del feed);
+   sin optimizar nada.
+4. Fuentes ausentes (aggTrades/libro/OI/contexto BTC en el canal de velas)
+   y F-PAPER-01: diferidos hasta nueva autorización; mantener diferido
+   stops/objetivos arrastrables y móvil/Flutter.
+
 ## Presupuesto REST upstream — alcance verificado y corregido (2026-10-25, base `309aee1`, sin Binance)
 
 `CURRENT_PHASE`: dashboard V2 de escritorio + observación (WS público solo bajo
@@ -24,11 +65,37 @@ tras la muerte de los procesos. Baseline: 147 pruebas focalizadas PASS;
 `tsc`/`eslint` 0; vitest explorador 48/48. Evidencia:
 `docs/evidence/rest-budget-scope-2026-10-25.json`. 0 llamadas Binance.
 
+**Precisiones de alcance (2026-10-25, segunda pasada):**
+
+1. **Tres identificadores distintos, no confundir:** (a)
+   `execution_id` es una etiqueta de ATRIBUCIÓN por ejecución/petición —
+   `bff-<uuid>` nuevo por cada petición HTTP del dashboard al BFF, o el que
+   pase el CLI — y solo sirve para reconstruir el consumo de esa ejecución
+   concreta con `fetch_rows_by_execution`; (b) el identificador de **corrida**
+   de observación (O1/O2, run id) es otra cosa y NO viaja en este ledger; un
+   clic del dashboard y una invocación del CLI son ejecuciones distintas
+   aunque pertenezcan a la misma corrida; (c) el **ámbito que realmente
+   comparte el presupuesto** es la ventana móvil de 60 s del archivo del
+   ledger: la consulta de reserva filtra SOLO por tiempo (`at_ms`), sin
+   `execution_id`, sin símbolo y sin proceso — toda ejecución que comparta
+   `market_fetch_ledger` (colas, reintentos y paginaciones incluidos) dibuja
+   del mismo vaso, sea cual sea su etiqueta.
+2. **La automatización del lado navegador YA está implementada**, no es
+   una tarea por construir: `scripts/market_stream_local_acceptance.py`
+   (2026-10-24, base `6be44b9`) conduce al navegador Playwright por el
+   procedimiento completo (LIVE, captura #1, paginación, captura #2,
+   liberación, reconexión, parada, aviso y captura #3, con máximos por fase)
+   y verificó dos recorridos consecutivos PASS con transporte loopback.
+   Lo pendiente NO es implementarla, sino ejecutar ese MISMO arnés en una
+   ventana Binance real (`--transport public`), que requiere autorización
+   explícita del operador y no se repite sin ella. El veredicto `FAIL`
+   medido de la ventana 2026-10-24 se mantiene.
+
 `NEXT_TASKS`:
-1. **Automatizar el lado navegador** (última sección superior): sigue siendo
-   la siguiente tarea activa de la F-CHART-BINANCE-04; el veredicto `FAIL`
-   medido de la ventana 2026-10-24 se mantiene y no se repite la ventana sin
-   autorización explícita.
+1. **Nueva ventana Binance (solo con autorización explícita)** reutilizando
+   tal cual el arnés automatizado ya implementado
+   (`scripts/market_stream_local_acceptance.py --transport public`); sin
+   autorización no se repite la ventana y el `FAIL` medido se mantiene.
 2. Las demás tareas de la sección "Segunda ventana real cerrada (2026-10-24
    14:04Z)" siguen vigentes tal cual (aviso de servicio detenido, decisión de
    seguridad Next.js 16.4.1, revisión visual NOT_REVIEWED, retención de

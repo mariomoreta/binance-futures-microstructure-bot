@@ -1,3 +1,55 @@
+## Indicadores compartidos V1: primera integración vertical (2026-10-25, base `09632f4`)
+
+Inventario verificado de los motores de Fase 1 y su integración como
+indicadores compartidos sobre velas cerradas en `/market-lab`. Documentado en
+`docs/SHARED_INDICATORS_V1.md`; contrato en la §11 de
+`docs/MARKET_EXPLORER_CONTRACT_V1.md`. Sin Binance (0 llamadas; datos locales,
+`client=None`), sin estrategia, sin señales, sin optimización, desktop.
+
+1. **Inventario (implementado/fuente):** retornos log y velocidad/aceleración
+   viven en los motores P1-04/P1-05 sobre mark price WS; flow/delta en
+   P1-06 sobre aggTrade WS; spread/profundidad en P1-07 sobre libro WS; OI en
+   P1-07 sobre REST público de OI; VWAP en P1-08 sobre flow + mark price.
+   El volumen relativo NO estaba implementado. Ninguna de esas fuentes viaja
+   en el canal de velas `/market-lab`, así que flow/spread/profundidad/OI y
+   contexto BTC quedan DECLINADOS con motivo (`declined[]`), nunca derivados
+   de OHLC ni servidos como cero.
+2. **Subconjunto elegido v1** (`market-indicators/v1`, backend único autoridad,
+   solo velas cerradas del rango del propio payload): `log_return_bps`,
+   `velocity_bps_5`, `rel_volume_10` (nuevo), `vwap_typical_10` +
+   `vwap_dev_bps_10` (aproximación por precio típico y `base_volume`,
+   declarada como NO siendo el VWAP de negociación de P1). Fórmulas,
+   unidades (bps/ratio/precio), ventana, calentamiento, disponibilidad
+   (`available_at_ms = open_time + interval_ms`) y huecos
+   (`GAP_IN_WINDOW`/`INSUFICIENT_CANDLES`/`MISSING_VOLUME`/`NO_PREVIOUS_CANDLE`,
+   nunca 0) en el contrato; sin lookahead (anclado por test) y sin
+   indicadores provisionales (la vela en formación se EXCLUYE, no se estima).
+3. **Integración /market-lab:** payload `market-series/v1` lleva el bloque
+   opcional `indicators`; el gráfico `market-chart/v1` lo publica como
+   `MarketIndicatorsBlock | null` (guard de versión/identidad: un bloque de
+   otro símbolo/intervalo o corrupto se descarta entero); badge junto al
+   gráfico con valores y UNKNOWN(motivo) de la vela bajo el cursor; cambio
+   de símbolo/intervalo reemplaza el modelo completo (sin arrastre);
+   `mergeEarlierSeries` une filas validadas de ambos bloques sin recalcular
+   en el navegador; el feed de stream no recalcula nada.
+4. **Precisiones documentales de la pasada anterior:** (a) `execution_id`
+   es etiqueta de atribución por ejecución/petición (`bff-<uuid>` por cada
+   petición del dashboard, o el que pase el CLI), no el id de corrida
+   (run id O1/O2) y no el ámbito de compartición: el presupuesto se comparte
+   en la ventana móvil de 60 s del archivo del ledger, filtrada SOLO por
+   tiempo, sin `execution_id`, símbolo ni proceso; (b) la automatización del
+   lado navegador YA está implementada (`scripts/market_stream_local_acceptance.py`,
+   PASS×2 en loopback el 2026-10-24) y lo pendiente es solo ejecutarla en
+   una ventana Binance real con `--transport public` y autorización
+   explícita del operador.
+
+Pruebas: backend `tests/test_kline_indicators.py` (18) + suites del
+explorador en verde (56); frontend `market-indicators.test.ts` (15),
+`price-chart-market.test.tsx` 11/11, `market-chart-contract` 13/13,
+`contract-explorer` 12/12 — `tsc` 0, `eslint` 0. Evidencia local:
+`docs/evidence/indicators-v1-2026-10-25.json` (0 upstream; series continua,
+con hueco/volumen ausente y `mark_klines` sin volumen).
+
 ## Presupuesto REST upstream: alcance verificado y corregido (2026-10-25, base `309aee1`)
 
 Verificación informativa del bloque anterior (`1b36647`/`309aee1`), solicitada

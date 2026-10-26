@@ -149,7 +149,7 @@ describe("market-chart/v1 — adaptación del payload del backend", () => {
     const model = buildMarketChartModel(payload());
     expect(model.operation).toBeNull();
     expect(model.identity.session_id).toBeNull();
-    expect(model.indicators).toEqual([]);
+    expect(model.indicators).toBeNull();
     expect(paperMarkersLeaked(model)).toEqual([]);
   });
 

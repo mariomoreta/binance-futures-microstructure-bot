@@ -1,3 +1,96 @@
+## Indicadores compartidos V1 — primera integración vertical (2026-10-25, base `09632f4`, sin Binance)
+
+**1. Title:** Primera integración vertical de indicadores compartidos en
+`/market-lab`: inventario de motores P1 y sus fuentes, subconjunto mínimo
+derivable de velas cerradas, backend única autoridad con salida versionada
+(`market-indicators/v1`) para gráfico y futuro evaluador, y visualización con
+valores al cursor.
+
+**2. Approval status:** DECIDIDO por el operador para este bloque (desktop,
+presupuesto cero, sin conexiones públicas, sin monitor/paper/órdenes). Sin
+estrategia nueva, sin señales de entrada, sin optimización; no re-alimenta
+motores P1 ni duplica sus cálculos.
+
+**3. Implementation status:** IMPLEMENTED — módulo nuevo
+`src/microstructure_probe/kline_indicators.py` (contrato
+`market-indicators/v1`: solo velas cerradas, `declined[]` para lo no
+derivable de OHLC, UNKNOWN con motivo, sin lookahead); gancho en
+`series_payload` (bloque opcional `indicators`); nota del payload
+actualizada; frontend: tipos y guard en `market-chart-contract.ts`
+(`parseMarketIndicators`, `marketIndicatorAtCursor`,
+`marketIndicatorsBadgeText`, fusión de bloques en `mergeEarlierSeries`),
+badge `market-chart-indicators` en `MarketMeta` con valores al cursor,
+nota y resumen a11y actualizados. Demo local `scripts/indicators_v1_demo.py`.
+Docs: §11 del contrato del explorador, `SHARED_INDICATORS_V1.md`,
+CURRENT_STATE, TASK_QUEUE, DECISIONS (dos entradas), este backlog.
+
+**4. Evaluation status:** VERIFIED con datos locales (0 peticiones upstream,
+0 llamadas Binance). Backend: `tests/test_kline_indicators.py` 18/18
+(fórmulas exactas, sin lookahead, provisional excluido y frontera de cierre,
+huecos/warmup con motivo sin ceros, volumen ausente, contract,
+integración de `series_payload`); regresión del explorador/presupuesto
+56/56. Frontend: `market-indicators.test.ts` 15/15,
+`price-chart-market.test.tsx` 11/11 (badge sin bloque y con cursor),
+`market-chart-contract` 13/13, `contract-explorer` 12/12; `tsc` 0,
+`eslint` 0. Evidencia: `docs/evidence/indicators-v1-2026-10-25.json`
+(series continua / hueco+volumen ausente / mark_klines sin volumen).
+NO evaluado: rentabilidad, señales, estrategia (fuera de alcance por diseño).
+
+**5. Limitaciones:** warmup por payload (las primeras velas del rango
+declaran `INSUFICIENT_CANDLES` aunque el caché tenga más historia fuera de
+la ventana); `vwap_typical_10` es aproximación por precio típico y NO el
+VWAP de negociación; sin indicadores provisionales en V1 (la vela en
+formación se excluye, no se estima); flow/spread/profundidad/OI/contexto
+BTC siguen sin fuente en este canal; el badge es de lectura bajo cursor,
+no un panel independiente.
+
+**6. Evidence:** `docs/evidence/indicators-v1-2026-10-25.json`;
+`tests/test_kline_indicators.py`; `frontend/src/test/market-indicators.test.ts`;
+`frontend/src/test/price-chart-market.test.tsx`;
+`docs/SHARED_INDICATORS_V1.md`; §11 `docs/MARKET_EXPLORER_CONTRACT_V1.md`;
+`scripts/indicators_v1_demo.py`; `docs/DECISIONS.md` (2026-10-25, dos
+entradas); `docs/CURRENT_STATE.md`; `docs/TASK_QUEUE.md`.
+
+**7. Last update:** 2026-10-25.
+
+### Cierre (siete campos, obligatorios)
+
+- `DECISIONS_REVIEWED` — AGENTS, WORKFLOW, CURRENT_STATE, TASK_QUEUE,
+  DECISIONS (2026-10-25 ×3: presupuesto, precisiones, indicadores),
+  `MARKET_EXPLORER_CONTRACT_V1` §3/§8/§11, `SHARED_INDICATORS_V1` (nuevo),
+  `SAFETY_RULES`, `DESKTOP_FIRST_SCOPE_20261020` y este backlog.
+- `NEW_DECISIONS_RECORDED` — DECISIONS 2026-10-25: que solo se calcula lo
+  derivable de velas cerradas auditadas y todo lo demás viaja `declined[]`
+  con motivo; backend única autoridad + guard de identidad en el navegador;
+  fusión de bloques por unión de filas validadas sin recálculo;
+  `execution_id` = atribución por petición (no corrida, no ámbito del
+  presupuesto, que es la ventana del ledger filtrada solo por tiempo);
+  automatización del navegador registrada como implementada (6be44b9) y
+  pendiente solo su ejecución autorizada en ventana real.
+- `FEATURES_IMPLEMENTED` — subconjunto `log_return_bps`, `velocity_bps_5`,
+  `rel_volume_10`, `vwap_typical_10`, `vwap_dev_bps_10`; bloque versionado;
+  integración payload→modelo→badge con UNKNOWN con motivo y valores al
+  cursor; demo y evidencia local.
+- `FEATURES_VERIFIED` — 18 backend + 51 frontend focalizados PASS; badge
+  muestra valores exactos del backend y `UNKNOWN(...)` en hueco; identidad
+  cruzada descartada (símbolo/intervalo distinto no filtra valores
+  anteriores); fusión sin recálculo; sin ceros inventados.
+- `DEFERRED_FEATURES` — fuentes reales de aggTrades/libro/OI/contexto BTC en
+  el canal de velas (requieren nueva autorización y presupuesto explícito);
+  volatilidad realizada y estructura de velas cerradas (decisión de
+  ventana/semántica); indicadores provisionales (`F-…` posterior);
+  `build_recovery` al ledger (vecino opcional del presupuesto); evaluador
+  (no existe aún; el bloque ya le sirve de contrato).
+- `BACKLOG_UPDATED` — yes: este bloque, `SHARED_INDICATORS_V1.md` (nuevo),
+  `MARKET_EXPLORER_CONTRACT_V1.md` §11 (nueva), CURRENT_STATE, TASK_QUEUE,
+  DECISIONS.
+- `DOCUMENTATION_CONFLICTS` — el estado previo decía "no se dibujan
+  indicadores ni se fabrican" y decía "automatizar el lado navegador" como
+  tarea pendiente: la nota del gráfico y la tarea fueron actualizadas a la
+  realidad (indicadores versionados del backend; automatización
+  implementada en `market_stream_local_acceptance.py`, PASS×2). El FAIL del
+  2026-10-24 sigue vigente; ningún resultado histórico reescrito.
+
 ## Presupuesto REST upstream — reconciliación de alcance corregido (2026-10-25, base `309aee1`, commit `2edb56c`)
 
 Cierre de la verificación pedida por el operador sobre el alcance real del
@@ -32,9 +125,13 @@ reutilizando mecanismos existentes y demostración con transporte local
   `tsc`/`eslint` 0; vitest explorador 48/48; migración aplicada y verificada
   en `data/market-cache/market_cache.db` real con `--no-fetch` (0 upstream).
 - `DEFERRED_FEATURES` — conectar `build_recovery` al ledger compartido
-  (requiere autorización el operador); automatización del lado navegador
-  (F-CHART-BINANCE-04 sigue activa); repetición de ventana Binance (sin
-  autorización); móvil/Flutter (deferido por alcance de escritorio).
+  (requiere autorización del operador); ejecutar en una ventana Binance real
+  el arnés de navegador YA implementado
+  (`scripts/market_stream_local_acceptance.py --transport public`,
+  verificado PASS×2 en loopback el 2026-10-24; solo con autorización
+  explícita) — la automatización del lado navegador no queda por construir;
+  repetir ventana sin autorización sigue prohibido; móvil/Flutter (deferido
+  por alcance de escritorio).
 - `BACKLOG_UPDATED` — yes: este bloque, `CURRENT_STATE`, `TASK_QUEUE`,
   `DECISIONS`, evidencia `docs/evidence/rest-budget-scope-2026-10-25.json`.
 - `DOCUMENTATION_CONFLICTS` — el estado previo (`309aee1`) describía el

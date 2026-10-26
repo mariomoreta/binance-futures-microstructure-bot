@@ -1,0 +1,948 @@
+{
+  "what": "market-indicators/v1: primera integracion vertical de indicadores compartidos (backend autoridad)",
+  "transport": "local sqlite; client=None; 0 peticiones upstream; no se abrio Binance",
+  "binance_calls": 0,
+  "contract_version": "market-indicators/v1",
+  "supported": [
+    "log_return_bps",
+    "velocity_bps_5",
+    "rel_volume_10",
+    "vwap_dev_bps_10"
+  ],
+  "declined": [
+    {
+      "name": "flow_delta",
+      "reason": "AGGTRADES_SOURCE_REQUIRED"
+    },
+    {
+      "name": "spread_bps",
+      "reason": "ORDER_BOOK_SOURCE_REQUIRED"
+    },
+    {
+      "name": "depth",
+      "reason": "ORDER_BOOK_SOURCE_REQUIRED"
+    },
+    {
+      "name": "open_interest",
+      "reason": "OI_REST_POLL_REQUIRED"
+    },
+    {
+      "name": "btc_context",
+      "reason": "SECOND_SYMBOL_KLINES_REQUIRED"
+    }
+  ],
+  "definitions": [
+    {
+      "name": "log_return_bps",
+      "formula": "10000 * ln(close_t / close_(t-1))",
+      "unit": "bps",
+      "window_candles": 1,
+      "requires": "previous grid candle closed and present"
+    },
+    {
+      "name": "velocity_bps_5",
+      "formula": "10000 * ln(close_t / close_(t-4))",
+      "unit": "bps",
+      "window_candles": 5,
+      "requires": "contiguous run of 5 closed grid candles ending at t"
+    },
+    {
+      "name": "rel_volume_10",
+      "formula": "base_volume_t / mean(base_volume t-9..t-1)",
+      "unit": "ratio",
+      "window_candles": 10,
+      "requires": "current base_volume and contiguous baseline of 10 closed candles with base_volume"
+    },
+    {
+      "name": "vwap_typical_10",
+      "formula": "sum(((h+l+c)/3 * v)) / sum(v) over t-9..t",
+      "unit": "price (quote)",
+      "window_candles": 10,
+      "requires": "contiguous run of 10 closed candles with base_volume; approximation weighted by typical price, NOT the traded VWAP of market_structure.vwap_record"
+    },
+    {
+      "name": "vwap_dev_bps_10",
+      "formula": "10000 * (close_t / vwap_typical_10 - 1)",
+      "unit": "bps",
+      "window_candles": 10,
+      "requires": "vwap_typical_10 of the same candle"
+    }
+  ],
+  "series_a_continuous": {
+    "symbol": "DEMOUSDT",
+    "interval": "1h",
+    "source": "klines",
+    "candles_in_payload": 16,
+    "coverage_state": "COVERED",
+    "indicators_block": {
+      "contract_version": "market-indicators/v1",
+      "availability": "CLOSED_CANDLES_ONLY",
+      "provisional_policy": {
+        "included": false,
+        "reason": "PROVISIONAL_EXCLUDED"
+      },
+      "computed_over": "payload_window",
+      "identity": {
+        "symbol": "DEMOUSDT",
+        "interval": "1h",
+        "interval_ms": 3600000,
+        "source": "klines"
+      },
+      "definitions": [
+        {
+          "name": "log_return_bps",
+          "formula": "10000 * ln(close_t / close_(t-1))",
+          "unit": "bps",
+          "window_candles": 1,
+          "requires": "previous grid candle closed and present"
+        },
+        {
+          "name": "velocity_bps_5",
+          "formula": "10000 * ln(close_t / close_(t-4))",
+          "unit": "bps",
+          "window_candles": 5,
+          "requires": "contiguous run of 5 closed grid candles ending at t"
+        },
+        {
+          "name": "rel_volume_10",
+          "formula": "base_volume_t / mean(base_volume t-9..t-1)",
+          "unit": "ratio",
+          "window_candles": 10,
+          "requires": "current base_volume and contiguous baseline of 10 closed candles with base_volume"
+        },
+        {
+          "name": "vwap_typical_10",
+          "formula": "sum(((h+l+c)/3 * v)) / sum(v) over t-9..t",
+          "unit": "price (quote)",
+          "window_candles": 10,
+          "requires": "contiguous run of 10 closed candles with base_volume; approximation weighted by typical price, NOT the traded VWAP of market_structure.vwap_record"
+        },
+        {
+          "name": "vwap_dev_bps_10",
+          "formula": "10000 * (close_t / vwap_typical_10 - 1)",
+          "unit": "bps",
+          "window_candles": 10,
+          "requires": "vwap_typical_10 of the same candle"
+        }
+      ],
+      "supported": [
+        "log_return_bps",
+        "velocity_bps_5",
+        "rel_volume_10",
+        "vwap_dev_bps_10"
+      ],
+      "declined": [
+        {
+          "name": "flow_delta",
+          "reason": "AGGTRADES_SOURCE_REQUIRED"
+        },
+        {
+          "name": "spread_bps",
+          "reason": "ORDER_BOOK_SOURCE_REQUIRED"
+        },
+        {
+          "name": "depth",
+          "reason": "ORDER_BOOK_SOURCE_REQUIRED"
+        },
+        {
+          "name": "open_interest",
+          "reason": "OI_REST_POLL_REQUIRED"
+        },
+        {
+          "name": "btc_context",
+          "reason": "SECOND_SYMBOL_KLINES_REQUIRED"
+        }
+      ],
+      "series": [
+        {
+          "open_time_ms": 1790000000000,
+          "available_at_ms": 1790003600000,
+          "values": {},
+          "unknown": {
+            "log_return_bps": "NO_PREVIOUS_CANDLE",
+            "velocity_bps_5": "INSUFICIENT_CANDLES",
+            "rel_volume_10": "INSUFICIENT_CANDLES",
+            "vwap_typical_10": "INSUFICIENT_CANDLES",
+            "vwap_dev_bps_10": "INSUFICIENT_CANDLES"
+          }
+        },
+        {
+          "open_time_ms": 1790003600000,
+          "available_at_ms": 1790007200000,
+          "values": {
+            "log_return_bps": -9.970091
+          },
+          "unknown": {
+            "velocity_bps_5": "INSUFICIENT_CANDLES",
+            "rel_volume_10": "INSUFICIENT_CANDLES",
+            "vwap_typical_10": "INSUFICIENT_CANDLES",
+            "vwap_dev_bps_10": "INSUFICIENT_CANDLES"
+          }
+        },
+        {
+          "open_time_ms": 1790007200000,
+          "available_at_ms": 1790010800000,
+          "values": {
+            "log_return_bps": 128.842218
+          },
+          "unknown": {
+            "velocity_bps_5": "INSUFICIENT_CANDLES",
+            "rel_volume_10": "INSUFICIENT_CANDLES",
+            "vwap_typical_10": "INSUFICIENT_CANDLES",
+            "vwap_dev_bps_10": "INSUFICIENT_CANDLES"
+          }
+        },
+        {
+          "open_time_ms": 1790010800000,
+          "available_at_ms": 1790014400000,
+          "values": {
+            "log_return_bps": -9.852218
+          },
+          "unknown": {
+            "velocity_bps_5": "INSUFICIENT_CANDLES",
+            "rel_volume_10": "INSUFICIENT_CANDLES",
+            "vwap_typical_10": "INSUFICIENT_CANDLES",
+            "vwap_dev_bps_10": "INSUFICIENT_CANDLES"
+          }
+        },
+        {
+          "open_time_ms": 1790014400000,
+          "available_at_ms": 1790018000000,
+          "values": {
+            "log_return_bps": 127.327871,
+            "velocity_bps_5": 236.347781
+          },
+          "unknown": {
+            "rel_volume_10": "INSUFICIENT_CANDLES",
+            "vwap_typical_10": "INSUFICIENT_CANDLES",
+            "vwap_dev_bps_10": "INSUFICIENT_CANDLES"
+          }
+        },
+        {
+          "open_time_ms": 1790018000000,
+          "available_at_ms": 1790021600000,
+          "values": {
+            "log_return_bps": -9.737099,
+            "velocity_bps_5": 236.580773
+          },
+          "unknown": {
+            "rel_volume_10": "INSUFICIENT_CANDLES",
+            "vwap_typical_10": "INSUFICIENT_CANDLES",
+            "vwap_dev_bps_10": "INSUFICIENT_CANDLES"
+          }
+        },
+        {
+          "open_time_ms": 1790021600000,
+          "available_at_ms": 1790025200000,
+          "values": {
+            "log_return_bps": 125.848708,
+            "velocity_bps_5": 233.587263
+          },
+          "unknown": {
+            "rel_volume_10": "INSUFICIENT_CANDLES",
+            "vwap_typical_10": "INSUFICIENT_CANDLES",
+            "vwap_dev_bps_10": "INSUFICIENT_CANDLES"
+          }
+        },
+        {
+          "open_time_ms": 1790025200000,
+          "available_at_ms": 1790028800000,
+          "values": {
+            "log_return_bps": -9.62464,
+            "velocity_bps_5": 233.814841
+          },
+          "unknown": {
+            "rel_volume_10": "INSUFICIENT_CANDLES",
+            "vwap_typical_10": "INSUFICIENT_CANDLES",
+            "vwap_dev_bps_10": "INSUFICIENT_CANDLES"
+          }
+        },
+        {
+          "open_time_ms": 1790028800000,
+          "available_at_ms": 1790032400000,
+          "values": {
+            "log_return_bps": 124.403518,
+            "velocity_bps_5": 230.890488
+          },
+          "unknown": {
+            "rel_volume_10": "INSUFICIENT_CANDLES",
+            "vwap_typical_10": "INSUFICIENT_CANDLES",
+            "vwap_dev_bps_10": "INSUFICIENT_CANDLES"
+          }
+        },
+        {
+          "open_time_ms": 1790032400000,
+          "available_at_ms": 1790036000000,
+          "values": {
+            "log_return_bps": -9.514749,
+            "velocity_bps_5": 231.112838,
+            "vwap_typical_10": 102.666667,
+            "vwap_dev_bps_10": 232.142857
+          },
+          "unknown": {
+            "rel_volume_10": "INSUFICIENT_CANDLES"
+          }
+        },
+        {
+          "open_time_ms": 1790036000000,
+          "available_at_ms": 1790039600000,
+          "values": {
+            "log_return_bps": 122.991144,
+            "velocity_bps_5": 228.255273,
+            "rel_volume_10": 1.0,
+            "vwap_typical_10": 103.266667,
+            "vwap_dev_bps_10": 298.579729
+          },
+          "unknown": {}
+        },
+        {
+          "open_time_ms": 1790039600000,
+          "available_at_ms": 1790043200000,
+          "values": {
+            "log_return_bps": -9.407338,
+            "velocity_bps_5": 228.472575,
+            "rel_volume_10": 1.0,
+            "vwap_typical_10": 103.866667,
+            "vwap_dev_bps_10": 229.460847
+          },
+          "unknown": {}
+        },
+        {
+          "open_time_ms": 1790043200000,
+          "available_at_ms": 1790046800000,
+          "values": {
+            "log_return_bps": 121.610479,
+            "velocity_bps_5": 225.679536,
+            "rel_volume_10": 1.0,
+            "vwap_typical_10": 104.466667,
+            "vwap_dev_bps_10": 295.149968
+          },
+          "unknown": {}
+        },
+        {
+          "open_time_ms": 1790046800000,
+          "available_at_ms": 1790050400000,
+          "values": {
+            "log_return_bps": -9.302326,
+            "velocity_bps_5": 225.891958,
+            "rel_volume_10": 1.0,
+            "vwap_typical_10": 105.066667,
+            "vwap_dev_bps_10": 226.840102
+          },
+          "unknown": {}
+        },
+        {
+          "open_time_ms": 1790050400000,
+          "available_at_ms": 1790054000000,
+          "values": {
+            "log_return_bps": 120.260469,
+            "velocity_bps_5": 223.161283,
+            "rel_volume_10": 1.0,
+            "vwap_typical_10": 105.666667,
+            "vwap_dev_bps_10": 291.798107
+          },
+          "unknown": {}
+        },
+        {
+          "open_time_ms": 1790054000000,
+          "available_at_ms": 1790057600000,
+          "values": {
+            "log_return_bps": -9.199633,
+            "velocity_bps_5": 223.368989,
+            "rel_volume_10": 1.0,
+            "vwap_typical_10": 106.266667,
+            "vwap_dev_bps_10": 224.278545
+          },
+          "unknown": {}
+        }
+      ],
+      "generated_at_ms": 1790057600000
+    }
+  },
+  "series_b_gap_and_missing_volume": {
+    "symbol": "HOLESUSDT",
+    "interval": "1h",
+    "source": "klines",
+    "candles_in_payload": 15,
+    "coverage_state": "PARTIAL",
+    "indicators_block": {
+      "contract_version": "market-indicators/v1",
+      "availability": "CLOSED_CANDLES_ONLY",
+      "provisional_policy": {
+        "included": false,
+        "reason": "PROVISIONAL_EXCLUDED"
+      },
+      "computed_over": "payload_window",
+      "identity": {
+        "symbol": "HOLESUSDT",
+        "interval": "1h",
+        "interval_ms": 3600000,
+        "source": "klines"
+      },
+      "definitions": [
+        {
+          "name": "log_return_bps",
+          "formula": "10000 * ln(close_t / close_(t-1))",
+          "unit": "bps",
+          "window_candles": 1,
+          "requires": "previous grid candle closed and present"
+        },
+        {
+          "name": "velocity_bps_5",
+          "formula": "10000 * ln(close_t / close_(t-4))",
+          "unit": "bps",
+          "window_candles": 5,
+          "requires": "contiguous run of 5 closed grid candles ending at t"
+        },
+        {
+          "name": "rel_volume_10",
+          "formula": "base_volume_t / mean(base_volume t-9..t-1)",
+          "unit": "ratio",
+          "window_candles": 10,
+          "requires": "current base_volume and contiguous baseline of 10 closed candles with base_volume"
+        },
+        {
+          "name": "vwap_typical_10",
+          "formula": "sum(((h+l+c)/3 * v)) / sum(v) over t-9..t",
+          "unit": "price (quote)",
+          "window_candles": 10,
+          "requires": "contiguous run of 10 closed candles with base_volume; approximation weighted by typical price, NOT the traded VWAP of market_structure.vwap_record"
+        },
+        {
+          "name": "vwap_dev_bps_10",
+          "formula": "10000 * (close_t / vwap_typical_10 - 1)",
+          "unit": "bps",
+          "window_candles": 10,
+          "requires": "vwap_typical_10 of the same candle"
+        }
+      ],
+      "supported": [
+        "log_return_bps",
+        "velocity_bps_5",
+        "rel_volume_10",
+        "vwap_dev_bps_10"
+      ],
+      "declined": [
+        {
+          "name": "flow_delta",
+          "reason": "AGGTRADES_SOURCE_REQUIRED"
+        },
+        {
+          "name": "spread_bps",
+          "reason": "ORDER_BOOK_SOURCE_REQUIRED"
+        },
+        {
+          "name": "depth",
+          "reason": "ORDER_BOOK_SOURCE_REQUIRED"
+        },
+        {
+          "name": "open_interest",
+          "reason": "OI_REST_POLL_REQUIRED"
+        },
+        {
+          "name": "btc_context",
+          "reason": "SECOND_SYMBOL_KLINES_REQUIRED"
+        }
+      ],
+      "series": [
+        {
+          "open_time_ms": 1790000000000,
+          "available_at_ms": 1790003600000,
+          "values": {},
+          "unknown": {
+            "log_return_bps": "NO_PREVIOUS_CANDLE",
+            "velocity_bps_5": "INSUFICIENT_CANDLES",
+            "rel_volume_10": "INSUFICIENT_CANDLES",
+            "vwap_typical_10": "INSUFICIENT_CANDLES",
+            "vwap_dev_bps_10": "INSUFICIENT_CANDLES"
+          }
+        },
+        {
+          "open_time_ms": 1790003600000,
+          "available_at_ms": 1790007200000,
+          "values": {
+            "log_return_bps": -9.970091
+          },
+          "unknown": {
+            "velocity_bps_5": "INSUFICIENT_CANDLES",
+            "rel_volume_10": "INSUFICIENT_CANDLES",
+            "vwap_typical_10": "INSUFICIENT_CANDLES",
+            "vwap_dev_bps_10": "INSUFICIENT_CANDLES"
+          }
+        },
+        {
+          "open_time_ms": 1790007200000,
+          "available_at_ms": 1790010800000,
+          "values": {
+            "log_return_bps": 128.842218
+          },
+          "unknown": {
+            "velocity_bps_5": "INSUFICIENT_CANDLES",
+            "rel_volume_10": "INSUFICIENT_CANDLES",
+            "vwap_typical_10": "INSUFICIENT_CANDLES",
+            "vwap_dev_bps_10": "INSUFICIENT_CANDLES"
+          }
+        },
+        {
+          "open_time_ms": 1790014400000,
+          "available_at_ms": 1790018000000,
+          "values": {},
+          "unknown": {
+            "log_return_bps": "NO_PREVIOUS_CANDLE",
+            "velocity_bps_5": "GAP_IN_WINDOW",
+            "rel_volume_10": "GAP_IN_WINDOW",
+            "vwap_typical_10": "GAP_IN_WINDOW",
+            "vwap_dev_bps_10": "GAP_IN_WINDOW"
+          }
+        },
+        {
+          "open_time_ms": 1790018000000,
+          "available_at_ms": 1790021600000,
+          "values": {
+            "log_return_bps": -9.737099
+          },
+          "unknown": {
+            "velocity_bps_5": "GAP_IN_WINDOW",
+            "rel_volume_10": "GAP_IN_WINDOW",
+            "vwap_typical_10": "GAP_IN_WINDOW",
+            "vwap_dev_bps_10": "GAP_IN_WINDOW"
+          }
+        },
+        {
+          "open_time_ms": 1790021600000,
+          "available_at_ms": 1790025200000,
+          "values": {
+            "log_return_bps": 125.848708
+          },
+          "unknown": {
+            "velocity_bps_5": "GAP_IN_WINDOW",
+            "rel_volume_10": "GAP_IN_WINDOW",
+            "vwap_typical_10": "GAP_IN_WINDOW",
+            "vwap_dev_bps_10": "GAP_IN_WINDOW"
+          }
+        },
+        {
+          "open_time_ms": 1790025200000,
+          "available_at_ms": 1790028800000,
+          "values": {
+            "log_return_bps": -9.62464
+          },
+          "unknown": {
+            "velocity_bps_5": "GAP_IN_WINDOW",
+            "rel_volume_10": "GAP_IN_WINDOW",
+            "vwap_typical_10": "GAP_IN_WINDOW",
+            "vwap_dev_bps_10": "GAP_IN_WINDOW"
+          }
+        },
+        {
+          "open_time_ms": 1790028800000,
+          "available_at_ms": 1790032400000,
+          "values": {
+            "log_return_bps": 124.403518,
+            "velocity_bps_5": 230.890488
+          },
+          "unknown": {
+            "rel_volume_10": "GAP_IN_WINDOW",
+            "vwap_typical_10": "GAP_IN_WINDOW",
+            "vwap_dev_bps_10": "GAP_IN_WINDOW"
+          }
+        },
+        {
+          "open_time_ms": 1790032400000,
+          "available_at_ms": 1790036000000,
+          "values": {
+            "log_return_bps": -9.514749,
+            "velocity_bps_5": 231.112838
+          },
+          "unknown": {
+            "rel_volume_10": "GAP_IN_WINDOW",
+            "vwap_typical_10": "GAP_IN_WINDOW",
+            "vwap_dev_bps_10": "GAP_IN_WINDOW"
+          }
+        },
+        {
+          "open_time_ms": 1790036000000,
+          "available_at_ms": 1790039600000,
+          "values": {
+            "log_return_bps": 122.991144,
+            "velocity_bps_5": 228.255273
+          },
+          "unknown": {
+            "rel_volume_10": "GAP_IN_WINDOW",
+            "vwap_typical_10": "GAP_IN_WINDOW",
+            "vwap_dev_bps_10": "GAP_IN_WINDOW"
+          }
+        },
+        {
+          "open_time_ms": 1790039600000,
+          "available_at_ms": 1790043200000,
+          "values": {
+            "log_return_bps": -9.407338,
+            "velocity_bps_5": 228.472575
+          },
+          "unknown": {
+            "rel_volume_10": "GAP_IN_WINDOW",
+            "vwap_typical_10": "GAP_IN_WINDOW",
+            "vwap_dev_bps_10": "GAP_IN_WINDOW"
+          }
+        },
+        {
+          "open_time_ms": 1790043200000,
+          "available_at_ms": 1790046800000,
+          "values": {
+            "log_return_bps": 121.610479,
+            "velocity_bps_5": 225.679536
+          },
+          "unknown": {
+            "rel_volume_10": "GAP_IN_WINDOW",
+            "vwap_typical_10": "GAP_IN_WINDOW",
+            "vwap_dev_bps_10": "GAP_IN_WINDOW"
+          }
+        },
+        {
+          "open_time_ms": 1790046800000,
+          "available_at_ms": 1790050400000,
+          "values": {
+            "log_return_bps": -9.302326,
+            "velocity_bps_5": 225.891958
+          },
+          "unknown": {
+            "rel_volume_10": "GAP_IN_WINDOW",
+            "vwap_typical_10": "MISSING_VOLUME",
+            "vwap_dev_bps_10": "MISSING_VOLUME"
+          }
+        },
+        {
+          "open_time_ms": 1790050400000,
+          "available_at_ms": 1790054000000,
+          "values": {
+            "log_return_bps": 120.260469,
+            "velocity_bps_5": 223.161283
+          },
+          "unknown": {
+            "rel_volume_10": "MISSING_BASELINE_VOLUME",
+            "vwap_typical_10": "MISSING_VOLUME",
+            "vwap_dev_bps_10": "MISSING_VOLUME"
+          }
+        },
+        {
+          "open_time_ms": 1790054000000,
+          "available_at_ms": 1790057600000,
+          "values": {
+            "log_return_bps": -9.199633,
+            "velocity_bps_5": 223.368989
+          },
+          "unknown": {
+            "rel_volume_10": "MISSING_BASELINE_VOLUME",
+            "vwap_typical_10": "MISSING_VOLUME",
+            "vwap_dev_bps_10": "MISSING_VOLUME"
+          }
+        }
+      ],
+      "generated_at_ms": 1790057600000
+    }
+  },
+  "series_c_mark_klines_no_volume": {
+    "symbol": "MARKUSDT",
+    "interval": "1h",
+    "source": "mark_klines",
+    "candles_in_payload": 16,
+    "coverage_state": "COVERED",
+    "indicators_block": {
+      "contract_version": "market-indicators/v1",
+      "availability": "CLOSED_CANDLES_ONLY",
+      "provisional_policy": {
+        "included": false,
+        "reason": "PROVISIONAL_EXCLUDED"
+      },
+      "computed_over": "payload_window",
+      "identity": {
+        "symbol": "MARKUSDT",
+        "interval": "1h",
+        "interval_ms": 3600000,
+        "source": "mark_klines"
+      },
+      "definitions": [
+        {
+          "name": "log_return_bps",
+          "formula": "10000 * ln(close_t / close_(t-1))",
+          "unit": "bps",
+          "window_candles": 1,
+          "requires": "previous grid candle closed and present"
+        },
+        {
+          "name": "velocity_bps_5",
+          "formula": "10000 * ln(close_t / close_(t-4))",
+          "unit": "bps",
+          "window_candles": 5,
+          "requires": "contiguous run of 5 closed grid candles ending at t"
+        },
+        {
+          "name": "rel_volume_10",
+          "formula": "base_volume_t / mean(base_volume t-9..t-1)",
+          "unit": "ratio",
+          "window_candles": 10,
+          "requires": "current base_volume and contiguous baseline of 10 closed candles with base_volume"
+        },
+        {
+          "name": "vwap_typical_10",
+          "formula": "sum(((h+l+c)/3 * v)) / sum(v) over t-9..t",
+          "unit": "price (quote)",
+          "window_candles": 10,
+          "requires": "contiguous run of 10 closed candles with base_volume; approximation weighted by typical price, NOT the traded VWAP of market_structure.vwap_record"
+        },
+        {
+          "name": "vwap_dev_bps_10",
+          "formula": "10000 * (close_t / vwap_typical_10 - 1)",
+          "unit": "bps",
+          "window_candles": 10,
+          "requires": "vwap_typical_10 of the same candle"
+        }
+      ],
+      "supported": [
+        "log_return_bps",
+        "velocity_bps_5",
+        "rel_volume_10",
+        "vwap_dev_bps_10"
+      ],
+      "declined": [
+        {
+          "name": "flow_delta",
+          "reason": "AGGTRADES_SOURCE_REQUIRED"
+        },
+        {
+          "name": "spread_bps",
+          "reason": "ORDER_BOOK_SOURCE_REQUIRED"
+        },
+        {
+          "name": "depth",
+          "reason": "ORDER_BOOK_SOURCE_REQUIRED"
+        },
+        {
+          "name": "open_interest",
+          "reason": "OI_REST_POLL_REQUIRED"
+        },
+        {
+          "name": "btc_context",
+          "reason": "SECOND_SYMBOL_KLINES_REQUIRED"
+        }
+      ],
+      "series": [
+        {
+          "open_time_ms": 1790000000000,
+          "available_at_ms": 1790003600000,
+          "values": {},
+          "unknown": {
+            "log_return_bps": "NO_PREVIOUS_CANDLE",
+            "velocity_bps_5": "INSUFICIENT_CANDLES",
+            "rel_volume_10": "INSUFICIENT_CANDLES",
+            "vwap_typical_10": "INSUFICIENT_CANDLES",
+            "vwap_dev_bps_10": "INSUFICIENT_CANDLES"
+          }
+        },
+        {
+          "open_time_ms": 1790003600000,
+          "available_at_ms": 1790007200000,
+          "values": {
+            "log_return_bps": -9.970091
+          },
+          "unknown": {
+            "velocity_bps_5": "INSUFICIENT_CANDLES",
+            "rel_volume_10": "INSUFICIENT_CANDLES",
+            "vwap_typical_10": "INSUFICIENT_CANDLES",
+            "vwap_dev_bps_10": "INSUFICIENT_CANDLES"
+          }
+        },
+        {
+          "open_time_ms": 1790007200000,
+          "available_at_ms": 1790010800000,
+          "values": {
+            "log_return_bps": 128.842218
+          },
+          "unknown": {
+            "velocity_bps_5": "INSUFICIENT_CANDLES",
+            "rel_volume_10": "INSUFICIENT_CANDLES",
+            "vwap_typical_10": "INSUFICIENT_CANDLES",
+            "vwap_dev_bps_10": "INSUFICIENT_CANDLES"
+          }
+        },
+        {
+          "open_time_ms": 1790010800000,
+          "available_at_ms": 1790014400000,
+          "values": {
+            "log_return_bps": -9.852218
+          },
+          "unknown": {
+            "velocity_bps_5": "INSUFICIENT_CANDLES",
+            "rel_volume_10": "INSUFICIENT_CANDLES",
+            "vwap_typical_10": "INSUFICIENT_CANDLES",
+            "vwap_dev_bps_10": "INSUFICIENT_CANDLES"
+          }
+        },
+        {
+          "open_time_ms": 1790014400000,
+          "available_at_ms": 1790018000000,
+          "values": {
+            "log_return_bps": 127.327871,
+            "velocity_bps_5": 236.347781
+          },
+          "unknown": {
+            "rel_volume_10": "INSUFICIENT_CANDLES",
+            "vwap_typical_10": "INSUFICIENT_CANDLES",
+            "vwap_dev_bps_10": "INSUFICIENT_CANDLES"
+          }
+        },
+        {
+          "open_time_ms": 1790018000000,
+          "available_at_ms": 1790021600000,
+          "values": {
+            "log_return_bps": -9.737099,
+            "velocity_bps_5": 236.580773
+          },
+          "unknown": {
+            "rel_volume_10": "INSUFICIENT_CANDLES",
+            "vwap_typical_10": "INSUFICIENT_CANDLES",
+            "vwap_dev_bps_10": "INSUFICIENT_CANDLES"
+          }
+        },
+        {
+          "open_time_ms": 1790021600000,
+          "available_at_ms": 1790025200000,
+          "values": {
+            "log_return_bps": 125.848708,
+            "velocity_bps_5": 233.587263
+          },
+          "unknown": {
+            "rel_volume_10": "INSUFICIENT_CANDLES",
+            "vwap_typical_10": "INSUFICIENT_CANDLES",
+            "vwap_dev_bps_10": "INSUFICIENT_CANDLES"
+          }
+        },
+        {
+          "open_time_ms": 1790025200000,
+          "available_at_ms": 1790028800000,
+          "values": {
+            "log_return_bps": -9.62464,
+            "velocity_bps_5": 233.814841
+          },
+          "unknown": {
+            "rel_volume_10": "INSUFICIENT_CANDLES",
+            "vwap_typical_10": "INSUFICIENT_CANDLES",
+            "vwap_dev_bps_10": "INSUFICIENT_CANDLES"
+          }
+        },
+        {
+          "open_time_ms": 1790028800000,
+          "available_at_ms": 1790032400000,
+          "values": {
+            "log_return_bps": 124.403518,
+            "velocity_bps_5": 230.890488
+          },
+          "unknown": {
+            "rel_volume_10": "INSUFICIENT_CANDLES",
+            "vwap_typical_10": "INSUFICIENT_CANDLES",
+            "vwap_dev_bps_10": "INSUFICIENT_CANDLES"
+          }
+        },
+        {
+          "open_time_ms": 1790032400000,
+          "available_at_ms": 1790036000000,
+          "values": {
+            "log_return_bps": -9.514749,
+            "velocity_bps_5": 231.112838
+          },
+          "unknown": {
+            "rel_volume_10": "INSUFICIENT_CANDLES",
+            "vwap_typical_10": "MISSING_VOLUME",
+            "vwap_dev_bps_10": "MISSING_VOLUME"
+          }
+        },
+        {
+          "open_time_ms": 1790036000000,
+          "available_at_ms": 1790039600000,
+          "values": {
+            "log_return_bps": 122.991144,
+            "velocity_bps_5": 228.255273
+          },
+          "unknown": {
+            "rel_volume_10": "MISSING_VOLUME",
+            "vwap_typical_10": "MISSING_VOLUME",
+            "vwap_dev_bps_10": "MISSING_VOLUME"
+          }
+        },
+        {
+          "open_time_ms": 1790039600000,
+          "available_at_ms": 1790043200000,
+          "values": {
+            "log_return_bps": -9.407338,
+            "velocity_bps_5": 228.472575
+          },
+          "unknown": {
+            "rel_volume_10": "MISSING_VOLUME",
+            "vwap_typical_10": "MISSING_VOLUME",
+            "vwap_dev_bps_10": "MISSING_VOLUME"
+          }
+        },
+        {
+          "open_time_ms": 1790043200000,
+          "available_at_ms": 1790046800000,
+          "values": {
+            "log_return_bps": 121.610479,
+            "velocity_bps_5": 225.679536
+          },
+          "unknown": {
+            "rel_volume_10": "MISSING_VOLUME",
+            "vwap_typical_10": "MISSING_VOLUME",
+            "vwap_dev_bps_10": "MISSING_VOLUME"
+          }
+        },
+        {
+          "open_time_ms": 1790046800000,
+          "available_at_ms": 1790050400000,
+          "values": {
+            "log_return_bps": -9.302326,
+            "velocity_bps_5": 225.891958
+          },
+          "unknown": {
+            "rel_volume_10": "MISSING_VOLUME",
+            "vwap_typical_10": "MISSING_VOLUME",
+            "vwap_dev_bps_10": "MISSING_VOLUME"
+          }
+        },
+        {
+          "open_time_ms": 1790050400000,
+          "available_at_ms": 1790054000000,
+          "values": {
+            "log_return_bps": 120.260469,
+            "velocity_bps_5": 223.161283
+          },
+          "unknown": {
+            "rel_volume_10": "MISSING_VOLUME",
+            "vwap_typical_10": "MISSING_VOLUME",
+            "vwap_dev_bps_10": "MISSING_VOLUME"
+          }
+        },
+        {
+          "open_time_ms": 1790054000000,
+          "available_at_ms": 1790057600000,
+          "values": {
+            "log_return_bps": -9.199633,
+            "velocity_bps_5": 223.368989
+          },
+          "unknown": {
+            "rel_volume_10": "MISSING_VOLUME",
+            "vwap_typical_10": "MISSING_VOLUME",
+            "vwap_dev_bps_10": "MISSING_VOLUME"
+          }
+        }
+      ],
+      "generated_at_ms": 1790057600000
+    }
+  },
+  "rules": [
+    "Solo velas cerradas: la vela en formacion queda excluida (provisional_policy PROVISIONAL_EXCLUDED).",
+    "Sin lookahead: el valor de la vela t solo lee velas <= t.",
+    "Hueco/warmup/volumen ausente -> UNKNOWN con motivo, nunca cero.",
+    "Bloques declinados: flujo, spread, profundidad, OI y contexto BTC no se derivan de OHLC."
+  ]
+}

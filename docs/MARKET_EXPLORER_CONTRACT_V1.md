@@ -288,3 +288,62 @@ aparte, versionado e independiente: `docs/MARKET_STREAM_CONTRACT_V1.md`.
   reparación REST acotada que se publica como `complete|partial|failed`.
 - Probado con transporte controlado; **no verificado con Binance**. La ventana
   viva está en `docs/MARKET_STREAM_LIVE_WINDOW_PLAN.md` y requiere autorización.
+
+## 11. Extensión 2026-10-25 — indicadores compartidos (`market-indicators/v1`)
+
+El backend calcula, vela a vela sobre **solo velas cerradas** del rango del
+propio payload, un bloque versionado `indicators` (el navegador solo le
+valores y motivos, nunca recalcula). Autoridad única para gráfico y futuro
+evaluador: `src/microstructure_probe/kline_indicators.py`.
+
+Contenido del bloque `market-indicators/v1` (fuente = velas OHLCV del payload):
+
+```
+contract_version="market-indicators/v1", availability="CLOSED_CANDLES_ONLY",
+provisional_policy{included:false, reason:"PROVISIONAL_EXCLUDED"},
+computed_over:"payload_window",
+identity{symbol, interval, interval_ms, source},
+definitions[{name, formula, unit, window_candles, requires}],
+supported[log_return_bps, velocity_bps_5, rel_volume_10, vwap_dev_bps_10],
+declined[{name, reason} (flow_delta, spread_bps, depth, open_interest, btc_context)],
+series[{open_time_ms, available_at_ms, values{...}, unknown{...}}],
+generated_at_ms
+```
+
+Fórmulas y unidades (todas sobre la rejilla cerrada `t−k·interval … t`):
+
+| Indicador | Fórmula | Unidad | Ventana | Requiere |
+|---|---|---|---|---|
+| `log_return_bps` | `10000·ln(close_t/close_{t−1})` | bps | 1 | vela anterior en la rejilla, cerrada |
+| `velocity_bps_5` | `10000·ln(close_t/close_{t−4})` | bps | 5 | 5 velas cerradas contiguas |
+| `rel_volume_10` | `v_t / mean(v_{t−9..t−1})` | ratio | 10 (baseline excluye t) | baseline contigua con `base_volume` |
+| `vwap_typical_10` | `Σ(tp·v)/Σ(v)` sobre `t−9..t`, `tp=(h+l+c)/3` | precio (quote) | 10 | ventana contigua con volumen |
+| `vwap_dev_bps_10` | `10000·(close_t/vwap_typical_10 − 1)` | bps | 10 | `vwap_typical_10` de la vela |
+
+Reglas duras:
+
+- **Disponibilidad:** el valor de la vela `t` está disponible cuando la vela
+  cierra, en `available_at_ms = open_time + interval_ms`; la vela en formación
+  queda EXCLUIDA (sin valores provisionales en esta integración: lo
+  provisional está separado por diseño, no identificado por fila).
+- **Huecos/warmup/volumen ausente:** `unknown{indicador: motivo}` con
+  `GAP_IN_WINDOW | INSUFICIENT_CANDLES | NO_PREVIOUS_CANDLE | MISSING_CLOSE |
+  MISSING_VOLUME | MISSING_BASELINE_VOLUME | MISSING_OHLC | INVALID_*`.
+  Un `UNKNOWN` es un motivo, nunca un 0 ni un dato interpolado.
+- **Sin lookahead:** el valor de `t` solo lee velas `≤ t` (anclado por test).
+- **Warmup honesto por payload:** el bloque se calcula sobre el rango del
+  propios payload (`computed_over: "payload_window"`): las primeras velas
+  declaran `INSUFICIENT_CANDLES` aunque el caché tenga velas anteriores
+  fuera de la ventana. Al anteponer un bloque anterior, el frontend une las
+  filas validadas de ambos bloques (`per_block_payload_windows`, la fila más
+  reciente gana) sin recalcular nada.
+- **Declinados:** flujo comprador/vendedor, spread, profundidad, OI y
+  contexto BTC **no se derivan de OHLC**; viajan en `declined` con su motivo
+  hasta que exista su fuente real en el canal de velas.
+- **Cálculo `vwap_typical_10`:** aproximación ponderada por precio típico y
+  `base_volume`; NO es el VWAP de negociación de `market_structure.vwap_record`
+  (ese necesita aggTrades). Unidad precio (quote); no se declara como benchmark.
+
+Añadir/migrar indicadores = nueva definición en el bloque con versión nueva;
+consumidores ignoran lo que no reconozcan; retirada: dejar de emitir el
+bloque (el gráfico vuelve a `indicators: null` con honestidad).

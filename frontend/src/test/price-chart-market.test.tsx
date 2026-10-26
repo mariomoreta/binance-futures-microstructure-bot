@@ -1,6 +1,6 @@
 import {afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi} from "vitest";
 import {cleanup, fireEvent, render, screen, waitFor} from "@testing-library/react";
-import {buildMarketChartModel, type MarketSeriesPayload} from "@/lib/market-chart-contract";
+import {buildMarketChartModel, type MarketIndicatorsBlock, type MarketSeriesPayload} from "@/lib/market-chart-contract";
 import {PriceChart} from "@/components/chart/PriceChart";
 
 const H = 3_600_000;
@@ -188,6 +188,63 @@ describe("PriceChart — modo mercado (market-chart/v1)", () => {
     expect(markers.map((m: {text?: string}) => m.text)).toContain("provisional");
     expect(screen.getByTestId("market-chart-coverage").textContent)
       .toContain("1 provisional");
+  });
+
+  it("muestra indicadores del backend: sin bloque declara ausencia", async () => {
+    render(<PriceChart model={buildMarketChartModel(payload())} />);
+    await waitFor(() => expect(h.chart.addSeries).toHaveBeenCalledTimes(3));
+    expect(screen.getByTestId("market-chart-indicators").textContent)
+      .toBe("Indicadores: ninguno (market-indicators/v1 ausente)");
+  });
+
+  it("muestra los valores del bloque versionado en la vela del cursor", async () => {
+    const indicators: MarketIndicatorsBlock = {
+      contract_version: "market-indicators/v1",
+      availability: "CLOSED_CANDLES_ONLY",
+      provisional_policy: {included: false, reason: "PROVISIONAL_EXCLUDED"},
+      computed_over: "payload_window",
+      identity: {symbol: "BTCUSDT", interval: "1h", interval_ms: H,
+        source: "klines"},
+      definitions: [],
+      supported: ["log_return_bps", "velocity_bps_5", "rel_volume_10",
+        "vwap_dev_bps_10"],
+      declined: [{name: "flow_delta", reason: "AGGTRADES_SOURCE_REQUIRED"}],
+      series: [
+        {open_time_ms: T0, available_at_ms: T0 + H,
+          values: {log_return_bps: 12.5, velocity_bps_5: 40.11,
+            rel_volume_10: 1.85, vwap_dev_bps_10: -3.25},
+          unknown: {}},
+        {open_time_ms: T0 + H, available_at_ms: T0 + 2 * H,
+          values: {}, unknown: {velocity_bps_5: "GAP_IN_WINDOW"}},
+      ],
+      generated_at_ms: T0 + H,
+    };
+    render(<PriceChart model={buildMarketChartModel(
+      payload([candle(T0), candle(T0 + H)], {indicators}),
+    )} />);
+    await waitFor(() => expect(h.chart.addSeries).toHaveBeenCalledTimes(3));
+
+    // Sin cursor el badge declara ausencia de fila bajo el cursor.
+    expect(screen.getByTestId("market-chart-indicators").textContent)
+      .toBe("Indicadores: sin fila para la vela bajo el cursor");
+
+    // El cursor cae en la vela T0: los valores exactos del backend se leen.
+    const crosshair = h.chart.subscribeCrosshairMove.mock.calls[0]![0];
+    const candleAt = (time: number) => {
+      const map = new Map();
+      map.set(h.series[0]!, {close: 100.5});
+      crosshair({time, point: {x: 1}, seriesData: map});
+    };
+    candleAt((T0 / 1000) as never);
+    await waitFor(() => expect(
+      screen.getByTestId("market-chart-indicators").textContent,
+    ).toBe("Indicadores: ret 12.50 · vel 40.11 · relvol 1.850 · vwapdev -3.25"));
+
+    // Vela con hueco en el backend: UNKNOWN con motivo, nunca cero.
+    candleAt(((T0 + H) / 1000) as never);
+    await waitFor(() => expect(
+      screen.getByTestId("market-chart-indicators").textContent,
+    ).toBe("Indicadores: vel UNKNOWN(GAP_IN_WINDOW)"));
   });
 
   it("dibuja la vela en formación en serie aparte y la actualiza sin reescribir cerradas", async () => {

@@ -2961,3 +2961,62 @@ transporte, reintentos que consumen cupo, reconstrucción del consumo desde el
 ledger persistido). Sin cambios de estrategia, economía, riesgo, paper,
 órdenes ni móvil; ventana Binance de Tercera no abierta ni solicitada.
 
+## 2026-10-25 — Precisiones documentales: execution_id ≠ corrida ≠ ámbito del presupuesto; automatización del navegador ya implementada (base `09632f4`)
+
+Dos correcciones de precisión pedidas por el operador, sin reescribir la
+historia y sin reconstruir lo que ya existe:
+
+1. **Tres identificadores distintos:** `execution_id` es una etiqueta de
+   ATRIBUCIÓN por ejecución/petición — `bff-<uuid>` nuevo por cada petición
+   HTTP del dashboard al BFF, o el que pase el CLI — usada para reconstruir
+   el consumo de esa ejecución con `fetch_rows_by_execution`; el
+   identificador de **corrida** de observación (O1/O2, run id) es otro
+   identificador que NO viaja en `market_fetch_ledger`; y el **ámbito que
+   realmente comparte el presupuesto** es la ventana móvil de 60 s del
+   archivo del ledger — la consulta de reserva de
+   `MarketCache.reserve_fetch_attempt` filtra solo por `at_ms`, sin
+   `execution_id`, sin símbolo y sin proceso: toda ejecución que comparta el
+   `market_fetch_ledger` dibuja del mismo vaso.
+2. **La automatización del lado navegador ya está implementada** y así queda
+   reconciliado el estado que la describía como tarea por construir:
+   `scripts/market_stream_local_acceptance.py` (2026-10-24, base `6be44b9`)
+   conduce el navegador Playwright por el procedimiento completo (LIVE,
+   captura #1, paginación, captura #2, liberación, reconexión, parada, aviso
+   y captura #3, con máximos por fase) con dos recorridos consecutivos PASS
+   en loopback (`docs/evidence/local-acceptance-2026-10-24/`). Lo pendiente
+   es solo EJECUTAR ese mismo arnés en una ventana Binance real
+   (`--transport public`), que sigue requiriendo autorización explícita; el
+   veredicto `FAIL` medido del 2026-10-24 se mantiene intacto.
+
+## 2026-10-25 — Indicadores compartidos V1: subconjunto mínimo sobre velas cerradas, backend única autoridad (base `09632f4`)
+
+Decisión de la primera integración vertical (pedida por el operador; sin
+Binance, datos locales, sin estrategia ni señales ni optimización):
+
+1. **Inventario sobre código real:** retornos/velocidad viven en P1-04/05
+   (mark price WS), flow/delta en P1-06 (aggTrade WS), spread/profundidad en
+   P1-07 (libro WS), OI en P1-07 (REST de OI), VWAP en P1-08 (flow + mark
+   price), y el volumen relativo NO estaba implementado. Ninguna de esas
+   fuentes viaja en el canal de velas `/market-lab`; por eso flow, spread,
+   profundidad, OI y contexto BTC se DECLINAN con motivo (nunca derivados de
+   OHLC, nunca cero sustituto).
+2. **Subconjunto elegido** `market-indicators/v1` calculado por el backend
+   (`kline_indicators.py`, gancho en `series_payload`), con la MISMA salida
+   versionada para gráfico y futuro evaluador: `log_return_bps`,
+   `velocity_bps_5`, `rel_volume_10`, `vwap_typical_10` + `vwap_dev_bps_10`
+   (VWAP de velas ≈ precio típico × `base_volume`, declarado como NO siendo
+   el VWAP de negociación de P1). Solo velas cerradas
+   (`PROVISIONAL_EXCLUDED`, sin indicadores provisionales en V1);
+   `available_at_ms = open_time + interval_ms`; hueco/warmup → UNKNOWN con
+   motivo (`GAP_IN_WINDOW`/`INSUFICIENT_CANDLES`/`MISSING_VOLUME`/
+   `NO_PREVIOUS_CANDLE`), sin ceros; sin lookahead (anclado por test);
+   `computed_over: "payload_window"` y al anteponer bloques el frontend solo
+   une filas validadas (sin recálculo).
+3. **Contrato aditivo:** bloque opcional `indicators` en `market-series/v1`
+   (§11 de `MARKET_EXPLORER_CONTRACT_V1.md`); el navegador lo lee con guard
+   de versión e identidad (bloque corrupto o de otra identidad → descartado
+   entero, no mostrado parcial). El plan queda en
+   `docs/SHARED_INDICATORS_V1.md`; evidencia local (0 upstream) en
+   `docs/evidence/indicators-v1-2026-10-25.json`.
+
+

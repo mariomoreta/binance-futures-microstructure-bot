@@ -46,6 +46,8 @@ from .history_client import (
     UpstreamBudgetExceeded,
 )
 
+from .kline_indicators import compute_kline_indicators
+
 from .market_cache import (
     CATALOG_TTL_MS,
     MAX_FETCH_REQUESTS_PER_WINDOW,
@@ -668,6 +670,10 @@ def series_payload(cache: MarketCache, client: Optional[HistoryClient] = None,
     coverage = compute_coverage(stored, start, end, step, earliest)
     candles = [_public_candle(b, now, step) for b in stored]
     freshness = _freshness(candles, now)
+    # Indicadores compartidos versionados:backend = unica autoridad. Sobre las
+    # velas cerradas del PROPIO rango del payload; el navegador no recalcula.
+    indicators = compute_kline_indicators(stored, step, now, sym, interval,
+                                          source)
     base_asset = (contract or {}).get("base_asset")
     volume_available = source == "klines" and any(
         c["base_volume"] is not None for c in candles)
@@ -689,6 +695,7 @@ def series_payload(cache: MarketCache, client: Optional[HistoryClient] = None,
             "end_ms": (int(candles[-1]["open_time_ms"]) if candles else None),
         },
         "candles": candles,
+        "indicators": indicators,
         "coverage": coverage,
         "volume": {
             "available": volume_available,
@@ -724,8 +731,9 @@ def series_payload(cache: MarketCache, client: Optional[HistoryClient] = None,
             " continuo, sin monitor. No es LIVE ni es estado actual.",
             "La vela no cerrada se marca provisional y no publica"
             " close_time_ms (desconocido en T).",
-            "No se fabrican indicadores, objetivos, senales ni marcas de"
-            " operaciones sobre datos de mercado.",
+            "Los indicadores versionados (market-indicators/v1)"
+            " los calcula el backend solo sobre velas cerradas; sin"
+            " senales, sin objetivos y sin marcas de operaciones.",
         ],
     }
 
