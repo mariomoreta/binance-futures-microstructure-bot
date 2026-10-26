@@ -906,13 +906,21 @@ def main() -> int:
     finally:
         for process in processes:
             try:
-                process.terminate()
-                process.wait(timeout=10)
+                # Terminate solo mata el hijo directo (cmd/npm); el nieto
+                # node (next start) sobrevive y quedaria sirviendo un build
+                # con cache de ESTA corrida en 3020: exactamente el escenario
+                # de servidor ajeno del 2026-10-25. Tree-kill exactivo.
+                subprocess.run(["taskkill", "/PID", str(process.pid), "/T",
+                                "/F"], capture_output=True, timeout=30)
             except Exception:  # noqa: BLE001
                 try:
-                    process.kill()
+                    process.terminate()
+                    process.wait(timeout=10)
                 except Exception:  # noqa: BLE001
-                    pass
+                    try:
+                        process.kill()
+                    except Exception:  # noqa: BLE001
+                        pass
         if fake is not None:
             try:
                 fake.stop()

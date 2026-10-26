@@ -29,7 +29,9 @@ demo de navegador con transporte local. Todo con **0 llamadas Binance**
    reload; provisional excluido; cambio BTCUSDT→MINAUSDT limpia valores sin
    recarga), 0 solicitudes Binance probadas (browser_external 0, ledger 0),
    BUILD_ID `e_lib1MO18w7gv6PJG2rm`, URL servida `http://127.0.0.1:3020`
-   (puerto libre al terminar). Capturas `shot-1h-values.png`,
+   (puerto servido durante la corrida; el finally detiene el arbol con
+   taskkill /T a partir de la correccion de esta sesion). Capturas
+   `shot-1h-values.png`,
    `shot-1m-close.png`, `shot-mina-values.png`: revisión visual del
    operador aparte (la demo no la sustituye; DOM ≠ visual).
 4. **Lección de infraestructura (importante):** los primeros fallos de la
