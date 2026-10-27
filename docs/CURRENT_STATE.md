@@ -3844,3 +3844,66 @@ CERRADA en paso 31: status=cerrada, reason=horizon,
 exit_px=0.06251, realized_net=-10.00).
 
 **Última actualización:** 2026-10-26.
+
+## Sesión de ingeniería — transporte local (refinamiento, 2026-10-26, HEAD 4175a8b)
+
+**Recuperación real:** el header con controles (Iniciar/Detener sesión) se
+renderiza siempre. Al recargar con sesión abierta, la vista completa se
+reconstruye desde el estado autoritativo del backend (gráfico, posición,
+controles, eventos, exportación), sin depender de marketSeries almacenado en
+React. Verificado con recarga en estado ABIERTA.
+
+**Fuente solo lectura:** el BFF de market-series pasa --no-fetch al CLI;
+nunca consulta Binance público. Una ausencia en caché devuelve motivo
+(NO_COVERAGE) con cero intentos upstream. Verificado: rango sin cobertura →
+etch.performed=false, equests=0, candles=[].
+
+**Reloj y evidencia compartida:** indicadores (market-indicators/v1) y
+contexto BTC (market-btc-context/v1) se recalculan en el backend con el
+reloj T de la sesión (solo velas conocidas en T, sin futuros). Open conocido
+al abrir; OHLC completo solo al cierre (close_time_ms <= T). Flujo sin
+eventos registrados → UNKNOWN.
+
+**Regla de ingeniería:** ENGINEERING-MINA-1M-v1, explícita, versionada,
+separada de estrategia aprobada. entry_px se fija antes de evaluar (cierre
+de última vela de contexto, no el cierre de la vela de entrada), por lo que
+la regla no garantiza entrada por igualdad automática. Dos prefijos de datos
+(A=20 contexto, B=35 contexto) bajo la misma configuración demuestran que A
+admite entrada y B se abstiene.
+
+**Vista de operación:** velas incrementales + reloj de sesión; candidato y
+motivo de decisión; entrada pendiente vs fill ejecutado; entrada/stop/salida
+en el gráfico (Lightweight Charts); posición abierta/cerrada y motivo; P&L
+no realizado/realizado, costes y funding UNKNOWN; historial de eventos y
+exportación JSON/CSV. Todos los paneles comparten session_id, símbolo, tiempos
+y config_hash.
+
+**Política de parada:** detener congela la sesión (detenida) sin inventar
+cierre; se recupera por GET tras recarga sin duplicar entrada ni cierre.
+
+**Aceptación (A–E) demostrada:**
+A) HTTP: crear → evaluar (ENTRADA_SIMULADA) → step (entrar) → pasos de
+   gestión → cerrada por horizonte (exit_px=0.06302, realized_net=3.98,
+   funding=None); E2E navegador: iniciar → ENTRADA_SIMULADA → Entrar →
+   abierta → pasos de gestión.
+B) HTTP: entry_px por encima de todos los cierres → SIN_ENTRADA/DESCARTADO,
+   position.open=false, sin posición.
+C) HTTP: fin de datos → sin nuevas entradas, posición no cerrada inventada
+   (open_at_end).
+D) HTTP y navegador: recarga recupera session_id/config_hash idénticos sin
+   duplicar entrada ni cierre; verificado con sesión ABIERTA.
+E) HTTP y navegador: detener → sesión detenida, recursos propios
+   liberados, sin afectar procesos ajenos.
+
+Transporte local aislado, 0 peticiones Binance, cadena
+dashboard → BFF → Python → dashboard.
+
+**Pruebas:** npx tsc --noEmit 0; npx eslint 0 (archivos nuevos);
+npx vitest run src/test/paper-lab-live-api.test.ts 9/9;
+python run_tests.py -q 1290 OK / 2 skipped; next build OK.
+BUILD_ID servido: O9cb8jOkgYZglg9UXB5hU.
+
+**Límites pendientes:** conexión a Binance público (ventana aparte,
+autorización explícita); selector automático de varios símbolos; monitor en
+vivo; paper prospectivo; órdenes; pagos; móvil/Flutter; indicadores
+provisionales; motor paper completo (Etapa 5).

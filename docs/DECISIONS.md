@@ -3308,3 +3308,21 @@ Integración observable en el dashboard existente (`/market-lab`) sin crear un g
 **Pruebas:** `npx tsc --noEmit` 0; `npx eslint` 0 en archivos nuevos; `npx vitest run src/test/paper-lab-live-api.test.ts` 9/9; `python run_tests.py -q` 1290 OK / 2 skipped; `next build` OK. E2E de navegador real (Chromium headless) sobre `http://127.0.0.1:3020/market-lab`: flujo A completo verificado (inicio → ENTRADA_SIMULADA → Entrar → abierta → pasos de gestión → cerrada por horizonte → exportación JSON), recarga recupera estado idéntico sin duplicar, detener congela sin cerrar, B (abstención sin posición verificada vía HTTP), C (fin de datos sin cierre inventado).
 
 
+
+**Sesión de ingeniería — transporte local (refinamiento, 2026-10-26, HEAD 4175a8b).**
+Integración observable en el dashboard existente (/market-lab) sin crear un gestor paralelo. Reutiliza el controlador canónico (CLI scripts/paper_lab_session.py + motor src/microstructure_probe/paper_lab_engine.py con mecánica de acktest_offline.run_backtest) y los servicios existentes (BFF pi/v1/paper-lab/sessions*, pi/v1/market-series sobre caché local client=None, 0 upstream). Fuente LOCAL SIMULADA: UN token candidato (MINAUSDT 1m) + BTC como contexto (BTCUSDT 1m).
+
+- **Recuperación real:** header con controles siempre renderizado; recarga con sesión abierta reconstruye vista completa (gráfico, posición, controles, eventos, exportación) desde estado autoritativo del backend.
+- **Fuente LOCAL SIMULADA (solo lectura):** --no-fetch en el BFF; cero upstream; ausencia en caché devuelve motivo sin activar fetch.
+- **Seis paneles separados:** estado de la sesión; fuente LOCAL SIMULADA; recepción/frescura (reloj T, cursor, velas conocidas); evaluador (regla ENGINEERING-MINA-1M-v1, decisión en T, motivo/evidencia); posición paper (entrada/stop/marca/P&L no realizado); último error o motivo de abstención.
+- **Reloj T compartido:** indicadores y contexto BTC recalculados en el backend con el reloj T de la sesión (sin futuros); Open conocido al abrir, OHLC completo solo al cierre; flujo sin eventos → UNKNOWN.
+- **Vista de operación:** velas incrementales + reloj; candidato y motivo de decisión; entrada pendiente vs fill ejecutado; entrada/stop/salida en el gráfico; posición abierta/cerrada y motivo; P&L no realizado/realizado, costes, funding UNKNOWN; historial de eventos; exportación JSON/CSV. Paneles comparten session_id, símbolo, tiempos, config_hash.
+- **Regla de ingeniería:** ENGINEERING-MINA-1M-v1, explícita, versionada; entry_px fijado antes de evaluar (no es cierre de vela de entrada); dos prefijos (A/B) bajo misma configuración demuestran admisión vs abstención sin garantizar entrada.
+- **Política de parada:** detener congela sesión (detenida) sin inventar cierre; recarga recupera estado sin duplicar entrada ni cierre.
+- **Recursos:** arranque/parada propios del BFF (spawnSync por acción), sin procesos huérfanos, sin afectar procesos ajenos; servicio de datos local (market-stream) permanece detenido.
+
+**Pruebas:** 
+px tsc --noEmit 0; 
+px eslint 0 (archivos nuevos); 
+px vitest run src/test/paper-lab-live-api.test.ts 9/9; python run_tests.py -q 1290 OK / 2 skipped; 
+ext build OK. E2E navegador real sobre http://127.0.0.1:3020/market-lab: iniciar → ENTRADA_SIMULADA → Entrar → abierta → pasos de gestión → recarga abierta recupera estado. HTTP: crear→evaluar→step×31→cerrada por horizonte (exit_px=0.06302, realized_net=3.98, funding=None); dos prefijos (A admite entrada, B se abstiene, misma configuración); fuente solo lectura 0 upstream; reloj T sin futuros.

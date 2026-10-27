@@ -2234,3 +2234,40 @@ indicadores; paper con datos vivos; móvil/Flutter; REA; `/antislop` end-to-end.
   queda `ok=false` con `required=false` por el transporte loopback, por lo que
   el PASS local no es una acreditación Binance. El dashboard se restauró al
   entorno canónico (catálogo 931, no las 2 entradas de prueba).
+
+## Sesión de ingeniería — transporte local (refinamiento, 2026-10-26, HEAD 4175a8b)
+
+**1. Title:** Recuperación real, fuente solo lectura, reloj T y regla de ingeniería en la sesión de ingeniería observable del dashboard.
+
+**2. Approval status:** DECIDED dentro del alcance autorizado (desktop, presupuesto cero, sin conexión pública Binance, sin monitor, sin paper prospectivo, sin órdenes, sin pagos, sin móvil/Flutter; fuente LOCAL SIMULADA = caché local client=None, 0 upstream).
+
+**3. Implementation status:** IMPLEMENTED.
+- rontend/src/components/session-lab/EngineeringSession.tsx + SessionStatusPanels.tsx + EngineeringSession.module.css + rontend/src/lib/session-lab.ts; cableado en rontend/src/app/market-lab/page.tsx; ajuste de fuente solo lectura en rontend/src/app/api/v1/market-series/route.ts (--no-fetch).
+- Recuperación real: header con controles siempre renderizado; recarga con sesión abierta reconstruye vista completa desde estado autoritativo del backend.
+- Fuente solo lectura: BFF pasa --no-fetch; cero upstream; ausencia en caché devuelve motivo sin activar fetch.
+- Reloj T compartido: indicadores y contexto BTC recalculados en backend con reloj T de sesión (sin futuros).
+- Regla de ingeniería: ENGINEERING-MINA-1M-v1, explícita, versionada; entry_px fijado antes de evaluar; dos prefijos (A/B) bajo misma configuración.
+
+**4. Evaluation status:** 
+px tsc --noEmit 0; 
+px eslint 0 (archivos nuevos); 
+px vitest run src/test/paper-lab-live-api.test.ts 9/9; python run_tests.py -q 1290 OK / 2 skipped; 
+ext build OK.
+E2E navegador real sobre http://127.0.0.1:3020/market-lab: iniciar → ENTRADA_SIMULADA → Entrar → abierta → pasos de gestión → recarga abierta recupera estado.
+HTTP: crear→evaluar→step×31→cerrada por horizonte (exit_px=0.06302, realized_net=3.98, funding=None); dos prefijos (A admite entrada, B se abstiene, misma configuración); fuente solo lectura 0 upstream; reloj T sin futuros.
+
+**5. Limitaciones:** conexión a Binance público (ventana aparte, autorización explícita); selector automático de varios símbolos; monitor en vivo; paper prospectivo; órdenes; pagos; móvil/Flutter; indicadores provisionales; motor paper completo (Etapa 5).
+
+**6. Evidence:** rontend/src/components/session-lab/; rontend/src/lib/session-lab.ts; rontend/src/app/api/v1/market-series/route.ts; rontend/src/app/market-lab/page.tsx; src/microstructure_probe/paper_lab_engine.py; scripts/paper_lab_session.py; BFF rontend/src/app/api/v1/paper-lab/sessions/*.
+
+**7. Last update:** 2026-10-26.
+
+### Cierre (siete campos, obligatorios)
+
+- DECISIONS_REVIEWED — docs/DECISIONS.md (sesión de ingeniería — transporte local, refinamiento 2026-10-26), docs/CURRENT_STATE.md, docs/TASK_QUEUE.md, docs/DESKTOP_FIRST_SCOPE_20261020.md.
+- NEW_DECISIONS_RECORDED — DECISIONS 2026-10-26: recuperación real desde estado autoritativo; fuente solo lectura (--no-fetch); reloj T compartido para indicadores/contexto BTC; regla de ingeniería con entry_px fijado antes de evaluar; dos prefijos para admisión vs abstención.
+- FEATURES_IMPLEMENTED — control iniciar/detener sesión; seis paneles; vista de operación completa; compartición de session_id/símbolo/tiempos/config_hash; regla de ingeniería versionada; dos prefijos de demostración.
+- FEATURES_VERIFIED — backend: crear→evaluar→step→cerrada por horizonte vía HTTP; frontend: tsc/eslint 0, vitest 9/9; E2E navegador: iniciar→evaluar→entrar→gestión→recarga abierta; dos prefijos HTTP (A admite, B se abstiene); fuente solo lectura 0 upstream; reloj T sin futuros.
+- DEFERRED_FEATURES — conexión a Binance público; selector automático; monitor en vivo; paper prospectivo; órdenes; pagos; móvil/Flutter; indicadores provisionales; motor paper completo (Etapa 5).
+- BACKLOG_UPDATED — yes: esta sección + CURRENT_STATE, TASK_QUEUE, DECISIONS.
+- DOCUMENTATION_CONFLICTS — ninguna contradictoria; se aclara que "fuente LOCAL SIMULADA" ≠ Binance LIVE y que el backend es la autoridad de decisión y estado económico.
