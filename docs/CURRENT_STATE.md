@@ -4008,3 +4008,16 @@ autorización explícita); selector automático de varios símbolos; monitor en
 vivo; paper prospectivo; órdenes; pagos; móvil/Flutter; indicadores
 provisionales; motor paper completo (Etapa 5); recorrido con datos nuevos
 continuos; los dos fallos preexistentes de la suite Python.
+
+**Servidor canónico tras el bloque (2026-10-27):** `next start` en
+`127.0.0.1:3020`, node PID **32856**, BUILD_ID **`GC5lmJU9kuk4F0d3Z7WxI`**,
+SHA fuente del árbol servido **bc2589a** (rama `feat/ingenieria-autonoma`,
+empujada a `origin`). URL de la sesión de ingeniería:
+`http://127.0.0.1:3020/market-lab`. Estado de entrega: `/market-lab` y `/`
+HTTP 200; sin puntero de sesión en el navegador ("Sesión no iniciada"); las
+cuatro sesiones de evidencia del bloque terminales (cerrada/detenida); sin
+proceso Python persistente de la sesión (spawnSync por acción). NOTA: existe
+un listener PREEXISTENTE en 8792 (node no; `python scripts/market_stream_service.py`,
+PID 33104, arrancado 2026-10-26) que no fue arrancado ni detenido en esta
+sesión; no es un servicio de ensayo de este bloque. `main` remota sigue en
+`d6801a5` (práctica previa: se empuja la rama activa, sin merge a main).
