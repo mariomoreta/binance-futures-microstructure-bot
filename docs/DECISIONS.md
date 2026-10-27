@@ -3260,4 +3260,38 @@ Evidencia: `docs/evidence/cd4a/EVIDENCE_PRECISIONES.md`,
 `docs/evidence/cd4a/market-lab-06-flow-nosource-rendered.txt`,
 `docs/evidence/cd4a/market-lab-07-flow-rendered.txt`.
 
+## 2026-10-26 Correccion de arquitectura flujo comprador/vendedor (commit 00a96a1)
+
+**Retirada duplicacion economica:** `flow-engine.ts` y `flow-instance.ts`
+eliminados del frontend. `flow.py` (P1-06) sigue siendo la unica implementacion
+del calculo de flujo agresivo, ahora expuesta desde el servicio Python de
+mercado (`market_stream_service.py`) en lugar de un singleton Node en el BFF.
+
+**Arquitectura requerida:**
+1. `FlowEngine` vive en el servicio Python de mercado (puerto 8792), que posee
+   el estado, la ingesta, la deduplicacion acotada y la publicacion SSE.
+2. El BFF (`frontend/src/app/api/v1/market-flow/route.ts`) es puro proxy:
+   GET consulta al servicio Python, POST devuelve 405 (ingesta solo directa
+   al servicio Python, transporte local explícito). No calcula flujo ni
+   depende de un singleton Node.
+3. El navegador usa el endpoint SSE del mismo origen
+   (`/api/v1/market-flow/stream`, puerto 3020, sin CORS). Identidad contractual
+   coherente (`symbol + event_id`), cancelacion propagada al cerrar la vista.
+4. La ingesta de pruebas queda restringida al transporte local explícito:
+   `FLOW_SYMBOLS` vacio por defecto (ningun simbolo aceptado = endpoint de
+   escritura cerrado por defecto). Se activa con `MICROPROBE_FLOW_SYMBOLS`
+   para pruebas locales. No hay endpoint de escritura abierto por defecto.
+5. Panel `MarketFlowPanel.tsx` conecta al SSE del mismo origen, sincroniza
+   identidad/tiempo/cobertura, descarta eventos antiguos al cambiar simbolo,
+   frescura caduca a 60s sin eventos validos (basada en ultimo dato valido,
+   no en hora de consulta). Desconexion y datos obsoletos se distinguen de
+   "nunca hubo cobertura".
+
+**Pruebas:** `tests/test_market_flow_service.py` 5/5 (FlowEngine como autoridad),
+`test_flow.py` 46/46 (sin regresion), `tsc` 0, `eslint` 0, `next build` OK.
+
+**Dashboard canonico restaurado.** Servidor `next start -p 3020` en
+`127.0.0.1:3020` con el nuevo build. Sin monitor, sin Binance publico,
+sin paper prospectivo, sin ordenes, sin pagos, sin movil.
+
 

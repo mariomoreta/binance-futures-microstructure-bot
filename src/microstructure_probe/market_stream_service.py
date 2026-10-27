@@ -31,9 +31,10 @@ import time
 import urllib.error
 import urllib.request
 from pathlib import Path
-from typing import Any, Dict, Optional, Sequence, Tuple
+from typing import Any, Dict, Optional, Sequence, Set, Tuple
 from urllib.parse import parse_qs, urlsplit
 
+from .flow import FlowEngine
 from .kline_btc_context import (
     BTC_BENCHMARK_SYMBOL,
     compute_btc_context,
@@ -58,6 +59,20 @@ MAX_BARS = 1000
 MIN_BARS = 1
 SERVICE_VERSION = "market-stream-service/v1"
 TRANSPORT_LOCAL = "local"
+
+# --- Flujo comprador/vendedor (market-flow/v1) -----------------------------
+# Presupuesto de memoria para IDs deduplicados (LRU acotado por simbolo).
+FLOW_MAX_EVENT_IDS = 10_000
+MARKET_FLOW_CONTRACT_VERSION = "market-flow/v1"
+FLOW_AVAILABILITY = "LIVE_CAPTURE_ONLY"
+NO_COVERAGE = "NO_COVERAGE_BEFORE_FIRST_EVENT"
+# Symbolos permitidos para ingesta de flujo. Por defecto vacia (ningun simbolo
+# aceptado = endpoint de escritura cerrado por defecto). Para pruebas locales
+# se puede poblar con MICROPROBE_FLOW_SYMBOLS="BTCUSDT,ETHUSDT".
+_FLOW_SYMBOLS_ENV = os.environ.get("MICROPROBE_FLOW_SYMBOLS", "")
+FLOW_SYMBOLS: Tuple[str, ...] = tuple(
+    s.strip().upper() for s in _FLOW_SYMBOLS_ENV.split(",") if s.strip()
+)
 TRANSPORT_PUBLIC = "public"
 LOOPBACK_HOSTS = ("127.0.0.1", "localhost", "::1")
 
@@ -290,6 +305,19 @@ class MarketStreamService:
         self.consumers_served = 0
         self.requests_total = 0
 
+        # --- Flujo comprador/vendedor (estado del servicio, no del BFF) -----
+        self.flow_engine = FlowEngine(symbols=FLOW_SYMBOLS,
+                                      min_baseline_buckets=5)
+        # Deduplicacion acotada: symbol -> set de event_ids ya vistos.
+        self.flow_seen_ids: Dict[str, Set[str]] = {}
+        # Consumidores SSE del flujo (symbol -> set de writers).
+        self.flow_consumers: Dict[str, Set[asyncio.StreamWriter]] = {}
+        self.flow_events_received = 0
+        self.flow_events_ingested = 0
+        self.flow_events_duplicate = 0
+        self.flow_events_dropped_late = 0
+        self.flow_events_dropped_invalid = 0
+
     # --- ciclo de vida ---------------------------------------------------
     async def start(self) -> None:
         self._server = await asyncio.start_server(
@@ -323,6 +351,16 @@ class MarketStreamService:
             task.cancel()
         if self._client_tasks:
             await asyncio.gather(*self._client_tasks, return_exceptions=True)
+        # Cerrar consumidores SSE del flujo
+        for symbol, writers in self.flow_consumers.items():
+            for writer in list(writers):
+                try:
+                    writer.close()
+                    await writer.wait_closed()
+                except Exception:
+                    pass
+            writers.clear()
+        self.flow_consumers.clear()
         self._remove_pidfile()
 
     async def serve_forever(self) -> None:
@@ -412,6 +450,12 @@ class MarketStreamService:
                 await self._send_json(writer, 200, self._health_payload())
             elif path == "/stream" and method == "GET":
                 await self._serve_stream(reader, writer, query)
+            elif path == "/flow" and method == "GET":
+                await self._flow_query(writer, query)
+            elif path == "/flow" and method == "POST":
+                await self._flow_ingest(reader, writer, headers)
+            elif path == "/flow/stream" and method == "GET":
+                await self._flow_stream(reader, writer, query)
             elif path == "/shutdown" and method == "POST":
                 await self._shutdown(writer, headers)
             else:
@@ -743,8 +787,307 @@ class MarketStreamService:
                           "base_url": self.transport_base_url},
             "generated_at_ms": _now_ms(),
             "times": {"unit": "ms", "epoch": "unix_utc"},
+            "flow": {
+                "events_received": self.flow_events_received,
+                "events_ingested": self.flow_events_ingested,
+                "events_duplicate": self.flow_events_duplicate,
+                "events_dropped_late": self.flow_events_dropped_late,
+                "events_dropped_invalid": self.flow_events_dropped_invalid,
+                "symbols": sorted(self.flow_engine._series.keys()),
+                "sse_consumers": {
+                    s: len(c) for s, c in self.flow_consumers.items() if c
+                },
+            },
         })
         return payload
+
+    # --- Flujo comprador/vendedor (endpoints del servicio) -----------------
+
+    def _flow_block(self, symbol: str, as_of_ms: Optional[int] = None) -> Dict[str, Any]:
+        """Construye el bloque market-flow/v1 para un simbolo.
+
+        Sin eventos para el simbolo: coverage NO_COVERAGE, valores
+        desconocidos, live=False. Nunca genera datos sinteticos.
+        """
+        if as_of_ms is None:
+            as_of_ms = _now_ms()
+        series = self.flow_engine._series.get(symbol)
+        if series is None or series.trades_total == 0:
+            return {
+                "contract_version": "market-flow/v1",
+                "availability": "LIVE_CAPTURE_ONLY",
+                "coverage": "NO_COVERAGE_BEFORE_FIRST_EVENT",
+                "identity": {"symbol": symbol, "venue": "binance",
+                             "market_type": "usd_m_futures",
+                             "source": "aggTrade_local_transport"},
+                "as_of_ms": as_of_ms,
+                "freshness_ms": None,
+                "live": False,
+                "trades_total": 0,
+                "rpi_base_total": None,
+                "rpi_notional_total": None,
+                "rpi_trades": None,
+                "dropped_late": 0,
+                "dropped_invalid": 0,
+                "horizons": {},
+                "baselines": {},
+                "acceleration": {},
+                "deduplication": {"seen_event_ids": 0,
+                                  "max_event_ids": FLOW_MAX_EVENT_IDS},
+                "notes": ["Sin eventos de captura para este simbolo: sin "
+                          "cobertura, sin valores ni ceros inventados."],
+            }
+        snap = series.snapshot(symbol, as_of_ms, subscribed=True)
+        # Mapear snapshot a formato del panel (agregar coverage a cada horizonte)
+        horizons = {}
+        for h_name, h_data in snap["horizons"].items():
+            horizons[h_name] = {
+                "trades": h_data["trades"],
+                "base_volume": h_data["base_volume"],
+                "notional": h_data["notional"],
+                "buy_base": h_data["buy_base"],
+                "sell_base": h_data["sell_base"],
+                "buy_notional": h_data["buy_notional"],
+                "sell_notional": h_data["sell_notional"],
+                "signed_delta": h_data["signed_delta"],
+                "delta_ratio": h_data["delta_ratio"],
+                "buy_pct": h_data["buy_pct"],
+                "sell_pct": h_data["sell_pct"],
+                "trade_rate": h_data["trade_rate"],
+                "notional_rate": h_data["notional_rate"],
+                "warmup_complete": h_data["warmup_complete"],
+                "window_ms": h_data["window_ms"],
+                "as_of_ms": h_data["as_of_ms"],
+                "coverage": "LIVE" if h_data["trades"] > 0 else NO_COVERAGE,
+            }
+        return {
+            "contract_version": MARKET_FLOW_CONTRACT_VERSION,
+            "availability": FLOW_AVAILABILITY,
+            "coverage": "LIVE" if series.trades_total > 0 else NO_COVERAGE,
+            "identity": {
+                "symbol": symbol,
+                "venue": "binance",
+                "market_type": "usd_m_futures",
+                "source": "aggTrade_local_transport",
+            },
+            "as_of_ms": as_of_ms,
+            "freshness_ms": snap["freshness_ms"],
+            "live": snap["live"],
+            "trades_total": snap["trades_total"],
+            "rpi_base_total": snap["rpi_base_total"],
+            "rpi_notional_total": snap["rpi_notional_total"],
+            "rpi_trades": snap["rpi_trades"],
+            "dropped_late": snap["dropped_late"],
+            "dropped_invalid": snap["dropped_invalid"],
+            "horizons": horizons,
+            "baselines": snap["baselines"],
+            "acceleration": snap["acceleration"],
+            "deduplication": {
+                "seen_event_ids": len(self.flow_seen_ids.get(symbol, set())),
+                "max_event_ids": FLOW_MAX_EVENT_IDS,
+            },
+            "notes": ["Delta positivo no es señal alcista automática: solo describe "
+                      "el saldo de volumen agresor en ventana."],
+        }
+
+    def _flow_register_event_id(self, symbol: str, event_id: str) -> bool:
+        """Devuelve True si el event_id es nuevo (no duplicado), False si ya
+        se vio. Presupuesto acotado (LRU) por simbolo."""
+        seen = self.flow_seen_ids.setdefault(symbol, set())
+        if event_id in seen:
+            return False
+        seen.add(event_id)
+        if len(seen) > FLOW_MAX_EVENT_IDS:
+            # Evicta el mas antiguo (set no ordenado; se elimina uno arbitrario,
+            # suficiente para mantener el presupuesto acotado).
+            seen.pop()
+        return True
+
+    async def _flow_query(self, writer: asyncio.StreamWriter,
+                          query: Dict[str, list]) -> None:
+        symbol = str((query.get("symbol") or [""])[0]).strip().upper()
+        if not symbol:
+            await self._send_json(writer, 400, {"error": "INVALID_SYMBOL",
+                                                "detail": "symbol requerido"})
+            return
+        as_of_ms = _parse_ms(query, "as_of_ms") or _now_ms()
+        block = self._flow_block(symbol, as_of_ms)
+        await self._send_json(writer, 200, {"ok": True, "data": block})
+
+    async def _flow_ingest(self, reader: asyncio.StreamWriter,
+                           writer: asyncio.StreamWriter,
+                           headers: Dict[str, str]) -> None:
+        """Ingesta un evento aggTrade del transporte local.
+
+        Body JSON: {symbol, event_id, event_ms, price, quantity,
+        buyer_is_maker, normal_quantity?}
+
+        Este es el UNICO endpoint de escritura del flujo. No hay escritura
+        abierta por defecto: requiere cuerpo JSON completo y simbolo valido.
+        """
+        try:
+            length = int(headers.get("content-length", "0") or "0")
+        except ValueError:
+            length = 0
+        if length <= 0 or length > MAX_REQUEST_BYTES:
+            await self._send_json(writer, 400, {"error": "INVALID_BODY",
+                                                "detail": "cuerpo JSON requerido"})
+            return
+        body = await reader.readexactly(length)
+        try:
+            payload = json.loads(body.decode("utf-8"))
+        except (json.JSONDecodeError, UnicodeDecodeError, ValueError):
+            await self._send_json(writer, 400, {"error": "INVALID_JSON",
+                                                "detail": "cuerpo no es JSON"})
+            return
+        if not isinstance(payload, dict):
+            await self._send_json(writer, 400, {"error": "INVALID_PAYLOAD",
+                                                "detail": "cuerpo debe ser objeto"})
+            return
+
+        symbol = str(payload.get("symbol") or "").strip().upper()
+        event_id = str(payload.get("event_id") or "").strip()
+        event_ms = payload.get("event_ms")
+        price = payload.get("price")
+        quantity = payload.get("quantity")
+        buyer_is_maker = payload.get("buyer_is_maker")
+        normal_quantity = payload.get("normal_quantity")
+
+        if not symbol:
+            await self._send_json(writer, 400, {"error": "INVALID_SYMBOL",
+                                                "detail": "symbol requerido"})
+            return
+        if not event_id:
+            await self._send_json(writer, 400, {"error": "MISSING_EVENT_ID",
+                                                "detail": "event_id requerido"})
+            return
+        try:
+            event_ms = int(event_ms)
+        except (TypeError, ValueError):
+            await self._send_json(writer, 400, {"error": "INVALID_EVENT_MS",
+                                                "detail": "event_ms invalido"})
+            return
+        if not isinstance(price, (int, float)) or isinstance(price, bool):
+            await self._send_json(writer, 400, {"error": "INVALID_PRICE",
+                                                "detail": "price invalido"})
+            return
+        if not isinstance(quantity, (int, float)) or isinstance(quantity, bool):
+            await self._send_json(writer, 400, {"error": "INVALID_QUANTITY",
+                                                "detail": "quantity invalida"})
+            return
+        if not isinstance(buyer_is_maker, bool):
+            await self._send_json(writer, 400, {"error": "INVALID_MAKER",
+                                                "detail": "buyer_is_maker debe ser booleano"})
+            return
+
+        self.flow_events_received += 1
+
+        # Deduplicacion por identidad (symbol + event_id)
+        if not self._flow_register_event_id(symbol, event_id):
+            self.flow_events_duplicate += 1
+            await self._send_json(writer, 200, {
+                "ok": True, "duplicate": True, "event_id": event_id,
+                "detail": "identificador repetido: no suma volumen",
+            })
+            return
+
+        accepted = self.flow_engine.ingest(
+            symbol, event_ms, float(price), float(quantity),
+            buyer_is_maker,
+            normal_quantity if isinstance(normal_quantity, (int, float))
+            and not isinstance(normal_quantity, bool) else None,
+        )
+        if not accepted:
+            series = self.flow_engine._series.get(symbol)
+            newest = series.newest_ms if series else None
+            if newest is not None and event_ms < newest:
+                self.flow_events_dropped_late += 1
+            else:
+                self.flow_events_dropped_invalid += 1
+            await self._send_json(writer, 200, {
+                "ok": False, "duplicate": False, "event_id": event_id,
+                "detail": "evento descartado (tardio o invalido)",
+            })
+            return
+
+        self.flow_events_ingested += 1
+        block = self._flow_block(symbol, event_ms)
+        # Publicar a consumidores SSE del flujo
+        await self._flow_publish(symbol, {
+            "event": "update",
+            "symbol": symbol,
+            "event_id": event_id,
+            "block": block,
+        })
+
+        await self._send_json(writer, 200, {
+            "ok": True, "duplicate": False, "event_id": event_id,
+            "symbol": symbol, "block": block,
+        })
+
+    async def _flow_publish(self, symbol: str, frame: Dict[str, Any]) -> None:
+        """Envía un frame SSE a los consumidores del flujo para un simbolo."""
+        data = _sse_frame(frame["event"], {k: v for k, v in frame.items()
+                                           if k != "event"})
+        dead = []
+        for writer in list(self.flow_consumers.get(symbol, set())):
+            try:
+                writer.write(data)
+                await writer.drain()
+            except (ConnectionError, OSError, asyncio.CancelledError):
+                dead.append(writer)
+        for writer in dead:
+            self.flow_consumers.get(symbol, set()).discard(writer)
+
+    async def _flow_stream(self, reader: asyncio.StreamWriter,
+                           writer: asyncio.StreamWriter,
+                           query: Dict[str, list]) -> None:
+        symbol = str((query.get("symbol") or [""])[0]).strip().upper()
+        if not symbol:
+            await self._send_json(writer, 400, {"error": "INVALID_SYMBOL",
+                                                "detail": "symbol requerido"})
+            return
+        writer.write(b"HTTP/1.1 200 OK\r\n"
+                     b"Content-Type: text/event-stream; charset=utf-8\r\n"
+                     b"Cache-Control: no-store\r\n"
+                     b"Connection: keep-alive\r\n\r\n")
+        await writer.drain()
+        # Registrar consumidor
+        self.flow_consumers.setdefault(symbol, set()).add(writer)
+        # Enviar snapshot inicial
+        block = self._flow_block(symbol)
+        await self._write_sse(writer, _sse_frame("hello", {
+            "contract_version": "market-flow/v1",
+            "symbol": symbol,
+            "at_ms": _now_ms(),
+        }))
+        await self._write_sse(writer, _sse_frame("snapshot", {
+            "symbol": symbol,
+            "block": block,
+        }))
+        disconnected = asyncio.create_task(_wait_eof(reader))
+        self._client_tasks.add(disconnected)
+        try:
+            while not self.stop_event.is_set():
+                try:
+                    chunk = await asyncio.wait_for(reader.read(1), timeout=5.0)
+                    if not chunk:
+                        break
+                except asyncio.TimeoutError:
+                    continue  # heartbeat implícito: cliente sigue conectado
+                except (ConnectionError, asyncio.CancelledError, OSError):
+                    break
+        except asyncio.CancelledError:
+            pass
+        finally:
+            disconnected.cancel()
+            self.flow_consumers.get(symbol, set()).discard(writer)
+            try:
+                writer.close()
+                await writer.wait_closed()
+            except Exception:
+                pass
+
 
 
 def _parse_request(raw: bytes) -> Optional[Tuple[str, str, Dict[str, str]]]:

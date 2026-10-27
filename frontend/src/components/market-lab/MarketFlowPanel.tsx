@@ -1,8 +1,9 @@
 // Panel de flujo agresivo comprador/vendedor — contrato `market-flow/v1`.
-// Backend como autoridad (FlowEngine compartido en el BFF); el frontend solo
-// solicita y presenta. Transporte local exclusivamente: mismo origen (puerto
-// 3020), sin conexión a Binance público, sin cobertura antes del primer
-// evento de captura, sin reconstrucción desde OHLC.
+// Backend como autoridad (FlowEngine en el servicio Python de mercado,
+// puerto 8791); el BFF es puro proxy y el frontend solo solicita y presenta.
+// Transporte local exclusivamente: mismo origen (puerto 3020), sin conexión
+// a Binance público, sin cobertura antes del primer evento de captura, sin
+// reconstrucción desde OHLC.
 //
 // Delta positivo NO es señal alcista automática: solo describe el saldo de
 // volumen agresor en ventana.
