@@ -13,8 +13,8 @@ import {
 import { buildPaperChartModel } from "@/lib/paper-chart-contract";
 import {
   createEngineeringSession, fetchMarketSeries, marketCandlesToPaper,
-  buildEngineeringConfig, splitContextAndOperation, contextClock,
-  lastContextClose, ENGINEERING_RULE_VERSION,
+  buildEngineeringConfig, splitContextAndOperation, lastContextClose,
+  ENGINEERING_RULE_VERSION,
 } from "@/lib/session-lab";
 import { PaperChart } from "../paper-lab-live/PaperChart";
 import { PositionPanel } from "../paper-lab-live/PositionPanel";
@@ -32,18 +32,22 @@ const SESSION_ID_STORAGE_KEY = "paper-lab-sesion-ingenieria-id";
 
 const EMPTY_CANDLES: PaperCandle[] = [];
 
+// Dos prefijos de datos sobre el MISMO simbolo y la MISMA configuracion de
+// sesion. Se usan solo para demostrar que, bajo igual configuracion, un
+// prefijo admite entrada y el otro se abstiene (no es un escaner ni una
+// estrategia rentable).
+const PREFIX_CONTEXT_COUNT: Record<"A" | "B", number> = { A: 20, B: 35 };
+
 interface EngineeringSessionProps {
   symbol?: string;
   interval?: string;
   bars?: number;
-  contextCount?: number;
 }
 
 export default function EngineeringSession({
   symbol = "MINAUSDT",
   interval = "1m",
-  bars = 80,
-  contextCount = 20,
+  bars = 90,
 }: EngineeringSessionProps) {
   const [state, setState] = useState<PaperSessionState | null>(null);
   const [marketSeries, setMarketSeries] = useState<{
@@ -57,6 +61,12 @@ export default function EngineeringSession({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [started, setStarted] = useState(false);
+  const [prefixOption, setPrefixOption] = useState<"A" | "B">("A");
+  // entry_px se fija UNA VEZ (antes de evaluar): cierre de la ultima vela de
+  // contexto (precio conocido ANTES de la ventana de operacion). Nunca es el
+  // cierre de la vela de entrada, con lo que la regla no garantiza entrada por
+  // igualdad automatica. Al cambiar de prefijo se conserva.
+  const [entryPxFixed, setEntryPxFixed] = useState<number | null>(null);
 
   const [requestIdCounter, setRequestIdCounter] = useState(0);
   const nextRequestId = useCallback(() => {
@@ -65,17 +75,42 @@ export default function EngineeringSession({
     return id;
   }, [requestIdCounter]);
 
+  // Pide indicadores / contexto BTC / flujo al backend con el reloj T de la
+  // sesion: solo velas conocidas en T, sin futuros. Fuente solo lectura
+  // (--no-fetch: cero upstream).
+  const loadContextForClock = useCallback(async (atMs: number | null) => {
+    if (atMs == null) return;
+    const series = await fetchMarketSeries(symbol, interval, bars, atMs);
+    if (!series) return;
+    const receivedAt = Date.now();
+    const all = marketCandlesToPaper(series.candles, receivedAt);
+    const { context, operation } = splitContextAndOperation(
+      all, PREFIX_CONTEXT_COUNT[prefixOption],
+    );
+    setMarketSeries({
+      candles: operation,
+      context,
+      indicators: series.indicators,
+      contextBtc: series.context_btc,
+      coverage: "NO_COVERAGE",
+      receivedAt,
+    });
+  }, [symbol, interval, bars, prefixOption]);
+
+  // Recupera el estado autoritativo tras recarga (incluida posicion abierta)
+  // y reconstruye el contexto de mercado con el reloj T de la sesion.
   const recoverAuthoritative = useCallback(async (sessionId: string) => {
     const loaded = await getSessionApi(sessionId);
     if (loaded.ok && loaded.data) {
       setState(loaded.data);
       setStarted(true);
       setError(null);
+      await loadContextForClock(loaded.data.clock_ms);
       return loaded.data;
     }
     setError(loaded.error ?? "SESSION_LOAD_FAILED");
     return null;
-  }, []);
+  }, [loadContextForClock]);
 
   useEffect(() => {
     const stored = typeof localStorage !== "undefined"
@@ -87,12 +122,13 @@ export default function EngineeringSession({
           setState(loaded.data);
           setStarted(true);
           setError(null);
+          void loadContextForClock(loaded.data.clock_ms);
         } else {
           setError(loaded.error ?? "SESSION_LOAD_FAILED");
         }
       }).catch(() => { /* persistencia opcional */ });
     }
-  }, [state]);
+  }, [state, loadContextForClock]);
 
   const startSession = useCallback(async () => {
     setLoading(true);
@@ -108,13 +144,20 @@ export default function EngineeringSession({
 
       const receivedAt = Date.now();
       const all = marketCandlesToPaper(series.candles, receivedAt);
-      if (all.length < contextCount + 2) {
+      const contextCount = PREFIX_CONTEXT_COUNT[prefixOption];
+      // Tomar solo las ultimas (contexto + operacion necesaria) velas para
+      // mantener el payload de la linea de comandos acotado (evitar
+      // WinError 206 / linea de comandos demasiado larga en Windows).
+      const operationNeeded = 40; // suficiente para horizonte + pasos
+      const window = contextCount + operationNeeded;
+      const recent = all.slice(Math.max(0, all.length - window));
+      if (recent.length < contextCount + 2) {
         setError("INSUFICIENT_CANDLES: cache local sin suficientes velas para contexto + operacion.");
         setLoading(false);
         return;
       }
 
-      const { context, operation } = splitContextAndOperation(all, contextCount);
+      const { context, operation } = splitContextAndOperation(recent, contextCount);
       const firstOp = operation[0];
       if (operation.length === 0 || !firstOp || firstOp.close == null || firstOp.close_time_ms == null) {
         setError("INSUFICIENT_CANDLES: la primera vela de operacion no tiene cierre definido.");
@@ -122,10 +165,21 @@ export default function EngineeringSession({
         return;
       }
 
-      // Regla de ingeniería: T = cierre de la primera vela de operacion; el
-      // precio de referencia de entrada es ese mismo cierre. La senal
-      // RULE-CAUSAL-V1 se evalua sobre velas de operación conocidas en T.
-      const entryPx = firstOp.close;
+      // Fijar entry_px UNA VEZ antes de evaluar: cierre de la ultima vela de
+      // contexto (precio conocido ANTES de la ventana de operacion). Nunca es
+      // el cierre de la vela de entrada, con lo que la regla no garantiza
+      // entrada por igualdad automatica. Al cambiar de prefijo se conserva.
+      let entryPx = entryPxFixed;
+      if (entryPx == null) {
+        entryPx = lastContextClose(context);
+        if (entryPx == null) {
+          setError("CLOCK_REQUIRED: no se pudo establecer el precio de referencia.");
+          setLoading(false);
+          return;
+        }
+        setEntryPxFixed(entryPx);
+      }
+
       const clock = firstOp.close_time_ms;
 
       const config: PaperSessionConfig = buildEngineeringConfig({
@@ -155,21 +209,87 @@ export default function EngineeringSession({
       }
       setState(evaluated.data);
 
-      setMarketSeries({
-        candles: operation,
-        context,
-        indicators: series.indicators,
-        contextBtc: series.context_btc,
-        coverage: "NO_COVERAGE",
-        receivedAt,
-      });
+      await loadContextForClock(clock);
       setStarted(true);
     } catch (exc: unknown) {
       setError(exc instanceof Error ? exc.message : String(exc));
     } finally {
       setLoading(false);
     }
-  }, [symbol, interval, bars, contextCount, nextRequestId]);
+  }, [symbol, interval, bars, prefixOption, entryPxFixed, loadContextForClock, nextRequestId]);
+
+  const changePrefix = useCallback(async (next: "A" | "B") => {
+    if (!state) return;
+    setPrefixOption(next);
+    // Volver a crear y evaluar con la MISMA entry_px fija pero distinto
+    // prefijo de datos, para demostrar admision vs abstencion bajo igual
+    // configuracion.
+    setLoading(true);
+    setError(null);
+    try {
+      const series = await fetchMarketSeries(symbol, interval, bars);
+      if (!series || !series.candles || series.candles.length === 0) {
+        setError("SERIES_EMPTY: no hay velas en cache local para el simbolo.");
+        setLoading(false);
+        return;
+      }
+      const receivedAt = Date.now();
+      const all = marketCandlesToPaper(series.candles, receivedAt);
+      const contextCount = PREFIX_CONTEXT_COUNT[next];
+      const operationNeeded = 40;
+      const window = contextCount + operationNeeded;
+      const recent = all.slice(Math.max(0, all.length - window));
+      if (recent.length < contextCount + 2) {
+        setError("INSUFICIENT_CANDLES: cache local sin suficientes velas.");
+        setLoading(false);
+        return;
+      }
+      const { context, operation } = splitContextAndOperation(recent, contextCount);
+      const firstOp = operation[0];
+      if (operation.length === 0 || !firstOp || firstOp.close == null || firstOp.close_time_ms == null) {
+        setError("INSUFICIENT_CANDLES: primera vela de operacion sin cierre.");
+        setLoading(false);
+        return;
+      }
+      const entryPx = entryPxFixed;
+      if (entryPx == null) {
+        setError("ENTRY_PX_MISSING: precio de referencia no fijado.");
+        setLoading(false);
+        return;
+      }
+      const clock = firstOp.close_time_ms;
+      const config: PaperSessionConfig = buildEngineeringConfig({
+        symbol, interval, entryPx,
+        horizonMs: 30 * 60 * 1000,
+      });
+      const created = await createEngineeringSession({
+        config, candles: operation, context,
+      });
+      if (!created.ok || !created.session) {
+        setError(created.error ?? "CREATE_FAILED");
+        setLoading(false);
+        return;
+      }
+      setState(created.session);
+      localStorage.setItem(SESSION_ID_STORAGE_KEY, created.session.session_id);
+      const evaluated = await evaluateSessionApi(
+        created.session.session_id, null, null,
+        ENGINEERING_RULE_VERSION, clock, nextRequestId(),
+      );
+      if (!evaluated.ok || !evaluated.data) {
+        setError(evaluated.error ?? "EVALUATE_FAILED");
+        setLoading(false);
+        return;
+      }
+      setState(evaluated.data);
+      await loadContextForClock(clock);
+      setStarted(true);
+    } catch (exc: unknown) {
+      setError(exc instanceof Error ? exc.message : String(exc));
+    } finally {
+      setLoading(false);
+    }
+  }, [symbol, interval, bars, entryPxFixed, nextRequestId, loadContextForClock, state]);
 
   const stopSession = useCallback(async () => {
     if (!state) return;
@@ -222,6 +342,9 @@ export default function EngineeringSession({
       if (result.data) {
         setState(result.data);
         const advanced = result.data as PaperSessionState;
+        // Al avanzar, el reloj T de la sesion se mueve: reconstruir indicadores
+        // y contexto con el nuevo T (solo datos conocidos en T, sin futuros).
+        await loadContextForClock(advanced.clock_ms ?? null);
         if (advanced.status === "sin_iniciar" || advanced.status === "en_espera") {
           const re = await evaluateSessionApi(
             advanced.session_id, null, null, null,
@@ -232,13 +355,14 @@ export default function EngineeringSession({
             if (re.status === 409) await recoverAuthoritative(advanced.session_id);
           } else if (re.data) {
             setState(re.data);
+            await loadContextForClock(re.data.clock_ms ?? null);
           }
         }
       }
     } finally {
       setLoading(false);
     }
-  }, [state, nextRequestId, recoverAuthoritative]);
+  }, [state, nextRequestId, recoverAuthoritative, loadContextForClock]);
 
   const handleExit = useCallback(async () => {
     if (!state) return;
@@ -252,11 +376,14 @@ export default function EngineeringSession({
         setLoading(false);
         return;
       }
-      if (result.data) setState(result.data);
+      if (result.data) {
+        setState(result.data);
+        await loadContextForClock(result.data.clock_ms ?? null);
+      }
     } finally {
       setLoading(false);
     }
-  }, [state, nextRequestId, recoverAuthoritative]);
+  }, [state, nextRequestId, recoverAuthoritative, loadContextForClock]);
 
   const handleRestart = useCallback(async () => {
     if (!state) return;
@@ -273,11 +400,12 @@ export default function EngineeringSession({
       if (result.data) {
         setState(result.data);
         localStorage.setItem(SESSION_ID_STORAGE_KEY, result.data.session_id);
+        await loadContextForClock(result.data.clock_ms);
       }
     } finally {
       setLoading(false);
     }
-  }, [state, nextRequestId, recoverAuthoritative]);
+  }, [state, nextRequestId, recoverAuthoritative, loadContextForClock]);
 
   const handleDecide = useCallback(async (decision: PaperCandidateDecision) => {
     if (!state) return;
@@ -300,20 +428,45 @@ export default function EngineeringSession({
     }
   }, [state, nextRequestId, recoverAuthoritative]);
 
-  const candlesForView = state?.candles ?? EMPTY_CANDLES;
-  const contextForView = state?.context_candles ?? EMPTY_CANDLES;
-  const clockForView = state?.clock_ms ?? 0;
+  // sessionReady es un objeto combinado que TypeScript puede reducir a
+  // no-nulo dentro de la rama correspondiente del condicional JSX.
+  const sessionReady = state && marketSeries ? { state, marketSeries } : null;
 
-  const chartModel = state
+  const cfg = state?.config;
+  const pos = state?.position;
+  const csts = state?.costs;
+  const evts = state?.events ?? [];
+  const res = state?.result;
+  const clockMs = state?.clock_ms ?? null;
+  const v = state ? sessionView(state) : null;
+const vForReady = state ? sessionView(state) : null;
+  const opn = pos?.open === true;
+  const fin = state ? (state.status === "cerrada" || state.status === "detenida") : false;
+
+  const chartModel = sessionReady
     ? buildPaperChartModel(
       {
-        ...state,
-        candles: candlesForView.filter((c) => c.open_time_ms <= clockForView),
-        context_candles: contextForView.filter((c) => c.open_time_ms <= clockForView),
+        ...sessionReady.state,
+        candles: sessionReady.state.candles.filter(
+          (c) => c.open_time_ms <= (sessionReady.state.clock_ms ?? 0),
+        ),
+        context_candles: sessionReady.state.context_candles.filter(
+          (c) => c.open_time_ms <= (sessionReady.state.clock_ms ?? 0),
+        ),
       },
       { fixtureId: null },
     )
     : null;
+
+  const abstentionReason =
+    (cfg?.decision === "SIN_ENTRADA" || cfg?.decision === "DESCARTADO")
+      ? cfg?.decision_reason ?? null
+      : null;
+
+  // sessionReady garantiza que state es no-nulo, por tanto v y chartModel
+  // también lo son dentro de la rama correspondiente.
+  const vReady = v!;
+  const chartModelReady = chartModel!;
 
   return (
     <section className={s.root} aria-label="Sesion de ingenieria - transporte local">
@@ -321,17 +474,29 @@ export default function EngineeringSession({
         <div className={s.titleBlock}>
           <h1>Sesion de ingenieria - transporte local</h1>
           <p className={s.subtitle}>
-            Flujo: datos (cache local, 0 upstream), grafico,
-            indicadores / contexto BTC / flujo, candidato, decision,
-            posicion paper, gestion, cierre, exportacion. El backend es la
-            autoridad; el navegador solo solicita acciones y presenta estados.
+            Flujo: datos (cache local, 0 upstream) → grafico →
+            indicadores / contexto BTC / flujo (recalculados en el backend con
+            el reloj T de la sesion) → candidato → decision →
+            posicion paper → gestion → cierre → exportacion. El backend es
+            la autoridad; el navegador solo solicita acciones y presenta
+            estados.
           </p>
         </div>
         <div className={s.actions}>
+          <label className={s.prefixLabel}>Prefijo de datos:</label>
+          <select
+            value={prefixOption}
+            onChange={(e) => changePrefix((e.target.value as "A" | "B") ?? "A")}
+            disabled={loading || !!sessionReady}
+            className={s.prefixSelect}
+          >
+            <option value="A">A (admite entrada)</option>
+            <option value="B">B (se abstiene)</option>
+          </select>
           <button
             type="button"
             className={s.startButton}
-            disabled={loading || started}
+            disabled={loading || started || !!sessionReady}
             onClick={startSession}
             data-testid="btn-iniciar-sesion"
           >
@@ -352,213 +517,210 @@ export default function EngineeringSession({
       {error && (
         <div className={s.errorBanner} role="alert" data-testid="session-error">
           <strong>Error:</strong> {error}
-          {state && (
-            <button type="button" className={s.recoverButton} onClick={() => recoverAuthoritative(state.session_id)}>
-              Recuperar estado autoritativo
-            </button>
-          )}
+          <button
+            type="button"
+            className={s.recoverButton}
+            onClick={() => state && recoverAuthoritative(state.session_id)}
+          >
+            Recuperar estado autoritativo
+          </button>
         </div>
       )}
 
-      {started && state && marketSeries && (
+      {sessionReady ? (
         <div>
-          {(() => {
-            const view = sessionView(state);
-            const cfg = state.config;
-            const pos = state.position;
-            const csts = state.costs;
-            const evts = state.events;
-            const res = state.result;
-            const opn = pos.open === true;
-            const fin = state.status === "cerrada" || state.status === "detenida";
-            return (
-              <>
-                <SessionStatusPanels
-                  state={state}
-                  marketSymbol={cfg.symbol}
-                  source="LOCAL SIMULADA - cache local (klines), client=None, 0 upstream"
-                  freshness={{
-                    received: view.cursor,
-                    cursor: view.cursor,
-                    total: view.n,
-                    clockMs: state.clock_ms,
-                    endOfData: fin && opn && res?.open_at_end === true,
-                    stale: false,
-                  }}
-                  indicators={marketSeries.indicators}
-                  contextBtc={marketSeries.contextBtc}
-                  flowCoverage={marketSeries.coverage}
-                  lastError={error}
-                  abstentionReason={
-                    (cfg.decision === "SIN_ENTRADA" || cfg.decision === "DESCARTADO")
-                      ? cfg.decision_reason ?? null
-                      : null
-                  }
-                />
+          <SessionStatusPanels
+            state={sessionReady.state}
+            marketSymbol={sessionReady.state.config.symbol}
+            source="LOCAL SIMULADA - cache local (klines), client=None, 0 upstream"
+            freshness={{
+              received: vReady.cursor,
+              cursor: vReady.cursor,
+              total: vReady.n,
+              clockMs: sessionReady.state.clock_ms,
+              endOfData: fin && opn && res?.open_at_end === true,
+              stale: false,
+            }}
+            indicators={sessionReady.marketSeries.indicators}
+            contextBtc={sessionReady.marketSeries.contextBtc}
+            flowCoverage={sessionReady.marketSeries.coverage}
+            lastError={error}
+            abstentionReason={abstentionReason}
+          />
 
-                <SessionControls
-                  status={state.status}
-                  canEnter={view.canEnter}
-                  canStep={view.canStep}
-                  canExit={view.canExit}
-                  canRestart={view.canRestart}
-                  canStop={view.canStop}
-                  canDecide={view.canDecide}
-                  decision={cfg.decision ?? null}
-                  onDecide={handleDecide}
-                  onEnter={handleEnter}
-                  onStep={handleStep}
-                  onExit={handleExit}
-                  onRestart={handleRestart}
-                  onStop={stopSession}
-                  stepMs={1200}
-                />
+          <SessionControls
+            status={sessionReady.state.status}
+            canEnter={vReady.canEnter}
+            canStep={vReady.canStep}
+            canExit={vReady.canExit}
+            canRestart={vReady.canRestart}
+            canStop={vReady.canStop}
+            canDecide={vReady.canDecide}
+            decision={sessionReady.state.config.decision ?? null}
+            onDecide={handleDecide}
+            onEnter={handleEnter}
+            onStep={handleStep}
+            onExit={handleExit}
+            onRestart={handleRestart}
+            onStop={stopSession}
+            stepMs={1200}
+          />
 
-                <div className={s.grid}>
-                  <section className={s.cardFull} aria-label="Grafico de operacion">
-                    <div className={s.chartHead}>
-                      <h3>
-                        Grafico - velas, niveles y eventos ({cfg.interval}, simulacion)
-                      </h3>
-                      <span className={s.sourceChip}>Fuente: LOCAL SIMULADA ({cfg.symbol})</span>
-                    </div>
-                    <div className={s.chartLegend} aria-label="Leyenda del grafico">
-                      <span><i className={s.swContext} aria-hidden="true"></i> contexto conocido</span>
-                      <span><i className={s.swReplay} aria-hidden="true"></i> velas reveladas</span>
-                      <span><i className={s.swOpen} aria-hidden="true"></i> solo-open (open, sin OHLC)</span>
-                      {chartModel?.operation.signal && (
-                        <span><i className={s.swSignal} aria-hidden="true"></i> senal</span>
-                      )}
-                      {chartModel?.operation.pending_entry && (
-                        <span><i className={s.swPending} aria-hidden="true"></i> entrada pendiente (no ejecutada)</span>
-                      )}
-                      {chartModel?.operation.entry && (
-                        <span><i className={s.swEntry} aria-hidden="true"></i> Entrada {formatPricePL(chartModel.operation.entry.px)}</span>
-                      )}
-                      {chartModel?.operation.stop_effective_px != null && (
-                        <span><i className={s.swStop} aria-hidden="true"></i> Stop efectivo {formatPricePL(chartModel.operation.stop_effective_px)}</span>
-                      )}
-                      {chartModel?.operation.exit && (
-                        <span><i className={s.swExit} aria-hidden="true"></i> Salida {formatPricePL(chartModel.operation.exit.px)} ({chartModel.operation.exit.reason ?? "-"})</span>
-                      )}
-                    </div>
-                    <div className={s.chartWrap}>
-                      {chartModel && <PaperChart model={chartModel} />}
-                    </div>
-                    <p className={s.note}>
-                      Solo velas conocidas en T; la vela solo-open se marca como punto
-                      ambar (open conocido, high/low/close UNKNOWN) y no se interpola.
-                      Entrada y stop salen de position.entry_px/stop_px efectivos; la
-                      salida solo se dibuja con exit_executed=true. Volumen e
-                      indicadores no los produce el backend en esta fase: se muestran
-                      como UNKNOWN.
-                    </p>
-                  </section>
+          <div className={s.grid}>
+            <section className={s.cardFull} aria-label="Grafico de operacion">
+              <div className={s.chartHead}>
+                <h3>
+                  Grafico - velas, niveles y eventos (
+                  {sessionReady.state.config.interval}, simulacion)
+                </h3>
+                <span className={s.sourceChip}>
+                  Fuente: LOCAL SIMULADA ({sessionReady.state.config.symbol})
+                </span>
+              </div>
+              <div className={s.chartLegend} aria-label="Leyenda del grafico">
+                <span><i className={s.swContext} aria-hidden="true"></i> contexto conocido</span>
+                <span><i className={s.swReplay} aria-hidden="true"></i> velas reveladas</span>
+                <span><i className={s.swOpen} aria-hidden="true"></i> solo-open (open, sin OHLC)</span>
+                {chartModelReady.operation.signal && (
+                  <span><i className={s.swSignal} aria-hidden="true"></i> senal</span>
+                )}
+                {chartModelReady.operation.pending_entry && (
+                  <span><i className={s.swPending} aria-hidden="true"></i> entrada pendiente (no ejecutada)</span>
+                )}
+                {chartModelReady.operation.entry && (
+                  <span><i className={s.swEntry} aria-hidden="true"></i> Entrada {formatPricePL(chartModelReady.operation.entry.px)}</span>
+                )}
+                {chartModelReady.operation.stop_effective_px != null && (
+                  <span><i className={s.swStop} aria-hidden="true"></i> Stop efectivo {formatPricePL(chartModelReady.operation.stop_effective_px)}</span>
+                )}
+                {chartModelReady.operation.exit && (
+                  <span><i className={s.swExit} aria-hidden="true"></i> Salida {formatPricePL(chartModelReady.operation.exit.px)} ({chartModelReady.operation.exit.reason ?? "-"})</span>
+                )}
+              </div>
+              <div className={s.chartWrap}>
+                {chartModel && <PaperChart model={chartModel} />}
+              </div>
+              <p className={s.note}>
+                Solo velas conocidas en T; open conocido al abrir y OHLC completo
+                solo al cierre. La vela solo-open se marca como punto ambar y no
+                se interpola. Entrada y stop salen de position.entry_px /
+                position.stop_px efectivos; la salida solo se dibuja con
+                exit_executed=true. Los indicadores y el contexto BTC se
+                recalculan en el backend con el reloj T de la sesion (sin
+                futuros); sin cobertura de flujo para el instante, se muestra
+                UNKNOWN. Volumen e indicadores de negociacion no los produce el
+                backend en esta fase: se muestran como UNKNOWN.
+              </p>
+            </section>
+          </div>
+
+          <div className={s.grid}>
+            <section className={s.card}>
+              <PositionPanel position={sessionReady.state.position} direction={sessionReady.state.config.direction} />
+            </section>
+            <section className={s.card}>
+              <PnLPanel
+                finished={fin}
+                entered={opn}
+                costs={csts!}
+                unrealized={sessionReady.state.position.unrealized_net}
+                result={res!}
+                exitExecuted={res?.exit_executed === true}
+              />
+            </section>
+          </div>
+
+          <div className={s.grid}>
+            <section className={s.cardFull}>
+              <h3>Historial de eventos</h3>
+              <EventLog events={evts} />
+            </section>
+          </div>
+
+          <div className={s.grid}>
+            <section className={s.card}>
+              <h3>Exportacion</h3>
+              <ExportPanel
+                state={sessionReady.state}
+                result={res ?? null}
+                onDownloadJson={(payload: string, fileName: string) => {
+                  const blob = new Blob([payload], { type: "application/json" });
+                  const url = URL.createObjectURL(blob);
+                  const a = document.createElement("a");
+                  a.href = url; a.download = fileName; a.click();
+                  URL.revokeObjectURL(url);
+                }}
+                onDownloadCsv={(payload: string, fileName: string) => {
+                  const blob = new Blob([payload], { type: "text/csv" });
+                  const url = URL.createObjectURL(blob);
+                  const a = document.createElement("a");
+                  a.href = url; a.download = fileName; a.click();
+                  URL.revokeObjectURL(url);
+                }}
+              />
+              <div className={s.exportMeta}>
+                <div className={s.row}>
+                  <span className={s.k}>session_id</span>
+                  <span className={s.v + " " + s.mono}>{sessionReady.state.session_id}</span>
                 </div>
-
-                <div className={s.grid}>
-                  <section className={s.card}>
-                    <PositionPanel position={pos} direction={cfg.direction} />
-                  </section>
-                  <section className={s.card}>
-                    <PnLPanel
-                      finished={fin}
-                      entered={opn}
-                      costs={csts}
-                      unrealized={pos.unrealized_net}
-                      result={res}
-                      exitExecuted={res?.exit_executed === true}
-                    />
-                  </section>
+                <div className={s.row}>
+                  <span className={s.k}>simbolo</span>
+                  <span className={s.v}>{sessionReady.state.config.symbol}</span>
                 </div>
-
-                <div className={s.grid}>
-                  <section className={s.cardFull}>
-                    <h3>Historial de eventos</h3>
-                    <EventLog events={evts} />
-                  </section>
+                <div className={s.row}>
+                  <span className={s.k}>intervalo</span>
+                  <span className={s.v}>{sessionReady.state.config.interval}</span>
                 </div>
-
-                <div className={s.grid}>
-                  <section className={s.card}>
-                    <h3>Exportacion</h3>
-                    <ExportPanel
-                      state={state}
-                      result={res ?? null}
-                      onDownloadJson={(payload: string, fileName: string) => {
-                        const blob = new Blob([payload], { type: "application/json" });
-                        const url = URL.createObjectURL(blob);
-                        const a = document.createElement("a");
-                        a.href = url; a.download = fileName; a.click();
-                        URL.revokeObjectURL(url);
-                      }}
-                      onDownloadCsv={(payload: string, fileName: string) => {
-                        const blob = new Blob([payload], { type: "text/csv" });
-                        const url = URL.createObjectURL(blob);
-                        const a = document.createElement("a");
-                        a.href = url; a.download = fileName; a.click();
-                        URL.revokeObjectURL(url);
-                      }}
-                    />
-                    <div className={s.exportMeta}>
-                      <div className={s.row}>
-                        <span className={s.k}>session_id</span>
-                        <span className={s.v + " " + s.mono}>{state.session_id}</span>
-                      </div>
-                      <div className={s.row}>
-                        <span className={s.k}>simbolo</span>
-                        <span className={s.v}>{cfg.symbol}</span>
-                      </div>
-                      <div className={s.row}>
-                        <span className={s.k}>intervalo</span>
-                        <span className={s.v}>{cfg.interval}</span>
-                      </div>
-                      <div className={s.row}>
-                        <span className={s.k}>config_hash</span>
-                        <span className={s.v + " " + s.mono}>{state.config_hash}</span>
-                      </div>
-                      <div className={s.row}>
-                        <span className={s.k}>motor</span>
-                        <span className={s.v + " " + s.mono}>{state.engine_version}</span>
-                      </div>
-                      <div className={s.row}>
-                        <span className={s.k}>regla</span>
-                        <span className={s.v + " " + s.mono}>{cfg.rule_version}</span>
-                      </div>
-                      <div className={s.row}>
-                        <span className={s.k}>reloj T</span>
-                        <span className={s.v}>{fmtUtcPL(state.clock_ms)}</span>
-                      </div>
-                      <div className={s.row}>
-                        <span className={s.k}>revision</span>
-                        <span className={s.v}>{state.revision}</span>
-                      </div>
-                    </div>
-                  </section>
+                <div className={s.row}>
+                  <span className={s.k}>config_hash</span>
+                  <span className={s.v + " " + s.mono}>{sessionReady.state.config_hash}</span>
                 </div>
+                <div className={s.row}>
+                  <span className={s.k}>motor</span>
+                  <span className={s.v + " " + s.mono}>{sessionReady.state.engine_version}</span>
+                </div>
+                <div className={s.row}>
+                  <span className={s.k}>regla</span>
+                  <span className={s.v + " " + s.mono}>{sessionReady.state.config.rule_version}</span>
+                </div>
+                <div className={s.row}>
+                  <span className={s.k}>reloj T</span>
+                  <span className={s.v}>{fmtUtcPL(clockMs)}</span>
+                </div>
+                <div className={s.row}>
+                  <span className={s.k}>revision</span>
+                  <span className={s.v}>{sessionReady.state.revision}</span>
+                </div>
+                <div className={s.row}>
+                  <span className={s.k}>prefijo</span>
+                  <span className={s.v}>{prefixOption}</span>
+                </div>
+                <div className={s.row}>
+                  <span className={s.k}>entry_px fijo</span>
+                  <span className={s.v}>{entryPxFixed != null ? entryPxFixed.toFixed(4) : "-"}</span>
+                </div>
+              </div>
+            </section>
+          </div>
 
-                <SessionPersistence
-                  sessions={[]}
-                  onLoad={recoverAuthoritative}
-                  onSave={async () => {
-                    const s = await listSessionsApi();
-                    if (s.ok) {
-                      // refrescar lista sin efectos
-                    }
-                  }}
-                />
-              </>
-            );
-          })()}
+          <SessionPersistence
+            sessions={[]}
+            onLoad={recoverAuthoritative}
+            onSave={async () => {
+              const s = await listSessionsApi();
+              if (s.ok) {
+                // refrescar lista sin efectos
+              }
+            }}
+          />
         </div>
-      )}
-
-      {!started && !error && (
+      ) : (
         <section className={s.empty}>
           <p>Sesion no iniciada. Abrir el dashboard no inicia servicios ni operaciones.</p>
           <p className={s.emptyNote}>
-            Pulsa Iniciar sesion para cargar {symbol} desde cache local,
-            evaluar la evidencia en T y abrir la sesion de ingenieria.
+            Seleccione un prefijo de datos y pulse Iniciar sesion para cargar
+            {symbol} desde cache local, evaluar la evidencia en T y abrir la
+            sesion de ingenieria.
           </p>
         </section>
       )}

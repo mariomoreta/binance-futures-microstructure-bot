@@ -17,7 +17,7 @@ export default function MarketLab(){
      <MarketFlowPanel symbol="BTCUSDT"/>
      <MarketLabView rows={rows} error={error}/>
      <section style={{marginTop:32}}>
-       <EngineeringSession symbol="MINAUSDT" interval="1m" bars={80} contextCount={20}/>
+       <EngineeringSession symbol="MINAUSDT" interval="1m" bars={90}/>
      </section>
    </>
  );

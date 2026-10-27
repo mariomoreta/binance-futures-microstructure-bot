@@ -45,10 +45,12 @@ export async function GET(req: Request) {
   }
   const fromMs = intParam(params, "from_ms");
   const toMs = intParam(params, "to_ms");
-  if (fromMs === null || toMs === null) {
-    return NextResponse.json({error: "INVALID_RANGE"}, {status: 400, headers});
-  }
-  if (fromMs !== undefined && toMs !== undefined && fromMs > toMs) {
+  const atMs = intParam(params, "at_ms");
+  // Reloj T de la sesion de ingenieria: si se pasa, se usa como to_ms para
+  // que el payload solo incluya velas conocidas en T y los indicadores /
+  // contexto BTC se recalculen sobre ese prefijo (sin futuros).
+  const effectiveToMs = atMs !== undefined ? atMs : toMs;
+  if (effectiveToMs != null && fromMs != null && effectiveToMs < fromMs) {
     return NextResponse.json({error: "INVALID_RANGE"}, {status: 400, headers});
   }
   const bars = intParam(params, "bars");
@@ -68,6 +70,10 @@ export async function GET(req: Request) {
     "--symbol", symbol,
     "--interval", interval,
     "--source", source,
+    // Fuente solo lectura: nunca consultar Binance publico, solo lo
+    // almacenado en cache local. Cualquier ausencia devuelve motivo, sin
+    // activar fetch.
+    "--no-fetch",
     "--pages", String(pages ?? 1),
     "--page-limit", String(pageLimit ?? 300),
     // Un id de ejecucion por peticion: vincula las filas del ledger de
@@ -75,8 +81,8 @@ export async function GET(req: Request) {
     // consulta que llego del dashboard.
     "--execution-id", `bff-${randomUUID()}`,
   ];
-  if (fromMs !== undefined) args.push("--from-ms", String(fromMs));
-  if (toMs !== undefined) args.push("--to-ms", String(toMs));
+  if (fromMs !== null) args.push("--from-ms", String(fromMs));
+  if (effectiveToMs !== null) args.push("--to-ms", String(effectiveToMs));
   if (bars !== undefined) args.push("--bars", String(bars));
   if (params.get("probe_earliest") === "1") args.push("--probe-earliest");
   const result = runMarketExplorer(args);

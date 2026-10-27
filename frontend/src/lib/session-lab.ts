@@ -72,13 +72,23 @@ async function fetchJson<T = unknown>(path: string): Promise<ApiResult<T>> {
   return { ok: true, data: body as T, status: r.status };
 }
 
-/** Trae velas (caché local, 0 upstream) para un símbolo/intervalo. */
+/** Trae velas (caché local, 0 upstream) para un símbolo/intervalo.
+ *
+ * Pasa un rango amplio ([0, 9999999999999]) para cubrir todo lo almacenado,
+ * independientemente del reloj de pared actual, ya que las velas cacheadas
+ * pueden ser de fechas pasadas. Cuando se pasa `atMs` (reloj T de la sesion),
+ * se sobreescribe `to_ms` para que el payload solo incluya velas conocidas en
+ * T y los indicadores / contexto BTC se recalculen sobre ese prefijo. Nunca
+ * se consulta Binance publico (--no-fetch).
+ */
 export async function fetchMarketSeries(
   symbol: string,
   interval: string,
   bars: number,
+  atMs?: number | null,
 ): Promise<MarketSeriesPayload | null> {
-  const url = `${API_BASE}?symbol=${encodeURIComponent(symbol)}&interval=${encodeURIComponent(interval)}&bars=${bars}&pages=1`;
+  const toParam = atMs != null ? `&to_ms=${atMs}` : "&to_ms=9999999999999";
+  const url = `${API_BASE}?symbol=${encodeURIComponent(symbol)}&interval=${encodeURIComponent(interval)}&bars=${bars}&pages=1&from_ms=0${toParam}`;
   const r = await fetchJson<MarketSeriesPayload>(url);
   if (!r.ok || !r.data) return null;
   return r.data;
