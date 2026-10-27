@@ -16,6 +16,10 @@ private/
 *.pem
 logs/
 *.log
+
+# Chrome DevTools MCP: perfil dedicado al dashboard de diagn\u00f3stico.
+# Nunca contiene sesiones personales; no se commitea.
+.chrome-devtools-mcp-profile/
 data/
 *.sqlite
 *.sqlite-*
