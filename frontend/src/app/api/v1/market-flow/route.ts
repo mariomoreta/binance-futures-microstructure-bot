@@ -1,27 +1,22 @@
 // Flujo agresivo comprador/vendedor — contrato `market-flow/v1`.
 //
-// Backend Python como unica autoridad (flow.py + market_flow.py); el frontend
-// solo solicita y presenta. Transporte local exclusivamente: sin conexion a
-// Binance publico, sin cobertura antes del primer evento de captura, sin
-// reconstruccion desde OHLC.
+// Backend Python como unica autoridad (flow.py + market_flow_service.py);
+// el frontend solo solicita y presenta. Transporte local exclusivamente:
+// sin conexion a Binance publico, sin cobertura antes del primer evento de
+// captura, sin reconstruccion desde OHLC. Sin fuente conectada: SIN
+// COBERTURA, valores desconocidos, live=false.
 //
 // Delta positivo NO es senal alcista automatica: solo describe el saldo de
 // volumen agresor en ventana.
 
-import {randomUUID} from "node:crypto";
-import {spawnSync} from "node:child_process";
-import {join} from "node:path";
 import {NextResponse} from "next/server";
-
-const ROOT = process.env.MARKET_FLOW_ROOT ??
-  "C:/proyectos/binance-futures-microstructure-bot";
-const PYTHON = process.env.MARKET_FLOW_PYTHON ?? "python";
-const SCRIPT = join(ROOT, "scripts", "market_flow.py");
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 const headers = {"Cache-Control": "no-store"};
 
+const DEFAULT_HOST = "127.0.0.1";
+const DEFAULT_PORT = 8799;
 const SYMBOL_RE = /^[A-Z0-9]{2,32}$/;
 
 function intParam(params: URLSearchParams, name: string): number | null | undefined {
@@ -32,6 +27,25 @@ function intParam(params: URLSearchParams, name: string): number | null | undefi
   if (!/^-?\d{1,16}$/.test(raw)) return null;
   const value = Number(raw);
   return Number.isSafeInteger(value) ? value : null;
+}
+
+function emptyBlock(symbol: string, asOfMs: number): Record<string, unknown> {
+  return {
+    contract_version: "market-flow/v1",
+    availability: "LIVE_CAPTURE_ONLY",
+    coverage: "NO_COVERAGE_BEFORE_FIRST_EVENT",
+    identity: {symbol, venue: "binance", market_type: "usd_m_futures",
+               source: "aggTrade_local_transport"},
+    as_of_ms: asOfMs,
+    freshness_ms: null,
+    live: false,
+    trades_total: 0,
+    horizons: {},
+    baselines: {},
+    acceleration: {},
+    deduplication: {seen_event_ids: 0},
+    notes: ["Sin servicio de flujo conectado: sin cobertura, sin valores ni ceros inventados."],
+  };
 }
 
 export async function GET(req: Request) {
@@ -50,42 +64,40 @@ export async function GET(req: Request) {
   if (!SYMBOL_RE.test(symbol)) {
     return NextResponse.json({error: "INVALID_SYMBOL"}, {status: 400, headers});
   }
-  const asOfMs = intParam(params, "as_of_ms");
-  if (asOfMs === undefined || asOfMs === null) {
-    return NextResponse.json({error: "INVALID_AS_OF_MS"}, {status: 400, headers});
-  }
+  const asOfMs = intParam(params, "as_of_ms") ?? Date.now();
 
-  // Un id de ejecucion por peticion: vincula al ledger de presupuesto si
-  // el CLI lo usa; aqui se propaga para trazabilidad.
-  const args = [
-    "--symbol", symbol,
-    "--as-of-ms", String(asOfMs),
-  ];
-  const result = spawnSync(
-    PYTHON, [SCRIPT, ...args],
-    {
-      cwd: ROOT, encoding: "utf8", timeout: 30_000,
-      maxBuffer: 8 * 1024 * 1024, windowsHide: true,
-      env: {...process.env, PYTHONPATH: ROOT + "/src"},
-    },
-  );
-  let raw = (result.stdout || "").trim();
-  if (!raw && result.status !== 0) raw = (result.stderr || "").trim();
-  if (!raw) {
-    return NextResponse.json({
-      error: result.error ? "PYTHON_SPAWN_FAILED" : "PYTHON_EMPTY_OUTPUT",
-      detail: (result.error?.message ?? result.stderr ?? "").slice(-500),
-    }, {status: 502, headers});
-  }
+  const flowHost = process.env.MARKET_FLOW_HOST ?? DEFAULT_HOST;
+  const flowPort = Number(process.env.MARKET_FLOW_PORT ?? DEFAULT_PORT);
+  const url = `http://${flowHost}:${flowPort}/flow?symbol=${encodeURIComponent(symbol)}&as_of_ms=${asOfMs}`;
+
   try {
-    const parsed = JSON.parse(raw);
-    if (!parsed.ok) {
-      return NextResponse.json({error: parsed.error ?? "FLOW_ERROR",
-        detail: parsed.detail ?? null}, {status: 502, headers});
+    const res = await fetch(url, {cache: "no-store", signal: AbortSignal.timeout(5000)});
+    if (!res.ok) {
+      return NextResponse.json({
+        ok: false,
+        data: emptyBlock(symbol, asOfMs),
+        error: `HTTP_${res.status}`,
+      }, {headers});
     }
-    return NextResponse.json(parsed.data, {headers});
-  } catch {
-    return NextResponse.json({error: "FLOW_BAD_JSON", detail: raw.slice(-300)},
-      {status: 502, headers});
+    const json = await res.json();
+    if (!json.ok) {
+      // El servicio devolvio error: SIN COBERTURA, no rellenar con sinteticos.
+      return NextResponse.json({
+        ok: false,
+        data: emptyBlock(symbol, asOfMs),
+        error: json.error ?? "FLOW_SERVICE_ERROR",
+        detail: json.detail ?? null,
+      }, {headers});
+    }
+    return NextResponse.json({ok: true, data: json.data}, {headers});
+  } catch (err) {
+    // Cualquier error de red/servicio no alcanzado: SIN COBERTURA, sin
+    // sinteticos, live=false, HTTP 200.
+    return NextResponse.json({
+      ok: false,
+      data: emptyBlock(symbol, asOfMs),
+      error: "FLOW_SERVICE_NOT_REACHABLE",
+      detail: err instanceof Error ? err.message : String(err),
+    }, {headers});
   }
 }

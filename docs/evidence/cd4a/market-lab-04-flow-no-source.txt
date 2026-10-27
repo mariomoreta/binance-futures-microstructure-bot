@@ -1,0 +1,289 @@
+uid=9_0 RootWebArea "Binance Futures — Research Dashboard" url="http://127.0.0.1:3020/market-lab"
+  uid=9_1 ignored
+    uid=9_2 ignored
+      uid=9_3 ignored
+        uid=9_4 link "Skip to main content" url="http://127.0.0.1:3020/market-lab#main-content"
+          uid=9_5 "Skip to main content"
+        uid=9_6 banner
+          uid=9_7 link "◆ BINANCE FUTURES" url="http://127.0.0.1:3020/overview"
+            uid=9_8 "◆ BINANCE FUTURES"
+          uid=9_9 ignored
+            uid=9_10 "Dashboard V2 / Market intelligence"
+          uid=9_11 search "Search retained symbols"
+            uid=9_12 textbox "Search symbol"
+              uid=9_13 ignored
+              uid=9_14 generic
+            uid=9_15 button "Search records"
+              uid=9_16 "Search"
+          uid=9_17 ignored
+            uid=9_18 "RESEARCH ONLY"
+        uid=9_19 navigation "Primary navigation"
+          uid=9_20 generic
+            uid=9_21 "TERMINAL"
+          uid=9_22 link "Overview" url="http://127.0.0.1:3020/overview"
+            uid=9_23 "Overview"
+          uid=9_24 link "Movers" url="http://127.0.0.1:3020/movers"
+            uid=9_25 "Movers"
+          uid=9_26 link "Search" url="http://127.0.0.1:3020/search"
+            uid=9_27 "Search"
+          uid=9_28 link "Mercado / Gráficos" url="http://127.0.0.1:3020/market-lab"
+            uid=9_29 "Mercado / Gráficos"
+          uid=9_30 link "Opportunities" url="http://127.0.0.1:3020/opportunities"
+            uid=9_31 "Opportunities"
+          uid=9_32 link "System" url="http://127.0.0.1:3020/system"
+            uid=9_33 "System"
+          uid=9_34 generic
+            uid=9_35 "RESEARCH ARCHIVE"
+          uid=9_36 link "Evidence" url="http://127.0.0.1:3020/historical-research"
+            uid=9_37 "Evidence"
+          uid=9_38 link "Market Archive" url="http://127.0.0.1:3020/market-archive"
+            uid=9_39 "Market Archive"
+          uid=9_40 generic
+            uid=9_41 "LABORATORIOS"
+          uid=9_42 link "Backtest" url="http://127.0.0.1:3020/backtest"
+            uid=9_43 "Backtest"
+          uid=9_44 link "Paper Lab — Simulación" url="http://127.0.0.1:3020/paper-lab-live"
+            uid=9_45 "Paper Lab — Simulación"
+          uid=9_46 link "Replay histórico" url="http://127.0.0.1:3020/paper-lab"
+            uid=9_47 "Replay histórico"
+          uid=9_48 ignored
+            uid=9_49 strong
+              uid=9_50 "OBSERVE & RESEARCH"
+            uid=9_51 "Each panel labels its source."
+            uid=9_52 LineBreak "
+"
+            uid=9_53 "No execution enabled."
+        uid=9_54 main
+          uid=9_55 status "Global run status" atomic live="polite" relevant="additions text"
+            uid=9_56 ignored
+              uid=9_57 ignored
+                uid=9_58 strong
+                  uid=9_59 "LOADING"
+                uid=9_60 ignored
+                  uid=9_61 "VERIFY "
+                  uid=9_62 "…"
+                uid=9_63 ignored
+                  uid=9_64 "ORIGIN "
+                  uid=9_65 "…"
+                uid=9_66 ignored
+                  uid=9_67 "RUN "
+                  uid=9_68 "…"
+              uid=9_69 ignored
+                uid=9_70 ignored
+                  uid=9_71 "START "
+                  uid=9_72 "…"
+                uid=9_73 ignored
+                  uid=9_74 "PLAN "
+                  uid=9_75 "UNKNOWN"
+                uid=9_76 ignored
+                  uid=9_77 "LEFT "
+                  uid=9_78 "UNKNOWN"
+              uid=9_79 ignored
+                uid=9_80 ignored
+                  uid=9_81 "FEED "
+                  uid=9_82 "…"
+                uid=9_83 ignored
+                  uid=9_84 "SUP "
+                  uid=9_85 "…"
+                uid=9_86 ignored
+                  uid=9_87 "SEN "
+                  uid=9_88 "…"
+            uid=9_89 link "System →" url="http://127.0.0.1:3020/system"
+              uid=9_90 "System →"
+          uid=9_91 ignored
+            uid=9_92 ignored
+              uid=9_93 "SOURCE PER PANEL"
+            uid=9_94 ignored
+              uid=9_95 "Canonical recorded evidence; observation dates and unavailable sources are labelled."
+          uid=9_96 status atomic live="polite" relevant="additions text"
+            uid=9_97 "Canonical SQLite"
+            uid=9_98 " · read only · "
+            uid=9_99 "read 2026-10-27T00:54:53.790Z"
+            uid=9_100 " · "
+            uid=9_101 "refresh every 15 s; bounded retry on failure"
+            uid=9_102 " · Read time is not observation time."
+          uid=9_103 ignored
+            uid=9_104 sectionheader
+              uid=9_105 ignored
+                uid=9_106 generic
+                  uid=9_107 "MARKET INTELLIGENCE / BINANCE USD-M · REST PÚBLICO"
+                uid=9_108 heading "Contract explorer · histórico bajo demanda" level="2"
+                  uid=9_109 "Contract explorer · histórico bajo demanda"
+                uid=9_110 paragraph
+                  uid=9_111 "Busca un contrato de Binance USD-M Futures y visualiza su histórico. Solo lectura pública: abrir un símbolo no abre posiciones, no inicia el monitor y no lo añade al universo del bot."
+              uid=9_112 ignored
+                uid=9_113 "catálogo: consultando"
+            uid=9_114 paragraph
+              uid=9_115 strong
+                uid=9_116 "HISTÓRICO + FEED BAJO DEMANDA"
+              uid=9_117 " — datos Binance USD-M Futures: histórico paginado por REST público y, si el servicio local de datos está arrancado, la vela en formación por WebSocket público. Solo se escribe LIVE cuando el backend declara RECIBIENDO con datos frescos del símbolo e intervalo actuales; un socket abierto no basta. El volumen se muestra solo si la fuente lo publica y en su unidad. Las velas adquiridas por REST se guardan únicamente en la caché aislada del explorador; el feed no persiste nada."
+            uid=9_118 form
+              uid=9_119 LabelText
+                uid=9_120 "Símbolo o nombre del contrato"
+                uid=9_121 textbox "Símbolo o nombre del contrato"
+                  uid=9_122 ignored
+                  uid=9_123 generic
+              uid=9_124 button "Buscar contratos" disableable disabled
+                uid=9_125 "Buscar contratos"
+              uid=9_126 button "Actualizar catálogo (1 petición)" description="Refresco acotado del catálogo: 1 petición a /fapi/v1/exchangeInfo" disableable disabled
+                uid=9_127 "Actualizar catálogo (1 petición)"
+            uid=9_128 paragraph live="polite" relevant="additions text"
+            uid=9_129 status atomic live="polite" relevant="additions text"
+              uid=9_130 "Consultando catálogo de contratos…"
+          uid=9_131 region "Flujo agresor (comprador / vendedor)"
+            uid=9_132 heading "Flujo agresor (comprador / vendedor)" level="2"
+              uid=9_133 "Flujo agresor (comprador / vendedor)"
+            uid=9_134 paragraph
+              uid=9_135 "Consultando flujo de transporte local…"
+            uid=9_136 paragraph
+              uid=9_137 "Delta positivo no es senal alcista automatica."
+          uid=9_138 ignored
+            uid=9_139 sectionheader
+              uid=9_140 ignored
+                uid=9_141 "MARKET INTELLIGENCE / SQLITE RESEARCH"
+                uid=9_142 heading "Historical Market Lab" level="1"
+                  uid=9_143 "Historical Market Lab"
+                uid=9_144 paragraph
+                  uid=9_145 "Stored mark-price observations. Session gaps are not filled. Comparisons are descriptive, not investment signals."
+              uid=9_146 link "Market Archive →" url="http://127.0.0.1:3020/market-archive"
+                uid=9_147 "Market Archive →"
+            uid=9_148 generic
+              uid=9_149 "PERSISTED SQLITE · NOT LIVE · Latest stored sample: "
+              uid=9_150 "2026-10-16 03:46:20 UTC"
+              uid=9_151 " · Displayed time windows are measured from the last saved sample, not the current clock."
+            uid=9_152 ignored
+              uid=9_153 LabelText
+                uid=9_154 "Symbol"
+                uid=9_155 combobox "Select symbol" expandable haspopup="menu" value="BTCUSDT"
+                  uid=9_156 MenuListPopup
+                    uid=9_157 ignored
+                      uid=9_158 option "BTCUSDT" selected
+                      uid=9_159 option "ETHUSDT"
+                      uid=9_160 option "SOLUSDT"
+              uid=9_161 LabelText
+                uid=9_162 "Historical window"
+                uid=9_163 combobox "Historical time window" expandable haspopup="menu" value="All saved"
+                  uid=9_164 MenuListPopup
+                    uid=9_165 ignored
+                      uid=9_166 option "All saved" selected
+                      uid=9_167 option "1 hour"
+                      uid=9_168 option "6 hours"
+                      uid=9_169 option "24 hours"
+              uid=9_170 LabelText
+                uid=9_171 "Compare symbol"
+                uid=9_172 combobox "Compare symbol" expandable haspopup="menu" value="ETHUSDT"
+                  uid=9_173 MenuListPopup
+                    uid=9_174 ignored
+                      uid=9_175 option "BTCUSDT"
+                      uid=9_176 option "ETHUSDT" selected
+                      uid=9_177 option "SOLUSDT"
+            uid=9_178 ignored
+              uid=9_179 generic
+                uid=9_180 generic
+                  uid=9_181 "Saved points"
+                uid=9_182 strong
+                  uid=9_183 "100"
+              uid=9_184 generic
+                uid=9_185 generic
+                  uid=9_186 "Last saved mark"
+                uid=9_187 strong
+                  uid=9_188 "81961.5"
+              uid=9_189 generic
+                uid=9_190 generic
+                  uid=9_191 "Observed change"
+                uid=9_192 strong
+                  uid=9_193 "1.271%"
+              uid=9_194 generic
+                uid=9_195 generic
+                  uid=9_196 "Compared symbol change"
+                uid=9_197 strong
+                  uid=9_198 "3.136%"
+            uid=9_199 generic
+              uid=9_200 heading "BTCUSDT — persisted price sequence" level="2"
+                uid=9_201 "BTCUSDT"
+                uid=9_202 " — persisted price sequence"
+              uid=9_203 image "BTCUSDT historical mark price chart"
+              uid=9_204 ignored
+                uid=9_205 ignored
+                  uid=9_206 "2026-10-15 10:25:20 UTC"
+                uid=9_207 ignored
+                  uid=9_208 "Range: "
+                  uid=9_209 "80932.25"
+                  uid=9_210 " — "
+                  uid=9_211 "82303.76"
+                uid=9_212 ignored
+                  uid=9_213 "2026-10-16 03:46:20 UTC"
+            uid=9_214 generic
+              uid=9_215 heading "Symbol comparison · observed change within stored window" level="2"
+                uid=9_216 "Symbol comparison · observed change within stored window"
+              uid=9_217 ignored
+                uid=9_218 ignored
+                  uid=9_219 generic
+                    uid=9_220 "BTCUSDT"
+                  uid=9_221 strong
+                    uid=9_222 "1.271%"
+                  uid=9_223 generic
+                    uid=9_224 "100"
+                    uid=9_225 " saved samples"
+                uid=9_226 ignored
+                  uid=9_227 generic
+                    uid=9_228 "ETHUSDT"
+                  uid=9_229 strong
+                    uid=9_230 "3.136%"
+                  uid=9_231 generic
+                    uid=9_232 "100"
+                    uid=9_233 " saved samples"
+              uid=9_234 paragraph
+                uid=9_235 "These returns are mark-price comparisons over the available points only. Missing periods and sampling differences prevent like-for-like performance conclusions."
+            uid=9_236 region "Stored sample coverage"
+              uid=9_237 heading "Coverage and freshness diagnostics" level="2"
+                uid=9_238 "Coverage and freshness diagnostics"
+              uid=9_239 table
+                uid=9_240 rowgroup
+                  uid=9_241 row
+                    uid=9_242 columnheader "Symbol"
+                      uid=9_243 "Symbol"
+                    uid=9_244 columnheader "Stored samples"
+                      uid=9_245 "Stored samples"
+                    uid=9_246 columnheader "First UTC"
+                      uid=9_247 "First UTC"
+                    uid=9_248 columnheader "Last UTC"
+                      uid=9_249 "Last UTC"
+                    uid=9_250 columnheader "Gap vs newest saved sample"
+                      uid=9_251 "Gap vs newest saved sample"
+                uid=9_252 ignored
+                  uid=9_253 row
+                    uid=9_254 cell "BTCUSDT"
+                      uid=9_255 "BTCUSDT"
+                    uid=9_256 cell "100"
+                      uid=9_257 "100"
+                    uid=9_258 cell "2026-10-15 10:25:20 UTC"
+                      uid=9_259 "2026-10-15 10:25:20 UTC"
+                    uid=9_260 cell "2026-10-16 03:46:20 UTC"
+                      uid=9_261 "2026-10-16 03:46:20 UTC"
+                    uid=9_262 cell "0.0h (snapshot gap)"
+                      uid=9_263 "0.0h (snapshot gap)"
+                  uid=9_264 row
+                    uid=9_265 cell "ETHUSDT"
+                      uid=9_266 "ETHUSDT"
+                    uid=9_267 cell "100"
+                      uid=9_268 "100"
+                    uid=9_269 cell "2026-10-15 10:25:20 UTC"
+                      uid=9_270 "2026-10-15 10:25:20 UTC"
+                    uid=9_271 cell "2026-10-16 03:46:20 UTC"
+                      uid=9_272 "2026-10-16 03:46:20 UTC"
+                    uid=9_273 cell "0.0h (snapshot gap)"
+                      uid=9_274 "0.0h (snapshot gap)"
+                  uid=9_275 row
+                    uid=9_276 cell "SOLUSDT"
+                      uid=9_277 "SOLUSDT"
+                    uid=9_278 cell "100"
+                      uid=9_279 "100"
+                    uid=9_280 cell "2026-10-15 10:25:20 UTC"
+                      uid=9_281 "2026-10-15 10:25:20 UTC"
+                    uid=9_282 cell "2026-10-16 03:46:20 UTC"
+                      uid=9_283 "2026-10-16 03:46:20 UTC"
+                    uid=9_284 cell "0.0h (snapshot gap)"
+                      uid=9_285 "0.0h (snapshot gap)"
+      uid=9_286 generic
+        uid=9_287 alert atomic live="assertive" relevant="additions text"

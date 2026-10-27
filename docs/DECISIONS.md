@@ -3092,6 +3092,59 @@ Continuación de 2ffdede con cuatro cierres del bloque indicadores: verificació
    sobre `3c2e7ab`). Dashboard en `127.0.0.1:3020` con env limpio, servicio
    de datos detenido (8792 sin escuchas).
 
+## 2026-10-26 Correccion flujo comprador/vendedor market-flow/v1 (commit f98e8e1)
+
+**Retirada la simulacion sintetica del camino canonico.** `scripts/market_flow.py` y el BFF
+`frontend/src/app/api/v1/market-flow/route.ts` ya no generan operaciones ficticias.
+Sin fuente conectada, el endpoint devuelve HTTP 200 con `coverage:
+NO_COVERAGE_BEFORE_FIRST_EVENT`, `live: false`, `trades_total: 0`,
+`freshness_ms: null` y valores desconocidos (never 0). Las fixtures solo se
+activan en el entorno de prueba con origen `SIMULATED` explicito; nunca se
+presentan como Binance LIVE.
+
+**Integracion incremental real con transporte local.**
+Nuevo `src/microstructure_probe/market_flow_service.py`: servidor SSE local
+que mantiene una **instancia compartida de FlowEngine** en memoria y recibe
+eventos aggTrade del transporte local via POST `/flow` (cuerpo JSON con
+`symbol`, `event_id`, `event_ms`, `price`, `quantity`, `buyer_is_maker`).
+Publica actualizaciones incrementales al panel via SSE `/flow/stream`.
+`scripts/market_flow_service.py` arranca/para el servicio. No se reconstruye
+flujo desde OHLC ni se crea otro gestor por peticion.
+
+**Identidad y deduplicacion.**
+Cada evento transporta `symbol + event_id`. Mismo `event_id` repetido: no
+suma volumen (contado como `events_duplicate`, bloqueado antes del engine).
+Identificadores distintos con mismo timestamp: ambos cuentan. Eventos tardios
+(`event_ms < newest seen`) se descartan (`dropped_late`). Nunca se afirma que
+el WS no repita: la deduplicacion es por `event_id`.
+
+**Frontend.**
+`frontend/src/components/market-lab/MarketFlowPanel.tsx` se conecta al SSE
+del servicio de flujo, sincroniza identidad/tiempo/cobertura con el grafico,
+descarta respuestas/eventos antiguos al cambiar simbolo (symbolRef + cierre
+de EventSource previo), y la frescura caduca tras 60s sin eventos
+(`setFreshnessStale`, `live=false`). Valores al cursor requieren cobertura
+registrada; donde no exista, UNKNOWN.
+
+**Pruebas de aceptacion (10/10):**
+1. Ruta canonica sin fuente: ninguno valor sintético ni LIVE (PASS).
+2. Dos eventos locales nuevos actualizan sin recargar (PASS).
+3. Duplicado no altera acumulados (PASS).
+4. Igual timestamp con IDs distintos cuenta ambos (PASS).
+5. Cambio de simbolo durante respuesta pendiente no mezcla datos (PASS).
+6. Desconexion retira LIVE (frescura caduca) (PASS).
+7. Cerrar vista libera su consumidor (PASS).
+Adicionalmente: `tests/test_market_flow.py` 10/10; `test_flow.py` 46/46
+(sin regresion); tsc 0; eslint 0; next build OK.
+
+**Dashboard canonico restaurado.** Servidor `next start -p 3020` en
+`127.0.0.1:3020` con el nuevo build (market-lab y /api/v1/market-flow
+HTTP 200, SIN COBERTURA sin fuente). Sin monitor, sin Binance publico,
+sin paper prospectivo, sin ordenes, sin pagos, sin movil.
+Evidencia: `docs/evidence/cd4a/EVIDENCE_PRECISIONES.md`,
+`docs/evidence/cd4a/market-lab-04-flow-no-source.png/.txt`.
+
+
 ## 2026-10-26 Chrome DevTools MCP oficial como diagnostico del dashboard (commit 5aabcbb) + flujo comprador/vendedor market-flow/v1
 
 1. **MCP de proyecto, no global.** `opencode.json` (nivel de proyecto,
