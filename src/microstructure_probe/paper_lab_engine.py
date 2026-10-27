@@ -1944,16 +1944,24 @@ def session_to_public_dict(
     if at_ms is None:
         at_ms = -1
 
-    # Velas conocidas en T (open disponible).
-    known_candles = [c for c in state.candles if c.open_time_ms <= at_ms]
+    # Todas las velas de operación se publican; el frontend filtra por
+    # open_time_ms para el gráfico. open solo se publica cuando su
+    # open_time_ms <= at_ms (antes no es conocido); high/low/close solo cuando
+    # el cierre es conocido en T. Nunca se filtra información futura: open de
+    # una vela cuya apertura aún no ocurrió se publica como None.
+    known_candles = list(state.candles)
 
     def _public_candle(c: PaperCandle) -> Dict[str, Any]:
         entry: Dict[str, Any] = {
             "open_time_ms": c.open_time_ms,
-            "open": c.open,
             "available_at": c.available_at,
             "received_at": c.received_at,
         }
+        # El open de una vela solo se conoce en su open_time_ms.
+        if c.open_time_ms <= at_ms:
+            entry["open"] = c.open
+        else:
+            entry["open"] = None
         # Solo publicar OHLC si la vela está plenamente conocida en T.
         if c.close_time_ms is not None and c.close_time_ms <= at_ms:
             entry["high"] = c.high

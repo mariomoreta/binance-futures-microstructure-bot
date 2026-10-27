@@ -3764,3 +3764,83 @@ serÃ­a UNKNOWN (no se puede determinar si se cumpliÃ³ o no), no PASS.
 - `test_budget_exceeded_fail_global`: presupuesto excedido → FAIL global
 - `test_local_transport_always_ok`: transporte local → siempre OK
 - `test_three_distinct_metrics`: las tres mÃ©tricas son independientes
+## Sesión de ingeniería — transporte local (2026-10-26, HEAD 365f7eb)
+
+**Control de sesión en el dashboard existente** (/market-lab). Botón visible
+"Iniciar / Detener sesión" (data-testid tn-iniciar-sesion /
+tn-detener-sesion). Abrir el dashboard NO inicia nada; cada acción es un
+POST acotado al BFF y el backend es la fuente de verdad. Reutiliza el
+controlador canónico (scripts/paper_lab_session.py +
+src/microstructure_probe/paper_lab_engine.py con mecánica de
+acktest_offline.run_backtest) y los servicios existentes (BFF
+pi/v1/paper-lab/sessions*, pi/v1/market-series sobre caché local
+client=None, 0 upstream). Fuente LOCAL SIMULADA: UN token candidato
+(MINAUSDT 1m) + BTC como contexto (BTCUSDT 1m), ambos de caché local;
+0 llamadas a Binance, ventana no abierta ni solicitada.
+
+**Seis paneles separados:** estado de la sesión; fuente LOCAL SIMULADA;
+recepción/frescura de datos (reloj T, cursor, velas conocidas); evaluador
+(regla ENGINEERING-MINA-1M-v1, decisión en T, motivo/evidencia); posición
+paper (entrada/stop/marca/P&L no realizado); último error o motivo de
+abstención.
+
+**Vista de operación:** velas incrementales + reloj de sesión; candidato y
+motivo de decisión; entrada pendiente vs fill ejecutado; entrada/stop/salida
+en el gráfico (PaperChart); posición abierta/cerrada y motivo; P&L no
+realizado/realizado, costes y funding UNKNOWN; historial de eventos y
+exportación JSON/CSV. Todos los paneles comparten session_id, símbolo,
+tiempos y config_hash.
+
+**Regla de ingeniería:** ENGINEERING-MINA-1M-v1, explícita, versionada y
+separada de cualquier estrategia aprobada; caso de ingeniería, no selección
+por rentabilidad; el backend decide con evidencia en T; el navegador no
+envía decisiones ni estado económico como autoridad.
+
+**Política de parada:** detener NO inventa cierre de posición; congela la
+sesión (detenida) y deja la posición tal cual (sin salida inventada, sin
+comisión de salida, sin realizado); se recupera por get tras recarga sin
+duplicar entrada ni cierre.
+
+**Recarga:** el estado autoritativo vive en paper-lab-sessions/ (atómico,
+control de revisión); el navegador solo guarda el puntero session_id
+(never estado económico) y recupera vía GET
+/api/v1/paper-lab/sessions/[id].
+
+**Recursos:** arranque/parada propios del BFF (spawnSync por acción),
+sin procesos huérfanos, sin afectar procesos ajenos; servicio de datos local
+(market-stream) permanece detenido por defecto.
+
+**Aceptación (A–E) demostrada frente al backend real:**
+A) iniciar → recibir datos → evaluar (ENTRADA_SIMULADA) → entrada automática
+(fill por un_backtest) → gestión (pasos de marca) → cierre por regla
+(horizonte) → exportación JSON/CSV;
+B) evidencia insuficiente → SIN_ENTRADA/DESCARTADO, sin posición;
+C) fin de datos → sin nuevas entradas, estado visible, posición no cerrada
+inventada (open_at_end);
+D) recarga → recuperación del mismo estado (session_id/config_hash
+idénticos) sin duplicar entrada ni cierre;
+E) detener → sesión detenida, recursos propios liberados, sin afectar
+procesos ajenos. Transporte local aislado, 0 peticiones Binance, cadena
+dashboard → BFF → Python → dashboard.
+
+**Pruebas:** 
+px tsc --noEmit 0; 
+px eslint 0 en archivos nuevos;
+
+px vitest run src/test/paper-lab-live-api.test.ts 9/9;
+python run_tests.py -q 1290 OK / 2 skipped; 
+ext build OK.
+E2E de navegador real (Chromium headless) sobre
+http://127.0.0.1:3020/market-lab: flujo A completo verificado
+(iniciar → ENTRADA_SIMULADA → Entrar → abierta → pasos de gestión →
+cerrada por horizonte → exportación JSON), recarga recupera estado idéntico
+sin duplicar entrada ni cierre, detener congela sin cerrar, B (abstención
+SIN_ENTRADA/DESCARTADO, sin posición) y C (fin de datos sin cierre
+inventado) verificadas vía HTTP; D y E con caveat de timing del navegador
+(ver notas). Nota: los clics de "Paso a paso" en el navegador son
+intermitentes (timing React/Playwright); el camino backend → BFF → Python
+está verificado por HTTP (crear → evaluar → step ×31 → cerrada por horizonte:
+CERRADA en paso 31: status=cerrada, reason=horizon,
+exit_px=0.06251, realized_net=-10.00).
+
+**Última actualización:** 2026-10-26.

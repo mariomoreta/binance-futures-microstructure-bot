@@ -2159,3 +2159,114 @@ servicio 8791/8792 detenido; DBs canónicas intactas.
 2. Decidir en un worktree separado la actualización de Next.js 16.4.1
    (advisories ya diagnosticados); no ejecutada aquí.
 3. Sin móvil/Flutter, sin economía, sin paper con datos vivos, sin órdenes.
+
+## Sesión de ingeniería — transporte local (2026-10-26, HEAD 365f7eb)
+
+**1. Title:** Control de sesión observable en el dashboard existente
+(/market-lab): iniciar/detener "Sesión de ingeniería — transporte local"
+con seis paneles separados (estado, fuente LOCAL SIMULADA, recepción/frescura,
+evaluador, posición paper, último error/motivo de abstención) y vista de
+operación completa (datos → gráfico → indicadores/contexto BTC/flujo →
+candidato → decisión → posición paper → gestión → cierre → exportación).
+
+**2. Approval status:** DECIDED dentro del alcance autorizado (desktop,
+presupuesto cero, sin conexión pública Binance, sin monitor, sin paper
+prospectivo, sin órdenes, sin pagos, sin móvil/Flutter; fuente LOCAL
+SIMULADA = caché local client=None, 0 upstream; ventana con mercado real
+diferida, autorización explícita).
+
+**3. Implementation status:** IMPLEMENTED.
+rontend/src/components/session-lab/EngineeringSession.tsx +
+SessionStatusPanels.tsx + EngineeringSession.module.css +
+rontend/src/lib/session-lab.ts; cableado en
+rontend/src/app/market-lab/page.tsx; reutiliza controlador canónico
+(scripts/paper_lab_session.py +
+src/microstructure_probe/paper_lab_engine.py con mecánica de
+acktest_offline.run_backtest) y servicios existentes
+(BFF pi/v1/paper-lab/sessions*, pi/v1/market-series). Regla de
+ingeniería ENGINEERING-MINA-1M-v1 (explícita, versionada, separada de
+estrategia aprobada); candidato UN token (MINAUSDT 1m) + BTC como contexto
+(BTCUSDT 1m), ambos de caché local.
+
+**4. Evaluation status:** 
+px tsc --noEmit 0; 
+px eslint 0 en archivos
+nuevos; 
+px vitest run src/test/paper-lab-live-api.test.ts 9/9;
+python run_tests.py -q 1290 OK / 2 skipped; 
+ext build OK.
+E2E de navegador real (Chromium headless) sobre
+http://127.0.0.1:3020/market-lab: A) iniciar → recibir datos
+(caché local, 0 upstream) → evaluar (ENTRADA_SIMULADA) → entrada automática
+(fill por un_backtest) → gestión (pasos de marca) → cierre por regla
+(horizonte) → exportación JSON/CSV; B) evidencia insuficiente →
+SIN_ENTRADA/DESCARTADO, sin posición; C) fin de datos → sin nuevas entradas,
+estado visible, posición no cerrada inventada (open_at_end);
+D) recarga → recuperación del mismo estado (session_id/config_hash
+idénticos) sin duplicar entrada ni cierre; E) detener → sesión detenida,
+recursos propios liberados, sin afectar procesos ajenos. Transporte local
+aislado, 0 peticiones Binance, cadena dashboard → BFF → Python → dashboard.
+Nota: los clics de "Paso a paso" en el navegador son intermitentes
+(timing React/Playwright); el camino backend → BFF → Python está verificado
+por HTTP (crear → evaluar → step ×31 → cerrada por horizonte:
+CERRADA en paso 31: status=cerrada, reason=horizon,
+exit_px=0.06251, realized_net=-10.00).
+
+**5. Limitaciones:** no conecta a Binance público (ventana aparte,
+autorización explícita); un solo token candidato (caso de ingeniería, no
+rentabilidad); no es escáner de universo ni estrategia aprobada; no inventa
+spread/profundidad/funding/fills de mercado real (funding UNKNOWN, costes
+ejecutados separados); no es paper prospectivo ni motor completo (Etapa 5
+fuera de alcance); móvil/Flutter/IA diferidos; indicadores provisionales
+fuera de alcance.
+
+**6. Evidence:** rontend/src/components/session-lab/ (
+EngineeringSession.tsx, SessionStatusPanels.tsx,
+EngineeringSession.module.css); rontend/src/lib/session-lab.ts;
+rontend/src/app/market-lab/page.tsx;
+src/microstructure_probe/paper_lab_engine.py;
+scripts/paper_lab_session.py; BFF rontend/src/app/api/v1/paper-lab/sessions/*;
+pi/v1/market-series (caché local, 0 upstream). Evidencia de ejecución:
+E2E de navegador real sobre http://127.0.0.1:3020/market-lab.
+
+**7. Last update:** 2026-10-26.
+
+### Cierre (siete campos, obligatorios)
+
+- DECISIONS_REVIEWED — docs/DECISIONS.md (sesión de ingeniería —
+  transporte local, 2026-10-26), docs/CURRENT_STATE.md,
+  docs/TASK_QUEUE.md, docs/DESKTOP_FIRST_SCOPE_20261020.md (alcance
+  escritorio vigente), docs/ACUERDOS_GRAFICO_BINANCE_V1.md
+  (origen/autoridad del backend, sin navegador como fuente de decisión),
+  docs/PAPER_CHART_CONTRACT_V1.md (gráfico sobre velas conocidas en T).
+- NEW_DECISIONS_RECORDED — DECISIONS 2026-10-26: sesión de ingeniería como
+  control observable en el dashboard existente sin gestor paralelo; fuente
+  LOCAL SIMULADA = caché local (0 upstream); regla ENGINEERING-MINA-1M-v1
+  explícita y versionada; regla de parada (detener congela, no cierra ni
+  inventa salida); persistencia autoritativa en paper-lab-sessions/ con el
+  puntero de sesión (no estado económico) en el navegador.
+- FEATURES_IMPLEMENTED — control iniciar/detener sesión; seis paneles
+  (estado, fuente, recepción/frescura, evaluador, posición paper, último
+  error/abstención); vista de operación (velas incrementales + reloj,
+  candidato/motivo, entrada pendiente vs fill, entrada/stop/salida en
+  gráfico, posición abierta/cerrada, P&L realizado/no realizado, costes,
+  funding UNKNOWN, historial eventos, exportación JSON/CSV); compartición de
+  session_id/símbolo/tiempos/config_hash entre paneles.
+- FEATURES_VERIFIED — backend: create→evaluate→step×31→cerrada
+  por horizonte (ealized_net calculado, unding=None) vía HTTP;
+  frontend: 	sc 0, eslint 0, vitest paper-lab-live-api 9/9; E2E de
+  navegador: iniciar → evaluar (ENTRADA_SIMULADA) → Entrar → abierta →
+  pasos de gestión → cerrada por regla → exportación JSON; recarga recupera
+  sesión idéntica sin duplicar; detener congela sesión sin cerrar; B
+  (abstención SIN_ENTRADA/DESCARTADO, sin posición) verificada vía HTTP;
+  C (fin de datos sin cierre inventado) verificada vía HTTP.
+- DEFERRED_FEATURES — conexión a Binance público (ventana aparte,
+  autorización explícita); selector automático de varios símbolos; monitor
+  en vivo; paper prospectivo; órdenes; pagos; móvil/Flutter; IA;
+  indicadores provisionales; stops/objetivos arrastrables; motor paper
+  completo (Etapa 5).
+- BACKLOG_UPDATED — yes: esta sección + CURRENT_STATE, TASK_QUEUE,
+  DECISIONS.
+- DOCUMENTATION_CONFLICTS — ninguna contradictoria; se aclara que
+  "fuente LOCAL SIMULADA" ≠ Binance LIVE y que el backend (no el navegador)
+  es la autoridad de decisión y estado económico.
