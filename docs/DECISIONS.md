@@ -3092,3 +3092,53 @@ Continuación de 2ffdede con cuatro cierres del bloque indicadores: verificació
    sobre `3c2e7ab`). Dashboard en `127.0.0.1:3020` con env limpio, servicio
    de datos detenido (8792 sin escuchas).
 
+## 2026-10-26 Chrome DevTools MCP oficial como diagnostico del dashboard (commit 5aabcbb) + flujo comprador/vendedor market-flow/v1
+
+1. **MCP de proyecto, no global.** `opencode.json` (nivel de proyecto,
+   formato nativo de OpenCode `"mcp": {...}`) registra el servidor
+   `chrome-devtools-mcp@1.12.0` (version estable fijada). Perfil Chrome
+   dedicado al dashboard (`.chrome-devtools-mcp-profile/`, ignorado en
+   `.gitignore`, sin sesiones personales). Flags oficiales:
+   `--no-usage-statistics`, `--no-performance-crux` (mas variables de
+   entorno equivalentes), `--allowed-url-pattern` restringido a
+   `127.0.0.1:*/*` y `localhost:*/*` (solo controla el navegador, no el
+   backend), viewport `1280x720` (desktop), `executable-path` a Chrome
+   estable 155. Cero dependencias en el runtime del dashboard; ninguna
+   configuracion global tocada; convive con Playwright.
+2. **Conexion real verificada.** `list_pages` lanza Chrome con
+   `about:blank`; 32 herramientas MCP expuestas. Recorrido acotado sobre
+   `http://127.0.0.1:3020/market-lab`: BTCUSDT buscado y seleccionado;
+   identidad e indicadores inspeccionados (100 samples, mark 81961.5,
+   +1.271%); DOM, consola, red (167 req, 0 hosts publicos) y capturas en
+   `docs/evidence/cd4a/`. `/paper-lab-live` y `/backtest` abiertos sin
+   ejecutar trabajos. Revision visual PENDIENTE (sin proveedor de vision).
+3. **Flujo comprador/vendedor market-flow/v1 (backend como autoridad,
+   contrato versionado).** Reutiliza `flow.py` (P1-06) sin modificarlo;
+   nuevo `src/microstructure_probe/market_flow.py` expone el contrato
+   `market-flow/v1` (`compute_flow_block`) y `scripts/market_flow.py`
+   CLI local (transporte local, datos simulados, sin Binance publico).
+   Nuevo BFF `frontend/src/app/api/v1/market-flow/route.ts` y panel
+   `frontend/src/components/market-lab/MarketFlowPanel.tsx` en
+   `/market-lab` (sincronizado con el grafico, delta positivo NO es
+   senal alcista automatica). Cambio de simbolo limpia datos anteriores
+   (useEffect con symbol como dependencia; backend stateless por peticion
+   via spawnSync). Sin cobertura antes del primer evento de captura
+   (coverage NINGUNA, nunca ceros ni valores inventados). buyer-is-maker
+   verificado (m=true -> agresor SELL, m=false -> agresor BUY);
+   deduplicacion (mismo E = nuevo volumen); eventos tardios descartados
+   (dropped_late). Indicadores y contexto BTC preservados intactos.
+   Pruebas: `tests/test_market_flow.py` 10/10; `test_flow.py` 46/46
+   (sin regresion). tsc 0, eslint 0.
+4. **Plano backend sin publicas: UNKNOWN.** La allowlist del navegador
+   solo controla al navegador (verificado: 0 hosts publicos en red). El
+   backend tiene ledger (`market_fetch_ledger`) + guard
+   (`LedgerAttemptGate`, `reserve_fetch_attempt`,
+   `UpstreamBudgetExceeded`) implementados, pero sin monitoreo directo
+   del trafico de backend no se puede afirmar "cero publicas en esta
+   carga" — declarado UNKNOWN, no cero. Evidencia en
+   `docs/evidence/cd4a/EVIDENCE_PRECISIONES.md`.
+5. **Dashboard canonico restaurado.** Servidor `next start -p 3020` en
+   `127.0.0.1:3020` con el nuevo build (market-lab y /api/v1/market-flow
+   HTTP 200). Sin monitor, sin Binance publico, sin paper prospectivo,
+   sin ordenes, sin pagos, sin movil.
+
