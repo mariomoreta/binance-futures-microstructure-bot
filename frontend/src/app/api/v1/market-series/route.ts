@@ -65,15 +65,18 @@ export async function GET(req: Request) {
   if (pageLimit === null || (pageLimit !== undefined && (pageLimit < 50 || pageLimit > 1000))) {
     return NextResponse.json({error: "INVALID_PAGE_LIMIT"}, {status: 400, headers});
   }
+  // `read_only=1` es la opcion de solo lectura controlada por backend para la
+  // sesion de ingeniería/replay sobre caché: fuerza --no-fetch (cero upstream,
+  // solo lo almacenado, ausencia -> motivo sin activar fetch). Sin ella, el
+  // explorador normal conserva la adquisición bajo demanda sujeta a los
+  // presupuestos existentes (ledger compartido, pages <= 2, 30 req/min).
+  const readOnly = params.get("read_only") === "1";
   const args = [
     "--action", "series",
     "--symbol", symbol,
     "--interval", interval,
     "--source", source,
-    // Fuente solo lectura: nunca consultar Binance publico, solo lo
-    // almacenado en cache local. Cualquier ausencia devuelve motivo, sin
-    // activar fetch.
-    "--no-fetch",
+    ...(readOnly ? ["--no-fetch"] : []),
     "--pages", String(pages ?? 1),
     "--page-limit", String(pageLimit ?? 300),
     // Un id de ejecucion por peticion: vincula las filas del ledger de

@@ -1,7 +1,7 @@
 "use client";
 
 import {
-  useCallback, useEffect, useState,
+  useCallback, useEffect, useRef, useState,
 } from "react";
 import {
   evaluateSessionApi, exitSessionApi, formatMoneyPL,
@@ -68,6 +68,12 @@ export default function EngineeringSession({
   // igualdad automatica. Al cambiar de prefijo se conserva.
   const [entryPxFixed, setEntryPxFixed] = useState<number | null>(null);
 
+  // clock_ms del estado autoritativo aplicado por última vez. Se usa para
+  // detectar cambios de T (incluido Entrar) y evitar mostrar valores de un T
+  // anterior como si fueran actuales mientras se recarga el contexto.
+  const lastClockRef = useRef<number | null>(null);
+  const [refreshing, setRefreshing] = useState(false);
+
   const [requestIdCounter, setRequestIdCounter] = useState(0);
   const nextRequestId = useCallback(() => {
     const id = "eng-req-" + Date.now() + "-" + requestIdCounter;
@@ -77,10 +83,15 @@ export default function EngineeringSession({
 
   // Pide indicadores / contexto BTC / flujo al backend con el reloj T de la
   // sesion: solo velas conocidas en T, sin futuros. Fuente solo lectura
-  // (--no-fetch: cero upstream).
-  const loadContextForClock = useCallback(async (atMs: number | null) => {
+  // (--no-fetch: cero upstream). symbol/interval se toman de la identidad
+  // autoritativa (config de la sesion recuperada) cuando se pasan; de las
+  // props del componente para una sesion nueva.
+  const loadContextForClock = useCallback(async (atMs: number | null,
+    symbolOverride?: string, intervalOverride?: string) => {
     if (atMs == null) return;
-    const series = await fetchMarketSeries(symbol, interval, bars, atMs);
+    const sym = symbolOverride ?? symbol;
+    const ivl = intervalOverride ?? interval;
+    const series = await fetchMarketSeries(sym, ivl, bars, atMs, true);
     if (!series) return;
     const receivedAt = Date.now();
     const all = marketCandlesToPaper(series.candles, receivedAt);
@@ -97,38 +108,64 @@ export default function EngineeringSession({
     });
   }, [symbol, interval, bars, prefixOption]);
 
+  // Actualizacion centralizada de la vista tras cada respuesta autoritativa.
+  // Si clock_ms cambia respecto del T aplicado (incluido Entrar), descarta el
+  // contexto anterior (no se muestran valores de otro T como actuales) y
+  // recarga indicadores / contexto BTC / flujo para el nuevo T con la
+  // identidad autoritativa de la sesion (config.symbol / config.interval).
+  const applyAuthoritative = useCallback(async (next: PaperSessionState | null) => {
+    if (!next) {
+      setState(null);
+      setMarketSeries(null);
+      lastClockRef.current = null;
+      setRefreshing(false);
+      return;
+    }
+    const prevClock = lastClockRef.current;
+    const clockChanged = prevClock !== null && prevClock !== next.clock_ms;
+    const initialLoad = prevClock === null;
+    if (clockChanged) {
+      setRefreshing(true);
+      setMarketSeries(null); // valores de T anterior no se muestran como actuales
+    }
+    setState(next);
+    lastClockRef.current = next.clock_ms ?? null;
+    try {
+      if ((initialLoad || clockChanged) && next.clock_ms != null) {
+        await loadContextForClock(next.clock_ms, next.config.symbol, next.config.interval);
+      }
+    } finally {
+      setRefreshing(false);
+    }
+  }, [loadContextForClock]);
+
   // Recupera el estado autoritativo tras recarga (incluida posicion abierta)
-  // y reconstruye el contexto de mercado con el reloj T de la sesion.
+  // y reconstruye el contexto de mercado con el reloj T de la sesion. La
+  // identidad (simbolo/intervalo) se toma del config de la sesion recuperada,
+  // nunca de las propiedades por defecto del componente.
   const recoverAuthoritative = useCallback(async (sessionId: string) => {
     const loaded = await getSessionApi(sessionId);
     if (loaded.ok && loaded.data) {
-      setState(loaded.data);
+      await applyAuthoritative(loaded.data);
       setStarted(true);
       setError(null);
-      await loadContextForClock(loaded.data.clock_ms);
       return loaded.data;
     }
     setError(loaded.error ?? "SESSION_LOAD_FAILED");
     return null;
-  }, [loadContextForClock]);
+  }, [applyAuthoritative]);
 
   useEffect(() => {
     const stored = typeof localStorage !== "undefined"
       ? localStorage.getItem(SESSION_ID_STORAGE_KEY)
       : null;
     if (stored && !state) {
-      getSessionApi(stored).then((loaded) => {
-        if (loaded.ok && loaded.data) {
-          setState(loaded.data);
-          setStarted(true);
-          setError(null);
-          void loadContextForClock(loaded.data.clock_ms);
-        } else {
-          setError(loaded.error ?? "SESSION_LOAD_FAILED");
-        }
-      }).catch(() => { /* persistencia opcional */ });
+      const handle = setTimeout(() => {
+        void recoverAuthoritative(stored).catch(() => { /* persistencia opcional */ });
+      }, 0);
+      return () => clearTimeout(handle);
     }
-  }, [state, loadContextForClock]);
+  }, [state, recoverAuthoritative]);
 
   const startSession = useCallback(async () => {
     setLoading(true);
@@ -207,16 +244,16 @@ export default function EngineeringSession({
         setLoading(false);
         return;
       }
-      setState(evaluated.data);
-
-      await loadContextForClock(clock);
+      // applyAuthoritative (carga inicial) reconstruye indicadores/contexto
+      // para el reloj T con la identidad autoritativa de la sesion.
+      await applyAuthoritative(evaluated.data);
       setStarted(true);
     } catch (exc: unknown) {
       setError(exc instanceof Error ? exc.message : String(exc));
     } finally {
       setLoading(false);
     }
-  }, [symbol, interval, bars, prefixOption, entryPxFixed, loadContextForClock, nextRequestId]);
+  }, [symbol, interval, bars, prefixOption, entryPxFixed, applyAuthoritative, nextRequestId]);
 
   const changePrefix = useCallback(async (next: "A" | "B") => {
     if (!state) return;
@@ -281,15 +318,17 @@ export default function EngineeringSession({
         setLoading(false);
         return;
       }
-      setState(evaluated.data);
-      await loadContextForClock(clock);
+      // Cambio de prefijo: mismo T pero distinto corte de contexto; se
+      // reconstruye el contexto con la nueva cantidad de velas de contexto.
+      await applyAuthoritative(evaluated.data);
+      await loadContextForClock(evaluated.data.clock_ms ?? null, symbol, interval);
       setStarted(true);
     } catch (exc: unknown) {
       setError(exc instanceof Error ? exc.message : String(exc));
     } finally {
       setLoading(false);
     }
-  }, [symbol, interval, bars, entryPxFixed, nextRequestId, loadContextForClock, state]);
+  }, [symbol, interval, bars, entryPxFixed, nextRequestId, applyAuthoritative, loadContextForClock, state]);
 
   const stopSession = useCallback(async () => {
     if (!state) return;
@@ -321,11 +360,11 @@ export default function EngineeringSession({
         setLoading(false);
         return;
       }
-      if (result.data) setState(result.data);
+      if (result.data) await applyAuthoritative(result.data); // Entrar avanza T: contexto al nuevo reloj
     } finally {
       setLoading(false);
     }
-  }, [state, nextRequestId, recoverAuthoritative]);
+  }, [state, nextRequestId, applyAuthoritative, recoverAuthoritative]);
 
   const handleStep = useCallback(async () => {
     if (!state) return;
@@ -340,11 +379,8 @@ export default function EngineeringSession({
         return;
       }
       if (result.data) {
-        setState(result.data);
+        await applyAuthoritative(result.data); // Paso avanza T: contexto al nuevo reloj
         const advanced = result.data as PaperSessionState;
-        // Al avanzar, el reloj T de la sesion se mueve: reconstruir indicadores
-        // y contexto con el nuevo T (solo datos conocidos en T, sin futuros).
-        await loadContextForClock(advanced.clock_ms ?? null);
         if (advanced.status === "sin_iniciar" || advanced.status === "en_espera") {
           const re = await evaluateSessionApi(
             advanced.session_id, null, null, null,
@@ -354,15 +390,14 @@ export default function EngineeringSession({
             setError(re.error ?? "REEVALUATE_FAILED");
             if (re.status === 409) await recoverAuthoritative(advanced.session_id);
           } else if (re.data) {
-            setState(re.data);
-            await loadContextForClock(re.data.clock_ms ?? null);
+            await applyAuthoritative(re.data);
           }
         }
       }
     } finally {
       setLoading(false);
     }
-  }, [state, nextRequestId, recoverAuthoritative, loadContextForClock]);
+  }, [state, nextRequestId, applyAuthoritative, recoverAuthoritative]);
 
   const handleExit = useCallback(async () => {
     if (!state) return;
@@ -376,14 +411,11 @@ export default function EngineeringSession({
         setLoading(false);
         return;
       }
-      if (result.data) {
-        setState(result.data);
-        await loadContextForClock(result.data.clock_ms ?? null);
-      }
+      if (result.data) await applyAuthoritative(result.data);
     } finally {
       setLoading(false);
     }
-  }, [state, nextRequestId, recoverAuthoritative, loadContextForClock]);
+  }, [state, nextRequestId, applyAuthoritative, recoverAuthoritative]);
 
   const handleRestart = useCallback(async () => {
     if (!state) return;
@@ -398,14 +430,13 @@ export default function EngineeringSession({
         return;
       }
       if (result.data) {
-        setState(result.data);
+        await applyAuthoritative(result.data); // reinicio reestablece T
         localStorage.setItem(SESSION_ID_STORAGE_KEY, result.data.session_id);
-        await loadContextForClock(result.data.clock_ms);
       }
     } finally {
       setLoading(false);
     }
-  }, [state, nextRequestId, recoverAuthoritative, loadContextForClock]);
+  }, [state, nextRequestId, applyAuthoritative, recoverAuthoritative]);
 
   const handleDecide = useCallback(async (decision: PaperCandidateDecision) => {
     if (!state) return;
@@ -422,11 +453,11 @@ export default function EngineeringSession({
         setLoading(false);
         return;
       }
-      if (result.data) setState(result.data);
+      if (result.data) await applyAuthoritative(result.data);
     } finally {
       setLoading(false);
     }
-  }, [state, nextRequestId, recoverAuthoritative]);
+  }, [state, nextRequestId, applyAuthoritative, recoverAuthoritative]);
 
   // sessionReady es un objeto combinado que TypeScript puede reducir a
   // no-nulo dentro de la rama correspondiente del condicional JSX.
@@ -487,7 +518,7 @@ const vForReady = state ? sessionView(state) : null;
           <select
             value={prefixOption}
             onChange={(e) => changePrefix((e.target.value as "A" | "B") ?? "A")}
-            disabled={loading || !!sessionReady}
+            disabled={loading || !!sessionReady || refreshing}
             className={s.prefixSelect}
           >
             <option value="A">A (admite entrada)</option>
@@ -527,9 +558,16 @@ const vForReady = state ? sessionView(state) : null;
         </div>
       )}
 
-      {sessionReady ? (
+      {state ? (
         <div>
-          <SessionStatusPanels
+          {refreshing && marketSeries == null ? (
+            <p className={s.note} role="status">
+              Actualizando indicadores y contexto al reloj T de la sesión…
+            </p>
+          ) : null}
+          {sessionReady ? (
+            <div>
+              <SessionStatusPanels
             state={sessionReady.state}
             marketSymbol={sessionReady.state.config.symbol}
             source="LOCAL SIMULADA - cache local (klines), client=None, 0 upstream"
@@ -703,6 +741,12 @@ const vForReady = state ? sessionView(state) : null;
             </section>
           </div>
 
+          </div>
+          ) : (
+            <p className={s.note}>
+              Contexto de mercado sin cobertura para el reloj T actual (UNKNOWN).
+            </p>
+          )}
           <SessionPersistence
             sessions={[]}
             onLoad={recoverAuthoritative}

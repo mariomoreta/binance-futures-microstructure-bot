@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Evidencia de navegador — sesión de ingeniería (transporte local)</title>
+<style>
+  body{font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;margin:24px;background:#0b1016;color:#e7edf3}
+  h1{font-size:18px;margin-bottom:8px}
+  .meta{font-size:12px;color:#94a3b8;margin-bottom:16px}
+  pre{background:#111827;border:1px solid #334155;border-radius:8px;padding:12px;overflow:auto;font-size:12px;line-height:1.45;max-width:980px}
+  .k{color:#7dd3fc}.v{color:#e7edf3}
+  .tag{color:#f472b6}.str{color:#a5d337}
+  .ok{color:#4ade80;font-weight:bold}
+  .warn{color:#fbbf24}
+  ul{line-height:1.6}
+</style>
+</head>
+<body>
+<h1>Evidencia de navegador — sesi&oacute;n de ingeniería (transporte local)</h1>
+<p class="meta">SHA fuente: <span class="k">933606b841afc3c705acd1a3a04593b2e8c02fb5</span> &nbsp;|&nbsp; BUILD_ID: <span class="k">yeIE931T35_a8l_k-WiqW</span> &nbsp;|&nbsp; Entorno: localhost:3020 (sin red p&uacute;blica)</p>
+<h2>1. Alcance de --no-fetch</h2>
+<ul>
+  <li class="ok">Sesión de ingeniería: ruta <code>/api/v1/market-series?read_only=1</code> → backend pasa <code>--no-fetch</code> al CLI → cero upstream; ausencia en caché devuelve motivo <code>NO_COVERAGE</code> sin intento de fetch.</li>
+  <li class="warn">Explorador normal: <code>/api/v1/market-series</code> sin <code>read_only</code> → sin <code>--no-fetch</code> → adquisición bajo demanda sujeta a presupuestos existentes (ledger compartido, pages ≤ 2, 30 req/min).</li>
+</ul>
+<h2>2. Recuperación por identidad autoritativa</h2>
+<ul>
+  <li class="ok">Al recargar con sesión abierta, el contexto se carga con <code>symbol</code>/<code>intervalo</code> del <code>config</code> de la sesión recuperada, nunca con las propiedades predeterminadas del componente.</li>
+  <li class="ok">Se muestra referencia de entrada y configuración recuperada: session_id, símbolo, intervalo, config_hash, regla, reloj T, revisión, entry_px fijo.</li>
+</ul>
+<h2>3. Sincronización de reloj</h2>
+<ul>
+  <li class="ok">Actualización centralizada tras cada respuesta autoritativa (<code>applyAuthoritative</code>). Si cambia <code>clock_ms</code> (incluido <b>Entrar</b>), indicadores y contexto BTC se recalculan para ese T.</li>
+  <li class="warn">Mientras se actualiza, el contexto anterior se descarta (<code>marketSeries = null</code>); no se muestran valores previos como actuales.</li>
+  <li class="ok">Transiciones probadas: entrada, paso, salida, reinicio y recuperación.</li>
+</ul>
+<h2>Alcance documentado</h2>
+<p>“Sesi&oacute;n de ingeniería/replay sobre caché”, no “sistema completo autónomo”. El recorrido con datos nuevos continuos sigue pendiente. Sin conexión p&uacute;blica a Binance, sin monitor, sin paper prospectivo, sin órdenes, sin pagos, sin m&oacute;vil.</p>
+<pre>
+<span class="tag">&lt;source sha&gt;</span>933606b841afc3c705acd1a3a04593b2e8c02fb5
+<span class="tag">&lt;build_id&gt;</span>yeIE931T35_a8l_k-WiqW
+<span class="tag">&lt;scope&gt;</span>sesión de ingeniería / replay sobre caché (desktop, presupuesto cero, sin red pública)
+<span class="tag">&lt;pendiente&gt;</span>recorrido con datos nuevos continuos
+</pre>
+</body>
+</html>

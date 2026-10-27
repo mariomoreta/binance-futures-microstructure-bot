@@ -3812,7 +3812,8 @@ sin procesos huérfanos, sin afectar procesos ajenos; servicio de datos local
 
 **Aceptación (A–E) demostrada frente al backend real:**
 A) iniciar → recibir datos → evaluar (ENTRADA_SIMULADA) → entrada automática
-(fill por un_backtest) → gestión (pasos de marca) → cierre por regla
+(fill por 
+un_backtest) → gestión (pasos de marca) → cierre por regla
 (horizonte) → exportación JSON/CSV;
 B) evidencia insuficiente → SIN_ENTRADA/DESCARTADO, sin posición;
 C) fin de datos → sin nuevas entradas, estado visible, posición no cerrada
@@ -3845,24 +3846,44 @@ exit_px=0.06251, realized_net=-10.00).
 
 **Última actualización:** 2026-10-26.
 
-## Sesión de ingeniería — transporte local (refinamiento, 2026-10-26, HEAD 4175a8b)
+## Sesión de ingeniería — transporte local (refinamiento, 2026-10-27, HEAD 933606b)
 
-**Recuperación real:** el header con controles (Iniciar/Detener sesión) se
-renderiza siempre. Al recargar con sesión abierta, la vista completa se
-reconstruye desde el estado autoritativo del backend (gráfico, posición,
-controles, eventos, exportación), sin depender de marketSeries almacenado en
-React. Verificado con recarga en estado ABIERTA.
+**Alcance aclarado:** "Sesión de ingeniería / replay sobre caché", no
+"sistema completo autónomo". El recorrido con datos nuevos continuos (feed
+vivo de Binance recorriendo el gráfico) sigue pendiente de autorización
+explícita; no se abrió conexión pública a Binance en esta sesión.
 
-**Fuente solo lectura:** el BFF de market-series pasa --no-fetch al CLI;
-nunca consulta Binance público. Una ausencia en caché devuelve motivo
-(NO_COVERAGE) con cero intentos upstream. Verificado: rango sin cobertura →
-etch.performed=false, equests=0, candles=[].
+**Alcance de --no-fetch:** el BFF de market-series expone la opción de solo
+lectura controlada por backend `read_only=1`. La sesión de ingeniería la usa
+y el BFF pasa `--no-fetch` al CLI: cero upstream, solo caché local, ausencia
+en caché devuelve motivo (NO_COVERAGE) con cero intentos upstream. El
+explorador normal llama al mismo BFF sin `read_only`, por lo que conserva la
+adquisición bajo demanda con sus presupuestos existentes (ledger compartido
+de reservas antes del envío, pages ≤ 2, 30 req/min compartido). Se verificó
+con transporte simulado: sesión de ingeniería sin caché → cero upstream;
+explorador normal con bloque faltante → adquisición acotada permitida.
+
+**Recuperación por identidad autoritativa:** al recuperar una sesión (recarga
+con sesión abierta), el contexto de mercado se carga con el `symbol` y el
+`intervalo` del `config` de la sesión recuperada, nunca con las propiedades
+predeterminadas del componente (defaults MINAUSDT/1m). Se muestra la
+referencia de entrada y la configuración recuperadas: session_id, símbolo,
+intervalo, config_hash, regla, reloj T, revisión y entry_px fijo. Probado
+con una sesión cuyo símbolo/intervalo difieren de los predeterminados.
 
 **Reloj y evidencia compartida:** indicadores (market-indicators/v1) y
 contexto BTC (market-btc-context/v1) se recalculan en el backend con el
 reloj T de la sesión (solo velas conocidas en T, sin futuros). Open conocido
 al abrir; OHLC completo solo al cierre (close_time_ms <= T). Flujo sin
 eventos registrados → UNKNOWN.
+
+**Sincronización de reloj:** la actualización de vista se centraliza tras
+cada respuesta autoritativa (`applyAuthoritative`). Si `clock_ms` cambia —
+incluido `Entrar` (avanza T) — indicadores y contexto se corresponden con
+ese T: se descarta el contexto anterior y se recarga para el nuevo T con la
+identidad autoritativa de la sesión. Mientras se actualizan, no se muestran
+valores previos como actuales (contexto suspendido hasta que se recarga).
+Probado: entrada, paso, salida, reinicio y recuperación.
 
 **Regla de ingeniería:** ENGINEERING-MINA-1M-v1, explícita, versionada,
 separada de estrategia aprobada. entry_px se fija antes de evaluar (cierre
@@ -3900,10 +3921,15 @@ dashboard → BFF → Python → dashboard.
 
 **Pruebas:** npx tsc --noEmit 0; npx eslint 0 (archivos nuevos);
 npx vitest run src/test/paper-lab-live-api.test.ts 9/9;
+npx vitest run src/test/session-lab.test.ts 4/4;
+npx vitest run src/test/engineering-session.test.tsx 5/5;
 python run_tests.py -q 1290 OK / 2 skipped; next build OK.
-BUILD_ID servido: O9cb8jOkgYZglg9UXB5hU.
+BUILD_ID servido: yeIE931T35_a8l_k-WiqW (SHA fuente del árbol
+933606b841afc3c705acd1a3a04593b2e8c02fb5, frontend del commit 933606b
+más los cambios de esta sesión).
 
 **Límites pendientes:** conexión a Binance público (ventana aparte,
 autorización explícita); selector automático de varios símbolos; monitor en
 vivo; paper prospectivo; órdenes; pagos; móvil/Flutter; indicadores
-provisionales; motor paper completo (Etapa 5).
+provisionales; motor paper completo (Etapa 5); recorrido con datos nuevos
+continuos.

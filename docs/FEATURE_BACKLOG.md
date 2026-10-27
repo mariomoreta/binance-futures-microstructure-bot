@@ -2235,39 +2235,78 @@ indicadores; paper con datos vivos; móvil/Flutter; REA; `/antislop` end-to-end.
   el PASS local no es una acreditación Binance. El dashboard se restauró al
   entorno canónico (catálogo 931, no las 2 entradas de prueba).
 
-## Sesión de ingeniería — transporte local (refinamiento, 2026-10-26, HEAD 4175a8b)
+## Sesión de ingeniería — transporte local (refinamiento, 2026-10-27, HEAD 933606b)
 
-**1. Title:** Recuperación real, fuente solo lectura, reloj T y regla de ingeniería en la sesión de ingeniería observable del dashboard.
+**Alcance aclarado:** "Sesión de ingeniería / replay sobre caché", no
+"sistema completo autónomo". El recorrido con datos nuevos continuos (feed
+vivo de Binance recorriendo el gráfico) sigue pendiente de autorización
+explícita; no se abrió conexión pública a Binance en esta sesión.
 
-**2. Approval status:** DECIDED dentro del alcance autorizado (desktop, presupuesto cero, sin conexión pública Binance, sin monitor, sin paper prospectivo, sin órdenes, sin pagos, sin móvil/Flutter; fuente LOCAL SIMULADA = caché local client=None, 0 upstream).
+**Alcance de --no-fetch:** el BFF de market-series expone la opción de solo
+lectura controlada por backend `read_only=1`. La sesión de ingeniería la usa
+y el BFF pasa `--no-fetch` al CLI: cero upstream, solo caché local, ausencia
+en caché devuelve motivo (NO_COVERAGE) con cero intentos upstream. El
+explorador normal llama al mismo BFF sin `read_only`, por lo que conserva la
+adquisición bajo demanda con sus presupuestos existentes (ledger compartido
+de reservas antes del envío, pages ≤ 2, 30 req/min compartido). Se verificó
+con transporte simulado: sesión de ingeniería sin caché → cero upstream;
+explorador normal con bloque faltante → adquisición acotada permitida.
 
-**3. Implementation status:** IMPLEMENTED.
-- rontend/src/components/session-lab/EngineeringSession.tsx + SessionStatusPanels.tsx + EngineeringSession.module.css + rontend/src/lib/session-lab.ts; cableado en rontend/src/app/market-lab/page.tsx; ajuste de fuente solo lectura en rontend/src/app/api/v1/market-series/route.ts (--no-fetch).
-- Recuperación real: header con controles siempre renderizado; recarga con sesión abierta reconstruye vista completa desde estado autoritativo del backend.
-- Fuente solo lectura: BFF pasa --no-fetch; cero upstream; ausencia en caché devuelve motivo sin activar fetch.
-- Reloj T compartido: indicadores y contexto BTC recalculados en backend con reloj T de sesión (sin futuros).
-- Regla de ingeniería: ENGINEERING-MINA-1M-v1, explícita, versionada; entry_px fijado antes de evaluar; dos prefijos (A/B) bajo misma configuración.
+**Recuperación por identidad autoritativa:** al recuperar una sesión (recarga
+con sesión abierta), el contexto de mercado se carga con el `symbol` y el
+`intervalo` del `config` de la sesión recuperada, nunca con las propiedades
+predeterminadas del componente (defaults MINAUSDT/1m). Se muestra la
+referencia de entrada y la configuración recuperadas: session_id, símbolo,
+intervalo, config_hash, regla, reloj T, revisión y entry_px fijo. Probado
+con una sesión cuyo símbolo/intervalo difieren de los predeterminados.
 
-**4. Evaluation status:** 
-px tsc --noEmit 0; 
-px eslint 0 (archivos nuevos); 
-px vitest run src/test/paper-lab-live-api.test.ts 9/9; python run_tests.py -q 1290 OK / 2 skipped; 
-ext build OK.
-E2E navegador real sobre http://127.0.0.1:3020/market-lab: iniciar → ENTRADA_SIMULADA → Entrar → abierta → pasos de gestión → recarga abierta recupera estado.
-HTTP: crear→evaluar→step×31→cerrada por horizonte (exit_px=0.06302, realized_net=3.98, funding=None); dos prefijos (A admite entrada, B se abstiene, misma configuración); fuente solo lectura 0 upstream; reloj T sin futuros.
+**Sincronización de reloj:** la actualización de vista se centraliza tras
+cada respuesta autoritativa (`applyAuthoritative`). Si `clock_ms` cambia —
+incluido `Entrar` (avanza T) — indicadores y contexto se corresponden con
+ese T: se descarta el contexto anterior y se recarga para el nuevo T con la
+identidad autoritativa de la sesión. Mientras se actualizan, no se muestran
+valores previos como actuales (contexto suspendido hasta que se recarga).
+Probado: entrada, paso, salida, reinicio y recuperación.
 
-**5. Limitaciones:** conexión a Binance público (ventana aparte, autorización explícita); selector automático de varios símbolos; monitor en vivo; paper prospectivo; órdenes; pagos; móvil/Flutter; indicadores provisionales; motor paper completo (Etapa 5).
+**Mecánica conservada:** recuperación real (header siempre renderizado; vista
+reconstruida desde estado autoritativo del backend); regla de ingeniería
+ENGINEERING-MINA-1M-v1 (entry_px fijado antes de evaluar; dos prefijos A/B);
+UNKNOWN del flujo sin cobertura (no se inventan valores); política de parada
+(sin inventar cierre); 0 peticiones Binance; cadena dashboard → BFF → Python
+→ dashboard.
 
-**6. Evidence:** rontend/src/components/session-lab/; rontend/src/lib/session-lab.ts; rontend/src/app/api/v1/market-series/route.ts; rontend/src/app/market-lab/page.tsx; src/microstructure_probe/paper_lab_engine.py; scripts/paper_lab_session.py; BFF rontend/src/app/api/v1/paper-lab/sessions/*.
+**Pruebas:** npx tsc --noEmit 0; npx eslint 0 (archivos nuevos);
+npx vitest run src/test/paper-lab-live-api.test.ts 9/9;
+npx vitest run src/test/session-lab.test.ts 4/4;
+npx vitest run src/test/engineering-session.test.tsx 5/5;
 
-**7. Last update:** 2026-10-26.
+python run_tests.py -q 1290 OK / 2 skipped; next build OK.
+BUILD_ID servido: yeIE931T35_a8l_k-WiqW (SHA fuente del árbol 933606b841afc3c705acd1a3a04593b2e8c02fb5, frontend del commit
+933606b más los cambios de esta sesión).
 
+**Límites pendientes:** conexión a Binance público (ventana aparte,
+autorización explícita); selector automático de varios símbolos; monitor en
+vivo; paper prospectivo; órdenes; pagos; móvil/Flutter; indicadores
+provisionales; motor paper completo (Etapa 5); recorrido con datos nuevos
+continuos.
+
+**6. Evidence:** frontend/src/components/session-lab/EngineeringSession.tsx
++ SessionStatusPanels.tsx + EngineeringSession.module.css;
+frontend/src/lib/session-lab.ts;
+frontend/src/app/api/v1/market-series/route.ts;
+frontend/src/app/market-lab/page.tsx;
+frontend/src/test/session-lab.test.ts;
+frontend/src/test/engineering-session.test.tsx;
+docs/evidence/engineering-session-browser-evidence.html;
+src/microstructure_probe/paper_lab_engine.py; scripts/paper_lab_session.py; BFF frontend/src/app/api/v1/paper-lab/sessions/*.
+
+**7. Last update:** 2026-10-27.
 ### Cierre (siete campos, obligatorios)
 
-- DECISIONS_REVIEWED — docs/DECISIONS.md (sesión de ingeniería — transporte local, refinamiento 2026-10-26), docs/CURRENT_STATE.md, docs/TASK_QUEUE.md, docs/DESKTOP_FIRST_SCOPE_20261020.md.
-- NEW_DECISIONS_RECORDED — DECISIONS 2026-10-26: recuperación real desde estado autoritativo; fuente solo lectura (--no-fetch); reloj T compartido para indicadores/contexto BTC; regla de ingeniería con entry_px fijado antes de evaluar; dos prefijos para admisión vs abstención.
-- FEATURES_IMPLEMENTED — control iniciar/detener sesión; seis paneles; vista de operación completa; compartición de session_id/símbolo/tiempos/config_hash; regla de ingeniería versionada; dos prefijos de demostración.
-- FEATURES_VERIFIED — backend: crear→evaluar→step→cerrada por horizonte vía HTTP; frontend: tsc/eslint 0, vitest 9/9; E2E navegador: iniciar→evaluar→entrar→gestión→recarga abierta; dos prefijos HTTP (A admite, B se abstiene); fuente solo lectura 0 upstream; reloj T sin futuros.
-- DEFERRED_FEATURES — conexión a Binance público; selector automático; monitor en vivo; paper prospectivo; órdenes; pagos; móvil/Flutter; indicadores provisionales; motor paper completo (Etapa 5).
-- BACKLOG_UPDATED — yes: esta sección + CURRENT_STATE, TASK_QUEUE, DECISIONS.
-- DOCUMENTATION_CONFLICTS — ninguna contradictoria; se aclara que "fuente LOCAL SIMULADA" ≠ Binance LIVE y que el backend es la autoridad de decisión y estado económico.
+- DECISIONS_REVIEWED — docs/DECISIONS.md (sesión de ingeniería — transporte local, refinamiento 2026-10-27), docs/CURRENT_STATE.md, docs/TASK_QUEUE.md, docs/DESKTOP_FIRST_SCOPE_20261020.md.
+- NEW_DECISIONS_RECORDED — DECISIONS 2026-10-27: alcance de --no-fetch (read_only=1, ingeniería cero upstream; explorador normal conserva adquisición bajo demanda); recuperación por identidad autoritativa (config.symbol/config.interval, no defaults del componente); sincronización de reloj T centralizada (applyAuthoritative; entrada/paso/salida/reinicio/recuperación; sin valores previos como actuales).
+- FEATURES_IMPLEMENTED — control iniciar/detener sesión; alcance de --no-fetch vía read_only=1; seis paneles; vista de operación completa; compartición de session_id/símbolo/tiempos/config_hash; regla de ingeniería versionada; dos prefijos de demostración.
+- FEATURES_VERIFIED — backend: crear→evaluar→step→cerrada por horizonte vía HTTP; frontend: tsc/eslint 0, vitest session-lab 4/4 + engineering-session 5/5 + paper-lab-live-api 9/9; E2E navegador: iniciar→evaluar→entrar→gestión→recarga abierta; dos prefijos HTTP (A admite, B se abstiene); fuente solo lectura 0 upstream; reloj T sin futuros.
+- DEFERRED_FEATURES — conexión a Binance público; selector automático; monitor en vivo; paper prospectivo; órdenes; pagos; móvil/Flutter; indicadores provisionales; motor paper completo (Etapa 5); recorrido con datos nuevos continuos.
+- BACKLOG_UPDATED — yes: esta sección + CURRENT_STATE, DECISIONS, FEATURE_BACKLOG.
+- DOCUMENTATION_CONFLICTS — ninguna contradictoria; se aclara que "sesión de ingeniería/replay sobre caché" ≠ "sistema completo autónomo" y que "fuente LOCAL SIMULADA" ≠ Binance LIVE; el backend es la autoridad de decisión y estado económico.
