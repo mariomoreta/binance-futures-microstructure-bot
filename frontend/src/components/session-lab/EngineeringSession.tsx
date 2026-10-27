@@ -72,6 +72,32 @@ export default function EngineeringSession({
   // detectar cambios de T (incluido Entrar) y evitar mostrar valores de un T
   // anterior como si fueran actuales mientras se recarga el contexto.
   const lastClockRef = useRef<number | null>(null);
+
+  // --- Modo autónomo ---------------------------------------------------------
+  // El navegador solo programa el siguiente paso; el motor Python (vía BFF) es
+  // dueño del reloj, de la regla y de cada transición. No se crea un proceso
+  // Python por tick: cada avance es una llamada al mismo endpoint /step que
+  // usa "Paso a paso", con un retraso observable entre pasos.
+  const AUTONOMOUS_STEP_DELAY_MS = 1500;
+  const MAX_AUTONOMOUS_STEPS = 200;
+  const [autonomous, setAutonomous] = useState(false);
+  const [transportCause, setTransportCause] = useState<string | null>(null);
+  const tickRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const autonomousStepRef = useRef(0);
+  // Bandera de "seguir avanzando" sincronizada de forma imperativa (sin
+  // depender de capturas de cierre de React), para que stopAutonomous() y la
+  // detección de cierre funcionen incluso dentro de un tick en ejecución.
+  const autonomousRef = useRef(false);
+  // Ref siempre al último estado recibido: evita capturas obsoletas
+  // (stale closure) de `state` dentro de los temporizadores del modo autónomo.
+  const stateRef = useRef<PaperSessionState | null>(null);
+  // Ref a la continuación del bucle autónomo: evita la referencia propia
+  // (self-reference) de `autonomousTick` dentro de su propio setTimeout.
+  const loopRef = useRef<(() => void) | null>(null);
+
+  useEffect(() => {
+    stateRef.current = state;
+  }, [state]);
   const [refreshing, setRefreshing] = useState(false);
 
   const [requestIdCounter, setRequestIdCounter] = useState(0);
@@ -115,6 +141,7 @@ export default function EngineeringSession({
   // identidad autoritativa de la sesion (config.symbol / config.interval).
   const applyAuthoritative = useCallback(async (next: PaperSessionState | null) => {
     if (!next) {
+      stateRef.current = null;
       setState(null);
       setMarketSeries(null);
       lastClockRef.current = null;
@@ -128,6 +155,7 @@ export default function EngineeringSession({
       setRefreshing(true);
       setMarketSeries(null); // valores de T anterior no se muestran como actuales
     }
+    stateRef.current = next;
     setState(next);
     lastClockRef.current = next.clock_ms ?? null;
     try {
@@ -167,6 +195,128 @@ export default function EngineeringSession({
     }
   }, [state, recoverAuthoritative]);
 
+  // --------------------------------------------------------------------------
+  // Modo autónomo: arranque, paso y parada.
+  // --------------------------------------------------------------------------
+
+  // Detiene el modo autónomo y libera el temporizador propio (recursos
+  // propios de la sesión: ningún proceso Python persistente se ve afectado).
+  const stopAutonomous = useCallback(() => {
+    if (tickRef.current !== null) {
+      clearTimeout(tickRef.current);
+      tickRef.current = null;
+    }
+    autonomousRef.current = false;
+    setAutonomous(false);
+    autonomousStepRef.current = 0;
+    setTransportCause(null);
+  }, []);
+
+  // Ejecuta un paso del motor (reutiliza exactamente el endpoint /step que
+  // usa "Paso a paso": un solo proceso Python por acción, sin gestor nuevo).
+  // Devuelve el estado resultante tras aplicar la respuesta autoritativa.
+  const stepOnce = useCallback(async (): Promise<PaperSessionState | null> => {
+    const current = stateRef.current;
+    if (!current) return null;
+    setLoading(true);
+    setError(null);
+    try {
+      const result = await stepSessionApi(
+        current.session_id, nextRequestId(), current.revision,
+      );
+      if (!result.ok) {
+        setError(result.error ?? "STEP_FAILED");
+        if (result.status === 409) await recoverAuthoritative(current.session_id);
+        return null;
+      }
+      if (!result.data) return null;
+      await applyAuthoritative(result.data);
+      return result.data as PaperSessionState;
+    } finally {
+      setLoading(false);
+    }
+  }, [nextRequestId, applyAuthoritative, recoverAuthoritative]);
+
+  // Un avance autónomo: revela la siguiente vela, gestiona entrada/fill y
+  // salida (stop/horizon), y programa el siguiente paso si la sesión sigue
+  // abierta. Detiene la autonomía al cerrar, detener o agotar el transporte.
+  const autonomousTick = useCallback(async () => {
+    if (!autonomousRef.current) return;
+    const current = stateRef.current;
+    if (!current) return;
+    if (current.status === "cerrada" || current.status === "detenida") {
+      stopAutonomous();
+      return;
+    }
+    autonomousStepRef.current += 1;
+    if (autonomousStepRef.current > MAX_AUTONOMOUS_STEPS) {
+      stopAutonomous();
+      setTransportCause(
+        "Límite de pasos autónomos alcanzado; sesión detenida por seguridad (sin entrada forzada).",
+      );
+      return;
+    }
+    const prevClock = current.clock_ms;
+    const prevStatus = current.status;
+    const next = await stepOnce();
+    if (!next) {
+      // Error en el paso: detener autonomía y dejar la causa visible.
+      stopAutonomous();
+      return;
+    }
+    if (!autonomousRef.current) return;
+    const advanced = next.clock_ms !== prevClock;
+    // Sin avance de reloj mientras se espera entrada/datos: fin del
+    // transporte local. No hay entrada nueva; la posición (si la hay) se
+    // gestiona según política documentada (open_at_end, sin cierre inventado).
+    if (!advanced && (prevStatus === "en_espera" || prevStatus === "sin_iniciar")) {
+      stopAutonomous();
+      setTransportCause(
+        "Transporte local: sin más eventos disponibles (fin de datos). Sin entrada nueva; posición no cerrada inventada (open_at_end, sin comisión de salida).",
+      );
+      return;
+    }
+    if (next.status === "cerrada" || next.status === "detenida") {
+      stopAutonomous();
+      if (
+        next.status === "cerrada" &&
+        next.position?.open === true &&
+        next.result?.open_at_end === true
+      ) {
+        setTransportCause(
+          "Fin de datos del transporte local: posición abierta sin cierre ejecutado (open_at_end), sin comisión de salida ni cierre inventado.",
+        );
+      }
+      return;
+    }
+    if (!autonomousRef.current) return;
+    // Programar siguiente paso con retraso observable.
+    tickRef.current = setTimeout(() => {
+      void loopRef.current?.();
+    }, AUTONOMOUS_STEP_DELAY_MS);
+  }, [stopAutonomous, stepOnce]);
+
+  // Arranca la autonomía cuando la evaluación deja entrada pendiente o
+  // posición abierta. El navegador no conduce el reloj: solo programa el
+  // primer paso; cada transición posterior es decidida por el motor Python.
+  const startAutonomy = useCallback(() => {
+    autonomousRef.current = true;
+    setAutonomous(true);
+    autonomousStepRef.current = 0;
+    setTransportCause(null);
+    void autonomousTick();
+  }, [autonomousTick]);
+
+  // Continuación del bucle autónomo (se asigna tras declarar autonomousTick
+  // para evitar la referencia propia antes de la declaración).
+  useEffect(() => {
+    loopRef.current = () => {
+      void autonomousTick();
+    };
+  }, [autonomousTick]);
+
+  // --------------------------------------------------------------------------
+
   const startSession = useCallback(async () => {
     setLoading(true);
     setError(null);
@@ -197,7 +347,7 @@ export default function EngineeringSession({
       const { context, operation } = splitContextAndOperation(recent, contextCount);
       const firstOp = operation[0];
       if (operation.length === 0 || !firstOp || firstOp.close == null || firstOp.close_time_ms == null) {
-        setError("INSUFICIENT_CANDLES: la primera vela de operacion no tiene cierre definido.");
+        setError("INSUFICIENT_CANDLES: la primera vela de operacion no tiene cierre definida.");
         setLoading(false);
         return;
       }
@@ -233,6 +383,7 @@ export default function EngineeringSession({
         return;
       }
       setState(created.session);
+      stateRef.current = created.session;
       localStorage.setItem(SESSION_ID_STORAGE_KEY, created.session.session_id);
 
       const evaluated = await evaluateSessionApi(
@@ -248,16 +399,29 @@ export default function EngineeringSession({
       // para el reloj T con la identidad autoritativa de la sesion.
       await applyAuthoritative(evaluated.data);
       setStarted(true);
+
+      // Modo autónomo: si hay entrada pendiente o posición abierta, el backend
+      // avanza los pasos solo hasta completar fill/gestión/cierre. Si la
+      // evidencia es insuficiente, se abstiene (sin entrada, sin autonomía).
+      if (
+        evaluated.data.status === "en_espera" ||
+        evaluated.data.status === "abierta"
+      ) {
+        startAutonomy();
+      }
     } catch (exc: unknown) {
       setError(exc instanceof Error ? exc.message : String(exc));
     } finally {
       setLoading(false);
     }
-  }, [symbol, interval, bars, prefixOption, entryPxFixed, applyAuthoritative, nextRequestId]);
+  }, [symbol, interval, bars, prefixOption, entryPxFixed, applyAuthoritative, nextRequestId, startAutonomy]);
 
   const changePrefix = useCallback(async (next: "A" | "B") => {
-    if (!state) return;
+    // La eleccion de prefijo antes de iniciar solo fija la opcion para el
+    // proximo "Iniciar sesion" (aun no hay sesion que reconstruir); con una
+    // sesion viva se reconstruye la sesion con el MISMO entry_px fijo.
     setPrefixOption(next);
+    if (!state) return;
     // Volver a crear y evaluar con la MISMA entry_px fija pero distinto
     // prefijo de datos, para demostrar admision vs abstencion bajo igual
     // configuracion.
@@ -308,6 +472,7 @@ export default function EngineeringSession({
         return;
       }
       setState(created.session);
+      stateRef.current = created.session;
       localStorage.setItem(SESSION_ID_STORAGE_KEY, created.session.session_id);
       const evaluated = await evaluateSessionApi(
         created.session.session_id, null, null,
@@ -323,15 +488,26 @@ export default function EngineeringSession({
       await applyAuthoritative(evaluated.data);
       await loadContextForClock(evaluated.data.clock_ms ?? null, symbol, interval);
       setStarted(true);
+
+      if (
+        evaluated.data.status === "en_espera" ||
+        evaluated.data.status === "abierta"
+      ) {
+        startAutonomy();
+      }
     } catch (exc: unknown) {
       setError(exc instanceof Error ? exc.message : String(exc));
     } finally {
       setLoading(false);
     }
-  }, [symbol, interval, bars, entryPxFixed, nextRequestId, applyAuthoritative, loadContextForClock, state]);
+  }, [symbol, interval, bars, entryPxFixed, nextRequestId, applyAuthoritative, loadContextForClock, state, startAutonomy]);
 
   const stopSession = useCallback(async () => {
     if (!state) return;
+    // Política de parada explícita: detener congela la sesión sin inventar
+    // cierre, y libera los recursos propios del frontend (temporizador
+    // autónomo). La posición queda tal cual (sin salida inventada).
+    stopAutonomous();
     setLoading(true);
     setError(null);
     try {
@@ -346,10 +522,11 @@ export default function EngineeringSession({
     } finally {
       setLoading(false);
     }
-  }, [state, nextRequestId, recoverAuthoritative]);
+  }, [state, nextRequestId, stopAutonomous, recoverAuthoritative]);
 
   const handleEnter = useCallback(async () => {
     if (!state) return;
+    stopAutonomous();
     setLoading(true);
     setError(null);
     try {
@@ -364,10 +541,11 @@ export default function EngineeringSession({
     } finally {
       setLoading(false);
     }
-  }, [state, nextRequestId, applyAuthoritative, recoverAuthoritative]);
+  }, [state, nextRequestId, stopAutonomous, applyAuthoritative, recoverAuthoritative]);
 
   const handleStep = useCallback(async () => {
     if (!state) return;
+    stopAutonomous();
     setLoading(true);
     setError(null);
     try {
@@ -397,10 +575,11 @@ export default function EngineeringSession({
     } finally {
       setLoading(false);
     }
-  }, [state, nextRequestId, applyAuthoritative, recoverAuthoritative]);
+  }, [state, nextRequestId, stopAutonomous, applyAuthoritative, recoverAuthoritative]);
 
   const handleExit = useCallback(async () => {
     if (!state) return;
+    stopAutonomous();
     setLoading(true);
     setError(null);
     try {
@@ -415,10 +594,11 @@ export default function EngineeringSession({
     } finally {
       setLoading(false);
     }
-  }, [state, nextRequestId, applyAuthoritative, recoverAuthoritative]);
+  }, [state, nextRequestId, stopAutonomous, applyAuthoritative, recoverAuthoritative]);
 
   const handleRestart = useCallback(async () => {
     if (!state) return;
+    stopAutonomous();
     setLoading(true);
     setError(null);
     try {
@@ -436,10 +616,11 @@ export default function EngineeringSession({
     } finally {
       setLoading(false);
     }
-  }, [state, nextRequestId, applyAuthoritative, recoverAuthoritative]);
+  }, [state, nextRequestId, stopAutonomous, applyAuthoritative, recoverAuthoritative]);
 
   const handleDecide = useCallback(async (decision: PaperCandidateDecision) => {
     if (!state) return;
+    stopAutonomous();
     setLoading(true);
     setError(null);
     try {
@@ -457,7 +638,13 @@ export default function EngineeringSession({
     } finally {
       setLoading(false);
     }
-  }, [state, nextRequestId, applyAuthoritative, recoverAuthoritative]);
+  }, [state, nextRequestId, stopAutonomous, applyAuthoritative, recoverAuthoritative]);
+
+  // Liberar el temporizador propio al desmontar la sesión (recursos propios;
+  // no interrumpe el backend ni procesos ajenos).
+  useEffect(() => {
+    return () => stopAutonomous();
+  }, [stopAutonomous]);
 
   // sessionReady es un objeto combinado que TypeScript puede reducir a
   // no-nulo dentro de la rama correspondiente del condicional JSX.
@@ -470,7 +657,7 @@ export default function EngineeringSession({
   const res = state?.result;
   const clockMs = state?.clock_ms ?? null;
   const v = state ? sessionView(state) : null;
-const vForReady = state ? sessionView(state) : null;
+  const vForReady = state ? sessionView(state) : null;
   const opn = pos?.open === true;
   const fin = state ? (state.status === "cerrada" || state.status === "detenida") : false;
 
@@ -542,6 +729,11 @@ const vForReady = state ? sessionView(state) : null;
           >
             Detener sesion
           </button>
+          {autonomous && (
+            <span className={s.autonomousChip} data-state="autonomo">
+              Autónomo: backend avanza el reloj
+            </span>
+          )}
         </div>
       </header>
 
@@ -568,185 +760,199 @@ const vForReady = state ? sessionView(state) : null;
           {sessionReady ? (
             <div>
               <SessionStatusPanels
-            state={sessionReady.state}
-            marketSymbol={sessionReady.state.config.symbol}
-            source="LOCAL SIMULADA - cache local (klines), client=None, 0 upstream"
-            freshness={{
-              received: vReady.cursor,
-              cursor: vReady.cursor,
-              total: vReady.n,
-              clockMs: sessionReady.state.clock_ms,
-              endOfData: fin && opn && res?.open_at_end === true,
-              stale: false,
-            }}
-            indicators={sessionReady.marketSeries.indicators}
-            contextBtc={sessionReady.marketSeries.contextBtc}
-            flowCoverage={sessionReady.marketSeries.coverage}
-            lastError={error}
-            abstentionReason={abstentionReason}
-          />
-
-          <SessionControls
-            status={sessionReady.state.status}
-            canEnter={vReady.canEnter}
-            canStep={vReady.canStep}
-            canExit={vReady.canExit}
-            canRestart={vReady.canRestart}
-            canStop={vReady.canStop}
-            canDecide={vReady.canDecide}
-            decision={sessionReady.state.config.decision ?? null}
-            onDecide={handleDecide}
-            onEnter={handleEnter}
-            onStep={handleStep}
-            onExit={handleExit}
-            onRestart={handleRestart}
-            onStop={stopSession}
-            stepMs={1200}
-          />
-
-          <div className={s.grid}>
-            <section className={s.cardFull} aria-label="Grafico de operacion">
-              <div className={s.chartHead}>
-                <h3>
-                  Grafico - velas, niveles y eventos (
-                  {sessionReady.state.config.interval}, simulacion)
-                </h3>
-                <span className={s.sourceChip}>
-                  Fuente: LOCAL SIMULADA ({sessionReady.state.config.symbol})
-                </span>
-              </div>
-              <div className={s.chartLegend} aria-label="Leyenda del grafico">
-                <span><i className={s.swContext} aria-hidden="true"></i> contexto conocido</span>
-                <span><i className={s.swReplay} aria-hidden="true"></i> velas reveladas</span>
-                <span><i className={s.swOpen} aria-hidden="true"></i> solo-open (open, sin OHLC)</span>
-                {chartModelReady.operation.signal && (
-                  <span><i className={s.swSignal} aria-hidden="true"></i> senal</span>
-                )}
-                {chartModelReady.operation.pending_entry && (
-                  <span><i className={s.swPending} aria-hidden="true"></i> entrada pendiente (no ejecutada)</span>
-                )}
-                {chartModelReady.operation.entry && (
-                  <span><i className={s.swEntry} aria-hidden="true"></i> Entrada {formatPricePL(chartModelReady.operation.entry.px)}</span>
-                )}
-                {chartModelReady.operation.stop_effective_px != null && (
-                  <span><i className={s.swStop} aria-hidden="true"></i> Stop efectivo {formatPricePL(chartModelReady.operation.stop_effective_px)}</span>
-                )}
-                {chartModelReady.operation.exit && (
-                  <span><i className={s.swExit} aria-hidden="true"></i> Salida {formatPricePL(chartModelReady.operation.exit.px)} ({chartModelReady.operation.exit.reason ?? "-"})</span>
-                )}
-              </div>
-              <div className={s.chartWrap}>
-                {chartModel && <PaperChart model={chartModel} />}
-              </div>
-              <p className={s.note}>
-                Solo velas conocidas en T; open conocido al abrir y OHLC completo
-                solo al cierre. La vela solo-open se marca como punto ambar y no
-                se interpola. Entrada y stop salen de position.entry_px /
-                position.stop_px efectivos; la salida solo se dibuja con
-                exit_executed=true. Los indicadores y el contexto BTC se
-                recalculan en el backend con el reloj T de la sesion (sin
-                futuros); sin cobertura de flujo para el instante, se muestra
-                UNKNOWN. Volumen e indicadores de negociacion no los produce el
-                backend en esta fase: se muestran como UNKNOWN.
-              </p>
-            </section>
-          </div>
-
-          <div className={s.grid}>
-            <section className={s.card}>
-              <PositionPanel position={sessionReady.state.position} direction={sessionReady.state.config.direction} />
-            </section>
-            <section className={s.card}>
-              <PnLPanel
-                finished={fin}
-                entered={opn}
-                costs={csts!}
-                unrealized={sessionReady.state.position.unrealized_net}
-                result={res!}
-                exitExecuted={res?.exit_executed === true}
-              />
-            </section>
-          </div>
-
-          <div className={s.grid}>
-            <section className={s.cardFull}>
-              <h3>Historial de eventos</h3>
-              <EventLog events={evts} />
-            </section>
-          </div>
-
-          <div className={s.grid}>
-            <section className={s.card}>
-              <h3>Exportacion</h3>
-              <ExportPanel
                 state={sessionReady.state}
-                result={res ?? null}
-                onDownloadJson={(payload: string, fileName: string) => {
-                  const blob = new Blob([payload], { type: "application/json" });
-                  const url = URL.createObjectURL(blob);
-                  const a = document.createElement("a");
-                  a.href = url; a.download = fileName; a.click();
-                  URL.revokeObjectURL(url);
+                marketSymbol={sessionReady.state.config.symbol}
+                source="LOCAL SIMULADA - cache local (klines), client=None, 0 upstream"
+                freshness={{
+                  received: vReady.cursor,
+                  cursor: vReady.cursor,
+                  total: vReady.n,
+                  clockMs: sessionReady.state.clock_ms,
+                  endOfData: fin && opn && res?.open_at_end === true,
+                  stale: false,
                 }}
-                onDownloadCsv={(payload: string, fileName: string) => {
-                  const blob = new Blob([payload], { type: "text/csv" });
-                  const url = URL.createObjectURL(blob);
-                  const a = document.createElement("a");
-                  a.href = url; a.download = fileName; a.click();
-                  URL.revokeObjectURL(url);
-                }}
+                indicators={sessionReady.marketSeries.indicators}
+                contextBtc={sessionReady.marketSeries.contextBtc}
+                flowCoverage={sessionReady.marketSeries.coverage}
+                lastError={error}
+                abstentionReason={abstentionReason}
               />
-              <div className={s.exportMeta}>
-                <div className={s.row}>
-                  <span className={s.k}>session_id</span>
-                  <span className={s.v + " " + s.mono}>{sessionReady.state.session_id}</span>
-                </div>
-                <div className={s.row}>
-                  <span className={s.k}>simbolo</span>
-                  <span className={s.v}>{sessionReady.state.config.symbol}</span>
-                </div>
-                <div className={s.row}>
-                  <span className={s.k}>intervalo</span>
-                  <span className={s.v}>{sessionReady.state.config.interval}</span>
-                </div>
-                <div className={s.row}>
-                  <span className={s.k}>config_hash</span>
-                  <span className={s.v + " " + s.mono}>{sessionReady.state.config_hash}</span>
-                </div>
-                <div className={s.row}>
-                  <span className={s.k}>motor</span>
-                  <span className={s.v + " " + s.mono}>{sessionReady.state.engine_version}</span>
-                </div>
-                <div className={s.row}>
-                  <span className={s.k}>regla</span>
-                  <span className={s.v + " " + s.mono}>{sessionReady.state.config.rule_version}</span>
-                </div>
-                <div className={s.row}>
-                  <span className={s.k}>reloj T</span>
-                  <span className={s.v}>{fmtUtcPL(clockMs)}</span>
-                </div>
-                <div className={s.row}>
-                  <span className={s.k}>revision</span>
-                  <span className={s.v}>{sessionReady.state.revision}</span>
-                </div>
-                <div className={s.row}>
-                  <span className={s.k}>prefijo</span>
-                  <span className={s.v}>{prefixOption}</span>
-                </div>
-                <div className={s.row}>
-                  <span className={s.k}>entry_px fijo</span>
-                  <span className={s.v}>{entryPxFixed != null ? entryPxFixed.toFixed(4) : "-"}</span>
-                </div>
-              </div>
-            </section>
-          </div>
+              {autonomous && (
+                <p className={s.note} role="status" data-testid="session-autonomous">
+                  Modo autónomo activo: el backend avanza el reloj y gestiona
+                  la posición sin intervención del navegador. Use Detener sesión
+                  para congelar la sesión.
+                </p>
+              )}
+              {transportCause && (
+                <p className={s.note} role="status" data-testid="session-transport-cause">
+                  {transportCause}
+                </p>
+              )}
 
-          </div>
-          ) : (
-            <p className={s.note}>
-              Contexto de mercado sin cobertura para el reloj T actual (UNKNOWN).
-            </p>
-          )}
+              <SessionControls
+                status={sessionReady.state.status}
+                // Durante la autonomía el backend conduce las transiciones; el
+                // operador no pulsa "Entrar" ni "Paso a paso" ni las necesita.
+                canEnter={vReady.canEnter && !autonomous}
+                canStep={vReady.canStep && !autonomous}
+                canExit={vReady.canExit}
+                canRestart={vReady.canRestart}
+                canStop={vReady.canStop}
+                canDecide={vReady.canDecide}
+                decision={sessionReady.state.config.decision ?? null}
+                onDecide={handleDecide}
+                onEnter={handleEnter}
+                onStep={handleStep}
+                onExit={handleExit}
+                onRestart={handleRestart}
+                onStop={stopSession}
+                stepMs={1200}
+              />
+
+              <div className={s.grid}>
+                <section className={s.cardFull} aria-label="Grafico de operacion">
+                  <div className={s.chartHead}>
+                    <h3>
+                      Grafico - velas, niveles y eventos (
+                      {sessionReady.state.config.interval}, simulacion)
+                    </h3>
+                    <span className={s.sourceChip}>
+                      Fuente: LOCAL SIMULADA ({sessionReady.state.config.symbol})
+                    </span>
+                  </div>
+                  <div className={s.chartLegend} aria-label="Leyenda del grafico">
+                    <span><i className={s.swContext} aria-hidden="true"></i> contexto conocido</span>
+                    <span><i className={s.swReplay} aria-hidden="true"></i> velas reveladas</span>
+                    <span><i className={s.swOpen} aria-hidden="true"></i> solo-open (open, sin OHLC)</span>
+                    {chartModelReady.operation.signal && (
+                      <span><i className={s.swSignal} aria-hidden="true"></i> senal</span>
+                    )}
+                    {chartModelReady.operation.pending_entry && (
+                      <span><i className={s.swPending} aria-hidden="true"></i> entrada pendiente (no ejecutada)</span>
+                    )}
+                    {chartModelReady.operation.entry && (
+                      <span><i className={s.swEntry} aria-hidden="true"></i> Entrada {formatPricePL(chartModelReady.operation.entry.px)}</span>
+                    )}
+                    {chartModelReady.operation.stop_effective_px != null && (
+                      <span><i className={s.swStop} aria-hidden="true"></i> Stop efectivo {formatPricePL(chartModelReady.operation.stop_effective_px)}</span>
+                    )}
+                    {chartModelReady.operation.exit && (
+                      <span><i className={s.swExit} aria-hidden="true"></i> Salida {formatPricePL(chartModelReady.operation.exit.px)} ({chartModelReady.operation.exit.reason ?? "-"})</span>
+                    )}
+                  </div>
+                  <div className={s.chartWrap}>
+                    {chartModel && <PaperChart model={chartModel} />}
+                  </div>
+                  <p className={s.note}>
+                    Solo velas conocidas en T; open conocido al abrir y OHLC completo
+                    solo al cierre. La vela solo-open se marca como punto ambar y no
+                    se interpola. Entrada y stop salen de position.entry_px /
+                    position.stop_px efectivos; la salida solo se dibuja con
+                    exit_executed=true. Los indicadores y el contexto BTC se
+                    recalculan en el backend con el reloj T de la sesion (sin
+                    futuros); sin cobertura de flujo para el instante, se muestra
+                    UNKNOWN. Volumen e indicadores de negociacion no los produce el
+                    backend en esta fase: se muestran como UNKNOWN.
+                  </p>
+                </section>
+              </div>
+
+              <div className={s.grid}>
+                <section className={s.card}>
+                  <PositionPanel position={sessionReady.state.position} direction={sessionReady.state.config.direction} />
+                </section>
+                <section className={s.card}>
+                  <PnLPanel
+                    finished={fin}
+                    entered={opn}
+                    costs={csts!}
+                    unrealized={sessionReady.state.position.unrealized_net}
+                    result={res!}
+                    exitExecuted={res?.exit_executed === true}
+                  />
+                </section>
+              </div>
+
+              <div className={s.grid}>
+                <section className={s.cardFull}>
+                  <h3>Historial de eventos</h3>
+                  <EventLog events={evts} />
+                </section>
+              </div>
+
+              <div className={s.grid}>
+                <section className={s.card}>
+                  <h3>Exportacion</h3>
+                  <ExportPanel
+                    state={sessionReady.state}
+                    result={res ?? null}
+                    onDownloadJson={(payload: string, fileName: string) => {
+                      const blob = new Blob([payload], { type: "application/json" });
+                      const url = URL.createObjectURL(blob);
+                      const a = document.createElement("a");
+                      a.href = url; a.download = fileName; a.click();
+                      URL.revokeObjectURL(url);
+                    }}
+                    onDownloadCsv={(payload: string, fileName: string) => {
+                      const blob = new Blob([payload], { type: "text/csv" });
+                      const url = URL.createObjectURL(blob);
+                      const a = document.createElement("a");
+                      a.href = url; a.download = fileName; a.click();
+                      URL.revokeObjectURL(url);
+                    }}
+                  />
+                  <div className={s.exportMeta}>
+                    <div className={s.row}>
+                      <span className={s.k}>session_id</span>
+                      <span className={s.v + " " + s.mono}>{sessionReady.state.session_id}</span>
+                    </div>
+                    <div className={s.row}>
+                      <span className={s.k}>simbolo</span>
+                      <span className={s.v}>{sessionReady.state.config.symbol}</span>
+                    </div>
+                    <div className={s.row}>
+                      <span className={s.k}>intervalo</span>
+                      <span className={s.v}>{sessionReady.state.config.interval}</span>
+                    </div>
+                    <div className={s.row}>
+                      <span className={s.k}>config_hash</span>
+                      <span className={s.v + " " + s.mono}>{sessionReady.state.config_hash}</span>
+                    </div>
+                    <div className={s.row}>
+                      <span className={s.k}>motor</span>
+                      <span className={s.v + " " + s.mono}>{sessionReady.state.engine_version}</span>
+                    </div>
+                    <div className={s.row}>
+                      <span className={s.k}>regla</span>
+                      <span className={s.v + " " + s.mono}>{sessionReady.state.config.rule_version}</span>
+                    </div>
+                    <div className={s.row}>
+                      <span className={s.k}>reloj T</span>
+                      <span className={s.v}>{fmtUtcPL(clockMs)}</span>
+                    </div>
+                    <div className={s.row}>
+                      <span className={s.k}>revision</span>
+                      <span className={s.v}>{sessionReady.state.revision}</span>
+                    </div>
+                    <div className={s.row}>
+                      <span className={s.k}>prefijo</span>
+                      <span className={s.v}>{prefixOption}</span>
+                    </div>
+                    <div className={s.row}>
+                      <span className={s.k}>entry_px fijo</span>
+                      <span className={s.v}>{entryPxFixed != null ? entryPxFixed.toFixed(4) : "-"}</span>
+                    </div>
+                  </div>
+                </section>
+              </div>
+
+            </div>
+            ) : (
+              <p className={s.note}>
+                Contexto de mercado sin cobertura para el reloj T actual (UNKNOWN).
+              </p>
+            )}
           <SessionPersistence
             sessions={[]}
             onLoad={recoverAuthoritative}
