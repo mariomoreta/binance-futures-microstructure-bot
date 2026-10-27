@@ -1,22 +1,19 @@
 // Flujo agresivo comprador/vendedor — contrato `market-flow/v1`.
-//
-// Backend Python como unica autoridad (flow.py + market_flow_service.py);
+// Backend como autoridad (FlowEngine compartido en `flow-instance.ts`);
 // el frontend solo solicita y presenta. Transporte local exclusivamente:
-// sin conexion a Binance publico, sin cobertura antes del primer evento de
-// captura, sin reconstruccion desde OHLC. Sin fuente conectada: SIN
-// COBERTURA, valores desconocidos, live=false.
+// sin conexión a Binance público, sin cobertura antes del primer evento de
+// captura, sin reconstrucción desde OHLC.
 //
-// Delta positivo NO es senal alcista automatica: solo describe el saldo de
+// Delta positivo NO es señal alcista automática: solo describe el saldo de
 // volumen agresor en ventana.
 
-import {NextResponse} from "next/server";
+import { NextResponse } from "next/server";
+import { flowEngine } from "@/lib/flow-instance";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
-const headers = {"Cache-Control": "no-store"};
+const headers = { "Cache-Control": "no-store" };
 
-const DEFAULT_HOST = "127.0.0.1";
-const DEFAULT_PORT = 8799;
 const SYMBOL_RE = /^[A-Z0-9]{2,32}$/;
 
 function intParam(params: URLSearchParams, name: string): number | null | undefined {
@@ -34,8 +31,8 @@ function emptyBlock(symbol: string, asOfMs: number): Record<string, unknown> {
     contract_version: "market-flow/v1",
     availability: "LIVE_CAPTURE_ONLY",
     coverage: "NO_COVERAGE_BEFORE_FIRST_EVENT",
-    identity: {symbol, venue: "binance", market_type: "usd_m_futures",
-               source: "aggTrade_local_transport"},
+    identity: { symbol, venue: "binance", market_type: "usd_m_futures",
+      source: "aggTrade_local_transport" },
     as_of_ms: asOfMs,
     freshness_ms: null,
     live: false,
@@ -43,8 +40,8 @@ function emptyBlock(symbol: string, asOfMs: number): Record<string, unknown> {
     horizons: {},
     baselines: {},
     acceleration: {},
-    deduplication: {seen_event_ids: 0},
-    notes: ["Sin servicio de flujo conectado: sin cobertura, sin valores ni ceros inventados."],
+    deduplication: { seen_event_ids: 0, max_event_ids: 10_000 },
+    notes: ["Sin eventos de captura para este símbolo: sin cobertura, sin valores ni ceros inventados."],
   };
 }
 
@@ -52,52 +49,92 @@ export async function GET(req: Request) {
   // Origen local acotado: solo la misma instancia del dashboard.
   const host = req.headers.get("host");
   if (host !== "127.0.0.1:3020" && host !== "localhost:3020") {
-    return NextResponse.json({error: "FORBIDDEN_ORIGIN"}, {status: 403, headers});
+    return NextResponse.json({ error: "FORBIDDEN_ORIGIN" }, { status: 403, headers });
   }
   const origin = req.headers.get("origin");
   if (origin !== null && origin !== `http://${host}`) {
-    return NextResponse.json({error: "FORBIDDEN_ORIGIN"}, {status: 403, headers});
+    return NextResponse.json({ error: "FORBIDDEN_ORIGIN" }, { status: 403, headers });
   }
 
   const params = new URL(req.url).searchParams;
   const symbol = (params.get("symbol") ?? "").trim().toUpperCase();
   if (!SYMBOL_RE.test(symbol)) {
-    return NextResponse.json({error: "INVALID_SYMBOL"}, {status: 400, headers});
+    return NextResponse.json({ error: "INVALID_SYMBOL" }, { status: 400, headers });
   }
   const asOfMs = intParam(params, "as_of_ms") ?? Date.now();
 
-  const flowHost = process.env.MARKET_FLOW_HOST ?? DEFAULT_HOST;
-  const flowPort = Number(process.env.MARKET_FLOW_PORT ?? DEFAULT_PORT);
-  const url = `http://${flowHost}:${flowPort}/flow?symbol=${encodeURIComponent(symbol)}&as_of_ms=${asOfMs}`;
+  const block = flowEngine.snapshot(symbol, asOfMs, true);
+  return NextResponse.json({ ok: true, data: block }, { headers });
+}
 
+interface FlowEventBody {
+  symbol: string;
+  event_id: string;
+  event_ms: number;
+  price: number;
+  quantity: number;
+  buyer_is_maker: boolean;
+  normal_quantity?: number;
+}
+
+export async function POST(req: Request) {
+  const host = req.headers.get("host");
+  if (host !== "127.0.0.1:3020" && host !== "localhost:3020") {
+    return NextResponse.json({ error: "FORBIDDEN_ORIGIN" }, { status: 403, headers });
+  }
+
+  let body: FlowEventBody;
   try {
-    const res = await fetch(url, {cache: "no-store", signal: AbortSignal.timeout(5000)});
-    if (!res.ok) {
-      return NextResponse.json({
-        ok: false,
-        data: emptyBlock(symbol, asOfMs),
-        error: `HTTP_${res.status}`,
-      }, {headers});
-    }
-    const json = await res.json();
-    if (!json.ok) {
-      // El servicio devolvio error: SIN COBERTURA, no rellenar con sinteticos.
-      return NextResponse.json({
-        ok: false,
-        data: emptyBlock(symbol, asOfMs),
-        error: json.error ?? "FLOW_SERVICE_ERROR",
-        detail: json.detail ?? null,
-      }, {headers});
-    }
-    return NextResponse.json({ok: true, data: json.data}, {headers});
-  } catch (err) {
-    // Cualquier error de red/servicio no alcanzado: SIN COBERTURA, sin
-    // sinteticos, live=false, HTTP 200.
+    body = await req.json();
+  } catch {
+    return NextResponse.json({ error: "INVALID_JSON" }, { status: 400, headers });
+  }
+
+  const symbol = String(body.symbol ?? "").trim().toUpperCase();
+  const event_id = String(body.event_id ?? "").trim();
+  const event_ms = body.event_ms;
+  const price = body.price;
+  const quantity = body.quantity;
+  const buyer_is_maker = body.buyer_is_maker;
+  const normal_quantity = body.normal_quantity;
+
+  if (!SYMBOL_RE.test(symbol)) {
+    return NextResponse.json({ error: "INVALID_SYMBOL", detail: `símbolo inválido: ${symbol}` }, { status: 400, headers });
+  }
+  if (!event_id) {
+    return NextResponse.json({ error: "MISSING_EVENT_ID", detail: "event_id es obligatorio" }, { status: 400, headers });
+  }
+  if (typeof event_ms !== "number" || !Number.isFinite(event_ms)) {
+    return NextResponse.json({ error: "INVALID_EVENT_MS", detail: "event_ms debe ser un número" }, { status: 400, headers });
+  }
+  if (typeof price !== "number" || !Number.isFinite(price) || price <= 0) {
+    return NextResponse.json({ error: "INVALID_PRICE", detail: "price inválido" }, { status: 400, headers });
+  }
+  if (typeof quantity !== "number" || !Number.isFinite(quantity) || quantity <= 0) {
+    return NextResponse.json({ error: "INVALID_QUANTITY", detail: "quantity inválida" }, { status: 400, headers });
+  }
+  if (typeof buyer_is_maker !== "boolean") {
+    return NextResponse.json({ error: "INVALID_MAKER", detail: "buyer_is_maker debe ser booleano" }, { status: 400, headers });
+  }
+
+  const result = flowEngine.ingest({
+    symbol,
+    event_id,
+    event_ms,
+    price,
+    quantity,
+    buyer_is_maker,
+    normal_quantity: typeof normal_quantity === "number" ? normal_quantity : undefined,
+  });
+
+  if (!result.ok) {
     return NextResponse.json({
       ok: false,
-      data: emptyBlock(symbol, asOfMs),
-      error: "FLOW_SERVICE_NOT_REACHABLE",
-      detail: err instanceof Error ? err.message : String(err),
-    }, {headers});
+      error: result.reason ?? "REJECTED",
+      detail: result.reason === "DUPLICATE_EVENT_ID" ? "identificador repetido: no suma volumen" : "evento descartado",
+    }, { status: 200, headers });
   }
+
+  const block = flowEngine.snapshot(symbol, event_ms, true);
+  return NextResponse.json({ ok: true, duplicate: false, event_id, symbol, block }, { headers });
 }

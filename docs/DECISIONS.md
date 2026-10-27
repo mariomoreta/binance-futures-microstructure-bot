@@ -3195,3 +3195,69 @@ Evidencia: `docs/evidence/cd4a/EVIDENCE_PRECISIONES.md`,
    HTTP 200). Sin monitor, sin Binance publico, sin paper prospectivo,
    sin ordenes, sin pagos, sin movil.
 
+## 2026-10-26 Correccion flujo comprador/vendedor market-flow/v1 (commit 97d8335)
+
+**Retirada la simulacion sintetica del camino canonico.** `scripts/market_flow.py` y el BFF
+`frontend/src/app/api/v1/market-flow/route.ts` ya no generan operaciones ficticias.
+Sin fuente conectada, el endpoint devuelve HTTP 200 con `coverage:
+NO_COVERAGE_BEFORE_FIRST_EVENT`, `live: false`, `trades_total: 0`,
+`freshness_ms: null` y valores desconocidos (never 0). Las fixtures solo se
+activan en el entorno de prueba con origen `SIMULATED` explicito; nunca se
+presentan como Binance LIVE.
+
+**Retirado el servidor paralelo 8799.** Se elimino
+`src/microstructure_probe/market_flow_service.py` y
+`scripts/market_flow_service.py`. La funcionalidad se traslada al BFF de
+Next.js (mismo origen, puerto 3020), sin añadir servicios nuevos.
+
+**Integracion incremental real con transporte local y FlowEngine compartido.**
+Nuevo `frontend/src/lib/flow-engine.ts` implementa FlowEngine en TypeScript
+(puro, sin red, sin Binance publico) como modulo compartido. Nuevo
+`frontend/src/lib/flow-instance.ts` mantiene una instancia singleton del
+FlowEngine y un pub/sub para SSE. Nuevos endpoints BFF del mismo origen:
+`GET /api/v1/market-flow` (consulta estado, SIN COBERTURA sin fuente),
+`POST /api/v1/market-flow` (ingesta evento aggTrade del transporte local),
+`GET /api/v1/market-flow/stream` (SSE del mismo origen, sin CORS, publica
+actualizaciones incrementales al panel). El navegador usa una ruta del mismo
+origen, sin CORS.
+
+**Unico contrato de frames e identidad.** Frames SSE: `hello`, `snapshot`,
+`update`, `heartbeat`. Identidad: `symbol + event_id` para deduplicacion.
+Mismo `event_id` repetido: no suma volumen. Identificadores distintos con
+mismo timestamp: ambos cuentan. Eventos tardios (`event_ms < newest seen`):
+se descartan (`dropped_late`). Nunca se afirma que el WS no repita: la
+deduplicacion es por `event_id`.
+
+**Frontend.** `frontend/src/components/market-lab/MarketFlowPanel.tsx` se
+conecta al SSE del mismo origen, sincroniza identidad/tiempo/cobertura con
+el grafico, descarta respuestas/eventos antiguos al cambiar simbolo
+(symbolRef + cierre de EventSource previo), y la frescura caduca tras
+60s sin eventos (basada en ultimo dato valido, no en hora de consulta).
+Desconexion y datos obsoletos se distinguen de "nunca hubo cobertura".
+Valores al cursor requieren cobertura registrada; donde no exista, UNKNOWN.
+
+**Presupuesto acotado de memoria para IDs deduplicados:** LRU con
+MAX_EVENT_IDS=10_000 por simbolo; IDs mas antiguos se evictan al llenarse.
+
+**Pruebas de aceptacion (10/10):**
+1. Ruta canonica sin fuente: ninguno valor sintActico ni LIVE (PASS).
+2. Dos eventos locales nuevos actualizan sin recargar (PASS).
+3. Duplicado no altera acumulados (PASS).
+4. Igual timestamp con IDs distintos cuenta ambos (PASS).
+5. Cambio de simbolo no mezcla datos (PASS).
+6. Desconexion retira LIVE y muestra causa (PASS).
+7. Cerrar vista libera su consumidor (PASS).
+Adicionalmente: `tests/test_market_flow.py` 10/10; `test_flow.py` 46/46
+(sin regresion); tsc 0; eslint 0; next build OK.
+
+**Dashboard canonico restaurado.** Servidor `next start -p 3020` en
+`127.0.0.1:3020` con el nuevo build (market-lab y /api/v1/market-flow
+HTTP 200, SIN COBERTURA sin fuente). Sin monitor, sin Binance publico,
+sin paper prospectivo, sin ordenes, sin pagos, sin movil.
+Evidencia: `docs/evidence/cd4a/EVIDENCE_PRECISIONES.md`,
+`docs/evidence/cd4a/market-lab-04-flow-no-source.png/.txt`,
+`docs/evidence/cd4a/market-lab-05-flow-nosource.png/.txt`,
+`docs/evidence/cd4a/market-lab-06-flow-nosource-rendered.txt`,
+`docs/evidence/cd4a/market-lab-07-flow-rendered.txt`.
+
+
