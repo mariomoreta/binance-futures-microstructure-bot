@@ -1,3 +1,34 @@
+## Modo autónomo de la sesión de ingeniería (2026-10-27, base `9a24308`, rama `feat/ingenieria-autonoma`)
+
+`CURRENT_PHASE`: dashboard V2 de escritorio + observación (WS público solo bajo
+autorización explícita; sin monitor, sin órdenes).
+
+`CURRENT_OBJECTIVE`: cerrado — la sesión de ingeniería avanza sola con un
+solo "Iniciar sesion" (entrada pendiente → fill simulado → gestión → cierre)
+reutilizando el endpoint `/step` de "Paso a paso"; el navegador solo observa
+y solicita iniciar/detener; abstención sin autonomía; fin de transporte con
+causa visible; parada sin cierre inventado; recarga sin duplicar efectos.
+
+`ACTIVE_TASK`: **cerrado**. Implementación en
+`frontend/src/components/session-lab/EngineeringSession.tsx` (bucle autónomo:
+`AUTONOMOUS_STEP_DELAY_MS=1500`, `MAX_AUTONOMOUS_STEPS=200`, referencias
+anti-closure, limpieza al desmontar, botones manuales deshabilitados durante
+la autonomía); corrección de selección de prefijo antes de iniciar
+(`changePrefix` ya no ignora la elección sin sesión). Pruebas: unidad A/B/C
+en `frontend/src/test/engineering-session.test.tsx` (8/8); suite frontend
+596 passed / 1 skipped; `tsc`/`eslint` 0. E2E navegador: A autónomo completo
+(ABIERTA→CERRADA por horizonte, sin botones), B abstención sin chip ni pasos,
+D recarga con posición abierta sin duplicar, E detener con posición congelada
+(paso posterior no-op). C vía HTTP (sin avance de reloj, sin entrada) +
+unidad de la causa visible. Evidencia: `docs/evidence/INGENIERIA_AUTONOMA_*.png`.
+Pendiente documentado: 2 fallos PREEXISTENTES de la suite Python en HEAD
+(test_paper_lab_engine velas solo-open; test_market_stream_window FAIL≠UNKNOWN)
+— fuera de alcance de este bloque, motor y rutas sin tocar.
+
+`NEXT_TASKS`: revisión del operador de las capturas; decidir los 2 fallos
+preexistentes de la suite Python; recorrido con datos nuevos continuos
+(ventana aparte, autorización explícita); resto del backlog (ver
+FEATURE_BACKLOG).
 ## Operativo restaurado tras el bloque de contexto BTC (2026-10-26, HEAD `3c2e7ab`, sin Binance)
 
 El dashboard canónico se restauró en 127.0.0.1:3020 tras el trabajo del

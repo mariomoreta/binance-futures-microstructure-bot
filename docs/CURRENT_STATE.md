@@ -3933,3 +3933,78 @@ autorización explícita); selector automático de varios símbolos; monitor en
 vivo; paper prospectivo; órdenes; pagos; móvil/Flutter; indicadores
 provisionales; motor paper completo (Etapa 5); recorrido con datos nuevos
 continuos.
+
+## Sesión de ingeniería — modo autónomo (2026-10-27, base `9a24308`, rama `feat/ingenieria-autonoma`)
+
+**Qué cambió:** la sesión de ingeniería (`/market-lab`) avanza sola con un
+solo "Iniciar sesion": datos → cálculos → regla → entrada pendiente → fill
+simulado → gestión → cierre, sin pulsar "Entrar" ni "Paso a paso" para cada
+transición. El bucle autónomo vive en el componente
+(`frontend/src/components/session-lab/EngineeringSession.tsx`) y reutiliza
+exactamente el endpoint `POST /api/v1/paper-lab/sessions/[id]/step` de
+"Paso a paso" (un proceso Python por acción vía `spawnSync`; sin proceso
+persistente por tick). Retardo observable 1500 ms entre pasos
+(`AUTONOMOUS_STEP_DELAY_MS`), tope de seguridad `MAX_AUTONOMOUS_STEPS=200`.
+
+**El navegador solo observa:** no conduce el reloj ni decide trades; cada
+transición la decide el motor Python. Cerrar o recargar la pestaña no
+interrumpe la sesión del backend (estado autoritativo en
+`paper-lab-sessions/`). Tras la evaluación, la autonomía arranca sola si el
+estado es `en_espera` o `abierta`; las abstenciones
+(`SIN_ENTRADA`/`DESCARTADO`/`sin_iniciar`) nunca abren el bucle.
+
+**Fin del transporte local:** si un paso no avanza `clock_ms` en
+`en_espera`/`sin_iniciar`, la autonomía se detiene con causa visible
+(`session-transport-cause`): sin entrada nueva, sin cierre inventado
+(`open_at_end`). Lo mismo al terminar en `cerrada` con posición abierta y
+`open_at_end=true`. Chip visible durante la autonomía
+("Autónomo: backend avanza el reloj"); "Entrar"/"Paso a paso" deshabilitados
+mientras dura; una acción manual detiene la autonomía y retoma el control.
+
+**Corrección de selección de prefijo antes de iniciar:** `changePrefix`
+ignoraba la elección sin sesión activa (preexistente en `9a24308`), lo que
+impedía el escenario B en el navegador. Ahora la elección sin sesión fija el
+prefijo para el próximo "Iniciar"; con sesión viva se conserva la
+reconstrucción con el mismo `entry_px` fijo. Verificado: sesión creada con
+35 velas de contexto (prefijo B). Nota factual: con la caché actual
+MINAUSDT 1m, el prefijo B NO garantiza abstención (la señal y el fill
+ocurrieron también con B); la abstención real se demuestra vía HTTP con
+stop ya vulnerado en T (DESCARTADO, sin posición, terminal).
+
+**Aceptación (A–E) con modo autónomo:**
+A) navegador: un "Iniciar sesion" → autonomía sola → ABIERTA (fill
+   ejecutado) → CERRADA por horizonte (exit_px=0.06302, realized_net=3.98,
+   exit_executed=true, open_at_end=false), 2 pasos automáticos, sin botones
+   de avance; evidencia `docs/evidence/INGENIERIA_AUTONOMA_A_ABIERTA.png`.
+B) navegador + HTTP: sesión con stop ya vulnerado en T → DESCARTADO, sin
+   posición; al recuperarla en el navegador NO hay chip autónomo ni pasos
+   (revisión sin cambios); evidencia
+   `docs/evidence/INGENIERIA_AUTONOMA_B_ABSTENCION.png`; además unidad de
+   `sin_iniciar` sin autonomía en `engineering-session.test.tsx`.
+C) HTTP: sesión con señal pendiente de fill y sin más velas → los pasos dejan
+   de avanzar el reloj (cursor/clock invariantes), sin entrada nueva; la
+   causa visible y la detención del bucle están cubiertas por unidad
+   (test C). Sesión detenida al cierre para no dejar sesiones pendientes.
+D) navegador: recarga con posición ABIERTA → mismo session_id/config_hash,
+   un único evento de entrada, sin duplicar efectos; la autonomía NO se
+   re-engancha sola tras recarga (el navegador observa); "Paso a paso"
+   vuelve a estar habilitado y completó el cierre por horizonte.
+E) navegador: "Detener sesion" con posición abierta → `detenida`, posición
+   congelada (pos_open=true, result=null, sin evento de salida), paso
+   posterior no-op (revisión/cursor invariantes); evidencia
+   `docs/evidence/INGENIERIA_AUTONOMA_E_DETENIDA.png`.
+
+**Pruebas:** `npx tsc --noEmit` 0; `npx eslint` 0 (componente + test);
+`npx vitest run src/test/engineering-session.test.tsx` 8/8 (5 previas + 3
+autónomas A/B/C); suite frontend completa 596 passed / 1 skipped (78
+archivos). Python: suite completa 1476 tests → 2 fallos PREEXISTENTES en
+HEAD (no causados por esta sesión; motor y rutas sin tocar):
+`tests/test_paper_lab_engine.py::test_public_dict_vela_solo_open_sin_ohlc`
+y `tests/test_market_stream_window.py` (scenario FAIL≠UNKNOWN); 2 skipped.
+`next build` OK. Exportación JSON/CSV intacta.
+
+**Límites pendientes:** conexión a Binance público (ventana aparte,
+autorización explícita); selector automático de varios símbolos; monitor en
+vivo; paper prospectivo; órdenes; pagos; móvil/Flutter; indicadores
+provisionales; motor paper completo (Etapa 5); recorrido con datos nuevos
+continuos; los dos fallos preexistentes de la suite Python.
