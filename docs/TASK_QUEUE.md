@@ -1,3 +1,25 @@
+## Entrega utilizable del transporte live local + identidad de la evidencia (2026-10-28, base `efa7700`)
+
+`CURRENT_PHASE`: dashboard V2 de escritorio + observación (WS público solo bajo
+autorización explícita; sin monitor, sin órdenes).
+
+`CURRENT_OBJECTIVE`: cerrado — entrega utilizable del bloque live local:
+dashboard 3020 en producción (BUILD_ID `0-HCAplwLhRPpYHuuAPC2`, árbol
+`efa7700`), servicios verificados sin tocarlos (8797 ready con pid-file
+reconciliado; 8792 identificado como LOCAL y NO usado; 8791 caído con
+condición explícita al pulsar «Iniciar»), e identidad de la evidencia
+aclarada (la aceptación corrió sobre árbol sin commitear sobre `90b3c9b`;
+implementación probada = commits `b85f389`+`5c9f409`+`557a1a8`).
+
+`ACTIVE_TASK`: **cerrado**.
+
+`NEXT_TASKS`: **próximo objetivo concreto** — adaptar y verificar este
+mismo recorrido (`/market-lab` → «Iniciar sesión») con datos públicos
+(8791 `--transport public`), con presupuesto y autorización separados del
+operador (incluye acreditación de recepción Binance real, reparación REST,
+churn WS ~9 s, ciclo SSE de 10 s). NO declarar completo: selector
+multiactivo, riesgo completo, paper prospectivo, estrategia rentable.
+
 ## Transporte `market_stream` en vivo de ingeniería: aceptación local PASS (2026-10-28, base `90b3c9b`)
 
 `CURRENT_PHASE`: dashboard V2 de escritorio + observación (WS público solo bajo

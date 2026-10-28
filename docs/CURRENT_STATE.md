@@ -1,3 +1,31 @@
+## Entrega utilizable del transporte live local + identidad de la evidencia (2026-10-28, base `efa7700`)
+
+Factual: dashboard canónico `http://127.0.0.1:3020` ACTIVO en producción
+(BUILD_ID `0-HCAplwLhRPpYHuuAPC2`, árbol `efa7700`), páginas verificadas,
+sin sesiones de ensayo. Identidad de la evidencia de aceptación
+aclarada: se corrió sobre árbol SIN commitear encima de `90b3c9b`
+(`git_sha=90b3c9b` es solo el HEAD al arrancar; la implementación probada
+es la publicada en `b85f389`+`5c9f409`+`557a1a8`, arnés en `e775cfd`).
+
+Servicios verificados (ninguno tocado): 8797 (pid 29096) canónico,
+ready/identificable — su pid-file estaba corrupto por una corrida efímera
+y se reconcilió al valor real (29096/8797) sin tocar el proceso; 8792
+(pid 33104) es `market_stream_service.py --transport local --base-url
+ws://127.0.0.1:9999` (LOCAL, no Binance) y NO se usa como fuente; 8791
+(fuente configurada de 8797) está CAÍDO.
+
+Condición al pulsar «Iniciar sesión» en `/market-lab`: la sesión se crea
+(contexto del cache local) y la conducción queda con error VISIBLE
+(`CONNECT_ERROR`/puertas de feed/`TRANSPORT_LOST`) porque 8791 está caído;
+sin fallback silencioso a 8792. Demo local viva exige fuente loopback
+propia + 8791 `--transport local`. Recorrido completo y BUILD_IDs en
+`docs/ENGINEERING_SESSION_BACKEND_V1.md` §11.6.
+
+Próximo objetivo declarado: adaptar y verificar este mismo recorrido con
+datos públicos (8791 `--transport public`), con presupuesto y autorización
+separados. NO completo: selector multiactivo, riesgo completo, paper
+prospectivo, estrategia rentable.
+
 ## Transporte `market_stream` en vivo de ingeniería: aceptación local PASS (2026-10-28, base `90b3c9b`)
 
 Factual: la sesión de ingeniería consume en vivo el

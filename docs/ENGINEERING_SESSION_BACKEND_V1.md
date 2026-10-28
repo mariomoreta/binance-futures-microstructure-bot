@@ -349,3 +349,79 @@ salida (`cerrada_s` 0.006), honesto.
 - Gaps para público (declarados, NO acreditados): recepción Binance no
   acreditada (todo loopback); reparación REST inexistente en local;
   churn WS ~9 s tolerado; ciclo SSE de 10 s del adaptador en silencio.
+
+### 11.6 Identidad de la evidencia y entrega utilizable (2026-10-28, cierre `efa7700`)
+
+**Identidad de la evidencia (honesto):** la aceptación de §11.3 se ejecutó
+sobre un árbol de trabajo SIN commitear encima de `90b3c9b`; el arnés
+capturó `git_sha=90b3c9b` (HEAD al arrancar la corrida), que NO contiene la
+implementación probada. Ese árbol sin commitear es exactamente el que hoy
+publican los commits `b85f389` (backend live), `5c9f409` (frontend live) y
+`557a1a8` (fix del explorador), con arnés y evidencia en `e775cfd`. No se
+atribuye código nuevo a la base: la prueba valida el contenido publicado
+en esos commits. SHA fuente del árbol final: **`efa7700`**.
+
+**BUILD_ID literales:**
+- BUILD_ID de la corrida de aceptación (build del arnés sobre el árbol sin
+  commitear): `WDYGaWV_cUxErasQlce70`.
+- BUILD_ID de la entrega en 3020 (build de producción de `next build`
+  desde el árbol `efa7700`, sin cambios de código): `0-HCAplwLhRPpYHuuAPC2`.
+
+**Estado de entrega (dashboard disponible, servicios verificados, nada
+tocado):**
+- Dashboard canónico `http://127.0.0.1:3020` activo (producción, BUILD_ID
+  `0-HCAplwLhRPpYHuuAPC2`); sin sesiones de ensayo
+  (`data/engineering-session/sessions/` sin sesiones).
+- 8797 (pid 29096): servicio de ingeniería canónico
+  (`scripts/engineering_session_service.py`, dir dedicado). Identidad
+  verificada. Su pid-file (`data/engineering-session/service.json`,
+  gitignored) estaba CORRUPTO por una corrida efímera posterior
+  (pid 10112/puerto 18797); reconciliado al valor real (29096/8797) con el
+  mismo schema que escribe el servicio: el proceso NO fue detenido ni
+  reiniciado.
+- 8792 (pid 33104): servicio de mercado preexistente, identidad verificada
+  por línea de comandos: `market_stream_service.py --port 8792 --transport
+  local --base-url ws://127.0.0.1:9999` → modo LOCAL (no Binance), sin
+  consumidores. NO se usa como fuente de la sesión: el backend 8797
+  apunta a su fuente configurada `http://127.0.0.1:8791` y no hay fallback
+  silencioso.
+- 8791 (fuente de mercado de 8797): CAÍDO. Arrancarlo exige
+  `--transport local` (WS loopback propio, p. ej. productor del arnés) o
+  `--transport public` (WS público de Binance, activación EXPLÍCITA no
+  autorizada en este bloque). Sin fuente local activa, no hay 8791
+  legítimo.
+
+**Recorrido del operador (lo que hay hoy):**
+1. URL: `http://127.0.0.1:3020/market-lab` (símbolo MINAUSDT, intervalo 1m,
+   fijos en la página).
+2. Opción: ventana de contexto — prefijo «A (ventana de contexto 20)» o
+   «B (ventana de contexto 35)» (fija `entry_px` distinto con igual
+   config; no es un escáner).
+3. Botón: «Iniciar sesión» (`btn-iniciar-sesion`), con chip de servicio
+   (`service-chip`) mostrando ready/down/error.
+4. Fuente del contexto: cache local vía `/api/v1/market-series`
+   (market-explorer, 0 peticiones upstream). Fuente de la ventana de
+   operación: feed SSE del servicio de mercado que 8797 tiene configurado
+   (`http://127.0.0.1:8791`).
+5. Qué inicia el botón: (a) comprobar 8797 y, si está down, arrancar la
+   instancia canónica vía BFF con identidad verificada; (b) crear la
+   sesión en el backend con transporte `market_stream` (solo contexto en
+   el create); (c) conducción autónoma: el backend avanza con los eventos
+   SSE.
+6. Condición actual explícita: con 8791 caído, la sesión se crea y la
+   conducción queda bloqueada con error VISIBLE
+   (`CONNECT_ERROR`/puertas de feed/`TRANSPORT_LOST`); no hay decisión
+   falsa ni uso silencioso de 8792. Para una demo local viva hay que
+   arrancar primero una fuente loopback propia (p. ej. el productor del
+   arnés `scripts/engineering_live_local_acceptance.py`) y luego 8791 con
+   `--transport local --base-url ws://<ese puerto>`.
+7. Pendiente para Binance público (REQUIERE autorización y presupuesto
+   separados): activación explícita de 8791 con `--transport public`,
+   acreditación de recepción Binance real, reparación REST, tratamiento
+   del churn WS ~9 s y del ciclo SSE de 10 s del adaptador.
+
+**Próximo objetivo concreto (no es «todo completo»):** adaptar y verificar
+este MISMO recorrido con datos públicos (8791 `--transport public`),
+presupuesto y autorización separados. Sigue pendiente y NO está completo:
+selector multiactivo, riesgo completo, paper prospectivo y estrategia
+rentable.
