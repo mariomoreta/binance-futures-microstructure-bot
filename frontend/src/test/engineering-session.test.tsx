@@ -21,6 +21,8 @@ const mocks = vi.hoisted(() => ({
   createBackendSession: vi.fn(),
   fetchBackendSession: vi.fn(),
   controlBackendSession: vi.fn(),
+  fetchEngineeringService: vi.fn(),
+  startEngineeringService: vi.fn(),
 }));
 
 vi.mock("@/lib/session-lab", async (importOriginal) => {
@@ -31,6 +33,8 @@ vi.mock("@/lib/session-lab", async (importOriginal) => {
     createBackendSession: mocks.createBackendSession,
     fetchBackendSession: mocks.fetchBackendSession,
     controlBackendSession: mocks.controlBackendSession,
+    fetchEngineeringService: mocks.fetchEngineeringService,
+    startEngineeringService: mocks.startEngineeringService,
   };
 });
 
@@ -158,6 +162,17 @@ describe("sesión de ingeniería — navegador observador (backend conduce)", ()
         return Promise.resolve(ctlResp(mkSession(), {state: "stopped"}));
       },
     );
+    // Servicio de ingeniería disponible y verificado por defecto: la mayoría
+    // de casos prueba el flujo de sesión, no la puerta del servicio.
+    mocks.fetchEngineeringService.mockResolvedValue({
+      ok: true,
+      data: {state: "ready", service: "engineering-session-service/v1",
+        pid: 4242, port: 8797, detail: null},
+      status: 200,
+    });
+    mocks.startEngineeringService.mockResolvedValue({
+      ok: true, data: {pid: 4242, port: 8797}, status: 200,
+    });
     localStorage.removeItem(SESSION_ID_STORAGE_KEY);
   });
   afterEach(() => {
@@ -191,6 +206,100 @@ describe("sesión de ingeniería — navegador observador (backend conduce)", ()
     );
     // El identificador de sesión vive en el navegador; el estado, no.
     expect(localStorage.getItem(SESSION_ID_STORAGE_KEY)).toBe("sess-123");
+    // Servicio ya listo: el arranque explícito del servicio NO se repite.
+    expect(mocks.startEngineeringService).not.toHaveBeenCalled();
+  });
+
+  it("montaje: consulta el estado del servicio con GET puro; NO arranca procesos ni sesiones", async () => {
+    render(<EngineeringSession symbol="MINAUSDT" interval="1m" bars={90} />);
+    await waitFor(() => expect(mocks.fetchEngineeringService).toHaveBeenCalled());
+    // Evitar confusión con el ciclo de observador: solo contamos la llamada
+    // de servicio, que es consulta (la puerta de arranque es POST del botón).
+    expect(mocks.startEngineeringService).not.toHaveBeenCalled();
+    expect(mocks.createBackendSession).not.toHaveBeenCalled();
+    await waitFor(() =>
+      expect(screen.getByTestId("service-chip").dataset.state).toBe("ready"));
+  });
+
+  it("servicio detenido → Iniciar: arranque explícito ONCE, servicio listo y una sola sesión", async () => {
+    // Estado coherente: consultas de servicio devuelven "down" hasta que el
+    // POST de arranque explícito cambia el estado (el montaje consume la
+    // primera consulta GET; la puerta del botón hace la suya).
+    let serviceReady = false;
+    mocks.fetchEngineeringService.mockImplementation(() => Promise.resolve({
+      ok: true,
+      data: serviceReady
+        ? {state: "ready", service: "engineering-session-service/v1",
+          pid: 4242, port: 8797, detail: null}
+        : {state: "down", detail: "sin escucha", pid: null, port: 8797},
+      status: 200,
+    } as never));
+    mocks.startEngineeringService.mockImplementation(() => {
+      serviceReady = true;
+      return Promise.resolve({
+        ok: true, data: {pid: 4242, port: 8797}, status: 200,
+      });
+    });
+    render(<EngineeringSession symbol="MINAUSDT" interval="1m" bars={90} />);
+    await waitFor(() =>
+      expect(screen.getByTestId("service-chip").dataset.state).toBe("down"));
+    fireEvent.click(screen.getByRole("button", {name: "Iniciar sesion"}));
+    await waitFor(() => expect(mocks.createBackendSession).toHaveBeenCalledTimes(1));
+    // Arranque explícito con POST action=start, UNA sola vez (sin duplicados).
+    expect(mocks.startEngineeringService).toHaveBeenCalledTimes(1);
+    expect(mocks.startEngineeringService.mock.calls[0]).toEqual([]);
+    await waitFor(() =>
+      expect(screen.getByTestId("service-chip").dataset.state).toBe("ready"));
+    // Una sola sesión: ni segunda creación ni segundo control start.
+    expect(mocks.createBackendSession).toHaveBeenCalledTimes(1);
+  });
+
+  it("fallo de arranque del servicio: error visible y claro SIN crear sesión", async () => {
+    mocks.fetchEngineeringService.mockResolvedValue({
+      ok: true,
+      data: {state: "down", detail: "sin escucha", pid: null, port: 8797},
+      status: 200,
+    });
+    mocks.startEngineeringService.mockResolvedValue({
+      ok: false,
+      error: "ENGINEERING_SERVICE_START_FAILED",
+      detail: "spawn del controlador canónico falló",
+      status: 503,
+    });
+    render(<EngineeringSession symbol="MINAUSDT" interval="1m" bars={90} />);
+    await waitFor(() =>
+      expect(screen.getByTestId("service-chip").dataset.state).toBe("down"));
+    fireEvent.click(screen.getByRole("button", {name: "Iniciar sesion"}));
+    await waitFor(() => expect(screen.getByTestId("session-error")).toBeTruthy());
+    const banner = screen.getByTestId("session-error").textContent ?? "";
+    expect(banner).toContain("ENGINEERING_SERVICE_START_FAILED");
+    expect(banner).toContain("spawn del controlador canónico falló");
+    expect(banner).toContain("No quedó ninguna sesión creada");
+    // Identidad conservadora: sin procesos huérfanos ni sesión creada.
+    expect(mocks.startEngineeringService).toHaveBeenCalledTimes(1);
+    expect(mocks.createBackendSession).not.toHaveBeenCalled();
+    await waitFor(() =>
+      expect(screen.getByTestId("service-chip").dataset.state).toBe("error"));
+  });
+
+  it("puerto ocupado por servicio de identidad no verificable: error claro, sin arrancar ni detener PID desconocido", async () => {
+    mocks.fetchEngineeringService.mockResolvedValue({
+      ok: true,
+      data: {state: "unidentified", detail: "puerto ocupado por un servicio desconocido",
+        pid: null, port: 8797},
+      status: 200,
+    });
+    render(<EngineeringSession symbol="MINAUSDT" interval="1m" bars={90} />);
+    await waitFor(() =>
+      expect(screen.getByTestId("service-chip").dataset.state).toBe("error"));
+    fireEvent.click(screen.getByRole("button", {name: "Iniciar sesion"}));
+    await waitFor(() => expect(screen.getByTestId("session-error")).toBeTruthy());
+    const banner = screen.getByTestId("session-error").textContent ?? "";
+    expect(banner).toContain("no identificable");
+    expect(banner).toContain("no se reutiliza ni se detiene");
+    // Conservador: ni arranque repetido ni creación de sesión.
+    expect(mocks.startEngineeringService).not.toHaveBeenCalled();
+    expect(mocks.createBackendSession).not.toHaveBeenCalled();
   });
 
   it("durante la conducción backend el chip session-autonomous aparece y el avance manual queda deshabilitado", async () => {

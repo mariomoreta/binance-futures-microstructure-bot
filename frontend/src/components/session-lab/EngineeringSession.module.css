@@ -226,6 +226,22 @@
   padding: 1px 6px;
   background: #072233;
 }
+/* Estado del servicio de ingeniería: detenido / arrancando / disponible /
+   error (data-state). */
+.sourceChip.serviceChip,
+.serviceChip {
+  font: 10px var(--font-mono);
+  color: #8fc8e6;
+  border: 1px solid var(--accent-muted);
+  border-radius: 3px;
+  padding: 1px 6px;
+  background: #072233;
+  white-space: nowrap;
+}
+.serviceChip[data-state="ready"] { color: #4fd1a0; }
+.serviceChip[data-state="down"] { color: #f0b429; }
+.serviceChip[data-state="error"],
+.serviceChip[data-state="starting"] { color: #ff7676; }
 .chartLegend {
   display: flex;
   align-items: center;

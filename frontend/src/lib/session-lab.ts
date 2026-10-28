@@ -336,3 +336,39 @@ export async function controlBackendSession(
     }),
   });
 }
+
+// ---------------------------------------------------------------------------
+// SERVICIO de ingeniería: estado y arranque explícito (control del operador)
+// ---------------------------------------------------------------------------
+
+export interface EngineeringServiceInfo {
+  state: "down" | "unidentified" | "ready";
+  service?: string | null;
+  engine_version?: string | null;
+  pid?: number | null;
+  port?: number | null;
+  cadence_ms?: number | null;
+  sessions_dir?: string | null;
+  detail?: string | null;
+}
+
+/** Estado del servicio (GET puro: consulta; NUNCA arranca nada). */
+export async function fetchEngineeringService(): Promise<
+  EngineeringApiResult<EngineeringServiceInfo>
+> {
+  return engineeringJson("/service");
+}
+
+/**
+ * Arranque explícito del servicio canónico del proyecto vía BFF (POST con
+ * guardia de origen; readiness con límite; identidad verificada). Idempotente
+ * si el servicio ya está listo y verificado.
+ */
+export async function startEngineeringService(): Promise<
+  EngineeringApiResult<{ pid?: number; port?: number; already?: boolean }>
+> {
+  return engineeringJson("/service", {
+    method: "POST",
+    body: JSON.stringify({action: "start"}),
+  });
+}

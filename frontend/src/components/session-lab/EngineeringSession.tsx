@@ -13,6 +13,7 @@ import {
   createBackendSession, fetchMarketSeries, marketCandlesToPaper,
   buildEngineeringConfig, splitContextAndOperation, lastContextClose,
   controlBackendSession, fetchBackendSession,
+  fetchEngineeringService, startEngineeringService,
   type EngineeringControlAction, type EngineeringDriveState,
   ENGINEERING_RULE_VERSION,
 } from "@/lib/session-lab";
@@ -54,6 +55,21 @@ const DRIVE_CAUSE_TEXT: Record<string, string> = {
   OPERATOR_STOP: "Conducción detenida por el operador.",
   SESSION_STOPPED: "Conducción terminada: la sesión quedó congelada (detenida).",
   DRIVE_EVENT_LIMIT: "Conducción detenida: alcanzó el techo de seguridad de eventos (DRIVE_EVENT_LIMIT).",
+};
+
+// Estados VISIBLES del servicio de ingeniería: distinguen comprobando /
+// arrancando / disponible / detenido / con error. El arranque ocurre SOLO por
+// la acción explícita del operador (POST del propio botón); ninguna consulta
+// GET ni la apertura de la página inicia procesos.
+type EngineeringServiceUiState =
+  | "checking" | "starting" | "ready" | "down" | "error";
+
+const SERVICE_CHIP_TEXT: Record<EngineeringServiceUiState, string> = {
+  checking: "Comprobando servicio de ingeniería…",
+  starting: "Arrancando servicio de ingeniería…",
+  ready: "Servicio de ingeniería listo",
+  down: "Servicio de ingeniería detenido",
+  error: "Servicio de ingeniería con error",
 };
 
 interface EngineeringSessionProps {
@@ -101,7 +117,18 @@ export default function EngineeringSession({
   const stateRef = useRef<PaperSessionState | null>(null);
   // Ref a la última identidad observada (para el observador con GetSession).
   const observeRef = useRef(false);
+  // Guardia síncrona de arranque: bloquea el segundo click de un gesto doble
+  // (ref actualizada sin esperar render de React).
+  const startInFlightRef = useRef(false);
   const [refreshing, setRefreshing] = useState(false);
+
+  // Estado del SERVICIO de ingeniería (visto por el BFF con guardia de
+  // origen): unknown / checking / starting / ready / down / error. Se
+  // consulta al montaje con GET puro (sin arranque); el arranque es una
+  // POST acción explícita del operador.
+  const [serviceState, setServiceState] = useState<EngineeringServiceUiState>(
+    "checking");
+  const [serviceDetail, setServiceDetail] = useState<string | null>(null);
 
   const [requestIdCounter, setRequestIdCounter] = useState(0);
   const nextRequestId = useCallback(() => {
@@ -229,6 +256,76 @@ export default function EngineeringSession({
     }
   }, [state, recoverAuthoritative]);
 
+  // Estado del servicio al montaje: GET puro (consulta; NUNCA arranca nada).
+  // Abrir la página inicia cero procesos: el marcador informa honestamente
+  // si el servicio está detenido. El estado inicial es "checking".
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      const result = await fetchEngineeringService();
+      if (cancelled) return;
+      const info = result.data;
+      if (!result.ok || !info) {
+        setServiceState("error");
+        setServiceDetail(result.detail ?? result.error ?? "sin respuesta del BFF");
+        return;
+      }
+      if (info.state === "ready") {
+        setServiceState("ready");
+        setServiceDetail(info.pid != null ? `pid ${info.pid}` : null);
+      } else if (info.state === "down") {
+        setServiceState("down");
+        setServiceDetail(info.detail ?? null);
+      } else {
+        setServiceState("error");
+        setServiceDetail(info.detail ?? "identidad del servicio no verificable");
+      }
+    })().catch(() => {
+      if (!cancelled) setServiceState("error");
+    });
+    return () => { cancelled = true; };
+  }, []);
+
+  // Puerta de arranque explícito: usada SOLO por el click del operador.
+  // Comprueba (GET) y, si está detenido, arranca la instancia canónica del
+  // proyecto vía BFF (readiness con límite + identidad verificada). Si ya
+  // está disponible no vuelve a arrancar nada (idempotente).
+  const ensureService = useCallback(async (): Promise<boolean> => {
+    let info = (await fetchEngineeringService()).data;
+    if (!info || info.state !== "ready") {
+      if (info?.state === "unidentified") {
+        setServiceState("error");
+        setServiceDetail(info.detail
+          ?? "puerto ocupado por un servicio de identidad no verificable");
+        setError(
+          "SERVICIO_DE_INGENIERIA: el puerto del servicio lo ocupa un proceso no identificable; no se reutiliza ni se detiene. Deténgalo manualmente si corresponde."
+        );
+        return false;
+      }
+      setServiceState("starting");
+      setServiceDetail(null);
+      const started = await startEngineeringService();
+      if (!started.ok || !started.data) {
+        setServiceState("error");
+        setServiceDetail(started.detail ?? started.error ?? "sin detalle");
+        setError(
+          `SERVICIO_DE_INGENIERIA: el arranque del servicio falló (${started.error ?? "desconocido"})${started.detail ? ` — ${started.detail}` : ""}. No quedó ninguna sesión creada.`
+        );
+        return false;
+      }
+      info = (await fetchEngineeringService()).data;
+      if (!info || info.state !== "ready") {
+        setServiceState("error");
+        setServiceDetail("arrancado pero la verificación de identidad falló");
+        setError("SERVICIO_DE_INGENIERIA: instancia arrancada sin identidad verificable.");
+        return false;
+      }
+    }
+    setServiceState("ready");
+    setServiceDetail(info.pid != null ? `pid ${info.pid}` : null);
+    return true;
+  }, []);
+
   // --------------------------------------------------------------------------
   // Conducción backend: arranque, observación y parada.
   // --------------------------------------------------------------------------
@@ -291,9 +388,24 @@ export default function EngineeringSession({
   const driveStopped = drive != null && drive.state === "stopped";
 
   const startSession = useCallback(async () => {
+    // Guardia SÍNCRONA contra doble clic: un segundo click puede llegar
+    // antes de que React re-renderice el `disabled` del botón (el estado de
+    // React no es síncrono); la ref bloquea el segundo arranque en el MISMO
+    // gesto. Sin esto, un doble clic creaba DOS sesiones (duplicado).
+    if (startInFlightRef.current) return;
+    startInFlightRef.current = true;
     setLoading(true);
     setError(null);
     setStarted(false);
+    // Puerta EXPLÍCITA del operador: comprobar el servicio y, si está
+    // detenido, arrancar la instancia canónica del proyecto (readiness con
+    // límite + identidad verificada). Si falla, no se crea ninguna sesión.
+    const serviceOk = await ensureService();
+    if (!serviceOk) {
+      setLoading(false);
+      startInFlightRef.current = false;
+      return;
+    }
     try {
       const series = await fetchMarketSeries(symbol, interval, bars);
       if (!series || !series.candles || series.candles.length === 0) {
@@ -372,8 +484,9 @@ export default function EngineeringSession({
       setError(exc instanceof Error ? exc.message : String(exc));
     } finally {
       setLoading(false);
+      startInFlightRef.current = false;
     }
-  }, [symbol, interval, bars, prefixOption, entryPxFixed, applyAuthoritative, nextRequestId, manualControl]);
+  }, [symbol, interval, bars, prefixOption, entryPxFixed, applyAuthoritative, nextRequestId, manualControl, ensureService]);
 
   const changePrefix = useCallback(async (next: "A" | "B") => {
     // La eleccion de prefijo antes de iniciar solo fija la opcion para el
@@ -558,6 +671,16 @@ export default function EngineeringSession({
           >
             {loading ? "Iniciando..." : "Iniciar sesion"}
           </button>
+          {/* Estado explícito del servicio: distingue detenido / arrancando /
+              disponible / error. El GET de montaje no inicia procesos. */}
+          <span
+            className={s.serviceChip ?? s.autonomousChip}
+            data-testid="service-chip"
+            data-state={serviceState}
+            data-service-pid={serviceDetail ?? undefined}
+          >
+            {SERVICE_CHIP_TEXT[serviceState]}
+          </span>
           <button
             type="button"
             className={s.stopButton}
