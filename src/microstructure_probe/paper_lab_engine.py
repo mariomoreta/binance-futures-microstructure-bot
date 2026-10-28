@@ -830,7 +830,9 @@ def evaluate_session(
 
     Transiciones:
       sin_iniciar → evaluando → en_espera (ENTRADA_SIMULADA)
-      sin_iniciar → evaluando → cerrada (SIN_ENTRADA / DESCARTADO, sin posición)
+      sin_iniciar → evaluando → sin_iniciar (SIN_ENTRADA temporal: la sesion
+      sigue abierta a datos nuevos; reevaluacion por evento del transporte)
+      sin_iniciar → evaluando → cerrada (DESCARTADO terminal, sin posición)
 
     Parametros:
       at_ms: tiempo de evaluacion T. Si es None, usa state.clock_ms o _now_ms().
@@ -1081,77 +1083,20 @@ def evaluate_session(
         )
         return next_state
 
-    # Senal SIN_ENTRADA porque no hay evidencia suficiente EN LAS VELAS DE
-    # OPERACION (que son las que evalua la senal): sesion temporal, no cierra.
-    # Espera a que el reloj revele mas velas de operacion.
-    #
-    # Importante: el gate usa el prefijo de operacion, no el fusionado con el
-    # contexto. Con contexto presente y cero velas de operacion conocidas, el
-    # prefijo fusionado no esta vacio y la sesion se cerraba en la primera
-    # evaluacion (sin evidencia real), dejando el escenario sin "Paso a paso".
+    # Abstencion temporal vs descarte terminal (separacion explicita):
+    #   * SIN_ENTRADA en T (precio no a favor, sin stop vulnerado) o prefijo
+    #     sin velas plenamente conocidas: abstencion TEMPORAL. La sesion
+    #     permanece sin_iniciar y se reevalua con cada evento nuevo del
+    #     transporte; un precio favorable posterior todavia puede confirmar
+    #     la entrada.
+    #   * DESCARTADO (stop ya vulnerado en T): descarte TERMINAL. La sesion
+    #     se cierra y no se reevalua.
     op_prefix = _known_prefix_at(next_state.candles, signal_at_ms)
     op_fully = _fully_known_at(next_state.candles, signal_at_ms)
-    if not op_prefix or not op_fully:
-        decision = signal
-        reason = signal_reason
-        evidence = dict(signal_evidence)
-        evidence.update({
-            "evaluated_at_ms": now,
-            "at_ms": signal_at_ms,
-            "rule_version": rule_version or RULE_CAUSAL_V1,
-            "admit_risk": risk_ok,
-            "risk_reason": risk_reason,
-        })
-        next_state = PaperSessionState(
-            session_id=next_state.session_id,
-            created_at_ms=next_state.created_at_ms,
-            updated_at_ms=now,
-            status="sin_iniciar",  # sesion temporal, espera mas datos
-            config=PaperSessionConfig(
-                symbol=next_state.config.symbol,
-                interval=next_state.config.interval,
-                direction=next_state.config.direction,
-                notional_usdt=next_state.config.notional_usdt,
-                entry_px=next_state.config.entry_px,
-                stop_px=next_state.config.stop_px,
-                stop_distance_pct=next_state.config.stop_distance_pct,
-                horizon_ms=next_state.config.horizon_ms,
-                fee_bps=next_state.config.fee_bps,
-                spread_bps=next_state.config.spread_bps,
-                slippage_bps=next_state.config.slippage_bps,
-                hypothesis_id=hypothesis_id,
-                hypothesis_version=hypothesis_version,
-                rule_version=rule_version or RULE_CAUSAL_V1,
-                decision=decision,
-                decision_reason=reason,
-                decision_evidence=evidence,
-            ),
-            candles=next_state.candles,
-            context_candles=next_state.context_candles,
-            cursor=next_state.cursor,
-            position=next_state.position,
-            costs=next_state.costs,
-            events=list(next_state.events) + [
-                PaperEvent(
-                    at_ms=signal_at_ms,
-                    label=f"Decision: {decision} (esperando datos)",
-                    kind="protection",
-                    detail=reason,
-                )
-            ],
-            result=None,
-            clock_ms=next_state.clock_ms,
-            config_hash=next_state.config_hash,
-            input_hash=next_state.input_hash,
-            engine_version=next_state.engine_version,
-            limitations=list(next_state.limitations),
-            revision=next_state.revision + 1,
-            authoritative=None,
-        )
-        return next_state
+    terminal_discard = signal == "DESCARTADO"
 
-    # Senal SIN_ENTRADA definitiva (stop vulnerado o precio no a favor):
-    # cierra sesion con motivo.
+    status = "cerrada" if terminal_discard else "sin_iniciar"
+
     decision = signal
     reason = signal_reason
     evidence = dict(signal_evidence)
@@ -1161,13 +1106,16 @@ def evaluate_session(
         "rule_version": rule_version or RULE_CAUSAL_V1,
         "admit_risk": risk_ok,
         "risk_reason": risk_reason,
+        "temporal_abstention": (not terminal_discard),
+        "abstention_kind": ("terminal_discard" if terminal_discard
+                            else "temporal"),
     })
 
     next_state = PaperSessionState(
         session_id=next_state.session_id,
         created_at_ms=next_state.created_at_ms,
         updated_at_ms=now,
-        status="cerrada",
+        status=status,
         config=PaperSessionConfig(
             symbol=next_state.config.symbol,
             interval=next_state.config.interval,
@@ -1195,7 +1143,10 @@ def evaluate_session(
         events=list(next_state.events) + [
             PaperEvent(
                 at_ms=signal_at_ms,
-                label=f"Decisión: {decision}",
+                label=("Decision: {} (descarte terminal)".format(decision)
+                       if terminal_discard else
+                       "Decision: {} temporal (esperando datos)".format(
+                           decision)),
                 kind="protection",
                 detail=reason,
             )
@@ -1929,7 +1880,9 @@ def session_to_public_dict(
     """Serializa la sesión para respuesta pública (API/evidencia/gráfico).
 
     Solo incluye información disponible en T:
-      - Velas con open_time_ms <= T (conocidas en T).
+      - Velas con open_time_ms <= T (conocidas en T). Las velas de operación
+        cuya apertura aún no ocurrió NO se publican: su existencia es
+        información futura (la duración total de la ventana de operación).
       - Para velas aún abiertas (close_time_ms > T o close_time_ms None),
         solo se publican open_time_ms y open; nunca high/low/close finales.
       - decision_evidence y authoritative se filtran para no revelar futuros.
@@ -1944,12 +1897,12 @@ def session_to_public_dict(
     if at_ms is None:
         at_ms = -1
 
-    # Todas las velas de operación se publican; el frontend filtra por
-    # open_time_ms para el gráfico. open solo se publica cuando su
-    # open_time_ms <= at_ms (antes no es conocido); high/low/close solo cuando
-    # el cierre es conocido en T. Nunca se filtra información futura: open de
-    # una vela cuya apertura aún no ocurrió se publica como None.
-    known_candles = list(state.candles)
+    # Solo el prefijo revelado: una vela cuya apertura es posterior a T no es
+    # conocida ni por cantidad ni por marca temporal. Publicarla (aunque sea
+    # con open=None) revela el tamaño y la forma del futuro; el evaluador solo
+    # recibe el prefijo revelado. can_step y cursor informan al frontend del
+    # resto de la ventana sin exponer filas futuras.
+    known_candles = [c for c in state.candles if c.open_time_ms <= at_ms]
 
     def _public_candle(c: PaperCandle) -> Dict[str, Any]:
         entry: Dict[str, Any] = {
@@ -1958,10 +1911,7 @@ def session_to_public_dict(
             "received_at": c.received_at,
         }
         # El open de una vela solo se conoce en su open_time_ms.
-        if c.open_time_ms <= at_ms:
-            entry["open"] = c.open
-        else:
-            entry["open"] = None
+        entry["open"] = c.open
         # Solo publicar OHLC si la vela está plenamente conocida en T.
         if c.close_time_ms is not None and c.close_time_ms <= at_ms:
             entry["high"] = c.high
@@ -2475,8 +2425,22 @@ def save_session(
         tmp = _unique_tmp_path(path)
         try:
             payload_text = json.dumps(payload_dict, indent=1, default=str)
-            tmp.write_text(payload_text, encoding="utf-8")
-            os.replace(tmp, path)
+            # Windows: el replace atómico puede chocar TRANSITORIAMENTE con
+            # escaneo antimalware/índices (WinError 5 "Access denied" /
+            # violación de compartición). Reintento acotado con retardo;
+            # WRITE_FAILED solo si todos los intentos fallan.
+            last_exc: Optional[Exception] = None
+            for attempt in range(5):
+                try:
+                    tmp.write_text(payload_text, encoding="utf-8")
+                    os.replace(tmp, path)
+                    last_exc = None
+                    break
+                except (OSError, ValueError) as exc:
+                    last_exc = exc
+                    time.sleep(0.02 * (attempt + 1))
+            if last_exc is not None:
+                raise last_exc
         except Exception as exc:
             # Limpiar temporal si queda; no dejar estado parcial.
             try:
@@ -2511,12 +2475,30 @@ def load_session(session_id: str,
     path = _session_path(sessions_dir, session_id)
     if not path.exists():
         return None
-    try:
-        d = json.loads(path.read_text(encoding="utf-8"))
-        return session_from_dict(d)
-    except Exception as exc:
-        raise ValueError(
-            f"IDENTITY_UNCERTAIN: sesión {session_id} ilegible: {exc}")
+    last_exc: Optional[Exception] = None
+    for _attempt in range(5):
+        try:
+            d = json.loads(path.read_text(encoding="utf-8"))
+        except json.JSONDecodeError as exc:
+            # Corrupción real del archivo: nunca fabricar estado.
+            raise ValueError(
+                f"IDENTITY_UNCERTAIN: sesión {session_id} ilegible: {exc}")
+        except (PermissionError, OSError) as exc:
+            # Windows: lectura concurrente con el replace atómico puede dar
+            # un acceso denegado TRANSITORIO. Reintento acotado; la corrupción
+            # persistente sigue explícita (IDENTITY_UNCERTAIN).
+            last_exc = exc
+            time.sleep(0.02 * (_attempt + 1))
+            continue
+        try:
+            return session_from_dict(d)
+        except ValueError:
+            raise
+        except Exception as exc:
+            raise ValueError(
+                f"IDENTITY_UNCERTAIN: sesión {session_id} ilegible: {exc}")
+    raise ValueError(
+        f"IDENTITY_UNCERTAIN: sesión {session_id} ilegible: {last_exc}")
 
 
 def list_sessions(root: str | Path = ".") -> List[Dict[str, Any]]:
