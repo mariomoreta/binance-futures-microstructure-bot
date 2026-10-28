@@ -14,8 +14,9 @@ import {
   buildEngineeringConfig, splitContextAndOperation, lastContextClose,
   controlBackendSession, fetchBackendSession,
   fetchEngineeringService, startEngineeringService,
+  ENGINEERING_TRANSPORT_MARKET_STREAM,
   type EngineeringControlAction, type EngineeringDriveState,
-  ENGINEERING_RULE_VERSION,
+  type EngineeringTransport,
 } from "@/lib/session-lab";
 import { PaperChart } from "../paper-lab-live/PaperChart";
 import { PositionPanel } from "../paper-lab-live/PositionPanel";
@@ -38,11 +39,16 @@ const SESSION_ID_STORAGE_KEY = "paper-lab-sesion-ingenieria-id";
 // local, sin llamadas periodicas a /step.
 const OBSERVER_INTERVAL_MS = 800;
 
-// Dos prefijos de datos sobre el MISMO simbolo y la MISMA configuracion de
-// sesion. Se usan solo para demostrar que, bajo igual configuracion, un
-// prefijo admite entrada y el otro se abstiene (no es un escaner ni una
-// estrategia rentable).
+// Dos ventanas de CONTEXTO sobre el MISMO simbolo y la MISMA configuracion
+// de sesion (modo live: la ventana de operacion la produce el feed del
+// servicio de mercado, no el navegador). Se usan para demostrar que, bajo
+// igual configuracion, una ventana de contexto distinta fija un entry_px
+// distinto (no es un escaner ni una estrategia rentable).
 const PREFIX_CONTEXT_COUNT: Record<"A" | "B", number> = { A: 20, B: 35 };
+const PREFIX_LABEL: Record<"A" | "B", string> = {
+  A: "A (ventana de contexto 20)",
+  B: "B (ventana de contexto 35)",
+};
 
 // Texto visible de la causa de fin de conducción (moteado del estado del
 // drive del backend). SESSION_CLOSED: el motor cerró la sesión; END_OF_TRANSPORT:
@@ -55,6 +61,19 @@ const DRIVE_CAUSE_TEXT: Record<string, string> = {
   OPERATOR_STOP: "Conducción detenida por el operador.",
   SESSION_STOPPED: "Conducción terminada: la sesión quedó congelada (detenida).",
   DRIVE_EVENT_LIMIT: "Conducción detenida: alcanzó el techo de seguridad de eventos (DRIVE_EVENT_LIMIT).",
+  IDENTITY_MISMATCH: "Conducción detenida: la identidad del stream (símbolo/intervalo) no coincide con la sesión.",
+  TRANSPORT_LOST: "Conducción detenida: el transporte de mercado se perdió (hilo del adaptador terminado).",
+};
+
+// Texto visible de la puerta de evaluación live (drive.last_gate). La puerta
+// ABSTIENE (no bloquea la conducción): la sesión conserva su decisión hasta
+// que el feed vuelve a ser evaluable.
+const GATE_CAUSE_TEXT: Record<string, string> = {
+  DATA_STALE: "Puerta live: frescura de velas insuficiente para evaluar (DATA_STALE); la conducción espera sin reevaluar.",
+  FEED_SILENCE: "Puerta live: silencio del feed (sin velas cerradas dentro del límite, FEED_SILENCE); la sesión conserva su última decisión sin reevaluar.",
+  GRID_GAP: "Puerta live: hueco en la rejilla de velas cerradas (GRID_GAP); se abstiene hasta completar la serie.",
+  SESSION_NOT_EVALUABLE: "Puerta live: la sesión no está evaluable en este reloj (SESSION_NOT_EVALUABLE).",
+  IDENTITY_MISMATCH: "Puerta live: identidad del stream distinta a la de la sesión (IDENTITY_MISMATCH); sin evaluación.",
 };
 
 // Estados VISIBLES del servicio de ingeniería: distinguen comprobando /
@@ -115,6 +134,13 @@ export default function EngineeringSession({
   const [drive, setDrive] = useState<EngineeringDriveState | null>(null);
   // Ref al último estado observado: evita capturas obsoletas (stale closure).
   const stateRef = useRef<PaperSessionState | null>(null);
+  // Ref al último drive observado (runner/evidencia del transporte live).
+  const driveRef = useRef<EngineeringDriveState | null>(null);
+  // Transporte de la sesión en curso: live (market_stream, default) o
+  // local_replay. Tras recuperar una sesión se toma del drive del backend
+  // (incluye el transporte persistido aunque el drive esté idle).
+  const [transportKind, setTransportKind] = useState<EngineeringTransport>(
+    ENGINEERING_TRANSPORT_MARKET_STREAM);
   // Ref a la última identidad observada (para el observador con GetSession).
   const observeRef = useRef(false);
   // Guardia síncrona de arranque: bloquea el segundo click de un gesto doble
@@ -169,7 +195,16 @@ export default function EngineeringSession({
   // contexto anterior (no se muestran valores de otro T como actuales) y
   // recarga indicadores / contexto BTC / flujo para el nuevo T con la
   // identidad autoritativa de la sesion (config.symbol / config.interval).
-  const applyAuthoritative = useCallback(async (next: PaperSessionState | null) => {
+  // En transporte LIVE (market_stream), indicadores/contexto vienen de los
+  // bloques de evidencia del STREAM (mismo feed que conduce); el contexto de
+  // velas se toma del estado autoritativo (el BFF puede no ver la cache del
+  // stream) o de la ventana que el operador eligió (opts.liveContext en la
+  // carga inicial). En local_replay se mantiene la recarga por BFF (solo
+  // lectura).
+  const applyAuthoritative = useCallback(async (
+    next: PaperSessionState | null,
+    opts?: { liveContext?: PaperCandle[] },
+  ) => {
     if (!next) {
       stateRef.current = null;
       setState(null);
@@ -178,6 +213,12 @@ export default function EngineeringSession({
       setRefreshing(false);
       return;
     }
+    // Live en la carga inicial de create: el drive aún no existe
+    // (applyDrive(null)); la ventana liveContext pasada por startSession
+    // indica transporte market_stream. En observación se decide por el
+    // runner observado del drive.
+    const live = opts?.liveContext != null
+      || driveRef.current?.runner === "market_stream";
     const prevClock = lastClockRef.current;
     const clockChanged = prevClock !== null && prevClock !== next.clock_ms;
     const initialLoad = prevClock === null;
@@ -190,12 +231,41 @@ export default function EngineeringSession({
     lastClockRef.current = next.clock_ms ?? null;
     try {
       if ((initialLoad || clockChanged) && next.clock_ms != null) {
-        await loadContextForClock(next.clock_ms, next.config.symbol, next.config.interval);
+        if (live) {
+          const evidence = driveRef.current?.evidence ?? {};
+          setMarketSeries({
+            candles: [],
+            // Ventana de contexto elegida por el operador en create (live);
+            // en recuperación (sin liveContext) se usa la autoritativa.
+            context: (initialLoad && opts?.liveContext
+              ? opts.liveContext
+              : next.context_candles).filter(
+              (c) => c.open_time_ms <= (next.clock_ms ?? 0),
+            ),
+            indicators: evidence.indicators?.block ?? null,
+            contextBtc: evidence.context_btc?.block ?? null,
+            coverage: "NO_COVERAGE",
+            receivedAt: Date.now(),
+          });
+        } else {
+          await loadContextForClock(next.clock_ms, next.config.symbol, next.config.interval);
+        }
       }
     } finally {
       setRefreshing(false);
     }
   }, [loadContextForClock]);
+
+  // Set centralizado del drive: estado + ref (la ref evita stale closures
+  // en applyAuthoritative dentro del observador).
+  const applyDrive = useCallback((next: EngineeringDriveState | null) => {
+    driveRef.current = next;
+    setDrive(next);
+    const runner = next?.runner;
+    if (runner === "market_stream" || runner === "local_replay") {
+      setTransportKind(runner);
+    }
+  }, []);
 
   useEffect(() => {
     stateRef.current = state;
@@ -213,9 +283,9 @@ export default function EngineeringSession({
       setError(result.error ?? "OBSERVE_FAILED");
       return;
     }
-    setDrive(result.data.drive ?? null);
+    applyDrive(result.data.drive ?? null);
     await applyAuthoritative(result.data.session);
-  }, [applyAuthoritative]);
+  }, [applyAuthoritative, applyDrive]);
 
   const observeActive = useCallback(async (sessionId: string) => {
     const result = await fetchBackendSession(sessionId);
@@ -223,10 +293,10 @@ export default function EngineeringSession({
       setError(result.error ?? "OBSERVE_FAILED");
       return null;
     }
-    setDrive(result.data.drive ?? null);
+    applyDrive(result.data.drive ?? null);
     await applyAuthoritative(result.data.session);
     return result.data.session;
-  }, [applyAuthoritative]);
+  }, [applyAuthoritative, applyDrive]);
 
   // Recupera el estado autoritativo tras recarga (incluida posicion abierta)
   // leyendo el servicio backend; la conducción backend siguió avanzando
@@ -355,13 +425,13 @@ export default function EngineeringSession({
         return null;
       }
       if (!result.data) return null;
-      setDrive(result.data.drive ?? null);
+      applyDrive(result.data.drive ?? null);
       await applyAuthoritative(result.data.session);
       return result.data.session;
     } finally {
       setLoading(false);
     }
-  }, [nextRequestId, applyAuthoritative, observeActive]);
+  }, [nextRequestId, applyAuthoritative, observeActive, applyDrive]);
 
   // Observador: mientras la página está abierta y hay una sesión, LEE el
   // estado del backend con GET al intervalo de observación. Cerrar la
@@ -385,7 +455,25 @@ export default function EngineeringSession({
   // Causa visible de fin de conducción (moteada desde el estado del drive).
   const driveCause = drive?.cause ?? null;
   const driveRunning = drive?.state === "running";
-  const driveStopped = drive != null && drive.state === "stopped";
+
+  // Puerta de evaluación live visible (drive.last_gate): la causa explica
+  // por qué la sesión se abstiene de reevaluar (silencio, hueco, frescura).
+  // Se muestra también la nota del backend si existe.
+  const gate = drive?.last_gate ?? null;
+  const gateCause = gate?.cause ?? null;
+  const gateVisible = gate != null && (gateCause != null || gate?.ok === false);
+
+  // Panel de evidencia del transporte live: identidad del stream (url del
+  // servicio de mercado, barras), marca de agua y bloques de evidencia
+  // (indicadores / contexto BTC) con su hora de recepción. Todo viene del
+  // drive observado con GET; el navegador no interpreta nada.
+  const liveDrive = transportKind === ENGINEERING_TRANSPORT_MARKET_STREAM
+    && drive?.runner === "market_stream"
+    ? drive
+    : null;
+  const evidenceEntries = liveDrive
+    ? Object.entries(liveDrive.evidence ?? {})
+    : [];
 
   const startSession = useCallback(async () => {
     // Guardia SÍNCRONA contra doble clic: un segundo click puede llegar
@@ -407,6 +495,7 @@ export default function EngineeringSession({
       return;
     }
     try {
+      setTransportKind(ENGINEERING_TRANSPORT_MARKET_STREAM);
       const series = await fetchMarketSeries(symbol, interval, bars);
       if (!series || !series.candles || series.candles.length === 0) {
         setError("SERIES_EMPTY: no hay velas en cache local para el simbolo.");
@@ -416,23 +505,13 @@ export default function EngineeringSession({
 
       const receivedAt = Date.now();
       const all = marketCandlesToPaper(series.candles, receivedAt);
+      // Modo live: SOLO la ventana de CONTEXTO viaja en create; la ventana
+      // de operación la produce el feed del servicio de mercado (velas
+      // cerradas por eventos SSE). Nada de listas de velas futuras.
       const contextCount = PREFIX_CONTEXT_COUNT[prefixOption];
-      // Tomar solo las ultimas (contexto + operacion necesaria) velas para
-      // mantener el payload de la linea de comandos acotado (evitar
-      // WinError 206 / linea de comandos demasiado larga en Windows).
-      const operationNeeded = 40; // suficiente para horizonte + pasos
-      const window = contextCount + operationNeeded;
-      const recent = all.slice(Math.max(0, all.length - window));
-      if (recent.length < contextCount + 2) {
-        setError("INSUFICIENT_CANDLES: cache local sin suficientes velas para contexto + operacion.");
-        setLoading(false);
-        return;
-      }
-
-      const { context, operation } = splitContextAndOperation(recent, contextCount);
-      const firstOp = operation[0];
-      if (operation.length === 0 || !firstOp || firstOp.close == null || firstOp.close_time_ms == null) {
-        setError("INSUFICIENT_CANDLES: la primera vela de operacion no tiene cierre definida.");
+      const context = all.slice(Math.max(0, all.length - contextCount));
+      if (context.length < 2) {
+        setError("INSUFICIENT_CANDLES: cache local sin suficientes velas para la ventana de contexto.");
         setLoading(false);
         return;
       }
@@ -440,7 +519,7 @@ export default function EngineeringSession({
       // Fijar entry_px UNA VEZ antes de evaluar: cierre de la ultima vela de
       // contexto (precio conocido ANTES de la ventana de operacion). Nunca es
       // el cierre de la vela de entrada, con lo que la regla no garantiza
-      // entrada por igualdad automatica. Al cambiar de prefijo se conserva.
+      // entrada por igualdad automatica. Al cambiar de ventana se conserva.
       let entryPx = entryPxFixed;
       if (entryPx == null) {
         entryPx = lastContextClose(context);
@@ -457,26 +536,29 @@ export default function EngineeringSession({
         horizonMs: 30 * 60 * 1000,
       });
 
-      // La sesión se crea EN EL BACKEND (motor Python + transporte local);
-      // la evaluación y todo avance lo conduce el backend. El navegador no
-      // evalúa ni programa pasos.
+      // La sesión se crea EN el backend (motor Python + transporte
+      // market_stream); la evaluación y todo avance lo conduce el backend
+      // con los eventos del servicio de mercado. El navegador no evalúa ni
+      // programa pasos.
       const created = await createBackendSession({
-        config, candles: operation, context,
+        config, candles: [], context,
+        transport: ENGINEERING_TRANSPORT_MARKET_STREAM,
+        requestId: nextRequestId(),
       });
       if (!created.ok || !created.data) {
         setError(created.error ?? "CREATE_FAILED");
         setLoading(false);
         return;
       }
-      setDrive(null); // nuevo backend: el drive previo no aplica
-      // applyAuthoritative (carga inicial) reconstruye indicadores/contexto
-      // para el reloj T con la identidad autoritativa de la sesion.
-      await applyAuthoritative(created.data.session);
+      applyDrive(null); // nuevo backend: el drive previo no aplica
+      // applyAuthoritative (carga inicial) fija el contexto visible de la
+      // ventana elegida; los indicadores/contexto llegarán por el stream.
+      await applyAuthoritative(created.data.session, { liveContext: context });
       localStorage.setItem(SESSION_ID_STORAGE_KEY, created.data.session.session_id);
       setStarted(true);
 
-      // Conducción autónoma del backend: el avance ocurre por los eventos del
-      // transporte local (reproductor con cadencia en el mismo proceso); una
+      // Conducción autónoma del backend: el avance ocurre por los eventos
+      // del servicio de mercado (SSE consumido por el servicio); una
       // abstención (SIN_ENTRADA/sin_iniciar) es temporal y sigue recibiendo
       // eventos para reevaluar sin intervención.
       await manualControl("start", { requestId: nextRequestId() });
@@ -486,7 +568,7 @@ export default function EngineeringSession({
       setLoading(false);
       startInFlightRef.current = false;
     }
-  }, [symbol, interval, bars, prefixOption, entryPxFixed, applyAuthoritative, nextRequestId, manualControl, ensureService]);
+  }, [symbol, interval, bars, prefixOption, entryPxFixed, applyAuthoritative, nextRequestId, manualControl, ensureService, applyDrive]);
 
   const changePrefix = useCallback(async (next: "A" | "B") => {
     // La eleccion de prefijo antes de iniciar solo fija la opcion para el
@@ -544,7 +626,7 @@ export default function EngineeringSession({
         setLoading(false);
         return;
       }
-      setDrive(null); // nuevo backend: el drive previo no aplica
+      applyDrive(null); // nuevo backend: el drive previo no aplica
       await applyAuthoritative(created.data.session);
       await loadContextForClock(created.data.session.clock_ms ?? null, symbol, interval);
       localStorage.setItem(SESSION_ID_STORAGE_KEY, created.data.session.session_id);
@@ -558,7 +640,7 @@ export default function EngineeringSession({
     } finally {
       setLoading(false);
     }
-  }, [symbol, interval, bars, entryPxFixed, nextRequestId, applyAuthoritative, loadContextForClock, state, manualControl]);
+  }, [symbol, interval, bars, entryPxFixed, nextRequestId, applyAuthoritative, loadContextForClock, state, manualControl, applyDrive]);
 
   const stopSession = useCallback(async () => {
     if (!state) return;
@@ -637,30 +719,40 @@ export default function EngineeringSession({
   const vReady = v!;
   const chartModelReady = chartModel!;
 
+  // Titulo y fuente visibles coherentes con el transporte de la sesion:
+  // live consume el servicio de mercado existente (SSE, solo loopback);
+  // local_replay reproduce velas ya conocidas con cadencia.
+  const transportTitle = transportKind === ENGINEERING_TRANSPORT_MARKET_STREAM
+    ? "Sesion de ingenieria - transporte market_stream (live)"
+    : "Sesion de ingenieria - transporte local (local_replay)";
+  const transportSource = transportKind === ENGINEERING_TRANSPORT_MARKET_STREAM
+    ? "LIVE - servicio de mercado (SSE, solo loopback); solo velas cerradas conducen"
+    : "LOCAL SIMULADA - cache local (klines), client=None, 0 upstream";
+
   return (
-    <section className={s.root} aria-label="Sesion de ingenieria - transporte local">
+    <section className={s.root} aria-label={transportTitle}>
       <header className={s.header}>
         <div className={s.titleBlock}>
-          <h1>Sesion de ingenieria - transporte local</h1>
+          <h1>{transportTitle}</h1>
           <p className={s.subtitle}>
-            Flujo: datos (cache local, 0 upstream) → grafico →
-            indicadores / contexto BTC / flujo (recalculados en el backend con
-            el reloj T de la sesion) → candidato → decision →
-            posicion paper → gestion → cierre → exportacion. El backend es
-            la autoridad; el navegador solo solicita acciones y presenta
-            estados.
+            Flujo: transporte (live: velas cerradas del servicio de mercado;
+            replay: cache local) → grafico → indicadores / contexto BTC
+            (evidencia del stream, recalculados con el reloj T de la sesion) →
+            candidato → decision → posicion paper → gestion → cierre →
+            exportacion. El backend es la autoridad; el navegador solo
+            solicita acciones y presenta estados.
           </p>
         </div>
         <div className={s.actions}>
-          <label className={s.prefixLabel}>Prefijo de datos:</label>
+          <label className={s.prefixLabel}>Ventana de contexto:</label>
           <select
             value={prefixOption}
             onChange={(e) => changePrefix((e.target.value as "A" | "B") ?? "A")}
             disabled={loading || !!sessionReady || refreshing}
             className={s.prefixSelect}
           >
-            <option value="A">A (admite entrada)</option>
-            <option value="B">B (se abstiene)</option>
+            <option value="A">{PREFIX_LABEL.A}</option>
+            <option value="B">{PREFIX_LABEL.B}</option>
           </select>
           <button
             type="button"
@@ -723,7 +815,7 @@ export default function EngineeringSession({
               <SessionStatusPanels
                 state={sessionReady.state}
                 marketSymbol={sessionReady.state.config.symbol}
-                source="LOCAL SIMULADA - cache local (klines), client=None, 0 upstream"
+                source={transportSource}
                 freshness={{
                   received: vReady.cursor,
                   cursor: vReady.cursor,
@@ -751,6 +843,70 @@ export default function EngineeringSession({
                   {DRIVE_CAUSE_TEXT[driveCause] ?? driveCause}
                 </p>
               )}
+              {gateVisible && (
+                <p className={s.note} role="status" data-testid="session-abstention-gate">
+                  {GATE_CAUSE_TEXT[gateCause ?? ""] ?? `Puerta live: ${gateCause ?? "no evaluable"}`}
+                  {gate?.note ? ` ${gate.note}.` : ""}
+                  {gate?.silence_ms != null && (
+                    <span>
+                      {" "}Silencio medido entre disparos: {Math.round(gate.silence_ms)} ms
+                      {" "}(límite {Math.round(gate.live_silence_ms ?? 0)} ms).
+                    </span>
+                  )}
+                </p>
+              )}
+              {liveDrive && (
+                <section
+                  className={s.cardFull}
+                  aria-label="Evidencia del transporte de mercado"
+                  data-testid="stream-evidence"
+                >
+                  <h3>Transporte market_stream (evidencia del stream)</h3>
+                  <div className={s.exportMeta}>
+                    <div className={s.row}>
+                      <span className={s.k}>servicio de mercado</span>
+                      <span className={s.v + " " + s.mono}>{liveDrive.market_url ?? "-"}</span>
+                    </div>
+                    <div className={s.row}>
+                      <span className={s.k}>barras del snapshot</span>
+                      <span className={s.v}>{liveDrive.bars ?? "-"}</span>
+                    </div>
+                    <div className={s.row}>
+                      <span className={s.k}>marca de agua (última vela cerrada)</span>
+                      <span className={s.v + " " + s.mono}>
+                        {liveDrive.watermark != null ? fmtUtcPL(liveDrive.watermark) : "-"}
+                      </span>
+                    </div>
+                    <div className={s.row}>
+                      <span className={s.k}>eventos del transporte</span>
+                      <span className={s.v}>{liveDrive.transport_events ?? 0}</span>
+                    </div>
+                    {evidenceEntries.map(([kind, block]) => (
+                      <div className={s.row} key={kind}>
+                        <span className={s.k}>evidencia {kind}</span>
+                        <span className={s.v}>
+                          recibida {fmtUtcPL(block?.received_at_ms ?? null)} (pared)
+                        </span>
+                      </div>
+                    ))}
+                    {evidenceEntries.length === 0 && (
+                      <div className={s.row}>
+                        <span className={s.k}>evidencia</span>
+                        <span className={s.v}>
+                          sin bloques aún (UNKNOWN hasta que el stream publique)
+                        </span>
+                      </div>
+                    )}
+                  </div>
+                  <p className={s.note}>
+                    Indicadores y contexto BTC provienen de los bloques de
+                    evidencia del MISMO stream que conduce la sesión; la
+                    recepción (pared) se muestra junto a la marca de agua del
+                    feed (evento). Sin bloque recibido, el panel muestra
+                    UNKNOWN: no se inventan valores.
+                  </p>
+                </section>
+              )}
 
               <SessionControls
                 status={sessionReady.state.status}
@@ -777,10 +933,15 @@ export default function EngineeringSession({
                   <div className={s.chartHead}>
                     <h3>
                       Grafico - velas, niveles y eventos (
-                      {sessionReady.state.config.interval}, simulacion)
+                      {sessionReady.state.config.interval},
+                      {transportKind === ENGINEERING_TRANSPORT_MARKET_STREAM
+                        ? " live)"
+                        : " simulacion)"}
                     </h3>
                     <span className={s.sourceChip}>
-                      Fuente: LOCAL SIMULADA ({sessionReady.state.config.symbol})
+                      Fuente: {transportKind === ENGINEERING_TRANSPORT_MARKET_STREAM
+                        ? `LIVE stream (${sessionReady.state.config.symbol})`
+                        : `LOCAL SIMULADA (${sessionReady.state.config.symbol})`}
                     </span>
                   </div>
                   <div className={s.chartLegend} aria-label="Leyenda del grafico">
@@ -930,9 +1091,10 @@ export default function EngineeringSession({
         <section className={s.empty}>
           <p>Sesion no iniciada. Abrir el dashboard no inicia servicios ni operaciones.</p>
           <p className={s.emptyNote}>
-            Seleccione un prefijo de datos y pulse Iniciar sesion para cargar
-            {symbol} desde cache local, evaluar la evidencia en T y abrir la
-            sesion de ingenieria.
+            Seleccione una ventana de contexto y pulse Iniciar sesion para
+            abrir la sesion de ingenieria de {symbol}: la ventana de operacion
+            la produce el feed del servicio de mercado (solo velas cerradas);
+            el contexto inicial viene de la cache local.
           </p>
         </section>
       )}

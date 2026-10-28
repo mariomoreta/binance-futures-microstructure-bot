@@ -207,8 +207,34 @@ export function waitFor<T>(
  * proyecto (spawn del CLI `scripts/engineering_session_service.py`), espera
  * readiness con límite y verifica identidad (child.pid == pid-file == health).
  * En fallo de readiness termina SOLO el proceso que generó (sin huérfanos).
+ *
+ * Dedupe de arranques CONCURRENTES: dos POST simultáneos comparten la MISMA
+ * promesa en curso — solo un spawn (la idempotencia del servicio ya listo
+ * cubre el caso secuencial; el caso concurrente vive aquí).
  */
+let startInFlight: Promise<StartServiceResult> | null = null;
+
+// Punto de inyección SOLO para pruebas unitarias: vitest no intercepta los
+// módulos builtin de Node en este entorno, así que el doble del spawn del
+// CLI canónico se inyecta aquí (ver
+// src/test/engineering-service-manager.test.ts). En producción siempre se
+// usa el spawn real.
+const spawnReal: typeof spawn = spawn;
+let spawnImpl: typeof spawn = spawnReal;
+
+export function _setSpawnForTests(impl: typeof spawn | null): void {
+  spawnImpl = impl ?? spawnReal;
+}
+
 export async function startService(): Promise<StartServiceResult> {
+  if (startInFlight) return startInFlight;
+  startInFlight = doStartService().finally(() => {
+    startInFlight = null;
+  });
+  return startInFlight;
+}
+
+async function doStartService(): Promise<StartServiceResult> {
   const port = servicePort();
   // 1) ¿Ya disponible y verificable? → no arrancar otra vez (idempotente).
   const before = await serviceStatus();
@@ -233,7 +259,7 @@ export async function startService(): Promise<StartServiceResult> {
   ];
   let child: ReturnType<typeof spawn>;
   try {
-    child = spawn(pythonExecutable(), args, {
+    child = spawnImpl(pythonExecutable(), args, {
       cwd: serviceRoot(),
       detached: true,
       stdio: "ignore",

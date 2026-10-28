@@ -43,9 +43,38 @@ export interface EngineeringDriveState {
   events_processed?: number;
   transport_events?: number;
   cadence_ms?: number | null;
-  runner?: string | null;
+  runner?: "local_replay" | "market_stream" | null;
   session_id?: string | null;
+  // --- transporte market_stream (live) --------------------------------
+  market_url?: string | null;
+  bars?: number | null;
+  live_silence_ms?: number | null;
+  watermark?: number | null;
+  last_trigger?: Record<string, unknown> | null;
+  last_gate?: {
+    ok?: boolean;
+    cause?: string | null;
+    silence_ms?: number | null;
+    live_silence_ms?: number | null;
+    clock_ms?: number | null;
+    evaluated_at_ms?: number | null;
+    grid_gap?: unknown;
+    note?: string | null;
+  } | null;
+  last_gap?: Record<string, unknown> | null;
+  last_status?: Record<string, unknown> | null;
+  evidence?: Record<string, { block?: unknown; received_at_ms?: number | null }>;
+  stats?: Record<string, unknown>;
 }
+
+// Transporte de la sesión de ingeniería: "market_stream" consume los
+// eventos del servicio de mercado existente (SSE, solo loopback);
+// "local_replay" es el reproductor con cadencia (retained para pruebas).
+export const ENGINEERING_TRANSPORT_MARKET_STREAM = "market_stream";
+export const ENGINEERING_TRANSPORT_LOCAL_REPLAY = "local_replay";
+export type EngineeringTransport =
+  | typeof ENGINEERING_TRANSPORT_MARKET_STREAM
+  | typeof ENGINEERING_TRANSPORT_LOCAL_REPLAY;
 
 export type EngineeringControlAction =
   | "start" | "stop" | "step" | "exit" | "restart" | "stop_session"
@@ -231,6 +260,10 @@ export type CreateSessionInput = {
   config: PaperSessionConfig;
   candles: PaperCandle[];
   context: PaperCandle[];
+  /** Transporte de conducción (default backend: local_replay). */
+  transport?: EngineeringTransport;
+  /** Idempotencia del POST create en el backend (dedupe por request_id). */
+  requestId?: string | null;
 };
 
 /** Crea una sesión de ingeniería vía BFF (POST /api/v1/paper-lab/sessions). */
@@ -295,7 +328,7 @@ async function engineeringJson<T = unknown>(
   return { ok: true, data: body as T, status: r.status };
 }
 
-/** Crea la sesión en el backend (motor Python + transporte local). */
+/** Crea la sesión en el backend (motor Python + transporte elegido). */
 export async function createBackendSession(input: CreateSessionInput): Promise<
   EngineeringApiResult<{ session: PaperSessionState }>
 > {
@@ -305,6 +338,8 @@ export async function createBackendSession(input: CreateSessionInput): Promise<
       config: input.config,
       candles: input.candles,
       context: input.context,
+      transport: input.transport ?? ENGINEERING_TRANSPORT_LOCAL_REPLAY,
+      request_id: input.requestId ?? null,
       hypothesis_id: input.config.hypothesis_id ?? null,
       hypothesis_version: input.config.hypothesis_version ?? null,
       rule_version: input.config.rule_version ?? null,

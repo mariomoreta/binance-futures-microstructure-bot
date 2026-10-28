@@ -200,6 +200,14 @@ describe("sesión de ingeniería — navegador observador (backend conduce)", ()
     render(<EngineeringSession symbol="MINAUSDT" interval="1m" bars={90} />);
     fireEvent.click(screen.getByRole("button", {name: "Iniciar sesion"}));
     await waitFor(() => expect(mocks.createBackendSession).toHaveBeenCalledTimes(1));
+    // Transporte live explícito en el payload de create: solo la ventana de
+    // contexto viaja (candles=[]); la operación la produce el feed. El
+    // request_id hace idempotente el create en el backend (dedupe).
+    const createInput = mocks.createBackendSession.mock.calls[0]![0];
+    expect(createInput.transport).toBe("market_stream");
+    expect(createInput.requestId).toEqual(expect.any(String));
+    expect(createInput.candles).toEqual([]);
+    expect(createInput.context.length).toBeGreaterThan(0);
     expect(mocks.controlBackendSession).toHaveBeenCalledWith(
       "sess-123", "start",
       expect.objectContaining({requestId: expect.any(String)}),
@@ -387,6 +395,49 @@ describe("sesión de ingeniería — navegador observador (backend conduce)", ()
     expect(advanceCalls).toEqual([]);
     expect(screen.queryByTestId("session-autonomous")).toBeNull();
     expect(screen.queryByTestId("session-drive-cause")).toBeNull();
+  });
+
+  it("transporte live: puerta de abstención visible (FEED_SILENCE) y panel de evidencia del stream", async () => {
+    // Drive live observado con GET: la puerta (last_gate) explica la
+    // abstención y la evidencia (indicadores/contexto BTC) viene del MISMO
+    // stream que conduce. El navegador solo presenta; no evalúa nada.
+    const liveDrive = {
+      state: "running", cause: null, runner: "market_stream",
+      market_url: "http://127.0.0.1:8791/events", bars: 60,
+      live_silence_ms: 120000, watermark: T1,
+      last_gate: {
+        ok: false, cause: "FEED_SILENCE", silence_ms: 130000,
+        live_silence_ms: 120000, clock_ms: null,
+        note: "feed en silencio (sin frames)",
+      },
+      evidence: {
+        indicators: {block: {ret: 1}, received_at_ms: T1},
+        context_btc: {block: {ret_btc_bps_5: 2}, received_at_ms: T1},
+      },
+      transport_events: 7,
+    };
+    mocks.createBackendSession.mockResolvedValue(
+      {ok: true, data: {session: mkSession()}, status: 200},
+    );
+    mocks.controlBackendSession.mockResolvedValue(
+      ctlResp(mkSession(), liveDrive),
+    );
+    mocks.fetchBackendSession.mockResolvedValue(getResp(mkSession(), liveDrive));
+    render(<EngineeringSession symbol="MINAUSDT" interval="1m" bars={90} />);
+    fireEvent.click(screen.getByRole("button", {name: "Iniciar sesion"}));
+    await waitFor(() =>
+      expect(screen.getByTestId("session-abstention-gate")).toBeTruthy());
+    const gate = screen.getByTestId("session-abstention-gate").textContent ?? "";
+    expect(gate).toContain("FEED_SILENCE");
+    expect(gate).toContain("silencio del feed");
+    expect(gate).toContain("130000");
+    await waitFor(() =>
+      expect(screen.getByTestId("stream-evidence")).toBeTruthy());
+    const panel = screen.getByTestId("stream-evidence").textContent ?? "";
+    expect(panel).toContain("market_stream");
+    expect(panel).toContain("8791");
+    expect(panel).toContain("evidencia indicators");
+    expect(panel).toContain("evidencia context_btc");
   });
 
   it("Detener sesión conduce stop del drive y luego stop_session (una paradigación explícita)", async () => {
