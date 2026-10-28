@@ -106,9 +106,10 @@ def _run_fixture() -> dict:
                    "primary": "BTCUSDT"},
         "budget": {"bff": True, "duration_s": 180.0, "max_messages": 1200,
                    "sse_consumers": {"service": 1, "bff": 1, "browser": 1,
-                                     "total": 3, "service_symbols": ["MINAUSDT"],
+                                     "internal_benchmark": 1, "total": 4,
+                                     "service_symbols": ["MINAUSDT"],
                                      "bff_symbols": ["BTCUSDT"],
-                                     "per_stream": {"BTCUSDT": 2, "MINAUSDT": 1}},
+                                     "per_stream": {"BTCUSDT": 3, "MINAUSDT": 1}},
                    "browser_consumers": 1},
         "preflight": {"ok": True, "error": None, "port_free": True},
         "service": {
@@ -118,10 +119,10 @@ def _run_fixture() -> dict:
             "health_before_consumer": {"connected": False, "attempts": 0,
                                        "consumers": 0, "counters": {}},
             "health_samples": [{"connected": True, "reconnects": 0,
-                                "consumers": 3, "counters": {},
+                                "consumers": 4, "counters": {},
                                 "streams": [{"symbol": "BTCUSDT", "interval": "1m",
                                              "live": True, "state": "RECEIVING"}]}],
-            "health_before_close": {"consumers": 3,
+            "health_before_close": {"consumers": 4,
                                     "counters": {"invalid": 0, "identity_mismatch": 0}},
             "health_after_close": {"consumers": 1, "counters": {}},
             "consumers_expected_after_close": 1,
@@ -199,11 +200,13 @@ class AcceptanceTests(unittest.TestCase):
         self.assertEqual(payload["chain"][1].split(":")[0], "hub+servicio")
         self.assertGreaterEqual(payload["budget"]["duration_s"], 120.0)
         consumers = payload["budget"]["sse_consumers"]
-        self.assertEqual(consumers["total"], 2)
+        self.assertEqual(consumers["total"], 3)
         self.assertEqual(consumers["service"], 1)
         self.assertEqual(consumers["bff"], 1)
         self.assertEqual(consumers["browser"], 0)
-        self.assertEqual(consumers["per_stream"], {"BTCUSDT": 1, "MINAUSDT": 1})
+        # Suscripcion interna del contexto BTC para el simbolo no benchmark.
+        self.assertEqual(consumers["internal_benchmark"], 1)
+        self.assertEqual(consumers["per_stream"], {"BTCUSDT": 2, "MINAUSDT": 1})
         self.assertGreaterEqual(len(payload["acceptance"]), 7)
         self.assertIn("--finalize", payload["commands"]["finalize"])
 
@@ -215,11 +218,11 @@ class AcceptanceTests(unittest.TestCase):
             max_reconnects=3, port=8791, no_bff=False, execute=False,
             browser_consumer=True, await_consumers=1, await_timeout=90.0)
         consumers = window.plan(args)["budget"]["sse_consumers"]
-        self.assertEqual(consumers["total"], 3)
+        self.assertEqual(consumers["total"], 4)
         self.assertEqual(consumers["service"], 1)
         self.assertEqual(consumers["bff"], 1)
         self.assertEqual(consumers["browser"], 1)
-        self.assertEqual(consumers["per_stream"], {"BTCUSDT": 2, "MINAUSDT": 1})
+        self.assertEqual(consumers["per_stream"], {"BTCUSDT": 3, "MINAUSDT": 1})
         self.assertEqual(consumers["service_symbols"], ["MINAUSDT"])
         self.assertEqual(consumers["bff_symbols"], ["BTCUSDT"])
         self.assertLessEqual(consumers["total"], window.MAX_CONSUMERS_PER_STREAM * 2)
@@ -357,16 +360,17 @@ class AcceptanceTests(unittest.TestCase):
         run["budget"]["bff"] = False
         run["budget"]["browser_consumers"] = 0
         run["budget"]["sse_consumers"] = {
-            "service": 2, "bff": 0, "browser": 0, "total": 2,
+            "service": 2, "bff": 0, "browser": 0, "total": 3,
+            "internal_benchmark": 1,
             "service_symbols": ["BTCUSDT", "MINAUSDT"], "bff_symbols": [],
-            "per_stream": {"BTCUSDT": 1, "MINAUSDT": 1},
+            "per_stream": {"BTCUSDT": 2, "MINAUSDT": 1},
         }
         service = run["consumers"].pop("bff")
         run["consumers"]["service"]["events"] = service["events"] + run["consumers"]["service"]["events"]
         run["consumers"]["service"]["hello"] = [
             {"identity": _identity("BTCUSDT")}, {"identity": _identity("MINAUSDT")}]
-        run["service"]["health_before_close"]["consumers"] = 2
-        run["service"]["health_samples"][0]["consumers"] = 2
+        run["service"]["health_before_close"]["consumers"] = 3
+        run["service"]["health_samples"][0]["consumers"] = 3
         run["service"]["health_after_close"]["consumers"] = 0
         run["service"]["consumers_expected_after_close"] = 0
         result = window.evaluate_acceptance(run, _after())
@@ -397,7 +401,7 @@ class AcceptanceTests(unittest.TestCase):
 
     def test_consumer_peak_above_budget_fails(self):
         run = _run_fixture()
-        run["service"]["health_samples"][0]["consumers"] = 4
+        run["service"]["health_samples"][0]["consumers"] = 5
         result = window.evaluate_acceptance(run, _after())
         self.assertEqual(result["verdict"], "FAIL")
         self.assertIn("consumer_budget", result["failed"])

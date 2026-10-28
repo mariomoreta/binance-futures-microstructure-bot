@@ -66,6 +66,7 @@ from microstructure_probe.market_stream import (  # noqa: E402
     STREAM_CONTRACT_VERSION,
     interval_ms,
 )
+from microstructure_probe.kline_btc_context import BTC_BENCHMARK_SYMBOL
 
 SERVICE_SCRIPT = ROOT / "scripts" / "market_stream_service.py"
 SERVICE_VERSION = "market-stream-service/v1"
@@ -339,11 +340,18 @@ class SseClient:
 # ---------------------------------------------------------------------------
 def _consumer_allocation(symbols: List[str], no_bff: bool,
                          browser: bool) -> Dict[str, Any]:
-    """Reparto de consumidores SSE: el navegador cuenta en el mismo presupuesto.
+    """Reparto de consumidores: el navegador cuenta en el mismo presupuesto.
 
     Con BFF el simbolo primario se consume por el BFF (el mismo camino que usa
     el grafico) y el servicio directo atiende los secundarios; asi el total
     propio es 2 y con el navegador se llega a 3, sin duplicar el primario.
+
+    Además se cuentan las SUSCRIPCIONES INTERNAS del contexto BTC
+    compartido: por cada consumidor propio cuyo simbolo no es el benchmark,
+    el servicio añade exactamente una suscripcion interna al benchmark
+    (BTCUSDT) para sustentar el bloque ``context_btc``. El presupuesto
+    declarado y el pico ``consumers`` de /health se comparan en la MISMA
+    unidad (consumidores del hub), incluidas las internas.
     """
     service = (symbols if no_bff else (symbols[1:] or symbols[:1]))
     bff = [] if no_bff else symbols[:1]
@@ -355,11 +363,17 @@ def _consumer_allocation(symbols: List[str], no_bff: bool,
         per_stream[symbol] = per_stream.get(symbol, 0) + 1
     for symbol in bff:
         per_stream[symbol] += browser_consumers
-    total = len(service) + len(bff) + browser_consumers
+    internal_benchmark = sum(
+        1 for symbol in service + bff if symbol != BTC_BENCHMARK_SYMBOL)
+    if internal_benchmark:
+        per_stream[BTC_BENCHMARK_SYMBOL] = (per_stream.get(
+            BTC_BENCHMARK_SYMBOL, 0) + internal_benchmark)
+    total = len(service) + len(bff) + browser_consumers + internal_benchmark
     return {
         "service": len(service),
         "bff": len(bff),
         "browser": browser_consumers,
+        "internal_benchmark": internal_benchmark,
         "total": total,
         "service_symbols": service,
         "bff_symbols": bff,

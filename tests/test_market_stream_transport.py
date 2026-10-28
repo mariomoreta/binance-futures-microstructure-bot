@@ -234,7 +234,10 @@ class LocalTransportRuntimeTests(unittest.IsolatedAsyncioTestCase):
                     health = service._health_payload()
                     self.assertEqual(health["transport"]["mode"], "local")
                     self.assertIn("127.0.0.1", health["transport"]["base_url"])
-                    self.assertEqual(health["consumers"], 1)
+                    # 1 consumidor SSE del token + 1 suscripcion interna del
+                    # contexto BTC (el simbolo de prueba no es el benchmark).
+                    # Consumidores del hub incluidos los internos.
+                    self.assertEqual(health["consumers"], 2)
 
                     writer.close()
                     try:
