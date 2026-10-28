@@ -341,6 +341,24 @@ class StoredReadTest(unittest.TestCase):
         self.assertEqual(bars[0]["storage"], "canonical")
         self.assertEqual(bars[0]["close"], "200.5")
 
+    def test_limit_keeps_the_most_recent_bars_of_the_range(self) -> None:
+        """Rango con mas velas que el limite: se conserva la COLA (las mas
+        recientes), no la cabeza. Un rango amplio ("todo lo almacenado") no
+        debe perder las velas recientes por el recorte ASC."""
+        bars_30 = [_cache_bar(T0 + i * STEP_1H, price=100.0 + i)
+                   for i in range(30)]
+        self.cache.upsert_klines("BTCUSDT", "1h", "klines", bars_30, T0)
+        bars, _ = MX.read_stored(self.cache, "BTCUSDT", "1h", "klines",
+                                 0, T0 + 1000 * STEP_1H, self.history,
+                                 limit=10)
+        self.assertEqual(len(bars), 10)
+        self.assertEqual(
+            [b["open_time"] for b in bars],
+            [T0 + i * STEP_1H for i in range(20, 30)])
+        self.assertEqual(
+            [b["open_time"] for b in bars], sorted(
+                b["open_time"] for b in bars))
+
 
 class PlanMissingBlockTest(unittest.TestCase):
     def test_empty_cache_requests_newest_bounded_block(self) -> None:

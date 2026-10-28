@@ -279,7 +279,12 @@ def catalog_payload(cache: MarketCache, client: Optional[HistoryClient] = None,
 def _read_canonical(path: Path, symbol: str, interval: str, source: str,
                     from_ms: int, to_ms: int,
                     limit: int) -> Tuple[List[Dict[str, Any]], Optional[str]]:
-    """Lee velas ya almacenadas en la DB de investigacion (read-only)."""
+    """Lee velas ya almacenadas en la DB de investigacion (read-only).
+
+    La lectura es DESC (cola): con mas de ``limit`` velas almacenadas en el
+    rango, el rango solicitado (p.ej. amplio para "todo lo almacenado")
+    conserva la porcion RECIENTE, no la mas antigua. Se devuelve ASC.
+    """
     if not Path(path).exists():
         return [], "CANONICAL_MISSING"
     table = ("historical_klines" if source == "klines"
@@ -296,11 +301,11 @@ def _read_canonical(path: Path, symbol: str, interval: str, source: str,
             " fetched_at" + (", base_volume, quote_volume" if source == "klines"
                              else ", NULL AS base_volume, NULL AS quote_volume")
             + f" FROM {table} WHERE symbol=? AND interval=?"
-            " AND open_time>=? AND open_time<=? ORDER BY open_time ASC LIMIT ?",
+            " AND open_time>=? AND open_time<=? ORDER BY open_time DESC LIMIT ?",
             (str(symbol).upper(), str(interval), int(from_ms), int(to_ms),
              max(1, int(limit))),
         ).fetchall()
-        return [dict(r) for r in rows], None
+        return [dict(r) for r in reversed(rows)], None
     except sqlite3.Error as exc:
         return [], f"CANONICAL_SCHEMA: {exc}"
     finally:
@@ -331,13 +336,19 @@ def read_stored(cache: MarketCache, symbol: str, interval: str, source: str,
     """Une velas canonicas + cache, deduplicando por tiempo de apertura.
 
     Se conserva la fila con ``fetched_at`` mas reciente (misma procedencia:
-    Binance klines). El origen se conserva para trazabilidad.
+    Binance klines). El origen se conserva para trazabilidad. Ambas lecturas
+    son de COLA (newest-first + reversa): con mas de ``limit`` velas en el
+    rango, se conservan las ``limit`` mas RECIENTES del rango pedido; con
+    menos, el resultado es identico al de una lectura ASC.
     """
     canonical, canonical_error = _read_canonical(
         Path(history_db) if history_db is not None
         else _default_history_db(), symbol, interval, source, from_ms, to_ms,
         limit)
-    cached = cache.read_klines(symbol, interval, source, from_ms, to_ms, limit)
+    cached = cache.read_klines(symbol, interval, source, from_ms, to_ms, limit,
+                               newest_first=True)
+    canonical = list(reversed(canonical))
+    cached = list(reversed(cached))
     merged: Dict[int, Dict[str, Any]] = {}
     for row in canonical:
         item = _normalize_stored_row(row, "canonical")
@@ -356,6 +367,8 @@ def read_stored(cache: MarketCache, symbol: str, interval: str, source: str,
         else:
             old["also_cached"] = True
     bars = [merged[k] for k in sorted(merged)]
+    if len(bars) > limit:
+        bars = bars[-limit:]
     return bars[:limit], {"canonical_error": canonical_error,
                           "canonical_rows": len(canonical),
                           "cache_rows": len(cached)}
