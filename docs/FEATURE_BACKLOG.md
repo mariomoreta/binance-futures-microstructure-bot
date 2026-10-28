@@ -2583,3 +2583,59 @@ explicito + dir dedicado + causa SSE + hallazgo doble clic);
 ENGINEERING_SESSION_BACKEND_V1.md §10 (9.1/9.3 anotadas
 historico/resuelto); CURRENT_STATE + TASK_QUEUE 2026-10-28; evidencia
 `docs/evidence/engineering-explicit-start-2026-10-28/`.
+
+## Transporte market_stream en vivo de ingeniería + aceptación local PASS + fix del explorador por cola (2026-10-28, base `90b3c9b`)
+
+**1. Title:** Transporte `market_stream` en vivo para la sesión de
+ingeniería reutilizando `market-stream-service/v1` (SSE loopback):
+backend con gates de feed vivo + consumo de snapshots + avance live;
+frontend con runner `market_stream` desde la UI; aceptación LOCAL
+completa con navegador real (3020) y productor SSE local determinista;
+arreglo del defecto del explorador canónico (lectura por COLA con caches
+>5000 velas).
+
+**2. Approval status:** DECIDIDO por el operador (2026-10-28):
+reutilizar el servicio de mercado existente sin colector/motor/gestor
+nuevos; `paper_lab_engine` intocado; aceptación solo local/loopback (sin
+Binance público); 8792/8797 intocables; 3020 restaurado al estado previo
+al finalizar.
+
+**3. Implementation status:** IMPLEMENTED -
+`src/microstructure_probe/engineering_session_service.py` (gates de feed
+vivo, `_consume_snapshot`, `_consume_market_closed`, `_live_advance`),
+`frontend/src/components/session-lab/EngineeringSession.tsx` +
+`frontend/src/lib/session-lab.ts` + `frontend/src/lib/engineering-service-manager.ts`
+(runner `market_stream`),
+`src/microstructure_probe/market_explorer.py` (`read_stored` por cola),
+`scripts/engineering_live_local_acceptance.py` (arnés nuevo),
+`scripts/indicators_v1_public_demo.py` (decodificación Windows corregida).
+
+**4. Evaluation status:** VERIFIED - 92 tests passed (41+1
+`test_market_explorer.py` con regresión de cola,
+`test_engineering_service_market_stream.py`,
+`test_engineering_session_service.py`, `test_paper_lab_engine.py`);
+frontend tsc/eslint 0 y vitest OK (verificado previamente); aceptación
+navegador real PASS
+(`docs/evidence/engineering-live-local-2026-10-28/summary.json`: corrida
+379,9 s, BUILD_ID `WDYGaWV_cUxErasQlce70`, 12/12 checks, 6 capturas,
+8 reconexiones con watermark, 0 peticiones externas, fill
+model_approximation, salida por stop, net −16,59 simulado,
+`trial_sessions: []`).
+
+**5. Deferred:** acreditación de recepción Binance real (todo loopback);
+reparación REST (inexistente en local); tratamiento del churn WS ~9 s;
+ciclo SSE de 10 s del adaptador en silencio; recorrido con datos nuevos
+continuos (ventana aparte). Todo lo público requiere autorización
+explícita.
+
+**6. Safety/constraints:** observe-only; sin Binance público, sin feed
+vivo real, sin órdenes, sin capital; proveedor público bloqueado por
+diseño en la aceptación (sitecustomize + guardia del navegador + proxy
+de registro); sesiones de ensayo retiradas (`trial_sessions: []`);
+dashboard 3020 restaurado (estaba libre); servicios canónicos
+8792/8797 intocables.
+
+**7. Traceability:** base `90b3c9b`; DECISIONS 2026-10-28 (transporte
+live + fix explorador por cola); ENGINEERING_SESSION_BACKEND_V1.md §11;
+CURRENT_STATE + TASK_QUEUE 2026-10-28; evidencia
+`docs/evidence/engineering-live-local-2026-10-28/`.

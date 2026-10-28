@@ -1,3 +1,32 @@
+## Transporte `market_stream` en vivo de ingeniería: aceptación local PASS (2026-10-28, base `90b3c9b`)
+
+Factual: la sesión de ingeniería consume en vivo el
+`market-stream-service/v1` (SSE loopback) — backend
+(`engineering_session_service.py`: gates de feed vivo + consumo de
+snapshots + avance live) y frontend (`EngineeringSession.tsx` /
+`session-lab.ts` / `engineering-service-manager.ts` con runner
+`market_stream`). Aceptación íntegra en navegador real (3020) con
+productor SSE local determinista:
+`docs/evidence/engineering-live-local-2026-10-28/summary.json` (corrida
+379,9 s; abstención → FEED_SILENCE → señal 1.0520 → fill 1.0525 →
+reinicio del servicio de mercado → salida por stop 1.0300 → cerrada;
+12/12 checks; 8 reconexiones; 0 peticiones externas; net −16,59
+simulado; `trial_sessions: []`; 3020 restaurado; 8792/8797 intocables).
+Tests 92 passed; frontend verificado sin cambios pendientes.
+
+Correcciones incluidas: (1) defecto del explorador canónico —
+`read_stored` devolvía la CABEZA del rango con caches >5000 velas;
+arreglado por COLA con regresión nueva (también afectaba al gráfico
+canónico con caches grandes); (2) arnés local determinista
+(`scripts/engineering_live_local_acceptance.py`) con backfill
+multi-frontera, limpieza de sesiones de ensayo por corrida y
+`LIMITS["entrada"]` 200 s (cadencia real del guion).
+
+Limitaciones declaradas (no bloquean el estado local): recepción de
+Binance NO acreditada (todo loopback); reparación REST inexistente en
+local; churn WS ~9 s tolerado; ciclo SSE de 10 s del adaptador en
+silencio. Detalle en `docs/ENGINEERING_SESSION_BACKEND_V1.md` §11.
+
 ## Inicio explícito completo desde la UI + defecto SSE corregido (2026-10-28, base `0bf96c6`)
 
 Evidencia: `docs/evidence/engineering-explicit-start-2026-10-28/acceptance-summary.json` (casos A–G, navegador real). Detalle en `docs/ENGINEERING_SESSION_BACKEND_V1.md` §10.

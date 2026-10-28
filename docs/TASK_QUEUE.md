@@ -1,3 +1,25 @@
+## Transporte `market_stream` en vivo de ingeniería: aceptación local PASS (2026-10-28, base `90b3c9b`)
+
+`CURRENT_PHASE`: dashboard V2 de escritorio + observación (WS público solo bajo
+autorización explícita; sin monitor, sin órdenes).
+
+`CURRENT_OBJECTIVE`: cerrado — transporte `market_stream` en vivo para la
+sesión de ingeniería (backend + frontend) y aceptación LOCAL completa con
+navegador real y productor SSE local determinista, sin Binance público.
+Evidencia: `docs/evidence/engineering-live-local-2026-10-28/summary.json`
+(12/12 checks, 6 capturas, 8 reconexiones, 0 peticiones externas,
+`trial_sessions: []`, 3020 restaurado). Incluye el arreglo del defecto del
+explorador canónico (lectura por cola con regresión) y el arnés
+`scripts/engineering_live_local_acceptance.py`.
+
+`ACTIVE_TASK`: **cerrado**.
+
+`NEXT_TASKS`: revisión del operador de las capturas shot-01..06; para
+feed público (REQUIERE autorización explícita): acreditación de recepción
+Binance real, reparación REST, tratamiento del churn WS ~9 s y del ciclo
+SSE de 10 s del adaptador; opcional: recorrido con datos nuevos continuos
+(ventana aparte).
+
 ## Inicio explícito completo desde la UI + arreglo del defecto SSE (2026-10-28, base `0bf96c6`)
 
 `CURRENT_PHASE`: dashboard V2 de escritorio + observación (WS público solo bajo

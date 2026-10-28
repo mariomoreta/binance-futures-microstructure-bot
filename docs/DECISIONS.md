@@ -3930,3 +3930,38 @@ del motor/servicio: causa UNKNOWN, load_session lo rechaza honestamente
 (IDENTITY_UNCERTAIN), evidencia preservada. Aceptacion real A-G PASS
 (docs/evidence/engineering-explicit-start-2026-10-28/); sin Binance
 publico, sin feed vivo, sin ordenes, observe-only.
+
+## 2026-10-28 - Transporte live market_stream de ingenieria (backend+frontend) + aceptacion local PASS + fix del explorador canonico por cola (base `90b3c9b`)
+
+DECISION: (a) la sesión de ingeniería consume en vivo el MISMO
+market-stream-service/v1 (SSE loopback) del paper-lab: gates de feed vivo,
+consumo de snapshots (_consume_snapshot/_consume_market_closed) y avance
+live (_live_advance) en engineering_session_service.py; el frontend arranca
+y supervisa el runner market_stream (EngineeringSession.tsx +
+session-lab.ts + engineering-service-manager.ts); sin colector/motor/gestor
+nuevos, paper_lab_engine intocado. (b) El explorador canónico read_stored
+con rango amplio devolvía la CABEZA (velas más antiguas) con LIMIT 5000 y
+caches >5000: el contexto del create live quedaba días atrasado y la
+puerta live bloqueaba honestamente (GRID_GAP/DATA_STALE, sin decisión
+falsa); arreglo por COLA (newest-first + reversa en canónico y cache;
+bars[-limit:] tras la fusión), semántica idéntica con <=limit, regresión
+nueva test_limit_keeps_the_most_recent_bars_of_the_range; efecto colateral
+corregido: el gráfico canónico con caches grandes mostraba silenciosamente
+datos viejos. (c) El arnés local determinista
+(scripts/engineering_live_local_acceptance.py) usa backfill multi-frontera
+del fake (últimas 4 fronteras cerradas al primer connect; sin señal en el
+backfill: close 1.0490), MEMORY_ONLY para frames live (el backfill no
+contamina el contexto) y limpieza de sesiones de ensayo al inicio de cada
+corrida (el workdir efímero acumulaba sesiones → SESSION_COUNT_UNEXPECTED);
+LIMITS["entrada"] 130→200 s por cadencia real del guion (la señal llega con
+la vela M+3 tras la puerta FEED_SILENCE, ~2 fronteras, ~141 s reales), no
+por compensar fallos. (d) shot-05/shot-06 con bytes idénticos es honesto
+(cierre instantáneo tras la salida, cerrada_s 0.006), no defecto.
+Aceptación real PASS en navegador
+(docs/evidence/engineering-live-local-2026-10-28/, corrida 379,9 s, 12/12
+checks, 8 reconexiones, 0 peticiones externas, net −16,59 simulado,
+trial_sessions [], 3020 restaurado, 8792/8797 intocables); 92 tests
+passed; sin Binance público, sin órdenes, observe-only. Gaps declarados
+para público (NO acreditados): recepción Binance, reparación REST
+inexistente en local, churn WS ~9 s tolerado, ciclo SSE de 10 s del
+adaptador en silencio.

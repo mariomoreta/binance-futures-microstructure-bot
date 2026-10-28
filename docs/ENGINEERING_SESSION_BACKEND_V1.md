@@ -269,3 +269,83 @@ entorno, no defecto).
 Estado final: servicio 8797 detenido (sin pid-file, sin sesiones de
 ensayo en el dir dedicado); dashboard 3020 sirviendo BUILD_ID
 `FQGAqw1wwcXIMQqei_fRA`; 8792 intocado.
+
+## 11. Transporte `market_stream` en vivo: backend + frontend + aceptación local (2026-10-28, base `90b3c9b`)
+
+### 11.1 Qué es
+
+La sesión de ingeniería consume en vivo el MISMO `market-stream-service/v1`
+(SSE loopback) que el paper-lab: el servicio de ingeniería
+(`engineering_session_service.py`) avanza su contexto y sus decisiones con
+los snapshots del stream en vivo (gates de feed vivo, `_consume_snapshot`,
+`_consume_market_closed`, `_live_advance`) y el frontend
+(`EngineeringSession.tsx` + `session-lab.ts` +
+`engineering-service-manager.ts`) arranca y supervisa el runner
+`market_stream`. No se creó ningún colector, motor ni gestor nuevos;
+`paper_lab_engine` no se tocó.
+
+### 11.2 Qué NO es
+
+- No acredita recepción de Binance: todo el arnés es loopback (fake WS →
+  servicio de mercado → SSE); el proveedor público permanece bloqueado
+  por diseño (sitecustomize + guardia de resolución del navegador + proxy
+  de registro).
+- No repara huecos por REST: la reparación REST no existe en local.
+- No persiste frames live (MEMORY_ONLY): el backfill del arnés no
+  contamina el contexto.
+
+### 11.3 Aceptación local PASS
+
+Evidencia: `docs/evidence/engineering-live-local-2026-10-28/summary.json`
+(corrida 379,9 s, git_sha `90b3c9b`, BUILD_ID `WDYGaWV_cUxErasQlce70`,
+navegador real en 3020 con productor SSE local determinista; capturas
+shot-01..06; 0 peticiones externas; `trial_sessions: []`; 3020 restaurado
+al estado previo —estaba libre—; 8792 y 8797 intocables).
+
+Guion verificado de punta a punta: backfill multi-frontera sin señal
+(1.0490) → abstención → pausa de 95 s → vela M tardía → puerta
+FEED_SILENCE (vela fusionada; reevaluaciones SIN_ENTRADA en M+1/M+2) →
+señal close(M+2)=1.0520 al conocerse → fill open(M+4)=1.0525
+(fill_basis=model_approximation) → reinicio del servicio de mercado
+(15 s) → salida por stop con close(M+4)=1.0300 ≤ 1.03425 → cerrada.
+Net −16,59 (simulado). 12/12 checks autoritativos (status cerrada,
+ENTRADA_SIMULADA, salida por stop, 3 relojes, bloques indicators +
+context_btc, runner market_stream, 8 reconexiones con watermark,
+market_url loopback).
+
+Verificación de código: 92 passed (41+1 `test_market_explorer.py`,
+`test_engineering_service_market_stream.py`,
+`test_engineering_session_service.py`, `test_paper_lab_engine.py`);
+arnés `scripts/engineering_live_local_acceptance.py` compila; frontend
+verificado previamente sin cambios pendientes (tsc/eslint 0, vitest OK).
+`shot-05` y `shot-06` tienen bytes idénticos: cierre instantáneo tras la
+salida (`cerrada_s` 0.006), honesto.
+
+### 11.4 Defecto del explorador canónico descubierto y corregido
+
+- Síntoma: smoke HTTP PASS contra el servicio de mercado, pero el create
+  live en navegador fallaba la puerta live (GRID_GAP/DATA_STALE) sin
+  decisión falsa. El repro CLI contra el cache temporal confirmó la
+  causa.
+- Causa: `market_explorer.read_stored` con rango amplio (`from_ms=0` +
+  `to_ms` enorme) leía ASC con `LIMIT 5000` (MAX_SERIES_LIMIT) y
+  devolvía la CABEZA del rango (velas más antiguas) cuando el cache
+  supera 5000 velas: el contexto del create live quedaba días atrasado.
+- Arreglo: lectura por COLA (newest-first + reversa en canónico y cache;
+  `bars[-limit:]` tras la fusión). Semántica idéntica con ≤limit;
+  regresión nueva
+  `test_limit_keeps_the_most_recent_bars_of_the_range`.
+- Efecto colateral corregido: el gráfico canónico con caches grandes
+  mostraba silenciosamente datos viejos.
+
+### 11.5 Ajustes del arnés y gaps declarados para feed público
+
+- `LIMITS["entrada"]` 130→200 s: cadencia real del guion (tras la puerta
+  FEED_SILENCE la señal llega con la vela M+3, ~2 fronteras, ~141 s
+  reales); no fue compensar un fallo.
+- Limpieza del directorio de sesiones de ensayo al inicio de cada corrida
+  del arnés: el workdir efímero reutilizado acumulaba sesiones
+  (SESSION_COUNT_UNEXPECTED). NO reutilizar el workdir sin esa limpieza.
+- Gaps para público (declarados, NO acreditados): recepción Binance no
+  acreditada (todo loopback); reparación REST inexistente en local;
+  churn WS ~9 s tolerado; ciclo SSE de 10 s del adaptador en silencio.
