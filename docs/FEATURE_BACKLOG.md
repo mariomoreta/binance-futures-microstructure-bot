@@ -2449,3 +2449,79 @@ replay-autoavance vs autonomía en backend).
   React, base `9a24308`) de la autonomía en backend (este bloque) en
   `docs/ENGINEERING_SESSION_BACKEND_V1.md`; el prefijo B no garantiza
   abstención con la caché actual (expectativa corregida).
+
+## Acceso operativo — sesión/servicio separados (2026-10-28, base `5f24807`)
+
+**1. Title:** Verificación de acceso operativo del bloque de autonomía en
+backend desde el estado entregado (8797 detenido): error visible sin
+duplicados con el servicio abajo; arranque por CLI canónico declarado
+limitación deliberada (el botón NO es inicio completo); semántica separada
+sesión (política de posición) / pestaña (solo observador) / servicio
+(sesiones en disco intactas y recuperables); publicación en
+`review/o1-funcional-v2-observacion` por fast-forward autorizado.
+
+**2. Approval status:** DECIDED dentro del alcance autorizado (operador
+autorizó fast-forward de la rama en revisión; sin Binance público, sin
+órdenes, sin monitor, sin nuevas funciones de estrategia; sin suites
+completas repetidas).
+
+**3. Implementation status:** VERIFIED (operativo). Sin cambios de código
+de producto: verificación en navegador real con el servicio explícito
+(`python scripts/engineering_session_service.py --port 8797
+--sessions-dir data/engineering-session/sessions --pid-file
+data/engineering-session/service.json`); docs y evidencia nuevas.
+
+**4. Evaluation status:** casos probados: (a) servicio abajo → banner
+`data-testid="session-error"` visible, sin `session_id` en localStorage,
+sin duplicados, sin procesos lanzados (BFF proxy puro); (b) S1
+`…7f1f4f32` ciclo autónomo completo (`SESSION_CLOSED` rev 38, kinds
+protección=2/entrada=1/marca=1/salida=1; red 1 create + 1 control + GETs);
+(c) S2 `…49b05386` cierre de pestaña con drive corriendo → backend
+continuó (rev 7→31→38) y cerró solo; reabrir recupera estado correcto
+(net 4.944281); (d) SERVICE_STOP con drive corriendo (`…516fa8d8`) →
+estado en disco intacto (`abierta` rev 11, sin evento de salida) y
+servicio parado; (e) reinicio → recuperación → «Detener sesion» →
+`detenida` rev 12 con posición preservada (entry 0.0626, mark 0.06256).
+Identidad: BUILD_ID `r5poURhuj3RQc4CjC6Kyz`; 8792 preexistente sin tocar.
+
+**5. Limitaciones:** el default del servicio SIN `--sessions-dir`
+(`paper-lab-sessions/`) colisiona con el controlador anterior (uso
+siempre de dir dedicado documentado); el mapeo `ENGINEERING_SERVICE_DOWN`
+del BFF rara vez aparece (el fetch de Node oculta el `code` → la etiqueta
+observada es `ENGINEERING_PROXY_ERROR`, igual 503 con error visible);
+defecto abierto del panel de flujo (`ERR_INCOMPLETE_CHUNKED_ENCODING` en
+`/api/v1/market-flow/stream`, impacto = stream abortado en re-render, sin
+atribuirle fallos de esta sesión) queda pendiente de decisión.
+
+**6. Evidence:** `docs/evidence/engineering-backend-2026-10-28/operational-access-2026-10-28.json`;
+`docs/evidence/engineering-backend-2026-10-28/ver-case-1-detener-tras-recuperar.png`;
+`docs/ENGINEERING_SESSION_BACKEND_V1.md` §8;
+`docs/DECISIONS.md` (2026-10-28, acceso operativo);
+`docs/CURRENT_STATE.md`; `docs/TASK_QUEUE.md`.
+
+**7. Last update:** 2026-10-28.
+
+### Cierre (siete campos, obligatorios)
+
+- `DECISIONS_REVIEWED` — `docs/DECISIONS.md` (autonomía en backend y
+  abstención temporal/terminal, 2026-10-28), `docs/CURRENT_STATE.md`,
+  `docs/TASK_QUEUE.md`, `docs/DESKTOP_FIRST_SCOPE_20261020.md`.
+- `NEW_DECISIONS_RECORDED` — DECISIONS 2026-10-28: arranque manual del
+  servicio declarado (botón no-inicio-completo; CLI canónico con dir
+  dedicado obligatorio); semántica separada sesión/pestaña/servicio
+  (detener sesión = política de posición; cerrar pestaña = solo
+  observador; detener servicio = sesiones en disco intactas, nunca cierra
+  por su cuenta).
+- `FEATURES_IMPLEMENTED` — ninguno nuevo (bloque de verificación);
+  documentación del acceso canónico y de la semántica separada.
+- `FEATURES_VERIFIED` — casos (a)–(e) de arriba en navegador real; 0
+  Binance público, 0 upstream, 0 órdenes; servicios al cierre: 8797
+  detenido, sin sesiones de ensayo, dashboard canónico servido.
+- `DEFERRED_FEATURES` — recorrido con datos nuevos continuos (ventana
+  aparte, autorización explícita); mapeo `ENGINEERING_SERVICE_DOWN`
+  opcional en BFF; hotfix del defecto abierto del panel de flujo.
+- `BACKLOG_UPDATED` — yes: esta sección + `CURRENT_STATE`, `TASK_QUEUE`,
+  `DECISIONS`, `ENGINEERING_SESSION_BACKEND_V1.md` (§8).
+- `DOCUMENTATION_CONFLICTS` — ninguna contradictoria; se declara el
+  alcance del botón (no inicio completo) y el impacto del defecto abierto
+  del panel de flujo sin atribuirle fallos de esta sesión.

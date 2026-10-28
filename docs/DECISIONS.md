@@ -3871,6 +3871,30 @@ de robustez Windows: `save_session` (escritura + `os.replace`) y
 `OSError`/`PermissionError` transitorios, conservando la señal explícita
 `IDENTITY_UNCERTAIN` para corrupción real (no se enmascara). El mismo
 bloque corrigió 3 fallos PREEXISTENTES de la base: causalidad del dict
-público de sesión (sin velas futuras) y el presupuesto interno de
+pA�blico de sesiA3n (sin velas futuras) y el presupuesto interno de
 benchmark de la ventana (`scripts/market_stream_window.py`). Suite Python:
 1530 passed / 2 skipped (antes 6 fallos en la base).
+
+## 2026-10-28 — Acceso operativo: arranque manual del servicio y semántica sesión/servicio separadas (base `5f24807`)
+
+DECISIÓN: se declaran explícitas dos políticas de acceso operativo para el
+bloque de ingeniería. (a) El arranque del servicio
+`engineering-session-service` es SIEMPRE manual por CLI: abrir el
+dashboard NO inicia procesos y el botón «Iniciar sesion» NO es un inicio
+completo; con el servicio abajo el error es visible
+(`data-testid="session-error"`), sin duplicados ni avance impostor, y el
+operador lo levanta con
+`python scripts/engineering_session_service.py --port 8797 --sessions-dir <dir dedicado> --pid-file data/engineering-session/service.json`
+(dir dedicado obligatorio: el default `paper-lab-sessions/` colisiona con
+el controlador anterior). (b) Las tres acciones de parada son distintas:
+«Detener sesion» = política de posición (congela la sesión en `detenida`,
+sin cerrar la posición ni inventar salida); cerrar la pestaña = solo
+desconecta al observador (el backend sigue conduciendo); detener el
+servicio = termina drives en memoria y NUNCA muta el estado económico en
+disco de sus sesiones (quedan intactas y manejables tras reinicio).
+Verificado en navegador real con 3 sesiones y parada/reinicio del
+servicio (evidencia
+`docs/evidence/engineering-backend-2026-10-28/`). Defecto abierto
+documentado del panel de flujo: `ERR_INCOMPLETE_CHUNKED_ENCODING` en
+`/api/v1/market-flow/stream` (impacto: stream abortado en re-render; sin
+atribuirle fallos de esta sesión).

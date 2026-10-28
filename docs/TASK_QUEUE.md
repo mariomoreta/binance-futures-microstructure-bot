@@ -1,3 +1,35 @@
+## Acceso operativo y publicación en revisión (2026-10-28, base `5f24807`)
+
+`CURRENT_PHASE`: dashboard V2 de escritorio + observación (WS público solo bajo
+autorización explícita; sin monitor, sin órdenes).
+
+`CURRENT_OBJECTIVE`: cerrado — acceso operativo del bloque de autonomía en
+backend verificado desde el estado entregado (8797 detenido): fallo visible y
+sin duplicados con el servicio abajo; arranque por CLI canónico declarado
+limitación deliberada; semántica sesión/pestaña/servicio verificada
+punto por punto; publicación de la rama en
+`review/o1-funcional-v2-observacion` por fast-forward autorizado (sin
+reset ni force).
+
+`ACTIVE_TASK`: **cerrado**. Evidencia:
+`docs/evidence/engineering-backend-2026-10-28/operational-access-2026-10-28.json`
++ captura `ver-case-1-detener-tras-recuperar.png`. Casos: servicio abajo
+(error `data-testid=session-error`, sin procesos lanzados, sin duplicados);
+S1 ciclo completo autónomo (`SESSION_CLOSED`, red 1 create + 1 control +
+GETs); S2 cierre de pestaña (backend rev 7→31→38, `SESSION_CLOSED`);
+SERVICE_STOP con drive corriendo (estado en disco intacto, rev 11, sin
+salida inventada); reinicio + recuperación + «Detener sesion» → `detenida`
+rev 12 con posición preservada. Servicios al cierre: 8797 detenido,
+sesiones de ensayo eliminadas, dashboard 3020 con
+`r5poURhuj3RQc4CjC6Kyz`, 8792 preexistente sin tocar.
+
+`NEXT_TASKS`: defecto abierto del panel de flujo (`ERR_INCOMPLETE_CHUNKED_ENCODING`
+en `/api/v1/market-flow/stream`) — decidir arreglo; revisión del operador
+de las capturas; recorrido con datos nuevos continuos (ventana aparte,
+autorización explícita); opcional: map explícito `ENGINEERING_SERVICE_DOWN`
+en el BFF (hoy el fetch de Node oculta `code` y el banner muestra
+`ENGINEERING_PROXY_ERROR`, igual 503 con error visible).
+
 ## Autonomía de la sesión de ingeniería en backend (2026-10-27/28, base `0aa98f5`, rama `feat/ingenieria-autonoma`)
 
 `CURRENT_PHASE`: dashboard V2 de escritorio + observación (WS público solo bajo

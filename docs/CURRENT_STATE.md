@@ -1,3 +1,36 @@
+## Acceso operativo verificado — sesión/servicio separados (2026-10-28, base `5f24807`)
+
+Verificación de acceso desde el estado entregado (8797 detenido), con la
+pestaña del operador y un servicio explícito. Evidencia:
+`docs/evidence/engineering-backend-2026-10-28/operational-access-2026-10-28.json`.
+Detalle completo en `docs/ENGINEERING_SESSION_BACKEND_V1.md` §8.
+
+1. **Arranque manual declarado deliberado:** abrir `/market-lab` no inicia
+   procesos; con 8797 detenido, «Iniciar sesion» muestra error visible sin
+   duplicados ni escaneo (BFF proxy puro). El botón NO es inicio completo;
+   el operador levanta el servicio con el CLI canónico (`--sessions-dir`
+   dedicado: el default colisiona con el controlador anterior).
+2. **Semántica separada y verificada:** detener la SESIÓN = política de
+   posición (`detenida`, posición preservada, sin salida inventada);
+   cerrar la PESTAÑA = solo desconecta el observador (el backend cerró la
+   sesión solo: rev 7→31→38); detener el SERVICIO = termina drives en
+   memoria y NUNCA muta el estado económico en disco ( sesión en disco
+   `abierta`, sin evento de salida, recuperable y reanudable tras reinicio).
+3. **Recorrido del operador probado:** iniciar (`1 POST create + 1 POST
+   control + GETs`) → sesión activa → cierre/reapertura de pestaña →
+   recuperación correcta (net 4.944281) → detener servicio con drive
+   corriendo → estado en disco intacto → reinicio → recuperar → «Detener
+   sesion» → `detenida` rev 12 sin salida inventada.
+4. **Servicios al cierre:** 8797 detenido y directorios de sesiones de
+   ensayo eliminados; dashboard canónico 3020 sirviendo
+   `r5poURhuj3RQc4CjC6Kyz` (PID 29508); 8792 preexistente sin tocar.
+   Defecto abierto del panel de flujo ERR_INCOMPLETE_CHUNKED_ENCODING:
+   impacto = el stream del panel se aborta en algunos re-render; sin
+   atribuirle fallos de esta sesión.
+5. **Publicación:** `feat/ingenieria-autonoma` pushed (normal); 
+   `review/o1-funcional-v2-observacion` estaba en `9a24308` (ancestro
+   estricto) → integrado por fast-forward autorizado (sin reset/force).
+
 ## Autonomía de la sesión de ingeniería en backend (2026-10-27/28, base `0aa98f5`, rama `feat/ingenieria-autonoma`)
 
 La sesión de ingeniería ya se conduce **desde un servicio backend Python

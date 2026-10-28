@@ -113,9 +113,67 @@ determinísticamente en las suites (no en la demo de navegador).
 - Error de consola NO a cargo de este trabajo: `ERR_INCOMPLETE_CHUNKED_ENCODING`
   en `/api/v1/market-flow/stream` (SSE de otro panel; preexistente).
 
-## 8. Evidencia
+## 8. Acceso operativo y semántica sesión/servicio (verificación 2026-10-28)
+
+Verificación de acceso con 8797 detenido (evidencia
+`docs/evidence/engineering-backend-2026-10-28/operational-access-2026-10-28.json`,
+SHA fuente `5f24807`, BUILD_ID `r5poURhuj3RQc4CjC6Kyz`):
+
+### 9.1 Arranque manual del servicio — limitación declarada
+
+**Deliberado:** abrir `/market-lab` NO arranca ningún proceso (cabecera del
+CLI: *«Arranque/parada explícitos; no se lanza solo porque alguien abra una
+página»*). El BFF `engineering-sessions` es proxy puro (sin `child_process`).
+Con el servicio detenido, «Iniciar sesion» muestra un banner de error visible
+(`data-testid="session-error"`, 503 del BFF; etiqueta observada
+`ENGINEERING_PROXY_ERROR`, el mapeo `ENGINEERING_SERVICE_DOWN` solo aparece
+cuando el `code` top-level del fetch lo expone), sin duplicados y sin
+escribir `session_id` en localStorage. El botón NO es un inicio completo:
+**el operador levanta el servicio con el CLI canónico**:
+
+```
+python scripts/engineering_session_service.py --port 8797 \
+  --sessions-dir data/engineering-session/sessions \
+  --pid-file data/engineering-session/service.json
+```
+
+Nota de aislamiento: el default SIN `--sessions-dir` es
+`paper-lab-sessions/` (compartido con el controlador anterior
+`scripts/paper_lab_session.py`); el motor además anida
+`paper-lab-sessions/` bajo el raíz indicado. Para acceso canónico usar el
+directorio dedicado indicado arriba.
+
+### 9.2 Semántica verificada: sesión ≠ servicio
+
+| Acción | Qué toca | Qué NO toca | Evidencia |
+|---|---|---|---|
+| «Detener sesion» (control stop + stop_session) | política de posición: congela la sesión (`detenida`) y detiene la conducción | sin cierre inventado, sin evento de salida; posición queda tal cual (`entry_px`/`mark_px` preservados) | `…516fa8d8`: rev 11→12, kinds `protection=2,entry=1,mark=1` |
+| Cerrar la pestaña | solo desconecta al observador | el backend sigue conduciendo (rev 7→31→38, `SESSION_CLOSED` con pestaña cerrada); reabrir recupera el estado correcto | `…49b05386` |
+| Detener el servicio (`--stop` / `/shutdown`) | termina transportes/drives en memoria (causa `OPERATOR_STOP` efímera) | NUNCA muta el estado económico en disco: sin eventos nuevos, sin cierres; sesiones quedan intactas y manejables tras reinicio | `…516fa8d8` en disco: `abierta` rev 11, kinds sin salida |
+| Abrir `/market-lab` | nada (solo observación) | no inicia procesos ni sesiones | banners visibles cuando el servicio falta |
+
+### 9.3 Defecto abierto del panel de flujo
+
+`ERR_INCOMPLETE_CHUNKED_ENCODING` en `/api/v1/market-flow/stream`
+(SSE del panel de flujo, panel ajeno a este bloque) se mantiene como
+DEFECTO ABIERTO: impacto observado = el stream del panel se aborta en
+algunos re-render/re-poll; no se le atribuyen fallos de esta sesión (el
+acceso y la conducción terminaron sin errores propios).
+
+### 9.4 Recorrido completo probado (usuario real)
+
+iniciar → sesión backend activa (`abierta`, drive `running`, 1 POST create
++ 1 POST control, resto GET) → cerrar pestaña → backend cierra solo
+(`SESSION_CLOSED`) → reabrir → recuperación correcta → (segunda sesión)
+detener servicio con drive corriendo → estado en disco intacto → reiniciar
+servicio → recuperar → «Detener sesion» → `detenida` con posición
+preservada. Al final: servicio detenido y directorios de sesiones de
+ensayo eliminados; dashboard canónico servido sin sesiones de ensayo.
+
+## 9. Evidencia
 
 - `docs/evidence/engineering-backend-2026-10-27/` — 13 piezas + `acceptance-summary.json`.
+- `docs/evidence/engineering-backend-2026-10-28/` — verificación de acceso operativo (2026-10-28).
 - `tests/test_engineering_session_service.py`; `tests/test_paper_lab_engine.py` (regresión);
   `frontend/src/test/engineering-session.test.tsx`; `frontend/src/test/session-lab.test.ts`.
 - Código: `src/microstructure_probe/engineering_session_service.py`.
