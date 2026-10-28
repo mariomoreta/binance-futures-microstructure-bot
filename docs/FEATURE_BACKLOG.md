@@ -2336,3 +2336,116 @@ src/microstructure_probe/paper_lab_engine.py; scripts/paper_lab_session.py; BFF 
 - `DEFERRED_FEATURES` — conexión a Binance público; selector automático de símbolos; monitor en vivo; paper prospectivo; órdenes; pagos; móvil/Flutter; IA; indicadores provisionales; motor paper completo (Etapa 5); recorrido con datos nuevos continuos; autonomía con proceso backend propio (no requerido).
 - `BACKLOG_UPDATED` — yes: esta sección + `CURRENT_STATE`, `TASK_QUEUE`, `DECISIONS`.
 - `DOCUMENTATION_CONFLICTS` — ninguna contradictoria; se aclara que el prefijo B no garantiza abstención con la caché actual (se corrige la expectativa previa de "B se abstiene" como no-verificada con datos reales; abstención real = stop ya vulnerado/evidencia insuficiente vía HTTP) y que la autonomía no implica un proceso backend periódico.
+
+## Sesión de ingeniería — autonomía en backend (2026-10-27/28, base `0aa98f5`, rama `feat/ingenieria-autonoma`)
+
+**1. Title:** Conducción de la sesión de ingeniería movida a un servicio
+backend Python residente (`engineering-session-service/v1`, puerto 8797
+por defecto, reutiliza `paper_lab_engine`; sin motor ni gestor paralelo):
+el navegador es SOLO observador, cerrar la pestaña NO detiene la sesión y
+reabrir recupera el estado correcto; avance SOLO por eventos REVEAL del
+transporte local con cadencia.
+
+**2. Approval status:** DECIDED dentro del alcance autorizado (desktop;
+transporte local incremental simulado sobre caché; 0 Binance público, 0
+upstream, 0 órdenes; sin monitor ni paper prospectivo; sin estrategia
+nueva; regla `ENGINEERING-MINA-1M-v1` hipótesis no validada, sin
+rentabilidad).
+
+**3. Implementation status:** IMPLEMENTED. Servicio
+`src/microstructure_probe/engineering_session_service.py` + CLI
+`scripts/engineering_session_service.py` (start/stop, `--pid-file`,
+`POST /shutdown`; servidor de biblioteca estándar con ruido de apagado
+silenciado). BFF `frontend/src/app/api/v1/engineering-sessions/**` (env
+`ENGINEERING_SERVICE_URL`, guardia de origen) + cliente
+`frontend/src/lib/session-lab.ts` (`createBackendSession`,
+`fetchBackendSession`, `controlBackendSession`; formas uniformes
+`{session, drive}` con drive hermana). Componente observador
+`frontend/src/components/session-lab/EngineeringSession.tsx`: chip de
+conducción con causa (`DRIVE_CAUSE_TEXT`), timer del navegador como
+autoridad de avance ELIMINADO (implementación del modo anterior), todas
+las acciones manuales vía control. Semántica en `paper_lab_engine.py`:
+`SIN_ENTRADA` = abstención temporal (reevalúa ante cada evento nuevo),
+`DESCARTADO` = descarte terminal; causalidad del dict público (sin velas
+futuras); reintentos de escritura/lectura de sesión en Windows (5×,
+backoff 20 ms, `IDENTITY_UNCERTAIN` solo para corrupción real).
+
+**4. Evaluation status:** backend `tests/test_engineering_session_service.py`
+8/8 (abstención temporal → evento confirmatorio → entrada/salida única sin
+intervención; END_OF_TRANSPORT sin cierre inventado; DESCARTADO terminal no
+reabre; 409 REVISION_CONFLICT/DRIVE_ACTIVE, 400/404; persistencia entre
+reinicios del controlador con posición manejable; start idempotente;
+`/shutdown`); frontend `engineering-session.test.tsx` 8/8; suite Python
+completa **1530 passed / 2 skipped** (3 fallos PREEXISTENTES de la base
+corregidos: causalidad del dict público; presupuesto interno de benchmark
+de la ventana en `scripts/market_stream_window.py` + tests fijados); suite
+frontend 604 passed / 1 skipped; `tsc`/`eslint` 0. Aceptación navegador
+real sobre `http://127.0.0.1:3020/market-lab` (BUILD_ID
+`r5poURhuj3RQc4CjC6Kyz`; servicio de aceptación 8797 con dir de sesiones
+aislado): S1 ciclo autónomo completo (solo 2 POST: create+start; resto
+GET); S2 cierre de pestaña → backend cerró la sesión solo (rev 33→38,
+`SESSION_CLOSED`) y reabrir recupera sesión cerrada con panel de
+exportación; S3 detener con posición abierta → `detenida` sin salida
+inventada (`OPERATOR_STOP` visible); S4 prefijo B → cerrada por horizonte
+(net_pnl 4.944281; kinds protección=2/entrada=1/marca=1/salida=1; tras
+recuperación 24 GET / 0 POST).
+
+**5. Limitaciones:** con la caché real de MINAUSDT ambos prefijos (A y B)
+admitían entrada — NO se fabricó abstención en datos reales; la separación
+abstención temporal/terminal y la confirmación posterior quedan probadas
+determinísticamente en suites (no en la demo de navegador); no conecta a
+Binance público (ventana aparte, autorización explícita); un solo token
+candidato; sin rentabilidad probada; servicio y dashboard canónicos son
+procesos separados (arranque manual de cada uno); separación bedrock sin
+cambios: el navegador no decide nada económico.
+
+**6. Evidence:** `docs/evidence/engineering-backend-2026-10-27/` (13 piezas
++ `acceptance-summary.json`); `tests/test_engineering_session_service.py`;
+`tests/test_market_stream_window.py`; `tests/test_market_stream_transport.py`;
+`frontend/src/test/engineering-session.test.tsx`;
+`src/microstructure_probe/engineering_session_service.py`;
+`src/microstructure_probe/paper_lab_engine.py`;
+`scripts/engineering_session_service.py`;
+`scripts/market_stream_window.py`; BFF
+`frontend/src/app/api/v1/engineering-sessions/**`;
+`frontend/src/lib/session-lab.ts`;
+`frontend/src/components/session-lab/EngineeringSession.tsx`;
+`docs/ENGINEERING_SESSION_BACKEND_V1.md` (doc dedicada con la distinción
+replay-autoavance vs autonomía en backend).
+
+**7. Last update:** 2026-10-28.
+
+### Cierre (siete campos, obligatorios)
+
+- `DECISIONS_REVIEWED` — `docs/DECISIONS.md` (modo autónomo 2026-10-27),
+  `docs/CURRENT_STATE.md`, `docs/TASK_QUEUE.md`,
+  `docs/DESKTOP_FIRST_SCOPE_20261020.md` (desktop only; sin trabajo móvil).
+- `NEW_DECISIONS_RECORDED` — DECISIONS 2026-10-28 (dos entradas):
+  autonomía de la sesión de ingeniería en backend
+  (`engineering-session-service/v1`, navegador solo observador, avance por
+  eventos REVEAL, cierre de pestaña no detiene la conducción) y
+  abstención temporal (`SIN_ENTRADA`) vs descarte terminal (`DESCARTADO`)
+  + reintentos de escritura en Windows (5×, backoff, `IDENTITY_UNCERTAIN`
+  explícito) + 3 fallos preexistentes de la base corregidos.
+- `FEATURES_IMPLEMENTED` — servicio backend residente con controlador,
+  transporte local REVEAL y coordinador (`advance_once`); endpoints
+  uniformes `{session, drive}` y causas de conducción explícitas; BFF +
+  cliente + componente observador con chip y causa; timer del navegador
+  eliminado; abstención temporal/terminal en el motor; causalidad del
+  dict público; reintentos de persistencia en Windows.
+- `FEATURES_VERIFIED` — backend 8/8; frontend componente 8/8; Python
+  1530/2 skip + frontend 604/1 skip; tsc/eslint 0; aceptación de navegador
+  real PASS S1–S4 con red verificada (0 Binance público, 0 upstream, 0
+  órdenes; solo GET tras recuperación, 0 POST de avance).
+- `DEFERRED_FEATURES` — conexión a Binance público; selector automático de
+  símbolos; monitor en vivo; paper prospectivo; órdenes; pagos;
+  móvil/Flutter; IA; indicadores provisionales; motor paper completo
+  (Etapa 5); recorrido con datos nuevos continuos; demo de abstención con
+  datos reales (requiere caché disfavorable).
+- `BACKLOG_UPDATED` — yes: esta sección + `CURRENT_STATE`, `TASK_QUEUE`,
+  `DECISIONS`, `ENGINEERING_SESSION_BACKEND_V1.md` (nueva).
+- `DOCUMENTATION_CONFLICTS` — ninguna contradictoria; se distingue
+  explícitamente el modo autónomo anterior (replay-autoavance con timer de
+  React, base `9a24308`) de la autonomía en backend (este bloque) en
+  `docs/ENGINEERING_SESSION_BACKEND_V1.md`; el prefijo B no garantiza
+  abstención con la caché actual (expectativa corregida).

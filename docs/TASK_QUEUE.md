@@ -1,3 +1,43 @@
+## Autonomía de la sesión de ingeniería en backend (2026-10-27/28, base `0aa98f5`, rama `feat/ingenieria-autonoma`)
+
+`CURRENT_PHASE`: dashboard V2 de escritorio + observación (WS público solo bajo
+autorización explícita; sin monitor, sin órdenes).
+
+`CURRENT_OBJECTIVE`: cerrado — la conducción de la sesión de ingeniería vive
+en un servicio backend Python residente (`engineering-session-service/v1`,
+port 8797 por defecto) que reutiliza `paper_lab_engine` y avanza SOLO por
+eventos REVEAL del transporte local; el navegador es observador y NO
+programa el avance. Cerrar el navegador no detiene la sesión; detener con
+posición abierta congela sin salida inventada; `SIN_ENTRADA` reevalúa ante
+nueva información y `DESCARTADO` es terminal.
+
+`ACTIVE_TASK`: **cerrado**. Implementación:
+`src/microstructure_probe/engineering_session_service.py` + CLI
+`scripts/engineering_session_service.py`; BFF
+`frontend/src/app/api/v1/engineering-sessions/**`; cliente
+`frontend/src/lib/session-lab.ts`; componente observador
+`frontend/src/components/session-lab/EngineeringSession.tsx` (chip de
+conducción + causa, timer del navegador eliminado). Pruebas: backend
+`tests/test_engineering_session_service.py` 8/8 (abstención temporal →
+confirmación → entrada/salida única por evento; DESCARTADO terminal;
+409/400/404; persistencia entre reinicios del controlador; `/shutdown`);
+frontend `engineering-session.test.tsx` 8/8; Python completo 1530 passed /
+2 skipped (corregidos 3 fallos PREEXISTENTES de la base: causalidad del
+dict público y presupuesto de fanout/benchmark interno de la ventana);
+frontend 604 passed / 1 skipped; `tsc`/`eslint` 0. Aceptación navegador
+real PASS en `docs/evidence/engineering-backend-2026-10-27/` (S1 ciclo
+autónomo; S2 pestaña cerrada → backend cierra solo y reabrir recupera; S3
+detener con posición → `detenida` sin salida inventada; S4 prefijo B →
+cierre por horizonte; red: solo GET tras recuperación, 0 POST de avance).
+Detalle y distinción contra el modo autónomo anterior (replay-autoavance
+React): `docs/ENGINEERING_SESSION_BACKEND_V1.md`.
+
+`NEXT_TASKS`: revisión del operador de las capturas
+(`eng-*.png`); recorrido con datos nuevos continuos (ventana aparte,
+autorización explícita); decidir si el error de consola preexistente
+ERR_INCOMPLETE_CHUNKED_ENCODING (`/api/v1/market-flow/stream`) merece
+arreglo; resto del backlog (ver FEATURE_BACKLOG).
+
 ## Modo autónomo de la sesión de ingeniería (2026-10-27, base `9a24308`, rama `feat/ingenieria-autonoma`)
 
 `CURRENT_PHASE`: dashboard V2 de escritorio + observación (WS público solo bajo

@@ -1,3 +1,54 @@
+## Autonomía de la sesión de ingeniería en backend (2026-10-27/28, base `0aa98f5`, rama `feat/ingenieria-autonoma`)
+
+La sesión de ingeniería ya se conduce **desde un servicio backend Python
+residente** (`engineering-session-service/v1`, puerto 8797 por defecto), no
+desde un temporizador del navegador. El navegador es SOLO observador (GET
+de estado cada 800 ms; iniciar/parar vía control). Distinción con el modo
+anterior: replay-autoavance (React timer + `/step` spawnSync, base
+`9a24308`) vs autonomía en backend (servicio residente reutilizando
+`paper_lab_engine`, sin motor paralelo; detalle en
+`docs/ENGINEERING_SESSION_BACKEND_V1.md`).
+
+1. **Servicio:** `src/microstructure_probe/engineering_session_service.py` +
+   CLI `scripts/engineering_session_service.py` (start/stop, `--pid-file`,
+   `POST /shutdown`). Endpoints uniformes `GET /sessions/{id}` y `POST
+   control` devuelven `{session, drive}` (drive hermana). Causas de
+   conducción: `SESSION_CLOSED`, `END_OF_TRANSPORT`, `OPERATOR_STOP`,
+   `SESSION_STOPPED`, `DRIVE_EVENT_LIMIT`, `DRIVE_ERROR:*`.
+- **Semántica de abstención corregida:** `SIN_ENTRADA` = abstención
+   temporal (reevalúa en cada evento nuevo; entrada confirmatoria sin
+   intervención, probada determinísticamente en tests); `DESCARTADO` =
+   descarte terminal (no reabre). El evaluador solo recibe el prefijo
+   revelado (REVEAL, sin OHLC en eventos de transporte, sin velas futuras
+   en el dict público — corrección de causalidad en `session_to_public_dict`).
+2. **Aceptación en navegador real (PASS)**, evidencia
+   `docs/evidence/engineering-backend-2026-10-27/` (eng-01…eng-13 +
+   `acceptance-summary.json`): S1 ciclo autónomo completo (solo 2 POST:
+   create+start, resto GET); S2 **cerrar pestaña no detiene la conducción**
+   (revisión 33→38, `SESSION_CLOSED`) y reabrir recupera sesión cerrada con
+   panel de exportación; S3 detener con posición abierta → `detenida` sin
+   salida inventada (`OPERATOR_STOP` visible); S4 prefijo B → cerrada por
+   horizonte (net_pnl 4.944281, kinds protección=2/entrada=1/marca=1/
+   salida=1; tras recuperación 24 GET / 0 POST). Nota honesta: con la caché
+   real de MINAUSDT ambos prefijos admitían entrada; no se fabricó
+   abstención en datos reales (separación temporal/terminal probada en
+   tests).
+3. **Pruebas:** backend `tests/test_engineering_session_service.py` 8/8;
+   frontend `engineering-session.test.tsx` 8/8; Python completo **1530
+   passed / 2 skipped** (3 fallos PREEXISTENTES de la base corregidos:
+   causalidad del dict público; presupuesto de benchmark interno de la
+   ventana en `scripts/market_stream_window.py`); frontend 604 passed / 1
+   skipped; `tsc`/`eslint` 0.
+4. **Operativo restaurado:** dashboard canónico 3020 sirviendo el build
+   nuevo `r5poURhuj3RQc4CjC6Kyz` (PID 29508; reemplazó el BUILD_ID previo
+   `GC5lmJU9kuk4F0d3Z7WxI`); instancia de aceptación del servicio (8797)
+   PARADA y sus directorios de sesión de prueba eliminados; servicio de
+   flujo PREEXISTENTE en 8792 sin tocar (otro dueño, no iniciado ni
+   detenido por este bloque); sin Binance público, 0 upstream, 0 órdenes.
+   Error de consola preexistente NO a cargo del bloque:
+   ERR_INCOMPLETE_CHUNKED_ENCODING en `/api/v1/market-flow/stream` (SSE de
+   otro panel).
+
 ## Estado operativo canónico restaurado (2026-10-26, HEAD `3c2e7ab`)
 
 Tras el trabajo del bloque de contexto BTC compartido, el dashboard canónico

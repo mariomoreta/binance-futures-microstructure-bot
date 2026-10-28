@@ -3832,3 +3832,45 @@ Objetivo: la sesión de ingeniería avanza sola de forma incremental (datos → 
 - **Cierre de robustez:** referencias (`stateRef`, `autonomousRef`, `loopRef`) para evitar closures obsoletos del bucle autónomo; limpieza al desmontar; reentrada protegida.
 - **Corrección de selección de prefijo antes de iniciar:** `changePrefix` ignoraba la elección cuando aún no había sesión (early return antes de fijar el prefijo), contradiciendo la instrucción de la propia página ("Seleccione un prefijo de datos y pulse Iniciar sesion"). Ahora la elección sin sesión solo fija el prefijo para el próximo "Iniciar"; con sesión viva se conserva el comportamiento previo (reconstrucción con el mismo `entry_px` fijo). Con la caché actual MINAUSDT 1m, el prefijo B (35 velas de contexto) NO garantiza abstención (la señal y el fill ocurren también con prefijo B); la abstención real se demuestra con evidencia insuficiente/stop ya vulnerado vía HTTP (DESCARTADO, sin posición).
 - **Sin rentabilidad:** la regla `ENGINEERING-MINA-1M-v1` sigue siendo hipótesis no validada; el modo autónomo no agrega selección por beneficio ni garantiza entradas (la regla puede abstenerse).
+
+## 2026-10-28 — Autonomía de la sesión de ingeniería en backend (engineering-session-service/v1, base `0aa98f5`)
+
+DECISIÓN: mover la conducción de la sesión de ingeniería a un servicio
+backend Python residente en loopback (biblioteca estándar
+`ThreadingHTTPServer`, puerto por defecto 8797, contrato
+`engineering-session-service/v1`) que reutiliza `paper_lab_engine` con un
+transporte local de eventos REVEAL y un hilo coordinador que llama
+`advance_once()`. RAZÓN: el modo autónomo anterior (base `9a24308`)
+programaba el avance con un timer de React en el navegador y un proceso
+Python por paso (spawnSync en `/step`): cerrar la pestaña detenía la
+conducción y el navegador era copartícipe del avance. Ahora el navegador
+es SOLO observador (GET de estado; iniciar/parar vía control) y la
+conducción sobrevive al cierre de la pestaña (demostrado en aceptación:
+revisión 33→38 con la pestaña cerrada, `SESSION_CLOSED`, reabrir recupera
+el estado correcto). Avance SOLO por eventos REVEAL con cadencia; el
+evaluador no recibe velas futuras ni OHLC en los eventos de transporte.
+Causas de fin de conducción explícitas (`SESSION_CLOSED`,
+`END_OF_TRANSPORT`, `OPERATOR_STOP`, `SESSION_STOPPED`, `DRIVE_EVENT_LIMIT`,
+`DRIVE_ERROR:*`). Respuestas uniformes `{session, drive}`. Aceptación de
+navegador real PASS en 4 escenarios (S1 ciclo; S2 cierre de pestaña; S3
+detener con posición abierta; S4 prefijo B + cierre por horizonte),
+evidencia `docs/evidence/engineering-backend-2026-10-27/`. La separación
+abstención temporal/terminal NO se demostró con datos reales (con la
+caché de MINAUSDT ambos prefijos admitían entrada; no se fabricó
+abstención): quedó probada determinísticamente en las suites.
+
+## 2026-10-28 — Abstención temporal vs descarte terminal + reintentos de escritura en Windows (base `0aa98f5`)
+
+DECISIÓN: en `paper_lab_engine.evaluate_session`, `SIN_ENTRADA` es
+abstención TEMPORAL (la sesión se reevalúa ante cada evento nuevo; un
+evento confirmatorio posterior admite la entrada sin intervención humana)
+y `DESCARTADO` es descarte TERMINAL (cierre de sesión sin reabrir). Antes
+la abstención bloqueaba indebidamente la información nueva. Complemento
+de robustez Windows: `save_session` (escritura + `os.replace`) y
+`load_session` reintentan 5× con backoff ascendente de 20 ms ante
+`OSError`/`PermissionError` transitorios, conservando la señal explícita
+`IDENTITY_UNCERTAIN` para corrupción real (no se enmascara). El mismo
+bloque corrigió 3 fallos PREEXISTENTES de la base: causalidad del dict
+público de sesión (sin velas futuras) y el presupuesto interno de
+benchmark de la ventana (`scripts/market_stream_window.py`). Suite Python:
+1530 passed / 2 skipped (antes 6 fallos en la base).
