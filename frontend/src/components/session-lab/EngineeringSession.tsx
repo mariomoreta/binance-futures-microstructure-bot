@@ -4,16 +4,16 @@ import {
   useCallback, useEffect, useRef, useState,
 } from "react";
 import {
-  evaluateSessionApi, exitSessionApi, formatMoneyPL,
-  formatPricePL, fmtUtcPL, getSessionApi, listSessionsApi,
-  restartSessionApi, sessionView, stepSessionApi, stopSessionApi,
-  type PaperCandidateDecision, type PaperSessionConfig,
+  formatMoneyPL, formatPricePL, fmtUtcPL, listSessionsApi,
+  sessionView, type PaperCandidateDecision, type PaperSessionConfig,
   type PaperSessionState, type PaperCandle,
 } from "@/lib/paper-lab-live";
 import { buildPaperChartModel } from "@/lib/paper-chart-contract";
 import {
-  createEngineeringSession, fetchMarketSeries, marketCandlesToPaper,
+  createBackendSession, fetchMarketSeries, marketCandlesToPaper,
   buildEngineeringConfig, splitContextAndOperation, lastContextClose,
+  controlBackendSession, fetchBackendSession,
+  type EngineeringControlAction, type EngineeringDriveState,
   ENGINEERING_RULE_VERSION,
 } from "@/lib/session-lab";
 import { PaperChart } from "../paper-lab-live/PaperChart";
@@ -27,16 +27,34 @@ import { SessionStatusPanels } from "./SessionStatusPanels";
 import s from "./EngineeringSession.module.css";
 
 // Clave de persistencia del puntero de sesion (solo un identificador, nunca
-// estado economico: el estado autoritativo vive en el backend).
+// estado economico: el estado autoritativo vive en el backend). Cerrar la
+// pestaña no detiene al backend: al reabrir, la sesión y su conducción solo
+// se observan de nuevo con GET.
 const SESSION_ID_STORAGE_KEY = "paper-lab-sesion-ingenieria-id";
 
-const EMPTY_CANDLES: PaperCandle[] = [];
+// Intervalo de observación: el navegador LEEE el estado del backend; no
+// conduce. El avance ocurre en el backend con los eventos del transporte
+// local, sin llamadas periodicas a /step.
+const OBSERVER_INTERVAL_MS = 800;
 
 // Dos prefijos de datos sobre el MISMO simbolo y la MISMA configuracion de
 // sesion. Se usan solo para demostrar que, bajo igual configuracion, un
 // prefijo admite entrada y el otro se abstiene (no es un escaner ni una
 // estrategia rentable).
 const PREFIX_CONTEXT_COUNT: Record<"A" | "B", number> = { A: 20, B: 35 };
+
+// Texto visible de la causa de fin de conducción (moteado del estado del
+// drive del backend). SESSION_CLOSED: el motor cerró la sesión; END_OF_TRANSPORT:
+// el transporte local se agotó (no hay mas velas reveladas); OPERATOR_STOP:
+// el operador detuvo la conducción; SESSION_STOPPED: la sesión quedó
+// congelada (detenida); DRIVE_EVENT_LIMIT: techo de seguridad por conducción.
+const DRIVE_CAUSE_TEXT: Record<string, string> = {
+  SESSION_CLOSED: "Conducción terminada: la sesión se cerró con la gestión de la posición.",
+  END_OF_TRANSPORT: "Conducción terminada: el transporte local se agotó (no hay más velas por revelar).",
+  OPERATOR_STOP: "Conducción detenida por el operador.",
+  SESSION_STOPPED: "Conducción terminada: la sesión quedó congelada (detenida).",
+  DRIVE_EVENT_LIMIT: "Conducción detenida: alcanzó el techo de seguridad de eventos (DRIVE_EVENT_LIMIT).",
+};
 
 interface EngineeringSessionProps {
   symbol?: string;
@@ -73,31 +91,16 @@ export default function EngineeringSession({
   // anterior como si fueran actuales mientras se recarga el contexto.
   const lastClockRef = useRef<number | null>(null);
 
-  // --- Modo autónomo ---------------------------------------------------------
-  // El navegador solo programa el siguiente paso; el motor Python (vía BFF) es
-  // dueño del reloj, de la regla y de cada transición. No se crea un proceso
-  // Python por tick: cada avance es una llamada al mismo endpoint /step que
-  // usa "Paso a paso", con un retraso observable entre pasos.
-  const AUTONOMOUS_STEP_DELAY_MS = 1500;
-  const MAX_AUTONOMOUS_STEPS = 200;
-  const [autonomous, setAutonomous] = useState(false);
-  const [transportCause, setTransportCause] = useState<string | null>(null);
-  const tickRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const autonomousStepRef = useRef(0);
-  // Bandera de "seguir avanzando" sincronizada de forma imperativa (sin
-  // depender de capturas de cierre de React), para que stopAutonomous() y la
-  // detección de cierre funcionen incluso dentro de un tick en ejecución.
-  const autonomousRef = useRef(false);
-  // Ref siempre al último estado recibido: evita capturas obsoletas
-  // (stale closure) de `state` dentro de los temporizadores del modo autónomo.
+  // --- Conducción autónoma del backend (no del navegador) ------------------
+  // La sesión vive en un servicio Python de larga vida (motor paper_lab_engine
+  // = autoridad económica única). El proceso backend es único: no hay un
+  // proceso Python por tick ni otro gestor paralelo. El navegador solo pide
+  // start/stop (control) y OBSERVA leyendo el estado; nunca avanza el reloj.
+  const [drive, setDrive] = useState<EngineeringDriveState | null>(null);
+  // Ref al último estado observado: evita capturas obsoletas (stale closure).
   const stateRef = useRef<PaperSessionState | null>(null);
-  // Ref a la continuación del bucle autónomo: evita la referencia propia
-  // (self-reference) de `autonomousTick` dentro de su propio setTimeout.
-  const loopRef = useRef<(() => void) | null>(null);
-
-  useEffect(() => {
-    stateRef.current = state;
-  }, [state]);
+  // Ref a la última identidad observada (para el observador con GetSession).
+  const observeRef = useRef(false);
   const [refreshing, setRefreshing] = useState(false);
 
   const [requestIdCounter, setRequestIdCounter] = useState(0);
@@ -167,27 +170,58 @@ export default function EngineeringSession({
     }
   }, [loadContextForClock]);
 
+  useEffect(() => {
+    stateRef.current = state;
+  }, [state]);
+
+  // --- Observador (solo lectura) -------------------------------------------
+  // El navegador LEE el estado del backend con GET: observar no conduce. La
+  // conducción vive en el backend con los eventos del transporte local y
+  // continúa aunque esta pestaña se cierre.
+  const observeOnce = useCallback(async () => {
+    const current = stateRef.current;
+    if (!current) return;
+    const result = await fetchBackendSession(current.session_id);
+    if (!result.ok || !result.data) {
+      setError(result.error ?? "OBSERVE_FAILED");
+      return;
+    }
+    setDrive(result.data.drive ?? null);
+    await applyAuthoritative(result.data.session);
+  }, [applyAuthoritative]);
+
+  const observeActive = useCallback(async (sessionId: string) => {
+    const result = await fetchBackendSession(sessionId);
+    if (!result.ok || !result.data) {
+      setError(result.error ?? "OBSERVE_FAILED");
+      return null;
+    }
+    setDrive(result.data.drive ?? null);
+    await applyAuthoritative(result.data.session);
+    return result.data.session;
+  }, [applyAuthoritative]);
+
   // Recupera el estado autoritativo tras recarga (incluida posicion abierta)
-  // y reconstruye el contexto de mercado con el reloj T de la sesion. La
-  // identidad (simbolo/intervalo) se toma del config de la sesion recuperada,
-  // nunca de las propiedades por defecto del componente.
+  // leyendo el servicio backend; la conducción backend siguió avanzando
+  // aunque la pestaña estuviera cerrada. La identidad (simbolo/intervalo) se
+  // toma del config de la sesion recuperada, nunca de las propiedades por
+  // defecto del componente.
   const recoverAuthoritative = useCallback(async (sessionId: string) => {
-    const loaded = await getSessionApi(sessionId);
-    if (loaded.ok && loaded.data) {
-      await applyAuthoritative(loaded.data);
+    const next = await observeActive(sessionId);
+    if (next) {
       setStarted(true);
       setError(null);
-      return loaded.data;
+      return next;
     }
-    setError(loaded.error ?? "SESSION_LOAD_FAILED");
     return null;
-  }, [applyAuthoritative]);
+  }, [observeActive]);
 
   useEffect(() => {
     const stored = typeof localStorage !== "undefined"
       ? localStorage.getItem(SESSION_ID_STORAGE_KEY)
       : null;
-    if (stored && !state) {
+    if (stored && !state && !observeRef.current) {
+      observeRef.current = true;
       const handle = setTimeout(() => {
         void recoverAuthoritative(stored).catch(() => { /* persistencia opcional */ });
       }, 0);
@@ -196,126 +230,65 @@ export default function EngineeringSession({
   }, [state, recoverAuthoritative]);
 
   // --------------------------------------------------------------------------
-  // Modo autónomo: arranque, paso y parada.
+  // Conducción backend: arranque, observación y parada.
   // --------------------------------------------------------------------------
 
-  // Detiene el modo autónomo y libera el temporizador propio (recursos
-  // propios de la sesión: ningún proceso Python persistente se ve afectado).
-  const stopAutonomous = useCallback(() => {
-    if (tickRef.current !== null) {
-      clearTimeout(tickRef.current);
-      tickRef.current = null;
-    }
-    autonomousRef.current = false;
-    setAutonomous(false);
-    autonomousStepRef.current = 0;
-    setTransportCause(null);
-  }, []);
-
-  // Ejecuta un paso del motor (reutiliza exactamente el endpoint /step que
-  // usa "Paso a paso": un solo proceso Python por acción, sin gestor nuevo).
-  // Devuelve el estado resultante tras aplicar la respuesta autoritativa.
-  const stepOnce = useCallback(async (): Promise<PaperSessionState | null> => {
+  // Control explícito en el backend (por petición del navegador). Cada acción
+  // es una transición única idempotente con revisión; el avance autónomo
+  // nunca lo inicia el frontend: el backend lo conduce con los eventos del
+  // transporte local.
+  const manualControl = useCallback(async (
+    action: EngineeringControlAction,
+    opts?: { expectedRevision?: number | null; requestId?: string | null },
+  ): Promise<PaperSessionState | null> => {
     const current = stateRef.current;
     if (!current) return null;
     setLoading(true);
     setError(null);
     try {
-      const result = await stepSessionApi(
-        current.session_id, nextRequestId(), current.revision,
+      const result = await controlBackendSession(
+        current.session_id, action, {
+          expectedRevision: opts?.expectedRevision ?? current.revision,
+          requestId: opts?.requestId ?? nextRequestId(),
+        },
       );
       if (!result.ok) {
-        setError(result.error ?? "STEP_FAILED");
-        if (result.status === 409) await recoverAuthoritative(current.session_id);
+        setError(result.error ?? `CONTROL_${action}_FAILED`);
+        if (result.status === 409) await observeActive(current.session_id);
         return null;
       }
       if (!result.data) return null;
-      await applyAuthoritative(result.data);
-      return result.data as PaperSessionState;
+      setDrive(result.data.drive ?? null);
+      await applyAuthoritative(result.data.session);
+      return result.data.session;
     } finally {
       setLoading(false);
     }
-  }, [nextRequestId, applyAuthoritative, recoverAuthoritative]);
+  }, [nextRequestId, applyAuthoritative, observeActive]);
 
-  // Un avance autónomo: revela la siguiente vela, gestiona entrada/fill y
-  // salida (stop/horizon), y programa el siguiente paso si la sesión sigue
-  // abierta. Detiene la autonomía al cerrar, detener o agotar el transporte.
-  const autonomousTick = useCallback(async () => {
-    if (!autonomousRef.current) return;
-    const current = stateRef.current;
-    if (!current) return;
-    if (current.status === "cerrada" || current.status === "detenida") {
-      stopAutonomous();
-      return;
-    }
-    autonomousStepRef.current += 1;
-    if (autonomousStepRef.current > MAX_AUTONOMOUS_STEPS) {
-      stopAutonomous();
-      setTransportCause(
-        "Límite de pasos autónomos alcanzado; sesión detenida por seguridad (sin entrada forzada).",
-      );
-      return;
-    }
-    const prevClock = current.clock_ms;
-    const prevStatus = current.status;
-    const next = await stepOnce();
-    if (!next) {
-      // Error en el paso: detener autonomía y dejar la causa visible.
-      stopAutonomous();
-      return;
-    }
-    if (!autonomousRef.current) return;
-    const advanced = next.clock_ms !== prevClock;
-    // Sin avance de reloj mientras se espera entrada/datos: fin del
-    // transporte local. No hay entrada nueva; la posición (si la hay) se
-    // gestiona según política documentada (open_at_end, sin cierre inventado).
-    if (!advanced && (prevStatus === "en_espera" || prevStatus === "sin_iniciar")) {
-      stopAutonomous();
-      setTransportCause(
-        "Transporte local: sin más eventos disponibles (fin de datos). Sin entrada nueva; posición no cerrada inventada (open_at_end, sin comisión de salida).",
-      );
-      return;
-    }
-    if (next.status === "cerrada" || next.status === "detenida") {
-      stopAutonomous();
-      if (
-        next.status === "cerrada" &&
-        next.position?.open === true &&
-        next.result?.open_at_end === true
-      ) {
-        setTransportCause(
-          "Fin de datos del transporte local: posición abierta sin cierre ejecutado (open_at_end), sin comisión de salida ni cierre inventado.",
-        );
-      }
-      return;
-    }
-    if (!autonomousRef.current) return;
-    // Programar siguiente paso con retraso observable.
-    tickRef.current = setTimeout(() => {
-      void loopRef.current?.();
-    }, AUTONOMOUS_STEP_DELAY_MS);
-  }, [stopAutonomous, stepOnce]);
-
-  // Arranca la autonomía cuando la evaluación deja entrada pendiente o
-  // posición abierta. El navegador no conduce el reloj: solo programa el
-  // primer paso; cada transición posterior es decidida por el motor Python.
-  const startAutonomy = useCallback(() => {
-    autonomousRef.current = true;
-    setAutonomous(true);
-    autonomousStepRef.current = 0;
-    setTransportCause(null);
-    void autonomousTick();
-  }, [autonomousTick]);
-
-  // Continuación del bucle autónomo (se asigna tras declarar autonomousTick
-  // para evitar la referencia propia antes de la declaración).
+  // Observador: mientras la página está abierta y hay una sesión, LEE el
+  // estado del backend con GET al intervalo de observación. Cerrar la
+  // pestaña detiene el observador y NO la conducción: el backend continúa.
+  const sessionId = state?.session_id ?? null;
   useEffect(() => {
-    loopRef.current = () => {
-      void autonomousTick();
+    if (!sessionId) return;
+    let cancelled = false;
+    const tick = async () => {
+      if (cancelled) return;
+      await observeOnce();
     };
-  }, [autonomousTick]);
+    const handle = setInterval(tick, OBSERVER_INTERVAL_MS);
+    void tick();
+    return () => {
+      cancelled = true;
+      clearInterval(handle);
+    };
+  }, [sessionId, observeOnce]);
 
-  // --------------------------------------------------------------------------
+  // Causa visible de fin de conducción (moteada desde el estado del drive).
+  const driveCause = drive?.cause ?? null;
+  const driveRunning = drive?.state === "running";
+  const driveStopped = drive != null && drive.state === "stopped";
 
   const startSession = useCallback(async () => {
     setLoading(true);
@@ -367,54 +340,40 @@ export default function EngineeringSession({
         setEntryPxFixed(entryPx);
       }
 
-      const clock = firstOp.close_time_ms;
-
       const config: PaperSessionConfig = buildEngineeringConfig({
         symbol, interval, entryPx,
         horizonMs: 30 * 60 * 1000,
       });
 
-      const created = await createEngineeringSession({
+      // La sesión se crea EN EL BACKEND (motor Python + transporte local);
+      // la evaluación y todo avance lo conduce el backend. El navegador no
+      // evalúa ni programa pasos.
+      const created = await createBackendSession({
         config, candles: operation, context,
       });
-      if (!created.ok || !created.session) {
+      if (!created.ok || !created.data) {
         setError(created.error ?? "CREATE_FAILED");
         setLoading(false);
         return;
       }
-      setState(created.session);
-      stateRef.current = created.session;
-      localStorage.setItem(SESSION_ID_STORAGE_KEY, created.session.session_id);
-
-      const evaluated = await evaluateSessionApi(
-        created.session.session_id, null, null,
-        ENGINEERING_RULE_VERSION, clock, nextRequestId(),
-      );
-      if (!evaluated.ok || !evaluated.data) {
-        setError(evaluated.error ?? "EVALUATE_FAILED");
-        setLoading(false);
-        return;
-      }
+      setDrive(null); // nuevo backend: el drive previo no aplica
       // applyAuthoritative (carga inicial) reconstruye indicadores/contexto
       // para el reloj T con la identidad autoritativa de la sesion.
-      await applyAuthoritative(evaluated.data);
+      await applyAuthoritative(created.data.session);
+      localStorage.setItem(SESSION_ID_STORAGE_KEY, created.data.session.session_id);
       setStarted(true);
 
-      // Modo autónomo: si hay entrada pendiente o posición abierta, el backend
-      // avanza los pasos solo hasta completar fill/gestión/cierre. Si la
-      // evidencia es insuficiente, se abstiene (sin entrada, sin autonomía).
-      if (
-        evaluated.data.status === "en_espera" ||
-        evaluated.data.status === "abierta"
-      ) {
-        startAutonomy();
-      }
+      // Conducción autónoma del backend: el avance ocurre por los eventos del
+      // transporte local (reproductor con cadencia en el mismo proceso); una
+      // abstención (SIN_ENTRADA/sin_iniciar) es temporal y sigue recibiendo
+      // eventos para reevaluar sin intervención.
+      await manualControl("start", { requestId: nextRequestId() });
     } catch (exc: unknown) {
       setError(exc instanceof Error ? exc.message : String(exc));
     } finally {
       setLoading(false);
     }
-  }, [symbol, interval, bars, prefixOption, entryPxFixed, applyAuthoritative, nextRequestId, startAutonomy]);
+  }, [symbol, interval, bars, prefixOption, entryPxFixed, applyAuthoritative, nextRequestId, manualControl]);
 
   const changePrefix = useCallback(async (next: "A" | "B") => {
     // La eleccion de prefijo antes de iniciar solo fija la opcion para el
@@ -458,193 +417,73 @@ export default function EngineeringSession({
         setLoading(false);
         return;
       }
-      const clock = firstOp.close_time_ms;
       const config: PaperSessionConfig = buildEngineeringConfig({
         symbol, interval, entryPx,
         horizonMs: 30 * 60 * 1000,
       });
-      const created = await createEngineeringSession({
+      // Cambio de prefijo: se reconstruye la sesión en el backend con la
+      // misma configuración (motor y conducción idénticos a Iniciar sesion).
+      const created = await createBackendSession({
         config, candles: operation, context,
       });
-      if (!created.ok || !created.session) {
+      if (!created.ok || !created.data) {
         setError(created.error ?? "CREATE_FAILED");
         setLoading(false);
         return;
       }
-      setState(created.session);
-      stateRef.current = created.session;
-      localStorage.setItem(SESSION_ID_STORAGE_KEY, created.session.session_id);
-      const evaluated = await evaluateSessionApi(
-        created.session.session_id, null, null,
-        ENGINEERING_RULE_VERSION, clock, nextRequestId(),
-      );
-      if (!evaluated.ok || !evaluated.data) {
-        setError(evaluated.error ?? "EVALUATE_FAILED");
-        setLoading(false);
-        return;
-      }
-      // Cambio de prefijo: mismo T pero distinto corte de contexto; se
-      // reconstruye el contexto con la nueva cantidad de velas de contexto.
-      await applyAuthoritative(evaluated.data);
-      await loadContextForClock(evaluated.data.clock_ms ?? null, symbol, interval);
+      setDrive(null); // nuevo backend: el drive previo no aplica
+      await applyAuthoritative(created.data.session);
+      await loadContextForClock(created.data.session.clock_ms ?? null, symbol, interval);
+      localStorage.setItem(SESSION_ID_STORAGE_KEY, created.data.session.session_id);
       setStarted(true);
 
-      if (
-        evaluated.data.status === "en_espera" ||
-        evaluated.data.status === "abierta"
-      ) {
-        startAutonomy();
-      }
+      // Conducción backend: el avance ocurre por los eventos del transporte
+      // local; abstenciones temporales siguen esperando datos nuevos.
+      await manualControl("start", { requestId: nextRequestId() });
     } catch (exc: unknown) {
       setError(exc instanceof Error ? exc.message : String(exc));
     } finally {
       setLoading(false);
     }
-  }, [symbol, interval, bars, entryPxFixed, nextRequestId, applyAuthoritative, loadContextForClock, state, startAutonomy]);
+  }, [symbol, interval, bars, entryPxFixed, nextRequestId, applyAuthoritative, loadContextForClock, state, manualControl]);
 
   const stopSession = useCallback(async () => {
     if (!state) return;
-    // Política de parada explícita: detener congela la sesión sin inventar
-    // cierre, y libera los recursos propios del frontend (temporizador
-    // autónomo). La posición queda tal cual (sin salida inventada).
-    stopAutonomous();
+    // Política de parada explícita en el backend: primero conduce stop (la
+    // conducción autónoma queda detenida con causa visible) y luego congela
+    // la sesión (detenida) sin inventar cierre. La posición queda tal cual.
     setLoading(true);
     setError(null);
     try {
-      const result = await stopSessionApi(state.session_id, nextRequestId(), state.revision);
-      if (!result.ok) {
-        setError(result.error ?? "STOP_FAILED");
-        if (result.status === 409) await recoverAuthoritative(state.session_id);
-        setLoading(false);
-        return;
-      }
-      if (result.data) setState(result.data);
+      await manualControl("stop");
+      await manualControl("stop_session");
     } finally {
       setLoading(false);
     }
-  }, [state, nextRequestId, stopAutonomous, recoverAuthoritative]);
+  }, [state, manualControl]);
 
   const handleEnter = useCallback(async () => {
-    if (!state) return;
-    stopAutonomous();
-    setLoading(true);
-    setError(null);
-    try {
-      const result = await stepSessionApi(state.session_id, nextRequestId(), state.revision);
-      if (!result.ok) {
-        setError(result.error ?? "ENTER_FAILED");
-        if (result.status === 409) await recoverAuthoritative(state.session_id);
-        setLoading(false);
-        return;
-      }
-      if (result.data) await applyAuthoritative(result.data); // Entrar avanza T: contexto al nuevo reloj
-    } finally {
-      setLoading(false);
-    }
-  }, [state, nextRequestId, stopAutonomous, applyAuthoritative, recoverAuthoritative]);
+    // "Entrar": un evento manual = un avance; el motor decide el fill.
+    await manualControl("step");
+  }, [manualControl]);
 
   const handleStep = useCallback(async () => {
-    if (!state) return;
-    stopAutonomous();
-    setLoading(true);
-    setError(null);
-    try {
-      const result = await stepSessionApi(state.session_id, nextRequestId(), state.revision);
-      if (!result.ok) {
-        setError(result.error ?? "STEP_FAILED");
-        if (result.status === 409) await recoverAuthoritative(state.session_id);
-        setLoading(false);
-        return;
-      }
-      if (result.data) {
-        await applyAuthoritative(result.data); // Paso avanza T: contexto al nuevo reloj
-        const advanced = result.data as PaperSessionState;
-        if (advanced.status === "sin_iniciar" || advanced.status === "en_espera") {
-          const re = await evaluateSessionApi(
-            advanced.session_id, null, null, null,
-            advanced.clock_ms ?? null, nextRequestId(), advanced.revision,
-          );
-          if (!re.ok) {
-            setError(re.error ?? "REEVALUATE_FAILED");
-            if (re.status === 409) await recoverAuthoritative(advanced.session_id);
-          } else if (re.data) {
-            await applyAuthoritative(re.data);
-          }
-        }
-      }
-    } finally {
-      setLoading(false);
-    }
-  }, [state, nextRequestId, stopAutonomous, applyAuthoritative, recoverAuthoritative]);
+    // "Paso a paso": el backend interpreta un evento del transporte local
+    // (reveled + reevaluación si solo hay abstención temporal vigente).
+    await manualControl("step");
+  }, [manualControl]);
 
   const handleExit = useCallback(async () => {
-    if (!state) return;
-    stopAutonomous();
-    setLoading(true);
-    setError(null);
-    try {
-      const result = await exitSessionApi(state.session_id, nextRequestId(), state.revision);
-      if (!result.ok) {
-        setError(result.error ?? "EXIT_FAILED");
-        if (result.status === 409) await recoverAuthoritative(state.session_id);
-        setLoading(false);
-        return;
-      }
-      if (result.data) await applyAuthoritative(result.data);
-    } finally {
-      setLoading(false);
-    }
-  }, [state, nextRequestId, stopAutonomous, applyAuthoritative, recoverAuthoritative]);
+    await manualControl("exit");
+  }, [manualControl]);
 
   const handleRestart = useCallback(async () => {
-    if (!state) return;
-    stopAutonomous();
-    setLoading(true);
-    setError(null);
-    try {
-      const result = await restartSessionApi(state.session_id, nextRequestId(), state.revision);
-      if (!result.ok) {
-        setError(result.error ?? "RESTART_FAILED");
-        if (result.status === 409) await recoverAuthoritative(state.session_id);
-        setLoading(false);
-        return;
-      }
-      if (result.data) {
-        await applyAuthoritative(result.data); // reinicio reestablece T
-        localStorage.setItem(SESSION_ID_STORAGE_KEY, result.data.session_id);
-      }
-    } finally {
-      setLoading(false);
-    }
-  }, [state, nextRequestId, stopAutonomous, applyAuthoritative, recoverAuthoritative]);
+    await manualControl("restart");
+  }, [manualControl]);
 
-  const handleDecide = useCallback(async (decision: PaperCandidateDecision) => {
-    if (!state) return;
-    stopAutonomous();
-    setLoading(true);
-    setError(null);
-    try {
-      const result = await evaluateSessionApi(
-        state.session_id, null, null, null,
-        state.clock_ms ?? null, nextRequestId(), state.revision,
-      );
-      if (!result.ok) {
-        setError(result.error ?? "DECIDE_FAILED");
-        if (result.status === 409) await recoverAuthoritative(state.session_id);
-        setLoading(false);
-        return;
-      }
-      if (result.data) await applyAuthoritative(result.data);
-    } finally {
-      setLoading(false);
-    }
-  }, [state, nextRequestId, stopAutonomous, applyAuthoritative, recoverAuthoritative]);
-
-  // Liberar el temporizador propio al desmontar la sesión (recursos propios;
-  // no interrumpe el backend ni procesos ajenos).
-  useEffect(() => {
-    return () => stopAutonomous();
-  }, [stopAutonomous]);
+  const handleDecide = useCallback(async (_decision: PaperCandidateDecision) => {
+    await manualControl("evaluate");
+  }, [manualControl]);
 
   // sessionReady es un objeto combinado que TypeScript puede reducir a
   // no-nulo dentro de la rama correspondiente del condicional JSX.
@@ -657,7 +496,6 @@ export default function EngineeringSession({
   const res = state?.result;
   const clockMs = state?.clock_ms ?? null;
   const v = state ? sessionView(state) : null;
-  const vForReady = state ? sessionView(state) : null;
   const opn = pos?.open === true;
   const fin = state ? (state.status === "cerrada" || state.status === "detenida") : false;
 
@@ -729,9 +567,9 @@ export default function EngineeringSession({
           >
             Detener sesion
           </button>
-          {autonomous && (
+          {driveRunning && (
             <span className={s.autonomousChip} data-state="autonomo">
-              Autónomo: backend avanza el reloj
+              Autónomo (backend)
             </span>
           )}
         </div>
@@ -777,16 +615,17 @@ export default function EngineeringSession({
                 lastError={error}
                 abstentionReason={abstentionReason}
               />
-              {autonomous && (
+              {driveRunning && (
                 <p className={s.note} role="status" data-testid="session-autonomous">
-                  Modo autónomo activo: el backend avanza el reloj y gestiona
-                  la posición sin intervención del navegador. Use Detener sesión
-                  para congelar la sesión.
+                  Conducción backend activa: el servicio avanza el reloj con
+                  los eventos del transporte local y gestiona la posición sin
+                  intervención del navegador. Use Detener sesión para congelar
+                  la sesión.
                 </p>
               )}
-              {transportCause && (
-                <p className={s.note} role="status" data-testid="session-transport-cause">
-                  {transportCause}
+              {driveCause && (
+                <p className={s.note} role="status" data-testid="session-drive-cause">
+                  {DRIVE_CAUSE_TEXT[driveCause] ?? driveCause}
                 </p>
               )}
 
@@ -794,8 +633,8 @@ export default function EngineeringSession({
                 status={sessionReady.state.status}
                 // Durante la autonomía el backend conduce las transiciones; el
                 // operador no pulsa "Entrar" ni "Paso a paso" ni las necesita.
-                canEnter={vReady.canEnter && !autonomous}
-                canStep={vReady.canStep && !autonomous}
+                canEnter={vReady.canEnter && !driveRunning}
+                canStep={vReady.canStep && !driveRunning}
                 canExit={vReady.canExit}
                 canRestart={vReady.canRestart}
                 canStop={vReady.canStop}

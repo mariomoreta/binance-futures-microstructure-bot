@@ -29,6 +29,28 @@ export const ENGINEERING_RULE_VERSION = "ENGINEERING-MINA-1M-v1";
 export const ENGINEERING_HYPOTHESIS_ID = "ENG-MINA-01";
 export const ENGINEERING_HYPOTHESIS_VERSION = "v1";
 
+// Servicio backend de sesiones de ingeniería (sesion autónoma del lado
+// backend): el navegador crea la sesión, observa su estado con GET y la
+// detiene con control stop. El avance autónomo lo conduce el backend con los
+// eventos del transporte local; este cliente no conduce.
+const ENGINEERING_BASE = "/api/v1/engineering-sessions";
+
+export interface EngineeringDriveState {
+  state: "running" | "stopped" | "idle";
+  cause?: string | null;
+  started_at_ms?: number | null;
+  finished_at_ms?: number | null;
+  events_processed?: number;
+  transport_events?: number;
+  cadence_ms?: number | null;
+  runner?: string | null;
+  session_id?: string | null;
+}
+
+export type EngineeringControlAction =
+  | "start" | "stop" | "step" | "exit" | "restart" | "stop_session"
+  | "evaluate";
+
 export interface MarketSeriesPayload {
   candles: Array<{
     open_time_ms: number;
@@ -235,4 +257,82 @@ export async function createEngineeringSession(
   }
   const data = body as { session?: PaperSessionState };
   return { ok: true, session: data.session!, status: r.status };
+}
+
+// ---------------------------------------------------------------------------
+// Sesión autónoma en el backend (serviced engineering-session/v1)
+// ---------------------------------------------------------------------------
+
+export interface EngineeringApiResult<T> {
+  ok: boolean;
+  data?: T;
+  error?: string;
+  detail?: string;
+  status: number;
+}
+
+async function engineeringJson<T = unknown>(
+  path: string, init?: RequestInit,
+): Promise<EngineeringApiResult<T>> {
+  let r: Response;
+  try {
+    r = await fetch(`${ENGINEERING_BASE}${path}`, {
+      cache: "no-store",
+      headers: { "Content-Type": "application/json" }, ...init,
+    });
+  } catch (exc: unknown) {
+    return { ok: false, error: "BFF_UNREACHABLE", detail: String(exc), status: 0 };
+  }
+  let body: unknown;
+  try { body = await r.json(); } catch { body = null; }
+  if (!r.ok) {
+    const err = (body as { error?: string; detail?: string }) ?? {};
+    return {
+      ok: false, error: err.error ?? String(r.status),
+      detail: err.detail ?? String(body ?? ""), status: r.status,
+    };
+  }
+  return { ok: true, data: body as T, status: r.status };
+}
+
+/** Crea la sesión en el backend (motor Python + transporte local). */
+export async function createBackendSession(input: CreateSessionInput): Promise<
+  EngineeringApiResult<{ session: PaperSessionState }>
+> {
+  return engineeringJson("", {
+    method: "POST",
+    body: JSON.stringify({
+      config: input.config,
+      candles: input.candles,
+      context: input.context,
+      hypothesis_id: input.config.hypothesis_id ?? null,
+      hypothesis_version: input.config.hypothesis_version ?? null,
+      rule_version: input.config.rule_version ?? null,
+    }),
+  });
+}
+
+/** Lee el estado público del backend (solo el prefijo revelado). */
+export async function fetchBackendSession(
+  sessionId: string,
+): Promise<EngineeringApiResult<{ session: PaperSessionState;
+  drive?: EngineeringDriveState }>> {
+  return engineeringJson(`/${encodeURIComponent(sessionId)}`);
+}
+
+/** Control explícito del navegador: start/stop/paso manual/exit/etc. */
+export async function controlBackendSession(
+  sessionId: string,
+  action: EngineeringControlAction,
+  opts?: { expectedRevision?: number | null; requestId?: string | null },
+): Promise<EngineeringApiResult<{ session: PaperSessionState;
+  drive?: EngineeringDriveState }>> {
+  return engineeringJson(`/${encodeURIComponent(sessionId)}/control`, {
+    method: "POST",
+    body: JSON.stringify({
+      action,
+      expected_revision: opts?.expectedRevision ?? null,
+      request_id: opts?.requestId ?? null,
+    }),
+  });
 }
