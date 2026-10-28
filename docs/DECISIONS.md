@@ -3898,3 +3898,35 @@ servicio (evidencia
 documentado del panel de flujo: `ERR_INCOMPLETE_CHUNKED_ENCODING` en
 `/api/v1/market-flow/stream` (impacto: stream abortado en re-render; sin
 atribuirle fallos de esta sesión).
+
+## 2026-10-28 - Inicio explicito completo integrado en la UI + directorio dedicado por defecto + causa/arreglo del defecto SSE (base  bf96c6)
+
+DECISION: (a) �Iniciar sesion� es ahora un inicio completo explicito: el
+BFF (nuevo rontend/src/lib/engineering-service-manager.ts + route
+/api/v1/engineering-sessions/service) genera la instancia canonica
+scripts/engineering_session_service.py (sin gestor paralelo), espera
+readiness con limite y verifica identidad triple (child.pid == pid-file ==
+/health.pid); nunca reutiliza ni detiene un PID desconocido
+(ENGINEERING_SERVICE_UNIDENTIFIED); en fallo termina solo el proceso que
+el gestor genero (sin huerfanos); el GET del servicio es consulta pura y
+nada arranca por abrir la pagina. (b) El default de sesiones del servicio
+era ROTO (el ROOT del modulo apuntaba a src/): ahora ROOT correcto y
+default dedicado data/engineering-session/sessions, sin colision con el
+controlador anterior (paper-lab-sessions/), conservando sesiones
+existentes sin migracion. (c) El defecto del panel de flujo
+(ERR_INCOMPLETE_CHUNKED_ENCODING) tiene causa reproducida con dos cortes
+convergentes: AbortSignal.timeout(30_000) del BFF (cada SSE moria a los
+30 s) y el odyTimeout por defecto de undici (30 s sin chunk cuando el
+servicio preexistente 8792 queda mudo sin eventos de flujo); el arreglo no
+toca 8792: agente undici con bodyTimeout 0 + headersTimeout acotado,
+cancelacion propagada por eq.signal, y reconexion del panel con la
+MISMA identidad (2,5 s) conservando la causa visible hasta onopen;
+desmontar/cambiar simbolo libera el consumidor. (d) Hallazgo de la
+aceptacion: el doble clic podia crear DOS sesiones (el disabled de React
+no es sincronico entre clicks) - guardia sincrona startInFlightRef; el
+artefacto anomatico de esa primera carrera (archivo de sesion vacio, id
+sin sufijo) NO se reproducio en 2 reintentos ni en sonda de concurrencia
+del motor/servicio: causa UNKNOWN, load_session lo rechaza honestamente
+(IDENTITY_UNCERTAIN), evidencia preservada. Aceptacion real A-G PASS
+(docs/evidence/engineering-explicit-start-2026-10-28/); sin Binance
+publico, sin feed vivo, sin ordenes, observe-only.

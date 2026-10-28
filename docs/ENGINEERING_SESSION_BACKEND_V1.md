@@ -119,7 +119,11 @@ Verificación de acceso con 8797 detenido (evidencia
 `docs/evidence/engineering-backend-2026-10-28/operational-access-2026-10-28.json`,
 SHA fuente `5f24807`, BUILD_ID `r5poURhuj3RQc4CjC6Kyz`):
 
-### 9.1 Arranque manual del servicio — limitación declarada
+### 9.1 Arranque manual del servicio — limitación declarada (HISTÓRICO)
+
+> **SUPERSEDED (2026-10-28, ver §10):** el inicio explícito completo ahora
+> está integrado en «Iniciar sesión» vía el gestor del BFF; esta sección se
+> conserva como registro histórico de la limitación declarada.
 
 **Deliberado:** abrir `/market-lab` NO arranca ningún proceso (cabecera del
 CLI: *«Arranque/parada explícitos; no se lanza solo porque alguien abra una
@@ -152,13 +156,13 @@ directorio dedicado indicado arriba.
 | Detener el servicio (`--stop` / `/shutdown`) | termina transportes/drives en memoria (causa `OPERATOR_STOP` efímera) | NUNCA muta el estado económico en disco: sin eventos nuevos, sin cierres; sesiones quedan intactas y manejables tras reinicio | `…516fa8d8` en disco: `abierta` rev 11, kinds sin salida |
 | Abrir `/market-lab` | nada (solo observación) | no inicia procesos ni sesiones | banners visibles cuando el servicio falta |
 
-### 9.3 Defecto abierto del panel de flujo
+### 9.3 Defecto abierto del panel de flujo (RESUELTO — ver §10)
 
 `ERR_INCOMPLETE_CHUNKED_ENCODING` en `/api/v1/market-flow/stream`
-(SSE del panel de flujo, panel ajeno a este bloque) se mantiene como
-DEFECTO ABIERTO: impacto observado = el stream del panel se aborta en
-algunos re-render/re-poll; no se le atribuyen fallos de esta sesión (el
-acceso y la conducción terminaron sin errores propios).
+(SSE del panel de flujo, panel ajeno a este bloque) se mantenía como
+DEFECTO ABIERTO. **RESUELTO en 2026-10-28 (§10):** causa reproducida y
+corregida (timeout de cuerpo del BFF + `bodyTimeout` de undici; sin
+cambios al servicio preexistente 8792).
 
 ### 9.4 Recorrido completo probado (usuario real)
 
@@ -174,6 +178,94 @@ ensayo eliminados; dashboard canónico servido sin sesiones de ensayo.
 
 - `docs/evidence/engineering-backend-2026-10-27/` — 13 piezas + `acceptance-summary.json`.
 - `docs/evidence/engineering-backend-2026-10-28/` — verificación de acceso operativo (2026-10-28).
+- `docs/evidence/engineering-explicit-start-2026-10-28/` — aceptación del inicio explícito + arreglo SSE (2026-10-28): `acceptance-summary.json` (casos A–G), capturas del fallo de arranque/lifecycle/recuperación, sesiones de ensayo archivadas + artefacto anómalo preservado (archivo vacío sin sufijo, causa UNKNOWN).
 - `tests/test_engineering_session_service.py`; `tests/test_paper_lab_engine.py` (regresión);
-  `frontend/src/test/engineering-session.test.tsx`; `frontend/src/test/session-lab.test.ts`.
-- Código: `src/microstructure_probe/engineering_session_service.py`.
+  `frontend/src/test/engineering-session.test.tsx`; `frontend/src/test/market-flow-panel.test.tsx`; `frontend/src/test/session-lab.test.ts`.
+- Código: `src/microstructure_probe/engineering_session_service.py`;
+  `frontend/src/lib/engineering-service-manager.ts`;
+  `frontend/src/app/api/v1/engineering-sessions/service/route.ts`.
+
+## 10. Inicio explícito integrado en la UI + defecto SSE corregido (2026-10-28)
+
+### 10.1 Arranque completo por «Iniciar sesión» (sin comandos manuales)
+
+El botón es ahora un **inicio completo explícito**: comprueba el servicio
+(GET consulta pura), y si está detenido arranca **solo la instancia
+canónica del proyecto** vía BFF:
+
+- Spawn objetivo: `scripts/engineering_session_service.py` (el controlador
+  canónico ya existente; NO hay un gestor paralelo; el BFF solo lo genera
+  y espera readiness).
+- Readiness con límite (15 s default, `ENGINEERING_SERVICE_START_TIMEOUT_MS`)
+  + **verificación de identidad**: `child.pid == pid-file
+  (`data/engineering-session/service.json`) == /health.pid`. Nunca se
+  reutiliza ni detiene un PID desconocido (puerto ocupado con identidad no
+  verificable → `ENGINEERING_SERVICE_UNIDENTIFIED`, sin arrancar ni matar).
+- En fallo de readiness el gestor termina SOLO el proceso que él generó
+  (`child.kill()`); sin huérfanos. El fallo de generación (p. ej.
+  intérprete inexistente) llega por el evento `error` de `child_process` y
+  está manejado (el dashboard no cae; error visible
+  `ENGINEERING_SERVICE_START_FAILED`).
+- Nada arranca por GET ni por abrir la página: `GET
+  /api/v1/engineering-sessions/service` es consulta pura; el chip de estado
+  distingue `checking / starting / ready / down / error`
+  (`data-testid="service-chip"`).
+- Idempotente: servicio ya listo y verificado → sin nuevo spawn.
+- Doble clic: guardia SÍNCRONA (`startInFlightRef`) además del
+  `disabled` de React — un segundo click dentro del mismo gesto no crea una
+  segunda sesión (el primer intento sin la guardia creó DOS sesiones; ver
+  evidencia del artefacto anómalo).
+
+### 10.2 Directorio de sesiones dedicado por defecto
+
+El default del servicio era ROTO (el `ROOT` del módulo apuntaba a `src/`,
+no al repo): ahora `ROOT` correcto y `SESSIONS_DEFAULT =
+data/engineering-session/sessions` — **sin colisión** con el controlador
+anterior `scripts/paper_lab_session.py` (cuyo raíz canónico sigue siendo
+`paper-lab-sessions/`). Las sesiones existentes se conservan sin migración
+ni borrado (el motor anida `paper-lab-sessions/` bajo el raíz indicado).
+
+### 10.3 Defecto SSE del panel de flujo — causa y arreglo
+
+Causa reproducida (dos cortes con el mismo síntoma
+`ERR_INCOMPLETE_CHUNKED_ENCODING`):
+1. La ruta BFF del stream pasaba `AbortSignal.timeout(30_000)` al fetch
+   upstream: CADA SSE moría a los 30 s exactos (log del proceso anterior:
+   ~10× "failed to pipe response" + `TimeoutError`).
+2. Además, el fetch global de Node (undici) aplica `bodyTimeout` por
+   defecto (30 s sin chunk): `/flow/stream` del servicio preexistente
+   (8792, no modificado) queda mudo cuando no se procesan eventos de
+   flujo, y undici cortaba con `UND_ERR_BODY_TIMEOUT`.
+
+La correlación con "re-renders" del bloque anterior era temporal (los
+re-polls del observador a 800 ms coincidían en tiempo), no causal.
+
+Arreglo (sin tocar 8792):
+- `stream/route.ts`: agente undici dedicado con `bodyTimeout: 0` +
+  `headersTimeout: 10 s`; sin `AbortSignal.timeout`; cancelación propagada
+  por `req.signal` (cambio de símbolo/desmontaje/pestaña cerrada libera el
+  consumidor upstream; un re-render sin cambio de identidad no toca la
+  conexión).
+- `MarketFlowPanel.tsx`: reconexión automática a los 2,5 s SIN cambiar
+  identidad (reintento con la MISMA identidad); la causa visible
+  («desconectado — reintentando») se conserva hasta `onopen` (sin falsa
+  reconexión); desmontar o cambiar símbolo NO reabre la suscripción
+  (libera su consumidor). Frescura y errores visibles intactos.
+
+### 10.4 Aceptación (navegador real, casos A–G) — PASS
+
+Ver `docs/evidence/engineering-explicit-start-2026-10-28/acceptance-summary.json`:
+A apertura sin procesos; B doble clic → UNA sesión (tras fix de guardia
+síncrona; el primer intento documentó el hallazgo + artefacto no
+reproducible, causa UNKNOWN); C identidad triple verificada; D «Detener
+sesion» → `detenida` rev 21, posición preservada (sin exit inventado),
+servicio sigue ready; E cerrar/reabrir pestaña → recuperación íntegra; F
+fallo de arranque → banner claro (`ENGINEERING_SERVICE_START_FAILED`),
+0 huérfanos, 0 sesiones, dashboard íntegro; G SSE estable 78 s + 40 s
+(0 errores de consola, 0 "failed to pipe" en BFF); panel marca «datos
+obsoletos» honestamente (fuente aggTrade local sin inyectar ~26 h:
+entorno, no defecto).
+
+Estado final: servicio 8797 detenido (sin pid-file, sin sesiones de
+ensayo en el dir dedicado); dashboard 3020 sirviendo BUILD_ID
+`FQGAqw1wwcXIMQqei_fRA`; 8792 intocado.

@@ -1,0 +1,708 @@
+{
+ "session_id": "PL-MINAUSDT-LONG-1793152892745-1a9fb3df",
+ "created_at_ms": 1793152892745,
+ "updated_at_ms": 1793152894041,
+ "status": "detenida",
+ "revision": 4,
+ "config": {
+  "symbol": "MINAUSDT",
+  "interval": "1m",
+  "direction": "LONG",
+  "notional_usdt": 1000.0,
+  "entry_px": 0.06267,
+  "stop_px": 0.061729950000000006,
+  "stop_distance_pct": 1.5,
+  "horizon_ms": 1800000,
+  "fee_bps": 5.0,
+  "spread_bps": 1.0,
+  "slippage_bps": 2.0,
+  "hypothesis_id": "ENG-MINA-01",
+  "hypothesis_version": "v1",
+  "rule_version": "ENGINEERING-MINA-1M-v1",
+  "decision": "SIN_ENTRADA",
+  "decision_reason": "Velas abiertas en T pero close todavia desconocido (ultima abierta @ 1793070600000): senal no confirmada, abstencion.",
+  "decision_evidence": {
+   "rule_version": "ENGINEERING-MINA-1M-v1",
+   "at_ms": 1793070600000,
+   "n_prefix_candles": 1,
+   "n_fully_known_candles": 0,
+   "candles": [
+    {
+     "open_time_ms": 1793070600000,
+     "open": 0.06266,
+     "high": 0.06274,
+     "low": 0.06266,
+     "close": 0.06273,
+     "close_time_ms": 1793070659999,
+     "open_known": true,
+     "ohlc_known": false
+    }
+   ],
+   "awaiting_close_of": 1793070600000,
+   "evaluated_at_ms": 1793152893200,
+   "admit_risk": true,
+   "risk_reason": "Admision de riesgo OK.",
+   "temporal_abstention": true,
+   "abstention_kind": "temporal"
+  }
+ },
+ "candles": [
+  {
+   "open_time_ms": 1793070600000,
+   "open": 0.06266,
+   "high": 0.06274,
+   "low": 0.06266,
+   "close": 0.06273,
+   "close_time_ms": 1793070659999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793070660000,
+   "open": 0.06267,
+   "high": 0.06268,
+   "low": 0.06257,
+   "close": 0.0626,
+   "close_time_ms": 1793070719999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793070720000,
+   "open": 0.0626,
+   "high": 0.06266,
+   "low": 0.0626,
+   "close": 0.06264,
+   "close_time_ms": 1793070779999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793070780000,
+   "open": 0.06263,
+   "high": 0.06263,
+   "low": 0.06257,
+   "close": 0.06257,
+   "close_time_ms": 1793070839999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793070840000,
+   "open": 0.06258,
+   "high": 0.0626,
+   "low": 0.06254,
+   "close": 0.06254,
+   "close_time_ms": 1793070899999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793070900000,
+   "open": 0.06254,
+   "high": 0.0626,
+   "low": 0.0625,
+   "close": 0.06256,
+   "close_time_ms": 1793070959999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793070960000,
+   "open": 0.06256,
+   "high": 0.06257,
+   "low": 0.06249,
+   "close": 0.06249,
+   "close_time_ms": 1793071019999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793071020000,
+   "open": 0.0625,
+   "high": 0.06253,
+   "low": 0.06248,
+   "close": 0.06251,
+   "close_time_ms": 1793071079999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793071080000,
+   "open": 0.06253,
+   "high": 0.0626,
+   "low": 0.0625,
+   "close": 0.06254,
+   "close_time_ms": 1793071139999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793071140000,
+   "open": 0.06255,
+   "high": 0.06266,
+   "low": 0.06255,
+   "close": 0.06264,
+   "close_time_ms": 1793071199999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793071200000,
+   "open": 0.06263,
+   "high": 0.06267,
+   "low": 0.06258,
+   "close": 0.06265,
+   "close_time_ms": 1793071259999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793071260000,
+   "open": 0.06265,
+   "high": 0.06265,
+   "low": 0.06258,
+   "close": 0.0626,
+   "close_time_ms": 1793071319999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793071320000,
+   "open": 0.06261,
+   "high": 0.06268,
+   "low": 0.0626,
+   "close": 0.06261,
+   "close_time_ms": 1793071379999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793071380000,
+   "open": 0.06261,
+   "high": 0.06271,
+   "low": 0.0626,
+   "close": 0.06267,
+   "close_time_ms": 1793071439999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793071440000,
+   "open": 0.06267,
+   "high": 0.06269,
+   "low": 0.06264,
+   "close": 0.06267,
+   "close_time_ms": 1793071499999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793071500000,
+   "open": 0.06266,
+   "high": 0.06266,
+   "low": 0.06256,
+   "close": 0.06258,
+   "close_time_ms": 1793071559999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793071560000,
+   "open": 0.06255,
+   "high": 0.06255,
+   "low": 0.06243,
+   "close": 0.06245,
+   "close_time_ms": 1793071619999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793071620000,
+   "open": 0.06246,
+   "high": 0.06262,
+   "low": 0.06246,
+   "close": 0.06262,
+   "close_time_ms": 1793071679999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793071680000,
+   "open": 0.06262,
+   "high": 0.06267,
+   "low": 0.06262,
+   "close": 0.06263,
+   "close_time_ms": 1793071739999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793071740000,
+   "open": 0.06263,
+   "high": 0.06264,
+   "low": 0.06262,
+   "close": 0.06264,
+   "close_time_ms": 1793071799999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793071800000,
+   "open": 0.06264,
+   "high": 0.06267,
+   "low": 0.06261,
+   "close": 0.06266,
+   "close_time_ms": 1793071859999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793071860000,
+   "open": 0.06267,
+   "high": 0.06271,
+   "low": 0.06264,
+   "close": 0.0627,
+   "close_time_ms": 1793071919999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793071920000,
+   "open": 0.06267,
+   "high": 0.06271,
+   "low": 0.06267,
+   "close": 0.06271,
+   "close_time_ms": 1793071979999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793071980000,
+   "open": 0.06271,
+   "high": 0.06292,
+   "low": 0.06271,
+   "close": 0.0629,
+   "close_time_ms": 1793072039999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793072040000,
+   "open": 0.0629,
+   "high": 0.06301,
+   "low": 0.06285,
+   "close": 0.063,
+   "close_time_ms": 1793072099999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793072100000,
+   "open": 0.063,
+   "high": 0.06311,
+   "low": 0.06299,
+   "close": 0.0631,
+   "close_time_ms": 1793072159999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793072160000,
+   "open": 0.06309,
+   "high": 0.06309,
+   "low": 0.06299,
+   "close": 0.06308,
+   "close_time_ms": 1793072219999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793072220000,
+   "open": 0.06309,
+   "high": 0.06312,
+   "low": 0.06306,
+   "close": 0.06306,
+   "close_time_ms": 1793072279999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793072280000,
+   "open": 0.06305,
+   "high": 0.0631,
+   "low": 0.06305,
+   "close": 0.06309,
+   "close_time_ms": 1793072339999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793072340000,
+   "open": 0.06309,
+   "high": 0.06309,
+   "low": 0.06301,
+   "close": 0.06302,
+   "close_time_ms": 1793072399999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793072400000,
+   "open": 0.06304,
+   "high": 0.06304,
+   "low": 0.06298,
+   "close": 0.06302,
+   "close_time_ms": 1793072459999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793072460000,
+   "open": 0.06301,
+   "high": 0.06304,
+   "low": 0.06298,
+   "close": 0.06301,
+   "close_time_ms": 1793072519999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793072520000,
+   "open": 0.06301,
+   "high": 0.06301,
+   "low": 0.06298,
+   "close": 0.06299,
+   "close_time_ms": 1793072579999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793072580000,
+   "open": 0.06299,
+   "high": 0.06303,
+   "low": 0.06296,
+   "close": 0.06298,
+   "close_time_ms": 1793072639999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793072640000,
+   "open": 0.06298,
+   "high": 0.06303,
+   "low": 0.06296,
+   "close": 0.06302,
+   "close_time_ms": 1793072699999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793072700000,
+   "open": 0.06302,
+   "high": 0.06302,
+   "low": 0.06294,
+   "close": 0.06294,
+   "close_time_ms": 1793072759999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793072760000,
+   "open": 0.06292,
+   "high": 0.06293,
+   "low": 0.06286,
+   "close": 0.06291,
+   "close_time_ms": 1793072819999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793072820000,
+   "open": 0.06291,
+   "high": 0.06295,
+   "low": 0.06289,
+   "close": 0.06291,
+   "close_time_ms": 1793072879999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793072880000,
+   "open": 0.0629,
+   "high": 0.06296,
+   "low": 0.06287,
+   "close": 0.06291,
+   "close_time_ms": 1793072939999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793072940000,
+   "open": 0.06291,
+   "high": 0.06292,
+   "low": 0.06285,
+   "close": 0.06285,
+   "close_time_ms": 1793072999999,
+   "available_at": null,
+   "received_at": null
+  }
+ ],
+ "context_candles": [
+  {
+   "open_time_ms": 1793069400000,
+   "open": 0.06303,
+   "high": 0.06306,
+   "low": 0.06302,
+   "close": 0.06304,
+   "close_time_ms": 1793069459999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793069460000,
+   "open": 0.06305,
+   "high": 0.06307,
+   "low": 0.06301,
+   "close": 0.06301,
+   "close_time_ms": 1793069519999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793069520000,
+   "open": 0.063,
+   "high": 0.06304,
+   "low": 0.06296,
+   "close": 0.06301,
+   "close_time_ms": 1793069579999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793069580000,
+   "open": 0.06301,
+   "high": 0.06305,
+   "low": 0.06268,
+   "close": 0.06296,
+   "close_time_ms": 1793069639999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793069640000,
+   "open": 0.06296,
+   "high": 0.06296,
+   "low": 0.0629,
+   "close": 0.0629,
+   "close_time_ms": 1793069699999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793069700000,
+   "open": 0.0629,
+   "high": 0.06292,
+   "low": 0.06286,
+   "close": 0.06288,
+   "close_time_ms": 1793069759999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793069760000,
+   "open": 0.06289,
+   "high": 0.06291,
+   "low": 0.06288,
+   "close": 0.0629,
+   "close_time_ms": 1793069819999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793069820000,
+   "open": 0.06291,
+   "high": 0.06291,
+   "low": 0.06284,
+   "close": 0.06291,
+   "close_time_ms": 1793069879999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793069880000,
+   "open": 0.06292,
+   "high": 0.06295,
+   "low": 0.06285,
+   "close": 0.06286,
+   "close_time_ms": 1793069939999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793069940000,
+   "open": 0.06287,
+   "high": 0.06291,
+   "low": 0.06287,
+   "close": 0.06289,
+   "close_time_ms": 1793069999999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793070000000,
+   "open": 0.06289,
+   "high": 0.063,
+   "low": 0.06289,
+   "close": 0.063,
+   "close_time_ms": 1793070059999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793070060000,
+   "open": 0.06299,
+   "high": 0.06299,
+   "low": 0.06288,
+   "close": 0.06288,
+   "close_time_ms": 1793070119999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793070120000,
+   "open": 0.06289,
+   "high": 0.06289,
+   "low": 0.06262,
+   "close": 0.06268,
+   "close_time_ms": 1793070179999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793070180000,
+   "open": 0.06268,
+   "high": 0.06271,
+   "low": 0.06261,
+   "close": 0.06271,
+   "close_time_ms": 1793070239999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793070240000,
+   "open": 0.0627,
+   "high": 0.06278,
+   "low": 0.0627,
+   "close": 0.06274,
+   "close_time_ms": 1793070299999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793070300000,
+   "open": 0.06274,
+   "high": 0.06279,
+   "low": 0.06274,
+   "close": 0.06276,
+   "close_time_ms": 1793070359999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793070360000,
+   "open": 0.06276,
+   "high": 0.06276,
+   "low": 0.06264,
+   "close": 0.06264,
+   "close_time_ms": 1793070419999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793070420000,
+   "open": 0.06266,
+   "high": 0.06269,
+   "low": 0.06265,
+   "close": 0.06265,
+   "close_time_ms": 1793070479999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793070480000,
+   "open": 0.06265,
+   "high": 0.06268,
+   "low": 0.06262,
+   "close": 0.06268,
+   "close_time_ms": 1793070539999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793070540000,
+   "open": 0.06268,
+   "high": 0.0627,
+   "low": 0.06259,
+   "close": 0.06267,
+   "close_time_ms": 1793070599999,
+   "available_at": null,
+   "received_at": null
+  }
+ ],
+ "cursor": 1,
+ "position": {
+  "open": false,
+  "direction": null,
+  "entry_px": null,
+  "entry_qty": null,
+  "entry_cost": null,
+  "entry_ms": null,
+  "stop_px": 0.061729950000000006,
+  "mark_px": null,
+  "mark_ms": null,
+  "unrealized_gross": null,
+  "unrealized_net": null,
+  "mfe_pct": null,
+  "mae_pct": null
+ },
+ "costs": {
+  "fee_bps": 5.0,
+  "spread_bps": 1.0,
+  "entry_fees": 0.5,
+  "exit_fees": 0.0,
+  "entry_spread_slip": 0.3,
+  "exit_spread_slip": 0.0,
+  "funding": null,
+  "friction": 0.8,
+  "entry_fees_executed": 0.0,
+  "exit_fees_executed": 0.0,
+  "entry_spread_slip_executed": 0.0,
+  "exit_spread_slip_executed": 0.0,
+  "exit_fees_estimated": 0.0,
+  "exit_spread_slip_estimated": 0.0
+ },
+ "events": [
+  {
+   "at_ms": 1793070600000,
+   "label": "Decision: SIN_ENTRADA temporal (esperando datos)",
+   "kind": "protection",
+   "detail": "Velas abiertas en T pero close todavia desconocido (ultima abierta @ 1793070600000): senal no confirmada, abstencion."
+  }
+ ],
+ "result": null,
+ "clock_ms": 1793070600000,
+ "config_hash": "7aa3c8e5de35acbe",
+ "input_hash": "024a5e9ed3b0d6fc",
+ "engine_version": "paper-lab-engine/v1.2",
+ "limitations": [
+  "no-latency-model",
+  "no-tick-lot-rounding",
+  "no-min-notional-gate",
+  "realized-only-drawdown",
+  "engineering-fixture-only"
+ ],
+ "authoritative": null,
+ "_request_id": "eng-req-1793152893597-1",
+ "_content_hash": "d52c4e1a9edf666659d5c256ca96519e24a73a6af1dd7d8457a3f42819f252d5"
+}

@@ -1,3 +1,40 @@
+## Inicio explícito completo desde la UI + defecto SSE corregido (2026-10-28, base `0bf96c6`)
+
+Evidencia: `docs/evidence/engineering-explicit-start-2026-10-28/acceptance-summary.json` (casos A–G, navegador real). Detalle en `docs/ENGINEERING_SESSION_BACKEND_V1.md` §10.
+
+1. **«Iniciar sesión» es inicio completo explícito:** con 8797 detenido, el
+   click comprueba el servicio (GET consulta pura) y, si está abajo, el BFF
+   genera la instancia canónica (`scripts/engineering_session_service.py`,
+   sin gestor paralelo), espera readiness con límite y verifica identidad
+   triple (child.pid == pid-file == /health.pid). Nunca reutiliza ni detiene
+   PIDs desconocidos; fallo de arranque → banner claro y sin huérfanos ni
+   sesión creada. Abrir la página NO inicia nada (chip de estado: checking /
+   starting / ready / down / error).
+2. **Doble clic → una sola sesión:** guardia síncrona en el componente
+   (el `disabled` de React no es síncrono entre clicks; el hallazgo inicial
+   creó 2 sesiones y un artefacto de archivo vacío no reproducible — causa
+   UNKNOWN, `load_session` lo rechaza con `IDENTITY_UNCERTAIN`).
+3. **Default de sesiones dedicado (y corrección de bug):** el `ROOT` del
+   servicio apuntaba a `src/` (default previo roto); ahora default
+   `data/engineering-session/sessions`, sin colisión con el controlador
+   anterior; sesiones existentes sin migrar.
+4. **Defecto SSE del panel de flujo RESUELTO (causa reproducida):** dos
+   cortes convergentes — `AbortSignal.timeout(30_000)` del BFF (cada SSE
+   moría a los 30 s) y `bodyTimeout` por defecto de undici (30 s sin chunk
+   con el servicio 8792 mudo). Arreglo sin tocar 8792: agente undici
+   `bodyTimeout: 0` + `headersTimeout` acotado, cancelación propagada por
+   `req.signal`, y reconexión del panel con la MISMA identidad conservando
+   la causa visible; desmontar/cambiar símbolo libera el consumidor. Ventanas
+   de verificación 78 s + 40 s con 0 errores de consola y 0 "failed to pipe".
+5. **Tests:** servicio 9/9 (nuevo: default dedicado); frontend vitest
+   611 passed + 1 skip (nuevos: 4 de arranque/servicio + 3 de reconexión del
+   panel); `tsc`/`eslint` 0 errores.
+6. **Servicios al cierre:** 8797 detenido (sin pid-file; dir dedicado sin
+   sesiones de ensayo, archivadas en evidencia); dashboard 3020 sirviendo
+   `FQGAqw1wwcXIMQqei_fRA` (PID 14492); 8792 preexistente intocado
+   (fuente aggTrade local sin inyectar ~26 h: el panel marca «datos
+   obsoletos» honestamente).
+
 ## Acceso operativo verificado — sesión/servicio separados (2026-10-28, base `5f24807`)
 
 Verificación de acceso desde el estado entregado (8797 detenido), con la

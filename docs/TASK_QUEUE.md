@@ -1,3 +1,29 @@
+## Inicio explícito completo desde la UI + arreglo del defecto SSE (2026-10-28, base `0bf96c6`)
+
+`CURRENT_PHASE`: dashboard V2 de escritorio + observación (WS público solo bajo
+autorización explícita; sin monitor, sin órdenes).
+
+`CURRENT_OBJECTIVE`: cerrado — «Iniciar sesión» como inicio completo
+explícito (comprueba servicio → arranca la instancia canónica vía BFF con
+readiness+identidad → crea e inicia UNA sesión), directorio de sesiones
+dedicado por defecto (bug del `ROOT` corregido), y causa/arreglo del
+defecto del panel de flujo (`ERR_INCOMPLETE_CHUNKED_ENCODING`: timeout del
+BFF + `bodyTimeout` de undici; reconexión con misma identidad; 8792
+intocado). Evidencia:
+`docs/evidence/engineering-explicit-start-2026-10-28/acceptance-summary.json`
+(casos A–G, navegador real, incl. fallo de arranque sin huérfanos).
+
+`ACTIVE_TASK`: **cerrado**.
+
+`NEXT_TASKS`: revisión del operador de las capturas; recorrido con datos
+nuevos continuos (ventana aparte, autorización explícita — la fuente
+aggTrade local lleva ~26 h sin inyectar); opcional: map explícito
+`ENGINEERING_SERVICE_DOWN` en el BFF (hoy el fetch de Node oculta `code`
+y el banner muestra `ENGINEERING_PROXY_ERROR`, igual 503 con error
+visible); opcional: investigar el artefacto anómalo de la primera carrera
+de doble clic (archivo vacío sin sufijo; causa UNKNOWN, no reproducible,
+`load_session` lo rechaza).
+
 ## Acceso operativo y publicación en revisión (2026-10-28, base `5f24807`)
 
 `CURRENT_PHASE`: dashboard V2 de escritorio + observación (WS público solo bajo

@@ -1,0 +1,55 @@
+{
+  "block": "inicio explicito de sesion + defecto SSE del panel de flujo",
+  "date": "2026-10-28",
+  "base_commit": "0bf96c6 (feat/ingenieria-autonoma == review/o1-funcional-v2-observacion)",
+  "build_id_final": "FQGAqw1wwcXIMQqei_fRA",
+  "dashboard": {"port": 3020, "pid_final": 14492, "cmd": "node next start -p 3020 -H 127.0.0.1"},
+  "engineering_service": {
+    "port": 8797,
+    "arranque": "SOLO por POST explícito del operador vía BFF (route /api/v1/engineering-sessions/service, action=start)",
+    "spawn_target": "scripts/engineering_session_service.py (controlador canónico, sin gestor paralelo)",
+    "identity_verification": "child.pid == pid-file(data/engineering-session/service.json) == /health.pid",
+    "estado_final": "detenido tras cierre (CLI --stop, pid file eliminado); 8792 preexistente (PID 33104) intocado"
+  },
+  "sessions_dir": {
+    "default_dedicado": "data/engineering-session/sessions (motor anida paper-lab-sessions/ debajo)",
+    "cambio": "el default previo del servicio era roto (ROOT mal calculado → src/paper-lab-sessions); ahora ROOT correcto + dir dedicado, sin colisión con scripts/paper_lab_session.py",
+    "sesiones_anteriores": "conservadas sin migración (paper-lab-sessions/ raíz del controlador anterior, intocadas)"
+  },
+  "acceptance_cases": [
+    {"case": "A apertura sin procesos", "result": "PASS", "evidence": "página /market-lab abierta con 8797 detenido: chip 'Servicio de ingeniería detenido' (state=down), nota visible 'Abrir el dashboard no inicia servicios ni operaciones', python PIDs antes=después=[33104], GET /service = consulta pura"},
+    {"case": "B doble clic → arranque único", "result": "PASS", "evidence": "dblclick en btn-iniciar-sesion → servicio arrancado una vez (pid 28112 = pid-file = health), UNA sola sesión PL-MINAUSDT-LONG-1793153159005-99af982a, drive running", "fix": "guardia síncrona startInFlightRef (el primer intento creó DOS sesiones por segundo click antes del re-render de React: PL-...-9086-bcfff2c4 detenida OK y PL-...-9526 archivo VACÍO, artefacto no reproducible en 2 reintentos del mismo flujo; sonda de concurrencia a nivel motor/servicio (2 creates + 2 starts + stop + halt simultáneos) NO reproduce archivo vacío ni id sin sufijo → causa exacta del artefacto UNKNOWN; load_session lo rechaza honestamente con IDENTITY_UNCERTAIN"},
+    {"case": "C identidad del proceso", "result": "PASS", "evidence": "chip muestra 'pid 28112'; Get-Process 28112 = python; service.json pid 28112; /health pid 28112; sessions_dir dedicado data/engineering-session/sessions"},
+    {"case": "D detener sesión con posición", "result": "PASS", "evidence": "Detener sesion en plena conducción → detenida rev 21, position.open=true (entry 0.0626, mark 0.06266), result=null, kinds=[protection,protection,entry,mark] SIN exit inventado; drive cause OPERATOR_STOP; el SERVICIO sigue ready (no se comparte con la sesión)"},
+    {"case": "E cerrar/reabrir pestaña", "result": "PASS", "evidence": "browser_close + navigate → sesión recuperada del backend: detenida/ABIERTA con entry 0.0626 y mark 0.06266 íntegros, sin error banner, chip servicio ready; la pestaña cerrada NO detuvo la conducción ni el servicio"},
+    {"case": "F fallo de arranque → error claro sin huérfanos", "result": "PASS", "evidence": "dashboard 3020 con ENGINEERING_SERVICE_PYTHON=python-inexistente-TEST → click Iniciar → banner 'SERVICIO_DE_INGENIERIA: el arranque del servicio falló (ENGINEERING_SERVICE_START_FAILED) — spawn ... ENOENT. No quedó ninguna sesión creada', chip error, 0 procesos python huérfanos, 0 sesiones creadas, servidor dashboard intacto (listener 'error' de child_process manejado)"},
+    {"case": "G estabilidad SSE durante re-renders", "result": "PASS", "evidence": "ventana de 78 s (cruza el umbral original de 30 s) con cero errores de consola y cero 'failed to pipe' en el BFF; ventana final de 40 s con build definitivo: 0 errores; el panel marca 'datos obsoletos' honestamente porque la fuente aggTrade local está sin inyectar ~26 h (environment, no defecto del stream)"}
+  ],
+  "sse_defect_root_cause": [
+    "Causa 1 (código): la ruta BFF /api/v1/market-flow/stream pasaba AbortSignal.timeout(30_000) al fetch upstream → CADA SSE moría exactamente a los 30 s → el navegador veía ERR_INCOMPLETE_CHUNKED_ENCODING (error histórico del log del proceso previo: ~10x 'failed to pipe response' + TimeoutError)",
+    "Causa 2 (runtime): el fetch global de Node (undici) aplica bodyTimeout por defecto (30 s sin chunk): /flow/stream del servicio preexistente queda mudo sin eventos de flujo → UND_ERR_BODY_TIMEOUT → 'failed to pipe response' (1x en el log del dashboard con la primera capa del arreglo)",
+    "Aparición en re-renders: correlación temporal (los re-renders del panel de ingeniería al observar con cadencia 800 ms coincidían con el minuto de vida del SSE), no causalidad por re-render"
+  ],
+  "sse_fix": [
+    "stream/route.ts: agent undici dedicado con bodyTimeout 0 + headersTimeout 10 s; sin AbortSignal.timeout; cancelación propagada por req.signal (cambio de símbolo/desmontar/pestaña cerrada libera el consumidor upstream)",
+    "MarketFlowPanel.tsx: reconexión automática con retardo 2,5 s SIN cambiar identidad (sseTick); causa visible conservada hasta onopen ('desconectado — reintentando'); desmontar/cambiar símbolo NO reabre la suscripción"
+  ],
+  "tests": {
+    "python": "tests/test_engineering_session_service.py 9/9 (incluye nuevo test_default_sessions_dir_dedicado_sin_colision)",
+    "frontend_full_vitest": "611 passed + 1 skipped (604 previos + 4 nuevos de engineering-session + 3 nuevos de market-flow-panel)",
+    "tsc": "0 errores",
+    "eslint": "0 errores (5 warnings preexistentes)"
+  },
+  "final_state": {
+    "dashboard": "servido en 3020 (PID 14492), build FQGAqw1wwcXIMQqei_fRA",
+    "engineering_service_8797": "detenido, sin pid-file, dir de sesiones sin archivos de ensayo (archivados en evidence)",
+    "preexisting_8792": "intocado (PID 33104)",
+    "browser": "cerrado"
+  },
+  "notes": [
+    "El arranque del servicio sigue sin ocurrir por GET ni por abrir la página: el GET /service es consulta pura (no genera procesos); el arranque es POST action=start con guardia de origen",
+    "No se expone 'detener servicio' en la UI (sin pedir detener PID desconocidos); el gestor solo termina el proceso que ÉL generó (child.kill en fallo de readiness)",
+    "Artefacto de la primera carrera doble-clic (archivo vacío sin sufijo) preservado como evidencia: docs/evidence/engineering-explicit-start-2026-10-28/anomalo-pl-mean-long-1793152509526-EMPTY-0bytes.json y sessions-run-2026-10-28/",
+    "Sin Binance público, sin feed vivo, sin órdenes, sin pagos, sin móvil, sin cambios económicos"
+  ]
+}

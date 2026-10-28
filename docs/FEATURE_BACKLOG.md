@@ -2525,3 +2525,61 @@ atribuirle fallos de esta sesión) queda pendiente de decisión.
 - `DOCUMENTATION_CONFLICTS` — ninguna contradictoria; se declara el
   alcance del botón (no inicio completo) y el impacto del defecto abierto
   del panel de flujo sin atribuirle fallos de esta sesión.
+
+## Inicio explicito de sesion desde la UI + defecto SSE corregido (2026-10-28, base `0bf96c6`)
+
+**1. Title:** Control explicito unico del operador para sesion de
+ingenieria local: comprobar servicio, arrancar la instancia canonica via
+BFF (readiness con limite + identidad triple), crear e iniciar una sola
+sesion; estado del servicio visible (checking/starting/ready/down/error);
+doble clic sin duplicados; directorio de sesiones dedicado por defecto
+(bug de `ROOT` corregido); causa/arreglo del defecto
+`ERR_INCOMPLETE_CHUNKED_ENCODING` del panel de flujo (timeout del BFF +
+bodyTimeout de undici; reconexion con misma identidad; 8792 intocado).
+
+**2. Approval status:** DECIDIDO por el operador (2026-10-28): integrar el
+arranque del servicio con el controlador canonico, sin gestor paralelo;
+nada por GET ni por abrir la pagina; guardias de origen existentes;
+identidad verificada, nunca reutilizar/detener PIDs desconocidos;
+conservar sesiones existentes sin migracion.
+
+**3. Implementation status:** IMPLEMENTED - `frontend/src/lib/engineering-service-manager.ts`
+(spawn canonico, readiness 15 s, identidad child.pid==pid-file==health,
+error de child_process manejado, kill solo del proceso propio),
+`frontend/src/app/api/v1/engineering-sessions/service/route.ts` (GET
+consulta pura / POST action=start con guardia de origen),
+`session-lab.ts` (fetchEngineeringService/startEngineeringService),
+`EngineeringSession.tsx` (chip `service-chip`, puerta explicita en el
+boton, guardia sincrona `startInFlightRef`), servicio Python default
+dedicado (`data/engineering-session/sessions`; ROOT corregido),
+`market-flow/stream/route.ts` (agent undici bodyTimeout 0 +
+headersTimeout, req.signal), `MarketFlowPanel.tsx` (reconexion 2,5 s
+misma identidad, causa visible hasta onopen, liberacion en
+desmonte/cambio de simbolo).
+
+**4. Evaluation status:** VERIFIED - servicio 9/9 (nuevo test default
+dedicado), frontend vitest 611 passed + 1 skip (4 nuevos
+engineering-session, 3 nuevos market-flow-panel), tsc/eslint 0;
+aceptacion navegador real A-G PASS
+(`docs/evidence/engineering-explicit-start-2026-10-28/acceptance-summary.json`,
+BUILD_ID `FQGAqw1wwcXIMQqei_fRA`, dashboard PID 14492): apertura sin
+procesos, doble clic 1 sesion, identidad triple, detenida con posicion
+preservada sin exit inventado, recuperacion tras reabrir pestaña, fallo
+de arranque claro sin huerfanos, SSE estable 78 s + 40 s con 0 errores.
+
+**5. Deferred:** ninguno (arreglo del defecto SSE estaba pendiente de
+decision del operador: decidido y ejecutado en este bloque). Opcional
+retenido: map explicito `ENGINEERING_SERVICE_DOWN` en el BFF; investigar
+causa exacta del artefacto anomatico (archivo vacio sin sufijo, UNKNOWN,
+no reproducible).
+
+**6. Safety/constraints:** observe-only; sin Binance publico, sin feed
+vivo, sin ordenes, sin pagos, sin movil; el servicio de flujo preexistente
+(8792) no modificado; 8797 detenido al cierre; sesiones de ensayo
+archivadas en evidencia y retiradas del dir en linea.
+
+**7. Traceability:** base `0bf96c6`; DECISIONS 2026-10-28 (inicio
+explicito + dir dedicado + causa SSE + hallazgo doble clic);
+ENGINEERING_SESSION_BACKEND_V1.md §10 (9.1/9.3 anotadas
+historico/resuelto); CURRENT_STATE + TASK_QUEUE 2026-10-28; evidencia
+`docs/evidence/engineering-explicit-start-2026-10-28/`.
