@@ -1,0 +1,83 @@
+{
+  "title": "Aceptación backend autónomo — sesión de ingeniería (engineering-session-service/v1)",
+  "date_utc": "2026-10-28T00:06-00:22",
+  "workspace": "C:\\proyectos\\binance-futures-microstructure-bot",
+  "git_head_under_test": "0aa98f57db9577cf258d332b4d102a3654c233d1 (feat/ingenieria-autonoma; cambios aun sin commit en el árbol de trabajo)",
+  "frontend_build_id": "r5poURhuj3RQc4CjC6Kyz",
+  "canonical_dashboard": {
+    "url": "http://127.0.0.1:3020/market-lab",
+    "process": "next start -p 3020 -H 127.0.0.1",
+    "pid_at_acceptance": 29508,
+    "note": "reemplazo controlado del BUILD_ID previo GC5lmJU9kuk4F0d3Z7WxI (PID 32856)"
+  },
+  "engineering_service": {
+    "pid": 28260,
+    "port": 8797,
+    "cadence_ms": 700.0,
+    "sessions_dir": "data\\engineering-session\\acceptance-sessions (dir aislado, fuera del canónico paper-lab-sessions)",
+    "pid_file": "data\\engineering-session\\acceptance-service.json",
+    "health": {"service": "engineering-session-service/v1", "engine_version": "paper-lab-engine/v1.2"}
+  },
+  "preexisting_service_not_touched": {
+    "port": 8792,
+    "hint": "python scripts/market_stream_service.py --port 8792 --transport local --base-url ws://127.0.0.1:9999 (PID 33104 previamente registrado) — NO detenido, NO usado"
+  },
+  "safety": {
+    "binance_public": false,
+    "upstream_calls": 0,
+    "orders": false,
+    "private_keys": false,
+    "source": "fuente LOCAL SIMULADA (cache local klines), client=None; fetchMarketSeries SIEMPRE read_only=1 (--no-fetch)"
+  },
+  "scenarios": {
+    "S1_lifecycle_autonomous": {
+      "session_id": "PL-MINAUSDT-LONG-1793146010973-1eea864b",
+      "prefix": "A",
+      "flow": "POST create (navegador) → POST control start → SOLO observación GET; entrada pendiente → fill → posición abierta → gestión (marca) → cierre con resultado",
+      "final": {"status": "cerrada", "position_open": false, "result_present": true, "drive_cause": "SESSION_CLOSED", "drive_events": 33, "single_entry_event": true},
+      "evidence": ["eng-01-initial-market-lab.png", "eng-02-drive-running-position-open.png", "eng-03-minuspre-tab-open-drive-running.json", "eng-04-tab-open-observer-network-requests.txt", "eng-05-tab-closed-9s-backend-state.json"]
+    },
+    "S2_tab_close_backend_continues": {
+      "tab_closed_at": "ver docs/evidence/engineering-backend-2026-10-27/eng-03-tab-close-at.txt",
+      "observed_9_seconds_after_close": {
+        "revision": "33 → 38",
+        "position": "cerrada autónomamente (entry+exit por el motor)",
+        "drive_state": "stopped",
+        "drive_cause": "SESSION_CLOSED",
+        "interpretation": "el backend siguió conduciendo con la pestaña cerrada; el cierre NO vino del navegador"
+      },
+      "reopen": {
+        "recovered_status": "cerrada",
+        "recovered_session_id_match": true,
+        "drive_chip": false,
+        "export_panel_available": true,
+        "evidence": ["eng-06-reopen-recovered-closed-session.png", "eng-07-recovered-closed-session-confirmed.png", "eng-08-export-panel-closed-session.png"]
+      },
+      "verdict": "PASSED — cierre de pestaña no detiene la conducción; reabrir recupera el estado correcto (no posición congelada)"
+    },
+    "S3_stop_with_open_position": {
+      "session_id": "PL-MINAUSDT-LONG-1793146121572-1c9d12be",
+      "action": "botón Detener sesion (stop → drive OPERATOR_STOP; stop_session → detenida)",
+      "final": {"status": "detenida", "position_open": true, "entry_px": 0.0626, "mark_px": 0.06271, "result": null, "invented_exit": false, "drive_cause": "OPERATOR_STOP"},
+      "ui": {"cause_text": "Conducción detenida por el operador.", "chip": false, "cerrar_posicion_disabled": true},
+      "evidence": ["eng-09-stop-open-position-backend-state.json", "eng-10-stop-open-position-detained.png"]
+    },
+    "S4_prefix_B_and_final_close": {
+      "session_id": "PL-MINAUSDT-LONG-1793146176404-c5424119",
+      "prefix": "B",
+      "note": "con la cache real de MINAUSDT ambos prefijos resultaron favorables al precio: ambos admitieron entrada; NO se fabricó abstención en datos reales (la separación abstención temporal / descarte terminal y confirmación posterior está demostrada determinísticamente en tests/test_engineering_session_service.py y frontend/src/test/engineering-session.test.tsx)",
+      "final": {"status": "cerrada", "exit_reason": "horizon", "net_pnl": 4.944281150159643, "drive_cause": "SESSION_CLOSED", "events_kinds": {"protection": 2, "entry": 1, "mark": 1, "exit": 1}},
+      "observer_only_after_recovery": {"GET": 24, "POST": 0},
+      "evidence": ["eng-11-final-session-closed-autonomous.png", "eng-12-final-closed-session-backend-state.json", "eng-13-observer-only-network-session3.txt"]
+    }
+  },
+  "network_authority_evidence": {
+    "tab_open_session_1": "1 POST /sessions (create) + 1 POST /control (start) + N GET observación — cero avances desde el navegador (eng-04)",
+    "recovered_closed_session": "24 GET sin ningún POST (eng-13)"
+  },
+  "console_notes": {
+    "errors": "1 error en consola NO relacionado: ERR_INCOMPLETE_CHUNKED_ENCODING en /api/v1/market-flow/stream?symbol=BTCUSDT (stream SSE de otro panel, se aborta al releer); 2 warnings de preload CSS",
+    "engineering_component": "sin errores"
+  },
+  "acceptance_path_completed": ["navegador", "BFF 3020", "servicio backend 8797", "eventos transporte local 700ms", "evaluación", "fill", "gestión", "cierre", "exportación (panel export + estado completo)"]
+}
