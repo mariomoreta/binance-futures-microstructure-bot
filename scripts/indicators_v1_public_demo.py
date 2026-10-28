@@ -154,8 +154,10 @@ def build_dashboard(evidence_dir: Path) -> str:
 
 
 def dashboard_pid_on_3020() -> Optional[int]:
+    # Windows en espanol emite bytes no-UTF8 (OEM/cp1252): decodificar con
+    # reemplazo para que -X utf8 no mate el sondeo.
     out = subprocess.run(["netstat", "-ano"], capture_output=True, text=True,
-                         timeout=30)
+                         encoding="utf-8", errors="replace", timeout=30)
     for line in out.stdout.splitlines():
         parts = line.split()
         if len(parts) >= 5 and parts[1] == f"127.0.0.1:{DASHBOARD_PORT}" \
@@ -169,7 +171,8 @@ def dashboard_pid_on_3020() -> Optional[int]:
 
 def process_name(pid: int) -> str:
     out = subprocess.run(["tasklist", "/FI", f"PID eq {pid}"],
-                         capture_output=True, text=True, timeout=30)
+                         capture_output=True, text=True, encoding="utf-8",
+                         errors="replace", timeout=30)
     lines = [line for line in out.stdout.splitlines() if line.strip()]
     if len(lines) >= 4:
         return lines[3].split()[0]

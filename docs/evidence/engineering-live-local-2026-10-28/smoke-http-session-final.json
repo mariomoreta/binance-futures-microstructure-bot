@@ -1,0 +1,4121 @@
+{
+  "session": {
+    "session_id": "PL-MINAUSDT-LONG-1793190478863-c98ddb9b",
+    "created_at_ms": 1793190478863,
+    "updated_at_ms": 1793190781390,
+    "status": "cerrada",
+    "revision": 19,
+    "clock_ms": 1793190720000,
+    "config_hash": "9400414c29c78f78",
+    "input_hash": null,
+    "config": {
+      "symbol": "MINAUSDT",
+      "interval": "1m",
+      "direction": "LONG",
+      "notional_usdt": 1000.0,
+      "entry_px": 1.05,
+      "stop_px": 1.03425,
+      "stop_distance_pct": 1.5,
+      "horizon_ms": 1800000,
+      "fee_bps": 5.0,
+      "spread_bps": 1.0,
+      "slippage_bps": 2.0,
+      "hypothesis_id": "ENG-MINA-01",
+      "hypothesis_version": "v1",
+      "rule_version": "ENGINEERING-MINA-1M-v1",
+      "decision": "ENTRADA_SIMULADA",
+      "decision_reason": "Senal de entrada en T pero sin fill posible en el prefijo conocido: run_backtest no admite operacion con datos disponibles en T. Senal pendiente de fill.",
+      "decision_evidence": {
+        "rule_version": "ENGINEERING-MINA-1M-v1",
+        "at_ms": 1793190600000,
+        "n_prefix_candles": 4,
+        "n_fully_known_candles": 3,
+        "candles": [
+          {
+            "open_time_ms": 1793190420000,
+            "open": 1.05,
+            "high": 1.050525,
+            "low": 1.0484755,
+            "close": 1.049,
+            "close_time_ms": 1793190479999,
+            "open_known": true,
+            "ohlc_known": true
+          },
+          {
+            "open_time_ms": 1793190480000,
+            "open": 1.049,
+            "high": 1.05002475,
+            "low": 1.0484755,
+            "close": 1.0495,
+            "close_time_ms": 1793190539999,
+            "open_known": true,
+            "ohlc_known": true
+          },
+          {
+            "open_time_ms": 1793190540000,
+            "open": 1.0495,
+            "high": 1.052526,
+            "low": 1.0489752500000002,
+            "close": 1.052,
+            "close_time_ms": 1793190599999,
+            "open_known": true,
+            "ohlc_known": true
+          },
+          {
+            "open_time_ms": 1793190600000,
+            "open": 1.052,
+            "high": 1.0530262499999998,
+            "low": 1.051474,
+            "close": 1.0525,
+            "close_time_ms": 1793190659999,
+            "open_known": true,
+            "ohlc_known": false
+          }
+        ],
+        "trigger_px": 1.052,
+        "entry_px": 1.05,
+        "stop_px": 1.03425,
+        "signal_candle_close_time_ms": 1793190599999,
+        "evaluated_at_ms": 1793190660856,
+        "decision_at_ms": 1793190600000,
+        "available_at_ms": null,
+        "admit_risk": true,
+        "risk_reason": "Admision de riesgo OK.",
+        "entry_fill_px": null,
+        "entry_fill_ms": null,
+        "entry_fill_qty": null,
+        "entry_fill_cost": null,
+        "adapter": {
+          "runner": "market_stream",
+          "market_url": "http://127.0.0.1:53885",
+          "market_service": {
+            "frames": 125,
+            "bad_frames": 0,
+            "unknown_frames": 0,
+            "provisional_frames": 42,
+            "disconnects": 6,
+            "reconnects": 6,
+            "connect_errors": 0,
+            "last_error": "TimeoutError: timed out",
+            "last_frame_at_ms": 1793190660855,
+            "connected_at_ms": 1793190571134,
+            "started_at_ms": 1793190478901
+          },
+          "symbol": "MINAUSDT",
+          "interval": "1m",
+          "trigger": {
+            "frame": "closed",
+            "open_time_ms": 1793190600000,
+            "close_time_ms": 1793190659999,
+            "received_at_ms": 1793190660855,
+            "available_at_ms": 1793190600000
+          },
+          "clocks": {
+            "trigger_open_ms": 1793190600000,
+            "trigger_received_at_ms": 1793190660855,
+            "evaluation_clock_ms": 1793190600000,
+            "evaluation_wall_ms": 1793190660857
+          },
+          "evidence_blocks": {
+            "context_btc": {
+              "contract_version": "market-btc-context/v1",
+              "availability": "CLOSED_CANDLES_ONLY",
+              "identity": {
+                "symbol": "MINAUSDT",
+                "interval": "1m",
+                "interval_ms": 60000,
+                "source": "ws_kline"
+              },
+              "context": {
+                "symbol": "BTCUSDT",
+                "venue": "binance",
+                "market_type": "usd_m_futures",
+                "interval": "1m",
+                "interval_ms": 60000,
+                "same_asset_as_token": false,
+                "subscription": {
+                  "reuses_token_stream": false,
+                  "shared": false,
+                  "live": true
+                },
+                "sources": [
+                  "cache",
+                  "ws_kline"
+                ],
+                "horizon_candles": 5,
+                "timeframe": {
+                  "aligned_by": "open_time_ms",
+                  "token_window": {
+                    "first": 1793187060000,
+                    "last": 1793190600000
+                  },
+                  "btc_observed": {
+                    "first": 1793187060000,
+                    "last": 1793190600000
+                  },
+                  "expected_grid": 59,
+                  "present_grid": 52,
+                  "gaps": [
+                    [
+                      1793190480000,
+                      1793190480000
+                    ]
+                  ]
+                },
+                "freshness": {
+                  "btc_last_closed_open_ms": 1793190600000,
+                  "btc_last_available_at_ms": 1793190660000,
+                  "age_ms": 854,
+                  "threshold_ms": 60000,
+                  "lagging": false,
+                  "note": "BTC atras del cierre esperado en la rejilla: las filas sin dato quedan UNKNOWN(BTC_LAGGING); no se arrastran valores antiguos como si fueran nuevos"
+                },
+                "acquisition": {
+                  "rest_upstream_requests": 0,
+                  "mode": "cache+ws",
+                  "note": "REST de tramos faltantes no ejecutado; si se autorizara, el numero de paginas depende del tramo faltante, nunca es una cifra fija"
+                }
+              },
+              "definitions": [
+                {
+                  "name": "ret_btc_bps_5",
+                  "formula": "10000 * ln(close_t^BTC / close_(t-4)^BTC)",
+                  "unit": "bps",
+                  "window_candles": 5,
+                  "requires": "velas cerradas de BTC en la MISMA rejilla del token (t-4..t por open_time_ms); mismas 5 velas cerradas que velocity_bps_5"
+                },
+                {
+                  "name": "ret_diff_bps_5",
+                  "formula": "velocity_bps_5(token) - ret_btc_bps_5",
+                  "unit": "bps",
+                  "window_candles": 5,
+                  "requires": "velocidad del token y velocidad de BTC conocidas en la misma fila"
+                }
+              ],
+              "supported": [
+                "ret_btc_bps_5",
+                "ret_diff_bps_5"
+              ],
+              "labels": {
+                "ret_diff_bps_5": "diferencia de retornos"
+              },
+              "series": [
+                {
+                  "open_time_ms": 1793187060000,
+                  "available_at_ms": 1793187120000,
+                  "values": {},
+                  "unknown": {
+                    "ret_btc_bps_5": "BTC_INSUFICIENT_CANDLES",
+                    "ret_diff_bps_5": "INSUFICIENT_CANDLES"
+                  }
+                },
+                {
+                  "open_time_ms": 1793187120000,
+                  "available_at_ms": 1793187180000,
+                  "values": {},
+                  "unknown": {
+                    "ret_btc_bps_5": "BTC_INSUFICIENT_CANDLES",
+                    "ret_diff_bps_5": "INSUFICIENT_CANDLES"
+                  }
+                },
+                {
+                  "open_time_ms": 1793187180000,
+                  "available_at_ms": 1793187240000,
+                  "values": {},
+                  "unknown": {
+                    "ret_btc_bps_5": "BTC_INSUFICIENT_CANDLES",
+                    "ret_diff_bps_5": "INSUFICIENT_CANDLES"
+                  }
+                },
+                {
+                  "open_time_ms": 1793187240000,
+                  "available_at_ms": 1793187300000,
+                  "values": {},
+                  "unknown": {
+                    "ret_btc_bps_5": "BTC_INSUFICIENT_CANDLES",
+                    "ret_diff_bps_5": "INSUFICIENT_CANDLES"
+                  }
+                },
+                {
+                  "open_time_ms": 1793187300000,
+                  "available_at_ms": 1793187360000,
+                  "values": {
+                    "ret_btc_bps_5": 0.0,
+                    "ret_diff_bps_5": 0.0
+                  },
+                  "unknown": {}
+                },
+                {
+                  "open_time_ms": 1793187360000,
+                  "available_at_ms": 1793187420000,
+                  "values": {
+                    "ret_btc_bps_5": 0.0,
+                    "ret_diff_bps_5": 0.0
+                  },
+                  "unknown": {}
+                },
+                {
+                  "open_time_ms": 1793187420000,
+                  "available_at_ms": 1793187480000,
+                  "values": {
+                    "ret_btc_bps_5": 0.0,
+                    "ret_diff_bps_5": 0.0
+                  },
+                  "unknown": {}
+                },
+                {
+                  "open_time_ms": 1793187480000,
+                  "available_at_ms": 1793187540000,
+                  "values": {
+                    "ret_btc_bps_5": 0.0,
+                    "ret_diff_bps_5": 0.0
+                  },
+                  "unknown": {}
+                },
+                {
+                  "open_time_ms": 1793187540000,
+                  "available_at_ms": 1793187600000,
+                  "values": {
+                    "ret_btc_bps_5": 0.0,
+                    "ret_diff_bps_5": 0.0
+                  },
+                  "unknown": {}
+                },
+                {
+                  "open_time_ms": 1793187600000,
+                  "available_at_ms": 1793187660000,
+                  "values": {
+                    "ret_btc_bps_5": 0.0,
+                    "ret_diff_bps_5": 0.0
+                  },
+                  "unknown": {}
+                },
+                {
+                  "open_time_ms": 1793187660000,
+                  "available_at_ms": 1793187720000,
+                  "values": {
+                    "ret_btc_bps_5": 0.0,
+                    "ret_diff_bps_5": 0.0
+                  },
+                  "unknown": {}
+                },
+                {
+                  "open_time_ms": 1793187720000,
+                  "available_at_ms": 1793187780000,
+                  "values": {
+                    "ret_btc_bps_5": 0.0,
+                    "ret_diff_bps_5": 0.0
+                  },
+                  "unknown": {}
+                },
+                {
+                  "open_time_ms": 1793187780000,
+                  "available_at_ms": 1793187840000,
+                  "values": {
+                    "ret_btc_bps_5": 0.0,
+                    "ret_diff_bps_5": 0.0
+                  },
+                  "unknown": {}
+                },
+                {
+                  "open_time_ms": 1793187840000,
+                  "available_at_ms": 1793187900000,
+                  "values": {
+                    "ret_btc_bps_5": 0.0,
+                    "ret_diff_bps_5": 0.0
+                  },
+                  "unknown": {}
+                },
+                {
+                  "open_time_ms": 1793187900000,
+                  "available_at_ms": 1793187960000,
+                  "values": {
+                    "ret_btc_bps_5": 0.0,
+                    "ret_diff_bps_5": 0.0
+                  },
+                  "unknown": {}
+                },
+                {
+                  "open_time_ms": 1793187960000,
+                  "available_at_ms": 1793188020000,
+                  "values": {
+                    "ret_btc_bps_5": 0.0,
+                    "ret_diff_bps_5": 0.0
+                  },
+                  "unknown": {}
+                },
+                {
+                  "open_time_ms": 1793188020000,
+                  "available_at_ms": 1793188080000,
+                  "values": {
+                    "ret_btc_bps_5": 0.0,
+                    "ret_diff_bps_5": 0.0
+                  },
+                  "unknown": {}
+                },
+                {
+                  "open_time_ms": 1793188080000,
+                  "available_at_ms": 1793188140000,
+                  "values": {
+                    "ret_btc_bps_5": 0.0,
+                    "ret_diff_bps_5": 0.0
+                  },
+                  "unknown": {}
+                },
+                {
+                  "open_time_ms": 1793188140000,
+                  "available_at_ms": 1793188200000,
+                  "values": {
+                    "ret_btc_bps_5": 0.0,
+                    "ret_diff_bps_5": 0.0
+                  },
+                  "unknown": {}
+                },
+                {
+                  "open_time_ms": 1793188200000,
+                  "available_at_ms": 1793188260000,
+                  "values": {
+                    "ret_btc_bps_5": 0.0,
+                    "ret_diff_bps_5": 0.0
+                  },
+                  "unknown": {}
+                },
+                {
+                  "open_time_ms": 1793188260000,
+                  "available_at_ms": 1793188320000,
+                  "values": {
+                    "ret_btc_bps_5": 0.0,
+                    "ret_diff_bps_5": 0.0
+                  },
+                  "unknown": {}
+                },
+                {
+                  "open_time_ms": 1793188320000,
+                  "available_at_ms": 1793188380000,
+                  "values": {
+                    "ret_btc_bps_5": 0.0,
+                    "ret_diff_bps_5": 0.0
+                  },
+                  "unknown": {}
+                },
+                {
+                  "open_time_ms": 1793188380000,
+                  "available_at_ms": 1793188440000,
+                  "values": {
+                    "ret_btc_bps_5": 0.0,
+                    "ret_diff_bps_5": 0.0
+                  },
+                  "unknown": {}
+                },
+                {
+                  "open_time_ms": 1793188440000,
+                  "available_at_ms": 1793188500000,
+                  "values": {
+                    "ret_btc_bps_5": 0.0,
+                    "ret_diff_bps_5": 0.0
+                  },
+                  "unknown": {}
+                },
+                {
+                  "open_time_ms": 1793188500000,
+                  "available_at_ms": 1793188560000,
+                  "values": {
+                    "ret_btc_bps_5": 0.0,
+                    "ret_diff_bps_5": 0.0
+                  },
+                  "unknown": {}
+                },
+                {
+                  "open_time_ms": 1793188560000,
+                  "available_at_ms": 1793188620000,
+                  "values": {
+                    "ret_btc_bps_5": 0.0,
+                    "ret_diff_bps_5": 0.0
+                  },
+                  "unknown": {}
+                },
+                {
+                  "open_time_ms": 1793188620000,
+                  "available_at_ms": 1793188680000,
+                  "values": {
+                    "ret_btc_bps_5": 0.0,
+                    "ret_diff_bps_5": 0.0
+                  },
+                  "unknown": {}
+                },
+                {
+                  "open_time_ms": 1793188680000,
+                  "available_at_ms": 1793188740000,
+                  "values": {
+                    "ret_btc_bps_5": 0.0,
+                    "ret_diff_bps_5": 0.0
+                  },
+                  "unknown": {}
+                },
+                {
+                  "open_time_ms": 1793188740000,
+                  "available_at_ms": 1793188800000,
+                  "values": {
+                    "ret_btc_bps_5": 0.0,
+                    "ret_diff_bps_5": 0.0
+                  },
+                  "unknown": {}
+                },
+                {
+                  "open_time_ms": 1793188800000,
+                  "available_at_ms": 1793188860000,
+                  "values": {
+                    "ret_btc_bps_5": 0.0,
+                    "ret_diff_bps_5": 0.0
+                  },
+                  "unknown": {}
+                },
+                {
+                  "open_time_ms": 1793188860000,
+                  "available_at_ms": 1793188920000,
+                  "values": {
+                    "ret_btc_bps_5": 0.0,
+                    "ret_diff_bps_5": 0.0
+                  },
+                  "unknown": {}
+                },
+                {
+                  "open_time_ms": 1793188920000,
+                  "available_at_ms": 1793188980000,
+                  "values": {
+                    "ret_btc_bps_5": 0.0,
+                    "ret_diff_bps_5": 0.0
+                  },
+                  "unknown": {}
+                },
+                {
+                  "open_time_ms": 1793188980000,
+                  "available_at_ms": 1793189040000,
+                  "values": {
+                    "ret_btc_bps_5": 0.0,
+                    "ret_diff_bps_5": 0.0
+                  },
+                  "unknown": {}
+                },
+                {
+                  "open_time_ms": 1793189040000,
+                  "available_at_ms": 1793189100000,
+                  "values": {
+                    "ret_btc_bps_5": 0.0,
+                    "ret_diff_bps_5": 0.0
+                  },
+                  "unknown": {}
+                },
+                {
+                  "open_time_ms": 1793189100000,
+                  "available_at_ms": 1793189160000,
+                  "values": {
+                    "ret_btc_bps_5": 0.0,
+                    "ret_diff_bps_5": 0.0
+                  },
+                  "unknown": {}
+                },
+                {
+                  "open_time_ms": 1793189160000,
+                  "available_at_ms": 1793189220000,
+                  "values": {
+                    "ret_btc_bps_5": 0.0,
+                    "ret_diff_bps_5": 0.0
+                  },
+                  "unknown": {}
+                },
+                {
+                  "open_time_ms": 1793189220000,
+                  "available_at_ms": 1793189280000,
+                  "values": {
+                    "ret_btc_bps_5": 0.0,
+                    "ret_diff_bps_5": 0.0
+                  },
+                  "unknown": {}
+                },
+                {
+                  "open_time_ms": 1793189280000,
+                  "available_at_ms": 1793189340000,
+                  "values": {
+                    "ret_btc_bps_5": 0.0,
+                    "ret_diff_bps_5": 0.0
+                  },
+                  "unknown": {}
+                },
+                {
+                  "open_time_ms": 1793189340000,
+                  "available_at_ms": 1793189400000,
+                  "values": {
+                    "ret_btc_bps_5": 0.0,
+                    "ret_diff_bps_5": 0.0
+                  },
+                  "unknown": {}
+                },
+                {
+                  "open_time_ms": 1793189400000,
+                  "available_at_ms": 1793189460000,
+                  "values": {
+                    "ret_btc_bps_5": 0.0,
+                    "ret_diff_bps_5": 0.0
+                  },
+                  "unknown": {}
+                },
+                {
+                  "open_time_ms": 1793189460000,
+                  "available_at_ms": 1793189520000,
+                  "values": {
+                    "ret_btc_bps_5": 0.0,
+                    "ret_diff_bps_5": 0.0
+                  },
+                  "unknown": {}
+                },
+                {
+                  "open_time_ms": 1793189520000,
+                  "available_at_ms": 1793189580000,
+                  "values": {
+                    "ret_btc_bps_5": 0.0,
+                    "ret_diff_bps_5": 0.0
+                  },
+                  "unknown": {}
+                },
+                {
+                  "open_time_ms": 1793189580000,
+                  "available_at_ms": 1793189640000,
+                  "values": {
+                    "ret_btc_bps_5": 0.0,
+                    "ret_diff_bps_5": 0.0
+                  },
+                  "unknown": {}
+                },
+                {
+                  "open_time_ms": 1793189640000,
+                  "available_at_ms": 1793189700000,
+                  "values": {
+                    "ret_btc_bps_5": 0.0,
+                    "ret_diff_bps_5": 0.0
+                  },
+                  "unknown": {}
+                },
+                {
+                  "open_time_ms": 1793189700000,
+                  "available_at_ms": 1793189760000,
+                  "values": {
+                    "ret_btc_bps_5": 0.0,
+                    "ret_diff_bps_5": 0.0
+                  },
+                  "unknown": {}
+                },
+                {
+                  "open_time_ms": 1793189760000,
+                  "available_at_ms": 1793189820000,
+                  "values": {
+                    "ret_btc_bps_5": 0.0,
+                    "ret_diff_bps_5": 0.0
+                  },
+                  "unknown": {}
+                },
+                {
+                  "open_time_ms": 1793189820000,
+                  "available_at_ms": 1793189880000,
+                  "values": {
+                    "ret_btc_bps_5": 0.0,
+                    "ret_diff_bps_5": 0.0
+                  },
+                  "unknown": {}
+                },
+                {
+                  "open_time_ms": 1793189880000,
+                  "available_at_ms": 1793189940000,
+                  "values": {
+                    "ret_btc_bps_5": 0.0,
+                    "ret_diff_bps_5": 0.0
+                  },
+                  "unknown": {}
+                },
+                {
+                  "open_time_ms": 1793189940000,
+                  "available_at_ms": 1793190000000,
+                  "values": {
+                    "ret_btc_bps_5": 0.0,
+                    "ret_diff_bps_5": 0.0
+                  },
+                  "unknown": {}
+                },
+                {
+                  "open_time_ms": 1793190000000,
+                  "available_at_ms": 1793190060000,
+                  "values": {
+                    "ret_btc_bps_5": 0.0,
+                    "ret_diff_bps_5": 0.0
+                  },
+                  "unknown": {}
+                },
+                {
+                  "open_time_ms": 1793190060000,
+                  "available_at_ms": 1793190120000,
+                  "values": {
+                    "ret_btc_bps_5": 0.0,
+                    "ret_diff_bps_5": 0.0
+                  },
+                  "unknown": {}
+                },
+                {
+                  "open_time_ms": 1793190120000,
+                  "available_at_ms": 1793190180000,
+                  "values": {
+                    "ret_btc_bps_5": 0.0,
+                    "ret_diff_bps_5": 0.0
+                  },
+                  "unknown": {}
+                },
+                {
+                  "open_time_ms": 1793190180000,
+                  "available_at_ms": 1793190240000,
+                  "values": {
+                    "ret_btc_bps_5": 0.0,
+                    "ret_diff_bps_5": 0.0
+                  },
+                  "unknown": {}
+                },
+                {
+                  "open_time_ms": 1793190240000,
+                  "available_at_ms": 1793190300000,
+                  "values": {
+                    "ret_btc_bps_5": 0.0,
+                    "ret_diff_bps_5": 0.0
+                  },
+                  "unknown": {}
+                },
+                {
+                  "open_time_ms": 1793190300000,
+                  "available_at_ms": 1793190360000,
+                  "values": {
+                    "ret_btc_bps_5": 0.0,
+                    "ret_diff_bps_5": 0.0
+                  },
+                  "unknown": {}
+                },
+                {
+                  "open_time_ms": 1793190360000,
+                  "available_at_ms": 1793190420000,
+                  "values": {
+                    "ret_btc_bps_5": 0.0,
+                    "ret_diff_bps_5": 0.0
+                  },
+                  "unknown": {}
+                },
+                {
+                  "open_time_ms": 1793190480000,
+                  "available_at_ms": 1793190540000,
+                  "values": {},
+                  "unknown": {
+                    "ret_btc_bps_5": "BTC_GAP_IN_WINDOW",
+                    "ret_diff_bps_5": "GAP_IN_WINDOW"
+                  }
+                },
+                {
+                  "open_time_ms": 1793190540000,
+                  "available_at_ms": 1793190600000,
+                  "values": {},
+                  "unknown": {
+                    "ret_btc_bps_5": "BTC_GAP_IN_WINDOW",
+                    "ret_diff_bps_5": "GAP_IN_WINDOW"
+                  }
+                },
+                {
+                  "open_time_ms": 1793190600000,
+                  "available_at_ms": 1793190660000,
+                  "values": {},
+                  "unknown": {
+                    "ret_btc_bps_5": "BTC_GAP_IN_WINDOW",
+                    "ret_diff_bps_5": "GAP_IN_WINDOW"
+                  }
+                }
+              ],
+              "normalized": {
+                "base_open_time_ms": 1793187060000,
+                "unit": "percent_from_base",
+                "series": [
+                  {
+                    "open_time_ms": 1793187060000,
+                    "token_pct": 0.0,
+                    "btc_pct": 0.0
+                  },
+                  {
+                    "open_time_ms": 1793187120000,
+                    "token_pct": 0.0,
+                    "btc_pct": 0.0
+                  },
+                  {
+                    "open_time_ms": 1793187180000,
+                    "token_pct": 0.0,
+                    "btc_pct": 0.0
+                  },
+                  {
+                    "open_time_ms": 1793187240000,
+                    "token_pct": 0.0,
+                    "btc_pct": 0.0
+                  },
+                  {
+                    "open_time_ms": 1793187300000,
+                    "token_pct": 0.0,
+                    "btc_pct": 0.0
+                  },
+                  {
+                    "open_time_ms": 1793187360000,
+                    "token_pct": 0.0,
+                    "btc_pct": 0.0
+                  },
+                  {
+                    "open_time_ms": 1793187420000,
+                    "token_pct": 0.0,
+                    "btc_pct": 0.0
+                  },
+                  {
+                    "open_time_ms": 1793187480000,
+                    "token_pct": 0.0,
+                    "btc_pct": 0.0
+                  },
+                  {
+                    "open_time_ms": 1793187540000,
+                    "token_pct": 0.0,
+                    "btc_pct": 0.0
+                  },
+                  {
+                    "open_time_ms": 1793187600000,
+                    "token_pct": 0.0,
+                    "btc_pct": 0.0
+                  },
+                  {
+                    "open_time_ms": 1793187660000,
+                    "token_pct": 0.0,
+                    "btc_pct": 0.0
+                  },
+                  {
+                    "open_time_ms": 1793187720000,
+                    "token_pct": 0.0,
+                    "btc_pct": 0.0
+                  },
+                  {
+                    "open_time_ms": 1793187780000,
+                    "token_pct": 0.0,
+                    "btc_pct": 0.0
+                  },
+                  {
+                    "open_time_ms": 1793187840000,
+                    "token_pct": 0.0,
+                    "btc_pct": 0.0
+                  },
+                  {
+                    "open_time_ms": 1793187900000,
+                    "token_pct": 0.0,
+                    "btc_pct": 0.0
+                  },
+                  {
+                    "open_time_ms": 1793187960000,
+                    "token_pct": 0.0,
+                    "btc_pct": 0.0
+                  },
+                  {
+                    "open_time_ms": 1793188020000,
+                    "token_pct": 0.0,
+                    "btc_pct": 0.0
+                  },
+                  {
+                    "open_time_ms": 1793188080000,
+                    "token_pct": 0.0,
+                    "btc_pct": 0.0
+                  },
+                  {
+                    "open_time_ms": 1793188140000,
+                    "token_pct": 0.0,
+                    "btc_pct": 0.0
+                  },
+                  {
+                    "open_time_ms": 1793188200000,
+                    "token_pct": 0.0,
+                    "btc_pct": 0.0
+                  },
+                  {
+                    "open_time_ms": 1793188260000,
+                    "token_pct": 0.0,
+                    "btc_pct": 0.0
+                  },
+                  {
+                    "open_time_ms": 1793188320000,
+                    "token_pct": 0.0,
+                    "btc_pct": 0.0
+                  },
+                  {
+                    "open_time_ms": 1793188380000,
+                    "token_pct": 0.0,
+                    "btc_pct": 0.0
+                  },
+                  {
+                    "open_time_ms": 1793188440000,
+                    "token_pct": 0.0,
+                    "btc_pct": 0.0
+                  },
+                  {
+                    "open_time_ms": 1793188500000,
+                    "token_pct": 0.0,
+                    "btc_pct": 0.0
+                  },
+                  {
+                    "open_time_ms": 1793188560000,
+                    "token_pct": 0.0,
+                    "btc_pct": 0.0
+                  },
+                  {
+                    "open_time_ms": 1793188620000,
+                    "token_pct": 0.0,
+                    "btc_pct": 0.0
+                  },
+                  {
+                    "open_time_ms": 1793188680000,
+                    "token_pct": 0.0,
+                    "btc_pct": 0.0
+                  },
+                  {
+                    "open_time_ms": 1793188740000,
+                    "token_pct": 0.0,
+                    "btc_pct": 0.0
+                  },
+                  {
+                    "open_time_ms": 1793188800000,
+                    "token_pct": 0.0,
+                    "btc_pct": 0.0
+                  },
+                  {
+                    "open_time_ms": 1793188860000,
+                    "token_pct": 0.0,
+                    "btc_pct": 0.0
+                  },
+                  {
+                    "open_time_ms": 1793188920000,
+                    "token_pct": 0.0,
+                    "btc_pct": 0.0
+                  },
+                  {
+                    "open_time_ms": 1793188980000,
+                    "token_pct": 0.0,
+                    "btc_pct": 0.0
+                  },
+                  {
+                    "open_time_ms": 1793189040000,
+                    "token_pct": 0.0,
+                    "btc_pct": 0.0
+                  },
+                  {
+                    "open_time_ms": 1793189100000,
+                    "token_pct": 0.0,
+                    "btc_pct": 0.0
+                  },
+                  {
+                    "open_time_ms": 1793189160000,
+                    "token_pct": 0.0,
+                    "btc_pct": 0.0
+                  },
+                  {
+                    "open_time_ms": 1793189220000,
+                    "token_pct": 0.0,
+                    "btc_pct": 0.0
+                  },
+                  {
+                    "open_time_ms": 1793189280000,
+                    "token_pct": 0.0,
+                    "btc_pct": 0.0
+                  },
+                  {
+                    "open_time_ms": 1793189340000,
+                    "token_pct": 0.0,
+                    "btc_pct": 0.0
+                  },
+                  {
+                    "open_time_ms": 1793189400000,
+                    "token_pct": 0.0,
+                    "btc_pct": 0.0
+                  },
+                  {
+                    "open_time_ms": 1793189460000,
+                    "token_pct": 0.0,
+                    "btc_pct": 0.0
+                  },
+                  {
+                    "open_time_ms": 1793189520000,
+                    "token_pct": 0.0,
+                    "btc_pct": 0.0
+                  },
+                  {
+                    "open_time_ms": 1793189580000,
+                    "token_pct": 0.0,
+                    "btc_pct": 0.0
+                  },
+                  {
+                    "open_time_ms": 1793189640000,
+                    "token_pct": 0.0,
+                    "btc_pct": 0.0
+                  },
+                  {
+                    "open_time_ms": 1793189700000,
+                    "token_pct": 0.0,
+                    "btc_pct": 0.0
+                  },
+                  {
+                    "open_time_ms": 1793189760000,
+                    "token_pct": 0.0,
+                    "btc_pct": 0.0
+                  },
+                  {
+                    "open_time_ms": 1793189820000,
+                    "token_pct": 0.0,
+                    "btc_pct": 0.0
+                  },
+                  {
+                    "open_time_ms": 1793189880000,
+                    "token_pct": 0.0,
+                    "btc_pct": 0.0
+                  },
+                  {
+                    "open_time_ms": 1793189940000,
+                    "token_pct": 0.0,
+                    "btc_pct": 0.0
+                  },
+                  {
+                    "open_time_ms": 1793190000000,
+                    "token_pct": 0.0,
+                    "btc_pct": 0.0
+                  },
+                  {
+                    "open_time_ms": 1793190060000,
+                    "token_pct": 0.0,
+                    "btc_pct": 0.0
+                  },
+                  {
+                    "open_time_ms": 1793190120000,
+                    "token_pct": 0.0,
+                    "btc_pct": 0.0
+                  },
+                  {
+                    "open_time_ms": 1793190180000,
+                    "token_pct": 0.0,
+                    "btc_pct": 0.0
+                  },
+                  {
+                    "open_time_ms": 1793190240000,
+                    "token_pct": 0.0,
+                    "btc_pct": 0.0
+                  },
+                  {
+                    "open_time_ms": 1793190300000,
+                    "token_pct": 0.0,
+                    "btc_pct": 0.0
+                  },
+                  {
+                    "open_time_ms": 1793190360000,
+                    "token_pct": 0.0,
+                    "btc_pct": 0.0
+                  },
+                  {
+                    "open_time_ms": 1793190540000,
+                    "token_pct": 0.1905,
+                    "btc_pct": 0.0
+                  },
+                  {
+                    "open_time_ms": 1793190600000,
+                    "token_pct": 0.2381,
+                    "btc_pct": 0.0
+                  }
+                ]
+              },
+              "generated_at_ms": 1793190660854
+            },
+            "indicators": {
+              "contract_version": "market-indicators/v1",
+              "availability": "CLOSED_CANDLES_ONLY",
+              "provisional_policy": {
+                "included": false,
+                "reason": "PROVISIONAL_EXCLUDED"
+              },
+              "computed_over": "payload_window",
+              "identity": {
+                "symbol": "MINAUSDT",
+                "interval": "1m",
+                "interval_ms": 60000,
+                "source": "ws_kline"
+              },
+              "definitions": [
+                {
+                  "name": "log_return_bps",
+                  "formula": "10000 * ln(close_t / close_(t-1))",
+                  "unit": "bps",
+                  "window_candles": 1,
+                  "requires": "previous grid candle closed and present"
+                },
+                {
+                  "name": "velocity_bps_5",
+                  "formula": "10000 * ln(close_t / close_(t-4))",
+                  "unit": "bps",
+                  "window_candles": 5,
+                  "requires": "contiguous run of 5 closed grid candles ending at t"
+                },
+                {
+                  "name": "rel_volume_10",
+                  "formula": "base_volume_t / mean(base_volume t-9..t-1)",
+                  "unit": "ratio",
+                  "window_candles": 10,
+                  "requires": "current base_volume and contiguous baseline of 10 closed candles with base_volume"
+                },
+                {
+                  "name": "vwap_typical_10",
+                  "formula": "sum(((h+l+c)/3 * v)) / sum(v) over t-9..t",
+                  "unit": "price (quote)",
+                  "window_candles": 10,
+                  "requires": "contiguous run of 10 closed candles with base_volume; approximation weighted by typical price, NOT the traded VWAP of market_structure.vwap_record"
+                },
+                {
+                  "name": "vwap_dev_bps_10",
+                  "formula": "10000 * (close_t / vwap_typical_10 - 1)",
+                  "unit": "bps",
+                  "window_candles": 10,
+                  "requires": "vwap_typical_10 of the same candle"
+                }
+              ],
+              "supported": [
+                "log_return_bps",
+                "velocity_bps_5",
+                "rel_volume_10",
+                "vwap_dev_bps_10"
+              ],
+              "declined": [
+                {
+                  "name": "flow_delta",
+                  "reason": "AGGTRADES_SOURCE_REQUIRED"
+                },
+                {
+                  "name": "spread_bps",
+                  "reason": "ORDER_BOOK_SOURCE_REQUIRED"
+                },
+                {
+                  "name": "depth",
+                  "reason": "ORDER_BOOK_SOURCE_REQUIRED"
+                },
+                {
+                  "name": "open_interest",
+                  "reason": "OI_REST_POLL_REQUIRED"
+                },
+                {
+                  "name": "btc_context",
+                  "reason": "SECOND_SYMBOL_KLINES_REQUIRED"
+                }
+              ],
+              "series": [
+                {
+                  "open_time_ms": 1793187060000,
+                  "available_at_ms": 1793187120000,
+                  "values": {},
+                  "unknown": {
+                    "log_return_bps": "NO_PREVIOUS_CANDLE",
+                    "velocity_bps_5": "INSUFICIENT_CANDLES",
+                    "rel_volume_10": "INSUFICIENT_CANDLES",
+                    "vwap_typical_10": "INSUFICIENT_CANDLES",
+                    "vwap_dev_bps_10": "INSUFICIENT_CANDLES"
+                  }
+                },
+                {
+                  "open_time_ms": 1793187120000,
+                  "available_at_ms": 1793187180000,
+                  "values": {
+                    "log_return_bps": 0.0
+                  },
+                  "unknown": {
+                    "velocity_bps_5": "INSUFICIENT_CANDLES",
+                    "rel_volume_10": "INSUFICIENT_CANDLES",
+                    "vwap_typical_10": "INSUFICIENT_CANDLES",
+                    "vwap_dev_bps_10": "INSUFICIENT_CANDLES"
+                  }
+                },
+                {
+                  "open_time_ms": 1793187180000,
+                  "available_at_ms": 1793187240000,
+                  "values": {
+                    "log_return_bps": 0.0
+                  },
+                  "unknown": {
+                    "velocity_bps_5": "INSUFICIENT_CANDLES",
+                    "rel_volume_10": "INSUFICIENT_CANDLES",
+                    "vwap_typical_10": "INSUFICIENT_CANDLES",
+                    "vwap_dev_bps_10": "INSUFICIENT_CANDLES"
+                  }
+                },
+                {
+                  "open_time_ms": 1793187240000,
+                  "available_at_ms": 1793187300000,
+                  "values": {
+                    "log_return_bps": 0.0
+                  },
+                  "unknown": {
+                    "velocity_bps_5": "INSUFICIENT_CANDLES",
+                    "rel_volume_10": "INSUFICIENT_CANDLES",
+                    "vwap_typical_10": "INSUFICIENT_CANDLES",
+                    "vwap_dev_bps_10": "INSUFICIENT_CANDLES"
+                  }
+                },
+                {
+                  "open_time_ms": 1793187300000,
+                  "available_at_ms": 1793187360000,
+                  "values": {
+                    "log_return_bps": 0.0,
+                    "velocity_bps_5": 0.0
+                  },
+                  "unknown": {
+                    "rel_volume_10": "INSUFICIENT_CANDLES",
+                    "vwap_typical_10": "INSUFICIENT_CANDLES",
+                    "vwap_dev_bps_10": "INSUFICIENT_CANDLES"
+                  }
+                },
+                {
+                  "open_time_ms": 1793187360000,
+                  "available_at_ms": 1793187420000,
+                  "values": {
+                    "log_return_bps": 0.0,
+                    "velocity_bps_5": 0.0
+                  },
+                  "unknown": {
+                    "rel_volume_10": "INSUFICIENT_CANDLES",
+                    "vwap_typical_10": "INSUFICIENT_CANDLES",
+                    "vwap_dev_bps_10": "INSUFICIENT_CANDLES"
+                  }
+                },
+                {
+                  "open_time_ms": 1793187420000,
+                  "available_at_ms": 1793187480000,
+                  "values": {
+                    "log_return_bps": 0.0,
+                    "velocity_bps_5": 0.0
+                  },
+                  "unknown": {
+                    "rel_volume_10": "INSUFICIENT_CANDLES",
+                    "vwap_typical_10": "INSUFICIENT_CANDLES",
+                    "vwap_dev_bps_10": "INSUFICIENT_CANDLES"
+                  }
+                },
+                {
+                  "open_time_ms": 1793187480000,
+                  "available_at_ms": 1793187540000,
+                  "values": {
+                    "log_return_bps": 0.0,
+                    "velocity_bps_5": 0.0
+                  },
+                  "unknown": {
+                    "rel_volume_10": "INSUFICIENT_CANDLES",
+                    "vwap_typical_10": "INSUFICIENT_CANDLES",
+                    "vwap_dev_bps_10": "INSUFICIENT_CANDLES"
+                  }
+                },
+                {
+                  "open_time_ms": 1793187540000,
+                  "available_at_ms": 1793187600000,
+                  "values": {
+                    "log_return_bps": 0.0,
+                    "velocity_bps_5": 0.0
+                  },
+                  "unknown": {
+                    "rel_volume_10": "INSUFICIENT_CANDLES",
+                    "vwap_typical_10": "INSUFICIENT_CANDLES",
+                    "vwap_dev_bps_10": "INSUFICIENT_CANDLES"
+                  }
+                },
+                {
+                  "open_time_ms": 1793187600000,
+                  "available_at_ms": 1793187660000,
+                  "values": {
+                    "log_return_bps": 0.0,
+                    "velocity_bps_5": 0.0,
+                    "vwap_typical_10": 1.05,
+                    "vwap_dev_bps_10": 0.0
+                  },
+                  "unknown": {
+                    "rel_volume_10": "INSUFICIENT_CANDLES"
+                  }
+                },
+                {
+                  "open_time_ms": 1793187660000,
+                  "available_at_ms": 1793187720000,
+                  "values": {
+                    "log_return_bps": 0.0,
+                    "velocity_bps_5": 0.0,
+                    "rel_volume_10": 1.0,
+                    "vwap_typical_10": 1.05,
+                    "vwap_dev_bps_10": 0.0
+                  },
+                  "unknown": {}
+                },
+                {
+                  "open_time_ms": 1793187720000,
+                  "available_at_ms": 1793187780000,
+                  "values": {
+                    "log_return_bps": 0.0,
+                    "velocity_bps_5": 0.0,
+                    "rel_volume_10": 1.0,
+                    "vwap_typical_10": 1.05,
+                    "vwap_dev_bps_10": 0.0
+                  },
+                  "unknown": {}
+                },
+                {
+                  "open_time_ms": 1793187780000,
+                  "available_at_ms": 1793187840000,
+                  "values": {
+                    "log_return_bps": 0.0,
+                    "velocity_bps_5": 0.0,
+                    "rel_volume_10": 1.0,
+                    "vwap_typical_10": 1.05,
+                    "vwap_dev_bps_10": 0.0
+                  },
+                  "unknown": {}
+                },
+                {
+                  "open_time_ms": 1793187840000,
+                  "available_at_ms": 1793187900000,
+                  "values": {
+                    "log_return_bps": 0.0,
+                    "velocity_bps_5": 0.0,
+                    "rel_volume_10": 1.0,
+                    "vwap_typical_10": 1.05,
+                    "vwap_dev_bps_10": 0.0
+                  },
+                  "unknown": {}
+                },
+                {
+                  "open_time_ms": 1793187900000,
+                  "available_at_ms": 1793187960000,
+                  "values": {
+                    "log_return_bps": 0.0,
+                    "velocity_bps_5": 0.0,
+                    "rel_volume_10": 1.0,
+                    "vwap_typical_10": 1.05,
+                    "vwap_dev_bps_10": 0.0
+                  },
+                  "unknown": {}
+                },
+                {
+                  "open_time_ms": 1793187960000,
+                  "available_at_ms": 1793188020000,
+                  "values": {
+                    "log_return_bps": 0.0,
+                    "velocity_bps_5": 0.0,
+                    "rel_volume_10": 1.0,
+                    "vwap_typical_10": 1.05,
+                    "vwap_dev_bps_10": 0.0
+                  },
+                  "unknown": {}
+                },
+                {
+                  "open_time_ms": 1793188020000,
+                  "available_at_ms": 1793188080000,
+                  "values": {
+                    "log_return_bps": 0.0,
+                    "velocity_bps_5": 0.0,
+                    "rel_volume_10": 1.0,
+                    "vwap_typical_10": 1.05,
+                    "vwap_dev_bps_10": 0.0
+                  },
+                  "unknown": {}
+                },
+                {
+                  "open_time_ms": 1793188080000,
+                  "available_at_ms": 1793188140000,
+                  "values": {
+                    "log_return_bps": 0.0,
+                    "velocity_bps_5": 0.0,
+                    "rel_volume_10": 1.0,
+                    "vwap_typical_10": 1.05,
+                    "vwap_dev_bps_10": 0.0
+                  },
+                  "unknown": {}
+                },
+                {
+                  "open_time_ms": 1793188140000,
+                  "available_at_ms": 1793188200000,
+                  "values": {
+                    "log_return_bps": 0.0,
+                    "velocity_bps_5": 0.0,
+                    "rel_volume_10": 1.0,
+                    "vwap_typical_10": 1.05,
+                    "vwap_dev_bps_10": 0.0
+                  },
+                  "unknown": {}
+                },
+                {
+                  "open_time_ms": 1793188200000,
+                  "available_at_ms": 1793188260000,
+                  "values": {
+                    "log_return_bps": 0.0,
+                    "velocity_bps_5": 0.0,
+                    "rel_volume_10": 1.0,
+                    "vwap_typical_10": 1.05,
+                    "vwap_dev_bps_10": 0.0
+                  },
+                  "unknown": {}
+                },
+                {
+                  "open_time_ms": 1793188260000,
+                  "available_at_ms": 1793188320000,
+                  "values": {
+                    "log_return_bps": 0.0,
+                    "velocity_bps_5": 0.0,
+                    "rel_volume_10": 1.0,
+                    "vwap_typical_10": 1.05,
+                    "vwap_dev_bps_10": 0.0
+                  },
+                  "unknown": {}
+                },
+                {
+                  "open_time_ms": 1793188320000,
+                  "available_at_ms": 1793188380000,
+                  "values": {
+                    "log_return_bps": 0.0,
+                    "velocity_bps_5": 0.0,
+                    "rel_volume_10": 1.0,
+                    "vwap_typical_10": 1.05,
+                    "vwap_dev_bps_10": 0.0
+                  },
+                  "unknown": {}
+                },
+                {
+                  "open_time_ms": 1793188380000,
+                  "available_at_ms": 1793188440000,
+                  "values": {
+                    "log_return_bps": 0.0,
+                    "velocity_bps_5": 0.0,
+                    "rel_volume_10": 1.0,
+                    "vwap_typical_10": 1.05,
+                    "vwap_dev_bps_10": 0.0
+                  },
+                  "unknown": {}
+                },
+                {
+                  "open_time_ms": 1793188440000,
+                  "available_at_ms": 1793188500000,
+                  "values": {
+                    "log_return_bps": 0.0,
+                    "velocity_bps_5": 0.0,
+                    "rel_volume_10": 1.0,
+                    "vwap_typical_10": 1.05,
+                    "vwap_dev_bps_10": 0.0
+                  },
+                  "unknown": {}
+                },
+                {
+                  "open_time_ms": 1793188500000,
+                  "available_at_ms": 1793188560000,
+                  "values": {
+                    "log_return_bps": 0.0,
+                    "velocity_bps_5": 0.0,
+                    "rel_volume_10": 1.0,
+                    "vwap_typical_10": 1.05,
+                    "vwap_dev_bps_10": 0.0
+                  },
+                  "unknown": {}
+                },
+                {
+                  "open_time_ms": 1793188560000,
+                  "available_at_ms": 1793188620000,
+                  "values": {
+                    "log_return_bps": 0.0,
+                    "velocity_bps_5": 0.0,
+                    "rel_volume_10": 1.0,
+                    "vwap_typical_10": 1.05,
+                    "vwap_dev_bps_10": 0.0
+                  },
+                  "unknown": {}
+                },
+                {
+                  "open_time_ms": 1793188620000,
+                  "available_at_ms": 1793188680000,
+                  "values": {
+                    "log_return_bps": 0.0,
+                    "velocity_bps_5": 0.0,
+                    "rel_volume_10": 1.0,
+                    "vwap_typical_10": 1.05,
+                    "vwap_dev_bps_10": 0.0
+                  },
+                  "unknown": {}
+                },
+                {
+                  "open_time_ms": 1793188680000,
+                  "available_at_ms": 1793188740000,
+                  "values": {
+                    "log_return_bps": 0.0,
+                    "velocity_bps_5": 0.0,
+                    "rel_volume_10": 1.0,
+                    "vwap_typical_10": 1.05,
+                    "vwap_dev_bps_10": 0.0
+                  },
+                  "unknown": {}
+                },
+                {
+                  "open_time_ms": 1793188740000,
+                  "available_at_ms": 1793188800000,
+                  "values": {
+                    "log_return_bps": 0.0,
+                    "velocity_bps_5": 0.0,
+                    "rel_volume_10": 1.0,
+                    "vwap_typical_10": 1.05,
+                    "vwap_dev_bps_10": 0.0
+                  },
+                  "unknown": {}
+                },
+                {
+                  "open_time_ms": 1793188800000,
+                  "available_at_ms": 1793188860000,
+                  "values": {
+                    "log_return_bps": 0.0,
+                    "velocity_bps_5": 0.0,
+                    "rel_volume_10": 1.0,
+                    "vwap_typical_10": 1.05,
+                    "vwap_dev_bps_10": 0.0
+                  },
+                  "unknown": {}
+                },
+                {
+                  "open_time_ms": 1793188860000,
+                  "available_at_ms": 1793188920000,
+                  "values": {
+                    "log_return_bps": 0.0,
+                    "velocity_bps_5": 0.0,
+                    "rel_volume_10": 1.0,
+                    "vwap_typical_10": 1.05,
+                    "vwap_dev_bps_10": 0.0
+                  },
+                  "unknown": {}
+                },
+                {
+                  "open_time_ms": 1793188920000,
+                  "available_at_ms": 1793188980000,
+                  "values": {
+                    "log_return_bps": 0.0,
+                    "velocity_bps_5": 0.0,
+                    "rel_volume_10": 1.0,
+                    "vwap_typical_10": 1.05,
+                    "vwap_dev_bps_10": 0.0
+                  },
+                  "unknown": {}
+                },
+                {
+                  "open_time_ms": 1793188980000,
+                  "available_at_ms": 1793189040000,
+                  "values": {
+                    "log_return_bps": 0.0,
+                    "velocity_bps_5": 0.0,
+                    "rel_volume_10": 1.0,
+                    "vwap_typical_10": 1.05,
+                    "vwap_dev_bps_10": 0.0
+                  },
+                  "unknown": {}
+                },
+                {
+                  "open_time_ms": 1793189040000,
+                  "available_at_ms": 1793189100000,
+                  "values": {
+                    "log_return_bps": 0.0,
+                    "velocity_bps_5": 0.0,
+                    "rel_volume_10": 1.0,
+                    "vwap_typical_10": 1.05,
+                    "vwap_dev_bps_10": 0.0
+                  },
+                  "unknown": {}
+                },
+                {
+                  "open_time_ms": 1793189100000,
+                  "available_at_ms": 1793189160000,
+                  "values": {
+                    "log_return_bps": 0.0,
+                    "velocity_bps_5": 0.0,
+                    "rel_volume_10": 1.0,
+                    "vwap_typical_10": 1.05,
+                    "vwap_dev_bps_10": 0.0
+                  },
+                  "unknown": {}
+                },
+                {
+                  "open_time_ms": 1793189160000,
+                  "available_at_ms": 1793189220000,
+                  "values": {
+                    "log_return_bps": 0.0,
+                    "velocity_bps_5": 0.0,
+                    "rel_volume_10": 1.0,
+                    "vwap_typical_10": 1.05,
+                    "vwap_dev_bps_10": 0.0
+                  },
+                  "unknown": {}
+                },
+                {
+                  "open_time_ms": 1793189220000,
+                  "available_at_ms": 1793189280000,
+                  "values": {
+                    "log_return_bps": 0.0,
+                    "velocity_bps_5": 0.0,
+                    "rel_volume_10": 1.0,
+                    "vwap_typical_10": 1.05,
+                    "vwap_dev_bps_10": 0.0
+                  },
+                  "unknown": {}
+                },
+                {
+                  "open_time_ms": 1793189280000,
+                  "available_at_ms": 1793189340000,
+                  "values": {
+                    "log_return_bps": 0.0,
+                    "velocity_bps_5": 0.0,
+                    "rel_volume_10": 1.0,
+                    "vwap_typical_10": 1.05,
+                    "vwap_dev_bps_10": 0.0
+                  },
+                  "unknown": {}
+                },
+                {
+                  "open_time_ms": 1793189340000,
+                  "available_at_ms": 1793189400000,
+                  "values": {
+                    "log_return_bps": 0.0,
+                    "velocity_bps_5": 0.0,
+                    "rel_volume_10": 1.0,
+                    "vwap_typical_10": 1.05,
+                    "vwap_dev_bps_10": 0.0
+                  },
+                  "unknown": {}
+                },
+                {
+                  "open_time_ms": 1793189400000,
+                  "available_at_ms": 1793189460000,
+                  "values": {
+                    "log_return_bps": 0.0,
+                    "velocity_bps_5": 0.0,
+                    "rel_volume_10": 1.0,
+                    "vwap_typical_10": 1.05,
+                    "vwap_dev_bps_10": 0.0
+                  },
+                  "unknown": {}
+                },
+                {
+                  "open_time_ms": 1793189460000,
+                  "available_at_ms": 1793189520000,
+                  "values": {
+                    "log_return_bps": 0.0,
+                    "velocity_bps_5": 0.0,
+                    "rel_volume_10": 1.0,
+                    "vwap_typical_10": 1.05,
+                    "vwap_dev_bps_10": 0.0
+                  },
+                  "unknown": {}
+                },
+                {
+                  "open_time_ms": 1793189520000,
+                  "available_at_ms": 1793189580000,
+                  "values": {
+                    "log_return_bps": 0.0,
+                    "velocity_bps_5": 0.0,
+                    "rel_volume_10": 1.0,
+                    "vwap_typical_10": 1.05,
+                    "vwap_dev_bps_10": 0.0
+                  },
+                  "unknown": {}
+                },
+                {
+                  "open_time_ms": 1793189580000,
+                  "available_at_ms": 1793189640000,
+                  "values": {
+                    "log_return_bps": 0.0,
+                    "velocity_bps_5": 0.0,
+                    "rel_volume_10": 1.0,
+                    "vwap_typical_10": 1.05,
+                    "vwap_dev_bps_10": 0.0
+                  },
+                  "unknown": {}
+                },
+                {
+                  "open_time_ms": 1793189640000,
+                  "available_at_ms": 1793189700000,
+                  "values": {
+                    "log_return_bps": 0.0,
+                    "velocity_bps_5": 0.0,
+                    "rel_volume_10": 1.0,
+                    "vwap_typical_10": 1.05,
+                    "vwap_dev_bps_10": 0.0
+                  },
+                  "unknown": {}
+                },
+                {
+                  "open_time_ms": 1793189700000,
+                  "available_at_ms": 1793189760000,
+                  "values": {
+                    "log_return_bps": 0.0,
+                    "velocity_bps_5": 0.0,
+                    "rel_volume_10": 1.0,
+                    "vwap_typical_10": 1.05,
+                    "vwap_dev_bps_10": 0.0
+                  },
+                  "unknown": {}
+                },
+                {
+                  "open_time_ms": 1793189760000,
+                  "available_at_ms": 1793189820000,
+                  "values": {
+                    "log_return_bps": 0.0,
+                    "velocity_bps_5": 0.0,
+                    "rel_volume_10": 1.0,
+                    "vwap_typical_10": 1.05,
+                    "vwap_dev_bps_10": 0.0
+                  },
+                  "unknown": {}
+                },
+                {
+                  "open_time_ms": 1793189820000,
+                  "available_at_ms": 1793189880000,
+                  "values": {
+                    "log_return_bps": 0.0,
+                    "velocity_bps_5": 0.0,
+                    "rel_volume_10": 1.0,
+                    "vwap_typical_10": 1.05,
+                    "vwap_dev_bps_10": 0.0
+                  },
+                  "unknown": {}
+                },
+                {
+                  "open_time_ms": 1793189880000,
+                  "available_at_ms": 1793189940000,
+                  "values": {
+                    "log_return_bps": 0.0,
+                    "velocity_bps_5": 0.0,
+                    "rel_volume_10": 1.0,
+                    "vwap_typical_10": 1.05,
+                    "vwap_dev_bps_10": 0.0
+                  },
+                  "unknown": {}
+                },
+                {
+                  "open_time_ms": 1793189940000,
+                  "available_at_ms": 1793190000000,
+                  "values": {
+                    "log_return_bps": 0.0,
+                    "velocity_bps_5": 0.0,
+                    "rel_volume_10": 1.0,
+                    "vwap_typical_10": 1.05,
+                    "vwap_dev_bps_10": 0.0
+                  },
+                  "unknown": {}
+                },
+                {
+                  "open_time_ms": 1793190000000,
+                  "available_at_ms": 1793190060000,
+                  "values": {
+                    "log_return_bps": 0.0,
+                    "velocity_bps_5": 0.0,
+                    "rel_volume_10": 1.0,
+                    "vwap_typical_10": 1.05,
+                    "vwap_dev_bps_10": 0.0
+                  },
+                  "unknown": {}
+                },
+                {
+                  "open_time_ms": 1793190060000,
+                  "available_at_ms": 1793190120000,
+                  "values": {
+                    "log_return_bps": 0.0,
+                    "velocity_bps_5": 0.0,
+                    "rel_volume_10": 1.0,
+                    "vwap_typical_10": 1.05,
+                    "vwap_dev_bps_10": 0.0
+                  },
+                  "unknown": {}
+                },
+                {
+                  "open_time_ms": 1793190120000,
+                  "available_at_ms": 1793190180000,
+                  "values": {
+                    "log_return_bps": 0.0,
+                    "velocity_bps_5": 0.0,
+                    "rel_volume_10": 1.0,
+                    "vwap_typical_10": 1.05,
+                    "vwap_dev_bps_10": 0.0
+                  },
+                  "unknown": {}
+                },
+                {
+                  "open_time_ms": 1793190180000,
+                  "available_at_ms": 1793190240000,
+                  "values": {
+                    "log_return_bps": 0.0,
+                    "velocity_bps_5": 0.0,
+                    "rel_volume_10": 1.0,
+                    "vwap_typical_10": 1.05,
+                    "vwap_dev_bps_10": 0.0
+                  },
+                  "unknown": {}
+                },
+                {
+                  "open_time_ms": 1793190240000,
+                  "available_at_ms": 1793190300000,
+                  "values": {
+                    "log_return_bps": 0.0,
+                    "velocity_bps_5": 0.0,
+                    "rel_volume_10": 1.0,
+                    "vwap_typical_10": 1.05,
+                    "vwap_dev_bps_10": 0.0
+                  },
+                  "unknown": {}
+                },
+                {
+                  "open_time_ms": 1793190300000,
+                  "available_at_ms": 1793190360000,
+                  "values": {
+                    "log_return_bps": 0.0,
+                    "velocity_bps_5": 0.0,
+                    "rel_volume_10": 1.0,
+                    "vwap_typical_10": 1.05,
+                    "vwap_dev_bps_10": 0.0
+                  },
+                  "unknown": {}
+                },
+                {
+                  "open_time_ms": 1793190360000,
+                  "available_at_ms": 1793190420000,
+                  "values": {
+                    "log_return_bps": 0.0,
+                    "velocity_bps_5": 0.0,
+                    "rel_volume_10": 1.0,
+                    "vwap_typical_10": 1.05,
+                    "vwap_dev_bps_10": 0.0
+                  },
+                  "unknown": {}
+                },
+                {
+                  "open_time_ms": 1793190480000,
+                  "available_at_ms": 1793190540000,
+                  "values": {},
+                  "unknown": {
+                    "log_return_bps": "NO_PREVIOUS_CANDLE",
+                    "velocity_bps_5": "GAP_IN_WINDOW",
+                    "rel_volume_10": "GAP_IN_WINDOW",
+                    "vwap_typical_10": "GAP_IN_WINDOW",
+                    "vwap_dev_bps_10": "GAP_IN_WINDOW"
+                  }
+                },
+                {
+                  "open_time_ms": 1793190540000,
+                  "available_at_ms": 1793190600000,
+                  "values": {
+                    "log_return_bps": 23.79254
+                  },
+                  "unknown": {
+                    "velocity_bps_5": "GAP_IN_WINDOW",
+                    "rel_volume_10": "GAP_IN_WINDOW",
+                    "vwap_typical_10": "GAP_IN_WINDOW",
+                    "vwap_dev_bps_10": "GAP_IN_WINDOW"
+                  }
+                },
+                {
+                  "open_time_ms": 1793190600000,
+                  "available_at_ms": 1793190660000,
+                  "values": {
+                    "log_return_bps": 4.751723
+                  },
+                  "unknown": {
+                    "velocity_bps_5": "GAP_IN_WINDOW",
+                    "rel_volume_10": "GAP_IN_WINDOW",
+                    "vwap_typical_10": "GAP_IN_WINDOW",
+                    "vwap_dev_bps_10": "GAP_IN_WINDOW"
+                  }
+                }
+              ],
+              "generated_at_ms": 1793190660851
+            }
+          },
+          "gate": {
+            "evaluated_at_ms": 1793190660856,
+            "clock_ms": 1793190600000,
+            "freshness": {
+              "reason": "END_OF_DATA",
+              "stale_candles": [],
+              "end_of_data": true,
+              "note": "end_of_data en live = sin vela cerrada posterior a\u00fan (espera normal del feed; no bloquea)"
+            },
+            "silence_ms": 60321,
+            "live_silence_ms": 90000.0,
+            "adapter_last_frame_at_ms": 1793190660855,
+            "grid_gap": null,
+            "ok": true,
+            "cause": null
+          }
+        }
+      }
+    },
+    "candles": [
+      {
+        "open_time_ms": 1793190420000,
+        "available_at": 1793190420000,
+        "received_at": 1793190483267,
+        "open": 1.05,
+        "high": 1.050525,
+        "low": 1.0484755,
+        "close": 1.049,
+        "close_time_ms": 1793190479999
+      },
+      {
+        "open_time_ms": 1793190480000,
+        "available_at": 1793190480000,
+        "received_at": 1793190580433,
+        "open": 1.049,
+        "high": 1.05002475,
+        "low": 1.0484755,
+        "close": 1.0495,
+        "close_time_ms": 1793190539999
+      },
+      {
+        "open_time_ms": 1793190540000,
+        "available_at": 1793190540000,
+        "received_at": 1793190600534,
+        "open": 1.0495,
+        "high": 1.052526,
+        "low": 1.0489752500000002,
+        "close": 1.052,
+        "close_time_ms": 1793190599999
+      },
+      {
+        "open_time_ms": 1793190600000,
+        "available_at": 1793190600000,
+        "received_at": 1793190660855,
+        "open": 1.052,
+        "high": 1.0530262499999998,
+        "low": 1.051474,
+        "close": 1.0525,
+        "close_time_ms": 1793190659999
+      },
+      {
+        "open_time_ms": 1793190660000,
+        "available_at": 1793190660000,
+        "received_at": 1793190721125,
+        "open": 1.0525,
+        "high": 1.0530262499999998,
+        "low": 1.029485,
+        "close": 1.03,
+        "close_time_ms": 1793190719999
+      },
+      {
+        "open_time_ms": 1793190720000,
+        "available_at": 1793190720000,
+        "received_at": 1793190781388,
+        "open": 1.03,
+        "high": null,
+        "low": null,
+        "close": null,
+        "close_time_ms": null
+      }
+    ],
+    "context_candles": [
+      {
+        "open_time_ms": 1793189220000,
+        "available_at": null,
+        "received_at": null,
+        "open": 1.05,
+        "high": 1.0505,
+        "low": 1.0495,
+        "close": 1.05,
+        "close_time_ms": 1793189279999
+      },
+      {
+        "open_time_ms": 1793189280000,
+        "available_at": null,
+        "received_at": null,
+        "open": 1.05,
+        "high": 1.0505,
+        "low": 1.0495,
+        "close": 1.05,
+        "close_time_ms": 1793189339999
+      },
+      {
+        "open_time_ms": 1793189340000,
+        "available_at": null,
+        "received_at": null,
+        "open": 1.05,
+        "high": 1.0505,
+        "low": 1.0495,
+        "close": 1.05,
+        "close_time_ms": 1793189399999
+      },
+      {
+        "open_time_ms": 1793189400000,
+        "available_at": null,
+        "received_at": null,
+        "open": 1.05,
+        "high": 1.0505,
+        "low": 1.0495,
+        "close": 1.05,
+        "close_time_ms": 1793189459999
+      },
+      {
+        "open_time_ms": 1793189460000,
+        "available_at": null,
+        "received_at": null,
+        "open": 1.05,
+        "high": 1.0505,
+        "low": 1.0495,
+        "close": 1.05,
+        "close_time_ms": 1793189519999
+      },
+      {
+        "open_time_ms": 1793189520000,
+        "available_at": null,
+        "received_at": null,
+        "open": 1.05,
+        "high": 1.0505,
+        "low": 1.0495,
+        "close": 1.05,
+        "close_time_ms": 1793189579999
+      },
+      {
+        "open_time_ms": 1793189580000,
+        "available_at": null,
+        "received_at": null,
+        "open": 1.05,
+        "high": 1.0505,
+        "low": 1.0495,
+        "close": 1.05,
+        "close_time_ms": 1793189639999
+      },
+      {
+        "open_time_ms": 1793189640000,
+        "available_at": null,
+        "received_at": null,
+        "open": 1.05,
+        "high": 1.0505,
+        "low": 1.0495,
+        "close": 1.05,
+        "close_time_ms": 1793189699999
+      },
+      {
+        "open_time_ms": 1793189700000,
+        "available_at": null,
+        "received_at": null,
+        "open": 1.05,
+        "high": 1.0505,
+        "low": 1.0495,
+        "close": 1.05,
+        "close_time_ms": 1793189759999
+      },
+      {
+        "open_time_ms": 1793189760000,
+        "available_at": null,
+        "received_at": null,
+        "open": 1.05,
+        "high": 1.0505,
+        "low": 1.0495,
+        "close": 1.05,
+        "close_time_ms": 1793189819999
+      },
+      {
+        "open_time_ms": 1793189820000,
+        "available_at": null,
+        "received_at": null,
+        "open": 1.05,
+        "high": 1.0505,
+        "low": 1.0495,
+        "close": 1.05,
+        "close_time_ms": 1793189879999
+      },
+      {
+        "open_time_ms": 1793189880000,
+        "available_at": null,
+        "received_at": null,
+        "open": 1.05,
+        "high": 1.0505,
+        "low": 1.0495,
+        "close": 1.05,
+        "close_time_ms": 1793189939999
+      },
+      {
+        "open_time_ms": 1793189940000,
+        "available_at": null,
+        "received_at": null,
+        "open": 1.05,
+        "high": 1.0505,
+        "low": 1.0495,
+        "close": 1.05,
+        "close_time_ms": 1793189999999
+      },
+      {
+        "open_time_ms": 1793190000000,
+        "available_at": null,
+        "received_at": null,
+        "open": 1.05,
+        "high": 1.0505,
+        "low": 1.0495,
+        "close": 1.05,
+        "close_time_ms": 1793190059999
+      },
+      {
+        "open_time_ms": 1793190060000,
+        "available_at": null,
+        "received_at": null,
+        "open": 1.05,
+        "high": 1.0505,
+        "low": 1.0495,
+        "close": 1.05,
+        "close_time_ms": 1793190119999
+      },
+      {
+        "open_time_ms": 1793190120000,
+        "available_at": null,
+        "received_at": null,
+        "open": 1.05,
+        "high": 1.0505,
+        "low": 1.0495,
+        "close": 1.05,
+        "close_time_ms": 1793190179999
+      },
+      {
+        "open_time_ms": 1793190180000,
+        "available_at": null,
+        "received_at": null,
+        "open": 1.05,
+        "high": 1.0505,
+        "low": 1.0495,
+        "close": 1.05,
+        "close_time_ms": 1793190239999
+      },
+      {
+        "open_time_ms": 1793190240000,
+        "available_at": null,
+        "received_at": null,
+        "open": 1.05,
+        "high": 1.0505,
+        "low": 1.0495,
+        "close": 1.05,
+        "close_time_ms": 1793190299999
+      },
+      {
+        "open_time_ms": 1793190300000,
+        "available_at": null,
+        "received_at": null,
+        "open": 1.05,
+        "high": 1.0505,
+        "low": 1.0495,
+        "close": 1.05,
+        "close_time_ms": 1793190359999
+      },
+      {
+        "open_time_ms": 1793190360000,
+        "available_at": null,
+        "received_at": null,
+        "open": 1.05,
+        "high": 1.0505,
+        "low": 1.0495,
+        "close": 1.05,
+        "close_time_ms": 1793190419999
+      }
+    ],
+    "cursor": 6,
+    "position": {
+      "open": false,
+      "direction": "LONG",
+      "entry_px": 1.0525,
+      "entry_qty": 950.1187648456057,
+      "entry_cost": 1000.0,
+      "entry_ms": 1793190660000,
+      "stop_px": 1.0367125,
+      "mark_px": 1.0367125,
+      "mark_ms": 1793190720000,
+      "unrealized_gross": -15.000000000000062,
+      "unrealized_net": -16.58800000000006,
+      "mfe_pct": 0.0,
+      "mae_pct": 0.0
+    },
+    "costs": {
+      "fee_bps": 5.0,
+      "spread_bps": 1.0,
+      "entry_fees": 0.5,
+      "exit_fees": 0.49249999999999994,
+      "entry_spread_slip": 0.3,
+      "exit_spread_slip": 0.29549999999999993,
+      "funding": null,
+      "friction": 1.5879999999999999,
+      "entry_fees_executed": 0.5,
+      "exit_fees_executed": 0.49249999999999994,
+      "entry_spread_slip_executed": 0.3,
+      "exit_spread_slip_executed": 0.29549999999999993,
+      "exit_fees_estimated": 0.0,
+      "exit_spread_slip_estimated": 0.0
+    },
+    "events": [
+      {
+        "event_id": "PL-MINAUSDT-LONG-1793190478863-c98ddb9b:ev:0:protection:1793190420000",
+        "at_ms": 1793190420000,
+        "label": "Decision: SIN_ENTRADA temporal (esperando datos)",
+        "kind": "protection",
+        "detail": "Velas abiertas en T pero close todavia desconocido (ultima abierta @ 1793190420000): senal no confirmada, abstencion."
+      },
+      {
+        "event_id": "PL-MINAUSDT-LONG-1793190478863-c98ddb9b:ev:1:protection:1793190540000",
+        "at_ms": 1793190540000,
+        "label": "Decision: SIN_ENTRADA temporal (esperando datos)",
+        "kind": "protection",
+        "detail": "Sin senal de entrada en T: close=1.0495 < entry_px=1.05 (LONG)."
+      },
+      {
+        "event_id": "PL-MINAUSDT-LONG-1793190478863-c98ddb9b:ev:2:protection:1793190600000",
+        "at_ms": 1793190600000,
+        "label": "Decision: ENTRADA_SIMULADA (pendiente de fill)",
+        "kind": "protection",
+        "detail": "Senal de entrada en T pero sin fill posible en el prefijo conocido: run_backtest no admite operacion con datos disponibles en T. Senal pendiente de fill."
+      },
+      {
+        "event_id": "PL-MINAUSDT-LONG-1793190478863-c98ddb9b:ev:3:entry:1793190660000",
+        "at_ms": 1793190660000,
+        "label": "Entrada LONG @ 1.05",
+        "kind": "entry",
+        "detail": "qty=950.11876485 notional=1000.0 stop=1.03671250 stop_config=1.03425 source=run_backtest | fill_basis=model_approximation (fill con precio conocido tras la decisi\u00f3n; bid/ask/profundidad no observados; funding/costes no observados=UNKNOWN)"
+      },
+      {
+        "event_id": "PL-MINAUSDT-LONG-1793190478863-c98ddb9b:ev:4:exit:1793190720000",
+        "at_ms": 1793190720000,
+        "label": "Salida stop @ 1.04",
+        "kind": "exit",
+        "detail": "razon=stop P&L neto=-16.59 | fill_basis=model_approximation (fill con precio conocido tras la decisi\u00f3n; bid/ask/profundidad no observados; funding/costes no observados=UNKNOWN)"
+      }
+    ],
+    "result": {
+      "symbol": "MINAUSDT",
+      "direction": "LONG",
+      "entry_px": 1.0525,
+      "exit_px": 1.0367125,
+      "entry_ms": 1793190660000,
+      "exit_ms": 1793190720000,
+      "exit_reason": "stop",
+      "exit_executed": true,
+      "qty": 950.1187648456057,
+      "filled_cost": 1000.0,
+      "gross_pnl": -15.000000000000062,
+      "fees": 0.9924999999999999,
+      "spread_slip": 0.5954999999999999,
+      "funding": null,
+      "friction": 1.5879999999999999,
+      "net_pnl": -16.58800000000006,
+      "realized_net": -16.58800000000006,
+      "open_at_end": false,
+      "entry_fees_executed": 0.5,
+      "exit_fees_executed": 0.49249999999999994,
+      "entry_spread_slip_executed": 0.3,
+      "exit_spread_slip_executed": 0.29549999999999993,
+      "exit_fees_estimated": 0.0,
+      "exit_spread_slip_estimated": 0.0
+    },
+    "engine_version": "paper-lab-engine/v1.2",
+    "limitations": [
+      "no-latency-model",
+      "no-tick-lot-rounding",
+      "no-min-notional-gate",
+      "realized-only-drawdown",
+      "engineering-fixture-only"
+    ],
+    "can_step": false,
+    "authoritative": {
+      "symbol": "MINAUSDT",
+      "direction": "LONG",
+      "family": "H1",
+      "rules_version": "H1-v1",
+      "event_time_ms": 1793190600000,
+      "entry_ms": 1793190660000,
+      "exit_ms": 1793190720000,
+      "entry_px": 1.0525,
+      "exit_px": 1.0367125,
+      "filled_qty": 950.1187648456057,
+      "filled_cost": 1000.0,
+      "gross_pnl": -15.000000000000062,
+      "spread_slip_cost": 0.5954999999999999,
+      "entry_spread_slip": 0.3,
+      "exit_spread_slip": 0.29549999999999993,
+      "fees": 0.9924999999999999,
+      "entry_fees": 0.5,
+      "exit_fees": 0.4924999999999999,
+      "funding": 0.0,
+      "friction": 1.5879999999999999,
+      "funding_events": [
+        {
+          "basis": "synthetic-fallback",
+          "detail": "legacy full-interval math; no venue calendar",
+          "intervals": 0,
+          "symbol": "MINAUSDT"
+        }
+      ],
+      "funding_model": "interval-fallback",
+      "funding_uncovered_ms": 0,
+      "funding_gap_ms": 0,
+      "funding_unknown": 0,
+      "funding_symbol": "MINAUSDT",
+      "funding_complete": null,
+      "funding_accounting_complete": false,
+      "funding_accounting_basis": "synthetic-fallback (no venue calendar)",
+      "net_pnl": -16.58800000000006,
+      "mfe_pct": 0.0,
+      "mae_pct": 1.5000000000000062,
+      "exit_reason": "stop",
+      "open_at_end": false,
+      "exit_executed": true,
+      "costs_executed": 1.5879999999999999,
+      "costs_exit_hypothetical": 0.0,
+      "realized_net": -16.58800000000006,
+      "fills": 1,
+      "cancelled_notional": 0.0
+    }
+  },
+  "drive": {
+    "state": "stopped",
+    "cause": "SESSION_CLOSED",
+    "started_at_ms": 1793190478901,
+    "finished_at_ms": 1793190781394,
+    "events_processed": 0,
+    "transport_events": 258,
+    "cadence_ms": null,
+    "runner": "market_stream",
+    "market_url": "http://127.0.0.1:53885",
+    "bars": 60,
+    "live_silence_ms": 90000.0,
+    "watermark": 1793190720000,
+    "last_trigger": {
+      "frame": "closed",
+      "open_time_ms": 1793190720000,
+      "close_time_ms": 1793190779999,
+      "received_at_ms": 1793190781388,
+      "available_at_ms": 1793190720000
+    },
+    "last_gate": {
+      "evaluated_at_ms": 1793190781390,
+      "clock_ms": 1793190720000,
+      "freshness": {
+        "reason": "END_OF_DATA",
+        "stale_candles": [],
+        "end_of_data": true,
+        "note": "end_of_data en live = sin vela cerrada posterior a\u00fan (espera normal del feed; no bloquea)"
+      },
+      "silence_ms": 60263,
+      "live_silence_ms": 90000.0,
+      "adapter_last_frame_at_ms": 1793190781388,
+      "grid_gap": null,
+      "ok": false,
+      "cause": "SESSION_NOT_EVALUABLE"
+    },
+    "last_gap": null,
+    "last_status": {
+      "block": {
+        "symbol": "MINAUSDT",
+        "interval": "1m",
+        "connection": {
+          "state": "RECEIVING",
+          "socket_connected": true,
+          "fresh_ms": 10000,
+          "stale_ms": 60000
+        },
+        "last_message_ms": 1793190779381,
+        "last_kline_open_ms": 1793190720000,
+        "closed_through_ms": 1793190720000,
+        "age_ms": 0,
+        "live": true,
+        "recovering": false,
+        "generated_at_ms": 1793190779381
+      },
+      "received_at_ms": 1793190779382
+    },
+    "evidence": {
+      "context_btc": {
+        "block": {
+          "contract_version": "market-btc-context/v1",
+          "availability": "CLOSED_CANDLES_ONLY",
+          "identity": {
+            "symbol": "MINAUSDT",
+            "interval": "1m",
+            "interval_ms": 60000,
+            "source": "ws_kline"
+          },
+          "context": {
+            "symbol": "BTCUSDT",
+            "venue": "binance",
+            "market_type": "usd_m_futures",
+            "interval": "1m",
+            "interval_ms": 60000,
+            "same_asset_as_token": false,
+            "subscription": {
+              "reuses_token_stream": false,
+              "shared": false,
+              "live": true
+            },
+            "sources": [
+              "cache",
+              "ws_kline"
+            ],
+            "horizon_candles": 5,
+            "timeframe": {
+              "aligned_by": "open_time_ms",
+              "token_window": {
+                "first": 1793187060000,
+                "last": 1793190720000
+              },
+              "btc_observed": {
+                "first": 1793187060000,
+                "last": 1793190720000
+              },
+              "expected_grid": 61,
+              "present_grid": 52,
+              "gaps": [
+                [
+                  1793190480000,
+                  1793190480000
+                ]
+              ]
+            },
+            "freshness": {
+              "btc_last_closed_open_ms": 1793190720000,
+              "btc_last_available_at_ms": 1793190780000,
+              "age_ms": 1387,
+              "threshold_ms": 60000,
+              "lagging": false,
+              "note": "BTC atras del cierre esperado en la rejilla: las filas sin dato quedan UNKNOWN(BTC_LAGGING); no se arrastran valores antiguos como si fueran nuevos"
+            },
+            "acquisition": {
+              "rest_upstream_requests": 0,
+              "mode": "cache+ws",
+              "note": "REST de tramos faltantes no ejecutado; si se autorizara, el numero de paginas depende del tramo faltante, nunca es una cifra fija"
+            }
+          },
+          "definitions": [
+            {
+              "name": "ret_btc_bps_5",
+              "formula": "10000 * ln(close_t^BTC / close_(t-4)^BTC)",
+              "unit": "bps",
+              "window_candles": 5,
+              "requires": "velas cerradas de BTC en la MISMA rejilla del token (t-4..t por open_time_ms); mismas 5 velas cerradas que velocity_bps_5"
+            },
+            {
+              "name": "ret_diff_bps_5",
+              "formula": "velocity_bps_5(token) - ret_btc_bps_5",
+              "unit": "bps",
+              "window_candles": 5,
+              "requires": "velocidad del token y velocidad de BTC conocidas en la misma fila"
+            }
+          ],
+          "supported": [
+            "ret_btc_bps_5",
+            "ret_diff_bps_5"
+          ],
+          "labels": {
+            "ret_diff_bps_5": "diferencia de retornos"
+          },
+          "series": [
+            {
+              "open_time_ms": 1793187060000,
+              "available_at_ms": 1793187120000,
+              "values": {},
+              "unknown": {
+                "ret_btc_bps_5": "BTC_INSUFICIENT_CANDLES",
+                "ret_diff_bps_5": "INSUFICIENT_CANDLES"
+              }
+            },
+            {
+              "open_time_ms": 1793187120000,
+              "available_at_ms": 1793187180000,
+              "values": {},
+              "unknown": {
+                "ret_btc_bps_5": "BTC_INSUFICIENT_CANDLES",
+                "ret_diff_bps_5": "INSUFICIENT_CANDLES"
+              }
+            },
+            {
+              "open_time_ms": 1793187180000,
+              "available_at_ms": 1793187240000,
+              "values": {},
+              "unknown": {
+                "ret_btc_bps_5": "BTC_INSUFICIENT_CANDLES",
+                "ret_diff_bps_5": "INSUFICIENT_CANDLES"
+              }
+            },
+            {
+              "open_time_ms": 1793187240000,
+              "available_at_ms": 1793187300000,
+              "values": {},
+              "unknown": {
+                "ret_btc_bps_5": "BTC_INSUFICIENT_CANDLES",
+                "ret_diff_bps_5": "INSUFICIENT_CANDLES"
+              }
+            },
+            {
+              "open_time_ms": 1793187300000,
+              "available_at_ms": 1793187360000,
+              "values": {
+                "ret_btc_bps_5": 0.0,
+                "ret_diff_bps_5": 0.0
+              },
+              "unknown": {}
+            },
+            {
+              "open_time_ms": 1793187360000,
+              "available_at_ms": 1793187420000,
+              "values": {
+                "ret_btc_bps_5": 0.0,
+                "ret_diff_bps_5": 0.0
+              },
+              "unknown": {}
+            },
+            {
+              "open_time_ms": 1793187420000,
+              "available_at_ms": 1793187480000,
+              "values": {
+                "ret_btc_bps_5": 0.0,
+                "ret_diff_bps_5": 0.0
+              },
+              "unknown": {}
+            },
+            {
+              "open_time_ms": 1793187480000,
+              "available_at_ms": 1793187540000,
+              "values": {
+                "ret_btc_bps_5": 0.0,
+                "ret_diff_bps_5": 0.0
+              },
+              "unknown": {}
+            },
+            {
+              "open_time_ms": 1793187540000,
+              "available_at_ms": 1793187600000,
+              "values": {
+                "ret_btc_bps_5": 0.0,
+                "ret_diff_bps_5": 0.0
+              },
+              "unknown": {}
+            },
+            {
+              "open_time_ms": 1793187600000,
+              "available_at_ms": 1793187660000,
+              "values": {
+                "ret_btc_bps_5": 0.0,
+                "ret_diff_bps_5": 0.0
+              },
+              "unknown": {}
+            },
+            {
+              "open_time_ms": 1793187660000,
+              "available_at_ms": 1793187720000,
+              "values": {
+                "ret_btc_bps_5": 0.0,
+                "ret_diff_bps_5": 0.0
+              },
+              "unknown": {}
+            },
+            {
+              "open_time_ms": 1793187720000,
+              "available_at_ms": 1793187780000,
+              "values": {
+                "ret_btc_bps_5": 0.0,
+                "ret_diff_bps_5": 0.0
+              },
+              "unknown": {}
+            },
+            {
+              "open_time_ms": 1793187780000,
+              "available_at_ms": 1793187840000,
+              "values": {
+                "ret_btc_bps_5": 0.0,
+                "ret_diff_bps_5": 0.0
+              },
+              "unknown": {}
+            },
+            {
+              "open_time_ms": 1793187840000,
+              "available_at_ms": 1793187900000,
+              "values": {
+                "ret_btc_bps_5": 0.0,
+                "ret_diff_bps_5": 0.0
+              },
+              "unknown": {}
+            },
+            {
+              "open_time_ms": 1793187900000,
+              "available_at_ms": 1793187960000,
+              "values": {
+                "ret_btc_bps_5": 0.0,
+                "ret_diff_bps_5": 0.0
+              },
+              "unknown": {}
+            },
+            {
+              "open_time_ms": 1793187960000,
+              "available_at_ms": 1793188020000,
+              "values": {
+                "ret_btc_bps_5": 0.0,
+                "ret_diff_bps_5": 0.0
+              },
+              "unknown": {}
+            },
+            {
+              "open_time_ms": 1793188020000,
+              "available_at_ms": 1793188080000,
+              "values": {
+                "ret_btc_bps_5": 0.0,
+                "ret_diff_bps_5": 0.0
+              },
+              "unknown": {}
+            },
+            {
+              "open_time_ms": 1793188080000,
+              "available_at_ms": 1793188140000,
+              "values": {
+                "ret_btc_bps_5": 0.0,
+                "ret_diff_bps_5": 0.0
+              },
+              "unknown": {}
+            },
+            {
+              "open_time_ms": 1793188140000,
+              "available_at_ms": 1793188200000,
+              "values": {
+                "ret_btc_bps_5": 0.0,
+                "ret_diff_bps_5": 0.0
+              },
+              "unknown": {}
+            },
+            {
+              "open_time_ms": 1793188200000,
+              "available_at_ms": 1793188260000,
+              "values": {
+                "ret_btc_bps_5": 0.0,
+                "ret_diff_bps_5": 0.0
+              },
+              "unknown": {}
+            },
+            {
+              "open_time_ms": 1793188260000,
+              "available_at_ms": 1793188320000,
+              "values": {
+                "ret_btc_bps_5": 0.0,
+                "ret_diff_bps_5": 0.0
+              },
+              "unknown": {}
+            },
+            {
+              "open_time_ms": 1793188320000,
+              "available_at_ms": 1793188380000,
+              "values": {
+                "ret_btc_bps_5": 0.0,
+                "ret_diff_bps_5": 0.0
+              },
+              "unknown": {}
+            },
+            {
+              "open_time_ms": 1793188380000,
+              "available_at_ms": 1793188440000,
+              "values": {
+                "ret_btc_bps_5": 0.0,
+                "ret_diff_bps_5": 0.0
+              },
+              "unknown": {}
+            },
+            {
+              "open_time_ms": 1793188440000,
+              "available_at_ms": 1793188500000,
+              "values": {
+                "ret_btc_bps_5": 0.0,
+                "ret_diff_bps_5": 0.0
+              },
+              "unknown": {}
+            },
+            {
+              "open_time_ms": 1793188500000,
+              "available_at_ms": 1793188560000,
+              "values": {
+                "ret_btc_bps_5": 0.0,
+                "ret_diff_bps_5": 0.0
+              },
+              "unknown": {}
+            },
+            {
+              "open_time_ms": 1793188560000,
+              "available_at_ms": 1793188620000,
+              "values": {
+                "ret_btc_bps_5": 0.0,
+                "ret_diff_bps_5": 0.0
+              },
+              "unknown": {}
+            },
+            {
+              "open_time_ms": 1793188620000,
+              "available_at_ms": 1793188680000,
+              "values": {
+                "ret_btc_bps_5": 0.0,
+                "ret_diff_bps_5": 0.0
+              },
+              "unknown": {}
+            },
+            {
+              "open_time_ms": 1793188680000,
+              "available_at_ms": 1793188740000,
+              "values": {
+                "ret_btc_bps_5": 0.0,
+                "ret_diff_bps_5": 0.0
+              },
+              "unknown": {}
+            },
+            {
+              "open_time_ms": 1793188740000,
+              "available_at_ms": 1793188800000,
+              "values": {
+                "ret_btc_bps_5": 0.0,
+                "ret_diff_bps_5": 0.0
+              },
+              "unknown": {}
+            },
+            {
+              "open_time_ms": 1793188800000,
+              "available_at_ms": 1793188860000,
+              "values": {
+                "ret_btc_bps_5": 0.0,
+                "ret_diff_bps_5": 0.0
+              },
+              "unknown": {}
+            },
+            {
+              "open_time_ms": 1793188860000,
+              "available_at_ms": 1793188920000,
+              "values": {
+                "ret_btc_bps_5": 0.0,
+                "ret_diff_bps_5": 0.0
+              },
+              "unknown": {}
+            },
+            {
+              "open_time_ms": 1793188920000,
+              "available_at_ms": 1793188980000,
+              "values": {
+                "ret_btc_bps_5": 0.0,
+                "ret_diff_bps_5": 0.0
+              },
+              "unknown": {}
+            },
+            {
+              "open_time_ms": 1793188980000,
+              "available_at_ms": 1793189040000,
+              "values": {
+                "ret_btc_bps_5": 0.0,
+                "ret_diff_bps_5": 0.0
+              },
+              "unknown": {}
+            },
+            {
+              "open_time_ms": 1793189040000,
+              "available_at_ms": 1793189100000,
+              "values": {
+                "ret_btc_bps_5": 0.0,
+                "ret_diff_bps_5": 0.0
+              },
+              "unknown": {}
+            },
+            {
+              "open_time_ms": 1793189100000,
+              "available_at_ms": 1793189160000,
+              "values": {
+                "ret_btc_bps_5": 0.0,
+                "ret_diff_bps_5": 0.0
+              },
+              "unknown": {}
+            },
+            {
+              "open_time_ms": 1793189160000,
+              "available_at_ms": 1793189220000,
+              "values": {
+                "ret_btc_bps_5": 0.0,
+                "ret_diff_bps_5": 0.0
+              },
+              "unknown": {}
+            },
+            {
+              "open_time_ms": 1793189220000,
+              "available_at_ms": 1793189280000,
+              "values": {
+                "ret_btc_bps_5": 0.0,
+                "ret_diff_bps_5": 0.0
+              },
+              "unknown": {}
+            },
+            {
+              "open_time_ms": 1793189280000,
+              "available_at_ms": 1793189340000,
+              "values": {
+                "ret_btc_bps_5": 0.0,
+                "ret_diff_bps_5": 0.0
+              },
+              "unknown": {}
+            },
+            {
+              "open_time_ms": 1793189340000,
+              "available_at_ms": 1793189400000,
+              "values": {
+                "ret_btc_bps_5": 0.0,
+                "ret_diff_bps_5": 0.0
+              },
+              "unknown": {}
+            },
+            {
+              "open_time_ms": 1793189400000,
+              "available_at_ms": 1793189460000,
+              "values": {
+                "ret_btc_bps_5": 0.0,
+                "ret_diff_bps_5": 0.0
+              },
+              "unknown": {}
+            },
+            {
+              "open_time_ms": 1793189460000,
+              "available_at_ms": 1793189520000,
+              "values": {
+                "ret_btc_bps_5": 0.0,
+                "ret_diff_bps_5": 0.0
+              },
+              "unknown": {}
+            },
+            {
+              "open_time_ms": 1793189520000,
+              "available_at_ms": 1793189580000,
+              "values": {
+                "ret_btc_bps_5": 0.0,
+                "ret_diff_bps_5": 0.0
+              },
+              "unknown": {}
+            },
+            {
+              "open_time_ms": 1793189580000,
+              "available_at_ms": 1793189640000,
+              "values": {
+                "ret_btc_bps_5": 0.0,
+                "ret_diff_bps_5": 0.0
+              },
+              "unknown": {}
+            },
+            {
+              "open_time_ms": 1793189640000,
+              "available_at_ms": 1793189700000,
+              "values": {
+                "ret_btc_bps_5": 0.0,
+                "ret_diff_bps_5": 0.0
+              },
+              "unknown": {}
+            },
+            {
+              "open_time_ms": 1793189700000,
+              "available_at_ms": 1793189760000,
+              "values": {
+                "ret_btc_bps_5": 0.0,
+                "ret_diff_bps_5": 0.0
+              },
+              "unknown": {}
+            },
+            {
+              "open_time_ms": 1793189760000,
+              "available_at_ms": 1793189820000,
+              "values": {
+                "ret_btc_bps_5": 0.0,
+                "ret_diff_bps_5": 0.0
+              },
+              "unknown": {}
+            },
+            {
+              "open_time_ms": 1793189820000,
+              "available_at_ms": 1793189880000,
+              "values": {
+                "ret_btc_bps_5": 0.0,
+                "ret_diff_bps_5": 0.0
+              },
+              "unknown": {}
+            },
+            {
+              "open_time_ms": 1793189880000,
+              "available_at_ms": 1793189940000,
+              "values": {
+                "ret_btc_bps_5": 0.0,
+                "ret_diff_bps_5": 0.0
+              },
+              "unknown": {}
+            },
+            {
+              "open_time_ms": 1793189940000,
+              "available_at_ms": 1793190000000,
+              "values": {
+                "ret_btc_bps_5": 0.0,
+                "ret_diff_bps_5": 0.0
+              },
+              "unknown": {}
+            },
+            {
+              "open_time_ms": 1793190000000,
+              "available_at_ms": 1793190060000,
+              "values": {
+                "ret_btc_bps_5": 0.0,
+                "ret_diff_bps_5": 0.0
+              },
+              "unknown": {}
+            },
+            {
+              "open_time_ms": 1793190060000,
+              "available_at_ms": 1793190120000,
+              "values": {
+                "ret_btc_bps_5": 0.0,
+                "ret_diff_bps_5": 0.0
+              },
+              "unknown": {}
+            },
+            {
+              "open_time_ms": 1793190120000,
+              "available_at_ms": 1793190180000,
+              "values": {
+                "ret_btc_bps_5": 0.0,
+                "ret_diff_bps_5": 0.0
+              },
+              "unknown": {}
+            },
+            {
+              "open_time_ms": 1793190180000,
+              "available_at_ms": 1793190240000,
+              "values": {
+                "ret_btc_bps_5": 0.0,
+                "ret_diff_bps_5": 0.0
+              },
+              "unknown": {}
+            },
+            {
+              "open_time_ms": 1793190240000,
+              "available_at_ms": 1793190300000,
+              "values": {
+                "ret_btc_bps_5": 0.0,
+                "ret_diff_bps_5": 0.0
+              },
+              "unknown": {}
+            },
+            {
+              "open_time_ms": 1793190300000,
+              "available_at_ms": 1793190360000,
+              "values": {
+                "ret_btc_bps_5": 0.0,
+                "ret_diff_bps_5": 0.0
+              },
+              "unknown": {}
+            },
+            {
+              "open_time_ms": 1793190360000,
+              "available_at_ms": 1793190420000,
+              "values": {
+                "ret_btc_bps_5": 0.0,
+                "ret_diff_bps_5": 0.0
+              },
+              "unknown": {}
+            },
+            {
+              "open_time_ms": 1793190480000,
+              "available_at_ms": 1793190540000,
+              "values": {},
+              "unknown": {
+                "ret_btc_bps_5": "BTC_GAP_IN_WINDOW",
+                "ret_diff_bps_5": "GAP_IN_WINDOW"
+              }
+            },
+            {
+              "open_time_ms": 1793190540000,
+              "available_at_ms": 1793190600000,
+              "values": {},
+              "unknown": {
+                "ret_btc_bps_5": "BTC_GAP_IN_WINDOW",
+                "ret_diff_bps_5": "GAP_IN_WINDOW"
+              }
+            },
+            {
+              "open_time_ms": 1793190600000,
+              "available_at_ms": 1793190660000,
+              "values": {},
+              "unknown": {
+                "ret_btc_bps_5": "BTC_GAP_IN_WINDOW",
+                "ret_diff_bps_5": "GAP_IN_WINDOW"
+              }
+            },
+            {
+              "open_time_ms": 1793190660000,
+              "available_at_ms": 1793190720000,
+              "values": {},
+              "unknown": {
+                "ret_btc_bps_5": "BTC_GAP_IN_WINDOW",
+                "ret_diff_bps_5": "GAP_IN_WINDOW"
+              }
+            },
+            {
+              "open_time_ms": 1793190720000,
+              "available_at_ms": 1793190780000,
+              "values": {},
+              "unknown": {
+                "ret_btc_bps_5": "BTC_GAP_IN_WINDOW",
+                "ret_diff_bps_5": "BTC_GAP_IN_WINDOW"
+              }
+            }
+          ],
+          "normalized": {
+            "base_open_time_ms": 1793187060000,
+            "unit": "percent_from_base",
+            "series": [
+              {
+                "open_time_ms": 1793187060000,
+                "token_pct": 0.0,
+                "btc_pct": 0.0
+              },
+              {
+                "open_time_ms": 1793187120000,
+                "token_pct": 0.0,
+                "btc_pct": 0.0
+              },
+              {
+                "open_time_ms": 1793187180000,
+                "token_pct": 0.0,
+                "btc_pct": 0.0
+              },
+              {
+                "open_time_ms": 1793187240000,
+                "token_pct": 0.0,
+                "btc_pct": 0.0
+              },
+              {
+                "open_time_ms": 1793187300000,
+                "token_pct": 0.0,
+                "btc_pct": 0.0
+              },
+              {
+                "open_time_ms": 1793187360000,
+                "token_pct": 0.0,
+                "btc_pct": 0.0
+              },
+              {
+                "open_time_ms": 1793187420000,
+                "token_pct": 0.0,
+                "btc_pct": 0.0
+              },
+              {
+                "open_time_ms": 1793187480000,
+                "token_pct": 0.0,
+                "btc_pct": 0.0
+              },
+              {
+                "open_time_ms": 1793187540000,
+                "token_pct": 0.0,
+                "btc_pct": 0.0
+              },
+              {
+                "open_time_ms": 1793187600000,
+                "token_pct": 0.0,
+                "btc_pct": 0.0
+              },
+              {
+                "open_time_ms": 1793187660000,
+                "token_pct": 0.0,
+                "btc_pct": 0.0
+              },
+              {
+                "open_time_ms": 1793187720000,
+                "token_pct": 0.0,
+                "btc_pct": 0.0
+              },
+              {
+                "open_time_ms": 1793187780000,
+                "token_pct": 0.0,
+                "btc_pct": 0.0
+              },
+              {
+                "open_time_ms": 1793187840000,
+                "token_pct": 0.0,
+                "btc_pct": 0.0
+              },
+              {
+                "open_time_ms": 1793187900000,
+                "token_pct": 0.0,
+                "btc_pct": 0.0
+              },
+              {
+                "open_time_ms": 1793187960000,
+                "token_pct": 0.0,
+                "btc_pct": 0.0
+              },
+              {
+                "open_time_ms": 1793188020000,
+                "token_pct": 0.0,
+                "btc_pct": 0.0
+              },
+              {
+                "open_time_ms": 1793188080000,
+                "token_pct": 0.0,
+                "btc_pct": 0.0
+              },
+              {
+                "open_time_ms": 1793188140000,
+                "token_pct": 0.0,
+                "btc_pct": 0.0
+              },
+              {
+                "open_time_ms": 1793188200000,
+                "token_pct": 0.0,
+                "btc_pct": 0.0
+              },
+              {
+                "open_time_ms": 1793188260000,
+                "token_pct": 0.0,
+                "btc_pct": 0.0
+              },
+              {
+                "open_time_ms": 1793188320000,
+                "token_pct": 0.0,
+                "btc_pct": 0.0
+              },
+              {
+                "open_time_ms": 1793188380000,
+                "token_pct": 0.0,
+                "btc_pct": 0.0
+              },
+              {
+                "open_time_ms": 1793188440000,
+                "token_pct": 0.0,
+                "btc_pct": 0.0
+              },
+              {
+                "open_time_ms": 1793188500000,
+                "token_pct": 0.0,
+                "btc_pct": 0.0
+              },
+              {
+                "open_time_ms": 1793188560000,
+                "token_pct": 0.0,
+                "btc_pct": 0.0
+              },
+              {
+                "open_time_ms": 1793188620000,
+                "token_pct": 0.0,
+                "btc_pct": 0.0
+              },
+              {
+                "open_time_ms": 1793188680000,
+                "token_pct": 0.0,
+                "btc_pct": 0.0
+              },
+              {
+                "open_time_ms": 1793188740000,
+                "token_pct": 0.0,
+                "btc_pct": 0.0
+              },
+              {
+                "open_time_ms": 1793188800000,
+                "token_pct": 0.0,
+                "btc_pct": 0.0
+              },
+              {
+                "open_time_ms": 1793188860000,
+                "token_pct": 0.0,
+                "btc_pct": 0.0
+              },
+              {
+                "open_time_ms": 1793188920000,
+                "token_pct": 0.0,
+                "btc_pct": 0.0
+              },
+              {
+                "open_time_ms": 1793188980000,
+                "token_pct": 0.0,
+                "btc_pct": 0.0
+              },
+              {
+                "open_time_ms": 1793189040000,
+                "token_pct": 0.0,
+                "btc_pct": 0.0
+              },
+              {
+                "open_time_ms": 1793189100000,
+                "token_pct": 0.0,
+                "btc_pct": 0.0
+              },
+              {
+                "open_time_ms": 1793189160000,
+                "token_pct": 0.0,
+                "btc_pct": 0.0
+              },
+              {
+                "open_time_ms": 1793189220000,
+                "token_pct": 0.0,
+                "btc_pct": 0.0
+              },
+              {
+                "open_time_ms": 1793189280000,
+                "token_pct": 0.0,
+                "btc_pct": 0.0
+              },
+              {
+                "open_time_ms": 1793189340000,
+                "token_pct": 0.0,
+                "btc_pct": 0.0
+              },
+              {
+                "open_time_ms": 1793189400000,
+                "token_pct": 0.0,
+                "btc_pct": 0.0
+              },
+              {
+                "open_time_ms": 1793189460000,
+                "token_pct": 0.0,
+                "btc_pct": 0.0
+              },
+              {
+                "open_time_ms": 1793189520000,
+                "token_pct": 0.0,
+                "btc_pct": 0.0
+              },
+              {
+                "open_time_ms": 1793189580000,
+                "token_pct": 0.0,
+                "btc_pct": 0.0
+              },
+              {
+                "open_time_ms": 1793189640000,
+                "token_pct": 0.0,
+                "btc_pct": 0.0
+              },
+              {
+                "open_time_ms": 1793189700000,
+                "token_pct": 0.0,
+                "btc_pct": 0.0
+              },
+              {
+                "open_time_ms": 1793189760000,
+                "token_pct": 0.0,
+                "btc_pct": 0.0
+              },
+              {
+                "open_time_ms": 1793189820000,
+                "token_pct": 0.0,
+                "btc_pct": 0.0
+              },
+              {
+                "open_time_ms": 1793189880000,
+                "token_pct": 0.0,
+                "btc_pct": 0.0
+              },
+              {
+                "open_time_ms": 1793189940000,
+                "token_pct": 0.0,
+                "btc_pct": 0.0
+              },
+              {
+                "open_time_ms": 1793190000000,
+                "token_pct": 0.0,
+                "btc_pct": 0.0
+              },
+              {
+                "open_time_ms": 1793190060000,
+                "token_pct": 0.0,
+                "btc_pct": 0.0
+              },
+              {
+                "open_time_ms": 1793190120000,
+                "token_pct": 0.0,
+                "btc_pct": 0.0
+              },
+              {
+                "open_time_ms": 1793190180000,
+                "token_pct": 0.0,
+                "btc_pct": 0.0
+              },
+              {
+                "open_time_ms": 1793190240000,
+                "token_pct": 0.0,
+                "btc_pct": 0.0
+              },
+              {
+                "open_time_ms": 1793190300000,
+                "token_pct": 0.0,
+                "btc_pct": 0.0
+              },
+              {
+                "open_time_ms": 1793190360000,
+                "token_pct": 0.0,
+                "btc_pct": 0.0
+              },
+              {
+                "open_time_ms": 1793190540000,
+                "token_pct": 0.1905,
+                "btc_pct": 0.0
+              },
+              {
+                "open_time_ms": 1793190600000,
+                "token_pct": 0.2381,
+                "btc_pct": 0.0
+              },
+              {
+                "open_time_ms": 1793190660000,
+                "token_pct": -1.9048,
+                "btc_pct": 0.0
+              },
+              {
+                "open_time_ms": 1793190720000,
+                "token_pct": -0.0952,
+                "btc_pct": 0.0
+              }
+            ]
+          },
+          "generated_at_ms": 1793190781387
+        },
+        "received_at_ms": 1793190781388
+      },
+      "indicators": {
+        "block": {
+          "contract_version": "market-indicators/v1",
+          "availability": "CLOSED_CANDLES_ONLY",
+          "provisional_policy": {
+            "included": false,
+            "reason": "PROVISIONAL_EXCLUDED"
+          },
+          "computed_over": "payload_window",
+          "identity": {
+            "symbol": "MINAUSDT",
+            "interval": "1m",
+            "interval_ms": 60000,
+            "source": "ws_kline"
+          },
+          "definitions": [
+            {
+              "name": "log_return_bps",
+              "formula": "10000 * ln(close_t / close_(t-1))",
+              "unit": "bps",
+              "window_candles": 1,
+              "requires": "previous grid candle closed and present"
+            },
+            {
+              "name": "velocity_bps_5",
+              "formula": "10000 * ln(close_t / close_(t-4))",
+              "unit": "bps",
+              "window_candles": 5,
+              "requires": "contiguous run of 5 closed grid candles ending at t"
+            },
+            {
+              "name": "rel_volume_10",
+              "formula": "base_volume_t / mean(base_volume t-9..t-1)",
+              "unit": "ratio",
+              "window_candles": 10,
+              "requires": "current base_volume and contiguous baseline of 10 closed candles with base_volume"
+            },
+            {
+              "name": "vwap_typical_10",
+              "formula": "sum(((h+l+c)/3 * v)) / sum(v) over t-9..t",
+              "unit": "price (quote)",
+              "window_candles": 10,
+              "requires": "contiguous run of 10 closed candles with base_volume; approximation weighted by typical price, NOT the traded VWAP of market_structure.vwap_record"
+            },
+            {
+              "name": "vwap_dev_bps_10",
+              "formula": "10000 * (close_t / vwap_typical_10 - 1)",
+              "unit": "bps",
+              "window_candles": 10,
+              "requires": "vwap_typical_10 of the same candle"
+            }
+          ],
+          "supported": [
+            "log_return_bps",
+            "velocity_bps_5",
+            "rel_volume_10",
+            "vwap_dev_bps_10"
+          ],
+          "declined": [
+            {
+              "name": "flow_delta",
+              "reason": "AGGTRADES_SOURCE_REQUIRED"
+            },
+            {
+              "name": "spread_bps",
+              "reason": "ORDER_BOOK_SOURCE_REQUIRED"
+            },
+            {
+              "name": "depth",
+              "reason": "ORDER_BOOK_SOURCE_REQUIRED"
+            },
+            {
+              "name": "open_interest",
+              "reason": "OI_REST_POLL_REQUIRED"
+            },
+            {
+              "name": "btc_context",
+              "reason": "SECOND_SYMBOL_KLINES_REQUIRED"
+            }
+          ],
+          "series": [
+            {
+              "open_time_ms": 1793187060000,
+              "available_at_ms": 1793187120000,
+              "values": {},
+              "unknown": {
+                "log_return_bps": "NO_PREVIOUS_CANDLE",
+                "velocity_bps_5": "INSUFICIENT_CANDLES",
+                "rel_volume_10": "INSUFICIENT_CANDLES",
+                "vwap_typical_10": "INSUFICIENT_CANDLES",
+                "vwap_dev_bps_10": "INSUFICIENT_CANDLES"
+              }
+            },
+            {
+              "open_time_ms": 1793187120000,
+              "available_at_ms": 1793187180000,
+              "values": {
+                "log_return_bps": 0.0
+              },
+              "unknown": {
+                "velocity_bps_5": "INSUFICIENT_CANDLES",
+                "rel_volume_10": "INSUFICIENT_CANDLES",
+                "vwap_typical_10": "INSUFICIENT_CANDLES",
+                "vwap_dev_bps_10": "INSUFICIENT_CANDLES"
+              }
+            },
+            {
+              "open_time_ms": 1793187180000,
+              "available_at_ms": 1793187240000,
+              "values": {
+                "log_return_bps": 0.0
+              },
+              "unknown": {
+                "velocity_bps_5": "INSUFICIENT_CANDLES",
+                "rel_volume_10": "INSUFICIENT_CANDLES",
+                "vwap_typical_10": "INSUFICIENT_CANDLES",
+                "vwap_dev_bps_10": "INSUFICIENT_CANDLES"
+              }
+            },
+            {
+              "open_time_ms": 1793187240000,
+              "available_at_ms": 1793187300000,
+              "values": {
+                "log_return_bps": 0.0
+              },
+              "unknown": {
+                "velocity_bps_5": "INSUFICIENT_CANDLES",
+                "rel_volume_10": "INSUFICIENT_CANDLES",
+                "vwap_typical_10": "INSUFICIENT_CANDLES",
+                "vwap_dev_bps_10": "INSUFICIENT_CANDLES"
+              }
+            },
+            {
+              "open_time_ms": 1793187300000,
+              "available_at_ms": 1793187360000,
+              "values": {
+                "log_return_bps": 0.0,
+                "velocity_bps_5": 0.0
+              },
+              "unknown": {
+                "rel_volume_10": "INSUFICIENT_CANDLES",
+                "vwap_typical_10": "INSUFICIENT_CANDLES",
+                "vwap_dev_bps_10": "INSUFICIENT_CANDLES"
+              }
+            },
+            {
+              "open_time_ms": 1793187360000,
+              "available_at_ms": 1793187420000,
+              "values": {
+                "log_return_bps": 0.0,
+                "velocity_bps_5": 0.0
+              },
+              "unknown": {
+                "rel_volume_10": "INSUFICIENT_CANDLES",
+                "vwap_typical_10": "INSUFICIENT_CANDLES",
+                "vwap_dev_bps_10": "INSUFICIENT_CANDLES"
+              }
+            },
+            {
+              "open_time_ms": 1793187420000,
+              "available_at_ms": 1793187480000,
+              "values": {
+                "log_return_bps": 0.0,
+                "velocity_bps_5": 0.0
+              },
+              "unknown": {
+                "rel_volume_10": "INSUFICIENT_CANDLES",
+                "vwap_typical_10": "INSUFICIENT_CANDLES",
+                "vwap_dev_bps_10": "INSUFICIENT_CANDLES"
+              }
+            },
+            {
+              "open_time_ms": 1793187480000,
+              "available_at_ms": 1793187540000,
+              "values": {
+                "log_return_bps": 0.0,
+                "velocity_bps_5": 0.0
+              },
+              "unknown": {
+                "rel_volume_10": "INSUFICIENT_CANDLES",
+                "vwap_typical_10": "INSUFICIENT_CANDLES",
+                "vwap_dev_bps_10": "INSUFICIENT_CANDLES"
+              }
+            },
+            {
+              "open_time_ms": 1793187540000,
+              "available_at_ms": 1793187600000,
+              "values": {
+                "log_return_bps": 0.0,
+                "velocity_bps_5": 0.0
+              },
+              "unknown": {
+                "rel_volume_10": "INSUFICIENT_CANDLES",
+                "vwap_typical_10": "INSUFICIENT_CANDLES",
+                "vwap_dev_bps_10": "INSUFICIENT_CANDLES"
+              }
+            },
+            {
+              "open_time_ms": 1793187600000,
+              "available_at_ms": 1793187660000,
+              "values": {
+                "log_return_bps": 0.0,
+                "velocity_bps_5": 0.0,
+                "vwap_typical_10": 1.05,
+                "vwap_dev_bps_10": 0.0
+              },
+              "unknown": {
+                "rel_volume_10": "INSUFICIENT_CANDLES"
+              }
+            },
+            {
+              "open_time_ms": 1793187660000,
+              "available_at_ms": 1793187720000,
+              "values": {
+                "log_return_bps": 0.0,
+                "velocity_bps_5": 0.0,
+                "rel_volume_10": 1.0,
+                "vwap_typical_10": 1.05,
+                "vwap_dev_bps_10": 0.0
+              },
+              "unknown": {}
+            },
+            {
+              "open_time_ms": 1793187720000,
+              "available_at_ms": 1793187780000,
+              "values": {
+                "log_return_bps": 0.0,
+                "velocity_bps_5": 0.0,
+                "rel_volume_10": 1.0,
+                "vwap_typical_10": 1.05,
+                "vwap_dev_bps_10": 0.0
+              },
+              "unknown": {}
+            },
+            {
+              "open_time_ms": 1793187780000,
+              "available_at_ms": 1793187840000,
+              "values": {
+                "log_return_bps": 0.0,
+                "velocity_bps_5": 0.0,
+                "rel_volume_10": 1.0,
+                "vwap_typical_10": 1.05,
+                "vwap_dev_bps_10": 0.0
+              },
+              "unknown": {}
+            },
+            {
+              "open_time_ms": 1793187840000,
+              "available_at_ms": 1793187900000,
+              "values": {
+                "log_return_bps": 0.0,
+                "velocity_bps_5": 0.0,
+                "rel_volume_10": 1.0,
+                "vwap_typical_10": 1.05,
+                "vwap_dev_bps_10": 0.0
+              },
+              "unknown": {}
+            },
+            {
+              "open_time_ms": 1793187900000,
+              "available_at_ms": 1793187960000,
+              "values": {
+                "log_return_bps": 0.0,
+                "velocity_bps_5": 0.0,
+                "rel_volume_10": 1.0,
+                "vwap_typical_10": 1.05,
+                "vwap_dev_bps_10": 0.0
+              },
+              "unknown": {}
+            },
+            {
+              "open_time_ms": 1793187960000,
+              "available_at_ms": 1793188020000,
+              "values": {
+                "log_return_bps": 0.0,
+                "velocity_bps_5": 0.0,
+                "rel_volume_10": 1.0,
+                "vwap_typical_10": 1.05,
+                "vwap_dev_bps_10": 0.0
+              },
+              "unknown": {}
+            },
+            {
+              "open_time_ms": 1793188020000,
+              "available_at_ms": 1793188080000,
+              "values": {
+                "log_return_bps": 0.0,
+                "velocity_bps_5": 0.0,
+                "rel_volume_10": 1.0,
+                "vwap_typical_10": 1.05,
+                "vwap_dev_bps_10": 0.0
+              },
+              "unknown": {}
+            },
+            {
+              "open_time_ms": 1793188080000,
+              "available_at_ms": 1793188140000,
+              "values": {
+                "log_return_bps": 0.0,
+                "velocity_bps_5": 0.0,
+                "rel_volume_10": 1.0,
+                "vwap_typical_10": 1.05,
+                "vwap_dev_bps_10": 0.0
+              },
+              "unknown": {}
+            },
+            {
+              "open_time_ms": 1793188140000,
+              "available_at_ms": 1793188200000,
+              "values": {
+                "log_return_bps": 0.0,
+                "velocity_bps_5": 0.0,
+                "rel_volume_10": 1.0,
+                "vwap_typical_10": 1.05,
+                "vwap_dev_bps_10": 0.0
+              },
+              "unknown": {}
+            },
+            {
+              "open_time_ms": 1793188200000,
+              "available_at_ms": 1793188260000,
+              "values": {
+                "log_return_bps": 0.0,
+                "velocity_bps_5": 0.0,
+                "rel_volume_10": 1.0,
+                "vwap_typical_10": 1.05,
+                "vwap_dev_bps_10": 0.0
+              },
+              "unknown": {}
+            },
+            {
+              "open_time_ms": 1793188260000,
+              "available_at_ms": 1793188320000,
+              "values": {
+                "log_return_bps": 0.0,
+                "velocity_bps_5": 0.0,
+                "rel_volume_10": 1.0,
+                "vwap_typical_10": 1.05,
+                "vwap_dev_bps_10": 0.0
+              },
+              "unknown": {}
+            },
+            {
+              "open_time_ms": 1793188320000,
+              "available_at_ms": 1793188380000,
+              "values": {
+                "log_return_bps": 0.0,
+                "velocity_bps_5": 0.0,
+                "rel_volume_10": 1.0,
+                "vwap_typical_10": 1.05,
+                "vwap_dev_bps_10": 0.0
+              },
+              "unknown": {}
+            },
+            {
+              "open_time_ms": 1793188380000,
+              "available_at_ms": 1793188440000,
+              "values": {
+                "log_return_bps": 0.0,
+                "velocity_bps_5": 0.0,
+                "rel_volume_10": 1.0,
+                "vwap_typical_10": 1.05,
+                "vwap_dev_bps_10": 0.0
+              },
+              "unknown": {}
+            },
+            {
+              "open_time_ms": 1793188440000,
+              "available_at_ms": 1793188500000,
+              "values": {
+                "log_return_bps": 0.0,
+                "velocity_bps_5": 0.0,
+                "rel_volume_10": 1.0,
+                "vwap_typical_10": 1.05,
+                "vwap_dev_bps_10": 0.0
+              },
+              "unknown": {}
+            },
+            {
+              "open_time_ms": 1793188500000,
+              "available_at_ms": 1793188560000,
+              "values": {
+                "log_return_bps": 0.0,
+                "velocity_bps_5": 0.0,
+                "rel_volume_10": 1.0,
+                "vwap_typical_10": 1.05,
+                "vwap_dev_bps_10": 0.0
+              },
+              "unknown": {}
+            },
+            {
+              "open_time_ms": 1793188560000,
+              "available_at_ms": 1793188620000,
+              "values": {
+                "log_return_bps": 0.0,
+                "velocity_bps_5": 0.0,
+                "rel_volume_10": 1.0,
+                "vwap_typical_10": 1.05,
+                "vwap_dev_bps_10": 0.0
+              },
+              "unknown": {}
+            },
+            {
+              "open_time_ms": 1793188620000,
+              "available_at_ms": 1793188680000,
+              "values": {
+                "log_return_bps": 0.0,
+                "velocity_bps_5": 0.0,
+                "rel_volume_10": 1.0,
+                "vwap_typical_10": 1.05,
+                "vwap_dev_bps_10": 0.0
+              },
+              "unknown": {}
+            },
+            {
+              "open_time_ms": 1793188680000,
+              "available_at_ms": 1793188740000,
+              "values": {
+                "log_return_bps": 0.0,
+                "velocity_bps_5": 0.0,
+                "rel_volume_10": 1.0,
+                "vwap_typical_10": 1.05,
+                "vwap_dev_bps_10": 0.0
+              },
+              "unknown": {}
+            },
+            {
+              "open_time_ms": 1793188740000,
+              "available_at_ms": 1793188800000,
+              "values": {
+                "log_return_bps": 0.0,
+                "velocity_bps_5": 0.0,
+                "rel_volume_10": 1.0,
+                "vwap_typical_10": 1.05,
+                "vwap_dev_bps_10": 0.0
+              },
+              "unknown": {}
+            },
+            {
+              "open_time_ms": 1793188800000,
+              "available_at_ms": 1793188860000,
+              "values": {
+                "log_return_bps": 0.0,
+                "velocity_bps_5": 0.0,
+                "rel_volume_10": 1.0,
+                "vwap_typical_10": 1.05,
+                "vwap_dev_bps_10": 0.0
+              },
+              "unknown": {}
+            },
+            {
+              "open_time_ms": 1793188860000,
+              "available_at_ms": 1793188920000,
+              "values": {
+                "log_return_bps": 0.0,
+                "velocity_bps_5": 0.0,
+                "rel_volume_10": 1.0,
+                "vwap_typical_10": 1.05,
+                "vwap_dev_bps_10": 0.0
+              },
+              "unknown": {}
+            },
+            {
+              "open_time_ms": 1793188920000,
+              "available_at_ms": 1793188980000,
+              "values": {
+                "log_return_bps": 0.0,
+                "velocity_bps_5": 0.0,
+                "rel_volume_10": 1.0,
+                "vwap_typical_10": 1.05,
+                "vwap_dev_bps_10": 0.0
+              },
+              "unknown": {}
+            },
+            {
+              "open_time_ms": 1793188980000,
+              "available_at_ms": 1793189040000,
+              "values": {
+                "log_return_bps": 0.0,
+                "velocity_bps_5": 0.0,
+                "rel_volume_10": 1.0,
+                "vwap_typical_10": 1.05,
+                "vwap_dev_bps_10": 0.0
+              },
+              "unknown": {}
+            },
+            {
+              "open_time_ms": 1793189040000,
+              "available_at_ms": 1793189100000,
+              "values": {
+                "log_return_bps": 0.0,
+                "velocity_bps_5": 0.0,
+                "rel_volume_10": 1.0,
+                "vwap_typical_10": 1.05,
+                "vwap_dev_bps_10": 0.0
+              },
+              "unknown": {}
+            },
+            {
+              "open_time_ms": 1793189100000,
+              "available_at_ms": 1793189160000,
+              "values": {
+                "log_return_bps": 0.0,
+                "velocity_bps_5": 0.0,
+                "rel_volume_10": 1.0,
+                "vwap_typical_10": 1.05,
+                "vwap_dev_bps_10": 0.0
+              },
+              "unknown": {}
+            },
+            {
+              "open_time_ms": 1793189160000,
+              "available_at_ms": 1793189220000,
+              "values": {
+                "log_return_bps": 0.0,
+                "velocity_bps_5": 0.0,
+                "rel_volume_10": 1.0,
+                "vwap_typical_10": 1.05,
+                "vwap_dev_bps_10": 0.0
+              },
+              "unknown": {}
+            },
+            {
+              "open_time_ms": 1793189220000,
+              "available_at_ms": 1793189280000,
+              "values": {
+                "log_return_bps": 0.0,
+                "velocity_bps_5": 0.0,
+                "rel_volume_10": 1.0,
+                "vwap_typical_10": 1.05,
+                "vwap_dev_bps_10": 0.0
+              },
+              "unknown": {}
+            },
+            {
+              "open_time_ms": 1793189280000,
+              "available_at_ms": 1793189340000,
+              "values": {
+                "log_return_bps": 0.0,
+                "velocity_bps_5": 0.0,
+                "rel_volume_10": 1.0,
+                "vwap_typical_10": 1.05,
+                "vwap_dev_bps_10": 0.0
+              },
+              "unknown": {}
+            },
+            {
+              "open_time_ms": 1793189340000,
+              "available_at_ms": 1793189400000,
+              "values": {
+                "log_return_bps": 0.0,
+                "velocity_bps_5": 0.0,
+                "rel_volume_10": 1.0,
+                "vwap_typical_10": 1.05,
+                "vwap_dev_bps_10": 0.0
+              },
+              "unknown": {}
+            },
+            {
+              "open_time_ms": 1793189400000,
+              "available_at_ms": 1793189460000,
+              "values": {
+                "log_return_bps": 0.0,
+                "velocity_bps_5": 0.0,
+                "rel_volume_10": 1.0,
+                "vwap_typical_10": 1.05,
+                "vwap_dev_bps_10": 0.0
+              },
+              "unknown": {}
+            },
+            {
+              "open_time_ms": 1793189460000,
+              "available_at_ms": 1793189520000,
+              "values": {
+                "log_return_bps": 0.0,
+                "velocity_bps_5": 0.0,
+                "rel_volume_10": 1.0,
+                "vwap_typical_10": 1.05,
+                "vwap_dev_bps_10": 0.0
+              },
+              "unknown": {}
+            },
+            {
+              "open_time_ms": 1793189520000,
+              "available_at_ms": 1793189580000,
+              "values": {
+                "log_return_bps": 0.0,
+                "velocity_bps_5": 0.0,
+                "rel_volume_10": 1.0,
+                "vwap_typical_10": 1.05,
+                "vwap_dev_bps_10": 0.0
+              },
+              "unknown": {}
+            },
+            {
+              "open_time_ms": 1793189580000,
+              "available_at_ms": 1793189640000,
+              "values": {
+                "log_return_bps": 0.0,
+                "velocity_bps_5": 0.0,
+                "rel_volume_10": 1.0,
+                "vwap_typical_10": 1.05,
+                "vwap_dev_bps_10": 0.0
+              },
+              "unknown": {}
+            },
+            {
+              "open_time_ms": 1793189640000,
+              "available_at_ms": 1793189700000,
+              "values": {
+                "log_return_bps": 0.0,
+                "velocity_bps_5": 0.0,
+                "rel_volume_10": 1.0,
+                "vwap_typical_10": 1.05,
+                "vwap_dev_bps_10": 0.0
+              },
+              "unknown": {}
+            },
+            {
+              "open_time_ms": 1793189700000,
+              "available_at_ms": 1793189760000,
+              "values": {
+                "log_return_bps": 0.0,
+                "velocity_bps_5": 0.0,
+                "rel_volume_10": 1.0,
+                "vwap_typical_10": 1.05,
+                "vwap_dev_bps_10": 0.0
+              },
+              "unknown": {}
+            },
+            {
+              "open_time_ms": 1793189760000,
+              "available_at_ms": 1793189820000,
+              "values": {
+                "log_return_bps": 0.0,
+                "velocity_bps_5": 0.0,
+                "rel_volume_10": 1.0,
+                "vwap_typical_10": 1.05,
+                "vwap_dev_bps_10": 0.0
+              },
+              "unknown": {}
+            },
+            {
+              "open_time_ms": 1793189820000,
+              "available_at_ms": 1793189880000,
+              "values": {
+                "log_return_bps": 0.0,
+                "velocity_bps_5": 0.0,
+                "rel_volume_10": 1.0,
+                "vwap_typical_10": 1.05,
+                "vwap_dev_bps_10": 0.0
+              },
+              "unknown": {}
+            },
+            {
+              "open_time_ms": 1793189880000,
+              "available_at_ms": 1793189940000,
+              "values": {
+                "log_return_bps": 0.0,
+                "velocity_bps_5": 0.0,
+                "rel_volume_10": 1.0,
+                "vwap_typical_10": 1.05,
+                "vwap_dev_bps_10": 0.0
+              },
+              "unknown": {}
+            },
+            {
+              "open_time_ms": 1793189940000,
+              "available_at_ms": 1793190000000,
+              "values": {
+                "log_return_bps": 0.0,
+                "velocity_bps_5": 0.0,
+                "rel_volume_10": 1.0,
+                "vwap_typical_10": 1.05,
+                "vwap_dev_bps_10": 0.0
+              },
+              "unknown": {}
+            },
+            {
+              "open_time_ms": 1793190000000,
+              "available_at_ms": 1793190060000,
+              "values": {
+                "log_return_bps": 0.0,
+                "velocity_bps_5": 0.0,
+                "rel_volume_10": 1.0,
+                "vwap_typical_10": 1.05,
+                "vwap_dev_bps_10": 0.0
+              },
+              "unknown": {}
+            },
+            {
+              "open_time_ms": 1793190060000,
+              "available_at_ms": 1793190120000,
+              "values": {
+                "log_return_bps": 0.0,
+                "velocity_bps_5": 0.0,
+                "rel_volume_10": 1.0,
+                "vwap_typical_10": 1.05,
+                "vwap_dev_bps_10": 0.0
+              },
+              "unknown": {}
+            },
+            {
+              "open_time_ms": 1793190120000,
+              "available_at_ms": 1793190180000,
+              "values": {
+                "log_return_bps": 0.0,
+                "velocity_bps_5": 0.0,
+                "rel_volume_10": 1.0,
+                "vwap_typical_10": 1.05,
+                "vwap_dev_bps_10": 0.0
+              },
+              "unknown": {}
+            },
+            {
+              "open_time_ms": 1793190180000,
+              "available_at_ms": 1793190240000,
+              "values": {
+                "log_return_bps": 0.0,
+                "velocity_bps_5": 0.0,
+                "rel_volume_10": 1.0,
+                "vwap_typical_10": 1.05,
+                "vwap_dev_bps_10": 0.0
+              },
+              "unknown": {}
+            },
+            {
+              "open_time_ms": 1793190240000,
+              "available_at_ms": 1793190300000,
+              "values": {
+                "log_return_bps": 0.0,
+                "velocity_bps_5": 0.0,
+                "rel_volume_10": 1.0,
+                "vwap_typical_10": 1.05,
+                "vwap_dev_bps_10": 0.0
+              },
+              "unknown": {}
+            },
+            {
+              "open_time_ms": 1793190300000,
+              "available_at_ms": 1793190360000,
+              "values": {
+                "log_return_bps": 0.0,
+                "velocity_bps_5": 0.0,
+                "rel_volume_10": 1.0,
+                "vwap_typical_10": 1.05,
+                "vwap_dev_bps_10": 0.0
+              },
+              "unknown": {}
+            },
+            {
+              "open_time_ms": 1793190360000,
+              "available_at_ms": 1793190420000,
+              "values": {
+                "log_return_bps": 0.0,
+                "velocity_bps_5": 0.0,
+                "rel_volume_10": 1.0,
+                "vwap_typical_10": 1.05,
+                "vwap_dev_bps_10": 0.0
+              },
+              "unknown": {}
+            },
+            {
+              "open_time_ms": 1793190480000,
+              "available_at_ms": 1793190540000,
+              "values": {},
+              "unknown": {
+                "log_return_bps": "NO_PREVIOUS_CANDLE",
+                "velocity_bps_5": "GAP_IN_WINDOW",
+                "rel_volume_10": "GAP_IN_WINDOW",
+                "vwap_typical_10": "GAP_IN_WINDOW",
+                "vwap_dev_bps_10": "GAP_IN_WINDOW"
+              }
+            },
+            {
+              "open_time_ms": 1793190540000,
+              "available_at_ms": 1793190600000,
+              "values": {
+                "log_return_bps": 23.79254
+              },
+              "unknown": {
+                "velocity_bps_5": "GAP_IN_WINDOW",
+                "rel_volume_10": "GAP_IN_WINDOW",
+                "vwap_typical_10": "GAP_IN_WINDOW",
+                "vwap_dev_bps_10": "GAP_IN_WINDOW"
+              }
+            },
+            {
+              "open_time_ms": 1793190600000,
+              "available_at_ms": 1793190660000,
+              "values": {
+                "log_return_bps": 4.751723
+              },
+              "unknown": {
+                "velocity_bps_5": "GAP_IN_WINDOW",
+                "rel_volume_10": "GAP_IN_WINDOW",
+                "vwap_typical_10": "GAP_IN_WINDOW",
+                "vwap_dev_bps_10": "GAP_IN_WINDOW"
+              }
+            },
+            {
+              "open_time_ms": 1793190660000,
+              "available_at_ms": 1793190720000,
+              "values": {
+                "log_return_bps": -216.094843
+              },
+              "unknown": {
+                "velocity_bps_5": "GAP_IN_WINDOW",
+                "rel_volume_10": "GAP_IN_WINDOW",
+                "vwap_typical_10": "GAP_IN_WINDOW",
+                "vwap_dev_bps_10": "GAP_IN_WINDOW"
+              }
+            },
+            {
+              "open_time_ms": 1793190720000,
+              "available_at_ms": 1793190780000,
+              "values": {
+                "log_return_bps": 182.785272,
+                "velocity_bps_5": -4.765309
+              },
+              "unknown": {
+                "rel_volume_10": "GAP_IN_WINDOW",
+                "vwap_typical_10": "GAP_IN_WINDOW",
+                "vwap_dev_bps_10": "GAP_IN_WINDOW"
+              }
+            }
+          ],
+          "generated_at_ms": 1793190781384
+        },
+        "received_at_ms": 1793190781387
+      }
+    },
+    "stats": {
+      "frames": 255,
+      "bad_frames": 0,
+      "unknown_frames": 0,
+      "provisional_frames": 102,
+      "disconnects": 6,
+      "reconnects": 6,
+      "connect_errors": 0,
+      "last_error": "TimeoutError: timed out",
+      "last_frame_at_ms": 1793190781388,
+      "connected_at_ms": 1793190571134,
+      "started_at_ms": 1793190478901
+    }
+  }
+}

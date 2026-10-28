@@ -1,0 +1,188 @@
+{
+  "generated_at_ms": 1793193943535,
+  "dashboard_url": "http://127.0.0.1:3020",
+  "transport": "market_stream (live, loopback)",
+  "symbol": "MINAUSDT",
+  "script": {
+    "context_close": 1.05,
+    "stop_px": 1.03425,
+    "closes": {
+      "M+0": 1.049,
+      "M+1": 1.0495,
+      "M+2": 1.052,
+      "M+3": 1.0525,
+      "M+4": 1.03
+    },
+    "live_silence_ms": 90000.0,
+    "pause_s": 95.0,
+    "restart_down_s": 15.0
+  },
+  "git_sha": "90b3c9ba743d852cc1da743c00213e1629933622",
+  "build_id": "WDYGaWV_cUxErasQlce70",
+  "notes": [
+    "Transporte loopback: este arnes NO acredita recepcion de Binance; el proveedor publico permanece bloqueado (sitecustomize + guardia de resolucion del navegador + proxy de registro).",
+    "8792 (servicio ajeno), 8797 y 8791 canonicos intocables: todos los servicios de la corrida usan puertos efimeros."
+  ],
+  "dashboard_replacement": {
+    "old_pid": null
+  },
+  "runs": [
+    {
+      "ports": {
+        "fake_ws": 52256,
+        "market_service": 52257,
+        "engineering_service": 52258,
+        "proxy": 52259,
+        "dashboard": 3020
+      },
+      "seed": {
+        "cache_db": "C:\\Users\\adonm\\AppData\\Local\\Temp\\opencode\\engineering-live-acceptance\\market_cache.db",
+        "seeded": {
+          "BTCUSDT": {
+            "1m": 10080
+          },
+          "MINAUSDT": {
+            "1m": 10080
+          }
+        },
+        "catalog_entries": 2,
+        "context_close": 1.05,
+        "last_closed_1m": 1793193840000
+      },
+      "shadow": {
+        "root": "C:\\Users\\adonm\\AppData\\Local\\Temp\\opencode\\engineering-live-acceptance\\shadow",
+        "conn_log": "C:\\Users\\adonm\\AppData\\Local\\Temp\\opencode\\engineering-live-acceptance\\public-attempts.jsonl",
+        "proxy_log": "C:\\Users\\adonm\\AppData\\Local\\Temp\\opencode\\engineering-live-acceptance\\proxy-attempts.jsonl",
+        "fake_log": "C:\\Users\\adonm\\AppData\\Local\\Temp\\opencode\\engineering-live-acceptance\\fake-ws.jsonl",
+        "browser_log": "C:\\Users\\adonm\\AppData\\Local\\Temp\\opencode\\engineering-live-acceptance\\browser-external.jsonl"
+      },
+      "flow": {
+        "phases": {
+          "minute_phase_s": 11.006578200031072,
+          "stream_evidence_s": 0.9426854001358151,
+          "abstention_s": 59.94247899996117,
+          "gate_s": 96.33617769996636,
+          "entrada_s": 84.40002160007134,
+          "fill_s": 59.60658330004662,
+          "salida_s": 43.73627050011419,
+          "cerrada_s": 0.006143100094050169
+        },
+        "screenshots": [
+          "shot-01-abstencion.png",
+          "shot-02-puerta-feed-silence.png",
+          "shot-03-entrada.png",
+          "shot-04-fill-gestion.png",
+          "shot-05-salida-stop.png",
+          "shot-06-sesion-cerrada.png"
+        ],
+        "click_open_ms": 1793193960000,
+        "stream_evidence_text": "Transporte market_stream (evidencia del stream)servicio de mercadohttp://127.0.0.1:52257barras del snapshot60marca de agua (última vela cerrada)-eventos del transporte0evidenciasin bloques aún (UNKNOWN hasta que el stream publique)Indicadores y contexto BTC provienen de los bloques de evidencia del MISMO stream que conduce la sesión; la recepción (pared) se muestra junto a la marca de agua del feed (evento). Sin bloque recibido, el panel muestra UNKNOWN: no se inventan valores.",
+        "gate_text": "Puerta live: silencio del feed (sin velas cerradas dentro del límite, FEED_SILENCE); la sesión conserva su última decisión sin reevaluar. Silencio medido entre disparos: 96741 ms (límite 90000 ms)."
+      },
+      "browser_external_requests": [],
+      "market_restarted_pid": 27228,
+      "session_id": "PL-MINAUSDT-LONG-1793193960839-03a7ecb6",
+      "final_checks": {
+        "status_cerrada": {
+          "ok": true,
+          "detail": "cerrada"
+        },
+        "decision_entrada": {
+          "ok": true,
+          "detail": "ENTRADA_SIMULADA"
+        },
+        "exit_stop": {
+          "ok": true,
+          "detail": {
+            "exit_executed": true,
+            "exit_reason": "stop"
+          }
+        },
+        "event_entry": {
+          "ok": true,
+          "detail": [
+            "protection",
+            "protection",
+            "protection",
+            "protection",
+            "entry",
+            "exit"
+          ]
+        },
+        "event_stop_or_exit": {
+          "ok": true,
+          "detail": [
+            "protection",
+            "protection",
+            "protection",
+            "protection",
+            "entry",
+            "exit"
+          ]
+        },
+        "fill_basis_tag": {
+          "ok": true,
+          "detail": "razon=stop P&L neto=-16.59 | fill_basis=model_approximation (fill con precio conocido tras la decisión; bid/ask/profundidad no observados; funding/costes no observados=UNKNOWN)"
+        },
+        "three_clocks": {
+          "ok": true,
+          "detail": {
+            "trigger_open_ms": 1793194140000,
+            "trigger_received_at_ms": 1793194201715,
+            "evaluation_clock_ms": 1793194140000,
+            "evaluation_wall_ms": 1793194201716
+          }
+        },
+        "evidence_blocks_stream": {
+          "ok": true,
+          "detail": [
+            "context_btc",
+            "indicators"
+          ]
+        },
+        "adapter_runner": {
+          "ok": true,
+          "detail": "market_stream"
+        },
+        "reconnects": {
+          "ok": true,
+          "detail": {
+            "reconnects": 8,
+            "disconnects": 8,
+            "connect_errors": 2
+          }
+        },
+        "watermark": {
+          "ok": true,
+          "detail": 1793194260000
+        },
+        "market_url_loopback": {
+          "ok": true,
+          "detail": "http://127.0.0.1:52257"
+        }
+      },
+      "zero_public": {
+        "python_denied_attempts": [],
+        "ledger": {
+          "rows": 0,
+          "requests": 0
+        },
+        "browser_external_requests": 0
+      },
+      "ok_zero_public": true,
+      "phases_pass": true,
+      "run_seconds": 379.9248711001128,
+      "procedural_pass": true
+    }
+  ],
+  "dashboard_restore": {
+    "expected": null,
+    "restarted": null,
+    "note": "no habia dashboard en 3020 antes de la corrida"
+  },
+  "canonical_service_state": {
+    "note": "el servicio canonico 8797 no fue tocado; sus sesiones de ensayo quedan listadas para revision del operador",
+    "trial_sessions": []
+  },
+  "verdict": "PASS"
+}
