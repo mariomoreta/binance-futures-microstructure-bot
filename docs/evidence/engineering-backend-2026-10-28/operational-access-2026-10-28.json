@@ -1,0 +1,71 @@
+{
+  "title": "Verificación de acceso operativo — sesión de ingeniería conducción backend (sin Binance público)",
+  "date_utc": "2026-10-28T01:05",
+  "workspace": "C:\\proyectos\\binance-futures-microstructure-bot",
+  "git_source_under_test": "feat/ingenieria-autonoma @ 5f24807 (árbol en la fecha; cambios subsiguientes solo docs/evidencia)",
+  "frontend_build_id": "r5poURhuj3RQc4CjC6Kyz",
+  "canonical_dashboard": {
+    "url": "http://127.0.0.1:3020/market-lab",
+    "pid": 29508,
+    "started_at": "2026-10-27 20:05 (local)"
+  },
+  "engineering_service": {
+    "identity": "engineering-session-service/v1",
+    "engine": "paper-lab-engine/v1.2",
+    "port": 8797,
+    "start_command": "python scripts/engineering_session_service.py --port 8797 --sessions-dir data/engineering-session/sessions --pid-file data/engineering-session/service.json",
+    "pid_at_test": 11032,
+    "cadence_ms": 700.0,
+    "sessions_dir_note": "el motor anida paper-lab-sessions bajo el raíz dado; el default SIN --sessions-dir colisiona con el controlador canónico anterior (scripts/paper_lab_session.py): se usa siempre un directorio dedicado"
+  },
+  "case_service_down_access": {
+    "setup": "8797 detenido; pestaña abierta en /market-lab",
+    "observations": [
+      "banner de error visible con data-testid=session-error (503 del BFF; etiqueta observada ENGINEERING_PROXY_ERROR; proceso NO reinicia el servicio ni lanza procesos)",
+      "BFF de engineering-sessions es proxy puro: sin child_process/spawn (verificado en el código fuente)",
+      "clicks repetidos de Iniciar sesion: cero duplicados, localStorage session_id permanece null, sin chip de conducción",
+      "el observador de recuperación reintenta por GET cada 800 ms y se recupera solo cuando el servicio vuelve (sin recargar)"
+    ]
+  },
+  "case_S1_full_lifecycle": {
+    "session_id": "PL-MINAUSDT-LONG-1793148300396-7f1f4f32",
+    "final": {"status": "cerrada", "revision": 38, "position_open": false, "drive_cause": "SESSION_CLOSED"},
+    "events_kinds": {"protection": 2, "entry": 1, "mark": 1, "exit": 1},
+    "network": "1 POST create + 1 POST control start + resto GET observación"
+  },
+  "case_S2_tab_close_backend_continues": {
+    "session_id": "PL-MINAUSDT-LONG-1793148492279-49b05386",
+    "tab_closed_at": "2026-10-28T00:48:20Z (sesión abierta rev 7, drive running)",
+    "with_tab_closed": [
+      {"t": "00:48:31Z", "status": "abierta", "revision": 31, "drive": "running"},
+      {"t": "00:48:36Z", "status": "cerrada", "revision": 38, "drive_cause": "SESSION_CLOSED"}
+    ],
+    "reopen": "recuperación automática por session_id; estado correcto (cerrada, net_pnl 4.944281), sin errores, chip de conducción terminado con texto de causa"
+  },
+  "case_SERVICE_STOP_with_running_session": {
+    "session_id": "PL-MINAUSDT-LONG-1793148548563-516fa8d8",
+    "at_stop": {"status": "abierta", "revision": 11, "position_open": true, "entry_px": 0.0626, "drive": "running (transporte local con cadencia en el mismo proceso)"},
+    "stop_command": "python scripts/engineering_session_service.py --stop --port 8797 --pid-file data/engineering-session/service.json -> {ok:true, pid:11032}",
+    "disk_state_after_stop": {
+      "status": "abierta",
+      "revision": 11,
+      "position_open": true,
+      "events_kinds": {"protection": 2, "entry": 1, "mark": 1},
+      "interpretation": "la parada del servicio NO altera el estado económico de sus sesiones: sin cierre inventado, sin evento de salida; la sesión queda recuperable y manejable"
+    }
+  },
+  "case_restart_recover_then_stop_session": {
+    "restart": "mismo comando de arranque canoníco; GET de la sesión recupera abierta rev 11 sin incoherencias",
+    "operator_stop": "click Detener sesion (control stop + stop_session) -> status detenida, revision 12, posición preservada (entry_px 0.0626, mark_px 0.06256), events kinds {protection:2, entry:1, mark:1} — sin evento de salida inventado",
+    "screenshot": "docs/evidence/engineering-backend-2026-10-28/ver-case-1-detener-tras-recuperar.png"
+  },
+  "session_vs_service_semantics_verified": {
+    "detener_sesion": "política de posición: detiene la conducción y congela la sesión (detenida) sin cerrar la posición ni inventar ningún evento de salida",
+    "cerrar_pestaña": "SOLO desconecta al observador; el backend sigue conduciendo (S2)",
+    "detener_servicio": "termina transportes/drives en memoria; sesiones durables intactas y recuperables tras reinicio (SERVICE_STOP); no mata procesos ajenos (guardia de origen + pid-file propio)"
+  },
+  "manual_start_limitation": "declarado deliberadamente: abrir el dashboard NO arranca el servicio (cabecera del CLI: 'Arranque/parada explícitos; no se lanza solo porque alguien abra una página'); sustenta la declaración de que el botón no es inicio completo",
+  "console_open_defect": "ERR_INCOMPLETE_CHUNKED_ENCODING @ /api/v1/market-flow/stream?symbol=BTCUSDT: DEFECTO ABIERTO del panel de flujo (stream SSE distinto a este trabajo); impacto observado: el stream del panel se aborta en re-render; sin atribuir fallos de esta sesión (acceso/conducción sin errores propios)",
+  "final_service_state_in_test": "servicio detenido con el mismo comando --stop tras completar la evidencia; directorios de sesiones de prueba eliminados",
+  "safety": {"binance_public": false, "upstream_calls": 0, "orders": false, "private_keys": false}
+}
