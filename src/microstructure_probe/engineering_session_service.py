@@ -1,16 +1,25 @@
 """Servicio de sesión de ingeniería autónoma (solo loopback).
 
 Mantiene la sesión del lado backend y conduce el avance mediante EVENTOS del
-transporte local: un reproductor con cadencia publica solo eventos de
-revelado (uno por vela) y el controlador los interpreta con el motor
-existente ``paper_lab_engine`` — autoridad económica única — paso a paso
-incrementalmente. El navegador inicia (create + control start), observa (GET
-del estado) y detiene (control stop); cerrar la pestaña NO detiene la sesión.
+transporte. Dos transportes, un solo controlador y un solo motor:
 
-No hay Binance, no hay feed vivo, no hay órdenes reales, no hay capital real.
-No hay un proceso Python por tick ni un gestor paralelo: un solo proceso de
-servicio reutiliza el motor y los mecanismos de persistencia existentes
-(escritura atómica + revisión optimista + lock por archivo).
+  * ``local_replay`` (default): un reproductor con cadencia publica solo
+    eventos de revelado (uno por vela) y el controlador los interpreta con
+    el motor existente ``paper_lab_engine`` — autoridad económica única —
+    paso a paso incrementalmente.
+  * ``market_stream`` (live de ingeniería): un adaptador cliente SSE consume
+    los eventos publicados por el servicio de mercado EXISTENTE
+    (``market-stream-service/v1``, solo loopback, fail-closed). Solo velas
+    CERRADAS conducen; la provisional es contador; duplicados/huecos/silencio
+    se traducen en dedupe o abstención con causa explícita.
+
+El navegador inicia (create + control start), observa (GET del estado) y
+detiene (control stop); cerrar la pestaña NO detiene la sesión.
+
+No hay Binance, no hay feed público, no hay órdenes reales, no hay capital
+real. No hay un proceso Python por tick ni un gestor paralelo: un solo
+proceso de servicio reutiliza el motor y los mecanismos de persistencia
+existentes (escritura atómica + revisión optimista + lock por archivo).
 
 El evaluador solo recibe el prefijo revelado: el dict público del motor no
 publica velas futuras y el reproductor no entrega OHLC, solo el avance
@@ -45,16 +54,20 @@ sin tocar bases canónicas).
 from __future__ import annotations
 
 import argparse
+import dataclasses
 import json
 import os
 import queue
 import sys
 import threading
 import time
+import urllib.error
+import urllib.request
+from dataclasses import replace as dc_replace
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from typing import Any, Dict, List, Optional
-from urllib.parse import parse_qs, urlsplit
+from urllib.parse import parse_qs, quote, urlsplit
 
 # Raíz del repositorio: src/microstructure_probe/este_archivo.py → 3 arriba.
 ROOT = Path(__file__).resolve().parents[2]
@@ -75,6 +88,42 @@ DEFAULT_HOST = "127.0.0.1"
 DEFAULT_CADENCE_MS = 700.0
 # Techo de seguridad por conducción: nº máximo de eventos consumidos.
 DRIVE_MAX_EVENTS = 4096
+
+# --- Transporte market_stream (sesión live de ingeniería) -------------------
+# Segundo transporte: el servicio de mercado EXISTENTE (market-stream/v1)
+# publica eventos SSE y este adaptador los consume. Sin Binance directo en
+# este proceso, sin otro colector ni gestor: solo un cliente SSE loopback.
+TRANSPORT_LOCAL_REPLAY = "local_replay"
+TRANSPORT_MARKET_STREAM = "market_stream"
+ALLOWED_TRANSPORTS = {TRANSPORT_LOCAL_REPLAY, TRANSPORT_MARKET_STREAM}
+MARKET_STREAM_PATH = "/stream"
+# Default del URL del servicio de mercado (solo loopback; el adaptador
+# rechaza fail-closed cualquier host no loopback).
+DEFAULT_MARKET_URL = "http://127.0.0.1:8791"
+DEFAULT_MARKET_BARS = 300
+# Techo de nocional simulado por sesión live (tope explícito, no estrategia).
+MAX_NOTIONAL_MARKET_STREAM = 1000.0
+# Silencio del feed live (ms) a partir del cual la puerta de evaluación
+# obliga a abstenerse con causa explícita.
+LIVE_SILENCE_MS_DEFAULT = 120_000.0
+# Tope de pasos de catch-up por evento de mercado (protección de bucle).
+CATCH_UP_MAX_STEPS = 256
+# Lectura del SSE: el servicio de mercado emite heartbeats ~cada 5 s; un
+# silencio mayor aquí significa conexión muerta → reconexión con backoff.
+# El timeout también cubre el connect.
+SSE_READ_TIMEOUT_S = 10.0
+SSE_BACKOFF_MAX_S = 5.0
+# Paso de rejilla por intervalo (validación de huecos en la ventana).
+INTERVAL_MS_MAP = {
+    "1m": 60_000, "5m": 300_000, "15m": 900_000,
+    "1h": 3_600_000, "4h": 14_400_000, "1d": 86_400_000,
+}
+# Hosts aceptados para conexiones de datos (fail-closed).
+LOOPBACK_HOSTS = ("127.0.0.1", "localhost", "::1")
+# Registro de transporte por sesión (sobrevive reinicios del servicio).
+# Vive en sessions_dir (FUERA de paper-lab-sessions/ para no interferir con
+# el escaneo de sesiones del motor).
+REGISTRY_FILENAME = "drive-registry.json"
 
 ALLOWED_ACTIONS = {
     "start", "stop", "step", "exit", "restart", "stop_session", "evaluate",
@@ -142,15 +191,271 @@ class LocalReplayTransport:
         self.event_queue.put({"type": "EOF"})
 
 
+def _candle_from_frame(payload: Dict[str, Any]) -> Optional[Dict[str, Any]]:
+    """Extrae una vela cerrada de un frame del stream (o None si es inválida).
+
+    Campos mínimos: open_time_ms + OHLC numéricos. ``close_time_ms`` es
+    opcional (si falta se deriva del intervalo en el controlador).
+    """
+    try:
+        open_ms = int(payload["open_time_ms"])
+        o = float(payload["open"])
+        h = float(payload["high"])
+        l = float(payload["low"])
+        c = float(payload["close"])
+    except (KeyError, TypeError, ValueError):
+        return None
+    close_ms = payload.get("close_time_ms")
+    try:
+        close_ms = int(close_ms) if close_ms is not None else None
+    except (TypeError, ValueError):
+        close_ms = None
+    return {
+        "open_time_ms": open_ms, "open": o, "high": h, "low": l,
+        "close": c, "close_time_ms": close_ms,
+        "base_volume": payload.get("base_volume"),
+    }
+
+
+class MarketServiceStreamAdapter:
+    """Cliente SSE contra el servicio de mercado EXISTENTE (market-stream/v1).
+
+    Restricción fail-closed: SOLO acepta URLs ``http://127.0.0.1:<puerto>`` o
+    ``http://localhost:<puerto>`` (loopback). Cualquier otro host se rechaza
+    en construcción y la sesión no arranca.
+
+    Responsabilidad única: traducir frames SSE en eventos de una cola. NO
+    toca el estado de la sesión (el controlador, con el motor, es el único
+    mutador). Reconecta con backoff ante caídas; los frames desconocidos se
+    ignoran con contador; la vela provisional (frame ``candle``) solo se
+    reporta como contador, nunca conduce.
+    """
+
+    def __init__(self, base_url: str, symbol: str, interval: str, bars: int,
+                 event_queue: "queue.Queue[Dict[str, Any]]",
+                 stop_event: threading.Event,
+                 started_event: threading.Event) -> None:
+        parsed = urlsplit(str(base_url or ""))
+        host = (parsed.hostname or "").lower()
+        if parsed.scheme != "http" or host not in LOOPBACK_HOSTS:
+            raise ValueError(
+                f"MARKET_URL_NOT_LOOPBACK: {base_url!r} no es un URL de "
+                "loopback (solo http://127.0.0.1:<puerto> o "
+                "http://localhost:<puerto>)")
+        port = parsed.port if parsed.port else 80
+        self.base_url = f"http://{host}:{port}"
+        self.symbol = str(symbol).upper()
+        self.interval = str(interval)
+        self.bars = max(int(bars), 1)
+        self.stream_url = (
+            self.base_url + MARKET_STREAM_PATH
+            + f"?symbol={quote(self.symbol)}&interval={quote(self.interval)}"
+            + f"&bars={self.bars}")
+        self.event_queue = event_queue
+        self.stop_event = stop_event
+        self.started_event = started_event
+        self.thread: Optional[threading.Thread] = None
+        self.stats: Dict[str, Any] = {
+            "frames": 0, "bad_frames": 0, "unknown_frames": 0,
+            "provisional_frames": 0, "disconnects": 0, "reconnects": 0,
+            "connect_errors": 0, "last_error": None,
+            "last_frame_at_ms": None, "connected_at_ms": None,
+            "started_at_ms": None,
+        }
+
+    @property
+    def identity(self) -> Dict[str, Any]:
+        return {
+            "symbol": self.symbol, "interval": self.interval,
+            "bars": self.bars, "base_url": self.base_url,
+        }
+
+    def start(self) -> None:
+        self.thread = threading.Thread(
+            target=self._run, name="market-stream-adapter", daemon=True)
+        self.thread.start()
+
+    # --- hilo del cliente SSE ------------------------------------------------
+    def _run(self) -> None:
+        self.started_event.set()
+        self.stats["started_at_ms"] = _now_ms()
+        while not self.stop_event.is_set():
+            try:
+                req = urllib.request.Request(
+                    self.stream_url,
+                    headers={"Accept": "text/event-stream"})
+                resp = urllib.request.urlopen(
+                    req, timeout=SSE_READ_TIMEOUT_S)
+            except Exception as exc:  # noqa: BLE001 - superficie real
+                self.stats["last_error"] = f"{type(exc).__name__}: {exc}"
+                self.stats["connect_errors"] += 1
+                self._put({
+                    "type": "CONNECT_ERROR",
+                    "detail": self.stats["last_error"],
+                    "received_at_ms": _now_ms(),
+                })
+                if not self._backoff_wait():
+                    return
+                continue
+            self.stats["connected_at_ms"] = _now_ms()
+            try:
+                self._read_stream(resp)
+            except Exception as exc:  # noqa: BLE001 - timeout/conexión caída
+                self.stats["last_error"] = f"{type(exc).__name__}: {exc}"
+            finally:
+                try:
+                    resp.close()
+                except OSError:  # pragma: no cover
+                    pass
+            if self.stop_event.is_set():
+                return
+            self.stats["disconnects"] += 1
+            self.stats["reconnects"] += 1
+            self._put({
+                "type": "DISCONNECTED",
+                "detail": self.stats["last_error"],
+                "received_at_ms": _now_ms(),
+            })
+            if not self._backoff_wait():
+                return
+
+    def _backoff_wait(self) -> bool:
+        """Espera con backoff exponencial acotado; False si hay parada."""
+        attempt = max(int(self.stats.get("reconnects", 0)) - 1, 0)
+        delay = min(0.5 * (2 ** attempt), SSE_BACKOFF_MAX_S)
+        end = time.monotonic() + delay
+        while time.monotonic() < end:
+            if self.stop_event.is_set():
+                return False
+            time.sleep(min(0.05, delay))
+        return not self.stop_event.is_set()
+
+    def _read_stream(self, resp: Any) -> None:
+        event_name: Optional[str] = None
+        data_lines: List[str] = []
+        while not self.stop_event.is_set():
+            raw = resp.readline()
+            if not raw:
+                raise ConnectionError(
+                    "SSE EOF (stream cerrado por el servicio)")
+            line = raw.decode("utf-8", "replace").rstrip("\r\n")
+            if line == "":
+                if event_name is not None:
+                    self._dispatch(event_name, "\n".join(data_lines))
+                event_name = None
+                data_lines = []
+                continue
+            if line.startswith(":"):
+                continue  # comentario SSE
+            if line.startswith("event:"):
+                event_name = line[len("event:"):].strip()
+            elif line.startswith("data:"):
+                data_lines.append(line[len("data:"):].strip())
+            # retry:/id:/otros campos: ignorados
+
+    def _dispatch(self, name: str, data_text: str) -> None:
+        self.stats["frames"] = int(self.stats["frames"]) + 1
+        self.stats["last_frame_at_ms"] = _now_ms()
+        try:
+            payload = json.loads(data_text) if data_text else {}
+        except json.JSONDecodeError:
+            self.stats["bad_frames"] = int(self.stats["bad_frames"]) + 1
+            return
+        if not isinstance(payload, dict):
+            self.stats["bad_frames"] = int(self.stats["bad_frames"]) + 1
+            return
+        received = _now_ms()
+        if name == "hello":
+            self._put({
+                "type": "HELLO", "identity": payload.get("identity") or {},
+                "service": payload.get("service"),
+                "received_at_ms": received,
+            })
+        elif name == "snapshot":
+            candles: List[Dict[str, Any]] = []
+            for row in payload.get("candles") or []:
+                if not isinstance(row, dict) or row.get("closed") is not True:
+                    continue  # SOLO velas cerradas del snapshot
+                candle = _candle_from_frame(row)
+                if candle is not None:
+                    candles.append(candle)
+            self._put({
+                "type": "SNAPSHOT", "candles": candles,
+                "observed": payload.get("observed"),
+                "received_at_ms": received,
+            })
+        elif name == "candle":
+            # Vela provisional del feed: SOLO contador; nunca conduce.
+            self.stats["provisional_frames"] = int(
+                self.stats["provisional_frames"]) + 1
+            self._put({
+                "type": "PROVISIONAL",
+                "open_time_ms": payload.get("open_time_ms"),
+                "received_at_ms": received,
+            })
+        elif name == "closed":
+            candle = _candle_from_frame(payload)
+            if candle is None:
+                self.stats["bad_frames"] = int(
+                    self.stats["bad_frames"]) + 1
+                return
+            self._put({
+                "type": "MARKET_CLOSED", "candle": candle,
+                "received_at_ms": received,
+            })
+        elif name == "indicators":
+            self._put({
+                "type": "EVIDENCE", "evidence_kind": "indicators",
+                "block": payload, "received_at_ms": received,
+            })
+        elif name == "context":
+            self._put({
+                "type": "EVIDENCE", "evidence_kind": "context_btc",
+                "block": payload, "received_at_ms": received,
+            })
+        elif name == "gap":
+            self._put({
+                "type": "DATA_GAP", "detail": payload,
+                "received_at_ms": received,
+            })
+        elif name == "status":
+            self._put({
+                "type": "STATUS", "block": payload,
+                "received_at_ms": received,
+            })
+        elif name == "heartbeat":
+            pass  # señal de vida; last_frame_at_ms ya quedó actualizado
+        else:
+            self.stats["unknown_frames"] = int(
+                self.stats["unknown_frames"]) + 1
+
+    def _put(self, event: Dict[str, Any]) -> None:
+        self.event_queue.put(event)
+
+
 class EngineeringSessionController:
     """Mantiene las sesiones y conduce el avance por eventos del transporte."""
 
-    def __init__(self, sessions_dir: Path, cadence_ms: float) -> None:
+    def __init__(self, sessions_dir: Path, cadence_ms: float,
+                 market_url: Optional[str] = None,
+                 market_bars: int = DEFAULT_MARKET_BARS,
+                 live_silence_ms: float = LIVE_SILENCE_MS_DEFAULT) -> None:
         self.sessions_dir = Path(sessions_dir)
         self.cadence_ms = float(cadence_ms)
+        # Config live (transporte market_stream): URL del servicio de mercado
+        # EXISTENTE (solo loopback; el adaptador valida fail-closed),
+        # ventana del snapshot y silencio del feed para la puerta.
+        self.market_url = (market_url
+                           or os.environ.get("ENGINEERING_MARKET_SERVICE_URL")
+                           or DEFAULT_MARKET_URL)
+        self.market_bars = max(int(market_bars), 1)
+        self.live_silence_ms = float(live_silence_ms)
         self._lock = threading.Lock()
         self._drives: Dict[str, Dict[str, Any]] = {}
         self._events: Dict[str, Dict[str, Any]] = {}
+        # Dedupe de creación por request_id (idempotencia backend del POST
+        # create; el guardia de React solo cubre el doble clic del navegador).
+        self._create_results: Dict[str, Dict[str, Any]] = {}
 
     # --- utilidades ---------------------------------------------------------
     def _load_state(self, session_id: str):
@@ -190,11 +495,61 @@ class EngineeringSessionController:
                 res.error_detail or "fallo al guardar")
         return res.state
 
+    # --- registro de transporte live (persistente) ---------------------------
+    def _registry_path(self) -> Path:
+        return self.sessions_dir / REGISTRY_FILENAME
+
+    def _load_registry(self) -> Dict[str, Dict[str, Any]]:
+        try:
+            data = json.loads(
+                self._registry_path().read_text(encoding="utf-8"))
+        except (OSError, json.JSONDecodeError):
+            return {}
+        sessions = data.get("sessions") if isinstance(data, dict) else None
+        return sessions if isinstance(sessions, dict) else {}
+
+    def _registry_entry(self, session_id: str) -> Optional[Dict[str, Any]]:
+        return self._load_registry().get(session_id)
+
+    def _register_live_session(self, session_id: str,
+                               entry: Dict[str, Any]) -> None:
+        sessions = self._load_registry()
+        sessions[session_id] = entry
+        self._write_registry(sessions)
+
+    def _unregister_session(self, session_id: str) -> None:
+        sessions = self._load_registry()
+        if session_id in sessions:
+            del sessions[session_id]
+            self._write_registry(sessions)
+
+    def _write_registry(self, sessions: Dict[str, Dict[str, Any]]) -> None:
+        path = self._registry_path()
+        path.parent.mkdir(parents=True, exist_ok=True)
+        tmp = path.with_name(path.name + ".tmp")
+        tmp.write_text(
+            json.dumps({"version": 1, "sessions": sessions},
+                       ensure_ascii=False, indent=1),
+            encoding="utf-8")
+        os.replace(tmp, path)
+
     def drive_view(self, session_id: str) -> Dict[str, Any]:
         with self._lock:
             drive = self._drives.get(session_id)
             info = self._events.get(session_id)
         if drive is None:
+            # Sin drive en memoria: el transporte persistido (registro) da
+            # la identidad del transporte para que el observador (UI) sepa
+            # cómo se conduce esta sesión tras un reinicio del servicio.
+            registry = self._registry_entry(session_id)
+            if registry:
+                return {
+                    "state": "idle",
+                    "session_id": session_id,
+                    "runner": registry.get("transport"),
+                    "market_url": registry.get("market_url"),
+                    "bars": registry.get("bars"),
+                }
             return {"state": "idle", "session_id": session_id}
         return self._drive_public(drive, info)
 
@@ -202,7 +557,8 @@ class EngineeringSessionController:
                       info: Optional[Dict[str, Any]]) -> Dict[str, Any]:
         if drive is None:
             return {"state": "idle"}
-        return {
+        runner = drive.get("runner", TRANSPORT_LOCAL_REPLAY)
+        out: Dict[str, Any] = {
             "state": drive["state"],
             "cause": drive.get("cause"),
             "started_at_ms": drive.get("started_at_ms"),
@@ -210,8 +566,23 @@ class EngineeringSessionController:
             "events_processed": drive.get("events_processed", 0),
             "transport_events": (info or {}).get("transport_events", 0),
             "cadence_ms": drive.get("cadence_ms"),
-            "runner": "local_replay",
+            "runner": runner,
         }
+        if runner == TRANSPORT_MARKET_STREAM:
+            adapter = drive.get("transport")
+            out.update({
+                "market_url": drive.get("market_url"),
+                "bars": drive.get("bars"),
+                "live_silence_ms": drive.get("live_silence_ms"),
+                "watermark": drive.get("watermark"),
+                "last_trigger": drive.get("last_trigger"),
+                "last_gate": drive.get("last_gate"),
+                "last_gap": drive.get("last_gap"),
+                "last_status": drive.get("last_status"),
+                "evidence": drive.get("evidence") or {},
+                "stats": dict(adapter.stats) if adapter is not None else {},
+            })
+        return out
 
     # --- endpoints ----------------------------------------------------------
     def list_sessions(self) -> List[Dict[str, Any]]:
@@ -226,27 +597,75 @@ class EngineeringSessionController:
         return rows
 
     def create_session(self, payload: Dict[str, Any]) -> Dict[str, Any]:
+        request_id = payload.get("request_id")
+        if request_id:
+            cached = self._create_results.get(str(request_id))
+            if cached is not None:
+                # Idempotencia backend: el mismo request_id devuelve la MISMA
+                # sesión creada (sin duplicar).
+                return cached
+        transport = str(payload.get("transport") or TRANSPORT_LOCAL_REPLAY)
+        if transport not in ALLOWED_TRANSPORTS:
+            raise ValueError(
+                f"transporte no permitido: {transport} (permitidos: "
+                f"{sorted(ALLOWED_TRANSPORTS)})")
         config = self._parse_config(payload["config"])
-        candles = [engine.PaperCandle(
-            open_time_ms=int(r["open_time_ms"]), open=float(r["open"]),
-            high=float(r["high"]), low=float(r["low"]),
-            close=float(r["close"]),
-            close_time_ms=int(r["close_time_ms"]),
-        ) for r in payload.get("candles") or []]
+        if transport == TRANSPORT_MARKET_STREAM:
+            # Live: la ventana de operación llega por eventos del servicio de
+            # mercado; create SOLO lleva contexto (candles=[] obligatorio).
+            if payload.get("candles"):
+                raise ValueError(
+                    "LIVE_CANDLES_FORBIDDEN: en transporte market_stream la "
+                    "ventana de operación la produce el feed; create solo "
+                    "acepta contexto (candles=[])")
+            candles: List[Dict[str, Any]] = []
+            raw_context = payload.get("context") or []
+            if not raw_context:
+                raise ValueError(
+                    "LIVE_CONTEXT_REQUIRED: la sesión live necesita contexto "
+                    "(ventana de velas cerradas conocidas) para fijar el "
+                    "reloj T inicial")
+            if config.notional_usdt > MAX_NOTIONAL_MARKET_STREAM:
+                raise ValueError(
+                    f"NOTIONAL_CAP: nocional {config.notional_usdt} USDT "
+                    f"supera el tope live {MAX_NOTIONAL_MARKET_STREAM} USDT")
+        else:
+            candles = [engine.PaperCandle(
+                open_time_ms=int(r["open_time_ms"]), open=float(r["open"]),
+                high=float(r["high"]), low=float(r["low"]),
+                close=float(r["close"]),
+                close_time_ms=int(r["close_time_ms"]),
+            ) for r in payload.get("candles") or []]
+            raw_context = payload.get("context") or []
         context = [engine.PaperCandle(
             open_time_ms=int(r["open_time_ms"]), open=float(r["open"]),
             high=float(r["high"]), low=float(r["low"]),
             close=float(r["close"]),
             close_time_ms=int(r["close_time_ms"]),
-        ) for r in payload.get("context") or []]
+        ) for r in raw_context]
         state = engine.create_session(
             config, candles, context,
             hypothesis_id=payload.get("hypothesis_id"),
             hypothesis_version=payload.get("hypothesis_version"),
             rule_version=payload.get("rule_version"),
         )
-        state = self._save(state, None, payload.get("request_id"))
-        return {"session": engine.session_to_public_dict(state)}
+        state = self._save(state, None, request_id)
+        result: Dict[str, Any] = {
+            "session": engine.session_to_public_dict(state),
+            "transport": transport,
+        }
+        if transport == TRANSPORT_MARKET_STREAM:
+            self._register_live_session(state.session_id, {
+                "transport": transport,
+                "symbol": config.symbol,
+                "interval": config.interval,
+                "bars": self.market_bars,
+                "market_url": self.market_url,
+                "live_silence_ms": self.live_silence_ms,
+            })
+        if request_id:
+            self._create_results[str(request_id)] = result
+        return result
 
     def get_session(self, session_id: str) -> Dict[str, Any]:
         state = self._load_state(session_id)
@@ -299,26 +718,80 @@ class EngineeringSessionController:
         stop_event = threading.Event()
         started_event = threading.Event()
         event_queue: "queue.Queue[Dict[str, Any]]" = queue.Queue()
-        schedule = [c.open_time_ms for c in state.candles]
-        transport = LocalReplayTransport(
-            schedule, event_queue, self.cadence_ms, stop_event, started_event)
-        drive = {
-            "state": "running",
-            "started_at_ms": _now_ms(),
-            "finished_at_ms": None,
-            "events_processed": 0,
-            "cause": None,
-            "stop_event": stop_event,
-            "queue": event_queue,
-            "transport": transport,
-            "cadence_ms": self.cadence_ms,
-        }
-        self._drives[session_id] = drive
-        self._events[session_id] = {"transport_events": 0}
-        transport.start()
-        thread = threading.Thread(
-            target=self._run_drive, args=(session_id,),
-            name=f"drive-{session_id[:24]}", daemon=True)
+        registry = self._registry_entry(session_id)
+        transport_kind = ((registry or {}).get("transport")
+                          or TRANSPORT_LOCAL_REPLAY)
+        if transport_kind == TRANSPORT_MARKET_STREAM:
+            if state.config.notional_usdt > MAX_NOTIONAL_MARKET_STREAM:
+                raise RuntimeError(
+                    "NOTIONAL_CAP",
+                    f"nocional {state.config.notional_usdt} USDT supera el "
+                    f"tope live {MAX_NOTIONAL_MARKET_STREAM} USDT")
+            market_url = str((registry or {}).get("market_url")
+                             or self.market_url)
+            bars = int((registry or {}).get("bars") or self.market_bars)
+            silence = float((registry or {}).get("live_silence_ms")
+                            or self.live_silence_ms)
+            try:
+                transport_obj: Any = MarketServiceStreamAdapter(
+                    market_url, state.config.symbol,
+                    state.config.interval, bars, event_queue, stop_event,
+                    started_event)
+            except ValueError as exc:
+                raise RuntimeError("MARKET_URL_NOT_LOOPBACK", str(exc))
+            drive = {
+                "state": "running",
+                "started_at_ms": _now_ms(),
+                "finished_at_ms": None,
+                "events_processed": 0,
+                "cause": None,
+                "stop_event": stop_event,
+                "queue": event_queue,
+                "transport": transport_obj,
+                "runner": TRANSPORT_MARKET_STREAM,
+                "market_url": transport_obj.base_url,
+                "bars": bars,
+                "live_silence_ms": silence,
+                "symbol": state.config.symbol,
+                "interval": state.config.interval,
+                "watermark": None,
+                "last_trigger": None,
+                "last_gate": None,
+                "last_gap": None,
+                "last_status": None,
+                "last_heartbeat_at_ms": None,
+                "evidence": {},
+                "cadence_ms": None,
+            }
+            self._drives[session_id] = drive
+            self._events[session_id] = {"transport_events": 0}
+            transport_obj.start()
+            thread = threading.Thread(
+                target=self._run_drive_market, args=(session_id,),
+                name=f"drive-live-{session_id[:24]}", daemon=True)
+        else:
+            schedule = [c.open_time_ms for c in state.candles]
+            transport_obj = LocalReplayTransport(
+                schedule, event_queue, self.cadence_ms, stop_event,
+                started_event)
+            drive = {
+                "state": "running",
+                "started_at_ms": _now_ms(),
+                "finished_at_ms": None,
+                "events_processed": 0,
+                "cause": None,
+                "stop_event": stop_event,
+                "queue": event_queue,
+                "transport": transport_obj,
+                "runner": TRANSPORT_LOCAL_REPLAY,
+                "cadence_ms": self.cadence_ms,
+            }
+            self._drives[session_id] = drive
+            self._events[session_id] = {"transport_events": 0}
+            transport_obj.start()
+            thread = threading.Thread(
+                target=self._run_drive, args=(session_id,),
+                name=f"drive-{session_id[:24]}", daemon=True)
         thread.start()
         started_event.wait(timeout=2.0)
         return {
@@ -481,6 +954,479 @@ class EngineeringSessionController:
                     f"DRIVE_EVENT_LIMIT ({DRIVE_MAX_EVENTS})")
                 break
 
+    # --- conducción live (transporte market_stream) --------------------------
+    def _run_drive_market(self, session_id: str) -> None:
+        """Conducción por eventos del servicio de mercado (SSE traducido).
+
+        El adaptador SOLO publica eventos en la cola; este bucle es el único
+        mutador del estado (vía el motor). La vela provisional y los frames
+        desconocidos no conducen; los duplicados se ignoran por marca de
+        agua (open_time) sin duplicar decisiones, fills ni cierres.
+        """
+        drive = self._drives.get(session_id)
+        if drive is None:  # pragma: no cover
+            return
+        stop_event: threading.Event = drive["stop_event"]
+        event_queue = drive["queue"]
+        adapter = drive["transport"]
+        with self._lock:
+            info = self._events.setdefault(
+                session_id, {"transport_events": 0})
+        while True:
+            if stop_event.is_set():
+                self._finish_drive(session_id, drive, "OPERATOR_STOP")
+                break
+            try:
+                event = event_queue.get(timeout=0.5)
+            except queue.Empty:
+                if not adapter.thread.is_alive() and event_queue.empty():
+                    self._finish_drive(session_id, drive, "TRANSPORT_LOST")
+                    break
+                # Feed en silencio (sin frames): señal VISIBLE en la puerta
+                # sin tocar la sesión (no se inventan decisiones).
+                last_frame = adapter.stats.get("last_frame_at_ms")
+                limit = float(drive.get("live_silence_ms")
+                              or self.live_silence_ms)
+                if last_frame is not None \
+                        and _now_ms() - int(last_frame) > limit \
+                        and (drive.get("last_gate") or {}).get("cause") \
+                        != "FEED_SILENCE":
+                    drive["last_gate"] = {
+                        "evaluated_at_ms": _now_ms(),
+                        "clock_ms": None,
+                        "silence_ms": _now_ms() - int(last_frame),
+                        "live_silence_ms": limit,
+                        "ok": False,
+                        "cause": "FEED_SILENCE",
+                        "note": "feed en silencio (sin frames); la sesión "
+                                "conserva su última decisión sin reevaluar",
+                    }
+                continue
+            ev_type = event.get("type")
+            with self._lock:
+                if drive["state"] != "running":
+                    continue
+                if ev_type == "STOPPED":
+                    self._finish_drive(session_id, drive, "OPERATOR_STOP")
+                    break
+            info["transport_events"] = int(
+                info.get("transport_events", 0)) + 1
+            received_at = int(event.get("received_at_ms") or _now_ms())
+            state = None
+            finish_cause: Optional[str] = None
+            try:
+                if ev_type == "HELLO":
+                    identity = event.get("identity") or {}
+                    if (str(identity.get("symbol") or "").upper()
+                            != str(drive["symbol"]).upper()
+                            or str(identity.get("interval") or "")
+                            != str(drive["interval"])):
+                        finish_cause = "IDENTITY_MISMATCH"
+                    else:
+                        drive["hello"] = {
+                            "identity": identity,
+                            "service": event.get("service"),
+                            "received_at_ms": received_at,
+                        }
+                elif ev_type == "SNAPSHOT":
+                    state = self._consume_snapshot(
+                        session_id, drive,
+                        event.get("candles") or [], received_at)
+                elif ev_type == "MARKET_CLOSED":
+                    state = self._consume_market_closed(
+                        session_id, drive, event.get("candle"), received_at)
+                elif ev_type == "PROVISIONAL":
+                    # Solo contador: la vela provisional nunca conduce.
+                    info["provisional_ignored"] = int(
+                        info.get("provisional_ignored", 0)) + 1
+                elif ev_type == "EVIDENCE":
+                    drive["evidence"][event.get("evidence_kind") or ""] = {
+                        "block": event.get("block"),
+                        "received_at_ms": received_at,
+                    }
+                elif ev_type == "DATA_GAP":
+                    drive["last_gap"] = {
+                        "detail": event.get("detail"),
+                        "received_at_ms": received_at,
+                    }
+                elif ev_type == "STATUS":
+                    drive["last_status"] = {
+                        "block": event.get("block"),
+                        "received_at_ms": received_at,
+                    }
+                elif ev_type == "HEARTBEAT":
+                    drive["last_heartbeat_at_ms"] = received_at
+                elif ev_type in ("DISCONNECTED", "CONNECT_ERROR"):
+                    info["disconnects"] = int(
+                        info.get("disconnects", 0)) + 1
+                    drive["last_disconnect"] = {
+                        "type": ev_type, "detail": event.get("detail"),
+                        "received_at_ms": received_at,
+                    }
+                # Otros tipos: ignorados (fail-safe).
+            except KeyError as exc:
+                finish_cause = (str(exc).strip("'\" ()")
+                                or "SESSION_NOT_FOUND")
+            except Exception as exc:  # noqa: BLE001 - superficie real
+                finish_cause = f"DRIVE_ERROR:{type(exc).__name__}: {exc}"
+            if finish_cause is not None:
+                self._finish_drive(session_id, drive, finish_cause)
+                break
+            if state is None:
+                continue
+            if state.status in ("cerrada", "detenida"):
+                cause = ("SESSION_CLOSED" if state.status == "cerrada"
+                         else "SESSION_STOPPED")
+                self._finish_drive(session_id, drive, cause)
+                break
+
+    def _consume_snapshot(self, session_id: str, drive: Dict[str, Any],
+                          rows: List[Any], received_at: int):
+        """Fusiona velas cerradas de un snapshot (reconexión / arranque).
+
+        Solo velas con open_time > reloj de la sesión (el resto es contexto
+        ya conocido); marca de agua evita reprocesar tras reconexión.
+        """
+        state = self._load_state(session_id)
+        if state is None:
+            raise KeyError("SESSION_NOT_FOUND")
+        if state.status in ("cerrada", "detenida"):
+            return state
+        appended = 0
+        max_open = 0
+        with self._lock:
+            watermark = int(drive.get("watermark") or 0)
+        for row in rows:
+            candle = row if isinstance(row, dict) else None
+            if candle is None or candle.get("open_time_ms") is None:
+                with self._lock:
+                    info = self._events.setdefault(session_id, {})
+                    info["bad_candles"] = int(
+                        info.get("bad_candles", 0)) + 1
+                continue
+            ot = int(candle["open_time_ms"])
+            max_open = max(max_open, ot)
+            if ot <= watermark or ot <= (state.clock_ms or 0):
+                with self._lock:
+                    info = self._events.setdefault(session_id, {})
+                    info["duplicates_ignored"] = int(
+                        info.get("duplicates_ignored", 0)) + 1
+                continue
+            paper = self._paper_candle_from_frame(
+                state, candle, received_at)
+            if paper is None:
+                with self._lock:
+                    info = self._events.setdefault(session_id, {})
+                    info["bad_candles"] = int(
+                        info.get("bad_candles", 0)) + 1
+                continue
+            state = dc_replace(
+                state,
+                candles=self._merge_operation_candle(state.candles, paper),
+                revision=state.revision + 1)
+            appended += 1
+        with self._lock:
+            drive["watermark"] = max(int(drive.get("watermark") or 0),
+                                     max_open)
+        if appended == 0:
+            return None
+        self._record_feed_gap(drive, received_at)
+        drive["last_trigger"] = {
+            "frame": "snapshot", "appended": appended,
+            "received_at_ms": received_at,
+        }
+        return self._live_advance(session_id, state, drive,
+                                  drive["last_trigger"],
+                                  expected_revision=state.revision - appended)
+
+    def _consume_market_closed(self, session_id: str, drive: Dict[str, Any],
+                               candle: Optional[Dict[str, Any]],
+                               received_at: int):
+        """Consume una vela CERRADA del feed: fusiona, avanza y evalúa.
+
+        Dedupe por marca de agua (open_time) y por reloj de la sesión: un
+        duplicado o una vela vieja no produce segunda decisión, fill ni
+        cierre (revisión sin cambios).
+        """
+        if not candle or candle.get("open_time_ms") is None:
+            with self._lock:
+                info = self._events.setdefault(session_id, {})
+                info["bad_candles"] = int(info.get("bad_candles", 0)) + 1
+            return None
+        ot = int(candle["open_time_ms"])
+        with self._lock:
+            watermark = int(drive.get("watermark") or 0)
+            if ot <= watermark:
+                info = self._events.setdefault(session_id, {})
+                info["duplicates_ignored"] = int(
+                    info.get("duplicates_ignored", 0)) + 1
+                return None
+        state = self._load_state(session_id)
+        if state is None:
+            raise KeyError("SESSION_NOT_FOUND")
+        if state.status in ("cerrada", "detenida"):
+            return state
+        if ot <= (state.clock_ms or 0):
+            # Vela del contexto o ya conocida: sin efecto en la sesión.
+            with self._lock:
+                drive["watermark"] = max(watermark, ot)
+                info = self._events.setdefault(session_id, {})
+                info["duplicates_ignored"] = int(
+                    info.get("duplicates_ignored", 0)) + 1
+            return None
+        paper = self._paper_candle_from_frame(state, candle, received_at)
+        if paper is None:
+            with self._lock:
+                drive["watermark"] = max(watermark, ot)
+                info = self._events.setdefault(session_id, {})
+                info["bad_candles"] = int(info.get("bad_candles", 0)) + 1
+            return None
+        with self._lock:
+            drive["watermark"] = max(watermark, ot)
+        self._record_feed_gap(drive, received_at)
+        drive["last_trigger"] = {
+            "frame": "closed", "open_time_ms": ot,
+            "close_time_ms": paper.close_time_ms,
+            "received_at_ms": received_at,
+            "available_at_ms": ot,
+        }
+        state = dc_replace(
+            state,
+            candles=self._merge_operation_candle(state.candles, paper),
+            revision=state.revision + 1)
+        return self._live_advance(session_id, state, drive,
+                                  drive["last_trigger"],
+                                  expected_revision=state.revision - 1)
+
+    @staticmethod
+    def _record_feed_gap(drive: Dict[str, Any], received_at: int) -> None:
+        """Hueco de silencio del feed ENTRE disparos (ms de pared).
+
+        El frame recién llegado resetea el reloj del adaptador: el silencio
+        relevante para la puerta es el tiempo transcurrido SIN datos entre
+        el disparo anterior y este. Si supera ``live_silence_ms``, la puerta
+        abstiene ESTA evaluación con causa FEED_SILENCE.
+        """
+        prev = drive.get("last_trigger_received_at_ms")
+        drive["feed_gap_ms"] = (
+            (received_at - int(prev)) if prev is not None else None)
+        drive["last_trigger_received_at_ms"] = received_at
+
+    @staticmethod
+    def _merge_operation_candle(candles: List, paper: Any) -> List:
+        """Ventana de operación ordenada, sin duplicar open_time."""
+        kept = [c for c in candles if c.open_time_ms != paper.open_time_ms]
+        kept.append(paper)
+        kept.sort(key=lambda c: c.open_time_ms)
+        return kept
+
+    def _paper_candle_from_frame(self, state, candle: Dict[str, Any],
+                                 received_at: int):
+        try:
+            ot = int(candle["open_time_ms"])
+            o = float(candle["open"])
+            h = float(candle["high"])
+            l = float(candle["low"])
+            c = float(candle["close"])
+        except (KeyError, TypeError, ValueError):
+            return None
+        step = INTERVAL_MS_MAP.get(str(state.config.interval))
+        close_ms = candle.get("close_time_ms")
+        try:
+            close_ms = int(close_ms) if close_ms is not None else None
+        except (TypeError, ValueError):
+            close_ms = None
+        if close_ms is None:
+            close_ms = (ot + step - 1) if step else None
+        # Causalidad: el open se conoce en open_time_ms; el OHLC completo
+        # (vela cerrada del feed) se recibe en received_at (hora de pared).
+        return engine.PaperCandle(
+            open_time_ms=ot, open=o, high=h, low=l, close=c,
+            close_time_ms=close_ms or ot,
+            available_at=ot, received_at=received_at,
+        )
+
+    def _live_advance(self, session_id: str, state, drive: Dict[str, Any],
+                      trigger: Dict[str, Any],
+                      expected_revision: Optional[int] = None):
+        """Catch-up del reloj + UNA evaluación con puerta + un solo guardado.
+
+        El catch-up corta ANTES de quedarse sin aperturas por revelar:
+        llamar ``step_forward`` con posición abierta y ``_next_reveal_index``
+        None cerraría la sesión por open_at_end (cierre falso en live).
+        ``expected_revision`` es la revisión ANTES de la fusión de la vela
+        (la mutación en memoria ya trae sus bumps acumulados).
+        """
+        if expected_revision is None:
+            expected_revision = state.revision
+        prev_revision = state.revision
+        steps = 0
+        while steps < CATCH_UP_MAX_STEPS:
+            if engine._next_reveal_index(state) is None:
+                break
+            state = engine.step_forward(state)
+            steps += 1
+            if state.status in ("cerrada", "detenida"):
+                break
+        drive["last_catch_up_steps"] = steps
+        if steps == 0:
+            # Nada por revelar ni decidir: sin guardado (sin revisión nueva).
+            return state
+        state = self._tag_fill_basis(state)
+        gate = self._evaluation_gate(state, drive)
+        drive["last_gate"] = gate
+        if gate["ok"] and state.status in ("sin_iniciar", "evaluando") and (
+                state.config.decision in (None, "SIN_ENTRADA")):
+            state = engine.evaluate_session(
+                state,
+                hypothesis_id=state.config.hypothesis_id,
+                hypothesis_version=state.config.hypothesis_version,
+                rule_version=state.config.rule_version or engine.RULE_CAUSAL_V1,
+                at_ms=state.clock_ms,
+            )
+            state = self._augment_live_evidence(state, drive, trigger, gate)
+        # UN solo guardado para todo el avance (fusion + catch-up + evaluación
+        # acumulados en memoria); request_id determinista por disparo.
+        request_id = (f"market-{session_id}-"
+                      f"{trigger.get('open_time_ms') or trigger.get('frame')}"
+                      f"-{expected_revision}")
+        return self._save(state, expected_revision, request_id)
+
+    def _evaluation_gate(self, state, drive: Dict[str, Any]) -> Dict[str, Any]:
+        """Puerta de evaluación live: frescura, silencio del feed y huecos.
+
+        Distinción explícita de relojes: hora del evento (open/close del
+        feed), hora de recepción (received_at, pared) y reloj de evaluación
+        (state.clock_ms). En live, ``end_of_data`` del evaluador de frescura
+        solo significa "aún no llegó la próxima vela cerrada" (espera
+        normal); el bloqueo real es silencio del feed u obsolescencia.
+        """
+        wall = _now_ms()
+        merged = engine._merge_candles(state.context_candles, state.candles)
+        at_ms = state.clock_ms if state.clock_ms is not None else wall
+        fr = engine.evaluate_freshness_at(merged, at_ms)
+        adapter = drive.get("transport")
+        # Silencio del feed medido ENTRE disparos (hueco sin datos hasta el
+        # disparo actual); el frame recién llegado no lo enmascara.
+        silence_ms = drive.get("feed_gap_ms")
+        limit = float(drive.get("live_silence_ms") or self.live_silence_ms)
+        holes = self._grid_holes(state)
+        stale = bool(fr.get("stale_candles"))
+        silence_ok = silence_ms is None or silence_ms <= limit
+        ok = (not stale and silence_ok and holes is None
+              and state.status not in ("cerrada", "detenida"))
+        cause = None
+        if not ok:
+            if stale:
+                cause = "DATA_STALE"
+            elif not silence_ok:
+                cause = "FEED_SILENCE"
+            elif holes is not None:
+                cause = "GRID_GAP"
+            else:
+                cause = "SESSION_NOT_EVALUABLE"
+        return {
+            "evaluated_at_ms": wall,
+            "clock_ms": at_ms,
+            "freshness": {
+                "reason": fr.get("reason"),
+                "stale_candles": fr.get("stale_candles"),
+                "end_of_data": fr.get("end_of_data"),
+                "note": ("end_of_data en live = sin vela cerrada posterior "
+                         "aún (espera normal del feed; no bloquea)"),
+            },
+            "silence_ms": silence_ms,
+            "live_silence_ms": limit,
+            "adapter_last_frame_at_ms": (
+                adapter.stats.get("last_frame_at_ms")
+                if adapter is not None else None),
+            "grid_gap": holes,
+            "ok": ok,
+            "cause": cause,
+        }
+
+    def _grid_holes(self, state) -> Optional[List[str]]:
+        step = INTERVAL_MS_MAP.get(str(state.config.interval))
+        if step is None:
+            return [f"intervalo {state.config.interval} sin paso de rejilla "
+                    "conocido"]
+        holes: List[str] = []
+        candles = sorted(state.candles, key=lambda c: c.open_time_ms)
+        if state.context_candles and candles:
+            last_ctx = max(
+                (c.close_time_ms or (c.open_time_ms + step - 1))
+                for c in state.context_candles)
+            if candles[0].open_time_ms != last_ctx + 1:
+                holes.append(
+                    f"frontera contexto→operación: primera vela "
+                    f"{candles[0].open_time_ms} != {last_ctx + 1} (continuidad)")
+        for prev, cur in zip(candles, candles[1:]):
+            if cur.open_time_ms - prev.open_time_ms != step:
+                holes.append(
+                    f"hueco {prev.open_time_ms}→{cur.open_time_ms} "
+                    f"(paso {cur.open_time_ms - prev.open_time_ms} != {step})")
+        return holes or None
+
+    def _tag_fill_basis(self, state):
+        """Etiqueta el último evento entry/exit/stop como aproximación.
+
+        Sin bid/ask/profundidad observados en T, el fill usa el precio
+        conocido tras la decisión (open de la vela revelada): es una
+        APROXIMACIÓN DEL MODELO, no liquidez inventada.
+        """
+        events = list(state.events)
+        for i in range(len(events) - 1, -1, -1):
+            ev = events[i]
+            if ev.kind in ("entry", "exit", "stop"):
+                if ev.detail and "fill_basis=" in ev.detail:
+                    return state
+                tag = ("fill_basis=model_approximation (fill con precio "
+                       "conocido tras la decisión; bid/ask/profundidad no "
+                       "observados; funding/costes no observados=UNKNOWN)")
+                events[i] = dataclasses.replace(
+                    ev, detail=((ev.detail + " | ") if ev.detail else "")
+                    + tag)
+                return dc_replace(state, events=events)
+        return state
+
+    def _augment_live_evidence(self, state, drive: Dict[str, Any],
+                               trigger: Dict[str, Any],
+                               gate: Dict[str, Any]):
+        """Enriquece la evidencia de la decisión con identidad y 3 relojes.
+
+        Nivel de servicio (el motor no se toca): session_id, config_hash,
+        identidad de mercado, evento disparador, bloques de evidencia del
+        adaptador y la distinción evento/recibido/reloj de evaluación.
+        """
+        evidence = state.config.decision_evidence
+        if not isinstance(evidence, dict):
+            return state
+        adapter = drive.get("transport")
+        augmented = dict(evidence)
+        augmented["adapter"] = {
+            "runner": TRANSPORT_MARKET_STREAM,
+            "market_url": drive.get("market_url"),
+            "market_service": (adapter.stats if adapter is not None
+                               else None) and dict(adapter.stats) or None,
+            "symbol": state.config.symbol,
+            "interval": state.config.interval,
+            "trigger": trigger,
+            "clocks": {
+                "trigger_open_ms": trigger.get("open_time_ms"),
+                "trigger_received_at_ms": trigger.get("received_at_ms"),
+                "evaluation_clock_ms": state.clock_ms,
+                "evaluation_wall_ms": _now_ms(),
+            },
+            "evidence_blocks": {
+                kind: entry.get("block")
+                for kind, entry in (drive.get("evidence") or {}).items()
+            },
+            "gate": gate,
+        }
+        return dc_replace(
+            state,
+            config=dc_replace(state.config, decision_evidence=augmented))
+
     def _finish_drive(self, session_id: str, drive: Dict[str, Any],
                       cause: str) -> None:
         if drive["state"] == "running":
@@ -489,6 +1435,11 @@ class EngineeringSessionController:
             drive["cause"] = cause
         if drive.get("stop_event") is not None:
             drive["stop_event"].set()
+        if cause in ("SESSION_CLOSED", "SESSION_STOPPED"):
+            try:
+                self._unregister_session(session_id)
+            except OSError:  # pragma: no cover
+                pass
 
     # --- parada -------------------------------------------------------------
     def shutdown(self) -> None:
@@ -644,6 +1595,13 @@ class EngineeringHTTPServer(ThreadingHTTPServer):
             "port": self.server_address[1],
             "sessions_dir": str(self.world.sessions_dir),
             "cadence_ms": self.world.cadence_ms,
+            "market": {
+                "url": self.world.market_url,
+                "bars": self.world.market_bars,
+                "live_silence_ms": self.world.live_silence_ms,
+                "max_notional_usdt": MAX_NOTIONAL_MARKET_STREAM,
+                "transports": sorted(ALLOWED_TRANSPORTS),
+            },
             "drives": drives,
             "generated_at_ms": _now_ms(),
         }
@@ -697,6 +1655,18 @@ def main(argv: Optional[List[str]] = None) -> int:
     parser.add_argument("--cadence-ms", type=float,
                         default=DEFAULT_CADENCE_MS,
                         help="cadencia del transporte local (ms por vela)")
+    parser.add_argument("--market-url", default=None,
+                        help="URL del servicio de mercado market-stream/v1 "
+                             "para transporte market_stream (SOLO loopback; "
+                             "default: env ENGINEERING_MARKET_SERVICE_URL o "
+                             f"{DEFAULT_MARKET_URL})")
+    parser.add_argument("--market-bars", type=int, default=DEFAULT_MARKET_BARS,
+                        help="ventana (velas) solicitada al snapshot del "
+                             "servicio de mercado")
+    parser.add_argument("--live-silence-ms", type=float,
+                        default=LIVE_SILENCE_MS_DEFAULT,
+                        help="silencio del feed live (ms) que fuerza la "
+                             "puerta de abstención con causa FEED_SILENCE")
     parser.add_argument("--pid-file", default=None)
     parser.add_argument("--stop", action="store_true",
                         help="detiene el servicio estrictamente en --port")
@@ -711,7 +1681,9 @@ def main(argv: Optional[List[str]] = None) -> int:
     sessions_dir = Path(args.sessions_dir) if args.sessions_dir \
         else SESSIONS_DEFAULT
     sessions_dir.mkdir(parents=True, exist_ok=True)
-    world = EngineeringSessionController(sessions_dir, args.cadence_ms)
+    world = EngineeringSessionController(
+        sessions_dir, args.cadence_ms, market_url=args.market_url,
+        market_bars=args.market_bars, live_silence_ms=args.live_silence_ms)
     server = EngineeringHTTPServer(args.host, args.port, world)
     pid_file = Path(args.pid_file) if args.pid_file else PID_DEFAULT
     pid_file.parent.mkdir(parents=True, exist_ok=True)
@@ -728,6 +1700,9 @@ def main(argv: Optional[List[str]] = None) -> int:
         "url": f"http://{server.server_address[0]}:{server.server_address[1]}",
         "sessions_dir": str(sessions_dir),
         "cadence_ms": world.cadence_ms,
+        "market_url": world.market_url,
+        "market_bars": world.market_bars,
+        "live_silence_ms": world.live_silence_ms,
     }, ensure_ascii=False), flush=True)
     thread = threading.Thread(target=server.serve_forever, daemon=True)
     thread.start()
