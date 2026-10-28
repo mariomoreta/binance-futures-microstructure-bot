@@ -68,6 +68,11 @@ export function MarketFlowPanel({ symbol }: { symbol: string }) {
   const esRef = useRef<EventSource | null>(null);
   const lastValidDataMs = useRef<number>(0); // última data válida recibida
   const staleTimer = useRef<ReturnType<typeof setInterval> | null>(null);
+  const reconnectTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  // Recolector de reconexión: al cambiar, el efecto del SSE cierra la
+  // suscripción previa y abre una nueva SIN cambiar de identidad (un
+  // re-render sin cambio de símbolo NO interrumpe el panel).
+  const [sseTick, setSseTick] = useState(0);
 
   const fetchFlow = useCallback(async () => {
     const sym = symbolRef.current;
@@ -110,15 +115,21 @@ export function MarketFlowPanel({ symbol }: { symbol: string }) {
     }
   }, []);
 
-  // Conexión SSE al flujo (mismo origen)
+  // Conexión SSE al flujo (mismo origen). Con reconexión automática: si la
+  // suscripción cae sin cambio de identidad, se reintenta con retardo fijo; no
+  // queda un panel muerto tras un error transitorio del transporte.
   useEffect(() => {
     const sym = (symbol || "").trim().toUpperCase();
     symbolRef.current = sym;
 
-    // Cerrar conexión SSE anterior si cambia el símbolo
+    // Cerrar conexión SSE anterior (cambio de identidad o reintento)
     if (esRef.current) {
       esRef.current.close();
       esRef.current = null;
+    }
+    if (reconnectTimer.current) {
+      clearTimeout(reconnectTimer.current);
+      reconnectTimer.current = null;
     }
 
     if (!sym || !/^[A-Z0-9]{2,32}$/.test(sym)) {
@@ -131,10 +142,16 @@ export function MarketFlowPanel({ symbol }: { symbol: string }) {
       return;
     }
 
+    // En un reintento la causa visible ("desconectado — reintentando") se
+    // CONSERVA hasta el onopen de la nueva suscripción: el operador ve el
+    // estado real del panel (sin falsa desconexión ni falsa reconexión).
+    const isRetry = sseTick > 0;
     (async () => {
       setLoading(true);
-      setError(null);
-      setConnectionCause(null);
+      if (!isRetry) {
+        setError(null);
+        setConnectionCause(null);
+      }
     })();
 
     const url = `${FLOW_STREAM_API}?symbol=${encodeURIComponent(sym)}`;
@@ -145,6 +162,7 @@ export function MarketFlowPanel({ symbol }: { symbol: string }) {
       if (symbolRef.current !== sym) return;
       setLoading(false);
       setConnectionCause(null);
+      setError(null);
     };
 
     es.onmessage = (evt) => {
@@ -169,20 +187,31 @@ export function MarketFlowPanel({ symbol }: { symbol: string }) {
       if (symbolRef.current !== sym) return;
       es.close();
       esRef.current = null;
-      // Desconexión: retirar LIVE, mostrar causa
-      setConnectionCause("desconectado");
-      setError("SSE desconectado");
-      // Intentar polling de respaldo vía HTTP
+      // Desconexión: retirar LIVE, mostrar causa visible
+      setConnectionCause("desconectado — reintentando");
+      setError("SSE desconectado; reintentando con la misma identidad");
+      // Consulta HTTP de respaldo puntual (frescura inmediata)
       fetchFlow();
+      // Reconexión con retardo: el reintento reabre el EventSource SIN
+      // cambiar de símbolo ni desmontar el panel (id del efecto: sseTick).
+      if (reconnectTimer.current) clearTimeout(reconnectTimer.current);
+      reconnectTimer.current = setTimeout(() => {
+        reconnectTimer.current = null;
+        if (symbolRef.current === sym) setSseTick((t) => t + 1);
+      }, 2_500);
     };
 
     return () => {
+      if (reconnectTimer.current) {
+        clearTimeout(reconnectTimer.current);
+        reconnectTimer.current = null;
+      }
       if (esRef.current === es) {
         esRef.current = null;
       }
       es.close();
     };
-  }, [symbol, fetchFlow]);
+  }, [symbol, sseTick, fetchFlow]);
 
   // Temporizador de frescura: caduca si no llega dato válido en STALE_MS
   useEffect(() => {
@@ -204,7 +233,8 @@ export function MarketFlowPanel({ symbol }: { symbol: string }) {
     };
   }, []);
 
-  // Consulta inicial y reconsulta periódica de respaldo
+  // Consulta HTTP inicial; el respaldo en caída SSE es puntual y la
+  // reconexión del SSE es la que reintenta periódicamente (2,5 s).
   useEffect(() => {
     fetchFlow();
   }, [fetchFlow]);
