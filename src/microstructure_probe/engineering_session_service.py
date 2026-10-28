@@ -56,14 +56,19 @@ from pathlib import Path
 from typing import Any, Dict, List, Optional
 from urllib.parse import parse_qs, urlsplit
 
-ROOT = Path(__file__).resolve().parent.parent
+# Raíz del repositorio: src/microstructure_probe/este_archivo.py → 3 arriba.
+ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT / "src"))
 sys.path.insert(0, str(ROOT))
 
 from microstructure_probe import paper_lab_engine as engine  # noqa: E402
 
 SERVICE_VERSION = "engineering-session-service/v1"
-SESSIONS_DEFAULT = ROOT / "paper-lab-sessions"
+# Directorio de sesiones DEDICADO del servicio de ingeniería: no colisiona
+# con el raíz canónico del controlador anterior (`paper-lab-sessions/`);
+# las sesiones existentes se conservan sin migración (el motor anida
+# `paper-lab-sessions/` debajo del raíz dado).
+SESSIONS_DEFAULT = (ROOT / "data" / "engineering-session" / "sessions")
 PID_DEFAULT = ROOT / "data" / "engineering-session" / "service.json"
 DEFAULT_PORT = 8797
 DEFAULT_HOST = "127.0.0.1"
@@ -685,7 +690,10 @@ def main(argv: Optional[List[str]] = None) -> int:
     parser.add_argument("--port", type=int, default=DEFAULT_PORT)
     parser.add_argument("--sessions-dir", default=None,
                         help="directorio de sesiones (default: "
-                             "./paper-lab-sessions); se crea si no existe")
+                             "data/engineering-session/sessions, dedicado — "
+                             "NO colisiona con el controlador anterior; el "
+                             "motor anida paper-lab-sessions/ debajo; se crea "
+                             "si no existe)")
     parser.add_argument("--cadence-ms", type=float,
                         default=DEFAULT_CADENCE_MS,
                         help="cadencia del transporte local (ms por vela)")

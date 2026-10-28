@@ -447,3 +447,17 @@ def test_shutdown_endpoint(tmp_path):
         assert body["pid"] == os.getpid()
     finally:
         h.close()
+
+
+def test_default_sessions_dir_dedicado_sin_colision():
+    """El default de sesiones es un directorio dedicado del servicio de
+    ingeniería: NO colisiona con el raíz del controlador anterior
+    (`paper-lab-sessions/`); las sesiones existentes del controlador
+    anterior se conservan sin migración ni borrado."""
+    from microstructure_probe import engineering_session_service as svc
+
+    expected = Path(__file__).resolve(
+        ).parents[1] / "data" / "engineering-session" / "sessions"
+    assert Path(svc.SESSIONS_DEFAULT).resolve() == expected.resolve()
+    # Guarda: el default no es el raíz canónico del controlador anterior.
+    assert Path(svc.SESSIONS_DEFAULT).name != "paper-lab-sessions"
