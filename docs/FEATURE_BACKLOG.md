@@ -2712,7 +2712,7 @@ previo al finalizar (sin demo activa, manifest cerrado); servicios canónicos
 verificación.
 
 **7. Traceability:** build `wF9Xf3Orb5Af7vgwp8_f4` (dashboard 3020, SHA
-fuente `780cf17` + cambios de este bloque); evidencia
+fuente `a954c2a` + cambios de este bloque); evidencia
 `docs/evidence/engineering-local-demo-2026-10-28/` (summary.json corrida 3,
 corrida1/ preservada, summary-integration.json de E2); evidencia
 `docs/evidence/engineering-local-demo-2026-10-28/e2-gridgap/` (E2 integrada);
@@ -2720,3 +2720,159 @@ ENGINEERING_SESSION_BACKEND_V1.md §11.7–§11.8; CURRENT_STATE + TASK_QUEUE +
 DECISIONS 2026-10-28; `docs/FEATURE_BACKLOG.md` esta entrada. Próximo
 objetivo declarado en docs: mismo recorrido con datos públicos
 (8791 `--transport public`), autorización/presupuesto separados.
+
+## Precisión documental mínima — fallos y correcciones del modo demo
+
+Este bloque separa tres cosas que la documentación previa mezclaba:
+
+### a) Fallo del ancla y ausencia de señal (corrida 3, 2026-10-28)
+El productor `scripts/local_demo_producer.py` fijaba `anchor_open = current_open`
+(minuto del primer connect del WS) en vez de `start_open` (primera frontera
+del backfill, `cache_end + paso`). Como todas las velas del backfill tenían
+`open_ms < anchor_open`, el índice `idx = (open_ms - anchor) // STEP_MS` era
+negativo y `close_of()` devolvía `PRE_CYCLE = 0.999·base` para **todas** las
+velas del backfill. Con `entry_px = base`, ninguna vela del backfill generaba
+señal LONG (`close < entry_px` siempre). La ausencia de señal era, por tanto,
+un defecto del ancla del precio, no una ausencia legítima de oportunidad.
+
+### b) Discontinuidades/backfill y GRID_GAP (corrida 4, 2026-10-29)
+El productor enviaba el backfill a ritmo acelerado (`BACKFILL_PACE_S=0.02`,
+~50 velas/segundo). El `market_stream_service` recicla su socket WS cada
+~8-15 s (churn observado). Al reconectar, el catch-up del productor partía
+desde `state["open"]` (avanzado por velas ya puertas en el buffer del WS pero
+no entregadas al consumidor), saltándose las velas intermedias. Resultado: el
+servicio de mercado recibió 6681 velas cerradas pero la sesión solo 34, con
+huecos de rejilla entre `1793115900000→1793148480000` (~55 min) y
+`1793156160000→1793273880000` (~129 min). `_grid_holes()` detectó el hueco
+frontera-contexto→operación y el hueco entre velas, bloqueando
+`evaluate_session` con `GRID_GAP` permanente. No hubo señal porque la puerta
+de evaluación nunca se abrió (`gate.ok = False`).
+
+### c) Correcciones que resolvieron cada uno
+- **Ancla:** `anchor_open = start_open` (primera frontera del backfill), no
+  `current_open`. Así cada vela del backfill recibe su `close` del ciclo
+  determinista según su índice real, y las velas de operación (idx ≥ 1) tienen
+  `close > base = entry_px`, generando señal LONG por RULE-CAUSAL-V1.
+- **Ritmo de backfill:** `BACKFILL_PACE_S = 1.0` (1 vela/segundo), lo bastante
+  lento para que el consumidor reciba cada vela antes de que el productor
+  avance al siguiente `open`, evitando el desfase entre `state["open"]` y lo
+  que el consumidor efectivamente recibió bajo churn.
+- **Continuidad contexto→operación:** plomado de `from_ms` y `to_ms` desde
+  el BFF (`CreateSessionInput.fromMs`/`toMs`) hasta `MarketServiceStreamAdapter`
+  y `hub.ready(consumer, deliver_from_ms)`, con `deliver_from_ms = last_ctx_close
+  + 1`. El consumidor ignora velas con `open_time_ms <= deliver_from_ms`
+  (dedupe por marca de agua), por lo que no hay duplicados ni velas ya cubiertas
+  por el contexto.
+- **Validación de la corrección:** verificación integrada E2-gridgap 14/14 PASS:
+  34 velas recibidas, ordenadas, sin duplicados, continuidad de rejilla exacta,
+  `ENTRADA_SIMULADA` en clock 1793073120000, fill simulado, gestión, cierre
+  por regla horizon con `exit_executed=true`. Sin GRID_GAP, sin FEED_SILENCE.
+
+Nota de honestidad: la señal `ENTRADA_SIMULADA` es una **señal de ingeniería
+del productor simulado**, no una validación estratégica ni evidencia de
+rentabilidad. Cero operaciones con dinero real.
+
+## Protocolo para el siguiente recorrido con datos públicos (sin ejecutar)
+
+### 1. Candidato configurado y contexto
+- Símbolo candidato: `MINAUSDT` 1m (mismo que la demo local, para comparar).
+- Contexto BTC: `BTCUSDT` 1m como símbolo de contexto compartido (ventana
+  BTC del mismo intervalo), leído del almacén local con `client=None`
+  (0 peticiones REST upstream para BTC).
+- La sesión se crea con `transport = market_stream`, `candles = []`,
+  `context = <últimas N velas cerradas de MINAUSDT del caché local>`,
+  `from_ms = last_ctx_close + 1`, `to_ms = ahora`.
+- `entry_px = close de la última vela de contexto` (precio conocido en T).
+
+### 2. Fuentes realmente necesarias
+- **Velas cerradas (klines 1m):** de `MINAUSDT` y `BTCUSDT` vía WS loopback
+  del `market_stream_service` (`--transport public` para datos reales de
+  Binance, `--transport local` para validación local sin Binance).
+- **aggTrade:** NO es necesario para el recorrido de ingeniería v1 (el motor
+  opera sobre velas cerradas). Se declara como dependencia ausente/UNKNOWN,
+  no se inventa.
+- **Profundidad/libro/OI/funding:** NO necesarios v1. Se declaran UNKNOWN.
+- **REST upstream:** solo para paginación de histórico si el caché no cubre
+  el rango solicitado (presupuesto compartido por intento, `LedgerAttemptGate`).
+- **Almacenamiento:** `data/market-cache/` (no canónico, aislado), no se
+  tocan `microprobe.db` ni `historical.db`.
+
+### 3. Presupuesto conjunto (acotado, declarativo)
+| Recurso | Límite | Nota |
+|---------|--------|------|
+| Conexiones WS | 1 (combinada MINAUSDT+BTCUSDT) | `market_stream_service` modo combinado |
+| Streams | 2 (MINAUSDT@kline_1m, BTCUSDT@kline_1m) | dentro de `MAX_SUBSCRIPTIONS=6` |
+| Consumidores SSE | 2 (uno por símbolo) + 1 navegador | dentro de `MAX_TOTAL_CONSUMERS=12` |
+| Peticiones REST upstream | 0 (modo local) / acotado (modo public) | `LedgerAttemptGate`, reserva transaccional |
+| Almacenamiento nuevo | 0 filas canónicas | caché aislado, no se escribe en DBs canónicas |
+| Tiempo | ≤ 180 s por ventana | `--max-seconds` en el servicio, auto-parada |
+| Duración del productor | `--max-runtime-s` default 2700 (45 min) | auto-parada, retira pid-file |
+
+### 4. Calentamiento y continuidad entre contexto e información nueva
+- Paso 1: leer caché local (`read_stored`, `client=None`, `--no-fetch`),
+  obtener las últimas N velas cerradas de MINAUSDT como contexto.
+- Paso 2: `last_ctx_close = close de la última vela de contexto`;
+  `from_ms = last_ctx_close + 1` (continuidad exacta, un solo paso de rejilla).
+- Paso 3: crear sesión con `transport = market_stream`, `context = contexto`,
+  `candles = []`, `from_ms`, `to_ms = ahora`.
+- Paso 4: el `market_stream_service` emite snapshot desde `from_ms`; el
+  adaptador de sesión usa `deliver_from_ms = from_ms`; el consumidor ignora
+  velas `open_time_ms <= deliver_from_ms`.
+- Paso 5: declarar preparado solo cuando el snapshot se recibe y el primer
+  `closed` posterior a `from_ms` llega con `open_time_ms = from_ms` (sin hueco
+  en la frontera).
+
+### 5. Política ante retraso, huecos, desconexión y posición abierta
+- **Retraso (silencio del feed):** si no hay `closed` nuevo dentro de
+  `live_silence_ms` (120 s por defecto), la puerta de evaluación abstiene con
+  causa `FEED_SILENCE`; la sesión conserva su última decisión, no se inventan
+  decisiones. Visible en el UI como causa de puerta.
+- **Huecos (GRID_GAP):** si `open_time_ms` de una vela nueva no es
+  `anterior + step`, la puerta abstiene con causa `GRID_GAP`; nunca se relaja
+  la causalidad ni se interpola para forzar una entrada.
+- **Desconexión:** el adaptador SSE reconecta con backoff exponencial acotado;
+  si se agota el presupuesto de reintentos (`RETRY_BUDGET`), se estaciona
+  hasta nuevo consumidor (`_park_until_new_consumer`). La sesión no se mata
+  ni se adopta por otro proceso.
+- **Posición abierta al finalizar:** si la ventana termina con posición
+  abierta, se congela la sesión (estado `detenida`), se publica el mark
+  no realizado, y se declara `exit_reason = "horizon"` o `open_at_end`
+  según corresponda. No se inventa cierre ni salida.
+
+### 6. Dos aceptaciones distinguidas
+**A. Integración con mercado real (recepción, cálculos, decisiones trazables,
+abstención y recuperación):** se considera exitosa si el feed llega, las velas
+se cierran en orden sin huecos, el motor calcula decisiones sobre el prefijo
+conocido sin lookahead, y ante falta de señal la sesión se abstiene con causa
+visibles. Cero operaciones es un resultado válido.
+**B. Operación paper (entrada/fill/gestión/cierre solo si se cumplen las
+condiciones de la regla):** solo si `close > entry_px` (LONG) con stop no
+vulnerado, el motor publica `ENTRADA_SIMULADA`; el fill es
+`model_approximation` (open de la vela revelada, no liquidez observada); la
+gestión marca mark/no-realizado; el cierre es por stop, horizon o `open_at_end`.
+Sin llenar profundidad, spread ni funding.
+
+### 7. Supuestos del modelo y bloqueos reales
+- **Supuestos:** las velas cerradas del WS son el único dato de mercado;
+  el fill es aproximación del modelo; funding es UNKNOWN; no hay latencia
+  modelo ni redondeo de lotes.
+- **Bloqueos reales:** requiere autorización separada para conexión pública
+  Binance (`--transport public`); el `market_stream_service` en modo local no
+  repara desde REST; el churn WS consume presupuesto de consumidores; cero
+  upstream REST significa que el histórico previo al caché no se puede
+  recuperar.
+
+## Seguridad del alcance
+
+- **No existe camino de órdenes reales:** el recorrido es observe-only;
+  `paper_lab_engine` es la autoridad económica única y no coloca órdenes;
+  el BFF es proxy de consulta; el navegador solo solicita acciones de
+  arranque/parada observando estados.
+- **No se necesitan claves privadas ni API keys de Binance:** todo es
+  loopback (`127.0.0.1`) con datos simulados o caché local; el proveedor
+  público está bloqueado por diseño (sitecustomize + guardia del navegador +
+  proxy de registro).
+- **La siguiente ventana será paper de ingeniería, no validación de
+  rentabilidad:** su conexión pública requiere autorización separada y
+  presupuesto explícito; no se declara ventaja ni edge.
+
