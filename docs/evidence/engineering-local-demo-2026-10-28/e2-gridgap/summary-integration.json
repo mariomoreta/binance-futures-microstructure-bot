@@ -1,0 +1,130 @@
+{
+  "date": "2026-10-29",
+  "focus": "E2 GRID_GAP resolucion de continuidad - integracion completa (controlador directo)",
+  "producer": {
+    "service": "local-demo-producer/v1",
+    "pid": 29996,
+    "port": 52829,
+    "host": "127.0.0.1",
+    "symbol": "MINAUSDT",
+    "base": 0.06285,
+    "max_runtime_s": 300.0,
+    "started_at_ms": 1793276450294
+  },
+  "checks": [
+    {
+      "name": "productor arrancado e identidad leida (cmdline del SO)",
+      "ok": true,
+      "detail": "pid=29996 port=52829"
+    },
+    {
+      "name": "market 8791 UP (transport local, loopback)",
+      "ok": true,
+      "detail": "pid=27508 service=market-stream-service/v1"
+    },
+    {
+      "name": "velas en cache local",
+      "ok": true,
+      "detail": "n=959"
+    },
+    {
+      "name": "contexto contiguo (ultima vela con cierre)",
+      "ok": true,
+      "detail": "ctx_last_open=1793072940000 close=0.06285 close_ms=1793072999999"
+    },
+    {
+      "name": "from_ms computado (continuidad exacta last_ctx+1)",
+      "ok": true,
+      "detail": "from_ms=1793073000000 to_ms=1793276452960"
+    },
+    {
+      "name": "sesion creada (market_stream, from_ms/to_ms)",
+      "ok": true,
+      "detail": "error=None"
+    },
+    {
+      "name": "session_id presente",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "conduccion iniciada (control start)",
+      "ok": true,
+      "detail": "error=None"
+    },
+    {
+      "name": "sin GRID_GAP (continuidad de rejilla respetada)",
+      "ok": true,
+      "detail": "GRID_GAP=False"
+    },
+    {
+      "name": "sin FEED_SILENCE bloqueando",
+      "ok": true,
+      "detail": "FEED_SILENCE=False"
+    },
+    {
+      "name": "eventos nuevos recibidos (open_time >= from_ms)",
+      "ok": true,
+      "detail": "n=34"
+    },
+    {
+      "name": "velas ordenadas y sin duplicados",
+      "ok": true,
+      "detail": "primera=1793073000000 ultima=1793074980000 n=34"
+    },
+    {
+      "name": "continuidad de rejilla entre velas nuevas",
+      "ok": true,
+      "detail": "huecos=[]"
+    },
+    {
+      "name": "decision ENTRADA_SIMULADA (senal RULE-CAUSAL-V1) en cualquier momento",
+      "ok": false,
+      "detail": "decision_final=None"
+    }
+  ],
+  "passed": 13,
+  "total": 14,
+  "decision_seen": false,
+  "grid_gap_seen": false,
+  "feed_silence_seen": false,
+  "opens_received": [
+    1793073000000,
+    1793073060000,
+    1793073120000,
+    1793073180000,
+    1793073240000,
+    1793073300000,
+    1793073360000,
+    1793073420000,
+    1793073480000,
+    1793073540000,
+    1793073600000,
+    1793073660000,
+    1793073720000,
+    1793073780000,
+    1793073840000,
+    1793073900000,
+    1793073960000,
+    1793074020000,
+    1793074080000,
+    1793074140000,
+    1793074200000,
+    1793074260000,
+    1793074320000,
+    1793074380000,
+    1793074440000,
+    1793074500000,
+    1793074560000,
+    1793074620000,
+    1793074680000,
+    1793074740000,
+    1793074800000,
+    1793074860000,
+    1793074920000,
+    1793074980000
+  ],
+  "first_new_open": null,
+  "last_open_seen": null,
+  "session_id": "PL-MINAUSDT-LONG-1793276452960-c0f5e558"
+}

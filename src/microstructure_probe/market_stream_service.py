@@ -606,8 +606,14 @@ class MarketStreamService:
                         if bar is not None
                     ]
             await self._write_sse(writer, _sse_frame("snapshot", snapshot))
-            last_open = int((snapshot.get("observed") or {}).get("end_ms") or 0) or None
-            self.hub.ready(consumer, last_open)
+            # deliver_from_ms: desde where empezar a entregar frames al
+            # consumidor. Preferimos el from_ms explícito (frontera de
+            # operación, coherente con el contexto) para no entregar velas
+            # ya cubiertas; si no hay, usamos el fin del snapshot.
+            snapshot_end_ms = int(
+                (snapshot.get("observed") or {}).get("end_ms") or 0) or None
+            deliver_from_ms = from_ms if from_ms is not None else snapshot_end_ms
+            self.hub.ready(consumer, deliver_from_ms)
             last_block = snapshot.get("indicators") or None
             if btc_consumer is not None:
                 btc_last_open = None

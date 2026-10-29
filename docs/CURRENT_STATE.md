@@ -17,16 +17,21 @@ El controlador del servicio ahora RECONCILIA el pid-file solo con evidencia
 verificable (health canónico + sessions_dir canónico + pid vivo + línea de
 comandos del SO); sin la cadena completa rechaza sin adoptar ni matar.
 Evidencia: `docs/evidence/engineering-local-demo-2026-10-28/summary.json`
-(BUILD_ID `NRjvq90SYBCoTGgmmRzA5`, dashboard 3020 en producción): **22/23
-checks PASS de la verificación acotada (corrida 3)**.
-FAIL documentado con causa: **E2** (señal `ENTRADA_SIMULADA` en 180 s) — el
-`market_stream_service` en modo local no asimila el backfill completo desde
-el cache (42 h atrás) bajo su churn WS → hueco de rejilla
-frontera contexto→operación → `GRID_GAP` bloquea `evaluate_session`
-permanentemente → sin decisión. No es defecto del modo demo; queda para la
-fase con datos públicos (`8791 --transport public`, autorización/presupuesto
-separados). Detalles: `ENGINEERING_SESSION_BACKEND_V1.md` §11.7–§11.8 y
-`docs/FEATURE_BACKLOG.md` (entrada modo demo 2026-10-28).
+(BUILD_ID `wF9Xf3Orb5Af7vgwp8_f4`, dashboard 3020 en producción): **14/14
+checks PASS de la verificación integrada E2-gridgap**, más 22/23 de la
+verificación acotada original (corrida 3).
+- PASS: A1–A4, B1–B3, D1–D6, E1, **E2 (decisión `ENTRADA_SIMULADA` en clock
+  1793073120000, close 0.06291285 > entry_px 0.06285; fill simulado
+  entry_qty=15895, entry_cost=1000, entry_ms=1793073180000; gestión con
+  mark_px/mfe_pct/mae_pct; cierre por regla horizon con exit_executed=true;
+  34 velas contiguas, sin GRID_GAP, sin FEED_SILENCE)**, F1–F4, F3, G1,
+  H1–H3.
+- Causa raíz del GRID_GAP original (resuelta): `anchor_open` del productor
+  se fijaba a `current_open` en vez de a `start_open`; fix:
+  `anchor_open = start_open`, `BACKFILL_PACE_S=1.0`, plomado de
+  `from_ms`/`to_ms` al servicio de mercado. Detalles:
+  `ENGINEERING_SESSION_BACKEND_V1.md` §11.7–§11.8 y
+  `docs/FEATURE_BACKLOG.md` (entrada modo demo 2026-10-28).
 
 ## Entrega utilizable del transporte live local + identidad de la evidencia (2026-10-28, base `efa7700`)
 

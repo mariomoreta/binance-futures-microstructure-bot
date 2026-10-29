@@ -515,7 +515,7 @@ la sesión), consultado con `--no-fetch` (0 upstream).
 **Verificación acotada (arranque coordinado, readiness y parada; NO repite
 la aceptación larga de §11.3):** resultados y evidencia en
 `docs/evidence/engineering-local-demo-2026-10-28/summary.json` (BUILD_ID
-`NRjvq90SYBCoTGgmmRzA5`); identidad del árbol al momento de la corrida:
+`wF9Xf3Orb5Af7vgwp8_f4`); identidad del árbol al momento de la corrida:
 HEAD `643e0b9` + cambios sin commitear que luego publica el commit de este
 bloque (mismo criterio de honestidad de §11.6).
 
@@ -531,16 +531,21 @@ checks PASS.
   intacto), F3 (caída de feed registrada DENTRO de la sesión), G1 (sesión
   detenida por el operador, política correcta), H1–H3 (sin demo activa al
   final; 8792 intacto; dashboard 200).
-- FAIL: **E2 — operación de ingeniería (señal `ENTRADA_SIMULADA` en plazo
-  acotado):** sin entrada en 180 s. Causa identificada (no defecto del
-  modo demo): el `market_stream_service` en modo local (`recovery: False`)
-  no asimila el backfill completo desde el cache (42 h atrás) bajo su churn
-  WS (se conecta/desconecta cada ~2 s); la sesión arranca con un hueco de
-  rejilla en la frontera contexto→operación → `GRID_GAP` bloquea
-  `evaluate_session` permanentemente → sin decisión. El productor demo ya
-  está corregido (`state["open"]` propio por frame en catch-up; test de
-  regresión 3/3; suite Python 1543 passed) pero la sesión no alcanzó
-  continuidad de rejilla desde el contexto. E2 queda documentado como fallo
-  con causa, no como PASS. Nota de la corrida 1 (FAIL por identidad de
-  servicio `market-stream-service/v1` vs contrato `market-stream/v1`,
-  corregido) preservada en `docs/evidence/engineering-local-demo-2026-10-28/corrida1/`.
+- **E2 — operación de ingeniería (señal `ENTRADA_SIMULADA` en plazo
+  acotado): PASS tras corrección de continuidad.** La sesión creó
+  `ENTRADA_SIMULADA` en clock 1793073120000 (close 0.06291285 > entry_px
+  0.06285, vela idx 2 del ciclo determinista), fill simulado
+  (entry_qty=15895, entry_cost=1000, entry_ms=1793073180000), gestión con
+  mark_px/mfe_pct/mae_pct, y cierre por regla horizon
+  (exit_reason="horizon", exit_executed=true). 34 velas recibidas, ordenadas,
+  sin duplicados, continuidad de rejilla exacta (sin GRID_GAP), sin
+  FEED_SILENCE. Causa raíz del GRID_GAP original (resuelta): `anchor_open`
+  del productor se fijaba a `current_open` en vez de a `start_open` (primera
+  frontera del backfill), por lo que todas las velas del backfill tenían
+  `idx < 0` → close = PRE_CYCLE (0.999·base) < entry_px → nunca señal.
+  Fix: `anchor_open = start_open`. Además, ritmo de backfill
+  `BACKFILL_PACE_S=1.0` y plomado de `from_ms`/`to_ms` desde el BFF al
+  servicio de mercado (`deliver_from_ms`) para continuidad exacta
+  contexto→operación. Nota de la corrida 1 (FAIL por identidad de servicio
+  `market-stream-service/v1` vs contrato `market-stream/v1`, corregido)
+  preservada en `docs/evidence/engineering-local-demo-2026-10-28/corrida1/`.

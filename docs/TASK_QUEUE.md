@@ -15,7 +15,7 @@ controlador reconcilia el pid-file SOLO con evidencia verificable (health
 canónico + sessions_dir canónico + pid vivo + cmdline del SO); sin la
 cadena completa rechaza sin adoptar ni matar. Evidencia acotada:
 `docs/evidence/engineering-local-demo-2026-10-28/summary.json`
-(BUILD_ID `NRjvq90SYBCoTGgmmRzA5`). Detalles: V1 §11.7–§11.8.
+(BUILD_ID `wF9Xf3Orb5Af7vgwp8_f4`). Detalles: V1 §11.7–§11.8.
 
 `ACTIVE_TASK`: **cerrado**.
 
@@ -25,9 +25,10 @@ el mismo recorrido con datos públicos (8791 `--transport public`),
 con presupuesto y autorización explícitos separados. NO declarar completo:
 selector multiactivo, riesgo completo, paper prospectivo, estrategia
 rentable.
-Pendiente documentado: **E2 falló** en la verificación acotada (22/23) por
-`GRID_GAP` del `market_stream_service` bajo churn WS — no es defecto del modo
-demo; requiere cambios en ese servicio y/o datos públicos con autorización.
+E2 verificado PASS (14/14 en verificación integrada E2-gridgap): decisión
+`ENTRADA_SIMULADA`, fill simulado, gestión y cierre por regla horizon.
+GRID_GAP resuelto (productor: `anchor_open=start_open`, `BACKFILL_PACE_S=1.0`;
+plomado `from_ms`/`to_ms` al servicio de mercado).
 
 ## Entrega utilizable del transporte live local + identidad de la evidencia (2026-10-28, base `efa7700`)
 

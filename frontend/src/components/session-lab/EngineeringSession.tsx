@@ -641,6 +641,14 @@ export default function EngineeringSession({
         horizonMs: 30 * 60 * 1000,
       });
 
+      // Rango de operación esperado para el stream: from_ms = primera frontera
+      // después del contexto (continuidad exacta con last_ctx + 1), to_ms =
+      // reloj de pared actual. El servicio usa from_ms para fijar
+      // deliver_from_ms y no entregar velas ya cubiertas por el contexto.
+      const lastCtx = context[context.length - 1]!;
+      const fromMs = ((lastCtx.close_time_ms ?? lastCtx.open_time_ms) + 1);
+      const toMs = Date.now();
+
       // La sesión se crea EN el backend (motor Python + transporte
       // market_stream); la evaluación y todo avance lo conduce el backend
       // con los eventos del servicio de mercado. El navegador no evalúa ni
@@ -649,6 +657,8 @@ export default function EngineeringSession({
         config, candles: [], context,
         transport: ENGINEERING_TRANSPORT_MARKET_STREAM,
         requestId: nextRequestId(),
+        fromMs,
+        toMs,
       });
       if (!created.ok || !created.data) {
         setError(created.error ?? "CREATE_FAILED");

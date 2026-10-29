@@ -2670,36 +2670,37 @@ anti doble-clic `demoInFlightRef`), `frontend/src/lib/engineering-service-manage
 `tests/test_local_demo_producer.py`, `frontend/src/test/engineering-service-manager.test.ts`,
 `frontend/src/test/engineering-session.test.tsx`, `frontend/src/test/local-demo-manager.test.ts`.
 
-**4. Evaluation status:** VERIFICADO parcialmente — verificación acotada
+**4. Evaluation status:** VERIFICADO — verificación acotada
 `docs/evidence/engineering-local-demo-2026-10-28/summary.json`
-(build `NRjvq90SYBCoTGgmmRzA5`, dashboard 3020): **22/23 checks PASS**.
+(build `wF9Xf3Orb5Af7vgwp8_f4`, dashboard 3020): **14/14 checks PASS** en la
+re-verificación integrada (E2-gridgap), más 22/23 de la verificación acotada
+original (E2 documentado como FAIL con causa en la corrida 3, ahora resuelto).
 PASS: A1-A4 (abrir la página no arranca nada; 8791 caído; sin productor ni
 market propios; 8792 intacto con cmdline LOCAL), B1-B3 (fuente ausente →
 aviso `FUENTE NO DISPONIBLE` ANTES de crear sesión, sin sesión huérfana,
 chip visible), D1-D6 (demo activa y fuente lista; un solo productor y un
 solo market propios identificados por cmdline del SO; chip `Fuente: lista`),
-E1 (sesión creada con evidencia de stream), F1-F4 (demo detenida, manifest
+E1 (sesión creada con evidencia de stream), **E2 (operación de ingeniería:
+`ENTRADA_SIMULADA` en clock 1793073120000, close 0.06291285 > entry_px
+0.06285; fill simulado entry_qty=15895, entry_cost=1000, entry_ms=
+1793073180000; gestión con mark_px/mfe_pct/mae_pct; cierre por regla horizon
+con exit_executed=true; sesión `cerrada`)**, F1-F4 (demo detenida, manifest
 cerrado, productor y 8791 detenidos y limpios, 8792 intacto), F3 (caída de
 feed registrada DENTRO de la sesión), G1 (sesión detenida por el operador,
 política correcta), H1-H3 (sin demo activa al final, 8792 intacto, dashboard
 200).
-FAIL: **E2 — operación de ingeniería (señal ENTRADA en plazo acotado)**:
-sin `ENTRADA_SIMULADA` en 180 s. Causa identificada (no defecto del modo
-demo): el `market_stream_service` en modo local (`recovery: False`) no
-asimila el backfill completo desde el cache (42 h atrás) bajo su churn WS
-(se conecta/desconecta cada ~2 s); la sesión arranca con un hueco de rejilla
-en la frontera contexto→operación → `GRID_GAP` bloquea `evaluate_session`
-permanentemente → sin decisión. El productor demo ya está corregido
-(`state["open"]` propio por frame en catch-up; test de regresión 3/3, suite
-Python 1543 passed) pero la sesión no alcanzó continuidad de rejilla desde
-el contexto. E2 queda documentado como fallo con causa, no como PASS.
+Causa raíz de GRID_GAP (resuelta): `anchor_open` del productor se fijaba a
+`current_open` en vez de a `start_open` (primera frontera del backfill), por
+lo que todas las velas del backfill tenían `idx < 0` → close = PRE_CYCLE
+(0.999·base) < entry_px → nunca señal. Fix: `anchor_open = start_open`.
+Además, ritmo de backfill `BACKFILL_PACE_S=1.0` (no saturar la cola SSE del
+consumidor) y plomado de `from_ms`/`to_ms` desde el BFF al servicio de
+mercado (`deliver_from_ms`) para continuidad exacta contexto→operación.
 
 **5. Deferred:** acreditación de recepción Binance real (todo loopback);
-reparación REST (inexistente en local); solución del GRID_GAP bajo churn del
-`market_stream_service` (requiere cambios en ese servicio, fuera del alcance
-del modo demo); recorrido con datos públicos (`8791 --transport public`)
-requiere autorización y presupuesto separados. Todo lo público requiere
-autorización explícita.
+reparación REST (inexistente en local); recorrido con datos públicos
+(`8791 --transport public`) requiere autorización y presupuesto separados.
+Todo lo público requiere autorización explícita.
 
 **6. Safety/constraints:** observe-only; sin Binance público, sin feed vivo
 real, sin órdenes, sin capital; proveedor público bloqueado por diseño
@@ -2707,13 +2708,15 @@ real, sin órdenes, sin capital; proveedor público bloqueado por diseño
 ensayo retiradas (`trial_sessions: []`); dashboard 3020 restaurado al estado
 previo al finalizar (sin demo activa, manifest cerrado); servicios canónicos
 8792/8797 intocables (verificado por cmdline del SO en A4/F4/H3); 8792 pid
-33104 intacto durante toda la verificación.
+33104 (ahora 31124 tras reinicio de seguridad) intacto durante la
+verificación.
 
-**7. Traceability:** build `NRjvq90SYBCoTGgmmRzA5` (dashboard 3020);
-evidencia `docs/evidence/engineering-local-demo-2026-10-28/` (summary.json
-corrida 3 + corrida1/ preservada con causa del FAIL de la corrida 1 por
-identidad de servicio `market-stream-service/v1` vs contrato
-`market-stream/v1`); ENGINEERING_SESSION_BACKEND_V1.md §11.7–§11.8;
-CURRENT_STATE + TASK_QUEUE + DECISIONS 2026-10-28; `docs/FEATURE_BACKLOG.md`
-esta entrada. Próximo objetivo declarado en docs: mismo recorrido con datos
-públicos (8791 `--transport public`), autorización/presupuesto separados.
+**7. Traceability:** build `wF9Xf3Orb5Af7vgwp8_f4` (dashboard 3020, SHA
+fuente `780cf17` + cambios de este bloque); evidencia
+`docs/evidence/engineering-local-demo-2026-10-28/` (summary.json corrida 3,
+corrida1/ preservada, summary-integration.json de E2); evidencia
+`docs/evidence/engineering-local-demo-2026-10-28/e2-gridgap/` (E2 integrada);
+ENGINEERING_SESSION_BACKEND_V1.md §11.7–§11.8; CURRENT_STATE + TASK_QUEUE +
+DECISIONS 2026-10-28; `docs/FEATURE_BACKLOG.md` esta entrada. Próximo
+objetivo declarado en docs: mismo recorrido con datos públicos
+(8791 `--transport public`), autorización/presupuesto separados.

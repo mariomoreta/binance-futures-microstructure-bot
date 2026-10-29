@@ -264,6 +264,13 @@ export type CreateSessionInput = {
   transport?: EngineeringTransport;
   /** Idempotencia del POST create en el backend (dedupe por request_id). */
   requestId?: string | null;
+  /** Primera frontera de operación esperada (open_time_ms). El servicio la
+    usa para fijar deliver_from_ms y no entregar velas ya cubiertas por el
+    contexto. Si se omite, deliver_from_ms parte desde 0. */
+  fromMs?: number | null;
+  /** Última frontera de operación esperada (open_time_ms). Acota el rango
+    del snapshot/stream. */
+  toMs?: number | null;
 };
 
 /** Crea una sesión de ingeniería vía BFF (POST /api/v1/paper-lab/sessions). */
@@ -343,6 +350,8 @@ export async function createBackendSession(input: CreateSessionInput): Promise<
       hypothesis_id: input.config.hypothesis_id ?? null,
       hypothesis_version: input.config.hypothesis_version ?? null,
       rule_version: input.config.rule_version ?? null,
+      from_ms: input.fromMs ?? null,
+      to_ms: input.toMs ?? null,
     }),
   });
 }

@@ -234,7 +234,9 @@ class MarketServiceStreamAdapter:
     def __init__(self, base_url: str, symbol: str, interval: str, bars: int,
                  event_queue: "queue.Queue[Dict[str, Any]]",
                  stop_event: threading.Event,
-                 started_event: threading.Event) -> None:
+                 started_event: threading.Event,
+                 from_ms: Optional[int] = None,
+                 to_ms: Optional[int] = None) -> None:
         parsed = urlsplit(str(base_url or ""))
         host = (parsed.hostname or "").lower()
         if parsed.scheme != "http" or host not in LOOPBACK_HOSTS:
@@ -247,10 +249,19 @@ class MarketServiceStreamAdapter:
         self.symbol = str(symbol).upper()
         self.interval = str(interval)
         self.bars = max(int(bars), 1)
+        self.from_ms = from_ms
+        self.to_ms = to_ms
+        params = [
+            f"symbol={quote(self.symbol)}",
+            f"interval={quote(self.interval)}",
+            f"bars={self.bars}",
+        ]
+        if self.from_ms is not None:
+            params.append(f"from_ms={int(self.from_ms)}")
+        if self.to_ms is not None:
+            params.append(f"to_ms={int(self.to_ms)}")
         self.stream_url = (
-            self.base_url + MARKET_STREAM_PATH
-            + f"?symbol={quote(self.symbol)}&interval={quote(self.interval)}"
-            + f"&bars={self.bars}")
+            self.base_url + MARKET_STREAM_PATH + "?" + "&".join(params))
         self.event_queue = event_queue
         self.stop_event = stop_event
         self.started_event = started_event
@@ -625,6 +636,8 @@ class EngineeringSessionController:
                     "LIVE_CONTEXT_REQUIRED: la sesión live necesita contexto "
                     "(ventana de velas cerradas conocidas) para fijar el "
                     "reloj T inicial")
+            from_ms = payload.get("from_ms")
+            to_ms = payload.get("to_ms")
             if config.notional_usdt > MAX_NOTIONAL_MARKET_STREAM:
                 raise ValueError(
                     f"NOTIONAL_CAP: nocional {config.notional_usdt} USDT "
@@ -662,6 +675,8 @@ class EngineeringSessionController:
                 "bars": self.market_bars,
                 "market_url": self.market_url,
                 "live_silence_ms": self.live_silence_ms,
+                "from_ms": from_ms,
+                "to_ms": to_ms,
             })
         if request_id:
             self._create_results[str(request_id)] = result
@@ -732,11 +747,13 @@ class EngineeringSessionController:
             bars = int((registry or {}).get("bars") or self.market_bars)
             silence = float((registry or {}).get("live_silence_ms")
                             or self.live_silence_ms)
+            from_ms = (registry or {}).get("from_ms")
+            to_ms = (registry or {}).get("to_ms")
             try:
                 transport_obj: Any = MarketServiceStreamAdapter(
                     market_url, state.config.symbol,
                     state.config.interval, bars, event_queue, stop_event,
-                    started_event)
+                    started_event, from_ms=from_ms, to_ms=to_ms)
             except ValueError as exc:
                 raise RuntimeError("MARKET_URL_NOT_LOOPBACK", str(exc))
             drive = {

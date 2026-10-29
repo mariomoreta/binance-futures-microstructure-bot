@@ -73,6 +73,16 @@ class DemoKlineServer(FakeKlineServer):
     BACKFILL_BOUNDARIES = 2
     # Tope de backfill por connect (memoria/tiempo acotados): 7 dias de 1m.
     MAX_BACKFILL_BARS = 10_080
+    # Ritmo de envio del backfill (segundos por vela). Debe ser lo bastante
+    # lento para que el consumidor (market_stream_service) reciba cada vela
+    # antes de que el productor avance al siguiente open: de otro modo, si el
+    # socket se recicla (churn), state["open"] quedaria por delante de lo que
+    # el consumidor recibio y el catch-up saltaria velas (GRID_GAP). 1.0 s
+    # (1 vela/segundo) elimina la saturacion del socket WS y permite que el
+    # consumidor reciba cada vela del backfill sin huecos (~42 h en ~42 min;
+    # el tope de duracion acortada detiene al productor a los 5 min, lo que
+    # ya basta para cubrir las primeras velas de operacion y la senal).
+    BACKFILL_PACE_S = 1.0
 
     def __init__(self, port: int, log_path: Path, base: float,
                  backfill_from_ms: Optional[int] = None) -> None:
@@ -104,11 +114,18 @@ class DemoKlineServer(FakeKlineServer):
                 now = now_ms()
                 current_open = (now // STEP_MS) * STEP_MS
                 if state["open"] is None:
-                    # Primer connect: backfill de las fronteras cerradas EN
-                    # ORDEN (repara cache->conexion sin reparacion REST) y
-                    # ancla del ciclo.
-                    if symbol == DEMO_SYMBOL and self.anchor_open is None:
-                        self.anchor_open = current_open
+                    # Primer connect (o reconecta tras caída): backfill de las
+                    # fronteras cerradas EN ORDEN desde backfill_from_ms para
+                    # reparar el tramo cache->conexion SIN reparacion REST.
+                    # Cada reconexion reenvia desde backfill_from_ms: el
+                    # consumidor (market_stream_service) deduplica por marca de
+                    # agua (ot <= watermark se ignora), de modo que nunca se
+                    # pierde continuidad aunque el socket se recicle (churn).
+                    # Evitamos confiar en state["open"] avanzado por una
+                    # conexion previa, porque al reconectar el catch-up
+                    # empezaria desde ahi y saltaria las velas que el
+                    # productor ya puso en el buffer del WS pero el consumidor
+                    # nunca recibio (causa del GRID_GAP en la corrida 4).
                     ev = now
                     if self.backfill_from_ms is not None:
                         start_open = self.backfill_from_ms
@@ -119,6 +136,13 @@ class DemoKlineServer(FakeKlineServer):
                         self.MAX_BACKFILL_BARS * STEP_MS)
                     if start_open < min_open:
                         start_open = min_open
+                    # Ancla del ciclo de precios: la PRIMERA frontera del
+                    # backfill (no current_open). Si se anclara a current_open,
+                    # todas las velas del backfill (open_ms < anchor_open)
+                    # tendrían idx < 0 y close = PRE_CYCLE (0.999*base),
+                    # por debajo de entry_px, y nunca habría señal.
+                    if symbol == DEMO_SYMBOL and self.anchor_open is None:
+                        self.anchor_open = start_open
                     back_open = start_open
                     while back_open < current_open:
                         state["open"] = back_open
@@ -135,6 +159,11 @@ class DemoKlineServer(FakeKlineServer):
                                          event_ms=ev)
                         ev += 1
                         back_open += STEP_MS
+                        # Pace: entrega ordenada sin saturar la cola del
+                        # consumidor SSE. Cada vela se envia con un retardo
+                        # acotado para que el adaptador las consuma todas.
+                        if self.BACKFILL_PACE_S > 0:
+                            await asyncio.sleep(self.BACKFILL_PACE_S)
                     state["open"] = current_open
                     state["open_price"] = self.close_of(symbol,
                                                         current_open - STEP_MS)

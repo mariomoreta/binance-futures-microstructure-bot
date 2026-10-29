@@ -1,0 +1,40 @@
+{
+  "date": "2026-10-29",
+  "focus": "E2 debug gate - por qué decision=None",
+  "checks": [
+    {
+      "name": "productor arrancado",
+      "ok": true,
+      "detail": "pid=20492 port=49717"
+    },
+    {
+      "name": "market 8791 UP",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "servicio ingenieria 18797 UP",
+      "ok": false,
+      "detail": ""
+    },
+    {
+      "name": "velas en cache",
+      "ok": true,
+      "detail": "n=959"
+    },
+    {
+      "name": "contexto contiguo",
+      "ok": true,
+      "detail": "ctx_last_open=1793072940000 close_ms=1793072999999"
+    },
+    {
+      "name": "sesion creada",
+      "ok": false,
+      "detail": "<urlopen error [WinError 10061] No se puede establecer una conexión ya que el equipo de destino denegó expresamente dicha conexión>"
+    }
+  ],
+  "passed": 4,
+  "total": 6,
+  "decision_seen": null,
+  "grid_gap_seen": null
+}
