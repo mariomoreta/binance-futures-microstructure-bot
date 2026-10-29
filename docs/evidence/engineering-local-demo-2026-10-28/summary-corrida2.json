@@ -1,0 +1,126 @@
+{
+  "date": "2026-10-28",
+  "run": 2,
+  "note": "re-verificacion acotada tras corregir el defecto de identidad del servicio de mercado (corrida 1 preservada con causa)",
+  "scope": "verificacion acotada demo local (arranque/readiness/parada; NO repite aceptacion larga)",
+  "build_id": "NRjvq90SYBCoTGgmmRzA5",
+  "checks": [
+    {
+      "name": "A1 abrir pagina no crea manifest de demo",
+      "ok": true,
+      "detail": "{'present': False, 'active': False, 'expired': False, 'started_at_ms': None, 'max_runtime_s': None, 'stopped_at_ms': None, 'producer': {'pid': None, 'port': None, 'alive': False}, 'market': {'pid': None, 'port': None, 'health_ok': False}}"
+    },
+    {
+      "name": "A2 8791 sigue caido tras abrir la pagina",
+      "ok": true,
+      "detail": "{'url': 'http://127.0.0.1:8791', 'available': False, 'service': None, 'detail': 'sin respuesta (sin fuente conectada)'}"
+    },
+    {
+      "name": "A3 sin productor ni market propios",
+      "ok": true,
+      "detail": "producer=0 market8791=0"
+    },
+    {
+      "name": "A4 8792 intacto (pid + cmdline LOCAL, no usado por la demo)",
+      "ok": true,
+      "detail": "python  scripts/market_stream_service.py --port 8792 --transport local --base-url ws://127.0.0.1:9999"
+    },
+    {
+      "name": "B1 aviso FUENTE NO DISPONIBLE",
+      "ok": true,
+      "detail": "Error: FUENTE NO DISPONIBLE: la fuente de mercado configurada no responde. Inicie la demostración local (datos simulados) o conecte la fuente autorizada; no se "
+    },
+    {
+      "name": "B2 sin sesion creada (sin huerfana)",
+      "ok": true,
+      "detail": "1 -> 1"
+    },
+    {
+      "name": "B3 chip de fuente en caida visible",
+      "ok": true,
+      "detail": "FUENTE NO DISPONIBLE"
+    },
+    {
+      "name": "D1 demo activa y fuente lista (identidad del servicio corregida)",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "D2 un solo productor propio identificado",
+      "ok": true,
+      "detail": "pid=30488 n=1"
+    },
+    {
+      "name": "D3 un solo market propio en 8791",
+      "ok": true,
+      "detail": "n=1"
+    },
+    {
+      "name": "D5 cmdline del productor apunta al CLI canonico propio (SO, no pid-file)",
+      "ok": true,
+      "detail": "python C:\\proyectos\\binance-futures-microstructure-bot\\scripts\\local_demo_producer.py --base 0.06285 --backfill-from-ms 1793073000000 --log C:\\proyectos\\binance"
+    },
+    {
+      "name": "D6 cmdline del market apunta al CLI canonico --transport local (SO)",
+      "ok": true,
+      "detail": "python C:\\proyectos\\binance-futures-microstructure-bot\\scripts\\market_stream_service.py --host 127.0.0.1 --port 8791 --transport local --base-url ws://127.0.0.1"
+    },
+    {
+      "name": "D4 chip fuente lista en UI",
+      "ok": true,
+      "detail": "Fuente: lista"
+    },
+    {
+      "name": "E1 sesion creada y con evidencia de stream",
+      "ok": true,
+      "detail": "sesiones 1 -> 1"
+    },
+    {
+      "name": "E2 operacion de ingenieria (senal ENTRADA en plazo acotado)",
+      "ok": false,
+      "detail": "sin entrada en 180 s"
+    },
+    {
+      "name": "F1 demo detenida (manifest cerrado)",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "F2 recursos propios detenidos y limpios",
+      "ok": true,
+      "detail": "producer=0 market8791=0"
+    },
+    {
+      "name": "F4 8792 sigue intacto tras la parada de la demo",
+      "ok": true,
+      "detail": "python  scripts/market_stream_service.py --port 8792 --transport local --base-url ws://127.0.0.1:9999"
+    },
+    {
+      "name": "F3 caida de feed registrada DENTRO de la sesion",
+      "ok": true,
+      "detail": "causa visible"
+    },
+    {
+      "name": "G1 sesion detenida por el operador (politica correcta)",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "H1 sin demostracion activa al final",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "H3 8792 intacto al final",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "H2 dashboard sigue disponible",
+      "ok": true,
+      "detail": ""
+    }
+  ],
+  "passed": 22,
+  "total": 23
+}

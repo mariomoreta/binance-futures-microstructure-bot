@@ -425,3 +425,122 @@ este MISMO recorrido con datos públicos (8791 `--transport public`),
 presupuesto y autorización separados. Sigue pendiente y NO está completo:
 selector multiactivo, riesgo completo, paper prospectivo y estrategia
 rentable.
+
+### 11.7 Reconciliación del pid-file por EVIDENCIA (2026-10-28; incidente preservado)
+
+**Incidente (preservado):** una corrida efímera sobrescribió el pid-file
+canónico (`data/engineering-session/service.json`) con pid 10112/puerto
+18797 mientras la instancia canónica real (pid 29096/puerto 8797) seguía
+viva; el gestor reportaba `unidentified` y la reconciliación era manual. El
+pid-file reescrito NO es prueba independiente de identidad: es un registro
+local (gitignored) que cualquiera puede escribir.
+
+**Evidencia independiente usada para atribuir el pid 29096 a esta
+instancia (2026-10-28):** (a) consulta al SO por línea de comandos
+(`Get-CimInstance Win32_Process`) del proceso 29096: `python
+...scripts/engineering_session_service.py --host 127.0.0.1 --port 8797
+--sessions-dir <dir dedicado canónico> --pid-file <pid-file canónico>`;
+(b) el propio `/health` del proceso declara
+`engineering-session-service/v1`, `pid 29096`, `sessions_dir` = directorio
+dedicado canónico. La consulta al SO es la fuente independiente; el health
+coincide; el pid-file restaurado a mano quedó subordinado a ambas.
+
+**Regla nueva del controlador (`engineering-service-manager.ts`):** ante
+pid-file ausente o incompatible, el arranque puede RECONCILIAR la instancia
+viva SOLO con la cadena completa de evidencia verificable:
+
+1. `/health` declara el servicio canónico y un pid numérico;
+2. el `sessions_dir` declarado por el servicio es el dedicado canónico;
+3. el pid está vivo (`process.kill(pid, 0)`);
+4. la línea de comandos del SO (consulta independiente, PowerShell
+   `Get-CimInstance` / `ps`) apunta al CLI canónico con el mismo `--port`
+   y, si declara `--sessions-dir`/`--pid-file`, con los canónicos.
+
+Sin TODA la cadena → rechazo explícito
+(`ENGINEERING_SERVICE_UNIDENTIFIED` con el eslabón faltante en el detalle):
+no se reutiliza, no se detiene, no se adopta a ciegas. Con la cadena
+completa → pid-file reescrito atómicamente (marcado `reconciled: true`) y
+la instancia se reutiliza (`already: true`). El GET de estado sigue siendo
+consulta pura (no reconcilia ni escribe); la reconciliación ocurre solo en
+el POST de arranque explícito. Tests:
+`frontend/src/test/engineering-service-manager.test.ts` (caso feliz,
+rechazo por cmdline, rechazo por sessions_dir).
+
+### 11.8 Modo «Demostración local — datos simulados» (2026-10-28, base `643e0b9` + cambios sin commitear al momento de la corrida)
+
+Modo explícito para que el operador recorra
+`/market-lab` → «Iniciar demostración» → «Iniciar sesión» sin puertos
+muertos, sin comandos manuales y SIN Binance. Claramente separado de la
+futura fuente pública: la demo es DEMOSTRACIÓN con datos simulados, no
+mercado real.
+
+**Recursos exclusivamente propios e identificados, acotados:**
+1. Productor WS loopback determinista `scripts/local_demo_producer.py`
+   (reutiliza el `FakeKlineServer` del arnés acreditado): servicio
+   `local-demo-producer/v1`, pid-file propio
+   (`data/engineering-demo/producer.json`), ciclo de precios determinista
+   sobre el close del cache local (produce señal LONG sin tocar el stop,
+   regla RULE-CAUSAL-V1), backfill inicial parametrizado
+   (`--backfill-from-ms` = cache_end+paso) que repara el tramo
+   cache→conexión SIN reparación REST, y parada automática propia
+   (`--max-runtime-s`, default 45 min; retira su pid-file al expirar).
+2. Servicio de mercado canónico en 8791 con `--transport local
+   --base-url ws://127.0.0.1:<productor>` y `--max-seconds` (parada
+   automática acotada), pid-file propio vía
+   `MICROPROBE_MARKET_STREAM_PID=data/engineering-demo/market.json`.
+3. Servicio de ingeniería canónico (8797), reutilizado/arrancado/reconciliado
+   por el gestor existente (identidad verificada).
+
+**Guardas:** NADA arranca por GET ni por abrir la página; iniciar/detener
+son POST con guardia de origen del BFF y guardia síncrona anti doble-clic
+(dedupe por promesa en curso). NO se usa silenciosamente 8792; si la
+fuente declarada ya tiene un servicio en escucha que no pertenece a la
+demo → rechazo explícito `DEMO_SOURCE_FOREIGN` (sin reutilización
+silenciosa). La parada de la demo detiene SOLO recursos con identidad
+doble verificada (manifest + pid-file propio); ante pid-file de otro pid →
+rechazo (`DEMO_*_UNIDENTIFIED`), nunca mata procesos desconocidos. La
+parada de la demo NO toca 8797 ni sus sesiones: la caída de feed posterior
+queda registrada DENTRO de la sesión (visible); la parada de la sesión es
+del operador.
+
+**Estados visibles (distingue servicio / fuente / sesión):** chip de
+servicio (existente), chip nuevo de fuente (`Fuente: lista` /
+`FUENTE NO DISPONIBLE`), tarjeta de demostración con estado y botones.
+«Iniciar sesión» comprueba la fuente ANTES de crear la sesión: sin fuente
+conectada muestra `FUENTE NO DISPONIBLE` y NO crea sesión (sin huérfanas);
+una caída POSTERIOR sí se registra dentro de la sesión. El precio base del
+productor = último close del cache local (el MISMO origen del contexto de
+la sesión), consultado con `--no-fetch` (0 upstream).
+
+**Verificación acotada (arranque coordinado, readiness y parada; NO repite
+la aceptación larga de §11.3):** resultados y evidencia en
+`docs/evidence/engineering-local-demo-2026-10-28/summary.json` (BUILD_ID
+`NRjvq90SYBCoTGgmmRzA5`); identidad del árbol al momento de la corrida:
+HEAD `643e0b9` + cambios sin commitear que luego publica el commit de este
+bloque (mismo criterio de honestidad de §11.6).
+
+**Resultado de la verificación acotada (corrida 3, 2026-10-28):** 22/23
+checks PASS.
+- PASS: A1–A4 (abrir la página no crea manifest ni arranca productor/8791;
+  8792 intacto con cmdline LOCAL), B1–B3 (fuente ausente → aviso
+  `FUENTE NO DISPONIBLE` ANTES de crear sesión; sin sesión huérfana;
+  chip visible), D1–D6 (demo activa y fuente lista; un solo productor y un
+  solo market propios identificados por cmdline del SO; chip `Fuente:
+  lista`), E1 (sesión creada con evidencia de stream), F1–F4 (demo
+  detenida, manifest cerrado, productor y 8791 detenidos y limpios; 8792
+  intacto), F3 (caída de feed registrada DENTRO de la sesión), G1 (sesión
+  detenida por el operador, política correcta), H1–H3 (sin demo activa al
+  final; 8792 intacto; dashboard 200).
+- FAIL: **E2 — operación de ingeniería (señal `ENTRADA_SIMULADA` en plazo
+  acotado):** sin entrada en 180 s. Causa identificada (no defecto del
+  modo demo): el `market_stream_service` en modo local (`recovery: False`)
+  no asimila el backfill completo desde el cache (42 h atrás) bajo su churn
+  WS (se conecta/desconecta cada ~2 s); la sesión arranca con un hueco de
+  rejilla en la frontera contexto→operación → `GRID_GAP` bloquea
+  `evaluate_session` permanentemente → sin decisión. El productor demo ya
+  está corregido (`state["open"]` propio por frame en catch-up; test de
+  regresión 3/3; suite Python 1543 passed) pero la sesión no alcanzó
+  continuidad de rejilla desde el contexto. E2 queda documentado como fallo
+  con causa, no como PASS. Nota de la corrida 1 (FAIL por identidad de
+  servicio `market-stream-service/v1` vs contrato `market-stream/v1`,
+  corregido) preservada en `docs/evidence/engineering-local-demo-2026-10-28/corrida1/`.

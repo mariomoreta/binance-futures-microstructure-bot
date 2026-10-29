@@ -1,0 +1,34 @@
+Salida íntegra de la corrida 1 (verify_local_demo.py, build mABueNhBnQ_rXZwESYlFf
+sin el fix de identidad; el crash final del arnés es consecuencia de E: sin
+sesión creada, el botón «Detener sesión» está deshabilitado y el click espera
+30 s hasta TimeoutError, antes de que el arnés escribiera summary.json).
+
+PASS A1 abrir pagina no crea manifest de demo | {'present': False, 'active': False, 'expired': False, 'started_at_ms': None, 'max_runtime_s': None, 'stopped_at_ms': None, 'producer': {'pid': None, 'port': None, 'alive': False}, 'market': {'pid': None, 'port': None, 'health_ok': False}}
+PASS A2 8791 sigue caido tras abrir la pagina | {'url': 'http://127.0.0.1:8791', 'available': False, 'service': None, 'detail': 'sin respuesta (sin fuente conectada)'}
+PASS A3 sin productor ni market propios | producer=0 market8791=0
+PASS B1 aviso FUENTE NO DISPONIBLE | Error: FUENTE NO DISPONIBLE: la fuente de mercado configurada no responde. Inicie la demostración local (datos simulados) o conecte la fuente autorizada; no se
+PASS B2 sin sesion creada (sin huerfana) | 0 -> 0
+PASS B3 chip de fuente en caida visible | FUENTE NO DISPONIBLE
+FAIL D1 demo activa y fuente lista
+FAIL D2 un solo productor propio identificado | pid=23056 n=-1
+FAIL D3 un solo market propio en 8791 | n=-1
+FAIL D4 chip fuente lista en UI | FUENTE NO DISPONIBLE
+FAIL E1 sesion creada y con evidencia de stream | Page.wait_for_selector: Timeout 120000ms exceeded.
+FAIL E2 operacion de ingenieria (senal ENTRADA en plazo acotado) | sin entrada en 180 s
+PASS F1 demo detenida (manifest cerrado)
+PASS F2 recursos propios detenidos | producer=0 market8791=0
+FAIL F3 caida de feed registrada DENTRO de la sesion | sin causa visible en 200 s
+[CRASH del arnes] Page.click btn-detener-sesion: Timeout 30000ms — el botón
+está DISABLED porque no hay sesión (E1 bloqueado por la puerta de fuente con
+el flag `available` equivocado). Consecuencia, no causa.
+
+Estado real durante D (verificado aparte por cmdline del SO):
+  pid 23056 :: python ...\scripts\local_demo_producer.py --base 0.06285 --backfill-from-ms 1793073000000 --log ...
+  pid 6900  :: python ...\scripts\market_stream_service.py --host 127.0.0.1 --port 8791 --transport local --bas[e-url ...]
+  pid 33104 :: python scripts/market_stream_service.py --port 8792 --transport local --base-url ws://127.0.0.1:9999   [INTACTO, no usado]
+
+Causa raíz única de D1/D4/E1/E2/F3 (y del crash G): `demoStatus` comparaba
+el campo `service` del /health (`market-stream-service/v1`) contra el
+CONTRATO `market-stream/v1` → `source.available` false con la demo en
+escucha. Corregido: la disponibilidad se acredita con
+`contract_version == market-stream/v1` (o el service canónico).

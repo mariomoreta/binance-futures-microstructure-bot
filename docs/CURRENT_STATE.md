@@ -1,3 +1,33 @@
+## Modo «Demostración local — datos simulados» + reconciliación por evidencia (2026-10-28, base `643e0b9`)
+
+Entregado y verificado de forma ACOTADA (arranque coordinado, readiness y
+parada; no repite la aceptación larga): el operador puede recorrer
+`/market-lab` → «Iniciar demostración» → «Iniciar sesión» desde la UI sin
+comandos ni variables manuales. La demo arranca EXCLUSIVAMENTE recursos
+propios identificados y acotados (productor WS loopback determinista con
+parada automática, servicio de mercado canónico en 8791 con
+`--transport local` y `--max-seconds`, servicio de ingeniería 8797 con
+identidad verificada), con duración/memoria acotadas (45 min default) y SIN
+Binance, sin 8792 y sin transporte público. «Iniciar sesión» comprueba la
+fuente ANTES de crear la sesión: sin fuente → `FUENTE NO DISPONIBLE` y sin
+sesión huérfana; la parada de la demo detiene solo recursos con identidad
+doble verificada (manifest + pid-file) y deja la pérdida de feed registrada
+DENTRO de la sesión; luego «Detener sesión» aplica la política de posición.
+El controlador del servicio ahora RECONCILIA el pid-file solo con evidencia
+verificable (health canónico + sessions_dir canónico + pid vivo + línea de
+comandos del SO); sin la cadena completa rechaza sin adoptar ni matar.
+Evidencia: `docs/evidence/engineering-local-demo-2026-10-28/summary.json`
+(BUILD_ID `NRjvq90SYBCoTGgmmRzA5`, dashboard 3020 en producción): **22/23
+checks PASS de la verificación acotada (corrida 3)**.
+FAIL documentado con causa: **E2** (señal `ENTRADA_SIMULADA` en 180 s) — el
+`market_stream_service` en modo local no asimila el backfill completo desde
+el cache (42 h atrás) bajo su churn WS → hueco de rejilla
+frontera contexto→operación → `GRID_GAP` bloquea `evaluate_session`
+permanentemente → sin decisión. No es defecto del modo demo; queda para la
+fase con datos públicos (`8791 --transport public`, autorización/presupuesto
+separados). Detalles: `ENGINEERING_SESSION_BACKEND_V1.md` §11.7–§11.8 y
+`docs/FEATURE_BACKLOG.md` (entrada modo demo 2026-10-28).
+
 ## Entrega utilizable del transporte live local + identidad de la evidencia (2026-10-28, base `efa7700`)
 
 Factual: dashboard canónico `http://127.0.0.1:3020` ACTIVO en producción

@@ -10,8 +10,8 @@
 // es exclusivamente el proceso que él mismo generó (child.kill()).
 // ---------------------------------------------------------------------------
 
-import { spawn } from "node:child_process";
-import { readFile } from "node:fs/promises";
+import { spawn, spawnSync } from "node:child_process";
+import { mkdir, readFile, rename, writeFile } from "node:fs/promises";
 import path from "node:path";
 
 export type EngineeringServiceState =
@@ -27,6 +27,7 @@ export interface EngineeringServiceStatus {
   port?: number | null;
   cadence_ms?: number | null;
   sessions_dir?: string | null;
+  market_url?: string | null;
   detail?: string | null;
 }
 
@@ -36,6 +37,7 @@ export interface StartServiceResult {
   port?: number;
   sessions_dir?: string;
   already?: boolean;
+  reconciled?: boolean;
   error?: string;
   detail?: string;
 }
@@ -50,8 +52,11 @@ interface PidFileInfo {
 const SERVICE_NAME = "engineering-session-service/v1";
 
 // --- configuración (env con defaults del proyecto) --------------------------
+// serviceRoot/pythonExecutable se exportan: el gestor de la DEMOSTRACIÓN
+// local (local-demo-manager.ts) reutiliza la misma raíz canónica y el mismo
+// intérprete, sin duplicar configuración.
 
-function serviceRoot(): string {
+export function serviceRoot(): string {
   // Raíz canónica del repo (padre del frontend servido), con sobreescritura
   // opcional para entornos de prueba.
   const env = process.env.ENGINEERING_SERVICE_ROOT;
@@ -66,7 +71,7 @@ function servicePort(): number {
   return Number.isFinite(n) && n > 0 ? Math.floor(n) : 8797;
 }
 
-function pythonExecutable(): string {
+export function pythonExecutable(): string {
   // Sobreescritura de prueba: ENGINEERING_SERVICE_PYTHON (p. ej. una ruta
   // inexistente para el caso de fallo de arranque).
   return process.env.ENGINEERING_SERVICE_PYTHON ?? "python";
@@ -159,6 +164,13 @@ export async function serviceStatus(): Promise<EngineeringServiceStatus> {
     };
   }
   const healthPid = typeof body?.pid === "number" ? body.pid : null;
+  // Fuente de mercado declarada por el propio servicio (para el estado de
+  // la demo y el aviso previo de fuente); presente siempre que /health
+  // responda con el contrato canónico.
+  const marketUrl = (() => {
+    const market = body?.market as { url?: unknown } | null | undefined;
+    return typeof market?.url === "string" ? market.url : null;
+  })();
   if (pid === null || healthPid === null || healthPid !== pid.pid) {
     return {
       state: "unidentified",
@@ -166,6 +178,10 @@ export async function serviceStatus(): Promise<EngineeringServiceStatus> {
       engine_version: String(body?.engine_version ?? ""),
       pid: healthPid,
       port,
+      sessions_dir: typeof body?.sessions_dir === "string"
+        ? body.sessions_dir
+        : null,
+      market_url: marketUrl,
       detail: "servicio en escucha con identidad no verificable (pid-file ausente o desajustado)",
     };
   }
@@ -177,8 +193,160 @@ export async function serviceStatus(): Promise<EngineeringServiceStatus> {
     port,
     cadence_ms: typeof body?.cadence_ms === "number" ? body.cadence_ms : null,
     sessions_dir: typeof body?.sessions_dir === "string" ? body.sessions_dir : null,
+    market_url: marketUrl,
     detail: null,
   };
+}
+
+// --- reconciliación del pid-file por EVIDENCIA (nunca adopción ciega) ------
+//
+// Incidente (2026-10-28, preservado en docs): una corrida efímera
+// sobrescribió el pid-file canónico (pid 10112/puerto 18797) mientras la
+// instancia canónica real (pid 29096/puerto 8797) seguía viva; el gestor
+// reportaba "unidentified" y el operador tenía que reconciliar a mano.
+// Regla nueva: ante pid-file incompatible, el gestor puede RECONCILIAR
+// únicamente con una cadena completa de evidencia independiente; con
+// cualquier eslabón faltante RECHAZA (no reutiliza, no detiene, no adopta).
+
+function pidAliveReal(pid: number): boolean {
+  try {
+    process.kill(pid, 0);  // señal 0: existence check, no envía nada
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+let pidAliveImpl: (pid: number) => boolean = pidAliveReal;
+
+export interface CmdlineEvidence {
+  ok: boolean;
+  commandLine?: string;
+  error?: string;
+}
+
+/** Consulta al SO (evidencia independiente del pid-file y de /health). */
+async function verifyCmdlineReal(
+  pid: number,
+  port: number,
+): Promise<CmdlineEvidence> {
+  const scriptNeedle = normalizeCmdPath(scriptPath());
+  try {
+    let commandLine: string;
+    if (process.platform === "win32") {
+      const r = spawnSync(
+        "powershell",
+        ["-NoProfile", "-Command",
+          `(Get-CimInstance Win32_Process -Filter 'ProcessId=${pid}').CommandLine`],
+        { encoding: "utf8", timeout: 5_000, windowsHide: true });
+      if (r.error) {
+        return { ok: false, error: `consulta al SO falló: ${r.error.message}` };
+      }
+      commandLine = (r.stdout || "").trim();
+    } else {
+      const r = spawnSync("ps", ["-p", String(pid), "-o", "args="],
+        { encoding: "utf8", timeout: 5_000 });
+      if (r.error) {
+        return { ok: false, error: `consulta al SO falló: ${r.error.message}` };
+      }
+      commandLine = (r.stdout || "").trim();
+    }
+    if (!commandLine) {
+      return { ok: false, error: "proceso sin línea de comandos (¿no existe?)" };
+    }
+    if (!normalizeCmdPath(commandLine).includes(scriptNeedle)) {
+      return { ok: false, commandLine, error: "el proceso no apunta al CLI canónico" };
+    }
+    const portMatch = commandLine.match(/--port[= ](\d+)/);
+    if (!portMatch || Number(portMatch[1]) !== port) {
+      return { ok: false, commandLine, error: `el proceso no declara --port ${port}` };
+    }
+    // Si declara sessions-dir/pid-file, deben apuntar a los canónicos.
+    const sessionsDirMatch = commandLine.match(/--sessions-dir[= ](\S+)/);
+    const sessionsDirArg = sessionsDirMatch?.[1];
+    if (sessionsDirArg &&
+        path.resolve(sessionsDirArg) !== path.resolve(sessionsDirPath())) {
+      return { ok: false, commandLine, error: "--sessions-dir no canónico" };
+    }
+    const pidFileMatch = commandLine.match(/--pid-file[= ](\S+)/);
+    const pidFileArg = pidFileMatch?.[1];
+    if (pidFileArg &&
+        path.resolve(pidFileArg) !== path.resolve(pidFilePath())) {
+      return { ok: false, commandLine, error: "--pid-file no canónico" };
+    }
+    return { ok: true, commandLine };
+  } catch (exc: unknown) {
+    return { ok: false, error: `consulta al SO falló: ${String(exc)}` };
+  }
+}
+
+function normalizeCmdPath(p: string): string {
+  return p.replace(/\\/g, "/").toLowerCase();
+}
+
+let verifyCmdlineImpl: (
+  pid: number,
+  port: number,
+) => Promise<CmdlineEvidence> = verifyCmdlineReal;
+
+/** Costura SOLO para pruebas unitarias (el SO real no se consulta en tests). */
+export function _setIdentityEvidenceForTests(
+  impl: {
+    pidAlive?: (pid: number) => boolean;
+    verifyCmdline?: (pid: number, port: number) => Promise<CmdlineEvidence>;
+  } | null,
+): void {
+  pidAliveImpl = impl?.pidAlive ?? pidAliveReal;
+  verifyCmdlineImpl = impl?.verifyCmdline ?? verifyCmdlineReal;
+}
+
+/**
+ * Reconciliación del pid-file con la instancia viva, SOLO con evidencia
+ * verificable: (1) /health declara el servicio canónico; (2) el sessions_dir
+ * declarado por el servicio es el dedicado canónico; (3) el pid está vivo;
+ * (4) la línea de comandos del SO apunta al CLI canónico con el mismo puerto
+ * (y, si declara sessions-dir/pid-file, con los canónicos). Sin TODA la
+ * cadena → rechazo; nunca se detiene ni adopta a ciegas.
+ */
+export async function reconcileServiceByEvidence(
+  st: EngineeringServiceStatus,
+): Promise<{ reconciled: boolean; reason?: string }> {
+  const pid = st.pid ?? null;
+  if (st.service !== SERVICE_NAME) {
+    return { reconciled: false, reason: "health sin identidad canónica" };
+  }
+  if (pid === null) {
+    return { reconciled: false, reason: "health sin pid" };
+  }
+  if (st.sessions_dir == null ||
+      path.resolve(st.sessions_dir) !== path.resolve(sessionsDirPath())) {
+    return { reconciled: false, reason: "sessions_dir declarado no canónico" };
+  }
+  if (!pidAliveImpl(pid)) {
+    return { reconciled: false, reason: "pid no vivo" };
+  }
+  const cmd = await verifyCmdlineImpl(pid, servicePort());
+  if (!cmd.ok) {
+    return { reconciled: false, reason: cmd.error ?? "cmdline no verificable" };
+  }
+  const port = servicePort();
+  const body = {
+    pid,
+    port,
+    host: "127.0.0.1",
+    service: SERVICE_NAME,
+    reconciled: true,
+    reconciled_at_ms: Date.now(),
+  };
+  const tmp = `${pidFilePath()}.tmp.${process.pid}`;
+  try {
+    await mkdir(path.dirname(pidFilePath()), { recursive: true });
+    await writeFile(tmp, JSON.stringify(body) + "\n", "utf8");
+    await rename(tmp, pidFilePath());
+  } catch (exc: unknown) {
+    return { reconciled: false, reason: `pid-file no escribible: ${String(exc)}` };
+  }
+  return { reconciled: true };
 }
 
 // --- arranque explícito -----------------------------------------------------
@@ -242,10 +410,26 @@ async function doStartService(): Promise<StartServiceResult> {
     return { ok: true, already: true, pid: before.pid ?? undefined, port };
   }
   if (before.state === "unidentified") {
+    // Antes de rechazar: ¿la instancia viva es reconciliable con evidencia
+    // verificable (health canónico + sessions_dir canónico + pid vivo +
+    // línea de comandos del SO == CLI canónico)? Sin la cadena completa se
+    // rechaza igual (no se reutiliza ni detiene procesos desconocidos).
+    const rec = await reconcileServiceByEvidence(before);
+    if (!rec.reconciled) {
+      return {
+        ok: false,
+        error: "ENGINEERING_SERVICE_UNIDENTIFIED",
+        detail:
+          `${before.detail ?? "identidad no verificable"}; reconciliación ` +
+          `rechazada (${rec.reason ?? "sin evidencia"}); no se reutiliza ni detiene`,
+      };
+    }
     return {
-      ok: false,
-      error: "ENGINEERING_SERVICE_UNIDENTIFIED",
-      detail: before.detail ?? "puerto ocupado con identidad no verificable",
+      ok: true,
+      already: true,
+      reconciled: true,
+      pid: before.pid ?? undefined,
+      port,
     };
   }
 

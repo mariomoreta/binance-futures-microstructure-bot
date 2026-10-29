@@ -23,6 +23,9 @@ const mocks = vi.hoisted(() => ({
   controlBackendSession: vi.fn(),
   fetchEngineeringService: vi.fn(),
   startEngineeringService: vi.fn(),
+  fetchEngineeringDemo: vi.fn(),
+  startEngineeringDemo: vi.fn(),
+  stopEngineeringDemo: vi.fn(),
 }));
 
 vi.mock("@/lib/session-lab", async (importOriginal) => {
@@ -35,6 +38,9 @@ vi.mock("@/lib/session-lab", async (importOriginal) => {
     controlBackendSession: mocks.controlBackendSession,
     fetchEngineeringService: mocks.fetchEngineeringService,
     startEngineeringService: mocks.startEngineeringService,
+    fetchEngineeringDemo: mocks.fetchEngineeringDemo,
+    startEngineeringDemo: mocks.startEngineeringDemo,
+    stopEngineeringDemo: mocks.stopEngineeringDemo,
   };
 });
 
@@ -172,6 +178,32 @@ describe("sesión de ingeniería — navegador observador (backend conduce)", ()
     });
     mocks.startEngineeringService.mockResolvedValue({
       ok: true, data: {pid: 4242, port: 8797}, status: 200,
+    });
+    // Fuente disponible por defecto (demo con servicio + fuente listos): la
+    // mayoría de casos prueba el flujo de sesión, no la puerta de fuente.
+    mocks.fetchEngineeringDemo.mockResolvedValue({
+      ok: true,
+      data: {
+        ok: true,
+        engineering: {state: "ready", pid: 4242, port: 8797,
+          market_url: "http://127.0.0.1:8791"},
+        source: {url: "http://127.0.0.1:8791", available: true,
+          service: "market-stream/v1", detail: null},
+        demo: {
+          present: true, active: true, expired: false,
+          started_at_ms: T1, max_runtime_s: 2700, stopped_at_ms: null,
+          producer: {pid: 111, port: 52256, alive: true},
+          market: {pid: 222, port: 8791, health_ok: true},
+        },
+      },
+      status: 200,
+    });
+    mocks.startEngineeringDemo.mockResolvedValue({
+      ok: true, data: {producer: {pid: 111, port: 52256},
+        market: {pid: 222, port: 8791}}, status: 200,
+    });
+    mocks.stopEngineeringDemo.mockResolvedValue({
+      ok: true, data: {}, status: 200,
     });
     localStorage.removeItem(SESSION_ID_STORAGE_KEY);
   });
@@ -475,5 +507,106 @@ describe("sesión de ingeniería — navegador observador (backend conduce)", ()
     await waitFor(() => expect(mocks.controlBackendSession).toHaveBeenCalledWith(
       "sess-123", "exit", expect.objectContaining({expectedRevision: 1}),
     ));
+  });
+
+  it("FUENTE NO DISPONIBLE: avisa ANTES de crear sesión y NO llama al backend", async () => {
+    // Servicio listo pero fuente caída: el create con market_stream
+    // fallaría inevitablemente → el aviso previo evita la sesión huérfana.
+    mocks.fetchEngineeringDemo.mockResolvedValue({
+      ok: true,
+      data: {
+        ok: true,
+        engineering: {state: "ready", pid: 4242, port: 8797,
+          market_url: "http://127.0.0.1:8791"},
+        source: {url: "http://127.0.0.1:8791", available: false,
+          service: null, detail: "sin respuesta (sin fuente conectada)"},
+        demo: {
+          present: false, active: false, expired: false,
+          started_at_ms: null, max_runtime_s: null, stopped_at_ms: null,
+          producer: {pid: null, port: null, alive: false},
+          market: {pid: null, port: null, health_ok: false},
+        },
+      },
+      status: 200,
+    });
+    render(<EngineeringSession symbol="MINAUSDT" interval="1m" bars={90} />);
+    await waitFor(() =>
+      expect(screen.getByTestId("source-chip").textContent)
+        .toContain("FUENTE NO DISPONIBLE"));
+    fireEvent.click(screen.getByRole("button", {name: "Iniciar sesion"}));
+    await waitFor(() => expect(screen.getByTestId("session-error")).toBeTruthy());
+    expect(screen.getByTestId("session-error").textContent)
+      .toContain("FUENTE NO DISPONIBLE");
+    expect(mocks.createBackendSession).not.toHaveBeenCalled();
+    expect(mocks.controlBackendSession).not.toHaveBeenCalled();
+  });
+
+  it("Demostración local: iniciar/detener llaman a la API una sola vez (doble clic sin duplicados)", async () => {
+    // Demo inactiva al abrir: el botón de iniciar debe estar habilitado.
+    mocks.fetchEngineeringDemo.mockResolvedValue({
+      ok: true,
+      data: {
+        ok: true,
+        engineering: {state: "ready", pid: 4242, port: 8797,
+          market_url: "http://127.0.0.1:8791"},
+        source: {url: "http://127.0.0.1:8791", available: false,
+          service: null, detail: "sin respuesta (sin fuente conectada)"},
+        demo: {
+          present: false, active: false, expired: false,
+          started_at_ms: null, max_runtime_s: null, stopped_at_ms: null,
+          producer: {pid: null, port: null, alive: false},
+          market: {pid: null, port: null, health_ok: false},
+        },
+      },
+      status: 200,
+    });
+    // Tras el arranque, el refresco de estado ve la demo ACTIVA (los dobles
+    // reflejan el BFF real: el manifest activo habilita Detener).
+    mocks.fetchEngineeringDemo.mockImplementation(async () => ({
+      ok: true,
+      data: {
+        ok: true,
+        engineering: {state: "ready", pid: 4242, port: 8797,
+          market_url: "http://127.0.0.1:8791"},
+        source: {url: "http://127.0.0.1:8791",
+          available: mocks.startEngineeringDemo.mock.calls.length > 0,
+          service: mocks.startEngineeringDemo.mock.calls.length > 0
+            ? "market-stream/v1" : null,
+          detail: null},
+        demo: {
+          present: mocks.startEngineeringDemo.mock.calls.length > 0,
+          active: mocks.startEngineeringDemo.mock.calls.length > 0,
+          expired: false,
+          started_at_ms: mocks.startEngineeringDemo.mock.calls.length > 0
+            ? T1 : null,
+          max_runtime_s: mocks.startEngineeringDemo.mock.calls.length > 0
+            ? 2700 : null,
+          stopped_at_ms: null,
+          producer: mocks.startEngineeringDemo.mock.calls.length > 0
+            ? {pid: 111, port: 52256, alive: true}
+            : {pid: null, port: null, alive: false},
+          market: mocks.startEngineeringDemo.mock.calls.length > 0
+            ? {pid: 222, port: 8791, health_ok: true}
+            : {pid: null, port: null, health_ok: false},
+        },
+      },
+      status: 200,
+    }));
+    mocks.startEngineeringDemo.mockResolvedValue({
+      ok: true, data: {producer: {pid: 111, port: 52256},
+        market: {pid: 222, port: 8791}}, status: 200,
+    });
+    render(<EngineeringSession symbol="MINAUSDT" interval="1m" bars={90} />);
+    await waitFor(() => expect(screen.getByTestId("demo-card")).toBeTruthy());
+    expect(screen.getByTestId("demo-status").textContent)
+      .toContain("Inactiva");
+    const btn = screen.getByTestId("btn-iniciar-demo");
+    fireEvent.click(btn);
+    fireEvent.click(btn);  // doble clic: la guardia síncrona bloquea el 2º
+    await waitFor(() => expect(mocks.startEngineeringDemo).toHaveBeenCalledTimes(1));
+    await waitFor(() => expect(screen.getByTestId("btn-detener-demo")
+      .hasAttribute("disabled")).toBe(false));
+    fireEvent.click(screen.getByTestId("btn-detener-demo"));
+    await waitFor(() => expect(mocks.stopEngineeringDemo).toHaveBeenCalledTimes(1));
   });
 });

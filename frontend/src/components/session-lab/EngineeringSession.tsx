@@ -14,9 +14,10 @@ import {
   buildEngineeringConfig, splitContextAndOperation, lastContextClose,
   controlBackendSession, fetchBackendSession,
   fetchEngineeringService, startEngineeringService,
+  fetchEngineeringDemo, startEngineeringDemo, stopEngineeringDemo,
   ENGINEERING_TRANSPORT_MARKET_STREAM,
   type EngineeringControlAction, type EngineeringDriveState,
-  type EngineeringTransport,
+  type EngineeringDemoStatus, type EngineeringTransport,
 } from "@/lib/session-lab";
 import { PaperChart } from "../paper-lab-live/PaperChart";
 import { PositionPanel } from "../paper-lab-live/PositionPanel";
@@ -91,6 +92,18 @@ const SERVICE_CHIP_TEXT: Record<EngineeringServiceUiState, string> = {
   error: "Servicio de ingeniería con error",
 };
 
+// Fuente de mercado (lo que el servicio de ingeniería consume): estado
+// VISIBLE ANTES de crear una sesión. Sin fuente conectada/fresca NO se
+// crea una sesión que inevitablemente fallaría (aviso previo); una caída
+// POSTERIOR sí se registra dentro de la sesión (visible).
+type SourceUiState = "checking" | "ready" | "unavailable";
+
+const SOURCE_CHIP_TEXT: Record<SourceUiState, string> = {
+  checking: "Comprobando fuente…",
+  ready: "Fuente: lista",
+  unavailable: "FUENTE NO DISPONIBLE",
+};
+
 interface EngineeringSessionProps {
   symbol?: string;
   interval?: string;
@@ -155,6 +168,13 @@ export default function EngineeringSession({
   const [serviceState, setServiceState] = useState<EngineeringServiceUiState>(
     "checking");
   const [serviceDetail, setServiceDetail] = useState<string | null>(null);
+
+  // DEMOSTRACIÓN local (datos simulados; NO Binance): estado visible y
+  // control del operador. El GET de montaje no arranca nada; iniciar/
+  // detener son POST explícitos con guardia síncrona contra doble clic.
+  const [demo, setDemo] = useState<EngineeringDemoStatus | null>(null);
+  const [demoBusy, setDemoBusy] = useState(false);
+  const demoInFlightRef = useRef(false);
 
   const [requestIdCounter, setRequestIdCounter] = useState(0);
   const nextRequestId = useCallback(() => {
@@ -356,6 +376,35 @@ export default function EngineeringSession({
     return () => { cancelled = true; };
   }, []);
 
+  // DEMOSTRACIÓN local: estado visible (GET puro en montaje + refresco
+  // acotado cada 10 s). Nada de esto arranca procesos.
+  const [nowMs, setNowMs] = useState<number>(0);
+  const refreshDemo = useCallback(async () => {
+    const result = await fetchEngineeringDemo();
+    if (result.ok && result.data) setDemo(result.data);
+  }, []);
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      const result = await fetchEngineeringDemo();
+      if (!cancelled && result.ok && result.data) {
+        setDemo(result.data);
+        setNowMs(Date.now());
+      }
+    })();
+    const timer = setInterval(() => {
+      void (async () => {
+        const result = await fetchEngineeringDemo();
+        if (!cancelled && result.ok && result.data) {
+          setDemo(result.data);
+          setNowMs(Date.now());
+        }
+      })();
+    }, 10_000);
+    return () => { cancelled = true; clearInterval(timer); };
+  }, []);
+
   // Puerta de arranque explícito: usada SOLO por el click del operador.
   // Comprueba (GET) y, si está detenido, arranca la instancia canónica del
   // proyecto vía BFF (readiness con límite + identidad verificada). Si ya
@@ -395,6 +444,48 @@ export default function EngineeringSession({
     setServiceDetail(info.pid != null ? `pid ${info.pid}` : null);
     return true;
   }, []);
+
+  // --- Demostración local: control del operador (POST explícito) -----------
+  const startDemoAction = useCallback(async () => {
+    // Guardia SÍNCRONA contra doble clic (el disabled de React no lo es).
+    if (demoInFlightRef.current) return;
+    demoInFlightRef.current = true;
+    setDemoBusy(true);
+    try {
+      const result = await startEngineeringDemo();
+      if (!result.ok) {
+        setError(
+          `DEMOSTRACION_LOCAL: el arranque falló (${result.error ?? "desconocido"})` +
+          `${result.detail ? ` — ${result.detail}` : ""}. No quedó ninguna sesión creada.`);
+      }
+      await refreshDemo();
+    } catch (exc: unknown) {
+      setError(`DEMOSTRACION_LOCAL: ${exc instanceof Error ? exc.message : String(exc)}`);
+    } finally {
+      demoInFlightRef.current = false;
+      setDemoBusy(false);
+    }
+  }, [refreshDemo]);
+
+  const stopDemoAction = useCallback(async () => {
+    if (demoInFlightRef.current) return;
+    demoInFlightRef.current = true;
+    setDemoBusy(true);
+    try {
+      const result = await stopEngineeringDemo();
+      if (!result.ok) {
+        setError(
+          `DEMOSTRACION_LOCAL: la parada falló (${result.error ?? "desconocido"})` +
+          `${result.detail ? ` — ${result.detail}` : ""}. Los recursos sin identidad verificable NO se detienen.`);
+      }
+      await refreshDemo();
+    } catch (exc: unknown) {
+      setError(`DEMOSTRACION_LOCAL: ${exc instanceof Error ? exc.message : String(exc)}`);
+    } finally {
+      demoInFlightRef.current = false;
+      setDemoBusy(false);
+    }
+  }, [refreshDemo]);
 
   // --------------------------------------------------------------------------
   // Conducción backend: arranque, observación y parada.
@@ -495,6 +586,20 @@ export default function EngineeringSession({
       return;
     }
     try {
+      // AVISO PREVIO de fuente (distingue servicio / fuente / sesión): sin
+      // fuente conectada y fresca NO se crea una sesión que inevitablemente
+      // fallaría; una caída POSTERIOR sí queda registrada dentro de la
+      // sesión (visible, sin decisión falsa).
+      const demoInfo = (await fetchEngineeringDemo()).data;
+      if (demoInfo) setDemo(demoInfo);
+      if (!demoInfo || !demoInfo.source.available) {
+        setError(
+          "FUENTE NO DISPONIBLE: la fuente de mercado configurada no responde. " +
+          "Inicie la demostración local (datos simulados) o conecte la fuente " +
+          "autorizada; no se creó ninguna sesión."
+        );
+        return;
+      }
       setTransportKind(ENGINEERING_TRANSPORT_MARKET_STREAM);
       const series = await fetchMarketSeries(symbol, interval, bars);
       if (!series || !series.candles || series.candles.length === 0) {
@@ -729,6 +834,34 @@ export default function EngineeringSession({
     ? "LIVE - servicio de mercado (SSE, solo loopback); solo velas cerradas conducen"
     : "LOCAL SIMULADA - cache local (klines), client=None, 0 upstream";
 
+  // Fuente y demo: estados derivados para los chips visibles.
+  const sourceUiState: SourceUiState = demo === null
+    ? "checking"
+    : (demo.engineering.state === "ready" && demo.source.available
+      ? "ready"
+      : "unavailable");
+  const demoActive = demo?.demo.active === true && !demo.demo.expired;
+  const demoText = (() => {
+    if (!demo || (!demo.demo.present && !demo.demo.active)) {
+      return "Inactiva — sin recursos de demostración propios";
+    }
+    if (demo.demo.expired) {
+      return "Expirada (duración acotada) — pulse Detener demostración y vuelva a iniciar";
+    }
+    if (demoActive) {
+      const anchor = demo.demo.started_at_ms ?? 0;
+      const elapsed = nowMs > anchor ? nowMs - anchor : 0;
+      const remainMin = demo.demo.max_runtime_s != null
+        ? Math.max(0, Math.round(
+            (demo.demo.max_runtime_s * 1000 - elapsed) / 60_000))
+        : null;
+      return `Activa — productor pid ${demo.demo.producer.pid ?? "?"}, fuente ` +
+        `${demo.source.url ?? "?"} (datos simulados` +
+        `${remainMin != null ? `, expira en ~${remainMin} min` : ""})`;
+    }
+    return "Detenida";
+  })();
+
   return (
     <section className={s.root} aria-label={transportTitle}>
       <header className={s.header}>
@@ -773,6 +906,16 @@ export default function EngineeringSession({
           >
             {SERVICE_CHIP_TEXT[serviceState]}
           </span>
+          {/* Fuente: estado visible ANTES de crear la sesión (sin fallback
+              silencioso). Con fuente caída, Iniciar sesión avisa
+              FUENTE NO DISPONIBLE y NO crea sesión. */}
+          <span
+            className={s.sourceChip ?? s.serviceChip}
+            data-testid="source-chip"
+            data-state={sourceUiState}
+          >
+            {SOURCE_CHIP_TEXT[sourceUiState]}
+          </span>
           <button
             type="button"
             className={s.stopButton}
@@ -789,6 +932,38 @@ export default function EngineeringSession({
           )}
         </div>
       </header>
+
+      {/* DEMOSTRACIÓN local — datos simulados: control visible del operador.
+          Recursos propios identificados y acotados (productor WS loopback +
+          servicio de mercado --transport local). Claramente separada de la
+          futura fuente Binance pública (autorización y presupuesto aparte);
+          nunca usa el servicio preexistente 8792 ni transporte público. */}
+      <div
+        className={s.card}
+        data-testid="demo-card"
+        data-active={demoActive ? "true" : "false"}
+      >
+        <strong>Demostración local — datos simulados (no Binance)</strong>
+        <p className={s.small} data-testid="demo-status">{demoText}</p>
+        <button
+          type="button"
+          className={s.startButton}
+          disabled={demoBusy || demoActive}
+          onClick={startDemoAction}
+          data-testid="btn-iniciar-demo"
+        >
+          {demoBusy ? "Gestionando demostración…" : "Iniciar demostración"}
+        </button>
+        <button
+          type="button"
+          className={s.stopButton}
+          disabled={demoBusy || !demoActive}
+          onClick={stopDemoAction}
+          data-testid="btn-detener-demo"
+        >
+          Detener demostración
+        </button>
+      </div>
 
       {error && (
         <div className={s.errorBanner} role="alert" data-testid="session-error">

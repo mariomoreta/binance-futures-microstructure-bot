@@ -384,6 +384,7 @@ export interface EngineeringServiceInfo {
   port?: number | null;
   cadence_ms?: number | null;
   sessions_dir?: string | null;
+  market_url?: string | null;
   detail?: string | null;
 }
 
@@ -405,5 +406,67 @@ export async function startEngineeringService(): Promise<
   return engineeringJson("/service", {
     method: "POST",
     body: JSON.stringify({action: "start"}),
+  });
+}
+
+// --- Demostración local (datos simulados; NO Binance) ------------------------
+
+export interface EngineeringDemoSource {
+  url: string | null;
+  available: boolean;
+  service: string | null;
+  detail: string | null;
+}
+
+export interface EngineeringDemoStatus {
+  ok: boolean;
+  engineering: EngineeringServiceInfo;
+  source: EngineeringDemoSource;
+  demo: {
+    present: boolean;
+    active: boolean;
+    expired: boolean;
+    started_at_ms: number | null;
+    max_runtime_s: number | null;
+    stopped_at_ms: number | null;
+    producer: { pid: number | null; port: number | null; alive: boolean };
+    market: { pid: number | null; port: number | null; health_ok: boolean };
+  };
+  error?: string | null;
+  detail?: string | null;
+}
+
+/** Estado de la demostración y de la fuente (GET puro: consulta). */
+export async function fetchEngineeringDemo(): Promise<
+  EngineeringApiResult<EngineeringDemoStatus>
+> {
+  return engineeringJson("/demo");
+}
+
+/**
+ * Inicia la demostración local: recursos propios identificados
+ * (productor WS loopback + servicio de mercado --transport local, acotados
+ * en duración) + servicio de ingeniería verificado. NUNCA toca el servicio
+ * preexistente 8792 ni habilita transporte público.
+ */
+export async function startEngineeringDemo(): Promise<
+  EngineeringApiResult<{
+    producer?: { pid: number; port: number };
+    market?: { pid: number; port: number };
+  }>
+> {
+  return engineeringJson("/demo", {
+    method: "POST",
+    body: JSON.stringify({action: "start"}),
+  });
+}
+
+/** Detiene la demostración (solo recursos propios; sesiones intactas). */
+export async function stopEngineeringDemo(): Promise<
+  EngineeringApiResult<{ already?: boolean }>
+> {
+  return engineeringJson("/demo", {
+    method: "POST",
+    body: JSON.stringify({action: "stop"}),
   });
 }

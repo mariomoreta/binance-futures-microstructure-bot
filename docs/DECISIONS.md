@@ -3965,3 +3965,49 @@ passed; sin Binance público, sin órdenes, observe-only. Gaps declarados
 para público (NO acreditados): recepción Binance, reparación REST
 inexistente en local, churn WS ~9 s tolerado, ciclo SSE de 10 s del
 adaptador en silencio.
+
+
+## 2026-10-28 — Demostración local explícita + reconciliación del pid-file solo por evidencia
+
+(a) POLÍTICA DE IDENTIDAD: ante pid-file ausente/incompatible (incidente
+preservado en V1 §11.7), el controlador del servicio de ingeniería puede
+RECONCILIAR la instancia viva únicamente con la cadena completa de
+evidencia verificable — /health canónico + sessions_dir canónico + pid
+vivo + línea de comandos del SO (Get-CimInstance/ps) apuntando al CLI
+canónico con el mismo puerto — reescribiendo el pid-file de forma atómica
+y marcada `reconciled`; sin la cadena completa RECHAZA
+(ENGINEERING_SERVICE_UNIDENTIFIED): no reutiliza, no detiene, no adopta.
+El GET de estado sigue siendo consulta pura (sin escrituras); la
+reconciliación ocurre solo en el POST de arranque explícito. Motivo: el
+pid-file no es prueba independiente (registro gitignored reescribible).
+
+(b) MODO DEMO EXPLÍCITO: «Demostración local — datos simulados» desde la
+UI de /market-lab (sin comandos ni variables manuales), arrancando
+EXCLUSIVAMENTE recursos propios identificados y acotados: productor WS
+loopback determinista nuevo (`scripts/local_demo_producer.py`, reutiliza
+el FakeKlineServer del arnés acreditado; parada automática propia
+`--max-runtime-s`), servicio de mercado canónico en 8791 con
+`--transport local --base-url ws://<productor>` y `--max-seconds`, y 8797
+por el gestor existente. Nada arranca por GET ni al abrir la página;
+iniciar/detener son POST con guardia de origen y guardia síncrona
+anti doble-clic. Si la fuente declarada ya tiene un servicio ajeno →
+rechazo explícito DEMO_SOURCE_FOREIGN (sin uso silencioso de 8792 ni de
+instancias ajenas). La parada de la demo solo toca recursos con identidad
+doble verificada (manifest + pid-file propio; DEMO_*_UNIDENTIFIED en caso
+contrario) y NO toca 8797 ni sus sesiones: la pérdida de feed queda
+registrada dentro de la sesión; la parada de la sesión es del operador.
+
+(c) PUERTA DE FUENTE: «Iniciar sesión» comprueba la fuente (la que 8797
+declara) ANTES de crear la sesión; sin fuente → `FUENTE NO DISPONIBLE` y
+sin sesión huérfana; una caída POSTERIOR sí se registra dentro de la
+sesión. Distingue estados servicio / fuente / sesión con chips visibles.
+
+(d) PRODUCTOR DE DEMO: precio base = último close del cache local (el
+MISMO origen del contexto de la sesión, consultado con --no-fetch, 0
+upstream) y backfill parametrizado `--backfill-from-ms` = cache_end+paso
+que repara el tramo cache→conexión SIN reparación REST (la puerta
+GRID_GAP exige continuidad exacta contexto→operación); ciclo de closes
+determinista que produce señal LONG (RULE-CAUSAL-V1) sin tocar el stop.
+Verificación ACOTADA (arranque/readiness/parada, no repite la aceptación
+larga) en docs/evidence/engineering-local-demo-2026-10-28/; sin Binance,
+sin órdenes, observe-only.

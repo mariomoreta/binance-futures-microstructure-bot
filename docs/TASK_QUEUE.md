@@ -1,3 +1,34 @@
+## Modo «Demostración local — datos simulados» + reconciliación por evidencia (2026-10-28, base `643e0b9`)
+
+`CURRENT_PHASE`: dashboard V2 de escritorio + observación (WS público solo bajo
+autorización explícita; sin monitor, sin órdenes).
+
+`CURRENT_OBJECTIVE`: cerrado — modo explícito «Demostración local — datos
+simulados» desde la UI (sin comandos ni variables manuales): recursos
+exclusivamente propios identificados y acotados (productor WS loopback con
+parada automática, 8791 `--transport local` con `--max-seconds`, 8797 con
+identidad verificada), guardas anti doble-clic, rechazo explícito de fuente
+extraña, aviso `FUENTE NO DISPONIBLE` ANTES de crear sesión (sin
+huérfanas), parada solo con identidad doble verificada (manifest +
+pid-file) y pérdida de feed registrada dentro de la sesión. Además, el
+controlador reconcilia el pid-file SOLO con evidencia verificable (health
+canónico + sessions_dir canónico + pid vivo + cmdline del SO); sin la
+cadena completa rechaza sin adoptar ni matar. Evidencia acotada:
+`docs/evidence/engineering-local-demo-2026-10-28/summary.json`
+(BUILD_ID `NRjvq90SYBCoTGgmmRzA5`). Detalles: V1 §11.7–§11.8.
+
+`ACTIVE_TASK`: **cerrado**.
+
+`NEXT_TASKS`: revisión del operador de las capturas
+`shot-01..07` de esta entrega; a continuación, el objetivo ya declarado:
+el mismo recorrido con datos públicos (8791 `--transport public`),
+con presupuesto y autorización explícitos separados. NO declarar completo:
+selector multiactivo, riesgo completo, paper prospectivo, estrategia
+rentable.
+Pendiente documentado: **E2 falló** en la verificación acotada (22/23) por
+`GRID_GAP` del `market_stream_service` bajo churn WS — no es defecto del modo
+demo; requiere cambios en ese servicio y/o datos públicos con autorización.
+
 ## Entrega utilizable del transporte live local + identidad de la evidencia (2026-10-28, base `efa7700`)
 
 `CURRENT_PHASE`: dashboard V2 de escritorio + observación (WS público solo bajo

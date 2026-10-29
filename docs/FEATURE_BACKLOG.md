@@ -2639,3 +2639,81 @@ dashboard 3020 restaurado (estaba libre); servicios canónicos
 live + fix explorador por cola); ENGINEERING_SESSION_BACKEND_V1.md §11;
 CURRENT_STATE + TASK_QUEUE 2026-10-28; evidencia
 `docs/evidence/engineering-live-local-2026-10-28/`.
+
+## Modo explícito «Demostración local — datos simulados» en /market-lab (2026-10-28, build `NRjvq90SYBCoTGgmmRzA5`)
+
+**1. Title:** Recorrido `/market-lab` → «Iniciar demostración» → «Iniciar
+sesión» con datos simulados exclusivamente propios, identidad de procesos
+verificable por evidencia (cmdline del SO, no pid-file reescrito a mano),
+guardas de fuente antes de crear sesiones, y verificación acotada
+(arranque/readiness/parada, sin repetir la aceptación larga).
+
+**2. Approval status:** DECIDIDO por el operador (2026-10-28): sin Binance,
+sin órdenes, sin pagos, sin móvil, sin cambios de estrategia; no usar
+silenciosamente 8792 ni habilitar transporte público; no matar ni adoptar
+procesos desconocidos; ante registro incompatible, rechazar o reconciliar
+solo con evidencia verificable; preservar el incidente del pid-file en
+documentación.
+
+**3. Implementation status:** IMPLEMENTED —
+`scripts/local_demo_producer.py` (ciclo determinista RULE-CAUSAL-V1,
+backfill `--backfill-from-ms` sin REST, auto-parada `--max-runtime-s`,
+estado compartido entre reconexiones WS),
+`frontend/src/lib/local-demo-manager.ts` (status GET puro / start / stop,
+manifest, seams), `frontend/src/app/api/v1/engineering-sessions/demo/route.ts`
+(BFF con guardia origen 127.0.0.1:3020), `frontend/src/lib/session-lab.ts`
+(cliente demo + `market_url`),
+`frontend/src/components/session-lab/EngineeringSession.tsx` (chip fuente,
+tarjeta demo `data-testid="demo-card"`, guardia de fuente en `startSession`,
+anti doble-clic `demoInFlightRef`), `frontend/src/lib/engineering-service-manager.ts`
+(reconciliación por evidencia, `market_url` exportado). Tests nuevos:
+`tests/test_local_demo_producer.py`, `frontend/src/test/engineering-service-manager.test.ts`,
+`frontend/src/test/engineering-session.test.tsx`, `frontend/src/test/local-demo-manager.test.ts`.
+
+**4. Evaluation status:** VERIFICADO parcialmente — verificación acotada
+`docs/evidence/engineering-local-demo-2026-10-28/summary.json`
+(build `NRjvq90SYBCoTGgmmRzA5`, dashboard 3020): **22/23 checks PASS**.
+PASS: A1-A4 (abrir la página no arranca nada; 8791 caído; sin productor ni
+market propios; 8792 intacto con cmdline LOCAL), B1-B3 (fuente ausente →
+aviso `FUENTE NO DISPONIBLE` ANTES de crear sesión, sin sesión huérfana,
+chip visible), D1-D6 (demo activa y fuente lista; un solo productor y un
+solo market propios identificados por cmdline del SO; chip `Fuente: lista`),
+E1 (sesión creada con evidencia de stream), F1-F4 (demo detenida, manifest
+cerrado, productor y 8791 detenidos y limpios, 8792 intacto), F3 (caída de
+feed registrada DENTRO de la sesión), G1 (sesión detenida por el operador,
+política correcta), H1-H3 (sin demo activa al final, 8792 intacto, dashboard
+200).
+FAIL: **E2 — operación de ingeniería (señal ENTRADA en plazo acotado)**:
+sin `ENTRADA_SIMULADA` en 180 s. Causa identificada (no defecto del modo
+demo): el `market_stream_service` en modo local (`recovery: False`) no
+asimila el backfill completo desde el cache (42 h atrás) bajo su churn WS
+(se conecta/desconecta cada ~2 s); la sesión arranca con un hueco de rejilla
+en la frontera contexto→operación → `GRID_GAP` bloquea `evaluate_session`
+permanentemente → sin decisión. El productor demo ya está corregido
+(`state["open"]` propio por frame en catch-up; test de regresión 3/3, suite
+Python 1543 passed) pero la sesión no alcanzó continuidad de rejilla desde
+el contexto. E2 queda documentado como fallo con causa, no como PASS.
+
+**5. Deferred:** acreditación de recepción Binance real (todo loopback);
+reparación REST (inexistente en local); solución del GRID_GAP bajo churn del
+`market_stream_service` (requiere cambios en ese servicio, fuera del alcance
+del modo demo); recorrido con datos públicos (`8791 --transport public`)
+requiere autorización y presupuesto separados. Todo lo público requiere
+autorización explícita.
+
+**6. Safety/constraints:** observe-only; sin Binance público, sin feed vivo
+real, sin órdenes, sin capital; proveedor público bloqueado por diseño
+(sitecustomize + guardia del navegador + proxy de registro); sesiones de
+ensayo retiradas (`trial_sessions: []`); dashboard 3020 restaurado al estado
+previo al finalizar (sin demo activa, manifest cerrado); servicios canónicos
+8792/8797 intocables (verificado por cmdline del SO en A4/F4/H3); 8792 pid
+33104 intacto durante toda la verificación.
+
+**7. Traceability:** build `NRjvq90SYBCoTGgmmRzA5` (dashboard 3020);
+evidencia `docs/evidence/engineering-local-demo-2026-10-28/` (summary.json
+corrida 3 + corrida1/ preservada con causa del FAIL de la corrida 1 por
+identidad de servicio `market-stream-service/v1` vs contrato
+`market-stream/v1`); ENGINEERING_SESSION_BACKEND_V1.md §11.7–§11.8;
+CURRENT_STATE + TASK_QUEUE + DECISIONS 2026-10-28; `docs/FEATURE_BACKLOG.md`
+esta entrada. Próximo objetivo declarado en docs: mismo recorrido con datos
+públicos (8791 `--transport public`), autorización/presupuesto separados.
