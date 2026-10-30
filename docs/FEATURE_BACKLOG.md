@@ -2774,77 +2774,132 @@ rentabilidad. Cero operaciones con dinero real.
 
 ## Protocolo para el siguiente recorrido con datos públicos (sin ejecutar)
 
-### 1. Candidato configurado y contexto
-- Símbolo candidato: `MINAUSDT` 1m (mismo que la demo local, para comparar).
-- Contexto BTC: `BTCUSDT` 1m como símbolo de contexto compartido (ventana
-  BTC del mismo intervalo), leído del almacén local con `client=None`
-  (0 peticiones REST upstream para BTC).
-- La sesión se crea con `transport = market_stream`, `candles = []`,
-  `context = <últimas N velas cerradas de MINAUSDT del caché local>`,
-  `from_ms = last_ctx_close + 1`, `to_ms = ahora`.
-- `entry_px = close de la última vela de contexto` (precio conocido en T).
+### 1. Transporte e identidad
+Cadena de datos para la ventana pública:
+**Binance público (WS de mercado real)** → **servicio Python de servicio**
+(`market_stream_service`, `--transport public`) → **SSE loopback**
+(`/stream` en `127.0.0.1:8791`) → **navegador** (EventSource vía BFF
+`/api/v1/market-stream`).
 
-### 2. Fuentes realmente necesarias
-- **Velas cerradas (klines 1m):** de `MINAUSDT` y `BTCUSDT` vía WS loopback
-  del `market_stream_service` (`--transport public` para datos reales de
-  Binance, `--transport local` para validación local sin Binance).
-- **aggTrade:** NO es necesario para el recorrido de ingeniería v1 (el motor
-  opera sobre velas cerradas). Se declara como dependencia ausente/UNKNOWN,
-  no se inventa.
-- **Profundidad/libro/OI/funding:** NO necesarios v1. Se declaran UNKNOWN.
-- **REST upstream:** solo para paginación de histórico si el caché no cubre
-  el rango solicitado (presupuesto compartido por intento, `LedgerAttemptGate`).
-- **Almacenamiento:** `data/market-cache/` (no canónico, aislado), no se
-  tocan `microprobe.db` ni `historical.db`.
+Nota: "WS loopback / proveedor público bloqueado" describe la **prueba
+local** (modo demo, datos simulados), no la futura ventana pública. En la
+ventana pública el proveedor de Binance se activa de forma explícita.
 
-### 3. Presupuesto conjunto (acotado, declarativo)
-| Recurso | Límite | Nota |
-|---------|--------|------|
-| Conexiones WS | 1 (combinada MINAUSDT+BTCUSDT) | `market_stream_service` modo combinado |
-| Streams | 2 (MINAUSDT@kline_1m, BTCUSDT@kline_1m) | dentro de `MAX_SUBSCRIPTIONS=6` |
-| Consumidores SSE | 2 (uno por símbolo) + 1 navegador | dentro de `MAX_TOTAL_CONSUMERS=12` |
-| Peticiones REST upstream | 0 (modo local) / acotado (modo public) | `LedgerAttemptGate`, reserva transaccional |
-| Almacenamiento nuevo | 0 filas canónicas | caché aislado, no se escribe en DBs canónicas |
-| Tiempo | ≤ 180 s por ventana | `--max-seconds` en el servicio, auto-parada |
-| Duración del productor | `--max-runtime-s` default 2700 (45 min) | auto-parada, retira pid-file |
+**Cómo se activa explícitamente el transporte público:**
+```
+python scripts/market_stream_service.py --port 8791 --transport public --max-seconds 180
+```
+- `resolve_transport(mode="public", base_url=None)` resuelve
+  `TRANSPORT_PUBLIC`, `recovery=True`; no hay `--base-url` (público no usa
+  loopback de productor).
+- El servicio declara en `/health`: `transport.mode = public`.
+- El adaptador de sesión (`MarketServiceStreamAdapter`) se construye con
+  `base_url=http://127.0.0.1:8791` y emite SSE en
+  `http://127.0.0.1:8791/stream?symbol=...&interval=...&bars=...`.
 
-### 4. Calentamiento y continuidad entre contexto e información nueva
-- Paso 1: leer caché local (`read_stored`, `client=None`, `--no-fetch`),
-  obtener las últimas N velas cerradas de MINAUSDT como contexto.
-- Paso 2: `last_ctx_close = close de la última vela de contexto`;
-  `from_ms = last_ctx_close + 1` (continuidad exacta, un solo paso de rejilla).
-- Paso 3: crear sesión con `transport = market_stream`, `context = contexto`,
-  `candles = []`, `from_ms`, `to_ms = ahora`.
-- Paso 4: el `market_stream_service` emite snapshot desde `from_ms`; el
-  adaptador de sesión usa `deliver_from_ms = from_ms`; el consumidor ignora
-  velas `open_time_ms <= deliver_from_ms`.
-- Paso 5: declarar preparado solo cuando el snapshot se recibe y el primer
-  `closed` posterior a `from_ms` llega con `open_time_ms = from_ms` (sin hueco
-  en la frontera).
+**Cómo se restaura después (vuelta a modo local / proveedor bloqueado):**
+1. Detener el servicio público:
+   `python scripts/market_stream_service.py --port 8791 --stop`.
+2. Verificar que `/health` declara `transport.mode = local` o que el servicio
+   no responde (bloqueado).
+3. Volver a modo local:
+   `python scripts/market_stream_service.py --port 8791 --transport local
+   --base-url ws://127.0.0.1:<productor> --max-seconds <N>`.
+- El proveedor público permanece **bloqueado por diseño**
+  (sitecustomize + guardia del navegador + proxy de registro) salvo que el
+  operador lo active explícitamente con `--transport public`.
 
-### 5. Política ante retraso, huecos, desconexión y posición abierta
-- **Retraso (silencio del feed):** si no hay `closed` nuevo dentro de
-  `live_silence_ms` (120 s por defecto), la puerta de evaluación abstiene con
-  causa `FEED_SILENCE`; la sesión conserva su última decisión, no se inventan
-  decisiones. Visible en el UI como causa de puerta.
-- **Huecos (GRID_GAP):** si `open_time_ms` de una vela nueva no es
-  `anterior + step`, la puerta abstiene con causa `GRID_GAP`; nunca se relaja
-  la causalidad ni se interpola para forzar una entrada.
-- **Desconexión:** el adaptador SSE reconecta con backoff exponencial acotado;
-  si se agota el presupuesto de reintentos (`RETRY_BUDGET`), se estaciona
-  hasta nuevo consumidor (`_park_until_new_consumer`). La sesión no se mata
-  ni se adopta por otro proceso.
-- **Posición abierta al finalizar:** si la ventana termina con posición
-  abierta, se congela la sesión (estado `detenida`), se publica el mark
-  no realizado, y se declara `exit_reason = "horizon"` o `open_at_end`
-  según corresponda. No se inventa cierre ni salida.
+### 2. Presupuesto inequívoco (cifras separadas)
+| Recurso | Límite exacto | Nota |
+|---------|---------------|------|
+| Conexiones WS simultáneas | 1 | una sola conexión combinada del servicio a Binance pública; MINAUSDT y BTCUSDT viajan en la misma conexión multiplexada |
+| Reconexiones acumuladas | ≤ 3 | backoff exponencial acotado (`RECONNECT_MAX_S=30`); al agotarse, `_park_until_new_consumer` |
+| Streams | 2 | `MINAUSDT@kline_1m`, `BTCUSDT@kline_1m` (dentro de `MAX_SUBSCRIPTIONS=6`) |
+| Consumidores SSE simultáneos | 3 | 2 en el hub (uno por símbolo) + 1 navegador vía BFF; `MAX_TOTAL_CONSUMERS=12` es el tope del servicio, no el presupuesto de la ventana |
+| Intentos REST upstream (páginas + reintentos) | ≤ 4 | modo público: ≤ 2 páginas por intento y ≤ 2 reintentos (máx. 4 intentos REST por ventana); `LedgerAttemptGate` es el mecanismo de reserva, no una cifra de presupuesto por sí misma; 0 en modo local |
+| Tiempo global | ≤ 180 s | `--max-seconds` en el servicio, auto-parada |
+| Almacenamiento nuevo | 0 filas canónicas | caché aislado en `data/market-cache/`; no se escribe en `microprobe.db` ni `historical.db` |
+
+### 3. Contexto actualizado (cobertura verificable antes de abrir)
+No se presupone que una caché antigua alcance el presente en 180 s. Antes de
+crear la sesión:
+- Paso 1: leer caché local (`read_stored`, `client=None`, `--no-fetch`) para
+  `MINAUSDT` 1m y `BTCUSDT` 1m.
+- Paso 2: calcular `last_ctx_close` de MINAUSDT. Si
+  `ahora - last_ctx_close > tolerancia` (p. ej. > 2 pasos de rejilla, > 2 min
+  sin cobertura continua), la caché es antigua y NO cubre el presente.
+- Paso 3 (regla de decisión): si el caché de MINAUSDT no tiene velas cerradas
+  continuas hasta `from_ms - step` (última vela cerrada adyacente al inicio de
+  operación), **abortar antes de la ventana** (no inventar mercado, no forzar
+  continuidad).
+- Paso 4 (BTC): `client=None` **no garantiza** cobertura contemporánea.
+  Verificar explícitamente que `BTCUSDT` 1m tiene velas cerradas en el mismo
+  rango temporal que MINAUSDT; si falta, BTC se marca `NO_COVERAGE` y se sigue
+  con MINAUSDT sola (contexto BTC omitido, no inventado).
+- Paso 5 (si falta cobertura): adquisición inicial acotada (máx. 2 páginas
+  REST, `LedgerAttemptGate`) para cerrar el tramo faltante, **o** abortar la
+  ventana antes de abrirla si no se puede cubrir.
+
+### 4. Final de ventana
+- Si hay posición abierta al finalizar: congelar conducción (`stop` en el
+  drive), conservar posición abierta y marca no realizada; **no inventar
+  fill ni comisión de salida**.
+- `exit_reason = "horizon"` **solo** si el horizonte se alcanzó y la salida
+  fue ejecutada por el motor (`exit_executed = true`).
+- Terminar la ventana **no equivale a cerrar una operación**; la posición
+  puede quedar abierta con mark no realizado.
+
+### 5. Aceptación
+- Ventana inicial = integración con datos públicos (aceptación A).
+- Cero operaciones es un resultado válido.
+- No se exige cerrar una operación de horizonte 30 min dentro de 180 s.
+- No cambiar umbrales, horizontes ni reglas para producir entradas.
+- Aceptación B (operación paper con entrada/fill/gestión/cierre) solo si se
+  cumplen las condiciones de la regla (RULE-CAUSAL-V1: `close > entry_px`
+  LONG con stop no vulnerado); el fill es `model_approximation`.
+
+Tabla final de límites (resumen del presupuesto):
+| Recurso | Límite exacto |
+|---------|---------------|
+| Conexiones WS simultáneas | 1 |
+| Reconexiones acumuladas | ≤ 3 |
+| Streams | 2 |
+| Consumidores SSE simultáneos | 3 |
+| Intentos REST upstream (páginas + reintentos) | ≤ 4 |
+| Tiempo global | ≤ 180 s |
+| Almacenamiento nuevo | 0 filas canónicas |
+
+Comando exacto (ventana pública):
+```
+python scripts/market_stream_service.py --port 8791 --transport public --max-seconds 180
+```
+Restaurar modo local:
+```
+python scripts/market_stream_service.py --port 8791 --stop
+python scripts/market_stream_service.py --port 8791 --transport local --base-url ws://127.0.0.1:<productor> --max-seconds <N>
+```
+
+Criterios PASS / FAIL / UNKNOWN:
+- **PASS:** feed llega, velas cierran en orden sin huecos, `from_ms` respetado,
+  `GRID_GAP` no se dispara por hueco de contexto, sesión se abstiene con causa
+  visible si no hay señal, cero operaciones es válido, ventana cierra sin
+  inventar fill/salida, 8792/8797 intocables, `--transport public` activado y
+  restaurado explícitamente.
+- **FAIL:** hueco de rejilla (GRID_GAP) en frontera contexto→operación,
+  relleno/interpolación de velas, fill o comisión de salida inventados,
+  `exit_reason="horizon"` sin salida ejecutada por el motor, 8792/8797 tocados,
+  cambio de umbral/horizonte/regla para forzar entrada, conexión pública sin
+  autorización separada.
+- **UNKNOWN:** cobertura de BTC contemporánea no verificable, caché antigua
+  sin adquisición inicial, comportamiento del proveedor público real no probado
+  en loopback.
 
 ### 6. Dos aceptaciones distinguidas
 **A. Integración con mercado real (recepción, cálculos, decisiones trazables,
 abstención y recuperación):** se considera exitosa si el feed llega, las velas
 se cierran en orden sin huecos, el motor calcula decisiones sobre el prefijo
 conocido sin lookahead, y ante falta de señal la sesión se abstiene con causa
-visibles. Cero operaciones es un resultado válido.
+visible. Cero operaciones es un resultado válido.
 **B. Operación paper (entrada/fill/gestión/cierre solo si se cumplen las
 condiciones de la regla):** solo si `close > entry_px` (LONG) con stop no
 vulnerado, el motor publica `ENTRADA_SIMULADA`; el fill es
