@@ -154,7 +154,7 @@ function ctlResp(
 describe("sesión de ingeniería — navegador observador (backend conduce)", () => {
   beforeEach(() => {
     mocks.fetchMarketSeries.mockResolvedValue(
-      seriesPayload(mkCandles(40, T1 - 40 * INTERVAL_MS)),
+      seriesPayload(mkCandles(40, Date.now() - 40 * INTERVAL_MS)),
     );
     mocks.fetchBackendSession.mockResolvedValue(getResp(mkSession()));
     mocks.createBackendSession.mockResolvedValue(

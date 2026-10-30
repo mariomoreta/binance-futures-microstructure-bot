@@ -601,9 +601,12 @@ export default function EngineeringSession({
         return;
       }
       setTransportKind(ENGINEERING_TRANSPORT_MARKET_STREAM);
-      const series = await fetchMarketSeries(symbol, interval, bars);
+      // Hasta 300 velas recientes por símbolo (ventana reciente, no backfill
+      // de la caché antigua). La caché antigua se conserva; no se conecta
+      // mediante backfill con la nueva sesión.
+      const series = await fetchMarketSeries(symbol, interval, 300);
       if (!series || !series.candles || series.candles.length === 0) {
-        setError("SERIES_EMPTY: no hay velas en cache local para el simbolo.");
+        setError("SERIES_EMPTY: no hay velas en cache local para el símbolo.");
         setLoading(false);
         return;
       }
@@ -614,6 +617,16 @@ export default function EngineeringSession({
       // de operación la produce el feed del servicio de mercado (velas
       // cerradas por eventos SSE). Nada de listas de velas futuras.
       const contextCount = PREFIX_CONTEXT_COUNT[prefixOption];
+      // Calentamiento mínimo: al menos contextCount velas cerradas para fijar
+      // entry_px y calentar indicadores (velocity_bps_5 necesita 5,
+      // rel_volume_10 y vwap_typical_10 necesitan 10).
+      if (all.length < contextCount) {
+        setError(
+          `INSUFICIENT_CANDLES: se necesitan al menos ${contextCount} velas cerradas para calentar la sesión; hay ${all.length}.`,
+        );
+        setLoading(false);
+        return;
+      }
       const context = all.slice(Math.max(0, all.length - contextCount));
       if (context.length < 2) {
         setError("INSUFICIENT_CANDLES: cache local sin suficientes velas para la ventana de contexto.");
@@ -621,10 +634,31 @@ export default function EngineeringSession({
         return;
       }
 
-      // Fijar entry_px UNA VEZ antes de evaluar: cierre de la ultima vela de
-      // contexto (precio conocido ANTES de la ventana de operacion). Nunca es
+      // No usar last_cache_close + 1 como inicio de operación si la caché
+      // está obsoleta. La última vela de contexto debe estar cercana al
+      // presente para que from_ms (= última vela de contexto + 1 paso) caiga
+      // dentro del rango que el feed público puede entregar.
+      const lastCtx = context[context.length - 1]!;
+      const lastCtxCloseMs = lastCtx.close_time_ms ?? lastCtx.open_time_ms;
+      const nowMs = Date.now();
+      const stepMs = 60_000; // 1m
+      const maxStalenessMs = 2 * stepMs; // tolerancia de 2 pasos de rejilla
+      if (nowMs - lastCtxCloseMs > maxStalenessMs) {
+        setError(
+          "CACHE_OBSOLETO: la última vela de contexto está demasiado atrasada " +
+          `(última: ${new Date(lastCtxCloseMs).toISOString()}, hace ${Math.round(
+            (nowMs - lastCtxCloseMs) / 1000,
+          )} s). No se puede iniciar sesión live sin continuidad verificada. ` +
+          "Esperar a nuevos datos o usar contexto reciente.",
+        );
+        setLoading(false);
+        return;
+      }
+
+      // Fijar entry_px UNA VEZ antes de evaluar: cierre de la última vela de
+      // contexto (precio conocido ANTES de la ventana de operación). Nunca es
       // el cierre de la vela de entrada, con lo que la regla no garantiza
-      // entrada por igualdad automatica. Al cambiar de ventana se conserva.
+      // entrada por igualdad automática. Al cambiar de ventana se conserva.
       let entryPx = entryPxFixed;
       if (entryPx == null) {
         entryPx = lastContextClose(context);
@@ -645,9 +679,8 @@ export default function EngineeringSession({
       // después del contexto (continuidad exacta con last_ctx + 1), to_ms =
       // reloj de pared actual. El servicio usa from_ms para fijar
       // deliver_from_ms y no entregar velas ya cubiertas por el contexto.
-      const lastCtx = context[context.length - 1]!;
-      const fromMs = ((lastCtx.close_time_ms ?? lastCtx.open_time_ms) + 1);
-      const toMs = Date.now();
+      const fromMs = lastCtxCloseMs + 1;
+      const toMs = nowMs;
 
       // La sesión se crea EN el backend (motor Python + transporte
       // market_stream); la evaluación y todo avance lo conduce el backend
