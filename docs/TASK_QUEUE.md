@@ -2553,3 +2553,30 @@ src/microstructure_probe/paper_lab_engine.py; scripts/paper_lab_session.py; BFF 
 - DEFERRED_FEATURES — conexión a Binance público; selector automático; monitor en vivo; paper prospectivo; órdenes; pagos; móvil/Flutter; indicadores provisionales; motor paper completo (Etapa 5); recorrido con datos nuevos continuos.
 - BACKLOG_UPDATED — yes: esta sección + CURRENT_STATE, DECISIONS, FEATURE_BACKLOG.
 - DOCUMENTATION_CONFLICTS — ninguna contradictoria; se aclara que "sesión de ingeniería/replay sobre caché" ≠ "sistema completo autónomo" y que "fuente LOCAL SIMULADA" ≠ Binance LIVE; el backend es la autoridad de decisión y estado económico.
+
+
+## Cierre: prueba de integraciÃ³n real de sesiÃ³n nueva con contexto reciente (2026-10-31, sin Binance)
+
+- `DECISIONS_REVIEWED` â€” AGENTS.md, WORKFLOW.md, CURRENT_STATE, DECISIONS,
+  FEATURE_BACKLOG, DESKTOP_FIRST_SCOPE_20261020.
+- `NEW_DECISIONS_RECORDED` â€” DECISIONS 2026-10-31: ventana explÃ­cita de
+  velas cerradas en `fetchMarketSeries` y `series_payload`; `readOnly=true`
+  por defecto (cero upstream); activaciÃ³n expresa (`readOnly=false`) para
+  adquisiciÃ³n con presupuesto compartido.
+- `FEATURES_IMPLEMENTED` â€” `tests/test_session_new_public_market_local.py`
+  (integraciÃ³n real HTTP/WS locales, TemporaryDirectory, camino BFF/CLI/
+  HistoryClient + servicio de mercado, sin mÃ©todos internos del motor);
+  `fetchMarketSeries` sin rango `0â†’9999999999999`; `series_payload` clamp al
+  reloj.
+- `FEATURES_VERIFIED` â€” nueva integraciÃ³n PASS (MINAUSDT+BTCUSDT, contexto 20
+  + stream 10 cierres, sin huecos ni duplicados, gate ok, sesiones detenidas);
+  `test_market_explorer.py` 42/42; `test_market_stream.py`+`test_history.py`
+  71/71; frontend `session-lab.test.ts` 4/4, suite 622/623, tsc/eslint 0,
+  `next build` OK. 0 llamadas Binance.
+- `DEFERRED_FEATURES` â€” ventana pÃºblica contra Binance (requiere autorizaciÃ³n
+  explÃ­cita), selector multiactivo, riesgo completo, paper prospectivo.
+- `BACKLOG_UPDATED` â€” yes: esta entrada + CURRENT_STATE + DECISIONS.
+- `DOCUMENTATION_CONFLICTS` â€” ninguna; se aclara que `fetchMarketSeries` con
+  `readOnly=false` habilita adquisiciÃ³n bajo demanda con presupuesto y que el
+  cambio de ventana es de backend (no solo React).
+

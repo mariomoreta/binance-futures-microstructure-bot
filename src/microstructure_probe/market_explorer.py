@@ -647,6 +647,11 @@ def series_payload(cache: MarketCache, client: Optional[HistoryClient] = None,
         raise ValueError(f"INVALID_SOURCE: {source!r}")
     step = INTERVAL_MS[interval]
     end = int(to_ms) if to_ms is not None else now
+    # Ventana explícita de velas cerradas: el fin del rango pedido nunca
+    # alcanza velas futuras (se clampa al reloj actual). Las velas cuyo cierre
+    # aún no se conoce se marcan `provisional` en _public_candle y no se
+    # publican como cerradas.
+    end = min(end, now)
     start = int(from_ms) if from_ms is not None else end - (max(1, int(bars)) - 1) * step
     if start > end:
         raise ValueError("INVALID_RANGE: from_ms > to_ms")

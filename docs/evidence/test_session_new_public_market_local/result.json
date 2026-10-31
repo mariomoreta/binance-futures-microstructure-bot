@@ -1,0 +1,58 @@
+{
+  "test": "test_session_new_public_market_local",
+  "verdict": "PASS",
+  "now_ms": 1793453760000,
+  "symbols": [
+    "MINAUSDT",
+    "BTCUSDT"
+  ],
+  "context_count": 20,
+  "stream_candles_per_symbol": 10,
+  "four_days_ago_ms": 1793108160000,
+  "canonical_audit": {
+    "found": [],
+    "deleted": [],
+    "unknown": []
+  },
+  "budget": {
+    "used_in_window": 2,
+    "ledger_rows_this_run": 2,
+    "enforcement": "ledger_shared_reserve_before_send"
+  },
+  "requests_logged_http": 2,
+  "ws_frames_sent": 80,
+  "results": [
+    {
+      "symbol": "MINAUSDT",
+      "session_id": "PL-MINAUSDT-LONG-1793453800956-b34b0228",
+      "stream_opens": [
+        1793453160000,
+        1793453220000,
+        1793453280000,
+        1793453340000,
+        1793453400000,
+        1793453460000,
+        1793453520000,
+        1793453580000,
+        1793453640000,
+        1793453700000
+      ]
+    },
+    {
+      "symbol": "BTCUSDT",
+      "session_id": "PL-BTCUSDT-LONG-1793453801466-bc4aa7ba",
+      "stream_opens": [
+        1793453160000,
+        1793453220000,
+        1793453280000,
+        1793453340000,
+        1793453400000,
+        1793453460000,
+        1793453520000,
+        1793453580000,
+        1793453640000,
+        1793453700000
+      ]
+    }
+  ]
+}

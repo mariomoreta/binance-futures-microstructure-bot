@@ -4011,3 +4011,28 @@ determinista que produce señal LONG (RULE-CAUSAL-V1) sin tocar el stop.
 Verificación ACOTADA (arranque/readiness/parada, no repite la aceptación
 larga) en docs/evidence/engineering-local-demo-2026-10-28/; sin Binance,
 sin órdenes, observe-only.
+
+
+## 2026-10-31 â€” Rango explÃ­cito de velas cerradas en fetchMarketSeries y series_payload
+
+- `frontend/src/lib/session-lab.ts`: `fetchMarketSeries` ya no pide
+  `from_ms=0` ni `to_ms=9999999999999`. Calcula una ventana explÃ­cita de velas
+  CERRADA a partir del reloj (o `atMs` si se pasa): `to_ms` = apertura de la
+  Ãºltima vela cuyo cierre <= ahora; `from_ms = to_ms - (bars - 1) * paso`.
+  Nunca alcanza velas futuras. Se exporta `INTERVAL_STEP_MS`.
+- `src/microstructure_probe/market_explorer.py`: `series_payload` clampa
+  `end = min(end, now)`: el rango pedido nunca supera el reloj actual; las
+  velas cuyo cierre aÃºn no se conoce se marcan `provisional` y no se publican
+  como cerradas.
+- `fetchMarketSeries` conserva `readOnly=true` por defecto (cero upstream,
+  `--no-fetch`); la adquisiciÃ³n pÃºblica requiere `readOnly=false` (activaciÃ³n
+  expresa) y el backend aplica el presupuesto compartido (ledger, reserva de
+  intento antes del transporte).
+- No es suficiente con cambiar `readOnly` en React: el backend valida la
+  ventana y el BFF/CLI respetan `read_only=1`.
+- Pruebas: `tests/test_session_new_public_market_local.py` (integraciÃ³n real
+  sobre HTTP/WS locales, sin Binance) y
+  `frontend/src/test/session-lab.test.ts` (ventana explÃ­cita). `tsc`/`eslint`
+  0; `vitest` session-lab 4/4; suite frontend 622/623; `next build` OK. Sin
+  Binance, Ã³rdenes, pagos ni cambios econÃ³micos.
+

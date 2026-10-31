@@ -4234,3 +4234,37 @@ un listener PREEXISTENTE en 8792 (node no; `python scripts/market_stream_service
 PID 33104, arrancado 2026-10-26) que no fue arrancado ni detenido en esta
 sesión; no es un servicio de ensayo de este bloque. `main` remota sigue en
 `d6801a5` (práctica previa: se empuja la rama activa, sin merge a main).
+
+
+## Addendum 2026-10-31 â€” Prueba de integraciÃ³n real de sesiÃ³n nueva con contexto reciente (sin Binance)
+
+Se reescribiÃ³ `tests/test_session_new_public_market_local.py` como prueba de
+integraciÃ³n real (antes: usaba mÃ©todos internos `_consume_*`/`_load_state`,
+escribÃ­a en la ruta canÃ³nica `data/engineering-session/sessions`, no levantaba
+HTTP/WS, generaba una vela futura rotulada cerrada y `fetchMarketSeries`
+pedÃ­a `0â†’9999999999999`).
+
+Cambios:
+- Aislamiento: `TemporaryDirectory` para sesiones y SQLite de prueba; se
+  audita la ruta canÃ³nica y se eliminan Ãºnicamente artefactos propios de este
+  test (hypothesis_id `ENG-MINA-01`; sesiones desconocidas intocadas). Se
+  corrigiÃ³ la afirmaciÃ³n de "directorio temporal".
+- Rango reciente: `fetchMarketSeries` calcula una ventana explÃ­cita de velas
+  cerradas (sin `0â†’9999999999999`); `series_payload` clampa `end` al reloj
+  actual; adquisiciÃ³n pÃºblica bloqueada salvo `readOnly=false` (expresa).
+- IntegraciÃ³n real: servidor HTTP de klines y servidor WS locales en puertos
+  efÃ­meros; `scripts/market_explorer.py` (HistoryClient + puerta de presupuesto
+  LedgerAttemptGate) como camino BFF/CLI; `market_stream_service` (SSE,
+  transporte local); sesiÃ³n vÃ­a `EngineeringHTTPServer` (mismo objeto que el
+  BFF `/api/v1/engineering-sessions`) por HTTP real (POST/GET), sin mÃ©todos
+  internos del motor. SQLite de prueba con datos de 4 dÃ­as atrÃ¡s; el HTTP
+  devuelve contexto reciente de MINAUSDT y BTCUSDT (rango reciente, no
+  backfill de 4 dÃ­as). Se acredita con log de solicitudes: rangos recientes,
+  presupuesto aplicado (ledger compartido), snapshot unido al primer cierre
+  nuevo sin huecos ni duplicados, sesiÃ³n preparada; todas las velas cerradas
+  con cierre conocido en el reloj de la prueba.
+- Resultado: `docs/evidence/test_session_new_public_market_local/result.json`
+  (verdict PASS) y `request-log.jsonl`. Regresiones: `test_market_explorer.py`
+  42/42, suite frontend 622/623, `tsc`/`eslint` 0, `next build` OK.
+- Sin Binance, Ã³rdenes, pagos, mÃ³vil ni cambios econÃ³micos.
+

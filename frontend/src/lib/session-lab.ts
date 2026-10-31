@@ -123,6 +123,13 @@ async function fetchJson<T = unknown>(path: string): Promise<ApiResult<T>> {
   return { ok: true, data: body as T, status: r.status };
 }
 
+// Paso de rejilla (ms) por intervalo soportado. Se usa para construir la
+// ventana explícita de velas CERRADAS que solicita fetchMarketSeries.
+export const INTERVAL_STEP_MS: Record<string, number> = {
+  "1m": 60_000, "5m": 300_000, "15m": 900_000,
+  "1h": 3_600_000, "4h": 14_400_000, "1d": 86_400_000,
+};
+
 /** Trae velas para un símbolo/intervalo.
  *
  * `readOnly=true` (sesión de ingeniería/replay) fuerza la opción de solo
@@ -135,11 +142,14 @@ async function fetchJson<T = unknown>(path: string): Promise<ApiResult<T>> {
  * solicita el backend para cubrir el rango. Cada página devuelve como
  * máximo `pageLimit` velas.
  *
- * Pasa un rango amplio ([0, 9999999999999]) para cubrir todo lo almacenado,
- * independientemente del reloj de pared actual, ya que las velas cacheadas
- * pueden ser de fechas pasadas. Cuando se pasa `atMs` (reloj T de la sesion),
- * se sobreescribe `to_ms` para que el payload solo incluya velas conocidas en
- * T y los indicadores / contexto BTC se recalculen sobre ese prefijo.
+ * Se pide siempre una VENTANA EXPLÍCITA DE VELAS CERRADA: `from_ms` y
+ * `to_ms` se calculan sobre el reloj (o `atMs` si se pasa) de modo que el
+ * rango nunca alcance velas futuras. Sin `atMs`, `to_ms` es la apertura de
+ * la última vela cuya cierre es <= ahora (close_time_ms conocido), y
+ * `from_ms = to_ms - (bars - 1) * paso`. Nunca se usa `from_ms=0` ni
+ * `to_ms=9999999999999`. La adquisición pública permanece bloqueada salvo que
+ * el llamador pase `readOnly=false` (activación expresa); el backend aplica
+ * el presupuesto compartido (ledger, reserva antes del transporte).
  */
 export async function fetchMarketSeries(
   symbol: string,
@@ -150,9 +160,15 @@ export async function fetchMarketSeries(
   pages = 1,
   pageLimit = 300,
 ): Promise<MarketSeriesPayload | null> {
-  const toParam = atMs != null ? `&to_ms=${atMs}` : "&to_ms=9999999999999";
+  const stepMs = INTERVAL_STEP_MS[interval] ?? 60_000;
+  const nBars = Math.max(1, Math.min(bars, 1000));
+  const nowMs = Date.now();
+  // Apertura de la última vela CERRADA conocida: su cierre <= ahora.
+  const lastClosedOpen = Math.floor(nowMs / stepMs) * stepMs - stepMs;
+  const toMs = atMs != null ? Math.floor(atMs) : lastClosedOpen;
+  const fromMs = toMs - (nBars - 1) * stepMs;
   const readOnlyParam = readOnly ? "&read_only=1" : "";
-  const url = `${API_BASE}?symbol=${encodeURIComponent(symbol)}&interval=${encodeURIComponent(interval)}&bars=${bars}&pages=${pages}&page_limit=${pageLimit}&from_ms=0${toParam}${readOnlyParam}`;
+  const url = `${API_BASE}?symbol=${encodeURIComponent(symbol)}&interval=${encodeURIComponent(interval)}&bars=${nBars}&pages=${pages}&page_limit=${pageLimit}&from_ms=${fromMs}&to_ms=${toMs}${readOnlyParam}`;
   const r = await fetchJson<MarketSeriesPayload>(url);
   if (!r.ok || !r.data) return null;
   return r.data;
