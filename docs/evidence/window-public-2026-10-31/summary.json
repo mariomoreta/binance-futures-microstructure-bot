@@ -1,0 +1,175 @@
+{
+  "generated_at_ms": 1793455877747,
+  "dashboard_url": "http://127.0.0.1:3020",
+  "service_port": 8791,
+  "transport": "public",
+  "binance_accredited": false,
+  "git_sha": "e2243c9503ad58ca52e23ac40b4922bfb08c3319",
+  "build_id": "t4z0bfKQ_kIP9qv1WHCKR",
+  "runs": [
+    {
+      "index": 1,
+      "started_at_ms": 1793455749273,
+      "finished_at_ms": 1793455876736,
+      "elapsed_s": 127.467,
+      "phases_s": {
+        "dashboard_verify": 1.493,
+        "minute_phase": 49.636,
+        "preflight": 0.007,
+        "page_ready": 6.112,
+        "acceptance": 51.148,
+        "pagination": 2.316,
+        "release": 0.03,
+        "reconnect": 2.835,
+        "down_notice": 2.477,
+        "run": 127.467
+      },
+      "marks_s": {
+        "minute_phase": 51.129,
+        "preflight": 53.9,
+        "service_up": 56.532,
+        "page_ready": 62.645,
+        "acceptance": 113.835,
+        "pagination": 116.152,
+        "release": 116.696,
+        "reconnect": 119.776,
+        "orchestrator_exit": 124.345,
+        "down_notice": 126.822
+      },
+      "error": "NameError: name 'rest_market_requests' is not defined",
+      "verdict": "ERROR",
+      "procedural_pass": false,
+      "local_checks": {
+        "zero_public_attempts": true,
+        "rest_market_budget": null,
+        "preflight_ok": true,
+        "all_series_local": null,
+        "catalog_local": null,
+        "one_pagination_request": true,
+        "pagination_new_unique": true,
+        "pagination_grew": true,
+        "framing_preserved": true,
+        "recent_updates": true,
+        "service_active_at_capture2": true,
+        "hold_signal_seen": true,
+        "consumers_released": true,
+        "browser_reconnected": true,
+        "down_notice": true,
+        "down_cause": true,
+        "history_preserved": true,
+        "no_reload": true,
+        "clean_stop": true,
+        "canonical_dbs_unchanged": true,
+        "finalizer_pass": true,
+        "dom_checks": {
+          "dom_identity": true,
+          "dom_state_live": true,
+          "dom_update_fresh": true,
+          "dom_candles_grew": true,
+          "dom_pagination_preserved": true,
+          "dom_no_reload": true,
+          "dom_after_stop": true
+        },
+        "phases_within_limits": {
+          "minute_phase": true,
+          "preflight": true,
+          "page_ready": true,
+          "acceptance": true,
+          "pagination": true,
+          "release": true,
+          "reconnect": true,
+          "down_notice": true
+        },
+        "global_budget": true,
+        "global_deadline_respected": true
+      },
+      "public_attempts": {},
+      "harness_debug": {
+        "disconnect": true,
+        "reconnect": 2,
+        "wrapper_after_disconnect": {
+          "current": {
+            "url": "/api/v1/market-stream?symbol=BTCUSDT&interval=1m&from_ms=1793437863160&to_ms=1793455803160",
+            "readyState": 0,
+            "native": false,
+            "listeners": [
+              "hello",
+              "snapshot",
+              "indicators",
+              "context",
+              "candle",
+              "closed",
+              "status",
+              "gap",
+              "heartbeat",
+              "error"
+            ]
+          },
+          "instances": [
+            {
+              "url": "/api/v1/market-flow/stream?symbol=BTCUSDT",
+              "readyState": 1,
+              "native": true
+            },
+            {
+              "url": "/api/v1/market-stream?symbol=BTCUSDT&interval=1m&from_ms=1793437863160&to_ms=1793455803160",
+              "readyState": 0,
+              "native": false
+            }
+          ]
+        },
+        "wrapper_after_reconnect": {
+          "current": {
+            "url": "/api/v1/market-stream?symbol=BTCUSDT&interval=1m&from_ms=1793437863160&to_ms=1793455803160",
+            "readyState": 0,
+            "native": true,
+            "listeners": [
+              "hello",
+              "snapshot",
+              "indicators",
+              "context",
+              "candle",
+              "closed",
+              "status",
+              "gap",
+              "heartbeat",
+              "error"
+            ]
+          },
+          "instances": [
+            {
+              "url": "/api/v1/market-flow/stream?symbol=BTCUSDT",
+              "readyState": 1,
+              "native": true
+            },
+            {
+              "url": "/api/v1/market-stream?symbol=BTCUSDT&interval=1m&from_ms=1793437863160&to_ms=1793455803160",
+              "readyState": 0,
+              "native": true
+            }
+          ]
+        }
+      },
+      "global_deadline_exceeded": false,
+      "transport_origin": "binance",
+      "binance_accredited": false
+    }
+  ],
+  "procedural_pass": false,
+  "limits_s": {
+    "minute_phase": 60.0,
+    "page_ready": 45.0,
+    "acceptance": 70.0,
+    "pagination": 20.0,
+    "release": 15.0,
+    "reconnect": 15.0,
+    "down_notice": 40.0,
+    "run": 180.0
+  },
+  "notes": [
+    "Transporte public: el servicio se conecta a Binance; requiere autorizacion humana explicita.",
+    "El dashboard canonico no es reconfigurado por el arnes; no se traslada configuracion de prueba al dashboard.",
+    "Hasta dos peticiones REST de velas en conjunto (carga inicial y paginacion, <=300 cada una); catalogo desde cache; una conexion WS simultanea y hasta tres reconexiones.",
+    "La ventana real reutiliza el mismo procedimiento con autorizacion humana."
+  ]
+}

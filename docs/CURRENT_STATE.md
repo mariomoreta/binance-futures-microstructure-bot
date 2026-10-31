@@ -4268,3 +4268,27 @@ Cambios:
   42/42, suite frontend 622/623, `tsc`/`eslint` 0, `next build` OK.
 - Sin Binance, Ã³rdenes, pagos, mÃ³vil ni cambios econÃ³micos.
 
+
+
+## Ventana pública de integración — 2026-10-31 (base e2243c9, autorizada 1x)
+
+Ejecutada una única ventana pública autorizada sobre `--transport public`, símbolos `BTCUSDT`+`MINAUSDT` 1m, reutilizando el recorrido corregido (`scripts/market_stream_window.py` + `scripts/market_stream_service.py` + arnés `scripts/market_stream_local_acceptance.py`), sin editar código durante la ventana ni relanzamiento automático.
+
+**Preflight (antes del primer acceso público):**
+- SHA fuente: `git rev-parse HEAD = e2243c9` (coincide con el solicitado).
+- BUILD_ID servido: dashboard 3020 reconstruido desde `e2243c9` (`next build` + `next start -p 3020`, PID 21152), sirve `t4z0bfKQ_kIP9qv1WHCKR` (coincide con `frontend/.next/BUILD_ID`; `_preflight` `served=true`).
+- Procesos: 8791 libre; 8792 ocupado por servicio LOCAL preexistente (PID 31124, `--transport local`, no tocado); 3020 dashboard propio. Sin sesiones activas (`service.json` obsoleto sin listener; `paper-lab-sessions` vacío).
+- Control de arranque / rango reciente: verificado en código (`series_payload`: `end = min(end, now)`, ventana explícita de `bars` velas cerradas; sin `0→9999999999999`).
+- Límites efectivos en código: 1 socket WS combinado (`BinanceKlineTransport.build_url`), `socket_reconnects` con tope script 3; consumidores SSE efectivos 3 (hub total 4 con 1 suscripción interna BTC de contexto); `--no-recovery` + `client=None` → 0 REST de recuperación; `bars=300` ≤ 300; `DEFAULT_DURATION_S=180`; hub `persistence=MEMORY_ONLY`; DBs canónicas solo lectura.
+
+**Ejecución (127,47 s de 180 s global):**
+- `transport_origin=binance`, servicio PID 32552 en 8791 (`--transport public --no-recovery --max-seconds`), parado limpio (exit 0, puerto cerrado, pidfile eliminado, health rechazado).
+- Recepción: 69 eventos vela BTCUSDT + 5 MINAUSDT; cierre confirmado 1793455800000 (close_time 1793455859999), siguiente vela 1793455860000; 64 actualizaciones provisionales misma apertura; 0 huecos; `identity_exact` (BTCUSDT/MINAUSDT, venue=binance, market_type=usd_m_futures, 1m).
+- Navegador: LIVE (RECIBIENDO), DOM identidad exacta, paginación 299→600 (1 petición, 300 nuevas, misma identidad, sin recarga), liberación consumers=0 con servicio vivo, reconnexión consumers=1, aviso `explorer-stream-down` con causa al parar.
+- Consumo REST: servicio 0 upstream; navegador/BFF 2 peticiones market-series (carga inicial 299 velas + paginación 300 velas, ≤300 cada una); total ≤ 3 ≤ 4; `external: []`, `browser_external: []`, cero peticiones públicas del navegador.
+- DBs canónicas: `microprobe.db` y `historical.db` sin cambios (mtime/size idénticos); caché derivada `market_cache.db` creció (esperado, aislada).
+- Escritura: solo JSON de evidencia en `docs/evidence/window-public-2026-10-31/`; cero DB canónica, cero sesiones paper.
+
+**Veredicto (finalizer, run.json): `PASS`**, `failed=[]`, `missing=[]`, `acquisition_finished=true`, `stop_reason=ACCEPTANCE_REACHED`, `visual_review=NOT_REVIEWED`. Todas las 21 checks requeridas OK (incluidas las 7 de DOM). Nota: el arnés falló al construir el resumen final por `NameError` (`rest_market_requests` no definida, variable ajena a la cadena) por lo que `local.json` reporta `verdict=ERROR`/`procedural_pass=false`, pero el veredicto autoritativo del finalizer en `run.json` es `PASS`.
+
+**Estado final:** servicio 8791 detenido y puerto libre; 8792 sin tocar; dashboard 3020 disponible sirviendo `e2243c9` (BUILD_ID `t4z0bfKQ_kIP9qv1WHCKR`), sin sesión de ensayo activa; sin posiciones paper abiertas; sin órdenes, claves, pagos, móvil ni optimización. Sin posición abierta que conservar (no hubo entrada).
