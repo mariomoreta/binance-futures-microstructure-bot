@@ -123,13 +123,17 @@ async function fetchJson<T = unknown>(path: string): Promise<ApiResult<T>> {
   return { ok: true, data: body as T, status: r.status };
 }
 
-/** Trae velas (caché local, 0 upstream) para un símbolo/intervalo.
+/** Trae velas para un símbolo/intervalo.
  *
  * `readOnly=true` (sesión de ingeniería/replay) fuerza la opción de solo
  * lectura del backend (`read_only=1` → `--no-fetch`): cero upstream, ausencia
- * en caché devuelve motivo sin activar fetch. `readOnly=false` se reserva al
- * explorador normal, que conserva la adquisición bajo demanda con sus
- * presupuestos existentes (ledger compartido, pages <= 2).
+ * en caché devuelve motivo sin activar fetch. `readOnly=false` habilita la
+ * adquisición bajo demanda del backend con presupuesto existente
+ * (ledger compartido, pages <= 2, 30 req/min).
+ *
+ * `pages` (máx. 2) y `pageLimit` (máx. 1000) controlan cuántas páginas
+ * solicita el backend para cubrir el rango. Cada página devuelve como
+ * máximo `pageLimit` velas.
  *
  * Pasa un rango amplio ([0, 9999999999999]) para cubrir todo lo almacenado,
  * independientemente del reloj de pared actual, ya que las velas cacheadas
@@ -143,10 +147,12 @@ export async function fetchMarketSeries(
   bars: number,
   atMs?: number | null,
   readOnly = true,
+  pages = 1,
+  pageLimit = 300,
 ): Promise<MarketSeriesPayload | null> {
   const toParam = atMs != null ? `&to_ms=${atMs}` : "&to_ms=9999999999999";
   const readOnlyParam = readOnly ? "&read_only=1" : "";
-  const url = `${API_BASE}?symbol=${encodeURIComponent(symbol)}&interval=${encodeURIComponent(interval)}&bars=${bars}&pages=1&from_ms=0${toParam}${readOnlyParam}`;
+  const url = `${API_BASE}?symbol=${encodeURIComponent(symbol)}&interval=${encodeURIComponent(interval)}&bars=${bars}&pages=${pages}&page_limit=${pageLimit}&from_ms=0${toParam}${readOnlyParam}`;
   const r = await fetchJson<MarketSeriesPayload>(url);
   if (!r.ok || !r.data) return null;
   return r.data;

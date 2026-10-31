@@ -603,10 +603,13 @@ export default function EngineeringSession({
       setTransportKind(ENGINEERING_TRANSPORT_MARKET_STREAM);
       // Hasta 300 velas recientes por símbolo (ventana reciente, no backfill
       // de la caché antigua). La caché antigua se conserva; no se conecta
-      // mediante backfill con la nueva sesión.
-      const series = await fetchMarketSeries(symbol, interval, 300);
+      // mediante backfill con la nueva sesión. Adquisición habilitada
+      // (readOnly=false): el backend consulta el proveedor configurado
+      // (local para pruebas, público con autorización separada) con
+      // presupuesto existente (ledger, 2 páginas, 300 velas/página).
+      const series = await fetchMarketSeries(symbol, interval, 300, undefined, false, 2, 300);
       if (!series || !series.candles || series.candles.length === 0) {
-        setError("SERIES_EMPTY: no hay velas en cache local para el símbolo.");
+        setError("SERIES_EMPTY: no hay velas para el símbolo (caché vacía o adquisición falló).");
         setLoading(false);
         return;
       }
@@ -634,14 +637,44 @@ export default function EngineeringSession({
         return;
       }
 
+      // Verificar continuidad de rejilla dentro del contexto reciente:
+      // cada vela debe abrir donde la anterior cerró (+1 paso de 60s).
+      const stepMs = 60_000; // 1m
+      for (let i = 1; i < context.length; i++) {
+        const prev = context[i - 1];
+        const curr = context[i];
+        if (prev == null || curr == null) {
+          setError(
+            "GRID_GAP_CONTEXTO: vela faltante en el contexto. " +
+            "No se puede iniciar sesión sin continuidad verificada.",
+          );
+          setLoading(false);
+          return;
+        }
+        const prevClose = prev.close_time_ms;
+        if (prevClose == null || curr.open_time_ms !== prevClose + 1) {
+          setError(
+            "GRID_GAP_CONTEXTO: hueco en la rejilla de velas cerradas del contexto " +
+            `entre ${prev.open_time_ms} y ${curr.open_time_ms}. ` +
+            "No se puede iniciar sesión sin continuidad verificada.",
+          );
+          setLoading(false);
+          return;
+        }
+      }
+
       // No usar last_cache_close + 1 como inicio de operación si la caché
       // está obsoleta. La última vela de contexto debe estar cercana al
       // presente para que from_ms (= última vela de contexto + 1 paso) caiga
-      // dentro del rango que el feed público puede entregar.
-      const lastCtx = context[context.length - 1]!;
+      // dentro del rango que el feed puede entregar.
+      const lastCtx = context[context.length - 1];
+      if (!lastCtx) {
+        setError("CONTEXT_EMPTY: contexto sin velas.");
+        setLoading(false);
+        return;
+      }
       const lastCtxCloseMs = lastCtx.close_time_ms ?? lastCtx.open_time_ms;
       const nowMs = Date.now();
-      const stepMs = 60_000; // 1m
       const maxStalenessMs = 2 * stepMs; // tolerancia de 2 pasos de rejilla
       if (nowMs - lastCtxCloseMs > maxStalenessMs) {
         setError(
