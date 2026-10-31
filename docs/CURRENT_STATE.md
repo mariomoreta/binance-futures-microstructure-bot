@@ -4292,3 +4292,62 @@ Ejecutada una única ventana pública autorizada sobre `--transport public`, sí
 **Veredicto (finalizer, run.json): `PASS`**, `failed=[]`, `missing=[]`, `acquisition_finished=true`, `stop_reason=ACCEPTANCE_REACHED`, `visual_review=NOT_REVIEWED`. Todas las 21 checks requeridas OK (incluidas las 7 de DOM). Nota: el arnés falló al construir el resumen final por `NameError` (`rest_market_requests` no definida, variable ajena a la cadena) por lo que `local.json` reporta `verdict=ERROR`/`procedural_pass=false`, pero el veredicto autoritativo del finalizer en `run.json` es `PASS`.
 
 **Estado final:** servicio 8791 detenido y puerto libre; 8792 sin tocar; dashboard 3020 disponible sirviendo `e2243c9` (BUILD_ID `t4z0bfKQ_kIP9qv1WHCKR`), sin sesión de ensayo activa; sin posiciones paper abiertas; sin órdenes, claves, pagos, móvil ni optimización. Sin posición abierta que conservar (no hubo entrada).
+
+
+## Cierre y correccion de la ventana pública de integración — 2026-10-31 (base e2243c9)
+
+Se corrigió el cierre de la ventana pública autorizada ejecutada sobre `--transport public`,
+símbolos `BTCUSDT`+`MINAUSDT` 1m, usando el recorrido corregido (`scripts/market_stream_window.py`
++ `scripts/market_stream_service.py` + arnés `scripts/market_stream_local_acceptance.py`),
+sin editar código durante la ventana ni relanzamiento automático. Los originales de evidencia
+(`run.json`, `network.json`, `local.json`) se conservan intactos; la corrección se publica como
+addendum reproducible: `docs/evidence/window-public-2026-10-31/addendum-reconciliacion-2026-10-31.md`.
+
+**Resultado global reconciliado:**
+- Cadena Binance → servicio SSE → BFF → DOM: **PASS funcional** (21/21 checks OK, 7/7 DOM,
+  `acquisition_finished=true`, `stop_reason=ACCEPTANCE_REACHED`, paginación 299→600, parada limpia).
+- Consumidores SSE simultáneos: **INCUMPLIMIENTO**. Máximo autorizado: 3. Pico medido en
+  `health_before_close`: 4 (`service=1, bff=1, browser=1, internal_benchmark=1`). El
+  `internal_benchmark` (suscripción interna compartida BTC, refcount) se contabilizaba como
+  consumidor adicional, llevando el pico a 4.
+- **Veredicto GLOBAL: NO PASS** (el incumplimiento de consumidores, 4 > 3, impide que el global
+  sea PASS aunque la cadena de datos del gráfico/transporte sea funcional).
+- Presupuesto REST (recalculado offline desde el ledger `market_fetch_ledger`, id 140–143):
+  4 intentos totales a Binance (1 exchangeInfo + 3 klines), 3 solicitudes de velas cada una ≤300
+  velas. Dentro del presupuesto autorizado (máx. 4 intentos totales; máx. 300 velas c/u).
+  No se equiparan llamadas al BFF con solicitudes a Binance. `upstream_binance_requests` nunca se
+  asume cero sin ledger (UNKNOWN si no hay registros).
+
+**Correcciones al arnés (demostradas con transporte local):**
+1. `scripts/market_stream_window.py::_consumer_allocation`: elimina el doble conteo del
+   consumidor benchmark del total declarado (pico 4 → 3; máximo autorizado 3).
+   `internal_benchmark` queda solo como campo informativo.
+2. `scripts/market_stream_local_acceptance.py`: corrige `NameError`
+   (`rest_market_requests` indefinida); `rest_market_budget` se evalúa contra el presupuesto
+   autorizado (≤ 4 intentos REST a Binance), no contra llamadas al BFF.
+3. `tests/test_engineering_session_local_backend.py` (nueva): prueba focalizada de sesión backend
+   de ingeniería que recibe eventos y registra decisiones con transporte local (sin red, sin
+   Binance): `session_id`, `config_hash`, runner (engine), decisión causal (`RULE-CAUSAL-V1`)
+   registrada con motivo y evidencia, `revision` incrementada, recepción de eventos
+   (`step_forward` avanza `clock_ms`/`cursor`), cero entradas válido si queda acreditada la
+   evaluación. 1/1 pasa.
+
+**Alcance realmente probado — sesión de ingeniería: NO EVALUADA.**
+Los checks del arnés de ventana no acreditan la sesión de ingeniería (no hay `session_id`,
+`config_hash`, runner, eventos recibidos, revisiones ni decisiones bajo mercado real en esta
+ventana). No existe evidencia de sesión de ingeniería bajo mercado real en 2026-10-31
+(`paper-lab-sessions/` sin archivos de fecha 179345...; evidencia de ingeniería previa es del
+2026-10-28 con transporte local, sin Binance real). La ausencia de posiciones abiertas **no**
+se presenta como abstención demostrada.
+
+**Estado final:** servicio 8791 detenido y puerto libre; 8792 sin tocar (servicio local
+preexistente PID 31124); dashboard 3020 disponible en `e2243c9` (BUILD_ID
+`t4z0bfKQ_kIP9qv1WHCKR`), sin sesión de ensayo activa; sin posiciones paper abiertas
+(no hubo entrada bajo mercado real); sin órdenes, claves privadas, pagos, móvil ni
+optimización; DBs canónicas intactas. Pruebas focales: 41/41 pasan
+(`test_engineering_session_local_backend.py` + `test_market_stream.py`).
+
+**Qué falta:** sesión de ingeniería bajo mercado real (NO EVALUADA, pendiente de ventana
+autorizada con transporte public); repetición de la ventana pública con consumidores ≤ 3 para
+pasar el veredicto global (requiere autorización explícita).
+

@@ -1546,6 +1546,12 @@ def run_one(index: int, args: argparse.Namespace, workdir: Path,
             # navegador al BFF). Sin registros del servicio Python, el
             # upstream es desconocido, no cero.
             upstream_binance_requests = None
+            # rest_market_requests: solicitudes HTTP realmente enviadas a
+            # Binance (upstream), NO llamadas del navegador al BFF.
+            # Modo local: sin Binance -> 0. Modo public: se lee del ledger de
+            # caché (registros upstream conservados); None si no se puede
+            # determinar, en cuyo caso el presupuesto es UNKNOWN.
+            rest_market_requests = 0 if transport == "local" else None
 
             checks = run.get("checks") or []
             failed = run.get("failed") or []
@@ -1577,10 +1583,9 @@ def run_one(index: int, args: argparse.Namespace, workdir: Path,
                 # registros del servicio Python (upstream es None), el
                 # presupuesto es UNKNOWN, no se asume cumplido.
                 "rest_market_budget": (True if transport == "local"
-                                       else (None if upstream_binance_requests
+                                       else (None if rest_market_requests
                                              is None
-                                             else upstream_binance_requests
-                                             <= 2)),
+                                             else rest_market_requests <= 4)),
                 "preflight_ok": bool(durations.get("preflight") is not None),
                 "all_series_local": all_fetch_local,
                 "catalog_local": catalog_local,

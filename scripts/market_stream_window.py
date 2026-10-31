@@ -363,12 +363,14 @@ def _consumer_allocation(symbols: List[str], no_bff: bool,
         per_stream[symbol] = per_stream.get(symbol, 0) + 1
     for symbol in bff:
         per_stream[symbol] += browser_consumers
+    # La suscripcion interna al benchmark (BTCUSDT) es COMPARTIDA (refcount)
+    # sobre el mismo stream del simbolo BTC; no es un consumidor SSE
+    # adicional del usuario ni aumenta el pico de consumidores declarado.
+    # El presupuesto de consumidores SSE se compara en la misma unidad:
+    # consumidores propios del hub (service + bff + browser), maximo 3.
     internal_benchmark = sum(
         1 for symbol in service + bff if symbol != BTC_BENCHMARK_SYMBOL)
-    if internal_benchmark:
-        per_stream[BTC_BENCHMARK_SYMBOL] = (per_stream.get(
-            BTC_BENCHMARK_SYMBOL, 0) + internal_benchmark)
-    total = len(service) + len(bff) + browser_consumers + internal_benchmark
+    total = len(service) + len(bff) + browser_consumers
     return {
         "service": len(service),
         "bff": len(bff),
