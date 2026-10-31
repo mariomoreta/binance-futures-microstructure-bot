@@ -4351,3 +4351,70 @@ optimización; DBs canónicas intactas. Pruebas focales: 41/41 pasan
 autorizada con transporte public); repetición de la ventana pública con consumidores ≤ 3 para
 pasar el veredicto global (requiere autorización explícita).
 
+
+
+## Cierre y bloqueo de la ventana pública de sesión de ingeniería — 2026-10-31 (base e2243c9 / commit 22987a4)
+
+Se ejecutó **una sola** ventana pública autorizada sobre ``--transport public``,
+símbolos `BTCUSDT`+`MINAUSDT` 1m, usando el arnés nuevo
+`scripts/engineering_live_window.py` que orquesta el servicio de mercado
+`market-stream/v1` (puerto 8791) y el servicio de sesiones de ingeniería
+`engineering-session-service/v1` (puerto 8797, ruta de sesiones aislada).
+**La ventana se cerró con veredicto BLOQUEO (no PASS).**
+
+**Causa del bloqueo:** no se pudo obtener un contexto reciente de velas
+cerradas para fijar el reloj T inicial de la sesión de ingeniería. La caché
+derivada local no tenía velas recientes para el rango, y las 2 peticiones REST
+klines a Binance (dentro del presupuesto de 4 totales; ≤300 velas c/u)
+devolvieron HTTP 200 pero 0 velas válidas (cuerpo no parseable como lista de
+klines). Sin contexto reciente, `create_session` con transporte
+`market_stream` rechazó con:
+
+    VALIDATION_ERROR: LIVE_CONTEXT_REQUIRED: la sesión live necesita contexto
+    (ventana de velas cerradas conocidas) para fijar el reloj T inicial
+
+Por lo tanto **no se creó la sesión de ingeniería**, no hubo eventos de
+mercado recibidos por la sesión, ni revisiones ni decisiones, y no hay
+evidencia de ejecución que verificar. Cero entradas (válido solo si se acredita
+evaluación real — aquí no se acreditó).
+
+**Preflight verificado (antes del bloqueo):**
+- SHA fuente: `git rev-parse HEAD = 22987a4` (árbol `e2243c9`, el solicitado).
+- BUILD_ID servido: dashboard 3020 sirve `t4z0bfKQ_kIP9qv1WHCKR` (coincide con
+  `frontend/.next/BUILD_ID` y el árbol); `/market-lab` HTTP 200.
+- Procesos: 8791 libre antes de arrancar; 8792 ocupado (servicio LOCAL
+  preexistente PID 31124, **no tocado**); 3020 dashboard propio. Sin procesos
+  de ingeniería activos antes de la ventana.
+- Rango reciente: `series_payload` clampa `end` al reloj actual (ventana
+  explícita de `bars` velas cerradas; sin `0→9999999999999`).
+- Límites efectivos impuestos por el orquestador: 1 WS combinada (hub de
+  market-stream), ≤3 consumidores SSE (monitoreados en /health), ≤3
+  reconexiones, ≤4 REST totales, ≤300 velas/consulta, deadline 180 s,
+  cero escrituras en DBs canónicas, hub usa una WS combinada.
+
+**Presupuesto REST (recalculado offline desde el ledger y la respuesta):**
+- Intentos REST totales a Binance: 2 (klines BTCUSDT + klines MINAUSDT),
+  cada una ≤300 velas. Límite autorizado: 4 totales. **Cumple.**
+- Peticiones del navegador al BFF: n/a (no hay navegador en esta ventana;
+  no se repite el ensayo del gráfico).
+- Escrituras en DBs canónicas: ninguna (`db_unchanged=true`).
+
+**Recursos y limpieza:**
+- Servicios propios (market-stream 8791, engineering-session 8797) detenidos
+  tras la ejecución; puertos en TIME_WAIT, sin proceso activo.
+- 8792 (servicio local preexistente) **no tocado**.
+- Dashboard 3020 disponible, sirviendo `e2243c9`, sin sesión de ensayo activa.
+- DBs canónicas (`microprobe.db`, `historical.db`): **intactas**.
+- Sesión de ingeniería: **no creada** (no hay `session_id` ni `config_hash`).
+- Evidencia: `docs/evidence/window-public-2026-10-31/run.json` +
+  `addendum-bloqueo-contexto.md`.
+
+**Veredicto global: BLOQUEO.** No se integra como PASS porque no se creó la
+sesión de ingeniería ni se recibió/evaluó evento de mercado real. No se repite
+la ventana (instrucción del operador). Una futura ventana requeriría resolver
+primero la disponibilidad de contexto reciente de velas cerradas antes de
+conectar a Binance.
+
+Sin órdenes reales, claves privadas, pagos, móvil ni optimización. Sin cambios
+durante la ventana.
+

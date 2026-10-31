@@ -1,0 +1,126 @@
+{
+  "generated_at_ms": 1793458486783,
+  "verdict": "ERROR",
+  "error": "RuntimeError: CREATE_SESSION_FAILED: status=400 text={\"error\": \"VALIDATION_ERROR: LIVE_CONTEXT_REQUIRED: la sesión live necesita contexto (ventana de velas cerradas conocidas) para fijar el reloj T inicial\"}",
+  "mode": "public",
+  "symbols": [
+    "MINAUSDT",
+    "BTCUSDT"
+  ],
+  "interval": "1m",
+  "bars": 300,
+  "deadline_s": 180.0,
+  "session_id": null,
+  "config_hash": null,
+  "evidence": {
+    "services": {
+      "mercado_pid": 41588,
+      "mercado_puerto": 8791,
+      "mercado_modo": "public",
+      "ingenieria_pid": 24456,
+      "ingenieria_puerto": 8797,
+      "sessions_dir": "C:\\Users\\adonm\\AppData\\Local\\Temp\\opencode\\engineering-live-sessions"
+    },
+    "contexto": {
+      "fuente": "caché derivada + REST klines",
+      "velas": 0,
+      "rango": null,
+      "rest_usadas": 2
+    }
+  },
+  "checks": [
+    {
+      "id": "dashboard_up",
+      "ok": true,
+      "required": true,
+      "source": "preflight",
+      "detail": "market-lab status=200"
+    },
+    {
+      "id": "build_served",
+      "ok": true,
+      "required": true,
+      "source": "preflight",
+      "detail": "BUILD_ID t4z0bfKQ_kIP9qv1WHCKR servido (árbol e2243c9)"
+    },
+    {
+      "id": "service_port_free",
+      "ok": true,
+      "required": true,
+      "source": "preflight",
+      "detail": "puerto 8791 libre"
+    },
+    {
+      "id": "engineering_port_free",
+      "ok": true,
+      "required": true,
+      "source": "preflight",
+      "detail": "puerto 8797 libre"
+    },
+    {
+      "id": "port_8792_untouched",
+      "ok": true,
+      "required": false,
+      "source": "preflight",
+      "detail": "8792 ocupado (servicio local preexistente, no tocar)"
+    },
+    {
+      "id": "codigo_limites_conocidos",
+      "ok": true,
+      "required": false,
+      "source": "preflight",
+      "detail": "lÃ­mites del usuario impuestos por el orquestador: <=3 consumidores SSE, <=3 reconexiones, <=4 REST, <=300 velas/consulta, deadline 180s, cero escrituras DB canÃ³nicas; el hub de market-stream usa 1 WS combinada."
+    },
+    {
+      "id": "no_ingenieria_activa",
+      "ok": true,
+      "required": false,
+      "source": "preflight",
+      "detail": "ningÃºn proceso de ingenierÃ­a activo antes de la ventana"
+    },
+    {
+      "id": "service_started",
+      "ok": true,
+      "required": true,
+      "source": "execute",
+      "detail": "servicio mercado PID 41588 puerto 8791 modo=public"
+    },
+    {
+      "id": "engineering_started",
+      "ok": true,
+      "required": true,
+      "source": "execute",
+      "detail": "servicio ingeniería PID 24456 puerto 8797"
+    },
+    {
+      "id": "rest_klines_BTCUSDT",
+      "ok": false,
+      "required": true,
+      "source": "execute",
+      "detail": "status=200 error=None"
+    },
+    {
+      "id": "rest_klines_MINAUSDT",
+      "ok": false,
+      "required": true,
+      "source": "execute",
+      "detail": "status=200 error=None"
+    },
+    {
+      "id": "rest_contexto_dentro_limite",
+      "ok": true,
+      "required": true,
+      "source": "execute",
+      "detail": "peticiones REST para contexto=2 (máximo 4)"
+    },
+    {
+      "id": "contexto_cargado",
+      "ok": false,
+      "required": true,
+      "source": "execute",
+      "detail": "0 velas cerradas recientes para fijar el reloj T (rest=2)"
+    }
+  ],
+  "rest_count": 2,
+  "db_unchanged": true
+}
