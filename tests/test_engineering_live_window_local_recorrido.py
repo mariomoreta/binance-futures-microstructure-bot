@@ -239,18 +239,41 @@ def _payload_contexto(contexto: list) -> Dict[str, Any]:
     }
 
 
-def test_validacion_contexto_rechaza_futuro_insuficiente_discontinuo():
-    """El backend (servicio de ingeniería) rechaza contexto futuro,
-    insuficiente o discontinuo ANTES de crear/iniciar la sesión, con motivo
-    explícito. No basta con una comprobación del frontend."""
+def test_validacion_contexto_rechaza_insuficiente_discontinuo_no_cerrado():
+    """El backend (servicio de ingeniería) rechaza contexto insuficiente,
+    discontinuo o no cerrado ANTES de crear/iniciar la sesión, con motivo
+    explícito. No basta con una comprobación del frontend (React).
+
+    Nota (causalidad, punto 1): ya no se rechaza por "futuro respecto a ahora"
+    porque el muro de pared no es un reloj de referencia validado. El reloj T
+    lo fija el motor a partir del close_time de la última vela de contexto.
+    Si existe incertidumbre de sincronización, se declara UNKNOWN y se
+    abstiene en el evaluador; no se resuelven futuros admitiendo OHLC. El
+    incidente histórico (ventana pública, events_processed=0) se conserva sin
+    declaración retrospectiva de causalidad respetada.
+    """
     ahora = int(time.time() * 1000)
     tmp = Path(tempfile.mkdtemp(prefix="ctx-val-"))
     ctl = EngineeringSessionController(tmp, cadence_ms=700.0)
 
+    def _payload(contexto: list) -> Dict[str, Any]:
+        cfg = {
+            "symbol": "MINAUSDT", "interval": "1m", "direction": "LONG",
+            "notional_usdt": 1000.0, "entry_px": 0.0, "stop_px": 0.0,
+            "stop_distance_pct": 5.0, "horizon_ms": 3 * 60 * 60 * 1000,
+            "fee_bps": 5.0, "spread_bps": 1.0, "slippage_bps": 2.0,
+        }
+        return {
+            "transport": "market_stream",
+            "config": cfg,
+            "candles": [],
+            "context": contexto,
+            "request_id": "ctx-val-%d" % ahora,
+        }
+
     def espera_rechazo(contexto, fragmento_motivo):
-        payload = _payload_contexto(contexto)
         try:
-            ctl.create_session(payload)
+            ctl.create_session(_payload(contexto))
         except ValueError as exc:
             assert fragmento_motivo in str(exc), (
                 "motivo inesperado: %s" % str(exc))
@@ -258,16 +281,8 @@ def test_validacion_contexto_rechaza_futuro_insuficiente_discontinuo():
         raise AssertionError(
             "debió rechazar con '%s'" % fragmento_motivo)
 
-    # Insuficiente: sin contexto no se fija el reloj T (LIVE_CONTEXT_REQUIRED
-    # es el motivo explícito del backend para contexto insuficiente/vacío).
+    # Insuficiente: sin contexto no se fija el reloj T.
     espera_rechazo([], "LIVE_CONTEXT_REQUIRED")
-    # Futuro: open_time posterior al ahora + un paso de rejilla.
-    espera_rechazo([{
-        "symbol": "MINAUSDT", "interval": "1m",
-        "open_time_ms": ahora + 200000,
-        "close_time_ms": ahora + 259999,
-        "open": 1, "high": 1, "low": 1, "close": 1,
-    }], "CONTEXTO_FUTURO")
     # Discontinuo: hueco entre velas del mismo símbolo (delta != 60s).
     espera_rechazo([
         {"symbol": "MINAUSDT", "interval": "1m",
@@ -277,6 +292,12 @@ def test_validacion_contexto_rechaza_futuro_insuficiente_discontinuo():
          "open_time_ms": ahora, "close_time_ms": ahora + 59999,
          "open": 1, "high": 1, "low": 1, "close": 1},
     ], "CONTEXTO_DISCONTINUO")
+    # Vela no cerrada (close_time <= open_time): no hay cierre disponible.
+    espera_rechazo([
+        {"symbol": "MINAUSDT", "interval": "1m",
+         "open_time_ms": ahora - 60000, "close_time_ms": ahora - 60000,
+         "open": 1, "high": 1, "low": 1, "close": 1},
+    ], "CONTEXTO_NO_CERRADO")
 
 
 if __name__ == "__main__":  # pragma: no cover

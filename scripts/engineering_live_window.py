@@ -864,8 +864,19 @@ class WindowOrchestrator:
                 drive_stats = (((sj or {})).get("drive") or {}).get("stats") or {}
                 if drive_stats:
                     self.evidence["adaptador_ingenieria"] = drive_stats
+                evaluaciones = (((sj or {})).get("drive") or {}).get(
+                    "evaluaciones") or []
+                if evaluaciones:
+                    self.evidence["evaluaciones"] = evaluaciones
+                    self.evidence["evaluacion_contador"] = int(
+                        (((sj or {})).get("drive") or {}).get(
+                            "evaluacion_contador", 0) or 0)
             time.sleep(1.0)
         self.evidence["revision_final"] = last_revision
+        self.evidence["evaluaciones_final"] = self.evidence.get(
+            "evaluaciones") or []
+        self.evidence["evaluacion_contador_final"] = self.evidence.get(
+            "evaluacion_contador", 0)
         self.evidence["eventos_procesados_final"] = last_events_processed
 
     def _stop_drive(self) -> None:

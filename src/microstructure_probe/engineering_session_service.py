@@ -578,6 +578,8 @@ class EngineeringSessionController:
             "transport_events": (info or {}).get("transport_events", 0),
             "cadence_ms": drive.get("cadence_ms"),
             "runner": runner,
+            "evaluacion_contador": int(drive.get("evaluacion_contador", 0)),
+            "evaluaciones": list(drive.get("evaluaciones") or []),
         }
         if runner == TRANSPORT_MARKET_STREAM:
             adapter = drive.get("transport")
@@ -637,10 +639,18 @@ class EngineeringSessionController:
                     "(ventana de velas cerradas conocidas) para fijar el "
                     "reloj T inicial")
             # --- Validación de contexto en el backend (antes de iniciar
-            # conducción). Rechaza contexto futuro, insuficiente o
-            # discontinuo con motivo explícito. No basta con una comprobación
-            # del frontend (React): el servicio es la autoridad. ---
-            now_ms = int(time.time() * 1000)
+            # conducción). Rechaza contexto insuficiente o discontinuo con
+            # motivo explícito. No basta con una comprobación del frontend
+            # (React): el servicio es la autoridad. ---
+            # Causalidad temporal: NO se usa ahora (hora de pared no
+            # validada) como referencia para admitir OHLC cerrado. Una vela
+            # cerrada requiere que su cierre/disponibilidad ya haya ocurrido
+            # respecto al reloj de referencia validado (T), que el motor fija
+            # a partir del close_time de la última vela de contexto. Si existe
+            # incertidumbre de sincronización, se declara UNKNOWN y se
+            # abstiene; no se resuelven futuros admitiendo OHLC. El incidente
+            # histórico (ventana pública, events_processed=0) se conserva
+            # sin declaración retrospectiva de causalidad respetada.
             step = INTERVAL_MS_MAP.get(str(config.interval))
             if step is None:
                 raise ValueError(
@@ -659,14 +669,11 @@ class EngineeringSessionController:
                 for c in velas:
                     ot = int(c["open_time_ms"])
                     ct = int(c.get("close_time_ms") or (ot + step - 1))
-                    if ot > now_ms + step:
+                    if ct is None or ct <= ot:
                         raise ValueError(
-                            f"CONTEXTO_FUTURO: {simbolo} vela open_time {ot} "
-                            f"es posterior al ahora {now_ms}")
-                    if ct > now_ms + step:
-                        raise ValueError(
-                            f"CONTEXTO_FUTURO: {simbolo} vela close_time {ct} "
-                            f"es posterior al ahora {now_ms}")
+                            f"CONTEXTO_NO_CERRADO: {simbolo} vela open_time "
+                            f"{ot} no tiene cierre disponible "
+                            f"(close_time={ct})")
                     if prev_open is not None and ot - prev_open != step:
                         raise ValueError(
                             f"CONTEXTO_DISCONTINUO: {simbolo} hueco entre "
@@ -816,6 +823,11 @@ class EngineeringSessionController:
                 "last_heartbeat_at_ms": None,
                 "evidence": {},
                 "cadence_ms": None,
+                # Registro de evaluaciones ejecutadas por el evaluador (motor).
+                # Cada entrada: evaluacion_num, evento_disparador, T, config,
+                # resultado (decisión/motivo), evaluado_en_ms.
+                "evaluaciones": [],
+                "evaluacion_contador": 0,
             }
             self._drives[session_id] = drive
             self._events[session_id] = {"transport_events": 0}
@@ -1329,8 +1341,12 @@ class EngineeringSessionController:
         state = self._tag_fill_basis(state)
         gate = self._evaluation_gate(state, drive)
         drive["last_gate"] = gate
+        evaluacion_ejecutada = False
+        decision_antes = state.config.decision
+        motivo_antes = state.config.decision_reason
         if gate["ok"] and state.status in ("sin_iniciar", "evaluando") and (
                 state.config.decision in (None, "SIN_ENTRADA")):
+            estado_antes = state
             state = engine.evaluate_session(
                 state,
                 hypothesis_id=state.config.hypothesis_id,
@@ -1338,7 +1354,48 @@ class EngineeringSessionController:
                 rule_version=state.config.rule_version or engine.RULE_CAUSAL_V1,
                 at_ms=state.clock_ms,
             )
+            # Se contó como evaluación ejecutada solo si el evaluador produjo
+            # una decisión (cambio de None -> decisión o reafirmación de
+            # SIN_ENTRADA con motivo). decision=null o puerta cerrada no son
+            # evaluación ejecutada: se clasifican separadamente.
+            evaluacion_ejecutada = (
+                estado_antes.config.decision != state.config.decision
+                or estado_antes.config.decision_reason
+                != state.config.decision_reason
+            )
             state = self._augment_live_evidence(state, drive, trigger, gate)
+        if evaluacion_ejecutada:
+            evaluaciones = drive.setdefault("evaluaciones", [])
+            contador = int(drive.get("evaluacion_contador", 0)) + 1
+            drive["evaluacion_contador"] = contador
+            evaluaciones.append({
+                "evaluacion_num": contador,
+                "evento_disparador": {
+                    "frame": trigger.get("frame"),
+                    "open_time_ms": trigger.get("open_time_ms"),
+                    "close_time_ms": trigger.get("close_time_ms"),
+                    "received_at_ms": trigger.get("received_at_ms"),
+                },
+                "T": state.clock_ms,
+                "config": {
+                    "rule_version": state.config.rule_version,
+                    "hypothesis_id": state.config.hypothesis_id,
+                    "hypothesis_version": state.config.hypothesis_version,
+                    "symbol": state.config.symbol,
+                    "interval": state.config.interval,
+                    "notional_usdt": state.config.notional_usdt,
+                },
+                "resultado": {
+                    "decision": state.config.decision,
+                    "decision_reason": state.config.decision_reason,
+                    "abstencion_sin_entrada": state.config.decision
+                    == "SIN_ENTRADA"
+                    and state.config.decision_reason is not None,
+                    "decision_antes": decision_antes,
+                    "motivo_antes": motivo_antes,
+                },
+                "evaluado_en_ms": _now_ms(),
+            })
         # UN solo guardado para todo el avance (fusion + catch-up + evaluación
         # acumulados en memoria); request_id determinista por disparo.
         request_id = (f"market-{session_id}-"

@@ -129,11 +129,13 @@ class LocalWsklineProvider:
         ws_port: int,
         klines_modes: Optional[Dict[str, str]] = None,
         sequence: Optional[List[Dict[str, Any]]] = None,
+        repeat: bool = True,
     ) -> None:
         self.http_port = int(http_port)
         self.ws_port = int(ws_port)
         self.klines_modes = dict(klines_modes or {})
         self.sequence = sequence  # lista de dicts para kline_message
+        self.repeat = bool(repeat)
         self.http_server: Optional[ThreadingHTTPServer] = None
         self.ws_server: Any = None
         self.http_thread: Optional[threading.Thread] = None
@@ -232,19 +234,25 @@ class LocalWsklineProvider:
                 ))
 
             sequence = self.sequence or self._default_sequence(None)
-            # Emite la secuencia y la repite periodicamente para que cualquier
-            # consumidor que se suscriba tarde reciba los eventos (sin Binance).
-            # Las repeticiones de un mismo open_time se descartan como
-            # duplicado (motivo visible en el hub).
+            # Emite la secuencia una vez; si repeat, la repite periodicamente
+            # para que cualquier consumidor que se suscriba tarde reciba los
+            # eventos (sin Binance). Las repeticiones de un mismo open_time se
+            # descartan como duplicado (motivo visible en el hub).
             try:
                 for item in sequence:
                     await _emit(item)
                     await _asyncio.sleep(0.05)
-                while True:
-                    await _asyncio.sleep(2.0)
-                    for item in sequence:
-                        await _emit(item)
-                        await _asyncio.sleep(0.05)
+                if self.repeat:
+                    while True:
+                        await _asyncio.sleep(2.0)
+                        for item in sequence:
+                            await _emit(item)
+                            await _asyncio.sleep(0.05)
+                else:
+                    # Mantener la conexión abierta sin repetir: el drive no
+                    # detecta TRANSPORT_LOST prematuramente.
+                    while True:
+                        await _asyncio.sleep(3600)
             except Exception:
                 pass  # cliente desconectado: se cierra esta conexión WS
         finally:
