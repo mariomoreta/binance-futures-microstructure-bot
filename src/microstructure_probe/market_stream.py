@@ -284,6 +284,20 @@ class KlineStreamHub:
         # nuevo volvio a pedir el stream" de "sigue vacio".
         self.subscription_generation = 0
         self._consumer_seq = 0
+        # --- Instrumentación del recorrido (diagnóstico, sin Binance real) ---
+        # Cada intento de conexión del transporte al socket de mercado.
+        self.ws_connects = 0
+        # Mensajes crudos recibidos del socket (antes de parsear).
+        self.ws_messages_received = 0
+        # Mensajes parseados como kline válida (normalize_kline éxito).
+        self.ws_klines_parsed = 0
+        # Cierres admitidos por símbolo (open_time único, pasado el filtro).
+        self.ws_closed_by_symbol: Dict[str, int] = {}
+        # Mensajes rechazados por símbolo con motivo (late, out_of_order,
+        # duplicate, invalid, unrouted, identity_mismatch).
+        self.ws_rejected_by_symbol: Dict[str, int] = {}
+        # Frases SSE ofrecidas a consumidores (consumer.offer aceptado).
+        self.sse_frames_sent = 0
 
     # --- utilidades -----------------------------------------------------
     def now(self) -> int:
@@ -440,6 +454,7 @@ class KlineStreamHub:
         self.socket_connected = True
         self.socket_since_ms = self.now()
         self.socket_attempts += 1
+        self.ws_connects += 1
         self.force_reconnect = False
         # Tras una reconexion hay que reparar lo que pudo cerrarse mientras no
         # habia socket: se marca RECOVERING y se pide REST acotado.
@@ -464,6 +479,7 @@ class KlineStreamHub:
     def on_message(self, raw: Any) -> str:
         """Procesa un mensaje crudo del socket. Devuelve un codigo de resultado."""
         received = self.now()
+        self.ws_messages_received += 1
         try:
             payload = json.loads(raw) if isinstance(raw, (str, bytes, bytearray)) else raw
         except (ValueError, TypeError):
@@ -491,6 +507,7 @@ class KlineStreamHub:
                 if not self.subs:
                     return error or "invalid"
             return error or "invalid"
+        self.ws_klines_parsed += 1
         sub = self.subs.get((candle["symbol"], candle["interval"]))
         if envelope_stream and str(envelope_stream) != candle["stream"]:
             # Sobre y payload no coinciden: mensaje corrupto o mal enrutado.
@@ -520,16 +537,22 @@ class KlineStreamHub:
         open_ms = int(candle["open_time_ms"])
         if sub.closed_through_ms is not None and open_ms < sub.closed_through_ms:
             sub.counters["late"] += 1
+            self.ws_rejected_by_symbol[sub.symbol] = (
+                self.ws_rejected_by_symbol.get(sub.symbol, 0) + 1)
             self._emit_status(sub)
             return "late"
         if sub.last_open_ms == open_ms and sub.last_event_ms is not None \
                 and int(candle["event_ms"]) < sub.last_event_ms:
             sub.counters["out_of_order"] += 1
+            self.ws_rejected_by_symbol[sub.symbol] = (
+                self.ws_rejected_by_symbol.get(sub.symbol, 0) + 1)
             return "out_of_order"
 
         previous = sub.current if (sub.current and sub.current["open_time_ms"] == open_ms) else None
         if previous is not None and not candle["closed"] and _same_candle(previous, candle):
             sub.counters["duplicate"] += 1
+            self.ws_rejected_by_symbol[sub.symbol] = (
+                self.ws_rejected_by_symbol.get(sub.symbol, 0) + 1)
             sub.last_received_ms = received
             return "duplicate"
 
@@ -546,6 +569,8 @@ class KlineStreamHub:
             sub.ring.append(payload)
             sub.counters["closed"] += 1
             sub.counters["applied"] += 1
+            self.ws_closed_by_symbol[sub.symbol] = (
+                self.ws_closed_by_symbol.get(sub.symbol, 0) + 1)
             self._publish(sub, "closed", payload)
         else:
             sub.current = payload
@@ -615,7 +640,8 @@ class KlineStreamHub:
     def _emit_to(self, consumer: Consumer, event: str, payload: Dict[str, Any]) -> None:
         if consumer.deliver_from_ms is None:
             return
-        if not consumer.offer(event, payload):
+        offered = consumer.offer(event, payload)
+        if not offered:
             sub = self._sub_for(consumer.id)
             if sub is not None:
                 sub.counters["dropped_consumers"] += 1
@@ -623,6 +649,8 @@ class KlineStreamHub:
                 if not sub.consumers:
                     sub.idle_since_ms = self.now()
                 self._notify_change()
+            return
+        self.sse_frames_sent += 1
 
     def _emit_status(self, sub: Subscription) -> None:
         payload = self._status_payload(sub)
@@ -812,6 +840,14 @@ class KlineStreamHub:
                 "reconnects": self.socket_reconnects,
                 "last_error": self.last_socket_error,
                 "route": WS_ROUTE,
+            },
+            "recorrido": {
+                "ws_connects": self.ws_connects,
+                "ws_messages_received": self.ws_messages_received,
+                "ws_klines_parsed": self.ws_klines_parsed,
+                "ws_closed_by_symbol": dict(self.ws_closed_by_symbol),
+                "ws_rejected_by_symbol": dict(self.ws_rejected_by_symbol),
+                "sse_frames_sent": self.sse_frames_sent,
             },
             "consumers": self.total_consumers(),
             "streams": streams,

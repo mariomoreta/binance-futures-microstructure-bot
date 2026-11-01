@@ -636,6 +636,43 @@ class EngineeringSessionController:
                     "LIVE_CONTEXT_REQUIRED: la sesión live necesita contexto "
                     "(ventana de velas cerradas conocidas) para fijar el "
                     "reloj T inicial")
+            # --- Validación de contexto en el backend (antes de iniciar
+            # conducción). Rechaza contexto futuro, insuficiente o
+            # discontinuo con motivo explícito. No basta con una comprobación
+            # del frontend (React): el servicio es la autoridad. ---
+            now_ms = int(time.time() * 1000)
+            step = INTERVAL_MS_MAP.get(str(config.interval))
+            if step is None:
+                raise ValueError(
+                    f"INTERVALO_NO_SOPORTADO: {config.interval}")
+            if len(raw_context) < 1:
+                raise ValueError(
+                    "CONTEXTO_INSUFICIENTE: se requiere al menos una vela de "
+                    "contexto para fijar el reloj T inicial")
+            por_simbolo: Dict[str, List[Dict[str, Any]]] = {}
+            for c in raw_context:
+                por_simbolo.setdefault(
+                    str(c.get("symbol") or config.symbol), []).append(c)
+            for simbolo, velas in por_simbolo.items():
+                velas.sort(key=lambda c: int(c["open_time_ms"]))
+                prev_open: Optional[int] = None
+                for c in velas:
+                    ot = int(c["open_time_ms"])
+                    ct = int(c.get("close_time_ms") or (ot + step - 1))
+                    if ot > now_ms + step:
+                        raise ValueError(
+                            f"CONTEXTO_FUTURO: {simbolo} vela open_time {ot} "
+                            f"es posterior al ahora {now_ms}")
+                    if ct > now_ms + step:
+                        raise ValueError(
+                            f"CONTEXTO_FUTURO: {simbolo} vela close_time {ct} "
+                            f"es posterior al ahora {now_ms}")
+                    if prev_open is not None and ot - prev_open != step:
+                        raise ValueError(
+                            f"CONTEXTO_DISCONTINUO: {simbolo} hueco entre "
+                            f"{prev_open} y {ot} (delta {ot - prev_open} ms, "
+                            f"se esperaba {step} ms)")
+                    prev_open = ot
             from_ms = payload.get("from_ms")
             to_ms = payload.get("to_ms")
             if config.notional_usdt > MAX_NOTIONAL_MARKET_STREAM:

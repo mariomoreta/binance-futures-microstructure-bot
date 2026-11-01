@@ -62,6 +62,7 @@ def _make_orchestrator(
     a.service_port = _free_port()
     a.engineering_port = _free_port()
     a.provider_port = provider_port
+    a.ws_port = provider_port + 1
     a.dashboard = "http://127.0.0.1:3020"
     a.build_id = "test-build-id"
     a.symbols = symbols

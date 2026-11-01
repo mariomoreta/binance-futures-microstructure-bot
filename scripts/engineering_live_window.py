@@ -72,6 +72,8 @@ from microstructure_probe.market_explorer import (  # noqa: E402
 
 DEFAULT_SERVICE_PORT = 8791
 DEFAULT_ENGINEERING_PORT = 8797
+DEFAULT_PROVIDER_PORT = 18799
+DEFAULT_WS_PORT = 18800
 DEFAULT_DASHBOARD = "http://127.0.0.1:3020"
 DEFAULT_SYMBOLS = "MINAUSDT,BTCUSDT"
 DEFAULT_INTERVAL = "1m"
@@ -134,6 +136,7 @@ class WindowOrchestrator:
         self.service_port = args.service_port
         self.engineering_port = args.engineering_port
         self.provider_port = args.provider_port
+        self.ws_port = args.ws_port
         self.symbols = [s.strip().upper() for s in args.symbols.split(",")]
         if len(self.symbols) < 1:
             raise ValueError("al menos un símbolo requerido")
@@ -294,8 +297,25 @@ class WindowOrchestrator:
         context = self._load_recent_context()
         self._create_session(context)
         self._start_drive()
+        t_adq_inicio = now_ms()
         self._wait_for_events()
+        t_adq_fin = now_ms()
+        self.evidence["duracion_adquisicion_s"] = round(
+            (t_adq_fin - t_adq_inicio) / 1000.0, 3)
+        self.evidence["adquisicion_dentro_deadline"] = (
+            t_adq_fin - t_adq_inicio) <= self.deadline_s * 1000
+        # La limpieza (stop + cierre de procesos) siempre se ejecuta, incluso
+        # si el deadline global ya vencio: el deadline impide NUEVO trabajo de
+        # mercado (el bucle de _wait_for_events ya termino por _remaining()),
+        # pero nunca debe abortar la liberacion de recursos.
         self._stop_drive()
+        t_limpieza_inicio = now_ms()
+        self._cleanup()
+        t_limpieza_fin = now_ms()
+        self.evidence["duracion_limpieza_s"] = round(
+            (t_limpieza_fin - t_limpieza_inicio) / 1000.0, 3)
+        self.evidence["duracion_total_s"] = round(
+            (t_limpieza_fin - self.started_at_ms) / 1000.0, 3)
         self._verdict()
 
     def _preflight(self) -> None:
@@ -361,6 +381,11 @@ class WindowOrchestrator:
         self._check_deadline("start_services")
         env = dict(os.environ)
         env["PYTHONPATH"] = str(ROOT / "src")
+        # --- proveedor local (solo modo local): se arranca ANTES del
+        # servicio para que el WS esté disponible cuando el transporte se
+        # conecte (sin Binance, cero red pública).
+        if self.transport == "local":
+            self._start_provider()
         # --- servicio de mercado en 8791 (una WS combinada) ---
         argv = [sys.executable, "-X", "utf8",
                 str(ROOT / "scripts" / "market_stream_service.py"),
@@ -370,7 +395,7 @@ class WindowOrchestrator:
                 "--max-seconds", str(int(self.deadline_s) + 10)]
         if self.transport == "local":
             argv += ["--base-url",
-                     "ws://127.0.0.1:%d" % self.provider_port]
+                     "ws://127.0.0.1:%d" % self.ws_port]
         self.service_proc = self._spawn(argv, "market-stream-service")
         svc_url = "http://127.0.0.1:%d" % self.service_port
         health = None
@@ -388,9 +413,6 @@ class WindowOrchestrator:
                        "servicio mercado PID %d puerto %d modo=%s"
                        % (health.get("pid"), health.get("port"),
                           tr.get("mode")), source="execute")
-        # --- proveedor local (solo modo local) ---
-        if self.transport == "local":
-            self._start_provider()
         # --- servicio de ingeniería en 8797 (ruta de sesiones aislada) ---
         sessions_dir = Path(self.args.sessions_dir)
         sessions_dir.mkdir(parents=True, exist_ok=True)
@@ -428,17 +450,27 @@ class WindowOrchestrator:
         }
 
     def _start_provider(self) -> None:
-        """Arranca el proveedor HTTP local de klines (sin Binance)."""
+        """Arranca el proveedor integrado local (HTTP /fapi/v1/klines +
+        WS de klines) sin Binance. HTTP sirve el contexto; WS alimenta el
+        transporte market_stream en modo local."""
         sys.path.insert(0, str(ROOT / "scripts"))
-        from local_kline_provider import LocalKlineProvider  # noqa: E402
-        modes = {sym: "ok" for sym in self.symbols}
-        if self.reference and self.reference not in modes:
-            modes[self.reference] = "ok"
-        self.provider = LocalKlineProvider(self.provider_port, modes)
+        from local_ws_kline_provider import LocalWsklineProvider  # noqa: E402
+        modos = {sym: "ok" for sym in self.symbols}
+        if self.reference and self.reference not in modos:
+            modos[self.reference] = "ok"
+        secuencia = None
+        env_seq = os.environ.get("ENGINEERING_LIVE_WS_SEQUENCE")
+        if env_seq:
+            try:
+                secuencia = json.loads(env_seq)
+            except Exception:  # noqa: BLE001
+                secuencia = None
+        self.provider = LocalWsklineProvider(self.provider_port,
+                                             self.ws_port, modos, secuencia)
         self.provider.start()
         self.add_check("provider_local_arribo", True,
-                       "proveedor local klines en puerto %d"
-                       % self.provider_port, source="execute")
+                       "proveedor local klines HTTP=%d WS=%d"
+                       % (self.provider_port, self.ws_port), source="execute")
 
     def _spawn(self, argv: List[str], label: str):
         proc = subprocess.Popen(
@@ -768,6 +800,7 @@ class WindowOrchestrator:
         svc_url = "http://127.0.0.1:%d" % self.service_port
         last_revision = None
         last_events_processed = 0
+        sj = None
         while self._remaining() > 0:
             self._check_deadline("poll_session")
             r = self._http_get(eng_url + "/sessions/%s" % self.session_id,
@@ -825,12 +858,17 @@ class WindowOrchestrator:
                                rec <= MAX_RECONNECTS,
                        "reconnects=%d (máximo %d)" % (rec, MAX_RECONNECTS),
                                required=False, source="execute")
+                recorrido = hj.get("recorrido") or {}
+                if recorrido:
+                    self.evidence["recorrido_servicio"] = recorrido
+                drive_stats = (((sj or {})).get("drive") or {}).get("stats") or {}
+                if drive_stats:
+                    self.evidence["adaptador_ingenieria"] = drive_stats
             time.sleep(1.0)
         self.evidence["revision_final"] = last_revision
         self.evidence["eventos_procesados_final"] = last_events_processed
 
     def _stop_drive(self) -> None:
-        self._check_deadline("stop_drive")
         eng_url = "http://127.0.0.1:%d" % self.engineering_port
         payload = {"action": "stop",
                    "expected_revision": None,
@@ -874,11 +912,18 @@ class WindowOrchestrator:
         if not canonical_dbs_unchanged(self.db_before,
                                        canonical_dbs_snapshot()):
             fail.append("db_canonica_escritas")
-        dur = (self.finished_at_ms or self.started_at_ms) - self.started_at_ms
-        self.evidence["duracion_s"] = round(dur / 1000.0, 3)
-        self.evidence["deadline_respetado"] = dur <= self.deadline_s * 1000
-        if dur > self.deadline_s * 1000:
-            fail.append("deadline_excedido")
+        dur_adq = self.evidence.get("duracion_adquisicion_s")
+        if dur_adq is not None:
+            self.evidence["duracion_s"] = dur_adq
+            self.evidence["deadline_respetado"] = dur_adq <= self.deadline_s
+            if dur_adq > self.deadline_s:
+                fail.append("deadline_excedido_en_adquisicion")
+        else:
+            dur = (self.finished_at_ms or self.started_at_ms) - self.started_at_ms
+            self.evidence["duracion_s"] = round(dur / 1000.0, 3)
+            self.evidence["deadline_respetado"] = dur <= self.deadline_s * 1000
+            if dur > self.deadline_s * 1000:
+                fail.append("deadline_excedido")
         if fail:
             self.verdict = "FAIL"
         elif missing:
@@ -958,8 +1003,10 @@ def build_arg_parser() -> argparse.ArgumentParser:
     ap.add_argument("--service-port", type=int, default=DEFAULT_SERVICE_PORT)
     ap.add_argument("--engineering-port", type=int,
                     default=DEFAULT_ENGINEERING_PORT)
-    ap.add_argument("--provider-port", type=int, default=18799,
-                    help="puerto del proveedor HTTP local (modo local)")
+    ap.add_argument("--provider-port", type=int, default=DEFAULT_PROVIDER_PORT,
+                    help="puerto HTTP del proveedor local (modo local)")
+    ap.add_argument("--ws-port", type=int, default=DEFAULT_WS_PORT,
+                    help="puerto WS del proveedor local (modo local)")
     ap.add_argument("--dashboard", default=DEFAULT_DASHBOARD)
     ap.add_argument("--build-id", required=True,
                     help="BUILD_ID que debe servir el dashboard")
