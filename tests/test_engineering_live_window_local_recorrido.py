@@ -283,13 +283,22 @@ def test_validacion_contexto_rechaza_insuficiente_discontinuo_no_cerrado():
 
     # Insuficiente: sin contexto no se fija el reloj T.
     espera_rechazo([], "LIVE_CONTEXT_REQUIRED")
-    # Discontinuo: hueco entre velas del mismo símbolo (delta != 60s).
+    # Futuro (caso histórico): crear a ``ahora`` con la última vela cerrando
+    # después de ``ahora``. El cierre todavía no ocurrió; no se admite como
+    # contexto cerrado (no se fija T desde un cierre no acreditado).
+    espera_rechazo([
+        {"symbol": "MINAUSDT", "interval": "1m",
+         "open_time_ms": ahora - 60000, "close_time_ms": ahora + 59999,
+         "open": 1, "high": 1, "low": 1, "close": 1},
+    ], "CONTEXTO_FUTURO")
+    # Discontinuo: hueco entre velas del mismo símbolo (delta != 60s), con
+    # cierres ya ocurridos (close_time <= ahora).
     espera_rechazo([
         {"symbol": "MINAUSDT", "interval": "1m",
          "open_time_ms": ahora - 120000, "close_time_ms": ahora - 60001,
          "open": 1, "high": 1, "low": 1, "close": 1},
         {"symbol": "MINAUSDT", "interval": "1m",
-         "open_time_ms": ahora, "close_time_ms": ahora + 59999,
+         "open_time_ms": ahora - 30000, "close_time_ms": ahora - 1,
          "open": 1, "high": 1, "low": 1, "close": 1},
     ], "CONTEXTO_DISCONTINUO")
     # Vela no cerrada (close_time <= open_time): no hay cierre disponible.
@@ -302,6 +311,6 @@ def test_validacion_contexto_rechaza_insuficiente_discontinuo_no_cerrado():
 
 if __name__ == "__main__":  # pragma: no cover
     test_recorrido_completo_transporte_local()
-    test_validacion_contexto_rechaza_futuro_insuficiente_discontinuo()
+    test_validacion_contexto_rechaza_insuficiente_discontinuo_no_cerrado()
     print("\nTODAS LAS PRUEBAS DE RECORRIDO LOCAL OK")
 

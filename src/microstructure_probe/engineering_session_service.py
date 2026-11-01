@@ -66,7 +66,7 @@ import urllib.request
 from dataclasses import replace as dc_replace
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any, Callable, Dict, List, Optional
 from urllib.parse import parse_qs, quote, urlsplit
 
 # Raíz del repositorio: src/microstructure_probe/este_archivo.py → 3 arriba.
@@ -450,7 +450,8 @@ class EngineeringSessionController:
     def __init__(self, sessions_dir: Path, cadence_ms: float,
                  market_url: Optional[str] = None,
                  market_bars: int = DEFAULT_MARKET_BARS,
-                 live_silence_ms: float = LIVE_SILENCE_MS_DEFAULT) -> None:
+                 live_silence_ms: float = LIVE_SILENCE_MS_DEFAULT,
+                 now_ms: Optional[Callable[[], Optional[int]]] = None) -> None:
         self.sessions_dir = Path(sessions_dir)
         self.cadence_ms = float(cadence_ms)
         # Config live (transporte market_stream): URL del servicio de mercado
@@ -467,6 +468,15 @@ class EngineeringSessionController:
         # Dedupe de creación por request_id (idempotencia backend del POST
         # create; el guardia de React solo cubre el doble clic del navegador).
         self._create_results: Dict[str, Dict[str, Any]] = {}
+        # Reloj de referencia independiente (contrato temporal de creación y
+        # admisión de cierres).
+        #   - modo público: tiempo del backend sincronizado
+        #     (ClockSynchronizer: offset + RTT + estado de sincronización /
+        #     incertidumbre explícitos).
+        #   - modo local/replay: reloj controlado por el transporte de prueba.
+        # None = incertidumbre: no hay referencia válida para admitir que un
+        # cierre ya ocurrió.
+        self._now_ms = now_ms or _now_ms
 
     # --- utilidades ---------------------------------------------------------
     def _load_state(self, session_id: str):
@@ -609,6 +619,56 @@ class EngineeringSessionController:
                 row["drive"] = drives[sid]
         return rows
 
+    # --- validación de contexto contra el reloj de referencia --------------
+    def _validar_contexto_temporal(
+        self, raw_context: List[Dict[str, Any]], step: int,
+        default_symbol: str,
+    ) -> None:
+        """Valida el contexto de creación contra el reloj de referencia.
+
+        Rechaza ANTES de crear/iniciar: contexto insuficiente, cierre futuro
+        (``close_time`` posterior a la referencia, sin tolerancia positiva de
+        un intervalo), vela no cerrada y serie discontinua. Ante incertidumbre
+        del reloj de referencia se abstiene con motivo: no se crea la sesión
+        ni se fija T desde un cierre no acreditado como ocurrido.
+        """
+        now = self._now_ms()
+        if now is None:
+            raise ValueError(
+                "RELOJ_REFERENCIA_INCERTO: no hay tiempo de referencia "
+                "validado para admitir el contexto cerrado (sincronización "
+                "del backend pendiente o fallida)")
+        if len(raw_context) < 1:
+            raise ValueError(
+                "CONTEXTO_INSUFICIENTE: se requiere al menos una vela de "
+                "contexto para fijar el reloj T inicial")
+        por_simbolo: Dict[str, List[Dict[str, Any]]] = {}
+        for c in raw_context:
+            por_simbolo.setdefault(
+                str(c.get("symbol") or default_symbol), []).append(c)
+        for simbolo, velas in por_simbolo.items():
+            velas.sort(key=lambda c: int(c["open_time_ms"]))
+            prev_open: Optional[int] = None
+            for c in velas:
+                ot = int(c["open_time_ms"])
+                ct = int(c.get("close_time_ms") or (ot + step - 1))
+                if ct is None or ct <= ot:
+                    raise ValueError(
+                        f"CONTEXTO_NO_CERRADO: {simbolo} vela open_time {ot} "
+                        f"no tiene cierre disponible (close_time={ct})")
+                if ct > now:
+                    raise ValueError(
+                        f"CONTEXTO_FUTURO: {simbolo} vela open_time {ot} "
+                        f"cierra en {ct}, posterior a la referencia {now}; "
+                        f"el cierre todavía no ocurrió (no se fija T desde "
+                        f"un cierre no acreditado)")
+                if prev_open is not None and ot - prev_open != step:
+                    raise ValueError(
+                        f"CONTEXTO_DISCONTINUO: {simbolo} hueco entre "
+                        f"{prev_open} y {ot} (delta {ot - prev_open} ms, se "
+                        f"esperaba {step} ms)")
+                prev_open = ot
+
     def create_session(self, payload: Dict[str, Any]) -> Dict[str, Any]:
         request_id = payload.get("request_id")
         if request_id:
@@ -638,48 +698,15 @@ class EngineeringSessionController:
                     "LIVE_CONTEXT_REQUIRED: la sesión live necesita contexto "
                     "(ventana de velas cerradas conocidas) para fijar el "
                     "reloj T inicial")
-            # --- Validación de contexto en el backend (antes de iniciar
-            # conducción). Rechaza contexto insuficiente o discontinuo con
-            # motivo explícito. No basta con una comprobación del frontend
-            # (React): el servicio es la autoridad. ---
-            # Causalidad temporal: NO se usa ahora (hora de pared no
-            # validada) como referencia para admitir OHLC cerrado. Una vela
-            # cerrada requiere que su cierre/disponibilidad ya haya ocurrido
-            # respecto al reloj de referencia validado (T), que el motor fija
-            # a partir del close_time de la última vela de contexto. Si existe
-            # incertidumbre de sincronización, se declara UNKNOWN y se
-            # abstiene; no se resuelven futuros admitiendo OHLC. El incidente
-            # histórico (ventana pública, events_processed=0) se conserva
-            # sin declaración retrospectiva de causalidad respetada.
             step = INTERVAL_MS_MAP.get(str(config.interval))
             if step is None:
                 raise ValueError(
                     f"INTERVALO_NO_SOPORTADO: {config.interval}")
-            if len(raw_context) < 1:
-                raise ValueError(
-                    "CONTEXTO_INSUFICIENTE: se requiere al menos una vela de "
-                    "contexto para fijar el reloj T inicial")
-            por_simbolo: Dict[str, List[Dict[str, Any]]] = {}
-            for c in raw_context:
-                por_simbolo.setdefault(
-                    str(c.get("symbol") or config.symbol), []).append(c)
-            for simbolo, velas in por_simbolo.items():
-                velas.sort(key=lambda c: int(c["open_time_ms"]))
-                prev_open: Optional[int] = None
-                for c in velas:
-                    ot = int(c["open_time_ms"])
-                    ct = int(c.get("close_time_ms") or (ot + step - 1))
-                    if ct is None or ct <= ot:
-                        raise ValueError(
-                            f"CONTEXTO_NO_CERRADO: {simbolo} vela open_time "
-                            f"{ot} no tiene cierre disponible "
-                            f"(close_time={ct})")
-                    if prev_open is not None and ot - prev_open != step:
-                        raise ValueError(
-                            f"CONTEXTO_DISCONTINUO: {simbolo} hueco entre "
-                            f"{prev_open} y {ot} (delta {ot - prev_open} ms, "
-                            f"se esperaba {step} ms)")
-                    prev_open = ot
+            # Validación de contexto contra el reloj de referencia (antes de
+            # crear/iniciar): rechaza cierre futuro, vela no cerrada o
+            # serie discontinua con motivo explícito. No se fija T desde un
+            # cierre cuyo close_time sea futuro respecto a la referencia.
+            self._validar_contexto_temporal(raw_context, step, config.symbol)
             from_ms = payload.get("from_ms")
             to_ms = payload.get("to_ms")
             if config.notional_usdt > MAX_NOTIONAL_MARKET_STREAM:
@@ -1246,6 +1273,13 @@ class EngineeringSessionController:
                 drive["watermark"] = max(watermark, ot)
                 info = self._events.setdefault(session_id, {})
                 info["bad_candles"] = int(info.get("bad_candles", 0)) + 1
+            return None
+        now = self._now_ms()
+        if now is None or paper.close_time_ms > now:
+            # Cierre no acreditado como ocurrido (referencia incierta o cierre
+            # futuro sin tolerancia positiva de intervalo): provisional. No se
+            # fusiona ni avanza el reloj ni la marca de agua; el mismo cierre
+            # puede reenviarse cuando la referencia acredite que ocurrió.
             return None
         with self._lock:
             drive["watermark"] = max(watermark, ot)

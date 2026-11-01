@@ -4036,3 +4036,12 @@ sin órdenes, observe-only.
   0; `vitest` session-lab 4/4; suite frontend 622/623; `next build` OK. Sin
   Binance, Ã³rdenes, pagos ni cambios econÃ³micos.
 
+
+## 2026-11-01 Referencia temporal explicita en create_session y admision de cierres (causalidad)
+
+- Defecto confirmado en create_session: la validacion de contexto comprobaba ct > ot y continuidad, pero no comparaba el cierre contra una referencia temporal independiente; fijar T desde el ultimo close_time no acreditaba que ese cierre ya ocurrio.
+- Se agrega un reloj de referencia independiente (EngineeringSessionController._now_ms, inyectable; por defecto pared del backend): modo publico: tiempo del backend sincronizado (ClockSynchronizer, offset + RTT y estado de sincronizacion/incertidumbre explicitos); modo local/replay: reloj controlado por el transporte de prueba. No se acepta un reloj aportado por el navegador como autoridad publica.
+- Validacion ANTES de crear/iniciar: rechaza contexto insuficiente, cierre futuro (close_time > referencia, sin tolerancia positiva de un intervalo), vela no cerrada y serie discontinua, con motivo explicito (CONTEXTO_INSUFICIENTE / CONTEXTO_FUTURO / CONTEXTO_NO_CERRADO / CONTEXTO_DISCONTINUO / RELOJ_REFERENCIA_INCERTO). Ante incertidumbre se abstiene con motivo; no se crea la sesion.
+- El T de evaluacion anterior no es techo permanente: un cierre nuevo avanza T cuando su disponibilidad queda acreditada por la referencia independiente (_consume_market_closed descarta cierres futuros como provisionales sin tocar la marca de agua, para que puedan reenviarse). Los duplicados no duplican efectos (marca de agua) ni el contador de evaluaciones.
+- Pruebas: tests/test_engineering_session_clock_reference.py (recorrido HTTP/SSE real: referencia temporal, recepcion, cierre, T anterior/nuevo, evento disparador, contador de evaluaciones y resultado; caso historico crear a T-60s con cierre T-1s rechazado; determinismo: dos futuros distintos con mismo prefijo -> mismo estado hasta T) y tests/test_engineering_live_window_local_recorrido.py (validacion de contexto, caso historico futuro).
+- Sin Binance, ordenes, pagos, movil ni cambios economicos.
