@@ -4066,3 +4066,14 @@ sin órdenes, observe-only.
 - Pruebas focalizadas: tests/test_engineering_clock_budget.py (modo local cero peticiones publicas; sin referencia no admite contexto RELOJ_REFERENCIA_INCERTO; publico sin presupuesto rechazado; intentos contabilizados y bloqueados antes de enviar; referencia valida vs expirada; salud distingue las cuatro fuentes; el arnes comprueba fuente y validez antes de crear sesion; limite total de corrida compartido y no reiniciado por ventana). Arranque real verificado por CLI (--clock-source local, /health reporta local_sistema disponible).
 - Sin Binance en modo local/demo, ordenes, pagos, movil ni cambios economicos.
 
+
+## 2026-11-02 Presupuesto total de la corrida: atribucion persistente por run_id en el ledger
+
+- Se corrigio el ciclo de vida del presupuesto total de la corrida: la clave global cache_meta.run_fetch_requests_total (reseteada por main() en cada arranque) se 
+sustituto por atribucion persistente al run_id (execution_id) en el ledger (market_fetch_ledger). run_requests_used(run_id) ahora lee SUM(requests) WHERE execution_id = run_id; no existe reset_run_budget ni reinicio global al arrancar.
+- Ciclo de vida verificado: (1) corrida con run_id estable consume cupos y al reiniciar el servicio de ESA corrida el consumo se conserva (no devuelve cupos); (2) dos instancias de la misma corrida comparten el limite total (7); (3) una nueva corrida (run_id distinto) empieza en cero sin borrar ni modificar los contadores de corridas previas.
+- Se mantiene separado el limite general compartido de ventana movil (MAX_FETCH_REQUESTS_PER_WINDOW=30 por 60 s) del limite total de la corrida (MAX_FETCH_REQUESTS_PER_RUN=7); se reservan ambos cupos atomicamente en la misma transaccion: si cualquiera se agota, no se envia nada.
+- /time, klines y demas intentos de una corrida usan el mismo run_id para compartir el limite total. main() genera un run_id estable por ejecucion y no lo resetea; una nueva corrida solo se obtiene con un run_id nuevo (creacion explicita).
+- Pruebas focalizadas: tests/test_engineering_clock_budget.py anade test_run_id_estable_consumo_conservado_al_reiniciar, test_dos_instancias_misma_corrida_limite_compartido y test_nueva_corrida_contador_independiente_evidencia_intacta (11 pruebas en total, todas OK). Se mantienen las regresiones temporales ya acreditadas (todas OK).
+- Sin Binance en modo local/demo, ordenes, pagos, movil ni cambios economicos.
+

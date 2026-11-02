@@ -2048,11 +2048,13 @@ def main(argv: Optional[List[str]] = None) -> int:
                 "detail": "no se pudo inicializar la caché de presupuesto",
             }, ensure_ascii=False), flush=True)
             return 2
-        # Nueva ejecucion: reiniciar el presupuesto total de la corrida.
-        cache.reset_run_budget()
+        # run_id estable para toda la ejecucion; se reutiliza al reiniciar
+        # la misma corrida y nunca se resetea. Un run_id nuevo comienza en
+        # cero sin borrar ni modificar los contadores de corridas previas.
         now_start = _now_ms()
+        run_id = f"eng-run-{now_start}"
         window_used = cache.requests_in_window(now_start)
-        run_used = cache.run_requests_used()
+        run_used = cache.run_requests_used(run_id)
         if window_used + max_req > MAX_FETCH_REQUESTS_PER_WINDOW \
                 or run_used + max_req > MAX_FETCH_REQUESTS_PER_RUN:
             print(json.dumps({
@@ -2068,7 +2070,7 @@ def main(argv: Optional[List[str]] = None) -> int:
         synchronizer = ClockSynchronizer(
             sample_count=max_req,
             fetch_server_time=_make_budgeted_time_fetch(
-                cache, f"eng-clock-{now_start}", max_req,
+                cache, run_id, max_req,
                 _fetch_binance_server_time,
                 run_max_requests=MAX_FETCH_REQUESTS_PER_RUN),
             request_timeout_seconds=5.0,

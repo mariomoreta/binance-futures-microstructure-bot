@@ -49,11 +49,11 @@ MAX_FETCH_REQUESTS_PER_WINDOW = 30         # peticiones/kline por minuto (todas 
 MAX_SERIES_LIMIT = 5000                    # tope duro de velas devueltas al cliente
 # Presupuesto TOTAL de la corrida: compartido entre /time, klines, catalogo,
 # reintentos y recuperacion. NO se reinicia al pasar la ventana movil de 60 s;
-# solo se reinicia al iniciar una nueva ejecucion del servicio.
+# se atribuye persistentemente al run_id (execution_id) en el ledger y solo
+# comienza en cero para un run_id nuevo.
 # Propuesta de minimo viable (no cubierta por la autorizacion previa de 4):
 # 5 intentos de tiempo + 2 de klines = 7.
 MAX_FETCH_REQUESTS_PER_RUN = 7
-RUN_BUDGET_META_KEY = "run_fetch_requests_total"
 
 
 def default_path() -> Path:
@@ -447,22 +447,17 @@ class MarketCache:
         Devuelve el id de fila reservado, o None si la reserva fue denegada.
 
         Cuando ``run_max_requests`` se indica, ademas se valida el presupuesto
-        TOTAL de la corrida (almacenado en ``cache_meta`` bajo
-        ``run_fetch_requests_total``), que se comparte entre /time, klines,
-        catalogo, reintentos y recuperacion y NO se reinicia al pasar la
-        ventana movil de 60 s. La reserva de ambos cupos (ventana y corrida)
-        es atomica en la misma transaccion: si alguno se agota, no se envia
-        nada.
+        TOTAL de la corrida, atribuido persistentemente al ``execution_id``
+        (run_id) en el ledger: ``SUM(requests)`` de reservas previas de esa
+        corrida. Se comparte entre /time, klines, catalogo, reintentos y
+        recuperacion y NO se reinicia al pasar la ventana movil de 60 s. La
+        reserva de ambos cupos (ventana y corrida) es atomica en la misma
+        transaccion: si alguno se agota, no se envia nada.
         """
         con = self._con()
         try:
             try:
                 con.execute("BEGIN IMMEDIATE")
-                # Asegurar tabla de meta (idempotente; init_db ya la crea).
-                con.execute(
-                    "CREATE TABLE IF NOT EXISTS cache_meta"
-                    " (key TEXT PRIMARY KEY, value TEXT NOT NULL)"
-                )
                 # 1) Limite general de ventana movil (30 por 60 s).
                 row = con.execute(
                     "SELECT COALESCE(SUM(requests), 0) n FROM"
@@ -471,14 +466,15 @@ class MarketCache:
                 ).fetchone()
                 used = int(row["n"] or 0)
                 # 2) Presupuesto total de la corrida (no se reinicia por
-                #    ventana; solo al iniciar una nueva ejecucion).
+                #    ventana; solo comienza en cero para un run_id nuevo).
                 run_total = 0
-                if run_max_requests is not None:
+                if run_max_requests is not None and execution_id is not None:
                     rrow = con.execute(
-                        "SELECT value FROM cache_meta WHERE key=?",
-                        (RUN_BUDGET_META_KEY,),
+                        "SELECT COALESCE(SUM(requests), 0) n FROM"
+                        " market_fetch_ledger WHERE execution_id = ?",
+                        (execution_id,),
                     ).fetchone()
-                    run_total = int(rrow["value"] or 0) if rrow else 0
+                    run_total = int(rrow["n"] or 0)
                 if used + int(attempts) > int(max_requests) or \
                         (run_max_requests is not None and
                          run_total + int(attempts) > int(run_max_requests)):
@@ -511,13 +507,6 @@ class MarketCache:
                 )
                 new_id = int(con.execute(
                     "SELECT last_insert_rowid()").fetchone()[0])
-                if run_max_requests is not None:
-                    con.execute(
-                        "INSERT INTO cache_meta (key, value) VALUES (?, ?)"
-                        " ON CONFLICT(key) DO UPDATE SET value=excluded.value",
-                        (RUN_BUDGET_META_KEY,
-                         str(run_total + int(attempts))),
-                    )
                 con.commit()
                 return new_id
             except BaseException:
@@ -579,34 +568,17 @@ class MarketCache:
                 "max_requests_per_window": int(max_requests),
                 "window_ms": int(window_ms)}
 
-    def run_requests_used(self) -> int:
+    def run_requests_used(self, run_id: str) -> int:
         """Suma de intentos ya reservados contra el presupuesto total de la
-        corrida (no se reinicia al pasar la ventana movil)."""
+        corrida ``run_id``, leída del ledger. No se reinicia al pasar la
+        ventana movil; solo comienza en cero para un run_id nuevo."""
         con = self._con()
         try:
             row = con.execute(
-                "SELECT value FROM cache_meta WHERE key=?",
-                (RUN_BUDGET_META_KEY,),
+                "SELECT COALESCE(SUM(requests), 0) n FROM market_fetch_ledger"
+                " WHERE execution_id = ?", (run_id,),
             ).fetchone()
-            return int(row["value"] or 0) if row else 0
-        finally:
-            con.close()
-
-    def reset_run_budget(self) -> None:
-        """Reinicia el presupuesto total de la corrida al iniciar una nueva
-        ejecucion del servicio."""
-        con = self._con()
-        try:
-            con.execute(
-                "CREATE TABLE IF NOT EXISTS cache_meta"
-                " (key TEXT PRIMARY KEY, value TEXT NOT NULL)"
-            )
-            con.execute(
-                "INSERT INTO cache_meta (key, value) VALUES (?, ?)"
-                " ON CONFLICT(key) DO UPDATE SET value=excluded.value",
-                (RUN_BUDGET_META_KEY, "0"),
-            )
-            con.commit()
+            return int(row["n"] or 0)
         finally:
             con.close()
 

@@ -390,7 +390,8 @@ class ClockBudgetRegressionTest(unittest.TestCase):
             )
         self.assertEqual(len(fetch_calls), MAX_FETCH_REQUESTS_PER_RUN,
                          "cada reserva de tiempo envió su fetch")
-        self.assertEqual(cache.run_requests_used(), MAX_FETCH_REQUESTS_PER_RUN,
+        self.assertEqual(cache.run_requests_used("eng-run-time"),
+                         MAX_FETCH_REQUESTS_PER_RUN,
                          "run total agotado")
 
         # El siguiente intento de /time se bloquea por el total de la corrida.
@@ -416,24 +417,191 @@ class ClockBudgetRegressionTest(unittest.TestCase):
             ),
             "el total no se reinició al pasar la ventana",
         )
-        self.assertEqual(cache.run_requests_used(), MAX_FETCH_REQUESTS_PER_RUN,
+        self.assertEqual(cache.run_requests_used("eng-run-time"),
+                         MAX_FETCH_REQUESTS_PER_RUN,
                          "el total de la corrida no se reinició por ventana")
 
-        # Compartido: una reserva de "klines" contra el mismo total también
-        # se bloquea (mismo contador, distinto execution_id).
+        # Compartido: una reserva de "klines" con el MISMO run_id también se
+        # bloquea (mismo contador de corrida).
         self.assertIsNone(
             cache.reserve_fetch_attempt(
                 tarde, symbol="BTCUSDT",
                 detail=json.dumps({"endpoint": "klines"}, sort_keys=True),
                 max_requests=GRAN_VENTANA, window_ms=60_000, attempts=1,
-                execution_id="eng-run-klines",
+                execution_id="eng-run-time",
                 run_max_requests=MAX_FETCH_REQUESTS_PER_RUN,
             ),
-            "klines también bloqueadas por el total compartido",
+            "klines también bloqueadas por el total compartido (mismo run_id)",
         )
         _publish("TOTAL_CORRIDA_AGOTADO", now, tarde, None, None, None,
                  "reserva_pre_envío", MAX_FETCH_REQUESTS_PER_RUN, None,
                  "total de corrida agotado, compartido y no reiniciado por ventana")
+
+    # --- Límite total de la corrida: ciclo de vida por run_id --------------
+
+    def test_run_id_estable_consumo_conservado_al_reiniciar(self):
+        """Una corrida tiene run_id estable; reiniciar el servicio de ESA
+        corrida (nueva instancia de MarketCache sobre el mismo ledger) no
+        devuelve cupos: el consumo se conserva."""
+        db = self.tmp / "cache_restart.db"
+        run_id = "eng-run-reinicio-1"
+
+        # Primera instancia: consume 3 cupos de la corrida.
+        cache1 = MarketCache(db)
+        cache1.init_db()
+        ahora = int(time.time() * 1000)
+        for _ in range(3):
+            row_id = cache1.reserve_fetch_attempt(
+                ahora, symbol=None,
+                detail=json.dumps({"endpoint": "fapi_time"}, sort_keys=True),
+                max_requests=MAX_FETCH_REQUESTS_PER_WINDOW,
+                window_ms=60_000, attempts=1,
+                execution_id=run_id,
+                run_max_requests=MAX_FETCH_REQUESTS_PER_RUN,
+            )
+            self.assertIsNotNone(row_id)
+        self.assertEqual(cache1.run_requests_used(run_id), 3,
+                         "consumo inicial de 3 cupos")
+
+        # Reinicio: nueva instancia de MarketCache (nuevo proceso de
+        # servicio) sobre el MISMO ledger y el MISMO run_id.
+        cache2 = MarketCache(db)
+        cache2.init_db()
+        self.assertEqual(cache2.run_requests_used(run_id), 3,
+                         "consumo conservado tras reinicio de la misma "
+                         "corrida: no se devuelven cupos")
+
+        # El presupuesto sigue contando desde lo consumido (no reseteado).
+        self.assertIsNotNone(
+            cache2.reserve_fetch_attempt(
+                ahora, symbol=None,
+                detail=json.dumps({"endpoint": "fapi_time"}, sort_keys=True),
+                max_requests=MAX_FETCH_REQUESTS_PER_WINDOW,
+                window_ms=60_000, attempts=1,
+                execution_id=run_id,
+                run_max_requests=MAX_FETCH_REQUESTS_PER_RUN,
+            ),
+            "tras reinicio se puede seguir consumiendo la corrida",
+        )
+        self.assertEqual(cache2.run_requests_used(run_id), 4,
+                         "consumo acumulado tras reinicio")
+        _publish("RUN_ID_CONSERVADO_AL_REINICIAR", ahora, ahora, None, None,
+                 None, "reserva_pre_envío", 4, None,
+                 "run_id estable: consumo conservado al reiniciar")
+
+    def test_dos_instancias_misma_corrida_limite_compartido(self):
+        """Arrancar otra instancia de la misma corrida no resetea el
+        presupuesto: ambas instancias comparten el límite total (7)."""
+        db = self.tmp / "cache_compartido.db"
+        run_id = "eng-run-compartido"
+        ahora = int(time.time() * 1000)
+
+        cache_a = MarketCache(db)
+        cache_a.init_db()
+        cache_b = MarketCache(db)
+        cache_b.init_db()
+
+        # Instancia A consume 4 cupos.
+        for _ in range(4):
+            row_id = cache_a.reserve_fetch_attempt(
+                ahora, symbol=None,
+                detail=json.dumps({"endpoint": "fapi_time"}, sort_keys=True),
+                max_requests=MAX_FETCH_REQUESTS_PER_WINDOW,
+                window_ms=60_000, attempts=1,
+                execution_id=run_id,
+                run_max_requests=MAX_FETCH_REQUESTS_PER_RUN,
+            )
+            self.assertIsNotNone(row_id)
+        self.assertEqual(cache_a.run_requests_used(run_id), 4,
+                         "instancia A consumió 4")
+
+        # Instancia B consume 3 cupos más (comparte el mismo run_id).
+        for _ in range(3):
+            row_id = cache_b.reserve_fetch_attempt(
+                ahora, symbol=None,
+                detail=json.dumps({"endpoint": "fapi_time"}, sort_keys=True),
+                max_requests=MAX_FETCH_REQUESTS_PER_WINDOW,
+                window_ms=60_000, attempts=1,
+                execution_id=run_id,
+                run_max_requests=MAX_FETCH_REQUESTS_PER_RUN,
+            )
+            self.assertIsNotNone(row_id)
+        self.assertEqual(cache_b.run_requests_used(run_id), 7,
+                         "instancia B ve el total compartido: 4+3=7")
+
+        # La corrida está agotada: la instancia A no puede reservar más.
+        self.assertIsNone(
+            cache_a.reserve_fetch_attempt(
+                ahora, symbol=None,
+                detail=json.dumps({"endpoint": "fapi_time"}, sort_keys=True),
+                max_requests=MAX_FETCH_REQUESTS_PER_WINDOW,
+                window_ms=60_000, attempts=1,
+                execution_id=run_id,
+                run_max_requests=MAX_FETCH_REQUESTS_PER_RUN,
+            ),
+            "límite compartido agotado: instancia A bloqueada",
+        )
+        self.assertEqual(cache_a.run_requests_used(run_id), 7,
+                         "sin exceder el total de la corrida")
+        _publish("MISMA_CORRIDA_LIMITE_COMPARTIDO", ahora, ahora, None, None,
+                 None, "reserva_pre_envío", 7, None,
+                 "dos instancias de la misma corrida: límite compartido, "
+                 "no reseteado")
+
+    def test_nueva_corrida_contador_independiente_evidencia_intacta(self):
+        """Una nueva corrida recibe presupuesto nuevo solo mediante
+        creación explícita (run_id distinto), sin borrar ni modificar los
+        contadores de corridas previas."""
+        db = self.tmp / "cache_nueva.db"
+        cache = MarketCache(db)
+        cache.init_db()
+        ahora = int(time.time() * 1000)
+
+        # Corrida A consume 3 cupos.
+        run_a = "eng-run-nueva-a"
+        for _ in range(3):
+            row_id = cache.reserve_fetch_attempt(
+                ahora, symbol=None,
+                detail=json.dumps({"endpoint": "fapi_time"}, sort_keys=True),
+                max_requests=MAX_FETCH_REQUESTS_PER_WINDOW,
+                window_ms=60_000, attempts=1,
+                execution_id=run_a,
+                run_max_requests=MAX_FETCH_REQUESTS_PER_RUN,
+            )
+            self.assertIsNotNone(row_id)
+        self.assertEqual(cache.run_requests_used(run_a), 3,
+                         "corrida A consumió 3 cupos")
+
+        # Corrida B (run_id distinto) empieza en cero: contador independiente.
+        run_b = "eng-run-nueva-b"
+        self.assertEqual(cache.run_requests_used(run_b), 0,
+                         "nueva corrida B inicia en cero")
+        row_id = cache.reserve_fetch_attempt(
+            ahora, symbol=None,
+            detail=json.dumps({"endpoint": "fapi_time"}, sort_keys=True),
+            max_requests=MAX_FETCH_REQUESTS_PER_WINDOW,
+            window_ms=60_000, attempts=1,
+            execution_id=run_b,
+            run_max_requests=MAX_FETCH_REQUESTS_PER_RUN,
+        )
+        self.assertIsNotNone(row_id, "corrida B puede reservar su propio cupo")
+        self.assertEqual(cache.run_requests_used(run_b), 1,
+                         "corrida B consumió 1 cupo propio")
+
+        # La evidencia de la corrida A permanece intacta (no se modificó ni
+        # borró al crear la corrida B).
+        self.assertEqual(cache.run_requests_used(run_a), 3,
+                         "evidencia de corrida A intacta tras nueva corrida")
+        rows_a = cache.fetch_ledger(limit=50)
+        time_rows_a = [r for r in rows_a
+                       if r.get("execution_id") == run_a
+                       and r.get("status") == "reserved"]
+        self.assertEqual(len(time_rows_a), 3,
+                         "tres reservas de corrida A todavía en ledger")
+        _publish("NUEVA_CORRIDA_INDEPENDIENTE", ahora, ahora, None, None,
+                 None, "reserva_pre_envío", 3, None,
+                 "nueva run_id: contador independiente, evidencia previa "
+                 "intacta")
 
     # --- 5. Referencia válida vs expirada: admisión / abstención ----------
 
