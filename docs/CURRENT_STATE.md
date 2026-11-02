@@ -1,3 +1,37 @@
+## Ventana pública única — FAIL por contexto con vela en curso (2026-11-02, base `d2ca1cb`)
+
+Se ejecutó **una sola** ventana pública autorizada (run_id
+`eng-run-public-20261102b`, deadline 180 s) con el arnés
+`scripts/engineering_live_window.py` (SHA-256 `32429af0ec82da0e717a98793c2c8d31eb2b22428998be6f3ff7e246edc6b4e5`),
+transporte `public` y reloj `public`, contra 8791/8797 aislados, sin tocar
+8792 ni el dashboard (3020, BUILD_ID `t4z0bfKQ_kIP9qv1WHCKR`, árbol
+frontend `1f6f0500cb9115fa5c9d44e07be2c5524bdee690`).
+
+Veredicto global: **FAIL**. El arnés registra `ERROR` porque la excepción
+abortó antes de `_verdict()`, pero la causa es un fallo determinista de
+contrato, no de Binance: `_load_recent_context` incluyó en el contexto la
+vela del minuto en curso (no cerrada) y el servicio la rechazó
+correctamente con `VALIDATION_ERROR: CONTEXTO_FUTURO` (BTCUSDT,
+`open_time=1793642700000`, cierre `1793642759999` > referencia
+`1793642709475`). **No se creó sesión**; no hubo conducción SSE,
+evaluaciones, decisión ni posición.
+
+Lo que sí quedó acreditado: reloj público válido antes de crear sesión
+(`public_sincronizado`, 5/5 muestras, `offset_ms=-60.40`, `rtt_ms=368.11`)
+y HTTP disponible mientras el reloj no estaba listo (transiciones en
+`evidence.json`); presupuesto exacto **7/7** en el ledger compartido
+(5 `/time` + 2 `klines`, 0 bloqueos pre-envío, `retry=0`, `limit=300`, sin
+paginación); limpieza completa (procesos terminados, 8791/8797 cerrados,
+8792 y 3020 intactos); DBs canónicas sin cambios (SHA-256 idéntico).
+
+No hubo relanzamiento. El presupuesto de ese run_id está agotado. Siguiente
+acción requerida: corregir `_load_recent_context` para excluir velas con
+`close_time_ms` posterior a la referencia, añadir prueba local y **pedir
+nueva autorización** con un run_id nuevo. Evidencia completa:
+`docs/evidence/engineering-live-public-20261102b/` (`RESULTADO.md`,
+`summary.json`, `preflight.json`, `evidence.json`, `post_state.json`,
+`ledger-run-id.json`, logs del arnés y de ambos servicios).
+
 ## Modo «Demostración local — datos simulados» + reconciliación por evidencia (2026-10-28, base `643e0b9`)
 
 Entregado y verificado de forma ACOTADA (arranque coordinado, readiness y

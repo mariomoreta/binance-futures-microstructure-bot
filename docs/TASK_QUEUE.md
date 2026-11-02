@@ -1,3 +1,30 @@
+## Ventana pública única 2026-11-02 — FAIL por vela en curso en el contexto (base `d2ca1cb`)
+
+`CURRENT_PHASE`: dashboard V2 de escritorio + observación (WS público solo bajo
+autorización explícita; sin monitor, sin órdenes).
+
+`CURRENT_OBJECTIVE`: cerrado con **FAIL** — la ventana pública única
+autorizada (run_id `eng-run-public-20261102b`, deadline 180 s) no creó
+sesión: el contexto incluía la vela del minuto en curso y el servicio la
+rechazó con `VALIDATION_ERROR: CONTEXTO_FUTURO`. Sin sesión no hay cierre
+nuevo, T, evento, contador ni decisión. Reloj público válido (5/5 muestras),
+presupuesto 7/7 (5 `/time` + 2 `klines`), limpieza y DBs canónicas
+correctas. Detalle: `docs/evidence/engineering-live-public-20261102b/RESULTADO.md`.
+
+`ACTIVE_TASK`: **cerrado** (sin relanzamiento; presupuesto del run_id
+agotado 7/7).
+
+`NEXT_TASKS`:
+1. Corregir `scripts/engineering_live_window.py::_load_recent_context` para
+   excluir toda vela con `close_time_ms` posterior a la referencia (nunca
+   enviar la vela en curso) y añadir una prueba local que lo fije.
+2. Verificar en local (transporte local/loopback, cero Binance) que el
+   contexto enviado solo contiene velas cerradas y que la sesión se crea.
+3. Solicitar **nueva autorización** explícita para otra ventana pública con
+   un `run_id` NUEVO; no reutilizar `eng-run-public-20261102b`.
+4. No declarar completo el recorrido público hasta acreditar sesión, cierre
+   nuevo, T anterior/nuevo, evento, contador y decisión con motivo.
+
 ## Modo «Demostración local — datos simulados» + reconciliación por evidencia (2026-10-28, base `643e0b9`)
 
 `CURRENT_PHASE`: dashboard V2 de escritorio + observación (WS público solo bajo

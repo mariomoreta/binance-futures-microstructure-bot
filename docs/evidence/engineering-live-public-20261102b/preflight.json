@@ -1,0 +1,52 @@
+{
+  "generated_at_ms": 1793642622331,
+  "run_id": "eng-run-public-20261102b",
+  "head": "d2ca1cbe197cd973164a701c850cea3a6e2113d0",
+  "branch": "diag/recorrido-local-4f4273c",
+  "head_tree_frontend": "1f6f0500cb9115fa5c9d44e07be2c5524bdee690",
+  "harness_path": "scripts/engineering_live_window.py",
+  "harness_sha256": "32429af0ec82da0e717a98793c2c8d31eb2b22428998be6f3ff7e246edc6b4e5",
+  "harness_git_blob": "f49df5b527dcbc96e327a6a7d8d9fec824b143a6",
+  "market_service_sha256": "8bb458765afc8594e78a41e33ea669d22b08b063b4980e10dfcb7b3b0d186a47",
+  "engineering_service_sha256": "1037daa076a9c6b2592a55df6e9433f5b4ee8f419ff431c5bb0d1cca6bd74666",
+  "build_id_file": "t4z0bfKQ_kIP9qv1WHCKR",
+  "ports": {
+    "3020": true,
+    "8791": false,
+    "8792": true,
+    "8797": false
+  },
+  "canonical_dbs": {
+    "data/historical/historical.db": {
+      "size": 19181568,
+      "sha256": "d8930ec5d4c4415e748859f426d0a9e9c39de5ceb17367efd3d626fdf56f8b19",
+      "mtime_ns": 1792122387393182100
+    },
+    "data/microprobe.db": {
+      "size": 238927872,
+      "sha256": "6ea98cab059b2a5b2559891c1f7bbf9a9aeb600fe0d8c182f34bd01d7d4221a7",
+      "mtime_ns": 1792122387932082900
+    }
+  },
+  "ledger": {
+    "rows_for_run_id": [
+      0,
+      0
+    ],
+    "window_60s": [
+      0,
+      0
+    ],
+    "all_rows": 228,
+    "cache_recent_1m": {
+      "BTCUSDT": 0,
+      "MINAUSDT": 0
+    }
+  },
+  "dashboard": {
+    "url": "http://127.0.0.1:3020/market-lab",
+    "status": 200,
+    "html_len": 45269,
+    "build_served": true
+  }
+}

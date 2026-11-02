@@ -1,3 +1,78 @@
+## Ventana pública única — veredicto FAIL por contexto con vela en curso (2026-11-02, base `d2ca1cb`)
+
+**1. Title:** Ejecución de UNA ventana pública autorizada con el arnés
+existente (`scripts/engineering_live_window.py`) para acreditar contexto
+reciente → sesión creada → cierre nuevo → avance de T → evaluación con
+decisión y motivo, con presupuestos, identidad, logs persistentes y limpieza
+verificados.
+
+**2. Approval status:** AUTORIZADO por el operador de forma acotada para una
+sola ejecución: deadline 180 s, hasta 7 intentos HTTP upstream totales por
+run_id, 1 conexión WS combinada MINAUSDT+BTCUSDT 1m, hasta 3 reconexiones,
+hasta 3 consumidores SSE, ≤300 velas por petición, cero escrituras en DBs
+canónicas, sin órdenes ni claves. La autorización NO cubre una segunda
+ejecución ni reutilizar el run_id.
+
+**3. Implementation status:** WINDOW_EXECUTED — sin cambios de código. Se
+ejecutó una vez (run_id `eng-run-public-20261102b`) con transporte y reloj
+públicos. El preflight verificó HEAD `d2ca1cb`, rama
+`diag/recorrido-local-4f4273c`, arnés SHA-256 `32429af0…`, dashboard 3020
+(BUILD_ID `t4z0bfKQ_kIP9qv1WHCKR`, árbol frontend `1f6f050…`), puertos
+8791/8797 libres y 8792 intacto. El reloj público quedó válido
+(`public_sincronizado`, 5/5 muestras, offset −60.40 ms). La creación de
+sesión fue rechazada con `VALIDATION_ERROR: CONTEXTO_FUTURO`: el arnés
+envió la vela del minuto en curso.
+
+**4. Evaluation status:** **FAIL** (el arnés registra `ERROR` por excepción
+antes de `_verdict()`). Criterios acreditados 2/8: referencia temporal
+válida y presupuestos/limpieza. No acreditados: sesión/identidad, contexto
+cerrado no futuro, cierre nuevo admitido, T anterior/nuevo + evento +
+contador, decisión con motivo. Consumo exacto 7/7 en el ledger compartido
+(5 `/time` + 2 `klines`, 0 bloqueos pre-envío). Limpieza y DBs canónicas
+correctas. Sin relanzamiento.
+
+**5. Limitaciones:** el estado de conexión de la WS combinada y el contador
+de reconexiones quedan UNKNOWN (no se muestreó `/health` del servicio de
+mercado tras el fallo); cero consumidores SSE se deduce del flujo de control
+(la conducción nunca se inició), no de un contador. El presupuesto del
+run_id quedó agotado, por lo que no cabe reintento dentro de la misma
+autorización.
+
+**6. Evidence:** `docs/evidence/engineering-live-public-20261102b/`
+(`RESULTADO.md`, `summary.json`, `preflight.json`, `evidence.json`,
+`post_state.json`, `ledger-run-id.json`, `harness-stdout.log`,
+`harness-stderr.log`, `service_logs/`); `docs/DECISIONS.md` (2026-11-02);
+`docs/CURRENT_STATE.md`; `docs/TASK_QUEUE.md`.
+
+**7. Last update:** 2026-11-02 (ventana ejecutada; veredicto FAIL; sin
+relanzamiento; corrección del arnés pendiente de autorización y prueba).
+
+### Cierre (siete campos, obligatorios)
+
+- `DECISIONS_REVIEWED` — AGENTS, `DESKTOP_FIRST_SCOPE_20261020`,
+  WORKFLOW, CURRENT_STATE, TASK_QUEUE, DECISIONS (incluida la entrada
+  2026-11-02 de readiness), SAFETY_RULES y este backlog.
+- `NEW_DECISIONS_RECORDED` — DECISIONS 2026-11-02: el contexto de la
+  ventana pública solo puede contener velas cerradas respecto de la
+  referencia; la vela en curso nunca se envía; no se relaja la validación
+  del servicio; no se relanza ni se reutiliza el run_id cuando el
+  presupuesto está agotado; toda nueva conexión exige autorización nueva.
+- `FEATURES_IMPLEMENTED` — ninguna función nueva. Solo evidencia, veredicto
+  y documentación de una ventana fallida.
+- `FEATURES_VERIFIED` — preflight sin conexión (dashboard/BUILD_ID, puertos,
+  DBs), sincronización pública real del reloj (5/5), presupuesto compartido
+  exacto 7/7 sin bloqueos, limpieza efectiva y DBs canónicas intactas.
+- `DEFERRED_FEATURES` — corrección de `_load_recent_context` (excluir velas
+  no cerradas) + prueba local; repetición de la ventana pública con run_id
+  nuevo y autorización explícita; recorrido SSE→adaptador→evaluación.
+- `BACKLOG_UPDATED` — yes: este bloque, CURRENT_STATE, TASK_QUEUE,
+  DECISIONS y evidencia en `docs/evidence/engineering-live-public-20261102b/`.
+- `DOCUMENTATION_CONFLICTS` — el check `build_served` imprime un literal
+  histórico ("árbol e2243c9") que no es el árbol servido; el check
+  `contexto_cargado` afirma "velas cerradas" aunque incluía una abierta. Se
+  dejan registradas ambas discrepancias; ningún resultado histórico se
+  reescribe.
+
 ## Indicadores compartidos V1 — primera integración vertical (2026-10-25, base `09632f4`, sin Binance)
 
 **1. Title:** Primera integración vertical de indicadores compartidos en

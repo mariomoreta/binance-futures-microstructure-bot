@@ -4334,3 +4334,58 @@ economicos.
   `python -m pytest tests/test_engineering_clock_budget.py` -> 21 passed
   (32 passed en total). Sin Binance, sin ventana publica, sin cambios
   economicos ni de presupuesto. Rama no integrada.
+
+## 2026-11-02 — Ventana publica unica: FAIL por vela en curso en el contexto
+
+- Se ejecuto UNA sola ventana publica autorizada (run_id
+  `eng-run-public-20261102b`, deadline 180 s, transporte y reloj publicos,
+  8791/8797 aislados). **Sin relanzamiento.**
+
+- Veredicto global: **FAIL**. El arnes escribe `ERROR` porque la excepcion
+  aborta antes de `_verdict()`; la clasificacion operativa correcta es fallo
+  determinista de contrato: no es un `ERROR` de Binance ni un `UNKNOWN` de
+  consumo.
+
+- Causa acreditada por el rechazo del servicio: `_load_recent_context`
+  (rama `public`, `scripts/engineering_live_window.py` lineas 952-976)
+  anade toda fila REST con `close_time` presente, **incluida la vela del
+  minuto en curso**. El servicio la rechazo correctamente con
+  `VALIDATION_ERROR: CONTEXTO_FUTURO` (BTCUSDT `open_time=1793642700000`,
+  cierre `1793642759999`, referencia `1793642709475`). No se creo sesion.
+  No se relajo la validacion para forzar la sesion.
+
+- Acreditado: reloj publico valido antes de crear sesion
+  (`public_sincronizado`, 5/5 muestras, `offset_ms=-60.398438`,
+  `rtt_ms=368.107`, HTTP disponible mientras `available=false`); presupuesto
+  exacto 7/7 en el ledger compartido (5 `fapi_time` + 2 `klines`, 0 filas
+  `budget_blocked`, `retry=0`, `limit=300`, rango de 300 min sin paginar ni
+  descargar dias intermedios); recuperacion REST desactivada; limpieza
+  completa (procesos terminados, 8791/8797 cerrados, 8792 y 3020 intactos);
+  DBs canonicas sin escrituras (SHA-256 identico antes/despues).
+
+- No acreditado: `session_id`, `config_hash`, cierre nuevo admitido,
+  T anterior/nuevo, evento disparador, contador de evaluaciones y decision
+  con motivo. La conduccion SSE nunca se inicio; no hubo posicion, P&L,
+  comision ni realizado.
+
+- Consumo no observable: el estado de conexion de la unica WS combinada y
+  el contador de reconexiones quedan **UNKNOWN** (no se muestreo `/health`
+  del servicio de mercado tras el fallo). Cero consumidores SSE es cierto
+  por flujo de control (la conduccion no se inicio), no por contador.
+
+- Correccion documental: el detalle del check `build_served` imprime un
+  literal historico ("arbol e2243c9") que NO corresponde al arbol servido
+  (`1f6f0500cb9115fa5c9d44e07be2c5524bdee690`); y `contexto_cargado`
+  afirma "velas cerradas" aunque el contexto incluia una vela abierta. Se
+  corrigen las afirmaciones en la evidencia nueva; no se reescribe historia.
+
+- Decision de alcance: no se modifica codigo durante ni despues de la
+  ventana. La correccion del arnes (excluir velas con `close_time_ms`
+  posterior a la referencia) y su prueba local quedan como siguiente tarea;
+  volver a conectar exige **nueva autorizacion** y un `run_id` NUEVO, porque
+  el presupuesto de `eng-run-public-20261102b` esta agotado (7/7).
+
+- Evidencia: `docs/evidence/engineering-live-public-20261102b/`
+  (`RESULTADO.md`, `summary.json`, `preflight.json`, `evidence.json`,
+  `post_state.json`, `ledger-run-id.json`, logs del arnes y de ambos
+  servicios).

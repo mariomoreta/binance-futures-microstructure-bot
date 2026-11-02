@@ -1,0 +1,130 @@
+{
+  "contract": "engineering-live-window-result/v1",
+  "date": "2026-11-02",
+  "run_id": "eng-run-public-20261102b",
+  "window": "single public window, one execution, no relaunch",
+  "verdict": "FAIL",
+  "harness_verdict": "ERROR",
+  "classification": "FAIL determinista de contrato (no ERROR de Binance, no UNKNOWN de consumo)",
+  "objective_achieved": false,
+  "identity": {
+    "branch": "diag/recorrido-local-4f4273c",
+    "head": "d2ca1cbe197cd973164a701c850cea3a6e2113d0",
+    "harness_path": "scripts/engineering_live_window.py",
+    "harness_sha256": "32429af0ec82da0e717a98793c2c8d31eb2b22428998be6f3ff7e246edc6b4e5",
+    "harness_git_blob": "f49df5b527dcbc96e327a6a7d8d9fec824b143a6",
+    "market_service_sha256": "8bb458765afc8594e78a41e33ea669d22b08b063b4980e10dfcb7b3b0d186a47",
+    "engineering_service_sha256": "1037daa076a9c6b2592a55df6e9433f5b4ee8f419ff431c5bb0d1cca6bd74666",
+    "frontend_tree": "1f6f0500cb9115fa5c9d44e07be2c5524bdee690",
+    "build_id_served": "t4z0bfKQ_kIP9qv1WHCKR",
+    "dashboard_url": "http://127.0.0.1:3020/market-lab",
+    "dashboard_http_status": 200,
+    "dashboard_modified": false
+  },
+  "command": [
+    "python", "scripts/engineering_live_window.py",
+    "--transport", "public", "--execute",
+    "--clock-source", "public",
+    "--service-port", "8791", "--engineering-port", "8797",
+    "--symbols", "MINAUSDT,BTCUSDT", "--interval", "1m", "--bars", "300",
+    "--duration", "180", "--deadline", "180",
+    "--run-id", "eng-run-public-20261102b",
+    "--sessions-dir", "data/engineering-session/live-window-20261102b",
+    "--evidence-dir", "docs/evidence/engineering-live-public-20261102b/service_logs",
+    "--dashboard", "http://127.0.0.1:3020",
+    "--build-id", "t4z0bfKQ_kIP9qv1WHCKR",
+    "--out", "docs/evidence/engineering-live-public-20261102b/evidence.json"
+  ],
+  "cause": {
+    "error": "CREATE_SESSION_FAILED: status=400 VALIDATION_ERROR: CONTEXTO_FUTURO",
+    "rejected_symbol": "BTCUSDT",
+    "rejected_candle_open_time_ms": 1793642700000,
+    "rejected_candle_close_time_ms": 1793642759999,
+    "reference_ms": 1793642709475,
+    "defect_location": "scripts/engineering_live_window.py::_load_recent_context (rama public, lineas 952-976)",
+    "defect": "incluye en el contexto la vela en curso (close_time posterior a la referencia); el servicio la rechaza correctamente"
+  },
+  "criteria": {
+    "session_id_config_hash_rule_identity": false,
+    "valid_time_reference": true,
+    "closed_non_future_context": false,
+    "at_least_one_new_closed_candle_admitted": false,
+    "t_previous_new_trigger_and_evaluation_counter": false,
+    "decision_executed_with_reason": false,
+    "budgets_checked_with_ledger": true,
+    "cleanup_and_canonical_dbs_intact": true
+  },
+  "clock": {
+    "source": "public_sincronizado",
+    "available": true,
+    "samples_valid": 5,
+    "samples_failed": 0,
+    "offset_ms": -60.398438,
+    "rtt_ms": 368.106934,
+    "http_available_at_ms": 1793642702548,
+    "ready_at_ms": 1793642708722
+  },
+  "context": {
+    "candles_sent": 598,
+    "symbols_seen": ["BTCUSDT", "MINAUSDT"],
+    "range_open_time_ms": [1793624820000, 1793642700000],
+    "rest_requests": 2,
+    "includes_open_candle": true
+  },
+  "consumption": {
+    "ledger_path": "data/market-cache/market_cache.db",
+    "run_id": "eng-run-public-20261102b",
+    "total_requests": 7,
+    "by_endpoint": {"fapi_time": 5, "klines": 2, "catalog": 0},
+    "blocked_pre_send_rows": 0,
+    "retries": 0,
+    "max_bars_per_request": 300,
+    "pagination": false,
+    "rest_recovery": "disabled",
+    "ws_connections_configured": 1,
+    "ws_connection_state": "UNKNOWN",
+    "sse_consumers": 0,
+    "reconnections": "UNKNOWN",
+    "deadline_s": 180,
+    "elapsed_s_until_failure": 7.6
+  },
+  "cleanup": {
+    "processes_terminated": ["ingeniería", "mercado"],
+    "processes_failed": [],
+    "log_files_closed": 4,
+    "ports_after": {"3020": "open", "8791": "closed", "8792": "open", "8797": "closed"},
+    "sessions_created": 0,
+    "canonical_dbs_unchanged": {
+      "data/historical/historical.db": true,
+      "data/microprobe.db": true
+    }
+  },
+  "not_exercised": [
+    "SSE consumer",
+    "admitted new close",
+    "evaluation",
+    "decision",
+    "position/PnL"
+  ],
+  "next_required_action": [
+    "corregir _load_recent_context para excluir velas con close_time_ms posterior a la referencia",
+    "añadir prueba local que fije el comportamiento",
+    "solicitar nueva autorizacion para otra ventana publica con run_id nuevo (el presupuesto de este run_id esta agotado 7/7)",
+    "no relanzar esta corrida ni reutilizar su run_id"
+  ],
+  "artifacts": {
+    "preflight": "preflight.json",
+    "harness_evidence": "evidence.json",
+    "post_state": "post_state.json",
+    "ledger_run_id": "ledger-run-id.json",
+    "report": "RESULTADO.md",
+    "logs": [
+      "harness-stdout.log",
+      "harness-stderr.log",
+      "service_logs/service-stdout.log",
+      "service_logs/service-stderr.log",
+      "service_logs/engineering-stdout.log",
+      "service_logs/engineering-stderr.log"
+    ]
+  }
+}

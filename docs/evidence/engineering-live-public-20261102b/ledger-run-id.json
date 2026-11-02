@@ -1,0 +1,61 @@
+{
+  "run_id": "eng-run-public-20261102b",
+  "generated_from": "post_state.json",
+  "ledger_rows": [
+    {
+      "id": 299,
+      "symbol": null,
+      "requests": 1,
+      "status": "ok",
+      "detail": "{\"endpoint\": \"fapi_time\", \"source\": \"https://fapi.binance.com/fapi/v1/time\"}"
+    },
+    {
+      "id": 300,
+      "symbol": null,
+      "requests": 1,
+      "status": "ok",
+      "detail": "{\"endpoint\": \"fapi_time\", \"source\": \"https://fapi.binance.com/fapi/v1/time\"}"
+    },
+    {
+      "id": 301,
+      "symbol": null,
+      "requests": 1,
+      "status": "ok",
+      "detail": "{\"endpoint\": \"fapi_time\", \"source\": \"https://fapi.binance.com/fapi/v1/time\"}"
+    },
+    {
+      "id": 302,
+      "symbol": null,
+      "requests": 1,
+      "status": "ok",
+      "detail": "{\"endpoint\": \"fapi_time\", \"source\": \"https://fapi.binance.com/fapi/v1/time\"}"
+    },
+    {
+      "id": 303,
+      "symbol": null,
+      "requests": 1,
+      "status": "ok",
+      "detail": "{\"endpoint\": \"fapi_time\", \"source\": \"https://fapi.binance.com/fapi/v1/time\"}"
+    },
+    {
+      "id": 304,
+      "symbol": "BTCUSDT",
+      "requests": 1,
+      "status": "ok",
+      "detail": "klines 1m limit=300 startTime=1793624768722 endTime=1793642708722 retry=0 duration_ms=353"
+    },
+    {
+      "id": 305,
+      "symbol": "MINAUSDT",
+      "requests": 1,
+      "status": "ok",
+      "detail": "klines 1m limit=300 startTime=1793624768722 endTime=1793642708722 retry=0 duration_ms=373"
+    }
+  ],
+  "total_requests": 7,
+  "by_endpoint": {
+    "fapi_time": 5,
+    "klines": 2
+  },
+  "blocked_pre_send_rows": 0
+}

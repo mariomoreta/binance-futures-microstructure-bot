@@ -1,0 +1,286 @@
+{
+  "generated_at_ms": 1793642709561,
+  "verdict": "ERROR",
+  "error": "RuntimeError: CREATE_SESSION_FAILED: status=400 text={\"error\": \"VALIDATION_ERROR: CONTEXTO_FUTURO: BTCUSDT vela open_time 1793642700000 cierra en 1793642759999, posterior a la referencia 1793642709475; el cierre todavía no ocurrió (no se fija T desde un cierre no acreditado)\"}",
+  "mode": "public",
+  "symbols": [
+    "MINAUSDT",
+    "BTCUSDT"
+  ],
+  "interval": "1m",
+  "bars": 300,
+  "deadline_s": 180.0,
+  "session_id": null,
+  "config_hash": null,
+  "evidence": {
+    "clock_readiness": {
+      "http_disponible_en_ms": 1793642702548,
+      "reloj_listo_en_ms": 1793642708722,
+      "transiciones": [
+        {
+          "estado": "http_disponible",
+          "at_ms": 1793642702548,
+          "detalle": "servicio respondió /health (PID=42480)"
+        },
+        {
+          "estado": "reloj_no_listo",
+          "at_ms": 1793642702550,
+          "detalle": "available=False (age_ms=None)"
+        },
+        {
+          "estado": "reloj_no_listo",
+          "at_ms": 1793642703073,
+          "detalle": "available=False (age_ms=None)"
+        },
+        {
+          "estado": "reloj_no_listo",
+          "at_ms": 1793642703575,
+          "detalle": "available=False (age_ms=None)"
+        },
+        {
+          "estado": "reloj_no_listo",
+          "at_ms": 1793642704091,
+          "detalle": "available=False (age_ms=None)"
+        },
+        {
+          "estado": "reloj_no_listo",
+          "at_ms": 1793642704606,
+          "detalle": "available=False (age_ms=None)"
+        },
+        {
+          "estado": "reloj_no_listo",
+          "at_ms": 1793642705109,
+          "detalle": "available=False (age_ms=None)"
+        },
+        {
+          "estado": "reloj_no_listo",
+          "at_ms": 1793642705636,
+          "detalle": "available=False (age_ms=None)"
+        },
+        {
+          "estado": "reloj_no_listo",
+          "at_ms": 1793642706156,
+          "detalle": "available=False (age_ms=None)"
+        },
+        {
+          "estado": "reloj_no_listo",
+          "at_ms": 1793642706672,
+          "detalle": "available=False (age_ms=None)"
+        },
+        {
+          "estado": "reloj_no_listo",
+          "at_ms": 1793642707188,
+          "detalle": "available=False (age_ms=None)"
+        },
+        {
+          "estado": "reloj_no_listo",
+          "at_ms": 1793642707704,
+          "detalle": "available=False (age_ms=None)"
+        },
+        {
+          "estado": "reloj_no_listo",
+          "at_ms": 1793642708220,
+          "detalle": "available=False (age_ms=None)"
+        },
+        {
+          "estado": "reloj_listo",
+          "at_ms": 1793642708722,
+          "detalle": "referencia válida (source=public_sincronizado)"
+        }
+      ],
+      "ultimo_motivo": "referencia válida (source=public_sincronizado)",
+      "error": null,
+      "ultimo_health": {
+        "service": "engineering-session-service/v1",
+        "engine_version": "paper-lab-engine/v1.2",
+        "pid": 42480,
+        "host": "127.0.0.1",
+        "port": 8797,
+        "sessions_dir": "data\\engineering-session\\live-window-20261102b",
+        "cadence_ms": 700.0,
+        "market": {
+          "url": "http://127.0.0.1:8791",
+          "bars": 300,
+          "live_silence_ms": 120000.0,
+          "max_notional_usdt": 1000.0,
+          "transports": [
+            "local_replay",
+            "market_stream"
+          ]
+        },
+        "clock": {
+          "source": "public_sincronizado",
+          "available": true,
+          "offset_ms": -60.398438,
+          "rtt_ms": 368.106934,
+          "last_sync_timestamp": "2026-11-02T18:05:08.643163+00:00",
+          "age_ms": 78.797,
+          "sync_successful": 1,
+          "sync_failed": 0,
+          "samples_valid": 5,
+          "samples_failed": 0
+        },
+        "drives": [],
+        "generated_at_ms": 1793642708721
+      }
+    },
+    "services": {
+      "mercado_pid": 31708,
+      "mercado_puerto": 8791,
+      "mercado_modo": "public",
+      "ingenieria_pid": 42480,
+      "ingenieria_puerto": 8797,
+      "sessions_dir": "data\\engineering-session\\live-window-20261102b",
+      "service_stdout_path": "C:\\proyectos\\binance-futures-microstructure-bot\\docs\\evidence\\engineering-live-public-20261102b\\service_logs\\service-stdout.log",
+      "service_stderr_path": "C:\\proyectos\\binance-futures-microstructure-bot\\docs\\evidence\\engineering-live-public-20261102b\\service_logs\\service-stderr.log",
+      "engineering_stdout_path": "C:\\proyectos\\binance-futures-microstructure-bot\\docs\\evidence\\engineering-live-public-20261102b\\service_logs\\engineering-stdout.log",
+      "engineering_stderr_path": "C:\\proyectos\\binance-futures-microstructure-bot\\docs\\evidence\\engineering-live-public-20261102b\\service_logs\\engineering-stderr.log"
+    },
+    "contexto": {
+      "fuente": "caché derivada + REST klines",
+      "velas": 598,
+      "symbols_seen": [
+        "BTCUSDT",
+        "MINAUSDT"
+      ],
+      "rango": [
+        1793624820000,
+        1793642700000
+      ],
+      "rest_usadas": 2,
+      "parse_diag": []
+    }
+  },
+  "checks": [
+    {
+      "id": "config_validada",
+      "ok": true,
+      "required": true,
+      "source": "config",
+      "detail": "regla/stop/horizonte/referencia fijadas antes de conectar (no se cambian durante la ventana)"
+    },
+    {
+      "id": "dashboard_up",
+      "ok": true,
+      "required": true,
+      "source": "preflight",
+      "detail": "market-lab status=200"
+    },
+    {
+      "id": "build_served",
+      "ok": true,
+      "required": true,
+      "source": "preflight",
+      "detail": "BUILD_ID t4z0bfKQ_kIP9qv1WHCKR servido (árbol e2243c9)"
+    },
+    {
+      "id": "service_port_free",
+      "ok": true,
+      "required": true,
+      "source": "preflight",
+      "detail": "puerto 8791 libre"
+    },
+    {
+      "id": "engineering_port_free",
+      "ok": true,
+      "required": true,
+      "source": "preflight",
+      "detail": "puerto 8797 libre"
+    },
+    {
+      "id": "port_8792_untouched",
+      "ok": true,
+      "required": false,
+      "source": "preflight",
+      "detail": "8792 ocupado (servicio local preexistente, no tocar)"
+    },
+    {
+      "id": "codigo_limites_conocidos",
+      "ok": true,
+      "required": false,
+      "source": "preflight",
+      "detail": "límites del usuario impuestos por el orquestador: <=3 consumidores SSE, <=3 reconexiones, <=7 REST (límite por corrida), <=300 velas/consulta, deadline 180s, cero escrituras DB canónicas; el hub de market-stream usa 1 WS combinada."
+    },
+    {
+      "id": "no_ingenieria_activa",
+      "ok": true,
+      "required": false,
+      "source": "preflight",
+      "detail": "ningún proceso de ingeniería activo antes de la ventana"
+    },
+    {
+      "id": "service_started",
+      "ok": true,
+      "required": true,
+      "source": "execute",
+      "detail": "servicio mercado PID 31708 puerto 8791 modo=public"
+    },
+    {
+      "id": "engineering_started",
+      "ok": true,
+      "required": true,
+      "source": "execute",
+      "detail": "servicio ingeniería PID 42480 puerto 8797"
+    },
+    {
+      "id": "contexto_cargado",
+      "ok": true,
+      "required": true,
+      "source": "execute",
+      "detail": "598 velas cerradas recientes para fijar el reloj T (rest=2)"
+    }
+  ],
+  "rest_count": 2,
+  "ledger_total_por_run_id": 7,
+  "db_unchanged": true,
+  "ultima_salud_ingenieria": {
+    "service": "engineering-session-service/v1",
+    "engine_version": "paper-lab-engine/v1.2",
+    "pid": 42480,
+    "host": "127.0.0.1",
+    "port": 8797,
+    "sessions_dir": "data\\engineering-session\\live-window-20261102b",
+    "cadence_ms": 700.0,
+    "market": {
+      "url": "http://127.0.0.1:8791",
+      "bars": 300,
+      "live_silence_ms": 120000.0,
+      "max_notional_usdt": 1000.0,
+      "transports": [
+        "local_replay",
+        "market_stream"
+      ]
+    },
+    "clock": {
+      "source": "public_sincronizado",
+      "available": true,
+      "offset_ms": -60.398438,
+      "rtt_ms": 368.106934,
+      "last_sync_timestamp": "2026-11-02T18:05:08.643163+00:00",
+      "age_ms": 78.797,
+      "sync_successful": 1,
+      "sync_failed": 0,
+      "samples_valid": 5,
+      "samples_failed": 0
+    },
+    "drives": [],
+    "generated_at_ms": 1793642708721
+  },
+  "limpieza_resultado": {
+    "procesos_terminados": [
+      "ingeniería",
+      "mercado"
+    ],
+    "procesos_fallidos": [],
+    "archivos_log_cerrados": [
+      "ingeniería_stdout",
+      "ingeniería_stderr",
+      "mercado_stdout",
+      "mercado_stderr"
+    ]
+  },
+  "service_stdout_path": "C:\\proyectos\\binance-futures-microstructure-bot\\docs\\evidence\\engineering-live-public-20261102b\\service_logs\\service-stdout.log",
+  "service_stderr_path": "C:\\proyectos\\binance-futures-microstructure-bot\\docs\\evidence\\engineering-live-public-20261102b\\service_logs\\service-stderr.log",
+  "engineering_stdout_path": "C:\\proyectos\\binance-futures-microstructure-bot\\docs\\evidence\\engineering-live-public-20261102b\\service_logs\\engineering-stdout.log",
+  "engineering_stderr_path": "C:\\proyectos\\binance-futures-microstructure-bot\\docs\\evidence\\engineering-live-public-20261102b\\service_logs\\engineering-stderr.log"
+}
