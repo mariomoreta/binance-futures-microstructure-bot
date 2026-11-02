@@ -3919,7 +3919,8 @@ convergentes: AbortSignal.timeout(30_000) del BFF (cada SSE moria a los
 30 s) y el odyTimeout por defecto de undici (30 s sin chunk cuando el
 servicio preexistente 8792 queda mudo sin eventos de flujo); el arreglo no
 toca 8792: agente undici con bodyTimeout 0 + headersTimeout acotado,
-cancelacion propagada por eq.signal, y reconexion del panel con la
+cancelacion propagada por 
+eq.signal, y reconexion del panel con la
 MISMA identidad (2,5 s) conservando la causa visible hasta onopen;
 desmontar/cambiar simbolo libera el consumidor. (d) Hallazgo de la
 aceptacion: el doble clic podia crear DOS sesiones (el disabled de React
@@ -4101,24 +4102,89 @@ test_main_run_id_persiste_y_reutiliza (16 pruebas en total, todas OK).
 - Sin Binance en modo local/demo, ordenes, pagos, movil ni cambios 
 economicos.
 
-
-## 2026-11-02 Propagación del run_id en el arranque del servicio de ingeniería\r\n\r\n- El orquestador (engineering_live_window.py) crea y persiste un run_id estable al iniciar\r\n  una corrida, transmitido mediante --run-id al servicio de ingeniería.\r\n- /time, klines y demás intentos de presupuesto usan ese mismo run_id y\r\n  comparten el límite total de la corrida (7).\r\n- Al reiniciar el proceso de la misma corrida se reutiliza el ID persistido en\r\n  sessions_dir/run-id.json. Una corrida nueva se crea explícitamente con un\r\n  --run-id distinto.\r\n- Pruebas focalizadas: tests/test_engineering_clock_budget.py añade\r\n  test_orquestador_run_id_camino_real y\r\n  test_orquestador_reinicio_reutiliza_run_id (14 pruebas en total, todas OK).\r\n- Sin Binance en modo local/demo, órdenes, pagos, móvil ni cambios económicos.\r\n
-## 2026-11-02 Configuración efectiva del orquestador (presupuesto y fuente de reloj)
-
-- Un límite ÚNICO y explícito por corrida: MAX_REST_REQUESTS_PER_RUN = 7 en scripts/engineering_live_window.py,
-  coherente con MAX_FETCH_REQUESTS_PER_RUN = 7 del servicio de ingeniería (market_cache.py): compartido entre
-  /time, klines, catálogo, reintentos y recuperación; atribuido persistentemente al run_id en el ledger.
-- Fuente de reloj derivada del transporte: --transport public arranca ingeniería con --clock-source public;
-  local usa referencia local explícita (--clock-source local). No hay --clock-source público sin autorización.
-- Antes de crear sesión, el orquestador verifica /health.clock del servicio de ingeniería y rechaza fuente
-  incorrecta (CLOCK_SOURCE_INCORRECTO), ausente (CLOCK_SOURCE_AUSENTE) o expirada / disponible False
-  (CLOCK_REFERENCIA_NO_DISPONIBLE).
-- LedgerAttemptGate (market_explorer.py) propaga run_max_requests al ledger market_fetch_ledger para que el
-  límite total de la corrida se valide junto con la ventana móvil (30/60 s), ambos antes de enviar.
-- Evidencia final: consumo agregado del ledger por run_id (run_requests_used), incluyendo /time; no solo el
-  contador de consultas de contexto del arnés.
-- Siete intentos sigue siendo una propuesta pendiente de autorización pública: no se ejecuta contra Binance.
-- Verificación acotada (transporte local, sin Binance): tests/test_engineering_clock_budget.py (21 OK):
-  argumentos del proceso, fuente esperada en /health antes de crear sesión, mismo run_id para tiempo y velas,
-  total agregado consistente, y fuente incorrecta / ausente / expirada / presupuesto agotado bloquean antes de
-  crear la sesión.
+
+
+## 2026-11-02 Propagación del run_id en el arranque del servicio de ingeniería\r\n\r\n- El orquestador (engineering_live_window.py) crea y persiste un run_id estable al iniciar\r\n  una corrida, transmitido mediante --run-id al servicio de ingeniería.\r\n- /time, klines y demás intentos de presupuesto usan ese mismo run_id y\r\n  comparten el límite total de la corrida (7).\r\n- Al reiniciar el proceso de la misma corrida se reutiliza el ID persistido en\r\n  sessions_dir/run-id.json. Una corrida nueva se crea explícitamente con un\r\n  --run-id distinto.\r\n- Pruebas focalizadas: tests/test_engineering_clock_budget.py añade\r\n  test_orquestador_run_id_camino_real y\r\n  test_orquestador_reinicio_reutiliza_run_id (14 pruebas en total, todas OK).\r\n- Sin Binance en modo local/demo, órdenes, pagos, móvil ni cambios económicos.\r\n
+
+## 2026-11-02 Configuración efectiva del orquestador (presupuesto y fuente de reloj)
+
+
+
+- Un límite ÚNICO y explícito por corrida: MAX_REST_REQUESTS_PER_RUN = 7 en scripts/engineering_live_window.py,
+
+  coherente con MAX_FETCH_REQUESTS_PER_RUN = 7 del servicio de ingeniería (market_cache.py): compartido entre
+
+  /time, klines, catálogo, reintentos y recuperación; atribuido persistentemente al run_id en el ledger.
+
+- Fuente de reloj derivada del transporte: --transport public arranca ingeniería con --clock-source public;
+
+  local usa referencia local explícita (--clock-source local). No hay --clock-source público sin autorización.
+
+- Antes de crear sesión, el orquestador verifica /health.clock del servicio de ingeniería y rechaza fuente
+
+  incorrecta (CLOCK_SOURCE_INCORRECTO), ausente (CLOCK_SOURCE_AUSENTE) o expirada / disponible False
+
+  (CLOCK_REFERENCIA_NO_DISPONIBLE).
+
+- LedgerAttemptGate (market_explorer.py) propaga run_max_requests al ledger market_fetch_ledger para que el
+
+  límite total de la corrida se valide junto con la ventana móvil (30/60 s), ambos antes de enviar.
+
+- Evidencia final: consumo agregado del ledger por run_id (run_requests_used), incluyendo /time; no solo el
+
+  contador de consultas de contexto del arnés.
+
+- Siete intentos sigue siendo una propuesta pendiente de autorización pública: no se ejecuta contra Binance.
+
+- Verificación acotada (transporte local, sin Binance): tests/test_engineering_clock_budget.py (21 OK):
+
+  argumentos del proceso, fuente esperada en /health antes de crear sesión, mismo run_id para tiempo y velas,
+
+  total agregado consistente, y fuente incorrecta / ausente / expirada / presupuesto agotado bloquean antes de
+
+  crear la sesión.
+
+
+
+## 2026-11-02 Ventana publica de integracion (un unico intento, desde f0593ed+a314e4c)
+
+
+
+- Ejecutado UNA VEZ: python scripts/engineering_live_window.py --transport public --execute
+
+  --run-id eng-run-public-20261102 --build-id turbopack-3-ry682tkyiqk
+
+  --sessions-dir <temp>/run-public/sessions --out <temp>/run-public/evidence.json
+
+- Resultado: VEREDICTO GLOBAL ERROR.
+
+- Causa: GLOBAL_DEADLINE_EXCEEDED en engineering_start_wait. El servicio de mercado
+
+  arranco (PID 29820, puerto 8791, modo=public) pero el servicio de ingenieria no
+
+  respondio /health a tiempo: su main() ejecuta ClockSynchronizer.sync() contra
+
+  Binance (5 intentos /time) ANTES de levantar el servidor HTTP, y el deadline de
+
+  180 s (desde el primer acceso publico) se consumo en preflight + arranque de
+
+  mercado + sync del reloj. No se llego a crear sesion, ni a etapa WS/SSE/evaluacion.
+
+- Limites respetados: 0 intentos REST publicos (rest_count=0), 1 conexion WS (no se
+
+  abrio por no alcanzar etapa), 0 reconexiones, 0 consumidores SSE, 300 velas/consulta,
+
+  deadline 180 s, cero escrituras en DBs canonicas (db_unchanged=true).
+
+- Consumo agregado del ledger por run_id: no disponible (no se alcanzo _verdict;
+
+  ledger_total_por_run_id=null). decision=null: no acredita abstencion.
+
+- Cero operaciones: valido. No se ajusto la regla. No se repitio la ventana.
+
+- Limpieza: _cleanup termino los procesos; puertos 8791 y 8797 libres; 8792 (servicio
+
+  local ajeno) intacto; dashboard 3020 disponible, sin sesion de ensayo activa.
+
+- Evidencia conservada en <temp>/run-public/evidence.json (no commiteada).
+
