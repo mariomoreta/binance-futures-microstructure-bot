@@ -2116,10 +2116,10 @@ def main(argv: Optional[List[str]] = None) -> int:
                 run_max_requests=MAX_FETCH_REQUESTS_PER_RUN),
             request_timeout_seconds=5.0,
         )
-        try:
-            asyncio.run(synchronizer.sync())
-        except Exception:  # noqa: BLE001 - referencia no disponible -> abstencion
-            pass
+        # NO se ejecuta synchronizer.sync() aqui: primero se levanta el
+        # servidor HTTP para que /health responda NOT_READY
+        # (available=False) durante la preparacion del reloj. La sincronizacion
+        # se ejecuta despues de thread.start(), fuera de esta rama.
         clock_source_label = "public_sincronizado"
     else:
         # Modo local: reloj de pared local, cero solicitudes publicas,
@@ -2153,6 +2153,16 @@ def main(argv: Optional[List[str]] = None) -> int:
     }, ensure_ascii=False), flush=True)
     thread = threading.Thread(target=server.serve_forever, daemon=True)
     thread.start()
+    # Sincronizacion del reloj despues de levantar /health: durante la
+    # preparacion (sync en curso contra Binance), /health responde
+    # NOT_READY (available=False) y nunca se admite crear sesion.
+    # Si el sync falla, available=False se mantiene y el servicio sigue
+    # operativo pero sin reloj valido.
+    if synchronizer is not None:
+        try:
+            asyncio.run(synchronizer.sync())
+        except Exception:  # noqa: BLE001 - referencia no disponible -> abstencion
+            pass
     try:
         while not server.stop_event.is_set():
             time.sleep(0.2)

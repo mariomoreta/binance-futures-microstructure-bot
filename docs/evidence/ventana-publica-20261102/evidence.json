@@ -1,0 +1,84 @@
+{
+  "generated_at_ms": 1793631488720,
+  "verdict": "ERROR",
+  "error": "RuntimeError: GLOBAL_DEADLINE_EXCEEDED en engineering_start_wait",
+  "mode": "public",
+  "symbols": [
+    "MINAUSDT",
+    "BTCUSDT"
+  ],
+  "interval": "1m",
+  "bars": 300,
+  "deadline_s": 180.0,
+  "session_id": null,
+  "config_hash": null,
+  "evidence": {},
+  "checks": [
+    {
+      "id": "config_validada",
+      "ok": true,
+      "required": true,
+      "source": "config",
+      "detail": "regla/stop/horizonte/referencia fijadas antes de conectar (no se cambian durante la ventana)"
+    },
+    {
+      "id": "dashboard_up",
+      "ok": true,
+      "required": true,
+      "source": "preflight",
+      "detail": "market-lab status=200"
+    },
+    {
+      "id": "build_served",
+      "ok": true,
+      "required": true,
+      "source": "preflight",
+      "detail": "BUILD_ID turbopack-3-ry682tkyiqk servido (árbol e2243c9)"
+    },
+    {
+      "id": "service_port_free",
+      "ok": true,
+      "required": true,
+      "source": "preflight",
+      "detail": "puerto 8791 libre"
+    },
+    {
+      "id": "engineering_port_free",
+      "ok": true,
+      "required": true,
+      "source": "preflight",
+      "detail": "puerto 8797 libre"
+    },
+    {
+      "id": "port_8792_untouched",
+      "ok": true,
+      "required": false,
+      "source": "preflight",
+      "detail": "8792 ocupado (servicio local preexistente, no tocar)"
+    },
+    {
+      "id": "codigo_limites_conocidos",
+      "ok": true,
+      "required": false,
+      "source": "preflight",
+      "detail": "límites del usuario impuestos por el orquestador: <=3 consumidores SSE, <=3 reconexiones, <=7 REST (límite por corrida), <=300 velas/consulta, deadline 180s, cero escrituras DB canónicas; el hub de market-stream usa 1 WS combinada."
+    },
+    {
+      "id": "no_ingenieria_activa",
+      "ok": true,
+      "required": false,
+      "source": "preflight",
+      "detail": "ningún proceso de ingeniería activo antes de la ventana"
+    },
+    {
+      "id": "service_started",
+      "ok": true,
+      "required": true,
+      "source": "execute",
+      "detail": "servicio mercado PID 29820 puerto 8791 modo=public"
+    }
+  ],
+  "rest_count": 0,
+  "ledger_total_por_run_id": null,
+  "db_unchanged": true
+}

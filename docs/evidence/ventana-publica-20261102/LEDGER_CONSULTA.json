@@ -1,0 +1,18 @@
+{
+  "run_id": "eng-run-public-20261102",
+  "consulta_ledger": {
+    "db_path": "data/market-cache/market_cache.db",
+    "tabla": "market_fetch_ledger",
+    "filtro": "execution_id = 'eng-run-public-20261102'",
+    "filas_encontradas": 0,
+    "consumo_agregado_persistido": 0,
+    "nota": "El ledger no contiene ninguna fila para este run_id. El servicio de ingenieria nunca llego a reservar un intento en market_fetch_ledger antes de que el orquestador detectara GLOBAL_DEADLINE_EXCEEDED en engineering_start_wait."
+  },
+  "distincion_intento": {
+    "reservado": "UNKNOWN (0 filas en ledger, no se pudo verificar)",
+    "envio_iniciado": "UNKNOWN (el servicio de ingenieria nunca publico /health, por lo que no se puede confirmar envio)",
+    "respuesta": "UNKNOWN (sin filas de completado en ledger)",
+    "error": "GLOBAL_DEADLINE_EXCEEDED en engineering_start_wait (orquestador); el servicio de ingenieria quedo bloqueado antes de levantar su servidor HTTP"
+  },
+  "conclusión": "consumo = UNKNOWN para los intentos /time del servicio de ingenieria. rest_count=0 solo refleja el contador del arnés (klines), no incluye /time del servicio."
+}

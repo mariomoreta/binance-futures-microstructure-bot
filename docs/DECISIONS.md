@@ -4188,3 +4188,29 @@ economicos.
 
 - Evidencia conservada en <temp>/run-public/evidence.json (no commiteada).
 
+
+## 2026-11-02 Cierre y correccion de arranque del servicio de ingenieria (post-ventana publica)
+
+- Cambio en scripts/microstructure_probe/engineering_session_service.py (main()): el servidor HTTP
+  se levanta ANTES de ejecutar ClockSynchronizer.sync() en modo --clock-source public. Durante la
+  preparacion (sync en curso), /health responde public_sincronizado con available=False (NOT_READY);
+  nunca se permite crear sesion sin sincronizacion valida (_validar_contexto_temporal rechaza con
+  RELOJ_REFERENCIA_INCERTO). Si el sync falla, available=False se mantiene y el servicio sigue
+  operativo pero sin reloj valido. Esto evita que el orquestador se bloquee esperando /health y
+  agote el deadline global de 180 s.
+- Diagnostico de la ventana publica (eng-run-public-20261102, veredicto ERROR): la ultima transicion
+  completada fue service_started (mercado PID 29820, puerto 8791, modo=public). El servicio de
+  ingenieria se lanzo (_spawn) pero su /health nunca respondio porque el servidor HTTP se levantaba
+  DESPUES del sync bloqueante contra Binance. No se atribuye el bloqueo solo a ClockSynchronizer;
+  la causa estructural es el orden de levantamiento del servidor HTTP.
+- Reconciliacion factual: rest_count=0 (contador del arnes, klines) NO acredita cero /time. El ledger
+  market_fetch_ledger tiene 0 filas para eng-run-public-20261102, por lo que el consumo de /time del
+  servicio de ingenieria es UNKNOWN (no se puede distinguir reservado / enviado / respondido / error).
+  Objetivo no evaluado; no "cero operaciones valido".
+- Pruebas focalizadas: tests/test_engineering_clock_readiness.py (6 PASS, sin Binance, cero peticiones
+  publicas): reloj local disponible; public sincronizado disponible; public sin sync = NOT_READY;
+  create_session rechazada sin reloj valido; proveedor de tiempo que falla = sesion rechazada;
+  /health responde inmediatamente durante preparacion (no bloquea).
+- Evidencia publicada en docs/evidence/ventana-publica-20261102/ (evidence.json, run-id.json,
+  LEDGER_CONSULTA.json, ABSENCIA_LOGS.md, RECONCILIACION_FACTUAL.md, PRUEBAS_LOCALES_READINESS.json).
+- No se repite la ventana publica. Sin conexiones publicas, ordenes, pagos, móvil ni cambios economicos.

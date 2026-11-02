@@ -1,0 +1,43 @@
+{
+  "run_id": "eng-run-public-20261102",
+  "pruebas_locales_readiness": {
+    "archivo": "tests/test_engineering_clock_readiness.py",
+    "pruebas_ejecutadas": 6,
+    "pruebas_pasadas": 6,
+    "sin_binance": true,
+    "cero_peticiones_publicas": true,
+    "casos": [
+      {
+        "id": "test_local_reporta_local_sistema_disponible",
+        "resultado": "PASS",
+        "descripcion": "--clock-source local reporta local_sistema, available=True; se permite crear sesion."
+      },
+      {
+        "id": "test_public_sincronizado_reporta_disponible",
+        "resultado": "PASS",
+        "descripcion": "--clock-source public con sync valido reporta public_sincronizado, available=True; se permite crear sesion."
+      },
+      {
+        "id": "test_public_sin_sync_reporta_not_ready",
+        "resultado": "PASS",
+        "descripcion": "Durante preparacion (sin sync completado), /health reporta public_sincronizado, available=False (NOT_READY). Offset y timestamp nulos."
+      },
+      {
+        "id": "test_create_session_rechazada_sin_reloj_valido",
+        "resultado": "PASS",
+        "descripcion": "create_session se rechaza con RELOJ_REFERENCIA_INCERTO cuando el reloj no esta disponible. Jamas se permite crear sesion sin sincronizacion valida."
+      },
+      {
+        "id": "test_proveedor_tiempo_falla_no_permite_sesion",
+        "resultado": "PASS",
+        "descripcion": "Proveedor local que falla en /time: sync fallido, available=False, create_session rechazada."
+      },
+      {
+        "id": "test_salud_disponible_durante_preparacion_public",
+        "resultado": "PASS",
+        "descripcion": "El servidor HTTP se levanta antes del sync: /health responde inmediatamente (no bloquea) incluso con available=False durante la preparacion."
+      }
+    ],
+    "conclusion": "El servidor HTTP del servicio de ingenieria se levanta ANTES de la sincronizacion del reloj. Durante la preparacion (sync en curso), /health responde NOT_READY (available=False) y nunca se permite crear sesion sin sincronizacion valida. El bloqueo de la ventana publica se resolvio levantando /health antes del sync."
+  }
+}
