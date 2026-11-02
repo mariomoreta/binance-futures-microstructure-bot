@@ -200,12 +200,14 @@ def _make_budgeted_time_fetch(
     execution_id: str,
     max_requests: int,
     real_fetch: Callable[[], int],
+    run_max_requests: Optional[int] = None,
 ) -> Callable[[], int]:
     """Devuelve un fetch de /time que RESERVA presupuesto ANTES de enviar.
 
     Cada intento (incluidos fallos) se contabiliza en
-    ``market_fetch_ledger`` ANTES de abrir socket. Si la ventana no permite
-    el intento, lanza ``UpstreamBudgetExceeded`` sin tocar la red.
+    ``market_fetch_ledger`` ANTES de abrir socket. Si la ventana o el
+    presupuesto total de la corrida no permiten el intento, lanza
+    ``UpstreamBudgetExceeded`` sin tocar la red.
     ClockSynchronizer cuenta una excepción como muestra fallida (no hay
     offset, por tanto ahora_ms -> None y abstención).
     """
@@ -216,6 +218,7 @@ def _make_budgeted_time_fetch(
                 {"endpoint": "fapi_time", "source": SERVER_TIME_URL},
                 sort_keys=True),
             max_requests=max_requests, execution_id=execution_id,
+            run_max_requests=run_max_requests,
         )
         if row_id is None:
             raise UpstreamBudgetExceeded(
@@ -581,37 +584,62 @@ class EngineeringSessionController:
         if clock_sync is not None:
             self._now_ms = make_synced_now_ms(
                 clock_sync, CLOCK_REFERENCE_MAX_AGE_MS)
-            self._clock_source = (clock_source
-                                  or "public_validado")
+            self._clock_source = clock_source or "public_sincronizado"
         else:
             # Referencia local explícita (reloj de pared local o reloj
             # inyectado por pruebas). Cero solicitudes públicas. Nunca se usa
             # como si fuera tiempo validado de Binance.
             self._now_ms = now_ms or _now_ms
-            self._clock_source = (clock_source or "local_controlado")
+            if clock_source is not None:
+                self._clock_source = clock_source
+            elif now_ms is not None:
+                # Reloj inyectado/controlado de prueba (no el pared del
+                # sistema): identidad explícita para el observador.
+                self._clock_source = "local_inyectado"
+            else:
+                self._clock_source = "local_sistema"
 
     # --- estado público del reloj de referencia -----------------------------
     def _clock_public_state(self) -> Dict[str, Any]:
-        """Fuente, última sincronización, offset, RTT y estado de validez."""
+        """Fuente, última sincronización, offset, RTT y estado de validez.
+
+        Cuatro estados explícitos:
+          - local_sistema: reloj de pared del servicio, cero públicas.
+          - local_inyectado: reloj controlado por pruebas, cero públicas.
+          - public_sincronizado: ClockSynchronizer sincronizado y vigente.
+          - referencia no disponible/expirada: available False.
+        """
         sync = self._clock_sync
         if sync is None:
-            # Referencia local (reloj de pared local o inyectado por
-            # pruebas): disponible por definicion, cero solicitudes publicas.
-            local = self._clock_source == "local_controlado"
+            # Referencia local (sistema o inyectado): disponible por
+            # definición, cero solicitudes públicas.
             return {
                 "source": self._clock_source,
-                "available": local,
-                "reason": None if local else "sin_sincronizador",
+                "available": True,
+                "reason": None,
             }
         snap = sync.snapshot()
-        available = (snap.get("clockOffsetMs") is not None
-                     and snap.get("lastClockSyncTimestamp") is not None)
+        offset = snap.get("clockOffsetMs")
+        ts = snap.get("lastClockSyncTimestamp")
+        available = offset is not None and ts is not None
+        age_ms: Optional[float] = None
+        if available:
+            try:
+                last = datetime.fromisoformat(str(ts))
+                age_ms = (
+                    datetime.now(timezone.utc) - last
+                ).total_seconds() * 1000.0
+                if age_ms > CLOCK_REFERENCE_MAX_AGE_MS:
+                    available = False
+            except (ValueError, TypeError):
+                available = False
         return {
             "source": self._clock_source,
             "available": available,
-            "offset_ms": snap.get("clockOffsetMs"),
+            "offset_ms": offset,
             "rtt_ms": snap.get("serverTimeRttMs"),
-            "last_sync_timestamp": snap.get("lastClockSyncTimestamp"),
+            "last_sync_timestamp": ts,
+            "age_ms": None if age_ms is None else round(age_ms, 6),
             "sync_successful": snap.get("clockSyncSuccessful"),
             "sync_failed": snap.get("clockSyncFailed"),
             "samples_valid": snap.get("clockSamplesValid"),
@@ -2004,39 +2032,57 @@ def main(argv: Optional[List[str]] = None) -> int:
         if max_req is None:
             max_req = ClockSynchronizer.sample_count
         # Presupuesto publico ANTES de habilitar el modo publico: si no
-        # alcanza para la politica de sincronizacion, no se habilita.
+        # alcanza para la politica de sincronizacion, no se habilita. Se
+        # comprueban AMBOS limites: la ventana movil (30/60 s) y el presupuesto
+        # total de la corrida (7), compartido entre /time, klines, catalogo,
+        # reintentos y recuperacion. El servicio no sustituye el total de la
+        # corrida por el limite general.
         cache = MarketCache()
         try:
             cache.init_db()
         except Exception:
             cache = None
-        if cache is not None \
-                and cache.requests_in_window(_now_ms()) + max_req > MAX_FETCH_REQUESTS_PER_WINDOW:
+        if cache is None:
+            print(json.dumps({
+                "error": "PUBLIC_CLOCK_CACHE_UNAVAILABLE",
+                "detail": "no se pudo inicializar la caché de presupuesto",
+            }, ensure_ascii=False), flush=True)
+            return 2
+        # Nueva ejecucion: reiniciar el presupuesto total de la corrida.
+        cache.reset_run_budget()
+        now_start = _now_ms()
+        window_used = cache.requests_in_window(now_start)
+        run_used = cache.run_requests_used()
+        if window_used + max_req > MAX_FETCH_REQUESTS_PER_WINDOW \
+                or run_used + max_req > MAX_FETCH_REQUESTS_PER_RUN:
             print(json.dumps({
                 "error": "PUBLIC_CLOCK_BUDGET_INSUFICIENTE",
                 "detail": ("se requieren "
                            f"{max_req} intentos /time pero el presupuesto "
                            "publico no permite la politica de "
-                           "sincronizacion del reloj"),
+                           "sincronizacion del reloj "
+                           f"(ventana {window_used}/{MAX_FETCH_REQUESTS_PER_WINDOW}, "
+                           f"corrida {run_used}/{MAX_FETCH_REQUESTS_PER_RUN})"),
             }, ensure_ascii=False), flush=True)
             return 2
         synchronizer = ClockSynchronizer(
             sample_count=max_req,
             fetch_server_time=_make_budgeted_time_fetch(
-                cache, f"eng-clock-{_now_ms()}", max_req,
-                _fetch_binance_server_time),
+                cache, f"eng-clock-{now_start}", max_req,
+                _fetch_binance_server_time,
+                run_max_requests=MAX_FETCH_REQUESTS_PER_RUN),
             request_timeout_seconds=5.0,
         )
         try:
             asyncio.run(synchronizer.sync())
         except Exception:  # noqa: BLE001 - referencia no disponible -> abstencion
             pass
-        clock_source_label = "public_validado"
+        clock_source_label = "public_sincronizado"
     else:
         # Modo local: reloj de pared local, cero solicitudes publicas,
         # referencia explícitamente local (no se simula tiempo de Binance).
         now_ms = _now_ms
-        clock_source_label = "local_controlado"
+        clock_source_label = "local_sistema"
     world = EngineeringSessionController(
         sessions_dir, args.cadence_ms, market_url=args.market_url,
         market_bars=args.market_bars, live_silence_ms=args.live_silence_ms,

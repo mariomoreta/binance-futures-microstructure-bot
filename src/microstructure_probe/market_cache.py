@@ -47,6 +47,13 @@ CATALOG_TTL_MS = 6 * 60 * 60 * 1000        # 6 h: no refrescar mas seguido
 ROLLING_WINDOW_MS = 60_000                 # ventana de presupuesto
 MAX_FETCH_REQUESTS_PER_WINDOW = 30         # peticiones/kline por minuto (todas las invocaciones)
 MAX_SERIES_LIMIT = 5000                    # tope duro de velas devueltas al cliente
+# Presupuesto TOTAL de la corrida: compartido entre /time, klines, catalogo,
+# reintentos y recuperacion. NO se reinicia al pasar la ventana movil de 60 s;
+# solo se reinicia al iniciar una nueva ejecucion del servicio.
+# Propuesta de minimo viable (no cubierta por la autorizacion previa de 4):
+# 5 intentos de tiempo + 2 de klines = 7.
+MAX_FETCH_REQUESTS_PER_RUN = 7
+RUN_BUDGET_META_KEY = "run_fetch_requests_total"
 
 
 def default_path() -> Path:
@@ -429,6 +436,7 @@ class MarketCache:
                               window_ms: int = ROLLING_WINDOW_MS,
                               attempts: int = 1,
                               execution_id: Optional[str] = None,
+                              run_max_requests: Optional[int] = None,
                               ) -> Optional[int]:
         """Reserva ``attempts`` upstream en la ventana compartida.
 
@@ -437,23 +445,52 @@ class MarketCache:
         nunca pasan ambos si el limite no alcanza. En denegacion queda una
         fila ``budget_blocked`` con ``requests=0`` (auditoria sin consumo).
         Devuelve el id de fila reservado, o None si la reserva fue denegada.
+
+        Cuando ``run_max_requests`` se indica, ademas se valida el presupuesto
+        TOTAL de la corrida (almacenado en ``cache_meta`` bajo
+        ``run_fetch_requests_total``), que se comparte entre /time, klines,
+        catalogo, reintentos y recuperacion y NO se reinicia al pasar la
+        ventana movil de 60 s. La reserva de ambos cupos (ventana y corrida)
+        es atomica en la misma transaccion: si alguno se agota, no se envia
+        nada.
         """
         con = self._con()
         try:
             try:
                 con.execute("BEGIN IMMEDIATE")
+                # Asegurar tabla de meta (idempotente; init_db ya la crea).
+                con.execute(
+                    "CREATE TABLE IF NOT EXISTS cache_meta"
+                    " (key TEXT PRIMARY KEY, value TEXT NOT NULL)"
+                )
+                # 1) Limite general de ventana movil (30 por 60 s).
                 row = con.execute(
                     "SELECT COALESCE(SUM(requests), 0) n FROM"
                     " market_fetch_ledger WHERE at_ms > ?",
                     (int(at_ms) - int(window_ms),),
                 ).fetchone()
                 used = int(row["n"] or 0)
-                if used + int(attempts) > int(max_requests):
+                # 2) Presupuesto total de la corrida (no se reinicia por
+                #    ventana; solo al iniciar una nueva ejecucion).
+                run_total = 0
+                if run_max_requests is not None:
+                    rrow = con.execute(
+                        "SELECT value FROM cache_meta WHERE key=?",
+                        (RUN_BUDGET_META_KEY,),
+                    ).fetchone()
+                    run_total = int(rrow["value"] or 0) if rrow else 0
+                if used + int(attempts) > int(max_requests) or \
+                        (run_max_requests is not None and
+                         run_total + int(attempts) > int(run_max_requests)):
                     blocked = {
                         "status": "blocked_pre_send",
                         "used_in_window": used,
                         "max_requests": int(max_requests),
                         "requested": int(attempts),
+                        "run_used": run_total,
+                        "run_max_requests": (
+                            int(run_max_requests)
+                            if run_max_requests is not None else None),
                     }
                     con.execute(
                         "INSERT INTO market_fetch_ledger (at_ms, symbol,"
@@ -474,6 +511,13 @@ class MarketCache:
                 )
                 new_id = int(con.execute(
                     "SELECT last_insert_rowid()").fetchone()[0])
+                if run_max_requests is not None:
+                    con.execute(
+                        "INSERT INTO cache_meta (key, value) VALUES (?, ?)"
+                        " ON CONFLICT(key) DO UPDATE SET value=excluded.value",
+                        (RUN_BUDGET_META_KEY,
+                         str(run_total + int(attempts))),
+                    )
                 con.commit()
                 return new_id
             except BaseException:
@@ -534,6 +578,37 @@ class MarketCache:
         return {"used_in_window": self.requests_in_window(now, window_ms),
                 "max_requests_per_window": int(max_requests),
                 "window_ms": int(window_ms)}
+
+    def run_requests_used(self) -> int:
+        """Suma de intentos ya reservados contra el presupuesto total de la
+        corrida (no se reinicia al pasar la ventana movil)."""
+        con = self._con()
+        try:
+            row = con.execute(
+                "SELECT value FROM cache_meta WHERE key=?",
+                (RUN_BUDGET_META_KEY,),
+            ).fetchone()
+            return int(row["value"] or 0) if row else 0
+        finally:
+            con.close()
+
+    def reset_run_budget(self) -> None:
+        """Reinicia el presupuesto total de la corrida al iniciar una nueva
+        ejecucion del servicio."""
+        con = self._con()
+        try:
+            con.execute(
+                "CREATE TABLE IF NOT EXISTS cache_meta"
+                " (key TEXT PRIMARY KEY, value TEXT NOT NULL)"
+            )
+            con.execute(
+                "INSERT INTO cache_meta (key, value) VALUES (?, ?)"
+                " ON CONFLICT(key) DO UPDATE SET value=excluded.value",
+                (RUN_BUDGET_META_KEY, "0"),
+            )
+            con.commit()
+        finally:
+            con.close()
 
     def fetch_ledger(self, limit: int = 20) -> List[Dict[str, Any]]:
         con = self._con()
