@@ -87,7 +87,9 @@ def _make_orchestrator_args(provider_port: int, sessions_dir: Path,
                             run_id: Optional[str],
                             transport: str = "local",
                             clock_source: Optional[str] = None,
-                            execute: bool = False) -> argparse.Namespace:
+                            execute: bool = False,
+                            clock_readiness_timeout_s: Optional[float] = None
+                            ) -> argparse.Namespace:
     """Construye los argumentos del orquestador para pruebas focalizadas."""
     argv = [
         "--transport", transport,
@@ -110,6 +112,9 @@ def _make_orchestrator_args(provider_port: int, sessions_dir: Path,
         argv += ["--run-id", run_id]
     if clock_source is not None:
         argv += ["--clock-source", clock_source]
+    if clock_readiness_timeout_s is not None:
+        argv += ["--clock-readiness-timeout-s",
+                 str(clock_readiness_timeout_s)]
     return elw_mod.build_arg_parser().parse_args(argv)
 
 STEP_MS = 60 * 1000  # 1m
@@ -1061,11 +1066,13 @@ class TestOrquestadorConfigEfectiva(unittest.TestCase):
 
     def _orchestrator_args(self, transport: str = "local",
                            clock_source: Optional[str] = None,
-                           run_id: Optional[str] = None
+                           run_id: Optional[str] = None,
+                           clock_readiness_timeout_s: Optional[float] = None
                            ) -> argparse.Namespace:
         return _make_orchestrator_args(
             self.provider_port, self.sessions_dir, run_id,
-            transport=transport, clock_source=clock_source)
+            transport=transport, clock_source=clock_source,
+            clock_readiness_timeout_s=clock_readiness_timeout_s)
 
     def _start_services_mocked(
         self,
@@ -1073,11 +1080,13 @@ class TestOrquestadorConfigEfectiva(unittest.TestCase):
         clock_source: Optional[str] = None,
         run_id: Optional[str] = None,
         health_clock: Optional[Dict[str, Any]] = None,
+        clock_readiness_timeout_s: Optional[float] = None,
     ):
         """Ejecuta _start_services con servicios mockeados (sin puentes reales
         de mercado/ingeniería). Devuelve (orch, argv_capturados, test_cache_db)."""
         args = self._orchestrator_args(
-            transport=transport, clock_source=clock_source, run_id=run_id)
+            transport=transport, clock_source=clock_source, run_id=run_id,
+            clock_readiness_timeout_s=clock_readiness_timeout_s)
         orch = elw_mod.WindowOrchestrator(args)
         original_cache_db = elw_mod.CACHE_DB
         test_cache_db = self.tmp / "orch_cache.db"
@@ -1086,7 +1095,8 @@ class TestOrquestadorConfigEfectiva(unittest.TestCase):
             captured: List[tuple] = []
             eng_port = args.engineering_port
 
-            def fake_spawn(argv, label):
+            def fake_spawn(argv, label, stdout_path=None,
+                           stderr_path=None):
                 captured.append((list(argv), label))
                 return _FakeProc()
 
@@ -1201,8 +1211,9 @@ class TestOrquestadorConfigEfectiva(unittest.TestCase):
             self._stop_provider()
 
     def test_fuente_expirada_bloquea_antes_de_crear_sesion(self):
-        """/health.clock disponible False (expirada) se rechaza antes de
-        crear la sesión."""
+        """/health.clock disponible False (expirada): el arnés espera hasta
+        el límite de preparación y luego falla con CLOCK_READINESS_TIMEOUT_CLOCK,
+        nunca permite crear sesión."""
         self._start_provider()
         try:
             with self.assertRaises(RuntimeError) as ctx:
@@ -1211,8 +1222,9 @@ class TestOrquestadorConfigEfectiva(unittest.TestCase):
                     health_clock={"source": "local_sistema",
                                   "available": False,
                                   "reason": "referencia expirada",
-                                  "age_ms": 7_000_000})
-            self.assertIn("CLOCK_REFERENCIA_NO_DISPONIBLE", str(ctx.exception))
+                                  "age_ms": 7_000_000},
+                    clock_readiness_timeout_s=2)
+            self.assertIn("ENGINEERING_CLOCK_NOT_READY", str(ctx.exception))
         finally:
             self._stop_provider()
 
@@ -1237,7 +1249,7 @@ class TestOrquestadorConfigEfectiva(unittest.TestCase):
                 args.sessions_dir = str(sessions_dir)
                 orch = elw_mod.WindowOrchestrator(args)
                 captured: List[tuple] = []
-                orch._spawn = lambda argv, label: (
+                orch._spawn = lambda argv, label, stdout_path=None, stderr_path=None: (
                     captured.append((list(argv), label)) or _FakeProc())
                 orch._load_recent_context()
                 rows = cache.fetch_ledger(limit=50)
@@ -1300,7 +1312,7 @@ class TestOrquestadorConfigEfectiva(unittest.TestCase):
                 args.sessions_dir = str(sessions_dir)
                 orch = elw_mod.WindowOrchestrator(args)
                 captured: List[tuple] = []
-                orch._spawn = lambda argv, label: (
+                orch._spawn = lambda argv, label, stdout_path=None, stderr_path=None: (
                     captured.append((list(argv), label)) or _FakeProc())
                 # La carga de contexto no debe abrir nuevo socket contra el
                 # proveedor (presupuesto agotado): contexto vacío.

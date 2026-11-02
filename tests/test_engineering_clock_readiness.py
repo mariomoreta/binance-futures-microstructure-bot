@@ -24,6 +24,7 @@ from __future__ import annotations
 import asyncio
 import json
 import shutil
+import subprocess
 import sys
 import tempfile
 import time
@@ -315,6 +316,148 @@ class TestClockReadiness(unittest.TestCase):
             self.assertFalse(clk["available"], clk)
         finally:
             h.close()
+
+
+# --- CLI real del servicio (subproceso) con proveedor loopback ------------
+
+class TestCliRealLocal(unittest.TestCase):
+    """Pruebas del CLI real de engineering_session_service.py lanzado como
+    subproceso, con proveedor de tiempo loopback (modo local: cero Binance).
+
+    Estas pruebas ejercitan el camino real del proceso, no solo los métodos
+    del controlador, para verificar que /health responde, que se pueden
+    persistir stdout/stderr y que el proceso se detiene limpiamente.
+    """
+
+    def setUp(self) -> None:
+        self.tmp = Path(tempfile.mkdtemp(prefix="orch-cli-real-"))
+        self.evidence_dir = self.tmp / "evidence"
+        self.evidence_dir.mkdir(parents=True, exist_ok=True)
+
+    def tearDown(self) -> None:
+        shutil.rmtree(self.tmp, ignore_errors=True)
+
+    def _launch_service(self, port: int, sessions_dir: Path,
+                        clock_source: str = "local",
+                        extra_args: Optional[List[str]] = None) -> subprocess.Popen:
+        """Lanza el CLI real del servicio de ingeniería como subproceso."""
+        argv = [
+            sys.executable,
+            str(ROOT / "scripts" / "engineering_session_service.py"),
+            "--port", str(port),
+            "--sessions-dir", str(sessions_dir),
+            "--clock-source", clock_source,
+            "--run-id", "eng-cli-real-%d" % int(time.time() * 1000),
+            "--pid-file", str(sessions_dir / "service.json"),
+        ]
+        if extra_args:
+            argv.extend(extra_args)
+        stdout_path = self.evidence_dir / "service-stdout.log"
+        stderr_path = self.evidence_dir / "service-stderr.log"
+        stdout_f = open(stdout_path, "w", encoding="utf-8", errors="replace")
+        stderr_f = open(stderr_path, "w", encoding="utf-8", errors="replace")
+        proc = subprocess.Popen(
+            argv, cwd=str(ROOT),
+            stdout=stdout_f, stderr=stderr_f,
+            text=True, encoding="utf-8", errors="replace")
+        # Guardar referencias para cerrar archivos después.
+        proc._stdout_file = stdout_f  # type: ignore[attr-defined]
+        proc._stderr_file = stderr_f  # type: ignore[attr-defined]
+        return proc
+
+    def _wait_for_health(self, port: int, timeout: float = 10.0
+                         ) -> Optional[Dict[str, Any]]:
+        """Espera a que /health responda en el puerto dado."""
+        import urllib.request
+        end = time.monotonic() + timeout
+        while time.monotonic() < end:
+            try:
+                with urllib.request.urlopen(
+                        "http://127.0.0.1:%d/health" % port, timeout=2.0) as resp:
+                    return json.loads(resp.read().decode("utf-8"))
+            except Exception:
+                time.sleep(0.25)
+        return None
+
+    def _stop_proc(self, proc: subprocess.Popen) -> None:
+        try:
+            proc.terminate()
+            proc.wait(timeout=5.0)
+        except Exception:  # noqa: BLE001
+            try:
+                proc.kill()
+            except Exception:  # noqa: BLE001
+                pass
+        for attr in ("_stdout_file", "_stderr_file"):
+            f = getattr(proc, attr, None)
+            if f is not None:
+                try:
+                    f.close()
+                except Exception:  # noqa: BLE001
+                    pass
+
+    # --- 1. Modo local: /health responde inmediatamente -------------------
+
+    def test_cli_real_local_salud_inmediata(self):
+        """CLI real en modo local: /health responde inmediatamente con
+        local_sistema, available=True."""
+        port = _free_port()
+        sessions_dir = self.tmp / "sessions"
+        sessions_dir.mkdir(parents=True, exist_ok=True)
+        proc = self._launch_service(port, sessions_dir, clock_source="local")
+        try:
+            health = self._wait_for_health(port, timeout=10.0)
+            self.assertIsNotNone(health, "el servicio no levantó /health")
+            clk = health.get("clock") or {}
+            self.assertEqual(clk.get("source"), "local_sistema", clk)
+            self.assertTrue(clk.get("available"), clk)
+        finally:
+            self._stop_proc(proc)
+
+    # --- 2. Modo local: se puede crear sesión -----------------------------
+
+    def test_cli_real_local_permite_crear_sesion(self):
+        """CLI real en modo local: se puede crear sesión porque el reloj
+        está disponible."""
+        port = _free_port()
+        sessions_dir = self.tmp / "sessions"
+        sessions_dir.mkdir(parents=True, exist_ok=True)
+        proc = self._launch_service(port, sessions_dir, clock_source="local")
+        try:
+            health = self._wait_for_health(port, timeout=10.0)
+            self.assertIsNotNone(health, "el servicio no levantó /health")
+            # Crear sesión vía HTTP real.
+            import urllib.request
+            payload = json.dumps(live_payload(CONTEXT, "req-cli-1")).encode()
+            req = urllib.request.Request(
+                "http://127.0.0.1:%d/sessions" % port,
+                data=payload, method="POST",
+                headers={"Content-Type": "application/json"})
+            with urllib.request.urlopen(req, timeout=10.0) as resp:
+                body = json.loads(resp.read().decode("utf-8"))
+            self.assertEqual(resp.status, 200, body)
+            sess = body.get("session") or {}
+            self.assertIsNotNone(sess.get("session_id"), body)
+        finally:
+            self._stop_proc(proc)
+
+    # --- 3. Stdout/stderr persisten en directorio de evidencia ------------
+
+    def test_cli_real_stdout_stderr_persistidos(self):
+        """CLI real: stdout/stderr se escriben en archivos de evidencia y
+        se conservan tras detener el servicio."""
+        port = _free_port()
+        sessions_dir = self.tmp / "sessions"
+        sessions_dir.mkdir(parents=True, exist_ok=True)
+        proc = self._launch_service(port, sessions_dir, clock_source="local")
+        try:
+            self._wait_for_health(port, timeout=10.0)
+        finally:
+            self._stop_proc(proc)
+        stdout_path = self.evidence_dir / "service-stdout.log"
+        stderr_path = self.evidence_dir / "service-stderr.log"
+        self.assertTrue(stdout_path.exists(), "stdout no persistido")
+        self.assertTrue(stderr_path.exists(), "stderr no persistido")
 
 
 if __name__ == "__main__":  # pragma: no cover

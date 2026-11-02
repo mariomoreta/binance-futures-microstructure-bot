@@ -94,6 +94,11 @@ MAX_BARS_PER_QUERY = 300
 MAX_CONSUMERS_SSE = 3
 MAX_RECONNECTS = 3
 GLOBAL_DEADLINE_S = 180.0
+# Tiempo máximo para esperar a que el servicio de ingeniería reporte un
+# reloj de referencia válido en /health (dentro del deadline global).
+CLOCK_READINESS_TIMEOUT_S = 60.0
+# Intervalo entre polls de /health durante la espera de readiness.
+CLOCK_POLL_INTERVAL_S = 0.5
 
 CANONICAL_DBS = (
     Path("data") / "microprobe.db",
@@ -162,7 +167,8 @@ def canonical_dbs_unchanged(before: Dict[str, Any],
 
 
 class WindowOrchestrator:
-    def __init__(self, args: argparse.Namespace) -> None:
+    def __init__(self, args: argparse.Namespace,
+                 evidence_dir: Optional[Path] = None) -> None:
         self.args = args
         self.transport = args.transport
         # Fuente del reloj de referencia: explícita por CLI o derivada del
@@ -211,12 +217,32 @@ class WindowOrchestrator:
         self.reconnects_max_seen = 0
         self.db_before = canonical_dbs_snapshot()
         self._config_validated = False
+        # Directorio de evidencia para persistir stdout/stderr de los
+        # servicios y otros artefactos de diagnóstico.
+        self.evidence_dir = evidence_dir
+        if self.evidence_dir is not None:
+            self.evidence_dir.mkdir(parents=True, exist_ok=True)
+        # Límite de preparación explícito para el reloj de referencia.
+        self.clock_readiness_timeout_s = (
+            args.clock_readiness_timeout_s
+            if args.clock_readiness_timeout_s is not None
+            else CLOCK_READINESS_TIMEOUT_S)
         # Identidad de corrida: se resuelve en _execute() una vez que
         # sessions_dir está disponible.
         self.run_id: Optional[str] = args.run_id
         # Consumo agregado del ledger por run_id (/time + klines + ...),
         # consultado en _verdict para la evidencia final.
         self.ledger_total_por_run_id: Optional[int] = None
+        # Última salud observada del servicio de ingeniería (antes de crear
+        # sesión y durante el monitoreo).
+        self.ultima_salud_ingenieria: Optional[Dict[str, Any]] = None
+        # Resultado de limpieza de procesos.
+        self.limpieza_resultado: Dict[str, Any] = {}
+        # Stdout/stderr capturados de los servicios (rutas a archivos).
+        self.service_stdout_path: Optional[Path] = None
+        self.service_stderr_path: Optional[Path] = None
+        self.engineering_stdout_path: Optional[Path] = None
+        self.engineering_stderr_path: Optional[Path] = None
 
     # -- validación de configuración (antes de conectar) ------------------
     def _validate_config(self) -> None:
@@ -307,6 +333,27 @@ class WindowOrchestrator:
                 self.db_before, canonical_dbs_snapshot())
             run["checks"] = self.checks
             run["verdict"] = self.verdict
+            # Recoger siempre desde finally: consumo del ledger por run_id,
+            # última salud disponible y resultado de limpieza.
+            if self.run_id is not None:
+                try:
+                    _cache = MarketCache(CACHE_DB)
+                    _cache.init_db()
+                    self.ledger_total_por_run_id = _cache.run_requests_used(
+                        self.run_id)
+                except Exception:  # noqa: BLE001 - evidencia, no falla
+                    self.ledger_total_por_run_id = None
+            run["ledger_total_por_run_id"] = self.ledger_total_por_run_id
+            run["ultima_salud_ingenieria"] = self.ultima_salud_ingenieria
+            run["limpieza_resultado"] = self.limpieza_resultado
+            run["service_stdout_path"] = str(self.service_stdout_path) \
+                if self.service_stdout_path else None
+            run["service_stderr_path"] = str(self.service_stderr_path) \
+                if self.service_stderr_path else None
+            run["engineering_stdout_path"] = str(self.engineering_stdout_path) \
+                if self.engineering_stdout_path else None
+            run["engineering_stderr_path"] = str(self.engineering_stderr_path) \
+                if self.engineering_stderr_path else None
             self._cleanup()
         return run
 
@@ -454,7 +501,17 @@ class WindowOrchestrator:
         if self.transport == "local":
             argv += ["--base-url",
                      "ws://127.0.0.1:%d" % self.ws_port]
-        self.service_proc = self._spawn(argv, "market-stream-service")
+        # Persistir stdout/stderr del servicio de mercado en evidencia.
+        svc_out = None
+        svc_err = None
+        if self.evidence_dir is not None:
+            svc_out = self.evidence_dir / "service-stdout.log"
+            svc_err = self.evidence_dir / "service-stderr.log"
+            self.service_stdout_path = svc_out
+            self.service_stderr_path = svc_err
+        self.service_proc = self._spawn(argv, "market-stream-service",
+                                        stdout_path=svc_out,
+                                        stderr_path=svc_err)
         svc_url = "http://127.0.0.1:%d" % self.service_port
         health = None
         for _ in range(int(self._remaining() // 0.25) + 1):
@@ -484,21 +541,19 @@ class WindowOrchestrator:
                  "--run-id", self.run_id,
                  "--clock-source", self.clock_source,
                  "--pid-file", str(sessions_dir / "service.json")]
-        self.engineering_proc = self._spawn(argv2, "engineering-session")
+        eng_out = None
+        eng_err = None
+        if self.evidence_dir is not None:
+            eng_out = self.evidence_dir / "engineering-stdout.log"
+            eng_err = self.evidence_dir / "engineering-stderr.log"
+            self.engineering_stdout_path = eng_out
+            self.engineering_stderr_path = eng_err
+        self.engineering_proc = self._spawn(argv2, "engineering-session",
+                                            stdout_path=eng_out,
+                                            stderr_path=eng_err)
         eng_url = "http://127.0.0.1:%d" % self.engineering_port
-        eng_health = None
-        for _ in range(int(self._remaining() // 0.25) + 1):
-            self._check_deadline("engineering_start_wait")
-            r = self._http_get(eng_url + "/health", timeout=3.0)
-            if r["ok"] and isinstance(self._json_loads(r["text"]), dict):
-                eng_health = self._json_loads(r["text"])
-                break
-            time.sleep(0.25)
-        if eng_health is None:
-            raise RuntimeError("ENGINEERING_START_FAILED")
-        # Verificar la fuente del reloj de referencia ANTES de crear la sesión:
-        # rechaza fuente incorrecta, ausente o expirada.
-        self._verify_clock(eng_health)
+        # Esperar readiness: HTTP disponible Y reloj de referencia válido.
+        eng_health = self._wait_for_engineering_readiness(eng_url, sessions_dir)
         self.add_check("engineering_started", True,
                        "servicio ingeniería PID %d puerto %d"
                        % (eng_health.get("pid"), eng_health.get("port")),
@@ -510,6 +565,14 @@ class WindowOrchestrator:
             "ingenieria_pid": eng_health.get("pid"),
             "ingenieria_puerto": eng_health.get("port"),
             "sessions_dir": str(sessions_dir),
+            "service_stdout_path": str(self.service_stdout_path)
+            if self.service_stdout_path else None,
+            "service_stderr_path": str(self.service_stderr_path)
+            if self.service_stderr_path else None,
+            "engineering_stdout_path": str(self.engineering_stdout_path)
+            if self.engineering_stdout_path else None,
+            "engineering_stderr_path": str(self.engineering_stderr_path)
+            if self.engineering_stderr_path else None,
         }
 
     def _start_provider(self) -> None:
@@ -568,11 +631,161 @@ class WindowOrchestrator:
                        "(source=%s)" % (self.clock_source, source),
                        source="execute")
 
-    def _spawn(self, argv: List[str], label: str):
+    def _wait_for_engineering_readiness(
+            self, eng_url: str, sessions_dir: Path) -> Dict[str, Any]:
+        """Espera a que el servicio de ingeniería reporte un reloj de
+        referencia válido en /health, distinguiendo HTTP disponible de
+        servicio preparado.
+
+        Registra transiciones y último motivo observado. Respeta el deadline
+        global y un límite de preparación explícito. No permite crear sesión
+        mientras el reloj no esté listo (available=False). Fuente incorrecta
+        o agotamiento de presupuesto producen un error claro.
+        """
+        readiness: Dict[str, Any] = {
+            "http_disponible_en_ms": None,
+            "reloj_listo_en_ms": None,
+            "transiciones": [],
+            "ultimo_motivo": None,
+            "error": None,
+            "ultimo_health": None,
+        }
+        started_monotonic = time.monotonic()
+        http_disponible = False
+        reloj_listo = False
+        ultimo_health = None
+
+        def registrar_transicion(estado: str, detalle: str) -> None:
+            ahora_ms = now_ms()
+            readiness["transiciones"].append({
+                "estado": estado,
+                "at_ms": ahora_ms,
+                "detalle": detalle,
+            })
+            readiness["ultimo_motivo"] = detalle
+
+        # Fase 1: esperar a que HTTP responda (servidor levantado).
+        while self._remaining() > 0:
+            self._check_deadline("engineering_http_wait")
+            transcurrido = time.monotonic() - started_monotonic
+            if transcurrido > self.clock_readiness_timeout_s:
+                readiness["error"] = "CLOCK_READINESS_TIMEOUT_HTTP"
+                registrar_transicion(
+                    "timeout_http",
+                    "servicio no respondió /health en %ds"
+                    % int(self.clock_readiness_timeout_s))
+                break
+            r = self._http_get(eng_url + "/health", timeout=3.0)
+            if r["ok"] and isinstance(self._json_loads(r["text"]), dict):
+                ultimo_health = self._json_loads(r["text"])
+                http_disponible = True
+                readiness["http_disponible_en_ms"] = now_ms()
+                self.ultima_salud_ingenieria = ultimo_health
+                registrar_transicion(
+                    "http_disponible",
+                    "servicio respondió /health (PID=%s)"
+                    % ultimo_health.get("pid"))
+                break
+            time.sleep(CLOCK_POLL_INTERVAL_S)
+
+        if not http_disponible:
+            raise RuntimeError(
+                "ENGINEERING_HTTP_NOT_AVAILABLE: %s"
+                % readiness["ultimo_motivo"])
+
+        # Fase 2: esperar a que el reloj de referencia esté listo.
+        while self._remaining() > 0:
+            self._check_deadline("engineering_clock_wait")
+            transcurrido = time.monotonic() - started_monotonic
+            if transcurrido > self.clock_readiness_timeout_s:
+                readiness["error"] = "CLOCK_READINESS_TIMEOUT_CLOCK"
+                registrar_transicion(
+                    "timeout_reloj",
+                    "reloj no listo en %ds"
+                    % int(self.clock_readiness_timeout_s))
+                break
+            r = self._http_get(eng_url + "/health", timeout=3.0)
+            if r["ok"] and isinstance(self._json_loads(r["text"]), dict):
+                ultimo_health = self._json_loads(r["text"])
+                self.ultima_salud_ingenieria = ultimo_health
+                clock = ultimo_health.get("clock") \
+                    if isinstance(ultimo_health, dict) else None
+                if not isinstance(clock, dict):
+                    # Reloj ausente: error claro, no seguir esperando.
+                    readiness["error"] = "CLOCK_SOURCE_AUSENTE"
+                    registrar_transicion(
+                        "reloj_ausente",
+                        "/health no expone el bloque 'clock'")
+                    raise RuntimeError(
+                        "CLOCK_SOURCE_AUSENTE: /health del servicio de "
+                        "ingeniería no expone el bloque 'clock'")
+                source = clock.get("source")
+                available = clock.get("available")
+                expected_source = ("public_sincronizado"
+                                   if self.clock_source == "public"
+                                   else "local_sistema")
+                if source != expected_source:
+                    # Fuente incorrecta: error claro, no seguir esperando.
+                    readiness["error"] = "CLOCK_SOURCE_INCORRECTO"
+                    registrar_transicion(
+                        "fuente_incorrecta",
+                        "se esperaba %s, obtuvo %s"
+                        % (expected_source, source))
+                    raise RuntimeError(
+                        "CLOCK_SOURCE_INCORRECTO: se esperaba el reloj %s, "
+                        "obtuvo %s" % (expected_source, source))
+                if available:
+                    reloj_listo = True
+                    readiness["reloj_listo_en_ms"] = now_ms()
+                    registrar_transicion(
+                        "reloj_listo",
+                        "referencia válida (source=%s)" % source)
+                    break
+                else:
+                    # Reloj no disponible aún (sincronización en curso):
+                    # seguir esperando sin abortar ni permitir crear sesión.
+                    registrar_transicion(
+                        "reloj_no_listo",
+                        "available=False (age_ms=%s)"
+                        % clock.get("age_ms"))
+            else:
+                registrar_transicion(
+                    "health_no_responde",
+                    "status=%s error=%s" % (r.get("status"), r.get("error")))
+            time.sleep(CLOCK_POLL_INTERVAL_S)
+
+        if not reloj_listo:
+            raise RuntimeError(
+                "ENGINEERING_CLOCK_NOT_READY: %s"
+                % readiness["ultimo_motivo"])
+
+        readiness["ultimo_health"] = ultimo_health
+        self.evidence["clock_readiness"] = readiness
+        return ultimo_health
+
+    def _spawn(self, argv: List[str], label: str,
+               stdout_path: Optional[Path] = None,
+               stderr_path: Optional[Path] = None):
+        """Lanza un proceso persistiendo stdout/stderr en archivos de
+        evidencia para evitar PIPE sin drenar y conservar los logs aunque
+        el proceso falle o timeout."""
+        if stdout_path is not None:
+            stdout_file = open(stdout_path, "w", encoding="utf-8",
+                               errors="replace")
+        else:
+            stdout_file = subprocess.PIPE
+        if stderr_path is not None:
+            stderr_file = open(stderr_path, "w", encoding="utf-8",
+                               errors="replace")
+        else:
+            stderr_file = subprocess.PIPE
         proc = subprocess.Popen(
             argv, cwd=str(ROOT),
-            stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+            stdout=stdout_file, stderr=stderr_file,
             text=True, encoding="utf-8", errors="replace")
+        # Guardar referencias a los archivos para cerrarlos en _cleanup.
+        proc._stdout_file = stdout_file if stdout_path else None
+        proc._stderr_file = stderr_file if stderr_path else None
         return proc
 
     @staticmethod
@@ -1064,9 +1277,16 @@ class WindowOrchestrator:
             "ledger_total_por_run_id": self.ledger_total_por_run_id,
             "db_unchanged": canonical_dbs_unchanged(
                 self.db_before, canonical_dbs_snapshot()),
+            "ultima_salud_ingenieria": self.ultima_salud_ingenieria,
+            "clock_readiness": self.evidence.get("clock_readiness"),
         }
 
     def _cleanup(self) -> None:
+        resultado = {
+            "procesos_terminados": [],
+            "procesos_fallidos": [],
+            "archivos_log_cerrados": [],
+        }
         if self.provider is not None:
             try:
                 self.provider.stop()
@@ -1078,11 +1298,26 @@ class WindowOrchestrator:
                 try:
                     proc.terminate()
                     proc.wait(timeout=5.0)
+                    resultado["procesos_terminados"].append(label)
                 except Exception:  # noqa: BLE001
                     try:
                         proc.kill()
+                        resultado["procesos_terminados"].append(label)
                     except Exception:  # noqa: BLE001
+                        resultado["procesos_fallidos"].append(label)
                         pass
+                # Cerrar archivos de stdout/stderr si existen.
+                for attr, nombre in (("_stdout_file", "stdout"),
+                                     ("_stderr_file", "stderr")):
+                    f = getattr(proc, attr, None)
+                    if f is not None:
+                        try:
+                            f.close()
+                            resultado["archivos_log_cerrados"].append(
+                                "%s_%s" % (label, nombre))
+                        except Exception:  # noqa: BLE001
+                            pass
+        self.limpieza_resultado = resultado
 
     def write_evidence(self, path: str) -> None:
         out = {
@@ -1102,6 +1337,16 @@ class WindowOrchestrator:
             "ledger_total_por_run_id": self.ledger_total_por_run_id,
             "db_unchanged": canonical_dbs_unchanged(
                 self.db_before, canonical_dbs_snapshot()),
+            "ultima_salud_ingenieria": self.ultima_salud_ingenieria,
+            "limpieza_resultado": self.limpieza_resultado,
+            "service_stdout_path": str(self.service_stdout_path)
+            if self.service_stdout_path else None,
+            "service_stderr_path": str(self.service_stderr_path)
+            if self.service_stderr_path else None,
+            "engineering_stdout_path": str(self.engineering_stdout_path)
+            if self.engineering_stdout_path else None,
+            "engineering_stderr_path": str(self.engineering_stderr_path)
+            if self.engineering_stderr_path else None,
         }
         p = Path(path)
         p.parent.mkdir(parents=True, exist_ok=True)
@@ -1153,6 +1398,15 @@ def build_arg_parser() -> argparse.ArgumentParser:
                     "(ClockSynchronizer sincronizado contra el backend publico, "
                     "bajo presupuesto). Default: derivada de --transport "
                     "(public -> public, local -> local).")
+    ap.add_argument("--evidence-dir", default=None,
+                    help="directorio para persistir stdout/stderr de los "
+                    "servicios y artefactos de diagnóstico. Si no se indica, "
+                    "no se persisten logs de proceso.")
+    ap.add_argument("--clock-readiness-timeout-s", type=float,
+                    default=CLOCK_READINESS_TIMEOUT_S,
+                    help="tiempo máximo (s) para esperar a que el servicio de "
+                    "ingeniería reporte un reloj de referencia válido en "
+                    "/health (dentro del deadline global).")
     ap.add_argument("--out", required=True, help="ruta JSON de evidencia")
     return ap
 
@@ -1163,7 +1417,10 @@ def main(argv: Optional[List[str]] = None) -> int:
     if args.sessions_dir is None:
         args.sessions_dir = str(Path(os.environ.get("TEMP", "."))
                                 / "opencode" / "engineering-live-sessions")
-    orch = WindowOrchestrator(args)
+    evidence_dir = None
+    if args.evidence_dir is not None:
+        evidence_dir = Path(args.evidence_dir)
+    orch = WindowOrchestrator(args, evidence_dir=evidence_dir)
     run = orch.run()
     orch.write_evidence(args.out)
     return 0 if run["verdict"] == "PASS" else 1

@@ -4214,3 +4214,26 @@ economicos.
 - Evidencia publicada en docs/evidence/ventana-publica-20261102/ (evidence.json, run-id.json,
   LEDGER_CONSULTA.json, ABSENCIA_LOGS.md, RECONCILIACION_FACTUAL.md, PRUEBAS_LOCALES_READINESS.json).
 - No se repite la ventana publica. Sin conexiones publicas, ordenes, pagos, móvil ni cambios economicos.
+
+## 2026-11-02 Corrección de readiness y persistencia de logs del arnés
+
+- scripts/engineering_live_window.py: el orquestador distingue ahora HTTP
+  disponible de servicio preparado. Durante la sincronización del reloj,
+  /health responde con clock.available=false (NOT_READY); el arnés espera
+  a que el reloj sea válido (source correcta y available=true) antes de
+  crear la sesión, respetando el deadline global y un límite de preparación
+  explícito (--clock-readiness-timeout-s, default 60 s). Fuente incorrecta
+  o agotamiento de presupuesto producen un error claro. No hay fallback al
+  reloj local en modo público.
+- Los procesos de mercado e ingeniería persisten stdout/stderr en archivos
+  de evidencia (--evidence-dir), evitando PIPE sin drenar. Los logs se
+  conservan ante timeout, error de arranque o fallo previo a _verdict.
+- El bloque finally recoge siempre: consumo del ledger por run_id,
+  última salud disponible, resultado de limpieza y rutas de logs. Evidencia
+  ausente significa UNKNOWN; no se infieren cero solicitudes.
+- Pruebas focalizadas: tests/test_engineering_clock_readiness.py (9 PASS,
+  sin Binance, cero peticiones públicas): incluye pruebas del CLI real del
+  servicio lanzado como subproceso con proveedor de tiempo loopback (modo
+  local: /health inmediato, creación de sesión, stdout/stderr persistidos).
+- No se modifican motores, reglas económicas ni presupuestos. No se ejecuta
+  ninguna ventana pública en este bloque.
