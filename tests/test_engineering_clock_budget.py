@@ -63,6 +63,55 @@ from microstructure_probe.market_cache import (  # noqa: E402
 # Sanidad: el presupuesto de corrida propuesto es 7 (5 tiempo + 2 klines).
 assert MAX_FETCH_REQUESTS_PER_RUN == 7
 
+# engineering_live_window y local_kline_provider viven en scripts/
+# (fuera del paquete microstructure_probe).
+_SCRIPTS_DIR = Path(__file__).resolve().parent.parent / "scripts"
+if str(_SCRIPTS_DIR) not in sys.path:
+    sys.path.insert(0, str(_SCRIPTS_DIR))
+import engineering_live_window as elw_mod  # noqa: E402
+from local_kline_provider import LocalKlineProvider  # noqa: E402
+
+
+class _FakeProc:
+    """Proceso falso para capturar argv sin arrancar servicios reales."""
+    pid = 0
+
+    def terminate(self):
+        pass
+
+    def wait(self, timeout=None):
+        return 0
+
+
+def _make_orchestrator_args(provider_port: int, sessions_dir: Path,
+                            run_id: Optional[str],
+                            transport: str = "local",
+                            clock_source: Optional[str] = None,
+                            execute: bool = False) -> argparse.Namespace:
+    """Construye los argumentos del orquestador para pruebas focalizadas."""
+    argv = [
+        "--transport", transport,
+        "--service-port", "8791",
+        "--engineering-port", "8797",
+        "--provider-port", str(provider_port),
+        "--ws-port", "18800",
+        "--dashboard", "http://127.0.0.1:3020",
+        "--build-id", "BUILD_ID_TEST",
+        "--symbols", "MINAUSDT,BTCUSDT",
+        "--interval", "1m",
+        "--bars", "300",
+        "--deadline", "180",
+        "--sessions-dir", str(sessions_dir),
+        "--out", str(sessions_dir / "evidence.json"),
+    ]
+    if execute:
+        argv.append("--execute")
+    if run_id is not None:
+        argv += ["--run-id", run_id]
+    if clock_source is not None:
+        argv += ["--clock-source", clock_source]
+    return elw_mod.build_arg_parser().parse_args(argv)
+
 STEP_MS = 60 * 1000  # 1m
 T0 = 1_790_000_000_000  # instante base (pasado respecto al reloj real)
 
@@ -862,6 +911,7 @@ class ClockBudgetRegressionTest(unittest.TestCase):
 
                 args = _make_orchestrator_args(provider_port, sessions_dir,
                                                run_id)
+                ahora = int(time.time() * 1000)
                 orch = elw_mod.WindowOrchestrator(args)
 
                 # Ejecutar carga de contexto (usa HistoryClient con run_id)
@@ -878,9 +928,9 @@ class ClockBudgetRegressionTest(unittest.TestCase):
                     len(klines_rows), 1,
                     f"no hay reservas de klines con run_id={run_id}: {rows}")
 
-                total_consumed = sum(
-                    r.get("requests", 0)
-                    for r in run_rows if r.get("status") == "reserved")
+                # Consumo agregado bajo el mismo run_id (/time + klines),
+                # leído del ledger (no solo el contador de contexto).
+                total_consumed = cache.run_requests_used(run_id)
                 self.assertGreaterEqual(
                     total_consumed, 1,
                     "debería haber consumo acumulado bajo run_id")
@@ -896,16 +946,9 @@ class ClockBudgetRegressionTest(unittest.TestCase):
 
     def test_orquestador_reinicio_reutiliza_run_id(self):
         """Reiniciar el orquestador con la misma sessions_dir reutiliza el
-        run_id y conserva el consumo acumulado."""
-        import sys as _sys
+        run_id (como hace _execute vía _read_run_id/_write_run_id) y conserva
+        el consumo acumulado del ledger por run_id."""
         import microstructure_probe.engineering_session_service as ess
-
-        # Agregar scripts/ al path para importar engineering_live_window y
-        # local_kline_provider
-        scripts_dir = Path(__file__).resolve().parent.parent / "scripts"
-        if str(scripts_dir) not in _sys.path:
-            _sys.path.insert(0, str(scripts_dir))
-        import engineering_live_window as elw_mod
         from local_kline_provider import LocalKlineProvider
 
         provider_port = _free_port()
@@ -927,77 +970,46 @@ class ClockBudgetRegressionTest(unittest.TestCase):
                 cache = MarketCache(test_cache_db)
                 cache.init_db()
 
-                # Primera instancia: crea run_id y consume klines
+                # Primera instancia: consume klines bajo run_id.
                 args1 = _make_orchestrator_args(provider_port, sessions_dir,
                                                 run_id)
                 orch1 = elw_mod.WindowOrchestrator(args1)
-                captured1 = []
-                orig_spawn1 = orch1._spawn
-
-                def capture_spawn1(argv, label):
-                    captured1.append((list(argv), label))
-
-                    class FakeProc1:
-                        pid = 0
-
-                        def terminate(self):
-                            pass
-
-                        def wait(self, timeout=None):
-                            return 0
-
-                    return FakeProc1()
-
-                orch1._spawn = capture_spawn1
+                captured1: List[tuple] = []
+                orch1._spawn = lambda argv, label: (
+                    captured1.append((list(argv), label)) or _FakeProc())
                 orch1._load_recent_context()
-
-                run_id_persistido = None
-                for argv, _ in captured1:
-                    if "--run-id" in argv:
-                        idx = argv.index("--run-id")
-                        if idx + 1 < len(argv):
-                            run_id_persistido = argv[idx + 1]
-                self.assertEqual(run_id_persistido, run_id,
-                                 f"run_id no persistido: {captured1}")
-
+                self.assertEqual(orch1.run_id, run_id,
+                                 "la instancia usa el run_id proporcionado")
                 consumo_1 = cache.run_requests_used(run_id)
                 self.assertGreaterEqual(
                     consumo_1, 1, "primera instancia consumió")
 
-                # Segunda instancia: misma sessions_dir, SIN --run-id
+                # _execute persiste el run_id en sessions_dir/run-id.json;
+                # al reiniciar la misma corrida sin --run-id se lee de ahí.
+                elw_mod._write_run_id(sessions_dir, run_id)
+                self.assertEqual(
+                    elw_mod._read_run_id(sessions_dir), run_id,
+                    "el run_id no se persistió para reutilizarlo")
+
+                # Segunda instancia: misma sessions_dir, SIN --run-id.
+                # _execute reutiliza el valor persistido y se lo asigna a la
+                # instancia antes de cargar contexto.
                 args2 = _make_orchestrator_args(provider_port, sessions_dir,
                                                 None)
                 orch2 = elw_mod.WindowOrchestrator(args2)
-                captured2 = []
-                orig_spawn2 = orch2._spawn
-
-                def capture_spawn2(argv, label):
-                    captured2.append((list(argv), label))
-
-                    class FakeProc2:
-                        pid = 0
-
-                        def terminate(self):
-                            pass
-
-                        def wait(self, timeout=None):
-                            return 0
-
-                    return FakeProc2()
-
-                orch2._spawn = capture_spawn2
+                self.assertIsNone(
+                    orch2.run_id,
+                    "antes de _execute, run_id no está resuelto")
+                run_id_reutilizado = elw_mod._read_run_id(sessions_dir)
+                self.assertEqual(run_id_reutilizado, run_id,
+                                 "reinicio no reutilizó el run_id persistido")
+                orch2.run_id = run_id_reutilizado
+                captured2: List[tuple] = []
+                orch2._spawn = lambda argv, label: (
+                    captured2.append((list(argv), label)) or _FakeProc())
                 orch2._load_recent_context()
 
-                run_id_reutilizado = None
-                for argv, _ in captured2:
-                    if "--run-id" in argv:
-                        idx = argv.index("--run-id")
-                        if idx + 1 < len(argv):
-                            run_id_reutilizado = argv[idx + 1]
-                self.assertEqual(run_id_reutilizado, run_id,
-                                 f"reinicio no reutilizó run_id: {captured2}")
-
-                # Verificar consumo acumulado
+                # Verificar consumo acumulado bajo el mismo run_id.
                 consumo_total = cache.run_requests_used(run_id)
                 self.assertGreater(
                     consumo_total, consumo_1,
@@ -1013,8 +1025,310 @@ class ClockBudgetRegressionTest(unittest.TestCase):
             prov.stop()
 
 
+# --- Verificación acotada: configuración efectiva del orquestador ----------
+
+class TestOrquestadorConfigEfectiva(unittest.TestCase):
+    """Verificación acotada del arranque real del orquestador con proveedores
+    locales (sin Binance, sin red pública):
+
+    - argumentos del proceso (--clock-source derivado de --transport, --run-id);
+    - fuente temporal esperada en /health ANTES de crear la sesión;
+    - mismo run_id para tiempo y velas;
+    - total agregado del ledger por run_id consistente;
+    - fuente incorrecta / ausente / expirada y presupuesto agotado bloquean
+      antes de crear la sesión.
+    """
+
+    def setUp(self) -> None:
+        self.tmp = Path(tempfile.mkdtemp(prefix="orch-config-"))
+
+    def tearDown(self) -> None:
+        shutil.rmtree(self.tmp, ignore_errors=True)
+
+    def _start_provider(self) -> None:
+        self.provider_port = _free_port()
+        self.sessions_dir = self.tmp / "sessions"
+        self.sessions_dir.mkdir(parents=True, exist_ok=True)
+        self.provider = LocalKlineProvider(
+            self.provider_port, {"BTCUSDT": "ok", "MINAUSDT": "ok"})
+        self.provider.start()
+
+    def _stop_provider(self) -> None:
+        try:
+            self.provider.stop()
+        except Exception:  # noqa: BLE001
+            pass
+
+    def _orchestrator_args(self, transport: str = "local",
+                           clock_source: Optional[str] = None,
+                           run_id: Optional[str] = None
+                           ) -> argparse.Namespace:
+        return _make_orchestrator_args(
+            self.provider_port, self.sessions_dir, run_id,
+            transport=transport, clock_source=clock_source)
+
+    def _start_services_mocked(
+        self,
+        transport: str = "local",
+        clock_source: Optional[str] = None,
+        run_id: Optional[str] = None,
+        health_clock: Optional[Dict[str, Any]] = None,
+    ):
+        """Ejecuta _start_services con servicios mockeados (sin puentes reales
+        de mercado/ingeniería). Devuelve (orch, argv_capturados, test_cache_db)."""
+        args = self._orchestrator_args(
+            transport=transport, clock_source=clock_source, run_id=run_id)
+        orch = elw_mod.WindowOrchestrator(args)
+        original_cache_db = elw_mod.CACHE_DB
+        test_cache_db = self.tmp / "orch_cache.db"
+        elw_mod.CACHE_DB = test_cache_db
+        try:
+            captured: List[tuple] = []
+            eng_port = args.engineering_port
+
+            def fake_spawn(argv, label):
+                captured.append((list(argv), label))
+                return _FakeProc()
+
+            def fake_http_get(url, timeout=8.0):
+                u = str(url)
+                text = "{}"
+                if u.endswith("/health"):
+                    port = int(u.rsplit(":", 1)[-1].split("/")[0])
+                    if port == eng_port:
+                        if health_clock == "__ABSENT__":
+                            text = json.dumps({
+                                "service": "engineering-session-service/v1",
+                                "pid": 1, "port": eng_port,
+                                "generated_at_ms": _now_ms()})
+                        else:
+                            clk = health_clock if isinstance(health_clock,
+                                                             dict) else {
+                                "source": "local_sistema", "available": True,
+                                "reason": None, "age_ms": None}
+                            text = json.dumps({
+                                "service": "engineering-session-service/v1",
+                                "pid": 1, "port": eng_port, "clock": clk,
+                                "generated_at_ms": _now_ms()})
+                    else:
+                        text = json.dumps({
+                            "service": "market-stream-service/v1",
+                            "pid": 2, "port": port,
+                            "transport": {"mode": transport}})
+                return {"ok": True, "status": 200, "text": text,
+                        "error": None}
+
+            orch._start_provider = lambda: None
+            orch._spawn = fake_spawn
+            orch._http_get = fake_http_get
+            orch._start_services()
+            return orch, captured, test_cache_db
+        finally:
+            elw_mod.CACHE_DB = original_cache_db
+
+    # -- A. argumentos del proceso ------------------------------------------
+
+    def test_argv_tiene_clock_source_y_run_id(self):
+        """--transport public arranca ingeniería con --clock-source public;
+        local con --clock-source local; ambas propagan --run-id."""
+        self._start_provider()
+        try:
+            orch, captured, _ = self._start_services_mocked(
+                transport="local", run_id="eng-run-argv-1")
+            eng_argv = [a for a, lbl in captured
+                        if lbl == "engineering-session"]
+            self.assertTrue(eng_argv, "no se capturó argv de ingeniería")
+            argv = eng_argv[0]
+            self.assertIn("--run-id", argv)
+            self.assertIn("eng-run-argv-1", argv)
+            self.assertIn("--clock-source", argv)
+            idx = argv.index("--clock-source")
+            self.assertEqual(argv[idx + 1], "local",
+                             "local debe usar referencia local explícita")
+
+            orch2, captured2, _ = self._start_services_mocked(
+                transport="public", run_id="eng-run-argv-2",
+                health_clock={"source": "public_sincronizado",
+                              "available": True, "reason": None,
+                              "age_ms": None})
+            eng_argv2 = [a for a, lbl in captured2
+                         if lbl == "engineering-session"][0]
+            idx2 = eng_argv2.index("--clock-source")
+            self.assertEqual(eng_argv2[idx2 + 1], "public",
+                             "public requiere --clock-source public")
+        finally:
+            self._stop_provider()
+
+    # -- B. fuente temporal en /health antes de crear sesión ----------------
+
+    def test_salud_clock_local_disponible_antes_de_crear_sesion(self):
+        """Local: /health.clock reporta local_sistema disponible y la sesión
+        se crea (no se lanza en _start_services)."""
+        self._start_provider()
+        try:
+            # No lanza: el reloj local es válido.
+            self._start_services_mocked(transport="local",
+                                        run_id="eng-run-clock-1")
+        finally:
+            self._stop_provider()
+
+    def test_fuente_incorrecta_bloquea_antes_de_crear_sesion(self):
+        """Local con /health.clock.source = public_sincronizado se rechaza
+        antes de crear la sesión."""
+        self._start_provider()
+        try:
+            with self.assertRaises(RuntimeError) as ctx:
+                self._start_services_mocked(
+                    transport="local", run_id="eng-run-bad-1",
+                    health_clock={"source": "public_sincronizado",
+                                  "available": True, "reason": None,
+                                  "age_ms": None})
+            self.assertIn("CLOCK_SOURCE_INCORRECTO", str(ctx.exception))
+        finally:
+            self._stop_provider()
+
+    def test_fuente_ausente_bloquea_antes_de_crear_sesion(self):
+        """/health.clock ausente (sin bloque 'clock') se rechaza antes de
+        crear la sesión."""
+        self._start_provider()
+        try:
+            with self.assertRaises(RuntimeError) as ctx:
+                self._start_services_mocked(
+                    transport="local", run_id="eng-run-absent-1",
+                    health_clock="__ABSENT__")
+            self.assertIn("CLOCK_SOURCE_AUSENTE", str(ctx.exception))
+        finally:
+            self._stop_provider()
+
+    def test_fuente_expirada_bloquea_antes_de_crear_sesion(self):
+        """/health.clock disponible False (expirada) se rechaza antes de
+        crear la sesión."""
+        self._start_provider()
+        try:
+            with self.assertRaises(RuntimeError) as ctx:
+                self._start_services_mocked(
+                    transport="local", run_id="eng-run-exp-1",
+                    health_clock={"source": "local_sistema",
+                                  "available": False,
+                                  "reason": "referencia expirada",
+                                  "age_ms": 7_000_000})
+            self.assertIn("CLOCK_REFERENCIA_NO_DISPONIBLE", str(ctx.exception))
+        finally:
+            self._stop_provider()
+
+    # -- C. mismo run_id y total agregado consistente -----------------------
+
+    def test_run_id_velas_y_total_agregado_consistente(self):
+        """Mismo run_id para el contexto (klines) y el total agregado del
+        ledger por run_id es consistente con el consumo del arnés."""
+        self._start_provider()
+        try:
+            sessions_dir = self.tmp / "sessions_ctx"
+            sessions_dir.mkdir(parents=True, exist_ok=True)
+            run_id = "eng-run-total-1"
+            test_cache_db = self.tmp / "ctx_cache.db"
+            original = elw_mod.CACHE_DB
+            elw_mod.CACHE_DB = test_cache_db
+            try:
+                cache = MarketCache(test_cache_db)
+                cache.init_db()
+                args = self._orchestrator_args(transport="local",
+                                               run_id=run_id)
+                args.sessions_dir = str(sessions_dir)
+                orch = elw_mod.WindowOrchestrator(args)
+                captured: List[tuple] = []
+                orch._spawn = lambda argv, label: (
+                    captured.append((list(argv), label)) or _FakeProc())
+                orch._load_recent_context()
+                rows = cache.fetch_ledger(limit=50)
+                run_rows = [r for r in rows
+                            if r.get("execution_id") == run_id]
+                klines_rows = [r for r in run_rows
+                               if "klines" in (r.get("detail") or "")]
+                self.assertGreaterEqual(
+                    len(klines_rows), 1,
+                    f"no hay reservas de klines con run_id={run_id}: {rows}")
+                total_ledger = cache.run_requests_used(run_id)
+                self.assertEqual(
+                    total_ledger, orch.rest_count,
+                    "ledger agregado por run_id debe coincidir con el consumo "
+                    f"del arnés: ledger={total_ledger} rest_count={orch.rest_count}")
+                self.assertGreaterEqual(total_ledger, 1)
+                # El total agregado incluye cualquier intento de tiempo
+                # (/time) bajo el mismo run_id, no solo el contador de
+                # consultas de contexto.
+            finally:
+                elw_mod.CACHE_DB = original
+        finally:
+            self._stop_provider()
+
+    # -- D. presupuesto agotado bloquea antes de crear sesión -------------
+
+    def test_presupuesto_agotado_bloquea_antes_de_crear_sesion(self):
+        """Agotado el presupuesto total de la corrida (7), la carga de
+        contexto no abre socket y la creación de sesión queda bloqueada."""
+        self._start_provider()
+        try:
+            sessions_dir = self.tmp / "sessions_budget"
+            sessions_dir.mkdir(parents=True, exist_ok=True)
+            run_id = "eng-run-budget-1"
+            test_cache_db = self.tmp / "budget_cache.db"
+            original = elw_mod.CACHE_DB
+            elw_mod.CACHE_DB = test_cache_db
+            try:
+                cache = MarketCache(test_cache_db)
+                cache.init_db()
+                ahora = _now_ms()
+                for _ in range(MAX_FETCH_REQUESTS_PER_RUN):
+                    row_id = cache.reserve_fetch_attempt(
+                        ahora, symbol="BTCUSDT",
+                        detail=json.dumps(
+                            {"endpoint": "klines", "pre_seed": True},
+                            sort_keys=True),
+                        max_requests=MAX_FETCH_REQUESTS_PER_WINDOW,
+                        window_ms=60_000, attempts=1,
+                        execution_id=run_id,
+                        run_max_requests=MAX_FETCH_REQUESTS_PER_RUN)
+                    self.assertIsNotNone(row_id)
+                self.assertEqual(
+                    cache.run_requests_used(run_id),
+                    MAX_FETCH_REQUESTS_PER_RUN,
+                    "el presupuesto de corrida debe estar agotado (7)")
+
+                args = self._orchestrator_args(transport="local",
+                                               run_id=run_id)
+                args.sessions_dir = str(sessions_dir)
+                orch = elw_mod.WindowOrchestrator(args)
+                captured: List[tuple] = []
+                orch._spawn = lambda argv, label: (
+                    captured.append((list(argv), label)) or _FakeProc())
+                # La carga de contexto no debe abrir nuevo socket contra el
+                # proveedor (presupuesto agotado): contexto vacío.
+                orch._load_recent_context()
+                self.assertEqual(
+                    orch.evidence["contexto"]["velas"], 0,
+                    "presupuesto agotado: sin velas cargadas")
+                # El total del ledger no creció (el intento bloqueado reserva
+                # requests=0) y se conserva en 7.
+                self.assertEqual(
+                    cache.run_requests_used(run_id),
+                    MAX_FETCH_REQUESTS_PER_RUN)
+                # Crear sesión con contexto vacío se rechaza antes de
+                # establecer la sesión (el presupuesto agotado impide el
+                # envío y la creación).
+                orch._validate_config()
+                orch._http_post_json = lambda url, payload, timeout=15.0: (
+                    {"ok": False, "status": 400,
+                     "text": "presupuesto agotado / contexto vacío",
+                     "json": None, "error": None})
+                with self.assertRaises(RuntimeError):
+                    orch._create_session(orch.evidence["contexto"] or [])
+            finally:
+                elw_mod.CACHE_DB = original
+        finally:
+            self._stop_provider()
 class _LocalTimeProvider:
-    """Proveedor de tiempo local controlado (sin Binance, sin red pública)."""
+    """Proveedor de tiempo local controlado (sin Binance, sin red publica)."""
 
     def __init__(self, server_ms: int, wall_ms: int) -> None:
         self.server_ms = server_ms

@@ -21,10 +21,11 @@ Límites del usuario (impersonados por este orquestador):
   * Máximo 3 consumidores SSE simultáneos contando TODOS los componentes:
     se abre 1 consumidor SSE externo (la sesión de ingeniería) y se verifica
     que /health del servicio reporte consumers <= 3.
-  * Hasta 4 intentos REST públicos TOTALES (catálogo, preparación,
-    reintentos, recuperación). Con ``--no-recovery`` el servicio no hace
-    recuperación REST. Cada intento se reserva ANTES del envío vía
-    ``LedgerAttemptGate`` (market_fetch_ledger); si se agota, se aborta sin
+  * Hasta 7 intentos REST públicos TOTALES (límite por corrida:
+    catálogo, preparación, reintentos, recuperación). Con ``--no-recovery``
+    el servicio no hace recuperación REST. Cada intento se reserva ANTES del
+    envío vía ``LedgerAttemptGate`` (market_fetch_ledger); si se agota, se
+    aborta sin abrir socket.
     abrir socket.
   * Cada consulta de klines: hasta 300 velas (bars=300).
   * Deadline global 180 s desde el primer acceso público (monotónico, cubre
@@ -64,7 +65,10 @@ from microstructure_probe.history_client import (  # noqa: E402
     INTERVAL_MS,
     UpstreamBudgetExceeded,
 )
-from microstructure_probe.market_cache import MarketCache  # noqa: E402
+from microstructure_probe.market_cache import (  # noqa: E402
+    MAX_FETCH_REQUESTS_PER_WINDOW,
+    MarketCache,
+)
 from microstructure_probe.market_explorer import (  # noqa: E402
     LedgerAttemptGate,
     read_stored,
@@ -79,7 +83,13 @@ DEFAULT_SYMBOLS = "MINAUSDT,BTCUSDT"
 DEFAULT_INTERVAL = "1m"
 DEFAULT_BARS = 300
 DEFAULT_DURATION_S = 180.0
-MAX_REST_TOTAL = 4
+# Límite explícito ÚNICO por corrida de presupuesto REST, compartido entre
+# /time, klines, catálogo, reintentos y recuperación. Coherente con el
+# servicio de ingeniería (MAX_FETCH_REQUESTS_PER_RUN = 7 en market_cache.py):
+# 5 intentos de tiempo + 2 de klines = 7. Es una propuesta de mínimo viable
+# (no cubierta por la autorización previa de 4); no se ejecuta contra Binance
+# sin autorización explícita del operador.
+MAX_REST_REQUESTS_PER_RUN = 7
 MAX_BARS_PER_QUERY = 300
 MAX_CONSUMERS_SSE = 3
 MAX_RECONNECTS = 3
@@ -155,6 +165,15 @@ class WindowOrchestrator:
     def __init__(self, args: argparse.Namespace) -> None:
         self.args = args
         self.transport = args.transport
+        # Fuente del reloj de referencia: explícita por CLI o derivada del
+        # transporte (public -> public, local -> local). Se propaga al servicio
+        # de ingeniería mediante --clock-source y se verifica en /health.clock
+        # ANTES de crear la sesión.
+        self.clock_source = (
+            args.clock_source
+            if args.clock_source is not None
+            else ("public" if self.transport == "public" else "local")
+        )
         self.service_port = args.service_port
         self.engineering_port = args.engineering_port
         self.provider_port = args.provider_port
@@ -195,6 +214,9 @@ class WindowOrchestrator:
         # Identidad de corrida: se resuelve en _execute() una vez que
         # sessions_dir está disponible.
         self.run_id: Optional[str] = args.run_id
+        # Consumo agregado del ledger por run_id (/time + klines + ...),
+        # consultado en _verdict para la evidencia final.
+        self.ledger_total_por_run_id: Optional[int] = None
 
     # -- validación de configuración (antes de conectar) ------------------
     def _validate_config(self) -> None:
@@ -293,7 +315,7 @@ class WindowOrchestrator:
             "symbols": self.symbols,
             "interval": self.interval,
             "bars_per_query": self.bars,
-            "max_rest_total": MAX_REST_TOTAL,
+            "max_rest_requests_per_run": MAX_REST_REQUESTS_PER_RUN,
             "max_consumers_sse": MAX_CONSUMERS_SSE,
             "max_reconnects": MAX_RECONNECTS,
             "deadline_s": self.deadline_s,
@@ -383,8 +405,10 @@ class WindowOrchestrator:
                        required=False, source="preflight")
         self.add_check("codigo_limites_conocidos", True,
                        "límites del usuario impuestos por el orquestador: "
-                       "<=3 consumidores SSE, <=3 reconexiones, <=4 REST, "
-                       "<=300 velas/consulta, deadline 180s, cero escrituras "
+                       "<=3 consumidores SSE, <=3 reconexiones, <=7 REST "
+                       "(límite por corrida), <=300 velas/consulta, deadline "
+                       "180s, cero escrituras DB canónicas; el hub de "
+                       "market-stream usa 1 WS combinada.",
                        "DB canónicas; el hub de market-stream usa 1 WS "
                        "combinada.",
                        required=False, source="preflight")
@@ -460,6 +484,7 @@ class WindowOrchestrator:
                  "--market-bars", str(self.bars),
                  "--live-silence-ms", "120000",
                  "--run-id", self.run_id,
+                 "--clock-source", self.clock_source,
                  "--pid-file", str(sessions_dir / "service.json")]
         self.engineering_proc = self._spawn(argv2, "engineering-session")
         eng_url = "http://127.0.0.1:%d" % self.engineering_port
@@ -473,6 +498,9 @@ class WindowOrchestrator:
             time.sleep(0.25)
         if eng_health is None:
             raise RuntimeError("ENGINEERING_START_FAILED")
+        # Verificar la fuente del reloj de referencia ANTES de crear la sesión:
+        # rechaza fuente incorrecta, ausente o expirada.
+        self._verify_clock(eng_health)
         self.add_check("engineering_started", True,
                        "servicio ingeniería PID %d puerto %d"
                        % (eng_health.get("pid"), eng_health.get("port")),
@@ -509,6 +537,39 @@ class WindowOrchestrator:
                        "proveedor local klines HTTP=%d WS=%d"
                        % (self.provider_port, self.ws_port), source="execute")
 
+    # -- verificación del reloj de referencia (antes de crear sesión) ------
+    def _verify_clock(self, eng_health: Dict[str, Any]) -> None:
+        """Rechaza ANTES de crear la sesión si el reloj de referencia del
+        servicio de ingeniería es incorrecto, ausente o expirado.
+
+        source esperado: public_sincronizado (--transport public) o
+        local_sistema (--transport local). La referencia debe estar
+        disponible (available True, es decir, sincronización vigente y no
+        expirada). No existe fallback silencioso al reloj de pared.
+        """
+        clock = eng_health.get("clock") if isinstance(eng_health, dict) \
+            else None
+        expected_source = ("public_sincronizado" if self.clock_source
+                           == "public" else "local_sistema")
+        if not isinstance(clock, dict):
+            raise RuntimeError(
+                "CLOCK_SOURCE_AUSENTE: /health del servicio de ingeniería no "
+                "expone el bloque 'clock'")
+        source = clock.get("source")
+        if source != expected_source:
+            raise RuntimeError(
+                "CLOCK_SOURCE_INCORRECTO: se esperaba el reloj %s, obtuvo "
+                "%s" % (expected_source, source))
+        if not clock.get("available"):
+            raise RuntimeError(
+                "CLOCK_REFERENCIA_NO_DISPONIBLE: %s (age_ms=%s)"
+                % (clock.get("reason") or "referencia expirada",
+                   clock.get("age_ms")))
+        self.add_check("clock_fuente_verificada", True,
+                       "reloj de referencia %s válido antes de crear sesión "
+                       "(source=%s)" % (self.clock_source, source),
+                       source="execute")
+
     def _spawn(self, argv: List[str], label: str):
         proc = subprocess.Popen(
             argv, cwd=str(ROOT),
@@ -535,7 +596,8 @@ class WindowOrchestrator:
 
         Modo local: proveedor HTTP local (cero Binance, cero REST real).
         Modo public: caché derivada local primero (cero REST); si insuficiente,
-        HistoryClient con attempt_gate (hasta MAX_REST_TOTAL).
+        HistoryClient con attempt_gate (hasta MAX_REST_REQUESTS_PER_RUN por
+        corrida).
         """
         self._check_deadline("load_context")
         step = INTERVAL_MS[self.interval]
@@ -554,7 +616,8 @@ class WindowOrchestrator:
                 pass
             execution_id = self.run_id
             gate = LedgerAttemptGate(cache, execution_id,
-                                     max_requests=MAX_REST_TOTAL)
+                                     max_requests=MAX_FETCH_REQUESTS_PER_WINDOW,
+                                     run_max_requests=MAX_REST_REQUESTS_PER_RUN)
             client = HistoryClient(
                 base_url="http://127.0.0.1:%d" % self.provider_port,
                 execution_id=execution_id, attempt_gate=gate,
@@ -640,14 +703,14 @@ class WindowOrchestrator:
                                                  + step - 1),
                         })
             # Si la caché no cubre el rango reciente, usar REST directo
-            # (contabilizado, dentro del presupuesto de 4 totales).
+            # (contabilizado, dentro del presupuesto de 7 por corrida).
             recientes = [c for c in contexto
                          if c["open_time_ms"] >= end - 2 * step
                          and c["symbol"] == self.primary]
             if len(recientes) < 10:
                 for sym in ([self.reference, self.primary]
                             if self.reference else [self.primary]):
-                    if rest_usadas >= MAX_REST_TOTAL:
+                    if rest_usadas >= MAX_REST_REQUESTS_PER_RUN:
                         break
                     self._check_deadline("context_rest_" + sym)
                     try:
@@ -658,7 +721,10 @@ class WindowOrchestrator:
                             pass
                         execution_id = self.run_id
                         gate = LedgerAttemptGate(cache, execution_id,
-                                                 max_requests=MAX_REST_TOTAL)
+                                                 max_requests=
+                                                 MAX_FETCH_REQUESTS_PER_WINDOW,
+                                                 run_max_requests=
+                                                 MAX_REST_REQUESTS_PER_RUN)
                         client = HistoryClient(
                             base_url="https://fapi.binance.com",
                             execution_id=execution_id, attempt_gate=gate,
@@ -955,8 +1021,22 @@ class WindowOrchestrator:
             fail.append("consumidores_exceden_limite")
         if self.reconnects_max_seen > MAX_RECONNECTS:
             fail.append("reconexiones_exceden_limite")
-        if self.rest_count > MAX_REST_TOTAL:
+        if self.rest_count > MAX_REST_REQUESTS_PER_RUN:
             fail.append("rest_excede_limite")
+        # Consumo agregado del ledger por run_id (/time + klines + ...), no
+        # solo el contador de consultas de contexto del arnés.
+        if self.run_id is not None:
+            try:
+                _cache = MarketCache(CACHE_DB)
+                _cache.init_db()
+                self.ledger_total_por_run_id = _cache.run_requests_used(
+                    self.run_id)
+            except Exception:  # noqa: BLE001 - evidencia, no falla la corrida
+                self.ledger_total_por_run_id = None
+        if (self.ledger_total_por_run_id is not None
+                and self.ledger_total_por_run_id
+                > MAX_REST_REQUESTS_PER_RUN):
+            fail.append("presupuesto_corrida_agotado")
         if not canonical_dbs_unchanged(self.db_before,
                                        canonical_dbs_snapshot()):
             fail.append("db_canonica_escritas")
@@ -983,6 +1063,7 @@ class WindowOrchestrator:
             "consumidores_max": self.consumers_max_seen,
             "reconexiones_max": self.reconnects_max_seen,
             "rest_total": self.rest_count,
+            "ledger_total_por_run_id": self.ledger_total_por_run_id,
             "db_unchanged": canonical_dbs_unchanged(
                 self.db_before, canonical_dbs_snapshot()),
         }
@@ -1020,6 +1101,7 @@ class WindowOrchestrator:
             "evidence": self.evidence,
             "checks": self.checks,
             "rest_count": self.rest_count,
+            "ledger_total_por_run_id": self.ledger_total_por_run_id,
             "db_unchanged": canonical_dbs_unchanged(
                 self.db_before, canonical_dbs_snapshot()),
         }
@@ -1067,6 +1149,12 @@ def build_arg_parser() -> argparse.ArgumentParser:
     ap.add_argument("--run-id", default=None,
                     help="identificador estable de la corrida de presupuesto. "
                     "Se persiste y se reutiliza al reiniciar la misma corrida.")
+    ap.add_argument("--clock-source", choices=["local", "public"], default=None,
+                    help="fuente del reloj de referencia: 'local' (reloj de pared "
+                    "local, cero solicitudes publicas) o 'public' "
+                    "(ClockSynchronizer sincronizado contra el backend publico, "
+                    "bajo presupuesto). Default: derivada de --transport "
+                    "(public -> public, local -> local).")
     ap.add_argument("--out", required=True, help="ruta JSON de evidencia")
     return ap
 

@@ -400,10 +400,13 @@ class LedgerAttemptGate:
     """
 
     def __init__(self, cache: MarketCache, execution_id: Optional[str],
-                 max_requests: int = MAX_FETCH_REQUESTS_PER_WINDOW) -> None:
+                 max_requests: int = MAX_FETCH_REQUESTS_PER_WINDOW,
+                 run_max_requests: Optional[int] = None) -> None:
         self.cache = cache
         self.execution_id = execution_id
         self.max_requests = int(max_requests)
+        self.run_max_requests = (
+            int(run_max_requests) if run_max_requests is not None else None)
 
     def before_send(self, entry: Dict[str, Any]) -> None:
         attempt = {
@@ -418,6 +421,7 @@ class LedgerAttemptGate:
             int(time.time() * 1000), symbol=entry.get("symbol"),
             detail=json.dumps(attempt, sort_keys=True),
             max_requests=self.max_requests, execution_id=self.execution_id,
+            run_max_requests=self.run_max_requests,
         )
         if row_id is None:
             entry["result"] = "budget_blocked"
