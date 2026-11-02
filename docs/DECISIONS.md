@@ -4263,3 +4263,74 @@ economicos.
   tests/test_engineering_clock_budget.py -q
   -> 32 passed (sin Binance, sin red pública, sin cambios económicos).
 - No se ejecuta ventana pública. Rama no integrada.
+
+
+
+## 2026-11-02 Correccion de evidencia de readiness (CLI real, sync demorada)
+
+- CORRECCION de las entradas anteriores de readiness: las pruebas alli
+  descritas NO ejercitaban sincronizacion demorada del CLI real.
+  `test_reloj_inicialmente_no_disponible_luego_disponible` y
+  `test_proveedor_fallido_timeout_no_crea_sesion` lanzaban un servicio
+  SIMULADO (script `MOCK_SERVICE_SCRIPT` escrito por el propio test) que
+  cambiaba `clock.available` con un temporizador (`switch_after_s`); la
+  espera era un polling local del test, no
+  `_wait_for_engineering_readiness` del orquestador. Una de las aserciones
+  era siempre verdadera (`proc.poll() is None or True`). Esa cobertura no
+  acreditaba el comportamiento productivo. Se conserva el registro anterior
+  como historico; esta entrada lo corrige.
+
+- Nuevo diseno (sin Binance, cero peticiones publicas):
+  * El test lanza `scripts/engineering_session_service.py` como subproceso
+    REAL via `_spawn` del arnes (stdout/stderr persistidos en evidencia).
+  * Proveedor de tiempo loopback `_TimeServer` que emula `/fapi/v1/time` y
+    RETIENE la respuesta hasta que el test llama a `release()`. No hay mock
+    de servicio ni temporizador que cambie `available`.
+  * La espera ejercitada es la productiva:
+    `WindowOrchestrator._wait_for_engineering_readiness` con
+    `clock_readiness_timeout_s` explicito.
+  * Orden real conservado: el servidor HTTP se levanta antes de
+    `ClockSynchronizer.sync()`; `ClockSynchronizer` es la clase real.
+
+- Demostrado:
+  * `/health` responde con `source=public_sincronizado`, `available=false` y
+    `offset_ms=null` mientras el sync esta en curso.
+  * `POST /sessions` se rechaza con RELOJ_REFERENCIA_INCERTO y sin
+    `session_id` durante la preparacion.
+  * La espera productiva sigue viva tras 1.5 s: no termina ni devuelve nada
+    prematuramente.
+  * Al liberar el proveedor, el sync real completa: `available=true`,
+    `offset_ms` no nulo, `_wait_for_engineering_readiness` retorna y la
+    sesion se crea (200).
+  * Proveedor que nunca responde: vence el limite de preparacion
+    (`ENGINEERING_CLOCK_NOT_READY`), no se crea sesion y la causa queda
+    publicada en `evidence["clock_readiness"]`
+    (`error=CLOCK_READINESS_TIMEOUT_CLOCK`, transiciones con
+    `reloj_no_listo`, ultimo motivo observado).
+  * Limpieza productiva verificada de forma efectiva: tras terminar el
+    servicio el proceso esta terminado (`proc.poll()` no nulo) y el puerto
+    esta cerrado (`_port_open` falso). Se elimino la asercion siempre
+    verdadera.
+
+- Cambio de soporte minimo en el servicio: argumento opcional
+  `--public-fetch-url` (default None = Binance `fapi/v1/time`; en produccion
+  el comportamiento no cambia) para apuntar el fetch de sincronizacion a un
+  servidor loopback en pruebas. Se importa ademas
+  `MAX_FETCH_REQUESTS_PER_RUN` en `engineering_session_service.py` (faltaba y
+  rompia con NameError el arranque en modo public; ese camino nunca se habia
+  ejecutado con el CLI real).
+
+- `_wait_for_engineering_readiness` publica `evidence["clock_readiness"]
+  tambien cuando falla (antes solo se publicaba al exito), para que la causa
+  observada no se pierda.
+
+- Nota de alcance documental: `docs/evidence/ventana-publica-20261102/
+  PRUEBAS_LOCALES_READINESS.json` describe las 6 pruebas unitarias de
+  controlador ejecutadas en ese momento; no acredita sincronizacion demorada
+  del CLI real. Esa cobertura es la que anade esta entrada.
+
+- Verificacion exacta: `python -m pytest
+  tests/test_engineering_clock_readiness.py` -> 11 passed;
+  `python -m pytest tests/test_engineering_clock_budget.py` -> 21 passed
+  (32 passed en total). Sin Binance, sin ventana publica, sin cambios
+  economicos ni de presupuesto. Rama no integrada.

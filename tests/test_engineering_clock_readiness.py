@@ -16,7 +16,12 @@ Verifica, SIN Binance y con proveedor de tiempo local:
    esperando /health (el servidor HTTP esta levantado antes del sync).
 
 Todas las pruebas usan el CLI real (EngineeringSessionController +
-EngineeringHTTPServer) con proveedores de tiempo locales mockeados.
+EngineeringHTTPServer) con proveedores de tiempo loopback que NUNCA tocan
+Binance. Las pruebas de TestCliRealLocal lanzan engineering_session_service.py
+como subproceso via _spawn y ejercitan _wait_for_engineering_readiness del
+orquestador contra un ClockSynchronizer real cuyo proveedor loopback queda
+retenido hasta que el test lo libera (sincronizacion genuinamente demorada,
+sin mocks que cambien available por temporizador).
 Cero peticiones a dominios publicos.
 """
 from __future__ import annotations
@@ -27,9 +32,12 @@ import shutil
 import subprocess
 import sys
 import tempfile
+import threading
 import time
+import argparse
 import unittest
 from datetime import datetime, timezone, timedelta
+from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from typing import Any, Callable, Dict, List, Optional
 
@@ -322,175 +330,104 @@ class TestClockReadiness(unittest.TestCase):
 
 # --- CLI real del servicio (subproceso) con proveedor loopback ------------
 
-MOCK_SERVICE_SCRIPT = r'''import json
-import sys
-import time
-from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
-from pathlib import Path
 
-sys.path.insert(0, sys.argv[sys.argv.index("--src-dir") + 1])
+class _TimeServer:
+    """Servidor HTTP loopback que emula /fapi/v1/time de Binance.
 
-from microstructure_probe.clock import ClockSynchronizer  # noqa: E402
-from microstructure_probe.engineering_session_service import (  # noqa: E402
-    EngineeringHTTPServer,
-    EngineeringSessionController,
-)
+    Las respuestas quedan RETENIDAS hasta que el test llama a ``release()``.
+    Asi se controla de forma determinista el instante en que el
+    ClockSynchronizer real completa su sincronizacion, sin sustituir el
+    servicio por un mock ni cambiar ``available`` con un temporizador.
+    Nunca toca Binance.
+    """
 
-PORT = int(sys.argv[sys.argv.index("--port") + 1])
-SESSIONS_DIR = Path(sys.argv[sys.argv.index("--sessions-dir") + 1])
-RUN_ID = sys.argv[sys.argv.index("--run-id") + 1]
-PID_FILE = Path(sys.argv[sys.argv.index("--pid-file") + 1])
-INITIAL_STATE = sys.argv[sys.argv.index("--initial-state") + 1]
-SWITCH_AFTER_S = float(sys.argv[sys.argv.index("--switch-after-s") + 1])
+    def __init__(self, port: int, server_time_offset_ms: int = 60_000) -> None:
+        self.port = port
+        self.server_time_offset_ms = server_time_offset_ms
+        self.release_event = threading.Event()
+        self.stopped = False
+        self.requests = 0
+        self.server: Optional[ThreadingHTTPServer] = None
+        self.thread: Optional[threading.Thread] = None
+        self._start()
 
-T0 = 1_790_000_000_000
+    def _make_handler(self):
+        outer = self
 
-# Proveedor de tiempo controlado: inicialmente no sincronizado (retrasado),
-# luego se sincroniza tras SWITCH_AFTER_S segundos.
-class _ControlledTimeProvider:
-    def __init__(self) -> None:
-        self.start = time.monotonic()
-        self.ready = False
-
-    def fetch_server_time(self) -> int:
-        if not self.ready:
-            # Devuelve un tiempo antiguo (retrasado) para forzar abstencion.
-            return T0
-        return T0 + 5 * 60 * 1000
-
-    def wall_clock_ms(self) -> float:
-        return float(int(time.time() * 1000))
-
-    def mark_ready(self) -> None:
-        self.ready = True
-
-
-provider = _ControlledTimeProvider()
-
-
-def _switch_ready() -> None:
-    time.sleep(SWITCH_AFTER_S)
-    provider.mark_ready()
-    import asyncio
-    try:
-        asyncio.run(sync.sync())
-    except Exception:  # noqa: BLE001 - si falla el sync, available queda False
-        pass
-
-
-import threading
-threading.Thread(target=_switch_ready, daemon=True).start()
-
-sync = ClockSynchronizer(
-    fetch_server_time=provider.fetch_server_time,
-    wall_clock_ms=provider.wall_clock_ms,
-    request_timeout_seconds=2.0,
-)
-# NO llamar a sync() aqui: el servidor HTTP se levanta primero y el sync
-# corre en segundo plano. El reloj pasa a available cuando el proveedor
-# se marca listo y el sincronizador lo procesa.
-
-
-class _Handler(BaseHTTPRequestHandler):
-    def do_GET(self):
-        from urllib.parse import urlsplit
-        path = urlsplit(self.path).path.rstrip("/") or "/"
-        if path == "/health":
-            now_wall = provider.wall_clock_ms()
-            # El reloj esta disponible solo si el proveedor esta listo
-            # Y el sincronizador tiene un offset valido.
-            clk = {
-                "source": "public_sincronizado",
-                "available": provider.ready
-                and sync.offset_ms is not None,
-                "offset_ms": sync.offset_ms,
-                "rtt_ms": None,
-                "last_sync_timestamp": None,
-                "age_ms": None,
-            }
-            body = json.dumps({
-                "service": "engineering-session-service/v1",
-                "pid": 1, "port": PORT,
-                "clock": clk,
-                "generated_at_ms": now_wall,
-            }).encode()
-            self.send_response(200)
-            self.send_header("Content-Type", "application/json")
-            self.send_header("Content-Length", str(len(body)))
-            self.end_headers()
-            self.wfile.write(body)
-        elif path == "/sessions":
-            self.send_response(400)
-            self.send_header("Content-Type", "application/json")
-            self.end_headers()
-            self.wfile.write(
-                json.dumps({"error": "RELOJ_REFERENCIA_INCERTO"}).encode())
-        else:
-            self.send_response(404)
-            self.end_headers()
-
-    def do_POST(self):
-        from urllib.parse import urlsplit
-        path = urlsplit(self.path).path.rstrip("/") or "/"
-        if path == "/sessions":
-            length = int(self.headers.get("Content-Length") or 0)
-            body = self.rfile.read(length) if length > 0 else b""
-            # Rechazar si el reloj no esta listo
-            if not provider.ready or sync.offset_ms is None:
-                self.send_response(400)
+        class H(BaseHTTPRequestHandler):
+            def do_GET(self):
+                from urllib.parse import urlsplit
+                outer.requests += 1
+                if urlsplit(self.path).path.rstrip("/") != "/fapi/v1/time":
+                    self.send_response(404)
+                    self.end_headers()
+                    return
+                # Retener la respuesta hasta que el test libere el proveedor.
+                outer.release_event.wait(timeout=30.0)
+                if outer.stopped:
+                    self.send_response(503)
+                    self.end_headers()
+                    return
+                server_time = (int(time.time() * 1000)
+                               + outer.server_time_offset_ms)
+                body = json.dumps({"serverTime": server_time}).encode()
+                self.send_response(200)
                 self.send_header("Content-Type", "application/json")
+                self.send_header("Content-Length", str(len(body)))
                 self.end_headers()
-                self.wfile.write(
-                    json.dumps({"error": "RELOJ_REFERENCIA_INCERTO"}).encode())
+                self.wfile.write(body)
+
+            def log_message(self, format, *args):  # noqa: A002
                 return
-            # Reloj listo: crear sesion exitosa
-            resp = {
-                "session": {
-                    "session_id": "sess-%d" % int(time.time() * 1000),
-                    "config_hash": "cfg-%d" % int(time.time() * 1000),
-                },
-                "transport": "market_stream",
-            }
-            body = json.dumps(resp).encode()
-            self.send_response(200)
-            self.send_header("Content-Type", "application/json")
-            self.send_header("Content-Length", str(len(body)))
-            self.end_headers()
-            self.wfile.write(body)
-        else:
-            self.send_response(404)
-            self.end_headers()
-    def log_message(self, format, *args):
-        return
 
+        return H
 
-server = ThreadingHTTPServer(("127.0.0.1", PORT), _Handler)
-# Escribir pid-file para que el orquestador lo reconozca.
-PID_FILE.parent.mkdir(parents=True, exist_ok=True)
-PID_FILE.write_text(json.dumps({
-    "pid": 1, "port": PORT, "host": "127.0.0.1",
-    "service": "engineering-session-service/v1",
-    "started_at_ms": int(time.time() * 1000),
-}) + "\n", encoding="utf-8")
-server.serve_forever()
-'''
+    def _start(self) -> None:
+        self.server = ThreadingHTTPServer(
+            ("127.0.0.1", self.port), self._make_handler())
+        self.thread = threading.Thread(
+            target=self.server.serve_forever, daemon=True)
+        self.thread.start()
+
+    def release(self) -> None:
+        self.release_event.set()
+
+    def stop(self) -> None:
+        self.stopped = True
+        self.release_event.set()
+        if self.server is not None:
+            try:
+                self.server.shutdown()
+            except Exception:  # noqa: BLE001
+                pass
+            try:
+                self.server.server_close()
+            except Exception:  # noqa: BLE001
+                pass
+        if self.thread is not None:
+            self.thread.join(timeout=5.0)
 
 
 class TestCliRealLocal(unittest.TestCase):
-    """Pruebas del CLI real de engineering_session_service.py lanzado como
-    subproceso via _spawn del arnés (no subprocess.Popen directo), con
-    proveedor de tiempo loopback (modo local: cero Binance).
+    """CLI real de engineering_session_service.py lanzado como subproceso via
+    _spawn del arnes, con proveedor de tiempo loopback controlado (cero
+    Binance). Ejercita _wait_for_engineering_readiness del orquestador real.
 
-    Estas pruebas ejercitan el camino real del proceso: el arnés lanza el
-    servicio, espera readiness, y verifica que no se cree sesion sin reloj
-    valido.
+    Demuestra:
+      - HTTP responde mientras el reloj aun no esta preparado (NOT_READY).
+      - La espera productiva no termina ni permite crear sesion prematuramente.
+      - Tras sincronizar, continua con fuente correcta y referencia valida.
+      - Si el proveedor falla, vence el limite de preparacion, no se crea
+        sesion y la causa queda registrada en evidencia.
+      - Tras la limpieza productiva, el proceso termina y el puerto se cierra.
     """
 
     def setUp(self) -> None:
         self.tmp = Path(tempfile.mkdtemp(prefix="orch-cli-real-"))
         self.evidence_dir = self.tmp / "evidence"
         self.evidence_dir.mkdir(parents=True, exist_ok=True)
-        self._procs = []
+        self._procs: List[subprocess.Popen] = []
+        self._time_servers: List[_TimeServer] = []
 
     def tearDown(self) -> None:
         for proc in self._procs:
@@ -502,15 +439,19 @@ class TestCliRealLocal(unittest.TestCase):
                     proc.kill()
                 except Exception:  # noqa: BLE001
                     pass
+        for ts in self._time_servers:
+            ts.stop()
         shutil.rmtree(self.tmp, ignore_errors=True)
 
-    def _launch_service(self, port: int, sessions_dir: Path,
-                        clock_source: str = "local",
-                        extra_args: Optional[List[str]] = None
-                        ) -> subprocess.Popen:
-        """Lanza el CLI real usando _spawn del arnés (captura stdout/stderr
-        en archivos de evidencia, sin PIPE sin drenar)."""
-        # Instancia ligera del orquestador solo para usar _spawn.
+    def _launch_cli_service(
+        self,
+        port: int,
+        sessions_dir: Path,
+        clock_source: str = "public",
+        public_fetch_url: Optional[str] = None,
+    ) -> subprocess.Popen:
+        """Lanza el CLI real de engineering_session_service.py via _spawn del
+        arnes (captura stdout/stderr en archivos de evidencia)."""
         orch = elw_mod.WindowOrchestrator.__new__(
             elw_mod.WindowOrchestrator)
         orch.evidence_dir = self.evidence_dir
@@ -521,52 +462,50 @@ class TestCliRealLocal(unittest.TestCase):
             "--port", str(port),
             "--sessions-dir", str(sessions_dir),
             "--clock-source", clock_source,
-            "--run-id", "eng-cli-real-%d" % int(time.time() * 1000),
+            "--run-id", "eng-cli-%d" % int(time.time() * 1000),
             "--pid-file", str(sessions_dir / "service.json"),
         ]
-        if extra_args:
-            argv.extend(extra_args)
-        stdout_path = self.evidence_dir / "service-stdout.log"
-        stderr_path = self.evidence_dir / "service-stderr.log"
+        if public_fetch_url is not None:
+            argv += ["--public-fetch-url", public_fetch_url]
+
+        stdout_path = self.evidence_dir / ("service-%d-stdout.log" % port)
+        stderr_path = self.evidence_dir / ("service-%d-stderr.log" % port)
         proc = orch._spawn(argv, "engineering-session",
                            stdout_path=stdout_path,
                            stderr_path=stderr_path)
         self._procs.append(proc)
+        # Dar tiempo al interprete hijo a arrancar y enlazar el puerto.
+        time.sleep(1.0)
+        if proc.poll() is not None:
+            stderr_txt = ""
+            try:
+                stderr_txt = stderr_path.read_text(
+                    encoding="utf-8", errors="replace")[-800:]
+            except Exception:  # noqa: BLE001
+                pass
+            raise RuntimeError(
+                "el proceso del servicio murio al arrancar (codigo=%s). "
+                "stderr: %s" % (proc.returncode, stderr_txt))
         return proc
 
-    def _launch_mock_service(self, port: int, sessions_dir: Path,
-                             initial_state: str = "not_ready",
-                             switch_after_s: float = 2.0) -> subprocess.Popen:
-        """Lanza un servicio mock de ingeniería (script helper generado en
-        vuelo) via _spawn del arnés. El mock reporta /health con
-        clock.available=False inicialmente y pasa a True tras switch_after_s.
-        Nunca toca Binance."""
-        # Escribir el script helper a un archivo temporal.
-        script = MOCK_SERVICE_SCRIPT
-        helper_path = self.tmp / "mock_engineering_service.py"
-        helper_path.write_text(script, encoding="utf-8")
-
+    def _make_orchestrator_for_readiness(
+        self,
+        clock_source: str = "public",
+        clock_readiness_timeout_s: float = 10.0,
+    ) -> elw_mod.WindowOrchestrator:
+        """Instancia del orquestador real (via __new__) con el estado minimo
+        necesario para invocar _wait_for_engineering_readiness."""
         orch = elw_mod.WindowOrchestrator.__new__(
             elw_mod.WindowOrchestrator)
+        orch.args = argparse.Namespace(clock_source=clock_source)
+        orch.clock_source = clock_source
+        orch.clock_readiness_timeout_s = clock_readiness_timeout_s
+        orch.deadline_monotonic = time.monotonic() + 180.0
         orch.evidence_dir = self.evidence_dir
-
-        argv = [
-            sys.executable, str(helper_path),
-            "--src-dir", str(ROOT / "src"),
-            "--port", str(port),
-            "--sessions-dir", str(sessions_dir),
-            "--run-id", "eng-mock-%d" % int(time.time() * 1000),
-            "--pid-file", str(sessions_dir / "service.json"),
-            "--initial-state", initial_state,
-            "--switch-after-s", str(switch_after_s),
-        ]
-        stdout_path = self.evidence_dir / "mock-stdout.log"
-        stderr_path = self.evidence_dir / "mock-stderr.log"
-        proc = orch._spawn(argv, "mock-engineering-session",
-                           stdout_path=stdout_path,
-                           stderr_path=stderr_path)
-        self._procs.append(proc)
-        return proc
+        orch.evidence = {}
+        orch.ultima_salud_ingenieria = None
+        orch.rest_count = 0
+        return orch
 
     def _wait_for_health(self, port: int, timeout: float = 10.0
                          ) -> Optional[Dict[str, Any]]:
@@ -576,28 +515,11 @@ class TestCliRealLocal(unittest.TestCase):
         while time.monotonic() < end:
             try:
                 with urllib.request.urlopen(
-                        "http://127.0.0.1:%d/health" % port, timeout=2.0) as resp:
+                        "http://127.0.0.1:%d/health" % port,
+                        timeout=2.0) as resp:
                     return json.loads(resp.read().decode("utf-8"))
-            except Exception:
+            except Exception:  # noqa: BLE001
                 time.sleep(0.25)
-        return None
-
-    def _wait_for_clock_ready(self, port: int, timeout: float = 15.0
-                              ) -> Optional[Dict[str, Any]]:
-        """Espera a que /health reporte clock.available=True."""
-        import urllib.request
-        end = time.monotonic() + timeout
-        while time.monotonic() < end:
-            try:
-                with urllib.request.urlopen(
-                        "http://127.0.0.1:%d/health" % port, timeout=2.0) as resp:
-                    health = json.loads(resp.read().decode("utf-8"))
-                clk = health.get("clock") or {}
-                if clk.get("available"):
-                    return health
-            except Exception:
-                pass
-            time.sleep(0.25)
         return None
 
     def _create_session(self, port: int, payload: Dict[str, Any],
@@ -622,140 +544,185 @@ class TestCliRealLocal(unittest.TestCase):
 
     def test_cli_real_local_salud_inmediata(self):
         """CLI real en modo local: /health responde inmediatamente con
-        local_sistema, available=True."""
+        local_sistema, available=True (sin sincronizacion)."""
         port = _free_port()
         sessions_dir = self.tmp / "sessions"
         sessions_dir.mkdir(parents=True, exist_ok=True)
-        proc = self._launch_service(port, sessions_dir, clock_source="local")
-        try:
-            health = self._wait_for_health(port, timeout=10.0)
-            self.assertIsNotNone(health, "el servicio no levantó /health")
-            clk = health.get("clock") or {}
-            self.assertEqual(clk.get("source"), "local_sistema", clk)
-            self.assertTrue(clk.get("available"), clk)
-        finally:
-            pass  # tearDown detiene procesos
+        self._launch_cli_service(port, sessions_dir, clock_source="local")
+        health = self._wait_for_health(port, timeout=15.0)
+        self.assertIsNotNone(health, "el servicio no levanto /health")
+        clk = health.get("clock") or {}
+        self.assertEqual(clk.get("source"), "local_sistema", clk)
+        self.assertTrue(clk.get("available"), clk)
 
-    # --- 2. Modo local: se puede crear sesión -----------------------------
+    # --- 2. HTTP disponible, reloj preparandose, luego sincronizado -------
 
-    def test_cli_real_local_permite_crear_sesion(self):
-        """CLI real en modo local: se puede crear sesión porque el reloj
-        está disponible."""
+    def test_http_responde_antes_de_reloj_listo_y_espera_productiva(self):
+        """Fallo original: /health responde con clock.available=false porque
+        el ClockSynchronizer real aun no ha sincronizado. La espera productiva
+        no termina ni permite crear sesion; al liberar el proveedor loopback
+        el reloj queda valido y el arnes continua."""
         port = _free_port()
-        sessions_dir = self.tmp / "sessions"
-        sessions_dir.mkdir(parents=True, exist_ok=True)
-        proc = self._launch_service(port, sessions_dir, clock_source="local")
-        try:
-            health = self._wait_for_health(port, timeout=10.0)
-            self.assertIsNotNone(health, "el servicio no levantó /health")
-            status, body = self._create_session(port, live_payload(
-                CONTEXT, "req-cli-1"))
-            self.assertEqual(status, 200, body)
-            sess = body.get("session") or {}
-            self.assertIsNotNone(sess.get("session_id"), body)
-        finally:
-            pass
-
-    # --- 3. Fallo original: reloj inicialmente NO disponible ------------
-
-    def test_reloj_inicialmente_no_disponible_luego_disponible(self):
-        """Fallo original: /health disponible con clock.available=false.
-        El arnés espera y no crea sesion. El proveedor responde despues y
-        el reloj pasa a available=true. El arnés continua y permite crear
-        sesion."""
-        port = _free_port()
-        sessions_dir = self.tmp / "sessions_mock"
+        time_port = _free_port()
+        sessions_dir = self.tmp / "sessions_ready"
         sessions_dir.mkdir(parents=True, exist_ok=True)
 
-        # Lanzar mock servicio: inicialmente no listo, listo tras 2s.
-        proc = self._launch_mock_service(
-            port, sessions_dir,
-            initial_state="not_ready", switch_after_s=2.0)
+        time_server = _TimeServer(time_port)
+        self._time_servers.append(time_server)
+        fetch_url = "http://127.0.0.1:%d/fapi/v1/time" % time_port
+
+        proc = self._launch_cli_service(
+            port, sessions_dir, public_fetch_url=fetch_url)
         try:
-            # Fase 1: /health responde inmediatamente (HTTP disponible)
-            # pero clock.available=false (NOT_READY).
-            health = self._wait_for_health(port, timeout=10.0)
-            self.assertIsNotNone(health, "el mock no levantó /health")
+            eng_url = "http://127.0.0.1:%d" % port
+
+            # 1) HTTP responde mientras el reloj no esta preparado.
+            health = self._wait_for_health(port, timeout=15.0)
+            self.assertIsNotNone(health, "el servicio no levanto /health")
+            self.assertIsNone(proc.poll(),
+                             "el servicio termino durante la preparacion")
             clk = health.get("clock") or {}
             self.assertEqual(clk.get("source"), "public_sincronizado", clk)
             self.assertFalse(clk.get("available"), clk)
+            self.assertIsNone(clk.get("offset_ms"), clk)
 
-            # Fase 2: No se puede crear sesion mientras el reloj no este listo.
-            status, body = self._create_session(port, live_payload(
-                CONTEXT, "req-mock-1"))
+            # 2) No se permite crear sesion prematuramente.
+            status, body = self._create_session(
+                port, live_payload(CONTEXT, "req-ready-1"))
             self.assertEqual(status, 400, body)
             self.assertIn("RELOJ_REFERENCIA_INCERTO", str(body), body)
+            self.assertIsNone((body.get("session") or {}).get("session_id"))
 
-            # Fase 3: El proveedor responde y el reloj pasa a available=true.
-            health_ready = self._wait_for_clock_ready(port, timeout=10.0)
-            self.assertIsNotNone(
-                health_ready, "el reloj nunca paso a available=true")
-            clk_ready = health_ready.get("clock") or {}
-            self.assertTrue(clk_ready.get("available"), clk_ready)
+            # 3) La espera productiva del orquestador no termina todavia.
+            orch = self._make_orchestrator_for_readiness(
+                clock_source="public", clock_readiness_timeout_s=20.0)
+            resultado: Dict[str, Any] = {}
 
-            # Fase 4: El arnés continua y permite crear sesion.
-            status, body = self._create_session(port, live_payload(
-                CONTEXT, "req-mock-2"))
+            def _esperar() -> None:
+                try:
+                    resultado["health"] = (
+                        orch._wait_for_engineering_readiness(
+                            eng_url, sessions_dir))
+                except Exception as exc:  # noqa: BLE001
+                    resultado["error"] = exc
+
+            hilo = threading.Thread(target=_esperar, daemon=True)
+            hilo.start()
+            hilo.join(timeout=1.5)
+            self.assertTrue(
+                hilo.is_alive(),
+                "readiness termino antes de que el reloj estuviera listo")
+            self.assertEqual(resultado, {},
+                             "readiness devolvio algo prematuramente")
+
+            # 4) Liberar el proveedor: el sync real completa y el reloj es
+            #    valido con fuente correcta y referencia (offset) disponible.
+            time_server.release()
+            hilo.join(timeout=20.0)
+            self.assertFalse(hilo.is_alive(),
+                             "readiness no termino tras sincronizar")
+            self.assertNotIn("error", resultado, resultado)
+            eng_health = resultado.get("health") or {}
+            clk = eng_health.get("clock") or {}
+            self.assertEqual(clk.get("source"), "public_sincronizado", clk)
+            self.assertTrue(clk.get("available"), clk)
+            self.assertIsNotNone(clk.get("offset_ms"), clk)
+
+            # 5) Continua y permite crear sesion.
+            status, body = self._create_session(
+                port, live_payload(CONTEXT, "req-ready-2"))
             self.assertEqual(status, 200, body)
             sess = body.get("session") or {}
             self.assertIsNotNone(sess.get("session_id"), body)
         finally:
-            pass
+            time_server.release()
 
-    # --- 4. Proveedor fallido/timeout: ninguna sesion creada -------------
+    # --- 3. Proveedor fallido/timeout: ninguna sesion creada --------------
 
     def test_proveedor_fallido_timeout_no_crea_sesion(self):
-        """Proveedor que nunca se recupera: el arnés espera hasta el timeout,
-        no crea sesion, causa explícita y limpieza verificada."""
+        """Proveedor de tiempo que nunca responde: vence el limite de
+        preparacion, no se crea sesion y la causa queda en evidencia."""
         port = _free_port()
-        sessions_dir = self.tmp / "sessions_mock_fail"
+        time_port = _free_port()
+        sessions_dir = self.tmp / "sessions_fail"
         sessions_dir.mkdir(parents=True, exist_ok=True)
 
-        # Lanzar mock servicio: nunca se pone listo (switch_after_s muy grande).
-        proc = self._launch_mock_service(
-            port, sessions_dir,
-            initial_state="not_ready", switch_after_s=999.0)
-        try:
-            # /health responde pero available=false permanentemente.
-            health = self._wait_for_health(port, timeout=10.0)
-            self.assertIsNotNone(health, "el mock no levantó /health")
-            clk = health.get("clock") or {}
-            self.assertFalse(clk.get("available"), clk)
+        # Proveedor loopback que retiene la respuesta para siempre.
+        time_server = _TimeServer(time_port)
+        self._time_servers.append(time_server)
+        fetch_url = "http://127.0.0.1:%d/fapi/v1/time" % time_port
 
-            # No se puede crear sesion (reloj incierto).
-            status, body = self._create_session(port, live_payload(
-                CONTEXT, "req-mock-fail-1"))
-            self.assertEqual(status, 400, body)
-            self.assertIn("RELOJ_REFERENCIA_INCERTO", str(body), body)
+        self._launch_cli_service(
+            port, sessions_dir, public_fetch_url=fetch_url)
+        eng_url = "http://127.0.0.1:%d" % port
 
-            # Verificar que no hay session_id (ninguna sesion creada).
-            sess = body.get("session") or {}
-            self.assertIsNone(sess.get("session_id"), body)
+        # HTTP responde (servidor levantado antes del sync) pero sin reloj.
+        health = self._wait_for_health(port, timeout=15.0)
+        self.assertIsNotNone(health, "el servicio no levanto /health")
+        clk = health.get("clock") or {}
+        self.assertEqual(clk.get("source"), "public_sincronizado", clk)
+        self.assertFalse(clk.get("available"), clk)
 
-            # El mock sigue vivo (no se cayo), pero el arnés no crea sesion.
-            # Limpieza: detener el proceso manualmente (verifica que responde).
-            self.assertIsNotNone(proc.poll() is None or True,
-                                 "el proceso de mock existe")
-        finally:
-            pass
+        # La espera productiva vence por limite de preparacion.
+        orch = self._make_orchestrator_for_readiness(
+            clock_source="public", clock_readiness_timeout_s=3.0)
+        with self.assertRaises(RuntimeError) as ctx:
+            orch._wait_for_engineering_readiness(eng_url, sessions_dir)
+        self.assertIn("ENGINEERING_CLOCK_NOT_READY", str(ctx.exception))
 
-    # --- 5. Stdout/stderr persisten en directorio de evidencia ------------
+        # Causa registrada en evidencia (no se infiere: se publica el
+        # motivo observado y las transiciones).
+        ev = orch.evidence.get("clock_readiness") or {}
+        self.assertEqual(ev.get("error"), "CLOCK_READINESS_TIMEOUT_CLOCK", ev)
+        estados = [t.get("estado") for t in ev.get("transiciones") or []]
+        self.assertIn("reloj_no_listo", estados, ev)
+        self.assertIn("reloj no listo", ev.get("ultimo_motivo") or "", ev)
+
+        # No se crea sesion (reloj incierto).
+        status, body = self._create_session(
+            port, live_payload(CONTEXT, "req-fail-1"))
+        self.assertEqual(status, 400, body)
+        self.assertIn("RELOJ_REFERENCIA_INCERTO", str(body), body)
+        self.assertIsNone((body.get("session") or {}).get("session_id"))
+
+    # --- 4. Stdout/stderr persisten en directorio de evidencia -------------
 
     def test_cli_real_stdout_stderr_persistidos(self):
-        """CLI real: stdout/stderr se escriben en archivos de evidencia y
-        se conservan tras detener el servicio. Captura via _spawn del arnés."""
+        """CLI real: stdout/stderr se escriben en archivos de evidencia y se
+        conservan tras detener el servicio. Captura via _spawn del arnes."""
         port = _free_port()
-        sessions_dir = self.tmp / "sessions"
+        sessions_dir = self.tmp / "sessions_stdio"
         sessions_dir.mkdir(parents=True, exist_ok=True)
-        proc = self._launch_service(port, sessions_dir, clock_source="local")
-        try:
-            self._wait_for_health(port, timeout=10.0)
-        finally:
-            pass
-        stdout_path = self.evidence_dir / "service-stdout.log"
-        stderr_path = self.evidence_dir / "service-stderr.log"
+        self._launch_cli_service(port, sessions_dir, clock_source="local")
+        health = self._wait_for_health(port, timeout=15.0)
+        self.assertIsNotNone(health, "el servicio no levanto /health")
+        stdout_path = self.evidence_dir / ("service-%d-stdout.log" % port)
+        stderr_path = self.evidence_dir / ("service-%d-stderr.log" % port)
         self.assertTrue(stdout_path.exists(), "stdout no persistido")
         self.assertTrue(stderr_path.exists(), "stderr no persistido")
+
+    # --- 5. Limpieza productiva: proceso terminado y puerto cerrado --------
+
+    def test_limpieza_productiva_proceso_terminado_puerto_cerrado(self):
+        """Tras detener el servicio el proceso termina y el puerto se cierra
+        (verificaciones efectivas, sin aserciones siempre verdaderas)."""
+        port = _free_port()
+        sessions_dir = self.tmp / "sessions_clean"
+        sessions_dir.mkdir(parents=True, exist_ok=True)
+        proc = self._launch_cli_service(
+            port, sessions_dir, clock_source="local")
+        health = self._wait_for_health(port, timeout=15.0)
+        self.assertIsNotNone(health, "el servicio no levanto /health")
+        self.assertTrue(elw_mod._port_open("127.0.0.1", port),
+                        "el puerto deberia estar abierto antes de limpiar")
+
+        proc.terminate()
+        proc.wait(timeout=5.0)
+
+        self.assertIsNotNone(proc.poll(),
+                             "el proceso del servicio no termino")
+        self.assertFalse(elw_mod._port_open("127.0.0.1", port),
+                         "el puerto del servicio no se cerro")
 
 
 if __name__ == "__main__":  # pragma: no cover

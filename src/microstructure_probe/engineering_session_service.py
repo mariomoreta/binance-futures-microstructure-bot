@@ -83,6 +83,7 @@ from microstructure_probe.clock import (  # noqa: E402
 )
 from microstructure_probe.history_client import UpstreamBudgetExceeded  # noqa: E402
 from microstructure_probe.market_cache import (  # noqa: E402
+    MAX_FETCH_REQUESTS_PER_RUN,
     MAX_FETCH_REQUESTS_PER_WINDOW,
     MarketCache,
 )
@@ -193,6 +194,28 @@ def _fetch_binance_server_time(timeout_seconds: float = 5.0) -> int:
     with urllib.request.urlopen(request, timeout=timeout_seconds) as response:
         payload = json.loads(response.read())
     return int(payload["serverTime"])
+
+
+def _fetch_server_time_from_url(
+        url: str, timeout_seconds: float = 5.0) -> int:
+    """Lee serverTime de una URL dada (servidor loopback en pruebas).
+    Mismo contrato que _fetch_binance_server_time (devuelve int de ms)."""
+    request = urllib.request.Request(url, method="GET")
+    with urllib.request.urlopen(request, timeout=timeout_seconds) as response:
+        payload = json.loads(response.read())
+    return int(payload["serverTime"])
+
+
+def _fetch_public_server_time(
+        public_fetch_url: Optional[str] = None) -> Callable[[], int]:
+    """Devuelve un fetch de serverTime sin argumentos.
+
+    Si ``public_fetch_url`` se indica, llama a esa URL (servidor loopback en
+    pruebas). De lo contrario, llama a Binance fapi.v1/time (produccion).
+    """
+    if public_fetch_url:
+        return lambda: _fetch_server_time_from_url(public_fetch_url)
+    return _fetch_binance_server_time
 
 
 def _make_budgeted_time_fetch(
@@ -2026,6 +2049,11 @@ def main(argv: Optional[List[str]] = None) -> int:
                         help="tope de intentos /time para sincronizacion "
                              "publica (default: sample_count del "
                              "sincronizador, 5).")
+    parser.add_argument("--public-fetch-url", default=None,
+                        help="URL del endpoint de tiempo para sincronizacion "
+                             "publica (default: Binance fapi.v1/time). Solo se "
+                             "usa en pruebas con servidor loopback; en "
+                             "produccion se usa Binance real.)")
     parser.add_argument("--run-id", default=None,
                         help="identificador estable de la corrida de "
                              "presupuesto. Requerido en modo publico; se "
@@ -2112,7 +2140,7 @@ def main(argv: Optional[List[str]] = None) -> int:
             sample_count=max_req,
             fetch_server_time=_make_budgeted_time_fetch(
                 cache, run_id, max_req,
-                _fetch_binance_server_time,
+                _fetch_public_server_time(args.public_fetch_url),
                 run_max_requests=MAX_FETCH_REQUESTS_PER_RUN),
             request_timeout_seconds=5.0,
         )

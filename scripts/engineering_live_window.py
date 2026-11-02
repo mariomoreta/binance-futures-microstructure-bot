@@ -667,6 +667,13 @@ class WindowOrchestrator:
             })
             readiness["ultimo_motivo"] = detalle
 
+        def fallar(mensaje: str) -> None:
+            # Publica la evidencia de readiness tambien cuando falla: la
+            # causa observada nunca se descarta ni se infiere.
+            readiness["ultimo_health"] = ultimo_health
+            self.evidence["clock_readiness"] = readiness
+            raise RuntimeError(mensaje)
+
         # Fase 1: esperar a que HTTP responda (servidor levantado).
         while self._remaining() > 0:
             self._check_deadline("engineering_http_wait")
@@ -692,9 +699,8 @@ class WindowOrchestrator:
             time.sleep(CLOCK_POLL_INTERVAL_S)
 
         if not http_disponible:
-            raise RuntimeError(
-                "ENGINEERING_HTTP_NOT_AVAILABLE: %s"
-                % readiness["ultimo_motivo"])
+            fallar("ENGINEERING_HTTP_NOT_AVAILABLE: %s"
+                   % readiness["ultimo_motivo"])
 
         # Fase 2: esperar a que el reloj de referencia esté listo.
         while self._remaining() > 0:
@@ -719,7 +725,7 @@ class WindowOrchestrator:
                     registrar_transicion(
                         "reloj_ausente",
                         "/health no expone el bloque 'clock'")
-                    raise RuntimeError(
+                    fallar(
                         "CLOCK_SOURCE_AUSENTE: /health del servicio de "
                         "ingeniería no expone el bloque 'clock'")
                 source = clock.get("source")
@@ -734,7 +740,7 @@ class WindowOrchestrator:
                         "fuente_incorrecta",
                         "se esperaba %s, obtuvo %s"
                         % (expected_source, source))
-                    raise RuntimeError(
+                    fallar(
                         "CLOCK_SOURCE_INCORRECTO: se esperaba el reloj %s, "
                         "obtuvo %s" % (expected_source, source))
                 if available:
@@ -758,9 +764,8 @@ class WindowOrchestrator:
             time.sleep(CLOCK_POLL_INTERVAL_S)
 
         if not reloj_listo:
-            raise RuntimeError(
-                "ENGINEERING_CLOCK_NOT_READY: %s"
-                % readiness["ultimo_motivo"])
+            fallar("ENGINEERING_CLOCK_NOT_READY: %s"
+                   % readiness["ultimo_motivo"])
 
         readiness["ultimo_health"] = ultimo_health
         self.evidence["clock_readiness"] = readiness
