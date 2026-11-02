@@ -1968,6 +1968,28 @@ def _read_pid_info(pid_path: Path) -> Dict[str, Any]:
         return {}
 
 
+def _run_id_path(sessions_dir: Path) -> Path:
+    """Ruta del archivo que persiste el run_id de la corrida activa."""
+    return sessions_dir / "run-id.json"
+
+
+def _read_run_id(sessions_dir: Path) -> Optional[str]:
+    """Lee el run_id persistido de una corrida previa, si existe."""
+    try:
+        data = json.loads(_run_id_path(sessions_dir).read_text(encoding="utf-8"))
+        return data.get("run_id") if isinstance(data, dict) else None
+    except (OSError, json.JSONDecodeError):
+        return None
+
+
+def _write_run_id(sessions_dir: Path, run_id: str) -> None:
+    """Persiste el run_id de la corrida para que un reinicio lo reutilice."""
+    _run_id_path(sessions_dir).parent.mkdir(parents=True, exist_ok=True)
+    _run_id_path(sessions_dir).write_text(
+        json.dumps({"run_id": run_id}, ensure_ascii=False) + "\n",
+        encoding="utf-8")
+
+
 def main(argv: Optional[List[str]] = None) -> int:
     parser = argparse.ArgumentParser(
         description="Servicio de sesiones de ingeniería (loopback)")
@@ -2004,6 +2026,11 @@ def main(argv: Optional[List[str]] = None) -> int:
                         help="tope de intentos /time para sincronizacion "
                              "publica (default: sample_count del "
                              "sincronizador, 5).")
+    parser.add_argument("--run-id", default=None,
+                        help="identificador estable de la corrida de "
+                             "presupuesto. Requerido en modo publico; se "
+                             "persiste y se reutiliza al reiniciar la misma "
+                             "corrida. En modo local es opcional.")
     parser.add_argument("--pid-file", default=None)
     parser.add_argument("--stop", action="store_true",
                         help="detiene el servicio estrictamente en --port")
@@ -2030,7 +2057,7 @@ def main(argv: Optional[List[str]] = None) -> int:
     if args.clock_source == "public":
         max_req = args.public_max_requests
         if max_req is None:
-            max_req = ClockSynchronizer.sample_count
+            max_req = CLOCK_PUBLIC_MAX_REQUESTS
         # Presupuesto publico ANTES de habilitar el modo publico: si no
         # alcanza para la politica de sincronizacion, no se habilita. Se
         # comprueban AMBOS limites: la ventana movil (30/60 s) y el presupuesto
@@ -2048,11 +2075,25 @@ def main(argv: Optional[List[str]] = None) -> int:
                 "detail": "no se pudo inicializar la caché de presupuesto",
             }, ensure_ascii=False), flush=True)
             return 2
-        # run_id estable para toda la ejecucion; se reutiliza al reiniciar
-        # la misma corrida y nunca se resetea. Un run_id nuevo comienza en
-        # cero sin borrar ni modificar los contadores de corridas previas.
+        # run_id estable para toda la corrida. En modo publico es obligatorio
+        # (--run-id); no se genera desde la hora actual. Al reiniciar la misma
+        # corrida se reutiliza el valor persistido en sessions_dir.
+        run_id = args.run_id
+        if run_id is None:
+            persisted = _read_run_id(sessions_dir)
+            if persisted is not None:
+                run_id = persisted
+            elif args.clock_source == "public":
+                print(json.dumps({
+                    "error": "PUBLIC_RUN_ID_REQUIRED",
+                    "detail": "modo publico requiere --run-id para atribuir "
+                              "el presupuesto de la corrida a una identidad "
+                              "estable.",
+                }, ensure_ascii=False), flush=True)
+                return 2
+        if run_id is not None:
+            _write_run_id(sessions_dir, run_id)
         now_start = _now_ms()
-        run_id = f"eng-run-{now_start}"
         window_used = cache.requests_in_window(now_start)
         run_used = cache.run_requests_used(run_id)
         if window_used + max_req > MAX_FETCH_REQUESTS_PER_WINDOW \

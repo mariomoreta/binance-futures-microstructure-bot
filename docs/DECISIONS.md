@@ -4077,3 +4077,27 @@ sustituto por atribucion persistente al run_id (execution_id) en el ledger (mark
 - Pruebas focalizadas: tests/test_engineering_clock_budget.py anade test_run_id_estable_consumo_conservado_al_reiniciar, test_dos_instancias_misma_corrida_limite_compartido y test_nueva_corrida_contador_independiente_evidencia_intacta (11 pruebas en total, todas OK). Se mantienen las regresiones temporales ya acreditadas (todas OK).
 - Sin Binance en modo local/demo, ordenes, pagos, movil ni cambios economicos.
 
+
+## 2026-11-02 Propagacion del run_id en el arranque del servicio de ingenieria
+
+- El orquestador (main de engineering_session_service) crea y persiste un 
+run_id estable al iniciar una corrida, transmitido mediante el argumento 
+estructurado --run-id. El modo publico lo exige; no genera otro desde la 
+hora actual.
+- /time, klines, catalogo y recuperación usan ese mismo run_id y comparten 
+el límite total de la corrida (7). El run_id se persiste en 
+sessions_dir/run-id.json; al reiniciar un proceso de la misma corrida se 
+reutiliza el ID persistido. Una corrida nueva se crea explícitamente con 
+un --run-id distinto.
+- Se elimina el ámbito presupuestario eng-ctx-<ahora> independiente. Los 
+IDs por petición se mantienen como detalle separado en el campo detail del 
+ledger.
+- Pruebas focalizadas: tests/test_engineering_clock_budget.py añade 
+test_run_id_propagacion_camino_real (servicio /time + arnés klines, mismo 
+run_id, SUM refleja ambos), test_run_id_reinicio_conserva_total, 
+test_run_id_agotamiento_bloquea_cualquier_componente, 
+test_main_run_id_public_exige_argumento y 
+test_main_run_id_persiste_y_reutiliza (16 pruebas en total, todas OK).
+- Sin Binance en modo local/demo, ordenes, pagos, movil ni cambios 
+economicos.
+
