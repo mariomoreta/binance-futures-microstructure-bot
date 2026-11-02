@@ -22,7 +22,11 @@ y HTTP disponible mientras el reloj no estaba listo (transiciones en
 `evidence.json`); presupuesto exacto **7/7** en el ledger compartido
 (5 `/time` + 2 `klines`, 0 bloqueos pre-envío, `retry=0`, `limit=300`, sin
 paginación); limpieza completa (procesos terminados, 8791/8797 cerrados,
-8792 y 3020 intactos); DBs canónicas sin cambios (SHA-256 idéntico).
+8792 y 3020 intactos); DBs canónicas sin cambios (SHA-256 idéntico). El
+pid-file compartido `data/market-stream/service.json`, sobrescrito por el
+8791 del arnés, se restauró con la identidad viva del 8792 (`pid=31124`,
+`port=8792`, reportada por su `/health`); el contenido previo exacto es
+UNKNOWN (no se capturó en el preflight).
 
 No hubo relanzamiento. El presupuesto de ese run_id está agotado. Siguiente
 acción requerida: corregir `_load_recent_context` para excluir velas con

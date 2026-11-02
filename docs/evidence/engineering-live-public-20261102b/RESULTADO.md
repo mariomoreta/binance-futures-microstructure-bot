@@ -139,6 +139,18 @@ abrió posición; no hay P&L, comisión ni realizado que reportar.
   ensayos activos.
 - DBs canónicas: sin escrituras (SHA-256 idéntico a `preflight.json`).
 
+### Efecto colateral en estado compartido y restauración
+
+El servicio de mercado del arnés (8791) escribe el pid-file por defecto
+`data/market-stream/service.json`, compartido con el servicio preexistente
+8792. La corrida lo sobrescribió con `pid=31708, port=8791` (proceso ya
+terminado). Se restauró con los valores que el propio 8792 reporta en
+`/health` (`pid=31124`, `port=8792`, `started_at_ms=1793276434054`, host
+`127.0.0.1`), sin reiniciar ni tocar el proceso 8792. El contenido previo
+exacto del archivo es **UNKNOWN** (el preflight no lo capturó). Tras la
+restauración, 8792 sigue respondiendo 200 en `/health` y 3020 sigue
+sirviendo el mismo BUILD_ID.
+
 ## Siguiente acción requerida (no ejecutada aquí)
 
 1. Corregir `_load_recent_context` para **excluir toda vela con

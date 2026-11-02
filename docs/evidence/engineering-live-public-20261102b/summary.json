@@ -106,6 +106,14 @@
     "decision",
     "position/PnL"
   ],
+  "side_effects": {
+    "shared_pid_file": "data/market-stream/service.json",
+    "overwritten_by_run": {"pid": 31708, "port": 8791},
+    "restored_from": "GET http://127.0.0.1:8792/health (live service)",
+    "restored_values": {"pid": 31124, "port": 8792, "started_at_ms": 1793276434054},
+    "previous_content": "UNKNOWN (preflight no lo capturo)",
+    "service_8792_restarted": false
+  },
   "next_required_action": [
     "corregir _load_recent_context para excluir velas con close_time_ms posterior a la referencia",
     "añadir prueba local que fije el comportamiento",
