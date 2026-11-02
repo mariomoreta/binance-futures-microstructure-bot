@@ -4045,3 +4045,14 @@ sin órdenes, observe-only.
 - El T de evaluacion anterior no es techo permanente: un cierre nuevo avanza T cuando su disponibilidad queda acreditada por la referencia independiente (_consume_market_closed descarta cierres futuros como provisionales sin tocar la marca de agua, para que puedan reenviarse). Los duplicados no duplican efectos (marca de agua) ni el contador de evaluaciones.
 - Pruebas: tests/test_engineering_session_clock_reference.py (recorrido HTTP/SSE real: referencia temporal, recepcion, cierre, T anterior/nuevo, evento disparador, contador de evaluaciones y resultado; caso historico crear a T-60s con cierre T-1s rechazado; determinismo: dos futuros distintos con mismo prefijo -> mismo estado hasta T) y tests/test_engineering_live_window_local_recorrido.py (validacion de contexto, caso historico futuro).
 - Sin Binance, ordenes, pagos, movil ni cambios economicos.
+
+## 2026-11-01 Activacion y presupuesto del reloj de referencia en el arranque del servicio
+
+- El arranque ordinario/demo (main de engineering_session_service) NO ejecuta ClockSynchronizer.sync() contra Binance. Por defecto usa el reloj de pared local (referencia local_controlado, cero solicitudes publicas). El modo publico requiere activacion explicita en backend (--clock-source public), no basta con una etiqueta del navegador.
+- Tres estados explicitos de referencia: local_controlado (reloj local/inyectado, cero publico), public_validado (ClockSynchronizer sincronizado contra el backend, offset + RTT + estado de sincronizacion expuestos) y sin referencia (ahora_ms -> None, abstencion). No existe fallback silencioso a pared no validado.
+- Cada intento /time de sincronizacion publica se RESERVA en market_fetch_ledger ANTES de enviar (incluidos fallos), dentro del presupuesto publico de la corrida (LedgerAttemptGate / MAX_FETCH_REQUESTS_PER_WINDOW). Si el presupuesto no permite la politica de sincronizacion (sample_count intentos), el modo publico no se habilita y el servicio retorna error (no se activa publico silenciosamente).
+- Se conserva la inyeccion de reloj local para pruebas (parametro now_ms del controlador).
+- Pruebas focalizadas: tests/test_engineering_clock_budget.py (modo local cero intentos publicos; sin referencia no admite contexto RELOJ_REFERENCIA_INCERTO; publico sin presupuesto rechazado; intentos contabilizados y bloqueados antes de enviar; referencia valida vs expirada admision/abstencion coherente) y
+  tests/test_engineering_session_clock_startup.py (arranque real por CLI: sincronizacion valida admite cierre; ausente/expirada abstiene; cierre futuro por contexto, snapshot y closed no admitido; sincronizacion recuperada progresa sin duplicados).
+- Sin Binance en modo local/demo, ordenes, pagos, movil ni cambios economicos.
+

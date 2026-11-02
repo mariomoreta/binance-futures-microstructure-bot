@@ -77,7 +77,15 @@ sys.path.insert(0, str(ROOT / "src"))
 sys.path.insert(0, str(ROOT))
 
 from microstructure_probe import paper_lab_engine as engine  # noqa: E402
-from microstructure_probe.clock import ClockSynchronizer  # noqa: E402
+from microstructure_probe.clock import (  # noqa: E402
+    ClockSynchronizer,
+    SERVER_TIME_URL,
+)
+from microstructure_probe.history_client import UpstreamBudgetExceeded  # noqa: E402
+from microstructure_probe.market_cache import (  # noqa: E402
+    MAX_FETCH_REQUESTS_PER_WINDOW,
+    MarketCache,
+)
 
 SERVICE_VERSION = "engineering-session-service/v1"
 # Directorio de sesiones DEDICADO del servicio de ingeniería: no colisiona
@@ -171,6 +179,59 @@ def make_synced_now_ms(
             return None
         return int(synchronizer._wall_clock_ms() + synchronizer.offset_ms)
     return now
+
+
+# Presupuesto por defecto para sincronización de reloj público. Debe caber
+# dentro de MAX_FETCH_REQUESTS_PER_WINDOW de la ventana de ledger compartida.
+CLOCK_PUBLIC_MAX_REQUESTS = 5  # == ClockSynchronizer.sample_count por defecto
+
+
+def _fetch_binance_server_time(timeout_seconds: float = 5.0) -> int:
+    """Lee serverTime de Binance fapi (mismo contrato que ClockSynchronizer,
+    sin modificar esa clase)."""
+    request = urllib.request.Request(SERVER_TIME_URL, method="GET")
+    with urllib.request.urlopen(request, timeout=timeout_seconds) as response:
+        payload = json.loads(response.read())
+    return int(payload["serverTime"])
+
+
+def _make_budgeted_time_fetch(
+    cache: MarketCache,
+    execution_id: str,
+    max_requests: int,
+    real_fetch: Callable[[], int],
+) -> Callable[[], int]:
+    """Devuelve un fetch de /time que RESERVA presupuesto ANTES de enviar.
+
+    Cada intento (incluidos fallos) se contabiliza en
+    ``market_fetch_ledger`` ANTES de abrir socket. Si la ventana no permite
+    el intento, lanza ``UpstreamBudgetExceeded`` sin tocar la red.
+    ClockSynchronizer cuenta una excepción como muestra fallida (no hay
+    offset, por tanto ahora_ms -> None y abstención).
+    """
+    def fetch() -> int:
+        row_id = cache.reserve_fetch_attempt(
+            _now_ms(), symbol=None,
+            detail=json.dumps(
+                {"endpoint": "fapi_time", "source": SERVER_TIME_URL},
+                sort_keys=True),
+            max_requests=max_requests, execution_id=execution_id,
+        )
+        if row_id is None:
+            raise UpstreamBudgetExceeded(
+                "clock /time bloqueado antes del envio: presupuesto publico "
+                "agotado")
+        try:
+            value = real_fetch()
+        except Exception as exc:  # noqa: BLE001 - registrar y propagar
+            cache.complete_fetch_row(
+                row_id, status="connection_error", retries=0,
+                note=json.dumps({"endpoint": "fapi_time", "error": str(exc)}))
+            raise
+        cache.complete_fetch_row(row_id, status="ok", retries=0,
+                                 note=json.dumps({"endpoint": "fapi_time"}))
+        return value
+    return fetch
 
 
 class LocalReplayTransport:
@@ -521,20 +582,26 @@ class EngineeringSessionController:
             self._now_ms = make_synced_now_ms(
                 clock_sync, CLOCK_REFERENCE_MAX_AGE_MS)
             self._clock_source = (clock_source
-                                  or "backend_sincronizado")
+                                  or "public_validado")
         else:
+            # Referencia local explícita (reloj de pared local o reloj
+            # inyectado por pruebas). Cero solicitudes públicas. Nunca se usa
+            # como si fuera tiempo validado de Binance.
             self._now_ms = now_ms or _now_ms
-            self._clock_source = (clock_source or "pared_no_validado")
+            self._clock_source = (clock_source or "local_controlado")
 
     # --- estado público del reloj de referencia -----------------------------
     def _clock_public_state(self) -> Dict[str, Any]:
         """Fuente, última sincronización, offset, RTT y estado de validez."""
         sync = self._clock_sync
         if sync is None:
+            # Referencia local (reloj de pared local o inyectado por
+            # pruebas): disponible por definicion, cero solicitudes publicas.
+            local = self._clock_source == "local_controlado"
             return {
                 "source": self._clock_source,
-                "available": False,
-                "reason": "sin_sincronizador",
+                "available": local,
+                "reason": None if local else "sin_sincronizador",
             }
         snap = sync.snapshot()
         available = (snap.get("clockOffsetMs") is not None
@@ -1899,6 +1966,16 @@ def main(argv: Optional[List[str]] = None) -> int:
                         default=LIVE_SILENCE_MS_DEFAULT,
                         help="silencio del feed live (ms) que fuerza la "
                              "puerta de abstención con causa FEED_SILENCE")
+    parser.add_argument("--clock-source", choices=["local", "public"],
+                        default="local",
+                        help="fuente del reloj de referencia: 'local' (reloj de "
+                             "pared local, cero solicitudes publicas) o "
+                             "'public' (ClockSynchronizer sincronizado contra "
+                             "el backend publico, bajo presupuesto).")
+    parser.add_argument("--public-max-requests", type=int, default=None,
+                        help="tope de intentos /time para sincronizacion "
+                             "publica (default: sample_count del "
+                             "sincronizador, 5).")
     parser.add_argument("--pid-file", default=None)
     parser.add_argument("--stop", action="store_true",
                         help="detiene el servicio estrictamente en --port")
@@ -1913,21 +1990,58 @@ def main(argv: Optional[List[str]] = None) -> int:
     sessions_dir = Path(args.sessions_dir) if args.sessions_dir \
         else SESSIONS_DEFAULT
     sessions_dir.mkdir(parents=True, exist_ok=True)
-    # Cableado de la infraestructura de sincronización existente al arranque
-    # real del servicio. Un único sincronizador (no se crea otro). La
-    # adquisición de tiempo es de mejor esfuerzo: si falla, la referencia
-    # queda no disponible (ahora_ms → None) y el servicio abstiene; nunca
-    # cae silenciosamente al reloj de pared no validado.
-    synchronizer = ClockSynchronizer()
-    try:
-        asyncio.run(synchronizer.sync())
-    except Exception:  # noqa: BLE001 - referencia no disponible → abstención
-        pass
+    # Seleccion EXPLICITA de la referencia temporal. Nunca se ejecuta
+    # ClockSynchronizer.sync() contra Binance en arranque local/demo: por
+    # defecto se usa el reloj de pared local (cero solicitudes publicas).
+    # El modo publico requiere activacion expresa en backend y presupuesto
+    # suficiente para su politica de sincronizacion (intentos /time
+    # contabilizados ANTES de enviar, incluido fallos).
+    synchronizer: Optional[ClockSynchronizer] = None
+    now_ms: Optional[Callable[[], Optional[int]]] = None
+    clock_source_label: Optional[str] = None
+    if args.clock_source == "public":
+        max_req = args.public_max_requests
+        if max_req is None:
+            max_req = ClockSynchronizer.sample_count
+        # Presupuesto publico ANTES de habilitar el modo publico: si no
+        # alcanza para la politica de sincronizacion, no se habilita.
+        cache = MarketCache()
+        try:
+            cache.init_db()
+        except Exception:
+            cache = None
+        if cache is not None \
+                and cache.requests_in_window(_now_ms()) + max_req > MAX_FETCH_REQUESTS_PER_WINDOW:
+            print(json.dumps({
+                "error": "PUBLIC_CLOCK_BUDGET_INSUFICIENTE",
+                "detail": ("se requieren "
+                           f"{max_req} intentos /time pero el presupuesto "
+                           "publico no permite la politica de "
+                           "sincronizacion del reloj"),
+            }, ensure_ascii=False), flush=True)
+            return 2
+        synchronizer = ClockSynchronizer(
+            sample_count=max_req,
+            fetch_server_time=_make_budgeted_time_fetch(
+                cache, f"eng-clock-{_now_ms()}", max_req,
+                _fetch_binance_server_time),
+            request_timeout_seconds=5.0,
+        )
+        try:
+            asyncio.run(synchronizer.sync())
+        except Exception:  # noqa: BLE001 - referencia no disponible -> abstencion
+            pass
+        clock_source_label = "public_validado"
+    else:
+        # Modo local: reloj de pared local, cero solicitudes publicas,
+        # referencia explícitamente local (no se simula tiempo de Binance).
+        now_ms = _now_ms
+        clock_source_label = "local_controlado"
     world = EngineeringSessionController(
         sessions_dir, args.cadence_ms, market_url=args.market_url,
         market_bars=args.market_bars, live_silence_ms=args.live_silence_ms,
-        clock_sync=synchronizer,
-        clock_source="backend_sincronizado")
+        now_ms=now_ms, clock_sync=synchronizer,
+        clock_source=clock_source_label)
     server = EngineeringHTTPServer(args.host, args.port, world)
     pid_file = Path(args.pid_file) if args.pid_file else PID_DEFAULT
     pid_file.parent.mkdir(parents=True, exist_ok=True)
