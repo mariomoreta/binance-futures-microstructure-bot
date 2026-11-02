@@ -333,6 +333,10 @@ class WindowOrchestrator:
                 self.db_before, canonical_dbs_snapshot())
             run["checks"] = self.checks
             run["verdict"] = self.verdict
+            # Ejecutar limpieza ANTES de copiar el resultado, para que
+            # limpieza_resultado refleje el estado real tras terminar procesos
+            # y cerrar archivos de logs, incluso ante timeout o error.
+            self._cleanup()
             # Recoger siempre desde finally: consumo del ledger por run_id,
             # última salud disponible y resultado de limpieza.
             if self.run_id is not None:
@@ -354,7 +358,6 @@ class WindowOrchestrator:
                 if self.engineering_stdout_path else None
             run["engineering_stderr_path"] = str(self.engineering_stderr_path) \
                 if self.engineering_stderr_path else None
-            self._cleanup()
         return run
 
     def _plan(self, run: Dict[str, Any]) -> Dict[str, Any]:
@@ -1417,9 +1420,17 @@ def main(argv: Optional[List[str]] = None) -> int:
     if args.sessions_dir is None:
         args.sessions_dir = str(Path(os.environ.get("TEMP", "."))
                                 / "opencode" / "engineering-live-sessions")
+    # --evidence-dir es obligatorio para persistir stdout/stderr de los
+    # procesos. Si no se indica, se deriva del directorio padre de --out.
+    # Nunca se usa PIPE sin drenar: sin directorio de evidencia no se arrancan
+    # procesos.
     evidence_dir = None
     if args.evidence_dir is not None:
         evidence_dir = Path(args.evidence_dir)
+    else:
+        out_dir = Path(args.out).parent
+        evidence_dir = out_dir / "service_logs"
+        evidence_dir.mkdir(parents=True, exist_ok=True)
     orch = WindowOrchestrator(args, evidence_dir=evidence_dir)
     run = orch.run()
     orch.write_evidence(args.out)

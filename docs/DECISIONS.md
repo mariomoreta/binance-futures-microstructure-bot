@@ -4237,3 +4237,29 @@ economicos.
   local: /health inmediato, creación de sesión, stdout/stderr persistidos).
 - No se modifican motores, reglas económicas ni presupuestos. No se ejecuta
   ninguna ventana pública en este bloque.
+
+## 2026-11-02 Prueba del fallo original de readiness y logs garantizados
+
+- Prueba del fallo original en tests/test_engineering_clock_readiness.py:
+  * test_reloj_inicialmente_no_disponible_luego_disponible: /health
+    disponible con clock.available=false (NOT_READY); el arnes espera y
+    no crea sesion; el proveedor responde tras 2s y el reloj pasa a
+    available=true; el arnes continua y permite crear sesion.
+  * test_proveedor_fallido_timeout_no_crea_sesion: proveedor que nunca
+    se recupera; ninguna sesion creada, causa RELOJ_REFERENCIA_INCERTO,
+    limpieza verificada.
+  * Ambas pruebas usan el CLI real del servicio lanzado via _spawn del
+    arnes (no subprocess.Popen directo), con proveedor de tiempo loopback
+    (cero Binance).
+- Logs garantizados: si falta --evidence-dir, se deriva del directorio
+  padre de --out; nunca hay fallback a PIPE sin drenar. Los tests capturan
+  stdout/stderr usando _spawn del arnés y verifican que los archivos
+  existan.
+- Resultado de limpieza: _cleanup() se ejecuta ANTES de copiar
+  limpieza_resultado al resultado final, para que el JSON publicado
+  contenga el estado real incluso ante timeout.
+- Resultado exacto del comando ejecutado:
+  python -m pytest tests/test_engineering_clock_readiness.py
+  tests/test_engineering_clock_budget.py -q
+  -> 32 passed (sin Binance, sin red pública, sin cambios económicos).
+- No se ejecuta ventana pública. Rama no integrada.
