@@ -54,6 +54,7 @@ sin tocar bases canónicas).
 from __future__ import annotations
 
 import argparse
+import asyncio
 import dataclasses
 import json
 import os
@@ -64,6 +65,7 @@ import time
 import urllib.error
 import urllib.request
 from dataclasses import replace as dc_replace
+from datetime import datetime, timezone
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from typing import Any, Callable, Dict, List, Optional
@@ -75,6 +77,7 @@ sys.path.insert(0, str(ROOT / "src"))
 sys.path.insert(0, str(ROOT))
 
 from microstructure_probe import paper_lab_engine as engine  # noqa: E402
+from microstructure_probe.clock import ClockSynchronizer  # noqa: E402
 
 SERVICE_VERSION = "engineering-session-service/v1"
 # Directorio de sesiones DEDICADO del servicio de ingeniería: no colisiona
@@ -134,6 +137,40 @@ CONFLICT_CODES = {"REVISION_CONFLICT", "SESSION_NOT_DRIVEABLE", "DRIVE_ACTIVE"}
 
 def _now_ms() -> int:
     return int(time.time() * 1000)
+
+
+# Máxima antigüedad admitida de la sincronización del reloj de referencia.
+# Una sincronización más antigua que esto = referencia expirada: ahora_ms
+# devuelve None y el llamador debe abstenerse (sin avanzar watermark ni
+# evaluar). No existe fallback silencioso al reloj de pared no validado.
+CLOCK_REFERENCE_MAX_AGE_MS = 60 * 60 * 1000  # 1 hora
+
+
+def make_synced_now_ms(
+    synchronizer: ClockSynchronizer,
+    max_age_ms: float = CLOCK_REFERENCE_MAX_AGE_MS,
+) -> Callable[[], Optional[int]]:
+    """Devuelve el tiempo del backend sincronizado (pared + offset) o None.
+
+    Devuelve None cuando no hay sincronización válida (offset ausente,
+    sincronización expirada o nunca realizada). Nunca cae silenciosamente al
+    reloj de pared no validado: ante incertidumbre devuelve None y el
+    llamador abstiene.
+    """
+    def now() -> Optional[int]:
+        if synchronizer.offset_ms is None \
+                or synchronizer.last_sync_timestamp is None:
+            return None
+        try:
+            last = datetime.fromisoformat(
+                str(synchronizer.last_sync_timestamp))
+        except ValueError:
+            return None
+        age_ms = (datetime.now(timezone.utc) - last).total_seconds() * 1000.0
+        if age_ms > max_age_ms:
+            return None
+        return int(synchronizer._wall_clock_ms() + synchronizer.offset_ms)
+    return now
 
 
 class LocalReplayTransport:
@@ -451,7 +488,9 @@ class EngineeringSessionController:
                  market_url: Optional[str] = None,
                  market_bars: int = DEFAULT_MARKET_BARS,
                  live_silence_ms: float = LIVE_SILENCE_MS_DEFAULT,
-                 now_ms: Optional[Callable[[], Optional[int]]] = None) -> None:
+                 now_ms: Optional[Callable[[], Optional[int]]] = None,
+                 clock_sync: Optional[ClockSynchronizer] = None,
+                 clock_source: Optional[str] = None) -> None:
         self.sessions_dir = Path(sessions_dir)
         self.cadence_ms = float(cadence_ms)
         # Config live (transporte market_stream): URL del servicio de mercado
@@ -469,14 +508,48 @@ class EngineeringSessionController:
         # create; el guardia de React solo cubre el doble clic del navegador).
         self._create_results: Dict[str, Dict[str, Any]] = {}
         # Reloj de referencia independiente (contrato temporal de creación y
-        # admisión de cierres).
-        #   - modo público: tiempo del backend sincronizado
-        #     (ClockSynchronizer: offset + RTT + estado de sincronización /
-        #     incertidumbre explícitos).
-        #   - modo local/replay: reloj controlado por el transporte de prueba.
-        # None = incertidumbre: no hay referencia válida para admitir que un
-        # cierre ya ocurrió.
-        self._now_ms = now_ms or _now_ms
+        # admisión de cierres). Tres estados explícitos:
+        #   - referencia local controlada: now_ms inyectado (transporte de
+        #     prueba).
+        #   - referencia pública validada: clock_sync (ClockSynchronizer) con
+        #     offset + RTT + estado de sincronización; ahora_ms devuelve None
+        #     si no está sincronizado o la sincronización expiró.
+        #   - referencia no disponible: ahora_ms devuelve None → abstención.
+        # No existe fallback silencioso al reloj de pared no validado.
+        self._clock_sync = clock_sync
+        if clock_sync is not None:
+            self._now_ms = make_synced_now_ms(
+                clock_sync, CLOCK_REFERENCE_MAX_AGE_MS)
+            self._clock_source = (clock_source
+                                  or "backend_sincronizado")
+        else:
+            self._now_ms = now_ms or _now_ms
+            self._clock_source = (clock_source or "pared_no_validado")
+
+    # --- estado público del reloj de referencia -----------------------------
+    def _clock_public_state(self) -> Dict[str, Any]:
+        """Fuente, última sincronización, offset, RTT y estado de validez."""
+        sync = self._clock_sync
+        if sync is None:
+            return {
+                "source": self._clock_source,
+                "available": False,
+                "reason": "sin_sincronizador",
+            }
+        snap = sync.snapshot()
+        available = (snap.get("clockOffsetMs") is not None
+                     and snap.get("lastClockSyncTimestamp") is not None)
+        return {
+            "source": self._clock_source,
+            "available": available,
+            "offset_ms": snap.get("clockOffsetMs"),
+            "rtt_ms": snap.get("serverTimeRttMs"),
+            "last_sync_timestamp": snap.get("lastClockSyncTimestamp"),
+            "sync_successful": snap.get("clockSyncSuccessful"),
+            "sync_failed": snap.get("clockSyncFailed"),
+            "samples_valid": snap.get("clockSamplesValid"),
+            "samples_failed": snap.get("clockSamplesFailed"),
+        }
 
     # --- utilidades ---------------------------------------------------------
     def _load_state(self, session_id: str):
@@ -1186,9 +1259,13 @@ class EngineeringSessionController:
         if state.status in ("cerrada", "detenida"):
             return state
         appended = 0
-        max_open = 0
+        max_admitted_open = 0
         with self._lock:
             watermark = int(drive.get("watermark") or 0)
+        # Referencia temporal independiente: un cierre del snapshot cuya
+        # disponibilidad no queda acreditada (futuro o referencia incierta)
+        # no se admite ni avanza la marca de agua.
+        now = self._now_ms()
         for row in rows:
             candle = row if isinstance(row, dict) else None
             if candle is None or candle.get("open_time_ms") is None:
@@ -1198,7 +1275,6 @@ class EngineeringSessionController:
                         info.get("bad_candles", 0)) + 1
                 continue
             ot = int(candle["open_time_ms"])
-            max_open = max(max_open, ot)
             if ot <= watermark or ot <= (state.clock_ms or 0):
                 with self._lock:
                     info = self._events.setdefault(session_id, {})
@@ -1213,6 +1289,16 @@ class EngineeringSessionController:
                     info["bad_candles"] = int(
                         info.get("bad_candles", 0)) + 1
                 continue
+            if now is None or paper.close_time_ms > now:
+                # Cierre futuro o referencia incierta: no admitir el cierre,
+                # no avanzar watermark; el mismo cierre puede reenviarse cuando
+                # la referencia acredite que ocurrió.
+                with self._lock:
+                    info = self._events.setdefault(session_id, {})
+                    info["snapshot_cierre_no_acreditado"] = int(
+                        info.get("snapshot_cierre_no_acreditado", 0)) + 1
+                continue
+            max_admitted_open = max(max_admitted_open, ot)
             state = dc_replace(
                 state,
                 candles=self._merge_operation_candle(state.candles, paper),
@@ -1220,7 +1306,7 @@ class EngineeringSessionController:
             appended += 1
         with self._lock:
             drive["watermark"] = max(int(drive.get("watermark") or 0),
-                                     max_open)
+                                     max_admitted_open)
         if appended == 0:
             return None
         self._record_feed_gap(drive, received_at)
@@ -1747,6 +1833,7 @@ class EngineeringHTTPServer(ThreadingHTTPServer):
                 "max_notional_usdt": MAX_NOTIONAL_MARKET_STREAM,
                 "transports": sorted(ALLOWED_TRANSPORTS),
             },
+            "clock": self.world._clock_public_state(),
             "drives": drives,
             "generated_at_ms": _now_ms(),
         }
@@ -1826,9 +1913,21 @@ def main(argv: Optional[List[str]] = None) -> int:
     sessions_dir = Path(args.sessions_dir) if args.sessions_dir \
         else SESSIONS_DEFAULT
     sessions_dir.mkdir(parents=True, exist_ok=True)
+    # Cableado de la infraestructura de sincronización existente al arranque
+    # real del servicio. Un único sincronizador (no se crea otro). La
+    # adquisición de tiempo es de mejor esfuerzo: si falla, la referencia
+    # queda no disponible (ahora_ms → None) y el servicio abstiene; nunca
+    # cae silenciosamente al reloj de pared no validado.
+    synchronizer = ClockSynchronizer()
+    try:
+        asyncio.run(synchronizer.sync())
+    except Exception:  # noqa: BLE001 - referencia no disponible → abstención
+        pass
     world = EngineeringSessionController(
         sessions_dir, args.cadence_ms, market_url=args.market_url,
-        market_bars=args.market_bars, live_silence_ms=args.live_silence_ms)
+        market_bars=args.market_bars, live_silence_ms=args.live_silence_ms,
+        clock_sync=synchronizer,
+        clock_source="backend_sincronizado")
     server = EngineeringHTTPServer(args.host, args.port, world)
     pid_file = Path(args.pid_file) if args.pid_file else PID_DEFAULT
     pid_file.parent.mkdir(parents=True, exist_ok=True)
