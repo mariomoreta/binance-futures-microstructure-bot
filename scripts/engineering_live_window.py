@@ -409,8 +409,6 @@ class WindowOrchestrator:
                        "(límite por corrida), <=300 velas/consulta, deadline "
                        "180s, cero escrituras DB canónicas; el hub de "
                        "market-stream usa 1 WS combinada.",
-                       "DB canónicas; el hub de market-stream usa 1 WS "
-                       "combinada.",
                        required=False, source="preflight")
         self.add_check("no_ingenieria_activa", True,
                        "ningún proceso de ingeniería activo antes de la "
