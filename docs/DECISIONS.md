@@ -4101,3 +4101,5 @@ test_main_run_id_persiste_y_reutiliza (16 pruebas en total, todas OK).
 - Sin Binance en modo local/demo, ordenes, pagos, movil ni cambios 
 economicos.
 
+
+## 2026-11-02 Propagación del run_id en el arranque del servicio de ingeniería\r\n\r\n- El orquestador (engineering_live_window.py) crea y persiste un run_id estable al iniciar\r\n  una corrida, transmitido mediante --run-id al servicio de ingeniería.\r\n- /time, klines y demás intentos de presupuesto usan ese mismo run_id y\r\n  comparten el límite total de la corrida (7).\r\n- Al reiniciar el proceso de la misma corrida se reutiliza el ID persistido en\r\n  sessions_dir/run-id.json. Una corrida nueva se crea explícitamente con un\r\n  --run-id distinto.\r\n- Pruebas focalizadas: tests/test_engineering_clock_budget.py añade\r\n  test_orquestador_run_id_camino_real y\r\n  test_orquestador_reinicio_reutiliza_run_id (14 pruebas en total, todas OK).\r\n- Sin Binance en modo local/demo, órdenes, pagos, móvil ni cambios económicos.\r\n

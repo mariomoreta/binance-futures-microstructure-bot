@@ -109,6 +109,28 @@ def _port_open(host: str, port: int, timeout: float = 0.4) -> bool:
         return s.connect_ex((host, int(port))) == 0
 
 
+def _run_id_path(sessions_dir: Path) -> Path:
+    """Ruta del archivo que persiste el run_id de la corrida activa."""
+    return sessions_dir / "run-id.json"
+
+
+def _read_run_id(sessions_dir: Path) -> Optional[str]:
+    """Lee el run_id persistido de una corrida previa, si existe."""
+    try:
+        data = json.loads(_run_id_path(sessions_dir).read_text(encoding="utf-8"))
+        return data.get("run_id") if isinstance(data, dict) else None
+    except (OSError, json.JSONDecodeError):
+        return None
+
+
+def _write_run_id(sessions_dir: Path, run_id: str) -> None:
+    """Persiste el run_id de la corrida para que un reinicio lo reutilice."""
+    _run_id_path(sessions_dir).parent.mkdir(parents=True, exist_ok=True)
+    _run_id_path(sessions_dir).write_text(
+        json.dumps({"run_id": run_id}, ensure_ascii=False) + "\n",
+        encoding="utf-8")
+
+
 def canonical_dbs_snapshot() -> Dict[str, Any]:
     out: Dict[str, Any] = {}
     for p in CANONICAL_DBS:
@@ -170,6 +192,9 @@ class WindowOrchestrator:
         self.reconnects_max_seen = 0
         self.db_before = canonical_dbs_snapshot()
         self._config_validated = False
+        # Identidad de corrida: se resuelve en _execute() una vez que
+        # sessions_dir está disponible.
+        self.run_id: Optional[str] = args.run_id
 
     # -- validación de configuración (antes de conectar) ------------------
     def _validate_config(self) -> None:
@@ -292,6 +317,17 @@ class WindowOrchestrator:
 
     # -- ejecución real ----------------------------------------------------
     def _execute(self, run: Dict[str, Any]) -> None:
+        # Resolver run_id: de --run-id, de archivo persistido, o nuevo.
+        sessions_dir = Path(self.args.sessions_dir) if self.args.sessions_dir else None
+        if sessions_dir is not None:
+            sessions_dir.mkdir(parents=True, exist_ok=True)
+        if self.run_id is None:
+            self.run_id = _read_run_id(sessions_dir)
+        if self.run_id is None:
+            self.run_id = "eng-run-%d" % now_ms()
+        if sessions_dir is not None:
+            _write_run_id(sessions_dir, self.run_id)
+        run["run_id"] = self.run_id
         self._preflight()
         self._start_services()
         context = self._load_recent_context()
@@ -423,6 +459,7 @@ class WindowOrchestrator:
                  "--market-url", svc_url,
                  "--market-bars", str(self.bars),
                  "--live-silence-ms", "120000",
+                 "--run-id", self.run_id,
                  "--pid-file", str(sessions_dir / "service.json")]
         self.engineering_proc = self._spawn(argv2, "engineering-session")
         eng_url = "http://127.0.0.1:%d" % self.engineering_port
@@ -515,7 +552,7 @@ class WindowOrchestrator:
                 cache.init_db()
             except Exception:  # noqa: BLE001
                 pass
-            execution_id = "eng-ctx-%d" % now_ms()
+            execution_id = self.run_id
             gate = LedgerAttemptGate(cache, execution_id,
                                      max_requests=MAX_REST_TOTAL)
             client = HistoryClient(
@@ -619,7 +656,7 @@ class WindowOrchestrator:
                             cache.init_db()
                         except Exception:  # noqa: BLE001
                             pass
-                        execution_id = "eng-ctx-%d" % now_ms()
+                        execution_id = self.run_id
                         gate = LedgerAttemptGate(cache, execution_id,
                                                  max_requests=MAX_REST_TOTAL)
                         client = HistoryClient(
@@ -1027,6 +1064,9 @@ def build_arg_parser() -> argparse.ArgumentParser:
     ap.add_argument("--duration", type=float, default=DEFAULT_DURATION_S)
     ap.add_argument("--deadline", type=float, default=GLOBAL_DEADLINE_S)
     ap.add_argument("--sessions-dir", default=None)
+    ap.add_argument("--run-id", default=None,
+                    help="identificador estable de la corrida de presupuesto. "
+                    "Se persiste y se reutiliza al reiniciar la misma corrida.")
     ap.add_argument("--out", required=True, help="ruta JSON de evidencia")
     return ap
 

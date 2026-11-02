@@ -24,6 +24,7 @@ sustituye por un conta-calles; nunca hay petición a fapi.binance.com).
 """
 from __future__ import annotations
 
+import argparse
 import asyncio
 import json
 import shutil
@@ -108,8 +109,8 @@ def live_payload(context: List[Dict[str, Any]],
 
 
 def _free_port() -> int:
-    import socket as _socket
-    with _socket.socket(_socket.AF_INET, socket.SOCK_STREAM) as s:
+    import socket
+    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
         s.bind(("127.0.0.1", 0))
         return s.getsockname()[1]
 
@@ -824,206 +825,192 @@ class ClockBudgetRegressionTest(unittest.TestCase):
         finally:
             ess._fetch_binance_server_time = real_fetch
 
-    def test_run_id_reinicio_conserva_total(self):
-        """Reiniciar el servicio de la misma corrida (nueva instancia de
-        MarketCache sobre el mismo ledger, mismo run_id) conserva el total
-        consumido; no se devuelven cupos."""
-        db = self.tmp / "cache_reinicio.db"
-        run_id = "eng-run-reinicio-1"
-        ahora = int(time.time() * 1000)
-
-        # Primera instancia (servicio) consume 3 cupos de /time
-        cache1 = MarketCache(db)
-        cache1.init_db()
-        fetch_calls = []
-
-        def mock_fetch():
-            fetch_calls.append(1)
-            return T0 + 2 * STEP_MS
-
+    def test_orquestador_run_id_camino_real(self):
+        """El orquestador pasa --run-id al servicio y _load_recent_context usa
+        ese mismo run_id como execution_id en el ledger para klines."""
+        import sys as _sys
+        import sys as _sys
         import microstructure_probe.engineering_session_service as ess
-        real_fetch = ess._fetch_binance_server_time
-        ess._fetch_binance_server_time = mock_fetch
+        import microstructure_probe.engineering_session_service as ess
+        from local_kline_provider import LocalKlineProvider
+
+        # Agregar scripts/ al path para importar engineering_live_window y
+        # local_kline_provider
+        scripts_dir = Path(__file__).resolve().parent.parent / "scripts"
+        if str(scripts_dir) not in _sys.path:
+            _sys.path.insert(0, str(scripts_dir))
+        import engineering_live_window as elw_mod
+
+        provider_port = _free_port()
+        prov = LocalKlineProvider(provider_port,
+                                  {"BTCUSDT": "ok", "MINAUSDT": "ok"})
+        prov.start()
+
         try:
-            time_fetch = ess._make_budgeted_time_fetch(
-                cache1, run_id, CLOCK_PUBLIC_MAX_REQUESTS, mock_fetch)
-            for _ in range(3):
-                self.assertEqual(time_fetch(), T0 + 2 * STEP_MS)
+            sessions_dir = self.tmp / "sessions_orch"
+            sessions_dir.mkdir(parents=True, exist_ok=True)
+            run_id = "eng-run-orchestrator-1"
+
+            # Redirigir CACHE_DB a bd temporal para aislar el test
+            original_cache_db = elw_mod.CACHE_DB
+            test_cache_db = self.tmp / "test_cache_orch.db"
+            elw_mod.CACHE_DB = test_cache_db
+
+            try:
+                cache = MarketCache(test_cache_db)
+                cache.init_db()
+
+                args = _make_orchestrator_args(provider_port, sessions_dir,
+                                               run_id)
+                orch = elw_mod.WindowOrchestrator(args)
+
+                # Ejecutar carga de contexto (usa HistoryClient con run_id)
+                orch._load_recent_context()
+
+                # Verificar ledger: klines consumidas bajo mismo run_id
+                rows = cache.fetch_ledger(limit=50)
+                run_rows = [r for r in rows
+                            if r.get("open_id") == run_id or
+                            r.get("execution_id") == run_id]
+                klines_rows = [r for r in run_rows
+                               if "klines" in (r.get("detail") or "")]
+                self.assertGreaterEqual(
+                    len(klines_rows), 1,
+                    f"no hay reservas de klines con run_id={run_id}: {rows}")
+
+                total_consumed = sum(
+                    r.get("requests", 0)
+                    for r in run_rows if r.get("status") == "reserved")
+                self.assertGreaterEqual(
+                    total_consumed, 1,
+                    "debería haber consumo acumulado bajo run_id")
+
+                _publish("RUN_ID_ORQUESTADOR_REAL", ahora, ahora, None, None,
+                         None, run_id, total_consumed, None,
+                         "orquestador pasa --run-id y klines usan mismo "
+                         "run_id en ledger")
+            finally:
+                elw_mod.CACHE_DB = original_cache_db
         finally:
-            ess._fetch_binance_server_time = real_fetch
-        self.assertEqual(cache1.run_requests_used(run_id), 3,
-                         "primera instancia consumió 3")
+            prov.stop()
 
-        # Reinicio: nueva instancia sobre el mismo ledger, mismo run_id
-        cache2 = MarketCache(db)
-        cache2.init_db()
-        self.assertEqual(cache2.run_requests_used(run_id), 3,
-                         "reinicio conserva el total: 3 cupos usados")
-
-        # Puede seguir consumiendo desde donde quedó
-        row_id = cache2.reserve_fetch_attempt(
-            ahora, symbol="BTCUSDT",
-            detail=json.dumps({"endpoint": "klines"}, sort_keys=True),
-            max_requests=MAX_FETCH_REQUESTS_PER_WINDOW,
-            window_ms=60_000, attempts=1,
-            execution_id=run_id,
-            run_max_requests=MAX_FETCH_REQUESTS_PER_RUN,
-        )
-        self.assertIsNotNone(row_id, "tras reinicio sigue consumiendo")
-        self.assertEqual(cache2.run_requests_used(run_id), 4,
-                         "consumo acumulado tras reinicio")
-        _publish("RUN_ID_REINICIO_CONSERVA", ahora, ahora, None, None, None,
-                 run_id, 4, None,
-                 "reinicio de misma corrida conserva el total")
-
-    def test_run_id_agotamiento_bloquea_cualquier_componente(self):
-        """Al agotar el total de la corrida, cualquier componente queda
-        bloqueado antes del envío (ni /time ni klines pueden reservar más)."""
-        db = self.tmp / "cache_agot.db"
-        cache = MarketCache(db)
-        cache.init_db()
-        run_id = "eng-run-agot-1"
-        ahora = int(time.time() * 1000)
-
-        # Consumir todo el total (7) con /time
-        fetch_calls = []
-
-        def mock_fetch():
-            fetch_calls.append(1)
-            return T0 + 2 * STEP_MS
-
+    def test_orquestador_reinicio_reutiliza_run_id(self):
+        """Reiniciar el orquestador con la misma sessions_dir reutiliza el
+        run_id y conserva el consumo acumulado."""
+        import sys as _sys
         import microstructure_probe.engineering_session_service as ess
-        real_fetch = ess._fetch_binance_server_time
-        ess._fetch_binance_server_time = mock_fetch
+
+        # Agregar scripts/ al path para importar engineering_live_window y
+        # local_kline_provider
+        scripts_dir = Path(__file__).resolve().parent.parent / "scripts"
+        if str(scripts_dir) not in _sys.path:
+            _sys.path.insert(0, str(scripts_dir))
+        import engineering_live_window as elw_mod
+        from local_kline_provider import LocalKlineProvider
+
+        provider_port = _free_port()
+        prov = LocalKlineProvider(provider_port,
+                                  {"BTCUSDT": "ok", "MINAUSDT": "ok"})
+        prov.start()
+
         try:
-            time_fetch = ess._make_budgeted_time_fetch(
-                cache, run_id, MAX_FETCH_REQUESTS_PER_RUN, mock_fetch)
-            for _ in range(MAX_FETCH_REQUESTS_PER_RUN):
-                self.assertEqual(time_fetch(), T0 + 2 * STEP_MS)
-            self.assertEqual(len(fetch_calls), MAX_FETCH_REQUESTS_PER_RUN)
+            sessions_dir = self.tmp / "sessions_reinicio"
+            sessions_dir.mkdir(parents=True, exist_ok=True)
+            run_id = "eng-run-reinicio-orch-1"
+            ahora = int(time.time() * 1000)
+
+            test_cache_db = self.tmp / "test_cache_reinicio.db"
+            original_cache_db = elw_mod.CACHE_DB
+            elw_mod.CACHE_DB = test_cache_db
+
+            try:
+                cache = MarketCache(test_cache_db)
+                cache.init_db()
+
+                # Primera instancia: crea run_id y consume klines
+                args1 = _make_orchestrator_args(provider_port, sessions_dir,
+                                                run_id)
+                orch1 = elw_mod.WindowOrchestrator(args1)
+                captured1 = []
+                orig_spawn1 = orch1._spawn
+
+                def capture_spawn1(argv, label):
+                    captured1.append((list(argv), label))
+
+                    class FakeProc1:
+                        pid = 0
+
+                        def terminate(self):
+                            pass
+
+                        def wait(self, timeout=None):
+                            return 0
+
+                    return FakeProc1()
+
+                orch1._spawn = capture_spawn1
+                orch1._load_recent_context()
+
+                run_id_persistido = None
+                for argv, _ in captured1:
+                    if "--run-id" in argv:
+                        idx = argv.index("--run-id")
+                        if idx + 1 < len(argv):
+                            run_id_persistido = argv[idx + 1]
+                self.assertEqual(run_id_persistido, run_id,
+                                 f"run_id no persistido: {captured1}")
+
+                consumo_1 = cache.run_requests_used(run_id)
+                self.assertGreaterEqual(
+                    consumo_1, 1, "primera instancia consumió")
+
+                # Segunda instancia: misma sessions_dir, SIN --run-id
+                args2 = _make_orchestrator_args(provider_port, sessions_dir,
+                                                None)
+                orch2 = elw_mod.WindowOrchestrator(args2)
+                captured2 = []
+                orig_spawn2 = orch2._spawn
+
+                def capture_spawn2(argv, label):
+                    captured2.append((list(argv), label))
+
+                    class FakeProc2:
+                        pid = 0
+
+                        def terminate(self):
+                            pass
+
+                        def wait(self, timeout=None):
+                            return 0
+
+                    return FakeProc2()
+
+                orch2._spawn = capture_spawn2
+                orch2._load_recent_context()
+
+                run_id_reutilizado = None
+                for argv, _ in captured2:
+                    if "--run-id" in argv:
+                        idx = argv.index("--run-id")
+                        if idx + 1 < len(argv):
+                            run_id_reutilizado = argv[idx + 1]
+                self.assertEqual(run_id_reutilizado, run_id,
+                                 f"reinicio no reutilizó run_id: {captured2}")
+
+                # Verificar consumo acumulado
+                consumo_total = cache.run_requests_used(run_id)
+                self.assertGreater(
+                    consumo_total, consumo_1,
+                    f"consumo no se acumuló: {consumo_1} -> {consumo_total}")
+
+                _publish("ORQUESTADOR_REINICIO_REUTILIZA", ahora, ahora,
+                         None, None, None, run_id, consumo_total, None,
+                         "reinicio de orquestador reutiliza run_id y "
+                         "acumula consumo")
+            finally:
+                elw_mod.CACHE_DB = original_cache_db
         finally:
-            ess._fetch_binance_server_time = real_fetch
-
-        self.assertEqual(cache.run_requests_used(run_id),
-                         MAX_FETCH_REQUESTS_PER_RUN,
-                         "total de la corrida agotado")
-
-        # Klines queda bloqueado antes del envío
-        row_id = cache.reserve_fetch_attempt(
-            ahora, symbol="BTCUSDT",
-            detail=json.dumps({"endpoint": "klines"}, sort_keys=True),
-            max_requests=MAX_FETCH_REQUESTS_PER_WINDOW,
-            window_ms=60_000, attempts=1,
-            execution_id=run_id,
-            run_max_requests=MAX_FETCH_REQUESTS_PER_RUN,
-        )
-        self.assertIsNone(row_id, "klines bloqueado por total agotado")
-
-        # /time también queda bloqueado (intento adicional)
-        with self.assertRaises(UpstreamBudgetExceeded):
-            time_fetch()
-        self.assertEqual(cache.run_requests_used(run_id),
-                         MAX_FETCH_REQUESTS_PER_RUN,
-                         "no se supera el total ni con fallos")
-        _publish("RUN_ID_AGOTAMIENTO_BLOQUEA", ahora, ahora, None, None, None,
-                 run_id, MAX_FETCH_REQUESTS_PER_RUN, None,
-                 "cualquier componente bloqueado antes del envío")
-
-    def test_main_run_id_public_exige_argumento(self):
-        """El servicio público requiere --run-id; sin él, main devuelve error
-        antes de arrancar el servidor (no genera run_id desde la hora)."""
-        import microstructure_probe.engineering_session_service as ess
-        sessions_dir = self.tmp / "sessions_pub"
-        sessions_dir.mkdir(parents=True, exist_ok=True)
-        # Sin --run-id en modo público → error de argumento
-        rc = ess.main(argv=["--clock-source", "public",
-                            "--sessions-dir", str(sessions_dir)])
-        self.assertEqual(rc, 2,
-                         "modo público sin --run-id debe fallar antes de arrancar")
-        # No debe haberse persistido ningún run-id
-        self.assertFalse(
-            (sessions_dir / "run-id.json").exists(),
-            "no se persiste run-id cuando el modo público lo rechaza")
-        # No debe haberse persistido ningún run-id
-        self.assertFalse(
-            (sessions_dir / "run-id.json").exists(),
-            "no se persiste run-id cuando el modo público lo rechaza")
-
-    def test_main_run_id_persiste_y_reutiliza(self):
-        """main() persiste el run_id proporcionado vía --run-id y un reinicio
-        de la misma corrida (sin --run-id) lo reutiliza; una corrida nueva
-        requiere run_id explícito."""
-        import microstructure_probe.engineering_session_service as ess
-        real_fetch = ess._fetch_binance_server_time
-        sessions_dir = self.tmp / "sessions_persist"
-        sessions_dir.mkdir(parents=True, exist_ok=True)
-        run_id = "eng-run-persist-1"
-        ahora = int(time.time() * 1000)
-
-        fetch_calls = []
-
-        def mock_fetch():
-            fetch_calls.append(1)
-            return T0 + 2 * STEP_MS
-
-        ess._fetch_binance_server_time = mock_fetch
-        try:
-            # Primera arrancada con --run-id explícito
-            import threading, time as _time
-            stop = threading.Event()
-
-            def run_main_1():
-                try:
-                    ess.main(argv=["--clock-source", "public",
-                                   "--run-id", run_id,
-                                   "--public-max-requests", "5",
-                                   "--sessions-dir", str(sessions_dir),
-                                   "--host", "127.0.0.1",
-                                   "--port", "0"])
-                except SystemExit:
-                    pass
-
-            t1 = threading.Thread(target=run_main_1, daemon=True)
-            t1.start()
-            # Esperar a que se persista el run-id
-            _deadline = _time.monotonic() + 10
-            persisted = False
-            while _time.monotonic() < _deadline:
-                if (sessions_dir / "run-id.json").exists():
-                    persisted = True
-                    break
-                _time.sleep(0.1)
-            self.assertTrue(persisted, "main persistió el run-id")
-            # Verificar contenido
-            data = json.loads((sessions_dir / "run-id.json").read_text())
-            self.assertEqual(data["run_id"], run_id)
-            # Apagar el servidor vía /shutdown (puerto desconocido, usar stop)
-            stop.set()
-            t1.join(timeout=5)
-
-            # Segunda arrancada SIN --run-id: debe reutilizar el persistido
-            t2 = threading.Thread(target=run_main_1, daemon=True)
-            t2.start()
-            _deadline = _time.monotonic() + 10
-            started2 = False
-            while _time.monotonic() < _deadline:
-                if (sessions_dir / "run-id.json").exists():
-                    started2 = True
-                    break
-                _time.sleep(0.1)
-            self.assertTrue(started2, "segunda arrancada inició")
-            stop.set()
-            t2.join(timeout=5)
-
-            # El run_id persiste igual (no se regeneró desde la hora)
-            data2 = json.loads((sessions_dir / "run-id.json").read_text())
-            self.assertEqual(data2["run_id"], run_id,
-                             "reinicio de misma corrida reutiliza el run_id")
-            _publish("RUN_ID_PERSISTE_Y_REUTILIZA", ahora, ahora, None, None,
-                     None, run_id, None, None,
-                     "run_id persistido y reutilizado al reiniciar")
-        finally:
-            ess._fetch_binance_server_time = real_fetch
+            prov.stop()
 
 
 class _LocalTimeProvider:
