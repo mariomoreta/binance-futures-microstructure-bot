@@ -501,3 +501,52 @@ export async function stopEngineeringDemo(): Promise<
     body: JSON.stringify({action: "stop"}),
   });
 }
+
+// --- Aceptación pública (Binance WS) -----------------------------------------
+
+export interface PublicRunState {
+  runId: string | null;
+  startedAtMs: number | null;
+  httpAttempts: number;
+  active: boolean;
+  error?: string | null;
+  detail?: string | null;
+}
+
+/** Inicia la aceptación pública: genera run_id propio (o reutiliza el
+ *  persistido de la misma corrida), arranca el servicio de ingeniería con
+ *  --clock-source public y ese run_id, y establece el presupuesto de la
+ *  corrida. Solo observación y simulación paper, sin órdenes reales.
+ */
+export async function startPublicRun(opts?: {
+  runId?: string | null;
+  symbols?: string;
+  interval?: string;
+}): Promise<
+  EngineeringApiResult<{
+    runId: string | null;
+    startedAtMs: number | null;
+    httpAttempts: number;
+    service?: { pid?: number | null; port?: number | null; sessions_dir?: string | null } | null;
+  }>
+> {
+  return engineeringJson("/public", {
+    method: "POST",
+    body: JSON.stringify({
+      action: "start",
+      run_id: opts?.runId ?? null,
+      symbols: opts?.symbols ?? "MINAUSDT,BTCUSDT",
+      interval: opts?.interval ?? "1m",
+    }),
+  });
+}
+
+/** Detiene la aceptación pública (solo recursos propios; sesiones intactas). */
+export async function stopPublicRun(runId: string | null): Promise<
+  EngineeringApiResult<{ already?: boolean; service_stopped?: boolean }>
+> {
+  return engineeringJson("/public", {
+    method: "POST",
+    body: JSON.stringify({action: "stop", run_id: runId ?? null}),
+  });
+}

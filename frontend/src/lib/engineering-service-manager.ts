@@ -12,7 +12,9 @@
 
 import { spawn, spawnSync } from "node:child_process";
 import { mkdir, readFile, rename, writeFile } from "node:fs/promises";
+import { readFileSync, writeFileSync } from "node:fs";
 import path from "node:path";
+import http from "node:http";
 
 export type EngineeringServiceState =
   | "down"          // sin escucha verificable
@@ -38,8 +40,25 @@ export interface StartServiceResult {
   sessions_dir?: string;
   already?: boolean;
   reconciled?: boolean;
+  /** run_id usado cuando se arranca en modo public; undefined en modo local. */
+  runIdFromService?: string | null;
   error?: string;
   detail?: string;
+}
+
+export type ClockSource = "local" | "public";
+
+export interface StartServiceOptions {
+  /** Fuente del reloj: "local" (default) o "public". */
+  clockSource?: ClockSource;
+  /** run_id estable de la corrida (obligatorio en modo public). */
+  runId?: string | null;
+  /** URL del endpoint de tiempo para sincronización pública (pruebas loopback). */
+  publicFetchUrl?: string | null;
+  /** Tope de intentos /time para sincronización pública. */
+  publicMaxRequests?: number | null;
+  /** Puesto de mercado del servicio (loopback). */
+  marketUrl?: string | null;
 }
 
 interface PidFileInfo {
@@ -394,19 +413,65 @@ export function _setSpawnForTests(impl: typeof spawn | null): void {
   spawnImpl = impl ?? spawnReal;
 }
 
-export async function startService(): Promise<StartServiceResult> {
+/** Ruta del archivo que persiste el run_id de la corrida activa (sessions_dir). */
+function publicRunIdPath(): string {
+  return path.join(serviceRoot(), "data", "engineering-session", "public-run-id.json");
+}
+
+/** Lee el run_id persistido de una corrida previa, si existe. */
+function readPublicRunId(): string | null {
+  try {
+    const raw = readFileSync(publicRunIdPath(), "utf8");
+    const data = JSON.parse(raw);
+    if (typeof data?.run_id === "string" && data.run_id) return data.run_id;
+    return null;
+  } catch {
+    return null;
+  }
+}
+
+/** Escribe el run_id de la corrida para que un reinicio lo reutilice. */
+function writePublicRunId(runId: string): void {
+  const p = publicRunIdPath();
+  mkdir(path.dirname(p), { recursive: true }).then(() => {
+    writeFileSync(p, JSON.stringify({ run_id: runId }) + "\n", "utf8");
+  }).catch(() => { /* no bloquea el arranque si no se puede persistir */ });
+}
+
+/** Borra el run_id persistido al detener la corrida. */
+function clearPublicRunId(): void {
+  try { writeFileSync(publicRunIdPath(), JSON.stringify({ run_id: null }) + "\n", "utf8"); } catch { /* no bloquea */ }
+}
+
+export async function startService(opts: StartServiceOptions = {}): Promise<StartServiceResult> {
   if (startInFlight) return startInFlight;
-  startInFlight = doStartService().finally(() => {
+  startInFlight = doStartService(opts).finally(() => {
     startInFlight = null;
   });
   return startInFlight;
 }
 
-async function doStartService(): Promise<StartServiceResult> {
+async function doStartService(opts: StartServiceOptions): Promise<StartServiceResult> {
   const port = servicePort();
   // 1) ¿Ya disponible y verificable? → no arrancar otra vez (idempotente).
   const before = await serviceStatus();
   if (before.state === "ready") {
+    // Si se pide modo publico y el servicio vivo es local, conflicto explícito:
+    // no se sustituye ni detiene el servicio local silenciosamente.
+    if (opts.clockSource === "public") {
+      const healthBody = await health(port).then(h => h.reachable ? h.body : {}).catch(() => ({}));
+      const hb = healthBody as { clock_source?: string } | null;
+      const declaredSource = typeof hb?.clock_source === "string" ? hb.clock_source : null;
+      if (declaredSource !== "public_sincronizado") {
+        return {
+          ok: false,
+          error: "ENGINEERING_SERVICE_MODE_CONFLICT",
+          detail: `el servicio en el puerto ${port} está en modo ${declaredSource ?? "desconocido"}; ` +
+            `el modo publico requiere --clock-source public y no se sustituye ni detiene ` +
+            `una instancia local silenciosamente. Detenga el servicio local primero si corresponde.`,
+        };
+      }
+    }
     return { ok: true, already: true, pid: before.pid ?? undefined, port };
   }
   if (before.state === "unidentified") {
@@ -434,6 +499,22 @@ async function doStartService(): Promise<StartServiceResult> {
   }
 
   // 2) Estado "down": iniciar la instancia canónica del proyecto.
+  // run_id estable: si se pide modo public y no se pasó run_id, reutilizar
+  // el persistido de una corrida previa (mismo run_id = misma corrida,
+  // sin devolver cupos ni crear otra sesión).
+  let runId = opts.runId ?? null;
+  if (!runId && opts.clockSource === "public") {
+    const persisted = readPublicRunId();
+    if (persisted) runId = persisted;
+  }
+  if (opts.clockSource === "public" && !runId) {
+    return {
+      ok: false,
+      error: "ENGINEERING_SERVICE_PUBLIC_RUN_ID_REQUIRED",
+      detail: "modo publico requiere run_id estable para atribuir el presupuesto de la corrida a una identidad estable.",
+    };
+  }
+
   const args = [
     scriptPath(),
     "--host", "127.0.0.1",
@@ -441,6 +522,24 @@ async function doStartService(): Promise<StartServiceResult> {
     "--sessions-dir", sessionsDirPath(),
     "--pid-file", pidFilePath(),
   ];
+  if (opts.clockSource === "public") {
+    args.push("--clock-source", "public");
+    if (runId) {
+      args.push("--run-id", runId);
+      writePublicRunId(runId);
+    }
+    if (opts.publicMaxRequests != null) {
+      args.push("--public-max-requests", String(opts.publicMaxRequests));
+    }
+    if (opts.publicFetchUrl) {
+      args.push("--public-fetch-url", opts.publicFetchUrl);
+    }
+  } else {
+    args.push("--clock-source", "local");
+  }
+  if (opts.marketUrl) {
+    args.push("--market-url", opts.marketUrl);
+  }
   let child: ReturnType<typeof spawn>;
   try {
     child = spawnImpl(pythonExecutable(), args, {
@@ -514,10 +613,91 @@ async function doStartService(): Promise<StartServiceResult> {
     pid: verified.pid,
     port,
     sessions_dir: sessionsDirPath(),
+    runIdFromService: opts.clockSource === "public" ? (runId ?? null) : null,
   };
 }
 
 function recordStartFailure(r: StartServiceResult): StartServiceResult {
   // Gancho explícito para evidencia/logs futuros; el resultado es el mensaje.
   return r;
+}
+
+/** Detiene el servicio de ingeniería propio vía POST /shutdown (pid-file + /health).
+ * Solo detiene el proceso que este gestor generó; nunca un PID desconocido.
+ */
+export interface StopServiceResult {
+  ok: boolean;
+  pid?: number | null;
+  error?: string;
+  detail?: string;
+}
+
+export async function stopService(): Promise<StopServiceResult> {
+  const port = servicePort();
+  const pidFile = await readPidFile();
+  const pid = pidFile?.pid ?? null;
+
+  // Verificar que el servicio esté listo y sea nuestro antes de apagar.
+  const st = await serviceStatus();
+  if (st.state !== "ready" && st.state !== "unidentified") {
+    return {
+      ok: false,
+      pid: null,
+      error: "ENGINEERING_SERVICE_NOT_RUNNING",
+      detail: `el servicio no está en estado ready (estado: ${st.state ?? "desconocido"}).`,
+    };
+  }
+
+  let shutdownOk = false;
+  let shutdownDetail: string | null = null;
+  if (pid != null) {
+    try {
+      shutdownOk = await postShutdown(port);
+      shutdownDetail = null;
+    } catch (exc: unknown) {
+      shutdownDetail = String(exc);
+    }
+  } else {
+    shutdownDetail = "sin pid-file verificable; no se apaga proceso desconocido.";
+  }
+
+  // Limpiar run_id persistido de la corrida pública.
+  clearPublicRunId();
+
+  if (!shutdownOk) {
+    return {
+      ok: false,
+      pid,
+      error: shutdownDetail ? "ENGINEERING_SERVICE_STOP_FAILED" : "ENGINEERING_SERVICE_NOT_OURS",
+      detail: shutdownDetail ?? "no se pudo verificar identidad del servicio; no se detuvo proceso desconocido.",
+    };
+  }
+
+  return { ok: true, pid };
+}
+
+/** POST a /shutdown del servicio de ingeniería. Resuelve true si respondió 200. */
+function postShutdown(port: number): Promise<boolean> {
+  return new Promise((resolve) => {
+    const req = http.request(
+      {
+        hostname: "127.0.0.1",
+        port,
+        path: "/shutdown",
+        method: "POST",
+        headers: { "Content-Length": 0 },
+        timeout: 5000,
+      },
+      (res) => {
+        let body = "";
+        res.on("data", (c) => { body += c; });
+        res.on("end", () => {
+          resolve(res.statusCode === 200);
+        });
+      },
+    );
+    req.on("error", () => resolve(false));
+    req.on("timeout", () => { req.destroy(); resolve(false); });
+    req.end();
+  });
 }

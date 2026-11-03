@@ -15,6 +15,7 @@ import {
   controlBackendSession, fetchBackendSession,
   fetchEngineeringService, startEngineeringService,
   fetchEngineeringDemo, startEngineeringDemo, stopEngineeringDemo,
+  startPublicRun, stopPublicRun,
   ENGINEERING_TRANSPORT_MARKET_STREAM,
   type EngineeringControlAction, type EngineeringDriveState,
   type EngineeringDemoStatus, type EngineeringTransport,
@@ -175,6 +176,55 @@ export default function EngineeringSession({
   const [demo, setDemo] = useState<EngineeringDemoStatus | null>(null);
   const [demoBusy, setDemoBusy] = useState(false);
   const demoInFlightRef = useRef(false);
+
+  // ============================================================================
+// FUENTE DE DATOS: DEMOSTRACIÓN LOCAL vs BINANCE PÚBLICO
+// -----------------------------------------------------------------------------
+// Seleccionada por el operador ANTES de crear la sesión. Abrir la página,
+// hacer GET, cambiar la selección o recargar NO abre conexiones públicas.
+// Solo una acción explícita de inicio ("Iniciar aceptación pública")
+// crea la corrida pública con run_id propio.
+type DataSource = "local" | "public";
+
+const SOURCE_LABEL: Record<DataSource, string> = {
+  local: "DEMOSTRACIÓN LOCAL (datos simulados)",
+  public: "BINANCE PÚBLICO (WS fstream.binance.com, observación)",
+};
+
+// Tope de la aceptación pública: 180 s globales, 7 intentos HTTP upstream
+// totales, 300 velas por consulta, 1 WS combinada, 3 reconexiones, 3 consumidores SSE.
+const PUBLIC_DEADLINE_S = 180;
+const PUBLIC_HTTP_MAX = 7;
+const PUBLIC_MAX_CANDLES = 300;
+const PUBLIC_MAX_RECONNECTS = 3;
+const PUBLIC_MAX_SSE_CONSUMERS = 3;
+
+interface PublicRunState {
+  runId: string | null;
+  startedAtMs: number | null;
+  httpAttempts: number;
+  deadlineExceeded: boolean;
+  active: boolean;
+  service: { pid?: number | null; port?: number | null; sessions_dir?: string | null } | null;
+}
+
+function isPublicRunExpired(startedAtMs: number | null): boolean {
+  if (!startedAtMs) return false;
+  return Date.now() - startedAtMs > PUBLIC_DEADLINE_S * 1000;
+}
+
+// Estado de la aceptación pública.
+const [dataSource, setDataSource] = useState<DataSource>("local");
+const [publicRun, setPublicRun] = useState<PublicRunState>({
+  runId: null,
+  startedAtMs: null,
+  httpAttempts: 0,
+  deadlineExceeded: false,
+  active: false,
+  service: null,
+});
+const [publicBusy, setPublicBusy] = useState(false);
+const publicInFlightRef = useRef(false);
 
   const [requestIdCounter, setRequestIdCounter] = useState(0);
   const nextRequestId = useCallback(() => {
@@ -488,6 +538,78 @@ export default function EngineeringSession({
   }, [refreshDemo]);
 
   // --------------------------------------------------------------------------
+  // ACEPTACIÓN PÚBLICA: control del operador (POST explícito)
+  // --------------------------------------------------------------------------
+
+  // Inicia la aceptación pública: crea run_id propio (o reutiliza el
+  // persistido de la misma corrida), arranca el servicio de ingeniería con
+  // --clock-source public y ese run_id vía BFF, y establece el presupuesto
+  // de la corrida. No llama a ensureService(): eso arrancaría el servicio en
+  // modo local y generaría conflicto de modo. El BFF público es la autoridad
+  // del arranque en modo publico.
+  // Solo Binance público, sin órdenes reales.
+  const startPublicAction = useCallback(async () => {
+    // Guardia SÍNCRONA contra doble clic.
+    if (publicInFlightRef.current) return;
+    publicInFlightRef.current = true;
+    setPublicBusy(true);
+    try {
+      // Crear run_id público y reservar presupuesto en el ledger vía BFF.
+      // El BFF arranca el servicio con --clock-source public si no está listo.
+      const result = await startPublicRun();
+      if (!result.ok || !result.data) {
+        setError(
+          `ACEPTACIÓN PÚBLICA: arranque falló (${result.error ?? "desconocido"})${
+            result.detail ? ` — ${result.detail}` : ""
+          }`,
+        );
+        return;
+      }
+      const data = result.data;
+      setPublicRun({
+        runId: data.runId ?? null,
+        startedAtMs: data.startedAtMs ?? Date.now(),
+        httpAttempts: data.httpAttempts ?? 0,
+        deadlineExceeded: false,
+        active: true,
+        service: data.service ?? null,
+      });
+      setDemoBusy(false);
+    } catch (exc: unknown) {
+      setError(
+        `ACEPTACIÓN PÚBLICA: ${exc instanceof Error ? exc.message : String(exc)}`,
+      );
+    } finally {
+      publicInFlightRef.current = false;
+      setPublicBusy(false);
+    }
+  }, []);
+
+  const stopPublicAction = useCallback(async () => {
+    if (publicInFlightRef.current) return;
+    publicInFlightRef.current = true;
+    setPublicBusy(true);
+    try {
+      const result = await stopPublicRun(publicRun.runId);
+      if (!result.ok) {
+        setError(
+          `ACEPTACIÓN PÚBLICA: parada falló (${result.error ?? "desconocido"})${
+            result.detail ? ` — ${result.detail}` : ""
+          }`,
+        );
+      }
+      setPublicRun((prev) => ({ ...prev, active: false, service: null }));
+    } catch (exc: unknown) {
+      setError(
+        `ACEPTACIÓN PÚBLICA: ${exc instanceof Error ? exc.message : String(exc)}`,
+      );
+    } finally {
+      publicInFlightRef.current = false;
+      setPublicBusy(false);
+    }
+  }, [publicRun.runId]);
+
+  // --------------------------------------------------------------------------
   // Conducción backend: arranque, observación y parada.
   // --------------------------------------------------------------------------
 
@@ -579,6 +701,13 @@ export default function EngineeringSession({
     // Puerta EXPLÍCITA del operador: comprobar el servicio y, si está
     // detenido, arrancar la instancia canónica del proyecto (readiness con
     // límite + identidad verificada). Si falla, no se crea ninguna sesión.
+    // PUBLIC: usar aceptación pública con run_id propio; sin sesión local.
+    if (dataSource === "public") {
+      await startPublicAction();
+      setLoading(false);
+      startInFlightRef.current = false;
+      return;
+    }
     const serviceOk = await ensureService();
     if (!serviceOk) {
       setLoading(false);
@@ -963,6 +1092,18 @@ export default function EngineeringSession({
             <option value="A">{PREFIX_LABEL.A}</option>
             <option value="B">{PREFIX_LABEL.B}</option>
           </select>
+          {/* Selector de fuente: DEMOSTRACIÓN LOCAL vs BINANCE PÚBLICO.
+              Solo afecta a sesiones nuevas; nunca cambia una sesión activa. */}
+          <label className={s.prefixLabel}>Fuente:</label>
+          <select
+            value={dataSource}
+            onChange={(e) => setDataSource((e.target.value as DataSource) ?? "local")}
+            disabled={loading || started || !!sessionReady || publicBusy}
+            className={s.prefixSelect}
+          >
+            <option value="local">{SOURCE_LABEL.local}</option>
+            <option value="public">{SOURCE_LABEL.public}</option>
+          </select>
           <button
             type="button"
             className={s.startButton}
@@ -972,6 +1113,32 @@ export default function EngineeringSession({
           >
             {loading ? "Iniciando..." : "Iniciar sesion"}
           </button>
+          {dataSource === "public" && publicRun.active ? (
+            <div>
+              <span className={s.autonomousChip} data-state="autonomo">
+                Pública activa • run {publicRun.runId}
+              </span>
+              <button
+                type="button"
+                className={s.stopButton}
+                disabled={publicBusy || !publicRun.active}
+                onClick={stopPublicAction}
+                data-testid="btn-detener-publica"
+              >
+                Detener pública
+              </button>
+            </div>
+          ) : dataSource === "public" ? (
+            <button
+              type="button"
+              className={s.startButton}
+              disabled={publicBusy || publicRun.active || loading || started}
+              onClick={startPublicAction}
+              data-testid="btn-iniciar-publica"
+            >
+              {publicBusy ? "Iniciando pública…" : "Iniciar aceptación pública"}
+            </button>
+          ) : null}
           {/* Estado explícito del servicio: distingue detenido / arrancando /
               disponible / error. El GET de montaje no inicia procesos. */}
           <span
