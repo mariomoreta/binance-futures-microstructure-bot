@@ -4716,3 +4716,25 @@ distintos.
 
 ## 2026-11-03 - Corrección semántica de costes y aceptación A-J del dashboard (base `bf974f2`)
 
+
+
+## 2026-11-03 — F-BOOK-SHARED-01: libro futuro y reconciliación del estado
+Autorización del usuario: registrar el libro de órdenes como integración futura
+y revisar coherencia documental. No implementar ni activar datos públicos.
+- Reutilizar autoridad Python existente (book.py/metrics.py). El top-20 por
+  snapshots no equivale a reconstrucción de un libro completo por diffs.
+- Un estado versionado alimentará UI y futuro evaluador; cobertura, disponibilidad
+  temporal y sincronización explícitas. No libro histórico inferido de OHLC.
+- Primero observación, después medición del aporte y eventual propuesta de reglas.
+  No se promete edge ni se alteran parámetros económicos.
+- Cerrar primero aceptación UI E/F/H/I e identidad del build. Revisión de evidencia
+  en base bf974f2: la abstención no acredita pendiente→fill; detener
+  sin posición no acredita preservación de posición abierta; origen declarado
+  no acredita caída de fuente. No implica que esas funciones estén rotas.
+- bf974f2:frontend = 2bcdd8fc5882ff648f397fda5f8cd07b7cc32989.
+  Se supersede la atribución a 5fc18d... para ese commit; no se verificó el
+  proceso servido en la PC en esta revisión.
+- Plan: docs/ORDER_BOOK_SHARED_PLAN_V1.md. Sin cambio de fases/gates, runtime,
+  archivos locales ajenos o evidencia histórica.
+
+Nota de concurrencia: c3b8600 publicó evidencia EFHI adicional durante la edición. Se conserva completa y se distingue de la evidencia anterior; ver aclaración vigente en CURRENT_STATE. No se declara rechazo ni aceptación nueva del navegador sin revisar el nuevo recorrido.

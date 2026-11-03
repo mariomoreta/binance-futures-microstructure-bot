@@ -1,3 +1,38 @@
+### Actualización concurrente revisada: c3b8600
+Durante esta edición apareció `c3b8600`, que incorpora
+`docs/evidence/dashboard-EFHI-20261103/` sin cambiar el árbol frontend
+`2bcdd8fc5882ff648f397fda5f8cd07b7cc32989`. Su resumen ya incluye
+pendiente→fill y una sesión detenida con `position.open=true`, respaldada
+por evento entry. También declara coincidencia UI/backend y caída de fuente.
+Esto amplía la evidencia anterior; las carencias señaladas abajo se refieren
+al paquete de bf974f2, no invalidan automáticamente el nuevo.
+Revisar las aserciones, capturas, identidad y estado final nuevos antes de dar
+por aceptado globalmente el producto. Esta revisión no ejecutó navegador ni
+comprobó el servidor local. El libro sigue siendo futuro y no implementado.
+
+## Prioridad vigente — dashboard verificable antes del libro — 2026-11-03
+Base revisada: `bf974f2`. Las declaraciones históricas
+«11/11 PASS» y «sin bloqueantes pendientes» no cierran la aceptación actual.
+
+`CURRENT_OBJECTIVE`: completar E/F/H/I con evidencia de la misma sesión y
+acreditar identidad del build servido. Ya solicitado al agente responsable.
+`ACTIVE_TASK`: aceptación local de UI pendiente; esta edición es solo documental.
+`NEXT_TASKS`:
+1. Señal pendiente → fill; comparar UI/backend con misma identidad y revisión.
+2. Detener con posición abierta preservada; cortar fuente y comprobar retirada
+   de LIVE con causa visible, sin recarga.
+3. Registrar SHA/árbol/build correctos y estado de servicios sin contradicciones.
+4. Revisar integración del trabajo aceptado sin inferir que main o la rama de
+   revisión ya lo contienen. No se integra ninguna rama en este bloque.
+5. Después: F-BOOK-SHARED-01 según
+   [ORDER_BOOK_SHARED_PLAN_V1.md](ORDER_BOOK_SHARED_PLAN_V1.md): auditar reutilización,
+   contrato, loopback, ventana pública separada, medición y eventual evaluación.
+   Es FUTURO/DIFERIDO; no autoriza feed ni cambios de estrategia.
+
+Conservar el PASS público previo del backend como evidencia separada.
+Libro visible no equivale a estrategia validada; no ampliar automáticamente
+el presupuesto histórico de 7 solicitudes ni capturar todos los símbolos.
+
 ## Corrección semántica de costes y aceptación A-J del dashboard (2026-11-03, base `bf974f2`)
 
 `CURRENT_PHASE`: dashboard V2 de escritorio + observación (WS público solo bajo autorización

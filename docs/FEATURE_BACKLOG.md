@@ -1,3 +1,54 @@
+### Actualización concurrente revisada: c3b8600
+Durante esta edición apareció `c3b8600`, que incorpora
+`docs/evidence/dashboard-EFHI-20261103/` sin cambiar el árbol frontend
+`2bcdd8fc5882ff648f397fda5f8cd07b7cc32989`. Su resumen ya incluye
+pendiente→fill y una sesión detenida con `position.open=true`, respaldada
+por evento entry. También declara coincidencia UI/backend y caída de fuente.
+Esto amplía la evidencia anterior; las carencias señaladas abajo se refieren
+al paquete de bf974f2, no invalidan automáticamente el nuevo.
+Revisar las aserciones, capturas, identidad y estado final nuevos antes de dar
+por aceptado globalmente el producto. Esta revisión no ejecutó navegador ni
+comprobó el servidor local. El libro sigue siendo futuro y no implementado.
+
+## F-BOOK-SHARED-01 — Libro compartido para dashboard y backend — 2026-11-03
+1. **Title:** Libro de órdenes por moneda seleccionada/candidato acotado,
+   métricas Python compartidas y observación de calidad de ejecución.
+2. **Approval status:** documentación AUTORIZADA por el usuario; implementación,
+   conexiones públicas, captura y modificación de reglas NO AUTORIZADAS en este bloque.
+3. **Implementation status:** PLANIFICADO / DIFERIDO. Existe cálculo top-20 en
+   `book.py` y métricas en `metrics.py`; falta acreditar su integración en el
+   recorrido actual de /market-lab. No se crea motor alternativo.
+4. **Evaluation status:** diseño revisado contra código y documentación;
+   sin prueba de integración nueva, sin gate de producto superado.
+5. **Evidence:** [ORDER_BOOK_SHARED_PLAN_V1.md](ORDER_BOOK_SHARED_PLAN_V1.md);
+   `src/microstructure_probe/book.py`, `metrics.py`,
+   `docs/SHARED_INDICATORS_V1.md`. Base `bf974f2`.
+6. **Verdict:** acuerdo futuro registrado; sin afirmación de rentabilidad,
+   mejoras de decisiones, datos live o libro completo implementado.
+7. **Next step:** cerrar primero E/F/H/I e identidad del build. Después auditar
+   fuente partial_snapshot vs diff_reconstructed y definir contrato/aceptación.
+
+### Aclaración de aceptación vigente del dashboard
+La evidencia `dashboard-recorrido-visible-20261103/acceptance-summary.json`
+no acredita E/F/H/I completos. Su «11/11 PASS» es un resultado del comprobador,
+no aceptación global del producto. Ver aclaración superior en CURRENT_STATE.
+El backend público sí tiene aceptación separada en
+`engineering-live-public-20261102d/`. No se reescribe evidencia histórica.
+
+### Cierre documental (siete campos)
+- DECISIONS_REVIEWED: AGENTS, WORKFLOW, MASTER_PLAN, SUCCESS_GATES, ROADMAP,
+  CURRENT_STATE, TASK_QUEUE, FEATURE_BACKLOG, DECISIONS, alcance desktop e indicadores.
+- NEW_DECISIONS_RECORDED: libro futuro, autoridad Python, selección acotada,
+  observación antes de reglas, modalidades y presupuestos separados.
+- FEATURES_IMPLEMENTED: ninguna función; plan y enlaces documentales.
+- FEATURES_VERIFIED: lectura de código/contratos y comprobación de enlaces;
+  sin nueva prueba runtime, visual o Binance.
+- DEFERRED_FEATURES: implementación/captura pública del libro, señales/filtros,
+  retención, papel prospectivo completo y ejecución real.
+- BACKLOG_UPDATED: sí, F-BOOK-SHARED-01 con dependencia de aceptación UI.
+- DOCUMENTATION_CONFLICTS: A–J global y árbol de frontend previos corregidos
+  mediante addendum; historia conservada, gates y estrategia sin cambios.
+
 ## Corrección semántica de costes y aceptación A-J del dashboard (2026-11-03, base `bf974f2`)
 
 **1. Title:** Corregir semántica de costes en PnLPanel y verificar aceptación

@@ -181,3 +181,14 @@ retornos NO se presenta como "alpha" ni rentabilidad.
   idénticos por construcción.
 - Fuente de aggTrades/libro/OI en el canal de velas: fuera de alcance hasta
   nueva autorización (presupuesto y arquitectura).
+
+
+## Integración futura del libro — F-BOOK-SHARED-01 (2026-11-03)
+Spread y profundidad continúan sin acreditación en el canal actual de velas.
+La propuesta futura está en
+[ORDER_BOOK_SHARED_PLAN_V1.md](ORDER_BOOK_SHARED_PLAN_V1.md).
+Reutilizar book.py/metrics.py y publicar un bloque aditivo con identidad,
+secuencia, cobertura y tiempos; no calcular libro desde OHLC ni modificar
+declined[] como si la fuente ya estuviera conectada. Diferenciar top-20
+por snapshots de un libro reconstruido por diffs. La autorización actual
+es documental; no cambia indicadores, decisiones ni fuentes activas.
