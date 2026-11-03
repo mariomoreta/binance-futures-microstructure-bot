@@ -202,7 +202,7 @@ const PUBLIC_MAX_SSE_CONSUMERS = 3;
 interface PublicRunState {
   runId: string | null;
   startedAtMs: number | null;
-  httpAttempts: number;
+  httpAttempts: number | null;
   deadlineExceeded: boolean;
   state?: string | null;
   cause?: string | null;
@@ -220,7 +220,7 @@ const [dataSource, setDataSource] = useState<DataSource>("local");
 const [publicRun, setPublicRun] = useState<PublicRunState>({
   runId: null,
   startedAtMs: null,
-  httpAttempts: 0,
+  httpAttempts: null,
   deadlineExceeded: false,
   state: null,
   cause: null,
@@ -573,7 +573,7 @@ const publicInFlightRef = useRef(false);
       setPublicRun({
         runId: data.runId ?? null,
         startedAtMs: data.startedAtMs ?? Date.now(),
-        httpAttempts: data.httpAttempts ?? 0,
+        httpAttempts: data.httpAttempts,
         deadlineExceeded: data.deadlineExceeded ?? false,
         state: data.state ?? null,
         cause: data.cause ?? null,

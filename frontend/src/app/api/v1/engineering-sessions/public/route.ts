@@ -120,7 +120,7 @@ export async function POST(req: Request): Promise<NextResponse> {
           ok: true,
           run_id: runId,
           started_at_ms: pr?.started_at_ms ?? Date.now(),
-          http_attempts: pr?.http_attempts ?? 0,
+          http_attempts: pr?.http_attempts ?? null,
           deadline_s: PUBLIC_DEADLINE_S,
           http_max: PUBLIC_HTTP_MAX,
           state: pr?.state ?? "preparing",

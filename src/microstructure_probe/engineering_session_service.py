@@ -1991,6 +1991,7 @@ class _EngineeringHTTPHandler(BaseHTTPRequestHandler):
 
 class EngineeringHTTPServer(ThreadingHTTPServer):
     daemon_threads = True
+    allow_reuse_address = True
 
     def handle_error(self, request, client_address) -> None:
         # Windows: el cierre del observador/proxy aborta conexiones (10054).
@@ -2126,16 +2127,19 @@ class PublicRunRecord:
       http_attempts   — intentos HTTP upstream consumidos (reconstruido desde ledger)
     """
 
-    def __init__(self, sessions_dir: Path) -> None:
+    def __init__(self, sessions_dir: Path,
+                 cache: Optional[MarketCache] = None) -> None:
         self.sessions_dir = Path(sessions_dir)
         self._path = _public_run_path(self.sessions_dir)
         self._lock = threading.Lock()
+        self._cache = cache
         self.run_id: Optional[str] = None
         self.source: Optional[str] = None
         self.symbols: Optional[str] = None
         self.interval: Optional[str] = None
         self.state: str = "idle"
         self.cause: Optional[str] = None
+        self.cleanup_cause: Optional[str] = None
         self.started_at_ms: Optional[int] = None
         self.deadline_ms: Optional[int] = None
         self.session_id: Optional[str] = None
@@ -2191,6 +2195,13 @@ class PublicRunRecord:
 
     def to_dict(self) -> Dict[str, Any]:
         with self._lock:
+            # Consumo autoritativo: reconstruido desde el ledger, nunca desde
+            # un contador paralelo en memoria que pueda divergir. Si no hay
+            # cache ni run_id, se reporta UNKNOWN (ausente, no cero).
+            if self._cache is not None and self.run_id is not None:
+                http_attempts: Any = self._cache.run_requests_used(self.run_id)
+            else:
+                http_attempts = None
             return {
                 "run_id": self.run_id,
                 "source": self.source,
@@ -2198,13 +2209,14 @@ class PublicRunRecord:
                 "interval": self.interval,
                 "state": self.state,
                 "cause": self.cause,
+                "cleanup_cause": self.cleanup_cause,
                 "started_at_ms": self.started_at_ms,
                 "deadline_ms": self.deadline_ms,
                 "session_id": self.session_id,
                 "config_hash": self.config_hash,
                 "pid": self.pid,
                 "port": self.port,
-                "http_attempts": self.http_attempts,
+                "http_attempts": http_attempts,
                 "deadline_exceeded": self.is_deadline_exceeded(),
             }
 
@@ -2225,22 +2237,98 @@ class PublicRunRecord:
 
     def begin(self, run_id: str, source: str, symbols: str, interval: str,
               pid: int, port: int) -> None:
-        """Inicia una nueva corrida (o reutiliza la misma run_id)."""
+        """Inicia o reanuda una corrida pública.
+
+        Reglas:
+        - Primera creación (run_id no visto): establece started_at_ms,
+          deadline_ms e identidad desde cero.
+        - Reanudación de la MISMA corrida (run_id == self.run_id): conserva
+          started_at_ms, deadline_ms, session_id y config_hash. Reconstruye
+          consumo desde el ledger (nunca desde cero). Actualiza solo
+          identidad de proceso y campos operativos. Si la corrida ya está
+          terminal (deadline_exceeded/stopped/error), no se reactiva
+          silenciosamente.
+        - Nueva corrida explícita (run_id diferente): resetea todo como
+          primera creación.
+        """
         now = _now_ms()
         with self._lock:
-            self.run_id = run_id
-            self.source = source
-            self.symbols = symbols
-            self.interval = interval
-            self.state = "preparing"
-            self.cause = None
-            self.started_at_ms = now
-            self.deadline_ms = now + PUBLIC_RUN_DEADLINE_S * 1000
-            self.session_id = None
-            self.config_hash = None
-            self.pid = pid
-            self.port = port
-            self.http_attempts = 0
+            # Reconstruir consumo real desde ledger (nunca desde cero).
+            if self._cache is not None and self.run_id == run_id:
+                self.http_attempts = self._cache.run_requests_used(run_id)
+
+            if self.run_id is None:
+                # Primera creación de corrida.
+                self.run_id = run_id
+                self.source = source
+                self.symbols = symbols
+                self.interval = interval
+                self.state = "preparing"
+                self.cause = None
+                self.started_at_ms = now
+                self.deadline_ms = now + PUBLIC_RUN_DEADLINE_S * 1000
+                self.session_id = None
+                self.config_hash = None
+                self.pid = pid
+                self.port = port
+            elif self.run_id == run_id:
+                # Reanudación de la misma corrida.
+                if self.state in ("deadline_exceeded", "error"):
+                    raise ValueError(
+                        f"corrida {run_id} ya está terminal ({self.state}); "
+                        "no se reactiva silenciosamente. Use run_id nuevo.")
+                if self.state == "stopped":
+                    # Reinicio desde stopped: conservar started_at_ms,
+                    # deadline_ms, session_id y config_hash. Actualizar solo
+                    # identidad de proceso y campos operativos.
+                    self.pid = pid
+                    self.port = port
+                    self.source = source
+                    self.symbols = symbols
+                    self.interval = interval
+                    self.state = "preparing"
+                    self.cause = None
+                elif self.state == "idle":
+                    self.state = "preparing"
+                    self.cause = None
+                    self.started_at_ms = now
+                    self.deadline_ms = now + PUBLIC_RUN_DEADLINE_S * 1000
+                elif self.state == "preparing":
+                    # Ya está en preparación: actualizar solo identidad de proceso.
+                    self.pid = pid
+                    self.port = port
+                    self.source = source
+                    self.symbols = symbols
+                    self.interval = interval
+                elif self.state == "ready":
+                    # Ya está lista: actualizar solo identidad de proceso.
+                    self.pid = pid
+                    self.port = port
+                    self.source = source
+                    self.symbols = symbols
+                    self.interval = interval
+                elif self.state == "active":
+                    # Ya está activa: actualizar solo identidad de proceso.
+                    self.pid = pid
+                    self.port = port
+                    self.source = source
+                    self.symbols = symbols
+                    self.interval = interval
+            else:
+                # Nueva corrida explícita (run_id diferente).
+                self.run_id = run_id
+                self.source = source
+                self.symbols = symbols
+                self.interval = interval
+                self.state = "preparing"
+                self.cause = None
+                self.started_at_ms = now
+                self.deadline_ms = now + PUBLIC_RUN_DEADLINE_S * 1000
+                self.session_id = None
+                self.config_hash = None
+                self.pid = pid
+                self.port = port
+                self.http_attempts = 0
         self._save()
 
     def mark_ready(self, session_id: Optional[str] = None,
@@ -2265,7 +2353,11 @@ class PublicRunRecord:
     def mark_stopped(self, cause: Optional[str] = None) -> None:
         with self._lock:
             self.state = "stopped"
-            self.cause = cause
+            # No sobrescribir causa terminal ya establecida (deadline_exceeded,
+            # error). La causa de parada se registra como dato separado.
+            if self.cause is None:
+                self.cause = cause
+            self.cleanup_cause = cause
         self._save()
 
     def mark_deadline_exceeded(self) -> None:
@@ -2493,7 +2585,7 @@ def main(argv: Optional[List[str]] = None) -> int:
         # se ejecuta despues de thread.start(), fuera de esta rama.
         clock_source_label = "public_sincronizado"
         # Registro persistente de la corrida: autoridad del ciclo de vida.
-        public_run = PublicRunRecord(sessions_dir)
+        public_run = PublicRunRecord(sessions_dir, cache=cache)
         public_run._load()
     else:
         # Modo local: reloj de pared local, cero solicitudes publicas,
@@ -2510,11 +2602,20 @@ def main(argv: Optional[List[str]] = None) -> int:
     # Iniciar el registro persistente de la corrida pública (autoridad del
     # ciclo de vida) una vez que el servidor tiene puerto asignado.
     if public_run is not None:
-        public_run.begin(
-            run_id, "public",
-            "MINAUSDT,BTCUSDT", "1m",
-            os.getpid(), server.server_address[1],
-        )
+        # begin() distingue primera creación, reanudación y nueva corrida
+        # explícita. Si la corrida ya está terminal, no se reactiva.
+        try:
+            public_run.begin(
+                run_id, "public",
+                "MINAUSDT,BTCUSDT", "1m",
+                os.getpid(), server.server_address[1],
+            )
+        except ValueError as exc:
+            print(json.dumps({
+                "error": "PUBLIC_RUN_TERMINAL",
+                "detail": str(exc),
+            }, ensure_ascii=False), flush=True)
+            return 2
     pid_file = Path(args.pid_file) if args.pid_file else PID_DEFAULT
     pid_file.parent.mkdir(parents=True, exist_ok=True)
     pid_file.write_text(json.dumps({
@@ -2567,7 +2668,11 @@ def main(argv: Optional[List[str]] = None) -> int:
         world.shutdown()
         server.shutdown()
         if public_run is not None:
-            public_run.mark_stopped("SERVICE_SHUTDOWN")
+            # No sobrescribir causa terminal (deadline_exceeded, error) con
+            # SERVICE_SHUTDOWN. mark_stopped preserva la causa terminal y
+            # registra limpieza como dato separado (cleanup_cause).
+            if public_run.state not in ("deadline_exceeded", "error"):
+                public_run.mark_stopped("SERVICE_SHUTDOWN")
         try:
             pid_file.unlink(missing_ok=True)
         except OSError:  # pragma: no cover

@@ -507,7 +507,7 @@ export async function stopEngineeringDemo(): Promise<
 export interface PublicRunState {
   runId: string | null;
   startedAtMs: number | null;
-  httpAttempts: number;
+  httpAttempts: number | null;
   active: boolean;
   deadlineExceeded: boolean;
   state?: string | null;
@@ -530,7 +530,7 @@ export async function startPublicRun(opts?: {
   EngineeringApiResult<{
     runId: string | null;
     startedAtMs: number | null;
-    httpAttempts: number;
+    httpAttempts: number | null;
     deadlineExceeded: boolean;
     state?: string | null;
     cause?: string | null;
