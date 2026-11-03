@@ -4673,3 +4673,25 @@ distintos.
 
 ## 2026-11-03 - Recorrido visible en dashboard V2 - /market-lab (base 2e3830a)
 
+## 2026-11-03 - Corrección semántica de costes y aceptación A-J del dashboard (base `ead35d2`)
+
+- Corregida la semántica de costes en `frontend/src/components/paper-lab-live/PnLPanel.tsx`:
+  * Ya no se deduce ejecución mediante `costs.entry_fees_executed > 0` ni equivalentes.
+  * Se usa el estado autoritativo: `entered` (posición.open) para entrada,
+    `exitExecuted` (result.exit_executed) para salida.
+  * Fill ejecutado y coste cero → `0.00` (nunca guion ni inventado).
+  * Coste ausente → `UNKNOWN` con motivo explícito.
+  * Estimación conocida → importe + "(estimación, no ejecutada)".
+  * Sin estimación → `UNKNOWN`; no se convierte null en cero al sumar.
+- Regresiones focalizadas: `tests/test/format.test.ts` (6 pruebas de costes) y
+  nueva `tests/test/pnl-panel.test.tsx` (8 pruebas de componente).
+- Aceptación local A-J verificada desde navegador real (Playwright, DOM/red):
+  11/11 PASS. Evidencia en
+  `docs/evidence/dashboard-recorrido-visible-20261103/`.
+- Despliegue: dashboard 3020 con BUILD_ID `3DorSLli3Q-s6NkA-vUq-`,
+  árbol frontend `5fc18d379a709217c4ce10d1e9eb73ccd059c9db` (= HEAD:frontend).
+- Servicio 8792 (pid 31124) preservado. Servicio 8797 (residual de prueba)
+  detenido. `opencode.json` fuera de commits.
+
+## 2026-11-03 - Corrección semántica de costes y aceptación A-J del dashboard (base `ead35d2`)
+

@@ -1,3 +1,22 @@
+## Corrección semántica de costes y aceptación A-J del dashboard (2026-11-03, base `ead35d2`)
+
+`CURRENT_PHASE`: dashboard V2 de escritorio + observación (WS público solo bajo autorización
+explícita; sin monitor, sin órdenes).
+
+`CURRENT_OBJECTIVE`: cumplido - corregir semántica de costes y verificar aceptación A-J
+desde el navegador real.
+
+`ACTIVE_TASK`: cerrado - costes corregidos (estado autoritativo, no _executed > 0),
+regresiones añadidas, aceptación A-J 11/11 PASS, evidencia publicada.
+
+`NEXT_TASKS`:
+1. 3020 dejado disponible con build verificado y sin demo activa.
+2. Servicio 8797 detenido (residual de prueba, no afirmarse 'todos los procesos
+   propios terminados').
+3. No bloqueantes pendientes.
+
+## Corrección semántica de costes y aceptación A-J del dashboard (base `ead35d2`)
+
 ## Recorrido visible en dashboard V2 - /market-lab (2026-11-03, base `2e3830a`)
 
 `CURRENT_PHASE`: dashboard V2 de escritorio + observación (WS público solo bajo autorización

@@ -1,3 +1,28 @@
+## Corrección semántica de costes y aceptación A-J del dashboard (2026-11-03, base `ead35d2`)
+
+**1. Title:** Corregir semántica de costes en PnLPanel y verificar aceptación
+  local A-J del recorrido visible del dashboard.
+
+**2. Approval status:** EJECUTADO (corrección de costes, regresiones, aceptación
+  local integrada; sin conexión Binance, sin órdenes reales, sin cambios de
+  estrategia, sin nuevos motores, sin pagos, sin móvil).
+
+**3. Implementation status:** IMPLEMENTADO en rama `dash-v2-04-recorrido-visible`.
+
+**4. Evaluation status:** PASS - typecheck, lint, build y pruebas de costes pasan.
+  Aceptación local A-J verificada desde navegador real: 11/11 PASS.
+
+**5. Evidence:** `docs/evidence/dashboard-recorrido-visible-20261103/`
+  (capturas DOM, respuestas backend, aceptación-summary.json).
+
+**6. Verdict:** PASS - costes corregidos con semántica correcta, aceptación
+  local verificada.
+
+**7. Next step:** dejar 3020 disponible con build verificado y sin demo activa;
+  servicio 8797 detenido (residual).
+
+## Corrección semántica de costes y aceptación A-J del dashboard (base `ead35d2`)
+
 ## Recorrido visible en dashboard V2 - /market-lab (2026-11-03, base `2e3830a`)
 
 **1. Title:** Llevar al dashboard existente el recorrido backend ya acreditado:
