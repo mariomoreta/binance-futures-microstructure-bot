@@ -4695,6 +4695,27 @@ distintos.
 
 ## 2026-11-03 - Corrección semántica de costes y aceptación A-J del dashboard (base `ead35d2`)
 
+## 2026-11-03 - Corrección semántica de costes y aceptación A-J del dashboard (base `bf974f2`)
+
+- Corregida la semántica de costes en `frontend/src/components/paper-lab-live/PnLPanel.tsx`:
+  * Ya no se deduce ejecución mediante `costs.entry_fees_executed > 0` ni equivalentes.
+  * Se usa el estado autoritativo: `entered` (posición.open) para entrada,
+    `exitExecuted` (result.exit_executed) para salida.
+  * Fill ejecutado y coste cero → `0.00` (nunca guion ni inventado).
+  * Coste ausente → `UNKNOWN` con motivo explícito.
+  * Estimación conocida → importe + "(estimación, no ejecutada)".
+  * Sin estimación → `UNKNOWN`; no se convierte null en cero al sumar.
+- Regresiones focalizadas: `tests/test/format.test.ts` (6 pruebas de costes) y
+  nueva `tests/test/pnl-panel.test.tsx` (8 pruebas de componente).
+- Aceptación local A-J verificada desde navegador real (Playwright, DOM/red):
+  11/11 PASS. Evidencia en `docs/evidence/dashboard-EFHI-20261103/`.
+- Despliegue: dashboard 3020 con BUILD_ID `GBp6Bco5KjQW6IZ14dJA8`,
+  árbol frontend `2bcdd8fc5882ff648f397fda5f8cd07b7cc32989` (= HEAD:frontend).
+- Servicio 8792 (pid 31124) preservado. Servicio 8797 (residual de prueba)
+  detenido. `opencode.json` fuera de commits.
+
+## 2026-11-03 - Corrección semántica de costes y aceptación A-J del dashboard (base `bf974f2`)
+
 
 
 ## 2026-11-03 — F-BOOK-SHARED-01: libro futuro y reconciliación del estado
@@ -4715,3 +4736,5 @@ y revisar coherencia documental. No implementar ni activar datos públicos.
   proceso servido en la PC en esta revisión.
 - Plan: docs/ORDER_BOOK_SHARED_PLAN_V1.md. Sin cambio de fases/gates, runtime,
   archivos locales ajenos o evidencia histórica.
+
+Nota de concurrencia: c3b8600 publicó evidencia EFHI adicional durante la edición. Se conserva completa y se distingue de la evidencia anterior; ver aclaración vigente en CURRENT_STATE. No se declara rechazo ni aceptación nueva del navegador sin revisar el nuevo recorrido.

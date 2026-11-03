@@ -1,3 +1,15 @@
+### Actualización concurrente revisada: c3b8600
+Durante esta edición apareció `c3b8600`, que incorpora
+`docs/evidence/dashboard-EFHI-20261103/` sin cambiar el árbol frontend
+`2bcdd8fc5882ff648f397fda5f8cd07b7cc32989`. Su resumen ya incluye
+pendiente→fill y una sesión detenida con `position.open=true`, respaldada
+por evento entry. También declara coincidencia UI/backend y caída de fuente.
+Esto amplía la evidencia anterior; las carencias señaladas abajo se refieren
+al paquete de bf974f2, no invalidan automáticamente el nuevo.
+Revisar las aserciones, capturas, identidad y estado final nuevos antes de dar
+por aceptado globalmente el producto. Esta revisión no ejecutó navegador ni
+comprobó el servidor local. El libro sigue siendo futuro y no implementado.
+
 ## Prioridad vigente — dashboard verificable antes del libro — 2026-11-03
 Base revisada: `bf974f2`. Las declaraciones históricas
 «11/11 PASS» y «sin bloqueantes pendientes» no cierran la aceptación actual.
@@ -20,6 +32,25 @@ acreditar identidad del build servido. Ya solicitado al agente responsable.
 Conservar el PASS público previo del backend como evidencia separada.
 Libro visible no equivale a estrategia validada; no ampliar automáticamente
 el presupuesto histórico de 7 solicitudes ni capturar todos los símbolos.
+
+## Corrección semántica de costes y aceptación A-J del dashboard (2026-11-03, base `bf974f2`)
+
+`CURRENT_PHASE`: dashboard V2 de escritorio + observación (WS público solo bajo autorización
+explícita; sin monitor, sin órdenes).
+
+`CURRENT_OBJECTIVE`: cumplido - corregir semántica de costes y verificar aceptación
+local integrada.
+
+`ACTIVE_TASK`: cerrado - costes corregidos (estado autoritativo, no _executed > 0),
+regresiones añadidas, aceptación A-J 11/11 PASS, evidencia publicada.
+
+`NEXT_TASKS`:
+1. 3020 dejado disponible con build verificado y sin demo activa.
+2. Servicio 8797 detenido (residual de prueba, no afirmarse "todos los procesos
+   propios terminados").
+3. No bloqueantes pendientes.
+
+## Corrección semántica de costes y aceptación A-J del dashboard (base `bf974f2`)
 
 ## Corrección semántica de costes y aceptación A-J del dashboard (2026-11-03, base `ead35d2`)
 

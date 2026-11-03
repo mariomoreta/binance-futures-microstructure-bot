@@ -11,7 +11,7 @@ validación separada, posibles reglas de entrada/salida. No es una señal nueva
 ni una promesa de mayor rentabilidad. No se implementa ni activa ningún feed,
 conexión pública, orden, dependencia o almacenamiento en este bloque.
 
-Primero completar la aceptación pendiente del dashboard. La captura pública,
+Primero revisar la aceptación vigente del dashboard y completar lo pendiente. La captura pública,
 la retención de datos y cualquier cambio de reglas requerirán alcance y
 presupuesto propios. Los 7 intentos de una ventana histórica no autorizan
 snapshots ni recuperación futura del libro.
@@ -22,7 +22,7 @@ Inspección de código en la base indicada:
   estado acotado para top-20: mejores precios, spread, profundidad top-1/5/10/20,
   imbalance, microprice, pendiente y concentración con cobertura.
 - Su contrato documentado es una instantánea COMPLETA top-20 por actualización
-  de depth20@100ms. No es un reconstructór de libro completo a partir de diffs.
+  de depth20@100ms. No es un reconstructor de libro completo a partir de diffs.
   El estado marca continuidad degradada ante saltos de pu.
 - src/microstructure_probe/metrics.py contiene spread_bps y
   order_book_imbalance. No duplicar las fórmulas ni asumir que ambos contratos
@@ -95,7 +95,7 @@ separados. Cantidades visibles pueden cancelarse; contrastar con aggTrade para
 estudiar operaciones ejecutadas. Imbalance positivo no es orden de compra.
 
 ## Secuencia futura y aceptación
-1. Cerrar E/F/H/I y la identidad del build del dashboard actual.
+1. Revisar la nueva evidencia E/F/H/I de c3b8600, cerrar lo no acreditado y verificar la identidad del build.
 2. Auditar book.py/metrics.py, consumidores y transporte; fijar el contrato,
    unidades, modalidad, límites de memoria, actualización y retención.
 3. Implementar solo observación con proveedor loopback y mismas métricas en

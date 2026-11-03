@@ -1,3 +1,15 @@
+### Actualización concurrente revisada: c3b8600
+Durante esta edición apareció `c3b8600`, que incorpora
+`docs/evidence/dashboard-EFHI-20261103/` sin cambiar el árbol frontend
+`2bcdd8fc5882ff648f397fda5f8cd07b7cc32989`. Su resumen ya incluye
+pendiente→fill y una sesión detenida con `position.open=true`, respaldada
+por evento entry. También declara coincidencia UI/backend y caída de fuente.
+Esto amplía la evidencia anterior; las carencias señaladas abajo se refieren
+al paquete de bf974f2, no invalidan automáticamente el nuevo.
+Revisar las aserciones, capturas, identidad y estado final nuevos antes de dar
+por aceptado globalmente el producto. Esta revisión no ejecutó navegador ni
+comprobó el servidor local. El libro sigue siendo futuro y no implementado.
+
 ## F-BOOK-SHARED-01 — Libro compartido para dashboard y backend — 2026-11-03
 1. **Title:** Libro de órdenes por moneda seleccionada/candidato acotado,
    métricas Python compartidas y observación de calidad de ejecución.
@@ -36,6 +48,31 @@ El backend público sí tiene aceptación separada en
 - BACKLOG_UPDATED: sí, F-BOOK-SHARED-01 con dependencia de aceptación UI.
 - DOCUMENTATION_CONFLICTS: A–J global y árbol de frontend previos corregidos
   mediante addendum; historia conservada, gates y estrategia sin cambios.
+
+## Corrección semántica de costes y aceptación A-J del dashboard (2026-11-03, base `bf974f2`)
+
+**1. Title:** Corregir semántica de costes en PnLPanel y verificar aceptación
+  local A-J del recorrido visible del dashboard.
+
+**2. Approval status:** EJECUTADO (corrección de costes, regresiones, aceptación
+  local integrada; sin conexión Binance, sin órdenes reales, sin cambios de
+  estrategia, sin nuevos motores, sin pagos, sin móvil).
+
+**3. Implementation status:** IMPLEMENTADO en rama `dash-v2-04-recorrido-visible`.
+
+**4. Evaluation status:** PASS - typecheck, lint, build y pruebas de costes pasan.
+  Aceptación local A-J verificada desde navegador real: 11/11 PASS.
+
+**5. Evidence:** `docs/evidence/dashboard-EFHI-20261103/`
+  (capturas DOM, respuestas backend, aceptación-summary.json).
+
+**6. Verdict:** PASS - costes corregidos con semántica correcta, aceptación
+  local verificada.
+
+**7. Next step:** dejar 3020 disponible con build verificado y sin demo activa;
+  servicio 8797 detenido (residual).
+
+## Corrección semántica de costes y aceptación A-J del dashboard (base `bf974f2`)
 
 ## Corrección semántica de costes y aceptación A-J del dashboard (2026-11-03, base `ead35d2`)
 
