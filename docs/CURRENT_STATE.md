@@ -1,3 +1,28 @@
+## Aclaración vigente y libro de órdenes futuro — 2026-11-03
+Revisión documental sobre `bf974f2`; no es una nueva ejecución
+ni verificación de procesos locales. Esta aclaración prevalece sobre los
+resúmenes históricos de cierre que contradiga, sin borrarlos.
+
+- Backend: el PASS público de `eng-run-public-20261102d` acredita recepción,
+  avance de T, evaluaciones vinculadas y un evento paper de entrada. No
+  acredita estabilidad continua, rentabilidad ni operación con fondos reales.
+- Dashboard: código y capturas publicados; aceptación global todavía PARCIAL.
+  En `docs/evidence/dashboard-recorrido-visible-20261103/acceptance-summary.json`,
+  E solo muestra SIN_ENTRADA; H detiene sin posición; I solo identifica origen.
+  F no acredita comparación autoritativa consistente de una misma sesión.
+  E/F/H/I quedan NO ACREDITADOS por esos artefactos, no declarados defectos.
+- Identidad: `bf974f2:frontend` = `2bcdd8fc5882ff648f397fda5f8cd07b7cc32989`.
+  La atribución `5fc18d...` corresponde a un estado anterior. El BUILD_ID
+  informado no basta para resolver qué código se sirvió. Reconciliación pendiente.
+- Futuro: F-BOOK-SHARED-01 PLANIFICADO/DIFERIDO. Reutilizar `book.py` y
+  `metrics.py`; diferenciar snapshots top-20 y reconstrucción por diffs.
+  Autorizado documentar, NO implementar, conectar, modificar reglas o presupuesto.
+  Plan: [ORDER_BOOK_SHARED_PLAN_V1.md](ORDER_BOOK_SHARED_PLAN_V1.md).
+- Progreso: infraestructura, histórico/gráfico, indicadores y recorrido paper
+  de ingeniería avanzados; producto continuo multiactivo, aceptación UI completa,
+  riesgo/caja/funding completo y validación estratégica siguen pendientes.
+  No se calcula porcentaje global ni se avanzan gates por número de tests.
+
 ## Corrección semántica de costes y aceptación A-J del dashboard (2026-11-03, base `ead35d2`)
 
 Corregida la semántica de costes en `PnLPanel.tsx`: ya no se deduce ejecución

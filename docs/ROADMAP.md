@@ -60,3 +60,13 @@ paper/performance surfaces → divergence monitoring.
 
 Authorization gate → small-size execution with kill-switch → audit. Not planned
 in detail until Phase 4 proves expectancy. No code before authorization.
+
+
+## Lane futura F-BOOK-SHARED-01 — 2026-11-03
+Secuencia adicional subordinada a aceptación del dashboard vigente:
+E/F/H/I + identidad del build → auditoría de book.py/metrics.py y contrato
+→ libro compartido en loopback → aceptación pública separada y presupuestada
+→ dataset/observación → evaluación del aporte → propuesta paper de filtros
+solo si la evidencia lo justifica.
+No adelanta fases, no habilita ejecución y no exige capturar todo el universo.
+Detalles: [ORDER_BOOK_SHARED_PLAN_V1.md](ORDER_BOOK_SHARED_PLAN_V1.md).
