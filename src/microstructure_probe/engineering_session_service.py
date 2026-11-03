@@ -601,9 +601,11 @@ class EngineeringSessionController:
                  live_silence_ms: float = LIVE_SILENCE_MS_DEFAULT,
                  now_ms: Optional[Callable[[], Optional[int]]] = None,
                  clock_sync: Optional[ClockSynchronizer] = None,
-                 clock_source: Optional[str] = None) -> None:
+                 clock_source: Optional[str] = None,
+                 public_run: Optional[PublicRunRecord] = None) -> None:
         self.sessions_dir = Path(sessions_dir)
         self.cadence_ms = float(cadence_ms)
+        self.public_run = public_run
         # Config live (transporte market_stream): URL del servicio de mercado
         # EXISTENTE (solo loopback; el adaptador valida fail-closed),
         # ventana del snapshot y silencio del feed para la puerta.
@@ -1909,6 +1911,16 @@ class _EngineeringHTTPHandler(BaseHTTPRequestHandler):
             if path == "/health":
                 self._send_json(200, self.server.health_payload())
                 return
+            if path == "/public-run":
+                pr = self.server.world.public_run
+                if pr is None:
+                    self._send_json(200, {
+                        "run_id": None, "state": "idle",
+                        "detail": "no hay registro de corrida publica",
+                    })
+                    return
+                self._send_json(200, pr.to_dict())
+                return
             if path == "/sessions":
                 self._send_json(200, {"sessions": world.list_sessions()})
                 return
@@ -2077,6 +2089,268 @@ def _write_run_id(sessions_dir: Path, run_id: str) -> None:
         encoding="utf-8")
 
 
+# ---------------------------------------------------------------------------
+# Registro persistente de la corrida pública (autoridad del ciclo de vida).
+# Vive en sessions_dir (fuera de paper-lab-sessions/ para no interferir con
+# el escaneo de sesiones del motor). Sobrevive reinicios del servicio y del
+# frontend: el backend es la única autoridad de la corrida.
+# ---------------------------------------------------------------------------
+
+PUBLIC_RUN_FILENAME = "public-run.json"
+# Deadline absoluto desde el primer intento (180 s en producción; sobrescribible
+# solo en pruebas mediante variable de entorno).
+PUBLIC_RUN_DEADLINE_S = int(
+    os.environ.get("PUBLIC_RUN_DEADLINE_S", "180"))
+
+
+def _public_run_path(sessions_dir: Path) -> Path:
+    return sessions_dir / PUBLIC_RUN_FILENAME
+
+
+class PublicRunRecord:
+    """Estado persistente de una corrida pública.
+
+    Campos:
+      run_id          — identidad estable de la corrida (generada o reutilizada)
+      source          — fuente de mercado ("public" / "local")
+      symbols         — símbolos suscritos
+      interval        — intervalo de velas
+      state           — "preparing" | "ready" | "active" | "stopped" | "deadline_exceeded" | "error"
+      cause           — motivo de la última transición de estado
+      started_at_ms   — instante del primer intento público (pared del backend)
+      deadline_ms     — started_at_ms + PUBLIC_RUN_DEADLINE_S
+      session_id      — session_id de la sesión de ingeniería (cuando existe)
+      config_hash     — config_hash de la sesión (cuando existe)
+      pid             — pid del proceso de servicio propietario
+      port            — puerto del servicio propietario
+      http_attempts   — intentos HTTP upstream consumidos (reconstruido desde ledger)
+    """
+
+    def __init__(self, sessions_dir: Path) -> None:
+        self.sessions_dir = Path(sessions_dir)
+        self._path = _public_run_path(self.sessions_dir)
+        self._lock = threading.Lock()
+        self.run_id: Optional[str] = None
+        self.source: Optional[str] = None
+        self.symbols: Optional[str] = None
+        self.interval: Optional[str] = None
+        self.state: str = "idle"
+        self.cause: Optional[str] = None
+        self.started_at_ms: Optional[int] = None
+        self.deadline_ms: Optional[int] = None
+        self.session_id: Optional[str] = None
+        self.config_hash: Optional[str] = None
+        self.pid: Optional[int] = None
+        self.port: Optional[int] = None
+        self.http_attempts: int = 0
+
+    # --- persistencia -------------------------------------------------------
+
+    def _load(self) -> None:
+        try:
+            data = json.loads(self._path.read_text(encoding="utf-8"))
+        except (OSError, json.JSONDecodeError):
+            return
+        if not isinstance(data, dict):
+            return
+        self.run_id = data.get("run_id")
+        self.source = data.get("source")
+        self.symbols = data.get("symbols")
+        self.interval = data.get("interval")
+        self.state = str(data.get("state", "idle"))
+        self.cause = data.get("cause")
+        self.started_at_ms = data.get("started_at_ms")
+        self.deadline_ms = data.get("deadline_ms")
+        self.session_id = data.get("session_id")
+        self.config_hash = data.get("config_hash")
+        self.pid = data.get("pid")
+        self.port = data.get("port")
+        self.http_attempts = int(data.get("http_attempts", 0) or 0)
+
+    def _save(self) -> None:
+        self._path.parent.mkdir(parents=True, exist_ok=True)
+        tmp = self._path.with_name(self._path.name + ".tmp")
+        payload = {
+            "run_id": self.run_id,
+            "source": self.source,
+            "symbols": self.symbols,
+            "interval": self.interval,
+            "state": self.state,
+            "cause": self.cause,
+            "started_at_ms": self.started_at_ms,
+            "deadline_ms": self.deadline_ms,
+            "session_id": self.session_id,
+            "config_hash": self.config_hash,
+            "pid": self.pid,
+            "port": self.port,
+            "http_attempts": self.http_attempts,
+        }
+        tmp.write_text(json.dumps(payload, ensure_ascii=False, indent=1),
+                       encoding="utf-8")
+        os.replace(tmp, self._path)
+
+    def to_dict(self) -> Dict[str, Any]:
+        with self._lock:
+            return {
+                "run_id": self.run_id,
+                "source": self.source,
+                "symbols": self.symbols,
+                "interval": self.interval,
+                "state": self.state,
+                "cause": self.cause,
+                "started_at_ms": self.started_at_ms,
+                "deadline_ms": self.deadline_ms,
+                "session_id": self.session_id,
+                "config_hash": self.config_hash,
+                "pid": self.pid,
+                "port": self.port,
+                "http_attempts": self.http_attempts,
+                "deadline_exceeded": self.is_deadline_exceeded(),
+            }
+
+    # --- estado -------------------------------------------------------------
+
+    def is_deadline_exceeded(self) -> bool:
+        if self.state in ("idle", "stopped", "deadline_exceeded", "error"):
+            return False
+        if self.deadline_ms is None:
+            return False
+        return _now_ms() >= int(self.deadline_ms)
+
+    def remaining_ms(self) -> Optional[int]:
+        if self.deadline_ms is None or self.state in ("idle", "stopped"):
+            return None
+        rem = int(self.deadline_ms) - _now_ms()
+        return max(rem, 0)
+
+    def begin(self, run_id: str, source: str, symbols: str, interval: str,
+              pid: int, port: int) -> None:
+        """Inicia una nueva corrida (o reutiliza la misma run_id)."""
+        now = _now_ms()
+        with self._lock:
+            self.run_id = run_id
+            self.source = source
+            self.symbols = symbols
+            self.interval = interval
+            self.state = "preparing"
+            self.cause = None
+            self.started_at_ms = now
+            self.deadline_ms = now + PUBLIC_RUN_DEADLINE_S * 1000
+            self.session_id = None
+            self.config_hash = None
+            self.pid = pid
+            self.port = port
+            self.http_attempts = 0
+        self._save()
+
+    def mark_ready(self, session_id: Optional[str] = None,
+                   config_hash: Optional[str] = None) -> None:
+        with self._lock:
+            if self.state == "preparing":
+                self.state = "ready"
+                self.cause = None
+            if session_id is not None:
+                self.session_id = session_id
+            if config_hash is not None:
+                self.config_hash = config_hash
+        self._save()
+
+    def mark_active(self) -> None:
+        with self._lock:
+            if self.state in ("preparing", "ready"):
+                self.state = "active"
+                self.cause = None
+        self._save()
+
+    def mark_stopped(self, cause: Optional[str] = None) -> None:
+        with self._lock:
+            self.state = "stopped"
+            self.cause = cause
+        self._save()
+
+    def mark_deadline_exceeded(self) -> None:
+        with self._lock:
+            self.state = "deadline_exceeded"
+            self.cause = "PUBLIC_RUN_DEADLINE_EXCEEDED"
+        self._save()
+
+    def mark_error(self, cause: str) -> None:
+        with self._lock:
+            self.state = "error"
+            self.cause = cause
+        self._save()
+
+    def update_http_attempts(self, count: int) -> None:
+        with self._lock:
+            self.http_attempts = int(count)
+        self._save()
+
+
+class PublicRunDeadlineWatcher(threading.Thread):
+    """Vigila el deadline absoluto de la corrida pública.
+
+    Ejecutado en hilo daemon del servicio de ingeniería. Cuando el deadline
+    vence: impide nuevas adquisiciones (marca deadline_exceeded), congela la
+    conducción (detiene los drives activos) y cierra los recursos públicos
+    propios (el servicio se apaga tras liberar). Funciona sin pestaña ni
+    proceso Next.js: es el propio backend el que posee el deadline.
+    Tras reinicio, el deadline se reconstruye desde el registro persistido
+    (no se otorga otro periodo de 180 s).
+    """
+
+    def __init__(self, world: "EngineeringSessionController",
+                 poll_ms: float = 2000.0) -> None:
+        super().__init__(name="public-run-deadline-watcher", daemon=True)
+        self.world = world
+        self.poll_ms = poll_ms
+        self._stop = threading.Event()
+
+    def run(self) -> None:
+        while not self._stop.is_set():
+            self._stop.wait(self.poll_ms / 1000.0)
+            if self._stop.is_set():
+                break
+            try:
+                self._tick()
+            except Exception:  # noqa: BLE001 - el watchdog no debe morir
+                pass
+
+    def stop(self) -> None:
+        self._stop.set()
+
+    def _tick(self) -> None:
+        pr = self.world.public_run
+        if pr is None:
+            return
+        with pr._lock:
+            state = pr.state
+            deadline_ms = pr.deadline_ms
+        if state in ("idle", "stopped", "deadline_exceeded", "error"):
+            return
+        if deadline_ms is None:
+            return
+        if _now_ms() < int(deadline_ms):
+            return
+        # Deadline vencido: congelar conducción y cerrar recursos propios.
+        pr.mark_deadline_exceeded()
+        with self.world._lock:
+            drives = list(self.world._drives.values())
+        for drive in drives:
+            if drive.get("state") == "running":
+                try:
+                    self.world._finish_drive(
+                        drive.get("session_id", ""), drive,
+                        "PUBLIC_RUN_DEADLINE_EXCEEDED")
+                except Exception:  # noqa: BLE001
+                    pass
+        # Cerrar el servicio propio (libera puerto y procesos).
+        try:
+            self.world.shutdown()
+        except Exception:  # noqa: BLE001
+            pass
+        self._stop.set()
+
+
 def main(argv: Optional[List[str]] = None) -> int:
     parser = argparse.ArgumentParser(
         description="Servicio de sesiones de ingeniería (loopback)")
@@ -2146,10 +2420,15 @@ def main(argv: Optional[List[str]] = None) -> int:
     synchronizer: Optional[ClockSynchronizer] = None
     now_ms: Optional[Callable[[], Optional[int]]] = None
     clock_source_label: Optional[str] = None
+    public_run: Optional[PublicRunRecord] = None
+    watcher: Optional[PublicRunDeadlineWatcher] = None
     if args.clock_source == "public":
-        max_req = args.public_max_requests
-        if max_req is None:
-            max_req = CLOCK_PUBLIC_MAX_REQUESTS
+        # Sincronizacion: 5 muestras (CLOCK_PUBLIC_MAX_REQUESTS). Techo TOTAL
+        # de corrida: 7 intentos (MAX_FETCH_REQUESTS_PER_RUN), compartido entre
+        # /time, klines, catalogo, reintentos y recuperacion.
+        max_req = CLOCK_PUBLIC_MAX_REQUESTS
+        if args.public_max_requests is not None:
+            max_req = max(args.public_max_requests, CLOCK_PUBLIC_MAX_REQUESTS)
         # Presupuesto publico ANTES de habilitar el modo publico: si no
         # alcanza para la politica de sincronizacion, no se habilita. Se
         # comprueban AMBOS limites: la ventana movil (30/60 s) y el presupuesto
@@ -2213,6 +2492,9 @@ def main(argv: Optional[List[str]] = None) -> int:
         # (available=False) durante la preparacion del reloj. La sincronizacion
         # se ejecuta despues de thread.start(), fuera de esta rama.
         clock_source_label = "public_sincronizado"
+        # Registro persistente de la corrida: autoridad del ciclo de vida.
+        public_run = PublicRunRecord(sessions_dir)
+        public_run._load()
     else:
         # Modo local: reloj de pared local, cero solicitudes publicas,
         # referencia explícitamente local (no se simula tiempo de Binance).
@@ -2222,8 +2504,17 @@ def main(argv: Optional[List[str]] = None) -> int:
         sessions_dir, args.cadence_ms, market_url=args.market_url,
         market_bars=args.market_bars, live_silence_ms=args.live_silence_ms,
         now_ms=now_ms, clock_sync=synchronizer,
-        clock_source=clock_source_label)
+        clock_source=clock_source_label,
+        public_run=public_run)
     server = EngineeringHTTPServer(args.host, args.port, world)
+    # Iniciar el registro persistente de la corrida pública (autoridad del
+    # ciclo de vida) una vez que el servidor tiene puerto asignado.
+    if public_run is not None:
+        public_run.begin(
+            run_id, "public",
+            "MINAUSDT,BTCUSDT", "1m",
+            os.getpid(), server.server_address[1],
+        )
     pid_file = Path(args.pid_file) if args.pid_file else PID_DEFAULT
     pid_file.parent.mkdir(parents=True, exist_ok=True)
     pid_file.write_text(json.dumps({
@@ -2245,6 +2536,11 @@ def main(argv: Optional[List[str]] = None) -> int:
     }, ensure_ascii=False), flush=True)
     thread = threading.Thread(target=server.serve_forever, daemon=True)
     thread.start()
+    # Watcher del deadline de la corrida pública (solo modo public).
+    # Vigila el deadline absoluto y congela conducción al vencer.
+    if public_run is not None:
+        watcher = PublicRunDeadlineWatcher(world)
+        watcher.start()
     # Sincronizacion del reloj despues de levantar /health: durante la
     # preparacion (sync en curso contra Binance), /health responde
     # NOT_READY (available=False) y nunca se admite crear sesion.
@@ -2257,12 +2553,21 @@ def main(argv: Optional[List[str]] = None) -> int:
             pass
     try:
         while not server.stop_event.is_set():
+            # Si el deadline de la corrida pública venció, detener el servidor
+            # (el watcher ya marcó deadline_exceeded y congeló los drives).
+            if public_run is not None and public_run.is_deadline_exceeded():
+                server.stop_event.set()
+                break
             time.sleep(0.2)
     except KeyboardInterrupt:  # pragma: no cover
         pass
     finally:
+        if watcher is not None:
+            watcher.stop()
         world.shutdown()
         server.shutdown()
+        if public_run is not None:
+            public_run.mark_stopped("SERVICE_SHUTDOWN")
         try:
             pid_file.unlink(missing_ok=True)
         except OSError:  # pragma: no cover

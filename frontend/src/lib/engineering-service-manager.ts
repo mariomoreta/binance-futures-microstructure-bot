@@ -443,6 +443,24 @@ function clearPublicRunId(): void {
   try { writeFileSync(publicRunIdPath(), JSON.stringify({ run_id: null }) + "\n", "utf8"); } catch { /* no bloquea */ }
 }
 
+/** Lee el registro persistente de la corrida pública (si existe). */
+function readPublicRunRecord(): { run_id?: string | null; pid?: number | null; port?: number | null; state?: string | null } | null {
+  try {
+    const p = path.join(serviceRoot(), "data", "engineering-session", "public-run.json");
+    const raw = readFileSync(p, "utf8");
+    const data = JSON.parse(raw);
+    if (typeof data !== "object" || data === null) return null;
+    return {
+      run_id: typeof data.run_id === "string" ? data.run_id : null,
+      pid: typeof data.pid === "number" ? data.pid : null,
+      port: typeof data.port === "number" ? data.port : null,
+      state: typeof data.state === "string" ? data.state : null,
+    };
+  } catch {
+    return null;
+  }
+}
+
 export async function startService(opts: StartServiceOptions = {}): Promise<StartServiceResult> {
   if (startInFlight) return startInFlight;
   startInFlight = doStartService(opts).finally(() => {
@@ -460,8 +478,8 @@ async function doStartService(opts: StartServiceOptions): Promise<StartServiceRe
     // no se sustituye ni detiene el servicio local silenciosamente.
     if (opts.clockSource === "public") {
       const healthBody = await health(port).then(h => h.reachable ? h.body : {}).catch(() => ({}));
-      const hb = healthBody as { clock_source?: string } | null;
-      const declaredSource = typeof hb?.clock_source === "string" ? hb.clock_source : null;
+      const hb = healthBody as { clock?: { source?: string } } | null;
+      const declaredSource = typeof hb?.clock?.source === "string" ? hb.clock.source : null;
       if (declaredSource !== "public_sincronizado") {
         return {
           ok: false,
@@ -632,20 +650,70 @@ export interface StopServiceResult {
   detail?: string;
 }
 
-export async function stopService(): Promise<StopServiceResult> {
+export async function stopService(runId?: string | null): Promise<StopServiceResult> {
   const port = servicePort();
   const pidFile = await readPidFile();
   const pid = pidFile?.pid ?? null;
 
-  // Verificar que el servicio esté listo y sea nuestro antes de apagar.
+  // Verificar que el servicio esté listo antes de apagar.
   const st = await serviceStatus();
-  if (st.state !== "ready" && st.state !== "unidentified") {
+  if (st.state !== "ready") {
     return {
       ok: false,
       pid: null,
       error: "ENGINEERING_SERVICE_NOT_RUNNING",
       detail: `el servicio no está en estado ready (estado: ${st.state ?? "desconocido"}).`,
     };
+  }
+
+  // Identidad acreditada: pid-file coincide con /health.pid.
+  const healthPid = typeof st.pid === "number" ? st.pid : null;
+  if (pid === null || healthPid === null || pid !== healthPid) {
+    return {
+      ok: false,
+      pid,
+      error: "ENGINEERING_SERVICE_IDENTITY_UNCERTAIN",
+      detail: `pid-file (${pid}) y /health (${healthPid}) no coinciden; no se apaga proceso de identidad incierta.`,
+    };
+  }
+
+  // Pertenencia a la corrida pública: si se solicita run_id, el pid del
+  // servicio debe coincidir con el pid registrado en public-run.json.
+  if (runId != null && runId !== "") {
+    const rec = readPublicRunRecord();
+    if (rec === null) {
+      return {
+        ok: false,
+        pid,
+        error: "ENGINEERING_SERVICE_RUN_NOT_FOUND",
+        detail: `no existe registro persistente de corrida pública; no se puede verificar pertenencia a la corrida ${runId}.`,
+      };
+    }
+    if (rec.run_id !== runId) {
+      return {
+        ok: false,
+        pid,
+        error: "ENGINEERING_SERVICE_RUN_MISMATCH",
+        detail: `el registro de corrida pública tiene run_id ${rec.run_id ?? "null"}; se solicitó detener ${runId}; no se detiene proceso de corrida ajena.`,
+      };
+    }
+    if (typeof rec.pid === "number" && rec.pid !== pid) {
+      return {
+        ok: false,
+        pid,
+        error: "ENGINEERING_SERVICE_RUN_PID_MISMATCH",
+        detail: `el pid registrado para la corrida ${runId} (${rec.pid}) no coincide con el pid del servicio (${pid}); no se detiene proceso ajeno.`,
+      };
+    }
+    if (typeof rec.state === "string" && rec.state === "deadline_exceeded") {
+      // El deadline ya venció; el servicio debería haberse detenido solo.
+      return {
+        ok: false,
+        pid,
+        error: "ENGINEERING_SERVICE_DEADLINE_EXCEEDED",
+        detail: `la corrida ${runId} ya excedió su deadline; el servicio debería haberse detenido por el watcher del backend.`,
+      };
+    }
   }
 
   let shutdownOk = false;
@@ -658,13 +726,12 @@ export async function stopService(): Promise<StopServiceResult> {
       shutdownDetail = String(exc);
     }
   } else {
-    shutdownDetail = "sin pid-file verificable; no se apaga proceso desconocido.";
+    shutdownDetail = "sin pid verificable; no se apaga proceso desconocido.";
   }
 
-  // Limpiar run_id persistido de la corrida pública.
-  clearPublicRunId();
-
   if (!shutdownOk) {
+    // No borrar el registro persistido si la parada falló: conserva historial
+    // y consumo para auditoría.
     return {
       ok: false,
       pid,
@@ -672,6 +739,9 @@ export async function stopService(): Promise<StopServiceResult> {
       detail: shutdownDetail ?? "no se pudo verificar identidad del servicio; no se detuvo proceso desconocido.",
     };
   }
+
+  // Parada confirmada: solo ahora limpiar el run_id persistido.
+  clearPublicRunId();
 
   return { ok: true, pid };
 }

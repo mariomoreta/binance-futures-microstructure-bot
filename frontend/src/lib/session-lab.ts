@@ -509,8 +509,12 @@ export interface PublicRunState {
   startedAtMs: number | null;
   httpAttempts: number;
   active: boolean;
+  deadlineExceeded: boolean;
+  state?: string | null;
+  cause?: string | null;
   error?: string | null;
   detail?: string | null;
+  service?: { pid?: number | null; port?: number | null; sessions_dir?: string | null } | null;
 }
 
 /** Inicia la aceptación pública: genera run_id propio (o reutiliza el
@@ -527,6 +531,9 @@ export async function startPublicRun(opts?: {
     runId: string | null;
     startedAtMs: number | null;
     httpAttempts: number;
+    deadlineExceeded: boolean;
+    state?: string | null;
+    cause?: string | null;
     service?: { pid?: number | null; port?: number | null; sessions_dir?: string | null } | null;
   }>
 > {

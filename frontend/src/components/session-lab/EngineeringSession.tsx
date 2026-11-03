@@ -204,6 +204,8 @@ interface PublicRunState {
   startedAtMs: number | null;
   httpAttempts: number;
   deadlineExceeded: boolean;
+  state?: string | null;
+  cause?: string | null;
   active: boolean;
   service: { pid?: number | null; port?: number | null; sessions_dir?: string | null } | null;
 }
@@ -220,6 +222,8 @@ const [publicRun, setPublicRun] = useState<PublicRunState>({
   startedAtMs: null,
   httpAttempts: 0,
   deadlineExceeded: false,
+  state: null,
+  cause: null,
   active: false,
   service: null,
 });
@@ -570,7 +574,9 @@ const publicInFlightRef = useRef(false);
         runId: data.runId ?? null,
         startedAtMs: data.startedAtMs ?? Date.now(),
         httpAttempts: data.httpAttempts ?? 0,
-        deadlineExceeded: false,
+        deadlineExceeded: data.deadlineExceeded ?? false,
+        state: data.state ?? null,
+        cause: data.cause ?? null,
         active: true,
         service: data.service ?? null,
       });
