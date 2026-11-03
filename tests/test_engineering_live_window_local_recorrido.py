@@ -109,7 +109,12 @@ def _make_orchestrator(
     a.sessions_dir = str(
         Path(tempfile.mkdtemp(prefix="eng-recorrido-")) / "sessions"
     )
-    return WindowOrchestrator(a)
+    a.clock_source = None
+    a.clock_readiness_timeout_s = None
+    a.run_id = None
+    a.rest_base_url = None
+    evidence_dir = Path(a.sessions_dir).parent / "evidence"
+    return WindowOrchestrator(a, evidence_dir=evidence_dir)
 
 
 def _secuencia(ahora: int) -> list:

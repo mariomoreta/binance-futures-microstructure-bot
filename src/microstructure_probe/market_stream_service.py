@@ -1169,6 +1169,9 @@ def main(argv: Optional[list[str]] = None) -> int:
                        help="transporte explicito: local (requiere --base-url "
                             "loopback) o public (WS publico de Binance)")
     parser.add_argument("--base-url", default=None)
+    parser.add_argument("--pid-file", default=None,
+                        help="ruta explicita del pid-file (aislada por corrida; "
+                             "por defecto data/market-stream/service.json)")
     parser.add_argument("--max-seconds", type=float, default=None,
                        help="parada automatica (solo ventana acotada autorizada)")
     parser.add_argument("--no-recovery", action="store_true",
@@ -1194,6 +1197,7 @@ def main(argv: Optional[list[str]] = None) -> int:
         host=args.host, port=args.port, base_url=plan["base_url"],
         transport_mode=plan["mode"], max_seconds=args.max_seconds,
         no_recovery=args.no_recovery,
+        pid_path=Path(args.pid_file) if args.pid_file else None,
     )
 
     async def _main() -> None:

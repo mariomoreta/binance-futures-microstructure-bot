@@ -1,3 +1,66 @@
+## Corrección del contexto cerrado del arnés + aislamiento de pid-files (2026-11-02, base `f033c06`)
+
+Corregido en código (sin ejecutar ninguna ventana pública) el defecto que
+causó el FAIL de `eng-run-public-20261102b`. Cambios en
+`scripts/engineering_live_window.py` (SHA-256
+`97bec590dc46aadde60b213afe5fdf8ae684b5dab088f59f4b6fefeab3bead9b`):
+
+- `_reference_now_ms` (nuevo): la referencia temporal del modo `public` sale
+  del reloj del servicio de ingeniería con validez comprobada
+  (`clock.source == public_sincronizado`, `available` True, `offset_ms`
+  finito y `age_ms` presente); nunca el reloj del navegador, sin tolerancia
+  positiva de un intervalo. El check `clock_fuente_verificada`
+  (`_verify_clock`) ahora se ejecuta de verdad en el modo `public` (estaba
+  definido pero sin cablear).
+- `_context_window` (nuevo): pide UNA ventana que termina en la última vela
+  cuyo cierre ya ocurrió (`open + step - 1 <= referencia`; el cierre
+  exactamente igual a la referencia se admite).
+- `_load_recent_context(reference_ms)`: valida CADA fila recibida (REST y
+  caché derivada): `close_time` ausente, posterior a la referencia (vela en
+  curso) u OHLC de caché capturado antes del cierre se excluyen con
+  diagnóstico; REST sobrescribe lo almacenado por apertura; identidad por
+  símbolo y continuidad se conservan; sin descargas automáticas adicionales
+  (máx. `MAX_REST_REQUESTS_PER_RUN` por corrida, reserva preenvío
+  `LedgerAttemptGate`).
+- `_prepare_context` + `_validar_contexto_cerrado` (nuevos): validación
+  defensiva ANTES de crear sesión que replica y no relaja la del backend
+  (`CONTEXTO_INSUFICIENTE / NO_RECIENTE / DISCONTINUO / FUERA_VENTANA /
+  FUTURO`); si tras filtrar falta contexto, aborta con motivo explícito sin
+  crear sesión.
+- Aislamiento de pid-files: `market_stream_service.py` acepta `--pid-file`;
+  el arnés pasa `sessions_dir/market-service.json` y
+  `sessions_dir/engineering-service.json` (exclusivos de la corrida). La
+  limpieza borra SOLO esos archivos; `data/market-stream/service.json`
+  (servicio 8792) no se toca ni se reconstruye.
+
+Verificación local (cero Binance, proveedores loopback): nuevas pruebas
+`tests/test_engineering_context_closed.py` — 7 PASS (fila en curso
+excluida aunque la respuesta la incluya; cierre exactamente igual a la
+referencia admitido; contexto insuficiente aborta con motivo sin crear
+sesión y sin descargas extra; proveedor local respeta el rango pedido con
+contexto cerrado y contiguo; pid-file ajeno preexistente idéntico
+antes/después incluso ante fallo; servicio real escribe su pid-file
+exclusivo sin reconstruir el por defecto) — y la regresión completa
+`tests/test_engineering_live_window_local_recorrido.py` (2 PASS: recorrido
+local WS → servicio → SSE → evaluación). Regresiones adicionales:
+`tests/test_engineering_clock_readiness.py` +
+`tests/test_engineering_clock_budget.py` (32 PASS) y
+`tests/test_market_stream.py` (40 PASS).
+
+Los proveedores locales de pruebas (`scripts/local_kline_provider.py`,
+`scripts/local_ws_kline_provider.py`) ahora respetan EXACTAMENTE el rango
+pedido (primera apertura `>= startTime`; no devuelven la vela anterior al
+rango), requisito para demostrar contexto reciente cerrado y contiguo.
+
+`tests/test_engineering_live_window_local.py` sigue sin recomponerse tras el
+cambio de firmas del arnés actual (falla en el mismo punto que antes del
+cambio: fixture `Args` sin los atributos actuales); no se toca en esta
+entrega.
+
+Pendiente con autorización propia: ventana pública NUEVA con run_id NUEVO
+(no reutilizar `eng-run-public-20261102b`, presupuesto agotado 7/7) para
+acreditar sesión → cierre nuevo → T → evaluación con decisión y motivo.
+
 ## Ventana pública única — FAIL por contexto con vela en curso (2026-11-02, base `d2ca1cb`)
 
 Se ejecutó **una sola** ventana pública autorizada (run_id

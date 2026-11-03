@@ -4188,81 +4188,156 @@ economicos.
 
 - Evidencia conservada en <temp>/run-public/evidence.json (no commiteada).
 
-
-## 2026-11-02 Cierre y correccion de arranque del servicio de ingenieria (post-ventana publica)
-
-- Cambio en scripts/microstructure_probe/engineering_session_service.py (main()): el servidor HTTP
-  se levanta ANTES de ejecutar ClockSynchronizer.sync() en modo --clock-source public. Durante la
-  preparacion (sync en curso), /health responde public_sincronizado con available=False (NOT_READY);
-  nunca se permite crear sesion sin sincronizacion valida (_validar_contexto_temporal rechaza con
-  RELOJ_REFERENCIA_INCERTO). Si el sync falla, available=False se mantiene y el servicio sigue
-  operativo pero sin reloj valido. Esto evita que el orquestador se bloquee esperando /health y
-  agote el deadline global de 180 s.
-- Diagnostico de la ventana publica (eng-run-public-20261102, veredicto ERROR): la ultima transicion
-  completada fue service_started (mercado PID 29820, puerto 8791, modo=public). El servicio de
-  ingenieria se lanzo (_spawn) pero su /health nunca respondio porque el servidor HTTP se levantaba
-  DESPUES del sync bloqueante contra Binance. No se atribuye el bloqueo solo a ClockSynchronizer;
-  la causa estructural es el orden de levantamiento del servidor HTTP.
-- Reconciliacion factual: rest_count=0 (contador del arnes, klines) NO acredita cero /time. El ledger
-  market_fetch_ledger tiene 0 filas para eng-run-public-20261102, por lo que el consumo de /time del
-  servicio de ingenieria es UNKNOWN (no se puede distinguir reservado / enviado / respondido / error).
-  Objetivo no evaluado; no "cero operaciones valido".
-- Pruebas focalizadas: tests/test_engineering_clock_readiness.py (6 PASS, sin Binance, cero peticiones
-  publicas): reloj local disponible; public sincronizado disponible; public sin sync = NOT_READY;
-  create_session rechazada sin reloj valido; proveedor de tiempo que falla = sesion rechazada;
-  /health responde inmediatamente durante preparacion (no bloquea).
-- Evidencia publicada en docs/evidence/ventana-publica-20261102/ (evidence.json, run-id.json,
-  LEDGER_CONSULTA.json, ABSENCIA_LOGS.md, RECONCILIACION_FACTUAL.md, PRUEBAS_LOCALES_READINESS.json).
-- No se repite la ventana publica. Sin conexiones publicas, ordenes, pagos, móvil ni cambios economicos.
-
-## 2026-11-02 Corrección de readiness y persistencia de logs del arnés
-
-- scripts/engineering_live_window.py: el orquestador distingue ahora HTTP
-  disponible de servicio preparado. Durante la sincronización del reloj,
-  /health responde con clock.available=false (NOT_READY); el arnés espera
-  a que el reloj sea válido (source correcta y available=true) antes de
-  crear la sesión, respetando el deadline global y un límite de preparación
-  explícito (--clock-readiness-timeout-s, default 60 s). Fuente incorrecta
-  o agotamiento de presupuesto producen un error claro. No hay fallback al
-  reloj local en modo público.
-- Los procesos de mercado e ingeniería persisten stdout/stderr en archivos
-  de evidencia (--evidence-dir), evitando PIPE sin drenar. Los logs se
-  conservan ante timeout, error de arranque o fallo previo a _verdict.
-- El bloque finally recoge siempre: consumo del ledger por run_id,
-  última salud disponible, resultado de limpieza y rutas de logs. Evidencia
-  ausente significa UNKNOWN; no se infieren cero solicitudes.
-- Pruebas focalizadas: tests/test_engineering_clock_readiness.py (9 PASS,
-  sin Binance, cero peticiones públicas): incluye pruebas del CLI real del
-  servicio lanzado como subproceso con proveedor de tiempo loopback (modo
-  local: /health inmediato, creación de sesión, stdout/stderr persistidos).
-- No se modifican motores, reglas económicas ni presupuestos. No se ejecuta
-  ninguna ventana pública en este bloque.
-
-## 2026-11-02 Prueba del fallo original de readiness y logs garantizados
-
-- Prueba del fallo original en tests/test_engineering_clock_readiness.py:
-  * test_reloj_inicialmente_no_disponible_luego_disponible: /health
-    disponible con clock.available=false (NOT_READY); el arnes espera y
-    no crea sesion; el proveedor responde tras 2s y el reloj pasa a
-    available=true; el arnes continua y permite crear sesion.
-  * test_proveedor_fallido_timeout_no_crea_sesion: proveedor que nunca
-    se recupera; ninguna sesion creada, causa RELOJ_REFERENCIA_INCERTO,
-    limpieza verificada.
-  * Ambas pruebas usan el CLI real del servicio lanzado via _spawn del
-    arnes (no subprocess.Popen directo), con proveedor de tiempo loopback
-    (cero Binance).
-- Logs garantizados: si falta --evidence-dir, se deriva del directorio
-  padre de --out; nunca hay fallback a PIPE sin drenar. Los tests capturan
-  stdout/stderr usando _spawn del arnés y verifican que los archivos
-  existan.
-- Resultado de limpieza: _cleanup() se ejecuta ANTES de copiar
-  limpieza_resultado al resultado final, para que el JSON publicado
-  contenga el estado real incluso ante timeout.
-- Resultado exacto del comando ejecutado:
-  python -m pytest tests/test_engineering_clock_readiness.py
-  tests/test_engineering_clock_budget.py -q
-  -> 32 passed (sin Binance, sin red pública, sin cambios económicos).
-- No se ejecuta ventana pública. Rama no integrada.
+
+
+## 2026-11-02 Cierre y correccion de arranque del servicio de ingenieria (post-ventana publica)
+
+
+
+- Cambio en scripts/microstructure_probe/engineering_session_service.py (main()): el servidor HTTP
+
+  se levanta ANTES de ejecutar ClockSynchronizer.sync() en modo --clock-source public. Durante la
+
+  preparacion (sync en curso), /health responde public_sincronizado con available=False (NOT_READY);
+
+  nunca se permite crear sesion sin sincronizacion valida (_validar_contexto_temporal rechaza con
+
+  RELOJ_REFERENCIA_INCERTO). Si el sync falla, available=False se mantiene y el servicio sigue
+
+  operativo pero sin reloj valido. Esto evita que el orquestador se bloquee esperando /health y
+
+  agote el deadline global de 180 s.
+
+- Diagnostico de la ventana publica (eng-run-public-20261102, veredicto ERROR): la ultima transicion
+
+  completada fue service_started (mercado PID 29820, puerto 8791, modo=public). El servicio de
+
+  ingenieria se lanzo (_spawn) pero su /health nunca respondio porque el servidor HTTP se levantaba
+
+  DESPUES del sync bloqueante contra Binance. No se atribuye el bloqueo solo a ClockSynchronizer;
+
+  la causa estructural es el orden de levantamiento del servidor HTTP.
+
+- Reconciliacion factual: rest_count=0 (contador del arnes, klines) NO acredita cero /time. El ledger
+
+  market_fetch_ledger tiene 0 filas para eng-run-public-20261102, por lo que el consumo de /time del
+
+  servicio de ingenieria es UNKNOWN (no se puede distinguir reservado / enviado / respondido / error).
+
+  Objetivo no evaluado; no "cero operaciones valido".
+
+- Pruebas focalizadas: tests/test_engineering_clock_readiness.py (6 PASS, sin Binance, cero peticiones
+
+  publicas): reloj local disponible; public sincronizado disponible; public sin sync = NOT_READY;
+
+  create_session rechazada sin reloj valido; proveedor de tiempo que falla = sesion rechazada;
+
+  /health responde inmediatamente durante preparacion (no bloquea).
+
+- Evidencia publicada en docs/evidence/ventana-publica-20261102/ (evidence.json, run-id.json,
+
+  LEDGER_CONSULTA.json, ABSENCIA_LOGS.md, RECONCILIACION_FACTUAL.md, PRUEBAS_LOCALES_READINESS.json).
+
+- No se repite la ventana publica. Sin conexiones publicas, ordenes, pagos, móvil ni cambios economicos.
+
+
+
+## 2026-11-02 Corrección de readiness y persistencia de logs del arnés
+
+
+
+- scripts/engineering_live_window.py: el orquestador distingue ahora HTTP
+
+  disponible de servicio preparado. Durante la sincronización del reloj,
+
+  /health responde con clock.available=false (NOT_READY); el arnés espera
+
+  a que el reloj sea válido (source correcta y available=true) antes de
+
+  crear la sesión, respetando el deadline global y un límite de preparación
+
+  explícito (--clock-readiness-timeout-s, default 60 s). Fuente incorrecta
+
+  o agotamiento de presupuesto producen un error claro. No hay fallback al
+
+  reloj local en modo público.
+
+- Los procesos de mercado e ingeniería persisten stdout/stderr en archivos
+
+  de evidencia (--evidence-dir), evitando PIPE sin drenar. Los logs se
+
+  conservan ante timeout, error de arranque o fallo previo a _verdict.
+
+- El bloque finally recoge siempre: consumo del ledger por run_id,
+
+  última salud disponible, resultado de limpieza y rutas de logs. Evidencia
+
+  ausente significa UNKNOWN; no se infieren cero solicitudes.
+
+- Pruebas focalizadas: tests/test_engineering_clock_readiness.py (9 PASS,
+
+  sin Binance, cero peticiones públicas): incluye pruebas del CLI real del
+
+  servicio lanzado como subproceso con proveedor de tiempo loopback (modo
+
+  local: /health inmediato, creación de sesión, stdout/stderr persistidos).
+
+- No se modifican motores, reglas económicas ni presupuestos. No se ejecuta
+
+  ninguna ventana pública en este bloque.
+
+
+
+## 2026-11-02 Prueba del fallo original de readiness y logs garantizados
+
+
+
+- Prueba del fallo original en tests/test_engineering_clock_readiness.py:
+
+  * test_reloj_inicialmente_no_disponible_luego_disponible: /health
+
+    disponible con clock.available=false (NOT_READY); el arnes espera y
+
+    no crea sesion; el proveedor responde tras 2s y el reloj pasa a
+
+    available=true; el arnes continua y permite crear sesion.
+
+  * test_proveedor_fallido_timeout_no_crea_sesion: proveedor que nunca
+
+    se recupera; ninguna sesion creada, causa RELOJ_REFERENCIA_INCERTO,
+
+    limpieza verificada.
+
+  * Ambas pruebas usan el CLI real del servicio lanzado via _spawn del
+
+    arnes (no subprocess.Popen directo), con proveedor de tiempo loopback
+
+    (cero Binance).
+
+- Logs garantizados: si falta --evidence-dir, se deriva del directorio
+
+  padre de --out; nunca hay fallback a PIPE sin drenar. Los tests capturan
+
+  stdout/stderr usando _spawn del arnés y verifican que los archivos
+
+  existan.
+
+- Resultado de limpieza: _cleanup() se ejecuta ANTES de copiar
+
+  limpieza_resultado al resultado final, para que el JSON publicado
+
+  contenga el estado real incluso ante timeout.
+
+- Resultado exacto del comando ejecutado:
+
+  python -m pytest tests/test_engineering_clock_readiness.py
+
+  tests/test_engineering_clock_budget.py -q
+
+  -> 32 passed (sin Binance, sin red pública, sin cambios económicos).
+
+- No se ejecuta ventana pública. Rama no integrada.
+
 
 
 
@@ -4389,3 +4464,61 @@ economicos.
   (`RESULTADO.md`, `summary.json`, `preflight.json`, `evidence.json`,
   `post_state.json`, `ledger-run-id.json`, logs del arnes y de ambos
   servicios).
+
+
+## 2026-11-02 — Contexto cerrado en el arnes y pid-files aislados (sin Binance)
+
+- Correccion del defecto FAIL documentado hoy (ventana
+  `eng-run-public-20261102b`), en codigo y con pruebas locales; SIN ventana
+  publica ni consumo upstream. Rama `diag/recorrido-local-4f4273c`, base
+  `f033c06`; arnes SHA-256 `97bec590…` (nuevo).
+
+- Referencia temporal: `_reference_now_ms` exige el reloj del servicio de
+  ingenieria con validez comprobada (`public_sincronizado`, `available`
+  True, `offset_ms` finito, `age_ms` presente); la referencia es
+  `reloj_local + offset`. Nunca el reloj del navegador. Ademas se cablea
+  `_verify_clock` (check `clock_fuente_verificada`), que estaba definido
+  pero sin llamar. Sin fallback silencioso a reloj de pared.
+
+- Ventana de contexto: `_context_window` pide exactamente la serie de
+  `bars` velas que termina en la ultima vela cuyo cierre ya ocurrio
+  (`open + step - 1 <= referencia`; el cierre IGUAL a la referencia se
+  admite). Sin tolerancia positiva de un intervalo: la vela en curso no se
+  pide, y si un proveedor la devuelve igualmente se filtra fila a fila.
+
+- Filtro por fila (`_admitir_filas` / `_admitir_almacenadas`): se excluyen
+  con contadores en `parse_diag` las filas sin `close_time` disponible,
+  con cierre posterior a la referencia (vela en curso) y el OHLC de cache
+  capturado antes del cierre. Nunca se inventa cierre ni se incluye OHLC
+  no cerrado. REST sobrescribe lo almacenado por `open_time`; identidad
+  por simbolo y deduplicacion solo dentro del mismo simbolo (BTC y MINA
+  nunca se mezclan por timestamp).
+
+- Aborto explicito: `_prepare_context` (nuevo paso entre arranque de
+  servicios y `_create_session`) ejecuta `_validar_contexto_cerrado`, que
+  replica la taxonomia del backend (`CONTEXTO_INSUFICIENTE`,
+  `CONTEXTO_NO_RECIENTE`, `CONTEXTO_DISCONTINUO`,
+  `CONTEXTO_FUERA_VENTANA`, `CONTEXTO_FUTURO`) sin relajarla. Si tras
+  filtrar falta contexto no se hacen descargas automaticas adicionales y
+  NO se crea sesion. Presupuesto REST sin cambios
+  (MAX_REST_REQUESTS_PER_RUN=7, reserva preenvio `LedgerAttemptGate`).
+
+- Aislamiento de pid-files: `market_stream_service.py` acepta `--pid-file`
+  (antes solo la variable de entorno); el arnes pasa rutas exclusivas de
+  la corrida (`sessions_dir/market-service.json`,
+  `sessions_dir/engineering-service.json`) y la limpieza borra SOLO esos
+  archivos. Un pid-file ajeno preexistente queda identico antes y despues,
+  incluso ante fallo de arranque (probado en loopback). El pid-file
+  compartido `data/market-stream/service.json` del servicio 8792 no se
+  toca ni se reconstruye.
+
+- Requisito habilitado: los proveedores locales de pruebas
+  (`local_kline_provider.py`, `local_ws_kline_provider.py`) ahora respetan
+  el rango pedido (primera apertura `>= startTime`); antes devolvian una
+  vela extra anterior al rango, lo que impedia demostrar contexto cerrado
+  puro con proveedor local.
+
+- Historia intacta: no se reescriben la decision FAIL previa ni los
+  veredictos existentes. Pendientes declarados no bloqueantes: literal
+  historico del check `build_served` y respuesta de
+  `tests/test_engineering_live_window_local.py` (fixture desfasada).

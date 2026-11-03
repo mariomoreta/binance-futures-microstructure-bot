@@ -89,7 +89,9 @@ class _HttpHandler(BaseHTTPRequestHandler):
             return
         bars = []
         px = BASE_PRICE.get(symbol, 100.0)
-        ot = start_time - STEP_MS
+        # Respetar EXACTAMENTE el rango pedido: primera apertura >= start_time
+        # (nunca la vela anterior al rango) y ultima apertura <= end_time.
+        ot = start_time
         count = 0
         while ot <= end_time and count < limit:
             close = px * (1.0 + 0.0002 * count)

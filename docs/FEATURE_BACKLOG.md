@@ -1,3 +1,70 @@
+## Contexto cerrado del arnés + pid-files aislados (2026-11-02, base `f033c06`)
+
+**1. Title:** Corrección en código (sin Binance, sin ventana pública) del
+defecto que causó el FAIL de `eng-run-public-20261102b`: el contexto enviado
+incluía la vela del minuto en curso.
+
+**2. Approval status:** AUTORIZADO por el operador de forma acotada:
+trabajar sobre HEAD `f033c06` de `diag/recorrido-local-4f4273c`, corregir
+solo preparación de contexto y aislamiento del pid-file en el arnés
+existente, con pruebas locales del camino productivo vía proveedores
+loopback, cero Binance y cero ventana pública. No autorizaba nueva ventana
+pública, cambios de presupuesto, integración de rama ni relejar la
+validación del backend.
+
+**3. Implementation status:** IMPLEMENTADO. En
+`scripts/engineering_live_window.py` (SHA-256
+`97bec590…`): referencia temporal del reloj público sincronizado del
+servicio de ingeniería con validez comprobada (`_reference_now_ms`;
+`_verify_clock` ahora cableado; nunca reloj del navegador), ventana que
+termina en la última vela cuyo cierre ya ocurrió (`_context_window`; cierre
+exactamente igual a la referencia admitido, sin tolerancia positiva),
+validación fila a fila de lo recibido (REST y caché: cierre ausente,
+posterior a la referencia u OHLC de cache pre-cierre → excluido con
+diagnóstico), aborto explícito ANTES de crear sesión si tras filtrar falta
+contexto (`_prepare_context` + `_validar_contexto_cerrado`, taxonomía
+`CONTEXTO_*` replicada, no relajada; sin descargas automáticas extra), y
+`--pid-file` exclusivo por servicio y corrida con limpieza solo de lo
+propio (`market_stream_service.py` ahora acepta `--pid-file`;
+`sessions_dir/market-service.json` y `sessions_dir/engineering-service.json`;
+`data/market-stream/service.json` de 8792 intacto). Proveedores locales de
+pruebas (`local_kline_provider.py`, `local_ws_kline_provider.py`) respetan
+exactamente el rango pedido.
+
+**4. Evaluation status:** **PASS en las pruebas locales requeridas** (sin
+Binance): nueva suite `tests/test_engineering_context_closed.py` 7/7 — vela
+en curso excluida aunque la respuesta REST la incluya; cierre exactamente
+igual a la referencia admitido; contexto insuficiente tras filtrar provoca
+aborto con motivo `CONTEXTO_INSUFICIENTE` sin crear sesión y sin descargas
+extra; proveedor local respeta el rango pedido y demuestra contexto
+reciente, cerrado y contiguo por símbolo; pid-file ajeno preexistente
+idéntico antes/después incluso ante fallo de arranque; servicio real escribe
+su pid-file exclusivo y no reconstruye el por defecto. Regresión completa
+local: `tests/test_engineering_live_window_local_recorrido.py` 2/2
+(WS → servicio → SSE → evaluación, recorrido end to end con el arnés
+corregido). Regresiones de clock/presupuesto: 32/32
+(`test_engineering_clock_readiness.py`, `test_engineering_clock_budget.py`)
+y servicio de mercado 40/40 (`test_market_stream.py`). Verificación de
+integridad: 8792 y 3020 vivos e intactos; sin escrituras en DBs canónicas.
+
+**5. Limitations:** el comportamiento contra Binance real queda SIN
+verificar (así está autorizado): la ventana pública corregida exige
+autorización nueva y run_id NUEVO. `tests/test_engineering_live_window_local.py`
+sigue sin recomponerse (fixture `Args` desfasada; fallaba igual antes del
+cambio). El literal histórico del detalle `build_served` («árbol e2243c9»)
+sigue pendiente y no bloquea.
+
+**6. Evidence:** `tests/test_engineering_context_closed.py`;
+`tests/test_engineering_live_window_local_recorrido.py`;
+`scripts/engineering_live_window.py`, `scripts/local_kline_provider.py`,
+`scripts/local_ws_kline_provider.py`,
+`src/microstructure_probe/market_stream_service.py`;
+`docs/CURRENT_STATE.md`, `docs/TASK_QUEUE.md`, `docs/DECISIONS.md`
+(entrada 2026-11-02 del mismo día).
+
+**7. Last update:** 2026-11-02 (corrección implementada y verificada en
+local; ventana pública nueva aún no autorizada).
+
 ## Ventana pública única — veredicto FAIL por contexto con vela en curso (2026-11-02, base `d2ca1cb`)
 
 **1. Title:** Ejecución de UNA ventana pública autorizada con el arnés

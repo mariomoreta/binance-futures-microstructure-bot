@@ -44,6 +44,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import math
 import os
 import socket
 import subprocess
@@ -213,6 +214,14 @@ class WindowOrchestrator:
         self.config_hash = None
         self.evidence: Dict[str, Any] = {}
         self.rest_count = 0
+        # Base REST de klines. Produccion: Binance publico. Las pruebas usan
+        # un proveedor loopback explicito (nunca Binance).
+        self.rest_base_url = (getattr(args, "rest_base_url", None)
+                              or "https://fapi.binance.com")
+        # Pid-files EXCLUSIVOS de la corrida (aislados en sessions_dir). Nunca
+        # se toca el pid-file del servicio local preexistente (8792).
+        self.market_pid_path: Optional[Path] = None
+        self.engineering_pid_path: Optional[Path] = None
         self.consumers_max_seen = 0
         self.reconnects_max_seen = 0
         self.db_before = canonical_dbs_snapshot()
@@ -402,7 +411,7 @@ class WindowOrchestrator:
         run["run_id"] = self.run_id
         self._preflight()
         self._start_services()
-        context = self._load_recent_context()
+        context = self._prepare_context()
         self._create_session(context)
         self._start_drive()
         t_adq_inicio = now_ms()
@@ -494,12 +503,20 @@ class WindowOrchestrator:
         # conecte (sin Binance, cero red pública).
         if self.transport == "local":
             self._start_provider()
+        # Pid-files explicitos y exclusivos de ESTA corrida: cada servicio
+        # escribe su identidad ahi; nunca en data/market-stream/service.json
+        # del servicio local preexistente (8792).
+        sessions_dir = Path(self.args.sessions_dir)
+        sessions_dir.mkdir(parents=True, exist_ok=True)
+        self.market_pid_path = sessions_dir / "market-service.json"
+        self.engineering_pid_path = sessions_dir / "engineering-service.json"
         # --- servicio de mercado en 8791 (una WS combinada) ---
         argv = [sys.executable, "-X", "utf8",
                 str(ROOT / "scripts" / "market_stream_service.py"),
                 "--port", str(self.service_port),
                 "--transport", self.transport,
                 "--no-recovery",
+                "--pid-file", str(self.market_pid_path),
                 "--max-seconds", str(int(self.deadline_s) + 10)]
         if self.transport == "local":
             argv += ["--base-url",
@@ -532,8 +549,6 @@ class WindowOrchestrator:
                        % (health.get("pid"), health.get("port"),
                           tr.get("mode")), source="execute")
         # --- servicio de ingeniería en 8797 (ruta de sesiones aislada) ---
-        sessions_dir = Path(self.args.sessions_dir)
-        sessions_dir.mkdir(parents=True, exist_ok=True)
         argv2 = [sys.executable, "-X", "utf8",
                  str(ROOT / "scripts" / "engineering_session_service.py"),
                  "--port", str(self.engineering_port),
@@ -543,7 +558,7 @@ class WindowOrchestrator:
                  "--live-silence-ms", "120000",
                  "--run-id", self.run_id,
                  "--clock-source", self.clock_source,
-                 "--pid-file", str(sessions_dir / "service.json")]
+                 "--pid-file", str(self.engineering_pid_path)]
         eng_out = None
         eng_err = None
         if self.evidence_dir is not None:
@@ -800,222 +815,406 @@ class WindowOrchestrator:
     def _json_loads(text: str) -> Any:
         return json.loads(text) if text.strip() else None
 
-    # -- contexto reciente (HistoryClient + LedgerAttemptGate) -------------
-    def _load_recent_context(self) -> List[Dict[str, Any]]:
-        """Contexto reciente para fijar el reloj T.
+    # -- referencia temporal y contexto cerrado ----------------------------
+    def _reference_now_ms(self) -> int:
+        """Referencia temporal del servicio de ingeniería, con validez
+        comprobada; nunca el reloj del navegador.
 
-        Usa HistoryClient + LedgerAttemptGate (reserva preenvío) + normalize_kline
-        (interpretación canónica: cierre conocido en T si close_time presente y
-        finito; nunca se inventa un booleano de cierre en row[12]).
+        Modo public: exige ``clock.source == public_sincronizado`` con
+        ``available`` True, ``offset_ms`` finito y ``age_ms`` presente (la
+        vigencia la impone el propio servicio). La referencia es
+        ``reloj_local + offset``. Modo local: reloj de pared del mismo host
+        que el servicio (``local_sistema``). No existe fallback silencioso:
+        sin referencia válida no se admite contexto ni se crea sesión.
+        """
+        if self.clock_source != "public":
+            return now_ms()
+        health = self.ultima_salud_ingenieria
+        clock = health.get("clock") if isinstance(health, dict) else None
+        if not isinstance(clock, dict):
+            raise RuntimeError(
+                "CLOCK_SOURCE_AUSENTE: /health del servicio de ingeniería no "
+                "expone el bloque 'clock'")
+        if clock.get("source") != "public_sincronizado":
+            raise RuntimeError(
+                "CLOCK_SOURCE_INCORRECTO: se esperaba public_sincronizado, "
+                "obtuvo %s" % clock.get("source"))
+        if not clock.get("available"):
+            raise RuntimeError(
+                "CLOCK_REFERENCIA_NO_DISPONIBLE: %s (age_ms=%s)"
+                % (clock.get("reason") or "referencia no vigente",
+                   clock.get("age_ms")))
+        offset = clock.get("offset_ms")
+        age_ms = clock.get("age_ms")
+        if (not isinstance(offset, (int, float))
+                or not math.isfinite(float(offset))):
+            raise RuntimeError(
+                "CLOCK_REFERENCIA_INCIERTA: offset_ms no finito (%r)"
+                % (offset,))
+        if age_ms is None:
+            raise RuntimeError(
+                "CLOCK_REFERENCIA_INCIERTA: age_ms ausente con reloj publico "
+                "disponible")
+        return int(round(now_ms() + float(offset)))
 
-        Identidades separadas: el contexto de cada símbolo lleva su propio
-        ``symbol``; BTC permanece en su serie de referencia y MINA en la suya;
-        nunca se deduplica por timestamp entre símbolos ni se elimina la
-        identidad antes de validarla.
+    def _context_window(self, reference_ms: int) -> Tuple[int, int]:
+        """Ventana de aperturas [primera, ultima] de velas CERRADAS.
+
+        La última vela admitida es la mayor ``open`` (múltiplo del paso) tal
+        que ``open + step - 1 <= reference_ms``: una vela cuyo cierre ocurrió
+        exactamente en la referencia se admite, y la vela en curso (cierre
+        posterior a la referencia) nunca entra. Sin tolerancia positiva de un
+        intervalo.
+        """
+        step = INTERVAL_MS[self.interval]
+        end_open = ((int(reference_ms) - step + 1) // step) * step
+        start_open = end_open - (self.bars - 1) * step
+        return start_open, end_open
+
+    @staticmethod
+    def _serie_utilizable(velas: List[Dict[str, Any]], end_open: int,
+                          step: int) -> bool:
+        """Serie no vacía, contigua y que alcanza la última vela cerrada."""
+        if not velas:
+            return False
+        ordenadas = sorted(velas, key=lambda c: c["open_time_ms"])
+        if ordenadas[-1]["open_time_ms"] != end_open:
+            return False
+        return all(b["open_time_ms"] - a["open_time_ms"] == step
+                   for a, b in zip(ordenadas, ordenadas[1:]))
+
+    def _admitir_filas(self, symbol: str, rows: List[Any], start_open: int,
+                       end_open: int, reference_ms: int,
+                       parse_diag: List[Dict[str, Any]]
+                       ) -> Tuple[List[Dict[str, Any]], Dict[str, int]]:
+        """``normalize_kline`` + filtro de cierre ocurrido y ventana.
+
+        Toda fila con ``close_time`` posterior a la referencia se descarta
+        (vela en curso, aunque el proveedor la devuelva). Nunca se incorpora
+        OHLC no cerrado al contexto. También se descarta lo que quede fuera
+        de la ventana pedida.
+        """
+        admitidas: Dict[int, Dict[str, Any]] = {}
+        excluidas = {"cierre_no_disponible": 0, "cierre_no_ocurrido": 0,
+                     "fuera_de_ventana": 0, "duplicadas": 0}
+        for row in rows:
+            try:
+                candle = normalize_kline(row)
+            except Exception as exc:  # noqa: BLE001
+                parse_diag.append({
+                    "symbol": symbol, "result": "parse_error",
+                    "error": "%s: %s" % (type(exc).__name__, exc),
+                })
+                continue
+            close_time = candle.get("close_time")
+            if close_time is None:
+                excluidas["cierre_no_disponible"] += 1
+                continue
+            open_time = int(candle["open_time"])
+            close_time = int(close_time)
+            if close_time > int(reference_ms):
+                excluidas["cierre_no_ocurrido"] += 1
+                continue
+            if open_time < start_open or open_time > end_open:
+                excluidas["fuera_de_ventana"] += 1
+                continue
+            if open_time in admitidas:
+                excluidas["duplicadas"] += 1
+            admitidas[open_time] = {
+                "symbol": symbol,
+                "open_time_ms": open_time,
+                "open": float(candle["open"]),
+                "high": float(candle["high"]),
+                "low": float(candle["low"]),
+                "close": float(candle["close"]),
+                "close_time_ms": close_time,
+            }
+        return (sorted(admitidas.values(), key=lambda c: c["open_time_ms"]),
+                excluidas)
+
+    def _admitir_almacenadas(self, symbol: str,
+                             stored: List[Dict[str, Any]], start_open: int,
+                             end_open: int, reference_ms: int, step: int
+                             ) -> Tuple[List[Dict[str, Any]], Dict[str, int]]:
+        """Mismo filtro de cierre ocurrido para filas de la caché derivada.
+
+        ``read_stored`` entrega ``open_time``/``close_time``. Si el cierre no
+        está disponible o es posterior a la referencia, la fila se excluye.
+        """
+        admitidas: Dict[int, Dict[str, Any]] = {}
+        excluidas = {"cierre_no_disponible": 0, "cierre_no_ocurrido": 0,
+                     "ohlc_no_cerrado": 0, "fuera_de_ventana": 0,
+                     "duplicadas": 0}
+        for c in stored:
+            try:
+                open_time = int(c["open_time"])
+                close_time = c.get("close_time")
+                if close_time is None:
+                    excluidas["cierre_no_disponible"] += 1
+                    continue
+                close_time = int(close_time)
+                if close_time > int(reference_ms):
+                    excluidas["cierre_no_ocurrido"] += 1
+                    continue
+                # Una fila cacheada ANTES del cierre puede tener OHLC parcial:
+                # solo se admite si la captura fue posterior al cierre (o si
+                # procede del almacen canónico, que solo guarda cerradas).
+                fetched_at = c.get("fetched_at")
+                if (fetched_at is not None
+                        and int(fetched_at) < close_time):
+                    excluidas["ohlc_no_cerrado"] += 1
+                    continue
+                if open_time < start_open or open_time > end_open:
+                    excluidas["fuera_de_ventana"] += 1
+                    continue
+                if open_time in admitidas:
+                    excluidas["duplicadas"] += 1
+                admitidas[open_time] = {
+                    "symbol": symbol,
+                    "open_time_ms": open_time,
+                    "open": float(c["open"]),
+                    "high": float(c["high"]),
+                    "low": float(c["low"]),
+                    "close": float(c["close"]),
+                    "close_time_ms": close_time,
+                }
+            except (KeyError, TypeError, ValueError):
+                excluidas["cierre_no_disponible"] += 1
+        return (sorted(admitidas.values(), key=lambda c: c["open_time_ms"]),
+                excluidas)
+
+    def _load_recent_context(
+            self, reference_ms: Optional[int] = None) -> List[Dict[str, Any]]:
+        """Contexto reciente CERRADO para fijar el reloj T.
+
+        Usa HistoryClient + LedgerAttemptGate (reserva preenvío) +
+        normalize_kline. La ventana termina en la última vela cuyo cierre ya
+        ocurrió respecto de la referencia validada del servicio de ingeniería;
+        cada fila se valida individualmente (``close_time`` posterior a la
+        referencia se excluye). Sin tolerancia positiva de un intervalo.
+
+        Identidades separadas por símbolo: BTC conserva su serie y MINA la
+        suya; nunca se deduplica por timestamp entre símbolos.
 
         Modo local: proveedor HTTP local (cero Binance, cero REST real).
-        Modo public: caché derivada local primero (cero REST); si insuficiente,
-        HistoryClient con attempt_gate (hasta MAX_REST_REQUESTS_PER_RUN por
-        corrida).
+        Modo public: caché derivada local primero (cero REST); si no cubre la
+        ventana cerrada, HistoryClient con attempt_gate (máximo
+        MAX_REST_REQUESTS_PER_RUN por corrida). Si tras filtrar el contexto es
+        insuficiente se registra el motivo y NO se hacen descargas extra.
         """
         self._check_deadline("load_context")
+        if reference_ms is None:
+            reference_ms = self._reference_now_ms()
         step = INTERVAL_MS[self.interval]
-        end = now_ms()
-        start = end - (self.bars - 1) * step
-        contexto: List[Dict[str, Any]] = []
-        rest_usadas = 0
+        start_open, end_open = self._context_window(reference_ms)
+        # ``endTime`` inclusivo: último milisegundo de la última vela cerrada.
+        end_time = end_open + step - 1
+        simbolos = ([self.reference, self.primary]
+                    if self.reference else [self.primary])
         parse_diag: List[Dict[str, Any]] = []
+        rest_usadas = 0
+        series: Dict[str, List[Dict[str, Any]]] = {}
 
-        if self.transport == "local":
-            # Proveedor local vía HistoryClient (sin Binance, cero REST real).
+        if self.transport == "public":
             cache = MarketCache(CACHE_DB)
             try:
                 cache.init_db()
             except Exception:  # noqa: BLE001
                 pass
-            execution_id = self.run_id
-            gate = LedgerAttemptGate(cache, execution_id,
-                                     max_requests=MAX_FETCH_REQUESTS_PER_WINDOW,
-                                     run_max_requests=MAX_REST_REQUESTS_PER_RUN)
-            client = HistoryClient(
-                base_url="http://127.0.0.1:%d" % self.provider_port,
-                execution_id=execution_id, attempt_gate=gate,
-                max_retries=0,  # fallo rápido: no reintentar contra proveedor local
-            )
-            for sym in ([self.reference, self.primary]
-                        if self.reference else [self.primary]):
-                self._check_deadline("context_rest_" + sym)
-                try:
-                    rows, _ = client.klines(sym, self.interval, start, end,
-                                            limit=self.bars)
-                    rest_usadas += 1
-                    parse_diag.append({
-                        "symbol": sym, "result": "ok",
-                        "rows": len(rows),
-                        "reserved_before_send": True,
-                    })
-                    for row in rows:
-                        try:
-                            candle = normalize_kline(row)
-                        except Exception as exc:  # noqa: BLE001
-                            parse_diag.append({
-                                "symbol": sym, "result": "parse_error",
-                                "error": "%s: %s" % (type(exc).__name__, exc),
-                            })
-                            continue
-                        # Cierre conocido en T: close_time presente y finito.
-                        close_time = candle.get("close_time")
-                        if close_time is None:
-                            parse_diag.append({
-                                "symbol": sym, "result": "close_time_missing",
-                                "open_time_ms": candle["open_time"],
-                            })
-                            continue
-                        contexto.append({
-                            "symbol": sym,
-                            "open_time_ms": int(candle["open_time"]),
-                            "open": float(candle["open"]),
-                            "high": float(candle["high"]),
-                            "low": float(candle["low"]),
-                            "close": float(candle["close"]),
-                            "close_time_ms": int(close_time),
-                        })
-                except UpstreamBudgetExceeded as exc:
-                    rest_usadas += 1
-                    parse_diag.append({
-                        "symbol": sym, "result": "budget_blocked_pre_send",
-                        "error": str(exc),
-                    })
-                    break
-                except Exception as exc:  # noqa: BLE001
-                    rest_usadas += 1
-                    parse_diag.append({
-                        "symbol": sym, "result": "exception",
-                        "error": "%s: %s" % (type(exc).__name__, exc),
-                    })
-        else:
-            # Modo public: caché derivada local primero (cero REST).
-            cache = MarketCache(CACHE_DB)
-            try:
-                cache.init_db()
-            except Exception:  # noqa: BLE001
-                pass
-            for sym in ([self.reference, self.primary]
-                        if self.reference else [self.primary]):
+            for sym in simbolos:
                 try:
                     stored, _ = read_stored(cache, sym, self.interval,
-                                            "klines", start, end, None,
-                                            self.bars)
+                                            "klines", start_open, end_time,
+                                            None, self.bars)
                 except Exception:  # noqa: BLE001
                     stored = []
-                for c in stored:
-                    if c.get("closed") is True:
-                        contexto.append({
-                            "symbol": sym,
-                            "open_time_ms": int(c["open_time_ms"]),
-                            "open": float(c["open"]),
-                            "high": float(c["high"]),
-                            "low": float(c["low"]),
-                            "close": float(c["close"]),
-                            "close_time_ms": int(c.get("close_time_ms")
-                                                 or c["open_time_ms"]
-                                                 + step - 1),
-                        })
-            # Si la caché no cubre el rango reciente, usar REST directo
-            # (contabilizado, dentro del presupuesto de 7 por corrida).
-            recientes = [c for c in contexto
-                         if c["open_time_ms"] >= end - 2 * step
-                         and c["symbol"] == self.primary]
-            if len(recientes) < 10:
-                for sym in ([self.reference, self.primary]
-                            if self.reference else [self.primary]):
-                    if rest_usadas >= MAX_REST_REQUESTS_PER_RUN:
-                        break
-                    self._check_deadline("context_rest_" + sym)
-                    try:
-                        cache = MarketCache(CACHE_DB)
-                        try:
-                            cache.init_db()
-                        except Exception:  # noqa: BLE001
-                            pass
-                        execution_id = self.run_id
-                        gate = LedgerAttemptGate(cache, execution_id,
-                                                 max_requests=
-                                                 MAX_FETCH_REQUESTS_PER_WINDOW,
-                                                 run_max_requests=
-                                                 MAX_REST_REQUESTS_PER_RUN)
-                        client = HistoryClient(
-                            base_url="https://fapi.binance.com",
-                            execution_id=execution_id, attempt_gate=gate,
-                            max_retries=0,  # fallo rápido: no reintentar
-                        )
-                        rows, _ = client.klines(sym, self.interval, start,
-                                                end, limit=self.bars)
-                        rest_usadas += 1
-                        for row in rows:
-                            try:
-                                candle = normalize_kline(row)
-                            except Exception as exc:  # noqa: BLE001
-                                parse_diag.append({
-                                    "symbol": sym, "result": "parse_error",
-                                    "error": "%s: %s" % (type(exc).__name__,
-                                                         exc),
-                                })
-                                continue
-                            close_time = candle.get("close_time")
-                            if close_time is None:
-                                continue
-                            contexto.append({
-                                "symbol": sym,
-                                "open_time_ms": int(candle["open_time"]),
-                                "open": float(candle["open"]),
-                                "high": float(candle["high"]),
-                                "low": float(candle["low"]),
-                                "close": float(candle["close"]),
-                                "close_time_ms": int(close_time),
-                            })
-                    except UpstreamBudgetExceeded as exc:
-                        rest_usadas += 1
-                        parse_diag.append({
-                            "symbol": sym,
-                            "result": "budget_blocked_pre_send",
-                            "error": str(exc),
-                        })
-                        break
-                    except Exception as exc:  # noqa: BLE001
-                        rest_usadas += 1
-                        parse_diag.append({
-                            "symbol": sym, "result": "exception",
-                            "error": "%s: %s" % (type(exc).__name__, exc),
-                        })
+                velas, excluidas = self._admitir_almacenadas(
+                    sym, stored, start_open, end_open, reference_ms, step)
+                series[sym] = velas
+                parse_diag.append({
+                    "symbol": sym, "result": "stored",
+                    "rows": len(stored), "admitidas": len(velas),
+                    "reserved_before_send": False, **excluidas,
+                })
+
+        base_url = ("http://127.0.0.1:%d" % self.provider_port
+                    if self.transport == "local" else self.rest_base_url)
+        for sym in simbolos:
+            if self._serie_utilizable(series.get(sym, []), end_open, step):
+                continue
+            if rest_usadas >= MAX_REST_REQUESTS_PER_RUN:
+                break
+            self._check_deadline("context_rest_" + sym)
+            try:
+                cache = MarketCache(CACHE_DB)
+                try:
+                    cache.init_db()
+                except Exception:  # noqa: BLE001
+                    pass
+                gate = LedgerAttemptGate(
+                    cache, self.run_id,
+                    max_requests=MAX_FETCH_REQUESTS_PER_WINDOW,
+                    run_max_requests=MAX_REST_REQUESTS_PER_RUN)
+                client = HistoryClient(
+                    base_url=base_url,
+                    execution_id=self.run_id, attempt_gate=gate,
+                    max_retries=0,  # fallo rápido: no reintentar
+                )
+                rows, _ = client.klines(sym, self.interval, start_open,
+                                        end_time, limit=self.bars)
+                rest_usadas += 1
+                nuevas, excluidas = self._admitir_filas(
+                    sym, rows, start_open, end_open, reference_ms, parse_diag)
+                merged = {c["open_time_ms"]: c
+                          for c in series.get(sym, [])}
+                for c in nuevas:
+                    merged[c["open_time_ms"]] = c
+                series[sym] = sorted(merged.values(),
+                                     key=lambda c: c["open_time_ms"])
+                parse_diag.append({
+                    "symbol": sym, "result": "ok", "rows": len(rows),
+                    "admitidas": len(nuevas),
+                    "reserved_before_send": True, **excluidas,
+                })
+            except UpstreamBudgetExceeded as exc:
+                rest_usadas += 1
+                parse_diag.append({
+                    "symbol": sym, "result": "budget_blocked_pre_send",
+                    "error": str(exc),
+                })
+                break
+            except Exception as exc:  # noqa: BLE001
+                rest_usadas += 1
+                parse_diag.append({
+                    "symbol": sym, "result": "exception",
+                    "error": "%s: %s" % (type(exc).__name__, exc),
+                })
 
         self.rest_count = rest_usadas
-        # No deduplicar símbolos distintos por timestamp: cada vela lleva su
-        # propio symbol; BTC y MINA conservan su identidad.
-        visto: set = set()
         unicos: List[Dict[str, Any]] = []
-        for c in sorted(contexto, key=lambda x: (x["symbol"],
-                                                 x["open_time_ms"])):
-            clave = (c["symbol"], c["open_time_ms"])
-            if clave in visto:
-                continue
-            visto.add(clave)
-            unicos.append(c)
-        self.add_check("contexto_cargado", len(unicos) > 0,
-                       "%d velas cerradas recientes para fijar el reloj T "
-                       "(rest=%d)" % (len(unicos), rest_usadas),
-                       source="execute")
+        por_simbolo: Dict[str, Dict[str, Any]] = {}
+        motivo: Optional[str] = None
+        for sym in simbolos:
+            velas = sorted(series.get(sym, []),
+                           key=lambda c: c["open_time_ms"])
+            ultimo = velas[-1] if velas else None
+            continuo = all(
+                b["open_time_ms"] - a["open_time_ms"] == step
+                for a, b in zip(velas, velas[1:]))
+            por_simbolo[sym] = {
+                "velas": len(velas),
+                "primera_open_ms": velas[0]["open_time_ms"] if velas else None,
+                "ultima_open_ms": ultimo["open_time_ms"] if ultimo else None,
+                "ultimo_cierre_ms": ultimo["close_time_ms"] if ultimo else None,
+                "contiguo": continuo,
+                "alcanza_ultima_cerrada": bool(
+                    ultimo and ultimo["open_time_ms"] == end_open),
+            }
+            if not velas:
+                motivo = motivo or (
+                    "CONTEXTO_INSUFICIENTE: %s sin velas cerradas en la "
+                    "ventana %d..%d (referencia %d)"
+                    % (sym, start_open, end_open, reference_ms))
+            elif not continuo:
+                motivo = motivo or (
+                    "CONTEXTO_DISCONTINUO: %s no es contiguo en la ventana "
+                    "%d..%d" % (sym, start_open, end_open))
+            elif ultimo["open_time_ms"] != end_open:
+                motivo = motivo or (
+                    "CONTEXTO_NO_RECIENTE: %s ultima vela cerrada %d, se "
+                    "esperaba %d (referencia %d)"
+                    % (sym, ultimo["open_time_ms"], end_open, reference_ms))
+            unicos.extend(velas)
+
+        self.add_check(
+            "contexto_cargado", motivo is None,
+            ("%d velas cerradas y contiguas para fijar el reloj T (rest=%d)"
+             % (len(unicos), rest_usadas)) if motivo is None else motivo,
+            source="execute")
         self.evidence["contexto"] = {
             "fuente": ("proveedor_http_local" if self.transport == "local"
                        else "caché derivada + REST klines"),
+            "referencia_ms": reference_ms,
+            "ventana": [start_open, end_open],
+            "cierre_ultima_ventana_ms": end_time,
             "velas": len(unicos),
             "symbols_seen": sorted({c["symbol"] for c in unicos}),
+            "por_simbolo": por_simbolo,
             "rango": [unicos[0]["open_time_ms"],
                       unicos[-1]["open_time_ms"]] if unicos else None,
             "rest_usadas": rest_usadas,
+            "motivo": motivo,
             "parse_diag": parse_diag,
         }
         return unicos
+
+    def _prepare_context(self) -> List[Dict[str, Any]]:
+        """Contexto cerrado listo para crear la sesión, o aborta con motivo.
+
+        Se ejecuta entre el arranque de servicios y ``_create_session``: si el
+        contexto filtrado es insuficiente, discontinuo o no llega a la última
+        vela cerrada, se lanza un error explícito y no se crea la sesión ni se
+        descargan velas adicionales.
+        """
+        if self.clock_source == "public":
+            self._verify_clock(self.ultima_salud_ingenieria)
+        reference_ms = self._reference_now_ms()
+        contexto = self._load_recent_context(reference_ms)
+        self._validar_contexto_cerrado(contexto)
+        return contexto
+
+    def _validar_contexto_cerrado(
+            self, contexto: List[Dict[str, Any]]) -> None:
+        """Validación defensiva final (no relaja la del backend).
+
+        Rechaza contexto vacío, cierres posteriores a la referencia, velas
+        fuera de la ventana, series discontinuas o que no alcanzan la última
+        vela cerrada. Se ejecuta ANTES de crear la sesión.
+        """
+        ev = self.evidence.get("contexto") or {}
+        motivo = ev.get("motivo")
+        if motivo:
+            raise RuntimeError(motivo)
+        reference_ms = ev.get("referencia_ms")
+        if reference_ms is None:
+            raise RuntimeError(
+                "CLOCK_REFERENCIA_INCIERTA: sin referencia validada para "
+                "admitir el contexto cerrado")
+        step = INTERVAL_MS[self.interval]
+        start_open, end_open = self._context_window(int(reference_ms))
+        simbolos = ([self.reference, self.primary]
+                    if self.reference else [self.primary])
+        por_simbolo: Dict[str, List[Dict[str, Any]]] = {}
+        for c in contexto:
+            por_simbolo.setdefault(c["symbol"], []).append(c)
+        for sym in simbolos:
+            velas = sorted(por_simbolo.get(sym, []),
+                           key=lambda c: c["open_time_ms"])
+            if not velas:
+                raise RuntimeError(
+                    "CONTEXTO_INSUFICIENTE: %s sin velas cerradas" % sym)
+            for c in velas:
+                if c["close_time_ms"] > int(reference_ms):
+                    raise RuntimeError(
+                        "CONTEXTO_FUTURO: %s vela open_time %d cierra %d "
+                        "despues de la referencia %d"
+                        % (sym, c["open_time_ms"], c["close_time_ms"],
+                           reference_ms))
+                if (c["open_time_ms"] < start_open
+                        or c["open_time_ms"] > end_open):
+                    raise RuntimeError(
+                        "CONTEXTO_FUERA_VENTANA: %s vela open_time %d fuera "
+                        "de %d..%d" % (sym, c["open_time_ms"], start_open,
+                                       end_open))
+            for a, b in zip(velas, velas[1:]):
+                if b["open_time_ms"] - a["open_time_ms"] != step:
+                    raise RuntimeError(
+                        "CONTEXTO_DISCONTINUO: %s hueco entre %d y %d"
+                        % (sym, a["open_time_ms"], b["open_time_ms"]))
+            if velas[-1]["open_time_ms"] != end_open:
+                raise RuntimeError(
+                    "CONTEXTO_NO_RECIENTE: %s ultima vela %d, se esperaba %d"
+                    % (sym, velas[-1]["open_time_ms"], end_open))
 
     def _create_session(self, context: List[Dict[str, Any]]) -> None:
         self._check_deadline("create_session")
@@ -1326,6 +1525,23 @@ class WindowOrchestrator:
                         except Exception:  # noqa: BLE001
                             pass
         self.limpieza_resultado = resultado
+        # Eliminar SOLO los pid-files propios de esta corrida (nunca el del
+        # servicio local preexistente 8792). Los servicios suelen borrarlos al
+        # parar; se tolera que ya no existan.
+        eliminados: List[str] = []
+        fallidos: List[str] = []
+        for path in (self.engineering_pid_path, self.market_pid_path):
+            if path is None:
+                continue
+            try:
+                if path.exists():
+                    path.unlink()
+                    eliminados.append(str(path))
+            except OSError:
+                fallidos.append(str(path))
+        resultado["pid_files_propios_eliminados"] = eliminados
+        if fallidos:
+            resultado["pid_files_propios_fallidos"] = fallidos
 
     def write_evidence(self, path: str) -> None:
         out = {
@@ -1415,6 +1631,9 @@ def build_arg_parser() -> argparse.ArgumentParser:
                     help="tiempo máximo (s) para esperar a que el servicio de "
                     "ingeniería reporte un reloj de referencia válido en "
                     "/health (dentro del deadline global).")
+    ap.add_argument("--rest-base-url", default=None,
+                    help="base REST de klines. Solo para pruebas con proveedor "
+                    "loopback; en produccion se usa https://fapi.binance.com.")
     ap.add_argument("--out", required=True, help="ruta JSON de evidencia")
     return ap
 

@@ -63,8 +63,9 @@ class _Handler(BaseHTTPRequestHandler):
         # modo "ok": klines cerradas recientes, una por minuto, cierre conocido.
         bars = []
         px = BASE_PRICE.get(symbol, 100.0)
-        # Empezamos justo antes de start_time y cubrimos hasta end_time.
-        ot = start_time - STEP_MS
+        # Respetar EXACTAMENTE el rango pedido: primera apertura >= start_time
+        # (nunca la vela anterior) y ultima apertura <= end_time.
+        ot = start_time
         count = 0
         while ot <= end_time and count < limit:
             close = px * (1.0 + 0.0002 * count)

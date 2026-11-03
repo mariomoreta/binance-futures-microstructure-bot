@@ -1,3 +1,48 @@
+## Corrección del contexto cerrado + pid-files aislados (2026-11-02, base `f033c06`)
+
+`CURRENT_PHASE`: dashboard V2 de escritorio + observación (WS público solo bajo
+autorización explícita; sin monitor, sin órdenes).
+
+`CURRENT_OBJECTIVE`: cerrado — corrección en código del arnés
+(`scripts/engineering_live_window.py`) que causó el FAIL de
+`eng-run-public-20261102b`, SIN ejecutar Binance ni nueva ventana pública:
+
+1. Contexto cerrado: la referencia sale del reloj público sincronizado del
+   servicio de ingeniería con su validez comprobada
+   (`public_sincronizado`/`available`/`offset_ms` finito/`age_ms` presente;
+   nunca el reloj del navegador). La ventana termina en la última vela cuyo
+   cierre ya ocurrió (el cierre exactamente igual a la referencia se admite)
+   y cada fila recibida se valida individualmente (`close_time` posterior a
+   la referencia → excluida como no disponible, nunca OHLC en contexto
+   cerrado). Identidad por símbolo, continuidad y calentamiento conservados.
+2. Si tras filtrar falta contexto: aborta con motivo explícito
+   (`CONTEXTO_*`) sin nuevas descargas automáticas y SIN crear sesión
+   (`_prepare_context` entre arranque de servicios y `_create_session`).
+3. Aislamiento: `--pid-file` explícito y exclusivo por servicio y corrida
+   (`sessions_dir/market-service.json`,
+   `sessions_dir/engineering-service.json`); `data/market-stream/service.json`
+   del 8792 intacto; limpieza borra solo lo propio.
+4. Pruebas locales (cero Binance, loopback): 7 PASS nuevas
+   (`tests/test_engineering_context_closed.py`), recorrido local completo
+   2 PASS (`tests/test_engineering_live_window_local_recorrido.py`),
+   regresiones 32 PASS (`test_engineering_clock_readiness.py` +
+   `test_engineering_clock_budget.py`) y 40 PASS
+   (`test_market_stream.py`).
+
+`ACTIVE_TASK`: **cerrado** (sin Binance; sin tocar 8792, 3020 ni DBs
+canónicas; `opencode.json` se mantiene fuera de los commits).
+
+`NEXT_TASKS`:
+1. Solicitar **nueva autorización** explícita del operador para UNA ventana
+   pública con un `run_id` NUEVO (no reutilizar
+   `eng-run-public-20261102b`, presupuesto agotado 7/7).
+2. En esa ventana: acreditar sesión creada, cierre nuevo admitido, T
+   anterior/nuevo, evento disparador, contador de evaluaciones y decisión
+   con motivo. Sin relanzamiento; FAIL/ERROR/UNKNOWN con motivos.
+3. Pueden quedar como revisiones posteriores (no bloquean): el literal
+   histórico del detalle `build_served` («árbol e2243c9») y la respuesta de
+   `tests/test_engineering_live_window_local.py` (fixture desfasada).
+
 ## Ventana pública única 2026-11-02 — FAIL por vela en curso en el contexto (base `d2ca1cb`)
 
 `CURRENT_PHASE`: dashboard V2 de escritorio + observación (WS público solo bajo
