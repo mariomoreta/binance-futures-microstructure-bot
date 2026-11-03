@@ -4584,3 +4584,25 @@ corregido en a11c02e (run_id nuevo, sin reutilizar cupos). Resultado:
   20261102c no se reescribe).
 - La acreditacion publica del recorrido completo sigue pendiente de una
   ventana autorizada con run_id NUEVO (presupuesto de 20261102c agotado).
+## 2026-11-03 - Ventana pública eng-run-public-20261102d: PASS de aceptación (base d307fc7)
+
+- Ejecutada UNA sola vez con run_id NUEVO `eng-run-public-20261102d` (nunca reutilizado de
+  `eng-run-public-20261102c`, presupuesto agotado 7/7). Transporte public, clock-source public,
+  sin fallback local, recuperación REST desactivada, regla RULE-CAUSAL-V1 sin cambios.
+- Cadena completa acreditada: sesión creada (create_ok, config_hash 4a339c046cc3ad63) →
+  conducción market_stream iniciada → 3 cierres NUEVOS admitidos POR la sesión
+  (watermark 1793674500000 → 1793674560000 → 1793674620000) → avance de T de
+  1793674499999 a 1793674620000 → 2 evaluaciones ejecutadas y vinculadas
+  (evento/T/config_hash/decisión/motivo): #1 SIN_ENTRADA con motivo (abstención válida),
+  #2 ENTRADA_SIMULADA con motivo (señal pendiente de fill, sin orden real).
+- `eventos_procesados_final: 95` (contador corregido en d307fc7, ya no falso cero).
+- Límites cumplidos y acreditados: HTTP upstream 2/7, ledger 7/7, consumidores SSE 2 (≤3),
+  reconexiones 0 (≤3), cero escrituras en historical.db/microprobe.db (hashes intactos),
+  sin órdenes reales ni cambios económicos.
+- Limpieza efectiva: procesos propios terminados, 8791/8797 libres, 8792 (pid 31124) y
+  3020 intactos, opencode.json fuera de commits.
+- Veredicto global: PASS. Sesión queda abierta y congelada (posición paper-lab simulada,
+  sin salida inventada). No valida rentabilidad.
+- Evidencia: docs/evidence/engineering-live-public-20261102d/ (RESULTADO.md entry point).
+  SHA arnés 3ef9e5f45a90a8ca… · BUILD_ID servido t4z0bfKQ_kIP9qv1WHCKR · árbol frontend
+  1f6f0500… = HEAD:frontend.

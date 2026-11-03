@@ -1,0 +1,55 @@
+{
+ "origen": {
+  "base_git": "d307fc7c1ef44493e01546fccee2eeb18fa4b79f",
+  "rama": "diag/recorrido-local-4f4273c",
+  "run_id_nuevo": "eng-run-public-20261102d",
+  "run_id_excluido": "eng-run-public-20261102c (presupuesto agotado 7/7, NO reutilizado)",
+  "kernel_criterios": "d307fc7 (criterios de aceptacion corregidos: cierre nuevo admitido + evaluacion vinculada)"
+ },
+ "arnes": {
+  "script": "scripts/engineering_live_window.py",
+  "sha256_16": "3ef9e5f45a90a8ca",
+  "criterios_corregidos_presentes": true
+ },
+ "servicios_preexistentes_intactos": {
+  "market_service_8792_pid": 31124,
+  "pid_file": "data/market-stream/service.json",
+  "dashboard_3020": "Next.js, preservado",
+  "build_id_served": "t4z0bfKQ_kIP9qv1WHCKR",
+  "build_id_literal_en_served_market_lab_html": true,
+  "frontend_tree_HEAD": "1f6f0500cb9115fa5c9d44e07be2c5524bdee690"
+ },
+ "puertos": {
+  "8791": "libre",
+  "8792": "OCCUPADO",
+  "8797": "libre",
+  "18799": "libre",
+  "18800": "libre",
+  "3020": "OCCUPADO"
+ },
+ "db_canonicas_intactas": {
+  "data/historical/historical.db": "d8930ec5d4c4415e",
+  "data/microprobe.db": "6ea98cab059b2a5b",
+  "hashes_iguales_a_ventana_20261102c": true
+ },
+ "ledger": {
+  "db": "data/market-cache/market_cache.db",
+  "ejecucion_nueva_usos": 0,
+  "presupuesto_max_http_upstream": 7,
+  "historicos_irreversibles": {
+   "eng-run-public-20261102c": 7,
+   "eng-run-public-20261102b": 7
+  }
+ },
+ "limites_ventana": {
+  "deadline_global_s": 180,
+  "max_http_upstream_total": 7,
+  "max_velas_por_consulta": 300,
+  "ws_combinada": "MINAUSDT+BTCUSDT 1m (una sola)",
+  "max_reconexiones": 3,
+  "max_consumidores_sse": 3,
+  "escrituras_db_canonicas": 0,
+  "ordenes_reales": 0
+ },
+ "politica_fallo": "sin relance; sin conexiones publicas auxiliares de diagnostico; sin cambios de codigo durante la ventana"
+}

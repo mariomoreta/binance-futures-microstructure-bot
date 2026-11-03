@@ -1,0 +1,1 @@
+{"service": "engineering-session-service/v1", "pid": 16948, "url": "http://127.0.0.1:8797", "sessions_dir": "docs\\evidence\\engineering-live-public-20261102d\\sessions", "cadence_ms": 700.0, "market_url": "http://127.0.0.1:8791", "market_bars": 300, "live_silence_ms": 120000.0}

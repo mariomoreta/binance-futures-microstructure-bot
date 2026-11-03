@@ -1,0 +1,1 @@
+{"service": "market-stream-service/v1", "pid": 26136, "url": "http://127.0.0.1:8791", "contract_version": "market-stream/v1", "transport": {"mode": "public", "base_url": null}}

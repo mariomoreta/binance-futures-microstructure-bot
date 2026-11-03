@@ -1,3 +1,22 @@
+## Ventana pública `eng-run-public-20261102d` - acreditación del recorrido completo (2026-11-03, base `d307fc7`)
+
+**1. Title:** Ejecutar una ventana pública única con run_id nuevo y acreditar:
+cierre nuevo admitido → avance de T → evaluación vinculada (decisión+motivo) → parada limpia.
+
+**2. Approval status:** AUTORIZADA por este prompt (una sola ejecución, run_id `eng-run-public-20261102d`, nunca reutilizar `eng-run-public-20261102c`; 180 s deadline; 7/7 HTTP upstream; 1 WS combinada; 3 consumidores SSE; 3 reconexiones; cero escrituras DB; sin órdenes reales).
+
+**3. Implementation status:** EJECUTADA (una sola vez, sin relance, sin cambios de código durante la ventana).
+
+**4. Evaluation status:** PASS - veredicto global PASS con todos los criterios obligatorios: identidad y referencia válidas; 3 cierres nuevos admitidos; 2 evaluaciones ejecutadas y vinculadas (evento/T/config_hash/decisión/motivo); decisión no-null con motivo explícito; todos los límites cumplidos (ledger 7/7, consumidores 2, reconexiones 0, DBs intactas); limpieza efectiva. SIN_ENTRADA con motivo válida.
+
+**5. Evidence:** `docs/evidence/engineering-live-public-20261102d/` (`RESULTADO.md` punto de entrada; `evidence.json` traza completa; `command.txt`; `preflight.json`; `service_logs/`; `sessions/`).
+
+**6. Verdict:** PASS global. Sesión queda abierta y congelada (posición paper-lab simulada, sin orden real; sin salida inventada). No valida rentabilidad ni edge.
+
+**7. Next step:** sesión congelada, sin acción inmediata. No bloqueantes: literal `build_served` y fixture de `tests/test_engineering_live_window_local.py`.
+
+## Corrección tramo SSE/adaptador + veredicto arnés (2026-11-02, base `4e141a7`)
+
 ## Corrección tramo SSE/adaptador + veredicto arnés (2026-11-02, base `4e141a7`)
 
 **1. Title:** Reproducir y corregir localmente el tramo

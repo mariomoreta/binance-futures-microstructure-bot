@@ -1,3 +1,26 @@
+## Ventana pública única `eng-run-public-20261102d` - PASS de aceptación (2026-11-03, base `d307fc7`)
+
+Ejecutada UNA sola vez (autorización acotada), run_id NUEVO (nunca reutilizado de
+`eng-run-public-20261102c`, presupuesto agotado 7/7), 180 s deadline, 7/7 HTTP
+upstream, 1 WS combinada MINAUSDT+BTCUSDT 1m, 3 consumidores SSE máx., 3
+reconexiones máx., cero escrituras en DBs canónicas, sin órdenes reales.
+
+Resultado: **PASS** — cadena completa acreditada:
+- Sesión creada (create_ok) con config_hash 4a339c046cc3ad63, regla RULE-CAUSAL-V1.
+- 3 cierres NUEVOS admitidos POR la sesión (watermark 1793674500000 → 1793674560000 → 1793674620000), T avanzó de 1793674499999 a 1793674620000.
+- 2 evaluaciones ejecutadas y vinculadas (evento/T/config_hash/decisión/motivo):
+  #1 SIN_ENTRADA con motivo (abstención válida), #2 ENTRADA_SIMULADA con motivo.
+- `eventos_procesados_final: 95` (contador corregido, ya no falso cero).
+- Presupuesto 2/7 HTTP upstream, ledger 7/7, consumidores 2, reconexiones 0, DBs intactas.
+- Limpieza: procesos propios terminados, 8791/8797 libres, 8792 (pid 31124) y 3020 intactos.
+- Sesión queda abierta y congelada (posición paper-lab simulada, sin orden real; sin salida inventada).
+
+Evidencia: `docs/evidence/engineering-live-public-20261102d/` (RESULTADO.md es el punto de entrada; evidence.json tiene la traza completa).
+
+SHA del arnés: `3ef9e5f45a90a8ca…` · BUILD_ID servido: `t4z0bfKQ_kIP9qv1WHCKR` · árbol frontend `1f6f0500…` = HEAD:frontend.
+
+## Corrección local del tramo HUB → SSE → adaptador → admisión → evaluación (2026-11-02, base `4e141a7`)
+
 ## Corregido tramo HUB → SSE → adaptador → admisión → evaluación (2026-11-02, base `4e141a7`)
 
 Corrección LOCAL (loopback, sin Binance, sin ventana pública) del tramo que

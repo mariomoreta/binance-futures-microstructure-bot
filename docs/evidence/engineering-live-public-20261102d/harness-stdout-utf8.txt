@@ -1,0 +1,133 @@
+﻿{
+  "ok": true,
+  "written": "docs\\evidence\\engineering-live-public-20261102d\\evidence.json",
+  "verdict": "PASS",
+  "reasons": {
+    "fail": [],
+    "missing": [],
+    "consumidores_max": 2,
+    "reconexiones_max": 0,
+    "rest_total": 2,
+    "cierres_admitidos_final": 3,
+    "evaluacion_contador_final": 2,
+    "eventos_procesados_final": 95,
+    "ledger_total_por_run_id": 7,
+    "db_unchanged": true,
+    "ultima_salud_ingenieria": {
+      "service": "engineering-session-service/v1",
+      "engine_version": "paper-lab-engine/v1.2",
+      "pid": 16948,
+      "host": "127.0.0.1",
+      "port": 8797,
+      "sessions_dir": "docs\\evidence\\engineering-live-public-20261102d\\sessions",
+      "cadence_ms": 700.0,
+      "market": {
+        "url": "http://127.0.0.1:8791",
+        "bars": 300,
+        "live_silence_ms": 120000.0,
+        "max_notional_usdt": 1000.0,
+        "transports": [
+          "local_replay",
+          "market_stream"
+        ]
+      },
+      "clock": {
+        "source": "public_sincronizado",
+        "available": true,
+        "offset_ms": -17.060059,
+        "rtt_ms": 369.565674,
+        "last_sync_timestamp": "2026-11-03T02:55:32.102257+00:00",
+        "age_ms": 112.472,
+        "sync_successful": 1,
+        "sync_failed": 0,
+        "samples_valid": 5,
+        "samples_failed": 0
+      },
+      "drives": [],
+      "generated_at_ms": 1793674532214
+    },
+    "clock_readiness": {
+      "http_disponible_en_ms": 1793674529131,
+      "reloj_listo_en_ms": 1793674532215,
+      "transiciones": [
+        {
+          "estado": "http_disponible",
+          "at_ms": 1793674529131,
+          "detalle": "servicio respondi├│ /health (PID=16948)"
+        },
+        {
+          "estado": "reloj_no_listo",
+          "at_ms": 1793674529154,
+          "detalle": "available=False (age_ms=None)"
+        },
+        {
+          "estado": "reloj_no_listo",
+          "at_ms": 1793674529666,
+          "detalle": "available=False (age_ms=None)"
+        },
+        {
+          "estado": "reloj_no_listo",
+          "at_ms": 1793674530179,
+          "detalle": "available=False (age_ms=None)"
+        },
+        {
+          "estado": "reloj_no_listo",
+          "at_ms": 1793674530697,
+          "detalle": "available=False (age_ms=None)"
+        },
+        {
+          "estado": "reloj_no_listo",
+          "at_ms": 1793674531199,
+          "detalle": "available=False (age_ms=None)"
+        },
+        {
+          "estado": "reloj_no_listo",
+          "at_ms": 1793674531712,
+          "detalle": "available=False (age_ms=None)"
+        },
+        {
+          "estado": "reloj_listo",
+          "at_ms": 1793674532215,
+          "detalle": "referencia v├ílida (source=public_sincronizado)"
+        }
+      ],
+      "ultimo_motivo": "referencia v├ílida (source=public_sincronizado)",
+      "error": null,
+      "ultimo_health": {
+        "service": "engineering-session-service/v1",
+        "engine_version": "paper-lab-engine/v1.2",
+        "pid": 16948,
+        "host": "127.0.0.1",
+        "port": 8797,
+        "sessions_dir": "docs\\evidence\\engineering-live-public-20261102d\\sessions",
+        "cadence_ms": 700.0,
+        "market": {
+          "url": "http://127.0.0.1:8791",
+          "bars": 300,
+          "live_silence_ms": 120000.0,
+          "max_notional_usdt": 1000.0,
+          "transports": [
+            "local_replay",
+            "market_stream"
+          ]
+        },
+        "clock": {
+          "source": "public_sincronizado",
+          "available": true,
+          "offset_ms": -17.060059,
+          "rtt_ms": 369.565674,
+          "last_sync_timestamp": "2026-11-03T02:55:32.102257+00:00",
+          "age_ms": 112.472,
+          "sync_successful": 1,
+          "sync_failed": 0,
+          "samples_valid": 5,
+          "samples_failed": 0
+        },
+        "drives": [],
+        "generated_at_ms": 1793674532214
+      }
+    }
+  },
+  "checks_failed": [],
+  "checks_missing": []
+}

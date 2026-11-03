@@ -1,3 +1,18 @@
+## Ventana pública `eng-run-public-20261102d` completada - PASS (2026-11-03, base `d307fc7`)
+
+`CURRENT_PHASE`: dashboard V2 de escritorio + observación (WS público solo bajo autorización explícita; sin monitor, sin órdenes).
+
+`CURRENT_OBJECTIVE`: cumplido - ejecutar UNA ventana pública autorizada y acreditar el recorrido:
+HUB → SSE → adaptador → cierre admitido → avance de T → evaluación vinculada con decisión y motivo.
+
+`ACTIVE_TASK`: **cerrado** - ventana pública ejecutada una sola vez, sin relance, sin cambios de código durante la ventana, 8792 y dashboard 3020 preservados, `opencode.json` fuera de los commits.
+
+`NEXT_TASKS`:
+1. Sesión abierta y congelada (posición paper-lab simulada, sin orden real): conservar, no inventar salida/comisión/realizado. No requiere acción inmediata.
+2. No bloqueantes pendientes: literal histórico del detalle `build_served` ("árbol e2243c9") y reparar la fixture desfasada de `tests/test_engineering_live_window_local.py`.
+
+## Resultado ventana pública única `eng-run-public-20261102c` y corrección local SSE (2026-11-02, bases `a11c02e` / `4e141a7`)
+
 ## Corrección local del tramo SSE completada (2026-11-02, base `4e141a7`)
 
 `CURRENT_PHASE`: dashboard V2 de escritorio + observación (WS público solo bajo

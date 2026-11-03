@@ -1,0 +1,3581 @@
+{
+  "generated_at_ms": 1793674707830,
+  "verdict": "PASS",
+  "error": null,
+  "mode": "public",
+  "symbols": [
+    "MINAUSDT",
+    "BTCUSDT"
+  ],
+  "interval": "1m",
+  "bars": 300,
+  "deadline_s": 180.0,
+  "session_id": "PL-MINAUSDT-LONG-1793674533011-ff05e947",
+  "config_hash": "4a339c046cc3ad63",
+  "evidence": {
+    "clock_readiness": {
+      "http_disponible_en_ms": 1793674529131,
+      "reloj_listo_en_ms": 1793674532215,
+      "transiciones": [
+        {
+          "estado": "http_disponible",
+          "at_ms": 1793674529131,
+          "detalle": "servicio respondió /health (PID=16948)"
+        },
+        {
+          "estado": "reloj_no_listo",
+          "at_ms": 1793674529154,
+          "detalle": "available=False (age_ms=None)"
+        },
+        {
+          "estado": "reloj_no_listo",
+          "at_ms": 1793674529666,
+          "detalle": "available=False (age_ms=None)"
+        },
+        {
+          "estado": "reloj_no_listo",
+          "at_ms": 1793674530179,
+          "detalle": "available=False (age_ms=None)"
+        },
+        {
+          "estado": "reloj_no_listo",
+          "at_ms": 1793674530697,
+          "detalle": "available=False (age_ms=None)"
+        },
+        {
+          "estado": "reloj_no_listo",
+          "at_ms": 1793674531199,
+          "detalle": "available=False (age_ms=None)"
+        },
+        {
+          "estado": "reloj_no_listo",
+          "at_ms": 1793674531712,
+          "detalle": "available=False (age_ms=None)"
+        },
+        {
+          "estado": "reloj_listo",
+          "at_ms": 1793674532215,
+          "detalle": "referencia válida (source=public_sincronizado)"
+        }
+      ],
+      "ultimo_motivo": "referencia válida (source=public_sincronizado)",
+      "error": null,
+      "ultimo_health": {
+        "service": "engineering-session-service/v1",
+        "engine_version": "paper-lab-engine/v1.2",
+        "pid": 16948,
+        "host": "127.0.0.1",
+        "port": 8797,
+        "sessions_dir": "docs\\evidence\\engineering-live-public-20261102d\\sessions",
+        "cadence_ms": 700.0,
+        "market": {
+          "url": "http://127.0.0.1:8791",
+          "bars": 300,
+          "live_silence_ms": 120000.0,
+          "max_notional_usdt": 1000.0,
+          "transports": [
+            "local_replay",
+            "market_stream"
+          ]
+        },
+        "clock": {
+          "source": "public_sincronizado",
+          "available": true,
+          "offset_ms": -17.060059,
+          "rtt_ms": 369.565674,
+          "last_sync_timestamp": "2026-11-03T02:55:32.102257+00:00",
+          "age_ms": 112.472,
+          "sync_successful": 1,
+          "sync_failed": 0,
+          "samples_valid": 5,
+          "samples_failed": 0
+        },
+        "drives": [],
+        "generated_at_ms": 1793674532214
+      }
+    },
+    "services": {
+      "mercado_pid": 26136,
+      "mercado_puerto": 8791,
+      "mercado_modo": "public",
+      "ingenieria_pid": 16948,
+      "ingenieria_puerto": 8797,
+      "sessions_dir": "docs\\evidence\\engineering-live-public-20261102d\\sessions",
+      "service_stdout_path": "docs\\evidence\\engineering-live-public-20261102d\\service_logs\\service-stdout.log",
+      "service_stderr_path": "docs\\evidence\\engineering-live-public-20261102d\\service_logs\\service-stderr.log",
+      "engineering_stdout_path": "docs\\evidence\\engineering-live-public-20261102d\\service_logs\\engineering-stdout.log",
+      "engineering_stderr_path": "docs\\evidence\\engineering-live-public-20261102d\\service_logs\\engineering-stderr.log"
+    },
+    "contexto": {
+      "fuente": "caché derivada + REST klines",
+      "referencia_ms": 1793674532198,
+      "ventana": [
+        1793656500000,
+        1793674440000
+      ],
+      "cierre_ultima_ventana_ms": 1793674499999,
+      "velas": 600,
+      "symbols_seen": [
+        "BTCUSDT",
+        "MINAUSDT"
+      ],
+      "por_simbolo": {
+        "BTCUSDT": {
+          "velas": 300,
+          "primera_open_ms": 1793656500000,
+          "ultima_open_ms": 1793674440000,
+          "ultimo_cierre_ms": 1793674499999,
+          "contiguo": true,
+          "alcanza_ultima_cerrada": true
+        },
+        "MINAUSDT": {
+          "velas": 300,
+          "primera_open_ms": 1793656500000,
+          "ultima_open_ms": 1793674440000,
+          "ultimo_cierre_ms": 1793674499999,
+          "contiguo": true,
+          "alcanza_ultima_cerrada": true
+        }
+      },
+      "rango": [
+        1793656500000,
+        1793674440000
+      ],
+      "rest_usadas": 2,
+      "motivo": null,
+      "parse_diag": [
+        {
+          "symbol": "BTCUSDT",
+          "result": "stored",
+          "rows": 0,
+          "admitidas": 0,
+          "reserved_before_send": false,
+          "cierre_no_disponible": 0,
+          "cierre_no_ocurrido": 0,
+          "ohlc_no_cerrado": 0,
+          "fuera_de_ventana": 0,
+          "duplicadas": 0
+        },
+        {
+          "symbol": "MINAUSDT",
+          "result": "stored",
+          "rows": 0,
+          "admitidas": 0,
+          "reserved_before_send": false,
+          "cierre_no_disponible": 0,
+          "cierre_no_ocurrido": 0,
+          "ohlc_no_cerrado": 0,
+          "fuera_de_ventana": 0,
+          "duplicadas": 0
+        },
+        {
+          "symbol": "BTCUSDT",
+          "result": "ok",
+          "rows": 300,
+          "admitidas": 300,
+          "reserved_before_send": true,
+          "cierre_no_disponible": 0,
+          "cierre_no_ocurrido": 0,
+          "fuera_de_ventana": 0,
+          "duplicadas": 0
+        },
+        {
+          "symbol": "MINAUSDT",
+          "result": "ok",
+          "rows": 300,
+          "admitidas": 300,
+          "reserved_before_send": true,
+          "cierre_no_disponible": 0,
+          "cierre_no_ocurrido": 0,
+          "fuera_de_ventana": 0,
+          "duplicadas": 0
+        }
+      ]
+    },
+    "create": {
+      "session_id": "PL-MINAUSDT-LONG-1793674533011-ff05e947",
+      "config_hash": "4a339c046cc3ad63",
+      "simbolo": "MINAUSDT",
+      "reference": "BTCUSDT",
+      "intervalo": "1m",
+      "regla": "RULE-CAUSAL-V1",
+      "notional_usdt": 1000.0,
+      "horizon_ms": 10800000,
+      "contexto_velas": 600,
+      "transporte": "market_stream",
+      "create_ok": true
+    },
+    "start": {
+      "drive_state": "running",
+      "runner": "market_stream",
+      "market_url": "http://127.0.0.1:8791",
+      "bars": 300,
+      "eventos_procesados": 0
+    },
+    "watermarks": [
+      {
+        "watermark": null,
+        "at_ms": 1793674533084
+      },
+      {
+        "watermark": 0,
+        "at_ms": 1793674534118
+      },
+      {
+        "watermark": 1793674500000,
+        "at_ms": 1793674561120
+      },
+      {
+        "watermark": 1793674560000,
+        "at_ms": 1793674621326
+      },
+      {
+        "watermark": 1793674620000,
+        "at_ms": 1793674680716
+      }
+    ],
+    "revisiones": [
+      {
+        "revision": 0,
+        "at_ms": 1793674533084,
+        "estado": "sin_iniciar",
+        "decision": null,
+        "decision_reason": null,
+        "clock_ms": 1793674499999,
+        "eventos_procesados": 1
+      },
+      {
+        "revision": 4,
+        "at_ms": 1793674561120,
+        "estado": "sin_iniciar",
+        "decision": "SIN_ENTRADA",
+        "decision_reason": "Velas abiertas en T pero close todavia desconocido (ultima abierta @ 1793674500000): senal no confirmada, abstencion.",
+        "clock_ms": 1793674500000,
+        "eventos_procesados": 13
+      },
+      {
+        "revision": 8,
+        "at_ms": 1793674621326,
+        "estado": "en_espera",
+        "decision": "ENTRADA_SIMULADA",
+        "decision_reason": "Senal de entrada en T pero sin fill posible en el prefijo conocido: run_backtest no admite operacion con datos disponibles en T. Senal pendiente de fill.",
+        "clock_ms": 1793674560000,
+        "eventos_procesados": 49
+      },
+      {
+        "revision": 10,
+        "at_ms": 1793674680716,
+        "estado": "abierta",
+        "decision": "ENTRADA_SIMULADA",
+        "decision_reason": "Senal de entrada en T pero sin fill posible en el prefijo conocido: run_backtest no admite operacion con datos disponibles en T. Senal pendiente de fill.",
+        "clock_ms": 1793674620000,
+        "eventos_procesados": 87
+      }
+    ],
+    "eventos_recibidos": [
+      {
+        "eventos_procesados": 1,
+        "at_ms": 1793674533084
+      },
+      {
+        "eventos_procesados": 3,
+        "at_ms": 1793674534118
+      },
+      {
+        "eventos_procesados": 4,
+        "at_ms": 1793674543491
+      },
+      {
+        "eventos_procesados": 7,
+        "at_ms": 1793674544525
+      },
+      {
+        "eventos_procesados": 9,
+        "at_ms": 1793674559041
+      },
+      {
+        "eventos_procesados": 13,
+        "at_ms": 1793674561120
+      },
+      {
+        "eventos_procesados": 15,
+        "at_ms": 1793674568303
+      },
+      {
+        "eventos_procesados": 17,
+        "at_ms": 1793674570369
+      },
+      {
+        "eventos_procesados": 19,
+        "at_ms": 1793674573462
+      },
+      {
+        "eventos_procesados": 21,
+        "at_ms": 1793674577608
+      },
+      {
+        "eventos_procesados": 25,
+        "at_ms": 1793674578657
+      },
+      {
+        "eventos_procesados": 27,
+        "at_ms": 1793674579691
+      },
+      {
+        "eventos_procesados": 29,
+        "at_ms": 1793674582823
+      },
+      {
+        "eventos_procesados": 30,
+        "at_ms": 1793674592177
+      },
+      {
+        "eventos_procesados": 33,
+        "at_ms": 1793674593196
+      },
+      {
+        "eventos_procesados": 35,
+        "at_ms": 1793674602536
+      },
+      {
+        "eventos_procesados": 37,
+        "at_ms": 1793674606730
+      },
+      {
+        "eventos_procesados": 41,
+        "at_ms": 1793674614023
+      },
+      {
+        "eventos_procesados": 43,
+        "at_ms": 1793674615058
+      },
+      {
+        "eventos_procesados": 45,
+        "at_ms": 1793674618173
+      },
+      {
+        "eventos_procesados": 49,
+        "at_ms": 1793674621326
+      },
+      {
+        "eventos_procesados": 51,
+        "at_ms": 1793674625477
+      },
+      {
+        "eventos_procesados": 53,
+        "at_ms": 1793674627542
+      },
+      {
+        "eventos_procesados": 55,
+        "at_ms": 1793674633769
+      },
+      {
+        "eventos_procesados": 57,
+        "at_ms": 1793674634802
+      },
+      {
+        "eventos_procesados": 59,
+        "at_ms": 1793674637947
+      },
+      {
+        "eventos_procesados": 61,
+        "at_ms": 1793674638981
+      },
+      {
+        "eventos_procesados": 63,
+        "at_ms": 1793674642112
+      },
+      {
+        "eventos_procesados": 65,
+        "at_ms": 1793674644192
+      },
+      {
+        "eventos_procesados": 66,
+        "at_ms": 1793674654632
+      },
+      {
+        "eventos_procesados": 69,
+        "at_ms": 1793674656682
+      },
+      {
+        "eventos_procesados": 71,
+        "at_ms": 1793674670235
+      },
+      {
+        "eventos_procesados": 75,
+        "at_ms": 1793674671281
+      },
+      {
+        "eventos_procesados": 77,
+        "at_ms": 1793674673364
+      },
+      {
+        "eventos_procesados": 79,
+        "at_ms": 1793674677562
+      },
+      {
+        "eventos_procesados": 81,
+        "at_ms": 1793674678609
+      },
+      {
+        "eventos_procesados": 87,
+        "at_ms": 1793674680716
+      },
+      {
+        "eventos_procesados": 89,
+        "at_ms": 1793674683835
+      },
+      {
+        "eventos_procesados": 91,
+        "at_ms": 1793674685920
+      },
+      {
+        "eventos_procesados": 93,
+        "at_ms": 1793674692181
+      },
+      {
+        "eventos_procesados": 95,
+        "at_ms": 1793674697361
+      }
+    ],
+    "recorrido_servicio": {
+      "ws_connects": 4,
+      "ws_messages_received": 381,
+      "ws_klines_parsed": 381,
+      "ws_closed_by_symbol": {
+        "BTCUSDT": 3,
+        "MINAUSDT": 3
+      },
+      "ws_rejected_by_symbol": {},
+      "sse_frames_sent": 381
+    },
+    "adaptador_ingenieria": {
+      "frames": 97,
+      "bad_frames": 0,
+      "unknown_frames": 0,
+      "provisional_frames": 34,
+      "disconnects": 3,
+      "reconnects": 3,
+      "connect_errors": 0,
+      "last_error": "_SseReadTimeout: SSE_READ_TIMEOUT: sin bytes durante 10s (heartbeats ~5 s)",
+      "last_frame_at_ms": 1793674696978,
+      "connected_at_ms": 1793674655721,
+      "started_at_ms": 1793674533059,
+      "last_disconnect_reason": "READ_TIMEOUT"
+    },
+    "cierres_admitidos_traza": [
+      {
+        "cierres_admitidos": 1,
+        "open_time_ms": 1793674500000,
+        "at_ms": 1793674561120
+      },
+      {
+        "cierres_admitidos": 2,
+        "open_time_ms": 1793674560000,
+        "at_ms": 1793674621326
+      },
+      {
+        "cierres_admitidos": 3,
+        "open_time_ms": 1793674620000,
+        "at_ms": 1793674680716
+      }
+    ],
+    "ultima_decision": "ENTRADA_SIMULADA",
+    "decision_reason": "Senal de entrada en T pero sin fill posible en el prefijo conocido: run_backtest no admite operacion con datos disponibles en T. Senal pendiente de fill.",
+    "decision_evidence": {
+      "rule_version": "RULE-CAUSAL-V1",
+      "at_ms": 1793674560000,
+      "n_prefix_candles": 2,
+      "n_fully_known_candles": 1,
+      "candles": [
+        {
+          "open_time_ms": 1793674500000,
+          "open": 0.05579,
+          "high": 0.05579,
+          "low": 0.05568,
+          "close": 0.0557,
+          "close_time_ms": 1793674559999,
+          "open_known": true,
+          "ohlc_known": true
+        },
+        {
+          "open_time_ms": 1793674560000,
+          "open": 0.05571,
+          "high": 0.05571,
+          "low": 0.05565,
+          "close": 0.05565,
+          "close_time_ms": 1793674619999,
+          "open_known": true,
+          "ohlc_known": false
+        }
+      ],
+      "trigger_px": 0.0557,
+      "entry_px": 0.0,
+      "stop_px": 0.0,
+      "signal_candle_close_time_ms": 1793674559999,
+      "evaluated_at_ms": 1793674620710,
+      "decision_at_ms": 1793674560000,
+      "available_at_ms": null,
+      "admit_risk": false,
+      "risk_reason": "Precio de entrada no positivo: admision denegada.",
+      "entry_fill_px": null,
+      "entry_fill_ms": null,
+      "entry_fill_qty": null,
+      "entry_fill_cost": null,
+      "adapter": {
+        "runner": "market_stream",
+        "market_url": "http://127.0.0.1:8791",
+        "market_service": {
+          "frames": 50,
+          "bad_frames": 0,
+          "unknown_frames": 0,
+          "provisional_frames": 15,
+          "disconnects": 2,
+          "reconnects": 2,
+          "connect_errors": 0,
+          "last_error": "_SseReadTimeout: SSE_READ_TIMEOUT: sin bytes durante 10s (heartbeats ~5 s)",
+          "last_frame_at_ms": 1793674620707,
+          "connected_at_ms": 1793674593018,
+          "started_at_ms": 1793674533059,
+          "last_disconnect_reason": "READ_TIMEOUT"
+        },
+        "symbol": "MINAUSDT",
+        "interval": "1m",
+        "trigger": {
+          "frame": "closed",
+          "open_time_ms": 1793674560000,
+          "close_time_ms": 1793674619999,
+          "received_at_ms": 1793674620707,
+          "available_at_ms": 1793674560000
+        },
+        "clocks": {
+          "trigger_open_ms": 1793674560000,
+          "trigger_received_at_ms": 1793674620707,
+          "evaluation_clock_ms": 1793674560000,
+          "evaluation_wall_ms": 1793674620710
+        },
+        "evidence_blocks": {
+          "indicators": {
+            "contract_version": "market-indicators/v1",
+            "availability": "CLOSED_CANDLES_ONLY",
+            "provisional_policy": {
+              "included": false,
+              "reason": "PROVISIONAL_EXCLUDED"
+            },
+            "computed_over": "payload_window",
+            "identity": {
+              "symbol": "MINAUSDT",
+              "interval": "1m",
+              "interval_ms": 60000,
+              "source": "ws_kline"
+            },
+            "definitions": [
+              {
+                "name": "log_return_bps",
+                "formula": "10000 * ln(close_t / close_(t-1))",
+                "unit": "bps",
+                "window_candles": 1,
+                "requires": "previous grid candle closed and present"
+              },
+              {
+                "name": "velocity_bps_5",
+                "formula": "10000 * ln(close_t / close_(t-4))",
+                "unit": "bps",
+                "window_candles": 5,
+                "requires": "contiguous run of 5 closed grid candles ending at t"
+              },
+              {
+                "name": "rel_volume_10",
+                "formula": "base_volume_t / mean(base_volume t-9..t-1)",
+                "unit": "ratio",
+                "window_candles": 10,
+                "requires": "current base_volume and contiguous baseline of 10 closed candles with base_volume"
+              },
+              {
+                "name": "vwap_typical_10",
+                "formula": "sum(((h+l+c)/3 * v)) / sum(v) over t-9..t",
+                "unit": "price (quote)",
+                "window_candles": 10,
+                "requires": "contiguous run of 10 closed candles with base_volume; approximation weighted by typical price, NOT the traded VWAP of market_structure.vwap_record"
+              },
+              {
+                "name": "vwap_dev_bps_10",
+                "formula": "10000 * (close_t / vwap_typical_10 - 1)",
+                "unit": "bps",
+                "window_candles": 10,
+                "requires": "vwap_typical_10 of the same candle"
+              }
+            ],
+            "supported": [
+              "log_return_bps",
+              "velocity_bps_5",
+              "rel_volume_10",
+              "vwap_dev_bps_10"
+            ],
+            "declined": [
+              {
+                "name": "flow_delta",
+                "reason": "AGGTRADES_SOURCE_REQUIRED"
+              },
+              {
+                "name": "spread_bps",
+                "reason": "ORDER_BOOK_SOURCE_REQUIRED"
+              },
+              {
+                "name": "depth",
+                "reason": "ORDER_BOOK_SOURCE_REQUIRED"
+              },
+              {
+                "name": "open_interest",
+                "reason": "OI_REST_POLL_REQUIRED"
+              },
+              {
+                "name": "btc_context",
+                "reason": "SECOND_SYMBOL_KLINES_REQUIRED"
+              }
+            ],
+            "series": [
+              {
+                "open_time_ms": 1793674560000,
+                "available_at_ms": 1793674620000,
+                "values": {},
+                "unknown": {
+                  "log_return_bps": "NO_PREVIOUS_CANDLE",
+                  "velocity_bps_5": "INSUFICIENT_CANDLES",
+                  "rel_volume_10": "INSUFICIENT_CANDLES",
+                  "vwap_typical_10": "INSUFICIENT_CANDLES",
+                  "vwap_dev_bps_10": "INSUFICIENT_CANDLES"
+                }
+              }
+            ],
+            "generated_at_ms": 1793674620705
+          },
+          "context_btc": {
+            "contract_version": "market-btc-context/v1",
+            "availability": "CLOSED_CANDLES_ONLY",
+            "identity": {
+              "symbol": "MINAUSDT",
+              "interval": "1m",
+              "interval_ms": 60000,
+              "source": "ws_kline"
+            },
+            "context": {
+              "symbol": "BTCUSDT",
+              "venue": "binance",
+              "market_type": "usd_m_futures",
+              "interval": "1m",
+              "interval_ms": 60000,
+              "same_asset_as_token": false,
+              "subscription": {
+                "reuses_token_stream": false,
+                "shared": false,
+                "live": true
+              },
+              "sources": [
+                "cache",
+                "ws_kline"
+              ],
+              "horizon_candles": 5,
+              "timeframe": {
+                "aligned_by": "open_time_ms",
+                "token_window": {
+                  "first": 1793674560000,
+                  "last": 1793674560000
+                },
+                "btc_observed": {
+                  "first": 1793674560000,
+                  "last": 1793674560000
+                },
+                "expected_grid": 1,
+                "present_grid": 0,
+                "gaps": []
+              },
+              "freshness": {
+                "btc_last_closed_open_ms": 1793674560000,
+                "btc_last_available_at_ms": 1793674620000,
+                "age_ms": 706,
+                "threshold_ms": 60000,
+                "lagging": false,
+                "note": "BTC atras del cierre esperado en la rejilla: las filas sin dato quedan UNKNOWN(BTC_LAGGING); no se arrastran valores antiguos como si fueran nuevos"
+              },
+              "acquisition": {
+                "rest_upstream_requests": 0,
+                "mode": "cache+ws",
+                "note": "REST de tramos faltantes no ejecutado; si se autorizara, el numero de paginas depende del tramo faltante, nunca es una cifra fija"
+              }
+            },
+            "definitions": [
+              {
+                "name": "ret_btc_bps_5",
+                "formula": "10000 * ln(close_t^BTC / close_(t-4)^BTC)",
+                "unit": "bps",
+                "window_candles": 5,
+                "requires": "velas cerradas de BTC en la MISMA rejilla del token (t-4..t por open_time_ms); mismas 5 velas cerradas que velocity_bps_5"
+              },
+              {
+                "name": "ret_diff_bps_5",
+                "formula": "velocity_bps_5(token) - ret_btc_bps_5",
+                "unit": "bps",
+                "window_candles": 5,
+                "requires": "velocidad del token y velocidad de BTC conocidas en la misma fila"
+              }
+            ],
+            "supported": [
+              "ret_btc_bps_5",
+              "ret_diff_bps_5"
+            ],
+            "labels": {
+              "ret_diff_bps_5": "diferencia de retornos"
+            },
+            "series": [
+              {
+                "open_time_ms": 1793674560000,
+                "available_at_ms": 1793674620000,
+                "values": {},
+                "unknown": {
+                  "ret_btc_bps_5": "BTC_INSUFICIENT_CANDLES",
+                  "ret_diff_bps_5": "INSUFICIENT_CANDLES"
+                }
+              }
+            ],
+            "normalized": {
+              "base_open_time_ms": 1793674560000,
+              "unit": "percent_from_base",
+              "series": [
+                {
+                  "open_time_ms": 1793674560000,
+                  "token_pct": 0.0,
+                  "btc_pct": 0.0
+                }
+              ]
+            },
+            "generated_at_ms": 1793674620706
+          }
+        },
+        "gate": {
+          "evaluated_at_ms": 1793674620710,
+          "clock_ms": 1793674560000,
+          "freshness": {
+            "reason": "END_OF_DATA",
+            "stale_candles": [],
+            "end_of_data": true,
+            "note": "end_of_data en live = sin vela cerrada posterior aún (espera normal del feed; no bloquea)"
+          },
+          "silence_ms": 60022,
+          "live_silence_ms": 120000.0,
+          "adapter_last_frame_at_ms": 1793674620707,
+          "grid_gap": null,
+          "ok": true,
+          "cause": null
+        }
+      }
+    },
+    "evaluaciones": [
+      {
+        "evaluacion_num": 1,
+        "session_id": "PL-MINAUSDT-LONG-1793674533011-ff05e947",
+        "config_hash": "4a339c046cc3ad63",
+        "evento_disparador": {
+          "frame": "closed",
+          "open_time_ms": 1793674500000,
+          "close_time_ms": 1793674559999,
+          "received_at_ms": 1793674560685
+        },
+        "T": 1793674500000,
+        "config": {
+          "rule_version": "RULE-CAUSAL-V1",
+          "hypothesis_id": "ENG-LIVE-01",
+          "hypothesis_version": "v1",
+          "symbol": "MINAUSDT",
+          "interval": "1m",
+          "notional_usdt": 1000.0
+        },
+        "resultado": {
+          "decision": "SIN_ENTRADA",
+          "decision_reason": "Velas abiertas en T pero close todavia desconocido (ultima abierta @ 1793674500000): senal no confirmada, abstencion.",
+          "abstencion_sin_entrada": true,
+          "decision_antes": null,
+          "motivo_antes": null
+        },
+        "evaluado_en_ms": 1793674560688
+      },
+      {
+        "evaluacion_num": 2,
+        "session_id": "PL-MINAUSDT-LONG-1793674533011-ff05e947",
+        "config_hash": "4a339c046cc3ad63",
+        "evento_disparador": {
+          "frame": "closed",
+          "open_time_ms": 1793674560000,
+          "close_time_ms": 1793674619999,
+          "received_at_ms": 1793674620707
+        },
+        "T": 1793674560000,
+        "config": {
+          "rule_version": "RULE-CAUSAL-V1",
+          "hypothesis_id": "ENG-LIVE-01",
+          "hypothesis_version": "v1",
+          "symbol": "MINAUSDT",
+          "interval": "1m",
+          "notional_usdt": 1000.0
+        },
+        "resultado": {
+          "decision": "ENTRADA_SIMULADA",
+          "decision_reason": "Senal de entrada en T pero sin fill posible en el prefijo conocido: run_backtest no admite operacion con datos disponibles en T. Senal pendiente de fill.",
+          "abstencion_sin_entrada": false,
+          "decision_antes": "SIN_ENTRADA",
+          "motivo_antes": "Velas abiertas en T pero close todavia desconocido (ultima abierta @ 1793674500000): senal no confirmada, abstencion."
+        },
+        "evaluado_en_ms": 1793674620710
+      }
+    ],
+    "evaluacion_contador": 2,
+    "revision_final": 10,
+    "evaluaciones_final": [
+      {
+        "evaluacion_num": 1,
+        "session_id": "PL-MINAUSDT-LONG-1793674533011-ff05e947",
+        "config_hash": "4a339c046cc3ad63",
+        "evento_disparador": {
+          "frame": "closed",
+          "open_time_ms": 1793674500000,
+          "close_time_ms": 1793674559999,
+          "received_at_ms": 1793674560685
+        },
+        "T": 1793674500000,
+        "config": {
+          "rule_version": "RULE-CAUSAL-V1",
+          "hypothesis_id": "ENG-LIVE-01",
+          "hypothesis_version": "v1",
+          "symbol": "MINAUSDT",
+          "interval": "1m",
+          "notional_usdt": 1000.0
+        },
+        "resultado": {
+          "decision": "SIN_ENTRADA",
+          "decision_reason": "Velas abiertas en T pero close todavia desconocido (ultima abierta @ 1793674500000): senal no confirmada, abstencion.",
+          "abstencion_sin_entrada": true,
+          "decision_antes": null,
+          "motivo_antes": null
+        },
+        "evaluado_en_ms": 1793674560688
+      },
+      {
+        "evaluacion_num": 2,
+        "session_id": "PL-MINAUSDT-LONG-1793674533011-ff05e947",
+        "config_hash": "4a339c046cc3ad63",
+        "evento_disparador": {
+          "frame": "closed",
+          "open_time_ms": 1793674560000,
+          "close_time_ms": 1793674619999,
+          "received_at_ms": 1793674620707
+        },
+        "T": 1793674560000,
+        "config": {
+          "rule_version": "RULE-CAUSAL-V1",
+          "hypothesis_id": "ENG-LIVE-01",
+          "hypothesis_version": "v1",
+          "symbol": "MINAUSDT",
+          "interval": "1m",
+          "notional_usdt": 1000.0
+        },
+        "resultado": {
+          "decision": "ENTRADA_SIMULADA",
+          "decision_reason": "Senal de entrada en T pero sin fill posible en el prefijo conocido: run_backtest no admite operacion con datos disponibles en T. Senal pendiente de fill.",
+          "abstencion_sin_entrada": false,
+          "decision_antes": "SIN_ENTRADA",
+          "motivo_antes": "Velas abiertas en T pero close todavia desconocido (ultima abierta @ 1793674500000): senal no confirmada, abstencion."
+        },
+        "evaluado_en_ms": 1793674620710
+      }
+    ],
+    "evaluacion_contador_final": 2,
+    "eventos_procesados_final": 95,
+    "cierres_admitidos_final": 3,
+    "watermark_final": 1793674620000,
+    "duracion_adquisicion_s": 174.711,
+    "adquisicion_dentro_deadline": true,
+    "stop": {
+      "status": 200,
+      "ok": true,
+      "text": "{\"session\": {\"session_id\": \"PL-MINAUSDT-LONG-1793674533011-ff05e947\", \"created_at_ms\": 1793674533011, \"updated_at_ms\": 1793674680368, \"status\": \"abierta\", \"revision\": 10, \"clock_ms\": 1793674620000, \"config_hash\": \"4a339c046cc3ad63\", \"input_hash\": null, \"config\": {\"symbol\": \"MINAUSDT\", \"interval\": \"1"
+    },
+    "duracion_limpieza_s": 0.014,
+    "duracion_total_s": 180.74,
+    "decision_final_vinculada": {
+      "revision": 10,
+      "decision": "ENTRADA_SIMULADA",
+      "motivo": "Senal de entrada en T pero sin fill posible en el prefijo conocido: run_backtest no admite operacion con datos disponibles en T. Senal pendiente de fill.",
+      "clock_ms": 1793674620000,
+      "eventos_procesados": 87
+    },
+    "evaluacion_vinculada": {
+      "evento_disparador": {
+        "frame": "closed",
+        "open_time_ms": 1793674560000,
+        "close_time_ms": 1793674619999,
+        "received_at_ms": 1793674620707
+      },
+      "T": 1793674560000,
+      "config_hash": "4a339c046cc3ad63",
+      "rule_version": "RULE-CAUSAL-V1",
+      "decision": "ENTRADA_SIMULADA",
+      "motivo": "Senal de entrada en T pero sin fill posible en el prefijo conocido: run_backtest no admite operacion con datos disponibles en T. Senal pendiente de fill.",
+      "abstencion_sin_entrada_valida": false
+    },
+    "duracion_s": 174.711,
+    "deadline_respetado": true,
+    "verdict_reasons": {
+      "fail": [],
+      "missing": [],
+      "consumidores_max": 2,
+      "reconexiones_max": 0,
+      "rest_total": 2,
+      "cierres_admitidos_final": 3,
+      "evaluacion_contador_final": 2,
+      "eventos_procesados_final": 95,
+      "ledger_total_por_run_id": 7,
+      "db_unchanged": true,
+      "ultima_salud_ingenieria": {
+        "service": "engineering-session-service/v1",
+        "engine_version": "paper-lab-engine/v1.2",
+        "pid": 16948,
+        "host": "127.0.0.1",
+        "port": 8797,
+        "sessions_dir": "docs\\evidence\\engineering-live-public-20261102d\\sessions",
+        "cadence_ms": 700.0,
+        "market": {
+          "url": "http://127.0.0.1:8791",
+          "bars": 300,
+          "live_silence_ms": 120000.0,
+          "max_notional_usdt": 1000.0,
+          "transports": [
+            "local_replay",
+            "market_stream"
+          ]
+        },
+        "clock": {
+          "source": "public_sincronizado",
+          "available": true,
+          "offset_ms": -17.060059,
+          "rtt_ms": 369.565674,
+          "last_sync_timestamp": "2026-11-03T02:55:32.102257+00:00",
+          "age_ms": 112.472,
+          "sync_successful": 1,
+          "sync_failed": 0,
+          "samples_valid": 5,
+          "samples_failed": 0
+        },
+        "drives": [],
+        "generated_at_ms": 1793674532214
+      },
+      "clock_readiness": {
+        "http_disponible_en_ms": 1793674529131,
+        "reloj_listo_en_ms": 1793674532215,
+        "transiciones": [
+          {
+            "estado": "http_disponible",
+            "at_ms": 1793674529131,
+            "detalle": "servicio respondió /health (PID=16948)"
+          },
+          {
+            "estado": "reloj_no_listo",
+            "at_ms": 1793674529154,
+            "detalle": "available=False (age_ms=None)"
+          },
+          {
+            "estado": "reloj_no_listo",
+            "at_ms": 1793674529666,
+            "detalle": "available=False (age_ms=None)"
+          },
+          {
+            "estado": "reloj_no_listo",
+            "at_ms": 1793674530179,
+            "detalle": "available=False (age_ms=None)"
+          },
+          {
+            "estado": "reloj_no_listo",
+            "at_ms": 1793674530697,
+            "detalle": "available=False (age_ms=None)"
+          },
+          {
+            "estado": "reloj_no_listo",
+            "at_ms": 1793674531199,
+            "detalle": "available=False (age_ms=None)"
+          },
+          {
+            "estado": "reloj_no_listo",
+            "at_ms": 1793674531712,
+            "detalle": "available=False (age_ms=None)"
+          },
+          {
+            "estado": "reloj_listo",
+            "at_ms": 1793674532215,
+            "detalle": "referencia válida (source=public_sincronizado)"
+          }
+        ],
+        "ultimo_motivo": "referencia válida (source=public_sincronizado)",
+        "error": null,
+        "ultimo_health": {
+          "service": "engineering-session-service/v1",
+          "engine_version": "paper-lab-engine/v1.2",
+          "pid": 16948,
+          "host": "127.0.0.1",
+          "port": 8797,
+          "sessions_dir": "docs\\evidence\\engineering-live-public-20261102d\\sessions",
+          "cadence_ms": 700.0,
+          "market": {
+            "url": "http://127.0.0.1:8791",
+            "bars": 300,
+            "live_silence_ms": 120000.0,
+            "max_notional_usdt": 1000.0,
+            "transports": [
+              "local_replay",
+              "market_stream"
+            ]
+          },
+          "clock": {
+            "source": "public_sincronizado",
+            "available": true,
+            "offset_ms": -17.060059,
+            "rtt_ms": 369.565674,
+            "last_sync_timestamp": "2026-11-03T02:55:32.102257+00:00",
+            "age_ms": 112.472,
+            "sync_successful": 1,
+            "sync_failed": 0,
+            "samples_valid": 5,
+            "samples_failed": 0
+          },
+          "drives": [],
+          "generated_at_ms": 1793674532214
+        }
+      }
+    }
+  },
+  "checks": [
+    {
+      "id": "config_validada",
+      "ok": true,
+      "required": true,
+      "source": "config",
+      "detail": "regla/stop/horizonte/referencia fijadas antes de conectar (no se cambian durante la ventana)"
+    },
+    {
+      "id": "dashboard_up",
+      "ok": true,
+      "required": true,
+      "source": "preflight",
+      "detail": "market-lab status=200"
+    },
+    {
+      "id": "build_served",
+      "ok": true,
+      "required": true,
+      "source": "preflight",
+      "detail": "BUILD_ID t4z0bfKQ_kIP9qv1WHCKR servido (árbol e2243c9)"
+    },
+    {
+      "id": "service_port_free",
+      "ok": true,
+      "required": true,
+      "source": "preflight",
+      "detail": "puerto 8791 libre"
+    },
+    {
+      "id": "engineering_port_free",
+      "ok": true,
+      "required": true,
+      "source": "preflight",
+      "detail": "puerto 8797 libre"
+    },
+    {
+      "id": "port_8792_untouched",
+      "ok": true,
+      "required": false,
+      "source": "preflight",
+      "detail": "8792 ocupado (servicio local preexistente, no tocar)"
+    },
+    {
+      "id": "codigo_limites_conocidos",
+      "ok": true,
+      "required": false,
+      "source": "preflight",
+      "detail": "límites del usuario impuestos por el orquestador: <=3 consumidores SSE, <=3 reconexiones, <=7 REST (límite por corrida), <=300 velas/consulta, deadline 180s, cero escrituras DB canónicas; el hub de market-stream usa 1 WS combinada."
+    },
+    {
+      "id": "no_ingenieria_activa",
+      "ok": true,
+      "required": false,
+      "source": "preflight",
+      "detail": "ningún proceso de ingeniería activo antes de la ventana"
+    },
+    {
+      "id": "service_started",
+      "ok": true,
+      "required": true,
+      "source": "execute",
+      "detail": "servicio mercado PID 26136 puerto 8791 modo=public"
+    },
+    {
+      "id": "engineering_started",
+      "ok": true,
+      "required": true,
+      "source": "execute",
+      "detail": "servicio ingeniería PID 16948 puerto 8797"
+    },
+    {
+      "id": "clock_fuente_verificada",
+      "ok": true,
+      "required": true,
+      "source": "execute",
+      "detail": "reloj de referencia public válido antes de crear sesión (source=public_sincronizado)"
+    },
+    {
+      "id": "contexto_cargado",
+      "ok": true,
+      "required": true,
+      "source": "execute",
+      "detail": "600 velas cerradas y contiguas para fijar el reloj T (rest=2)"
+    },
+    {
+      "id": "sesion_creada",
+      "ok": true,
+      "required": true,
+      "source": "execute",
+      "detail": "session_id=PL-MINAUSDT-LONG-1793674533011-ff05e947 config_hash=4a339c046cc3ad63 regla=RULE-CAUSAL-V1 simbolo=MINAUSDT vinculada al transporte market_stream"
+    },
+    {
+      "id": "conduccion_iniciada",
+      "ok": true,
+      "required": true,
+      "source": "execute",
+      "detail": "drive state=running runner=market_stream mercado=http://127.0.0.1:8791"
+    },
+    {
+      "id": "consumidores_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "consumers=2 (máximo 3, todos los componentes)"
+    },
+    {
+      "id": "reconexiones_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "reconnects=0 (máximo 3)"
+    },
+    {
+      "id": "consumidores_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "consumers=2 (máximo 3, todos los componentes)"
+    },
+    {
+      "id": "reconexiones_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "reconnects=0 (máximo 3)"
+    },
+    {
+      "id": "consumidores_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "consumers=2 (máximo 3, todos los componentes)"
+    },
+    {
+      "id": "reconexiones_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "reconnects=0 (máximo 3)"
+    },
+    {
+      "id": "consumidores_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "consumers=2 (máximo 3, todos los componentes)"
+    },
+    {
+      "id": "reconexiones_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "reconnects=0 (máximo 3)"
+    },
+    {
+      "id": "consumidores_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "consumers=2 (máximo 3, todos los componentes)"
+    },
+    {
+      "id": "reconexiones_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "reconnects=0 (máximo 3)"
+    },
+    {
+      "id": "consumidores_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "consumers=2 (máximo 3, todos los componentes)"
+    },
+    {
+      "id": "reconexiones_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "reconnects=0 (máximo 3)"
+    },
+    {
+      "id": "consumidores_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "consumers=2 (máximo 3, todos los componentes)"
+    },
+    {
+      "id": "reconexiones_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "reconnects=0 (máximo 3)"
+    },
+    {
+      "id": "consumidores_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "consumers=2 (máximo 3, todos los componentes)"
+    },
+    {
+      "id": "reconexiones_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "reconnects=0 (máximo 3)"
+    },
+    {
+      "id": "consumidores_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "consumers=2 (máximo 3, todos los componentes)"
+    },
+    {
+      "id": "reconexiones_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "reconnects=0 (máximo 3)"
+    },
+    {
+      "id": "consumidores_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "consumers=2 (máximo 3, todos los componentes)"
+    },
+    {
+      "id": "reconexiones_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "reconnects=0 (máximo 3)"
+    },
+    {
+      "id": "consumidores_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "consumers=0 (máximo 3, todos los componentes)"
+    },
+    {
+      "id": "reconexiones_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "reconnects=0 (máximo 3)"
+    },
+    {
+      "id": "consumidores_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "consumers=2 (máximo 3, todos los componentes)"
+    },
+    {
+      "id": "reconexiones_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "reconnects=0 (máximo 3)"
+    },
+    {
+      "id": "consumidores_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "consumers=2 (máximo 3, todos los componentes)"
+    },
+    {
+      "id": "reconexiones_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "reconnects=0 (máximo 3)"
+    },
+    {
+      "id": "consumidores_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "consumers=2 (máximo 3, todos los componentes)"
+    },
+    {
+      "id": "reconexiones_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "reconnects=0 (máximo 3)"
+    },
+    {
+      "id": "consumidores_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "consumers=2 (máximo 3, todos los componentes)"
+    },
+    {
+      "id": "reconexiones_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "reconnects=0 (máximo 3)"
+    },
+    {
+      "id": "consumidores_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "consumers=2 (máximo 3, todos los componentes)"
+    },
+    {
+      "id": "reconexiones_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "reconnects=0 (máximo 3)"
+    },
+    {
+      "id": "consumidores_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "consumers=2 (máximo 3, todos los componentes)"
+    },
+    {
+      "id": "reconexiones_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "reconnects=0 (máximo 3)"
+    },
+    {
+      "id": "consumidores_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "consumers=2 (máximo 3, todos los componentes)"
+    },
+    {
+      "id": "reconexiones_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "reconnects=0 (máximo 3)"
+    },
+    {
+      "id": "consumidores_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "consumers=2 (máximo 3, todos los componentes)"
+    },
+    {
+      "id": "reconexiones_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "reconnects=0 (máximo 3)"
+    },
+    {
+      "id": "consumidores_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "consumers=2 (máximo 3, todos los componentes)"
+    },
+    {
+      "id": "reconexiones_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "reconnects=0 (máximo 3)"
+    },
+    {
+      "id": "consumidores_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "consumers=2 (máximo 3, todos los componentes)"
+    },
+    {
+      "id": "reconexiones_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "reconnects=0 (máximo 3)"
+    },
+    {
+      "id": "consumidores_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "consumers=2 (máximo 3, todos los componentes)"
+    },
+    {
+      "id": "reconexiones_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "reconnects=0 (máximo 3)"
+    },
+    {
+      "id": "consumidores_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "consumers=2 (máximo 3, todos los componentes)"
+    },
+    {
+      "id": "reconexiones_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "reconnects=0 (máximo 3)"
+    },
+    {
+      "id": "consumidores_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "consumers=2 (máximo 3, todos los componentes)"
+    },
+    {
+      "id": "reconexiones_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "reconnects=0 (máximo 3)"
+    },
+    {
+      "id": "consumidores_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "consumers=2 (máximo 3, todos los componentes)"
+    },
+    {
+      "id": "reconexiones_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "reconnects=0 (máximo 3)"
+    },
+    {
+      "id": "consumidores_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "consumers=2 (máximo 3, todos los componentes)"
+    },
+    {
+      "id": "reconexiones_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "reconnects=0 (máximo 3)"
+    },
+    {
+      "id": "consumidores_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "consumers=2 (máximo 3, todos los componentes)"
+    },
+    {
+      "id": "reconexiones_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "reconnects=0 (máximo 3)"
+    },
+    {
+      "id": "decision_registrada",
+      "ok": true,
+      "required": true,
+      "source": "execute",
+      "detail": "decisión=SIN_ENTRADA motivo=Velas abiertas en T pero close todavia desconocido (ultima abierta @ 1793674500000): senal no confirmada, abstencion. (evidencia en T)"
+    },
+    {
+      "id": "consumidores_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "consumers=2 (máximo 3, todos los componentes)"
+    },
+    {
+      "id": "reconexiones_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "reconnects=0 (máximo 3)"
+    },
+    {
+      "id": "consumidores_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "consumers=2 (máximo 3, todos los componentes)"
+    },
+    {
+      "id": "reconexiones_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "reconnects=0 (máximo 3)"
+    },
+    {
+      "id": "consumidores_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "consumers=2 (máximo 3, todos los componentes)"
+    },
+    {
+      "id": "reconexiones_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "reconnects=0 (máximo 3)"
+    },
+    {
+      "id": "consumidores_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "consumers=2 (máximo 3, todos los componentes)"
+    },
+    {
+      "id": "reconexiones_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "reconnects=0 (máximo 3)"
+    },
+    {
+      "id": "consumidores_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "consumers=2 (máximo 3, todos los componentes)"
+    },
+    {
+      "id": "reconexiones_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "reconnects=0 (máximo 3)"
+    },
+    {
+      "id": "consumidores_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "consumers=2 (máximo 3, todos los componentes)"
+    },
+    {
+      "id": "reconexiones_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "reconnects=0 (máximo 3)"
+    },
+    {
+      "id": "consumidores_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "consumers=2 (máximo 3, todos los componentes)"
+    },
+    {
+      "id": "reconexiones_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "reconnects=0 (máximo 3)"
+    },
+    {
+      "id": "consumidores_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "consumers=2 (máximo 3, todos los componentes)"
+    },
+    {
+      "id": "reconexiones_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "reconnects=0 (máximo 3)"
+    },
+    {
+      "id": "consumidores_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "consumers=2 (máximo 3, todos los componentes)"
+    },
+    {
+      "id": "reconexiones_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "reconnects=0 (máximo 3)"
+    },
+    {
+      "id": "consumidores_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "consumers=2 (máximo 3, todos los componentes)"
+    },
+    {
+      "id": "reconexiones_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "reconnects=0 (máximo 3)"
+    },
+    {
+      "id": "consumidores_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "consumers=2 (máximo 3, todos los componentes)"
+    },
+    {
+      "id": "reconexiones_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "reconnects=0 (máximo 3)"
+    },
+    {
+      "id": "consumidores_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "consumers=2 (máximo 3, todos los componentes)"
+    },
+    {
+      "id": "reconexiones_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "reconnects=0 (máximo 3)"
+    },
+    {
+      "id": "consumidores_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "consumers=2 (máximo 3, todos los componentes)"
+    },
+    {
+      "id": "reconexiones_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "reconnects=0 (máximo 3)"
+    },
+    {
+      "id": "consumidores_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "consumers=2 (máximo 3, todos los componentes)"
+    },
+    {
+      "id": "reconexiones_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "reconnects=0 (máximo 3)"
+    },
+    {
+      "id": "consumidores_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "consumers=2 (máximo 3, todos los componentes)"
+    },
+    {
+      "id": "reconexiones_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "reconnects=0 (máximo 3)"
+    },
+    {
+      "id": "consumidores_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "consumers=2 (máximo 3, todos los componentes)"
+    },
+    {
+      "id": "reconexiones_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "reconnects=0 (máximo 3)"
+    },
+    {
+      "id": "consumidores_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "consumers=2 (máximo 3, todos los componentes)"
+    },
+    {
+      "id": "reconexiones_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "reconnects=0 (máximo 3)"
+    },
+    {
+      "id": "consumidores_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "consumers=2 (máximo 3, todos los componentes)"
+    },
+    {
+      "id": "reconexiones_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "reconnects=0 (máximo 3)"
+    },
+    {
+      "id": "consumidores_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "consumers=2 (máximo 3, todos los componentes)"
+    },
+    {
+      "id": "reconexiones_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "reconnects=0 (máximo 3)"
+    },
+    {
+      "id": "consumidores_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "consumers=2 (máximo 3, todos los componentes)"
+    },
+    {
+      "id": "reconexiones_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "reconnects=0 (máximo 3)"
+    },
+    {
+      "id": "consumidores_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "consumers=2 (máximo 3, todos los componentes)"
+    },
+    {
+      "id": "reconexiones_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "reconnects=0 (máximo 3)"
+    },
+    {
+      "id": "consumidores_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "consumers=2 (máximo 3, todos los componentes)"
+    },
+    {
+      "id": "reconexiones_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "reconnects=0 (máximo 3)"
+    },
+    {
+      "id": "consumidores_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "consumers=2 (máximo 3, todos los componentes)"
+    },
+    {
+      "id": "reconexiones_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "reconnects=0 (máximo 3)"
+    },
+    {
+      "id": "consumidores_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "consumers=2 (máximo 3, todos los componentes)"
+    },
+    {
+      "id": "reconexiones_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "reconnects=0 (máximo 3)"
+    },
+    {
+      "id": "consumidores_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "consumers=2 (máximo 3, todos los componentes)"
+    },
+    {
+      "id": "reconexiones_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "reconnects=0 (máximo 3)"
+    },
+    {
+      "id": "consumidores_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "consumers=2 (máximo 3, todos los componentes)"
+    },
+    {
+      "id": "reconexiones_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "reconnects=0 (máximo 3)"
+    },
+    {
+      "id": "consumidores_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "consumers=2 (máximo 3, todos los componentes)"
+    },
+    {
+      "id": "reconexiones_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "reconnects=0 (máximo 3)"
+    },
+    {
+      "id": "consumidores_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "consumers=2 (máximo 3, todos los componentes)"
+    },
+    {
+      "id": "reconexiones_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "reconnects=0 (máximo 3)"
+    },
+    {
+      "id": "consumidores_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "consumers=2 (máximo 3, todos los componentes)"
+    },
+    {
+      "id": "reconexiones_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "reconnects=0 (máximo 3)"
+    },
+    {
+      "id": "consumidores_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "consumers=2 (máximo 3, todos los componentes)"
+    },
+    {
+      "id": "reconexiones_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "reconnects=0 (máximo 3)"
+    },
+    {
+      "id": "consumidores_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "consumers=0 (máximo 3, todos los componentes)"
+    },
+    {
+      "id": "reconexiones_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "reconnects=0 (máximo 3)"
+    },
+    {
+      "id": "consumidores_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "consumers=2 (máximo 3, todos los componentes)"
+    },
+    {
+      "id": "reconexiones_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "reconnects=0 (máximo 3)"
+    },
+    {
+      "id": "consumidores_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "consumers=2 (máximo 3, todos los componentes)"
+    },
+    {
+      "id": "reconexiones_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "reconnects=0 (máximo 3)"
+    },
+    {
+      "id": "consumidores_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "consumers=2 (máximo 3, todos los componentes)"
+    },
+    {
+      "id": "reconexiones_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "reconnects=0 (máximo 3)"
+    },
+    {
+      "id": "consumidores_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "consumers=2 (máximo 3, todos los componentes)"
+    },
+    {
+      "id": "reconexiones_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "reconnects=0 (máximo 3)"
+    },
+    {
+      "id": "consumidores_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "consumers=2 (máximo 3, todos los componentes)"
+    },
+    {
+      "id": "reconexiones_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "reconnects=0 (máximo 3)"
+    },
+    {
+      "id": "consumidores_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "consumers=2 (máximo 3, todos los componentes)"
+    },
+    {
+      "id": "reconexiones_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "reconnects=0 (máximo 3)"
+    },
+    {
+      "id": "consumidores_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "consumers=2 (máximo 3, todos los componentes)"
+    },
+    {
+      "id": "reconexiones_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "reconnects=0 (máximo 3)"
+    },
+    {
+      "id": "consumidores_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "consumers=2 (máximo 3, todos los componentes)"
+    },
+    {
+      "id": "reconexiones_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "reconnects=0 (máximo 3)"
+    },
+    {
+      "id": "consumidores_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "consumers=2 (máximo 3, todos los componentes)"
+    },
+    {
+      "id": "reconexiones_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "reconnects=0 (máximo 3)"
+    },
+    {
+      "id": "consumidores_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "consumers=2 (máximo 3, todos los componentes)"
+    },
+    {
+      "id": "reconexiones_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "reconnects=0 (máximo 3)"
+    },
+    {
+      "id": "consumidores_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "consumers=2 (máximo 3, todos los componentes)"
+    },
+    {
+      "id": "reconexiones_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "reconnects=0 (máximo 3)"
+    },
+    {
+      "id": "consumidores_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "consumers=2 (máximo 3, todos los componentes)"
+    },
+    {
+      "id": "reconexiones_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "reconnects=0 (máximo 3)"
+    },
+    {
+      "id": "consumidores_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "consumers=2 (máximo 3, todos los componentes)"
+    },
+    {
+      "id": "reconexiones_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "reconnects=0 (máximo 3)"
+    },
+    {
+      "id": "consumidores_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "consumers=2 (máximo 3, todos los componentes)"
+    },
+    {
+      "id": "reconexiones_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "reconnects=0 (máximo 3)"
+    },
+    {
+      "id": "consumidores_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "consumers=2 (máximo 3, todos los componentes)"
+    },
+    {
+      "id": "reconexiones_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "reconnects=0 (máximo 3)"
+    },
+    {
+      "id": "consumidores_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "consumers=2 (máximo 3, todos los componentes)"
+    },
+    {
+      "id": "reconexiones_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "reconnects=0 (máximo 3)"
+    },
+    {
+      "id": "consumidores_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "consumers=2 (máximo 3, todos los componentes)"
+    },
+    {
+      "id": "reconexiones_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "reconnects=0 (máximo 3)"
+    },
+    {
+      "id": "consumidores_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "consumers=2 (máximo 3, todos los componentes)"
+    },
+    {
+      "id": "reconexiones_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "reconnects=0 (máximo 3)"
+    },
+    {
+      "id": "consumidores_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "consumers=2 (máximo 3, todos los componentes)"
+    },
+    {
+      "id": "reconexiones_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "reconnects=0 (máximo 3)"
+    },
+    {
+      "id": "consumidores_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "consumers=2 (máximo 3, todos los componentes)"
+    },
+    {
+      "id": "reconexiones_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "reconnects=0 (máximo 3)"
+    },
+    {
+      "id": "consumidores_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "consumers=2 (máximo 3, todos los componentes)"
+    },
+    {
+      "id": "reconexiones_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "reconnects=0 (máximo 3)"
+    },
+    {
+      "id": "consumidores_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "consumers=2 (máximo 3, todos los componentes)"
+    },
+    {
+      "id": "reconexiones_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "reconnects=0 (máximo 3)"
+    },
+    {
+      "id": "consumidores_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "consumers=2 (máximo 3, todos los componentes)"
+    },
+    {
+      "id": "reconexiones_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "reconnects=0 (máximo 3)"
+    },
+    {
+      "id": "consumidores_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "consumers=2 (máximo 3, todos los componentes)"
+    },
+    {
+      "id": "reconexiones_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "reconnects=0 (máximo 3)"
+    },
+    {
+      "id": "consumidores_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "consumers=2 (máximo 3, todos los componentes)"
+    },
+    {
+      "id": "reconexiones_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "reconnects=0 (máximo 3)"
+    },
+    {
+      "id": "consumidores_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "consumers=2 (máximo 3, todos los componentes)"
+    },
+    {
+      "id": "reconexiones_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "reconnects=0 (máximo 3)"
+    },
+    {
+      "id": "consumidores_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "consumers=2 (máximo 3, todos los componentes)"
+    },
+    {
+      "id": "reconexiones_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "reconnects=0 (máximo 3)"
+    },
+    {
+      "id": "decision_registrada",
+      "ok": true,
+      "required": true,
+      "source": "execute",
+      "detail": "decisión=ENTRADA_SIMULADA motivo=Senal de entrada en T pero sin fill posible en el prefijo conocido: run_backtest no admite operacion con datos disponibles en T. Senal pendiente de fill. (evidencia en T)"
+    },
+    {
+      "id": "consumidores_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "consumers=2 (máximo 3, todos los componentes)"
+    },
+    {
+      "id": "reconexiones_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "reconnects=0 (máximo 3)"
+    },
+    {
+      "id": "consumidores_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "consumers=2 (máximo 3, todos los componentes)"
+    },
+    {
+      "id": "reconexiones_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "reconnects=0 (máximo 3)"
+    },
+    {
+      "id": "consumidores_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "consumers=2 (máximo 3, todos los componentes)"
+    },
+    {
+      "id": "reconexiones_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "reconnects=0 (máximo 3)"
+    },
+    {
+      "id": "consumidores_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "consumers=2 (máximo 3, todos los componentes)"
+    },
+    {
+      "id": "reconexiones_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "reconnects=0 (máximo 3)"
+    },
+    {
+      "id": "consumidores_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "consumers=2 (máximo 3, todos los componentes)"
+    },
+    {
+      "id": "reconexiones_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "reconnects=0 (máximo 3)"
+    },
+    {
+      "id": "consumidores_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "consumers=2 (máximo 3, todos los componentes)"
+    },
+    {
+      "id": "reconexiones_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "reconnects=0 (máximo 3)"
+    },
+    {
+      "id": "consumidores_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "consumers=2 (máximo 3, todos los componentes)"
+    },
+    {
+      "id": "reconexiones_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "reconnects=0 (máximo 3)"
+    },
+    {
+      "id": "consumidores_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "consumers=2 (máximo 3, todos los componentes)"
+    },
+    {
+      "id": "reconexiones_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "reconnects=0 (máximo 3)"
+    },
+    {
+      "id": "consumidores_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "consumers=2 (máximo 3, todos los componentes)"
+    },
+    {
+      "id": "reconexiones_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "reconnects=0 (máximo 3)"
+    },
+    {
+      "id": "consumidores_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "consumers=2 (máximo 3, todos los componentes)"
+    },
+    {
+      "id": "reconexiones_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "reconnects=0 (máximo 3)"
+    },
+    {
+      "id": "consumidores_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "consumers=2 (máximo 3, todos los componentes)"
+    },
+    {
+      "id": "reconexiones_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "reconnects=0 (máximo 3)"
+    },
+    {
+      "id": "consumidores_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "consumers=2 (máximo 3, todos los componentes)"
+    },
+    {
+      "id": "reconexiones_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "reconnects=0 (máximo 3)"
+    },
+    {
+      "id": "consumidores_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "consumers=2 (máximo 3, todos los componentes)"
+    },
+    {
+      "id": "reconexiones_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "reconnects=0 (máximo 3)"
+    },
+    {
+      "id": "consumidores_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "consumers=2 (máximo 3, todos los componentes)"
+    },
+    {
+      "id": "reconexiones_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "reconnects=0 (máximo 3)"
+    },
+    {
+      "id": "consumidores_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "consumers=2 (máximo 3, todos los componentes)"
+    },
+    {
+      "id": "reconexiones_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "reconnects=0 (máximo 3)"
+    },
+    {
+      "id": "consumidores_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "consumers=2 (máximo 3, todos los componentes)"
+    },
+    {
+      "id": "reconexiones_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "reconnects=0 (máximo 3)"
+    },
+    {
+      "id": "consumidores_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "consumers=2 (máximo 3, todos los componentes)"
+    },
+    {
+      "id": "reconexiones_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "reconnects=0 (máximo 3)"
+    },
+    {
+      "id": "consumidores_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "consumers=2 (máximo 3, todos los componentes)"
+    },
+    {
+      "id": "reconexiones_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "reconnects=0 (máximo 3)"
+    },
+    {
+      "id": "consumidores_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "consumers=2 (máximo 3, todos los componentes)"
+    },
+    {
+      "id": "reconexiones_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "reconnects=0 (máximo 3)"
+    },
+    {
+      "id": "consumidores_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "consumers=2 (máximo 3, todos los componentes)"
+    },
+    {
+      "id": "reconexiones_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "reconnects=0 (máximo 3)"
+    },
+    {
+      "id": "consumidores_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "consumers=2 (máximo 3, todos los componentes)"
+    },
+    {
+      "id": "reconexiones_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "reconnects=0 (máximo 3)"
+    },
+    {
+      "id": "consumidores_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "consumers=2 (máximo 3, todos los componentes)"
+    },
+    {
+      "id": "reconexiones_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "reconnects=0 (máximo 3)"
+    },
+    {
+      "id": "consumidores_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "consumers=2 (máximo 3, todos los componentes)"
+    },
+    {
+      "id": "reconexiones_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "reconnects=0 (máximo 3)"
+    },
+    {
+      "id": "consumidores_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "consumers=2 (máximo 3, todos los componentes)"
+    },
+    {
+      "id": "reconexiones_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "reconnects=0 (máximo 3)"
+    },
+    {
+      "id": "consumidores_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "consumers=2 (máximo 3, todos los componentes)"
+    },
+    {
+      "id": "reconexiones_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "reconnects=0 (máximo 3)"
+    },
+    {
+      "id": "consumidores_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "consumers=2 (máximo 3, todos los componentes)"
+    },
+    {
+      "id": "reconexiones_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "reconnects=0 (máximo 3)"
+    },
+    {
+      "id": "consumidores_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "consumers=2 (máximo 3, todos los componentes)"
+    },
+    {
+      "id": "reconexiones_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "reconnects=0 (máximo 3)"
+    },
+    {
+      "id": "consumidores_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "consumers=2 (máximo 3, todos los componentes)"
+    },
+    {
+      "id": "reconexiones_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "reconnects=0 (máximo 3)"
+    },
+    {
+      "id": "consumidores_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "consumers=2 (máximo 3, todos los componentes)"
+    },
+    {
+      "id": "reconexiones_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "reconnects=0 (máximo 3)"
+    },
+    {
+      "id": "consumidores_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "consumers=2 (máximo 3, todos los componentes)"
+    },
+    {
+      "id": "reconexiones_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "reconnects=0 (máximo 3)"
+    },
+    {
+      "id": "consumidores_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "consumers=2 (máximo 3, todos los componentes)"
+    },
+    {
+      "id": "reconexiones_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "reconnects=0 (máximo 3)"
+    },
+    {
+      "id": "consumidores_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "consumers=2 (máximo 3, todos los componentes)"
+    },
+    {
+      "id": "reconexiones_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "reconnects=0 (máximo 3)"
+    },
+    {
+      "id": "consumidores_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "consumers=0 (máximo 3, todos los componentes)"
+    },
+    {
+      "id": "reconexiones_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "reconnects=0 (máximo 3)"
+    },
+    {
+      "id": "consumidores_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "consumers=0 (máximo 3, todos los componentes)"
+    },
+    {
+      "id": "reconexiones_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "reconnects=0 (máximo 3)"
+    },
+    {
+      "id": "consumidores_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "consumers=2 (máximo 3, todos los componentes)"
+    },
+    {
+      "id": "reconexiones_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "reconnects=0 (máximo 3)"
+    },
+    {
+      "id": "consumidores_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "consumers=2 (máximo 3, todos los componentes)"
+    },
+    {
+      "id": "reconexiones_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "reconnects=0 (máximo 3)"
+    },
+    {
+      "id": "consumidores_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "consumers=2 (máximo 3, todos los componentes)"
+    },
+    {
+      "id": "reconexiones_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "reconnects=0 (máximo 3)"
+    },
+    {
+      "id": "consumidores_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "consumers=2 (máximo 3, todos los componentes)"
+    },
+    {
+      "id": "reconexiones_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "reconnects=0 (máximo 3)"
+    },
+    {
+      "id": "consumidores_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "consumers=2 (máximo 3, todos los componentes)"
+    },
+    {
+      "id": "reconexiones_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "reconnects=0 (máximo 3)"
+    },
+    {
+      "id": "consumidores_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "consumers=2 (máximo 3, todos los componentes)"
+    },
+    {
+      "id": "reconexiones_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "reconnects=0 (máximo 3)"
+    },
+    {
+      "id": "consumidores_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "consumers=2 (máximo 3, todos los componentes)"
+    },
+    {
+      "id": "reconexiones_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "reconnects=0 (máximo 3)"
+    },
+    {
+      "id": "consumidores_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "consumers=2 (máximo 3, todos los componentes)"
+    },
+    {
+      "id": "reconexiones_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "reconnects=0 (máximo 3)"
+    },
+    {
+      "id": "consumidores_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "consumers=2 (máximo 3, todos los componentes)"
+    },
+    {
+      "id": "reconexiones_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "reconnects=0 (máximo 3)"
+    },
+    {
+      "id": "consumidores_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "consumers=2 (máximo 3, todos los componentes)"
+    },
+    {
+      "id": "reconexiones_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "reconnects=0 (máximo 3)"
+    },
+    {
+      "id": "consumidores_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "consumers=2 (máximo 3, todos los componentes)"
+    },
+    {
+      "id": "reconexiones_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "reconnects=0 (máximo 3)"
+    },
+    {
+      "id": "consumidores_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "consumers=2 (máximo 3, todos los componentes)"
+    },
+    {
+      "id": "reconexiones_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "reconnects=0 (máximo 3)"
+    },
+    {
+      "id": "consumidores_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "consumers=2 (máximo 3, todos los componentes)"
+    },
+    {
+      "id": "reconexiones_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "reconnects=0 (máximo 3)"
+    },
+    {
+      "id": "consumidores_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "consumers=2 (máximo 3, todos los componentes)"
+    },
+    {
+      "id": "reconexiones_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "reconnects=0 (máximo 3)"
+    },
+    {
+      "id": "consumidores_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "consumers=2 (máximo 3, todos los componentes)"
+    },
+    {
+      "id": "reconexiones_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "reconnects=0 (máximo 3)"
+    },
+    {
+      "id": "consumidores_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "consumers=2 (máximo 3, todos los componentes)"
+    },
+    {
+      "id": "reconexiones_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "reconnects=0 (máximo 3)"
+    },
+    {
+      "id": "consumidores_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "consumers=2 (máximo 3, todos los componentes)"
+    },
+    {
+      "id": "reconexiones_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "reconnects=0 (máximo 3)"
+    },
+    {
+      "id": "consumidores_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "consumers=2 (máximo 3, todos los componentes)"
+    },
+    {
+      "id": "reconexiones_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "reconnects=0 (máximo 3)"
+    },
+    {
+      "id": "consumidores_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "consumers=2 (máximo 3, todos los componentes)"
+    },
+    {
+      "id": "reconexiones_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "reconnects=0 (máximo 3)"
+    },
+    {
+      "id": "consumidores_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "consumers=2 (máximo 3, todos los componentes)"
+    },
+    {
+      "id": "reconexiones_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "reconnects=0 (máximo 3)"
+    },
+    {
+      "id": "consumidores_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "consumers=2 (máximo 3, todos los componentes)"
+    },
+    {
+      "id": "reconexiones_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "reconnects=0 (máximo 3)"
+    },
+    {
+      "id": "consumidores_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "consumers=2 (máximo 3, todos los componentes)"
+    },
+    {
+      "id": "reconexiones_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "reconnects=0 (máximo 3)"
+    },
+    {
+      "id": "consumidores_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "consumers=2 (máximo 3, todos los componentes)"
+    },
+    {
+      "id": "reconexiones_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "reconnects=0 (máximo 3)"
+    },
+    {
+      "id": "consumidores_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "consumers=2 (máximo 3, todos los componentes)"
+    },
+    {
+      "id": "reconexiones_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "reconnects=0 (máximo 3)"
+    },
+    {
+      "id": "consumidores_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "consumers=2 (máximo 3, todos los componentes)"
+    },
+    {
+      "id": "reconexiones_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "reconnects=0 (máximo 3)"
+    },
+    {
+      "id": "consumidores_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "consumers=2 (máximo 3, todos los componentes)"
+    },
+    {
+      "id": "reconexiones_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "reconnects=0 (máximo 3)"
+    },
+    {
+      "id": "consumidores_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "consumers=2 (máximo 3, todos los componentes)"
+    },
+    {
+      "id": "reconexiones_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "reconnects=0 (máximo 3)"
+    },
+    {
+      "id": "consumidores_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "consumers=2 (máximo 3, todos los componentes)"
+    },
+    {
+      "id": "reconexiones_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "reconnects=0 (máximo 3)"
+    },
+    {
+      "id": "consumidores_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "consumers=2 (máximo 3, todos los componentes)"
+    },
+    {
+      "id": "reconexiones_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "reconnects=0 (máximo 3)"
+    },
+    {
+      "id": "consumidores_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "consumers=2 (máximo 3, todos los componentes)"
+    },
+    {
+      "id": "reconexiones_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "reconnects=0 (máximo 3)"
+    },
+    {
+      "id": "consumidores_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "consumers=2 (máximo 3, todos los componentes)"
+    },
+    {
+      "id": "reconexiones_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "reconnects=0 (máximo 3)"
+    },
+    {
+      "id": "consumidores_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "consumers=2 (máximo 3, todos los componentes)"
+    },
+    {
+      "id": "reconexiones_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "reconnects=0 (máximo 3)"
+    },
+    {
+      "id": "consumidores_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "consumers=2 (máximo 3, todos los componentes)"
+    },
+    {
+      "id": "reconexiones_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "reconnects=0 (máximo 3)"
+    },
+    {
+      "id": "consumidores_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "consumers=2 (máximo 3, todos los componentes)"
+    },
+    {
+      "id": "reconexiones_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "reconnects=0 (máximo 3)"
+    },
+    {
+      "id": "consumidores_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "consumers=2 (máximo 3, todos los componentes)"
+    },
+    {
+      "id": "reconexiones_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "reconnects=0 (máximo 3)"
+    },
+    {
+      "id": "consumidores_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "consumers=2 (máximo 3, todos los componentes)"
+    },
+    {
+      "id": "reconexiones_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "reconnects=0 (máximo 3)"
+    },
+    {
+      "id": "consumidores_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "consumers=2 (máximo 3, todos los componentes)"
+    },
+    {
+      "id": "reconexiones_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "reconnects=0 (máximo 3)"
+    },
+    {
+      "id": "consumidores_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "consumers=2 (máximo 3, todos los componentes)"
+    },
+    {
+      "id": "reconexiones_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "reconnects=0 (máximo 3)"
+    },
+    {
+      "id": "consumidores_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "consumers=2 (máximo 3, todos los componentes)"
+    },
+    {
+      "id": "reconexiones_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "reconnects=0 (máximo 3)"
+    },
+    {
+      "id": "consumidores_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "consumers=2 (máximo 3, todos los componentes)"
+    },
+    {
+      "id": "reconexiones_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "reconnects=0 (máximo 3)"
+    },
+    {
+      "id": "consumidores_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "consumers=2 (máximo 3, todos los componentes)"
+    },
+    {
+      "id": "reconexiones_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "reconnects=0 (máximo 3)"
+    },
+    {
+      "id": "consumidores_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "consumers=2 (máximo 3, todos los componentes)"
+    },
+    {
+      "id": "reconexiones_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "reconnects=0 (máximo 3)"
+    },
+    {
+      "id": "consumidores_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "consumers=2 (máximo 3, todos los componentes)"
+    },
+    {
+      "id": "reconexiones_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "reconnects=0 (máximo 3)"
+    },
+    {
+      "id": "consumidores_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "consumers=2 (máximo 3, todos los componentes)"
+    },
+    {
+      "id": "reconexiones_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "reconnects=0 (máximo 3)"
+    },
+    {
+      "id": "consumidores_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "consumers=2 (máximo 3, todos los componentes)"
+    },
+    {
+      "id": "reconexiones_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "reconnects=0 (máximo 3)"
+    },
+    {
+      "id": "consumidores_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "consumers=2 (máximo 3, todos los componentes)"
+    },
+    {
+      "id": "reconexiones_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "reconnects=0 (máximo 3)"
+    },
+    {
+      "id": "consumidores_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "consumers=2 (máximo 3, todos los componentes)"
+    },
+    {
+      "id": "reconexiones_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "reconnects=0 (máximo 3)"
+    },
+    {
+      "id": "consumidores_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "consumers=2 (máximo 3, todos los componentes)"
+    },
+    {
+      "id": "reconexiones_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "reconnects=0 (máximo 3)"
+    },
+    {
+      "id": "consumidores_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "consumers=2 (máximo 3, todos los componentes)"
+    },
+    {
+      "id": "reconexiones_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "reconnects=0 (máximo 3)"
+    },
+    {
+      "id": "conduccion_detenida",
+      "ok": true,
+      "required": true,
+      "source": "execute",
+      "detail": "stop status=200 (conducción congelada, sin cierre inventado, posición preservada)"
+    }
+  ],
+  "rest_count": 2,
+  "ledger_total_por_run_id": 7,
+  "db_unchanged": true,
+  "ultima_salud_ingenieria": {
+    "service": "engineering-session-service/v1",
+    "engine_version": "paper-lab-engine/v1.2",
+    "pid": 16948,
+    "host": "127.0.0.1",
+    "port": 8797,
+    "sessions_dir": "docs\\evidence\\engineering-live-public-20261102d\\sessions",
+    "cadence_ms": 700.0,
+    "market": {
+      "url": "http://127.0.0.1:8791",
+      "bars": 300,
+      "live_silence_ms": 120000.0,
+      "max_notional_usdt": 1000.0,
+      "transports": [
+        "local_replay",
+        "market_stream"
+      ]
+    },
+    "clock": {
+      "source": "public_sincronizado",
+      "available": true,
+      "offset_ms": -17.060059,
+      "rtt_ms": 369.565674,
+      "last_sync_timestamp": "2026-11-03T02:55:32.102257+00:00",
+      "age_ms": 112.472,
+      "sync_successful": 1,
+      "sync_failed": 0,
+      "samples_valid": 5,
+      "samples_failed": 0
+    },
+    "drives": [],
+    "generated_at_ms": 1793674532214
+  },
+  "limpieza_resultado": {
+    "procesos_terminados": [
+      "ingeniería",
+      "mercado"
+    ],
+    "procesos_fallidos": [],
+    "archivos_log_cerrados": [
+      "ingeniería_stdout",
+      "ingeniería_stderr",
+      "mercado_stdout",
+      "mercado_stderr"
+    ],
+    "pid_files_propios_eliminados": []
+  },
+  "service_stdout_path": "docs\\evidence\\engineering-live-public-20261102d\\service_logs\\service-stdout.log",
+  "service_stderr_path": "docs\\evidence\\engineering-live-public-20261102d\\service_logs\\service-stderr.log",
+  "engineering_stdout_path": "docs\\evidence\\engineering-live-public-20261102d\\service_logs\\engineering-stdout.log",
+  "engineering_stderr_path": "docs\\evidence\\engineering-live-public-20261102d\\service_logs\\engineering-stderr.log"
+}
