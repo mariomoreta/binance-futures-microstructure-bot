@@ -1,6 +1,6 @@
 "use client";
 import type {PaperCosts, PaperTradeResult} from "@/lib/paper-lab-live";
-import {formatMoneyUnknown, formatFunding, formatMoney} from "@/lib/format";
+import {formatCost, formatCostEstimate, formatFunding, formatMoney} from "@/lib/format";
 import s from "./PaperLabLive.module.css";
 
 interface PnLPanelProps {
@@ -21,19 +21,19 @@ export function PnLPanel({finished, entered, costs, unrealized, result, exitExec
       <div className={s.row}><span className={s.k}>P&L bruto</span><span className={`${s.v} ${gross == null ? "" : gross >= 0 ? s.pos : s.neg}`}>{formatMoney(gross)}</span></div>
       {entered && (
         <>
-          <div className={s.row}><span className={s.k}>Comisiones entrada</span><span className={s.v}>{formatMoneyUnknown(costs.entry_fees, costs.entry_fees_executed > 0, "sin fill de entrada")}</span></div>
-          <div className={s.row}><span className={s.k}>Spread+slippage entrada</span><span className={s.v}>{formatMoneyUnknown(costs.entry_spread_slip, costs.entry_spread_slip_executed > 0, "sin fill de entrada")}</span></div>
+          <div className={s.row}><span className={s.k}>Comisiones entrada</span><span className={s.v}>{formatCost(costs.entry_fees, costs.entry_fees_executed > 0, "sin fill de entrada")}</span></div>
+          <div className={s.row}><span className={s.k}>Spread+slippage entrada</span><span className={s.v}>{formatCost(costs.entry_spread_slip, costs.entry_spread_slip_executed > 0, "sin fill de entrada")}</span></div>
           {!realized && (
             <>
-              <div className={s.row}><span className={s.k}>Salida hipotetica (costes)</span><span className={`${s.v} ${s.warn}`}>{formatMoneyUnknown(costs.exit_fees + costs.exit_spread_slip, costs.exit_fees_executed > 0 || costs.exit_spread_slip_executed > 0, "sin salida ejecutada")} · no ejecutada</span></div>
+              <div className={s.row}><span className={s.k}>Salida hipotetica (costes)</span><span className={`${s.v} ${s.warn}`}>{formatCostEstimate(costs.exit_fees_estimated + costs.exit_spread_slip_estimated, entered && !realized)}</span></div>
               <div className={s.row}><span className={s.k}>Funding devengado</span><span className={s.v}>{formatFunding(costs.funding)}</span></div>
               <div className={s.row}><span className={s.k}>Neto estimado (NO realizado)</span><span className={`${s.v} ${unrealized == null ? "" : unrealized >= 0 ? s.pos : s.neg}`}>{formatMoney(unrealized ?? null)}</span></div>
             </>
           )}
           {realized && (
             <>
-              <div className={s.row}><span className={s.k}>Comisiones salida</span><span className={s.v}>{formatMoneyUnknown(costs.exit_fees, costs.exit_fees_executed > 0, "sin salida ejecutada")}</span></div>
-              <div className={s.row}><span className={s.k}>Spread+slippage salida</span><span className={s.v}>{formatMoneyUnknown(costs.exit_spread_slip, costs.exit_spread_slip_executed > 0, "sin salida ejecutada")}</span></div>
+              <div className={s.row}><span className={s.k}>Comisiones salida</span><span className={s.v}>{formatCost(costs.exit_fees, costs.exit_fees_executed > 0, "sin salida ejecutada")}</span></div>
+              <div className={s.row}><span className={s.k}>Spread+slippage salida</span><span className={s.v}>{formatCost(costs.exit_spread_slip, costs.exit_spread_slip_executed > 0, "sin salida ejecutada")}</span></div>
               <div className={s.row}><span className={s.k}>Funding</span><span className={s.v}>{formatFunding(costs.funding)}</span></div>
               <div className={s.row}><span className={s.k}>Neto REALIZADO</span><span className={`${s.v} ${net != null && net >= 0 ? s.pos : s.neg}`}>{formatMoney(net)}</span></div>
             </>

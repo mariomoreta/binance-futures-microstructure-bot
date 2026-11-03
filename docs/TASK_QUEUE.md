@@ -1,3 +1,22 @@
+## Recorrido visible en dashboard V2 - /market-lab (2026-11-03, base `2e3830a`)
+
+`CURRENT_PHASE`: dashboard V2 de escritorio + observación (WS público solo bajo autorización
+explícita; sin monitor, sin órdenes).
+
+`CURRENT_OBJECTIVE`: cumplido - llevar el recorrido backend ya acreditado al control visible del
+dashboard en /market-lab.
+
+`ACTIVE_TASK`: cerrado - implementación de interfaz, cableado a servicios existentes y aceptación
+local integrada (11/11 PASS desde navegador real).
+
+`NEXT_TASKS`:
+1. Sesión dejada abierta y congelada (posición paper simulada, sin orden real): conservar, no
+   inventar salida/comisión/realizado.
+2. 3020 dejado disponible con build verificado y sin demo activa.
+3. No bloqueantes: literal histórico del detalle `build_served` ("árbol e2243c9").
+
+## Recorrido visible en dashboard V2 - implementación (base `2e3830a`)
+
 ## Recorrido visible en el dashboard V2 - /market-lab (2026-11-03, base `4b35d2c`)
 
 `CURRENT_PHASE`: dashboard V2 de escritorio + observación (WS público solo bajo autorización

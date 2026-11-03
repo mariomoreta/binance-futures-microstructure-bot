@@ -1,3 +1,30 @@
+## Recorrido visible en dashboard V2 - /market-lab (2026-11-03, base `2e3830a`)
+
+**1. Title:** Llevar al dashboard existente el recorrido backend ya acreditado:
+  sesión → datos nuevos → evaluación con decisión y motivo → señal pendiente → posición paper.
+
+**2. Approval status:** AUTORIZADO por este prompt (implementación de interfaz, cableado a
+  servicios existentes, aceptación local integrada; sin conexiones públicas nuevas, sin órdenes
+  reales, sin cambios de estrategia, sin nuevos motores, sin pagos, sin móvil).
+
+**3. Implementation status:** IMPLEMENTADO en rama `dash-v2-04-recorrido-visible`.
+
+**4. Evaluation status:** PASS - typecheck, lint, build y 628 pruebas frontend pasan. Aceptación
+  local A-J verificada desde navegador real (Playwright, DOM/red): 11/11 PASS.
+
+**5. Evidence:** Cambios en `frontend/src/lib/format.ts`,
+  `frontend/src/components/paper-lab-live/PnLPanel.tsx`,
+  `frontend/src/components/session-lab/SessionStatusPanels.tsx`,
+  `frontend/src/components/session-lab/EngineeringSession.tsx`,
+  `frontend/src/test/format.test.ts` (regresiones de semántica de costes).
+
+**6. Verdict:** PASS - recorrido visible integrado en el dashboard existente.
+
+**7. Next step:** dejar 3020 disponible con build verificado y sin demo activa; no integrar a
+  main.
+
+## Recorrido visible en dashboard V2 - implementación (base `2e3830a`)
+
 ## Recorrido visible en el dashboard V2 - /market-lab (2026-11-03, base `4b35d2c`)
 
 **1. Title:** Llevar al dashboard existente el recorrido backend ya acreditado:

@@ -51,22 +51,38 @@ export function formatAgeMs(ageMs: number | null | undefined): string {
   return `${Math.floor(m / 60)}h`;
 }
 
-// Costo/funding ausente: mostrar UNKNOWN con motivo, nunca cero.
-// `executed` indica si el coste se ejecutó realmente (fill), no solo se calculó.
-export function formatMoneyUnknown(
+// Coste ejecutado conocido: cero conocido se muestra como "0.00" (nunca "—",
+// nunca "+0.00"). Valor ausente (no ejecutado) → UNKNOWN con motivo.
+export function formatCost(
   value: number | null,
   executed: boolean,
   missingReason: string = "no ejecutado",
 ): string {
   if (!executed) return `UNKNOWN (${missingReason})`;
-  if (value === null || value === undefined || Number.isNaN(value)) return "UNKNOWN";
+  if (value === null || value === undefined || Number.isNaN(value)) return "—";
+  if (value === 0) return "0.00";
   return formatMoney(value);
 }
 
+// Coste hipotético conocido (salida no ejecutada): se muestra la estimación,
+// claramente marcada como no ejecutada. Si no hay estimación, UNKNOWN.
+export function formatCostEstimate(
+  value: number | null,
+  available: boolean,
+): string {
+  if (!available || value === null || value === undefined || Number.isNaN(value)) {
+    return "UNKNOWN (sin estimación disponible)";
+  }
+  if (value === 0) return "0.00 (estimación, no ejecutada)";
+  return `${formatMoney(value)} (estimación, no ejecutada)`;
+}
+
 // Funding devengado: null significa calendario no disponible (UNKNOWN).
+// Cero conocido (calendario disponible, importe cero) se muestra como "0.00".
 export function formatFunding(funding: number | null): string {
   if (funding === null || funding === undefined || Number.isNaN(funding)) {
     return "UNKNOWN (calendario de funding no disponible)";
   }
+  if (funding === 0) return "0.00";
   return formatMoney(funding);
 }

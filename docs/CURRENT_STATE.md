@@ -1,3 +1,32 @@
+## Recorrido visible en dashboard V2 - /market-lab implementado (2026-11-03, base `2e3830a`)
+
+Implementado en rama `dash-v2-04-recorrido-visible` (no integrada a main). Lleva al dashboard
+el recorrido backend ya acreditado (ventana pública `eng-run-public-20261102d`, PASS):
+sesión → datos nuevos → evaluación con decisión y motivo → señal pendiente → posición paper.
+
+Aceptación local A-J verificada desde el navegador real (Playwright, DOM/red, 11/11 PASS):
+A. Abrir dashboard: no inicia procesos ni sesión (GET puro de lectura).
+B. Iniciar demostración: un solo arranque y una sola sesión (demo loopback + servicio de ingeniería).
+C. Datos nuevos: gráfico y evaluación cambian sin recargar (SIN_ENTRADA apareció en T).
+D. SIN_ENTRADA con motivo visible en el panel de última evaluación.
+E. Señal pendiente y fill diferenciados (indicador: fill ejecutado / señal pendiente / decisión de abstención).
+F. Backend y UI coinciden: identidad, T, regla, decisión y posición.
+G. Recarga recupera la misma sesión sin duplicar entradas/evaluaciones.
+H. Detener sesión congela la conducción y conserva la posición abierta (sin salida inventada).
+I. Fuente caída: chip de fuente declara origen y causa.
+J. Limpieza: procesos propios terminados, archivos ajenos intactos.
+
+Semántica de costes corregida: cero conocido se muestra como cero; valor ausente → UNKNOWN con
+motivo; coste hipotético conocido → estimación claramente no ejecutada. Sin cambios de cálculos
+
+económicos. Regresiones focalizadas en tests/test/format.test.ts.
+
+Despliegue: dashboard 3020 con build verificado (BUILD_ID Wm9NjmROE3wO2OEpej10M, árbol frontend
+92116fedd163974e020cac0b6d78251a7618bac9 = HEAD:frontend). Servicio preexistente 8792
+(pid 31124) y archivos ajenos preservados. `opencode.json` fuera de commits.
+
+Activación pública (Binance) queda deshabilitada / no disponible en este bloque.
+
 ## Recorrido visible en el dashboard V2 - /market-lab (2026-11-03, base `4b35d2c`)
 
 Implementado en rama `dash-v2-04-recorrido-visible` (no integrada a main):

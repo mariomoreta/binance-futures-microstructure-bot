@@ -1143,6 +1143,16 @@ export default function EngineeringSession({
                     <>
                       <strong>Señal:</strong> vigilando (sin decisión de entrada).
                     </>
+                  ) : chartModelReady.operation.decision === "SIN_ENTRADA" ? (
+                    <>
+                      <strong>Decisión de abstención:</strong> SIN_ENTRADA —
+                      señal evaluada, sin entrada (esperando datos en T).
+                    </>
+                  ) : chartModelReady.operation.decision === "DESCARTADO" ? (
+                    <>
+                      <strong>Decisión:</strong> DESCARTADO —
+                      señal evaluada, sin entrada.
+                    </>
                   ) : (
                     <>
                       <strong>Sin señal:</strong> sin decisión de evaluación vigente.

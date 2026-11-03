@@ -4647,3 +4647,29 @@ distintos.
 
 ## 2026-11-03 - Reconciliación de la ventana pública eng-run-public-20261102d (base 88c5d2c)
 
+## 2026-11-03 - Recorrido visible en dashboard V2 - /market-lab (base 2e3830a)
+
+- Implementado en rama `dash-v2-04-recorrido-visible` (no integrada a main).
+- /market-lab muestra el recorrido backend ya acreditado (ventana pública
+  `eng-run-public-20261102d`, PASS, base `88c5d2c`).
+- Fuente identificada explícitamente: DEMOSTRACIÓN LOCAL vs BINANCE PÚBLICO (no activado en
+  este bloque; claramente no disponible al abrir la vista ni iniciar la demostración).
+- Estado separado: servicio de ingeniería, conexión de datos y sesión en paneles distintos.
+- Última evaluación: evento disparador, T, regla, decisión y motivo (panel dedicado).
+- Señal pendiente separada de fill ejecutado (indicador de texto + gráfico).
+- Costes/funding ausentes → UNKNOWN con motivo; cero conocido → cero; estimación conocida →
+  claramente no ejecutada. Sin cambios de cálculos económicos.
+- Error, silencio o desconexión visibles; datos antiguos nunca rotulados como actuales.
+- Semántica operativa: abrir página/GET no arranca procesos; cerrar pestaña desconecta al
+  observador sin detener el backend; recarga recupera la misma sesión sin duplicar; detener
+  sesión congela y conserva posición; distinguir detener sesión de detener servicios;
+  pid-files propios; servicio 8792 y dashboard 3020 preservados.
+- Aceptación local (A-J) verificada desde navegador real (Playwright, DOM/red): 11/11 PASS.
+- Typecheck, lint y build pasan. 628 pruebas frontend pasan.
+- Despliegue: dashboard 3020 con BUILD_ID Wm9NjmROE3wO2OEpej10M, árbol frontend
+  92116fedd163974e020cac0b6d78251a7618bac9 (= HEAD:frontend).
+- Commit selectivo y push normal en la misma rama; sin integrar a main.
+- La activación pública queda deshabilitada en este bloque.
+
+## 2026-11-03 - Recorrido visible en dashboard V2 - /market-lab (base 2e3830a)
+
