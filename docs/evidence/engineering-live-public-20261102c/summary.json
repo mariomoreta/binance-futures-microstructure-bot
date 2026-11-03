@@ -1,0 +1,208 @@
+{
+  "run_id": "eng-run-public-20261102c",
+  "base_git": "a11c02ee776e3eccba0dc67180a62aa05dd83c03",
+  "harness_sha256": "97bec590dc46aadde60b213afe5fdf8ae684b5dab088f59f4b6fefeab3bead9b",
+  "build_id": "t4z0bfKQ_kIP9qv1WHCKR",
+  "frontend_tree": "HEAD:dashboard",
+  "mode": "LIVE_WINDOW_EXECUTE (transport public, clock public)",
+  "arnes_verdict": "PASS",
+  "arnes_error": null,
+  "session_id": "PL-MINAUSDT-LONG-1793669229096-9d935300",
+  "config_hash": "4a339c046cc3ad63",
+  "regla": "RULE-CAUSAL-V1",
+  "referencia_ms": 1793669228291,
+  "contexto": {
+    "fuente": "caché derivada + REST klines",
+    "referencia_ms": 1793669228291,
+    "ventana": [
+      1793651220000,
+      1793669160000
+    ],
+    "cierre_ultima_ventana_ms": 1793669219999,
+    "velas": 600,
+    "symbols_seen": [
+      "BTCUSDT",
+      "MINAUSDT"
+    ],
+    "por_simbolo": {
+      "BTCUSDT": {
+        "velas": 300,
+        "primera_open_ms": 1793651220000,
+        "ultima_open_ms": 1793669160000,
+        "ultimo_cierre_ms": 1793669219999,
+        "contiguo": true,
+        "alcanza_ultima_cerrada": true
+      },
+      "MINAUSDT": {
+        "velas": 300,
+        "primera_open_ms": 1793651220000,
+        "ultima_open_ms": 1793669160000,
+        "ultimo_cierre_ms": 1793669219999,
+        "contiguo": true,
+        "alcanza_ultima_cerrada": true
+      }
+    },
+    "rango": [
+      1793651220000,
+      1793669160000
+    ],
+    "rest_usadas": 2,
+    "motivo": null
+  },
+  "contexto_parse_diag": [
+    {
+      "symbol": "BTCUSDT",
+      "result": "stored",
+      "rows": 0,
+      "admitidas": 0,
+      "reserved_before_send": false,
+      "cierre_no_disponible": 0,
+      "cierre_no_ocurrido": 0,
+      "ohlc_no_cerrado": 0,
+      "fuera_de_ventana": 0,
+      "duplicadas": 0
+    },
+    {
+      "symbol": "MINAUSDT",
+      "result": "stored",
+      "rows": 0,
+      "admitidas": 0,
+      "reserved_before_send": false,
+      "cierre_no_disponible": 0,
+      "cierre_no_ocurrido": 0,
+      "ohlc_no_cerrado": 0,
+      "fuera_de_ventana": 0,
+      "duplicadas": 0
+    },
+    {
+      "symbol": "BTCUSDT",
+      "result": "ok",
+      "rows": 300,
+      "admitidas": 300,
+      "reserved_before_send": true,
+      "cierre_no_disponible": 0,
+      "cierre_no_ocurrido": 0,
+      "fuera_de_ventana": 0,
+      "duplicadas": 0
+    },
+    {
+      "symbol": "MINAUSDT",
+      "result": "ok",
+      "rows": 300,
+      "admitidas": 300,
+      "reserved_before_send": true,
+      "cierre_no_disponible": 0,
+      "cierre_no_ocurrido": 0,
+      "fuera_de_ventana": 0,
+      "duplicadas": 0
+    }
+  ],
+  "cierre_ultima_ventana_ms": 1793669219999,
+  "presupuesto": {
+    "rest_arnes": 2,
+    "ledger_total_run_id": 7,
+    "budget_blocked": 0,
+    "limite_total": 7
+  },
+  "limits_seen": {
+    "consumidores_max": 2,
+    "reconexiones_max": 0
+  },
+  "cadena": {
+    "ws_hub": {
+      "ws_connects": 5,
+      "ws_messages_received": 237,
+      "ws_klines_parsed": 237,
+      "ws_closed_by_symbol": {
+        "BTCUSDT": 2,
+        "MINAUSDT": 1
+      },
+      "ws_rejected_by_symbol": {},
+      "sse_frames_sent": 237
+    },
+    "sse_adapter": {
+      "frames": 60,
+      "bad_frames": 0,
+      "unknown_frames": 0,
+      "provisional_frames": 17,
+      "disconnects": 5,
+      "reconnects": 5,
+      "connect_errors": 0,
+      "last_error": "TimeoutError: timed out",
+      "last_frame_at_ms": 1793669392558,
+      "connected_at_ms": 1793669374186,
+      "started_at_ms": 1793669229149
+    },
+    "sesion_revisiones": [
+      {
+        "revision": 0,
+        "at_ms": 1793669229184,
+        "estado": "sin_iniciar",
+        "decision": null,
+        "decision_reason": null,
+        "clock_ms": 1793669219999,
+        "eventos_procesados": 0
+      },
+      {
+        "revision": 2,
+        "at_ms": 1793669342370,
+        "estado": "sin_iniciar",
+        "decision": null,
+        "decision_reason": null,
+        "clock_ms": 1793669280000,
+        "eventos_procesados": 0
+      }
+    ],
+    "evaluaciones": [],
+    "eventos_procesados": 0,
+    "decision_final_vinculada": {
+      "revision": 2,
+      "decision": null,
+      "motivo": null,
+      "clock_ms": 1793669280000,
+      "eventos_procesados": 0
+    }
+  },
+  "sesion_final": {
+    "status": "sin_iniciar",
+    "revision": 2,
+    "clock_ms": 1793669280000,
+    "events": 0,
+    "position": {
+      "open": false,
+      "direction": null,
+      "entry_px": null,
+      "entry_qty": null,
+      "entry_cost": null,
+      "entry_ms": null,
+      "stop_px": 0.0,
+      "mark_px": null,
+      "mark_ms": null,
+      "unrealized_gross": null,
+      "unrealized_net": null,
+      "mfe_pct": null,
+      "mae_pct": null
+    },
+    "result": null,
+    "input_hash": null
+  },
+  "db_unchanged": true,
+  "duracion_total_s": 180.386,
+  "adquisicion_dentro_deadline": true,
+  "limpieza_resultado": {
+    "procesos_terminados": [
+      "ingeniería",
+      "mercado"
+    ],
+    "procesos_fallidos": [],
+    "archivos_log_cerrados": [
+      "ingeniería_stdout",
+      "ingeniería_stderr",
+      "mercado_stdout",
+      "mercado_stderr"
+    ],
+    "pid_files_propios_eliminados": []
+  },
+  "verdict_global": "FAIL",
+  "verdict_global_motivo": "EVALUACION_NO_ALCANZADA: CIA completa no acreditada por la sesion (eventos_procesados=0, evaluaciones=0, cursor=1, sin decision ni motivo). El arnes completo su recorrido (sesion creada, conduccion viva, budgets exactos, limpieza), el WS publico entrego 237 mensajes con 3 cierres nuevos admitidos POR EL HUB (BTC 2, MINA 1), pero el adaptador SSE del servicio de ingenieria solo recibio 60 frames con 5 desconexiones por TimeoutError y conexion efectiva recien a 1793669374186 (~147 s despues del arranque); el avance de clock 1793669219999->1793669280000 (revision 2, sin evento registrado) es causa UNKNOWN."
+}

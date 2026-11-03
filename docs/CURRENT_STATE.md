@@ -1,3 +1,47 @@
+## Ventana pública única `eng-run-public-20261102c` - FAIL de aceptación: EVALUACION_NO_ALCANZADA (2026-11-02, base `a11c02e`)
+
+Se ejecutó UNA ventana pública autorizada con el arnés corregido
+(`scripts/engineering_live_window.py` — SHA real en
+`docs/evidence/engineering-live-public-20261102c/preflight.json`).
+Presupuesto consumido exactamente: ledger `execution_id=eng-run-public-20261102c`
+con 7/7 filas (5 `/time` + 2 klines, `limit=300`, `endTime=1793669219999`,
+0 reintentos, 0 `budget_blocked`). Sin relanzamientos; 0 escrituras en DBs
+canónicas (hash-igualadas antes/después); 8792, 3020 y `opencode.json`
+intactos.
+
+- ACREDITADO: sesión creada con identidad
+  (`PL-MINAUSDT-LONG-1793669229096-9d935300`, `config_hash=4a339c046cc3ad63`,
+  regla `RULE-CAUSAL-V1` fija pre-conexión); referencia de reloj público
+  válido (`public_sincronizado`, offset −7.125 ms, RTT 360 ms, 5/5 muestras);
+  contexto cerrado no-futuro correcto con el camino corregido en a11c02e
+  (600 velas, 300/símbolo, contiguas, último cierre admitido
+  1793669219999 ≤ referencia 1793669228291, vela en curso excluida fila a
+  fila, `cierre_no_ocurrido:0`, REST 2/2); WS pública saludable (237
+  mensajes, 0 reconexiones, **3 cierres nuevos admitidos POR EL HUB**:
+  BTCUSDT 2, MINAUSDT 1, 237 frames SSE enviados); consumidores ≤2; adquisición
+  174.5 s < 180 s; limpieza completa (pid-files propios eliminados, 8791/8797
+  libres, pid-file 8792 intacto, DBs canónicas sin cambios); posición
+  `open=false` sin fills ni salidas inventadas.
+- NO ACREDITADO: cierre nuevo admitido **por la sesión**
+  (`events=[]`, `eventos_procesados=0`), avance de T por evento, evento
+  disparador y evaluación con decisión y motivo
+  (contador 0; `result=null`; sesión quedó `sin_iniciar`, rev 2 con
+  `clock_ms=1793669280000` sin evento registrado → causa UNKNOWN).
+- CAUSA (clasificada): fallo del arnés/servicios locales en el adaptador SSE
+  del servicio de ingeniería: frames 60/237, 5 desconexiones por
+  `TimeoutError: timed out`, conexión efectiva recién a
+  `1793669374186` (~147 s tras `started_at_ms=1793669229149`). No es fallo
+  upstream de Binance y NO es el defecto de contexto corregido en a11c02e.
+- Veredicto del arnés: PASS interno (sus checks); veredicto global de
+  aceptación: **FAIL** (`EVALUACION_NO_ALCANZADA`). `SIN_ENTRADA` no aplica:
+  no hubo eventos procesados con los cuales abstenerse.
+- Evidencia: `docs/evidence/engineering-live-public-20261102c/`
+  (`RESULTADO.md`, `summary.json`, `evidence.json`, `preflight.json`,
+  `post_state.json`, `ledger-run-id.json`, sesión persistida, logs de
+  servicio y del arnés).
+
+## Corrección del contexto cerrado del arnés + aislamiento de pid-files (2026-11-02, base `f033c06`)
+
 ## Corrección del contexto cerrado del arnés + aislamiento de pid-files (2026-11-02, base `f033c06`)
 
 Corregido en código (sin ejecutar ninguna ventana pública) el defecto que

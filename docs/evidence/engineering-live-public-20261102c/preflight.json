@@ -1,0 +1,26 @@
+{
+  "fecha": "2026-11-02",
+  "verificacion_previa_sin_red_publica": true,
+  "head": "a11c02ee776e3eccba0dc67180a62aa05dd83c03",
+  "branch": "diag/recorrido-local-4f4273c",
+  "harness_sha256": "97bec590dc46aadde60b213afe5fdf8ae684b5dab088f59f4b6fefeab3bead9b",
+  "frontend_tree_git": "HEAD:dashboard",
+  "build_id_servido": "t4z0bfKQ_kIP9qv1WHCKR",
+  "build_id_en_pagina_served": true,
+  "puertos_antes": {
+    "8791": "libre",
+    "8797": "libre",
+    "18799": "libre",
+    "18800": "libre",
+    "8792": "OCCUPADO(pid 31124)",
+    "3020": "OCCUPADO"
+  },
+  "pid_file_8792_antes": "{\"pid\":31124,\"port\":8792,\"started_at_ms\":1793276434054}",
+  "canonical_dbs_before": {
+    "historical": "d8930ec5d4c4415e748859f426d0a9e9c39de5ceb17367efd3d626fdf56f8b19",
+    "microprobe": "6ea98cab059b2a5b2559891c1f7bbf9a9aeb600fe0d8c182f34bd01d7d4221a7"
+  },
+  "ledger_rows_run_id_before": 0,
+  "run_id": "eng-run-public-20261102c",
+  "no_relanceado": true
+}

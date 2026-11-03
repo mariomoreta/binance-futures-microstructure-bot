@@ -1,3 +1,55 @@
+## Ventana pública única `eng-run-public-20261102c` (2026-11-02, base `a11c02e`)
+
+**1. Title:** Ejecutar UNA ventana pública autorizada con el arnés corregido
+(a11c02e) y acreditar: sesión creada → cierre nuevo admitido por la sesión →
+avance de T → evaluación con decisión y motivo.
+
+**2. Approval status:** AUTORIZADO por el operador de forma acotada: una sola
+ejecución pública (`run_id` NUEVO `eng-run-public-20261102c`), deadline 180 s,
+máx. 7 intentos HTTP upstream, 300 velas/consulta, 1 WS combinada
+(MINAUSDT+BTCUSDT, 1m), 3 reconexiones, 3 consumidores SSE, 0 escrituras en
+DBs canónicas, sin órdenes reales ni claves, sin relanzamientos ni
+diagnósticos públicos auxiliares.
+
+**3. Implementation status:** EJECUTADA una sola vez (sin relanzar).
+`session_id=PL-MINAUSDT-LONG-1793669229096-9d935300`,
+`config_hash=4a339c046cc3ad63`, regla `RULE-CAUSAL-V1`; la ventana usó el
+arnés existente en base `a11c02e` (SHA-256 completo en `preflight.json`;
+BUILD_ID servido
+`t4z0bfKQ_kIP9qv1WHCKR`, árbol frontend `1f6f0500cb9115fa5c9d44e07be2c5524bdee690`).
+
+**4. Evaluation status:** **FAIL de aceptación**
+(`EVALUACION_NO_ALCANZADA`) pese al PASS interno del arnés. Acreditado:
+contexto cerrado no-futuro (camino corregido en a11c02e funcionó en producción:
+600 velas contiguas, último cierre 1793669219999 ≤ referencia 1793669228291,
+vela en curso excluida fila a fila), referencia de reloj público válida,
+presupuesto exacto 7/7 ledger compartido, WS pública 237 mensajes sin
+reconexiones con 3 cierres nuevos admitidos POR EL HUB, limpieza completa y
+DBs canónicas intactas. NO acreditado: eventos procesados por la sesión
+(`eventos_procesados=0`, `events=[]`), avance de T por evento (rev 2 con
+`clock_ms=1793669280000` sin evento: UNKNOWN), evento disparador y
+evaluación con decisión y motivo. Causa clasificada: adaptador SSE del
+servicio de ingeniería (60/237 frames, 5 desconexiones
+`TimeoutError`, conexión efectiva ~147 s tarde). No es fallo de Binance ni
+del contexto corregido. `SIN_ENTRADA` no aplica (no hubo eventos
+procesados).
+
+**5. Evidence:** `docs/evidence/engineering-live-public-20261102c/` —
+`evidence.json` (arnés, PASS interno), `summary.json` (veredicto global
+FAIL + motivo), `RESULTADO.md`, `preflight.json`, `post_state.json`,
+`ledger-run-id.json` (7 filas), `command.txt`, `sessions/`
+(sesión persistida, `events=[]`), `service_logs/` (stderr vacío),
+`harness-stdout.log` (UTF-16LE) + `harness-stdout-utf8.txt`.
+
+**6. Verdict:** FAIL (contrato de aceptación del recorrido completo).
+
+**7. Next step:** corrección local del adaptador SSE de ingeniería
+(causa de desconexiones/TimeoutError y de `eventos_procesados` plano, y del
+cambio de `clock_ms` sin evento); luego solicitar nueva autorización para
+UNA ventana pública con `run_id` NUEVO.
+
+## Contexto cerrado del arnés + pid-files aislados (2026-11-02, base `f033c06`)
+
 ## Contexto cerrado del arnés + pid-files aislados (2026-11-02, base `f033c06`)
 
 **1. Title:** Corrección en código (sin Binance, sin ventana pública) del

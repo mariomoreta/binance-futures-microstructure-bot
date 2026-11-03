@@ -1,0 +1,15 @@
+{
+ "version": 1,
+ "sessions": {
+  "PL-MINAUSDT-LONG-1793669229096-9d935300": {
+   "transport": "market_stream",
+   "symbol": "MINAUSDT",
+   "interval": "1m",
+   "bars": 300,
+   "market_url": "http://127.0.0.1:8791",
+   "live_silence_ms": 120000.0,
+   "from_ms": null,
+   "to_ms": null
+  }
+ }
+}

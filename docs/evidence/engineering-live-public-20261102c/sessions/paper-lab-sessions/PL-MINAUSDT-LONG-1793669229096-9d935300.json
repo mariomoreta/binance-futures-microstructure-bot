@@ -1,0 +1,6088 @@
+{
+ "session_id": "PL-MINAUSDT-LONG-1793669229096-9d935300",
+ "created_at_ms": 1793669229096,
+ "updated_at_ms": 1793669342023,
+ "status": "sin_iniciar",
+ "revision": 2,
+ "config": {
+  "symbol": "MINAUSDT",
+  "interval": "1m",
+  "direction": "LONG",
+  "notional_usdt": 1000.0,
+  "entry_px": 0.0,
+  "stop_px": 0.0,
+  "stop_distance_pct": 5.0,
+  "horizon_ms": 10800000,
+  "fee_bps": 5.0,
+  "spread_bps": 1.0,
+  "slippage_bps": 2.0,
+  "hypothesis_id": "ENG-LIVE-01",
+  "hypothesis_version": "v1",
+  "rule_version": "RULE-CAUSAL-V1",
+  "decision": null,
+  "decision_reason": null,
+  "decision_evidence": null
+ },
+ "candles": [
+  {
+   "open_time_ms": 1793669280000,
+   "open": 0.05586,
+   "high": 0.05587,
+   "low": 0.05582,
+   "close": 0.05587,
+   "close_time_ms": 1793669339999,
+   "available_at": 1793669280000,
+   "received_at": 1793669342018
+  }
+ ],
+ "context_candles": [
+  {
+   "open_time_ms": 1793651220000,
+   "open": 77106.0,
+   "high": 77106.1,
+   "low": 77035.0,
+   "close": 77035.0,
+   "close_time_ms": 1793651279999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793651280000,
+   "open": 77035.1,
+   "high": 77035.1,
+   "low": 77000.0,
+   "close": 77013.2,
+   "close_time_ms": 1793651339999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793651340000,
+   "open": 77013.2,
+   "high": 77021.4,
+   "low": 76980.3,
+   "close": 76997.0,
+   "close_time_ms": 1793651399999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793651400000,
+   "open": 76996.9,
+   "high": 76997.0,
+   "low": 76921.0,
+   "close": 76921.0,
+   "close_time_ms": 1793651459999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793651460000,
+   "open": 76921.0,
+   "high": 76921.1,
+   "low": 76885.2,
+   "close": 76885.3,
+   "close_time_ms": 1793651519999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793651520000,
+   "open": 76885.2,
+   "high": 76912.4,
+   "low": 76859.7,
+   "close": 76908.7,
+   "close_time_ms": 1793651579999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793651580000,
+   "open": 76908.7,
+   "high": 76912.4,
+   "low": 76835.0,
+   "close": 76912.4,
+   "close_time_ms": 1793651639999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793651640000,
+   "open": 76912.4,
+   "high": 76938.9,
+   "low": 76895.1,
+   "close": 76927.8,
+   "close_time_ms": 1793651699999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793651700000,
+   "open": 76928.0,
+   "high": 76943.4,
+   "low": 76843.7,
+   "close": 76843.8,
+   "close_time_ms": 1793651759999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793651760000,
+   "open": 76843.8,
+   "high": 76921.1,
+   "low": 76843.7,
+   "close": 76914.4,
+   "close_time_ms": 1793651819999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793651820000,
+   "open": 76914.4,
+   "high": 76933.4,
+   "low": 76875.4,
+   "close": 76875.4,
+   "close_time_ms": 1793651879999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793651880000,
+   "open": 76875.4,
+   "high": 76890.4,
+   "low": 76834.5,
+   "close": 76885.9,
+   "close_time_ms": 1793651939999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793651940000,
+   "open": 76885.9,
+   "high": 76907.9,
+   "low": 76850.8,
+   "close": 76850.8,
+   "close_time_ms": 1793651999999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793652000000,
+   "open": 76850.8,
+   "high": 76880.1,
+   "low": 76826.2,
+   "close": 76847.8,
+   "close_time_ms": 1793652059999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793652060000,
+   "open": 76847.8,
+   "high": 76856.2,
+   "low": 76808.0,
+   "close": 76824.6,
+   "close_time_ms": 1793652119999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793652120000,
+   "open": 76824.5,
+   "high": 76896.0,
+   "low": 76814.8,
+   "close": 76864.3,
+   "close_time_ms": 1793652179999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793652180000,
+   "open": 76864.3,
+   "high": 76906.5,
+   "low": 76864.3,
+   "close": 76891.4,
+   "close_time_ms": 1793652239999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793652240000,
+   "open": 76891.5,
+   "high": 76893.5,
+   "low": 76880.0,
+   "close": 76880.1,
+   "close_time_ms": 1793652299999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793652300000,
+   "open": 76880.1,
+   "high": 76928.5,
+   "low": 76880.0,
+   "close": 76900.4,
+   "close_time_ms": 1793652359999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793652360000,
+   "open": 76900.4,
+   "high": 76999.0,
+   "low": 76900.4,
+   "close": 76989.7,
+   "close_time_ms": 1793652419999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793652420000,
+   "open": 76989.7,
+   "high": 76989.7,
+   "low": 76937.1,
+   "close": 76957.9,
+   "close_time_ms": 1793652479999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793652480000,
+   "open": 76957.9,
+   "high": 76988.7,
+   "low": 76948.8,
+   "close": 76955.0,
+   "close_time_ms": 1793652539999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793652540000,
+   "open": 76955.0,
+   "high": 76988.3,
+   "low": 76954.9,
+   "close": 76978.2,
+   "close_time_ms": 1793652599999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793652600000,
+   "open": 76978.3,
+   "high": 76993.7,
+   "low": 76917.0,
+   "close": 76917.0,
+   "close_time_ms": 1793652659999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793652660000,
+   "open": 76917.0,
+   "high": 76927.7,
+   "low": 76870.2,
+   "close": 76883.8,
+   "close_time_ms": 1793652719999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793652720000,
+   "open": 76883.7,
+   "high": 76897.7,
+   "low": 76872.2,
+   "close": 76886.4,
+   "close_time_ms": 1793652779999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793652780000,
+   "open": 76886.5,
+   "high": 76911.9,
+   "low": 76872.2,
+   "close": 76911.8,
+   "close_time_ms": 1793652839999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793652840000,
+   "open": 76911.8,
+   "high": 76927.7,
+   "low": 76904.0,
+   "close": 76909.4,
+   "close_time_ms": 1793652899999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793652900000,
+   "open": 76909.5,
+   "high": 76909.5,
+   "low": 76830.0,
+   "close": 76831.0,
+   "close_time_ms": 1793652959999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793652960000,
+   "open": 76831.1,
+   "high": 76831.1,
+   "low": 76803.0,
+   "close": 76813.7,
+   "close_time_ms": 1793653019999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793653020000,
+   "open": 76813.7,
+   "high": 76813.8,
+   "low": 76718.8,
+   "close": 76719.6,
+   "close_time_ms": 1793653079999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793653080000,
+   "open": 76719.7,
+   "high": 76763.4,
+   "low": 76701.3,
+   "close": 76751.6,
+   "close_time_ms": 1793653139999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793653140000,
+   "open": 76751.6,
+   "high": 76773.4,
+   "low": 76715.0,
+   "close": 76770.1,
+   "close_time_ms": 1793653199999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793653200000,
+   "open": 76770.0,
+   "high": 76770.1,
+   "low": 76733.3,
+   "close": 76733.3,
+   "close_time_ms": 1793653259999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793653260000,
+   "open": 76733.4,
+   "high": 76763.6,
+   "low": 76710.0,
+   "close": 76717.7,
+   "close_time_ms": 1793653319999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793653320000,
+   "open": 76717.7,
+   "high": 76878.7,
+   "low": 76717.6,
+   "close": 76862.9,
+   "close_time_ms": 1793653379999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793653380000,
+   "open": 76862.8,
+   "high": 76862.9,
+   "low": 76786.0,
+   "close": 76791.4,
+   "close_time_ms": 1793653439999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793653440000,
+   "open": 76791.5,
+   "high": 76812.7,
+   "low": 76789.4,
+   "close": 76812.6,
+   "close_time_ms": 1793653499999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793653500000,
+   "open": 76812.6,
+   "high": 76858.8,
+   "low": 76812.6,
+   "close": 76818.7,
+   "close_time_ms": 1793653559999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793653560000,
+   "open": 76818.8,
+   "high": 76875.9,
+   "low": 76806.4,
+   "close": 76852.6,
+   "close_time_ms": 1793653619999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793653620000,
+   "open": 76852.6,
+   "high": 76948.1,
+   "low": 76851.5,
+   "close": 76932.9,
+   "close_time_ms": 1793653679999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793653680000,
+   "open": 76933.0,
+   "high": 76933.0,
+   "low": 76869.4,
+   "close": 76874.9,
+   "close_time_ms": 1793653739999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793653740000,
+   "open": 76874.9,
+   "high": 76878.8,
+   "low": 76856.3,
+   "close": 76856.3,
+   "close_time_ms": 1793653799999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793653800000,
+   "open": 76856.3,
+   "high": 76856.4,
+   "low": 76805.1,
+   "close": 76805.1,
+   "close_time_ms": 1793653859999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793653860000,
+   "open": 76805.0,
+   "high": 76846.9,
+   "low": 76798.0,
+   "close": 76829.0,
+   "close_time_ms": 1793653919999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793653920000,
+   "open": 76828.9,
+   "high": 76848.2,
+   "low": 76828.9,
+   "close": 76842.0,
+   "close_time_ms": 1793653979999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793653980000,
+   "open": 76841.9,
+   "high": 76854.7,
+   "low": 76831.8,
+   "close": 76841.9,
+   "close_time_ms": 1793654039999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793654040000,
+   "open": 76841.9,
+   "high": 76850.0,
+   "low": 76800.0,
+   "close": 76840.7,
+   "close_time_ms": 1793654099999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793654100000,
+   "open": 76840.8,
+   "high": 76859.7,
+   "low": 76829.0,
+   "close": 76829.1,
+   "close_time_ms": 1793654159999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793654160000,
+   "open": 76829.1,
+   "high": 76829.1,
+   "low": 76803.2,
+   "close": 76810.9,
+   "close_time_ms": 1793654219999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793654220000,
+   "open": 76811.0,
+   "high": 76880.0,
+   "low": 76810.9,
+   "close": 76880.0,
+   "close_time_ms": 1793654279999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793654280000,
+   "open": 76880.0,
+   "high": 76920.2,
+   "low": 76880.0,
+   "close": 76910.3,
+   "close_time_ms": 1793654339999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793654340000,
+   "open": 76910.3,
+   "high": 76910.3,
+   "low": 76881.8,
+   "close": 76892.2,
+   "close_time_ms": 1793654399999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793654400000,
+   "open": 76892.2,
+   "high": 76915.0,
+   "low": 76884.7,
+   "close": 76915.0,
+   "close_time_ms": 1793654459999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793654460000,
+   "open": 76915.0,
+   "high": 76915.0,
+   "low": 76900.0,
+   "close": 76900.0,
+   "close_time_ms": 1793654519999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793654520000,
+   "open": 76900.0,
+   "high": 76900.1,
+   "low": 76858.0,
+   "close": 76858.0,
+   "close_time_ms": 1793654579999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793654580000,
+   "open": 76858.1,
+   "high": 76873.1,
+   "low": 76854.0,
+   "close": 76873.1,
+   "close_time_ms": 1793654639999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793654640000,
+   "open": 76873.1,
+   "high": 76873.1,
+   "low": 76854.0,
+   "close": 76854.1,
+   "close_time_ms": 1793654699999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793654700000,
+   "open": 76854.1,
+   "high": 76854.1,
+   "low": 76823.3,
+   "close": 76830.6,
+   "close_time_ms": 1793654759999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793654760000,
+   "open": 76830.6,
+   "high": 76844.3,
+   "low": 76812.4,
+   "close": 76832.6,
+   "close_time_ms": 1793654819999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793654820000,
+   "open": 76832.6,
+   "high": 76832.6,
+   "low": 76734.8,
+   "close": 76761.5,
+   "close_time_ms": 1793654879999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793654880000,
+   "open": 76761.5,
+   "high": 76774.6,
+   "low": 76744.7,
+   "close": 76756.7,
+   "close_time_ms": 1793654939999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793654940000,
+   "open": 76756.7,
+   "high": 76788.4,
+   "low": 76743.5,
+   "close": 76779.4,
+   "close_time_ms": 1793654999999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793655000000,
+   "open": 76779.4,
+   "high": 76859.9,
+   "low": 76758.2,
+   "close": 76780.6,
+   "close_time_ms": 1793655059999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793655060000,
+   "open": 76780.7,
+   "high": 76826.3,
+   "low": 76764.7,
+   "close": 76774.2,
+   "close_time_ms": 1793655119999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793655120000,
+   "open": 76774.3,
+   "high": 76830.0,
+   "low": 76774.0,
+   "close": 76795.9,
+   "close_time_ms": 1793655179999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793655180000,
+   "open": 76795.9,
+   "high": 76843.6,
+   "low": 76781.3,
+   "close": 76813.5,
+   "close_time_ms": 1793655239999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793655240000,
+   "open": 76813.5,
+   "high": 76843.6,
+   "low": 76802.2,
+   "close": 76826.5,
+   "close_time_ms": 1793655299999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793655300000,
+   "open": 76826.6,
+   "high": 76830.7,
+   "low": 76795.0,
+   "close": 76795.1,
+   "close_time_ms": 1793655359999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793655360000,
+   "open": 76795.1,
+   "high": 76843.8,
+   "low": 76783.5,
+   "close": 76843.8,
+   "close_time_ms": 1793655419999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793655420000,
+   "open": 76843.8,
+   "high": 76934.0,
+   "low": 76843.7,
+   "close": 76917.1,
+   "close_time_ms": 1793655479999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793655480000,
+   "open": 76917.1,
+   "high": 76938.9,
+   "low": 76917.0,
+   "close": 76917.0,
+   "close_time_ms": 1793655539999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793655540000,
+   "open": 76917.1,
+   "high": 76966.6,
+   "low": 76917.0,
+   "close": 76941.3,
+   "close_time_ms": 1793655599999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793655600000,
+   "open": 76941.3,
+   "high": 76950.0,
+   "low": 76901.6,
+   "close": 76910.0,
+   "close_time_ms": 1793655659999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793655660000,
+   "open": 76910.0,
+   "high": 76917.6,
+   "low": 76897.0,
+   "close": 76917.5,
+   "close_time_ms": 1793655719999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793655720000,
+   "open": 76917.6,
+   "high": 76932.9,
+   "low": 76912.0,
+   "close": 76932.9,
+   "close_time_ms": 1793655779999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793655780000,
+   "open": 76932.8,
+   "high": 76985.0,
+   "low": 76932.8,
+   "close": 76985.0,
+   "close_time_ms": 1793655839999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793655840000,
+   "open": 76985.0,
+   "high": 76988.5,
+   "low": 76945.2,
+   "close": 76953.2,
+   "close_time_ms": 1793655899999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793655900000,
+   "open": 76953.1,
+   "high": 76959.2,
+   "low": 76906.6,
+   "close": 76906.6,
+   "close_time_ms": 1793655959999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793655960000,
+   "open": 76906.6,
+   "high": 76937.2,
+   "low": 76906.6,
+   "close": 76923.9,
+   "close_time_ms": 1793656019999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793656020000,
+   "open": 76923.8,
+   "high": 76930.8,
+   "low": 76855.0,
+   "close": 76855.1,
+   "close_time_ms": 1793656079999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793656080000,
+   "open": 76855.1,
+   "high": 76870.1,
+   "low": 76822.5,
+   "close": 76837.0,
+   "close_time_ms": 1793656139999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793656140000,
+   "open": 76836.9,
+   "high": 76837.0,
+   "low": 76787.1,
+   "close": 76789.0,
+   "close_time_ms": 1793656199999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793656200000,
+   "open": 76789.0,
+   "high": 76832.1,
+   "low": 76777.4,
+   "close": 76816.8,
+   "close_time_ms": 1793656259999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793656260000,
+   "open": 76816.7,
+   "high": 76827.2,
+   "low": 76800.1,
+   "close": 76809.0,
+   "close_time_ms": 1793656319999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793656320000,
+   "open": 76809.0,
+   "high": 76819.3,
+   "low": 76800.5,
+   "close": 76819.3,
+   "close_time_ms": 1793656379999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793656380000,
+   "open": 76819.2,
+   "high": 76826.9,
+   "low": 76801.0,
+   "close": 76804.5,
+   "close_time_ms": 1793656439999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793656440000,
+   "open": 76804.5,
+   "high": 76869.9,
+   "low": 76804.4,
+   "close": 76856.7,
+   "close_time_ms": 1793656499999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793656500000,
+   "open": 76856.6,
+   "high": 76869.4,
+   "low": 76834.1,
+   "close": 76869.4,
+   "close_time_ms": 1793656559999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793656560000,
+   "open": 76869.4,
+   "high": 76907.6,
+   "low": 76869.3,
+   "close": 76907.5,
+   "close_time_ms": 1793656619999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793656620000,
+   "open": 76907.6,
+   "high": 76907.6,
+   "low": 76828.0,
+   "close": 76839.6,
+   "close_time_ms": 1793656679999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793656680000,
+   "open": 76839.6,
+   "high": 76846.0,
+   "low": 76814.8,
+   "close": 76818.5,
+   "close_time_ms": 1793656739999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793656740000,
+   "open": 76818.5,
+   "high": 76831.4,
+   "low": 76818.4,
+   "close": 76831.4,
+   "close_time_ms": 1793656799999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793656800000,
+   "open": 76831.3,
+   "high": 76863.4,
+   "low": 76831.3,
+   "close": 76863.3,
+   "close_time_ms": 1793656859999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793656860000,
+   "open": 76863.4,
+   "high": 76882.3,
+   "low": 76850.2,
+   "close": 76860.0,
+   "close_time_ms": 1793656919999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793656920000,
+   "open": 76860.0,
+   "high": 76870.8,
+   "low": 76859.9,
+   "close": 76860.0,
+   "close_time_ms": 1793656979999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793656980000,
+   "open": 76860.0,
+   "high": 76860.0,
+   "low": 76846.3,
+   "close": 76850.1,
+   "close_time_ms": 1793657039999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793657040000,
+   "open": 76850.0,
+   "high": 76850.0,
+   "low": 76813.2,
+   "close": 76813.3,
+   "close_time_ms": 1793657099999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793657100000,
+   "open": 76813.3,
+   "high": 76826.7,
+   "low": 76813.2,
+   "close": 76826.7,
+   "close_time_ms": 1793657159999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793657160000,
+   "open": 76826.7,
+   "high": 76873.4,
+   "low": 76826.6,
+   "close": 76873.4,
+   "close_time_ms": 1793657219999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793657220000,
+   "open": 76873.3,
+   "high": 76873.3,
+   "low": 76826.0,
+   "close": 76845.1,
+   "close_time_ms": 1793657279999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793657280000,
+   "open": 76845.1,
+   "high": 76862.1,
+   "low": 76845.0,
+   "close": 76862.1,
+   "close_time_ms": 1793657339999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793657340000,
+   "open": 76862.1,
+   "high": 76878.3,
+   "low": 76862.0,
+   "close": 76869.0,
+   "close_time_ms": 1793657399999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793657400000,
+   "open": 76869.1,
+   "high": 76870.1,
+   "low": 76869.0,
+   "close": 76870.1,
+   "close_time_ms": 1793657459999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793657460000,
+   "open": 76870.0,
+   "high": 76870.5,
+   "low": 76870.0,
+   "close": 76870.5,
+   "close_time_ms": 1793657519999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793657520000,
+   "open": 76870.5,
+   "high": 76878.8,
+   "low": 76850.0,
+   "close": 76850.1,
+   "close_time_ms": 1793657579999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793657580000,
+   "open": 76850.0,
+   "high": 76850.0,
+   "low": 76830.0,
+   "close": 76830.0,
+   "close_time_ms": 1793657639999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793657640000,
+   "open": 76830.1,
+   "high": 76871.8,
+   "low": 76822.1,
+   "close": 76871.8,
+   "close_time_ms": 1793657699999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793657700000,
+   "open": 76871.8,
+   "high": 76872.9,
+   "low": 76860.4,
+   "close": 76860.5,
+   "close_time_ms": 1793657759999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793657760000,
+   "open": 76860.5,
+   "high": 76861.9,
+   "low": 76860.4,
+   "close": 76861.9,
+   "close_time_ms": 1793657819999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793657820000,
+   "open": 76861.8,
+   "high": 76993.1,
+   "low": 76861.8,
+   "close": 76960.3,
+   "close_time_ms": 1793657879999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793657880000,
+   "open": 76960.4,
+   "high": 76983.1,
+   "low": 76960.1,
+   "close": 76983.1,
+   "close_time_ms": 1793657939999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793657940000,
+   "open": 76983.1,
+   "high": 77000.0,
+   "low": 76983.0,
+   "close": 76984.7,
+   "close_time_ms": 1793657999999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793658000000,
+   "open": 76984.6,
+   "high": 76984.7,
+   "low": 76972.2,
+   "close": 76972.2,
+   "close_time_ms": 1793658059999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793658060000,
+   "open": 76972.2,
+   "high": 76972.3,
+   "low": 76956.1,
+   "close": 76956.1,
+   "close_time_ms": 1793658119999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793658120000,
+   "open": 76956.1,
+   "high": 76956.2,
+   "low": 76950.0,
+   "close": 76950.1,
+   "close_time_ms": 1793658179999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793658180000,
+   "open": 76950.0,
+   "high": 76982.6,
+   "low": 76935.8,
+   "close": 76979.5,
+   "close_time_ms": 1793658239999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793658240000,
+   "open": 76979.5,
+   "high": 76997.3,
+   "low": 76979.4,
+   "close": 76997.3,
+   "close_time_ms": 1793658299999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793658300000,
+   "open": 76997.3,
+   "high": 76997.3,
+   "low": 76956.0,
+   "close": 76956.0,
+   "close_time_ms": 1793658359999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793658360000,
+   "open": 76956.0,
+   "high": 76960.0,
+   "low": 76921.8,
+   "close": 76921.9,
+   "close_time_ms": 1793658419999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793658420000,
+   "open": 76921.8,
+   "high": 76921.8,
+   "low": 76866.9,
+   "close": 76867.0,
+   "close_time_ms": 1793658479999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793658480000,
+   "open": 76867.0,
+   "high": 76867.0,
+   "low": 76830.0,
+   "close": 76830.0,
+   "close_time_ms": 1793658539999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793658540000,
+   "open": 76830.1,
+   "high": 76866.4,
+   "low": 76830.1,
+   "close": 76855.0,
+   "close_time_ms": 1793658599999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793658600000,
+   "open": 76855.1,
+   "high": 76866.9,
+   "low": 76842.3,
+   "close": 76855.5,
+   "close_time_ms": 1793658659999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793658660000,
+   "open": 76855.5,
+   "high": 76864.6,
+   "low": 76855.4,
+   "close": 76864.6,
+   "close_time_ms": 1793658719999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793658720000,
+   "open": 76864.6,
+   "high": 76864.6,
+   "low": 76807.8,
+   "close": 76807.8,
+   "close_time_ms": 1793658779999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793658780000,
+   "open": 76807.7,
+   "high": 76815.4,
+   "low": 76805.4,
+   "close": 76815.2,
+   "close_time_ms": 1793658839999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793658840000,
+   "open": 76815.2,
+   "high": 76815.3,
+   "low": 76815.2,
+   "close": 76815.3,
+   "close_time_ms": 1793658899999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793658900000,
+   "open": 76815.3,
+   "high": 76830.4,
+   "low": 76815.2,
+   "close": 76815.3,
+   "close_time_ms": 1793658959999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793658960000,
+   "open": 76815.2,
+   "high": 76815.2,
+   "low": 76781.3,
+   "close": 76781.4,
+   "close_time_ms": 1793659019999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793659020000,
+   "open": 76781.3,
+   "high": 76806.7,
+   "low": 76780.0,
+   "close": 76780.1,
+   "close_time_ms": 1793659079999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793659080000,
+   "open": 76780.1,
+   "high": 76788.9,
+   "low": 76780.0,
+   "close": 76788.9,
+   "close_time_ms": 1793659139999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793659140000,
+   "open": 76788.8,
+   "high": 76788.9,
+   "low": 76782.3,
+   "close": 76782.3,
+   "close_time_ms": 1793659199999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793659200000,
+   "open": 76782.3,
+   "high": 76819.9,
+   "low": 76782.3,
+   "close": 76813.8,
+   "close_time_ms": 1793659259999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793659260000,
+   "open": 76813.8,
+   "high": 76813.9,
+   "low": 76792.0,
+   "close": 76792.1,
+   "close_time_ms": 1793659319999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793659320000,
+   "open": 76792.1,
+   "high": 76803.5,
+   "low": 76792.0,
+   "close": 76803.4,
+   "close_time_ms": 1793659379999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793659380000,
+   "open": 76803.5,
+   "high": 76818.6,
+   "low": 76803.3,
+   "close": 76809.0,
+   "close_time_ms": 1793659439999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793659440000,
+   "open": 76808.9,
+   "high": 76809.0,
+   "low": 76808.8,
+   "close": 76808.9,
+   "close_time_ms": 1793659499999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793659500000,
+   "open": 76808.9,
+   "high": 76818.4,
+   "low": 76808.8,
+   "close": 76818.3,
+   "close_time_ms": 1793659559999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793659560000,
+   "open": 76818.4,
+   "high": 76875.2,
+   "low": 76818.3,
+   "close": 76875.1,
+   "close_time_ms": 1793659619999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793659620000,
+   "open": 76875.2,
+   "high": 76915.1,
+   "low": 76875.2,
+   "close": 76885.1,
+   "close_time_ms": 1793659679999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793659680000,
+   "open": 76885.0,
+   "high": 76915.5,
+   "low": 76880.2,
+   "close": 76915.3,
+   "close_time_ms": 1793659739999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793659740000,
+   "open": 76915.3,
+   "high": 76936.7,
+   "low": 76903.3,
+   "close": 76911.5,
+   "close_time_ms": 1793659799999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793659800000,
+   "open": 76911.5,
+   "high": 76911.5,
+   "low": 76900.0,
+   "close": 76900.0,
+   "close_time_ms": 1793659859999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793659860000,
+   "open": 76900.0,
+   "high": 76900.1,
+   "low": 76889.6,
+   "close": 76894.0,
+   "close_time_ms": 1793659919999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793659920000,
+   "open": 76894.0,
+   "high": 76900.0,
+   "low": 76894.0,
+   "close": 76900.0,
+   "close_time_ms": 1793659979999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793659980000,
+   "open": 76899.9,
+   "high": 76900.0,
+   "low": 76889.9,
+   "close": 76890.0,
+   "close_time_ms": 1793660039999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793660040000,
+   "open": 76890.0,
+   "high": 76904.6,
+   "low": 76889.9,
+   "close": 76891.0,
+   "close_time_ms": 1793660099999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793660100000,
+   "open": 76891.0,
+   "high": 76891.0,
+   "low": 76890.9,
+   "close": 76890.9,
+   "close_time_ms": 1793660159999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793660160000,
+   "open": 76890.9,
+   "high": 76900.0,
+   "low": 76890.9,
+   "close": 76900.0,
+   "close_time_ms": 1793660219999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793660220000,
+   "open": 76899.9,
+   "high": 76899.9,
+   "low": 76880.2,
+   "close": 76880.2,
+   "close_time_ms": 1793660279999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793660280000,
+   "open": 76880.2,
+   "high": 76911.4,
+   "low": 76880.2,
+   "close": 76904.0,
+   "close_time_ms": 1793660339999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793660340000,
+   "open": 76904.0,
+   "high": 76916.7,
+   "low": 76897.9,
+   "close": 76916.7,
+   "close_time_ms": 1793660399999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793660400000,
+   "open": 76916.6,
+   "high": 76916.7,
+   "low": 76803.1,
+   "close": 76803.1,
+   "close_time_ms": 1793660459999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793660460000,
+   "open": 76803.0,
+   "high": 76803.0,
+   "low": 76722.0,
+   "close": 76773.1,
+   "close_time_ms": 1793660519999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793660520000,
+   "open": 76773.0,
+   "high": 76773.1,
+   "low": 76715.5,
+   "close": 76755.4,
+   "close_time_ms": 1793660579999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793660580000,
+   "open": 76755.5,
+   "high": 76821.8,
+   "low": 76755.4,
+   "close": 76788.7,
+   "close_time_ms": 1793660639999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793660640000,
+   "open": 76788.7,
+   "high": 76800.8,
+   "low": 76763.9,
+   "close": 76766.3,
+   "close_time_ms": 1793660699999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793660700000,
+   "open": 76766.3,
+   "high": 76766.4,
+   "low": 76715.1,
+   "close": 76738.8,
+   "close_time_ms": 1793660759999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793660760000,
+   "open": 76738.9,
+   "high": 76812.2,
+   "low": 76738.9,
+   "close": 76788.5,
+   "close_time_ms": 1793660819999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793660820000,
+   "open": 76788.5,
+   "high": 76819.6,
+   "low": 76783.7,
+   "close": 76788.5,
+   "close_time_ms": 1793660879999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793660880000,
+   "open": 76788.5,
+   "high": 76818.3,
+   "low": 76703.8,
+   "close": 76755.4,
+   "close_time_ms": 1793660939999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793660940000,
+   "open": 76755.5,
+   "high": 76818.3,
+   "low": 76755.5,
+   "close": 76790.6,
+   "close_time_ms": 1793660999999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793661000000,
+   "open": 76790.6,
+   "high": 76818.1,
+   "low": 76790.5,
+   "close": 76812.1,
+   "close_time_ms": 1793661059999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793661060000,
+   "open": 76812.1,
+   "high": 76842.4,
+   "low": 76812.1,
+   "close": 76828.8,
+   "close_time_ms": 1793661119999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793661120000,
+   "open": 76828.7,
+   "high": 76840.1,
+   "low": 76823.0,
+   "close": 76828.7,
+   "close_time_ms": 1793661179999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793661180000,
+   "open": 76828.7,
+   "high": 76828.7,
+   "low": 76781.2,
+   "close": 76781.2,
+   "close_time_ms": 1793661239999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793661240000,
+   "open": 76781.3,
+   "high": 76781.3,
+   "low": 76760.4,
+   "close": 76774.2,
+   "close_time_ms": 1793661299999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793661300000,
+   "open": 76774.1,
+   "high": 76831.9,
+   "low": 76774.1,
+   "close": 76831.2,
+   "close_time_ms": 1793661359999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793661360000,
+   "open": 76831.1,
+   "high": 76838.5,
+   "low": 76821.6,
+   "close": 76838.5,
+   "close_time_ms": 1793661419999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793661420000,
+   "open": 76838.5,
+   "high": 76838.5,
+   "low": 76793.6,
+   "close": 76793.7,
+   "close_time_ms": 1793661479999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793661480000,
+   "open": 76793.7,
+   "high": 76834.6,
+   "low": 76793.6,
+   "close": 76830.9,
+   "close_time_ms": 1793661539999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793661540000,
+   "open": 76830.9,
+   "high": 76856.9,
+   "low": 76828.3,
+   "close": 76851.4,
+   "close_time_ms": 1793661599999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793661600000,
+   "open": 76851.5,
+   "high": 76861.2,
+   "low": 76851.4,
+   "close": 76852.1,
+   "close_time_ms": 1793661659999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793661660000,
+   "open": 76852.1,
+   "high": 76876.6,
+   "low": 76800.0,
+   "close": 76800.1,
+   "close_time_ms": 1793661719999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793661720000,
+   "open": 76800.0,
+   "high": 76812.2,
+   "low": 76790.5,
+   "close": 76812.2,
+   "close_time_ms": 1793661779999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793661780000,
+   "open": 76812.2,
+   "high": 76829.3,
+   "low": 76812.1,
+   "close": 76821.5,
+   "close_time_ms": 1793661839999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793661840000,
+   "open": 76821.5,
+   "high": 76821.5,
+   "low": 76793.0,
+   "close": 76793.5,
+   "close_time_ms": 1793661899999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793661900000,
+   "open": 76793.5,
+   "high": 76793.5,
+   "low": 76744.0,
+   "close": 76744.1,
+   "close_time_ms": 1793661959999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793661960000,
+   "open": 76744.0,
+   "high": 76744.1,
+   "low": 76720.2,
+   "close": 76726.8,
+   "close_time_ms": 1793662019999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793662020000,
+   "open": 76726.9,
+   "high": 76726.9,
+   "low": 76716.0,
+   "close": 76716.0,
+   "close_time_ms": 1793662079999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793662080000,
+   "open": 76716.0,
+   "high": 76731.0,
+   "low": 76716.0,
+   "close": 76731.0,
+   "close_time_ms": 1793662139999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793662140000,
+   "open": 76730.9,
+   "high": 76754.4,
+   "low": 76730.8,
+   "close": 76754.4,
+   "close_time_ms": 1793662199999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793662200000,
+   "open": 76754.4,
+   "high": 76773.2,
+   "low": 76754.3,
+   "close": 76761.9,
+   "close_time_ms": 1793662259999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793662260000,
+   "open": 76761.8,
+   "high": 76761.8,
+   "low": 76734.0,
+   "close": 76734.0,
+   "close_time_ms": 1793662319999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793662320000,
+   "open": 76734.0,
+   "high": 76774.2,
+   "low": 76730.0,
+   "close": 76774.2,
+   "close_time_ms": 1793662379999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793662380000,
+   "open": 76774.2,
+   "high": 76805.0,
+   "low": 76761.5,
+   "close": 76802.5,
+   "close_time_ms": 1793662439999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793662440000,
+   "open": 76802.5,
+   "high": 76802.5,
+   "low": 76791.0,
+   "close": 76798.7,
+   "close_time_ms": 1793662499999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793662500000,
+   "open": 76798.6,
+   "high": 76824.6,
+   "low": 76798.6,
+   "close": 76821.8,
+   "close_time_ms": 1793662559999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793662560000,
+   "open": 76821.8,
+   "high": 76824.1,
+   "low": 76821.8,
+   "close": 76824.0,
+   "close_time_ms": 1793662619999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793662620000,
+   "open": 76824.0,
+   "high": 76848.7,
+   "low": 76817.1,
+   "close": 76831.3,
+   "close_time_ms": 1793662679999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793662680000,
+   "open": 76831.3,
+   "high": 76831.3,
+   "low": 76793.2,
+   "close": 76793.3,
+   "close_time_ms": 1793662739999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793662740000,
+   "open": 76793.2,
+   "high": 76825.2,
+   "low": 76793.2,
+   "close": 76825.2,
+   "close_time_ms": 1793662799999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793662800000,
+   "open": 76825.2,
+   "high": 76836.8,
+   "low": 76825.2,
+   "close": 76836.8,
+   "close_time_ms": 1793662859999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793662860000,
+   "open": 76836.8,
+   "high": 76836.8,
+   "low": 76826.0,
+   "close": 76830.1,
+   "close_time_ms": 1793662919999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793662920000,
+   "open": 76830.0,
+   "high": 76843.6,
+   "low": 76830.0,
+   "close": 76843.6,
+   "close_time_ms": 1793662979999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793662980000,
+   "open": 76843.5,
+   "high": 76849.9,
+   "low": 76812.4,
+   "close": 76812.5,
+   "close_time_ms": 1793663039999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793663040000,
+   "open": 76812.5,
+   "high": 76818.6,
+   "low": 76812.0,
+   "close": 76818.6,
+   "close_time_ms": 1793663099999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793663100000,
+   "open": 76818.6,
+   "high": 76820.6,
+   "low": 76808.0,
+   "close": 76808.1,
+   "close_time_ms": 1793663159999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793663160000,
+   "open": 76808.1,
+   "high": 76808.1,
+   "low": 76793.2,
+   "close": 76795.2,
+   "close_time_ms": 1793663219999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793663220000,
+   "open": 76795.2,
+   "high": 76801.3,
+   "low": 76795.1,
+   "close": 76795.3,
+   "close_time_ms": 1793663279999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793663280000,
+   "open": 76795.2,
+   "high": 76813.8,
+   "low": 76795.2,
+   "close": 76806.1,
+   "close_time_ms": 1793663339999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793663340000,
+   "open": 76806.1,
+   "high": 76813.8,
+   "low": 76806.0,
+   "close": 76813.7,
+   "close_time_ms": 1793663399999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793663400000,
+   "open": 76813.8,
+   "high": 76819.2,
+   "low": 76812.8,
+   "close": 76813.8,
+   "close_time_ms": 1793663459999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793663460000,
+   "open": 76813.8,
+   "high": 76813.8,
+   "low": 76813.7,
+   "close": 76813.8,
+   "close_time_ms": 1793663519999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793663520000,
+   "open": 76813.8,
+   "high": 76813.8,
+   "low": 76764.1,
+   "close": 76770.3,
+   "close_time_ms": 1793663579999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793663580000,
+   "open": 76770.3,
+   "high": 76778.7,
+   "low": 76756.1,
+   "close": 76777.7,
+   "close_time_ms": 1793663639999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793663640000,
+   "open": 76777.6,
+   "high": 76811.3,
+   "low": 76777.6,
+   "close": 76811.3,
+   "close_time_ms": 1793663699999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793663700000,
+   "open": 76811.2,
+   "high": 76811.3,
+   "low": 76811.2,
+   "close": 76811.2,
+   "close_time_ms": 1793663759999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793663760000,
+   "open": 76811.3,
+   "high": 76815.0,
+   "low": 76806.0,
+   "close": 76806.1,
+   "close_time_ms": 1793663819999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793663820000,
+   "open": 76806.0,
+   "high": 76806.0,
+   "low": 76780.2,
+   "close": 76788.1,
+   "close_time_ms": 1793663879999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793663880000,
+   "open": 76788.0,
+   "high": 76788.1,
+   "low": 76784.1,
+   "close": 76784.1,
+   "close_time_ms": 1793663939999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793663940000,
+   "open": 76784.2,
+   "high": 76791.3,
+   "low": 76784.1,
+   "close": 76791.3,
+   "close_time_ms": 1793663999999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793664000000,
+   "open": 76791.3,
+   "high": 76802.4,
+   "low": 76790.0,
+   "close": 76802.4,
+   "close_time_ms": 1793664059999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793664060000,
+   "open": 76802.3,
+   "high": 76810.5,
+   "low": 76775.4,
+   "close": 76775.4,
+   "close_time_ms": 1793664119999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793664120000,
+   "open": 76775.4,
+   "high": 76783.9,
+   "low": 76775.4,
+   "close": 76779.3,
+   "close_time_ms": 1793664179999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793664180000,
+   "open": 76779.2,
+   "high": 76787.2,
+   "low": 76779.2,
+   "close": 76779.3,
+   "close_time_ms": 1793664239999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793664240000,
+   "open": 76779.3,
+   "high": 76787.9,
+   "low": 76767.0,
+   "close": 76767.8,
+   "close_time_ms": 1793664299999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793664300000,
+   "open": 76767.7,
+   "high": 76767.8,
+   "low": 76740.9,
+   "close": 76740.9,
+   "close_time_ms": 1793664359999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793664360000,
+   "open": 76740.9,
+   "high": 76741.0,
+   "low": 76720.1,
+   "close": 76725.3,
+   "close_time_ms": 1793664419999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793664420000,
+   "open": 76725.3,
+   "high": 76725.4,
+   "low": 76670.0,
+   "close": 76691.2,
+   "close_time_ms": 1793664479999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793664480000,
+   "open": 76691.1,
+   "high": 76691.1,
+   "low": 76641.0,
+   "close": 76664.7,
+   "close_time_ms": 1793664539999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793664540000,
+   "open": 76664.6,
+   "high": 76696.0,
+   "low": 76661.1,
+   "close": 76683.4,
+   "close_time_ms": 1793664599999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793664600000,
+   "open": 76683.3,
+   "high": 76760.5,
+   "low": 76683.3,
+   "close": 76760.5,
+   "close_time_ms": 1793664659999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793664660000,
+   "open": 76760.4,
+   "high": 76825.6,
+   "low": 76760.4,
+   "close": 76825.5,
+   "close_time_ms": 1793664719999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793664720000,
+   "open": 76825.5,
+   "high": 76831.0,
+   "low": 76802.6,
+   "close": 76831.0,
+   "close_time_ms": 1793664779999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793664780000,
+   "open": 76830.9,
+   "high": 76867.6,
+   "low": 76830.9,
+   "close": 76850.1,
+   "close_time_ms": 1793664839999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793664840000,
+   "open": 76850.0,
+   "high": 76850.1,
+   "low": 76756.7,
+   "close": 76799.9,
+   "close_time_ms": 1793664899999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793664900000,
+   "open": 76799.9,
+   "high": 76845.8,
+   "low": 76775.9,
+   "close": 76845.8,
+   "close_time_ms": 1793664959999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793664960000,
+   "open": 76845.8,
+   "high": 76906.9,
+   "low": 76845.8,
+   "close": 76881.5,
+   "close_time_ms": 1793665019999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793665020000,
+   "open": 76881.5,
+   "high": 76932.8,
+   "low": 76876.1,
+   "close": 76930.1,
+   "close_time_ms": 1793665079999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793665080000,
+   "open": 76930.1,
+   "high": 76960.6,
+   "low": 76903.5,
+   "close": 76930.7,
+   "close_time_ms": 1793665139999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793665140000,
+   "open": 76930.7,
+   "high": 76956.5,
+   "low": 76924.7,
+   "close": 76953.4,
+   "close_time_ms": 1793665199999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793665200000,
+   "open": 76953.5,
+   "high": 76971.6,
+   "low": 76945.5,
+   "close": 76962.1,
+   "close_time_ms": 1793665259999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793665260000,
+   "open": 76962.1,
+   "high": 77070.1,
+   "low": 76962.1,
+   "close": 77016.3,
+   "close_time_ms": 1793665319999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793665320000,
+   "open": 77016.3,
+   "high": 77023.9,
+   "low": 76994.7,
+   "close": 77023.9,
+   "close_time_ms": 1793665379999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793665380000,
+   "open": 77023.9,
+   "high": 77033.2,
+   "low": 77011.8,
+   "close": 77014.2,
+   "close_time_ms": 1793665439999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793665440000,
+   "open": 77014.3,
+   "high": 77014.3,
+   "low": 76996.5,
+   "close": 76997.1,
+   "close_time_ms": 1793665499999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793665500000,
+   "open": 76997.1,
+   "high": 76997.1,
+   "low": 76984.2,
+   "close": 76994.3,
+   "close_time_ms": 1793665559999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793665560000,
+   "open": 76994.4,
+   "high": 77029.5,
+   "low": 76994.3,
+   "close": 77020.7,
+   "close_time_ms": 1793665619999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793665620000,
+   "open": 77020.7,
+   "high": 77030.0,
+   "low": 77020.7,
+   "close": 77024.0,
+   "close_time_ms": 1793665679999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793665680000,
+   "open": 77024.0,
+   "high": 77037.3,
+   "low": 77011.2,
+   "close": 77034.1,
+   "close_time_ms": 1793665739999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793665740000,
+   "open": 77034.1,
+   "high": 77045.9,
+   "low": 77026.8,
+   "close": 77045.9,
+   "close_time_ms": 1793665799999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793665800000,
+   "open": 77045.9,
+   "high": 77066.4,
+   "low": 77021.1,
+   "close": 77063.3,
+   "close_time_ms": 1793665859999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793665860000,
+   "open": 77063.3,
+   "high": 77135.1,
+   "low": 77063.2,
+   "close": 77110.0,
+   "close_time_ms": 1793665919999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793665920000,
+   "open": 77110.1,
+   "high": 77110.1,
+   "low": 77062.1,
+   "close": 77107.0,
+   "close_time_ms": 1793665979999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793665980000,
+   "open": 77107.1,
+   "high": 77107.8,
+   "low": 77102.5,
+   "close": 77103.3,
+   "close_time_ms": 1793666039999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793666040000,
+   "open": 77103.4,
+   "high": 77137.3,
+   "low": 77091.4,
+   "close": 77122.2,
+   "close_time_ms": 1793666099999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793666100000,
+   "open": 77122.3,
+   "high": 77147.8,
+   "low": 77122.3,
+   "close": 77147.8,
+   "close_time_ms": 1793666159999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793666160000,
+   "open": 77147.8,
+   "high": 77175.4,
+   "low": 77147.7,
+   "close": 77150.2,
+   "close_time_ms": 1793666219999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793666220000,
+   "open": 77150.2,
+   "high": 77233.3,
+   "low": 77150.1,
+   "close": 77225.2,
+   "close_time_ms": 1793666279999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793666280000,
+   "open": 77225.3,
+   "high": 77225.3,
+   "low": 77190.0,
+   "close": 77190.1,
+   "close_time_ms": 1793666339999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793666340000,
+   "open": 77190.0,
+   "high": 77190.1,
+   "low": 77114.0,
+   "close": 77114.1,
+   "close_time_ms": 1793666399999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793666400000,
+   "open": 77114.1,
+   "high": 77142.0,
+   "low": 77114.1,
+   "close": 77141.9,
+   "close_time_ms": 1793666459999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793666460000,
+   "open": 77142.0,
+   "high": 77160.5,
+   "low": 77122.0,
+   "close": 77122.0,
+   "close_time_ms": 1793666519999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793666520000,
+   "open": 77122.1,
+   "high": 77122.1,
+   "low": 77099.8,
+   "close": 77099.9,
+   "close_time_ms": 1793666579999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793666580000,
+   "open": 77099.8,
+   "high": 77120.0,
+   "low": 77084.0,
+   "close": 77084.0,
+   "close_time_ms": 1793666639999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793666640000,
+   "open": 77084.0,
+   "high": 77110.0,
+   "low": 77029.6,
+   "close": 77029.6,
+   "close_time_ms": 1793666699999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793666700000,
+   "open": 77029.6,
+   "high": 77114.3,
+   "low": 77029.6,
+   "close": 77114.2,
+   "close_time_ms": 1793666759999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793666760000,
+   "open": 77114.3,
+   "high": 77120.0,
+   "low": 77072.0,
+   "close": 77105.2,
+   "close_time_ms": 1793666819999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793666820000,
+   "open": 77105.1,
+   "high": 77151.3,
+   "low": 77105.1,
+   "close": 77125.7,
+   "close_time_ms": 1793666879999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793666880000,
+   "open": 77125.8,
+   "high": 77125.8,
+   "low": 77092.0,
+   "close": 77092.0,
+   "close_time_ms": 1793666939999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793666940000,
+   "open": 77092.1,
+   "high": 77092.1,
+   "low": 77078.0,
+   "close": 77084.5,
+   "close_time_ms": 1793666999999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793667000000,
+   "open": 77084.5,
+   "high": 77132.0,
+   "low": 77078.0,
+   "close": 77115.3,
+   "close_time_ms": 1793667059999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793667060000,
+   "open": 77115.4,
+   "high": 77122.0,
+   "low": 77092.2,
+   "close": 77092.2,
+   "close_time_ms": 1793667119999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793667120000,
+   "open": 77092.1,
+   "high": 77121.0,
+   "low": 77088.0,
+   "close": 77088.0,
+   "close_time_ms": 1793667179999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793667180000,
+   "open": 77088.0,
+   "high": 77088.0,
+   "low": 77052.0,
+   "close": 77052.1,
+   "close_time_ms": 1793667239999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793667240000,
+   "open": 77052.1,
+   "high": 77071.6,
+   "low": 77025.0,
+   "close": 77025.0,
+   "close_time_ms": 1793667299999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793667300000,
+   "open": 77025.0,
+   "high": 77076.0,
+   "low": 77024.0,
+   "close": 77060.6,
+   "close_time_ms": 1793667359999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793667360000,
+   "open": 77060.7,
+   "high": 77060.7,
+   "low": 77018.2,
+   "close": 77018.3,
+   "close_time_ms": 1793667419999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793667420000,
+   "open": 77018.2,
+   "high": 77018.7,
+   "low": 77002.8,
+   "close": 77018.7,
+   "close_time_ms": 1793667479999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793667480000,
+   "open": 77018.6,
+   "high": 77090.1,
+   "low": 77010.9,
+   "close": 77090.1,
+   "close_time_ms": 1793667539999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793667540000,
+   "open": 77090.0,
+   "high": 77125.6,
+   "low": 77076.1,
+   "close": 77104.4,
+   "close_time_ms": 1793667599999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793667600000,
+   "open": 77104.5,
+   "high": 77104.5,
+   "low": 77046.0,
+   "close": 77046.1,
+   "close_time_ms": 1793667659999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793667660000,
+   "open": 77046.1,
+   "high": 77093.1,
+   "low": 77030.0,
+   "close": 77084.8,
+   "close_time_ms": 1793667719999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793667720000,
+   "open": 77084.7,
+   "high": 77160.8,
+   "low": 77083.7,
+   "close": 77160.1,
+   "close_time_ms": 1793667779999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793667780000,
+   "open": 77160.0,
+   "high": 77242.3,
+   "low": 77151.9,
+   "close": 77172.0,
+   "close_time_ms": 1793667839999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793667840000,
+   "open": 77172.0,
+   "high": 77200.0,
+   "low": 77166.0,
+   "close": 77199.9,
+   "close_time_ms": 1793667899999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793667900000,
+   "open": 77199.9,
+   "high": 77230.0,
+   "low": 77199.9,
+   "close": 77219.6,
+   "close_time_ms": 1793667959999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793667960000,
+   "open": 77219.5,
+   "high": 77219.9,
+   "low": 77161.3,
+   "close": 77179.2,
+   "close_time_ms": 1793668019999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793668020000,
+   "open": 77179.1,
+   "high": 77219.9,
+   "low": 77176.0,
+   "close": 77201.3,
+   "close_time_ms": 1793668079999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793668080000,
+   "open": 77201.2,
+   "high": 77219.9,
+   "low": 77178.0,
+   "close": 77209.8,
+   "close_time_ms": 1793668139999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793668140000,
+   "open": 77209.7,
+   "high": 77219.0,
+   "low": 77188.0,
+   "close": 77210.1,
+   "close_time_ms": 1793668199999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793668200000,
+   "open": 77210.0,
+   "high": 77210.1,
+   "low": 77189.6,
+   "close": 77190.9,
+   "close_time_ms": 1793668259999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793668260000,
+   "open": 77191.0,
+   "high": 77219.0,
+   "low": 77166.0,
+   "close": 77209.2,
+   "close_time_ms": 1793668319999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793668320000,
+   "open": 77209.3,
+   "high": 77217.7,
+   "low": 77194.1,
+   "close": 77215.3,
+   "close_time_ms": 1793668379999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793668380000,
+   "open": 77215.4,
+   "high": 77246.8,
+   "low": 77208.0,
+   "close": 77223.0,
+   "close_time_ms": 1793668439999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793668440000,
+   "open": 77223.0,
+   "high": 77223.1,
+   "low": 77200.0,
+   "close": 77204.1,
+   "close_time_ms": 1793668499999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793668500000,
+   "open": 77204.0,
+   "high": 77212.9,
+   "low": 77134.0,
+   "close": 77134.0,
+   "close_time_ms": 1793668559999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793668560000,
+   "open": 77134.1,
+   "high": 77206.0,
+   "low": 77134.1,
+   "close": 77206.0,
+   "close_time_ms": 1793668619999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793668620000,
+   "open": 77206.0,
+   "high": 77215.0,
+   "low": 77194.1,
+   "close": 77206.9,
+   "close_time_ms": 1793668679999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793668680000,
+   "open": 77206.9,
+   "high": 77249.5,
+   "low": 77200.6,
+   "close": 77248.5,
+   "close_time_ms": 1793668739999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793668740000,
+   "open": 77248.6,
+   "high": 77292.8,
+   "low": 77248.5,
+   "close": 77270.0,
+   "close_time_ms": 1793668799999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793668800000,
+   "open": 77269.8,
+   "high": 77269.8,
+   "low": 77220.0,
+   "close": 77220.1,
+   "close_time_ms": 1793668859999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793668860000,
+   "open": 77220.1,
+   "high": 77294.2,
+   "low": 77220.0,
+   "close": 77294.2,
+   "close_time_ms": 1793668919999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793668920000,
+   "open": 77294.2,
+   "high": 77297.6,
+   "low": 77275.7,
+   "close": 77288.4,
+   "close_time_ms": 1793668979999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793668980000,
+   "open": 77288.3,
+   "high": 77288.4,
+   "low": 77243.7,
+   "close": 77248.0,
+   "close_time_ms": 1793669039999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793669040000,
+   "open": 77248.0,
+   "high": 77277.0,
+   "low": 77248.0,
+   "close": 77264.7,
+   "close_time_ms": 1793669099999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793669100000,
+   "open": 77264.7,
+   "high": 77293.2,
+   "low": 77264.6,
+   "close": 77266.6,
+   "close_time_ms": 1793669159999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793669160000,
+   "open": 77266.5,
+   "high": 77266.6,
+   "low": 77231.9,
+   "close": 77232.9,
+   "close_time_ms": 1793669219999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793651220000,
+   "open": 0.05566,
+   "high": 0.05567,
+   "low": 0.05561,
+   "close": 0.05562,
+   "close_time_ms": 1793651279999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793651280000,
+   "open": 0.05561,
+   "high": 0.05561,
+   "low": 0.05556,
+   "close": 0.05557,
+   "close_time_ms": 1793651339999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793651340000,
+   "open": 0.05557,
+   "high": 0.0556,
+   "low": 0.05555,
+   "close": 0.0556,
+   "close_time_ms": 1793651399999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793651400000,
+   "open": 0.05559,
+   "high": 0.05559,
+   "low": 0.05553,
+   "close": 0.05553,
+   "close_time_ms": 1793651459999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793651460000,
+   "open": 0.05553,
+   "high": 0.05556,
+   "low": 0.05543,
+   "close": 0.05544,
+   "close_time_ms": 1793651519999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793651520000,
+   "open": 0.05543,
+   "high": 0.05543,
+   "low": 0.05538,
+   "close": 0.05541,
+   "close_time_ms": 1793651579999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793651580000,
+   "open": 0.05542,
+   "high": 0.05543,
+   "low": 0.05527,
+   "close": 0.05532,
+   "close_time_ms": 1793651639999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793651640000,
+   "open": 0.05533,
+   "high": 0.05542,
+   "low": 0.05533,
+   "close": 0.05542,
+   "close_time_ms": 1793651699999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793651700000,
+   "open": 0.0554,
+   "high": 0.05541,
+   "low": 0.05528,
+   "close": 0.05528,
+   "close_time_ms": 1793651759999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793651760000,
+   "open": 0.05529,
+   "high": 0.05537,
+   "low": 0.05529,
+   "close": 0.05536,
+   "close_time_ms": 1793651819999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793651820000,
+   "open": 0.05536,
+   "high": 0.05539,
+   "low": 0.05527,
+   "close": 0.05527,
+   "close_time_ms": 1793651879999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793651880000,
+   "open": 0.05526,
+   "high": 0.0553,
+   "low": 0.0552,
+   "close": 0.05524,
+   "close_time_ms": 1793651939999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793651940000,
+   "open": 0.05524,
+   "high": 0.05526,
+   "low": 0.0552,
+   "close": 0.0552,
+   "close_time_ms": 1793651999999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793652000000,
+   "open": 0.0552,
+   "high": 0.0552,
+   "low": 0.05511,
+   "close": 0.05514,
+   "close_time_ms": 1793652059999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793652060000,
+   "open": 0.05512,
+   "high": 0.05517,
+   "low": 0.05512,
+   "close": 0.05516,
+   "close_time_ms": 1793652119999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793652120000,
+   "open": 0.05516,
+   "high": 0.05522,
+   "low": 0.05515,
+   "close": 0.05521,
+   "close_time_ms": 1793652179999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793652180000,
+   "open": 0.0552,
+   "high": 0.05525,
+   "low": 0.0552,
+   "close": 0.05522,
+   "close_time_ms": 1793652239999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793652240000,
+   "open": 0.05521,
+   "high": 0.05525,
+   "low": 0.0552,
+   "close": 0.05525,
+   "close_time_ms": 1793652299999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793652300000,
+   "open": 0.05524,
+   "high": 0.05531,
+   "low": 0.05521,
+   "close": 0.05528,
+   "close_time_ms": 1793652359999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793652360000,
+   "open": 0.05529,
+   "high": 0.05541,
+   "low": 0.05529,
+   "close": 0.05541,
+   "close_time_ms": 1793652419999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793652420000,
+   "open": 0.05539,
+   "high": 0.05539,
+   "low": 0.05534,
+   "close": 0.05534,
+   "close_time_ms": 1793652479999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793652480000,
+   "open": 0.05535,
+   "high": 0.05536,
+   "low": 0.05531,
+   "close": 0.05533,
+   "close_time_ms": 1793652539999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793652540000,
+   "open": 0.05534,
+   "high": 0.0554,
+   "low": 0.05532,
+   "close": 0.05538,
+   "close_time_ms": 1793652599999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793652600000,
+   "open": 0.05538,
+   "high": 0.05539,
+   "low": 0.05528,
+   "close": 0.05528,
+   "close_time_ms": 1793652659999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793652660000,
+   "open": 0.0553,
+   "high": 0.0553,
+   "low": 0.05525,
+   "close": 0.05528,
+   "close_time_ms": 1793652719999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793652720000,
+   "open": 0.05529,
+   "high": 0.05535,
+   "low": 0.05529,
+   "close": 0.05534,
+   "close_time_ms": 1793652779999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793652780000,
+   "open": 0.05534,
+   "high": 0.0554,
+   "low": 0.05534,
+   "close": 0.05537,
+   "close_time_ms": 1793652839999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793652840000,
+   "open": 0.05538,
+   "high": 0.05542,
+   "low": 0.05538,
+   "close": 0.0554,
+   "close_time_ms": 1793652899999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793652900000,
+   "open": 0.05538,
+   "high": 0.05541,
+   "low": 0.05531,
+   "close": 0.05531,
+   "close_time_ms": 1793652959999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793652960000,
+   "open": 0.05532,
+   "high": 0.05533,
+   "low": 0.05529,
+   "close": 0.05532,
+   "close_time_ms": 1793653019999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793653020000,
+   "open": 0.0553,
+   "high": 0.0553,
+   "low": 0.05519,
+   "close": 0.05519,
+   "close_time_ms": 1793653079999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793653080000,
+   "open": 0.05522,
+   "high": 0.05525,
+   "low": 0.05518,
+   "close": 0.05525,
+   "close_time_ms": 1793653139999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793653140000,
+   "open": 0.05525,
+   "high": 0.05528,
+   "low": 0.0552,
+   "close": 0.05526,
+   "close_time_ms": 1793653199999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793653200000,
+   "open": 0.05526,
+   "high": 0.0553,
+   "low": 0.05526,
+   "close": 0.05529,
+   "close_time_ms": 1793653259999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793653260000,
+   "open": 0.05525,
+   "high": 0.05534,
+   "low": 0.05519,
+   "close": 0.0552,
+   "close_time_ms": 1793653319999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793653320000,
+   "open": 0.05519,
+   "high": 0.05533,
+   "low": 0.05519,
+   "close": 0.05527,
+   "close_time_ms": 1793653379999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793653380000,
+   "open": 0.05527,
+   "high": 0.05527,
+   "low": 0.05512,
+   "close": 0.05512,
+   "close_time_ms": 1793653439999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793653440000,
+   "open": 0.05511,
+   "high": 0.05516,
+   "low": 0.05507,
+   "close": 0.05507,
+   "close_time_ms": 1793653499999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793653500000,
+   "open": 0.05508,
+   "high": 0.05513,
+   "low": 0.05502,
+   "close": 0.05502,
+   "close_time_ms": 1793653559999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793653560000,
+   "open": 0.05502,
+   "high": 0.05513,
+   "low": 0.055,
+   "close": 0.0551,
+   "close_time_ms": 1793653619999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793653620000,
+   "open": 0.05508,
+   "high": 0.05518,
+   "low": 0.05508,
+   "close": 0.05516,
+   "close_time_ms": 1793653679999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793653680000,
+   "open": 0.05516,
+   "high": 0.05517,
+   "low": 0.05511,
+   "close": 0.05516,
+   "close_time_ms": 1793653739999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793653740000,
+   "open": 0.05517,
+   "high": 0.05521,
+   "low": 0.05517,
+   "close": 0.05521,
+   "close_time_ms": 1793653799999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793653800000,
+   "open": 0.05521,
+   "high": 0.05521,
+   "low": 0.05514,
+   "close": 0.05514,
+   "close_time_ms": 1793653859999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793653860000,
+   "open": 0.05515,
+   "high": 0.05517,
+   "low": 0.05512,
+   "close": 0.05516,
+   "close_time_ms": 1793653919999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793653920000,
+   "open": 0.05516,
+   "high": 0.05525,
+   "low": 0.05516,
+   "close": 0.05524,
+   "close_time_ms": 1793653979999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793653980000,
+   "open": 0.05524,
+   "high": 0.05525,
+   "low": 0.05521,
+   "close": 0.05522,
+   "close_time_ms": 1793654039999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793654040000,
+   "open": 0.05522,
+   "high": 0.05522,
+   "low": 0.05515,
+   "close": 0.05518,
+   "close_time_ms": 1793654099999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793654100000,
+   "open": 0.0552,
+   "high": 0.05525,
+   "low": 0.0552,
+   "close": 0.05523,
+   "close_time_ms": 1793654159999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793654160000,
+   "open": 0.05522,
+   "high": 0.05524,
+   "low": 0.0552,
+   "close": 0.05523,
+   "close_time_ms": 1793654219999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793654220000,
+   "open": 0.05522,
+   "high": 0.05534,
+   "low": 0.05522,
+   "close": 0.05534,
+   "close_time_ms": 1793654279999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793654280000,
+   "open": 0.05532,
+   "high": 0.05534,
+   "low": 0.05529,
+   "close": 0.0553,
+   "close_time_ms": 1793654339999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793654340000,
+   "open": 0.05529,
+   "high": 0.05529,
+   "low": 0.05525,
+   "close": 0.05526,
+   "close_time_ms": 1793654399999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793654400000,
+   "open": 0.05526,
+   "high": 0.05538,
+   "low": 0.05526,
+   "close": 0.05536,
+   "close_time_ms": 1793654459999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793654460000,
+   "open": 0.05534,
+   "high": 0.05534,
+   "low": 0.05528,
+   "close": 0.05528,
+   "close_time_ms": 1793654519999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793654520000,
+   "open": 0.05528,
+   "high": 0.05528,
+   "low": 0.05523,
+   "close": 0.05523,
+   "close_time_ms": 1793654579999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793654580000,
+   "open": 0.05522,
+   "high": 0.05522,
+   "low": 0.05518,
+   "close": 0.05519,
+   "close_time_ms": 1793654639999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793654640000,
+   "open": 0.05519,
+   "high": 0.05519,
+   "low": 0.05512,
+   "close": 0.05512,
+   "close_time_ms": 1793654699999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793654700000,
+   "open": 0.0551,
+   "high": 0.05514,
+   "low": 0.0551,
+   "close": 0.05514,
+   "close_time_ms": 1793654759999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793654760000,
+   "open": 0.05514,
+   "high": 0.05515,
+   "low": 0.05514,
+   "close": 0.05514,
+   "close_time_ms": 1793654819999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793654820000,
+   "open": 0.05513,
+   "high": 0.05513,
+   "low": 0.05505,
+   "close": 0.05505,
+   "close_time_ms": 1793654879999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793654880000,
+   "open": 0.05505,
+   "high": 0.05508,
+   "low": 0.05505,
+   "close": 0.05508,
+   "close_time_ms": 1793654939999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793654940000,
+   "open": 0.05509,
+   "high": 0.05512,
+   "low": 0.05505,
+   "close": 0.05507,
+   "close_time_ms": 1793654999999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793655000000,
+   "open": 0.05507,
+   "high": 0.05531,
+   "low": 0.05505,
+   "close": 0.05521,
+   "close_time_ms": 1793655059999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793655060000,
+   "open": 0.0552,
+   "high": 0.0552,
+   "low": 0.0551,
+   "close": 0.0551,
+   "close_time_ms": 1793655119999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793655120000,
+   "open": 0.05509,
+   "high": 0.05517,
+   "low": 0.05509,
+   "close": 0.05513,
+   "close_time_ms": 1793655179999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793655180000,
+   "open": 0.05511,
+   "high": 0.05516,
+   "low": 0.05508,
+   "close": 0.05508,
+   "close_time_ms": 1793655239999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793655240000,
+   "open": 0.05509,
+   "high": 0.05511,
+   "low": 0.05507,
+   "close": 0.05511,
+   "close_time_ms": 1793655299999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793655300000,
+   "open": 0.05513,
+   "high": 0.05513,
+   "low": 0.05507,
+   "close": 0.05507,
+   "close_time_ms": 1793655359999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793655360000,
+   "open": 0.05507,
+   "high": 0.05523,
+   "low": 0.05507,
+   "close": 0.05522,
+   "close_time_ms": 1793655419999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793655420000,
+   "open": 0.05522,
+   "high": 0.05531,
+   "low": 0.05522,
+   "close": 0.0553,
+   "close_time_ms": 1793655479999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793655480000,
+   "open": 0.05528,
+   "high": 0.05534,
+   "low": 0.05527,
+   "close": 0.05532,
+   "close_time_ms": 1793655539999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793655540000,
+   "open": 0.05533,
+   "high": 0.05538,
+   "low": 0.05533,
+   "close": 0.05538,
+   "close_time_ms": 1793655599999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793655600000,
+   "open": 0.05537,
+   "high": 0.05537,
+   "low": 0.05529,
+   "close": 0.05536,
+   "close_time_ms": 1793655659999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793655660000,
+   "open": 0.05537,
+   "high": 0.05541,
+   "low": 0.05536,
+   "close": 0.05541,
+   "close_time_ms": 1793655719999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793655720000,
+   "open": 0.0554,
+   "high": 0.05541,
+   "low": 0.05539,
+   "close": 0.05541,
+   "close_time_ms": 1793655779999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793655780000,
+   "open": 0.05541,
+   "high": 0.05556,
+   "low": 0.05541,
+   "close": 0.05555,
+   "close_time_ms": 1793655839999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793655840000,
+   "open": 0.05553,
+   "high": 0.05555,
+   "low": 0.05551,
+   "close": 0.05551,
+   "close_time_ms": 1793655899999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793655900000,
+   "open": 0.05552,
+   "high": 0.05558,
+   "low": 0.05551,
+   "close": 0.05556,
+   "close_time_ms": 1793655959999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793655960000,
+   "open": 0.05556,
+   "high": 0.05564,
+   "low": 0.05556,
+   "close": 0.05561,
+   "close_time_ms": 1793656019999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793656020000,
+   "open": 0.05561,
+   "high": 0.05561,
+   "low": 0.05555,
+   "close": 0.05555,
+   "close_time_ms": 1793656079999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793656080000,
+   "open": 0.05555,
+   "high": 0.05558,
+   "low": 0.05554,
+   "close": 0.05558,
+   "close_time_ms": 1793656139999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793656140000,
+   "open": 0.05559,
+   "high": 0.05568,
+   "low": 0.05559,
+   "close": 0.05564,
+   "close_time_ms": 1793656199999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793656200000,
+   "open": 0.05563,
+   "high": 0.05567,
+   "low": 0.0556,
+   "close": 0.05567,
+   "close_time_ms": 1793656259999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793656260000,
+   "open": 0.05566,
+   "high": 0.05566,
+   "low": 0.05563,
+   "close": 0.05563,
+   "close_time_ms": 1793656319999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793656320000,
+   "open": 0.05562,
+   "high": 0.05565,
+   "low": 0.05562,
+   "close": 0.05565,
+   "close_time_ms": 1793656379999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793656380000,
+   "open": 0.05565,
+   "high": 0.05566,
+   "low": 0.05562,
+   "close": 0.05563,
+   "close_time_ms": 1793656439999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793656440000,
+   "open": 0.05564,
+   "high": 0.05582,
+   "low": 0.05564,
+   "close": 0.05579,
+   "close_time_ms": 1793656499999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793656500000,
+   "open": 0.05579,
+   "high": 0.05579,
+   "low": 0.05575,
+   "close": 0.05578,
+   "close_time_ms": 1793656559999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793656560000,
+   "open": 0.05579,
+   "high": 0.05587,
+   "low": 0.05578,
+   "close": 0.05587,
+   "close_time_ms": 1793656619999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793656620000,
+   "open": 0.05585,
+   "high": 0.05586,
+   "low": 0.05581,
+   "close": 0.05583,
+   "close_time_ms": 1793656679999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793656680000,
+   "open": 0.05582,
+   "high": 0.05584,
+   "low": 0.05581,
+   "close": 0.05581,
+   "close_time_ms": 1793656739999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793656740000,
+   "open": 0.05581,
+   "high": 0.05582,
+   "low": 0.05578,
+   "close": 0.0558,
+   "close_time_ms": 1793656799999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793656800000,
+   "open": 0.05581,
+   "high": 0.05581,
+   "low": 0.05575,
+   "close": 0.05579,
+   "close_time_ms": 1793656859999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793656860000,
+   "open": 0.05579,
+   "high": 0.0558,
+   "low": 0.05575,
+   "close": 0.0558,
+   "close_time_ms": 1793656919999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793656920000,
+   "open": 0.05577,
+   "high": 0.05579,
+   "low": 0.05572,
+   "close": 0.05572,
+   "close_time_ms": 1793656979999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793656980000,
+   "open": 0.05571,
+   "high": 0.05571,
+   "low": 0.0556,
+   "close": 0.0556,
+   "close_time_ms": 1793657039999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793657040000,
+   "open": 0.0556,
+   "high": 0.0556,
+   "low": 0.05553,
+   "close": 0.05553,
+   "close_time_ms": 1793657099999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793657100000,
+   "open": 0.05553,
+   "high": 0.05555,
+   "low": 0.05551,
+   "close": 0.05554,
+   "close_time_ms": 1793657159999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793657160000,
+   "open": 0.05555,
+   "high": 0.05561,
+   "low": 0.05555,
+   "close": 0.0556,
+   "close_time_ms": 1793657219999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793657220000,
+   "open": 0.05559,
+   "high": 0.05559,
+   "low": 0.05555,
+   "close": 0.05558,
+   "close_time_ms": 1793657279999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793657280000,
+   "open": 0.05559,
+   "high": 0.05564,
+   "low": 0.05559,
+   "close": 0.05563,
+   "close_time_ms": 1793657339999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793657340000,
+   "open": 0.05564,
+   "high": 0.05564,
+   "low": 0.05561,
+   "close": 0.05562,
+   "close_time_ms": 1793657399999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793657400000,
+   "open": 0.05561,
+   "high": 0.05564,
+   "low": 0.05558,
+   "close": 0.05564,
+   "close_time_ms": 1793657459999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793657460000,
+   "open": 0.05562,
+   "high": 0.05563,
+   "low": 0.05562,
+   "close": 0.05562,
+   "close_time_ms": 1793657519999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793657520000,
+   "open": 0.05563,
+   "high": 0.05569,
+   "low": 0.05563,
+   "close": 0.05563,
+   "close_time_ms": 1793657579999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793657580000,
+   "open": 0.05563,
+   "high": 0.05566,
+   "low": 0.05561,
+   "close": 0.05562,
+   "close_time_ms": 1793657639999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793657640000,
+   "open": 0.05561,
+   "high": 0.05561,
+   "low": 0.05559,
+   "close": 0.0556,
+   "close_time_ms": 1793657699999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793657700000,
+   "open": 0.05561,
+   "high": 0.05566,
+   "low": 0.05561,
+   "close": 0.05565,
+   "close_time_ms": 1793657759999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793657760000,
+   "open": 0.05565,
+   "high": 0.05566,
+   "low": 0.05565,
+   "close": 0.05565,
+   "close_time_ms": 1793657819999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793657820000,
+   "open": 0.05565,
+   "high": 0.05574,
+   "low": 0.05565,
+   "close": 0.0557,
+   "close_time_ms": 1793657879999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793657880000,
+   "open": 0.0557,
+   "high": 0.0557,
+   "low": 0.05565,
+   "close": 0.05565,
+   "close_time_ms": 1793657939999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793657940000,
+   "open": 0.05565,
+   "high": 0.05568,
+   "low": 0.05565,
+   "close": 0.05565,
+   "close_time_ms": 1793657999999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793658000000,
+   "open": 0.05565,
+   "high": 0.05567,
+   "low": 0.05561,
+   "close": 0.05561,
+   "close_time_ms": 1793658059999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793658060000,
+   "open": 0.05562,
+   "high": 0.05562,
+   "low": 0.05548,
+   "close": 0.05548,
+   "close_time_ms": 1793658119999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793658120000,
+   "open": 0.05548,
+   "high": 0.05549,
+   "low": 0.05544,
+   "close": 0.05544,
+   "close_time_ms": 1793658179999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793658180000,
+   "open": 0.05544,
+   "high": 0.05545,
+   "low": 0.05543,
+   "close": 0.05545,
+   "close_time_ms": 1793658239999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793658240000,
+   "open": 0.05545,
+   "high": 0.05546,
+   "low": 0.05532,
+   "close": 0.05534,
+   "close_time_ms": 1793658299999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793658300000,
+   "open": 0.05535,
+   "high": 0.05535,
+   "low": 0.05525,
+   "close": 0.05525,
+   "close_time_ms": 1793658359999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793658360000,
+   "open": 0.05525,
+   "high": 0.05531,
+   "low": 0.05524,
+   "close": 0.05524,
+   "close_time_ms": 1793658419999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793658420000,
+   "open": 0.05524,
+   "high": 0.05524,
+   "low": 0.05518,
+   "close": 0.05518,
+   "close_time_ms": 1793658479999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793658480000,
+   "open": 0.05519,
+   "high": 0.05521,
+   "low": 0.05517,
+   "close": 0.0552,
+   "close_time_ms": 1793658539999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793658540000,
+   "open": 0.05518,
+   "high": 0.05522,
+   "low": 0.05517,
+   "close": 0.0552,
+   "close_time_ms": 1793658599999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793658600000,
+   "open": 0.05519,
+   "high": 0.05523,
+   "low": 0.05517,
+   "close": 0.05519,
+   "close_time_ms": 1793658659999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793658660000,
+   "open": 0.05519,
+   "high": 0.05523,
+   "low": 0.05519,
+   "close": 0.05523,
+   "close_time_ms": 1793658719999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793658720000,
+   "open": 0.05522,
+   "high": 0.05522,
+   "low": 0.05516,
+   "close": 0.05519,
+   "close_time_ms": 1793658779999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793658780000,
+   "open": 0.05519,
+   "high": 0.05522,
+   "low": 0.05504,
+   "close": 0.05519,
+   "close_time_ms": 1793658839999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793658840000,
+   "open": 0.0552,
+   "high": 0.05524,
+   "low": 0.0552,
+   "close": 0.05523,
+   "close_time_ms": 1793658899999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793658900000,
+   "open": 0.05523,
+   "high": 0.05526,
+   "low": 0.05521,
+   "close": 0.05522,
+   "close_time_ms": 1793658959999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793658960000,
+   "open": 0.05522,
+   "high": 0.05523,
+   "low": 0.05518,
+   "close": 0.05521,
+   "close_time_ms": 1793659019999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793659020000,
+   "open": 0.0552,
+   "high": 0.05521,
+   "low": 0.05518,
+   "close": 0.0552,
+   "close_time_ms": 1793659079999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793659080000,
+   "open": 0.05518,
+   "high": 0.05522,
+   "low": 0.05517,
+   "close": 0.05522,
+   "close_time_ms": 1793659139999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793659140000,
+   "open": 0.05523,
+   "high": 0.05523,
+   "low": 0.0552,
+   "close": 0.0552,
+   "close_time_ms": 1793659199999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793659200000,
+   "open": 0.05523,
+   "high": 0.05528,
+   "low": 0.05522,
+   "close": 0.05524,
+   "close_time_ms": 1793659259999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793659260000,
+   "open": 0.05524,
+   "high": 0.05526,
+   "low": 0.05524,
+   "close": 0.05524,
+   "close_time_ms": 1793659319999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793659320000,
+   "open": 0.05525,
+   "high": 0.05531,
+   "low": 0.05525,
+   "close": 0.05529,
+   "close_time_ms": 1793659379999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793659380000,
+   "open": 0.0553,
+   "high": 0.05535,
+   "low": 0.0553,
+   "close": 0.05531,
+   "close_time_ms": 1793659439999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793659440000,
+   "open": 0.05532,
+   "high": 0.05532,
+   "low": 0.05531,
+   "close": 0.05532,
+   "close_time_ms": 1793659499999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793659500000,
+   "open": 0.05532,
+   "high": 0.05535,
+   "low": 0.0553,
+   "close": 0.05532,
+   "close_time_ms": 1793659559999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793659560000,
+   "open": 0.05533,
+   "high": 0.05534,
+   "low": 0.0553,
+   "close": 0.05532,
+   "close_time_ms": 1793659619999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793659620000,
+   "open": 0.05532,
+   "high": 0.05538,
+   "low": 0.05532,
+   "close": 0.05538,
+   "close_time_ms": 1793659679999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793659680000,
+   "open": 0.05538,
+   "high": 0.05538,
+   "low": 0.05535,
+   "close": 0.05537,
+   "close_time_ms": 1793659739999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793659740000,
+   "open": 0.05537,
+   "high": 0.05539,
+   "low": 0.05536,
+   "close": 0.05538,
+   "close_time_ms": 1793659799999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793659800000,
+   "open": 0.05537,
+   "high": 0.0554,
+   "low": 0.05537,
+   "close": 0.05537,
+   "close_time_ms": 1793659859999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793659860000,
+   "open": 0.05537,
+   "high": 0.05539,
+   "low": 0.05536,
+   "close": 0.05536,
+   "close_time_ms": 1793659919999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793659920000,
+   "open": 0.05536,
+   "high": 0.05541,
+   "low": 0.05535,
+   "close": 0.05538,
+   "close_time_ms": 1793659979999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793659980000,
+   "open": 0.05541,
+   "high": 0.05544,
+   "low": 0.05538,
+   "close": 0.05544,
+   "close_time_ms": 1793660039999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793660040000,
+   "open": 0.05544,
+   "high": 0.05545,
+   "low": 0.05541,
+   "close": 0.05541,
+   "close_time_ms": 1793660099999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793660100000,
+   "open": 0.0554,
+   "high": 0.05542,
+   "low": 0.05539,
+   "close": 0.0554,
+   "close_time_ms": 1793660159999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793660160000,
+   "open": 0.05541,
+   "high": 0.05543,
+   "low": 0.05541,
+   "close": 0.05543,
+   "close_time_ms": 1793660219999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793660220000,
+   "open": 0.05543,
+   "high": 0.05543,
+   "low": 0.05539,
+   "close": 0.05542,
+   "close_time_ms": 1793660279999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793660280000,
+   "open": 0.05543,
+   "high": 0.05544,
+   "low": 0.05543,
+   "close": 0.05543,
+   "close_time_ms": 1793660339999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793660340000,
+   "open": 0.05543,
+   "high": 0.05545,
+   "low": 0.05542,
+   "close": 0.05542,
+   "close_time_ms": 1793660399999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793660400000,
+   "open": 0.05542,
+   "high": 0.05542,
+   "low": 0.05525,
+   "close": 0.05533,
+   "close_time_ms": 1793660459999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793660460000,
+   "open": 0.05534,
+   "high": 0.05535,
+   "low": 0.05523,
+   "close": 0.05528,
+   "close_time_ms": 1793660519999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793660520000,
+   "open": 0.05528,
+   "high": 0.0553,
+   "low": 0.05525,
+   "close": 0.0553,
+   "close_time_ms": 1793660579999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793660580000,
+   "open": 0.05531,
+   "high": 0.05544,
+   "low": 0.05531,
+   "close": 0.05541,
+   "close_time_ms": 1793660639999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793660640000,
+   "open": 0.05541,
+   "high": 0.05544,
+   "low": 0.05536,
+   "close": 0.05536,
+   "close_time_ms": 1793660699999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793660700000,
+   "open": 0.05538,
+   "high": 0.05538,
+   "low": 0.05534,
+   "close": 0.05537,
+   "close_time_ms": 1793660759999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793660760000,
+   "open": 0.05538,
+   "high": 0.05546,
+   "low": 0.05538,
+   "close": 0.05544,
+   "close_time_ms": 1793660819999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793660820000,
+   "open": 0.05544,
+   "high": 0.05544,
+   "low": 0.05535,
+   "close": 0.05537,
+   "close_time_ms": 1793660879999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793660880000,
+   "open": 0.05537,
+   "high": 0.05543,
+   "low": 0.05537,
+   "close": 0.05541,
+   "close_time_ms": 1793660939999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793660940000,
+   "open": 0.05542,
+   "high": 0.0555,
+   "low": 0.05542,
+   "close": 0.05547,
+   "close_time_ms": 1793660999999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793661000000,
+   "open": 0.05547,
+   "high": 0.05557,
+   "low": 0.05547,
+   "close": 0.05556,
+   "close_time_ms": 1793661059999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793661060000,
+   "open": 0.05556,
+   "high": 0.05563,
+   "low": 0.05556,
+   "close": 0.05562,
+   "close_time_ms": 1793661119999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793661120000,
+   "open": 0.05562,
+   "high": 0.05562,
+   "low": 0.05557,
+   "close": 0.05559,
+   "close_time_ms": 1793661179999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793661180000,
+   "open": 0.05559,
+   "high": 0.05559,
+   "low": 0.05554,
+   "close": 0.05554,
+   "close_time_ms": 1793661239999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793661240000,
+   "open": 0.05554,
+   "high": 0.05555,
+   "low": 0.05551,
+   "close": 0.05554,
+   "close_time_ms": 1793661299999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793661300000,
+   "open": 0.05553,
+   "high": 0.0556,
+   "low": 0.05553,
+   "close": 0.0556,
+   "close_time_ms": 1793661359999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793661360000,
+   "open": 0.0556,
+   "high": 0.0556,
+   "low": 0.05556,
+   "close": 0.05557,
+   "close_time_ms": 1793661419999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793661420000,
+   "open": 0.05556,
+   "high": 0.05556,
+   "low": 0.05541,
+   "close": 0.05541,
+   "close_time_ms": 1793661479999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793661480000,
+   "open": 0.05543,
+   "high": 0.05546,
+   "low": 0.05543,
+   "close": 0.05544,
+   "close_time_ms": 1793661539999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793661540000,
+   "open": 0.05544,
+   "high": 0.05549,
+   "low": 0.05544,
+   "close": 0.05549,
+   "close_time_ms": 1793661599999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793661600000,
+   "open": 0.0555,
+   "high": 0.05552,
+   "low": 0.05549,
+   "close": 0.05549,
+   "close_time_ms": 1793661659999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793661660000,
+   "open": 0.05549,
+   "high": 0.05552,
+   "low": 0.05548,
+   "close": 0.05548,
+   "close_time_ms": 1793661719999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793661720000,
+   "open": 0.05548,
+   "high": 0.05551,
+   "low": 0.05546,
+   "close": 0.05551,
+   "close_time_ms": 1793661779999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793661780000,
+   "open": 0.05552,
+   "high": 0.05579,
+   "low": 0.0555,
+   "close": 0.05567,
+   "close_time_ms": 1793661839999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793661840000,
+   "open": 0.05568,
+   "high": 0.05569,
+   "low": 0.05562,
+   "close": 0.05567,
+   "close_time_ms": 1793661899999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793661900000,
+   "open": 0.05567,
+   "high": 0.05567,
+   "low": 0.05562,
+   "close": 0.05562,
+   "close_time_ms": 1793661959999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793661960000,
+   "open": 0.05562,
+   "high": 0.05562,
+   "low": 0.0556,
+   "close": 0.0556,
+   "close_time_ms": 1793662019999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793662020000,
+   "open": 0.05559,
+   "high": 0.0556,
+   "low": 0.05559,
+   "close": 0.0556,
+   "close_time_ms": 1793662079999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793662080000,
+   "open": 0.05561,
+   "high": 0.05563,
+   "low": 0.05561,
+   "close": 0.05563,
+   "close_time_ms": 1793662139999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793662140000,
+   "open": 0.05563,
+   "high": 0.05565,
+   "low": 0.05563,
+   "close": 0.05565,
+   "close_time_ms": 1793662199999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793662200000,
+   "open": 0.05565,
+   "high": 0.05566,
+   "low": 0.05558,
+   "close": 0.05558,
+   "close_time_ms": 1793662259999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793662260000,
+   "open": 0.05557,
+   "high": 0.05557,
+   "low": 0.05556,
+   "close": 0.05557,
+   "close_time_ms": 1793662319999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793662320000,
+   "open": 0.05556,
+   "high": 0.05559,
+   "low": 0.05554,
+   "close": 0.05559,
+   "close_time_ms": 1793662379999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793662380000,
+   "open": 0.05559,
+   "high": 0.05559,
+   "low": 0.05553,
+   "close": 0.05554,
+   "close_time_ms": 1793662439999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793662440000,
+   "open": 0.05553,
+   "high": 0.05553,
+   "low": 0.05552,
+   "close": 0.05552,
+   "close_time_ms": 1793662499999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793662500000,
+   "open": 0.05551,
+   "high": 0.05553,
+   "low": 0.05551,
+   "close": 0.05552,
+   "close_time_ms": 1793662559999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793662560000,
+   "open": 0.05552,
+   "high": 0.05552,
+   "low": 0.0555,
+   "close": 0.0555,
+   "close_time_ms": 1793662619999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793662620000,
+   "open": 0.05549,
+   "high": 0.05549,
+   "low": 0.05547,
+   "close": 0.05547,
+   "close_time_ms": 1793662679999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793662680000,
+   "open": 0.05549,
+   "high": 0.05552,
+   "low": 0.05548,
+   "close": 0.05548,
+   "close_time_ms": 1793662739999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793662740000,
+   "open": 0.0555,
+   "high": 0.05555,
+   "low": 0.0555,
+   "close": 0.05555,
+   "close_time_ms": 1793662799999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793662800000,
+   "open": 0.05555,
+   "high": 0.05556,
+   "low": 0.05554,
+   "close": 0.05554,
+   "close_time_ms": 1793662859999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793662860000,
+   "open": 0.05555,
+   "high": 0.05556,
+   "low": 0.05555,
+   "close": 0.05556,
+   "close_time_ms": 1793662919999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793662920000,
+   "open": 0.05556,
+   "high": 0.05558,
+   "low": 0.05556,
+   "close": 0.05558,
+   "close_time_ms": 1793662979999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793662980000,
+   "open": 0.05559,
+   "high": 0.05559,
+   "low": 0.05557,
+   "close": 0.05557,
+   "close_time_ms": 1793663039999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793663040000,
+   "open": 0.05556,
+   "high": 0.05559,
+   "low": 0.05556,
+   "close": 0.05556,
+   "close_time_ms": 1793663099999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793663100000,
+   "open": 0.05555,
+   "high": 0.05556,
+   "low": 0.05554,
+   "close": 0.05555,
+   "close_time_ms": 1793663159999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793663160000,
+   "open": 0.05555,
+   "high": 0.05555,
+   "low": 0.05554,
+   "close": 0.05554,
+   "close_time_ms": 1793663219999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793663220000,
+   "open": 0.05554,
+   "high": 0.05554,
+   "low": 0.05553,
+   "close": 0.05554,
+   "close_time_ms": 1793663279999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793663280000,
+   "open": 0.05557,
+   "high": 0.05557,
+   "low": 0.05556,
+   "close": 0.05557,
+   "close_time_ms": 1793663339999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793663340000,
+   "open": 0.05558,
+   "high": 0.05567,
+   "low": 0.05558,
+   "close": 0.05566,
+   "close_time_ms": 1793663399999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793663400000,
+   "open": 0.05566,
+   "high": 0.05566,
+   "low": 0.05564,
+   "close": 0.05564,
+   "close_time_ms": 1793663459999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793663460000,
+   "open": 0.05566,
+   "high": 0.05566,
+   "low": 0.05563,
+   "close": 0.05563,
+   "close_time_ms": 1793663519999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793663520000,
+   "open": 0.05563,
+   "high": 0.05563,
+   "low": 0.05559,
+   "close": 0.05559,
+   "close_time_ms": 1793663579999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793663580000,
+   "open": 0.0556,
+   "high": 0.05567,
+   "low": 0.0556,
+   "close": 0.05566,
+   "close_time_ms": 1793663639999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793663640000,
+   "open": 0.05566,
+   "high": 0.0557,
+   "low": 0.05566,
+   "close": 0.0557,
+   "close_time_ms": 1793663699999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793663700000,
+   "open": 0.05571,
+   "high": 0.05571,
+   "low": 0.0557,
+   "close": 0.05571,
+   "close_time_ms": 1793663759999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793663760000,
+   "open": 0.0557,
+   "high": 0.0557,
+   "low": 0.05569,
+   "close": 0.0557,
+   "close_time_ms": 1793663819999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793663820000,
+   "open": 0.0557,
+   "high": 0.0557,
+   "low": 0.05568,
+   "close": 0.05568,
+   "close_time_ms": 1793663879999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793663880000,
+   "open": 0.05569,
+   "high": 0.05569,
+   "low": 0.05565,
+   "close": 0.05565,
+   "close_time_ms": 1793663939999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793663940000,
+   "open": 0.05567,
+   "high": 0.05568,
+   "low": 0.05567,
+   "close": 0.05568,
+   "close_time_ms": 1793663999999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793664000000,
+   "open": 0.05569,
+   "high": 0.05569,
+   "low": 0.05563,
+   "close": 0.05563,
+   "close_time_ms": 1793664059999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793664060000,
+   "open": 0.05564,
+   "high": 0.05567,
+   "low": 0.05558,
+   "close": 0.05558,
+   "close_time_ms": 1793664119999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793664120000,
+   "open": 0.0556,
+   "high": 0.05568,
+   "low": 0.05559,
+   "close": 0.05561,
+   "close_time_ms": 1793664179999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793664180000,
+   "open": 0.05561,
+   "high": 0.05564,
+   "low": 0.05561,
+   "close": 0.05564,
+   "close_time_ms": 1793664239999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793664240000,
+   "open": 0.05564,
+   "high": 0.05567,
+   "low": 0.0556,
+   "close": 0.05567,
+   "close_time_ms": 1793664299999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793664300000,
+   "open": 0.05566,
+   "high": 0.05573,
+   "low": 0.0556,
+   "close": 0.05568,
+   "close_time_ms": 1793664359999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793664360000,
+   "open": 0.05568,
+   "high": 0.05568,
+   "low": 0.05564,
+   "close": 0.05564,
+   "close_time_ms": 1793664419999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793664420000,
+   "open": 0.05564,
+   "high": 0.05564,
+   "low": 0.05559,
+   "close": 0.05563,
+   "close_time_ms": 1793664479999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793664480000,
+   "open": 0.05562,
+   "high": 0.05562,
+   "low": 0.05546,
+   "close": 0.05552,
+   "close_time_ms": 1793664539999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793664540000,
+   "open": 0.05552,
+   "high": 0.0556,
+   "low": 0.05552,
+   "close": 0.0556,
+   "close_time_ms": 1793664599999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793664600000,
+   "open": 0.0556,
+   "high": 0.05568,
+   "low": 0.0556,
+   "close": 0.05566,
+   "close_time_ms": 1793664659999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793664660000,
+   "open": 0.05566,
+   "high": 0.05575,
+   "low": 0.05565,
+   "close": 0.05575,
+   "close_time_ms": 1793664719999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793664720000,
+   "open": 0.05575,
+   "high": 0.05577,
+   "low": 0.05572,
+   "close": 0.05572,
+   "close_time_ms": 1793664779999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793664780000,
+   "open": 0.05571,
+   "high": 0.05574,
+   "low": 0.05571,
+   "close": 0.05574,
+   "close_time_ms": 1793664839999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793664840000,
+   "open": 0.05573,
+   "high": 0.05573,
+   "low": 0.05562,
+   "close": 0.05565,
+   "close_time_ms": 1793664899999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793664900000,
+   "open": 0.05565,
+   "high": 0.05576,
+   "low": 0.05564,
+   "close": 0.05574,
+   "close_time_ms": 1793664959999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793664960000,
+   "open": 0.05575,
+   "high": 0.05583,
+   "low": 0.05574,
+   "close": 0.05579,
+   "close_time_ms": 1793665019999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793665020000,
+   "open": 0.05579,
+   "high": 0.05584,
+   "low": 0.05577,
+   "close": 0.05582,
+   "close_time_ms": 1793665079999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793665080000,
+   "open": 0.0558,
+   "high": 0.05583,
+   "low": 0.05577,
+   "close": 0.05582,
+   "close_time_ms": 1793665139999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793665140000,
+   "open": 0.05583,
+   "high": 0.05583,
+   "low": 0.05577,
+   "close": 0.05583,
+   "close_time_ms": 1793665199999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793665200000,
+   "open": 0.05581,
+   "high": 0.05582,
+   "low": 0.05574,
+   "close": 0.05576,
+   "close_time_ms": 1793665259999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793665260000,
+   "open": 0.05577,
+   "high": 0.05585,
+   "low": 0.05577,
+   "close": 0.05582,
+   "close_time_ms": 1793665319999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793665320000,
+   "open": 0.05581,
+   "high": 0.05583,
+   "low": 0.05575,
+   "close": 0.05575,
+   "close_time_ms": 1793665379999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793665380000,
+   "open": 0.05577,
+   "high": 0.05577,
+   "low": 0.05574,
+   "close": 0.05575,
+   "close_time_ms": 1793665439999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793665440000,
+   "open": 0.05576,
+   "high": 0.05579,
+   "low": 0.05574,
+   "close": 0.05579,
+   "close_time_ms": 1793665499999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793665500000,
+   "open": 0.05578,
+   "high": 0.05578,
+   "low": 0.05573,
+   "close": 0.05573,
+   "close_time_ms": 1793665559999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793665560000,
+   "open": 0.05573,
+   "high": 0.05575,
+   "low": 0.05568,
+   "close": 0.05571,
+   "close_time_ms": 1793665619999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793665620000,
+   "open": 0.05571,
+   "high": 0.05571,
+   "low": 0.05562,
+   "close": 0.05562,
+   "close_time_ms": 1793665679999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793665680000,
+   "open": 0.05564,
+   "high": 0.05566,
+   "low": 0.0556,
+   "close": 0.05564,
+   "close_time_ms": 1793665739999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793665740000,
+   "open": 0.05564,
+   "high": 0.05564,
+   "low": 0.05561,
+   "close": 0.05563,
+   "close_time_ms": 1793665799999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793665800000,
+   "open": 0.05562,
+   "high": 0.05564,
+   "low": 0.05562,
+   "close": 0.05564,
+   "close_time_ms": 1793665859999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793665860000,
+   "open": 0.05565,
+   "high": 0.05572,
+   "low": 0.05565,
+   "close": 0.05566,
+   "close_time_ms": 1793665919999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793665920000,
+   "open": 0.05566,
+   "high": 0.05569,
+   "low": 0.05563,
+   "close": 0.05569,
+   "close_time_ms": 1793665979999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793665980000,
+   "open": 0.05569,
+   "high": 0.05569,
+   "low": 0.05565,
+   "close": 0.05565,
+   "close_time_ms": 1793666039999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793666040000,
+   "open": 0.05565,
+   "high": 0.05568,
+   "low": 0.05564,
+   "close": 0.05568,
+   "close_time_ms": 1793666099999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793666100000,
+   "open": 0.05566,
+   "high": 0.05567,
+   "low": 0.05566,
+   "close": 0.05566,
+   "close_time_ms": 1793666159999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793666160000,
+   "open": 0.05567,
+   "high": 0.05571,
+   "low": 0.05567,
+   "close": 0.05567,
+   "close_time_ms": 1793666219999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793666220000,
+   "open": 0.05568,
+   "high": 0.05573,
+   "low": 0.05568,
+   "close": 0.05572,
+   "close_time_ms": 1793666279999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793666280000,
+   "open": 0.05571,
+   "high": 0.05573,
+   "low": 0.05571,
+   "close": 0.05572,
+   "close_time_ms": 1793666339999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793666340000,
+   "open": 0.05573,
+   "high": 0.05589,
+   "low": 0.05573,
+   "close": 0.05589,
+   "close_time_ms": 1793666399999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793666400000,
+   "open": 0.05589,
+   "high": 0.05592,
+   "low": 0.05585,
+   "close": 0.05586,
+   "close_time_ms": 1793666459999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793666460000,
+   "open": 0.05587,
+   "high": 0.05591,
+   "low": 0.05585,
+   "close": 0.05589,
+   "close_time_ms": 1793666519999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793666520000,
+   "open": 0.05589,
+   "high": 0.05589,
+   "low": 0.05583,
+   "close": 0.05583,
+   "close_time_ms": 1793666579999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793666580000,
+   "open": 0.05584,
+   "high": 0.05588,
+   "low": 0.05583,
+   "close": 0.05585,
+   "close_time_ms": 1793666639999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793666640000,
+   "open": 0.05583,
+   "high": 0.05583,
+   "low": 0.05571,
+   "close": 0.05573,
+   "close_time_ms": 1793666699999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793666700000,
+   "open": 0.05573,
+   "high": 0.0558,
+   "low": 0.05572,
+   "close": 0.05578,
+   "close_time_ms": 1793666759999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793666760000,
+   "open": 0.05579,
+   "high": 0.0559,
+   "low": 0.05579,
+   "close": 0.05585,
+   "close_time_ms": 1793666819999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793666820000,
+   "open": 0.05586,
+   "high": 0.05595,
+   "low": 0.05586,
+   "close": 0.05593,
+   "close_time_ms": 1793666879999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793666880000,
+   "open": 0.05593,
+   "high": 0.05597,
+   "low": 0.05593,
+   "close": 0.05595,
+   "close_time_ms": 1793666939999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793666940000,
+   "open": 0.05595,
+   "high": 0.05595,
+   "low": 0.05591,
+   "close": 0.05593,
+   "close_time_ms": 1793666999999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793667000000,
+   "open": 0.05591,
+   "high": 0.05591,
+   "low": 0.05584,
+   "close": 0.05587,
+   "close_time_ms": 1793667059999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793667060000,
+   "open": 0.05586,
+   "high": 0.05586,
+   "low": 0.05579,
+   "close": 0.05579,
+   "close_time_ms": 1793667119999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793667120000,
+   "open": 0.05577,
+   "high": 0.05584,
+   "low": 0.05574,
+   "close": 0.05578,
+   "close_time_ms": 1793667179999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793667180000,
+   "open": 0.05577,
+   "high": 0.05579,
+   "low": 0.05577,
+   "close": 0.05578,
+   "close_time_ms": 1793667239999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793667240000,
+   "open": 0.05578,
+   "high": 0.05579,
+   "low": 0.05575,
+   "close": 0.05575,
+   "close_time_ms": 1793667299999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793667300000,
+   "open": 0.05575,
+   "high": 0.05579,
+   "low": 0.05575,
+   "close": 0.05579,
+   "close_time_ms": 1793667359999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793667360000,
+   "open": 0.05579,
+   "high": 0.05579,
+   "low": 0.05574,
+   "close": 0.05574,
+   "close_time_ms": 1793667419999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793667420000,
+   "open": 0.05574,
+   "high": 0.05579,
+   "low": 0.05574,
+   "close": 0.05577,
+   "close_time_ms": 1793667479999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793667480000,
+   "open": 0.05578,
+   "high": 0.05584,
+   "low": 0.05577,
+   "close": 0.05584,
+   "close_time_ms": 1793667539999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793667540000,
+   "open": 0.05584,
+   "high": 0.05589,
+   "low": 0.05584,
+   "close": 0.05587,
+   "close_time_ms": 1793667599999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793667600000,
+   "open": 0.05583,
+   "high": 0.05584,
+   "low": 0.05574,
+   "close": 0.05575,
+   "close_time_ms": 1793667659999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793667660000,
+   "open": 0.05577,
+   "high": 0.05588,
+   "low": 0.05577,
+   "close": 0.05588,
+   "close_time_ms": 1793667719999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793667720000,
+   "open": 0.05588,
+   "high": 0.05598,
+   "low": 0.05588,
+   "close": 0.05597,
+   "close_time_ms": 1793667779999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793667780000,
+   "open": 0.05597,
+   "high": 0.05615,
+   "low": 0.05597,
+   "close": 0.05613,
+   "close_time_ms": 1793667839999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793667840000,
+   "open": 0.05613,
+   "high": 0.05619,
+   "low": 0.05603,
+   "close": 0.0561,
+   "close_time_ms": 1793667899999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793667900000,
+   "open": 0.05611,
+   "high": 0.05612,
+   "low": 0.05604,
+   "close": 0.05607,
+   "close_time_ms": 1793667959999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793667960000,
+   "open": 0.05607,
+   "high": 0.05607,
+   "low": 0.05595,
+   "close": 0.05595,
+   "close_time_ms": 1793668019999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793668020000,
+   "open": 0.05596,
+   "high": 0.056,
+   "low": 0.05595,
+   "close": 0.05595,
+   "close_time_ms": 1793668079999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793668080000,
+   "open": 0.05595,
+   "high": 0.05595,
+   "low": 0.05585,
+   "close": 0.05587,
+   "close_time_ms": 1793668139999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793668140000,
+   "open": 0.05587,
+   "high": 0.05588,
+   "low": 0.05582,
+   "close": 0.05588,
+   "close_time_ms": 1793668199999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793668200000,
+   "open": 0.05587,
+   "high": 0.05588,
+   "low": 0.0558,
+   "close": 0.05581,
+   "close_time_ms": 1793668259999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793668260000,
+   "open": 0.05582,
+   "high": 0.05587,
+   "low": 0.05581,
+   "close": 0.05587,
+   "close_time_ms": 1793668319999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793668320000,
+   "open": 0.05587,
+   "high": 0.05593,
+   "low": 0.05587,
+   "close": 0.05593,
+   "close_time_ms": 1793668379999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793668380000,
+   "open": 0.05593,
+   "high": 0.05594,
+   "low": 0.05589,
+   "close": 0.05593,
+   "close_time_ms": 1793668439999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793668440000,
+   "open": 0.05592,
+   "high": 0.05593,
+   "low": 0.05588,
+   "close": 0.05588,
+   "close_time_ms": 1793668499999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793668500000,
+   "open": 0.05588,
+   "high": 0.05589,
+   "low": 0.05581,
+   "close": 0.05584,
+   "close_time_ms": 1793668559999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793668560000,
+   "open": 0.05585,
+   "high": 0.05596,
+   "low": 0.05584,
+   "close": 0.05596,
+   "close_time_ms": 1793668619999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793668620000,
+   "open": 0.05595,
+   "high": 0.05596,
+   "low": 0.05594,
+   "close": 0.05595,
+   "close_time_ms": 1793668679999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793668680000,
+   "open": 0.05595,
+   "high": 0.05596,
+   "low": 0.05595,
+   "close": 0.05595,
+   "close_time_ms": 1793668739999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793668740000,
+   "open": 0.05596,
+   "high": 0.05603,
+   "low": 0.05596,
+   "close": 0.05601,
+   "close_time_ms": 1793668799999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793668800000,
+   "open": 0.05599,
+   "high": 0.05602,
+   "low": 0.05594,
+   "close": 0.05595,
+   "close_time_ms": 1793668859999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793668860000,
+   "open": 0.05595,
+   "high": 0.05597,
+   "low": 0.05593,
+   "close": 0.05597,
+   "close_time_ms": 1793668919999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793668920000,
+   "open": 0.05598,
+   "high": 0.05599,
+   "low": 0.05598,
+   "close": 0.05599,
+   "close_time_ms": 1793668979999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793668980000,
+   "open": 0.05599,
+   "high": 0.05599,
+   "low": 0.05591,
+   "close": 0.05594,
+   "close_time_ms": 1793669039999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793669040000,
+   "open": 0.05595,
+   "high": 0.05597,
+   "low": 0.05588,
+   "close": 0.05588,
+   "close_time_ms": 1793669099999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793669100000,
+   "open": 0.05588,
+   "high": 0.0559,
+   "low": 0.05588,
+   "close": 0.0559,
+   "close_time_ms": 1793669159999,
+   "available_at": null,
+   "received_at": null
+  },
+  {
+   "open_time_ms": 1793669160000,
+   "open": 0.0559,
+   "high": 0.0559,
+   "low": 0.05589,
+   "close": 0.05589,
+   "close_time_ms": 1793669219999,
+   "available_at": null,
+   "received_at": null
+  }
+ ],
+ "cursor": 1,
+ "position": {
+  "open": false,
+  "direction": null,
+  "entry_px": null,
+  "entry_qty": null,
+  "entry_cost": null,
+  "entry_ms": null,
+  "stop_px": 0.0,
+  "mark_px": null,
+  "mark_ms": null,
+  "unrealized_gross": null,
+  "unrealized_net": null,
+  "mfe_pct": null,
+  "mae_pct": null
+ },
+ "costs": {
+  "fee_bps": 5.0,
+  "spread_bps": 1.0,
+  "entry_fees": 0.5,
+  "exit_fees": 0.0,
+  "entry_spread_slip": 0.3,
+  "exit_spread_slip": 0.0,
+  "funding": null,
+  "friction": 0.8,
+  "entry_fees_executed": 0.0,
+  "exit_fees_executed": 0.0,
+  "entry_spread_slip_executed": 0.0,
+  "exit_spread_slip_executed": 0.0,
+  "exit_fees_estimated": 0.0,
+  "exit_spread_slip_estimated": 0.0
+ },
+ "events": [],
+ "result": null,
+ "clock_ms": 1793669280000,
+ "config_hash": "4a339c046cc3ad63",
+ "input_hash": null,
+ "engine_version": "paper-lab-engine/v1.2",
+ "limitations": [
+  "no-latency-model",
+  "no-tick-lot-rounding",
+  "no-min-notional-gate",
+  "realized-only-drawdown",
+  "engineering-fixture-only"
+ ],
+ "authoritative": null,
+ "_request_id": "market-PL-MINAUSDT-LONG-1793669229096-9d935300-1793669280000-0",
+ "_content_hash": "60affa1ad111b32fb69bdc0af9a24305a7316d3d3ee4b1fabe33bee521608460"
+}

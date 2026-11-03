@@ -1,0 +1,130 @@
+{
+  "ok": true,
+  "written": "docs\\evidence\\engineering-live-public-20261102c\\evidence.json",
+  "verdict": "PASS",
+  "reasons": {
+    "fail": [],
+    "missing": [],
+    "consumidores_max": 2,
+    "reconexiones_max": 0,
+    "rest_total": 2,
+    "ledger_total_por_run_id": 7,
+    "db_unchanged": true,
+    "ultima_salud_ingenieria": {
+      "service": "engineering-session-service/v1",
+      "engine_version": "paper-lab-engine/v1.2",
+      "pid": 2664,
+      "host": "127.0.0.1",
+      "port": 8797,
+      "sessions_dir": "docs\\evidence\\engineering-live-public-20261102c\\sessions",
+      "cadence_ms": 700.0,
+      "market": {
+        "url": "http://127.0.0.1:8791",
+        "bars": 300,
+        "live_silence_ms": 120000.0,
+        "max_notional_usdt": 1000.0,
+        "transports": [
+          "local_replay",
+          "market_stream"
+        ]
+      },
+      "clock": {
+        "source": "public_sincronizado",
+        "available": true,
+        "offset_ms": -7.125244,
+        "rtt_ms": 360.332031,
+        "last_sync_timestamp": "2026-11-03T01:27:08.280721+00:00",
+        "age_ms": 16.901,
+        "sync_successful": 1,
+        "sync_failed": 0,
+        "samples_valid": 5,
+        "samples_failed": 0
+      },
+      "drives": [],
+      "generated_at_ms": 1793669228297
+    },
+    "clock_readiness": {
+      "http_disponible_en_ms": 1793669225232,
+      "reloj_listo_en_ms": 1793669228298,
+      "transiciones": [
+        {
+          "estado": "http_disponible",
+          "at_ms": 1793669225232,
+          "detalle": "servicio respondi├│ /health (PID=2664)"
+        },
+        {
+          "estado": "reloj_no_listo",
+          "at_ms": 1793669225234,
+          "detalle": "available=False (age_ms=None)"
+        },
+        {
+          "estado": "reloj_no_listo",
+          "at_ms": 1793669225749,
+          "detalle": "available=False (age_ms=None)"
+        },
+        {
+          "estado": "reloj_no_listo",
+          "at_ms": 1793669226252,
+          "detalle": "available=False (age_ms=None)"
+        },
+        {
+          "estado": "reloj_no_listo",
+          "at_ms": 1793669226764,
+          "detalle": "available=False (age_ms=None)"
+        },
+        {
+          "estado": "reloj_no_listo",
+          "at_ms": 1793669227280,
+          "detalle": "available=False (age_ms=None)"
+        },
+        {
+          "estado": "reloj_no_listo",
+          "at_ms": 1793669227783,
+          "detalle": "available=False (age_ms=None)"
+        },
+        {
+          "estado": "reloj_listo",
+          "at_ms": 1793669228298,
+          "detalle": "referencia v├ílida (source=public_sincronizado)"
+        }
+      ],
+      "ultimo_motivo": "referencia v├ílida (source=public_sincronizado)",
+      "error": null,
+      "ultimo_health": {
+        "service": "engineering-session-service/v1",
+        "engine_version": "paper-lab-engine/v1.2",
+        "pid": 2664,
+        "host": "127.0.0.1",
+        "port": 8797,
+        "sessions_dir": "docs\\evidence\\engineering-live-public-20261102c\\sessions",
+        "cadence_ms": 700.0,
+        "market": {
+          "url": "http://127.0.0.1:8791",
+          "bars": 300,
+          "live_silence_ms": 120000.0,
+          "max_notional_usdt": 1000.0,
+          "transports": [
+            "local_replay",
+            "market_stream"
+          ]
+        },
+        "clock": {
+          "source": "public_sincronizado",
+          "available": true,
+          "offset_ms": -7.125244,
+          "rtt_ms": 360.332031,
+          "last_sync_timestamp": "2026-11-03T01:27:08.280721+00:00",
+          "age_ms": 16.901,
+          "sync_successful": 1,
+          "sync_failed": 0,
+          "samples_valid": 5,
+          "samples_failed": 0
+        },
+        "drives": [],
+        "generated_at_ms": 1793669228297
+      }
+    }
+  },
+  "checks_failed": [],
+  "checks_missing": []
+}

@@ -1,0 +1,97 @@
+{
+  "puertos": {
+    "8791": "libre",
+    "8797": "libre",
+    "8792": "OCCUPADO",
+    "3020": "OCCUPADO",
+    "18799": "libre",
+    "18800": "libre"
+  },
+  "historical.db": "d8930ec5d4c4415e748859f426d0a9e9c39de5ceb17367efd3d626fdf56f8b19",
+  "microprobe.db": "6ea98cab059b2a5b2559891c1f7bbf9a9aeb600fe0d8c182f34bd01d7d4221a7",
+  "historical_before": "d8930ec5d4c4415e748859f426d0a9e9c39de5ceb17367efd3d626fdf56f8b19",
+  "microprobe_before": "6ea98cab059b2a5b2559891c1f7bbf9a9aeb600fe0d8c182f34bd01d7d4221a7",
+  "pid_file_8792": "{\"service\": \"market-stream-service/v1\", \"contract_version\": \"market-stream/v1\", \"pid\": 31124, \"host\": \"127.0.0.1\", \"port\": 8792, \"started_at_ms\": 1793276434054}",
+  "ledger_run_id": [
+    {
+      "id": 330,
+      "at_ms": 1793669225193,
+      "source": null,
+      "requests": 1,
+      "retries": 0,
+      "failures": 0,
+      "status": "ok",
+      "detail": "{\"endpoint\": \"fapi_time\", \"source\": \"https://fapi.binance.com/fapi/v1/time\"}"
+    },
+    {
+      "id": 331,
+      "at_ms": 1793669226867,
+      "source": null,
+      "requests": 1,
+      "retries": 0,
+      "failures": 0,
+      "status": "ok",
+      "detail": "{\"endpoint\": \"fapi_time\", \"source\": \"https://fapi.binance.com/fapi/v1/time\"}"
+    },
+    {
+      "id": 332,
+      "at_ms": 1793669227207,
+      "source": null,
+      "requests": 1,
+      "retries": 0,
+      "failures": 0,
+      "status": "ok",
+      "detail": "{\"endpoint\": \"fapi_time\", \"source\": \"https://fapi.binance.com/fapi/v1/time\"}"
+    },
+    {
+      "id": 333,
+      "at_ms": 1793669227568,
+      "source": null,
+      "requests": 1,
+      "retries": 0,
+      "failures": 0,
+      "status": "ok",
+      "detail": "{\"endpoint\": \"fapi_time\", \"source\": \"https://fapi.binance.com/fapi/v1/time\"}"
+    },
+    {
+      "id": 334,
+      "at_ms": 1793669227935,
+      "source": null,
+      "requests": 1,
+      "retries": 0,
+      "failures": 0,
+      "status": "ok",
+      "detail": "{\"endpoint\": \"fapi_time\", \"source\": \"https://fapi.binance.com/fapi/v1/time\"}"
+    },
+    {
+      "id": 335,
+      "at_ms": 1793669228336,
+      "source": null,
+      "requests": 1,
+      "retries": 0,
+      "failures": 0,
+      "status": "ok",
+      "detail": "{\"duration_ms\": 356, \"endpoint\": \"https://fapi.binance.com/fapi/v1/klines?symbol=BTCUSDT&interval=1m&startTime=1793651220000&endTime=1793669219999&limit=300\", \"interval\": \"1m\", \"page\": 300, \"range\": \"1793651220000-1793669219999\", \"result\": \"ok\", \"retry\": 0, \"symbol\": \"BTCUSDT\"}"
+    },
+    {
+      "id": 336,
+      "at_ms": 1793669228715,
+      "source": null,
+      "requests": 1,
+      "retries": 0,
+      "failures": 0,
+      "status": "ok",
+      "detail": "{\"duration_ms\": 343, \"endpoint\": \"https://fapi.binance.com/fapi/v1/klines?symbol=MINAUSDT&interval=1m&startTime=1793651220000&endTime=1793669219999&limit=300\", \"interval\": \"1m\", \"page\": 300, \"range\": \"1793651220000-1793669219999\", \"result\": \"ok\", \"retry\": 0, \"symbol\": \"MINAUSDT\"}"
+    }
+  ],
+  "ledger_total": 7,
+  "ledger_budget_blocked": 0,
+  "sessions_dir_files": [
+    "drive-registry.json",
+    "paper-lab-sessions",
+    "paper-lab-sessions\\.PL-MINAUSDT-LONG-1793669229096-9d935300.lock",
+    "paper-lab-sessions\\PL-MINAUSDT-LONG-1793669229096-9d935300.json",
+    "run-id.json"
+  ],
+  "pid_files_en_sessions": []
+}

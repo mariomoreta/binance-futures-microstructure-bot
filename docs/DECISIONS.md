@@ -4522,3 +4522,32 @@ economicos.
   veredictos existentes. Pendientes declarados no bloqueantes: literal
   historico del check `build_served` y respuesta de
   `tests/test_engineering_live_window_local.py` (fixture desfasada).
+## 2026-11-02 - Ventana publica eng-run-public-20261102c: FAIL de aceptacion por cadena SSE-adaptador (base a11c02e)
+
+Unica ventana publica autorizada ejecutada una sola vez con el arnes
+corregido en a11c02e (run_id nuevo, sin reutilizar cupos). Resultado:
+
+- Acreditado en producción: referencia del reloj publico sincronizado valida
+  (public_sincronizado, offset −7.125 ms, 5/5 muestras), contexto cerrado
+  no-futuro correcto (600 velas contiguas, ultimo cierre admitido
+  1793669219999 <= referencia 1793669228291, vela en curso excluida fila a
+  fila), presupuesto exacto 7/7 en ledger compartido por run_id, WS publica
+  237 mensajes sin reconexiones con 3 cierres nuevos admitidos POR EL HUB
+  (BTCUSDT 2, MINAUSDT 1), limpieza completa, DBs canonicas intactas, 8792
+  y 3020 preservados.
+- No acreditado: eventos procesados por la sesion (eventos_procesados=0,
+  events=[]), avance de T por evento, evento disparador y evaluacion con
+  decisión y motivo. La sesión quedó `sin_iniciar`; rev 2 avanzó `clock_ms`
+  1793669219999 → 1793669280000 sin evento registrado (causa UNKNOWN).
+- Clasificación: fallo del arnés/servicios locales en el adaptador SSE del
+  servicio de ingeniería (60/237 frames, 5 desconexiones por
+  `TimeoutError: timed out`, conexión efectiva recién ~147 s tras el
+  arranque). No es fallo upstream de Binance ni del contexto corregido en
+  a11c02e. `SIN_ENTRADA` no aplica (no hubo eventos procesados).
+- Decision de veredicto: el PASS interno del arnes NO se acepta como PASS de
+  aceptacion; el veredicto global es FAIL (EVALUACION_NO_ALCANZADA). Se
+  conserva toda la evidencia en
+  docs/evidence/engineering-live-public-20261102c/.
+- Siguiente: correccion local del adaptador SSE y nueva ventana publica solo
+  con autorizacion explicita y run_id NUEVO.
+

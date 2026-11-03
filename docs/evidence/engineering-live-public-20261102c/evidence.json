@@ -1,0 +1,2918 @@
+{
+  "generated_at_ms": 1793669403685,
+  "verdict": "PASS",
+  "error": null,
+  "mode": "public",
+  "symbols": [
+    "MINAUSDT",
+    "BTCUSDT"
+  ],
+  "interval": "1m",
+  "bars": 300,
+  "deadline_s": 180.0,
+  "session_id": "PL-MINAUSDT-LONG-1793669229096-9d935300",
+  "config_hash": "4a339c046cc3ad63",
+  "evidence": {
+    "clock_readiness": {
+      "http_disponible_en_ms": 1793669225232,
+      "reloj_listo_en_ms": 1793669228298,
+      "transiciones": [
+        {
+          "estado": "http_disponible",
+          "at_ms": 1793669225232,
+          "detalle": "servicio respondió /health (PID=2664)"
+        },
+        {
+          "estado": "reloj_no_listo",
+          "at_ms": 1793669225234,
+          "detalle": "available=False (age_ms=None)"
+        },
+        {
+          "estado": "reloj_no_listo",
+          "at_ms": 1793669225749,
+          "detalle": "available=False (age_ms=None)"
+        },
+        {
+          "estado": "reloj_no_listo",
+          "at_ms": 1793669226252,
+          "detalle": "available=False (age_ms=None)"
+        },
+        {
+          "estado": "reloj_no_listo",
+          "at_ms": 1793669226764,
+          "detalle": "available=False (age_ms=None)"
+        },
+        {
+          "estado": "reloj_no_listo",
+          "at_ms": 1793669227280,
+          "detalle": "available=False (age_ms=None)"
+        },
+        {
+          "estado": "reloj_no_listo",
+          "at_ms": 1793669227783,
+          "detalle": "available=False (age_ms=None)"
+        },
+        {
+          "estado": "reloj_listo",
+          "at_ms": 1793669228298,
+          "detalle": "referencia válida (source=public_sincronizado)"
+        }
+      ],
+      "ultimo_motivo": "referencia válida (source=public_sincronizado)",
+      "error": null,
+      "ultimo_health": {
+        "service": "engineering-session-service/v1",
+        "engine_version": "paper-lab-engine/v1.2",
+        "pid": 2664,
+        "host": "127.0.0.1",
+        "port": 8797,
+        "sessions_dir": "docs\\evidence\\engineering-live-public-20261102c\\sessions",
+        "cadence_ms": 700.0,
+        "market": {
+          "url": "http://127.0.0.1:8791",
+          "bars": 300,
+          "live_silence_ms": 120000.0,
+          "max_notional_usdt": 1000.0,
+          "transports": [
+            "local_replay",
+            "market_stream"
+          ]
+        },
+        "clock": {
+          "source": "public_sincronizado",
+          "available": true,
+          "offset_ms": -7.125244,
+          "rtt_ms": 360.332031,
+          "last_sync_timestamp": "2026-11-03T01:27:08.280721+00:00",
+          "age_ms": 16.901,
+          "sync_successful": 1,
+          "sync_failed": 0,
+          "samples_valid": 5,
+          "samples_failed": 0
+        },
+        "drives": [],
+        "generated_at_ms": 1793669228297
+      }
+    },
+    "services": {
+      "mercado_pid": 10116,
+      "mercado_puerto": 8791,
+      "mercado_modo": "public",
+      "ingenieria_pid": 2664,
+      "ingenieria_puerto": 8797,
+      "sessions_dir": "docs\\evidence\\engineering-live-public-20261102c\\sessions",
+      "service_stdout_path": "docs\\evidence\\engineering-live-public-20261102c\\service_logs\\service-stdout.log",
+      "service_stderr_path": "docs\\evidence\\engineering-live-public-20261102c\\service_logs\\service-stderr.log",
+      "engineering_stdout_path": "docs\\evidence\\engineering-live-public-20261102c\\service_logs\\engineering-stdout.log",
+      "engineering_stderr_path": "docs\\evidence\\engineering-live-public-20261102c\\service_logs\\engineering-stderr.log"
+    },
+    "contexto": {
+      "fuente": "caché derivada + REST klines",
+      "referencia_ms": 1793669228291,
+      "ventana": [
+        1793651220000,
+        1793669160000
+      ],
+      "cierre_ultima_ventana_ms": 1793669219999,
+      "velas": 600,
+      "symbols_seen": [
+        "BTCUSDT",
+        "MINAUSDT"
+      ],
+      "por_simbolo": {
+        "BTCUSDT": {
+          "velas": 300,
+          "primera_open_ms": 1793651220000,
+          "ultima_open_ms": 1793669160000,
+          "ultimo_cierre_ms": 1793669219999,
+          "contiguo": true,
+          "alcanza_ultima_cerrada": true
+        },
+        "MINAUSDT": {
+          "velas": 300,
+          "primera_open_ms": 1793651220000,
+          "ultima_open_ms": 1793669160000,
+          "ultimo_cierre_ms": 1793669219999,
+          "contiguo": true,
+          "alcanza_ultima_cerrada": true
+        }
+      },
+      "rango": [
+        1793651220000,
+        1793669160000
+      ],
+      "rest_usadas": 2,
+      "motivo": null,
+      "parse_diag": [
+        {
+          "symbol": "BTCUSDT",
+          "result": "stored",
+          "rows": 0,
+          "admitidas": 0,
+          "reserved_before_send": false,
+          "cierre_no_disponible": 0,
+          "cierre_no_ocurrido": 0,
+          "ohlc_no_cerrado": 0,
+          "fuera_de_ventana": 0,
+          "duplicadas": 0
+        },
+        {
+          "symbol": "MINAUSDT",
+          "result": "stored",
+          "rows": 0,
+          "admitidas": 0,
+          "reserved_before_send": false,
+          "cierre_no_disponible": 0,
+          "cierre_no_ocurrido": 0,
+          "ohlc_no_cerrado": 0,
+          "fuera_de_ventana": 0,
+          "duplicadas": 0
+        },
+        {
+          "symbol": "BTCUSDT",
+          "result": "ok",
+          "rows": 300,
+          "admitidas": 300,
+          "reserved_before_send": true,
+          "cierre_no_disponible": 0,
+          "cierre_no_ocurrido": 0,
+          "fuera_de_ventana": 0,
+          "duplicadas": 0
+        },
+        {
+          "symbol": "MINAUSDT",
+          "result": "ok",
+          "rows": 300,
+          "admitidas": 300,
+          "reserved_before_send": true,
+          "cierre_no_disponible": 0,
+          "cierre_no_ocurrido": 0,
+          "fuera_de_ventana": 0,
+          "duplicadas": 0
+        }
+      ]
+    },
+    "create": {
+      "session_id": "PL-MINAUSDT-LONG-1793669229096-9d935300",
+      "config_hash": "4a339c046cc3ad63",
+      "simbolo": "MINAUSDT",
+      "reference": "BTCUSDT",
+      "intervalo": "1m",
+      "regla": "RULE-CAUSAL-V1",
+      "notional_usdt": 1000.0,
+      "horizon_ms": 10800000,
+      "contexto_velas": 600,
+      "transporte": "market_stream",
+      "create_ok": true
+    },
+    "start": {
+      "drive_state": "running",
+      "runner": "market_stream",
+      "market_url": "http://127.0.0.1:8791",
+      "bars": 300,
+      "eventos_procesados": 0
+    },
+    "revisiones": [
+      {
+        "revision": 0,
+        "at_ms": 1793669229184,
+        "estado": "sin_iniciar",
+        "decision": null,
+        "decision_reason": null,
+        "clock_ms": 1793669219999,
+        "eventos_procesados": 0
+      },
+      {
+        "revision": 2,
+        "at_ms": 1793669342370,
+        "estado": "sin_iniciar",
+        "decision": null,
+        "decision_reason": null,
+        "clock_ms": 1793669280000,
+        "eventos_procesados": 0
+      }
+    ],
+    "recorrido_servicio": {
+      "ws_connects": 5,
+      "ws_messages_received": 237,
+      "ws_klines_parsed": 237,
+      "ws_closed_by_symbol": {
+        "BTCUSDT": 2,
+        "MINAUSDT": 1
+      },
+      "ws_rejected_by_symbol": {},
+      "sse_frames_sent": 237
+    },
+    "adaptador_ingenieria": {
+      "frames": 60,
+      "bad_frames": 0,
+      "unknown_frames": 0,
+      "provisional_frames": 17,
+      "disconnects": 5,
+      "reconnects": 5,
+      "connect_errors": 0,
+      "last_error": "TimeoutError: timed out",
+      "last_frame_at_ms": 1793669392558,
+      "connected_at_ms": 1793669374186,
+      "started_at_ms": 1793669229149
+    },
+    "revision_final": 2,
+    "evaluaciones_final": [],
+    "evaluacion_contador_final": 0,
+    "eventos_procesados_final": 0,
+    "duracion_adquisicion_s": 174.489,
+    "adquisicion_dentro_deadline": true,
+    "stop": {
+      "status": 200,
+      "ok": true,
+      "text": "{\"session\": {\"session_id\": \"PL-MINAUSDT-LONG-1793669229096-9d935300\", \"created_at_ms\": 1793669229096, \"updated_at_ms\": 1793669342023, \"status\": \"sin_iniciar\", \"revision\": 2, \"clock_ms\": 1793669280000, \"config_hash\": \"4a339c046cc3ad63\", \"input_hash\": null, \"config\": {\"symbol\": \"MINAUSDT\", \"interval\":"
+    },
+    "duracion_limpieza_s": 0.016,
+    "duracion_total_s": 180.386,
+    "decision_final_vinculada": {
+      "revision": 2,
+      "decision": null,
+      "motivo": null,
+      "clock_ms": 1793669280000,
+      "eventos_procesados": 0
+    },
+    "duracion_s": 174.489,
+    "deadline_respetado": true,
+    "verdict_reasons": {
+      "fail": [],
+      "missing": [],
+      "consumidores_max": 2,
+      "reconexiones_max": 0,
+      "rest_total": 2,
+      "ledger_total_por_run_id": 7,
+      "db_unchanged": true,
+      "ultima_salud_ingenieria": {
+        "service": "engineering-session-service/v1",
+        "engine_version": "paper-lab-engine/v1.2",
+        "pid": 2664,
+        "host": "127.0.0.1",
+        "port": 8797,
+        "sessions_dir": "docs\\evidence\\engineering-live-public-20261102c\\sessions",
+        "cadence_ms": 700.0,
+        "market": {
+          "url": "http://127.0.0.1:8791",
+          "bars": 300,
+          "live_silence_ms": 120000.0,
+          "max_notional_usdt": 1000.0,
+          "transports": [
+            "local_replay",
+            "market_stream"
+          ]
+        },
+        "clock": {
+          "source": "public_sincronizado",
+          "available": true,
+          "offset_ms": -7.125244,
+          "rtt_ms": 360.332031,
+          "last_sync_timestamp": "2026-11-03T01:27:08.280721+00:00",
+          "age_ms": 16.901,
+          "sync_successful": 1,
+          "sync_failed": 0,
+          "samples_valid": 5,
+          "samples_failed": 0
+        },
+        "drives": [],
+        "generated_at_ms": 1793669228297
+      },
+      "clock_readiness": {
+        "http_disponible_en_ms": 1793669225232,
+        "reloj_listo_en_ms": 1793669228298,
+        "transiciones": [
+          {
+            "estado": "http_disponible",
+            "at_ms": 1793669225232,
+            "detalle": "servicio respondió /health (PID=2664)"
+          },
+          {
+            "estado": "reloj_no_listo",
+            "at_ms": 1793669225234,
+            "detalle": "available=False (age_ms=None)"
+          },
+          {
+            "estado": "reloj_no_listo",
+            "at_ms": 1793669225749,
+            "detalle": "available=False (age_ms=None)"
+          },
+          {
+            "estado": "reloj_no_listo",
+            "at_ms": 1793669226252,
+            "detalle": "available=False (age_ms=None)"
+          },
+          {
+            "estado": "reloj_no_listo",
+            "at_ms": 1793669226764,
+            "detalle": "available=False (age_ms=None)"
+          },
+          {
+            "estado": "reloj_no_listo",
+            "at_ms": 1793669227280,
+            "detalle": "available=False (age_ms=None)"
+          },
+          {
+            "estado": "reloj_no_listo",
+            "at_ms": 1793669227783,
+            "detalle": "available=False (age_ms=None)"
+          },
+          {
+            "estado": "reloj_listo",
+            "at_ms": 1793669228298,
+            "detalle": "referencia válida (source=public_sincronizado)"
+          }
+        ],
+        "ultimo_motivo": "referencia válida (source=public_sincronizado)",
+        "error": null,
+        "ultimo_health": {
+          "service": "engineering-session-service/v1",
+          "engine_version": "paper-lab-engine/v1.2",
+          "pid": 2664,
+          "host": "127.0.0.1",
+          "port": 8797,
+          "sessions_dir": "docs\\evidence\\engineering-live-public-20261102c\\sessions",
+          "cadence_ms": 700.0,
+          "market": {
+            "url": "http://127.0.0.1:8791",
+            "bars": 300,
+            "live_silence_ms": 120000.0,
+            "max_notional_usdt": 1000.0,
+            "transports": [
+              "local_replay",
+              "market_stream"
+            ]
+          },
+          "clock": {
+            "source": "public_sincronizado",
+            "available": true,
+            "offset_ms": -7.125244,
+            "rtt_ms": 360.332031,
+            "last_sync_timestamp": "2026-11-03T01:27:08.280721+00:00",
+            "age_ms": 16.901,
+            "sync_successful": 1,
+            "sync_failed": 0,
+            "samples_valid": 5,
+            "samples_failed": 0
+          },
+          "drives": [],
+          "generated_at_ms": 1793669228297
+        }
+      }
+    }
+  },
+  "checks": [
+    {
+      "id": "config_validada",
+      "ok": true,
+      "required": true,
+      "source": "config",
+      "detail": "regla/stop/horizonte/referencia fijadas antes de conectar (no se cambian durante la ventana)"
+    },
+    {
+      "id": "dashboard_up",
+      "ok": true,
+      "required": true,
+      "source": "preflight",
+      "detail": "market-lab status=200"
+    },
+    {
+      "id": "build_served",
+      "ok": true,
+      "required": true,
+      "source": "preflight",
+      "detail": "BUILD_ID t4z0bfKQ_kIP9qv1WHCKR servido (árbol e2243c9)"
+    },
+    {
+      "id": "service_port_free",
+      "ok": true,
+      "required": true,
+      "source": "preflight",
+      "detail": "puerto 8791 libre"
+    },
+    {
+      "id": "engineering_port_free",
+      "ok": true,
+      "required": true,
+      "source": "preflight",
+      "detail": "puerto 8797 libre"
+    },
+    {
+      "id": "port_8792_untouched",
+      "ok": true,
+      "required": false,
+      "source": "preflight",
+      "detail": "8792 ocupado (servicio local preexistente, no tocar)"
+    },
+    {
+      "id": "codigo_limites_conocidos",
+      "ok": true,
+      "required": false,
+      "source": "preflight",
+      "detail": "límites del usuario impuestos por el orquestador: <=3 consumidores SSE, <=3 reconexiones, <=7 REST (límite por corrida), <=300 velas/consulta, deadline 180s, cero escrituras DB canónicas; el hub de market-stream usa 1 WS combinada."
+    },
+    {
+      "id": "no_ingenieria_activa",
+      "ok": true,
+      "required": false,
+      "source": "preflight",
+      "detail": "ningún proceso de ingeniería activo antes de la ventana"
+    },
+    {
+      "id": "service_started",
+      "ok": true,
+      "required": true,
+      "source": "execute",
+      "detail": "servicio mercado PID 10116 puerto 8791 modo=public"
+    },
+    {
+      "id": "engineering_started",
+      "ok": true,
+      "required": true,
+      "source": "execute",
+      "detail": "servicio ingeniería PID 2664 puerto 8797"
+    },
+    {
+      "id": "clock_fuente_verificada",
+      "ok": true,
+      "required": true,
+      "source": "execute",
+      "detail": "reloj de referencia public válido antes de crear sesión (source=public_sincronizado)"
+    },
+    {
+      "id": "contexto_cargado",
+      "ok": true,
+      "required": true,
+      "source": "execute",
+      "detail": "600 velas cerradas y contiguas para fijar el reloj T (rest=2)"
+    },
+    {
+      "id": "sesion_creada",
+      "ok": true,
+      "required": true,
+      "source": "execute",
+      "detail": "session_id=PL-MINAUSDT-LONG-1793669229096-9d935300 config_hash=4a339c046cc3ad63 regla=RULE-CAUSAL-V1 simbolo=MINAUSDT vinculada al transporte market_stream"
+    },
+    {
+      "id": "conduccion_iniciada",
+      "ok": true,
+      "required": true,
+      "source": "execute",
+      "detail": "drive state=running runner=market_stream mercado=http://127.0.0.1:8791"
+    },
+    {
+      "id": "consumidores_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "consumers=2 (máximo 3, todos los componentes)"
+    },
+    {
+      "id": "reconexiones_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "reconnects=0 (máximo 3)"
+    },
+    {
+      "id": "consumidores_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "consumers=2 (máximo 3, todos los componentes)"
+    },
+    {
+      "id": "reconexiones_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "reconnects=0 (máximo 3)"
+    },
+    {
+      "id": "consumidores_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "consumers=2 (máximo 3, todos los componentes)"
+    },
+    {
+      "id": "reconexiones_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "reconnects=0 (máximo 3)"
+    },
+    {
+      "id": "consumidores_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "consumers=2 (máximo 3, todos los componentes)"
+    },
+    {
+      "id": "reconexiones_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "reconnects=0 (máximo 3)"
+    },
+    {
+      "id": "consumidores_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "consumers=2 (máximo 3, todos los componentes)"
+    },
+    {
+      "id": "reconexiones_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "reconnects=0 (máximo 3)"
+    },
+    {
+      "id": "consumidores_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "consumers=2 (máximo 3, todos los componentes)"
+    },
+    {
+      "id": "reconexiones_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "reconnects=0 (máximo 3)"
+    },
+    {
+      "id": "consumidores_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "consumers=2 (máximo 3, todos los componentes)"
+    },
+    {
+      "id": "reconexiones_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "reconnects=0 (máximo 3)"
+    },
+    {
+      "id": "consumidores_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "consumers=2 (máximo 3, todos los componentes)"
+    },
+    {
+      "id": "reconexiones_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "reconnects=0 (máximo 3)"
+    },
+    {
+      "id": "consumidores_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "consumers=2 (máximo 3, todos los componentes)"
+    },
+    {
+      "id": "reconexiones_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "reconnects=0 (máximo 3)"
+    },
+    {
+      "id": "consumidores_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "consumers=2 (máximo 3, todos los componentes)"
+    },
+    {
+      "id": "reconexiones_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "reconnects=0 (máximo 3)"
+    },
+    {
+      "id": "consumidores_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "consumers=2 (máximo 3, todos los componentes)"
+    },
+    {
+      "id": "reconexiones_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "reconnects=0 (máximo 3)"
+    },
+    {
+      "id": "consumidores_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "consumers=2 (máximo 3, todos los componentes)"
+    },
+    {
+      "id": "reconexiones_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "reconnects=0 (máximo 3)"
+    },
+    {
+      "id": "consumidores_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "consumers=2 (máximo 3, todos los componentes)"
+    },
+    {
+      "id": "reconexiones_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "reconnects=0 (máximo 3)"
+    },
+    {
+      "id": "consumidores_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "consumers=2 (máximo 3, todos los componentes)"
+    },
+    {
+      "id": "reconexiones_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "reconnects=0 (máximo 3)"
+    },
+    {
+      "id": "consumidores_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "consumers=2 (máximo 3, todos los componentes)"
+    },
+    {
+      "id": "reconexiones_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "reconnects=0 (máximo 3)"
+    },
+    {
+      "id": "consumidores_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "consumers=2 (máximo 3, todos los componentes)"
+    },
+    {
+      "id": "reconexiones_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "reconnects=0 (máximo 3)"
+    },
+    {
+      "id": "consumidores_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "consumers=2 (máximo 3, todos los componentes)"
+    },
+    {
+      "id": "reconexiones_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "reconnects=0 (máximo 3)"
+    },
+    {
+      "id": "consumidores_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "consumers=2 (máximo 3, todos los componentes)"
+    },
+    {
+      "id": "reconexiones_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "reconnects=0 (máximo 3)"
+    },
+    {
+      "id": "consumidores_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "consumers=2 (máximo 3, todos los componentes)"
+    },
+    {
+      "id": "reconexiones_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "reconnects=0 (máximo 3)"
+    },
+    {
+      "id": "consumidores_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "consumers=2 (máximo 3, todos los componentes)"
+    },
+    {
+      "id": "reconexiones_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "reconnects=0 (máximo 3)"
+    },
+    {
+      "id": "consumidores_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "consumers=2 (máximo 3, todos los componentes)"
+    },
+    {
+      "id": "reconexiones_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "reconnects=0 (máximo 3)"
+    },
+    {
+      "id": "consumidores_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "consumers=2 (máximo 3, todos los componentes)"
+    },
+    {
+      "id": "reconexiones_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "reconnects=0 (máximo 3)"
+    },
+    {
+      "id": "consumidores_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "consumers=2 (máximo 3, todos los componentes)"
+    },
+    {
+      "id": "reconexiones_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "reconnects=0 (máximo 3)"
+    },
+    {
+      "id": "consumidores_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "consumers=2 (máximo 3, todos los componentes)"
+    },
+    {
+      "id": "reconexiones_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "reconnects=0 (máximo 3)"
+    },
+    {
+      "id": "consumidores_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "consumers=2 (máximo 3, todos los componentes)"
+    },
+    {
+      "id": "reconexiones_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "reconnects=0 (máximo 3)"
+    },
+    {
+      "id": "consumidores_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "consumers=2 (máximo 3, todos los componentes)"
+    },
+    {
+      "id": "reconexiones_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "reconnects=0 (máximo 3)"
+    },
+    {
+      "id": "consumidores_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "consumers=2 (máximo 3, todos los componentes)"
+    },
+    {
+      "id": "reconexiones_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "reconnects=0 (máximo 3)"
+    },
+    {
+      "id": "consumidores_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "consumers=2 (máximo 3, todos los componentes)"
+    },
+    {
+      "id": "reconexiones_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "reconnects=0 (máximo 3)"
+    },
+    {
+      "id": "consumidores_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "consumers=2 (máximo 3, todos los componentes)"
+    },
+    {
+      "id": "reconexiones_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "reconnects=0 (máximo 3)"
+    },
+    {
+      "id": "consumidores_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "consumers=2 (máximo 3, todos los componentes)"
+    },
+    {
+      "id": "reconexiones_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "reconnects=0 (máximo 3)"
+    },
+    {
+      "id": "consumidores_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "consumers=2 (máximo 3, todos los componentes)"
+    },
+    {
+      "id": "reconexiones_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "reconnects=0 (máximo 3)"
+    },
+    {
+      "id": "consumidores_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "consumers=2 (máximo 3, todos los componentes)"
+    },
+    {
+      "id": "reconexiones_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "reconnects=0 (máximo 3)"
+    },
+    {
+      "id": "consumidores_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "consumers=2 (máximo 3, todos los componentes)"
+    },
+    {
+      "id": "reconexiones_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "reconnects=0 (máximo 3)"
+    },
+    {
+      "id": "consumidores_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "consumers=2 (máximo 3, todos los componentes)"
+    },
+    {
+      "id": "reconexiones_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "reconnects=0 (máximo 3)"
+    },
+    {
+      "id": "consumidores_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "consumers=2 (máximo 3, todos los componentes)"
+    },
+    {
+      "id": "reconexiones_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "reconnects=0 (máximo 3)"
+    },
+    {
+      "id": "consumidores_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "consumers=2 (máximo 3, todos los componentes)"
+    },
+    {
+      "id": "reconexiones_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "reconnects=0 (máximo 3)"
+    },
+    {
+      "id": "consumidores_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "consumers=2 (máximo 3, todos los componentes)"
+    },
+    {
+      "id": "reconexiones_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "reconnects=0 (máximo 3)"
+    },
+    {
+      "id": "consumidores_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "consumers=2 (máximo 3, todos los componentes)"
+    },
+    {
+      "id": "reconexiones_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "reconnects=0 (máximo 3)"
+    },
+    {
+      "id": "consumidores_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "consumers=2 (máximo 3, todos los componentes)"
+    },
+    {
+      "id": "reconexiones_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "reconnects=0 (máximo 3)"
+    },
+    {
+      "id": "consumidores_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "consumers=2 (máximo 3, todos los componentes)"
+    },
+    {
+      "id": "reconexiones_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "reconnects=0 (máximo 3)"
+    },
+    {
+      "id": "consumidores_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "consumers=2 (máximo 3, todos los componentes)"
+    },
+    {
+      "id": "reconexiones_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "reconnects=0 (máximo 3)"
+    },
+    {
+      "id": "consumidores_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "consumers=2 (máximo 3, todos los componentes)"
+    },
+    {
+      "id": "reconexiones_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "reconnects=0 (máximo 3)"
+    },
+    {
+      "id": "consumidores_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "consumers=2 (máximo 3, todos los componentes)"
+    },
+    {
+      "id": "reconexiones_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "reconnects=0 (máximo 3)"
+    },
+    {
+      "id": "consumidores_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "consumers=2 (máximo 3, todos los componentes)"
+    },
+    {
+      "id": "reconexiones_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "reconnects=0 (máximo 3)"
+    },
+    {
+      "id": "consumidores_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "consumers=2 (máximo 3, todos los componentes)"
+    },
+    {
+      "id": "reconexiones_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "reconnects=0 (máximo 3)"
+    },
+    {
+      "id": "consumidores_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "consumers=0 (máximo 3, todos los componentes)"
+    },
+    {
+      "id": "reconexiones_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "reconnects=0 (máximo 3)"
+    },
+    {
+      "id": "consumidores_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "consumers=2 (máximo 3, todos los componentes)"
+    },
+    {
+      "id": "reconexiones_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "reconnects=0 (máximo 3)"
+    },
+    {
+      "id": "consumidores_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "consumers=2 (máximo 3, todos los componentes)"
+    },
+    {
+      "id": "reconexiones_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "reconnects=0 (máximo 3)"
+    },
+    {
+      "id": "consumidores_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "consumers=2 (máximo 3, todos los componentes)"
+    },
+    {
+      "id": "reconexiones_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "reconnects=0 (máximo 3)"
+    },
+    {
+      "id": "consumidores_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "consumers=2 (máximo 3, todos los componentes)"
+    },
+    {
+      "id": "reconexiones_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "reconnects=0 (máximo 3)"
+    },
+    {
+      "id": "consumidores_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "consumers=2 (máximo 3, todos los componentes)"
+    },
+    {
+      "id": "reconexiones_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "reconnects=0 (máximo 3)"
+    },
+    {
+      "id": "consumidores_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "consumers=2 (máximo 3, todos los componentes)"
+    },
+    {
+      "id": "reconexiones_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "reconnects=0 (máximo 3)"
+    },
+    {
+      "id": "consumidores_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "consumers=2 (máximo 3, todos los componentes)"
+    },
+    {
+      "id": "reconexiones_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "reconnects=0 (máximo 3)"
+    },
+    {
+      "id": "consumidores_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "consumers=2 (máximo 3, todos los componentes)"
+    },
+    {
+      "id": "reconexiones_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "reconnects=0 (máximo 3)"
+    },
+    {
+      "id": "consumidores_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "consumers=2 (máximo 3, todos los componentes)"
+    },
+    {
+      "id": "reconexiones_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "reconnects=0 (máximo 3)"
+    },
+    {
+      "id": "consumidores_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "consumers=2 (máximo 3, todos los componentes)"
+    },
+    {
+      "id": "reconexiones_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "reconnects=0 (máximo 3)"
+    },
+    {
+      "id": "consumidores_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "consumers=2 (máximo 3, todos los componentes)"
+    },
+    {
+      "id": "reconexiones_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "reconnects=0 (máximo 3)"
+    },
+    {
+      "id": "consumidores_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "consumers=2 (máximo 3, todos los componentes)"
+    },
+    {
+      "id": "reconexiones_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "reconnects=0 (máximo 3)"
+    },
+    {
+      "id": "consumidores_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "consumers=2 (máximo 3, todos los componentes)"
+    },
+    {
+      "id": "reconexiones_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "reconnects=0 (máximo 3)"
+    },
+    {
+      "id": "consumidores_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "consumers=2 (máximo 3, todos los componentes)"
+    },
+    {
+      "id": "reconexiones_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "reconnects=0 (máximo 3)"
+    },
+    {
+      "id": "consumidores_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "consumers=2 (máximo 3, todos los componentes)"
+    },
+    {
+      "id": "reconexiones_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "reconnects=0 (máximo 3)"
+    },
+    {
+      "id": "consumidores_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "consumers=2 (máximo 3, todos los componentes)"
+    },
+    {
+      "id": "reconexiones_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "reconnects=0 (máximo 3)"
+    },
+    {
+      "id": "consumidores_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "consumers=2 (máximo 3, todos los componentes)"
+    },
+    {
+      "id": "reconexiones_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "reconnects=0 (máximo 3)"
+    },
+    {
+      "id": "consumidores_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "consumers=2 (máximo 3, todos los componentes)"
+    },
+    {
+      "id": "reconexiones_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "reconnects=0 (máximo 3)"
+    },
+    {
+      "id": "consumidores_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "consumers=2 (máximo 3, todos los componentes)"
+    },
+    {
+      "id": "reconexiones_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "reconnects=0 (máximo 3)"
+    },
+    {
+      "id": "consumidores_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "consumers=2 (máximo 3, todos los componentes)"
+    },
+    {
+      "id": "reconexiones_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "reconnects=0 (máximo 3)"
+    },
+    {
+      "id": "consumidores_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "consumers=2 (máximo 3, todos los componentes)"
+    },
+    {
+      "id": "reconexiones_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "reconnects=0 (máximo 3)"
+    },
+    {
+      "id": "consumidores_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "consumers=2 (máximo 3, todos los componentes)"
+    },
+    {
+      "id": "reconexiones_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "reconnects=0 (máximo 3)"
+    },
+    {
+      "id": "consumidores_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "consumers=2 (máximo 3, todos los componentes)"
+    },
+    {
+      "id": "reconexiones_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "reconnects=0 (máximo 3)"
+    },
+    {
+      "id": "consumidores_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "consumers=2 (máximo 3, todos los componentes)"
+    },
+    {
+      "id": "reconexiones_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "reconnects=0 (máximo 3)"
+    },
+    {
+      "id": "consumidores_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "consumers=0 (máximo 3, todos los componentes)"
+    },
+    {
+      "id": "reconexiones_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "reconnects=0 (máximo 3)"
+    },
+    {
+      "id": "consumidores_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "consumers=2 (máximo 3, todos los componentes)"
+    },
+    {
+      "id": "reconexiones_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "reconnects=0 (máximo 3)"
+    },
+    {
+      "id": "consumidores_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "consumers=2 (máximo 3, todos los componentes)"
+    },
+    {
+      "id": "reconexiones_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "reconnects=0 (máximo 3)"
+    },
+    {
+      "id": "consumidores_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "consumers=2 (máximo 3, todos los componentes)"
+    },
+    {
+      "id": "reconexiones_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "reconnects=0 (máximo 3)"
+    },
+    {
+      "id": "consumidores_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "consumers=2 (máximo 3, todos los componentes)"
+    },
+    {
+      "id": "reconexiones_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "reconnects=0 (máximo 3)"
+    },
+    {
+      "id": "consumidores_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "consumers=2 (máximo 3, todos los componentes)"
+    },
+    {
+      "id": "reconexiones_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "reconnects=0 (máximo 3)"
+    },
+    {
+      "id": "consumidores_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "consumers=2 (máximo 3, todos los componentes)"
+    },
+    {
+      "id": "reconexiones_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "reconnects=0 (máximo 3)"
+    },
+    {
+      "id": "consumidores_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "consumers=2 (máximo 3, todos los componentes)"
+    },
+    {
+      "id": "reconexiones_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "reconnects=0 (máximo 3)"
+    },
+    {
+      "id": "consumidores_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "consumers=2 (máximo 3, todos los componentes)"
+    },
+    {
+      "id": "reconexiones_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "reconnects=0 (máximo 3)"
+    },
+    {
+      "id": "consumidores_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "consumers=2 (máximo 3, todos los componentes)"
+    },
+    {
+      "id": "reconexiones_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "reconnects=0 (máximo 3)"
+    },
+    {
+      "id": "consumidores_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "consumers=2 (máximo 3, todos los componentes)"
+    },
+    {
+      "id": "reconexiones_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "reconnects=0 (máximo 3)"
+    },
+    {
+      "id": "consumidores_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "consumers=2 (máximo 3, todos los componentes)"
+    },
+    {
+      "id": "reconexiones_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "reconnects=0 (máximo 3)"
+    },
+    {
+      "id": "consumidores_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "consumers=2 (máximo 3, todos los componentes)"
+    },
+    {
+      "id": "reconexiones_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "reconnects=0 (máximo 3)"
+    },
+    {
+      "id": "consumidores_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "consumers=2 (máximo 3, todos los componentes)"
+    },
+    {
+      "id": "reconexiones_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "reconnects=0 (máximo 3)"
+    },
+    {
+      "id": "consumidores_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "consumers=2 (máximo 3, todos los componentes)"
+    },
+    {
+      "id": "reconexiones_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "reconnects=0 (máximo 3)"
+    },
+    {
+      "id": "consumidores_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "consumers=2 (máximo 3, todos los componentes)"
+    },
+    {
+      "id": "reconexiones_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "reconnects=0 (máximo 3)"
+    },
+    {
+      "id": "consumidores_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "consumers=2 (máximo 3, todos los componentes)"
+    },
+    {
+      "id": "reconexiones_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "reconnects=0 (máximo 3)"
+    },
+    {
+      "id": "consumidores_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "consumers=2 (máximo 3, todos los componentes)"
+    },
+    {
+      "id": "reconexiones_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "reconnects=0 (máximo 3)"
+    },
+    {
+      "id": "consumidores_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "consumers=2 (máximo 3, todos los componentes)"
+    },
+    {
+      "id": "reconexiones_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "reconnects=0 (máximo 3)"
+    },
+    {
+      "id": "consumidores_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "consumers=2 (máximo 3, todos los componentes)"
+    },
+    {
+      "id": "reconexiones_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "reconnects=0 (máximo 3)"
+    },
+    {
+      "id": "consumidores_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "consumers=2 (máximo 3, todos los componentes)"
+    },
+    {
+      "id": "reconexiones_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "reconnects=0 (máximo 3)"
+    },
+    {
+      "id": "consumidores_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "consumers=2 (máximo 3, todos los componentes)"
+    },
+    {
+      "id": "reconexiones_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "reconnects=0 (máximo 3)"
+    },
+    {
+      "id": "consumidores_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "consumers=2 (máximo 3, todos los componentes)"
+    },
+    {
+      "id": "reconexiones_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "reconnects=0 (máximo 3)"
+    },
+    {
+      "id": "consumidores_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "consumers=0 (máximo 3, todos los componentes)"
+    },
+    {
+      "id": "reconexiones_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "reconnects=0 (máximo 3)"
+    },
+    {
+      "id": "consumidores_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "consumers=0 (máximo 3, todos los componentes)"
+    },
+    {
+      "id": "reconexiones_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "reconnects=0 (máximo 3)"
+    },
+    {
+      "id": "consumidores_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "consumers=2 (máximo 3, todos los componentes)"
+    },
+    {
+      "id": "reconexiones_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "reconnects=0 (máximo 3)"
+    },
+    {
+      "id": "consumidores_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "consumers=2 (máximo 3, todos los componentes)"
+    },
+    {
+      "id": "reconexiones_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "reconnects=0 (máximo 3)"
+    },
+    {
+      "id": "consumidores_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "consumers=2 (máximo 3, todos los componentes)"
+    },
+    {
+      "id": "reconexiones_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "reconnects=0 (máximo 3)"
+    },
+    {
+      "id": "consumidores_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "consumers=2 (máximo 3, todos los componentes)"
+    },
+    {
+      "id": "reconexiones_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "reconnects=0 (máximo 3)"
+    },
+    {
+      "id": "consumidores_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "consumers=2 (máximo 3, todos los componentes)"
+    },
+    {
+      "id": "reconexiones_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "reconnects=0 (máximo 3)"
+    },
+    {
+      "id": "consumidores_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "consumers=2 (máximo 3, todos los componentes)"
+    },
+    {
+      "id": "reconexiones_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "reconnects=0 (máximo 3)"
+    },
+    {
+      "id": "consumidores_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "consumers=2 (máximo 3, todos los componentes)"
+    },
+    {
+      "id": "reconexiones_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "reconnects=0 (máximo 3)"
+    },
+    {
+      "id": "consumidores_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "consumers=2 (máximo 3, todos los componentes)"
+    },
+    {
+      "id": "reconexiones_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "reconnects=0 (máximo 3)"
+    },
+    {
+      "id": "consumidores_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "consumers=2 (máximo 3, todos los componentes)"
+    },
+    {
+      "id": "reconexiones_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "reconnects=0 (máximo 3)"
+    },
+    {
+      "id": "consumidores_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "consumers=2 (máximo 3, todos los componentes)"
+    },
+    {
+      "id": "reconexiones_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "reconnects=0 (máximo 3)"
+    },
+    {
+      "id": "consumidores_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "consumers=2 (máximo 3, todos los componentes)"
+    },
+    {
+      "id": "reconexiones_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "reconnects=0 (máximo 3)"
+    },
+    {
+      "id": "consumidores_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "consumers=2 (máximo 3, todos los componentes)"
+    },
+    {
+      "id": "reconexiones_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "reconnects=0 (máximo 3)"
+    },
+    {
+      "id": "consumidores_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "consumers=2 (máximo 3, todos los componentes)"
+    },
+    {
+      "id": "reconexiones_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "reconnects=0 (máximo 3)"
+    },
+    {
+      "id": "consumidores_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "consumers=2 (máximo 3, todos los componentes)"
+    },
+    {
+      "id": "reconexiones_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "reconnects=0 (máximo 3)"
+    },
+    {
+      "id": "consumidores_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "consumers=2 (máximo 3, todos los componentes)"
+    },
+    {
+      "id": "reconexiones_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "reconnects=0 (máximo 3)"
+    },
+    {
+      "id": "consumidores_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "consumers=2 (máximo 3, todos los componentes)"
+    },
+    {
+      "id": "reconexiones_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "reconnects=0 (máximo 3)"
+    },
+    {
+      "id": "consumidores_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "consumers=2 (máximo 3, todos los componentes)"
+    },
+    {
+      "id": "reconexiones_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "reconnects=0 (máximo 3)"
+    },
+    {
+      "id": "consumidores_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "consumers=2 (máximo 3, todos los componentes)"
+    },
+    {
+      "id": "reconexiones_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "reconnects=0 (máximo 3)"
+    },
+    {
+      "id": "consumidores_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "consumers=2 (máximo 3, todos los componentes)"
+    },
+    {
+      "id": "reconexiones_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "reconnects=0 (máximo 3)"
+    },
+    {
+      "id": "consumidores_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "consumers=2 (máximo 3, todos los componentes)"
+    },
+    {
+      "id": "reconexiones_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "reconnects=0 (máximo 3)"
+    },
+    {
+      "id": "consumidores_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "consumers=2 (máximo 3, todos los componentes)"
+    },
+    {
+      "id": "reconexiones_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "reconnects=0 (máximo 3)"
+    },
+    {
+      "id": "consumidores_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "consumers=2 (máximo 3, todos los componentes)"
+    },
+    {
+      "id": "reconexiones_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "reconnects=0 (máximo 3)"
+    },
+    {
+      "id": "consumidores_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "consumers=2 (máximo 3, todos los componentes)"
+    },
+    {
+      "id": "reconexiones_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "reconnects=0 (máximo 3)"
+    },
+    {
+      "id": "consumidores_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "consumers=2 (máximo 3, todos los componentes)"
+    },
+    {
+      "id": "reconexiones_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "reconnects=0 (máximo 3)"
+    },
+    {
+      "id": "consumidores_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "consumers=2 (máximo 3, todos los componentes)"
+    },
+    {
+      "id": "reconexiones_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "reconnects=0 (máximo 3)"
+    },
+    {
+      "id": "consumidores_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "consumers=2 (máximo 3, todos los componentes)"
+    },
+    {
+      "id": "reconexiones_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "reconnects=0 (máximo 3)"
+    },
+    {
+      "id": "consumidores_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "consumers=2 (máximo 3, todos los componentes)"
+    },
+    {
+      "id": "reconexiones_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "reconnects=0 (máximo 3)"
+    },
+    {
+      "id": "consumidores_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "consumers=2 (máximo 3, todos los componentes)"
+    },
+    {
+      "id": "reconexiones_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "reconnects=0 (máximo 3)"
+    },
+    {
+      "id": "consumidores_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "consumers=2 (máximo 3, todos los componentes)"
+    },
+    {
+      "id": "reconexiones_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "reconnects=0 (máximo 3)"
+    },
+    {
+      "id": "consumidores_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "consumers=2 (máximo 3, todos los componentes)"
+    },
+    {
+      "id": "reconexiones_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "reconnects=0 (máximo 3)"
+    },
+    {
+      "id": "consumidores_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "consumers=2 (máximo 3, todos los componentes)"
+    },
+    {
+      "id": "reconexiones_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "reconnects=0 (máximo 3)"
+    },
+    {
+      "id": "consumidores_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "consumers=2 (máximo 3, todos los componentes)"
+    },
+    {
+      "id": "reconexiones_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "reconnects=0 (máximo 3)"
+    },
+    {
+      "id": "consumidores_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "consumers=2 (máximo 3, todos los componentes)"
+    },
+    {
+      "id": "reconexiones_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "reconnects=0 (máximo 3)"
+    },
+    {
+      "id": "consumidores_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "consumers=2 (máximo 3, todos los componentes)"
+    },
+    {
+      "id": "reconexiones_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "reconnects=0 (máximo 3)"
+    },
+    {
+      "id": "consumidores_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "consumers=2 (máximo 3, todos los componentes)"
+    },
+    {
+      "id": "reconexiones_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "reconnects=0 (máximo 3)"
+    },
+    {
+      "id": "consumidores_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "consumers=2 (máximo 3, todos los componentes)"
+    },
+    {
+      "id": "reconexiones_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "reconnects=0 (máximo 3)"
+    },
+    {
+      "id": "consumidores_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "consumers=2 (máximo 3, todos los componentes)"
+    },
+    {
+      "id": "reconexiones_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "reconnects=0 (máximo 3)"
+    },
+    {
+      "id": "consumidores_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "consumers=2 (máximo 3, todos los componentes)"
+    },
+    {
+      "id": "reconexiones_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "reconnects=0 (máximo 3)"
+    },
+    {
+      "id": "consumidores_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "consumers=2 (máximo 3, todos los componentes)"
+    },
+    {
+      "id": "reconexiones_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "reconnects=0 (máximo 3)"
+    },
+    {
+      "id": "consumidores_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "consumers=2 (máximo 3, todos los componentes)"
+    },
+    {
+      "id": "reconexiones_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "reconnects=0 (máximo 3)"
+    },
+    {
+      "id": "consumidores_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "consumers=2 (máximo 3, todos los componentes)"
+    },
+    {
+      "id": "reconexiones_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "reconnects=0 (máximo 3)"
+    },
+    {
+      "id": "consumidores_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "consumers=0 (máximo 3, todos los componentes)"
+    },
+    {
+      "id": "reconexiones_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "reconnects=0 (máximo 3)"
+    },
+    {
+      "id": "consumidores_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "consumers=0 (máximo 3, todos los componentes)"
+    },
+    {
+      "id": "reconexiones_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "reconnects=0 (máximo 3)"
+    },
+    {
+      "id": "consumidores_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "consumers=0 (máximo 3, todos los componentes)"
+    },
+    {
+      "id": "reconexiones_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "reconnects=0 (máximo 3)"
+    },
+    {
+      "id": "consumidores_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "consumers=0 (máximo 3, todos los componentes)"
+    },
+    {
+      "id": "reconexiones_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "reconnects=0 (máximo 3)"
+    },
+    {
+      "id": "consumidores_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "consumers=2 (máximo 3, todos los componentes)"
+    },
+    {
+      "id": "reconexiones_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "reconnects=0 (máximo 3)"
+    },
+    {
+      "id": "consumidores_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "consumers=2 (máximo 3, todos los componentes)"
+    },
+    {
+      "id": "reconexiones_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "reconnects=0 (máximo 3)"
+    },
+    {
+      "id": "consumidores_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "consumers=2 (máximo 3, todos los componentes)"
+    },
+    {
+      "id": "reconexiones_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "reconnects=0 (máximo 3)"
+    },
+    {
+      "id": "consumidores_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "consumers=2 (máximo 3, todos los componentes)"
+    },
+    {
+      "id": "reconexiones_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "reconnects=0 (máximo 3)"
+    },
+    {
+      "id": "consumidores_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "consumers=2 (máximo 3, todos los componentes)"
+    },
+    {
+      "id": "reconexiones_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "reconnects=0 (máximo 3)"
+    },
+    {
+      "id": "consumidores_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "consumers=2 (máximo 3, todos los componentes)"
+    },
+    {
+      "id": "reconexiones_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "reconnects=0 (máximo 3)"
+    },
+    {
+      "id": "consumidores_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "consumers=2 (máximo 3, todos los componentes)"
+    },
+    {
+      "id": "reconexiones_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "reconnects=0 (máximo 3)"
+    },
+    {
+      "id": "consumidores_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "consumers=2 (máximo 3, todos los componentes)"
+    },
+    {
+      "id": "reconexiones_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "reconnects=0 (máximo 3)"
+    },
+    {
+      "id": "consumidores_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "consumers=2 (máximo 3, todos los componentes)"
+    },
+    {
+      "id": "reconexiones_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "reconnects=0 (máximo 3)"
+    },
+    {
+      "id": "consumidores_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "consumers=2 (máximo 3, todos los componentes)"
+    },
+    {
+      "id": "reconexiones_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "reconnects=0 (máximo 3)"
+    },
+    {
+      "id": "consumidores_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "consumers=2 (máximo 3, todos los componentes)"
+    },
+    {
+      "id": "reconexiones_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "reconnects=0 (máximo 3)"
+    },
+    {
+      "id": "consumidores_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "consumers=2 (máximo 3, todos los componentes)"
+    },
+    {
+      "id": "reconexiones_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "reconnects=0 (máximo 3)"
+    },
+    {
+      "id": "consumidores_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "consumers=2 (máximo 3, todos los componentes)"
+    },
+    {
+      "id": "reconexiones_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "reconnects=0 (máximo 3)"
+    },
+    {
+      "id": "consumidores_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "consumers=2 (máximo 3, todos los componentes)"
+    },
+    {
+      "id": "reconexiones_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "reconnects=0 (máximo 3)"
+    },
+    {
+      "id": "consumidores_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "consumers=2 (máximo 3, todos los componentes)"
+    },
+    {
+      "id": "reconexiones_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "reconnects=0 (máximo 3)"
+    },
+    {
+      "id": "consumidores_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "consumers=2 (máximo 3, todos los componentes)"
+    },
+    {
+      "id": "reconexiones_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "reconnects=0 (máximo 3)"
+    },
+    {
+      "id": "consumidores_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "consumers=2 (máximo 3, todos los componentes)"
+    },
+    {
+      "id": "reconexiones_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "reconnects=0 (máximo 3)"
+    },
+    {
+      "id": "consumidores_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "consumers=2 (máximo 3, todos los componentes)"
+    },
+    {
+      "id": "reconexiones_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "reconnects=0 (máximo 3)"
+    },
+    {
+      "id": "consumidores_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "consumers=2 (máximo 3, todos los componentes)"
+    },
+    {
+      "id": "reconexiones_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "reconnects=0 (máximo 3)"
+    },
+    {
+      "id": "consumidores_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "consumers=2 (máximo 3, todos los componentes)"
+    },
+    {
+      "id": "reconexiones_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "reconnects=0 (máximo 3)"
+    },
+    {
+      "id": "consumidores_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "consumers=2 (máximo 3, todos los componentes)"
+    },
+    {
+      "id": "reconexiones_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "reconnects=0 (máximo 3)"
+    },
+    {
+      "id": "consumidores_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "consumers=2 (máximo 3, todos los componentes)"
+    },
+    {
+      "id": "reconexiones_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "reconnects=0 (máximo 3)"
+    },
+    {
+      "id": "consumidores_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "consumers=2 (máximo 3, todos los componentes)"
+    },
+    {
+      "id": "reconexiones_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "reconnects=0 (máximo 3)"
+    },
+    {
+      "id": "consumidores_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "consumers=2 (máximo 3, todos los componentes)"
+    },
+    {
+      "id": "reconexiones_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "reconnects=0 (máximo 3)"
+    },
+    {
+      "id": "consumidores_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "consumers=2 (máximo 3, todos los componentes)"
+    },
+    {
+      "id": "reconexiones_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "reconnects=0 (máximo 3)"
+    },
+    {
+      "id": "consumidores_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "consumers=2 (máximo 3, todos los componentes)"
+    },
+    {
+      "id": "reconexiones_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "reconnects=0 (máximo 3)"
+    },
+    {
+      "id": "consumidores_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "consumers=2 (máximo 3, todos los componentes)"
+    },
+    {
+      "id": "reconexiones_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "reconnects=0 (máximo 3)"
+    },
+    {
+      "id": "consumidores_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "consumers=0 (máximo 3, todos los componentes)"
+    },
+    {
+      "id": "reconexiones_dentro_limite",
+      "ok": true,
+      "required": false,
+      "source": "execute",
+      "detail": "reconnects=0 (máximo 3)"
+    },
+    {
+      "id": "conduccion_detenida",
+      "ok": true,
+      "required": true,
+      "source": "execute",
+      "detail": "stop status=200 (conducción congelada, sin cierre inventado, posición preservada)"
+    }
+  ],
+  "rest_count": 2,
+  "ledger_total_por_run_id": 7,
+  "db_unchanged": true,
+  "ultima_salud_ingenieria": {
+    "service": "engineering-session-service/v1",
+    "engine_version": "paper-lab-engine/v1.2",
+    "pid": 2664,
+    "host": "127.0.0.1",
+    "port": 8797,
+    "sessions_dir": "docs\\evidence\\engineering-live-public-20261102c\\sessions",
+    "cadence_ms": 700.0,
+    "market": {
+      "url": "http://127.0.0.1:8791",
+      "bars": 300,
+      "live_silence_ms": 120000.0,
+      "max_notional_usdt": 1000.0,
+      "transports": [
+        "local_replay",
+        "market_stream"
+      ]
+    },
+    "clock": {
+      "source": "public_sincronizado",
+      "available": true,
+      "offset_ms": -7.125244,
+      "rtt_ms": 360.332031,
+      "last_sync_timestamp": "2026-11-03T01:27:08.280721+00:00",
+      "age_ms": 16.901,
+      "sync_successful": 1,
+      "sync_failed": 0,
+      "samples_valid": 5,
+      "samples_failed": 0
+    },
+    "drives": [],
+    "generated_at_ms": 1793669228297
+  },
+  "limpieza_resultado": {
+    "procesos_terminados": [
+      "ingeniería",
+      "mercado"
+    ],
+    "procesos_fallidos": [],
+    "archivos_log_cerrados": [
+      "ingeniería_stdout",
+      "ingeniería_stderr",
+      "mercado_stdout",
+      "mercado_stderr"
+    ],
+    "pid_files_propios_eliminados": []
+  },
+  "service_stdout_path": "docs\\evidence\\engineering-live-public-20261102c\\service_logs\\service-stdout.log",
+  "service_stderr_path": "docs\\evidence\\engineering-live-public-20261102c\\service_logs\\service-stderr.log",
+  "engineering_stdout_path": "docs\\evidence\\engineering-live-public-20261102c\\service_logs\\engineering-stdout.log",
+  "engineering_stderr_path": "docs\\evidence\\engineering-live-public-20261102c\\service_logs\\engineering-stderr.log"
+}

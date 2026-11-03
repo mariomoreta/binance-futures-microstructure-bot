@@ -1,0 +1,84 @@
+{
+  "execution_id": "eng-run-public-20261102c",
+  "rows": [
+    {
+      "id": 330,
+      "at_ms": 1793669225193,
+      "execution_id": "eng-run-public-20261102c",
+      "source": null,
+      "requests": 1,
+      "retries": 0,
+      "failures": 0,
+      "status": "ok",
+      "detail": "{\"endpoint\": \"fapi_time\", \"source\": \"https://fapi.binance.com/fapi/v1/time\"}"
+    },
+    {
+      "id": 331,
+      "at_ms": 1793669226867,
+      "execution_id": "eng-run-public-20261102c",
+      "source": null,
+      "requests": 1,
+      "retries": 0,
+      "failures": 0,
+      "status": "ok",
+      "detail": "{\"endpoint\": \"fapi_time\", \"source\": \"https://fapi.binance.com/fapi/v1/time\"}"
+    },
+    {
+      "id": 332,
+      "at_ms": 1793669227207,
+      "execution_id": "eng-run-public-20261102c",
+      "source": null,
+      "requests": 1,
+      "retries": 0,
+      "failures": 0,
+      "status": "ok",
+      "detail": "{\"endpoint\": \"fapi_time\", \"source\": \"https://fapi.binance.com/fapi/v1/time\"}"
+    },
+    {
+      "id": 333,
+      "at_ms": 1793669227568,
+      "execution_id": "eng-run-public-20261102c",
+      "source": null,
+      "requests": 1,
+      "retries": 0,
+      "failures": 0,
+      "status": "ok",
+      "detail": "{\"endpoint\": \"fapi_time\", \"source\": \"https://fapi.binance.com/fapi/v1/time\"}"
+    },
+    {
+      "id": 334,
+      "at_ms": 1793669227935,
+      "execution_id": "eng-run-public-20261102c",
+      "source": null,
+      "requests": 1,
+      "retries": 0,
+      "failures": 0,
+      "status": "ok",
+      "detail": "{\"endpoint\": \"fapi_time\", \"source\": \"https://fapi.binance.com/fapi/v1/time\"}"
+    },
+    {
+      "id": 335,
+      "at_ms": 1793669228336,
+      "execution_id": "eng-run-public-20261102c",
+      "source": null,
+      "requests": 1,
+      "retries": 0,
+      "failures": 0,
+      "status": "ok",
+      "detail": "{\"duration_ms\": 356, \"endpoint\": \"https://fapi.binance.com/fapi/v1/klines?symbol=BTCUSDT&interval=1m&startTime=1793651220000&endTime=1793669219999&limit=300\", \"interval\": \"1m\", \"page\": 300, \"range\": \"1793651220000-1793669219999\", \"result\": \"ok\", \"retry\": 0, \"symbol\": \"BTCUSDT\"}"
+    },
+    {
+      "id": 336,
+      "at_ms": 1793669228715,
+      "execution_id": "eng-run-public-20261102c",
+      "source": null,
+      "requests": 1,
+      "retries": 0,
+      "failures": 0,
+      "status": "ok",
+      "detail": "{\"duration_ms\": 343, \"endpoint\": \"https://fapi.binance.com/fapi/v1/klines?symbol=MINAUSDT&interval=1m&startTime=1793651220000&endTime=1793669219999&limit=300\", \"interval\": \"1m\", \"page\": 300, \"range\": \"1793651220000-1793669219999\", \"result\": \"ok\", \"retry\": 0, \"symbol\": \"MINAUSDT\"}"
+    }
+  ],
+  "total": 7,
+  "budget_blocked": 0
+}

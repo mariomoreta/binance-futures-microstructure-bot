@@ -1,3 +1,45 @@
+## Resultado ventana pública `eng-run-public-20261102c` y siguiente tarea (2026-11-02, base `a11c02e`)
+
+`CURRENT_PHASE`: dashboard V2 de escritorio + observación (WS público solo bajo
+autorización explícita; sin monitor, sin órdenes).
+
+`CURRENT_OBJECTIVE`: EJECUTADA la única ventana pública autorizada
+`eng-run-public-20261102c` con el arnés corregido en a11c02e. Presupuesto
+exacto 7/7 (5 `/time` + 2 klines), adquisición 174.5 s < 180 s, sesión creada
+(`PL-MINAUSDT-LONG-1793669229096-9d935300`,
+`config_hash=4a339c046cc3ad63`), contexto cerrado no-futuro correcto
+(600 velas contiguas, vela en curso excluida), WS pública sin reconexiones y
+3 cierres nuevos admitidos POR EL HUB. La cadena se rompió en el adaptador
+SSE de ingeniería (60/237 frames, 5 desconexiones `TimeoutError`, conexión
+efectiva a los ~147 s): `eventos_procesados=0`, sin evaluación ni decisión.
+Veredicto global: **FAIL** (`EVALUACION_NO_ALCANZADA`); el PASS interno del
+arnés no acredita el recorrido completo. Evidencia en
+`docs/evidence/engineering-live-public-20261102c/` (`RESULTADO.md`,
+`summary.json`, …). Limpieza verificada: 8791/8797/18799/18800 libres,
+pid-file 8792 intacto, DBs canónicas hash-igualadas, 3020 disponible.
+
+`ACTIVE_TASK`: **corregir el adaptador SSE del servicio de ingeniería**
+(`engineering-session-service`): por qué conecta ~147 s tarde, por qué se
+repite `TimeoutError: timed out` (5 desconexiones) y por qué los 60 frames
+tardíos no incrementaron `eventos_procesados` (sesión `sin_iniciar`,
+`clock_ms` avanzó 1793669219999 → 1793669280000 sin evento registrado:
+causa UNKNOWN). Trabajo local con loopback; sin Binance.
+
+`NEXT_TASKS`:
+1. Corrección local del adaptador SSE + respuesta de `eventos_procesados`
+   con pruebas loopback del recorrido completo (WS → servicio → SSE →
+   adaptador → evento → evaluación).
+2. Solicitar **nueva autorización** explícita del operador para UNA ventana
+   pública con un `run_id` NUEVO (no reutilizar `eng-run-public-20261102c`,
+   presupuesto agotado 7/7) y acreditar el cierre nuevo admitido por la
+   sesión, T anterior/nuevo por evento, evento disparador, contador de
+   evaluaciones y decisión con motivo.
+3. Revisiones posteriores (no bloquean): literal histórico del detalle
+   `build_served` ("árbol e2243c9") y
+   `tests/test_engineering_live_window_local.py` (fixture desfasada).
+
+## Corrección del contexto cerrado + pid-files aislados (2026-11-02, base `f033c06`)
+
 ## Corrección del contexto cerrado + pid-files aislados (2026-11-02, base `f033c06`)
 
 `CURRENT_PHASE`: dashboard V2 de escritorio + observación (WS público solo bajo
