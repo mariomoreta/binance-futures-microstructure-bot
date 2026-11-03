@@ -1,0 +1,799 @@
+{
+  "timestamp": "2026-11-03T15:55:00.000Z",
+  "baseUrl": "http://127.0.0.1:3020",
+  "buildId": "GBp6Bco5KjQW6IZ14dJA8",
+  "frontendTree": "2bcdd8fc5882ff648f397fda5f8cd07b7cc32989",
+  "sessionId": "PL-MINAUSDT-LONG-1793722028206-4cabaa4c",
+  "results": [
+    {
+      "step": "A",
+      "detail": "Página carga sin iniciar procesos ni sesión (GET puro)",
+      "ok": true
+    },
+    {
+      "step": "B",
+      "detail": "Demo iniciada con un solo arranque",
+      "ok": true
+    },
+    {
+      "step": "B (sesión)",
+      "detail": "Sesión creada con un solo arranque",
+      "ok": true
+    },
+    {
+      "step": "C",
+      "detail": "Evaluación UI = SIN_ENTRADA apareció sin recargar",
+      "ok": true
+    },
+    {
+      "step": "D",
+      "detail": "SIN_ENTRADA con motivo explícito visible en panel",
+      "ok": true
+    },
+    {
+      "step": "E",
+      "detail": "Señal pendiente → fill ejecutado → posición abierta",
+      "ok": true
+    },
+    {
+      "step": "F",
+      "detail": "UI y backend coinciden: session_id, símbolo, intervalo, config_hash, revisión/T, decisión, motivo, posición",
+      "ok": true
+    },
+    {
+      "step": "H",
+      "detail": "Detener sesión: conducción detenida, posición y entrada conservadas, sin exit event",
+      "ok": true
+    },
+    {
+      "step": "I",
+      "detail": "Fuente caída: LIVE desaparece, causa visible, histórico conservado",
+      "ok": true
+    },
+    {
+      "step": "J",
+      "detail": "Demo detenida vía API",
+      "ok": true
+    }
+  ],
+  "backendState": {
+    "session_id": "PL-MINAUSDT-LONG-1793722028206-4cabaa4c",
+    "created_at_ms": 1793722028206,
+    "updated_at_ms": 1793722202920,
+    "status": "detenida",
+    "revision": 11,
+    "clock_ms": 1793722140000,
+    "config_hash": "39cebf6ab3e0ccfa",
+    "input_hash": null,
+    "config": {
+      "symbol": "MINAUSDT",
+      "interval": "1m",
+      "direction": "LONG",
+      "notional_usdt": 1000,
+      "entry_px": 0.05594,
+      "stop_px": 0.055100899999999994,
+      "stop_distance_pct": 1.5,
+      "horizon_ms": 1800000,
+      "fee_bps": 5,
+      "spread_bps": 1,
+      "slippage_bps": 2,
+      "hypothesis_id": "ENG-MINA-01",
+      "hypothesis_version": "v1",
+      "rule_version": "ENGINEERING-MINA-1M-v1",
+      "decision": "ENTRADA_SIMULADA",
+      "decision_reason": "Senal de entrada en T pero sin fill posible en el prefijo conocido: run_backtest no admite operacion con datos disponibles en T. Senal pendiente de fill.",
+      "decision_evidence": {
+        "rule_version": "ENGINEERING-MINA-1M-v1",
+        "at_ms": 1793722080000,
+        "n_prefix_candles": 2,
+        "n_fully_known_candles": 1,
+        "candles": [
+          {
+            "open_time_ms": 1793722020000,
+            "open": 0.05643072,
+            "high": 0.05645893536,
+            "low": 0.056205593145,
+            "close": 0.05623371,
+            "close_time_ms": 1793722079999,
+            "open_known": true,
+            "ohlc_known": true
+          },
+          {
+            "open_time_ms": 1793722080000,
+            "open": 0.05623371,
+            "high": 0.056346309074999996,
+            "low": 0.056205593145,
+            "close": 0.05631815,
+            "close_time_ms": 1793722139999,
+            "open_known": true,
+            "ohlc_known": false
+          }
+        ],
+        "trigger_px": 0.05623371,
+        "entry_px": 0.05594,
+        "stop_px": 0.055100899999999994,
+        "signal_candle_close_time_ms": 1793722079999,
+        "evaluated_at_ms": 1793722140684,
+        "decision_at_ms": 1793722080000,
+        "available_at_ms": null,
+        "admit_risk": true,
+        "risk_reason": "Admision de riesgo OK.",
+        "entry_fill_px": null,
+        "entry_fill_ms": null,
+        "entry_fill_qty": null,
+        "entry_fill_cost": null,
+        "adapter": {
+          "runner": "market_stream",
+          "market_url": "http://127.0.0.1:8791",
+          "market_service": {
+            "frames": 124,
+            "bad_frames": 0,
+            "unknown_frames": 0,
+            "provisional_frames": 56,
+            "disconnects": 0,
+            "reconnects": 0,
+            "connect_errors": 0,
+            "last_error": null,
+            "last_frame_at_ms": 1793722140683,
+            "connected_at_ms": 1793722028251,
+            "started_at_ms": 1793722028249
+          },
+          "symbol": "MINAUSDT",
+          "interval": "1m",
+          "trigger": {
+            "frame": "closed",
+            "open_time_ms": 1793722080000,
+            "close_time_ms": 1793722139999,
+            "received_at_ms": 1793722140683,
+            "available_at_ms": 1793722080000
+          },
+          "clocks": {
+            "trigger_open_ms": 1793722080000,
+            "trigger_received_at_ms": 1793722140683,
+            "evaluation_clock_ms": 1793722080000,
+            "evaluation_wall_ms": 1793722140685
+          },
+          "evidence_blocks": {
+            "indicators": {
+              "contract_version": "market-indicators/v1",
+              "availability": "CLOSED_CANDLES_ONLY",
+              "provisional_policy": {
+                "included": false,
+                "reason": "PROVISIONAL_EXCLUDED"
+              },
+              "computed_over": "payload_window",
+              "identity": {
+                "symbol": "MINAUSDT",
+                "interval": "1m",
+                "interval_ms": 60000,
+                "source": "ws_kline"
+              },
+              "definitions": [
+                {
+                  "name": "log_return_bps",
+                  "formula": "10000 * ln(close_t / close_(t-1))",
+                  "unit": "bps",
+                  "window_candles": 1,
+                  "requires": "previous grid candle closed and present"
+                },
+                {
+                  "name": "velocity_bps_5",
+                  "formula": "10000 * ln(close_t / close_(t-4))",
+                  "unit": "bps",
+                  "window_candles": 5,
+                  "requires": "contiguous run of 5 closed grid candles ending at t"
+                },
+                {
+                  "name": "rel_volume_10",
+                  "formula": "base_volume_t / mean(base_volume t-9..t-1)",
+                  "unit": "ratio",
+                  "window_candles": 10,
+                  "requires": "current base_volume and contiguous baseline of 10 closed candles with base_volume"
+                },
+                {
+                  "name": "vwap_typical_10",
+                  "formula": "sum(((h+l+c)/3 * v)) / sum(v) over t-9..t",
+                  "unit": "price (quote)",
+                  "window_candles": 10,
+                  "requires": "contiguous run of 10 closed candles with base_volume; approximation weighted by typical price, NOT the traded VWAP of market_structure.vwap_record"
+                },
+                {
+                  "name": "vwap_dev_bps_10",
+                  "formula": "10000 * (close_t / vwap_typical_10 - 1)",
+                  "unit": "bps",
+                  "window_candles": 10,
+                  "requires": "vwap_typical_10 of the same candle"
+                }
+              ],
+              "supported": [
+                "log_return_bps",
+                "velocity_bps_5",
+                "rel_volume_10",
+                "vwap_dev_bps_10"
+              ],
+              "declined": [
+                {
+                  "name": "flow_delta",
+                  "reason": "AGGTRADES_SOURCE_REQUIRED"
+                },
+                {
+                  "name": "spread_bps",
+                  "reason": "ORDER_BOOK_SOURCE_REQUIRED"
+                },
+                {
+                  "name": "depth",
+                  "reason": "ORDER_BOOK_SOURCE_REQUIRED"
+                },
+                {
+                  "name": "open_interest",
+                  "reason": "OI_REST_POLL_REQUIRED"
+                },
+                {
+                  "name": "btc_context",
+                  "reason": "SECOND_SYMBOL_KLINES_REQUIRED"
+                }
+              ],
+              "series": [
+                {
+                  "open_time_ms": 1793722020000,
+                  "available_at_ms": 1793722080000,
+                  "values": {},
+                  "unknown": {
+                    "log_return_bps": "NO_PREVIOUS_CANDLE",
+                    "velocity_bps_5": "INSUFICIENT_CANDLES",
+                    "rel_volume_10": "INSUFICIENT_CANDLES",
+                    "vwap_typical_10": "INSUFICIENT_CANDLES",
+                    "vwap_dev_bps_10": "INSUFICIENT_CANDLES"
+                  }
+                },
+                {
+                  "open_time_ms": 1793722080000,
+                  "available_at_ms": 1793722140000,
+                  "values": {
+                    "log_return_bps": 15.004642
+                  },
+                  "unknown": {
+                    "velocity_bps_5": "INSUFICIENT_CANDLES",
+                    "rel_volume_10": "INSUFICIENT_CANDLES",
+                    "vwap_typical_10": "INSUFICIENT_CANDLES",
+                    "vwap_dev_bps_10": "INSUFICIENT_CANDLES"
+                  }
+                }
+              ],
+              "generated_at_ms": 1793722140682
+            },
+            "context_btc": {
+              "contract_version": "market-btc-context/v1",
+              "availability": "CLOSED_CANDLES_ONLY",
+              "identity": {
+                "symbol": "MINAUSDT",
+                "interval": "1m",
+                "interval_ms": 60000,
+                "source": "ws_kline"
+              },
+              "context": {
+                "symbol": "BTCUSDT",
+                "venue": "binance",
+                "market_type": "usd_m_futures",
+                "interval": "1m",
+                "interval_ms": 60000,
+                "same_asset_as_token": false,
+                "subscription": {
+                  "reuses_token_stream": false,
+                  "shared": true,
+                  "live": true
+                },
+                "sources": [
+                  "cache",
+                  "ws_kline"
+                ],
+                "horizon_candles": 5,
+                "timeframe": {
+                  "aligned_by": "open_time_ms",
+                  "token_window": {
+                    "first": 1793722020000,
+                    "last": 1793722080000
+                  },
+                  "btc_observed": {
+                    "first": 1793722020000,
+                    "last": 1793722080000
+                  },
+                  "expected_grid": 2,
+                  "present_grid": 0,
+                  "gaps": []
+                },
+                "freshness": {
+                  "btc_last_closed_open_ms": 1793722080000,
+                  "btc_last_available_at_ms": 1793722140000,
+                  "age_ms": 682,
+                  "threshold_ms": 60000,
+                  "lagging": false,
+                  "note": "BTC atras del cierre esperado en la rejilla: las filas sin dato quedan UNKNOWN(BTC_LAGGING); no se arrastran valores antiguos como si fueran nuevos"
+                },
+                "acquisition": {
+                  "rest_upstream_requests": 0,
+                  "mode": "cache+ws",
+                  "note": "REST de tramos faltantes no ejecutado; si se autorizara, el numero de paginas depende del tramo faltante, nunca es una cifra fija"
+                }
+              },
+              "definitions": [
+                {
+                  "name": "ret_btc_bps_5",
+                  "formula": "10000 * ln(close_t^BTC / close_(t-4)^BTC)",
+                  "unit": "bps",
+                  "window_candles": 5,
+                  "requires": "velas cerradas de BTC en la MISMA rejilla del token (t-4..t por open_time_ms); mismas 5 velas cerradas que velocity_bps_5"
+                },
+                {
+                  "name": "ret_diff_bps_5",
+                  "formula": "velocity_bps_5(token) - ret_btc_bps_5",
+                  "unit": "bps",
+                  "window_candles": 5,
+                  "requires": "velocidad del token y velocidad de BTC conocidas en la misma fila"
+                }
+              ],
+              "supported": [
+                "ret_btc_bps_5",
+                "ret_diff_bps_5"
+              ],
+              "labels": {
+                "ret_diff_bps_5": "diferencia de retornos"
+              },
+              "series": [
+                {
+                  "open_time_ms": 1793722020000,
+                  "available_at_ms": 1793722080000,
+                  "values": {},
+                  "unknown": {
+                    "ret_btc_bps_5": "BTC_INSUFICIENT_CANDLES",
+                    "ret_diff_bps_5": "INSUFICIENT_CANDLES"
+                  }
+                },
+                {
+                  "open_time_ms": 1793722080000,
+                  "available_at_ms": 1793722140000,
+                  "values": {},
+                  "unknown": {
+                    "ret_btc_bps_5": "BTC_INSUFICIENT_CANDLES",
+                    "ret_diff_bps_5": "INSUFICIENT_CANDLES"
+                  }
+                }
+              ],
+              "normalized": {
+                "base_open_time_ms": 1793722020000,
+                "unit": "percent_from_base",
+                "series": [
+                  {
+                    "open_time_ms": 1793722020000,
+                    "token_pct": 0,
+                    "btc_pct": 0
+                  },
+                  {
+                    "open_time_ms": 1793722080000,
+                    "token_pct": 0.1502,
+                    "btc_pct": 0
+                  }
+                ]
+              },
+              "generated_at_ms": 1793722140682
+            }
+          },
+          "gate": {
+            "evaluated_at_ms": 1793722140684,
+            "clock_ms": 1793722080000,
+            "freshness": {
+              "reason": "END_OF_DATA",
+              "stale_candles": [],
+              "end_of_data": true,
+              "note": "end_of_data en live = sin vela cerrada posterior aún (espera normal del feed; no bloquea)"
+            },
+            "silence_ms": 60390,
+            "live_silence_ms": 120000,
+            "adapter_last_frame_at_ms": 1793722140683,
+            "grid_gap": null,
+            "ok": true,
+            "cause": null
+          }
+        }
+      }
+    },
+    "candles": [
+      {
+        "open_time_ms": 1793722020000,
+        "available_at": 1793722020000,
+        "received_at": 1793722080293,
+        "open": 0.05643072,
+        "high": 0.05645893536,
+        "low": 0.056205593145,
+        "close": 0.05623371,
+        "close_time_ms": 1793722079999
+      },
+      {
+        "open_time_ms": 1793722080000,
+        "available_at": 1793722080000,
+        "received_at": 1793722140683,
+        "open": 0.05623371,
+        "high": 0.056346309074999996,
+        "low": 0.056205593145,
+        "close": 0.05631815,
+        "close_time_ms": 1793722139999
+      },
+      {
+        "open_time_ms": 1793722140000,
+        "available_at": 1793722140000,
+        "received_at": 1793722201083,
+        "open": 0.05631815,
+        "high": null,
+        "low": null,
+        "close": null,
+        "close_time_ms": null
+      }
+    ],
+    "context_candles": [
+      {
+        "open_time_ms": 1793720820000,
+        "available_at": null,
+        "received_at": null,
+        "open": 0.05627,
+        "high": 0.05632,
+        "low": 0.05626,
+        "close": 0.0563,
+        "close_time_ms": 1793720879999
+      },
+      {
+        "open_time_ms": 1793720880000,
+        "available_at": null,
+        "received_at": null,
+        "open": 0.0563,
+        "high": 0.05632,
+        "low": 0.05626,
+        "close": 0.05632,
+        "close_time_ms": 1793720939999
+      },
+      {
+        "open_time_ms": 1793720940000,
+        "available_at": null,
+        "received_at": null,
+        "open": 0.05631,
+        "high": 0.05636,
+        "low": 0.05626,
+        "close": 0.05626,
+        "close_time_ms": 1793720999999
+      },
+      {
+        "open_time_ms": 1793721000000,
+        "available_at": null,
+        "received_at": null,
+        "open": 0.05626,
+        "high": 0.05626,
+        "low": 0.05618,
+        "close": 0.05618,
+        "close_time_ms": 1793721059999
+      },
+      {
+        "open_time_ms": 1793721060000,
+        "available_at": null,
+        "received_at": null,
+        "open": 0.05619,
+        "high": 0.05619,
+        "low": 0.05614,
+        "close": 0.05614,
+        "close_time_ms": 1793721119999
+      },
+      {
+        "open_time_ms": 1793721120000,
+        "available_at": null,
+        "received_at": null,
+        "open": 0.05614,
+        "high": 0.05618,
+        "low": 0.05614,
+        "close": 0.05615,
+        "close_time_ms": 1793721179999
+      },
+      {
+        "open_time_ms": 1793721180000,
+        "available_at": null,
+        "received_at": null,
+        "open": 0.05614,
+        "high": 0.05619,
+        "low": 0.05612,
+        "close": 0.05619,
+        "close_time_ms": 1793721239999
+      },
+      {
+        "open_time_ms": 1793721240000,
+        "available_at": null,
+        "received_at": null,
+        "open": 0.05618,
+        "high": 0.05621,
+        "low": 0.05618,
+        "close": 0.0562,
+        "close_time_ms": 1793721299999
+      },
+      {
+        "open_time_ms": 1793721300000,
+        "available_at": null,
+        "received_at": null,
+        "open": 0.0562,
+        "high": 0.0563,
+        "low": 0.0562,
+        "close": 0.05628,
+        "close_time_ms": 1793721359999
+      },
+      {
+        "open_time_ms": 1793721360000,
+        "available_at": null,
+        "received_at": null,
+        "open": 0.05628,
+        "high": 0.05631,
+        "low": 0.05628,
+        "close": 0.05629,
+        "close_time_ms": 1793721419999
+      },
+      {
+        "open_time_ms": 1793721420000,
+        "available_at": null,
+        "received_at": null,
+        "open": 0.05628,
+        "high": 0.05631,
+        "low": 0.05627,
+        "close": 0.05627,
+        "close_time_ms": 1793721479999
+      },
+      {
+        "open_time_ms": 1793721480000,
+        "available_at": null,
+        "received_at": null,
+        "open": 0.05627,
+        "high": 0.05628,
+        "low": 0.05624,
+        "close": 0.05626,
+        "close_time_ms": 1793721539999
+      },
+      {
+        "open_time_ms": 1793721540000,
+        "available_at": null,
+        "received_at": null,
+        "open": 0.05626,
+        "high": 0.05626,
+        "low": 0.05602,
+        "close": 0.05602,
+        "close_time_ms": 1793721599999
+      },
+      {
+        "open_time_ms": 1793721600000,
+        "available_at": null,
+        "received_at": null,
+        "open": 0.05602,
+        "high": 0.05609,
+        "low": 0.05601,
+        "close": 0.05601,
+        "close_time_ms": 1793721659999
+      },
+      {
+        "open_time_ms": 1793721660000,
+        "available_at": null,
+        "received_at": null,
+        "open": 0.056,
+        "high": 0.05604,
+        "low": 0.05593,
+        "close": 0.05593,
+        "close_time_ms": 1793721719999
+      },
+      {
+        "open_time_ms": 1793721720000,
+        "available_at": null,
+        "received_at": null,
+        "open": 0.05594,
+        "high": 0.05603,
+        "low": 0.05594,
+        "close": 0.05595,
+        "close_time_ms": 1793721779999
+      },
+      {
+        "open_time_ms": 1793721780000,
+        "available_at": null,
+        "received_at": null,
+        "open": 0.05594,
+        "high": 0.05596,
+        "low": 0.05589,
+        "close": 0.05592,
+        "close_time_ms": 1793721839999
+      },
+      {
+        "open_time_ms": 1793721840000,
+        "available_at": null,
+        "received_at": null,
+        "open": 0.05591,
+        "high": 0.05592,
+        "low": 0.05576,
+        "close": 0.0558,
+        "close_time_ms": 1793721899999
+      },
+      {
+        "open_time_ms": 1793721900000,
+        "available_at": null,
+        "received_at": null,
+        "open": 0.0558,
+        "high": 0.05586,
+        "low": 0.05578,
+        "close": 0.05581,
+        "close_time_ms": 1793721959999
+      },
+      {
+        "open_time_ms": 1793721960000,
+        "available_at": null,
+        "received_at": null,
+        "open": 0.05583,
+        "high": 0.05597,
+        "low": 0.05581,
+        "close": 0.05594,
+        "close_time_ms": 1793722019999
+      }
+    ],
+    "cursor": 3,
+    "position": {
+      "open": true,
+      "direction": "LONG",
+      "entry_px": 0.05631815,
+      "entry_qty": 17756.265076178817,
+      "entry_cost": 1000,
+      "entry_ms": 1793722140000,
+      "stop_px": 0.05547337775,
+      "mark_px": 0.05631815,
+      "mark_ms": 1793722140000,
+      "unrealized_gross": 0,
+      "unrealized_net": -0.8,
+      "mfe_pct": 0,
+      "mae_pct": 0
+    },
+    "costs": {
+      "fee_bps": 5,
+      "spread_bps": 1,
+      "entry_fees": 0.5,
+      "exit_fees": 0,
+      "entry_spread_slip": 0.3,
+      "exit_spread_slip": 0,
+      "funding": null,
+      "friction": 0.8,
+      "entry_fees_executed": 0.5,
+      "exit_fees_executed": 0,
+      "entry_spread_slip_executed": 0.3,
+      "exit_spread_slip_executed": 0,
+      "exit_fees_estimated": 0,
+      "exit_spread_slip_estimated": 0
+    },
+    "events": [
+      {
+        "event_id": "PL-MINAUSDT-LONG-1793722028206-4cabaa4c:ev:0:protection:1793722020000",
+        "at_ms": 1793722020000,
+        "label": "Decision: SIN_ENTRADA temporal (esperando datos)",
+        "kind": "protection",
+        "detail": "Velas abiertas en T pero close todavia desconocido (ultima abierta @ 1793722020000): senal no confirmada, abstencion."
+      },
+      {
+        "event_id": "PL-MINAUSDT-LONG-1793722028206-4cabaa4c:ev:1:protection:1793722080000",
+        "at_ms": 1793722080000,
+        "label": "Decision: ENTRADA_SIMULADA (pendiente de fill)",
+        "kind": "protection",
+        "detail": "Senal de entrada en T pero sin fill posible en el prefijo conocido: run_backtest no admite operacion con datos disponibles en T. Senal pendiente de fill."
+      },
+      {
+        "event_id": "PL-MINAUSDT-LONG-1793722028206-4cabaa4c:ev:2:entry:1793722140000",
+        "at_ms": 1793722140000,
+        "label": "Entrada LONG @ 0.06",
+        "kind": "entry",
+        "detail": "qty=17756.26507618 notional=1000.0 stop=0.05547338 stop_config=0.055100899999999994 source=run_backtest | fill_basis=model_approximation (fill con precio conocido tras la decisión; bid/ask/profundidad no observados; funding/costes no observados=UNKNOWN)"
+      }
+    ],
+    "result": null,
+    "engine_version": "paper-lab-engine/v1.2",
+    "limitations": [
+      "no-latency-model",
+      "no-tick-lot-rounding",
+      "no-min-notional-gate",
+      "realized-only-drawdown",
+      "engineering-fixture-only"
+    ],
+    "can_step": false,
+    "authoritative": {
+      "symbol": "MINAUSDT",
+      "direction": "LONG",
+      "family": "H1",
+      "rules_version": "H1-v1",
+      "event_time_ms": 1793722080000,
+      "entry_ms": 1793722140000,
+      "exit_ms": 1793722140000,
+      "entry_px": 0.05631815,
+      "exit_px": 0.05631815,
+      "filled_qty": 17756.265076178817,
+      "filled_cost": 1000,
+      "gross_pnl": 0,
+      "spread_slip_cost": 0.6,
+      "entry_spread_slip": 0.3,
+      "exit_spread_slip": 0.3,
+      "fees": 1,
+      "entry_fees": 0.5,
+      "exit_fees": 0.5,
+      "funding": 0,
+      "friction": 1.6,
+      "funding_events": [
+        {
+          "basis": "synthetic-fallback",
+          "detail": "legacy full-interval math; no venue calendar",
+          "intervals": 0,
+          "symbol": "MINAUSDT"
+        }
+      ],
+      "funding_model": "interval-fallback",
+      "funding_uncovered_ms": 0,
+      "funding_gap_ms": 0,
+      "funding_unknown": 0,
+      "funding_symbol": "MINAUSDT",
+      "funding_complete": null,
+      "funding_accounting_complete": false,
+      "funding_accounting_basis": "synthetic-fallback (no venue calendar)",
+      "net_pnl": -1.6,
+      "mfe_pct": 0,
+      "mae_pct": 0,
+      "exit_reason": "open_at_end",
+      "open_at_end": true,
+      "exit_executed": false,
+      "costs_executed": 0.8,
+      "costs_exit_hypothetical": 0.8,
+      "realized_net": null,
+      "fills": 1,
+      "cancelled_notional": 0
+    }
+  },
+  "demoState": {
+    "ok": true,
+    "engineering": {
+      "state": "ready",
+      "service": "engineering-session-service/v1",
+      "engine_version": "paper-lab-engine/v1.2",
+      "pid": 37476,
+      "port": 8797,
+      "cadence_ms": 700,
+      "sessions_dir": "C:\\proyectos\\binance-futures-microstructure-bot\\data\\engineering-session\\sessions",
+      "market_url": "http://127.0.0.1:8791",
+      "detail": null
+    },
+    "source": {
+      "url": "http://127.0.0.1:8791",
+      "available": true,
+      "service": "market-stream-service/v1",
+      "detail": null
+    },
+    "demo": {
+      "present": true,
+      "active": true,
+      "expired": false,
+      "started_at_ms": 1793722318985,
+      "max_runtime_s": 2700,
+      "stopped_at_ms": null,
+      "producer": {
+        "pid": 41712,
+        "port": 62377,
+        "alive": true
+      },
+      "market": {
+        "pid": 38992,
+        "port": 8791,
+        "health_ok": true
+      }
+    }
+  },
+  "serviceState": {
+    "ok": true,
+    "state": "ready",
+    "service": "engineering-session-service/v1",
+    "engine_version": "paper-lab-engine/v1.2",
+    "pid": 37476,
+    "port": 8797,
+    "cadence_ms": 700,
+    "sessions_dir": "C:\\proyectos\\binance-futures-microstructure-bot\\data\\engineering-session\\sessions",
+    "market_url": "http://127.0.0.1:8791",
+    "detail": null
+  }
+}

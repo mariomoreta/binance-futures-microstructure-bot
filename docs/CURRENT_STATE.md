@@ -1,3 +1,27 @@
+## Corrección semántica de costes y aceptación A-J del dashboard (2026-11-03, base `bf974f2`)
+
+Corregida la semántica de costes en `PnLPanel.tsx`: ya no se deduce ejecución
+mediante `costs.entry_fees_executed > 0` ni equivalentes. Ahora se usa el
+estado autoritativo de entrada/salida y la disponibilidad real del dato:
+- Fill ejecutado y coste conocido cero → muestra `0.00` (nunca guion ni inventado).
+- Coste ausente → `UNKNOWN` con motivo explícito.
+- Estimación conocida → muestra importe + "(estimación, no ejecutada)".
+- Sin estimación → `UNKNOWN`; no se convierte null en cero al sumar.
+Regresiones focalizadas en `tests/test/format.test.ts` y nueva
+`tests/test/pnl-panel.test.tsx` (8 pruebas de costes).
+
+Aceptación local A-J verificada desde navegador real (Playwright, DOM/red):
+11/11 PASS. Evidencia en `docs/evidence/dashboard-EFHI-20261103/`
+(capturas DOM, respuestas del backend, aceptación-summary.json).
+
+Despliegue: dashboard 3020 con build verificado (BUILD_ID
+`GBp6Bco5KjQW6IZ14dJA8`, árbol frontend
+`2bcdd8fc5882ff648f397fda5f8cd07b7cc32989` = HEAD:frontend). Servicio
+preexistente 8792 (pid 31124) preservado. Servicio 8797 (residual de prueba)
+detenido. `opencode.json` fuera de commits.
+
+Activación pública (Binance) queda deshabilitada en este bloque.
+
 ## Corrección semántica de costes y aceptación A-J del dashboard (2026-11-03, base `ead35d2`)
 
 Corregida la semántica de costes en `PnLPanel.tsx`: ya no se deduce ejecución
