@@ -4606,3 +4606,20 @@ corregido en a11c02e (run_id nuevo, sin reutilizar cupos). Resultado:
 - Evidencia: docs/evidence/engineering-live-public-20261102d/ (RESULTADO.md entry point).
   SHA arnés 3ef9e5f45a90a8ca… · BUILD_ID servido t4z0bfKQ_kIP9qv1WHCKR · árbol frontend
   1f6f0500… = HEAD:frontend.
+## 2026-11-03 - Reconciliación de la ventana pública eng-run-public-20261102d (base 88c5d2c)
+
+- Aclaraciones documentales sobre evidencia existente (sin Binance, sin repetir ventana, sin cambios de código):
+  * Conexiones/reconexiones: `reconexiones_max=0` del arnés mide `socket.reconnects` del `/health` del mercado
+    (contador autorizado: <=3 reconexiones acumuladas). `ws_connects=4` son aperturas de socket WS acumuladas;
+    `ws_connects - 1 != reconexiones` (verificado en `market_stream.py`: `ws_connects` incrementa en cada
+    `on_socket_open`, `socket_reconnects` solo en `on_socket_closed(error)`). El adaptador SSE registró
+    `disconnects=3 / reconnects=3` (capa distinta de lectura SSE), `connect_errors=0`; consumidores SSE 2 (<=3).
+    Todo dentro del presupuesto autorizado.
+  * Señal vs fill: la decisión #2 (`ENTRADA_SIMULADA`, T=1793674560000, rev 8) fue "pendiente de fill"
+    (`entry_fill_* = None`). El fill se materializó tras la decisión (`events[2]`, `kind=entry`,
+    at_ms=1793674620000, precio 0.05564 = open de la vela #3 disponible), respaldado por evento explícito,
+    `fill_basis=model_approximation`, costes UNKNOWN. No se infirió el fill solo de `position.open`.
+  * Veredicto reconciliado: PASS (recepción+evaluación, límites, estado paper acreditado), sin rebajar criterios.
+- Addendum: `docs/evidence/engineering-live-public-20261102d/ADDENDUM_RECONCILIACION.md`.
+- Sesión abierta y congelada (posición paper-lab simulada, sin orden real). Siguiente bloque propuesto: control
+  visible del recorrido acreditado en el dashboard (Dashboard V2), no implementado en esta reconciliación.

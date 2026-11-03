@@ -1,3 +1,18 @@
+## Reconciliación de la ventana pública `eng-run-public-20261102d` (2026-11-03, base `88c5d2c`)
+
+Aclaraciones documentales sobre evidencia existente (sin Binance, sin repetir ventana, sin cambios de código):
+- Conexiones/reconexiones: `reconexiones_max=0` del arnés mide `socket.reconnects` del `/health` del mercado
+  (contador autorizado: <=3). `ws_connects=4` son aperturas de socket WS acumuladas (no equivalen a
+  reconexiones; `ws_connects - 1 != reconexiones`). El adaptador SSE registró `disconnects=3 / reconnects=3`
+  (capa distinta, lectura SSE), `connect_errors=0`. Límite de consumidores SSE: 2 (<=3). Todo dentro del
+  presupuesto autorizado.
+- Señal vs fill: la decisión #2 (`ENTRADA_SIMULADA`, T=1793674560000, rev 8) fue "pendiente de fill"
+  (`entry_fill_* = None`). El fill se materializó tras la decisión (`events[2]`, `kind=entry`,
+  at_ms=1793674620000, precio 0.05564 = open de la vela #3 disponible), respaldado por evento explícito,
+  `fill_basis=model_approximation`, costes UNKNOWN.
+- Veredicto reconciliado: PASS (recepción+evaluación, límites, estado paper acreditado), sin rebajar criterios.
+  Véase `docs/evidence/engineering-live-public-20261102d/ADDENDUM_RECONCILIACION.md`.
+
 ## Ventana pública única `eng-run-public-20261102d` - PASS de aceptación (2026-11-03, base `d307fc7`)
 
 Ejecutada UNA sola vez (autorización acotada), run_id NUEVO (nunca reutilizado de

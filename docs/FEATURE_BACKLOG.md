@@ -1,3 +1,25 @@
+## Reconciliación de la ventana pública `eng-run-public-20261102d` (2026-11-03, base `88c5d2c`)
+
+**1. Title:** Reconciliar precisiones de conexiones/reconexiones y señal frente a fill de la ventana pública.
+
+**2. Approval status:** EJECUTADO (aclaración documental, base `88c5d2c`, sin cambios de código, sin repetir ventana).
+
+**3. Implementation status:** IMPLEMENTADO. Addendum en
+`docs/evidence/engineering-live-public-20261102d/ADDENDUM_RECONCILIACION.md` con rutas y campos exactos de evidencia.
+
+**4. Evaluation status:** PASS. Se confirma que el límite autorizado de reconexiones WS (0 <= 3, contador
+`socket.reconnects`) se cumplió; que `ws_connects=4` son aperturas acumuladas no equivalentes a reconexiones;
+que el fill ejecutado tiene evento `entry` explícito (`kind=entry`, at_ms=1793674620000, precio 0.05564); y que el
+veredicto global PASS se mantiene sin rebajar criterios.
+
+**5. Evidence:** `docs/evidence/engineering-live-public-20261102d/ADDENDUM_RECONCILIACION.md` y evidencia original
+intacta (`evidence.json`, sesión, logs, command.txt, preflight.json, RESULTADO.md).
+
+**6. Verdict:** PASS global mantenido. Sesión abierta y congelada.
+**7. Next step:** siguiente bloque de producto: control visible del recorrido acreditado en el dashboard.
+
+## Ventana pública `eng-run-public-20261102d` - acreditación del recorrido completo (2026-11-03, base `d307fc7`)
+
 ## Ventana pública `eng-run-public-20261102d` - acreditación del recorrido completo (2026-11-03, base `d307fc7`)
 
 **1. Title:** Ejecutar una ventana pública única con run_id nuevo y acreditar:

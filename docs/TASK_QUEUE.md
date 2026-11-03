@@ -1,3 +1,17 @@
+## Reconciliación de `eng-run-public-20261102d` completada (2026-11-03, base `88c5d2c`)
+
+`ACTIVE_TASK`: cerrado - reconciliación documental de la ventana pública (addendum publicado; sin cambios de
+código, sin repetir ventana, 8792 y dashboard 3020 preservados, `opencode.json` fuera de los commits).
+
+`NEXT_TASKS`:
+1. Sesión abierta y congelada (posición paper-lab simulada, sin orden real): conservar, no inventar salida/comisión/realizado.
+2. Siguiente bloque de producto propuesto: llevar el recorrido ya acreditado al control visible del dashboard (Dashboard V2).
+   No implementar en este bloque.
+3. No bloqueantes: literal histórico del detalle `build_served` ("árbol e2243c9") y reparar la fixture desfasada de
+   `tests/test_engineering_live_window_local.py`.
+
+## Ventana pública `eng-run-public-20261102d` completada - PASS (2026-11-03, base `d307fc7`)
+
 ## Ventana pública `eng-run-public-20261102d` completada - PASS (2026-11-03, base `d307fc7`)
 
 `CURRENT_PHASE`: dashboard V2 de escritorio + observación (WS público solo bajo autorización explícita; sin monitor, sin órdenes).
