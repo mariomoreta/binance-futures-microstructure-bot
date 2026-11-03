@@ -4623,3 +4623,27 @@ corregido en a11c02e (run_id nuevo, sin reutilizar cupos). Resultado:
 - Addendum: `docs/evidence/engineering-live-public-20261102d/ADDENDUM_RECONCILIACION.md`.
 - Sesión abierta y congelada (posición paper-lab simulada, sin orden real). Siguiente bloque propuesto: control
   visible del recorrido acreditado en el dashboard (Dashboard V2), no implementado en esta reconciliación.
+## 2026-11-03 - Recorrido visible en el dashboard V2 - /market-lab (base 4b35d2c)
+
+- Implementado en rama `dash-v2-04-recorrido-visible` (no integrada a main).
+- /market-lab muestra la sesión de ingeniería ya acreditada (ventana pública
+    `eng-run-public-20261102d`, PASS, base `88c5d2c`).
+- Fuente identificada explícitamente: DEMOSTRACIÓN LOCAL vs BINANCE PÚBLICO (no
+  activado en este bloque; claramente no disponible al abrir la vista ni iniciar la
+  demostración).
+- Estado separado: servicio de ingeniería, conexión de datos y sesión en paneles
+distintos.
+- Última evaluación: evento disparador, T, regla, decisión y motivo (panel dedicado).
+- Señal pendiente separada de fill ejecutado (indicador de texto + gráfico).
+- Costes/funding ausentes → UNKNOWN con motivo, nunca cero.
+- Error, silencio o desconexión visibles; datos antiguos nunca rotulados como actuales.
+- Semántica operativa: abrir página/GET no arranca procesos; cerrar pestaña desconecta
+  al observador sin detener el backend; recarga recupera la misma sesión sin duplicar;
+  detener sesión congela y conserva posición; distinguir detener sesión de detener
+  servicios; pid-files propios; servicio 8792 y dashboard 3020 preservados.
+- Aceptación local (A-J) documentada: pruebas, typecheck, lint y build pasan.
+- 622 pruebas frontend pasan; 81 archivos de prueba.
+- Commit selectivo y push normal en la misma rama; sin integrar a main.
+
+## 2026-11-03 - Reconciliación de la ventana pública eng-run-public-20261102d (base 88c5d2c)
+

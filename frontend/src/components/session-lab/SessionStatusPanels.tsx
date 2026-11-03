@@ -11,6 +11,15 @@ interface SessionStatusPanelsProps {
   state: PaperSessionState | null;
   marketSymbol: string | null;
   source: string | null;
+  /** Evento disparador de la última evaluación (del drive del backend). */
+  lastTrigger: {
+    frame?: string | null;
+    open_time_ms?: number | null;
+    close_time_ms?: number | null;
+    received_at_ms?: number | null;
+  } | null;
+  /** Instante de evaluación del último gate (pared del backend). */
+  evaluatedAtMs: number | null;
   freshness: {
     received: number;      // velas recibidas en la ventana
     cursor: number;        // reloj de revelación
@@ -46,6 +55,8 @@ export function SessionStatusPanels({
   state,
   marketSymbol,
   source,
+  lastTrigger,
+  evaluatedAtMs,
   freshness,
   indicators,
   contextBtc,
@@ -94,7 +105,7 @@ export function SessionStatusPanels({
           </p>
         </section>
 
-        {/* 2. Fuente LOCAL SIMULADA */}
+        {/* 2. Fuente de datos (identificada explícitamente) */}
         <section className="panel">
           <h3>Fuente de datos</h3>
           <div className="value" data-testid="panel-source">
@@ -105,11 +116,14 @@ export function SessionStatusPanels({
               {marketSymbol ? `Símbolo: <span className="mono">{marketSymbol}</span>` : "Símbolo: —"}
             </span>
             <br />
-            <span className="muted">0 llamadas a Binance público · caché local (client=None)</span>
+            <span className="muted">{source && source.includes("LIVE")
+              ? "Servicio de mercado (SSE, solo loopback) · velas cerradas conducen"
+              : "Caché local (klines) · client=None · 0 upstream"}</span>
           </div>
           <p className="hint">
-            Fuente LOCAL SIMULADA. Los velas son replay de caché local; no se
-            declara Binance LIVE ni se adquieren datos públicos.
+            {source && source.includes("LIVE")
+              ? "Fuente: DEMOSTRACIÓN LOCAL (datos simulados, productor WS loopback + servicio de mercado --transport local). Nunca Binance público en este bloque."
+              : "Fuente: LOCAL SIMULADA. Los velas son replay de caché local; no se declara Binance LIVE ni se adquieren datos públicos."}
           </p>
         </section>
 
@@ -151,7 +165,48 @@ export function SessionStatusPanels({
           </p>
         </section>
 
-        {/* 5. Posición paper */}
+        {/* 5. Última evaluación (evento / T / regla / decisión / motivo) */}
+        <section className="panel">
+          <h3>Última evaluación</h3>
+          <div className="value" data-testid="panel-last-eval-decision">
+            {decision === null ? "—" : decision}
+          </div>
+          <div className="meta">
+            {config?.rule_version && (
+              <span>Regla <span className="mono">{config.rule_version}</span></span>
+            )}
+            <br />
+            {lastTrigger && (
+              <>
+                <span>
+                  Evento: <span className="mono">{lastTrigger.frame ?? "—"}</span>
+                </span>
+                <br />
+                <span>
+                  open {fmtMs(lastTrigger.open_time_ms ?? null)} → close{' '}
+                  <span className="mono">{fmtMs(lastTrigger.close_time_ms ?? null)}</span>
+                  <br />
+                  received {fmtMs(lastTrigger.received_at_ms ?? null)}
+                </span>
+              </>
+            )}
+            <br />
+            <span>
+              T: <span className="mono">{fmtMs(state?.clock_ms ?? null)}</span>{" "}
+              {evaluatedAtMs != null && (
+                <>
+                  · evaluado{' '}
+                  <span className="mono">{fmtMs(evaluatedAtMs)}</span>
+                </>
+              )}
+            </span>
+          </div>
+          <p className="hint">
+            {decisionReason ?? abstentionReason ?? "Sin evaluación aún."}
+          </p>
+        </section>
+
+        {/* 6. Posición paper */}
         <section className="panel">
           <h3>Posición paper</h3>
           <div className="value" data-testid="panel-position">
@@ -173,7 +228,7 @@ export function SessionStatusPanels({
           </p>
         </section>
 
-        {/* 6. Último error / motivo de abstención */}
+        {/* 7. Último error / motivo de abstención */}
         <section className="panel">
           <h3>Último error / abstención</h3>
           <div className="value warn" data-testid="panel-error">

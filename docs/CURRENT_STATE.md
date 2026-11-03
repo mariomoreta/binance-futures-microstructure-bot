@@ -1,3 +1,24 @@
+## Recorrido visible en el dashboard V2 - /market-lab (2026-11-03, base `4b35d2c`)
+
+Implementado en rama `dash-v2-04-recorrido-visible` (no integrada a main):
+- /market-lab muestra la sesión de ingeniería ya acreditada (sesión → datos nuevos →
+  evaluación con decisión y motivo → señal pendiente → posición paper).
+- Fuente identificada explícitamente: DEMOSTRACIÓN LOCAL (datos simulados, productor
+  WS loopback + servicio de mercado --transport local) vs BINANCE PÚBLICO (no activado
+  en este bloque; claramente no disponible al abrir la vista ni iniciar la demostración).
+- Estado separado: servicio de ingeniería, conexión de datos y sesión son paneles
+distintos.
+- Última evaluación: evento disparador, T, regla, decisión y motivo (panel dedicado).
+- Señal pendiente separada de fill ejecutado (indicador de texto + gráfico).
+- Costes/funding ausentes → UNKNOWN con motivo, nunca cero.
+- Error, silencio o desconexión visibles; datos antiguos nunca rotulados como actuales.
+- Abrir la página o GET no arranca procesos; cerrar la pestaña desconecta al observador
+  sin detener el backend; recarga recupera la misma sesión sin duplicar entradas.
+- Detener sesión congela la conducción y conserva la posición abierta; no inventa salida.
+- Servicio preexistente 8792 y dashboard 3020 preservados; `opencode.json` fuera de commits.
+
+## Reconciliación de la ventana pública `eng-run-public-20261102d` (2026-11-03, base `88c5d2c`)
+
 ## Reconciliación de la ventana pública `eng-run-public-20261102d` (2026-11-03, base `88c5d2c`)
 
 Aclaraciones documentales sobre evidencia existente (sin Binance, sin repetir ventana, sin cambios de código):

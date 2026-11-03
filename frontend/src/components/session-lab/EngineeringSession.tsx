@@ -1067,6 +1067,14 @@ export default function EngineeringSession({
                 state={sessionReady.state}
                 marketSymbol={sessionReady.state.config.symbol}
                 source={transportSource}
+                lastTrigger={
+                  (liveDrive?.last_trigger as
+                    | { frame?: string | null; open_time_ms?: number | null;
+                        close_time_ms?: number | null;
+                        received_at_ms?: number | null }
+                    | null) ?? null
+                }
+                evaluatedAtMs={liveDrive?.last_gate?.evaluated_at_ms ?? null}
                 freshness={{
                   received: vReady.cursor,
                   cursor: vReady.cursor,
@@ -1103,6 +1111,42 @@ export default function EngineeringSession({
                       {" "}Silencio medido entre disparos: {Math.round(gate.silence_ms)} ms
                       {" "}(límite {Math.round(gate.live_silence_ms ?? 0)} ms).
                     </span>
+                  )}
+                </p>
+              )}
+              {/* Señal pendiente vs fill ejecutado: indicador explícito separado
+                  del gráfico. Señal pendiente = decisión tomada pero sin fill;
+                  fill ejecutado = posición abierta con entry_px conocido. */}
+              {sessionReady && (
+                <p
+                  className={s.note}
+                  role="status"
+                  data-testid="session-signal-fill-status"
+                >
+                  {chartModelReady.operation.entry ? (
+                    <>
+                      <strong>Fill ejecutado:</strong> entrada {formatPricePL(chartModelReady.operation.entry.px)}{" "}
+                      {sessionReady.state.position.entry_qty != null && (
+                        <>
+                          · qty {sessionReady.state.position.entry_qty.toFixed(8)}
+                          {sessionReady.state.position.entry_cost != null &&
+                            ` · cost ${sessionReady.state.position.entry_cost.toFixed(2)} USDT`}
+                        </>
+                      )}
+                    </>
+                  ) : chartModelReady.operation.pending_entry ? (
+                    <>
+                      <strong>Señal pendiente:</strong> decisión tomada, fill no
+                      ejecutado (esperando vela con open conocido en T).
+                    </>
+                  ) : chartModelReady.operation.signal ? (
+                    <>
+                      <strong>Señal:</strong> vigilando (sin decisión de entrada).
+                    </>
+                  ) : (
+                    <>
+                      <strong>Sin señal:</strong> sin decisión de evaluación vigente.
+                    </>
                   )}
                 </p>
               )}

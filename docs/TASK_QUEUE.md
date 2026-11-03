@@ -1,3 +1,27 @@
+## Recorrido visible en el dashboard V2 - /market-lab (2026-11-03, base `4b35d2c`)
+
+`CURRENT_PHASE`: dashboard V2 de escritorio + observación (WS público solo bajo autorización
+explícita; sin monitor, sin órdenes).
+
+`CURRENT_OBJECTIVE`: llevar el recorrido backend ya acreditado al control visible del
+dashboard en /market-lab: sesión → datos nuevos → evaluación con decisión y motivo →
+señal pendiente → posición paper.
+
+`ACTIVE_TASK`: implementar interfaz, cableado a servicios existentes y aceptación local
+integrada (pruebas, typecheck, lint, build, evidencia reproducible).
+
+`NEXT_TASKS`:
+1. Verificar navegación principal → /market-lab con acceso al recorrido.
+2. Aceptación local desde el navegador (A-J): no arranca procesos al abrir, un solo arranque,
+   datos nuevos cambian gráfico/evaluación sin recargar, SIN_ENTRADA con motivo, señal
+   pendiente vs fill, recarga sin duplicados, detener conserva posición, fuente caída retira
+   LIVE, limpieza de procesos propios.
+3. Tipo de cambio, lint y build pasan; pruebas apropiadas a los cambios.
+4. Commit selectivo y push normal en la misma rama (sin integrar a main).
+5. Dashboard disponible en 3020 con entorno canónico limpio y sin demo activa.
+
+## Reconciliación de `eng-run-public-20261102d` completada (2026-11-03, base `88c5d2c`)
+
 ## Reconciliación de `eng-run-public-20261102d` completada (2026-11-03, base `88c5d2c`)
 
 `ACTIVE_TASK`: cerrado - reconciliación documental de la ventana pública (addendum publicado; sin cambios de

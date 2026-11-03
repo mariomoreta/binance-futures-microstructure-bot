@@ -50,3 +50,23 @@ export function formatAgeMs(ageMs: number | null | undefined): string {
   if (m < 60) return `${m}m`;
   return `${Math.floor(m / 60)}h`;
 }
+
+// Costo/funding ausente: mostrar UNKNOWN con motivo, nunca cero.
+// `executed` indica si el coste se ejecutó realmente (fill), no solo se calculó.
+export function formatMoneyUnknown(
+  value: number | null,
+  executed: boolean,
+  missingReason: string = "no ejecutado",
+): string {
+  if (!executed) return `UNKNOWN (${missingReason})`;
+  if (value === null || value === undefined || Number.isNaN(value)) return "UNKNOWN";
+  return formatMoney(value);
+}
+
+// Funding devengado: null significa calendario no disponible (UNKNOWN).
+export function formatFunding(funding: number | null): string {
+  if (funding === null || funding === undefined || Number.isNaN(funding)) {
+    return "UNKNOWN (calendario de funding no disponible)";
+  }
+  return formatMoney(funding);
+}

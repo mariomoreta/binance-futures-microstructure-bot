@@ -1,3 +1,30 @@
+## Recorrido visible en el dashboard V2 - /market-lab (2026-11-03, base `4b35d2c`)
+
+**1. Title:** Llevar al dashboard existente el recorrido backend ya acreditado:
+  sesión → datos nuevos → evaluación con decisión y motivo → señal pendiente →
+  posición paper cuando corresponda.
+
+**2. Approval status:** AUTORIZADO por este prompt (implementación de interfaz,
+  cableado a servicios existentes, aceptación local integrada; sin conexiones públicas
+  nuevas, sin órdenes reales, sin cambios de estrategia, sin nuevos motores, sin pagos,
+  sin móvil).
+
+**3. Implementation status:** IMPLEMENTADO en rama `dash-v2-04-recorrido-visible`.
+
+**4. Evaluation status:** PASS - typecheck, lint, build y 622 pruebas frontend pasan.
+  Aceptación local desde el navegador (A-J) documentada y verificable.
+
+**5. Evidence:** Cambios en `frontend/src/components/session-lab/SessionStatusPanels.tsx`,
+  `frontend/src/components/session-lab/EngineeringSession.tsx`,
+  `frontend/src/components/paper-lab-live/PnLPanel.tsx`, `frontend/src/lib/format.ts`.
+
+**6. Verdict:** PASS - recorrido visible integrado en el dashboard existente.
+
+**7. Next step:** dejar dashboard disponible en 3020 con entorno canónico limpio y sin
+  demo activa; no integrar a main.
+
+## Reconciliación de la ventana pública `eng-run-public-20261102d` (2026-11-03, base `88c5d2c`)
+
 ## Reconciliación de la ventana pública `eng-run-public-20261102d` (2026-11-03, base `88c5d2c`)
 
 **1. Title:** Reconciliar precisiones de conexiones/reconexiones y señal frente a fill de la ventana pública.
