@@ -1321,6 +1321,8 @@ class WindowOrchestrator:
         svc_url = "http://127.0.0.1:%d" % self.service_port
         last_revision = None
         last_events_processed = 0
+        last_cierres_admitidos = 0
+        last_watermark = None
         sj = None
         while self._remaining() > 0:
             self._check_deadline("poll_session")
@@ -1330,6 +1332,22 @@ class WindowOrchestrator:
                 sj = self._json_loads(r["text"])
                 session = sj.get("session") or {}
                 drive = sj.get("drive") or {}
+                rev = session.get("revision")
+                ep = drive.get("events_processed", 0)
+                ca = int(drive.get("cierres_admitidos") or 0)
+                wm = drive.get("watermark")
+                if ca != last_cierres_admitidos:
+                    last_cierres_admitidos = ca
+                    self.evidence.setdefault("cierres_admitidos_traza",
+                                             []).append({
+                        "cierres_admitidos": ca,
+                        "open_time_ms": (drive.get("last_trigger")
+                                         or {}).get("open_time_ms"),
+                        "at_ms": now_ms()})
+                if last_watermark is None or wm != last_watermark:
+                    last_watermark = wm
+                    self.evidence.setdefault("watermarks", []).append(
+                        {"watermark": wm, "at_ms": now_ms()})
                 rev = session.get("revision")
                 ep = drive.get("events_processed", 0)
                 if rev is not None and rev != last_revision:
@@ -1399,6 +1417,8 @@ class WindowOrchestrator:
         self.evidence["evaluacion_contador_final"] = self.evidence.get(
             "evaluacion_contador", 0)
         self.evidence["eventos_procesados_final"] = last_events_processed
+        self.evidence["cierres_admitidos_final"] = last_cierres_admitidos
+        self.evidence["watermark_final"] = last_watermark
 
     def _stop_drive(self) -> None:
         eng_url = "http://127.0.0.1:%d" % self.engineering_port
@@ -1435,6 +1455,46 @@ class WindowOrchestrator:
                 "clock_ms": last.get("clock_ms"),
                 "eventos_procesados": last.get("eventos_procesados"),
             }
+        # Aceptación real del recorrido HUB -> SSE -> adaptador -> admisión
+        # -> T -> evaluación (defecto 2026-11-02c: sesión creada + revisiones
+        # presentes NO bastan). Las reglas duras aplican cuando hay actividad
+        # registrada de la sesión; sin revisiones el veredicto es UNKNOWN
+        # (no PASS): bloqueo de evidencia, no violación de contrato.
+        cierres = int(self.evidence.get("cierres_admitidos_final") or 0)
+        evaluaciones = self.evidence.get("evaluaciones_final") or []
+        if revs and cierres <= 0:
+            fail.append("sin_cierre_nuevo_admitido")
+        if revs and not evaluaciones:
+            fail.append("sin_evaluacion_ejecutada")
+        elif revs and evaluaciones:
+            ultima = evaluaciones[-1]
+            res = ultima.get("resultado") or {}
+            config = ultima.get("config") or {}
+            linked = (
+                ultima.get("evento_disparador") is not None
+                and ultima.get("T") is not None
+                and config.get("rule_version")
+                and res.get("decision") is not None
+                and res.get("decision_reason") is not None)
+            if not linked:
+                fail.append("evaluacion_sin_vinculo_completo")
+            elif (crea.get("config_hash")
+                    and ultima.get("config_hash")
+                    and ultima.get("config_hash")
+                    != crea.get("config_hash")):
+                fail.append("evaluacion_config_hash_distinta")
+            linked_ev = {
+                "evento_disparador": ultima.get("evento_disparador"),
+                "T": ultima.get("T"),
+                "config_hash": ultima.get("config_hash"),
+                "rule_version": config.get("rule_version"),
+                "decision": res.get("decision"),
+                "motivo": res.get("decision_reason"),
+                "abstencion_sin_entrada_valida": (
+                    res.get("decision") == "SIN_ENTRADA"
+                    and res.get("decision_reason") is not None),
+            }
+            self.evidence["evaluacion_vinculada"] = linked_ev
         if self.consumers_max_seen > MAX_CONSUMERS_SSE:
             fail.append("consumidores_exceden_limite")
         if self.reconnects_max_seen > MAX_RECONNECTS:
@@ -1481,6 +1541,12 @@ class WindowOrchestrator:
             "consumidores_max": self.consumers_max_seen,
             "reconexiones_max": self.reconnects_max_seen,
             "rest_total": self.rest_count,
+            "cierres_admitidos_final": self.evidence.get(
+                "cierres_admitidos_final", 0),
+            "evaluacion_contador_final": self.evidence.get(
+                "evaluacion_contador_final", 0),
+            "eventos_procesados_final": self.evidence.get(
+                "eventos_procesados_final", 0),
             "ledger_total_por_run_id": self.ledger_total_por_run_id,
             "db_unchanged": canonical_dbs_unchanged(
                 self.db_before, canonical_dbs_snapshot()),

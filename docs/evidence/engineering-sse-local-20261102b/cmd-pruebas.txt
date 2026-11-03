@@ -1,0 +1,22 @@
+Comandos exactos ejecutados (PowerShell, workdir raíz repo, base 4e141a7):
+
+  python -X utf8 -m pytest tests/test_engineering_window_verdict_rules.py -q
+  # -> 6 passed
+
+  python -X utf8 -m pytest tests/test_engineering_service_market_stream.py -q
+  # -> 11 passed (8 previos + 3 nuevas de fiabilidad SSE) [18.9 s]
+
+  python -X utf8 -m pytest tests/test_engineering_live_window_local_recorrido.py tests/test_engineering_context_closed.py -q
+  # -> 9 passed [76.5 s]
+
+  python -X utf8 -m pytest tests/test_engineering_clock_readiness.py tests/test_engineering_clock_budget.py tests/test_market_stream.py -q
+  # -> 72 passed [122.2 s]
+
+  python -X utf8 -m py_compile src/microstructure_probe/engineering_session_service.py src/microstructure_probe/market_stream_service.py scripts/engineering_live_window.py tests/test_engineering_service_market_stream.py tests/test_engineering_window_verdict_rules.py
+  # -> COMPILE_OK
+
+Origen de la reproducción: LOOPBACK determinista
+(FakeSSEMarketServer/Harness en tests/test_engineering_service_market_stream.py
+y proveedores locales ws/HTTP de scripts/local_ws_kline_provider.py).
+Cero Binance, cero ventana pública, sin conexiones externas.
+Servicios preexistentes preservados: 8792 (pid 31124) y dashboard 3020.

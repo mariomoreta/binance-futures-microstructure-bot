@@ -132,6 +132,12 @@ def _chunked(data: bytes) -> bytes:
     return f"{len(data):X}\r\n".encode("ascii") + data + b"\r\n"
 
 
+# Tope de espera del drain SSE: si el receptor no drena en ese tiempo, la
+# conexión se corta (consumidor liberado) en lugar de colgar el stream sin
+# heartbeats. Solo afecta a la conexión en problema, no al bucle de eventos.
+SSE_WRITE_DRAIN_TIMEOUT_S = 30.0
+
+
 def _sse_frame(event: str, payload: Dict[str, Any]) -> bytes:
     body = json.dumps(payload, ensure_ascii=False, separators=(",", ":"))
     return f"event: {event}\ndata: {body}\n\n".encode("utf-8")
@@ -721,7 +727,18 @@ class MarketStreamService:
     async def _write_sse(self, writer: asyncio.StreamWriter, frame: bytes | str) -> None:
         data = frame.encode("utf-8") if isinstance(frame, str) else frame
         writer.write(_chunked(data))
-        await writer.drain()
+        try:
+            await asyncio.wait_for(writer.drain(),
+                                   timeout=SSE_WRITE_DRAIN_TIMEOUT_S)
+        except (asyncio.TimeoutError, ConnectionError, OSError) as exc:
+            # El receptor no drena (colgado o conexión muerta): cierra el
+            # stream en vez de dejarlo colgado sin heartbeats. El finally del
+            # handler libera el consumidor y el observador de desconexión
+            # despierta el bucle: sin bloquear el bucle de eventos ni
+            # estancar los heartbeats de los demás receptores.
+            raise ConnectionError(
+                "SSE_WRITE_STALL: no drain en "
+                f"{SSE_WRITE_DRAIN_TIMEOUT_S:.0f}s") from exc
 
     async def _snapshot(self, symbol: str, interval: str, from_ms: Optional[int],
                         to_ms: Optional[int], bars: int) -> Optional[Dict[str, Any]]:

@@ -1,3 +1,52 @@
+## Corregido tramo HUB → SSE → adaptador → admisión → evaluación (2026-11-02, base `4e141a7`)
+
+Corrección LOCAL (loopback, sin Binance, sin ventana pública) del tramo que
+rompió la ventana `eng-run-public-20261102c`:
+
+- Diagnóstico con relojes separados: `SSE_READ_TIMEOUT_S=10.0` de
+  `engineering_session_service.py` cubre conexión HTTP Y espera entre
+  lecturas (heartbeat del HUB garantizado cada ≤5 s ⇒ 2×; los 5 cortes
+  TimeoutError de la ventana fueron de FASE LECTURA: `connect_errors=0`);
+  silencio de mercado en la puerta (`live_silence_ms`, `feed_gap_ms` entre
+  disparos); deadline global del arnés (`--deadline`) + `--max-seconds` del
+  servicio. No se aumentó ningún límite: el corte del silencio con
+  heartbeats ausentes es correcto.
+- Defecto de medición confirmado y corregido: `drive["events_processed"]`
+  NUNCA se incrementaba en `_run_drive_market` → falso cero eterno en
+  transporte `market_stream`. El "avance de clock sin eventos" de la ventana
+  pública era ESTE defecto: la rev 2 provenía de la admisión legítima de un
+  cierre real (merge + catch-up en la misma pasada de `_live_advance`),
+  no de una transición oculta. Sin cambio en el motor.
+- Adaptador: desconexiones clasificadas (`READ_TIMEOUT`/`EOF`/`READ_ERROR`,
+  `DISCONNECTED.reason` a la conducción) sin ánimo de límites.
+- Conducción: contadores reales y comparables por alcance:
+  `events_processed` (consumidos), `cierres_admitidos` (admisiones POR la
+  sesión, watermark), `counters.{duplicates_ignored,bad_candles,…}`,
+  `gates_rechazadas` (puertas rebotadas duraderas, acotado 8) y
+  `evaluaciones[*].session_id/config_hash`.
+- HUB (`market_stream_service.py`): drain del receptor acotado (30 s →
+  `SSE_WRITE_STALL`): un receptor colgado se corta y libera consumidor
+  en vez de dejar el stream sin heartbeats. Heartbeats, silencio, backoff
+  y cancelación conservados.
+- Arnés veredicto: exige cierres admitidos > 0 y evaluación vinculada
+  (evento/T/config_hash/decisión/motivo; `SIN_ENTRADA` con motivo sigue
+  siendo válida). Sesión creada + revisiones presentes NO bastan; sin
+  revisiones = UNKNOWN. Falsos motivos: `sin_cierre_nuevo_admitido`,
+  `sin_evaluacion_ejecutada`, `evaluacion_sin_vinculo_completo`,
+  `evaluacion_config_hash_distinta`.
+- Reproducción local (adaptador productivo, productor SSE loopback):
+  lectura estable con heartbeats NO cortada (0 desconexiones, 3 periodos de
+  riesgo); silencio real → `READ_TIMEOUT` + reconexión acotada + cancelación
+  efectiva; corte y reconexión con recuperación del cierre pendiente UNA vez
+  (watermark; duplicados y provisionales sin efectos económicos
+  duplicados).
+- Pruebas: 98 PASS totales (`test_engineering_service_market_stream.py` 11,
+  `test_engineering_window_verdict_rules.py` 6, recorrido local integrado +
+  contexto cerrado 9, reloj/presupuesto/mercado 72). Evidencia nueva (origen
+  loopback): `docs/evidence/engineering-sse-local-20261102b/`.
+
+## Ventana pública única `eng-run-public-20261102c` - FAIL de aceptación: EVALUACION_NO_ALCANZADA (2026-11-02, base `a11c02e`)
+
 ## Ventana pública única `eng-run-public-20261102c` - FAIL de aceptación: EVALUACION_NO_ALCANZADA (2026-11-02, base `a11c02e`)
 
 Se ejecutó UNA ventana pública autorizada con el arnés corregido

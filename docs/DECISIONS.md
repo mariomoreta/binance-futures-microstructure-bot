@@ -4551,3 +4551,36 @@ corregido en a11c02e (run_id nuevo, sin reutilizar cupos). Resultado:
 - Siguiente: correccion local del adaptador SSE y nueva ventana publica solo
   con autorizacion explicita y run_id NUEVO.
 
+## 2026-11-02 - Correccion local tramo SSE/adaptador y veredicto endurecido (base 4e141a7)
+
+- Diagnostico con relojes separados y evidencia: SSE_READ_TIMEOUT_S=10
+  cubre conexion HTTP y espera entre lecturas del adaptador
+  (engineering_session_service) contra heartbeats del HUB cada <=5 s;
+  los 5 cortes TimeoutError de la ventana eng-run-public-20261102c fueron
+  de fase LECTURA (connect_errors=0); silencio de mercado medido entre
+  disparos (live_silence_ms/feed_gap_ms) con gate propio; deadline global
+  del arnes (--deadline) y --max-seconds del servicio son relojes distintos.
+- Defecto raiz confirmado y corregido en el transporte market_stream:
+  drive["events_processed"] nunca se incrementaba (falso cero en salud y
+  arnes). El cambio de clock_ms 1793669219999 -> 1793669280000 (rev 2) de
+  esa ventana era admision legitima de un cierre real del feed (merge +
+  catch-up en _live_advance), no una transicion oculta. El motor no se toca.
+- Reproduccion local con el adaptador PRODUCTIVO y productor SSE loopback:
+  heartbeats estables no cortan lectura, silencio real produce
+  READ_TIMEOUT clasificado con reconexion acotada y cancelacion efectiva,
+  corte+reconexion recupera el cierre pendiente UNA vez (watermark) con
+  evaluacion vinculada; duplicados y provisionales sin efectos economicos.
+- Correccion minima sin relajar causalidad ni limites: clasificacion de
+  desconexiones, eventos_processed real, cierres_admitidos por watermark,
+  gates_rechazadas duraderas, session_id/config_hash en evaluaciones, drain
+  acotado en el HUB (SSE_WRITE_STALL, corta solo la conexion afectada).
+- Veredicto del arnes: PASS exige cierre nuevo admitido POR la sesion y
+  evaluacion vinculada a evento, T, config_hash, decision y motivo;
+  SIN_ENTRADA con motivo sigue acreditando; sesion creada + revisiones no
+  bastan; sin revisiones = UNKNOWN. Regresion con la forma observada
+  (test_engineering_window_verdict_rules) = FAIL.
+- 98 pruebas PASS en total; evidencia loopback nueva en
+  docs/evidence/engineering-sse-local-20261102b/ (la historica de
+  20261102c no se reescribe).
+- La acreditacion publica del recorrido completo sigue pendiente de una
+  ventana autorizada con run_id NUEVO (presupuesto de 20261102c agotado).

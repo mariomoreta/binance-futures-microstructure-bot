@@ -123,8 +123,18 @@ CATCH_UP_MAX_STEPS = 256
 # Lectura del SSE: el servicio de mercado emite heartbeats ~cada 5 s; un
 # silencio mayor aquí significa conexión muerta → reconexión con backoff.
 # El timeout también cubre el connect.
+# 10 s = 2x el intervalo de heartbeat del servicio: una lectura estable NO
+# se corta indebidamente (hay un heartbeat cada ≤5 s); el corte solo se
+# produce ante conexión realmente muerta. La fase del fallo (conexión HTTP
+# vs espera entre lecturas) se distingue con motivos y contadores separados
+# (connect_errors vs disconnects + last_disconnect_reason), no animando
+# límites.
 SSE_READ_TIMEOUT_S = 10.0
 SSE_BACKOFF_MAX_S = 5.0
+
+
+class _SseReadTimeout(Exception):
+    """Readline del SSE excedió SSE_READ_TIMEOUT_S (conexión muerta)."""
 # Paso de rejilla por intervalo (validación de huecos en la ventana).
 INTERVAL_MS_MAP = {
     "1m": 60_000, "5m": 300_000, "15m": 900_000,
@@ -437,6 +447,11 @@ class MarketServiceStreamAdapter:
                 self._read_stream(resp)
             except Exception as exc:  # noqa: BLE001 - timeout/conexión caída
                 self.stats["last_error"] = f"{type(exc).__name__}: {exc}"
+                self.stats["last_disconnect_reason"] = (
+                    "READ_TIMEOUT"
+                    if isinstance(exc, _SseReadTimeout) else (
+                        "EOF"
+                        if isinstance(exc, ConnectionError) else "READ_ERROR"))
             finally:
                 try:
                     resp.close()
@@ -448,6 +463,7 @@ class MarketServiceStreamAdapter:
             self.stats["reconnects"] += 1
             self._put({
                 "type": "DISCONNECTED",
+                "reason": self.stats.get("last_disconnect_reason"),
                 "detail": self.stats["last_error"],
                 "received_at_ms": _now_ms(),
             })
@@ -469,7 +485,15 @@ class MarketServiceStreamAdapter:
         event_name: Optional[str] = None
         data_lines: List[str] = []
         while not self.stop_event.is_set():
-            raw = resp.readline()
+            try:
+                raw = resp.readline()
+            except TimeoutError as exc:
+                # Fase LECTURA: silencio > SSE_READ_TIMEOUT_S con un feed que
+                # garantiza heartbeats cada ~5 s ⇒ conexión muerta. Distingue
+                # de un fallo de fase CONEXIÓN (contado en connect_errors).
+                raise _SseReadTimeout(
+                    "SSE_READ_TIMEOUT: sin bytes durante "
+                    f"{SSE_READ_TIMEOUT_S:.0f}s (heartbeats ~5 s)") from exc
             if not raw:
                 raise ConnectionError(
                     "SSE EOF (stream cerrado por el servicio)")
@@ -776,7 +800,12 @@ class EngineeringSessionController:
             "started_at_ms": drive.get("started_at_ms"),
             "finished_at_ms": drive.get("finished_at_ms"),
             "events_processed": drive.get("events_processed", 0),
+            "cierres_admitidos": int(drive.get("cierres_admitidos", 0) or 0),
             "transport_events": (info or {}).get("transport_events", 0),
+            # Contadores de alcance completo del recorrido (admisión,
+            # descartes y conectividad) comparables entre sí.
+            "counters": {k: v for k, v in (info or {}).items()
+                         if isinstance(v, (int, float))},
             "cadence_ms": drive.get("cadence_ms"),
             "runner": runner,
             "evaluacion_contador": int(drive.get("evaluacion_contador", 0)),
@@ -791,6 +820,8 @@ class EngineeringSessionController:
                 "watermark": drive.get("watermark"),
                 "last_trigger": drive.get("last_trigger"),
                 "last_gate": drive.get("last_gate"),
+                "gates_rechazadas": list(
+                    drive.get("gates_rechazadas") or []),
                 "last_gap": drive.get("last_gap"),
                 "last_status": drive.get("last_status"),
                 "evidence": drive.get("evidence") or {},
@@ -1023,6 +1054,7 @@ class EngineeringSessionController:
                 "started_at_ms": _now_ms(),
                 "finished_at_ms": None,
                 "events_processed": 0,
+                "cierres_admitidos": 0,
                 "cause": None,
                 "stop_event": stop_event,
                 "queue": event_queue,
@@ -1036,6 +1068,7 @@ class EngineeringSessionController:
                 "watermark": None,
                 "last_trigger": None,
                 "last_gate": None,
+                "gates_rechazadas": [],
                 "last_gap": None,
                 "last_status": None,
                 "last_heartbeat_at_ms": None,
@@ -1063,6 +1096,7 @@ class EngineeringSessionController:
                 "started_at_ms": _now_ms(),
                 "finished_at_ms": None,
                 "events_processed": 0,
+                "cierres_admitidos": 0,
                 "cause": None,
                 "stop_event": stop_event,
                 "queue": event_queue,
@@ -1295,6 +1329,14 @@ class EngineeringSessionController:
                     break
             info["transport_events"] = int(
                 info.get("transport_events", 0)) + 1
+            # Contador de eventos CONSUMIDOS por la conducción live. Sin
+            # este incremento, `drive["events_processed"]` queda congelado
+            # en 0 en el transporte market_stream y la salud del servicio
+            # reporta un cero falso (defecto visto en
+            # eng-run-public-20261102c: rev 2 con clock avanzado y contador
+            # en 0 en la misma sesión).
+            drive["events_processed"] = int(
+                drive.get("events_processed", 0)) + 1
             received_at = int(event.get("received_at_ms") or _now_ms())
             state = None
             finish_cause: Optional[str] = None
@@ -1425,6 +1467,9 @@ class EngineeringSessionController:
         with self._lock:
             drive["watermark"] = max(int(drive.get("watermark") or 0),
                                      max_admitted_open)
+            if appended > 0:
+                drive["cierres_admitidos"] = int(
+                    drive.get("cierres_admitidos", 0)) + appended
         if appended == 0:
             return None
         self._record_feed_gap(drive, received_at)
@@ -1487,6 +1532,8 @@ class EngineeringSessionController:
             return None
         with self._lock:
             drive["watermark"] = max(watermark, ot)
+            drive["cierres_admitidos"] = int(
+                drive.get("cierres_admitidos", 0)) + 1
         self._record_feed_gap(drive, received_at)
         drive["last_trigger"] = {
             "frame": "closed", "open_time_ms": ot,
@@ -1579,6 +1626,21 @@ class EngineeringSessionController:
         state = self._tag_fill_basis(state)
         gate = self._evaluation_gate(state, drive)
         drive["last_gate"] = gate
+        if not gate.get("ok"):
+            # Puerta rebotada: registrar la causa de forma duradera en el
+            # drive (la memoria del servicio), acotada, para que el
+            # recorrido quede auditable sin haber decidido nada
+            # (p.ej. eng-run-public-20261102c). Sin decisión inventada.
+            rechazadas: List[Dict[str, Any]] = drive.setdefault(
+                "gates_rechazadas", [])
+            rechazadas.append({
+                "evaluated_at_ms": gate.get("evaluated_at_ms"),
+                "cause": gate.get("cause"),
+                "clock_ms": gate.get("clock_ms"),
+                "silence_ms": gate.get("silence_ms"),
+                "grid_gap": gate.get("grid_gap"),
+            })
+            del rechazadas[:-8]
         evaluacion_ejecutada = False
         decision_antes = state.config.decision
         motivo_antes = state.config.decision_reason
@@ -1608,6 +1670,8 @@ class EngineeringSessionController:
             drive["evaluacion_contador"] = contador
             evaluaciones.append({
                 "evaluacion_num": contador,
+                "session_id": state.session_id,
+                "config_hash": state.config_hash,
                 "evento_disparador": {
                     "frame": trigger.get("frame"),
                     "open_time_ms": trigger.get("open_time_ms"),

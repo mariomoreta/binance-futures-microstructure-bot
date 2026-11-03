@@ -1,3 +1,46 @@
+## Corrección local del tramo SSE completada (2026-11-02, base `4e141a7`)
+
+`CURRENT_PHASE`: dashboard V2 de escritorio + observación (WS público solo bajo
+autorización explícita; sin monitor, sin órdenes).
+
+`CURRENT_OBJECTIVE`: cerrado - reproducir y corregir localmente el tramo
+HUB → SSE → adaptador → cierre admitido → T → evaluación, con el arnés,
+servicios y motor EXISTENTES (sin Binance, sin ventana pública):
+
+1. Diagnóstico por relojes (conexión HTTP / espera entre lecturas SSE /
+   silencio de mercado / deadline global) con su configuración exacta y
+   lectura de la ventana `20261102c`; no se atribuyó todo a TimeoutError ni
+   se aumentó límite alguno.
+2. Defecto raíz confirmado: `events_processed` nunca se incrementaba en
+   `_run_drive_market` (falso cero); las 5 desconexiones fueron de fase
+   LECTURA; la rev 2 con clock avanzado era admisión legítima de un cierre
+   real (no transición oculta).
+3. Corrección mínima: clasificación de desconexiones, contadores reales
+   (`events_processed`, `cierres_admitidos`), `gates_rechazadas` duraderas,
+   identidad en evaluaciones, drain acotado en el HUB; motor intacto.
+4. Veredicto del arnés endurecido (cierres + evaluación vinculada
+   obligatorios; SIN_ENTRADA con motivo válida; sin revisiones = UNKNOWN).
+5. Reproducción local del adaptador productivo: heartbeats estables,
+   silencio con clasificación y reconexión acotada, recuperación del cierre
+   pendiente única con contadores por alcance.
+6. 98 pruebas PASS; evidencia loopback en
+   `docs/evidence/engineering-sse-local-20261102b/`.
+
+`ACTIVE_TASK`: **cerrado** (sin Binance; 8792 y dashboard 3020 intactos;
+`opencode.json` fuera de los commits).
+
+`NEXT_TASKS`:
+1. Solicitar **nueva autorización** explícita del operador para UNA ventana
+   pública con un `run_id` NUEVO (no reutilizar
+   `eng-run-public-20261102c`, presupuesto agotado 7/7) y acreditar el
+   recorrido completo con el veredicto corregido (adhoc: cierre nuevo
+   admitido POR la sesión + evaluación vinculada).
+2. Revisiones posteriores (no bloquean): literal histórico del detalle
+   `build_served` ("árbol e2243c9") y
+   `tests/test_engineering_live_window_local.py` (fixture desfasada).
+
+## Resultado ventana pública `eng-run-public-20261102c` y siguiente tarea (2026-11-02, base `a11c02e`)
+
 ## Resultado ventana pública `eng-run-public-20261102c` y siguiente tarea (2026-11-02, base `a11c02e`)
 
 `CURRENT_PHASE`: dashboard V2 de escritorio + observación (WS público solo bajo

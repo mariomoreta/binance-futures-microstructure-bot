@@ -1,3 +1,46 @@
+## Corrección tramo SSE/adaptador + veredicto arnés (2026-11-02, base `4e141a7`)
+
+**1. Title:** Reproducir y corregir localmente el tramo
+HUB → SSE → adaptador de ingeniería → cierre admitido → avance de T →
+evaluación, y eliminar el falso PASS del arnés.
+
+**2. Approval status:** AUTORIZADO por el operador de forma acotada:
+base `4e141a7`, SIN Binance, SIN nueva ventana pública; reutilizar
+servicios/motor/arnés existentes; diagnóstico con evidencia; reproducción
+loopback; corrección mínima; regresiones; sin cambios de estrategia,
+presupuestos ni ventana.
+
+**3. Implementation status:** IMPLEMENTADO. Relojes separados en el
+diagnóstico (conexión/lectura/silencio/deadline) y confirmado defecto de
+medición (`events_processed` nunca incrementado en `_run_drive_market`);
+clasificación de desconexiones del adaptador (`READ_TIMEOUT`/`EOF`/…);
+contadores por alcance (`events_processed`, `cierres_admitidos`,
+`counters`, `gates_rechazadas` acotadas, identidad en evaluaciones);
+drain acotado en el HUB (30 s); veredicto del arnés con exigencias de
+admisión + evaluación vinculada (SIN_ENTRADA con motivo válida); motor sin
+cambios; ningún límite aumentado.
+
+**4. Evaluation status:** PASS. Reproducción local con el adaptador
+PRODUCTIVO: (a) lectura estable con heartbeats −> 0 desconexiones;
+(b) silencio real −> `READ_TIMEOUT` clasificado + reconexión acotada +
+cancelación efectiva; (c) corte y reconexión −> cierre pendiente admitido
+UNA vez (watermark) con evaluación vinculada (evento/T/config_hash/
+decisión/motivo) y duplicados/provisionales sin efectos económicos; (d)
+forma 20261102c exacta → FAIL del arnés; 98 pruebas PASS.
+
+**5. Evidence:** `docs/evidence/engineering-sse-local-20261102b/`
+(`RESULTADO.md` con tabla de relojes y hallazgos, `cmd-pruebas.txt`)
++ histórica intacta `docs/evidence/engineering-live-public-20261102c/`.
+
+**6. Verdict:** PASS en local (loopback); el estado del sistema no se
+declara completo - la acreditación pública sigue pendiente de ventana
+autorizada con run_id nuevo.
+
+**7. Next step:** nueva ventana pública autorizada (run_id nuevo) para
+acreditar el recorrido completo con el veredicto corregido.
+
+## Ventana pública única `eng-run-public-20261102c` (2026-11-02, base `a11c02e`)
+
 ## Ventana pública única `eng-run-public-20261102c` (2026-11-02, base `a11c02e`)
 
 **1. Title:** Ejecutar UNA ventana pública autorizada con el arnés corregido

@@ -601,6 +601,12 @@ def test_gate_feed_silence_and_grid_gap_abstain():
         # El hueco quedó registrado y la decisión sigue sin reevaluar.
         body = harness.get(sid)
         assert body["session"]["config"]["decision"] == "SIN_ENTRADA"
+        # Registro duradero de puertas rebotadas (causa auditable, sin
+        # decisión inventada).
+        rechazadas = body["drive"]["gates_rechazadas"]
+        causas = [r["cause"] for r in rechazadas]
+        assert "FEED_SILENCE" in causas, causas
+        assert "GRID_GAP" in causas, causas
     finally:
         harness.close()
         server.stop()
@@ -677,6 +683,216 @@ def test_stop_with_open_position_keeps_policy():
                                          else None)(harness.get(sid)))
         assert body["session"]["position"]["open"] is True
         assert body["session"]["result"] is None
+    finally:
+        harness.close()
+        server.stop()
+        shutil.rmtree(tmp, ignore_errors=True)
+
+
+# --- fiabilidad del tramo SSE (hallazgos de eng-run-public-20261102c) --------
+# En esa ventana el adaptador recibió 60/237 frames, se cayó 5 veces con
+# TimeoutError y el contador `events_processed` del transporte market_stream
+# permaneció congelado en 0 (falso cero de la lectura del arnés). Estas
+# pruebas reproducen localmente cada tramo del fallo con el adaptador
+# PRODUCTIVO y un productor SSE loopback determinista.
+
+def _sse_drain_queue(q: "queue.Queue") -> list:
+    out = []
+    while True:
+        try:
+            out.append(q.get_nowait())
+        except queue.Empty:
+            return out
+
+
+def _sse_wait_stats(cond, timeout: float = 6.0, poll: float = 0.05):
+    end = time.monotonic() + timeout
+    last = None
+    while time.monotonic() < end:
+        last = cond()
+        if last:
+            return last
+        time.sleep(poll)
+    raise AssertionError(f"condición no alcanzada en {timeout}s: {last!r}")
+
+
+def _sse_heartbeat_pacer(server: FakeSSEMarketServer, interval_s: float,
+                         stop: threading.Event) -> threading.Thread:
+    def _loop() -> None:
+        while not stop.is_set():
+            if stop.wait(timeout=interval_s):
+                break
+            server.send("heartbeat", {"now_ms": int(time.time() * 1000)})
+    t = threading.Thread(target=_loop, daemon=True)
+    return t
+
+
+def test_adapter_stable_heartbeat_read_is_not_cut():
+    """Lectura SSE estable: heartbeats cada ~timeout/3 durante más de 3
+    periodos → cero desconexiones. El timeout NO corta una lectura sana
+    (heartbeats garantizan bytes cada ≤5 s; aquí 0.3 s vs tope 1 s)."""
+    orig = svc.SSE_READ_TIMEOUT_S
+    svc.SSE_READ_TIMEOUT_S = 1.0
+    server = FakeSSEMarketServer()
+    q: "queue.Queue[Dict[str, Any]]" = queue.Queue()
+    stop = threading.Event()
+    started = threading.Event()
+    adapter = svc.MarketServiceStreamAdapter(
+        server.url, "BTCUSDT", "1m", 50, q, stop, started)
+    pacer_stop = threading.Event()
+    pacer = _sse_heartbeat_pacer(server, 0.3, pacer_stop)
+    try:
+        adapter.start()
+        server.send(*hello_frame())
+        pacer.start()
+        # ~11 heartbeats (>= 3 periodos de 1 s): si el timeout cortara una
+        # lectura estable, habría desconexiones aquí.
+        _sse_wait_stats(lambda: adapter.stats["frames"] >= 12, timeout=6.0)
+        stats = adapter.stats
+        assert stats["disconnects"] == 0, stats
+        assert stats["reconnects"] == 0, stats
+        assert stats.get("last_disconnect_reason") is None, stats
+        assert stats["last_error"] is None, stats
+        # El heartbeat es señal de vida (frames + last_frame), no evento:
+        # el motor nunca conduce por un heartbeat.
+        eventos = _sse_drain_queue(q)
+        jenis = [e["type"] for e in eventos]
+        assert jenis == ["HELLO"], jenis
+    finally:
+        stop.set()
+        try:
+            adapter.thread.join(timeout=2.5)
+        except Exception:  # noqa: BLE001
+            pass
+        pacer_stop.set()
+        pacer.join(timeout=2.0)
+        server.stop()
+        svc.SSE_READ_TIMEOUT_S = orig
+
+
+def test_adapter_silence_classifies_read_timeout_and_reconnects_bounded():
+    """Silencio real del feed > tope de lectura: desconexión clasificada
+    READ_TIMEOUT (fase LECTURA, connect_errors en 0), reconexión acotada
+    y cancelación efectiva del hilo ante stop (sin hilos colgando)."""
+    orig = svc.SSE_READ_TIMEOUT_S
+    svc.SSE_READ_TIMEOUT_S = 1.0
+    server = FakeSSEMarketServer()
+    q: "queue.Queue[Dict[str, Any]]" = queue.Queue()
+    stop = threading.Event()
+    started = threading.Event()
+    try:
+        adapter = svc.MarketServiceStreamAdapter(
+            server.url, "BTCUSDT", "1m", 50, q, stop, started)
+        adapter.start()
+        server.send(*hello_frame())
+        _sse_wait_stats(
+            lambda: adapter.stats.get("last_disconnect_reason")
+            == "READ_TIMEOUT", timeout=4.0)
+        stats = adapter.stats
+        assert stats["connect_errors"] == 0, (
+            "el fallo fue de LECTURA, no de conexión", stats)
+        assert stats["disconnects"] == 1, stats
+        desconexiones = [e for e in _sse_drain_queue(q)
+                         if e.get("type") == "DISCONNECTED"]
+        assert desconexiones, "la desconexión debe publicarse a la conducción"
+        assert desconexiones[0].get("reason") == "READ_TIMEOUT"
+        # Reconexión acotada (backoff 0.5 s): nueva conexión en ≤2.5 s.
+        _sse_wait_stats(lambda: server.connections >= 2, timeout=2.5)
+        # Cancelación efectiva: el hilo termina en ≤3 s pese al ciclo
+        # de reconexión activo.
+        stop.set()
+        adapter.thread.join(timeout=3.0)
+        assert not adapter.thread.is_alive()
+    finally:
+        stop.set()
+        server.stop()
+        svc.SSE_READ_TIMEOUT_S = orig
+
+
+def test_reconnect_recovers_pending_close_once_with_counters():
+    """Corte por caída SSE y reconexión: el snapshot de recuperación admite
+    el cierre pendiente UNA sola vez (watermark), dispara evaluación
+    vinculada (evento/T/config_hash/decisión/motivo) y el MISMO cierre
+    reenviado no produce segunda evaluación ni efectos económicos."""
+    tmp = Path(tempfile.mkdtemp(prefix="eng-mkt-recover-"))
+    server = FakeSSEMarketServer()
+    harness = Harness(tmp, server.url)
+    try:
+        created = harness.create(live_payload(request_id="req-recover-1"))
+        sid = created["session"]["session_id"]
+        harness.control(sid, "start", request_id="start-recover-1")
+        push_hello_and_snapshot(server)  # contexto; provisional (no conduce)
+
+        server.send(*closed_frame(FEED[0]))  # C1 admitida → SIN_ENTRADA
+        harness.wait_for(lambda: (lambda b: b if
+                                  len(b["session"]["candles"]) == 1 else None)(
+            harness.get(sid)))
+        base = harness.get(sid)
+        assert base["session"]["config"]["decision"] == "SIN_ENTRADA"
+        assert base["drive"]["cierres_admitidos"] == 1
+        dup_base = base["drive"]["counters"].get("duplicates_ignored", 0)
+
+        # --- corte por EOF del SSE (caída simulada del tramo) ---
+        server.close_connection()
+        harness.wait_for(lambda: (lambda b: b if
+                                  (b["drive"].get("stats") or {})
+                                  .get("last_disconnect_reason")
+                                  == "EOF" else None)(harness.get(sid)))
+
+        # --- reconexión: snapshot re-incluye C1 (duplicado watermark) y
+        # llega C2, el cierre ocurrido durante el corte ---
+        server.send(*hello_frame())
+        server.send("snapshot", {
+            "symbol": "BTCUSDT", "interval": "1m",
+            "candles": [dict(c, closed=True) for c in CONTEXT]
+                       + [dict(FEED[0], closed=True)],
+        })
+        server.send(*closed_frame(FEED[1]))
+
+        body = harness.wait_for(lambda: (lambda b: b if (
+            b["drive"].get("cierres_admitidos") == 2
+            and len(b["session"]["candles"]) == 2) else None)(
+            harness.get(sid)))
+        drive = body["drive"]
+        assert drive["stats"]["last_disconnect_reason"] == "EOF"
+        # Contadores del mismo alcance: eventos CONSUMIDOS por la
+        # conducción (antes congelados en 0) y cierres admitidos POR la
+        # sesión (no mensajes WS ni frames SSE).
+        assert drive["events_processed"] >= 6, drive
+        assert drive["transport_events"] >= 6, drive
+        assert drive["cierres_admitidos"] == 2, drive
+        dup_after_reconnect = drive["counters"].get(
+            "duplicates_ignored", 0)
+        assert dup_after_reconnect - dup_base == 3, (
+            "contexto×2 + C1 como duplicados del snapshot", dup_after_reconnect)
+        assert drive["last_trigger"]["open_time_ms"] == \
+            FEED[1]["open_time_ms"], drive["last_trigger"]
+        # Dos evaluaciones vinculadas (C1 y C2); config_hash vinculado.
+        evaluaciones = drive["evaluaciones"]
+        assert len(evaluaciones) == 2, evaluaciones
+        for e in evaluaciones:
+            assert e["evento_disparador"]["frame"] == "closed"
+            assert e["T"] is not None
+            assert e["config_hash"] == created["session"]["config_hash"]
+            assert e["config"]["rule_version"] == "RULE-CAUSAL-V1"
+            res = e["resultado"]
+            assert res["decision"] == "SIN_ENTRADA"
+            assert res["decision_reason"], "SIN_ENTRADA exige motivo"
+            assert res["abstencion_sin_entrada"] is True
+        # Sin efectos económicos duplicados: posición cerrada (fills 0).
+        assert body["session"]["position"]["open"] is False
+        assert body["session"]["input_hash"] is None
+        # --- Reenvío del MISMO C2: duplicado exacto ignora UNA vez; ---
+        revision_before = body["session"]["revision"]
+        server.send(*closed_frame(FEED[1]))
+        time.sleep(0.6)
+        after = harness.get(sid)
+        assert after["drive"]["cierres_admitidos"] == 2
+        assert after["drive"]["evaluacion_contador"] == 2
+        assert after["session"]["revision"] == revision_before, (
+            "el duplicado no debe producir revisión nueva")
+        assert after["drive"]["counters"]["duplicates_ignored"] == \
+            dup_after_reconnect + 1
     finally:
         harness.close()
         server.stop()
