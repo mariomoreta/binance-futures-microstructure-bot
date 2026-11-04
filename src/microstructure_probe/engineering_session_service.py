@@ -151,7 +151,10 @@ ALLOWED_ACTIONS = {
     "start", "stop", "step", "exit", "restart", "stop_session", "evaluate",
 }
 
-CONFLICT_CODES = {"REVISION_CONFLICT", "SESSION_NOT_DRIVEABLE", "DRIVE_ACTIVE"}
+CONFLICT_CODES = {
+    "REVISION_CONFLICT", "SESSION_NOT_DRIVEABLE", "DRIVE_ACTIVE",
+    "PUBLIC_RUN_DEADLINE_EXCEEDED",
+}
 
 
 def _now_ms() -> int:
@@ -893,7 +896,28 @@ class EngineeringSessionController:
                         f"esperaba {step} ms)")
                 prev_open = ot
 
+    # --- puerta del deadline de la corrida pública ---------------------------
+    def _ensure_public_run_driveable(self) -> None:
+        """Bloquea adquisición/conducción NUEVA si el plazo ya venció.
+
+        El watcher marca ``deadline_exceeded`` y congela los drives, pero
+        entre el vencimiento y su tick (o si el reloj venció justo antes de
+        atender la petición) una petición podría colarse. Esta puerta cierra
+        esa ventana: ningún create/start/step nuevo tras el vencimiento.
+        """
+        pr = self.public_run
+        if pr is None:
+            return
+        if pr.is_deadline_exceeded():
+            if not pr.is_terminal():
+                pr.mark_deadline_exceeded()
+            raise RuntimeError(
+                "PUBLIC_RUN_DEADLINE_EXCEEDED",
+                "el plazo de la corrida pública venció: no se admite "
+                "adquisición ni conducción nueva")
+
     def create_session(self, payload: Dict[str, Any]) -> Dict[str, Any]:
+        self._ensure_public_run_driveable()
         request_id = payload.get("request_id")
         if request_id:
             cached = self._create_results.get(str(request_id))
@@ -1006,6 +1030,7 @@ class EngineeringSessionController:
     # --- conducción ---------------------------------------------------------
     def _start_drive(self, session_id: str,
                      expected_revision: Optional[int]) -> Dict[str, Any]:
+        self._ensure_public_run_driveable()
         state = self._load_state(session_id)
         if state is None:
             raise KeyError("SESSION_NOT_FOUND")
@@ -1143,6 +1168,10 @@ class EngineeringSessionController:
     def _advance_action(self, session_id: str, action: str,
                         expected_revision: Optional[int],
                         request_id: Optional[str]) -> Dict[str, Any]:
+        # ``stop_session`` es terminación/limpieza, no trabajo nuevo: debe
+        # seguir permitida tras el vencimiento para poder cerrar la sesión.
+        if action != "stop_session":
+            self._ensure_public_run_driveable()
         state = self._load_state(session_id)
         if state is None:
             raise KeyError("SESSION_NOT_FOUND")
@@ -2131,7 +2160,9 @@ class PublicRunRecord:
                  cache: Optional[MarketCache] = None) -> None:
         self.sessions_dir = Path(sessions_dir)
         self._path = _public_run_path(self.sessions_dir)
-        self._lock = threading.Lock()
+        # RLock: to_dict()/is_deadline_exceeded() se llaman entre sí y desde
+        # el watcher; un Lock simple produciría interbloqueo.
+        self._lock = threading.RLock()
         self._cache = cache
         self.run_id: Optional[str] = None
         self.source: Optional[str] = None
@@ -2222,17 +2253,58 @@ class PublicRunRecord:
 
     # --- estado -------------------------------------------------------------
 
+    def deadline_passed(self) -> bool:
+        """Plazo de pared vencido, con independencia del estado.
+
+        Es un hecho temporal (``now >= deadline_ms``), no una decisión de
+        ciclo de vida. Lo consultan el watcher y el arranque para no otorgar
+        tiempo ni ejecutar adquisiciones nuevas tras el vencimiento.
+        """
+        with self._lock:
+            deadline_ms = self.deadline_ms
+        if deadline_ms is None:
+            return False
+        return _now_ms() >= int(deadline_ms)
+
+    def is_terminal(self) -> bool:
+        """Estado terminal persistido (causa que no se reactiva sola)."""
+        with self._lock:
+            return self.state in ("deadline_exceeded", "error")
+
     def is_deadline_exceeded(self) -> bool:
-        if self.state in ("idle", "stopped", "deadline_exceeded", "error"):
+        """True si la corrida terminó por deadline o si el plazo ya venció.
+
+        Distingue tres cosas que antes se confundían:
+          - ``deadline_passed()``: hecho temporal (venció el plazo).
+          - ``is_terminal()``: estado terminal persistido (deadline/error).
+          - ``cleanup_cause``: limpieza posterior, nunca una reactivación.
+
+        El estado ``deadline_exceeded`` es terminal: si el watcher ya lo
+        estableció, la respuesta es True aunque el reloj retroceda o el
+        proceso se reinicie. Antes devolvía False justo en ese estado, de
+        modo que el bucle principal nunca cerraba el servidor.
+        """
+        with self._lock:
+            state = self.state
+            cause = self.cause
+            deadline_ms = self.deadline_ms
+        if state == "deadline_exceeded" or cause == "PUBLIC_RUN_DEADLINE_EXCEEDED":
+            # Causa terminal persistida: una limpieza posterior (state=stopped)
+            # NO convierte el vencimiento en una corrida viva ni devuelve plazo.
+            return True
+        if state in ("idle", "stopped", "error"):
             return False
-        if self.deadline_ms is None:
+        if deadline_ms is None:
             return False
-        return _now_ms() >= int(self.deadline_ms)
+        return _now_ms() >= int(deadline_ms)
 
     def remaining_ms(self) -> Optional[int]:
-        if self.deadline_ms is None or self.state in ("idle", "stopped"):
+        with self._lock:
+            deadline_ms = self.deadline_ms
+            state = self.state
+        if deadline_ms is None or state in ("idle", "stopped"):
             return None
-        rem = int(self.deadline_ms) - _now_ms()
+        rem = int(deadline_ms) - _now_ms()
         return max(rem, 0)
 
     def begin(self, run_id: str, source: str, symbols: str, interval: str,
@@ -2273,7 +2345,8 @@ class PublicRunRecord:
                 self.port = port
             elif self.run_id == run_id:
                 # Reanudación de la misma corrida.
-                if self.state in ("deadline_exceeded", "error"):
+                if self.state in ("deadline_exceeded", "error") \
+                        or self.cause == "PUBLIC_RUN_DEADLINE_EXCEEDED":
                     raise ValueError(
                         f"corrida {run_id} ya está terminal ({self.state}); "
                         "no se reactiva silenciosamente. Use run_id nuevo.")
@@ -2391,10 +2464,14 @@ class PublicRunDeadlineWatcher(threading.Thread):
     """
 
     def __init__(self, world: "EngineeringSessionController",
-                 poll_ms: float = 2000.0) -> None:
+                 poll_ms: float = 2000.0,
+                 on_deadline: Optional[Callable[[], None]] = None) -> None:
         super().__init__(name="public-run-deadline-watcher", daemon=True)
         self.world = world
         self.poll_ms = poll_ms
+        # Cierre del servidor propio sin depender de React/Next.js: el
+        # backend posee el deadline y apaga su propio listener.
+        self.on_deadline = on_deadline
         self._stop = threading.Event()
 
     def run(self) -> None:
@@ -2414,14 +2491,11 @@ class PublicRunDeadlineWatcher(threading.Thread):
         pr = self.world.public_run
         if pr is None:
             return
-        with pr._lock:
-            state = pr.state
-            deadline_ms = pr.deadline_ms
-        if state in ("idle", "stopped", "deadline_exceeded", "error"):
+        # Estado terminal persistido: nada que vigilar.
+        if pr.is_terminal():
             return
-        if deadline_ms is None:
-            return
-        if _now_ms() < int(deadline_ms):
+        # Hecho temporal: ¿venció el plazo? (no se deriva del estado).
+        if not pr.deadline_passed():
             return
         # Deadline vencido: congelar conducción y cerrar recursos propios.
         pr.mark_deadline_exceeded()
@@ -2440,6 +2514,11 @@ class PublicRunDeadlineWatcher(threading.Thread):
             self.world.shutdown()
         except Exception:  # noqa: BLE001
             pass
+        if self.on_deadline is not None:
+            try:
+                self.on_deadline()
+            except Exception:  # noqa: BLE001
+                pass
         self._stop.set()
 
 
@@ -2638,16 +2717,21 @@ def main(argv: Optional[List[str]] = None) -> int:
     thread = threading.Thread(target=server.serve_forever, daemon=True)
     thread.start()
     # Watcher del deadline de la corrida pública (solo modo public).
-    # Vigila el deadline absoluto y congela conducción al vencer.
+    # Vigila el deadline absoluto y congela conducción al vencer. El cierre
+    # del listener es del propio backend (no depende de pestaña ni Next.js).
     if public_run is not None:
-        watcher = PublicRunDeadlineWatcher(world)
+        watcher = PublicRunDeadlineWatcher(
+            world, on_deadline=server.stop_event.set)
         watcher.start()
     # Sincronizacion del reloj despues de levantar /health: durante la
-    # preparacion (sync en curso contra Binance), /health responde
-    # NOT_READY (available=False) y nunca se admite crear sesion.
-    # Si el sync falla, available=False se mantiene y el servicio sigue
-    # operativo pero sin reloj valido.
-    if synchronizer is not None:
+    # preparacion (sync en curso), /health responde NOT_READY y nunca se
+    # admite crear sesion. Si el plazo YA venció en el registro persistido
+    # (reinicio de una corrida vencida o proceso anterior caído), no se
+    # ejecuta sincronización ni sondeo alguno: ninguna adquisición nueva.
+    if public_run is not None and public_run.deadline_passed():
+        public_run.mark_deadline_exceeded()
+        server.stop_event.set()
+    elif synchronizer is not None:
         try:
             asyncio.run(synchronizer.sync())
         except Exception:  # noqa: BLE001 - referencia no disponible -> abstencion
@@ -2656,6 +2740,8 @@ def main(argv: Optional[List[str]] = None) -> int:
         while not server.stop_event.is_set():
             # Si el deadline de la corrida pública venció, detener el servidor
             # (el watcher ya marcó deadline_exceeded y congeló los drives).
+            # is_deadline_exceeded() distingue plazo vencido de estado
+            # terminal y de limpieza: en estado terminal devuelve True.
             if public_run is not None and public_run.is_deadline_exceeded():
                 server.stop_event.set()
                 break

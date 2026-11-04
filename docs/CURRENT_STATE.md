@@ -4747,3 +4747,34 @@ conectar a Binance.
 Sin órdenes reales, claves privadas, pagos, móvil ni optimización. Sin cambios
 durante la ventana.
 
+
+## 2026-11-03 - NO PASS en la aceptación pública A–J: deadline terminal corregido (base `263039b`)
+
+- Se rectifica el "10/10 PASS" de
+  `ADDENDUM_PUENTE_PUBLICO_DEFECTOS_20261103.md`: medía estado JSON del backend,
+  no el camino productivo (E sin UI, G sin proceso/puerto, H sin ejecutar la
+  parada, I afirmaba `position.open=false`, contra el requisito).
+- Corregido el defecto terminal del deadline en
+  `engineering_session_service.py`: `deadline_passed()` (hecho temporal),
+  `is_terminal()` (estado persistido) e `is_deadline_exceeded()` (terminal o
+  plazo vencido). El watcher cierra el listener propio y el reinicio de una
+  corrida vencida no reactiva ni concede tiempo (`PUBLIC_RUN_DEADLINE_EXCEEDED`).
+- Nueva aceptación ejecutada con el BFF productivo (build
+  `afm2q3kpfKZ0sigxBFsB5`, Host 3020, puerto alterno), el servicio real, proveedor
+  loopback `/time`+klines, directorios temporales exclusivos y bloqueo
+  registrado de red pública.
+- Resultado: **7 criterios PASS (A, B, C, D, G, I, J) y 3 NO ACREDITADO
+  (E, F, H)**. Comando `python -m pytest tests/test_public_run_integration.py
+  tests/test_public_run_deadline.py -v --no-header --color=no` → 11 passed,
+  3 failed, exit 1. Evidencia en
+  `docs/evidence/public-acceptance-20261103/pytest-public-acceptance.txt`.
+- Hallazgos no corregidos (fuera de alcance): el gestor BFF lee
+  `data/engineering-session/public-run.json` y el backend escribe en
+  `.../sessions/public-run.json` (la parada propia nunca detiene); el fetch de
+  `/time` usa el número de muestras (5) como límite de ventana (30/min),
+  bloqueando la sincronización si hubo actividad reciente; el estado persistido
+  nunca sale de `preparing`; el primer arranque público desde la UI falla por
+  `PUBLIC_RUN_ID_REQUIRED`.
+- Sin Binance, sin ventana pública, sin cambios económicos, sin rebuild del
+  frontend. 3020 (pid 20088) y 8792 (pid 31124) preservados; 8797 libre.
+- Regresiones: 94 passed (`engineering_*`, `paper_lab_*`).
