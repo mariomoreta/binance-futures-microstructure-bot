@@ -4769,3 +4769,13 @@ ext build OK (BUILD_ID afm2q3kpfKZ0sigxBFsB5); 	sc --noEmit 0 errores; eslint 0 
 - Evidencia computada (solo lectura SQLite): docs/evidence/research/universe_liquidity_v1/coverage.json y descriptive.json; script scripts/research_universe_liquidity_inventory.py.
 - Resultado: hipótesis NO testeable hoy sobre outcomes resueltos (0 filas de profundidad/libro en el instante T para la ventana resuelta; universo resuelto = 6 símbolos = 1.15% de 522 elegibles; retorno forward medio ≈ 0 en BTC/ETH/SOL). Diagnóstico computado de insuficiencia, no otro simulador. Plan mínimo de adquisición propuesto (no ejecutado).
 - Sin Binance, sin ventana pública, sin órdenes, sin cambios de reglas operativas ni económicas. 3020 (pid 20088) y 8792 (pid 31124) preservados; 8797 libre. opencode.json y archivos ajenos no se commitean.
+
+
+## 2026-11-03 - Autoselección de candidatos para investigación (rama research/universe-liquidity-v1, base 2f5fc70)
+
+- Inventario corregido: scripts/research_universe_liquidity_inventory.py (COUNT(*) filas no grupos; elegibilidad desde datos y filtros explícitos; sin 522/942 hardcodeados; procedencia REAL/FIXTURE/UNKNOWN por evidencia; n_events_with_1h_outcome cuenta específicamente horizonte 1h; descartes y denominadores publicados; fórmula y unidades de retornos declaradas).
+- Matriz de aprovechamiento de datos existentes: docs/evidence/research/universe_liquidity_v1/joint_coverage.json. Cobertura útil liquidez+flujo+resultado posterior = 1 de 14 símbolos research (BTCUSDT, solo horizonte 1h); los otros 13 no tienen precio posterior.
+- Autoselección de investigación: scripts/research_selector.py (política versionada research-selector-v1, bounded set, ambos lados, criterios en T, límites de candidatos, comparador con semilla fijada, trazabilidad por ciclo). Pruebas: tests/test_research_selector.py (11 pruebas de mecanismo, sin ventaja económica).
+- Pruebas de inventario: tests/test_research_inventory.py (10 pruebas, conteos conocidos, mezcla de horizontes, procedencia desconocida, elegibilidad).
+- Resultado: cobertura insuficiente para probar la hipótesis liquidez-vs-flujo sobre universo representativo. Diagnóstico de insuficiencia, no otro simulador. Plan mínimo de adquisición propuesto (no ejecutado).
+- Sin Binance, sin ventana pública, sin órdenes, sin cambios de reglas operativas ni económicas. 3020 (pid 20088) y 8792 (pid 31124) preservados; 8797 libre. opencode.json y archivos ajenos no se commitean.

@@ -129,6 +129,78 @@ Tal como exige el punto 7, solo se propone la adquisición mínima; no se ejecut
 
 ---
 
+## 4. Matriz de aprovechamiento de datos existentes
+
+Generada por `scripts/research_universe_liquidity_inventory.py` (salida:
+`joint_coverage.json`). Evalúa cobertura conjunta: símbolo × ventana de libro/
+flujo × cobertura de precio posterior × horizontes computables × motivos de
+exclusión.
+
+| Símbolo | Ventana libro/flujo | Precio posterior | Horizontes computables | Adecuado para outcomes | Motivos de exclusión |
+|---|---|---|---|---|---|
+| BTCUSDT | 2026-10-07 22:43 → 2026-10-16 03:46 | market_klines 1h (2026-10-08 → 2026-11-03) | 1h | SÍ | 1m: primera vela 1m (2026-10-22) tras fin de ventana |
+| AIOTUSDT | ... | ninguno | — | NO | sin precio posterior |
+| (12 símbolos más) | ... | ninguno | — | NO | sin precio posterior |
+
+**Resultado:** cobertura útil para liquidez + flujo + resultado posterior =
+**1 de 14 símbolos research** (BTCUSDT), y 0 de los 13 restantes. Incluso para
+BTCUSDT solo el horizonte 1h es computable (1m no, por falta de velas 1m
+posteriores dentro de la ventana).
+
+Esto confirma el diagnóstico de §4: no hay cobertura suficiente para medir la
+hipótesis liquidez-vs-flujo sobre un universo representativo. Se detiene antes
+de adquirir datos nuevos; se entrega el plan de adquisición en §5.
+
+---
+
+## 5. Autoselección de candidatos para investigación
+
+**Política versionada:** `research-selector-v1` (archivo:
+`scripts/research_selector.py`, pruebas: `tests/test_research_selector.py`).
+
+La autoselección de investigación **NO equivale a autorización para operar**.
+Es un protocolo reproducible que elige qué estudiar sin selección manual
+posterior de monedas ganadoras.
+
+### 5.1 Política (fijada antes de resultados nuevos)
+
+| Ítem | Definición |
+|---|---|
+| Universo | Contratos Binance USD-M Futures elegibles: status=TRADING, contractType=PERPETUAL, quoteAsset=USDT (desde `contract_catalog`, referencia estática; universo en T = UNKNOWN). |
+| Exploración | Amplia: todos los elegibles del catálogo son considerados inicialmente; no se eligen seis monedas porque tengan datos ni los ganadores finales de un período. |
+| Selección acotada | Conjunto bounded para análisis profundo (`max_deep_analysis=20`, `max_per_side=10`). |
+| Lados | Ambos lados del movimiento (UP si cambio_24h ≥ +0.02; DOWN si ≤ −0.02). |
+| Criterios en T | Movimiento (cambio_24h_pct), volumen (quote_volume_24h), cobertura (ticker 24h). Aceleración (1h), percentil de volumen vs propia historia y liquidez NO disponibles en discovery → marcados como UNKNOWN, nunca fabricados. |
+| Límites | max_candidates_total=500 (descubrimiento), max_deep_analysis=20 (estudio profundo), max_per_side=10. |
+| Rotación | min_dwell_cycles=1, max_cycles_per_symbol=5. |
+| Comparador | Muestreo con semilla fijada (`comparator_seed=42`, share=0.25) del mismo universo disponible en T; registra probabilidad y mecanismo de muestreo. |
+
+### 5.2 Comparador reproducible
+
+Además de candidatos, se conserva un comparador de selección sencilla con
+semilla fijada del mismo universo disponible en T, en condiciones de
+observación comparables. Se registra la probabilidad de muestreo y el
+mecanismo. No se afirma representatividad por observar "decenas de símbolos";
+se publica cobertura, concentración por símbolo y dependencia entre eventos.
+
+### 5.3 Trazabilidad por ciclo
+
+Cada ciclo produce: `cycle_id`, instante de referencia, versión de política,
+universo observado y procedencia, candidatos seleccionados y comparadores,
+variables disponibles, motivos de elección/exclusión y datos faltantes,
+timestamps de disponibilidad, estado: `pendiente / evaluable / insuficiente /
+error`.
+
+**Ningún resultado forward se usa para seleccionar.** La selección se basa
+únicamente en datos disponibles en T (movimiento 24h, volumen 24h, cobertura).
+Los tests de mecanismo verifican: mismos datos en T → misma selección; datos
+posteriores no alteran la selección hasta T; símbolo inelegible → exclusión
+explícita; ganadores y perdedores por la política declarada; límites
+respetados; comparador reproducible; no seleccionados registrados con motivos;
+cero red pública; cero escrituras en DBs canonicas.
+
+---
+
 ## 6. Trabajo congelado y componentes reutilizados
 
 **Congelado (punto 1):** no añadir controles, pantallas, indicadores, IA, conectores ni otro supervisor. No tocar 3020/8792/opencode.json ni archivos ajenos. La integración visual del libro deja de ser requisito previo para investigarlo.
@@ -148,13 +220,32 @@ Tal como exige el punto 7, solo se propone la adquisición mínima; no se ejecut
 
 ## 7. Siguiente paso (el que más reduce incertidumbre económica)
 
-**Adquirir liquidez en el instante T (profundidad/order book top-20 con `available_at`) para el universo candidato, al menos para los símbolos con resolución histórica (BTC/ETH/SOL y los de `historical_klines`), de modo que se pueda unir (símbolo × instante T) liquidez + flujo agresor + retorno forward resuelto y probar la hipótesis líquido-vs-flujo con denominadores.** Sin ese dato, la hipótesis permanece no testeable y cualquier "selector" sería un simulador sin soporte.
+El mecanismo de autoselección ya está implementado y probado
+(`scripts/research_selector.py` + `tests/test_research_selector.py`). El
+siguiente paso que más reduce incertidumbre económica sigue siendo **adquirir
+liquidez en el instante T** (profundidad/order book top-20 con `available_at`)
+para el universo candidato, de modo que se pueda unir
+(símbolo × instante T) liquidez + flujo agresor + retorno forward resuelto y
+probar la hipótesis líquido-vs-flujo con denominadores. Sin ese dato, la
+hipótesis permanece no testeable y cualquier "selector" sería un simulador
+sin soporte.
+
+**Criterio de interrupción:** si tras la adquisición mínima el retorno
+forward condicionado sigue ≈ 0 tras costes en un universo representativo, no
+escalar.
 
 ---
 
 ## 8. Publicación y trazabilidad
 
-- Protocolo: este documento (§2).
-- Resultado reproducible: `coverage.json` + `descriptive.json` + script `scripts/research_universe_liquidity_inventory.py`.
-- Cambios de prioridad registrados en `docs/CURRENT_STATE.md`, `docs/TASK_QUEUE.md`, `docs/DECISIONS.md` (append-only), con enlace desde `docs/FEATURE_BACKLOG.md`.
-- No se declara "listo para operación"; no se aprueban umbrales ni mapping; SUCCESS_GATES no se altera por este documento.
+- Protocolo: este documento (§2 y §5).
+- Resultado reproducible: `coverage.json` + `descriptive.json` +
+  `joint_coverage.json` + scripts `research_universe_liquidity_inventory.py`
+  y `research_selector.py`.
+- Pruebas del mecanismo: `tests/test_research_inventory.py` +
+  `tests/test_research_selector.py`.
+- Cambios de prioridad registrados en `docs/CURRENT_STATE.md`,
+  `docs/TASK_QUEUE.md`, `docs/DECISIONS.md` (append-only), con enlace desde
+  `docs/FEATURE_BACKLOG.md`.
+- No se declara "listo para operación"; no se aprueban umbrales ni mapping;
+  SUCCESS_GATES no se altera por este documento.

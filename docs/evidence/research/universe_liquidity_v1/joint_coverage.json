@@ -1,0 +1,228 @@
+{
+  "generated_at": "2026-11-04T02:03:07.144093+00:00",
+  "research_symbols": [
+    "AIOTUSDT",
+    "BTCUSDT",
+    "ERAUSDT",
+    "ETHUSDT",
+    "GRIFFAINUSDT",
+    "JCTUSDT",
+    "KAIAUSDT",
+    "LUMIAUSDT",
+    "MAGICUSDT",
+    "METUSDT",
+    "OGNUSDT",
+    "RLCUSDT",
+    "SOLUSDT",
+    "USUSDT"
+  ],
+  "n_research_symbols": 14,
+  "n_adequate_for_outcomes": 1,
+  "adequate_symbols": [
+    "BTCUSDT"
+  ],
+  "matrix": [
+    {
+      "symbol": "AIOTUSDT",
+      "book_window_from": "2026-10-08T12:31:00+00:00",
+      "book_window_to": "2026-10-08T12:35:00+00:00",
+      "book_rows": 3,
+      "flow_rows": 4,
+      "posterior_price": null,
+      "computable_horizons": [],
+      "exclusion_reasons": [
+        "1h: no hay velas 1h en market_klines para este simbolo",
+        "1m: no hay velas 1m en market_klines para este simbolo"
+      ],
+      "adequate_for_outcomes": false
+    },
+    {
+      "symbol": "BTCUSDT",
+      "book_window_from": "2026-10-07T22:43:00+00:00",
+      "book_window_to": "2026-10-16T03:47:00+00:00",
+      "book_rows": 528,
+      "flow_rows": 553,
+      "posterior_price": {
+        "interval": "1h",
+        "from": "2026-10-09T16:00:00+00:00",
+        "to": "2026-10-31T14:59:59.999000+00:00",
+        "rows": 527
+      },
+      "computable_horizons": [
+        "1h"
+      ],
+      "exclusion_reasons": [
+        "1m: primera vela 1m posterior (2026-10-23T06:44:00+00:00) despues del fin de ventana (2026-10-16T03:47:00+00:00)"
+      ],
+      "adequate_for_outcomes": true
+    },
+    {
+      "symbol": "ERAUSDT",
+      "book_window_from": "2026-10-10T11:18:00+00:00",
+      "book_window_to": "2026-10-10T13:48:00+00:00",
+      "book_rows": 43,
+      "flow_rows": 46,
+      "posterior_price": null,
+      "computable_horizons": [],
+      "exclusion_reasons": [
+        "1h: no hay velas 1h en market_klines para este simbolo",
+        "1m: no hay velas 1m en market_klines para este simbolo"
+      ],
+      "adequate_for_outcomes": false
+    },
+    {
+      "symbol": "ETHUSDT",
+      "book_window_from": "2026-10-07T22:43:00+00:00",
+      "book_window_to": "2026-10-16T03:47:00+00:00",
+      "book_rows": 528,
+      "flow_rows": 553,
+      "posterior_price": null,
+      "computable_horizons": [],
+      "exclusion_reasons": [
+        "1h: no hay velas 1h en market_klines para este simbolo",
+        "1m: no hay velas 1m en market_klines para este simbolo"
+      ],
+      "adequate_for_outcomes": false
+    },
+    {
+      "symbol": "GRIFFAINUSDT",
+      "book_window_from": "2026-10-08T11:55:00+00:00",
+      "book_window_to": "2026-10-08T11:59:00+00:00",
+      "book_rows": 3,
+      "flow_rows": 4,
+      "posterior_price": null,
+      "computable_horizons": [],
+      "exclusion_reasons": [
+        "1h: no hay velas 1h en market_klines para este simbolo",
+        "1m: no hay velas 1m en market_klines para este simbolo"
+      ],
+      "adequate_for_outcomes": false
+    },
+    {
+      "symbol": "JCTUSDT",
+      "book_window_from": "2026-10-09T02:04:00+00:00",
+      "book_window_to": "2026-10-09T10:17:00+00:00",
+      "book_rows": 8,
+      "flow_rows": 9,
+      "posterior_price": null,
+      "computable_horizons": [],
+      "exclusion_reasons": [
+        "1h: no hay velas 1h en market_klines para este simbolo",
+        "1m: no hay velas 1m en market_klines para este simbolo"
+      ],
+      "adequate_for_outcomes": false
+    },
+    {
+      "symbol": "KAIAUSDT",
+      "book_window_from": "2026-10-09T10:15:00+00:00",
+      "book_window_to": "2026-10-10T04:21:00+00:00",
+      "book_rows": 27,
+      "flow_rows": 29,
+      "posterior_price": null,
+      "computable_horizons": [],
+      "exclusion_reasons": [
+        "1h: no hay velas 1h en market_klines para este simbolo",
+        "1m: no hay velas 1m en market_klines para este simbolo"
+      ],
+      "adequate_for_outcomes": false
+    },
+    {
+      "symbol": "LUMIAUSDT",
+      "book_window_from": "2026-10-10T11:18:00+00:00",
+      "book_window_to": "2026-10-10T13:48:00+00:00",
+      "book_rows": 43,
+      "flow_rows": 46,
+      "posterior_price": null,
+      "computable_horizons": [],
+      "exclusion_reasons": [
+        "1h: no hay velas 1h en market_klines para este simbolo",
+        "1m: no hay velas 1m en market_klines para este simbolo"
+      ],
+      "adequate_for_outcomes": false
+    },
+    {
+      "symbol": "MAGICUSDT",
+      "book_window_from": "2026-10-10T03:55:00+00:00",
+      "book_window_to": "2026-10-10T13:48:00+00:00",
+      "book_rows": 68,
+      "flow_rows": 72,
+      "posterior_price": null,
+      "computable_horizons": [],
+      "exclusion_reasons": [
+        "1h: no hay velas 1h en market_klines para este simbolo",
+        "1m: no hay velas 1m en market_klines para este simbolo"
+      ],
+      "adequate_for_outcomes": false
+    },
+    {
+      "symbol": "METUSDT",
+      "book_window_from": "2026-10-08T11:55:00+00:00",
+      "book_window_to": "2026-10-08T12:35:00+00:00",
+      "book_rows": 6,
+      "flow_rows": 8,
+      "posterior_price": null,
+      "computable_horizons": [],
+      "exclusion_reasons": [
+        "1h: no hay velas 1h en market_klines para este simbolo",
+        "1m: no hay velas 1m en market_klines para este simbolo"
+      ],
+      "adequate_for_outcomes": false
+    },
+    {
+      "symbol": "OGNUSDT",
+      "book_window_from": "2026-10-08T11:55:00+00:00",
+      "book_window_to": "2026-10-09T02:11:00+00:00",
+      "book_rows": 12,
+      "flow_rows": 15,
+      "posterior_price": null,
+      "computable_horizons": [],
+      "exclusion_reasons": [
+        "1h: no hay velas 1h en market_klines para este simbolo",
+        "1m: no hay velas 1m en market_klines para este simbolo"
+      ],
+      "adequate_for_outcomes": false
+    },
+    {
+      "symbol": "RLCUSDT",
+      "book_window_from": "2026-10-09T02:04:00+00:00",
+      "book_window_to": "2026-10-09T02:11:00+00:00",
+      "book_rows": 6,
+      "flow_rows": 7,
+      "posterior_price": null,
+      "computable_horizons": [],
+      "exclusion_reasons": [
+        "1h: no hay velas 1h en market_klines para este simbolo",
+        "1m: no hay velas 1m en market_klines para este simbolo"
+      ],
+      "adequate_for_outcomes": false
+    },
+    {
+      "symbol": "SOLUSDT",
+      "book_window_from": "2026-10-07T22:43:00+00:00",
+      "book_window_to": "2026-10-16T03:47:00+00:00",
+      "book_rows": 528,
+      "flow_rows": 553,
+      "posterior_price": null,
+      "computable_horizons": [],
+      "exclusion_reasons": [
+        "1h: no hay velas 1h en market_klines para este simbolo",
+        "1m: no hay velas 1m en market_klines para este simbolo"
+      ],
+      "adequate_for_outcomes": false
+    },
+    {
+      "symbol": "USUSDT",
+      "book_window_from": "2026-10-09T10:15:00+00:00",
+      "book_window_to": "2026-10-10T04:21:00+00:00",
+      "book_rows": 27,
+      "flow_rows": 28,
+      "posterior_price": null,
+      "computable_horizons": [],
+      "exclusion_reasons": [
+        "1h: no hay velas 1h en market_klines para este simbolo",
+        "1m: no hay velas 1m en market_klines para este simbolo"
+      ],
+      "adequate_for_outcomes": false
+    }
+  ]
+}

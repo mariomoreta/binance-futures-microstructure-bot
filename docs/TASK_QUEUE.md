@@ -2861,3 +2861,17 @@ NEXT_TASKS:
 1. Adquirir liquidez en el instante T (order book top-20 con available_at) para el universo candidato, para unir liquidez + flujo agresor + retorno forward resuelto.
 2. Si tras la adquisición mínima el retorno forward condicionado sigue ≈ 0 tras costes en universo representativo, no escalar (criterio de interrupción).
 - No integrar ramas, no reset/clean/force, no borrar evidencia. opencode.json y archivos ajenos no se commitean.
+
+
+## 2026-11-03 - Investigación universo y liquidez: autoselección (rama research/universe-liquidity-v1, base 2f5fc70) - NUEVA PRIORIDAD
+
+CURRENT_PHASE: investigación de hipótesis económica (liquidez vs flujo agresor) y selección automática de candidatos sobre el universo elegible.
+
+CURRENT_OBJECTIVE: determinar si existe información aprovechable para seleccionar y operar sobre el universo de futuros elegible, sin conexión pública ni órdenes.
+
+ACTIVE_TASK: investigación en curso docs/RESEARCH_UNIVERSE_LIQUIDITY_V1.md. Inventario corregido, matriz de aprovechamiento (joint_coverage: 1/14 símbolos con cobertura para outcomes), autoselección implementada (research_selector.py, 11 pruebas de mecanismo), pruebas de inventario (10 pruebas). Diagnóstico: insuficiencia (solo BTCUSDT tiene precio posterior para la ventana research; horizonte 1h solo).
+
+NEXT_TASKS:
+1. Adquirir liquidez en el instante T (order book top-20 con available_at) para el universo candidato, para unir liquidez + flujo agresor + retorno forward resuelto.
+2. Si tras la adquisición mínima el retorno forward condicionado sigue ≈ 0 tras costes en universo representativo, no escalar (criterio de interrupción).
+- No integrar ramas, no reset/clean/force, no borrar evidencia. opencode.json y archivos ajenos no se commitean.

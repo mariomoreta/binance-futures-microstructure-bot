@@ -1,9 +1,9 @@
 {
-  "generated_at": "2026-11-04T01:44:21.031348+00:00",
+  "generated_at": "2026-11-04T02:03:07.236180+00:00",
   "result": {
     "symbols": {
       "BTCUSDT": {
-        "n_events_with_flow_and_outcome": 463,
+        "n_events_with_flow_and_1h_outcome": 463,
         "mean_forward_return_1h": 4.3e-05,
         "median_forward_return_1h": -6.6e-05,
         "share_positive_1h": 0.4881,
@@ -13,7 +13,7 @@
         "mean_ret_1h_tbp_lt_05": 5.6e-05
       },
       "ETHUSDT": {
-        "n_events_with_flow_and_outcome": 484,
+        "n_events_with_flow_and_1h_outcome": 484,
         "mean_forward_return_1h": -1.1e-05,
         "median_forward_return_1h": 4.2e-05,
         "share_positive_1h": 0.5062,
@@ -23,7 +23,7 @@
         "mean_ret_1h_tbp_lt_05": 0.000145
       },
       "SOLUSDT": {
-        "n_events_with_flow_and_outcome": 569,
+        "n_events_with_flow_and_1h_outcome": 569,
         "mean_forward_return_1h": 0.000383,
         "median_forward_return_1h": -9.9e-05,
         "share_positive_1h": 0.4815,
@@ -33,7 +33,7 @@
         "mean_ret_1h_tbp_lt_05": 0.000425
       },
       "MINAUSDT": {
-        "n_events_with_flow_and_outcome": 613,
+        "n_events_with_flow_and_1h_outcome": 613,
         "mean_forward_return_1h": 0.001021,
         "median_forward_return_1h": 0.00062,
         "share_positive_1h": 0.509,
@@ -43,7 +43,7 @@
         "mean_ret_1h_tbp_lt_05": -0.000619
       },
       "ORCAUSDT": {
-        "n_events_with_flow_and_outcome": 587,
+        "n_events_with_flow_and_1h_outcome": 587,
         "mean_forward_return_1h": 0.001026,
         "median_forward_return_1h": 0.0,
         "share_positive_1h": 0.4991,
@@ -53,7 +53,7 @@
         "mean_ret_1h_tbp_lt_05": 0.001341
       },
       "NMRUSDT": {
-        "n_events_with_flow_and_outcome": 42,
+        "n_events_with_flow_and_1h_outcome": 42,
         "mean_forward_return_1h": 0.005747,
         "median_forward_return_1h": 0.001925,
         "share_positive_1h": 0.5,
@@ -64,7 +64,7 @@
       }
     },
     "overall": {
-      "n_events_total": 2761,
+      "n_events_total_OK": 2761,
       "n_events_with_flow_proxy": 2761,
       "n_events_with_1h_outcome": 2758,
       "symbols_evaluated": [
@@ -75,22 +75,29 @@
         "ORCAUSDT",
         "NMRUSDT"
       ],
-      "resolved_universe_symbols": [
-        "BTCUSDT",
-        "ETHUSDT",
-        "SOLUSDT",
-        "MINAUSDT",
-        "NMRUSDT",
-        "ORCAUSDT"
-      ],
-      "share_of_eligible_universe": 0.011494
+      "share_of_eligible_universe": null,
+      "note_denominator": "Denominador de elegibilidad en T UNKNOWN (no hay snapshot de universo en T). No se divide entre 522 (hardcodeado eliminado)."
     },
     "denominators": {},
+    "formulas": {
+      "forward_return": {
+        "formula": "(price_at_T_plus_h - price_at_T) / price_at_T",
+        "units": "decimal (p. ej. 0.001 = +0.10%)",
+        "price_at_T": "precio de cierre de la vela/bucket en el instante T",
+        "price_at_T_plus_h": "precio de cierre de la vela/bucket en T + h",
+        "note": "solo computable si existe precio posterior disponible DESPUES de T; nunca se atribuye a T un agregado disponible solo despues de T."
+      }
+    },
     "level": "A_descriptiva_asociacion",
+    "interpretation_guardrails": [
+      "La media cercana a cero o el % positivo cercano al 50% NO se interpretan como 'cara/cruz' ni como evidencia de ausencia de edge; son estadisticas descriptivas sobre un censo same-grid con sesgo de seleccion y sin comparador de trading.",
+      "label de event_outcomes siempre NULL (sin etiquetar).",
+      "No es prediccion (nivel B) ni resultado operable tras costes (nivel C)."
+    ],
     "claims": [
-      "No es predicción (nivel B) ni resultado operable tras costes (nivel C).",
-      "Censo same-grid: los eventos ya se detectaron porque movieron (sesgo de selección).",
-      "Liquidez (profundidad/spread) en T NO disponible para esta ventana -> no se testa la hipótesis liquidez-vs-flujo, solo flujo proxy.",
+      "No es prediccion (nivel B) ni resultado operable tras costes (nivel C).",
+      "Censo same-grid: los eventos ya se detectaron porque movieron (sesgo de seleccion).",
+      "Liquidez (profundidad/spread) en T NO disponible para esta ventana -> no se testa la hipotesis liquidez-vs-flujo, solo flujo proxy.",
       "label de event_outcomes siempre NULL (sin etiquetar)."
     ]
   }

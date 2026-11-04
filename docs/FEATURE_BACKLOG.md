@@ -3331,3 +3331,21 @@ esearch/universe-liquidity-v1. Documento docs/RESEARCH_UNIVERSE_LIQUIDITY_V1.md 
 **6. Verdict:** insuficiencia computada; plan mínimo de adquisición propuesto (no ejecutado).
 
 **7. Next step:** adquirir liquidez en el instante T (order book top-20 con available_at) para el universo candidato y, si el retorno forward condicionado sigue ≈ 0 tras costes en universo representativo, no escalar.
+
+
+## research/universe-liquidity-v1 (2026-11-03)
+
+**1. Title:** Autoselección de candidatos para investigación sobre el universo elegible (liquidez vs flujo agresor).
+
+**2. Approval status:** PROPUESTO (investigación autorizada; sin conexión pública, sin órdenes, sin cambios de reglas operativas ni económicas).
+
+**3. Implementation status:** IMPLEMENTADO (mecanismo + pruebas) en rama 
+esearch/universe-liquidity-v1. Documento docs/RESEARCH_UNIVERSE_LIQUIDITY_V1.md con protocolo, tabla de cobertura, matriz de aprovechamiento, política de autoselección y comparador.
+
+**4. Evaluation status:** diagnóstico computado de insuficiencia. Cobertura útil liquidez+flujo+resultado posterior = 1 de 14 símbolos research (BTCUSDT, solo 1h). Hipótesis NO testeable hoy sobre universo representativo. No es otro simulador.
+
+**5. Evidence:** docs/evidence/research/universe_liquidity_v1/coverage.json, descriptive.json, joint_coverage.json; scripts/research_universe_liquidity_inventory.py y scripts/research_selector.py; 	ests/test_research_inventory.py (10) y 	ests/test_research_selector.py (11).
+
+**6. Verdict:** insuficiencia computada; plan mínimo de adquisición propuesto (no ejecutado).
+
+**7. Next step:** adquirir liquidez en el instante T (order book top-20 con available_at) para el universo candidato; si el retorno forward condicionado sigue ≈ 0 tras costes en universo representativo, no escalar.

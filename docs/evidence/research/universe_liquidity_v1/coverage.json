@@ -1,10 +1,19 @@
 {
-  "generated_at": "2026-11-04T01:44:20.936774+00:00",
+  "generated_at": "2026-11-04T02:03:07.129129+00:00",
+  "formulas": {
+    "forward_return": {
+      "formula": "(price_at_T_plus_h - price_at_T) / price_at_T",
+      "units": "decimal (p. ej. 0.001 = +0.10%)",
+      "price_at_T": "precio de cierre de la vela/bucket en el instante T",
+      "price_at_T_plus_h": "precio de cierre de la vela/bucket en T + h",
+      "note": "solo computable si existe precio posterior disponible DESPUES de T; nunca se atribuye a T un agregado disponible solo despues de T."
+    }
+  },
   "entries": [
     {
       "source": "contract_catalog",
       "location": "data/market-cache/market_cache.db",
-      "data_kind": "universe_catalog",
+      "data_kind": "universo catalogo estatico (referencia, no snapshot en T)",
       "distinct_symbols": 942,
       "symbols": [
         "0GUSDT",
@@ -954,13 +963,25 @@
       "available_from": null,
       "available_to": null,
       "resolution": "snapshot",
-      "notes": "942 contratos; 522 TRADING+eligibles (USDT perp). No es snapshot de universo en T.",
-      "procedence": "real"
+      "notes": "942 contratos de referencia; filtro elegible = status TRADING y eligible truthy. No es snapshot de universo en T; no se usa como denominador de elegibilidad historica.",
+      "procedence": "REAL",
+      "eligible_filter": "status='TRADING' AND eligible IN (1,'1','true')",
+      "discards": [
+        {
+          "motivo": "status!=TRADING",
+          "count": 138
+        },
+        {
+          "motivo": "eligible no truthy",
+          "count": 282
+        }
+      ],
+      "effective_denominator": 522
     },
     {
       "source": "market_klines",
       "location": "data/market-cache/market_cache.db",
-      "data_kind": "ohlcv + taker_buy (flujo proxy por vela)",
+      "data_kind": "ohlcv + taker_buy (flujo proxy por vela; precios posteriores)",
       "distinct_symbols": 10,
       "symbols": [
         "0GUSDT",
@@ -974,12 +995,15 @@
         "BTCUSDT",
         "MINAUSDT"
       ],
-      "rows": 12,
+      "rows": 12818,
       "available_from": "2026-05-27T03:00:00+00:00",
-      "available_to": "2026-11-03T18:03:00+00:00",
-      "resolution": "1m/15m/1h según símbolo",
-      "notes": "Hasta hoy (2026-11-03). Incluye BTC pero NO ETH ni SOL. Sin forward-outcome resuelto.",
-      "procedence": "real"
+      "available_to": "2026-11-03T18:03:59.999000+00:00",
+      "resolution": "1m y 1h segun simbolo",
+      "notes": "Filas contadas con COUNT(*) (12,818 filas reales), no numero de grupos simbolo/intervalo. Incluye BTCUSDT y MINAUSDT; NO ETHUSDT ni SOLUSDT. Sirve como precio posterior para computar outcomes de la ventana research_* solo donde hay overlap temporal.",
+      "procedence": "REAL",
+      "eligible_filter": null,
+      "discards": [],
+      "effective_denominator": null
     },
     {
       "source": "historical_klines",
@@ -996,10 +1020,13 @@
       ],
       "rows": 17270,
       "available_from": "2026-09-07T21:30:00+00:00",
-      "available_to": "2026-10-07T21:22:00+00:00",
+      "available_to": "2026-10-07T21:59:59.999000+00:00",
       "resolution": "15m y 1h",
-      "notes": "Solo 6 símbolos (BTC/ETH/SOL/MINAU/NMR/ORCA). Ventana 2026-09-07 a 2026-10-07.",
-      "procedence": "real"
+      "notes": "Solo 6 simbolos (BTC/ETH/SOL/MINAU/NMR/ORCA). Ventana 2026-09-07 a 2026-10-07 21:22. TERMINA antes de que empiece research_book/research_flow (2026-10-07 22:43), por lo que NO puede servir de precio posterior para la ventana research_*.",
+      "procedence": "REAL",
+      "eligible_filter": null,
+      "discards": [],
+      "effective_denominator": null
     },
     {
       "source": "event_instances/outcomes",
@@ -1014,12 +1041,24 @@
         "ORCAUSDT",
         "SOLUSDT"
       ],
-      "rows": 2831,
-      "available_from": "2026-09-08T03:00:00+00:00",
+      "rows": 2761,
+      "available_from": "2026-09-08T22:00:00+00:00",
       "available_to": "2026-10-07T20:00:00+00:00",
-      "resolution": "detección (censo same-grid)",
-      "notes": "2831 eventos, 16986 outcome-rows, 16548 utilizables. Universo resuelto = 6 símbolos (0.6% de elegibles). label siempre NULL (descriptivo).",
-      "procedence": "real"
+      "resolution": "deteccion (censo same-grid)",
+      "notes": "2761 eventos OK, 16986 outcome-rows, 2758 con horizonte 1h utilizables (de 2831 rows horizon 1h). Universo resuelto = 6 simbolos. label siempre NULL (descriptivo, sin etiquetar).",
+      "procedence": "REAL",
+      "eligible_filter": null,
+      "discards": [
+        {
+          "motivo": "data_quality!=OK",
+          "count": 70
+        },
+        {
+          "motivo": "horizon!=1h o usable_for_statistics=0 para 1h",
+          "count": 73
+        }
+      ],
+      "effective_denominator": 2758
     },
     {
       "source": "research_book_1m",
@@ -1044,10 +1083,13 @@
       ],
       "rows": 1830,
       "available_from": "2026-10-07T22:43:00+00:00",
-      "available_to": "2026-10-16T03:45:00+00:00",
+      "available_to": "2026-10-16T03:46:00+00:00",
       "resolution": "1m",
-      "notes": "Ventana reciente 2026-10-07 a 2026-10-16, resultados forward NO resueltos. No se une con event_outcomes.",
-      "procedence": "real"
+      "notes": "Ventana reciente 2026-10-07 22:43 a 2026-10-16, resultados forward NO resueltos. No se une con event_outcomes. Requiere precio posterior en market_klines para computar outcomes; solo BTCUSDT lo tiene.",
+      "procedence": "REAL",
+      "eligible_filter": null,
+      "discards": [],
+      "effective_denominator": null
     },
     {
       "source": "research_flow_1m",
@@ -1072,10 +1114,13 @@
       ],
       "rows": 1927,
       "available_from": "2026-10-07T22:43:00+00:00",
-      "available_to": "2026-10-16T03:46:00+00:00",
+      "available_to": "2026-10-16T03:47:00+00:00",
       "resolution": "1m",
-      "notes": "Ventana reciente 2026-10-07 a 2026-10-16, resultados forward NO resueltos. No se une con event_outcomes.",
-      "procedence": "real"
+      "notes": "Ventana reciente 2026-10-07 22:43 a 2026-10-16, resultados forward NO resueltos. No se une con event_outcomes. Requiere precio posterior en market_klines para computar outcomes; solo BTCUSDT lo tiene.",
+      "procedence": "REAL",
+      "eligible_filter": null,
+      "discards": [],
+      "effective_denominator": null
     },
     {
       "source": "flow_buckets (microprobe)",
@@ -1103,11 +1148,14 @@
       "available_to": "2026-10-16T03:46:10+00:00",
       "resolution": "10s/30s/1m/5m",
       "notes": "Ventana reciente 2026-10-07 a 2026-10-16, no resuelta.",
-      "procedence": "real"
+      "procedence": "REAL",
+      "eligible_filter": null,
+      "discards": [],
+      "effective_denominator": null
     },
     {
-      "source": "book_depth_at_event_time (resolved window)",
-      "location": "data/historical/historical.db + data/microprobe.db",
+      "source": "book_depth_at_event_time (ventana resuelta)",
+      "location": "data/historical/historical.db",
       "data_kind": "profundidad/libro en instante T",
       "distinct_symbols": 0,
       "symbols": [],
@@ -1115,8 +1163,15 @@
       "available_from": null,
       "available_to": null,
       "resolution": "1m",
-      "notes": "0 filas de book_depth en la ventana resuelta (Sep 8 - Oct 7). research_book_1m empieza 2026-10-07 22:43 (sin resolver). LIQUIDEZ EN T NO DISPONIBLE para outcomes resueltos -> hipótesis liquidez-vs-flujo NO comprobable sobre outcomes.",
-      "procedence": "real"
+      "notes": "0 filas de book_depth en ventana resuelta (Sep 8 - Oct 7). research_book_1m empieza 2026-10-07 22:43 (despues de historical_klines). LIQUIDEZ EN T NO DISPONIBLE para outcomes resueltos.",
+      "procedence": "REAL (vacio)",
+      "discards": [
+        {
+          "motivo": "sin solapamiento temporal con precios posteriores",
+          "count": 0
+        }
+      ],
+      "effective_denominator": 0
     }
   ]
 }
