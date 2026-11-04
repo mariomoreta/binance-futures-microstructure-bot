@@ -1,0 +1,210 @@
+{
+  "almacenamiento": {
+    "jsonl_bytes": 235997,
+    "jsonl_rows": 219,
+    "research_db": "C:\\Users\\adonm\\AppData\\Local\\Temp\\opencode\\pilot-evidence\\out\\research.db"
+  },
+  "ciclos_saltados": 0,
+  "config": {
+    "clock_file": "C:\\Users\\adonm\\AppData\\Local\\Temp\\opencode\\pilot-evidence\\clock.txt",
+    "clock_mode": "manual",
+    "cycle_seconds": 60,
+    "decision_delay_seconds": 5,
+    "duration_seconds": 240,
+    "horizons": "30s=30000,60s=60000,120s=120000",
+    "max_bytes": 134217728,
+    "max_candidates": 12,
+    "max_comparators": 8,
+    "max_data_age_ms": 5000,
+    "max_messages": 5000000,
+    "max_observations": 20000,
+    "max_symbols": 20,
+    "min_quote_volume_usdt": 1000000.0,
+    "out_dir": "C:\\Users\\adonm\\AppData\\Local\\Temp\\opencode\\pilot-evidence\\out",
+    "pilot_version": "research-pilot-v1",
+    "policy_version": "research-selector-v2",
+    "price_delay_ms": 2000,
+    "price_interval": "1m",
+    "price_tolerance_ms": 90000,
+    "protocol_version": "prospective-protocol-v1",
+    "rest_base": "http://127.0.0.1:62019",
+    "run_id": "pilot-evidence-local",
+    "selection_seconds": 60,
+    "settle_seconds": 30,
+    "tick_ms": 100,
+    "ws_market_base": "ws://127.0.0.1:62020",
+    "ws_public_base": "ws://127.0.0.1:62020"
+  },
+  "dedupe": {
+    "flujo_duplicados": 3,
+    "libro_duplicados": 0
+  },
+  "ended_iso": "2025-01-01T00:05:30+00:00",
+  "ended_ms": 1735689930000,
+  "estado": "completo",
+  "horizontes": {
+    "120s": {
+      "desfase_ms": {
+        "max": 55000.0,
+        "mean": 55000.0,
+        "min": 55000.0,
+        "n": 19
+      },
+      "neto": "UNKNOWN (sin supuestos de ejecucion/costes)",
+      "no_evaluable": 0,
+      "pendiente": 34,
+      "resueltos": 19,
+      "retorno_fraccion": {
+        "max": 0.0003000000000000754,
+        "mean": 0.00029999999999999173,
+        "min": 0.00029999999999990207,
+        "n": 19
+      }
+    },
+    "30s": {
+      "desfase_ms": {
+        "max": 25500.0,
+        "mean": 25018.867924528302,
+        "min": 24500.0,
+        "n": 53
+      },
+      "neto": "UNKNOWN (sin supuestos de ejecucion/costes)",
+      "no_evaluable": 0,
+      "pendiente": 0,
+      "resueltos": 53,
+      "retorno_fraccion": {
+        "max": 0.0003000000000000964,
+        "mean": 0.0001943396226415111,
+        "min": 9.999999999990905e-05,
+        "n": 53
+      }
+    },
+    "60s": {
+      "desfase_ms": {
+        "max": 55500.0,
+        "mean": 55243.24324324324,
+        "min": 55000.0,
+        "n": 37
+      },
+      "neto": "UNKNOWN (sin supuestos de ejecucion/costes)",
+      "no_evaluable": 0,
+      "pendiente": 16,
+      "resueltos": 37,
+      "retorno_fraccion": {
+        "max": 0.00030000000000008617,
+        "mean": 0.00024864864864864556,
+        "min": 0.00019999999999990232,
+        "n": 37
+      }
+    }
+  },
+  "limites": [
+    "retorno mark-to-mid; NO es P&L ejecutable",
+    "sin supuestos de costes el neto es UNKNOWN",
+    "no se declara ventaja, rentabilidad ni representatividad"
+  ],
+  "motivos": {
+    "libro_degradado_por_hueco": 1,
+    "sin_flujo": 2
+  },
+  "n_aptas_para_evaluacion": 54,
+  "n_ciclos": 5,
+  "n_descartadas": 3,
+  "n_observaciones": 57,
+  "n_observadas": 54,
+  "n_resultados": 159,
+  "n_rotaciones_salida": 41,
+  "pilot_version": "research-pilot-v1",
+  "policy_version": "research-selector-v2",
+  "por_simbolo": {
+    "SYM00USDT": 3,
+    "SYM01USDT": 2,
+    "SYM02USDT": 2,
+    "SYM03USDT": 2,
+    "SYM04USDT": 1,
+    "SYM05USDT": 1,
+    "SYM06USDT": 1,
+    "SYM07USDT": 2,
+    "SYM08USDT": 2,
+    "SYM09USDT": 1,
+    "SYM10USDT": 1,
+    "SYM11USDT": 2,
+    "SYM12USDT": 3,
+    "SYM13USDT": 2,
+    "SYM14USDT": 2,
+    "SYM15USDT": 3,
+    "SYM16USDT": 3,
+    "SYM17USDT": 1,
+    "SYM18USDT": 1,
+    "SYM19USDT": 2,
+    "SYM20USDT": 2,
+    "SYM21USDT": 1,
+    "SYM22USDT": 1,
+    "SYM23USDT": 1,
+    "SYM24USDT": 1,
+    "SYM25USDT": 1,
+    "SYM26USDT": 1,
+    "SYM27USDT": 1,
+    "SYM28USDT": 1,
+    "SYM29USDT": 1,
+    "SYM30USDT": 1,
+    "SYM31USDT": 1,
+    "SYM32USDT": 1,
+    "SYM34USDT": 1,
+    "SYM35USDT": 2,
+    "SYM36USDT": 1,
+    "SYM37USDT": 1,
+    "SYM39USDT": 1
+  },
+  "protocol_version": "prospective-protocol-v1",
+  "recorder": {
+    "book_1m_rows": 88,
+    "drops": 0,
+    "enabled": true,
+    "errors": 0,
+    "flow_10s_rows": 613,
+    "flow_1m_rows": 141,
+    "high_water": 57,
+    "inflight": 0,
+    "last_write_at": "2026-11-04T13:14:56Z",
+    "state": "STOPPED",
+    "writes": 843
+  },
+  "rest": {
+    "failures": 0,
+    "requests": 117,
+    "retries": 0,
+    "weight_spent": 1330
+  },
+  "retorno_unidades": "fraccion (0.01 = 1%), mark-to-mid; NO P&L ejecutable",
+  "run_id": "pilot-evidence-local",
+  "seguidos_peak": 20,
+  "started_iso": "2025-01-01T00:00:00+00:00",
+  "started_ms": 1735689600000,
+  "stop_reason": "duracion",
+  "ws": {
+    "market": {
+      "connected_now": false,
+      "connections": 1,
+      "disconnects": 1,
+      "errors": 0,
+      "last_error": null,
+      "messages": 7104,
+      "name": "market",
+      "reconnects": 0,
+      "url_shape": "ws://127.0.0.1:62020/stream"
+    },
+    "public": {
+      "connected_now": false,
+      "connections": 1,
+      "disconnects": 1,
+      "errors": 0,
+      "last_error": null,
+      "messages": 7104,
+      "name": "public",
+      "reconnects": 0,
+      "url_shape": "ws://127.0.0.1:62020/stream"
+    }
+  },
+  "ws_connections_total": 8
+}

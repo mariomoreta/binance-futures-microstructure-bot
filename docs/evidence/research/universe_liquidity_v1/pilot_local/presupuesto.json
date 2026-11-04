@@ -1,0 +1,97 @@
+{
+  "almacenamiento": {
+    "jsonl_bytes_previstos": 14880000,
+    "sqlite_bytes_previstos": 7680000,
+    "tope_configurado_bytes": 134217728,
+    "total_bytes_previstos": 22560000
+  },
+  "interrupcion_y_limpieza": {
+    "condiciones": [
+      "duracion de captura agotada",
+      "max_observaciones alcanzado",
+      "tope de bytes alcanzado",
+      "max_mensajes alcanzado",
+      "senal externa (SIGINT/SIGTERM)"
+    ],
+    "limpieza": [
+      "cancelar feeds WS y cerrar conexiones",
+      "drenar ResearchRecorder (buckets abiertos como PARTIAL)",
+      "escribir resultados pendientes como PENDING con motivo",
+      "escribir manifiesto y resumen desde lo persistido"
+    ]
+  },
+  "no_incluye": [
+    "adquisicion de order book historico",
+    "backfill de huecos",
+    "ordenes, claves o endpoints privados"
+  ],
+  "rest": {
+    "endpoints": {
+      "/fapi/v1/exchangeInfo": {
+        "llamadas": 48,
+        "peso_total": 48,
+        "peso_unitario": 1
+      },
+      "/fapi/v1/klines": {
+        "llamadas": 14400,
+        "nota": "1 por observacion y horizonte; interval 1m, limit=1",
+        "peso_total": 14400,
+        "peso_unitario": 1
+      },
+      "/fapi/v1/ticker/24hr": {
+        "llamadas": 48,
+        "peso_total": 1920,
+        "peso_unitario": 40
+      },
+      "/fapi/v1/time": {
+        "llamadas": 6,
+        "peso_total": 6,
+        "peso_unitario": 1
+      }
+    },
+    "peso_medio_por_minuto": 55.461290322580645,
+    "peso_reintentos_5pct": 819,
+    "peso_total": 16374,
+    "peso_total_con_reintentos": 17193
+  },
+  "simbolos": {
+    "incluye_pendientes": true,
+    "nota": "los resultados pendientes no abren WS; solo consumen consultas de klines",
+    "simultaneos_max": 20
+  },
+  "supuestos": {
+    "ciclos_decision": 240,
+    "duracion_captura_s": 14400.0,
+    "horizontes": [
+      "5m",
+      "15m",
+      "60m"
+    ],
+    "periodo_settle_s": 4200.0,
+    "pesos_oficiales": {
+      "exchangeInfo": 1,
+      "klines_limit_1_100": 1,
+      "ticker_24hr_sin_symbol": 40,
+      "time": 1
+    },
+    "pool_referencia": "REQUEST_WEIGHT publicado en exchangeInfo.rateLimits y cabecera X-MBX-USED-WEIGHT-1M; medido previamente 2400/min (referencia, no garantia)",
+    "reintentos_previstos_pct": 5.0,
+    "selecciones": 48,
+    "simbolos_simultaneos_max": 20,
+    "total_s": 18600.0
+  },
+  "version": "research-pilot-v1",
+  "ws": {
+    "conexiones_simultaneas": 2,
+    "endpoints": [
+      "wss://fstream.binance.com/public",
+      "wss://fstream.binance.com/market"
+    ],
+    "limite_mensajes_entrantes_por_s": 10,
+    "limite_streams_por_conexion": 1024,
+    "nota": "depth20@100ms pertenece a /public; aggTrade a /market: son dos conexiones distintas (docs oficiales, aviso de rutas)",
+    "reconexiones_acumuladas_previstas": 50,
+    "streams_pico": 40,
+    "vida_maxima_conexion_s": 86400
+  }
+}

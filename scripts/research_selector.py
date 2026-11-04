@@ -529,6 +529,19 @@ def select_candidates(
             "volume_percentile_vs_own_history": "UNKNOWN (no serie propia)",
             "liquidity_spread_depth": "UNKNOWN (no historia de libro)",
         },
+        # Ranking completo del universo examinado en T (trazabilidad del
+        # punto 3: no solo los seleccionados). Orden = prioridad descendente,
+        # empate por simbolo; la clasificacion dice por que entro o no.
+        "ranking": [
+            {
+                "symbol": s.symbol,
+                "side": s.side,
+                "priority": s.priority,
+                "classification": s.classification,
+                "exclusion_reasons": list(s.exclusion_reasons),
+            }
+            for s in sorted(all_evaluated, key=rank_key)
+        ],
     }
     return selected_pool, exclusions, cycle_summary
 

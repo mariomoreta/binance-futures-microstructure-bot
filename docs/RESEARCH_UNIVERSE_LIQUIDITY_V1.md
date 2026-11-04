@@ -451,3 +451,115 @@ escalar.
   `docs/FEATURE_BACKLOG.md`.
 - No se declara "listo para operación"; no se aprueban umbrales ni mapping;
   SUCCESS_GATES no se altera por este documento.
+
+## 9. Piloto prospectivo v1 (protocolo fijado 2026-11-04)
+
+Este bloque añade un **piloto prospectivo local y reproducible** que ejecuta la
+cadena completa sin órdenes ni endpoints privados:
+
+```
+universo elegible → autoselección (research-selector-v2) → captura de libro y
+flujo → precios posteriores (5m/15m/60m) → evaluación reproducible.
+```
+
+### 9.1 Protocolo (fijado antes de capturar; no optimizado por resultados)
+
+- **Universo y elegibilidad:** catálogo público USD-M (PERPETUAL / TRADING /
+  USDT) + tickers 24h; snapshot con `as_of_ms` y procedencia. El catálogo es un
+  snapshot, no acredita universo histórico.
+- **Selección:** `research-selector-v2` (umbral 0,02 pp como hipótesis NO
+  validada, no se ajusta en el piloto). Hasta 12 candidatos y hasta 8
+  comparadores, unión ≤ 20 símbolos simultáneos. Comparadores del mismo
+  universo excluyendo candidatos, muestreo con semilla y probabilidad de
+  inclusión registrada. Sin resultados futuros para seleccionar.
+- **Frecuencia:** selección cada ciclo de selección; decisiones cada ciclo de
+  captura. Rotación con observaciones y resultados pendientes conservados
+  (nunca se borran ni se abandonan silenciosamente).
+- **Permanencia/datos ausentes:** ausencia de datos no es cero; huecos,
+  desconexiones y buckets parciales se registran con causa y cobertura
+  explícitas (`motivos`). `last_event_ms` no se usa como sustituto de
+  publicación; no se rellenan timestamps desconocidos.
+- **Horizontes de resultado:** 5m, 15m y 60m desde el instante de decisión.
+- **Métricas:** libro (spread bps, imbalance base/notional, desplazamiento de
+  microprice, profundidad top-20 base y notional, bandas realmente cubiertas)
+  y flujo agresor (delta, delta_ratio, volumen base/notional, trades en
+  ventana), con distinción profundidad base vs notional USDT.
+- **Regla de precios:** precio de decisión = mid del libro (mark-to-mid, no P&L
+  ejecutable); precio posterior = apertura de la vela 1m alineada al alza
+  (>= objetivo), con timestamp real, antigüedad, desfase y horizonte efectivo.
+  Si excede tolerancia → NO_EVALUABLE. El retorno es variación mark-to-mid
+  (fracción); sin supuestos de ejecución/costes, el neto queda UNKNOWN.
+- **Instante de decisión:** `max(disponibilidad de todos los datos usados)`;
+  nunca `bucket_end`. Debe ser >= disponibilidad de libro y flujo. Una
+  publicación posterior al cierre del minuto se usa para una decisión
+  posterior, nunca se retrodata.
+- **Suficiencia e interrupción:** parada por duración, max observaciones, max
+  bytes o max mensajes; limpieza (cerrar feeds WS, drenar buckets abiertos
+  como PARTIAL, pendientes como PENDING con motivo, escribir manifiesto y
+  resumen desde lo persistido). Ningún proceso persistente al finalizar.
+
+### 9.2 Ejecución local reproducible (comando productivo)
+
+```
+python scripts/research_pilot.py \
+  --run-id piloto-local --out-dir data/research_pilot/piloto-local \
+  --duration-seconds 14400 --settle-seconds 4200 \
+  --cycle-seconds 60 --selection-seconds 300 \
+  --max-symbols 20 --max-candidates 12 --max-comparators 8 \
+  --horizons "5m=300000,15m=900000,60m=3600000" \
+  --price-interval 1m --price-tolerance-ms 90000 --price-delay-ms 2000
+```
+
+Contra proveedores públicos reales esto usaría:
+`--rest-base https://fapi.binance.com --ws-public-base
+wss://fstream.binance.com/public --ws-market-base
+wss://fstream.binance.com/market`. En este bloque **no se ejecuta contra
+Binance** (cero conexiones públicas de mercado).
+
+La prueba de cadena completa se ejecuta contra proveedores HTTP/WS loopback y
+SQLite temporal con reloj de prueba (`tests/test_research_pilot.py`):
+`pytest tests/test_research_pilot.py -v` (4 passed). Verifica unión ≤ 20,
+decisión >= disponibilidad, duplicados sin multiplicación, hueco/incompleto con
+motivo, rotación con pendientes conservados, parada por duración y resumen
+regenerado desde lo persistido.
+
+### 9.3 Presupuesto público propuesto (NO ejecutado, autorización separada)
+
+Este piloto requiere presupuesto y autorización nuevos; no se reusa la
+autorización histórica de 7 solicitudes/180 segundos. Véase
+`docs/evidence/research/universe_liquidity_v1/pilot_local/presupuesto.json`,
+calculado sin red a partir de los pesos oficiales del endpoint
+(`/fapi/v1/exchangeInfo=1`, `/fapi/v1/ticker/24hr=40 sin símbolo`,
+`/fapi/v1/klines=1 por límite<=100`, `/fapi/v1/time=1`) y los límites WS
+(1024 streams/conexión, 10 mensajes entrantes/s, conexión válida 24 h,
+depth20@100ms en `/public` y aggTrade en `/market` → **2 conexiones
+simultáneas**).
+
+Supuestos clave de la propuesta: captura 4 h + settle 70 m (para madurar el
+60m del último ciclo), selección cada 5 m, decisión cada 1 m, 20 símbolos
+simultáneos, almacenamiento tope 128 MB. Peso REST aprox. 16 374 (≈17 193 con
+5 % de reintentos), muy por debajo del pool de 2400 peso/min. Los resultados
+pendientes no abren WS; solo consumen consultas de klines. No incluye backfill,
+order book histórico, ni endpoints privados/órdenes.
+
+### 9.4 Evidencia publicada (muestra pequeña, dataset fuera de Git)
+
+- `docs/evidence/research/universe_liquidity_v1/pilot_local/manifiesto.json`
+  (run, versiones, config, hashes, git HEAD).
+- `docs/evidence/research/universe_liquidity_v1/pilot_local/resumen.json`
+  (resumen regenerado desde lo persistido).
+- `docs/evidence/research/universe_liquidity_v1/pilot_local/observaciones_muestra.jsonl`
+  (12 filas de muestra).
+- `docs/evidence/research/universe_liquidity_v1/pilot_local/presupuesto.json`
+  (presupuesto público calculado sin red).
+- Dataset completo (observaciones.jsonl, research.db) fuera de Git; se
+  publica solo manifiesto, hashes y muestra pequeña.
+
+### 9.5 Límites del bloque
+
+- Cero conexiones públicas de mercado; cero escrituras en DBs canónicas; sin
+  dashboard nuevo, Paper Lab, IA, órdenes, pagos ni móvil; sin integración de
+  ramas ni procesos persistentes al finalizar.
+- No se declara ventaja, rentabilidad, representatividad estadística ni bot
+  listo para operar. El piloto produce observaciones aptas para estudio y un
+  presupuesto público revisable; nada más.

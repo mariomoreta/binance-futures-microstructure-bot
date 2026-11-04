@@ -4804,3 +4804,15 @@ ext build OK (BUILD_ID afm2q3kpfKZ0sigxBFsB5); 	sc --noEmit 0 errores; eslint 0 
 - Pruebas: tests/test_research_joint_coverage.py 24 PASS (incluye integracion del main() completo sobre SQLite temporal y verificacion de hashes de DB intactos); subconjunto research 49 PASS. Fixtures reescritas con timestamps epoch realistas.
 - Evidencia: docs/evidence/research/universe_liquidity_v1/{observaciones.jsonl,observaciones_resumen.json,disponibilidad_as_of.json,validacion_muestra.json,run_final_hashes.json,run_final_stdout.txt}; documentado en docs/RESEARCH_UNIVERSE_LIQUIDITY_V1.md seccion 5.5.
 - Sin Binance, sin ventana publica, sin ordenes, sin cambios economicos ni de reglas operativas. 8792 preservado; opencode.json y archivos ajenos no se commitean.
+
+## 2026-11-04 - Piloto prospectivo v1: cadena local loopback y presupuesto público
+
+- Se añade `scripts/research_pilot.py`: CLI acotado (no motor, supervisor, servicio residente ni sistema de presupuestos) que ejecuta el comando productivo completo: universo elegible → autoselección research-selector-v2 → captura de libro (depth20@100ms, /public) y flujo agresor (aggTrade, /market) → precios forward (5m/15m/60m, vela 1m alineada al alza) → evaluación reproducible, con parada acotada y limpieza. Coordina componentes existentes; no crea segundo motor.
+- Protocolo fijado antes de capturar: selección reproducible (hasta 12 candidatos + 8 comparadores, unión ≤ 20, sin resultados futuros); decisión = max(disponibilidad de todos los datos usados), nunca `bucket_end`; horizontes 5m/15m/60m; ausencia de datos no es cero; huecos/incompletos con causa y cobertura; retorno mark-to-mid no es P&L ejecutable (neto UNKNOWN sin supuestos de coste/ejecución).
+- Prueba de cadena completa: `tests/test_research_pilot.py` (4 passed) contra HTTP/WS loopback, SQLite temporal y reloj manual; verifica unión ≤ 20, decisión >= disponibilidad, duplicados sin multiplicación, hueco/incompleto con motivo, rotación con pendientes conservados, parada por duración y resumen desde lo persistido.
+- `src/microstructure_probe/research_recorder.py`: acepta reloj inyectable opcional (`clock_ms`) sin cambiar el comportamiento por defecto (reloj de pared).
+- `scripts/research_selector.py`: registra el ranking completo del universo examinado en `cycle_summary["ranking"]`.
+- Presupuesto público (NO ejecutado, autorización separada): `docs/evidence/research/universe_liquidity_v1/pilot_local/presupuesto.json` (peso REST aprox. 16 374 + 5 % reintentos; 2 conexiones WS simultáneas: /public y /market; 20 símbolos; tope 128 MB).
+- Evidencia pequeña publicada: manifiesto, resumen y muestra de 12 observaciones en
+  `docs/evidence/research/universe_liquidity_v1/pilot_local/`; dataset completo fuera de Git.
+- Sin Binance, sin ventana pública, sin órdenes, sin cambios económicos ni de reglas operativas; SUCCESS_GATES no se altera.

@@ -3384,3 +3384,19 @@ esearch/universe-liquidity-v1. Documento docs/RESEARCH_UNIVERSE_LIQUIDITY_V1.md 
 **6. Verdict:** insuficiencia de trazabilidad computada; la validación independiente de 26 observaciones da 529 comprobaciones comparables y 0 discrepancias.
 
 **7. Next step:** adquirir liquidez en el instante T con `available_at` propio y persistir `as_of_ms` desde el inicio de la captura; sin eso no se puede pasar de descripción a evaluación causal.
+
+## research/piloto-prospectivo-v1 (2026-11-04)
+
+**1. Title:** Piloto prospectivo local: cadena universo → autoselección (research-selector-v2) → libro/flujo → precios forward (5m/15m/60m) → evaluación reproducible, contra proveedores loopback y SQLite temporal.
+
+**2. Approval status:** PROPUESTO (investigación autorizada; solo lectura local, cero conexiones públicas de mercado, sin órdenes, sin cambios de reglas operativas ni económicas; presupuesto público requiere autorización separada).
+
+**3. Implementation status:** IMPLEMENTADO. `scripts/research_pilot.py` (CLI acotado), `tests/test_research_pilot.py` (4 passed: selección reproducible, unión ≤ 20, decisión >= disponibilidad de libro y flujo, duplicados sin multiplicación, hueco/incompleto con motivo, rotación con pendientes conservados, parada por duración, resumen desde lo persistido). `src/microstructure_probe/research_recorder.py` acepta reloj inyectable (no cambia el comportamiento por defecto). `scripts/research_selector.py` registra ranking completo del ciclo.
+
+**4. Evaluation status:** cadena completa verificada en loopback (57 observaciones, 54 aptas, 159 resultados, estados observada/descartada con motivos, duplicados dedupeados, pendientes conservados tras rotación). Sin Binance; no declara ventaja, rentabilidad ni representatividad.
+
+**5. Evidence:** `docs/evidence/research/universe_liquidity_v1/pilot_local/` (manifiesto.json, resumen.json, observaciones_muestra.jsonl, presupuesto.json); dataset completo fuera de Git; `docs/RESEARCH_UNIVERSE_LIQUIDITY_V1.md` §9; `docs/CURRENT_STATE.md` bloque piloto.
+
+**6. Verdict:** piloto local ejecutado y reproducible; el salto a evaluación causal requiere adquirir liquidez en T con `available_at` propio (ver FEATURE_BACKLOG research/universe-liquidity-v1 punto 7).
+
+**7. Next step:** ejecutar el piloto contra Binance solo tras autorización separada del presupuesto en §9.3 del documento de investigación; seguir adquiriendo liquidez en T.

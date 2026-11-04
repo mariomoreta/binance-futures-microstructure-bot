@@ -1,3 +1,27 @@
+## Piloto prospectivo v1 (cadena local, 2026-11-04)
+
+Cadena local reproducible contra proveedores HTTP/WS loopback y SQLite temporal
+(reloj de prueba), sin conexiones públicas de mercado ni DBs canónicas:
+`scripts/research_pilot.py` coordina `research_selector` (research-selector-v2),
+`book.BookEngine`, `flow.FlowEngine`, `history_client.HistoryClient` y
+`research_recorder.ResearchRecorder`. Prueba de cadena completa:
+`tests/test_research_pilot.py` (4 passed: selección reproducible, unión ≤ 20,
+decisión >= disponibilidad de libro y flujo, duplicados sin multiplicación,
+hueco/incompleto con motivo, rotación con pendientes conservados, parada por
+duración, resumen regenerado desde lo persistido). No declara ventaja ni
+rentabilidad; produce observaciones aptas para estudio y un presupuesto
+público revisable.
+
+- Protocolo y presupuesto: `docs/RESEARCH_UNIVERSE_LIQUIDITY_V1.md` §9.
+- Ejecutar localmente (loopback): `pytest tests/test_research_pilot.py -v`.
+- Presupuesto público (no ejecutado):
+  `docs/evidence/research/universe_liquidity_v1/pilot_local/presupuesto.json`.
+- Evidencia pequeña (manifiesto, resumen, muestra de 12 observaciones):
+  `docs/evidence/research/universe_liquidity_v1/pilot_local/`.
+- Dataset completo fuera de Git; solo manifiesto, hashes y muestra se publican.
+
+---
+
 ## Corrida final de observaciones libro+flujo y reconciliación de disponibilidad (2026-11-04, base `65d73ff`)
 
 Investigación (solo lectura de SQLite local; sin Binance, sin tocar DBs canónicas,

@@ -201,7 +201,8 @@ class ResearchRecorder:
                  history_store: Optional[Any] = None,
                  run_id: Optional[str] = None,
                  rules_version: Optional[str] = None,
-                 dataset_id: Optional[str] = None) -> None:
+                 dataset_id: Optional[str] = None,
+                 clock_ms: Optional[Any] = None) -> None:
         """Optional ``history_store`` overrides the default HistoryStore
         for read-only count lookups in status() (Route-C injection point
         for hermetic tests). When None, behavior is unchanged.
@@ -214,6 +215,9 @@ class ResearchRecorder:
         self.run_id = run_id
         self.rules_version = rules_version
         self.dataset_id = dataset_id
+        # Inyeccion opcional del reloj (solo para pilotos/hermeticos). Por
+        # defecto se conserva el reloj de pared historico.
+        self._clock_ms = clock_ms
         self.max_queue = max(16, int(max_queue))
         self.retention_days = retention_days or {"flow_10s": 7, "flow_1m": 90,
                                                  "book_1m": 90}
@@ -388,7 +392,10 @@ class ResearchRecorder:
         row["run_id"] = self.run_id
         row["rules_version"] = self.rules_version
         try:
-            row["as_of_ms"] = int(time.time() * 1000)
+            if self._clock_ms is not None:
+                row["as_of_ms"] = int(self._clock_ms())
+            else:
+                row["as_of_ms"] = int(time.time() * 1000)
         except Exception:
             row["as_of_ms"] = None
         row["price_source"] = price_source

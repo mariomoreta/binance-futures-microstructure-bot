@@ -1,0 +1,49 @@
+{
+  "config": {
+    "clock_file": "C:\\Users\\adonm\\AppData\\Local\\Temp\\opencode\\pilot-evidence\\clock.txt",
+    "clock_mode": "manual",
+    "cycle_seconds": 60,
+    "decision_delay_seconds": 5,
+    "duration_seconds": 240,
+    "horizons": "30s=30000,60s=60000,120s=120000",
+    "max_bytes": 134217728,
+    "max_candidates": 12,
+    "max_comparators": 8,
+    "max_data_age_ms": 5000,
+    "max_messages": 5000000,
+    "max_observations": 20000,
+    "max_symbols": 20,
+    "min_quote_volume_usdt": 1000000.0,
+    "out_dir": "C:\\Users\\adonm\\AppData\\Local\\Temp\\opencode\\pilot-evidence\\out",
+    "pilot_version": "research-pilot-v1",
+    "policy_version": "research-selector-v2",
+    "price_delay_ms": 2000,
+    "price_interval": "1m",
+    "price_tolerance_ms": 90000,
+    "protocol_version": "prospective-protocol-v1",
+    "rest_base": "http://127.0.0.1:62019",
+    "run_id": "pilot-evidence-local",
+    "selection_seconds": 60,
+    "settle_seconds": 30,
+    "tick_ms": 100,
+    "ws_market_base": "ws://127.0.0.1:62020",
+    "ws_public_base": "ws://127.0.0.1:62020"
+  },
+  "dataset_location": "C:\\Users\\adonm\\AppData\\Local\\Temp\\opencode\\pilot-evidence\\out",
+  "files": {
+    "observaciones.jsonl": {
+      "bytes": 255843,
+      "sha256": "623adb484b9a8b2c12a2e81c0a5ef5b63351171af8edc04c3921664c0ba77062"
+    },
+    "resumen.json": {
+      "bytes": 5359,
+      "sha256": "a24cf3a029e2a06cd338cd99d2422b787efbf213cbb3df262c57d5a85d8046d8"
+    }
+  },
+  "git_head": "dbd852ed7c0a4fe8d487218f2e2be546dd62a458",
+  "nota": "dataset fuera de Git; se publican manifiesto, hashes y muestra pequena",
+  "pilot_version": "research-pilot-v1",
+  "policy_version": "research-selector-v2",
+  "protocol_version": "prospective-protocol-v1",
+  "run_id": "pilot-evidence-local"
+}
