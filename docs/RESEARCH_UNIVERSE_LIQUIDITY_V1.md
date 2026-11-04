@@ -59,7 +59,7 @@ Generado con `scripts/research_universe_liquidity_inventory.py` (SQLite `mode=ro
 | `research_book_1m` | libro agregado (spread, desequilibrio, microprice) | 14 | 1 830 | 2026-10-07 22:43 → 2026-10-16 | 1m | **Reciente, resultados NO resueltos.** No se une con `event_outcomes`. |
 | `research_flow_1m` | flujo agregado (delta_ratio, compra/venta) | 14 | 1 927 | 2026-10-07 → 2026-10-16 | 1m | Reciente, no resuelto. |
 | `flow_buckets` (microprobe) | buckets de flujo agresor | 14 | 8 204 | 2026-10-07 → 2026-10-16 | 10s/30s/1m/5m | Reciente, no resuelto. |
-| book depth en T (ventana resuelta) | **profundidad/libro en instante T** | **0** | **0** | — | — | **0 filas en Sep 8 – Oct 7.** `research_book_1m` empieza 2026-10-07 22:43 (sin resolver). **Liquidez en T no disponible para outcomes resueltos.** |
+| book depth en T (ventana resuelta) | **profundidad/libro en instante T** | **0** | **0** | — | — | **0 filas en Sep 8 – Oct 7.** `research_book_1m` empieza 2026-10-07 22:43 (sin resolver). **Liquidez en T no disponible para outcomes resueltos.** Véase §4 (matriz de aprovechamiento por observación). |
 
 Tabla completa: `docs/evidence/research/universe_liquidity_v1/coverage.json`.
 
@@ -168,11 +168,11 @@ posterior de monedas ganadoras.
 |---|---|
 | Universo | Contratos Binance USD-M Futures elegibles: status=TRADING, contractType=PERPETUAL, quoteAsset=USDT (desde `contract_catalog`, referencia estática; universo en T = UNKNOWN). |
 | Exploración | Amplia: todos los elegibles del catálogo son considerados inicialmente; no se eligen seis monedas porque tengan datos ni los ganadores finales de un período. |
-| Selección acotada | Conjunto bounded para análisis profundo (`max_deep_analysis=20`, `max_per_side=10`). |
-| Lados | Ambos lados del movimiento (UP si cambio_24h ≥ +0.02; DOWN si ≤ −0.02). |
+| Selección acotada | Conjunto bounded para análisis profundo (`max_deep_analysis_total=20`, `max_per_side=10`). Techo total para la unión candidatos + comparadores. |
+| Lados | Ambos lados del movimiento (UP si cambio_24h ≥ +0.02; DOWN si ≤ −0.02). `cambio_24h_pct` se interpreta en **puntos porcentuales** (convención Binance priceChangePercent: 5.0 = 5%); 0.02 = 0,02 puntos porcentuales (hipótesis no validada, ambigüedad previa documentada). |
 | Criterios en T | Movimiento (cambio_24h_pct), volumen (quote_volume_24h), cobertura (ticker 24h). Aceleración (1h), percentil de volumen vs propia historia y liquidez NO disponibles en discovery → marcados como UNKNOWN, nunca fabricados. |
-| Límites | max_candidates_total=500 (descubrimiento), max_deep_analysis=20 (estudio profundo), max_per_side=10. |
-| Rotación | min_dwell_cycles=1, max_cycles_per_symbol=5. |
+| Límites | max_candidates_total=500 (tope de recursos de descubrimiento, NO recorte del universo: todos los elegibles se consideran), max_deep_analysis_total=20 (estudio profundo), max_per_side=10 (techo por lado). |
+| Rotación | min_dwell_cycles=1, max_cycles_per_symbol=5 — **diferidos**: no existe gestor de rotación en este prototipo; no se aplican. |
 | Comparador | Muestreo con semilla fijada (`comparator_seed=42`, share=0.25) del mismo universo disponible en T; registra probabilidad y mecanismo de muestreo. |
 
 ### 5.2 Comparador reproducible
@@ -198,6 +198,33 @@ posteriores no alteran la selección hasta T; símbolo inelegible → exclusión
 explícita; ganadores y perdedores por la política declarada; límites
 respetados; comparador reproducible; no seleccionados registrados con motivos;
 cero red pública; cero escrituras en DBs canonicas.
+
+### 5.4 Qué hace efectivamente el selector / qué permanece diferido
+
+**Qué hace el selector (implementado y probado):**
+- Construye el universo observado desde `contract_catalog` (referencia estática; universo en T = UNKNOWN).
+- Filtra símbolos elegibles (PERPETUAL/TRADING/USDT) y marca los no elegibles con motivo.
+- Para cada elegible con datos en T (movimiento 24h, volumen 24h, cobertura), asigna lado (UP/DOWN) si `cambio_24h` supera el umbral (0,02 puntos porcentuales).
+- Rankea por prioridad de estudio (movimiento, volumen) y selecciona hasta `max_deep_analysis_total` (20) en total, respetando `max_per_side` (10) por lado.
+- Construye un comparador de selección sencilla con semilla fijada sobre el resto del universo, dentro del mismo techo total, deduplicando símbolos ya seleccionados y reportando probabilidad efectiva de muestreo.
+- Produce trazabilidad completa por ciclo (cycle_id, instante, política, universo, candidatos, comparador, exclusiones, estado).
+
+**Qué permanece diferido (no implementado en este bloque):**
+- Gestor de rotación / permanencia (`min_dwell_cycles`, `max_cycles_per_symbol`): no existe gestor de rotación; no se construye uno solo para justificarlos.
+- Liquidez en T real (profundidad/spread): no disponible para la ventana resuelta (0 filas de libro en T).
+- Percentil de volumen vs propia historia y aceleración 1h: no disponibles en `discovery.Candidate`.
+- Ejecución, paper trading, órdenes, cambios de reglas operativas.
+
+**Cuántas observaciones son utilizables de verdad (matriz de aprovechamiento, §4):**
+- Solo **BTCUSDT** tiene precio posterior compatible para la ventana de libro/flujo research (2026-10-07 22:43 → 2026-10-16).
+- De las 1081 observaciones de libro/flujo de BTCUSDT, **253 están emparejadas** con un precio objetivo en T+h (horizonte 1h); 828 excluidas (falta precio posterior compatible).
+- Los otros 13 símbolos research tienen **0 observaciones emparejadas** (no tienen precio posterior en `market_klines`).
+- Conclusión: cobertura útil = 1 símbolo de 14 research (≈ 0,2% de los 522 elegibles), solo horizonte 1h. No hay cobertura suficiente para medir la hipótesis liquidez-vs-flujo sobre un universo representativo.
+
+**Captura mínima que faltaría (no ejecutar en este bloque):**
+- Liquidez en el instante T (order book top-20 con `available_at`) para el universo candidato, al menos los símbolos con resolución histórica (BTCUSDT y los de `historical_klines`).
+- Serie rolling-24h por símbolo para ranking causal.
+- Universo elegible en T (snapshots periódicos de `exchangeInfo`).
 
 ---
 

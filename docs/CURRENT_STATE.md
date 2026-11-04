@@ -4810,3 +4810,13 @@ ext build OK (BUILD_ID afm2q3kpfKZ0sigxBFsB5); 	sc --noEmit 0 errores; eslint 0 
 - Pruebas de inventario: tests/test_research_inventory.py (10 pruebas, conteos conocidos, mezcla de horizontes, procedencia desconocida, elegibilidad).
 - Resultado: cobertura insuficiente para probar la hipótesis liquidez-vs-flujo sobre universo representativo. Diagnóstico de insuficiencia, no otro simulador. Plan mínimo de adquisición propuesto (no ejecutado).
 - Sin Binance, sin ventana pública, sin órdenes, sin cambios de reglas operativas ni económicas. 3020 (pid 20088) y 8792 (pid 31124) preservados; 8797 libre. opencode.json y archivos ajenos no se commitean.
+
+
+## 2026-11-03 - Autoselección de candidatos e inventario corregido (rama research/universe-liquidity-v1, base 2f5fc70 -> 23a2315)
+
+- Inventario corregido: scripts/research_universe_liquidity_inventory.py (COUNT(*) filas no grupos; elegibilidad desde datos y filtros explícitos; sin 522/942 hardcodeados; procedencia REAL/FIXTURE/UNKNOWN por evidencia; n_events_with_1h_outcome cuenta específicamente horizonte 1h; descartes y denominadores publicados; fórmula y unidades de retornos declaradas).
+- Matriz de aprovechamiento por observación: docs/evidence/research/universe_liquidity_v1/joint_coverage.json. Cobertura útil liquidez+flujo+resultado posterior = 1 de 14 símbolos research (BTCUSDT, solo horizonte 1h, 253 de 1081 observaciones emparejadas); los otros 13 símbolos research tienen 0 emparejadas (no tienen precio posterior en market_klines).
+- Autoselección de investigación: scripts/research_selector.py (política versionada research-selector-v1, bounded set, ambos lados, criterios en T, unidades declaradas en puntos porcentuales, techo conjunto candidatos+comparadores, comparador con semilla fijada, trazabilidad por ciclo, disponibilidad temporal real). Pruebas: tests/test_research_selector.py (15 pruebas de mecanismo, sin ventaja económica).
+- Pruebas de inventario: tests/test_research_inventory.py (10 pruebas). Pruebas de matriz conjunta: tests/test_research_joint_coverage.py (4 pruebas de disponibilidad temporal, unidades, universo >500, techo conjunto, exclusión obligatoria vs dato faltante, ventanas sin parejas válidas, precio futuro indebido, hueco/resolución incompatible).
+- Resultado: cobertura insuficiente para probar la hipótesis liquidez-vs-flujo sobre universo representativo. Diagnóstico de insuficiencia, no otro simulador. Plan mínimo de adquisición propuesto (no ejecutado).
+- Sin Binance, sin ventana pública, sin órdenes, sin cambios de reglas operativas ni económicas. 3020 (pid 20088) y 8792 (pid 31124) preservados; 8797 libre. opencode.json y archivos ajenos no se commitean.

@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-11-04T02:03:07.144093+00:00",
+  "generated_at": "2026-11-04T02:30:38.746887+00:00",
   "research_symbols": [
     "AIOTUSDT",
     "BTCUSDT",
@@ -21,18 +21,118 @@
   "adequate_symbols": [
     "BTCUSDT"
   ],
+  "nota": "Solo se considera adecuado un simbolo/horizonte si al menos una observacion de libro/flujo tiene precio de referencia en T y precio objetivo en T+h con resolucion y disponibilidad compatibles. MIN/MAX temporales y filas existentes NO acreditan por si solas un outcome calculable.",
   "matrix": [
     {
       "symbol": "AIOTUSDT",
       "book_window_from": "2026-10-08T12:31:00+00:00",
       "book_window_to": "2026-10-08T12:35:00+00:00",
-      "book_rows": 3,
-      "flow_rows": 4,
-      "posterior_price": null,
-      "computable_horizons": [],
-      "exclusion_reasons": [
-        "1h: no hay velas 1h en market_klines para este simbolo",
-        "1m: no hay velas 1m en market_klines para este simbolo"
+      "n_observaciones": 7,
+      "n_book_rows": 3,
+      "n_flow_rows": 4,
+      "horizons": [
+        {
+          "interval": "1m",
+          "tolerance_ms": 60000,
+          "has_posterior_price": false,
+          "posterior_price_range": {
+            "from": null,
+            "to": null,
+            "rows": 0
+          },
+          "n_observaciones": 7,
+          "n_emparejadas": 0,
+          "n_excluidas": 7,
+          "motivos_exclucion": [
+            {
+              "bucket_end": 1791462720000,
+              "T_plus_h": 1791462780000,
+              "motivo": "precio_referencia_no_disponible_en_T"
+            },
+            {
+              "bucket_end": 1791462780000,
+              "T_plus_h": 1791462840000,
+              "motivo": "precio_referencia_no_disponible_en_T"
+            },
+            {
+              "bucket_end": 1791462840000,
+              "T_plus_h": 1791462900000,
+              "motivo": "precio_referencia_no_disponible_en_T"
+            },
+            {
+              "bucket_end": 1791462720000,
+              "T_plus_h": 1791462780000,
+              "motivo": "precio_referencia_no_disponible_en_T"
+            },
+            {
+              "bucket_end": 1791462780000,
+              "T_plus_h": 1791462840000,
+              "motivo": "precio_referencia_no_disponible_en_T"
+            },
+            {
+              "bucket_end": 1791462840000,
+              "T_plus_h": 1791462900000,
+              "motivo": "precio_referencia_no_disponible_en_T"
+            },
+            {
+              "bucket_end": 1791462900000,
+              "T_plus_h": 1791462960000,
+              "motivo": "precio_referencia_no_disponible_en_T"
+            }
+          ],
+          "adequate": false
+        },
+        {
+          "interval": "1h",
+          "tolerance_ms": 3600000,
+          "has_posterior_price": false,
+          "posterior_price_range": {
+            "from": null,
+            "to": null,
+            "rows": 0
+          },
+          "n_observaciones": 7,
+          "n_emparejadas": 0,
+          "n_excluidas": 7,
+          "motivos_exclucion": [
+            {
+              "bucket_end": 1791462720000,
+              "T_plus_h": 1791466320000,
+              "motivo": "precio_referencia_no_disponible_en_T"
+            },
+            {
+              "bucket_end": 1791462780000,
+              "T_plus_h": 1791466380000,
+              "motivo": "precio_referencia_no_disponible_en_T"
+            },
+            {
+              "bucket_end": 1791462840000,
+              "T_plus_h": 1791466440000,
+              "motivo": "precio_referencia_no_disponible_en_T"
+            },
+            {
+              "bucket_end": 1791462720000,
+              "T_plus_h": 1791466320000,
+              "motivo": "precio_referencia_no_disponible_en_T"
+            },
+            {
+              "bucket_end": 1791462780000,
+              "T_plus_h": 1791466380000,
+              "motivo": "precio_referencia_no_disponible_en_T"
+            },
+            {
+              "bucket_end": 1791462840000,
+              "T_plus_h": 1791466440000,
+              "motivo": "precio_referencia_no_disponible_en_T"
+            },
+            {
+              "bucket_end": 1791462900000,
+              "T_plus_h": 1791466500000,
+              "motivo": "precio_referencia_no_disponible_en_T"
+            }
+          ],
+          "adequate": false
+        }
       ],
       "adequate_for_outcomes": false
     },
@@ -40,19 +140,142 @@
       "symbol": "BTCUSDT",
       "book_window_from": "2026-10-07T22:43:00+00:00",
       "book_window_to": "2026-10-16T03:47:00+00:00",
-      "book_rows": 528,
-      "flow_rows": 553,
-      "posterior_price": {
-        "interval": "1h",
-        "from": "2026-10-09T16:00:00+00:00",
-        "to": "2026-10-31T14:59:59.999000+00:00",
-        "rows": 527
-      },
-      "computable_horizons": [
-        "1h"
-      ],
-      "exclusion_reasons": [
-        "1m: primera vela 1m posterior (2026-10-23T06:44:00+00:00) despues del fin de ventana (2026-10-16T03:47:00+00:00)"
+      "n_observaciones": 1081,
+      "n_book_rows": 528,
+      "n_flow_rows": 553,
+      "horizons": [
+        {
+          "interval": "1m",
+          "tolerance_ms": 60000,
+          "has_posterior_price": true,
+          "posterior_price_range": {
+            "from": "2026-10-23T06:44:00+00:00",
+            "to": "2026-10-31T14:10:59.999000+00:00",
+            "rows": 2696
+          },
+          "n_observaciones": 1081,
+          "n_emparejadas": 0,
+          "n_excluidas": 1081,
+          "motivos_exclucion": [
+            {
+              "bucket_end": 1791413040000,
+              "T_plus_h": 1791413100000,
+              "motivo": "precio_referencia_no_disponible_en_T"
+            },
+            {
+              "bucket_end": 1791413100000,
+              "T_plus_h": 1791413160000,
+              "motivo": "precio_referencia_no_disponible_en_T"
+            },
+            {
+              "bucket_end": 1791420420000,
+              "T_plus_h": 1791420480000,
+              "motivo": "precio_referencia_no_disponible_en_T"
+            },
+            {
+              "bucket_end": 1791420540000,
+              "T_plus_h": 1791420600000,
+              "motivo": "precio_referencia_no_disponible_en_T"
+            },
+            {
+              "bucket_end": 1791420600000,
+              "T_plus_h": 1791420660000,
+              "motivo": "precio_referencia_no_disponible_en_T"
+            },
+            {
+              "bucket_end": 1791420660000,
+              "T_plus_h": 1791420720000,
+              "motivo": "precio_referencia_no_disponible_en_T"
+            },
+            {
+              "bucket_end": 1791420720000,
+              "T_plus_h": 1791420780000,
+              "motivo": "precio_referencia_no_disponible_en_T"
+            },
+            {
+              "bucket_end": 1791420780000,
+              "T_plus_h": 1791420840000,
+              "motivo": "precio_referencia_no_disponible_en_T"
+            },
+            {
+              "bucket_end": 1791420840000,
+              "T_plus_h": 1791420900000,
+              "motivo": "precio_referencia_no_disponible_en_T"
+            },
+            {
+              "bucket_end": 1791420900000,
+              "T_plus_h": 1791420960000,
+              "motivo": "precio_referencia_no_disponible_en_T"
+            }
+          ],
+          "adequate": false
+        },
+        {
+          "interval": "1h",
+          "tolerance_ms": 3600000,
+          "has_posterior_price": true,
+          "posterior_price_range": {
+            "from": "2026-10-09T16:00:00+00:00",
+            "to": "2026-10-31T14:59:59.999000+00:00",
+            "rows": 527
+          },
+          "n_observaciones": 1081,
+          "n_emparejadas": 253,
+          "n_excluidas": 828,
+          "motivos_exclucion": [
+            {
+              "bucket_end": 1791413040000,
+              "T_plus_h": 1791416640000,
+              "motivo": "precio_referencia_no_disponible_en_T"
+            },
+            {
+              "bucket_end": 1791413100000,
+              "T_plus_h": 1791416700000,
+              "motivo": "precio_referencia_no_disponible_en_T"
+            },
+            {
+              "bucket_end": 1791420420000,
+              "T_plus_h": 1791424020000,
+              "motivo": "precio_referencia_no_disponible_en_T"
+            },
+            {
+              "bucket_end": 1791420540000,
+              "T_plus_h": 1791424140000,
+              "motivo": "precio_referencia_no_disponible_en_T"
+            },
+            {
+              "bucket_end": 1791420600000,
+              "T_plus_h": 1791424200000,
+              "motivo": "precio_referencia_no_disponible_en_T"
+            },
+            {
+              "bucket_end": 1791420660000,
+              "T_plus_h": 1791424260000,
+              "motivo": "precio_referencia_no_disponible_en_T"
+            },
+            {
+              "bucket_end": 1791420720000,
+              "T_plus_h": 1791424320000,
+              "motivo": "precio_referencia_no_disponible_en_T"
+            },
+            {
+              "bucket_end": 1791420780000,
+              "T_plus_h": 1791424380000,
+              "motivo": "precio_referencia_no_disponible_en_T"
+            },
+            {
+              "bucket_end": 1791420840000,
+              "T_plus_h": 1791424440000,
+              "motivo": "precio_referencia_no_disponible_en_T"
+            },
+            {
+              "bucket_end": 1791420900000,
+              "T_plus_h": 1791424500000,
+              "motivo": "precio_referencia_no_disponible_en_T"
+            }
+          ],
+          "adequate": true
+        }
       ],
       "adequate_for_outcomes": true
     },
@@ -60,13 +283,142 @@
       "symbol": "ERAUSDT",
       "book_window_from": "2026-10-10T11:18:00+00:00",
       "book_window_to": "2026-10-10T13:48:00+00:00",
-      "book_rows": 43,
-      "flow_rows": 46,
-      "posterior_price": null,
-      "computable_horizons": [],
-      "exclusion_reasons": [
-        "1h: no hay velas 1h en market_klines para este simbolo",
-        "1m: no hay velas 1m en market_klines para este simbolo"
+      "n_observaciones": 89,
+      "n_book_rows": 43,
+      "n_flow_rows": 46,
+      "horizons": [
+        {
+          "interval": "1m",
+          "tolerance_ms": 60000,
+          "has_posterior_price": false,
+          "posterior_price_range": {
+            "from": null,
+            "to": null,
+            "rows": 0
+          },
+          "n_observaciones": 89,
+          "n_emparejadas": 0,
+          "n_excluidas": 89,
+          "motivos_exclucion": [
+            {
+              "bucket_end": 1791631140000,
+              "T_plus_h": 1791631200000,
+              "motivo": "precio_referencia_no_disponible_en_T"
+            },
+            {
+              "bucket_end": 1791631200000,
+              "T_plus_h": 1791631260000,
+              "motivo": "precio_referencia_no_disponible_en_T"
+            },
+            {
+              "bucket_end": 1791631260000,
+              "T_plus_h": 1791631320000,
+              "motivo": "precio_referencia_no_disponible_en_T"
+            },
+            {
+              "bucket_end": 1791631320000,
+              "T_plus_h": 1791631380000,
+              "motivo": "precio_referencia_no_disponible_en_T"
+            },
+            {
+              "bucket_end": 1791631380000,
+              "T_plus_h": 1791631440000,
+              "motivo": "precio_referencia_no_disponible_en_T"
+            },
+            {
+              "bucket_end": 1791631440000,
+              "T_plus_h": 1791631500000,
+              "motivo": "precio_referencia_no_disponible_en_T"
+            },
+            {
+              "bucket_end": 1791631500000,
+              "T_plus_h": 1791631560000,
+              "motivo": "precio_referencia_no_disponible_en_T"
+            },
+            {
+              "bucket_end": 1791631560000,
+              "T_plus_h": 1791631620000,
+              "motivo": "precio_referencia_no_disponible_en_T"
+            },
+            {
+              "bucket_end": 1791631620000,
+              "T_plus_h": 1791631680000,
+              "motivo": "precio_referencia_no_disponible_en_T"
+            },
+            {
+              "bucket_end": 1791631680000,
+              "T_plus_h": 1791631740000,
+              "motivo": "precio_referencia_no_disponible_en_T"
+            }
+          ],
+          "adequate": false
+        },
+        {
+          "interval": "1h",
+          "tolerance_ms": 3600000,
+          "has_posterior_price": false,
+          "posterior_price_range": {
+            "from": null,
+            "to": null,
+            "rows": 0
+          },
+          "n_observaciones": 89,
+          "n_emparejadas": 0,
+          "n_excluidas": 89,
+          "motivos_exclucion": [
+            {
+              "bucket_end": 1791631140000,
+              "T_plus_h": 1791634740000,
+              "motivo": "precio_referencia_no_disponible_en_T"
+            },
+            {
+              "bucket_end": 1791631200000,
+              "T_plus_h": 1791634800000,
+              "motivo": "precio_referencia_no_disponible_en_T"
+            },
+            {
+              "bucket_end": 1791631260000,
+              "T_plus_h": 1791634860000,
+              "motivo": "precio_referencia_no_disponible_en_T"
+            },
+            {
+              "bucket_end": 1791631320000,
+              "T_plus_h": 1791634920000,
+              "motivo": "precio_referencia_no_disponible_en_T"
+            },
+            {
+              "bucket_end": 1791631380000,
+              "T_plus_h": 1791634980000,
+              "motivo": "precio_referencia_no_disponible_en_T"
+            },
+            {
+              "bucket_end": 1791631440000,
+              "T_plus_h": 1791635040000,
+              "motivo": "precio_referencia_no_disponible_en_T"
+            },
+            {
+              "bucket_end": 1791631500000,
+              "T_plus_h": 1791635100000,
+              "motivo": "precio_referencia_no_disponible_en_T"
+            },
+            {
+              "bucket_end": 1791631560000,
+              "T_plus_h": 1791635160000,
+              "motivo": "precio_referencia_no_disponible_en_T"
+            },
+            {
+              "bucket_end": 1791631620000,
+              "T_plus_h": 1791635220000,
+              "motivo": "precio_referencia_no_disponible_en_T"
+            },
+            {
+              "bucket_end": 1791631680000,
+              "T_plus_h": 1791635280000,
+              "motivo": "precio_referencia_no_disponible_en_T"
+            }
+          ],
+          "adequate": false
+        }
       ],
       "adequate_for_outcomes": false
     },
@@ -74,13 +426,142 @@
       "symbol": "ETHUSDT",
       "book_window_from": "2026-10-07T22:43:00+00:00",
       "book_window_to": "2026-10-16T03:47:00+00:00",
-      "book_rows": 528,
-      "flow_rows": 553,
-      "posterior_price": null,
-      "computable_horizons": [],
-      "exclusion_reasons": [
-        "1h: no hay velas 1h en market_klines para este simbolo",
-        "1m: no hay velas 1m en market_klines para este simbolo"
+      "n_observaciones": 1081,
+      "n_book_rows": 528,
+      "n_flow_rows": 553,
+      "horizons": [
+        {
+          "interval": "1m",
+          "tolerance_ms": 60000,
+          "has_posterior_price": false,
+          "posterior_price_range": {
+            "from": null,
+            "to": null,
+            "rows": 0
+          },
+          "n_observaciones": 1081,
+          "n_emparejadas": 0,
+          "n_excluidas": 1081,
+          "motivos_exclucion": [
+            {
+              "bucket_end": 1791413040000,
+              "T_plus_h": 1791413100000,
+              "motivo": "precio_referencia_no_disponible_en_T"
+            },
+            {
+              "bucket_end": 1791413100000,
+              "T_plus_h": 1791413160000,
+              "motivo": "precio_referencia_no_disponible_en_T"
+            },
+            {
+              "bucket_end": 1791420420000,
+              "T_plus_h": 1791420480000,
+              "motivo": "precio_referencia_no_disponible_en_T"
+            },
+            {
+              "bucket_end": 1791420540000,
+              "T_plus_h": 1791420600000,
+              "motivo": "precio_referencia_no_disponible_en_T"
+            },
+            {
+              "bucket_end": 1791420600000,
+              "T_plus_h": 1791420660000,
+              "motivo": "precio_referencia_no_disponible_en_T"
+            },
+            {
+              "bucket_end": 1791420660000,
+              "T_plus_h": 1791420720000,
+              "motivo": "precio_referencia_no_disponible_en_T"
+            },
+            {
+              "bucket_end": 1791420720000,
+              "T_plus_h": 1791420780000,
+              "motivo": "precio_referencia_no_disponible_en_T"
+            },
+            {
+              "bucket_end": 1791420780000,
+              "T_plus_h": 1791420840000,
+              "motivo": "precio_referencia_no_disponible_en_T"
+            },
+            {
+              "bucket_end": 1791420840000,
+              "T_plus_h": 1791420900000,
+              "motivo": "precio_referencia_no_disponible_en_T"
+            },
+            {
+              "bucket_end": 1791420900000,
+              "T_plus_h": 1791420960000,
+              "motivo": "precio_referencia_no_disponible_en_T"
+            }
+          ],
+          "adequate": false
+        },
+        {
+          "interval": "1h",
+          "tolerance_ms": 3600000,
+          "has_posterior_price": false,
+          "posterior_price_range": {
+            "from": null,
+            "to": null,
+            "rows": 0
+          },
+          "n_observaciones": 1081,
+          "n_emparejadas": 0,
+          "n_excluidas": 1081,
+          "motivos_exclucion": [
+            {
+              "bucket_end": 1791413040000,
+              "T_plus_h": 1791416640000,
+              "motivo": "precio_referencia_no_disponible_en_T"
+            },
+            {
+              "bucket_end": 1791413100000,
+              "T_plus_h": 1791416700000,
+              "motivo": "precio_referencia_no_disponible_en_T"
+            },
+            {
+              "bucket_end": 1791420420000,
+              "T_plus_h": 1791424020000,
+              "motivo": "precio_referencia_no_disponible_en_T"
+            },
+            {
+              "bucket_end": 1791420540000,
+              "T_plus_h": 1791424140000,
+              "motivo": "precio_referencia_no_disponible_en_T"
+            },
+            {
+              "bucket_end": 1791420600000,
+              "T_plus_h": 1791424200000,
+              "motivo": "precio_referencia_no_disponible_en_T"
+            },
+            {
+              "bucket_end": 1791420660000,
+              "T_plus_h": 1791424260000,
+              "motivo": "precio_referencia_no_disponible_en_T"
+            },
+            {
+              "bucket_end": 1791420720000,
+              "T_plus_h": 1791424320000,
+              "motivo": "precio_referencia_no_disponible_en_T"
+            },
+            {
+              "bucket_end": 1791420780000,
+              "T_plus_h": 1791424380000,
+              "motivo": "precio_referencia_no_disponible_en_T"
+            },
+            {
+              "bucket_end": 1791420840000,
+              "T_plus_h": 1791424440000,
+              "motivo": "precio_referencia_no_disponible_en_T"
+            },
+            {
+              "bucket_end": 1791420900000,
+              "T_plus_h": 1791424500000,
+              "motivo": "precio_referencia_no_disponible_en_T"
+            }
+          ],
+          "adequate": false
+        }
       ],
       "adequate_for_outcomes": false
     },
@@ -88,13 +569,112 @@
       "symbol": "GRIFFAINUSDT",
       "book_window_from": "2026-10-08T11:55:00+00:00",
       "book_window_to": "2026-10-08T11:59:00+00:00",
-      "book_rows": 3,
-      "flow_rows": 4,
-      "posterior_price": null,
-      "computable_horizons": [],
-      "exclusion_reasons": [
-        "1h: no hay velas 1h en market_klines para este simbolo",
-        "1m: no hay velas 1m en market_klines para este simbolo"
+      "n_observaciones": 7,
+      "n_book_rows": 3,
+      "n_flow_rows": 4,
+      "horizons": [
+        {
+          "interval": "1m",
+          "tolerance_ms": 60000,
+          "has_posterior_price": false,
+          "posterior_price_range": {
+            "from": null,
+            "to": null,
+            "rows": 0
+          },
+          "n_observaciones": 7,
+          "n_emparejadas": 0,
+          "n_excluidas": 7,
+          "motivos_exclucion": [
+            {
+              "bucket_end": 1791460560000,
+              "T_plus_h": 1791460620000,
+              "motivo": "precio_referencia_no_disponible_en_T"
+            },
+            {
+              "bucket_end": 1791460620000,
+              "T_plus_h": 1791460680000,
+              "motivo": "precio_referencia_no_disponible_en_T"
+            },
+            {
+              "bucket_end": 1791460680000,
+              "T_plus_h": 1791460740000,
+              "motivo": "precio_referencia_no_disponible_en_T"
+            },
+            {
+              "bucket_end": 1791460560000,
+              "T_plus_h": 1791460620000,
+              "motivo": "precio_referencia_no_disponible_en_T"
+            },
+            {
+              "bucket_end": 1791460620000,
+              "T_plus_h": 1791460680000,
+              "motivo": "precio_referencia_no_disponible_en_T"
+            },
+            {
+              "bucket_end": 1791460680000,
+              "T_plus_h": 1791460740000,
+              "motivo": "precio_referencia_no_disponible_en_T"
+            },
+            {
+              "bucket_end": 1791460740000,
+              "T_plus_h": 1791460800000,
+              "motivo": "precio_referencia_no_disponible_en_T"
+            }
+          ],
+          "adequate": false
+        },
+        {
+          "interval": "1h",
+          "tolerance_ms": 3600000,
+          "has_posterior_price": false,
+          "posterior_price_range": {
+            "from": null,
+            "to": null,
+            "rows": 0
+          },
+          "n_observaciones": 7,
+          "n_emparejadas": 0,
+          "n_excluidas": 7,
+          "motivos_exclucion": [
+            {
+              "bucket_end": 1791460560000,
+              "T_plus_h": 1791464160000,
+              "motivo": "precio_referencia_no_disponible_en_T"
+            },
+            {
+              "bucket_end": 1791460620000,
+              "T_plus_h": 1791464220000,
+              "motivo": "precio_referencia_no_disponible_en_T"
+            },
+            {
+              "bucket_end": 1791460680000,
+              "T_plus_h": 1791464280000,
+              "motivo": "precio_referencia_no_disponible_en_T"
+            },
+            {
+              "bucket_end": 1791460560000,
+              "T_plus_h": 1791464160000,
+              "motivo": "precio_referencia_no_disponible_en_T"
+            },
+            {
+              "bucket_end": 1791460620000,
+              "T_plus_h": 1791464220000,
+              "motivo": "precio_referencia_no_disponible_en_T"
+            },
+            {
+              "bucket_end": 1791460680000,
+              "T_plus_h": 1791464280000,
+              "motivo": "precio_referencia_no_disponible_en_T"
+            },
+            {
+              "bucket_end": 1791460740000,
+              "T_plus_h": 1791464340000,
+              "motivo": "precio_referencia_no_disponible_en_T"
+            }
+          ],
+          "adequate": false
+        }
       ],
       "adequate_for_outcomes": false
     },
@@ -102,13 +682,142 @@
       "symbol": "JCTUSDT",
       "book_window_from": "2026-10-09T02:04:00+00:00",
       "book_window_to": "2026-10-09T10:17:00+00:00",
-      "book_rows": 8,
-      "flow_rows": 9,
-      "posterior_price": null,
-      "computable_horizons": [],
-      "exclusion_reasons": [
-        "1h: no hay velas 1h en market_klines para este simbolo",
-        "1m: no hay velas 1m en market_klines para este simbolo"
+      "n_observaciones": 17,
+      "n_book_rows": 8,
+      "n_flow_rows": 9,
+      "horizons": [
+        {
+          "interval": "1m",
+          "tolerance_ms": 60000,
+          "has_posterior_price": false,
+          "posterior_price_range": {
+            "from": null,
+            "to": null,
+            "rows": 0
+          },
+          "n_observaciones": 17,
+          "n_emparejadas": 0,
+          "n_excluidas": 17,
+          "motivos_exclucion": [
+            {
+              "bucket_end": 1791511500000,
+              "T_plus_h": 1791511560000,
+              "motivo": "precio_referencia_no_disponible_en_T"
+            },
+            {
+              "bucket_end": 1791511560000,
+              "T_plus_h": 1791511620000,
+              "motivo": "precio_referencia_no_disponible_en_T"
+            },
+            {
+              "bucket_end": 1791511620000,
+              "T_plus_h": 1791511680000,
+              "motivo": "precio_referencia_no_disponible_en_T"
+            },
+            {
+              "bucket_end": 1791511680000,
+              "T_plus_h": 1791511740000,
+              "motivo": "precio_referencia_no_disponible_en_T"
+            },
+            {
+              "bucket_end": 1791511740000,
+              "T_plus_h": 1791511800000,
+              "motivo": "precio_referencia_no_disponible_en_T"
+            },
+            {
+              "bucket_end": 1791511800000,
+              "T_plus_h": 1791511860000,
+              "motivo": "precio_referencia_no_disponible_en_T"
+            },
+            {
+              "bucket_end": 1791540960000,
+              "T_plus_h": 1791541020000,
+              "motivo": "precio_referencia_no_disponible_en_T"
+            },
+            {
+              "bucket_end": 1791541020000,
+              "T_plus_h": 1791541080000,
+              "motivo": "precio_referencia_no_disponible_en_T"
+            },
+            {
+              "bucket_end": 1791511500000,
+              "T_plus_h": 1791511560000,
+              "motivo": "precio_referencia_no_disponible_en_T"
+            },
+            {
+              "bucket_end": 1791511560000,
+              "T_plus_h": 1791511620000,
+              "motivo": "precio_referencia_no_disponible_en_T"
+            }
+          ],
+          "adequate": false
+        },
+        {
+          "interval": "1h",
+          "tolerance_ms": 3600000,
+          "has_posterior_price": false,
+          "posterior_price_range": {
+            "from": null,
+            "to": null,
+            "rows": 0
+          },
+          "n_observaciones": 17,
+          "n_emparejadas": 0,
+          "n_excluidas": 17,
+          "motivos_exclucion": [
+            {
+              "bucket_end": 1791511500000,
+              "T_plus_h": 1791515100000,
+              "motivo": "precio_referencia_no_disponible_en_T"
+            },
+            {
+              "bucket_end": 1791511560000,
+              "T_plus_h": 1791515160000,
+              "motivo": "precio_referencia_no_disponible_en_T"
+            },
+            {
+              "bucket_end": 1791511620000,
+              "T_plus_h": 1791515220000,
+              "motivo": "precio_referencia_no_disponible_en_T"
+            },
+            {
+              "bucket_end": 1791511680000,
+              "T_plus_h": 1791515280000,
+              "motivo": "precio_referencia_no_disponible_en_T"
+            },
+            {
+              "bucket_end": 1791511740000,
+              "T_plus_h": 1791515340000,
+              "motivo": "precio_referencia_no_disponible_en_T"
+            },
+            {
+              "bucket_end": 1791511800000,
+              "T_plus_h": 1791515400000,
+              "motivo": "precio_referencia_no_disponible_en_T"
+            },
+            {
+              "bucket_end": 1791540960000,
+              "T_plus_h": 1791544560000,
+              "motivo": "precio_referencia_no_disponible_en_T"
+            },
+            {
+              "bucket_end": 1791541020000,
+              "T_plus_h": 1791544620000,
+              "motivo": "precio_referencia_no_disponible_en_T"
+            },
+            {
+              "bucket_end": 1791511500000,
+              "T_plus_h": 1791515100000,
+              "motivo": "precio_referencia_no_disponible_en_T"
+            },
+            {
+              "bucket_end": 1791511560000,
+              "T_plus_h": 1791515160000,
+              "motivo": "precio_referencia_no_disponible_en_T"
+            }
+          ],
+          "adequate": false
+        }
       ],
       "adequate_for_outcomes": false
     },
@@ -116,13 +825,142 @@
       "symbol": "KAIAUSDT",
       "book_window_from": "2026-10-09T10:15:00+00:00",
       "book_window_to": "2026-10-10T04:21:00+00:00",
-      "book_rows": 27,
-      "flow_rows": 29,
-      "posterior_price": null,
-      "computable_horizons": [],
-      "exclusion_reasons": [
-        "1h: no hay velas 1h en market_klines para este simbolo",
-        "1m: no hay velas 1m en market_klines para este simbolo"
+      "n_observaciones": 56,
+      "n_book_rows": 27,
+      "n_flow_rows": 29,
+      "horizons": [
+        {
+          "interval": "1m",
+          "tolerance_ms": 60000,
+          "has_posterior_price": false,
+          "posterior_price_range": {
+            "from": null,
+            "to": null,
+            "rows": 0
+          },
+          "n_observaciones": 56,
+          "n_emparejadas": 0,
+          "n_excluidas": 56,
+          "motivos_exclucion": [
+            {
+              "bucket_end": 1791540960000,
+              "T_plus_h": 1791541020000,
+              "motivo": "precio_referencia_no_disponible_en_T"
+            },
+            {
+              "bucket_end": 1791541020000,
+              "T_plus_h": 1791541080000,
+              "motivo": "precio_referencia_no_disponible_en_T"
+            },
+            {
+              "bucket_end": 1791604560000,
+              "T_plus_h": 1791604620000,
+              "motivo": "precio_referencia_no_disponible_en_T"
+            },
+            {
+              "bucket_end": 1791604620000,
+              "T_plus_h": 1791604680000,
+              "motivo": "precio_referencia_no_disponible_en_T"
+            },
+            {
+              "bucket_end": 1791604680000,
+              "T_plus_h": 1791604740000,
+              "motivo": "precio_referencia_no_disponible_en_T"
+            },
+            {
+              "bucket_end": 1791604740000,
+              "T_plus_h": 1791604800000,
+              "motivo": "precio_referencia_no_disponible_en_T"
+            },
+            {
+              "bucket_end": 1791604800000,
+              "T_plus_h": 1791604860000,
+              "motivo": "precio_referencia_no_disponible_en_T"
+            },
+            {
+              "bucket_end": 1791604860000,
+              "T_plus_h": 1791604920000,
+              "motivo": "precio_referencia_no_disponible_en_T"
+            },
+            {
+              "bucket_end": 1791604920000,
+              "T_plus_h": 1791604980000,
+              "motivo": "precio_referencia_no_disponible_en_T"
+            },
+            {
+              "bucket_end": 1791604980000,
+              "T_plus_h": 1791605040000,
+              "motivo": "precio_referencia_no_disponible_en_T"
+            }
+          ],
+          "adequate": false
+        },
+        {
+          "interval": "1h",
+          "tolerance_ms": 3600000,
+          "has_posterior_price": false,
+          "posterior_price_range": {
+            "from": null,
+            "to": null,
+            "rows": 0
+          },
+          "n_observaciones": 56,
+          "n_emparejadas": 0,
+          "n_excluidas": 56,
+          "motivos_exclucion": [
+            {
+              "bucket_end": 1791540960000,
+              "T_plus_h": 1791544560000,
+              "motivo": "precio_referencia_no_disponible_en_T"
+            },
+            {
+              "bucket_end": 1791541020000,
+              "T_plus_h": 1791544620000,
+              "motivo": "precio_referencia_no_disponible_en_T"
+            },
+            {
+              "bucket_end": 1791604560000,
+              "T_plus_h": 1791608160000,
+              "motivo": "precio_referencia_no_disponible_en_T"
+            },
+            {
+              "bucket_end": 1791604620000,
+              "T_plus_h": 1791608220000,
+              "motivo": "precio_referencia_no_disponible_en_T"
+            },
+            {
+              "bucket_end": 1791604680000,
+              "T_plus_h": 1791608280000,
+              "motivo": "precio_referencia_no_disponible_en_T"
+            },
+            {
+              "bucket_end": 1791604740000,
+              "T_plus_h": 1791608340000,
+              "motivo": "precio_referencia_no_disponible_en_T"
+            },
+            {
+              "bucket_end": 1791604800000,
+              "T_plus_h": 1791608400000,
+              "motivo": "precio_referencia_no_disponible_en_T"
+            },
+            {
+              "bucket_end": 1791604860000,
+              "T_plus_h": 1791608460000,
+              "motivo": "precio_referencia_no_disponible_en_T"
+            },
+            {
+              "bucket_end": 1791604920000,
+              "T_plus_h": 1791608520000,
+              "motivo": "precio_referencia_no_disponible_en_T"
+            },
+            {
+              "bucket_end": 1791604980000,
+              "T_plus_h": 1791608580000,
+              "motivo": "precio_referencia_no_disponible_en_T"
+            }
+          ],
+          "adequate": false
+        }
       ],
       "adequate_for_outcomes": false
     },
@@ -130,13 +968,142 @@
       "symbol": "LUMIAUSDT",
       "book_window_from": "2026-10-10T11:18:00+00:00",
       "book_window_to": "2026-10-10T13:48:00+00:00",
-      "book_rows": 43,
-      "flow_rows": 46,
-      "posterior_price": null,
-      "computable_horizons": [],
-      "exclusion_reasons": [
-        "1h: no hay velas 1h en market_klines para este simbolo",
-        "1m: no hay velas 1m en market_klines para este simbolo"
+      "n_observaciones": 89,
+      "n_book_rows": 43,
+      "n_flow_rows": 46,
+      "horizons": [
+        {
+          "interval": "1m",
+          "tolerance_ms": 60000,
+          "has_posterior_price": false,
+          "posterior_price_range": {
+            "from": null,
+            "to": null,
+            "rows": 0
+          },
+          "n_observaciones": 89,
+          "n_emparejadas": 0,
+          "n_excluidas": 89,
+          "motivos_exclucion": [
+            {
+              "bucket_end": 1791631140000,
+              "T_plus_h": 1791631200000,
+              "motivo": "precio_referencia_no_disponible_en_T"
+            },
+            {
+              "bucket_end": 1791631200000,
+              "T_plus_h": 1791631260000,
+              "motivo": "precio_referencia_no_disponible_en_T"
+            },
+            {
+              "bucket_end": 1791631260000,
+              "T_plus_h": 1791631320000,
+              "motivo": "precio_referencia_no_disponible_en_T"
+            },
+            {
+              "bucket_end": 1791631320000,
+              "T_plus_h": 1791631380000,
+              "motivo": "precio_referencia_no_disponible_en_T"
+            },
+            {
+              "bucket_end": 1791631380000,
+              "T_plus_h": 1791631440000,
+              "motivo": "precio_referencia_no_disponible_en_T"
+            },
+            {
+              "bucket_end": 1791631440000,
+              "T_plus_h": 1791631500000,
+              "motivo": "precio_referencia_no_disponible_en_T"
+            },
+            {
+              "bucket_end": 1791631500000,
+              "T_plus_h": 1791631560000,
+              "motivo": "precio_referencia_no_disponible_en_T"
+            },
+            {
+              "bucket_end": 1791631560000,
+              "T_plus_h": 1791631620000,
+              "motivo": "precio_referencia_no_disponible_en_T"
+            },
+            {
+              "bucket_end": 1791631620000,
+              "T_plus_h": 1791631680000,
+              "motivo": "precio_referencia_no_disponible_en_T"
+            },
+            {
+              "bucket_end": 1791631680000,
+              "T_plus_h": 1791631740000,
+              "motivo": "precio_referencia_no_disponible_en_T"
+            }
+          ],
+          "adequate": false
+        },
+        {
+          "interval": "1h",
+          "tolerance_ms": 3600000,
+          "has_posterior_price": false,
+          "posterior_price_range": {
+            "from": null,
+            "to": null,
+            "rows": 0
+          },
+          "n_observaciones": 89,
+          "n_emparejadas": 0,
+          "n_excluidas": 89,
+          "motivos_exclucion": [
+            {
+              "bucket_end": 1791631140000,
+              "T_plus_h": 1791634740000,
+              "motivo": "precio_referencia_no_disponible_en_T"
+            },
+            {
+              "bucket_end": 1791631200000,
+              "T_plus_h": 1791634800000,
+              "motivo": "precio_referencia_no_disponible_en_T"
+            },
+            {
+              "bucket_end": 1791631260000,
+              "T_plus_h": 1791634860000,
+              "motivo": "precio_referencia_no_disponible_en_T"
+            },
+            {
+              "bucket_end": 1791631320000,
+              "T_plus_h": 1791634920000,
+              "motivo": "precio_referencia_no_disponible_en_T"
+            },
+            {
+              "bucket_end": 1791631380000,
+              "T_plus_h": 1791634980000,
+              "motivo": "precio_referencia_no_disponible_en_T"
+            },
+            {
+              "bucket_end": 1791631440000,
+              "T_plus_h": 1791635040000,
+              "motivo": "precio_referencia_no_disponible_en_T"
+            },
+            {
+              "bucket_end": 1791631500000,
+              "T_plus_h": 1791635100000,
+              "motivo": "precio_referencia_no_disponible_en_T"
+            },
+            {
+              "bucket_end": 1791631560000,
+              "T_plus_h": 1791635160000,
+              "motivo": "precio_referencia_no_disponible_en_T"
+            },
+            {
+              "bucket_end": 1791631620000,
+              "T_plus_h": 1791635220000,
+              "motivo": "precio_referencia_no_disponible_en_T"
+            },
+            {
+              "bucket_end": 1791631680000,
+              "T_plus_h": 1791635280000,
+              "motivo": "precio_referencia_no_disponible_en_T"
+            }
+          ],
+          "adequate": false
+        }
       ],
       "adequate_for_outcomes": false
     },
@@ -144,13 +1111,142 @@
       "symbol": "MAGICUSDT",
       "book_window_from": "2026-10-10T03:55:00+00:00",
       "book_window_to": "2026-10-10T13:48:00+00:00",
-      "book_rows": 68,
-      "flow_rows": 72,
-      "posterior_price": null,
-      "computable_horizons": [],
-      "exclusion_reasons": [
-        "1h: no hay velas 1h en market_klines para este simbolo",
-        "1m: no hay velas 1m en market_klines para este simbolo"
+      "n_observaciones": 140,
+      "n_book_rows": 68,
+      "n_flow_rows": 72,
+      "horizons": [
+        {
+          "interval": "1m",
+          "tolerance_ms": 60000,
+          "has_posterior_price": false,
+          "posterior_price_range": {
+            "from": null,
+            "to": null,
+            "rows": 0
+          },
+          "n_observaciones": 140,
+          "n_emparejadas": 0,
+          "n_excluidas": 140,
+          "motivos_exclucion": [
+            {
+              "bucket_end": 1791604560000,
+              "T_plus_h": 1791604620000,
+              "motivo": "precio_referencia_no_disponible_en_T"
+            },
+            {
+              "bucket_end": 1791604620000,
+              "T_plus_h": 1791604680000,
+              "motivo": "precio_referencia_no_disponible_en_T"
+            },
+            {
+              "bucket_end": 1791604680000,
+              "T_plus_h": 1791604740000,
+              "motivo": "precio_referencia_no_disponible_en_T"
+            },
+            {
+              "bucket_end": 1791604740000,
+              "T_plus_h": 1791604800000,
+              "motivo": "precio_referencia_no_disponible_en_T"
+            },
+            {
+              "bucket_end": 1791604800000,
+              "T_plus_h": 1791604860000,
+              "motivo": "precio_referencia_no_disponible_en_T"
+            },
+            {
+              "bucket_end": 1791604860000,
+              "T_plus_h": 1791604920000,
+              "motivo": "precio_referencia_no_disponible_en_T"
+            },
+            {
+              "bucket_end": 1791604920000,
+              "T_plus_h": 1791604980000,
+              "motivo": "precio_referencia_no_disponible_en_T"
+            },
+            {
+              "bucket_end": 1791604980000,
+              "T_plus_h": 1791605040000,
+              "motivo": "precio_referencia_no_disponible_en_T"
+            },
+            {
+              "bucket_end": 1791605040000,
+              "T_plus_h": 1791605100000,
+              "motivo": "precio_referencia_no_disponible_en_T"
+            },
+            {
+              "bucket_end": 1791605100000,
+              "T_plus_h": 1791605160000,
+              "motivo": "precio_referencia_no_disponible_en_T"
+            }
+          ],
+          "adequate": false
+        },
+        {
+          "interval": "1h",
+          "tolerance_ms": 3600000,
+          "has_posterior_price": false,
+          "posterior_price_range": {
+            "from": null,
+            "to": null,
+            "rows": 0
+          },
+          "n_observaciones": 140,
+          "n_emparejadas": 0,
+          "n_excluidas": 140,
+          "motivos_exclucion": [
+            {
+              "bucket_end": 1791604560000,
+              "T_plus_h": 1791608160000,
+              "motivo": "precio_referencia_no_disponible_en_T"
+            },
+            {
+              "bucket_end": 1791604620000,
+              "T_plus_h": 1791608220000,
+              "motivo": "precio_referencia_no_disponible_en_T"
+            },
+            {
+              "bucket_end": 1791604680000,
+              "T_plus_h": 1791608280000,
+              "motivo": "precio_referencia_no_disponible_en_T"
+            },
+            {
+              "bucket_end": 1791604740000,
+              "T_plus_h": 1791608340000,
+              "motivo": "precio_referencia_no_disponible_en_T"
+            },
+            {
+              "bucket_end": 1791604800000,
+              "T_plus_h": 1791608400000,
+              "motivo": "precio_referencia_no_disponible_en_T"
+            },
+            {
+              "bucket_end": 1791604860000,
+              "T_plus_h": 1791608460000,
+              "motivo": "precio_referencia_no_disponible_en_T"
+            },
+            {
+              "bucket_end": 1791604920000,
+              "T_plus_h": 1791608520000,
+              "motivo": "precio_referencia_no_disponible_en_T"
+            },
+            {
+              "bucket_end": 1791604980000,
+              "T_plus_h": 1791608580000,
+              "motivo": "precio_referencia_no_disponible_en_T"
+            },
+            {
+              "bucket_end": 1791605040000,
+              "T_plus_h": 1791608640000,
+              "motivo": "precio_referencia_no_disponible_en_T"
+            },
+            {
+              "bucket_end": 1791605100000,
+              "T_plus_h": 1791608700000,
+              "motivo": "precio_referencia_no_disponible_en_T"
+            }
+          ],
+          "adequate": false
+        }
       ],
       "adequate_for_outcomes": false
     },
@@ -158,13 +1254,142 @@
       "symbol": "METUSDT",
       "book_window_from": "2026-10-08T11:55:00+00:00",
       "book_window_to": "2026-10-08T12:35:00+00:00",
-      "book_rows": 6,
-      "flow_rows": 8,
-      "posterior_price": null,
-      "computable_horizons": [],
-      "exclusion_reasons": [
-        "1h: no hay velas 1h en market_klines para este simbolo",
-        "1m: no hay velas 1m en market_klines para este simbolo"
+      "n_observaciones": 14,
+      "n_book_rows": 6,
+      "n_flow_rows": 8,
+      "horizons": [
+        {
+          "interval": "1m",
+          "tolerance_ms": 60000,
+          "has_posterior_price": false,
+          "posterior_price_range": {
+            "from": null,
+            "to": null,
+            "rows": 0
+          },
+          "n_observaciones": 14,
+          "n_emparejadas": 0,
+          "n_excluidas": 14,
+          "motivos_exclucion": [
+            {
+              "bucket_end": 1791460560000,
+              "T_plus_h": 1791460620000,
+              "motivo": "precio_referencia_no_disponible_en_T"
+            },
+            {
+              "bucket_end": 1791460620000,
+              "T_plus_h": 1791460680000,
+              "motivo": "precio_referencia_no_disponible_en_T"
+            },
+            {
+              "bucket_end": 1791460680000,
+              "T_plus_h": 1791460740000,
+              "motivo": "precio_referencia_no_disponible_en_T"
+            },
+            {
+              "bucket_end": 1791462720000,
+              "T_plus_h": 1791462780000,
+              "motivo": "precio_referencia_no_disponible_en_T"
+            },
+            {
+              "bucket_end": 1791462780000,
+              "T_plus_h": 1791462840000,
+              "motivo": "precio_referencia_no_disponible_en_T"
+            },
+            {
+              "bucket_end": 1791462840000,
+              "T_plus_h": 1791462900000,
+              "motivo": "precio_referencia_no_disponible_en_T"
+            },
+            {
+              "bucket_end": 1791460560000,
+              "T_plus_h": 1791460620000,
+              "motivo": "precio_referencia_no_disponible_en_T"
+            },
+            {
+              "bucket_end": 1791460620000,
+              "T_plus_h": 1791460680000,
+              "motivo": "precio_referencia_no_disponible_en_T"
+            },
+            {
+              "bucket_end": 1791460680000,
+              "T_plus_h": 1791460740000,
+              "motivo": "precio_referencia_no_disponible_en_T"
+            },
+            {
+              "bucket_end": 1791460740000,
+              "T_plus_h": 1791460800000,
+              "motivo": "precio_referencia_no_disponible_en_T"
+            }
+          ],
+          "adequate": false
+        },
+        {
+          "interval": "1h",
+          "tolerance_ms": 3600000,
+          "has_posterior_price": false,
+          "posterior_price_range": {
+            "from": null,
+            "to": null,
+            "rows": 0
+          },
+          "n_observaciones": 14,
+          "n_emparejadas": 0,
+          "n_excluidas": 14,
+          "motivos_exclucion": [
+            {
+              "bucket_end": 1791460560000,
+              "T_plus_h": 1791464160000,
+              "motivo": "precio_referencia_no_disponible_en_T"
+            },
+            {
+              "bucket_end": 1791460620000,
+              "T_plus_h": 1791464220000,
+              "motivo": "precio_referencia_no_disponible_en_T"
+            },
+            {
+              "bucket_end": 1791460680000,
+              "T_plus_h": 1791464280000,
+              "motivo": "precio_referencia_no_disponible_en_T"
+            },
+            {
+              "bucket_end": 1791462720000,
+              "T_plus_h": 1791466320000,
+              "motivo": "precio_referencia_no_disponible_en_T"
+            },
+            {
+              "bucket_end": 1791462780000,
+              "T_plus_h": 1791466380000,
+              "motivo": "precio_referencia_no_disponible_en_T"
+            },
+            {
+              "bucket_end": 1791462840000,
+              "T_plus_h": 1791466440000,
+              "motivo": "precio_referencia_no_disponible_en_T"
+            },
+            {
+              "bucket_end": 1791460560000,
+              "T_plus_h": 1791464160000,
+              "motivo": "precio_referencia_no_disponible_en_T"
+            },
+            {
+              "bucket_end": 1791460620000,
+              "T_plus_h": 1791464220000,
+              "motivo": "precio_referencia_no_disponible_en_T"
+            },
+            {
+              "bucket_end": 1791460680000,
+              "T_plus_h": 1791464280000,
+              "motivo": "precio_referencia_no_disponible_en_T"
+            },
+            {
+              "bucket_end": 1791460740000,
+              "T_plus_h": 1791464340000,
+              "motivo": "precio_referencia_no_disponible_en_T"
+            }
+          ],
+          "adequate": false
+        }
       ],
       "adequate_for_outcomes": false
     },
@@ -172,13 +1397,142 @@
       "symbol": "OGNUSDT",
       "book_window_from": "2026-10-08T11:55:00+00:00",
       "book_window_to": "2026-10-09T02:11:00+00:00",
-      "book_rows": 12,
-      "flow_rows": 15,
-      "posterior_price": null,
-      "computable_horizons": [],
-      "exclusion_reasons": [
-        "1h: no hay velas 1h en market_klines para este simbolo",
-        "1m: no hay velas 1m en market_klines para este simbolo"
+      "n_observaciones": 27,
+      "n_book_rows": 12,
+      "n_flow_rows": 15,
+      "horizons": [
+        {
+          "interval": "1m",
+          "tolerance_ms": 60000,
+          "has_posterior_price": false,
+          "posterior_price_range": {
+            "from": null,
+            "to": null,
+            "rows": 0
+          },
+          "n_observaciones": 27,
+          "n_emparejadas": 0,
+          "n_excluidas": 27,
+          "motivos_exclucion": [
+            {
+              "bucket_end": 1791460560000,
+              "T_plus_h": 1791460620000,
+              "motivo": "precio_referencia_no_disponible_en_T"
+            },
+            {
+              "bucket_end": 1791460620000,
+              "T_plus_h": 1791460680000,
+              "motivo": "precio_referencia_no_disponible_en_T"
+            },
+            {
+              "bucket_end": 1791460680000,
+              "T_plus_h": 1791460740000,
+              "motivo": "precio_referencia_no_disponible_en_T"
+            },
+            {
+              "bucket_end": 1791462720000,
+              "T_plus_h": 1791462780000,
+              "motivo": "precio_referencia_no_disponible_en_T"
+            },
+            {
+              "bucket_end": 1791462780000,
+              "T_plus_h": 1791462840000,
+              "motivo": "precio_referencia_no_disponible_en_T"
+            },
+            {
+              "bucket_end": 1791462840000,
+              "T_plus_h": 1791462900000,
+              "motivo": "precio_referencia_no_disponible_en_T"
+            },
+            {
+              "bucket_end": 1791511500000,
+              "T_plus_h": 1791511560000,
+              "motivo": "precio_referencia_no_disponible_en_T"
+            },
+            {
+              "bucket_end": 1791511560000,
+              "T_plus_h": 1791511620000,
+              "motivo": "precio_referencia_no_disponible_en_T"
+            },
+            {
+              "bucket_end": 1791511620000,
+              "T_plus_h": 1791511680000,
+              "motivo": "precio_referencia_no_disponible_en_T"
+            },
+            {
+              "bucket_end": 1791511680000,
+              "T_plus_h": 1791511740000,
+              "motivo": "precio_referencia_no_disponible_en_T"
+            }
+          ],
+          "adequate": false
+        },
+        {
+          "interval": "1h",
+          "tolerance_ms": 3600000,
+          "has_posterior_price": false,
+          "posterior_price_range": {
+            "from": null,
+            "to": null,
+            "rows": 0
+          },
+          "n_observaciones": 27,
+          "n_emparejadas": 0,
+          "n_excluidas": 27,
+          "motivos_exclucion": [
+            {
+              "bucket_end": 1791460560000,
+              "T_plus_h": 1791464160000,
+              "motivo": "precio_referencia_no_disponible_en_T"
+            },
+            {
+              "bucket_end": 1791460620000,
+              "T_plus_h": 1791464220000,
+              "motivo": "precio_referencia_no_disponible_en_T"
+            },
+            {
+              "bucket_end": 1791460680000,
+              "T_plus_h": 1791464280000,
+              "motivo": "precio_referencia_no_disponible_en_T"
+            },
+            {
+              "bucket_end": 1791462720000,
+              "T_plus_h": 1791466320000,
+              "motivo": "precio_referencia_no_disponible_en_T"
+            },
+            {
+              "bucket_end": 1791462780000,
+              "T_plus_h": 1791466380000,
+              "motivo": "precio_referencia_no_disponible_en_T"
+            },
+            {
+              "bucket_end": 1791462840000,
+              "T_plus_h": 1791466440000,
+              "motivo": "precio_referencia_no_disponible_en_T"
+            },
+            {
+              "bucket_end": 1791511500000,
+              "T_plus_h": 1791515100000,
+              "motivo": "precio_referencia_no_disponible_en_T"
+            },
+            {
+              "bucket_end": 1791511560000,
+              "T_plus_h": 1791515160000,
+              "motivo": "precio_referencia_no_disponible_en_T"
+            },
+            {
+              "bucket_end": 1791511620000,
+              "T_plus_h": 1791515220000,
+              "motivo": "precio_referencia_no_disponible_en_T"
+            },
+            {
+              "bucket_end": 1791511680000,
+              "T_plus_h": 1791515280000,
+              "motivo": "precio_referencia_no_disponible_en_T"
+            }
+          ],
+          "adequate": false
+        }
       ],
       "adequate_for_outcomes": false
     },
@@ -186,13 +1540,142 @@
       "symbol": "RLCUSDT",
       "book_window_from": "2026-10-09T02:04:00+00:00",
       "book_window_to": "2026-10-09T02:11:00+00:00",
-      "book_rows": 6,
-      "flow_rows": 7,
-      "posterior_price": null,
-      "computable_horizons": [],
-      "exclusion_reasons": [
-        "1h: no hay velas 1h en market_klines para este simbolo",
-        "1m: no hay velas 1m en market_klines para este simbolo"
+      "n_observaciones": 13,
+      "n_book_rows": 6,
+      "n_flow_rows": 7,
+      "horizons": [
+        {
+          "interval": "1m",
+          "tolerance_ms": 60000,
+          "has_posterior_price": false,
+          "posterior_price_range": {
+            "from": null,
+            "to": null,
+            "rows": 0
+          },
+          "n_observaciones": 13,
+          "n_emparejadas": 0,
+          "n_excluidas": 13,
+          "motivos_exclucion": [
+            {
+              "bucket_end": 1791511500000,
+              "T_plus_h": 1791511560000,
+              "motivo": "precio_referencia_no_disponible_en_T"
+            },
+            {
+              "bucket_end": 1791511560000,
+              "T_plus_h": 1791511620000,
+              "motivo": "precio_referencia_no_disponible_en_T"
+            },
+            {
+              "bucket_end": 1791511620000,
+              "T_plus_h": 1791511680000,
+              "motivo": "precio_referencia_no_disponible_en_T"
+            },
+            {
+              "bucket_end": 1791511680000,
+              "T_plus_h": 1791511740000,
+              "motivo": "precio_referencia_no_disponible_en_T"
+            },
+            {
+              "bucket_end": 1791511740000,
+              "T_plus_h": 1791511800000,
+              "motivo": "precio_referencia_no_disponible_en_T"
+            },
+            {
+              "bucket_end": 1791511800000,
+              "T_plus_h": 1791511860000,
+              "motivo": "precio_referencia_no_disponible_en_T"
+            },
+            {
+              "bucket_end": 1791511500000,
+              "T_plus_h": 1791511560000,
+              "motivo": "precio_referencia_no_disponible_en_T"
+            },
+            {
+              "bucket_end": 1791511560000,
+              "T_plus_h": 1791511620000,
+              "motivo": "precio_referencia_no_disponible_en_T"
+            },
+            {
+              "bucket_end": 1791511620000,
+              "T_plus_h": 1791511680000,
+              "motivo": "precio_referencia_no_disponible_en_T"
+            },
+            {
+              "bucket_end": 1791511680000,
+              "T_plus_h": 1791511740000,
+              "motivo": "precio_referencia_no_disponible_en_T"
+            }
+          ],
+          "adequate": false
+        },
+        {
+          "interval": "1h",
+          "tolerance_ms": 3600000,
+          "has_posterior_price": false,
+          "posterior_price_range": {
+            "from": null,
+            "to": null,
+            "rows": 0
+          },
+          "n_observaciones": 13,
+          "n_emparejadas": 0,
+          "n_excluidas": 13,
+          "motivos_exclucion": [
+            {
+              "bucket_end": 1791511500000,
+              "T_plus_h": 1791515100000,
+              "motivo": "precio_referencia_no_disponible_en_T"
+            },
+            {
+              "bucket_end": 1791511560000,
+              "T_plus_h": 1791515160000,
+              "motivo": "precio_referencia_no_disponible_en_T"
+            },
+            {
+              "bucket_end": 1791511620000,
+              "T_plus_h": 1791515220000,
+              "motivo": "precio_referencia_no_disponible_en_T"
+            },
+            {
+              "bucket_end": 1791511680000,
+              "T_plus_h": 1791515280000,
+              "motivo": "precio_referencia_no_disponible_en_T"
+            },
+            {
+              "bucket_end": 1791511740000,
+              "T_plus_h": 1791515340000,
+              "motivo": "precio_referencia_no_disponible_en_T"
+            },
+            {
+              "bucket_end": 1791511800000,
+              "T_plus_h": 1791515400000,
+              "motivo": "precio_referencia_no_disponible_en_T"
+            },
+            {
+              "bucket_end": 1791511500000,
+              "T_plus_h": 1791515100000,
+              "motivo": "precio_referencia_no_disponible_en_T"
+            },
+            {
+              "bucket_end": 1791511560000,
+              "T_plus_h": 1791515160000,
+              "motivo": "precio_referencia_no_disponible_en_T"
+            },
+            {
+              "bucket_end": 1791511620000,
+              "T_plus_h": 1791515220000,
+              "motivo": "precio_referencia_no_disponible_en_T"
+            },
+            {
+              "bucket_end": 1791511680000,
+              "T_plus_h": 1791515280000,
+              "motivo": "precio_referencia_no_disponible_en_T"
+            }
+          ],
+          "adequate": false
+        }
       ],
       "adequate_for_outcomes": false
     },
@@ -200,13 +1683,142 @@
       "symbol": "SOLUSDT",
       "book_window_from": "2026-10-07T22:43:00+00:00",
       "book_window_to": "2026-10-16T03:47:00+00:00",
-      "book_rows": 528,
-      "flow_rows": 553,
-      "posterior_price": null,
-      "computable_horizons": [],
-      "exclusion_reasons": [
-        "1h: no hay velas 1h en market_klines para este simbolo",
-        "1m: no hay velas 1m en market_klines para este simbolo"
+      "n_observaciones": 1081,
+      "n_book_rows": 528,
+      "n_flow_rows": 553,
+      "horizons": [
+        {
+          "interval": "1m",
+          "tolerance_ms": 60000,
+          "has_posterior_price": false,
+          "posterior_price_range": {
+            "from": null,
+            "to": null,
+            "rows": 0
+          },
+          "n_observaciones": 1081,
+          "n_emparejadas": 0,
+          "n_excluidas": 1081,
+          "motivos_exclucion": [
+            {
+              "bucket_end": 1791413040000,
+              "T_plus_h": 1791413100000,
+              "motivo": "precio_referencia_no_disponible_en_T"
+            },
+            {
+              "bucket_end": 1791413100000,
+              "T_plus_h": 1791413160000,
+              "motivo": "precio_referencia_no_disponible_en_T"
+            },
+            {
+              "bucket_end": 1791420420000,
+              "T_plus_h": 1791420480000,
+              "motivo": "precio_referencia_no_disponible_en_T"
+            },
+            {
+              "bucket_end": 1791420540000,
+              "T_plus_h": 1791420600000,
+              "motivo": "precio_referencia_no_disponible_en_T"
+            },
+            {
+              "bucket_end": 1791420600000,
+              "T_plus_h": 1791420660000,
+              "motivo": "precio_referencia_no_disponible_en_T"
+            },
+            {
+              "bucket_end": 1791420660000,
+              "T_plus_h": 1791420720000,
+              "motivo": "precio_referencia_no_disponible_en_T"
+            },
+            {
+              "bucket_end": 1791420720000,
+              "T_plus_h": 1791420780000,
+              "motivo": "precio_referencia_no_disponible_en_T"
+            },
+            {
+              "bucket_end": 1791420780000,
+              "T_plus_h": 1791420840000,
+              "motivo": "precio_referencia_no_disponible_en_T"
+            },
+            {
+              "bucket_end": 1791420840000,
+              "T_plus_h": 1791420900000,
+              "motivo": "precio_referencia_no_disponible_en_T"
+            },
+            {
+              "bucket_end": 1791420900000,
+              "T_plus_h": 1791420960000,
+              "motivo": "precio_referencia_no_disponible_en_T"
+            }
+          ],
+          "adequate": false
+        },
+        {
+          "interval": "1h",
+          "tolerance_ms": 3600000,
+          "has_posterior_price": false,
+          "posterior_price_range": {
+            "from": null,
+            "to": null,
+            "rows": 0
+          },
+          "n_observaciones": 1081,
+          "n_emparejadas": 0,
+          "n_excluidas": 1081,
+          "motivos_exclucion": [
+            {
+              "bucket_end": 1791413040000,
+              "T_plus_h": 1791416640000,
+              "motivo": "precio_referencia_no_disponible_en_T"
+            },
+            {
+              "bucket_end": 1791413100000,
+              "T_plus_h": 1791416700000,
+              "motivo": "precio_referencia_no_disponible_en_T"
+            },
+            {
+              "bucket_end": 1791420420000,
+              "T_plus_h": 1791424020000,
+              "motivo": "precio_referencia_no_disponible_en_T"
+            },
+            {
+              "bucket_end": 1791420540000,
+              "T_plus_h": 1791424140000,
+              "motivo": "precio_referencia_no_disponible_en_T"
+            },
+            {
+              "bucket_end": 1791420600000,
+              "T_plus_h": 1791424200000,
+              "motivo": "precio_referencia_no_disponible_en_T"
+            },
+            {
+              "bucket_end": 1791420660000,
+              "T_plus_h": 1791424260000,
+              "motivo": "precio_referencia_no_disponible_en_T"
+            },
+            {
+              "bucket_end": 1791420720000,
+              "T_plus_h": 1791424320000,
+              "motivo": "precio_referencia_no_disponible_en_T"
+            },
+            {
+              "bucket_end": 1791420780000,
+              "T_plus_h": 1791424380000,
+              "motivo": "precio_referencia_no_disponible_en_T"
+            },
+            {
+              "bucket_end": 1791420840000,
+              "T_plus_h": 1791424440000,
+              "motivo": "precio_referencia_no_disponible_en_T"
+            },
+            {
+              "bucket_end": 1791420900000,
+              "T_plus_h": 1791424500000,
+              "motivo": "precio_referencia_no_disponible_en_T"
+            }
+          ],
+          "adequate": false
+        }
       ],
       "adequate_for_outcomes": false
     },
@@ -214,13 +1826,142 @@
       "symbol": "USUSDT",
       "book_window_from": "2026-10-09T10:15:00+00:00",
       "book_window_to": "2026-10-10T04:21:00+00:00",
-      "book_rows": 27,
-      "flow_rows": 28,
-      "posterior_price": null,
-      "computable_horizons": [],
-      "exclusion_reasons": [
-        "1h: no hay velas 1h en market_klines para este simbolo",
-        "1m: no hay velas 1m en market_klines para este simbolo"
+      "n_observaciones": 55,
+      "n_book_rows": 27,
+      "n_flow_rows": 28,
+      "horizons": [
+        {
+          "interval": "1m",
+          "tolerance_ms": 60000,
+          "has_posterior_price": false,
+          "posterior_price_range": {
+            "from": null,
+            "to": null,
+            "rows": 0
+          },
+          "n_observaciones": 55,
+          "n_emparejadas": 0,
+          "n_excluidas": 55,
+          "motivos_exclucion": [
+            {
+              "bucket_end": 1791540960000,
+              "T_plus_h": 1791541020000,
+              "motivo": "precio_referencia_no_disponible_en_T"
+            },
+            {
+              "bucket_end": 1791541020000,
+              "T_plus_h": 1791541080000,
+              "motivo": "precio_referencia_no_disponible_en_T"
+            },
+            {
+              "bucket_end": 1791604560000,
+              "T_plus_h": 1791604620000,
+              "motivo": "precio_referencia_no_disponible_en_T"
+            },
+            {
+              "bucket_end": 1791604620000,
+              "T_plus_h": 1791604680000,
+              "motivo": "precio_referencia_no_disponible_en_T"
+            },
+            {
+              "bucket_end": 1791604680000,
+              "T_plus_h": 1791604740000,
+              "motivo": "precio_referencia_no_disponible_en_T"
+            },
+            {
+              "bucket_end": 1791604740000,
+              "T_plus_h": 1791604800000,
+              "motivo": "precio_referencia_no_disponible_en_T"
+            },
+            {
+              "bucket_end": 1791604800000,
+              "T_plus_h": 1791604860000,
+              "motivo": "precio_referencia_no_disponible_en_T"
+            },
+            {
+              "bucket_end": 1791604860000,
+              "T_plus_h": 1791604920000,
+              "motivo": "precio_referencia_no_disponible_en_T"
+            },
+            {
+              "bucket_end": 1791604920000,
+              "T_plus_h": 1791604980000,
+              "motivo": "precio_referencia_no_disponible_en_T"
+            },
+            {
+              "bucket_end": 1791604980000,
+              "T_plus_h": 1791605040000,
+              "motivo": "precio_referencia_no_disponible_en_T"
+            }
+          ],
+          "adequate": false
+        },
+        {
+          "interval": "1h",
+          "tolerance_ms": 3600000,
+          "has_posterior_price": false,
+          "posterior_price_range": {
+            "from": null,
+            "to": null,
+            "rows": 0
+          },
+          "n_observaciones": 55,
+          "n_emparejadas": 0,
+          "n_excluidas": 55,
+          "motivos_exclucion": [
+            {
+              "bucket_end": 1791540960000,
+              "T_plus_h": 1791544560000,
+              "motivo": "precio_referencia_no_disponible_en_T"
+            },
+            {
+              "bucket_end": 1791541020000,
+              "T_plus_h": 1791544620000,
+              "motivo": "precio_referencia_no_disponible_en_T"
+            },
+            {
+              "bucket_end": 1791604560000,
+              "T_plus_h": 1791608160000,
+              "motivo": "precio_referencia_no_disponible_en_T"
+            },
+            {
+              "bucket_end": 1791604620000,
+              "T_plus_h": 1791608220000,
+              "motivo": "precio_referencia_no_disponible_en_T"
+            },
+            {
+              "bucket_end": 1791604680000,
+              "T_plus_h": 1791608280000,
+              "motivo": "precio_referencia_no_disponible_en_T"
+            },
+            {
+              "bucket_end": 1791604740000,
+              "T_plus_h": 1791608340000,
+              "motivo": "precio_referencia_no_disponible_en_T"
+            },
+            {
+              "bucket_end": 1791604800000,
+              "T_plus_h": 1791608400000,
+              "motivo": "precio_referencia_no_disponible_en_T"
+            },
+            {
+              "bucket_end": 1791604860000,
+              "T_plus_h": 1791608460000,
+              "motivo": "precio_referencia_no_disponible_en_T"
+            },
+            {
+              "bucket_end": 1791604920000,
+              "T_plus_h": 1791608520000,
+              "motivo": "precio_referencia_no_disponible_en_T"
+            },
+            {
+              "bucket_end": 1791604980000,
+              "T_plus_h": 1791608580000,
+              "motivo": "precio_referencia_no_disponible_en_T"
+            }
+          ],
+          "adequate": false
+        }
       ],
       "adequate_for_outcomes": false
     }

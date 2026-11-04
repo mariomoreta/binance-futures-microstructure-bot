@@ -11,8 +11,11 @@ Corrige el inventario anterior segun el mandato:
 - Publica descartes y denominadores efectivos.
 - Declara formula y unidades de retornos; no concluye "cara/cruz" por media
   cercana a cero ni proporcion positiva cercana al 50%.
-- Agrega matriz de cobertura conjunta: simbolo x ventana libro/flujo x
-  cobertura de precio posterior x horizontes calculables x motivos de exclusión.
+- Matriz de cobertura conjunta por observacion (punto 5): para cada
+  observacion de libro/flujo, verifica compatibilidad temporal entre precio
+  de referencia en T y precio objetivo en T+h, usando unicamente precios de
+  market_klines con resolucion y disponibilidad compatibles. No acredita un
+  outcome por MIN/MAX temporales ni por filas existentes.
 
 No escribe en DBs canonicas, no abre conexiones publicas, no lanza capturas.
 Salidas JSON en docs/evidence/research/universe_liquidity_v1/:
@@ -66,10 +69,14 @@ FORMULAS = {
     "forward_return": {
         "formula": "(price_at_T_plus_h - price_at_T) / price_at_T",
         "units": "decimal (p. ej. 0.001 = +0.10%)",
-        "price_at_T": "precio de cierre de la vela/bucket en el instante T",
-        "price_at_T_plus_h": "precio de cierre de la vela/bucket en T + h",
-        "note": "solo computable si existe precio posterior disponible DESPUES de T; "
-        "nunca se atribuye a T un agregado disponible solo despues de T.",
+        "price_at_T": "precio de cierre de la vela/bucket en el instante T, "
+        "conocido en T (no reconstruido desde OHLC).",
+        "price_at_T_plus_h": "precio de cierre de la vela/bucket en T + h, "
+        "disponible solo despues de T+h; nunca se usa el close de una vela "
+        "horaria que contiene T como si se conociera en T.",
+        "note": "solo computable si existe precio posterior disponible "
+        "DESPUES de T; nunca se atribuye a T un agregado disponible solo "
+        "despues de T.",
     }
 }
 
@@ -117,8 +124,6 @@ def coverage_table():
     trading = [r["symbol"] for r in rows if r["status"] == "TRADING"]
     eligible = [r["symbol"] for r in rows
                 if str(r["eligible"]).lower() in ("1", "true")]
-    # Denominador efectivo: contratos elegibles en catalogo actual
-    # (no es universo en T, es catalogo estatico de referencia)
     add(
         "contract_catalog", "data/market-cache/market_cache.db",
         "universo catalogo estatico (referencia, no snapshot en T)",
@@ -179,13 +184,13 @@ def coverage_table():
         "Solo 6 simbolos (BTC/ETH/SOL/MINAU/NMR/ORCA). Ventana 2026-09-07 a "
         "2026-10-07 21:22. TERMINA antes de que empiece research_book/research_flow "
         "(2026-10-07 22:43), por lo que NO puede servir de precio posterior para "
-        "la ventana research_*.",
+        "outcomes de la ventana research_*.",
         provenance_from_evidence(n, True, True),
     )
 
     # --- event_instances / event_outcomes: n_events_with_1h_outcome especifica horizonte 1h
-    n_ev = count("data/historical/historical.db", "event_instances",
-                 "data_quality='OK'")
+    n_ev = count("data/historical/historical.db",
+                 "event_instances WHERE data_quality='OK'")
     n_out = count("data/historical/historical.db", "event_outcomes")
     n_1h_usable = count("data/historical/historical.db",
                         "event_outcomes WHERE horizon='1h' AND usable_for_statistics=1")
@@ -229,8 +234,8 @@ def coverage_table():
         add(tbl, "data/historical/historical.db", kind, syms, n,
             ms(dmin), ms(dmax), "1m",
             "Ventana reciente 2026-10-07 22:43 a 2026-10-16, resultados forward "
-            "NO resueltos. No se une con event_outcomes. Requiere precio posterior "
-            "en market_klines para computar outcomes; solo BTCUSDT lo tiene.",
+            "NO resueltos. No se une con event_outcomes. Para computar outcomes "
+            "se necesita precio posterior en market_klines; solo BTCUSDT lo tiene.",
             provenance_from_evidence(n, True, True))
 
     # --- flow_buckets (microprobe): ingestión en vivo reciente, sin resolver
@@ -247,28 +252,6 @@ def coverage_table():
         "Ventana reciente 2026-10-07 a 2026-10-16, no resuelta.",
         provenance_from_evidence(n_fb, True, True))
 
-    # --- book depth en T para ventana resuelta: 0 filas
-    n_book_hist = count("data/historical/historical.db",
-                        "research_book_1m WHERE bucket_start < 1791403200000")
-    entries.append({
-        "source": "book_depth_at_event_time (ventana resuelta)",
-        "location": "data/historical/historical.db",
-        "data_kind": "profundidad/libro en instante T",
-        "distinct_symbols": 0,
-        "symbols": [],
-        "rows": int(n_book_hist),
-        "available_from": None,
-        "available_to": None,
-        "resolution": "1m",
-        "notes": "0 filas de book_depth en ventana resuelta (Sep 8 - Oct 7). "
-                 "research_book_1m empieza 2026-10-07 22:43 (despues de historical_klines). "
-                 "LIQUIDEZ EN T NO DISPONIBLE para outcomes resueltos.",
-        "procedence": "REAL (vacio)",
-        "discards": [{"motivo": "sin solapamiento temporal con precios posteriores",
-                      "count": int(n_book_hist)}],
-        "effective_denominator": 0,
-    })
-
     with open(OUT / "coverage.json", "w", encoding="utf-8") as f:
         json.dump({"generated_at": datetime.now(timezone.utc).isoformat(),
                    "formulas": FORMULAS,
@@ -277,89 +260,206 @@ def coverage_table():
 
 
 # ---------------------------------------------------------------------------
-# 2. Matriz de cobertura conjunta (simbolo x ventana x precio posterior x horizonte)
+# 2. Matriz de cobertura conjunta por OBSERVACION (punto 5)
 # ---------------------------------------------------------------------------
 
-def joint_coverage_matrix():
-    """Para cada simbolo en research_book_1m/research_flow_1m:
-    - ventana de libro/flujo (min, max bucket_end)
-    - precio posterior disponible (en market_klines) y su rango
-    - horizontes computables (1h si hay velas 1h posteriores; 1m si hay velas 1m posteriores)
-    - motivos de exclusión
+def _interval_ms(interval: str) -> Optional[int]:
+    """Duracion en ms de un intervalo de vela (para tolerancia de alineacion)."""
+    mapping = {"1m": 60_000, "3m": 180_000, "5m": 300_000, "15m": 900_000,
+               "1h": 3_600_000, "4h": 14_400_000, "1d": 86_400_000}
+    return mapping.get(interval)
+
+
+def _vela_cercana_antes_o_en(con: sqlite3.Connection, symbol: str,
+                             interval: str, close_time_limite_ms: int) -> Optional[Dict[str, Any]]:
+    """Devuelve la vela de market_klines cuya close_time sea <= close_time_limite_ms
+    y sea la mas cercana (ultima cerrada antes o en el limite).
+
+    Es el precio de referencia conocido en T (no reconstruido desde OHLC,
+    no usa informacion futura).
     """
-    # Ventana research por simbolo
+    cur = con.cursor()
+    cur.execute(
+        "SELECT open_time, open, high, low, close, close_time FROM market_klines "
+        "WHERE symbol = ? AND interval = ? AND close_time <= ? "
+        "ORDER BY close_time DESC LIMIT 1",
+        (symbol, interval, close_time_limite_ms))
+    row = cur.fetchone()
+    if not row:
+        return None
+    open_time, o, h, l, c, close_time = row
+    return {
+        "open_time": open_time, "open": o, "high": h, "low": l, "close": c,
+        "close_time": close_time,
+    }
+
+
+def _vela_cubriendo_objetivo(con: sqlite3.Connection, symbol: str,
+                             interval: str, objetivo_ms: int) -> Optional[Dict[str, Any]]:
+    """Devuelve la primera vela de market_klines cuya open_time <= objetivo_ms
+    y close_time >= objetivo_ms. Es decir, la vela que cubre el instante
+    objetivo_ms y cuyo close NO se conocia antes de objetivo_ms.
+
+    Esto evita usar el close de una vela horaria que contiene T como si se
+    conociera en T: solo se acepta una vela cuya cierre sea >= objetivo_ms.
+    """
+    cur = con.cursor()
+    cur.execute(
+        "SELECT open_time, open, high, low, close, close_time FROM market_klines "
+        "WHERE symbol = ? AND interval = ? AND open_time <= ? AND close_time >= ? "
+        "ORDER BY open_time ASC LIMIT 1",
+        (symbol, interval, objetivo_ms, objetivo_ms))
+    row = cur.fetchone()
+    if not row:
+        return None
+    open_time, o, h, l, c, close_time = row
+    return {
+        "open_time": open_time, "open": o, "high": h, "low": l, "close": c,
+        "close_time": close_time,
+    }
+
+
+def joint_coverage_matrix():
+    """Matriz de cobertura conjunta por OBSERVACION (punto 5 del mandato).
+
+    Para cada observacion de libro/flujo (bucket):
+    - Identifica simbolo, bucket (bucket_start, bucket_end) y T de analisis
+      (T = bucket_end, momento en que los datos del bucket se conocen).
+    - Precio de referencia en T: vela de market_klines con close_time <= T
+      (la ultima cerrada antes o en T). No es reconstruida desde OHLC.
+    - Precio objetivo T+h: vela de market_klines con open_time <= T+h y
+      close_time >= T+h (su close NO se conocia antes de T+h).
+    - Usa unicamente precios con resolucion y disponibilidad compatibles
+      (mismo intervalo que el horizonte).
+    - Tolerancia de alineacion declarada: una vela del intervalo.
+    - No usa el close de una vela horaria que contiene T como si se conociera
+      en T. No extrapola horizontes de un minuto usando velas horarias.
+
+    Publica por simbolo/horizonte: n_observaciones, n_emparejadas,
+    n_excluidas y motivos. Solo llama "adecuado" al subconjunto realmente
+    emparejado. Si no hay ninguno, resultado cero/insuficiente.
+    """
+    # Ventana y observaciones research por simbolo (libro y flujo).
     book_rows = query("data/historical/historical.db",
-                      "SELECT symbol, MIN(bucket_start), MAX(bucket_end), "
-                      "COUNT(*) AS n_rows FROM research_book_1m GROUP BY symbol")
+                      "SELECT symbol, bucket_start, bucket_end FROM research_book_1m")
     flow_rows = query("data/historical/historical.db",
-                      "SELECT symbol, MIN(bucket_start), MAX(bucket_end), "
-                      "COUNT(*) AS n_rows FROM research_flow_1m GROUP BY symbol")
-    book_by_sym = {r["symbol"]: r for r in book_rows}
-    flow_by_sym = {r["symbol"]: r for r in flow_rows}
+                      "SELECT symbol, bucket_start, bucket_end FROM research_flow_1m")
 
-    # Precio posterior por simbolo en market_klines (1h y 1m)
-    mk_rows = query("data/market-cache/market_cache.db",
-                    "SELECT symbol, interval, MIN(open_time), MAX(close_time), "
-                    "COUNT(*) AS n_rows FROM market_klines GROUP BY symbol, interval")
-    mk_by_sym_interval = {}
-    for r in mk_rows:
-        mk_by_sym_interval[(r["symbol"], r["interval"])] = r
+    research_symbols = sorted(
+        set(r["symbol"] for r in book_rows) | set(r["symbol"] for r in flow_rows))
 
-    research_symbols = sorted(set(book_by_sym) | set(flow_by_sym))
+    # Cache de velas market_klines por (simbolo, intervalo), ordenadas por open_time.
+    mk_cache: Dict[tuple, List[Dict[str, Any]]] = {}
+
+    def velas(sym: str, interval: str) -> List[Dict[str, Any]]:
+        key = (sym, interval)
+        if key not in mk_cache:
+            rows = query("data/market-cache/market_cache.db",
+                         "SELECT open_time, open, high, low, close, close_time "
+                         "FROM market_klines WHERE symbol = ? AND interval = ? "
+                         "ORDER BY open_time ASC",
+                         (sym, interval))
+            mk_cache[key] = rows
+        return mk_cache[key]
+
     matrix = []
-
     for sym in research_symbols:
-        b = book_by_sym.get(sym, {})
-        f = flow_by_sym.get(sym, {})
-        win_start = min(x for x in [b.get("MIN(bucket_start)"), f.get("MIN(bucket_start)")] if x is not None)
-        win_end = max(x for x in [b.get("MAX(bucket_end)"), f.get("MAX(bucket_end)")] if x is not None)
+        sym_book = [r for r in book_rows if r["symbol"] == sym]
+        sym_flow = [r for r in flow_rows if r["symbol"] == sym]
+        all_buckets = sym_book + sym_flow
+        n_observaciones = len(all_buckets)
+        win_start = min((r["bucket_start"] for r in all_buckets), default=None)
+        win_end = max((r["bucket_end"] for r in all_buckets), default=None)
 
-        mk_1h = mk_by_sym_interval.get((sym, "1h"))
-        mk_1m = mk_by_sym_interval.get((sym, "1m"))
-
-        horizons = []
-        exclusions = []
-        if mk_1h is not None:
-            # 1h computable si hay una vela 1h cuya open_time >= bucket_end de alguna ventana
-            first_1h_open = mk_1h["MIN(open_time)"]
-            if first_1h_open <= win_end:
-                horizons.append("1h")
-            else:
-                exclusions.append("1h: primera vela 1h posterior (" +
-                                  ms(first_1h_open) + ") despues del fin de ventana (" +
-                                  ms(win_end) + ")")
-        else:
-            exclusions.append("1h: no hay velas 1h en market_klines para este simbolo")
-        if mk_1m is not None:
-            first_1m_open = mk_1m["MIN(open_time)"]
-            if first_1m_open <= win_end:
-                horizons.append("1m")
-            else:
-                exclusions.append("1m: primera vela 1m posterior (" +
-                                  ms(first_1m_open) + ") despues del fin de ventana (" +
-                                  ms(win_end) + ")")
-        else:
-            exclusions.append("1m: no hay velas 1m en market_klines para este simbolo")
-
-        posterior = None
-        if mk_1h:
-            posterior = {"interval": "1h", "from": ms(mk_1h["MIN(open_time)"]),
-                         "to": ms(mk_1h["MAX(close_time)"]), "rows": int(mk_1h["n_rows"])}
-        elif mk_1m:
-            posterior = {"interval": "1m", "from": ms(mk_1m["MIN(open_time)"]),
-                         "to": ms(mk_1m["MAX(close_time)"]), "rows": int(mk_1m["n_rows"])}
-
-        matrix.append({
+        entry = {
             "symbol": sym,
             "book_window_from": ms(win_start),
             "book_window_to": ms(win_end),
-            "book_rows": int(b.get("n_rows", 0)),
-            "flow_rows": int(f.get("n_rows", 0)),
-            "posterior_price": posterior,
-            "computable_horizons": horizons,
-            "exclusion_reasons": exclusions,
-            "adequate_for_outcomes": len(horizons) > 0,
-        })
+            "n_observaciones": n_observaciones,
+            "n_book_rows": len(sym_book),
+            "n_flow_rows": len(sym_flow),
+            "horizons": [],
+            "adequate_for_outcomes": False,
+        }
+
+        for interval in ("1m", "1h"):
+            tolerance_ms = _interval_ms(interval)
+            mk_velas = velas(sym, interval)
+            has_posterior_price = len(mk_velas) > 0
+
+            n_emparejadas = 0
+            n_excluidas = 0
+            motivos: List[Dict[str, Any]] = []
+
+            for b in all_buckets:
+                t = int(b["bucket_end"])          # T = fin del bucket (datos conocidos en T)
+                t_plus_h = t + tolerance_ms       # objetivo T+h
+
+                # Precio de referencia en T: ultima vela cerrada en o antes de T.
+                precio_ref = _vela_cercana_antes_o_en(
+                    None, sym, interval, t) if False else None
+                # Usar query directa (no hay conexión persistente); reusamos mk_velas en memoria.
+                precio_ref_vela = None
+                for v in mk_velas:
+                    if int(v["close_time"]) <= t:
+                        precio_ref_vela = v
+                    else:
+                        break  # ordenadas por open_time, pero close_time no ordenada; seguir buscando
+                # Nota: mk_velas esta ordenada por open_time, no close_time.
+                # Para encontrar la ultima con close_time <= T, escanear todas.
+                precio_ref_vela = None
+                mejor_close = -1
+                for v in mk_velas:
+                    ct = int(v["close_time"])
+                    if ct <= t and ct > mejor_close:
+                        mejor_close = ct
+                        precio_ref_vela = v
+
+                # Precio objetivo en T+h: primera vela con open_time <= T+h y close_time >= T+h.
+                precio_objetivo_vela = None
+                for v in mk_velas:
+                    if int(v["open_time"]) <= t_plus_h and int(v["close_time"]) >= t_plus_h:
+                        precio_objetivo_vela = v
+                        break
+
+                motivo_excl = None
+                if precio_ref_vela is None:
+                    motivo_excl = "precio_referencia_no_disponible_en_T"
+                elif not has_posterior_price:
+                    motivo_excl = f"sin_precio_posterior_{interval}_en_market_klines"
+                elif precio_objetivo_vela is None:
+                    motivo_excl = (f"sin_vela_{interval}_compatible_en_T+h "
+                                   f"(open_time<={t_plus_h} y close_time>={t_plus_h})")
+
+                if motivo_excl:
+                    n_excluidas += 1
+                    motivos.append({
+                        "bucket_end": t,
+                        "T_plus_h": t_plus_h,
+                        "motivo": motivo_excl,
+                    })
+                else:
+                    n_emparejadas += 1
+
+            entry["horizons"].append({
+                "interval": interval,
+                "tolerance_ms": tolerance_ms,
+                "has_posterior_price": has_posterior_price,
+                "posterior_price_range": {
+                    "from": ms(int(mk_velas[0]["open_time"])) if mk_velas else None,
+                    "to": ms(int(mk_velas[-1]["close_time"])) if mk_velas else None,
+                    "rows": len(mk_velas),
+                },
+                "n_observaciones": n_observaciones,
+                "n_emparejadas": n_emparejadas,
+                "n_excluidas": n_excluidas,
+                "motivos_exclucion": motivos[:10],  # muestra acotada
+                "adequate": n_emparejadas > 0,
+            })
+            if n_emparejadas > 0:
+                entry["adequate_for_outcomes"] = True
+
+        matrix.append(entry)
 
     adequate = [m for m in matrix if m["adequate_for_outcomes"]]
     with open(OUT / "joint_coverage.json", "w", encoding="utf-8") as f:
@@ -369,6 +469,12 @@ def joint_coverage_matrix():
             "n_research_symbols": len(research_symbols),
             "n_adequate_for_outcomes": len(adequate),
             "adequate_symbols": [m["symbol"] for m in adequate],
+            "nota": ("Solo se considera adecuado un simbolo/horizonte si al "
+                     "menos una observacion de libro/flujo tiene precio de "
+                     "referencia en T y precio objetivo en T+h con resolucion "
+                     "y disponibilidad compatibles. MIN/MAX temporales y filas "
+                     "existentes NO acreditan por si solas un outcome "
+                     "calculable."),
             "matrix": matrix,
         }, f, ensure_ascii=False, indent=2)
     return matrix
