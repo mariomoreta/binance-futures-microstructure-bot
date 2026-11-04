@@ -1,0 +1,4969 @@
+{
+  "fuente_muestra": "docs\\evidence\\research\\universe_liquidity_v1\\observaciones_muestra_validacion.json",
+  "fuente_registros": "docs\\evidence\\research\\universe_liquidity_v1\\observaciones.jsonl",
+  "db_sha256_antes": {
+    "historical": "d8930ec5d4c4415e748859f426d0a9e9c39de5ceb17367efd3d626fdf56f8b19",
+    "market_cache": "a0bc2a673be2320f0f88f3a8d97e73c5a61bbd200b002c81354b7634ed0859d7"
+  },
+  "db_sha256_despues": {
+    "historical": "d8930ec5d4c4415e748859f426d0a9e9c39de5ceb17367efd3d626fdf56f8b19",
+    "market_cache": "a0bc2a673be2320f0f88f3a8d97e73c5a61bbd200b002c81354b7634ed0859d7"
+  },
+  "db_sin_cambios": true,
+  "n_observaciones_validadas": 26,
+  "n_con_al_menos_un_valor_comparable": 26,
+  "n_comprobaciones_comparables": 529,
+  "n_comprobaciones_null_null": 105,
+  "n_discrepancias": 0,
+  "cobertura_estado_clases": [
+    {
+      "estado": "aceptada_para_descripcion",
+      "clase_libro": "desconocida",
+      "clase_flujo": "desconocida"
+    },
+    {
+      "estado": "aceptada_para_descripcion",
+      "clase_libro": "publicada_despues_de_T",
+      "clase_flujo": "publicada_despues_de_T"
+    },
+    {
+      "estado": "descartada",
+      "clase_libro": null,
+      "clase_flujo": "desconocida"
+    },
+    {
+      "estado": "descartada",
+      "clase_libro": null,
+      "clase_flujo": "publicada_despues_de_T"
+    },
+    {
+      "estado": "descartada",
+      "clase_libro": null,
+      "clase_flujo": "publicada_en_T"
+    },
+    {
+      "estado": "descartada",
+      "clase_libro": "desconocida",
+      "clase_flujo": null
+    },
+    {
+      "estado": "descartada",
+      "clase_libro": "desconocida",
+      "clase_flujo": "desconocida"
+    },
+    {
+      "estado": "descartada",
+      "clase_libro": "publicada_despues_de_T",
+      "clase_flujo": "publicada_despues_de_T"
+    }
+  ],
+  "resultado": "PASS",
+  "filas": [
+    {
+      "observation_id": "BTCUSDT|1791604560000|1791604620000",
+      "origen": "muestra_generador",
+      "simbolo": "BTCUSDT",
+      "bucket_start": 1791604560000,
+      "bucket_end": 1791604620000,
+      "sufijo": "",
+      "estado": "aceptada_para_descripcion",
+      "clase_libro": "desconocida",
+      "clase_flujo": "desconocida",
+      "fuente_libro_presente": true,
+      "fuente_flujo_presente": true,
+      "comprobaciones": [
+        {
+          "campo": "precio_T",
+          "registrado": 82590.3,
+          "fuente": 82590.3,
+          "comparable": true,
+          "coincide": true
+        },
+        {
+          "campo": "close_time_T",
+          "registrado": 1791601199999,
+          "fuente": 1791601199999,
+          "comparable": true,
+          "coincide": true
+        },
+        {
+          "campo": "precio_T_plus_h",
+          "registrado": 82559.9,
+          "fuente": 82559.9,
+          "comparable": true,
+          "coincide": true
+        },
+        {
+          "campo": "close_time_T_plus_h",
+          "registrado": 1791604799999,
+          "fuente": 1791604799999,
+          "comparable": true,
+          "coincide": true
+        },
+        {
+          "campo": "retorno",
+          "registrado": -0.00036808196604212274,
+          "fuente": -0.00036808196604212274,
+          "comparable": true,
+          "coincide": true
+        },
+        {
+          "campo": "as_of_libro",
+          "registrado": null,
+          "fuente": null,
+          "comparable": false,
+          "coincide": null
+        },
+        {
+          "campo": "as_of_flujo",
+          "registrado": null,
+          "fuente": null,
+          "comparable": false,
+          "coincide": null
+        },
+        {
+          "campo": "clase_libro",
+          "registrado": "desconocida",
+          "fuente": "desconocida",
+          "comparable": true,
+          "coincide": true
+        },
+        {
+          "campo": "clase_flujo",
+          "registrado": "desconocida",
+          "fuente": "desconocida",
+          "comparable": true,
+          "coincide": true
+        },
+        {
+          "campo": "libro.spread_mean_bps",
+          "registrado": 0.012114667557296732,
+          "fuente": 0.012114667557296732,
+          "comparable": true,
+          "coincide": true
+        },
+        {
+          "campo": "libro.imb_mean",
+          "registrado": 0.47924622398538624,
+          "fuente": 0.47924622398538624,
+          "comparable": true,
+          "coincide": true
+        },
+        {
+          "campo": "libro.micro_mean_bps",
+          "registrado": 0.002135768711382178,
+          "fuente": 0.002135768711382178,
+          "comparable": true,
+          "coincide": true
+        },
+        {
+          "campo": "libro.bid20_mean_base",
+          "registrado": 1876532.169120503,
+          "fuente": 1876532.169120503,
+          "comparable": true,
+          "coincide": true
+        },
+        {
+          "campo": "libro.ask20_mean_base",
+          "registrado": 697494.6486353965,
+          "fuente": 697494.6486353965,
+          "comparable": true,
+          "coincide": true
+        },
+        {
+          "campo": "libro.first_event_ms",
+          "registrado": 1791604560057,
+          "fuente": 1791604560057,
+          "comparable": true,
+          "coincide": true
+        },
+        {
+          "campo": "libro.last_event_ms",
+          "registrado": 1791604619931,
+          "fuente": 1791604619931,
+          "comparable": true,
+          "coincide": true
+        },
+        {
+          "campo": "flujo.buy_notional",
+          "registrado": 3366209.4854999995,
+          "fuente": 3366209.4854999995,
+          "comparable": true,
+          "coincide": true
+        },
+        {
+          "campo": "flujo.sell_notional",
+          "registrado": 215513.57989999995,
+          "fuente": 215513.57989999995,
+          "comparable": true,
+          "coincide": true
+        },
+        {
+          "campo": "flujo.delta_notional",
+          "registrado": 3150695.9055999997,
+          "fuente": 3150695.9055999997,
+          "comparable": true,
+          "coincide": true
+        },
+        {
+          "campo": "flujo.delta_ratio",
+          "registrado": 0.8796592723865815,
+          "fuente": 0.8796592723865815,
+          "comparable": true,
+          "coincide": true
+        },
+        {
+          "campo": "flujo.base_volume",
+          "registrado": 43.389999999999965,
+          "fuente": 43.389999999999965,
+          "comparable": true,
+          "coincide": true
+        },
+        {
+          "campo": "flujo.trade_count",
+          "registrado": 171,
+          "fuente": 171,
+          "comparable": true,
+          "coincide": true
+        },
+        {
+          "campo": "flujo.price_close",
+          "registrado": 82556.9,
+          "fuente": 82556.9,
+          "comparable": true,
+          "coincide": true
+        },
+        {
+          "campo": "flujo.first_event_ms",
+          "registrado": 1791604560374,
+          "fuente": 1791604560374,
+          "comparable": true,
+          "coincide": true
+        },
+        {
+          "campo": "flujo.last_event_ms",
+          "registrado": 1791604619912,
+          "fuente": 1791604619912,
+          "comparable": true,
+          "coincide": true
+        },
+        {
+          "campo": "flujo.delta_vs_buy_menos_sell",
+          "registrado": 3150695.9055999997,
+          "fuente": 3150695.9055999997,
+          "comparable": true,
+          "coincide": true
+        },
+        {
+          "campo": "flujo.delta_ratio_vs_delta_sobre_total",
+          "registrado": 0.8796592723865815,
+          "fuente": 0.8796592723865815,
+          "comparable": true,
+          "coincide": true
+        },
+        {
+          "campo": "flujo.base_volume_vs_buy_base_mas_sell_base",
+          "registrado": 43.389999999999965,
+          "fuente": 43.389999999999965,
+          "comparable": true,
+          "coincide": true
+        }
+      ],
+      "n_comparables": 26,
+      "n_no_comparables_null_null": 2,
+      "n_discrepancias": 0
+    },
+    {
+      "observation_id": "BTCUSDT|1791604980000|1791605040000",
+      "origen": "muestra_generador",
+      "simbolo": "BTCUSDT",
+      "bucket_start": 1791604980000,
+      "bucket_end": 1791605040000,
+      "sufijo": "",
+      "estado": "aceptada_para_descripcion",
+      "clase_libro": "desconocida",
+      "clase_flujo": "desconocida",
+      "fuente_libro_presente": true,
+      "fuente_flujo_presente": true,
+      "comprobaciones": [
+        {
+          "campo": "precio_T",
+          "registrado": 82559.9,
+          "fuente": 82559.9,
+          "comparable": true,
+          "coincide": true
+        },
+        {
+          "campo": "close_time_T",
+          "registrado": 1791604799999,
+          "fuente": 1791604799999,
+          "comparable": true,
+          "coincide": true
+        },
+        {
+          "campo": "precio_T_plus_h",
+          "registrado": 82648.1,
+          "fuente": 82648.1,
+          "comparable": true,
+          "coincide": true
+        },
+        {
+          "campo": "close_time_T_plus_h",
+          "registrado": 1791608399999,
+          "fuente": 1791608399999,
+          "comparable": true,
+          "coincide": true
+        },
+        {
+          "campo": "retorno",
+          "registrado": 0.0010683152474750047,
+          "fuente": 0.0010683152474750047,
+          "comparable": true,
+          "coincide": true
+        },
+        {
+          "campo": "as_of_libro",
+          "registrado": null,
+          "fuente": null,
+          "comparable": false,
+          "coincide": null
+        },
+        {
+          "campo": "as_of_flujo",
+          "registrado": null,
+          "fuente": null,
+          "comparable": false,
+          "coincide": null
+        },
+        {
+          "campo": "clase_libro",
+          "registrado": "desconocida",
+          "fuente": "desconocida",
+          "comparable": true,
+          "coincide": true
+        },
+        {
+          "campo": "clase_flujo",
+          "registrado": "desconocida",
+          "fuente": "desconocida",
+          "comparable": true,
+          "coincide": true
+        },
+        {
+          "campo": "libro.spread_mean_bps",
+          "registrado": 0.012100572274592191,
+          "fuente": 0.012100572274592191,
+          "comparable": true,
+          "coincide": true
+        },
+        {
+          "campo": "libro.imb_mean",
+          "registrado": 0.4601198425752585,
+          "fuente": 0.4601198425752585,
+          "comparable": true,
+          "coincide": true
+        },
+        {
+          "campo": "libro.micro_mean_bps",
+          "registrado": 0.0031486551442729744,
+          "fuente": 0.0031486551442729744,
+          "comparable": true,
+          "coincide": true
+        },
+        {
+          "campo": "libro.bid20_mean_base",
+          "registrado": 1153023.736481315,
+          "fuente": 1153023.736481315,
+          "comparable": true,
+          "coincide": true
+        },
+        {
+          "campo": "libro.ask20_mean_base",
+          "registrado": 363654.0024264706,
+          "fuente": 363654.0024264706,
+          "comparable": true,
+          "coincide": true
+        },
+        {
+          "campo": "libro.first_event_ms",
+          "registrado": 1791604980045,
+          "fuente": 1791604980045,
+          "comparable": true,
+          "coincide": true
+        },
+        {
+          "campo": "libro.last_event_ms",
+          "registrado": 1791605039907,
+          "fuente": 1791605039907,
+          "comparable": true,
+          "coincide": true
+        },
+        {
+          "campo": "flujo.buy_notional",
+          "registrado": 2098499.6486,
+          "fuente": 2098499.6486,
+          "comparable": true,
+          "coincide": true
+        },
+        {
+          "campo": "flujo.sell_notional",
+          "registrado": 5121487.665900004,
+          "fuente": 5121487.665900004,
+          "comparable": true,
+          "coincide": true
+        },
+        {
+          "campo": "flujo.delta_notional",
+          "registrado": -3022988.017300004,
+          "fuente": -3022988.017300004,
+          "comparable": true,
+          "coincide": true
+        },
+        {
+          "campo": "flujo.delta_ratio",
+          "registrado": -0.4186971369366389,
+          "fuente": -0.4186971369366389,
+          "comparable": true,
+          "coincide": true
+        },
+        {
+          "campo": "flujo.base_volume",
+          "registrado": 87.36299999999996,
+          "fuente": 87.36299999999996,
+          "comparable": true,
+          "coincide": true
+        },
+        {
+          "campo": "flujo.trade_count",
+          "registrado": 590,
+          "fuente": 590,
+          "comparable": true,
+          "coincide": true
+        },
+        {
+          "campo": "flujo.price_close",
+          "registrado": 82634.1,
+          "fuente": 82634.1,
+          "comparable": true,
+          "coincide": true
+        },
+        {
+          "campo": "flujo.first_event_ms",
+          "registrado": 1791604980012,
+          "fuente": 1791604980012,
+          "comparable": true,
+          "coincide": true
+        },
+        {
+          "campo": "flujo.last_event_ms",
+          "registrado": 1791605039274,
+          "fuente": 1791605039274,
+          "comparable": true,
+          "coincide": true
+        },
+        {
+          "campo": "flujo.delta_vs_buy_menos_sell",
+          "registrado": -3022988.017300004,
+          "fuente": -3022988.017300004,
+          "comparable": true,
+          "coincide": true
+        },
+        {
+          "campo": "flujo.delta_ratio_vs_delta_sobre_total",
+          "registrado": -0.4186971369366389,
+          "fuente": -0.4186971369366389,
+          "comparable": true,
+          "coincide": true
+        },
+        {
+          "campo": "flujo.base_volume_vs_buy_base_mas_sell_base",
+          "registrado": 87.36299999999996,
+          "fuente": 87.36299999999996,
+          "comparable": true,
+          "coincide": true
+        }
+      ],
+      "n_comparables": 26,
+      "n_no_comparables_null_null": 2,
+      "n_discrepancias": 0
+    },
+    {
+      "observation_id": "BTCUSDT|1791605100000|1791605160000",
+      "origen": "muestra_generador",
+      "simbolo": "BTCUSDT",
+      "bucket_start": 1791605100000,
+      "bucket_end": 1791605160000,
+      "sufijo": "",
+      "estado": "aceptada_para_descripcion",
+      "clase_libro": "desconocida",
+      "clase_flujo": "desconocida",
+      "fuente_libro_presente": true,
+      "fuente_flujo_presente": true,
+      "comprobaciones": [
+        {
+          "campo": "precio_T",
+          "registrado": 82559.9,
+          "fuente": 82559.9,
+          "comparable": true,
+          "coincide": true
+        },
+        {
+          "campo": "close_time_T",
+          "registrado": 1791604799999,
+          "fuente": 1791604799999,
+          "comparable": true,
+          "coincide": true
+        },
+        {
+          "campo": "precio_T_plus_h",
+          "registrado": 82648.1,
+          "fuente": 82648.1,
+          "comparable": true,
+          "coincide": true
+        },
+        {
+          "campo": "close_time_T_plus_h",
+          "registrado": 1791608399999,
+          "fuente": 1791608399999,
+          "comparable": true,
+          "coincide": true
+        },
+        {
+          "campo": "retorno",
+          "registrado": 0.0010683152474750047,
+          "fuente": 0.0010683152474750047,
+          "comparable": true,
+          "coincide": true
+        },
+        {
+          "campo": "as_of_libro",
+          "registrado": null,
+          "fuente": null,
+          "comparable": false,
+          "coincide": null
+        },
+        {
+          "campo": "as_of_flujo",
+          "registrado": null,
+          "fuente": null,
+          "comparable": false,
+          "coincide": null
+        },
+        {
+          "campo": "clase_libro",
+          "registrado": "desconocida",
+          "fuente": "desconocida",
+          "comparable": true,
+          "coincide": true
+        },
+        {
+          "campo": "clase_flujo",
+          "registrado": "desconocida",
+          "fuente": "desconocida",
+          "comparable": true,
+          "coincide": true
+        },
+        {
+          "campo": "libro.spread_mean_bps",
+          "registrado": 0.012771305732471096,
+          "fuente": 0.012771305732471096,
+          "comparable": true,
+          "coincide": true
+        },
+        {
+          "campo": "libro.imb_mean",
+          "registrado": 0.6379187948721845,
+          "fuente": 0.6379187948721845,
+          "comparable": true,
+          "coincide": true
+        },
+        {
+          "campo": "libro.micro_mean_bps",
+          "registrado": 0.004446439742384876,
+          "fuente": 0.004446439742384876,
+          "comparable": true,
+          "coincide": true
+        },
+        {
+          "campo": "libro.bid20_mean_base",
+          "registrado": 1683839.1254581686,
+          "fuente": 1683839.1254581686,
+          "comparable": true,
+          "coincide": true
+        },
+        {
+          "campo": "libro.ask20_mean_base",
+          "registrado": 363261.4977587074,
+          "fuente": 363261.4977587074,
+          "comparable": true,
+          "coincide": true
+        },
+        {
+          "campo": "libro.first_event_ms",
+          "registrado": 1791605100005,
+          "fuente": 1791605100005,
+          "comparable": true,
+          "coincide": true
+        },
+        {
+          "campo": "libro.last_event_ms",
+          "registrado": 1791605159935,
+          "fuente": 1791605159935,
+          "comparable": true,
+          "coincide": true
+        },
+        {
+          "campo": "flujo.buy_notional",
+          "registrado": 2714834.6013,
+          "fuente": 2714834.6013,
+          "comparable": true,
+          "coincide": true
+        },
+        {
+          "campo": "flujo.sell_notional",
+          "registrado": 669849.7061000002,
+          "fuente": 669849.7061000002,
+          "comparable": true,
+          "coincide": true
+        },
+        {
+          "campo": "flujo.delta_notional",
+          "registrado": 2044984.8952000001,
+          "fuente": 2044984.8952000001,
+          "comparable": true,
+          "coincide": true
+        },
+        {
+          "campo": "flujo.delta_ratio",
+          "registrado": 0.6041877792646748,
+          "fuente": 0.6041877792646748,
+          "comparable": true,
+          "coincide": true
+        },
+        {
+          "campo": "flujo.base_volume",
+          "registrado": 40.94800000000001,
+          "fuente": 40.94800000000001,
+          "comparable": true,
+          "coincide": true
+        },
+        {
+          "campo": "flujo.trade_count",
+          "registrado": 263,
+          "fuente": 263,
+          "comparable": true,
+          "coincide": true
+        },
+        {
+          "campo": "flujo.price_close",
+          "registrado": 82664.6,
+          "fuente": 82664.6,
+          "comparable": true,
+          "coincide": true
+        },
+        {
+          "campo": "flujo.first_event_ms",
+          "registrado": 1791605100303,
+          "fuente": 1791605100303,
+          "comparable": true,
+          "coincide": true
+        },
+        {
+          "campo": "flujo.last_event_ms",
+          "registrado": 1791605159536,
+          "fuente": 1791605159536,
+          "comparable": true,
+          "coincide": true
+        },
+        {
+          "campo": "flujo.delta_vs_buy_menos_sell",
+          "registrado": 2044984.8952000001,
+          "fuente": 2044984.8952000001,
+          "comparable": true,
+          "coincide": true
+        },
+        {
+          "campo": "flujo.delta_ratio_vs_delta_sobre_total",
+          "registrado": 0.6041877792646748,
+          "fuente": 0.6041877792646748,
+          "comparable": true,
+          "coincide": true
+        },
+        {
+          "campo": "flujo.base_volume_vs_buy_base_mas_sell_base",
+          "registrado": 40.94800000000001,
+          "fuente": 40.94800000000001,
+          "comparable": true,
+          "coincide": true
+        }
+      ],
+      "n_comparables": 26,
+      "n_no_comparables_null_null": 2,
+      "n_discrepancias": 0
+    },
+    {
+      "observation_id": "BTCUSDT|1791605340000|1791605400000",
+      "origen": "muestra_generador",
+      "simbolo": "BTCUSDT",
+      "bucket_start": 1791605340000,
+      "bucket_end": 1791605400000,
+      "sufijo": "",
+      "estado": "aceptada_para_descripcion",
+      "clase_libro": "desconocida",
+      "clase_flujo": "desconocida",
+      "fuente_libro_presente": true,
+      "fuente_flujo_presente": true,
+      "comprobaciones": [
+        {
+          "campo": "precio_T",
+          "registrado": 82559.9,
+          "fuente": 82559.9,
+          "comparable": true,
+          "coincide": true
+        },
+        {
+          "campo": "close_time_T",
+          "registrado": 1791604799999,
+          "fuente": 1791604799999,
+          "comparable": true,
+          "coincide": true
+        },
+        {
+          "campo": "precio_T_plus_h",
+          "registrado": 82648.1,
+          "fuente": 82648.1,
+          "comparable": true,
+          "coincide": true
+        },
+        {
+          "campo": "close_time_T_plus_h",
+          "registrado": 1791608399999,
+          "fuente": 1791608399999,
+          "comparable": true,
+          "coincide": true
+        },
+        {
+          "campo": "retorno",
+          "registrado": 0.0010683152474750047,
+          "fuente": 0.0010683152474750047,
+          "comparable": true,
+          "coincide": true
+        },
+        {
+          "campo": "as_of_libro",
+          "registrado": null,
+          "fuente": null,
+          "comparable": false,
+          "coincide": null
+        },
+        {
+          "campo": "as_of_flujo",
+          "registrado": null,
+          "fuente": null,
+          "comparable": false,
+          "coincide": null
+        },
+        {
+          "campo": "clase_libro",
+          "registrado": "desconocida",
+          "fuente": "desconocida",
+          "comparable": true,
+          "coincide": true
+        },
+        {
+          "campo": "clase_flujo",
+          "registrado": "desconocida",
+          "fuente": "desconocida",
+          "comparable": true,
+          "coincide": true
+        },
+        {
+          "campo": "libro.spread_mean_bps",
+          "registrado": 0.01209643830560074,
+          "fuente": 0.01209643830560074,
+          "comparable": true,
+          "coincide": true
+        },
+        {
+          "campo": "libro.imb_mean",
+          "registrado": -0.02496769902346906,
+          "fuente": -0.02496769902346906,
+          "comparable": true,
+          "coincide": true
+        },
+        {
+          "campo": "libro.micro_mean_bps",
+          "registrado": 0.0001568317099248736,
+          "fuente": 0.0001568317099248736,
+          "comparable": true,
+          "coincide": true
+        },
+        {
+          "campo": "libro.bid20_mean_base",
+          "registrado": 693136.5956727915,
+          "fuente": 693136.5956727915,
+          "comparable": true,
+          "coincide": true
+        },
+        {
+          "campo": "libro.ask20_mean_base",
+          "registrado": 887322.2806989399,
+          "fuente": 887322.2806989399,
+          "comparable": true,
+          "coincide": true
+        },
+        {
+          "campo": "libro.first_event_ms",
+          "registrado": 1791605340071,
+          "fuente": 1791605340071,
+          "comparable": true,
+          "coincide": true
+        },
+        {
+          "campo": "libro.last_event_ms",
+          "registrado": 1791605399969,
+          "fuente": 1791605399969,
+          "comparable": true,
+          "coincide": true
+        },
+        {
+          "campo": "flujo.buy_notional",
+          "registrado": 676642.6578000006,
+          "fuente": 676642.6578000006,
+          "comparable": true,
+          "coincide": true
+        },
+        {
+          "campo": "flujo.sell_notional",
+          "registrado": 2787866.966899999,
+          "fuente": 2787866.966899999,
+          "comparable": true,
+          "coincide": true
+        },
+        {
+          "campo": "flujo.delta_notional",
+          "registrado": -2111224.3090999983,
+          "fuente": -2111224.3090999983,
+          "comparable": true,
+          "coincide": true
+        },
+        {
+          "campo": "flujo.delta_ratio",
+          "registrado": -0.6093861867342378,
+          "fuente": -0.6093861867342378,
+          "comparable": true,
+          "coincide": true
+        },
+        {
+          "campo": "flujo.base_volume",
+          "registrado": 41.909,
+          "fuente": 41.909,
+          "comparable": true,
+          "coincide": true
+        },
+        {
+          "campo": "flujo.trade_count",
+          "registrado": 482,
+          "fuente": 482,
+          "comparable": true,
+          "coincide": true
+        },
+        {
+          "campo": "flujo.price_close",
+          "registrado": 82650.0,
+          "fuente": 82650.0,
+          "comparable": true,
+          "coincide": true
+        },
+        {
+          "campo": "flujo.first_event_ms",
+          "registrado": 1791605340161,
+          "fuente": 1791605340161,
+          "comparable": true,
+          "coincide": true
+        },
+        {
+          "campo": "flujo.last_event_ms",
+          "registrado": 1791605399888,
+          "fuente": 1791605399888,
+          "comparable": true,
+          "coincide": true
+        },
+        {
+          "campo": "flujo.delta_vs_buy_menos_sell",
+          "registrado": -2111224.3090999983,
+          "fuente": -2111224.3090999983,
+          "comparable": true,
+          "coincide": true
+        },
+        {
+          "campo": "flujo.delta_ratio_vs_delta_sobre_total",
+          "registrado": -0.6093861867342378,
+          "fuente": -0.6093861867342378,
+          "comparable": true,
+          "coincide": true
+        },
+        {
+          "campo": "flujo.base_volume_vs_buy_base_mas_sell_base",
+          "registrado": 41.909,
+          "fuente": 41.909,
+          "comparable": true,
+          "coincide": true
+        }
+      ],
+      "n_comparables": 26,
+      "n_no_comparables_null_null": 2,
+      "n_discrepancias": 0
+    },
+    {
+      "observation_id": "BTCUSDT|1792112220000|1792112280000|F",
+      "origen": "muestra_generador",
+      "simbolo": "BTCUSDT",
+      "bucket_start": 1792112220000,
+      "bucket_end": 1792112280000,
+      "sufijo": "F",
+      "estado": "descartada",
+      "clase_libro": null,
+      "clase_flujo": "publicada_en_T",
+      "fuente_libro_presente": false,
+      "fuente_flujo_presente": true,
+      "comprobaciones": [
+        {
+          "campo": "precio_T",
+          "registrado": 82195.4,
+          "fuente": 82195.4,
+          "comparable": true,
+          "coincide": true
+        },
+        {
+          "campo": "close_time_T",
+          "registrado": 1792108799999,
+          "fuente": 1792108799999,
+          "comparable": true,
+          "coincide": true
+        },
+        {
+          "campo": "precio_T_plus_h",
+          "registrado": 82297.7,
+          "fuente": 82297.7,
+          "comparable": true,
+          "coincide": true
+        },
+        {
+          "campo": "close_time_T_plus_h",
+          "registrado": 1792112399999,
+          "fuente": 1792112399999,
+          "comparable": true,
+          "coincide": true
+        },
+        {
+          "campo": "retorno",
+          "registrado": 0.0012445951963248906,
+          "fuente": 0.0012445951963248906,
+          "comparable": true,
+          "coincide": true
+        },
+        {
+          "campo": "as_of_libro",
+          "registrado": null,
+          "fuente": null,
+          "comparable": false,
+          "coincide": null
+        },
+        {
+          "campo": "as_of_flujo",
+          "registrado": 1792112273692,
+          "fuente": 1792112273692,
+          "comparable": true,
+          "coincide": true
+        },
+        {
+          "campo": "clase_libro",
+          "registrado": null,
+          "fuente": null,
+          "comparable": false,
+          "coincide": null
+        },
+        {
+          "campo": "clase_flujo",
+          "registrado": "publicada_en_T",
+          "fuente": "publicada_en_T",
+          "comparable": true,
+          "coincide": true
+        },
+        {
+          "campo": "flujo.buy_notional",
+          "registrado": 750059.7465000001,
+          "fuente": 750059.7465000001,
+          "comparable": true,
+          "coincide": true
+        },
+        {
+          "campo": "flujo.sell_notional",
+          "registrado": 531829.3199000001,
+          "fuente": 531829.3199000001,
+          "comparable": true,
+          "coincide": true
+        },
+        {
+          "campo": "flujo.delta_notional",
+          "registrado": 218230.4266,
+          "fuente": 218230.4266,
+          "comparable": true,
+          "coincide": true
+        },
+        {
+          "campo": "flujo.delta_ratio",
+          "registrado": 0.1702412730712093,
+          "fuente": 0.1702412730712093,
+          "comparable": true,
+          "coincide": true
+        },
+        {
+          "campo": "flujo.base_volume",
+          "registrado": 15.57599999999999,
+          "fuente": 15.57599999999999,
+          "comparable": true,
+          "coincide": true
+        },
+        {
+          "campo": "flujo.trade_count",
+          "registrado": 180,
+          "fuente": 180,
+          "comparable": true,
+          "coincide": true
+        },
+        {
+          "campo": "flujo.price_close",
+          "registrado": 82299.9,
+          "fuente": 82299.9,
+          "comparable": true,
+          "coincide": true
+        },
+        {
+          "campo": "flujo.first_event_ms",
+          "registrado": 1792112221108,
+          "fuente": 1792112221108,
+          "comparable": true,
+          "coincide": true
+        },
+        {
+          "campo": "flujo.last_event_ms",
+          "registrado": 1792112273087,
+          "fuente": 1792112273087,
+          "comparable": true,
+          "coincide": true
+        },
+        {
+          "campo": "flujo.delta_vs_buy_menos_sell",
+          "registrado": 218230.4266,
+          "fuente": 218230.4266,
+          "comparable": true,
+          "coincide": true
+        },
+        {
+          "campo": "flujo.delta_ratio_vs_delta_sobre_total",
+          "registrado": 0.1702412730712093,
+          "fuente": 0.1702412730712093,
+          "comparable": true,
+          "coincide": true
+        },
+        {
+          "campo": "flujo.base_volume_vs_buy_base_mas_sell_base",
+          "registrado": 15.57599999999999,
+          "fuente": 15.57599999999999,
+          "comparable": true,
+          "coincide": true
+        }
+      ],
+      "n_comparables": 19,
+      "n_no_comparables_null_null": 2,
+      "n_discrepancias": 0
+    },
+    {
+      "observation_id": "BTCUSDT|1792122360000|1792122420000|F",
+      "origen": "muestra_generador",
+      "simbolo": "BTCUSDT",
+      "bucket_start": 1792122360000,
+      "bucket_end": 1792122420000,
+      "sufijo": "F",
+      "estado": "descartada",
+      "clase_libro": null,
+      "clase_flujo": "publicada_en_T",
+      "fuente_libro_presente": false,
+      "fuente_flujo_presente": true,
+      "comprobaciones": [
+        {
+          "campo": "precio_T",
+          "registrado": 82010.0,
+          "fuente": 82010.0,
+          "comparable": true,
+          "coincide": true
+        },
+        {
+          "campo": "close_time_T",
+          "registrado": 1792119599999,
+          "fuente": 1792119599999,
+          "comparable": true,
+          "coincide": true
+        },
+        {
+          "campo": "precio_T_plus_h",
+          "registrado": 82088.0,
+          "fuente": 82088.0,
+          "comparable": true,
+          "coincide": true
+        },
+        {
+          "campo": "close_time_T_plus_h",
+          "registrado": 1792123199999,
+          "fuente": 1792123199999,
+          "comparable": true,
+          "coincide": true
+        },
+        {
+          "campo": "retorno",
+          "registrado": 0.0009511035239604926,
+          "fuente": 0.0009511035239604926,
+          "comparable": true,
+          "coincide": true
+        },
+        {
+          "campo": "as_of_libro",
+          "registrado": null,
+          "fuente": null,
+          "comparable": false,
+          "coincide": null
+        },
+        {
+          "campo": "as_of_flujo",
+          "registrado": 1792122387383,
+          "fuente": 1792122387383,
+          "comparable": true,
+          "coincide": true
+        },
+        {
+          "campo": "clase_libro",
+          "registrado": null,
+          "fuente": null,
+          "comparable": false,
+          "coincide": null
+        },
+        {
+          "campo": "clase_flujo",
+          "registrado": "publicada_en_T",
+          "fuente": "publicada_en_T",
+          "comparable": true,
+          "coincide": true
+        },
+        {
+          "campo": "flujo.buy_notional",
+          "registrado": 3498012.2131000026,
+          "fuente": 3498012.2131000026,
+          "comparable": true,
+          "coincide": true
+        },
+        {
+          "campo": "flujo.sell_notional",
+          "registrado": 2264661.0767000006,
+          "fuente": 2264661.0767000006,
+          "comparable": true,
+          "coincide": true
+        },
+        {
+          "campo": "flujo.delta_notional",
+          "registrado": 1233351.136400002,
+          "fuente": 1233351.136400002,
+          "comparable": true,
+          "coincide": true
+        },
+        {
+          "campo": "flujo.delta_ratio",
+          "registrado": 0.21402412983971303,
+          "fuente": 0.21402412983971303,
+          "comparable": true,
+          "coincide": true
+        },
+        {
+          "campo": "flujo.base_volume",
+          "registrado": 70.33200000000002,
+          "fuente": 70.33200000000002,
+          "comparable": true,
+          "coincide": true
+        },
+        {
+          "campo": "flujo.trade_count",
+          "registrado": 842,
+          "fuente": 842,
+          "comparable": true,
+          "coincide": true
+        },
+        {
+          "campo": "flujo.price_close",
+          "registrado": 81973.0,
+          "fuente": 81973.0,
+          "comparable": true,
+          "coincide": true
+        },
+        {
+          "campo": "flujo.first_event_ms",
+          "registrado": 1792122360005,
+          "fuente": 1792122360005,
+          "comparable": true,
+          "coincide": true
+        },
+        {
+          "campo": "flujo.last_event_ms",
+          "registrado": 1792122386803,
+          "fuente": 1792122386803,
+          "comparable": true,
+          "coincide": true
+        },
+        {
+          "campo": "flujo.delta_vs_buy_menos_sell",
+          "registrado": 1233351.136400002,
+          "fuente": 1233351.136400002,
+          "comparable": true,
+          "coincide": true
+        },
+        {
+          "campo": "flujo.delta_ratio_vs_delta_sobre_total",
+          "registrado": 0.21402412983971303,
+          "fuente": 0.21402412983971303,
+          "comparable": true,
+          "coincide": true
+        },
+        {
+          "campo": "flujo.base_volume_vs_buy_base_mas_sell_base",
+          "registrado": 70.33200000000002,
+          "fuente": 70.33200000000002,
+          "comparable": true,
+          "coincide": true
+        }
+      ],
+      "n_comparables": 19,
+      "n_no_comparables_null_null": 2,
+      "n_discrepancias": 0
+    },
+    {
+      "observation_id": "BTCUSDT|1791635400000|1791635460000|F",
+      "origen": "muestra_generador",
+      "simbolo": "BTCUSDT",
+      "bucket_start": 1791635400000,
+      "bucket_end": 1791635460000,
+      "sufijo": "F",
+      "estado": "descartada",
+      "clase_libro": null,
+      "clase_flujo": "desconocida",
+      "fuente_libro_presente": false,
+      "fuente_flujo_presente": true,
+      "comprobaciones": [
+        {
+          "campo": "precio_T",
+          "registrado": 82836.7,
+          "fuente": 82836.7,
+          "comparable": true,
+          "coincide": true
+        },
+        {
+          "campo": "close_time_T",
+          "registrado": 1791633599999,
+          "fuente": 1791633599999,
+          "comparable": true,
+          "coincide": true
+        },
+        {
+          "campo": "precio_T_plus_h",
+          "registrado": 82764.9,
+          "fuente": 82764.9,
+          "comparable": true,
+          "coincide": true
+        },
+        {
+          "campo": "close_time_T_plus_h",
+          "registrado": 1791637199999,
+          "fuente": 1791637199999,
+          "comparable": true,
+          "coincide": true
+        },
+        {
+          "campo": "retorno",
+          "registrado": -0.0008667655761275245,
+          "fuente": -0.0008667655761275245,
+          "comparable": true,
+          "coincide": true
+        },
+        {
+          "campo": "as_of_libro",
+          "registrado": null,
+          "fuente": null,
+          "comparable": false,
+          "coincide": null
+        },
+        {
+          "campo": "as_of_flujo",
+          "registrado": null,
+          "fuente": null,
+          "comparable": false,
+          "coincide": null
+        },
+        {
+          "campo": "clase_libro",
+          "registrado": null,
+          "fuente": null,
+          "comparable": false,
+          "coincide": null
+        },
+        {
+          "campo": "clase_flujo",
+          "registrado": "desconocida",
+          "fuente": "desconocida",
+          "comparable": true,
+          "coincide": true
+        },
+        {
+          "campo": "flujo.buy_notional",
+          "registrado": 384900.5648999999,
+          "fuente": 384900.5648999999,
+          "comparable": true,
+          "coincide": true
+        },
+        {
+          "campo": "flujo.sell_notional",
+          "registrado": 61196.458500000015,
+          "fuente": 61196.458500000015,
+          "comparable": true,
+          "coincide": true
+        },
+        {
+          "campo": "flujo.delta_notional",
+          "registrado": 323704.1063999999,
+          "fuente": 323704.1063999999,
+          "comparable": true,
+          "coincide": true
+        },
+        {
+          "campo": "flujo.delta_ratio",
+          "registrado": 0.7256361047487768,
+          "fuente": 0.7256361047487768,
+          "comparable": true,
+          "coincide": true
+        },
+        {
+          "campo": "flujo.base_volume",
+          "registrado": 5.3870000000000005,
+          "fuente": 5.3870000000000005,
+          "comparable": true,
+          "coincide": true
+        },
+        {
+          "campo": "flujo.trade_count",
+          "registrado": 52,
+          "fuente": 52,
+          "comparable": true,
+          "coincide": true
+        },
+        {
+          "campo": "flujo.price_close",
+          "registrado": 82810.0,
+          "fuente": 82810.0,
+          "comparable": true,
+          "coincide": true
+        },
+        {
+          "campo": "flujo.first_event_ms",
+          "registrado": 1791635400196,
+          "fuente": 1791635400196,
+          "comparable": true,
+          "coincide": true
+        },
+        {
+          "campo": "flujo.last_event_ms",
+          "registrado": 1791635429071,
+          "fuente": 1791635429071,
+          "comparable": true,
+          "coincide": true
+        },
+        {
+          "campo": "flujo.delta_vs_buy_menos_sell",
+          "registrado": 323704.1063999999,
+          "fuente": 323704.1063999999,
+          "comparable": true,
+          "coincide": true
+        },
+        {
+          "campo": "flujo.delta_ratio_vs_delta_sobre_total",
+          "registrado": 0.7256361047487768,
+          "fuente": 0.7256361047487768,
+          "comparable": true,
+          "coincide": true
+        },
+        {
+          "campo": "flujo.base_volume_vs_buy_base_mas_sell_base",
+          "registrado": 5.3870000000000005,
+          "fuente": 5.3870000000000005,
+          "comparable": true,
+          "coincide": true
+        }
+      ],
+      "n_comparables": 18,
+      "n_no_comparables_null_null": 3,
+      "n_discrepancias": 0
+    },
+    {
+      "observation_id": "BTCUSDT|1791606000000|1791606060000|F",
+      "origen": "muestra_generador",
+      "simbolo": "BTCUSDT",
+      "bucket_start": 1791606000000,
+      "bucket_end": 1791606060000,
+      "sufijo": "F",
+      "estado": "descartada",
+      "clase_libro": null,
+      "clase_flujo": "desconocida",
+      "fuente_libro_presente": false,
+      "fuente_flujo_presente": true,
+      "comprobaciones": [
+        {
+          "campo": "precio_T",
+          "registrado": 82559.9,
+          "fuente": 82559.9,
+          "comparable": true,
+          "coincide": true
+        },
+        {
+          "campo": "close_time_T",
+          "registrado": 1791604799999,
+          "fuente": 1791604799999,
+          "comparable": true,
+          "coincide": true
+        },
+        {
+          "campo": "precio_T_plus_h",
+          "registrado": 82648.1,
+          "fuente": 82648.1,
+          "comparable": true,
+          "coincide": true
+        },
+        {
+          "campo": "close_time_T_plus_h",
+          "registrado": 1791608399999,
+          "fuente": 1791608399999,
+          "comparable": true,
+          "coincide": true
+        },
+        {
+          "campo": "retorno",
+          "registrado": 0.0010683152474750047,
+          "fuente": 0.0010683152474750047,
+          "comparable": true,
+          "coincide": true
+        },
+        {
+          "campo": "as_of_libro",
+          "registrado": null,
+          "fuente": null,
+          "comparable": false,
+          "coincide": null
+        },
+        {
+          "campo": "as_of_flujo",
+          "registrado": null,
+          "fuente": null,
+          "comparable": false,
+          "coincide": null
+        },
+        {
+          "campo": "clase_libro",
+          "registrado": null,
+          "fuente": null,
+          "comparable": false,
+          "coincide": null
+        },
+        {
+          "campo": "clase_flujo",
+          "registrado": "desconocida",
+          "fuente": "desconocida",
+          "comparable": true,
+          "coincide": true
+        },
+        {
+          "campo": "flujo.buy_notional",
+          "registrado": 7851.759499999999,
+          "fuente": 7851.759499999999,
+          "comparable": true,
+          "coincide": true
+        },
+        {
+          "campo": "flujo.sell_notional",
+          "registrado": 21902.25,
+          "fuente": 21902.25,
+          "comparable": true,
+          "coincide": true
+        },
+        {
+          "campo": "flujo.delta_notional",
+          "registrado": -14050.4905,
+          "fuente": -14050.4905,
+          "comparable": true,
+          "coincide": true
+        },
+        {
+          "campo": "flujo.delta_ratio",
+          "registrado": -0.4722217521641915,
+          "fuente": -0.4722217521641915,
+          "comparable": true,
+          "coincide": true
+        },
+        {
+          "campo": "flujo.base_volume",
+          "registrado": 0.36000000000000004,
+          "fuente": 0.36000000000000004,
+          "comparable": true,
+          "coincide": true
+        },
+        {
+          "campo": "flujo.trade_count",
+          "registrado": 18,
+          "fuente": 18,
+          "comparable": true,
+          "coincide": true
+        },
+        {
+          "campo": "flujo.price_close",
+          "registrado": 82650.0,
+          "fuente": 82650.0,
+          "comparable": true,
+          "coincide": true
+        },
+        {
+          "campo": "flujo.first_event_ms",
+          "registrado": 1791606000250,
+          "fuente": 1791606000250,
+          "comparable": true,
+          "coincide": true
+        },
+        {
+          "campo": "flujo.last_event_ms",
+          "registrado": 1791606011340,
+          "fuente": 1791606011340,
+          "comparable": true,
+          "coincide": true
+        },
+        {
+          "campo": "flujo.delta_vs_buy_menos_sell",
+          "registrado": -14050.4905,
+          "fuente": -14050.4905,
+          "comparable": true,
+          "coincide": true
+        },
+        {
+          "campo": "flujo.delta_ratio_vs_delta_sobre_total",
+          "registrado": -0.4722217521641915,
+          "fuente": -0.4722217521641915,
+          "comparable": true,
+          "coincide": true
+        },
+        {
+          "campo": "flujo.base_volume_vs_buy_base_mas_sell_base",
+          "registrado": 0.36000000000000004,
+          "fuente": 0.36000000000000004,
+          "comparable": true,
+          "coincide": true
+        }
+      ],
+      "n_comparables": 18,
+      "n_no_comparables_null_null": 3,
+      "n_discrepancias": 0
+    },
+    {
+      "observation_id": "LUMIAUSDT|1791632160000|1791632220000",
+      "origen": "muestra_generador",
+      "simbolo": "LUMIAUSDT",
+      "bucket_start": 1791632160000,
+      "bucket_end": 1791632220000,
+      "sufijo": "",
+      "estado": "descartada",
+      "clase_libro": "desconocida",
+      "clase_flujo": "desconocida",
+      "fuente_libro_presente": true,
+      "fuente_flujo_presente": true,
+      "comprobaciones": [
+        {
+          "campo": "precio_T",
+          "registrado": null,
+          "fuente": null,
+          "comparable": false,
+          "coincide": null
+        },
+        {
+          "campo": "close_time_T",
+          "registrado": null,
+          "fuente": null,
+          "comparable": false,
+          "coincide": null
+        },
+        {
+          "campo": "precio_T_plus_h",
+          "registrado": null,
+          "fuente": null,
+          "comparable": false,
+          "coincide": null
+        },
+        {
+          "campo": "close_time_T_plus_h",
+          "registrado": null,
+          "fuente": null,
+          "comparable": false,
+          "coincide": null
+        },
+        {
+          "campo": "retorno",
+          "registrado": null,
+          "fuente": null,
+          "comparable": false,
+          "coincide": null
+        },
+        {
+          "campo": "as_of_libro",
+          "registrado": null,
+          "fuente": null,
+          "comparable": false,
+          "coincide": null
+        },
+        {
+          "campo": "as_of_flujo",
+          "registrado": null,
+          "fuente": null,
+          "comparable": false,
+          "coincide": null
+        },
+        {
+          "campo": "clase_libro",
+          "registrado": "desconocida",
+          "fuente": "desconocida",
+          "comparable": true,
+          "coincide": true
+        },
+        {
+          "campo": "clase_flujo",
+          "registrado": "desconocida",
+          "fuente": "desconocida",
+          "comparable": true,
+          "coincide": true
+        },
+        {
+          "campo": "libro.spread_mean_bps",
+          "registrado": 3.059897881212825,
+          "fuente": 3.059897881212825,
+          "comparable": true,
+          "coincide": true
+        },
+        {
+          "campo": "libro.imb_mean",
+          "registrado": -0.08197327113154848,
+          "fuente": -0.08197327113154848,
+          "comparable": true,
+          "coincide": true
+        },
+        {
+          "campo": "libro.micro_mean_bps",
+          "registrado": 0.18590252688695313,
+          "fuente": 0.18590252688695313,
+          "comparable": true,
+          "coincide": true
+        },
+        {
+          "campo": "libro.bid20_mean_base",
+          "registrado": 5330.249597782858,
+          "fuente": 5330.249597782858,
+          "comparable": true,
+          "coincide": true
+        },
+        {
+          "campo": "libro.ask20_mean_base",
+          "registrado": 6279.639573605714,
+          "fuente": 6279.639573605714,
+          "comparable": true,
+          "coincide": true
+        },
+        {
+          "campo": "libro.first_event_ms",
+          "registrado": 1791632181075,
+          "fuente": 1791632181075,
+          "comparable": true,
+          "coincide": true
+        },
+        {
+          "campo": "libro.last_event_ms",
+          "registrado": 1791632219911,
+          "fuente": 1791632219911,
+          "comparable": true,
+          "coincide": true
+        },
+        {
+          "campo": "flujo.buy_notional",
+          "registrado": 15752.678307000004,
+          "fuente": 15752.678307000004,
+          "comparable": true,
+          "coincide": true
+        },
+        {
+          "campo": "flujo.sell_notional",
+          "registrado": 17310.13293400001,
+          "fuente": 17310.13293400001,
+          "comparable": true,
+          "coincide": true
+        },
+        {
+          "campo": "flujo.delta_notional",
+          "registrado": -1557.4546270000046,
+          "fuente": -1557.4546270000046,
+          "comparable": true,
+          "coincide": true
+        },
+        {
+          "campo": "flujo.delta_ratio",
+          "registrado": -0.04710593469041316,
+          "fuente": -0.04710593469041316,
+          "comparable": true,
+          "coincide": true
+        },
+        {
+          "campo": "flujo.base_volume",
+          "registrado": 296889.4,
+          "fuente": 296889.4,
+          "comparable": true,
+          "coincide": true
+        },
+        {
+          "campo": "flujo.trade_count",
+          "registrado": 501,
+          "fuente": 501,
+          "comparable": true,
+          "coincide": true
+        },
+        {
+          "campo": "flujo.price_close",
+          "registrado": 0.11126,
+          "fuente": 0.11126,
+          "comparable": true,
+          "coincide": true
+        },
+        {
+          "campo": "flujo.first_event_ms",
+          "registrado": 1791632172224,
+          "fuente": 1791632172224,
+          "comparable": true,
+          "coincide": true
+        },
+        {
+          "campo": "flujo.last_event_ms",
+          "registrado": 1791632219884,
+          "fuente": 1791632219884,
+          "comparable": true,
+          "coincide": true
+        },
+        {
+          "campo": "flujo.delta_vs_buy_menos_sell",
+          "registrado": -1557.4546270000046,
+          "fuente": -1557.4546270000046,
+          "comparable": true,
+          "coincide": true
+        },
+        {
+          "campo": "flujo.delta_ratio_vs_delta_sobre_total",
+          "registrado": -0.04710593469041316,
+          "fuente": -0.04710593469041316,
+          "comparable": true,
+          "coincide": true
+        },
+        {
+          "campo": "flujo.base_volume_vs_buy_base_mas_sell_base",
+          "registrado": 296889.4,
+          "fuente": 296889.4,
+          "comparable": true,
+          "coincide": true
+        }
+      ],
+      "n_comparables": 21,
+      "n_no_comparables_null_null": 7,
+      "n_discrepancias": 0
+    },
+    {
+      "observation_id": "ETHUSDT|1791423180000|1791423240000",
+      "origen": "muestra_generador",
+      "simbolo": "ETHUSDT",
+      "bucket_start": 1791423180000,
+      "bucket_end": 1791423240000,
+      "sufijo": "",
+      "estado": "descartada",
+      "clase_libro": "desconocida",
+      "clase_flujo": "desconocida",
+      "fuente_libro_presente": true,
+      "fuente_flujo_presente": true,
+      "comprobaciones": [
+        {
+          "campo": "precio_T",
+          "registrado": null,
+          "fuente": null,
+          "comparable": false,
+          "coincide": null
+        },
+        {
+          "campo": "close_time_T",
+          "registrado": null,
+          "fuente": null,
+          "comparable": false,
+          "coincide": null
+        },
+        {
+          "campo": "precio_T_plus_h",
+          "registrado": null,
+          "fuente": null,
+          "comparable": false,
+          "coincide": null
+        },
+        {
+          "campo": "close_time_T_plus_h",
+          "registrado": null,
+          "fuente": null,
+          "comparable": false,
+          "coincide": null
+        },
+        {
+          "campo": "retorno",
+          "registrado": null,
+          "fuente": null,
+          "comparable": false,
+          "coincide": null
+        },
+        {
+          "campo": "as_of_libro",
+          "registrado": null,
+          "fuente": null,
+          "comparable": false,
+          "coincide": null
+        },
+        {
+          "campo": "as_of_flujo",
+          "registrado": null,
+          "fuente": null,
+          "comparable": false,
+          "coincide": null
+        },
+        {
+          "campo": "clase_libro",
+          "registrado": "desconocida",
+          "fuente": "desconocida",
+          "comparable": true,
+          "coincide": true
+        },
+        {
+          "campo": "clase_flujo",
+          "registrado": "desconocida",
+          "fuente": "desconocida",
+          "comparable": true,
+          "coincide": true
+        },
+        {
+          "campo": "libro.spread_mean_bps",
+          "registrado": 0.038711788818457535,
+          "fuente": 0.038711788818457535,
+          "comparable": true,
+          "coincide": true
+        },
+        {
+          "campo": "libro.imb_mean",
+          "registrado": 0.29303609715984835,
+          "fuente": 0.29303609715984835,
+          "comparable": true,
+          "coincide": true
+        },
+        {
+          "campo": "libro.micro_mean_bps",
+          "registrado": 0.00758076821577777,
+          "fuente": 0.00758076821577777,
+          "comparable": true,
+          "coincide": true
+        },
+        {
+          "campo": "libro.bid20_mean_base",
+          "registrado": 668668.7120216954,
+          "fuente": 668668.7120216954,
+          "comparable": true,
+          "coincide": true
+        },
+        {
+          "campo": "libro.ask20_mean_base",
+          "registrado": 403478.88465892733,
+          "fuente": 403478.88465892733,
+          "comparable": true,
+          "coincide": true
+        },
+        {
+          "campo": "libro.first_event_ms",
+          "registrado": 1791423180087,
+          "fuente": 1791423180087,
+          "comparable": true,
+          "coincide": true
+        },
+        {
+          "campo": "libro.last_event_ms",
+          "registrado": 1791423239927,
+          "fuente": 1791423239927,
+          "comparable": true,
+          "coincide": true
+        },
+        {
+          "campo": "flujo.buy_notional",
+          "registrado": 2720643.7551400014,
+          "fuente": 2720643.7551400014,
+          "comparable": true,
+          "coincide": true
+        },
+        {
+          "campo": "flujo.sell_notional",
+          "registrado": 1609576.5013799998,
+          "fuente": 1609576.5013799998,
+          "comparable": true,
+          "coincide": true
+        },
+        {
+          "campo": "flujo.delta_notional",
+          "registrado": 1111067.2537600016,
+          "fuente": 1111067.2537600016,
+          "comparable": true,
+          "coincide": true
+        },
+        {
+          "campo": "flujo.delta_ratio",
+          "registrado": 0.2565844663645159,
+          "fuente": 0.2565844663645159,
+          "comparable": true,
+          "coincide": true
+        },
+        {
+          "campo": "flujo.base_volume",
+          "registrado": 1676.3850000000007,
+          "fuente": 1676.3850000000007,
+          "comparable": true,
+          "coincide": true
+        },
+        {
+          "campo": "flujo.trade_count",
+          "registrado": 549,
+          "fuente": 549,
+          "comparable": true,
+          "coincide": true
+        },
+        {
+          "campo": "flujo.price_close",
+          "registrado": 2583.27,
+          "fuente": 2583.27,
+          "comparable": true,
+          "coincide": true
+        },
+        {
+          "campo": "flujo.first_event_ms",
+          "registrado": 1791423180008,
+          "fuente": 1791423180008,
+          "comparable": true,
+          "coincide": true
+        },
+        {
+          "campo": "flujo.last_event_ms",
+          "registrado": 1791423239987,
+          "fuente": 1791423239987,
+          "comparable": true,
+          "coincide": true
+        },
+        {
+          "campo": "flujo.delta_vs_buy_menos_sell",
+          "registrado": 1111067.2537600016,
+          "fuente": 1111067.2537600016,
+          "comparable": true,
+          "coincide": true
+        },
+        {
+          "campo": "flujo.delta_ratio_vs_delta_sobre_total",
+          "registrado": 0.2565844663645159,
+          "fuente": 0.2565844663645159,
+          "comparable": true,
+          "coincide": true
+        },
+        {
+          "campo": "flujo.base_volume_vs_buy_base_mas_sell_base",
+          "registrado": 1676.3850000000007,
+          "fuente": 1676.3850000000007,
+          "comparable": true,
+          "coincide": true
+        }
+      ],
+      "n_comparables": 21,
+      "n_no_comparables_null_null": 7,
+      "n_discrepancias": 0
+    },
+    {
+      "observation_id": "BTCUSDT|1791603900000|1791603960000",
+      "origen": "suplemento_por_clase",
+      "simbolo": "BTCUSDT",
+      "bucket_start": 1791603900000,
+      "bucket_end": 1791603960000,
+      "sufijo": "",
+      "estado": "aceptada_para_descripcion",
+      "clase_libro": "desconocida",
+      "clase_flujo": "desconocida",
+      "fuente_libro_presente": true,
+      "fuente_flujo_presente": true,
+      "comprobaciones": [
+        {
+          "campo": "precio_T",
+          "registrado": 82590.3,
+          "fuente": 82590.3,
+          "comparable": true,
+          "coincide": true
+        },
+        {
+          "campo": "close_time_T",
+          "registrado": 1791601199999,
+          "fuente": 1791601199999,
+          "comparable": true,
+          "coincide": true
+        },
+        {
+          "campo": "precio_T_plus_h",
+          "registrado": 82559.9,
+          "fuente": 82559.9,
+          "comparable": true,
+          "coincide": true
+        },
+        {
+          "campo": "close_time_T_plus_h",
+          "registrado": 1791604799999,
+          "fuente": 1791604799999,
+          "comparable": true,
+          "coincide": true
+        },
+        {
+          "campo": "retorno",
+          "registrado": -0.00036808196604212274,
+          "fuente": -0.00036808196604212274,
+          "comparable": true,
+          "coincide": true
+        },
+        {
+          "campo": "as_of_libro",
+          "registrado": null,
+          "fuente": null,
+          "comparable": false,
+          "coincide": null
+        },
+        {
+          "campo": "as_of_flujo",
+          "registrado": null,
+          "fuente": null,
+          "comparable": false,
+          "coincide": null
+        },
+        {
+          "campo": "clase_libro",
+          "registrado": "desconocida",
+          "fuente": "desconocida",
+          "comparable": true,
+          "coincide": true
+        },
+        {
+          "campo": "clase_flujo",
+          "registrado": "desconocida",
+          "fuente": "desconocida",
+          "comparable": true,
+          "coincide": true
+        },
+        {
+          "campo": "libro.spread_mean_bps",
+          "registrado": 0.012117209770811552,
+          "fuente": 0.012117209770811552,
+          "comparable": true,
+          "coincide": true
+        },
+        {
+          "campo": "libro.imb_mean",
+          "registrado": -0.05570456626242058,
+          "fuente": -0.05570456626242058,
+          "comparable": true,
+          "coincide": true
+        },
+        {
+          "campo": "libro.micro_mean_bps",
+          "registrado": 0.00030401092656317147,
+          "fuente": 0.00030401092656317147,
+          "comparable": true,
+          "coincide": true
+        },
+        {
+          "campo": "libro.bid20_mean_base",
+          "registrado": 1427616.9925656612,
+          "fuente": 1427616.9925656612,
+          "comparable": true,
+          "coincide": true
+        },
+        {
+          "campo": "libro.ask20_mean_base",
+          "registrado": 2142606.223898376,
+          "fuente": 2142606.223898376,
+          "comparable": true,
+          "coincide": true
+        },
+        {
+          "campo": "libro.first_event_ms",
+          "registrado": 1791603913261,
+          "fuente": 1791603913261,
+          "comparable": true,
+          "coincide": true
+        },
+        {
+          "campo": "libro.last_event_ms",
+          "registrado": 1791603959983,
+          "fuente": 1791603959983,
+          "comparable": true,
+          "coincide": true
+        },
+        {
+          "campo": "flujo.buy_notional",
+          "registrado": 37384.8669,
+          "fuente": 37384.8669,
+          "comparable": true,
+          "coincide": true
+        },
+        {
+          "campo": "flujo.sell_notional",
+          "registrado": 67094.61359999998,
+          "fuente": 67094.61359999998,
+          "comparable": true,
+          "coincide": true
+        },
+        {
+          "campo": "flujo.delta_notional",
+          "registrado": -29709.74669999998,
+          "fuente": -29709.74669999998,
+          "comparable": true,
+          "coincide": true
+        },
+        {
+          "campo": "flujo.delta_ratio",
+          "registrado": -0.2843596327031889,
+          "fuente": -0.2843596327031889,
+          "comparable": true,
+          "coincide": true
+        },
+        {
+          "campo": "flujo.base_volume",
+          "registrado": 1.2660000000000002,
+          "fuente": 1.2660000000000002,
+          "comparable": true,
+          "coincide": true
+        },
+        {
+          "campo": "flujo.trade_count",
+          "registrado": 55,
+          "fuente": 55,
+          "comparable": true,
+          "coincide": true
+        },
+        {
+          "campo": "flujo.price_close",
+          "registrado": 82527.2,
+          "fuente": 82527.2,
+          "comparable": true,
+          "coincide": true
+        },
+        {
+          "campo": "flujo.first_event_ms",
+          "registrado": 1791603914168,
+          "fuente": 1791603914168,
+          "comparable": true,
+          "coincide": true
+        },
+        {
+          "campo": "flujo.last_event_ms",
+          "registrado": 1791603959801,
+          "fuente": 1791603959801,
+          "comparable": true,
+          "coincide": true
+        },
+        {
+          "campo": "flujo.delta_vs_buy_menos_sell",
+          "registrado": -29709.74669999998,
+          "fuente": -29709.74669999998,
+          "comparable": true,
+          "coincide": true
+        },
+        {
+          "campo": "flujo.delta_ratio_vs_delta_sobre_total",
+          "registrado": -0.2843596327031889,
+          "fuente": -0.2843596327031889,
+          "comparable": true,
+          "coincide": true
+        },
+        {
+          "campo": "flujo.base_volume_vs_buy_base_mas_sell_base",
+          "registrado": 1.2660000000000002,
+          "fuente": 1.2660000000000002,
+          "comparable": true,
+          "coincide": true
+        }
+      ],
+      "n_comparables": 26,
+      "n_no_comparables_null_null": 2,
+      "n_discrepancias": 0
+    },
+    {
+      "observation_id": "BTCUSDT|1791603960000|1791604020000",
+      "origen": "suplemento_por_clase",
+      "simbolo": "BTCUSDT",
+      "bucket_start": 1791603960000,
+      "bucket_end": 1791604020000,
+      "sufijo": "",
+      "estado": "aceptada_para_descripcion",
+      "clase_libro": "desconocida",
+      "clase_flujo": "desconocida",
+      "fuente_libro_presente": true,
+      "fuente_flujo_presente": true,
+      "comprobaciones": [
+        {
+          "campo": "precio_T",
+          "registrado": 82590.3,
+          "fuente": 82590.3,
+          "comparable": true,
+          "coincide": true
+        },
+        {
+          "campo": "close_time_T",
+          "registrado": 1791601199999,
+          "fuente": 1791601199999,
+          "comparable": true,
+          "coincide": true
+        },
+        {
+          "campo": "precio_T_plus_h",
+          "registrado": 82559.9,
+          "fuente": 82559.9,
+          "comparable": true,
+          "coincide": true
+        },
+        {
+          "campo": "close_time_T_plus_h",
+          "registrado": 1791604799999,
+          "fuente": 1791604799999,
+          "comparable": true,
+          "coincide": true
+        },
+        {
+          "campo": "retorno",
+          "registrado": -0.00036808196604212274,
+          "fuente": -0.00036808196604212274,
+          "comparable": true,
+          "coincide": true
+        },
+        {
+          "campo": "as_of_libro",
+          "registrado": null,
+          "fuente": null,
+          "comparable": false,
+          "coincide": null
+        },
+        {
+          "campo": "as_of_flujo",
+          "registrado": null,
+          "fuente": null,
+          "comparable": false,
+          "coincide": null
+        },
+        {
+          "campo": "clase_libro",
+          "registrado": "desconocida",
+          "fuente": "desconocida",
+          "comparable": true,
+          "coincide": true
+        },
+        {
+          "campo": "clase_flujo",
+          "registrado": "desconocida",
+          "fuente": "desconocida",
+          "comparable": true,
+          "coincide": true
+        },
+        {
+          "campo": "libro.spread_mean_bps",
+          "registrado": 0.012114405714080807,
+          "fuente": 0.012114405714080807,
+          "comparable": true,
+          "coincide": true
+        },
+        {
+          "campo": "libro.imb_mean",
+          "registrado": 0.6038314869449456,
+          "fuente": 0.6038314869449456,
+          "comparable": true,
+          "coincide": true
+        },
+        {
+          "campo": "libro.micro_mean_bps",
+          "registrado": 0.0032983096959185725,
+          "fuente": 0.0032983096959185725,
+          "comparable": true,
+          "coincide": true
+        },
+        {
+          "campo": "libro.bid20_mean_base",
+          "registrado": 1667528.4461488635,
+          "fuente": 1667528.4461488635,
+          "comparable": true,
+          "coincide": true
+        },
+        {
+          "campo": "libro.ask20_mean_base",
+          "registrado": 453782.3241073864,
+          "fuente": 453782.3241073864,
+          "comparable": true,
+          "coincide": true
+        },
+        {
+          "campo": "libro.first_event_ms",
+          "registrado": 1791603960085,
+          "fuente": 1791603960085,
+          "comparable": true,
+          "coincide": true
+        },
+        {
+          "campo": "libro.last_event_ms",
+          "registrado": 1791604019959,
+          "fuente": 1791604019959,
+          "comparable": true,
+          "coincide": true
+        },
+        {
+          "campo": "flujo.buy_notional",
+          "registrado": 3117560.8385999976,
+          "fuente": 3117560.8385999976,
+          "comparable": true,
+          "coincide": true
+        },
+        {
+          "campo": "flujo.sell_notional",
+          "registrado": 248263.59199999992,
+          "fuente": 248263.59199999992,
+          "comparable": true,
+          "coincide": true
+        },
+        {
+          "campo": "flujo.delta_notional",
+          "registrado": 2869297.246599998,
+          "fuente": 2869297.246599998,
+          "comparable": true,
+          "coincide": true
+        },
+        {
+          "campo": "flujo.delta_ratio",
+          "registrado": 0.8524797730131493,
+          "fuente": 0.8524797730131493,
+          "comparable": true,
+          "coincide": true
+        },
+        {
+          "campo": "flujo.base_volume",
+          "registrado": 40.78199999999988,
+          "fuente": 40.78199999999988,
+          "comparable": true,
+          "coincide": true
+        },
+        {
+          "campo": "flujo.trade_count",
+          "registrado": 238,
+          "fuente": 238,
+          "comparable": true,
+          "coincide": true
+        },
+        {
+          "campo": "flujo.price_close",
+          "registrado": 82554.5,
+          "fuente": 82554.5,
+          "comparable": true,
+          "coincide": true
+        },
+        {
+          "campo": "flujo.first_event_ms",
+          "registrado": 1791603960751,
+          "fuente": 1791603960751,
+          "comparable": true,
+          "coincide": true
+        },
+        {
+          "campo": "flujo.last_event_ms",
+          "registrado": 1791604019204,
+          "fuente": 1791604019204,
+          "comparable": true,
+          "coincide": true
+        },
+        {
+          "campo": "flujo.delta_vs_buy_menos_sell",
+          "registrado": 2869297.246599998,
+          "fuente": 2869297.246599998,
+          "comparable": true,
+          "coincide": true
+        },
+        {
+          "campo": "flujo.delta_ratio_vs_delta_sobre_total",
+          "registrado": 0.8524797730131493,
+          "fuente": 0.8524797730131493,
+          "comparable": true,
+          "coincide": true
+        },
+        {
+          "campo": "flujo.base_volume_vs_buy_base_mas_sell_base",
+          "registrado": 40.78199999999988,
+          "fuente": 40.78199999999988,
+          "comparable": true,
+          "coincide": true
+        }
+      ],
+      "n_comparables": 26,
+      "n_no_comparables_null_null": 2,
+      "n_discrepancias": 0
+    },
+    {
+      "observation_id": "BTCUSDT|1791889800000|1791889860000",
+      "origen": "suplemento_por_clase",
+      "simbolo": "BTCUSDT",
+      "bucket_start": 1791889800000,
+      "bucket_end": 1791889860000,
+      "sufijo": "",
+      "estado": "aceptada_para_descripcion",
+      "clase_libro": "publicada_despues_de_T",
+      "clase_flujo": "publicada_despues_de_T",
+      "fuente_libro_presente": true,
+      "fuente_flujo_presente": true,
+      "comprobaciones": [
+        {
+          "campo": "precio_T",
+          "registrado": 83310.1,
+          "fuente": 83310.1,
+          "comparable": true,
+          "coincide": true
+        },
+        {
+          "campo": "close_time_T",
+          "registrado": 1791889199999,
+          "fuente": 1791889199999,
+          "comparable": true,
+          "coincide": true
+        },
+        {
+          "campo": "precio_T_plus_h",
+          "registrado": 83325.2,
+          "fuente": 83325.2,
+          "comparable": true,
+          "coincide": true
+        },
+        {
+          "campo": "close_time_T_plus_h",
+          "registrado": 1791892799999,
+          "fuente": 1791892799999,
+          "comparable": true,
+          "coincide": true
+        },
+        {
+          "campo": "retorno",
+          "registrado": 0.0001812505326483976,
+          "fuente": 0.0001812505326483976,
+          "comparable": true,
+          "coincide": true
+        },
+        {
+          "campo": "as_of_libro",
+          "registrado": 1791889861250,
+          "fuente": 1791889861250,
+          "comparable": true,
+          "coincide": true
+        },
+        {
+          "campo": "as_of_flujo",
+          "registrado": 1791889861204,
+          "fuente": 1791889861204,
+          "comparable": true,
+          "coincide": true
+        },
+        {
+          "campo": "clase_libro",
+          "registrado": "publicada_despues_de_T",
+          "fuente": "publicada_despues_de_T",
+          "comparable": true,
+          "coincide": true
+        },
+        {
+          "campo": "clase_flujo",
+          "registrado": "publicada_despues_de_T",
+          "fuente": "publicada_despues_de_T",
+          "comparable": true,
+          "coincide": true
+        },
+        {
+          "campo": "libro.spread_mean_bps",
+          "registrado": 0.012066731029668286,
+          "fuente": 0.012066731029668286,
+          "comparable": true,
+          "coincide": true
+        },
+        {
+          "campo": "libro.imb_mean",
+          "registrado": 0.2414297846694753,
+          "fuente": 0.2414297846694753,
+          "comparable": true,
+          "coincide": true
+        },
+        {
+          "campo": "libro.micro_mean_bps",
+          "registrado": 0.001789371908289447,
+          "fuente": 0.001789371908289447,
+          "comparable": true,
+          "coincide": true
+        },
+        {
+          "campo": "libro.bid20_mean_base",
+          "registrado": 1038044.8618113744,
+          "fuente": 1038044.8618113744,
+          "comparable": true,
+          "coincide": true
+        },
+        {
+          "campo": "libro.ask20_mean_base",
+          "registrado": 710123.9479710901,
+          "fuente": 710123.9479710901,
+          "comparable": true,
+          "coincide": true
+        },
+        {
+          "campo": "libro.first_event_ms",
+          "registrado": 1791889838394,
+          "fuente": 1791889838394,
+          "comparable": true,
+          "coincide": true
+        },
+        {
+          "campo": "libro.last_event_ms",
+          "registrado": 1791889859970,
+          "fuente": 1791889859970,
+          "comparable": true,
+          "coincide": true
+        },
+        {
+          "campo": "flujo.buy_notional",
+          "registrado": 2296180.7659,
+          "fuente": 2296180.7659,
+          "comparable": true,
+          "coincide": true
+        },
+        {
+          "campo": "flujo.sell_notional",
+          "registrado": 1030151.0252,
+          "fuente": 1030151.0252,
+          "comparable": true,
+          "coincide": true
+        },
+        {
+          "campo": "flujo.delta_notional",
+          "registrado": 1266029.7407,
+          "fuente": 1266029.7407,
+          "comparable": true,
+          "coincide": true
+        },
+        {
+          "campo": "flujo.delta_ratio",
+          "registrado": 0.3806083758954577,
+          "fuente": 0.3806083758954577,
+          "comparable": true,
+          "coincide": true
+        },
+        {
+          "campo": "flujo.base_volume",
+          "registrado": 39.94800000000002,
+          "fuente": 39.94800000000002,
+          "comparable": true,
+          "coincide": true
+        },
+        {
+          "campo": "flujo.trade_count",
+          "registrado": 389,
+          "fuente": 389,
+          "comparable": true,
+          "coincide": true
+        },
+        {
+          "campo": "flujo.price_close",
+          "registrado": 83267.1,
+          "fuente": 83267.1,
+          "comparable": true,
+          "coincide": true
+        },
+        {
+          "campo": "flujo.first_event_ms",
+          "registrado": 1791889838353,
+          "fuente": 1791889838353,
+          "comparable": true,
+          "coincide": true
+        },
+        {
+          "campo": "flujo.last_event_ms",
+          "registrado": 1791889859909,
+          "fuente": 1791889859909,
+          "comparable": true,
+          "coincide": true
+        },
+        {
+          "campo": "flujo.delta_vs_buy_menos_sell",
+          "registrado": 1266029.7407,
+          "fuente": 1266029.7407,
+          "comparable": true,
+          "coincide": true
+        },
+        {
+          "campo": "flujo.delta_ratio_vs_delta_sobre_total",
+          "registrado": 0.3806083758954577,
+          "fuente": 0.3806083758954577,
+          "comparable": true,
+          "coincide": true
+        },
+        {
+          "campo": "flujo.base_volume_vs_buy_base_mas_sell_base",
+          "registrado": 39.94800000000002,
+          "fuente": 39.94800000000002,
+          "comparable": true,
+          "coincide": true
+        }
+      ],
+      "n_comparables": 28,
+      "n_no_comparables_null_null": 0,
+      "n_discrepancias": 0
+    },
+    {
+      "observation_id": "BTCUSDT|1791889860000|1791889920000",
+      "origen": "suplemento_por_clase",
+      "simbolo": "BTCUSDT",
+      "bucket_start": 1791889860000,
+      "bucket_end": 1791889920000,
+      "sufijo": "",
+      "estado": "aceptada_para_descripcion",
+      "clase_libro": "publicada_despues_de_T",
+      "clase_flujo": "publicada_despues_de_T",
+      "fuente_libro_presente": true,
+      "fuente_flujo_presente": true,
+      "comprobaciones": [
+        {
+          "campo": "precio_T",
+          "registrado": 83310.1,
+          "fuente": 83310.1,
+          "comparable": true,
+          "coincide": true
+        },
+        {
+          "campo": "close_time_T",
+          "registrado": 1791889199999,
+          "fuente": 1791889199999,
+          "comparable": true,
+          "coincide": true
+        },
+        {
+          "campo": "precio_T_plus_h",
+          "registrado": 83325.2,
+          "fuente": 83325.2,
+          "comparable": true,
+          "coincide": true
+        },
+        {
+          "campo": "close_time_T_plus_h",
+          "registrado": 1791892799999,
+          "fuente": 1791892799999,
+          "comparable": true,
+          "coincide": true
+        },
+        {
+          "campo": "retorno",
+          "registrado": 0.0001812505326483976,
+          "fuente": 0.0001812505326483976,
+          "comparable": true,
+          "coincide": true
+        },
+        {
+          "campo": "as_of_libro",
+          "registrado": 1791889921283,
+          "fuente": 1791889921283,
+          "comparable": true,
+          "coincide": true
+        },
+        {
+          "campo": "as_of_flujo",
+          "registrado": 1791889921307,
+          "fuente": 1791889921307,
+          "comparable": true,
+          "coincide": true
+        },
+        {
+          "campo": "clase_libro",
+          "registrado": "publicada_despues_de_T",
+          "fuente": "publicada_despues_de_T",
+          "comparable": true,
+          "coincide": true
+        },
+        {
+          "campo": "clase_flujo",
+          "registrado": "publicada_despues_de_T",
+          "fuente": "publicada_despues_de_T",
+          "comparable": true,
+          "coincide": true
+        },
+        {
+          "campo": "libro.spread_mean_bps",
+          "registrado": 0.012183778617720143,
+          "fuente": 0.012183778617720143,
+          "comparable": true,
+          "coincide": true
+        },
+        {
+          "campo": "libro.imb_mean",
+          "registrado": -0.07444853779944254,
+          "fuente": -0.07444853779944254,
+          "comparable": true,
+          "coincide": true
+        },
+        {
+          "campo": "libro.micro_mean_bps",
+          "registrado": -0.00033176630294209615,
+          "fuente": -0.00033176630294209615,
+          "comparable": true,
+          "coincide": true
+        },
+        {
+          "campo": "libro.bid20_mean_base",
+          "registrado": 646182.7494342151,
+          "fuente": 646182.7494342151,
+          "comparable": true,
+          "coincide": true
+        },
+        {
+          "campo": "libro.ask20_mean_base",
+          "registrado": 875888.2091273369,
+          "fuente": 875888.2091273369,
+          "comparable": true,
+          "coincide": true
+        },
+        {
+          "campo": "libro.first_event_ms",
+          "registrado": 1791889861500,
+          "fuente": 1791889861500,
+          "comparable": true,
+          "coincide": true
+        },
+        {
+          "campo": "libro.last_event_ms",
+          "registrado": 1791889919958,
+          "fuente": 1791889919958,
+          "comparable": true,
+          "coincide": true
+        },
+        {
+          "campo": "flujo.buy_notional",
+          "registrado": 3438059.718099999,
+          "fuente": 3438059.718099999,
+          "comparable": true,
+          "coincide": true
+        },
+        {
+          "campo": "flujo.sell_notional",
+          "registrado": 1892396.8851000005,
+          "fuente": 1892396.8851000005,
+          "comparable": true,
+          "coincide": true
+        },
+        {
+          "campo": "flujo.delta_notional",
+          "registrado": 1545662.8329999982,
+          "fuente": 1545662.8329999982,
+          "comparable": true,
+          "coincide": true
+        },
+        {
+          "campo": "flujo.delta_ratio",
+          "registrado": 0.2899681862285681,
+          "fuente": 0.2899681862285681,
+          "comparable": true,
+          "coincide": true
+        },
+        {
+          "campo": "flujo.base_volume",
+          "registrado": 64.04500000000003,
+          "fuente": 64.04500000000003,
+          "comparable": true,
+          "coincide": true
+        },
+        {
+          "campo": "flujo.trade_count",
+          "registrado": 903,
+          "fuente": 903,
+          "comparable": true,
+          "coincide": true
+        },
+        {
+          "campo": "flujo.price_close",
+          "registrado": 83254.1,
+          "fuente": 83254.1,
+          "comparable": true,
+          "coincide": true
+        },
+        {
+          "campo": "flujo.first_event_ms",
+          "registrado": 1791889861588,
+          "fuente": 1791889861588,
+          "comparable": true,
+          "coincide": true
+        },
+        {
+          "campo": "flujo.last_event_ms",
+          "registrado": 1791889919982,
+          "fuente": 1791889919982,
+          "comparable": true,
+          "coincide": true
+        },
+        {
+          "campo": "flujo.delta_vs_buy_menos_sell",
+          "registrado": 1545662.8329999982,
+          "fuente": 1545662.8329999982,
+          "comparable": true,
+          "coincide": true
+        },
+        {
+          "campo": "flujo.delta_ratio_vs_delta_sobre_total",
+          "registrado": 0.2899681862285681,
+          "fuente": 0.2899681862285681,
+          "comparable": true,
+          "coincide": true
+        },
+        {
+          "campo": "flujo.base_volume_vs_buy_base_mas_sell_base",
+          "registrado": 64.04500000000003,
+          "fuente": 64.04500000000003,
+          "comparable": true,
+          "coincide": true
+        }
+      ],
+      "n_comparables": 28,
+      "n_no_comparables_null_null": 0,
+      "n_discrepancias": 0
+    },
+    {
+      "observation_id": "AIOTUSDT|1791462840000|1791462900000|F",
+      "origen": "suplemento_por_clase",
+      "simbolo": "AIOTUSDT",
+      "bucket_start": 1791462840000,
+      "bucket_end": 1791462900000,
+      "sufijo": "F",
+      "estado": "descartada",
+      "clase_libro": null,
+      "clase_flujo": "desconocida",
+      "fuente_libro_presente": false,
+      "fuente_flujo_presente": true,
+      "comprobaciones": [
+        {
+          "campo": "precio_T",
+          "registrado": null,
+          "fuente": null,
+          "comparable": false,
+          "coincide": null
+        },
+        {
+          "campo": "close_time_T",
+          "registrado": null,
+          "fuente": null,
+          "comparable": false,
+          "coincide": null
+        },
+        {
+          "campo": "precio_T_plus_h",
+          "registrado": null,
+          "fuente": null,
+          "comparable": false,
+          "coincide": null
+        },
+        {
+          "campo": "close_time_T_plus_h",
+          "registrado": null,
+          "fuente": null,
+          "comparable": false,
+          "coincide": null
+        },
+        {
+          "campo": "retorno",
+          "registrado": null,
+          "fuente": null,
+          "comparable": false,
+          "coincide": null
+        },
+        {
+          "campo": "as_of_libro",
+          "registrado": null,
+          "fuente": null,
+          "comparable": false,
+          "coincide": null
+        },
+        {
+          "campo": "as_of_flujo",
+          "registrado": null,
+          "fuente": null,
+          "comparable": false,
+          "coincide": null
+        },
+        {
+          "campo": "clase_libro",
+          "registrado": null,
+          "fuente": null,
+          "comparable": false,
+          "coincide": null
+        },
+        {
+          "campo": "clase_flujo",
+          "registrado": "desconocida",
+          "fuente": "desconocida",
+          "comparable": true,
+          "coincide": true
+        },
+        {
+          "campo": "flujo.buy_notional",
+          "registrado": 913.0317200000001,
+          "fuente": 913.0317200000001,
+          "comparable": true,
+          "coincide": true
+        },
+        {
+          "campo": "flujo.sell_notional",
+          "registrado": 759.8116,
+          "fuente": 759.8116,
+          "comparable": true,
+          "coincide": true
+        },
+        {
+          "campo": "flujo.delta_notional",
+          "registrado": 153.22012000000007,
+          "fuente": 153.22012000000007,
+          "comparable": true,
+          "coincide": true
+        },
+        {
+          "campo": "flujo.delta_ratio",
+          "registrado": 0.09159263044431445,
+          "fuente": 0.09159263044431445,
+          "comparable": true,
+          "coincide": true
+        },
+        {
+          "campo": "flujo.base_volume",
+          "registrado": 46358.0,
+          "fuente": 46358.0,
+          "comparable": true,
+          "coincide": true
+        },
+        {
+          "campo": "flujo.trade_count",
+          "registrado": 15,
+          "fuente": 15,
+          "comparable": true,
+          "coincide": true
+        },
+        {
+          "campo": "flujo.price_close",
+          "registrado": 0.0361,
+          "fuente": 0.0361,
+          "comparable": true,
+          "coincide": true
+        },
+        {
+          "campo": "flujo.first_event_ms",
+          "registrado": 1791462840133,
+          "fuente": 1791462840133,
+          "comparable": true,
+          "coincide": true
+        },
+        {
+          "campo": "flujo.last_event_ms",
+          "registrado": 1791462848192,
+          "fuente": 1791462848192,
+          "comparable": true,
+          "coincide": true
+        },
+        {
+          "campo": "flujo.delta_vs_buy_menos_sell",
+          "registrado": 153.22012000000007,
+          "fuente": 153.22012000000007,
+          "comparable": true,
+          "coincide": true
+        },
+        {
+          "campo": "flujo.delta_ratio_vs_delta_sobre_total",
+          "registrado": 0.09159263044431445,
+          "fuente": 0.09159263044431445,
+          "comparable": true,
+          "coincide": true
+        },
+        {
+          "campo": "flujo.base_volume_vs_buy_base_mas_sell_base",
+          "registrado": 46358.0,
+          "fuente": 46358.0,
+          "comparable": true,
+          "coincide": true
+        }
+      ],
+      "n_comparables": 13,
+      "n_no_comparables_null_null": 8,
+      "n_discrepancias": 0
+    },
+    {
+      "observation_id": "BTCUSDT|1791413100000|1791413160000|F",
+      "origen": "suplemento_por_clase",
+      "simbolo": "BTCUSDT",
+      "bucket_start": 1791413100000,
+      "bucket_end": 1791413160000,
+      "sufijo": "F",
+      "estado": "descartada",
+      "clase_libro": null,
+      "clase_flujo": "desconocida",
+      "fuente_libro_presente": false,
+      "fuente_flujo_presente": true,
+      "comprobaciones": [
+        {
+          "campo": "precio_T",
+          "registrado": null,
+          "fuente": null,
+          "comparable": false,
+          "coincide": null
+        },
+        {
+          "campo": "close_time_T",
+          "registrado": null,
+          "fuente": null,
+          "comparable": false,
+          "coincide": null
+        },
+        {
+          "campo": "precio_T_plus_h",
+          "registrado": null,
+          "fuente": null,
+          "comparable": false,
+          "coincide": null
+        },
+        {
+          "campo": "close_time_T_plus_h",
+          "registrado": null,
+          "fuente": null,
+          "comparable": false,
+          "coincide": null
+        },
+        {
+          "campo": "retorno",
+          "registrado": null,
+          "fuente": null,
+          "comparable": false,
+          "coincide": null
+        },
+        {
+          "campo": "as_of_libro",
+          "registrado": null,
+          "fuente": null,
+          "comparable": false,
+          "coincide": null
+        },
+        {
+          "campo": "as_of_flujo",
+          "registrado": null,
+          "fuente": null,
+          "comparable": false,
+          "coincide": null
+        },
+        {
+          "campo": "clase_libro",
+          "registrado": null,
+          "fuente": null,
+          "comparable": false,
+          "coincide": null
+        },
+        {
+          "campo": "clase_flujo",
+          "registrado": "desconocida",
+          "fuente": "desconocida",
+          "comparable": true,
+          "coincide": true
+        },
+        {
+          "campo": "flujo.buy_notional",
+          "registrado": 215264.20829999994,
+          "fuente": 215264.20829999994,
+          "comparable": true,
+          "coincide": true
+        },
+        {
+          "campo": "flujo.sell_notional",
+          "registrado": 612319.8481000004,
+          "fuente": 612319.8481000004,
+          "comparable": true,
+          "coincide": true
+        },
+        {
+          "campo": "flujo.delta_notional",
+          "registrado": -397055.63980000047,
+          "fuente": -397055.63980000047,
+          "comparable": true,
+          "coincide": true
+        },
+        {
+          "campo": "flujo.delta_ratio",
+          "registrado": -0.4797768114663746,
+          "fuente": -0.4797768114663746,
+          "comparable": true,
+          "coincide": true
+        },
+        {
+          "campo": "flujo.base_volume",
+          "registrado": 9.942999999999996,
+          "fuente": 9.942999999999996,
+          "comparable": true,
+          "coincide": true
+        },
+        {
+          "campo": "flujo.trade_count",
+          "registrado": 228,
+          "fuente": 228,
+          "comparable": true,
+          "coincide": true
+        },
+        {
+          "campo": "flujo.price_close",
+          "registrado": 83215.9,
+          "fuente": 83215.9,
+          "comparable": true,
+          "coincide": true
+        },
+        {
+          "campo": "flujo.first_event_ms",
+          "registrado": 1791413100096,
+          "fuente": 1791413100096,
+          "comparable": true,
+          "coincide": true
+        },
+        {
+          "campo": "flujo.last_event_ms",
+          "registrado": 1791413137508,
+          "fuente": 1791413137508,
+          "comparable": true,
+          "coincide": true
+        },
+        {
+          "campo": "flujo.delta_vs_buy_menos_sell",
+          "registrado": -397055.63980000047,
+          "fuente": -397055.63980000047,
+          "comparable": true,
+          "coincide": true
+        },
+        {
+          "campo": "flujo.delta_ratio_vs_delta_sobre_total",
+          "registrado": -0.4797768114663746,
+          "fuente": -0.4797768114663746,
+          "comparable": true,
+          "coincide": true
+        },
+        {
+          "campo": "flujo.base_volume_vs_buy_base_mas_sell_base",
+          "registrado": 9.942999999999996,
+          "fuente": 9.942999999999996,
+          "comparable": true,
+          "coincide": true
+        }
+      ],
+      "n_comparables": 13,
+      "n_no_comparables_null_null": 8,
+      "n_discrepancias": 0
+    },
+    {
+      "observation_id": "BTCUSDT|1792022820000|1792022880000|F",
+      "origen": "suplemento_por_clase",
+      "simbolo": "BTCUSDT",
+      "bucket_start": 1792022820000,
+      "bucket_end": 1792022880000,
+      "sufijo": "F",
+      "estado": "descartada",
+      "clase_libro": null,
+      "clase_flujo": "publicada_despues_de_T",
+      "fuente_libro_presente": false,
+      "fuente_flujo_presente": true,
+      "comprobaciones": [
+        {
+          "campo": "precio_T",
+          "registrado": 81641.5,
+          "fuente": 81641.5,
+          "comparable": true,
+          "coincide": true
+        },
+        {
+          "campo": "close_time_T",
+          "registrado": 1792022399999,
+          "fuente": 1792022399999,
+          "comparable": true,
+          "coincide": true
+        },
+        {
+          "campo": "precio_T_plus_h",
+          "registrado": 81624.7,
+          "fuente": 81624.7,
+          "comparable": true,
+          "coincide": true
+        },
+        {
+          "campo": "close_time_T_plus_h",
+          "registrado": 1792025999999,
+          "fuente": 1792025999999,
+          "comparable": true,
+          "coincide": true
+        },
+        {
+          "campo": "retorno",
+          "registrado": -0.00020577769884192365,
+          "fuente": -0.00020577769884192365,
+          "comparable": true,
+          "coincide": true
+        },
+        {
+          "campo": "as_of_libro",
+          "registrado": null,
+          "fuente": null,
+          "comparable": false,
+          "coincide": null
+        },
+        {
+          "campo": "as_of_flujo",
+          "registrado": 1792022884181,
+          "fuente": 1792022884181,
+          "comparable": true,
+          "coincide": true
+        },
+        {
+          "campo": "clase_libro",
+          "registrado": null,
+          "fuente": null,
+          "comparable": false,
+          "coincide": null
+        },
+        {
+          "campo": "clase_flujo",
+          "registrado": "publicada_despues_de_T",
+          "fuente": "publicada_despues_de_T",
+          "comparable": true,
+          "coincide": true
+        },
+        {
+          "campo": "flujo.buy_notional",
+          "registrado": 473568.75860000023,
+          "fuente": 473568.75860000023,
+          "comparable": true,
+          "coincide": true
+        },
+        {
+          "campo": "flujo.sell_notional",
+          "registrado": 385113.2073000001,
+          "fuente": 385113.2073000001,
+          "comparable": true,
+          "coincide": true
+        },
+        {
+          "campo": "flujo.delta_notional",
+          "registrado": 88455.55130000011,
+          "fuente": 88455.55130000011,
+          "comparable": true,
+          "coincide": true
+        },
+        {
+          "campo": "flujo.delta_ratio",
+          "registrado": 0.10301316996600507,
+          "fuente": 0.10301316996600507,
+          "comparable": true,
+          "coincide": true
+        },
+        {
+          "campo": "flujo.base_volume",
+          "registrado": 10.505999999999997,
+          "fuente": 10.505999999999997,
+          "comparable": true,
+          "coincide": true
+        },
+        {
+          "campo": "flujo.trade_count",
+          "registrado": 252,
+          "fuente": 252,
+          "comparable": true,
+          "coincide": true
+        },
+        {
+          "campo": "flujo.price_close",
+          "registrado": 81740.4,
+          "fuente": 81740.4,
+          "comparable": true,
+          "coincide": true
+        },
+        {
+          "campo": "flujo.first_event_ms",
+          "registrado": 1792022856994,
+          "fuente": 1792022856994,
+          "comparable": true,
+          "coincide": true
+        },
+        {
+          "campo": "flujo.last_event_ms",
+          "registrado": 1792022879853,
+          "fuente": 1792022879853,
+          "comparable": true,
+          "coincide": true
+        },
+        {
+          "campo": "flujo.delta_vs_buy_menos_sell",
+          "registrado": 88455.55130000011,
+          "fuente": 88455.55130000011,
+          "comparable": true,
+          "coincide": true
+        },
+        {
+          "campo": "flujo.delta_ratio_vs_delta_sobre_total",
+          "registrado": 0.10301316996600507,
+          "fuente": 0.10301316996600507,
+          "comparable": true,
+          "coincide": true
+        },
+        {
+          "campo": "flujo.base_volume_vs_buy_base_mas_sell_base",
+          "registrado": 10.505999999999997,
+          "fuente": 10.505999999999997,
+          "comparable": true,
+          "coincide": true
+        }
+      ],
+      "n_comparables": 19,
+      "n_no_comparables_null_null": 2,
+      "n_discrepancias": 0
+    },
+    {
+      "observation_id": "ETHUSDT|1792022820000|1792022880000|F",
+      "origen": "suplemento_por_clase",
+      "simbolo": "ETHUSDT",
+      "bucket_start": 1792022820000,
+      "bucket_end": 1792022880000,
+      "sufijo": "F",
+      "estado": "descartada",
+      "clase_libro": null,
+      "clase_flujo": "publicada_despues_de_T",
+      "fuente_libro_presente": false,
+      "fuente_flujo_presente": true,
+      "comprobaciones": [
+        {
+          "campo": "precio_T",
+          "registrado": null,
+          "fuente": null,
+          "comparable": false,
+          "coincide": null
+        },
+        {
+          "campo": "close_time_T",
+          "registrado": null,
+          "fuente": null,
+          "comparable": false,
+          "coincide": null
+        },
+        {
+          "campo": "precio_T_plus_h",
+          "registrado": null,
+          "fuente": null,
+          "comparable": false,
+          "coincide": null
+        },
+        {
+          "campo": "close_time_T_plus_h",
+          "registrado": null,
+          "fuente": null,
+          "comparable": false,
+          "coincide": null
+        },
+        {
+          "campo": "retorno",
+          "registrado": null,
+          "fuente": null,
+          "comparable": false,
+          "coincide": null
+        },
+        {
+          "campo": "as_of_libro",
+          "registrado": null,
+          "fuente": null,
+          "comparable": false,
+          "coincide": null
+        },
+        {
+          "campo": "as_of_flujo",
+          "registrado": 1792022884210,
+          "fuente": 1792022884210,
+          "comparable": true,
+          "coincide": true
+        },
+        {
+          "campo": "clase_libro",
+          "registrado": null,
+          "fuente": null,
+          "comparable": false,
+          "coincide": null
+        },
+        {
+          "campo": "clase_flujo",
+          "registrado": "publicada_despues_de_T",
+          "fuente": "publicada_despues_de_T",
+          "comparable": true,
+          "coincide": true
+        },
+        {
+          "campo": "flujo.buy_notional",
+          "registrado": 821345.4373600003,
+          "fuente": 821345.4373600003,
+          "comparable": true,
+          "coincide": true
+        },
+        {
+          "campo": "flujo.sell_notional",
+          "registrado": 434545.55661000015,
+          "fuente": 434545.55661000015,
+          "comparable": true,
+          "coincide": true
+        },
+        {
+          "campo": "flujo.delta_notional",
+          "registrado": 386799.8807500002,
+          "fuente": 386799.8807500002,
+          "comparable": true,
+          "coincide": true
+        },
+        {
+          "campo": "flujo.delta_ratio",
+          "registrado": 0.3079884182681222,
+          "fuente": 0.3079884182681222,
+          "comparable": true,
+          "coincide": true
+        },
+        {
+          "campo": "flujo.base_volume",
+          "registrado": 518.0919999999998,
+          "fuente": 518.0919999999998,
+          "comparable": true,
+          "coincide": true
+        },
+        {
+          "campo": "flujo.trade_count",
+          "registrado": 285,
+          "fuente": 285,
+          "comparable": true,
+          "coincide": true
+        },
+        {
+          "campo": "flujo.price_close",
+          "registrado": 2424.4,
+          "fuente": 2424.4,
+          "comparable": true,
+          "coincide": true
+        },
+        {
+          "campo": "flujo.first_event_ms",
+          "registrado": 1792022856927,
+          "fuente": 1792022856927,
+          "comparable": true,
+          "coincide": true
+        },
+        {
+          "campo": "flujo.last_event_ms",
+          "registrado": 1792022879817,
+          "fuente": 1792022879817,
+          "comparable": true,
+          "coincide": true
+        },
+        {
+          "campo": "flujo.delta_vs_buy_menos_sell",
+          "registrado": 386799.8807500002,
+          "fuente": 386799.8807500002,
+          "comparable": true,
+          "coincide": true
+        },
+        {
+          "campo": "flujo.delta_ratio_vs_delta_sobre_total",
+          "registrado": 0.3079884182681222,
+          "fuente": 0.3079884182681222,
+          "comparable": true,
+          "coincide": true
+        },
+        {
+          "campo": "flujo.base_volume_vs_buy_base_mas_sell_base",
+          "registrado": 518.0919999999998,
+          "fuente": 518.0919999999998,
+          "comparable": true,
+          "coincide": true
+        }
+      ],
+      "n_comparables": 14,
+      "n_no_comparables_null_null": 7,
+      "n_discrepancias": 0
+    },
+    {
+      "observation_id": "BTCUSDT|1791889920000|1791889980000|F",
+      "origen": "suplemento_por_clase",
+      "simbolo": "BTCUSDT",
+      "bucket_start": 1791889920000,
+      "bucket_end": 1791889980000,
+      "sufijo": "F",
+      "estado": "descartada",
+      "clase_libro": null,
+      "clase_flujo": "publicada_en_T",
+      "fuente_libro_presente": false,
+      "fuente_flujo_presente": true,
+      "comprobaciones": [
+        {
+          "campo": "precio_T",
+          "registrado": 83310.1,
+          "fuente": 83310.1,
+          "comparable": true,
+          "coincide": true
+        },
+        {
+          "campo": "close_time_T",
+          "registrado": 1791889199999,
+          "fuente": 1791889199999,
+          "comparable": true,
+          "coincide": true
+        },
+        {
+          "campo": "precio_T_plus_h",
+          "registrado": 83325.2,
+          "fuente": 83325.2,
+          "comparable": true,
+          "coincide": true
+        },
+        {
+          "campo": "close_time_T_plus_h",
+          "registrado": 1791892799999,
+          "fuente": 1791892799999,
+          "comparable": true,
+          "coincide": true
+        },
+        {
+          "campo": "retorno",
+          "registrado": 0.0001812505326483976,
+          "fuente": 0.0001812505326483976,
+          "comparable": true,
+          "coincide": true
+        },
+        {
+          "campo": "as_of_libro",
+          "registrado": null,
+          "fuente": null,
+          "comparable": false,
+          "coincide": null
+        },
+        {
+          "campo": "as_of_flujo",
+          "registrado": 1791889921698,
+          "fuente": 1791889921698,
+          "comparable": true,
+          "coincide": true
+        },
+        {
+          "campo": "clase_libro",
+          "registrado": null,
+          "fuente": null,
+          "comparable": false,
+          "coincide": null
+        },
+        {
+          "campo": "clase_flujo",
+          "registrado": "publicada_en_T",
+          "fuente": "publicada_en_T",
+          "comparable": true,
+          "coincide": true
+        },
+        {
+          "campo": "flujo.buy_notional",
+          "registrado": 1082.2766,
+          "fuente": 1082.2766,
+          "comparable": true,
+          "coincide": true
+        },
+        {
+          "campo": "flujo.sell_notional",
+          "registrado": 34383.855,
+          "fuente": 34383.855,
+          "comparable": true,
+          "coincide": true
+        },
+        {
+          "campo": "flujo.delta_notional",
+          "registrado": -33301.578400000006,
+          "fuente": -33301.578400000006,
+          "comparable": true,
+          "coincide": true
+        },
+        {
+          "campo": "flujo.delta_ratio",
+          "registrado": -0.9389684439111483,
+          "fuente": -0.9389684439111483,
+          "comparable": true,
+          "coincide": true
+        },
+        {
+          "campo": "flujo.base_volume",
+          "registrado": 0.426,
+          "fuente": 0.426,
+          "comparable": true,
+          "coincide": true
+        },
+        {
+          "campo": "flujo.trade_count",
+          "registrado": 14,
+          "fuente": 14,
+          "comparable": true,
+          "coincide": true
+        },
+        {
+          "campo": "flujo.price_close",
+          "registrado": 83250.7,
+          "fuente": 83250.7,
+          "comparable": true,
+          "coincide": true
+        },
+        {
+          "campo": "flujo.first_event_ms",
+          "registrado": 1791889920128,
+          "fuente": 1791889920128,
+          "comparable": true,
+          "coincide": true
+        },
+        {
+          "campo": "flujo.last_event_ms",
+          "registrado": 1791889920538,
+          "fuente": 1791889920538,
+          "comparable": true,
+          "coincide": true
+        },
+        {
+          "campo": "flujo.delta_vs_buy_menos_sell",
+          "registrado": -33301.578400000006,
+          "fuente": -33301.578400000006,
+          "comparable": true,
+          "coincide": true
+        },
+        {
+          "campo": "flujo.delta_ratio_vs_delta_sobre_total",
+          "registrado": -0.9389684439111483,
+          "fuente": -0.9389684439111483,
+          "comparable": true,
+          "coincide": true
+        },
+        {
+          "campo": "flujo.base_volume_vs_buy_base_mas_sell_base",
+          "registrado": 0.426,
+          "fuente": 0.426,
+          "comparable": true,
+          "coincide": true
+        }
+      ],
+      "n_comparables": 19,
+      "n_no_comparables_null_null": 2,
+      "n_discrepancias": 0
+    },
+    {
+      "observation_id": "BTCUSDT|1792060020000|1792060080000|F",
+      "origen": "suplemento_por_clase",
+      "simbolo": "BTCUSDT",
+      "bucket_start": 1792060020000,
+      "bucket_end": 1792060080000,
+      "sufijo": "F",
+      "estado": "descartada",
+      "clase_libro": null,
+      "clase_flujo": "publicada_en_T",
+      "fuente_libro_presente": false,
+      "fuente_flujo_presente": true,
+      "comprobaciones": [
+        {
+          "campo": "precio_T",
+          "registrado": 81225.1,
+          "fuente": 81225.1,
+          "comparable": true,
+          "coincide": true
+        },
+        {
+          "campo": "close_time_T",
+          "registrado": 1792058399999,
+          "fuente": 1792058399999,
+          "comparable": true,
+          "coincide": true
+        },
+        {
+          "campo": "precio_T_plus_h",
+          "registrado": 81000.1,
+          "fuente": 81000.1,
+          "comparable": true,
+          "coincide": true
+        },
+        {
+          "campo": "close_time_T_plus_h",
+          "registrado": 1792061999999,
+          "fuente": 1792061999999,
+          "comparable": true,
+          "coincide": true
+        },
+        {
+          "campo": "retorno",
+          "registrado": -0.0027700796921148758,
+          "fuente": -0.0027700796921148758,
+          "comparable": true,
+          "coincide": true
+        },
+        {
+          "campo": "as_of_libro",
+          "registrado": null,
+          "fuente": null,
+          "comparable": false,
+          "coincide": null
+        },
+        {
+          "campo": "as_of_flujo",
+          "registrado": 1792060044067,
+          "fuente": 1792060044067,
+          "comparable": true,
+          "coincide": true
+        },
+        {
+          "campo": "clase_libro",
+          "registrado": null,
+          "fuente": null,
+          "comparable": false,
+          "coincide": null
+        },
+        {
+          "campo": "clase_flujo",
+          "registrado": "publicada_en_T",
+          "fuente": "publicada_en_T",
+          "comparable": true,
+          "coincide": true
+        },
+        {
+          "campo": "flujo.buy_notional",
+          "registrado": 2158557.513399999,
+          "fuente": 2158557.513399999,
+          "comparable": true,
+          "coincide": true
+        },
+        {
+          "campo": "flujo.sell_notional",
+          "registrado": 431595.63790000003,
+          "fuente": 431595.63790000003,
+          "comparable": true,
+          "coincide": true
+        },
+        {
+          "campo": "flujo.delta_notional",
+          "registrado": 1726961.8754999992,
+          "fuente": 1726961.8754999992,
+          "comparable": true,
+          "coincide": true
+        },
+        {
+          "campo": "flujo.delta_ratio",
+          "registrado": 0.6667412213186067,
+          "fuente": 0.6667412213186067,
+          "comparable": true,
+          "coincide": true
+        },
+        {
+          "campo": "flujo.base_volume",
+          "registrado": 31.987000000000016,
+          "fuente": 31.987000000000016,
+          "comparable": true,
+          "coincide": true
+        },
+        {
+          "campo": "flujo.trade_count",
+          "registrado": 194,
+          "fuente": 194,
+          "comparable": true,
+          "coincide": true
+        },
+        {
+          "campo": "flujo.price_close",
+          "registrado": 80990.0,
+          "fuente": 80990.0,
+          "comparable": true,
+          "coincide": true
+        },
+        {
+          "campo": "flujo.first_event_ms",
+          "registrado": 1792060020886,
+          "fuente": 1792060020886,
+          "comparable": true,
+          "coincide": true
+        },
+        {
+          "campo": "flujo.last_event_ms",
+          "registrado": 1792060042989,
+          "fuente": 1792060042989,
+          "comparable": true,
+          "coincide": true
+        },
+        {
+          "campo": "flujo.delta_vs_buy_menos_sell",
+          "registrado": 1726961.8754999992,
+          "fuente": 1726961.8754999992,
+          "comparable": true,
+          "coincide": true
+        },
+        {
+          "campo": "flujo.delta_ratio_vs_delta_sobre_total",
+          "registrado": 0.6667412213186067,
+          "fuente": 0.6667412213186067,
+          "comparable": true,
+          "coincide": true
+        },
+        {
+          "campo": "flujo.base_volume_vs_buy_base_mas_sell_base",
+          "registrado": 31.987000000000016,
+          "fuente": 31.987000000000016,
+          "comparable": true,
+          "coincide": true
+        }
+      ],
+      "n_comparables": 19,
+      "n_no_comparables_null_null": 2,
+      "n_discrepancias": 0
+    },
+    {
+      "observation_id": "BTCUSDT|1791433680000|1791433740000|L",
+      "origen": "suplemento_por_clase",
+      "simbolo": "BTCUSDT",
+      "bucket_start": 1791433680000,
+      "bucket_end": 1791433740000,
+      "sufijo": "L",
+      "estado": "descartada",
+      "clase_libro": "desconocida",
+      "clase_flujo": null,
+      "fuente_libro_presente": true,
+      "fuente_flujo_presente": false,
+      "comprobaciones": [
+        {
+          "campo": "precio_T",
+          "registrado": null,
+          "fuente": null,
+          "comparable": false,
+          "coincide": null
+        },
+        {
+          "campo": "close_time_T",
+          "registrado": null,
+          "fuente": null,
+          "comparable": false,
+          "coincide": null
+        },
+        {
+          "campo": "precio_T_plus_h",
+          "registrado": null,
+          "fuente": null,
+          "comparable": false,
+          "coincide": null
+        },
+        {
+          "campo": "close_time_T_plus_h",
+          "registrado": null,
+          "fuente": null,
+          "comparable": false,
+          "coincide": null
+        },
+        {
+          "campo": "retorno",
+          "registrado": null,
+          "fuente": null,
+          "comparable": false,
+          "coincide": null
+        },
+        {
+          "campo": "as_of_libro",
+          "registrado": null,
+          "fuente": null,
+          "comparable": false,
+          "coincide": null
+        },
+        {
+          "campo": "as_of_flujo",
+          "registrado": null,
+          "fuente": null,
+          "comparable": false,
+          "coincide": null
+        },
+        {
+          "campo": "clase_libro",
+          "registrado": "desconocida",
+          "fuente": "desconocida",
+          "comparable": true,
+          "coincide": true
+        },
+        {
+          "campo": "clase_flujo",
+          "registrado": null,
+          "fuente": null,
+          "comparable": false,
+          "coincide": null
+        },
+        {
+          "campo": "libro.spread_mean_bps",
+          "registrado": 0.012075298522177019,
+          "fuente": 0.012075298522177019,
+          "comparable": true,
+          "coincide": true
+        },
+        {
+          "campo": "libro.imb_mean",
+          "registrado": 0.17247209674972094,
+          "fuente": 0.17247209674972094,
+          "comparable": true,
+          "coincide": true
+        },
+        {
+          "campo": "libro.micro_mean_bps",
+          "registrado": 0.0015535643529174723,
+          "fuente": 0.0015535643529174723,
+          "comparable": true,
+          "coincide": true
+        },
+        {
+          "campo": "libro.bid20_mean_base",
+          "registrado": 616341.0035235714,
+          "fuente": 616341.0035235714,
+          "comparable": true,
+          "coincide": true
+        },
+        {
+          "campo": "libro.ask20_mean_base",
+          "registrado": 363907.60436642857,
+          "fuente": 363907.60436642857,
+          "comparable": true,
+          "coincide": true
+        },
+        {
+          "campo": "libro.first_event_ms",
+          "registrado": 1791433725614,
+          "fuente": 1791433725614,
+          "comparable": true,
+          "coincide": true
+        },
+        {
+          "campo": "libro.last_event_ms",
+          "registrado": 1791433739920,
+          "fuente": 1791433739920,
+          "comparable": true,
+          "coincide": true
+        }
+      ],
+      "n_comparables": 8,
+      "n_no_comparables_null_null": 8,
+      "n_discrepancias": 0
+    },
+    {
+      "observation_id": "ETHUSDT|1791433680000|1791433740000|L",
+      "origen": "suplemento_por_clase",
+      "simbolo": "ETHUSDT",
+      "bucket_start": 1791433680000,
+      "bucket_end": 1791433740000,
+      "sufijo": "L",
+      "estado": "descartada",
+      "clase_libro": "desconocida",
+      "clase_flujo": null,
+      "fuente_libro_presente": true,
+      "fuente_flujo_presente": false,
+      "comprobaciones": [
+        {
+          "campo": "precio_T",
+          "registrado": null,
+          "fuente": null,
+          "comparable": false,
+          "coincide": null
+        },
+        {
+          "campo": "close_time_T",
+          "registrado": null,
+          "fuente": null,
+          "comparable": false,
+          "coincide": null
+        },
+        {
+          "campo": "precio_T_plus_h",
+          "registrado": null,
+          "fuente": null,
+          "comparable": false,
+          "coincide": null
+        },
+        {
+          "campo": "close_time_T_plus_h",
+          "registrado": null,
+          "fuente": null,
+          "comparable": false,
+          "coincide": null
+        },
+        {
+          "campo": "retorno",
+          "registrado": null,
+          "fuente": null,
+          "comparable": false,
+          "coincide": null
+        },
+        {
+          "campo": "as_of_libro",
+          "registrado": null,
+          "fuente": null,
+          "comparable": false,
+          "coincide": null
+        },
+        {
+          "campo": "as_of_flujo",
+          "registrado": null,
+          "fuente": null,
+          "comparable": false,
+          "coincide": null
+        },
+        {
+          "campo": "clase_libro",
+          "registrado": "desconocida",
+          "fuente": "desconocida",
+          "comparable": true,
+          "coincide": true
+        },
+        {
+          "campo": "clase_flujo",
+          "registrado": null,
+          "fuente": null,
+          "comparable": false,
+          "coincide": null
+        },
+        {
+          "campo": "libro.spread_mean_bps",
+          "registrado": 0.038884780455927644,
+          "fuente": 0.038884780455927644,
+          "comparable": true,
+          "coincide": true
+        },
+        {
+          "campo": "libro.imb_mean",
+          "registrado": 0.04842714542752359,
+          "fuente": 0.04842714542752359,
+          "comparable": true,
+          "coincide": true
+        },
+        {
+          "campo": "libro.micro_mean_bps",
+          "registrado": -0.0026870648851263666,
+          "fuente": -0.0026870648851263666,
+          "comparable": true,
+          "coincide": true
+        },
+        {
+          "campo": "libro.bid20_mean_base",
+          "registrado": 440560.93064735713,
+          "fuente": 440560.93064735713,
+          "comparable": true,
+          "coincide": true
+        },
+        {
+          "campo": "libro.ask20_mean_base",
+          "registrado": 303589.88477714284,
+          "fuente": 303589.88477714284,
+          "comparable": true,
+          "coincide": true
+        },
+        {
+          "campo": "libro.first_event_ms",
+          "registrado": 1791433725661,
+          "fuente": 1791433725661,
+          "comparable": true,
+          "coincide": true
+        },
+        {
+          "campo": "libro.last_event_ms",
+          "registrado": 1791433739949,
+          "fuente": 1791433739949,
+          "comparable": true,
+          "coincide": true
+        }
+      ],
+      "n_comparables": 8,
+      "n_no_comparables_null_null": 8,
+      "n_discrepancias": 0
+    },
+    {
+      "observation_id": "AIOTUSDT|1791462660000|1791462720000",
+      "origen": "suplemento_por_clase",
+      "simbolo": "AIOTUSDT",
+      "bucket_start": 1791462660000,
+      "bucket_end": 1791462720000,
+      "sufijo": "",
+      "estado": "descartada",
+      "clase_libro": "desconocida",
+      "clase_flujo": "desconocida",
+      "fuente_libro_presente": true,
+      "fuente_flujo_presente": true,
+      "comprobaciones": [
+        {
+          "campo": "precio_T",
+          "registrado": null,
+          "fuente": null,
+          "comparable": false,
+          "coincide": null
+        },
+        {
+          "campo": "close_time_T",
+          "registrado": null,
+          "fuente": null,
+          "comparable": false,
+          "coincide": null
+        },
+        {
+          "campo": "precio_T_plus_h",
+          "registrado": null,
+          "fuente": null,
+          "comparable": false,
+          "coincide": null
+        },
+        {
+          "campo": "close_time_T_plus_h",
+          "registrado": null,
+          "fuente": null,
+          "comparable": false,
+          "coincide": null
+        },
+        {
+          "campo": "retorno",
+          "registrado": null,
+          "fuente": null,
+          "comparable": false,
+          "coincide": null
+        },
+        {
+          "campo": "as_of_libro",
+          "registrado": null,
+          "fuente": null,
+          "comparable": false,
+          "coincide": null
+        },
+        {
+          "campo": "as_of_flujo",
+          "registrado": null,
+          "fuente": null,
+          "comparable": false,
+          "coincide": null
+        },
+        {
+          "campo": "clase_libro",
+          "registrado": "desconocida",
+          "fuente": "desconocida",
+          "comparable": true,
+          "coincide": true
+        },
+        {
+          "campo": "clase_flujo",
+          "registrado": "desconocida",
+          "fuente": "desconocida",
+          "comparable": true,
+          "coincide": true
+        },
+        {
+          "campo": "libro.spread_mean_bps",
+          "registrado": 14.167576046951487,
+          "fuente": 14.167576046951487,
+          "comparable": true,
+          "coincide": true
+        },
+        {
+          "campo": "libro.imb_mean",
+          "registrado": -0.011003024869828864,
+          "fuente": -0.011003024869828864,
+          "comparable": true,
+          "coincide": true
+        },
+        {
+          "campo": "libro.micro_mean_bps",
+          "registrado": 0.373690439012888,
+          "fuente": 0.373690439012888,
+          "comparable": true,
+          "coincide": true
+        },
+        {
+          "campo": "libro.bid20_mean_base",
+          "registrado": 6244.801810167785,
+          "fuente": 6244.801810167785,
+          "comparable": true,
+          "coincide": true
+        },
+        {
+          "campo": "libro.ask20_mean_base",
+          "registrado": 6394.605682550336,
+          "fuente": 6394.605682550336,
+          "comparable": true,
+          "coincide": true
+        },
+        {
+          "campo": "libro.first_event_ms",
+          "registrado": 1791462676784,
+          "fuente": 1791462676784,
+          "comparable": true,
+          "coincide": true
+        },
+        {
+          "campo": "libro.last_event_ms",
+          "registrado": 1791462719902,
+          "fuente": 1791462719902,
+          "comparable": true,
+          "coincide": true
+        },
+        {
+          "campo": "flujo.buy_notional",
+          "registrado": 5252.07215,
+          "fuente": 5252.07215,
+          "comparable": true,
+          "coincide": true
+        },
+        {
+          "campo": "flujo.sell_notional",
+          "registrado": 3870.36281,
+          "fuente": 3870.36281,
+          "comparable": true,
+          "coincide": true
+        },
+        {
+          "campo": "flujo.delta_notional",
+          "registrado": 1381.7093399999999,
+          "fuente": 1381.7093399999999,
+          "comparable": true,
+          "coincide": true
+        },
+        {
+          "campo": "flujo.delta_ratio",
+          "registrado": 0.15146277787219212,
+          "fuente": 0.15146277787219212,
+          "comparable": true,
+          "coincide": true
+        },
+        {
+          "campo": "flujo.base_volume",
+          "registrado": 254000.0,
+          "fuente": 254000.0,
+          "comparable": true,
+          "coincide": true
+        },
+        {
+          "campo": "flujo.trade_count",
+          "registrado": 112,
+          "fuente": 112,
+          "comparable": true,
+          "coincide": true
+        },
+        {
+          "campo": "flujo.price_close",
+          "registrado": 0.03595,
+          "fuente": 0.03595,
+          "comparable": true,
+          "coincide": true
+        },
+        {
+          "campo": "flujo.first_event_ms",
+          "registrado": 1791462676843,
+          "fuente": 1791462676843,
+          "comparable": true,
+          "coincide": true
+        },
+        {
+          "campo": "flujo.last_event_ms",
+          "registrado": 1791462719869,
+          "fuente": 1791462719869,
+          "comparable": true,
+          "coincide": true
+        },
+        {
+          "campo": "flujo.delta_vs_buy_menos_sell",
+          "registrado": 1381.7093399999999,
+          "fuente": 1381.7093399999999,
+          "comparable": true,
+          "coincide": true
+        },
+        {
+          "campo": "flujo.delta_ratio_vs_delta_sobre_total",
+          "registrado": 0.15146277787219212,
+          "fuente": 0.15146277787219212,
+          "comparable": true,
+          "coincide": true
+        },
+        {
+          "campo": "flujo.base_volume_vs_buy_base_mas_sell_base",
+          "registrado": 254000.0,
+          "fuente": 254000.0,
+          "comparable": true,
+          "coincide": true
+        }
+      ],
+      "n_comparables": 21,
+      "n_no_comparables_null_null": 7,
+      "n_discrepancias": 0
+    },
+    {
+      "observation_id": "AIOTUSDT|1791462720000|1791462780000",
+      "origen": "suplemento_por_clase",
+      "simbolo": "AIOTUSDT",
+      "bucket_start": 1791462720000,
+      "bucket_end": 1791462780000,
+      "sufijo": "",
+      "estado": "descartada",
+      "clase_libro": "desconocida",
+      "clase_flujo": "desconocida",
+      "fuente_libro_presente": true,
+      "fuente_flujo_presente": true,
+      "comprobaciones": [
+        {
+          "campo": "precio_T",
+          "registrado": null,
+          "fuente": null,
+          "comparable": false,
+          "coincide": null
+        },
+        {
+          "campo": "close_time_T",
+          "registrado": null,
+          "fuente": null,
+          "comparable": false,
+          "coincide": null
+        },
+        {
+          "campo": "precio_T_plus_h",
+          "registrado": null,
+          "fuente": null,
+          "comparable": false,
+          "coincide": null
+        },
+        {
+          "campo": "close_time_T_plus_h",
+          "registrado": null,
+          "fuente": null,
+          "comparable": false,
+          "coincide": null
+        },
+        {
+          "campo": "retorno",
+          "registrado": null,
+          "fuente": null,
+          "comparable": false,
+          "coincide": null
+        },
+        {
+          "campo": "as_of_libro",
+          "registrado": null,
+          "fuente": null,
+          "comparable": false,
+          "coincide": null
+        },
+        {
+          "campo": "as_of_flujo",
+          "registrado": null,
+          "fuente": null,
+          "comparable": false,
+          "coincide": null
+        },
+        {
+          "campo": "clase_libro",
+          "registrado": "desconocida",
+          "fuente": "desconocida",
+          "comparable": true,
+          "coincide": true
+        },
+        {
+          "campo": "clase_flujo",
+          "registrado": "desconocida",
+          "fuente": "desconocida",
+          "comparable": true,
+          "coincide": true
+        },
+        {
+          "campo": "libro.spread_mean_bps",
+          "registrado": 11.921562149409787,
+          "fuente": 11.921562149409787,
+          "comparable": true,
+          "coincide": true
+        },
+        {
+          "campo": "libro.imb_mean",
+          "registrado": 0.08081628069895977,
+          "fuente": 0.08081628069895977,
+          "comparable": true,
+          "coincide": true
+        },
+        {
+          "campo": "libro.micro_mean_bps",
+          "registrado": 0.010043712034076696,
+          "fuente": 0.010043712034076696,
+          "comparable": true,
+          "coincide": true
+        },
+        {
+          "campo": "libro.bid20_mean_base",
+          "registrado": 6867.152227606837,
+          "fuente": 6867.152227606837,
+          "comparable": true,
+          "coincide": true
+        },
+        {
+          "campo": "libro.ask20_mean_base",
+          "registrado": 5834.3708753418805,
+          "fuente": 5834.3708753418805,
+          "comparable": true,
+          "coincide": true
+        },
+        {
+          "campo": "libro.first_event_ms",
+          "registrado": 1791462720010,
+          "fuente": 1791462720010,
+          "comparable": true,
+          "coincide": true
+        },
+        {
+          "campo": "libro.last_event_ms",
+          "registrado": 1791462779946,
+          "fuente": 1791462779946,
+          "comparable": true,
+          "coincide": true
+        },
+        {
+          "campo": "flujo.buy_notional",
+          "registrado": 8577.77838,
+          "fuente": 8577.77838,
+          "comparable": true,
+          "coincide": true
+        },
+        {
+          "campo": "flujo.sell_notional",
+          "registrado": 3433.4386099999997,
+          "fuente": 3433.4386099999997,
+          "comparable": true,
+          "coincide": true
+        },
+        {
+          "campo": "flujo.delta_notional",
+          "registrado": 5144.3397700000005,
+          "fuente": 5144.3397700000005,
+          "comparable": true,
+          "coincide": true
+        },
+        {
+          "campo": "flujo.delta_ratio",
+          "registrado": 0.4282946327822524,
+          "fuente": 0.4282946327822524,
+          "comparable": true,
+          "coincide": true
+        },
+        {
+          "campo": "flujo.base_volume",
+          "registrado": 333339.0,
+          "fuente": 333339.0,
+          "comparable": true,
+          "coincide": true
+        },
+        {
+          "campo": "flujo.trade_count",
+          "registrado": 165,
+          "fuente": 165,
+          "comparable": true,
+          "coincide": true
+        },
+        {
+          "campo": "flujo.price_close",
+          "registrado": 0.0362,
+          "fuente": 0.0362,
+          "comparable": true,
+          "coincide": true
+        },
+        {
+          "campo": "flujo.first_event_ms",
+          "registrado": 1791462720019,
+          "fuente": 1791462720019,
+          "comparable": true,
+          "coincide": true
+        },
+        {
+          "campo": "flujo.last_event_ms",
+          "registrado": 1791462779736,
+          "fuente": 1791462779736,
+          "comparable": true,
+          "coincide": true
+        },
+        {
+          "campo": "flujo.delta_vs_buy_menos_sell",
+          "registrado": 5144.3397700000005,
+          "fuente": 5144.3397700000005,
+          "comparable": true,
+          "coincide": true
+        },
+        {
+          "campo": "flujo.delta_ratio_vs_delta_sobre_total",
+          "registrado": 0.4282946327822524,
+          "fuente": 0.4282946327822524,
+          "comparable": true,
+          "coincide": true
+        },
+        {
+          "campo": "flujo.base_volume_vs_buy_base_mas_sell_base",
+          "registrado": 333339.0,
+          "fuente": 333339.0,
+          "comparable": true,
+          "coincide": true
+        }
+      ],
+      "n_comparables": 21,
+      "n_no_comparables_null_null": 7,
+      "n_discrepancias": 0
+    },
+    {
+      "observation_id": "ETHUSDT|1791889800000|1791889860000",
+      "origen": "suplemento_por_clase",
+      "simbolo": "ETHUSDT",
+      "bucket_start": 1791889800000,
+      "bucket_end": 1791889860000,
+      "sufijo": "",
+      "estado": "descartada",
+      "clase_libro": "publicada_despues_de_T",
+      "clase_flujo": "publicada_despues_de_T",
+      "fuente_libro_presente": true,
+      "fuente_flujo_presente": true,
+      "comprobaciones": [
+        {
+          "campo": "precio_T",
+          "registrado": null,
+          "fuente": null,
+          "comparable": false,
+          "coincide": null
+        },
+        {
+          "campo": "close_time_T",
+          "registrado": null,
+          "fuente": null,
+          "comparable": false,
+          "coincide": null
+        },
+        {
+          "campo": "precio_T_plus_h",
+          "registrado": null,
+          "fuente": null,
+          "comparable": false,
+          "coincide": null
+        },
+        {
+          "campo": "close_time_T_plus_h",
+          "registrado": null,
+          "fuente": null,
+          "comparable": false,
+          "coincide": null
+        },
+        {
+          "campo": "retorno",
+          "registrado": null,
+          "fuente": null,
+          "comparable": false,
+          "coincide": null
+        },
+        {
+          "campo": "as_of_libro",
+          "registrado": 1791889861116,
+          "fuente": 1791889861116,
+          "comparable": true,
+          "coincide": true
+        },
+        {
+          "campo": "as_of_flujo",
+          "registrado": 1791889861165,
+          "fuente": 1791889861165,
+          "comparable": true,
+          "coincide": true
+        },
+        {
+          "campo": "clase_libro",
+          "registrado": "publicada_despues_de_T",
+          "fuente": "publicada_despues_de_T",
+          "comparable": true,
+          "coincide": true
+        },
+        {
+          "campo": "clase_flujo",
+          "registrado": "publicada_despues_de_T",
+          "fuente": "publicada_despues_de_T",
+          "comparable": true,
+          "coincide": true
+        },
+        {
+          "campo": "libro.spread_mean_bps",
+          "registrado": 0.04005362669576311,
+          "fuente": 0.04005362669576311,
+          "comparable": true,
+          "coincide": true
+        },
+        {
+          "campo": "libro.imb_mean",
+          "registrado": -0.017945616988805323,
+          "fuente": -0.017945616988805323,
+          "comparable": true,
+          "coincide": true
+        },
+        {
+          "campo": "libro.micro_mean_bps",
+          "registrado": 0.0004911113514184034,
+          "fuente": 0.0004911113514184034,
+          "comparable": true,
+          "coincide": true
+        },
+        {
+          "campo": "libro.bid20_mean_base",
+          "registrado": 447188.982792891,
+          "fuente": 447188.982792891,
+          "comparable": true,
+          "coincide": true
+        },
+        {
+          "campo": "libro.ask20_mean_base",
+          "registrado": 488003.489463128,
+          "fuente": 488003.489463128,
+          "comparable": true,
+          "coincide": true
+        },
+        {
+          "campo": "libro.first_event_ms",
+          "registrado": 1791889838435,
+          "fuente": 1791889838435,
+          "comparable": true,
+          "coincide": true
+        },
+        {
+          "campo": "libro.last_event_ms",
+          "registrado": 1791889859921,
+          "fuente": 1791889859921,
+          "comparable": true,
+          "coincide": true
+        },
+        {
+          "campo": "flujo.buy_notional",
+          "registrado": 2702345.3040599986,
+          "fuente": 2702345.3040599986,
+          "comparable": true,
+          "coincide": true
+        },
+        {
+          "campo": "flujo.sell_notional",
+          "registrado": 594961.49542,
+          "fuente": 594961.49542,
+          "comparable": true,
+          "coincide": true
+        },
+        {
+          "campo": "flujo.delta_notional",
+          "registrado": 2107383.8086399985,
+          "fuente": 2107383.8086399985,
+          "comparable": true,
+          "coincide": true
+        },
+        {
+          "campo": "flujo.delta_ratio",
+          "registrado": 0.6391227558722601,
+          "fuente": 0.6391227558722601,
+          "comparable": true,
+          "coincide": true
+        },
+        {
+          "campo": "flujo.base_volume",
+          "registrado": 1320.6419999999998,
+          "fuente": 1320.6419999999998,
+          "comparable": true,
+          "coincide": true
+        },
+        {
+          "campo": "flujo.trade_count",
+          "registrado": 344,
+          "fuente": 344,
+          "comparable": true,
+          "coincide": true
+        },
+        {
+          "campo": "flujo.price_close",
+          "registrado": 2496.46,
+          "fuente": 2496.46,
+          "comparable": true,
+          "coincide": true
+        },
+        {
+          "campo": "flujo.first_event_ms",
+          "registrado": 1791889838291,
+          "fuente": 1791889838291,
+          "comparable": true,
+          "coincide": true
+        },
+        {
+          "campo": "flujo.last_event_ms",
+          "registrado": 1791889859928,
+          "fuente": 1791889859928,
+          "comparable": true,
+          "coincide": true
+        },
+        {
+          "campo": "flujo.delta_vs_buy_menos_sell",
+          "registrado": 2107383.8086399985,
+          "fuente": 2107383.8086399985,
+          "comparable": true,
+          "coincide": true
+        },
+        {
+          "campo": "flujo.delta_ratio_vs_delta_sobre_total",
+          "registrado": 0.6391227558722601,
+          "fuente": 0.6391227558722601,
+          "comparable": true,
+          "coincide": true
+        },
+        {
+          "campo": "flujo.base_volume_vs_buy_base_mas_sell_base",
+          "registrado": 1320.6419999999998,
+          "fuente": 1320.6419999999998,
+          "comparable": true,
+          "coincide": true
+        }
+      ],
+      "n_comparables": 23,
+      "n_no_comparables_null_null": 5,
+      "n_discrepancias": 0
+    },
+    {
+      "observation_id": "ETHUSDT|1791889860000|1791889920000",
+      "origen": "suplemento_por_clase",
+      "simbolo": "ETHUSDT",
+      "bucket_start": 1791889860000,
+      "bucket_end": 1791889920000,
+      "sufijo": "",
+      "estado": "descartada",
+      "clase_libro": "publicada_despues_de_T",
+      "clase_flujo": "publicada_despues_de_T",
+      "fuente_libro_presente": true,
+      "fuente_flujo_presente": true,
+      "comprobaciones": [
+        {
+          "campo": "precio_T",
+          "registrado": null,
+          "fuente": null,
+          "comparable": false,
+          "coincide": null
+        },
+        {
+          "campo": "close_time_T",
+          "registrado": null,
+          "fuente": null,
+          "comparable": false,
+          "coincide": null
+        },
+        {
+          "campo": "precio_T_plus_h",
+          "registrado": null,
+          "fuente": null,
+          "comparable": false,
+          "coincide": null
+        },
+        {
+          "campo": "close_time_T_plus_h",
+          "registrado": null,
+          "fuente": null,
+          "comparable": false,
+          "coincide": null
+        },
+        {
+          "campo": "retorno",
+          "registrado": null,
+          "fuente": null,
+          "comparable": false,
+          "coincide": null
+        },
+        {
+          "campo": "as_of_libro",
+          "registrado": 1791889921270,
+          "fuente": 1791889921270,
+          "comparable": true,
+          "coincide": true
+        },
+        {
+          "campo": "as_of_flujo",
+          "registrado": 1791889921137,
+          "fuente": 1791889921137,
+          "comparable": true,
+          "coincide": true
+        },
+        {
+          "campo": "clase_libro",
+          "registrado": "publicada_despues_de_T",
+          "fuente": "publicada_despues_de_T",
+          "comparable": true,
+          "coincide": true
+        },
+        {
+          "campo": "clase_flujo",
+          "registrado": "publicada_despues_de_T",
+          "fuente": "publicada_despues_de_T",
+          "comparable": true,
+          "coincide": true
+        },
+        {
+          "campo": "libro.spread_mean_bps",
+          "registrado": 0.04008600960328842,
+          "fuente": 0.04008600960328842,
+          "comparable": true,
+          "coincide": true
+        },
+        {
+          "campo": "libro.imb_mean",
+          "registrado": -0.0019168704490137927,
+          "fuente": -0.0019168704490137927,
+          "comparable": true,
+          "coincide": true
+        },
+        {
+          "campo": "libro.micro_mean_bps",
+          "registrado": -0.00060744187378967,
+          "fuente": -0.00060744187378967,
+          "comparable": true,
+          "coincide": true
+        },
+        {
+          "campo": "libro.bid20_mean_base",
+          "registrado": 462225.16030335095,
+          "fuente": 462225.16030335095,
+          "comparable": true,
+          "coincide": true
+        },
+        {
+          "campo": "libro.ask20_mean_base",
+          "registrado": 480389.9754605291,
+          "fuente": 480389.9754605291,
+          "comparable": true,
+          "coincide": true
+        },
+        {
+          "campo": "libro.first_event_ms",
+          "registrado": 1791889861553,
+          "fuente": 1791889861553,
+          "comparable": true,
+          "coincide": true
+        },
+        {
+          "campo": "libro.last_event_ms",
+          "registrado": 1791889919955,
+          "fuente": 1791889919955,
+          "comparable": true,
+          "coincide": true
+        },
+        {
+          "campo": "flujo.buy_notional",
+          "registrado": 1142130.30723,
+          "fuente": 1142130.30723,
+          "comparable": true,
+          "coincide": true
+        },
+        {
+          "campo": "flujo.sell_notional",
+          "registrado": 1885654.4326100005,
+          "fuente": 1885654.4326100005,
+          "comparable": true,
+          "coincide": true
+        },
+        {
+          "campo": "flujo.delta_notional",
+          "registrado": -743524.1253800006,
+          "fuente": -743524.1253800006,
+          "comparable": true,
+          "coincide": true
+        },
+        {
+          "campo": "flujo.delta_ratio",
+          "registrado": -0.24556703638690353,
+          "fuente": -0.24556703638690353,
+          "comparable": true,
+          "coincide": true
+        },
+        {
+          "campo": "flujo.base_volume",
+          "registrado": 1213.68,
+          "fuente": 1213.68,
+          "comparable": true,
+          "coincide": true
+        },
+        {
+          "campo": "flujo.trade_count",
+          "registrado": 557,
+          "fuente": 557,
+          "comparable": true,
+          "coincide": true
+        },
+        {
+          "campo": "flujo.price_close",
+          "registrado": 2494.75,
+          "fuente": 2494.75,
+          "comparable": true,
+          "coincide": true
+        },
+        {
+          "campo": "flujo.first_event_ms",
+          "registrado": 1791889861538,
+          "fuente": 1791889861538,
+          "comparable": true,
+          "coincide": true
+        },
+        {
+          "campo": "flujo.last_event_ms",
+          "registrado": 1791889919781,
+          "fuente": 1791889919781,
+          "comparable": true,
+          "coincide": true
+        },
+        {
+          "campo": "flujo.delta_vs_buy_menos_sell",
+          "registrado": -743524.1253800006,
+          "fuente": -743524.1253800006,
+          "comparable": true,
+          "coincide": true
+        },
+        {
+          "campo": "flujo.delta_ratio_vs_delta_sobre_total",
+          "registrado": -0.24556703638690353,
+          "fuente": -0.24556703638690353,
+          "comparable": true,
+          "coincide": true
+        },
+        {
+          "campo": "flujo.base_volume_vs_buy_base_mas_sell_base",
+          "registrado": 1213.68,
+          "fuente": 1213.68,
+          "comparable": true,
+          "coincide": true
+        }
+      ],
+      "n_comparables": 23,
+      "n_no_comparables_null_null": 5,
+      "n_discrepancias": 0
+    }
+  ]
+}

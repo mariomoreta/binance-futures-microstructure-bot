@@ -1,0 +1,239 @@
+{
+  "fuente": "data/historical/historical.db",
+  "modo": "read-only (mode=ro)",
+  "db_sha256_antes": "d8930ec5d4c4415e748859f426d0a9e9c39de5ceb17367efd3d626fdf56f8b19",
+  "db_sha256_despues": "d8930ec5d4c4415e748859f426d0a9e9c39de5ceb17367efd3d626fdf56f8b19",
+  "db_sin_cambios": true,
+  "semantica": {
+    "as_of_ms": "marca de tiempo de persistencia en el flush; no prueba por sí sola cuándo estuvo disponible el dato",
+    "as_of_null": "procedencia desconocida (filas previas al linkage v3, nunca rellenadas)",
+    "as_of_presente_en_o_antes_del_bucket": "as_of_ms <= bucket_end",
+    "as_of_posterior_al_bucket": "as_of_ms > bucket_end"
+  },
+  "sql": {
+    "research_book_1m": "SELECT\n  COUNT(*) AS total,\n  SUM(CASE WHEN as_of_ms IS NULL THEN 1 ELSE 0 END) AS as_of_null,\n  SUM(CASE WHEN as_of_ms IS NOT NULL AND as_of_ms <= bucket_end\n           THEN 1 ELSE 0 END) AS as_of_presente_en_o_antes_del_bucket,\n  SUM(CASE WHEN as_of_ms IS NOT NULL AND as_of_ms > bucket_end\n           THEN 1 ELSE 0 END) AS as_of_posterior_al_bucket,\n  MIN(as_of_ms) AS as_of_min,\n  MAX(as_of_ms) AS as_of_max\nFROM research_book_1m",
+    "research_flow_1m": "SELECT\n  COUNT(*) AS total,\n  SUM(CASE WHEN as_of_ms IS NULL THEN 1 ELSE 0 END) AS as_of_null,\n  SUM(CASE WHEN as_of_ms IS NOT NULL AND as_of_ms <= bucket_end\n           THEN 1 ELSE 0 END) AS as_of_presente_en_o_antes_del_bucket,\n  SUM(CASE WHEN as_of_ms IS NOT NULL AND as_of_ms > bucket_end\n           THEN 1 ELSE 0 END) AS as_of_posterior_al_bucket,\n  MIN(as_of_ms) AS as_of_min,\n  MAX(as_of_ms) AS as_of_max\nFROM research_flow_1m"
+  },
+  "resultados": {
+    "research_book_1m": {
+      "total": {
+        "total": 1830,
+        "as_of_null": 1776,
+        "as_of_presente_en_o_antes_del_bucket": 0,
+        "as_of_posterior_al_bucket": 54,
+        "as_of_min": 1791889861116,
+        "as_of_max": 1792122360602
+      },
+      "por_simbolo": [
+        {
+          "total": "AIOTUSDT",
+          "as_of_null": 3,
+          "as_of_presente_en_o_antes_del_bucket": 3,
+          "as_of_posterior_al_bucket": 0,
+          "as_of_min": 0
+        },
+        {
+          "total": "BTCUSDT",
+          "as_of_null": 528,
+          "as_of_presente_en_o_antes_del_bucket": 510,
+          "as_of_posterior_al_bucket": 0,
+          "as_of_min": 18
+        },
+        {
+          "total": "ERAUSDT",
+          "as_of_null": 43,
+          "as_of_presente_en_o_antes_del_bucket": 43,
+          "as_of_posterior_al_bucket": 0,
+          "as_of_min": 0
+        },
+        {
+          "total": "ETHUSDT",
+          "as_of_null": 528,
+          "as_of_presente_en_o_antes_del_bucket": 510,
+          "as_of_posterior_al_bucket": 0,
+          "as_of_min": 18
+        },
+        {
+          "total": "GRIFFAINUSDT",
+          "as_of_null": 3,
+          "as_of_presente_en_o_antes_del_bucket": 3,
+          "as_of_posterior_al_bucket": 0,
+          "as_of_min": 0
+        },
+        {
+          "total": "JCTUSDT",
+          "as_of_null": 8,
+          "as_of_presente_en_o_antes_del_bucket": 8,
+          "as_of_posterior_al_bucket": 0,
+          "as_of_min": 0
+        },
+        {
+          "total": "KAIAUSDT",
+          "as_of_null": 27,
+          "as_of_presente_en_o_antes_del_bucket": 27,
+          "as_of_posterior_al_bucket": 0,
+          "as_of_min": 0
+        },
+        {
+          "total": "LUMIAUSDT",
+          "as_of_null": 43,
+          "as_of_presente_en_o_antes_del_bucket": 43,
+          "as_of_posterior_al_bucket": 0,
+          "as_of_min": 0
+        },
+        {
+          "total": "MAGICUSDT",
+          "as_of_null": 68,
+          "as_of_presente_en_o_antes_del_bucket": 68,
+          "as_of_posterior_al_bucket": 0,
+          "as_of_min": 0
+        },
+        {
+          "total": "METUSDT",
+          "as_of_null": 6,
+          "as_of_presente_en_o_antes_del_bucket": 6,
+          "as_of_posterior_al_bucket": 0,
+          "as_of_min": 0
+        },
+        {
+          "total": "OGNUSDT",
+          "as_of_null": 12,
+          "as_of_presente_en_o_antes_del_bucket": 12,
+          "as_of_posterior_al_bucket": 0,
+          "as_of_min": 0
+        },
+        {
+          "total": "RLCUSDT",
+          "as_of_null": 6,
+          "as_of_presente_en_o_antes_del_bucket": 6,
+          "as_of_posterior_al_bucket": 0,
+          "as_of_min": 0
+        },
+        {
+          "total": "SOLUSDT",
+          "as_of_null": 528,
+          "as_of_presente_en_o_antes_del_bucket": 510,
+          "as_of_posterior_al_bucket": 0,
+          "as_of_min": 18
+        },
+        {
+          "total": "USUSDT",
+          "as_of_null": 27,
+          "as_of_presente_en_o_antes_del_bucket": 27,
+          "as_of_posterior_al_bucket": 0,
+          "as_of_min": 0
+        }
+      ]
+    },
+    "research_flow_1m": {
+      "total": {
+        "total": 1927,
+        "as_of_null": 1855,
+        "as_of_presente_en_o_antes_del_bucket": 15,
+        "as_of_posterior_al_bucket": 57,
+        "as_of_min": 1791889861165,
+        "as_of_max": 1792122387383
+      },
+      "por_simbolo": [
+        {
+          "total": "AIOTUSDT",
+          "as_of_null": 4,
+          "as_of_presente_en_o_antes_del_bucket": 4,
+          "as_of_posterior_al_bucket": 0,
+          "as_of_min": 0
+        },
+        {
+          "total": "BTCUSDT",
+          "as_of_null": 553,
+          "as_of_presente_en_o_antes_del_bucket": 529,
+          "as_of_posterior_al_bucket": 5,
+          "as_of_min": 19
+        },
+        {
+          "total": "ERAUSDT",
+          "as_of_null": 46,
+          "as_of_presente_en_o_antes_del_bucket": 46,
+          "as_of_posterior_al_bucket": 0,
+          "as_of_min": 0
+        },
+        {
+          "total": "ETHUSDT",
+          "as_of_null": 553,
+          "as_of_presente_en_o_antes_del_bucket": 529,
+          "as_of_posterior_al_bucket": 5,
+          "as_of_min": 19
+        },
+        {
+          "total": "GRIFFAINUSDT",
+          "as_of_null": 4,
+          "as_of_presente_en_o_antes_del_bucket": 4,
+          "as_of_posterior_al_bucket": 0,
+          "as_of_min": 0
+        },
+        {
+          "total": "JCTUSDT",
+          "as_of_null": 9,
+          "as_of_presente_en_o_antes_del_bucket": 9,
+          "as_of_posterior_al_bucket": 0,
+          "as_of_min": 0
+        },
+        {
+          "total": "KAIAUSDT",
+          "as_of_null": 29,
+          "as_of_presente_en_o_antes_del_bucket": 29,
+          "as_of_posterior_al_bucket": 0,
+          "as_of_min": 0
+        },
+        {
+          "total": "LUMIAUSDT",
+          "as_of_null": 46,
+          "as_of_presente_en_o_antes_del_bucket": 46,
+          "as_of_posterior_al_bucket": 0,
+          "as_of_min": 0
+        },
+        {
+          "total": "MAGICUSDT",
+          "as_of_null": 72,
+          "as_of_presente_en_o_antes_del_bucket": 72,
+          "as_of_posterior_al_bucket": 0,
+          "as_of_min": 0
+        },
+        {
+          "total": "METUSDT",
+          "as_of_null": 8,
+          "as_of_presente_en_o_antes_del_bucket": 8,
+          "as_of_posterior_al_bucket": 0,
+          "as_of_min": 0
+        },
+        {
+          "total": "OGNUSDT",
+          "as_of_null": 15,
+          "as_of_presente_en_o_antes_del_bucket": 15,
+          "as_of_posterior_al_bucket": 0,
+          "as_of_min": 0
+        },
+        {
+          "total": "RLCUSDT",
+          "as_of_null": 7,
+          "as_of_presente_en_o_antes_del_bucket": 7,
+          "as_of_posterior_al_bucket": 0,
+          "as_of_min": 0
+        },
+        {
+          "total": "SOLUSDT",
+          "as_of_null": 553,
+          "as_of_presente_en_o_antes_del_bucket": 529,
+          "as_of_posterior_al_bucket": 5,
+          "as_of_min": 19
+        },
+        {
+          "total": "USUSDT",
+          "as_of_null": 28,
+          "as_of_presente_en_o_antes_del_bucket": 28,
+          "as_of_posterior_al_bucket": 0,
+          "as_of_min": 0
+        }
+      ]
+    }
+  }
+}

@@ -1,0 +1,54 @@
+{
+  "procedimiento": "observaciones_libro_flujo_precio_v2",
+  "horizonte_ms": 3600000,
+  "tolerancia_alineacion_ms": 3600000,
+  "fuente_precios": "market_klines|1h",
+  "n_observaciones_totales": 1930,
+  "n_parejas_libro_flujo": 1827,
+  "n_libro_sin_flujo": 3,
+  "n_flujo_sin_libro": 100,
+  "n_duplicados_libro": 0,
+  "n_duplicados_flujo": 0,
+  "n_aceptada_para_descripcion": 121,
+  "n_apta_temporalmente_para_evaluacion": 0,
+  "n_descartada": 1809,
+  "disponibilidad_por_fuente": {
+    "libro": {
+      "total": 1830,
+      "as_of_null": 1776,
+      "as_of_presente_en_o_antes_del_bucket": 0,
+      "as_of_posterior_al_bucket": 54
+    },
+    "flujo": {
+      "total": 1927,
+      "as_of_null": 1855,
+      "as_of_presente_en_o_antes_del_bucket": 15,
+      "as_of_posterior_al_bucket": 57
+    }
+  },
+  "disponibilidad_observaciones": {
+    "n_parejas_evaluadas": 1827,
+    "ambas_publicadas_en_T": 0,
+    "alguna_desconocida": 1773,
+    "alguna_posterior_a_T": 54
+  },
+  "retorno_evaluable_causalmente": {
+    "n": 0,
+    "media": null,
+    "mediana": null,
+    "min": null,
+    "max": null
+  },
+  "retorno_descriptivo_no_evaluable": {
+    "n": 121,
+    "media": 6.602275815714801e-05,
+    "mediana": 0.00030447689781551895,
+    "min": -0.0027700796921148758,
+    "max": 0.0019640029423806864
+  },
+  "nota": "Los dos agregados de retorno NO son intercambiables: retorno_evaluable_causalmente exige as_of_ms de libro y flujo <= T en la MISMA observaci≤n; retorno_descriptivo_no_evaluable agrupa observaciones con precios pero sin disponibilidad publicada acreditada en T y no sostiene ninguna conclusi≤n causal. as_of_ms NULL significa procedencia desconocida: no se rellena, no se sustituye por last_event_ms y no prueba ausencia de relaci≤n econ≤mica."
+}
+
+Observaciones escritas: C:\proyectos\binance-futures-microstructure-bot\docs\evidence\research\universe_liquidity_v1\observaciones.jsonl (1930 filas)
+Resumen escrito: C:\proyectos\binance-futures-microstructure-bot\docs\evidence\research\universe_liquidity_v1\observaciones_resumen.json
+Muestra de validaci≤n escrita: C:\proyectos\binance-futures-microstructure-bot\docs\evidence\research\universe_liquidity_v1\observaciones_muestra_validacion.json (10 filas)

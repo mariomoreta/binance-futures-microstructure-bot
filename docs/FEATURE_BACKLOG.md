@@ -3367,3 +3367,20 @@ esearch/universe-liquidity-v1. Documento docs/RESEARCH_UNIVERSE_LIQUIDITY_V1.md 
 **6. Verdict:** insuficiencia computada; plan mínimo de adquisición propuesto (no ejecutado).
 
 **7. Next step:** adquirir liquidez en el instante T (order book top-20 con available_at) para el universo candidato; si el retorno forward condicionado sigue ≈ 0 tras costes en universo representativo, no escalar.
+
+
+## research/universe-liquidity-v1 (2026-11-04)
+
+**1. Title:** Corrida final de la tabla de observaciones libro+flujo y reconciliación de disponibilidad publicada (`as_of_ms`).
+
+**2. Approval status:** PROPUESTO (investigación autorizada; solo lectura de SQLite local, sin Binance, sin órdenes, sin cambios de reglas operativas ni económicas).
+
+**3. Implementation status:** IMPLEMENTADO y ejecutado UNA vez sobre las DBs reales en solo lectura. `scripts/research_observations_table.py` (procedimiento v2) clasifica `as_of_ms` por fuente en NULL / `<= bucket_end` / `> bucket_end`, separa estado descriptivo de estado causalmente evaluable, y `tests/test_research_joint_coverage.py` ejecuta `main()` completo contra SQLite temporal (24 pruebas). Añadidos `research_availability_counts.py` y `research_observations_validate_sample.py`.
+
+**4. Evaluation status:** 1930 observaciones (1827 parejas); **0 causalmente evaluables**, 121 descriptivas (BTCUSDT 1h), 1809 descartadas. Disponibilidad: libro 1776 NULL / 0 en T / 54 posterior; flujo 1855 NULL / 15 en T / 57 posterior. Corregida la causa anterior: el 97,04 % de las parejas tiene al menos una fuente con `as_of_ms` NULL, no publicación posterior a T (2,96 %). Hipótesis liquidez-vs-flujo: NO TESTEABLE, no refutada. Pruebas: research 49 passed; suite completa 1661 passed / 2 skipped / 12 fallos PREEXISTENTES ajenos (fixtures de `test_engineering_live_window_local.py`, `test_market_stream_window.py`, `test_session_new_public_market.py`).
+
+**5. Evidence:** `docs/evidence/research/universe_liquidity_v1/observaciones.jsonl`, `observaciones_resumen.json`, `disponibilidad_as_of.json`, `validacion_muestra.json`, `run_final_stdout.txt`, `run_final_hashes.json`; `docs/RESEARCH_UNIVERSE_LIQUIDITY_V1.md` §5.5.
+
+**6. Verdict:** insuficiencia de trazabilidad computada; la validación independiente de 26 observaciones da 529 comprobaciones comparables y 0 discrepancias.
+
+**7. Next step:** adquirir liquidez en el instante T con `available_at` propio y persistir `as_of_ms` desde el inicio de la captura; sin eso no se puede pasar de descripción a evaluación causal.

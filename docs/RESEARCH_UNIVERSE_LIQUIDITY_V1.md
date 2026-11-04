@@ -2,8 +2,13 @@
 
 **Rama:** `research/universe-liquidity-v1` (desde `dash-v2-05-public-acceptance` @ `78371aa`)
 **Estado:** investigación en curso (solo lectura de datos locales; sin conexión pública; sin órdenes; sin cambios de reglas operativas)
-**Fecha:** 2026-11-03
-**Evidencia:** `docs/evidence/research/universe_liquidity_v1/coverage.json` y `descriptive.json` (generados por `scripts/research_universe_liquidity_inventory.py`, read-only sobre SQLite)
+**Fecha:** 2026-11-03 (actualizado 2026-11-04: corrida final de observaciones y reconciliación de disponibilidad)
+**Evidencia:** `docs/evidence/research/universe_liquidity_v1/` —
+`coverage.json`, `descriptive.json`, `joint_coverage.json` (inventario),
+`observaciones.jsonl` + `observaciones_resumen.json` (corrida final),
+`disponibilidad_as_of.json` (consulta de `as_of_ms`), `validacion_muestra.json`
+(validación contra fuente), `run_final_stdout.txt` y `run_final_hashes.json`
+(prueba de solo lectura).
 
 ---
 
@@ -215,15 +220,173 @@ cero red pública; cero escrituras en DBs canonicas.
 - Percentil de volumen vs propia historia y aceleración 1h: no disponibles en `discovery.Candidate`.
 - Ejecución, paper trading, órdenes, cambios de reglas operativas.
 
-**Cuántas observaciones son utilizables de verdad (matriz de aprovechamiento, §4):**
-- **0 observaciones aptas temporalmente para evaluación.** Ninguna de las 1827 parejas libro+flujo tiene disponibilidad publicada en T (el `as_of_ms` de todos los buckets es posterior a `bucket_end`, es decir, el dato no estaba publicado cuando se tomaba la decisión en T).
-- De las 1827 parejas libro+flujo, solo 253 tienen precio en T y precio en T+h con resolución y disponibilidad compatibles (todas de **BTCUSDT**, horizonte 1h). Las otras 1574 pares de BTCUSDT carecen de precio en T o en T+h. Los otros 13 símbolos research tienen 0 pares emparejados (no tienen precio posterior en `market_klines`).
-- Conclusión: cobertura útil para evaluación = **0 observaciones**. Cobertura para descripción = 1827 pares (1827 de 14 símbolos, pero solo 14 símbolos en el universo research). Ninguna corrida permite calcular retorno válido con disponibilidad acreditada en T.
+**Cuántas observaciones son utilizables de verdad (corregido 2026-11-04, §5.5):**
+- **0 observaciones causalmente evaluables.** Ninguna de las 1827 parejas libro+flujo
+  tiene `as_of_ms <= bucket_end` en AMBAS fuentes.
+- **121 parejas son descriptivas, no evaluables:** tienen precio en T y en T+h
+  (todas de **BTCUSDT**, horizonte 1h) pero su disponibilidad publicada en T no
+  está acreditada (103 con `as_of_ms` NULL en ambas fuentes, 18 con `as_of_ms`
+  posterior al bucket en ambas). Su retorno 1h se conserva como descripción y
+  **no sostiene ninguna conclusión causal**.
+- **1809 observaciones descartadas:** 1706 parejas sin precio en T o en T+h, más
+  103 filas sin contraparte (3 de libro, 100 de flujo).
+- Los otros 13 símbolos research tienen 0 parejas con precio posterior en
+  `market_klines`.
+- Conclusión: cobertura útil para evaluación causal = **0 observaciones**;
+  cobertura descriptiva = **121 parejas** (todas BTCUSDT, 1h). La corrección de
+  la causa (antes atribuida a publicación posterior a T en *todos* los buckets)
+  está en §5.5.3.
 
 **Captura mínima que faltaría (no ejecutar en este bloque):**
 - Liquidez en el instante T (order book top-20 con `available_at`) para el universo candidato, al menos los símbolos con resolución histórica (BTCUSDT y los de `historical_klines`).
 - Serie rolling-24h por símbolo para ranking causal.
 - Universo elegible en T (snapshots periódicos de `exchangeInfo`).
+
+---
+
+## 5.5 Corrida final sobre DBs reales y reconciliación de disponibilidad (2026-11-04)
+
+Generador: `scripts/research_observations_table.py` (procedimiento
+`observaciones_libro_flujo_precio_v2`). **Una sola corrida final**, solo lectura
+(`mode=ro`) sobre `data/historical/historical.db` y
+`data/market-cache/market_cache.db`. SHA-256 idéntico antes y después
+(`run_final_hashes.json`: `sin_cambios=true`). Sin Binance, sin escrituras en
+DBs canónicas, sin tocar 3020/8792/`opencode.json`.
+
+Artefactos: `observaciones.jsonl` (1930 filas), `observaciones_resumen.json`,
+`observaciones_muestra_validacion.json`, `run_final_stdout.txt`,
+`run_final_hashes.json`, `disponibilidad_as_of.json`, `validacion_muestra.json`.
+
+### 5.5.1 Consulta de disponibilidad publicada, por fuente
+
+Consulta ejecutada tal cual (también en `disponibilidad_as_of.json`):
+
+```sql
+SELECT
+  COUNT(*) AS total,
+  SUM(CASE WHEN as_of_ms IS NULL THEN 1 ELSE 0 END) AS as_of_null,
+  SUM(CASE WHEN as_of_ms IS NOT NULL AND as_of_ms <= bucket_end
+           THEN 1 ELSE 0 END) AS as_of_presente_en_o_antes_del_bucket,
+  SUM(CASE WHEN as_of_ms IS NOT NULL AND as_of_ms > bucket_end
+           THEN 1 ELSE 0 END) AS as_of_posterior_al_bucket,
+  MIN(as_of_ms) AS as_of_min,
+  MAX(as_of_ms) AS as_of_max
+FROM research_book_1m;   -- idéntica sobre research_flow_1m
+```
+
+Resultados medidos:
+
+| Fuente | Total | `as_of_ms` NULL | Presente (`<= bucket_end`) | Posterior (`> bucket_end`) |
+|---|---:|---:|---:|---:|
+| `research_book_1m` | 1 830 | **1 776** | **0** | **54** |
+| `research_flow_1m` | 1 927 | **1 855** | **15** | **57** |
+
+Dos matices medidos, no inferidos:
+
+1. Los 54 `as_of_ms` de libro posteriores al bucket están entre **+365 ms y
+   +1 354 ms** (mediana +474 ms); los 57 de flujo, entre **+380 ms y +4 210 ms**.
+   Son marcas de *flush* posteriores al cierre, no horas de retraso.
+2. Las 15 filas de flujo con `as_of_ms <= bucket_end` son el **último bucket de
+   cada corrida**, persistido antes del cierre nominal (entre 6,3 s y 58,3 s
+   antes). Son buckets en curso/parciales: "presente" **no** certifica que el
+   minuto estuviera completo. No forman pareja evaluable (libro no tiene
+   ninguna fila con `as_of_ms <= bucket_end`).
+
+### 5.5.2 Tabla única de la corrida final
+
+| Nivel | Concepto | n |
+|---|---|---:|
+| Libro (1 830 filas) | `as_of_ms` NULL (procedencia desconocida) | 1 776 |
+| Libro | `as_of_ms <= bucket_end` | 0 |
+| Libro | `as_of_ms > bucket_end` | 54 |
+| Flujo (1 927 filas) | `as_of_ms` NULL (procedencia desconocida) | 1 855 |
+| Flujo | `as_of_ms <= bucket_end` (todos parciales, ver §5.5.1) | 15 |
+| Flujo | `as_of_ms > bucket_end` | 57 |
+| Parejas (1 827) | Ambas fuentes publicadas en T | **0** |
+| Parejas | Alguna fuente con `as_of_ms` NULL | 1 773 |
+| Parejas | Alguna fuente posterior al bucket | 54 |
+| Observaciones (1 930) | Descartadas (sin pareja o sin precio) | 1 809 |
+| Observaciones | Descriptivas, **no** evaluables causalmente | 121 |
+| Observaciones | **Causalmente evaluables** | **0** |
+| Retorno 1h descriptivo (n=121) | media / mediana / mín / máx | +6,60e-05 / +3,04e-04 / −2,77e-03 / +1,96e-03 |
+
+Las 121 descriptivas se reparten en 103 con `as_of_ms` NULL en ambas fuentes y
+18 con `as_of_ms` posterior al bucket en ambas. Las 54 parejas posteriores se
+reparten en 18 descriptivas y 36 sin precio. Las 1 773 parejas con alguna fuente
+NULL se reparten en 103 descriptivas y 1 670 sin precio.
+
+### 5.5.3 Reconciliación: «publicación posterior a T» frente a «disponibilidad desconocida»
+
+La afirmación anterior («el `as_of_ms` de **todos** los buckets es posterior a
+`bucket_end`») **no se sostiene** con los datos y queda corregida:
+
+- El artefacto previo (`65d73ff`) ya mostraba el reparto real de motivos:
+  **1 773** observaciones con `disponibilidad_publicada_desconocida` (1 670 + 103)
+  frente a **54** con `disponibilidad_publicada_despues_de_T` (36 + 18). La
+  afirmación generalizó el motivo minoritario (2,96 % de las parejas).
+- La causa dominante de exclusión causal es **falta de trazabilidad**
+  (`as_of_ms` NULL: 1 776/1 830 en libro, 1 855/1 927 en flujo), no publicación
+  tardía. `as_of_ms` es la marca de persistencia en el *flush*
+  (`history_store._ensure_v3`), no una prueba de cuándo estuvo disponible el
+  dato.
+- **No se inventa ningún timestamp**: NULL permanece NULL; `last_event_ms` NO se
+  usa como sustituto de disponibilidad publicada. Tampoco se rellena el hueco con
+  el `as_of_ms` de la otra fuente (el código anterior lo hacía; ahora cada fuente
+  se clasifica por separado y se exige que **ambas** cumplan).
+- **Reconciliación del 253**: el «253» previo no eran parejas. Era la suma de
+  **121 filas de libro + 132 filas de flujo** de BTCUSDT contadas por separado
+  por la matriz de cobertura (unidad = fila). La corrida actual exige pareja
+  libro+flujo en el mismo bucket y ambos precios: **121 parejas**. Verificado
+  por consulta independiente: libro 121, flujo 132, parejas 121. En este dataset
+  el criterio «vela que contiene T+h» y el criterio estricto
+  (`close_time <= T+h`) seleccionan exactamente las mismas filas, así que la
+  diferencia 253→121 es de **unidad de conteo**, no de lookahead.
+
+### 5.5.4 Validación de la muestra contra registros fuente
+
+`scripts/research_observations_validate_sample.py` recalcula con SQL
+independiente (sin helpers del generador) sobre ambas DBs en solo lectura.
+Conjunto: la muestra determinista del generador **más** un suplemento que cubre
+todas las combinaciones (estado × clase de libro × clase de flujo) presentes,
+para no dejar `publicada_despues_de_T` sin comprobar.
+
+| Resultado | Valor |
+|---|---:|
+| Observaciones validadas | 26 |
+| Con al menos un valor no nulo comparado | 26 |
+| Comprobaciones comparables | **529** |
+| Pares null-null (no acreditados) | 105 |
+| Discrepancias | **0** |
+| Combinaciones estado/clase cubiertas | 8 |
+| DBs modificadas | 0 (`db_sin_cambios=true`) |
+
+Ejemplos (registrado = fuente, cálculo independiente = mismo valor):
+
+| Observación | Estado | `precio_T` | `precio_T+h` | retorno 1h | `as_of` libro/flujo |
+|---|---|---|---:|---:|---|
+| `BTCUSDT\|1791604560000\|1791604620000` | descriptiva (desconocida) | 82 590,3 | 82 559,9 | −3,6808196604e-04 | NULL / NULL |
+| `BTCUSDT\|1791889800000\|1791889860000` | descriptiva (posterior) | 83 310,1 | 83 325,2 | +1,8125053265e-04 | 1791889861250 / 1791889861204 |
+| `LUMIAUSDT\|1791632160000\|1791632220000` | descartada | — | — | — | NULL / NULL |
+
+En la segunda fila el `as_of` es +250 ms y +204 ms posterior al bucket: la clase
+`publicada_despues_de_T` se comprobó contra la fuente, no se dedujo. En la
+tercera no hay precio; su fila de flujo sí se validó (delta = buy − sell,
+delta_ratio = delta/(buy+sell), base_volume = buy_base + sell_base): comparar
+null con null no se usa como acreditación.
+
+### 5.5.5 Separación descriptivo/causal y límites
+
+- **Descriptivo (121):** spread, desequilibrio, microprice, delta y retorno 1h
+  existen y son verificables. Sirven para describir el tramo, no para afirmar
+  asociación causal con el retorno.
+- **Causalmente evaluable (0):** ninguna observación acredita que libro y flujo
+  estuvieran publicados en T.
+- **La falta de trazabilidad no es una conclusión económica.** Que 1 773 parejas
+  tengan `as_of_ms` NULL significa «no se registró cuándo se publicó», no «no
+  había relación entre liquidez y flujo». La hipótesis sigue **NO TESTEABLE** con
+  los datos actuales; no queda refutada.
+- No se declara fill, coste, rentabilidad operable ni cobertura representativa.
+  El retorno descriptivo no está ajustado por costes y no es una señal.
 
 ---
 
@@ -240,7 +403,11 @@ cero red pública; cero escrituras en DBs canonicas.
 - `scripts/build_funding_calendar.py` — calendario de funding (BTC/ETH/SOL; fuera de ellos UNKNOWN).
 - `docs/EXTREMES_EVALUABILITY_MATRIX.md`, `OFFLINE_EVAL_CENSUS_V2.md`, `EXTREME_MOVERS_OBJECTIVE.md`, `STRATEGY_THESIS.md`, `PRODUCT_GOAL.md`.
 
-**Nuevo código:** solo `scripts/research_universe_liquidity_inventory.py` (extracción/inventario read-only) y este documento. Sin pruebas decorativas.
+**Nuevo código:** `scripts/research_universe_liquidity_inventory.py`
+(extracción/inventario read-only), `scripts/research_observations_table.py`
+(tabla de observaciones, solo lectura), `scripts/research_availability_counts.py`
+(consulta de disponibilidad) y `scripts/research_observations_validate_sample.py`
+(validación contra fuente). Sin pruebas decorativas.
 
 ---
 
@@ -266,10 +433,19 @@ escalar.
 
 - Protocolo: este documento (§2 y §5).
 - Resultado reproducible: `coverage.json` + `descriptive.json` +
-  `joint_coverage.json` + scripts `research_universe_liquidity_inventory.py`
-  y `research_selector.py`.
+  `joint_coverage.json` + `observaciones.jsonl` + `observaciones_resumen.json` +
+  `disponibilidad_as_of.json` + `validacion_muestra.json` + scripts
+  `research_universe_liquidity_inventory.py`, `research_selector.py`,
+  `research_observations_table.py`, `research_availability_counts.py` y
+  `research_observations_validate_sample.py`.
 - Pruebas del mecanismo: `tests/test_research_inventory.py` +
-  `tests/test_research_selector.py`.
+  `tests/test_research_selector.py` + `tests/test_research_joint_coverage.py`
+  (incluye integración que ejecuta `main()` completo contra SQLite temporal).
+  Subconjunto research: 49 passed (`pytest_research.txt`). Suite completa:
+  1661 passed, 2 skipped, 12 failed PREEXISTENTES y ajenos a este bloque
+  (`pytest_full.txt`; fixture desfasada de `test_engineering_live_window_local.py`,
+  FAIL/UNKNOWN de `test_market_stream_window.py` y vela futura fija en
+  `test_session_new_public_market.py`; ninguno importa el código modificado).
 - Cambios de prioridad registrados en `docs/CURRENT_STATE.md`,
   `docs/TASK_QUEUE.md`, `docs/DECISIONS.md` (append-only), con enlace desde
   `docs/FEATURE_BACKLOG.md`.

@@ -1,3 +1,39 @@
+## Corrida final de observaciones libro+flujo y reconciliación de disponibilidad (2026-11-04, base `65d73ff`)
+
+Investigación (solo lectura de SQLite local; sin Binance, sin tocar DBs canónicas,
+3020, 8792 ni `opencode.json`). Una sola corrida final del generador
+`scripts/research_observations_table.py` (procedimiento v2) con SHA-256 de las DBs
+idéntico antes/después (`run_final_hashes.json`):
+
+- 1930 observaciones: 1827 parejas libro+flujo, 3 solo libro, 100 solo flujo.
+- **0 causalmente evaluables**; **121 descriptivas** (BTCUSDT, 1h; retorno 1h medio
+  +6,60e-05, mediana +3,04e-04) y **1809 descartadas** (sin pareja o sin precio).
+- Disponibilidad publicada (`as_of_ms`), por fuente: libro 1776 NULL / 0 en T /
+  54 posterior; flujo 1855 NULL / 15 en T / 57 posterior. Las 15 «en T» son el
+  último bucket de cada corrida, persistido antes del cierre nominal (parciales).
+- Reconciliación: la causa anterior «publicación posterior a T en todos los
+  buckets» no se sostiene; el 97,04 % de las parejas (1773/1827) tiene al menos
+  una fuente con `as_of_ms` NULL, y solo el 2,96 % (54/1827) es posterior
+  (+0,37 s a +4,21 s de flush). `as_of_ms` NULL = procedencia desconocida; no se
+  rellena ni se sustituye por `last_event_ms`. El «253» previo eran 121 filas de
+  libro + 132 de flujo contadas por separado, no parejas; la cifra correcta de
+  parejas con ambos precios es 121.
+- Validación independiente de muestra: 26 observaciones, 529 comprobaciones
+  comparables, 0 discrepancias, 105 pares null-null excluidos de la acreditación.
+- Límite declarado: falta de trazabilidad ≠ ausencia de relación económica; la
+  hipótesis liquidez-vs-flujo sigue NO TESTEABLE, no refutada.
+- Pruebas: subconjunto research 49 PASS (24 de ellas en
+  `test_research_joint_coverage.py`, con integración del `main()` completo sobre
+  SQLite temporal). Suite completa: 1661 passed, 2 skipped, 12 failed; los 12 son
+  PREEXISTENTES y ajenos a este bloque (`test_engineering_live_window_local.py`
+  fixture desfasada ya registrada en `docs/TASK_QUEUE.md`,
+  `test_market_stream_window.py` FAIL/UNKNOWN ya registrado, y
+  `test_session_new_public_market.py` con vela fija en el futuro). Ninguno
+  importa el código de investigación modificado.
+
+Detalle, consulta SQL y tabla única: `docs/RESEARCH_UNIVERSE_LIQUIDITY_V1.md` §5.5;
+evidencia en `docs/evidence/research/universe_liquidity_v1/`.
+
 ## Corrección semántica de costes y aceptación A-J del dashboard (2026-11-03, base `bf974f2`)
 
 Corregida la semántica de costes en `PnLPanel.tsx`: ya no se deduce ejecución

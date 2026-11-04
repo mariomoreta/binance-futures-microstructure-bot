@@ -1,0 +1,676 @@
+﻿.................................................................... [  4%]
+........................................................................ [  8%]
+........................................................................ [ 12%]
+........................................................................ [ 16%]
+........................................................................ [ 21%]
+........................................................................ [ 25%]
+...................FFFFFFF.............................................. [ 29%]
+........................................................................ [ 34%]
+........................................................................ [ 38%]
+...................s.................................................... [ 42%]
+........................................................................ [ 47%]
+............................................................FF [ 50%]
+.........FF............................................................. [ 55%]
+............................................................ [ 58%]
+........................................................................ [ 62%]
+........................................................................ [ 67%]
+........................................................................ [ 71%]
+........................................................................ [ 75%]
+.................................................................... [ 79%]
+........................................................................ [ 84%]
+..............................................................F....... [ 88%]
+..................s.................................................................................................................. [ 96%]
+..............................................................           [100%]
+================================== FAILURES ===================================
+______________ test_contexto_ok_ambos_simbolos_precios_distintos ______________
+
+    def test_contexto_ok_ambos_simbolos_precios_distintos():
+        """Lista vßlida de klines para BTCUSDT y MINAUSDT (precios muy distintos),
+        contexto reciente, sφmbolos separados, presupuesto preenvφo reservado."""
+        port = _free_port()
+        prov = LocalKlineProvider(port, {"BTCUSDT": "ok", "MINAUSDT": "ok"})
+        prov.start()
+        try:
+>           orch = _make_orchestrator(port)
+                   ^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests\test_engineering_live_window_local.py:99: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+tests\test_engineering_live_window_local.py:76: in _make_orchestrator
+    return WindowOrchestrator(a)
+           ^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = <engineering_live_window.WindowOrchestrator object at 0x000002B158B80C20>
+args = <test_engineering_live_window_local._make_orchestrator.<locals>.Args object at 0x000002B158B80AD0>
+evidence_dir = None
+
+    def __init__(self, args: argparse.Namespace,
+                 evidence_dir: Optional[Path] = None) -> None:
+        self.args = args
+        self.transport = args.transport
+        # Fuente del reloj de referencia: explφcita por CLI o derivada del
+        # transporte (public -> public, local -> local). Se propaga al servicio
+        # de ingenierφa mediante --clock-source y se verifica en /health.clock
+        # ANTES de crear la sesi≤n.
+        self.clock_source = (
+            args.clock_source
+>           if args.clock_source is not None
+               ^^^^^^^^^^^^^^^^^
+            else ("public" if self.transport == "public" else "local")
+        )
+E       AttributeError: 'Args' object has no attribute 'clock_source'
+
+scripts\engineering_live_window.py:181: AttributeError
+_____________ test_contexto_json_error_no_falla_catastroficamente _____________
+
+    def test_contexto_json_error_no_falla_catastroficamente():
+        """JSON de error (no lista) se registra como diagn≤stico, sin fallar el
+        arnΘs; el otro sφmbolo sigue cargando (presupuesto permite 4 intentos)."""
+        port = _free_port()
+        prov = LocalKlineProvider(port, {"BTCUSDT": "json_error", "MINAUSDT": "ok"})
+        prov.start()
+        try:
+>           orch = _make_orchestrator(port)
+                   ^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests\test_engineering_live_window_local.py:150: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+tests\test_engineering_live_window_local.py:76: in _make_orchestrator
+    return WindowOrchestrator(a)
+           ^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = <engineering_live_window.WindowOrchestrator object at 0x000002B158B81400>
+args = <test_engineering_live_window_local._make_orchestrator.<locals>.Args object at 0x000002B158B80EC0>
+evidence_dir = None
+
+    def __init__(self, args: argparse.Namespace,
+                 evidence_dir: Optional[Path] = None) -> None:
+        self.args = args
+        self.transport = args.transport
+        # Fuente del reloj de referencia: explφcita por CLI o derivada del
+        # transporte (public -> public, local -> local). Se propaga al servicio
+        # de ingenierφa mediante --clock-source y se verifica en /health.clock
+        # ANTES de crear la sesi≤n.
+        self.clock_source = (
+            args.clock_source
+>           if args.clock_source is not None
+               ^^^^^^^^^^^^^^^^^
+            else ("public" if self.transport == "public" else "local")
+        )
+E       AttributeError: 'Args' object has no attribute 'clock_source'
+
+scripts\engineering_live_window.py:181: AttributeError
+_______________ test_contexto_cuerpo_no_json_registra_excepcion _______________
+
+    def test_contexto_cuerpo_no_json_registra_excepcion():
+        """Cuerpo no JSON se registra como excepci≤n de parseo, sin fallar el
+        arnΘs; MINAUSDT sigue cargando."""
+        port = _free_port()
+        prov = LocalKlineProvider(port, {"BTCUSDT": "non_json", "MINAUSDT": "ok"})
+        prov.start()
+        try:
+>           orch = _make_orchestrator(port)
+                   ^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests\test_engineering_live_window_local.py:182: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+tests\test_engineering_live_window_local.py:76: in _make_orchestrator
+    return WindowOrchestrator(a)
+           ^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = <engineering_live_window.WindowOrchestrator object at 0x000002B158B81940>
+args = <test_engineering_live_window_local._make_orchestrator.<locals>.Args object at 0x000002B158B817F0>
+evidence_dir = None
+
+    def __init__(self, args: argparse.Namespace,
+                 evidence_dir: Optional[Path] = None) -> None:
+        self.args = args
+        self.transport = args.transport
+        # Fuente del reloj de referencia: explφcita por CLI o derivada del
+        # transporte (public -> public, local -> local). Se propaga al servicio
+        # de ingenierφa mediante --clock-source y se verifica en /health.clock
+        # ANTES de crear la sesi≤n.
+        self.clock_source = (
+            args.clock_source
+>           if args.clock_source is not None
+               ^^^^^^^^^^^^^^^^^
+            else ("public" if self.transport == "public" else "local")
+        )
+E       AttributeError: 'Args' object has no attribute 'clock_source'
+
+scripts\engineering_live_window.py:181: AttributeError
+__________________________ test_contexto_lista_vacia __________________________
+
+    def test_contexto_lista_vacia():
+        """Lista vacφa [] se acepta como contexto vßlido (0 velas para ese sφmbolo,
+        el otro sigue cargando)."""
+        port = _free_port()
+        prov = LocalKlineProvider(port, {"BTCUSDT": "empty", "MINAUSDT": "ok"})
+        prov.start()
+        try:
+>           orch = _make_orchestrator(port)
+                   ^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests\test_engineering_live_window_local.py:207: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+tests\test_engineering_live_window_local.py:76: in _make_orchestrator
+    return WindowOrchestrator(a)
+           ^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = <engineering_live_window.WindowOrchestrator object at 0x000002B158B81D30>
+args = <test_engineering_live_window_local._make_orchestrator.<locals>.Args object at 0x000002B158B81BE0>
+evidence_dir = None
+
+    def __init__(self, args: argparse.Namespace,
+                 evidence_dir: Optional[Path] = None) -> None:
+        self.args = args
+        self.transport = args.transport
+        # Fuente del reloj de referencia: explφcita por CLI o derivada del
+        # transporte (public -> public, local -> local). Se propaga al servicio
+        # de ingenierφa mediante --clock-source y se verifica en /health.clock
+        # ANTES de crear la sesi≤n.
+        self.clock_source = (
+            args.clock_source
+>           if args.clock_source is not None
+               ^^^^^^^^^^^^^^^^^
+            else ("public" if self.transport == "public" else "local")
+        )
+E       AttributeError: 'Args' object has no attribute 'clock_source'
+
+scripts\engineering_live_window.py:181: AttributeError
+______________ test_presupuesto_preenvio_reserva_antes_del_envio ______________
+
+    def test_presupuesto_preenvio_reserva_antes_del_envio():
+        """LedgerAttemptGate reserva 1 intento ANTES del transporte (fila reserved
+        con requests=1) y la cierra con el resultado real tras el envφo."""
+        port = _free_port()
+        prov = LocalKlineProvider(port, {"BTCUSDT": "ok", "MINAUSDT": "ok"})
+        prov.start()
+        try:
+>           orch = _make_orchestrator(port)
+                   ^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests\test_engineering_live_window_local.py:232: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+tests\test_engineering_live_window_local.py:76: in _make_orchestrator
+    return WindowOrchestrator(a)
+           ^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = <engineering_live_window.WindowOrchestrator object at 0x000002B158B82120>
+args = <test_engineering_live_window_local._make_orchestrator.<locals>.Args object at 0x000002B158B81FD0>
+evidence_dir = None
+
+    def __init__(self, args: argparse.Namespace,
+                 evidence_dir: Optional[Path] = None) -> None:
+        self.args = args
+        self.transport = args.transport
+        # Fuente del reloj de referencia: explφcita por CLI o derivada del
+        # transporte (public -> public, local -> local). Se propaga al servicio
+        # de ingenierφa mediante --clock-source y se verifica en /health.clock
+        # ANTES de crear la sesi≤n.
+        self.clock_source = (
+            args.clock_source
+>           if args.clock_source is not None
+               ^^^^^^^^^^^^^^^^^
+            else ("public" if self.transport == "public" else "local")
+        )
+E       AttributeError: 'Args' object has no attribute 'clock_source'
+
+scripts\engineering_live_window.py:181: AttributeError
+____________________ test_vencimiento_durante_preparacion _____________________
+
+    def test_vencimiento_durante_preparacion():
+        """Deadline monot≤nico ·nico: vencido durante la preparaci≤n lanza
+        GLOBAL_DEADLINE_EXCEEDED."""
+        port = _free_port()
+        prov = LocalKlineProvider(port, {"BTCUSDT": "ok", "MINAUSDT": "ok"})
+        prov.start()
+        try:
+>           orch = _make_orchestrator(port, deadline=0.05)  # 50 ms
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests\test_engineering_live_window_local.py:269: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+tests\test_engineering_live_window_local.py:76: in _make_orchestrator
+    return WindowOrchestrator(a)
+           ^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = <engineering_live_window.WindowOrchestrator object at 0x000002B158B823C0>
+args = <test_engineering_live_window_local._make_orchestrator.<locals>.Args object at 0x000002B158B82270>
+evidence_dir = None
+
+    def __init__(self, args: argparse.Namespace,
+                 evidence_dir: Optional[Path] = None) -> None:
+        self.args = args
+        self.transport = args.transport
+        # Fuente del reloj de referencia: explφcita por CLI o derivada del
+        # transporte (public -> public, local -> local). Se propaga al servicio
+        # de ingenierφa mediante --clock-source y se verifica en /health.clock
+        # ANTES de crear la sesi≤n.
+        self.clock_source = (
+            args.clock_source
+>           if args.clock_source is not None
+               ^^^^^^^^^^^^^^^^^
+            else ("public" if self.transport == "public" else "local")
+        )
+E       AttributeError: 'Args' object has no attribute 'clock_source'
+
+scripts\engineering_live_window.py:181: AttributeError
+_______________ test_identidades_no_se_deduplican_por_timestamp _______________
+
+    def test_identidades_no_se_deduplican_por_timestamp():
+        """BTCUSDT y MINAUSDT mantienen su sφmbolo; nunca se dedupe solo por
+        timestamp entre sφmbolos distintos."""
+        port = _free_port()
+        prov = LocalKlineProvider(port, {"BTCUSDT": "ok", "MINAUSDT": "ok"})
+        prov.start()
+        try:
+>           orch = _make_orchestrator(port)
+                   ^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests\test_engineering_live_window_local.py:288: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+tests\test_engineering_live_window_local.py:76: in _make_orchestrator
+    return WindowOrchestrator(a)
+           ^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = <engineering_live_window.WindowOrchestrator object at 0x000002B158B82660>
+args = <test_engineering_live_window_local._make_orchestrator.<locals>.Args object at 0x000002B158B82510>
+evidence_dir = None
+
+    def __init__(self, args: argparse.Namespace,
+                 evidence_dir: Optional[Path] = None) -> None:
+        self.args = args
+        self.transport = args.transport
+        # Fuente del reloj de referencia: explφcita por CLI o derivada del
+        # transporte (public -> public, local -> local). Se propaga al servicio
+        # de ingenierφa mediante --clock-source y se verifica en /health.clock
+        # ANTES de crear la sesi≤n.
+        self.clock_source = (
+            args.clock_source
+>           if args.clock_source is not None
+               ^^^^^^^^^^^^^^^^^
+            else ("public" if self.transport == "public" else "local")
+        )
+E       AttributeError: 'Args' object has no attribute 'clock_source'
+
+scripts\engineering_live_window.py:181: AttributeError
+_______ AcceptanceTests.test_plan_counts_browser_inside_consumer_budget _______
+
+self = <test_market_stream_window.AcceptanceTests testMethod=test_plan_counts_browser_inside_consumer_budget>
+
+    def test_plan_counts_browser_inside_consumer_budget(self):
+        import argparse
+        args = argparse.Namespace(
+            symbols="BTCUSDT,MINAUSDT", interval="1m", duration=180.0,
+            hold_seconds=20.0, max_messages=1200, max_events=6000,
+            max_reconnects=3, port=8791, no_bff=False, execute=False,
+            browser_consumer=True, await_consumers=1, await_timeout=90.0)
+        consumers = window.plan(args)["budget"]["sse_consumers"]
+>       self.assertEqual(consumers["total"], 4)
+E       AssertionError: 3 != 4
+
+tests\test_market_stream_window.py:221: AssertionError
+_______ AcceptanceTests.test_plan_declares_chain_budget_and_stop_rules ________
+
+self = <test_market_stream_window.AcceptanceTests testMethod=test_plan_declares_chain_budget_and_stop_rules>
+
+    def test_plan_declares_chain_budget_and_stop_rules(self):
+        import argparse
+        args = argparse.Namespace(
+            symbols="BTCUSDT,MINAUSDT", interval="1m", duration=180.0,
+            hold_seconds=20.0, max_messages=1200, max_events=6000,
+            max_reconnects=3, port=8791, no_bff=False, execute=False)
+        payload = window.plan(args)
+        self.assertEqual(payload["mode"], "LIVE_WINDOW_PLAN")
+        self.assertIn("REQUIERE AUTORIZACION", payload["authorization"])
+        self.assertEqual(payload["chain"][1].split(":")[0], "hub+servicio")
+        self.assertGreaterEqual(payload["budget"]["duration_s"], 120.0)
+        consumers = payload["budget"]["sse_consumers"]
+>       self.assertEqual(consumers["total"], 3)
+E       AssertionError: 2 != 3
+
+tests\test_market_stream_window.py:203: AssertionError
+_ OrchestrationTests.test_missing_browser_aborts_before_opening_own_consumers _
+
+self = <test_market_stream_window.OrchestrationTests testMethod=test_missing_browser_aborts_before_opening_own_consumers>
+
+    def test_missing_browser_aborts_before_opening_own_consumers(self):
+        """Con `--await-consumers 1` y sin navegador, para sin contactar Binance."""
+        import argparse
+        import os
+    
+        def free_port() -> int:
+            import socket as _socket
+            with _socket.socket(_socket.AF_INET, _socket.SOCK_STREAM) as sock:
+                sock.bind(("127.0.0.1", 0))
+                return int(sock.getsockname()[1])
+    
+        async def scenario():
+            with tempfile.TemporaryDirectory() as tmp:
+                cached_env = {key: os.environ.get(key) for key in (
+                    "MICROPROBE_MARKET_CACHE_DB", "MICROPROBE_MARKET_STREAM_PID")}
+                os.environ["MICROPROBE_MARKET_CACHE_DB"] = str(Path(tmp) / "cache.db")
+                os.environ["MICROPROBE_MARKET_STREAM_PID"] = str(Path(tmp) / "service.json")
+                MarketCache(Path(tmp) / "cache.db").init_db()
+                port = free_port()
+                args = argparse.Namespace(
+                    symbols="BTCUSDT,MINAUSDT", interval="1m", duration=20.0,
+                    hold_seconds=0.5, max_messages=40, max_events=400,
+                    max_reconnects=1, port=port, host="127.0.0.1",
+                    dashboard_url="http://127.0.0.1:3020", no_bff=False,
+                    base_url="ws://127.0.0.1:1", execute=True,
+                    out=None, dom_first=None, dom_last=None, dom_after_stop=None,
+                    visual_review=None, screenshot=None, finalize=None,
+                    browser_consumer=True, await_consumers=1, await_timeout=3.0)
+                try:
+                    run = await window.run_window(args)
+                finally:
+                    for key, value in cached_env.items():
+                        if value is None:
+                            os.environ.pop(key, None)
+                        else:
+                            os.environ[key] = value
+                self.assertEqual(run["stop_reason"], "BROWSER_NOT_ATTACHED")
+                self.assertFalse(run["acquisition_finished"])
+                self.assertEqual(run["consumers"], {})
+                wait = run["service"]["browser_wait"]
+                self.assertFalse(wait["ok"])
+                self.assertLessEqual(wait["waited_ms"], 8000)
+                self.assertTrue(run["service"]["after_stop"]["process_exited"])
+                self.assertTrue(run["service"]["after_stop"]["port_closed"])
+    
+>       asyncio.run(scenario())
+
+tests\test_market_stream_window.py:725: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+C:\Python314\Lib\asyncio\runners.py:204: in run
+    return runner.run(main)
+           ^^^^^^^^^^^^^^^^
+C:\Python314\Lib\asyncio\runners.py:127: in run
+    return self._loop.run_until_complete(task)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+C:\Python314\Lib\asyncio\base_events.py:719: in run_until_complete
+    return future.result()
+           ^^^^^^^^^^^^^^^
+tests\test_market_stream_window.py:716: in scenario
+    self.assertEqual(run["stop_reason"], "BROWSER_NOT_ATTACHED")
+E   AssertionError: 'PREFLIGHT_FAILED' != 'BROWSER_NOT_ATTACHED'
+E   - PREFLIGHT_FAILED
+E   + BROWSER_NOT_ATTACHED
+_ OrchestrationTests.test_window_orchestrates_service_and_detects_close_without_bff _
+
+self = <test_market_stream_window.OrchestrationTests testMethod=test_window_orchestrates_service_and_detects_close_without_bff>
+
+    def test_window_orchestrates_service_and_detects_close_without_bff(self):
+        from urllib.parse import parse_qs, urlsplit
+    
+        from websockets.asyncio.server import serve
+    
+        async def fake_exchange(ws):
+            request = getattr(ws, "request", None)
+            path = getattr(request, "path", "") or getattr(ws, "path", "")
+            streams = (parse_qs(urlsplit(path).query).get("streams") or [""])[0]
+            symbols = [item.split("@")[0].upper() for item in streams.split("/")
+                       if "@kline_" in item]
+            now = window.now_ms()
+            base = now - (now % STEP)
+            try:
+                for index, symbol in enumerate(symbols):
+                    for step, close in enumerate(("100.1", "100.5", "100.9")):
+                        await ws.send(_kline(symbol=symbol, open_ms=base, close=close,
+                                             event_ms=base + 10 + step * 20))
+                        await asyncio.sleep(0.03)
+                    if index == 0:
+                        await ws.send(_kline(symbol=symbol, open_ms=base, closed=True,
+                                             close="101.0", event_ms=base + STEP))
+                        await ws.send(_kline(symbol=symbol, open_ms=base + STEP,
+                                             close="101.4", event_ms=base + STEP + 50))
+                await ws.wait_closed()
+            except asyncio.CancelledError:
+                raise
+    
+        def free_port() -> int:
+            import socket as _socket
+            with _socket.socket(_socket.AF_INET, _socket.SOCK_STREAM) as sock:
+                sock.bind(("127.0.0.1", 0))
+                return int(sock.getsockname()[1])
+    
+        import argparse
+        import os
+    
+        async def scenario():
+            with tempfile.TemporaryDirectory() as tmp:
+                cached_env = {key: os.environ.get(key) for key in (
+                    "MICROPROBE_MARKET_CACHE_DB", "MICROPROBE_MARKET_STREAM_PID")}
+                os.environ["MICROPROBE_MARKET_CACHE_DB"] = str(Path(tmp) / "cache.db")
+                os.environ["MICROPROBE_MARKET_STREAM_PID"] = str(Path(tmp) / "service.json")
+                MarketCache(Path(tmp) / "cache.db").init_db()
+                ws_server = await serve(fake_exchange, "127.0.0.1", 0)
+                ws_port = ws_server.sockets[0].getsockname()[1]
+                port = free_port()
+                args = argparse.Namespace(
+                    symbols="BTCUSDT,MINAUSDT", interval="1m", duration=20.0,
+                    hold_seconds=0.5, max_messages=40, max_events=400,
+                    max_reconnects=1, port=port, host="127.0.0.1",
+                    dashboard_url="http://127.0.0.1:3020", no_bff=True,
+                    base_url=f"ws://127.0.0.1:{ws_port}", execute=True,
+                    out=None, dom_first=None, dom_last=None, dom_after_stop=None,
+                    visual_review=None, screenshot=None, finalize=None)
+                try:
+                    run = await window.run_window(args)
+                finally:
+                    ws_server.close()
+                    await ws_server.wait_closed()
+                    for key, value in cached_env.items():
+                        if value is None:
+                            os.environ.pop(key, None)
+                        else:
+                            os.environ[key] = value
+    
+                self.assertEqual(run["stop_reason"], "ACCEPTANCE_REACHED")
+                self.assertTrue(run["acquisition_finished"])
+                self.assertEqual(run["transport"]["origin"], "loopback_test")
+                self.assertEqual(run["verdict"], "UNKNOWN")
+                self.assertIn("dom_state_live", run["missing"])
+                events = run["consumers"]["service"]["events"]
+                closed = [e for e in events if e.get("closed")]
+                self.assertTrue(closed)
+                self.assertEqual(closed[0]["close_time_ms"] % STEP, STEP - 1)
+                self.assertTrue(any(e["symbol"] == "MINAUSDT" for e in events))
+                after = run["service"]["after_stop"]
+                self.assertTrue(after["process_exited"])
+                self.assertTrue(after["port_closed"])
+                self.assertTrue(after["pidfile_removed"])
+                self.assertFalse(window._port_open("127.0.0.1", port))
+                self.assertFalse((Path(tmp) / "service.json").exists())
+                evidence_dir = os.environ.get("MARKET_STREAM_WINDOW_EVIDENCE_DIR")
+                if evidence_dir:
+                    target = Path(evidence_dir)
+                    target.mkdir(parents=True, exist_ok=True)
+                    (target / "market-stream-window-loopback.json").write_text(
+                        json.dumps(run, ensure_ascii=False, indent=2) + "\n",
+                        encoding="utf-8")
+    
+>       asyncio.run(scenario())
+
+tests\test_market_stream_window.py:678: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+C:\Python314\Lib\asyncio\runners.py:204: in run
+    return runner.run(main)
+           ^^^^^^^^^^^^^^^^
+C:\Python314\Lib\asyncio\runners.py:127: in run
+    return self._loop.run_until_complete(task)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+C:\Python314\Lib\asyncio\base_events.py:719: in run_until_complete
+    return future.result()
+           ^^^^^^^^^^^^^^^
+tests\test_market_stream_window.py:657: in scenario
+    self.assertEqual(run["verdict"], "UNKNOWN")
+E   AssertionError: 'FAIL' != 'UNKNOWN'
+E   - FAIL
+E   + UNKNOWN
+---------------------------- Captured stderr call -----------------------------
+[window] AVISO: transporte loopback de prueba; este JSON NO acredita recepcion de Binance
+[window] servicio PID 23848 en http://127.0.0.1:64598; socket.connected=False
+[window] consumidores SSE abiertos: service; espera de captura 0 s tras aceptar
+[window] ACEPTACION DE CADENA ALCANZADA (provisional + cierre + siguiente); captura el DOM ahora: quedan 0 s
+[window] parada: ACCEPTANCE_REACHED; consumidores_tras_cerrar=0 (esperado 0)
+__________ test_session_new_public_market_prepares_without_backfill ___________
+
+    def test_session_new_public_market_prepares_without_backfill() -> None:
+        """Una sesi≤n nueva se prepara con contexto reciente (·ltimas 20 velas),
+        sin descargar el intervalo intermedio, con snapshot+stream ordenados y
+        sin duplicados, y cero solicitudes p·blicas."""
+>       assert main() == 0
+               ^^^^^^
+
+tests\test_session_new_public_market.py:432: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+tests\test_session_new_public_market.py:350: in main
+    session_id_mina = _create_and_verify_session(
+tests\test_session_new_public_market.py:172: in _create_and_verify_session
+    result = controller.create_session(payload)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+src\microstructure_probe\engineering_session_service.py:957: in create_session
+    self._validar_contexto_temporal(raw_context, step, config.symbol)
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = <microstructure_probe.engineering_session_service.EngineeringSessionController object at 0x000002B158539A90>
+raw_context = [{'open_time_ms': 1793787420000, 'open': 0.06284583, 'high': 0.06287725, 'low': 0.06275159, ...}, {'open_time_ms': 179...0.06275158, ...}, {'open_time_ms': 1793787720000, 'open': 0.06284575, 'high': 0.06287717, 'low': 0.06275151, ...}, ...]
+step = 60000, default_symbol = 'MINAUSDT'
+
+    def _validar_contexto_temporal(
+        self, raw_context: List[Dict[str, Any]], step: int,
+        default_symbol: str,
+    ) -> None:
+        """Valida el contexto de creaci≤n contra el reloj de referencia.
+    
+        Rechaza ANTES de crear/iniciar: contexto insuficiente, cierre futuro
+        (``close_time`` posterior a la referencia, sin tolerancia positiva de
+        un intervalo), vela no cerrada y serie discontinua. Ante incertidumbre
+        del reloj de referencia se abstiene con motivo: no se crea la sesi≤n
+        ni se fija T desde un cierre no acreditado como ocurrido.
+        """
+        now = self._now_ms()
+        if now is None:
+            raise ValueError(
+                "RELOJ_REFERENCIA_INCERTO: no hay tiempo de referencia "
+                "validado para admitir el contexto cerrado (sincronizaci≤n "
+                "del backend pendiente o fallida)")
+        if len(raw_context) < 1:
+            raise ValueError(
+                "CONTEXTO_INSUFICIENTE: se requiere al menos una vela de "
+                "contexto para fijar el reloj T inicial")
+        por_simbolo: Dict[str, List[Dict[str, Any]]] = {}
+        for c in raw_context:
+            por_simbolo.setdefault(
+                str(c.get("symbol") or default_symbol), []).append(c)
+        for simbolo, velas in por_simbolo.items():
+            velas.sort(key=lambda c: int(c["open_time_ms"]))
+            prev_open: Optional[int] = None
+            for c in velas:
+                ot = int(c["open_time_ms"])
+                ct = int(c.get("close_time_ms") or (ot + step - 1))
+                if ct is None or ct <= ot:
+                    raise ValueError(
+                        f"CONTEXTO_NO_CERRADO: {simbolo} vela open_time {ot} "
+                        f"no tiene cierre disponible (close_time={ct})")
+                if ct > now:
+>                   raise ValueError(
+                        f"CONTEXTO_FUTURO: {simbolo} vela open_time {ot} "
+                        f"cierra en {ct}, posterior a la referencia {now}; "
+                        f"el cierre todavφa no ocurri≤ (no se fija T desde "
+                        f"un cierre no acreditado)")
+E                   ValueError: CONTEXTO_FUTURO: MINAUSDT vela open_time 1793788560000 cierra en 1793788619999, posterior a la referencia 1793788613784; el cierre todavφa no ocurri≤ (no se fija T desde un cierre no acreditado)
+
+src\microstructure_probe\engineering_session_service.py:887: ValueError
+---------------------------- Captured stdout call -----------------------------
+CachΘ antigua: 60 velas, ·ltima: 1793446500000 (~4.0 dφas atrßs)
+Snapshot reciente MINAUSDT: 300 velas, primera: 1793770620000, ·ltima: 1793788560000 (cerrada hace -60 s)
+Snapshot reciente BTCUSDT: 300 velas, primera: 1793770620000, ·ltima: 1793788560000 (cerrada hace -60 s)
+
+--- Crear sesi≤n MINAUSDT ---
+============================== warnings summary ===============================
+tests/test_book_oi.py::test_config
+  C:\Users\adonm\AppData\Roaming\Python\Python314\site-packages\_pytest\python.py:171: PytestReturnNotNoneWarning: Test functions should return None, but tests/test_book_oi.py::test_config returned <class 'microstructure_probe.config.ProbeConfig'>.
+  Did you mean to use `assert` instead of `return`?
+  See https://docs.pytest.org/en/stable/how-to/assert.html#return-not-none for more information.
+    warnings.warn(
+
+tests/test_detectors.py::test_config
+  C:\Users\adonm\AppData\Roaming\Python\Python314\site-packages\_pytest\python.py:171: PytestReturnNotNoneWarning: Test functions should return None, but tests/test_detectors.py::test_config returned <class 'microstructure_probe.config.ProbeConfig'>.
+  Did you mean to use `assert` instead of `return`?
+  See https://docs.pytest.org/en/stable/how-to/assert.html#return-not-none for more information.
+    warnings.warn(
+
+tests/test_flow.py::test_config
+  C:\Users\adonm\AppData\Roaming\Python\Python314\site-packages\_pytest\python.py:171: PytestReturnNotNoneWarning: Test functions should return None, but tests/test_flow.py::test_config returned <class 'microstructure_probe.config.ProbeConfig'>.
+  Did you mean to use `assert` instead of `return`?
+  See https://docs.pytest.org/en/stable/how-to/assert.html#return-not-none for more information.
+    warnings.warn(
+
+tests/test_host_telemetry.py::test_config
+  C:\Users\adonm\AppData\Roaming\Python\Python314\site-packages\_pytest\python.py:171: PytestReturnNotNoneWarning: Test functions should return None, but tests/test_host_telemetry.py::test_config returned <class 'microstructure_probe.config.ProbeConfig'>.
+  Did you mean to use `assert` instead of `return`?
+  See https://docs.pytest.org/en/stable/how-to/assert.html#return-not-none for more information.
+    warnings.warn(
+
+tests/test_market_structure.py::test_config
+  C:\Users\adonm\AppData\Roaming\Python\Python314\site-packages\_pytest\python.py:171: PytestReturnNotNoneWarning: Test functions should return None, but tests/test_market_structure.py::test_config returned <class 'microstructure_probe.config.ProbeConfig'>.
+  Did you mean to use `assert` instead of `return`?
+  See https://docs.pytest.org/en/stable/how-to/assert.html#return-not-none for more information.
+    warnings.warn(
+
+tests/test_p14b_3_transport_freshness.py::test_config
+  C:\Users\adonm\AppData\Roaming\Python\Python314\site-packages\_pytest\python.py:171: PytestReturnNotNoneWarning: Test functions should return None, but tests/test_p14b_3_transport_freshness.py::test_config returned <class 'microstructure_probe.config.ProbeConfig'>.
+  Did you mean to use `assert` instead of `return`?
+  See https://docs.pytest.org/en/stable/how-to/assert.html#return-not-none for more information.
+    warnings.warn(
+
+tests/test_persistence_isolation.py::test_config
+  C:\Users\adonm\AppData\Roaming\Python\Python314\site-packages\_pytest\python.py:171: PytestReturnNotNoneWarning: Test functions should return None, but tests/test_persistence_isolation.py::test_config returned <class 'microstructure_probe.config.ProbeConfig'>.
+  Did you mean to use `assert` instead of `return`?
+  See https://docs.pytest.org/en/stable/how-to/assert.html#return-not-none for more information.
+    warnings.warn(
+
+tests/test_probe.py::test_config
+  C:\Users\adonm\AppData\Roaming\Python\Python314\site-packages\_pytest\python.py:171: PytestReturnNotNoneWarning: Test functions should return None, but tests/test_probe.py::test_config returned <class 'microstructure_probe.config.ProbeConfig'>.
+  Did you mean to use `assert` instead of `return`?
+  See https://docs.pytest.org/en/stable/how-to/assert.html#return-not-none for more information.
+    warnings.warn(
+
+tests/test_queue_wait_attribution.py::test_config
+  C:\Users\adonm\AppData\Roaming\Python\Python314\site-packages\_pytest\python.py:171: PytestReturnNotNoneWarning: Test functions should return None, but tests/test_queue_wait_attribution.py::test_config returned <class 'microstructure_probe.config.ProbeConfig'>.
+  Did you mean to use `assert` instead of `return`?
+  See https://docs.pytest.org/en/stable/how-to/assert.html#return-not-none for more information.
+    warnings.warn(
+
+tests/test_universe_probe.py::test_config
+  C:\Users\adonm\AppData\Roaming\Python\Python314\site-packages\_pytest\python.py:171: PytestReturnNotNoneWarning: Test functions should return None, but tests/test_universe_probe.py::test_config returned <class 'microstructure_probe.config.ProbeConfig'>.
+  Did you mean to use `assert` instead of `return`?
+  See https://docs.pytest.org/en/stable/how-to/assert.html#return-not-none for more information.
+    warnings.warn(
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ===========================
+FAILED tests/test_engineering_live_window_local.py::test_contexto_ok_ambos_simbolos_precios_distintos
+FAILED tests/test_engineering_live_window_local.py::test_contexto_json_error_no_falla_catastroficamente
+FAILED tests/test_engineering_live_window_local.py::test_contexto_cuerpo_no_json_registra_excepcion
+FAILED tests/test_engineering_live_window_local.py::test_contexto_lista_vacia
+FAILED tests/test_engineering_live_window_local.py::test_presupuesto_preenvio_reserva_antes_del_envio
+FAILED tests/test_engineering_live_window_local.py::test_vencimiento_durante_preparacion
+FAILED tests/test_engineering_live_window_local.py::test_identidades_no_se_deduplican_por_timestamp
+FAILED tests/test_market_stream_window.py::AcceptanceTests::test_plan_counts_browser_inside_consumer_budget
+FAILED tests/test_market_stream_window.py::AcceptanceTests::test_plan_declares_chain_budget_and_stop_rules
+FAILED tests/test_market_stream_window.py::OrchestrationTests::test_missing_browser_aborts_before_opening_own_consumers
+FAILED tests/test_market_stream_window.py::OrchestrationTests::test_window_orchestrates_service_and_detects_close_without_bff
+FAILED tests/test_session_new_public_market.py::test_session_new_public_market_prepares_without_backfill
+12 failed, 1661 passed, 2 skipped, 10 warnings, 43 subtests passed in 754.70s (0:12:34)
