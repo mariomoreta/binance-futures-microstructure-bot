@@ -168,12 +168,12 @@ posterior de monedas ganadoras.
 |---|---|
 | Universo | Contratos Binance USD-M Futures elegibles: status=TRADING, contractType=PERPETUAL, quoteAsset=USDT (desde `contract_catalog`, referencia estática; universo en T = UNKNOWN). |
 | Exploración | Amplia: todos los elegibles del catálogo son considerados inicialmente; no se eligen seis monedas porque tengan datos ni los ganadores finales de un período. |
-| Selección acotada | Conjunto bounded para análisis profundo (`max_deep_analysis_total=20`, `max_per_side=10`). Techo total para la unión candidatos + comparadores. |
+| Selección acotada | Conjunto bounded para análisis profundo (`max_candidatos=12`, `max_comparadores=8`, `max_deep_analysis_total=20`, `max_per_side=10`). Techo total para la unión candidatos + comparadores. |
 | Lados | Ambos lados del movimiento (UP si cambio_24h ≥ +0.02; DOWN si ≤ −0.02). `cambio_24h_pct` se interpreta en **puntos porcentuales** (convención Binance priceChangePercent: 5.0 = 5%); 0.02 = 0,02 puntos porcentuales (hipótesis no validada, ambigüedad previa documentada). |
 | Criterios en T | Movimiento (cambio_24h_pct), volumen (quote_volume_24h), cobertura (ticker 24h). Aceleración (1h), percentil de volumen vs propia historia y liquidez NO disponibles en discovery → marcados como UNKNOWN, nunca fabricados. |
-| Límites | max_candidates_total=500 (tope de recursos de descubrimiento, NO recorte del universo: todos los elegibles se consideran), max_deep_analysis_total=20 (estudio profundo), max_per_side=10 (techo por lado). |
+| Límites | max_candidatos=12 (candidatos seleccionados para estudio profundo), max_comparadores=8 (reserva para el comparador), max_deep_analysis_total=20 (techo total unión candidatos+comparadores), max_per_side=10 (techo por lado). |
 | Rotación | min_dwell_cycles=1, max_cycles_per_symbol=5 — **diferidos**: no existe gestor de rotación en este prototipo; no se aplican. |
-| Comparador | Muestreo con semilla fijada (`comparator_seed=42`, share=0.25) del mismo universo disponible en T; registra probabilidad y mecanismo de muestreo. |
+| Comparador | Muestreo con semilla fijada (`comparator_seed=42`, `comparator_share=0.25`) del mismo universo disponible en T; registra probabilidad de muestreo efectiva y mecanismo. |
 
 ### 5.2 Comparador reproducible
 
@@ -205,8 +205,8 @@ cero red pública; cero escrituras en DBs canonicas.
 - Construye el universo observado desde `contract_catalog` (referencia estática; universo en T = UNKNOWN).
 - Filtra símbolos elegibles (PERPETUAL/TRADING/USDT) y marca los no elegibles con motivo.
 - Para cada elegible con datos en T (movimiento 24h, volumen 24h, cobertura), asigna lado (UP/DOWN) si `cambio_24h` supera el umbral (0,02 puntos porcentuales).
-- Rankea por prioridad de estudio (movimiento, volumen) y selecciona hasta `max_deep_analysis_total` (20) en total, respetando `max_per_side` (10) por lado.
-- Construye un comparador de selección sencilla con semilla fijada sobre el resto del universo, dentro del mismo techo total, deduplicando símbolos ya seleccionados y reportando probabilidad efectiva de muestreo.
+- Rankea por prioridad de estudio (movimiento, volumen) y selecciona hasta `max_candidatos` (12) en total, respetando `max_per_side` (10) por lado y el techo total `max_deep_analysis_total` (20).
+- Construye un comparador de selección sencilla con semilla fijada sobre el resto del universo, dentro del mismo techo total (reserva explícita de `max_comparadores=8`), deduplicando símbolos ya seleccionados y reportando probabilidad efectiva de muestreo.
 - Produce trazabilidad completa por ciclo (cycle_id, instante, política, universo, candidatos, comparador, exclusiones, estado).
 
 **Qué permanece diferido (no implementado en este bloque):**
@@ -216,10 +216,9 @@ cero red pública; cero escrituras en DBs canonicas.
 - Ejecución, paper trading, órdenes, cambios de reglas operativas.
 
 **Cuántas observaciones son utilizables de verdad (matriz de aprovechamiento, §4):**
-- Solo **BTCUSDT** tiene precio posterior compatible para la ventana de libro/flujo research (2026-10-07 22:43 → 2026-10-16).
-- De las 1081 observaciones de libro/flujo de BTCUSDT, **253 están emparejadas** con un precio objetivo en T+h (horizonte 1h); 828 excluidas (falta precio posterior compatible).
-- Los otros 13 símbolos research tienen **0 observaciones emparejadas** (no tienen precio posterior en `market_klines`).
-- Conclusión: cobertura útil = 1 símbolo de 14 research (≈ 0,2% de los 522 elegibles), solo horizonte 1h. No hay cobertura suficiente para medir la hipótesis liquidez-vs-flujo sobre un universo representativo.
+- **0 observaciones aptas temporalmente para evaluación.** Ninguna de las 1827 parejas libro+flujo tiene disponibilidad publicada en T (el `as_of_ms` de todos los buckets es posterior a `bucket_end`, es decir, el dato no estaba publicado cuando se tomaba la decisión en T).
+- De las 1827 parejas libro+flujo, solo 253 tienen precio en T y precio en T+h con resolución y disponibilidad compatibles (todas de **BTCUSDT**, horizonte 1h). Las otras 1574 pares de BTCUSDT carecen de precio en T o en T+h. Los otros 13 símbolos research tienen 0 pares emparejados (no tienen precio posterior en `market_klines`).
+- Conclusión: cobertura útil para evaluación = **0 observaciones**. Cobertura para descripción = 1827 pares (1827 de 14 símbolos, pero solo 14 símbolos en el universo research). Ninguna corrida permite calcular retorno válido con disponibilidad acreditada en T.
 
 **Captura mínima que faltaría (no ejecutar en este bloque):**
 - Liquidez en el instante T (order book top-20 con `available_at`) para el universo candidato, al menos los símbolos con resolución histórica (BTCUSDT y los de `historical_klines`).

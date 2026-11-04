@@ -1,0 +1,77 @@
+[
+  {
+    "observation_id": "BTCUSDT|1791431340000|1791431400000",
+    "simbolo": "BTCUSDT",
+    "estado": "descartada",
+    "verificacion_precios": {
+      "precio_T_recalculado": null,
+      "close_time_T_recalculado": null,
+      "precio_T_plus_h_recalculado": null,
+      "close_time_T_plus_h_recalculado": null,
+      "precio_T_original": null,
+      "precio_T_plus_h_original": null,
+      "coincide": true
+    },
+    "coincide": true
+  },
+  {
+    "observation_id": "BTCUSDT|1791438540000|1791438600000",
+    "simbolo": "BTCUSDT",
+    "estado": "descartada",
+    "verificacion_precios": {
+      "precio_T_recalculado": null,
+      "close_time_T_recalculado": null,
+      "precio_T_plus_h_recalculado": null,
+      "close_time_T_plus_h_recalculado": null,
+      "precio_T_original": null,
+      "precio_T_plus_h_original": null,
+      "coincide": true
+    },
+    "coincide": true
+  },
+  {
+    "observation_id": "BTCUSDT|1791440820000|1791440880000",
+    "simbolo": "BTCUSDT",
+    "estado": "descartada",
+    "verificacion_precios": {
+      "precio_T_recalculado": null,
+      "close_time_T_recalculado": null,
+      "precio_T_plus_h_recalculado": null,
+      "close_time_T_plus_h_recalculado": null,
+      "precio_T_original": null,
+      "precio_T_plus_h_original": null,
+      "coincide": true
+    },
+    "coincide": true
+  },
+  {
+    "observation_id": "BTCUSDT|1791440880000|1791440940000",
+    "simbolo": "BTCUSDT",
+    "estado": "descartada",
+    "verificacion_precios": {
+      "precio_T_recalculado": null,
+      "close_time_T_recalculado": null,
+      "precio_T_plus_h_recalculado": null,
+      "close_time_T_plus_h_recalculado": null,
+      "precio_T_original": null,
+      "precio_T_plus_h_original": null,
+      "coincide": true
+    },
+    "coincide": true
+  },
+  {
+    "observation_id": "BTCUSDT|1791540300000|1791540360000",
+    "simbolo": "BTCUSDT",
+    "estado": "descartada",
+    "verificacion_precios": {
+      "precio_T_recalculado": null,
+      "close_time_T_recalculado": null,
+      "precio_T_plus_h_recalculado": null,
+      "close_time_T_plus_h_recalculado": null,
+      "precio_T_original": null,
+      "precio_T_plus_h_original": null,
+      "coincide": true
+    },
+    "coincide": true
+  }
+]

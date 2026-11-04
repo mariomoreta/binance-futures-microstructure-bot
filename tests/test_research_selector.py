@@ -5,22 +5,16 @@ Cubren el punto 6 del mandato:
 - Cambiar datos posteriores no altera la seleccion hasta T.
 - Simbolo inelegible o dato futuro -> exclusion explicita.
 - Ganadores y perdedores tratados por la politica declarada.
-- Limites de candidatos respetados.
-- Comparador reproducible (techo conjunto candidatos+comparadores,
-  probabilidad efectiva del muestreo).
+- Limites de candidatos respetados (techo conjunto candidatos+comparadores).
+- Comparador reproducible (techo conjunto, probabilidad efectiva).
 - Registro de no seleccionados y datos faltantes.
 - Ningun resultado forward se usa para seleccionar.
 - Cero red publica y cero escrituras en DBs canonicas.
-- Dato futuro y disponibilidad ausente.
-- Unidades del umbral (puntos porcentuales).
-- Universo mayor de 500 sin recorte silencioso.
-- Exclusion obligatoria frente a dato faltante.
 
-Estas pruebas prueban el MECANISMO, NO evidencia de ventaja economica.
+Estas pruebas prueban el MECANISMO, no evidencia de ventaja economica.
 """
 from __future__ import annotations
 
-import json
 import os
 import sys
 import tempfile
@@ -70,11 +64,11 @@ def _catalog_row(symbol: str, eligible: bool = True) -> dict:
 
 
 class TestTemporalAvailability(unittest.TestCase):
-    """Disponibilidad temporal: reference_ms controla qué datos pueden usarse."""
+    """Disponibilidad temporal: reference_ms controla lo que puede usarse."""
 
     def test_dato_disponible_despues_de_T_excluido(self):
-        """candidate con discovered_at_ms > reference_ms -> excluido del ciclo."""
-        cats = [_cand("FUTUSDT", 0.05, discovered_at_ms=1_790_000_000_000 + 1)]
+        cats = [_cand("FUTUSDT", 0.05,
+                      discovered_at_ms=1_790_000_000_000 + 1)]
         catalog = [_catalog_row("FUTUSDT")]
         cycle = run_research_cycle(catalog, cats, ResearchPolicy(),
                                    reference_ms=1_790_000_000_000)
@@ -84,18 +78,16 @@ class TestTemporalAvailability(unittest.TestCase):
         self.assertEqual(cycle.exclusions[0]["reason"], "dato_no_disponible_en_T")
 
     def test_disponibilidad_desconocida_unknown_no_selecciona(self):
-        """ticker_close_ms None -> disponibilidad desconocida -> UNKNOWN."""
         cats = [_cand("UNKUSDT", 0.05, ticker_close_ms=None)]
         catalog = [_catalog_row("UNKUSDT")]
         cycle = run_research_cycle(catalog, cats, ResearchPolicy(),
                                    reference_ms=1_790_000_000_000)
         self.assertEqual(len(cycle.selected), 0)
         self.assertEqual(len(cycle.exclusions), 1)
+        self.assertEqual(cycle.exclusions[0]["symbol"], "UNKUSDT")
         self.assertEqual(cycle.exclusions[0]["reason"], "dato_no_disponible_en_T")
 
     def test_dato_disponible_en_T_no_es_excluido(self):
-        """candidate con discovered_at_ms <= reference_ms y ticker_close_ms <=
-        reference_ms -> usable en T."""
         cats = [_cand("OKUSDT", 0.05,
                       discovered_at_ms=1_790_000_000_000 - 1000,
                       ticker_close_ms=1_790_000_000_000 - 1000)]
@@ -112,7 +104,8 @@ class TestDeterminism(unittest.TestCase):
     def test_same_input_same_selection(self):
         cats = [_cand("AAAUSDT", 0.05), _cand("BBBUSDT", -0.04),
                 _cand("CCCUSDT", 0.01)]
-        pol = ResearchPolicy(max_deep_analysis_total=5, max_per_side=3)
+        pol = ResearchPolicy(max_candidatos=12, max_comparadores=8,
+                             max_per_side=3)
         c1 = run_research_cycle(
             [_catalog_row(c.symbol, c.eligible) for c in cats],
             cats, pol, reference_ms=1_790_000_000_000)
@@ -124,9 +117,9 @@ class TestDeterminism(unittest.TestCase):
                          [(s.symbol, s.side) for s in c2.selected])
 
     def test_post_t_data_does_not_alter_selection(self):
-        """Cambiar datos posteriores a T no altera la seleccion hasta T."""
         cats_t = [_cand("AAAUSDT", 0.05)]
-        pol = ResearchPolicy(max_deep_analysis_total=5, max_per_side=3)
+        pol = ResearchPolicy(max_candidatos=12, max_comparadores=8,
+                             max_per_side=3)
         base = run_research_cycle(
             [_catalog_row(c.symbol, c.eligible) for c in cats_t],
             cats_t, pol, reference_ms=1_790_000_000_000)
@@ -151,8 +144,6 @@ class TestDeterminism(unittest.TestCase):
                                        total_budget=5)
         self.assertEqual([c["symbol"] for c in comp1],
                          [c["symbol"] for c in comp2])
-        # Registra probabilidad efectiva y mecanismo de muestreo real.
-        # Pool de 5, dibuja 5 -> probabilidad 1.0 (todos seleccionados).
         for c in comp1:
             self.assertIn("selection_probability", c)
             self.assertEqual(c["selection_probability"], 1.0)
@@ -164,14 +155,12 @@ class TestDeterminism(unittest.TestCase):
         self.assertEqual(sum1["effective_probability"], 1.0)
         self.assertEqual(sum1["n_draw"], 5)
         self.assertEqual(sum1["n_available"], 5)
-        # Con pool mayor que el presupuesto, probabilidad < 1.0.
         comp_big, sum_big = build_comparator([f"S{i}" for i in range(10)], pol,
                                              1_790_000_000_000, total_budget=5)
         self.assertEqual(len(comp_big), 5)
         for c in comp_big:
             self.assertEqual(c["selection_probability"], 0.5)
         self.assertEqual(sum_big["effective_probability"], 0.5)
-        # Sin solapamiento con candidatos ya seleccionados (deduplicacion).
         comp_already, _ = build_comparator(["A", "B", "C"], pol,
                                            1_790_000_000_000,
                                            already_selected_symbols=["A", "B"],
@@ -195,8 +184,6 @@ class TestExclusions(unittest.TestCase):
                          "not_in_observed_universe")
 
     def test_missing_move_features_excluded(self):
-        """Dato de movimiento faltante -> elegible con datos faltantes, no
-        excluido obligatorio por movimiento (no hay lado)."""
         cats = [_cand("AAAUSDT", None)]
         catalog = [_catalog_row("AAAUSDT")]
         cycle = run_research_cycle(catalog, cats, ResearchPolicy(),
@@ -210,8 +197,6 @@ class TestExclusions(unittest.TestCase):
                         in cycle.exclusions[0]["reason"])
 
     def test_missing_volume_is_eligible_missing_data(self):
-        """volumen_24h desconocido -> elegible con datos faltantes, NO
-        excluido obligatorio (el movimiento aún permite lado)."""
         cats = [discovery.Candidate(
             symbol="VOLUNK", status="TRADING", contract_type="PERPETUAL",
             quote_asset="USDT", price=100.0, change_24h_pct=0.05,
@@ -232,11 +217,10 @@ class TestUnitsAndThreshold(unittest.TestCase):
     """Unidades del umbral: change_24h_pct en puntos porcentuales."""
 
     def test_umbral_0_02_puntos_porcentuales(self):
-        """0.02 se interpreta como 0.02 puntos porcentuales (no 2%).
-        change_24h_pct=0.05 (0.05 pp) supera el umbral; 0.01 no."""
         cats = [_cand("SUPERA", 0.05), _cand("NO_SUPERA", 0.01)]
         catalog = [_catalog_row("SUPERA"), _catalog_row("NO_SUPERA")]
-        pol = ResearchPolicy(max_deep_analysis_total=5, max_per_side=3)
+        pol = ResearchPolicy(max_candidatos=12, max_comparadores=8,
+                             max_per_side=3)
         cycle = run_research_cycle(catalog, cats, pol,
                                    reference_ms=1_790_000_000_000)
         supers = [s for s in cycle.selected if s.symbol == "SUPERA"]
@@ -244,66 +228,62 @@ class TestUnitsAndThreshold(unittest.TestCase):
         self.assertEqual(len(supers), 1, "0.05 pp >= 0.02 pp umbral -> UP")
         self.assertEqual(len(nosup), 0, "0.01 pp < 0.02 pp -> excluido")
         self.assertEqual(supers[0].side, "UP")
-        # Documentar unidad en la política.
+        self.assertEqual(pol.to_dict()["max_candidatos"], 12)
+        self.assertEqual(pol.to_dict()["max_comparadores"], 8)
+        self.assertEqual(pol.to_dict()["max_deep_analysis_total"], 20)
         self.assertEqual(pol.to_dict()["move_24h_unit"],
                          "puntos_porcentuales (Binance priceChangePercent)")
 
 
 class TestUniverseSize(unittest.TestCase):
-    """Universo mayor de 500 sin recorte silencioso en el descubrimiento."""
+    """Universo mayor de 500 no recortado silenciosamente en el descubrimiento."""
 
     def test_universo_600_no_recortado_a_500(self):
-        """max_candidates_total=500 es tope de recursos para seguimiento
-        profundo, NO recorte del descubrimiento: todos los 600 elegibles
-        se evalúan."""
         cats = [_cand(f"SYM{i:04d}", 0.05) for i in range(600)]
         catalog = [_catalog_row(c.symbol) for c in cats]
-        pol = ResearchPolicy(max_deep_analysis_total=5, max_per_side=3)
+        pol = ResearchPolicy(max_candidatos=12, max_comparadores=8,
+                             max_per_side=3)
         cycle = run_research_cycle(catalog, cats, pol,
                                    reference_ms=1_790_000_000_000)
         self.assertEqual(cycle.cycle_summary["n_candidates_evaluated"], 600)
         self.assertEqual(cycle.universe.n_eligible, 600)
-        # No hay recorte silencioso del universo a los primeros 500.
+        self.assertLessEqual(len(cycle.selected), pol.max_candidatos)
 
 
 class TestCombinedCeiling(unittest.TestCase):
-    """Techo conjunto candidatos + comparadores y probabilidad efectiva."""
+    """Techo conjunto candidatos + comparadores respeta el techo de 20."""
 
     def test_union_candidatos_comparador_respeta_techo(self):
-        """10 UP + 10 DOWN (20 candidatos) con techo total 5:
-        len(selected) + len(comparator) <= 5."""
         cats = [_cand(f"UP{i:03d}", 0.05) for i in range(10)] + \
                [_cand(f"DN{i:03d}", -0.05) for i in range(10)]
         catalog = [_catalog_row(c.symbol) for c in cats]
-        pol = ResearchPolicy(max_deep_analysis_total=5, max_per_side=3)
+        pol = ResearchPolicy(max_candidatos=12, max_comparadores=8,
+                             max_per_side=3)
         cycle = run_research_cycle(catalog, cats, pol,
                                    reference_ms=1_790_000_000_000)
-        self.assertLessEqual(len(cycle.selected), pol.max_deep_analysis_total)
+        self.assertLessEqual(len(cycle.selected), pol.max_candidatos)
         self.assertLessEqual(len(cycle.comparator),
-                             pol.max_deep_analysis_total)
+                             pol.max_comparadores)
         self.assertLessEqual(len(cycle.selected) + len(cycle.comparator),
                              pol.max_deep_analysis_total)
-        # Deduplicacion: candidatos ya seleccionados no aparecen en
-        # comparador.
         sel_symbols = {s.symbol for s in cycle.selected}
         comp_symbols = {c["symbol"] for c in cycle.comparator}
         self.assertFalse(sel_symbols & comp_symbols)
-        # Probabilidad efectiva calculada desde el mecanismo real.
         self.assertIn("effective_probability", cycle.comparator_summary)
         self.assertGreaterEqual(cycle.comparator_summary[
             "effective_probability"], 0.0)
 
     def test_20_distribuido_documentado(self):
-        """max_deep_analysis_total=20 como hipotesis de capacidad del
-        prototipo, distribuida entre candidatos y comparadores."""
         cats = [_cand(f"UP{i:03d}", 0.05) for i in range(10)] + \
                [_cand(f"DN{i:03d}", -0.05) for i in range(10)]
         catalog = [_catalog_row(c.symbol) for c in cats]
         pol = ResearchPolicy(max_deep_analysis_total=20, max_per_side=10)
         cycle = run_research_cycle(catalog, cats, pol,
                                    reference_ms=1_790_000_000_000)
-        self.assertLessEqual(len(cycle.selected) + len(cycle.comparator), 20)
-        self.assertEqual(pol.to_dict()["max_deep_analysis_total"], 20)
+        self.assertLessEqual(len(cycle.selected) + len(cycle.comparator),
+                             pol.max_deep_analysis_total)
+        self.assertEqual(pol.to_dict()["max_candidatos"], 12)
+        self.assertEqual(pol.to_dict()["max_comparadores"], 8)
 
 
 class TestNoForwardNoWrites(unittest.TestCase):

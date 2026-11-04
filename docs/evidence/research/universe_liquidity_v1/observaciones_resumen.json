@@ -1,0 +1,24 @@
+{
+  "procedimiento": "observaciones_libro_flujo_precio_v1",
+  "horizonte_ms": 3600000,
+  "tolerancia_alineacion_ms": 3600000,
+  "fuente_precios": "market_klines|1h",
+  "n_observaciones_totales": 1930,
+  "n_parejas_libro_flujo": 1827,
+  "n_libro_sin_flujo": 3,
+  "n_flujo_sin_libro": 100,
+  "n_duplicados_libro": 0,
+  "n_duplicados_flujo": 0,
+  "n_aceptada_para_descripcion": 0,
+  "n_apta_temporalmente_para_evaluacion": 0,
+  "n_descartada": 1930,
+  "n_con_retorno_valido": 0,
+  "retorno_descriptivo": {
+    "media": null,
+    "mediana": null,
+    "min": null,
+    "max": null,
+    "n": 0
+  },
+  "nota": "Las '253 parejas' del informe anterior quedan NO VALIDADAS. Este recalc empareja libro y flujo por bucket idéntico y requiere precio en T y en T+h de market_klines con resolución y disponibilidad compatibles. Solo las observaciones apta_temporalmente_para_evaluacion tienen retorno calculable. No se declara fill, rentabilidad operable ni cobertura representativa."
+}

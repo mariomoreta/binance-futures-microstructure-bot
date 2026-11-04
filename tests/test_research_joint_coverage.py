@@ -1,19 +1,12 @@
-"""Pruebas pequenas de la matriz de cobertura conjunta (joint_coverage_matrix).
+"""Pruebas focalizadas de la matriz de cobertura conjunta (punto 6 del mandato).
 
-Cubren el punto 6 del mandato:
-- Ventanas que se solapan pero no contienen parejas válidas.
-- Pareja válida y precio futuro indebidamente usado como referencia (no se usa
-  el close de una vela horaria que contiene T como si se conociera en T).
-- Hueco o resolución incompatible (vela 1m con solo precios 1h, y viceversa).
-
-Usan SQLite en memoria, no tocan DBs canonicas, no abren red publica.
-Prueban el MECANISMO de emparejamiento, NO evidencia de ventaja economica.
+Prueban el MECANISMO de emparejamiento libro-flujo y de precios en T y T+h,
+usando datos sintéticos en memoria. No tocan DBs canónicas, no abren red
+pública. Prueban el MECANISMO, no evidencia de ventaja económica.
 """
 from __future__ import annotations
 
-import sqlite3
 import sys
-import tempfile
 import unittest
 from pathlib import Path
 
@@ -24,124 +17,186 @@ for p in (str(ROOT), str(SRC), str(SCRIPTS)):
     if p not in sys.path:
         sys.path.insert(0, p)
 
-import research_universe_liquidity_inventory as inv  # noqa: E402
+from research_observations_table import (  # noqa: E402
+    emparejar_libro_flujo,
+    precio_en_T,
+    precio_en_T_plus_h,
+    construir_observacion,
+)
 
 
-def _mk_con(rows):
-    """Crea una SQLite en memoria con tabla market_klines poblada con rows."""
-    tmp = Path(tempfile.mkdtemp(prefix="jointcov_"))
-    con = sqlite3.connect(str(tmp / "mk.db"))
-    con.execute(
-        "CREATE TABLE market_klines (symbol TEXT, interval TEXT, "
-        "open_time INTEGER, open REAL, high REAL, low REAL, close REAL, "
-        "close_time INTEGER, base_volume TEXT, quote_volume TEXT, "
-        "trade_count INTEGER, taker_buy_base TEXT, taker_buy_quote TEXT, "
-        "fetched_at INTEGER)")
-    con.executemany(
-        "INSERT INTO market_klines VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?)", rows)
-    con.commit()
-    return con
+def _libro(symbol: str, bs: int, be: int, as_of_ms: int | None = None) -> dict:
+    return {
+        "symbol": symbol,
+        "bucket_start": bs,
+        "bucket_end": be,
+        "spread_mean_bps": 0.01,
+        "imb_mean": 0.0,
+        "micro_mean_bps": 0.0,
+        "bid20_mean_base": 100.0,
+        "ask20_mean_base": 100.0,
+        "first_event_ms": bs,
+        "last_event_ms": be - 40,
+        "as_of_ms": as_of_ms,
+    }
 
 
-class TestPrecioReferenciaEnT(unittest.TestCase):
-    """_vela_cercana_antes_o_en: precio conocido en T (close_time <= T)."""
-
-    def test_vela_cerrada_antes_de_T_es_referencia_valida(self):
-        con = _mk_con([
-            ("BTCUSDT", "1h", 1000, 100, 101, 99, 101, 3600000, "1", "1", 1, "1", "1", 3600000),
-            ("BTCUSDT", "1h", 3600000, 100, 102, 99, 101, 7200000, "1", "1", 1, "1", "1", 7200000),
-        ])
-        # T = 5000000 (dentro de la vela 3600000-7200000). La ultima vela cerrada
-        # antes o en T es la que cierra en 3600000 (precio 101).
-        v = inv._vela_cercana_antes_o_en(con, "BTCUSDT", "1h", 5000000)
-        self.assertIsNotNone(v)
-        self.assertEqual(v["close_time"], 3600000)
-        self.assertEqual(v["close"], 101)
-        con.close()
-
-    def test_no_hay_vela_cerrada_antes_de_T_retorna_None(self):
-        con = _mk_con([
-            ("BTCUSDT", "1h", 3600000, 100, 101, 99, 100, 7200000, "1", "1", 1, "1", "1", 7200000),
-        ])
-        # T = 1000 (antes de la primera vela). No hay vela cerrada antes de T.
-        v = inv._vela_cercana_antes_o_en(con, "BTCUSDT", "1h", 1000)
-        self.assertIsNone(v)
-        con.close()
-
-    def test_no_se_usa_close_de_vela_que_contiene_T(self):
-        """Si T cae dentro de una vela horaria, su close NO se conoce en T,
-        por lo que no debe usarse como precio de referencia."""
-        con = _mk_con([
-            ("BTCUSDT", "1h", 3600000, 100, 105, 99, 105, 7200000, "1", "1", 1, "1", "1", 7200000),
-        ])
-        # T = 5000000 cae dentro de la vela 3600000-7200000. Su close (105)
-        # no se conocia en T. No hay otra vela cerrada antes de T.
-        v = inv._vela_cercana_antes_o_en(con, "BTCUSDT", "1h", 5000000)
-        self.assertIsNone(v)
-        con.close()
+def _flujo(
+    symbol: str, bs: int, be: int, as_of_ms: int | None = None
+) -> dict:
+    return {
+        "symbol": symbol,
+        "bucket_start": bs,
+        "bucket_end": be,
+        "buy_notional": 100.0,
+        "sell_notional": 100.0,
+        "delta": 0.0,
+        "delta_ratio": 0.0,
+        "base_volume": 1.0,
+        "trade_count": 1,
+        "price_close": 100.0,
+        "first_event_ms": bs,
+        "last_event_ms": be - 40,
+        "as_of_ms": as_of_ms,
+    }
 
 
-class TestPrecioObjetivoTmásH(unittest.TestCase):
-    """_vela_cubriendo_objetivo: precio en T+h (open_time <= T+h <= close_time)."""
-
-    def test_vela_que_cubre_T_plus_h_es_objetivo_valido(self):
-        con = _mk_con([
-            ("BTCUSDT", "1h", 7200000, 101, 102, 100, 101, 10800000, "1", "1", 1, "1", "1", 10800000),
-        ])
-        # T = 7200000, h = 1h -> T+h = 10800000. La vela 7200000-10800000
-        # cubre T+h (open_time=7200000 <= 10800000 <= close_time=10800000).
-        v = inv._vela_cubriendo_objetivo(con, "BTCUSDT", "1h", 10800000)
-        self.assertIsNotNone(v)
-        self.assertEqual(v["open_time"], 7200000)
-        self.assertEqual(v["close_time"], 10800000)
-        con.close()
-
-    def test_vela_que_cierra_antes_de_T_plus_h_no_es_objetivo(self):
-        con = _mk_con([
-            ("BTCUSDT", "1h", 3600000, 100, 101, 99, 100, 7200000, "1", "1", 1, "1", "1", 7200000),
-            ("BTCUSDT", "1h", 10800000, 101, 102, 100, 101, 14400000, "1", "1", 1, "1", "1", 14400000),
-        ])
-        # T = 7200000, T+h = 10800000. La vela 3600000-7200000 cierra en 7200000
-        # (es T, no cubre T+h como objetivo futuro). La vela 10800000-14400000
-        # empieza en 10800000 (= T+h), cubre T+h.
-        v = inv._vela_cubriendo_objetivo(con, "BTCUSDT", "1h", 10800000)
-        self.assertIsNotNone(v)
-        self.assertEqual(v["open_time"], 10800000)
-        con.close()
-
-    def test_no_hay_vela_que_cubra_T_plus_h_retorna_None(self):
-        con = _mk_con([
-            ("BTCUSDT", "1h", 3600000, 100, 101, 99, 100, 7200000, "1", "1", 1, "1", "1", 7200000),
-        ])
-        # T = 7200000, T+h = 10800000. No hay vela con open_time <= 10800000
-        # y close_time >= 10800000 (la unica cierra en 7200000 < 10800000).
-        v = inv._vela_cubriendo_objetivo(con, "BTCUSDT", "1h", 10800000)
-        self.assertIsNone(v)
-        con.close()
+def _velas_1h(primer_open: int, n: int) -> list:
+    """n velas 1h consecutivas empezando en primer_open."""
+    return [
+        (primer_open + i * 3600000, primer_open + (i + 1) * 3600000, 100.0 + i)
+        for i in range(n)
+    ]
 
 
-class TestResolucionIncompatible(unittest.TestCase):
-    """No se extrapolan horizontes de un minuto usando velas horarias."""
+class TestEmparejamientoLibroFlujo(unittest.TestCase):
+    """Libro sin flujo y flujo sin libro: no son observación conjunta."""
 
-    def test_intervalo_1m_con_solo_precios_1h_no_empareja_1m(self):
-        con = _mk_con([
-            ("BTCUSDT", "1h", 3600000, 100, 101, 99, 100, 7200000, "1", "1", 1, "1", "1", 7200000),
-        ])
-        # Pedir precio objetivo para intervalo 1m en T+h=7200000, pero solo hay
-        # velas 1h. No hay velas 1m, por lo que no hay emparejamiento 1m.
-        v = inv._vela_cubriendo_objetivo(con, "BTCUSDT", "1m", 7200000)
-        self.assertIsNone(v)
-        con.close()
+    def test_libro_sin_flujo_no_es_par(self):
+        libro = [_libro("BTCUSDT", 1000, 2000)]
+        flujo = []
+        pares, solo_libro, solo_flujo, ndl, ndf = emparejar_libro_flujo(
+            libro, flujo
+        )
+        self.assertEqual(len(pares), 0)
+        self.assertEqual(len(solo_libro), 1)
+        self.assertEqual(len(solo_flujo), 0)
+        self.assertEqual(ndl, 0)
+        self.assertEqual(ndf, 0)
 
-    def test_intervalo_1h_con_solo_precios_1m_no_empareja_1h(self):
-        con = _mk_con([
-            ("BTCUSDT", "1m", 3600000, 100, 101, 99, 100, 3660000, "1", "1", 1, "1", "1", 3660000),
-        ])
-        # Pedir precio objetivo para intervalo 1h en T+h=7200000, pero solo hay
-        # velas 1m. No hay velas 1h, por lo que no hay emparejamiento 1h.
-        v = inv._vela_cubriendo_objetivo(con, "BTCUSDT", "1h", 7200000)
-        self.assertIsNone(v)
-        con.close()
+    def test_flujo_sin_libro_no_es_par(self):
+        libro = []
+        flujo = [_flujo("BTCUSDT", 1000, 2000)]
+        pares, solo_libro, solo_flujo, ndl, ndf = emparejar_libro_flujo(
+            libro, flujo
+        )
+        self.assertEqual(len(pares), 0)
+        self.assertEqual(len(solo_libro), 0)
+        self.assertEqual(len(solo_flujo), 1)
+        self.assertEqual(ndl, 0)
+        self.assertEqual(ndf, 0)
+
+    def test_libro_y_flujo_mismo_bucket_son_par(self):
+        libro = [_libro("BTCUSDT", 1000, 2000)]
+        flujo = [_flujo("BTCUSDT", 1000, 2000)]
+        pares, solo_libro, solo_flujo, ndl, ndf = emparejar_libro_flujo(
+            libro, flujo
+        )
+        self.assertEqual(len(pares), 1)
+        self.assertEqual(len(solo_libro), 0)
+        self.assertEqual(len(solo_flujo), 0)
+        self.assertEqual(pares[0][0]["symbol"], "BTCUSDT")
+        self.assertEqual(pares[0][1]["symbol"], "BTCUSDT")
+
+    def test_buckets_distintos_no_se_emparejan(self):
+        libro = [_libro("BTCUSDT", 1000, 2000)]
+        flujo = [_flujo("BTCUSDT", 2000, 3000)]
+        pares, solo_libro, solo_flujo, ndl, ndf = emparejar_libro_flujo(
+            libro, flujo
+        )
+        self.assertEqual(len(pares), 0)
+        self.assertEqual(len(solo_libro), 1)
+        self.assertEqual(len(solo_flujo), 1)
+
+
+class TestDuplicadosNoMultiplican(unittest.TestCase):
+    """Filas duplicadas no crean observaciones adicionales."""
+
+    def test_duplicado_libro_no_multiplica(self):
+        libro = [
+            _libro("BTCUSDT", 1000, 2000),
+            _libro("BTCUSDT", 1000, 2000),
+        ]
+        flujo = [_flujo("BTCUSDT", 1000, 2000)]
+        pares, solo_libro, solo_flujo, ndl, ndf = emparejar_libro_flujo(
+            libro, flujo
+        )
+        self.assertEqual(len(pares), 1)
+        self.assertEqual(len(solo_libro), 1)
+        self.assertEqual(ndl, 1)
+        self.assertEqual(ndf, 0)
+
+
+class TestDisponibilidadTemporal(unittest.TestCase):
+    """Disponibilidad desconocida o posterior a T no acredita en T."""
+
+    def test_as_of_ms_none_es_desconocida(self):
+        libro = _libro("BTCUSDT", 1000, 2000, as_of_ms=None)
+        flujo = _flujo("BTCUSDT", 1000, 2000, as_of_ms=None)
+        velas = _velas_1h(0, 5)
+        obs = construir_observacion(
+            "BTCUSDT", 1000, 2000, libro, flujo, velas
+        )
+        self.assertIsNone(obs["disponible_publicado_ms"])
+        self.assertFalse(obs["disponible_publicada_en_T"])
+
+    def test_disponibilidad_despues_de_T_no_acredita(self):
+        # as_of_ms posterior a T (bucket_end=2000, as_of=3000)
+        libro = _libro("BTCUSDT", 1000, 2000, as_of_ms=3000)
+        flujo = _flujo("BTCUSDT", 1000, 2000, as_of_ms=3000)
+        velas = _velas_1h(0, 5)
+        obs = construir_observacion(
+            "BTCUSDT", 1000, 2000, libro, flujo, velas
+        )
+        self.assertFalse(obs["disponible_publicada_en_T"])
+
+
+class TestPrecioReferenciaT(unittest.TestCase):
+    """Referencia demasiado antigua o dentro de vela que contiene T+h."""
+
+    def test_referencia_demasiado_antigua_no_se_usa(self):
+        # Última vela cerrada antes de T=7000000 es la que cierra en 3600000.
+        # Eso SÍ es un precio conocido en T.
+        velas = [(0, 3600000, 100.0)]
+        p_T, ct_T = precio_en_T(velas, 7000000)
+        self.assertEqual(p_T, 100.0)
+        self.assertEqual(ct_T, 3600000)
+
+    def test_vela_que_contiene_T_plus_h_no_es_precio_en_T_plus_h(self):
+        # T=3600000, T+h=7200000. Vela [3600000, 7200000] cierra exactamente en
+        # T+h, por lo que SU CIERRE SÍ se conoció en T+h y ES un precio válido.
+        velas = [(3600000, 7200000, 100.0), (7200000, 10800000, 110.0)]
+        p_Tph, ct_Tph = precio_en_T_plus_h(velas, 3600000)
+        self.assertEqual(p_Tph, 100.0)
+        self.assertEqual(ct_Tph, 7200000)
+
+    def test_no_hay_vela_que_cierre_en_T_plus_h(self):
+        # T=3600000, T+h=7200000. Vela [3600000, 10800000] cierra en 10800000
+        # > T+h. No hay vela con close_time en (3600000, 7200000].
+        velas = [(3600000, 10800000, 100.0)]
+        p_Tph, ct_Tph = precio_en_T_plus_h(velas, 3600000)
+        self.assertIsNone(p_Tph)
+
+    def test_pareja_temporal_valida_con_horizonte_efectivo(self):
+        # T=3600000, T+h=7200000. Vela [3600000, 7200000] cierra exactamente en
+        # T+h, por lo que SU CIERRE SÍ se conoció en T+h y ES un precio válido.
+        velas = [(0, 3600000, 100.0), (3600000, 7200000, 110.0)]
+        p_T, ct_T = precio_en_T(velas, 3600000)
+        p_Tph, ct_Tph = precio_en_T_plus_h(velas, 3600000)
+        self.assertEqual(p_T, 100.0)
+        self.assertEqual(ct_T, 3600000)
+        self.assertEqual(p_Tph, 110.0)
+        self.assertEqual(ct_Tph, 7200000)
 
 
 if __name__ == "__main__":

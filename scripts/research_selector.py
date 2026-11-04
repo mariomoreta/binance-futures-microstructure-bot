@@ -64,7 +64,7 @@ from typing import Any, Dict, List, Optional, Tuple
 from microstructure_probe import discovery  # noqa: E402
 from microstructure_probe.universe import SymbolInfo, SymbolUniverse  # noqa: E402
 
-POLICY_VERSION = "research-selector-v1"
+POLICY_VERSION = "research-selector-v2"
 
 # ---------------------------------------------------------------------------
 # Unidades declaradas (punto 2 del mandato)
@@ -117,17 +117,19 @@ class ResearchPolicy:
     status_required: str = "TRADING"
 
     # Exploracion amplia: todo el universo elegible se considera para
-    # descubrimiento. max_candidates_total es un tope de RECURSOS para el
+    # descubrimiento. max_candidatos es un tope de RECURSOS para el
     # seguimiento profundo, NO un recorte silencioso del universo a los
     # primeros 500. El descubrimiento considera todos los elegibles; el
     # limite aplica a cuantos pasan a analisis profundo.
-    max_candidates_total: int = 500
+    max_candidatos: int = 12
 
     # Seleccion acotada para analisis profundo (bounded set).
     # max_deep_analysis_total es el techo TOTAL de la union candidatos +
     # comparadores (punto 3 del mandato). Se distribuye documentadamente:
-    # hasta max_per_side candidatos por lado y el resto para comparadores.
+    # hasta max_candidatos candidatos (max_per_side por lado) y el resto
+    # para comparadores.
     max_deep_analysis_total: int = 20  # hipotesis de capacidad del prototipo
+    max_comparadores: int = 8  # reserva explicita para comparadores
     max_per_side: int = 10  # tope por lado (UP / DOWN)
 
     # Criterios disponibles en T (movimiento, aceleracion, volumen, cobertura).
@@ -157,7 +159,8 @@ class ResearchPolicy:
             "contract_type": self.contract_type,
             "quote_asset": self.quote_asset,
             "status_required": self.status_required,
-            "max_candidates_total": self.max_candidates_total,
+            "max_candidatos": self.max_candidatos,
+            "max_comparadores": self.max_comparadores,
             "max_deep_analysis_total": self.max_deep_analysis_total,
             "max_per_side": self.max_per_side,
             "move_24h_min_abs": self.move_24h_min_abs,
@@ -474,7 +477,7 @@ def select_candidates(
     count_up = 0
     count_down = 0
     for s in all_pool:
-        if len(selected_pool) >= policy.max_deep_analysis_total:
+        if len(selected_pool) >= policy.max_candidatos:
             break
         if s.side == "UP" and count_up < policy.max_per_side:
             selected_pool.append(s)
@@ -514,6 +517,8 @@ def select_candidates(
         "n_eligible_not_selected_quota": len([s for s in all_evaluated
                                               if s.classification
                                               == CLASS_ELIGIBLE_NOT_SELECTED_QUOTA]),
+        "max_candidatos": policy.max_candidatos,
+        "max_comparadores": policy.max_comparadores,
         "max_deep_analysis_total": policy.max_deep_analysis_total,
         "max_per_side": policy.max_per_side,
         "liquidity_required": policy.require_liquidity_observed,
@@ -663,7 +668,8 @@ def run_research_cycle(catalog_rows: List[Dict[str, Any]],
     # Comparador bajo techo conjunto (candidatos + comparadores <= total).
     # El presupuesto restante es el total menos lo ya usado por candidatos.
     selected_symbols = [s.symbol for s in selected]
-    remaining_budget = max(0, policy.max_deep_analysis_total - len(selected))
+    remaining_budget = max(0, min(policy.max_comparadores,
+                                policy.max_deep_analysis_total - len(selected)))
     comparator, comparator_summary = build_comparator(
         universe.eligible_symbols, policy, reference_ms,
         already_selected_symbols=selected_symbols,
