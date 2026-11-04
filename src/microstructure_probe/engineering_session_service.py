@@ -2205,6 +2205,14 @@ class PublicRunRecord:
     def _save(self) -> None:
         self._path.parent.mkdir(parents=True, exist_ok=True)
         tmp = self._path.with_name(self._path.name + ".tmp")
+        # Consumo autoritativo: reconstruido desde el ledger compartido, nunca
+        # desde un contador en memoria que pueda divergir o quedarse obsoleto.
+        # Coincide con to_dict() para que el archivo persistente y la respuesta
+        # en vivo de /public-run muestren el mismo consumo.
+        if self._cache is not None and self.run_id is not None:
+            http_attempts: Any = self._cache.run_requests_used(self.run_id)
+        else:
+            http_attempts = None
         payload = {
             "run_id": self.run_id,
             "source": self.source,
@@ -2218,7 +2226,7 @@ class PublicRunRecord:
             "config_hash": self.config_hash,
             "pid": self.pid,
             "port": self.port,
-            "http_attempts": self.http_attempts,
+            "http_attempts": http_attempts,
         }
         tmp.write_text(json.dumps(payload, ensure_ascii=False, indent=1),
                        encoding="utf-8")
@@ -2733,9 +2741,17 @@ def main(argv: Optional[List[str]] = None) -> int:
         server.stop_event.set()
     elif synchronizer is not None:
         try:
-            asyncio.run(synchronizer.sync())
+            synced = asyncio.run(synchronizer.sync())
         except Exception:  # noqa: BLE001 - referencia no disponible -> abstencion
-            pass
+            synced = False
+        if synced and public_run is not None and cache is not None:
+            # Persistir el consumo real (muestras /time de la sincronización)
+            # para que el registro en disco coincida con la respuesta en vivo
+            # y no se presente como consumo cero cuando el servicio no pueda
+            # reiniciarse (p. ej. presupuesto agotado).
+            public_run.update_http_attempts(
+                cache.run_requests_used(run_id))
+            public_run._save()
     try:
         while not server.stop_event.is_set():
             # Si el deadline de la corrida pública venció, detener el servidor

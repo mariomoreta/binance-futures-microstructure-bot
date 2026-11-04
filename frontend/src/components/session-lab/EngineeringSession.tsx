@@ -1124,6 +1124,22 @@ const publicInFlightRef = useRef(false);
               <span className={s.autonomousChip} data-state="autonomo">
                 Pública activa • run {publicRun.runId}
               </span>
+              <span className={s.note} data-testid="public-http-attempts">
+                Intentos HTTP:
+                {publicRun.httpAttempts != null
+                  ? String(publicRun.httpAttempts)
+                  : "UNKNOWN (consulta fallida)"}
+              </span>
+              {publicRun.deadlineExceeded ? (
+                <span className={s.note} data-testid="public-deadline-exceeded">
+                  Plazo vencido
+                </span>
+              ) : null}
+              {publicRun.cause ? (
+                <span className={s.note} data-testid="public-cause">
+                  Causa: {publicRun.cause}
+                </span>
+              ) : null}
               <button
                 type="button"
                 className={s.stopButton}

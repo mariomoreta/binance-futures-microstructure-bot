@@ -1,4 +1,5 @@
 import {NextResponse} from "next/server";
+import { publicOriginAllowed } from "@/lib/engineering-service-manager";
 
 // Proxy BFF -> servicio backend de sesiones de ingenieria (solo loopback).
 // El backend mantiene la sesion y conduce el avance por eventos del
@@ -13,10 +14,7 @@ const SERVICE_BASE =
   process.env.ENGINEERING_SERVICE_URL ?? "http://127.0.0.1:8797";
 
 function originAllowed(req: Request): boolean {
-  const origin = req.headers.get("origin");
-  const host = req.headers.get("host");
-  return host === "127.0.0.1:3020" &&
-    (origin === "http://127.0.0.1:3020" || origin === null);
+  return publicOriginAllowed(req);
 }
 
 const SERVICE_DOWN_CODES = ["ECONNREFUSED", "EADDRNOTAVAIL", "UND_ERR_CONNECT",

@@ -402,7 +402,9 @@ def stop_process(proc: subprocess.Popen, port: Optional[int] = None,
 
 class BffProcess:
     def __init__(self, port: int, service_root: Path, provider: LoopbackProvider,
-                 guard: NetworkGuard, cache_db: Path, log_dir: Path) -> None:
+                 guard: NetworkGuard, cache_db: Path, log_dir: Path,
+                 allowed_host: Optional[str] = None,
+                 service_port: int = 8797) -> None:
         self.port = port
         self.service_root = service_root
         self.proc: Optional[subprocess.Popen] = None
@@ -410,6 +412,14 @@ class BffProcess:
         self._provider = provider
         self._guard = guard
         self._cache_db = cache_db
+        # Origen explícito para el BFF de pruebas. Si se omite, el BFF usa
+        # su valor de producción por defecto (127.0.0.1:3020) y las pruebas
+        # deben spoofear el encabezado Host. Para navegador real (E) se pasa
+        # el puerto del servidor de pruebas.
+        self._allowed_host = allowed_host
+        # Puerto del servicio de ingeniería (contrato 8797 por defecto; pruebas
+        # aisladas pueden usar otro puerto libre).
+        self._service_port = service_port
 
     def start(self) -> None:
         node = shutil.which("node")
@@ -421,12 +431,14 @@ class BffProcess:
         env.update({
             "ENGINEERING_SERVICE_ROOT": str(self.service_root),
             "ENGINEERING_SERVICE_SCRIPT": str(SCRIPT),
-            "ENGINEERING_SERVICE_PORT": "8797",
+            "ENGINEERING_SERVICE_PORT": str(self._service_port),
             "ENGINEERING_SERVICE_PYTHON": sys.executable,
             "MICROPROBE_MARKET_CACHE_DB": str(self._cache_db),
             "PUBLIC_FETCH_URL": self._provider.time_url,
             "NEXT_TELEMETRY_DISABLED": "1",
         })
+        if self._allowed_host is not None:
+            env["ENGINEERING_PUBLIC_ALLOWED_HOST"] = self._allowed_host
         out = open(self.log_dir / f"bff-{self.port}.out.log", "w", encoding="utf-8")
         err = open(self.log_dir / f"bff-{self.port}.err.log", "w", encoding="utf-8")
         self.proc = subprocess.Popen(

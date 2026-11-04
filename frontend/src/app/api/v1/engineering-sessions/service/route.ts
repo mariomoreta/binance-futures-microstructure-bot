@@ -9,17 +9,18 @@ import {NextResponse} from "next/server";
 import {
   serviceStatus,
   startService,
+  publicOriginAllowed,
 } from "@/lib/engineering-service-manager";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 const headers = {"Cache-Control": "no-store"};
 
+/** Origen permitido para la aceptación pública: por defecto 127.0.0.1:3020
+ * (producción). Un entorno de prueba lo sobrescribe con
+ * ENGINEERING_PUBLIC_ALLOWED_HOST. */
 function originAllowed(req: Request): boolean {
-  const origin = req.headers.get("origin");
-  const host = req.headers.get("host");
-  return host === "127.0.0.1:3020" &&
-    (origin === "http://127.0.0.1:3020" || origin === null);
+  return publicOriginAllowed(req);
 }
 
 /** Estado del servicio (consulta pura; no arranca ni detiene nada). */

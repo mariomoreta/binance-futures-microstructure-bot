@@ -13,6 +13,10 @@ import {
   serviceStatus,
   startService,
   stopService,
+  readPublicRunRecord,
+  PublicRunRecordView,
+  servicePort,
+  publicOriginAllowed,
   type StartServiceOptions,
 } from "@/lib/engineering-service-manager";
 
@@ -21,9 +25,7 @@ export const dynamic = "force-dynamic";
 const headers = { "Cache-Control": "no-store" };
 
 function originAllowed(req: Request): boolean {
-  const origin = req.headers.get("origin");
-  const host = req.headers.get("host");
-  return host === "127.0.0.1:3020" && (origin === "http://127.0.0.1:3020" || origin === null);
+  return publicOriginAllowed(req);
 }
 
 const PUBLIC_HTTP_MAX = 7;
@@ -31,20 +33,29 @@ const PUBLIC_DEADLINE_S = 180;
 const PUBLIC_CLOCK_REQUESTS = 5; // 5 muestras para sincronización del reloj
 
 /** Estado de la aceptación pública (consulta pura; lee del backend). */
+async function fetchPublicRun(): Promise<PublicRunRecordView | null> {
+  try {
+    const resp = await fetch(`http://127.0.0.1:${servicePort()}/public-run`, {
+      method: "GET",
+      cache: "no-store",
+      signal: AbortSignal.timeout(2_000),
+    });
+    if (resp.ok) {
+      const body = await resp.json().catch(() => null);
+      if (body && typeof body === "object") return body as PublicRunRecordView;
+    }
+  } catch { /* servicio no disponible: se usa el registro persistente */ }
+  const persisted = readPublicRunRecord();
+  return persisted ?? null;
+}
+
 export async function GET(req: Request): Promise<NextResponse> {
   if (!originAllowed(req)) {
     return NextResponse.json({ error: "FORBIDDEN" }, { status: 403, headers });
   }
   try {
     const st = await serviceStatus();
-    // Consulta el registro persistente de la corrida en el backend.
-    const pr = await fetch("http://127.0.0.1:8797/public-run", {
-      method: "GET",
-      cache: "no-store",
-      signal: AbortSignal.timeout(2_000),
-    }).then(async (r) => {
-      try { return await r.json(); } catch { return null; }
-    }).catch(() => null);
+    const pr = await fetchPublicRun();
     return NextResponse.json(
       {
         ok: true,
@@ -100,33 +111,43 @@ export async function POST(req: Request): Promise<NextResponse> {
         // En pruebas locales se puede sobrescribir con variable de entorno.
         publicFetchUrl: process.env.PUBLIC_FETCH_URL ?? null,
       });
+      // 2. Leer el registro persistente: del servicio vivo si responde, y del
+      //    disco si no (corrida cuya arrancada falló por presupuesto, etc.).
+      const pr = await fetchPublicRun();
+      const runId = pr?.run_id ?? started.runIdFromService ?? body.run_id ?? null;
+      const persisted = {
+        run_id: runId,
+        started_at_ms: pr?.started_at_ms ?? (started.ok ? Date.now() : null),
+        httpAttempts: pr?.http_attempts ?? null,
+        deadline_s: PUBLIC_DEADLINE_S,
+        http_max: PUBLIC_HTTP_MAX,
+        state: pr?.state ?? (started.ok ? "preparing" : "idle"),
+        cause: pr?.cause ?? null,
+        deadline_exceeded: pr?.deadline_exceeded ?? false,
+        service: {
+          pid: started.pid ?? (typeof pr?.pid === "number" ? pr.pid : null),
+          port: started.port ?? (typeof pr?.port === "number" ? pr.port : null),
+          sessions_dir: started.sessions_dir ?? null,
+        },
+      };
       if (!started.ok) {
+        // El servicio no pudo arrancar (p. ej. presupuesto insuficiente para
+        // sincronizar): no se inventan run_id, consumo ni plazo. El registro
+        // persistido se devuelve tal cual para que el operador lo consulte.
         return NextResponse.json(
-          { ok: false, error: started.error ?? "ENGINEERING_SERVICE_START_FAILED", detail: started.detail ?? undefined },
+          {
+            ok: false,
+            error: started.error ?? "ENGINEERING_SERVICE_START_FAILED",
+            detail: started.detail ?? undefined,
+            publicRun: persisted,
+          },
           { status: 503, headers },
         );
       }
-      // 2. Consultar el registro persistente de la corrida en el backend.
-      const pr = await fetch("http://127.0.0.1:8797/public-run", {
-        method: "GET",
-        cache: "no-store",
-        signal: AbortSignal.timeout(2_000),
-      }).then(async (r) => {
-        try { return await r.json(); } catch { return null; }
-      }).catch(() => null);
-      const runId = pr?.run_id ?? started.runIdFromService ?? body.run_id;
       return NextResponse.json(
         {
           ok: true,
-          run_id: runId,
-          started_at_ms: pr?.started_at_ms ?? Date.now(),
-          http_attempts: pr?.http_attempts ?? null,
-          deadline_s: PUBLIC_DEADLINE_S,
-          http_max: PUBLIC_HTTP_MAX,
-          state: pr?.state ?? "preparing",
-          cause: pr?.cause ?? null,
-          service: { pid: started.pid, port: started.port, sessions_dir: started.sessions_dir },
-          deadline_exceeded: pr?.deadline_exceeded ?? false,
+          ...persisted,
         },
         { status: 200, headers },
       );

@@ -4778,3 +4778,16 @@ durante la ventana.
 - Sin Binance, sin ventana pública, sin cambios económicos, sin rebuild del
   frontend. 3020 (pid 20088) y 8792 (pid 31124) preservados; 8797 libre.
 - Regresiones: 94 passed (`engineering_*`, `paper_lab_*`).
+
+## 2026-11-03 - Cierre de la aceptación pública E/F/H y rectificación del deadline (base 374e92a -> 374e92a + cambios de este bloque)
+
+- Cierre de E (consumo real en interfaz), F (recuperación sin devolver cupos) y H (parada propia efectiva).
+  * E: EngineeringSession.tsx renderiza httpAttempts/deadlineExceeded (UNKNOWN si no hay valor, nunca cero ficticio); public/route.ts emite httpAttempts (camelCase) y lee el registro persistente desde disco cuando el servicio no arranca (etchPublicRun fallback a 
+eadPublicRunRecord). publicOriginAllowed centralizado en engineering-service-manager.ts con ENGINEERING_PUBLIC_ALLOWED_HOST (default 127.0.0.1:3020; producción sin abrir). Prueba E2E con Playwright: navegador real renderiza Intentos HTTP: 5 y 7 coincidiendo con SUM(requests) del ledger. Evidencia: docs/evidence/public-acceptance-20261103/e-consumption-ui.png.
+  * F: tras 7/7 consumido, el BFF consulta la corrida desde disco (run_id/started_at_ms/deadline_ms/http_attempts>0; no inexistente ni consumo cero); reinicio con el mismo run_id se rechaza explícito (503 ENGINEERING_SERVICE_EXITED), cero /time nuevos, registro conservado; corrida terminal no se reactiva (egin() rechaza).
+  * H: corregido el desajuste de rutas — el gestor BFF lee el registro en sessions/public-run.json (mismo lugar autoritativo que el backend), no en data/engineering-session/public-run.json. run_id ajeno → rechazo, proceso/puerto intactos; identidad incierta → rechazo, sin shutdown; run_id propio → parada efectiva (proceso termina, puerto libre, pid-file retirado), registro conserva causa/consumption/historial.
+- Backend: PublicRunRecord._save() reconstruye http_attempts desde el ledger (coherente con 	o_dict()); main() persiste http_attempts tras la sincronización exitosa.
+- Pruebas: 14/14 aceptación pública pasan (A–D, F–J en 	est_public_run_integration.py; E en 	est_public_run_e_ui.py; G en 	est_public_run_deadline.py), salida 0. Regresiones engineering_*/paper_lab_*/deadline: 99 passed.
+- Sin Binance, sin ventana pública, sin cambios económicos ni ampliación de presupuesto. 3020 (pid 20088) y 8792 (pid 31124) preservados; 8797 libre. opencode.json y archivos ajenos no se commitean.
+- Build: 
+ext build OK (BUILD_ID afm2q3kpfKZ0sigxBFsB5); 	sc --noEmit 0 errores; eslint 0 errores (1 advertencia preexistente).

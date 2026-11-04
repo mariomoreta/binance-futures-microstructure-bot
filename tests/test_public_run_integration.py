@@ -17,14 +17,15 @@ Criterios:
      -> evaluación vinculada.
   D. 5 /time + 2 klines reales (HistoryClient + LedgerAttemptGate) = 7; el
      8.º queda bloqueado ANTES del transporte.
-  E. Consumo en interfaz: NO ACREDITADO (el valor no se renderiza; además el
-     BFF productivo solo admite Host 127.0.0.1:3020 y 3020 se preserva).
-  F. Reinicio de la misma corrida: NO ACREDITADO (el pre-chequeo de
-     presupuesto rechaza cualquier reanudación tras consumir 5/7).
-  H. Parada con run_id ajeno rechazada y proceso/puerto intactos; identidad
-     incierta cubierta con proveedor local controlado. NO ACREDITADO: la
-     parada de la corrida propia no detiene el servicio (el gestor BFF lee el
-     registro en una ruta distinta de la que escribe el backend).
+  E. Consumo en interfaz: se ejecuta en ``tests/test_public_run_e_ui.py``
+     (navegador real contra servidor Next.js de prueba aislado).
+  F. Recuperación sin devolver cupos: persistencia consultable aunque el
+     servicio no arranque; reinicio sin presupuesto se rechaza explícito
+     con cero envíos nuevos y registro conservado; corrida terminal no se
+     reactiva.
+  H. Parada propia efectiva: run_id ajeno rechazado, identidad incierta
+     rechazada, run_id propio detiene proceso, cierra puerto y retira
+     pid-file; conserva causa/consumption/historial.
   I. Entrada real por la secuencia/regla existentes; tras detener, entrada y
      posición conservadas, sin salida/comisión/realizado inventados.
   J. Fallo de preparación: causa visible, /health honesto y limpieza.
@@ -32,8 +33,8 @@ Criterios:
 G (deadline) se ejecuta en ``tests/test_public_run_deadline.py`` (proceso y
 puerto reales, plazo corto).
 
-Los criterios E, F y H se reportan como NO ACREDITADO: el runner sale con
-código distinto de cero; no se cambia la descripción para simular un PASS.
+Los criterios E, F y H se ejecutan como pruebas reales que verifican lo que
+afirman; el runner falla si alguna aserción no se cumple. No se simulan PASS.
 """
 from __future__ import annotations
 
@@ -60,9 +61,9 @@ from microstructure_probe.history_client import (  # noqa: E402
 from microstructure_probe.market_cache import MarketCache  # noqa: E402
 from microstructure_probe.market_explorer import LedgerAttemptGate  # noqa: E402
 from public_run_harness import (  # noqa: E402
-    BffProcess, LoopbackProvider, NetworkGuard, bff_manager_run_record_path,
-    bff_pid_file, bff_public_run_path, entry_payload, free_port, health,
-    http_json, is_listening, pid_alive, public_run, start_engineering_service,
+    BffProcess, LoopbackProvider, NetworkGuard, bff_pid_file,
+    bff_public_run_path, entry_payload, free_port, health, http_json,
+    is_listening, pid_alive, public_run, start_engineering_service,
     wait_clock_ready, wait_health, wait_port_free, wait_port_listening,
 )
 
@@ -89,7 +90,6 @@ class Acceptance:
     session_at_creation: Dict[str, Any] = field(default_factory=dict)
     final_session: Dict[str, Any] = field(default_factory=dict)
     ledger_counts: Dict[str, int] = field(default_factory=dict)
-    clock_observed: Dict[str, Any] = field(default_factory=dict)
 
 
 @pytest.fixture(scope="module")
@@ -402,99 +402,82 @@ def test_d_budget_seven_real_requests_then_blocked(acceptance: Acceptance) -> No
 
 
 # ---------------------------------------------------------------------------
-# E. Consumo en la interfaz -> NO ACREDITADO (no se simula un PASS)
+# E. Consumo en la interfaz -> ejecutado en tests/test_public_run_e_ui.py
+#    (Playwright + servidor Next.js de prueba aislado). No hay test de E aquí.
 # ---------------------------------------------------------------------------
 
-def test_e_ui_consumption_is_not_accredited(acceptance: Acceptance) -> None:
+
+# ---------------------------------------------------------------------------
+# F. Recuperación sin devolver cupos (contrato real de reinicio)
+# ---------------------------------------------------------------------------
+
+def test_f_restart_contract_persistence_and_budget_rejection(
+        acceptance: Acceptance) -> None:
     ctx = acceptance
-    # 1) El backend SÍ expone el consumo real del ledger (mismo run_id de la
-    #    corrida que acaba de consumir 7 intentos). Eso es dato, no interfaz.
-    status, body = _bff_public(ctx)
-    assert status == 200, body
-    run = body.get("publicRun") or {}
-    assert run.get("run_id") == ctx.run_id, run
-    assert run.get("http_attempts") == 7, run
-    assert ctx.ledger_counts.get("total_provider") == 7, ctx.ledger_counts
-
-    # 2) La interfaz NO lee el consumo ni el deadline: sólo los escribe en el
-    #    estado React. `publicRun.httpAttempts` / `publicRun.deadlineExceeded`
-    #    no aparecen en ninguna expresión renderizada (el panel muestra
-    #    únicamente `publicRun.runId`).
-    component = (ROOT / "frontend" / "src" / "components" / "session-lab" /
-                 "EngineeringSession.tsx").read_text(encoding="utf-8")
-    assert "publicRun.httpAttempts" not in component, (
-        "el componente ahora lee el consumo: revisar si se renderiza")
-    assert "publicRun.deadlineExceeded" not in component, (
-        "el componente ahora lee el deadline: revisar si se renderiza")
-    assert "publicRun.runId" in component  # lo único que sí se pinta
-
-    # 3) El BFF productivo sólo admite Host 127.0.0.1:3020 (originAllowed) y
-    #    3020 se preserva con el dashboard del operador: un navegador no puede
-    #    ejercer la UI en el puerto aislado de la prueba.
-    route = (ROOT / "frontend" / "src" / "app" / "api" / "v1" /
-             "engineering-sessions" / "public" / "route.ts").read_text(
-                 encoding="utf-8")
-    assert 'host === "127.0.0.1:3020"' in route
-    pytest.fail(
-        "E NO ACREDITADO: el consumo real del ledger "
-        f"(run {ctx.run_id}, {ctx.ledger_counts}) no se renderiza en la UI "
-        "(el componente sólo lo guarda en estado) y la interfaz productiva no "
-        "puede ejercerse en un puerto aislado (guardia de Host 3020, que se "
-        "preserva). Un GET al backend prueba dato, no presentación ni "
-        "actualización de UI.")
-
-
-# ---------------------------------------------------------------------------
-# F. Reinicio de la misma corrida -> NO ACREDITADO (bloqueado por presupuesto)
-# ---------------------------------------------------------------------------
-
-def test_f_restart_same_run_is_not_accredited(acceptance: Acceptance) -> None:
-    ctx = acceptance
-    # Mata el servicio propio (caída simulada) y reintenta la MISMA corrida
-    # por el BFF. El pre-chequeo de presupuesto del backend exige 5 intentos
-    # libres para sincronizar y ya hay 7 consumidos: la reanudación se
-    # rechaza; no se otorga tiempo ni identidad nueva.
+    # La corrida de A-D está viva en el puerto de contrato, con presupuesto
+    # 7/7 consumido (5 /time de sincronización + 2 klines de D).
     pid = ctx.service_pid
     assert isinstance(pid, int) and pid_alive(pid)
+
+    # --- F-A: consumo real registrado (vivo) y persistencia de identidad ---
+    cache = MarketCache(db_path=ctx.cache_db)
+    cache.init_db()
+    assert cache.run_requests_used(ctx.run_id) == 7, (
+        "el consumo real del ledger debe ser 7")
+
+    record_path = bff_public_run_path(ctx.service_root)
+    record_before = json.loads(record_path.read_text(encoding="utf-8"))
+    assert record_before["run_id"] == ctx.run_id
+    assert record_before["started_at_ms"] is not None
+    assert record_before["deadline_ms"] is not None
+
+    # Servicio vivo: /public-run devuelve el consumo real (7) del ledger.
+    status, run = _bff_public(ctx)
+    assert status == 200, run
+    assert (run.get("publicRun") or {}).get("http_attempts") == 7, run
+
+    # --- F-B: caída del servicio; la corrida sigue consultable desde disco ---
     import subprocess
     subprocess.run(["taskkill", "/PID", str(pid), "/F"],
                    capture_output=True, check=False)
     wait_port_free(SERVICE_PORT, timeout_s=15.0)
-    record_before = json.loads(
-        bff_public_run_path(ctx.service_root).read_text(encoding="utf-8"))
-    time_before = ctx.provider.counts()["time"]
+    assert is_listening(SERVICE_PORT) is False
+    assert pid_alive(pid) is False
+    counts_before = ctx.provider.counts()
 
+    # El BFF lee el registro persistente (disco) aunque el servicio no arranque:
+    # no presenta la corrida como inexistente ni consumo cero.
+    status_code, run = _bff_public(ctx)  # GET
+    assert status_code == 200, run
+    persisted = run.get("publicRun") or {}
+    assert persisted.get("run_id") == ctx.run_id, persisted
+    assert persisted.get("state") != "idle", persisted
+    assert persisted.get("started_at_ms") == record_before["started_at_ms"]
+    assert persisted.get("deadline_ms") == record_before["deadline_ms"]
+    http_attempts = persisted.get("http_attempts")
+    assert isinstance(http_attempts, int) and http_attempts > 0, persisted
+    # Ningún envío nuevo: servicio caído, proveedor sin actividad.
+    assert ctx.provider.counts() == counts_before, ctx.provider.counts()
+
+    # --- F-C: reinicio sin presupuesto suficiente -> rechazo explícito,
+    # ---     cero envíos nuevos y registro conservado ----------------------
     status, payload = _bff_public(
         ctx, "POST", {"action": "start", "run_id": ctx.run_id})
-    # Lo observable SÍ se conserva: no hay adquisiciones nuevas y el registro
-    # persistente mantiene identidad, plazo y consumo (sin reactivarse).
-    assert ctx.provider.counts()["time"] == time_before, (
-        "la reanudación ejecutó adquisiciones nuevas")
-    record_after = json.loads(
-        bff_public_run_path(ctx.service_root).read_text(encoding="utf-8"))
+    assert status == 503, payload
+    assert payload.get("ok") is False, payload
+    assert payload.get("error") in (
+        "ENGINEERING_SERVICE_EXITED", "ENGINEERING_SERVICE_START_FAILED"), payload
+    # El pre-chequeo del backend rechazó la sincronización: cero intentos
+    # nuevos en el proveedor.
+    assert ctx.provider.counts() == counts_before, ctx.provider.counts()
+    # El registro persistido no se modificó.
+    record_after = json.loads(record_path.read_text(encoding="utf-8"))
     assert record_after["run_id"] == record_before["run_id"]
     assert record_after["started_at_ms"] == record_before["started_at_ms"]
     assert record_after["deadline_ms"] == record_before["deadline_ms"]
+    # El servicio sigue caído y el puerto libre.
     assert is_listening(SERVICE_PORT) is False
-
-    assert status == 503, payload
-    assert payload.get("ok") is False, payload
-    assert payload.get("error") == "ENGINEERING_SERVICE_EXITED", payload
-    # La consulta del BFF ya no puede leer la corrida: sin backend vivo
-    # informa "idle", perdiendo la identidad persistida en la interfaz.
-    status_code, run = _bff_public(ctx)
-    assert status_code == 200, run
-    current = run.get("publicRun") or {}
-    assert current.get("run_id") is None, current
     ctx.service_pid = None
-    pytest.fail(
-        "F NO ACREDITADO: la misma corrida no puede rearrancar tras consumir "
-        "el presupuesto. El servicio sale con código 2 por el pre-chequeo "
-        "(5/7 ya usados en sincronización) antes de escribir cualquier estado, "
-        "así que no hay servicio vivo que conserve identidad/consumo/plazo; "
-        "el BFF además pasa a informar run_id=null (idle). Reanudar una "
-        "corrida ya sincronizada exigiría reutilizar su reloj, no volver a "
-        "pedir 5 /time.")
 
 
 # ---------------------------------------------------------------------------
@@ -556,19 +539,19 @@ class _FakeCanonicalService:
             self.server.server_close()
 
 
-def test_h_stop_rejects_foreign_run_and_uncertain_identity(
+def test_h_stop_own_effective_and_rejections(
         acceptance: Acceptance) -> None:
     ctx = acceptance
     record_path = bff_public_run_path(ctx.service_root)
-    # Corrida propia viva: la de A si el servicio sigue en pie, o una nueva
-    # (identidad y presupuesto propios) si F ya lo derribó.
+    # Servicio vivo: reutilizar la corrida de A si el servicio sigue en pie,
+    # o arrancar una nueva (-h) si F la derribó. Identidad y presupuesto
+    # propios.
     run_id = ctx.run_id
     if is_listening(SERVICE_PORT):
         existing = json.loads(record_path.read_text(encoding="utf-8"))
         assert existing["run_id"] == run_id, existing
         pid = int(existing["pid"])
         assert pid_alive(pid)
-        ctx.service_pid = pid
     else:
         run_id = f"{ctx.run_id}-h"
         status, started = _bff_public(
@@ -576,35 +559,20 @@ def test_h_stop_rejects_foreign_run_and_uncertain_identity(
         assert status == 200 and started.get("ok") is True, started
         assert started.get("run_id") == run_id, started
         pid = int((started.get("service") or {})["pid"])
-        ctx.service_pid = pid
+    ctx.service_pid = pid
     assert pid_alive(pid)
-    # H no juzga la sincronización del reloj: sólo la identidad del proceso y
-    # la pertenencia de la corrida. Se registra el estado real del reloj como
-    # observación (puede quedar no disponible si la ventana tiene actividad;
-    # eso no altera la parada).
     ready = wait_health(SERVICE_PORT, timeout_s=30.0)
     assert ready is not None and ready.get("pid") == pid, ready
-    clock_state = ready.get("clock") or {}
-    ctx.clock_observed = {
-        "available": clock_state.get("available"),
-        "samples_valid": clock_state.get("samples_valid"),
-        "samples_failed": clock_state.get("samples_failed"),
-    }
     before = health(SERVICE_PORT)
     assert before is not None and before.get("pid") == pid
 
     record = json.loads(record_path.read_text(encoding="utf-8"))
-    assert record["run_id"] == run_id, record
-    assert record["pid"] == pid, record
-    # El gestor BFF consulta OTRA ruta para verificar pertenencia (defecto
-    # reproducido: falta el segmento "sessions").
-    manager_record_path = bff_manager_run_record_path(ctx.service_root)
-    manager_sees_record = manager_record_path.exists()
+    assert record["run_id"] == run_id and record["pid"] == pid
 
     def stop(run: str) -> Any:
         return _bff_public(ctx, "POST", {"action": "stop", "run_id": run})
 
-    # --- H1: run_id ajeno sobre un servicio vivo identificado --------------
+    # --- H1: run_id ajeno sobre servicio vivo identificado ----------------
     status, foreign = stop("eng-run-ajena-000")
     assert status == 200, foreign
     assert foreign.get("service_stopped") is False, foreign
@@ -615,24 +583,28 @@ def test_h_stop_rejects_foreign_run_and_uncertain_identity(
     unchanged = json.loads(record_path.read_text(encoding="utf-8"))
     assert unchanged["run_id"] == run_id and unchanged["pid"] == pid
 
-    # --- H2: parada legítima de la corrida propia --------------------------
+    # --- H2: parada propia con identidad acreditada -> efectiva ---------
+    # stopService ahora lee el registro del mismo lugar autoritativo donde
+    # el backend lo escribe (sessions/public-run.json), por lo que verifica
+    # pertenencia y detiene el proceso propio.
     status, own = stop(run_id)
     assert status == 200, own
-    own_stopped = own.get("service_stopped") is True
-    if own_stopped:
-        wait_port_free(SERVICE_PORT, timeout_s=20.0)
-        assert is_listening(SERVICE_PORT) is False
-        assert pid_alive(pid) is False
-    else:
-        # Sin parada: el proceso y el puerto siguen intactos (no se apagó
-        # nada ajeno). Se detiene a mano para poder seguir con la prueba.
-        assert is_listening(SERVICE_PORT) is True
-        assert pid_alive(pid) is True
-        assert http_json(SERVICE_PORT, "/shutdown", method="POST", body={},
-                         host=f"127.0.0.1:{SERVICE_PORT}")[0] == 200
-        wait_port_free(SERVICE_PORT, timeout_s=20.0)
+    assert own.get("service_stopped") is True, own
+    wait_port_free(SERVICE_PORT, timeout_s=20.0)
+    assert is_listening(SERVICE_PORT) is False
+    assert pid_alive(pid) is False
+    # El pid-file propio es retirado por el servicio al detenerse.
+    assert bff_pid_file(ctx.service_root).exists() is False
+    # Causa/consumption/historial conservados en el registro persistente.
+    final_record = json.loads(record_path.read_text(encoding="utf-8"))
+    assert final_record["run_id"] == run_id
+    assert final_record["pid"] == pid
+    assert isinstance(final_record.get("http_attempts"), int)
+    ctx.service_pid = None
 
-    # --- H3: identidad incierta (proveedor local controlado) --------------
+    # --- H3: identidad incierta (proveedor local controlado) ------------
+    # 8797 quedó libre tras la parada propia; se monta un servicio falso
+    # cuyo /health.pid no coincide con el pid-file.
     fake = _FakeCanonicalService()
     try:
         fake.start()
@@ -657,20 +629,6 @@ def test_h_stop_rejects_foreign_run_and_uncertain_identity(
             bff_pid_file(ctx.service_root).unlink(missing_ok=True)
         except OSError:
             pass
-    ctx.service_pid = None
-
-    if not own_stopped:
-        pytest.fail(
-            "H NO ACREDITADO: la parada con run_id ajeno se rechaza y no toca "
-            "proceso/puerto (verificado), y la identidad incierta tampoco se "
-            "apaga, pero la parada de la corrida PROPIA tampoco detiene el "
-            "servicio: el gestor busca el registro en "
-            f"{manager_record_path} (existe={manager_sees_record}) mientras el "
-            f"backend lo persiste en {record_path} (run_id={run_id}, "
-            f"pid={pid}). Sin ese registro no puede verificar pertenencia: "
-            f"responde {own.get('detail')!r}. La corrida sólo se detiene a "
-            "mano contra el backend. Reloj observado en esta corrida: "
-            f"{ctx.clock_observed}.")
 
 
 # ---------------------------------------------------------------------------

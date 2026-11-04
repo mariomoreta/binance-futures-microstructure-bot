@@ -84,7 +84,7 @@ export function serviceRoot(): string {
   return path.resolve(process.cwd(), "..");
 }
 
-function servicePort(): number {
+export function servicePort(): number {
   const env = process.env.ENGINEERING_SERVICE_PORT;
   const n = env ? Number(env) : NaN;
   return Number.isFinite(n) && n > 0 ? Math.floor(n) : 8797;
@@ -115,6 +115,21 @@ function pidFilePath(): string {
 function sessionsDirPath(): string {
   // Directorio DEDICADO (el motor anida paper-lab-sessions/ debajo).
   return path.join(serviceRoot(), "data", "engineering-session", "sessions");
+}
+
+// Origen permitido para las rutas de aceptación pública.
+// Por defecto admite únicamente el dashboard canónico (127.0.0.1:3020),
+// preservando la política de producción. Un servidor de pruebas aislado
+// puede sobrescribirlo con ENGINEERING_PUBLIC_ALLOWED_HOST (p. ej. el
+// puerto efímero del servidor de pruebas) sin abrir la política en
+// producción y sin exponer el dashboard del operador.
+export function publicOriginAllowed(req: Request): boolean {
+  const allowedHost = process.env.ENGINEERING_PUBLIC_ALLOWED_HOST ??
+    "127.0.0.1:3020";
+  const origin = req.headers.get("origin");
+  const host = req.headers.get("host");
+  return host === allowedHost &&
+    (origin === `http://${allowedHost}` || origin === null);
 }
 
 // --- utilidades -------------------------------------------------------------
@@ -443,18 +458,55 @@ function clearPublicRunId(): void {
   try { writeFileSync(publicRunIdPath(), JSON.stringify({ run_id: null }) + "\n", "utf8"); } catch { /* no bloquea */ }
 }
 
-/** Lee el registro persistente de la corrida pública (si existe). */
-function readPublicRunRecord(): { run_id?: string | null; pid?: number | null; port?: number | null; state?: string | null } | null {
+/** Lee el registro persistente de la corrida pública (si existe).
+ * Lee del mismo lugar autoritativo donde el backend lo escribe:
+ * sessionsDir()/public-run.json (dentro de sessions_dir), no del nivel
+ * superior de data/engineering-session/. Así el BFF y el servicio
+ * derivan de la misma configuración y no hay desajuste de rutas. */
+/** Vista del registro persistente de la corrida pública (campos que el BFF
+ * necesita exponer/consultar). Coincide con lo que persiste el backend en
+ * sessionsDir()/public-run.json. */
+export interface PublicRunRecordView {
+  run_id?: string | null;
+  source?: string | null;
+  state?: string | null;
+  cause?: string | null;
+  started_at_ms?: number | null;
+  deadline_ms?: number | null;
+  session_id?: string | null;
+  config_hash?: string | null;
+  pid?: number | null;
+  port?: number | null;
+  http_attempts?: number | null;
+  deadline_exceeded?: boolean;
+  cleanup_cause?: string | null;
+}
+
+/** Lee el registro persistente de la corrida pública (si existe).
+ * Lee del mismo lugar autoritativo donde el backend lo escribe:
+ * sessionsDir()/public-run.json (dentro de sessions_dir), no del nivel
+ * superior de data/engineering-session/. Así el BFF y el servicio
+ * derivan de la misma configuración y no hay desajuste de rutas. */
+export function readPublicRunRecord(): PublicRunRecordView | null {
   try {
-    const p = path.join(serviceRoot(), "data", "engineering-session", "public-run.json");
+    const p = path.join(sessionsDirPath(), "public-run.json");
     const raw = readFileSync(p, "utf8");
     const data = JSON.parse(raw);
     if (typeof data !== "object" || data === null) return null;
     return {
       run_id: typeof data.run_id === "string" ? data.run_id : null,
+      source: typeof data.source === "string" ? data.source : null,
+      state: typeof data.state === "string" ? data.state : null,
+      cause: typeof data.cause === "string" ? data.cause : null,
+      started_at_ms: typeof data.started_at_ms === "number" ? data.started_at_ms : null,
+      deadline_ms: typeof data.deadline_ms === "number" ? data.deadline_ms : null,
+      session_id: typeof data.session_id === "string" ? data.session_id : null,
+      config_hash: typeof data.config_hash === "string" ? data.config_hash : null,
       pid: typeof data.pid === "number" ? data.pid : null,
       port: typeof data.port === "number" ? data.port : null,
-      state: typeof data.state === "string" ? data.state : null,
+      http_attempts: typeof data.http_attempts === "number" ? data.http_attempts : null,
+      deadline_exceeded: data.deadline_exceeded === true,
+      cleanup_cause: typeof data.cleanup_cause === "string" ? data.cleanup_cause : null,
     };
   } catch {
     return null;

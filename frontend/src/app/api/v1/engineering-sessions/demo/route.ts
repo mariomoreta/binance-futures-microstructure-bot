@@ -13,16 +13,14 @@ import {
   startDemo,
   stopDemo,
 } from "@/lib/local-demo-manager";
+import { publicOriginAllowed } from "@/lib/engineering-service-manager";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 const headers = {"Cache-Control": "no-store"};
 
 function originAllowed(req: Request): boolean {
-  const origin = req.headers.get("origin");
-  const host = req.headers.get("host");
-  return host === "127.0.0.1:3020" &&
-    (origin === "http://127.0.0.1:3020" || origin === null);
+  return publicOriginAllowed(req);
 }
 
 /** Estado de la demostración y de la fuente (consulta pura). */
