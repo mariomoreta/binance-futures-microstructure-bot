@@ -2847,3 +2847,17 @@ src/microstructure_probe/paper_lab_engine.py; scripts/paper_lab_session.py; BFF 
   `readOnly=false` habilita adquisiciÃ³n bajo demanda con presupuesto y que el
   cambio de ventana es de backend (no solo React).
 
+
+
+## 2026-11-03 - Investigación universo y liquidez (rama research/universe-liquidity-v1, base 78371aa) - NUEVA PRIORIDAD
+
+CURRENT_PHASE: investigación de hipótesis económica (liquidez vs flujo agresor) y selección automática de candidatos sobre el universo elegible.
+
+CURRENT_OBJECTIVE: determinar si existe información aprovechable para seleccionar y operar sobre el universo de futuros elegible, sin conexión pública ni órdenes.
+
+ACTIVE_TASK: investigación en curso docs/RESEARCH_UNIVERSE_LIQUIDITY_V1.md. Diagnóstico computado: insuficiencia (liquidez en T ausente para outcomes resueltos; universo resuelto 6 símbolos = 1.15% de elegibles; retorno forward ≈ 0). Plan mínimo de adquisición propuesto, NO ejecutado.
+
+NEXT_TASKS:
+1. Adquirir liquidez en el instante T (order book top-20 con available_at) para el universo candidato, para unir liquidez + flujo agresor + retorno forward resuelto.
+2. Si tras la adquisición mínima el retorno forward condicionado sigue ≈ 0 tras costes en universo representativo, no escalar (criterio de interrupción).
+- No integrar ramas, no reset/clean/force, no borrar evidencia. opencode.json y archivos ajenos no se commitean.

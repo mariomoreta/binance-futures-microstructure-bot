@@ -3313,3 +3313,21 @@ Sin llenar profundidad, spread ni funding.
   rentabilidad:** su conexión pública requiere autorización separada y
   presupuesto explícito; no se declara ventaja ni edge.
 
+
+
+## research/universe-liquidity-v1 (2026-11-03)
+
+**1. Title:** Investigación de hipótesis económica y selección automática de candidatos sobre el universo elegible (liquidez vs flujo agresor).
+
+**2. Approval status:** PROPUESTO (investigación autorizada; sin conexión pública, sin órdenes, sin cambios de reglas operativas ni económicas).
+
+**3. Implementation status:** INVESTIGACIÓN EN CURSO en rama 
+esearch/universe-liquidity-v1. Documento docs/RESEARCH_UNIVERSE_LIQUIDITY_V1.md con protocolo breve, tabla de cobertura y resultado descriptivo nivel A.
+
+**4. Evaluation status:** diagnóstico computado de insuficiencia. Hipótesis NO testeable hoy sobre outcomes resueltos (0 filas de profundidad/libro en el instante T para la ventana resuelta; universo resuelto = 6 símbolos = 1.15% de 522 elegibles; retorno forward medio ≈ 0 en BTC/ETH/SOL). No es otro simulador.
+
+**5. Evidence:** docs/evidence/research/universe_liquidity_v1/coverage.json, descriptive.json; scripts/research_universe_liquidity_inventory.py (read-only sobre SQLite).
+
+**6. Verdict:** insuficiencia computada; plan mínimo de adquisición propuesto (no ejecutado).
+
+**7. Next step:** adquirir liquidez en el instante T (order book top-20 con available_at) para el universo candidato y, si el retorno forward condicionado sigue ≈ 0 tras costes en universo representativo, no escalar.

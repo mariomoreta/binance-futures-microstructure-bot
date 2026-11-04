@@ -4760,3 +4760,12 @@ eadPublicRunRecord). publicOriginAllowed centralizado en engineering-service-man
 - Sin Binance, sin ventana pública, sin cambios económicos ni ampliación de presupuesto. 3020 (pid 20088) y 8792 (pid 31124) preservados; 8797 libre. opencode.json y archivos ajenos no se commitean.
 - Build: 
 ext build OK (BUILD_ID afm2q3kpfKZ0sigxBFsB5); 	sc --noEmit 0 errores; eslint 0 errores (1 advertencia preexistente).
+
+
+## 2026-11-03 - Cambio de prioridad: investigación universo y liquidez (rama research/universe-liquidity-v1, base 78371aa)
+
+- PRIORIDAD CAMBIADA: se pausa expansión del dashboard, Paper Lab, gestores de procesos y aceptación pública. El objetivo inmediato es investigar la hipótesis económica (liquidez vs flujo agresor → continuación/reversión) y la selección automática de candidatos sobre el universo elegible.
+- Documento: docs/RESEARCH_UNIVERSE_LIQUIDITY_V1.md (protocolo breve, tabla de cobertura, resultado descriptivo nivel A, plan mínimo de adquisición NO ejecutado).
+- Evidencia computada (solo lectura SQLite): docs/evidence/research/universe_liquidity_v1/coverage.json y descriptive.json; script scripts/research_universe_liquidity_inventory.py.
+- Resultado: hipótesis NO testeable hoy sobre outcomes resueltos (0 filas de profundidad/libro en el instante T para la ventana resuelta; universo resuelto = 6 símbolos = 1.15% de 522 elegibles; retorno forward medio ≈ 0 en BTC/ETH/SOL). Diagnóstico computado de insuficiencia, no otro simulador. Plan mínimo de adquisición propuesto (no ejecutado).
+- Sin Binance, sin ventana pública, sin órdenes, sin cambios de reglas operativas ni económicas. 3020 (pid 20088) y 8792 (pid 31124) preservados; 8797 libre. opencode.json y archivos ajenos no se commitean.
