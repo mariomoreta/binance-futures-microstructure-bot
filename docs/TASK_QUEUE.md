@@ -12,7 +12,8 @@ ni logs de consumo). No se relanzó ni se creó otro run_id.
 12 ciclos, 240 observaciones, 206 resultados (5m: 115, 15m: 91, 60m: 0);
 causa de parada UNKNOWN. Análisis offline v2 publicado con unidades %,
 comparación por ciclo y símbolo, cobertura desigual y asociaciones reproducibles
-(9 pruebas focalizadas pasadas).
+(9 pruebas focalizadas pasadas). Embudo corregido por rol y diagnóstico de
+incorporación publicados (6 pruebas focalizadas pasadas).
 `tests/test_research_pilot.py` 28 passed. Cero órdenes, cero claves privadas,
 cero cambios de estrategia ni tolerancias.
 
@@ -27,6 +28,9 @@ cero cambios de estrategia ni tolerancias.
    60m y en candidatos/comparadores), sin cambiar reglas ni tolerancias. No se
    repite automáticamente solo porque falte 60m: primero se define el problema
    que resolvería la adquisición.
+4. La carrera de feeds al entrar símbolos nuevos es estructural del diseño
+   (selección → feeds → evaluación); mitigarla requiere cambiar tolerancias o
+   lógica productiva, fuera de este bloque.
 
 ## Piloto prospectivo v1 — política de pendientes y publicación (2026-11-05)
 

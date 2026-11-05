@@ -56,11 +56,17 @@ observaciones aptas para estudio y un presupuesto público revisable.
   `docs/evidence/research/universe_liquidity_v1/pilot_public_proposal_1h/rectificacion_analisis_offline_v2.md`
   (unidades %, comparación por ciclo y símbolo, cobertura desigual, asociaciones
   reproducibles; sustituye las cifras del informe inicial).
+  **Rectificación del embudo (publicada):**
+  `docs/evidence/research/universe_liquidity_v1/pilot_public_proposal_1h/rectificacion_embudo_publica.md`
+  (embudo corregido por rol: candidate 144/109/35, comparator 96/19/77, total
+  240/128/112; diagnóstico de incorporación; carrera reproducible demostrada;
+  6 pruebas focalizadas pasadas).
   Informe inicial conservado:
   `docs/evidence/research/universe_liquidity_v1/pilot_public_proposal_1h/informe_analisis_offline.md`.
   Tablas pequeñas v2:
   `docs/evidence/research/universe_liquidity_v1/pilot_public_proposal_1h/tablas/resumen_analisis_offline_v2.json`.
-  Script: `scripts/analisis_offline_captura_publica.py`; pruebas: 9 passed.
+  Scripts: `scripts/analisis_offline_captura_publica.py`,
+  `scripts/diagnostico_embudo_publica.py`; pruebas: 9 + 6 passed.
   Dataset completo y derivados detallados fuera de Git; solo manifiesto, hashes y
   muestra se publican.
 - Evidencia pequeña (manifiesto, resumen, muestra de 12 observaciones):

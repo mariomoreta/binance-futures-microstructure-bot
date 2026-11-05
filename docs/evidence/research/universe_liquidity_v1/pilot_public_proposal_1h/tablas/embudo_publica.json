@@ -1,0 +1,173 @@
+{
+  "run_id": "public-pilot-1h-20261105a",
+  "estado_corrida": "corrida_interrumpida_o_cierre_no_acreditado",
+  "causa_parada": "UNKNOWN",
+  "embudo_por_rol": {
+    "seleccionadas_por_rol": {
+      "comparator": 96,
+      "candidate": 144
+    },
+    "aptas_por_rol": {
+      "comparator": 19,
+      "candidate": 109
+    },
+    "descartadas_por_rol": {
+      "comparator": 77,
+      "candidate": 35
+    },
+    "total_observaciones": 240,
+    "total_aptas": 128,
+    "total_descartadas": 112
+  },
+  "tasas_cobertura": {
+    "candidate": {
+      "seleccionadas": 144,
+      "aptas": 109,
+      "descartadas": 35,
+      "resultados_5m": 97,
+      "resultados_15m": 76,
+      "resultados_60m": 0,
+      "tasa_5m_sobre_aptas": 0.8899082568807339,
+      "tasa_15m_sobre_aptas": 0.6972477064220184,
+      "tasa_5m_sobre_seleccionadas": 0.6736111111111112,
+      "tasa_15m_sobre_seleccionadas": 0.5277777777777778
+    },
+    "comparator": {
+      "seleccionadas": 96,
+      "aptas": 19,
+      "descartadas": 77,
+      "resultados_5m": 18,
+      "resultados_15m": 15,
+      "resultados_60m": 0,
+      "tasa_5m_sobre_aptas": 0.9473684210526315,
+      "tasa_15m_sobre_aptas": 0.7894736842105263,
+      "tasa_5m_sobre_seleccionadas": 0.1875,
+      "tasa_15m_sobre_seleccionadas": 0.15625
+    }
+  },
+  "consistencia": {
+    "seleccionadas_por_rol_suma_coincide_total": true,
+    "aptas_por_rol_suma_coincide_total": true,
+    "descartadas_por_rol_suma_coincide_total": true,
+    "candidate_seleccionadas": 144,
+    "candidate_aptas": 109,
+    "candidate_descartadas": 35,
+    "comparator_seleccionadas": 96,
+    "comparator_aptas": 19,
+    "comparator_descartadas": 77,
+    "total_observaciones": 240,
+    "total_aptas": 128,
+    "total_descartadas": 112,
+    "motivos_pueden_solaparse": true,
+    "roles_no_se_solapan": true
+  },
+  "motivos_por_rol": {
+    "comparator": {
+      "sin_libro": 44,
+      "sin_flujo": 44,
+      "dato_obsoleto_libro": 5,
+      "dato_obsoleto_flujo": 32
+    },
+    "candidate": {
+      "sin_libro": 22,
+      "sin_flujo": 22,
+      "dato_obsoleto_libro": 10,
+      "dato_obsoleto_flujo": 5
+    }
+  },
+  "descartes_comparador_por_motivo": {
+    "sin_libro": 44,
+    "sin_flujo": 44,
+    "dato_obsoleto_libro": 5,
+    "dato_obsoleto_flujo": 32
+  },
+  "descartes_candidate_por_motivo": {
+    "sin_libro": 22,
+    "sin_flujo": 22,
+    "dato_obsoleto_libro": 10,
+    "dato_obsoleto_flujo": 5
+  },
+  "cobertura_por_condicion_rol": [
+    {
+      "rol": "candidate",
+      "condicion_incorporacion": "permanece",
+      "seleccionadas": 122,
+      "aptas": 109,
+      "descartadas": 13,
+      "sin_libro": 0,
+      "sin_flujo": 0,
+      "obsoleto_libro": 10,
+      "obsoleto_flujo": 5,
+      "ventana_incompleta": 0,
+      "tiempo_incorporacion_a_evaluacion_ms_validos": 122
+    },
+    {
+      "rol": "candidate",
+      "condicion_incorporacion": "primera_vez",
+      "seleccionadas": 17,
+      "aptas": 0,
+      "descartadas": 17,
+      "sin_libro": 17,
+      "sin_flujo": 17,
+      "obsoleto_libro": 0,
+      "obsoleto_flujo": 0,
+      "ventana_incompleta": 17,
+      "tiempo_incorporacion_a_evaluacion_ms_validos": 17
+    },
+    {
+      "rol": "candidate",
+      "condicion_incorporacion": "reincorpora",
+      "seleccionadas": 5,
+      "aptas": 0,
+      "descartadas": 5,
+      "sin_libro": 5,
+      "sin_flujo": 5,
+      "obsoleto_libro": 0,
+      "obsoleto_flujo": 0,
+      "ventana_incompleta": 5,
+      "tiempo_incorporacion_a_evaluacion_ms_validos": 5
+    },
+    {
+      "rol": "comparator",
+      "condicion_incorporacion": "permanece",
+      "seleccionadas": 52,
+      "aptas": 19,
+      "descartadas": 33,
+      "sin_libro": 0,
+      "sin_flujo": 0,
+      "obsoleto_libro": 5,
+      "obsoleto_flujo": 32,
+      "ventana_incompleta": 0,
+      "tiempo_incorporacion_a_evaluacion_ms_validos": 52
+    },
+    {
+      "rol": "comparator",
+      "condicion_incorporacion": "primera_vez",
+      "seleccionadas": 27,
+      "aptas": 0,
+      "descartadas": 27,
+      "sin_libro": 27,
+      "sin_flujo": 27,
+      "obsoleto_libro": 0,
+      "obsoleto_flujo": 0,
+      "ventana_incompleta": 27,
+      "tiempo_incorporacion_a_evaluacion_ms_validos": 27
+    },
+    {
+      "rol": "comparator",
+      "condicion_incorporacion": "reincorpora",
+      "seleccionadas": 17,
+      "aptas": 0,
+      "descartadas": 17,
+      "sin_libro": 17,
+      "sin_flujo": 17,
+      "obsoleto_libro": 0,
+      "obsoleto_flujo": 0,
+      "ventana_incompleta": 17,
+      "tiempo_incorporacion_a_evaluacion_ms_validos": 17
+    }
+  ],
+  "n_simbolos_distintos": 44,
+  "simbolos_cambian_rol": [],
+  "nota": "Los totales por rol (candidate + comparator) deben coincidir con el total de observaciones del JSONL. Los motivos de descarte pueden solaparse dentro de una misma observación; las observaciones por rol no se solapan."
+}

@@ -790,7 +790,61 @@ rentabilidad. Insuficiencia no es ausencia de ventaja. El siguiente paso que má
 reduciría incertidumbre es repetir la captura con cierre acreditado y settle
 completado para 60m, sin cambiar reglas ni tolerancias.
 
+### 9.7 Embudo corregido y diagnóstico de incorporación (rectificación)
+
+**Estado:** `corrida_interrumpida_o_cierre_no_acreditado` (causa de parada `UNKNOWN`).
+
+**Embudo corregido (verificado contra el dataset original):** los conteos por
+rol **no se solapan** (candidate y comparator son mutuamente excluyentes).
+
+| Rol | Seleccionadas | Aptas | Descartadas | Resultados 5m | Resultados 15m | Resultados 60m |
+| --- | --- | --- | --- | --- | --- | --- |
+| candidate | 144 | 109 | 35 | 97 | 76 | 0 |
+| comparator | 96 | 19 | 77 | 18 | 15 | 0 |
+| **Total** | **240** | **128** | **112** | **115** | **91** | **0** |
+
+**Tasas de cobertura (sobre aptas / sobre seleccionadas):**
+- candidate 5m: 97/109 = 89,0 % / 97/144 = 67,4 %.
+- candidate 15m: 76/109 = 69,7 % / 76/144 = 52,8 %.
+- comparator 5m: 18/19 = 94,7 % / 18/96 = 18,8 %.
+- comparator 15m: 15/19 = 78,9 % / 15/96 = 15,6 %.
+
+**Diagnóstico de incorporación:** los comparadores acumulan descartes porque
+se eligen con muestreo aleatorio sin reemplazo (`rng.sample`, seed 42) de
+~465 elegibles, con solo 8 por ciclo; la mayoría son `primera_vez` o
+`reincorpora` y no tienen libro ni flujo cuando se evalúan (feeds recién
+abiertos). Los candidatos son top-12 por prioridad determinista que se repiten
+(`permanece` = 122 de 144) y son mayoritariamente aptos.
+
+| Origen de descartes de comparadores (77) | Cantidad | Motivo principal |
+| --- | --- | --- |
+| `primera_vez` + `reincorpora` (sin libro/flujo) | 44 | carrera de feeds al entrar al seguimiento |
+| `permanece` descartados | 33 | dato_obsoleto_flujo (32), dato_obsoleto_libro (5) |
+
+**Carrera reproducible demostrada:** el orden del código es
+`run_cycle()` (selección) → `_restart_feeds()` (abrir feeds) →
+`take_decisions()` (evaluar). Un símbolo nuevo se evalúa sin datos acumulados.
+Demostrado con prueba focalizada loopback
+(`tests/test_embudo_publica.py::test_carrera_simbolo_nuevo_sin_datos_se_descarta`).
+No sustituye la evidencia histórica.
+
+**Qué queda UNKNOWN:** 33 descartes de comparadores `permanece` (mayoritariamente
+`dato_obsoleto_flujo`); no se atribuye a baja liquidez, rotación o transporte
+sin demostrar la secuencia de disponibilidad por símbolo.
+
 **Evidencia publicada (muestra pequeña, dataset fuera de Git):**
+- `docs/evidence/research/universe_liquidity_v1/pilot_public_proposal_1h/rectificacion_embudo_publica.md` (rectificación identificable del embudo; sustituye las cifras de embudo del informe inicial).
+- `docs/evidence/research/universe_liquidity_v1/pilot_public_proposal_1h/tablas/embudo_publica.json` (tabla pequeña del embudo).
+- `docs/evidence/research/universe_liquidity_v1/pilot_public_proposal_1h/informe_analisis_offline.md` (informe inicial, conservado como antecedente).
+- `docs/evidence/research/universe_liquidity_v1/pilot_public_proposal_1h/rectificacion_analisis_offline_v2.md` (rectificación v2: unidades, comparación por ciclo y símbolo, asociaciones reproducibles).
+- `docs/evidence/research/universe_liquidity_v1/pilot_public_proposal_1h/tablas/resumen_analisis_offline_v2.json` (tablas pequeñas v2).
+- `docs/evidence/research/universe_liquidity_v1/pilot_public_proposal_1h/tablas/resumen_analisis_offline.json` (tablas v1, conservadas como antecedente).
+- `docs/evidence/research/universe_liquidity_v1/pilot_public_proposal_1h/manifiesto_corrida_publica_1h.json`
+- `docs/evidence/research/universe_liquidity_v1/pilot_public_proposal_1h/diagnostico_corrida_publica_1h.md`
+- Scripts: `scripts/analisis_offline_captura_publica.py`, `scripts/diagnostico_embudo_publica.py`
+- Pruebas: `tests/test_analisis_offline_captura_publica.py` (9 passed),
+  `tests/test_embudo_publica.py` (6 passed)
+- Dataset completo y derivados detallados fuera de Git; solo manifiesto, hashes y muestra se publican.
 - `docs/evidence/research/universe_liquidity_v1/pilot_public_proposal_1h/informe_analisis_offline.md` (informe inicial, conservado como antecedente).
 - `docs/evidence/research/universe_liquidity_v1/pilot_public_proposal_1h/rectificacion_analisis_offline_v2.md` (rectificación identificable: unidades, comparación por ciclo y símbolo, cobertura desigual, asociaciones reproducibles; sustituye las cifras del informe inicial).
 - `docs/evidence/research/universe_liquidity_v1/pilot_public_proposal_1h/tablas/resumen_analisis_offline_v2.json` (tablas pequeñas v2).
