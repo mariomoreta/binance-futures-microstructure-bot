@@ -1,8 +1,14 @@
 """Análisis OFFLINE y solo lectura de la captura pública public-pilot-1h-20261105a.
 
-Lee unicamente el JSONL del dataset original sin modificarlo y escribe tablas
-pequeñas (derivados) para publicación en Git. Los derivados detallados se dejan
-fuera de Git. No conecta a Binance, no adquiere datos nuevos, no cambia reglas.
+Lee únicamente el JSONL del dataset original sin modificarlo y escribe tablas
+pequeñas para publicación en Git. Los derivados detallados se dejan fuera de Git.
+No conecta a Binance, no adquiere datos nuevos, no cambia reglas ni tolerancias.
+
+Salidas:
+- Derivados detallados (fuera de Git):
+  C:\proyectos\binance-futures-data\public-pilot-1h-20261105a\derivados\analisis_v2\analisis_completo.json
+- Tablas pequeñas (Git):
+  docs/evidence/research/universe_liquidity_v1/pilot_public_proposal_1h/tablas/resumen_analisis_offline_v2.json
 """
 from __future__ import annotations
 
@@ -18,13 +24,15 @@ DATASET_JSONL = Path(
     r"C:\proyectos\binance-futures-data\public-pilot-1h-20261105a\observaciones.jsonl"
 )
 DERIVADOS_DETALLADOS = Path(
-    r"C:\proyectos\binance-futures-data\public-pilot-1h-20261105a\derivados"
+    r"C:\proyectos\binance-futures-data\public-pilot-1h-20261105a\derivados\analisis_v2"
 )
 TABLAS_GIT = Path(
     r"docs/evidence/research/universe_liquidity_v1/pilot_public_proposal_1h/tablas"
 )
 
 HORIZONTES = ("5m", "15m", "60m")
+HORIZONTES_EVALUABLES = ("5m", "15m")
+ROLES = ("candidate", "comparator")
 
 
 def _cargar_jsonl(ruta: Path) -> list[dict[str, Any]]:
@@ -51,7 +59,7 @@ def _seguro_float(valor: Any) -> float | None:
 
 
 def _stats(valores: list[float]) -> dict[str, float | None]:
-    limpios = [v for v in valores if v is not None]
+    limpios = [v for v in valores if v is not None and math.isfinite(v)]
     if not limpios:
         return {"n": 0, "media": None, "mediana": None, "desv": None, "min": None, "max": None}
     n = len(limpios)
@@ -68,12 +76,18 @@ def _stats(valores: list[float]) -> dict[str, float | None]:
     }
 
 
+def _pct(valor: float | None) -> float | None:
+    if valor is None:
+        return None
+    return valor * 100.0
+
+
 def _direccion_desde_move24h(move24h: float | None) -> str | None:
     """Proxy de la dirección que motivó la selección.
 
-    Las observaciones individuales no traen campo `side`; usan `move_24h_pct`
-    como indicador del movimiento previo. Se declara explícitamente como proxy
-    y no se usa para inventar órdenes.
+    Las observaciones individuales de este dataset no traen campo `side`
+    acreditado en la selección original; `move_24h_pct` se usa como proxy
+    expreso y se declara aquí. No es una orden de compra ni venta.
     """
     if move24h is None:
         return None
@@ -84,13 +98,91 @@ def _direccion_desde_move24h(move24h: float | None) -> str | None:
     return None
 
 
+def _pearson(xs: list[float], ys: list[float]) -> dict[str, Any]:
+    """Correlación de Pearson. Nunca devuelve cero inventado."""
+    pares = [(x, y) for x, y in zip(xs, ys) if x is not None and y is not None]
+    n = len(pares)
+    if n < 2:
+        return {
+            "n_pares_validos": n,
+            "pearson": None,
+            "motivo": "muestra_insuficiente_menor_a_2",
+        }
+    xs_f = [x for x, _ in pares]
+    ys_f = [y for _, y in pares]
+    mx = statistics.fmean(xs_f)
+    my = statistics.fmean(ys_f)
+    sx2 = sum((x - mx) ** 2 for x in xs_f) / n
+    sy2 = sum((y - my) ** 2 for y in ys_f) / n
+    if sx2 == 0.0 or sy2 == 0.0:
+        return {
+            "n_pares_validos": n,
+            "pearson": None,
+            "motivo": "varianza_cero_en_una_variable",
+        }
+    cov = sum((x - mx) * (y - my) for x, y in pares) / n
+    return {
+        "n_pares_validos": n,
+        "pearson": cov / (math.sqrt(sx2) * math.sqrt(sy2)),
+        "motivo": None,
+    }
+
+
+def _terciles(
+    pares: list[tuple[float | None, float | None]],
+) -> dict[str, Any]:
+    """Terciles de delta_ratio (primera variable) frente a retorno (segunda).
+
+    Corte por posición ordenada: bajo <= t1, t1 < x <= t2, alto > t2.
+    Empates en el corte: se asignan según la posición ordenada (estable).
+    """
+    validos = [(x, y) for x, y in pares if x is not None and y is not None]
+    n = len(validos)
+    if n < 3:
+        return {
+            "n_validos": n,
+            "metodo": "posicion_ordenada_terciles",
+            "cortes": None,
+            "motivo": "muestra_insuficiente_menor_a_3",
+            "terciles": {},
+        }
+    xs_ordenados = sorted(x for x, _ in validos)
+    t1 = xs_ordenados[n // 3]
+    t2 = xs_ordenados[2 * n // 3]
+
+    grupos: dict[str, list[float]] = {"bajo": [], "medio": [], "alto": []}
+    for x, y in validos:
+        if x <= t1:
+            grupos["bajo"].append(y)
+        elif x <= t2:
+            grupos["medio"].append(y)
+        else:
+            grupos["alto"].append(y)
+
+    return {
+        "n_validos": n,
+        "metodo": "posicion_ordenada_terciles",
+        "cortes": {"t1": t1, "t2": t2},
+        "regla_empates": "posicion_ordenada_estable: bajo<=t1, t1<x<=t2, alto>t2",
+        "motivo": None,
+        "terciles": {
+            nombre: {
+                "n": len(vals),
+                "media_retorno": statistics.fmean(vals) if vals else None,
+                "mediana_retorno": statistics.median(vals) if vals else None,
+            }
+            for nombre, vals in grupos.items()
+        },
+    }
+
+
 def analizar(jsonl: Path = DATASET_JSONL) -> dict[str, Any]:
     objetos = _cargar_jsonl(jsonl)
     ciclos = [o for o in objetos if o.get("kind") == "ciclo"]
     observaciones = [o for o in objetos if o.get("kind") == "observacion"]
     resultados = [o for o in objetos if o.get("kind") == "resultado"]
 
-    # Índice de ciclos por reference_ms (clave precisa para mapear observaciones).
+    # Índice de ciclos por reference_ms (clave precisa).
     ciclos_por_ref: dict[int, dict[str, Any]] = {}
     for c in ciclos:
         rm = c.get("reference_ms")
@@ -105,7 +197,6 @@ def analizar(jsonl: Path = DATASET_JSONL) -> dict[str, Any]:
         if oid:
             resultados_por_id[str(oid)].append(r)
 
-    # Mapeo observación -> ciclo por disponibilidad.seleccion_ms == ciclo.reference_ms.
     def ciclo_de_observacion(obs: dict[str, Any]) -> tuple[int | None, dict[str, Any] | None]:
         disp = obs.get("disponibilidad") or {}
         sel_ms = disp.get("seleccion_ms")
@@ -114,43 +205,77 @@ def analizar(jsonl: Path = DATASET_JSONL) -> dict[str, Any]:
             return ciclos_ordenados.index(c), c
         return None, None
 
-    # --- Tabla por rol, ciclo y horizonte ---
+    # ---- Embudo por rol ----
+    seleccionadas_por_rol: dict[str, int] = Counter()
+    aptas_por_rol: dict[str, int] = Counter()
+    descartes_por_rol_motivo: dict[str, Counter] = defaultdict(Counter)
+    descartes_por_rol: dict[str, int] = Counter()
+    simbolos_por_rol_ciclo: dict[tuple[str, int | None], set[str]] = defaultdict(set)
+    primer_ciclo_por_simbolo: dict[str, int | None] = {}
+    ciclos_por_simbolo: dict[str, set[int | None]] = defaultdict(set)
+    rol_por_simbolo_ciclo: dict[tuple[str, int | None], str] = {}
+
+    for obs in observaciones:
+        rol = obs.get("role") or "desconocido"
+        seleccionadas_por_rol[rol] += 1
+        ciclo_idx, ciclo_obj = ciclo_de_observacion(obs)
+        simbolo = obs.get("symbol")
+        estado = obs.get("estado")
+        motivos = obs.get("motivos") or []
+
+        if simbolo:
+            ciclos_por_simbolo[simbolo].add(ciclo_idx)
+            if simbolo not in primer_ciclo_por_simbolo or (
+                ciclo_idx is not None
+                and primer_ciclo_por_simbolo[simbolo] is not None
+                and ciclo_idx < primer_ciclo_por_simbolo[simbolo]
+            ):
+                primer_ciclo_por_simbolo[simbolo] = ciclo_idx
+            clave = (rol, ciclo_idx)
+            simbolos_por_rol_ciclo[clave].add(simbolo)
+            rol_por_simbolo_ciclo[clave] = rol
+
+        if estado == "observada":
+            aptas_por_rol[rol] += 1
+        elif estado == "descartada":
+            descartes_por_rol[rol] += 1
+            for m in motivos:
+                descartes_por_rol_motivo[rol][m] += 1
+
+    # ---- Tabla por rol, ciclo y horizonte (cobertura) ----
     por_ciclo_rol_horizonte: dict[tuple[int | None, str, str], dict[str, Any]] = defaultdict(
         lambda: {
             "observaciones": 0,
             "aptas": 0,
             "descartadas": 0,
-            "resultados_disponibles": 0,
-            "resultados_faltantes": 0,
+            "resultado_registrado": 0,
+            "resultado_faltante": 0,
             "simbolos": set(),
             "motivos_descartes": Counter(),
         }
     )
-    motivos_por_rol: dict[str, Counter] = defaultdict(Counter)
-    motivos_por_ciclo: dict[int | None, Counter] = defaultdict(Counter)
 
     for obs in observaciones:
-        ciclo_idx, ciclo_obj = ciclo_de_observacion(obs)
+        ciclo_idx, _ = ciclo_de_observacion(obs)
         rol = obs.get("role") or "desconocido"
         simbolo = obs.get("symbol")
         estado = obs.get("estado")
         motivos = obs.get("motivos") or []
 
         clave_base = (ciclo_idx, rol, "todas")
-        entrada = por_ciclo_rol_horizonte[clave_base]
-        entrada["observaciones"] += 1
+        ent = por_ciclo_rol_horizonte[clave_base]
+        ent["observaciones"] += 1
         if simbolo:
-            entrada["simbolos"].add(simbolo)
+            ent["simbolos"].add(simbolo)
         if estado == "observada":
-            entrada["aptas"] += 1
+            ent["aptas"] += 1
         elif estado == "descartada":
-            entrada["descartadas"] += 1
+            ent["descartadas"] += 1
             for m in motivos:
-                entrada["motivos_descartes"][m] += 1
-                motivos_por_rol[rol][m] += 1
-                motivos_por_ciclo[ciclo_idx][m] += 1
+                ent["motivos_descartes"][m] += 1
 
         if estado == "observada":
+            oid = obs.get("observation_id")
             for h in HORIZONTES:
                 clave_h = (ciclo_idx, rol, h)
                 ent_h = por_ciclo_rol_horizonte[clave_h]
@@ -158,47 +283,55 @@ def analizar(jsonl: Path = DATASET_JSONL) -> dict[str, Any]:
                 ent_h["aptas"] += 1
                 if simbolo:
                     ent_h["simbolos"].add(simbolo)
-                oid = obs.get("observation_id")
-                res_h = [r for r in resultados_por_id.get(str(oid), []) if r.get("horizon") == h]
+                res_h = [
+                    r
+                    for r in resultados_por_id.get(str(oid), [])
+                    if r.get("horizon") == h
+                ]
                 if res_h:
-                    ent_h["resultados_disponibles"] += 1
+                    ent_h["resultado_registrado"] += 1
                 else:
-                    ent_h["resultados_faltantes"] += 1
+                    ent_h["resultado_faltante"] += 1
 
     filas_cobertura = []
     for (ciclo_idx, rol, horizonte), ent in sorted(
-        por_ciclo_rol_horizonte.items(), key=lambda x: (x[0][0] if x[0][0] is not None else 999, x[0][1], x[0][2])
+        por_ciclo_rol_horizonte.items(),
+        key=lambda x: (x[0][0] if x[0][0] is not None else 999, x[0][1], x[0][2]),
     ):
         filas_cobertura.append(
             {
                 "ciclo_idx": ciclo_idx,
                 "rol": rol,
                 "horizonte": horizonte,
-                "observaciones": ent["observaciones"],
+                "seleccionadas": ent["observaciones"],
                 "aptas": ent["aptas"],
                 "descartadas": ent["descartadas"],
-                "resultados_disponibles": ent["resultados_disponibles"],
-                "resultados_faltantes": ent["resultados_faltantes"],
+                "resultado_registrado": ent["resultado_registrado"],
+                "resultado_faltante": ent["resultado_faltante"],
+                "tasa_cobertura_sobre_seleccionadas": (
+                    ent["resultado_registrado"] / ent["observaciones"]
+                    if ent["observaciones"]
+                    else None
+                ),
+                "tasa_cobertura_sobre_aptas": (
+                    ent["resultado_registrado"] / ent["aptas"] if ent["aptas"] else None
+                ),
                 "n_simbolos_distintos": len(ent["simbolos"]),
                 "motivos_descartes": dict(ent["motivos_descartes"]),
             }
         )
 
-    # --- Comparación candidatos vs comparadores por horizonte ---
+    # ---- Comparación candidatos vs comparadores por horizonte ----
     comparacion_por_horizonte: dict[str, dict[str, Any]] = {}
-    filas_fuera_grupo: list[dict[str, Any]] = []
+    detalle_ciclo: dict[str, list[dict[str, Any]]] = {}
 
-    for h in ("5m", "15m"):
+    for h in HORIZONTES_EVALUABLES:
         grupo_cand: list[float] = []
         grupo_comp: list[float] = []
-        det_cand: list[dict[str, Any]] = []
-        det_comp: list[dict[str, Any]] = []
         simbolos_cand: set[str] = set()
         simbolos_comp: set[str] = set()
         ciclos_cand: set[int | None] = set()
         ciclos_comp: set[int | None] = set()
-        obs_cand_n = 0
-        obs_comp_n = 0
 
         for obs in observaciones:
             if obs.get("estado") != "observada":
@@ -209,15 +342,6 @@ def analizar(jsonl: Path = DATASET_JSONL) -> dict[str, Any]:
             ciclo_idx, _ = ciclo_de_observacion(obs)
             res_h = [r for r in resultados_por_id.get(str(oid), []) if r.get("horizon") == h]
             if not res_h:
-                filas_fuera_grupo.append(
-                    {
-                        "horizonte": h,
-                        "rol": rol,
-                        "simbolo": simbolo,
-                        "ciclo_idx": ciclo_idx,
-                        "motivo": "resultado_no_registrado_causa_UNKNOWN",
-                    }
-                )
                 continue
             r = res_h[0]
             retorno = _seguro_float(r.get("retorno"))
@@ -227,6 +351,7 @@ def analizar(jsonl: Path = DATASET_JSONL) -> dict[str, Any]:
                 "simbolo": simbolo,
                 "ciclo_idx": ciclo_idx,
                 "retorno": retorno,
+                "retorno_pct": _pct(retorno),
                 "decision_ms": obs.get("decision_ms"),
                 "observation_id": oid,
                 "precio_base": r.get("precio_base"),
@@ -234,59 +359,118 @@ def analizar(jsonl: Path = DATASET_JSONL) -> dict[str, Any]:
                 "precio_base_fuente": r.get("precio_base_fuente"),
                 "precio_posterior_fuente": r.get("precio_posterior_fuente"),
                 "horizonte_efectivo_ms": r.get("horizonte_efectivo_ms"),
-                "direccion_proxy": _direccion_desde_move24h(
-                    _seguro_float((obs.get("seleccion") or {}).get("move_24h_pct"))
-                ),
             }
             if rol == "candidate":
                 grupo_cand.append(retorno)
-                det_cand.append(registro)
-                obs_cand_n += 1
                 simbolos_cand.add(simbolo)
                 ciclos_cand.add(ciclo_idx)
             elif rol == "comparator":
                 grupo_comp.append(retorno)
-                det_comp.append(registro)
-                obs_comp_n += 1
                 simbolos_comp.add(simbolo)
                 ciclos_comp.add(ciclo_idx)
 
         ciclos_comunes = ciclos_cand & ciclos_comp
+
+        # Diferencia por ciclo (mismo peso a cada ciclo con ambos grupos).
+        diferencias_por_ciclo: list[dict[str, Any]] = []
+        for ci in sorted(ciclos_comunes, key=lambda x: (x is None, x if x is not None else -1)):
+            cand_ci = [
+                r.get("retorno")
+                for obs in observaciones
+                if obs.get("estado") == "observada"
+                and obs.get("role") == "candidate"
+                and ciclo_de_observacion(obs)[0] == ci
+                for r in resultados_por_id.get(str(obs.get("observation_id")), [])
+                if r.get("horizon") == h and _seguro_float(r.get("retorno")) is not None
+            ]
+            comp_ci = [
+                r.get("retorno")
+                for obs in observaciones
+                if obs.get("estado") == "observada"
+                and obs.get("role") == "comparator"
+                and ciclo_de_observacion(obs)[0] == ci
+                for r in resultados_por_id.get(str(obs.get("observation_id")), [])
+                if r.get("horizon") == h and _seguro_float(r.get("retorno")) is not None
+            ]
+            cand_ci = [v for v in cand_ci if v is not None]
+            comp_ci = [v for v in comp_ci if v is not None]
+            if cand_ci and comp_ci:
+                mc = statistics.fmean(cand_ci)
+                mc_pct = _pct(mc)
+                mco = statistics.fmean(comp_ci)
+                mco_pct = _pct(mco)
+                diferencias_por_ciclo.append(
+                    {
+                        "ciclo_idx": ci,
+                        "n_candidatos": len(cand_ci),
+                        "n_comparadores": len(comp_ci),
+                        "media_candidatos": mc,
+                        "media_candidatos_pct": mc_pct,
+                        "media_comparadores": mco,
+                        "media_comparadores_pct": mco_pct,
+                        "diferencia_ciclo": mc - mco,
+                        "diferencia_ciclo_puntos_porcentuales": _pct(mc - mco),
+                    }
+                )
+
+        media_diferencias_por_ciclo = None
+        media_diferencias_por_ciclo_puntos = None
+        if diferencias_por_ciclo:
+            diffs = [d["diferencia_ciclo"] for d in diferencias_por_ciclo]
+            media_diferencias_por_ciclo = statistics.fmean(diffs)
+            media_diferencias_por_ciclo_puntos = _pct(media_diferencias_por_ciclo)
+
+        media_agrupada_cand = _stats(grupo_cand)
+        media_agrupada_comp = _stats(grupo_comp)
+        diff_agrupada = None
+        diff_agrupada_puntos = None
+        if media_agrupada_cand["media"] is not None and media_agrupada_comp["media"] is not None:
+            diff_agrupada = media_agrupada_cand["media"] - media_agrupada_comp["media"]
+            diff_agrupada_puntos = _pct(diff_agrupada)
+
         comparacion_por_horizonte[h] = {
             "candidatos": {
                 "n_resultados": len(grupo_cand),
-                "n_observaciones_originales": obs_cand_n,
                 "n_simbolos": len(simbolos_cand),
                 "n_ciclos": len(ciclos_cand),
-                **_stats(grupo_cand),
+                **media_agrupada_cand,
+                "media_pct": media_agrupada_cand["media"] and _pct(media_agrupada_cand["media"]),
+                "mediana_pct": media_agrupada_cand["mediana"] and _pct(media_agrupada_cand["mediana"]),
+                "min_pct": media_agrupada_cand["min"] and _pct(media_agrupada_cand["min"]),
+                "max_pct": media_agrupada_cand["max"] and _pct(media_agrupada_cand["max"]),
                 "proporcion_positivos": (
                     sum(1 for v in grupo_cand if v > 0) / len(grupo_cand) if grupo_cand else None
                 ),
-                "detalle": det_cand,
             },
             "comparadores": {
                 "n_resultados": len(grupo_comp),
-                "n_observaciones_originales": obs_comp_n,
                 "n_simbolos": len(simbolos_comp),
                 "n_ciclos": len(ciclos_comp),
-                **_stats(grupo_comp),
+                **media_agrupada_comp,
+                "media_pct": media_agrupada_comp["media"] and _pct(media_agrupada_comp["media"]),
+                "mediana_pct": media_agrupada_comp["mediana"] and _pct(media_agrupada_comp["mediana"]),
+                "min_pct": media_agrupada_comp["min"] and _pct(media_agrupada_comp["min"]),
+                "max_pct": media_agrupada_comp["max"] and _pct(media_agrupada_comp["max"]),
                 "proporcion_positivos": (
                     sum(1 for v in grupo_comp if v > 0) / len(grupo_comp) if grupo_comp else None
                 ),
-                "detalle": det_comp,
             },
-            "diferencia_medias_descriptiva": (
-                (statistics.fmean(grupo_cand) - statistics.fmean(grupo_comp))
-                if grupo_cand and grupo_comp
-                else None
-            ),
+            "diferencia_medias_agrupada": diff_agrupada,
+            "diferencia_medias_agrupada_puntos_porcentuales": diff_agrupada_puntos,
+            "media_de_diferencias_por_ciclo": media_diferencias_por_ciclo,
+            "media_de_diferencias_por_ciclo_puntos_porcentuales": media_diferencias_por_ciclo_puntos,
             "ciclos_con_ambos_grupos": len(ciclos_comunes),
-            "observaciones_fuera_de_grupo": len([f for f in filas_fuera_grupo if f["horizonte"] == h]),
+            "diferencias_por_ciclo": diferencias_por_ciclo,
+            "ciclos_sin_grupo_comparable": sorted(
+                (ciclos_cand | ciclos_comp) - ciclos_comunes,
+                key=lambda x: (x is None, x if x is not None else -1),
+            ),
         }
+        detalle_ciclo[h] = diferencias_por_ciclo
 
-    # --- UP / DOWN por horizonte (candidatos, dirección por move_24h_pct proxy) ---
+    # ---- UP / DOWN por horizonte (candidatos, dirección por move_24h_pct proxy) ----
     updown_por_horizonte: dict[str, dict[str, Any]] = {}
-    for h in ("5m", "15m"):
+    for h in HORIZONTES_EVALUABLES:
         grupos: dict[str, list[float]] = {"UP_like": [], "DOWN_like": []}
         for obs in observaciones:
             if obs.get("estado") != "observada" or obs.get("role") != "candidate":
@@ -304,16 +488,25 @@ def analizar(jsonl: Path = DATASET_JSONL) -> dict[str, Any]:
                 if retorno is None:
                     continue
                 grupos[direccion].append(retorno)
-        updown_por_horizonte[h] = {
-            lado: {
-                "n": len(vals),
-                **_stats(vals),
+        updown_por_horizonte[h] = {}
+        for lado in ("UP_like", "DOWN_like"):
+            vals = grupos[lado]
+            st = _stats(vals)
+            updown_por_horizonte[h][lado] = {
+                "n": st["n"],
+                "media": st["media"],
+                "media_pct": _pct(st["media"]),
+                "mediana": st["mediana"],
+                "mediana_pct": _pct(st["mediana"]),
+                "desv": st["desv"],
+                "min": st["min"],
+                "min_pct": _pct(st["min"]),
+                "max": st["max"],
+                "max_pct": _pct(st["max"]),
                 "proporcion_positivos": sum(1 for v in vals if v > 0) / len(vals) if vals else None,
             }
-            for lado, vals in grupos.items()
-        }
 
-    # --- Métricas exploratorias de liquidez/flujo (solo variables al decidir) ---
+    # ---- Asociaciones reproducibles (líquidez/flujo vs retorno) ----
     metrica_flujo = "delta_ratio"
     metrica_libro = "profundidad_notional_top20"
 
@@ -330,19 +523,22 @@ def analizar(jsonl: Path = DATASET_JSONL) -> dict[str, Any]:
         if bid_not is not None and ask_not is not None:
             profundidad = bid_not + ask_not
         oid = obs.get("observation_id")
+        ciclo_idx, _ = ciclo_de_observacion(obs)
         for r in resultados_por_id.get(str(oid), []):
             h = r.get("horizon")
-            if h not in ("5m", "15m"):
+            if h not in HORIZONTES_EVALUABLES:
                 continue
             retorno = _seguro_float(r.get("retorno"))
             filas_asoc.append(
                 {
                     "horizonte": h,
                     "simbolo": obs.get("symbol"),
+                    "ciclo_idx": ciclo_idx,
                     "rol": obs.get("role"),
                     "delta_ratio": delta_ratio,
                     "profundidad_notional_top20_USDT": profundidad,
                     "retorno": retorno,
+                    "retorno_pct": _pct(retorno),
                     "ventana_flujo_ms": flujo.get("window_ms"),
                     "ventana_flujo_completa": flujo.get("ventana_completa"),
                     "libro_banda_5bps_cubierta": (obs.get("cobertura") or {}).get(
@@ -353,20 +549,119 @@ def analizar(jsonl: Path = DATASET_JSONL) -> dict[str, Any]:
                     ),
                 }
             )
-    asociacion = {
+
+    asociaciones: dict[str, Any] = {
         "metrica_flujo": metrica_flujo,
         "metrica_libro": metrica_libro,
-        "n_filas": len(filas_asoc),
-        "cobertura_profundidad_not_none": sum(
-            1 for f in filas_asoc if f["profundidad_notional_top20_USDT"] is not None
-        ),
-        "cobertura_delta_ratio_not_none": sum(
-            1 for f in filas_asoc if f["delta_ratio"] is not None
-        ),
-        "filas": filas_asoc,
+        "n_filas_totales": len(filas_asoc),
+        "por_horizonte": {},
     }
+    for h in HORIZONTES_EVALUABLES:
+        f = [x for x in filas_asoc if x["horizonte"] == h]
+        pares_dr = [(x["delta_ratio"], x["retorno"]) for x in f if x["delta_ratio"] is not None and x["retorno"] is not None]
+        pares_prof = [
+            (x["profundidad_notional_top20_USDT"], x["retorno"])
+            for x in f
+            if x["profundidad_notional_top20_USDT"] is not None and x["retorno"] is not None
+        ]
+        simbolos_h = sorted({x["simbolo"] for x in f if x["simbolo"]})
+        ciclos_h = sorted({x["ciclo_idx"] for x in f if x["ciclo_idx"] is not None})
+        asociaciones["por_horizonte"][h] = {
+            "n_filas": len(f),
+            "delta_ratio": {
+                "n_pares_validos": len(pares_dr),
+                "simbolos": simbolos_h,
+                "ciclos": ciclos_h,
+                "valores_excluidos_delta_ratio_none": sum(
+                    1 for x in f if x["delta_ratio"] is None
+                ),
+                "valores_excluidos_retorno_none": sum(1 for x in f if x["retorno"] is None),
+                **_pearson([a for a, _ in pares_dr], [b for _, b in pares_dr]),
+            },
+            "profundidad_notional_top20": {
+                "n_pares_validos": len(pares_prof),
+                "simbolos": simbolos_h,
+                "ciclos": ciclos_h,
+                "valores_excluidos_profundidad_none": sum(
+                    1 for x in f if x["profundidad_notional_top20_USDT"] is None
+                ),
+                "valores_excluidos_retorno_none": sum(1 for x in f if x["retorno"] is None),
+                **_pearson([a for a, _ in pares_prof], [b for _, b in pares_prof]),
+            },
+            "terciles_delta_ratio": _terciles([(x["delta_ratio"], x["retorno"]) for x in f]),
+        }
 
-    # --- Dependencia: resumen por símbolo y por ciclo ---
+    # ---- Resumen por símbolo (media y mediana por símbolo, horizonte, rol) ----
+    por_simbolo_horizonte_rol: dict[tuple[str, str, str], dict[str, Any]] = defaultdict(
+        lambda: {"valores": [], "ciclos": set()}
+    )
+    rol_por_simbolo_ciclo_global: dict[tuple[str, int | None], str] = {}
+
+    for r in resultados:
+        simbolo = r.get("symbol")
+        h = r.get("horizon")
+        oid = r.get("observation_id", "")
+        obs_origen = next((o for o in observaciones if o.get("observation_id") == oid), None)
+        if not obs_origen or simbolo is None or h is None:
+            continue
+        ciclo_idx, _ = ciclo_de_observacion(obs_origen)
+        rol = obs_origen.get("role") or "desconocido"
+        retorno = _seguro_float(r.get("retorno"))
+        if retorno is None:
+            continue
+        clave = (simbolo, h, rol)
+        por_simbolo_horizonte_rol[clave]["valores"].append(retorno)
+        if ciclo_idx is not None:
+            por_simbolo_horizonte_rol[clave]["ciclos"].add(ciclo_idx)
+            rol_por_simbolo_ciclo_global[(simbolo, ciclo_idx)] = rol
+
+    resumen_simbolos: dict[str, Any] = {}
+    for simbolo in sorted({s for (s, _, _) in por_simbolo_horizonte_rol}):
+        entrada: dict[str, Any] = {"por_horizonte_rol": {}, "cambia_de_rol": False}
+        roles_vistos: set[str] = set()
+        for h in HORIZONTES_EVALUABLES:
+            for rol in ROLES:
+                clave = (simbolo, h, rol)
+                if clave not in por_simbolo_horizonte_rol:
+                    continue
+                vals = por_simbolo_horizonte_rol[clave]["valores"]
+                st = _stats(vals)
+                roles_vistos.add(rol)
+                entrada["por_horizonte_rol"][f"{h}|{rol}"] = {
+                    "n": st["n"],
+                    "media": st["media"],
+                    "media_pct": _pct(st["media"]),
+                    "mediana": st["mediana"],
+                    "mediana_pct": _pct(st["mediana"]),
+                    "desv": st["desv"],
+                    "min": st["min"],
+                    "max": st["max"],
+                    "n_ciclos": len(por_simbolo_horizonte_rol[clave]["ciclos"]),
+                }
+        if len(roles_vistos) > 1:
+            entrada["cambia_de_rol"] = True
+        # Ponderación igual por símbolo: promedio de las medias de cada símbolo (se declara abajo).
+        resumen_simbolos[simbolo] = entrada
+
+    # Ponderación igual por símbolo: media de las medias por símbolo.
+    ponderacion_por_simbolo: dict[str, Any] = {}
+    for h in HORIZONTES_EVALUABLES:
+        for rol in ROLES:
+            medias_simbolo = []
+            for simbolo, entrada in resumen_simbolos.items():
+                clave_h = f"{h}|{rol}"
+                if clave_h in entrada["por_horizonte_rol"]:
+                    medias_simbolo.append(entrada["por_horizonte_rol"][clave_h]["media"])
+            if medias_simbolo:
+                m = statistics.fmean(medias_simbolo)
+                ponderacion_por_simbolo[f"{h}|{rol}"] = {
+                    "n_simbolos": len(medias_simbolo),
+                    "media_de_medias_por_simbolo": m,
+                    "media_de_medias_por_simbolo_pct": _pct(m),
+                    "regla_ponderacion": "igual_peso_por_simbolo_promedio_de_medias_simbolo",
+                }
+
+    # ---- Dependencia ----
     por_simbolo: dict[str, dict[str, Any]] = defaultdict(
         lambda: {"n_resultados": 0, "ciclos": set(), "horizontes": Counter()}
     )
@@ -391,7 +686,7 @@ def analizar(jsonl: Path = DATASET_JSONL) -> dict[str, Any]:
             elif rol == "comparator":
                 por_ciclo_res[ciclo_idx]["comparadores"] += 1
 
-    resumen_simbolos = {
+    resumen_simbolos_dep = {
         s: {
             "n_resultados": v["n_resultados"],
             "n_ciclos": len(v["ciclos"]),
@@ -406,10 +701,12 @@ def analizar(jsonl: Path = DATASET_JSONL) -> dict[str, Any]:
             "candidatos": v["candidatos"],
             "comparadores": v["comparadores"],
         }
-        for c, v in sorted(por_ciclo_res.items(), key=lambda x: (x[0] is None, x[0] if x[0] is not None else -1))
+        for c, v in sorted(
+            por_ciclo_res.items(), key=lambda x: (x[0] is None, x if x[0] is not None else -1)
+        )
     }
 
-    # --- Precios y costes ---
+    # ---- Precios y costes ----
     precios_fuentes: set[str] = set()
     for r in resultados:
         if r.get("precio_base_fuente"):
@@ -425,17 +722,21 @@ def analizar(jsonl: Path = DATASET_JSONL) -> dict[str, Any]:
         "observaciones_descartadas": sum(1 for o in observaciones if o.get("estado") == "descartada"),
         "resultados_total": len(resultados),
         "resultados_por_horizonte": {h: sum(1 for r in resultados if r.get("horizon") == h) for h in HORIZONTES},
+        "seleccionadas_por_rol": dict(seleccionadas_por_rol),
+        "aptas_por_rol": dict(aptas_por_rol),
+        "descartes_por_rol": dict(descartes_por_rol),
+        "descartes_por_rol_motivo": {k: dict(v) for k, v in descartes_por_rol_motivo.items()},
         "cobertura_tabla": filas_cobertura,
         "comparacion": comparacion_por_horizonte,
         "updown": updown_por_horizonte,
-        "asociacion_liquidez_flujo": asociacion,
+        "asociaciones": asociaciones,
         "resumen_por_simbolo": resumen_simbolos,
+        "ponderacion_por_simbolo": ponderacion_por_simbolo,
+        "resumen_por_simbolo_dependencia": resumen_simbolos_dep,
         "resumen_por_ciclo": resumen_ciclos,
         "ciclos_con_ambos_grupos_total": max(
             (v["ciclos_con_ambos_grupos"] for v in comparacion_por_horizonte.values()), default=0
         ),
-        "motivos_por_rol": {k: dict(v) for k, v in motivos_por_rol.items()},
-        "motivos_por_ciclo": {str(k) if k is not None else "desconocido": dict(v) for k, v in motivos_por_ciclo.items()},
         "precios_fuentes_detectadas": sorted(precios_fuentes),
         "nota_dependencia": "206 resultados no son 206 muestras independientes: una observación puede aportar dos horizontes y un símbolo puede repetirse entre ciclos.",
     }
@@ -447,7 +748,7 @@ def _escribir_json(ruta: Path, datos: Any) -> None:
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser(description="Análisis offline de captura pública.")
+    parser = argparse.ArgumentParser(description="Análisis offline de captura pública (v2).")
     parser.add_argument("--jsonl", default=str(DATASET_JSONL), help="Ruta del JSONL del dataset.")
     args = parser.parse_args()
 
@@ -455,12 +756,12 @@ def main() -> None:
     res = analizar(jsonl)
 
     # Derivados detallados fuera de Git.
-    _escribir_json(DERIVADOS_DETALLADOS / "analisis_completo.json", res)
+    _escribir_json(DERIVADOS_DETALLADOS / "analisis_completo_v2.json", res)
 
-    # Tablas pequeñas para Git (sin detalle fila a fila de todas las observaciones).
+    # Tablas pequeñas para Git.
     tablas_publicar: dict[str, Any] = {
         "run_id": "public-pilot-1h-20261105a",
-        "base_commit": "f6eb22afa3e35f7e1ed0305e184bec81881b7991",
+        "base_commit": "5a404219d45d1584e085ac2208718bccdcb269fe",
         "estado_corrida": "corrida_interrumpida_o_cierre_no_acreditado",
         "causa_parada": "UNKNOWN",
         "resumen_global": {
@@ -470,58 +771,101 @@ def main() -> None:
             not in (
                 "comparacion",
                 "updown",
-                "asociacion_liquidez_flujo",
+                "asociaciones",
                 "cobertura_tabla",
                 "resumen_por_simbolo",
+                "resumen_por_simbolo_dependencia",
                 "resumen_por_ciclo",
             )
         },
+        "embudo_cobertura": {
+            "seleccionadas_por_rol": res["seleccionadas_por_rol"],
+            "aptas_por_rol": res["aptas_por_rol"],
+            "descartes_por_rol": res["descartes_por_rol"],
+            "descartes_por_rol_motivo": res["descartes_por_rol_motivo"],
+            "resultados_por_horizonte": res["resultados_por_horizonte"],
+        },
+        "cobertura_por_fila": res["cobertura_tabla"],
         "comparacion_candidatos_comparadores": {
             h: {
                 "candidatos": {
                     "n_resultados": v["candidatos"]["n_resultados"],
-                    "n_observaciones_originales": v["candidatos"]["n_observaciones_originales"],
-                    "n_simbolos": v["candidatos"]["n_simbolos"],
-                    "n_ciclos": v["candidatos"]["n_ciclos"],
                     "media": v["candidatos"]["media"],
+                    "media_pct": v["candidatos"]["media_pct"],
                     "mediana": v["candidatos"]["mediana"],
+                    "mediana_pct": v["candidatos"]["mediana_pct"],
                     "desv": v["candidatos"]["desv"],
                     "min": v["candidatos"]["min"],
+                    "min_pct": v["candidatos"]["min_pct"],
                     "max": v["candidatos"]["max"],
+                    "max_pct": v["candidatos"]["max_pct"],
                     "proporcion_positivos": v["candidatos"]["proporcion_positivos"],
                 },
                 "comparadores": {
                     "n_resultados": v["comparadores"]["n_resultados"],
-                    "n_observaciones_originales": v["comparadores"]["n_observaciones_originales"],
-                    "n_simbolos": v["comparadores"]["n_simbolos"],
-                    "n_ciclos": v["comparadores"]["n_ciclos"],
                     "media": v["comparadores"]["media"],
+                    "media_pct": v["comparadores"]["media_pct"],
                     "mediana": v["comparadores"]["mediana"],
+                    "mediana_pct": v["comparadores"]["mediana_pct"],
                     "desv": v["comparadores"]["desv"],
                     "min": v["comparadores"]["min"],
+                    "min_pct": v["comparadores"]["min_pct"],
                     "max": v["comparadores"]["max"],
+                    "max_pct": v["comparadores"]["max_pct"],
                     "proporcion_positivos": v["comparadores"]["proporcion_positivos"],
                 },
-                "diferencia_medias_descriptiva": v["diferencia_medias_descriptiva"],
+                "diferencia_medias_agrupada": v["diferencia_medias_agrupada"],
+                "diferencia_medias_agrupada_puntos_porcentuales": v[
+                    "diferencia_medias_agrupada_puntos_porcentuales"
+                ],
+                "media_de_diferencias_por_ciclo": v["media_de_diferencias_por_ciclo"],
+                "media_de_diferencias_por_ciclo_puntos_porcentuales": v[
+                    "media_de_diferencias_por_ciclo_puntos_porcentuales"
+                ],
                 "ciclos_con_ambos_grupos": v["ciclos_con_ambos_grupos"],
-                "observaciones_fuera_de_grupo": v["observaciones_fuera_de_grupo"],
+                "diferencias_por_ciclo": v["diferencias_por_ciclo"],
+                "ciclos_sin_grupo_comparable": v["ciclos_sin_grupo_comparable"],
             }
             for h, v in res["comparacion"].items()
         },
         "updown_candidatos": res["updown"],
-        "asociacion_liquidez_flujo_resumen": {
-            "metrica_flujo": res["asociacion_liquidez_flujo"]["metrica_flujo"],
-            "metrica_libro": res["asociacion_liquidez_flujo"]["metrica_libro"],
-            "n_filas": res["asociacion_liquidez_flujo"]["n_filas"],
-            "cobertura_profundidad_not_none": res["asociacion_liquidez_flujo"][
-                "cobertura_profundidad_not_none"
-            ],
-            "cobertura_delta_ratio_not_none": res["asociacion_liquidez_flujo"][
-                "cobertura_delta_ratio_not_none"
-            ],
+        "asociaciones_reproducibles": {
+            h: {
+                "n_filas": v["n_filas"],
+                "delta_ratio": {
+                    "n_pares_validos": v["delta_ratio"]["n_pares_validos"],
+                    "pearson": v["delta_ratio"]["pearson"],
+                    "motivo": v["delta_ratio"]["motivo"],
+                    "simbolos": v["delta_ratio"]["simbolos"],
+                    "ciclos": v["delta_ratio"]["ciclos"],
+                    "valores_excluidos_delta_ratio_none": v["delta_ratio"][
+                        "valores_excluidos_delta_ratio_none"
+                    ],
+                    "valores_excluidos_retorno_none": v["delta_ratio"][
+                        "valores_excluidos_retorno_none"
+                    ],
+                },
+                "profundidad_notional_top20": {
+                    "n_pares_validos": v["profundidad_notional_top20"]["n_pares_validos"],
+                    "pearson": v["profundidad_notional_top20"]["pearson"],
+                    "motivo": v["profundidad_notional_top20"]["motivo"],
+                    "simbolos": v["profundidad_notional_top20"]["simbolos"],
+                    "ciclos": v["profundidad_notional_top20"]["ciclos"],
+                    "valores_excluidos_profundidad_none": v["profundidad_notional_top20"][
+                        "valores_excluidos_profundidad_none"
+                    ],
+                    "valores_excluidos_retorno_none": v["profundidad_notional_top20"][
+                        "valores_excluidos_retorno_none"
+                    ],
+                },
+                "terciles_delta_ratio": v["terciles_delta_ratio"],
+            }
+            for h, v in res["asociaciones"]["por_horizonte"].items()
         },
+        "resumen_por_simbolo": res["resumen_por_simbolo"],
+        "ponderacion_por_simbolo": res["ponderacion_por_simbolo"],
         "dependencia": {
-            "resumen_por_simbolo": res["resumen_por_simbolo"],
+            "resumen_por_simbolo": res["resumen_por_simbolo_dependencia"],
             "resumen_por_ciclo": res["resumen_por_ciclo"],
             "ciclos_con_ambos_grupos_total": res["ciclos_con_ambos_grupos_total"],
             "nota": res["nota_dependencia"],
@@ -531,9 +875,9 @@ def main() -> None:
             "nota": "proxy de fuentes mixtas: precio inicial del libro (libro_mid) frente a precio posterior de apertura de vela 1m (klines_apertura_1m). No es retorno mid-to-mid ni P&L.",
         },
     }
-    _escribir_json(TABLAS_GIT / "resumen_analisis_offline.json", tablas_publicar)
-    print("Análisis completo escrito en", DERIVADOS_DETALLADOS / "analisis_completo.json")
-    print("Tablas pequeñas para Git escritas en", TABLAS_GIT / "resumen_analisis_offline.json")
+    _escribir_json(TABLAS_GIT / "resumen_analisis_offline_v2.json", tablas_publicar)
+    print("Derivados detallados escritos en", DERIVADOS_DETALLADOS / "analisis_completo_v2.json")
+    print("Tablas pequeñas para Git escritas en", TABLAS_GIT / "resumen_analisis_offline_v2.json")
 
 
 if __name__ == "__main__":

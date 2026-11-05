@@ -791,10 +791,12 @@ reduciría incertidumbre es repetir la captura con cierre acreditado y settle
 completado para 60m, sin cambiar reglas ni tolerancias.
 
 **Evidencia publicada (muestra pequeña, dataset fuera de Git):**
-- `docs/evidence/research/universe_liquidity_v1/pilot_public_proposal_1h/informe_analisis_offline.md`
-- `docs/evidence/research/universe_liquidity_v1/pilot_public_proposal_1h/tablas/resumen_analisis_offline.json`
+- `docs/evidence/research/universe_liquidity_v1/pilot_public_proposal_1h/informe_analisis_offline.md` (informe inicial, conservado como antecedente).
+- `docs/evidence/research/universe_liquidity_v1/pilot_public_proposal_1h/rectificacion_analisis_offline_v2.md` (rectificación identificable: unidades, comparación por ciclo y símbolo, cobertura desigual, asociaciones reproducibles; sustituye las cifras del informe inicial).
+- `docs/evidence/research/universe_liquidity_v1/pilot_public_proposal_1h/tablas/resumen_analisis_offline_v2.json` (tablas pequeñas v2).
+- `docs/evidence/research/universe_liquidity_v1/pilot_public_proposal_1h/tablas/resumen_analisis_offline.json` (tablas v1, conservadas como antecedente).
 - `docs/evidence/research/universe_liquidity_v1/pilot_public_proposal_1h/manifiesto_corrida_publica_1h.json`
 - `docs/evidence/research/universe_liquidity_v1/pilot_public_proposal_1h/diagnostico_corrida_publica_1h.md`
 - Script: `scripts/analisis_offline_captura_publica.py`
-- Pruebas: `tests/test_analisis_offline_captura_publica.py` (5 passed)
+- Pruebas: `tests/test_analisis_offline_captura_publica.py` (9 passed)
 - Dataset completo y derivados detallados fuera de Git; solo manifiesto, hashes y muestra se publican.

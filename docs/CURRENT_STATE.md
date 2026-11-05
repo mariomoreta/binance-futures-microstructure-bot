@@ -51,10 +51,16 @@ observaciones aptas para estudio y un presupuesto público revisable.
   Diagnóstico y manifiesto:
   `docs/evidence/research/universe_liquidity_v1/pilot_public_proposal_1h/diagnostico_corrida_publica_1h.md`
   y `manifiesto_corrida_publica_1h.json`.
-- **Análisis offline (descriptivo, no concluyente):**
-  `docs/evidence/research/universe_liquidity_v1/pilot_public_proposal_1h/informe_analisis_offline.md`
-  y `tablas/resumen_analisis_offline.json` (12 ciclos, 206 resultados; 60m no evaluado;
-  causa de parada UNKNOWN; 5 pruebas focalizadas pasadas).
+- **Análisis offline (descriptivo, no concluyente; rectificación v2 publicada):**
+  Rectificación identificable:
+  `docs/evidence/research/universe_liquidity_v1/pilot_public_proposal_1h/rectificacion_analisis_offline_v2.md`
+  (unidades %, comparación por ciclo y símbolo, cobertura desigual, asociaciones
+  reproducibles; sustituye las cifras del informe inicial).
+  Informe inicial conservado:
+  `docs/evidence/research/universe_liquidity_v1/pilot_public_proposal_1h/informe_analisis_offline.md`.
+  Tablas pequeñas v2:
+  `docs/evidence/research/universe_liquidity_v1/pilot_public_proposal_1h/tablas/resumen_analisis_offline_v2.json`.
+  Script: `scripts/analisis_offline_captura_publica.py`; pruebas: 9 passed.
   Dataset completo y derivados detallados fuera de Git; solo manifiesto, hashes y
   muestra se publican.
 - Evidencia pequeña (manifiesto, resumen, muestra de 12 observaciones):

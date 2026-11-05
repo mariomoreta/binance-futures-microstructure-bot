@@ -4,28 +4,29 @@
 Binance, sin órdenes; presupuesto público requiere autorización separada).
 
 `CURRENT_OBJECTIVE`: cumplido — ejecutar UNA vez la propuesta pública 1 h + 70 min
-y publicar el diagnóstico del cierre. La corrida se ejecutó con el comando de
-§9.3 y cerró sin acreditar causa (causa UNKNOWN; sin código de salida ni logs de
-consumo). No se relanzó ni se creó otro run_id.
+y publicar el análisis offline rectificado (v2). La corrida se ejecutó con el
+comando de §9.3 y cerró sin acreditar causa (causa UNKNOWN; sin código de salida
+ni logs de consumo). No se relanzó ni se creó otro run_id.
 
 `ACTIVE_TASK`: cerrado — corrida ejecutada una sola vez; resultado publicado:
 12 ciclos, 240 observaciones, 206 resultados (5m: 115, 15m: 91, 60m: 0);
-causa de parada UNKNOWN. Diagnóstico y manifiesto en
-`docs/evidence/research/universe_liquidity_v1/pilot_public_proposal_1h/`.
+causa de parada UNKNOWN. Análisis offline v2 publicado con unidades %,
+comparación por ciclo y símbolo, cobertura desigual y asociaciones reproducibles
+(9 pruebas focalizadas pasadas).
 `tests/test_research_pilot.py` 28 passed. Cero órdenes, cero claves privadas,
 cero cambios de estrategia ni tolerancias.
 
 `NEXT_TASKS`:
-1. Publicar diagnóstico, manifiesto y análisis offline en GitHub (commit
-   selectivo y push normal a research/universe-liquidity-v1; verificar SHA
-   local/remoto).
-2. Mantener `max_data_age_ms=5000`; no tocar dashboard 3020, servicio 8792,
+1. Mantener `max_data_age_ms=5000`; no tocar dashboard 3020, servicio 8792,
    `opencode.json` ni archivos ajenos; no relanzar la corrida ni crear otro
    run_id.
-3. No interpretar retornos brutos como P&L ni presentar la captura como
+2. No interpretar retornos brutos como P&L ni presentar la captura como
    suficiencia del dataset.
-4. Siguiente paso que más reduciría incertidumbre: repetir la captura con cierre
-   acreditado y settle completado para 60m, sin cambiar reglas ni tolerancias.
+3. Siguiente paso que más reduciría incertidumbre: repetir la captura con cierre
+   acreditado y settle completado para 60m (para tener denominador completo en
+   60m y en candidatos/comparadores), sin cambiar reglas ni tolerancias. No se
+   repite automáticamente solo porque falte 60m: primero se define el problema
+   que resolvería la adquisición.
 
 ## Piloto prospectivo v1 — política de pendientes y publicación (2026-11-05)
 
