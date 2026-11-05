@@ -42,15 +42,18 @@ observaciones aptas para estudio y un presupuesto público revisable.
   `docs/evidence/research/universe_liquidity_v1/pilot_sync/pytest_pendientes.txt`.
 - Presupuesto histórico 4 h (sustituido, no vigente):
   `docs/evidence/research/universe_liquidity_v1/pilot_local/presupuesto.json`.
-- **Propuesta pública vigente 1 h + 70 min (2026-11-05, NO ejecutada):**
-  `docs/RESEARCH_UNIVERSE_LIQUIDITY_V1.md` §9.3; presupuesto generado con
-  `--budget-only` en `docs/evidence/research/universe_liquidity_v1/pilot_public_proposal_1h/`
-  (744 intentos/1.212 peso base; puerta 2.000/5.000; 46 intentos de apertura WS;
-  2,80 MB previstos frente a 128 MiB; config SHA-256 `2538ac09…`). Sustituye a
-  la propuesta de 4 h, que queda como antecedente.
+- **Corrida pública 1 h + 70 min (2026-11-05, ejecutada una vez, cierre no acreditado):**
+  Comando publicado en `docs/evidence/research/universe_liquidity_v1/pilot_public_proposal_1h/comando_propuesto.txt`;
+  configuración y presupuesto en la misma carpeta (§9.3).
+  Resultado: 12 ciclos, 240 observaciones, 206 resultados (5m: 115, 15m: 91, 60m: 0);
+  causa de parada `UNKNOWN` (sin código de salida ni logs de consumo; archivos de
+  control de fin ausentes; stdout/stderr vacíos).
+  Diagnóstico y manifiesto:
+  `docs/evidence/research/universe_liquidity_v1/pilot_public_proposal_1h/diagnostico_corrida_publica_1h.md`
+  y `manifiesto_corrida_publica_1h.json`.
+  Dataset completo fuera de Git; solo manifiesto, hashes y muestra se publican.
 - Evidencia pequeña (manifiesto, resumen, muestra de 12 observaciones):
   `docs/evidence/research/universe_liquidity_v1/pilot_local/`.
-- Dataset completo fuera de Git; solo manifiesto, hashes y muestra se publican.
 
 ---
 

@@ -1,0 +1,140 @@
+{
+  "run_id": "public-pilot-1h-20261105a",
+  "rama": "research/universe-liquidity-v1",
+  "base_commit": "7916c49d5b49d5993a62901f2d2262d6231a153d",
+  "estado_corrida": "corrida_interrumpida_o_cierre_no_acreditado",
+  "proceso_vivo": false,
+  "codigo_salida_recuperable": false,
+  "causa_parada": "UNKNOWN",
+  "total_lineas": 458,
+  "ciclos_completados": 12,
+  "observaciones_total": 240,
+  "resultados_total": 206,
+  "observaciones_por_estado": {
+    "descartada": 112,
+    "observada": 128
+  },
+  "observaciones_aptas": 128,
+  "observaciones_descartadas": 112,
+  "descartadas_por_motivo": {
+    "sin_libro": 66,
+    "sin_flujo": 66,
+    "dato_obsoleto_libro": 15,
+    "dato_obsoleto_flujo": 37
+  },
+  "observaciones_por_rol": {
+    "comparator": 96,
+    "candidate": 144
+  },
+  "observaciones_simbolos_top": {
+    "2ZUSDT": 12,
+    "ATUSDT": 12,
+    "CAPUSDT": 12,
+    "CLANKERUSDT": 12,
+    "GWEIUSDT": 12,
+    "HUMAUSDT": 12,
+    "JCTUSDT": 12,
+    "LYNUSDT": 12,
+    "THEUSDT": 12,
+    "EVAAUSDT": 10,
+    "ONUSDT": 8,
+    "AUSDT": 8,
+    "BANUSDT": 8,
+    "CUSDT": 8,
+    "DRIFTUSDT": 8
+  },
+  "simbolos_observados": 44,
+  "resultados_por_estado": {
+    "resuelto": 206
+  },
+  "resultados_por_horizonte": {
+    "5m": 115,
+    "15m": 91
+  },
+  "resultados_horizonte_estado": {
+    "15m|resuelto": 91,
+    "5m|resuelto": 115
+  },
+  "resultados_neto_estado": {
+    "UNKNOWN": 206
+  },
+  "resultados_resueltos": 206,
+  "resultados_esperados_aptas_x_3_horizontes": 384,
+  "resultados_generados": 206,
+  "resultados_pendientes_sin_generar": 178,
+  "resultados_60m_resueltos": 0,
+  "resultados_60m_pendientes_de_settle": 128,
+  "decision_ms_min": 1793899458279,
+  "decision_ms_max": 1793902799028,
+  "decision_ms_count": 446,
+  "ultimo_evento_ms": 1793902799028,
+  "ultimo_evento_iso": "2026-11-05T18:19:59.028000+00:00",
+  "reference_ms": 1793902799015,
+  "reference_iso": "2026-11-05T18:19:59.015000+00:00",
+  "policy_versions": {
+    "research-selector-v2": 12
+  },
+  "universe_claves_ultimo_ciclo": [
+    "as_of_ms",
+    "catalog_is_historical_snapshot",
+    "eligible_symbols",
+    "exclusion_summary",
+    "n_eligible",
+    "n_total_catalog",
+    "procedence",
+    "source"
+  ],
+  "universo_ultimo_ciclo": {
+    "n_total_catalog": 942,
+    "n_eligible": 471,
+    "procedence": "REAL (catalogo estatico; universo en T = UNKNOWN)",
+    "n_candidates_evaluated": 942,
+    "n_eligible_universe": 471,
+    "n_excluded_mandatory": 471,
+    "n_selected": 12,
+    "n_eligible_not_selected_quota": 459,
+    "n_eligible_missing_data": 0
+  },
+  "archivos": {
+    "observaciones.jsonl": {
+      "sha256": "e01280703c19a98b4bb8e738a9f3824d1c24dbf2192a28ad94fa6f78cf8fb466",
+      "tamano": 2942444,
+      "ruta": "C:\\proyectos\\binance-futures-data\\public-pilot-1h-20261105a\\observaciones.jsonl"
+    },
+    "research.db": {
+      "sha256": "706d0741783ef7d77d0170faa92d17ec267952b34a4cf4edf91797f95820923a",
+      "tamano": 2179072,
+      "ruta": "C:\\proyectos\\binance-futures-data\\public-pilot-1h-20261105a\\research.db"
+    },
+    "presupuesto.json": {
+      "sha256": "511cdd2d3d6ba96d6a70a63b8916552c64b83e9183476ff4a744ed828e227318",
+      "tamano": 4712,
+      "ruta": "C:\\proyectos\\binance-futures-data\\public-pilot-1h-20261105a\\presupuesto.json"
+    },
+    "stdout.log": {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "tamano": 0,
+      "ruta": "C:\\proyectos\\binance-futures-data\\public-pilot-1h-20261105a\\logs\\stdout.log"
+    },
+    "stderr.log": {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "tamano": 0,
+      "ruta": "C:\\proyectos\\binance-futures-data\\public-pilot-1h-20261105a\\logs\\stderr.log"
+    }
+  },
+  "consumo_http_intentos": "UNKNOWN",
+  "consumo_http_peso": "UNKNOWN",
+  "consumo_ws_aperturas": "UNKNOWN",
+  "consumo_ws_reconexiones": "UNKNOWN",
+  "consumo_ws_mensajes": "UNKNOWN",
+  "consumo_almacenamiento_research_db_bytes": 2179072,
+  "notas": [
+    "stdout.log y stderr.log vacios (0 bytes). No hay registro de consumo HTTP/WS ni de causa de parada.",
+    "No existen orquesta_inicio.txt ni orquesta_fin.txt.",
+    "No hay proceso research_pilot.py activo. Unico python vivo: market_stream_service.py (puerto 8792, servicio ajeno, no se toca).",
+    "Dataset completo fuera de Git en C:\\proyectos\\binance-futures-data\\public-pilot-1h-20261105a.",
+    "No se interpretan retornos brutos como P&L; no hay optimizacion de umbrales; neto_estado = UNKNOWN en todos los resultados.",
+    "Causa de parada no acreditada: no se atribuye a duracion ni a presupuesto sin prueba.",
+    "Resultados esperados = aptas x 3 horizontes (teorico); los 60m no maduraron porque el cierre no se acredito."
+  ]
+}
