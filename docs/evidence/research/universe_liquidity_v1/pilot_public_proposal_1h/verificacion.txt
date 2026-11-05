@@ -1,0 +1,130 @@
+Verificación de la propuesta pública 1 h + 70 min
+Fecha: 2026-11-05
+Rama: research/universe-liquidity-v1
+SHA de código base verificado: 68c0520de6354775b9a6148ed629047f562ce212
+Estado: PROPUESTA NO EJECUTADA. Cero conexiones a fapi.binance.com o
+fstream.binance.com. Solo se consultó documentación oficial y se ejecutó
+--budget-only (sin red, sin DB, sin JSONL, sin reloj de producción).
+
+1. Comando de presupuesto ejecutado (misma configuración que el comando
+   propuesto, con --budget-only):
+
+$env:PYTHONPATH="src;scripts"; python scripts/research_pilot.py --budget-only `
+  --run-id public-pilot-1h-20261105a `
+  --out-dir "C:\proyectos\binance-futures-data\public-pilot-1h-20261105a" `
+  --mode public --activar-publico `
+  --rest-base https://fapi.binance.com `
+  --ws-public-base wss://fstream.binance.com/public `
+  --ws-market-base wss://fstream.binance.com/market `
+  --duration-seconds 3600 --settle-seconds 4200 `
+  --cycle-seconds 300 --selection-seconds 300 `
+  --decision-delay-seconds 5 --tick-ms 500 `
+  --max-symbols 20 --max-candidates 12 --max-comparators 8 `
+  --min-quote-volume 1000000 `
+  --horizons "5m=300000,15m=900000,60m=3600000" `
+  --price-interval 1m --price-tolerance-ms 90000 --price-delay-ms 2000 `
+  --max-data-age-ms 5000 --max-observations 20000 `
+  --max-http-attempts 2000 --max-http-retries 50 --max-http-weight 5000 `
+  --max-ws-reconnects 20 --max-messages 5000000 --max-bytes 134217728
+
+Salida:
+{"presupuesto": "C:\\proyectos\\binance-futures-data\\public-pilot-1h-20261105a\\presupuesto.json", "peso_total_estimado": 1212}
+
+El directorio de datos solo contiene presupuesto.json (4.712 bytes). No hay
+research.db, observaciones.jsonl ni archivos WAL/SHM.
+
+2. Configuración efectiva y hashes
+
+- config_efectiva.json: configuración parseada desde los argumentos exactos.
+- config_sha256.txt: 2538ac09409b93ba9943323d0ce6c8ece7adce00c0dbf09ab2f8ae4d1891522c
+  (SHA-256 del JSON canónico de config_efectiva.json con sort_keys=True,
+  UTF-8 y separadores ","/":"; incluye run_id y out_dir y conserva los valores
+  numéricos tal como los serializa el CLI). Reproducible con:
+  python -c "import json,hashlib,pathlib; d=json.loads(pathlib.Path(r'docs/evidence/research/universe_liquidity_v1/pilot_public_proposal_1h/config_efectiva.json').read_text(encoding='utf-8')); print(hashlib.sha256(json.dumps(d,sort_keys=True,ensure_ascii=False,separators=(',',':')).encode('utf-8')).hexdigest())"
+- presupuesto.json: copia del generado por el CLI, sin edición manual.
+
+3. Presupuesto reproducido
+
+- 12 selecciones, 12 ciclos de decisión, 240 observaciones máximas.
+- 720 klines base = 240 × 3 horizontes.
+- 24 catálogo/ticker = 12 exchangeInfo + 12 ticker/24hr sin símbolo.
+- 744 intentos HTTP base = 24 + 720.
+- 1.212 peso base = 12×1 + 12×40 + 720×1.
+- Reserva de 50 reintentos: 794 intentos y 3.212 de peso en el peor caso
+  (todos los reintentos como ticker de peso 40).
+- Puerta efectiva: 2.000 intentos / 5.000 de peso, comprobada antes del
+  transporte. No se presupuesta /time.
+- Peso por ciclo de 5 min en el limitador conservador del cliente: 660
+  (20×3×10 + 20 + 40), bajo 1.200/min.
+- Pool oficial: 2.400/min por IP, compartido UM+CM.
+
+4. WS reproducido
+
+- 2 conexiones simultáneas: /public (depth20@100ms) + /market (aggTrade).
+- Aperturas iniciales: 2.
+- Rotaciones: 12 selecciones − 1 = 11; 2 aperturas por rotación = 22.
+- Reaperturas tras desconexión/fallo: tope 20; sobregiro máximo por tick: 2.
+  Incluye cierres normales del servidor y fallos antes de la primera conexión;
+  no cuenta la primera apertura ni las rotaciones deliberadas.
+- Intentos de apertura máximos: 2 + 22 + 20 + 2 = 46.
+- 20 streams por conexión, 40 totales; límite 1.024 por conexión.
+- 10 mensajes/s es el límite de mensajes entrantes al servidor
+  (cliente→Binance); no limita los datos servidor→cliente.
+- max_messages=5.000.000 cuenta solo datos; ping/pong de control no cuentan.
+- Validez de conexión: 24 h; corrida total: 2 h 10 min.
+
+5. Almacenamiento reproducido
+
+- JSONL: 240×1.600 + 720×500 = 744.000 B.
+- SQLite: 7.200 filas 10 s + 2.400 filas 1 m (libro+flujo), 200 B/fila =
+  1.920.000 B.
+- Auxiliares WAL/SHM: 2×65.536 = 131.072 B.
+- Total: 2.795.072 B (2,67 MiB); tope 134.217.728 B; margen 131.422.656 B
+  (97,92 %).
+- La comprobación total es previa a cada escritura; la cola del recorder
+  (2.000 filas por defecto) acota el sobregiro a filas en vuelo.
+
+6. Pruebas focales
+
+$env:PYTHONPATH="src;scripts"; python -m pytest tests/test_research_pilot.py -q
+28 passed in 13.29s
+
+Incluye la regresión añadida:
+test_budget_cuenta_dos_aperturas_por_rotacion
+(744/1.212 base; 794/3.212 con reserva; 46 intentos de apertura; 2,80 MB y
+margen).
+
+7. Documentación oficial consultada (fecha 2026-11-05)
+
+- Market Data USDⓈ-M (klines, ticker, exchangeInfo):
+  https://developers.binance.com/en/docs/catalog/core-trading-derivatives-trading-usd-s-m-futures/api/rest-api/market-data
+  klines limit=1 → peso 1; ticker sin symbol → 40; exchangeInfo → 1.
+- General Info, LIMITS:
+  https://developers.binance.com/en/docs/products/derivatives-trading-usds-futures/general-info#limits
+  Cabecera X-MBX-USED-WEIGHT-1M; 429/418; límites por IP.
+- Aviso de integración CM/UM:
+  https://developers.binance.com/en/docs/products/derivatives-trading-coin-futures/Important-CM-UM-Integration-Notice
+  IP request weight 2400/min; UM y CM comparten un único pool por IP.
+- Websocket Market Streams, Connect:
+  https://developers.binance.com/en/docs/products/derivatives-trading-usds-futures/websocket-market-streams/Connect
+  /public y /market; 24 h; ping/pong; 10 incoming messages/s; 1.024 streams.
+- Important WebSocket Change Notice:
+  https://developers.binance.com/en/docs/products/derivatives-trading-usds-futures/websocket-market-streams/Important-WebSocket-Change-Notice
+  depth<levels>@100ms en /public; aggTrade en /market.
+
+El límite de 300 intentos de conexión cada 5 min no aparece en las páginas UM
+vigentes consultadas; el «300» de WebSocket API General Info es ORDERS/10s, no
+conexiones. No se usa como cota.
+
+8. Hallazgos y límites de esta verificación
+
+- La base de 720 klines no es un máximo: resolve_due reintenta cada tick
+  (500 ms) si falta la vela, hasta la ventana de tolerancia. La puerta de
+  2.000/5.000 es la cota real; si se agota, para con presupuesto_agotado y deja
+  pendientes con causa. Riesgo documentado; no se cambió el comportamiento.
+- max_messages, max_ws_reconnects y max_http_retries tienen comprobación
+  posterior al evento (sobregiro acotado); max_http_attempts y max_http_weight
+  son estrictos antes del transporte.
+- No se declara el piloto listo ni rentable. Esta evidencia solo acredita
+  aritmética, configuración, documentación oficial y ausencia de acceso a
+  mercado.

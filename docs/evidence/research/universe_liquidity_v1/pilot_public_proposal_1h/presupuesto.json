@@ -1,0 +1,120 @@
+{
+  "almacenamiento": {
+    "auxiliares_bytes_previstos": 131072,
+    "jsonl_bytes_previstos": 744000,
+    "margen_bytes": 131422656,
+    "margen_porcentaje": 97.92,
+    "nota": "El tope incluye JSONL, SQLite y sus archivos auxiliares. La comprobacion es previa a cada escritura; la cola del recorder (2000 filas por defecto) puede sobregirar como maximo esas filas en vuelo. No se anuncia 128 MB totales si solo se limita el JSONL.",
+    "sqlite_bytes_previstos": 1920000,
+    "tope_configurado_bytes": 134217728,
+    "total_bytes_previstos": 2795072
+  },
+  "interrupcion_y_limpieza": {
+    "condiciones": [
+      "duracion de captura agotada",
+      "max_observaciones alcanzado",
+      "tope de bytes (almacenamiento total) alcanzado",
+      "max_mensajes WS alcanzado",
+      "reconexiones WS acumuladas agotadas",
+      "presupuesto HTTP agotado (intentos/peso/reintentos)",
+      "senal externa (SIGINT/SIGTERM)"
+    ],
+    "limpieza": [
+      "cancelar feeds WS y cerrar conexiones",
+      "drenar ResearchRecorder (buckets abiertos como PARTIAL)",
+      "escribir resultados pendientes como PENDING con motivo",
+      "escribir manifiesto y resumen desde lo persistido"
+    ]
+  },
+  "limites_efectivos": {
+    "max_bytes_almacenamiento": 134217728,
+    "max_http_attempts": 2000,
+    "max_http_retries": 50,
+    "max_http_weight": 5000,
+    "max_messages": 5000000,
+    "max_ws_reconnects": 20
+  },
+  "mode": "public",
+  "no_incluye": [
+    "adquisicion de order book historico",
+    "backfill de huecos",
+    "ordenes, claves o endpoints privados",
+    "llamadas /time (no realizadas por el programa)"
+  ],
+  "rest": {
+    "endpoints": {
+      "/fapi/v1/exchangeInfo": {
+        "llamadas": 12,
+        "peso_total": 12,
+        "peso_unitario": 1
+      },
+      "/fapi/v1/klines": {
+        "llamadas": 720,
+        "nota": "1 por observacion y horizonte; interval 1m, limit=1",
+        "peso_total": 720,
+        "peso_unitario": 1
+      },
+      "/fapi/v1/ticker/24hr": {
+        "llamadas": 12,
+        "peso_total": 480,
+        "peso_unitario": 40
+      }
+    },
+    "intentos_base": 744,
+    "intentos_base_mas_reintentos": 794,
+    "intentos_techo_efectivo": 2000,
+    "nota_consultas_repetidas": "La base cuenta una consulta de klines por observacion y horizonte. Si falta la vela, resolve_due reintenta cada tick; esos intentos y sus reintentos solo estan acotados por max_http_attempts/max_http_weight.",
+    "peso_base": 1212,
+    "peso_base_mas_reintentos_max": 3212,
+    "peso_reserva_reintentos_max": 2000,
+    "peso_techo_efectivo": 5000,
+    "peso_total_estimado": 1212,
+    "reintentos_tope": 50
+  },
+  "simbolos": {
+    "incluye_pendientes": true,
+    "nota": "los resultados pendientes no abren WS; solo consumen consultas de klines sujetas al presupuesto HTTP",
+    "simultaneos_max": 20
+  },
+  "supuestos": {
+    "ciclos_decision": 12,
+    "duracion_captura_s": 3600.0,
+    "horizontes": [
+      "5m",
+      "15m",
+      "60m"
+    ],
+    "nota": "No se presupuestan llamadas /time (el programa no las realiza). Los reintentos se reservan con max_http_retries (50), no con un 5 % fijo; el limite efectivo es max_http_attempts/max_http_weight.",
+    "periodo_settle_s": 4200.0,
+    "pesos_oficiales": {
+      "exchangeInfo": 1,
+      "klines_limit_1_100": 1,
+      "ticker_24hr_sin_symbol": 40
+    },
+    "pool_referencia": "REQUEST_WEIGHT de exchangeInfo.rateLimits y cabecera X-MBX-USED-WEIGHT-1M; 2400/min por IP, UM y CM comparten pool (referencia, no garantia de disponibilidad)",
+    "selecciones": 12,
+    "simbolos_simultaneos_max": 20,
+    "total_s": 7800.0
+  },
+  "version": "research-pilot-v1",
+  "ws": {
+    "aperturas_iniciales": 2,
+    "aperturas_por_rotacion_max": 22,
+    "aperturas_totales_max": 46,
+    "conexiones_simultaneas": 2,
+    "endpoints": [
+      "wss://fstream.binance.com/public",
+      "wss://fstream.binance.com/market"
+    ],
+    "limite_mensajes_entrantes_por_s": 10,
+    "limite_streams_por_conexion": 1024,
+    "mensajes_datos_tope": 5000000,
+    "nota": "depth20@100ms pertenece a /public; aggTrade a /market: son dos conexiones distintas (docs oficiales, aviso de rutas). Cada rotacion reabre ambos feeds: 2 aperturas por cambio. max_ws_reconnects cuenta reaperturas tras una desconexion o fallo (incluye cierres normales del servidor); no cuenta la apertura inicial ni las rotaciones deliberadas, y se comprueba por tick. max_messages cuenta solo mensajes de datos; los ping/pong de control no se contabilizan.",
+    "reaperturas_tras_desconexion_tope": 20,
+    "rotaciones_previstas": 11,
+    "sobregiro_reaperturas_por_tick_max": 2,
+    "streams_pico_por_conexion": 20,
+    "streams_pico_total": 40,
+    "vida_maxima_conexion_s": 86400
+  }
+}

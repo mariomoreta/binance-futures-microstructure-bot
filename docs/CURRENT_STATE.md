@@ -12,7 +12,7 @@ explícita con `--status-file` (contadores aceptados por fuente y última
 disponibilidad) y solo entonces se autoriza la evaluación en ese instante con
 `--decision-gate-file`. Ambos flags solo se aceptan con `--clock manual`; no se
 sustituye el adaptador productivo ni hay sleeps de avance. `pytest
-tests/test_research_pilot.py` (27 passed) cubre: frescura independiente por
+tests/test_research_pilot.py` (28 passed) cubre: frescura independiente por
 fuente (libro obsoleto / flujo obsoleto con la otra fuente fresca), ventana
 incompleta con motivo explícito, `decision_ms` no retrotraído, presupuesto
 efectivo antes del transporte, modo local vs público, horizontes 5m/15m/60m
@@ -40,8 +40,14 @@ observaciones aptas para estudio y un presupuesto público revisable.
   `docs/evidence/research/universe_liquidity_v1/pilot_sync/`.
 - Evidencia de política de pendientes (settle, parada, presupuesto):
   `docs/evidence/research/universe_liquidity_v1/pilot_sync/pytest_pendientes.txt`.
-- Presupuesto público (no ejecutado):
+- Presupuesto histórico 4 h (sustituido, no vigente):
   `docs/evidence/research/universe_liquidity_v1/pilot_local/presupuesto.json`.
+- **Propuesta pública vigente 1 h + 70 min (2026-11-05, NO ejecutada):**
+  `docs/RESEARCH_UNIVERSE_LIQUIDITY_V1.md` §9.3; presupuesto generado con
+  `--budget-only` en `docs/evidence/research/universe_liquidity_v1/pilot_public_proposal_1h/`
+  (744 intentos/1.212 peso base; puerta 2.000/5.000; 46 intentos de apertura WS;
+  2,80 MB previstos frente a 128 MiB; config SHA-256 `2538ac09…`). Sustituye a
+  la propuesta de 4 h, que queda como antecedente.
 - Evidencia pequeña (manifiesto, resumen, muestra de 12 observaciones):
   `docs/evidence/research/universe_liquidity_v1/pilot_local/`.
 - Dataset completo fuera de Git; solo manifiesto, hashes y muestra se publican.

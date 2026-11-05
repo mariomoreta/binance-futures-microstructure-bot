@@ -1,3 +1,30 @@
+## Piloto prospectivo v1 — propuesta pública 1 h + 70 min (2026-11-05)
+
+`CURRENT_PHASE`: investigación local del universo/liquidez (solo lectura, sin
+Binance, sin órdenes; presupuesto público requiere autorización separada).
+
+`CURRENT_OBJECTIVE`: cumplido — publicar una propuesta pública concreta de
+1 h + 70 min, generada y verificada con `--budget-only`, sin ejecutarla.
+
+`ACTIVE_TASK`: cerrado — §9.3 de
+`docs/RESEARCH_UNIVERSE_LIQUIDITY_V1.md` fija comando, configuración,
+presupuesto, límites, rotación WS, almacenamiento y aceptación. Presupuesto:
+744 intentos/1.212 peso base; reserva de 50 reintentos (794/3.212); puerta
+2.000/5.000; 46 intentos de apertura WS; 2,80 MB previstos/128 MiB. Evidencia en
+`docs/evidence/research/universe_liquidity_v1/pilot_public_proposal_1h/`.
+`tests/test_research_pilot.py` 28 passed, incluida la regresión de 2 aperturas
+por rotación. Cero conexiones públicas de mercado.
+
+`NEXT_TASKS`:
+1. Autorizar o rechazar la propuesta §9.3 antes de ejecutar cualquier ventana
+   pública; no hay autorización implícita.
+2. Si se autoriza, usar el comando único de §9.3 y el directorio de datos
+   persistente fuera de Git; no aumentar límites automáticamente.
+3. Aceptar o mitigar el riesgo documentado de repetición de klines cada 500 ms
+   cuando falta una vela (la puerta corta en 2.000/5.000 y deja pendientes).
+4. Mantener `max_data_age_ms=5000`; no tocar dashboard 3020, servicio 8792,
+   `opencode.json` ni archivos ajenos.
+
 ## Piloto prospectivo v1 — política de pendientes y publicación (2026-11-05)
 
 `CURRENT_PHASE`: investigación local del universo/liquidez (solo lectura, sin
@@ -11,7 +38,8 @@ infraestructura.
 captura (el settle solo madura lo ya programado), fin de settle (pendiente con
 causa), parada explícita (`--stop-file` en pruebas; SIGINT/SIGTERM en
 producción) y presupuesto agotado (bloqueo antes del transporte).
-`tests/test_research_pilot.py` 27 passed; evidencia en
+`tests/test_research_pilot.py` 27 passed en ese bloque (28 con la regresión de
+rotación de 2026-11-05); evidencia en
 `docs/evidence/research/universe_liquidity_v1/pilot_sync/pytest_pendientes.txt`.
 sin cambios de tolerancias, presupuestos, estrategia ni conexiones públicas.
 

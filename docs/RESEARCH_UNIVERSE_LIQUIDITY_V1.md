@@ -528,7 +528,7 @@ Binance** (cero conexiones públicas de mercado).
 
 La prueba de cadena completa se ejecuta contra proveedores HTTP/WS loopback y
 SQLite temporal con reloj de prueba (`tests/test_research_pilot.py`):
-`pytest tests/test_research_pilot.py -v` (27 passed). El test **no duerme para
+`pytest tests/test_research_pilot.py -v` (28 passed). El test **no duerme para
 avanzar el reloj**: fija el instante, ordena al proveedor publicar el burst,
 espera confirmación por `--status-file` (contadores aceptados por fuente y
 última disponibilidad) y solo entonces autoriza la evaluación con
@@ -537,7 +537,8 @@ se aceptan con `--clock manual`. Verifica frescura independiente por fuente
 (libro obsoleto / flujo obsoleto), ventana incompleta con motivo, `decision_ms`
 no retrotraído, unión ≤ 20, duplicados sin multiplicación, rotación conservando
 el resultado del símbolo retirado, horizontes 5m/15m/60m con `desfase_ms=0`,
-manifiesto con hashes y resumen regenerado desde lo persistido. También cubre
+manifiesto con hashes, resumen regenerado desde lo persistido y contabilidad
+de aperturas WS (2 por rotación, más reaperturas no deliberadas). También cubre
 la política de pendientes: fin normal → settle madura; fin de settle →
 `pendiente` con causa; parada explícita (`--stop-file`, solo con reloj manual)
 → ninguna consulta de precio adicional; presupuesto agotado → siguiente envío
@@ -545,24 +546,174 @@ bloqueado antes del transporte y pendientes con causa.
 `max_data_age_ms` permanece en 5000. Evidencia:
 `docs/evidence/research/universe_liquidity_v1/pilot_sync/`.
 
-### 9.3 Presupuesto público propuesto (NO ejecutado, autorización separada)
+### 9.3 Propuesta pública vigente: 1 h + 70 min (NO ejecutada)
 
-Este piloto requiere presupuesto y autorización nuevos; no se reusa la
-autorización histórica de 7 solicitudes/180 segundos. Véase
-`docs/evidence/research/universe_liquidity_v1/pilot_local/presupuesto.json`,
-calculado sin red a partir de los pesos oficiales del endpoint
-(`/fapi/v1/exchangeInfo=1`, `/fapi/v1/ticker/24hr=40 sin símbolo`,
-`/fapi/v1/klines=1 por límite<=100`, `/fapi/v1/time=1`) y los límites WS
-(1024 streams/conexión, 10 mensajes entrantes/s, conexión válida 24 h,
-depth20@100ms en `/public` y aggTrade en `/market` → **2 conexiones
-simultáneas**).
+> Estado 2026-11-05: **propuesta no ejecutada**. No se abrió ningún endpoint
+> de mercado. Esta propuesta sustituye a la de 4 h + 70 min (§9.3.1), que queda
+> conservada solo como antecedente histórico y no debe usarse como presupuesto
+> vigente.
 
-Supuestos clave de la propuesta: captura 4 h + settle 70 m (para madurar el
-60m del último ciclo), selección cada 5 m, decisión cada 1 m, 20 símbolos
-simultáneos, almacenamiento tope 128 MB. Peso REST aprox. 16 374 (≈17 193 con
-5 % de reintentos), muy por debajo del pool de 2400 peso/min. Los resultados
-pendientes no abren WS; solo consumen consultas de klines. No incluye backfill,
-order book histórico, ni endpoints privados/órdenes.
+**Comando único propuesto (PowerShell; requiere autorización separada):**
+
+```powershell
+Set-Location "C:\proyectos\binance-futures-microstructure-bot"
+python scripts/research_pilot.py `
+  --run-id "public-pilot-1h-20261105a" `
+  --out-dir "C:\proyectos\binance-futures-data\public-pilot-1h-20261105a" `
+  --mode public --activar-publico `
+  --rest-base "https://fapi.binance.com" `
+  --ws-public-base "wss://fstream.binance.com/public" `
+  --ws-market-base "wss://fstream.binance.com/market" `
+  --duration-seconds 3600 --settle-seconds 4200 `
+  --cycle-seconds 300 --selection-seconds 300 `
+  --decision-delay-seconds 5 --tick-ms 500 `
+  --max-symbols 20 --max-candidates 12 --max-comparators 8 `
+  --min-quote-volume 1000000 `
+  --horizons "5m=300000,15m=900000,60m=3600000" `
+  --price-interval 1m --price-tolerance-ms 90000 --price-delay-ms 2000 `
+  --max-data-age-ms 5000 --max-observations 20000 `
+  --max-http-attempts 2000 --max-http-retries 50 --max-http-weight 5000 `
+  --max-ws-reconnects 20 --max-messages 5000000 --max-bytes 134217728
+```
+
+No se ha lanzado. El directorio de datos es propio y persistente, fuera de Git;
+`--budget-only` se usó solo para generar el presupuesto publicado en evidencia.
+El comando usa `research-selector-v2` sin cambios y mantiene
+`max_data_age_ms=5000`.
+
+**Presupuesto generado sin red**
+
+`--budget-only` con esa configuración produjo
+`docs/evidence/research/universe_liquidity_v1/pilot_public_proposal_1h/presupuesto.json`.
+El hash SHA-256 de la configuración efectiva (incluye `run_id` y `out_dir`) es
+`2538ac09409b93ba9943323d0ce6c8ece7adce00c0dbf09ab2f8ae4d1891522c`,
+calculado sobre el JSON canónico (`sort_keys=True`, UTF-8, separadores `,`/`:`) de
+`config_efectiva.json` (incluye `run_id` y `out_dir`; conserva los valores
+numéricos tal como los serializa el CLI, p. ej. `3600.0`).
+SHA del código base verificado: `68c0520de6354775b9a6148ed629047f562ce212`.
+El commit de esta propuesta se publica en la rama; su SHA es el de
+`git rev-parse HEAD`.
+
+- 12 selecciones y 12 ciclos de decisión; 240 observaciones máximas; 720
+  consultas de klines base (20 símbolos × 3 horizontes × 12 ciclos).
+- 24 consultas de catálogo/ticker + 720 de klines = **744 intentos HTTP base**;
+  **1.212 de peso base** (12×1 + 12×40 + 720×1).
+- Reserva de 50 reintentos: 794 intentos; peor caso de peso 3.212 si los 50
+  reintentos fueran tickers de peso 40. La puerta efectiva es 2.000 intentos /
+  5.000 de peso; no se presupuesta `/time` porque el programa no la llama.
+- El límite de reintentos es posterior al envío: el evento 51 marca bloqueo,
+  pero intentos y peso siguen acotados antes del transporte por
+  `max_http_attempts` y `max_http_weight`.
+
+**Verificación oficial (consultada 2026-11-05)**
+
+| Comprobación | Fuente oficial |
+| --- | --- |
+| Pesos REST: klines `limit=1` → 1; ticker sin `symbol` → 40; exchangeInfo → 1 | [Market Data, USDⓈ-M](https://developers.binance.com/en/docs/catalog/core-trading-derivatives-trading-usd-s-m-futures/api/rest-api/market-data) |
+| Cabecera `X-MBX-USED-WEIGHT-1M`; 429/418; límites por IP | [General Info, LIMITS](https://developers.binance.com/en/docs/products/derivatives-trading-usds-futures/general-info#limits) |
+| 2.400/min por IP; UM y CM comparten el mismo pool | [Aviso de integración CM/UM](https://developers.binance.com/en/docs/products/derivatives-trading-coin-futures/Important-CM-UM-Integration-Notice) |
+| Rutas `/public` y `/market`; 24 h; ping/pong; 10 mensajes entrantes/s; 1.024 streams/conexión | [Websocket Market Streams, Connect](https://developers.binance.com/en/docs/products/derivatives-trading-usds-futures/websocket-market-streams/Connect) |
+| `depth<levels>@100ms` en `/public`; `aggTrade` en `/market` | [Important WebSocket Change Notice](https://developers.binance.com/en/docs/products/derivatives-trading-usds-futures/websocket-market-streams/Important-WebSocket-Change-Notice) |
+
+El límite de 300 intentos de conexión cada 5 minutos no aparece en las páginas
+UM vigentes consultadas; el «300» de WebSocket API General Info es un límite de
+órdenes (`ORDERS/10s`), no de conexiones. El plan no depende de esa cota; aun si
+aplicara, 46 intentos de apertura máximos quedarían por debajo de 300.
+
+El limitador de ventana de `HistoryClient` usa pesos conservadores propios
+(klines 10, exchangeInfo 20, ticker 40) y 1.200/min; no consume el pool oficial
+de 2.400/min, solo espacia. Por ciclo de 5 min el plan usa 660 de ese peso
+conservador (20×3×10 + 20 + 40), por debajo de 1.200. El presupuesto de 1.212
+usa los pesos oficiales del gate, no los conservadores del limitador.
+
+**Contabilidad WS (aperturas, rotaciones y reconexiones)**
+
+| Concepto | Cálculo | Total |
+| --- | --- | --- |
+| Conexiones simultáneas | `/public` (depth) + `/market` (aggTrade) | 2 |
+| Aperturas iniciales | primera selección | 2 |
+| Rotaciones | 12 selecciones − 1 = 11; 2 feeds reabiertos por cambio | 22 |
+| Reaperturas tras desconexión/fallo (incluye cierre normal) | `max_ws_reconnects` | 20 |
+| Sobregiro entre comprobaciones | hasta 2 feeds cruzan el umbral en un tick | 2 |
+| Intentos de apertura máximos | 2 + 22 + 20 + 2 | **46** |
+
+`max_ws_reconnects` cuenta `StreamFeed.reconnects`: reaperturas o intentos de
+reconexión después de una desconexión o fallo, **incluidos los cierres normales
+del servidor y los fallos antes de la primera conexión**. No cuenta la primera
+apertura exitosa ni las rotaciones deliberadas. Un intento fallido incrementa
+`errors`/`reconnects`, no `connections`; `connections` solo sube tras conectar.
+El tope se comprueba por tick, de ahí el sobregiro acotado de 2. El pico es 20 streams por conexión
+(40 totales), muy por debajo de 1.024. Los 10 mensajes/s son «incoming» hacia el
+servidor (el cliente solo envía pong; no suscribe por mensaje), no un tope de
+datos servidor→cliente. `max_messages=5.000.000` cuenta solo mensajes de datos;
+los ping/pong de control no se contabilizan. La validez de 24 h supera las
+2 h 10 min de la corrida.
+
+**Almacenamiento previsto**
+
+| Componente | Cálculo | Bytes |
+| --- | --- | --- |
+| JSONL | 240 observaciones × 1.600 + 720 resultados × 500 | 744.000 |
+| SQLite | 7.200 filas 10 s + 2.400 filas 1 m (libro+flujo), 200 B/fila | 1.920.000 |
+| Auxiliares WAL/SHM | 2 × 65.536 | 131.072 |
+| **Total** | | **2.795.072** (2,67 MiB) |
+| Tope | `max_bytes` | 134.217.728 |
+| Margen | | **131.422.656** (97,92 %) |
+
+La comprobación de total es previa a cada escritura y el JSONL tiene su propio
+tope; la cola del recorder (2.000 filas por defecto) puede sobregirar como máximo
+esas filas en vuelo, no un múltiplo del tope. Con 2,8 MB previstos frente a
+128 MiB el margen es suficiente para esta corrida.
+
+**Aceptación previa a la captura**
+
+| Recurso | Base | Máximo permitido | Mecanismo | Compatible |
+| --- | --- | --- | --- | --- |
+| Intentos HTTP | 744 | 2.000 | `RunBudget.before_send` antes del transporte | Sí |
+| Peso HTTP | 1.212 | 5.000 | `RunBudget.before_send` | Sí |
+| Reintentos | 0 | 50 (+1 en vuelo) | `after_send` | Sí; reserva 3.212 |
+| Peso/min cliente | 660 por ciclo de 5 min | 1.200/min | `HistoryClient._admit` | Sí |
+| Peso/min oficial | ~101 por ciclo | 2.400/min UM+CM | pool por IP | Sí |
+| Conexiones WS simultáneas | 2 | 2 | diseño `/public`+`/market` | Sí |
+| Intentos de apertura WS | 24 exitosos planificados (2+22) | 46 (20+2 no deliberadas) | rotación + `max_ws_reconnects` | Sí |
+| Streams por conexión | 20 | 1.024 | servidor | Sí |
+| Mensajes de datos | no estimado | 5.000.000 | comprobación por tick | Blando; puede parar antes |
+| Almacenamiento | 2,80 MB | 128 MiB | total + tope JSONL | Sí; 97,9 % de margen |
+| Observaciones | 240 | 20.000 | `take_decisions` | Sí |
+| Settle | 4.200 s | 4.200 s | bucle de settle | Sí; último 60m en 6.905 s, margen 895 s |
+
+**Hallazgos concretos y riesgos**
+
+- La base de 720 klines **no es un máximo**: si falta la vela, `resolve_due`
+  reintenta cada tick (500 ms) hasta la ventana de tolerancia. Esos intentos
+  repetidos solo quedan acotados por la puerta de 2.000 intentos/5.000 de peso.
+  Si se agota, la corrida para con `presupuesto_agotado` y deja pendientes con
+  causa; puede truncar el settle. No se aumenta el límite ni se cambia el
+  comportamiento en este bloque.
+- `max_messages` se comprueba por tick, no por mensaje: es un tope blando. Solo
+  cuenta datos; a 20 símbolos, `depth20@100ms` aporta ~720.000 mensajes/hora y
+  deja ~4,28 M para `aggTrade`. No hay garantía de que el flujo agresor quepa en
+  el tope; si se alcanza, la corrida para y no se resuelven más precios.
+- `max_ws_reconnects` cuenta reaperturas tras desconexión o fallo (incluye
+  cierres normales, no solo errores) y se comprueba por tick;
+  `max_http_retries` también es posterior al evento (sobregiro acotado). Los
+  topes estrictos de intentos y peso son previos al transporte.
+- El límite de 300 conexiones/5 min de USD-M no consta en la documentación UM
+  vigente consultada; no se usa como cota. El total de 46 intentos de apertura
+  es una cota conservadora calculada, no una medida.
+
+Esta propuesta **no declara el piloto listo**: requiere autorización humana
+explícita y aceptar el riesgo de repetición por velas ausentes. No incluye
+backfill, order book histórico ni endpoints privados/órdenes.
+
+#### 9.3.1 Propuesta histórica 4 h + 70 min (sustituida)
+
+La propuesta anterior usaba captura 14.400 s + settle 4.200 s, decisión cada
+60 s, 20 símbolos y un peso REST aproximado de 16.374 (≈17.193 con 5 % de
+reintentos). Su presupuesto está en
+`docs/evidence/research/universe_liquidity_v1/pilot_local/presupuesto.json`.
+Queda **sustituida** por §9.3; se conserva solo como antecedente y sus cifras no
+deben presentarse como vigentes.
 
 ### 9.4 Evidencia publicada (muestra pequeña, dataset fuera de Git)
 
@@ -573,7 +724,11 @@ order book histórico, ni endpoints privados/órdenes.
 - `docs/evidence/research/universe_liquidity_v1/pilot_local/observaciones_muestra.jsonl`
   (12 filas de muestra).
 - `docs/evidence/research/universe_liquidity_v1/pilot_local/presupuesto.json`
-  (presupuesto público calculado sin red).
+  (presupuesto histórico de 4 h, **sustituido**; no vigente).
+- `docs/evidence/research/universe_liquidity_v1/pilot_public_proposal_1h/`
+  (`presupuesto.json` vigente de 1 h + 70 min, `config_efectiva.json`,
+  `config_sha256.txt`, `verificacion.txt`, `comando_propuesto.txt`; generado con
+  `--budget-only`, no ejecutado).
 - Dataset completo (observaciones.jsonl, research.db) fuera de Git; se
   publica solo manifiesto, hashes y muestra pequeña.
 

@@ -955,6 +955,31 @@ class TestCLISeparacionLocalPublico(unittest.TestCase):
         self.assertIn("limites_efectivos", budget)
         self.assertGreater(budget["limites_efectivos"]["max_http_attempts"], 0)
 
+    def test_budget_cuenta_dos_aperturas_por_rotacion(self):
+        tmp = Path(tempfile.mkdtemp(prefix="budget-rot-"))
+        cfg = rp.PilotConfig(
+            run_id="b", out_dir=tmp,
+            duration_seconds=3_600, settle_seconds=4_200,
+            cycle_seconds=300, selection_seconds=300, max_symbols=20)
+        budget = rp.compute_budget(cfg)
+        rest = budget["rest"]
+        self.assertEqual(rest["intentos_base"], 744)
+        self.assertEqual(rest["peso_base"], 1_212)
+        self.assertEqual(rest["intentos_base_mas_reintentos"], 794)
+        self.assertEqual(rest["peso_base_mas_reintentos_max"], 3_212)
+        ws = budget["ws"]
+        self.assertEqual(ws["rotaciones_previstas"], 11)
+        self.assertEqual(ws["aperturas_iniciales"], 2)
+        self.assertEqual(ws["aperturas_por_rotacion_max"], 22)
+        self.assertEqual(ws["reaperturas_tras_desconexion_tope"], 20)
+        self.assertEqual(ws["sobregiro_reaperturas_por_tick_max"], 2)
+        self.assertEqual(ws["aperturas_totales_max"], 46)
+        self.assertEqual(ws["streams_pico_por_conexion"], 20)
+        self.assertEqual(ws["streams_pico_total"], 40)
+        storage = budget["almacenamiento"]
+        self.assertEqual(storage["total_bytes_previstos"], 2_795_072)
+        self.assertEqual(storage["margen_bytes"], 131_422_656)
+
 
 # ---------------------------------------------------------------------------
 # Cadena completa sincronizada (comando productivo, loopback)

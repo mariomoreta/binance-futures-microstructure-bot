@@ -711,10 +711,19 @@ def compute_budget(cfg: PilotConfig) -> Dict[str, Any]:
     storage_aux = 2 * 65_536  # WAL + SHM aproximado
     storage_total = storage_jsonl + storage_db + storage_aux
 
-    ws_streams_peak = symbols * 2  # depth20@100ms + aggTrade por simbolo
+    # La primera seleccion abre los feeds; cada seleccion posterior puede
+    # cambiar el set y reabrir AMBOS feeds (/public y /market).
     ws_connections = 2             # /public (depth) + /market (aggTrade)
-    rotations = selections
-    ws_reconnects = ws_connections + rotations  # peor caso: cambio de set
+    rotations = max(0, selections - 1) if symbols else 0
+    ws_initial_openings = ws_connections if symbols else 0
+    ws_rotation_openings = 2 * rotations
+    ws_reconnect_cap = cfg.max_ws_reconnects
+    # El tope se comprueba por tick: cada feed puede cruzarlo una vez antes
+    # de la siguiente comprobacion (2 feeds como maximo).
+    ws_reconnect_overshoot = min(2, ws_connections) if symbols else 0
+    ws_total_openings_max = (ws_initial_openings + ws_rotation_openings
+                             + ws_reconnect_cap
+                             + ws_reconnect_overshoot)
 
     return {
         "version": PILOT_VERSION,
@@ -733,14 +742,14 @@ def compute_budget(cfg: PilotConfig) -> Dict[str, Any]:
                 "klines_limit_1_100": WEIGHT_KLINES,
             },
             "pool_referencia": (
-                "REQUEST_WEIGHT publicado en exchangeInfo.rateLimits y cabecera "
-                "X-MBX-USED-WEIGHT-1M; medido previamente 2400/min (referencia, "
-                "no garantia)"
+                "REQUEST_WEIGHT de exchangeInfo.rateLimits y cabecera "
+                "X-MBX-USED-WEIGHT-1M; 2400/min por IP, UM y CM comparten "
+                "pool (referencia, no garantia de disponibilidad)"
             ),
             "nota": (
                 "No se presupuestan llamadas /time (el programa no las realiza). "
-                "El 5 % de reintentos es solo una referencia; el limite efectivo "
-                "es max_http_retries."
+                "Los reintentos se reservan con max_http_retries (50), no con un "
+                "5 % fijo; el limite efectivo es max_http_attempts/max_http_weight."
             ),
         },
         "limites_efectivos": {
@@ -764,20 +773,49 @@ def compute_budget(cfg: PilotConfig) -> Dict[str, Any]:
                     "peso_total": weight_klines,
                     "nota": "1 por observacion y horizonte; interval 1m, limit=1"},
             },
+            "intentos_base": selections * 2 + klines_requests,
+            "reintentos_tope": cfg.max_http_retries,
+            "intentos_base_mas_reintentos": (
+                selections * 2 + klines_requests + cfg.max_http_retries),
+            "peso_base": weight_total,
+            "peso_reserva_reintentos_max": (
+                cfg.max_http_retries * WEIGHT_TICKER_24H),
+            "peso_base_mas_reintentos_max": (
+                weight_total + cfg.max_http_retries * WEIGHT_TICKER_24H),
             "peso_total_estimado": weight_total,
+            "intentos_techo_efectivo": cfg.max_http_attempts,
+            "peso_techo_efectivo": cfg.max_http_weight,
+            "nota_consultas_repetidas": (
+                "La base cuenta una consulta de klines por observacion y "
+                "horizonte. Si falta la vela, resolve_due reintenta cada "
+                "tick; esos intentos y sus reintentos solo estan acotados "
+                "por max_http_attempts/max_http_weight."
+            ),
         },
         "ws": {
             "conexiones_simultaneas": ws_connections,
             "endpoints": [cfg.ws_public_base, cfg.ws_market_base],
-            "streams_pico": ws_streams_peak,
+            "streams_pico_por_conexion": symbols,
+            "streams_pico_total": symbols * 2,
             "limite_streams_por_conexion": 1024,
             "limite_mensajes_entrantes_por_s": 10,
             "vida_maxima_conexion_s": 86_400,
-            "reconexiones_acumuladas_previstas": ws_reconnects,
+            "aperturas_iniciales": ws_initial_openings,
+            "rotaciones_previstas": rotations,
+            "aperturas_por_rotacion_max": ws_rotation_openings,
+            "reaperturas_tras_desconexion_tope": ws_reconnect_cap,
+            "sobregiro_reaperturas_por_tick_max": ws_reconnect_overshoot,
+            "aperturas_totales_max": ws_total_openings_max,
+            "mensajes_datos_tope": cfg.max_messages,
             "nota": (
                 "depth20@100ms pertenece a /public; aggTrade a /market: son dos "
                 "conexiones distintas (docs oficiales, aviso de rutas). "
-                "El costo de rotacion cuenta dos conexiones por cambio de set."
+                "Cada rotacion reabre ambos feeds: 2 aperturas por cambio. "
+                "max_ws_reconnects cuenta reaperturas tras una desconexion o "
+                "fallo (incluye cierres normales del servidor); no cuenta la "
+                "apertura inicial ni las rotaciones deliberadas, y se comprueba "
+                "por tick. max_messages cuenta solo mensajes de datos; los "
+                "ping/pong de control no se contabilizan."
             ),
         },
         "simbolos": {
@@ -792,9 +830,17 @@ def compute_budget(cfg: PilotConfig) -> Dict[str, Any]:
             "auxiliares_bytes_previstos": storage_aux,
             "total_bytes_previstos": storage_total,
             "tope_configurado_bytes": cfg.max_bytes,
+            "margen_bytes": (cfg.max_bytes - storage_total
+                             if cfg.max_bytes else None),
+            "margen_porcentaje": (
+                round(100.0 * (cfg.max_bytes - storage_total) / cfg.max_bytes, 2)
+                if cfg.max_bytes else None),
             "nota": (
                 "El tope incluye JSONL, SQLite y sus archivos auxiliares. "
-                "No se anuncia 128 MB totales si solo se limita el JSONL."
+                "La comprobacion es previa a cada escritura; la cola del "
+                "recorder (2000 filas por defecto) puede sobregirar como "
+                "maximo esas filas en vuelo. No se anuncia 128 MB totales si "
+                "solo se limita el JSONL."
             ),
         },
         "interrupcion_y_limpieza": {

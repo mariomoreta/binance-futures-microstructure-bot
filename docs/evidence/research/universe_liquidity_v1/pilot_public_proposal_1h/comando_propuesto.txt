@@ -1,0 +1,20 @@
+# PROPUESTA NO EJECUTADA - comando unico para una autorizacion posterior.
+
+Set-Location "C:\proyectos\binance-futures-microstructure-bot"
+python scripts/research_pilot.py `
+  --run-id "public-pilot-1h-20261105a" `
+  --out-dir "C:\proyectos\binance-futures-data\public-pilot-1h-20261105a" `
+  --mode public --activar-publico `
+  --rest-base "https://fapi.binance.com" `
+  --ws-public-base "wss://fstream.binance.com/public" `
+  --ws-market-base "wss://fstream.binance.com/market" `
+  --duration-seconds 3600 --settle-seconds 4200 `
+  --cycle-seconds 300 --selection-seconds 300 `
+  --decision-delay-seconds 5 --tick-ms 500 `
+  --max-symbols 20 --max-candidates 12 --max-comparators 8 `
+  --min-quote-volume 1000000 `
+  --horizons "5m=300000,15m=900000,60m=3600000" `
+  --price-interval 1m --price-tolerance-ms 90000 --price-delay-ms 2000 `
+  --max-data-age-ms 5000 --max-observations 20000 `
+  --max-http-attempts 2000 --max-http-retries 50 --max-http-weight 5000 `
+  --max-ws-reconnects 20 --max-messages 5000000 --max-bytes 134217728
