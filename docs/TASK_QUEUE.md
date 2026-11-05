@@ -16,13 +16,16 @@ causa de parada UNKNOWN. Diagnóstico y manifiesto en
 cero cambios de estrategia ni tolerancias.
 
 `NEXT_TASKS`:
-1. Publicar diagnóstico y manifiesto pequeño en GitHub (commit selectivo y push
-   normal a research/universe-liquidity-v1; verificar SHA local/remoto).
+1. Publicar diagnóstico, manifiesto y análisis offline en GitHub (commit
+   selectivo y push normal a research/universe-liquidity-v1; verificar SHA
+   local/remoto).
 2. Mantener `max_data_age_ms=5000`; no tocar dashboard 3020, servicio 8792,
    `opencode.json` ni archivos ajenos; no relanzar la corrida ni crear otro
    run_id.
 3. No interpretar retornos brutos como P&L ni presentar la captura como
    suficiencia del dataset.
+4. Siguiente paso que más reduciría incertidumbre: repetir la captura con cierre
+   acreditado y settle completado para 60m, sin cambiar reglas ni tolerancias.
 
 ## Piloto prospectivo v1 — política de pendientes y publicación (2026-11-05)
 

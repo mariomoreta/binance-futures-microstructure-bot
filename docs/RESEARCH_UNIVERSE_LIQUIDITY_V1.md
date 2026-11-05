@@ -740,3 +740,61 @@ deben presentarse como vigentes.
 - No se declara ventaja, rentabilidad, representatividad estadística ni bot
   listo para operar. El piloto produce observaciones aptas para estudio y un
   presupuesto público revisable; nada más.
+
+### 9.6 Resultados descriptivos de la captura pública ejecutada (offline)
+
+**run_id:** `public-pilot-1h-20261105a`. **Estado:** `corrida_interrumpida_o_cierre_no_acreditado`
+(causa de parada `UNKNOWN`; no hay código de salida ni logs de consumo).
+**Análisis:** solo lectura, offline, sin conexión a Binance, sin adquisición de datos nuevos.
+
+| Ítem | Valor |
+| --- | --- |
+| Ciclos de selección | 12 / 12 |
+| Observaciones totales | 240 (aptas 128, descartadas 112) |
+| Resultados totales | 206 (5m: 115, 15m: 91, 60m: 0) |
+| Resultados faltantes (aptas × 3 − generados) | 178, causa UNKNOWN |
+| Símbolos observados | 44, repetidos entre ciclos |
+| Roles | candidate 144, comparator 96 |
+| Precios | libro_mid (inicial) → klines_apertura_1m (posterior; proxy fuentes mixtas) |
+
+**Descartes por motivo (pueden solaparse):** `sin_libro` 66, `sin_flujo` 66,
+`dato_obsoleto_flujo` 37, `dato_obsoleto_libro` 15. Distribuidos en los 12
+ciclos y en ambos roles; no se concentra solo en el primero.
+
+**Candidatos vs comparadores (solo subconjunto con resultado observado):**
+
+- 5m: candidatos n=97, media −0,0034, mediana −0,0015, desv 0,0126, min −0,0529,
+  max 0,0208, positivos 0,402. Comparadores n=18, media −0,0005, mediana −0,0002,
+  desv 0,0053, positivos 0,500. Diferencia de medias descriptiva −0,0029. 9
+  ciclos con ambos grupos.
+- 15m: candidatos n=76, media −0,0123, mediana −0,0072, desv 0,0222, min −0,0858,
+  max 0,0188, positivos 0,303. Comparadores n=15, media −0,0012, mediana −0,0024,
+  desv 0,0058, positivos 0,333. Diferencia de medias descriptiva −0,0111. 7
+  ciclos con ambos grupos.
+
+**Dirección de selección (proxy `move_24h_pct`, no es orden):** a 5m `UP_like`
+media −0,0071 (n=31), `DOWN_like` media −0,0017 (n=66); a 15m `UP_like` media
+−0,0240 (n=27), `DOWN_like` media −0,0058 (n=49).
+
+**Liquidez/flujo vs retorno (descriptivo, variables al decidir):** correlación
+Pearson débil. 5m: delta_ratio −0,052, profundidad 0,133. 15m: delta_ratio 0,034,
+profundidad 0,265. Sin patrón monotónico claro por terciles de delta_ratio.
+
+**Veredicto por dimensión:**
+- A. Integración técnica: transporte y selección funcionaron; cierre no acreditado.
+- B. Calidad/cobertura: 206 resultados resueltos, 60m sin evaluar, suficiencia limitada.
+- C. Resultados descriptivos: neto_estado UNKNOWN; no se presentan como P&L.
+
+**Conclusión:** no hay datos suficientes para afirmar una ventaja, alpha o
+rentabilidad. Insuficiencia no es ausencia de ventaja. El siguiente paso que más
+reduciría incertidumbre es repetir la captura con cierre acreditado y settle
+completado para 60m, sin cambiar reglas ni tolerancias.
+
+**Evidencia publicada (muestra pequeña, dataset fuera de Git):**
+- `docs/evidence/research/universe_liquidity_v1/pilot_public_proposal_1h/informe_analisis_offline.md`
+- `docs/evidence/research/universe_liquidity_v1/pilot_public_proposal_1h/tablas/resumen_analisis_offline.json`
+- `docs/evidence/research/universe_liquidity_v1/pilot_public_proposal_1h/manifiesto_corrida_publica_1h.json`
+- `docs/evidence/research/universe_liquidity_v1/pilot_public_proposal_1h/diagnostico_corrida_publica_1h.md`
+- Script: `scripts/analisis_offline_captura_publica.py`
+- Pruebas: `tests/test_analisis_offline_captura_publica.py` (5 passed)
+- Dataset completo y derivados detallados fuera de Git; solo manifiesto, hashes y muestra se publican.

@@ -1,0 +1,463 @@
+{
+  "run_id": "public-pilot-1h-20261105a",
+  "base_commit": "f6eb22afa3e35f7e1ed0305e184bec81881b7991",
+  "estado_corrida": "corrida_interrumpida_o_cierre_no_acreditado",
+  "causa_parada": "UNKNOWN",
+  "resumen_global": {
+    "total_lineas": 458,
+    "ciclos": 12,
+    "observaciones_total": 240,
+    "observaciones_aptas": 128,
+    "observaciones_descartadas": 112,
+    "resultados_total": 206,
+    "resultados_por_horizonte": {
+      "5m": 115,
+      "15m": 91,
+      "60m": 0
+    },
+    "ciclos_con_ambos_grupos_total": 9,
+    "motivos_por_rol": {
+      "comparator": {
+        "sin_libro": 44,
+        "sin_flujo": 44,
+        "dato_obsoleto_libro": 5,
+        "dato_obsoleto_flujo": 32
+      },
+      "candidate": {
+        "sin_libro": 22,
+        "sin_flujo": 22,
+        "dato_obsoleto_libro": 10,
+        "dato_obsoleto_flujo": 5
+      }
+    },
+    "motivos_por_ciclo": {
+      "0": {
+        "sin_libro": 20,
+        "sin_flujo": 20
+      },
+      "1": {
+        "sin_libro": 9,
+        "sin_flujo": 9
+      },
+      "2": {
+        "dato_obsoleto_libro": 11,
+        "sin_libro": 9,
+        "sin_flujo": 9,
+        "dato_obsoleto_flujo": 2
+      },
+      "3": {
+        "dato_obsoleto_flujo": 4,
+        "sin_libro": 1,
+        "sin_flujo": 1
+      },
+      "4": {
+        "dato_obsoleto_flujo": 3,
+        "dato_obsoleto_libro": 1,
+        "sin_libro": 3,
+        "sin_flujo": 3
+      },
+      "5": {
+        "dato_obsoleto_flujo": 6,
+        "dato_obsoleto_libro": 1
+      },
+      "6": {
+        "sin_libro": 5,
+        "sin_flujo": 5,
+        "dato_obsoleto_libro": 1,
+        "dato_obsoleto_flujo": 3
+      },
+      "7": {
+        "dato_obsoleto_flujo": 1,
+        "sin_libro": 4,
+        "sin_flujo": 4
+      },
+      "8": {
+        "sin_libro": 9,
+        "sin_flujo": 9,
+        "dato_obsoleto_flujo": 1
+      },
+      "9": {
+        "dato_obsoleto_flujo": 7,
+        "sin_libro": 1,
+        "sin_flujo": 1
+      },
+      "10": {
+        "dato_obsoleto_flujo": 7,
+        "dato_obsoleto_libro": 1,
+        "sin_libro": 1,
+        "sin_flujo": 1
+      },
+      "11": {
+        "dato_obsoleto_flujo": 3,
+        "sin_libro": 4,
+        "sin_flujo": 4
+      }
+    },
+    "precios_fuentes_detectadas": [
+      "klines_apertura_1m",
+      "libro_mid"
+    ],
+    "nota_dependencia": "206 resultados no son 206 muestras independientes: una observación puede aportar dos horizontes y un símbolo puede repetirse entre ciclos."
+  },
+  "comparacion_candidatos_comparadores": {
+    "5m": {
+      "candidatos": {
+        "n_resultados": 97,
+        "n_observaciones_originales": 97,
+        "n_simbolos": 15,
+        "n_ciclos": 9,
+        "media": -0.003398434741918505,
+        "mediana": -0.0015007503751877061,
+        "desv": 0.012630058945646465,
+        "min": -0.052898142937535274,
+        "max": 0.02083912197832733,
+        "proporcion_positivos": 0.4020618556701031
+      },
+      "comparadores": {
+        "n_resultados": 18,
+        "n_observaciones_originales": 18,
+        "n_simbolos": 8,
+        "n_ciclos": 9,
+        "media": -0.0005350844108080701,
+        "mediana": -0.00020534766406135027,
+        "desv": 0.005265708624366521,
+        "min": -0.018289459773760536,
+        "max": 0.006685768863419352,
+        "proporcion_positivos": 0.5
+      },
+      "diferencia_medias_descriptiva": -0.002863350331110435,
+      "ciclos_con_ambos_grupos": 9,
+      "observaciones_fuera_de_grupo": 13
+    },
+    "15m": {
+      "candidatos": {
+        "n_resultados": 76,
+        "n_observaciones_originales": 76,
+        "n_simbolos": 14,
+        "n_ciclos": 7,
+        "media": -0.012251263243968526,
+        "mediana": -0.00723896719366665,
+        "desv": 0.022204222487980742,
+        "min": -0.08582292232482337,
+        "max": 0.01879609802522006,
+        "proporcion_positivos": 0.3026315789473684
+      },
+      "comparadores": {
+        "n_resultados": 15,
+        "n_observaciones_originales": 15,
+        "n_simbolos": 8,
+        "n_ciclos": 7,
+        "media": -0.0011663511232193956,
+        "mediana": -0.0024457593688362745,
+        "desv": 0.005783397098871975,
+        "min": -0.014272121788772638,
+        "max": 0.010299401197604953,
+        "proporcion_positivos": 0.3333333333333333
+      },
+      "diferencia_medias_descriptiva": -0.01108491212074913,
+      "ciclos_con_ambos_grupos": 7,
+      "observaciones_fuera_de_grupo": 37
+    }
+  },
+  "updown_candidatos": {
+    "5m": {
+      "UP_like": {
+        "n": 31,
+        "media": -0.00709512856789185,
+        "mediana": -0.004028648164726939,
+        "desv": 0.01719189159369361,
+        "min": -0.052898142937535274,
+        "max": 0.02083912197832733,
+        "proporcion_positivos": 0.3225806451612903
+      },
+      "DOWN_like": {
+        "n": 66,
+        "media": -0.0016621088539613275,
+        "mediana": -0.0009472505561122686,
+        "desv": 0.009283643136991798,
+        "min": -0.0463292943692088,
+        "max": 0.018206113245364912,
+        "proporcion_positivos": 0.4393939393939394
+      }
+    },
+    "15m": {
+      "UP_like": {
+        "n": 27,
+        "media": -0.02403556181190467,
+        "mediana": -0.012748597654258044,
+        "desv": 0.029722654476751206,
+        "min": -0.08582292232482337,
+        "max": 0.01879609802522006,
+        "proporcion_positivos": 0.25925925925925924
+      },
+      "DOWN_like": {
+        "n": 49,
+        "media": -0.005757874237146569,
+        "mediana": -0.004488778054862902,
+        "desv": 0.012618248826353559,
+        "min": -0.04269019794896263,
+        "max": 0.018751921303412217,
+        "proporcion_positivos": 0.32653061224489793
+      }
+    }
+  },
+  "asociacion_liquidez_flujo_resumen": {
+    "metrica_flujo": "delta_ratio",
+    "metrica_libro": "profundidad_notional_top20",
+    "n_filas": 206,
+    "cobertura_profundidad_not_none": 206,
+    "cobertura_delta_ratio_not_none": 206
+  },
+  "dependencia": {
+    "resumen_por_simbolo": {
+      "2ZUSDT": {
+        "n_resultados": 11,
+        "n_ciclos": 6,
+        "horizontes": {
+          "5m": 6,
+          "15m": 5
+        }
+      },
+      "AKEUSDT": {
+        "n_resultados": 6,
+        "n_ciclos": 4,
+        "horizontes": {
+          "5m": 4,
+          "15m": 2
+        }
+      },
+      "ARIAUSDT": {
+        "n_resultados": 10,
+        "n_ciclos": 5,
+        "horizontes": {
+          "5m": 5,
+          "15m": 5
+        }
+      },
+      "ATUSDT": {
+        "n_resultados": 16,
+        "n_ciclos": 9,
+        "horizontes": {
+          "5m": 9,
+          "15m": 7
+        }
+      },
+      "AUSDT": {
+        "n_resultados": 5,
+        "n_ciclos": 3,
+        "horizontes": {
+          "5m": 3,
+          "15m": 2
+        }
+      },
+      "AVAAIUSDT": {
+        "n_resultados": 2,
+        "n_ciclos": 1,
+        "horizontes": {
+          "5m": 1,
+          "15m": 1
+        }
+      },
+      "BANUSDT": {
+        "n_resultados": 2,
+        "n_ciclos": 1,
+        "horizontes": {
+          "5m": 1,
+          "15m": 1
+        }
+      },
+      "CAPUSDT": {
+        "n_resultados": 16,
+        "n_ciclos": 9,
+        "horizontes": {
+          "5m": 9,
+          "15m": 7
+        }
+      },
+      "CLANKERUSDT": {
+        "n_resultados": 16,
+        "n_ciclos": 9,
+        "horizontes": {
+          "5m": 9,
+          "15m": 7
+        }
+      },
+      "CLOUSDT": {
+        "n_resultados": 2,
+        "n_ciclos": 1,
+        "horizontes": {
+          "5m": 1,
+          "15m": 1
+        }
+      },
+      "CUSDT": {
+        "n_resultados": 5,
+        "n_ciclos": 3,
+        "horizontes": {
+          "5m": 3,
+          "15m": 2
+        }
+      },
+      "DRIFTUSDT": {
+        "n_resultados": 4,
+        "n_ciclos": 2,
+        "horizontes": {
+          "5m": 2,
+          "15m": 2
+        }
+      },
+      "EVAAUSDT": {
+        "n_resultados": 14,
+        "n_ciclos": 8,
+        "horizontes": {
+          "5m": 8,
+          "15m": 6
+        }
+      },
+      "GWEIUSDT": {
+        "n_resultados": 11,
+        "n_ciclos": 6,
+        "horizontes": {
+          "5m": 6,
+          "15m": 5
+        }
+      },
+      "HOTUSDT": {
+        "n_resultados": 2,
+        "n_ciclos": 1,
+        "horizontes": {
+          "5m": 1,
+          "15m": 1
+        }
+      },
+      "HUMAUSDT": {
+        "n_resultados": 16,
+        "n_ciclos": 9,
+        "horizontes": {
+          "5m": 9,
+          "15m": 7
+        }
+      },
+      "JCTUSDT": {
+        "n_resultados": 16,
+        "n_ciclos": 9,
+        "horizontes": {
+          "5m": 9,
+          "15m": 7
+        }
+      },
+      "LYNUSDT": {
+        "n_resultados": 16,
+        "n_ciclos": 9,
+        "horizontes": {
+          "5m": 9,
+          "15m": 7
+        }
+      },
+      "ONUSDT": {
+        "n_resultados": 12,
+        "n_ciclos": 6,
+        "horizontes": {
+          "5m": 6,
+          "15m": 6
+        }
+      },
+      "PONSUSDT": {
+        "n_resultados": 2,
+        "n_ciclos": 2,
+        "horizontes": {
+          "5m": 2
+        }
+      },
+      "SXTUSDT": {
+        "n_resultados": 2,
+        "n_ciclos": 1,
+        "horizontes": {
+          "5m": 1,
+          "15m": 1
+        }
+      },
+      "THEUSDT": {
+        "n_resultados": 16,
+        "n_ciclos": 9,
+        "horizontes": {
+          "5m": 9,
+          "15m": 7
+        }
+      },
+      "UAIUSDT": {
+        "n_resultados": 4,
+        "n_ciclos": 2,
+        "horizontes": {
+          "5m": 2,
+          "15m": 2
+        }
+      }
+    },
+    "resumen_por_ciclo": {
+      "1": {
+        "n_resultados": 22,
+        "n_simbolos": 11,
+        "candidatos": 20,
+        "comparadores": 2
+      },
+      "3": {
+        "n_resultados": 30,
+        "n_simbolos": 15,
+        "candidatos": 22,
+        "comparadores": 8
+      },
+      "4": {
+        "n_resultados": 28,
+        "n_simbolos": 14,
+        "candidatos": 22,
+        "comparadores": 6
+      },
+      "5": {
+        "n_resultados": 28,
+        "n_simbolos": 14,
+        "candidatos": 24,
+        "comparadores": 4
+      },
+      "6": {
+        "n_resultados": 24,
+        "n_simbolos": 12,
+        "candidatos": 22,
+        "comparadores": 2
+      },
+      "7": {
+        "n_resultados": 30,
+        "n_simbolos": 15,
+        "candidatos": 24,
+        "comparadores": 6
+      },
+      "8": {
+        "n_resultados": 20,
+        "n_simbolos": 10,
+        "candidatos": 18,
+        "comparadores": 2
+      },
+      "9": {
+        "n_resultados": 12,
+        "n_simbolos": 12,
+        "candidatos": 10,
+        "comparadores": 2
+      },
+      "10": {
+        "n_resultados": 12,
+        "n_simbolos": 12,
+        "candidatos": 11,
+        "comparadores": 1
+      }
+    },
+    "ciclos_con_ambos_grupos_total": 9,
+    "nota": "206 resultados no son 206 muestras independientes: una observación puede aportar dos horizontes y un símbolo puede repetirse entre ciclos."
+  },
+  "precios_y_costes": {
+    "fuentes_detectadas": [
+      "klines_apertura_1m",
+      "libro_mid"
+    ],
+    "nota": "proxy de fuentes mixtas: precio inicial del libro (libro_mid) frente a precio posterior de apertura de vela 1m (klines_apertura_1m). No es retorno mid-to-mid ni P&L."
+  }
+}
