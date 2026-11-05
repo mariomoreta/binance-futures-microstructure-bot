@@ -1,9 +1,9 @@
 """Piloto prospectivo de investigacion (solo lectura de datos publicos, sin ordenes).
 
-Objetivo: producir observaciones evaluables para la hipotesis
-"liquidez disponible frente a flujo agresor -> movimiento posterior", con
-trazabilidad temporal honesta. NO es un motor nuevo, ni un supervisor, ni un
-servicio residente: es un CLI acotado que coordina componentes existentes.
+Objetivo: producir observaciones con tiempos, cobertura y precios honestos para
+la hipotesis "liquidez disponible frente a flujo agresor -> movimiento posterior".
+NO es un motor nuevo, ni un supervisor, ni un servicio residente: es un CLI
+acotado que coordina componentes existentes.
 
 Reutilizacion (delta minimo):
 - ``discovery.build_candidates``: elegibilidad (PERPETUAL/TRADING/USDT/volumen)
@@ -13,34 +13,66 @@ Reutilizacion (delta minimo):
 - ``book.BookEngine``: features de libro top-20 (spread, imbalance, microprice,
   profundidad base/notional, bandas realmente cubiertas, huecos/cruzados).
 - ``flow.FlowEngine``: flujo agresor por ventana trailing (delta, delta_ratio,
-  volumen base/notional, trades).
-- ``history_client.HistoryClient``: REST publico con limitador, reintentos y
-  contabilidad de peso (catalogo, tickers y klines de precios posteriores).
+  volumen base/notional, trades, calentamiento de ventana).
+- ``history_client.HistoryClient``: REST publico con limitador, reintentos,
+  contabilidad de peso y puerta de presupuesto (``attempt_gate``).
 - ``history_store.HistoryStore`` + ``research_recorder.ResearchRecorder``:
   agregados 1m/10s completos y parciales en SQLite (buckets parciales marcados).
 - ``universe.SymbolUniverse``: conjunto explicito de simbolos seguidos.
 
 Protocolo fijado antes de capturar (ver docs/RESEARCH_UNIVERSE_LIQUIDITY_V1.md
-seccion 9). Resumen:
+seccion 9):
 - Universo: catalogo publico (PERPETUAL/TRADING/USDT) + tickers 24h; snapshot
   con ``as_of_ms`` y procedencia; el catalogo NO acredita universo historico.
 - Seleccion cada ``selection_seconds`` (research-selector-v2, umbral 0.02 pp
   como HIPOTESIS, no se ajusta aqui). Candidatos <= 12, comparadores <= 8,
   union <= 20. Sin resultados futuros.
-- Decisiones cada ``cycle_seconds``: el instante de decision es
-  ``max(disponibilidad_libro, disponibilidad_flujo)``; nunca ``bucket_end``.
-- Horizontes de resultado: 5m/15m/60m por defecto, medidos desde la decision.
-- Precio posterior: apertura de la vela 1m alineada al alza (>= objetivo), con
-  desfase registrado; si excede la tolerancia -> NO_EVALUABLE. Sin lookahead.
-- Retorno = variacion mark-to-mid (fraccion). NO es P&L ejecutable: sin
-  supuestos de ejecucion/costes, el neto queda UNKNOWN.
-- Duracion = captura + settle; el settle permite madurar los resultados del
-  ultimo ciclo. Si no maduran, quedan PENDING (nunca se fuerzan).
+- Decisiones cada ``cycle_seconds``: el instante de decision es el instante
+  REAL en que se construyen las variables (el reloj del piloto), nunca
+  ``bucket_end`` y nunca retrotraido. Las disponibilidades de libro, flujo y
+  seleccion se registran por separado y todas deben ser <= decision_ms.
+- Horizontes de resultado: 5m/15m/60m por defecto, medidos desde decision_ms.
+- Frescura independiente por fuente: un flujo reciente no rejuvenece un libro
+  antiguo, ni al contrario. Antiguedad de evento y de recepción registradas por
+  separado. Ausencia, obsolescencia, reloj incoherente y cobertura insuficiente
+  tienen motivos diferenciados.
+- Ventana completa: para apto_para_evaluacion se exige calentamiento y
+  cobertura suficientes (ventana de 1m completa). Las observaciones parciales
+  se conservan con motivo explicito pero quedan excluidas del conjunto apto.
+- Precios honestos: precio_base = mid del libro (libro_mid) y precio posterior
+  = apertura de vela 1m (klines_apertura_1m). Es un proxy de fuentes mixtas,
+  NO mark-to-mid ni P&L ejecutable. Se registran fuente, timestamp,
+  disponibilidad, desfase y horizonte efectivo de ambos.
+- Duracion = captura + settle; el settle permite madurar resultados. Durante el
+  settle siguen vigentes presupuesto, plazo y cancelacion.
+- Presupuesto EFECTIVO (no solo estimado): HistoryClient reserva cada intento
+  HTTP antes del transporte mediante una puerta de presupuesto con maximos
+  explícitos de intentos totales, reintentos totales y peso acumulado.
+  Agotar una cota produce parada con causa y limpieza. El almacenamiento
+  contempla JSONL + SQLite + archivos auxiliares.
 
 Reloj: ``--clock system`` (produccion) o ``--clock manual --clock-file PATH``
-(solo pruebas: el instante lo fija un controlador externo). No se inventan
-timestamps: un dato sin marca de disponibilidad queda UNKNOWN.
+(solo pruebas). No se inventan timestamps: un dato sin marca de disponibilidad
+queda UNKNOWN.
+
+Sincronizacion de pruebas (solo con ``--clock manual``):
+- ``--status-file PATH``: el piloto publica de forma atomica un snapshot de
+  progreso (instante simulado, fuentes seguidas, contadores aceptados por
+  fuente, ultima disponibilidad por fuente, feeds, fase y motivo de parada).
+  No altera el camino productivo.
+- ``--decision-gate-file PATH``: barrera explicita de evaluacion. Si se indica,
+  una decision solo se toma cuando el fichero contiene el mismo instante que el
+  reloj (``{"decision_ms": <ms>}`` o el entero). Permite fijar el instante,
+  publicar los eventos, esperar confirmacion de procesamiento y AUTORIZAR la
+  evaluacion en ese instante; nunca adelanta ni retrasa el reloj.
+
+Modo de ejecucion:
+- ``--mode local`` (por defecto): requiere endpoints loopback explicitos
+  (127.0.0.1/localhost) y RECHAZA endpoints publicos antes de cualquier envio.
+- ``--mode public``: requiere activacion adicional ``--activar-publico``.
+- ``--budget-only``: no realiza acceso de red ni de mercado.
 """
+
 from __future__ import annotations
 
 import argparse
@@ -48,6 +80,7 @@ import asyncio
 import hashlib
 import json
 import math
+import os
 import subprocess
 import sys
 import time
@@ -55,6 +88,7 @@ from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Callable, Dict, List, Optional, Tuple
+from urllib.parse import urlsplit
 
 ROOT = Path(__file__).resolve().parent.parent
 for _p in (str(ROOT), str(ROOT / "src"), str(ROOT / "scripts")):
@@ -65,8 +99,11 @@ from microstructure_probe import discovery  # noqa: E402
 from microstructure_probe.book import BookEngine  # noqa: E402
 from microstructure_probe.flow import FlowEngine  # noqa: E402
 from microstructure_probe.history_client import (  # noqa: E402
+    ASSUMED_WEIGHTS,
     INTERVAL_MS,
     HistoryClient,
+    RateLimitExceeded,
+    UpstreamBudgetExceeded,
 )
 from microstructure_probe.history_store import HistoryStore  # noqa: E402
 from microstructure_probe.research_recorder import ResearchRecorder  # noqa: E402
@@ -85,11 +122,10 @@ DEFAULT_HORIZONS: Tuple[Tuple[str, int], ...] = (
 )
 
 # Pesos oficiales usados por el presupuesto (ver doc, seccion 9.7):
-# exchangeInfo=1, ticker/24hr sin symbol=40, klines limit<100=1, time=1.
+# exchangeInfo=1, ticker/24hr sin symbol=40, klines limit<100=1.
 WEIGHT_EXCHANGE_INFO = 1
 WEIGHT_TICKER_24H = 40
 WEIGHT_KLINES = 1
-WEIGHT_TIME = 1
 
 STATE_OBSERVADA = "observada"
 STATE_DESCARTADA = "descartada"
@@ -101,6 +137,9 @@ OUTCOME_PENDIENTE = "pendiente"
 # Tolerancia de coherencia de reloj: un evento adelantado mas de esto al reloj
 # del piloto se registra como patologia, nunca se recorta en silencio.
 FUTURE_EVENT_TOLERANCE_MS = 1_000
+
+# Hosts considerados loopback para el modo local.
+LOOPBACK_HOSTS = {"127.0.0.1", "localhost", "::1"}
 
 
 # ---------------------------------------------------------------------------
@@ -158,6 +197,17 @@ def classify_event_clock(event_ms: Optional[int], reference_ms: int) -> str:
     return "ok"
 
 
+def es_loopback(url: Optional[str]) -> bool:
+    """True si el host de la URL es loopback (127.0.0.1/localhost/::1)."""
+    if not url:
+        return False
+    try:
+        host = urlsplit(url).hostname
+    except Exception:
+        return False
+    return host in LOOPBACK_HOSTS
+
+
 # ---------------------------------------------------------------------------
 # Reloj
 # ---------------------------------------------------------------------------
@@ -201,6 +251,86 @@ def build_clock(mode: str, clock_file: Optional[str]) -> Any:
             raise ValueError("--clock manual requiere --clock-file")
         return ManualClock(Path(clock_file))
     raise ValueError(f"modo de reloj desconocido: {mode}")
+
+
+# ---------------------------------------------------------------------------
+# Puerta de presupuesto efectiva (HistoryClient.attempt_gate)
+# ---------------------------------------------------------------------------
+
+class RunBudget:
+    """Puerta de presupuesto efectiva para HistoryClient.attempt_gate.
+
+    Reserva cada intento HTTP ANTES del transporte. Impone maximos explicitos
+    de intentos totales, reintentos totales y peso acumulado. Cuando se agota
+    alguna cota, bloquea antes de enviar y el siguiente intento se rechaza
+    sin abrir conexion.
+    """
+
+    def __init__(
+        self,
+        max_attempts: int,
+        max_retries: int,
+        max_weight: int,
+    ) -> None:
+        self.max_attempts = max(0, int(max_attempts))
+        self.max_retries = max(0, int(max_retries))
+        self.max_weight = max(0, int(max_weight))
+        self.attempts = 0
+        self.retries = 0
+        self.weight = 0
+        self.blocked = False
+        self.reason: Optional[str] = None
+
+    def weight_of(self, endpoint: str) -> int:
+        ep = (endpoint or "").lower()
+        if "/fapi/v1/ticker/24hr" in ep:
+            return 40
+        if "/fapi/v1/exchangeinfo" in ep:
+            return 1
+        if "/fapi/v1/time" in ep:
+            return 1
+        if "/fapi/v1/klines" in ep or "/fapi/v1/markpriceklines" in ep:
+            return 1
+        return 1
+
+    def before_send(self, entry: Dict[str, Any]) -> None:
+        if self.blocked:
+            raise UpstreamBudgetExceeded(self.reason or "presupuesto_agotado")
+        ep = str(entry.get("endpoint", ""))
+        w = self.weight_of(ep)
+        if self.attempts + 1 > self.max_attempts:
+            self.blocked = True
+            self.reason = "presupuesto_intentos_agotado"
+            raise UpstreamBudgetExceeded(self.reason)
+        if self.weight + w > self.max_weight:
+            self.blocked = True
+            self.reason = "presupuesto_peso_agotado"
+            raise UpstreamBudgetExceeded(self.reason)
+        # Reservar ANTES del transporte.
+        self.attempts += 1
+        self.weight += w
+        entry["_reserved_weight"] = w
+        entry["_attempt_no"] = self.attempts
+
+    def after_send(self, entry: Dict[str, Any]) -> None:
+        result = str(entry.get("result", ""))
+        if "retry" in result:
+            self.retries += 1
+            if self.retries > self.max_retries:
+                self.blocked = True
+                self.reason = "presupuesto_reintentos_agotado"
+
+    def status(self) -> Dict[str, Any]:
+        return {
+            "attempts": self.attempts,
+            "retries": self.retries,
+            "weight": self.weight,
+            "max_attempts": self.max_attempts,
+            "max_retries": self.max_retries,
+            "max_weight": self.max_weight,
+            "blocked": self.blocked,
+            "reason": self.reason,
+        }
 
 
 # ---------------------------------------------------------------------------
@@ -250,6 +380,15 @@ def read_jsonl(path: Path) -> List[Dict[str, Any]]:
     return rows
 
 
+def _atomic_write(path: Path, text: str) -> None:
+    """Escritura atomica (tmp + replace) para ficheros de sincronizacion."""
+    path = Path(path)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    tmp = path.with_name(path.name + ".tmp")
+    tmp.write_text(text, encoding="utf-8", newline="\n")
+    os.replace(tmp, path)
+
+
 def _stats(values: List[float]) -> Dict[str, Any]:
     if not values:
         return {"n": 0, "min": None, "max": None, "mean": None}
@@ -269,7 +408,16 @@ def build_summary(rows: List[Dict[str, Any]]) -> Dict[str, Any]:
 
     by_motivo: Dict[str, int] = {}
     by_symbol: Dict[str, int] = {}
+    by_estado: Dict[str, int] = {}
+    apto = 0
+    no_apto = 0
     for r in obs:
+        estado = r.get("estado")
+        by_estado[estado] = by_estado.get(estado, 0) + 1
+        if r.get("apto_para_evaluacion"):
+            apto += 1
+        else:
+            no_apto += 1
         for motivo in r.get("motivos") or []:
             by_motivo[motivo] = by_motivo.get(motivo, 0) + 1
         by_symbol[r["symbol"]] = by_symbol.get(r["symbol"], 0) + 1
@@ -304,9 +452,11 @@ def build_summary(rows: List[Dict[str, Any]]) -> Dict[str, Any]:
         }
 
     seguidos_peak = 0
+    rotaciones = 0
     for c in cycles:
-        seguidos_peak = max(seguidos_peak,
-                            len((c.get("seguimiento") or {}).get("seguidos") or []))
+        seg = (c.get("seguimiento") or {})
+        seguidos_peak = max(seguidos_peak, len(seg.get("seguidos") or []))
+        rotaciones += len(seg.get("salidas") or [])
 
     return {
         "pilot_version": PILOT_VERSION,
@@ -314,17 +464,17 @@ def build_summary(rows: List[Dict[str, Any]]) -> Dict[str, Any]:
         "policy_version": POLICY_VERSION,
         "n_ciclos": len(cycles),
         "n_observaciones": len(obs),
-        "n_observadas": sum(1 for r in obs if r.get("estado") == STATE_OBSERVADA),
-        "n_descartadas": sum(1 for r in obs if r.get("estado") == STATE_DESCARTADA),
-        "n_aptas_para_evaluacion": sum(
-            1 for r in obs if r.get("apto_para_evaluacion")),
+        "n_observadas": by_estado.get(STATE_OBSERVADA, 0),
+        "n_descartadas": by_estado.get(STATE_DESCARTADA, 0),
+        "n_aptas_para_evaluacion": apto,
+        "n_no_aptas_para_evaluacion": no_apto,
         "n_resultados": len(outs),
         "motivos": dict(sorted(by_motivo.items())),
         "por_simbolo": dict(sorted(by_symbol.items())),
+        "por_estado": dict(sorted(by_estado.items())),
         "horizontes": horizon_summary,
         "seguidos_peak": seguidos_peak,
-        "n_rotaciones_salida": sum(
-            len((c.get("seguimiento") or {}).get("salidas") or []) for c in cycles),
+        "n_rotaciones_salida": rotaciones,
         "dedupe": {
             "flujo_duplicados": sum(
                 int((r.get("integridad") or {}).get("dedupe_flujo") or 0)
@@ -333,7 +483,11 @@ def build_summary(rows: List[Dict[str, Any]]) -> Dict[str, Any]:
                 int((r.get("integridad") or {}).get("dedupe_libro") or 0)
                 for r in obs),
         },
-        "retorno_unidades": "fraccion (0.01 = 1%), mark-to-mid; NO P&L ejecutable",
+        "retorno_unidades": (
+            "fraccion (0.01 = 1%); precio_base = libro_mid y "
+            "precio_posterior = klines_apertura_1m (proxy de fuentes mixtas; "
+            "no mark-to-mid, no P&L ejecutable)"
+        ),
     }
 
 
@@ -424,9 +578,11 @@ class StreamFeed:
 class PilotConfig:
     run_id: str
     out_dir: Path
-    rest_base: str = "https://fapi.binance.com"
-    ws_public_base: str = "wss://fstream.binance.com/public"
-    ws_market_base: str = "wss://fstream.binance.com/market"
+    mode: str = "local"                 # "local" | "public"
+    activar_publico: bool = False       # requerida para mode=="public"
+    rest_base: str = "http://127.0.0.1"
+    ws_public_base: str = "ws://127.0.0.1"
+    ws_market_base: str = "ws://127.0.0.1"
     duration_seconds: float = 14_400.0   # 4 h de captura
     settle_seconds: float = 4_200.0      # 70 min para madurar 60m del ultimo ciclo
     cycle_seconds: float = 60.0
@@ -442,17 +598,27 @@ class PilotConfig:
     price_delay_ms: int = 2_000
     max_data_age_ms: int = 5_000
     max_observations: int = 20_000
-    max_bytes: int = 128 * 1024 * 1024
+    max_bytes: int = 128 * 1024 * 1024   # almacenamiento TOTAL (JSONL+SQLite+aux)
     max_messages: int = 5_000_000
+    max_http_attempts: int = 2000
+    max_http_retries: int = 50
+    max_http_weight: int = 5000
+    max_ws_reconnects: int = 20
     tick_ms: int = 500
     clock_mode: str = "system"
     clock_file: Optional[str] = None
+    # Solo pruebas (requieren clock_mode == "manual"): observabilidad de
+    # progreso y barrera explicita de evaluacion. Jamas alteran tolerancias.
+    status_file: Optional[str] = None
+    decision_gate_file: Optional[str] = None
     keep_research_db: bool = True
 
     def to_dict(self) -> Dict[str, Any]:
         return {
             "run_id": self.run_id,
             "out_dir": str(self.out_dir),
+            "mode": self.mode,
+            "activar_publico": self.activar_publico,
             "rest_base": self.rest_base,
             "ws_public_base": self.ws_public_base,
             "ws_market_base": self.ws_market_base,
@@ -473,9 +639,15 @@ class PilotConfig:
             "max_observations": self.max_observations,
             "max_bytes": self.max_bytes,
             "max_messages": self.max_messages,
+            "max_http_attempts": self.max_http_attempts,
+            "max_http_retries": self.max_http_retries,
+            "max_http_weight": self.max_http_weight,
+            "max_ws_reconnects": self.max_ws_reconnects,
             "tick_ms": self.tick_ms,
             "clock_mode": self.clock_mode,
             "clock_file": self.clock_file,
+            "status_file": self.status_file,
+            "decision_gate_file": self.decision_gate_file,
             "policy_version": POLICY_VERSION,
             "pilot_version": PILOT_VERSION,
             "protocol_version": PROTOCOL_VERSION,
@@ -487,7 +659,12 @@ class PilotConfig:
 # ---------------------------------------------------------------------------
 
 def compute_budget(cfg: PilotConfig) -> Dict[str, Any]:
-    """Presupuesto concreto de una corrida; distingue pico y acumulado."""
+    """Presupuesto concreto de una corrida; distingue pico y acumulado.
+
+    No presupuesta llamadas /time que el programa no realiza. Las cotas
+    efectivas (intentos, reintentos, peso, WS, almacenamiento) se imponen
+    en tiempo de ejecucion mediante RunBudget y los controles del piloto.
+    """
     duration = max(0.0, float(cfg.duration_seconds))
     settle = max(0.0, float(cfg.settle_seconds))
     total_s = duration + settle
@@ -498,17 +675,13 @@ def compute_budget(cfg: PilotConfig) -> Dict[str, Any]:
 
     observations_max = cycles * symbols
     klines_requests = observations_max * n_horizons
-    time_queries = max(1, int(math.ceil(total_s / 3600.0)))  # 1/hora
 
     weight_catalog = selections * WEIGHT_EXCHANGE_INFO
     weight_tickers = selections * WEIGHT_TICKER_24H
     weight_klines = klines_requests * WEIGHT_KLINES
-    weight_time = time_queries * WEIGHT_TIME
-    weight_total = weight_catalog + weight_tickers + weight_klines + weight_time
-    retry_rate = 0.05
-    weight_retries = int(math.ceil(weight_total * retry_rate))
+    weight_total = weight_catalog + weight_tickers + weight_klines
 
-    # Almacenamiento: JSONL + buckets 1m/10s del recorder.
+    # Almacenamiento: JSONL + SQLite (buckets 1m/10s) + auxiliares (WAL/SHM).
     bytes_obs = 1_600
     bytes_outcome = 500
     bytes_bucket_row = 200
@@ -516,7 +689,8 @@ def compute_budget(cfg: PilotConfig) -> Dict[str, Any]:
     bucket_rows_10s = symbols * int(duration / 10.0) if duration else 0
     storage_jsonl = observations_max * bytes_obs + klines_requests * bytes_outcome
     storage_db = (bucket_rows * 2 + bucket_rows_10s) * bytes_bucket_row
-    storage_total = storage_jsonl + storage_db
+    storage_aux = 2 * 65_536  # WAL + SHM aproximado
+    storage_total = storage_jsonl + storage_db + storage_aux
 
     ws_streams_peak = symbols * 2  # depth20@100ms + aggTrade por simbolo
     ws_connections = 2             # /public (depth) + /market (aggTrade)
@@ -525,6 +699,7 @@ def compute_budget(cfg: PilotConfig) -> Dict[str, Any]:
 
     return {
         "version": PILOT_VERSION,
+        "mode": cfg.mode,
         "supuestos": {
             "duracion_captura_s": duration,
             "periodo_settle_s": settle,
@@ -533,18 +708,29 @@ def compute_budget(cfg: PilotConfig) -> Dict[str, Any]:
             "selecciones": selections,
             "simbolos_simultaneos_max": symbols,
             "horizontes": [label for label, _ in cfg.horizons],
-            "reintentos_previstos_pct": retry_rate * 100.0,
             "pesos_oficiales": {
                 "exchangeInfo": WEIGHT_EXCHANGE_INFO,
                 "ticker_24hr_sin_symbol": WEIGHT_TICKER_24H,
                 "klines_limit_1_100": WEIGHT_KLINES,
-                "time": WEIGHT_TIME,
             },
             "pool_referencia": (
                 "REQUEST_WEIGHT publicado en exchangeInfo.rateLimits y cabecera "
                 "X-MBX-USED-WEIGHT-1M; medido previamente 2400/min (referencia, "
                 "no garantia)"
             ),
+            "nota": (
+                "No se presupuestan llamadas /time (el programa no las realiza). "
+                "El 5 % de reintentos es solo una referencia; el limite efectivo "
+                "es max_http_retries."
+            ),
+        },
+        "limites_efectivos": {
+            "max_http_attempts": cfg.max_http_attempts,
+            "max_http_retries": cfg.max_http_retries,
+            "max_http_weight": cfg.max_http_weight,
+            "max_ws_reconnects": cfg.max_ws_reconnects,
+            "max_messages": cfg.max_messages,
+            "max_bytes_almacenamiento": cfg.max_bytes,
         },
         "rest": {
             "endpoints": {
@@ -558,16 +744,8 @@ def compute_budget(cfg: PilotConfig) -> Dict[str, Any]:
                     "llamadas": klines_requests, "peso_unitario": WEIGHT_KLINES,
                     "peso_total": weight_klines,
                     "nota": "1 por observacion y horizonte; interval 1m, limit=1"},
-                "/fapi/v1/time": {
-                    "llamadas": time_queries, "peso_unitario": WEIGHT_TIME,
-                    "peso_total": weight_time},
             },
-            "peso_total": weight_total,
-            "peso_reintentos_5pct": weight_retries,
-            "peso_total_con_reintentos": weight_total + weight_retries,
-            "peso_medio_por_minuto": (
-                (weight_total + weight_retries) / (total_s / 60.0)
-                if total_s > 0 else 0.0),
+            "peso_total_estimado": weight_total,
         },
         "ws": {
             "conexiones_simultaneas": ws_connections,
@@ -579,26 +757,35 @@ def compute_budget(cfg: PilotConfig) -> Dict[str, Any]:
             "reconexiones_acumuladas_previstas": ws_reconnects,
             "nota": (
                 "depth20@100ms pertenece a /public; aggTrade a /market: son dos "
-                "conexiones distintas (docs oficiales, aviso de rutas)"),
+                "conexiones distintas (docs oficiales, aviso de rutas). "
+                "El costo de rotacion cuenta dos conexiones por cambio de set."
+            ),
         },
         "simbolos": {
             "simultaneos_max": symbols,
             "incluye_pendientes": True,
             "nota": ("los resultados pendientes no abren WS; solo consumen "
-                     "consultas de klines"),
+                     "consultas de klines sujetas al presupuesto HTTP"),
         },
         "almacenamiento": {
             "jsonl_bytes_previstos": storage_jsonl,
             "sqlite_bytes_previstos": storage_db,
+            "auxiliares_bytes_previstos": storage_aux,
             "total_bytes_previstos": storage_total,
             "tope_configurado_bytes": cfg.max_bytes,
+            "nota": (
+                "El tope incluye JSONL, SQLite y sus archivos auxiliares. "
+                "No se anuncia 128 MB totales si solo se limita el JSONL."
+            ),
         },
         "interrupcion_y_limpieza": {
             "condiciones": [
                 "duracion de captura agotada",
                 "max_observaciones alcanzado",
-                "tope de bytes alcanzado",
-                "max_mensajes alcanzado",
+                "tope de bytes (almacenamiento total) alcanzado",
+                "max_mensajes WS alcanzado",
+                "reconexiones WS acumuladas agotadas",
+                "presupuesto HTTP agotado (intentos/peso/reintentos)",
                 "senal externa (SIGINT/SIGTERM)",
             ],
             "limpieza": [
@@ -612,6 +799,7 @@ def compute_budget(cfg: PilotConfig) -> Dict[str, Any]:
             "adquisicion de order book historico",
             "backfill de huecos",
             "ordenes, claves o endpoints privados",
+            "llamadas /time (no realizadas por el programa)",
         ],
     }
 
@@ -634,7 +822,13 @@ class ResearchPilot:
             db_path=self.db_path, run_id=cfg.run_id, enabled=True,
             clock_ms=self.clock.now_ms,
         )
-        self.rest = HistoryClient(base_url=cfg.rest_base)
+        # Puerta de presupuesto efectiva: reserva cada intento HTTP antes del
+        # transporte. Reutiliza HistoryClient y su attempt_gate existente.
+        self.budget = RunBudget(
+            cfg.max_http_attempts, cfg.max_http_retries, cfg.max_http_weight,
+        )
+        self.rest = HistoryClient(base_url=cfg.rest_base,
+                                  attempt_gate=self.budget)
         self.policy = research_selector.ResearchPolicy(
             max_candidatos=cfg.max_candidates,
             max_comparadores=cfg.max_comparators,
@@ -645,11 +839,15 @@ class ResearchPilot:
         self.followed: List[str] = []
         self.roles: Dict[str, str] = {}
         self.selection_meta: Dict[str, Dict[str, Any]] = {}
+        self.last_selection_reference_ms: Optional[int] = None
         self.last_book_recv: Dict[str, int] = {}
         self.last_flow_recv: Dict[str, int] = {}
         self.last_book_event: Dict[str, int] = {}
         self.last_flow_event: Dict[str, int] = {}
         self.last_book_u: Dict[str, int] = {}
+        # Contadores ACEPTADOS por fuente (confirmacion de procesamiento).
+        self.book_events: Dict[str, int] = {}
+        self.flow_events: Dict[str, int] = {}
         self.flow_seen_ids: Dict[str, set] = {}
         self.flow_seen_order: Dict[str, List[int]] = {}
         self.dedupe_flow: Dict[str, int] = {}
@@ -660,18 +858,50 @@ class ResearchPilot:
         self.outcomes_written = 0
         self.observations_written = 0
         self.cycles_run = 0
+        self.evaluations_run = 0
         self.stop_reason: Optional[str] = None
+        # Solo pruebas: snapshot de progreso y barrera de evaluacion.
+        self.status_path: Optional[Path] = (
+            Path(cfg.status_file) if cfg.status_file else None)
+        self.gate_path: Optional[Path] = (
+            Path(cfg.decision_gate_file) if cfg.decision_gate_file else None)
+        self._phase = "captura"
         self.feeds: Dict[str, StreamFeed] = {}
         self.feed_tasks: List[asyncio.Task] = []
         self.feed_stop = asyncio.Event()
         self.feed_signature: Optional[Tuple[Tuple[str, ...], Tuple[str, ...]]] = None
+        # Contadores acumulados de WS (no se reseten al reemplazar StreamFeed).
         self.ws_total_connections = 0
+        self.ws_messages_total = 0
+        self.ws_reconnects_total = 0
         self.started_ms = self.clock.now_ms()
         self.ended_ms: Optional[int] = None
         self.capture_end_ms = self.started_ms + int(cfg.duration_seconds * 1000)
         self.settle_end_ms = self.capture_end_ms + int(cfg.settle_seconds * 1000)
 
-    # -- mensajes WS ---------------------------------------------------
+    # -- almacenamiento total ----------------------------------------------
+
+    def _sqlite_bytes(self) -> int:
+        total = 0
+        for p in (self.db_path,
+                  Path(str(self.db_path) + "-wal"),
+                  Path(str(self.db_path) + "-shm")):
+            try:
+                if p.exists():
+                    total += p.stat().st_size
+            except OSError:
+                pass
+        return total
+
+    def storage_bytes_total(self) -> int:
+        """Almacenamiento total: JSONL + SQLite + archivos auxiliares."""
+        return self.store.bytes_written + self._sqlite_bytes()
+
+    def _storage_ok(self, extra_bytes: int = 0) -> bool:
+        return (not self.cfg.max_bytes
+                or self.storage_bytes_total() + extra_bytes <= self.cfg.max_bytes)
+
+    # -- mensajes WS -------------------------------------------------------
 
     def _is_duplicate_trade(self, symbol: str, trade_id: Any) -> bool:
         try:
@@ -720,6 +950,7 @@ class ResearchPilot:
                 if accepted:
                     self.last_flow_recv[symbol] = recv_ms
                     self.last_flow_event[symbol] = int(event_ms)
+                    self.flow_events[symbol] = self.flow_events.get(symbol, 0) + 1
                     self.recorder.record_trade(symbol, int(event_ms),
                                                float(price), float(qty), maker)
             return
@@ -747,6 +978,7 @@ class ResearchPilot:
                         self.last_book_u[symbol] = uid
                     self.last_book_recv[symbol] = recv_ms
                     self.last_book_event[symbol] = int(data.get("E"))
+                    self.book_events[symbol] = self.book_events.get(symbol, 0) + 1
                     state = self.book._books.get(symbol)
                     features = state.features if state is not None else None
                     if features:
@@ -780,10 +1012,13 @@ class ResearchPilot:
         signature = (tuple(public), tuple(market))
         if signature == self.feed_signature:
             return
-        # Contar conexiones establecidas antes de reemplazarlas, para llevar
-        # un total acumulado incluso cuando el feed objeto se descarta.
+        # Acumular contadores del feed que se reemplaza (no se reseten).
         self.ws_total_connections += sum(
             f.connections for f in self.feeds.values())
+        self.ws_messages_total += sum(
+            f.messages for f in self.feeds.values())
+        self.ws_reconnects_total += sum(
+            f.reconnects for f in self.feeds.values())
         await self._stop_feeds()
         if not public:
             self.feed_signature = signature
@@ -819,6 +1054,7 @@ class ResearchPilot:
         cycle = research_selector.run_research_cycle(
             catalog_rows, candidates, self.policy,
             reference_ms=self.clock.now_ms())
+        self.last_selection_reference_ms = cycle.reference_ms
 
         selected = [s.symbol for s in cycle.selected]
         comparators = [c["symbol"] for c in cycle.comparator]
@@ -908,7 +1144,7 @@ class ResearchPilot:
             self.stop_reason = "presupuesto_bytes"
         return row
 
-    # -- decisiones ----------------------------------------------------
+    # -- decisiones --------------------------------------------------------
 
     def _book_records(self, now: int) -> Dict[str, Dict[str, Any]]:
         if self.book is None:
@@ -920,58 +1156,81 @@ class ResearchPilot:
             return {}
         return {r["symbol"]: r for r in self.flow.snapshot_all(now)}
 
+    def _frescura_fuente(self, recv_ms: Optional[int], event_ms: Optional[int],
+                         now: int) -> bool:
+        """True si la fuente está obsoleta respecto al instante real now."""
+        if recv_ms is None:
+            return True
+        if (now - int(recv_ms)) > self.cfg.max_data_age_ms:
+            return True
+        if event_ms is not None and (now - int(event_ms)) > self.cfg.max_data_age_ms:
+            return True
+        return False
+
     def build_observation(self, symbol: str, now: int,
                           book_rec: Optional[Dict[str, Any]],
                           flow_rec: Optional[Dict[str, Any]]) -> Dict[str, Any]:
+        # now es el instante REAL de evaluacion (decision_ms), nunca retrotraido.
+        decision_ms = int(now)
         book_recv = self.last_book_recv.get(symbol)
         flow_recv = self.last_flow_recv.get(symbol)
+        book_event = self.last_book_event.get(symbol)
+        flow_event = self.last_flow_event.get(symbol)
         motivos: List[str] = []
 
-        availability = [m for m in (book_recv, flow_recv) if m is not None]
-        if not availability:
-            decision_ms = now
-            motivos.append("sin_datos_de_libro_ni_flujo")
-        else:
-            decision_ms = max(availability)
+        # Disponibilidad por fuente (registrada por separado, <= decision_ms).
         if book_recv is None:
             motivos.append("sin_libro")
         if flow_recv is None:
             motivos.append("sin_flujo")
-        if decision_ms < now and (now - decision_ms) > self.cfg.max_data_age_ms:
-            motivos.append("dato_obsoleto")
 
-        book_features = (book_rec or {}).get("book") or {}
-        flow_h = (((flow_rec or {}).get("horizons") or {}).get("1m") or {})
+        # Frescura INDEPENDIENTE por fuente: flujo reciente no rejuvenece libro
+        # antiguo, ni al contrario.
+        if book_recv is not None and self._frescura_fuente(book_recv, book_event, decision_ms):
+            motivos.append("dato_obsoleto_libro")
+        if flow_recv is not None and self._frescura_fuente(flow_recv, flow_event, decision_ms):
+            motivos.append("dato_obsoleto_flujo")
 
-        book_event = self.last_book_event.get(symbol)
-        flow_event = self.last_flow_event.get(symbol)
+        # Coherencia de reloj por fuente.
         if classify_event_clock(book_event, decision_ms) == "evento_futuro":
             motivos.append("evento_de_libro_posterior_al_reloj")
         if classify_event_clock(flow_event, decision_ms) == "evento_futuro":
             motivos.append("evento_de_flujo_posterior_al_reloj")
 
+        # Calidad del libro.
+        book_features = (book_rec or {}).get("book") or {}
         if book_rec and book_rec.get("degraded"):
             motivos.append("libro_degradado_por_hueco")
         if book_features.get("crossed"):
             motivos.append("libro_cruzado")
-        if flow_rec is not None and int(flow_h.get("trades") or 0) <= 0:
-            motivos.append("flujo_sin_eventos_en_ventana")
-
         mid = book_features.get("mid")
-        if mid is None and "sin_libro" not in motivos:
+        if mid is None and book_recv is not None:
             motivos.append("libro_sin_mid")
 
-        age_book = (decision_ms - book_event) if book_event is not None else None
-        age_flow = (decision_ms - flow_event) if flow_event is not None else None
+        # Flujo: ventana completa y eventos en ventana.
+        flow_h = (((flow_rec or {}).get("horizons") or {}).get("1m") or {})
+        window_complete = bool(flow_h.get("warmup_complete")) if flow_rec is not None else False
+        trades = int(flow_h.get("trades") or 0)
+        if flow_rec is not None and not window_complete:
+            motivos.append("flujo_ventana_incompleta")
+        if flow_rec is not None and trades <= 0:
+            motivos.append("flujo_sin_eventos_en_ventana")
 
         fatal = {
-            "sin_datos_de_libro_ni_flujo", "sin_libro", "sin_flujo",
-            "dato_obsoleto", "libro_degradado_por_hueco", "libro_cruzado",
-            "libro_sin_mid", "flujo_sin_eventos_en_ventana",
+            "sin_libro", "sin_flujo",
+            "dato_obsoleto_libro", "dato_obsoleto_flujo",
             "evento_de_libro_posterior_al_reloj",
             "evento_de_flujo_posterior_al_reloj",
+            "libro_degradado_por_hueco", "libro_cruzado", "libro_sin_mid",
+            "flujo_ventana_incompleta", "flujo_sin_eventos_en_ventana",
         }
         apto = not any(m in fatal for m in motivos) and mid is not None
+
+        # Antiguedad de evento Y de recepción por fuente.
+        age_book_event = (decision_ms - book_event) if book_event is not None else None
+        age_book_recv = (decision_ms - book_recv) if book_recv is not None else None
+        age_flow_event = (decision_ms - flow_event) if flow_event is not None else None
+        age_flow_recv = (decision_ms - flow_recv) if flow_recv is not None else None
 
         depth = book_features.get("depth") or {}
         top20 = depth.get("top20") or {}
@@ -980,6 +1239,7 @@ class ResearchPilot:
         ask_conc = conc.get("ask") or {}
 
         meta = self.selection_meta.get(symbol) or {}
+        seleccion_disponibilidad = self.last_selection_reference_ms
         return {
             "kind": "observacion",
             "observation_id": build_observation_id(symbol, decision_ms),
@@ -991,26 +1251,36 @@ class ResearchPilot:
                 "move_24h_pct": meta.get("move_24h_pct"),
                 "selection_probability": meta.get("selection_probability"),
                 "policy_version": POLICY_VERSION,
+                "disponibilidad_ms": seleccion_disponibilidad,
             },
+            # Instante REAL de decision (evaluacion), no bucket_end.
             "decision_ms": decision_ms,
             "decision_iso": iso_utc(decision_ms),
             "regla_decision": (
-                "decision_ms = max(disponibilidad de todos los datos usados); "
-                "nunca bucket_end"),
+                "decision_ms = instante real de evaluacion (reloj del piloto); "
+                "todas las disponibilidades <= decision_ms; nunca bucket_end; "
+                "nunca retrotraido"),
             "disponibilidad": {
                 "libro_ms": book_recv,
                 "flujo_ms": flow_recv,
+                "seleccion_ms": seleccion_disponibilidad,
                 "max_ms": decision_ms,
             },
             "estado": STATE_OBSERVADA if apto else STATE_DESCARTADA,
             "apto_para_evaluacion": apto,
             "motivos": motivos,
+            # Precio inicial: mid del libro (fuente libro). Precio posterior:
+            # apertura de vela 1m (fuente klines). Proxy de fuentes mixtas,
+            # NO mark-to-mid ni P&L.
             "precio_base": mid,
             "precio_base_fuente": "libro_mid",
+            "precio_base_event_ms": book_event,
+            "precio_base_disponibilidad_ms": book_recv,
             "libro": {
                 "event_ms": book_event,
                 "received_ms": book_recv,
-                "age_ms": age_book,
+                "age_event_ms": age_book_event,
+                "age_received_ms": age_book_recv,
                 "spread_bps": book_features.get("spread_bps"),
                 "imbalance_notional": book_features.get("imbalance_notional"),
                 "imbalance_qty": book_features.get("imbalance_qty"),
@@ -1030,7 +1300,8 @@ class ResearchPilot:
             "flujo": {
                 "event_ms": flow_event,
                 "received_ms": flow_recv,
-                "age_ms": age_flow,
+                "age_event_ms": age_flow_event,
+                "age_received_ms": age_flow_recv,
                 "window_ms": flow_h.get("window_ms"),
                 "buy_notional": flow_h.get("buy_notional"),
                 "sell_notional": flow_h.get("sell_notional"),
@@ -1038,13 +1309,13 @@ class ResearchPilot:
                 "delta_ratio": flow_h.get("delta_ratio"),
                 "base_volume": flow_h.get("base_volume"),
                 "trade_count": flow_h.get("trades"),
-                "ventana_completa": flow_h.get("warmup_complete"),
+                "ventana_completa": window_complete,
                 "source": "aggTrade",
             },
             "cobertura": {
                 "libro_presente": bool(book_features),
                 "flujo_presente": flow_rec is not None,
-                "flujo_ventana_completa": bool(flow_h.get("warmup_complete")),
+                "flujo_ventana_completa": window_complete,
                 "libro_banda_5bps_cubierta": (
                     (bid_conc.get("coverage_max_dist_bps") or 0) >= 5.0
                     and (ask_conc.get("coverage_max_dist_bps") or 0) >= 5.0),
@@ -1065,11 +1336,15 @@ class ResearchPilot:
         }
 
     def take_decisions(self, now: int) -> int:
+        """now es el instante real de evaluacion; decision_ms = now."""
         book_records = self._book_records(now)
         flow_records = self._flow_records(now)
         written = 0
         for symbol in list(self.followed):
             if self.store.cap_reached:
+                self.stop_reason = "presupuesto_bytes"
+                break
+            if not self._storage_ok():
                 self.stop_reason = "presupuesto_bytes"
                 break
             obs = self.build_observation(symbol, now,
@@ -1101,7 +1376,7 @@ class ResearchPilot:
                 break
         return written
 
-    # -- resultados ----------------------------------------------------
+    # -- resultados --------------------------------------------------------
 
     def _fetch_price(self, symbol: str, price_ts_ms: int) -> Optional[float]:
         step = INTERVAL_MS[self.cfg.price_interval]
@@ -1128,6 +1403,11 @@ class ResearchPilot:
         step = INTERVAL_MS[self.cfg.price_interval]
         resolved = 0
         for key in list(self.pending):
+            if self.stop_reason:
+                break
+            if not self._storage_ok():
+                self.stop_reason = "presupuesto_bytes"
+                break
             item = self.pending[key]
             target = int(item["target_ms"])
             price_ts = ceil_ms(target, step)
@@ -1146,6 +1426,16 @@ class ResearchPilot:
             try:
                 price = await asyncio.to_thread(
                     self._fetch_price, item["symbol"], price_ts)
+            except RateLimitExceeded as exc:
+                # Presupuesto HTTP agotado: no hay mas consultas ilimitadas.
+                self.stop_reason = "presupuesto_agotado"
+                self._write_outcome(item, OUTCOME_NO_EVALUABLE, {
+                    "motivo": f"presupuesto_agotado: {exc}",
+                    "price_ts_ms": price_ts, "desfase_ms": desfase,
+                })
+                del self.pending[key]
+                resolved += 1
+                continue
             except Exception as exc:
                 self._write_outcome(item, OUTCOME_NO_EVALUABLE, {
                     "motivo": f"error_consulta_precio: {type(exc).__name__}",
@@ -1173,6 +1463,11 @@ class ResearchPilot:
                 "horizonte_efectivo_ms": price_ts - int(item["decision_ms"]),
                 "retorno": ret,
                 "retorno_unidades": "fraccion",
+                "precio_base": base,
+                "precio_base_fuente": "libro_mid",
+                "precio_posterior": price,
+                "precio_posterior_fuente": "klines_apertura_1m",
+                "precio_posterior_ts_ms": price_ts,
                 "neto": None,
                 "neto_estado": "UNKNOWN",
                 "neto_motivo": "sin supuestos de ejecucion ni costes",
@@ -1183,6 +1478,9 @@ class ResearchPilot:
 
     def _write_outcome(self, item: Dict[str, Any], estado: str,
                        extra: Dict[str, Any]) -> None:
+        if not self._storage_ok():
+            self.stop_reason = "presupuesto_bytes"
+            return
         row = {
             "kind": "resultado",
             "observation_id": item["observation_id"],
@@ -1209,6 +1507,81 @@ class ResearchPilot:
             })
         self.pending.clear()
 
+    # -- sincronizacion de pruebas ----------------------------------------
+
+    def _gate_decision_ms(self) -> Optional[int]:
+        """Instante autorizado por la barrera (None si no hay/no es valida)."""
+        if self.gate_path is None:
+            return None
+        try:
+            raw = self.gate_path.read_text(encoding="utf-8").strip()
+        except OSError:
+            return None
+        if not raw:
+            return None
+        try:
+            if raw.startswith("{"):
+                return int(json.loads(raw)["decision_ms"])
+            return int(raw)
+        except (KeyError, TypeError, ValueError):
+            return None
+
+    def _fuente_status(self, cache_event: Dict[str, int],
+                       cache_recv: Dict[str, int], now: int) -> Dict[str, Any]:
+        out: Dict[str, Any] = {}
+        for sym in self.followed:
+            event_ms = cache_event.get(sym)
+            recv_ms = cache_recv.get(sym)
+            out[sym] = {
+                "event_ms": event_ms,
+                "received_ms": recv_ms,
+                "age_event_ms": (now - event_ms) if event_ms is not None else None,
+                "age_received_ms": (now - recv_ms) if recv_ms is not None else None,
+            }
+        return out
+
+    def _write_status(self) -> None:
+        """Snapshot atomico de progreso (solo si --status-file esta definido)."""
+        if self.status_path is None:
+            return
+        now = self.clock.now_ms()
+        status = {
+            "phase": self._phase,
+            "now_ms": now,
+            "started_ms": self.started_ms,
+            "capture_end_ms": self.capture_end_ms,
+            "settle_end_ms": self.settle_end_ms,
+            "followed": list(self.followed),
+            "roles": dict(self.roles),
+            "cycles_run": self.cycles_run,
+            "evaluations_run": self.evaluations_run,
+            "observations_written": self.observations_written,
+            "outcomes_written": self.outcomes_written,
+            "pending": len(self.pending),
+            "stop_reason": self.stop_reason,
+            "gate_decision_ms": self._gate_decision_ms(),
+            "book_events": dict(self.book_events),
+            "flow_events": dict(self.flow_events),
+            "book": self._fuente_status(
+                self.last_book_event, self.last_book_recv, now),
+            "flow": self._fuente_status(
+                self.last_flow_event, self.last_flow_recv, now),
+            "feeds": {
+                name: {
+                    "connected_now": feed.connected_now,
+                    "connections": feed.connections,
+                    "messages": feed.messages,
+                }
+                for name, feed in self.feeds.items()
+            },
+        }
+        try:
+            _atomic_write(self.status_path, json.dumps(
+                status, ensure_ascii=False, sort_keys=True) + "\n")
+        except OSError:
+            # La observabilidad de prueba nunca detiene la captura.
+            pass
+
     # -- bucle ---------------------------------------------------------
 
     async def run(self) -> Dict[str, Any]:
@@ -1227,24 +1600,45 @@ class ResearchPilot:
                 if self.stop_reason:
                     break
                 if now >= next_selection:
-                    await asyncio.to_thread(self.run_cycle)
+                    try:
+                        await asyncio.to_thread(self.run_cycle)
+                    except RateLimitExceeded as exc:
+                        self.stop_reason = f"presupuesto_agotado: {exc}"
+                        break
                     now = self.clock.now_ms()
                     await self._restart_feeds()
                     next_selection = now + int(self.cfg.selection_seconds * 1000)
                 if now >= next_decision and self.followed:
-                    self.take_decisions(now)
-                    next_decision = now + int(self.cfg.cycle_seconds * 1000)
+                    # Barrera de evaluacion (solo pruebas con clock manual):
+                    # sin barrera se mantiene el comportamiento productivo.
+                    if self.gate_path is None or self._gate_decision_ms() == now:
+                        self.take_decisions(now)
+                        self.evaluations_run += 1
+                        next_decision = now + int(self.cfg.cycle_seconds * 1000)
                 if self.stop_reason:
                     break
-                if sum(f.messages for f in self.feeds.values()) > self.cfg.max_messages:
+                # Limites WS acumulados (incluidos feeds reemplazados).
+                if (self.ws_messages_total
+                        + sum(f.messages for f in self.feeds.values())
+                        > self.cfg.max_messages):
                     self.stop_reason = "max_mensajes"
                     break
+                if self.ws_reconnects_total + sum(
+                        f.reconnects for f in self.feeds.values()
+                    ) > self.cfg.max_ws_reconnects:
+                    self.stop_reason = "max_reconexiones_ws"
+                    break
                 await self.resolve_due(now)
+                self._write_status()
                 await asyncio.sleep(tick_s)
-            # Settle: sin WS; solo maduran resultados ya programados.
+            # Settle: presupuesto, plazo y cancelacion siguen vigentes.
             await self._stop_feeds()
-            while self.clock.now_ms() < self.settle_end_ms and self.pending:
+            self._phase = "settle"
+            while (self.clock.now_ms() < self.settle_end_ms
+                   and self.pending
+                   and not self.stop_reason):
                 await self.resolve_due(self.clock.now_ms())
+                self._write_status()
                 await asyncio.sleep(tick_s)
             self.finalize_pending(self.clock.now_ms())
         finally:
@@ -1255,6 +1649,8 @@ class ResearchPilot:
                 pass
             self.store.close()
             self.ended_ms = self.clock.now_ms()
+            self._phase = "fin"
+            self._write_status()
         summary = self._write_outputs(skipped_selections)
         return summary
 
@@ -1277,12 +1673,20 @@ class ResearchPilot:
                 "failures": self.rest.stats.failures,
                 "weight_spent": self.rest.stats.weight_spent,
             },
+            "presupuesto_http": self.budget.status(),
             "ws_connections_total": self.ws_total_connections + sum(
                 f.connections for f in self.feeds.values()),
+            "ws_messages_total": self.ws_messages_total + sum(
+                f.messages for f in self.feeds.values()),
+            "ws_reconnects_total": self.ws_reconnects_total + sum(
+                f.reconnects for f in self.feeds.values()),
             "ws": {name: feed.status() for name, feed in self.feeds.items()},
             "almacenamiento": {
                 "jsonl_bytes": self.store.bytes_written,
                 "jsonl_rows": self.store.rows_written,
+                "sqlite_bytes": self._sqlite_bytes(),
+                "storage_bytes_total": self.storage_bytes_total(),
+                "tope_bytes": self.cfg.max_bytes,
                 "research_db": str(self.db_path) if self.cfg.keep_research_db else None,
             },
             "recorder": self.recorder.status(),
@@ -1290,9 +1694,12 @@ class ResearchPilot:
             "estado": ("completo" if summary["n_observaciones"] > 0
                        else "insuficiente"),
             "limites": [
-                "retorno mark-to-mid; NO es P&L ejecutable",
+                "precio_base = libro_mid; precio_posterior = klines_apertura_1m; "
+                "proxy de fuentes mixtas, no mark-to-mid, no P&L ejecutable",
                 "sin supuestos de costes el neto es UNKNOWN",
                 "no se declara ventaja, rentabilidad ni representatividad",
+                "presupuesto HTTP efectivo (intentos/peso/reintentos) y "
+                "almacenamiento total (JSONL+SQLite+aux)",
             ],
         })
         summary_path = self.out_dir / "resumen.json"
@@ -1354,9 +1761,14 @@ def build_parser() -> argparse.ArgumentParser:
                     "endpoints privados)")
     p.add_argument("--run-id", default=None)
     p.add_argument("--out-dir", default=None)
-    p.add_argument("--rest-base", default="https://fapi.binance.com")
-    p.add_argument("--ws-public-base", default="wss://fstream.binance.com/public")
-    p.add_argument("--ws-market-base", default="wss://fstream.binance.com/market")
+    p.add_argument("--mode", choices=("local", "public"), default="local",
+                   help="modo local (loopback, default) o publico "
+                   "(requiere --activar-publico)")
+    p.add_argument("--activar-publico", action="store_true",
+                   help="habilita modo publico (endpoints Binance)")
+    p.add_argument("--rest-base", default="http://127.0.0.1")
+    p.add_argument("--ws-public-base", default="ws://127.0.0.1")
+    p.add_argument("--ws-market-base", default="ws://127.0.0.1")
     p.add_argument("--duration-seconds", type=float, default=14_400.0)
     p.add_argument("--settle-seconds", type=float, default=4_200.0)
     p.add_argument("--cycle-seconds", type=float, default=60.0)
@@ -1374,9 +1786,17 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("--max-observations", type=int, default=20_000)
     p.add_argument("--max-bytes", type=int, default=128 * 1024 * 1024)
     p.add_argument("--max-messages", type=int, default=5_000_000)
+    p.add_argument("--max-http-attempts", type=int, default=2000)
+    p.add_argument("--max-http-retries", type=int, default=50)
+    p.add_argument("--max-http-weight", type=int, default=5000)
+    p.add_argument("--max-ws-reconnects", type=int, default=20)
     p.add_argument("--tick-ms", type=int, default=500)
     p.add_argument("--clock", choices=("system", "manual"), default="system")
     p.add_argument("--clock-file", default=None)
+    p.add_argument("--status-file", default=None,
+                   help="snapshot de progreso (solo --clock manual)")
+    p.add_argument("--decision-gate-file", default=None,
+                   help="barrera de evaluacion (solo --clock manual)")
     p.add_argument("--budget-only", action="store_true",
                    help="calcula y escribe el presupuesto sin red")
     return p
@@ -1386,9 +1806,33 @@ def config_from_args(args: argparse.Namespace) -> PilotConfig:
     run_id = args.run_id or time.strftime("pilot-%Y%m%dT%H%M%SZ", time.gmtime())
     out_dir = Path(args.out_dir) if args.out_dir else (
         ROOT / "data" / "research_pilot" / run_id)
+
+    # Separacion explicita local/publico.
+    if args.mode == "local":
+        for nombre, valor in (("rest-base", args.rest_base),
+                              ("ws-public-base", args.ws_public_base),
+                              ("ws-market-base", args.ws_market_base)):
+            if not es_loopback(valor):
+                raise ValueError(
+                    f"modo local rechaza endpoint publico en --{nombre}: {valor}"
+                )
+    else:  # public
+        if not args.activar_publico:
+            raise ValueError(
+                "modo publico requiere --activar-publico (activacion adicional)"
+            )
+
+    # Instrumentacion de sincronizacion: solo con reloj manual (pruebas).
+    if args.clock != "manual" and (args.status_file or args.decision_gate_file):
+        raise ValueError(
+            "--status-file/--decision-gate-file requieren --clock manual"
+        )
+
     return PilotConfig(
         run_id=run_id,
         out_dir=out_dir,
+        mode=args.mode,
+        activar_publico=args.activar_publico,
         rest_base=args.rest_base,
         ws_public_base=args.ws_public_base,
         ws_market_base=args.ws_market_base,
@@ -1409,9 +1853,15 @@ def config_from_args(args: argparse.Namespace) -> PilotConfig:
         max_observations=args.max_observations,
         max_bytes=args.max_bytes,
         max_messages=args.max_messages,
+        max_http_attempts=args.max_http_attempts,
+        max_http_retries=args.max_http_retries,
+        max_http_weight=args.max_http_weight,
+        max_ws_reconnects=args.max_ws_reconnects,
         tick_ms=args.tick_ms,
         clock_mode=args.clock,
         clock_file=args.clock_file,
+        status_file=args.status_file,
+        decision_gate_file=args.decision_gate_file,
     )
 
 
@@ -1423,6 +1873,7 @@ def main(argv: Optional[List[str]] = None) -> int:
         print(json.dumps({"error": str(exc)}), file=sys.stderr)
         return 2
     if args.budget_only:
+        # No realiza acceso de red ni de mercado.
         budget = compute_budget(cfg)
         Path(cfg.out_dir).mkdir(parents=True, exist_ok=True)
         path = Path(cfg.out_dir) / "presupuesto.json"
@@ -1430,8 +1881,7 @@ def main(argv: Optional[List[str]] = None) -> int:
                                    sort_keys=True) + "\n", encoding="utf-8",
                         newline="\n")
         print(json.dumps({"presupuesto": str(path),
-                          "peso_total": budget["rest"]["peso_total"],
-                          "con_reintentos": budget["rest"]["peso_total_con_reintentos"]},
+                          "peso_total_estimado": budget["rest"]["peso_total_estimado"]},
                          ensure_ascii=False))
         return 0
     try:
@@ -1448,6 +1898,7 @@ def main(argv: Optional[List[str]] = None) -> int:
         "stop_reason": summary["stop_reason"],
         "observaciones": summary["n_observaciones"],
         "aptas": summary["n_aptas_para_evaluacion"],
+        "no_aptas": summary["n_no_aptas_para_evaluacion"],
         "resultados": summary["n_resultados"],
         "out_dir": str(cfg.out_dir),
     }, ensure_ascii=False))

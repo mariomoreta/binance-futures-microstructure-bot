@@ -1,3 +1,24 @@
+## Piloto prospectivo v1 — sincronización reloj/prueba (2026-11-04)
+
+`CURRENT_PHASE`: investigación local del universo/liquidez (solo lectura, sin
+Binance, sin órdenes; presupuesto público requiere autorización separada).
+
+`CURRENT_OBJECTIVE`: cumplido — eliminar la carrera reloj/proveedor en la cadena
+completa y demostrar frescura por fuente, ventana completa y horizontes
+5m/15m/60m sin relajar tolerancias.
+
+`ACTIVE_TASK`: cerrado — `scripts/research_pilot.py` acepta `--status-file` y
+`--decision-gate-file` (solo `--clock manual`); `tests/test_research_pilot.py`
+reescrito con pasos explícitos fijar instante → publicar → confirmar
+procesamiento → autorizar evaluación → avanzar (23 passed). Evidencia en
+`docs/evidence/research/universe_liquidity_v1/pilot_sync/`.
+
+`NEXT_TASKS`:
+1. Mantener `max_data_age_ms=5000`; no ajustar el reloj para forzar aptas.
+2. No ejecutar contra Binance sin autorización separada del presupuesto (§9.3).
+3. Revisar si el settle por parada de duración debe madurar pendientes o
+   conservarlos como `pendiente` (comportamiento actual del bloque).
+
 ## Corrección semántica de costes y aceptación A-J del dashboard (2026-11-03, base `bf974f2`)
 
 `CURRENT_PHASE`: dashboard V2 de escritorio + observación (WS público solo bajo autorización

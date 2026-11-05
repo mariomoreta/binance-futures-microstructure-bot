@@ -4,16 +4,30 @@ Cadena local reproducible contra proveedores HTTP/WS loopback y SQLite temporal
 (reloj de prueba), sin conexiones públicas de mercado ni DBs canónicas:
 `scripts/research_pilot.py` coordina `research_selector` (research-selector-v2),
 `book.BookEngine`, `flow.FlowEngine`, `history_client.HistoryClient` y
-`research_recorder.ResearchRecorder`. Prueba de cadena completa:
-`tests/test_research_pilot.py` (4 passed: selección reproducible, unión ≤ 20,
-decisión >= disponibilidad de libro y flujo, duplicados sin multiplicación,
-hueco/incompleto con motivo, rotación con pendientes conservados, parada por
-duración, resumen regenerado desde lo persistido). No declara ventaja ni
-rentabilidad; produce observaciones aptas para estudio y un presupuesto
-público revisable.
+`research_recorder.ResearchRecorder`.
+
+Sincronización determinista de la cadena completa (2026-11-04): el test fija el
+instante, el proveedor WS publica el burst bajo demanda, se espera confirmación
+explícita con `--status-file` (contadores aceptados por fuente y última
+disponibilidad) y solo entonces se autoriza la evaluación en ese instante con
+`--decision-gate-file`. Ambos flags solo se aceptan con `--clock manual`; no se
+sustituye el adaptador productivo ni hay sleeps de avance. `pytest
+tests/test_research_pilot.py` (23 passed) cubre: frescura independiente por
+fuente (libro obsoleto / flujo obsoleto con la otra fuente fresca), ventana
+incompleta con motivo explícito, `decision_ms` no retrotraído, presupuesto
+efectivo antes del transporte, modo local vs público, horizontes 5m/15m/60m
+resueltos por avance controlado del reloj (desfase 0 y horizonte efectivo
+exacto), rotación conservando el resultado del símbolo retirado, contadores WS
+acumulados, manifiesto con hashes y resumen regenerado desde lo persistido.
+`max_data_age_ms` se mantiene en 5000. Cada corrida publica `diagnostico.json`
+con edades por fuente, cobertura, instante de evaluación y motivos; el resumen
+incluye el histograma de motivos. No declara ventaja ni rentabilidad; produce
+observaciones aptas para estudio y un presupuesto público revisable.
 
 - Protocolo y presupuesto: `docs/RESEARCH_UNIVERSE_LIQUIDITY_V1.md` §9.
 - Ejecutar localmente (loopback): `pytest tests/test_research_pilot.py -v`.
+- Evidencia de sincronización (edades, cobertura, motivos y horizontes):
+  `docs/evidence/research/universe_liquidity_v1/pilot_sync/`.
 - Presupuesto público (no ejecutado):
   `docs/evidence/research/universe_liquidity_v1/pilot_local/presupuesto.json`.
 - Evidencia pequeña (manifiesto, resumen, muestra de 12 observaciones):

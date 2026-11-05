@@ -1,0 +1,205 @@
+{
+  "almacenamiento": {
+    "jsonl_bytes": 22462,
+    "jsonl_rows": 18,
+    "research_db": "C:\\Users\\adonm\\AppData\\Local\\Temp\\pilot-sync-4o40tw2f\\out\\research.db",
+    "sqlite_bytes": 139264,
+    "storage_bytes_total": 161726,
+    "tope_bytes": 134217728
+  },
+  "ciclos_saltados": 0,
+  "config": {
+    "activar_publico": false,
+    "clock_file": "C:\\Users\\adonm\\AppData\\Local\\Temp\\pilot-sync-4o40tw2f\\clock.txt",
+    "clock_mode": "manual",
+    "cycle_seconds": 60.0,
+    "decision_delay_seconds": 5.0,
+    "decision_gate_file": "C:\\Users\\adonm\\AppData\\Local\\Temp\\pilot-sync-4o40tw2f\\gate.json",
+    "duration_seconds": 4000.0,
+    "horizons": "5m=300000,15m=900000,60m=3600000",
+    "max_bytes": 134217728,
+    "max_candidates": 5,
+    "max_comparators": 0,
+    "max_data_age_ms": 5000,
+    "max_http_attempts": 2000,
+    "max_http_retries": 50,
+    "max_http_weight": 5000,
+    "max_messages": 5000000,
+    "max_observations": 20000,
+    "max_symbols": 5,
+    "max_ws_reconnects": 20,
+    "min_quote_volume_usdt": 1000000.0,
+    "mode": "local",
+    "out_dir": "C:\\Users\\adonm\\AppData\\Local\\Temp\\pilot-sync-4o40tw2f\\out",
+    "pilot_version": "research-pilot-v1",
+    "policy_version": "research-selector-v2",
+    "price_delay_ms": 2000,
+    "price_interval": "1m",
+    "price_tolerance_ms": 90000,
+    "protocol_version": "prospective-protocol-v1",
+    "rest_base": "http://127.0.0.1:54978",
+    "run_id": "pilot-sync",
+    "selection_seconds": 7200.0,
+    "settle_seconds": 300.0,
+    "status_file": "C:\\Users\\adonm\\AppData\\Local\\Temp\\pilot-sync-4o40tw2f\\status.json",
+    "tick_ms": 20,
+    "ws_market_base": "ws://127.0.0.1:54979",
+    "ws_public_base": "ws://127.0.0.1:54979"
+  },
+  "dedupe": {
+    "flujo_duplicados": 0,
+    "libro_duplicados": 0
+  },
+  "ended_iso": "2025-01-01T01:11:41+00:00",
+  "ended_ms": 1735693901000,
+  "estado": "completo",
+  "horizontes": {
+    "15m": {
+      "desfase_ms": {
+        "max": 0.0,
+        "mean": 0.0,
+        "min": 0.0,
+        "n": 4
+      },
+      "neto": "UNKNOWN (sin supuestos de ejecucion/costes)",
+      "no_evaluable": 0,
+      "pendiente": 0,
+      "resueltos": 4,
+      "retorno_fraccion": {
+        "max": 0.00020000000000004546,
+        "mean": 0.00019999999999997548,
+        "min": 0.0001999999999999064,
+        "n": 4
+      }
+    },
+    "5m": {
+      "desfase_ms": {
+        "max": 0.0,
+        "mean": 0.0,
+        "min": 0.0,
+        "n": 4
+      },
+      "neto": "UNKNOWN (sin supuestos de ejecucion/costes)",
+      "no_evaluable": 0,
+      "pendiente": 0,
+      "resueltos": 4,
+      "retorno_fraccion": {
+        "max": 0.0006000000000000227,
+        "mean": 0.0005999999999999811,
+        "min": 0.00059999999999994,
+        "n": 4
+      }
+    },
+    "60m": {
+      "desfase_ms": {
+        "max": 0.0,
+        "mean": 0.0,
+        "min": 0.0,
+        "n": 4
+      },
+      "neto": "UNKNOWN (sin supuestos de ejecucion/costes)",
+      "no_evaluable": 0,
+      "pendiente": 0,
+      "resueltos": 4,
+      "retorno_fraccion": {
+        "max": 0.0005000000000000972,
+        "mean": 0.0005000000000000209,
+        "min": 0.0004999999999999911,
+        "n": 4
+      }
+    }
+  },
+  "limites": [
+    "precio_base = libro_mid; precio_posterior = klines_apertura_1m; proxy de fuentes mixtas, no mark-to-mid, no P&L ejecutable",
+    "sin supuestos de costes el neto es UNKNOWN",
+    "no se declara ventaja, rentabilidad ni representatividad",
+    "presupuesto HTTP efectivo (intentos/peso/reintentos) y almacenamiento total (JSONL+SQLite+aux)"
+  ],
+  "motivos": {
+    "sin_flujo": 1
+  },
+  "n_aptas_para_evaluacion": 4,
+  "n_ciclos": 1,
+  "n_descartadas": 1,
+  "n_no_aptas_para_evaluacion": 1,
+  "n_observaciones": 5,
+  "n_observadas": 4,
+  "n_resultados": 12,
+  "n_rotaciones_salida": 0,
+  "pilot_version": "research-pilot-v1",
+  "policy_version": "research-selector-v2",
+  "por_estado": {
+    "descartada": 1,
+    "observada": 4
+  },
+  "por_simbolo": {
+    "AAAUSDT": 1,
+    "BBBUSDT": 1,
+    "CCCUSDT": 1,
+    "DDDUSDT": 1,
+    "EEEUSDT": 1
+  },
+  "presupuesto_http": {
+    "attempts": 14,
+    "blocked": false,
+    "max_attempts": 2000,
+    "max_retries": 50,
+    "max_weight": 5000,
+    "reason": null,
+    "retries": 0,
+    "weight": 53
+  },
+  "protocol_version": "prospective-protocol-v1",
+  "recorder": {
+    "book_1m_rows": 3,
+    "drops": 0,
+    "enabled": true,
+    "errors": 0,
+    "flow_10s_rows": 34,
+    "flow_1m_rows": 15,
+    "high_water": 35,
+    "inflight": 0,
+    "last_write_at": "2026-11-05T03:36:51Z",
+    "state": "STOPPED",
+    "writes": 53
+  },
+  "rest": {
+    "failures": 0,
+    "requests": 14,
+    "retries": 0,
+    "weight_spent": 180
+  },
+  "retorno_unidades": "fraccion (0.01 = 1%); precio_base = libro_mid y precio_posterior = klines_apertura_1m (proxy de fuentes mixtas; no mark-to-mid, no P&L ejecutable)",
+  "run_id": "pilot-sync",
+  "seguidos_peak": 5,
+  "started_iso": "2025-01-01T00:00:00+00:00",
+  "started_ms": 1735689600000,
+  "stop_reason": "duracion",
+  "ws": {
+    "market": {
+      "connected_now": false,
+      "connections": 1,
+      "disconnects": 1,
+      "errors": 0,
+      "last_error": null,
+      "messages": 255,
+      "name": "market",
+      "reconnects": 0,
+      "url_shape": "ws://127.0.0.1:54979/stream"
+    },
+    "public": {
+      "connected_now": false,
+      "connections": 1,
+      "disconnects": 1,
+      "errors": 0,
+      "last_error": null,
+      "messages": 8,
+      "name": "public",
+      "reconnects": 0,
+      "url_shape": "ws://127.0.0.1:54979/stream"
+    }
+  },
+  "ws_connections_total": 2,
+  "ws_messages_total": 263,
+  "ws_reconnects_total": 0
+}

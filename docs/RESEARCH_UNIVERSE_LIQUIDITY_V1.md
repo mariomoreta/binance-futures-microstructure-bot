@@ -518,10 +518,18 @@ Binance** (cero conexiones públicas de mercado).
 
 La prueba de cadena completa se ejecuta contra proveedores HTTP/WS loopback y
 SQLite temporal con reloj de prueba (`tests/test_research_pilot.py`):
-`pytest tests/test_research_pilot.py -v` (4 passed). Verifica unión ≤ 20,
-decisión >= disponibilidad, duplicados sin multiplicación, hueco/incompleto con
-motivo, rotación con pendientes conservados, parada por duración y resumen
-regenerado desde lo persistido.
+`pytest tests/test_research_pilot.py -v` (23 passed). El test **no duerme para
+avanzar el reloj**: fija el instante, ordena al proveedor publicar el burst,
+espera confirmación por `--status-file` (contadores aceptados por fuente y
+última disponibilidad) y solo entonces autoriza la evaluación con
+`--decision-gate-file`; después avanza al siguiente instante. Ambos flags solo
+se aceptan con `--clock manual`. Verifica frescura independiente por fuente
+(libro obsoleto / flujo obsoleto), ventana incompleta con motivo, `decision_ms`
+no retrotraído, unión ≤ 20, duplicados sin multiplicación, rotación conservando
+el resultado del símbolo retirado, horizontes 5m/15m/60m con `desfase_ms=0`,
+manifiesto con hashes y resumen regenerado desde lo persistido.
+`max_data_age_ms` permanece en 5000. Evidencia:
+`docs/evidence/research/universe_liquidity_v1/pilot_sync/`.
 
 ### 9.3 Presupuesto público propuesto (NO ejecutado, autorización separada)
 

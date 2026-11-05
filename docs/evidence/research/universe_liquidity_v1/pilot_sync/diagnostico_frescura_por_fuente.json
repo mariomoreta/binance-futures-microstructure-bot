@@ -1,0 +1,467 @@
+{
+  "observaciones": [
+    {
+      "apto_para_evaluacion": true,
+      "cobertura": {
+        "flujo_presente": true,
+        "flujo_ventana_completa": true,
+        "libro_banda_5bps_cubierta": true,
+        "libro_presente": true
+      },
+      "decision_ms": 1735689660000,
+      "estado": "observada",
+      "flujo": {
+        "age_event_ms": 0,
+        "age_received_ms": 0,
+        "event_ms": 1735689660000,
+        "received_ms": 1735689660000,
+        "ventana_completa": true
+      },
+      "libro": {
+        "age_event_ms": 0,
+        "age_received_ms": 0,
+        "event_ms": 1735689660000,
+        "received_ms": 1735689660000
+      },
+      "motivos": [],
+      "observation_id": "AAAUSDT|1735689660000",
+      "symbol": "AAAUSDT"
+    },
+    {
+      "apto_para_evaluacion": true,
+      "cobertura": {
+        "flujo_presente": true,
+        "flujo_ventana_completa": true,
+        "libro_banda_5bps_cubierta": true,
+        "libro_presente": true
+      },
+      "decision_ms": 1735689660000,
+      "estado": "observada",
+      "flujo": {
+        "age_event_ms": 0,
+        "age_received_ms": 0,
+        "event_ms": 1735689660000,
+        "received_ms": 1735689660000,
+        "ventana_completa": true
+      },
+      "libro": {
+        "age_event_ms": 0,
+        "age_received_ms": 0,
+        "event_ms": 1735689660000,
+        "received_ms": 1735689660000
+      },
+      "motivos": [],
+      "observation_id": "BBBUSDT|1735689660000",
+      "symbol": "BBBUSDT"
+    },
+    {
+      "apto_para_evaluacion": true,
+      "cobertura": {
+        "flujo_presente": true,
+        "flujo_ventana_completa": true,
+        "libro_banda_5bps_cubierta": true,
+        "libro_presente": true
+      },
+      "decision_ms": 1735689660000,
+      "estado": "observada",
+      "flujo": {
+        "age_event_ms": 0,
+        "age_received_ms": 0,
+        "event_ms": 1735689660000,
+        "received_ms": 1735689660000,
+        "ventana_completa": true
+      },
+      "libro": {
+        "age_event_ms": 0,
+        "age_received_ms": 0,
+        "event_ms": 1735689660000,
+        "received_ms": 1735689660000
+      },
+      "motivos": [],
+      "observation_id": "CCCUSDT|1735689660000",
+      "symbol": "CCCUSDT"
+    },
+    {
+      "apto_para_evaluacion": false,
+      "cobertura": {
+        "flujo_presente": true,
+        "flujo_ventana_completa": false,
+        "libro_banda_5bps_cubierta": true,
+        "libro_presente": true
+      },
+      "decision_ms": 1735689660000,
+      "estado": "descartada",
+      "flujo": {
+        "age_event_ms": 0,
+        "age_received_ms": 0,
+        "event_ms": 1735689660000,
+        "received_ms": 1735689660000,
+        "ventana_completa": false
+      },
+      "libro": {
+        "age_event_ms": 0,
+        "age_received_ms": 0,
+        "event_ms": 1735689660000,
+        "received_ms": 1735689660000
+      },
+      "motivos": [
+        "flujo_ventana_incompleta"
+      ],
+      "observation_id": "DDDUSDT|1735689660000",
+      "symbol": "DDDUSDT"
+    },
+    {
+      "apto_para_evaluacion": false,
+      "cobertura": {
+        "flujo_presente": false,
+        "flujo_ventana_completa": false,
+        "libro_banda_5bps_cubierta": true,
+        "libro_presente": true
+      },
+      "decision_ms": 1735689660000,
+      "estado": "descartada",
+      "flujo": {
+        "age_event_ms": null,
+        "age_received_ms": null,
+        "event_ms": null,
+        "received_ms": null,
+        "ventana_completa": false
+      },
+      "libro": {
+        "age_event_ms": 0,
+        "age_received_ms": 0,
+        "event_ms": 1735689660000,
+        "received_ms": 1735689660000
+      },
+      "motivos": [
+        "sin_flujo"
+      ],
+      "observation_id": "EEEUSDT|1735689660000",
+      "symbol": "EEEUSDT"
+    },
+    {
+      "apto_para_evaluacion": true,
+      "cobertura": {
+        "flujo_presente": true,
+        "flujo_ventana_completa": true,
+        "libro_banda_5bps_cubierta": true,
+        "libro_presente": true
+      },
+      "decision_ms": 1735689720000,
+      "estado": "observada",
+      "flujo": {
+        "age_event_ms": 0,
+        "age_received_ms": 0,
+        "event_ms": 1735689720000,
+        "received_ms": 1735689720000,
+        "ventana_completa": true
+      },
+      "libro": {
+        "age_event_ms": 0,
+        "age_received_ms": 0,
+        "event_ms": 1735689720000,
+        "received_ms": 1735689720000
+      },
+      "motivos": [],
+      "observation_id": "AAAUSDT|1735689720000",
+      "symbol": "AAAUSDT"
+    },
+    {
+      "apto_para_evaluacion": false,
+      "cobertura": {
+        "flujo_presente": true,
+        "flujo_ventana_completa": true,
+        "libro_banda_5bps_cubierta": true,
+        "libro_presente": true
+      },
+      "decision_ms": 1735689720000,
+      "estado": "descartada",
+      "flujo": {
+        "age_event_ms": 0,
+        "age_received_ms": 0,
+        "event_ms": 1735689720000,
+        "received_ms": 1735689720000,
+        "ventana_completa": true
+      },
+      "libro": {
+        "age_event_ms": 60000,
+        "age_received_ms": 60000,
+        "event_ms": 1735689660000,
+        "received_ms": 1735689660000
+      },
+      "motivos": [
+        "dato_obsoleto_libro"
+      ],
+      "observation_id": "BBBUSDT|1735689720000",
+      "symbol": "BBBUSDT"
+    },
+    {
+      "apto_para_evaluacion": false,
+      "cobertura": {
+        "flujo_presente": true,
+        "flujo_ventana_completa": true,
+        "libro_banda_5bps_cubierta": true,
+        "libro_presente": true
+      },
+      "decision_ms": 1735689720000,
+      "estado": "descartada",
+      "flujo": {
+        "age_event_ms": 60000,
+        "age_received_ms": 60000,
+        "event_ms": 1735689660000,
+        "received_ms": 1735689660000,
+        "ventana_completa": true
+      },
+      "libro": {
+        "age_event_ms": 0,
+        "age_received_ms": 0,
+        "event_ms": 1735689720000,
+        "received_ms": 1735689720000
+      },
+      "motivos": [
+        "dato_obsoleto_flujo"
+      ],
+      "observation_id": "CCCUSDT|1735689720000",
+      "symbol": "CCCUSDT"
+    },
+    {
+      "apto_para_evaluacion": true,
+      "cobertura": {
+        "flujo_presente": true,
+        "flujo_ventana_completa": true,
+        "libro_banda_5bps_cubierta": true,
+        "libro_presente": true
+      },
+      "decision_ms": 1735689720000,
+      "estado": "observada",
+      "flujo": {
+        "age_event_ms": 0,
+        "age_received_ms": 0,
+        "event_ms": 1735689720000,
+        "received_ms": 1735689720000,
+        "ventana_completa": true
+      },
+      "libro": {
+        "age_event_ms": 0,
+        "age_received_ms": 0,
+        "event_ms": 1735689720000,
+        "received_ms": 1735689720000
+      },
+      "motivos": [],
+      "observation_id": "DDDUSDT|1735689720000",
+      "symbol": "DDDUSDT"
+    },
+    {
+      "apto_para_evaluacion": false,
+      "cobertura": {
+        "flujo_presente": false,
+        "flujo_ventana_completa": false,
+        "libro_banda_5bps_cubierta": true,
+        "libro_presente": true
+      },
+      "decision_ms": 1735689720000,
+      "estado": "descartada",
+      "flujo": {
+        "age_event_ms": null,
+        "age_received_ms": null,
+        "event_ms": null,
+        "received_ms": null,
+        "ventana_completa": false
+      },
+      "libro": {
+        "age_event_ms": 0,
+        "age_received_ms": 0,
+        "event_ms": 1735689720000,
+        "received_ms": 1735689720000
+      },
+      "motivos": [
+        "sin_flujo"
+      ],
+      "observation_id": "EEEUSDT|1735689720000",
+      "symbol": "EEEUSDT"
+    }
+  ],
+  "regla": "edades por fuente, cobertura, instante de evaluacion y motivo de clasificacion por observacion",
+  "resultados": [
+    {
+      "decision_ms": 1735689660000,
+      "estado": "pendiente",
+      "horizon": "5m",
+      "horizon_ms": 300000,
+      "kind": "resultado",
+      "motivo": "ventana_de_settle_agotada",
+      "observation_id": "AAAUSDT|1735689660000",
+      "price_ts_previsto_ms": 1735689960000,
+      "symbol": "AAAUSDT",
+      "target_ms": 1735689960000
+    },
+    {
+      "decision_ms": 1735689660000,
+      "estado": "pendiente",
+      "horizon": "15m",
+      "horizon_ms": 900000,
+      "kind": "resultado",
+      "motivo": "ventana_de_settle_agotada",
+      "observation_id": "AAAUSDT|1735689660000",
+      "price_ts_previsto_ms": 1735690560000,
+      "symbol": "AAAUSDT",
+      "target_ms": 1735690560000
+    },
+    {
+      "decision_ms": 1735689660000,
+      "estado": "pendiente",
+      "horizon": "60m",
+      "horizon_ms": 3600000,
+      "kind": "resultado",
+      "motivo": "ventana_de_settle_agotada",
+      "observation_id": "AAAUSDT|1735689660000",
+      "price_ts_previsto_ms": 1735693260000,
+      "symbol": "AAAUSDT",
+      "target_ms": 1735693260000
+    },
+    {
+      "decision_ms": 1735689660000,
+      "estado": "pendiente",
+      "horizon": "5m",
+      "horizon_ms": 300000,
+      "kind": "resultado",
+      "motivo": "ventana_de_settle_agotada",
+      "observation_id": "BBBUSDT|1735689660000",
+      "price_ts_previsto_ms": 1735689960000,
+      "symbol": "BBBUSDT",
+      "target_ms": 1735689960000
+    },
+    {
+      "decision_ms": 1735689660000,
+      "estado": "pendiente",
+      "horizon": "15m",
+      "horizon_ms": 900000,
+      "kind": "resultado",
+      "motivo": "ventana_de_settle_agotada",
+      "observation_id": "BBBUSDT|1735689660000",
+      "price_ts_previsto_ms": 1735690560000,
+      "symbol": "BBBUSDT",
+      "target_ms": 1735690560000
+    },
+    {
+      "decision_ms": 1735689660000,
+      "estado": "pendiente",
+      "horizon": "60m",
+      "horizon_ms": 3600000,
+      "kind": "resultado",
+      "motivo": "ventana_de_settle_agotada",
+      "observation_id": "BBBUSDT|1735689660000",
+      "price_ts_previsto_ms": 1735693260000,
+      "symbol": "BBBUSDT",
+      "target_ms": 1735693260000
+    },
+    {
+      "decision_ms": 1735689660000,
+      "estado": "pendiente",
+      "horizon": "5m",
+      "horizon_ms": 300000,
+      "kind": "resultado",
+      "motivo": "ventana_de_settle_agotada",
+      "observation_id": "CCCUSDT|1735689660000",
+      "price_ts_previsto_ms": 1735689960000,
+      "symbol": "CCCUSDT",
+      "target_ms": 1735689960000
+    },
+    {
+      "decision_ms": 1735689660000,
+      "estado": "pendiente",
+      "horizon": "15m",
+      "horizon_ms": 900000,
+      "kind": "resultado",
+      "motivo": "ventana_de_settle_agotada",
+      "observation_id": "CCCUSDT|1735689660000",
+      "price_ts_previsto_ms": 1735690560000,
+      "symbol": "CCCUSDT",
+      "target_ms": 1735690560000
+    },
+    {
+      "decision_ms": 1735689660000,
+      "estado": "pendiente",
+      "horizon": "60m",
+      "horizon_ms": 3600000,
+      "kind": "resultado",
+      "motivo": "ventana_de_settle_agotada",
+      "observation_id": "CCCUSDT|1735689660000",
+      "price_ts_previsto_ms": 1735693260000,
+      "symbol": "CCCUSDT",
+      "target_ms": 1735693260000
+    },
+    {
+      "decision_ms": 1735689720000,
+      "estado": "pendiente",
+      "horizon": "5m",
+      "horizon_ms": 300000,
+      "kind": "resultado",
+      "motivo": "ventana_de_settle_agotada",
+      "observation_id": "AAAUSDT|1735689720000",
+      "price_ts_previsto_ms": 1735690020000,
+      "symbol": "AAAUSDT",
+      "target_ms": 1735690020000
+    },
+    {
+      "decision_ms": 1735689720000,
+      "estado": "pendiente",
+      "horizon": "15m",
+      "horizon_ms": 900000,
+      "kind": "resultado",
+      "motivo": "ventana_de_settle_agotada",
+      "observation_id": "AAAUSDT|1735689720000",
+      "price_ts_previsto_ms": 1735690620000,
+      "symbol": "AAAUSDT",
+      "target_ms": 1735690620000
+    },
+    {
+      "decision_ms": 1735689720000,
+      "estado": "pendiente",
+      "horizon": "60m",
+      "horizon_ms": 3600000,
+      "kind": "resultado",
+      "motivo": "ventana_de_settle_agotada",
+      "observation_id": "AAAUSDT|1735689720000",
+      "price_ts_previsto_ms": 1735693320000,
+      "symbol": "AAAUSDT",
+      "target_ms": 1735693320000
+    },
+    {
+      "decision_ms": 1735689720000,
+      "estado": "pendiente",
+      "horizon": "5m",
+      "horizon_ms": 300000,
+      "kind": "resultado",
+      "motivo": "ventana_de_settle_agotada",
+      "observation_id": "DDDUSDT|1735689720000",
+      "price_ts_previsto_ms": 1735690020000,
+      "symbol": "DDDUSDT",
+      "target_ms": 1735690020000
+    },
+    {
+      "decision_ms": 1735689720000,
+      "estado": "pendiente",
+      "horizon": "15m",
+      "horizon_ms": 900000,
+      "kind": "resultado",
+      "motivo": "ventana_de_settle_agotada",
+      "observation_id": "DDDUSDT|1735689720000",
+      "price_ts_previsto_ms": 1735690620000,
+      "symbol": "DDDUSDT",
+      "target_ms": 1735690620000
+    },
+    {
+      "decision_ms": 1735689720000,
+      "estado": "pendiente",
+      "horizon": "60m",
+      "horizon_ms": 3600000,
+      "kind": "resultado",
+      "motivo": "ventana_de_settle_agotada",
+      "observation_id": "DDDUSDT|1735689720000",
+      "price_ts_previsto_ms": 1735693320000,
+      "symbol": "DDDUSDT",
+      "target_ms": 1735693320000
+    }
+  ]
+}

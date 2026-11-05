@@ -1,0 +1,12 @@
+============================= test session starts =============================
+platform win32 -- Python 3.14.3, pytest-9.1.1, pluggy-1.6.0 -- C:\Python314\python.exe
+cachedir: .pytest_cache
+rootdir: C:\proyectos\binance-futures-microstructure-bot
+configfile: pyproject.toml
+plugins: anyio-4.14.1, langsmith-0.10.2
+collecting ... collected 23 items / 21 deselected / 2 selected
+
+tests/test_research_pilot.py::TestCadenaSincronizada::test_frescura_por_fuente_y_ventana_en_cadena_productiva PASSED [ 50%]
+tests/test_research_pilot.py::TestCadenaSincronizada::test_horizontes_5m_15m_60m_por_avance_controlado PASSED [100%]
+
+====================== 2 passed, 21 deselected in 3.26s =======================
