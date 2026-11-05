@@ -65,6 +65,22 @@ Sincronizacion de pruebas (solo con ``--clock manual``):
   reloj (``{"decision_ms": <ms>}`` o el entero). Permite fijar el instante,
   publicar los eventos, esperar confirmacion de procesamiento y AUTORIZAR la
   evaluacion en ese instante; nunca adelanta ni retrasa el reloj.
+- ``--stop-file PATH``: parada explicita del operador para pruebas. Al existir,
+  el piloto deja de adquirir datos, no consulta mas precios, conserva lo ya
+  escrito y persiste los resultados pendientes con causa ``parada_operador``.
+
+Politica de pendientes:
+- Fin normal de captura: se deja de seleccionar/capturar y SOLO se maduran los
+  resultados ya programados durante el settle acotado; presupuesto, plazo y
+  cancelacion siguen vigentes.
+- Fin del settle: lo no resuelto se persiste como ``pendiente`` con causa
+  (``ventana_de_settle_agotada`` u otra parada); no se inventan precios ni se
+  prorroga el plazo.
+- Parada explicita: se detiene la adquisicion, no se consultan mas precios y se
+  conservan observaciones y pendientes.
+- Presupuesto agotado o fallo que impide continuar: no se hacen mas accesos
+  afectados y se persisten pendientes con causa.
+- El settle no devuelve cupos, no crea otro run_id y no abre prorroga.
 
 Modo de ejecucion:
 - ``--mode local`` (por defecto): requiere endpoints loopback explicitos
@@ -81,6 +97,7 @@ import hashlib
 import json
 import math
 import os
+import signal
 import subprocess
 import sys
 import time
@@ -611,6 +628,7 @@ class PilotConfig:
     # progreso y barrera explicita de evaluacion. Jamas alteran tolerancias.
     status_file: Optional[str] = None
     decision_gate_file: Optional[str] = None
+    stop_file: Optional[str] = None
     keep_research_db: bool = True
 
     def to_dict(self) -> Dict[str, Any]:
@@ -648,6 +666,7 @@ class PilotConfig:
             "clock_file": self.clock_file,
             "status_file": self.status_file,
             "decision_gate_file": self.decision_gate_file,
+            "stop_file": self.stop_file,
             "policy_version": POLICY_VERSION,
             "pilot_version": PILOT_VERSION,
             "protocol_version": PROTOCOL_VERSION,
@@ -865,6 +884,8 @@ class ResearchPilot:
             Path(cfg.status_file) if cfg.status_file else None)
         self.gate_path: Optional[Path] = (
             Path(cfg.decision_gate_file) if cfg.decision_gate_file else None)
+        self.stop_path: Optional[Path] = (
+            Path(cfg.stop_file) if cfg.stop_file else None)
         self._phase = "captura"
         self.feeds: Dict[str, StreamFeed] = {}
         self.feed_tasks: List[asyncio.Task] = []
@@ -1403,7 +1424,7 @@ class ResearchPilot:
         step = INTERVAL_MS[self.cfg.price_interval]
         resolved = 0
         for key in list(self.pending):
-            if self.stop_reason:
+            if self._terminal_stop():
                 break
             if not self._storage_ok():
                 self.stop_reason = "presupuesto_bytes"
@@ -1427,15 +1448,11 @@ class ResearchPilot:
                 price = await asyncio.to_thread(
                     self._fetch_price, item["symbol"], price_ts)
             except RateLimitExceeded as exc:
-                # Presupuesto HTTP agotado: no hay mas consultas ilimitadas.
-                self.stop_reason = "presupuesto_agotado"
-                self._write_outcome(item, OUTCOME_NO_EVALUABLE, {
-                    "motivo": f"presupuesto_agotado: {exc}",
-                    "price_ts_ms": price_ts, "desfase_ms": desfase,
-                })
-                del self.pending[key]
-                resolved += 1
-                continue
+                # Presupuesto HTTP agotado: no se envia nada mas. El resultado
+                # queda PENDIENTE (finalize_pending) con causa, sin inventar
+                # precio ni convertirlo en no evaluable.
+                self.stop_reason = f"presupuesto_agotado: {exc}"
+                break
             except Exception as exc:
                 self._write_outcome(item, OUTCOME_NO_EVALUABLE, {
                     "motivo": f"error_consulta_precio: {type(exc).__name__}",
@@ -1498,14 +1515,38 @@ class ResearchPilot:
             self.stop_reason = "presupuesto_bytes"
 
     def finalize_pending(self, now: int) -> None:
+        cause = self._pending_cause()
         for key in list(self.pending):
             item = self.pending[key]
             step = INTERVAL_MS[self.cfg.price_interval]
             self._write_outcome(item, OUTCOME_PENDIENTE, {
-                "motivo": "ventana_de_settle_agotada",
+                "motivo": cause,
                 "price_ts_previsto_ms": ceil_ms(item["target_ms"], step),
             })
         self.pending.clear()
+
+    def _pending_cause(self) -> str:
+        """Causa real de los pendientes al cerrar (sin inventar estados)."""
+        reason = self.stop_reason or ""
+        if reason == "parada_operador":
+            return "parada_operador"
+        if reason.startswith("presupuesto_agotado"):
+            return "presupuesto_agotado"
+        if reason and reason != "duracion":
+            return reason
+        return "ventana_de_settle_agotada"
+
+    def _terminal_stop(self) -> bool:
+        """Parada que impide seguir madurando (duracion no es terminal)."""
+        return bool(self.stop_reason) and self.stop_reason != "duracion"
+
+    def request_stop(self, reason: str) -> None:
+        """Registra una parada explicita; prevalece sobre el fin por duracion."""
+        if self.stop_reason in (None, "duracion"):
+            self.stop_reason = reason
+
+    def _stop_file_requested(self) -> bool:
+        return self.stop_path is not None and self.stop_path.exists()
 
     # -- sincronizacion de pruebas ----------------------------------------
 
@@ -1593,6 +1634,9 @@ class ResearchPilot:
         tick_s = max(0.01, self.cfg.tick_ms / 1000.0)
         try:
             while True:
+                if self._stop_file_requested():
+                    self.request_stop("parada_operador")
+                    break
                 now = self.clock.now_ms()
                 if now >= self.capture_end_ms:
                     self.stop_reason = self.stop_reason or "duracion"
@@ -1604,6 +1648,8 @@ class ResearchPilot:
                         await asyncio.to_thread(self.run_cycle)
                     except RateLimitExceeded as exc:
                         self.stop_reason = f"presupuesto_agotado: {exc}"
+                        break
+                    if self._terminal_stop():
                         break
                     now = self.clock.now_ms()
                     await self._restart_feeds()
@@ -1636,7 +1682,10 @@ class ResearchPilot:
             self._phase = "settle"
             while (self.clock.now_ms() < self.settle_end_ms
                    and self.pending
-                   and not self.stop_reason):
+                   and not self._terminal_stop()):
+                if self._stop_file_requested():
+                    self.request_stop("parada_operador")
+                    break
                 await self.resolve_due(self.clock.now_ms())
                 self._write_status()
                 await asyncio.sleep(tick_s)
@@ -1797,6 +1846,8 @@ def build_parser() -> argparse.ArgumentParser:
                    help="snapshot de progreso (solo --clock manual)")
     p.add_argument("--decision-gate-file", default=None,
                    help="barrera de evaluacion (solo --clock manual)")
+    p.add_argument("--stop-file", default=None,
+                   help="parada explicita del operador (solo --clock manual)")
     p.add_argument("--budget-only", action="store_true",
                    help="calcula y escribe el presupuesto sin red")
     return p
@@ -1823,9 +1874,11 @@ def config_from_args(args: argparse.Namespace) -> PilotConfig:
             )
 
     # Instrumentacion de sincronizacion: solo con reloj manual (pruebas).
-    if args.clock != "manual" and (args.status_file or args.decision_gate_file):
+    if args.clock != "manual" and (
+            args.status_file or args.decision_gate_file or args.stop_file):
         raise ValueError(
-            "--status-file/--decision-gate-file requieren --clock manual"
+            "--status-file/--decision-gate-file/--stop-file requieren "
+            "--clock manual"
         )
 
     return PilotConfig(
@@ -1862,7 +1915,34 @@ def config_from_args(args: argparse.Namespace) -> PilotConfig:
         clock_file=args.clock_file,
         status_file=args.status_file,
         decision_gate_file=args.decision_gate_file,
+        stop_file=args.stop_file,
     )
+
+
+def _install_stop_handlers(pilot: "ResearchPilot") -> Dict[int, Any]:
+    """SIGINT/SIGTERM/SIGBREAK -> parada limpia (sin KeyboardInterrupt)."""
+    previous: Dict[int, Any] = {}
+
+    def handler(signum, frame):  # noqa: ARG001
+        pilot.request_stop("senal_externa")
+
+    for name in ("SIGINT", "SIGTERM", "SIGBREAK"):
+        sig = getattr(signal, name, None)
+        if sig is None:
+            continue
+        try:
+            previous[sig] = signal.signal(sig, handler)
+        except (ValueError, OSError):
+            continue
+    return previous
+
+
+def _restore_stop_handlers(previous: Dict[int, Any]) -> None:
+    for sig, prev in previous.items():
+        try:
+            signal.signal(sig, prev)
+        except (ValueError, OSError):
+            pass
 
 
 def main(argv: Optional[List[str]] = None) -> int:
@@ -1887,7 +1967,11 @@ def main(argv: Optional[List[str]] = None) -> int:
     try:
         clock = build_clock(cfg.clock_mode, cfg.clock_file)
         pilot = ResearchPilot(cfg, clock=clock)
-        summary = asyncio.run(pilot.run())
+        previous = _install_stop_handlers(pilot)
+        try:
+            summary = asyncio.run(pilot.run())
+        finally:
+            _restore_stop_handlers(previous)
     except Exception as exc:
         print(json.dumps({"error": f"{type(exc).__name__}: {exc}"}),
               file=sys.stderr)

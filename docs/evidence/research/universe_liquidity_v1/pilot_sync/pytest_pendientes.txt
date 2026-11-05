@@ -1,0 +1,5 @@
+Comando: pytest tests/test_research_pilot.py tests/test_history_client_budget.py -q
+Entorno: loopback local, reloj manual, sin conexiones publicas de mercado.
+
+................................                                         [100%]
+32 passed in 44.75s

@@ -12,14 +12,24 @@ explícita con `--status-file` (contadores aceptados por fuente y última
 disponibilidad) y solo entonces se autoriza la evaluación en ese instante con
 `--decision-gate-file`. Ambos flags solo se aceptan con `--clock manual`; no se
 sustituye el adaptador productivo ni hay sleeps de avance. `pytest
-tests/test_research_pilot.py` (23 passed) cubre: frescura independiente por
+tests/test_research_pilot.py` (27 passed) cubre: frescura independiente por
 fuente (libro obsoleto / flujo obsoleto con la otra fuente fresca), ventana
 incompleta con motivo explícito, `decision_ms` no retrotraído, presupuesto
 efectivo antes del transporte, modo local vs público, horizontes 5m/15m/60m
 resueltos por avance controlado del reloj (desfase 0 y horizonte efectivo
 exacto), rotación conservando el resultado del símbolo retirado, contadores WS
 acumulados, manifiesto con hashes y resumen regenerado desde lo persistido.
-`max_data_age_ms` se mantiene en 5000. Cada corrida publica `diagnostico.json`
+
+Política de pendientes verificada (2026-11-05): el fin normal de captura deja
+de seleccionar/capturar y el settle solo madura resultados ya programados;
+al agotarse el settle lo no resuelto queda `pendiente` con causa
+(`ventana_de_settle_agotada`). La parada explícita (`--stop-file` en pruebas,
+SIGINT/SIGTERM en producción) detiene la adquisición y no hace más consultas
+de precio, conservando observaciones y pendientes con causa `parada_operador`/
+`senal_externa`. El presupuesto agotado bloquea el siguiente envío antes del
+transporte y persiste pendientes con causa `presupuesto_agotado`. El settle no
+devuelve cupos, no crea otro run_id y no abre prórroga. `max_data_age_ms` se
+mantiene en 5000. Cada corrida publica `diagnostico.json`
 con edades por fuente, cobertura, instante de evaluación y motivos; el resumen
 incluye el histograma de motivos. No declara ventaja ni rentabilidad; produce
 observaciones aptas para estudio y un presupuesto público revisable.
@@ -28,6 +38,8 @@ observaciones aptas para estudio y un presupuesto público revisable.
 - Ejecutar localmente (loopback): `pytest tests/test_research_pilot.py -v`.
 - Evidencia de sincronización (edades, cobertura, motivos y horizontes):
   `docs/evidence/research/universe_liquidity_v1/pilot_sync/`.
+- Evidencia de política de pendientes (settle, parada, presupuesto):
+  `docs/evidence/research/universe_liquidity_v1/pilot_sync/pytest_pendientes.txt`.
 - Presupuesto público (no ejecutado):
   `docs/evidence/research/universe_liquidity_v1/pilot_local/presupuesto.json`.
 - Evidencia pequeña (manifiesto, resumen, muestra de 12 observaciones):

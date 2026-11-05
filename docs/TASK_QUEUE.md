@@ -1,3 +1,26 @@
+## Piloto prospectivo v1 — política de pendientes y publicación (2026-11-05)
+
+`CURRENT_PHASE`: investigación local del universo/liquidez (solo lectura, sin
+Binance, sin órdenes; presupuesto público requiere autorización separada).
+
+`CURRENT_OBJECTIVE`: cumplido — publicar el trabajo existente en la rama y
+dejar inequívoca la política de pendientes, sin abrir otro bloque de
+infraestructura.
+
+`ACTIVE_TASK`: cerrado — `scripts/research_pilot.py` distingue fin normal de
+captura (el settle solo madura lo ya programado), fin de settle (pendiente con
+causa), parada explícita (`--stop-file` en pruebas; SIGINT/SIGTERM en
+producción) y presupuesto agotado (bloqueo antes del transporte).
+`tests/test_research_pilot.py` 27 passed; evidencia en
+`docs/evidence/research/universe_liquidity_v1/pilot_sync/pytest_pendientes.txt`.
+sin cambios de tolerancias, presupuestos, estrategia ni conexiones públicas.
+
+`NEXT_TASKS`:
+1. Revisar el presupuesto público concreto (§9.3) para su autorización separada;
+   no ejecutar ventana pública sin ella.
+2. Mantener `max_data_age_ms=5000`; no ajustar el reloj para forzar aptas.
+3. No tocar dashboard 3020, servicio 8792, `opencode.json` ni archivos ajenos.
+
 ## Piloto prospectivo v1 — sincronización reloj/prueba (2026-11-04)
 
 `CURRENT_PHASE`: investigación local del universo/liquidez (solo lectura, sin
@@ -16,8 +39,9 @@ procesamiento → autorizar evaluación → avanzar (23 passed). Evidencia en
 `NEXT_TASKS`:
 1. Mantener `max_data_age_ms=5000`; no ajustar el reloj para forzar aptas.
 2. No ejecutar contra Binance sin autorización separada del presupuesto (§9.3).
-3. Revisar si el settle por parada de duración debe madurar pendientes o
-   conservarlos como `pendiente` (comportamiento actual del bloque).
+3. Resuelto (2026-11-05): el settle por parada de duración madura los
+   resultados ya programados; lo no resuelto al agotarse el settle queda
+   `pendiente` con causa. Ver bloque superior.
 
 ## Corrección semántica de costes y aceptación A-J del dashboard (2026-11-03, base `bf974f2`)
 

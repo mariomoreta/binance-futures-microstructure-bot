@@ -497,6 +497,16 @@ flujo → precios posteriores (5m/15m/60m) → evaluación reproducible.
   bytes o max mensajes; limpieza (cerrar feeds WS, drenar buckets abiertos
   como PARTIAL, pendientes como PENDING con motivo, escribir manifiesto y
   resumen desde lo persistido). Ningún proceso persistente al finalizar.
+- **Política de pendientes y settle:** al terminar la captura se deja de
+  seleccionar/capturar y el settle acotado solo madura resultados ya
+  programados, manteniendo presupuesto, plazo y cancelación. Al agotarse el
+  settle lo no resuelto se persiste como `pendiente` con causa
+  (`ventana_de_settle_agotada`); no se inventan precios ni se prorroga. Una
+  parada explícita del operador detiene la adquisición y no realiza más
+  consultas de precio, conservando observaciones y pendientes con causa. El
+  presupuesto agotado bloquea el siguiente envío antes del transporte y
+  persiste pendientes con causa. El settle no devuelve cupos, no crea otro
+  `run_id` y no abre prórroga ilimitada.
 
 ### 9.2 Ejecución local reproducible (comando productivo)
 
@@ -518,7 +528,7 @@ Binance** (cero conexiones públicas de mercado).
 
 La prueba de cadena completa se ejecuta contra proveedores HTTP/WS loopback y
 SQLite temporal con reloj de prueba (`tests/test_research_pilot.py`):
-`pytest tests/test_research_pilot.py -v` (23 passed). El test **no duerme para
+`pytest tests/test_research_pilot.py -v` (27 passed). El test **no duerme para
 avanzar el reloj**: fija el instante, ordena al proveedor publicar el burst,
 espera confirmación por `--status-file` (contadores aceptados por fuente y
 última disponibilidad) y solo entonces autoriza la evaluación con
@@ -527,7 +537,11 @@ se aceptan con `--clock manual`. Verifica frescura independiente por fuente
 (libro obsoleto / flujo obsoleto), ventana incompleta con motivo, `decision_ms`
 no retrotraído, unión ≤ 20, duplicados sin multiplicación, rotación conservando
 el resultado del símbolo retirado, horizontes 5m/15m/60m con `desfase_ms=0`,
-manifiesto con hashes y resumen regenerado desde lo persistido.
+manifiesto con hashes y resumen regenerado desde lo persistido. También cubre
+la política de pendientes: fin normal → settle madura; fin de settle →
+`pendiente` con causa; parada explícita (`--stop-file`, solo con reloj manual)
+→ ninguna consulta de precio adicional; presupuesto agotado → siguiente envío
+bloqueado antes del transporte y pendientes con causa.
 `max_data_age_ms` permanece en 5000. Evidencia:
 `docs/evidence/research/universe_liquidity_v1/pilot_sync/`.
 

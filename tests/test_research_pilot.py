@@ -426,13 +426,14 @@ class PilotRun:
 
     def __init__(self, tmp: Path, *, universe, duration_s, settle_s,
                  selection_s, max_symbols, rotation=False,
-                 cycle_s=60, horizons=HORIZONS) -> None:
+                 cycle_s=60, horizons=HORIZONS, max_http_attempts=2000) -> None:
         self.tmp = Path(tmp)
         self.universe = list(universe)
         self.out_dir = self.tmp / "out"
         self.obs_path = self.out_dir / "observaciones.jsonl"
         self.status_path = self.tmp / "status.json"
         self.gate_path = self.tmp / "gate.json"
+        self.stop_path = self.tmp / "stop.txt"
         self.clock = ClockFile(self.tmp / "clock.txt", T0)
 
         self.http = MarketHttp(self.universe, rotation=rotation)
@@ -471,7 +472,7 @@ class PilotRun:
             "--max-observations", "20000",
             "--max-bytes", str(128 * 1024 * 1024),
             "--max-messages", "5000000",
-            "--max-http-attempts", "2000",
+            "--max-http-attempts", str(max_http_attempts),
             "--max-http-retries", "50",
             "--max-http-weight", "5000",
             "--max-ws-reconnects", "20",
@@ -479,6 +480,7 @@ class PilotRun:
             "--clock", "manual", "--clock-file", str(self.tmp / "clock.txt"),
             "--status-file", str(self.status_path),
             "--decision-gate-file", str(self.gate_path),
+            "--stop-file", str(self.stop_path),
         ]
         self.proc = subprocess.Popen(
             cmd, cwd=str(ROOT), stdout=subprocess.PIPE,
@@ -489,10 +491,16 @@ class PilotRun:
     # -- estado / esperas explicitas ------------------------------------
 
     def status(self):
-        try:
-            return json.loads(self.status_path.read_text(encoding="utf-8"))
-        except (OSError, ValueError):
-            return None
+        # os.replace atomico puede coincidir con la lectura: se reintenta un
+        # plazo corto para no confundir "aun no escrito" con "no existe".
+        deadline = time.monotonic() + 0.25
+        while True:
+            try:
+                return json.loads(self.status_path.read_text(encoding="utf-8"))
+            except (OSError, ValueError):
+                if time.monotonic() > deadline:
+                    return None
+                time.sleep(0.01)
 
     def _exit_diagnostic(self) -> str:
         return (f"rc={self.proc.poll()} status={json.dumps(self.status())} "
@@ -645,6 +653,17 @@ class PilotRun:
             self.stdout, self.stderr = self.proc.communicate()
             raise AssertionError(
                 f"el piloto no termino tras alcanzar el fin: {self._exit_diagnostic()}")
+        return self.proc.returncode
+
+    def wait_exit(self, timeout: float = 90.0) -> int:
+        """Espera el cierre limpio sin forzar el reloj."""
+        try:
+            self.stdout, self.stderr = self.proc.communicate(timeout=timeout)
+        except subprocess.TimeoutExpired:
+            self.proc.kill()
+            self.stdout, self.stderr = self.proc.communicate()
+            raise AssertionError(
+                f"el piloto no termino por si solo: {self._exit_diagnostic()}")
         return self.proc.returncode
 
     def shutdown(self) -> None:
@@ -1150,7 +1169,154 @@ class TestCadenaSincronizada(unittest.TestCase):
             self.assertEqual(summary["horizontes"][label]["pendiente"], 0)
         self.assertEqual(len(outcomes), 12)
 
-    # -- 3. rotacion sin perder el resultado del simbolo retirado -------
+    # -- 3. politica de pendientes: settle, parada y presupuesto ---------
+
+    def test_fin_normal_maduran_resultados_durante_el_settle(self):
+        run = self._start(universe=UNIVERSE, duration_s=180, settle_s=300,
+                          selection_s=3_600, max_symbols=5)
+        run.wait_ready(expected_followed=5)
+
+        e0 = T0 + MINUTE
+        full = _full_window(e0)
+        obs = run.step(
+            e0,
+            depth_symbols=UNIVERSE,
+            trade_events={s: full for s in UNIVERSE},
+            evaluate=True, expected_obs=5)
+        apta = next(o for o in obs if o["symbol"] == SYM_APTA)
+        oid = apta["observation_id"]
+
+        # Fin normal de captura: se deja de capturar pero el settle sigue.
+        run.advance(T0 + 180_000)
+        state = run.wait_status(
+            lambda st: st.get("phase") == "settle", "settle iniciado")
+        self.assertEqual(state["stop_reason"], "duracion")
+        self.assertGreater(state["pending"], 0)
+        rows = read_rows(run.obs_path)
+        self.assertFalse([r for r in rows
+                          if r.get("kind") == "resultado"
+                          and r.get("observation_id") == oid], rows)
+
+        # Solo madura lo ya programado; no hay nuevas decisiones.
+        target = e0 + 300_000
+        run.advance(target + MINUTE + 2_000)
+        outcome = run.wait_outcome(oid, "5m")
+        self.assertEqual(outcome["estado"], "resuelto")
+        self.assertEqual(outcome["desfase_ms"], 0)
+        self.assertEqual(outcome["horizonte_efectivo_ms"], 300_000)
+
+        observations, outcomes = self._finish(run)
+        summary = run.summary()
+        self.assertEqual(summary["stop_reason"], "duracion")
+        self.assertEqual(summary["horizontes"]["5m"]["resueltos"], 5)
+        self.assertEqual(summary["horizontes"]["5m"]["pendiente"], 0)
+        self.assertEqual(len(observations), 5)
+        self.assertGreaterEqual(len(outcomes), 5)
+
+    def test_fin_de_settle_conserva_pendientes_con_causa(self):
+        run = self._start(universe=UNIVERSE, duration_s=180, settle_s=60,
+                          selection_s=3_600, max_symbols=5)
+        run.wait_ready(expected_followed=5)
+
+        e0 = T0 + MINUTE
+        full = _full_window(e0)
+        run.step(
+            e0,
+            depth_symbols=UNIVERSE,
+            trade_events={s: full for s in UNIVERSE},
+            evaluate=True, expected_obs=5)
+
+        run.advance(T0 + 180_000)
+        run.wait_status(lambda st: st.get("phase") == "settle",
+                        "settle iniciado")
+        # El settle termina antes del objetivo de 5m (e0+300000).
+        run.advance(T0 + 180_000 + 60_000 + 1_000)
+
+        rows = read_rows(run.obs_path)
+        pend = [r for r in rows if r.get("kind") == "resultado"]
+        self.assertEqual(len(pend), 15, pend)
+        self.assertEqual({r["estado"] for r in pend}, {"pendiente"})
+        self.assertEqual({r["motivo"] for r in pend},
+                         {"ventana_de_settle_agotada"})
+
+        self._finish(run)
+        summary = run.summary()
+        self.assertEqual(summary["stop_reason"], "duracion")
+        self.assertEqual(summary["horizontes"]["5m"]["resueltos"], 0)
+        self.assertEqual(summary["horizontes"]["5m"]["pendiente"], 5)
+
+    def test_parada_operador_no_consulta_mas_precios(self):
+        run = self._start(universe=UNIVERSE, duration_s=4_000, settle_s=300,
+                          selection_s=7_200, max_symbols=5)
+        run.wait_ready(expected_followed=5)
+
+        e0 = T0 + MINUTE
+        full = _full_window(e0)
+        obs = run.step(
+            e0,
+            depth_symbols=UNIVERSE,
+            trade_events={s: full for s in UNIVERSE},
+            evaluate=True, expected_obs=5)
+        oid = obs[0]["observation_id"]
+        consultas = run.http.klines_calls
+
+        # Parada explicita ANTES de que venza ningun objetivo.
+        run.stop_path.write_text("stop\n", encoding="utf-8")
+        rc = run.wait_exit()
+        self.assertEqual(rc, 0, run.stderr)
+        # Aunque el objetivo ya no se persigue, no hubo nuevas consultas.
+        self.assertEqual(run.http.klines_calls, consultas)
+
+        rows = read_rows(run.obs_path)
+        pend = [r for r in rows
+                if r.get("kind") == "resultado"
+                and r.get("observation_id") == oid]
+        self.assertEqual(len(pend), 3, pend)
+        self.assertEqual({r["estado"] for r in pend}, {"pendiente"})
+        self.assertEqual({r["motivo"] for r in pend}, {"parada_operador"})
+        summary = run.summary()
+        self.assertEqual(summary["stop_reason"], "parada_operador")
+        self.assertEqual(summary["n_observaciones"], 5)
+
+    def test_presupuesto_agotado_bloquea_el_siguiente_envio(self):
+        run = self._start(universe=UNIVERSE, duration_s=4_000, settle_s=300,
+                          selection_s=7_200, max_symbols=5,
+                          max_http_attempts=2)
+        run.wait_ready(expected_followed=5)
+
+        e0 = T0 + MINUTE
+        full = _full_window(e0)
+        run.step(
+            e0,
+            depth_symbols=UNIVERSE,
+            trade_events={s: full for s in UNIVERSE},
+            evaluate=True, expected_obs=5)
+
+        # La seleccion consumio 2 intentos; el primer klines se bloquea ANTES
+        # del transporte y no llega al proveedor loopback.
+        run.advance(e0 + 300_000 + 2_000)
+        run.wait_status(
+            lambda st: str(st.get("stop_reason") or "").startswith(
+                "presupuesto_agotado"), "presupuesto agotado")
+        rc = run.wait_exit()
+        self.assertEqual(rc, 0, run.stderr)
+        self.assertEqual(run.http.klines_calls, 0)
+
+        rows = read_rows(run.obs_path)
+        pend = [r for r in rows if r.get("kind") == "resultado"]
+        self.assertEqual(len(pend), 15, pend)
+        self.assertEqual({r["estado"] for r in pend}, {"pendiente"})
+        self.assertEqual({r["motivo"] for r in pend}, {"presupuesto_agotado"})
+
+        summary = run.summary()
+        self.assertTrue(summary["stop_reason"].startswith(
+            "presupuesto_agotado"))
+        presupuesto = summary["presupuesto_http"]
+        self.assertEqual(presupuesto["attempts"], 2)
+        self.assertTrue(presupuesto["blocked"])
+        self.assertEqual(presupuesto["reason"], "presupuesto_intentos_agotado")
+
+    # -- 4. rotacion sin perder el resultado del simbolo retirado -------
 
     def test_rotacion_conserva_resultados_y_acumulados_ws(self):
         run = self._start(universe=ROTATION_UNIVERSE, duration_s=600,
