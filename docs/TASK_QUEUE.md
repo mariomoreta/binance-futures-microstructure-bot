@@ -13,7 +13,14 @@ ni logs de consumo). No se relanzó ni se creó otro run_id.
 causa de parada UNKNOWN. Análisis offline v2 publicado con unidades %,
 comparación por ciclo y símbolo, cobertura desigual y asociaciones reproducibles
 (9 pruebas focalizadas pasadas). Embudo corregido por rol y diagnóstico de
-incorporación publicados (6 pruebas focalizadas pasadas).
+incorporación publicados (7 pruebas focalizadas pasadas).
+Recorrido productivo reproducido localmente con proveedores loopback y el CLI
+del piloto (`tests/test_recorrido_productivo.py`): selección → suscripción →
+recepción → evaluación. Con el código actual, un símbolo recién suscrito se
+evalúa sin datos acumulados y se descarta con su motivo; `research_pilot.py` no
+se modificó (una corrección de calentamiento rompería pruebas de cadena
+sincronizada y cambiaría el comportamiento de presupuesto; queda como límite
+conocido para una futura adquisición con autorización propia).
 `tests/test_research_pilot.py` 28 passed. Cero órdenes, cero claves privadas,
 cero cambios de estrategia ni tolerancias.
 

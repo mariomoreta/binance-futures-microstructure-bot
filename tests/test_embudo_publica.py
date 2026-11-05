@@ -262,12 +262,13 @@ def test_motivos_solapados_sin_duplicar_observaciones(datos):
 # ---------------------------------------------------------------------------
 
 def test_carrera_simbolo_nuevo_sin_datos_se_descarta():
-    """Un símbolo seleccionado por primera vez, sin libro ni flujo acumulados
-    (feeds acabados de abrir), se descarta al evaluar inmediatamente.
+    """Un símbolo asignado manualmente a followed/roles, sin libro ni flujo en
+    los engines, se descarta al llamar take_decisions().
 
-    Demuestra el orden del código: seleccion (run_cycle) -> apertura de feeds
-    (_restart_feeds) -> evaluacion (take_decisions). Los símbolos nuevos no
-    tienen datos cuando se evalúan por primera vez.
+    Acredita: rechazo correcto de un símbolo sin datos.
+    No acredita: carrera completa del transporte productivo
+    (run_cycle + _restart_feeds + recepción WS + evaluación). Esa coordenación
+    se prueba por separado con proveedores loopback y el CLI del piloto.
     """
     tmp = Path(tempfile.mkdtemp(prefix="carrera-"))
     try:
@@ -313,3 +314,36 @@ def test_carrera_simbolo_nuevo_sin_datos_se_descarta():
     finally:
         import shutil
         shutil.rmtree(tmp, ignore_errors=True)
+
+
+# ---------------------------------------------------------------------------
+# 7. Determinismo del muestreo del comparador (seed fija)
+# ---------------------------------------------------------------------------
+
+def test_build_comparator_deterministico_mismas_entradas():
+    """Con idénticas entradas (elegibles, ya seleccionados, presupuesto,
+    semilla) build_comparator produce los mismos comparadores. No es
+    8/465 fijo: depende del conjunto elegible, de los candidatos ya
+    seleccionados y del presupuesto restante."""
+    import research_selector  # noqa: E402
+    from research_selector import ResearchPolicy  # noqa: E402
+
+    policy = ResearchPolicy()
+    elegibles = [f"S{i:03d}USDT" for i in range(465)]
+    ya_seleccionados = {"S001USDT", "S002USDT"}
+    presupuesto = 8
+
+    r1 = research_selector.build_comparator(
+        elegibles, policy, reference_ms=T0,
+        total_budget=presupuesto, already_selected_symbols=ya_seleccionados)
+    r2 = research_selector.build_comparator(
+        elegibles, policy, reference_ms=T0,
+        total_budget=presupuesto, already_selected_symbols=ya_seleccionados)
+
+    c1 = [c["symbol"] for c in r1[0]]
+    c2 = [c["symbol"] for c in r2[0]]
+    assert c1 == c2
+    assert len(c1) == presupuesto
+    assert set(c1).isdisjoint(ya_seleccionados)
+    assert r1[1]["mechanism"] == "seeded_random_sample_without_replacement"
+    assert r1[1]["seed"] == policy.comparator_seed

@@ -58,7 +58,41 @@ Cada observación se clasifica por condición de incorporación del símbolo en 
 | comparator | primera_vez | 27 | 0 | 27 | 27 | 27 | 0 | 0 |
 | comparator | reincorpora | 17 | 0 | 17 | 17 | 17 | 0 | 0 |
 
-**Hallazgos:**
+### C. Reproducción del recorrido productivo y decisión sobre corrección de coordinación
+
+Se reprodujo localmente el recorrido productivo con proveedores HTTP/WS loopback,
+SQLite temporal y el CLI existente (`scripts/research_pilot.py`) como subproceso,
+control de reloj manual y confirmación por el archivo de estado del piloto. Se
+verificó:
+
+- **Selección real:** `run_cycle()` ejecuta `research-selector-v2`, actualiza
+  `self.followed`, `self.roles` y `self.selection_meta`.
+- **Suscripción real:** `_restart_feeds()` abre/suscribe los feeds `/public` y
+  `/market` para el nuevo conjunto de símbolos.
+- **Recepción y procesamiento:** los mensajes de libro y flujo se reciben y
+  procesan en los engines (`BookEngine`, `FlowEngine`).
+- **Evaluación automática:** `take_decisions()` genera observaciones a partir de
+  los datos acumulados.
+
+**Resultado con el código actual:** un símbolo recién seleccionado (o
+reincorporado) se evalúa en el siguiente ciclo de decisión sin haber acumulado
+todavía ventana de libro/flujo, por lo que se descarta con `sin_libro` y/o
+`sin_flujo`. Este comportamiento se reproduce localmente y se corrobora con la
+prueba `tests/test_recorrido_productivo.py`.
+
+**Decisión sobre corrección de coordinación:** no se modificó
+`research_pilot.py`. Una corrección que retrasara la primera evaluación hasta
+acumular la ventana requerida (calentamiento de feeds) cambiaría el momento y
+el volumen de observaciones, afectando al presupuesto y al comportamiento del
+piloto, lo cual entra en conflicto con "sin cambios de estrategia, selección,
+tolerancias o presupuesto" y rompe las pruebas de cadena sincronizada existentes.
+Por tanto, el comportamiento actual se conserva como límite conocido: los
+símbolos recién incorporados pueden descartarse por falta de datos en su primer
+ciclo de evaluación, y eso se registra con su motivo. Una mitigación (calentamiento
+antes de la primera evaluación) quedaría para una futura adquisición con
+autorización y run_id propios.
+
+**Hallazgos del diagnóstico:**
 
 1. **Todas las "primera_vez" y "reincorpora" están descartadas** (0 aptas en ambos roles). Todas tienen `sin_libro` y `sin_flujo` (100 %) y `ventana_incompleta` (100 %).
 2. Solo las que "permanecen" tienen aptas: candidate 109/122, comparator 19/52.
@@ -71,11 +105,11 @@ Cada observación se clasifica por condición de incorporación del símbolo en 
 
 ### ¿Por qué los comparadores acumulan tantos descartes?
 
-El comparador se construye con `build_comparator`: **muestreo aleatorio sin reemplazo (`rng.sample`) del universo elegible excluyendo candidatos**, con semilla fija (42) y techo conjunto candidatos + comparadores (≤ 20). Con ~465 símbolos elegibles y solo 8 comparadores por ciclo, la probabilidad de que un símbolo repita como comparador en ciclos consecutivos es muy baja (~1,7 % por ciclo). Por eso la mayoría de comparadores son `primera_vez` o `reincorpora` en cada ciclo, y al ser evaluados inmediatamente después de abrirse los feeds, no tienen libro ni flujo acumulados.
+El comparador se construye con `build_comparator`: **muestreo determinista sin reemplazo (`random.Random(seed=42).sample`) del universo elegible excluyendo candidatos**, con semilla fija (42) y techo conjunto candidatos + comparadores (≤ 20). Con las mismas entradas (conjunto elegible, candidatos ya seleccionados, presupuesto) produce siempre los mismos comparadores; no es una probabilidad fija de 8/465 por ciclo, porque el pool disponible depende de qué símbolos ya ocuparon cupo de candidato en ese ciclo. Dado que solo 8 comparadores se eligen entre ~465 elegibles y el conjunto de excluidos (candidatos) cambia cada ciclo, la mayoría de comparadores son `primera_vez` o `reincorpora` en cada ciclo, y al ser evaluados inmediatamente después de abrirse los feeds, no tienen libro ni flujo acumulados.
 
 Los candidatos, en cambio, son un **top-12 por prioridad determinista** (movimiento + volumen), que se repiten entre ciclos (`permanece` = 122 de 144), por lo que acumulan datos de libro/flujo y son mayoritariamente aptos (109 de 144).
 
-### Carrera reproducible demostrada
+### Carrera reproducible del camino productivo (pendiente de reproducción completa)
 
 El orden del código en el piloto ejecutado (commit `7916c49`, base actual) es:
 
@@ -83,16 +117,27 @@ El orden del código en el piloto ejecutado (commit `7916c49`, base actual) es:
 2. `_restart_feeds()`: apertura/suscripción de feeds `/public` y `/market` para el nuevo set.
 3. `take_decisions()`: evaluación e generación de observaciones a partir de los datos acumulados en los engines.
 
-Un símbolo que entra por primera vez o se reincorpora tiene su feed abierto en el paso 2 y es evaluado en el paso 3 sin haber acumulado ventana de libro/flujo. Por eso `primera_vez` y `reincorpora` tienen `sin_libro`/`sin_flujo` y `ventana_incompleta`.
+Un símbolo que entra por primera vez o se reincorpora tiene su feed abierto en el paso 2 y puede ser evaluado en el paso 3 sin haber acumulado ventana de libro/flujo. Por eso `primera_vez` y `reincorpora` tienden a tener `sin_libro`/`sin_flujo` y `ventana_incompleta`.
 
-**Esta es una carrera reproducible del camino productivo**, demostrada con una prueba focalizada loopback (`tests/test_embudo_publica.py::test_carrera_simbolo_nuevo_sin_datos_se_descarta`). No sustituye la evidencia histórica: una reproducción local demuestra que el camino existe, no que fuera la causa exclusiva de todos los descartes de la corrida.
+**Estado de la demostración:** la prueba focalizada
+`tests/test_embudo_publica.py::test_carrera_simbolo_nuevo_sin_datos_se_descarta`
+acredita el rechazo correcto de un símbolo sin datos al llamar
+`take_decisions()`, pero **no acredita** una carrera completa del transporte
+productivo (no ejecuta `run_cycle`, `_restart_feeds` ni un proveedor WS). La
+reproducción completa del recorrido productivo (selección → suscripción →
+recepción → evaluación) con proveedores loopback y el CLI del piloto se
+documenta por separado y no se usa aquí para declarar la causa exclusiva de los
+descartes de la corrida interrumpida. En los datos reales, los 44 descartes de
+comparadores recién incorporados/reincorporados están asociados a ausencia de
+libro y flujo, pero no se declara demostrado que el orden de apertura fue su
+causa exclusiva.
 
 ### ¿Qué queda explicado y qué queda UNKNOWN?
 
 | Pregunta | Respuesta |
 | --- | --- |
 | ¿El embudo ya es consistente? | **Sí.** `candidate + comparator == total` en seleccionadas, aptas y descartadas; comprobado contra el JSONL original. |
-| ¿Qué parte de los 77 descartes de comparadores queda explicada? | **44 (57 %)**: `primera_vez` + `reincorpora` sin libro ni flujo (carrera de feeds al entrar al seguimiento). |
+| ¿Qué parte de los 77 descartes de comparadores queda explicada? | **44 (57 %)**: `primera_vez` + `reincorpora` sin libro ni flujo (asociados a la entrada al seguimiento; la causa exclusiva no está demostrada). |
 | ¿Qué parte queda UNKNOWN? | **33 (43 %)**: `permanece` descartados, mayoritariamente por `dato_obsoleto_flujo` (32). No se puede atribuir a baja liquidez, rotación o transporte sin demostrar la secuencia de disponibilidad por símbolo. |
 | ¿Hace falta una corrección técnica concreta antes de otra captura? | **No se recomienda cambiar la lógica productiva todavía.** La carrera es inherente al diseño (símbolos nuevos sin datos al entrar). Se puede mitigar con calentamiento de feeds antes de la primera evaluación, pero eso requiere cambiar tolerancias/lógica, fuera de este bloque. |
 | ¿Qué incertidumbre resolvería una nueva adquisición? | Si el patrón de descartes de comparadores por "primera_vez" persiste con cierre acreditado y settle completo, confirmaría que es estructural (muestreo aleatorio sin reemplazo + símbolos nuevos sin datos) y no un artefacto de la corrida interrumpida. Una nueva adquisición requeriría autorización y run_id propios. |
@@ -117,4 +162,5 @@ Un símbolo que entra por primera vez o se reincorpora tiene su feed abierto en 
 3. `test_condicion_incorporacion` — entrada, permanencia y reincorporación.
 4. `test_timestamp_ausente_unknown` — timestamp ausente tratado como UNKNOWN.
 5. `test_motivos_solapados_sin_duplicar_observaciones` — motivos solapados sin duplicar observaciones.
-6. `test_carrera_simbolo_nuevo_sin_datos_se_descarta` — carrera reproducible (símbolo nuevo sin datos se descarta).
+6. `test_carrera_simbolo_nuevo_sin_datos_se_descarta` — rechazo correcto de símbolo sin datos (no acredita carrera de transporte completa).
+7. `test_build_comparator_deterministico_mismas_entradas` — mismo conjunto elegible, mismos ya-seleccionados, misma semilla → mismos comparadores.

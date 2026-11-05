@@ -821,19 +821,25 @@ abiertos). Los candidatos son top-12 por prioridad determinista que se repiten
 | `primera_vez` + `reincorpora` (sin libro/flujo) | 44 | carrera de feeds al entrar al seguimiento |
 | `permanece` descartados | 33 | dato_obsoleto_flujo (32), dato_obsoleto_libro (5) |
 
-**Carrera reproducible demostrada:** el orden del código es
-`run_cycle()` (selección) → `_restart_feeds()` (abrir feeds) →
-`take_decisions()` (evaluar). Un símbolo nuevo se evalúa sin datos acumulados.
-Demostrado con prueba focalizada loopback
-(`tests/test_embudo_publica.py::test_carrera_simbolo_nuevo_sin_datos_se_descarta`).
-No sustituye la evidencia histórica.
+**Carrera reproducible del camino productivo (estado de la demostración):**
+el orden del código es `run_cycle()` (selección) → `_restart_feeds()` (abrir
+feeds) → `take_decisions()` (evaluar). Un símbolo nuevo puede ser evaluado sin
+haber acumulado ventana de libro/flujo. La prueba focalizada
+`tests/test_embudo_publica.py::test_carrera_simbolo_nuevo_sin_datos_se_descarta`
+acredita el rechazo correcto de un símbolo sin datos al llamar
+`take_decisions()`, pero **no acredita** una carrera completa del transporte
+productivo (no ejecuta `run_cycle`, `_restart_feeds` ni un proveedor WS). La
+reproducción completa del recorrido productivo con proveedores loopback y el
+CLI del piloto está en `tests/test_recorrido_productivo.py` y se documenta en
+`rectificacion_embudo_publica.md` sección C. Ninguna de las dos declara la
+causa exclusiva de los descartes de la corrida interrumpida.
 
 **Qué queda UNKNOWN:** 33 descartes de comparadores `permanece` (mayoritariamente
 `dato_obsoleto_flujo`); no se atribuye a baja liquidez, rotación o transporte
 sin demostrar la secuencia de disponibilidad por símbolo.
 
 **Evidencia publicada (muestra pequeña, dataset fuera de Git):**
-- `docs/evidence/research/universe_liquidity_v1/pilot_public_proposal_1h/rectificacion_embudo_publica.md` (rectificación identificable del embudo; sustituye las cifras de embudo del informe inicial).
+- `docs/evidence/research/universe_liquidity_v1/pilot_public_proposal_1h/rectificacion_embudo_publica.md` (rectificación identificable del embudo: conteos por rol, diagnóstico de incorporación, reproducción del recorrido productivo y decisión de no modificar el código productivo; sustituye las cifras de embudo del informe inicial).
 - `docs/evidence/research/universe_liquidity_v1/pilot_public_proposal_1h/tablas/embudo_publica.json` (tabla pequeña del embudo).
 - `docs/evidence/research/universe_liquidity_v1/pilot_public_proposal_1h/informe_analisis_offline.md` (informe inicial, conservado como antecedente).
 - `docs/evidence/research/universe_liquidity_v1/pilot_public_proposal_1h/rectificacion_analisis_offline_v2.md` (rectificación v2: unidades, comparación por ciclo y símbolo, asociaciones reproducibles).
@@ -843,14 +849,6 @@ sin demostrar la secuencia de disponibilidad por símbolo.
 - `docs/evidence/research/universe_liquidity_v1/pilot_public_proposal_1h/diagnostico_corrida_publica_1h.md`
 - Scripts: `scripts/analisis_offline_captura_publica.py`, `scripts/diagnostico_embudo_publica.py`
 - Pruebas: `tests/test_analisis_offline_captura_publica.py` (9 passed),
-  `tests/test_embudo_publica.py` (6 passed)
-- Dataset completo y derivados detallados fuera de Git; solo manifiesto, hashes y muestra se publican.
-- `docs/evidence/research/universe_liquidity_v1/pilot_public_proposal_1h/informe_analisis_offline.md` (informe inicial, conservado como antecedente).
-- `docs/evidence/research/universe_liquidity_v1/pilot_public_proposal_1h/rectificacion_analisis_offline_v2.md` (rectificación identificable: unidades, comparación por ciclo y símbolo, cobertura desigual, asociaciones reproducibles; sustituye las cifras del informe inicial).
-- `docs/evidence/research/universe_liquidity_v1/pilot_public_proposal_1h/tablas/resumen_analisis_offline_v2.json` (tablas pequeñas v2).
-- `docs/evidence/research/universe_liquidity_v1/pilot_public_proposal_1h/tablas/resumen_analisis_offline.json` (tablas v1, conservadas como antecedente).
-- `docs/evidence/research/universe_liquidity_v1/pilot_public_proposal_1h/manifiesto_corrida_publica_1h.json`
-- `docs/evidence/research/universe_liquidity_v1/pilot_public_proposal_1h/diagnostico_corrida_publica_1h.md`
-- Script: `scripts/analisis_offline_captura_publica.py`
-- Pruebas: `tests/test_analisis_offline_captura_publica.py` (9 passed)
+  `tests/test_embudo_publica.py` (7 passed),
+  `tests/test_recorrido_productivo.py` (recorrido productivo con proveedores loopback y CLI del piloto).
 - Dataset completo y derivados detallados fuera de Git; solo manifiesto, hashes y muestra se publican.

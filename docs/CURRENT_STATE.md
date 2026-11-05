@@ -60,7 +60,15 @@ observaciones aptas para estudio y un presupuesto público revisable.
   `docs/evidence/research/universe_liquidity_v1/pilot_public_proposal_1h/rectificacion_embudo_publica.md`
   (embudo corregido por rol: candidate 144/109/35, comparator 96/19/77, total
   240/128/112; diagnóstico de incorporación; carrera reproducible demostrada;
-  6 pruebas focalizadas pasadas).
+  7 pruebas focalizadas pasadas).
+- **Recorrido productivo reproducido localmente (loopback, sin Binance):**
+  `tests/test_recorrido_productivo.py` verifica selección → suscripción →
+  recepción → evaluación con el CLI del piloto y proveedores HTTP/WS loopback.
+  Con el código actual, un símbolo recién suscrito se evalúa sin datos
+  acumulados y se descarta con su motivo; no se modificó `research_pilot.py`
+  (una corrección de calentamiento rompería pruebas de cadena sincronizada y
+  cambiaría el comportamiento de presupuesto; queda como límite conocido para
+  una futura adquisición con autorización propia).
   Informe inicial conservado:
   `docs/evidence/research/universe_liquidity_v1/pilot_public_proposal_1h/informe_analisis_offline.md`.
   Tablas pequeñas v2:
