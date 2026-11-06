@@ -75,6 +75,22 @@ Cero órdenes, cero claves privadas, cero cambios de estrategia ni tolerancias.
    queda reescritura pendiente. Cualquier nueva captura sigue requiriendo
    autorización explícita y no se relanza automáticamente.
 
+**Análisis offline research/universe-liquidez-v1 (v2) — completado 2026-11-06.**
+Script `scripts/analisis_universo_liquidez_v2.py`, pruebas
+`tests/test_analisis_universo_liquidez_v2.py` (6 passed), tabla e informe en
+`docs/evidence/research/universe_liquidity_v1/public-pilot-1h-20261106a/`.
+Embudo reconstruido desde registros de ciclo: 240 seleccionados (144 candidate
++ 96 comparator), 24 selecciones sin observación emitida, 216 observaciones
+emitidas (168 aptas, 48 descartadas), 504 resultados (168 × 5m/15m/60m).
+Diferencia candidatos-comparadores positiva en los 3 horizontes (+0,33 pp a
+5m, +0,92 pp a 15m, +3,23 pp a 60m) pero con cobertura asimétrica de
+comparadores (42 aptas vs 126 candidate; ciclos 1/7/9/11 con un solo
+comparador apto) y mediana de candidatos inferior a comparadores a 60m
+(0,56 % vs 0,61 %). Asociación exploratoria flujo/profundidad débil-positiva
+(Pearson +0,037 / +0,112 / +0,144). `neto_estado=UNKNOWN` en los 504.
+Sensibilidad por símbolo: AKEUSDT y JCTUSDT concentran parte del resultado;
+la diferencia conserva signo al excluir cualquier símbolo.
+
 ## Piloto prospectivo v1 — política de pendientes y publicación (2026-11-05)
 
 `CURRENT_PHASE`: investigación local del universo/liquidez (solo lectura, sin

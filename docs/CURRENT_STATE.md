@@ -124,6 +124,21 @@ observaciones aptas para estudio y un presupuesto público revisable.
   `scripts/diagnostico_embudo_publica.py`; pruebas: 9 + 6 passed.
   Dataset completo y derivados detallados fuera de Git; solo manifiesto, hashes y
   muestra se publican.
+
+  **Análisis offline research/universe-liquidez-v1 (análisis v2, 2026-11-06):**
+  `scripts/analisis_universo_liquidez_v2.py` (embudo desde registros de ciclo:
+  240 seleccionados, 24 sin observación emitida, 216 emitidas, 168 aptas, 48
+  descartadas, 504 resultados), pruebas
+  `tests/test_analisis_universo_liquidez_v2.py` (6 passed), tabla e informe en
+  `docs/evidence/research/universe_liquidity_v1/public-pilot-1h-20261106a/`.
+  Diferencia candidatos-comparadores positiva en 5m/15m/60m (+0,33 / +0,92 /
+  +3,23 pp) con cobertura asimétrica de comparadores (42 aptas vs 126 candidate;
+  ciclos 1/7/9/11 con un solo comparador apto); mediana de candidatos inferior a
+  comparadores a 60m (0,56 % vs 0,61 %). Asociación exploratoria
+  flujo/profundidad débil-positiva (Pearson +0,037 / +0,112 / +0,144).
+  `neto_estado=UNKNOWN` en los 504. Sensibilidad por símbolo: AKEUSDT y JCTUSDT
+  concentran parte del resultado; la diferencia conserva signo al excluir
+  cualquier símbolo.
 - Evidencia pequeña (manifiesto, resumen, muestra de 12 observaciones):
   `docs/evidence/research/universe_liquidity_v1/pilot_local/`.
 

@@ -1,0 +1,1739 @@
+{
+  "run_id": "public-pilot-1h-20261106a",
+  "version_analisis": "v2_embudo_desde_ciclos",
+  "codigo_salida_proceso": "UNKNOWN",
+  "nota_codigo_salida": "no recuperable retrospectivamente; finalización inferida del resumen de corrida, no evidencia directa del SO",
+  "resumen_global": {
+    "run_id": "public-pilot-1h-20261106a",
+    "total_lineas": 732,
+    "ciclos": 12,
+    "observaciones_total": 216,
+    "observaciones_aptas": 168,
+    "observaciones_descartadas": 48,
+    "resultados_total": 504,
+    "resultados_por_horizonte": {
+      "5m": 168,
+      "15m": 168,
+      "60m": 168
+    },
+    "seleccionados_total": 240,
+    "seleccionados_por_rol": {
+      "candidate": 144,
+      "comparator": 96
+    },
+    "total_sin_observacion": 24,
+    "precios_y_costes": {
+      "fuentes_detectadas": [
+        "klines_apertura_1m",
+        "libro_mid"
+      ],
+      "neto_estados": {
+        "UNKNOWN": 504
+      },
+      "nota": "precio_base = libro_mid; precio_posterior = klines_apertura_1m; proxy de fuentes mixtas, no mark-to-mid, no P&L ejecutable; neto_estado=UNKNOWN sin costes ni ejecución acreditados."
+    }
+  },
+  "embudo_desde_ciclos": {
+    "seleccionados_total": 240,
+    "seleccionados_por_rol": {
+      "candidate": 144,
+      "comparator": 96
+    },
+    "total_sin_observacion": 24,
+    "observaciones_emitidas_total": 216,
+    "observaciones_aptas": 168,
+    "observaciones_descartadas": 48,
+    "resultados_total": 504,
+    "resultados_por_horizonte": {
+      "5m": 168,
+      "15m": 168,
+      "60m": 168
+    },
+    "filas_por_ciclo_rol": [
+      {
+        "ciclo_idx": 0,
+        "reference_ms": 1793942258855,
+        "decision_ms": 1793942343961,
+        "rol": "candidate",
+        "seleccionados": 12,
+        "observaciones_emitidas": 12,
+        "seleccion_sin_observacion": 0,
+        "aptas": 12,
+        "descartadas": 0,
+        "motivos_descartes": {},
+        "cobertura_por_horizonte": {
+          "5m": {
+            "resultado_registrado": 12,
+            "resultado_faltante": 0
+          },
+          "15m": {
+            "resultado_registrado": 12,
+            "resultado_faltante": 0
+          },
+          "60m": {
+            "resultado_registrado": 12,
+            "resultado_faltante": 0
+          }
+        },
+        "simbolos_seleccionados": [
+          "AINUSDT",
+          "AKEUSDT",
+          "UAIUSDT",
+          "JCTUSDT",
+          "CYBERUSDT",
+          "BIRBUSDT",
+          "ELSAUSDT",
+          "HUMAUSDT",
+          "ATUSDT",
+          "HANAUSDT",
+          "牛来USDT",
+          "PONSUSDT"
+        ]
+      },
+      {
+        "ciclo_idx": 0,
+        "reference_ms": 1793942258855,
+        "decision_ms": 1793942343961,
+        "rol": "comparator",
+        "seleccionados": 8,
+        "observaciones_emitidas": 8,
+        "seleccion_sin_observacion": 0,
+        "aptas": 8,
+        "descartadas": 0,
+        "motivos_descartes": {},
+        "cobertura_por_horizonte": {
+          "5m": {
+            "resultado_registrado": 8,
+            "resultado_faltante": 0
+          },
+          "15m": {
+            "resultado_registrado": 8,
+            "resultado_faltante": 0
+          },
+          "60m": {
+            "resultado_registrado": 8,
+            "resultado_faltante": 0
+          }
+        },
+        "simbolos_seleccionados": [
+          "POWERUSDT",
+          "AUSDT",
+          "1MBABYDOGEUSDT",
+          "SPACEUSDT",
+          "DEXEUSDT",
+          "COOKIEUSDT",
+          "CGPTUSDT",
+          "BANKUSDT"
+        ]
+      },
+      {
+        "ciclo_idx": 1,
+        "reference_ms": 1793942563207,
+        "decision_ms": 1793942644172,
+        "rol": "candidate",
+        "seleccionados": 12,
+        "observaciones_emitidas": 12,
+        "seleccion_sin_observacion": 0,
+        "aptas": 12,
+        "descartadas": 0,
+        "motivos_descartes": {},
+        "cobertura_por_horizonte": {
+          "5m": {
+            "resultado_registrado": 12,
+            "resultado_faltante": 0
+          },
+          "15m": {
+            "resultado_registrado": 12,
+            "resultado_faltante": 0
+          },
+          "60m": {
+            "resultado_registrado": 12,
+            "resultado_faltante": 0
+          }
+        },
+        "simbolos_seleccionados": [
+          "AINUSDT",
+          "UAIUSDT",
+          "JCTUSDT",
+          "AKEUSDT",
+          "CYBERUSDT",
+          "BIRBUSDT",
+          "ELSAUSDT",
+          "HUMAUSDT",
+          "ATUSDT",
+          "HANAUSDT",
+          "牛来USDT",
+          "PONSUSDT"
+        ]
+      },
+      {
+        "ciclo_idx": 1,
+        "reference_ms": 1793942563207,
+        "decision_ms": 1793942644172,
+        "rol": "comparator",
+        "seleccionados": 8,
+        "observaciones_emitidas": 8,
+        "seleccion_sin_observacion": 0,
+        "aptas": 1,
+        "descartadas": 7,
+        "motivos_descartes": {
+          "dato_obsoleto_flujo": 7
+        },
+        "cobertura_por_horizonte": {
+          "5m": {
+            "resultado_registrado": 1,
+            "resultado_faltante": 0
+          },
+          "15m": {
+            "resultado_registrado": 1,
+            "resultado_faltante": 0
+          },
+          "60m": {
+            "resultado_registrado": 1,
+            "resultado_faltante": 0
+          }
+        },
+        "simbolos_seleccionados": [
+          "POWERUSDT",
+          "AUSDT",
+          "1MBABYDOGEUSDT",
+          "SPACEUSDT",
+          "DEXEUSDT",
+          "COOKIEUSDT",
+          "CGPTUSDT",
+          "BANKUSDT"
+        ]
+      },
+      {
+        "ciclo_idx": 2,
+        "reference_ms": 1793942867040,
+        "decision_ms": 1793942927179,
+        "rol": "candidate",
+        "seleccionados": 12,
+        "observaciones_emitidas": 12,
+        "seleccion_sin_observacion": 0,
+        "aptas": 10,
+        "descartadas": 2,
+        "motivos_descartes": {
+          "flujo_ventana_incompleta": 1,
+          "dato_obsoleto_flujo": 1
+        },
+        "cobertura_por_horizonte": {
+          "5m": {
+            "resultado_registrado": 10,
+            "resultado_faltante": 0
+          },
+          "15m": {
+            "resultado_registrado": 10,
+            "resultado_faltante": 0
+          },
+          "60m": {
+            "resultado_registrado": 10,
+            "resultado_faltante": 0
+          }
+        },
+        "simbolos_seleccionados": [
+          "AINUSDT",
+          "AKEUSDT",
+          "JCTUSDT",
+          "UAIUSDT",
+          "CYBERUSDT",
+          "ELSAUSDT",
+          "BIRBUSDT",
+          "ATUSDT",
+          "HUMAUSDT",
+          "HANAUSDT",
+          "牛来USDT",
+          "EVAAUSDT"
+        ]
+      },
+      {
+        "ciclo_idx": 2,
+        "reference_ms": 1793942867040,
+        "decision_ms": 1793942927179,
+        "rol": "comparator",
+        "seleccionados": 8,
+        "observaciones_emitidas": 8,
+        "seleccion_sin_observacion": 0,
+        "aptas": 4,
+        "descartadas": 4,
+        "motivos_descartes": {
+          "dato_obsoleto_flujo": 4,
+          "dato_obsoleto_libro": 1
+        },
+        "cobertura_por_horizonte": {
+          "5m": {
+            "resultado_registrado": 4,
+            "resultado_faltante": 0
+          },
+          "15m": {
+            "resultado_registrado": 4,
+            "resultado_faltante": 0
+          },
+          "60m": {
+            "resultado_registrado": 4,
+            "resultado_faltante": 0
+          }
+        },
+        "simbolos_seleccionados": [
+          "POWERUSDT",
+          "AUSDT",
+          "1MBABYDOGEUSDT",
+          "SPACEUSDT",
+          "DEXEUSDT",
+          "COOKIEUSDT",
+          "CGPTUSDT",
+          "BANKUSDT"
+        ]
+      },
+      {
+        "ciclo_idx": 3,
+        "reference_ms": 1793943176147,
+        "decision_ms": 1793943227262,
+        "rol": "candidate",
+        "seleccionados": 12,
+        "observaciones_emitidas": 11,
+        "seleccion_sin_observacion": 1,
+        "aptas": 10,
+        "descartadas": 1,
+        "motivos_descartes": {
+          "dato_obsoleto_flujo": 1
+        },
+        "cobertura_por_horizonte": {
+          "5m": {
+            "resultado_registrado": 10,
+            "resultado_faltante": 0
+          },
+          "15m": {
+            "resultado_registrado": 10,
+            "resultado_faltante": 0
+          },
+          "60m": {
+            "resultado_registrado": 10,
+            "resultado_faltante": 0
+          }
+        },
+        "simbolos_seleccionados": [
+          "AINUSDT",
+          "JCTUSDT",
+          "UAIUSDT",
+          "CYBERUSDT",
+          "AKEUSDT",
+          "ELSAUSDT",
+          "BIRBUSDT",
+          "HUMAUSDT",
+          "ATUSDT",
+          "BEAMXUSDT",
+          "牛来USDT",
+          "HANAUSDT"
+        ]
+      },
+      {
+        "ciclo_idx": 3,
+        "reference_ms": 1793943176147,
+        "decision_ms": 1793943227262,
+        "rol": "comparator",
+        "seleccionados": 8,
+        "observaciones_emitidas": 5,
+        "seleccion_sin_observacion": 3,
+        "aptas": 2,
+        "descartadas": 3,
+        "motivos_descartes": {
+          "dato_obsoleto_flujo": 3
+        },
+        "cobertura_por_horizonte": {
+          "5m": {
+            "resultado_registrado": 2,
+            "resultado_faltante": 0
+          },
+          "15m": {
+            "resultado_registrado": 2,
+            "resultado_faltante": 0
+          },
+          "60m": {
+            "resultado_registrado": 2,
+            "resultado_faltante": 0
+          }
+        },
+        "simbolos_seleccionados": [
+          "POWERUSDT",
+          "AUSDT",
+          "1MBABYDOGEUSDT",
+          "SPACEUSDT",
+          "DIAUSDT",
+          "COTIUSDT",
+          "CHILLGUYUSDT",
+          "BANKUSDT"
+        ]
+      },
+      {
+        "ciclo_idx": 4,
+        "reference_ms": 1793943478703,
+        "decision_ms": 1793943527315,
+        "rol": "candidate",
+        "seleccionados": 12,
+        "observaciones_emitidas": 12,
+        "seleccion_sin_observacion": 0,
+        "aptas": 11,
+        "descartadas": 1,
+        "motivos_descartes": {
+          "dato_obsoleto_flujo": 1
+        },
+        "cobertura_por_horizonte": {
+          "5m": {
+            "resultado_registrado": 11,
+            "resultado_faltante": 0
+          },
+          "15m": {
+            "resultado_registrado": 11,
+            "resultado_faltante": 0
+          },
+          "60m": {
+            "resultado_registrado": 11,
+            "resultado_faltante": 0
+          }
+        },
+        "simbolos_seleccionados": [
+          "AINUSDT",
+          "AKEUSDT",
+          "JCTUSDT",
+          "UAIUSDT",
+          "CYBERUSDT",
+          "BIRBUSDT",
+          "ELSAUSDT",
+          "HUMAUSDT",
+          "ATUSDT",
+          "HANAUSDT",
+          "BEAMXUSDT",
+          "牛来USDT"
+        ]
+      },
+      {
+        "ciclo_idx": 4,
+        "reference_ms": 1793943478703,
+        "decision_ms": 1793943527315,
+        "rol": "comparator",
+        "seleccionados": 8,
+        "observaciones_emitidas": 8,
+        "seleccion_sin_observacion": 0,
+        "aptas": 7,
+        "descartadas": 1,
+        "motivos_descartes": {
+          "dato_obsoleto_flujo": 1
+        },
+        "cobertura_por_horizonte": {
+          "5m": {
+            "resultado_registrado": 7,
+            "resultado_faltante": 0
+          },
+          "15m": {
+            "resultado_registrado": 7,
+            "resultado_faltante": 0
+          },
+          "60m": {
+            "resultado_registrado": 7,
+            "resultado_faltante": 0
+          }
+        },
+        "simbolos_seleccionados": [
+          "POWERUSDT",
+          "AUSDT",
+          "1MBABYDOGEUSDT",
+          "SPACEUSDT",
+          "DIAUSDT",
+          "COTIUSDT",
+          "CHILLGUYUSDT",
+          "BANKUSDT"
+        ]
+      },
+      {
+        "ciclo_idx": 5,
+        "reference_ms": 1793943781040,
+        "decision_ms": 1793943827698,
+        "rol": "candidate",
+        "seleccionados": 12,
+        "observaciones_emitidas": 10,
+        "seleccion_sin_observacion": 2,
+        "aptas": 10,
+        "descartadas": 0,
+        "motivos_descartes": {},
+        "cobertura_por_horizonte": {
+          "5m": {
+            "resultado_registrado": 10,
+            "resultado_faltante": 0
+          },
+          "15m": {
+            "resultado_registrado": 10,
+            "resultado_faltante": 0
+          },
+          "60m": {
+            "resultado_registrado": 10,
+            "resultado_faltante": 0
+          }
+        },
+        "simbolos_seleccionados": [
+          "AINUSDT",
+          "AKEUSDT",
+          "JCTUSDT",
+          "UAIUSDT",
+          "CYBERUSDT",
+          "BIRBUSDT",
+          "ELSAUSDT",
+          "HUMAUSDT",
+          "ATUSDT",
+          "HANAUSDT",
+          "EVAAUSDT",
+          "PONSUSDT"
+        ]
+      },
+      {
+        "ciclo_idx": 5,
+        "reference_ms": 1793943781040,
+        "decision_ms": 1793943827698,
+        "rol": "comparator",
+        "seleccionados": 8,
+        "observaciones_emitidas": 5,
+        "seleccion_sin_observacion": 3,
+        "aptas": 3,
+        "descartadas": 2,
+        "motivos_descartes": {
+          "dato_obsoleto_flujo": 2
+        },
+        "cobertura_por_horizonte": {
+          "5m": {
+            "resultado_registrado": 3,
+            "resultado_faltante": 0
+          },
+          "15m": {
+            "resultado_registrado": 3,
+            "resultado_faltante": 0
+          },
+          "60m": {
+            "resultado_registrado": 3,
+            "resultado_faltante": 0
+          }
+        },
+        "simbolos_seleccionados": [
+          "POWERUSDT",
+          "AUSDT",
+          "1MBABYDOGEUSDT",
+          "SPACEUSDT",
+          "DEXEUSDT",
+          "COOKIEUSDT",
+          "CGPTUSDT",
+          "BANKUSDT"
+        ]
+      },
+      {
+        "ciclo_idx": 6,
+        "reference_ms": 1793944083789,
+        "decision_ms": 1793944127943,
+        "rol": "candidate",
+        "seleccionados": 12,
+        "observaciones_emitidas": 11,
+        "seleccion_sin_observacion": 1,
+        "aptas": 10,
+        "descartadas": 1,
+        "motivos_descartes": {
+          "dato_obsoleto_flujo": 1
+        },
+        "cobertura_por_horizonte": {
+          "5m": {
+            "resultado_registrado": 10,
+            "resultado_faltante": 0
+          },
+          "15m": {
+            "resultado_registrado": 10,
+            "resultado_faltante": 0
+          },
+          "60m": {
+            "resultado_registrado": 10,
+            "resultado_faltante": 0
+          }
+        },
+        "simbolos_seleccionados": [
+          "AKEUSDT",
+          "AINUSDT",
+          "JCTUSDT",
+          "UAIUSDT",
+          "CYBERUSDT",
+          "ELSAUSDT",
+          "BIRBUSDT",
+          "HUMAUSDT",
+          "ATUSDT",
+          "EVAAUSDT",
+          "HANAUSDT",
+          "PIEVERSEUSDT"
+        ]
+      },
+      {
+        "ciclo_idx": 6,
+        "reference_ms": 1793944083789,
+        "decision_ms": 1793944127943,
+        "rol": "comparator",
+        "seleccionados": 8,
+        "observaciones_emitidas": 7,
+        "seleccion_sin_observacion": 1,
+        "aptas": 3,
+        "descartadas": 4,
+        "motivos_descartes": {
+          "dato_obsoleto_flujo": 4
+        },
+        "cobertura_por_horizonte": {
+          "5m": {
+            "resultado_registrado": 3,
+            "resultado_faltante": 0
+          },
+          "15m": {
+            "resultado_registrado": 3,
+            "resultado_faltante": 0
+          },
+          "60m": {
+            "resultado_registrado": 3,
+            "resultado_faltante": 0
+          }
+        },
+        "simbolos_seleccionados": [
+          "POWERUSDT",
+          "AUSDT",
+          "1MBABYDOGEUSDT",
+          "SOPHUSDT",
+          "DEXEUSDT",
+          "COOKIEUSDT",
+          "CGPTUSDT",
+          "BANKUSDT"
+        ]
+      },
+      {
+        "ciclo_idx": 7,
+        "reference_ms": 1793944386978,
+        "decision_ms": 1793944427957,
+        "rol": "candidate",
+        "seleccionados": 12,
+        "observaciones_emitidas": 12,
+        "seleccion_sin_observacion": 0,
+        "aptas": 10,
+        "descartadas": 2,
+        "motivos_descartes": {
+          "dato_obsoleto_flujo": 2
+        },
+        "cobertura_por_horizonte": {
+          "5m": {
+            "resultado_registrado": 10,
+            "resultado_faltante": 0
+          },
+          "15m": {
+            "resultado_registrado": 10,
+            "resultado_faltante": 0
+          },
+          "60m": {
+            "resultado_registrado": 10,
+            "resultado_faltante": 0
+          }
+        },
+        "simbolos_seleccionados": [
+          "AKEUSDT",
+          "AINUSDT",
+          "JCTUSDT",
+          "UAIUSDT",
+          "CYBERUSDT",
+          "ELSAUSDT",
+          "BIRBUSDT",
+          "HUMAUSDT",
+          "ATUSDT",
+          "EVAAUSDT",
+          "HANAUSDT",
+          "PIEVERSEUSDT"
+        ]
+      },
+      {
+        "ciclo_idx": 7,
+        "reference_ms": 1793944386978,
+        "decision_ms": 1793944427957,
+        "rol": "comparator",
+        "seleccionados": 8,
+        "observaciones_emitidas": 6,
+        "seleccion_sin_observacion": 2,
+        "aptas": 1,
+        "descartadas": 5,
+        "motivos_descartes": {
+          "dato_obsoleto_flujo": 5,
+          "dato_obsoleto_libro": 1
+        },
+        "cobertura_por_horizonte": {
+          "5m": {
+            "resultado_registrado": 1,
+            "resultado_faltante": 0
+          },
+          "15m": {
+            "resultado_registrado": 1,
+            "resultado_faltante": 0
+          },
+          "60m": {
+            "resultado_registrado": 1,
+            "resultado_faltante": 0
+          }
+        },
+        "simbolos_seleccionados": [
+          "POWRUSDT",
+          "AUSDT",
+          "1MBABYDOGEUSDT",
+          "SPACEUSDT",
+          "DEXEUSDT",
+          "COOKIEUSDT",
+          "CGPTUSDT",
+          "BANKUSDT"
+        ]
+      },
+      {
+        "ciclo_idx": 8,
+        "reference_ms": 1793944689592,
+        "decision_ms": 1793944728135,
+        "rol": "candidate",
+        "seleccionados": 12,
+        "observaciones_emitidas": 11,
+        "seleccion_sin_observacion": 1,
+        "aptas": 11,
+        "descartadas": 0,
+        "motivos_descartes": {},
+        "cobertura_por_horizonte": {
+          "5m": {
+            "resultado_registrado": 11,
+            "resultado_faltante": 0
+          },
+          "15m": {
+            "resultado_registrado": 11,
+            "resultado_faltante": 0
+          },
+          "60m": {
+            "resultado_registrado": 11,
+            "resultado_faltante": 0
+          }
+        },
+        "simbolos_seleccionados": [
+          "AINUSDT",
+          "AKEUSDT",
+          "JCTUSDT",
+          "UAIUSDT",
+          "CYBERUSDT",
+          "ELSAUSDT",
+          "BIRBUSDT",
+          "HUMAUSDT",
+          "ATUSDT",
+          "HANAUSDT",
+          "EVAAUSDT",
+          "PONSUSDT"
+        ]
+      },
+      {
+        "ciclo_idx": 8,
+        "reference_ms": 1793944689592,
+        "decision_ms": 1793944728135,
+        "rol": "comparator",
+        "seleccionados": 8,
+        "observaciones_emitidas": 8,
+        "seleccion_sin_observacion": 0,
+        "aptas": 5,
+        "descartadas": 3,
+        "motivos_descartes": {
+          "dato_obsoleto_flujo": 3
+        },
+        "cobertura_por_horizonte": {
+          "5m": {
+            "resultado_registrado": 5,
+            "resultado_faltante": 0
+          },
+          "15m": {
+            "resultado_registrado": 5,
+            "resultado_faltante": 0
+          },
+          "60m": {
+            "resultado_registrado": 5,
+            "resultado_faltante": 0
+          }
+        },
+        "simbolos_seleccionados": [
+          "POWRUSDT",
+          "AUSDT",
+          "1MBABYDOGEUSDT",
+          "SPACEUSDT",
+          "DEXEUSDT",
+          "COOKIEUSDT",
+          "CGPTUSDT",
+          "BANKUSDT"
+        ]
+      },
+      {
+        "ciclo_idx": 9,
+        "reference_ms": 1793944992879,
+        "decision_ms": 1793945028256,
+        "rol": "candidate",
+        "seleccionados": 12,
+        "observaciones_emitidas": 11,
+        "seleccion_sin_observacion": 1,
+        "aptas": 10,
+        "descartadas": 1,
+        "motivos_descartes": {
+          "dato_obsoleto_flujo": 1
+        },
+        "cobertura_por_horizonte": {
+          "5m": {
+            "resultado_registrado": 10,
+            "resultado_faltante": 0
+          },
+          "15m": {
+            "resultado_registrado": 10,
+            "resultado_faltante": 0
+          },
+          "60m": {
+            "resultado_registrado": 10,
+            "resultado_faltante": 0
+          }
+        },
+        "simbolos_seleccionados": [
+          "AKEUSDT",
+          "AINUSDT",
+          "JCTUSDT",
+          "UAIUSDT",
+          "CYBERUSDT",
+          "ELSAUSDT",
+          "BIRBUSDT",
+          "HUMAUSDT",
+          "ATUSDT",
+          "HANAUSDT",
+          "EVAAUSDT",
+          "BEAMXUSDT"
+        ]
+      },
+      {
+        "ciclo_idx": 9,
+        "reference_ms": 1793944992879,
+        "decision_ms": 1793945028256,
+        "rol": "comparator",
+        "seleccionados": 8,
+        "observaciones_emitidas": 3,
+        "seleccion_sin_observacion": 5,
+        "aptas": 1,
+        "descartadas": 2,
+        "motivos_descartes": {
+          "dato_obsoleto_libro": 1,
+          "dato_obsoleto_flujo": 2
+        },
+        "cobertura_por_horizonte": {
+          "5m": {
+            "resultado_registrado": 1,
+            "resultado_faltante": 0
+          },
+          "15m": {
+            "resultado_registrado": 1,
+            "resultado_faltante": 0
+          },
+          "60m": {
+            "resultado_registrado": 1,
+            "resultado_faltante": 0
+          }
+        },
+        "simbolos_seleccionados": [
+          "POWERUSDT",
+          "AUSDT",
+          "1MBABYDOGEUSDT",
+          "SOPHUSDT",
+          "DIAUSDT",
+          "COTIUSDT",
+          "CHILLGUYUSDT",
+          "BANKUSDT"
+        ]
+      },
+      {
+        "ciclo_idx": 10,
+        "reference_ms": 1793945296983,
+        "decision_ms": 1793945328322,
+        "rol": "candidate",
+        "seleccionados": 12,
+        "observaciones_emitidas": 11,
+        "seleccion_sin_observacion": 1,
+        "aptas": 10,
+        "descartadas": 1,
+        "motivos_descartes": {
+          "dato_obsoleto_flujo": 1
+        },
+        "cobertura_por_horizonte": {
+          "5m": {
+            "resultado_registrado": 10,
+            "resultado_faltante": 0
+          },
+          "15m": {
+            "resultado_registrado": 10,
+            "resultado_faltante": 0
+          },
+          "60m": {
+            "resultado_registrado": 10,
+            "resultado_faltante": 0
+          }
+        },
+        "simbolos_seleccionados": [
+          "AKEUSDT",
+          "AINUSDT",
+          "JCTUSDT",
+          "UAIUSDT",
+          "CYBERUSDT",
+          "ELSAUSDT",
+          "BIRBUSDT",
+          "ATUSDT",
+          "HUMAUSDT",
+          "HANAUSDT",
+          "BEAMXUSDT",
+          "PONSUSDT"
+        ]
+      },
+      {
+        "ciclo_idx": 10,
+        "reference_ms": 1793945296983,
+        "decision_ms": 1793945328322,
+        "rol": "comparator",
+        "seleccionados": 8,
+        "observaciones_emitidas": 8,
+        "seleccion_sin_observacion": 0,
+        "aptas": 6,
+        "descartadas": 2,
+        "motivos_descartes": {
+          "dato_obsoleto_flujo": 2
+        },
+        "cobertura_por_horizonte": {
+          "5m": {
+            "resultado_registrado": 6,
+            "resultado_faltante": 0
+          },
+          "15m": {
+            "resultado_registrado": 6,
+            "resultado_faltante": 0
+          },
+          "60m": {
+            "resultado_registrado": 6,
+            "resultado_faltante": 0
+          }
+        },
+        "simbolos_seleccionados": [
+          "POWERUSDT",
+          "AUSDT",
+          "1MBABYDOGEUSDT",
+          "SOPHUSDT",
+          "DIAUSDT",
+          "COTIUSDT",
+          "CHILLGUYUSDT",
+          "BANKUSDT"
+        ]
+      },
+      {
+        "ciclo_idx": 11,
+        "reference_ms": 1793945601108,
+        "decision_ms": 1793945628365,
+        "rol": "candidate",
+        "seleccionados": 12,
+        "observaciones_emitidas": 11,
+        "seleccion_sin_observacion": 1,
+        "aptas": 10,
+        "descartadas": 1,
+        "motivos_descartes": {
+          "dato_obsoleto_flujo": 1
+        },
+        "cobertura_por_horizonte": {
+          "5m": {
+            "resultado_registrado": 10,
+            "resultado_faltante": 0
+          },
+          "15m": {
+            "resultado_registrado": 10,
+            "resultado_faltante": 0
+          },
+          "60m": {
+            "resultado_registrado": 10,
+            "resultado_faltante": 0
+          }
+        },
+        "simbolos_seleccionados": [
+          "AKEUSDT",
+          "AINUSDT",
+          "JCTUSDT",
+          "UAIUSDT",
+          "CYBERUSDT",
+          "ELSAUSDT",
+          "BIRBUSDT",
+          "HUMAUSDT",
+          "ATUSDT",
+          "HANAUSDT",
+          "ARIAUSDT",
+          "PONSUSDT"
+        ]
+      },
+      {
+        "ciclo_idx": 11,
+        "reference_ms": 1793945601108,
+        "decision_ms": 1793945628365,
+        "rol": "comparator",
+        "seleccionados": 8,
+        "observaciones_emitidas": 6,
+        "seleccion_sin_observacion": 2,
+        "aptas": 1,
+        "descartadas": 5,
+        "motivos_descartes": {
+          "dato_obsoleto_flujo": 5,
+          "dato_obsoleto_libro": 1
+        },
+        "cobertura_por_horizonte": {
+          "5m": {
+            "resultado_registrado": 1,
+            "resultado_faltante": 0
+          },
+          "15m": {
+            "resultado_registrado": 1,
+            "resultado_faltante": 0
+          },
+          "60m": {
+            "resultado_registrado": 1,
+            "resultado_faltante": 0
+          }
+        },
+        "simbolos_seleccionados": [
+          "POWERUSDT",
+          "AVAAIUSDT",
+          "1MBABYDOGEUSDT",
+          "SOPHUSDT",
+          "DIAUSDT",
+          "COTIUSDT",
+          "CHILLGUYUSDT",
+          "BANUSDT"
+        ]
+      }
+    ]
+  },
+  "comparacion_candidatos_comparadores": {
+    "5m": {
+      "candidatos": {
+        "n_resultados": 126,
+        "n_simbolos": 15,
+        "n_ciclos": 12,
+        "media": 0.003049061000520805,
+        "media_pct": 0.30490610005208046,
+        "mediana": 0.0011616145871527653,
+        "mediana_pct": 0.11616145871527653,
+        "desv": 0.015023712635279438,
+        "min": -0.040525536639526356,
+        "min_pct": -4.052553663952636,
+        "max": 0.08276797829036636,
+        "max_pct": 8.276797829036637,
+        "proporcion_positivos": 0.6111111111111112,
+        "media_por_simbolo": 0.002477581686058758,
+        "media_por_simbolo_pct": 0.2477581686058758
+      },
+      "comparadores": {
+        "n_resultados": 42,
+        "n_simbolos": 13,
+        "n_ciclos": 12,
+        "media": -0.00022894622776902662,
+        "media_pct": -0.022894622776902664,
+        "mediana": -0.0006899498867103199,
+        "mediana_pct": -0.06899498867103199,
+        "desv": 0.002379440310395633,
+        "min": -0.0046736502820304724,
+        "min_pct": -0.46736502820304726,
+        "max": 0.005824670058246796,
+        "max_pct": 0.5824670058246796,
+        "proporcion_positivos": 0.38095238095238093,
+        "media_por_simbolo": -0.00026028231633886187,
+        "media_por_simbolo_pct": -0.026028231633886185
+      },
+      "diferencia_medias_agrupada": 0.0032780072282898314,
+      "diferencia_medias_agrupada_puntos_porcentuales": 0.32780072282898315,
+      "diferencia_medias_agrupada_por_simbolo": 0.00273786400239762,
+      "media_de_diferencias_por_ciclo": 0.0030945399845590978,
+      "media_de_diferencias_por_ciclo_puntos_porcentuales": 0.30945399845590976,
+      "ciclos_con_ambos_grupos": 12,
+      "ciclos_sin_grupo_comparable": [],
+      "comp_aptos_por_ciclo": {
+        "0": 8,
+        "1": 1,
+        "2": 4,
+        "3": 2,
+        "4": 7,
+        "5": 3,
+        "6": 3,
+        "7": 1,
+        "8": 5,
+        "9": 1,
+        "10": 6,
+        "11": 1
+      },
+      "ciclos_con_un_solo_comparador": [
+        1,
+        7,
+        9,
+        11
+      ],
+      "updown_candidatos": {
+        "UP": {
+          "n": 49,
+          "media": 0.003373198340202461,
+          "media_pct": 0.33731983402024607,
+          "mediana": 0.0016507098052162444,
+          "mediana_pct": 0.16507098052162444,
+          "desv": 0.018812456710276506,
+          "min": -0.033169129720853854,
+          "min_pct": -3.3169129720853854,
+          "max": 0.08276797829036636,
+          "max_pct": 8.276797829036637,
+          "proporcion_positivos": 0.5918367346938775
+        },
+        "DOWN": {
+          "n": 77,
+          "media": 0.002842791784359751,
+          "media_pct": 0.2842791784359751,
+          "mediana": 0.0008645641469006771,
+          "mediana_pct": 0.0864564146900677,
+          "desv": 0.012000953673969089,
+          "min": -0.040525536639526356,
+          "min_pct": -4.052553663952636,
+          "max": 0.03993480032599839,
+          "max_pct": 3.9934800325998387,
+          "proporcion_positivos": 0.6233766233766234
+        }
+      }
+    },
+    "15m": {
+      "candidatos": {
+        "n_resultados": 126,
+        "n_simbolos": 15,
+        "n_ciclos": 12,
+        "media": 0.01016314852545319,
+        "media_pct": 1.016314852545319,
+        "mediana": 0.001344224447288555,
+        "mediana_pct": 0.1344224447288555,
+        "desv": 0.029718833195322442,
+        "min": -0.041354607619667826,
+        "min_pct": -4.135460761966782,
+        "max": 0.11216644052464947,
+        "max_pct": 11.216644052464947,
+        "proporcion_positivos": 0.5476190476190477,
+        "media_por_simbolo": 0.009337011387649814,
+        "media_por_simbolo_pct": 0.9337011387649814
+      },
+      "comparadores": {
+        "n_resultados": 42,
+        "n_simbolos": 13,
+        "n_ciclos": 12,
+        "media": 0.0009504869032631578,
+        "media_pct": 0.09504869032631579,
+        "mediana": 0.0010651510240259118,
+        "mediana_pct": 0.10651510240259118,
+        "desv": 0.0036540773979553726,
+        "min": -0.007112375533428228,
+        "min_pct": -0.7112375533428228,
+        "max": 0.008279668813247452,
+        "max_pct": 0.8279668813247453,
+        "proporcion_positivos": 0.5952380952380952,
+        "media_por_simbolo": 0.0012253671966302923,
+        "media_por_simbolo_pct": 0.12253671966302923
+      },
+      "diferencia_medias_agrupada": 0.009212661622190033,
+      "diferencia_medias_agrupada_puntos_porcentuales": 0.9212661622190033,
+      "diferencia_medias_agrupada_por_simbolo": 0.008111644191019523,
+      "media_de_diferencias_por_ciclo": 0.008566303277419423,
+      "media_de_diferencias_por_ciclo_puntos_porcentuales": 0.8566303277419424,
+      "ciclos_con_ambos_grupos": 12,
+      "ciclos_sin_grupo_comparable": [],
+      "comp_aptos_por_ciclo": {
+        "0": 8,
+        "1": 1,
+        "2": 4,
+        "3": 2,
+        "4": 7,
+        "5": 3,
+        "6": 3,
+        "7": 1,
+        "8": 5,
+        "9": 1,
+        "10": 6,
+        "11": 1
+      },
+      "ciclos_con_un_solo_comparador": [
+        1,
+        7,
+        9,
+        11
+      ],
+      "updown_candidatos": {
+        "UP": {
+          "n": 49,
+          "media": 0.012218271300081346,
+          "media_pct": 1.2218271300081347,
+          "mediana": 0.0012711450083113828,
+          "mediana_pct": 0.1271145008311383,
+          "desv": 0.03680986031291724,
+          "min": -0.041354607619667826,
+          "min_pct": -4.135460761966782,
+          "max": 0.11216644052464947,
+          "max_pct": 11.216644052464947,
+          "proporcion_positivos": 0.5306122448979592
+        },
+        "DOWN": {
+          "n": 77,
+          "media": 0.00885534312341709,
+          "media_pct": 0.8855343123417091,
+          "mediana": 0.0013551155612437442,
+          "mediana_pct": 0.13551155612437443,
+          "desv": 0.02405415010696551,
+          "min": -0.02612368578118544,
+          "min_pct": -2.612368578118544,
+          "max": 0.1066935859605529,
+          "max_pct": 10.66935859605529,
+          "proporcion_positivos": 0.5584415584415584
+        }
+      }
+    },
+    "60m": {
+      "candidatos": {
+        "n_resultados": 126,
+        "n_simbolos": 15,
+        "n_ciclos": 12,
+        "media": 0.03927911186127959,
+        "media_pct": 3.9279111861279588,
+        "mediana": 0.005606877276246584,
+        "mediana_pct": 0.5606877276246585,
+        "desv": 0.07431090641126702,
+        "min": -0.0528983211910041,
+        "min_pct": -5.28983211910041,
+        "max": 0.2700580402867873,
+        "max_pct": 27.00580402867873,
+        "proporcion_positivos": 0.5714285714285714,
+        "media_por_simbolo": 0.03013742674888168,
+        "media_por_simbolo_pct": 3.013742674888168
+      },
+      "comparadores": {
+        "n_resultados": 42,
+        "n_simbolos": 13,
+        "n_ciclos": 12,
+        "media": 0.007022377897973295,
+        "media_pct": 0.7022377897973295,
+        "mediana": 0.006133886300253033,
+        "mediana_pct": 0.6133886300253033,
+        "desv": 0.006180971471418521,
+        "min": -0.0030620467365028077,
+        "min_pct": -0.30620467365028076,
+        "max": 0.02661653026616532,
+        "max_pct": 2.661653026616532,
+        "proporcion_positivos": 0.8333333333333334,
+        "media_por_simbolo": 0.008109211068531163,
+        "media_por_simbolo_pct": 0.8109211068531164
+      },
+      "diferencia_medias_agrupada": 0.03225673396330629,
+      "diferencia_medias_agrupada_puntos_porcentuales": 3.225673396330629,
+      "diferencia_medias_agrupada_por_simbolo": 0.022028215680350516,
+      "media_de_diferencias_por_ciclo": 0.03246818978239587,
+      "media_de_diferencias_por_ciclo_puntos_porcentuales": 3.2468189782395873,
+      "ciclos_con_ambos_grupos": 12,
+      "ciclos_sin_grupo_comparable": [],
+      "comp_aptos_por_ciclo": {
+        "0": 8,
+        "1": 1,
+        "2": 4,
+        "3": 2,
+        "4": 7,
+        "5": 3,
+        "6": 3,
+        "7": 1,
+        "8": 5,
+        "9": 1,
+        "10": 6,
+        "11": 1
+      },
+      "ciclos_con_un_solo_comparador": [
+        1,
+        7,
+        9,
+        11
+      ],
+      "updown_candidatos": {
+        "UP": {
+          "n": 49,
+          "media": 0.06348364379636852,
+          "media_pct": 6.348364379636852,
+          "mediana": 0.01476254816594095,
+          "mediana_pct": 1.476254816594095,
+          "desv": 0.10098391763929858,
+          "min": -0.0528983211910041,
+          "min_pct": -5.28983211910041,
+          "max": 0.2700580402867873,
+          "max_pct": 27.00580402867873,
+          "proporcion_positivos": 0.6122448979591837
+        },
+        "DOWN": {
+          "n": 77,
+          "media": 0.02387622790258663,
+          "media_pct": 2.387622790258663,
+          "mediana": 0.003357438016528878,
+          "mediana_pct": 0.3357438016528878,
+          "desv": 0.04400721068748261,
+          "min": -0.019678533874117478,
+          "min_pct": -1.9678533874117479,
+          "max": 0.20987654320987664,
+          "max_pct": 20.987654320987666,
+          "proporcion_positivos": 0.5454545454545454
+        }
+      }
+    }
+  },
+  "asociaciones_flujo_profundidad": {
+    "metrica_principal": "flujo_agresor_neto_notional / profundidad_notional_top20 (buy_notional - sell_notional) / (bid_notional_top20 + ask_notional_top20)",
+    "unidades": "flujo y profundidad en USDT; ratio adimensional; retorno en fracción",
+    "ventana_flujo_ms": 60000,
+    "regla_denominador_cero": "si profundidad == 0 o None -> ratio None (no se convierte en cero)",
+    "n_filas_totales": 504,
+    "n_campos_ausentes_o_no_finitos": 0,
+    "n_profundidad_cero_o_invalida": 0,
+    "n_ventana_incompleta": 0,
+    "parejas_validas_por_horizonte": {
+      "5m": 168,
+      "15m": 168,
+      "60m": 168
+    },
+    "por_horizonte": {
+      "5m": {
+        "n_filas": 168,
+        "n_pares_validos": 168,
+        "pearson": 0.03706042341930345,
+        "motivo": null,
+        "corte_fijo_abs": 0.2555027217904271,
+        "corte_fijo_regla": "tercil_superior_de_valor_absoluto_del_ratio_obtenido_del_dataset_no_umbral_validado",
+        "grupo_ratio_alto": {
+          "n": 56,
+          "retorno": {
+            "n": 56,
+            "media": 0.005051186251715029,
+            "mediana": 0.0026215883574007546,
+            "desv": 0.01731091927233622,
+            "min": -0.040525536639526356,
+            "max": 0.08276797829036636
+          },
+          "magnitud_media_abs": 0.011168505312486568
+        },
+        "grupo_ratio_bajo": {
+          "n": 112,
+          "retorno": {
+            "n": 112,
+            "media": 0.0008187456643150061,
+            "mediana": -6.191950464391737e-05,
+            "desv": 0.010161991048601776,
+            "min": -0.033169129720853854,
+            "max": 0.05318352059925106
+          },
+          "magnitud_media_abs": 0.005878739695788169
+        }
+      },
+      "15m": {
+        "n_filas": 168,
+        "n_pares_validos": 168,
+        "pearson": 0.11239404555788159,
+        "motivo": null,
+        "corte_fijo_abs": 0.2555027217904271,
+        "corte_fijo_regla": "tercil_superior_de_valor_absoluto_del_ratio_obtenido_del_dataset_no_umbral_validado",
+        "grupo_ratio_alto": {
+          "n": 56,
+          "retorno": {
+            "n": 56,
+            "media": 0.015604532976246222,
+            "mediana": 0.004043435218695002,
+            "desv": 0.034497470629851396,
+            "min": -0.03510473235065928,
+            "max": 0.11216644052464947
+          },
+          "magnitud_media_abs": 0.02346219659845533
+        },
+        "grupo_ratio_bajo": {
+          "n": 112,
+          "retorno": {
+            "n": 112,
+            "media": 0.0039877081917354135,
+            "mediana": 0.0007260457329015234,
+            "desv": 0.019556752609043455,
+            "min": -0.041354607619667826,
+            "max": 0.09542230818826572
+          },
+          "magnitud_media_abs": 0.010363111842612025
+        }
+      },
+      "60m": {
+        "n_filas": 168,
+        "n_pares_validos": 168,
+        "pearson": 0.1442620154647709,
+        "motivo": null,
+        "corte_fijo_abs": 0.2555027217904271,
+        "corte_fijo_regla": "tercil_superior_de_valor_absoluto_del_ratio_obtenido_del_dataset_no_umbral_validado",
+        "grupo_ratio_alto": {
+          "n": 56,
+          "retorno": {
+            "n": 56,
+            "media": 0.03900425065515598,
+            "mediana": 0.01799589308340513,
+            "desv": 0.06328883022482606,
+            "min": -0.036990106730347416,
+            "max": 0.22136658110255447
+          },
+          "magnitud_media_abs": 0.04782364598133388
+        },
+        "grupo_ratio_bajo": {
+          "n": 112,
+          "retorno": {
+            "n": 112,
+            "media": 0.02732026722810154,
+            "mediana": 0.005589493363626999,
+            "desv": 0.06686626872776073,
+            "min": -0.0528983211910041,
+            "max": 0.2700580402867873
+          },
+          "magnitud_media_abs": 0.03460257716164967
+        }
+      }
+    }
+  },
+  "dependencia": {
+    "resumen_por_simbolo": {
+      "1MBABYDOGEUSDT": {
+        "n_resultados": 6,
+        "n_ciclos": 2,
+        "horizontes": {
+          "5m": 2,
+          "15m": 2,
+          "60m": 2
+        }
+      },
+      "AINUSDT": {
+        "n_resultados": 36,
+        "n_ciclos": 12,
+        "horizontes": {
+          "5m": 12,
+          "15m": 12,
+          "60m": 12
+        }
+      },
+      "AKEUSDT": {
+        "n_resultados": 36,
+        "n_ciclos": 12,
+        "horizontes": {
+          "5m": 12,
+          "15m": 12,
+          "60m": 12
+        }
+      },
+      "ATUSDT": {
+        "n_resultados": 30,
+        "n_ciclos": 10,
+        "horizontes": {
+          "5m": 10,
+          "15m": 10,
+          "60m": 10
+        }
+      },
+      "AUSDT": {
+        "n_resultados": 12,
+        "n_ciclos": 4,
+        "horizontes": {
+          "5m": 4,
+          "15m": 4,
+          "60m": 4
+        }
+      },
+      "BANKUSDT": {
+        "n_resultados": 27,
+        "n_ciclos": 9,
+        "horizontes": {
+          "5m": 9,
+          "15m": 9,
+          "60m": 9
+        }
+      },
+      "BEAMXUSDT": {
+        "n_resultados": 6,
+        "n_ciclos": 2,
+        "horizontes": {
+          "5m": 2,
+          "15m": 2,
+          "60m": 2
+        }
+      },
+      "BIRBUSDT": {
+        "n_resultados": 36,
+        "n_ciclos": 12,
+        "horizontes": {
+          "5m": 12,
+          "15m": 12,
+          "60m": 12
+        }
+      },
+      "CGPTUSDT": {
+        "n_resultados": 12,
+        "n_ciclos": 4,
+        "horizontes": {
+          "5m": 4,
+          "15m": 4,
+          "60m": 4
+        }
+      },
+      "CHILLGUYUSDT": {
+        "n_resultados": 9,
+        "n_ciclos": 3,
+        "horizontes": {
+          "5m": 3,
+          "15m": 3,
+          "60m": 3
+        }
+      },
+      "COOKIEUSDT": {
+        "n_resultados": 6,
+        "n_ciclos": 2,
+        "horizontes": {
+          "5m": 2,
+          "15m": 2,
+          "60m": 2
+        }
+      },
+      "COTIUSDT": {
+        "n_resultados": 6,
+        "n_ciclos": 2,
+        "horizontes": {
+          "5m": 2,
+          "15m": 2,
+          "60m": 2
+        }
+      },
+      "CYBERUSDT": {
+        "n_resultados": 36,
+        "n_ciclos": 12,
+        "horizontes": {
+          "5m": 12,
+          "15m": 12,
+          "60m": 12
+        }
+      },
+      "DEXEUSDT": {
+        "n_resultados": 12,
+        "n_ciclos": 4,
+        "horizontes": {
+          "5m": 4,
+          "15m": 4,
+          "60m": 4
+        }
+      },
+      "DIAUSDT": {
+        "n_resultados": 6,
+        "n_ciclos": 2,
+        "horizontes": {
+          "5m": 2,
+          "15m": 2,
+          "60m": 2
+        }
+      },
+      "ELSAUSDT": {
+        "n_resultados": 36,
+        "n_ciclos": 12,
+        "horizontes": {
+          "5m": 12,
+          "15m": 12,
+          "60m": 12
+        }
+      },
+      "EVAAUSDT": {
+        "n_resultados": 9,
+        "n_ciclos": 3,
+        "horizontes": {
+          "5m": 3,
+          "15m": 3,
+          "60m": 3
+        }
+      },
+      "HANAUSDT": {
+        "n_resultados": 18,
+        "n_ciclos": 6,
+        "horizontes": {
+          "5m": 6,
+          "15m": 6,
+          "60m": 6
+        }
+      },
+      "HUMAUSDT": {
+        "n_resultados": 36,
+        "n_ciclos": 12,
+        "horizontes": {
+          "5m": 12,
+          "15m": 12,
+          "60m": 12
+        }
+      },
+      "JCTUSDT": {
+        "n_resultados": 36,
+        "n_ciclos": 12,
+        "horizontes": {
+          "5m": 12,
+          "15m": 12,
+          "60m": 12
+        }
+      },
+      "PIEVERSEUSDT": {
+        "n_resultados": 3,
+        "n_ciclos": 1,
+        "horizontes": {
+          "5m": 1,
+          "15m": 1,
+          "60m": 1
+        }
+      },
+      "PONSUSDT": {
+        "n_resultados": 9,
+        "n_ciclos": 3,
+        "horizontes": {
+          "5m": 3,
+          "15m": 3,
+          "60m": 3
+        }
+      },
+      "POWERUSDT": {
+        "n_resultados": 9,
+        "n_ciclos": 3,
+        "horizontes": {
+          "5m": 3,
+          "15m": 3,
+          "60m": 3
+        }
+      },
+      "POWRUSDT": {
+        "n_resultados": 3,
+        "n_ciclos": 1,
+        "horizontes": {
+          "5m": 1,
+          "15m": 1,
+          "60m": 1
+        }
+      },
+      "SOPHUSDT": {
+        "n_resultados": 3,
+        "n_ciclos": 1,
+        "horizontes": {
+          "5m": 1,
+          "15m": 1,
+          "60m": 1
+        }
+      },
+      "SPACEUSDT": {
+        "n_resultados": 15,
+        "n_ciclos": 5,
+        "horizontes": {
+          "5m": 5,
+          "15m": 5,
+          "60m": 5
+        }
+      },
+      "UAIUSDT": {
+        "n_resultados": 36,
+        "n_ciclos": 12,
+        "horizontes": {
+          "5m": 12,
+          "15m": 12,
+          "60m": 12
+        }
+      },
+      "牛来USDT": {
+        "n_resultados": 15,
+        "n_ciclos": 5,
+        "horizontes": {
+          "5m": 5,
+          "15m": 5,
+          "60m": 5
+        }
+      }
+    },
+    "resumen_por_ciclo": {
+      "0": {
+        "n_resultados": 60,
+        "n_simbolos": 20,
+        "candidatos": 36,
+        "comparadores": 24
+      },
+      "1": {
+        "n_resultados": 39,
+        "n_simbolos": 13,
+        "candidatos": 36,
+        "comparadores": 3
+      },
+      "2": {
+        "n_resultados": 42,
+        "n_simbolos": 14,
+        "candidatos": 30,
+        "comparadores": 12
+      },
+      "3": {
+        "n_resultados": 36,
+        "n_simbolos": 12,
+        "candidatos": 30,
+        "comparadores": 6
+      },
+      "4": {
+        "n_resultados": 54,
+        "n_simbolos": 18,
+        "candidatos": 33,
+        "comparadores": 21
+      },
+      "5": {
+        "n_resultados": 39,
+        "n_simbolos": 13,
+        "candidatos": 30,
+        "comparadores": 9
+      },
+      "6": {
+        "n_resultados": 39,
+        "n_simbolos": 13,
+        "candidatos": 30,
+        "comparadores": 9
+      },
+      "7": {
+        "n_resultados": 33,
+        "n_simbolos": 11,
+        "candidatos": 30,
+        "comparadores": 3
+      },
+      "8": {
+        "n_resultados": 48,
+        "n_simbolos": 16,
+        "candidatos": 33,
+        "comparadores": 15
+      },
+      "9": {
+        "n_resultados": 33,
+        "n_simbolos": 11,
+        "candidatos": 30,
+        "comparadores": 3
+      },
+      "10": {
+        "n_resultados": 48,
+        "n_simbolos": 16,
+        "candidatos": 30,
+        "comparadores": 18
+      },
+      "11": {
+        "n_resultados": 33,
+        "n_simbolos": 11,
+        "candidatos": 30,
+        "comparadores": 3
+      }
+    },
+    "nota": "Los retornos de tres horizontes sobre una misma observación no son muestras independientes; los símbolos repetidos y las ventanas solapadas tampoco lo son automáticamente."
+  },
+  "precios_y_costes": {
+    "fuentes_detectadas": [
+      "klines_apertura_1m",
+      "libro_mid"
+    ],
+    "neto_estados": {
+      "UNKNOWN": 504
+    },
+    "nota": "precio_base = libro_mid; precio_posterior = klines_apertura_1m; proxy de fuentes mixtas, no mark-to-mid, no P&L ejecutable; neto_estado=UNKNOWN sin costes ni ejecución acreditados."
+  }
+}
