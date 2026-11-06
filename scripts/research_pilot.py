@@ -114,7 +114,10 @@ for _p in (str(ROOT), str(ROOT / "src"), str(ROOT / "scripts")):
 
 from microstructure_probe import discovery  # noqa: E402
 from microstructure_probe.book import BookEngine  # noqa: E402
-from microstructure_probe.flow import FlowEngine  # noqa: E402
+from microstructure_probe.flow import (  # noqa: E402
+    FLOW_HORIZONS_MS,
+    FlowEngine,
+)
 from microstructure_probe.history_client import (  # noqa: E402
     ASSUMED_WEIGHTS,
     INTERVAL_MS,
@@ -131,6 +134,8 @@ import research_selector  # noqa: E402
 PILOT_VERSION = "research-pilot-v1"
 PROTOCOL_VERSION = "prospective-protocol-v1"
 POLICY_VERSION = research_selector.POLICY_VERSION
+# Horizonte de flujo que exige la observacion (build_observation usa 1m).
+DECISION_FLOW_HORIZON = "1m"
 
 DEFAULT_HORIZONS: Tuple[Tuple[str, int], ...] = (
     ("5m", 300_000),
@@ -951,9 +956,15 @@ class ResearchPilot:
         self.capture_end_ms = self.started_ms + int(cfg.duration_seconds * 1000)
         self.settle_end_ms = self.capture_end_ms + int(cfg.settle_seconds * 1000)
         # Instante de primera suscripcion de cada simbolo (calentamiento).
-        # Un simbolo recién suscrito no se evalúa hasta acumular la ventana
-        # requerida (espera acotada, no indefinida).
+        # Un simbolo recién suscrito no se evalua hasta acumular la ventana
+        # de flujo 1m requerida por la observacion; el periodo es independiente
+        # del intervalo entre selecciones.
         self.symbol_first_seen_ms: Dict[str, int] = {}
+        self.symbol_warmup_ms = FLOW_HORIZONS_MS[DECISION_FLOW_HORIZON]
+        # Simbolos ya evaluados en el ciclo de decision actual (para no
+        # re-evaluarlos cuando se disparan evaluaciones acotadas por
+        # calentamiento dentro del mismo ciclo).
+        self._symbols_evaluated_this_cycle: set[str] = set()
 
     # -- almacenamiento total ----------------------------------------------
 
@@ -1171,10 +1182,12 @@ class ResearchPilot:
                 "sampling_mechanism": c.get("sampling_mechanism"),
             }
         # Registrar primera suscripcion de simbolos nuevos (calentamiento).
-        # Una reincorporacion actualiza el instante: no hereda cobertura
+        # Solo las entradas (nuevas o reincorporadas) renuevan el instante; los
+        # simbolos que continuan conservan su periodo para no heredar ventaja
+        # ni reiniciar su cobertura. Una reincorporacion no hereda cobertura
         # ficticia del periodo desconectado.
         for sym in new_followed:
-            if sym not in self.symbol_first_seen_ms:
+            if sym not in prev:
                 self.symbol_first_seen_ms[sym] = now
 
         # Engines: alta/baja explicita; nunca se amplian solos.
@@ -1193,6 +1206,8 @@ class ResearchPilot:
                           self.last_book_event, self.last_flow_event,
                           self.last_book_u):
                 cache.pop(sym, None)
+            self.symbol_first_seen_ms.pop(sym, None)
+            self._symbols_evaluated_this_cycle.discard(sym)
 
         self.followed = new_followed
         self.cycles_run += 1
@@ -1417,6 +1432,34 @@ class ResearchPilot:
             },
         }
 
+    def _ready_symbols(self, now: int) -> List[str]:
+        """Simbolos que cumplieron calentamiento y aun no evaluaron en el ciclo.
+
+        El corte de calentamiento es ``first_seen + symbol_warmup_ms`` y no
+        depende de ``selection_seconds``: un simbolo reincorporado renueva su
+        first_seen y vuelve a esperar la ventana completa.
+        """
+        ready: List[str] = []
+        for symbol in self.followed:
+            if symbol in self._symbols_evaluated_this_cycle:
+                continue
+            first_seen = self.symbol_first_seen_ms.get(symbol)
+            if first_seen is None:
+                continue
+            if now - first_seen >= self.symbol_warmup_ms:
+                ready.append(symbol)
+        return ready
+
+    def _earliest_ready_ms(self) -> Optional[int]:
+        """Primer instante en que algun simbolo pendiente cumplira su ventana."""
+        times = [
+            self.symbol_first_seen_ms[symbol] + self.symbol_warmup_ms
+            for symbol in self.followed
+            if symbol in self.symbol_first_seen_ms
+            and symbol not in self._symbols_evaluated_this_cycle
+        ]
+        return min(times) if times else None
+
     def take_decisions(self, now: int) -> int:
         """now es el instante real de evaluacion; decision_ms = now."""
         book_records = self._book_records(now)
@@ -1435,8 +1478,11 @@ class ResearchPilot:
             first_seen = self.symbol_first_seen_ms.get(symbol)
             if (
                 first_seen is not None
-                and now - first_seen < self.cfg.selection_seconds * 1000
+                and now - first_seen < self.symbol_warmup_ms
             ):
+                continue
+            # No re-evaluar un simbolo ya evaluado en este ciclo de decision.
+            if symbol in self._symbols_evaluated_this_cycle:
                 continue
             obs = self.build_observation(symbol, now,
                                          book_records.get(symbol),
@@ -1449,6 +1495,7 @@ class ResearchPilot:
                 break
             self._seen_observation_ids.add(obs_id)
             self.observations_written += 1
+            self._symbols_evaluated_this_cycle.add(symbol)
             written += 1
             if obs["apto_para_evaluacion"]:
                 for label, horizon_ms in self.cfg.horizons:
@@ -1666,6 +1713,10 @@ class ResearchPilot:
             "roles": dict(self.roles),
             "cycles_run": self.cycles_run,
             "evaluations_run": self.evaluations_run,
+            "symbol_warmup_ms": self.symbol_warmup_ms,
+            "symbol_first_seen_ms": dict(self.symbol_first_seen_ms),
+            "symbols_evaluated_this_cycle": sorted(
+                self._symbols_evaluated_this_cycle),
             "observations_written": self.observations_written,
             "outcomes_written": self.outcomes_written,
             "pending": len(self.pending),
@@ -1724,14 +1775,40 @@ class ResearchPilot:
                     now = self.clock.now_ms()
                     await self._restart_feeds()
                     next_selection = now + int(self.cfg.selection_seconds * 1000)
-                if now >= next_decision and self.followed:
-                    # Barrera de evaluacion (solo pruebas con clock manual):
-                    # sin barrera se mantiene el comportamiento productivo.
-                    if self.gate_path is None or self._gate_decision_ms() == now:
+                # Evaluacion: un solo camino, con o sin barrera de prueba.
+                # - Sin barrera (productivo): el corte se programa en el
+                #   instante en que el primer simbolo pendiente completa su
+                #   calentamiento (first_seen + warmup); despues avanza por
+                #   cycle_seconds. Un simbolo que completa la ventana dentro
+                #   del ciclo se evalua antes de la siguiente seleccion.
+                # - Con barrera (solo pruebas): solo se evalua en el instante
+                #   autorizado por decision-gate-file. La barrera no participa
+                #   en la coordinacion automatica.
+                if self.followed:
+                    if self.gate_path is not None:
+                        if self._gate_decision_ms() == now:
+                            self._symbols_evaluated_this_cycle = set()
+                            written = self.take_decisions(now)
+                            if written > 0:
+                                self.evaluations_run += 1
+                    elif now >= next_decision:
+                        self._symbols_evaluated_this_cycle = set()
                         written = self.take_decisions(now)
-                        self.evaluations_run += 1
                         if written > 0:
-                            next_decision = now + int(self.cfg.cycle_seconds * 1000)
+                            self.evaluations_run += 1
+                            next_decision = now + int(
+                                self.cfg.cycle_seconds * 1000)
+                        else:
+                            # Ningun simbolo cumplio la ventana: el corte se
+                            # reprograma para el primer calentamiento pendiente.
+                            earliest = self._earliest_ready_ms()
+                            next_decision = (
+                                earliest if earliest is not None
+                                else now + int(self.cfg.cycle_seconds * 1000))
+                    elif self._ready_symbols(now):
+                        # Calentamiento cumplido dentro del ciclo actual.
+                        if self.take_decisions(now) > 0:
+                            self.evaluations_run += 1
                 if self.stop_reason:
                     break
                 # Limites WS acumulados (incluidos feeds reemplazados).

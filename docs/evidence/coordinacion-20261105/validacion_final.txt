@@ -1,0 +1,7 @@
+comando: python -m pytest tests/test_research_pilot.py tests/test_recorrido_productivo.py tests/test_embudo_publica.py tests/test_research_selector.py tests/test_observation_cycle.py tests/test_discovery.py -q
+
+........................................................................ [ 94%]
+....                                                                     [100%]
+76 passed in 25.73s
+
+EXITCODE=0

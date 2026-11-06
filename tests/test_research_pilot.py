@@ -11,10 +11,12 @@ Pruebas acotadas del camino productivo corregido:
 - Rotacion de seguimiento sin reiniciar contadores acumulados de WS.
 - Modo local rechazando destinos publicos antes del envio.
 - Cadena completa HTTP/WS loopback con reloj manual SIN dormir y SIN carreras:
-  el test fija el instante, el proveedor publica los eventos, se espera
-  confirmacion explicita (status-file) de que el piloto proceso libro y flujo,
-  y solo entonces se autoriza la evaluacion (decision-gate-file) en ese mismo
-  instante. Despues se avanza al siguiente instante.
+  el test publica y confirma el procesamiento de libro y flujo con
+  event_ms=corte MIENTRAS el reloj esta antes del corte; solo despues alcanza
+  el corte. La barrera decision-gate-file es un control explicito de estas
+  pruebas; el camino productivo automatico (sin barrera) se demuestra en
+  tests/test_recorrido_productivo.py.
+- Calentamiento independiente de selection_seconds: ventana de flujo 1m.
 - Horizontes productivos 5m/15m/60m demostrados por avance controlado del
   reloj, verificando precio posterior, desfase y horizonte efectivo.
 
@@ -626,17 +628,25 @@ class PilotRun:
 
     def step(self, instant_ms: int, *, depth_symbols=(), trade_events=None,
              evaluate: bool = False, expected_obs: int = None):
-        """Fija instante -> publica -> confirma -> (autoriza evaluacion)."""
-        base = self.advance(instant_ms)
+        """Publica y confirma ANTES del corte; luego alcanza ``instant_ms``.
+
+        El reloj se coloca un segundo antes del corte, se publican los eventos
+        con event_ms=instant_ms y se espera confirmacion de procesamiento. Solo
+        despues se alcanza el instante de decision, de modo que la evaluacion
+        no puede ocurrir antes de recibir los datos. Cuando ``evaluate`` es
+        True se autoriza la barrera de prueba en ese mismo instante.
+        """
+        base = self.advance(instant_ms - 1_000)
         if depth_symbols or trade_events:
-            self.publish_and_confirm(base, instant_ms, depth_symbols,
-                                     trade_events)
+            self.publish_and_confirm(
+                base, instant_ms, depth_symbols, trade_events)
         if not evaluate:
             return None
         tmp = self.gate_path.with_name(self.gate_path.name + ".tmp")
         tmp.write_text(json.dumps({"decision_ms": instant_ms, "allow": True}),
                        encoding="utf-8")
         os.replace(tmp, self.gate_path)
+        self.advance(instant_ms)
         return self.wait_observations(instant_ms, expected_obs or 1)
 
     # -- cierre ---------------------------------------------------------
@@ -1057,13 +1067,16 @@ class TestCadenaSincronizada(unittest.TestCase):
 
         for symbol in UNIVERSE:
             self.assertEqual(by_sym[symbol]["decision_ms"], e0, diag0)
-            self.assertEqual(by_sym[symbol]["disponibilidad"]["libro_ms"], e0,
-                             diag0)
+            # El libro se publica/confirma un segundo antes del corte; la
+            # disponibilidad real es <= decision_ms.
+            self.assertEqual(by_sym[symbol]["disponibilidad"]["libro_ms"],
+                             e0 - 1_000, diag0)
 
         for symbol in (SYM_APTA, SYM_LIBRO, SYM_FLUJO):
             self.assertTrue(by_sym[symbol]["apto_para_evaluacion"], diag0)
             self.assertEqual(by_sym[symbol]["motivos"], [], diag0)
-            self.assertEqual(by_sym[symbol]["libro"]["age_event_ms"], 0, diag0)
+            self.assertEqual(by_sym[symbol]["libro"]["age_event_ms"], 0,
+                             diag0)
             self.assertEqual(by_sym[symbol]["flujo"]["age_event_ms"], 0, diag0)
             self.assertTrue(by_sym[symbol]["cobertura"]["flujo_ventana_completa"],
                             diag0)
@@ -1095,7 +1108,8 @@ class TestCadenaSincronizada(unittest.TestCase):
 
         # Apta: ambas fuentes frescas, ventana completa.
         self.assertTrue(by_sym1[SYM_APTA]["apto_para_evaluacion"], diag1)
-        self.assertEqual(by_sym1[SYM_APTA]["libro"]["age_event_ms"], 0, diag1)
+        self.assertEqual(by_sym1[SYM_APTA]["libro"]["age_event_ms"], 0,
+                         diag1)
         self.assertEqual(by_sym1[SYM_APTA]["flujo"]["age_event_ms"], 0, diag1)
         self.assertEqual(
             by_sym1[SYM_APTA]["cobertura"]["flujo_ventana_completa"], True,
@@ -1345,13 +1359,15 @@ class TestCadenaSincronizada(unittest.TestCase):
 
     def test_rotacion_conserva_resultados_y_acumulados_ws(self):
         run = self._start(universe=ROTATION_UNIVERSE, duration_s=600,
-                          settle_s=40, selection_s=60, max_symbols=4,
+                          settle_s=40, selection_s=120, max_symbols=4,
                           rotation=True)
         run.wait_ready(expected_followed=4)
         first = set(run.status()["followed"])
         self.assertEqual(len(first), 4)
 
-        e0 = T0 + 5_000  # primer instante de decision (delay=5s)
+        # Primer corte de decision DESPUES del calentamiento (60s de flujo 1m).
+        # Los eventos se publican/confirman un segundo antes del corte.
+        e0 = T0 + 60_000
         full = _full_window(e0)
         obs0 = run.step(
             e0,
@@ -1364,20 +1380,35 @@ class TestCadenaSincronizada(unittest.TestCase):
         removed_obs = aptas[0]
         self.assertIn(removed_obs["symbol"], first)
 
-        # Segunda seleccion: rota el conjunto seguido.
-        e1 = T0 + MINUTE
+        # Segunda seleccion: rota el conjunto seguido (mitades disjuntas).
+        e1 = T0 + 120_000
         run.advance(e1)
         state = run.wait_status(
             lambda st: st.get("cycles_run", 0) >= 2,
             "segunda seleccion aplicada")
         second = set(state["followed"])
         self.assertTrue(second.isdisjoint(first))
+
+        # Sembrar la ventana de flujo del nuevo conjunto tras suscribirlo y
+        # publicar el libro; el corte real es e2, un segundo despues de los
+        # datos frescos finales.
+        seed = list(range(e1 - 60_000, e1 + 1, 1_000))
         run.publish_and_confirm(
             state, e1, depth_symbols=sorted(second),
-            trade_events={s: [e1] for s in second})
+            trade_events={s: seed for s in second})
+        e2 = T0 + 180_000
+        obs1 = run.step(
+            e2,
+            depth_symbols=sorted(second),
+            trade_events={s: [e2] for s in second},
+            evaluate=True, expected_obs=4)
+        self.assertTrue(all(o["decision_ms"] == e2 for o in obs1), obs1)
+        self.assertGreaterEqual(
+            len([o for o in obs1 if o["apto_para_evaluacion"]]), 1, obs1)
+        self._evidence(run, obs0 + obs1)
 
         # El simbolo retirado conserva su resultado pendiente y se resuelve.
-        target = T0 + 5_000 + 300_000 + MINUTE
+        target = e0 + 300_000 + MINUTE
         run.advance(target)
         outcome = run.wait_outcome(
             removed_obs["observation_id"], "5m")

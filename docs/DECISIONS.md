@@ -4816,3 +4816,16 @@ ext build OK (BUILD_ID afm2q3kpfKZ0sigxBFsB5); 	sc --noEmit 0 errores; eslint 0 
 - Evidencia pequeña publicada: manifiesto, resumen y muestra de 12 observaciones en
   `docs/evidence/research/universe_liquidity_v1/pilot_local/`; dataset completo fuera de Git.
 - Sin Binance, sin ventana pública, sin órdenes, sin cambios económicos ni de reglas operativas; SUCCESS_GATES no se altera.
+
+## 2026-11-05 - Coordinacion automatica del piloto: calentamiento propio, corte tras recepcion (rama research/universe-liquidity-v1, base 0c5bccb)
+
+- Diagnostico: en la base publicada 0c5bccb los 7 tests de cadena fallaban por timeout al esperar observaciones (el calentamiento se media con `selection_seconds`), y en el arbol de trabajo fallaban con `AssertionError: None != 1735689660000` (pilot `aptas: 0`, `motivos: ["sin_libro","sin_flujo"]`) porque el corte de evaluacion ocurria antes de que la recepcion estuviera confirmada. Reproducido en checkout aislado de 0c5bccb: docs/evidence/coordinacion-20261105/base_aislada_0c5bccb.txt; traceback previo: fallos_antes.txt.
+- Aclaracion tecnica: `compute_budget(cfg)` es una funcion pura de configuracion y no toca `self.book`; el metodo que consulta el libro es `_book_records(now)`. El fallo de evaluacion sin libro no proviene del presupuesto.
+- Decision: el calentamiento por simbolo pasa a ser `FLOW_HORIZONS_MS[DECISION_FLOW_HORIZON]` con `DECISION_FLOW_HORIZON = "1m"` (60 s), la ventana de flujo que la decision necesita, y deja de depender de `selection_seconds`.
+- Decision: solo los simbolos nuevos o reincorporados renuevan `symbol_first_seen_ms` al suscribirse; un simbolo que continua conserva su marca. Una reincorporacion obtiene periodo nuevo y una oportunidad de evaluacion antes de la siguiente seleccion.
+- Decision: en la ruta automatica (`ProductRun`/CLI, sin barrera manual) el corte se programa en `max(corte_actual, min(first_seen) + warmup)` y luego avanza `cycle_seconds`; si en el corte no se escribio ninguna observacion se reprograma al `siguiente_calentamiento` pendiente (`_earliest_ready_ms`). `_symbols_evaluated_this_cycle` limita a una observacion por simbolo y ciclo.
+- Decision: `decision-gate-file` se conserva unicamente como control explicito de las pruebas de cadena; la ruta productiva no usa barrera y no se introduce ninguna nueva.
+- Estado expuesto: el resumen del piloto publica `symbol_warmup_ms`, `symbol_first_seen_ms` y `symbols_evaluated_this_cycle`.
+- Pruebas: `tests/test_research_pilot.py` 28 passed (7 de cadena sincronizada adaptadas al protocolo publicar/confirmar con `event_ms=cut` estando el reloj un segundo antes del corte), `tests/test_recorrido_productivo.py` 6 passed (incluye reincorporacion con nuevo periodo), combinado 34 passed; conjunto relacionado 76 passed. Antes: 7 failed.
+- Evidencia: docs/evidence/coordinacion-20261105/{fallos_antes.txt,base_aislada_0c5bccb.txt,fallos_despues.txt,recorrido_despues.txt,suite_completa.txt,suite_relacionada.txt,traza_instancia.json,diagnostico.md}, con traza de una instancia: recepcion confirmada en 59000 y evaluacion automatica en 60000 (18 observaciones, 18 aptas, `evaluations_run=1`).
+- Sin Binance, sin ventana publica, sin ordenes, sin datasets historicos modificados, sin cambios economicos ni de reglas operativas. opencode.json y archivos ajenos no se commitean.

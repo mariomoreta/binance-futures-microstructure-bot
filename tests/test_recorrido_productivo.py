@@ -7,10 +7,11 @@ publica, ni endpoints privados, ni red publica de mercado.
 Demuestra la correccion de coordinacion (captura_protocol_version=2):
 - seleccionar -> suscribir -> acumular ventana requerida -> evaluar.
 - Un simbolo recien suscrito no se evalua inmediatamente; espera al
-  calentamiento acotado por ciclo (selection_seconds).
+  calentamiento acotado por ciclo (ventana de flujo = 60s, no selection_seconds
+  = 300s).
 - decision_ms sigue siendo el instante real de evaluacion.
 - Como maximo una observacion por simbolo y ciclo.
-- Una reincorporacion no hereda cobertura ficticia.
+- Una reincorporacion reinicia su calentamiento; no hereda cobertura ficticia.
 """
 from __future__ import annotations
 
@@ -47,9 +48,10 @@ from tests.test_research_pilot import (  # noqa: E402
 import research_pilot as rp  # noqa: E402
 from research_pilot import PilotConfig  # noqa: E402
 
-# Universo con suficientes simbolos para tener candidatos Y comparadores
-# (max_candidates=12 + max_comparators=8 = techo 20 = max_symbols).
+# Universo suficiente para candidatos (12) + comparadores (8) = techo 20.
 UNIVERSE = [f"S{i:03d}USDT" for i in range(25)]
+# Dos mitades disjuntas de 12: la seleccion rota por llamada y luego reincorpora.
+ROTATION_UNIVERSE = [f"R{i:03d}USDT" for i in range(24)]
 HORIZONS = (("5m", 300_000), ("15m", 900_000), ("60m", 3_600_000))
 
 
@@ -64,9 +66,14 @@ def _send_json(handler, payload, code: int = 200) -> None:
 
 
 class ControlledMarketHttp:
-    """Mercado REST simulado. Devuelve catalogo y ticker de todos los simbolos."""
-    def __init__(self, universe):
+    """Mercado REST simulado. Devuelve catalogo y ticker de todos los simbolos.
+
+    Con ``rotation=True`` cada llamada a ticker/24hr destaca una mitad disjunta
+    del universo, de modo que la seleccion rota y luego reincorpora simbolos.
+    """
+    def __init__(self, universe, rotation=False):
         self.universe = list(universe)
+        self.rotation = rotation
         self.call_count = 0
         self._lock = threading.Lock()
 
@@ -82,13 +89,22 @@ class ControlledMarketHttp:
         if path == "/fapi/v1/ticker/24hr":
             with self._lock:
                 self.call_count += 1
+                call = self.call_count
+            half = len(self.universe) // 2
             rows = []
             for idx, symbol in enumerate(self.universe):
+                if self.rotation:
+                    high = (idx < half) if call % 2 == 1 else (idx >= half)
+                    volume = 50_000_000.0 if high else 2_000_000.0
+                    move = 1.0 if high else 0.05
+                else:
+                    volume = 50_000_000.0
+                    move = 1.0 + 0.1 * idx
                 rows.append({
                     "symbol": symbol,
                     "lastPrice": str(base_price(symbol, self.universe)),
-                    "priceChangePercent": str(1.0 + 0.1 * idx),
-                    "quoteVolume": str(50_000_000.0),
+                    "priceChangePercent": str(move),
+                    "quoteVolume": str(volume),
                     "count": str(1000 + idx),
                     "closeTime": T0,
                 })
@@ -128,14 +144,15 @@ class ProductRun:
     """
     def __init__(self, tmp, *, universe, duration_s, settle_s,
                  selection_s, cycle_s, decision_delay_s,
-                 max_symbols, max_candidates, max_comparators):
+                 max_symbols, max_candidates, max_comparators,
+                 rotation=False):
         self.tmp = Path(tmp)
         self.out_dir = self.tmp / "out"
         self.obs_path = self.out_dir / "observaciones.jsonl"
         self.status_path = self.tmp / "status.json"
         self.clock = ClockFile(self.tmp / "clock.txt", T0)
 
-        self.http = ControlledMarketHttp(universe)
+        self.http = ControlledMarketHttp(universe, rotation=rotation)
         self.http_port = find_free_port()
         self.httpd = ThreadingHTTPServer(
             ("127.0.0.1", self.http_port), self.http.make_handler())
@@ -310,9 +327,26 @@ def recorrido():
     """Ejecuta el piloto una vez y lo detiene al finalizar."""
     tmp = Path(tempfile.mkdtemp(prefix="recorrido-"))
     run = ProductRun(
-        tmp, universe=UNIVERSE, duration_s=300, settle_s=60,
-        selection_s=60, cycle_s=60, decision_delay_s=60,
+        tmp, universe=UNIVERSE, duration_s=900, settle_s=60,
+        selection_s=300, cycle_s=300, decision_delay_s=0,
         max_symbols=20, max_candidates=12, max_comparators=8)
+    try:
+        yield run
+    finally:
+        run.shutdown()
+        import shutil
+        shutil.rmtree(tmp, ignore_errors=True)
+
+
+@pytest.fixture
+def recorrido_rotacion():
+    """Piloto con seleccion rotatoria: mitades disjuntas y reincorporacion."""
+    tmp = Path(tempfile.mkdtemp(prefix="recorrido-rot-"))
+    run = ProductRun(
+        tmp, universe=ROTATION_UNIVERSE, duration_s=600, settle_s=60,
+        selection_s=120, cycle_s=60, decision_delay_s=0,
+        max_symbols=12, max_candidates=12, max_comparators=0,
+        rotation=True)
     try:
         yield run
     finally:
@@ -360,7 +394,7 @@ def test_recorrido_productivo_seleccion_suscripcion_recepcion_evaluacion(
 
     # Fase 3: avanzar a T0+59000. El piloto intenta evaluar en T0+5000 (prima
     # decision_delay=60s), pero los simbolos estan en calentamiento
-    # (59000 < selection_seconds=60000), asi que salta y no avanza
+    # (59000 < symbol_warmup_ms=60000), asi que salta y no avanza
     # next_decision. Publicar mas datos en T0+59000.
     # Publicar un evento de flujo con event_ms=T0+60000 mientras el reloj esta
     # en T0+59000: asi, al evaluar en T0+60000, span_ms=60000 (ventana completa)
@@ -371,7 +405,7 @@ def test_recorrido_productivo_seleccion_suscripcion_recepcion_evaluacion(
         trade_events={s: [T0 + 60_000] for s in seguido_inicial})
 
     # Fase 4: avanzar a T0+60000. Los simbolos ya cumplieron el calentamiento
-    # (60000 >= selection_seconds=60000). El piloto evalua automaticamente con
+    # (60000 >= symbol_warmup_ms=60000). El piloto evalua automaticamente con
     # los datos publicados. span_ms del flujo = 60000 >= window_ms=60000.
     run.advance(T0 + 60_000)
     # Esperar a que se generen observaciones en T0+60000.
@@ -414,8 +448,9 @@ def test_recorrido_productivo_seleccion_suscripcion_recepcion_evaluacion(
 
 
 def test_recorrido_productivo_nuevo_simbolo_calentamiento(recorrido):
-    """Un simbolo recien seleccionado (segundo ciclo) pasa por calentamiento:
-    no se evalua inmediatamente tras la suscripcion."""
+    """Un simbolo recien seleccionado pasa por calentamiento:
+    no se evalua inmediatamente tras la suscripcion, solo despues de
+    acumular la ventana requerida."""
     run = recorrido
 
     # Fase 1: seleccion inicial en T0.
@@ -425,47 +460,162 @@ def test_recorrido_productivo_nuevo_simbolo_calentamiento(recorrido):
         and len(st.get("followed") or []) > 0
         and len(st.get("feeds") or {}) == 2,
         "seleccion inicial")
-    seguido_inicial = set(state.get("followed") or [])
+    seguido_inicial = state.get("followed") or []
+    assert 12 <= len(seguido_inicial) <= 20
 
     # Publicar datos en T0 para los simbolos iniciales.
     run.publish_and_confirm(
         T0, depth_symbols=list(seguido_inicial),
         trade_events={s: [T0] for s in seguido_inicial})
 
-    # Fase 2: avanzar a T0+59000 y publicar un evento de flujo con
-    # event_ms=T0+60000 (mientras el reloj esta en T0+59000). Asi, al evaluar
-    # en T0+60000, span_ms=60000 (ventana completa) y el evento sigue siendo
-    # fresco (recv_ms=T0+59000, age_recv=1000).
+    # Fase 2: avanzar a T0+5000. Los simbolos llevan solo 5s de calentamiento,
+    # menos de los 60s requeridos. No debe haber evaluacion en este instante.
+    run.advance(T0 + 5_000)
+    obs_5k = [r for r in read_rows(run.obs_path)
+              if r.get("kind") == "observacion"
+              and r.get("decision_ms") == T0 + 5_000]
+    assert len(obs_5k) == 0, (
+        f"no debe haber evaluacion antes del calentamiento, se encontraron "
+        f"{len(obs_5k)} observaciones en T+5000")
+
+    # Fase 3: avanzar a T0+59000 y publicar flujo con event_ms=T0+60000
+    # (mientras el reloj esta en T0+59000). Asi, al evaluar en T0+60000,
+    # span_ms=60000 (ventana completa) y el evento sigue siendo fresco.
     run.advance(T0 + 59_000)
     run.publish_and_confirm(
         T0 + 59_000, depth_symbols=list(seguido_inicial),
         trade_events={s: [T0 + 60_000] for s in seguido_inicial})
 
-    # Fase 3: avanzar a T0+60000. Primera decision real. Los simbolos
-    # iniciales ya cumplieron calentamiento y se evaluan.
+    # Fase 4: avanzar a T0+60000. Los simbolos ya cumplieron el calentamiento
+    # (60000 >= symbol_warmup_ms=60000). El piloto evalua automaticamente.
     run.advance(T0 + 60_000)
     obs_t0_60k = run.wait_observations(T0 + 60_000, len(seguido_inicial))
-    by_sym_60k = {o["symbol"]: o for o in obs_t0_60k}
-    aptas_60k = [o for o in obs_t0_60k if o.get("estado") == "observada"]
-    assert len(aptas_60k) > 0
 
-    # Fase 3: en T0+60000 hay una nueva seleccion (selection_seconds=60).
-    # Algunos simbolos pueden salir y otros entrar. Los que entran por primera
-    # vez tienen symbol_first_seen_ms = T0+60000 y NO se evaluan en este
-    # mismo ciclo de decision (estan en calentamiento).
-    # Avanzar a T0+120000: los nuevos simbolos ya cumplieron calentamiento.
-    run.advance(T0 + 120_000)
-    obs_t1_120k = run.wait_observations(T0 + 120_000, 1)
-    # Si hay observaciones en T0+120000, verificar que no hay simbolos
-    # evaluados en el mismo ciclo en que entraron (calentamiento respetado).
-    for o in obs_t1_120k:
-        if o.get("estado") == "observada":
-            disp = o["disponibilidad"]
-            # seleccion_ms debe ser estrictamente anterior a decision_ms
-            # (no fue suscrita y evaluada en el mismo instante).
-            assert disp["seleccion_ms"] < o["decision_ms"], o
+    # Verificar que cada simbolo tiene exactamente una observacion en T0+60000.
+    conteo = {}
+    for o in obs_t0_60k:
+        if o.get("kind") == "observacion" and o.get("decision_ms") == T0 + 60_000:
+            s = o.get("symbol")
+            conteo[s] = conteo.get(s, 0) + 1
+    for s, c in conteo.items():
+        assert c == 1, f"simbolo {s} tiene {c} observaciones en un ciclo"
 
-    print("Calentamiento OK: nuevos simbolos no se evalúan en el mismo ciclo")
+    # Verificar que hay al menos algunas aptas (simbolos con datos frescos).
+    aptas = [o for o in obs_t0_60k if o.get("estado") == "observada"]
+    assert len(aptas) > 0, "esperaba al menos una observacion apta tras calentamiento"
+
+    print("Calentamiento OK: simbolos nuevos no se evaluan antes de los 60s, "
+          "solo despues de cumplir la ventana")
+
+
+def test_recorrido_productivo_reincorporacion_nuevo_periodo(
+        recorrido_rotacion):
+    """Un simbolo que sale y reincorpora espera un periodo nuevo.
+
+    El calentamiento es la ventana de flujo 1m (60s), independiente de
+    selection_seconds (120s). La reincorporacion renueva first_seen y la
+    evaluacion ocurre despues de esa ventana y antes de la siguiente seleccion,
+    sin barrera manual de decision.
+    """
+    run = recorrido_rotacion
+
+    run.advance(T0)
+    state = run.wait_status(
+        lambda st: st.get("now_ms") == T0
+        and len(st.get("followed") or []) >= 8
+        and len(st.get("feeds") or {}) == 2,
+        "seleccion inicial")
+    first = set(state["followed"])
+    assert 8 <= len(first) <= 12
+    assert state.get("symbol_warmup_ms") == 60_000
+    assert set(state["symbol_first_seen_ms"]) == first
+
+    # Primer corte: exactamente al completar la ventana de 60s.
+    e0 = T0 + 60_000
+    run.advance(e0 - 1_000)
+    run.publish_and_confirm(
+        e0 - 1_000, depth_symbols=sorted(first),
+        trade_events={s: list(range(T0 - 2_000, e0 + 1, 1_000))
+                      for s in first})
+    run.advance(e0)
+    obs0 = run.wait_observations(e0, len(first))
+    assert all(o["decision_ms"] == e0 for o in obs0), obs0
+    assert all(o["apto_para_evaluacion"] for o in obs0), obs0
+
+    # Segunda seleccion (120s): rota a la mitad disjunta. No se evalua en el
+    # mismo instante de la suscripcion.
+    e1 = T0 + 120_000
+    run.advance(e1)
+    state = run.wait_status(
+        lambda st: st.get("cycles_run", 0) >= 2,
+        "segunda seleccion")
+    second = set(state["followed"])
+    assert second.isdisjoint(first)
+    assert not [r for r in read_rows(run.obs_path)
+                if r.get("kind") == "observacion"
+                and r.get("decision_ms") == e1]
+
+    # Sembrar la ventana del nuevo conjunto y evaluarlo en e2 (tras 60s).
+    run.publish_and_confirm(
+        e1, depth_symbols=sorted(second),
+        trade_events={s: list(range(e1 - 60_000, e1 + 1, 1_000))
+                      for s in second})
+    e2 = T0 + 180_000
+    run.advance(e2 - 1_000)
+    run.publish_and_confirm(
+        e2 - 1_000, depth_symbols=sorted(second),
+        trade_events={s: [e2] for s in second})
+    run.advance(e2)
+    obs1 = run.wait_observations(e2, len(second))
+    assert all(o["decision_ms"] == e2 for o in obs1), obs1
+    assert any(o["apto_para_evaluacion"] for o in obs1), obs1
+
+    # Tercera seleccion (240s): reincorpora el primer conjunto con periodo
+    # nuevo; no hereda la cobertura del periodo anterior.
+    e3 = T0 + 240_000
+    run.advance(e3)
+    state = run.wait_status(
+        lambda st: st.get("cycles_run", 0) >= 3,
+        "tercera seleccion")
+    third = set(state["followed"])
+    assert third == first
+    assert all(state["symbol_first_seen_ms"][s] == e3 for s in third)
+    assert not [r for r in read_rows(run.obs_path)
+                if r.get("kind") == "observacion"
+                and r.get("decision_ms") == e3]
+
+    # Evaluacion en e4: 60s despues de reincorporar y antes de la siguiente
+    # seleccion (e3 + 120s).
+    run.publish_and_confirm(
+        e3, depth_symbols=sorted(third),
+        trade_events={s: list(range(e3 - 60_000, e3 + 1, 1_000))
+                      for s in third})
+    e4 = T0 + 300_000
+    assert e4 < e3 + 120_000
+    run.advance(e4 - 1_000)
+    run.publish_and_confirm(
+        e4 - 1_000, depth_symbols=sorted(third),
+        trade_events={s: [e4] for s in third})
+    run.advance(e4)
+    obs2 = run.wait_observations(e4, len(third))
+    for o in obs2:
+        assert o["decision_ms"] == e4, o
+        disp = o["disponibilidad"]
+        assert disp["seleccion_ms"] == e3, o
+        assert disp["seleccion_ms"] < o["decision_ms"], o
+    assert any(o["apto_para_evaluacion"] for o in obs2), obs2
+
+    # El ciclo registra la salida y la reincorporacion (trazabilidad).
+    ciclos = [r for r in read_rows(run.obs_path) if r.get("kind") == "ciclo"]
+    salidas = [s["symbol"] for c in ciclos
+               for s in (c.get("seguimiento") or {}).get("salidas", [])]
+    entradas = [s["symbol"] for c in ciclos
+                for s in (c.get("seguimiento") or {}).get("entradas", [])]
+    assert first & set(salidas), "el primer conjunto debe registrar salida"
+    assert first & set(entradas), "el primer conjunto debe registrar entrada"
+
+    print(f"Reincorporacion OK: {len(first)} simbolos con periodo nuevo en "
+          f"e3={e3}, evaluados en e4={e4} antes de la siguiente seleccion")
 
 
 def test_recorrido_productivo_fuente_ausente_descarta(recorrido):
@@ -487,6 +637,9 @@ def test_recorrido_productivo_fuente_ausente_descarta(recorrido):
 
     # Avanzar a T0+60000: calentamiento cumplido, pero falta flujo.
     run.advance(T0 + 60_000)
+    run.publish_and_confirm(
+        T0 + 60_000, depth_symbols=seguido_inicial,
+        trade_events={})
     obs = run.wait_observations(T0 + 60_000, len(seguido_inicial))
 
     # Todos deben estar descartados por sin_flujo.
@@ -513,24 +666,24 @@ def test_recorrido_productivo_frescura_libro_obsoleto(recorrido):
     # Publicar libro con evento en T0 (viejo) y flujo en T0 y T0+60000.
     # El flujo en T0 establece oldest_ms; el de T0+60000 (publicado mientras
     # el reloj esta en T0+59000) establece newest_ms, dando span_ms=60000.
-    # Al evaluar en T0+60000, el libro tiene age_event=60000 > 5000 ->
-    # dato_obsoleto_libro.
+    # No se refresca el libro: al evaluar en T0+60000 su age_event=60000
+    # supera max_data_age_ms -> dato_obsoleto_libro.
     run.publish_and_confirm(
         T0, depth_symbols=seguido_inicial,
         trade_events={s: [T0] for s in seguido_inicial})
     run.advance(T0 + 59_000)
     run.publish_and_confirm(
-        T0 + 59_000, depth_symbols=seguido_inicial,
+        T0 + 59_000, depth_symbols=(),
         trade_events={s: [T0 + 60_000] for s in seguido_inicial})
 
     run.advance(T0 + 60_000)
     obs = run.wait_observations(T0 + 60_000, len(seguido_inicial))
 
-    for o in obs:
-        if o.get("estado") == "descartada":
-            motivos = set(o.get("motivos") or [])
-            # Al menos algunos deben rechazar por libro obsoleto.
-            assert "dato_obsoleto_libro" in motivos or "sin_libro" in motivos, o
+    rechazadas = [o for o in obs if o.get("estado") == "descartada"]
+    assert rechazadas, obs
+    for o in rechazadas:
+        motivos = set(o.get("motivos") or [])
+        assert "dato_obsoleto_libro" in motivos or "sin_libro" in motivos, o
 
     print("Frescura libro obsoleto OK: rechazo con motivo")
 

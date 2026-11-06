@@ -3400,3 +3400,19 @@ esearch/universe-liquidity-v1. Documento docs/RESEARCH_UNIVERSE_LIQUIDITY_V1.md 
 **6. Verdict:** piloto local ejecutado y reproducible; el salto a evaluación causal requiere adquirir liquidez en T con `available_at` propio (ver FEATURE_BACKLOG research/universe-liquidity-v1 punto 7).
 
 **7. Next step:** autorizar o rechazar la propuesta pública 1 h + 70 min de §9.3 (presupuesto generado con `--budget-only`, no ejecutado); no ejecutar contra Binance sin autorización separada; seguir adquiriendo liquidez en T.
+
+## research/piloto-coordinacion (2026-11-05, base `0c5bccb`)
+
+**1. Title:** Corregir la coordinacion automatica del piloto (seleccion -> suscripcion -> recepcion confirmada -> evaluacion) con calentamiento propio de 60 s y sin barrera manual.
+
+**2. Approval status:** EJECUTADO (correccion autorizada en esta tarea; solo lectura local, proveedores loopback, sin Binance, sin ordenes, sin cambios economicos ni de reglas operativas).
+
+**3. Implementation status:** IMPLEMENTADO en `scripts/research_pilot.py`: `DECISION_FLOW_HORIZON = "1m"` y `symbol_warmup_ms = FLOW_HORIZONS_MS["1m"]` (60 s) sustituyen a `selection_seconds`; solo nuevos/reincorporados renuevan `symbol_first_seen_ms`; `_ready_symbols`/`_earliest_ready_ms` gobiernan el corte; `_symbols_evaluated_this_cycle` limita a una observacion por simbolo y ciclo; el corte se reprograma al primer calentamiento pendiente y una readiness intra-ciclo se evalua antes de la siguiente seleccion; `decision-gate-file` queda solo como control de pruebas. Estado expone `symbol_warmup_ms`, `symbol_first_seen_ms`, `symbols_evaluated_this_cycle`.
+
+**4. Evaluation status:** PASS en loopback. `tests/test_research_pilot.py` 28 passed (7 de `TestCadenaSincronizada` adaptadas conservando sus controles) + `tests/test_recorrido_productivo.py` 6 passed (incluye reincorporacion con nuevo periodo) = 34/34; conjunto relacionado de 6 archivos 76 passed con `EXITCODE=0`. Antes: 7 failed en la base aislada y en el arbol de trabajo.
+
+**5. Evidence:** `docs/evidence/coordinacion-20261105/` (`fallos_antes.txt`, `base_aislada_0c5bccb.txt`, `fallos_despues.txt`, `suite_completa.txt`, `suite_relacionada.txt`, `validacion_final.txt`, `traza_instancia.json`, `diagnostico.md`); `docs/DECISIONS.md` 2026-11-05; `docs/RESEARCH_UNIVERSE_LIQUIDITY_V1.md` seccion 9.7; `docs/CURRENT_STATE.md`; `docs/TASK_QUEUE.md`.
+
+**6. Verdict:** coordinacion temporal coherente y verificable; no se declara ventaja economica ni latencia real de produccion (el calentamiento es una cota derivada de la ventana de flujo).
+
+**7. Next step:** mantener el calentamiento de 60 s y no introducir barreras manuales; cualquier captura publica sigue requiriendo autorizacion separada.

@@ -15,19 +15,21 @@ comparación por ciclo y símbolo, cobertura desigual y asociaciones reproducibl
 (9 pruebas focalizadas pasadas). Embudo corregido por rol y diagnóstico de
 incorporación publicados (7 pruebas focalizadas pasadas).
 Recorrido productivo reproducido localmente con proveedores loopback y el CLI
-del piloto (`tests/test_recorrido_productivo.py`): selección → suscripción →
-recepción → evaluación automática después del calentamiento (5 pruebas pasan).
-**Corrección de coordinación implementada en `scripts/research_pilot.py`:**
-`symbol_first_seen_ms` registra la primera suscripción; `take_decisions` salta
-símbolos en calentamiento (`now - symbol_first_seen_ms < selection_seconds`);
-el bucle solo avanza `next_decision` si se escribió al menos una observación.
-Versión del protocolo de captura: `capture_protocol_version=2`. Se mantienen
-todos los límites, tolerancias, selección research-selector-v2 y definición de
-precios.
-`tests/test_research_pilot.py` 42 passed, 7 fallidas (`TestCadenaSincronizada`:
-asumen evaluación inmediata; requieren reescritura con tiempos simulados que
-permitan el calentamiento; no se eliminaron como controles válidos). Cero
-órdenes, cero claves privadas, cero cambios de estrategia ni tolerancias.
+del piloto (`tests/test_recorrido_productivo.py`, 6 pruebas): creación →
+selección → motores/suscripción → recepción confirmada → evaluación automática.
+**Coordinación automática corregida en `scripts/research_pilot.py`:**
+`symbol_warmup_ms = FLOW_HORIZONS_MS["1m"]` (60 s), independiente de
+`selection_seconds`; solo entradas/reincorporaciones renuevan
+`symbol_first_seen_ms`; el corte se programa tras el calentamiento y se
+reprograma al primer símbolo pendiente; la evaluación dentro del ciclo ocurre
+antes de la siguiente selección. Los datos se publican/confirman antes de
+alcanzar el corte, sin `decision-gate-file` en el camino productivo. Versión del
+protocolo de captura: `capture_protocol_version=2`. Se mantienen todos los
+límites, tolerancias, selección research-selector-v2 y definición de precios.
+`tests/test_research_pilot.py` 28 passed (incluye las 7 de
+`TestCadenaSincronizada`, adaptadas conservando sus controles) +
+`test_recorrido_productivo.py` 6 passed = 34/34. Cero órdenes, cero claves
+privadas, cero cambios de estrategia ni tolerancias.
 
 `NEXT_TASKS`:
 1. Mantener `max_data_age_ms=5000`; no tocar dashboard 3020, servicio 8792,
@@ -40,9 +42,10 @@ permitan el calentamiento; no se eliminaron como controles válidos). Cero
    60m y en candidatos/comparadores), sin cambiar reglas ni tolerancias. No se
    repite automáticamente solo porque falte 60m: primero se define el problema
    que resolvería la adquisición.
-4. Reescribir las 7 pruebas de `TestCadenaSincronizada` para usar tiempos
-   simulados que permitan el calentamiento (selección → suscripción → ventana
-   completa → evaluación), sin cambiar la lógica productiva.
+4. (CERRADO 2026-11-05) Las 7 pruebas de `TestCadenaSincronizada` quedaron
+   adaptadas al calentamiento de 60 s y pasan conservando sus controles; no
+   queda reescritura pendiente. Cualquier nueva captura sigue requiriendo
+   autorización explícita y no se relanza automáticamente.
 
 ## Piloto prospectivo v1 — política de pendientes y publicación (2026-11-05)
 

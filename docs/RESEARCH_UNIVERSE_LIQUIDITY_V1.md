@@ -821,17 +821,33 @@ abiertos). Los candidatos son top-12 por prioridad determinista que se repiten
 | `primera_vez` + `reincorpora` (sin libro/flujo) | 44 | carrera de feeds al entrar al seguimiento |
 | `permanece` descartados | 33 | dato_obsoleto_flujo (32), dato_obsoleto_libro (5) |
 
-**Corrección de coordinación implementada y verificada:**
+**Corrección de coordinación implementada y verificada (actualizada
+2026-11-05):**
 el orden del código es `run_cycle()` (selección) → `_restart_feeds()` (abrir
-feeds) → `take_decisions()` (evaluar). `take_decisions` salta símbolos en
-calentamiento (`now - symbol_first_seen_ms < selection_seconds`), por lo que un
-símbolo recién suscrito no se evalúa inmediatamente. El bucle principal solo
-avanza `next_decision` si se escribió al menos una observación. La corrección se
-verificó con `tests/test_recorrido_productivo.py` (5 pruebas): selección real
-con candidatos y comparadores, suscripción de feeds, recepción de mensajes,
-evaluación automática después del calentamiento, símbolos nuevos/reincorporados
-sin cobertura ficticia, fuente ausente con motivo explícito, y una observación
-por símbolo y ciclo.
+feeds) → corte de evaluación → `take_decisions()`. El calentamiento ya no se
+mide con `selection_seconds`: `symbol_warmup_ms = FLOW_HORIZONS_MS["1m"]` = 60 s
+(`DECISION_FLOW_HORIZON = "1m"`), es decir, la ventana de flujo que la decisión
+necesita, independiente de la cadencia de selección. Cada símbolo nuevo o
+reincorporado renueva `symbol_first_seen_ms` al suscribirse y un símbolo que
+continúa conserva el suyo.
+
+El bucle automático (`ProductRun`/CLI, sin barrera manual) corta en
+`max(corte_actual, min(first_seen) + warmup)` y después avanza `cycle_seconds`;
+si tras un corte no se escribió ninguna observación, se reprograma al
+`siguiente_calentamiento` pendiente (`_earliest_ready_ms`). Un símbolo que
+alcanza la readiness a mitad de ciclo se evalúa antes de la siguiente selección,
+y `_symbols_evaluated_this_cycle` garantiza como máximo una observación por
+símbolo y ciclo. `decision-gate-file` queda solo como control explícito de las
+pruebas de cadena; la ruta productiva no usa barrera.
+
+La corrección se verificó con `tests/test_recorrido_productivo.py` (6 pruebas)
+y `tests/test_research_pilot.py` (28 pruebas, 7 de ellas de cadena
+sincronizada): selección real con candidatos y comparadores, suscripción de
+feeds, recepción confirmada antes del corte, evaluación automática tras el
+calentamiento de 60 s, símbolos nuevos/reincorporados sin cobertura ficticia y
+con nuevo periodo y nueva oportunidad de evaluación, fuente ausente con motivo
+explícito, y una observación por símbolo y ciclo. Evidencia:
+`docs/evidence/coordinacion-20261105/`.
 
 **Qué queda UNKNOWN:** 33 descartes de comparadores `permanece` (mayoritariamente
 `dato_obsoleto_flujo`); no se atribuye a baja liquidez, rotación o transporte

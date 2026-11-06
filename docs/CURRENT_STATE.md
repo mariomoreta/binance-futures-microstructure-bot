@@ -62,20 +62,26 @@ observaciones aptas para estudio y un presupuesto público revisable.
   240/128/112; diagnóstico de incorporación; carrera reproducible demostrada;
   7 pruebas focalizadas pasadas).
 - **Recorrido productivo reproducido localmente (loopback, sin Binance):**
-  `tests/test_recorrido_productivo.py` verifica selección → suscripción →
-  recepción → evaluación automática con el CLI del piloto y proveedores
-  HTTP/WS loopback (5 pruebas pasan).
-- **Corrección de coordinación implementada en `scripts/research_pilot.py`:**
-  `symbol_first_seen_ms` registra la primera suscripción de cada símbolo;
-  `take_decisions` salta símbolos en calentamiento
-  (`now - symbol_first_seen_ms < selection_seconds`); el bucle solo avanza
-  `next_decision` si se escribió al menos una observación. Versión del protocolo
-  de captura: `capture_protocol_version=2`. Se mantienen todos los límites,
+  `tests/test_recorrido_productivo.py` (6 pruebas) verifica creación del piloto →
+  `run_cycle`/selección → inicialización de motores y suscripción → recepción
+  confirmada → evaluación automática, sin `decision-gate-file`. El corte se
+  programa en `first_seen + 60 s` (ventana de flujo 1m) y los datos se
+  publican/confirman antes de alcanzar ese corte.
+- **Coordinación automática corregida en `scripts/research_pilot.py`
+  (2026-11-05):**
+  `symbol_warmup_ms = FLOW_HORIZONS_MS["1m"]` (60 s), independiente de
+  `selection_seconds`; solo las entradas/reincorporaciones renuevan
+  `symbol_first_seen_ms`; el corte se reprograma al primer calentamiento
+  pendiente y una evaluación dentro del ciclo ocurre antes de la siguiente
+  selección. `decision-gate-file` queda como control explícito de las pruebas
+  de cadena; el camino productivo no lo requiere. Versión del protocolo de
+  captura: `capture_protocol_version=2`. Se mantienen todos los límites,
   tolerancias, selección research-selector-v2 y definición de precios.
-  Las 7 pruebas de cadena sincronización (`TestCadenaSincronizada`) asumen el
-  comportamiento anterior (evaluación inmediata) y requieren reescritura para
-  usar tiempos simulados que permitan el calentamiento; no se eliminaron como
-  controles válidos.
+  Las 7 pruebas de `TestCadenaSincronizada` fueron adaptadas (publicar/confirmar
+  antes del corte; horizontes y rotación con calentamiento) y pasan: 7/7.
+  Evidencia y traza de una sola instancia:
+  `docs/evidence/coordinacion-20261105/` (`traza_instancia.json`,
+  `diagnostico.md`, `validacion_final.txt` con `EXITCODE=0`).
   Informe inicial conservado:
   `docs/evidence/research/universe_liquidity_v1/pilot_public_proposal_1h/informe_analisis_offline.md`.
   Tablas pequeñas v2:
