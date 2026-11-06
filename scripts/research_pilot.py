@@ -2170,11 +2170,13 @@ def config_from_args(args: argparse.Namespace) -> PilotConfig:
             )
 
     # Instrumentacion de sincronizacion: solo con reloj manual (pruebas).
+    # --status-file es puramente observativo: no controla decisiones, por lo que
+    # se admite tambien con reloj system (capturas publicas). --decision-gate-file
+    # y --stop_file son barreras de prueba y requieren reloj manual.
     if args.clock != "manual" and (
-            args.status_file or args.decision_gate_file or args.stop_file):
+            args.decision_gate_file or args.stop_file):
         raise ValueError(
-            "--status-file/--decision-gate-file/--stop-file requieren "
-            "--clock manual"
+            "--decision-gate-file/--stop-file requieren --clock manual"
         )
 
     return PilotConfig(
