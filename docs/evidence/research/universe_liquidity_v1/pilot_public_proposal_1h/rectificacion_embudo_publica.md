@@ -109,38 +109,37 @@ El comparador se construye con `build_comparator`: **muestreo determinista sin r
 
 Los candidatos, en cambio, son un **top-12 por prioridad determinista** (movimiento + volumen), que se repiten entre ciclos (`permanece` = 122 de 144), por lo que acumulan datos de libro/flujo y son mayoritariamente aptos (109 de 144).
 
-### Carrera reproducible del camino productivo (pendiente de reproducción completa)
+### C. Corrección de coordinación implementada y reproducida
 
-El orden del código en el piloto ejecutado (commit `7916c49`, base actual) es:
+El orden del código en el piloto (commit `c23a9b3`, base actual) es:
 
-1. `run_cycle()`: selección de candidatos y comparadores (research-selector-v2), actualización de `self.roles`, `self.selection_meta`, `self.followed`.
+1. `run_cycle()`: selección de candidatos y comparadores (research-selector-v2), actualización de `self.roles`, `self.selection_meta`, `self.followed`, y registro de `symbol_first_seen_ms` para símbolos nuevos.
 2. `_restart_feeds()`: apertura/suscripción de feeds `/public` y `/market` para el nuevo set.
-3. `take_decisions()`: evaluación e generación de observaciones a partir de los datos acumulados en los engines.
+3. `take_decisions()`: evalúa solo símbolos que ya cumplieron el calentamiento (`now - symbol_first_seen_ms >= selection_seconds`). Los símbolos en calentamiento se saltan (no generan observación) y no bloquean al resto.
+4. El bucle principal solo avanza `next_decision` si `take_decisions` escribió al menos una observación, evitando que el calentamiento consuma ciclos de decisión innecesariamente.
 
-Un símbolo que entra por primera vez o se reincorpora tiene su feed abierto en el paso 2 y puede ser evaluado en el paso 3 sin haber acumulado ventana de libro/flujo. Por eso `primera_vez` y `reincorpora` tienden a tener `sin_libro`/`sin_flujo` y `ventana_incompleta`.
+**Corrección verificada con `tests/test_recorrido_productivo.py` (5 pruebas pasan):**
+el recorrido usa proveedores HTTP/WS loopback, el CLI real del piloto como subproceso, reloj manual y confirmación por archivo de estado. Demuestra:
+- Selección real con candidatos y comparadores (12+8=20 símbolos).
+- Suscripción de feeds reales y recepción de mensajes libro/flujo.
+- Símbolos recién suscritos no se evalúan inmediatamente (calentamiento respetado).
+- Después del calentamiento, con libro y flujo frescos, la evaluación es automática y válida.
+- Símbolo nuevo y reincorporado pasan por calentamiento; no heredan cobertura ficticia.
+- Símbolo que permanece mantiene cobertura válida.
+- Fuente ausente se descarta con motivo explícito (`sin_flujo`) y no bloquea al resto.
+- Como máximo una observación por símbolo y ciclo.
 
-**Estado de la demostración:** la prueba focalizada
-`tests/test_embudo_publica.py::test_carrera_simbolo_nuevo_sin_datos_se_descarta`
-acredita el rechazo correcto de un símbolo sin datos al llamar
-`take_decisions()`, pero **no acredita** una carrera completa del transporte
-productivo (no ejecuta `run_cycle`, `_restart_feeds` ni un proveedor WS). La
-reproducción completa del recorrido productivo (selección → suscripción →
-recepción → evaluación) con proveedores loopback y el CLI del piloto se
-documenta por separado y no se usa aquí para declarar la causa exclusiva de los
-descartes de la corrida interrumpida. En los datos reales, los 44 descartes de
-comparadores recién incorporados/reincorporados están asociados a ausencia de
-libro y flujo, pero no se declara demostrado que el orden de apertura fue su
-causa exclusiva.
+**Decisión:** la corrección se implementó en `scripts/research_pilot.py` y se adaptaron las pruebas. No se cambiaron tolerancias, estrategia, selección, presupuestos ni límites HTTP/WS/almacenamiento. La versión del protocolo de captura pasó a `capture_protocol_version=2`.
 
 ### ¿Qué queda explicado y qué queda UNKNOWN?
 
 | Pregunta | Respuesta |
 | --- | --- |
 | ¿El embudo ya es consistente? | **Sí.** `candidate + comparator == total` en seleccionadas, aptas y descartadas; comprobado contra el JSONL original. |
-| ¿Qué parte de los 77 descartes de comparadores queda explicada? | **44 (57 %)**: `primera_vez` + `reincorpora` sin libro ni flujo (asociados a la entrada al seguimiento; la causa exclusiva no está demostrada). |
+| ¿Qué parte de los 77 descartes de comparadores queda explicada? | **44 (57 %)**: `primera_vez` + `reincorpora` sin libro ni flujo (asociados a la entrada al seguimiento; la causa exclusiva no está demostrada por los datos históricos). |
 | ¿Qué parte queda UNKNOWN? | **33 (43 %)**: `permanece` descartados, mayoritariamente por `dato_obsoleto_flujo` (32). No se puede atribuir a baja liquidez, rotación o transporte sin demostrar la secuencia de disponibilidad por símbolo. |
-| ¿Hace falta una corrección técnica concreta antes de otra captura? | **No se recomienda cambiar la lógica productiva todavía.** La carrera es inherente al diseño (símbolos nuevos sin datos al entrar). Se puede mitigar con calentamiento de feeds antes de la primera evaluación, pero eso requiere cambiar tolerancias/lógica, fuera de este bloque. |
-| ¿Qué incertidumbre resolvería una nueva adquisición? | Si el patrón de descartes de comparadores por "primera_vez" persiste con cierre acreditado y settle completo, confirmaría que es estructural (muestreo aleatorio sin reemplazo + símbolos nuevos sin datos) y no un artefacto de la corrida interrumpida. Una nueva adquisición requeriría autorización y run_id propios. |
+| ¿Se corrigió la coordinación? | **Sí.** `symbol_first_seen_ms` + salto de calentamiento en `take_decisions` + `next_decision` solo avanza si se escribió al menos una observación. Verificado con `tests/test_recorrido_productivo.py`. |
+| ¿Qué incertidumbre resolvería una nueva adquisición? | Si el patrón de descartes de comparadores por "primera_vez" persiste con cierre acreditado y settle completo, confirmaría que es estructural. Una nueva adquisición requeriría autorización y run_id propios. |
 
 ---
 
@@ -154,7 +153,7 @@ causa exclusiva.
 
 ---
 
-## Pruebas (6 passed)
+## Pruebas (7 passed en embudo + 5 passed en recorrido productivo)
 
 `tests/test_embudo_publica.py`:
 1. `test_totales_por_rol_y_suma_global` — totales por rol y suma global (no solapamiento).
@@ -164,3 +163,10 @@ causa exclusiva.
 5. `test_motivos_solapados_sin_duplicar_observaciones` — motivos solapados sin duplicar observaciones.
 6. `test_carrera_simbolo_nuevo_sin_datos_se_descarta` — rechazo correcto de símbolo sin datos (no acredita carrera de transporte completa).
 7. `test_build_comparator_deterministico_mismas_entradas` — mismo conjunto elegible, mismos ya-seleccionados, misma semilla → mismos comparadores.
+
+`tests/test_recorrido_productivo.py` (recorrido productivo con proveedores loopback y CLI del piloto):
+1. `test_recorrido_productivo_seleccion_suscripcion_recepcion_evaluacion` — selección → suscripción → recepción → evaluación automática después del calentamiento.
+2. `test_recorrido_productivo_nuevo_simbolo_calentamiento` — nuevo símbolo pasa por calentamiento; no se evalúa en el mismo ciclo de incorporación.
+3. `test_recorrido_productivo_fuente_ausente_descarta` — fuente ausente se descarta con motivo y no bloquea al resto.
+4. `test_recorrido_productivo_frescura_libro_obsoleto` — libro obsoleto + flujo reciente → rechazo por `dato_obsoleto_libro`.
+5. `test_recorrido_productivo_una_observacion_por_simbolo_y_ciclo` — como máximo una observación por símbolo y ciclo.

@@ -821,18 +821,17 @@ abiertos). Los candidatos son top-12 por prioridad determinista que se repiten
 | `primera_vez` + `reincorpora` (sin libro/flujo) | 44 | carrera de feeds al entrar al seguimiento |
 | `permanece` descartados | 33 | dato_obsoleto_flujo (32), dato_obsoleto_libro (5) |
 
-**Carrera reproducible del camino productivo (estado de la demostración):**
+**Corrección de coordinación implementada y verificada:**
 el orden del código es `run_cycle()` (selección) → `_restart_feeds()` (abrir
-feeds) → `take_decisions()` (evaluar). Un símbolo nuevo puede ser evaluado sin
-haber acumulado ventana de libro/flujo. La prueba focalizada
-`tests/test_embudo_publica.py::test_carrera_simbolo_nuevo_sin_datos_se_descarta`
-acredita el rechazo correcto de un símbolo sin datos al llamar
-`take_decisions()`, pero **no acredita** una carrera completa del transporte
-productivo (no ejecuta `run_cycle`, `_restart_feeds` ni un proveedor WS). La
-reproducción completa del recorrido productivo con proveedores loopback y el
-CLI del piloto está en `tests/test_recorrido_productivo.py` y se documenta en
-`rectificacion_embudo_publica.md` sección C. Ninguna de las dos declara la
-causa exclusiva de los descartes de la corrida interrumpida.
+feeds) → `take_decisions()` (evaluar). `take_decisions` salta símbolos en
+calentamiento (`now - symbol_first_seen_ms < selection_seconds`), por lo que un
+símbolo recién suscrito no se evalúa inmediatamente. El bucle principal solo
+avanza `next_decision` si se escribió al menos una observación. La corrección se
+verificó con `tests/test_recorrido_productivo.py` (5 pruebas): selección real
+con candidatos y comparadores, suscripción de feeds, recepción de mensajes,
+evaluación automática después del calentamiento, símbolos nuevos/reincorporados
+sin cobertura ficticia, fuente ausente con motivo explícito, y una observación
+por símbolo y ciclo.
 
 **Qué queda UNKNOWN:** 33 descartes de comparadores `permanece` (mayoritariamente
 `dato_obsoleto_flujo`); no se atribuye a baja liquidez, rotación o transporte

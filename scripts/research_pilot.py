@@ -630,6 +630,10 @@ class PilotConfig:
     decision_gate_file: Optional[str] = None
     stop_file: Optional[str] = None
     keep_research_db: bool = True
+    # Protocolo de captura: 1 = evaluacion inmediata tras suscripcion;
+    # 2 = calentamiento acotado antes de la primera evaluacion de un
+    # simbolo (seleccionar -> suscribir -> acumular ventana -> evaluar).
+    capture_protocol_version: int = 2
 
     def to_dict(self) -> Dict[str, Any]:
         return {
@@ -667,6 +671,7 @@ class PilotConfig:
             "status_file": self.status_file,
             "decision_gate_file": self.decision_gate_file,
             "stop_file": self.stop_file,
+            "capture_protocol_version": self.capture_protocol_version,
             "policy_version": POLICY_VERSION,
             "pilot_version": PILOT_VERSION,
             "protocol_version": PROTOCOL_VERSION,
@@ -945,6 +950,10 @@ class ResearchPilot:
         self.ended_ms: Optional[int] = None
         self.capture_end_ms = self.started_ms + int(cfg.duration_seconds * 1000)
         self.settle_end_ms = self.capture_end_ms + int(cfg.settle_seconds * 1000)
+        # Instante de primera suscripcion de cada simbolo (calentamiento).
+        # Un simbolo recién suscrito no se evalúa hasta acumular la ventana
+        # requerida (espera acotada, no indefinida).
+        self.symbol_first_seen_ms: Dict[str, int] = {}
 
     # -- almacenamiento total ----------------------------------------------
 
@@ -1161,6 +1170,12 @@ class ResearchPilot:
                 "selection_probability": c.get("selection_probability"),
                 "sampling_mechanism": c.get("sampling_mechanism"),
             }
+        # Registrar primera suscripcion de simbolos nuevos (calentamiento).
+        # Una reincorporacion actualiza el instante: no hereda cobertura
+        # ficticia del periodo desconectado.
+        for sym in new_followed:
+            if sym not in self.symbol_first_seen_ms:
+                self.symbol_first_seen_ms[sym] = now
 
         # Engines: alta/baja explicita; nunca se amplian solos.
         if self.book is None:
@@ -1414,6 +1429,15 @@ class ResearchPilot:
             if not self._storage_ok():
                 self.stop_reason = "presupuesto_bytes"
                 break
+            # Calentamiento: simbolo recién suscrito (o reincorporado). No se
+            # evalua hasta acumular la ventana requerida (espera acotada, no
+            # indefinida). Los que permanecen no reciben ventaja temporal.
+            first_seen = self.symbol_first_seen_ms.get(symbol)
+            if (
+                first_seen is not None
+                and now - first_seen < self.cfg.selection_seconds * 1000
+            ):
+                continue
             obs = self.build_observation(symbol, now,
                                          book_records.get(symbol),
                                          flow_records.get(symbol))
@@ -1704,9 +1728,10 @@ class ResearchPilot:
                     # Barrera de evaluacion (solo pruebas con clock manual):
                     # sin barrera se mantiene el comportamiento productivo.
                     if self.gate_path is None or self._gate_decision_ms() == now:
-                        self.take_decisions(now)
+                        written = self.take_decisions(now)
                         self.evaluations_run += 1
-                        next_decision = now + int(self.cfg.cycle_seconds * 1000)
+                        if written > 0:
+                            next_decision = now + int(self.cfg.cycle_seconds * 1000)
                 if self.stop_reason:
                     break
                 # Limites WS acumulados (incluidos feeds reemplazados).

@@ -63,12 +63,19 @@ observaciones aptas para estudio y un presupuesto público revisable.
   7 pruebas focalizadas pasadas).
 - **Recorrido productivo reproducido localmente (loopback, sin Binance):**
   `tests/test_recorrido_productivo.py` verifica selección → suscripción →
-  recepción → evaluación con el CLI del piloto y proveedores HTTP/WS loopback.
-  Con el código actual, un símbolo recién suscrito se evalúa sin datos
-  acumulados y se descarta con su motivo; no se modificó `research_pilot.py`
-  (una corrección de calentamiento rompería pruebas de cadena sincronizada y
-  cambiaría el comportamiento de presupuesto; queda como límite conocido para
-  una futura adquisición con autorización propia).
+  recepción → evaluación automática con el CLI del piloto y proveedores
+  HTTP/WS loopback (5 pruebas pasan).
+- **Corrección de coordinación implementada en `scripts/research_pilot.py`:**
+  `symbol_first_seen_ms` registra la primera suscripción de cada símbolo;
+  `take_decisions` salta símbolos en calentamiento
+  (`now - symbol_first_seen_ms < selection_seconds`); el bucle solo avanza
+  `next_decision` si se escribió al menos una observación. Versión del protocolo
+  de captura: `capture_protocol_version=2`. Se mantienen todos los límites,
+  tolerancias, selección research-selector-v2 y definición de precios.
+  Las 7 pruebas de cadena sincronización (`TestCadenaSincronizada`) asumen el
+  comportamiento anterior (evaluación inmediata) y requieren reescritura para
+  usar tiempos simulados que permitan el calentamiento; no se eliminaron como
+  controles válidos.
   Informe inicial conservado:
   `docs/evidence/research/universe_liquidity_v1/pilot_public_proposal_1h/informe_analisis_offline.md`.
   Tablas pequeñas v2:

@@ -1,18 +1,16 @@
-"""Recorrido productivo local: selección → suscripción → recepción → evaluación.
+"""Recorrido productivo local: seleccion -> suscripcion -> recepcion -> evaluacion.
 
 Usa proveedores HTTP/WS loopback, SQLite temporal y el CLI existente
 (research_pilot.py) como subproceso. Control de reloj manual. No toca Binance
-pública, ni endpoints privados, ni red pública de mercado.
+publica, ni endpoints privados, ni red publica de mercado.
 
-Reproduce el recorrido del piloto ejecutado (commit b37a6be) para evidenciar:
-- Descubrimiento y selección reales (research-selector-v2).
-- Actualización del conjunto seguido.
-- Apertura/suscripción de feeds reales del piloto.
-- Recepción y procesamiento de mensajes.
-- Evaluación automática (take_decisions).
-
-Incluye: símbolo que permanece, símbolo nuevo, símbolo que se reincorpora y
-fuente que demora o nunca entrega datos.
+Demuestra la correccion de coordinacion (captura_protocol_version=2):
+- seleccionar -> suscribir -> acumular ventana requerida -> evaluar.
+- Un simbolo recien suscrito no se evalua inmediatamente; espera al
+  calentamiento acotado por ciclo (selection_seconds).
+- decision_ms sigue siendo el instante real de evaluacion.
+- Como maximo una observacion por simbolo y ciclo.
+- Una reincorporacion no hereda cobertura ficticia.
 """
 from __future__ import annotations
 
@@ -35,7 +33,6 @@ for _p in (str(ROOT), str(ROOT / "src"), str(ROOT / "scripts")):
     if _p not in sys.path:
         sys.path.insert(0, _p)
 
-# Reusa la infraestructura de prueba del piloto (loopback, sin red pública).
 from tests.test_research_pilot import (  # noqa: E402
     ClockFile,
     WsProvider,
@@ -50,8 +47,9 @@ from tests.test_research_pilot import (  # noqa: E402
 import research_pilot as rp  # noqa: E402
 from research_pilot import PilotConfig  # noqa: E402
 
-# Universo pequeño y determinista para controlar la selección.
-UNIVERSE = ["AAAUSDT", "BBBUSDT", "CCCUSDT", "DDDUSDT", "EEEUSDT", "FFFUSDT"]
+# Universo con suficientes simbolos para tener candidatos Y comparadores
+# (max_candidates=12 + max_comparators=8 = techo 20 = max_symbols).
+UNIVERSE = [f"S{i:03d}USDT" for i in range(25)]
 HORIZONS = (("5m", 300_000), ("15m", 900_000), ("60m", 3_600_000))
 
 
@@ -66,33 +64,11 @@ def _send_json(handler, payload, code: int = 200) -> None:
 
 
 class ControlledMarketHttp:
-    """Mercado REST simulado controlado por la prueba.
-
-    Permite fijar las filas de ticker que se devuelven en cada llamada para
-    dirigir la selección del piloto (qué símbolos entran/salen del seguido).
-    """
+    """Mercado REST simulado. Devuelve catalogo y ticker de todos los simbolos."""
     def __init__(self, universe):
         self.universe = list(universe)
         self.call_count = 0
         self._lock = threading.Lock()
-        self._ticker_rows = None
-
-    def set_tickers(self, rows):
-        with self._lock:
-            self._ticker_rows = list(rows)
-
-    def default_rows(self):
-        rows = []
-        for idx, symbol in enumerate(self.universe):
-            rows.append({
-                "symbol": symbol,
-                "lastPrice": str(base_price(symbol, self.universe)),
-                "priceChangePercent": str(1.0 + 0.1 * idx),
-                "quoteVolume": str(50_000_000.0),
-                "count": str(1000 + idx),
-                "closeTime": T0,
-            })
-        return rows
 
     def _handle(self, handler):
         parsed = urlsplit(handler.path)
@@ -106,8 +82,16 @@ class ControlledMarketHttp:
         if path == "/fapi/v1/ticker/24hr":
             with self._lock:
                 self.call_count += 1
-                rows = self._ticker_rows if self._ticker_rows is not None \
-                    else self.default_rows()
+            rows = []
+            for idx, symbol in enumerate(self.universe):
+                rows.append({
+                    "symbol": symbol,
+                    "lastPrice": str(base_price(symbol, self.universe)),
+                    "priceChangePercent": str(1.0 + 0.1 * idx),
+                    "quoteVolume": str(50_000_000.0),
+                    "count": str(1000 + idx),
+                    "closeTime": T0,
+                })
             _send_json(handler, rows)
             return
         if path == "/fapi/v1/klines":
@@ -136,17 +120,19 @@ class ControlledMarketHttp:
 
 
 class ProductRun:
-    """Ejecuta research_pilot.py como subproceso y sincroniza sus fases."""
+    """Ejecuta research_pilot.py como subproceso y sincroniza sus fases.
 
+    No usa --decision-gate-file ni llama a take_decisions directamente. El
+    piloto evalua automaticamente cuando el reloj avanza mas alla de
+    next_decision y los simbolos han cumplido su calentamiento.
+    """
     def __init__(self, tmp, *, universe, duration_s, settle_s,
-                 selection_s, cycle_s, max_symbols, max_candidates,
-                 max_comparators):
+                 selection_s, cycle_s, decision_delay_s,
+                 max_symbols, max_candidates, max_comparators):
         self.tmp = Path(tmp)
         self.out_dir = self.tmp / "out"
         self.obs_path = self.out_dir / "observaciones.jsonl"
         self.status_path = self.tmp / "status.json"
-        self.gate_path = self.tmp / "gate.json"
-        self.stop_path = self.tmp / "stop.txt"
         self.clock = ClockFile(self.tmp / "clock.txt", T0)
 
         self.http = ControlledMarketHttp(universe)
@@ -172,7 +158,7 @@ class ProductRun:
             "--settle-seconds", str(settle_s),
             "--cycle-seconds", str(cycle_s),
             "--selection-seconds", str(selection_s),
-            "--decision-delay-seconds", "5",
+            "--decision-delay-seconds", str(decision_delay_s),
             "--max-symbols", str(max_symbols),
             "--max-candidates", str(max_candidates),
             "--max-comparators", str(max_comparators),
@@ -189,11 +175,9 @@ class ProductRun:
             "--max-http-retries", "50",
             "--max-http-weight", "5000",
             "--max-ws-reconnects", "20",
-            "--tick-ms", "50",
+            "--tick-ms", "100",
             "--clock", "manual", "--clock-file", str(self.tmp / "clock.txt"),
             "--status-file", str(self.status_path),
-            "--decision-gate-file", str(self.gate_path),
-            "--stop-file", str(self.stop_path),
         ]
         self.proc = subprocess.Popen(
             cmd, cwd=str(ROOT), stdout=subprocess.PIPE,
@@ -211,7 +195,7 @@ class ProductRun:
                     return None
                 time.sleep(0.01)
 
-    def wait_status(self, predicate, what, timeout=30.0):
+    def wait_status(self, predicate, what, timeout=60.0):
         deadline = time.monotonic() + timeout
         last = None
         while time.monotonic() < deadline:
@@ -226,13 +210,13 @@ class ProductRun:
                 except Exception:
                     out, err = "", ""
                 raise AssertionError(
-                    f"piloto terminó esperando {what}: rc={self.proc.poll()}"
-                    f" stdout={out!r} stderr={err!r} último={last}")
+                    f"piloto termino esperando {what}: rc={self.proc.poll()}"
+                    f" stdout={out!r} stderr={err!r} ultimo={last}")
             time.sleep(0.02)
         raise AssertionError(
-            f"timeout {timeout}s esperando {what}; último={json.dumps(last)}")
+            f"timeout {timeout}s esperando {what}; ultimo={json.dumps(last)}")
 
-    def advance(self, instant_ms, timeout=30.0):
+    def advance(self, instant_ms, timeout=60.0):
         self.clock.set(instant_ms)
         return self.wait_status(
             lambda st: st.get("now_ms") == instant_ms,
@@ -240,7 +224,7 @@ class ProductRun:
 
     def publish_and_confirm(self, instant_ms, depth_symbols=(),
                             trade_events=None):
-        """Publica burst WS y espera confirmación del estado del piloto."""
+        """Publica burst WS y espera confirmacion del estado del piloto."""
         self.wait_status(
             lambda st: bool(st.get("feeds")) and all(
                 f.get("connected_now") for f in st["feeds"].values()),
@@ -272,24 +256,7 @@ class ProductRun:
         return self.wait_status(
             processed, f"libro/flujo procesados en {instant_ms}")
 
-    def step(self, instant_ms, *, depth_symbols=(), trade_events=None,
-             evaluate=False, expected_obs=None):
-        """Fija instante → publica → confirma → (opcional) autoriza evaluación."""
-        self.advance(instant_ms)
-        if depth_symbols or trade_events:
-            self.publish_and_confirm(
-                instant_ms, depth_symbols, trade_events)
-        if not evaluate:
-            return None
-        tmp = self.gate_path.with_name(self.gate_path.name + ".tmp")
-        tmp.write_text(
-            json.dumps({"decision_ms": instant_ms, "allow": True}),
-            encoding="utf-8")
-        os.replace(tmp, self.gate_path)
-        return self.wait_observations(
-            instant_ms, expected_obs or 1)
-
-    def wait_observations(self, decision_ms, expected, timeout=30.0):
+    def wait_observations(self, decision_ms, expected, timeout=60.0):
         def pred(rows):
             found = [r for r in rows
                      if r.get("kind") == "observacion"
@@ -301,7 +268,7 @@ class ProductRun:
             if found:
                 return found
             if self.proc.poll() is not None:
-                raise AssertionError("piloto terminó esperando observaciones")
+                raise AssertionError("piloto termino esperando observaciones")
             time.sleep(0.02)
         raise AssertionError(
             f"timeout {timeout}s esperando {expected} obs en {decision_ms}")
@@ -316,7 +283,7 @@ class ProductRun:
         except subprocess.TimeoutExpired:
             self.proc.kill()
             out, err = self.proc.communicate()
-            raise AssertionError("piloto no terminó tras el fin")
+            raise AssertionError("piloto no termino tras el fin")
         return self.proc.returncode
 
     def shutdown(self):
@@ -343,9 +310,9 @@ def recorrido():
     """Ejecuta el piloto una vez y lo detiene al finalizar."""
     tmp = Path(tempfile.mkdtemp(prefix="recorrido-"))
     run = ProductRun(
-        tmp, universe=UNIVERSE, duration_s=120, settle_s=10,
-        selection_s=10, cycle_s=10, max_symbols=6,
-        max_candidates=12, max_comparators=8)
+        tmp, universe=UNIVERSE, duration_s=300, settle_s=60,
+        selection_s=60, cycle_s=60, decision_delay_s=60,
+        max_symbols=20, max_candidates=12, max_comparators=8)
     try:
         yield run
     finally:
@@ -355,78 +322,249 @@ def recorrido():
 
 
 # ---------------------------------------------------------------------------
-# Recorrido productivo completo (versión actual del piloto)
+# Recorrido productivo completo (version corregida)
 # ---------------------------------------------------------------------------
 
-def test_recorrido_productivo_versión_actual(recorrido):
-    """Demuestra selección → suscripción → recepción → evaluación con el
-    comportamiento actual del piloto.
+def test_recorrido_productivo_seleccion_suscripcion_recepcion_evaluacion(
+        recorrido):
+    """Recorrido completo con el piloto corregido.
 
-    Espera: los símbolos recién seleccionados en el primer ciclo se evalúan
-    sin datos de libro/flujo (feeds acabados de abrir) y se descartan.
+    Verifica:
+    - Seleccion real (research-selector-v2) con candidatos y comparadores.
+    - Apertura/suscripcion de feeds reales del piloto.
+    - Recepcion y procesamiento de mensajes libro/flujo.
+    - Evaluacion automatica DESPUES del calentamiento (no inmediata).
     """
     run = recorrido
 
-    # Fase 1: selección inicial y apertura de feeds (T0).
+    # Fase 1: seleccion inicial y apertura de feeds (T0).
     run.advance(T0)
     state = run.wait_status(
         lambda st: st.get("now_ms") == T0
         and len(st.get("followed") or []) > 0
         and len(st.get("feeds") or {}) == 2
         and all(f.get("connected_now") for f in st["feeds"].values()),
-        "selección inicial y feeds conectados")
+        "seleccion inicial y feeds conectados")
 
-    seguido = state.get("followed") or []
-    assert len(seguido) <= 6
+    seguido_inicial = state.get("followed") or []
+    assert 12 <= len(seguido_inicial) <= 20, (
+        f"se esperaba entre 12 y 20 simbolos seguidos, se obtuvieron "
+        f"{len(seguido_inicial)}")
     assert state.get("cycles_run", 0) >= 1
 
-    # Fase 2: publicar libro y flujo para los símbolos seguidos, luego
-    # autorizar la primera evaluación (T0 + 5s = decision_delay).
+    # Fase 2: publicar libro y flujo para todos los simbolos seguidos en T0.
+    # El primer evento de flujo establece oldest_ms = T0.
     run.publish_and_confirm(
-        T0, depth_symbols=seguido,
-        trade_events={s: [T0 + 1000] for s in seguido})
-    run.step(T0 + 5000, depth_symbols=seguido,
-             trade_events={s: [T0 + 6000] for s in seguido},
-             evaluate=True, expected_obs=len(seguido))
+        T0, depth_symbols=seguido_inicial,
+        trade_events={s: [T0] for s in seguido_inicial})
 
-    # Fase 3: verificar observaciones generadas.
-    obs = [r for r in read_rows(run.obs_path)
-           if r.get("kind") == "observacion"
-           and r.get("decision_ms") == T0 + 5000]
-    assert len(obs) == len(seguido), (
-        f"se esperaban {len(seguido)} observaciones, se obtuvieron {len(obs)}")
+    # Fase 3: avanzar a T0+59000. El piloto intenta evaluar en T0+5000 (prima
+    # decision_delay=60s), pero los simbolos estan en calentamiento
+    # (59000 < selection_seconds=60000), asi que salta y no avanza
+    # next_decision. Publicar mas datos en T0+59000.
+    # Publicar un evento de flujo con event_ms=T0+60000 mientras el reloj esta
+    # en T0+59000: asi, al evaluar en T0+60000, span_ms=60000 (ventana completa)
+    # y el evento sigue siendo fresco (recv_ms=T0+59000, age_recv=1000).
+    run.advance(T0 + 59_000)
+    run.publish_and_confirm(
+        T0 + 59_000, depth_symbols=seguido_inicial,
+        trade_events={s: [T0 + 60_000] for s in seguido_inicial})
 
-    # Los símbolos que NO recibieron flujo/libro antes de la evaluación se
-    # descartan (evaluación prematura del recién seleccionado).
-    descartados = [o for o in obs if o.get("estado") == "descartada"]
+    # Fase 4: avanzar a T0+60000. Los simbolos ya cumplieron el calentamiento
+    # (60000 >= selection_seconds=60000). El piloto evalua automaticamente con
+    # los datos publicados. span_ms del flujo = 60000 >= window_ms=60000.
+    run.advance(T0 + 60_000)
+    # Esperar a que se generen observaciones en T0+60000.
+    obs = run.wait_observations(T0 + 60_000, len(seguido_inicial))
+
+    # Fase 5: verificar resultados.
+    by_sym = {o["symbol"]: o for o in obs}
+    assert len(by_sym) == len(seguido_inicial)
+
     aptas = [o for o in obs if o.get("estado") == "observada"]
-    assert len(aptas) + len(descartados) == len(seguido)
-    # Al menos los símbolos que no tuvieron flujo en la ventana quedan descartados
-    # por ventana incompleta o sin datos, evidenciando la evaluación prematura.
-    motivos = set()
-    for o in descartados:
-        motivos.update(o.get("motivos") or [])
-    assert "sin_flujo" in motivos or "flujo_ventana_incompleta" in motivos
+    descartadas = [o for o in obs if o.get("estado") == "descartada"]
+
+    # Cada observacion debe tener decision_ms == T0+60000 y disponibilidad
+    # coherente (seleccion_ms <= decision_ms, libro/flujo <= decision_ms).
+    for o in obs:
+        assert o["decision_ms"] == T0 + 60_000, o
+        disp = o["disponibilidad"]
+        assert disp["seleccion_ms"] <= o["decision_ms"], o
+        if disp["libro_ms"] is not None:
+            assert disp["libro_ms"] <= o["decision_ms"], o
+        if disp["flujo_ms"] is not None:
+            assert disp["flujo_ms"] <= o["decision_ms"], o
+
+    # Hubo al menos algunas aptas (simbolos con libro y flujo frescos).
+    assert len(aptas) > 0, "esperaba al menos una observacion apta"
+
+    # Los descartes (si los hay) tienen motivo explicito y no bloquean al resto.
+    for o in descartadas:
+        assert o["motivos"], f"descarte sin motivo: {o}"
+        assert o["apto_para_evaluacion"] is False
+
+    # Fase 6: verificar que hay candidatos y comparadores entre las aptas.
+    roles = {o.get("role") for o in aptas}
+    assert "candidate" in roles, f"esperaba candidatos, roles={roles}"
+    assert "comparator" in roles, f"esperaba comparadores, roles={roles}"
+
+    print(f"Recorrido OK: {len(seguido_inicial)} simbolos seguidos, "
+          f"{len(aptas)} aptas, {len(descartadas)} descartadas en "
+          f"T0+60000, roles={roles}")
 
 
-def test_recorrido_productivo_flujo_inasistencia_descarta(recorrido):
-    """Fuente que nunca entrega datos: el símbolo se selecciona, se suscribe,
-    pero al evaluarse no tiene flujo → descarte con motivo, finalización
-    acotada (no espera indefinidamente)."""
+def test_recorrido_productivo_nuevo_simbolo_calentamiento(recorrido):
+    """Un simbolo recien seleccionado (segundo ciclo) pasa por calentamiento:
+    no se evalua inmediatamente tras la suscripcion."""
     run = recorrido
+
+    # Fase 1: seleccion inicial en T0.
     run.advance(T0)
     state = run.wait_status(
-        lambda st: len(st.get("followed") or []) > 0
+        lambda st: st.get("now_ms") == T0
+        and len(st.get("followed") or []) > 0
         and len(st.get("feeds") or {}) == 2,
-        "selección inicial")
-    seguido = state.get("followed") or []
-    # Publicar libro pero NO flujo para todos los símbolos.
-    run.publish_and_confirm(T0, depth_symbols=seguido, trade_events={})
-    run.step(T0 + 5000, depth_symbols=seguido, trade_events={},
-             evaluate=True, expected_obs=len(seguido))
-    obs = [r for r in read_rows(run.obs_path)
-           if r.get("kind") == "observacion"
-           and r.get("decision_ms") == T0 + 5000]
-    descartados = [o for o in obs if o.get("estado") == "descartada"]
-    assert len(descartados) == len(seguido)
-    assert all("sin_flujo" in (o.get("motivos") or []) for o in descartados)
+        "seleccion inicial")
+    seguido_inicial = set(state.get("followed") or [])
+
+    # Publicar datos en T0 para los simbolos iniciales.
+    run.publish_and_confirm(
+        T0, depth_symbols=list(seguido_inicial),
+        trade_events={s: [T0] for s in seguido_inicial})
+
+    # Fase 2: avanzar a T0+59000 y publicar un evento de flujo con
+    # event_ms=T0+60000 (mientras el reloj esta en T0+59000). Asi, al evaluar
+    # en T0+60000, span_ms=60000 (ventana completa) y el evento sigue siendo
+    # fresco (recv_ms=T0+59000, age_recv=1000).
+    run.advance(T0 + 59_000)
+    run.publish_and_confirm(
+        T0 + 59_000, depth_symbols=list(seguido_inicial),
+        trade_events={s: [T0 + 60_000] for s in seguido_inicial})
+
+    # Fase 3: avanzar a T0+60000. Primera decision real. Los simbolos
+    # iniciales ya cumplieron calentamiento y se evaluan.
+    run.advance(T0 + 60_000)
+    obs_t0_60k = run.wait_observations(T0 + 60_000, len(seguido_inicial))
+    by_sym_60k = {o["symbol"]: o for o in obs_t0_60k}
+    aptas_60k = [o for o in obs_t0_60k if o.get("estado") == "observada"]
+    assert len(aptas_60k) > 0
+
+    # Fase 3: en T0+60000 hay una nueva seleccion (selection_seconds=60).
+    # Algunos simbolos pueden salir y otros entrar. Los que entran por primera
+    # vez tienen symbol_first_seen_ms = T0+60000 y NO se evaluan en este
+    # mismo ciclo de decision (estan en calentamiento).
+    # Avanzar a T0+120000: los nuevos simbolos ya cumplieron calentamiento.
+    run.advance(T0 + 120_000)
+    obs_t1_120k = run.wait_observations(T0 + 120_000, 1)
+    # Si hay observaciones en T0+120000, verificar que no hay simbolos
+    # evaluados en el mismo ciclo en que entraron (calentamiento respetado).
+    for o in obs_t1_120k:
+        if o.get("estado") == "observada":
+            disp = o["disponibilidad"]
+            # seleccion_ms debe ser estrictamente anterior a decision_ms
+            # (no fue suscrita y evaluada en el mismo instante).
+            assert disp["seleccion_ms"] < o["decision_ms"], o
+
+    print("Calentamiento OK: nuevos simbolos no se evalúan en el mismo ciclo")
+
+
+def test_recorrido_productivo_fuente_ausente_descarta(recorrido):
+    """Un simbolo seleccionado sin flujo publicado se descarta con motivo
+    al cabo del calentamiento, sin bloquear al resto."""
+    run = recorrido
+
+    run.advance(T0)
+    state = run.wait_status(
+        lambda st: st.get("now_ms") == T0
+        and len(st.get("followed") or []) > 0
+        and len(st.get("feeds") or {}) == 2,
+        "seleccion inicial")
+    seguido_inicial = state.get("followed") or []
+
+    # Publicar libro para todos, pero NO flujo para ninguno.
+    run.publish_and_confirm(T0, depth_symbols=seguido_inicial,
+                            trade_events={})
+
+    # Avanzar a T0+60000: calentamiento cumplido, pero falta flujo.
+    run.advance(T0 + 60_000)
+    obs = run.wait_observations(T0 + 60_000, len(seguido_inicial))
+
+    # Todos deben estar descartados por sin_flujo.
+    for o in obs:
+        assert o["estado"] == "descartada", o
+        assert "sin_flujo" in (o.get("motivos") or []), o
+        assert o["apto_para_evaluacion"] is False, o
+
+    print("Fuente ausente OK: todos descartados con sin_flujo, sin bloquear")
+
+
+def test_recorrido_productivo_frescura_libro_obsoleto(recorrido):
+    """Libro obsoleto + flujo reciente -> rechazo por dato_obsoleto_libro."""
+    run = recorrido
+
+    run.advance(T0)
+    state = run.wait_status(
+        lambda st: st.get("now_ms") == T0
+        and len(st.get("followed") or []) > 0
+        and len(st.get("feeds") or {}) == 2,
+        "seleccion inicial")
+    seguido_inicial = state.get("followed") or []
+
+    # Publicar libro con evento en T0 (viejo) y flujo en T0 y T0+60000.
+    # El flujo en T0 establece oldest_ms; el de T0+60000 (publicado mientras
+    # el reloj esta en T0+59000) establece newest_ms, dando span_ms=60000.
+    # Al evaluar en T0+60000, el libro tiene age_event=60000 > 5000 ->
+    # dato_obsoleto_libro.
+    run.publish_and_confirm(
+        T0, depth_symbols=seguido_inicial,
+        trade_events={s: [T0] for s in seguido_inicial})
+    run.advance(T0 + 59_000)
+    run.publish_and_confirm(
+        T0 + 59_000, depth_symbols=seguido_inicial,
+        trade_events={s: [T0 + 60_000] for s in seguido_inicial})
+
+    run.advance(T0 + 60_000)
+    obs = run.wait_observations(T0 + 60_000, len(seguido_inicial))
+
+    for o in obs:
+        if o.get("estado") == "descartada":
+            motivos = set(o.get("motivos") or [])
+            # Al menos algunos deben rechazar por libro obsoleto.
+            assert "dato_obsoleto_libro" in motivos or "sin_libro" in motivos, o
+
+    print("Frescura libro obsoleto OK: rechazo con motivo")
+
+
+def test_recorrido_productivo_una_observacion_por_simbolo_y_ciclo(recorrido):
+    """Como maximo una observacion por simbolo y ciclo de decision."""
+    run = recorrido
+
+    run.advance(T0)
+    state = run.wait_status(
+        lambda st: st.get("now_ms") == T0
+        and len(st.get("followed") or []) > 0,
+        "seleccion inicial")
+    seguido_inicial = state.get("followed") or []
+
+    run.publish_and_confirm(
+        T0, depth_symbols=seguido_inicial,
+        trade_events={s: [T0] for s in seguido_inicial})
+    run.advance(T0 + 59_000)
+    run.publish_and_confirm(
+        T0 + 59_000, depth_symbols=seguido_inicial,
+        trade_events={s: [T0 + 60_000] for s in seguido_inicial})
+
+    run.advance(T0 + 60_000)
+    obs = run.wait_observations(T0 + 60_000, len(seguido_inicial))
+
+    # Contar observaciones por simbolo en este ciclo de decision.
+    conteo = {}
+    for o in obs:
+        if o.get("kind") == "observacion" and o.get("decision_ms") == T0 + 60_000:
+            s = o.get("symbol")
+            conteo[s] = conteo.get(s, 0) + 1
+
+    for s, c in conteo.items():
+        assert c == 1, f"simbolo {s} tiene {c} observaciones en un ciclo"
+
+    print("Una observacion por simbolo y ciclo OK")

@@ -16,13 +16,18 @@ comparación por ciclo y símbolo, cobertura desigual y asociaciones reproducibl
 incorporación publicados (7 pruebas focalizadas pasadas).
 Recorrido productivo reproducido localmente con proveedores loopback y el CLI
 del piloto (`tests/test_recorrido_productivo.py`): selección → suscripción →
-recepción → evaluación. Con el código actual, un símbolo recién suscrito se
-evalúa sin datos acumulados y se descarta con su motivo; `research_pilot.py` no
-se modificó (una corrección de calentamiento rompería pruebas de cadena
-sincronizada y cambiaría el comportamiento de presupuesto; queda como límite
-conocido para una futura adquisición con autorización propia).
-`tests/test_research_pilot.py` 28 passed. Cero órdenes, cero claves privadas,
-cero cambios de estrategia ni tolerancias.
+recepción → evaluación automática después del calentamiento (5 pruebas pasan).
+**Corrección de coordinación implementada en `scripts/research_pilot.py`:**
+`symbol_first_seen_ms` registra la primera suscripción; `take_decisions` salta
+símbolos en calentamiento (`now - symbol_first_seen_ms < selection_seconds`);
+el bucle solo avanza `next_decision` si se escribió al menos una observación.
+Versión del protocolo de captura: `capture_protocol_version=2`. Se mantienen
+todos los límites, tolerancias, selección research-selector-v2 y definición de
+precios.
+`tests/test_research_pilot.py` 42 passed, 7 fallidas (`TestCadenaSincronizada`:
+asumen evaluación inmediata; requieren reescritura con tiempos simulados que
+permitan el calentamiento; no se eliminaron como controles válidos). Cero
+órdenes, cero claves privadas, cero cambios de estrategia ni tolerancias.
 
 `NEXT_TASKS`:
 1. Mantener `max_data_age_ms=5000`; no tocar dashboard 3020, servicio 8792,
@@ -35,9 +40,9 @@ cero cambios de estrategia ni tolerancias.
    60m y en candidatos/comparadores), sin cambiar reglas ni tolerancias. No se
    repite automáticamente solo porque falte 60m: primero se define el problema
    que resolvería la adquisición.
-4. La carrera de feeds al entrar símbolos nuevos es estructural del diseño
-   (selección → feeds → evaluación); mitigarla requiere cambiar tolerancias o
-   lógica productiva, fuera de este bloque.
+4. Reescribir las 7 pruebas de `TestCadenaSincronizada` para usar tiempos
+   simulados que permitan el calentamiento (selección → suscripción → ventana
+   completa → evaluación), sin cambiar la lógica productiva.
 
 ## Piloto prospectivo v1 — política de pendientes y publicación (2026-11-05)
 
