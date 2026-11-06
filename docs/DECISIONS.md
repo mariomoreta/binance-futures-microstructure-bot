@@ -4868,3 +4868,37 @@ ow >= next_decision) se limpia _symbols_evaluated_this_cycle antes de calcular l
   y hashes publicados.
 - No se declara ventaja ni rentabilidad; comparaci�n descriptiva s�lo.
 - No se tocan 3020, 8792, opencode.json ni archivos ajenos.
+
+## 2026-11-06 — Dirección operativa de perpetuos extremos y cierre exploratorio
+
+- Decisión explícita del usuario: el producto final debe explorar el universo
+  elegible de perpetuos Binance USD-M, autoseleccionar e investigar monedas con
+  fuertes movimientos de 24h y evaluar LONG/SHORT/abstención, entrada, stop-loss,
+  gestión y salida. KPI: expectativa neta y riesgo, no volatilidad o código.
+- `PRODUCT_GOAL.md` fija esta dirección; MASTER_PLAN/ROADMAP y las portadas de
+  estado/cola la aplican. La captura `public-pilot-1h-20261106a` y su análisis v4
+  quedan cerrados como exploratorios con límites; 60m ya está resuelto.
+- Prioridad: revisar/cerrar el protocolo operativo independiente ya entregado
+  por el agente en `6a10c307` (`EXPERIMENTO_OPERATIVO_V1.md`, no ejecutado), con una regla, datos, comparación, criterios de decisión y presupuesto
+  previos a ejecutar. No se aprueba una regla, captura o ejecución por esta nota.
+- Congelar expansión de interfaces, Paper Lab, gestores, features/conectores/IA.
+  Reutilizar componentes; corregir solo defectos materiales para la decisión
+  económica o el experimento. No encadenar auditorías por límites no decisivos.
+- Se conservan las evidencias históricas, SUCCESS_GATES y autorización separada
+  para capturas, despliegue paper y cualquier operación real. Cambios solo de
+  documentación en la rama de investigación; sin modificar código ni dataset.
+
+## 2026-11-06 — Aclaración de alcance: futuros perpetuos Y con vencimiento
+
+- Corrección explícita del usuario a la dirección anterior: el objetivo comprende
+  tanto perpetuos como futuros con vencimiento de Binance. Los perpetuos son
+  una clase de futuros; la meta no queda restringida a PERPETUAL.
+- PRODUCT_GOAL y las instrucciones/portadas actuales reflejan ambos tipos.
+  La selección vigente filtra PERPETUAL/TRADING/USDT; no existe evidencia aquí
+  de cobertura de contratos con vencimiento. Los resultados previos conservan
+  su universo original y no se extrapolan a otro producto.
+- El protocolo en revisión debe identificar cobertura y faltantes por tipo,
+  margen/liquidación, vencimiento/roll, unidades, costes y ejecución. La
+  documentación no modifica filtros, estrategia, presupuesto, gates ni
+  autoriza adquisiciones u operaciones. Se reutiliza lo existente, sin crear
+  otra línea de infraestructura por esta aclaración.

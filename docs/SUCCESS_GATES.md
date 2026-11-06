@@ -1,5 +1,20 @@
 # SUCCESS_GATES
 
+## Aplicación al trabajo vigente — 2026-11-06
+
+Estos gates siguen rigiendo la promoción formal; esta actualización no marca
+ninguno como cumplido ni modifica sus umbrales. La prioridad del agente está en
+`PRODUCT_GOAL.md` y el bloque vigente de `TASK_QUEUE.md`: diseñar una comprobación
+operativa independiente y acotada sobre selección de futuros extremos (perpetuos y con vencimiento),
+entrada, stop, salida y riesgo, reutilizando los componentes existentes.
+
+Recepción de datos, aceptación UI, tests, mayor movimiento o retorno bruto no
+demuestran rentabilidad. Separar asociación exploratoria, resultado de una regla
+causal y evidencia neta independiente. La planificación de investigación no
+autoriza capturas, despliegue paper ni ejecución real por sí misma. No convertir
+listas históricas en ampliaciones de infraestructura sin necesidad económica
+demostrada ni declarar una fase promovida porque exista código de esa fase.
+
 Objective advancement criteria. A phase is complete only when ALL its gates
 pass with linked evidence. `UNKNOWN` beats optimistic.
 

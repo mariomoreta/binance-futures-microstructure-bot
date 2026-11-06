@@ -1,5 +1,92 @@
 # PRODUCT_GOAL
 
+## Dirección operativa vigente — decisión del usuario 2026-11-06
+
+**Objetivo final:** desarrollar un bot para operar contratos de futuros de Binance,
+tanto perpetuos como contratos con vencimiento, que presentan movimientos
+alcistas o bajistas extremos en su ventana rolling de 24 horas. Debe explorar por sí mismo el universo elegible, seleccionar
+qué monedas investigar y evaluar oportunidades de entrada, dirección, stop-loss,
+gestión de posición y salida. La meta es obtener expectativa neta positiva con
+riesgo controlado; no se promete rentabilidad ni se afirma que ya exista.
+
+### Recorrido del producto
+
+1. Descubrir todos los contratos elegibles conocidos en T; no limitar el universo
+   a BTC/ETH/SOL ni elegir retrospectivamente ganadores finales del día.
+2. Autoseleccionar candidatos de ambos lados con política versionada. La
+   investigación profunda es acotada por recursos y conserva comparadores,
+   descartes y denominadores. Candidato no significa token operable.
+3. Investigar con información disponible al decidir: movimiento y volumen,
+   libro/profundidad/spread y flujo agresor, con frescura y cobertura explícitas.
+   La relación flujo/liquidez es una hipótesis; no un edge ya probado.
+4. Aplicar una regla predefinida y evaluable: LONG, SHORT o abstención. Un gran
+   cambio de 24h no basta como entrada. Continuación, reversión y rebote son
+   hipótesis distintas; UP no equivale automáticamente a LONG ni DOWN a SHORT.
+5. Definir antes de evaluar: disparador, primera ejecución causalmente posible,
+   precio/modelo de fill, tamaño y riesgo, stop-loss, gestión, salida y vencimiento.
+   Evaluar también pérdidas, no entradas y posiciones abiertas al finalizar.
+6. Comprobar fuera de los datos usados para diseñar la regla su resultado neto,
+   exposición y drawdown bajo supuestos explícitos de ejecución, comisiones,
+   spread/slippage y funding cuando corresponda. Lo no medido sigue UNKNOWN.
+7. Validar en paper con los motores existentes y riesgo no eludible. El backend
+   es la autoridad; el dashboard presenta la decisión y nunca la calcula.
+8. Considerar ejecución real autónoma únicamente tras las evidencias requeridas
+   y autorización humana específica. Esta dirección no habilita órdenes,
+   credenciales, apalancamiento ni fondos reales.
+
+Autonomía significa ejecutar reglas, selección, investigación y gestión
+versionadas dentro de límites autorizados. No significa modificar umbrales,
+estrategias o presupuestos continuamente para hacer aparecer ganancias.
+
+### Prioridad de trabajo y criterio de cierre
+
+- **Ahora:** revisar y cerrar una sola hipótesis operativa y el experimento
+  propuesto en [EXPERIMENTO_OPERATIVO_V1](EXPERIMENTO_OPERATIVO_V1.md), aprovechando
+  selector, book/flow y simulación existentes; no reiniciar su diseño.
+- **Captura cerrada:** `public-pilot-1h-20261106a` aporta evidencia exploratoria.
+  Sus 168 resultados por horizonte ya están resueltos; 165 parejas por horizonte
+  son válidas para la asociación de flujo. No repetir para «completar 60m».
+- Antes de otra adquisición: fijar pregunta, regla, períodos, datos mínimos,
+  métrica principal, comparador, presupuesto y criterios de continuar,
+  reformular, detener o declarar insuficiencia. No extender capturas
+  automáticamente ni cambiar reglas después de ver resultados.
+- Congelar expansión de dashboard, Paper Lab, gestores, nuevas features,
+  conectores e IA. Reutilizar lo construido. Un arreglo solo entra en el camino
+  crítico si se explica qué decisión económica o experimento desbloquea.
+- Las limitaciones que no alteran la conclusión se registran sin otra ronda
+  general de auditoría. Si una métrica no es acreditable, se excluye o se limita
+  la conclusión; no se inicia una reparación indefinida.
+- Separar tres evidencias: seleccionar movimientos diferentes; aprovecharlos con
+  una regla causal; sostener resultado neto y riesgo en una comprobación
+  independiente. Tests verdes y más volatilidad no acreditan las dos últimas.
+
+Este bloque fija la dirección actual y prevalece sobre prioridades históricas
+de expansión de interfaces o adquisiciones genéricas. No modifica parámetros,
+SUCCESS_GATES ni autorizaciones de ejecución. La secuencia y el alcance del
+agente que diseña el experimento se conservan; no es otra tarea de implementación.
+
+### Cobertura obligatoria: perpetuos y futuros con vencimiento
+
+Aclaración explícita del usuario, 2026-11-06: el objetivo incluye **ambos**:
+contratos perpetuos (sin vencimiento) y futuros con vencimiento. No se limita
+el producto final a PERPETUAL ni se presume que cada moneda disponga de ambos.
+La elegibilidad se determina por instrumentos realmente listados y conocidos
+en T, con tipo, familia/producto, moneda de margen/liquidación, tamaño de
+contrato, estado y vencimiento identificados.
+
+**Cobertura implementada hoy:** `research_selector.py` filtra PERPETUAL,
+TRADING y USDT. La captura y resultados actuales corresponden a ese subconjunto;
+no acreditan cobertura de contratos con vencimiento. Ese soporte es un faltante
+explícito de producto, no una capacidad que se pueda declarar por cambiar texto.
+
+El diseño del experimento debe separar cobertura y resultado por tipo de
+contrato, identificar datos/componentes reutilizables y qué falta para incluir
+vencimientos. No extrapolar automáticamente fills, funding, comisiones,
+liquidación, roll/vencimiento o unidades de P&L entre productos. Toda evaluación
+que cubra un solo tipo debe declararlo; no acepta como cumplido el objetivo de
+ambos. Esta aclaración modifica el alcance documental, no filtros, código,
+presupuestos ni autorizaciones de adquisición u operación.
+
 Build a Binance Futures market-intelligence system that can:
 
 1. Monitor the Futures universe in real time.

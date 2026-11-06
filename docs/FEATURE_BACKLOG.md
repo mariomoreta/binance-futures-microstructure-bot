@@ -1,3 +1,33 @@
+## F-EXTREME-OPERATING-ALIGNMENT-20261106 — Dirección y prioridad operativas
+
+**1. Title:** Alinear autoselección/investigación de futuros extremos (perpetuos y con vencimiento) con
+entrada, dirección, stop-loss, gestión, salida y comprobación económica.
+
+**2. Approval status:** AUTORIZADO por el usuario para alinear documentación.
+El diseño ya fue entregado en `6a10c307`; su revisión/cierre no aprueba reglas,
+capturas nuevas, cambios de presupuesto ni ejecución real por este registro.
+
+**3. Implementation status:** DOCUMENTADO en PRODUCT_GOAL, AGENTS, MASTER_PLAN,
+ROADMAP, estado/cola y documento de investigación. Capacidades operativas
+existentes se reutilizan; no se declara implementado el objetivo completo.
+
+**4. Evaluation status:** análisis v4 de `public-pilot-1h-20261106a` cerrado
+como exploratorio con límites. Diferencias brutas y asociación de flujo no
+acreditan estrategia rentable, generalización ni promoción de fase.
+
+**5. Evidence:** solicitud explícita del usuario del 2026-11-06;
+`docs/PRODUCT_GOAL.md`;
+`docs/evidence/research/universe_liquidity_v1/public-pilot-1h-20261106a/informe_analisis_universo_liquidez_v4.md`.
+
+**6. Verdict:** alineación documental, sin cambio de código, parámetros, gates,
+datos ni autorizaciones de operación. Historia conservada.
+
+**7. Next step:** revisar/cerrar `EXPERIMENTO_OPERATIVO_V1.md` ya entregado: una regla,
+datos y ejecución posibles, comparadores/cobertura, períodos, métrica y criterios
+de decisión, presupuesto. No otra captura automática ni expansión de sistemas.
+
+---
+
 ## Corrección semántica de costes y aceptación A-J del dashboard (2026-11-03, base `bf974f2`)
 
 **1. Title:** Corregir semántica de costes en PnLPanel y verificar aceptación

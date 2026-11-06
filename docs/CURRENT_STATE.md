@@ -1,3 +1,34 @@
+# Estado vigente — dirección operativa, 2026-11-06
+
+**Objetivo:** bot autónomo para futuros Binance (perpetuos y con vencimiento) de movimientos extremos
+alcistas y bajistas: universo → autoselección → investigación → decisión
+LONG/SHORT/abstención → entrada/stop-loss/gestión/salida → resultado neto y riesgo.
+La dirección vinculante está en [PRODUCT_GOAL](PRODUCT_GOAL.md).
+
+**Hecho:** la captura `public-pilot-1h-20261106a` y su análisis v4 quedan cerrados
+como exploratorios con límites: 240 selecciones, 216 observaciones (168 aptas,
+48 descartadas), 504 resultados resueltos; 165 parejas por horizonte para
+asociación de flujo. No hay rentabilidad ni capacidad predictiva acreditadas.
+Fuente: [informe v4](evidence/research/universe_liquidity_v1/public-pilot-1h-20261106a/informe_analisis_universo_liquidez_v4.md),
+publicado sobre `e624758`. Código de salida del proceso e identidad por registro:
+UNKNOWN; no se infieren de la finalización ni del nombre del directorio.
+
+**Propuesta entregada por el agente:**
+[EXPERIMENTO_OPERATIVO_V1](EXPERIMENTO_OPERATIVO_V1.md), commit `6a10c307`, no
+implementado ni ejecutado. Pendiente revisar/cerrar la definición causal de
+fill, aplicación de la misma regla a comparadores, parámetros/métrica y
+presupuesto. Este cambio documental no aprueba esos elementos ni reinicia diseño.
+No ejecutar otra captura para completar 60m (ya resuelto), no ampliar UI,
+Paper Lab, supervisión, conectores o IA. Reutilizar los motores y controles.
+Siguiente trabajo autorizado: bloque al inicio de [TASK_QUEUE](TASK_QUEUE.md).
+
+**Lectura de la historia:** los bloques inferiores son antecedentes fechados.
+Sus antiguos CURRENT_PHASE/NEXT_TASKS, restricciones de ventanas y afirmaciones
+sustituidas no eligen el trabajo actual ni acreditan nuevas autorizaciones.
+`SUCCESS_GATES.md` y las barreras de ejecución real se conservan.
+
+---
+
 ## Piloto prospectivo v1 (cadena local, 2026-11-04)
 
 Cadena local reproducible contra proveedores HTTP/WS loopback y SQLite temporal

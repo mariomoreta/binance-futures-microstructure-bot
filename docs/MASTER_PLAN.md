@@ -1,5 +1,20 @@
 # MASTER_PLAN
 
+## Prioridad operativa vigente — 2026-11-06
+
+`docs/PRODUCT_GOAL.md` fija el objetivo: autoselección e investigación de
+futuros con movimientos extremos (perpetuos y con vencimiento) → decisión LONG/SHORT/abstención → entrada,
+stop-loss, gestión y salida → comprobación de expectativa neta y riesgo →
+paper validado → ejecución solo con autorización específica.
+
+La rama de investigación no tiene pendiente otra expansión de dashboard ni
+otra reconciliación general de la captura. El siguiente entregable es el
+cierre/revisión del protocolo operativo propuesto en
+`docs/EXPERIMENTO_OPERATIVO_V1.md`, ya entregado por el agente (no ejecutado).
+Infraestructura y simulación existentes se reutilizan; ni una prueba funcional
+ni diferencias de retornos brutos avanzan gates económicos. Las fases inferiores
+siguen siendo referencias de promoción, no una lista para rehacer capacidades.
+
 Stable strategic direction. Factual state lives in `docs/CURRENT_STATE.md`;
 operational next work lives in `docs/TASK_QUEUE.md`.
 
@@ -46,12 +61,14 @@ Full criteria: `docs/SUCCESS_GATES.md`. Sequence and dependencies: `docs/ROADMAP
 
 ## Current phase
 
-**PHASE 1 — MARKET INTELLIGENCE + DASHBOARD.** Baseline: audited observe-only
-probe (v0.2.0) + canonical `python run_tests.py`. Execution follows the binding
-P1-00…P1-14 dependency order in `docs/TASK_QUEUE.md` (dashboard-progressive,
-classifier only after raw-feature validation). Persistence foundation is a
-Phase 1 task (P1-02); full labeling stays Phase 2. No paper trading and no
-execution until their phases and authorizations.
+**Investigación económica orientada a operación, con protocolo independiente
+propuesto y pendiente de revisión/cierre.** La captura y análisis exploratorios
+están cerrados con limitaciones; no hay rentabilidad acreditada. Priorizar la
+propuesta ya entregada en `docs/EXPERIMENTO_OPERATIVO_V1.md` y el bloque vigente
+de `docs/TASK_QUEUE.md`. La antigua etiqueta «PHASE 1 — MARKET INTELLIGENCE +
+DASHBOARD» describe la secuencia histórica, no una orden de reabrir desarrollo
+UI. No se promueven fases formales ni se habilitan capturas, paper o ejecución
+por este cambio documental.
 
 ## Alcance estrategico preservado — 2026-10-16
 El producto final evalua movimientos extremos de ambos lados en el universo

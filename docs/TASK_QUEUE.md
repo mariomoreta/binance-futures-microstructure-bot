@@ -1,3 +1,51 @@
+# Cola vigente — objetivo operativo, 2026-11-06
+
+`CURRENT_PHASE`: investigación de una regla operable sobre futuros extremos (perpetuos y con vencimiento);
+revisión/cierre del diseño de comprobación independiente. No es declaración de promoción formal.
+
+`CURRENT_OBJECTIVE`: evaluar si la autoselección del universo elegible, unida a
+una regla causal de dirección, entrada, stop-loss, gestión y salida, permite una
+expectativa neta favorable con riesgo controlado. Más movimiento por sí solo no
+satisface el objetivo. Dirección canónica: [PRODUCT_GOAL](PRODUCT_GOAL.md).
+
+`ACTIVE_TASK`: revisar y cerrar la propuesta ya entregada por el agente en
+[EXPERIMENTO_OPERATIVO_V1](EXPERIMENTO_OPERATIVO_V1.md) (`6a10c307`, no ejecutada).
+Resolver solo sus bloqueos declarados, sin reiniciar el diseño. Entregables: mapa breve de capacidades reutilizables,
+una hipótesis/regla candidata para revisión, datos y ejecución necesarios,
+períodos, comparadores/cobertura, métrica principal y criterio de
+continuar/reformular/detener/insuficiencia, presupuesto y límites. Solo diseño;
+la regla y el presupuesto propuestos no quedan aprobados por documentarlos.
+
+`NEXT_TASKS`:
+1. Revisar y cerrar ese protocolo, sin otro inventario general ni expansión
+   de código. Reutilizar selector, book/flow y simulación/riesgo existentes.
+2. Decidir sobre la adquisición/evaluación concreta por autorización separada.
+   No comenzar capturas ni cambiar parámetros/presupuestos automáticamente.
+3. Ejecutado un experimento autorizado, tomar la decisión económica prevista.
+   La insuficiencia no renueva automáticamente duración ni cupos.
+
+`CLOSED`: análisis exploratorio v4 de `public-pilot-1h-20261106a`; los 168
+resultados de 60m existen, no es necesario repetir para completarlos. Los
+límites de cobertura, costes, precios e identidad siguen explícitos; ver
+[CURRENT_STATE](CURRENT_STATE.md) e informe v4.
+
+`OUT_OF_SCOPE`: ampliación de dashboard/Paper Lab, nuevos gestores, indicadores,
+conectores/IA y auditorías generales. Solo arreglos materiales que identifiquen
+qué experimento o decisión económica desbloquean; límites no decisivos se
+registran sin ciclos indefinidos de reparación.
+
+Este bloque sustituye las prioridades operativas de las colas históricas
+inferiores; no borra evidencia, no cambia SUCCESS_GATES y no interrumpe al agente
+en curso. Preservar `opencode.json`, archivos ajenos, DBs y servicios existentes.
+
+**Cobertura por tipo:** el objetivo incluye perpetuos Y futuros con vencimiento.
+El selector y la captura actuales cubren PERPETUAL/TRADING/USDT. Añadir al cierre
+del protocolo una matriz breve por tipo: cubierto, datos faltantes y reutilización
+posible. No declarar que el objetivo completo está cubierto por el piloto actual
+ni abrir capturas nuevas por esta aclaración.
+
+---
+
 ## Piloto prospectivo v1 — propuesta pública 1 h + 70 min (2026-11-05)
 
 `CURRENT_PHASE`: investigación local del universo/liquidez (solo lectura, sin

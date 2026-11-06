@@ -1,5 +1,22 @@
 # Binance Futures Microstructure Probe
 
+## Dirección vigente — 2026-11-06
+
+El objetivo es un bot que explore los futuros elegibles de Binance, tanto
+perpetuos como contratos con vencimiento, y autoseleccione monedas con movimientos extremos alcistas y bajistas y
+evalúe entrada, dirección LONG/SHORT, stop-loss, gestión y salida. La meta es
+expectativa neta ajustada por riesgo; todavía no hay rentabilidad demostrada.
+
+El protocolo propuesto ya existe en `docs/EXPERIMENTO_OPERATIVO_V1.md`; no está
+aprobado para ejecución. La prioridad actual es revisar y cerrar la propuesta de comprobación operativa independiente y
+acotada, reutilizando selector, datos y simulación existentes. El estudio de
+`public-pilot-1h-20261106a` está cerrado como exploratorio. No se amplía el
+dashboard ni la supervisión para sustituir esa comprobación.
+
+Dirección de producto: [PRODUCT_GOAL](docs/PRODUCT_GOAL.md).
+Trabajo autorizado: bloque vigente al inicio de [TASK_QUEUE](docs/TASK_QUEUE.md).
+Los comandos técnicos inferiores no autorizan nuevas capturas ni operaciones.
+
 Proyecto nuevo y aislado para la Fase 1 del bot de microestructura de Binance USD-M Futures. Solo consume datos publicos. No usa cuenta, API keys, endpoints privados ni envia ordenes.
 
 ## Seguridad por defecto
