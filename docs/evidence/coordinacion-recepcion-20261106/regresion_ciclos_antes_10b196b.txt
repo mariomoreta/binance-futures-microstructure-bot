@@ -1,0 +1,5 @@
+CICLO 1: 18 observaciones en decision_ms=1735689662000
+Observaciones fuera del ciclo 1: 0
+REGRESION CONFIRMADA en base 10b196b: solo un ciclo de evaluacion
+.
+1 passed in 18.90s

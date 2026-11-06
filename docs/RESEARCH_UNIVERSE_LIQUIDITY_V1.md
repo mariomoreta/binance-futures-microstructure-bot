@@ -863,6 +863,16 @@ cadena sincronizada. La evidencia cronológica está en
 (`docs/evidence/coordinacion-20261105/`) se conserva como antecedente, con su
 limitación identificada en el diagnóstico (§8).
 
+**Renovación del ciclo de decisión (actualizada 2026-11-06):** con conjunto
+estable, el bucle automático produce observaciones periódicas, una por símbolo
+y ciclo de decisión; el primer corte espera cobertura observada real
+(protocolo de captura 3) y los siguientes ciclos se inician en el limiar de
+`next_decision` sin depender de que entren o salgan símbolos. La reincorporación
+renueva `symbol_first_seen_ms` y no hereda cobertura. Verificado con
+`tests/test_tres_ciclos_decision.py` (3 ciclos × 18 símbolos, 54 observaciones,
+intervalos coherentes con `cycle_seconds = 300 s`) y con el resto del
+recorrido productivo (`tests/test_recorrido_productivo.py`, 6 passed).
+
 **Qué queda UNKNOWN:** 33 descartes de comparadores `permanece` (mayoritariamente
 `dato_obsoleto_flujo`); no se atribuye a baja liquidez, rotación o transporte
 sin demostrar la secuencia de disponibilidad por símbolo.

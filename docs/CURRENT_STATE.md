@@ -96,6 +96,15 @@ observaciones aptas para estudio y un presupuesto público revisable.
   acotada), `test_aceptacion_coordinacion_recepcion.py` 1 passed; conjunto
   relacionado 77 passed, `EXITCODE=0`
   (`docs/evidence/coordinacion-recepcion-20261106/validacion_final.txt`).
+- **Renovaci�n del ciclo de decisión (2026-11-06):** en el limiar de cada ciclo
+  de decisión (`now >= next_decision`) los símbolos seguidos recuperan su
+  oportunidad de evaluación; dentro del ciclo los reintentos de calentamiento
+  no la renuevan y la selección no decide si hay nueva evaluación. Verificado
+  con `tests/test_tres_ciclos_decision.py`: 3 ciclos consecutivos,
+  18 símbolos × 3 = 54 observaciones, cortes en T0+62000 / T0+366000 /
+  T0+666000 (intervalos 304000 y 300000 ms, coherentes con cycle_seconds=300 s),
+  todas aptas, sin duplicados. Diagnóstico actualizado:
+  `docs/evidence/coordinacion-20261105/diagnostico.md` §8.
   Informe inicial conservado:
   `docs/evidence/research/universe_liquidity_v1/pilot_public_proposal_1h/informe_analisis_offline.md`.
   Tablas pequeñas v2:

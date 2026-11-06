@@ -1903,6 +1903,13 @@ class ResearchPilot:
                                 self.evaluations_run += 1
                                 self.last_cut_ms = now
                     elif now >= next_decision:
+                        # Nuevo ciclo de decision: los simbolos seguidos
+                        # recuperan su oportunidad de evaluacion. El set se
+                        # limpia unica y exclusivamente en el limiar del ciclo;
+                        # dentro del mismo ciclo los reintentos de calentamiento
+                        # no la renuevan, y la seleccion no decide si hay nueva
+                        # evaluacion.
+                        self._symbols_evaluated_this_cycle = set()
                         pending = self._pending_symbols()
                         if not pending:
                             next_decision = now + int(
@@ -1916,7 +1923,6 @@ class ResearchPilot:
                             if (len(ready) == len(pending)
                                     or (deadline is not None
                                         and now >= deadline)):
-                                self._symbols_evaluated_this_cycle = set()
                                 written = self.take_decisions(now)
                                 if written > 0:
                                     self.evaluations_run += 1

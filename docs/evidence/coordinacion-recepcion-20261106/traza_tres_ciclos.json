@@ -1,0 +1,119 @@
+{
+  "aceptacion": "tres-ciclos-decision-conjunto-estable",
+  "ciclos": [
+    {
+      "ciclo": 1,
+      "decision_ms": 1735689662000,
+      "observaciones": 18,
+      "simbolos": [
+        "S000USDT",
+        "S001USDT",
+        "S002USDT",
+        "S003USDT",
+        "S004USDT",
+        "S009USDT",
+        "S010USDT",
+        "S011USDT",
+        "S015USDT",
+        "S016USDT",
+        "S017USDT",
+        "S018USDT",
+        "S019USDT",
+        "S020USDT",
+        "S021USDT",
+        "S022USDT",
+        "S023USDT",
+        "S024USDT"
+      ],
+      "todos_aptos": true
+    },
+    {
+      "ciclo": 2,
+      "decision_ms": 1735689966000,
+      "observaciones": 18,
+      "simbolos": [
+        "S000USDT",
+        "S001USDT",
+        "S002USDT",
+        "S003USDT",
+        "S004USDT",
+        "S009USDT",
+        "S010USDT",
+        "S011USDT",
+        "S015USDT",
+        "S016USDT",
+        "S017USDT",
+        "S018USDT",
+        "S019USDT",
+        "S020USDT",
+        "S021USDT",
+        "S022USDT",
+        "S023USDT",
+        "S024USDT"
+      ],
+      "todos_aptos": true
+    },
+    {
+      "ciclo": 3,
+      "decision_ms": 1735690266000,
+      "observaciones": 18,
+      "simbolos": [
+        "S000USDT",
+        "S001USDT",
+        "S002USDT",
+        "S003USDT",
+        "S004USDT",
+        "S009USDT",
+        "S010USDT",
+        "S011USDT",
+        "S015USDT",
+        "S016USDT",
+        "S017USDT",
+        "S018USDT",
+        "S019USDT",
+        "S020USDT",
+        "S021USDT",
+        "S022USDT",
+        "S023USDT",
+        "S024USDT"
+      ],
+      "todos_aptos": true
+    }
+  ],
+  "codigo_salida": null,
+  "duplicados": 0,
+  "evaluations_run": 3,
+  "eventos_con_fecha_futura": 0,
+  "first_seen_ms": {
+    "S000USDT": 1735689600000,
+    "S001USDT": 1735689600000,
+    "S002USDT": 1735689600000,
+    "S003USDT": 1735689600000,
+    "S004USDT": 1735689600000,
+    "S009USDT": 1735689600000,
+    "S010USDT": 1735689600000,
+    "S011USDT": 1735689600000,
+    "S015USDT": 1735689600000,
+    "S016USDT": 1735689600000,
+    "S017USDT": 1735689600000,
+    "S018USDT": 1735689600000,
+    "S019USDT": 1735689600000,
+    "S020USDT": 1735689600000,
+    "S021USDT": 1735689600000,
+    "S022USDT": 1735689600000,
+    "S023USDT": 1735689600000,
+    "S024USDT": 1735689600000
+  },
+  "intervalos_ciclo_ms": [
+    304000,
+    300000
+  ],
+  "roles": [
+    "candidate",
+    "comparator"
+  ],
+  "run_id": "tres-ciclos-decision",
+  "seleccion_t0_ms": 1735689600000,
+  "simbolos": 18,
+  "total_observaciones": 54
+}

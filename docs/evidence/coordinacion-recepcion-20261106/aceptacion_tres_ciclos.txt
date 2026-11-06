@@ -1,0 +1,8 @@
+Seleccion T0=1735689600000: 18 simbolos, roles=['candidate', 'comparator']
+Ciclo 1: decision_ms=1735689662000, 18 observaciones aptas
+Ciclo 1: decision_ms=1735689662000, 18 observaciones aptas
+Ciclo 2: decision_ms=1735689966000, 18 observaciones aptas
+Ciclo 3: decision_ms=1735690266000, 18 observaciones aptas
+ACEPTACION TRES CICLOS OK: 54 observaciones (18 x 3), cortes=[1735689662000, 1735689966000, 1735690266000], intervalos=[304000, 300000]
+.
+1 passed in 34.04s

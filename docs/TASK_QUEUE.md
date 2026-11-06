@@ -34,8 +34,14 @@ selección research-selector-v2 y definición de precios.
 `test_recorrido_productivo.py` 6 passed (reincorporación con periodo nuevo y
 fuente ausente con espera acotada) +
 `test_aceptacion_coordinacion_recepcion.py` 1 passed (corte con recepción
-cronológica y evidencia de fechas futuras cero) = 35/35 en los archivos del
-piloto y el recorrido; conjunto relacionado 77 passed, `EXITCODE=0`.
+cronológica y evidencia de fechas futuras cero) +
+`test_tres_ciclos_decision.py` 1 passed (3 ciclos × 18 símbolos, 54
+observaciones) = 36/36 en los archivos del piloto y el recorrido; conjunto
+relacionado 78 passed, `EXITCODE=0`.
+- Renovación del ciclo de decisión (2026-11-06): en el limiar de cada ciclo
+  de decisión los símbolos seguidos recuperan su oportunidad de evaluación;
+  dentro del ciclo los reintentos de calentamiento no la renuevan y la selección
+  no decide si hay nueva evaluación.
 Cero órdenes, cero claves privadas, cero cambios de estrategia ni tolerancias.
 
 `NEXT_TASKS`:

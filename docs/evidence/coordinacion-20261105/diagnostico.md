@@ -212,3 +212,46 @@ EXITCODE=0 (alidacion_final.txt).
 **Qué sigue UNKNOWN.** La latencia real de Binance pública no se mide aquí: la
 recepción es loopback. La espera máxima de 60 s es una cota operativa explícita,
 no una medición de latencia de producción. No se declara ventaja económica.
+
+## 8. Renovación del ciclo de decisión (2026-11-06)
+
+**Defecto en la base 10b196b.** Tras el primer corte, los símbolos permanecen en
+_symbols_evaluated_this_cycle, _pending_symbols queda vacío y el bucle solo
+adelanta 
+ext_decision sin volver a evaluar: con conjunto estable solo se
+produce un ciclo de evaluación. Reproducido en worktree aislado de 10b196b
+(sin Binance, con recepción cronológica y fuentes frescas): ciclo 1 con 18
+observaciones en decision_ms = T0 + 62000 y 0 observaciones fuera del ciclo
+1. Evidencia:
+docs/evidence/coordinacion-recepcion-20261106/regresion_ciclos_antes_10b196b.txt.
+No se atribuye a presupuesto, ausencia de datos ni selección.
+
+**Corrección mínima en scripts/research_pilot.py.** En el limiar de cada
+ciclo de decisión (
+ow >= next_decision) se limpia
+_symbols_evaluated_this_cycle antes de calcular los pendientes, de modo que
+los símbolos seguidos recuperan la oportunidad en cada ciclo; dentro del mismo
+ciclo los reintentos de calentamiento no la renuevan, y la selección no decide
+si hay nueva evaluación (ciclos de selección y de decisión son distintos).
+Máximo una observación por símbolo y ciclo.
+
+**Evidencia de aceptación.** 	ests/test_tres_ciclos_decision.py: tres ciclos
+consecutivos con conjunto estable (18 símbolos, candidatos y comparadores),
+cortes en T0 + 62000, T0 + 366000 y T0 + 666000 (intervalos 304000 ms y
+300000 ms, coherentes con cycle_seconds = 300 s), 54 observaciones =
+18 símbolos × 3 ciclos, todas aptas, sin duplicados y sin observaciones
+adicionales por ejecutar otra selección. Traza:
+docs/evidence/coordinacion-recepcion-20261106/traza_tres_ciclos.json.
+
+**Regresiones conservadas:** corte nominal incompleto no consume prematuramente
+la oportunidad; fuente ausente con espera acotada y motivo explícito;
+frescura independiente por fuente; reincorporación reinicia cobertura;
+rotación conserva pendientes; presupuesto bloquea antes del envío; parada
+explícita impide nuevas consultas; fin normal permite settle acotado.
+Validación final: 78 passed, EXITCODE=0
+(docs/evidence/coordinacion-recepcion-20261106/validacion_final.txt).
+
+Sin Binance público, sin adquisición externa, sin datasets históricos ni DBs
+canónicas modificadas, sin cambios de selección, estrategia, precios, frescura
+o techos presupuestarios. No se tocan 3020, servicio 8792, opencode.json ni
+archivos ajenos.
