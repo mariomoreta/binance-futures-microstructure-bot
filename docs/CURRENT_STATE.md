@@ -144,6 +144,14 @@ observaciones aptas para estudio y un presupuesto público revisable.
   del resultado; la diferencia conserva signo al excluir cualquier símbolo.
   Los 168 resultados de 60m ya existen; no se recomienda repetir la captura
   solo para completarlos.
+
+  **Diseño de experimento operativo (no ejecutado):** `docs/EXPERIMENTO_OPERATIVO_V1.md`
+  — tabla de capacidades existentes (selector, RULE-CAUSAL-V1, motor
+  paper/backtest, costes, trazabilidad), hipótesis operativa única (continuación,
+  regla candidata para revisión), diseño de comprobación independiente y acotada
+  (3 ventanas separadas, presupuesto propio, niveles A/B/C de decisión),
+  pendiente de autorización de alcance y presupuesto separados.
+
 - Evidencia pequeña (manifiesto, resumen, muestra de 12 observaciones):
   `docs/evidence/research/universe_liquidity_v1/pilot_local/`.
 

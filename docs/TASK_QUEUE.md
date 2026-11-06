@@ -97,6 +97,14 @@ símbolo: AKEUSDT y JCTUSDT concentran parte del resultado; la diferencia
 conserva signo al excluir cualquier símbolo. Los 168 resultados de 60m ya
 existen; no se recomienda repetir la captura solo para completarlos.
 
+5. (DISEÑO DE ALCANCE, no ejecutado) Protocolo de experimento operativo v1
+   en `docs/EXPERIMENTO_OPERATIVO_V1.md`: tabla de capacidades existentes
+   (selector, RULE-CAUSAL-V1, motor paper/backtest, costes, trazabilidad),
+   hipótesis operativa única (continuación, regla candidata para revisión),
+   diseño de comprobación independiente y acotada (3 ventanas separadas,
+   presupuesto propio, niveles A/B/C de decisión), sin ejecutar ni abrir
+   Binance. Pendiente de autorización de alcance y presupuesto separados.
+
 ## Piloto prospectivo v1 — política de pendientes y publicación (2026-11-05)
 
 `CURRENT_PHASE`: investigación local del universo/liquidez (solo lectura, sin
