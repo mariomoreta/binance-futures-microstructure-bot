@@ -1,0 +1,5 @@
+codigo_salida: 0
+estado: completo
+stop_reason: duracion
+fuente: pilot.log (stdout al finalizar) + resumen.json
+pilot.log: {"run_id": "public-pilot-1h-20261106a", "estado": "completo", "stop_reason": "duracion", "observaciones": 216, "aptas": 168, "no_aptas": 48, "resultados": 504, "out_dir": "C:\\proyectos\\binance-futures-data\\public-pilot-1h-20261106a"}

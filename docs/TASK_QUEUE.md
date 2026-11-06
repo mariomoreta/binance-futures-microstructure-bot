@@ -4,16 +4,19 @@
 Binance, sin órdenes; presupuesto público requiere autorización separada).
 
 `CURRENT_OBJECTIVE`: cumplido — ejecutar UNA vez la propuesta pública 1 h + 70 min
-y publicar el análisis offline rectificado (v2). La corrida se ejecutó con el
-comando de §9.3 y cerró sin acreditar causa (causa UNKNOWN; sin código de salida
-ni logs de consumo). No se relanzó ni se creó otro run_id.
+(public-pilot-1h-20261106a, SHA f122fbc). La corrida cerró con causa acreditada
+(duración) y código de salida 0. Resultado: 12 ciclos, 12 evaluaciones,
+216 observaciones (168 aptas, 48 descartadas con motivo explícito), 504
+resultados (168 × 3 horizontes, 0 pendientes). Consumo dentro de límites:
+HTTP 641 attempts/1 109 weight/0 retries (máx 2000/5000/50); WS 20 conexiones/
+960 114 mensajes/0 reconnects (máx 5 000 000/20); almacenamiento 5,2 MB/128 MB
+(3,9 %). 0 fechas futuras (protocolo v3). Traza:
+docs/evidence/coordinacion-recepcion-20261106/captura_publica_20261106a/.
+Dataset fuera de Git; manifiesto y hashes publicados.
 
-`ACTIVE_TASK`: cerrado — corrida ejecutada una sola vez; resultado publicado:
-12 ciclos, 240 observaciones, 206 resultados (5m: 115, 15m: 91, 60m: 0);
-causa de parada UNKNOWN. Análisis offline v2 publicado con unidades %,
-comparación por ciclo y símbolo, cobertura desigual y asociaciones reproducibles
-(9 pruebas focalizadas pasadas). Embudo corregido por rol y diagnóstico de
-incorporación publicados (7 pruebas focalizadas pasadas).
+`ACTIVE_TASK`: cerrado — captura pública ejecutada una sola vez; resultado
+publicado y reconciliado (docs/evidence/coordinacion-recepcion-20261106/
+captura_publica_20261106a/). No se relanzó ni se creó otro run_id.
 Recorrido productivo reproducido localmente con proveedores loopback y el CLI
 del piloto (`tests/test_recorrido_productivo.py`, 6 pruebas): creación →
 selección → motores/suscripción → recepción confirmada → evaluación automática.

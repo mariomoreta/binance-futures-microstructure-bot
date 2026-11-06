@@ -1,0 +1,12 @@
+{
+  "tipo": "hashes_fuentes",
+  "derivado_de": "archivos originales de la corrida",
+  "hashes": {
+    "observaciones.jsonl": "43cc26e529b38e97494217d3015f4a42f826bf515f0df34898d9a764a54a1165",
+    "resumen.json": "cf03be4dffb9930ae81d0bd157dcbb1de2889cc8a3d3679d473d75def0c5a59b",
+    "manifiesto.json": "5027ac287467f3badef27e93d361ba7cfbea09b6a3468270c5035939f416cb3b",
+    "status.json": "14d48d458110dde677df3a2edf7c705e23d0d5bb06e984ff303c2703f7b7aa0a",
+    "pilot.log": "def7afa373f676044a724c03e4ebded6c818bba5dddaf7644a3d81ceb36b2264",
+    "comando.txt": "ac382d8afc76b08d929d31672e0a05df6f635f91883677484b0637c371154fe1"
+  }
+}
