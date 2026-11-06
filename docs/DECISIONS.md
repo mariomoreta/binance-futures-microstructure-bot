@@ -4887,3 +4887,18 @@ ow >= next_decision) se limpia _symbols_evaluated_this_cycle antes de calcular l
 - Se conservan las evidencias históricas, SUCCESS_GATES y autorización separada
   para capturas, despliegue paper y cualquier operación real. Cambios solo de
   documentación en la rama de investigación; sin modificar código ni dataset.
+
+## 2026-11-06 — Aclaración de alcance: futuros perpetuos Y con vencimiento
+
+- Corrección explícita del usuario a la dirección anterior: el objetivo comprende
+  tanto perpetuos como futuros con vencimiento de Binance. Los perpetuos son
+  una clase de futuros; la meta no queda restringida a PERPETUAL.
+- PRODUCT_GOAL y las instrucciones/portadas actuales reflejan ambos tipos.
+  La selección vigente filtra PERPETUAL/TRADING/USDT; no existe evidencia aquí
+  de cobertura de contratos con vencimiento. Los resultados previos conservan
+  su universo original y no se extrapolan a otro producto.
+- El protocolo en revisión debe identificar cobertura y faltantes por tipo,
+  margen/liquidación, vencimiento/roll, unidades, costes y ejecución. La
+  documentación no modifica filtros, estrategia, presupuesto, gates ni
+  autoriza adquisiciones u operaciones. Se reutiliza lo existente, sin crear
+  otra línea de infraestructura por esta aclaración.

@@ -4,7 +4,7 @@
 
 Read `docs/PRODUCT_GOAL.md` and the current block at the top of
 `docs/TASK_QUEUE.md` before choosing work. The target is an autonomous,
-risk-controlled Binance USD-M perpetuals system: discover extreme movers across
+risk-controlled Binance Futures system covering perpetual and dated/expiry contracts: discover extreme movers across
 the eligible universe, research them, decide LONG/SHORT or abstain, then manage
 entry, stop-loss, position and exit. Profitability after defensible execution
 costs and risk is the final objective, not a demonstrated current capability.
@@ -23,6 +23,12 @@ or profitability is accepted by this documentation change. New public captures,
 paper deployments and any real execution retain their separate authorization
 boundaries. The design draft now exists in `docs/EXPERIMENTO_OPERATIVO_V1.md`; preserve it,
 review its stated blockers, and do not restart design or duplicate the agent's work.
+
+Product coverage includes BOTH perpetual futures and dated/expiry futures.
+The current research selector supports only PERPETUAL/TRADING/USDT; report that
+implementation limit explicitly. The experiment design must identify coverage
+and missing requirements by contract type; do not remove filters or claim dated
+support without the appropriate implementation, evidence and authorization.
 
 ## Current scope — desktop web only (user decision 2026-10-20)
 

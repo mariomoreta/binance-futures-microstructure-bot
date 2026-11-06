@@ -14,8 +14,9 @@
    validación paper usando lo existente; no hay promoción automática.
 5. Considerar ejecución real únicamente con gates y autorización específica.
 
-La capacidad final es autoseleccionar y gestionar operaciones en perpetuos con
-movimientos extremos de ambos lados; detectar volatilidad es una etapa, no el
+La capacidad final es autoseleccionar y gestionar operaciones en futuros de
+Binance, tanto perpetuos como contratos con vencimiento, con movimientos
+extremos de ambos lados; detectar volatilidad es una etapa, no el
 resultado final. Ver `PRODUCT_GOAL.md` y el bloque vigente de `TASK_QUEUE.md`.
 Se congela la expansión de dashboard, Paper Lab, supervisión y conectores.
 Las fases y listas históricas inferiores no reactivan esos trabajos ni invalidan

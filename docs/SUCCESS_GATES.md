@@ -5,7 +5,7 @@
 Estos gates siguen rigiendo la promoción formal; esta actualización no marca
 ninguno como cumplido ni modifica sus umbrales. La prioridad del agente está en
 `PRODUCT_GOAL.md` y el bloque vigente de `TASK_QUEUE.md`: diseñar una comprobación
-operativa independiente y acotada sobre selección de perpetuos extremos,
+operativa independiente y acotada sobre selección de futuros extremos (perpetuos y con vencimiento),
 entrada, stop, salida y riesgo, reutilizando los componentes existentes.
 
 Recepción de datos, aceptación UI, tests, mayor movimiento o retorno bruto no

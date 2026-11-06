@@ -2,8 +2,8 @@
 
 ## Dirección vigente — 2026-11-06
 
-El objetivo es un bot que explore el universo elegible de perpetuos Binance
-USD-M, autoseleccione monedas con movimientos extremos alcistas y bajistas y
+El objetivo es un bot que explore los futuros elegibles de Binance, tanto
+perpetuos como contratos con vencimiento, y autoseleccione monedas con movimientos extremos alcistas y bajistas y
 evalúe entrada, dirección LONG/SHORT, stop-loss, gestión y salida. La meta es
 expectativa neta ajustada por riesgo; todavía no hay rentabilidad demostrada.
 

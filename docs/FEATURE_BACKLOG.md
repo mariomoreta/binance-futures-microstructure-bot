@@ -1,6 +1,6 @@
 ## F-EXTREME-OPERATING-ALIGNMENT-20261106 — Dirección y prioridad operativas
 
-**1. Title:** Alinear autoselección/investigación de perpetuos extremos con
+**1. Title:** Alinear autoselección/investigación de futuros extremos (perpetuos y con vencimiento) con
 entrada, dirección, stop-loss, gestión, salida y comprobación económica.
 
 **2. Approval status:** AUTORIZADO por el usuario para alinear documentación.

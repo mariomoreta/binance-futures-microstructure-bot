@@ -1,6 +1,6 @@
 # Estado vigente — dirección operativa, 2026-11-06
 
-**Objetivo:** bot autónomo para perpetuos Binance USD-M de movimientos extremos
+**Objetivo:** bot autónomo para futuros Binance (perpetuos y con vencimiento) de movimientos extremos
 alcistas y bajistas: universo → autoselección → investigación → decisión
 LONG/SHORT/abstención → entrada/stop-loss/gestión/salida → resultado neto y riesgo.
 La dirección vinculante está en [PRODUCT_GOAL](PRODUCT_GOAL.md).

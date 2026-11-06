@@ -1,6 +1,6 @@
 # Cola vigente — objetivo operativo, 2026-11-06
 
-`CURRENT_PHASE`: investigación de una regla operable sobre perpetuos extremos;
+`CURRENT_PHASE`: investigación de una regla operable sobre futuros extremos (perpetuos y con vencimiento);
 revisión/cierre del diseño de comprobación independiente. No es declaración de promoción formal.
 
 `CURRENT_OBJECTIVE`: evaluar si la autoselección del universo elegible, unida a
@@ -37,6 +37,12 @@ registran sin ciclos indefinidos de reparación.
 Este bloque sustituye las prioridades operativas de las colas históricas
 inferiores; no borra evidencia, no cambia SUCCESS_GATES y no interrumpe al agente
 en curso. Preservar `opencode.json`, archivos ajenos, DBs y servicios existentes.
+
+**Cobertura por tipo:** el objetivo incluye perpetuos Y futuros con vencimiento.
+El selector y la captura actuales cubren PERPETUAL/TRADING/USDT. Añadir al cierre
+del protocolo una matriz breve por tipo: cubierto, datos faltantes y reutilización
+posible. No declarar que el objetivo completo está cubierto por el piloto actual
+ni abrir capturas nuevas por esta aclaración.
 
 ---
 

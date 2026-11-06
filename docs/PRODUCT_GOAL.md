@@ -2,9 +2,9 @@
 
 ## Dirección operativa vigente — decisión del usuario 2026-11-06
 
-**Objetivo final:** desarrollar un bot para operar contratos perpetuos de Binance
-USD-M que presentan movimientos alcistas o bajistas extremos en su ventana
-rolling de 24 horas. Debe explorar por sí mismo el universo elegible, seleccionar
+**Objetivo final:** desarrollar un bot para operar contratos de futuros de Binance,
+tanto perpetuos como contratos con vencimiento, que presentan movimientos
+alcistas o bajistas extremos en su ventana rolling de 24 horas. Debe explorar por sí mismo el universo elegible, seleccionar
 qué monedas investigar y evaluar oportunidades de entrada, dirección, stop-loss,
 gestión de posición y salida. La meta es obtener expectativa neta positiva con
 riesgo controlado; no se promete rentabilidad ni se afirma que ya exista.
@@ -64,6 +64,28 @@ Este bloque fija la dirección actual y prevalece sobre prioridades históricas
 de expansión de interfaces o adquisiciones genéricas. No modifica parámetros,
 SUCCESS_GATES ni autorizaciones de ejecución. La secuencia y el alcance del
 agente que diseña el experimento se conservan; no es otra tarea de implementación.
+
+### Cobertura obligatoria: perpetuos y futuros con vencimiento
+
+Aclaración explícita del usuario, 2026-11-06: el objetivo incluye **ambos**:
+contratos perpetuos (sin vencimiento) y futuros con vencimiento. No se limita
+el producto final a PERPETUAL ni se presume que cada moneda disponga de ambos.
+La elegibilidad se determina por instrumentos realmente listados y conocidos
+en T, con tipo, familia/producto, moneda de margen/liquidación, tamaño de
+contrato, estado y vencimiento identificados.
+
+**Cobertura implementada hoy:** `research_selector.py` filtra PERPETUAL,
+TRADING y USDT. La captura y resultados actuales corresponden a ese subconjunto;
+no acreditan cobertura de contratos con vencimiento. Ese soporte es un faltante
+explícito de producto, no una capacidad que se pueda declarar por cambiar texto.
+
+El diseño del experimento debe separar cobertura y resultado por tipo de
+contrato, identificar datos/componentes reutilizables y qué falta para incluir
+vencimientos. No extrapolar automáticamente fills, funding, comisiones,
+liquidación, roll/vencimiento o unidades de P&L entre productos. Toda evaluación
+que cubra un solo tipo debe declararlo; no acepta como cumplido el objetivo de
+ambos. Esta aclaración modifica el alcance documental, no filtros, código,
+presupuestos ni autorizaciones de adquisición u operación.
 
 Build a Binance Futures market-intelligence system that can:
 

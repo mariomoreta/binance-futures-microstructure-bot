@@ -3,7 +3,7 @@
 ## Dirección y punto de cierre vigentes — 2026-11-06
 
 Este estudio sirve al objetivo operativo de `PRODUCT_GOAL.md`: autoseleccionar
-perpetuos con movimientos extremos y evaluar reglas LONG/SHORT/abstención con
+futuros con movimientos extremos (perpetuos y con vencimiento) y evaluar reglas LONG/SHORT/abstención con
 entrada causal, stop-loss, gestión, salida, costes y riesgo. Encontrar monedas
 que se mueven más o una asociación flujo/libro no equivale a poder operarlas con
 beneficio. Continuación y reversión se contrastan por separado.

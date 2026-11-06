@@ -32,6 +32,13 @@ movimientos extremos con expectativa neta y riesgo defendibles. La autonomía
 operativa es el objetivo final; la autorización actual cubre diseño/revisión,
 no adquisición, despliegue paper ni órdenes reales.
 
+**Alcance corregido por el usuario:** la meta incluye futuros perpetuos y con
+vencimiento. Esta propuesta usa hasta ahora la cobertura PERPETUAL/TRADING/USDT;
+no prueba ambos tipos. Antes de autorizarla, declarar qué tipo(s) comprende,
+qué falta para los vencimientos y cómo se distinguen margen/liquidación,
+vencimiento/roll, costes y modelo de ejecución. No convertir el filtro actual
+en una restricción del objetivo final ni mezclar resultados de productos.
+
 **Estado:** diseño de alcance y decisión. No se ejecuta. No hay órdenes reales, no hay conexión nueva a Binance, no hay infraestructura nueva, no hay cambios económicos productivos. Este documento es revisable antes de cualquier autorización de adquisición.
 
 **Base:** `e624758a9de3d2f2f9ea77f659b0135d2808a1b6` (commit esperado). Analiza v4 como punto de partida. Dataset de referencia: `public-pilot-1h-20261106a` (una sola hora, 2026-11-06, 216 observaciones, 168 aptas, 504 resultados).

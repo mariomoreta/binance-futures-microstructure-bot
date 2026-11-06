@@ -3,7 +3,7 @@
 ## Prioridad operativa vigente — 2026-11-06
 
 `docs/PRODUCT_GOAL.md` fija el objetivo: autoselección e investigación de
-perpetuos con movimientos extremos → decisión LONG/SHORT/abstención → entrada,
+futuros con movimientos extremos (perpetuos y con vencimiento) → decisión LONG/SHORT/abstención → entrada,
 stop-loss, gestión y salida → comprobación de expectativa neta y riesgo →
 paper validado → ejecución solo con autorización específica.
 
