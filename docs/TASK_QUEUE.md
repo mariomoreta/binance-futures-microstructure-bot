@@ -17,6 +17,11 @@ Dataset fuera de Git; manifiesto y hashes publicados.
 `ACTIVE_TASK`: cerrado — captura pública ejecutada una sola vez; resultado
 publicado y reconciliado (docs/evidence/coordinacion-recepcion-20261106/
 captura_publica_20261106a/). No se relanzó ni se creó otro run_id.
+Publicados originales: manifiesto.json, resumen.json, status.json (SHA-256
+verificados contra origen). Reconciliaciones: intervalos entre decision_ms
+(intervalo 2→3 = 283 007 ms, desviación 16 993 ms), peso HTTP (1 109 y
+6 890 son contadores internos con tabla ASSUMED_WEIGHTS, no cabeceras
+Binance), código de salida UNKNOWN (no hay evidencia directa).
 Recorrido productivo reproducido localmente con proveedores loopback y el CLI
 del piloto (`tests/test_recorrido_productivo.py`, 6 pruebas): creación →
 selección → motores/suscripción → recepción confirmada → evaluación automática.
