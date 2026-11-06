@@ -105,6 +105,17 @@ observaciones aptas para estudio y un presupuesto público revisable.
   T0+666000 (intervalos 304000 y 300000 ms, coherentes con cycle_seconds=300 s),
   todas aptas, sin duplicados. Diagnóstico actualizado:
   `docs/evidence/coordinacion-20261105/diagnostico.md` §8.
+- **Captura p�blica public-pilot-1h-20261106a (2026-11-06):** ejecuci�n �nica
+  autorizada, SHA f122fbc, 3600 s captura + 4200 s settle, selection_seconds=300,
+  cycle_seconds=300, ventana 60 s, max_data_age_ms=5000, candidatos+comparadores
+  (max 20 s�mbolos). Resultado: fase=fin, stop_reason=duracion, 12 ciclos,
+  12 evaluaciones, 216 observaciones (168 aptas, 47 dato_obsoleto_flujo +
+  4 dato_obsoleto_libro + 1 flujo_ventana_incompleta), 504 resultados.
+  Consumo dentro de l�mites: HTTP 641 attempts/1109 weight/0 retries (m�x 2000/5000/50);
+  WS 20 conexiones/960114 mensajes/0 reconnects (m�x 2000000/20);
+  almacenamiento 5,225,620/134,217,728 bytes (3.9%). 0 fechas futuras (protocolo v3).
+  Traza: docs/evidence/coordinacion-recepcion-20261106/traza_captura_publica_20261106.md.
+  Dataset fuera de Git; manifiesto y hashes publicados.
   Informe inicial conservado:
   `docs/evidence/research/universe_liquidity_v1/pilot_public_proposal_1h/informe_analisis_offline.md`.
   Tablas pequeñas v2:

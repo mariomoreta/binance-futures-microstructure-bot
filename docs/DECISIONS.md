@@ -4853,3 +4853,18 @@ ow >= next_decision) se limpia _symbols_evaluated_this_cycle antes de calcular l
 - Pruebas: 	ests/test_tres_ciclos_decision.py (nueva aceptación: 3 ciclos consecutivos, 18 símbolos × 3 = 54 observaciones, cortes en T0+62000 / T0+366000 / T0+666000, intervalos 304000 ms y 300000 ms coherentes con cycle_seconds = 300 s, todas aptas, sin duplicados, sin observaciones por ejecutar otra selección) + suites anteriores (78 passed en conjunto relacionado, EXITCODE=0).
 - Evidencia: docs/evidence/coordinacion-recepcion-20261106/{regresion_ciclos_antes_10b196b.txt,aceptacion_tres_ciclos.txt,traza_tres_ciclos.json,validacion_final.txt}; diagnostico actualizado en docs/evidence/coordinacion-20261105/diagnostico.md (sección 8).
 - Sin Binance público, sin adquisición externa, sin datasets históricos ni DBs canonicas modificadas, sin cambios de selección, estrategia, precios, frescura ni techos presupuestarios. No se tocan 3020, 8792, opencode.json ni archivos ajenos.
+
+## 2026-11-06 - Captura p�blica public-pilot-1h-20261106a (rama research/universe-liquidity-v1, SHA f122fbc)
+
+- Ejecuci�n �nica autorizada (run_id: public-pilot-1h-20261106a), sin Binance p�rivate, sin ordenes, sin claves privadas.
+- Configuraci�n: selection_seconds=300, cycle_seconds=300, duraci�n 3600 s, settle 4200 s, ventana 60 s, max_data_age_ms=5000,
+  max_symbols=20, max_candidates=12, max_comparators=8, capture_protocol_version=3.
+- Resultado: fase=fin, stop_reason=duracion, 12 ciclos, 12 evaluaciones, 216 observaciones (168 aptas, 48 descartadas con
+  motivo expl�cito: 47 dato_obsoleto_flujo, 4 dato_obsoleto_libro, 1 flujo_ventana_incompleta), 504 resultados.
+  Ninguna observaci�n falsa apta; 0 fechas futuras.
+- Consumo dentro de l�mites: HTTP 641 attempts/1109 weight/0 retries (m�x 2000/5000/50); WS 20 conexiones/960114 mensajes/
+  0 reconnects (m�x 5000000/20); almacenamiento 5,225,620/134,217,728 bytes (3.9%).
+- Traza: docs/evidence/coordinacion-recepcion-20261106/traza_captura_publica_20261106.md. Dataset fuera de Git; manifiesto
+  y hashes publicados.
+- No se declara ventaja ni rentabilidad; comparaci�n descriptiva s�lo.
+- No se tocan 3020, 8792, opencode.json ni archivos ajenos.

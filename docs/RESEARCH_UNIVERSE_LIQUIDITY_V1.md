@@ -873,6 +873,14 @@ renueva `symbol_first_seen_ms` y no hereda cobertura. Verificado con
 intervalos coherentes con `cycle_seconds = 300 s`) y con el resto del
 recorrido productivo (`tests/test_recorrido_productivo.py`, 6 passed).
 
+**Captura p�blica public-pilot-1h-20261106a (2026-11-06):** ejecuci�n �nica
+  autorizada, SHA f122fbc, 3600 s captura + 4200 s settle, 12 ciclos, 12
+  evaluaciones, 216 observaciones (168 aptas, 48 descartadas con motivo
+  expl�cito), 504 resultados. Consumo dentro de l�mites: HTTP 641 attempts/
+  1109 weight/0 retries (m�x 2000/5000/50); WS 20 conexiones/960114 mensajes/
+  0 reconnects (m�x 5000000/20); almacenamiento 3.9% del tope. 0 fechas futuras.
+  Traza: docs/evidence/coordinacion-recepcion-20261106/traza_captura_publica_20261106.md.
+
 **Qué queda UNKNOWN:** 33 descartes de comparadores `permanece` (mayoritariamente
 `dato_obsoleto_flujo`); no se atribuye a baja liquidez, rotación o transporte
 sin demostrar la secuencia de disponibilidad por símbolo.

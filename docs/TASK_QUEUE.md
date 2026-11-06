@@ -42,6 +42,13 @@ relacionado 78 passed, `EXITCODE=0`.
   de decisión los símbolos seguidos recuperan su oportunidad de evaluación;
   dentro del ciclo los reintentos de calentamiento no la renuevan y la selección
   no decide si hay nueva evaluación.
+- Captura p�blica public-pilot-1h-20261106a (2026-11-06): ejecuci�n �nica
+  autorizada, SHA f122fbc, 3600 s captura + 4200 s settle, 12 ciclos, 12
+  evaluaciones, 216 observaciones (168 aptas, 48 descartadas con motivo
+  explícito), 504 resultados. Consumo dentro de l�mites: HTTP 641 attempts/
+  1109 weight/0 retries; WS 20 conexiones/0 reconnects; almacenamiento
+  3.9% del tope. 0 fechas futuras. Traza:
+  docs/evidence/coordinacion-recepcion-20261106/traza_captura_publica_20261106.md.
 Cero órdenes, cero claves privadas, cero cambios de estrategia ni tolerancias.
 
 `NEXT_TASKS`:
