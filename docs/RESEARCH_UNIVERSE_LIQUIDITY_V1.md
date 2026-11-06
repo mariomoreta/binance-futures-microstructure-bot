@@ -1,5 +1,46 @@
 # Investigación: universo y selección por liquidez/flujo — v1
 
+## Dirección y punto de cierre vigentes — 2026-11-06
+
+Este estudio sirve al objetivo operativo de `PRODUCT_GOAL.md`: autoseleccionar
+perpetuos con movimientos extremos y evaluar reglas LONG/SHORT/abstención con
+entrada causal, stop-loss, gestión, salida, costes y riesgo. Encontrar monedas
+que se mueven más o una asociación flujo/libro no equivale a poder operarlas con
+beneficio. Continuación y reversión se contrastan por separado.
+
+El análisis v4 de `public-pilot-1h-20261106a` se considera **cerrado como
+exploratorio con limitaciones**. Son 240 selecciones, 216 observaciones emitidas
+(168 aptas / 48 descartadas), 504 resultados resueltos (168 por horizonte
+5m/15m/60m) y 165 parejas válidas por horizonte para la asociación de flujo.
+La diferencia media de candidatos frente a comparadores es favorable en esa
+captura y conserva signo al retirar cada símbolo individual; no acredita
+predictividad, rentabilidad ni estabilidad entre períodos. Cobertura asimétrica,
+concentración por símbolo, precios mixtos y costes/ejecución UNKNOWN limitan
+la interpretación. La identidad por registro y el código de salida del proceso
+siguen UNKNOWN; la procedencia del archivo se documenta por manifiesto/hashes.
+
+Evidencia actual:
+`evidence/research/universe_liquidity_v1/public-pilot-1h-20261106a/informe_analisis_universo_liquidez_v4.md`
+y tablas asociadas. Las recomendaciones inferiores para completar 60m pertenecen
+a la primera captura incompleta `public-pilot-1h-20261105a`; no son una tarea
+vigente sobre la segunda captura.
+
+**Propuesta ya entregada (no ejecutada):**
+[EXPERIMENTO_OPERATIVO_V1](EXPERIMENTO_OPERATIVO_V1.md), publicada en `6a10c307`.
+El siguiente trabajo es revisar y cerrar sus bloqueos, sin reiniciar el diseño:
+ una regla predefinida, mapa de componentes existentes,
+entrada/dirección/stop/salida/riesgo, períodos separados, comparadores, cobertura,
+métrica y criterios de decisión, datos y presupuesto. Las pruebas de selección
+y de regla deben distinguirse; no escoger definiciones según qué gane en esta
+captura. Antes de ejecutar, documentar qué puede medirse y qué seguirá UNKNOWN.
+
+No reabrir la captura por limitaciones que no cambien la decisión económica.
+Una falla material se corrige de forma acotada o limita la conclusión. Ninguna
+repetición, ampliación de presupuesto ni incorporación de costes aislada
+autoriza declarar rentabilidad. Dashboard, gestores y nuevos indicadores/IA
+quedan fuera del camino crítico. La historia inferior se conserva; este bloque
+sustituye su prioridad de adquisición genérica, no sus evidencias originales.
+
 **Rama:** `research/universe-liquidity-v1` (desde `dash-v2-05-public-acceptance` @ `78371aa`)
 **Estado:** investigación en curso (solo lectura de datos locales; sin conexión pública; sin órdenes; sin cambios de reglas operativas)
 **Fecha:** 2026-11-03 (actualizado 2026-11-04: corrida final de observaciones y reconciliación de disponibilidad)

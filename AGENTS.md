@@ -1,11 +1,36 @@
 # AGENTS.md
 
+## Active product direction — user decision 2026-11-06
+
+Read `docs/PRODUCT_GOAL.md` and the current block at the top of
+`docs/TASK_QUEUE.md` before choosing work. The target is an autonomous,
+risk-controlled Binance USD-M perpetuals system: discover extreme movers across
+the eligible universe, research them, decide LONG/SHORT or abstain, then manage
+entry, stop-loss, position and exit. Profitability after defensible execution
+costs and risk is the final objective, not a demonstrated current capability.
+
+Current priority: review and complete the proposed bounded operational experiment using
+existing selector, features and simulation components. The exploratory capture
+`public-pilot-1h-20261106a` is closed with limitations. Do not repeatedly reopen
+its analysis unless a defect could change the economic decision. Record
+non-decisive limitations and continue the authorized task.
+
+Freeze dashboard/Paper Lab expansion, process-management work, new indicators,
+connectors and AI layers. Essential fixes must identify the specific experiment
+they unblock. Do not recreate existing components or choose the next task from
+an old phase heading. Historical gates remain promotion requirements; no phase
+or profitability is accepted by this documentation change. New public captures,
+paper deployments and any real execution retain their separate authorization
+boundaries. The design draft now exists in `docs/EXPERIMENTO_OPERATIVO_V1.md`; preserve it,
+review its stated blockers, and do not restart design or duplicate the agent's work.
+
 ## Current scope — desktop web only (user decision 2026-10-20)
 
 Read `docs/DESKTOP_FIRST_SCOPE_20261020.md`. Mobile layouts, mobile viewport
 QA/captures (including 360/390 px), Flutter and phone access are DEFERRED.
-They are not acceptance gates for current work. Complete the desktop V2 and
-bot functional scope first; reopening mobile requires explicit user approval.
+They are not acceptance gates for current work. Preserve the existing desktop
+V2; its expansion is paused while the operational experiment is designed.
+Reopening mobile requires explicit user approval.
 Preserve existing code/tests and historical evidence; do not add mobile work.
 
 

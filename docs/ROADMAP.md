@@ -1,9 +1,30 @@
 # ROADMAP
 
+## Secuencia de trabajo vigente — 2026-11-06
+
+1. Dar por cerrado como exploratorio el análisis de
+   `public-pilot-1h-20261106a`, con limitaciones conservadas.
+2. Revisar y cerrar la propuesta existente `EXPERIMENTO_OPERATIVO_V1.md`, con
+   mapa breve de capacidades, una hipótesis operativa y protocolo independiente con regla de entrada/dirección,
+   stop, salida, riesgo, datos y presupuesto definidos antes de ejecutarlo.
+3. Revisar ese protocolo y autorizar por separado, si procede, su adquisición y
+   evaluación. Una corrida nueva debe resolver una pregunta económica concreta.
+4. Decidir continuar, reformular o detener la línea con los criterios fijados.
+   Solo una candidata que lo justifique pasa a evaluación de ejecución/costes y
+   validación paper usando lo existente; no hay promoción automática.
+5. Considerar ejecución real únicamente con gates y autorización específica.
+
+La capacidad final es autoseleccionar y gestionar operaciones en perpetuos con
+movimientos extremos de ambos lados; detectar volatilidad es una etapa, no el
+resultado final. Ver `PRODUCT_GOAL.md` y el bloque vigente de `TASK_QUEUE.md`.
+Se congela la expansión de dashboard, Paper Lab, supervisión y conectores.
+Las fases y listas históricas inferiores no reactivan esos trabajos ni invalidan
+el trabajo económico ya autorizado; sus gates formales no se dan por cumplidos.
+
 Future sequence. Operational now lives in `docs/TASK_QUEUE.md`.
 Decision/feature traceability lives in `docs/FEATURE_BACKLOG.md`.
 
-## Phase 1 — Market Intelligence + Dashboard (CURRENT)
+## Phase 1 — Market Intelligence + Dashboard (secuencia histórica)
 
 Dependency order (binding — see `docs/DECISIONS.md` 2026-10-06):
 
