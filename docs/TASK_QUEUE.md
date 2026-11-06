@@ -104,6 +104,19 @@ existen; no se recomienda repetir la captura solo para completarlos.
    diseño de comprobación independiente y acotada (3 ventanas separadas,
    presupuesto propio, niveles A/B/C de decisión), sin ejecutar ni abrir
    Binance. Pendiente de autorización de alcance y presupuesto separados.
+6. (DISEÑO DE ALCANCE CERRADO, no ejecutado) Protocolo de experimento
+   operativo v2 en `docs/EXPERIMENTO_OPERATIVO_V2.md`: cobertura real de
+   perpetuos USD-M (único tipo del experimento; futuros con vencimiento
+   declarados como pendiente sin soporte), tabla de capacidades existentes,
+   regla candidata completa (continuación, entry/open de vela siguiente,
+   stop 0,5 %, notional 1000, horizonte 60 m, max_concurrent=1),
+   aplicación de la misma regla a candidatos y comparadores (el rol no
+   determina dirección), comprobación de datos previstos (fills y stops
+   intermedios no acreditados en el piloto → UNKNOWN), calendario y
+   presupuesto propio (3 ventanas separadas, HTTP/WS/almacenamiento),
+   métrica principal neta (`neto_por_operación`), criterios de decisión
+   A/B/C y acción exacta que requiere autorización posterior. No ejecutado,
+   sin Binance, sin infraestructura nueva.
 
 ## Piloto prospectivo v1 — política de pendientes y publicación (2026-11-05)
 
