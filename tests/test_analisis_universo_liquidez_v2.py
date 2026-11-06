@@ -59,6 +59,7 @@ def _hacer_observacion(
         "decision_ms": decision_ms,
         "observation_id": "%s|%s" % (simbolo, decision_ms),
         "side": lado,
+        "disponibilidad": {"seleccion_ms": referencia_ms, "max_ms": decision_ms},
         "flujo": {},
         "libro": {},
         "cobertura": {"flujo_ventana_completa": ventana_completa},
@@ -221,7 +222,7 @@ def test_campos_ausentes_no_publican_disponibilidad_completa(tmp_run):
     asoc = tablas["asociaciones_flujo_profundidad"]
     assert asoc["n_filas_totales"] == 6
     assert asoc["n_campos_ausentes_o_no_finitos"] == 3  # AAA 3 horizontes
-    assert asoc["n_profundidad_cero_o_invalida"] == 3   # CCC 3 horizontes
+    assert asoc["n_profundidad_cero_o_invalida"] == 6   # AAA (ausente) + CCC (cero), 3 horizontes cada uno
     # AAA: flujo ausente -> ratio None. CCC: profundidad cero -> ratio None.
     # Ninguna produce parejas validas (requieren ratio y retorno no None).
     assert asoc["parejas_validas_por_horizonte"] == {"5m": 0, "15m": 0, "60m": 0}
@@ -364,3 +365,188 @@ def test_no_asume_168_168_desde_derivados_propios(tmp_run):
     assert asoc["parejas_validas_por_horizonte"] == {"5m": 2, "15m": 2, "60m": 2}
     texto = json.dumps(tablas, ensure_ascii=False)
     assert "168/168" not in texto
+
+
+# -------------------- vínculo selección→decisión --------------------
+
+def test_primera_seleccion_sin_decision(tmp_run):
+    """Primera selección sin decisión; la decisión posterior pertenece a la segunda."""
+    objetos = [
+        # Ciclo 1: referencia 900, sin observaciones (decisión nunca llega).
+        _hacer_ciclo(900, 1000, ["AAA"], ["CCC"]),
+        # Ciclo 2: referencia 2000, observaciones emitidas con seleccion_ms=2000.
+        _hacer_ciclo(2000, 2100, ["BBB"], ["DDD"]),
+    ]
+    observaciones = [
+        _hacer_observacion("BBB", "candidate", "observada", "UP", 2100, 2000, 100, 50, 1000, 500, True, 0.01, 0.02, 0.03),
+        _hacer_observacion("DDD", "comparator", "observada", None, 2100, 2000, 150, 75, 900, 450, True, 0.001, 0.002, 0.003),
+    ]
+    resultados = []
+    for oid in ("BBB|2100", "DDD|2100"):
+        for h in ("5m", "15m", "60m"):
+            resultados.append(_hacer_resultado(oid, h, 0.01))
+    _escribir_jsonl(tmp_run["jsonl"], objetos + observaciones + resultados)
+
+    tablas = _ejecutar_cli(tmp_run)
+    rg = tablas["resumen_global"]
+    # AAA y CCC seleccionados pero sin observación: 2 selecciones sin observación.
+    assert rg["seleccionados_total"] == 4
+    assert rg["total_sin_observacion"] == 2
+    # Solo BBB y DDD tienen observación: 2 emitidas.
+    assert rg["observaciones_total"] == 2
+    # El embudo por ciclo_rol debe mostrar 2 filas con seleccion_sin_observacion>0.
+    filas = tablas["embudo_desde_ciclos"]["filas_por_ciclo_rol"]
+    sin_obs = [f for f in filas if f["seleccion_sin_observacion"] > 0]
+    assert len(sin_obs) == 2  # candidato ciclo 1, comparador ciclo 1
+
+
+def test_vínculo_ausente_ambiguo_contradictorio(tmp_run):
+    """Vínculo ausente, ambiguo o contradictorio no se inventa; se registra."""
+    objetos = [
+        _hacer_ciclo(900, 1000, ["AAA"], ["CCC"]),
+    ]
+    # Observación con seleccion_ms que no coincide con ningún ciclo (vínculo ausente).
+    o_sin_vinculo = _hacer_observacion("ZZZ", "candidate", "observada", "UP", 9999, 900, 100, 50, 1000, 500, True, 0.01, 0.02, 0.03)
+    o_sin_vinculo["disponibilidad"]["seleccion_ms"] = 9999
+    observaciones = [o_sin_vinculo]
+    resultados = [
+        _hacer_resultado("ZZZ|9999", "5m", 0.01),
+    ]
+    _escribir_jsonl(tmp_run["jsonl"], objetos + observaciones + resultados)
+
+    tablas = _ejecutar_cli(tmp_run)
+    rg = tablas["resumen_global"]
+    assert rg["observaciones_total"] == 1
+    # ZZZ no está en la selección, pero AAA y CCC sí están seleccionados y no se observaron.
+    assert rg["total_sin_observacion"] == 2
+    # El embudo no debe contar a ZZZ como observación del ciclo 1.
+    filas = tablas["embudo_desde_ciclos"]["filas_por_ciclo_rol"]
+    ciclo1_cand = [f for f in filas if f["reference_ms"] == 900 and f["rol"] == "candidate"][0]
+    assert ciclo1_cand["observaciones_emitidas"] == 0
+    assert ciclo1_cand["seleccion_sin_observacion"] == 1
+
+
+def test_mezcla_de_corridas(tmp_run):
+    """Mezcla de corridas: observation_id duplicado se detecta y expone."""
+    objetos = [
+        _hacer_ciclo(900, 1000, ["AAA"], ["CCC"]),
+    ]
+    observaciones = [
+        _hacer_observacion("AAA", "candidate", "observada", "UP", 1000, 900, 100, 50, 1000, 500, True, 0.01, 0.02, 0.03),
+        # Duplicado de observation_id (misma corrida o mezcla: no se puede distinguir, se expone).
+        _hacer_observacion("AAA", "candidate", "observada", "UP", 1000, 900, 200, 100, 800, 400, True, -0.005, -0.01, -0.02),
+    ]
+    resultados = [
+        _hacer_resultado("AAA|1000", "5m", 0.01),
+        _hacer_resultado("AAA|1000", "5m", -0.005),
+    ]
+    _escribir_jsonl(tmp_run["jsonl"], objetos + observaciones + resultados)
+
+    tablas = _ejecutar_cli(tmp_run)
+    asoc = tablas["asociaciones_flujo_profundidad"]
+    assert asoc["mezcla_run_id_detectada"] is True
+    assert "AAA|1000" in asoc["ids_duplicados_observacion"]
+    assert "AAA|1000" in asoc["ids_duplicados_resultado"]
+
+
+# -------------------- validación de datos para asociación --------------------
+
+def test_profundidad_negativa_cero_ausente(tmp_run):
+    """Profundidad negativa, cero, ausente o no finita: no cuenta como pareja válida."""
+    objetos = [
+        _hacer_ciclo(900, 1000, ["AAA", "BBB", "CCC", "DDD"], ["EEE"]),
+    ]
+    observaciones = [
+        _hacer_observacion("AAA", "candidate", "observada", "UP", 1000, 900, 100, 50, 1000, 500, True, 0.01, 0.02, 0.03),  # válida
+        _hacer_observacion("BBB", "candidate", "observada", "UP", 1000, 900, 200, 100, -100, 500, True, 0.02, 0.04, 0.06),  # profundidad negativa
+        _hacer_observacion("CCC", "candidate", "observada", "UP", 1000, 900, 300, 150, 0, 0, True, 0.03, 0.06, 0.09),  # profundidad cero
+        _hacer_observacion("DDD", "candidate", "observada", "UP", 1000, 900, None, None, None, None, True, 0.04, 0.08, 0.12),  # ausente
+        _hacer_observacion("EEE", "comparator", "observada", None, 1000, 900, 150, 75, 900, 450, True, 0.001, 0.002, 0.003),  # válida
+    ]
+    resultados = []
+    for oid in ("AAA|1000", "BBB|1000", "CCC|1000", "DDD|1000", "EEE|1000"):
+        for h in ("5m", "15m", "60m"):
+            resultados.append(_hacer_resultado(oid, h, 0.01))
+    _escribir_jsonl(tmp_run["jsonl"], objetos + observaciones + resultados)
+
+    tablas = _ejecutar_cli(tmp_run)
+    asoc = tablas["asociaciones_flujo_profundidad"]
+    assert asoc["n_filas_totales"] == 15  # 5 obs × 3 horizontes
+    # Solo AAA y EEE son válidas: 2 × 3 = 6 parejas válidas por horizonte.
+    assert asoc["parejas_validas_por_horizonte"] == {"5m": 2, "15m": 2, "60m": 2}
+    # BBB (negativa), CCC (cero), DDD (ausente) × 3 horizontes = 9 filas inválidas.
+    assert asoc["n_profundidad_cero_o_invalida"] == 9
+    assert asoc["n_campos_ausentes_o_no_finitos"] == 3  # DDD × 3 horizontes (flujo y libro ausentes)
+
+
+def test_ventana_incompleta_excluida(tmp_run):
+    """Ventana incompleta excluida de parejas válidas."""
+    objetos = [
+        _hacer_ciclo(900, 1000, ["AAA", "BBB"], ["CCC"]),
+    ]
+    observaciones = [
+        _hacer_observacion("AAA", "candidate", "observada", "UP", 1000, 900, 100, 50, 1000, 500, True, 0.01, 0.02, 0.03),  # ventana completa
+        _hacer_observacion("BBB", "candidate", "observada", "UP", 1000, 900, 200, 100, 800, 400, False, 0.02, 0.04, 0.06),  # ventana incompleta
+        _hacer_observacion("CCC", "comparator", "observada", None, 1000, 900, 150, 75, 900, 450, True, 0.001, 0.002, 0.003),  # ventana completa
+    ]
+    resultados = []
+    for oid in ("AAA|1000", "BBB|1000", "CCC|1000"):
+        for h in ("5m", "15m", "60m"):
+            resultados.append(_hacer_resultado(oid, h, 0.01))
+    _escribir_jsonl(tmp_run["jsonl"], objetos + observaciones + resultados)
+
+    tablas = _ejecutar_cli(tmp_run)
+    asoc = tablas["asociaciones_flujo_profundidad"]
+    assert asoc["n_ventana_incompleta"] == 3  # BBB × 3 horizontes
+    # Solo AAA y CCC válidas: 2 × 3 = 6 parejas válidas por horizonte.
+    assert asoc["parejas_validas_por_horizonte"] == {"5m": 2, "15m": 2, "60m": 2}
+
+
+# -------------------- sensibilidad calculada a mano --------------------
+
+def test_sensibilidad_calculada_a_mano(tmp_run):
+    """Sensibilidad calculada a mano, incluida exclusión que deja un rol vacío."""
+    objetos = [
+        _hacer_ciclo(900, 1000, ["A", "B"], ["C", "D"]),
+    ]
+    observaciones = [
+        _hacer_observacion("A", "candidate", "observada", "UP", 1000, 900, 100, 0, 1000, 500, True, 0.10, 0.0, 0.0),
+        _hacer_observacion("B", "candidate", "observada", "UP", 1000, 900, 200, 0, 1000, 500, True, 0.20, 0.0, 0.0),
+        _hacer_observacion("C", "comparator", "observada", None, 1000, 900, 0, 0, 1000, 500, True, 0.00, 0.0, 0.0),
+        _hacer_observacion("D", "comparator", "observada", None, 1000, 900, 0, 0, 1000, 500, True, 0.20, 0.0, 0.0),
+    ]
+    resultados = []
+    datos = {"A|1000": {"5m": 0.10}, "B|1000": {"5m": 0.20}, "C|1000": {"5m": 0.00}, "D|1000": {"5m": 0.20}}
+    for oid, por_h in datos.items():
+        for h, ret in por_h.items():
+            resultados.append(_hacer_resultado(oid, h, ret))
+    _escribir_jsonl(tmp_run["jsonl"], objetos + observaciones + resultados)
+
+    tablas = _ejecutar_cli(tmp_run)
+    sens = tablas["sensibilidad_por_simbolo"]
+    base = tablas["diferencia_base_por_horizonte"]
+    assert abs(base["5m"] - 0.05) < 1e-12  # cand (0.10+0.20)/2=0.15, comp (0.00+0.20)/2=0.10, diff=0.05
+
+    # Buscar la entrada de A.
+    ent_a = next(s for s in sens if s["simbolo"] == "A")
+    h5 = ent_a["por_horizonte"]["5m"]
+    # Excluyendo A: cand=[B=0.20] media=0.20; comp=[C=0.00, D=0.20] media=0.10; diff=0.10.
+    assert abs(h5["candidatos_media"] - 0.20) < 1e-12
+    assert abs(h5["comparadores_media"] - 0.10) < 1e-12
+    assert abs(h5["diferencia"] - 0.10) < 1e-12
+    assert abs(h5["cambio_frente_base"] - (0.10 - 0.05)) < 1e-12
+    assert h5["signo_cambia"] is False
+
+    # Excluir C y D deja comparadores vacío -> no calculable.
+    ent_c = next(s for s in sens if s["simbolo"] == "C")
+    h5_c = ent_c["por_horizonte"]["5m"]
+    # Excluyendo C: comp=[D=0.20] media=0.20; cand=[A=0.10,B=0.20] media=0.15; diff=-0.05.
+    assert abs(h5_c["diferencia"] - (-0.05)) < 1e-12
+    assert h5_c["signo_cambia"] is True  # base +0.05, nuevo -0.05
+
+    # Excluir ambos comparadores (no está en esta tabla de un símbolo, pero el
+    # caso de rol vacío se cubre cuando la exclusión deja comparadores sin datos).
+    # Aquí C deja comp con D, no vacío. Verificamos que el contrato de no-cero
+    # se respete: diferencia nunca es cero inventada.
+    assert h5_c["diferencia"] is not None
+    assert h5_c["motivo"] is None

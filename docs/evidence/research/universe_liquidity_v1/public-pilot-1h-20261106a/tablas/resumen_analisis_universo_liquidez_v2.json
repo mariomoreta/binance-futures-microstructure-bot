@@ -53,7 +53,7 @@
       {
         "ciclo_idx": 0,
         "reference_ms": 1793942258855,
-        "decision_ms": 1793942343961,
+        "decision_ms": null,
         "rol": "candidate",
         "seleccionados": 12,
         "observaciones_emitidas": 12,
@@ -93,7 +93,7 @@
       {
         "ciclo_idx": 0,
         "reference_ms": 1793942258855,
-        "decision_ms": 1793942343961,
+        "decision_ms": null,
         "rol": "comparator",
         "seleccionados": 8,
         "observaciones_emitidas": 8,
@@ -129,7 +129,7 @@
       {
         "ciclo_idx": 1,
         "reference_ms": 1793942563207,
-        "decision_ms": 1793942644172,
+        "decision_ms": null,
         "rol": "candidate",
         "seleccionados": 12,
         "observaciones_emitidas": 12,
@@ -169,7 +169,7 @@
       {
         "ciclo_idx": 1,
         "reference_ms": 1793942563207,
-        "decision_ms": 1793942644172,
+        "decision_ms": null,
         "rol": "comparator",
         "seleccionados": 8,
         "observaciones_emitidas": 8,
@@ -207,7 +207,7 @@
       {
         "ciclo_idx": 2,
         "reference_ms": 1793942867040,
-        "decision_ms": 1793942927179,
+        "decision_ms": null,
         "rol": "candidate",
         "seleccionados": 12,
         "observaciones_emitidas": 12,
@@ -250,7 +250,7 @@
       {
         "ciclo_idx": 2,
         "reference_ms": 1793942867040,
-        "decision_ms": 1793942927179,
+        "decision_ms": null,
         "rol": "comparator",
         "seleccionados": 8,
         "observaciones_emitidas": 8,
@@ -289,7 +289,7 @@
       {
         "ciclo_idx": 3,
         "reference_ms": 1793943176147,
-        "decision_ms": 1793943227262,
+        "decision_ms": null,
         "rol": "candidate",
         "seleccionados": 12,
         "observaciones_emitidas": 11,
@@ -331,7 +331,7 @@
       {
         "ciclo_idx": 3,
         "reference_ms": 1793943176147,
-        "decision_ms": 1793943227262,
+        "decision_ms": null,
         "rol": "comparator",
         "seleccionados": 8,
         "observaciones_emitidas": 5,
@@ -369,7 +369,7 @@
       {
         "ciclo_idx": 4,
         "reference_ms": 1793943478703,
-        "decision_ms": 1793943527315,
+        "decision_ms": null,
         "rol": "candidate",
         "seleccionados": 12,
         "observaciones_emitidas": 12,
@@ -411,7 +411,7 @@
       {
         "ciclo_idx": 4,
         "reference_ms": 1793943478703,
-        "decision_ms": 1793943527315,
+        "decision_ms": null,
         "rol": "comparator",
         "seleccionados": 8,
         "observaciones_emitidas": 8,
@@ -449,7 +449,7 @@
       {
         "ciclo_idx": 5,
         "reference_ms": 1793943781040,
-        "decision_ms": 1793943827698,
+        "decision_ms": null,
         "rol": "candidate",
         "seleccionados": 12,
         "observaciones_emitidas": 10,
@@ -489,7 +489,7 @@
       {
         "ciclo_idx": 5,
         "reference_ms": 1793943781040,
-        "decision_ms": 1793943827698,
+        "decision_ms": null,
         "rol": "comparator",
         "seleccionados": 8,
         "observaciones_emitidas": 5,
@@ -527,7 +527,7 @@
       {
         "ciclo_idx": 6,
         "reference_ms": 1793944083789,
-        "decision_ms": 1793944127943,
+        "decision_ms": null,
         "rol": "candidate",
         "seleccionados": 12,
         "observaciones_emitidas": 11,
@@ -569,7 +569,7 @@
       {
         "ciclo_idx": 6,
         "reference_ms": 1793944083789,
-        "decision_ms": 1793944127943,
+        "decision_ms": null,
         "rol": "comparator",
         "seleccionados": 8,
         "observaciones_emitidas": 7,
@@ -607,7 +607,7 @@
       {
         "ciclo_idx": 7,
         "reference_ms": 1793944386978,
-        "decision_ms": 1793944427957,
+        "decision_ms": null,
         "rol": "candidate",
         "seleccionados": 12,
         "observaciones_emitidas": 12,
@@ -649,7 +649,7 @@
       {
         "ciclo_idx": 7,
         "reference_ms": 1793944386978,
-        "decision_ms": 1793944427957,
+        "decision_ms": null,
         "rol": "comparator",
         "seleccionados": 8,
         "observaciones_emitidas": 6,
@@ -688,7 +688,7 @@
       {
         "ciclo_idx": 8,
         "reference_ms": 1793944689592,
-        "decision_ms": 1793944728135,
+        "decision_ms": null,
         "rol": "candidate",
         "seleccionados": 12,
         "observaciones_emitidas": 11,
@@ -728,7 +728,7 @@
       {
         "ciclo_idx": 8,
         "reference_ms": 1793944689592,
-        "decision_ms": 1793944728135,
+        "decision_ms": null,
         "rol": "comparator",
         "seleccionados": 8,
         "observaciones_emitidas": 8,
@@ -766,7 +766,7 @@
       {
         "ciclo_idx": 9,
         "reference_ms": 1793944992879,
-        "decision_ms": 1793945028256,
+        "decision_ms": null,
         "rol": "candidate",
         "seleccionados": 12,
         "observaciones_emitidas": 11,
@@ -808,7 +808,7 @@
       {
         "ciclo_idx": 9,
         "reference_ms": 1793944992879,
-        "decision_ms": 1793945028256,
+        "decision_ms": null,
         "rol": "comparator",
         "seleccionados": 8,
         "observaciones_emitidas": 3,
@@ -847,7 +847,7 @@
       {
         "ciclo_idx": 10,
         "reference_ms": 1793945296983,
-        "decision_ms": 1793945328322,
+        "decision_ms": null,
         "rol": "candidate",
         "seleccionados": 12,
         "observaciones_emitidas": 11,
@@ -889,7 +889,7 @@
       {
         "ciclo_idx": 10,
         "reference_ms": 1793945296983,
-        "decision_ms": 1793945328322,
+        "decision_ms": null,
         "rol": "comparator",
         "seleccionados": 8,
         "observaciones_emitidas": 8,
@@ -927,7 +927,7 @@
       {
         "ciclo_idx": 11,
         "reference_ms": 1793945601108,
-        "decision_ms": 1793945628365,
+        "decision_ms": null,
         "rol": "candidate",
         "seleccionados": 12,
         "observaciones_emitidas": 11,
@@ -969,7 +969,7 @@
       {
         "ciclo_idx": 11,
         "reference_ms": 1793945601108,
-        "decision_ms": 1793945628365,
+        "decision_ms": null,
         "rol": "comparator",
         "seleccionados": 8,
         "observaciones_emitidas": 6,
@@ -1287,113 +1287,1610 @@
     "unidades": "flujo y profundidad en USDT; ratio adimensional; retorno en fracción",
     "ventana_flujo_ms": 60000,
     "regla_denominador_cero": "si profundidad == 0 o None -> ratio None (no se convierte en cero)",
+    "mezcla_run_id_detectada": false,
+    "ids_duplicados_observacion": [],
+    "ids_duplicados_resultado": [],
     "n_filas_totales": 504,
     "n_campos_ausentes_o_no_finitos": 0,
+    "n_valor_negativo_flujo": 3,
+    "n_valor_negativo_profundidad": 0,
     "n_profundidad_cero_o_invalida": 0,
     "n_ventana_incompleta": 0,
+    "n_fila_invalida_asociacion": 3,
     "parejas_validas_por_horizonte": {
-      "5m": 168,
-      "15m": 168,
-      "60m": 168
+      "5m": 165,
+      "15m": 165,
+      "60m": 165
     },
     "por_horizonte": {
       "5m": {
         "n_filas": 168,
-        "n_pares_validos": 168,
-        "pearson": 0.03706042341930345,
+        "n_pares_validos": 165,
+        "pearson": 0.036751420369082084,
         "motivo": null,
-        "corte_fijo_abs": 0.2555027217904271,
+        "corte_fijo_abs": 0.2687356137256427,
         "corte_fijo_regla": "tercil_superior_de_valor_absoluto_del_ratio_obtenido_del_dataset_no_umbral_validado",
         "grupo_ratio_alto": {
-          "n": 56,
+          "n": 55,
           "retorno": {
-            "n": 56,
-            "media": 0.005051186251715029,
-            "mediana": 0.0026215883574007546,
-            "desv": 0.01731091927233622,
+            "n": 55,
+            "media": 0.005156002769916247,
+            "mediana": 0.00280939002904627,
+            "desv": 0.017449962454413697,
             "min": -0.040525536639526356,
             "max": 0.08276797829036636
           },
-          "magnitud_media_abs": 0.011168505312486568
+          "magnitud_media_abs": 0.011358592277270834
         },
         "grupo_ratio_bajo": {
-          "n": 112,
+          "n": 110,
           "retorno": {
-            "n": 112,
-            "media": 0.0008187456643150061,
+            "n": 110,
+            "media": 0.0008425091603741037,
             "mediana": -6.191950464391737e-05,
-            "desv": 0.010161991048601776,
+            "desv": 0.010250750796706254,
             "min": -0.033169129720853854,
             "max": 0.05318352059925106
           },
-          "magnitud_media_abs": 0.005878739695788169
+          "magnitud_media_abs": 0.00596002205715873
         }
       },
       "15m": {
         "n_filas": 168,
-        "n_pares_validos": 168,
-        "pearson": 0.11239404555788159,
+        "n_pares_validos": 165,
+        "pearson": 0.11210553566410089,
         "motivo": null,
-        "corte_fijo_abs": 0.2555027217904271,
+        "corte_fijo_abs": 0.2687356137256427,
         "corte_fijo_regla": "tercil_superior_de_valor_absoluto_del_ratio_obtenido_del_dataset_no_umbral_validado",
         "grupo_ratio_alto": {
-          "n": 56,
+          "n": 55,
           "retorno": {
-            "n": 56,
-            "media": 0.015604532976246222,
-            "mediana": 0.004043435218695002,
-            "desv": 0.034497470629851396,
+            "n": 55,
+            "media": 0.01602006840272815,
+            "mediana": 0.0043660009289363515,
+            "desv": 0.034670502061231,
             "min": -0.03510473235065928,
             "max": 0.11216644052464947
           },
-          "magnitud_media_abs": 0.02346219659845533
+          "magnitud_media_abs": 0.02375696534605888
         },
         "grupo_ratio_bajo": {
-          "n": 112,
+          "n": 110,
           "retorno": {
-            "n": 112,
-            "media": 0.0039877081917354135,
-            "mediana": 0.0007260457329015234,
-            "desv": 0.019556752609043455,
+            "n": 110,
+            "media": 0.003987084272684666,
+            "mediana": 0.0006649405948866663,
+            "desv": 0.01972221119810291,
             "min": -0.041354607619667826,
             "max": 0.09542230818826572
           },
-          "magnitud_media_abs": 0.010363111842612025
+          "magnitud_media_abs": 0.010462521419616651
         }
       },
       "60m": {
         "n_filas": 168,
-        "n_pares_validos": 168,
-        "pearson": 0.1442620154647709,
+        "n_pares_validos": 165,
+        "pearson": 0.14388199129013693,
         "motivo": null,
-        "corte_fijo_abs": 0.2555027217904271,
+        "corte_fijo_abs": 0.2687356137256427,
         "corte_fijo_regla": "tercil_superior_de_valor_absoluto_del_ratio_obtenido_del_dataset_no_umbral_validado",
         "grupo_ratio_alto": {
-          "n": 56,
+          "n": 55,
           "retorno": {
-            "n": 56,
-            "media": 0.03900425065515598,
-            "mediana": 0.01799589308340513,
-            "desv": 0.06328883022482606,
+            "n": 55,
+            "media": 0.03998456500486001,
+            "mediana": 0.01850236444607688,
+            "desv": 0.06343883636701621,
             "min": -0.036990106730347416,
             "max": 0.22136658110255447
           },
-          "magnitud_media_abs": 0.04782364598133388
+          "magnitud_media_abs": 0.048422020661384214
         },
         "grupo_ratio_bajo": {
-          "n": 112,
+          "n": 110,
           "retorno": {
-            "n": 112,
-            "media": 0.02732026722810154,
-            "mediana": 0.005589493363626999,
-            "desv": 0.06686626872776073,
+            "n": 110,
+            "media": 0.027517356488843365,
+            "mediana": 0.005451069002913217,
+            "desv": 0.06749192805039993,
             "min": -0.0528983211910041,
             "max": 0.2700580402867873
           },
-          "magnitud_media_abs": 0.03460257716164967
+          "magnitud_media_abs": 0.03515890833980397
         }
       }
     }
+  },
+  "sensibilidad_por_simbolo": [
+    {
+      "simbolo": "1MBABYDOGEUSDT",
+      "por_horizonte": {
+        "5m": {
+          "candidatos_n": 126,
+          "comparadores_n": 40,
+          "candidatos_media": 0.003049061000520805,
+          "candidatos_media_pct": 0.30490610005208046,
+          "comparadores_media": -0.0001436973264258163,
+          "comparadores_media_pct": -0.014369732642581632,
+          "diferencia": 0.0031927583269466212,
+          "diferencia_puntos_porcentuales": 0.31927583269466214,
+          "diferencia_base": 0.0032780072282898314,
+          "diferencia_base_puntos_porcentuales": 0.32780072282898315,
+          "cambio_frente_base": -8.524890134321015e-05,
+          "cambio_frente_base_puntos_porcentuales": -0.008524890134321015,
+          "signo_cambia": false,
+          "motivo": null
+        },
+        "15m": {
+          "candidatos_n": 126,
+          "comparadores_n": 40,
+          "candidatos_media": 0.01016314852545319,
+          "candidatos_media_pct": 1.016314852545319,
+          "comparadores_media": 0.0010544173725197856,
+          "comparadores_media_pct": 0.10544173725197856,
+          "diferencia": 0.009108731152933404,
+          "diferencia_puntos_porcentuales": 0.9108731152933404,
+          "diferencia_base": 0.009212661622190033,
+          "diferencia_base_puntos_porcentuales": 0.9212661622190033,
+          "cambio_frente_base": -0.00010393046925662869,
+          "cambio_frente_base_puntos_porcentuales": -0.010393046925662869,
+          "signo_cambia": false,
+          "motivo": null
+        },
+        "60m": {
+          "candidatos_n": 126,
+          "comparadores_n": 40,
+          "candidatos_media": 0.03927911186127959,
+          "candidatos_media_pct": 3.9279111861279588,
+          "comparadores_media": 0.0074863090410589046,
+          "comparadores_media_pct": 0.7486309041058905,
+          "diferencia": 0.031792802820220685,
+          "diferencia_puntos_porcentuales": 3.1792802820220687,
+          "diferencia_base": 0.03225673396330629,
+          "diferencia_base_puntos_porcentuales": 3.225673396330629,
+          "cambio_frente_base": -0.0004639311430856066,
+          "cambio_frente_base_puntos_porcentuales": -0.04639311430856066,
+          "signo_cambia": false,
+          "motivo": null
+        }
+      }
+    },
+    {
+      "simbolo": "AINUSDT",
+      "por_horizonte": {
+        "5m": {
+          "candidatos_n": 114,
+          "comparadores_n": 42,
+          "candidatos_media": 0.0030249770558255003,
+          "candidatos_media_pct": 0.30249770558255,
+          "comparadores_media": -0.00022894622776902662,
+          "comparadores_media_pct": -0.022894622776902664,
+          "diferencia": 0.003253923283594527,
+          "diferencia_puntos_porcentuales": 0.3253923283594527,
+          "diferencia_base": 0.0032780072282898314,
+          "diferencia_base_puntos_porcentuales": 0.32780072282898315,
+          "cambio_frente_base": -2.4083944695304452e-05,
+          "cambio_frente_base_puntos_porcentuales": -0.0024083944695304452,
+          "signo_cambia": false,
+          "motivo": null
+        },
+        "15m": {
+          "candidatos_n": 114,
+          "comparadores_n": 42,
+          "candidatos_media": 0.010056470949986391,
+          "candidatos_media_pct": 1.0056470949986391,
+          "comparadores_media": 0.0009504869032631578,
+          "comparadores_media_pct": 0.09504869032631579,
+          "diferencia": 0.009105984046723234,
+          "diferencia_puntos_porcentuales": 0.9105984046723234,
+          "diferencia_base": 0.009212661622190033,
+          "diferencia_base_puntos_porcentuales": 0.9212661622190033,
+          "cambio_frente_base": -0.00010667757546679868,
+          "cambio_frente_base_puntos_porcentuales": -0.010667757546679868,
+          "signo_cambia": false,
+          "motivo": null
+        },
+        "60m": {
+          "candidatos_n": 114,
+          "comparadores_n": 42,
+          "candidatos_media": 0.03828981157546346,
+          "candidatos_media_pct": 3.8289811575463464,
+          "comparadores_media": 0.007022377897973295,
+          "comparadores_media_pct": 0.7022377897973295,
+          "diferencia": 0.031267433677490165,
+          "diferencia_puntos_porcentuales": 3.1267433677490164,
+          "diferencia_base": 0.03225673396330629,
+          "diferencia_base_puntos_porcentuales": 3.225673396330629,
+          "cambio_frente_base": -0.0009893002858161262,
+          "cambio_frente_base_puntos_porcentuales": -0.09893002858161262,
+          "signo_cambia": false,
+          "motivo": null
+        }
+      }
+    },
+    {
+      "simbolo": "AKEUSDT",
+      "por_horizonte": {
+        "5m": {
+          "candidatos_n": 114,
+          "comparadores_n": 42,
+          "candidatos_media": 0.0015213493117398138,
+          "candidatos_media_pct": 0.15213493117398139,
+          "comparadores_media": -0.00022894622776902662,
+          "comparadores_media_pct": -0.022894622776902664,
+          "diferencia": 0.0017502955395088404,
+          "diferencia_puntos_porcentuales": 0.17502955395088404,
+          "diferencia_base": 0.0032780072282898314,
+          "diferencia_base_puntos_porcentuales": 0.32780072282898315,
+          "cambio_frente_base": -0.001527711688780991,
+          "cambio_frente_base_puntos_porcentuales": -0.1527711688780991,
+          "signo_cambia": false,
+          "motivo": null
+        },
+        "15m": {
+          "candidatos_n": 114,
+          "comparadores_n": 42,
+          "candidatos_media": 0.004710886907262254,
+          "candidatos_media_pct": 0.4710886907262254,
+          "comparadores_media": 0.0009504869032631578,
+          "comparadores_media_pct": 0.09504869032631579,
+          "diferencia": 0.0037604000039990963,
+          "diferencia_puntos_porcentuales": 0.37604000039990965,
+          "diferencia_base": 0.009212661622190033,
+          "diferencia_base_puntos_porcentuales": 0.9212661622190033,
+          "cambio_frente_base": -0.005452261618190936,
+          "cambio_frente_base_puntos_porcentuales": -0.5452261618190936,
+          "signo_cambia": false,
+          "motivo": null
+        },
+        "60m": {
+          "candidatos_n": 114,
+          "comparadores_n": 42,
+          "candidatos_media": 0.02792905233215333,
+          "candidatos_media_pct": 2.792905233215333,
+          "comparadores_media": 0.007022377897973295,
+          "comparadores_media_pct": 0.7022377897973295,
+          "diferencia": 0.020906674434180032,
+          "diferencia_puntos_porcentuales": 2.090667443418003,
+          "diferencia_base": 0.03225673396330629,
+          "diferencia_base_puntos_porcentuales": 3.225673396330629,
+          "cambio_frente_base": -0.01135005952912626,
+          "cambio_frente_base_puntos_porcentuales": -1.135005952912626,
+          "signo_cambia": false,
+          "motivo": null
+        }
+      }
+    },
+    {
+      "simbolo": "ATUSDT",
+      "por_horizonte": {
+        "5m": {
+          "candidatos_n": 116,
+          "comparadores_n": 42,
+          "candidatos_media": 0.0032672873538248165,
+          "candidatos_media_pct": 0.32672873538248165,
+          "comparadores_media": -0.00022894622776902662,
+          "comparadores_media_pct": -0.022894622776902664,
+          "diferencia": 0.003496233581593843,
+          "diferencia_puntos_porcentuales": 0.3496233581593843,
+          "diferencia_base": 0.0032780072282898314,
+          "diferencia_base_puntos_porcentuales": 0.32780072282898315,
+          "cambio_frente_base": 0.00021822635330401166,
+          "cambio_frente_base_puntos_porcentuales": 0.021822635330401165,
+          "signo_cambia": false,
+          "motivo": null
+        },
+        "15m": {
+          "candidatos_n": 116,
+          "comparadores_n": 42,
+          "candidatos_media": 0.010976718423848685,
+          "candidatos_media_pct": 1.0976718423848686,
+          "comparadores_media": 0.0009504869032631578,
+          "comparadores_media_pct": 0.09504869032631579,
+          "diferencia": 0.010026231520585528,
+          "diferencia_puntos_porcentuales": 1.0026231520585527,
+          "diferencia_base": 0.009212661622190033,
+          "diferencia_base_puntos_porcentuales": 0.9212661622190033,
+          "cambio_frente_base": 0.0008135698983954952,
+          "cambio_frente_base_puntos_porcentuales": 0.08135698983954953,
+          "signo_cambia": false,
+          "motivo": null
+        },
+        "60m": {
+          "candidatos_n": 116,
+          "comparadores_n": 42,
+          "candidatos_media": 0.0428246206730686,
+          "candidatos_media_pct": 4.28246206730686,
+          "comparadores_media": 0.007022377897973295,
+          "comparadores_media_pct": 0.7022377897973295,
+          "diferencia": 0.035802242775095305,
+          "diferencia_puntos_porcentuales": 3.5802242775095303,
+          "diferencia_base": 0.03225673396330629,
+          "diferencia_base_puntos_porcentuales": 3.225673396330629,
+          "cambio_frente_base": 0.0035455088117890138,
+          "cambio_frente_base_puntos_porcentuales": 0.3545508811789014,
+          "signo_cambia": false,
+          "motivo": null
+        }
+      }
+    },
+    {
+      "simbolo": "AUSDT",
+      "por_horizonte": {
+        "5m": {
+          "candidatos_n": 126,
+          "comparadores_n": 38,
+          "candidatos_media": 0.003049061000520805,
+          "candidatos_media_pct": 0.30490610005208046,
+          "comparadores_media": -0.00026810756182409757,
+          "comparadores_media_pct": -0.026810756182409756,
+          "diferencia": 0.0033171685623449025,
+          "diferencia_puntos_porcentuales": 0.33171685623449026,
+          "diferencia_base": 0.0032780072282898314,
+          "diferencia_base_puntos_porcentuales": 0.32780072282898315,
+          "cambio_frente_base": 3.916133405507116e-05,
+          "cambio_frente_base_puntos_porcentuales": 0.003916133405507116,
+          "signo_cambia": false,
+          "motivo": null
+        },
+        "15m": {
+          "candidatos_n": 126,
+          "comparadores_n": 38,
+          "candidatos_media": 0.01016314852545319,
+          "candidatos_media_pct": 1.016314852545319,
+          "comparadores_media": 0.0009763287023630097,
+          "comparadores_media_pct": 0.09763287023630098,
+          "diferencia": 0.00918681982309018,
+          "diferencia_puntos_porcentuales": 0.918681982309018,
+          "diferencia_base": 0.009212661622190033,
+          "diferencia_base_puntos_porcentuales": 0.9212661622190033,
+          "cambio_frente_base": -2.5841799099852666e-05,
+          "cambio_frente_base_puntos_porcentuales": -0.0025841799099852666,
+          "signo_cambia": false,
+          "motivo": null
+        },
+        "60m": {
+          "candidatos_n": 126,
+          "comparadores_n": 38,
+          "candidatos_media": 0.03927911186127959,
+          "candidatos_media_pct": 3.9279111861279588,
+          "comparadores_media": 0.0074446340380865,
+          "comparadores_media_pct": 0.7444634038086501,
+          "diferencia": 0.03183447782319309,
+          "diferencia_puntos_porcentuales": 3.183447782319309,
+          "diferencia_base": 0.03225673396330629,
+          "diferencia_base_puntos_porcentuales": 3.225673396330629,
+          "cambio_frente_base": -0.0004222561401132016,
+          "cambio_frente_base_puntos_porcentuales": -0.04222561401132016,
+          "signo_cambia": false,
+          "motivo": null
+        }
+      }
+    },
+    {
+      "simbolo": "BANKUSDT",
+      "por_horizonte": {
+        "5m": {
+          "candidatos_n": 126,
+          "comparadores_n": 33,
+          "candidatos_media": 0.003049061000520805,
+          "candidatos_media_pct": 0.30490610005208046,
+          "comparadores_media": -0.00013769533052559034,
+          "comparadores_media_pct": -0.013769533052559034,
+          "diferencia": 0.003186756331046395,
+          "diferencia_puntos_porcentuales": 0.3186756331046395,
+          "diferencia_base": 0.0032780072282898314,
+          "diferencia_base_puntos_porcentuales": 0.32780072282898315,
+          "cambio_frente_base": -9.125089724343642e-05,
+          "cambio_frente_base_puntos_porcentuales": -0.009125089724343642,
+          "signo_cambia": false,
+          "motivo": null
+        },
+        "15m": {
+          "candidatos_n": 126,
+          "comparadores_n": 33,
+          "candidatos_media": 0.01016314852545319,
+          "candidatos_media_pct": 1.016314852545319,
+          "comparadores_media": 0.00132394976049742,
+          "comparadores_media_pct": 0.132394976049742,
+          "diferencia": 0.00883919876495577,
+          "diferencia_puntos_porcentuales": 0.883919876495577,
+          "diferencia_base": 0.009212661622190033,
+          "diferencia_base_puntos_porcentuales": 0.9212661622190033,
+          "cambio_frente_base": -0.0003734628572342625,
+          "cambio_frente_base_puntos_porcentuales": -0.03734628572342625,
+          "signo_cambia": false,
+          "motivo": null
+        },
+        "60m": {
+          "candidatos_n": 126,
+          "comparadores_n": 33,
+          "candidatos_media": 0.03927911186127959,
+          "candidatos_media_pct": 3.9279111861279588,
+          "comparadores_media": 0.008250030277963845,
+          "comparadores_media_pct": 0.8250030277963845,
+          "diferencia": 0.031029081583315743,
+          "diferencia_puntos_porcentuales": 3.1029081583315743,
+          "diferencia_base": 0.03225673396330629,
+          "diferencia_base_puntos_porcentuales": 3.225673396330629,
+          "cambio_frente_base": -0.0012276523799905487,
+          "cambio_frente_base_puntos_porcentuales": -0.12276523799905487,
+          "signo_cambia": false,
+          "motivo": null
+        }
+      }
+    },
+    {
+      "simbolo": "BEAMXUSDT",
+      "por_horizonte": {
+        "5m": {
+          "candidatos_n": 124,
+          "comparadores_n": 42,
+          "candidatos_media": 0.002997205780017153,
+          "candidatos_media_pct": 0.2997205780017153,
+          "comparadores_media": -0.00022894622776902662,
+          "comparadores_media_pct": -0.022894622776902664,
+          "diferencia": 0.0032261520077861796,
+          "diferencia_puntos_porcentuales": 0.32261520077861794,
+          "diferencia_base": 0.0032780072282898314,
+          "diferencia_base_puntos_porcentuales": 0.32780072282898315,
+          "cambio_frente_base": -5.185522050365175e-05,
+          "cambio_frente_base_puntos_porcentuales": -0.005185522050365175,
+          "signo_cambia": false,
+          "motivo": null
+        },
+        "15m": {
+          "candidatos_n": 124,
+          "comparadores_n": 42,
+          "candidatos_media": 0.01020019995362829,
+          "candidatos_media_pct": 1.0200199953628288,
+          "comparadores_media": 0.0009504869032631578,
+          "comparadores_media_pct": 0.09504869032631579,
+          "diferencia": 0.009249713050365132,
+          "diferencia_puntos_porcentuales": 0.9249713050365131,
+          "diferencia_base": 0.009212661622190033,
+          "diferencia_base_puntos_porcentuales": 0.9212661622190033,
+          "cambio_frente_base": 3.7051428175099294e-05,
+          "cambio_frente_base_puntos_porcentuales": 0.0037051428175099294,
+          "signo_cambia": false,
+          "motivo": null
+        },
+        "60m": {
+          "candidatos_n": 124,
+          "comparadores_n": 42,
+          "candidatos_media": 0.039936444735747326,
+          "candidatos_media_pct": 3.9936444735747325,
+          "comparadores_media": 0.007022377897973295,
+          "comparadores_media_pct": 0.7022377897973295,
+          "diferencia": 0.03291406683777403,
+          "diferencia_puntos_porcentuales": 3.291406683777403,
+          "diferencia_base": 0.03225673396330629,
+          "diferencia_base_puntos_porcentuales": 3.225673396330629,
+          "cambio_frente_base": 0.0006573328744677379,
+          "cambio_frente_base_puntos_porcentuales": 0.06573328744677379,
+          "signo_cambia": false,
+          "motivo": null
+        }
+      }
+    },
+    {
+      "simbolo": "BIRBUSDT",
+      "por_horizonte": {
+        "5m": {
+          "candidatos_n": 114,
+          "comparadores_n": 42,
+          "candidatos_media": 0.003702982230998453,
+          "candidatos_media_pct": 0.3702982230998453,
+          "comparadores_media": -0.00022894622776902662,
+          "comparadores_media_pct": -0.022894622776902664,
+          "diferencia": 0.00393192845876748,
+          "diferencia_puntos_porcentuales": 0.393192845876748,
+          "diferencia_base": 0.0032780072282898314,
+          "diferencia_base_puntos_porcentuales": 0.32780072282898315,
+          "cambio_frente_base": 0.0006539212304776487,
+          "cambio_frente_base_puntos_porcentuales": 0.06539212304776487,
+          "signo_cambia": false,
+          "motivo": null
+        },
+        "15m": {
+          "candidatos_n": 114,
+          "comparadores_n": 42,
+          "candidatos_media": 0.012060087355413227,
+          "candidatos_media_pct": 1.2060087355413227,
+          "comparadores_media": 0.0009504869032631578,
+          "comparadores_media_pct": 0.09504869032631579,
+          "diferencia": 0.01110960045215007,
+          "diferencia_puntos_porcentuales": 1.110960045215007,
+          "diferencia_base": 0.009212661622190033,
+          "diferencia_base_puntos_porcentuales": 0.9212661622190033,
+          "cambio_frente_base": 0.0018969388299600373,
+          "cambio_frente_base_puntos_porcentuales": 0.18969388299600373,
+          "signo_cambia": false,
+          "motivo": null
+        },
+        "60m": {
+          "candidatos_n": 114,
+          "comparadores_n": 42,
+          "candidatos_media": 0.04478726584650102,
+          "candidatos_media_pct": 4.4787265846501025,
+          "comparadores_media": 0.007022377897973295,
+          "comparadores_media_pct": 0.7022377897973295,
+          "diferencia": 0.037764887948527726,
+          "diferencia_puntos_porcentuales": 3.7764887948527726,
+          "diferencia_base": 0.03225673396330629,
+          "diferencia_base_puntos_porcentuales": 3.225673396330629,
+          "cambio_frente_base": 0.005508153985221434,
+          "cambio_frente_base_puntos_porcentuales": 0.5508153985221433,
+          "signo_cambia": false,
+          "motivo": null
+        }
+      }
+    },
+    {
+      "simbolo": "CGPTUSDT",
+      "por_horizonte": {
+        "5m": {
+          "candidatos_n": 126,
+          "comparadores_n": 38,
+          "candidatos_media": 0.003049061000520805,
+          "candidatos_media_pct": 0.30490610005208046,
+          "comparadores_media": -0.00015667421495512782,
+          "comparadores_media_pct": -0.01566742149551278,
+          "diferencia": 0.0032057352154759326,
+          "diferencia_puntos_porcentuales": 0.3205735215475933,
+          "diferencia_base": 0.0032780072282898314,
+          "diferencia_base_puntos_porcentuales": 0.32780072282898315,
+          "cambio_frente_base": -7.227201281389877e-05,
+          "cambio_frente_base_puntos_porcentuales": -0.0072272012813898775,
+          "signo_cambia": false,
+          "motivo": null
+        },
+        "15m": {
+          "candidatos_n": 126,
+          "comparadores_n": 38,
+          "candidatos_media": 0.01016314852545319,
+          "candidatos_media_pct": 1.016314852545319,
+          "comparadores_media": 0.0008883758424228868,
+          "comparadores_media_pct": 0.08883758424228869,
+          "diferencia": 0.009274772683030303,
+          "diferencia_puntos_porcentuales": 0.9274772683030303,
+          "diferencia_base": 0.009212661622190033,
+          "diferencia_base_puntos_porcentuales": 0.9212661622190033,
+          "cambio_frente_base": 6.211106084027043e-05,
+          "cambio_frente_base_puntos_porcentuales": 0.006211106084027043,
+          "signo_cambia": false,
+          "motivo": null
+        },
+        "60m": {
+          "candidatos_n": 126,
+          "comparadores_n": 38,
+          "candidatos_media": 0.03927911186127959,
+          "candidatos_media_pct": 3.9279111861279588,
+          "comparadores_media": 0.006924736042592532,
+          "comparadores_media_pct": 0.6924736042592532,
+          "diferencia": 0.03235437581868705,
+          "diferencia_puntos_porcentuales": 3.2354375818687053,
+          "diferencia_base": 0.03225673396330629,
+          "diferencia_base_puntos_porcentuales": 3.225673396330629,
+          "cambio_frente_base": 9.764185538076176e-05,
+          "cambio_frente_base_puntos_porcentuales": 0.009764185538076176,
+          "signo_cambia": false,
+          "motivo": null
+        }
+      }
+    },
+    {
+      "simbolo": "CHILLGUYUSDT",
+      "por_horizonte": {
+        "5m": {
+          "candidatos_n": 126,
+          "comparadores_n": 39,
+          "candidatos_media": 0.003049061000520805,
+          "candidatos_media_pct": 0.30490610005208046,
+          "comparadores_media": -0.00029856984986729855,
+          "comparadores_media_pct": -0.029856984986729854,
+          "diferencia": 0.0033476308503881036,
+          "diferencia_puntos_porcentuales": 0.33476308503881036,
+          "diferencia_base": 0.0032780072282898314,
+          "diferencia_base_puntos_porcentuales": 0.32780072282898315,
+          "cambio_frente_base": 6.96236220982722e-05,
+          "cambio_frente_base_puntos_porcentuales": 0.0069623622098272196,
+          "signo_cambia": false,
+          "motivo": null
+        },
+        "15m": {
+          "candidatos_n": 126,
+          "comparadores_n": 39,
+          "candidatos_media": 0.01016314852545319,
+          "candidatos_media_pct": 1.016314852545319,
+          "comparadores_media": 0.0008379076518270696,
+          "comparadores_media_pct": 0.08379076518270696,
+          "diferencia": 0.00932524087362612,
+          "diferencia_puntos_porcentuales": 0.9325240873626119,
+          "diferencia_base": 0.009212661622190033,
+          "diferencia_base_puntos_porcentuales": 0.9212661622190033,
+          "cambio_frente_base": 0.00011257925143608703,
+          "cambio_frente_base_puntos_porcentuales": 0.011257925143608703,
+          "signo_cambia": false,
+          "motivo": null
+        },
+        "60m": {
+          "candidatos_n": 126,
+          "comparadores_n": 39,
+          "candidatos_media": 0.03927911186127959,
+          "candidatos_media_pct": 3.9279111861279588,
+          "comparadores_media": 0.007022749144965501,
+          "comparadores_media_pct": 0.7022749144965501,
+          "diferencia": 0.03225636271631409,
+          "diferencia_puntos_porcentuales": 3.2256362716314086,
+          "diferencia_base": 0.03225673396330629,
+          "diferencia_base_puntos_porcentuales": 3.225673396330629,
+          "cambio_frente_base": -3.712469922034778e-07,
+          "cambio_frente_base_puntos_porcentuales": -3.712469922034778e-05,
+          "signo_cambia": false,
+          "motivo": null
+        }
+      }
+    },
+    {
+      "simbolo": "COOKIEUSDT",
+      "por_horizonte": {
+        "5m": {
+          "candidatos_n": 126,
+          "comparadores_n": 40,
+          "candidatos_media": 0.003049061000520805,
+          "candidatos_media_pct": 0.30490610005208046,
+          "comparadores_media": -0.00017447209750937151,
+          "comparadores_media_pct": -0.01744720975093715,
+          "diferencia": 0.003223533098030176,
+          "diferencia_puntos_porcentuales": 0.32235330980301763,
+          "diferencia_base": 0.0032780072282898314,
+          "diferencia_base_puntos_porcentuales": 0.32780072282898315,
+          "cambio_frente_base": -5.447413025965516e-05,
+          "cambio_frente_base_puntos_porcentuales": -0.005447413025965516,
+          "signo_cambia": false,
+          "motivo": null
+        },
+        "15m": {
+          "candidatos_n": 126,
+          "comparadores_n": 40,
+          "candidatos_media": 0.01016314852545319,
+          "candidatos_media_pct": 1.016314852545319,
+          "comparadores_media": 0.0008150747397713927,
+          "comparadores_media_pct": 0.08150747397713927,
+          "diferencia": 0.009348073785681798,
+          "diferencia_puntos_porcentuales": 0.9348073785681797,
+          "diferencia_base": 0.009212661622190033,
+          "diferencia_base_puntos_porcentuales": 0.9212661622190033,
+          "cambio_frente_base": 0.00013541216349176495,
+          "cambio_frente_base_puntos_porcentuales": 0.013541216349176495,
+          "signo_cambia": false,
+          "motivo": null
+        },
+        "60m": {
+          "candidatos_n": 126,
+          "comparadores_n": 40,
+          "candidatos_media": 0.03927911186127959,
+          "candidatos_media_pct": 3.9279111861279588,
+          "comparadores_media": 0.006857959422521873,
+          "comparadores_media_pct": 0.6857959422521873,
+          "diferencia": 0.03242115243875771,
+          "diferencia_puntos_porcentuales": 3.242115243875771,
+          "diferencia_base": 0.03225673396330629,
+          "diferencia_base_puntos_porcentuales": 3.225673396330629,
+          "cambio_frente_base": 0.0001644184754514208,
+          "cambio_frente_base_puntos_porcentuales": 0.01644184754514208,
+          "signo_cambia": false,
+          "motivo": null
+        }
+      }
+    },
+    {
+      "simbolo": "COTIUSDT",
+      "por_horizonte": {
+        "5m": {
+          "candidatos_n": 126,
+          "comparadores_n": 40,
+          "candidatos_media": 0.003049061000520805,
+          "candidatos_media_pct": 0.30490610005208046,
+          "comparadores_media": -0.00027709548310076934,
+          "comparadores_media_pct": -0.027709548310076933,
+          "diferencia": 0.003326156483621574,
+          "diferencia_puntos_porcentuales": 0.3326156483621574,
+          "diferencia_base": 0.0032780072282898314,
+          "diferencia_base_puntos_porcentuales": 0.32780072282898315,
+          "cambio_frente_base": 4.814925533174266e-05,
+          "cambio_frente_base_puntos_porcentuales": 0.004814925533174266,
+          "signo_cambia": false,
+          "motivo": null
+        },
+        "15m": {
+          "candidatos_n": 126,
+          "comparadores_n": 40,
+          "candidatos_media": 0.01016314852545319,
+          "candidatos_media_pct": 1.016314852545319,
+          "comparadores_media": 0.0008904699698164219,
+          "comparadores_media_pct": 0.08904699698164219,
+          "diferencia": 0.009272678555636769,
+          "diferencia_puntos_porcentuales": 0.9272678555636769,
+          "diferencia_base": 0.009212661622190033,
+          "diferencia_base_puntos_porcentuales": 0.9212661622190033,
+          "cambio_frente_base": 6.0016933446736115e-05,
+          "cambio_frente_base_puntos_porcentuales": 0.0060016933446736115,
+          "signo_cambia": false,
+          "motivo": null
+        },
+        "60m": {
+          "candidatos_n": 126,
+          "comparadores_n": 40,
+          "candidatos_media": 0.03927911186127959,
+          "candidatos_media_pct": 3.9279111861279588,
+          "comparadores_media": 0.007021531818402808,
+          "comparadores_media_pct": 0.7021531818402809,
+          "diferencia": 0.03225758004287678,
+          "diferencia_puntos_porcentuales": 3.225758004287678,
+          "diferencia_base": 0.03225673396330629,
+          "diferencia_base_puntos_porcentuales": 3.225673396330629,
+          "cambio_frente_base": 8.460795704878787e-07,
+          "cambio_frente_base_puntos_porcentuales": 8.460795704878787e-05,
+          "signo_cambia": false,
+          "motivo": null
+        }
+      }
+    },
+    {
+      "simbolo": "CYBERUSDT",
+      "por_horizonte": {
+        "5m": {
+          "candidatos_n": 114,
+          "comparadores_n": 42,
+          "candidatos_media": 0.003219778363588313,
+          "candidatos_media_pct": 0.3219778363588313,
+          "comparadores_media": -0.00022894622776902662,
+          "comparadores_media_pct": -0.022894622776902664,
+          "diferencia": 0.0034487245913573396,
+          "diferencia_puntos_porcentuales": 0.34487245913573394,
+          "diferencia_base": 0.0032780072282898314,
+          "diferencia_base_puntos_porcentuales": 0.32780072282898315,
+          "cambio_frente_base": 0.00017071736306750827,
+          "cambio_frente_base_puntos_porcentuales": 0.017071736306750827,
+          "signo_cambia": false,
+          "motivo": null
+        },
+        "15m": {
+          "candidatos_n": 114,
+          "comparadores_n": 42,
+          "candidatos_media": 0.010685258087433312,
+          "candidatos_media_pct": 1.0685258087433311,
+          "comparadores_media": 0.0009504869032631578,
+          "comparadores_media_pct": 0.09504869032631579,
+          "diferencia": 0.009734771184170155,
+          "diferencia_puntos_porcentuales": 0.9734771184170155,
+          "diferencia_base": 0.009212661622190033,
+          "diferencia_base_puntos_porcentuales": 0.9212661622190033,
+          "cambio_frente_base": 0.0005221095619801219,
+          "cambio_frente_base_puntos_porcentuales": 0.05221095619801219,
+          "signo_cambia": false,
+          "motivo": null
+        },
+        "60m": {
+          "candidatos_n": 114,
+          "comparadores_n": 42,
+          "candidatos_media": 0.04313579070559916,
+          "candidatos_media_pct": 4.313579070559916,
+          "comparadores_media": 0.007022377897973295,
+          "comparadores_media_pct": 0.7022377897973295,
+          "diferencia": 0.036113412807625866,
+          "diferencia_puntos_porcentuales": 3.611341280762587,
+          "diferencia_base": 0.03225673396330629,
+          "diferencia_base_puntos_porcentuales": 3.225673396330629,
+          "cambio_frente_base": 0.003856678844319575,
+          "cambio_frente_base_puntos_porcentuales": 0.3856678844319575,
+          "signo_cambia": false,
+          "motivo": null
+        }
+      }
+    },
+    {
+      "simbolo": "DEXEUSDT",
+      "por_horizonte": {
+        "5m": {
+          "candidatos_n": 126,
+          "comparadores_n": 38,
+          "candidatos_media": 0.003049061000520805,
+          "candidatos_media_pct": 0.30490610005208046,
+          "comparadores_media": -0.00015048157338073316,
+          "comparadores_media_pct": -0.015048157338073317,
+          "diferencia": 0.003199542573901538,
+          "diferencia_puntos_porcentuales": 0.3199542573901538,
+          "diferencia_base": 0.0032780072282898314,
+          "diferencia_base_puntos_porcentuales": 0.32780072282898315,
+          "cambio_frente_base": -7.846465438829343e-05,
+          "cambio_frente_base_puntos_porcentuales": -0.007846465438829343,
+          "signo_cambia": false,
+          "motivo": null
+        },
+        "15m": {
+          "candidatos_n": 126,
+          "comparadores_n": 38,
+          "candidatos_media": 0.01016314852545319,
+          "candidatos_media_pct": 1.016314852545319,
+          "comparadores_media": 0.0010091802859941363,
+          "comparadores_media_pct": 0.10091802859941362,
+          "diferencia": 0.009153968239459053,
+          "diferencia_puntos_porcentuales": 0.9153968239459054,
+          "diferencia_base": 0.009212661622190033,
+          "diferencia_base_puntos_porcentuales": 0.9212661622190033,
+          "cambio_frente_base": -5.869338273097914e-05,
+          "cambio_frente_base_puntos_porcentuales": -0.005869338273097914,
+          "signo_cambia": false,
+          "motivo": null
+        },
+        "60m": {
+          "candidatos_n": 126,
+          "comparadores_n": 38,
+          "candidatos_media": 0.03927911186127959,
+          "candidatos_media_pct": 3.9279111861279588,
+          "comparadores_media": 0.007186828733404886,
+          "comparadores_media_pct": 0.7186828733404885,
+          "diferencia": 0.0320922831278747,
+          "diferencia_puntos_porcentuales": 3.20922831278747,
+          "diferencia_base": 0.03225673396330629,
+          "diferencia_base_puntos_porcentuales": 3.225673396330629,
+          "cambio_frente_base": -0.0001644508354315885,
+          "cambio_frente_base_puntos_porcentuales": -0.01644508354315885,
+          "signo_cambia": false,
+          "motivo": null
+        }
+      }
+    },
+    {
+      "simbolo": "DIAUSDT",
+      "por_horizonte": {
+        "5m": {
+          "candidatos_n": 126,
+          "comparadores_n": 40,
+          "candidatos_media": 0.003049061000520805,
+          "candidatos_media_pct": 0.30490610005208046,
+          "comparadores_media": -0.0002852506829645196,
+          "comparadores_media_pct": -0.02852506829645196,
+          "diferencia": 0.0033343116834853243,
+          "diferencia_puntos_porcentuales": 0.3334311683485324,
+          "diferencia_base": 0.0032780072282898314,
+          "diferencia_base_puntos_porcentuales": 0.32780072282898315,
+          "cambio_frente_base": 5.630445519549292e-05,
+          "cambio_frente_base_puntos_porcentuales": 0.005630445519549292,
+          "signo_cambia": false,
+          "motivo": null
+        },
+        "15m": {
+          "candidatos_n": 126,
+          "comparadores_n": 40,
+          "candidatos_media": 0.01016314852545319,
+          "candidatos_media_pct": 1.016314852545319,
+          "comparadores_media": 0.0008994099269051939,
+          "comparadores_media_pct": 0.08994099269051939,
+          "diferencia": 0.009263738598547996,
+          "diferencia_puntos_porcentuales": 0.9263738598547997,
+          "diferencia_base": 0.009212661622190033,
+          "diferencia_base_puntos_porcentuales": 0.9212661622190033,
+          "cambio_frente_base": 5.107697635796382e-05,
+          "cambio_frente_base_puntos_porcentuales": 0.005107697635796382,
+          "signo_cambia": false,
+          "motivo": null
+        },
+        "60m": {
+          "candidatos_n": 126,
+          "comparadores_n": 40,
+          "candidatos_media": 0.03927911186127959,
+          "candidatos_media_pct": 3.9279111861279588,
+          "comparadores_media": 0.006756212368658416,
+          "comparadores_media_pct": 0.6756212368658415,
+          "diferencia": 0.032522899492621174,
+          "diferencia_puntos_porcentuales": 3.2522899492621176,
+          "diferencia_base": 0.03225673396330629,
+          "diferencia_base_puntos_porcentuales": 3.225673396330629,
+          "cambio_frente_base": 0.00026616552931488235,
+          "cambio_frente_base_puntos_porcentuales": 0.026616552931488235,
+          "signo_cambia": false,
+          "motivo": null
+        }
+      }
+    },
+    {
+      "simbolo": "ELSAUSDT",
+      "por_horizonte": {
+        "5m": {
+          "candidatos_n": 114,
+          "comparadores_n": 42,
+          "candidatos_media": 0.003258248398835209,
+          "candidatos_media_pct": 0.3258248398835209,
+          "comparadores_media": -0.00022894622776902662,
+          "comparadores_media_pct": -0.022894622776902664,
+          "diferencia": 0.0034871946266042354,
+          "diferencia_puntos_porcentuales": 0.34871946266042353,
+          "diferencia_base": 0.0032780072282898314,
+          "diferencia_base_puntos_porcentuales": 0.32780072282898315,
+          "cambio_frente_base": 0.00020918739831440403,
+          "cambio_frente_base_puntos_porcentuales": 0.0209187398314404,
+          "signo_cambia": false,
+          "motivo": null
+        },
+        "15m": {
+          "candidatos_n": 114,
+          "comparadores_n": 42,
+          "candidatos_media": 0.010886710188861379,
+          "candidatos_media_pct": 1.088671018886138,
+          "comparadores_media": 0.0009504869032631578,
+          "comparadores_media_pct": 0.09504869032631579,
+          "diferencia": 0.009936223285598221,
+          "diferencia_puntos_porcentuales": 0.9936223285598221,
+          "diferencia_base": 0.009212661622190033,
+          "diferencia_base_puntos_porcentuales": 0.9212661622190033,
+          "cambio_frente_base": 0.0007235616634081888,
+          "cambio_frente_base_puntos_porcentuales": 0.07235616634081887,
+          "signo_cambia": false,
+          "motivo": null
+        },
+        "60m": {
+          "candidatos_n": 114,
+          "comparadores_n": 42,
+          "candidatos_media": 0.042916844545925995,
+          "candidatos_media_pct": 4.291684454592599,
+          "comparadores_media": 0.007022377897973295,
+          "comparadores_media_pct": 0.7022377897973295,
+          "diferencia": 0.0358944666479527,
+          "diferencia_puntos_porcentuales": 3.5894466647952696,
+          "diferencia_base": 0.03225673396330629,
+          "diferencia_base_puntos_porcentuales": 3.225673396330629,
+          "cambio_frente_base": 0.0036377326846464067,
+          "cambio_frente_base_puntos_porcentuales": 0.36377326846464064,
+          "signo_cambia": false,
+          "motivo": null
+        }
+      }
+    },
+    {
+      "simbolo": "EVAAUSDT",
+      "por_horizonte": {
+        "5m": {
+          "candidatos_n": 123,
+          "comparadores_n": 42,
+          "candidatos_media": 0.002898052405140472,
+          "candidatos_media_pct": 0.2898052405140472,
+          "comparadores_media": -0.00022894622776902662,
+          "comparadores_media_pct": -0.022894622776902664,
+          "diferencia": 0.0031269986329094984,
+          "diferencia_puntos_porcentuales": 0.31269986329094984,
+          "diferencia_base": 0.0032780072282898314,
+          "diferencia_base_puntos_porcentuales": 0.32780072282898315,
+          "cambio_frente_base": -0.00015100859538033293,
+          "cambio_frente_base_puntos_porcentuales": -0.015100859538033293,
+          "signo_cambia": false,
+          "motivo": null
+        },
+        "15m": {
+          "candidatos_n": 123,
+          "comparadores_n": 42,
+          "candidatos_media": 0.009618675013703212,
+          "candidatos_media_pct": 0.9618675013703213,
+          "comparadores_media": 0.0009504869032631578,
+          "comparadores_media_pct": 0.09504869032631579,
+          "diferencia": 0.008668188110440055,
+          "diferencia_puntos_porcentuales": 0.8668188110440055,
+          "diferencia_base": 0.009212661622190033,
+          "diferencia_base_puntos_porcentuales": 0.9212661622190033,
+          "cambio_frente_base": -0.0005444735117499776,
+          "cambio_frente_base_puntos_porcentuales": -0.054447351174997764,
+          "signo_cambia": false,
+          "motivo": null
+        },
+        "60m": {
+          "candidatos_n": 123,
+          "comparadores_n": 42,
+          "candidatos_media": 0.03909037226066015,
+          "candidatos_media_pct": 3.9090372260660153,
+          "comparadores_media": 0.007022377897973295,
+          "comparadores_media_pct": 0.7022377897973295,
+          "diferencia": 0.032067994362686855,
+          "diferencia_puntos_porcentuales": 3.2067994362686854,
+          "diferencia_base": 0.03225673396330629,
+          "diferencia_base_puntos_porcentuales": 3.225673396330629,
+          "cambio_frente_base": -0.0001887396006194364,
+          "cambio_frente_base_puntos_porcentuales": -0.01887396006194364,
+          "signo_cambia": false,
+          "motivo": null
+        }
+      }
+    },
+    {
+      "simbolo": "HANAUSDT",
+      "por_horizonte": {
+        "5m": {
+          "candidatos_n": 120,
+          "comparadores_n": 42,
+          "candidatos_media": 0.0032760476427507773,
+          "candidatos_media_pct": 0.32760476427507773,
+          "comparadores_media": -0.00022894622776902662,
+          "comparadores_media_pct": -0.022894622776902664,
+          "diferencia": 0.003504993870519804,
+          "diferencia_puntos_porcentuales": 0.3504993870519804,
+          "diferencia_base": 0.0032780072282898314,
+          "diferencia_base_puntos_porcentuales": 0.32780072282898315,
+          "cambio_frente_base": 0.00022698664222997253,
+          "cambio_frente_base_puntos_porcentuales": 0.022698664222997253,
+          "signo_cambia": false,
+          "motivo": null
+        },
+        "15m": {
+          "candidatos_n": 120,
+          "comparadores_n": 42,
+          "candidatos_media": 0.010732004960719403,
+          "candidatos_media_pct": 1.0732004960719403,
+          "comparadores_media": 0.0009504869032631578,
+          "comparadores_media_pct": 0.09504869032631579,
+          "diferencia": 0.009781518057456246,
+          "diferencia_puntos_porcentuales": 0.9781518057456245,
+          "diferencia_base": 0.009212661622190033,
+          "diferencia_base_puntos_porcentuales": 0.9212661622190033,
+          "cambio_frente_base": 0.0005688564352662132,
+          "cambio_frente_base_puntos_porcentuales": 0.05688564352662132,
+          "signo_cambia": false,
+          "motivo": null
+        },
+        "60m": {
+          "candidatos_n": 120,
+          "comparadores_n": 42,
+          "candidatos_media": 0.0413308538542638,
+          "candidatos_media_pct": 4.13308538542638,
+          "comparadores_media": 0.007022377897973295,
+          "comparadores_media_pct": 0.7022377897973295,
+          "diferencia": 0.0343084759562905,
+          "diferencia_puntos_porcentuales": 3.4308475956290505,
+          "diferencia_base": 0.03225673396330629,
+          "diferencia_base_puntos_porcentuales": 3.225673396330629,
+          "cambio_frente_base": 0.0020517419929842115,
+          "cambio_frente_base_puntos_porcentuales": 0.20517419929842115,
+          "signo_cambia": false,
+          "motivo": null
+        }
+      }
+    },
+    {
+      "simbolo": "HUMAUSDT",
+      "por_horizonte": {
+        "5m": {
+          "candidatos_n": 114,
+          "comparadores_n": 42,
+          "candidatos_media": 0.003408216696410287,
+          "candidatos_media_pct": 0.3408216696410287,
+          "comparadores_media": -0.00022894622776902662,
+          "comparadores_media_pct": -0.022894622776902664,
+          "diferencia": 0.0036371629241793136,
+          "diferencia_puntos_porcentuales": 0.36371629241793135,
+          "diferencia_base": 0.0032780072282898314,
+          "diferencia_base_puntos_porcentuales": 0.32780072282898315,
+          "cambio_frente_base": 0.0003591556958894822,
+          "cambio_frente_base_puntos_porcentuales": 0.03591556958894822,
+          "signo_cambia": false,
+          "motivo": null
+        },
+        "15m": {
+          "candidatos_n": 114,
+          "comparadores_n": 42,
+          "candidatos_media": 0.011394825891788042,
+          "candidatos_media_pct": 1.139482589178804,
+          "comparadores_media": 0.0009504869032631578,
+          "comparadores_media_pct": 0.09504869032631579,
+          "diferencia": 0.010444338988524884,
+          "diferencia_puntos_porcentuales": 1.0444338988524884,
+          "diferencia_base": 0.009212661622190033,
+          "diferencia_base_puntos_porcentuales": 0.9212661622190033,
+          "cambio_frente_base": 0.0012316773663348518,
+          "cambio_frente_base_puntos_porcentuales": 0.12316773663348518,
+          "signo_cambia": false,
+          "motivo": null
+        },
+        "60m": {
+          "candidatos_n": 114,
+          "comparadores_n": 42,
+          "candidatos_media": 0.04424623704000409,
+          "candidatos_media_pct": 4.4246237040004095,
+          "comparadores_media": 0.007022377897973295,
+          "comparadores_media_pct": 0.7022377897973295,
+          "diferencia": 0.037223859142030795,
+          "diferencia_puntos_porcentuales": 3.7223859142030795,
+          "diferencia_base": 0.03225673396330629,
+          "diferencia_base_puntos_porcentuales": 3.225673396330629,
+          "cambio_frente_base": 0.004967125178724503,
+          "cambio_frente_base_puntos_porcentuales": 0.4967125178724503,
+          "signo_cambia": false,
+          "motivo": null
+        }
+      }
+    },
+    {
+      "simbolo": "JCTUSDT",
+      "por_horizonte": {
+        "5m": {
+          "candidatos_n": 114,
+          "comparadores_n": 42,
+          "candidatos_media": 0.0021641749810098507,
+          "candidatos_media_pct": 0.21641749810098507,
+          "comparadores_media": -0.00022894622776902662,
+          "comparadores_media_pct": -0.022894622776902664,
+          "diferencia": 0.0023931212087788772,
+          "diferencia_puntos_porcentuales": 0.23931212087788772,
+          "diferencia_base": 0.0032780072282898314,
+          "diferencia_base_puntos_porcentuales": 0.32780072282898315,
+          "cambio_frente_base": -0.0008848860195109541,
+          "cambio_frente_base_puntos_porcentuales": -0.08848860195109541,
+          "signo_cambia": false,
+          "motivo": null
+        },
+        "15m": {
+          "candidatos_n": 114,
+          "comparadores_n": 42,
+          "candidatos_media": 0.007776753206296123,
+          "candidatos_media_pct": 0.7776753206296123,
+          "comparadores_media": 0.0009504869032631578,
+          "comparadores_media_pct": 0.09504869032631579,
+          "diferencia": 0.006826266303032966,
+          "diferencia_puntos_porcentuales": 0.6826266303032966,
+          "diferencia_base": 0.009212661622190033,
+          "diferencia_base_puntos_porcentuales": 0.9212661622190033,
+          "cambio_frente_base": -0.0023863953191570666,
+          "cambio_frente_base_puntos_porcentuales": -0.23863953191570667,
+          "signo_cambia": false,
+          "motivo": null
+        },
+        "60m": {
+          "candidatos_n": 114,
+          "comparadores_n": 42,
+          "candidatos_media": 0.032671503324519784,
+          "candidatos_media_pct": 3.2671503324519784,
+          "comparadores_media": 0.007022377897973295,
+          "comparadores_media_pct": 0.7022377897973295,
+          "diferencia": 0.025649125426546487,
+          "diferencia_puntos_porcentuales": 2.564912542654649,
+          "diferencia_base": 0.03225673396330629,
+          "diferencia_base_puntos_porcentuales": 3.225673396330629,
+          "cambio_frente_base": -0.006607608536759804,
+          "cambio_frente_base_puntos_porcentuales": -0.6607608536759804,
+          "signo_cambia": false,
+          "motivo": null
+        }
+      }
+    },
+    {
+      "simbolo": "PIEVERSEUSDT",
+      "por_horizonte": {
+        "5m": {
+          "candidatos_n": 125,
+          "comparadores_n": 42,
+          "candidatos_media": 0.0031264144551349632,
+          "candidatos_media_pct": 0.3126414455134963,
+          "comparadores_media": -0.00022894622776902662,
+          "comparadores_media_pct": -0.022894622776902664,
+          "diferencia": 0.00335536068290399,
+          "diferencia_puntos_porcentuales": 0.335536068290399,
+          "diferencia_base": 0.0032780072282898314,
+          "diferencia_base_puntos_porcentuales": 0.32780072282898315,
+          "cambio_frente_base": 7.735345461415844e-05,
+          "cambio_frente_base_puntos_porcentuales": 0.007735345461415844,
+          "signo_cambia": false,
+          "motivo": null
+        },
+        "15m": {
+          "candidatos_n": 125,
+          "comparadores_n": 42,
+          "candidatos_media": 0.010249373584871952,
+          "candidatos_media_pct": 1.0249373584871952,
+          "comparadores_media": 0.0009504869032631578,
+          "comparadores_media_pct": 0.09504869032631579,
+          "diferencia": 0.009298886681608795,
+          "diferencia_puntos_porcentuales": 0.9298886681608795,
+          "diferencia_base": 0.009212661622190033,
+          "diferencia_base_puntos_porcentuales": 0.9212661622190033,
+          "cambio_frente_base": 8.622505941876211e-05,
+          "cambio_frente_base_puntos_porcentuales": 0.008622505941876211,
+          "signo_cambia": false,
+          "motivo": null
+        },
+        "60m": {
+          "candidatos_n": 125,
+          "comparadores_n": 42,
+          "candidatos_media": 0.03948366056849121,
+          "candidatos_media_pct": 3.948366056849121,
+          "comparadores_media": 0.007022377897973295,
+          "comparadores_media_pct": 0.7022377897973295,
+          "diferencia": 0.03246128267051791,
+          "diferencia_puntos_porcentuales": 3.2461282670517915,
+          "diferencia_base": 0.03225673396330629,
+          "diferencia_base_puntos_porcentuales": 3.225673396330629,
+          "cambio_frente_base": 0.00020454870721162144,
+          "cambio_frente_base_puntos_porcentuales": 0.020454870721162144,
+          "signo_cambia": false,
+          "motivo": null
+        }
+      }
+    },
+    {
+      "simbolo": "PONSUSDT",
+      "por_horizonte": {
+        "5m": {
+          "candidatos_n": 123,
+          "comparadores_n": 42,
+          "candidatos_media": 0.003120425511520793,
+          "candidatos_media_pct": 0.3120425511520793,
+          "comparadores_media": -0.00022894622776902662,
+          "comparadores_media_pct": -0.022894622776902664,
+          "diferencia": 0.0033493717392898198,
+          "diferencia_puntos_porcentuales": 0.334937173928982,
+          "diferencia_base": 0.0032780072282898314,
+          "diferencia_base_puntos_porcentuales": 0.32780072282898315,
+          "cambio_frente_base": 7.13645109999884e-05,
+          "cambio_frente_base_puntos_porcentuales": 0.007136451099998839,
+          "signo_cambia": false,
+          "motivo": null
+        },
+        "15m": {
+          "candidatos_n": 123,
+          "comparadores_n": 42,
+          "candidatos_media": 0.010338413714750964,
+          "candidatos_media_pct": 1.0338413714750965,
+          "comparadores_media": 0.0009504869032631578,
+          "comparadores_media_pct": 0.09504869032631579,
+          "diferencia": 0.009387926811487807,
+          "diferencia_puntos_porcentuales": 0.9387926811487807,
+          "diferencia_base": 0.009212661622190033,
+          "diferencia_base_puntos_porcentuales": 0.9212661622190033,
+          "cambio_frente_base": 0.00017526518929777447,
+          "cambio_frente_base_puntos_porcentuales": 0.017526518929777447,
+          "signo_cambia": false,
+          "motivo": null
+        },
+        "60m": {
+          "candidatos_n": 123,
+          "comparadores_n": 42,
+          "candidatos_media": 0.040297483936905625,
+          "candidatos_media_pct": 4.0297483936905625,
+          "comparadores_media": 0.007022377897973295,
+          "comparadores_media_pct": 0.7022377897973295,
+          "diferencia": 0.03327510603893233,
+          "diferencia_puntos_porcentuales": 3.327510603893233,
+          "diferencia_base": 0.03225673396330629,
+          "diferencia_base_puntos_porcentuales": 3.225673396330629,
+          "cambio_frente_base": 0.0010183720756260367,
+          "cambio_frente_base_puntos_porcentuales": 0.10183720756260367,
+          "signo_cambia": false,
+          "motivo": null
+        }
+      }
+    },
+    {
+      "simbolo": "POWERUSDT",
+      "por_horizonte": {
+        "5m": {
+          "candidatos_n": 126,
+          "comparadores_n": 39,
+          "candidatos_media": 0.003049061000520805,
+          "candidatos_media_pct": 0.30490610005208046,
+          "comparadores_media": -0.00033339193238027416,
+          "comparadores_media_pct": -0.03333919323802741,
+          "diferencia": 0.003382452932901079,
+          "diferencia_puntos_porcentuales": 0.3382452932901079,
+          "diferencia_base": 0.0032780072282898314,
+          "diferencia_base_puntos_porcentuales": 0.32780072282898315,
+          "cambio_frente_base": 0.0001044457046112477,
+          "cambio_frente_base_puntos_porcentuales": 0.01044457046112477,
+          "signo_cambia": false,
+          "motivo": null
+        },
+        "15m": {
+          "candidatos_n": 126,
+          "comparadores_n": 39,
+          "candidatos_media": 0.01016314852545319,
+          "candidatos_media_pct": 1.016314852545319,
+          "comparadores_media": 0.0007510274914062995,
+          "comparadores_media_pct": 0.07510274914062995,
+          "diferencia": 0.009412121034046891,
+          "diferencia_puntos_porcentuales": 0.9412121034046891,
+          "diferencia_base": 0.009212661622190033,
+          "diferencia_base_puntos_porcentuales": 0.9212661622190033,
+          "cambio_frente_base": 0.00019945941185685843,
+          "cambio_frente_base_puntos_porcentuales": 0.019945941185685843,
+          "signo_cambia": false,
+          "motivo": null
+        },
+        "60m": {
+          "candidatos_n": 126,
+          "comparadores_n": 39,
+          "candidatos_media": 0.03927911186127959,
+          "candidatos_media_pct": 3.9279111861279588,
+          "comparadores_media": 0.005941910155215809,
+          "comparadores_media_pct": 0.5941910155215809,
+          "diferencia": 0.03333720170606378,
+          "diferencia_puntos_porcentuales": 3.333720170606378,
+          "diferencia_base": 0.03225673396330629,
+          "diferencia_base_puntos_porcentuales": 3.225673396330629,
+          "cambio_frente_base": 0.001080467742757489,
+          "cambio_frente_base_puntos_porcentuales": 0.10804677427574891,
+          "signo_cambia": false,
+          "motivo": null
+        }
+      }
+    },
+    {
+      "simbolo": "POWRUSDT",
+      "por_horizonte": {
+        "5m": {
+          "candidatos_n": 126,
+          "comparadores_n": 41,
+          "candidatos_media": 0.003049061000520805,
+          "candidatos_media_pct": 0.30490610005208046,
+          "comparadores_media": -0.00022101518574221845,
+          "comparadores_media_pct": -0.022101518574221844,
+          "diferencia": 0.0032700761862630235,
+          "diferencia_puntos_porcentuales": 0.32700761862630234,
+          "diferencia_base": 0.0032780072282898314,
+          "diferencia_base_puntos_porcentuales": 0.32780072282898315,
+          "cambio_frente_base": -7.931042026807899e-06,
+          "cambio_frente_base_puntos_porcentuales": -0.0007931042026807899,
+          "signo_cambia": false,
+          "motivo": null
+        },
+        "15m": {
+          "candidatos_n": 126,
+          "comparadores_n": 41,
+          "candidatos_media": 0.01016314852545319,
+          "candidatos_media_pct": 1.016314852545319,
+          "comparadores_media": 0.0009961946712642158,
+          "comparadores_media_pct": 0.09961946712642158,
+          "diferencia": 0.009166953854188975,
+          "diferencia_puntos_porcentuales": 0.9166953854188975,
+          "diferencia_base": 0.009212661622190033,
+          "diferencia_base_puntos_porcentuales": 0.9212661622190033,
+          "cambio_frente_base": -4.570776800105758e-05,
+          "cambio_frente_base_puntos_porcentuales": -0.004570776800105758,
+          "signo_cambia": false,
+          "motivo": null
+        },
+        "60m": {
+          "candidatos_n": 126,
+          "comparadores_n": 41,
+          "candidatos_media": 0.03927911186127959,
+          "candidatos_media_pct": 3.9279111861279588,
+          "comparadores_media": 0.006828747805888762,
+          "comparadores_media_pct": 0.6828747805888762,
+          "diferencia": 0.032450364055390826,
+          "diferencia_puntos_porcentuales": 3.2450364055390826,
+          "diferencia_base": 0.03225673396330629,
+          "diferencia_base_puntos_porcentuales": 3.225673396330629,
+          "cambio_frente_base": 0.00019363009208453463,
+          "cambio_frente_base_puntos_porcentuales": 0.019363009208453463,
+          "signo_cambia": false,
+          "motivo": null
+        }
+      }
+    },
+    {
+      "simbolo": "SOPHUSDT",
+      "por_horizonte": {
+        "5m": {
+          "candidatos_n": 126,
+          "comparadores_n": 41,
+          "candidatos_media": 0.003049061000520805,
+          "candidatos_media_pct": 0.30490610005208046,
+          "comparadores_media": -0.00020806708799732805,
+          "comparadores_media_pct": -0.020806708799732804,
+          "diferencia": 0.0032571280885181327,
+          "diferencia_puntos_porcentuales": 0.32571280885181325,
+          "diferencia_base": 0.0032780072282898314,
+          "diferencia_base_puntos_porcentuales": 0.32780072282898315,
+          "cambio_frente_base": -2.087913977169868e-05,
+          "cambio_frente_base_puntos_porcentuales": -0.002087913977169868,
+          "signo_cambia": false,
+          "motivo": null
+        },
+        "15m": {
+          "candidatos_n": 126,
+          "comparadores_n": 41,
+          "candidatos_media": 0.01016314852545319,
+          "candidatos_media_pct": 1.016314852545319,
+          "comparadores_media": 0.0009295641871472739,
+          "comparadores_media_pct": 0.09295641871472739,
+          "diferencia": 0.009233584338305916,
+          "diferencia_puntos_porcentuales": 0.9233584338305916,
+          "diferencia_base": 0.009212661622190033,
+          "diferencia_base_puntos_porcentuales": 0.9212661622190033,
+          "cambio_frente_base": 2.0922716115883214e-05,
+          "cambio_frente_base_puntos_porcentuales": 0.0020922716115883214,
+          "signo_cambia": false,
+          "motivo": null
+        },
+        "60m": {
+          "candidatos_n": 126,
+          "comparadores_n": 41,
+          "candidatos_media": 0.03927911186127959,
+          "candidatos_media_pct": 3.9279111861279588,
+          "comparadores_media": 0.007026055178332279,
+          "comparadores_media_pct": 0.7026055178332279,
+          "diferencia": 0.03225305668294731,
+          "diferencia_puntos_porcentuales": 3.225305668294731,
+          "diferencia_base": 0.03225673396330629,
+          "diferencia_base_puntos_porcentuales": 3.225673396330629,
+          "cambio_frente_base": -3.677280358979629e-06,
+          "cambio_frente_base_puntos_porcentuales": -0.0003677280358979629,
+          "signo_cambia": false,
+          "motivo": null
+        }
+      }
+    },
+    {
+      "simbolo": "SPACEUSDT",
+      "por_horizonte": {
+        "5m": {
+          "candidatos_n": 126,
+          "comparadores_n": 37,
+          "candidatos_media": 0.003049061000520805,
+          "candidatos_media_pct": 0.30490610005208046,
+          "comparadores_media": -0.0003114983581397484,
+          "comparadores_media_pct": -0.03114983581397484,
+          "diferencia": 0.003360559358660553,
+          "diferencia_puntos_porcentuales": 0.3360559358660553,
+          "diferencia_base": 0.0032780072282898314,
+          "diferencia_base_puntos_porcentuales": 0.32780072282898315,
+          "cambio_frente_base": 8.255213037072166e-05,
+          "cambio_frente_base_puntos_porcentuales": 0.008255213037072166,
+          "signo_cambia": false,
+          "motivo": null
+        },
+        "15m": {
+          "candidatos_n": 126,
+          "comparadores_n": 37,
+          "candidatos_media": 0.01016314852545319,
+          "candidatos_media_pct": 1.016314852545319,
+          "comparadores_media": 0.0010499451199213821,
+          "comparadores_media_pct": 0.10499451199213822,
+          "diferencia": 0.009113203405531808,
+          "diferencia_puntos_porcentuales": 0.9113203405531808,
+          "diferencia_base": 0.009212661622190033,
+          "diferencia_base_puntos_porcentuales": 0.9212661622190033,
+          "cambio_frente_base": -9.945821665822453e-05,
+          "cambio_frente_base_puntos_porcentuales": -0.009945821665822453,
+          "signo_cambia": false,
+          "motivo": null
+        },
+        "60m": {
+          "candidatos_n": 126,
+          "comparadores_n": 37,
+          "candidatos_media": 0.03927911186127959,
+          "candidatos_media_pct": 3.9279111861279588,
+          "comparadores_media": 0.006738993659046794,
+          "comparadores_media_pct": 0.6738993659046794,
+          "diferencia": 0.03254011820223279,
+          "diferencia_puntos_porcentuales": 3.2540118202232793,
+          "diferencia_base": 0.03225673396330629,
+          "diferencia_base_puntos_porcentuales": 3.225673396330629,
+          "cambio_frente_base": 0.0002833842389265012,
+          "cambio_frente_base_puntos_porcentuales": 0.028338423892650122,
+          "signo_cambia": false,
+          "motivo": null
+        }
+      }
+    },
+    {
+      "simbolo": "UAIUSDT",
+      "por_horizonte": {
+        "5m": {
+          "candidatos_n": 114,
+          "comparadores_n": 42,
+          "candidatos_media": 0.003527994521448124,
+          "candidatos_media_pct": 0.3527994521448124,
+          "comparadores_media": -0.00022894622776902662,
+          "comparadores_media_pct": -0.022894622776902664,
+          "diferencia": 0.0037569407492171504,
+          "diferencia_puntos_porcentuales": 0.375694074921715,
+          "diferencia_base": 0.0032780072282898314,
+          "diferencia_base_puntos_porcentuales": 0.32780072282898315,
+          "cambio_frente_base": 0.00047893352092731904,
+          "cambio_frente_base_puntos_porcentuales": 0.047893352092731906,
+          "signo_cambia": false,
+          "motivo": null
+        },
+        "15m": {
+          "candidatos_n": 114,
+          "comparadores_n": 42,
+          "candidatos_media": 0.012218474485176557,
+          "candidatos_media_pct": 1.2218474485176556,
+          "comparadores_media": 0.0009504869032631578,
+          "comparadores_media_pct": 0.09504869032631579,
+          "diferencia": 0.0112679875819134,
+          "diferencia_puntos_porcentuales": 1.12679875819134,
+          "diferencia_base": 0.009212661622190033,
+          "diferencia_base_puntos_porcentuales": 0.9212661622190033,
+          "cambio_frente_base": 0.002055325959723367,
+          "cambio_frente_base_puntos_porcentuales": 0.2055325959723367,
+          "signo_cambia": false,
+          "motivo": null
+        },
+        "60m": {
+          "candidatos_n": 114,
+          "comparadores_n": 42,
+          "candidatos_media": 0.030636350374717382,
+          "candidatos_media_pct": 3.0636350374717383,
+          "comparadores_media": 0.007022377897973295,
+          "comparadores_media_pct": 0.7022377897973295,
+          "diferencia": 0.023613972476744086,
+          "diferencia_puntos_porcentuales": 2.3613972476744087,
+          "diferencia_base": 0.03225673396330629,
+          "diferencia_base_puntos_porcentuales": 3.225673396330629,
+          "cambio_frente_base": -0.008642761486562206,
+          "cambio_frente_base_puntos_porcentuales": -0.8642761486562206,
+          "signo_cambia": false,
+          "motivo": null
+        }
+      }
+    },
+    {
+      "simbolo": "牛来USDT",
+      "por_horizonte": {
+        "5m": {
+          "candidatos_n": 121,
+          "comparadores_n": 42,
+          "candidatos_media": 0.0032010263599839884,
+          "candidatos_media_pct": 0.32010263599839883,
+          "comparadores_media": -0.00022894622776902662,
+          "comparadores_media_pct": -0.022894622776902664,
+          "diferencia": 0.003429972587753015,
+          "diferencia_puntos_porcentuales": 0.3429972587753015,
+          "diferencia_base": 0.0032780072282898314,
+          "diferencia_base_puntos_porcentuales": 0.32780072282898315,
+          "cambio_frente_base": 0.0001519653594631836,
+          "cambio_frente_base_puntos_porcentuales": 0.015196535946318361,
+          "signo_cambia": false,
+          "motivo": null
+        },
+        "15m": {
+          "candidatos_n": 121,
+          "comparadores_n": 42,
+          "candidatos_media": 0.010495342266571206,
+          "candidatos_media_pct": 1.0495342266571206,
+          "comparadores_media": 0.0009504869032631578,
+          "comparadores_media_pct": 0.09504869032631579,
+          "diferencia": 0.009544855363308048,
+          "diferencia_puntos_porcentuales": 0.9544855363308048,
+          "diferencia_base": 0.009212661622190033,
+          "diferencia_base_puntos_porcentuales": 0.9212661622190033,
+          "cambio_frente_base": 0.00033219374111801564,
+          "cambio_frente_base_puntos_porcentuales": 0.033219374111801564,
+          "signo_cambia": false,
+          "motivo": null
+        },
+        "60m": {
+          "candidatos_n": 121,
+          "comparadores_n": 42,
+          "candidatos_media": 0.041180547745439014,
+          "candidatos_media_pct": 4.118054774543902,
+          "comparadores_media": 0.007022377897973295,
+          "comparadores_media_pct": 0.7022377897973295,
+          "diferencia": 0.03415816984746572,
+          "diferencia_puntos_porcentuales": 3.415816984746572,
+          "diferencia_base": 0.03225673396330629,
+          "diferencia_base_puntos_porcentuales": 3.225673396330629,
+          "cambio_frente_base": 0.0019014358841594262,
+          "cambio_frente_base_puntos_porcentuales": 0.19014358841594262,
+          "signo_cambia": false,
+          "motivo": null
+        }
+      }
+    }
+  ],
+  "diferencia_base_por_horizonte": {
+    "5m": 0.0032780072282898314,
+    "15m": 0.009212661622190033,
+    "60m": 0.03225673396330629
   },
   "dependencia": {
     "resumen_por_simbolo": {

@@ -97,40 +97,43 @@ def _indexar(objetos: list[dict[str, Any]]) -> dict[str, Any]:
     resultados = [o for o in objetos if o.get("kind") == "resultado"]
 
     ciclos_ordenados = sorted(ciclos, key=lambda c: c.get("reference_ms", 0))
+    ciclos_por_ref: dict[int, dict[str, Any]] = {}
+    for c in ciclos_ordenados:
+        ref = c.get("reference_ms")
+        if isinstance(ref, int):
+            ciclos_por_ref[ref] = c
 
-    # Ciclos de decisión ordenados por decision_ms (momento de evaluación).
+    # Ciclos de decisión ordenados por decision_ms (momento de evaluación),
+    # obtenido de las observaciones (cada ciclo tiene un decision_ms único).
     decision_ms_ordenados = sorted(
         {o.get("decision_ms") for o in observaciones if isinstance(o.get("decision_ms"), int)}
     )
 
-    # Pareado reference_ms (selección) -> decision_ms (decisión) por posición ordenada.
-    # Son 12 de cada uno; se asume pareado por orden cronológico.
-    seleccion_a_decision: dict[int, int] = {}
-    for i, c in enumerate(ciclos_ordenados):
-        ref = c.get("reference_ms")
-        if isinstance(ref, int) and i < len(decision_ms_ordenados):
-            seleccion_a_decision[ref] = decision_ms_ordenados[i]
-
     # Selección por ciclo (reference_ms) y rol: símbolos seleccionados.
     seleccion_por_ciclo_rol: dict[int, dict[str, list[str]]] = {}
     seleccion_simbolo_rol_por_ciclo: dict[int, dict[str, str]] = {}
+    seleccionados_por_ciclo_rol: dict[int, dict[str, int]] = {}
     for c in ciclos_ordenados:
         ref = c.get("reference_ms")
         rol_map: dict[str, list[str]] = {"candidate": [], "comparator": []}
         simbolo_rol: dict[str, str] = {}
+        n_por_rol: dict[str, int] = {"candidate": 0, "comparator": 0}
         for entry in (c.get("selected") or []):
             sym = entry.get("symbol")
             if sym:
                 rol_map["candidate"].append(sym)
                 simbolo_rol[sym] = "candidate"
+                n_por_rol["candidate"] += 1
         for entry in (c.get("comparator") or []):
             sym = entry.get("symbol")
             if sym:
                 rol_map["comparator"].append(sym)
                 simbolo_rol[sym] = "comparator"
+                n_por_rol["comparator"] += 1
         if isinstance(ref, int):
             seleccion_por_ciclo_rol[ref] = rol_map
             seleccion_simbolo_rol_por_ciclo[ref] = simbolo_rol
+            seleccionados_por_ciclo_rol[ref] = n_por_rol
 
     # Índice de resultados por observation_id.
     resultados_por_id: dict[str, list[dict[str, Any]]] = defaultdict(list)
@@ -141,27 +144,53 @@ def _indexar(objetos: list[dict[str, Any]]) -> dict[str, Any]:
 
     def ciclo_de_observacion(
         obs: dict[str, Any],
-    ) -> tuple[int | None, dict[str, Any] | None]:
-        """Devuelve (índice de ciclo de decisión, objeto ciclo) usando decision_ms."""
-        dm = obs.get("decision_ms")
-        if isinstance(dm, int) and dm in decision_ms_ordenados:
-            return decision_ms_ordenados.index(dm), {
-                "reference_ms": None,
-                "decision_ms": dm,
-                "tipo": "decision",
-            }
-        return None, None
+    ) -> tuple[int | None, dict[str, Any] | None, str | None]:
+        """Devuelve (índice de ciclo de selección, objeto ciclo, motivo de vínculo).
+
+        El vínculo selecciÃ³nÂ→decisión se construye sobre el identificador
+        persistido: observacion.disponibilidad.seleccion_ms == ciclo.reference_ms.
+        Nunca se usa orden cronológico ni proximidad temporal.
+        """
+        disp = obs.get("disponibilidad") or {}
+        sel_ms = disp.get("seleccion_ms")
+        if isinstance(sel_ms, int) and sel_ms in ciclos_por_ref:
+            return ciclos_ordenados.index(ciclos_por_ref[sel_ms]), ciclos_por_ref[sel_ms], None
+        # Observación sin vínculo acreditado a un ciclo de selección.
+        return None, None, "sin_vinculo_seleccion"
+
+    def pertenece_a_seleccion(
+        obs: dict[str, Any], ciclo: dict[str, Any] | None
+    ) -> tuple[bool, str | None]:
+        """Verifica que el símbolo y rol de la observación estén en la selección
+        del ciclo vinculado. Devuelve (pertenece, motivo)."""
+        if ciclo is None:
+            return False, "sin_ciclo_vinculado"
+        disp = obs.get("disponibilidad") or {}
+        sel_ms = disp.get("seleccion_ms")
+        rol = obs.get("role")
+        sym = obs.get("symbol")
+        if not isinstance(sel_ms, int) or sel_ms not in seleccion_por_ciclo_rol:
+            return False, "seleccion_no_encontrada_para_ciclo"
+        simbolos_rol = seleccion_por_ciclo_rol[sel_ms].get(rol, [])
+        if sym not in simbolos_rol:
+            return (
+                False,
+                "simbolo_no_en_rol_seleccionado",
+            )
+        return True, None
 
     return {
         "ciclos": ciclos_ordenados,
+        "ciclos_por_ref": ciclos_por_ref,
         "observaciones": observaciones,
         "resultados": resultados,
         "decision_ms_ordenados": decision_ms_ordenados,
-        "seleccion_a_decision": seleccion_a_decision,
         "seleccion_por_ciclo_rol": seleccion_por_ciclo_rol,
         "seleccion_simbolo_rol_por_ciclo": seleccion_simbolo_rol_por_ciclo,
+        "seleccionados_por_ciclo_rol": seleccionados_por_ciclo_rol,
         "resultados_por_id": resultados_por_id,
         "ciclo_de_observacion": ciclo_de_observacion,
+        "pertenece_a_seleccion": pertenece_a_seleccion,
     }
 
 
@@ -173,7 +202,6 @@ def analizar(jsonl: Path, run_id: str | None = None) -> dict[str, Any]:
     observaciones = idx["observaciones"]
     resultados = idx["resultados"]
     decision_ms_ordenados = idx["decision_ms_ordenados"]
-    seleccion_a_decision = idx["seleccion_a_decision"]
     seleccion_por_ciclo_rol = idx["seleccion_por_ciclo_rol"]
     seleccion_simbolo_rol_por_ciclo = idx["seleccion_simbolo_rol_por_ciclo"]
     resultados_por_id = idx["resultados_por_id"]
@@ -189,21 +217,39 @@ def analizar(jsonl: Path, run_id: str | None = None) -> dict[str, Any]:
     total_observadas = 0
     total_sin_observacion = 0
 
+    # Vínculo selección→decisión sobre el identificador persistido:
+    # observacion.disponibilidad.seleccion_ms == ciclo.reference_ms.
+    # Nunca se usa orden cronológico ni proximidad temporal.
+    observaciones_por_ciclo_rol: dict[int, dict[str, list[dict[str, Any]]]] = defaultdict(
+        lambda: defaultdict(list)
+    )
+    observaciones_sin_vinculo: list[dict[str, Any]] = []
+    for o in observaciones:
+        ciclo_idx, ciclo_obj, motivo_vinculo = ciclo_de_observacion(o)
+        if ciclo_idx is None:
+            observaciones_sin_vinculo.append(o)
+            continue
+        ref = ciclo_obj.get("reference_ms")
+        rol = o.get("role") or "desconocido"
+        observaciones_por_ciclo_rol[ref][rol].append(o)
+
+    filas_embudo: list[dict[str, Any]] = []
+    total_seleccionados = 0
+    total_seleccionados_por_rol: dict[str, int] = {"candidate": 0, "comparator": 0}
+    total_observadas = 0
+    total_sin_observacion = 0
+
     for i, c in enumerate(ciclos):
         ref = c.get("reference_ms")
         ciclo_idx = i
-        dm = seleccion_a_decision.get(ref) if isinstance(ref, int) else None
-        ciclo_dec_idx = decision_ms_ordenados.index(dm) if isinstance(dm, int) and dm in decision_ms_ordenados else None
 
         sel_rol = seleccion_por_ciclo_rol.get(ref, {"candidate": [], "comparator": []}) if isinstance(ref, int) else {"candidate": [], "comparator": []}
         for rol in ROLES:
             n_sel = len(sel_rol.get(rol, []))
             total_seleccionados += n_sel
             total_seleccionados_por_rol[rol] += n_sel
-            # observaciones emitidas para este ciclo de decisión y rol
-            obs_rol = [o for o in observaciones
-                       if (o.get("role") == rol)
-                       and (o.get("decision_ms") == dm)]
+            # observaciones emitidas vinculadas a este ciclo de selección y rol
+            obs_rol = observaciones_por_ciclo_rol.get(ref, {}).get(rol, [])
             n_emit = len(obs_rol)
             n_aptas = sum(1 for o in obs_rol if o.get("estado") == "observada")
             n_desc = sum(1 for o in obs_rol if o.get("estado") == "descartada")
@@ -229,8 +275,12 @@ def analizar(jsonl: Path, run_id: str | None = None) -> dict[str, Any]:
                     else:
                         n_falt += 1
                 cov_h[h] = {"resultado_registrado": n_res, "resultado_faltante": n_falt}
+            # decision_ms del ciclo (momento de evaluación) para referencia informativa
+            dm = None
+            if isinstance(ref, int) and c.get("decision_ms") is not None:
+                dm = c.get("decision_ms")
             filas_embudo.append({
-                "ciclo_idx": ciclo_dec_idx,
+                "ciclo_idx": ciclo_idx,
                 "reference_ms": ref,
                 "decision_ms": dm,
                 "rol": rol,
@@ -251,7 +301,7 @@ def analizar(jsonl: Path, run_id: str | None = None) -> dict[str, Any]:
             if obs.get("role") != rol or obs.get("estado") != "observada":
                 continue
             oid = str(obs.get("observation_id"))
-            ciclo_idx, _ = ciclo_de_observacion(obs)
+            ciclo_idx, _, _ = ciclo_de_observacion(obs)
             for r in resultados_por_id.get(oid, []):
                 if r.get("horizon") != h:
                     continue
@@ -409,11 +459,150 @@ def analizar(jsonl: Path, run_id: str | None = None) -> dict[str, Any]:
             "updown_candidatos": updown,
         }
 
+    # ============ Sensibilidad por símbolo (exclusión uno por uno) ============
+    def _comparacion_para_conjunto(
+        filas_cand: list[dict[str, Any]], filas_comp: list[dict[str, Any]]
+    ) -> dict[str, Any]:
+        """Calcula medias y diferencia para un conjunto dado de filas (ya filtradas)."""
+        grupo_cand = [f["retorno"] for f in filas_cand]
+        grupo_comp = [f["retorno"] for f in filas_comp]
+        st_cand = _stats(grupo_cand)
+        st_comp = _stats(grupo_comp)
+        diff = None
+        diff_puntos = None
+        if st_cand["media"] is not None and st_comp["media"] is not None:
+            diff = st_cand["media"] - st_comp["media"]
+            diff_puntos = _pct(diff)
+        return {
+            "candidatos_n": len(grupo_cand),
+            "candidatos_media": st_cand["media"],
+            "candidatos_media_pct": _pct(st_cand["media"]),
+            "comparadores_n": len(grupo_comp),
+            "comparadores_media": st_comp["media"],
+            "comparadores_media_pct": _pct(st_comp["media"]),
+            "diferencia": diff,
+            "diferencia_puntos_porcentuales": diff_puntos,
+        }
+
+    # Índice de retornos por símbolo y horizonte (sobre observaciones aptas con resultado).
+    retornos_por_simbolo_h: dict[str, dict[str, dict[str, list[float]]]] = defaultdict(
+        lambda: defaultdict(lambda: defaultdict(list))
+    )
+    for h in HORIZONTES_EVALUABLES:
+        for obs in observaciones:
+            if obs.get("role") not in ROLES or obs.get("estado") != "observada":
+                continue
+            oid = str(obs.get("observation_id"))
+            for r in resultados_por_id.get(oid, []):
+                if r.get("horizon") != h:
+                    continue
+                retorno = _seguro_float(r.get("retorno"))
+                if retorno is None:
+                    continue
+                sym = obs.get("symbol") or "desconocido"
+                rol = obs.get("role")
+                retornos_por_simbolo_h[sym][h][rol].append(retorno)
+
+    simbolos_ordenados = sorted(retornos_por_simbolo_h.keys())
+    sensibilidad_por_simbolo: list[dict[str, Any]] = []
+    diferencia_base_por_h: dict[str, float | None] = {}
+    for h in HORIZONTES_EVALUABLES:
+        base_cand = []
+        base_comp = []
+        for obs in observaciones:
+            if obs.get("estado") != "observada":
+                continue
+            oid = str(obs.get("observation_id"))
+            for r in resultados_por_id.get(oid, []):
+                if r.get("horizon") != h:
+                    continue
+                retorno = _seguro_float(r.get("retorno"))
+                if retorno is None:
+                    continue
+                if obs.get("role") == "candidate":
+                    base_cand.append(retorno)
+                elif obs.get("role") == "comparator":
+                    base_comp.append(retorno)
+        base = _comparacion_para_conjunto(
+            [{"retorno": v} for v in base_cand],
+            [{"retorno": v} for v in base_comp],
+        )
+        diferencia_base_por_h[h] = base["diferencia"]
+
+    for sym in simbolos_ordenados:
+        entrada: dict[str, Any] = {"simbolo": sym, "por_horizonte": {}}
+        for h in HORIZONTES_EVALUABLES:
+            # Construir conjuntos excluyendo este símbolo.
+            filas_cand: list[dict[str, Any]] = []
+            filas_comp: list[dict[str, Any]] = []
+            for obs in observaciones:
+                if obs.get("estado") != "observada":
+                    continue
+                if (obs.get("symbol") or "desconocido") == sym:
+                    continue
+                oid = str(obs.get("observation_id"))
+                for r in resultados_por_id.get(oid, []):
+                    if r.get("horizon") != h:
+                        continue
+                    retorno = _seguro_float(r.get("retorno"))
+                    if retorno is None:
+                        continue
+                    fila = {"retorno": retorno}
+                    if obs.get("role") == "candidate":
+                        filas_cand.append(fila)
+                    elif obs.get("role") == "comparator":
+                        filas_comp.append(fila)
+            comp = _comparacion_para_conjunto(filas_cand, filas_comp)
+            base_diff = diferencia_base_por_h.get(h)
+            cambio = None
+            signo_cambia = None
+            if comp["diferencia"] is not None and base_diff is not None:
+                cambio = comp["diferencia"] - base_diff
+                signo_base = (base_diff > 0) - (base_diff < 0)
+                signo_nuevo = (comp["diferencia"] > 0) - (comp["diferencia"] < 0)
+                signo_cambia = signo_base != signo_nuevo
+            entrada["por_horizonte"][h] = {
+                "candidatos_n": comp["candidatos_n"],
+                "comparadores_n": comp["comparadores_n"],
+                "candidatos_media": comp["candidatos_media"],
+                "candidatos_media_pct": comp["candidatos_media_pct"],
+                "comparadores_media": comp["comparadores_media"],
+                "comparadores_media_pct": comp["comparadores_media_pct"],
+                "diferencia": comp["diferencia"],
+                "diferencia_puntos_porcentuales": comp["diferencia_puntos_porcentuales"],
+                "diferencia_base": base_diff,
+                "diferencia_base_puntos_porcentuales": _pct(base_diff) if base_diff is not None else None,
+                "cambio_frente_base": cambio,
+                "cambio_frente_base_puntos_porcentuales": _pct(cambio) if cambio is not None else None,
+                "signo_cambia": signo_cambia,
+                "motivo": (
+                    "grupo_vacio_o_sin_resultados"
+                    if comp["diferencia"] is None
+                    else None
+                ),
+            }
+        sensibilidad_por_simbolo.append(entrada)
+
     # ============ Asociación: flujo agresor neto / profundidad top-20 ============
+    # Validación de identidad de corrida:
+    # - observation_id únicos entre observaciones (no deben repetirse).
+    # - pares (observation_id, horizon) únicos entre resultados (un resultado por
+    #   observación y horizonte; repetir observation_id entre horizontes es normal).
+    observation_ids_obs = [str(o.get("observation_id")) for o in observaciones if o.get("observation_id")]
+    ids_duplicados_obs = [k for k, v in Counter(observation_ids_obs).items() if v > 1]
+    pares_res = [(str(r.get("observation_id")), str(r.get("horizon"))) for r in resultados if r.get("observation_id") and r.get("horizon")]
+    ids_duplicados_res = [k for k, v in Counter(pares_res).items() if v > 1]
+    ids_duplicados_res = [oid for (oid, _h) in ids_duplicados_res]
+    mezcla_run_id_detectada = bool(ids_duplicados_obs or ids_duplicados_res)
+
     filas_asoc: list[dict[str, Any]] = []
     n_campos_ausentes = 0
-    n_profundidad_cero_invalida = 0
+    n_profundidad_cero_o_invalida = 0
     n_ventana_incompleta = 0
+    n_valor_negativo_flujo = 0
+    n_valor_negativo_profundidad = 0
+    n_fila_invalida_asoc = 0
+    VENTANA_FLUJO_ESPERADA_MS = 60000
     for obs in observaciones:
         if obs.get("estado") != "observada":
             continue
@@ -422,35 +611,58 @@ def analizar(jsonl: Path, run_id: str | None = None) -> dict[str, Any]:
         cobertura = obs.get("cobertura") or {}
         buy_notional = _seguro_float(flujo.get("buy_notional"))
         sell_notional = _seguro_float(flujo.get("sell_notional"))
+        # Validar importes finitos y no negativos.
+        flujo_invalido = False
+        if buy_notional is None or sell_notional is None:
+            flujo_invalido = True
+        elif buy_notional < 0 or sell_notional < 0:
+            flujo_invalido = True
+            n_valor_negativo_flujo += 1
         flujo_neto_notional = None
-        if buy_notional is not None and sell_notional is not None:
+        if not flujo_invalido:
             flujo_neto_notional = buy_notional - sell_notional
         ventana_flujo_ms = flujo.get("window_ms")
         ventana_completa = flujo.get("ventana_completa")
-        if not ventana_completa:
-            n_ventana_incompleta += 1
+        ventana_valida = (
+            ventana_completa is True
+            and ventana_flujo_ms == VENTANA_FLUJO_ESPERADA_MS
+        )
         bid_not = _seguro_float(libro.get("bid_notional_top20"))
         ask_not = _seguro_float(libro.get("ask_notional_top20"))
         profundidad = None
-        profundidad_cero_o_invalida = False
+        profundidad_invalida = False
         if bid_not is None or ask_not is None:
-            profundidad_cero_o_invalida = True
+            profundidad_invalida = True
+        elif bid_not < 0 or ask_not < 0:
+            profundidad_invalida = True
+            n_valor_negativo_profundidad += 1
         else:
             profundidad = bid_not + ask_not
-        ciclo_idx, _ = ciclo_de_observacion(obs)
+            if profundidad <= 0:
+                profundidad_invalida = True
+        fila_valida_asoc = (
+            not flujo_invalido
+            and not profundidad_invalida
+            and ventana_valida
+        )
+        if not fila_valida_asoc:
+            n_fila_invalida_asoc += 1
+        ciclo_idx, _, _ = ciclo_de_observacion(obs)
+        campos_ausentes = (
+            buy_notional is None or sell_notional is None
+            or bid_not is None or ask_not is None
+        )
         for r in resultados_por_id.get(str(obs.get("observation_id")), []):
             h = r.get("horizon")
             if h not in HORIZONTES_EVALUABLES:
                 continue
             retorno = _seguro_float(r.get("retorno"))
-            campos_ausentes = (
-                buy_notional is None or sell_notional is None
-                or bid_not is None or ask_not is None
-            )
+            if profundidad_invalida:
+                n_profundidad_cero_o_invalida += 1
+            if not ventana_valida:
+                n_ventana_incompleta += 1
             if campos_ausentes:
                 n_campos_ausentes += 1
-            if profundidad is not None and profundidad <= 0:
-                n_profundidad_cero_invalida += 1
             filas_asoc.append({
                 "horizonte": h,
                 "simbolo": obs.get("symbol"),
@@ -459,10 +671,13 @@ def analizar(jsonl: Path, run_id: str | None = None) -> dict[str, Any]:
                 "lado": _lado_desde_side(obs),
                 "flujo_neto_notional_USDT": flujo_neto_notional,
                 "profundidad_notional_top20_USDT": profundidad,
-                "profundidad_cero_o_invalida": profundidad_cero_o_invalida,
+                "profundidad_invalida": profundidad_invalida,
+                "flujo_invalido": flujo_invalido,
+                "ventana_invalida": not ventana_valida,
+                "fila_valida_asociacion": fila_valida_asoc,
                 "flujo_sobre_profundidad": (
                     (flujo_neto_notional / profundidad)
-                    if (flujo_neto_notional is not None and profundidad not in (None, 0))
+                    if fila_valida_asoc and profundidad not in (None, 0)
                     else None
                 ),
                 "ventana_flujo_ms": ventana_flujo_ms,
@@ -476,7 +691,7 @@ def analizar(jsonl: Path, run_id: str | None = None) -> dict[str, Any]:
     for h in HORIZONTES_EVALUABLES:
         f = [x for x in filas_asoc if x["horizonte"] == h]
         parejas_validas_por_h[h] = sum(
-            1 for x in f if x["flujo_sobre_profundidad"] is not None and x["retorno"] is not None
+            1 for x in f if x["fila_valida_asociacion"] and x["flujo_sobre_profundidad"] is not None and x["retorno"] is not None
         )
 
     # Asociaciones por horizonte con una única definición principal y corte fijo.
@@ -486,12 +701,18 @@ def analizar(jsonl: Path, run_id: str | None = None) -> dict[str, Any]:
             "(buy_notional - sell_notional) / (bid_notional_top20 + ask_notional_top20)"
         ),
         "unidades": "flujo y profundidad en USDT; ratio adimensional; retorno en fracción",
-        "ventana_flujo_ms": 60000,
+        "ventana_flujo_ms": VENTANA_FLUJO_ESPERADA_MS,
         "regla_denominador_cero": "si profundidad == 0 o None -> ratio None (no se convierte en cero)",
+        "mezcla_run_id_detectada": mezcla_run_id_detectada,
+        "ids_duplicados_observacion": ids_duplicados_obs,
+        "ids_duplicados_resultado": ids_duplicados_res,
         "n_filas_totales": len(filas_asoc),
         "n_campos_ausentes_o_no_finitos": n_campos_ausentes,
-        "n_profundidad_cero_o_invalida": n_profundidad_cero_invalida,
+        "n_valor_negativo_flujo": n_valor_negativo_flujo,
+        "n_valor_negativo_profundidad": n_valor_negativo_profundidad,
+        "n_profundidad_cero_o_invalida": n_profundidad_cero_o_invalida,
         "n_ventana_incompleta": n_ventana_incompleta,
+        "n_fila_invalida_asociacion": n_fila_invalida_asoc,
         "parejas_validas_por_horizonte": parejas_validas_por_h,
         "por_horizonte": {},
     }
@@ -567,7 +788,7 @@ def analizar(jsonl: Path, run_id: str | None = None) -> dict[str, Any]:
         simbolo = r.get("symbol")
         oid = r.get("observation_id", "")
         obs_origen = next((o for o in observaciones if o.get("observation_id") == oid), None)
-        ciclo_idx, _ = ciclo_de_observacion(obs_origen) if obs_origen else (None, None)
+        ciclo_idx, _, _ = ciclo_de_observacion(obs_origen) if obs_origen else (None, None)
         rol = obs_origen.get("role") if obs_origen else None
         if simbolo:
             por_simbolo[simbolo]["n_resultados"] += 1
@@ -628,6 +849,7 @@ def analizar(jsonl: Path, run_id: str | None = None) -> dict[str, Any]:
         "embudo_tabla": filas_embudo,
         "comparacion": comparacion_por_horizonte,
         "asociaciones": asociaciones,
+        "sensibilidad_por_simbolo": sensibilidad_por_simbolo,
         "resumen_por_simbolo_dependencia": resumen_por_simbolo_dependencia,
         "resumen_por_ciclo": resumen_por_ciclo,
         "precios_y_costes": {
@@ -692,6 +914,7 @@ def main() -> None:
                 "embudo_tabla",
                 "resumen_por_simbolo_dependencia",
                 "resumen_por_ciclo",
+                "sensibilidad_por_simbolo",
             )
         },
         "embudo_desde_ciclos": {
@@ -765,12 +988,25 @@ def main() -> None:
             "unidades": res["asociaciones"]["unidades"],
             "ventana_flujo_ms": res["asociaciones"]["ventana_flujo_ms"],
             "regla_denominador_cero": res["asociaciones"]["regla_denominador_cero"],
+            "mezcla_run_id_detectada": res["asociaciones"]["mezcla_run_id_detectada"],
+            "ids_duplicados_observacion": res["asociaciones"]["ids_duplicados_observacion"],
+            "ids_duplicados_resultado": res["asociaciones"]["ids_duplicados_resultado"],
             "n_filas_totales": res["asociaciones"]["n_filas_totales"],
             "n_campos_ausentes_o_no_finitos": res["asociaciones"]["n_campos_ausentes_o_no_finitos"],
+            "n_valor_negativo_flujo": res["asociaciones"]["n_valor_negativo_flujo"],
+            "n_valor_negativo_profundidad": res["asociaciones"]["n_valor_negativo_profundidad"],
             "n_profundidad_cero_o_invalida": res["asociaciones"]["n_profundidad_cero_o_invalida"],
             "n_ventana_incompleta": res["asociaciones"]["n_ventana_incompleta"],
+            "n_fila_invalida_asociacion": res["asociaciones"]["n_fila_invalida_asociacion"],
             "parejas_validas_por_horizonte": res["asociaciones"]["parejas_validas_por_horizonte"],
             "por_horizonte": res["asociaciones"]["por_horizonte"],
+        },
+        "sensibilidad_por_simbolo": res["sensibilidad_por_simbolo"],
+        "diferencia_base_por_horizonte": {
+            h: res["sensibilidad_por_simbolo"][0]["por_horizonte"][h]["diferencia_base"]
+            if res["sensibilidad_por_simbolo"]
+            else None
+            for h in HORIZONTES_EVALUABLES
         },
         "dependencia": {
             "resumen_por_simbolo": res["resumen_por_simbolo_dependencia"],
