@@ -125,22 +125,25 @@ observaciones aptas para estudio y un presupuesto público revisable.
   Dataset completo y derivados detallados fuera de Git; solo manifiesto, hashes y
   muestra se publican.
 
-  **Análisis offline research/universe-liquidez-v1 (análisis v3, 2026-11-06):**
+  **Análisis offline research/universe-liquidez-v1 (análisis v4, 2026-11-06):**
   `scripts/analisis_universo_liquidez_v2.py` (embudo desde registros de ciclo
   con vínculo seleccion_ms==reference_ms: 240 seleccionados, 24 sin observación
   emitida, 216 emitidas, 168 aptas, 48 descartadas, 504 resultados), pruebas
-  `tests/test_analisis_universo_liquidez_v2.py` (12 passed), tabla e informe en
+  `tests/test_analisis_universo_liquidez_v2.py` (16 passed), tabla e informe en
   `docs/evidence/research/universe_liquidity_v1/public-pilot-1h-20261106a/`.
-  Diferencia candidatos-comparadores positiva en 5m/15m/60m (+0,33 / +0,92 /
-  +3,23 pp) con cobertura asimétrica de comparadores (42 aptas vs 126
-  candidate; ciclos 1/7/9/11 con un solo comparador apto); mediana de
-  candidatos inferior a comparadores a 60m (0,56 % vs 0,61 %). Asociación
-  exploratoria flujo/profundidad débil-positiva (Pearson +0,037 / +0,112 /
-  +0,144), mezclas de corrida no detectadas, entradas validadas.
-  `neto_estado=UNKNOWN` en los 504. Sensibilidad reproducible por símbolo:
-  AKEUSDT y JCTUSDT concentran parte del resultado; la diferencia conserva
-  signo al excluir cualquier símbolo. Los 168 resultados de 60m ya existen; no
-  se recomienda repetir la captura solo para completarlos.
+  Asociación flujo/profundidad: 3 observaciones excluidas por importe bruto
+  negativo (error de punto flotante ~1e-14), parejas válidas 165/horizonte;
+  identidad de corrida es UNKNOWN (registros sin campo run_id); duplicados y
+  mezcla de corrida son controles separados. Diferencia candidatos-comparadores
+  positiva en 5m/15m/60m (+0,33 / +0,92 / +3,23 pp) con cobertura asimétrica
+  de comparadores (42 aptas vs 126 candidate; ciclos 1/7/9/11 con un solo
+  comparador apto); mediana de candidatos inferior a comparadores a 60m
+  (0,56 % vs 0,61 %). Asociación exploratoria flujo/profundidad débil-positiva
+  (Pearson +0,037 / +0,112 / +0,144). `neto_estado=UNKNOWN` en los 504.
+  Sensibilidad reproducible por símbolo: AKEUSDT y JCTUSDT concentran parte
+  del resultado; la diferencia conserva signo al excluir cualquier símbolo.
+  Los 168 resultados de 60m ya existen; no se recomienda repetir la captura
+  solo para completarlos.
 - Evidencia pequeña (manifiesto, resumen, muestra de 12 observaciones):
   `docs/evidence/research/universe_liquidity_v1/pilot_local/`.
 

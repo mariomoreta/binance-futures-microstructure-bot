@@ -584,16 +584,36 @@ def analizar(jsonl: Path, run_id: str | None = None) -> dict[str, Any]:
         sensibilidad_por_simbolo.append(entrada)
 
     # ============ Asociación: flujo agresor neto / profundidad top-20 ============
-    # Validación de identidad de corrida:
-    # - observation_id únicos entre observaciones (no deben repetirse).
-    # - pares (observation_id, horizon) únicos entre resultados (un resultado por
-    #   observación y horizonte; repetir observation_id entre horizontes es normal).
+    # Identidad de corrida (separada de duplicados):
+    # - observation_id únicos entre observaciones (control de duplicados).
+    # - pares (observation_id, horizon) únicos entre resultados (control de duplicados).
+    # - run_id explícito en registros: si los registros contienen campo run_id,
+    #   se verifica que todos coincidan y que coincidan con el run_id del CLI.
+    #   Si no hay campo run_id, la identidad es UNKNOWN (no se infiere del CLI
+    #   ni del directorio; se acredita mediante el manifiesto y el hash).
     observation_ids_obs = [str(o.get("observation_id")) for o in observaciones if o.get("observation_id")]
     ids_duplicados_obs = [k for k, v in Counter(observation_ids_obs).items() if v > 1]
     pares_res = [(str(r.get("observation_id")), str(r.get("horizon"))) for r in resultados if r.get("observation_id") and r.get("horizon")]
     ids_duplicados_res = [k for k, v in Counter(pares_res).items() if v > 1]
-    ids_duplicados_res = [oid for (oid, _h) in ids_duplicados_res]
-    mezcla_run_id_detectada = bool(ids_duplicados_obs or ids_duplicados_res)
+    ids_duplicados_res_oids = [oid for (oid, _h) in ids_duplicados_res]
+
+    run_ids_en_registros = set()
+    for o in observaciones + resultados:
+        rid = o.get("run_id")
+        if rid is not None:
+            run_ids_en_registros.add(str(rid))
+    if len(run_ids_en_registros) == 0:
+        run_id_en_registros = "UNKNOWN"
+        run_id_coincide_con_esperado = None
+        mezcla_run_id_detectada = None  # sin campo run_id, no determinable
+    elif len(run_ids_en_registros) == 1:
+        run_id_en_registros = next(iter(run_ids_en_registros))
+        run_id_coincide_con_esperado = (run_id_en_registros == run_id)
+        mezcla_run_id_detectada = False
+    else:
+        run_id_en_registros = sorted(run_ids_en_registros)
+        run_id_coincide_con_esperado = None
+        mezcla_run_id_detectada = True  # contradicción explícita: dos corridas distintas
 
     filas_asoc: list[dict[str, Any]] = []
     n_campos_ausentes = 0
@@ -602,6 +622,7 @@ def analizar(jsonl: Path, run_id: str | None = None) -> dict[str, Any]:
     n_valor_negativo_flujo = 0
     n_valor_negativo_profundidad = 0
     n_fila_invalida_asoc = 0
+    n_flujo_neto_negativo_legitimo = 0
     VENTANA_FLUJO_ESPERADA_MS = 60000
     for obs in observaciones:
         if obs.get("estado") != "observada":
@@ -663,6 +684,18 @@ def analizar(jsonl: Path, run_id: str | None = None) -> dict[str, Any]:
                 n_ventana_incompleta += 1
             if campos_ausentes:
                 n_campos_ausentes += 1
+            # Flujo neto negativo legítimo (importes brutos no negativos, diferencia negativa).
+            if (not flujo_invalido) and flujo_neto_notional is not None and flujo_neto_notional < 0:
+                n_flujo_neto_negativo_legitimo += 1
+            # Causa exacta de exclusión de la asociación.
+            if flujo_invalido:
+                causa_exclusion = "importe_bruto_negativo_o_ausente"
+            elif profundidad_invalida:
+                causa_exclusion = "profundidad_cero_o_invalida"
+            elif not ventana_valida:
+                causa_exclusion = "ventana_flujo_incompleta"
+            else:
+                causa_exclusion = None
             filas_asoc.append({
                 "horizonte": h,
                 "simbolo": obs.get("symbol"),
@@ -675,6 +708,7 @@ def analizar(jsonl: Path, run_id: str | None = None) -> dict[str, Any]:
                 "flujo_invalido": flujo_invalido,
                 "ventana_invalida": not ventana_valida,
                 "fila_valida_asociacion": fila_valida_asoc,
+                "causa_exclusion_asociacion": causa_exclusion,
                 "flujo_sobre_profundidad": (
                     (flujo_neto_notional / profundidad)
                     if fila_valida_asoc and profundidad not in (None, 0)
@@ -703,13 +737,16 @@ def analizar(jsonl: Path, run_id: str | None = None) -> dict[str, Any]:
         "unidades": "flujo y profundidad en USDT; ratio adimensional; retorno en fracción",
         "ventana_flujo_ms": VENTANA_FLUJO_ESPERADA_MS,
         "regla_denominador_cero": "si profundidad == 0 o None -> ratio None (no se convierte en cero)",
+        "run_id_en_registros": run_id_en_registros,
+        "run_id_coincide_con_esperado": run_id_coincide_con_esperado,
         "mezcla_run_id_detectada": mezcla_run_id_detectada,
         "ids_duplicados_observacion": ids_duplicados_obs,
-        "ids_duplicados_resultado": ids_duplicados_res,
+        "ids_duplicados_resultado": ids_duplicados_res_oids,
         "n_filas_totales": len(filas_asoc),
         "n_campos_ausentes_o_no_finitos": n_campos_ausentes,
         "n_valor_negativo_flujo": n_valor_negativo_flujo,
         "n_valor_negativo_profundidad": n_valor_negativo_profundidad,
+        "n_flujo_neto_negativo_legitimo": n_flujo_neto_negativo_legitimo,
         "n_profundidad_cero_o_invalida": n_profundidad_cero_o_invalida,
         "n_ventana_incompleta": n_ventana_incompleta,
         "n_fila_invalida_asociacion": n_fila_invalida_asoc,
@@ -988,6 +1025,8 @@ def main() -> None:
             "unidades": res["asociaciones"]["unidades"],
             "ventana_flujo_ms": res["asociaciones"]["ventana_flujo_ms"],
             "regla_denominador_cero": res["asociaciones"]["regla_denominador_cero"],
+            "run_id_en_registros": res["asociaciones"]["run_id_en_registros"],
+            "run_id_coincide_con_esperado": res["asociaciones"]["run_id_coincide_con_esperado"],
             "mezcla_run_id_detectada": res["asociaciones"]["mezcla_run_id_detectada"],
             "ids_duplicados_observacion": res["asociaciones"]["ids_duplicados_observacion"],
             "ids_duplicados_resultado": res["asociaciones"]["ids_duplicados_resultado"],
@@ -995,6 +1034,7 @@ def main() -> None:
             "n_campos_ausentes_o_no_finitos": res["asociaciones"]["n_campos_ausentes_o_no_finitos"],
             "n_valor_negativo_flujo": res["asociaciones"]["n_valor_negativo_flujo"],
             "n_valor_negativo_profundidad": res["asociaciones"]["n_valor_negativo_profundidad"],
+            "n_flujo_neto_negativo_legitimo": res["asociaciones"]["n_flujo_neto_negativo_legitimo"],
             "n_profundidad_cero_o_invalida": res["asociaciones"]["n_profundidad_cero_o_invalida"],
             "n_ventana_incompleta": res["asociaciones"]["n_ventana_incompleta"],
             "n_fila_invalida_asociacion": res["asociaciones"]["n_fila_invalida_asociacion"],

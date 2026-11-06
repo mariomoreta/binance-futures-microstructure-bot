@@ -128,13 +128,13 @@ def tmp_run(tmp_path):
     }
 
 
-def _ejecutar_cli(tmp_run):
+def _ejecutar_cli(tmp_run, run_id="test-run-temporal"):
     cmd = [
         sys.executable, str(SCRIPT),
         "--jsonl", str(tmp_run["jsonl"]),
         "--out-derivados", str(tmp_run["out_derivados"]),
         "--out-tablas", str(tmp_run["out_tablas"]),
-        "--run_id", "test-run-temporal",
+        "--run_id", run_id,
     ]
     res = subprocess.run(cmd, capture_output=True, text=True)
     assert res.returncode == 0, "CLI fallo: %s" % res.stderr
@@ -444,7 +444,9 @@ def test_mezcla_de_corridas(tmp_run):
 
     tablas = _ejecutar_cli(tmp_run)
     asoc = tablas["asociaciones_flujo_profundidad"]
-    assert asoc["mezcla_run_id_detectada"] is True
+    # Duplicados de observation_id se reportan; identidad de corrida es UNKNOWN (None).
+    assert asoc["mezcla_run_id_detectada"] is None
+    assert asoc["run_id_en_registros"] == "UNKNOWN"
     assert "AAA|1000" in asoc["ids_duplicados_observacion"]
     assert "AAA|1000" in asoc["ids_duplicados_resultado"]
 
@@ -550,3 +552,109 @@ def test_sensibilidad_calculada_a_mano(tmp_run):
     # se respete: diferencia nunca es cero inventada.
     assert h5_c["diferencia"] is not None
     assert h5_c["motivo"] is None
+
+
+# -------------------- flujo neto negativo legítimo (compra y venta positivas) --------------------
+
+def test_flujo_neto_negativo_legitimo_admitido(tmp_run):
+    """Compra y venta positivas con flujo neto negativo: admitida en la asociación."""
+    objetos = [
+        _hacer_ciclo(900, 1000, ["AAA"], ["CCC"]),
+    ]
+    observaciones = [
+        # buy=100, sell=200 → flujo neto = -100 (negativo, pero legítimo: ambos importes >= 0).
+        _hacer_observacion("AAA", "candidate", "observada", "UP", 1000, 900, 100, 200, 1000, 500, True, 0.01, 0.02, 0.03),
+        _hacer_observacion("CCC", "comparator", "observada", None, 1000, 900, 150, 75, 900, 450, True, 0.001, 0.002, 0.003),
+    ]
+    resultados = []
+    for oid in ("AAA|1000", "CCC|1000"):
+        for h in ("5m", "15m", "60m"):
+            resultados.append(_hacer_resultado(oid, h, 0.01))
+    _escribir_jsonl(tmp_run["jsonl"], objetos + observaciones + resultados)
+
+    tablas = _ejecutar_cli(tmp_run)
+    asoc = tablas["asociaciones_flujo_profundidad"]
+    # AAA y CCC son válidas: 2 observaciones × 3 horizontes = 6 parejas válidas por horizonte.
+    assert asoc["parejas_validas_por_horizonte"] == {"5m": 2, "15m": 2, "60m": 2}
+    # AAA tiene flujo neto negativo legítimo: 3 horizontes contados.
+    assert asoc["n_flujo_neto_negativo_legitimo"] == 3
+    assert asoc["n_valor_negativo_flujo"] == 0  # no hay importe bruto negativo
+
+
+# -------------------- identidad de corrida: dos corridas distintas --------------------
+
+def test_dos_corridas_distintas_contradiccion(tmp_run):
+    """Dos corridas distintas con identificadores únicos: contradicción detectada."""
+    objetos = [
+        _hacer_ciclo(900, 1000, ["AAA"], ["CCC"]),
+    ]
+    observaciones = [
+        _hacer_observacion("AAA", "candidate", "observada", "UP", 1000, 900, 100, 50, 1000, 500, True, 0.01, 0.02, 0.03),
+        _hacer_observacion("CCC", "comparator", "observada", None, 1000, 900, 150, 75, 900, 450, True, 0.001, 0.002, 0.003),
+    ]
+    # Marcar cada observación con un run_id distinto (contradicción explícita).
+    observaciones[0]["run_id"] = "corrida-A"
+    observaciones[1]["run_id"] = "corrida-B"
+    resultados = []
+    for oid in ("AAA|1000", "CCC|1000"):
+        for h in ("5m", "15m", "60m"):
+            resultados.append(_hacer_resultado(oid, h, 0.01))
+    _escribir_jsonl(tmp_run["jsonl"], objetos + observaciones + resultados)
+
+    tablas = _ejecutar_cli(tmp_run, run_id="corrida-A")
+    asoc = tablas["asociaciones_flujo_profundidad"]
+    assert asoc["mezcla_run_id_detectada"] is True
+    assert asoc["run_id_en_registros"] == ["corrida-A", "corrida-B"]
+    assert asoc["run_id_coincide_con_esperado"] is None
+
+
+# -------------------- identidad de corrida: ausente (UNKNOWN) --------------------
+
+def test_identidad_corrida_ausente_unknown(tmp_run):
+    """Sin campo run_id en los registros: identidad es UNKNOWN, no false."""
+    objetos = [
+        _hacer_ciclo(900, 1000, ["AAA"], ["CCC"]),
+    ]
+    observaciones = [
+        _hacer_observacion("AAA", "candidate", "observada", "UP", 1000, 900, 100, 50, 1000, 500, True, 0.01, 0.02, 0.03),
+        _hacer_observacion("CCC", "comparator", "observada", None, 1000, 900, 150, 75, 900, 450, True, 0.001, 0.002, 0.003),
+    ]
+    resultados = []
+    for oid in ("AAA|1000", "CCC|1000"):
+        for h in ("5m", "15m", "60m"):
+            resultados.append(_hacer_resultado(oid, h, 0.01))
+    _escribir_jsonl(tmp_run["jsonl"], objetos + observaciones + resultados)
+
+    tablas = _ejecutar_cli(tmp_run, run_id="cualquier-cosa")
+    asoc = tablas["asociaciones_flujo_profundidad"]
+    assert asoc["mezcla_run_id_detectada"] is None
+    assert asoc["run_id_en_registros"] == "UNKNOWN"
+    assert asoc["run_id_coincide_con_esperado"] is None
+
+
+# -------------------- conteos correctos por observación y horizonte --------------------
+
+def test_conteos_observacion_y_horizonte(tmp_run):
+    """Conteos correctos por observación (216) y filas observación×horizonte (504)."""
+    objetos = [
+        _hacer_ciclo(900, 1000, ["A", "B"], ["C", "D"]),
+    ]
+    observaciones = [
+        _hacer_observacion("A", "candidate", "observada", "UP", 1000, 900, 100, 0, 1000, 500, True, 0.10, 0.0, 0.0),
+        _hacer_observacion("B", "candidate", "observada", "UP", 1000, 900, 200, 0, 1000, 500, True, 0.20, 0.0, 0.0),
+        _hacer_observacion("C", "comparator", "observada", None, 1000, 900, 0, 0, 1000, 500, True, 0.00, 0.0, 0.0),
+        _hacer_observacion("D", "comparator", "observada", None, 1000, 900, 0, 0, 1000, 500, True, 0.20, 0.0, 0.0),
+    ]
+    resultados = []
+    for oid in ("A|1000", "B|1000", "C|1000", "D|1000"):
+        for h in ("5m", "15m", "60m"):
+            resultados.append(_hacer_resultado(oid, h, 0.01))
+    _escribir_jsonl(tmp_run["jsonl"], objetos + observaciones + resultados)
+
+    tablas = _ejecutar_cli(tmp_run)
+    rg = tablas["resumen_global"]
+    assert rg["observaciones_total"] == 4
+    assert rg["observaciones_aptas"] == 4
+    assert rg["resultados_total"] == 12
+    assert rg["resultados_por_horizonte"] == {"5m": 4, "15m": 4, "60m": 4}
+

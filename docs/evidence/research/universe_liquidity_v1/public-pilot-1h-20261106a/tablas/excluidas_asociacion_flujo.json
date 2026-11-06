@@ -1,0 +1,73 @@
+{
+  "tipo": "tabla_pequena",
+  "version": "v3_reconciliacion_flujo",
+  "run_id": "public-pilot-1h-20261106a",
+  "run_id_en_registros": "UNKNOWN",
+  "nota_run_id": "Los registros JSONL (observaciones y resultados) no contienen campo run_id. La identidad de corrida se acredita mediante el manifiesto publicado y el hash del archivo observaciones.jsonl, no por un campo persistido en cada registro. El argumento CLI --run_id y el nombre del directorio no son pruebas suficientes por si solos.",
+  "duplicados_observation_id_observaciones": [],
+  "duplicados_pares_observacion_horizonte_resultados": [],
+  "observaciones_excluidas_asociacion_flujo": [
+    {
+      "observation_id": "CGPTUSDT|1793942927179",
+      "simbolo": "CGPTUSDT",
+      "rol": "comparator",
+      "decision_ms": 1793942927179,
+      "buy_notional_original": -9.592326932761353e-14,
+      "sell_notional_original": 190.33849000000006,
+      "flujo_neto_calculado_USDT": -190.33849000000015,
+      "profundidad_top20_USDT": 66614.15978,
+      "ventana_flujo_completa": true,
+      "ventana_flujo_ms": 60000,
+      "motivo_exclusion": "buy_notional negativo (importe bruto, error de punto flotante ~1e-14). Regla estricta: buy_notional y sell_notional deben ser >= 0. No es flujo neto negativo; el flujo neto es legítimo.",
+      "resultados_forward": {
+        "5m": {"retorno": 0.0009199632014720101, "estado": "resuelto", "neto_estado": "UNKNOWN"},
+        "15m": {"retorno": 0.008279668813247452, "estado": "resuelto", "neto_estado": "UNKNOWN"},
+        "60m": {"retorno": 0.011959521619135279, "estado": "resuelto", "neto_estado": "UNKNOWN"}
+      }
+    },
+    {
+      "observation_id": "HANAUSDT|1793944127943",
+      "simbolo": "HANAUSDT",
+      "rol": "candidate",
+      "decision_ms": 1793944127943,
+      "buy_notional_original": 470.1170800000008,
+      "sell_notional_original": -1.1457501614131615e-12,
+      "flujo_neto_calculado_USDT": 470.1170800000019,
+      "profundidad_top20_USDT": 63160.740430000005,
+      "ventana_flujo_completa": true,
+      "ventana_flujo_ms": 60000,
+      "motivo_exclusion": "sell_notional negativo (importe bruto, error de punto flotante ~1e-14). Regla estricta: buy_notional y sell_notional deben ser >= 0. No es flujo neto negativo; el flujo neto es legítimo.",
+      "resultados_forward": {
+        "5m": {"retorno": -0.0008123476848090652, "estado": "resuelto", "neto_estado": "UNKNOWN"},
+        "15m": {"retorno": -0.008123476848090934, "estado": "resuelto", "neto_estado": "UNKNOWN"},
+        "60m": {"retorno": -0.0024370430544273366, "estado": "resuelto", "neto_estado": "UNKNOWN"}
+      }
+    },
+    {
+      "observation_id": "CHILLGUYUSDT|1793945328322",
+      "simbolo": "CHILLGUYUSDT",
+      "rol": "comparator",
+      "decision_ms": 1793945328322,
+      "buy_notional_original": 38.27701400000023,
+      "sell_notional_original": -5.417888360170764e-14,
+      "flujo_neto_calculado_USDT": 38.277014000000285,
+      "profundidad_top20_USDT": 10992.21281,
+      "ventana_flujo_completa": true,
+      "ventana_flujo_ms": 60000,
+      "motivo_exclusion": "sell_notional negativo (importe bruto, error de punto flotante ~1e-14). Regla estricta: buy_notional y sell_notional deben ser >= 0. No es flujo neto negativo; el flujo neto es legítimo.",
+      "resultados_forward": {
+        "5m": {"retorno": -0.0017978310038856218, "estado": "resuelto", "neto_estado": "UNKNOWN"},
+        "15m": {"retorno": 0.0006379400336366713, "estado": "resuelto", "neto_estado": "UNKNOWN"},
+        "60m": {"retorno": 0.008525198631328529, "estado": "resuelto", "neto_estado": "UNKNOWN"}
+      }
+    }
+  ],
+  "denominadores": {
+    "observaciones_unicas_aptas": 168,
+    "filas_observacion_horizonte": 504,
+    "parejas_validas_por_horizonte": {"5m": 165, "15m": 165, "60m": 165},
+    "observaciones_excluidas_de_asociacion": 3,
+    "causa_exclusion": "buy_notional o sell_notional ligeramente negativo (error de punto flotante ~1e-14), no profundidad cero ni ventana incompleta."
+  },
+  "nota": "Un importe bruto negativo (buy o sell < 0) se excluye de la asociación flujo/profundidad. Un flujo neto negativo (buy - sell < 0) es legítimo y no es motivo de exclusión. Ninguna de las 3 observaciones excluidas tiene flujo neto negativo por causa económica; el importe bruto negativo es error de punto flotante."
+}
