@@ -1,0 +1,59 @@
+{
+  "config": {
+    "activar_publico": true,
+    "capture_protocol_version": 3,
+    "clock_file": null,
+    "clock_mode": "system",
+    "cycle_seconds": 300.0,
+    "decision_delay_seconds": 0.0,
+    "decision_gate_file": null,
+    "duration_seconds": 3600.0,
+    "horizons": "5m=300000,15m=900000,60m=3600000",
+    "max_bytes": 134217728,
+    "max_candidates": 12,
+    "max_comparators": 8,
+    "max_data_age_ms": 5000,
+    "max_http_attempts": 2000,
+    "max_http_retries": 50,
+    "max_http_weight": 5000,
+    "max_messages": 5000000,
+    "max_observations": 20000,
+    "max_symbols": 20,
+    "max_ws_reconnects": 20,
+    "min_quote_volume_usdt": 1000000.0,
+    "mode": "public",
+    "out_dir": "C:\\proyectos\\binance-futures-data\\public-pilot-1h-20261106a",
+    "pilot_version": "research-pilot-v1",
+    "policy_version": "research-selector-v2",
+    "price_delay_ms": 2000,
+    "price_interval": "1m",
+    "price_tolerance_ms": 90000,
+    "protocol_version": "prospective-protocol-v1",
+    "rest_base": "https://fapi.binance.com",
+    "run_id": "public-pilot-1h-20261106a",
+    "selection_seconds": 300.0,
+    "settle_seconds": 4200.0,
+    "status_file": "C:\\proyectos\\binance-futures-data\\public-pilot-1h-20261106a\\status.json",
+    "stop_file": null,
+    "tick_ms": 500,
+    "ws_market_base": "wss://fstream.binance.com/market",
+    "ws_public_base": "wss://fstream.binance.com/public"
+  },
+  "dataset_location": "C:\\proyectos\\binance-futures-data\\public-pilot-1h-20261106a",
+  "files": {
+    "observaciones.jsonl": {
+      "bytes": 3112084,
+      "sha256": "43cc26e529b38e97494217d3015f4a42f826bf515f0df34898d9a764a54a1165"
+    },
+    "resumen.json": {
+      "bytes": 6277,
+      "sha256": "cf03be4dffb9930ae81d0bd157dcbb1de2889cc8a3d3679d473d75def0c5a59b"
+    }
+  },
+  "git_head": "f122fbc898821f4a985d071d5fd6efc1f469d9c4",
+  "nota": "dataset fuera de Git; se publican manifiesto, hashes y muestra pequena",
+  "pilot_version": "research-pilot-v1",
+  "policy_version": "research-selector-v2",
+  "protocol_version": "prospective-protocol-v1",
+  "run_id": "public-pilot-1h-20261106a"
+}

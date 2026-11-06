@@ -36,7 +36,7 @@ Por tanto:
 
 ## 4. Código de salida
 
-código de salida: 0 (proceso terminó normalmente, stop_reason = "duracion"). Evidencia: pilot.log (stdout al finalizar) y resumen.json (estado = "completo").
+Código de salida observado: UNKNOWN. El archivo pilot.log contiene el resumen final del piloto ({"run_id": "public-pilot-1h-20261106a", "estado": "completo", ...}), pero no incluye un código de salida de proceso. No existe archivo de control de terminación (exit code file) ni registro del shell padre en los archivos de la corrida. La finalización normal se infiere del resumen (estado = "completo", stop_reason = "duracion") y del camino de salida normal del código (main() retorna 0 al finalizar pilot.run() sin excepción), pero no hay evidencia directa del código de salida del sistema operativo.
 
 ## 5. Distinción de tipos
 

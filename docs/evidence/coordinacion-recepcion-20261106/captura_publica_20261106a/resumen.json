@@ -1,0 +1,232 @@
+{
+  "almacenamiento": {
+    "jsonl_bytes": 3112084,
+    "jsonl_rows": 732,
+    "research_db": "C:\\proyectos\\binance-futures-data\\public-pilot-1h-20261106a\\research.db",
+    "sqlite_bytes": 2113536,
+    "storage_bytes_total": 5225620,
+    "tope_bytes": 134217728
+  },
+  "ciclos_saltados": 0,
+  "config": {
+    "activar_publico": true,
+    "capture_protocol_version": 3,
+    "clock_file": null,
+    "clock_mode": "system",
+    "cycle_seconds": 300.0,
+    "decision_delay_seconds": 0.0,
+    "decision_gate_file": null,
+    "duration_seconds": 3600.0,
+    "horizons": "5m=300000,15m=900000,60m=3600000",
+    "max_bytes": 134217728,
+    "max_candidates": 12,
+    "max_comparators": 8,
+    "max_data_age_ms": 5000,
+    "max_http_attempts": 2000,
+    "max_http_retries": 50,
+    "max_http_weight": 5000,
+    "max_messages": 5000000,
+    "max_observations": 20000,
+    "max_symbols": 20,
+    "max_ws_reconnects": 20,
+    "min_quote_volume_usdt": 1000000.0,
+    "mode": "public",
+    "out_dir": "C:\\proyectos\\binance-futures-data\\public-pilot-1h-20261106a",
+    "pilot_version": "research-pilot-v1",
+    "policy_version": "research-selector-v2",
+    "price_delay_ms": 2000,
+    "price_interval": "1m",
+    "price_tolerance_ms": 90000,
+    "protocol_version": "prospective-protocol-v1",
+    "rest_base": "https://fapi.binance.com",
+    "run_id": "public-pilot-1h-20261106a",
+    "selection_seconds": 300.0,
+    "settle_seconds": 4200.0,
+    "status_file": "C:\\proyectos\\binance-futures-data\\public-pilot-1h-20261106a\\status.json",
+    "stop_file": null,
+    "tick_ms": 500,
+    "ws_market_base": "wss://fstream.binance.com/market",
+    "ws_public_base": "wss://fstream.binance.com/public"
+  },
+  "dedupe": {
+    "flujo_duplicados": 0,
+    "libro_duplicados": 0
+  },
+  "ended_iso": "2026-11-06T07:14:10.655000+00:00",
+  "ended_ms": 1793949250655,
+  "estado": "completo",
+  "horizontes": {
+    "15m": {
+      "desfase_ms": {
+        "max": 56039.0,
+        "mean": 20775.125,
+        "min": 11635.0,
+        "n": 168
+      },
+      "neto": "UNKNOWN (sin supuestos de ejecucion/costes)",
+      "no_evaluable": 0,
+      "pendiente": 0,
+      "resueltos": 168,
+      "retorno_fraccion": {
+        "max": 0.11216644052464947,
+        "mean": 0.007859983119905682,
+        "min": -0.041354607619667826,
+        "n": 168
+      }
+    },
+    "5m": {
+      "desfase_ms": {
+        "max": 56039.0,
+        "mean": 20775.125,
+        "min": 11635.0,
+        "n": 168
+      },
+      "neto": "UNKNOWN (sin supuestos de ejecucion/costes)",
+      "no_evaluable": 0,
+      "pendiente": 0,
+      "resueltos": 168,
+      "retorno_fraccion": {
+        "max": 0.08276797829036636,
+        "mean": 0.0022295591934483475,
+        "min": -0.040525536639526356,
+        "n": 168
+      }
+    },
+    "60m": {
+      "desfase_ms": {
+        "max": 56039.0,
+        "mean": 20775.125,
+        "min": 11635.0,
+        "n": 168
+      },
+      "neto": "UNKNOWN (sin supuestos de ejecucion/costes)",
+      "no_evaluable": 0,
+      "pendiente": 0,
+      "resueltos": 168,
+      "retorno_fraccion": {
+        "max": 0.2700580402867873,
+        "mean": 0.031214928370453015,
+        "min": -0.0528983211910041,
+        "n": 168
+      }
+    }
+  },
+  "limites": [
+    "precio_base = libro_mid; precio_posterior = klines_apertura_1m; proxy de fuentes mixtas, no mark-to-mid, no P&L ejecutable",
+    "sin supuestos de costes el neto es UNKNOWN",
+    "no se declara ventaja, rentabilidad ni representatividad",
+    "presupuesto HTTP efectivo (intentos/peso/reintentos) y almacenamiento total (JSONL+SQLite+aux)"
+  ],
+  "motivos": {
+    "dato_obsoleto_flujo": 47,
+    "dato_obsoleto_libro": 4,
+    "flujo_ventana_incompleta": 1
+  },
+  "n_aptas_para_evaluacion": 168,
+  "n_ciclos": 12,
+  "n_descartadas": 48,
+  "n_no_aptas_para_evaluacion": 48,
+  "n_observaciones": 216,
+  "n_observadas": 168,
+  "n_resultados": 504,
+  "n_rotaciones_salida": 25,
+  "pilot_version": "research-pilot-v1",
+  "policy_version": "research-selector-v2",
+  "por_estado": {
+    "descartada": 48,
+    "observada": 168
+  },
+  "por_simbolo": {
+    "1MBABYDOGEUSDT": 12,
+    "AINUSDT": 12,
+    "AKEUSDT": 12,
+    "ATUSDT": 12,
+    "AUSDT": 11,
+    "BANKUSDT": 11,
+    "BEAMXUSDT": 2,
+    "BIRBUSDT": 12,
+    "CGPTUSDT": 6,
+    "CHILLGUYUSDT": 3,
+    "COOKIEUSDT": 6,
+    "COTIUSDT": 3,
+    "CYBERUSDT": 12,
+    "DEXEUSDT": 6,
+    "DIAUSDT": 3,
+    "ELSAUSDT": 12,
+    "EVAAUSDT": 5,
+    "HANAUSDT": 12,
+    "HUMAUSDT": 12,
+    "JCTUSDT": 12,
+    "PIEVERSEUSDT": 1,
+    "PONSUSDT": 3,
+    "POWERUSDT": 9,
+    "POWRUSDT": 1,
+    "SOPHUSDT": 2,
+    "SPACEUSDT": 7,
+    "UAIUSDT": 12,
+    "牛来USDT": 5
+  },
+  "presupuesto_http": {
+    "attempts": 641,
+    "blocked": false,
+    "max_attempts": 2000,
+    "max_retries": 50,
+    "max_weight": 5000,
+    "reason": null,
+    "retries": 0,
+    "weight": 1109
+  },
+  "protocol_version": "prospective-protocol-v1",
+  "recorder": {
+    "book_1m_rows": 1196,
+    "drops": 0,
+    "enabled": true,
+    "errors": 0,
+    "flow_10s_rows": 6391,
+    "flow_1m_rows": 1236,
+    "high_water": 24,
+    "inflight": 0,
+    "last_write_at": "2026-11-06T07:14:10Z",
+    "state": "STOPPED",
+    "writes": 8823
+  },
+  "rest": {
+    "failures": 0,
+    "requests": 641,
+    "retries": 0,
+    "weight_spent": 6890
+  },
+  "retorno_unidades": "fraccion (0.01 = 1%); precio_base = libro_mid y precio_posterior = klines_apertura_1m (proxy de fuentes mixtas; no mark-to-mid, no P&L ejecutable)",
+  "run_id": "public-pilot-1h-20261106a",
+  "seguidos_peak": 20,
+  "started_iso": "2026-11-06T05:17:36.629000+00:00",
+  "started_ms": 1793942256629,
+  "stop_reason": "duracion",
+  "ws": {
+    "market": {
+      "connected_now": false,
+      "connections": 1,
+      "disconnects": 1,
+      "errors": 0,
+      "last_error": null,
+      "messages": 55265,
+      "name": "market",
+      "reconnects": 0,
+      "url_shape": "wss://fstream.binance.com/market/stream"
+    },
+    "public": {
+      "connected_now": false,
+      "connections": 1,
+      "disconnects": 1,
+      "errors": 0,
+      "last_error": null,
+      "messages": 26192,
+      "name": "public",
+      "reconnects": 0,
+      "url_shape": "wss://fstream.binance.com/public/stream"
+    }
+  },
+  "ws_connections_total": 20,
+  "ws_messages_total": 960114,
+  "ws_reconnects_total": 0
+}

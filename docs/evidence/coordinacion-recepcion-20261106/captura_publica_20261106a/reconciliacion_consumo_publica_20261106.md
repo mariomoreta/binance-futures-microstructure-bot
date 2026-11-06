@@ -12,9 +12,9 @@ Fuente: resumen.json (contadores persistidos del piloto, no estimaciones del pre
 | Reintentos (retries) | 0 | 50 | ACREDITADO |
 | Bloqueado | false | — | ACREDITADO |
 | Fallos (rest.failures) | 0 | — | ACREDITADO |
-| Peso gastado (rest.weight_spent) | 6 890 | — | Informativo (cabecera X-MBX-USED-WEIGHT de Binance; distinto del peso de presupuesto) |
+| Peso gastado (rest.weight_spent) | 6 890 | — | Informativo (contador interno de HistoryClient con tabla ASSUMED_WEIGHTS; no es peso real de cabeceras Binance) |
 
-Nota: `presupuesto_http.weight` (1 109) y `rest.weight_spent` (6 890) miden cosas distintas. El primero es el peso efectivo del presupuesto interno (intentos × peso unitario estimado), acotado por max_http_weight = 5 000. El segundo es el peso real reportado por las cabeceras de Binance (X-MBX-USED-WEIGHT-1M), que no está sujeto al mismo tope de 5 000 del presupuesto interno. Ambos están dentro de sus respectivos contextos.
+Nota: `presupuesto_http.weight` (1 109) y `rest.weight_spent` (6 890) son contadores internos que acumulan pesos configurados desde la tabla `ASSUMED_WEIGHTS` de `history_client.py` (`self.stats.weight_spent += weight` donde `weight = ASSUMED_WEIGHTS[...]`). No se conservan cabeceras `X-MBX-USED-WEIGHT-1M` de Binance en ningún archivo de la corrida, por lo que no existe valor real de peso HTTP de respuesta del servidor. Ambos contadores (1 109 del presupuesto interno y 6 890 de HistoryClient) usan la misma tabla de pesos asignados, no valores observados de la red.
 
 ## 2. WebSocket
 

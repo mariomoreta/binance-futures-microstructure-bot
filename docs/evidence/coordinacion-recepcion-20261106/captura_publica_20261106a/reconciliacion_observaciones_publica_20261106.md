@@ -48,7 +48,12 @@ Cada observación apta (168) genera exactamente 3 resultados (uno por horizonte)
 | 12 | 1793945628365 | 06:13:48.365 | 17 | 11 | 6 | 11 | 6 |
 | **Total** | | | **216** | **136** | **80** | **168** | **48** |
 
-Intervalos entre ciclos: 300 211 ms, 300 007 ms, 300 083 ms, 300 053 ms, 300 383 ms, 300 245 ms, 300 014 ms, 300 178 ms, 300 121 ms, 300 066 ms, 300 043 ms — todos coherentes con cycle_seconds = 300 s (desviación máxima 383 ms, dentro del tick de 500 ms del piloto).
+Intervalos entre ciclos (decision_ms consecutivos, medidos en observaciones.jsonl):
+300 211 ms, 283 007 ms, 300 083 ms, 300 053 ms, 300 383 ms, 300 245 ms, 300 014 ms, 300 178 ms, 300 121 ms, 300 066 ms, 300 043 ms.
+Mínimo: 283 007 ms (ciclo 2 → 3); máximo: 300 383 ms; promedio: 298 582 ms.
+Desviación absoluta respecto a 300 000 ms: 211, 16 993, 83, 53, 383, 245, 14, 178, 121, 66, 43 ms.
+
+Nota: el intervalo entre el ciclo 2 y el ciclo 3 es 283 007 ms, 16 993 ms por debajo de los 300 000 ms nominales. Esta desviación es muy superior al tick del piloto (500 ms) y no se atribuye automáticamente a un fallo; es un dato observado del ciclo de ejecución real. Todos los demás intervalos están dentro de ±383 ms de 300 000 ms. No se declara compatibilidad ni incumplimiento automático por esta desviación; se reporta como observación cronológica del ciclo de decisión del piloto.
 
 ## 4. Explicación de 216 < 240
 
