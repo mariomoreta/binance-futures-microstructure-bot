@@ -1,0 +1,608 @@
+{
+  "aceptacion": "primer-corte-automatico-cronologico",
+  "cobertura": {
+    "S000USDT": {
+      "flujo_presente": true,
+      "flujo_ventana_completa": true,
+      "libro_banda_5bps_cubierta": true,
+      "libro_presente": true
+    },
+    "S001USDT": {
+      "flujo_presente": true,
+      "flujo_ventana_completa": true,
+      "libro_banda_5bps_cubierta": true,
+      "libro_presente": true
+    },
+    "S002USDT": {
+      "flujo_presente": true,
+      "flujo_ventana_completa": true,
+      "libro_banda_5bps_cubierta": true,
+      "libro_presente": true
+    },
+    "S003USDT": {
+      "flujo_presente": true,
+      "flujo_ventana_completa": true,
+      "libro_banda_5bps_cubierta": true,
+      "libro_presente": true
+    },
+    "S004USDT": {
+      "flujo_presente": true,
+      "flujo_ventana_completa": true,
+      "libro_banda_5bps_cubierta": true,
+      "libro_presente": true
+    },
+    "S009USDT": {
+      "flujo_presente": true,
+      "flujo_ventana_completa": true,
+      "libro_banda_5bps_cubierta": true,
+      "libro_presente": true
+    },
+    "S010USDT": {
+      "flujo_presente": true,
+      "flujo_ventana_completa": true,
+      "libro_banda_5bps_cubierta": true,
+      "libro_presente": true
+    },
+    "S011USDT": {
+      "flujo_presente": true,
+      "flujo_ventana_completa": true,
+      "libro_banda_5bps_cubierta": true,
+      "libro_presente": true
+    },
+    "S015USDT": {
+      "flujo_presente": true,
+      "flujo_ventana_completa": true,
+      "libro_banda_5bps_cubierta": true,
+      "libro_presente": true
+    },
+    "S016USDT": {
+      "flujo_presente": true,
+      "flujo_ventana_completa": true,
+      "libro_banda_5bps_cubierta": true,
+      "libro_presente": true
+    },
+    "S017USDT": {
+      "flujo_presente": true,
+      "flujo_ventana_completa": true,
+      "libro_banda_5bps_cubierta": true,
+      "libro_presente": true
+    },
+    "S018USDT": {
+      "flujo_presente": true,
+      "flujo_ventana_completa": true,
+      "libro_banda_5bps_cubierta": true,
+      "libro_presente": true
+    },
+    "S019USDT": {
+      "flujo_presente": true,
+      "flujo_ventana_completa": true,
+      "libro_banda_5bps_cubierta": true,
+      "libro_presente": true
+    },
+    "S020USDT": {
+      "flujo_presente": true,
+      "flujo_ventana_completa": true,
+      "libro_banda_5bps_cubierta": true,
+      "libro_presente": true
+    },
+    "S021USDT": {
+      "flujo_presente": true,
+      "flujo_ventana_completa": true,
+      "libro_banda_5bps_cubierta": true,
+      "libro_presente": true
+    },
+    "S022USDT": {
+      "flujo_presente": true,
+      "flujo_ventana_completa": true,
+      "libro_banda_5bps_cubierta": true,
+      "libro_presente": true
+    },
+    "S023USDT": {
+      "flujo_presente": true,
+      "flujo_ventana_completa": true,
+      "libro_banda_5bps_cubierta": true,
+      "libro_presente": true
+    },
+    "S024USDT": {
+      "flujo_presente": true,
+      "flujo_ventana_completa": true,
+      "libro_banda_5bps_cubierta": true,
+      "libro_presente": true
+    }
+  },
+  "corte": {
+    "efectivo_ms": 1735689662000,
+    "espera_maxima_ms": 1735689721000,
+    "motivo": "cobertura_completa",
+    "nominal_ms": 1735689660000,
+    "reprogramaciones": 1
+  },
+  "decisiones": [
+    {
+      "apto_para_evaluacion": true,
+      "cobertura": {
+        "flujo_presente": true,
+        "flujo_ventana_completa": true,
+        "libro_banda_5bps_cubierta": true,
+        "libro_presente": true
+      },
+      "decision_ms": 1735689662000,
+      "disponibilidad": {
+        "flujo_ms": 1735689661000,
+        "libro_ms": 1735689661000,
+        "max_ms": 1735689662000,
+        "seleccion_ms": 1735689600000
+      },
+      "estado": "observada",
+      "motivos": [],
+      "role": "comparator",
+      "symbol": "S000USDT"
+    },
+    {
+      "apto_para_evaluacion": true,
+      "cobertura": {
+        "flujo_presente": true,
+        "flujo_ventana_completa": true,
+        "libro_banda_5bps_cubierta": true,
+        "libro_presente": true
+      },
+      "decision_ms": 1735689662000,
+      "disponibilidad": {
+        "flujo_ms": 1735689661000,
+        "libro_ms": 1735689661000,
+        "max_ms": 1735689662000,
+        "seleccion_ms": 1735689600000
+      },
+      "estado": "observada",
+      "motivos": [],
+      "role": "comparator",
+      "symbol": "S001USDT"
+    },
+    {
+      "apto_para_evaluacion": true,
+      "cobertura": {
+        "flujo_presente": true,
+        "flujo_ventana_completa": true,
+        "libro_banda_5bps_cubierta": true,
+        "libro_presente": true
+      },
+      "decision_ms": 1735689662000,
+      "disponibilidad": {
+        "flujo_ms": 1735689661000,
+        "libro_ms": 1735689661000,
+        "max_ms": 1735689662000,
+        "seleccion_ms": 1735689600000
+      },
+      "estado": "observada",
+      "motivos": [],
+      "role": "comparator",
+      "symbol": "S002USDT"
+    },
+    {
+      "apto_para_evaluacion": true,
+      "cobertura": {
+        "flujo_presente": true,
+        "flujo_ventana_completa": true,
+        "libro_banda_5bps_cubierta": true,
+        "libro_presente": true
+      },
+      "decision_ms": 1735689662000,
+      "disponibilidad": {
+        "flujo_ms": 1735689661000,
+        "libro_ms": 1735689661000,
+        "max_ms": 1735689662000,
+        "seleccion_ms": 1735689600000
+      },
+      "estado": "observada",
+      "motivos": [],
+      "role": "comparator",
+      "symbol": "S003USDT"
+    },
+    {
+      "apto_para_evaluacion": true,
+      "cobertura": {
+        "flujo_presente": true,
+        "flujo_ventana_completa": true,
+        "libro_banda_5bps_cubierta": true,
+        "libro_presente": true
+      },
+      "decision_ms": 1735689662000,
+      "disponibilidad": {
+        "flujo_ms": 1735689661000,
+        "libro_ms": 1735689661000,
+        "max_ms": 1735689662000,
+        "seleccion_ms": 1735689600000
+      },
+      "estado": "observada",
+      "motivos": [],
+      "role": "comparator",
+      "symbol": "S004USDT"
+    },
+    {
+      "apto_para_evaluacion": true,
+      "cobertura": {
+        "flujo_presente": true,
+        "flujo_ventana_completa": true,
+        "libro_banda_5bps_cubierta": true,
+        "libro_presente": true
+      },
+      "decision_ms": 1735689662000,
+      "disponibilidad": {
+        "flujo_ms": 1735689661000,
+        "libro_ms": 1735689661000,
+        "max_ms": 1735689662000,
+        "seleccion_ms": 1735689600000
+      },
+      "estado": "observada",
+      "motivos": [],
+      "role": "comparator",
+      "symbol": "S009USDT"
+    },
+    {
+      "apto_para_evaluacion": true,
+      "cobertura": {
+        "flujo_presente": true,
+        "flujo_ventana_completa": true,
+        "libro_banda_5bps_cubierta": true,
+        "libro_presente": true
+      },
+      "decision_ms": 1735689662000,
+      "disponibilidad": {
+        "flujo_ms": 1735689661000,
+        "libro_ms": 1735689661000,
+        "max_ms": 1735689662000,
+        "seleccion_ms": 1735689600000
+      },
+      "estado": "observada",
+      "motivos": [],
+      "role": "comparator",
+      "symbol": "S010USDT"
+    },
+    {
+      "apto_para_evaluacion": true,
+      "cobertura": {
+        "flujo_presente": true,
+        "flujo_ventana_completa": true,
+        "libro_banda_5bps_cubierta": true,
+        "libro_presente": true
+      },
+      "decision_ms": 1735689662000,
+      "disponibilidad": {
+        "flujo_ms": 1735689661000,
+        "libro_ms": 1735689661000,
+        "max_ms": 1735689662000,
+        "seleccion_ms": 1735689600000
+      },
+      "estado": "observada",
+      "motivos": [],
+      "role": "comparator",
+      "symbol": "S011USDT"
+    },
+    {
+      "apto_para_evaluacion": true,
+      "cobertura": {
+        "flujo_presente": true,
+        "flujo_ventana_completa": true,
+        "libro_banda_5bps_cubierta": true,
+        "libro_presente": true
+      },
+      "decision_ms": 1735689662000,
+      "disponibilidad": {
+        "flujo_ms": 1735689661000,
+        "libro_ms": 1735689661000,
+        "max_ms": 1735689662000,
+        "seleccion_ms": 1735689600000
+      },
+      "estado": "observada",
+      "motivos": [],
+      "role": "candidate",
+      "symbol": "S015USDT"
+    },
+    {
+      "apto_para_evaluacion": true,
+      "cobertura": {
+        "flujo_presente": true,
+        "flujo_ventana_completa": true,
+        "libro_banda_5bps_cubierta": true,
+        "libro_presente": true
+      },
+      "decision_ms": 1735689662000,
+      "disponibilidad": {
+        "flujo_ms": 1735689661000,
+        "libro_ms": 1735689661000,
+        "max_ms": 1735689662000,
+        "seleccion_ms": 1735689600000
+      },
+      "estado": "observada",
+      "motivos": [],
+      "role": "candidate",
+      "symbol": "S016USDT"
+    },
+    {
+      "apto_para_evaluacion": true,
+      "cobertura": {
+        "flujo_presente": true,
+        "flujo_ventana_completa": true,
+        "libro_banda_5bps_cubierta": true,
+        "libro_presente": true
+      },
+      "decision_ms": 1735689662000,
+      "disponibilidad": {
+        "flujo_ms": 1735689661000,
+        "libro_ms": 1735689661000,
+        "max_ms": 1735689662000,
+        "seleccion_ms": 1735689600000
+      },
+      "estado": "observada",
+      "motivos": [],
+      "role": "candidate",
+      "symbol": "S017USDT"
+    },
+    {
+      "apto_para_evaluacion": true,
+      "cobertura": {
+        "flujo_presente": true,
+        "flujo_ventana_completa": true,
+        "libro_banda_5bps_cubierta": true,
+        "libro_presente": true
+      },
+      "decision_ms": 1735689662000,
+      "disponibilidad": {
+        "flujo_ms": 1735689661000,
+        "libro_ms": 1735689661000,
+        "max_ms": 1735689662000,
+        "seleccion_ms": 1735689600000
+      },
+      "estado": "observada",
+      "motivos": [],
+      "role": "candidate",
+      "symbol": "S018USDT"
+    },
+    {
+      "apto_para_evaluacion": true,
+      "cobertura": {
+        "flujo_presente": true,
+        "flujo_ventana_completa": true,
+        "libro_banda_5bps_cubierta": true,
+        "libro_presente": true
+      },
+      "decision_ms": 1735689662000,
+      "disponibilidad": {
+        "flujo_ms": 1735689661000,
+        "libro_ms": 1735689661000,
+        "max_ms": 1735689662000,
+        "seleccion_ms": 1735689600000
+      },
+      "estado": "observada",
+      "motivos": [],
+      "role": "candidate",
+      "symbol": "S019USDT"
+    },
+    {
+      "apto_para_evaluacion": true,
+      "cobertura": {
+        "flujo_presente": true,
+        "flujo_ventana_completa": true,
+        "libro_banda_5bps_cubierta": true,
+        "libro_presente": true
+      },
+      "decision_ms": 1735689662000,
+      "disponibilidad": {
+        "flujo_ms": 1735689661000,
+        "libro_ms": 1735689661000,
+        "max_ms": 1735689662000,
+        "seleccion_ms": 1735689600000
+      },
+      "estado": "observada",
+      "motivos": [],
+      "role": "candidate",
+      "symbol": "S020USDT"
+    },
+    {
+      "apto_para_evaluacion": true,
+      "cobertura": {
+        "flujo_presente": true,
+        "flujo_ventana_completa": true,
+        "libro_banda_5bps_cubierta": true,
+        "libro_presente": true
+      },
+      "decision_ms": 1735689662000,
+      "disponibilidad": {
+        "flujo_ms": 1735689661000,
+        "libro_ms": 1735689661000,
+        "max_ms": 1735689662000,
+        "seleccion_ms": 1735689600000
+      },
+      "estado": "observada",
+      "motivos": [],
+      "role": "candidate",
+      "symbol": "S021USDT"
+    },
+    {
+      "apto_para_evaluacion": true,
+      "cobertura": {
+        "flujo_presente": true,
+        "flujo_ventana_completa": true,
+        "libro_banda_5bps_cubierta": true,
+        "libro_presente": true
+      },
+      "decision_ms": 1735689662000,
+      "disponibilidad": {
+        "flujo_ms": 1735689661000,
+        "libro_ms": 1735689661000,
+        "max_ms": 1735689662000,
+        "seleccion_ms": 1735689600000
+      },
+      "estado": "observada",
+      "motivos": [],
+      "role": "candidate",
+      "symbol": "S022USDT"
+    },
+    {
+      "apto_para_evaluacion": true,
+      "cobertura": {
+        "flujo_presente": true,
+        "flujo_ventana_completa": true,
+        "libro_banda_5bps_cubierta": true,
+        "libro_presente": true
+      },
+      "decision_ms": 1735689662000,
+      "disponibilidad": {
+        "flujo_ms": 1735689661000,
+        "libro_ms": 1735689661000,
+        "max_ms": 1735689662000,
+        "seleccion_ms": 1735689600000
+      },
+      "estado": "observada",
+      "motivos": [],
+      "role": "candidate",
+      "symbol": "S023USDT"
+    },
+    {
+      "apto_para_evaluacion": true,
+      "cobertura": {
+        "flujo_presente": true,
+        "flujo_ventana_completa": true,
+        "libro_banda_5bps_cubierta": true,
+        "libro_presente": true
+      },
+      "decision_ms": 1735689662000,
+      "disponibilidad": {
+        "flujo_ms": 1735689661000,
+        "libro_ms": 1735689661000,
+        "max_ms": 1735689662000,
+        "seleccion_ms": 1735689600000
+      },
+      "estado": "observada",
+      "motivos": [],
+      "role": "candidate",
+      "symbol": "S024USDT"
+    }
+  ],
+  "eventos_con_fecha_futura": 0,
+  "inicio_seguimiento_ms": 1735689600000,
+  "primera_recepcion": {
+    "flujo_ms": {
+      "S000USDT": 1735689601000,
+      "S001USDT": 1735689601000,
+      "S002USDT": 1735689601000,
+      "S003USDT": 1735689601000,
+      "S004USDT": 1735689601000,
+      "S009USDT": 1735689601000,
+      "S010USDT": 1735689601000,
+      "S011USDT": 1735689601000,
+      "S015USDT": 1735689601000,
+      "S016USDT": 1735689601000,
+      "S017USDT": 1735689601000,
+      "S018USDT": 1735689601000,
+      "S019USDT": 1735689601000,
+      "S020USDT": 1735689601000,
+      "S021USDT": 1735689601000,
+      "S022USDT": 1735689601000,
+      "S023USDT": 1735689601000,
+      "S024USDT": 1735689601000
+    },
+    "libro_ms": {
+      "S000USDT": 1735689601000,
+      "S001USDT": 1735689601000,
+      "S002USDT": 1735689601000,
+      "S003USDT": 1735689601000,
+      "S004USDT": 1735689601000,
+      "S009USDT": 1735689601000,
+      "S010USDT": 1735689601000,
+      "S011USDT": 1735689601000,
+      "S015USDT": 1735689601000,
+      "S016USDT": 1735689601000,
+      "S017USDT": 1735689601000,
+      "S018USDT": 1735689601000,
+      "S019USDT": 1735689601000,
+      "S020USDT": 1735689601000,
+      "S021USDT": 1735689601000,
+      "S022USDT": 1735689601000,
+      "S023USDT": 1735689601000,
+      "S024USDT": 1735689601000
+    }
+  },
+  "publicaciones": {
+    "eventos_con_fecha_futura": 0,
+    "eventos_por_reloj": {
+      "1735689601000": 36,
+      "1735689606000": 36,
+      "1735689611000": 36,
+      "1735689616000": 36,
+      "1735689621000": 36,
+      "1735689626000": 36,
+      "1735689631000": 36,
+      "1735689636000": 36,
+      "1735689641000": 36,
+      "1735689646000": 36,
+      "1735689651000": 36,
+      "1735689656000": 36,
+      "1735689661000": 36
+    },
+    "paso_ms": 5000,
+    "primer_evento": {
+      "clock_ms": 1735689601000,
+      "event_ms": 1735689601000,
+      "kind": "libro",
+      "symbol": "S000USDT"
+    },
+    "primera_recepcion_ms": 1735689601000,
+    "total_eventos": 468,
+    "ultimo_evento": {
+      "clock_ms": 1735689661000,
+      "event_ms": 1735689661000,
+      "kind": "flujo",
+      "symbol": "S024USDT"
+    },
+    "ventana_observada_ms": 60000
+  },
+  "run_id": "aceptacion-corte-automatico",
+  "suscripcion": {
+    "cycles_run": 1,
+    "feeds_conectados": {
+      "market": true,
+      "public": true
+    },
+    "first_seen_ms": {
+      "S000USDT": 1735689600000,
+      "S001USDT": 1735689600000,
+      "S002USDT": 1735689600000,
+      "S003USDT": 1735689600000,
+      "S004USDT": 1735689600000,
+      "S009USDT": 1735689600000,
+      "S010USDT": 1735689600000,
+      "S011USDT": 1735689600000,
+      "S015USDT": 1735689600000,
+      "S016USDT": 1735689600000,
+      "S017USDT": 1735689600000,
+      "S018USDT": 1735689600000,
+      "S019USDT": 1735689600000,
+      "S020USDT": 1735689600000,
+      "S021USDT": 1735689600000,
+      "S022USDT": 1735689600000,
+      "S023USDT": 1735689600000,
+      "S024USDT": 1735689600000
+    },
+    "simbolos": [
+      "S000USDT",
+      "S001USDT",
+      "S002USDT",
+      "S003USDT",
+      "S004USDT",
+      "S009USDT",
+      "S010USDT",
+      "S011USDT",
+      "S015USDT",
+      "S016USDT",
+      "S017USDT",
+      "S018USDT",
+      "S019USDT",
+      "S020USDT",
+      "S021USDT",
+      "S022USDT",
+      "S023USDT",
+      "S024USDT"
+    ]
+  }
+}

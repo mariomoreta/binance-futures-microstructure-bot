@@ -68,20 +68,34 @@ observaciones aptas para estudio y un presupuesto público revisable.
   programa en `first_seen + 60 s` (ventana de flujo 1m) y los datos se
   publican/confirman antes de alcanzar ese corte.
 - **Coordinación automática corregida en `scripts/research_pilot.py`
-  (2026-11-05):**
+  (2026-11-05, protocolo de captura 3 desde 2026-11-06):**
   `symbol_warmup_ms = FLOW_HORIZONS_MS["1m"]` (60 s), independiente de
   `selection_seconds`; solo las entradas/reincorporaciones renuevan
-  `symbol_first_seen_ms`; el corte se reprograma al primer calentamiento
-  pendiente y una evaluación dentro del ciclo ocurre antes de la siguiente
-  selección. `decision-gate-file` queda como control explícito de las pruebas
-  de cadena; el camino productivo no lo requiere. Versión del protocolo de
-  captura: `capture_protocol_version=2`. Se mantienen todos los límites,
+  `symbol_first_seen_ms`; el primer corte espera cobertura observada real
+  (ventana de flujo completa del motor y ambas fuentes frescas), no el instante
+  nominal `first_seen + 60 s`: si aún no hay cobertura se reprograma dentro del
+  mismo bucle con espera máxima explícita (`WARMUP_MAX_WAIT_MS = 60 s`) y, al
+  agotarla, se evalúa con motivo explícito del motor sin marcar apto nada sin
+  datos. `decision-gate-file` queda como control explícito de las pruebas de
+  cadena; el camino productivo no lo requiere. Versión del protocolo de
+  captura: `capture_protocol_version=3`. Se mantienen todos los límites,
   tolerancias, selección research-selector-v2 y definición de precios.
   Las 7 pruebas de `TestCadenaSincronizada` fueron adaptadas (publicar/confirmar
   antes del corte; horizontes y rotación con calentamiento) y pasan: 7/7.
-  Evidencia y traza de una sola instancia:
-  `docs/evidence/coordinacion-20261105/` (`traza_instancia.json`,
+  Evidencia previa: `docs/evidence/coordinacion-20261105/` (`traza_instancia.json`,
   `diagnostico.md`, `validacion_final.txt` con `EXITCODE=0`).
+- **Aceptación cronológica del primer corte (2026-11-06):**
+  `tests/test_aceptacion_coordinacion_recepcion.py` publica 468 eventos con
+  `event_ms <= reloj` (0 fechas futuras), primera recepción en T0+1000, sin
+  historia precargada; corte nominal T0+60000 (ventana 55 s) no consume la
+  oportunidad; evaluación efectiva en T0+62000 con ventana observada 60000 ms y
+  18/18 aptas (candidatos y comparadores). Traza:
+  `docs/evidence/coordinacion-recepcion-20261106/traza_corte_recepcion.json`.
+  Pruebas: `test_research_pilot.py` 28 passed, `test_recorrido_productivo.py`
+  6 passed (reincorporación con periodo nuevo y fuente ausente con espera
+  acotada), `test_aceptacion_coordinacion_recepcion.py` 1 passed; conjunto
+  relacionado 77 passed, `EXITCODE=0`
+  (`docs/evidence/coordinacion-recepcion-20261106/validacion_final.txt`).
   Informe inicial conservado:
   `docs/evidence/research/universe_liquidity_v1/pilot_public_proposal_1h/informe_analisis_offline.md`.
   Tablas pequeñas v2:

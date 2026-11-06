@@ -17,19 +17,26 @@ incorporación publicados (7 pruebas focalizadas pasadas).
 Recorrido productivo reproducido localmente con proveedores loopback y el CLI
 del piloto (`tests/test_recorrido_productivo.py`, 6 pruebas): creación →
 selección → motores/suscripción → recepción confirmada → evaluación automática.
-**Coordinación automática corregida en `scripts/research_pilot.py`:**
+**Coordinación automática corregida en `scripts/research_pilot.py` (2026-11-05, protocolo de captura 3 desde 2026-11-06):**
 `symbol_warmup_ms = FLOW_HORIZONS_MS["1m"]` (60 s), independiente de
 `selection_seconds`; solo entradas/reincorporaciones renuevan
-`symbol_first_seen_ms`; el corte se programa tras el calentamiento y se
-reprograma al primer símbolo pendiente; la evaluación dentro del ciclo ocurre
-antes de la siguiente selección. Los datos se publican/confirman antes de
-alcanzar el corte, sin `decision-gate-file` en el camino productivo. Versión del
-protocolo de captura: `capture_protocol_version=2`. Se mantienen todos los
-límites, tolerancias, selección research-selector-v2 y definición de precios.
+`symbol_first_seen_ms`; el primer corte espera cobertura observada real
+(ventana de flujo completa del motor y ambas fuentes frescas), no el instante
+nominal `first_seen + 60 s`: si aún no hay cobertura se reprograma dentro del
+mismo bucle con espera máxima explícita (`WARMUP_MAX_WAIT_MS = 60 s`) y, al
+agotarla, se evalúa con motivo explícito del motor sin marcar apto nada sin
+datos. Los datos se publican/confirman antes de alcanzar el corte, sin
+`decision-gate-file` en el camino productivo. Versión del protocolo de captura:
+`capture_protocol_version=3`. Se mantienen todos los límites, tolerancias,
+selección research-selector-v2 y definición de precios.
 `tests/test_research_pilot.py` 28 passed (incluye las 7 de
 `TestCadenaSincronizada`, adaptadas conservando sus controles) +
-`test_recorrido_productivo.py` 6 passed = 34/34. Cero órdenes, cero claves
-privadas, cero cambios de estrategia ni tolerancias.
+`test_recorrido_productivo.py` 6 passed (reincorporación con periodo nuevo y
+fuente ausente con espera acotada) +
+`test_aceptacion_coordinacion_recepcion.py` 1 passed (corte con recepción
+cronológica y evidencia de fechas futuras cero) = 35/35 en los archivos del
+piloto y el recorrido; conjunto relacionado 77 passed, `EXITCODE=0`.
+Cero órdenes, cero claves privadas, cero cambios de estrategia ni tolerancias.
 
 `NEXT_TASKS`:
 1. Mantener `max_data_age_ms=5000`; no tocar dashboard 3020, servicio 8792,

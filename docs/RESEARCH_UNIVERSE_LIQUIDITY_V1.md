@@ -822,32 +822,46 @@ abiertos). Los candidatos son top-12 por prioridad determinista que se repiten
 | `permanece` descartados | 33 | dato_obsoleto_flujo (32), dato_obsoleto_libro (5) |
 
 **Corrección de coordinación implementada y verificada (actualizada
-2026-11-05):**
+2026-11-06, protocolo de captura 3):**
 el orden del código es `run_cycle()` (selección) → `_restart_feeds()` (abrir
-feeds) → corte de evaluación → `take_decisions()`. El calentamiento ya no se
-mide con `selection_seconds`: `symbol_warmup_ms = FLOW_HORIZONS_MS["1m"]` = 60 s
-(`DECISION_FLOW_HORIZON = "1m"`), es decir, la ventana de flujo que la decisión
-necesita, independiente de la cadencia de selección. Cada símbolo nuevo o
-reincorporado renueva `symbol_first_seen_ms` al suscribirse y un símbolo que
-continúa conserva el suyo.
+feeds) → corte de evaluación → `take_decisions()`. El calentamiento no se mide
+con `selection_seconds`: `symbol_warmup_ms = FLOW_HORIZONS_MS["1m"]` = 60 s
+(`DECISION_FLOW_HORIZON = "1m"`), la ventana de flujo que la decisión necesita.
+Cada símbolo nuevo o reincorporado renueva `symbol_first_seen_ms` al suscribirse
+y un símbolo que continúa conserva el suyo.
 
-El bucle automático (`ProductRun`/CLI, sin barrera manual) corta en
-`max(corte_actual, min(first_seen) + warmup)` y después avanza `cycle_seconds`;
-si tras un corte no se escribió ninguna observación, se reprograma al
-`siguiente_calentamiento` pendiente (`_earliest_ready_ms`). Un símbolo que
-alcanza la readiness a mitad de ciclo se evalúa antes de la siguiente selección,
-y `_symbols_evaluated_this_cycle` garantiza como máximo una observación por
+El primer corte espera **cobertura observada real**, no el instante nominal. La
+primera recepción ocurre después de la suscripción, así que en `T0+60 s` la
+ventana observada puede ser menor de 60 s: el piloto no la admite como completa
+ni consume la oportunidad. `_coverage_ready` exige ventana de flujo completa
+según el motor (`warmup_complete` sobre el span de eventos recibidos), libro con
+mid válido y ambas fuentes dentro de `max_data_age_ms=5000`; la misma regla se
+aplica a candidatos y comparadores. La programación usa la primera recepción
+efectiva por fuente (`symbol_first_flow_ms` / `symbol_first_book_ms`). Si el
+corte nominal no tiene cobertura, se reprograma dentro del mismo bucle cada
+250 ms hacia `primera_recepcion + ventana`, con espera máxima explícita
+`WARMUP_MAX_WAIT_MS = 60 s` (acotada por el fin de captura). Al agotarse la
+espera el corte se ejecuta con motivo explícito (`sin_flujo`, `sin_libro`,
+`dato_obsoleto_*`, `flujo_ventana_incompleta`) y `last_cut_reason` distingue
+`cobertura_completa` de `espera_maxima_agotada`. Tras una selección con símbolos
+nuevos o reincorporados el corte vigente se adelanta a su ventana nominal,
+`decision_ms` sigue siendo el instante real de evaluación y
+`_symbols_evaluated_this_cycle` garantiza como máximo una observación por
 símbolo y ciclo. `decision-gate-file` queda solo como control explícito de las
 pruebas de cadena; la ruta productiva no usa barrera.
 
-La corrección se verificó con `tests/test_recorrido_productivo.py` (6 pruebas)
-y `tests/test_research_pilot.py` (28 pruebas, 7 de ellas de cadena
-sincronizada): selección real con candidatos y comparadores, suscripción de
-feeds, recepción confirmada antes del corte, evaluación automática tras el
-calentamiento de 60 s, símbolos nuevos/reincorporados sin cobertura ficticia y
-con nuevo periodo y nueva oportunidad de evaluación, fuente ausente con motivo
-explícito, y una observación por símbolo y ciclo. Evidencia:
-`docs/evidence/coordinacion-20261105/`.
+La corrección se verificó con recepción cronológica (`event_ms <= reloj` en el
+momento de publicar, sin fechas futuras ni historia precargada): la aceptación
+`tests/test_aceptacion_coordinacion_recepcion.py` publica 468 eventos, primera
+recepción en T0+1000, corte nominal T0+60000, evaluación efectiva T0+62000,
+ventana observada 60000 ms y 18/18 observaciones aptas (candidatos y
+comparadores). `tests/test_recorrido_productivo.py` (6 pruebas) cubre además
+reincorporación con periodo nuevo y sin historia heredada, y fuente ausente con
+espera acotada y motivo; `tests/test_research_pilot.py` 28 pruebas, 7 de ellas de
+cadena sincronizada. La evidencia cronológica está en
+`docs/evidence/coordinacion-recepcion-20261106/`; la de 2026-11-05
+(`docs/evidence/coordinacion-20261105/`) se conserva como antecedente, con su
+limitación identificada en el diagnóstico (§8).
 
 **Qué queda UNKNOWN:** 33 descartes de comparadores `permanece` (mayoritariamente
 `dato_obsoleto_flujo`); no se atribuye a baja liquidez, rotación o transporte

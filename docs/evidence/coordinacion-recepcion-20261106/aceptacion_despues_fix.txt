@@ -1,0 +1,3 @@
+ACEPTACION OK: corte nominal 1735689660000 -> evaluacion efectiva 1735689662000 (18 simbolos, ventana observada 60000 ms, traza=C:\proyectos\binance-futures-microstructure-bot\docs\evidence\coordinacion-recepcion-20261106\traza_corte_recepcion.json)
+.
+1 passed in 5.26s

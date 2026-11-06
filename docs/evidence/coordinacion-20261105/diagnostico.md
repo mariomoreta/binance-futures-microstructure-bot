@@ -160,3 +160,55 @@ Conteos: `tests/test_research_pilot.py` 28 passed (7 de cadena),
 - Los 33 descartes `permanece` (`dato_obsoleto_flujo`) del embudo público
   siguen sin atribución causal (ver §9.7 de
   `docs/RESEARCH_UNIVERSE_LIQUIDITY_V1.md`).
+
+## 8. Corrección 2026-11-06: evidencia cronológica y corte con cobertura real
+
+**Limitación de la evidencia de 2026-11-05 (no se borra).** Las pruebas de
+cadena publicaban y confirmaban los eventos con event_ms = cut estando el reloj
+un segundo antes del corte, y la reincorporación recibía por lotes datos
+anteriores al nuevo periodo. Eso acreditaba el orden del bucle
+(seleccionar → suscribir → confirmar → evaluar), pero no una ventana construida
+recibiendo durante 60 s desde una suscripción nueva. Los archivos y resultados
+anteriores se conservan tal cual.
+
+**Defecto con recepción cronológica (base 93bcecf).** Sonda de aceptación en
+worktree aislado, primera recepción en T0+1000: en el corte nominal T0+60000 la
+ventana observada es 55 s. El código evaluaba igualmente y escribía 18 descartes
+lujo_ventana_incompleta con decision_ms = T0+60000, consumiendo la única
+oportunidad del ciclo (siguiente corte en T0+360000): 0 observaciones aptas antes
+de la siguiente selección. Evidencia: ntes_fix_93bcecf.txt y
+ecorrido_productivo_antes_fix.txt (5 failed, 1 passed) en
+docs/evidence/coordinacion-recepcion-20261106/.
+
+**Corrección (protocolo de captura 3).** El primer corte espera cobertura
+observada real:
+
+- _coverage_ready exige ventana de flujo completa según el motor
+  (warmup_complete sobre el span de eventos recibidos), libro con mid válido,
+  sin degradación ni cruce y ambas fuentes dentro de max_data_age_ms (5 s).
+  Misma regla para candidatos y comparadores.
+- La programación usa la primera recepción efectiva por fuente
+  (symbol_first_flow_ms / symbol_first_book_ms), no la suscripción.
+- Si el corte nominal no tiene cobertura, se reprograma en el mismo bucle cada
+  250 ms hacia primera_recepcion + ventana, con espera máxima explícita
+  WARMUP_MAX_WAIT_MS = 60 s (también acotada por el fin de captura). No se
+  escribe un descarte definitivo ni se consume la oportunidad.
+- Al agotarse la espera, el corte se ejecuta con motivo explícito del motor
+  (sin_flujo / sin_libro / dato_obsoleto_* / lujo_ventana_incompleta);
+  last_cut_reason distingue cobertura_completa de espera_maxima_agotada.
+- decision_ms sigue siendo el instante real de evaluación; no se extiende la
+  captura ni se compensan ciclos fuera de plazo.
+
+**Evidencia posterior (cronológica).** 	ests/test_aceptacion_coordinacion_recepcion.py:
+18 símbolos (candidatos y comparadores), primera recepción en T0+1000, 468
+eventos publicados con event_ms <= reloj y 0 fechas futuras; corte nominal
+T0+60000, evaluación efectiva T0+62000, ventana observada 60000 ms, 18/18 aptas.
+Traza: docs/evidence/coordinacion-recepcion-20261106/traza_corte_recepcion.json.
+Regresiones: 	ests/test_recorrido_productivo.py 6 passed (reincorporación sin
+historia precargada; fuente ausente con espera acotada y motivo) y
+	ests/test_research_pilot.py 28 passed; conjunto relacionado 77 passed,
+EXITCODE=0 (alidacion_final.txt).
+
+**Qué sigue UNKNOWN.** La latencia real de Binance pública no se mide aquí: la
+recepción es loopback. La espera máxima de 60 s es una cota operativa explícita,
+no una medición de latencia de producción. No se declara ventaja económica.

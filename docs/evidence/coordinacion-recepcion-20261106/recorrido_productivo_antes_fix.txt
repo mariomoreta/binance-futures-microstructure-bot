@@ -1,0 +1,142 @@
+FFFFF.                                                                   [100%]
+================================== FAILURES ===================================
+____ test_recorrido_productivo_seleccion_suscripcion_recepcion_evaluacion _____
+
+recorrido = <test_recorrido_productivo.ProductRun object at 0x0000020355C28440>
+
+    def test_recorrido_productivo_seleccion_suscripcion_recepcion_evaluacion(
+            recorrido):
+        """Cadena completa: seleccion -> suscripcion -> recepcion -> evaluacion.
+    
+        La ventana se construye con eventos recibidos cronologicamente: a T0+60 s
+        la cobertura observada es 55 s (primera recepcion T0+1 s), asi que el corte
+        no puede consumirse; la evaluacion llega al completarse la ventana real y
+        antes de la siguiente seleccion (T0+300 s).
+        """
+        run = recorrido
+        state = seleccion_inicial(run)
+        seguido = state.get("followed") or []
+        assert 12 <= len(seguido) <= 20, seguido
+        roles_seleccion = set((state.get("roles") or {}).values())
+        assert {"candidate", "comparator"} <= roles_seleccion, roles_seleccion
+    
+        # Recepcion cronologica hasta T0+60000: ventana observada = 55 s.
+        publicar_cronologico(run, seguido, hasta_ms=60_000)
+        run.advance(T0 + 60_000)
+>       assert not observaciones_desde(run, T0 + 60_000), (
+            "no debe evaluarse con ventana observada incompleta")
+E       AssertionError: no debe evaluarse con ventana observada incompleta
+E       assert not [{'apto_para_evaluacion': False, 'cobertura': {'flujo_presente': True, 'flujo_ventana_completa': False, 'libro_banda_5...': True, 'libro_presente': True}, 'decision_iso': '2025-01-01T00:01:00+00:00', 'decision_ms': 1735689660000, ...}, ...]
+E        +  where [{'apto_para_evaluacion': False, 'cobertura': {'flujo_presente': True, 'flujo_ventana_completa': False, 'libro_banda_5...': True, 'libro_presente': True}, 'decision_iso': '2025-01-01T00:01:00+00:00', 'decision_ms': 1735689660000, ...}, ...] = observaciones_desde(<test_recorrido_productivo.ProductRun object at 0x0000020355C28440>, (1735689600000 + 60000))
+
+tests\test_recorrido_productivo.py:451: AssertionError
+____________ test_recorrido_productivo_nuevo_simbolo_calentamiento ____________
+
+recorrido = <test_recorrido_productivo.ProductRun object at 0x0000020355D4C690>
+
+    def test_recorrido_productivo_nuevo_simbolo_calentamiento(recorrido):
+        """Un simbolo recien suscrito no se evalua hasta tener cobertura real."""
+        run = recorrido
+        state = seleccion_inicial(run)
+        seguido = state.get("followed") or []
+        assert 12 <= len(seguido) <= 20, seguido
+    
+        # A T0+5000 no hay ventana ni evaluacion.
+        publicar_cronologico(run, seguido, hasta_ms=5_000)
+        assert not observaciones_desde(run, T0 + 5_000), (
+            "no debe haber evaluacion antes del calentamiento")
+    
+        # A T0+60000 la ventana observada es 55 s: sigue sin ser evaluable.
+        publicar_cronologico(run, seguido, desde_ms=10_000, hasta_ms=60_000)
+        run.advance(T0 + 60_000)
+>       assert not observaciones_desde(run, T0 + 5_000)
+E       AssertionError: assert not [{'apto_para_evaluacion': False, 'cobertura': {'flujo_presente': True, 'flujo_ventana_completa': False, 'libro_banda_5...': True, 'libro_presente': True}, 'decision_iso': '2025-01-01T00:01:00+00:00', 'decision_ms': 1735689660000, ...}, ...]
+E        +  where [{'apto_para_evaluacion': False, 'cobertura': {'flujo_presente': True, 'flujo_ventana_completa': False, 'libro_banda_5...': True, 'libro_presente': True}, 'decision_iso': '2025-01-01T00:01:00+00:00', 'decision_ms': 1735689660000, ...}, ...] = observaciones_desde(<test_recorrido_productivo.ProductRun object at 0x0000020355D4C690>, (1735689600000 + 5000))
+
+tests\test_recorrido_productivo.py:524: AssertionError
+___________ test_recorrido_productivo_reincorporacion_nuevo_periodo ___________
+
+recorrido_rotacion = <test_recorrido_productivo.ProductRun object at 0x0000020355D4CB90>
+
+    def test_recorrido_productivo_reincorporacion_nuevo_periodo(
+            recorrido_rotacion):
+        """Un simbolo que sale y vuelve espera un periodo nuevo sin historia.
+    
+        No se precarga el minuto anterior: la primera recepcion de cada periodo
+        ocurre despues de la nueva suscripcion, y la evaluacion llega al completar
+        la ventana observada, antes de la siguiente seleccion.
+        """
+        run = recorrido_rotacion
+        state = seleccion_inicial(run, minimo=8)
+        first = set(state["followed"])
+        assert 8 <= len(first) <= 12, first
+        assert state.get("symbol_warmup_ms") == 60_000, state
+        assert set(state["symbol_first_seen_ms"]) == first
+>       assert state.get("symbol_first_flow_ms") == {}
+E       AssertionError: assert None == {}
+E        +  where None = <built-in method get of dict object at 0x00000203561BAC00>('symbol_first_flow_ms')
+E        +    where <built-in method get of dict object at 0x00000203561BAC00> = {'book': {'R000USDT': {'age_event_ms': None, 'age_received_ms': None, 'event_ms': None, 'received_ms': None}, 'R001USD...'event_ms': None, 'received_ms': None}, ...}, 'book_events': {}, 'capture_end_ms': 1735690200000, 'cycles_run': 1, ...}.get
+
+tests\test_recorrido_productivo.py:556: AssertionError
+______________ test_recorrido_productivo_fuente_ausente_descarta ______________
+
+recorrido = <test_recorrido_productivo.ProductRun object at 0x0000020355D13360>
+
+    def test_recorrido_productivo_fuente_ausente_descarta(recorrido):
+        """Un simbolo sin flujo espera el maximo acotado y se descarta con motivo.
+    
+        Los demas siguen siendo evaluables cuando la espera vence; ninguno queda
+        marcado como apto sin datos.
+        """
+        run = recorrido
+        state = seleccion_inicial(run)
+        seguido = state.get("followed") or []
+        assert 12 <= len(seguido) <= 20, seguido
+        sin_flujo = seguido[-1]
+    
+        publicar_cronologico(run, seguido, sin_flujo=[sin_flujo])
+        # A T0+60000 el resto ya tiene ventana; el simbolo sin flujo no.
+>       assert not observaciones_desde(run, T0 + 60_000)
+E       AssertionError: assert not [{'apto_para_evaluacion': False, 'cobertura': {'flujo_presente': True, 'flujo_ventana_completa': False, 'libro_banda_5...': True, 'libro_presente': True}, 'decision_iso': '2025-01-01T00:01:01+00:00', 'decision_ms': 1735689661000, ...}, ...]
+E        +  where [{'apto_para_evaluacion': False, 'cobertura': {'flujo_presente': True, 'flujo_ventana_completa': False, 'libro_banda_5...': True, 'libro_presente': True}, 'decision_iso': '2025-01-01T00:01:01+00:00', 'decision_ms': 1735689661000, ...}, ...] = observaciones_desde(<test_recorrido_productivo.ProductRun object at 0x0000020355D13360>, (1735689600000 + 60000))
+
+tests\test_recorrido_productivo.py:636: AssertionError
+______________ test_recorrido_productivo_frescura_libro_obsoleto ______________
+
+recorrido = <test_recorrido_productivo.ProductRun object at 0x0000020356199BA0>
+
+    def test_recorrido_productivo_frescura_libro_obsoleto(recorrido):
+        """Libro obsoleto con flujo fresco: espera acotada y rechazo con motivo."""
+        run = recorrido
+        state = seleccion_inicial(run)
+        seguido = state.get("followed") or []
+        assert 12 <= len(seguido) <= 20, seguido
+    
+        # Solo el primer libro; el flujo se mantiene cronologico.
+        publicar_cronologico(run, seguido, hasta_ms=1_000)
+        publicar_cronologico(run, seguido, desde_ms=6_000,
+                             hasta_ms=VENTANA_OBSERVADA_MS, sin_libro=seguido)
+    
+        # La espera maxima (60 s extra) vence en T0+121000.
+        run.advance(T0 + 120_000)
+        run.publish_and_confirm(
+            T0 + 120_000, depth_symbols=(),
+            trade_events={s: [T0 + 120_000] for s in seguido})
+        run.advance(T0 + 121_000)
+        obs = run.wait_first_cut(T0 + 60_000, len(seguido), T0 + 300_000)
+    
+        estado = run.status() or {}
+>       assert estado.get("last_cut_reason") == "espera_maxima_agotada", estado
+E       AssertionError: {'book': {'S000USDT': {'age_event_ms': 120000, 'age_received_ms': 120000, 'event_ms': 1735689601000, 'received_ms': 17...S000USDT': 1, 'S001USDT': 1, 'S002USDT': 1, 'S003USDT': 1, ...}, 'capture_end_ms': 1735690500000, 'cycles_run': 1, ...}
+E       assert None == 'espera_maxima_agotada'
+E        +  where None = <built-in method get of dict object at 0x00000203563722C0>('last_cut_reason')
+E        +    where <built-in method get of dict object at 0x00000203563722C0> = {'book': {'S000USDT': {'age_event_ms': 120000, 'age_received_ms': 120000, 'event_ms': 1735689601000, 'received_ms': 17...S000USDT': 1, 'S001USDT': 1, 'S002USDT': 1, 'S003USDT': 1, ...}, 'capture_end_ms': 1735690500000, 'cycles_run': 1, ...}.get
+
+tests\test_recorrido_productivo.py:690: AssertionError
+=========================== short test summary info ===========================
+FAILED tests/test_recorrido_productivo.py::test_recorrido_productivo_seleccion_suscripcion_recepcion_evaluacion
+FAILED tests/test_recorrido_productivo.py::test_recorrido_productivo_nuevo_simbolo_calentamiento
+FAILED tests/test_recorrido_productivo.py::test_recorrido_productivo_reincorporacion_nuevo_periodo
+FAILED tests/test_recorrido_productivo.py::test_recorrido_productivo_fuente_ausente_descarta
+FAILED tests/test_recorrido_productivo.py::test_recorrido_productivo_frescura_libro_obsoleto
+5 failed, 1 passed in 20.99s

@@ -136,6 +136,14 @@ PROTOCOL_VERSION = "prospective-protocol-v1"
 POLICY_VERSION = research_selector.POLICY_VERSION
 # Horizonte de flujo que exige la observacion (build_observation usa 1m).
 DECISION_FLOW_HORIZON = "1m"
+# Espera maxima explicita (dentro del periodo de seguimiento) para completar la
+# cobertura del primer corte. La ventana se mide con eventos observados, no con
+# el instante de suscripcion, asi que el corte nominal puede adelantarse a la
+# recepcion real: esta espera acota la reprogramacion sin extender la captura.
+WARMUP_MAX_WAIT_MS = 60_000
+# Reintento de comprobacion de cobertura dentro del mismo bucle (no hay otro
+# planificador): evita evaluar antes de recibir y no consume la oportunidad.
+COVERAGE_RECHECK_MS = 250
 
 DEFAULT_HORIZONS: Tuple[Tuple[str, int], ...] = (
     ("5m", 300_000),
@@ -637,8 +645,11 @@ class PilotConfig:
     keep_research_db: bool = True
     # Protocolo de captura: 1 = evaluacion inmediata tras suscripcion;
     # 2 = calentamiento acotado antes de la primera evaluacion de un
-    # simbolo (seleccionar -> suscribir -> acumular ventana -> evaluar).
-    capture_protocol_version: int = 2
+    # simbolo (seleccionar -> suscribir -> acumular ventana -> evaluar);
+    # 3 = el corte espera cobertura observada real (span de flujo y frescura de
+    # ambas fuentes) con espera maxima acotada, sin consumir la oportunidad en
+    # el corte nominal prematuro.
+    capture_protocol_version: int = 3
 
     def to_dict(self) -> Dict[str, Any]:
         return {
@@ -961,10 +972,25 @@ class ResearchPilot:
         # del intervalo entre selecciones.
         self.symbol_first_seen_ms: Dict[str, int] = {}
         self.symbol_warmup_ms = FLOW_HORIZONS_MS[DECISION_FLOW_HORIZON]
+        # Primera recepcion efectiva por fuente (instante del reloj al
+        # procesar el evento). La ventana de flujo se mide con eventos
+        # observados; la programacion del corte usa esta recepcion, no la
+        # suscripcion, y nunca inventa cobertura.
+        self.symbol_first_flow_ms: Dict[str, int] = {}
+        self.symbol_first_book_ms: Dict[str, int] = {}
         # Simbolos ya evaluados en el ciclo de decision actual (para no
         # re-evaluarlos cuando se disparan evaluaciones acotadas por
         # calentamiento dentro del mismo ciclo).
         self._symbols_evaluated_this_cycle: set[str] = set()
+        # Observabilidad del corte (nominal vs efectivo) y esperas acotadas.
+        self.next_decision_ms: Optional[int] = None
+        self.cut_deadline_ms: Optional[int] = None
+        self.last_cut_ms: Optional[int] = None
+        self.last_nominal_cut_ms: Optional[int] = None
+        self.last_cut_deadline_ms: Optional[int] = None
+        self.last_cut_reason: Optional[str] = None
+        self.warmup_deferrals = 0
+        self._deferral_active = False
 
     # -- almacenamiento total ----------------------------------------------
 
@@ -1037,6 +1063,7 @@ class ResearchPilot:
                 if accepted:
                     self.last_flow_recv[symbol] = recv_ms
                     self.last_flow_event[symbol] = int(event_ms)
+                    self.symbol_first_flow_ms.setdefault(symbol, recv_ms)
                     self.flow_events[symbol] = self.flow_events.get(symbol, 0) + 1
                     self.recorder.record_trade(symbol, int(event_ms),
                                                float(price), float(qty), maker)
@@ -1065,6 +1092,7 @@ class ResearchPilot:
                         self.last_book_u[symbol] = uid
                     self.last_book_recv[symbol] = recv_ms
                     self.last_book_event[symbol] = int(data.get("E"))
+                    self.symbol_first_book_ms.setdefault(symbol, recv_ms)
                     self.book_events[symbol] = self.book_events.get(symbol, 0) + 1
                     state = self.book._books.get(symbol)
                     features = state.features if state is not None else None
@@ -1207,6 +1235,8 @@ class ResearchPilot:
                           self.last_book_u):
                 cache.pop(sym, None)
             self.symbol_first_seen_ms.pop(sym, None)
+            self.symbol_first_flow_ms.pop(sym, None)
+            self.symbol_first_book_ms.pop(sym, None)
             self._symbols_evaluated_this_cycle.discard(sym)
 
         self.followed = new_followed
@@ -1432,33 +1462,92 @@ class ResearchPilot:
             },
         }
 
-    def _ready_symbols(self, now: int) -> List[str]:
-        """Simbolos que cumplieron calentamiento y aun no evaluaron en el ciclo.
+    def _pending_symbols(self) -> List[str]:
+        """Simbolos seguidos que aun no tienen observacion en este ciclo."""
+        return [symbol for symbol in self.followed
+                if symbol not in self._symbols_evaluated_this_cycle]
 
-        El corte de calentamiento es ``first_seen + symbol_warmup_ms`` y no
-        depende de ``selection_seconds``: un simbolo reincorporado renueva su
-        first_seen y vuelve a esperar la ventana completa.
+    def _first_reception_ms(self, symbol: str) -> Optional[int]:
+        """Primera recepcion efectiva (flujo o libro), o suscripcion si no hay."""
+        stamps = [stamp for stamp in (
+            self.symbol_first_flow_ms.get(symbol),
+            self.symbol_first_book_ms.get(symbol)) if stamp is not None]
+        if stamps:
+            return min(stamps)
+        return self.symbol_first_seen_ms.get(symbol)
+
+    def _coverage_ready(self, symbol: str, book_rec: Optional[Dict[str, Any]],
+                        flow_rec: Optional[Dict[str, Any]], now: int) -> bool:
+        """Cobertura observada real: ventana completa y ambas fuentes frescas.
+
+        La ventana la calcula el motor con eventos recibidos
+        (``warmup_complete`` sobre el span observado), nunca con el instante de
+        suscripcion. Se exige ademas que el libro tenga mid valido y que ambas
+        fuentes esten dentro de ``max_data_age_ms``; mismas reglas para
+        candidatos y comparadores.
         """
-        ready: List[str] = []
-        for symbol in self.followed:
-            if symbol in self._symbols_evaluated_this_cycle:
-                continue
-            first_seen = self.symbol_first_seen_ms.get(symbol)
-            if first_seen is None:
-                continue
-            if now - first_seen >= self.symbol_warmup_ms:
-                ready.append(symbol)
-        return ready
+        if book_rec is None or flow_rec is None:
+            return False
+        flow_h = ((flow_rec.get("horizons") or {}).get(DECISION_FLOW_HORIZON)
+                  or {})
+        if not flow_h.get("warmup_complete"):
+            return False
+        if int(flow_h.get("trades") or 0) <= 0:
+            return False
+        book_features = book_rec.get("book") or {}
+        if book_features.get("mid") is None:
+            return False
+        if book_rec.get("degraded") or book_features.get("crossed"):
+            return False
+        if self._frescura_fuente(self.last_book_recv.get(symbol),
+                                 self.last_book_event.get(symbol), now):
+            return False
+        if self._frescura_fuente(self.last_flow_recv.get(symbol),
+                                 self.last_flow_event.get(symbol), now):
+            return False
+        return True
+
+    def _ready_symbols(self, now: int) -> List[str]:
+        """Pendientes con cobertura observada real en ``now``."""
+        book_records = self._book_records(now)
+        flow_records = self._flow_records(now)
+        return [symbol for symbol in self._pending_symbols()
+                if self._coverage_ready(symbol, book_records.get(symbol),
+                                        flow_records.get(symbol), now)]
 
     def _earliest_ready_ms(self) -> Optional[int]:
-        """Primer instante en que algun simbolo pendiente cumplira su ventana."""
-        times = [
-            self.symbol_first_seen_ms[symbol] + self.symbol_warmup_ms
-            for symbol in self.followed
-            if symbol in self.symbol_first_seen_ms
-            and symbol not in self._symbols_evaluated_this_cycle
-        ]
+        """Estimacion: primera recepcion + ventana de flujo requerida.
+
+        Es solo una cita para reprogramar; la readiness efectiva la decide
+        ``_coverage_ready`` con los eventos ya recibidos.
+        """
+        times = []
+        for symbol in self._pending_symbols():
+            first = self._first_reception_ms(symbol)
+            if first is None:
+                continue
+            times.append(int(first) + self.symbol_warmup_ms)
         return min(times) if times else None
+
+    def _cut_deadline_ms(self) -> Optional[int]:
+        """Espera maxima acotada para el corte pendiente (dentro de captura)."""
+        pending = self._pending_symbols()
+        if not pending:
+            return None
+        deadlines = []
+        for symbol in pending:
+            first = (self._first_reception_ms(symbol)
+                     or self.started_ms)
+            deadlines.append(int(first) + self.symbol_warmup_ms
+                             + WARMUP_MAX_WAIT_MS)
+        return min(min(deadlines), self.capture_end_ms - 1)
+
+    def _nominal_cut_ms(self) -> Optional[int]:
+        """Corte nominal (suscripcion + ventana), expuesto como referencia."""
+        pending = self._pending_symbols()
+        seen = [self.symbol_first_seen_ms[symbol] for symbol in pending
+                if symbol in self.symbol_first_seen_ms]
+        return (min(seen) + self.symbol_warmup_ms) if seen else None
 
     def take_decisions(self, now: int) -> int:
         """now es el instante real de evaluacion; decision_ms = now."""
@@ -1715,6 +1804,17 @@ class ResearchPilot:
             "evaluations_run": self.evaluations_run,
             "symbol_warmup_ms": self.symbol_warmup_ms,
             "symbol_first_seen_ms": dict(self.symbol_first_seen_ms),
+            "symbol_first_flow_ms": dict(self.symbol_first_flow_ms),
+            "symbol_first_book_ms": dict(self.symbol_first_book_ms),
+            "nominal_decision_ms": self._nominal_cut_ms(),
+            "last_nominal_cut_ms": self.last_nominal_cut_ms,
+            "last_cut_deadline_ms": self.last_cut_deadline_ms,
+            "next_decision_ms": self.next_decision_ms,
+            "cut_deadline_ms": self.cut_deadline_ms,
+            "last_cut_ms": self.last_cut_ms,
+            "last_cut_reason": self.last_cut_reason,
+            "warmup_deferrals": self.warmup_deferrals,
+            "warmup_pending": self._pending_symbols(),
             "symbols_evaluated_this_cycle": sorted(
                 self._symbols_evaluated_this_cycle),
             "observations_written": self.observations_written,
@@ -1775,15 +1875,25 @@ class ResearchPilot:
                     now = self.clock.now_ms()
                     await self._restart_feeds()
                     next_selection = now + int(self.cfg.selection_seconds * 1000)
+                    # Una entrada nueva o reincorporada merece su propio corte
+                    # dentro de este ciclo: se adelanta el corte vigente a su
+                    # ventana nominal; la cobertura observada decide despues.
+                    if self._pending_symbols():
+                        candidate = now + self.symbol_warmup_ms
+                        if candidate < next_decision:
+                            next_decision = candidate
                 # Evaluacion: un solo camino, con o sin barrera de prueba.
-                # - Sin barrera (productivo): el corte se programa en el
-                #   instante en que el primer simbolo pendiente completa su
-                #   calentamiento (first_seen + warmup); despues avanza por
-                #   cycle_seconds. Un simbolo que completa la ventana dentro
-                #   del ciclo se evalua antes de la siguiente seleccion.
+                # - Sin barrera (productivo): el corte espera COBERTURA
+                #   OBSERVADA real (ventana de flujo completa y ambas fuentes
+                #   frescas). El corte nominal (suscripcion + ventana) puede
+                #   adelantarse a la primera recepcion: mientras no haya
+                #   cobertura se reprograma dentro del mismo bucle, con espera
+                #   maxima acotada, sin escribir un descarte definitivo.
                 # - Con barrera (solo pruebas): solo se evalua en el instante
                 #   autorizado por decision-gate-file. La barrera no participa
                 #   en la coordinacion automatica.
+                self.next_decision_ms = next_decision
+                self.cut_deadline_ms = self._cut_deadline_ms()
                 if self.followed:
                     if self.gate_path is not None:
                         if self._gate_decision_ms() == now:
@@ -1791,24 +1901,56 @@ class ResearchPilot:
                             written = self.take_decisions(now)
                             if written > 0:
                                 self.evaluations_run += 1
+                                self.last_cut_ms = now
                     elif now >= next_decision:
-                        self._symbols_evaluated_this_cycle = set()
-                        written = self.take_decisions(now)
-                        if written > 0:
-                            self.evaluations_run += 1
+                        pending = self._pending_symbols()
+                        if not pending:
                             next_decision = now + int(
                                 self.cfg.cycle_seconds * 1000)
                         else:
-                            # Ningun simbolo cumplio la ventana: el corte se
-                            # reprograma para el primer calentamiento pendiente.
-                            earliest = self._earliest_ready_ms()
-                            next_decision = (
-                                earliest if earliest is not None
-                                else now + int(self.cfg.cycle_seconds * 1000))
-                    elif self._ready_symbols(now):
-                        # Calentamiento cumplido dentro del ciclo actual.
-                        if self.take_decisions(now) > 0:
-                            self.evaluations_run += 1
+                            nominal = self._nominal_cut_ms()
+                            if nominal is not None:
+                                self.last_nominal_cut_ms = nominal
+                            ready = self._ready_symbols(now)
+                            deadline = self._cut_deadline_ms()
+                            if (len(ready) == len(pending)
+                                    or (deadline is not None
+                                        and now >= deadline)):
+                                self._symbols_evaluated_this_cycle = set()
+                                written = self.take_decisions(now)
+                                if written > 0:
+                                    self.evaluations_run += 1
+                                    self.last_cut_ms = now
+                                    self.last_cut_deadline_ms = deadline
+                                    self.last_cut_reason = (
+                                        "cobertura_completa"
+                                        if len(ready) == len(pending)
+                                        else "espera_maxima_agotada")
+                                    self._deferral_active = False
+                                    next_decision = now + int(
+                                        self.cfg.cycle_seconds * 1000)
+                                else:
+                                    earliest = self._earliest_ready_ms()
+                                    next_decision = (
+                                        earliest if earliest is not None
+                                        else now + int(
+                                            self.cfg.cycle_seconds * 1000))
+                            else:
+                                # Corte nominal sin cobertura real: no se
+                                # consume la oportunidad. Se reintenta en el
+                                # mismo bucle hasta la espera maxima.
+                                if not self._deferral_active:
+                                    self.warmup_deferrals += 1
+                                    self._deferral_active = True
+                                self.last_cut_reason = "esperando_cobertura"
+                                earliest = self._earliest_ready_ms()
+                                target = (earliest if earliest is not None
+                                          else now + COVERAGE_RECHECK_MS)
+                                if deadline is not None:
+                                    target = min(target, deadline)
+                                next_decision = max(
+                                    now + COVERAGE_RECHECK_MS, target)
+                self.next_decision_ms = next_decision
                 if self.stop_reason:
                     break
                 # Limites WS acumulados (incluidos feeds reemplazados).

@@ -4,14 +4,17 @@ Usa proveedores HTTP/WS loopback, SQLite temporal y el CLI existente
 (research_pilot.py) como subproceso. Control de reloj manual. No toca Binance
 publica, ni endpoints privados, ni red publica de mercado.
 
-Demuestra la correccion de coordinacion (captura_protocol_version=2):
-- seleccionar -> suscribir -> acumular ventana requerida -> evaluar.
-- Un simbolo recien suscrito no se evalua inmediatamente; espera al
-  calentamiento acotado por ciclo (ventana de flujo = 60s, no selection_seconds
-  = 300s).
+Demuestra la correccion de coordinacion (captura_protocol_version=3):
+- seleccionar -> suscribir -> recibir eventos -> ventana observada completa ->
+  evaluar. Cada evento se publica con event_ms <= reloj: no hay fechas futuras
+  ni historia precargada.
+- Un simbolo recien suscrito no se evalua inmediatamente; el corte nominal
+  (suscripcion + 60 s) no consume la oportunidad si la ventana observada aun es
+  menor. Se espera cobertura real, con espera maxima acotada (+60 s).
 - decision_ms sigue siendo el instante real de evaluacion.
 - Como maximo una observacion por simbolo y ciclo.
-- Una reincorporacion reinicia su calentamiento; no hereda cobertura ficticia.
+- Una reincorporacion reinicia su calentamiento; no hereda cobertura ni usa
+  eventos anteriores al nuevo periodo.
 """
 from __future__ import annotations
 
@@ -145,12 +148,14 @@ class ProductRun:
     def __init__(self, tmp, *, universe, duration_s, settle_s,
                  selection_s, cycle_s, decision_delay_s,
                  max_symbols, max_candidates, max_comparators,
-                 rotation=False):
+                 rotation=False, run_id="recorrido-productivo"):
         self.tmp = Path(tmp)
         self.out_dir = self.tmp / "out"
         self.obs_path = self.out_dir / "observaciones.jsonl"
         self.status_path = self.tmp / "status.json"
         self.clock = ClockFile(self.tmp / "clock.txt", T0)
+        # Auditoria de cronologia: cada evento publicado con su reloj.
+        self.published = []
 
         self.http = ControlledMarketHttp(universe, rotation=rotation)
         self.http_port = find_free_port()
@@ -166,7 +171,7 @@ class ProductRun:
 
         cmd = [
             sys.executable, str(ROOT / "scripts" / "research_pilot.py"),
-            "--run-id", "recorrido-productivo", "--out-dir", str(self.out_dir),
+            "--run-id", run_id, "--out-dir", str(self.out_dir),
             "--mode", "local",
             "--rest-base", f"http://127.0.0.1:{self.http_port}",
             "--ws-public-base", f"ws://127.0.0.1:{self.ws_port}",
@@ -199,6 +204,7 @@ class ProductRun:
         self.proc = subprocess.Popen(
             cmd, cwd=str(ROOT), stdout=subprocess.PIPE,
             stderr=subprocess.PIPE, text=True)
+        self.cmd = cmd
 
     # -- estado -----------------------------------------------------------
     def status(self):
@@ -241,12 +247,30 @@ class ProductRun:
 
     def publish_and_confirm(self, instant_ms, depth_symbols=(),
                             trade_events=None):
-        """Publica burst WS y espera confirmacion del estado del piloto."""
+        """Publica burst WS y espera confirmacion del estado del piloto.
+
+        Exige cronologia real: ``event_ms <= reloj`` en el momento de publicar.
+        Se registra cada publicacion para auditarla al final.
+        """
         self.wait_status(
             lambda st: bool(st.get("feeds")) and all(
                 f.get("connected_now") for f in st["feeds"].values()),
             "feeds conectados antes de publicar")
         events = {k: list(v) for k, v in (trade_events or {}).items()}
+        clock_now = self.clock.read()
+        for symbol in depth_symbols:
+            self.published.append({"symbol": symbol, "kind": "libro",
+                                   "event_ms": int(instant_ms),
+                                   "clock_ms": clock_now})
+        for symbol, series in events.items():
+            for event_ms in series:
+                self.published.append({"symbol": symbol, "kind": "flujo",
+                                       "event_ms": int(event_ms),
+                                       "clock_ms": clock_now})
+        futuros = [p for p in self.published if p["event_ms"] > p["clock_ms"]]
+        if futuros:
+            raise AssertionError(
+                f"evento con fecha futura al publicar: {futuros[:3]}")
         sent = self.ws.publish(instant_ms, depth_symbols, events)
         for symbol in depth_symbols:
             if sent["depth"].get(symbol, 0) != 1:
@@ -273,11 +297,12 @@ class ProductRun:
         return self.wait_status(
             processed, f"libro/flujo procesados en {instant_ms}")
 
-    def wait_observations(self, decision_ms, expected, timeout=60.0):
+    def wait_first_cut(self, after_ms, expected, before_ms, timeout=90.0):
+        """Primer corte automatico con decision_ms en (after, before)."""
         def pred(rows):
             found = [r for r in rows
                      if r.get("kind") == "observacion"
-                     and r.get("decision_ms") == decision_ms]
+                     and after_ms < int(r.get("decision_ms") or 0) < before_ms]
             return found if len(found) >= expected else None
         deadline = time.monotonic() + timeout
         while time.monotonic() < deadline:
@@ -285,10 +310,11 @@ class ProductRun:
             if found:
                 return found
             if self.proc.poll() is not None:
-                raise AssertionError("piloto termino esperando observaciones")
+                raise AssertionError("piloto termino esperando el primer corte")
             time.sleep(0.02)
         raise AssertionError(
-            f"timeout {timeout}s esperando {expected} obs en {decision_ms}")
+            f"timeout {timeout}s esperando {expected} obs con decision_ms en "
+            f"({after_ms}, {before_ms})")
 
     def stop(self, timeout=90.0):
         state = self.status() or {}
@@ -354,258 +380,233 @@ def recorrido_rotacion():
         import shutil
         shutil.rmtree(tmp, ignore_errors=True)
 
-
 # ---------------------------------------------------------------------------
-# Recorrido productivo completo (version corregida)
+# Recorrido productivo con recepcion cronologica (sin fechas futuras)
 # ---------------------------------------------------------------------------
 
-def test_recorrido_productivo_seleccion_suscripcion_recepcion_evaluacion(
-        recorrido):
-    """Recorrido completo con el piloto corregido.
+# Primera recepcion DESPUES de la suscripcion: el corte nominal
+# (suscripcion + 60 s) nunca puede coincidir con una ventana ya completa.
+PRIMERA_RECEPCION_MS = 1_000
+# Ultima recepcion del primer corte: 61_000 - 1_000 = 60_000 de ventana
+# observada real, construida durante el minuto de seguimiento.
+VENTANA_OBSERVADA_MS = 61_000
+PASO_MS = 5_000
 
-    Verifica:
-    - Seleccion real (research-selector-v2) con candidatos y comparadores.
-    - Apertura/suscripcion de feeds reales del piloto.
-    - Recepcion y procesamiento de mensajes libro/flujo.
-    - Evaluacion automatica DESPUES del calentamiento (no inmediata).
-    """
-    run = recorrido
 
-    # Fase 1: seleccion inicial y apertura de feeds (T0).
+def seleccion_inicial(run, minimo=1):
     run.advance(T0)
-    state = run.wait_status(
+    return run.wait_status(
         lambda st: st.get("now_ms") == T0
-        and len(st.get("followed") or []) > 0
+        and len(st.get("followed") or []) >= minimo
         and len(st.get("feeds") or {}) == 2
         and all(f.get("connected_now") for f in st["feeds"].values()),
         "seleccion inicial y feeds conectados")
 
-    seguido_inicial = state.get("followed") or []
-    assert 12 <= len(seguido_inicial) <= 20, (
-        f"se esperaba entre 12 y 20 simbolos seguidos, se obtuvieron "
-        f"{len(seguido_inicial)}")
-    assert state.get("cycles_run", 0) >= 1
 
-    # Fase 2: publicar libro y flujo para todos los simbolos seguidos en T0.
-    # El primer evento de flujo establece oldest_ms = T0.
-    run.publish_and_confirm(
-        T0, depth_symbols=seguido_inicial,
-        trade_events={s: [T0] for s in seguido_inicial})
+def publicar_cronologico(run, symbols, *, desde_ms=PRIMERA_RECEPCION_MS,
+                         hasta_ms=VENTANA_OBSERVADA_MS, paso_ms=PASO_MS,
+                         sin_flujo=(), sin_libro=(), base_ms=T0):
+    """Publica libro y flujo con ``event_ms == reloj`` en orden temporal.
 
-    # Fase 3: avanzar a T0+59000. El piloto intenta evaluar en T0+5000 (prima
-    # decision_delay=60s), pero los simbolos estan en calentamiento
-    # (59000 < symbol_warmup_ms=60000), asi que salta y no avanza
-    # next_decision. Publicar mas datos en T0+59000.
-    # Publicar un evento de flujo con event_ms=T0+60000 mientras el reloj esta
-    # en T0+59000: asi, al evaluar en T0+60000, span_ms=60000 (ventana completa)
-    # y el evento sigue siendo fresco (recv_ms=T0+59000, age_recv=1000).
-    run.advance(T0 + 59_000)
-    run.publish_and_confirm(
-        T0 + 59_000, depth_symbols=seguido_inicial,
-        trade_events={s: [T0 + 60_000] for s in seguido_inicial})
+    No publica fechas futuras ni precarga historia: cada evento existe cuando
+    el reloj ya lo admite. Los simbolos de ``sin_flujo`` reciben solo libro y
+    los de ``sin_libro`` solo flujo.
+    """
+    sin_flujo = set(sin_flujo)
+    sin_libro = set(sin_libro)
+    for offset in range(desde_ms, hasta_ms + 1, paso_ms):
+        t = base_ms + offset
+        run.advance(t)
+        run.publish_and_confirm(
+            t,
+            depth_symbols=[s for s in symbols if s not in sin_libro],
+            trade_events={s: [t] for s in symbols if s not in sin_flujo})
 
-    # Fase 4: avanzar a T0+60000. Los simbolos ya cumplieron el calentamiento
-    # (60000 >= symbol_warmup_ms=60000). El piloto evalua automaticamente con
-    # los datos publicados. span_ms del flujo = 60000 >= window_ms=60000.
+
+def observaciones_desde(run, decision_min_ms):
+    return [r for r in read_rows(run.obs_path)
+            if r.get("kind") == "observacion"
+            and int(r.get("decision_ms") or 0) >= decision_min_ms]
+
+
+def test_recorrido_productivo_seleccion_suscripcion_recepcion_evaluacion(
+        recorrido):
+    """Cadena completa: seleccion -> suscripcion -> recepcion -> evaluacion.
+
+    La ventana se construye con eventos recibidos cronologicamente: a T0+60 s
+    la cobertura observada es 55 s (primera recepcion T0+1 s), asi que el corte
+    no puede consumirse; la evaluacion llega al completarse la ventana real y
+    antes de la siguiente seleccion (T0+300 s).
+    """
+    run = recorrido
+    state = seleccion_inicial(run)
+    seguido = state.get("followed") or []
+    assert 12 <= len(seguido) <= 20, seguido
+    roles_seleccion = set((state.get("roles") or {}).values())
+    assert {"candidate", "comparator"} <= roles_seleccion, roles_seleccion
+
+    # Recepcion cronologica hasta T0+60000: ventana observada = 55 s.
+    publicar_cronologico(run, seguido, hasta_ms=60_000)
     run.advance(T0 + 60_000)
-    # Esperar a que se generen observaciones en T0+60000.
-    obs = run.wait_observations(T0 + 60_000, len(seguido_inicial))
+    assert not observaciones_desde(run, T0 + 60_000), (
+        "no debe evaluarse con ventana observada incompleta")
+    estado_60 = run.status() or {}
+    assert estado_60.get("evaluations_run") == 0, estado_60
+    assert estado_60.get("warmup_deferrals", 0) >= 1, estado_60
+    assert estado_60.get("warmup_pending"), estado_60
 
-    # Fase 5: verificar resultados.
+    # Completar la ventana observada (60 s reales) y dejar correr el corte.
+    publicar_cronologico(run, seguido, desde_ms=VENTANA_OBSERVADA_MS,
+                         hasta_ms=VENTANA_OBSERVADA_MS)
+    run.advance(T0 + 62_000)
+    obs = run.wait_first_cut(T0 + 60_000, len(seguido), T0 + 300_000)
+
     by_sym = {o["symbol"]: o for o in obs}
-    assert len(by_sym) == len(seguido_inicial)
+    assert set(by_sym) == set(seguido), (set(by_sym) ^ set(seguido))
+    decisiones = {o["decision_ms"] for o in obs}
+    assert len(decisiones) == 1, decisiones
+    decision = decisiones.pop()
+    assert T0 + 60_000 < decision < T0 + 300_000, decision
 
-    aptas = [o for o in obs if o.get("estado") == "observada"]
-    descartadas = [o for o in obs if o.get("estado") == "descartada"]
-
-    # Cada observacion debe tener decision_ms == T0+60000 y disponibilidad
-    # coherente (seleccion_ms <= decision_ms, libro/flujo <= decision_ms).
     for o in obs:
-        assert o["decision_ms"] == T0 + 60_000, o
+        assert o["estado"] == "observada", o
+        assert o["apto_para_evaluacion"] is True, o
+        assert o["motivos"] == [], o
+        cobertura = o["cobertura"]
+        assert cobertura["flujo_presente"] is True, o
+        assert cobertura["flujo_ventana_completa"] is True, o
+        assert cobertura["libro_presente"] is True, o
         disp = o["disponibilidad"]
         assert disp["seleccion_ms"] <= o["decision_ms"], o
-        if disp["libro_ms"] is not None:
-            assert disp["libro_ms"] <= o["decision_ms"], o
-        if disp["flujo_ms"] is not None:
-            assert disp["flujo_ms"] <= o["decision_ms"], o
+        assert disp["libro_ms"] <= o["decision_ms"], o
+        assert disp["flujo_ms"] <= o["decision_ms"], o
 
-    # Hubo al menos algunas aptas (simbolos con libro y flujo frescos).
-    assert len(aptas) > 0, "esperaba al menos una observacion apta"
+    # Exactamente una observacion por simbolo en el corte.
+    conteo = {}
+    for r in read_rows(run.obs_path):
+        if r.get("kind") == "observacion":
+            key = (r["symbol"], r["decision_ms"])
+            conteo[key] = conteo.get(key, 0) + 1
+    assert all(c == 1 for c in conteo.values()), conteo
 
-    # Los descartes (si los hay) tienen motivo explicito y no bloquean al resto.
-    for o in descartadas:
-        assert o["motivos"], f"descarte sin motivo: {o}"
-        assert o["apto_para_evaluacion"] is False
+    roles = {o["role"] for o in obs}
+    assert roles == {"candidate", "comparator"}, roles
 
-    # Fase 6: verificar que hay candidatos y comparadores entre las aptas.
-    roles = {o.get("role") for o in aptas}
-    assert "candidate" in roles, f"esperaba candidatos, roles={roles}"
-    assert "comparator" in roles, f"esperaba comparadores, roles={roles}"
+    estado = run.status() or {}
+    assert estado.get("last_nominal_cut_ms") == T0 + 60_000, estado
+    assert estado.get("last_cut_ms") == decision, estado
+    assert estado.get("last_cut_reason") == "cobertura_completa", estado
 
-    print(f"Recorrido OK: {len(seguido_inicial)} simbolos seguidos, "
-          f"{len(aptas)} aptas, {len(descartadas)} descartadas en "
-          f"T0+60000, roles={roles}")
+    # Cronologia: ningun evento se publico con fecha futura.
+    assert run.published, "no se registro ninguna publicacion"
+    assert all(p["event_ms"] <= p["clock_ms"] for p in run.published)
+
+    print(f"Recorrido OK: {len(seguido)} simbolos, corte nominal "
+          f"{estado.get('last_nominal_cut_ms')}, evaluacion efectiva "
+          f"{decision}, roles={roles}")
 
 
 def test_recorrido_productivo_nuevo_simbolo_calentamiento(recorrido):
-    """Un simbolo recien seleccionado pasa por calentamiento:
-    no se evalua inmediatamente tras la suscripcion, solo despues de
-    acumular la ventana requerida."""
+    """Un simbolo recien suscrito no se evalua hasta tener cobertura real."""
     run = recorrido
+    state = seleccion_inicial(run)
+    seguido = state.get("followed") or []
+    assert 12 <= len(seguido) <= 20, seguido
 
-    # Fase 1: seleccion inicial en T0.
-    run.advance(T0)
-    state = run.wait_status(
-        lambda st: st.get("now_ms") == T0
-        and len(st.get("followed") or []) > 0
-        and len(st.get("feeds") or {}) == 2,
-        "seleccion inicial")
-    seguido_inicial = state.get("followed") or []
-    assert 12 <= len(seguido_inicial) <= 20
+    # A T0+5000 no hay ventana ni evaluacion.
+    publicar_cronologico(run, seguido, hasta_ms=5_000)
+    assert not observaciones_desde(run, T0 + 5_000), (
+        "no debe haber evaluacion antes del calentamiento")
 
-    # Publicar datos en T0 para los simbolos iniciales.
-    run.publish_and_confirm(
-        T0, depth_symbols=list(seguido_inicial),
-        trade_events={s: [T0] for s in seguido_inicial})
-
-    # Fase 2: avanzar a T0+5000. Los simbolos llevan solo 5s de calentamiento,
-    # menos de los 60s requeridos. No debe haber evaluacion en este instante.
-    run.advance(T0 + 5_000)
-    obs_5k = [r for r in read_rows(run.obs_path)
-              if r.get("kind") == "observacion"
-              and r.get("decision_ms") == T0 + 5_000]
-    assert len(obs_5k) == 0, (
-        f"no debe haber evaluacion antes del calentamiento, se encontraron "
-        f"{len(obs_5k)} observaciones en T+5000")
-
-    # Fase 3: avanzar a T0+59000 y publicar flujo con event_ms=T0+60000
-    # (mientras el reloj esta en T0+59000). Asi, al evaluar en T0+60000,
-    # span_ms=60000 (ventana completa) y el evento sigue siendo fresco.
-    run.advance(T0 + 59_000)
-    run.publish_and_confirm(
-        T0 + 59_000, depth_symbols=list(seguido_inicial),
-        trade_events={s: [T0 + 60_000] for s in seguido_inicial})
-
-    # Fase 4: avanzar a T0+60000. Los simbolos ya cumplieron el calentamiento
-    # (60000 >= symbol_warmup_ms=60000). El piloto evalua automaticamente.
+    # A T0+60000 la ventana observada es 55 s: sigue sin ser evaluable.
+    publicar_cronologico(run, seguido, desde_ms=10_000, hasta_ms=60_000)
     run.advance(T0 + 60_000)
-    obs_t0_60k = run.wait_observations(T0 + 60_000, len(seguido_inicial))
+    assert not observaciones_desde(run, T0 + 5_000)
 
-    # Verificar que cada simbolo tiene exactamente una observacion en T0+60000.
+    publicar_cronologico(run, seguido, desde_ms=VENTANA_OBSERVADA_MS,
+                         hasta_ms=VENTANA_OBSERVADA_MS)
+    run.advance(T0 + 62_000)
+    obs = run.wait_first_cut(T0 + 60_000, len(seguido), T0 + 300_000)
+
     conteo = {}
-    for o in obs_t0_60k:
-        if o.get("kind") == "observacion" and o.get("decision_ms") == T0 + 60_000:
-            s = o.get("symbol")
-            conteo[s] = conteo.get(s, 0) + 1
-    for s, c in conteo.items():
-        assert c == 1, f"simbolo {s} tiene {c} observaciones en un ciclo"
+    for o in obs:
+        conteo[o["symbol"]] = conteo.get(o["symbol"], 0) + 1
+    assert set(conteo) == set(seguido), (set(conteo) ^ set(seguido))
+    for symbol, cuenta in conteo.items():
+        assert cuenta == 1, f"{symbol} tiene {cuenta} observaciones"
+    assert any(o["apto_para_evaluacion"] for o in obs), obs
 
-    # Verificar que hay al menos algunas aptas (simbolos con datos frescos).
-    aptas = [o for o in obs_t0_60k if o.get("estado") == "observada"]
-    assert len(aptas) > 0, "esperaba al menos una observacion apta tras calentamiento"
-
-    print("Calentamiento OK: simbolos nuevos no se evaluan antes de los 60s, "
-          "solo despues de cumplir la ventana")
+    print("Calentamiento OK: sin evaluacion antes de cobertura real")
 
 
 def test_recorrido_productivo_reincorporacion_nuevo_periodo(
         recorrido_rotacion):
-    """Un simbolo que sale y reincorpora espera un periodo nuevo.
+    """Un simbolo que sale y vuelve espera un periodo nuevo sin historia.
 
-    El calentamiento es la ventana de flujo 1m (60s), independiente de
-    selection_seconds (120s). La reincorporacion renueva first_seen y la
-    evaluacion ocurre despues de esa ventana y antes de la siguiente seleccion,
-    sin barrera manual de decision.
+    No se precarga el minuto anterior: la primera recepcion de cada periodo
+    ocurre despues de la nueva suscripcion, y la evaluacion llega al completar
+    la ventana observada, antes de la siguiente seleccion.
     """
     run = recorrido_rotacion
-
-    run.advance(T0)
-    state = run.wait_status(
-        lambda st: st.get("now_ms") == T0
-        and len(st.get("followed") or []) >= 8
-        and len(st.get("feeds") or {}) == 2,
-        "seleccion inicial")
+    state = seleccion_inicial(run, minimo=8)
     first = set(state["followed"])
-    assert 8 <= len(first) <= 12
-    assert state.get("symbol_warmup_ms") == 60_000
+    assert 8 <= len(first) <= 12, first
+    assert state.get("symbol_warmup_ms") == 60_000, state
     assert set(state["symbol_first_seen_ms"]) == first
+    assert state.get("symbol_first_flow_ms") == {}
 
-    # Primer corte: exactamente al completar la ventana de 60s.
-    e0 = T0 + 60_000
-    run.advance(e0 - 1_000)
-    run.publish_and_confirm(
-        e0 - 1_000, depth_symbols=sorted(first),
-        trade_events={s: list(range(T0 - 2_000, e0 + 1, 1_000))
-                      for s in first})
-    run.advance(e0)
-    obs0 = run.wait_observations(e0, len(first))
-    assert all(o["decision_ms"] == e0 for o in obs0), obs0
+    # Periodo 1: recepcion cronologica desde T0+1000 (sin evento en T0).
+    publicar_cronologico(run, sorted(first))
+    run.advance(T0 + 62_000)
+    obs0 = run.wait_first_cut(T0 + 60_000, len(first), T0 + 120_000)
     assert all(o["apto_para_evaluacion"] for o in obs0), obs0
+    corte0 = obs0[0]["decision_ms"]
 
-    # Segunda seleccion (120s): rota a la mitad disjunta. No se evalua en el
-    # mismo instante de la suscripcion.
+    # Segunda seleccion (120 s): rota a la mitad disjunta.
     e1 = T0 + 120_000
     run.advance(e1)
     state = run.wait_status(
-        lambda st: st.get("cycles_run", 0) >= 2,
-        "segunda seleccion")
+        lambda st: st.get("cycles_run", 0) >= 2, "segunda seleccion")
     second = set(state["followed"])
-    assert second.isdisjoint(first)
-    assert not [r for r in read_rows(run.obs_path)
-                if r.get("kind") == "observacion"
-                and r.get("decision_ms") == e1]
+    assert second.isdisjoint(first), (second & first)
+    assert not observaciones_desde(run, e1)[:1] or all(
+        o["decision_ms"] != e1 for o in observaciones_desde(run, e1))
 
-    # Sembrar la ventana del nuevo conjunto y evaluarlo en e2 (tras 60s).
-    run.publish_and_confirm(
-        e1, depth_symbols=sorted(second),
-        trade_events={s: list(range(e1 - 60_000, e1 + 1, 1_000))
-                      for s in second})
-    e2 = T0 + 180_000
-    run.advance(e2 - 1_000)
-    run.publish_and_confirm(
-        e2 - 1_000, depth_symbols=sorted(second),
-        trade_events={s: [e2] for s in second})
-    run.advance(e2)
-    obs1 = run.wait_observations(e2, len(second))
-    assert all(o["decision_ms"] == e2 for o in obs1), obs1
+    # Periodo 2: primera recepcion DESPUES de suscribir (e1+1000).
+    publicar_cronologico(run, sorted(second), base_ms=e1)
+    run.advance(e1 + 62_000)
+    obs1 = run.wait_first_cut(e1 + 60_000, len(second), e1 + 120_000)
+    assert all(o["decision_ms"] > e1 for o in obs1), obs1
     assert any(o["apto_para_evaluacion"] for o in obs1), obs1
 
-    # Tercera seleccion (240s): reincorpora el primer conjunto con periodo
-    # nuevo; no hereda la cobertura del periodo anterior.
+    # Tercera seleccion (240 s): reincorpora el primer conjunto.
     e3 = T0 + 240_000
     run.advance(e3)
     state = run.wait_status(
-        lambda st: st.get("cycles_run", 0) >= 3,
-        "tercera seleccion")
+        lambda st: st.get("cycles_run", 0) >= 3, "tercera seleccion")
     third = set(state["followed"])
-    assert third == first
+    assert third == first, (third ^ first)
     assert all(state["symbol_first_seen_ms"][s] == e3 for s in third)
-    assert not [r for r in read_rows(run.obs_path)
-                if r.get("kind") == "observacion"
-                and r.get("decision_ms") == e3]
+    # Sin cobertura heredada: la primera recepcion del periodo es posterior.
+    for symbol in third:
+        assert symbol not in state["symbol_first_flow_ms"] or (
+            state["symbol_first_flow_ms"][symbol] > e3), state
+    assert not [o for o in observaciones_desde(run, e3)
+                if o["decision_ms"] == e3]
 
-    # Evaluacion en e4: 60s despues de reincorporar y antes de la siguiente
-    # seleccion (e3 + 120s).
-    run.publish_and_confirm(
-        e3, depth_symbols=sorted(third),
-        trade_events={s: list(range(e3 - 60_000, e3 + 1, 1_000))
-                      for s in third})
-    e4 = T0 + 300_000
-    assert e4 < e3 + 120_000
-    run.advance(e4 - 1_000)
-    run.publish_and_confirm(
-        e4 - 1_000, depth_symbols=sorted(third),
-        trade_events={s: [e4] for s in third})
-    run.advance(e4)
-    obs2 = run.wait_observations(e4, len(third))
+    # Periodo 3: recepcion cronologica nueva, sin precarga.
+    publicar_cronologico(run, sorted(third), base_ms=e3)
+    run.advance(e3 + 62_000)
+    obs2 = run.wait_first_cut(e3 + 60_000, len(third), e3 + 120_000)
     for o in obs2:
-        assert o["decision_ms"] == e4, o
+        assert o["decision_ms"] > e3, o
         disp = o["disponibilidad"]
         assert disp["seleccion_ms"] == e3, o
         assert disp["seleccion_ms"] < o["decision_ms"], o
+        assert disp["flujo_ms"] > e3, o
     assert any(o["apto_para_evaluacion"] for o in obs2), obs2
 
-    # El ciclo registra la salida y la reincorporacion (trazabilidad).
+    # El ciclo registra salida y reincorporacion.
     ciclos = [r for r in read_rows(run.obs_path) if r.get("kind") == "ciclo"]
     salidas = [s["symbol"] for c in ciclos
                for s in (c.get("seguimiento") or {}).get("salidas", [])]
@@ -615,109 +616,115 @@ def test_recorrido_productivo_reincorporacion_nuevo_periodo(
     assert first & set(entradas), "el primer conjunto debe registrar entrada"
 
     print(f"Reincorporacion OK: {len(first)} simbolos con periodo nuevo en "
-          f"e3={e3}, evaluados en e4={e4} antes de la siguiente seleccion")
+          f"{e3}, evaluados en {obs2[0]['decision_ms']} (periodo 1: {corte0})")
 
 
 def test_recorrido_productivo_fuente_ausente_descarta(recorrido):
-    """Un simbolo seleccionado sin flujo publicado se descarta con motivo
-    al cabo del calentamiento, sin bloquear al resto."""
+    """Un simbolo sin flujo espera el maximo acotado y se descarta con motivo.
+
+    Los demas siguen siendo evaluables cuando la espera vence; ninguno queda
+    marcado como apto sin datos.
+    """
     run = recorrido
+    state = seleccion_inicial(run)
+    seguido = state.get("followed") or []
+    assert 12 <= len(seguido) <= 20, seguido
+    sin_flujo = seguido[-1]
 
-    run.advance(T0)
-    state = run.wait_status(
-        lambda st: st.get("now_ms") == T0
-        and len(st.get("followed") or []) > 0
-        and len(st.get("feeds") or {}) == 2,
-        "seleccion inicial")
-    seguido_inicial = state.get("followed") or []
+    publicar_cronologico(run, seguido, sin_flujo=[sin_flujo])
+    # A T0+60000 el resto ya tiene ventana; el simbolo sin flujo no.
+    assert not observaciones_desde(run, T0 + 60_000)
+    # Sigue sin evaluarse durante la espera acotada.
+    run.advance(T0 + 120_000)
+    assert not observaciones_desde(run, T0 + 60_000)
 
-    # Publicar libro para todos, pero NO flujo para ninguno.
-    run.publish_and_confirm(T0, depth_symbols=seguido_inicial,
-                            trade_events={})
-
-    # Avanzar a T0+60000: calentamiento cumplido, pero falta flujo.
-    run.advance(T0 + 60_000)
+    # Antes del vencimiento se refrescan las fuentes del resto.
     run.publish_and_confirm(
-        T0 + 60_000, depth_symbols=seguido_inicial,
-        trade_events={})
-    obs = run.wait_observations(T0 + 60_000, len(seguido_inicial))
+        T0 + 120_000,
+        depth_symbols=[s for s in seguido if s != sin_flujo],
+        trade_events={s: [T0 + 120_000] for s in seguido
+                      if s != sin_flujo})
+    run.advance(T0 + 121_000)
+    obs = run.wait_first_cut(T0 + 60_000, len(seguido), T0 + 300_000)
 
-    # Todos deben estar descartados por sin_flujo.
-    for o in obs:
-        assert o["estado"] == "descartada", o
-        assert "sin_flujo" in (o.get("motivos") or []), o
-        assert o["apto_para_evaluacion"] is False, o
+    estado = run.status() or {}
+    assert estado.get("last_cut_reason") == "espera_maxima_agotada", estado
 
-    print("Fuente ausente OK: todos descartados con sin_flujo, sin bloquear")
+    by_sym = {o["symbol"]: o for o in obs}
+    assert set(by_sym) == set(seguido)
+    retrasado = by_sym[sin_flujo]
+    assert retrasado["estado"] == "descartada", retrasado
+    assert "sin_flujo" in (retrasado.get("motivos") or []), retrasado
+    assert retrasado["apto_para_evaluacion"] is False, retrasado
+    for symbol, o in by_sym.items():
+        if symbol == sin_flujo:
+            continue
+        assert o["apto_para_evaluacion"] is True, o
+        assert o["estado"] == "observada", o
+
+    print(f"Fuente ausente OK: {sin_flujo} descartado con sin_flujo tras "
+          f"espera acotada; {len(seguido) - 1} evaluados")
 
 
 def test_recorrido_productivo_frescura_libro_obsoleto(recorrido):
-    """Libro obsoleto + flujo reciente -> rechazo por dato_obsoleto_libro."""
+    """Libro obsoleto con flujo fresco: espera acotada y rechazo con motivo."""
     run = recorrido
+    state = seleccion_inicial(run)
+    seguido = state.get("followed") or []
+    assert 12 <= len(seguido) <= 20, seguido
 
-    run.advance(T0)
-    state = run.wait_status(
-        lambda st: st.get("now_ms") == T0
-        and len(st.get("followed") or []) > 0
-        and len(st.get("feeds") or {}) == 2,
-        "seleccion inicial")
-    seguido_inicial = state.get("followed") or []
+    # Solo el primer libro; el flujo se mantiene cronologico.
+    publicar_cronologico(run, seguido, hasta_ms=1_000)
+    publicar_cronologico(run, seguido, desde_ms=6_000,
+                         hasta_ms=VENTANA_OBSERVADA_MS, sin_libro=seguido)
 
-    # Publicar libro con evento en T0 (viejo) y flujo en T0 y T0+60000.
-    # El flujo en T0 establece oldest_ms; el de T0+60000 (publicado mientras
-    # el reloj esta en T0+59000) establece newest_ms, dando span_ms=60000.
-    # No se refresca el libro: al evaluar en T0+60000 su age_event=60000
-    # supera max_data_age_ms -> dato_obsoleto_libro.
+    # La espera maxima (60 s extra) vence en T0+121000.
+    run.advance(T0 + 120_000)
     run.publish_and_confirm(
-        T0, depth_symbols=seguido_inicial,
-        trade_events={s: [T0] for s in seguido_inicial})
-    run.advance(T0 + 59_000)
-    run.publish_and_confirm(
-        T0 + 59_000, depth_symbols=(),
-        trade_events={s: [T0 + 60_000] for s in seguido_inicial})
+        T0 + 120_000, depth_symbols=(),
+        trade_events={s: [T0 + 120_000] for s in seguido})
+    run.advance(T0 + 121_000)
+    obs = run.wait_first_cut(T0 + 60_000, len(seguido), T0 + 300_000)
 
-    run.advance(T0 + 60_000)
-    obs = run.wait_observations(T0 + 60_000, len(seguido_inicial))
+    estado = run.status() or {}
+    assert estado.get("last_cut_reason") == "espera_maxima_agotada", estado
 
-    rechazadas = [o for o in obs if o.get("estado") == "descartada"]
-    assert rechazadas, obs
+    rechazadas = [o for o in obs if o["estado"] == "descartada"]
+    assert len(rechazadas) == len(obs), obs
     for o in rechazadas:
         motivos = set(o.get("motivos") or [])
-        assert "dato_obsoleto_libro" in motivos or "sin_libro" in motivos, o
+        assert "dato_obsoleto_libro" in motivos, o
+        assert o["apto_para_evaluacion"] is False, o
 
-    print("Frescura libro obsoleto OK: rechazo con motivo")
+    print("Frescura libro obsoleto OK: espera acotada y rechazo con motivo")
 
 
 def test_recorrido_productivo_una_observacion_por_simbolo_y_ciclo(recorrido):
     """Como maximo una observacion por simbolo y ciclo de decision."""
     run = recorrido
+    state = seleccion_inicial(run)
+    seguido = state.get("followed") or []
 
-    run.advance(T0)
-    state = run.wait_status(
-        lambda st: st.get("now_ms") == T0
-        and len(st.get("followed") or []) > 0,
-        "seleccion inicial")
-    seguido_inicial = state.get("followed") or []
+    publicar_cronologico(run, seguido)
+    run.advance(T0 + 62_000)
+    obs = run.wait_first_cut(T0 + 60_000, len(seguido), T0 + 300_000)
+    decision = obs[0]["decision_ms"]
 
-    run.publish_and_confirm(
-        T0, depth_symbols=seguido_inicial,
-        trade_events={s: [T0] for s in seguido_inicial})
-    run.advance(T0 + 59_000)
-    run.publish_and_confirm(
-        T0 + 59_000, depth_symbols=seguido_inicial,
-        trade_events={s: [T0 + 60_000] for s in seguido_inicial})
-
-    run.advance(T0 + 60_000)
-    obs = run.wait_observations(T0 + 60_000, len(seguido_inicial))
-
-    # Contar observaciones por simbolo en este ciclo de decision.
     conteo = {}
     for o in obs:
-        if o.get("kind") == "observacion" and o.get("decision_ms") == T0 + 60_000:
-            s = o.get("symbol")
-            conteo[s] = conteo.get(s, 0) + 1
+        conteo[o["symbol"]] = conteo.get(o["symbol"], 0) + 1
+    assert set(conteo) == set(seguido)
+    assert all(c == 1 for c in conteo.values()), conteo
 
-    for s, c in conteo.items():
-        assert c == 1, f"simbolo {s} tiene {c} observaciones en un ciclo"
+    # Avanzar y publicar dentro del mismo ciclo no duplica observaciones.
+    publicar_cronologico(run, seguido, desde_ms=decision - T0 + 1_000,
+                         hasta_ms=decision - T0 + 1_000)
+    run.advance(decision + 5_000)
+    repetidas = [o for o in observaciones_desde(run, T0 + 60_000)
+                 if o["decision_ms"] != decision]
+    assert not repetidas, repetidas
+
+    estado = run.status() or {}
+    assert estado.get("evaluations_run") == 1, estado
 
     print("Una observacion por simbolo y ciclo OK")

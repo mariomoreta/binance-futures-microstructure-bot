@@ -1,0 +1,13 @@
+suscritos: 18 en T0=1735689600000
+status keys con first_flow: False
+observaciones con decision_ms == T0+60000: 18
+   1735689660000 descartada ['flujo_ventana_incompleta'] False
+   1735689660000 descartada ['flujo_ventana_incompleta'] False
+   1735689660000 descartada ['flujo_ventana_incompleta'] False
+observaciones aptas antes de T0+300000: 0
+evaluations_run: 1
+next_decision_ms: None
+motivos del corte prematuro: ['flujo_ventana_incompleta']
+PRE-FIX CONFIRMADO: oportunidad consumida sin ventana completa
+.
+1 passed in 4.23s
