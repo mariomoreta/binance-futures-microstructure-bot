@@ -57,11 +57,61 @@ información de mercado en T (move_24h_pct = +2.4)
 ## Regresiones ejecutadas
 
 `tests/test_paper_lab_engine.py`, `tests/test_experimento_operativo_local.py`,
-`tests/test_backtest_offline.py`, `tests/test_operativo_local_v2.py` → **68 passed**.
+`tests/test_backtest_offline.py`, `tests/test_operativo_local_v2.py` → **73 passed**.
+
+## Recorrido conectado ejecutado (dato de movimiento -> motor)
+
+El camino se ejecuta realmente desde un dato de mercado en T, no desde una
+dirección escrita a mano en la fixture:
+
+```
+dato de movimiento en T (move_24h_pct)
+  -> derivar_direccion_desde_movimiento()  (misma funcion para candidato y
+     comparador; el rol no determina la direccion)
+  -> direccion -> PaperSessionConfig.direction  (procede de la funcion)
+  -> evaluate_session (senal causal) -> step_forward (fill en open de vela
+     siguiente) -> gestion/salida -> resultado
+```
+
+Resultado del recorrido conectado generado por ejecución (ejemplo LONG):
+
+| Campo | Valor | Origen |
+|---|---|---|
+| Dato original | `move_24h_pct = +2.4` (%) | Fixture de mercado en T |
+| Dirección derivada | `LONG` | `derivar_direccion_desde_movimiento(+2.4)` |
+| Dirección usada en config | `LONG` | Procede de la función, no de una constante |
+| Decisión | `ENTRADA_SIMULADA` | `evaluate_session` en T=119000 |
+| Fill | `102.0` @ `120 000 ms` | Open de vela siguiente a la señal |
+| qty | `9.8039` | notional 1000 / 102 |
+| Stop efectivo | `101.49` | entry ejecutada × (1 − 0,005) |
+| Salida | `stop` @ `101.49` | Toque al conocerse close de vela de entrada |
+| exit_executed | `true` | Salida ejecutada |
+| P&L neto | `-6.596` | bruto − comisiones − spread/slippage |
+| funding | `None` | Sin calendario de funding real |
+
+**Presentación honesta de funding:** cuando `funding=None`, el importe neto
+mostrado es un **resultado condicionado / sin funding conocido**, no un neto
+completo. El desconocimiento del funding nunca se convierte en cero.
+
+Resultado equivalente para movimiento negativo (`move_24h_pct = -1.8`):
+dirección `SHORT`, fill `98.0` @ `120 000 ms`, salida `stop` @ `98.49`,
+neto `-6.604`, funding `None` (sin funding conocido).
+
+Casos de abstención conectados: dato ausente (`None`) → motivo
+`dato_ausente: move_24h_pct no disponible en T`; movimiento sin señal (`0.0`)
+→ motivo `sin_senal: move_24h_pct==0 (sin direccion)`. En ambos, sin fill ni
+salida.
+
+El mismo recorrido se ejecuta para candidato y comparador con idéntica regla y
+configuración de costes/horario/stop; el rol candidate/comparator no influye
+en la dirección.
 
 ## JSON de traza completa
 
-`docs/evidence/operativo_local_v2/traza_recorrido_integrado.json` (estado de sesión serializado).
+`docs/evidence/operativo_local_v2/traza_recorrido_conectado.json` (traza del
+recorrido conectado ejecutado: LONG, SHORT, dato ausente, sin señal) y
+`docs/evidence/operativo_local_v2/traza_recorrido_integrado.json`
+(estado de sesión del recorrido integrado anterior).
 
 ## Declaración de cierre
 

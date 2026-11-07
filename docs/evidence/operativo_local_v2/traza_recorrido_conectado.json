@@ -1,0 +1,100 @@
+{
+  "recorrido_conectado": {
+    "descripcion": "dato de movimiento en T -> derivar_direccion_desde_movimiento() -> direccion/configuracion -> senal -> motor (paper_lab_engine) -> fill -> salida -> resultado",
+    "motor": "paper_lab_engine + backtest_offline (unica autoridad economica)",
+    "casos": {
+      "movimiento_positivo_LONG": {
+        "dato_original": 2.4,
+        "direccion_derivada": {
+          "direction": "LONG",
+          "reason": "movimiento_alcista: move_24h_pct=2.4>0"
+        },
+        "direccion_usada": "LONG",
+        "decision": "ENTRADA_SIMULADA",
+        "fill": {
+          "px": 101.99999999999999,
+          "ms": 120000,
+          "qty": 9.803921568627452,
+          "stop": 101.48999999999998
+        },
+        "salida": {
+          "exit_px": 101.48999999999998,
+          "exit_ms": 180000,
+          "exit_reason": "stop",
+          "exit_executed": true,
+          "open_at_end": false,
+          "qty": 9.803921568627452,
+          "gross_pnl": -5.000000000000051,
+          "fees": 0.9974999999999999,
+          "spread_slip": 0.5984999999999999,
+          "funding": null,
+          "net_pnl": -6.596000000000051
+        },
+        "estado_final": "cerrada",
+        "motivo_abstencion": null,
+        "config_direction": "LONG"
+      },
+      "movimiento_negativo_SHORT": {
+        "dato_original": -1.8,
+        "direccion_derivada": {
+          "direction": "SHORT",
+          "reason": "movimiento_bajista: move_24h_pct=-1.8<0"
+        },
+        "direccion_usada": "SHORT",
+        "decision": "ENTRADA_SIMULADA",
+        "fill": {
+          "px": 98.0,
+          "ms": 120000,
+          "qty": 10.204081632653061,
+          "stop": 98.49
+        },
+        "salida": {
+          "exit_px": 98.49,
+          "exit_ms": 180000,
+          "exit_reason": "stop",
+          "exit_executed": true,
+          "open_at_end": false,
+          "qty": 10.204081632653061,
+          "gross_pnl": -4.999999999999948,
+          "fees": 1.0025,
+          "spread_slip": 0.6014999999999999,
+          "funding": null,
+          "net_pnl": -6.603999999999948
+        },
+        "estado_final": "cerrada",
+        "motivo_abstencion": null,
+        "config_direction": "SHORT"
+      },
+      "dato_ausente_abstencion": {
+        "dato_original": null,
+        "direccion_derivada": {
+          "direction": null,
+          "reason": "dato_ausente: move_24h_pct no disponible en T"
+        },
+        "direccion_usada": null,
+        "decision": null,
+        "fill": null,
+        "salida": null,
+        "estado_final": "abstencion",
+        "motivo_abstencion": "dato_ausente: move_24h_pct no disponible en T"
+      },
+      "sin_senal_abstencion": {
+        "dato_original": 0.0,
+        "direccion_derivada": {
+          "direction": null,
+          "reason": "sin_senal: move_24h_pct==0 (sin direccion)"
+        },
+        "direccion_usada": null,
+        "decision": null,
+        "fill": null,
+        "salida": null,
+        "estado_final": "abstencion",
+        "motivo_abstencion": "sin_senal: move_24h_pct==0 (sin direccion)"
+      }
+    },
+    "candidato_vs_comparador": {
+      "mismo_dato_misma_direccion": "candidato y comparador con move_24h_pct=+2.4 derivan ambos LONG; el rol no determina direccion",
+      "dato_distinto_direccion_distinta_por_dato": "candidato +2.4 -> LONG, comparador -1.8 -> SHORT; misma regla y configuracion de costes/horario/stop"
+    }
+  }
+}

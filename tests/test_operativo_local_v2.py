@@ -37,12 +37,43 @@ NOTIONAL = 1000.0
 STOP_PCT = 0.5
 
 
+def validar_ohlc(c: PaperCandle) -> None:
+    """Comprueba que el rango OHLC de una vela es coerente antes de ejecutar
+    el motor: low <= min(open, close) <= max(open, close) <= high.
+
+    Una vela abierta legítimamente desconocida mantiene close=None; en ese
+    caso solo se exige low <= open <= high. No se inventan cierres."""
+    import math
+    for nombre, valor in (("open", c.open), ("high", c.high),
+                          ("low", c.low)):
+        if valor is None or not math.isfinite(valor):
+            raise ValueError(f"OHLC invalido en {c.open_time_ms}: {nombre}={valor}")
+    if c.close is not None:
+        if not math.isfinite(c.close):
+            raise ValueError(f"OHLC invalido en {c.open_time_ms}: close={c.close}")
+        lo = min(c.open, c.close)
+        hi = max(c.open, c.close)
+        if not (c.low <= lo):
+            raise ValueError(
+                f"OHLC invalido en {c.open_time_ms}: low={c.low} > min(open,close)={lo}")
+        if not (hi <= c.high):
+            raise ValueError(
+                f"OHLC invalido en {c.open_time_ms}: max(open,close)={hi} > high={c.high}")
+    else:
+        if not (c.low <= c.open <= c.high):
+            raise ValueError(
+                f"OHLC invalido en {c.open_time_ms}: low={c.low} > open={c.open} "
+                f"o open > high={c.high}")
+
+
 def mk_candle(open_ms: int, open_px: float, high: float, low: float,
               close: float, close_ms: int) -> PaperCandle:
-    return PaperCandle(
+    c = PaperCandle(
         open_time_ms=open_ms, open=open_px, high=high,
         low=low, close=close, close_time_ms=close_ms,
     )
+    validar_ohlc(c)
+    return c
 
 
 def mk_config(direction: str, entry_px: float, stop_px: float,
@@ -105,7 +136,7 @@ def test_entrada_causal_long_fill_vela_siguiente():
     el open pasado de V1 (101)."""
     velas = [
         mk_candle(0, 100.0, 101.0, 99.0, 100.0, 59_999),      # contexto
-        mk_candle(60_000, 101.0, 103.0, 101.5, 102.0, 119_000),  # V1 senal (low=101.5 > stop 101.49)
+        mk_candle(60_000, 101.6, 103.0, 101.55, 102.0, 119_000),  # V1 senal (low=101.55 > stop 101.49, no vulnerada)
         mk_candle(120_000, 102.0, 105.0, 101.0, 104.0, 180_000),  # V2 fill
     ]
     # entry_px=close de V1=102; stop 0.5% debajo = 101.49
@@ -128,7 +159,7 @@ def test_entrada_causal_short_fill_vela_siguiente():
     """SHORT: senal en T con close de V1; fill en open de V2 (98.0)."""
     velas = [
         mk_candle(0, 100.0, 101.0, 99.0, 100.0, 59_999),      # contexto
-        mk_candle(60_000, 99.0, 98.4, 97.0, 98.0, 119_000),   # V1 senal SHORT (high=98.4 < stop 98.49)
+        mk_candle(60_000, 98.3, 98.4, 97.0, 98.0, 119_000),   # V1 senal SHORT (high=98.4 < stop 98.49, no vulnerada)
         mk_candle(120_000, 98.0, 99.0, 96.0, 97.0, 180_000),   # V2 fill
     ]
     # entry_px=close de V1=98; stop 0.5% encima = 98.49
@@ -385,7 +416,7 @@ def test_abstencion_precio_no_a_favor():
     """Condicion no satisfecha: close no opera a favor vs entry_px -> SIN_ENTRADA."""
     velas = [
         mk_candle(0, 100.0, 101.0, 99.0, 100.0, 59_999),   # contexto
-        mk_candle(60_000, 101.0, 102.0, 100.0, 99.0, 119_999),  # V1 close=99 < entry=100 (LONG)
+        mk_candle(60_000, 101.0, 102.0, 98.5, 99.0, 119_999),  # V1 close=99 < entry=100 (LONG)
     ]
     state = _signal_session("LONG", entry_px=100.0, stop_px=95.0,
                             velas=velas, at_ms=119_999)
@@ -537,6 +568,211 @@ def test_contabilidad_independiente_long_y_short():
           f"spread={entry_spread+exit_spread_short} neto={neto_esperado_short} funding={r_short.funding}")
 
 
+# ============================================================================
+# 9. RECORRIDO CONECTADO: dato de movimiento en T -> funcion comun ->
+#    direccion/configuracion -> senal -> motor -> fill -> salida -> resultado
+# ============================================================================
+def _recorrido_conectado(move_24h_pct: Optional[float], velas: List[PaperCandle],
+                         at_ms: int, entry_px: float, stop_px: float,
+                         horizon_ms: int = HORIZON_60M,
+                         notional: float = NOTIONAL) -> dict:
+    """Recorrido conectado y reproducible.
+
+    Flujo:
+      dato de movimiento en T -> derivar_direccion_desde_movimiento()
+      -> direccion/configuracion (la direction de PaperSessionConfig procede
+      EXCLUSIVAMENTE del resultado de la funcion, nunca de una constante de
+      fixture) -> evaluate_session (senal) -> step_forward (fill en open de
+      vela siguiente) -> step_forward... (gestion/salida) -> resultado.
+
+    Si la direccion derivada es None (dato ausente o sin senal), hay
+    abstencion con motivo y no se crea sesion de trading.
+
+    Devuelve un dict con el dato original, direccion derivada, decision,
+    fill, salida y estado final.
+    """
+    from typing import Optional  # noqa: F401  (ya importado al modulo)
+    traza = {
+        "dato_original": move_24h_pct,
+        "direccion_derivada": derivar_direccion_desde_movimiento(move_24h_pct),
+        "direccion_usada": None,
+        "decision": None,
+        "fill": None,
+        "salida": None,
+        "estado_final": None,
+        "motivo_abstencion": None,
+    }
+    dir_res = traza["direccion_derivada"]
+    direccion = dir_res["direction"]
+    traza["direccion_usada"] = direccion
+
+    if direccion is None:
+        # Dato ausente o movimiento sin senal: abstencion con motivo, sin motor.
+        traza["estado_final"] = "abstencion"
+        traza["motivo_abstencion"] = dir_res["reason"]
+        return traza
+
+    config = mk_config(direccion, entry_px=entry_px, stop_px=stop_px,
+                       horizon_ms=horizon_ms, notional=notional)
+    state = create_session(config, velas, hypothesis_id="H-conectado")
+    state = evaluate_session(state, rule_version=RULE_CAUSAL_V1, at_ms=at_ms)
+    traza["decision"] = state.config.decision
+    traza["config_direction"] = state.config.direction
+
+    if state.status != "en_espera":
+        traza["estado_final"] = state.status
+        return traza
+
+    # Fill en open de la vela siguiente a la senal (causal, nunca open pasado).
+    state = step_forward(state)
+    if state.position.open:
+        traza["fill"] = {
+            "px": state.position.entry_px,
+            "ms": state.position.entry_ms,
+            "qty": state.position.entry_qty,
+            "stop": state.position.stop_px,
+        }
+        pasos = 0
+        while state.status == "abierta":
+            state = step_forward(state)
+            pasos += 1
+            if pasos > 200:
+                raise AssertionError("Demasiados pasos sin cerrar")
+        traza["salida"] = _res(state)
+        traza["estado_final"] = state.status
+    else:
+        traza["estado_final"] = state.status
+    return traza
+
+
+def _velas_conexion_long() -> List[PaperCandle]:
+    """LONG: V1 senal close=102.0 (>= entry 102.0, stop 101.49 no vulnerado);
+    V2 fill open=102.0; V3 revela close de V2 (low=101.0 <= stop) -> salida."""
+    return [
+        mk_candle(0, 100.0, 101.0, 99.0, 100.0, 59_999),          # V0 contexto
+        mk_candle(60_000, 101.6, 103.0, 101.55, 102.0, 119_000),   # V1 senal
+        mk_candle(120_000, 102.0, 103.0, 101.0, 102.5, 179_000),   # V2 fill + rango stop
+        mk_candle(180_000, 102.0, 103.0, 101.0, 102.5, 239_000),   # V3: revela close de V2
+    ]
+
+
+def _velas_conexion_short() -> List[PaperCandle]:
+    """SHORT: V1 senal close=98.0 (<= entry 98.0, stop 98.49 no vulnerado);
+    V2 fill open=98.0; V3 revela close de V2 (high=100.0 >= stop) -> salida."""
+    return [
+        mk_candle(0, 100.0, 101.0, 99.0, 100.0, 59_999),          # V0 contexto
+        mk_candle(60_000, 98.3, 98.4, 97.0, 98.0, 119_000),        # V1 senal
+        mk_candle(120_000, 98.0, 100.0, 97.0, 99.0, 179_000),      # V2 fill + rango stop
+        mk_candle(180_000, 98.0, 99.0, 97.0, 98.0, 239_000),      # V3: revela close de V2
+    ]
+
+
+def test_recorrido_conectado_movimiento_positivo_long():
+    """Movimiento positivo -> LONG -> señal -> fill -> salida por stop."""
+    traza = _recorrido_conectado(
+        move_24h_pct=+2.4, velas=_velas_conexion_long(), at_ms=119_000,
+        entry_px=102.0, stop_px=101.49,
+    )
+    assert traza["dato_original"] == 2.4
+    assert traza["direccion_usada"] == "LONG", traza
+    assert traza["direccion_derivada"]["direction"] == "LONG"
+    assert traza["direccion_derivada"]["reason"].startswith("movimiento_alcista")
+    assert traza["decision"] == "ENTRADA_SIMULADA", traza
+    assert traza["config_direction"] == "LONG"  # procede de la funcion, no de una constante
+    f = traza["fill"]
+    assert f is not None and abs(f["px"] - 102.0) < 1e-9, traza
+    assert f["ms"] == 120_000  # open de vela siguiente a la senal
+    assert abs(f["stop"] - 101.49) < 1e-9
+    s = traza["salida"]
+    assert s is not None
+    assert s["exit_reason"] == "stop", s
+    assert s["exit_executed"] is True, s
+    assert abs(s["exit_px"] - 101.49) < 1e-9, s
+    assert s["open_at_end"] is False
+    funding_tag = "SIN funding conocido (None, no cero)" if s["funding"] is None else f"funding={s['funding']}"
+    print(f"  [conectado LONG] dato={traza['dato_original']} dir={traza['direccion_usada']} "
+          f"fill={f['px']}@{f['ms']} salida={s['exit_reason']}@{s['exit_px']} "
+          f"neto={s['net_pnl']} ({funding_tag})")
+
+
+def test_recorrido_conectado_movimiento_negativo_short():
+    """Movimiento negativo -> SHORT -> señal -> fill -> salida por stop."""
+    traza = _recorrido_conectado(
+        move_24h_pct=-1.8, velas=_velas_conexion_short(), at_ms=119_000,
+        entry_px=98.0, stop_px=98.49,
+    )
+    assert traza["dato_original"] == -1.8
+    assert traza["direccion_usada"] == "SHORT", traza
+    assert traza["direccion_derivada"]["direction"] == "SHORT"
+    assert traza["direccion_derivada"]["reason"].startswith("movimiento_bajista")
+    assert traza["decision"] == "ENTRADA_SIMULADA", traza
+    assert traza["config_direction"] == "SHORT"  # procede de la funcion, no de una constante
+    f = traza["fill"]
+    assert f is not None and abs(f["px"] - 98.0) < 1e-9, traza
+    assert f["ms"] == 120_000
+    assert abs(f["stop"] - 98.49) < 1e-9
+    s = traza["salida"]
+    assert s is not None
+    assert s["exit_reason"] == "stop", s
+    assert s["exit_executed"] is True, s
+    assert abs(s["exit_px"] - 98.49) < 1e-9, s
+    assert s["open_at_end"] is False
+    funding_tag = "SIN funding conocido (None, no cero)" if s["funding"] is None else f"funding={s['funding']}"
+    print(f"  [conectado SHORT] dato={traza['dato_original']} dir={traza['direccion_usada']} "
+          f"fill={f['px']}@{f['ms']} salida={s['exit_reason']}@{s['exit_px']} "
+          f"neto={s['net_pnl']} ({funding_tag})")
+
+
+def test_recorrido_conectado_candidato_y_comparador_misma_regla():
+    """Candidato y comparador usan la misma funcion y configuracion; el rol
+    no decide la dirección. Mismo dato -> misma direccion; dato distinto ->
+    direccion distinta por el dato, no por el rol."""
+    velas_l = _velas_conexion_long()
+    velas_s = _velas_conexion_short()
+
+    # Candidato con movimiento positivo y comparador con el mismo dato:
+    # ambos derivan LONG, mismo trato, el rol no importa.
+    t_cand = _recorrido_conectado(+2.4, velas_l, 119_000, 102.0, 101.49)
+    t_comp = _recorrido_conectado(+2.4, velas_l, 119_000, 102.0, 101.49)
+    assert t_cand["direccion_usada"] == t_comp["direccion_usada"] == "LONG"
+    assert t_cand["decision"] == t_comp["decision"] == "ENTRADA_SIMULADA"
+    assert abs(t_cand["fill"]["px"] - 102.0) < 1e-9
+    assert abs(t_comp["fill"]["px"] - 102.0) < 1e-9
+
+    # Candidato positivo (LONG) vs comparador negativo (SHORT): la direccion
+    # sigue el dato de movimiento, nunca el rol candidate/comparator.
+    t_cand2 = _recorrido_conectado(+2.4, velas_l, 119_000, 102.0, 101.49)
+    t_comp2 = _recorrido_conectado(-1.8, velas_s, 119_000, 98.0, 98.49)
+    assert t_cand2["direccion_usada"] == "LONG"
+    assert t_comp2["direccion_usada"] == "SHORT"
+    # Misma configuracion de costes/horario/stop para ambos (condiciones equivalentes).
+    assert abs(t_cand2["fill"]["stop"] - 101.49) < 1e-9
+    assert abs(t_comp2["fill"]["stop"] - 98.49) < 1e-9
+    print(f"  [conectado candidato/comparador] cand={t_cand2['direccion_usada']} "
+          f"comp={t_comp2['direccion_usada']} (misma regla, rol sin efecto)")
+
+
+def test_recorrido_conectado_dato_ausente_abstencion():
+    """move_24h_pct None (dato necesario ausente) -> abstencion, motivo dato_ausente."""
+    traza = _recorrido_conectado(None, _velas_conexion_long(), 119_000, 102.0, 101.49)
+    assert traza["direccion_usada"] is None
+    assert traza["decision"] is None
+    assert traza["fill"] is None
+    assert traza["salida"] is None
+    assert traza["estado_final"] == "abstencion"
+    assert traza["motivo_abstencion"].startswith("dato_ausente"), traza
+    print(f"  [conectado dato ausente] motivo={traza['motivo_abstencion']}")
+
+
+def test_recorrido_conectado_sin_senal_abstencion():
+    """move_24h_pct == 0 (presente pero sin direccion) -> abstencion, motivo sin_senal."""
+    traza = _recorrido_conectado(0.0, _velas_conexion_long(), 119_000, 102.0, 101.49)
+    assert traza["direccion_usada"] is None
+    assert traza["estado_final"] == "abstencion"
+    assert traza["motivo_abstencion"].startswith("sin_senal"), traza
+    print(f"  [conectado sin senal] motivo={traza['motivo_abstencion']}")
+
+
 if __name__ == "__main__":
     test_direccion_desde_movimiento_positivo_negativo_ausente()
     print("OK: direccion comun desde movimiento")
@@ -566,6 +802,16 @@ if __name__ == "__main__":
     print("OK: concurrencia max_concurrent=1")
     test_contabilidad_independiente_long_y_short()
     print("OK: contabilidad independiente LONG y SHORT")
+    test_recorrido_conectado_movimiento_positivo_long()
+    print("OK: recorrido conectado movimiento positivo LONG")
+    test_recorrido_conectado_movimiento_negativo_short()
+    print("OK: recorrido conectado movimiento negativo SHORT")
+    test_recorrido_conectado_candidato_y_comparador_misma_regla()
+    print("OK: recorrido conectado candidato/comparador misma regla")
+    test_recorrido_conectado_dato_ausente_abstencion()
+    print("OK: recorrido conectado dato ausente abstencion")
+    test_recorrido_conectado_sin_senal_abstencion()
+    print("OK: recorrido conectado sin senal abstencion")
     print("TODAS LAS PRUEBAS FOCALIZADAS PASARON")
 
 

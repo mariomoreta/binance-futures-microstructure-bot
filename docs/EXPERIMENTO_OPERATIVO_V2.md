@@ -156,11 +156,24 @@ Ejecutar las 3 ventanas del protocolo con la regla candidata congelada, bajo el 
 ## 8. Estado de este bloque (demostración local, 2026-11-07)
 
 Este bloque se completó localmente sobre `research/universe-liquidez-v1` (base
-`a1f7927c55faf80e2ad610537e010bd0954b565e`), reutilizando `paper_lab_engine`
+`f8b25debf64b5eaa04910d65b64948ba0414df6c`), reutilizando `paper_lab_engine`
 y `backtest_offline` sin Binance, sin dashboard, sin nuevos servicios ni motores
 paralelos. Pruebas focalizadas en `tests/test_operativo_local_v2.py` (junto con
 las regresiones de `paper_lab_engine`, `experimento_operativo_local` y
-`backtest_offline`: **68 passed**).
+`backtest_offline`: **73 passed**).
+
+Se añadio el **recorrido conectado ejecutado**: dato de movimiento en T ->
+`derivar_direccion_desde_movimiento()` -> direccion/configuracion (la
+direccion de `PaperSessionConfig` procede de la funcion, no de una constante
+de fixture) -> `evaluate_session` (senal) -> `step_forward` (fill en open de
+vela siguiente) -> gestion/salida -> resultado. Se verificó para movimiento
+positivo (LONG), negativo (SHORT), candidato y comparador bajo la misma regla,
+dato ausente (abstencion `dato_ausente`) y sin señal (abstencion `sin_senal`).
+
+Se añadio `validar_ohlc()` en el constructor de fixtures `mk_candle()` para
+detectar rangos inválidos (`low <= min(open, close) <= max(open, close) <=
+high`) antes de ejecutar el motor; las fixtures con rangos imposibles se
+corrigieron conservando el propósito de cada escenario.
 
 ### Qué queda acreditado por esta prueba local
 
