@@ -1,6 +1,6 @@
 # Protocolo de experimento operativo v2 — research/universe-liquidez-v1
 
-**Estado:** diseño de alcance cerrado y revisable. No se ejecuta. No hay órdenes reales, no hay conexión nueva a Binance, no hay infraestructura nueva, no hay cambios económicos productivos. Este documento actualiza y reemplaza el alcance de `docs/EXPERIMENTO_OPERATIVO_V1.md` (diseño de alcance v1); no se borra el v1, se conserva como referencia histórica.
+**Estado:** diseño de alcance cerrado y demostrado localmente. No se ejecuta en producción. No hay órdenes reales, no hay conexión nueva a Binance, no hay infraestructura nueva, no hay cambios económicos productivos. Este documento actualiza y reemplaza el alcance de `docs/EXPERIMENTO_OPERATIVO_V1.md` (diseño de alcance v1); no se borra el v1, se conserva como referencia histórica.
 
 **Base:** HEAD `6a10c30701cbbf695b422ba4a83206e1dd872132` (rama `research/universe-liquidez-v1`). Dataset de referencia para diagnóstico: `public-pilot-1h-20261106a` (una sola hora, 2026-11-06, 216 observaciones, 168 aptas, 504 resultados). Análisis v4 como punto de partida.
 
@@ -54,14 +54,14 @@ Se inspeccionan exclusivamente componentes ya disponibles. No se propone otro mo
 
 **Hipótesis de continuación (se elige una sola; reversión es hipótesis distinta, no probada aquí):** reconocer que está influenciada por resultados ya vistos de la captura 20261106a (candidatos mostraron retornos medios positivos descriptivos), por lo tanto debe probarse en ventanas separadas y no se asume superioridad.
 
-**Regla candidata completa (para revisión, NO implementada, NO aprobada por documentarla):**
+**Regla candidata completa (demostrada localmente con `paper_lab_engine` / `backtest_offline`, NO implementada en producción, NO aprobada por documentarla):**
 
 | Elemento | Valor / condición explícita |
 |---|---|
 | Información disponible al decidir | `side` (UP/DOWN) del selector en T, `move_24h_pct`, precio de libro `libro_mid` en T, cobertura y frescura (`disponibilidad.<= decision_ms + tolerancia`). Nada del futuro. |
 | Condición de señal y dirección | Si `side == UP` → LONG; si `side == DOWN` → SHORT. Si `side` es None → SIN_ENTRADA. Solo si existe vela 1m plenamente conocida en T y su close opera a favor vs `entry_px` y stop no vulnerado (misma lógica de abstención que RULE-CAUSAL-V1). |
-| Entrada y primera ejecución posterior causalmente posible | `entry_px` = close de la vela 1m plenamente conocida en T (precio conocido en T). Primera ejecución: fill al **open de la vela 1m siguiente** a la de señal (primera ejecución posterior causalmente posible; nunca el open pasado de la vela que confirmó la señal, nunca precio futuro). |
-| Stop inicial y tratamiento de gaps | `stop_px = entry_px × (1 − stop_distance_pct)` para LONG; `entry_px × (1 + stop_distance_pct)` para SHORT. `stop_distance_pct = 0.5` (0,5 %). Gap: si el open de la vela siguiente cruza el stop, se sale al open de esa vela (primer precio disponible tras el gap, no al stop nominal); stop no vulnerable en T → SIN_ENTRADA. |
+| Entrada y primera ejecución posterior causalmente posible | `entry_px` = close de la vela 1m plenamente conocida en T (precio conocido en T). Primera ejecución: fill al **open de la vela 1m siguiente** a la de señal (primera ejecución posterior causalmente posible; nunca el open pasado de la vela que confirmó la señal, nunca precio futuro). Demostrado localmente con `step_forward` → `_apply_entry` → `run_backtest`. |
+| Stop inicial y tratamiento de gaps | `stop_px = entry_px × (1 − stop_distance_pct)` para LONG; `entry_px × (1 + stop_distance_pct)` para SHORT. `stop_distance_pct = 0.5` (0,5 %). Gap: si el open de la vela siguiente cruza el stop, se sale al stop (precio del stop, no al open); stop no vulnerable en T → SIN_ENTRADA. |
 | Tamaño y riesgo por operación | `notional_usdt = 1000` (fijo). Riesgo por operación = `stop_distance_pct × notional_usdt = 5 USDT`. |
 | Límite de exposición y concurrencia | `max_concurrent = 1` (una posición a la vez). |
 | Salida, horizonte y posiciones abiertas al finalizar | Horizonte fijo `horizon_ms = 3 600 000` (60 m). Salida al stop (touch) o al horizonte con close conocido. Si no hay close conocido al horizonte → `open_at_end` (marca, no salida ejecutada, P&L = UNKNOWN). Posiciones abiertas al finalizar se mantienen abiertas, sin salida inventada. |

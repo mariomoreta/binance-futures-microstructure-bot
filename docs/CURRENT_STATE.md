@@ -183,16 +183,19 @@ observaciones aptas para estudio y un presupuesto público revisable.
   (3 ventanas separadas, presupuesto propio, niveles A/B/C de decisión),
   pendiente de autorización de alcance y presupuesto separados.
 
-  **Diseño de experimento operativo v2 (no ejecutado):** `docs/EXPERIMENTO_OPERATIVO_V2.md`
-  — cobertura real de perpetuos USD-M (único tipo; futuros con vencimiento
-  declarados pendiente sin soporte), tabla de capacidades, regla candidata
-  completa (continuación, entry/open de vela siguiente, stop 0,5 %, notional
-  1000, horizonte 60 m, max_concurrent=1), misma regla a candidatos y
-  comparadores (el rol no determina dirección), comprobación de datos previstos
-  (fills y stops intermedios no acreditados → UNKNOWN), calendario y
-  presupuesto propio, métrica neta `neto_por_operación`, criterios de decisión
-  A/B/C, acción exacta que requiere autorización posterior. No ejecutado, sin
-  Binance, sin infraestructura nueva.
+  **Diseño de experimento operativo v2 (no ejecutado en producción, demostrado
+   localmente):** `docs/EXPERIMENTO_OPERATIVO_V2.md` — cobertura real de
+   perpetuos USD-M (único tipo; futuros con vencimiento declarados pendiente
+   sin soporte), tabla de capacidades, regla candidata completa (continuación,
+   entry/open de vela siguiente, stop 0,5 %, notional 1000, horizonte 60 m,
+   max_concurrent=1), misma regla a candidatos y comparadores (el rol no
+   determina dirección), comprobación de datos previstos (fills y stops
+   intermedios no acreditados → UNKNOWN), calendario y presupuesto propio,
+   métrica neta `neto_por_operación`, criterios de decisión A/B/C, acción
+   exacta que requiere autorización posterior. Demostrado localmente con
+   `paper_lab_engine` / `backtest_offline` (5 pruebas en
+   `tests/test_experimento_operativo_local.py` pasadas). No ejecutado en
+   producción, sin Binance, sin infraestructura nueva.
 
 - Evidencia pequeña (manifiesto, resumen, muestra de 12 observaciones):
   `docs/evidence/research/universe_liquidity_v1/pilot_local/`.
