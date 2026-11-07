@@ -130,6 +130,11 @@ from microstructure_probe.research_recorder import ResearchRecorder  # noqa: E40
 from microstructure_probe.universe import SymbolUniverse  # noqa: E402
 
 import research_selector  # noqa: E402
+from research_operativo_adapter import (  # noqa: E402
+    OperativoAdapter, OperativoConfig,
+)
+from microstructure_probe.backtest_offline import FundingCalendar  # noqa: E402
+from microstructure_probe.paper_lab_engine import PaperCandle  # noqa: E402
 
 PILOT_VERSION = "research-pilot-v1"
 PROTOCOL_VERSION = "prospective-protocol-v1"
@@ -714,11 +719,15 @@ def compute_budget(cfg: PilotConfig) -> Dict[str, Any]:
     n_horizons = len(cfg.horizons)
 
     observations_max = cycles * symbols
+    # Una llamada klines por observacion apta (adaptador: entrada/gestion/salida)
+    # más una por horizonte (resolve_due de resultados).
+    klines_entrada = observations_max
     klines_requests = observations_max * n_horizons
+    klines_total = klines_entrada + klines_requests
 
     weight_catalog = selections * WEIGHT_EXCHANGE_INFO
     weight_tickers = selections * WEIGHT_TICKER_24H
-    weight_klines = klines_requests * WEIGHT_KLINES
+    weight_klines = klines_total * WEIGHT_KLINES
     weight_total = weight_catalog + weight_tickers + weight_klines
 
     # Almacenamiento: JSONL + SQLite (buckets 1m/10s) + auxiliares (WAL/SHM).
@@ -727,7 +736,7 @@ def compute_budget(cfg: PilotConfig) -> Dict[str, Any]:
     bytes_bucket_row = 200
     bucket_rows = symbols * int(duration / 60.0) if duration else 0
     bucket_rows_10s = symbols * int(duration / 10.0) if duration else 0
-    storage_jsonl = observations_max * bytes_obs + klines_requests * bytes_outcome
+    storage_jsonl = observations_max * bytes_obs + klines_total * bytes_outcome
     storage_db = (bucket_rows * 2 + bucket_rows_10s) * bytes_bucket_row
     storage_aux = 2 * 65_536  # WAL + SHM aproximado
     storage_total = storage_jsonl + storage_db + storage_aux
@@ -789,15 +798,21 @@ def compute_budget(cfg: PilotConfig) -> Dict[str, Any]:
                 "/fapi/v1/ticker/24hr": {
                     "llamadas": selections, "peso_unitario": WEIGHT_TICKER_24H,
                     "peso_total": weight_tickers},
-                "/fapi/v1/klines": {
+                "/fapi/v1/klines_entrada_adaptador": {
+                    "llamadas": klines_entrada, "peso_unitario": WEIGHT_KLINES,
+                    "peso_total": klines_entrada * WEIGHT_KLINES,
+                    "nota": "1 por observacion apta (adaptador: entrada, "
+                            "gestion y salida simuladas; interval 1m, limit=1)"},
+                "/fapi/v1/klines_resultado_resolve": {
                     "llamadas": klines_requests, "peso_unitario": WEIGHT_KLINES,
-                    "peso_total": weight_klines,
-                    "nota": "1 por observacion y horizonte; interval 1m, limit=1"},
+                    "peso_total": klines_requests * WEIGHT_KLINES,
+                    "nota": "1 por observacion y horizonte (resolve_due de "
+                            "resultados; interval 1m, limit=1)"},
             },
-            "intentos_base": selections * 2 + klines_requests,
+            "intentos_base": selections * 2 + klines_total,
             "reintentos_tope": cfg.max_http_retries,
             "intentos_base_mas_reintentos": (
-                selections * 2 + klines_requests + cfg.max_http_retries),
+                selections * 2 + klines_total + cfg.max_http_retries),
             "peso_base": weight_total,
             "peso_reserva_reintentos_max": (
                 cfg.max_http_retries * WEIGHT_TICKER_24H),
@@ -807,8 +822,8 @@ def compute_budget(cfg: PilotConfig) -> Dict[str, Any]:
             "intentos_techo_efectivo": cfg.max_http_attempts,
             "peso_techo_efectivo": cfg.max_http_weight,
             "nota_consultas_repetidas": (
-                "La base cuenta una consulta de klines por observacion y "
-                "horizonte. Si falta la vela, resolve_due reintenta cada "
+                "La base cuenta klines de entrada (adaptador) y de resultado "
+                "(resolve_due). Si falta la vela, resolve_due reintenta cada "
                 "tick; esos intentos y sus reintentos solo estan acotados "
                 "por max_http_attempts/max_http_weight."
             ),
@@ -895,7 +910,13 @@ def compute_budget(cfg: PilotConfig) -> Dict[str, Any]:
 # ---------------------------------------------------------------------------
 
 class ResearchPilot:
-    def __init__(self, cfg: PilotConfig, clock: Any = None) -> None:
+    def __init__(
+        self,
+        cfg: PilotConfig,
+        clock: Any = None,
+        funding_calendars: Optional[Dict[str, FundingCalendar]] = None,
+        operativo_cfg: Optional[OperativoConfig] = None,
+    ) -> None:
         self.cfg = cfg
         self.clock = clock or build_clock(cfg.clock_mode, cfg.clock_file)
         self.out_dir = Path(cfg.out_dir)
@@ -915,6 +936,14 @@ class ResearchPilot:
         )
         self.rest = HistoryClient(base_url=cfg.rest_base,
                                   attempt_gate=self.budget)
+        # Adaptador del camino del experimento: ejecuta la regla operativa
+        # (direccion comun, senal, entrada, gestion y salida simuladas) sobre
+        # las observaciones del piloto, reutilizando paper_lab_engine.
+        self.operativo = OperativoAdapter(
+            store_path=self.out_dir / "resultado_operativo.jsonl",
+            cfg=operativo_cfg or OperativoConfig(),
+            funding_calendars=funding_calendars or {},
+        )
         self.policy = research_selector.ResearchPolicy(
             max_candidatos=cfg.max_candidates,
             max_comparadores=cfg.max_comparators,
@@ -1598,10 +1627,61 @@ class ResearchPilot:
                         "target_ms": target,
                         "precio_base": obs["precio_base"],
                     }
+                # Camino del experimento: simular y persistir la operacion
+                # con el adaptador sobre las velas 1m de la trayectoria. Si el
+                # presupuesto se agota, se salta este simbolo y se sigue con
+                # los demas; el bloqueo se registra en resolve_due.
+                try:
+                    self._procesar_operativo(symbol, obs)
+                except RateLimitExceeded:
+                    # Presupuesto agotado antes del transporte: se salta este
+                    # simbolo y se sigue con los demas; el bloqueo se registra
+                    # en resolve_due.
+                    pass
+                except Exception as exc:  # noqa: BLE001 - no derrumbar el piloto
+                    self.stop_reason = (
+                        f"adaptador_operativo_fallo: {type(exc).__name__}: {exc}"
+                    )
+                    break
             if self.observations_written >= self.cfg.max_observations:
                 self.stop_reason = "max_observaciones"
                 break
         return written
+
+    def _procesar_operativo(self, symbol: str, obs: Dict[str, Any]) -> None:
+        """Simula y persiste la operacion del experimento para una
+        observacion apta.
+
+        Obtiene velas 1m mediante el mismo cliente REST del piloto (klines,
+        puerta de presupuesto incluida) y las entrega al OperativoAdapter,
+        que reutiliza paper_lab_engine para entrada, gestion y salida
+        simuladas. El resultado se vincula al observation_id de origen y se
+        persiste para regenerarlo despues por replay.
+        """
+        decision_ms = int(obs["decision_ms"])
+        step_ms = INTERVAL_MS[self.cfg.price_interval]
+        # end_ms cubre hasta el horizonte mas un paso para que el reloj
+        # alcance el cierre de horizonte.
+        end_ms = decision_ms + int(self.operativo.cfg.horizon_ms) + step_ms
+        # Incluir la vela que se cierra en T (close_time <= decision_ms) para
+        # usar su close como referencia de senal (entry_px).
+        start_ms = decision_ms - step_ms
+        rows, _ = self.rest.klines(
+            symbol, self.cfg.price_interval, start_ms, end_ms,
+            limit=int(self.operativo.cfg.horizon_ms // 60_000) + 2,
+        )
+        candles = [
+            PaperCandle(
+                open_time_ms=int(r[0]), open=float(r[1]),
+                high=float(r[2]), low=float(r[3]), close=float(r[4]),
+                close_time_ms=int(r[6]),
+            )
+            for r in rows
+        ]
+        cal = self.operativo.funding_calendars.get(symbol)
+        tr = self.operativo.procesar_observacion(
+            obs, candles, funding_calendar=cal)
+        self.operativo.persistir(tr)
 
     # -- resultados --------------------------------------------------------
 

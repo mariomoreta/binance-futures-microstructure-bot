@@ -225,7 +225,7 @@ el bloqueo material de la §7 persiste.
 
 ## 9. Camino productivo para recoger los datos y reproducir la regla
 
-### 9.1 Adaptador de conexión (fuera de los tests)
+### 9.1 Adaptador de conexión (integrado en research_pilot)
 
 `scripts/research_operativo_adapter.py` implementa el adaptador mínimo que conecta:
 
@@ -236,16 +236,25 @@ senal -> motor existente (paper_lab_engine) ->
 entrada/gestion/salida simuladas -> resultado reproducible
 ```
 
-- Reutiliza `paper_lab_engine` y `backtest_offline` como única autoridad económica.
+El adaptador está integrado en `scripts/research_pilot.py` (`ResearchPilot`):
+cada observación apta (`kind=observacion`) se envía al
+`OperativoAdapter`, que obtiene velas 1m mediante el mismo `HistoryClient` del
+piloto (puerta de presupuesto incluida) y ejecuta la regla operativa sobre
+`paper_lab_engine`. El resultado se persiste en
+`<out_dir>/resultado_operativo.jsonl` (`kind=resultado_operativo`).
+
+- Reutiliza `paper_lab_engine` y `backtest_offline` como única autoridad
+  económica.
 - No abre Binance, no envía órdenes, no crea servicios ni motores paralelos.
-- Lee filas JSONL de observación del piloto (`kind=observacion`).
-- Deriva la dirección EXCLUSIVAMENTE de `move_24h_pct`; el rol candidate/comparator
-  no determina dirección ni elude riesgo o capacidad.
+- Deriva la dirección EXCLUSIVAMENTE de `move_24h_pct`; el rol
+  candidate/comparator no determina dirección ni elude riesgo o capacidad.
 - Usa velas 1m conocidas causalmente (open en `open_time_ms`, OHLC en
   `close_time_ms`) para reconstruir entrada posterior, stops, gaps y salida.
 - No rellena huecos ni convierte ausencias en cero.
-- Persiste resultados en JSONL (`kind=resultado_operativo`) para replay posterior
-  sin usar resultados futuros para decidir.
+- Persiste resultados en JSONL para replay posterior sin usar resultados
+  futuros para decidir.
+- Una falla en el adaptador no derrumba el piloto: se registra en
+  `stop_reason` y se sigue con el siguiente símbolo.
 
 ### 9.2 Datos a conservar (candidatos y comparadores)
 
@@ -293,20 +302,27 @@ decidir y datos posteriores para resolver el resultado:
 
 ### 9.5 Presupuesto efectivo (calculado localmente, sin mercado público)
 
-Calculado desde solicitudes y suscripciones realmente previstas, incluyendo
-trayectoria 1m y funding. Pesos contra tabla `ASSUMED_WEIGHTS` de
-`history_client` (no cabeceras Binance reales, que no se han registrado).
+Generado con `scripts/research_pilot.py --budget-only` (sin red), desde el
+plan real de solicitudes: ciclos de decisión, símbolos simultáneos, velas 1m
+para entrada y para resultados (3 horizontes), y reintentos. Pesos contra
+la tabla interna `ASSUMED_WEIGHTS` de `history_client` (no cabeceras
+Binance reales, que no se han registrado).
+
+Con la configuración del protocolo (3 ventanas × 1 h captura + 70 min
+settle, `cycle_seconds=60`, `selection_seconds=300`, `max_symbols=20`,
+3 horizontes 5m/15m/60m):
 
 | Concepto | Por ventana | Total (3 ventanas) | Notas |
 |---|---|---|---|
-| exchangeInfo (REST) | 1 intento / peso 20 | 3 / 60 | Catálogo de elegibilidad |
-| ticker 24h (REST) | 1 intento / peso 40 | 3 / 120 | Movimiento 24h |
-| klines 1m (REST) | 20 intentos / peso 200 | 60 / 600 | 20 símbolos × 1 req (limit=200) |
-| HTTP intentos totales | ≤22 | ≤66 | Máximo 2000 por ventana |
-| HTTP peso total | ≤260 | ≤780 | Máximo 5000 por ventana |
-| HTTP reintentos | ≤5 | ≤15 | Dentro del presupuesto |
-| WS conexiones simultáneas | ≤20 | ≤20 (pico) | Libro + flujo del piloto |
-| WS aperturas acumuladas | ≤20 | ≤60 | Conteo en el tiempo |
+| exchangeInfo (REST) | 12 intentos / peso 12 | 36 / 36 | 1 por ciclo de selección (12 ciclos) |
+| ticker 24h (REST) | 12 intentos / peso 480 | 36 / 1 440 | Movimiento 24h por selección |
+| klines entrada (REST) | 1 200 intentos / peso 1 200 | 3 600 / 3 600 | 1 por observación apta (adaptador) |
+| klines resultado (REST) | 3 600 intentos / peso 3 600 | 10 800 / 10 800 | 1 por observación × 3 horizontes |
+| HTTP intentos totales | ≤4 824 | ≤14 472 | Techo efectivo 2 000/ventana |
+| HTTP peso total | ≤5 292 | ≤15 876 | Techo efectivo 5 000/ventana |
+| HTTP reintentos | ≤50 | ≤150 | Dentro del presupuesto |
+| WS conexiones simultáneas | 2 | 2 (pico) | /public (depth) + /market (aggTrade) |
+| WS aperturas acumuladas | ≤24 | ≤72 | Inicial + rotaciones + reconexiones |
 | WS mensajes | ≤5 000 000 | ≤15 000 000 | Límite del piloto |
 | WS reconexiones | ≤20 | ≤60 | Límite del piloto |
 | Almacenamiento | ≤128 MB | ≤384 MB | JSONL + SQLite + aux |
@@ -314,43 +330,96 @@ trayectoria 1m y funding. Pesos contra tabla `ASSUMED_WEIGHTS` de
 | Max símbolos | 20 | 20 | Por ventana |
 | Max candidatos/comparadores | 12/8 | 12/8 | Techo conjunto 20 |
 
+**Diferencia respecto a los límites propuestos:** el peso HTTP estimado
+(5 292/ventana) excede el techo de 5 000 peso/ventana del presupuesto
+anterior. Esta diferencia **debe declararse para autorización**; no se
+aumentan cupos silenciosamente. Opciones: reducir `max_symbols`,
+aumentar `cycle_seconds`, o solicitar un techo de peso mayor.
+
 **Peso HTTP observado vs configurado:** los pesos son de `ASSUMED_WEIGHTS`
-(tabla interna, no cabeceras Binance). El consumo real se reconstruye desde el
-ledger de `HistoryClient`. Ningún límite se aumenta silenciosamente.
+(tabla interna, no cabeceras Binance). El consumo real se reconstruye desde
+el ledger de `HistoryClient`.
 
 **Justificación del uso mínimo de REST/WS:** klines 1m por REST es el mínimo
 necesario para reconstruir fills al open de vela siguiente, stops y gaps.
 No se captura flujo/libro adicional más allá de lo que ya adquiere el piloto,
 ni datos sin necesidad operativa concreta.
 
-### 9.6 Comando público (NO EJECUTADO)
+### 9.6 Comandos (NO EJECUTADOS)
 
-Este comando se propone **sin ejecutar**; requiere autorización separada de
-presupuesto y de ventana pública antes de cualquier adquisición.
+Todos los comandos se proponen **sin ejecutar**; requieren autorización
+separada de presupuesto y de ventana pública antes de cualquier adquisición.
+
+**a) Validación de presupuesto (sin solicitudes de mercado):**
 
 ```
 python scripts/research_pilot.py \
   --mode local \
-  --transport loopback \
-  --budget http=260,ws=20,storage=128mb \
-  --max-symbols 20 \
-  --cycle-seconds 300 \
+  --budget-only \
+  --run-id exp-v2-ventana-1 \
+  --out-dir data/evidence/operativo_v2/ventana-1
+```
+
+Genera `presupuesto.json` en `<out-dir>/` sin abrir red ni mercado.
+
+**b) Comando local con endpoints loopback (pruebas, sin Binance):**
+
+```
+python scripts/research_pilot.py \
+  --mode local \
+  --duration-seconds 3600 \
+  --settle-seconds 4200 \
+  --cycle-seconds 60 \
   --selection-seconds 300 \
+  --max-symbols 20 \
+  --max-candidates 12 \
+  --max-comparators 8 \
+  --min-quote-volume 1000000 \
+  --horizons "5m=300000,15m=900000,60m=3600000" \
+  --price-interval 1m \
+  --price-tolerance-ms 90000 \
+  --price-delay-ms 2000 \
   --max-data-age-ms 5000 \
-  --execution-id exp-v2-ventana-1 \
-  --run-id exp-v2-ventana-1-<uuid> \
-  --db-path data/historical/operativo_v2.db \
-  --obs-path data/evidence/operativo_v2/ventana-1/observaciones.jsonl \
-  --stop-file /tmp/exp-v2-stop \
-  --clock system
+  --max-observations 20000 \
+  --max-bytes 134217728 \
+  --max-messages 5000000 \
+  --max-http-attempts 2000 \
+  --max-http-retries 50 \
+  --max-http-weight 5000 \
+  --max-ws-reconnects 20 \
+  --tick-ms 20 \
+  --clock manual --clock-file <reloj-de-prueba.txt> \
+  --run-id exp-v2-ventana-1 \
+  --out-dir data/evidence/operativo_v2/ventana-1 \
+  --rest-base http://127.0.0.1:<puerto-loopback> \
+  --ws-public-base ws://127.0.0.1:<puerto-loopback> \
+  --ws-market-base ws://127.0.0.1:<puerto-loopback> \
+  --status-file <estado.json> \
+  --decision-gate-file <gate.json> \
+  --stop-file <paro.json>
 ```
 
 **Modo `local`:** rechaza endpoints públicos antes de cualquier envío
-(require endpoints loopback explícitos). **No se ejecuta contra Binance.**
+(require endpoints loopback explícitos). `--clock manual` con
+`--decision-gate-file`/`--stop-file` son opciones de prueba; el camino
+productivo automático no las requiere.
 
-**Identificación de corrida:** `--run-id` único por ventana; `--execution-id`
-para trazabilidad del presupuesto. Los datos se persisten en
-`data/evidence/operativo_v2/ventana-N/`.
+**c) Comando público propuesto (NO EJECUTADO):**
+
+```
+python scripts/research_pilot.py \
+  --mode public --activar-publico \
+  --duration-seconds 3600 \
+  --settle-seconds 4200 \
+  ...
+```
+
+Requiere autorización separada de presupuesto y de ventana pública.
+**No se ejecuta contra Binance sin esa autorización.**
+
+**Identificación de corrida:** `--run-id` único por ventana. Los datos se
+persisten en `<out-dir>/` (`observaciones.jsonl`,
+`resultado_operativo.jsonl`, `resumen.json`).
 
 ### 9.7 Evidencia para aceptar o rechazar el experimento
 

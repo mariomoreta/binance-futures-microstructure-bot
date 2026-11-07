@@ -188,12 +188,17 @@ class MarketHttp:
                 self.klines_calls += 1
             symbol = params.get("symbol", [""])[0].upper()
             start = int(params.get("startTime", [0])[0])
+            end = int(params.get("endTime", [0])[0])
             open_time = ceil_ms(start, MINUTE)
-            price = kline_price(symbol, open_time, self.universe)
-            row = [open_time, f"{price:.8f}", f"{price * 1.001:.8f}",
-                   f"{price * 0.999:.8f}", f"{price:.8f}", "100",
-                   open_time + MINUTE - 1, "100000", "10", "50", "50000", "0"]
-            _send_json(handler, [row])
+            rows = []
+            t = open_time
+            while t <= end:
+                price = kline_price(symbol, t, self.universe)
+                rows.append([t, f"{price:.8f}", f"{price * 1.001:.8f}",
+                             f"{price * 0.999:.8f}", f"{price:.8f}", "100",
+                             t + MINUTE - 1, "100000", "10", "50", "50000", "0"])
+                t += MINUTE
+            _send_json(handler, rows)
             return
 
         _send_json(handler, {"code": -1, "msg": "not found"}, code=404)
@@ -973,10 +978,10 @@ class TestCLISeparacionLocalPublico(unittest.TestCase):
             cycle_seconds=300, selection_seconds=300, max_symbols=20)
         budget = rp.compute_budget(cfg)
         rest = budget["rest"]
-        self.assertEqual(rest["intentos_base"], 744)
-        self.assertEqual(rest["peso_base"], 1_212)
-        self.assertEqual(rest["intentos_base_mas_reintentos"], 794)
-        self.assertEqual(rest["peso_base_mas_reintentos_max"], 3_212)
+        self.assertEqual(rest["intentos_base"], 984)
+        self.assertEqual(rest["peso_base"], 1_452)
+        self.assertEqual(rest["intentos_base_mas_reintentos"], 1_034)
+        self.assertEqual(rest["peso_base_mas_reintentos_max"], 3_452)
         ws = budget["ws"]
         self.assertEqual(ws["rotaciones_previstas"], 11)
         self.assertEqual(ws["aperturas_iniciales"], 2)
@@ -987,8 +992,8 @@ class TestCLISeparacionLocalPublico(unittest.TestCase):
         self.assertEqual(ws["streams_pico_por_conexion"], 20)
         self.assertEqual(ws["streams_pico_total"], 40)
         storage = budget["almacenamiento"]
-        self.assertEqual(storage["total_bytes_previstos"], 2_795_072)
-        self.assertEqual(storage["margen_bytes"], 131_422_656)
+        self.assertEqual(storage["total_bytes_previstos"], 2_915_072)
+        self.assertEqual(storage["margen_bytes"], 131_302_656)
 
 
 # ---------------------------------------------------------------------------

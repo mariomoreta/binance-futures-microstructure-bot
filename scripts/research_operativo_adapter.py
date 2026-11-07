@@ -134,9 +134,12 @@ class OperativoAdapter:
     """Conecta seleccion -> direccion comun -> motor -> resultado reproducible.
 
     Uso típico:
-        adapter = OperativoAdapter(store_path=jsonl_path, cfg=OperativoConfig())
+        adapter = OperativoAdapter(
+            store_path=jsonl_path, cfg=OperativoConfig(),
+            funding_calendars={symbol: FundingCalendar(...)})
         for obs in read_jsonl(pilot_obs_path):
-            tr = adapter.procesar_observacion(obs, velas_1m_por_simbolo)
+            tr = adapter.procesar_observacion(obs, velas_1m_por_simbolo,
+                                              funding_calendar=cal_por_simbolo)
             adapter.persistir(tr)
 
     `velas_1m_por_simbolo` es un dict {symbol: [PaperCandle, ...]} con las
@@ -148,9 +151,11 @@ class OperativoAdapter:
         self,
         store_path: Path,
         cfg: Optional[OperativoConfig] = None,
-        funding_calendar: Optional[Any] = None,
+        funding_calendars: Optional[Dict[str, FundingCalendar]] = None,
     ) -> None:
-        self.cfg = cfg or OperativoConfig(funding_calendar=funding_calendar)
+        self.cfg = cfg or OperativoConfig()
+        self.funding_calendars: Dict[str, FundingCalendar] = (
+            funding_calendars or {})
         self.store_path = Path(store_path)
         self.store_path.parent.mkdir(parents=True, exist_ok=True)
         self._fh = self.store_path.open("a", encoding="utf-8", newline="\n")
@@ -188,6 +193,7 @@ class OperativoAdapter:
         self,
         observacion: Dict[str, Any],
         velas_1m: List[PaperCandle],
+        funding_calendar: Optional[FundingCalendar] = None,
     ) -> OperativoTradeResult:
         """Procesa una observacion del piloto y devuelve el resultado de la
         operacion simulada (o abstencion/descarte) sin usar datos futuros.
@@ -212,6 +218,9 @@ class OperativoAdapter:
             "direccion_derivada": derivar_direccion_desde_movimiento(move_24h_pct),
         }
         direccion = traza["direccion_derivada"]["direction"]
+        # Calendario de funding por simbolo: parametro de llamada o registro
+        # del adaptador; nunca se inventa.
+        cal = funding_calendar or self.funding_calendars.get(symbol)
 
         # --- Abstencion por dato ausente o sin senal ---------------------
         if direccion is None:
@@ -334,17 +343,17 @@ class OperativoAdapter:
         if r.open_at_end:
             self.estado["posiciones_abiertas_final"] += 1
 
-        # Funding: si hay calendario real, recalcular con run_backtest para
-        # contabilizar settlements; si no hay calendario, funding = UNKNOWN
-        # (None, nunca cero). paper_lab_engine ya fuerza funding=None cuando
-        # no hay calendario real.
+        # Funding: si hay calendario real para este simbolo, recalcular con
+        # run_backtest para contabilizar settlements; si no hay calendario,
+        # funding = UNKNOWN (None, nunca cero). paper_lab_engine ya fuerza
+        # funding=None cuando no hay calendario real.
         funding = r.funding
         funding_estado = "ninguno (UNKNOWN, no cero)"
-        if self.cfg.funding_calendar is not None:
+        if cal is not None:
             bt = _resultado_con_funding(
                 symbol, direccion, velas_1m, decision_ms,
                 r.entry_px, r.entry_ms, r.exit_px, r.exit_ms,
-                self.cfg,
+                cal, self.cfg,
             )
             if bt is not None:
                 funding = bt.get("funding")
@@ -446,6 +455,7 @@ def _resultado_con_funding(
     symbol: str, direction: str, velas_1m: List[PaperCandle],
     decision_ms: int, entry_px_ref: float, entry_ms: Optional[int],
     exit_px: Optional[float], exit_ms: Optional[int],
+    calendar: FundingCalendar,
     cfg: OperativoConfig,
 ) -> Optional[Dict[str, Any]]:
     """Recalcula el trade con run_backtest y FundingCalendar real para
@@ -455,7 +465,7 @@ def _resultado_con_funding(
     Usa las mismas velas 1m y la misma decision_ms que paper_lab_engine,
     para que entrada/salida coincidan y solo se añada el funding contabilizado.
     """
-    if cfg.funding_calendar is None:
+    if calendar is None:
         return None
     try:
         bt_candles = _to_bt_candles(velas_1m, symbol)
@@ -474,7 +484,7 @@ def _resultado_con_funding(
         fee_bps=cfg.fee_bps, spread_bps=cfg.spread_bps,
         slippage_bps=cfg.slippage_bps,
         cost_scale=1.0, max_concurrent=cfg.max_concurrent,
-        funding_calendar=cfg.funding_calendar,
+        funding_calendar=calendar,
         funding_estimated_bps=cfg.funding_estimated_bps,
     )
     try:
