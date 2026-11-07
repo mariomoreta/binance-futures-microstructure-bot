@@ -236,10 +236,12 @@ senal -> motor existente (paper_lab_engine) ->
 entrada/gestion/salida simuladas -> resultado reproducible
 ```
 
-El adaptador está integrado en `scripts/research_pilot.py` (`ResearchPilot`):
-cada observación apta (`kind=observacion`) se envía al
-`OperativoAdapter`, que obtiene velas 1m mediante el mismo `HistoryClient` del
-piloto (puerta de presupuesto incluida) y ejecuta la regla operativa sobre
+El adaptador (`scripts/research_operativo_adapter.py`) está integrado en
+`scripts/research_pilot.py` (`ResearchPilot`). Cada observación apta
+(`kind=observacion`) se registra como trabajo operativo pendiente y se resuelve
+mediante replay posterior: tras finalizar la captura, se leen las observaciones
+persistidas, se obtienen las velas 1m mediante el mismo `HistoryClient` del
+piloto (puerta de presupuesto incluida), y se ejecuta la regla operativa sobre
 `paper_lab_engine`. El resultado se persiste en
 `<out_dir>/resultado_operativo.jsonl` (`kind=resultado_operativo`).
 
@@ -255,6 +257,9 @@ piloto (puerta de presupuesto incluida) y ejecuta la regla operativa sobre
   futuros para decidir.
 - Una falla en el adaptador no derrumba el piloto: se registra en
   `stop_reason` y se sigue con el siguiente símbolo.
+- Las operaciones se resuelven por replay posterior (no en tiempo real durante
+  el ciclo del piloto), lo que permite usar trayectoria completa conocida sin
+  depender de relojes futuros.
 
 ### 9.2 Datos a conservar (candidatos y comparadores)
 
@@ -309,17 +314,17 @@ la tabla interna `ASSUMED_WEIGHTS` de `history_client` (no cabeceras
 Binance reales, que no se han registrado).
 
 Con la configuración del protocolo (3 ventanas × 1 h captura + 70 min
-settle, `cycle_seconds=60`, `selection_seconds=300`, `max_symbols=20`,
+settle, `cycle_seconds=300`, `selection_seconds=300`, `max_symbols=20`,
 3 horizontes 5m/15m/60m):
 
 | Concepto | Por ventana | Total (3 ventanas) | Notas |
 |---|---|---|---|
 | exchangeInfo (REST) | 12 intentos / peso 12 | 36 / 36 | 1 por ciclo de selección (12 ciclos) |
 | ticker 24h (REST) | 12 intentos / peso 480 | 36 / 1 440 | Movimiento 24h por selección |
-| klines entrada (REST) | 1 200 intentos / peso 1 200 | 3 600 / 3 600 | 1 por observación apta (adaptador) |
-| klines resultado (REST) | 3 600 intentos / peso 3 600 | 10 800 / 10 800 | 1 por observación × 3 horizontes |
-| HTTP intentos totales | ≤4 824 | ≤14 472 | Techo efectivo 2 000/ventana |
-| HTTP peso total | ≤5 292 | ≤15 876 | Techo efectivo 5 000/ventana |
+| klines entrada (REST) | 240 intentos / peso 240 | 720 / 720 | 1 por observación apta (adaptador) |
+| klines resultado (REST) | 720 intentos / peso 720 | 2 160 / 2 160 | 1 por observación × 3 horizontes |
+| HTTP intentos totales | ≤984 | ≤2 952 | Techo efectivo 2 000/ventana |
+| HTTP peso total | ≤1 452 | ≤4 356 | Dentro del techo 5 000/ventana |
 | HTTP reintentos | ≤50 | ≤150 | Dentro del presupuesto |
 | WS conexiones simultáneas | 2 | 2 (pico) | /public (depth) + /market (aggTrade) |
 | WS aperturas acumuladas | ≤24 | ≤72 | Inicial + rotaciones + reconexiones |
@@ -330,11 +335,15 @@ settle, `cycle_seconds=60`, `selection_seconds=300`, `max_symbols=20`,
 | Max símbolos | 20 | 20 | Por ventana |
 | Max candidatos/comparadores | 12/8 | 12/8 | Techo conjunto 20 |
 
-**Diferencia respecto a los límites propuestos:** el peso HTTP estimado
-(5 292/ventana) excede el techo de 5 000 peso/ventana del presupuesto
-anterior. Esta diferencia **debe declararse para autorización**; no se
-aumentan cupos silenciosamente. Opciones: reducir `max_symbols`,
-aumentar `cycle_seconds`, o solicitar un techo de peso mayor.
+**Peso HTTP observado vs configurado:** los pesos son de `ASSUMED_WEIGHTS`
+(tabla interna, no cabeceras Binance). El consumo real se reconstruye desde
+el ledger de `HistoryClient`. El peso total (1 452/ventana) está dentro del
+techo de 5 000/ventana, por lo que no se requiere aumento de cupos.
+
+**Justificación del uso mínimo de REST/WS:** klines 1m por REST es el mínimo
+necesario para reconstruir fills al open de vela siguiente, stops y gaps.
+No se captura flujo/libro adicional más allá de lo que ya adquiere el piloto,
+ni datos sin necesidad operativa concreta.
 
 **Peso HTTP observado vs configurado:** los pesos son de `ASSUMED_WEIGHTS`
 (tabla interna, no cabeceras Binance). El consumo real se reconstruye desde
@@ -369,7 +378,7 @@ python scripts/research_pilot.py \
   --mode local \
   --duration-seconds 3600 \
   --settle-seconds 4200 \
-  --cycle-seconds 60 \
+  --cycle-seconds 300 \
   --selection-seconds 300 \
   --max-symbols 20 \
   --max-candidates 12 \

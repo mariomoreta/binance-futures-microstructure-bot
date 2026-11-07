@@ -132,9 +132,16 @@ from microstructure_probe.universe import SymbolUniverse  # noqa: E402
 import research_selector  # noqa: E402
 from research_operativo_adapter import (  # noqa: E402
     OperativoAdapter, OperativoConfig,
+    _resultado_con_funding, _replace_result,
+    _vela_plenamente_conocida_en,
 )
 from microstructure_probe.backtest_offline import FundingCalendar  # noqa: E402
-from microstructure_probe.paper_lab_engine import PaperCandle  # noqa: E402
+from microstructure_probe.paper_lab_engine import (  # noqa: E402
+    ENGINE_VERSION_PAPER, PaperCandle, PaperSessionConfig,
+    RULE_CAUSAL_V1, create_session, evaluate_session, step_forward,
+)
+
+RULE_VERSION = RULE_CAUSAL_V1
 
 PILOT_VERSION = "research-pilot-v1"
 PROTOCOL_VERSION = "prospective-protocol-v1"
@@ -969,6 +976,7 @@ class ResearchPilot:
         self.dedupe_book: Dict[str, int] = {}
         self.book_gaps: Dict[str, int] = {}
         self.pending: Dict[Tuple[str, str], Dict[str, Any]] = {}
+        self.operativo_pendientes: Dict[str, Dict[str, Any]] = {}
         self._seen_observation_ids: set = set()
         self.outcomes_written = 0
         self.observations_written = 0
@@ -1627,22 +1635,11 @@ class ResearchPilot:
                         "target_ms": target,
                         "precio_base": obs["precio_base"],
                     }
-                # Camino del experimento: simular y persistir la operacion
-                # con el adaptador sobre las velas 1m de la trayectoria. Si el
-                # presupuesto se agota, se salta este simbolo y se sigue con
-                # los demas; el bloqueo se registra en resolve_due.
-                try:
-                    self._procesar_operativo(symbol, obs)
-                except RateLimitExceeded:
-                    # Presupuesto agotado antes del transporte: se salta este
-                    # simbolo y se sigue con los demas; el bloqueo se registra
-                    # en resolve_due.
-                    pass
-                except Exception as exc:  # noqa: BLE001 - no derrumbar el piloto
-                    self.stop_reason = (
-                        f"adaptador_operativo_fallo: {type(exc).__name__}: {exc}"
-                    )
-                    break
+                # Camino del experimento: registrar trabajo operativo pendiente
+                # sin simular inmediatamente. La trayectoria se obtendra cuando
+                # el reloj avance y haya velas disponibles. El adaptador se
+                # invoca desde _resolver_operativos_pendientes.
+                self._registrar_operativo_pendiente(symbol, obs)
             if self.observations_written >= self.cfg.max_observations:
                 self.stop_reason = "max_observaciones"
                 break
@@ -1682,6 +1679,128 @@ class ResearchPilot:
         tr = self.operativo.procesar_observacion(
             obs, candles, funding_calendar=cal)
         self.operativo.persistir(tr)
+
+    def _registrar_operativo_pendiente(
+        self, symbol: str, obs: Dict[str, Any],
+    ) -> None:
+        """Registra trabajo operativo pendiente para una observacion apta.
+
+        Conserva la observacion completa y el dato de movimiento. No simula
+        todavia: se resuelve cuando haya trayectoria suficiente (ver
+        _resolver_operativos_pendientes).
+        """
+        self.operativo_pendientes[obs["observation_id"]] = {
+            "observation_id": obs["observation_id"],
+            "symbol": symbol,
+            "role": str(obs.get("role", "comparator")),
+            "observacion": obs,
+            "resuelta": False,
+        }
+
+    def _resolver_operativos_pendientes(self, now: int) -> int:
+        """Resuelve operaciones pendientes cuando hay trayectoria suficiente.
+
+        Obtiene velas 1m desde el HistoryClient (respeta el reloj del
+        proveedor) hasta el instante actual. Para cada operacion pendiente:
+        - Si hay vela de entrada (open de vela siguiente a decision_ms),
+          simula entrada y gestion hasta el reloj actual.
+        - Si hay suficiente trayectoria para conocer el desenlace (stop,
+          horizonte o agotamiento), persiste el resultado final.
+        - Si no hay suficiente trayectoria, deja la operacion pendiente.
+
+        Devuelve el numero de operaciones resueltas en esta llamada.
+        """
+        resueltas = 0
+        for oid in list(self.operativo_pendientes.keys()):
+            item = self.operativo_pendientes[oid]
+            if item["resuelta"]:
+                continue
+            symbol = item["symbol"]
+            obs = item["observacion"]
+            decision_ms = int(obs["decision_ms"])
+            step_ms = INTERVAL_MS[self.cfg.price_interval]
+            # Velas desde decision_ms hasta el reloj actual (más un paso para
+            # cubrir el cierre de la vela actual).
+            end_ms = now + step_ms
+            start_ms = decision_ms - step_ms
+            try:
+                rows, _ = self.rest.klines(
+                    symbol, self.cfg.price_interval, start_ms, end_ms,
+                    limit=int(self.cfg.horizon_ms // 60_000) + 2,
+                )
+            except RateLimitExceeded:
+                # Presupuesto agotado: no se puede obtener mas trayectoria.
+                continue
+            except Exception:
+                continue
+            if not rows:
+                continue
+            candles = [
+                PaperCandle(
+                    open_time_ms=int(r[0]), open=float(r[1]),
+                    high=float(r[2]), low=float(r[3]),
+                    close=float(r[4]) if r[4] is not None else None,
+                    close_time_ms=int(r[6]) if r[6] is not None else None,
+                )
+                for r in rows
+            ]
+            cal = self.operativo.funding_calendars.get(symbol)
+            tr = self.operativo.procesar_observacion(
+                obs, candles, funding_calendar=cal)
+            self.operativo.persistir(tr)
+            item["resuelta"] = True
+            resueltas += 1
+        return resueltas
+
+    def _persistir_resultado_operativo(
+        self, item: Dict[str, Any], state: PaperSessionState,
+        resuelta: bool,
+    ) -> None:
+        """Persiste el resultado de una operacion operativa una sola vez."""
+        if item["resuelta"]:
+            return
+        r = state.result
+        cal = self.operativo.funding_calendars.get(item["symbol"])
+        funding = r.funding
+        funding_estado = "ninguno (UNKNOWN, no cero)"
+        if cal is not None:
+            bt = _resultado_con_funding(
+                item["symbol"], item["direction"],
+                state.candles, item["decision_ms"],
+                r.entry_px, r.entry_ms, r.exit_px, r.exit_ms,
+                cal, self.operativo.cfg,
+            )
+            if bt is not None:
+                funding = bt.get("funding")
+                funding_estado = bt.get(
+                    "funding_model", "settlement-calendar")
+                r = _replace_result(r, funding=funding,
+                                    net_pnl=bt.get("net_pnl"))
+        from scripts.research_operativo_adapter import (
+            OperativoTradeResult,
+        )
+        tr = OperativoTradeResult(
+            observation_id=item["observation_id"],
+            symbol=item["symbol"], role=item["role"],
+            direction=item["direction"],
+            decision="ENTRADA_EJECUTADA" if r.exit_executed
+            else ("SIN_ENTRADA" if state.status != "abierta"
+                  else "ENTRADA_SIMULADA"),
+            decision_ms=item["decision_ms"],
+            entry_px=r.entry_px, entry_ms=r.entry_ms,
+            exit_px=r.exit_px, exit_ms=r.exit_ms,
+            exit_reason=r.exit_reason, exit_executed=r.exit_executed,
+            open_at_end=r.open_at_end, qty=r.qty,
+            gross_pnl=r.gross_pnl, fees=r.fees,
+            spread_slip=r.spread_slip, funding=funding,
+            net_pnl=r.net_pnl,
+            funding_estado=funding_estado,
+            config_hash=self.operativo._config_hash(),
+            engine_version=ENGINE_VERSION_PAPER,
+        )
+        self.operativo.persistir(tr)
+        item["resuelta"] = True
+        item["resultado"] = tr
 
     # -- resultados --------------------------------------------------------
 
@@ -2050,6 +2169,9 @@ class ResearchPilot:
                     ) > self.cfg.max_ws_reconnects:
                     self.stop_reason = "max_reconexiones_ws"
                     break
+                # Resolver operaciones operativas pendientes cuando haya
+                # trayectoria disponible (respetando el reloj del proveedor).
+                self._resolver_operativos_pendientes(now)
                 await self.resolve_due(now)
                 self._write_status()
                 await asyncio.sleep(tick_s)
@@ -2057,12 +2179,14 @@ class ResearchPilot:
             await self._stop_feeds()
             self._phase = "settle"
             while (self.clock.now_ms() < self.settle_end_ms
-                   and self.pending
+                   and (self.pending or self.operativo_pendientes)
                    and not self._terminal_stop()):
                 if self._stop_file_requested():
                     self.request_stop("parada_operador")
                     break
-                await self.resolve_due(self.clock.now_ms())
+                now = self.clock.now_ms()
+                self._resolver_operativos_pendientes(now)
+                await self.resolve_due(now)
                 self._write_status()
                 await asyncio.sleep(tick_s)
             self.finalize_pending(self.clock.now_ms())

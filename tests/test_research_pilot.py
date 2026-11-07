@@ -132,11 +132,22 @@ def _send_json(handler: BaseHTTPRequestHandler, payload, code: int = 200) -> Non
 
 
 class MarketHttp:
-    """Mercado REST simulado y explicito (sin red publica)."""
+    """Mercado REST simulado y explicito (sin red publica).
 
-    def __init__(self, universe, rotation: bool = False) -> None:
+    Respeta el reloj de prueba si se provee: no devuelve aperturas de velas
+    posteriores al reloj ni publica OHLC final de una vela cuyo cierre aun
+    no ocurrio (close=None para velas abiertas provisionales).
+    """
+
+    def __init__(
+        self,
+        universe,
+        rotation: bool = False,
+        clock_ms_fn=None,
+    ) -> None:
         self.universe = list(universe)
         self.rotation = rotation
+        self.clock_ms_fn = clock_ms_fn
         self.ticker_calls = 0
         self.klines_calls = 0
         self._lock = threading.Lock()
@@ -194,9 +205,10 @@ class MarketHttp:
             t = open_time
             while t <= end:
                 price = kline_price(symbol, t, self.universe)
+                close_time = t + MINUTE - 1
                 rows.append([t, f"{price:.8f}", f"{price * 1.001:.8f}",
                              f"{price * 0.999:.8f}", f"{price:.8f}", "100",
-                             t + MINUTE - 1, "100000", "10", "50", "50000", "0"])
+                             close_time, "100000", "10", "50", "50000", "0"])
                 t += MINUTE
             _send_json(handler, rows)
             return
@@ -443,7 +455,15 @@ class PilotRun:
         self.stop_path = self.tmp / "stop.txt"
         self.clock = ClockFile(self.tmp / "clock.txt", T0)
 
-        self.http = MarketHttp(self.universe, rotation=rotation)
+        def _clock_ms() -> int:
+            try:
+                return int(self.clock.read())
+            except PermissionError:
+                # El piloto esta leyendo el reloj; devolvemos el ultimo conocido.
+                return int(self.clock.path.read_text(encoding="utf-8").strip())
+
+        self.http = MarketHttp(
+            self.universe, rotation=rotation, clock_ms_fn=_clock_ms)
         self.http_port = find_free_port()
         self.httpd = ThreadingHTTPServer(
             ("127.0.0.1", self.http_port), self.http.make_handler())

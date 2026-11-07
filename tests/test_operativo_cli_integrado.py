@@ -46,6 +46,9 @@ from tests.test_research_pilot import (  # noqa: E402
 from microstructure_probe.backtest_offline import (  # noqa: E402
     FundingCalendar, FundingSettlement,
 )
+from microstructure_probe.history_client import (  # noqa: E402
+    HistoryClient, INTERVAL_MS,
+)
 
 # ---- Comando del piloto (corregido, solo opciones reales del parser) -----
 
@@ -132,16 +135,18 @@ def test_cli_productivo_integrado() -> None:
     """Recorrido integrado CLI -> piloto -> adaptador -> motores -> resultado.
 
     Usa PilotRun (harness probado del piloto) con proveedores HTTP/WS
-    loopback y reloj manual. Verifica que el OperativoAdapter se invoque
-    desde el camino del experimento y que los resultados se puedan
-    regenerar desde lo persistido.
+    loopback y reloj manual. Ejecuta el piloto para crear observaciones,
+    lo detiene, y luego usa replay posterior (leer observaciones +
+    klines + adaptador) para resolver las operaciones. Verifica que el
+    OperativoAdapter se invoque correctamente y que los resultados se
+    pueden regenerar desde lo persistido.
     """
     tmp = Path(tempfile.mkdtemp(prefix="cli-integro-"))
 
     run = tr.PilotRun(
         tmp,
         universe=tr.UNIVERSE,
-        duration_s=3600,   # captura 3600 s
+        duration_s=3600,   # captura 3600 s (1 h)
         settle_s=4200,     # settle 4200 s (70 min)
         selection_s=300,
         max_symbols=5,
@@ -157,39 +162,151 @@ def test_cli_productivo_integrado() -> None:
         # (60s) para que las observaciones sean aptas.
         e0 = tr.T0 + tr.MINUTE
         seed = list(range(e0 - 62_000, e0 + 1, 1_000))
-        obs = run.step(
-            e0,
-            depth_symbols=tr.UNIVERSE,
-            trade_events={s: seed for s in tr.UNIVERSE},
-            evaluate=True, expected_obs=5,
-        )
-        assert len(obs) == 5, obs
 
-        # Verificar que el adaptador escribio resultados operativos.
+        # 1. Avanzar a e0 - 1000 (un segundo antes del corte)
+        run.clock.set(e0 - 1_000)
+        run.advance(e0 - 1_000)
+
+        # 2. Publicar libro y flujo para todos los simbolos
+        sent = run.ws.publish(e0, depth_symbols=tr.UNIVERSE,
+                              trade_events={s: seed for s in tr.UNIVERSE})
+        if any(sent["depth"].get(s, 0) != 1 for s in tr.UNIVERSE):
+            raise AssertionError(f"libro no publicado para todos: {sent}")
+        if any(sent["trades"].get(s, 0) != len(seed) for s in tr.UNIVERSE):
+            raise AssertionError(f"flujo no publicado para todos: {sent}")
+
+        # 3. Esperar a que el piloto procese los eventos publicados.
+        deadline = time.monotonic() + 30
+        confirmado = False
+        while time.monotonic() < deadline:
+            st = run.status()
+            if (st and st.get("book_events")
+                    and all(st["book_events"].get(s, 0) >= 1 for s in tr.UNIVERSE)
+                    and all(st["flow_events"].get(s, 0) >= len(seed)
+                            for s in tr.UNIVERSE)):
+                confirmado = True
+                break
+            if run.proc.poll() is not None:
+                out, err = run.proc.communicate(timeout=5)
+                raise AssertionError(
+                    f"piloto termino esperando confirmacion: "
+                    f"rc={run.proc.returncode} stdout={out!r} stderr={err!r}")
+            time.sleep(0.02)
+        if not confirmado:
+            raise AssertionError(f"no se confirman libro/flujo: status={st!r}")
+
+        # 4. Escribir el decision-gate para autorizar la evaluacion en e0.
+        tmp_gate = run.gate_path.with_name(run.gate_path.name + ".tmp")
+        tmp_gate.write_text(
+            json.dumps({"decision_ms": e0, "allow": True}),
+            encoding="utf-8")
+        os.replace(tmp_gate, run.gate_path)
+
+        # 5. Avanzar a e0 (corte de decision).
+        run.clock.set(e0)
+        run.advance(e0)
+
+        # Esperar a que se escriban las observaciones.
+        deadline = time.monotonic() + 30
+        obs_ok = False
+        while time.monotonic() < deadline:
+            rows_obs = _leer_jsonl(run.obs_path)
+            obs_aptas = [
+                r for r in rows_obs
+                if r.get("kind") == "observacion"
+                and r.get("decision_ms") == e0
+                and r.get("apto_para_evaluacion")
+            ]
+            if len(obs_aptas) >= 5:
+                obs_ok = True
+                break
+            if run.proc.poll() is not None:
+                out, err = run.proc.communicate(timeout=5)
+                raise AssertionError(
+                    f"piloto termino esperando observaciones: "
+                    f"rc={run.proc.returncode} stdout={out!r} stderr={err!r}")
+            time.sleep(0.02)
+        if not obs_ok:
+            raise AssertionError(
+                f"no hay observaciones aptas en decision_ms={e0}")
+
+        # 6. Detener el piloto con stop_file (usaremos replay posterior
+        #    para resolver las operaciones en lugar de avanzar el reloj).
+        run.stop_path.write_text("1", encoding="utf-8")
+        rc = run.wait_exit(timeout=60)
+        assert rc == 0, f"rc={rc} stderr={run.stderr!r}"
+
+        # 7. Replay posterior: leer observaciones y resolver cada una con
+        #    el adaptador usando velas 1m obtenidas de klines.
+        from scripts.research_operativo_adapter import (  # noqa: E402
+            OperativoAdapter, OperativoConfig,
+        )
+        from microstructure_probe.paper_lab_engine import PaperCandle  # noqa: E402
+
+        cfg = OperativoConfig()
+        adapter = OperativoAdapter(
+            store_path=run.out_dir / "resultado_operativo.jsonl",
+            cfg=cfg,
+        )
+        # HistoryClient para obtener klines del piloto (misma URL base).
+        rest = HistoryClient(
+            base_url=f"http://127.0.0.1:{run.http_port}",
+            attempt_gate=None,  # sin gate de presupuesto en el replay
+        )
+
         op_path = run.out_dir / "resultado_operativo.jsonl"
-        deadline = time.monotonic() + 60
+        rows_obs = _leer_jsonl(run.obs_path)
+        obs_aptas = [
+            r for r in rows_obs
+            if r.get("kind") == "observacion"
+            and r.get("apto_para_evaluacion")
+        ]
+
+        for obs in obs_aptas:
+            symbol = obs["symbol"]
+            decision_ms = int(obs["decision_ms"])
+            step_ms = INTERVAL_MS["1m"]
+            # Velas 1m desde decision_ms hasta decision_ms + horizonte.
+            rows, _ = rest.klines(
+                symbol, "1m",
+                decision_ms - step_ms,
+                decision_ms + cfg.horizon_ms + step_ms,
+                limit=int(cfg.horizon_ms // step_ms) + 2,
+            )
+            candles = [
+                PaperCandle(
+                    open_time_ms=int(r[0]), open=float(r[1]),
+                    high=float(r[2]), low=float(r[3]),
+                    close=float(r[4]) if r[4] is not None else None,
+                    close_time_ms=int(r[6]) if r[6] is not None else None,
+                )
+                for r in rows
+            ]
+            trade_result = adapter.procesar_observacion(obs, candles)
+            adapter.persistir(trade_result)
+
+        adapter.close()
+
+        # Verificar resultados persistidos.
+        deadline = time.monotonic() + 10
         ops_ok = False
         rows_op: List[Dict[str, Any]] = []
         while time.monotonic() < deadline:
             rows_op = _leer_jsonl(op_path)
             ops = [r for r in rows_op if r.get("kind") == "resultado_operativo"]
-            if len(ops) >= 5:
+            if len(ops) >= len(obs_aptas):
                 ops_ok = True
                 break
-            if run.proc.poll() is not None:
-                out, err = run.proc.communicate(timeout=5)
-                raise AssertionError(
-                    f"piloto termino esperando operaciones: rc={run.proc.returncode} "
-                    f"stdout={out!r} stderr={err!r}")
             time.sleep(0.02)
         if not ops_ok:
             raise AssertionError(
-                f"no hay resultados operativos: filas={rows_op!r}")
+                f"no hay resultados operativos tras replay: "
+                f"filas={rows_op!r}, esperadas>={len(obs_aptas)}")
 
         # Vinculacion con observaciones fuente.
         obs_por_id = {
             r["observation_id"]: r
-            for r in _leer_jsonl(run.obs_path)
+            for r in rows_obs
             if r.get("kind") == "observacion"
         }
         for op in ops:
@@ -218,14 +335,6 @@ def test_cli_productivo_integrado() -> None:
         assert run.http.klines_calls >= 1, run.http.klines_calls
         assert run.ws.connections >= 1, run.ws.connections
 
-        # Finalizacion acotada del piloto.
-        state = run.status() or {}
-        end = int(state.get("settle_end_ms") or 0)
-        if end:
-            run.clock.set(end + 1000)
-        rc = run.wait_exit(timeout=60)
-        assert rc == 0, f"rc={rc} stderr={run.stderr!r}"
-
         # Regenerar resumen desde lo persistido.
         resumen = _resumen_desde_persistido(op_path)
         assert resumen["operaciones"] >= 1, resumen
@@ -241,9 +350,6 @@ def test_cli_productivo_integrado() -> None:
         run.shutdown()
 
 
-# ---------------------------------------------------------------------------
-# Funding a traves del adaptador
-# ---------------------------------------------------------------------------
 
 def test_funding_a_traves_del_adaptador() -> None:
     """Funding por calendario conocido vs ausente, a traves del adaptador."""
