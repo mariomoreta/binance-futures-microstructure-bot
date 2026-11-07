@@ -222,3 +222,149 @@ corrigieron conservando el propósito de cada escenario.
 
 Mientras tanto, el experimento queda en **diseño, no listo para ejecutar**;
 el bloqueo material de la §7 persiste.
+
+## 9. Camino productivo para recoger los datos y reproducir la regla
+
+### 9.1 Adaptador de conexión (fuera de los tests)
+
+`scripts/research_operativo_adapter.py` implementa el adaptador mínimo que conecta:
+
+```
+seleccion (research_pilot) -> datos de mercado en T ->
+direccion comun (derivar_direccion_desde_movimiento) ->
+senal -> motor existente (paper_lab_engine) ->
+entrada/gestion/salida simuladas -> resultado reproducible
+```
+
+- Reutiliza `paper_lab_engine` y `backtest_offline` como única autoridad económica.
+- No abre Binance, no envía órdenes, no crea servicios ni motores paralelos.
+- Lee filas JSONL de observación del piloto (`kind=observacion`).
+- Deriva la dirección EXCLUSIVAMENTE de `move_24h_pct`; el rol candidate/comparator
+  no determina dirección ni elude riesgo o capacidad.
+- Usa velas 1m conocidas causalmente (open en `open_time_ms`, OHLC en
+  `close_time_ms`) para reconstruir entrada posterior, stops, gaps y salida.
+- No rellena huecos ni convierte ausencias en cero.
+- Persiste resultados en JSONL (`kind=resultado_operativo`) para replay posterior
+  sin usar resultados futuros para decidir.
+
+### 9.2 Datos a conservar (candidatos y comparadores)
+
+Con identidad y unidades explícitas, separados entre datos disponibles al
+decidir y datos posteriores para resolver el resultado:
+
+| Dato | Campos | Disponible al decidir | Posterior (resultado) |
+|---|---|---|---|
+| Dato de movimiento | `move_24h_pct` (%), `disponibilidad_ms` | Sí | — |
+| Ciclo, selección, rol | `cycle_id`, `role`, `symbol`, `priority` | Sí | — |
+| Instante de decisión | `decision_ms`, `decision_iso` | Sí | — |
+| Referencia de señal | `entry_px` (close de vela 1m conocida en T) | Sí | — |
+| Configuración versionada | `config_hash`, `rule_version`, `engine_version` | Sí | — |
+| Velas 1m | `open_time_ms, open, high, low, close, close_time_ms` | Sí (hasta T) | Sí (tras T, para fill/stop/salida) |
+| Precio de fill | `entry_px`, `entry_ms`, `qty` | No (posterior a T) | Sí |
+| Stop | `stop_px`, `stop_distance_pct` | Sí (referencia) | Sí (efectivo tras fill) |
+| Salida | `exit_px`, `exit_ms`, `exit_reason`, `exit_executed` | No | Sí |
+| Funding | `funding`, `funding_estado`, `funding_calendar` | No (calendario por símbolo) | Sí (settlements en holding) |
+| Costes | `fee_bps`, `spread_bps`, `slippage_bps`, `fees`, `spread_slip` | Sí (supuestos) | Sí (ejecutados) |
+| Cobertura/frescura | `disponibilidad.libro_ms`, `.flujo_ms`, `.seleccion_ms` | Sí | — |
+
+### 9.3 Regla congelada (sin optimización)
+
+- Baseline: continuación (derivada de `move_24h_pct`, no del rol).
+- `stop_distance_pct = 0.5` → `stop_fraction = 0.005`.
+- `notional_usdt = 1000`, riesgo nominal = 5 USDT antes de costes/gaps.
+- `horizon_ms = 3 600 000` (60 min).
+- `max_concurrent = 1` (una posición a la vez).
+- Mismo `notional`, `stop_distance_pct`, `horizon_ms`, costes y frescura para
+  candidatos y comparadores.
+- `max_data_age_ms = 5000` (sin relajar).
+
+### 9.4 Funding y resultado económico
+
+- Se contabilizan únicamente eventos de funding dentro del período de exposición
+  (`entry_ms <= settlement_ms < exit_ms`).
+- Funding cero requiere cobertura suficiente que acredite que no corresponde
+  cargo ni abono.
+- Calendario ausente o incompleto → resultado total como UNKNOWN; puede
+  publicarse por separado el resultado condicionado sin funding.
+- Tasas conocidas posteriormente solo para contabilidad, nunca para decidir
+  una entrada anterior.
+- Comisiones y spread/slippage distinguidos de supuestos del modelo. Los fills
+  simulados no se presentan como ejecuciones reales.
+
+### 9.5 Presupuesto efectivo (calculado localmente, sin mercado público)
+
+Calculado desde solicitudes y suscripciones realmente previstas, incluyendo
+trayectoria 1m y funding. Pesos contra tabla `ASSUMED_WEIGHTS` de
+`history_client` (no cabeceras Binance reales, que no se han registrado).
+
+| Concepto | Por ventana | Total (3 ventanas) | Notas |
+|---|---|---|---|
+| exchangeInfo (REST) | 1 intento / peso 20 | 3 / 60 | Catálogo de elegibilidad |
+| ticker 24h (REST) | 1 intento / peso 40 | 3 / 120 | Movimiento 24h |
+| klines 1m (REST) | 20 intentos / peso 200 | 60 / 600 | 20 símbolos × 1 req (limit=200) |
+| HTTP intentos totales | ≤22 | ≤66 | Máximo 2000 por ventana |
+| HTTP peso total | ≤260 | ≤780 | Máximo 5000 por ventana |
+| HTTP reintentos | ≤5 | ≤15 | Dentro del presupuesto |
+| WS conexiones simultáneas | ≤20 | ≤20 (pico) | Libro + flujo del piloto |
+| WS aperturas acumuladas | ≤20 | ≤60 | Conteo en el tiempo |
+| WS mensajes | ≤5 000 000 | ≤15 000 000 | Límite del piloto |
+| WS reconexiones | ≤20 | ≤60 | Límite del piloto |
+| Almacenamiento | ≤128 MB | ≤384 MB | JSONL + SQLite + aux |
+| Captura + settle | 1 h + 70 min (130 min) | 6 h 30 min | 3 ventanas |
+| Max símbolos | 20 | 20 | Por ventana |
+| Max candidatos/comparadores | 12/8 | 12/8 | Techo conjunto 20 |
+
+**Peso HTTP observado vs configurado:** los pesos son de `ASSUMED_WEIGHTS`
+(tabla interna, no cabeceras Binance). El consumo real se reconstruye desde el
+ledger de `HistoryClient`. Ningún límite se aumenta silenciosamente.
+
+**Justificación del uso mínimo de REST/WS:** klines 1m por REST es el mínimo
+necesario para reconstruir fills al open de vela siguiente, stops y gaps.
+No se captura flujo/libro adicional más allá de lo que ya adquiere el piloto,
+ni datos sin necesidad operativa concreta.
+
+### 9.6 Comando público (NO EJECUTADO)
+
+Este comando se propone **sin ejecutar**; requiere autorización separada de
+presupuesto y de ventana pública antes de cualquier adquisición.
+
+```
+python scripts/research_pilot.py \
+  --mode local \
+  --transport loopback \
+  --budget http=260,ws=20,storage=128mb \
+  --max-symbols 20 \
+  --cycle-seconds 300 \
+  --selection-seconds 300 \
+  --max-data-age-ms 5000 \
+  --execution-id exp-v2-ventana-1 \
+  --run-id exp-v2-ventana-1-<uuid> \
+  --db-path data/historical/operativo_v2.db \
+  --obs-path data/evidence/operativo_v2/ventana-1/observaciones.jsonl \
+  --stop-file /tmp/exp-v2-stop \
+  --clock system
+```
+
+**Modo `local`:** rechaza endpoints públicos antes de cualquier envío
+(require endpoints loopback explícitos). **No se ejecuta contra Binance.**
+
+**Identificación de corrida:** `--run-id` único por ventana; `--execution-id`
+para trazabilidad del presupuesto. Los datos se persisten en
+`data/evidence/operativo_v2/ventana-N/`.
+
+### 9.7 Evidencia para aceptar o rechazar el experimento
+
+Aceptar solo si, tras las 3 ventanas autorizadas:
+- Nivel A: diferencia consistente de `neto_por_operación` entre candidatos
+  y comparadores, con cobertura ≥50% de ciclos con ambos grupos aptos.
+- Nivel B: regla ejecutada conforme al modelo (causalidad respetada, sin
+  lookahead, fills en open de vela siguiente, stops al precio real tras gap).
+- Nivel C: `neto_por_operación` medio > 0 con supuestos de costes declarados
+  y defendibles, en las 3 ventanas.
+
+Rechazar o declarar insuficiencia si falta cualquiera de los anteriores. La
+insuficiencia no autoriza automáticamente más capturas.
+
+La prueba local **no acredita rentabilidad ni autoriza** las tres ventanas ni
+ejecución real. Queda pendiente: velas 1m con open/close causales, calendario
+de funding por símbolo, y autorización separada de presupuesto.

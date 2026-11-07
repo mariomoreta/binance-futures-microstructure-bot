@@ -5060,3 +5060,29 @@ ext build OK (BUILD_ID afm2q3kpfKZ0sigxBFsB5); 	sc --noEmit 0 errores; eslint 0 
 - Pruebas de inventario: tests/test_research_inventory.py (10 pruebas). Pruebas de matriz conjunta: tests/test_research_joint_coverage.py (4 pruebas de disponibilidad temporal, unidades, universo >500, techo conjunto, exclusión obligatoria vs dato faltante, ventanas sin parejas válidas, precio futuro indebido, hueco/resolución incompatible).
 - Resultado: cobertura insuficiente para probar la hipótesis liquidez-vs-flujo sobre universo representativo. Diagnóstico de insuficiencia, no otro simulador. Plan mínimo de adquisición propuesto (no ejecutado).
 - Sin Binance, sin ventana pública, sin órdenes, sin cambios de reglas operativas ni económicas. 3020 (pid 20088) y 8792 (pid 31124) preservados; 8797 libre. opencode.json y archivos ajenos no se commitean.
+
+## Camino productivo del experimento operativo v2 (preparado, no ejecutado)
+
+scripts/research_operativo_adapter.py conecta el camino productivo sin motor
+nuevo ni infraestructura adicional:
+
+seleccion (research_pilot) -> datos de mercado en T ->
+direccion comun (derivar_direccion_desde_movimiento, desde move_24h_pct;
+el rol no determina direccion) ->
+senal -> motor existente (paper_lab_engine / backtest_offline) ->
+entrada/gestion/salida simuladas -> resultado reproducible.
+
+Pruebas focalizadas: tests/test_operativo_adapter_local.py
+(ambos roles reciben el dato de movimiento; candidato y comparador bajo
+misma regla; dato ausente y sin senal -> abstencion con motivo;
+funding=None presentado como UNKNOWN nunca cero; resumen regenerable
+desde lo persistido; adaptador sin red por defecto).
+Regresiones afectadas: test_paper_lab_engine.py,
+test_experimento_operativo_local.py, test_backtest_offline.py,
+test_operativo_local_v2.py, test_operativo_adapter_local.py:
+81 passed.
+
+Presupuesto efectivo y comando publico NO EJECUTADO en
+docs/EXPERIMENTO_OPERATIVO_V2.md seccion 9. El experimento queda en
+diseño, listo para solicitar autorizacion de adquisicion; no acredita
+rentabilidad ni autoriza las tres ventanas ni ejecucion real.

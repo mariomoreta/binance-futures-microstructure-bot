@@ -4902,3 +4902,26 @@ ow >= next_decision) se limpia _symbols_evaluated_this_cycle antes de calcular l
   documentación no modifica filtros, estrategia, presupuesto, gates ni
   autoriza adquisiciones u operaciones. Se reutiliza lo existente, sin crear
   otra línea de infraestructura por esta aclaración.
+
+
+## 2026-11-07 — Camino productivo del experimento operativo v2 (preparado)
+
+Se adiciono scripts/research_operativo_adapter.py como adaptador minimo que
+conecta seleccion (research_pilot) -> datos de mercado en T ->
+direccion comun (derivar_direccion_desde_movimiento, desde move_24h_pct;
+el rol no determina direccion) -> senal -> motor existente
+(paper_lab_engine / backtest_offline) -> entrada/gestion/salida simuladas
+-> resultado reproducible.
+
+Se adicionaron pruebas focalizadas en tests/test_operativo_adapter_local.py
+y se corrigieron fixtures OHLC invalidas en tests/test_operativo_local_v2.py
+con validacion reutilizable validar_ohlc(). funding=None se presenta como
+UNKNOWN (nunca cero). El experimento queda en diseno, listo para solicitar
+autorizacion de adquisicion; no acredita rentabilidad ni autoriza las tres
+ventanas ni ejecucion real. No se abre Binance, no se envian ordenes, no se
+crean servicios ni motores paralelos. opencode.json y archivos ajenos no se
+commitean.
+
+81 pruebas focales y de regresion afectadas pasan.
+Presupuesto efectivo y comando publico NO EJECUTADO en
+docs/EXPERIMENTO_OPERATIVO_V2.md seccion 9.
