@@ -1,0 +1,84 @@
+{
+  "direccion": {
+    "direction": "LONG",
+    "reason": "movimiento_alcista: move_24h_pct=2.4>0"
+  },
+  "senal": {
+    "decision": "ENTRADA_SIMULADA",
+    "entry_px_referencia": 102.0,
+    "stop_px_referencia": 101.49,
+    "evidence_T": {
+      "rule_version": "RULE-CAUSAL-V1",
+      "at_ms": 119000,
+      "n_prefix_candles": 2,
+      "n_fully_known_candles": 2,
+      "candles": [
+        {
+          "open_time_ms": 0,
+          "open": 100.0,
+          "high": 101.0,
+          "low": 99.0,
+          "close": 100.0,
+          "close_time_ms": 59999,
+          "open_known": true,
+          "ohlc_known": true
+        },
+        {
+          "open_time_ms": 60000,
+          "open": 102.0,
+          "high": 104.0,
+          "low": 101.5,
+          "close": 102.0,
+          "close_time_ms": 119000,
+          "open_known": true,
+          "ohlc_known": true
+        }
+      ],
+      "trigger_px": 102.0,
+      "entry_px": 102.0,
+      "stop_px": 101.49,
+      "signal_candle_close_time_ms": 119000,
+      "evaluated_at_ms": 1794027627000,
+      "decision_at_ms": 119000,
+      "available_at_ms": 120000,
+      "admit_risk": true,
+      "risk_reason": "Admision de riesgo OK.",
+      "entry_fill_px": null,
+      "entry_fill_ms": null,
+      "entry_fill_qty": null,
+      "entry_fill_cost": null
+    }
+  },
+  "fill": {
+    "px": 101.99999999999999,
+    "ms": 120000,
+    "qty": 9.803921568627452,
+    "notional": 1000.0
+  },
+  "stop": {
+    "efectivo": 101.48999999999998,
+    "modelo": "entry_px*(1-stop_distance_pct/100)"
+  },
+  "salida": {
+    "reason": "stop",
+    "executed": true,
+    "px": 101.48999999999998,
+    "ms": 180000,
+    "open_at_end": false
+  },
+  "costes": {
+    "entry_fees": 0.5,
+    "exit_fees": 0.49749999999999994,
+    "entry_spread_slip": 0.3,
+    "exit_spread_slip": 0.29849999999999993,
+    "funding": null,
+    "friction": 1.5959999999999999
+  },
+  "resultado": {
+    "gross_pnl": -5.000000000000051,
+    "fees": 0.9974999999999999,
+    "spread_slip": 0.5984999999999999,
+    "net_pnl": -6.596000000000051,
+    "realized_net": -6.596000000000051
+  }
+}

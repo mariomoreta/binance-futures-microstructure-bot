@@ -172,6 +172,46 @@ def _merge_candles(
     return merged
 
 
+# --- Derivacion comun de direccion desde informacion de mercado en T -------
+#
+# Unico camino para traducir un dato de movimiento disponible en T en
+# direccion LONG/SHORT/None. Lo usan por igual candidatos y comparadores;
+# el rol candidate/comparator NO determina la direccion.
+
+
+def derivar_direccion_desde_movimiento(
+    move_24h_pct: Optional[float],
+) -> Dict[str, Optional[str]]:
+    """Deriva la direccion de senal desde el movimiento disponible en T.
+
+    Campo: move_24h_pct (variacion porcentual del precio en las 24h previas a T).
+    Unidades: puntos porcentuales (ej. +2.5 = +2.5%).
+    Instante de disponibilidad: T (debe estar publicado/computado en/before T;
+      nunca se usa un valor del futuro).
+    Formula exacta:
+      - move_24h_pct > 0  -> LONG (movimiento alcista).
+      - move_24h_pct < 0  -> SHORT (movimiento bajista).
+      - move_24h_pct == 0 -> None (sin movimiento, no hay senal).
+      - move_24h_pct is None -> None (dato necesario ausente).
+
+    Distingue ausencia de senal (valor presente pero sin direccion, == 0)
+    de ausencia del dato necesario (valor None). Ambos devuelven direccion
+    None pero con motivo distinto, para que el llamador registre el motivo
+    adecuado y nunca asigne LONG/SHORT por sustituto.
+    """
+    if move_24h_pct is None:
+        return {"direction": None,
+                "reason": "dato_ausente: move_24h_pct no disponible en T"}
+    if move_24h_pct > 0:
+        return {"direction": "LONG",
+                "reason": f"movimiento_alcista: move_24h_pct={move_24h_pct}>0"}
+    if move_24h_pct < 0:
+        return {"direction": "SHORT",
+                "reason": f"movimiento_bajista: move_24h_pct={move_24h_pct}<0"}
+    return {"direction": None,
+            "reason": "sin_senal: move_24h_pct==0 (sin direccion)"}
+
+
 # --- Regla de senal causal (senal, no admision, no simulacion) -------------
 
 

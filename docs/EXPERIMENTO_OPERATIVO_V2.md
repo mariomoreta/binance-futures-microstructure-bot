@@ -115,11 +115,12 @@ Se inspeccionan exclusivamente componentes ya disponibles. No se propone otro mo
 | HTTP intentos | ≤2000 | ≤6000 | Sujeto a nueva autorización de presupuesto |
 | HTTP peso | ≤5000 | ≤15 000 | Tabla ASSUMED_WEIGHTS, no cabeceras reales |
 | HTTP reintentos | ≤50 | ≤150 | |
-| WS conexiones | ≤20 | ≤60 | |
+| WS conexiones simultáneas (pico por ventana) | ≤20 | ≤20 (pico, no acumulado) | Límite de conexiones al mismo tiempo; no se suma entre ventanas |
+| WS aperturas acumuladas (total en el tiempo) | ≤20 | ≤60 | Conteo de aperturas de conexión a lo largo de las 3 ventanas |
 | WS mensajes | ≤5 000 000 | ≤15 000 000 | |
 | WS reconexiones | ≤20 | ≤60 | |
 | Almacenamiento | ≤128 MB | ≤384 MB | JSONL + SQLite + aux |
-| Duración de captura y maduración | 1 h + 70 min settle | 5 h 30 min total | |
+| Duración de captura y maduración | 1 h + 70 min settle (130 min por ventana) | 6 h 30 min total (3 × 130 min) | |
 | Max símbolos | 20 | 20 | Por ventana |
 | Max candidatos/comparadores | 12/8 | 12/8 | Por ventana, techo conjunto 20 |
 
@@ -151,3 +152,60 @@ Ejecutar las 3 ventanas del protocolo con la regla candidata congelada, bajo el 
 **Bloqueo material identificado:** los precios del piloto solo dan precio posterior por horizonte fijo; no dan open de vela siguiente ni rango intra-vela para stop. El mínimo trabajo para resolverlo sería adquirir datos de velas 1m con open/close conocidos causalmente y calendario de funding por símbolo, antes de autorizar cualquier captura operativa. Mientras tanto, el experimento queda en diseño, no listo para ejecutar.
 
 **Referencias en estado y cola:** `docs/TASK_QUEUE.md` y `docs/CURRENT_STATE.md` se actualizan brevemente con referencia a este protocolo v2 (diseño de alcance, no ejecutado, pendiente de autorización).
+
+## 8. Estado de este bloque (demostración local, 2026-11-07)
+
+Este bloque se completó localmente sobre `research/universe-liquidez-v1` (base
+`a1f7927c55faf80e2ad610537e010bd0954b565e`), reutilizando `paper_lab_engine`
+y `backtest_offline` sin Binance, sin dashboard, sin nuevos servicios ni motores
+paralelos. Pruebas focalizadas en `tests/test_operativo_local_v2.py` (junto con
+las regresiones de `paper_lab_engine`, `experimento_operativo_local` y
+`backtest_offline`: **68 passed**).
+
+### Qué queda acreditado por esta prueba local
+
+- Dirección común desde información de mercado en T: `derivar_direccion_desde_movimiento(move_24h_pct)`
+  (campo `move_24h_pct`, unidades %, instante T, fórmula `>0 LONG / <0 SHORT /
+  ==0 sin señal / None dato ausente`), misma función para candidatos y
+  comparadores; el rol no determina dirección.
+- Recorrido integrado reproducible con datos locales:
+  información de mercado → dirección común → configuración/señal → motor →
+  entrada → gestión/salida → resultado.
+- Entrada causal LONG y SHORT: fill en open de vela siguiente, nunca open
+  pasado de la vela que confirmó la señal.
+- Salida ejecutada por horizonte: 60 min alcanzados (`exit_executed=true`,
+  precio, tiempo, motivo `horizon`).
+- Agotamiento de datos: `open_at_end=true`, `exit_executed=false`, sin salida
+  ni realizado inventados (no es salida por horizonte).
+- Stop intravela: toque con precio según el modelo existente (LONG y SHORT).
+- Gap auténtico: ninguna vela anterior activa el stop; la apertura posterior
+  cruza y sale al precio disponible tras el salto, no al stop nominal.
+- Abstención: dato ausente o condición no satisfecha, con motivo explícito.
+- Concurrencia `max_concurrent=1`: señales simultáneas, prioridad determinista
+  `(event_time_ms, symbol)`, una operación admitida, señales rechazadas por
+  capacidad (`skipped_overlap`), sin usar retornos posteriores para elegir.
+- Contabilidad independiente: LONG y SHORT recalculados a mano (cantidad,
+  P&L bruto, comisiones, spread/slippage, funding, neto); `stop_fraction =
+  stop_distance_pct / 100`; con entrada 100, notional 1000, distancia 0,5 %:
+  stop 99,5 LONG / 100,5 SHORT y riesgo nominal 5 antes de costes y gaps.
+  Funding desconocido = None (UNKNOWN), nunca cero.
+
+### Qué NO acredita esta prueba local
+
+- Rentabilidad ni expectativa neta favorable (ni autoriza ejecución).
+- Las tres ventanas de captura pública ni su presupuesto (requieren autorización
+  separada).
+- Cobertura de futuros con vencimiento (pendiente; este experimento usa solo
+  perpetuos USD-M, cobertura declarada).
+
+### Datos que necesitaría una futura captura
+
+- Velas 1m con `open`/`close` conocidos causalmente (para rellenar fills al open
+  de vela siguiente y rangos intra-vela de stop), no solo precio posterior por
+  horizonte fijo.
+- Calendario de funding por símbolo (para que funding deje de ser UNKNOWN).
+- Autorización separada de presupuesto para ejecutar el protocolo v2 en 3
+  ventanas (6 h 30 min total).
+
+Mientras tanto, el experimento queda en **diseño, no listo para ejecutar**;
+el bloqueo material de la §7 persiste.
