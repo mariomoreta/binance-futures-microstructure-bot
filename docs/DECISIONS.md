@@ -4925,3 +4925,10 @@ commitean.
 81 pruebas focales y de regresion afectadas pasan.
 Presupuesto efectivo y comando publico NO EJECUTADO en
 docs/EXPERIMENTO_OPERATIVO_V2.md seccion 9.
+
+## 2026-11-09 — F-GARCH-01 registrado como opcion futura diferida
+
+- El usuario autoriza documentar GARCH para considerarlo al avanzar, no implementarlo ahora.
+- FUTURE_RESEARCH_OPTIONS.md contiene la propuesta y fuentes; FEATURE_BACKLOG.md separa registro autorizado de evaluacion/integracion PROPOSED y utilidad NO EVALUADA.
+- Pregunta futura: mejora de volatilidad/riesgo frente a volatilidad movil y EWMA, con validacion cronologica fuera de muestra. Un eventual uso operativo se prueba aparte y bajo riesgo comparable; no se atribuye direccion ni rentabilidad a GARCH.
+- Se conserva la prioridad del experimento operativo actual y su regla. Sin codigo, dependencias, capturas, cambios de parametros/presupuestos, servicios, datos ni autorizaciones economicas.

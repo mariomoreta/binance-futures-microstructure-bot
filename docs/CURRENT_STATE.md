@@ -27,6 +27,11 @@ Sus antiguos CURRENT_PHASE/NEXT_TASKS, restricciones de ventanas y afirmaciones
 sustituidas no eligen el trabajo actual ni acreditan nuevas autorizaciones.
 `SUCCESS_GATES.md` y las barreras de ejecución real se conservan.
 
+**Opcion futura registrada (2026-11-09):** [GARCH / F-GARCH-01](FUTURE_RESEARCH_OPTIONS.md#f-garch-01--volatilidad-y-riesgo-propuesta-diferida)
+queda diferido para evaluar volatilidad/riesgo frente a baselines simples.
+Solo documentado; sin implementacion ni utilidad economica demostrada.
+No modifica el bloque operativo actual ni su regla, presupuesto o autorizaciones.
+
 ---
 
 ## Piloto prospectivo v1 (cadena local, 2026-11-04)

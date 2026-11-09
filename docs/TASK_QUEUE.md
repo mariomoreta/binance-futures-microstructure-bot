@@ -44,6 +44,11 @@ del protocolo una matriz breve por tipo: cubierto, datos faltantes y reutilizaci
 posible. No declarar que el objetivo completo está cubierto por el piloto actual
 ni abrir capturas nuevas por esta aclaración.
 
+**Opcion futura registrada (2026-11-09):** [GARCH / F-GARCH-01](FUTURE_RESEARCH_OPTIONS.md#f-garch-01--volatilidad-y-riesgo-propuesta-diferida)
+queda diferido para evaluar volatilidad/riesgo frente a baselines simples.
+Solo documentado; sin implementacion ni utilidad economica demostrada.
+No modifica el bloque operativo actual ni su regla, presupuesto o autorizaciones.
+
 ---
 
 ## Piloto prospectivo v1 — propuesta pública 1 h + 70 min (2026-11-05)

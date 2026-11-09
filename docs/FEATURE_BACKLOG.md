@@ -1,3 +1,33 @@
+## F-GARCH-01 — GARCH como opcion futura de volatilidad y riesgo (2026-11-09)
+
+**1. Title:** Evaluar si GARCH mejora la estimacion de volatilidad y, despues,
+el control de riesgo del bot de futuros extremos.
+
+**2. Approval status:** DECIDED solo para registrar esta opcion por solicitud
+del usuario. Evaluacion/integracion futura PROPOSED y DIFERIDA; no hay
+autorizacion de implementacion, adquisicion ni cambio de estrategia.
+
+**3. Implementation status:** NOT IMPLEMENTED para esta propuesta; solo
+documentacion. Sin dependencias, servicios, UI ni cambios del experimento v2.
+
+**4. Evaluation status:** NOT EVALUATED en nuestros datos. GARCH(1,1), con
+Student-t como candidata, debe compararse fuera de muestra con volatilidad
+movil y EWMA. No hay edge ni rentabilidad atribuidos al modelo.
+
+**5. Evidence:** solicitud del usuario del 2026-11-09 y
+[FUTURE_RESEARCH_OPTIONS — F-GARCH-01](FUTURE_RESEARCH_OPTIONS.md#f-garch-01--volatilidad-y-riesgo-propuesta-diferida),
+con fuentes primarias, limites, datos y criterios de evaluacion/descarte.
+
+**6. Verdict:** opcion futura documentada, sin desplazar el trabajo operativo
+actual. No sustituye direccion, libro/flujo, ejecucion ni costes; el soporte de
+futuros con vencimiento sigue pendiente.
+
+**7. Next step:** tras cerrar el bloque actual, revisar un estudio offline
+acotado con criterios previos. Integrar solo si aporta mejora incremental
+consistente y justifica su complejidad; sin nuevas capturas automaticas.
+
+---
+
 ## F-EXTREME-OPERATING-ALIGNMENT-20261106 — Dirección y prioridad operativas
 
 **1. Title:** Alinear autoselección/investigación de futuros extremos (perpetuos y con vencimiento) con
