@@ -1,28 +1,43 @@
-# Cola vigente — objetivo operativo, 2026-11-06
+# Cola vigente — objetivo operativo, 2026-11-10
 
-`CURRENT_PHASE`: investigación de una regla operable sobre futuros extremos (perpetuos y con vencimiento);
-revisión/cierre del diseño de comprobación independiente. No es declaración de promoción formal.
+`CURRENT_PHASE`: preparación de la primera ventana del experimento operativo
+v2 sobre perpetuos USD-M. La ventana pública no está autorizada ni ejecutada y
+la revisión independiente devuelve NO-GO hasta resolver el bloqueo P0 de
+cobertura de funding. No es declaración de promoción formal.
 
 `CURRENT_OBJECTIVE`: evaluar si la autoselección del universo elegible, unida a
 una regla causal de dirección, entrada, stop-loss, gestión y salida, permite una
 expectativa neta favorable con riesgo controlado. Más movimiento por sí solo no
 satisface el objetivo. Dirección canónica: [PRODUCT_GOAL](PRODUCT_GOAL.md).
 
-`ACTIVE_TASK`: revisar y cerrar la propuesta ya entregada por el agente en
-[EXPERIMENTO_OPERATIVO_V1](EXPERIMENTO_OPERATIVO_V1.md) (`6a10c307`, no ejecutada).
-Resolver solo sus bloqueos declarados, sin reiniciar el diseño. Entregables: mapa breve de capacidades reutilizables,
-una hipótesis/regla candidata para revisión, datos y ejecución necesarios,
-períodos, comparadores/cobertura, métrica principal y criterio de
-continuar/reformular/detener/insuficiencia, presupuesto y límites. Solo diseño;
-la regla y el presupuesto propuestos no quedan aprobados por documentarlos.
+`ACTIVE_TASK`: decisión humana pendiente sobre la cobertura de funding del
+cierre de exposición, con las tres opciones de
+[EXPERIMENTO_OPERATIVO_V2](EXPERIMENTO_OPERATIVO_V2.md) §10.5. La preparación
+técnica local está cerrada y reproducible (`--budget-only` con código 0, sin
+red, run_id reservado `exp-v2-ventana-1-20261110a`), pero la primera ventana
+**no es evaluable** para la pregunta económica con la configuración actual:
+la cobertura de funding por posición exige un settlement posterior al cierre y
+la consulta ocurre ~1 min después de la salida, de modo que con cadencia de 8 h
+las operaciones quedarían condicionadas y la comparación por rol insuficiente.
+No se debilita `funding_accounting_complete` ni se convierte `UNKNOWN` en cero.
 
 `NEXT_TASKS`:
-1. Revisar y cerrar ese protocolo, sin otro inventario general ni expansión
-   de código. Reutilizar selector, book/flow y simulación/riesgo existentes.
-2. Decidir sobre la adquisición/evaluación concreta por autorización separada.
-   No comenzar capturas ni cambiar parámetros/presupuestos automáticamente.
-3. Ejecutado un experimento autorizado, tomar la decisión económica prevista.
-   La insuficiencia no renueva automáticamente duración ni cupos.
+1. Obtener la decisión humana entre las opciones A (adquirir y retener un
+   settlement posterior), B (extender el contrato del calendario con límites
+   de cobertura y horario de venue probados) y C (modelar como cubiertos los
+   intervalos entre settlements regulares cuando el calendario de venue pruebe
+   que no había evento) del §10.5 del protocolo. Sin esa decisión, no abrir
+   conexión pública, no ejecutar la ventana ni las otras dos.
+2. Tras la decisión, implementar solo la opción elegida, recalcular el
+   presupuesto con `--budget-only` y volver a verificar el gate. Cualquier
+   cambio de duración, presupuesto o contrato de contabilidad queda registrado
+   en `docs/DECISIONS.md` antes de ejecutar.
+3. Solo después de esa verificación, solicitar autorización explícita para
+   **una sola** ventana; si se autoriza, ejecutar el comando exacto una vez,
+   conservar logs, exit code, ledger, funding y hashes, y reconstruir la
+   economía desde lo persistido. La insuficiencia no renueva automáticamente
+   duración, cupos ni ventanas.
+
 
 `CLOSED`: análisis exploratorio v4 de `public-pilot-1h-20261106a`; los 168
 resultados de 60m existen, no es necesario repetir para completarlos. Los

@@ -202,7 +202,8 @@ class ResearchRecorder:
                  run_id: Optional[str] = None,
                  rules_version: Optional[str] = None,
                  dataset_id: Optional[str] = None,
-                 clock_ms: Optional[Any] = None) -> None:
+                 clock_ms: Optional[Any] = None,
+                 max_db_bytes: Optional[int] = None) -> None:
         """Optional ``history_store`` overrides the default HistoryStore
         for read-only count lookups in status() (Route-C injection point
         for hermetic tests). When None, behavior is unchanged.
@@ -218,6 +219,8 @@ class ResearchRecorder:
         # Inyeccion opcional del reloj (solo para pilotos/hermeticos). Por
         # defecto se conserva el reloj de pared historico.
         self._clock_ms = clock_ms
+        self.max_db_bytes = (int(max_db_bytes)
+                             if max_db_bytes is not None else None)
         self.max_queue = max(16, int(max_queue))
         self.retention_days = retention_days or {"flow_10s": 7, "flow_1m": 90,
                                                  "book_1m": 90}
@@ -260,7 +263,8 @@ class ResearchRecorder:
         if self._history_store is not None:
             return self._history_store
         from .history_store import HistoryStore as _HS
-        return _HS(self.db_path) if self.db_path else _HS()
+        return (_HS(self.db_path, max_db_bytes=self.max_db_bytes)
+                if self.db_path else _HS())
 
     def stop_and_drain(self, timeout: float = 10.0) -> Dict[str, Any]:
         # close open buckets as PARTIAL (explicitly marked, never complete)

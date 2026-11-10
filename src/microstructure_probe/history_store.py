@@ -46,26 +46,39 @@ def default_path() -> Path:
 _SOURCES = ("klines", "mark_klines")
 
 
-def _connect(db_path: Path) -> sqlite3.Connection:
+def _connect(db_path: Path,
+             max_db_bytes: Optional[int] = None) -> sqlite3.Connection:
     db_path = Path(db_path)
     db_path.parent.mkdir(parents=True, exist_ok=True)
     con = sqlite3.connect(str(db_path))
     con.execute("PRAGMA journal_mode=WAL")
+    if max_db_bytes is not None and int(max_db_bytes) > 0:
+        page_size = int(con.execute("PRAGMA page_size").fetchone()[0])
+        max_pages = max(1, int(max_db_bytes) // max(1, page_size))
+        con.execute(f"PRAGMA max_page_count={max_pages}")
+        con.execute("PRAGMA wal_autocheckpoint=64")
+        con.execute(f"PRAGMA journal_size_limit={int(max_db_bytes)}")
     return con
 
 
 class HistoryStore:
     """Separate historical research store (never the live dashboard DB)."""
 
-    def __init__(self, db_path: Optional[Path] = None) -> None:
+    def __init__(self, db_path: Optional[Path] = None,
+                 max_db_bytes: Optional[int] = None) -> None:
         resolved = Path(db_path) if db_path is not None else default_path()
         if resolved.resolve() == (Path("data") / "microprobe.db").resolve():
             raise ValueError("historical store must not be the live dashboard DB")
         self.db_path = resolved
+        self.max_db_bytes = (int(max_db_bytes)
+                             if max_db_bytes is not None else None)
         self._initialized = False
 
+    def _connect(self) -> sqlite3.Connection:
+        return _connect(self.db_path, self.max_db_bytes)
+
     def init_db(self) -> None:
-        con = _connect(self.db_path)
+        con = self._connect()
         try:
             con.execute(
                 "CREATE TABLE IF NOT EXISTS history_meta"
@@ -301,7 +314,7 @@ class HistoryStore:
         ) for r in rows]
         if not payload:
             return 0
-        con = _connect(self.db_path)
+        con = self._connect()
         try:
             con.executemany(
                 "INSERT OR REPLACE INTO historical_klines"
@@ -327,7 +340,7 @@ class HistoryStore:
         ) for r in rows]
         if not payload:
             return 0
-        con = _connect(self.db_path)
+        con = self._connect()
         try:
             con.executemany(
                 "INSERT OR REPLACE INTO historical_mark_klines"
@@ -363,7 +376,7 @@ class HistoryStore:
                         expected_bars: int, actual_bars: int) -> None:
         self._ensure()
         ratio = (actual_bars / expected_bars) if expected_bars > 0 else None
-        con = _connect(self.db_path)
+        con = self._connect()
         try:
             con.execute(
                 "INSERT OR REPLACE INTO historical_coverage"
@@ -408,7 +421,7 @@ class HistoryStore:
 
     def start_run(self, params: Dict[str, Any]) -> int:
         self._ensure()
-        con = _connect(self.db_path)
+        con = self._connect()
         try:
             cur = con.execute(
                 "INSERT INTO historical_ingestion_runs"
@@ -423,7 +436,7 @@ class HistoryStore:
     def finish_run(self, run_id: int, requests: int, retries: int,
                    failures: int, status: str) -> None:
         self._ensure()
-        con = _connect(self.db_path)
+        con = self._connect()
         try:
             con.execute(
                 "UPDATE historical_ingestion_runs SET requests=?, retries=?,"
@@ -440,7 +453,7 @@ class HistoryStore:
         self._ensure()
         if not gaps:
             return
-        con = _connect(self.db_path)
+        con = self._connect()
         try:
             con.executemany(
                 "INSERT OR REPLACE INTO historical_gaps"
@@ -478,7 +491,7 @@ class HistoryStore:
         ) for r in rows]
         if not payload:
             return 0
-        con = _connect(self.db_path)
+        con = self._connect()
         try:
             con.executemany(
                 "INSERT OR REPLACE INTO historical_oi"
@@ -510,7 +523,7 @@ class HistoryStore:
 
     def upsert_event_definition(self, definition: Dict[str, Any]) -> None:
         self._ensure()
-        con = _connect(self.db_path)
+        con = self._connect()
         try:
             self._ensure_v2(con)
             con.execute(
@@ -532,7 +545,7 @@ class HistoryStore:
 
     def start_event_run(self, params: Dict[str, Any]) -> int:
         self._ensure()
-        con = _connect(self.db_path)
+        con = self._connect()
         try:
             self._ensure_v2(con)
             cur = con.execute(
@@ -561,7 +574,7 @@ class HistoryStore:
         self._ensure()
         if not events:
             return 0
-        con = _connect(self.db_path)
+        con = self._connect()
         try:
             self._ensure_v2(con)
             payload = []
@@ -606,7 +619,7 @@ class HistoryStore:
         self._ensure()
         if not outcomes:
             return 0
-        con = _connect(self.db_path)
+        con = self._connect()
         try:
             self._ensure_v2(con)
             con.executemany(
@@ -631,7 +644,7 @@ class HistoryStore:
     def finish_event_run(self, run_id: int, event_count: int,
                          usable_count: int) -> None:
         self._ensure()
-        con = _connect(self.db_path)
+        con = self._connect()
         try:
             self._ensure_v2(con)
             con.execute(
@@ -674,7 +687,7 @@ class HistoryStore:
         self._ensure()
         if not rows:
             return 0
-        con = _connect(self.db_path)
+        con = self._connect()
         try:
             self._ensure_v2(con)
             con.executemany(
@@ -709,7 +722,7 @@ class HistoryStore:
         self._ensure()
         if not rows:
             return 0
-        con = _connect(self.db_path)
+        con = self._connect()
         try:
             self._ensure_v2(con)
             con.executemany(
@@ -759,7 +772,7 @@ class HistoryStore:
         ret = retention_days or dict(_DEF)
         now = int(now_ms) if now_ms is not None else int(time.time() * 1000)
         self._ensure()
-        con = _connect(self.db_path)
+        con = self._connect()
         out: Dict[str, int] = {}
         try:
             self._ensure_v2(con)

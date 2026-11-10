@@ -25,6 +25,7 @@ abort; 418 aborts immediately (IP ban) — never spin against the limiter.
 
 from __future__ import annotations
 
+import hashlib
 import json
 import random
 import time
@@ -42,6 +43,9 @@ ASSUMED_WEIGHTS = {
     "aggtrades": 20,
     "oi_hist": 5,
     "exchange_info": 20,
+    # USD-M funding history: request weight 1, but it shares a separate
+    # 500 requests / 5 minutes limit with /fapi/v1/fundingInfo.
+    "funding_rate": 1,
 }
 
 INTERVAL_MS = {
@@ -134,6 +138,7 @@ class HistoryClient:
         req = urllib.request.Request(
             url, headers={"User-Agent": "microprobe-history-p11b/1.0"})
         attempts_5xx = 0
+        retries_429_request = 0
         while True:
             self._admit(weight)
             # Registrar cada intento upstream ANTES de enviarlo.
@@ -144,36 +149,65 @@ class HistoryClient:
                 "interval": params.get("interval"),
                 "range": f"{params.get('startTime', '')}-{params.get('endTime', '')}",
                 "page": params.get("limit"),
-                "retry": attempts_5xx,
+                "retry": attempts_5xx + retries_429_request,
                 "result": "pending",
                 "duration_ms": None,
+                "sent_at_ms": None,
+                "completed_at_ms": None,
+                "blocked_at_ms": None,
+                "block_reason": None,
+                "configured_weight": weight,
+                "observed_headers": {},
+                "response_sha256": None,
             }
             self.upstream_requests.append(upstream_entry)
             # Reserva de presupuesto ANTES del transporte: si la puerta
             # deniega, aqui se aborta sin abrir ninguna conexion.
             if self.attempt_gate is not None:
-                self.attempt_gate.before_send(upstream_entry)
+                try:
+                    self.attempt_gate.before_send(upstream_entry)
+                except UpstreamBudgetExceeded as exc:
+                    upstream_entry["result"] = "blocked_before_send"
+                    upstream_entry["blocked_at_ms"] = int(time.time() * 1000)
+                    upstream_entry["block_reason"] = str(exc)
+                    raise
             try:
                 hdrs: Dict[str, str] = {}
                 t0: Optional[float] = None
                 try:
                     t0 = time.monotonic()
+                    upstream_entry["sent_at_ms"] = int(time.time() * 1000)
                     with self._opener(req, timeout=self.timeout) as resp:
                         raw = resp.read().decode("utf-8")
                         hdrs = {k.lower(): v for k, v in resp.headers.items()}
                         payload = json.loads(raw)
                     upstream_entry["result"] = "ok"
                     upstream_entry["duration_ms"] = int((time.monotonic() - t0) * 1000)
+                    upstream_entry["completed_at_ms"] = int(time.time() * 1000)
+                    upstream_entry["response_sha256"] = hashlib.sha256(
+                        raw.encode("utf-8")).hexdigest()
+                    upstream_entry["observed_headers"] = {
+                        key: value for key, value in hdrs.items()
+                        if key.startswith("x-mbx-") or key == "retry-after"
+                    }
                 except urllib.error.HTTPError as exc:
                     self.stats.failures += 1
                     started = t0 if t0 is not None else time.monotonic()
                     upstream_entry["result"] = f"http_{exc.code}"
                     upstream_entry["duration_ms"] = int((time.monotonic() - started) * 1000)
+                    upstream_entry["completed_at_ms"] = int(time.time() * 1000)
+                    if exc.headers:
+                        upstream_entry["observed_headers"] = {
+                            key.lower(): value for key, value in exc.headers.items()
+                            if key.lower().startswith("x-mbx-")
+                            or key.lower() == "retry-after"
+                        }
                     if exc.code == 418:
                         raise RateLimitExceeded(
                             f"HTTP 418 IP ban on {path} — aborting") from exc
                     if exc.code == 429:
                         self._429_seen += 1
+                        retries_429_request += 1
                         if self._429_seen > self.max_429:
                             raise RateLimitExceeded(
                                 f"HTTP 429 budget exhausted on {path}") from exc
@@ -184,7 +218,7 @@ class HistoryClient:
                         except (TypeError, ValueError):
                             delay = 60.0
                         self.stats.retries += 1
-                        upstream_entry["result"] = f"http_429_retry_{attempts_5xx + 1}"
+                        upstream_entry["result"] = f"http_429_retry_{retries_429_request}"
                         upstream_entry["duration_ms"] = int(
                             (time.monotonic() - started) * 1000)
                         self._sleep(min(delay, 65.0))
@@ -204,6 +238,7 @@ class HistoryClient:
                     started = t0 if t0 is not None else time.monotonic()
                     upstream_entry["result"] = "connection_error"
                     upstream_entry["duration_ms"] = int((time.monotonic() - started) * 1000)
+                    upstream_entry["completed_at_ms"] = int(time.time() * 1000)
                     if attempts_5xx >= self.max_retries:
                         raise
                     attempts_5xx += 1
@@ -355,6 +390,28 @@ class HistoryClient:
                                  ASSUMED_WEIGHTS["exchange_info"])
         if not isinstance(payload, dict):
             raise ValueError("unexpected exchangeInfo shape")
+        return payload, hdrs
+
+    def funding_rate(self, symbol: str, start_ms: Optional[int] = None,
+                     end_ms: Optional[int] = None,
+                     limit: int = 1000) -> Tuple[List[Dict[str, Any]], Dict]:
+        """Realized USD-M funding history for one symbol.
+
+        The endpoint returns settled funding rows, not a quoted next rate. A
+        per-symbol query avoids depending on a future selection being known
+        in advance and avoids the global recent-200 truncation.
+        """
+        params: Dict[str, Any] = {"symbol": symbol.upper(),
+                                  "limit": int(limit)}
+        if start_ms is not None:
+            params["startTime"] = int(start_ms)
+        if end_ms is not None:
+            params["endTime"] = int(end_ms)
+        payload, hdrs = self.get(
+            "/fapi/v1/fundingRate", params,
+            ASSUMED_WEIGHTS["funding_rate"])
+        if not isinstance(payload, list):
+            raise ValueError("unexpected fundingRate shape")
         return payload, hdrs
 
 

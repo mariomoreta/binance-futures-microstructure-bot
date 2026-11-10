@@ -1,5 +1,73 @@
 # Estado vigente — dirección operativa, 2026-11-10
 
+## Preparación de la primera ventana operativa v2 (2026-11-10, NO EJECUTADA, NO-GO)
+
+Sobre la base revisada `6d321a27e333d8e416f429f525d766b4cfac7aef` quedó
+preparado localmente el camino de la primera ventana de
+[EXPERIMENTO_OPERATIVO_V2](EXPERIMENTO_OPERATIVO_V2.md), sin abrir ninguna
+conexión pública de mercado y sin ejecutar la ventana:
+
+- El funding se adquiere por símbolo realmente observado mediante
+  `GET /fapi/v1/fundingRate`, después de T y solo para contabilidad. Se
+  reutiliza `FundingCalendar`; no hay calendario sintético en esta ruta. La
+  cobertura incompleta mantiene funding y neto completo en `UNKNOWN` y solo
+  permite publicar neto condicionado.
+- Los comparadores conservan el movimiento 24 h real del ticker observado en T
+  y pasan por la misma regla de dirección, entrada, stop, horizonte, costes y
+  capacidad que los candidatos.
+- El resumen económico se reconstruye desde filas persistidas y separa netos
+  `COMPLETO` y `CONDICIONADO_SIN_FUNDING_COMPLETO`. La comparación por rol no
+  se publica sin operaciones completas en ambos y con al menos 50 % de ciclos
+  con ambos roles aptos.
+- Cada intento HTTP conserva peso configurado y reservado, resultado,
+  cabeceras observadas y SHA-256 de respuesta. El tope de almacenamiento
+  incluye JSONL de datos, ledger HTTP, calendarios de funding, SQLite y
+  auxiliares, sin doble conteo.
+
+**Revisión independiente (2026-11-10): NO-GO para la primera ventana.** Se
+cerraron cinco defectos técnicos (gate de presupuesto con el nombre de campo
+equivocado; regresión de `config_hash` que rompía la reconstrucción de la
+evidencia publicada; contabilidad global de reintentos; registro de intento
+bloqueado antes del transporte; ledger y resumen escritos en el `finally`).
+Queda abierto un defecto económico/metodológico P0: la cobertura de funding
+por posición exige un settlement posterior al cierre, y la consulta ocurre
+~1 min después de la salida, de modo que con cadencia de 8 h la ventana
+quedaría normalmente `CONDICIONADO_SIN_FUNDING_COMPLETO` y la comparación
+candidate/comparator quedaría `INSUFICIENTE`. Las tres opciones de
+resolución (adquirir y retener un settlement posterior; extender el contrato
+del calendario con límites de cobertura y horario de venue probados; o
+modelar como cubiertos los intervalos entre settlements regulares cuando el
+calendario de venue prueba que no había evento) están en
+`EXPERIMENTO_OPERATIVO_V2.md` §10.5 y requieren decisión humana. No se
+debilita `funding_accounting_complete` ni se convierte `UNKNOWN` en cero.
+
+El `--budget-only` exacto se reejecutó con el código final: código 0, `stderr`
+vacío y sin red. Presupuesto de la ventana: base 1 224 intentos / 1 692 peso;
+base + reservas 1 754 / 4 172; 50 reintentos; funding con máximo concentrado
+planificado 90 dentro del límite compartido 500/5 min; almacenamiento previsto
+7 310 872 B y con cuotas reservadas 54 363 648 B, dentro de 134 217 728 B.
+Artefacto fuera de Git:
+`C:\Users\adonm\AppData\Local\Temp\opencode\binance-futures-operativo-v2\exp-v2-ventana-1-20261110a\presupuesto.json`
+(SHA-256 `eb2f93dea16bac8c2c911654dac51482f565a801d0531c574cdd4780f97ccec3`).
+
+Evidencia de código: `tests/test_research_pilot.py` (45 passed) y conjunto
+focalizado de piloto, adaptador operativo, CLI integrado, capacidad y
+presupuesto, operativo local v2, cliente y store de historia, backtest offline
+y correcciones, funding y assessment, experimento local, motor paper,
+auditabilidad y reconstrucción (262 passed + 4 subtests). La suite completa
+`python run_tests.py` ejecutó 1 619 tests (4 fallos, 2 skipped): conserva los
+4 fallos preexistentes de `tests/test_market_stream_window.py`, reproducidos
+también en un worktree limpio de la base `6d321a2`; la regresión de
+`config_hash` detectada en esa corrida quedó cerrada y el paquete publicado
+vuelve a reconstruirse.
+
+**Estado operativo:** la preparación técnica está cerrada, pero la primera
+ventana está bloqueada por la decisión de metodología de cobertura de funding
+(NO-GO). No se autoriza por este bloque la ejecución pública, las otras dos
+ventanas, paper deployment, cuentas, claves ni ejecución real. La cobertura
+sigue limitada a perpetuos USD-M; futuros con vencimiento pendientes y GARCH
+diferido.
+
 **Objetivo:** bot autónomo para futuros Binance (perpetuos y con vencimiento) de movimientos extremos
 alcistas y bajistas: universo → autoselección → investigación → decisión
 LONG/SHORT/abstención → entrada/stop-loss/gestión/salida → resultado neto y riesgo.
@@ -61,7 +129,8 @@ focalizadas: 35 passed y 4 subtests passed; las dos aceptaciones CLI real
 (calendario completo e incompleto), 2 passed. Sin cambio de motor, regla,
 costes, exposición, configuración, capturas, Binance, órdenes o servicios.
 
-**Consecuencias metodológicas (configuración congelada):** el intervalo de
+**Consecuencias metodológicas del cierre previo (funding real no conectado):**
+el intervalo de
 ocupación semiabierto `[entry_ms, exit_ms)` es la autoridad de capacidad
 compartida (`max_concurrent=1`); una salida desconocida mantiene la ocupación
 abierta; la prioridad es determinista por
@@ -69,9 +138,11 @@ abierta; la prioridad es determinista por
 participa. El presupuesto separa estimación base (preparación + 1 trayectoria
 por observación apta + 1 precio por observación y horizonte), reservas
 (peticiones repetidas ≤1 por observación + 50 reintentos por fallo) y techos
-efectivos (2 000 intentos / 5 000 peso / 50 reintentos / 128 MB). Con la
-configuración congelada: base 984 intentos / 1 452 peso; base + reservas
-1 274 / 3 692; almacenamiento previsto 2 915 072 B. La estimación base no es
+efectivos (2 000 intentos / 5 000 peso / 50 reintentos / 128 MB). En aquel
+recorrido local sin adquisición de funding: base 984 intentos / 1 452 peso;
+base + reservas 1 274 / 3 692; almacenamiento previsto 2 915 072 B. El
+presupuesto vigente con funding real figura en el bloque superior y en
+`EXPERIMENTO_OPERATIVO_V2.md` §10. La estimación base no es
 un máximo garantizado. El funding solo se acredita con calendario, cadencia
 nominal y contabilidad por posición explícitamente completa: settlements
 liquidados con marca utilizable, sin hueco interior aplicable y sin exposición

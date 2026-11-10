@@ -1,3 +1,100 @@
+## F-OPERATIVO-V2-VENTANA1-PREP-20261110 — Preparacion local de la primera ventana
+
+**1. Title:** Preparar localmente la primera ventana del experimento operativo
+v2 con funding real por simbolo observado, movimiento real para comparadores,
+ledger HTTP, separacion de netos y presupuesto exacto, sin ejecutarla.
+
+**2. Approval status:** AUTORIZADO para preparacion local y `--budget-only`.
+No autoriza la ventana publica, las otras dos ventanas, paper deployment,
+cuentas, claves, ordenes ni ejecucion real. La revision posterior NO habilita
+ninguna ejecucion: deja la ventana en NO-GO hasta la decision humana de
+metodologia de funding.
+
+**3. Implementation status:** IMPLEMENTADO sobre la base revisada `6d321a2`.
+`research_pilot` consulta funding real despues de T por simbolo efectivamente
+investigado, conserva sus calendars y procedencia, deriva el movimiento real
+de comparadores desde ticker y reconstruye el resumen economico desde filas
+persistidas. `UNKNOWN` no se convierte en cero. La version del piloto queda
+identificada como `research-pilot-v2`.
+
+**4. Evaluation status:** NO EVALUADO economicamente. No hay ventana publica,
+resultado de mercado, rentabilidad, direccion ni expectativa neta acreditadas.
+
+**5. Evidence:** `tests/test_research_pilot.py` (45 passed) y conjunto
+focalizado (262 passed + 4 subtests). `--budget-only` con el comando exacto
+reejecutado con el codigo final: codigo 0, sin red, 1 224 intentos / 1 692
+peso base; 1 754 / 4 172 base + reservas; 50 reintentos; almacenamiento
+previsto 7 310 872 B y con cuotas reservadas 54 363 648 B, dentro de
+134 217 728 B. Artefacto fuera de Git:
+`C:\Users\adonm\AppData\Local\Temp\opencode\binance-futures-operativo-v2\exp-v2-ventana-1-20261110a\presupuesto.json`
+(SHA-256 `eb2f93dea16bac8c2c911654dac51482f565a801d0531c574cdd4780f97ccec3`).
+Suite completa: 1 619 tests (4 fallos, 2 skipped) con los 4 fallos
+preexistentes de `tests/test_market_stream_window.py`, reproducidos tambien en
+un worktree limpio de `6d321a2`.
+
+**6. Verdict:** preparacion tecnica local cerrada y sin acquisition publica.
+La primera ventana queda NO-GO por el bloqueo P0 de cobertura de funding
+descrito en `EXPERIMENTO_OPERATIVO_V2.md` §10.5: sin decision humana no se
+puede publicar neto completo ni comparacion por rol. Cobertura limitada a
+perpetuos USD-M; futuros con vencimiento pendientes y GARCH diferido.
+
+**7. Next step:** decision humana entre las opciones A, B y C del §10.5 del
+protocolo. Solo despues de implementarla y revalidar el presupuesto se
+solicita autorizacion para una sola ventana. No ejecutar ni autorizar las
+otras dos ventanas.
+
+---
+
+## F-OPERATIVO-V2-REV-FUNDING-20261110 — Revision independiente y cierre de defectos
+
+**1. Title:** Revisar la preparacion de la primera ventana, cerrar los defectos
+tecnicos detectados y dejar constancia del bloqueo economico P0 de cobertura
+de funding sin debilar la contabilidad.
+
+**2. Approval status:** AUTORIZADO como correccion tecnica acotada dentro del
+encargo vigente (preparacion local y `--budget-only`). No autoriza ventanas
+publicas, cambios de metodologia, paper, ejecucion real ni aumento de cupos.
+
+**3. Implementation status:** IMPLEMENTADO. (a) gate de presupuesto con el
+nombre de campo real `max_comparators`; (b) `repr` del calendario estabilizado
+para que el `config_hash` de la evidencia publicada siga siendo reproducible,
+mientras `calendar_hash()` compromete marca, tipo de tasa y tasa; (c)
+reintentos contados globalmente en `RunBudget.before_send`; (d) intento
+bloqueado registrado como `blocked_before_send` sin consumir cupo ni peso;
+(e) ledger y resumen reconstruidos en el `finally`, con drenaje del recorder a
+30 s; (f) `--budget-only` y modo publico con fallo cerrado (codigo 3) cuando
+el plan excede una cota.
+
+**4. Evaluation status:** NO EVALUADO economicamente. El cierre evita
+representaciones incoherentes y restores la verificabilidad de la evidencia
+publicada; no acredita rentabilidad ni expectativa neta. La cobertura de
+funding del cierre de exposicion sigue sin resolverse y bloquea la ventana.
+
+**5. Evidence:** `tests/test_research_pilot.py` (45 passed, incluidos
+reintentos globales, intento bloqueado, reserva de almacenamiento, cadencia
+mixta, hash de funding, deduplicacion economica y `--budget-only` con codigo
+3); `tests/test_backtest_funding.py` con
+`PublishedConfigHashTest` (config_hash publicado congelado) y
+`CalendarIdentityTest::test_provenance_changes_calendar_hash_not_legacy_text`;
+conjunto focalizado 262 passed + 4 subtests. Regresion de `config_hash`
+reproducida: 168 celdas fallidas en
+`tests/test_audit_offline_eval_traceability.py::IntegracionLedgerTest` antes
+del arreglo y verde despues; la misma prueba pasa en un worktree limpio de
+`6d321a2`. P0 reproducido con el motor canonico: cadencia 8 h y exposicion de
+60 min dejan `funding_accounting_complete=false` con `uncovered holding
+3 540 000 ms` cuando la consulta ocurre ~1 min despues del cierre.
+
+**6. Verdict:** defectos tecnicos cerrados y verificados. Ventana 1 en NO-GO
+por decision humana pendiente sobre la cobertura de funding (opciones A, B y C
+en `EXPERIMENTO_OPERATIVO_V2.md` §10.5). `funding_accounting_complete` no se
+debilita y `UNKNOWN` no se convierte en cero.
+
+**7. Next step:** obtener la decision humana A/B/C, implementar solo la opción
+elegida, recalcular el presupuesto con `--budget-only` y revalidar el gate
+antes de pedir autorizacion de la primera ventana.
+
+---
+
 ## F-OPERATIVO-FUNDING-INTEGRIDAD-20261110 — Acreditacion por cobertura de la posicion
 
 **1. Title:** Impedir que el adaptador publique un total de funding acreditado

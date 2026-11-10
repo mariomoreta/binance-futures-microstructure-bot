@@ -100,10 +100,12 @@ import os
 import signal
 import subprocess
 import sys
+import threading
 import time
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from pathlib import Path
+from statistics import median
 from typing import Any, Callable, Dict, List, Optional, Tuple
 from urllib.parse import urlsplit
 
@@ -142,7 +144,7 @@ from microstructure_probe.paper_lab_engine import (  # noqa: E402
 
 RULE_VERSION = RULE_CAUSAL_V1
 
-PILOT_VERSION = "research-pilot-v1"
+PILOT_VERSION = "research-pilot-v2"
 PROTOCOL_VERSION = "prospective-protocol-v1"
 POLICY_VERSION = research_selector.POLICY_VERSION
 # Horizonte de flujo que exige la observacion (build_observation usa 1m).
@@ -167,6 +169,36 @@ DEFAULT_HORIZONS: Tuple[Tuple[str, int], ...] = (
 WEIGHT_EXCHANGE_INFO = 1
 WEIGHT_TICKER_24H = 40
 WEIGHT_KLINES = 1
+WEIGHT_FUNDING_RATE = 1
+
+# Techos-operative del protocolo v2. ``--budget-only`` falla cerrado si una
+# configuracion intenta ampliar cualquiera de estos cupos.
+PROTOCOL_MAX_HTTP_ATTEMPTS = 2_000
+PROTOCOL_MAX_HTTP_RETRIES = 50
+PROTOCOL_MAX_HTTP_WEIGHT = 5_000
+PROTOCOL_MAX_STORAGE_BYTES = 128 * 1024 * 1024
+PROTOCOL_MAX_WS_RECONNECTS = 20
+PROTOCOL_MAX_MESSAGES = 5_000_000
+PROTOCOL_MAX_STREAMS_PER_CONNECTION = 1_024
+
+# Reservas fisicas para escritura concurrente y auditoria de frontera.
+MAX_HTTP_LEDGER_ROW_BYTES = 8_192
+MAX_SQLITE_QUOTA_BYTES = 32 * 1024 * 1024
+MAX_HTTP_LEDGER_QUOTA_BYTES = 16 * 1024 * 1024
+
+
+# Funding real se consulta por observacion operativa apta. Como el simbolo
+# seleccionado no se conoce de antemano, la peticion se hace despues de la
+# decision y solo se usa para contabilidad. Una segunda consulta por
+# observacion queda reservada para una repeticion acotada.
+MAX_CONSULTAS_FUNDING_POR_OBS = 2
+FUNDING_HISTORY_LOOKBACK_MS = 48 * 60 * 60 * 1000
+
+# /fapi/v1/fundingRate comparte un limite oficial de 500 peticiones cada
+# 5 minutos con /fapi/v1/fundingInfo. Es un limite del endpoint, distinto del
+# presupuesto general por peso de la ventana.
+FUNDING_RATE_SHARED_LIMIT_5M = 500
+FUNDING_RATE_SHARED_WINDOW_MS = 5 * 60 * 1000
 
 STATE_OBSERVADA = "observada"
 STATE_DESCARTADA = "descartada"
@@ -333,6 +365,7 @@ class RunBudget:
         self.weight = 0
         self.blocked = False
         self.reason: Optional[str] = None
+        self._funding_rate_attempts_5m: List[Tuple[float, str]] = []
 
     def weight_of(self, endpoint: str) -> int:
         ep = (endpoint or "").lower()
@@ -344,6 +377,8 @@ class RunBudget:
             return 1
         if "/fapi/v1/klines" in ep or "/fapi/v1/markpriceklines" in ep:
             return 1
+        if "/fapi/v1/fundingrate" in ep:
+            return WEIGHT_FUNDING_RATE
         return 1
 
     def before_send(self, entry: Dict[str, Any]) -> None:
@@ -351,6 +386,15 @@ class RunBudget:
             raise UpstreamBudgetExceeded(self.reason or "presupuesto_agotado")
         ep = str(entry.get("endpoint", ""))
         w = self.weight_of(ep)
+        retry_no = int(entry.get("retry") or 0)
+        is_retry = retry_no > 0
+        # El cupo de reintentos es global para la corrida. ``retry`` es el
+        # numero de reintento dentro de una peticion, por lo que no puede
+        # consumirse por comparacion directa con el maximo global.
+        if is_retry and self.retries >= self.max_retries:
+            self.blocked = True
+            self.reason = "presupuesto_reintentos_agotado"
+            raise UpstreamBudgetExceeded(self.reason)
         if self.attempts + 1 > self.max_attempts:
             self.blocked = True
             self.reason = "presupuesto_intentos_agotado"
@@ -359,19 +403,33 @@ class RunBudget:
             self.blocked = True
             self.reason = "presupuesto_peso_agotado"
             raise UpstreamBudgetExceeded(self.reason)
+        if "/fapi/v1/fundingrate" in ep.lower():
+            now = time.monotonic()
+            self._funding_rate_attempts_5m = [
+                item for item in self._funding_rate_attempts_5m
+                if (now - item[0]) * 1000 < FUNDING_RATE_SHARED_WINDOW_MS
+            ]
+            if len(self._funding_rate_attempts_5m) >= FUNDING_RATE_SHARED_LIMIT_5M:
+                self.blocked = True
+                self.reason = "presupuesto_funding_rate_5m_agotado"
+                raise UpstreamBudgetExceeded(self.reason)
+            # Solo cuenta intentos que pueden abrir transporte. Una peticion
+            # bloqueada por intento/peso/reintento no consume el limite 5 m.
+            self._funding_rate_attempts_5m.append((now, ep))
         # Reservar ANTES del transporte.
         self.attempts += 1
         self.weight += w
+        if is_retry:
+            self.retries += 1
         entry["_reserved_weight"] = w
         entry["_attempt_no"] = self.attempts
+        entry["_retry_reserved"] = is_retry
 
     def after_send(self, entry: Dict[str, Any]) -> None:
-        result = str(entry.get("result", ""))
-        if "retry" in result:
-            self.retries += 1
-            if self.retries > self.max_retries:
-                self.blocked = True
-                self.reason = "presupuesto_reintentos_agotado"
+        # Los reintentos se reservan en ``before_send``. Contarlos aqui por
+        # texto de resultado omitia los errores de conexion, que si reabren
+        # transporte y consumen cupo global.
+        return
 
     def status(self) -> Dict[str, Any]:
         return {
@@ -381,9 +439,86 @@ class RunBudget:
             "max_attempts": self.max_attempts,
             "max_retries": self.max_retries,
             "max_weight": self.max_weight,
+            "funding_rate_attempts_5m": len(self._funding_rate_attempts_5m),
+            "funding_rate_shared_limit_5m": FUNDING_RATE_SHARED_LIMIT_5M,
             "blocked": self.blocked,
             "reason": self.reason,
         }
+
+
+class RunStorageBudget:
+    """Reserva atomica de bytes para todos los datos de una corrida.
+
+    ``used_bytes`` contiene bytes ya persistidos. ``reserved_bytes`` contiene
+    espacio separado todavia no escrito. Una reserva se rechaza antes de
+    tocar disco si el total contado mas la reserva excede el tope.
+    """
+
+    def __init__(self, max_bytes: int) -> None:
+        self.max_bytes = max(0, int(max_bytes))
+        self._lock = threading.RLock()
+        self._used_bytes = 0
+        self._reserved_bytes: Dict[str, int] = {}
+
+    def seed_used(self, used_bytes: int) -> None:
+        with self._lock:
+            self._used_bytes = max(self._used_bytes, int(used_bytes))
+
+    @property
+    def used_bytes(self) -> int:
+        with self._lock:
+            return self._used_bytes
+
+    @property
+    def reserved_bytes(self) -> int:
+        with self._lock:
+            return sum(self._reserved_bytes.values())
+
+    @property
+    def accounted_bytes(self) -> int:
+        with self._lock:
+            return self._used_bytes + sum(self._reserved_bytes.values())
+
+    def can_fit(self, extra_bytes: int = 0) -> bool:
+        extra = max(0, int(extra_bytes))
+        with self._lock:
+            if not self.max_bytes:
+                return True
+            return (self._used_bytes + sum(self._reserved_bytes.values())
+                    + extra) <= self.max_bytes
+
+    def reserve(self, key: str, delta_bytes: int) -> bool:
+        delta = max(0, int(delta_bytes))
+        with self._lock:
+            if not self.can_fit(delta):
+                return False
+            self._reserved_bytes[key] = (
+                self._reserved_bytes.get(key, 0) + delta)
+            return True
+
+    def commit(self, key: str, actual_delta_bytes: int) -> None:
+        actual = int(actual_delta_bytes)
+        with self._lock:
+            reserved = self._reserved_bytes.pop(key, 0)
+            if actual > reserved:
+                raise ValueError(
+                    f"reserva de almacenamiento excedida en {key}: "
+                    f"reservado={reserved}, real={actual}")
+            self._used_bytes = max(0, self._used_bytes + actual)
+
+    def release(self, key: str) -> None:
+        with self._lock:
+            self._reserved_bytes.pop(key, None)
+
+    def status(self) -> Dict[str, Any]:
+        with self._lock:
+            return {
+                "max_bytes": self.max_bytes,
+                "used_bytes": self._used_bytes,
+                "reserved_bytes": sum(self._reserved_bytes.values()),
+                "accounted_bytes": (self._used_bytes
+                                    + sum(self._reserved_bytes.values())),
+            }
 
 
 # ---------------------------------------------------------------------------
@@ -393,9 +528,13 @@ class RunBudget:
 class PilotStore:
     """Append-only JSONL con tope de bytes. Sin base de datos nueva."""
 
-    def __init__(self, path: Path, max_bytes: int) -> None:
+    def __init__(self, path: Path, max_bytes: int,
+                 storage_budget: Optional[RunStorageBudget] = None,
+                 storage_key: Optional[str] = None) -> None:
         self.path = Path(path)
         self.max_bytes = max(0, int(max_bytes))
+        self.storage_budget = storage_budget
+        self.storage_key = storage_key or str(self.path)
         self.path.parent.mkdir(parents=True, exist_ok=True)
         self.bytes_written = 0
         self.rows_written = 0
@@ -407,11 +546,23 @@ class PilotStore:
             return False
         payload = json.dumps(row, ensure_ascii=False, sort_keys=True) + "\n"
         encoded = len(payload.encode("utf-8"))
-        if self.max_bytes and self.bytes_written + encoded > self.max_bytes:
-            self.cap_reached = True
-            return False
-        self._fh.write(payload)
-        self._fh.flush()
+        if self.storage_budget is not None:
+            if not self.storage_budget.reserve(self.storage_key, encoded):
+                self.cap_reached = True
+                return False
+            try:
+                self._fh.write(payload)
+                self._fh.flush()
+            except Exception:
+                self.storage_budget.release(self.storage_key)
+                raise
+            self.storage_budget.commit(self.storage_key, encoded)
+        else:
+            if self.max_bytes and self.bytes_written + encoded > self.max_bytes:
+                self.cap_reached = True
+                return False
+            self._fh.write(payload)
+            self._fh.flush()
         self.bytes_written += encoded
         self.rows_written += 1
         return True
@@ -451,6 +602,108 @@ def _stats(values: List[float]) -> Dict[str, Any]:
         "max": max(values),
         "mean": sum(values) / len(values),
     }
+
+
+def _funding_regular_times(
+    symbol: str, rows: List[Dict[str, Any]],
+) -> List[int]:
+    regular_times = sorted({
+        int(row["fundingTime"])
+        for row in rows
+        if str(row.get("symbol", "")).upper() == symbol.upper()
+        and row.get("fundingTime") is not None
+        and str(row.get("rateType", "Regular")).lower() == "regular"
+    })
+    return regular_times
+
+
+def _funding_delta_distribution(
+    symbol: str, rows: List[Dict[str, Any]],
+) -> Dict[str, int]:
+    regular_times = _funding_regular_times(symbol, rows)
+    counts: Dict[str, int] = {}
+    for before, after in zip(regular_times, regular_times[1:]):
+        delta = int(after - before)
+        if delta > 0:
+            counts[str(delta)] = counts.get(str(delta), 0) + 1
+    return dict(sorted(counts.items(), key=lambda item: int(item[0])))
+
+
+def _infer_funding_interval_ms(
+    symbol: str, rows: List[Dict[str, Any]],
+) -> Optional[int]:
+    """Infer one nominal cadence from unambiguous REAL regular settlements.
+
+    Special settlements remain chargeable events but do not define cadence.
+    At least two equal regular deltas are required. Any conflicting regular
+    delta leaves the cadence UNKNOWN, so a changed or skipped schedule cannot
+    be certified by the smallest observed interval.
+    """
+    regular_times = _funding_regular_times(symbol, rows)
+    deltas = [
+        int(after - before)
+        for before, after in zip(regular_times, regular_times[1:])
+        if int(after - before) > 0
+    ]
+    if len(deltas) < 2:
+        return None
+    counts: Dict[int, int] = {}
+    for delta in deltas:
+        counts[delta] = counts.get(delta, 0) + 1
+    repeated = [delta for delta, count in counts.items() if count >= 2]
+    if len(repeated) != 1:
+        return None
+    interval = repeated[0]
+    if any(delta != interval for delta in deltas):
+        return None
+    return interval
+
+
+def _funding_calendar_from_rows(
+    symbol: str, rows: List[Dict[str, Any]],
+) -> FundingCalendar:
+    """Build the existing per-symbol FundingCalendar from realized rows."""
+    settlements: List[FundingSettlement] = []
+    for row in rows:
+        if str(row.get("symbol", "")).upper() != symbol.upper():
+            continue
+        try:
+            settlement_ms = int(row["fundingTime"])
+            funding_rate = float(row["fundingRate"])
+            rate_bps = funding_rate * 10_000.0
+        except (KeyError, TypeError, ValueError) as exc:
+            raise ValueError(
+                f"fila de funding invalida para {symbol}: {row!r}") from exc
+        if not math.isfinite(rate_bps):
+            raise ValueError(f"tasa de funding no finita para {symbol}")
+        mark_price = None
+        if row.get("markPrice") is not None:
+            try:
+                mark_price = float(row["markPrice"])
+            except (TypeError, ValueError) as exc:
+                raise ValueError(
+                    f"marca de funding invalida para {symbol}: {row!r}") from exc
+            if not math.isfinite(mark_price):
+                raise ValueError(f"marca de funding no finita para {symbol}")
+        rate_type = (str(row["rateType"]).strip().lower()
+                     if row.get("rateType") is not None else None)
+        settlements.append(FundingSettlement(
+            settlement_ms=settlement_ms,
+            rate_bps=rate_bps,
+            mark_price=mark_price,
+            rate_type=rate_type,
+            funding_rate=funding_rate,
+        ))
+    calendar = FundingCalendar(
+        version="exchange-funding-history/v2",
+        source="exchange-funding-history (Binance USD-M fundingRate)",
+        interval_ms=_infer_funding_interval_ms(symbol, rows),
+        settlements=tuple(settlements),
+        symbol=symbol.upper(),
+    )
+    # normalized() falla cerrado ante el mismo timestamp con tasas distintas.
+    calendar.normalized()
+    return calendar
 
 
 def build_summary(rows: List[Dict[str, Any]]) -> Dict[str, Any]:
@@ -541,6 +794,274 @@ def build_summary(rows: List[Dict[str, Any]]) -> Dict[str, Any]:
             "precio_posterior = klines_apertura_1m (proxy de fuentes mixtas; "
             "no mark-to-mid, no P&L ejecutable)"
         ),
+    }
+
+
+def _net_operating_stats(rows: List[Dict[str, Any]]) -> Dict[str, Any]:
+    values = [float(row["net_pnl"]) for row in rows
+              if row.get("net_pnl") is not None]
+    if not values:
+        return {"n": 0, "suma_usdt": None, "media_usdt": None,
+                "mediana_usdt": None, "min_usdt": None, "max_usdt": None}
+    return {
+        "n": len(values),
+        "suma_usdt": sum(values),
+        "media_usdt": sum(values) / len(values),
+        "mediana_usdt": median(values),
+        "min_usdt": min(values),
+        "max_usdt": max(values),
+    }
+
+
+def _realized_drawdown(rows: List[Dict[str, Any]]) -> Optional[float]:
+    values = [row for row in rows
+              if row.get("net_pnl") is not None and row.get("exit_ms") is not None]
+    if not values:
+        return None
+    equity = 0.0
+    peak = 0.0
+    max_drawdown = 0.0
+    for row in sorted(values, key=lambda item: (int(item["exit_ms"]),
+                                               str(item.get("observation_id")))):
+        equity += float(row["net_pnl"])
+        peak = max(peak, equity)
+        max_drawdown = max(max_drawdown, peak - equity)
+    return max_drawdown
+
+
+def build_operational_economic_summary(
+    persisted_rows: List[Dict[str, Any]],
+    operational_rows: List[Dict[str, Any]],
+) -> Dict[str, Any]:
+    """Economic metrics rebuilt only from persisted pilot/operation rows.
+
+    Missing values remain absent. In particular, unknown funding is not added
+    as zero and candidate/comparator means are emitted only when both groups
+    have complete operations and the frozen cycle-coverage gate is satisfied.
+    """
+    cycles = [row for row in persisted_rows if row.get("kind") == "ciclo"]
+    observations = [row for row in persisted_rows
+                    if row.get("kind") == "observacion"]
+    roles = ("candidate", "comparator")
+
+    # Las metricas se reconstruyen desde operaciones unicas por observacion.
+    # Si un fichero contiene una repeticion, la ultima fila persistida es la
+    # autoridad y el duplicado queda contabilizado, no ponderado dos veces.
+    operational_by_id: Dict[str, Dict[str, Any]] = {}
+    operational_without_id = 0
+    for index, row in enumerate(operational_rows):
+        oid = str(row.get("observation_id") or "")
+        if not oid:
+            operational_without_id += 1
+            oid = f"__sin_id_{index}"
+        operational_by_id[oid] = row
+    operational_duplicates = len(operational_rows) - len(operational_by_id)
+    operational_rows = list(operational_by_id.values())
+
+    selected = {role: 0 for role in roles}
+    for cycle in cycles:
+        selected["candidate"] += len(cycle.get("selected") or [])
+        selected["comparator"] += len(cycle.get("comparator") or [])
+
+    observed = {role: 0 for role in roles}
+    apt = {role: 0 for role in roles}
+    discarded = {role: 0 for role in roles}
+    for row in observations:
+        role = str(row.get("role") or "comparator")
+        if role not in observed:
+            observed[role] = 0
+            apt[role] = 0
+            discarded[role] = 0
+        observed[role] += 1
+        if row.get("apto_para_evaluacion"):
+            apt[role] += 1
+        else:
+            discarded[role] += 1
+
+    decisions = {str(row.get("decision") or "UNKNOWN"): 0
+                 for row in operational_rows}
+    for row in operational_rows:
+        decision = str(row.get("decision") or "UNKNOWN")
+        decisions[decision] = decisions.get(decision, 0) + 1
+    signals = sum(1 for row in operational_rows
+                  if row.get("direction") in ("LONG", "SHORT"))
+    abstentions = decisions.get("SIN_ENTRADA", 0)
+    capacity_rejections = decisions.get("RECHAZADA_CAPACIDAD", 0)
+    simulated_operations = decisions.get("ENTRADA_EJECUTADA", 0)
+
+    executed = [row for row in operational_rows
+                if row.get("decision") == "ENTRADA_EJECUTADA"]
+    closed = [row for row in executed
+              if row.get("exit_executed") is True
+              and row.get("entry_ms") is not None
+              and row.get("exit_ms") is not None]
+    still_open = [row for row in executed if row.get("open_at_end") is True]
+
+    def _sum_field(rows: List[Dict[str, Any]], field: str) -> Optional[float]:
+        values = [float(row[field]) for row in rows
+                  if row.get(field) is not None]
+        return sum(values) if values else None
+
+    complete = [row for row in closed
+                if row.get("neto_estado") == "COMPLETO"
+                and row.get("net_pnl") is not None]
+    conditioned = [row for row in closed
+                   if row.get("neto_estado")
+                   == "CONDICIONADO_SIN_FUNDING_COMPLETO"
+                   and row.get("net_pnl") is not None]
+    exposure_ms = sum(int(row["exit_ms"]) - int(row["entry_ms"])
+                      for row in closed)
+
+    # Cycle coverage uses the selection reference persisted in each
+    # observation, not the later decision instant.
+    cycles_both_roles_apt = 0
+    for cycle in cycles:
+        reference = cycle.get("reference_ms")
+        apt_roles = {
+            str(row.get("role"))
+            for row in observations
+            if row.get("apto_para_evaluacion")
+            and (row.get("disponibilidad") or {}).get("seleccion_ms")
+            == reference
+        }
+        if {"candidate", "comparator"}.issubset(apt_roles):
+            cycles_both_roles_apt += 1
+    coverage_ratio = (cycles_both_roles_apt / len(cycles)
+                      if cycles else None)
+
+    complete_by_role = {
+        role: [row for row in complete if row.get("role") == role]
+        for role in roles
+    }
+    selection_ms_by_oid = {
+        str(row.get("observation_id")): (row.get("disponibilidad") or {}).get(
+            "seleccion_ms")
+        for row in observations
+        if row.get("observation_id")
+    }
+    complete_by_cycle_role: Dict[Any, Dict[str, List[Dict[str, Any]]]] = {}
+    for row in complete:
+        cycle_reference = selection_ms_by_oid.get(
+            str(row.get("observation_id")))
+        role = str(row.get("role"))
+        complete_by_cycle_role.setdefault(
+            cycle_reference, {}).setdefault(role, []).append(row)
+    cycles_complete_both_roles = []
+    paired_differences = []
+    for cycle in cycles:
+        reference = cycle.get("reference_ms")
+        by_role = complete_by_cycle_role.get(reference, {})
+        if all(by_role.get(role) for role in roles):
+            cycles_complete_both_roles.append(reference)
+            candidate_mean = sum(
+                float(row["net_pnl"]) for row in by_role["candidate"]
+            ) / len(by_role["candidate"])
+            comparator_mean = sum(
+                float(row["net_pnl"]) for row in by_role["comparator"]
+            ) / len(by_role["comparator"])
+            paired_differences.append({
+                "reference_ms": reference,
+                "candidate_medio_usdt": candidate_mean,
+                "comparator_medio_usdt": comparator_mean,
+                "diferencia_usdt": candidate_mean - comparator_mean,
+            })
+    comparison_reasons = []
+    if not complete_by_role["candidate"]:
+        comparison_reasons.append("sin_operaciones_completas_candidate")
+    if not complete_by_role["comparator"]:
+        comparison_reasons.append("sin_operaciones_completas_comparator")
+    if coverage_ratio is None or coverage_ratio < 0.5:
+        comparison_reasons.append("cobertura_de_ciclos_ambos_roles_bajo_50pct")
+    comparison: Dict[str, Any] = {
+        "estado": "INSUFICIENTE",
+        "motivos": comparison_reasons,
+        "ciclos_total": len(cycles),
+        "ciclos_con_ambos_roles_aptos": cycles_both_roles_apt,
+        "cobertura_ciclos_ambos_roles": coverage_ratio,
+        "operaciones_completas_candidate": len(complete_by_role["candidate"]),
+        "operaciones_completas_comparator": len(complete_by_role["comparator"]),
+        "ciclos_con_operaciones_completas_ambos_roles": len(
+            cycles_complete_both_roles),
+        "diferencias_paired_por_ciclo": paired_differences,
+        "diferencia_paired_media_usdt": (
+            sum(item["diferencia_usdt"] for item in paired_differences)
+            / len(paired_differences) if paired_differences else None),
+    }
+    if not comparison_reasons:
+        comparison["estado"] = "COMPARABLE"
+        comparison["neto_por_operacion_candidate"] = _net_operating_stats(
+            complete_by_role["candidate"])
+        comparison["neto_por_operacion_comparator"] = _net_operating_stats(
+            complete_by_role["comparator"])
+
+    return {
+        "fuente": ["observaciones.jsonl", "resultado_operativo.jsonl"],
+        "diagnosticos": {
+            "filas_operativas_leidas": len(operational_rows)
+            + operational_duplicates,
+            "filas_operativas_unicas": len(operational_rows),
+            "duplicados_operativos_descartados": operational_duplicates,
+            "filas_operativas_sin_observation_id": operational_without_id,
+        },
+        "definiciones": {
+            "neto_por_operacion": ("net_pnl de operaciones cerradas divided by "
+                                   "n; USDT; solo se publica neto COMPLETO o "
+                                   "CONDICIONADO por separado"),
+            "drawdown": ("max(peak_equity - equity) sobre net_pnl de salidas "
+                         "cerradas ordenadas por exit_ms; no mark-to-market"),
+            "exposicion": "suma(exit_ms - entry_ms) de operaciones cerradas",
+            "comparacion": ("solo si ambos roles tienen operaciones COMPLETO y "
+                            ">=50% de ciclos con ambos roles aptos"),
+        },
+        "embudo_por_rol": {
+            role: {
+                "seleccionadas": selected[role],
+                "observadas": observed[role],
+                "aptas": apt[role],
+                "descartadas": discarded[role],
+            } for role in roles
+        },
+        "decisiones": {
+            "senales_con_direccion": signals,
+            "abstenciones": abstentions,
+            "rechazos_capacidad": capacity_rejections,
+            "operaciones_ejecutadas_simuladas": simulated_operations,
+            "por_decision": dict(sorted(decisions.items())),
+        },
+        "posiciones": {
+            "cerradas": len(closed),
+            "todavia_abiertas": len(still_open),
+            "exposicion_realizada_ms": exposure_ms,
+        },
+        "resultado_usdt": {
+            "bruto_operaciones_cerradas": _sum_field(closed, "gross_pnl"),
+            "comisiones_operaciones_cerradas": _sum_field(closed, "fees"),
+            "spread_slippage_operaciones_cerradas": _sum_field(
+                closed, "spread_slip"),
+            "funding_completamente_acreditado": _sum_field(complete, "funding"),
+            "neto_completo": _net_operating_stats(complete),
+            "neto_conditionado_sin_funding_completo": _net_operating_stats(
+                conditioned),
+            "drawdown_realizado_neto_completo_usdt": _realized_drawdown(
+                complete),
+            "drawdown_realizado_neto_conditionado_usdt": _realized_drawdown(
+                conditioned),
+        },
+        "ganancias_perdidas": {
+            "ganadoras_neto_completo": sum(
+                1 for row in complete if float(row["net_pnl"]) > 0),
+            "perdedoras_neto_completo": sum(
+                1 for row in complete if float(row["net_pnl"]) < 0),
+            "breakeven_neto_completo": sum(
+                1 for row in complete if float(row["net_pnl"]) == 0),
+            "ganadoras_neto_conditionado": sum(
+                1 for row in conditioned if float(row["net_pnl"]) > 0),
+            "perdedoras_neto_conditionado": sum(
+                1 for row in conditioned if float(row["net_pnl"]) < 0),
+            "breakeven_neto_conditionado": sum(
+                1 for row in conditioned if float(row["net_pnl"]) == 0),
+        },
+        "comparacion_candidate_comparator": comparison,
     }
 
 
@@ -651,7 +1172,7 @@ class PilotConfig:
     price_delay_ms: int = 2_000
     max_data_age_ms: int = 5_000
     max_observations: int = 20_000
-    max_bytes: int = 128 * 1024 * 1024   # almacenamiento TOTAL (JSONL+SQLite+aux)
+    max_bytes: int = 128 * 1024 * 1024   # almacenamiento total de datos
     max_messages: int = 5_000_000
     max_http_attempts: int = 2000
     max_http_retries: int = 50
@@ -666,6 +1187,11 @@ class PilotConfig:
     decision_gate_file: Optional[str] = None
     stop_file: Optional[str] = None
     keep_research_db: bool = True
+    # "none": no se-automatico la adquisicion de funding. "exchange": cada
+    # observacion operativa apta consulta el historico realizado del simbolo
+    # por el mismo cliente, puerta y presupuesto. Un calendario externo solo
+    # se usa en pruebas/local y no se mezcla con esta fuente.
+    funding_source: str = "none"
     # Protocolo de captura: 1 = evaluacion inmediata tras suscripcion;
     # 2 = calentamiento acotado antes de la primera evaluacion de un
     # simbolo (seleccionar -> suscribir -> acumular ventana -> evaluar);
@@ -710,6 +1236,7 @@ class PilotConfig:
             "status_file": self.status_file,
             "decision_gate_file": self.decision_gate_file,
             "stop_file": self.stop_file,
+            "funding_source": self.funding_source,
             "capture_protocol_version": self.capture_protocol_version,
             "policy_version": POLICY_VERSION,
             "pilot_version": PILOT_VERSION,
@@ -751,21 +1278,45 @@ def compute_budget(cfg: PilotConfig) -> Dict[str, Any]:
     klines_requests = observations_max * n_horizons
     klines_total = klines_trayectoria + klines_requests
 
+    # Funding real: una consulta por observacion operativa apta. El simbolo
+    # se conoce en ese momento, de modo que no se presupone una seleccion
+    # futura. Una llamada repetida por observacion queda reservada aparte.
+    funding_enabled = cfg.funding_source == "exchange"
+    funding_calls = observations_max if funding_enabled else 0
+    funding_calls_reserve = (observations_max * max(
+        0, MAX_CONSULTAS_FUNDING_POR_OBS - 1) if funding_enabled else 0)
+
     weight_catalog = selections * WEIGHT_EXCHANGE_INFO
     weight_tickers = selections * WEIGHT_TICKER_24H
     weight_klines = klines_total * WEIGHT_KLINES
-    weight_total = weight_catalog + weight_tickers + weight_klines
+    weight_funding = funding_calls * WEIGHT_FUNDING_RATE
+    weight_total = (weight_catalog + weight_tickers + weight_klines
+                    + weight_funding)
 
-    # Almacenamiento: JSONL + SQLite (buckets 1m/10s) + auxiliares (WAL/SHM).
+    # Almacenamiento: JSONL de observaciones/resultados/funding, ledger HTTP,
+    # SQLite (buckets 1m/10s) y auxiliares (WAL/SHM).
     bytes_obs = 1_600
     bytes_outcome = 500
+    bytes_operativo = 1_200
+    bytes_funding_log = 8_000
+    bytes_funding_calendar = 4_000
+    bytes_http_request = 700
     bytes_bucket_row = 200
     bucket_rows = symbols * int(duration / 60.0) if duration else 0
     bucket_rows_10s = symbols * int(duration / 10.0) if duration else 0
-    storage_jsonl = observations_max * bytes_obs + klines_total * bytes_outcome
+    storage_jsonl = (observations_max * bytes_obs
+                     + klines_total * bytes_outcome
+                     + observations_max * bytes_operativo
+                     + funding_calls * bytes_funding_log)
+    storage_funding_files = funding_calls * bytes_funding_calendar
+    storage_http_ledger = ((selections * 2 + klines_total + funding_calls
+                            + klines_trayectoria_reserva
+                            + funding_calls_reserve + cfg.max_http_retries)
+                           * bytes_http_request)
     storage_db = (bucket_rows * 2 + bucket_rows_10s) * bytes_bucket_row
     storage_aux = 2 * 65_536  # WAL + SHM aproximado
-    storage_total = storage_jsonl + storage_db + storage_aux
+    storage_total = (storage_jsonl + storage_funding_files
+                     + storage_http_ledger + storage_db + storage_aux)
 
     # La primera seleccion abre los feeds; cada seleccion posterior puede
     # cambiar el set y reabrir AMBOS feeds (/public y /market).
@@ -781,9 +1332,70 @@ def compute_budget(cfg: PilotConfig) -> Dict[str, Any]:
                              + ws_reconnect_cap
                              + ws_reconnect_overshoot)
 
+    attempts_base = selections * 2 + klines_total + funding_calls
+    attempts_with_reserves = (
+        attempts_base + klines_trayectoria_reserva + funding_calls_reserve
+        + cfg.max_http_retries)
+    weight_with_reserves = (
+        weight_total + klines_trayectoria_reserva * WEIGHT_KLINES
+        + funding_calls_reserve * WEIGHT_FUNDING_RATE
+        + cfg.max_http_retries * WEIGHT_TICKER_24H)
+    funding_concentrated_raw = (
+        symbols * max(0, MAX_CONSULTAS_FUNDING_POR_OBS - 1)
+        + symbols + cfg.max_http_retries) if funding_enabled else 0
+    if cfg.max_bytes:
+        runtime_sqlite_quota = min(
+            MAX_SQLITE_QUOTA_BYTES, cfg.max_bytes // 4)
+        runtime_ledger_quota = min(
+            MAX_HTTP_LEDGER_QUOTA_BYTES, cfg.max_bytes // 4)
+    else:
+        runtime_sqlite_quota = MAX_SQLITE_QUOTA_BYTES
+        runtime_ledger_quota = MAX_HTTP_LEDGER_QUOTA_BYTES
+    storage_accounted_max = (
+        storage_jsonl + storage_funding_files
+        + runtime_sqlite_quota + runtime_ledger_quota)
+    gate_checks = {
+        "intentos_plan_dentro_del_techo": (
+            attempts_with_reserves <= cfg.max_http_attempts),
+        "intentos_no_amplian_protocolo": (
+            cfg.max_http_attempts <= PROTOCOL_MAX_HTTP_ATTEMPTS),
+        "peso_plan_dentro_del_techo": (
+            weight_with_reserves <= cfg.max_http_weight),
+        "peso_no_amplia_protocolo": (
+            cfg.max_http_weight <= PROTOCOL_MAX_HTTP_WEIGHT),
+        "reintentos_no_amplian_protocolo": (
+            cfg.max_http_retries <= PROTOCOL_MAX_HTTP_RETRIES),
+        "funding_rate_5m_dentro_del_limite": (
+            funding_concentrated_raw <= FUNDING_RATE_SHARED_LIMIT_5M),
+        "almacenamiento_dentro_del_techo": (
+            not cfg.max_bytes or storage_total <= cfg.max_bytes),
+        "almacenamiento_reservado_dentro_del_techo": (
+            not cfg.max_bytes or storage_accounted_max <= cfg.max_bytes),
+        "almacenamiento_no_amplia_protocolo": (
+            cfg.max_bytes <= PROTOCOL_MAX_STORAGE_BYTES),
+        "streams_por_conexion_dentro_del_limite": (
+            symbols <= PROTOCOL_MAX_STREAMS_PER_CONNECTION),
+        "reconexiones_no_amplian_protocolo": (
+            cfg.max_ws_reconnects <= PROTOCOL_MAX_WS_RECONNECTS),
+        "mensajes_no_amplian_protocolo": (
+            cfg.max_messages <= PROTOCOL_MAX_MESSAGES),
+        "cupo_simbolos_coherente": (
+            cfg.max_candidates + cfg.max_comparators <= cfg.max_symbols),
+    }
+    budget_gate = {
+        "cabe_en_limites": all(gate_checks.values()),
+        "comprobaciones": gate_checks,
+        "intentos_plan_con_reservas": attempts_with_reserves,
+        "peso_plan_con_reservas": weight_with_reserves,
+        "funding_maximo_concentrado_5m": funding_concentrated_raw,
+        "almacenamiento_previsto_bytes": storage_total,
+        "almacenamiento_reservado_max_bytes": storage_accounted_max,
+    }
+
     return {
         "version": PILOT_VERSION,
         "mode": cfg.mode,
+        "gate": budget_gate,
         "supuestos": {
             "duracion_captura_s": duration,
             "periodo_settle_s": settle,
@@ -796,7 +1408,9 @@ def compute_budget(cfg: PilotConfig) -> Dict[str, Any]:
                 "exchangeInfo": WEIGHT_EXCHANGE_INFO,
                 "ticker_24hr_sin_symbol": WEIGHT_TICKER_24H,
                 "klines_limit_1_100": WEIGHT_KLINES,
+                "fundingRate": WEIGHT_FUNDING_RATE,
             },
+            "funding_source": cfg.funding_source,
             "pool_referencia": (
                 "REQUEST_WEIGHT de exchangeInfo.rateLimits y cabecera "
                 "X-MBX-USED-WEIGHT-1M; 2400/min por IP, UM y CM comparten "
@@ -815,6 +1429,8 @@ def compute_budget(cfg: PilotConfig) -> Dict[str, Any]:
             "max_ws_reconnects": cfg.max_ws_reconnects,
             "max_messages": cfg.max_messages,
             "max_bytes_almacenamiento": cfg.max_bytes,
+            "funding_rate_shared_limit_5m": FUNDING_RATE_SHARED_LIMIT_5M,
+            "funding_rate_shared_window_ms": FUNDING_RATE_SHARED_WINDOW_MS,
         },
         "rest": {
             "endpoints": {
@@ -837,6 +1453,15 @@ def compute_budget(cfg: PilotConfig) -> Dict[str, Any]:
                     "peso_total": klines_requests * WEIGHT_KLINES,
                     "nota": "1 por observacion y horizonte (resolve_due de "
                             "resultados; interval 1m, limit=1)"},
+                "/fapi/v1/fundingRate": {
+                    "llamadas": funding_calls,
+                    "peso_unitario": WEIGHT_FUNDING_RATE,
+                    "peso_total": weight_funding,
+                    "nota": ("1 por observacion operativa apta cuando "
+                             "--funding-source exchange; consulta el historico "
+                             "realizado del simbolo efectivamente investigado, "
+                             "despues de T y solo para contabilidad. Limite "
+                             "compartido del endpoint: 500/5 min")},
             },
             "estimacion_base": {
                 "preparacion": {
@@ -851,7 +1476,12 @@ def compute_budget(cfg: PilotConfig) -> Dict[str, Any]:
                     "llamadas": klines_requests,
                     "peso": klines_requests * WEIGHT_KLINES,
                     "nota": "1 precio posterior por observacion y horizonte"},
-                "intentos": selections * 2 + klines_total,
+                "funding_real": {
+                    "llamadas": funding_calls,
+                    "peso": weight_funding,
+                    "nota": ("historial realizado por simbolo observado; "
+                             "0 si funding_source=none")},
+                "intentos": selections * 2 + klines_total + funding_calls,
                 "peso": weight_total,
             },
             "reservas": {
@@ -863,20 +1493,30 @@ def compute_budget(cfg: PilotConfig) -> Dict[str, Any]:
                     "nota": "peticion REPETIDA (misma observacion consultada "
                             "en otro intervalo) cuando la trayectoria no fue "
                             "utilizable; distinta del reintento por fallo"},
+                "peticiones_repetidas_funding_por_observacion": {
+                    "max_por_observacion": max(
+                        0, MAX_CONSULTAS_FUNDING_POR_OBS - 1),
+                    "llamadas": funding_calls_reserve,
+                    "peso": funding_calls_reserve * WEIGHT_FUNDING_RATE,
+                    "nota": "peticion repetida del historico real de funding; "
+                            "distinta del reintento por fallo"},
                 "reintentos_por_fallo": {
                     "max_por_ventana": cfg.max_http_retries,
                     "llamadas": cfg.max_http_retries,
                     "peso_max": cfg.max_http_retries * WEIGHT_TICKER_24H,
                     "nota": "reintento del cliente HTTP ante fallo; se cuenta "
                             "aparte de las peticiones repetidas"},
-                "intentos": (klines_trayectoria_reserva + cfg.max_http_retries),
+                "intentos": (klines_trayectoria_reserva
+                             + funding_calls_reserve + cfg.max_http_retries),
                 "peso": (klines_trayectoria_reserva * WEIGHT_KLINES
+                         + funding_calls_reserve * WEIGHT_FUNDING_RATE
                          + cfg.max_http_retries * WEIGHT_TICKER_24H),
             },
-            "intentos_base": selections * 2 + klines_total,
+            "intentos_base": selections * 2 + klines_total + funding_calls,
             "reintentos_tope": cfg.max_http_retries,
             "intentos_base_mas_reintentos": (
-                selections * 2 + klines_total + cfg.max_http_retries),
+                selections * 2 + klines_total + funding_calls
+                + cfg.max_http_retries),
             "peso_base": weight_total,
             "peso_reserva_reintentos_max": (
                 cfg.max_http_retries * WEIGHT_TICKER_24H),
@@ -886,15 +1526,19 @@ def compute_budget(cfg: PilotConfig) -> Dict[str, Any]:
             "intentos_techo_efectivo": cfg.max_http_attempts,
             "peso_techo_efectivo": cfg.max_http_weight,
             "intentos_base_mas_reservas": (
-                selections * 2 + klines_total + klines_trayectoria_reserva
+                selections * 2 + klines_total + funding_calls
+                + klines_trayectoria_reserva + funding_calls_reserve
                 + cfg.max_http_retries),
             "peso_base_mas_reservas_max": (
                 weight_total + klines_trayectoria_reserva * WEIGHT_KLINES
+                + funding_calls_reserve * WEIGHT_FUNDING_RATE
                 + cfg.max_http_retries * WEIGHT_TICKER_24H),
             "cabe_en_limites": (
-                (selections * 2 + klines_total + klines_trayectoria_reserva
+                (selections * 2 + klines_total + funding_calls
+                 + klines_trayectoria_reserva + funding_calls_reserve
                  + cfg.max_http_retries) <= cfg.max_http_attempts
                 and (weight_total + klines_trayectoria_reserva * WEIGHT_KLINES
+                     + funding_calls_reserve * WEIGHT_FUNDING_RATE
                      + cfg.max_http_retries * WEIGHT_TICKER_24H)
                 <= cfg.max_http_weight),
             "nota_consultas_repetidas": (
@@ -907,6 +1551,22 @@ def compute_budget(cfg: PilotConfig) -> Dict[str, Any]:
                 "garantizado, el limite efectivo es max_http_attempts/"
                 "max_http_weight (2000/5000 en la configuracion congelada)."
             ),
+        },
+        "funding": {
+            "fuente": cfg.funding_source,
+            "consultas_base_ventana": funding_calls,
+            "consultas_repetidas_reserva": funding_calls_reserve,
+            "reintentos_por_fallo_compartidos": cfg.max_http_retries,
+            "intentos_totales_reservados": (funding_calls
+                                            + funding_calls_reserve
+                                            + cfg.max_http_retries),
+            "limite_compartido_endpoint_5m": FUNDING_RATE_SHARED_LIMIT_5M,
+            "maximo_concentrado_5m_planificado": funding_concentrated_raw,
+            "nota": ("El limite de 500/5 min pertenece al endpoint. El maximo "
+                     "concentrado se calcula conservadoramente con una tanda "
+                     "de 20 observaciones, sus repetidas y los 50 reintentos. "
+                     "Las tasas se consultan despues de T y no pueden "
+                     "decidir la entrada."),
         },
         "ws": {
             "conexiones_simultaneas": ws_connections,
@@ -942,21 +1602,30 @@ def compute_budget(cfg: PilotConfig) -> Dict[str, Any]:
         },
         "almacenamiento": {
             "jsonl_bytes_previstos": storage_jsonl,
+            "funding_calendar_bytes_previstos": storage_funding_files,
+            "http_ledger_bytes_previstos": storage_http_ledger,
             "sqlite_bytes_previstos": storage_db,
             "auxiliares_bytes_previstos": storage_aux,
             "total_bytes_previstos": storage_total,
+            "reserva_sqlite_bytes": runtime_sqlite_quota,
+            "reserva_http_ledger_bytes": runtime_ledger_quota,
+            "total_reservado_con_jsonl_bytes": storage_accounted_max,
             "tope_configurado_bytes": cfg.max_bytes,
             "margen_bytes": (cfg.max_bytes - storage_total
                              if cfg.max_bytes else None),
+            "margen_reservado_bytes": (
+                cfg.max_bytes - storage_accounted_max
+                if cfg.max_bytes else None),
             "margen_porcentaje": (
                 round(100.0 * (cfg.max_bytes - storage_total) / cfg.max_bytes, 2)
                 if cfg.max_bytes else None),
             "nota": (
-                "El tope incluye JSONL, SQLite y sus archivos auxiliares. "
-                "La comprobacion es previa a cada escritura; la cola del "
-                "recorder (2000 filas por defecto) puede sobregirar como "
-                "maximo esas filas en vuelo. No se anuncia 128 MB totales si "
-                "solo se limita el JSONL."
+                "El tope incluye JSONL de datos, ledger HTTP, calendarios de "
+                "funding, SQLite y sus auxiliares. Cada JSONL reserva sus "
+                "bytes exactos antes de escribir; SQLite y el ledger tienen "
+                "cuotas fisicas reservadas para evitar carreras. Los indices "
+                "finales y el estado de progreso no forman parte del tope de "
+                "datos de la ventana."
             ),
         },
         "interrupcion_y_limpieza": {
@@ -1002,12 +1671,49 @@ class ResearchPilot:
         self.out_dir = Path(cfg.out_dir)
         self.out_dir.mkdir(parents=True, exist_ok=True)
         self.obs_path = self.out_dir / "observaciones.jsonl"
-        self.store = PilotStore(self.obs_path, cfg.max_bytes)
+        self.operativo_path = self.out_dir / "resultado_operativo.jsonl"
+        self.funding_log_path = self.out_dir / "funding_adquisicion.jsonl"
+        self.http_ledger_path = self.out_dir / "http_requests.jsonl"
         self.db_path = self.out_dir / "research.db"
-        self.history = HistoryStore(self.db_path)
+        self.storage_budget = RunStorageBudget(cfg.max_bytes)
+        existing_data_bytes = self._existing_counted_bytes()
+        self.sqlite_initial_bytes = self._sqlite_bytes()
+        self._sqlite_quota_committed = False
+        self.storage_budget.seed_used(existing_data_bytes)
+        if cfg.max_bytes:
+            sqlite_quota = min(MAX_SQLITE_QUOTA_BYTES, cfg.max_bytes // 4)
+            ledger_quota = min(MAX_HTTP_LEDGER_QUOTA_BYTES, cfg.max_bytes // 4)
+        else:
+            sqlite_quota = MAX_SQLITE_QUOTA_BYTES
+            ledger_quota = MAX_HTTP_LEDGER_QUOTA_BYTES
+        self.sqlite_quota_bytes = sqlite_quota
+        self.http_ledger_quota_bytes = ledger_quota
+        self.sqlite_main_limit_bytes = (
+            max(4_096, (sqlite_quota - 128 * 1024) // 2)
+            if sqlite_quota else 0)
+        if not self.storage_budget.reserve(
+                "sqlite:research.db", sqlite_quota):
+            raise ValueError("presupuesto_bytes: no cabe la reserva SQLite")
+        if not self.storage_budget.reserve(
+                "http:requests", ledger_quota):
+            self.storage_budget.release("sqlite:research.db")
+            raise ValueError("presupuesto_bytes: no cabe la reserva del ledger")
+        self.store = PilotStore(
+            self.obs_path, 0,
+            storage_budget=self.storage_budget,
+            storage_key=f"jsonl:{self.obs_path}",
+        )
+        self.funding_log_fh = self.funding_log_path.open(
+            "a", encoding="utf-8", newline="\n")
+        self.funding_log_bytes = 0
+        self.funding_queries_by_oid: Dict[str, int] = {}
+        self.funding_calendars_by_oid: Dict[str, FundingCalendar] = {}
+        self.history = HistoryStore(
+            self.db_path, max_db_bytes=self.sqlite_main_limit_bytes)
         self.recorder = ResearchRecorder(
             db_path=self.db_path, run_id=cfg.run_id, enabled=True,
             clock_ms=self.clock.now_ms,
+            max_db_bytes=self.sqlite_main_limit_bytes,
         )
         # Puerta de presupuesto efectiva: reserva cada intento HTTP antes del
         # transporte. Reutiliza HistoryClient y su attempt_gate existente.
@@ -1023,6 +1729,7 @@ class ResearchPilot:
             store_path=self.out_dir / "resultado_operativo.jsonl",
             cfg=operativo_cfg or OperativoConfig(),
             funding_calendars=funding_calendars or {},
+            storage_budget=self.storage_budget,
         )
         self.policy = research_selector.ResearchPolicy(
             max_candidatos=cfg.max_candidates,
@@ -1123,13 +1830,55 @@ class ResearchPilot:
                 pass
         return total
 
+    @staticmethod
+    def _file_bytes(path: Path) -> int:
+        try:
+            return path.stat().st_size if path.exists() else 0
+        except OSError:
+            return 0
+
+    def _funding_files_bytes(self) -> int:
+        funding_dir = self.out_dir / "funding"
+        if not funding_dir.exists():
+            return 0
+        return sum(self._file_bytes(path)
+                   for path in funding_dir.glob("*.json"))
+
+    def _existing_counted_bytes(self) -> int:
+        funding_dir = self.out_dir / "funding"
+        funding_bytes = (
+            sum(self._file_bytes(path)
+                for path in funding_dir.glob("*.json"))
+            if funding_dir.exists() else 0)
+        return (
+            self._file_bytes(self.obs_path)
+            + self._file_bytes(self.operativo_path)
+            + self._file_bytes(self.funding_log_path)
+            + self._file_bytes(self.http_ledger_path)
+            + funding_bytes
+            + self._sqlite_bytes()
+        )
+
     def storage_bytes_total(self) -> int:
-        """Almacenamiento total: JSONL + SQLite + archivos auxiliares."""
-        return self.store.bytes_written + self._sqlite_bytes()
+        """Bytes de datos persistidos, sin doble conteo.
+
+        Incluye los tres JSONL de datos, el ledger HTTP, los calendarios de
+        funding, SQLite y sus auxiliares. Los indices finales (``resumen.json``
+        y ``manifiesto.json``) no son datos de la ventana y se contabilizan
+        aparte del tope de captura.
+        """
+        http_ledger_path = self.out_dir / "http_requests.jsonl"
+        return (
+            self._file_bytes(self.obs_path)
+            + self._file_bytes(self.operativo.store_path)
+            + self._file_bytes(self.funding_log_path)
+            + self._file_bytes(http_ledger_path)
+            + self._funding_files_bytes()
+            + self._sqlite_bytes()
+        )
 
     def _storage_ok(self, extra_bytes: int = 0) -> bool:
-        return (not self.cfg.max_bytes
-                or self.storage_bytes_total() + extra_bytes <= self.cfg.max_bytes)
+        return self.storage_budget.can_fit(extra_bytes)
 
     # -- mensajes WS -------------------------------------------------------
 
@@ -1278,6 +2027,7 @@ class ResearchPilot:
         candidates = discovery.build_candidates(
             exchange_info, tickers, self.cfg.min_quote_volume_usdt,
             discovered_at_ms=self.clock.now_ms())
+        candidate_by_symbol = {c.symbol: c for c in candidates}
         catalog_rows = [{
             "symbol": c.symbol, "status": c.status,
             "contract_type": c.contract_type, "quote_asset": c.quote_asset,
@@ -1320,12 +2070,38 @@ class ResearchPilot:
                 "priority": s.priority, "move_24h_pct": s.move_24h,
                 "classification": s.classification,
             }
+        comparator_rows = []
         for c in cycle.comparator:
+            candidate = candidate_by_symbol.get(c["symbol"])
+            ticker_close_ms = (candidate.ticker_close_ms
+                               if candidate is not None else None)
+            ticker_available = (
+                ticker_close_ms is not None
+                and int(ticker_close_ms) <= int(cycle.reference_ms))
+            move = (candidate.change_24h_pct
+                    if candidate is not None and ticker_available else None)
+            side = None
+            if move is not None:
+                side = "UP" if float(move) > 0 else (
+                    "DOWN" if float(move) < 0 else None)
             self.selection_meta[c["symbol"]] = {
-                "role": "comparator", "side": None, "priority": None,
+                "role": "comparator", "side": side, "priority": None,
+                "move_24h_pct": move,
+                "ticker_close_ms": ticker_close_ms,
+                "ticker_discovered_at_ms": (
+                    candidate.discovered_at_ms if candidate is not None else None),
+                "selection_reference_ms": cycle.reference_ms,
                 "selection_probability": c.get("selection_probability"),
                 "sampling_mechanism": c.get("sampling_mechanism"),
             }
+            comparator_rows.append({
+                **c, "side": side, "move_24h": move,
+                "ticker_close_ms": ticker_close_ms,
+                "ticker_discovered_at_ms": (
+                    candidate.discovered_at_ms if candidate is not None else None),
+                "selection_reference_ms": cycle.reference_ms,
+                "movement_source": "/fapi/v1/ticker/24hr priceChangePercent",
+            })
         # Registrar primera suscripcion de simbolos nuevos (calentamiento).
         # Solo las entradas (nuevas o reincorporadas) renuevan el instante; los
         # simbolos que continuan conservan su periodo para no heredar ventaja
@@ -1367,7 +2143,7 @@ class ResearchPilot:
             "policy_version": cycle.policy_version,
             "universe": cycle.universe.to_dict(),
             "selected": cycle.to_dict()["selected"],
-            "comparator": cycle.comparator,
+            "comparator": comparator_rows,
             "exclusions": cycle.exclusions,
             "cycle_summary": cycle.cycle_summary,
             "seguimiento": {
@@ -1744,6 +2520,155 @@ class ResearchPilot:
             "motivo": None,
         }
 
+    @staticmethod
+    def _jsonl_payload(row: Dict[str, Any]) -> str:
+        return json.dumps(row, ensure_ascii=False, sort_keys=True) + "\n"
+
+    def _write_funding_log(self, row: Dict[str, Any]) -> bool:
+        payload = self._jsonl_payload(row)
+        encoded = len(payload.encode("utf-8"))
+        key = f"jsonl:{self.funding_log_path}"
+        if not self.storage_budget.reserve(key, encoded):
+            self.stop_reason = "presupuesto_bytes"
+            return False
+        try:
+            self.funding_log_fh.write(payload)
+            self.funding_log_fh.flush()
+        except Exception:
+            self.storage_budget.release(key)
+            raise
+        self.storage_budget.commit(key, encoded)
+        self.funding_log_bytes += encoded
+        return True
+
+    def _ensure_funding_calendar(
+        self, symbol: str, obs: Dict[str, Any], now: int,
+    ) -> Optional[FundingCalendar]:
+        """Acquire realized funding history for a symbol actually investigated.
+
+        The query happens only after the operational trajectory is due, uses
+        the same HistoryClient and RunBudget, and is never visible to the
+        decision at T. Missing or conflicting venue rows fail closed to an
+        explicit UNKNOWN funding state.
+        """
+        if self.cfg.funding_source != "exchange":
+            return self.operativo.funding_calendars.get(symbol.upper())
+
+        oid = str(obs["observation_id"])
+        count = int(self.funding_queries_by_oid.get(oid, 0))
+        if count >= MAX_CONSULTAS_FUNDING_POR_OBS:
+            return self.funding_calendars_by_oid.get(oid)
+        self.funding_queries_by_oid[oid] = count + 1
+        start_ms = int(obs["decision_ms"]) - FUNDING_HISTORY_LOOKBACK_MS
+        end_ms = int(now)
+        try:
+            rows, headers = self.rest.funding_rate(
+                symbol, start_ms=start_ms, end_ms=end_ms, limit=1000)
+            request = (self.rest.upstream_requests[-1]
+                       if self.rest.upstream_requests else {})
+            calendar = _funding_calendar_from_rows(symbol, rows)
+            ordered, duplicates = calendar.normalized()
+            provenance = {
+                "endpoint": "/fapi/v1/fundingRate",
+                "acquired_utc": iso_utc(
+                    int(request.get("completed_at_ms") or now)),
+                "request_sent_at_ms": request.get("sent_at_ms"),
+                "request_completed_at_ms": request.get("completed_at_ms"),
+                "query_start_ms": start_ms,
+                "query_end_ms": end_ms,
+                "response_sha256": request.get("response_sha256"),
+                "observed_headers": request.get("observed_headers") or headers,
+                "configured_weight": request.get("configured_weight"),
+                "n_raw": len(rows),
+                "n_settlements": len(ordered),
+                "n_duplicates": duplicates,
+                "coverage_ms": ([ordered[0].settlement_ms,
+                                 ordered[-1].settlement_ms]
+                                if ordered else [None, None]),
+                "interval_basis": (
+                    "unambiguous_repeated_regular_deltas"
+                    if calendar.interval_ms else "UNKNOWN"),
+                "regular_delta_distribution_ms": (
+                    _funding_delta_distribution(symbol, rows)),
+                "calendar_hash": calendar.calendar_hash(),
+                "note": ("realized venue rows only; queried after T for "
+                         "accounting, never for the decision"),
+            }
+            calendar_payload = {
+                "version": calendar.version,
+                "source": calendar.source,
+                "interval_ms": calendar.interval_ms,
+                "symbol": calendar.symbol,
+                "settlements": [
+                    {"settlement_ms": item.settlement_ms,
+                     "rate_bps": item.rate_bps,
+                     "funding_rate": item.funding_rate,
+                     "mark_price": item.mark_price,
+                     "rate_type": item.rate_type}
+                    for item in ordered
+                ],
+                "provenance": provenance,
+            }
+            funding_dir = self.out_dir / "funding"
+            funding_dir.mkdir(parents=True, exist_ok=True)
+            safe_oid = "".join(ch if ch.isalnum() or ch in "-_" else "_"
+                               for ch in oid)
+            calendar_path = funding_dir / f"{symbol.upper()}--{safe_oid}.json"
+            calendar_text = (json.dumps(
+                calendar_payload, ensure_ascii=False, indent=2,
+                sort_keys=True) + "\n")
+            log_row = {
+                "kind": "funding_adquisicion",
+                "observation_id": oid,
+                "symbol": symbol.upper(),
+                "decision_ms": int(obs["decision_ms"]),
+                "consulta_numero": count + 1,
+                "estado": "OK",
+                "calendar": calendar_payload,
+                "calendar_file": str(calendar_path),
+            }
+            calendar_bytes = len(calendar_text.encode("utf-8"))
+            calendar_key = f"file:{calendar_path}"
+            old_calendar_bytes = self._file_bytes(calendar_path)
+            calendar_growth = max(0, calendar_bytes - old_calendar_bytes)
+            if not self.storage_budget.reserve(
+                    calendar_key, calendar_growth):
+                self.stop_reason = "presupuesto_bytes"
+                return None
+            try:
+                _atomic_write(calendar_path, calendar_text)
+            except Exception:
+                self.storage_budget.release(calendar_key)
+                raise
+            self.storage_budget.commit(
+                calendar_key, calendar_bytes - old_calendar_bytes)
+            if not self._write_funding_log(log_row):
+                try:
+                    calendar_path.unlink(missing_ok=True)
+                except OSError:
+                    pass
+                self.storage_budget.commit(
+                    calendar_key, -calendar_bytes)
+                return None
+            self.funding_calendars_by_oid[oid] = calendar
+            return calendar
+        except RateLimitExceeded:
+            raise
+        except Exception as exc:
+            self._write_funding_log({
+                "kind": "funding_adquisicion",
+                "observation_id": oid,
+                "symbol": symbol.upper(),
+                "decision_ms": int(obs["decision_ms"]),
+                "consulta_numero": count + 1,
+                "estado": "ERROR",
+                "error": f"{type(exc).__name__}: {exc}",
+                "query_start_ms": start_ms,
+                "query_end_ms": end_ms,
+                "funding_resultado": "UNKNOWN",
+            })
+            return None
+
     def _consultar_trayectoria_operativa(
         self, symbol: str, obs: Dict[str, Any], now: int,
     ) -> Tuple[Optional[Any], str]:
@@ -1784,7 +2709,7 @@ class ResearchPilot:
             ))
         if not velas_conocidas:
             return None, "sin_velas_conocidas_en_el_reloj"
-        cal = self.operativo.funding_calendars.get(symbol)
+        cal = self._ensure_funding_calendar(symbol, obs, now)
         tr = self.operativo.procesar_observacion(
             obs, velas_conocidas, funding_calendar=cal)
         return tr, ""
@@ -1877,7 +2802,12 @@ class ResearchPilot:
                 or r.decision == "ENTRADA_SIMULADA"
             )
             if terminal:
-                self.operativo.persistir(tr)
+                if not self._storage_ok():
+                    self.stop_reason = "presupuesto_bytes"
+                    break
+                if not self.operativo.persistir(tr):
+                    self.stop_reason = "presupuesto_bytes"
+                    break
                 item["resuelta"] = True
                 item["resultado"] = tr
                 item["motivo"] = None
@@ -1917,7 +2847,12 @@ class ResearchPilot:
                 config_hash=self.operativo._config_hash(),
                 engine_version=ENGINE_VERSION_PAPER,
             )
-            self.operativo.persistir(tr)
+            if not self._storage_ok():
+                self.stop_reason = "presupuesto_bytes"
+                break
+            if not self.operativo.persistir(tr):
+                self.stop_reason = "presupuesto_bytes"
+                break
             item["motivo"] = motivo
 
     # -- resultados --------------------------------------------------------
@@ -2182,6 +3117,7 @@ class ResearchPilot:
         next_decision = self.started_ms + int(
             self.cfg.decision_delay_seconds * 1000)
         skipped_selections = 0
+        run_error: Optional[BaseException] = None
         tick_s = max(0.01, self.cfg.tick_ms / 1000.0)
         try:
             while True:
@@ -2325,23 +3261,95 @@ class ResearchPilot:
             # PENDIENTES con su motivo real (no se inventan resultados ni se
             # devuelven cupos de presupuesto).
             self.finalize_operativos_pendientes(self.clock.now_ms())
+        except BaseException as exc:
+            run_error = exc
+            self.stop_reason = self.stop_reason or (
+                f"error_interno:{type(exc).__name__}")
+            raise
         finally:
             await self._stop_feeds()
             try:
-                self.recorder.stop_and_drain(timeout=10.0)
+                self.recorder.stop_and_drain(timeout=30.0)
             except Exception:
                 pass
             self.store.close()
+            try:
+                self.operativo.close()
+            except Exception:
+                pass
+            try:
+                self.funding_log_fh.close()
+            except Exception:
+                pass
             self.ended_ms = self.clock.now_ms()
             self._phase = "fin"
             self._write_status()
-        summary = self._write_outputs(skipped_selections)
+            # El ledger y el resumen se reconstruyen incluso ante una excepcion
+            # o senal: el cierre auditable no depende de la salida normal.
+            try:
+                summary = self._write_outputs(skipped_selections)
+            except Exception:
+                if run_error is None:
+                    raise
+                summary = {}
         return summary
 
     # -- salidas -------------------------------------------------------
 
     def _write_outputs(self, skipped_selections: int) -> Dict[str, Any]:
         rows = read_jsonl(self.obs_path)
+        operational_path = self.out_dir / "resultado_operativo.jsonl"
+        operational_rows = (read_jsonl(operational_path)
+                            if operational_path.exists() else [])
+        http_ledger_path = self.out_dir / "http_requests.jsonl"
+        http_ledger = []
+        for request in self.rest.upstream_requests:
+            http_ledger.append({
+                "kind": "http_request",
+                "execution_id": request.get("execution_id"),
+                "endpoint": request.get("endpoint"),
+                "symbol": request.get("symbol"),
+                "interval": request.get("interval"),
+                "range": request.get("range"),
+                "page": request.get("page"),
+                "retry": request.get("retry"),
+                "result": request.get("result"),
+                "duration_ms": request.get("duration_ms"),
+                "sent_at_ms": request.get("sent_at_ms"),
+                "completed_at_ms": request.get("completed_at_ms"),
+                "blocked_at_ms": request.get("blocked_at_ms"),
+                "block_reason": request.get("block_reason"),
+                "configured_weight": request.get("configured_weight"),
+                "reserved_weight": request.get("_reserved_weight"),
+                "attempt_no": request.get("_attempt_no"),
+                "retry_reserved": request.get("_retry_reserved"),
+                "observed_headers": request.get("observed_headers") or {},
+                "response_sha256": request.get("response_sha256"),
+            })
+        http_ledger_text = "".join(
+            json.dumps(row, ensure_ascii=False, sort_keys=True) + "\n"
+            for row in http_ledger)
+        http_ledger_bytes = len(http_ledger_text.encode("utf-8"))
+        old_ledger_bytes = self._file_bytes(http_ledger_path)
+        ledger_growth = max(0, http_ledger_bytes - old_ledger_bytes)
+        if ledger_growth > self.http_ledger_quota_bytes:
+            self.stop_reason = "presupuesto_bytes"
+        else:
+            try:
+                _atomic_write(http_ledger_path, http_ledger_text)
+            except OSError:
+                self.stop_reason = "presupuesto_bytes"
+            else:
+                self.storage_budget.commit(
+                    "http:requests", http_ledger_bytes - old_ledger_bytes)
+        if not self._sqlite_quota_committed:
+            sqlite_growth = self._sqlite_bytes() - self.sqlite_initial_bytes
+            if sqlite_growth > self.sqlite_quota_bytes:
+                self.stop_reason = "presupuesto_bytes"
+            else:
+                self.storage_budget.commit(
+                    "sqlite:research.db", sqlite_growth)
+                self._sqlite_quota_committed = True
         summary = build_summary(rows)
         summary.update({
             "run_id": self.cfg.run_id,
@@ -2355,7 +3363,22 @@ class ResearchPilot:
                 "requests": self.rest.stats.requests,
                 "retries": self.rest.stats.retries,
                 "failures": self.rest.stats.failures,
-                "weight_spent": self.rest.stats.weight_spent,
+                "peso_configurado_cliente_respuestas_ok": (
+                    self.rest.stats.weight_spent),
+                "peso_reservado_presupuesto_todos_intentos": self.budget.weight,
+                "nota_pesos": (
+                    "configured_weight es el peso conservador del cliente; "
+                    "reserved_weight es el peso oficial reservado por la puerta "
+                    "antes de cada transporte. El peso reservado cuenta "
+                    "intentos fallidos; el peso del cliente solo respuestas OK."),
+                "ledger_file": str(http_ledger_path),
+                "ledger_rows": len(http_ledger),
+                "cabeceras_peso_observadas": [
+                    {"endpoint": row.get("endpoint"),
+                     "observed_headers": row.get("observed_headers") or {}}
+                    for row in http_ledger
+                    if row.get("observed_headers")
+                ],
             },
             "presupuesto_http": self.budget.status(),
             # Politica presupuestada de esta corrida (estimacion base, reservas
@@ -2369,11 +3392,22 @@ class ResearchPilot:
             "ws_reconnects_total": self.ws_reconnects_total + sum(
                 f.reconnects for f in self.feeds.values()),
             "ws": {name: feed.status() for name, feed in self.feeds.items()},
+            "economia_operativa_v2": build_operational_economic_summary(
+                rows, operational_rows),
             "almacenamiento": {
-                "jsonl_bytes": self.store.bytes_written,
-                "jsonl_rows": self.store.rows_written,
+                "observaciones_jsonl_bytes": self._file_bytes(self.obs_path),
+                "observaciones_jsonl_rows": self.store.rows_written,
+                "resultado_operativo_jsonl_bytes": self._file_bytes(
+                    self.operativo.store_path),
+                "funding_adquisicion_jsonl_bytes": self._file_bytes(
+                    self.funding_log_path),
+                "funding_calendar_bytes": self._funding_files_bytes(),
+                "http_requests_jsonl_bytes": self._file_bytes(http_ledger_path),
                 "sqlite_bytes": self._sqlite_bytes(),
                 "storage_bytes_total": self.storage_bytes_total(),
+                "storage_accounted_bytes": (
+                    self.storage_budget.accounted_bytes),
+                "storage_budget": self.storage_budget.status(),
                 "tope_bytes": self.cfg.max_bytes,
                 "research_db": str(self.db_path) if self.cfg.keep_research_db else None,
             },
@@ -2384,7 +3418,8 @@ class ResearchPilot:
             "limites": [
                 "precio_base = libro_mid; precio_posterior = klines_apertura_1m; "
                 "proxy de fuentes mixtas, no mark-to-mid, no P&L ejecutable",
-                "sin supuestos de costes el neto es UNKNOWN",
+                "neto COMPLETO solo con funding acreditado por posicion; "
+                "sin cobertura completa queda CONDICIONADO, nunca cero",
                 "no se declara ventaja, rentabilidad ni representatividad",
                 "presupuesto HTTP efectivo (intentos/peso/reintentos) y "
                 "almacenamiento total (JSONL+SQLite+aux)",
@@ -2407,10 +3442,25 @@ class ResearchPilot:
             "nota": ("dataset fuera de Git; se publican manifiesto, hashes y "
                      "muestra pequena"),
         }
-        for name in ("observaciones.jsonl", "resumen.json"):
+        manifest_names = (
+            "observaciones.jsonl", "resultado_operativo.jsonl",
+            "funding_adquisicion.jsonl", "http_requests.jsonl",
+            "presupuesto.json", "resumen.json", "estado.json",
+            "diagnostico.json", "research.db", "research.db-wal",
+            "research.db-shm",
+        )
+        for name in manifest_names:
             path = self.out_dir / name
             if path.exists():
                 manifest["files"][name] = {
+                    "bytes": path.stat().st_size,
+                    "sha256": _sha256(path),
+                }
+        funding_dir = self.out_dir / "funding"
+        if funding_dir.exists():
+            for path in sorted(funding_dir.glob("*.json")):
+                key = str(path.relative_to(self.out_dir)).replace("\\", "/")
+                manifest["files"][key] = {
                     "bytes": path.stat().st_size,
                     "sha256": _sha256(path),
                 }
@@ -2492,6 +3542,11 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("--funding-calendars", default=None,
                    help="ruta a JSON con calendarios de funding por simbolo "
                         "(clave = simbolo, valor = calendario)")
+    p.add_argument("--funding-source", choices=("none", "exchange"),
+                   default="none",
+                   help="none=sin funding automatico; exchange=historial "
+                        "realizado por simbolo mediante el cliente HTTP y la "
+                        "puerta de presupuesto")
     return p
 
 
@@ -2514,6 +3569,12 @@ def config_from_args(args: argparse.Namespace) -> PilotConfig:
             raise ValueError(
                 "modo publico requiere --activar-publico (activacion adicional)"
             )
+
+    if (args.funding_source == "exchange"
+            and args.funding_calendars):
+        raise ValueError(
+            "--funding-source exchange y --funding-calendars son fuentes "
+            "excluyentes; no se mezclan calendarios externos con la fuente real")
 
     # Instrumentacion de sincronizacion: solo con reloj manual (pruebas).
     # --status-file es puramente observativo: no controla decisiones, por lo que
@@ -2560,6 +3621,7 @@ def config_from_args(args: argparse.Namespace) -> PilotConfig:
         status_file=args.status_file,
         decision_gate_file=args.decision_gate_file,
         stop_file=args.stop_file,
+        funding_source=args.funding_source,
     )
 
 
@@ -2604,10 +3666,20 @@ def main(argv: Optional[List[str]] = None) -> int:
         path.write_text(json.dumps(budget, ensure_ascii=False, indent=2,
                                    sort_keys=True) + "\n", encoding="utf-8",
                         newline="\n")
+        gate = budget["gate"]
         print(json.dumps({"presupuesto": str(path),
-                          "peso_total_estimado": budget["rest"]["peso_total_estimado"]},
+                          "peso_total_estimado": budget["rest"]["peso_total_estimado"],
+                          "gate": gate},
                          ensure_ascii=False))
-        return 0
+        return 0 if gate["cabe_en_limites"] else 3
+    if cfg.mode == "public":
+        gate = compute_budget(cfg)["gate"]
+        if not gate["cabe_en_limites"]:
+            print(json.dumps({
+                "error": "presupuesto_no_cerrado",
+                "gate": gate,
+            }, ensure_ascii=False), file=sys.stderr)
+            return 3
     try:
         clock = build_clock(cfg.clock_mode, cfg.clock_file)
         # Cargar calendarios de funding si se especifican (archivo sintetico

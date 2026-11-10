@@ -203,6 +203,53 @@ class CalendarIdentityTest(unittest.TestCase):
         self.assertEqual(a.calendar_hash(), b.calendar_hash())
         self.assertNotEqual(a.calendar_hash(), c.calendar_hash())
 
+    def test_provenance_changes_calendar_hash_not_legacy_text(self) -> None:
+        plain = FundingCalendar(
+            version="FUNDING-CAL-v1",
+            source="exchange-funding-history (Binance USD-M fundingRate)",
+            interval_ms=28_800_000,
+            settlements=(FundingSettlement(1, 2.0),),
+            symbol="BTCUSDT")
+        with_provenance = FundingCalendar(
+            version="FUNDING-CAL-v1",
+            source="exchange-funding-history (Binance USD-M fundingRate)",
+            interval_ms=28_800_000,
+            settlements=(FundingSettlement(
+                1, 2.0, mark_price=100.0, rate_type="regular",
+                funding_rate=0.0002),),
+            symbol="BTCUSDT")
+        self.assertNotEqual(plain.calendar_hash(),
+                            with_provenance.calendar_hash())
+        # El texto del calendario sin procedencia es el previo: config_hash
+        # forma parte del contrato de la evidencia publicada.
+        self.assertEqual(
+            repr(plain),
+            "FundingCalendar(version='FUNDING-CAL-v1', source="
+            "'exchange-funding-history (Binance USD-M fundingRate)', "
+            "interval_ms=28800000, settlements=(FundingSettlement("
+            "settlement_ms=1, rate_bps=2.0),), symbol='BTCUSDT')")
+        self.assertIn("mark_price=100.0", repr(with_provenance))
+
+
+class PublishedConfigHashTest(unittest.TestCase):
+    def test_config_hash_de_run_publicada_no_cambia(self) -> None:
+        """El config_hash del calendario publicado sigue siendo reproducible.
+
+        ``docs/evidence/eval-census-v2-package`` fija un config_hash por
+        celda. Ampliar la procedencia de ``FundingSettlement`` no puede
+        cambiar ese valor, o la reconstruccion published->replay deja de
+        ser verificable.
+        """
+        calendar = FundingCalendar(
+            version="FUNDING-CAL-v1",
+            source="exchange-funding-history (Binance USD-M fundingRate)",
+            interval_ms=28_800_000,
+            settlements=(),
+            symbol="BTCUSDT")
+        self.assertEqual(
+            BacktestConfig(funding_calendar=calendar).config_hash(),
+            "2e34e9d48595d5db")
+
 
 if __name__ == "__main__":
     unittest.main()

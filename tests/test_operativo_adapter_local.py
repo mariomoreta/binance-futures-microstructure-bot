@@ -21,6 +21,7 @@ from __future__ import annotations
 
 import json
 import math
+from dataclasses import dataclass
 import os
 import sys
 import tempfile
@@ -41,8 +42,8 @@ from microstructure_probe.paper_lab_engine import (  # noqa: E402
     PaperCandle, derivar_direccion_desde_movimiento, RULE_CAUSAL_V1,
 )
 from scripts.research_operativo_adapter import (  # noqa: E402
-    OperativoAdapter, OperativoConfig, _candles_de_klines, _vela_plenamente_conocida_en,
-    validar_ohlc,
+    OperativoAdapter, OperativoConfig, _candles_de_klines,
+    _replace_result, _vela_plenamente_conocida_en, validar_ohlc,
 )
 from tests.test_operativo_local_v2 import mk_candle  # noqa: E402
 
@@ -487,6 +488,21 @@ def test_limite_adquisicion_bloquea_antes_envio() -> None:
     print("  [limite] adaptador sin red por defecto; velas provenientes de loopback/sinteticas")
 
 
+def test_neto_funding_cero_no_se_reemplaza_por_el_neto_sin_funding() -> None:
+    @dataclass
+    class Resultado:
+        funding: float | None
+        net_pnl: float | None
+
+    resultado = _replace_result(
+        Resultado(funding=None, net_pnl=5.0),
+        funding=0.0,
+        net_pnl=0.0,
+    )
+    assert resultado.funding == 0.0
+    assert resultado.net_pnl == 0.0
+
+
 if __name__ == "__main__":
     test_ambos_roles_reciben_dato_de_movimiento()
     print("OK: ambos roles reciben dato de movimiento")
@@ -504,4 +520,6 @@ if __name__ == "__main__":
     print("OK: validacion OHLC")
     test_limite_adquisicion_bloquea_antes_envio()
     print("OK: limite adquisicion bloquea antes envio")
+    test_neto_funding_cero_no_se_reemplaza_por_el_neto_sin_funding()
+    print("OK: neto funding cero preservado")
     print("TODAS LAS PRUEBAS INTEGRADAS LOOPBACK PASARON")

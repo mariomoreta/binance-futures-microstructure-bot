@@ -152,11 +152,14 @@ class OperativoAdapter:
         store_path: Path,
         cfg: Optional[OperativoConfig] = None,
         funding_calendars: Optional[Dict[str, FundingCalendar]] = None,
+        storage_budget: Optional[Any] = None,
     ) -> None:
         self.cfg = cfg or OperativoConfig()
         self.funding_calendars: Dict[str, FundingCalendar] = (
             funding_calendars or {})
         self.store_path = Path(store_path)
+        self.storage_budget = storage_budget
+        self.storage_key = f"operativo:{self.store_path}"
         self.store_path.parent.mkdir(parents=True, exist_ok=True)
         self._fh = self.store_path.open("a", encoding="utf-8", newline="\n")
         self._bytes = 0
@@ -196,6 +199,11 @@ class OperativoAdapter:
             self._fh.close()
         except Exception:
             pass
+
+    @property
+    def bytes_written(self) -> int:
+        """Bytes persisted by this adapter, for the run-wide storage cap."""
+        return self._bytes
 
     # -- capacidad compartida (max_concurrent=1) -----------------------------
 
@@ -299,8 +307,19 @@ class OperativoAdapter:
     def _escribir(self, row: Dict[str, Any]) -> bool:
         payload = json.dumps(row, ensure_ascii=False, sort_keys=True) + "\n"
         encoded = len(payload.encode("utf-8"))
-        self._fh.write(payload)
-        self._fh.flush()
+        if self.storage_budget is not None:
+            if not self.storage_budget.reserve(self.storage_key, encoded):
+                return False
+            try:
+                self._fh.write(payload)
+                self._fh.flush()
+            except Exception:
+                self.storage_budget.release(self.storage_key)
+                raise
+            self.storage_budget.commit(self.storage_key, encoded)
+        else:
+            self._fh.write(payload)
+            self._fh.flush()
         self._bytes += encoded
         self._rows += 1
         return True
@@ -628,7 +647,7 @@ class OperativoAdapter:
                 self.procesar_observacion(obs, velas, funding_calendar=cal))
         return resultados
 
-    def persistir(self, tr: OperativoTradeResult) -> None:
+    def persistir(self, tr: OperativoTradeResult) -> bool:
         row = {
             "kind": "resultado_operativo",
             "observation_id": tr.observation_id,
@@ -670,7 +689,7 @@ class OperativoAdapter:
             row["neto_estado"] = "CONDICIONADO_SIN_FUNDING_COMPLETO"
             row["neto_motivo"] = (
                 "resultado numerico sin funding completo; no es neto completo")
-        self._escribir(row)
+        return self._escribir(row)
 
     def _config_hash(self) -> str:
         payload = json.dumps(self.cfg.to_dict(), sort_keys=True, default=str)
@@ -768,7 +787,11 @@ def _replace_result(
 ) -> Any:
     """Devuelve una copia del PaperTradeResult con funding y net_pnl ajustados."""
     from dataclasses import replace
-    return replace(r, funding=funding, net_pnl=net_pnl or r.net_pnl)
+    return replace(
+        r,
+        funding=funding,
+        net_pnl=(r.net_pnl if net_pnl is None else net_pnl),
+    )
 
 
 def _resultado_con_funding(

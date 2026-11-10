@@ -50,7 +50,9 @@ import research_pilot as rp  # noqa: E402
 from research_pilot import (  # noqa: E402
     RunBudget, ceil_ms, build_summary, es_loopback,
 )
-from microstructure_probe.history_client import UpstreamBudgetExceeded  # noqa: E402
+from microstructure_probe.history_client import (  # noqa: E402
+    HistoryClient, UpstreamBudgetExceeded,
+)
 
 # ---------------------------------------------------------------------------
 # Fixture de simbolos y mercado simulado (loopback)
@@ -145,13 +147,16 @@ class MarketHttp:
         universe,
         rotation: bool = False,
         clock_ms_fn=None,
+        moves=None,
     ) -> None:
         self.universe = list(universe)
         self.rotation = rotation
         self.clock_ms_fn = clock_ms_fn
+        self.moves = dict(moves or {})
         self.ticker_calls = 0
         self.klines_calls = 0
         self.exchange_info_calls = 0
+        self.funding_calls = 0
         # Klines se clasifican por el limite pedido: la consulta de
         # TRAYECTORIA operativa pide la ventana del horizonte (limit>1) y la
         # consulta de precio por horizonte pide una sola vela (limit=1).
@@ -175,6 +180,8 @@ class MarketHttp:
                     vol, move = 2_000_000.0, 0.05
             else:
                 vol, move = 50_000_000.0, 1.0 + 0.1 * idx
+            if symbol in self.moves:
+                move = float(self.moves[symbol])
             rows.append({
                 "symbol": symbol,
                 "lastPrice": str(base_price(symbol, self.universe)),
@@ -201,6 +208,21 @@ class MarketHttp:
 
         if path == "/fapi/v1/ticker/24hr":
             _send_json(handler, self.ticker_rows())
+            return
+
+        if path == "/fapi/v1/fundingRate":
+            with self._lock:
+                self.funding_calls += 1
+            symbol = params.get("symbol", [""])[0].upper()
+            rows = [
+                {"symbol": symbol, "fundingTime": T0 - 16 * 3_600_000,
+                 "fundingRate": "0.0001", "markPrice": str(base_price(symbol))},
+                {"symbol": symbol, "fundingTime": T0 - 8 * 3_600_000,
+                 "fundingRate": "0.0002", "markPrice": str(base_price(symbol))},
+                {"symbol": symbol, "fundingTime": T0,
+                 "fundingRate": "0.0003", "markPrice": str(base_price(symbol))},
+            ]
+            _send_json(handler, rows)
             return
 
         if path == "/fapi/v1/klines":
@@ -806,6 +828,110 @@ class TestPureHelpers(unittest.TestCase):
             b.before_send({"endpoint": "http://127.0.0.1/fapi/v1/exchangeInfo"})
         self.assertEqual(b.reason, "presupuesto_peso_agotado")
 
+    def test_reintento_fuera_de_cota_bloquea_antes_del_transporte(self):
+        b = RunBudget(max_attempts=10, max_retries=1, max_weight=10)
+        b.before_send({"endpoint": "http://127.0.0.1/fapi/v1/klines",
+                       "retry": 1})
+        with self.assertRaises(UpstreamBudgetExceeded):
+            b.before_send({"endpoint": "http://127.0.0.1/fapi/v1/klines",
+                           "retry": 2})
+        self.assertEqual(b.reason, "presupuesto_reintentos_agotado")
+        self.assertEqual(b.attempts, 1)
+        self.assertEqual(b.retries, 1)
+
+    def test_reintentos_comparten_cota_global_entre_peticiones(self):
+        b = RunBudget(max_attempts=10, max_retries=1, max_weight=10)
+        b.before_send({"endpoint": "http://127.0.0.1/fapi/v1/klines",
+                       "retry": 0})
+        b.before_send({"endpoint": "http://127.0.0.1/fapi/v1/klines",
+                       "retry": 1})
+        b.before_send({"endpoint": "http://127.0.0.1/fapi/v1/klines",
+                       "retry": 0})
+        with self.assertRaises(UpstreamBudgetExceeded):
+            b.before_send({"endpoint": "http://127.0.0.1/fapi/v1/klines",
+                           "retry": 1})
+        self.assertEqual(b.reason, "presupuesto_reintentos_agotado")
+        self.assertEqual(b.attempts, 3)
+        self.assertEqual(b.retries, 1)
+
+    def test_storage_budget_rechaza_antes_de_la_frontera(self):
+        budget = rp.RunStorageBudget(10)
+        self.assertTrue(budget.reserve("a", 5))
+        self.assertTrue(budget.can_fit(5))
+        self.assertFalse(budget.can_fit(6))
+        self.assertFalse(budget.reserve("b", 6))
+        budget.commit("a", 5)
+        self.assertEqual(budget.used_bytes, 5)
+        self.assertFalse(budget.reserve("b", 6))
+        self.assertTrue(budget.reserve("b", 5))
+        budget.commit("b", 5)
+        self.assertEqual(budget.accounted_bytes, 10)
+
+    def test_intento_bloqueado_no_consume_limite_compartido_funding(self):
+        b = RunBudget(max_attempts=0, max_retries=50, max_weight=5_000)
+        with self.assertRaises(UpstreamBudgetExceeded):
+            b.before_send({
+                "endpoint": "http://127.0.0.1/fapi/v1/fundingRate"})
+        self.assertEqual(b.status()["funding_rate_attempts_5m"], 0)
+
+    def test_errores_de_conexion_consumen_reintento_global(self):
+        class Response:
+            def read(self):
+                return b"[]"
+
+            @property
+            def headers(self):
+                return {"x-mbx-used-weight-1m": "1"}
+
+            def __enter__(self):
+                return self
+
+            def __exit__(self, *args):
+                return False
+
+        failed = set()
+
+        def opener(req, timeout=None):
+            symbol = req.full_url.split("symbol=")[-1]
+            if symbol not in failed:
+                failed.add(symbol)
+                raise ConnectionError("simulated disconnect")
+            return Response()
+
+        budget = RunBudget(max_attempts=10, max_retries=2, max_weight=100)
+        client = HistoryClient(
+            opener=opener,
+            attempt_gate=budget,
+            sleep=lambda _seconds: None,
+        )
+        for symbol in ("AAAUSDT", "BBBUSDT"):
+            client.get("/fapi/v1/klines", {"symbol": symbol}, weight=1)
+
+        self.assertEqual(budget.attempts, 4)
+        self.assertEqual(budget.retries, 2)
+        self.assertEqual(
+            [entry["result"] for entry in client.upstream_requests],
+            ["connection_error", "ok", "connection_error", "ok"],
+        )
+
+    def test_ledger_registra_bloqueo_antes_del_transporte(self):
+        budget = RunBudget(max_attempts=0, max_retries=50, max_weight=100)
+        client = HistoryClient(
+            opener=lambda *_args, **_kwargs: self.fail("no debe abrir transporte"),
+            attempt_gate=budget,
+            sleep=lambda _seconds: None,
+        )
+        with self.assertRaises(UpstreamBudgetExceeded):
+            client.get("/fapi/v1/klines", {"symbol": "AAAUSDT"}, weight=1)
+
+        self.assertEqual(len(client.upstream_requests), 1)
+        entry = client.upstream_requests[0]
+        self.assertEqual(entry["result"], "blocked_before_send")
+        self.assertIsNone(entry["sent_at_ms"])
+        self.assertIsNotNone(entry["blocked_at_ms"])
+        self.assertIn("presupuesto_intentos_agotado", entry["block_reason"])
+        self.assertIsNone(entry.get("_reserved_weight"))
+
 
 # ---------------------------------------------------------------------------
 # Pruebas independientes de build_observation
@@ -1011,6 +1137,19 @@ class TestCLISeparacionLocalPublico(unittest.TestCase):
                 "--decision-gate-file", "gate.json"]))
         self.assertIn("requieren --clock manual", str(ctx.exception))
 
+    def test_funding_source_exchange_llega_a_la_configuracion(self):
+        cfg = rp.config_from_args(rp.build_parser().parse_args([
+            "--mode", "local", "--funding-source", "exchange"]))
+        self.assertEqual(cfg.funding_source, "exchange")
+        self.assertEqual(cfg.to_dict()["funding_source"], "exchange")
+
+    def test_funding_source_exchange_excluye_calendarios_externos(self):
+        with self.assertRaises(ValueError) as ctx:
+            rp.config_from_args(rp.build_parser().parse_args([
+                "--mode", "local", "--funding-source", "exchange",
+                "--funding-calendars", "calendarios.json"]))
+        self.assertIn("excluyentes", str(ctx.exception))
+
     def test_budget_only_sin_red(self):
         tmp = Path(tempfile.mkdtemp(prefix="budget-only-"))
         cfg = rp.PilotConfig(run_id="b", out_dir=tmp)
@@ -1060,8 +1199,301 @@ class TestCLISeparacionLocalPublico(unittest.TestCase):
         self.assertEqual(ws["streams_pico_por_conexion"], 20)
         self.assertEqual(ws["streams_pico_total"], 40)
         storage = budget["almacenamiento"]
-        self.assertEqual(storage["total_bytes_previstos"], 2_915_072)
-        self.assertEqual(storage["margen_bytes"], 131_302_656)
+        self.assertEqual(storage["total_bytes_previstos"], 4_094_872)
+        self.assertEqual(storage["margen_bytes"], 130_122_856)
+
+    def test_presupuesto_funding_real_no_amplia_cupos(self):
+        tmp = Path(tempfile.mkdtemp(prefix="budget-funding-"))
+        cfg = rp.PilotConfig(
+            run_id="b", out_dir=tmp,
+            duration_seconds=3_600, settle_seconds=4_200,
+            cycle_seconds=300, selection_seconds=300, max_symbols=20,
+            max_candidates=12, max_comparators=8,
+            max_http_attempts=2_000, max_http_retries=50,
+            max_http_weight=5_000, max_bytes=128 * 1024 * 1024,
+            funding_source="exchange")
+        budget = rp.compute_budget(cfg)
+        rest = budget["rest"]
+        self.assertEqual(rest["intentos_base"], 1_224)
+        self.assertEqual(rest["peso_base"], 1_692)
+        self.assertEqual(rest["intentos_base_mas_reintentos"], 1_274)
+        self.assertEqual(rest["peso_base_mas_reintentos_max"], 3_692)
+        self.assertEqual(rest["intentos_base_mas_reservas"], 1_754)
+        self.assertEqual(rest["peso_base_mas_reservas_max"], 4_172)
+        self.assertTrue(rest["cabe_en_limites"])
+        self.assertEqual(rest["intentos_techo_efectivo"], 2_000)
+        self.assertEqual(rest["peso_techo_efectivo"], 5_000)
+        self.assertEqual(
+            rest["endpoints"]["/fapi/v1/fundingRate"]["llamadas"], 240)
+        storage = budget["almacenamiento"]
+        self.assertEqual(storage["total_bytes_previstos"], 7_310_872)
+        self.assertEqual(storage["margen_bytes"], 126_906_856)
+        self.assertTrue(budget["gate"]["cabe_en_limites"])
+        self.assertEqual(
+            budget["gate"]["funding_maximo_concentrado_5m"], 90)
+
+    def test_budget_only_falla_cerrado_con_plan_sobre_presupuesto(self):
+        tmp = Path(tempfile.mkdtemp(prefix="budget-only-invalid-"))
+        code = rp.main([
+            "--mode", "local", "--budget-only",
+            "--run-id", "invalid", "--out-dir", str(tmp),
+        ])
+        self.assertEqual(code, 3)
+        budget = json.loads(
+            (tmp / "presupuesto.json").read_text(encoding="utf-8"))
+        self.assertFalse(budget["gate"]["cabe_en_limites"])
+        self.assertFalse(
+            budget["gate"]["comprobaciones"][
+                "intentos_plan_dentro_del_techo"])
+
+
+class TestFundingRealComparadoresYEconomia(unittest.TestCase):
+    def setUp(self) -> None:
+        self.tmp = Path(tempfile.mkdtemp(prefix="funding-real-"))
+        self.http = MarketHttp(
+            UNIVERSE,
+            moves={"EEEUSDT": -0.5},
+        )
+        self.port = find_free_port()
+        self.httpd = ThreadingHTTPServer(
+            ("127.0.0.1", self.port), self.http.make_handler())
+        self.thread = threading.Thread(
+            target=self.httpd.serve_forever, daemon=True)
+        self.thread.start()
+
+    def tearDown(self) -> None:
+        self.httpd.shutdown()
+        self.httpd.server_close()
+        self.thread.join(timeout=5)
+
+    def _pilot(self, **overrides) -> rp.ResearchPilot:
+        params = {
+            "run_id": "funding-real",
+            "out_dir": self.tmp / "out",
+            "mode": "local",
+            "duration_seconds": 3_600,
+            "settle_seconds": 4_200,
+            "cycle_seconds": 300,
+            "selection_seconds": 300,
+            "max_symbols": 5,
+            "max_candidates": 2,
+            "max_comparators": 3,
+            "funding_source": "exchange",
+        }
+        params.update(overrides)
+        return rp.ResearchPilot(
+            rp.PilotConfig(**params),
+            clock=StaticClock(T0 + 61 * MINUTE),
+        )
+
+    def test_cadencia_regular_mixta_falla_cerrada(self):
+        rows = [
+            {"symbol": "AAAUSDT", "fundingTime": 0,
+             "fundingRate": "0.0001", "markPrice": "100"},
+            {"symbol": "AAAUSDT", "fundingTime": 4 * 3_600_000,
+             "fundingRate": "0.0001", "markPrice": "101"},
+            {"symbol": "AAAUSDT", "fundingTime": 12 * 3_600_000,
+             "fundingRate": "0.0001", "markPrice": "102"},
+            {"symbol": "AAAUSDT", "fundingTime": 20 * 3_600_000,
+             "fundingRate": "0.0001", "markPrice": "103"},
+        ]
+        calendar = rp._funding_calendar_from_rows("AAAUSDT", rows)
+        self.assertIsNone(calendar.interval_ms)
+        self.assertEqual(
+            rp._funding_delta_distribution("AAAUSDT", rows),
+            {"14400000": 1, "28800000": 2},
+        )
+
+    def test_hash_calendario_compromete_proveniencia_de_settlement(self):
+        base = {
+            "symbol": "AAAUSDT", "fundingTime": 0,
+            "fundingRate": "0.0001", "markPrice": "100",
+            "rateType": "Regular",
+        }
+        first = rp._funding_calendar_from_rows("AAAUSDT", [base])
+        changed = rp._funding_calendar_from_rows(
+            "AAAUSDT", [{**base, "markPrice": "101"}])
+        self.assertNotEqual(first.calendar_hash(), changed.calendar_hash())
+        self.assertEqual(first.settlements[0].rate_type, "regular")
+        self.assertEqual(first.settlements[0].mark_price, 100.0)
+
+    def test_funding_real_por_simbolo_observado_persiste_trazabilidad(self):
+        pilot = self._pilot(out_dir=self.tmp / "funding")
+        pilot.rest = HistoryClient(
+            base_url=f"http://127.0.0.1:{self.port}",
+            attempt_gate=pilot.budget)
+        obs = {
+            "observation_id": "AAAUSDT|1735689605000",
+            "symbol": "AAAUSDT",
+            "decision_ms": T0 + 5 * MINUTE,
+        }
+        now = T0 + 61 * MINUTE
+        calendar = pilot._ensure_funding_calendar("AAAUSDT", obs, now)
+        self.assertIsNotNone(calendar)
+        self.assertEqual(calendar.symbol, "AAAUSDT")
+        self.assertEqual(calendar.interval_ms, 8 * 3_600_000)
+        self.assertEqual(len(calendar.settlements), 3)
+        self.assertEqual(self.http.funding_calls, 1)
+
+        log_rows = read_rows(pilot.funding_log_path)
+        self.assertEqual(len(log_rows), 1)
+        self.assertEqual(log_rows[0]["estado"], "OK")
+        self.assertEqual(
+            log_rows[0]["calendar"]["provenance"]["configured_weight"], 1)
+
+        pilot.ended_ms = now
+        pilot._write_outputs(0)
+        ledger = read_rows(pilot.out_dir / "http_requests.jsonl")
+        self.assertEqual(len(ledger), 1)
+        self.assertIn("/fapi/v1/fundingRate", ledger[0]["endpoint"])
+        self.assertEqual(ledger[0]["configured_weight"], 1)
+        self.assertEqual(ledger[0]["reserved_weight"], 1)
+        self.assertIn(
+            "x-mbx-used-weight-1m", ledger[0]["observed_headers"])
+        self.assertEqual(len(ledger[0]["response_sha256"]), 64)
+
+        data_paths = [
+            pilot.obs_path,
+            pilot.operativo.store_path,
+            pilot.funding_log_path,
+            pilot.out_dir / "http_requests.jsonl",
+            *sorted((pilot.out_dir / "funding").glob("*.json")),
+            pilot.db_path,
+            Path(str(pilot.db_path) + "-wal"),
+            Path(str(pilot.db_path) + "-shm"),
+        ]
+        expected = sum(path.stat().st_size for path in data_paths
+                       if path.exists())
+        self.assertEqual(pilot.storage_bytes_total(), expected)
+
+        pilot.store.close()
+        pilot.operativo.close()
+        pilot.funding_log_fh.close()
+        pilot.history.close()
+
+    def test_comparador_persiste_movimiento_real_y_misma_regla_de_senal(self):
+        pilot = self._pilot(
+            out_dir=self.tmp / "comparator",
+            max_symbols=5,
+            max_candidates=2,
+            max_comparators=3,
+            funding_source="none",
+        )
+        pilot.rest = HistoryClient(
+            base_url=f"http://127.0.0.1:{self.port}",
+            attempt_gate=pilot.budget)
+        cycle = pilot.run_cycle()
+        rows = read_rows(pilot.obs_path)
+        cycle_rows = [row for row in rows if row.get("kind") == "ciclo"]
+        self.assertEqual(len(cycle_rows), 1)
+        comparator = {
+            row["symbol"]: row for row in cycle_rows[0]["comparator"]
+        }
+        self.assertIn("EEEUSDT", comparator)
+        self.assertEqual(comparator["EEEUSDT"]["move_24h"], -0.5)
+        self.assertEqual(comparator["EEEUSDT"]["side"], "DOWN")
+        self.assertEqual(comparator["EEEUSDT"]["ticker_close_ms"], T0)
+        self.assertEqual(
+            comparator["EEEUSDT"]["selection_reference_ms"],
+            cycle_rows[0]["reference_ms"])
+        self.assertEqual(
+            pilot.selection_meta["EEEUSDT"]["move_24h_pct"], -0.5)
+        self.assertEqual(pilot.selection_meta["EEEUSDT"]["role"], "comparator")
+
+        pilot.store.close()
+        pilot.operativo.close()
+        pilot.funding_log_fh.close()
+        pilot.history.close()
+
+    def test_resumen_economico_no_convierte_unknown_en_cero(self):
+        persisted = [
+            {"kind": "ciclo", "reference_ms": 100,
+             "selected": [{"symbol": "AAAUSDT"}],
+             "comparator": [{"symbol": "BBBUSDT"}]},
+            {"kind": "observacion", "role": "candidate",
+             "apto_para_evaluacion": True,
+             "disponibilidad": {"seleccion_ms": 100}},
+            {"kind": "observacion", "role": "comparator",
+             "apto_para_evaluacion": True,
+             "disponibilidad": {"seleccion_ms": 100}},
+        ]
+        operational = [
+            {"role": "candidate", "decision": "ENTRADA_EJECUTADA",
+             "direction": "LONG", "exit_executed": True,
+             "entry_ms": 10, "exit_ms": 20, "gross_pnl": 2.0,
+             "fees": 0.5, "spread_slip": 0.5, "funding": 0.0,
+             "net_pnl": 1.0, "neto_estado": "COMPLETO"},
+            {"role": "comparator", "decision": "ENTRADA_EJECUTADA",
+             "direction": "SHORT", "exit_executed": True,
+             "entry_ms": 10, "exit_ms": 20, "gross_pnl": -1.0,
+             "fees": 0.5, "spread_slip": 0.5, "funding": 0.0,
+             "net_pnl": -2.0, "neto_estado": "COMPLETO"},
+            {"role": "candidate", "decision": "ENTRADA_EJECUTADA",
+             "direction": "LONG", "exit_executed": True,
+             "entry_ms": 30, "exit_ms": 40, "gross_pnl": 4.0,
+             "fees": 0.5, "spread_slip": 0.5, "funding": None,
+             "net_pnl": 3.0,
+             "neto_estado": "CONDICIONADO_SIN_FUNDING_COMPLETO"},
+            {"role": "candidate", "decision": "SIN_ENTRADA",
+             "direction": None, "exit_executed": False,
+             "entry_ms": None, "exit_ms": None, "gross_pnl": 0.0,
+             "fees": 0.0, "spread_slip": 0.0, "funding": None,
+             "net_pnl": None, "neto_estado": "UNKNOWN"},
+        ]
+        summary = rp.build_operational_economic_summary(
+            persisted, operational)
+        result = summary["resultado_usdt"]
+        self.assertEqual(result["neto_completo"]["n"], 2)
+        self.assertEqual(result["neto_completo"]["suma_usdt"], -1.0)
+        self.assertEqual(
+            result["neto_conditionado_sin_funding_completo"]["n"], 1)
+        self.assertEqual(
+            result["neto_conditionado_sin_funding_completo"]["suma_usdt"], 3.0)
+        comparison = summary["comparacion_candidate_comparator"]
+        self.assertEqual(comparison["estado"], "COMPARABLE")
+        self.assertEqual(
+            comparison["operaciones_completas_candidate"], 1)
+        self.assertEqual(
+            comparison["operaciones_completas_comparator"], 1)
+        self.assertEqual(
+            comparison["neto_por_operacion_candidate"]["media_usdt"], 1.0)
+        self.assertEqual(
+            comparison["neto_por_operacion_comparator"]["media_usdt"], -2.0)
+
+    def test_resumen_economico_deduplica_operaciones(self):
+        persisted = [{"kind": "ciclo", "reference_ms": 100,
+                      "selected": [], "comparator": []}]
+        operation = {
+            "observation_id": "AAAUSDT|1", "role": "candidate",
+            "decision": "ENTRADA_EJECUTADA", "direction": "LONG",
+            "exit_executed": True, "entry_ms": 10, "exit_ms": 20,
+            "gross_pnl": 1.0, "fees": 0.0, "spread_slip": 0.0,
+            "funding": 0.0, "net_pnl": 1.0, "neto_estado": "COMPLETO",
+        }
+        summary = rp.build_operational_economic_summary(
+            persisted, [operation, dict(operation)])
+        self.assertEqual(summary["resultado_usdt"]["neto_completo"]["n"], 1)
+        self.assertEqual(
+            summary["diagnosticos"]["duplicados_operativos_descartados"], 1)
+
+    def test_comparacion_no_se_publica_sin_operaciones_completas(self):
+        persisted = [{"kind": "ciclo", "reference_ms": 100,
+                      "selected": [], "comparator": []}]
+        operational = [{
+            "role": "candidate", "decision": "ENTRADA_EJECUTADA",
+            "direction": "LONG", "exit_executed": True,
+            "entry_ms": 10, "exit_ms": 20, "gross_pnl": 1.0,
+            "fees": 0.0, "spread_slip": 0.0, "funding": None,
+            "net_pnl": 1.0,
+            "neto_estado": "CONDICIONADO_SIN_FUNDING_COMPLETO",
+        }]
+        summary = rp.build_operational_economic_summary(
+            persisted, operational)
+        comparison = summary["comparacion_candidate_comparator"]
+        self.assertEqual(comparison["estado"], "INSUFICIENTE")
+        self.assertIn("sin_operaciones_completas_candidate",
+                      comparison["motivos"])
+        self.assertNotIn("neto_por_operacion_candidate", comparison)
 
 
 # ---------------------------------------------------------------------------

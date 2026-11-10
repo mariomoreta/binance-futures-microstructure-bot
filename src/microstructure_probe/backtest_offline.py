@@ -117,14 +117,41 @@ ENGINE_VERSION = "backtest-offline/v4.2"
 FUNDING_INTERVAL_MS = 8 * 3600 * 1000
 
 
+def _settlement_repr(settlement: "FundingSettlement") -> str:
+    """Text form of one settlement for ``FundingCalendar.__repr__``.
+
+    Without provenance the text is identical to the dataclass repr used
+    before the provenance fields existed, which keeps ``config_hash`` of the
+    published runs reproducible. Provenance fields are appended, in
+    declaration order, only when the venue supplied them.
+    """
+    parts = ["settlement_ms=%r" % (settlement.settlement_ms,),
+             "rate_bps=%r" % (settlement.rate_bps,)]
+    if settlement.mark_price is not None:
+        parts.append("mark_price=%r" % (settlement.mark_price,))
+    if settlement.rate_type is not None:
+        parts.append("rate_type=%r" % (settlement.rate_type,))
+    if settlement.funding_rate is not None:
+        parts.append("funding_rate=%r" % (settlement.funding_rate,))
+    return "FundingSettlement(%s)" % ", ".join(parts)
+
+
 @dataclass(frozen=True)
 class FundingSettlement:
-    """One realized funding settlement: timestamp + rate actually paid."""
+    """One realized funding settlement and its venue provenance.
+
+    ``rate_bps`` is the accounting quantity. The remaining fields preserve the
+    normalized venue observation so the persisted calendar hash commits to the
+    rate type and mark that accompanied it.
+    """
     settlement_ms: int
     rate_bps: float
+    mark_price: Optional[float] = None
+    rate_type: Optional[str] = None
+    funding_rate: Optional[float] = None
 
 
-@dataclass(frozen=True)
+@dataclass(frozen=True, repr=False)
 class FundingCalendar:
     """Versioned settlement calendar (per-symbol venue reality, injected).
 
@@ -143,12 +170,39 @@ class FundingCalendar:
     settlements: Tuple[FundingSettlement, ...] = ()
     symbol: Optional[str] = None
 
+    def __repr__(self) -> str:
+        """Stable text form used by ``BacktestConfig.config_hash``.
+
+        ``config_hash`` serializes the configuration with ``default=str``, so
+        this representation is part of the published evidence contract: the
+        runs already manifested in ``docs/evidence/eval-census-v2-package``
+        must keep reproducing the same ``config_hash``. A settlement without
+        provenance therefore renders exactly like the previous dataclass
+        repr. A settlement that carries venue provenance adds those fields,
+        and ``calendar_hash()`` commits them in every case.
+        """
+        items = ", ".join(
+            _settlement_repr(item) for item in self.settlements)
+        if len(self.settlements) == 1:
+            items += ","
+        return (
+            "FundingCalendar(version=%r, source=%r, interval_ms=%r, "
+            "settlements=(%s), symbol=%r)"
+            % (self.version, self.source, self.interval_ms, items, self.symbol))
+
     def calendar_hash(self) -> str:
         payload = json.dumps({
             "version": self.version, "source": self.source,
             "interval_ms": self.interval_ms, "symbol": self.symbol,
-            "settlements": sorted((s.settlement_ms, s.rate_bps)
-                                  for s in self.settlements),
+            "settlements": sorted(
+                ({
+                    "settlement_ms": s.settlement_ms,
+                    "rate_bps": s.rate_bps,
+                    "mark_price": s.mark_price,
+                    "rate_type": s.rate_type,
+                    "funding_rate": s.funding_rate,
+                } for s in self.settlements),
+                key=lambda item: item["settlement_ms"]),
         }, sort_keys=True, default=str)
         return hashlib.sha256(payload.encode("utf-8")).hexdigest()[:16]
 

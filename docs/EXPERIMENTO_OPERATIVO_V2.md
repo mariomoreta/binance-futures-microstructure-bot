@@ -1,6 +1,6 @@
 # Protocolo de experimento operativo v2 — research/universe-liquidez-v1
 
-**Estado:** diseño de alcance cerrado y demostrado localmente. No se ejecuta en producción. No hay órdenes reales, no hay conexión nueva a Binance, no hay infraestructura nueva, no hay cambios económicos productivos. Este documento actualiza y reemplaza el alcance de `docs/EXPERIMENTO_OPERATIVO_V1.md` (diseño de alcance v1); no se borra el v1, se conserva como referencia histórica.
+**Estado:** diseño de alcance cerrado y demostrado localmente. No se ejecuta en producción. La preparación de la primera ventana está cerrada en técnica (§10) pero la revisión independiente devuelve **NO-GO** para esa ventana hasta que una persona resuelva el bloqueo P0 de cobertura de funding (§10.5). No hay órdenes reales, no hay conexión nueva a Binance, no hay infraestructura nueva, no hay cambios económicos productivos. Este documento actualiza y reemplaza el alcance de `docs/EXPERIMENTO_OPERATIVO_V1.md` (diseño de alcance v1); no se borra el v1, se conserva como referencia histórica.
 
 **Base:** HEAD `6a10c30701cbbf695b422ba4a83206e1dd872132` (rama `research/universe-liquidez-v1`). Dataset de referencia para diagnóstico: `public-pilot-1h-20261106a` (una sola hora, 2026-11-06, 216 observaciones, 168 aptas, 504 resultados). Análisis v4 como punto de partida.
 
@@ -288,6 +288,10 @@ F. **Presupuesto coherente con la frecuencia real (rectificado 2026-11-10):**
 
 ### Presupuesto efectivo (--budget-only, 1 ventana)
 
+> Estos importes son el estado histórico del recorrido local con
+> `funding_source=none`. El presupuesto vigente de la primera ventana con
+> funding real está en el bloque 10.
+
 Calculado con `python scripts/research_pilot.py --budget-only` (sin red):
 
 | Concepto | Por ventana | Techo | Estado |
@@ -409,6 +413,11 @@ decidir y datos posteriores para resolver el resultado:
 
 ### 9.5 Presupuesto efectivo (calculado localmente, sin mercado público)
 
+> **Nota de supersesión:** los importes de esta sección correspondían al
+> recorrido local sin adquisición automática de funding (`funding_source=none`).
+> Para la primera ventana con funding real, el presupuesto vigente es el del
+> bloque 10. Este bloque se conserva como historial.
+
 Generado con `scripts/research_pilot.py --budget-only` (sin red), desde el
 plan real de solicitudes: ciclos de decisión, símbolos simultáneos, velas 1m
 para entrada y para resultados (3 horizontes), y reintentos. Pesos contra
@@ -463,6 +472,12 @@ No se captura flujo/libro adicional más allá de lo que ya adquiere el piloto,
 ni datos sin necesidad operativa concreta.
 
 ### 9.6 Comandos (NO EJECUTADOS)
+
+> **Nota de supersesión:** los comandos de este subapartado pertenecen al
+> recorrido local histórico (`run_id exp-v2-ventana-1`, sin funding
+> automático). El comando vigente de la primera ventana, con funding real y
+> `run_id exp-v2-ventana-1-20261110a`, está en el §10.2 y §10.3 y no debe
+> reutilizar el identificador anterior.
 
 Todos los comandos se proponen **sin ejecutar**; requieren autorización
 separada de presupuesto y de ventana pública antes de cualquier adquisición.
@@ -552,5 +567,288 @@ Rechazar o declarar insuficiencia si falta cualquiera de los anteriores. La
 insuficiencia no autoriza automáticamente más capturas.
 
 La prueba local **no acredita rentabilidad ni autoriza** las tres ventanas ni
-ejecución real. Queda pendiente: velas 1m con open/close causales, calendario
-de funding por símbolo, y autorización separada de presupuesto.
+ejecución real. El camino local de velas 1m y funding real por símbolo quedó
+preparado en el bloque 10, pero la evidencia pública, la cobertura real de
+funding y la autorización separada siguen pendientes.
+
+## 10. Preparación local de la primera ventana (2026-11-10, NO EJECUTADA)
+
+**Base revisada:** `6d321a27e333d8e416f429f525d766b4cfac7aef`, rama
+`research/universe-liquidez-v1`. Se conserva el trabajo posterior y los cambios
+ajenos. No se abrió ninguna conexión pública de mercado ni se ejecutó la
+ventana.
+
+### 10.1 Cerrajes mínimos para hacer evaluable la ventana
+
+1. **Funding real por símbolo observado.** `research_pilot` consulta
+   `GET /fapi/v1/fundingRate` por símbolo después de que la trayectoria del
+   horizonte puede estar disponible. La consulta usa el mismo `HistoryClient`,
+   `RunBudget` y ledger HTTP del piloto. Las filas realizadas se convierten en
+   el `FundingCalendar` existente; la cadencia nominal solo se infiere de
+   deltas repetidos de settlements regulares. No hay calendario sintético en
+   esta ruta y `--funding-source exchange` excluye
+   `--funding-calendars`.
+2. **Comparadores con movimiento real.** El movimiento 24 h de un comparador se
+   conserva desde el ticker observado en T. La dirección se deriva de ese
+   movimiento con la misma función usada para candidatos. El rol no determina
+   LONG/SHORT ni modifica entrada, stop, horizonte, coste o capacidad.
+3. **Separación de netos.** El resumen reconstruido desde filas persistidas
+   separa `COMPLETO` de `CONDICIONADO_SIN_FUNDING_COMPLETO`; un funding
+   desconocido nunca se convierte en cero. La comparación de roles solo se
+   publica si ambos tienen operaciones completas y al menos el 50 % de los
+   ciclos tiene ambos roles aptos.
+4. **Trazabilidad HTTP y almacenamiento.** Cada intento registra peso
+   configurado y reservado, resultado, cabeceras observadas y SHA-256 de la
+   respuesta. El tope de 128 MB incluye los JSONL de datos, ledger HTTP,
+   calendarios de funding, SQLite y auxiliares, sin doble conteo.
+5. **Cotas de reintento.** El reintento número 51 se bloquea antes del
+   transporte; un intento bloqueado no consume el límite compartido de
+   `/fapi/v1/fundingRate` (500/5 min).
+
+### 10.2 Presupuesto local calculado, sin red
+
+`--budget-only` se reejecutó con el código final y la configuración exacta
+propuesta; terminó con código 0, `stderr` vacío y sin abrir red. Artefacto
+fuera de Git:
+`C:\Users\adonm\AppData\Local\Temp\opencode\binance-futures-operativo-v2\exp-v2-ventana-1-20261110a\presupuesto.json`
+(SHA-256 `eb2f93dea16bac8c2c911654dac51482f565a801d0531c574cdd4780f97ccec3`).
+
+Comando exacto de validación, sin red:
+
+```powershell
+$runDir = 'C:\Users\adonm\AppData\Local\Temp\opencode\binance-futures-operativo-v2\exp-v2-ventana-1-20261110a'
+New-Item -ItemType Directory -Force -Path $runDir | Out-Null
+python scripts/research_pilot.py `
+  --mode public --activar-publico --budget-only `
+  --duration-seconds 3600 `
+  --settle-seconds 4200 `
+  --cycle-seconds 300 `
+  --selection-seconds 300 `
+  --decision-delay-seconds 5 `
+  --max-symbols 20 `
+  --max-candidates 12 `
+  --max-comparators 8 `
+  --min-quote-volume 1000000 `
+  --horizons '5m=300000,15m=900000,60m=3600000' `
+  --price-interval 1m `
+  --price-tolerance-ms 90000 `
+  --price-delay-ms 2000 `
+  --max-data-age-ms 5000 `
+  --max-observations 20000 `
+  --max-bytes 134217728 `
+  --max-messages 5000000 `
+  --max-http-attempts 2000 `
+  --max-http-retries 50 `
+  --max-http-weight 5000 `
+  --max-ws-reconnects 20 `
+  --tick-ms 20 `
+  --funding-source exchange `
+  --run-id exp-v2-ventana-1-20261110a `
+  --out-dir $runDir `
+  --rest-base https://fapi.binance.com `
+  --ws-public-base wss://fstream.binance.com `
+  --ws-market-base wss://fstream.binance.com `
+  --status-file (Join-Path $runDir 'estado.json') `
+  > (Join-Path $runDir 'budget-only.stdout.log') 2> (Join-Path $runDir 'budget-only.stderr.log')
+$code = $LASTEXITCODE
+$code | Set-Content -LiteralPath (Join-Path $runDir 'budget-only.exit_code.txt') -Encoding ascii
+```
+
+| Concepto | Una ventana | Techo efectivo | Estado |
+|---|---:|---:|---|
+| HTTP intentos, base | 1 224 | 2 000 | Dentro |
+| HTTP intentos, base + reservas | 1 754 | 2 000 | Dentro |
+| HTTP peso, base | 1 692 | 5 000 | Dentro |
+| HTTP peso, base + reservas | 4 172 | 5 000 | Dentro |
+| HTTP reintentos | 50 | 50 | Dentro |
+| Funding, máximo concentrado 5 min | 90 | 500 | Dentro (supuesto de planificador) |
+| Almacenamiento previsto | 7 310 872 B | 134 217 728 B | Dentro (5,45 %) |
+| Almacenamiento con cuotas reservadas | 54 363 648 B | 134 217 728 B | Dentro (40,5 %) |
+| Duración captura + settle | 3 600 + 4 200 s | 7 800 s | Ventana única |
+| Símbolos / candidatos / comparadores | 20 / 12 / 8 | 20 conjuntos | Dentro |
+
+La base incluye 24 llamadas de preparación, 240 trayectorias operativas, 720
+precios por horizonte y 240 consultas de funding real. Las reservas incluyen
+240 repeticiones de trayectoria, 240 repeticiones de funding y 50 reintentos
+por fallo. No se aumentó ningún cupo.
+
+Desglose de almacenamiento previsto: 3 072 000 B de JSONL de datos, 960 000 B
+de calendarios de funding, 1 227 800 B de ledger HTTP, 1 920 000 B estimados de
+SQLite y 131 072 B de auxiliares WAL/SHM. En runtime, SQLite queda limitado por
+`PRAGMA max_page_count` a una cuota de 33 554 432 B y el ledger HTTP a una
+reserva de 16 777 216 B; con las reservas, el total contabilizado es
+54 363 648 B. `resumen.json`, `manifiesto.json` y `estado.json` son índices
+finales y no forman parte del tope de datos de la ventana.
+
+El gate de `--budget-only` falla cerrado: con un plan sobre presupuesto el
+proceso escribe `presupuesto.json` y devuelve código 3, y el modo público se
+niega a arrancar con el mismo código. El `funding_maximo_concentrado_5m=90` es
+una asunción del planificador (20 símbolos × su repetida + 20 + 50 reintentos),
+no un límite derivado y probado; los 530 intentos de funding reservados son
+acumulados de la hora, no de 5 minutos. El límite real de 500/5 min se aplica
+en runtime y bloquea antes del transporte.
+
+### 10.3 Comando público propuesto (NO EJECUTADO, BLOQUEADO)
+
+Requiere autorización humana específica para **una sola ventana** y la
+decisión de metodología del §10.5. No autoriza las otras dos.
+
+```powershell
+$runDir = 'C:\Users\adonm\AppData\Local\Temp\opencode\binance-futures-operativo-v2\exp-v2-ventana-1-20261110a'
+New-Item -ItemType Directory -Force -Path $runDir | Out-Null
+python scripts/research_pilot.py `
+  --mode public --activar-publico `
+  --duration-seconds 3600 `
+  --settle-seconds 4200 `
+  --cycle-seconds 300 `
+  --selection-seconds 300 `
+  --decision-delay-seconds 5 `
+  --max-symbols 20 `
+  --max-candidates 12 `
+  --max-comparators 8 `
+  --min-quote-volume 1000000 `
+  --horizons '5m=300000,15m=900000,60m=3600000' `
+  --price-interval 1m `
+  --price-tolerance-ms 90000 `
+  --price-delay-ms 2000 `
+  --max-data-age-ms 5000 `
+  --max-observations 20000 `
+  --max-bytes 134217728 `
+  --max-messages 5000000 `
+  --max-http-attempts 2000 `
+  --max-http-retries 50 `
+  --max-http-weight 5000 `
+  --max-ws-reconnects 20 `
+  --tick-ms 20 `
+  --funding-source exchange `
+  --run-id exp-v2-ventana-1-20261110a `
+  --out-dir $runDir `
+  --rest-base https://fapi.binance.com `
+  --ws-public-base wss://fstream.binance.com `
+  --ws-market-base wss://fstream.binance.com `
+  --status-file (Join-Path $runDir 'estado.json') `
+  > (Join-Path $runDir 'stdout.log') 2> (Join-Path $runDir 'stderr.log')
+$code = $LASTEXITCODE
+$code | Set-Content -LiteralPath (Join-Path $runDir 'exit_code.txt') -Encoding ascii
+```
+
+Artefactos esperados: `manifiesto.json`, `resumen.json`, `presupuesto.json`,
+`http_requests.jsonl`, `funding_adquisicion.jsonl`, `funding/*.json`,
+`observaciones.jsonl`, `resultado_operativo.jsonl`, `research.db`, `estado.json`,
+`stdout.log`, `stderr.log` y `exit_code.txt`.
+
+### 10.4 Lectura económica y paradas
+
+La pregunta de esta ventana es de **viabilidad y exploración**, no de
+rentabilidad generalizable: ¿la regla causal se ejecuta de extremo a extremo
+con datos y funding identificables, y qué diferencia descriptiva aparece entre
+candidatos y comparadores bajo la misma regla? Si el funding no cubre la
+exposición, el neto completo permanece `UNKNOWN` y solo puede publicarse el
+neto condicionado. Una diferencia aislada no acredita edge.
+
+Paradas obligatorias: cualquier violación causal; fills, stops, gaps o
+posiciones abiertas sin acreditación; presupuesto excedido; almacenamiento
+excedido; o fallo que impida reconstruir el ledger y el resumen desde lo
+persistido. La insuficiencia no renueva automáticamente esta ventana ni las
+otras dos.
+
+Cobertura: solo perpetuos USD-M. Los futuros con vencimiento siguen pendientes.
+GARCH continúa diferido. Esta preparación no autoriza órdenes, cuentas,
+claves, paper deployment ni ejecución real.
+
+### 10.5 Revisión independiente, veredicto NO-GO y decisión humana pendiente
+
+Una revisión independiente de la preparación (2026-11-10) Reprodujo cinco
+defectos técnicos y un defecto económico/metodológico. Los defectos técnicos se
+cerraron en este bloque; el económico **no** se cierra sin decisión humana.
+
+**Defectos técnicos cerrados (verificados con la suite):**
+
+1. El gate de presupuesto consultaba `max_comparadores` con el nombre del
+   `ResearchPolicy` (`max_comparadores`), de modo que `compute_budget` fallaba
+   con `AttributeError` y `--budget-only` no podía validar nada. Corregido al
+   nombre real de `PilotConfig` (`max_comparators`).
+2. La ampliación de `FundingSettlement` (marca, tipo de tasa) cambió el `repr`
+   del calendario y, con él, el `config_hash` de `BacktestConfig`, que entra en
+   los manifiestos publicados de `docs/evidence/eval-census-v2-package`. La
+   reconstrucción published→replay pasó a 168 celdas fallidas. Se estabilizó el
+   texto del calendario para que el `config_hash` de las corridas publicadas
+   siga siendo reproducible, mientras `calendar_hash()` sí compromete la
+   procedencia nueva. Regresión cubierta por
+   `tests/test_backtest_funding.py::PublishedConfigHashTest`.
+3. El límite de reintentos era global pero se contaba por texto de resultado:
+   los errores de conexión no consumían cupo. Ahora `RunBudget.before_send`
+   cuenta el reintento cuando `retry > 0`, global entre peticiones.
+4. Un intento bloqueado antes del transporte quedaba indistinguible de uno
+   enviado. Ahora se registra `result="blocked_before_send"` con
+   `block_reason` y marcas absolutas, sin consumir cupo ni peso.
+5. El ledger y el resumen solo se escribían en la salida normal. Ahora se
+   reconstruyen en el `finally` de la corrida, también ante excepción o señal,
+   y el drenaje del recorder se amplía a 30 s.
+
+**Defecto económico/metodológico P0 (abierto, requiere decisión): cobertura de
+funding al cierre de la exposición.**
+
+`backtest_offline` acredita el funding por posición: la exposición
+`[entry_ms, exit_ms)` queda sin cubrir cuando el calendario no lista ningún
+settlement posterior a `exit_ms` (`uncovered = exit_ms - último_settlement`).
+La consulta de funding se hace cuando la trayectoria del horizonte ya puede
+estar disponible, es decir, alrededor de `exit_ms + 1 min`. Por tanto, para
+que la cobertura sea completa hace falta un settlement en la ventana
+`(exit_ms, consulta]`, de aproximadamente uno o dos minutos.
+
+Reproducción local con el motor canónico (sintética, sin mercado): cadencia de
+8 h, exposición de 60 min y consulta un minuto después del cierre dejan
+`funding_accounting_complete=false` con `uncovered holding 3 540 000 ms`; con un
+settlement ya posterior al cierre, la misma posición queda `fully settled, no
+gaps, no uncovered holding`. Con cadencia de 8 h, la probabilidad de que un
+boundary cae en esa ventana de uno o dos minutos es del orden del 0,4 % por
+posición.
+
+Consecuencia sobre la ventana tal como está definida: la mayoría de las
+operaciones quedarían `CONDICIONADO_SIN_FUNDING_COMPLETO` en lugar de
+`COMPLETO`, y la comparación candidate/comparator, que solo se publica con
+operaciones `COMPLETO` en ambos roles, quedaría `INSUFICIENTE`. El importe de
+funding realmente liquidado se conservaría como dato, pero el neto completo
+seguiría `UNKNOWN`. **No se debilita `funding_accounting_complete` ni se
+convierte `UNKNOWN` en cero para forzar un resultado.**
+
+**Veredicto:** NO-GO para ejecutar la primera ventana con la configuración
+actual. La preparación técnica está cerrada y reproducible, pero la ventana no
+es evaluable para la pregunta económica sin resolver antes la cobertura de
+funding. No se ejecuta nada hasta que una persona elija una de estas tres
+opciones y se vuelva a validar el presupuesto:
+
+- **Opción A, adquirir y retener un settlement posterior.** Consultar el
+  historial de funding de cada símbolo después del primer boundary que sigue
+  a su `exit_ms`, y alargar el settle hasta ese boundary. Es la opción que no
+  cambia la contabilidad por posición. Impacto: la duración de la ventana
+  cambia (el settle debe cubrir hasta el boundary posterior de la última
+  observación, del orden de 8 h adicionales) y el presupuesto debe recalcularse;
+  el número de consultas de funding por observación puede mantenerse en uno si
+  la consulta se difiere hasta después del cierre.
+- **Opción B, extender el contrato del calendario con límites de cobertura y
+  horario de venue probados.** Añadir al calendario un límite de cobertura
+  verificable (por ejemplo, "la venue no liquidó funding entre el último
+  settlement listado y este instante") y un horario de venue que lo pruebe,
+  de modo que la cola pueda acreditarse sin esperar al boundary. Impacto: nuevo
+  contrato de calendario, nueva evidencia de venue y pruebas nuevas; no
+  cambia la contabilidad por posición pero cambia el estándar de cobertura.
+- **Opción C, modelar como cubiertos los intervalos entre settlements
+  regulares cuando el calendario de venue prueba que no había evento.**
+  Tratar el intervalo entre settlements regulares consecutivos como cubierto
+  cuando la cadencia y la ausencia de evento estén probadas, en lugar de
+  exigir un settlement posterior al cierre. Impacto: cambia el contrato de
+  contabilidad de funding y, por tanto, exige decisión metodológica explícita,
+  pruebas de equivalencia y nueva revisión.
+
+Las tres opciones son excluyentes en su implementación y ninguna se ejecuta
+sin autorización. La opción elegida puede alterar duración, presupuesto o
+contrato de contabilidad, pero ninguna altera la regla congelada de
+dirección, entrada, stop, horizonte, notional, costes, frescura, capacidad,
+tope de intentos, peso, reintentos o almacenamiento.
+
+**Límites vigentes:** cobertura solo de perpetuos USD-M; futuros con
+vencimiento pendientes; GARCH diferido; la primera ventana, si se autoriza,
+solo demuestra viabilidad y evidencia exploratoria, no rentabilidad
+generalizable. La insuficiencia no renueva cupos ni ventanas.
