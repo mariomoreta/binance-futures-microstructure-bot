@@ -27,7 +27,10 @@ la regla y el presupuesto propuestos no quedan aprobados por documentarlos.
 `CLOSED`: análisis exploratorio v4 de `public-pilot-1h-20261106a`; los 168
 resultados de 60m existen, no es necesario repetir para completarlos. Los
 límites de cobertura, costes, precios e identidad siguen explícitos; ver
-[CURRENT_STATE](CURRENT_STATE.md) e informe v4.
+[CURRENT_STATE](CURRENT_STATE.md) e informe v4. También queda cerrada la
+acreditación de funding con cobertura incompleta: el total queda UNKNOWN
+cuando la contabilidad por posición no es explícitamente completa, sin tocar
+el diagnóstico de `backtest_offline` ni la configuración congelada.
 
 `OUT_OF_SCOPE`: ampliación de dashboard/Paper Lab, nuevos gestores, indicadores,
 conectores/IA y auditorías generales. Solo arreglos materiales que identifiquen

@@ -229,9 +229,12 @@ E. **Funding vía CLI (rectificado 2026-11-10):** `main()` carga calendarios de
    identificado como tal en pruebas; no se abre adquisición pública) y falla
    de forma explícita (código 2) si el fichero no existe o no es válido: no hay
    paso silencioso a un calendario vacío. Solo se acredita el importe si el
-   calendario declara cadencia nominal y todos los settlements de la
-   exposición se liquidaron con marca utilizable y sin hueco interior sobre la
-   exposición; en otro caso (sin calendario, sin cadencia, settlement
+   calendario declara cadencia nominal y la contabilidad de funding de la
+   posición (`funding_accounting_complete` de `backtest_offline`) está
+   explícitamente completa: sin exposición sin cubrir, settlement desconocido
+   ni hueco interior aplicable. La integridad es por posición, no solo global
+   del calendario; si falta o es desconocida, el importe no se acredita. En
+   otro caso (sin calendario, sin cadencia, cobertura incompleta, settlement
    desconocido o hueco interior) el funding queda UNKNOWN, nunca cero ni
    parcial. Cada fila persistida publica el detalle de cobertura
    (`funding_cuenta_completa`, `funding_sin_cubrir_ms`, `funding_huecos_ms`,
@@ -240,6 +243,14 @@ E. **Funding vía CLI (rectificado 2026-11-10):** `main()` carga calendarios de
    su directorio temporal y lo pasa por `--funding-calendars`: no depende de
    ningún fichero externo y verifica el importe con un cálculo independiente
    (`qty × marca causal del settlement × rate_bps/10000`).
+
+   **Rectificación adicional 2026-11-10 (base `9580983`):** se reprodujo una
+   fila con `funding=0.1`, `funding_estado="settlement-calendar"`,
+   `funding_cuenta_completa=false` y `funding_sin_cubrir_ms=60000`. El
+   adaptador ahora usa el veredicto por posición de `backtest_offline` y
+   falla cerrado: esa fila persiste `funding=null`, estado explícito UNKNOWN y
+   el neto numérico queda identificado como condicionado, no completo. El
+   diagnóstico del motor no se modificó.
 
 F. **Presupuesto coherente con la frecuencia real (rectificado 2026-11-10):**
    `compute_budget` separa tres cosas: la estimación base (preparación + UNA
@@ -268,8 +279,9 @@ F. **Presupuesto coherente con la frecuencia real (rectificado 2026-11-10):**
   se conservan con causa real al parar/agotar settle/bloqueo presupuestario.
 - Dos señales solapadas no producen dos posiciones admitidas (max_concurrent=1
   compartido); prioridad determinista con información disponible al decidir.
-- Funding entra por la configuración real del CLI (calendario con evento en
-  exposición → contabilizado; sin evento → cero; ausente → UNKNOWN).
+- Funding entra por la configuración real del CLI (cobertura completa con
+  evento en exposición → contabilizado; cobertura completa sin evento
+  aplicable → cero; cobertura incompleta o calendario ausente → UNKNOWN).
 - Presupuesto reservado antes del transporte: intento bloqueado no aumenta el
   contador del proveedor.
 - Una parada conserva pendientes y libera solo los recursos propios.
@@ -379,10 +391,17 @@ decidir y datos posteriores para resolver el resultado:
 
 - Se contabilizan únicamente eventos de funding dentro del período de exposición
   (`entry_ms <= settlement_ms < exit_ms`).
+- La acreditación del total exige el veredicto explícito
+  `funding_accounting_complete=true` de `backtest_offline` para la posición,
+  además de cero exposición sin cubrir, cero settlements desconocidos y cero
+  huecos aplicables. La integridad es por posición; un estado ausente o
+  desconocido falla cerrado y no se infiere desde la integridad global.
 - Funding cero requiere cobertura suficiente que acredite que no corresponde
   cargo ni abono.
-- Calendario ausente o incompleto → resultado total como UNKNOWN; puede
-  publicarse por separado el resultado condicionado sin funding.
+- Calendario ausente o cobertura incompleta → `funding=null` y estado
+  explícito UNKNOWN. Si se conserva un neto numérico sin funding completo,
+  `neto_estado=CONDICIONADO_SIN_FUNDING_COMPLETO`; no se presenta como neto
+  completo. Ningún importe parcial sustituye al total desconocido.
 - Tasas conocidas posteriormente solo para contabilidad, nunca para decidir
   una entrada anterior.
 - Comisiones y spread/slippage distinguidos de supuestos del modelo. Los fills

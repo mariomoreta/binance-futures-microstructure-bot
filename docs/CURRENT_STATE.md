@@ -45,6 +45,22 @@ operativo local, backtest offline y backtest funding). La suite completa
 `tests/test_market_stream_window.py`, ajenos a este trabajo y reproducidos
 también con los cambios apartados.
 
+**Corrección de acreditación de funding (2026-11-10, base `9580983`):** se
+reprodujo sobre la base revisada la fila incoherente `funding=0.1`,
+`funding_estado="settlement-calendar"`, `funding_cuenta_completa=false` y
+`funding_sin_cubrir_ms=60000`. `backtest_offline` conservaba correctamente su
+diagnóstico por posición; el defecto estaba en el predicado de acreditación
+del adaptador, que no exigía `funding_accounting_complete=true` ni descartaba
+la exposición sin cubrir. La corrección mínima usa el veredicto autoritativo
+por posición y falla cerrado si falta: la fila ahora persiste `funding=null`,
+estado explícito UNKNOWN, `funding_cuenta_completa=false`,
+`funding_sin_cubrir_ms=60000` y, si conserva neto numérico,
+`neto_estado=CONDICIONADO_SIN_FUNDING_COMPLETO`. Se conservan los casos de
+importe conocido y cero acreditado con cobertura completa. Pruebas
+focalizadas: 35 passed y 4 subtests passed; las dos aceptaciones CLI real
+(calendario completo e incompleto), 2 passed. Sin cambio de motor, regla,
+costes, exposición, configuración, capturas, Binance, órdenes o servicios.
+
 **Consecuencias metodológicas (configuración congelada):** el intervalo de
 ocupación semiabierto `[entry_ms, exit_ms)` es la autoridad de capacidad
 compartida (`max_concurrent=1`); una salida desconocida mantiene la ocupación
@@ -57,8 +73,9 @@ efectivos (2 000 intentos / 5 000 peso / 50 reintentos / 128 MB). Con la
 configuración congelada: base 984 intentos / 1 452 peso; base + reservas
 1 274 / 3 692; almacenamiento previsto 2 915 072 B. La estimación base no es
 un máximo garantizado. El funding solo se acredita con calendario, cadencia
-nominal y settlements liquidados con marca utilizable y sin hueco interior
-sobre la exposición; en otro caso queda UNKNOWN (nunca cero ni parcial) y cada
+nominal y contabilidad por posición explícitamente completa: settlements
+liquidados con marca utilizable, sin hueco interior aplicable y sin exposición
+sin cubrir; en otro caso queda UNKNOWN (nunca cero ni parcial) y cada
 fila persistida publica su detalle de cobertura. Sin capturas públicas, sin
 Binance, sin órdenes reales y sin servicios nuevos: no se reabre la captura
 `public-pilot-1h-20261106a` ni cambian la regla, los parámetros o los topes

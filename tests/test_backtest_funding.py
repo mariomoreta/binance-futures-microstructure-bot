@@ -161,6 +161,9 @@ class IncompleteCalendarTest(unittest.TestCase):
         trade = res["trades"][0]
         self.assertEqual(len(trade["funding_events"]), 1)
         self.assertGreater(trade["funding_uncovered_ms"], 0)
+        # La completitud es por posicion: el importe liquidado observado no
+        # acredita el total mientras exista exposicion sin cubrir.
+        self.assertIs(trade["funding_accounting_complete"], False)
         # Settled only what the calendar lists; the rest is UNKNOWN time.
         self.assertAlmostEqual(trade["funding"], 1.0)
 

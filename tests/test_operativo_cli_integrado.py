@@ -393,6 +393,9 @@ def test_cli_productivo_integrado() -> None:
         # El calendario cubre toda la exposicion: no hay tiempo sin cubrir.
         assert admitida.get("funding_cuenta_completa") is True, admitida
         assert admitida.get("funding_sin_cubrir_ms") == 0, admitida
+        assert admitida.get("funding_huecos_ms") == 0, admitida
+        assert admitida.get("funding_settlements_desconocidos") == 0, admitida
+        assert admitida.get("neto_estado") == "COMPLETO", admitida
 
         # Sin calendario propio (simbolos sin calendario) el funding queda
         # UNKNOWN, nunca cero.
@@ -415,17 +418,97 @@ def test_cli_productivo_integrado() -> None:
 
 
 
-def test_funding_a_traves_del_adaptador() -> None:
-    """Funding por calendario conocido vs ausente, a traves del adaptador.
+def test_cli_funding_incompleto_desde_cli_real() -> None:
+    """El CLI real persiste funding UNKNOWN con cobertura incompleta.
+
+    El calendario se crea dentro del directorio temporal de esta prueba y se
+    pasa por ``--funding-calendars``. Solo contiene un settlement al inicio
+    de la exposicion, por lo que el motor conserva exposicion sin cubrir y
+    la contabilidad por posicion queda incompleta.
+    """
+    tmp = Path(tempfile.mkdtemp(prefix="cli-funding-incompleto-"))
+    universe = [tr.UNIVERSE[0]]
+    e0 = tr.T0 + tr.MINUTE
+    entrada_prevista = e0 + tr.MINUTE
+    cal_path = tmp / "calendario_incompleto.json"
+    cal_path.write_text(json.dumps({
+        universe[0]: {
+            "version": "synthetic/v1",
+            "source": "synthetic-fixture",
+            "interval_ms": 8 * 3600 * 1000,
+            "settlements": [
+                {"settlement_ms": entrada_prevista, "rate_bps": 1.0},
+            ],
+        }
+    }), encoding="utf-8")
+
+    run = tr.PilotRun(
+        tmp,
+        universe=universe,
+        duration_s=300,
+        settle_s=4200,
+        selection_s=300,
+        max_symbols=1,
+        cycle_s=300,
+        horizons=tr.HORIZONS,
+        max_http_attempts=2000,
+        funding_calendars_path=str(cal_path),
+    )
+    try:
+        run.wait_ready(expected_followed=1)
+        seed = list(range(e0 - 62_000, e0 + 1, 1_000))
+        run.step(
+            e0,
+            depth_symbols=universe,
+            trade_events={universe[0]: seed},
+            evaluate=True,
+            expected_obs=1,
+        )
+        capture_end = run.status()["capture_end_ms"]
+        run.advance(capture_end)
+        run.advance(e0 + 3_600_000 + tr.MINUTE * 2)
+
+        op_path = run.out_dir / "resultado_operativo.jsonl"
+        deadline = time.monotonic() + 30
+        ops: List[Dict[str, Any]] = []
+        while time.monotonic() < deadline:
+            if op_path.exists():
+                ops = [r for r in _leer_jsonl(op_path)
+                       if r.get("kind") == "resultado_operativo"]
+            if len(ops) >= 1:
+                break
+            if run.proc.poll() is not None:
+                break
+            time.sleep(0.02)
+        assert len(ops) == 1, ops
+        row = ops[0]
+        assert row["decision"] == "ENTRADA_EJECUTADA", row
+        assert row["funding"] is None, row
+        assert "UNKNOWN" in row["funding_estado"], row
+        assert row["funding_cuenta_completa"] is False, row
+        assert row["funding_sin_cubrir_ms"] > 0, row
+        assert row["neto_estado"] == "CONDICIONADO_SIN_FUNDING_COMPLETO", row
+        print(f"  [CLI funding incompleto] symbol={row['symbol']} "
+              f"funding={row['funding']} estado={row['funding_estado']} "
+              f"completa={row['funding_cuenta_completa']} "
+              f"sin_cubrir_ms={row['funding_sin_cubrir_ms']}")
+    finally:
+        run.shutdown()
+
+
+def test_funding_a_traves_del_adaptador(monkeypatch) -> None:
+    """Funding por cobertura de posicion, a traves del adaptador persistido.
 
     Escenarios (todos con calendario sintetico propio de la prueba):
     - sin calendario -> UNKNOWN;
-    - calendario con settlement dentro de la exposicion -> importe
-      acreditado, verificado con un calculo independiente;
-    - calendario sin settlement en la exposicion -> cero acreditado;
-    - calendario sin cadencia nominal (interval_ms=None) -> UNKNOWN;
-    - calendario con hueco interior sobre la exposicion -> UNKNOWN.
+    - cobertura incompleta con exposicion sin cubrir -> total UNKNOWN;
+    - cobertura completa con settlement aplicable -> importe acreditado y
+      verificado con un calculo independiente;
+    - cobertura completa sin settlement dentro de exposicion -> cero acreditado;
+    - integridad por posicion ausente -> UNKNOWN (fallo cerrado);
+    - calendario sin cadencia nominal o con hueco aplicable -> UNKNOWN.
     """
+    import scripts.research_operativo_adapter as adapter_module  # noqa: E402
     from scripts.research_operativo_adapter import (  # noqa: E402
         OperativoAdapter, OperativoConfig,
     )
@@ -461,50 +544,110 @@ def test_funding_a_traves_del_adaptador() -> None:
         tr = adapter.procesar_observacion(obs, velas)
         adapter.persistir(tr)
         adapter.close()
-        return tr
+        rows = _leer_jsonl(tmp / f"{nombre}.jsonl")
+        return tr, rows[-1]
 
     # 1) Calendario ausente -> funding UNKNOWN.
-    tr_sin = _procesar("sin_calendario")
+    tr_sin, row_sin = _procesar("sin_calendario")
     assert tr_sin.funding is None, tr_sin
     assert tr_sin.funding_estado.startswith("ninguno"), tr_sin
+    assert row_sin["funding"] is None, row_sin
+    assert row_sin["neto_estado"] == "CONDICIONADO_SIN_FUNDING_COMPLETO", row_sin
 
-    # 2) Calendario conocido con evento DENTRO de la exposicion
-    #    (120000 en [entry_ms=120000, exit_ms=180000)).
-    cal = FundingCalendar(
+    # 2) Reproduccion del defecto: un settlement en la entrada y ningun
+    #    settlement posterior deixa 60000 ms de exposicion sin cubrir. El
+    #    total observado no sustituye al total UNKNOWN.
+    cal_incompleto = FundingCalendar(
         version="synthetic/v1", source="synthetic-fixture",
         interval_ms=8 * 3600 * 1000, symbol="FUNDUSDT",
         settlements=(FundingSettlement(settlement_ms=120_000, rate_bps=1.0),),
     )
-    tr_con = _procesar("con_evento", cal)
+    tr_inc, row_inc = _procesar("incompleto", cal_incompleto)
+    assert tr_inc.entry_ms == 120_000 and tr_inc.exit_ms == 180_000, tr_inc
+    assert tr_inc.funding is None, tr_inc
+    assert "UNKNOWN" in tr_inc.funding_estado, tr_inc
+    assert row_inc["funding"] is None, row_inc
+    assert row_inc["funding_cuenta_completa"] is False, row_inc
+    assert row_inc["funding_sin_cubrir_ms"] == 60_000, row_inc
+    assert row_inc["neto_estado"] == "CONDICIONADO_SIN_FUNDING_COMPLETO", row_inc
+
+    # 3) Cobertura completa con settlement aplicable dentro de la exposicion
+    #    (120000 en [entry_ms=120000, exit_ms=180000)).
+    cal = FundingCalendar(
+        version="synthetic/v1", source="synthetic-fixture",
+        interval_ms=8 * 3600 * 1000, symbol="FUNDUSDT",
+        settlements=(
+            FundingSettlement(settlement_ms=120_000, rate_bps=1.0),
+            FundingSettlement(
+                settlement_ms=120_000 + 8 * 3600 * 1000, rate_bps=1.0),
+        ),
+    )
+    tr_con, row_con = _procesar("con_evento", cal)
     assert tr_con.funding_estado == "settlement-calendar", tr_con
     # Importe esperado calculado independientemente: held_qty * mark * rate / 10000
     qty = 1000.0 / 102.0
     esperado = qty * 102.0 * 1.0 / 10_000.0
     assert abs(tr_con.funding - esperado) < 1e-9, (tr_con.funding, esperado)
-    assert tr_con.net_pnl is not None
+    assert row_con["funding_cuenta_completa"] is True, row_con
+    assert row_con["funding_sin_cubrir_ms"] == 0, row_con
+    assert row_con["neto_estado"] == "COMPLETO", row_con
 
-    # 3) Calendario sin evento en la exposicion -> cero acreditado (no UNKNOWN).
-    cal_vacio = FundingCalendar(
+    # 4) Cobertura completa sin settlement dentro de la exposicion -> cero
+    #    acreditado. El primer settlement precede la entrada y el ultimo la
+    #    sigue; la cadencia nominal acredita que no hay pago aplicable.
+    cal_sin_evento = FundingCalendar(
         version="synthetic/v1", source="synthetic-fixture",
         interval_ms=8 * 3600 * 1000, symbol="FUNDUSDT",
-        settlements=(),
+        settlements=(
+            FundingSettlement(settlement_ms=0, rate_bps=1.0),
+            FundingSettlement(
+                settlement_ms=8 * 3600 * 1000, rate_bps=1.0),
+        ),
     )
-    tr_vac = _procesar("sin_evento", cal_vacio)
+    tr_vac, row_vac = _procesar("sin_evento", cal_sin_evento)
     assert tr_vac.funding == 0.0, tr_vac
     assert tr_vac.funding_estado == "settlement-calendar", tr_vac
+    assert row_vac["funding_cuenta_completa"] is True, row_vac
+    assert row_vac["funding_sin_cubrir_ms"] == 0, row_vac
+    assert row_vac["neto_estado"] == "COMPLETO", row_vac
 
-    # 4) Calendario sin cadencia nominal -> la integridad interior es
+    # 5) Si la autoridad no publica el veredicto por posicion, el adaptador
+    #    falla cerrado y conserva la integridad como desconocida.
+    resultado_con_funding_real = adapter_module._resultado_con_funding
+
+    def _resultado_sin_integridad(*args, **kwargs):
+        bt = resultado_con_funding_real(*args, **kwargs)
+        if bt is None:
+            return None
+        bt = dict(bt)
+        bt.pop("funding_accounting_complete", None)
+        return bt
+
+    monkeypatch.setattr(
+        adapter_module, "_resultado_con_funding", _resultado_sin_integridad)
+    tr_desconocida, row_desconocida = _procesar(
+        "integridad_desconocida", cal)
+    assert tr_desconocida.funding is None, tr_desconocida
+    assert "UNKNOWN" in tr_desconocida.funding_estado, tr_desconocida
+    assert row_desconocida["funding_cuenta_completa"] is None, row_desconocida
+    assert row_desconocida["neto_estado"] == "CONDICIONADO_SIN_FUNDING_COMPLETO", (
+        row_desconocida)
+    monkeypatch.setattr(
+        adapter_module, "_resultado_con_funding", resultado_con_funding_real)
+
+    # 6) Calendario sin cadencia nominal -> la integridad interior es
     #    UNKNOWN: el importe NO se acredita.
     cal_sin_cadencia = FundingCalendar(
         version="synthetic/v1", source="synthetic-fixture",
         interval_ms=None, symbol="FUNDUSDT",
         settlements=(FundingSettlement(settlement_ms=120_000, rate_bps=1.0),),
     )
-    tr_nc = _procesar("sin_cadencia", cal_sin_cadencia)
+    tr_nc, row_nc = _procesar("sin_cadencia", cal_sin_cadencia)
     assert tr_nc.funding is None, tr_nc
     assert "UNKNOWN" in tr_nc.funding_estado, tr_nc
+    assert row_nc["funding"] is None, row_nc
 
-    # 5) Hueco interior del calendario sobre la exposicion -> UNKNOWN.
+    # 7) Hueco interior del calendario sobre la exposicion -> UNKNOWN.
     cal_con_hueco = FundingCalendar(
         version="synthetic/v1", source="synthetic-fixture",
         interval_ms=8 * 3600 * 1000, symbol="FUNDUSDT",
@@ -514,14 +657,17 @@ def test_funding_a_traves_del_adaptador() -> None:
                 settlement_ms=120_000 + 3 * 8 * 3600 * 1000, rate_bps=1.0),
         ),
     )
-    tr_gap = _procesar("con_hueco", cal_con_hueco)
+    tr_gap, row_gap = _procesar("con_hueco", cal_con_hueco)
     assert tr_gap.funding is None, tr_gap
     assert "UNKNOWN" in tr_gap.funding_estado, tr_gap
+    assert row_gap["funding"] is None, row_gap
 
     shutil.rmtree(tmp, ignore_errors=True)
     print(f"  [funding] ausente={tr_sin.funding_estado} "
+          f"incompleto={tr_inc.funding_estado} "
           f"con_evento={tr_con.funding} (esperado {esperado}) "
           f"sin_evento={tr_vac.funding} "
+          f"integridad_desconocida={tr_desconocida.funding_estado} "
           f"sin_cadencia={tr_nc.funding_estado} "
           f"con_hueco={tr_gap.funding_estado}")
 

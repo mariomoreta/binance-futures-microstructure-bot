@@ -1,3 +1,36 @@
+## F-OPERATIVO-FUNDING-INTEGRIDAD-20261110 — Acreditacion por cobertura de la posicion
+
+**1. Title:** Impedir que el adaptador publique un total de funding acreditado
+cuando `backtest_offline` informe contabilidad incompleta de la posicion.
+
+**2. Approval status:** AUTORIZADO por el encargo del 2026-11-10. Correccion
+material acotada; no autoriza capturas publicas, paper, ejecucion real ni
+cambios de la configuracion congelada.
+
+**3. Implementation status:** IMPLEMENTADO. El adaptador exige el veredicto
+explicito `funding_accounting_complete=true` y falla cerrado ante exposicion
+sin cubrir, settlements desconocidos, huecos aplicables o veredicto ausente.
+Con cobertura incompleta persiste `funding=null`, estado UNKNOWN y neto
+numerico condicionado. No cambia el motor canonico.
+
+**4. Evaluation status:** NO EVALUADO economicamente. La correccion evita una
+representacion incoherente del funding; no acredita rentabilidad, direccion ni
+expectativa neta.
+
+**5. Evidence:** reproduccion previa sobre `9580983` de `funding=0.1` con
+`funding_cuenta_completa=false` y `funding_sin_cubrir_ms=60000`; focalizados
+35 passed y 4 subtests passed; aceptaciones CLI real de calendario completo e
+incompleto, 2 passed.
+
+**6. Verdict:** defecto cerrado con fallo cerrado y sin modelo nuevo de
+funding. La cobertura sigue limitada a perpetuos USD-M; futuros con
+vencimiento pendientes.
+
+**7. Next step:** mantener el protocolo operativo v2 sujeto a su autorizacion
+separada; no abrir captura ni despliegue por este cierre.
+
+---
+
 ## F-OPERATIVO-REPLAY-CIERRE-20261110 — Cierre de capacidad, presupuesto y funding del replay operativo v2
 
 **1. Title:** Cerrar tres defectos materiales del replay operativo v2 sobre la

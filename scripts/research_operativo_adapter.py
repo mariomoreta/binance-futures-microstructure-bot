@@ -659,6 +659,17 @@ class OperativoAdapter:
         detalle = self._funding_cuenta.get(tr.observation_id)
         if detalle:
             row.update(detalle)
+        if tr.net_pnl is None:
+            row["neto_estado"] = "UNKNOWN"
+            row["neto_motivo"] = "sin resultado neto disponible"
+        elif (tr.funding is not None and detalle
+              and detalle.get("funding_cuenta_completa") is True):
+            row["neto_estado"] = "COMPLETO"
+            row["neto_motivo"] = "funding acreditado y cobertura completa"
+        else:
+            row["neto_estado"] = "CONDICIONADO_SIN_FUNDING_COMPLETO"
+            row["neto_motivo"] = (
+                "resultado numerico sin funding completo; no es neto completo")
         self._escribir(row)
 
     def _config_hash(self) -> str:
@@ -707,14 +718,23 @@ def _candles_de_klines(
 def _funding_acreditable(bt: Dict[str, Any], cal: Optional[FundingCalendar]) -> bool:
     """True si el importe de funding puede acreditarse como completo.
 
-    No se acredita un importe parcial: si algun settlement de la exposicion
-    quedo sin mark utilizable, si hay huecos interiores sobre la exposicion o
-    si el calendario no declara cadencia nominal (integridad interior
-    UNKNOWN), el funding queda UNKNOWN (nunca cero ni parcial).
+    La autoridad es el veredicto por posicion de ``backtest_offline``
+    (``funding_accounting_complete``). Solo el valor booleano True lo
+    acredita: si falta o es desconocido, el resultado falla cerrado. Se
+    comprueban tambien los diagnosticos de cobertura que lo hacen falso:
+    exposicion sin cubrir, settlements desconocidos y huecos aplicables.
+
+    No se acredita un importe parcial. Sin calendario o sin cadencia nominal
+    la integridad interior es UNKNOWN y el funding queda Unknown, nunca cero
+    ni parcial.
     """
     if cal is None or bt is None:
         return False
     if cal.interval_ms is None:
+        return False
+    if bt.get("funding_accounting_complete") is not True:
+        return False
+    if int(bt.get("funding_uncovered_ms") or 0) > 0:
         return False
     if int(bt.get("funding_unknown") or 0) > 0:
         return False
@@ -725,8 +745,11 @@ def _funding_acreditable(bt: Dict[str, Any], cal: Optional[FundingCalendar]) -> 
 
 def _detalle_funding(bt: Dict[str, Any], cal: FundingCalendar) -> Dict[str, Any]:
     """Detalle de cobertura del funding para la fila persistida."""
+    integridad = bt.get("funding_accounting_complete")
+    if not isinstance(integridad, bool):
+        integridad = None
     return {
-        "funding_cuenta_completa": bool(bt.get("funding_accounting_complete")),
+        "funding_cuenta_completa": integridad,
         "funding_sin_cubrir_ms": int(bt.get("funding_uncovered_ms") or 0),
         "funding_huecos_ms": int(bt.get("funding_gap_ms") or 0),
         "funding_settlements_desconocidos": int(bt.get("funding_unknown") or 0),
