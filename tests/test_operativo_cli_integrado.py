@@ -57,7 +57,7 @@ CMD_BASE = [
     "--mode", "local",
     "--duration-seconds", "3600",   # captura 3600 s
     "--settle-seconds", "4200",     # settle 4200 s (70 min)
-    "--cycle-seconds", "60",
+    "--cycle-seconds", "300",
     "--selection-seconds", "300",
     "--decision-delay-seconds", "5",
     "--max-symbols", "20",
@@ -135,22 +135,34 @@ def test_cli_productivo_integrado() -> None:
     """Recorrido integrado CLI -> piloto -> adaptador -> motores -> resultado.
 
     Usa PilotRun (harness probado del piloto) con proveedores HTTP/WS
-    loopback y reloj manual. Ejecuta el piloto para crear observaciones,
-    lo detiene, y luego usa replay posterior (leer observaciones +
-    klines + adaptador) para resolver las operaciones. Verifica que el
-    OperativoAdapter se invoque correctamente y que los resultados se
-    pueden regenerar desde lo persistido.
+    loopback y reloj manual. El piloto ejecuta la regla operativa internamente
+    durante la captura y el settle, resolviendo operaciones pendientes a
+    medida que la trayectoria se vuelve disponible. El test NO crea un
+    adaptador externo ni un HistoryClient sin gate: todo lo produce el CLI
+    real bajo su presupuesto.
+
+    Demuestra:
+    - Observaciones aptas persistidas en T con decision_ms y move_24h_pct.
+    - Trabajo operativo pendiente sin resultado futuro antes de tener
+      trayectoria suficiente.
+    - Resolucion posterior del CLI una vez disponible la trayectoria.
+    - Capacidad compartida max_concurrent=1 (seniales solapadas no producen
+      dos posiciones).
+    - Funding desconocido (sin calendario) -> neto condicionado, no cero.
+    - Presupuesto reservado antes del transporte (intento bloqueado no
+      aumenta contador del proveedor).
+    - Parada conserva pendientes con causa real.
     """
     tmp = Path(tempfile.mkdtemp(prefix="cli-integro-"))
 
     run = tr.PilotRun(
         tmp,
         universe=tr.UNIVERSE,
-        duration_s=3600,   # captura 3600 s (1 h)
-        settle_s=4200,     # settle 4200 s (70 min)
+        duration_s=300,    # captura 300 s (5 min), suficiente para el corte
+        settle_s=4200,     # settle 4200 s (70 min): cubre el horizonte 60m
         selection_s=300,
         max_symbols=5,
-        cycle_s=60,
+        cycle_s=300,       # corregido: 300s, no 60s
         horizons=tr.HORIZONS,
         max_http_attempts=2000,
     )
@@ -195,14 +207,16 @@ def test_cli_productivo_integrado() -> None:
         if not confirmado:
             raise AssertionError(f"no se confirman libro/flujo: status={st!r}")
 
-        # 4. Escribir el decision-gate para autorizar la evaluacion en e0.
+        # 4. Escribir el decision-gate PARA ANTES de avanzar el reloj a e0,
+        #    para que el piloto lo lea al procesar el corte.
         tmp_gate = run.gate_path.with_name(run.gate_path.name + ".tmp")
         tmp_gate.write_text(
             json.dumps({"decision_ms": e0, "allow": True}),
             encoding="utf-8")
         os.replace(tmp_gate, run.gate_path)
 
-        # 5. Avanzar a e0 (corte de decision).
+        # 5. Avanzar a e0 (corte de decision). Con el reloj en e0 y el gate
+        #    ya escrito, el piloto evalua y crea observaciones aptas.
         run.clock.set(e0)
         run.advance(e0)
 
@@ -230,65 +244,23 @@ def test_cli_productivo_integrado() -> None:
             raise AssertionError(
                 f"no hay observaciones aptas en decision_ms={e0}")
 
-        # 6. Detener el piloto con stop_file (usaremos replay posterior
-        #    para resolver las operaciones en lugar de avanzar el reloj).
-        run.stop_path.write_text("1", encoding="utf-8")
-        rc = run.wait_exit(timeout=60)
-        assert rc == 0, f"rc={rc} stderr={run.stderr!r}"
-
-        # 7. Replay posterior: leer observaciones y resolver cada una con
-        #    el adaptador usando velas 1m obtenidas de klines.
-        from scripts.research_operativo_adapter import (  # noqa: E402
-            OperativoAdapter, OperativoConfig,
-        )
-        from microstructure_probe.paper_lab_engine import PaperCandle  # noqa: E402
-
-        cfg = OperativoConfig()
-        adapter = OperativoAdapter(
-            store_path=run.out_dir / "resultado_operativo.jsonl",
-            cfg=cfg,
-        )
-        # HistoryClient para obtener klines del piloto (misma URL base).
-        rest = HistoryClient(
-            base_url=f"http://127.0.0.1:{run.http_port}",
-            attempt_gate=None,  # sin gate de presupuesto en el replay
-        )
-
+        # 6. Avanzar el reloj al final de la captura (el piloto entra al
+        #    settle) y luego al final del horizonte operativo para que el CLI
+        #    resuelva las operaciones pendientes con trayectoria disponible.
         op_path = run.out_dir / "resultado_operativo.jsonl"
-        rows_obs = _leer_jsonl(run.obs_path)
-        obs_aptas = [
-            r for r in rows_obs
-            if r.get("kind") == "observacion"
-            and r.get("apto_para_evaluacion")
-        ]
+        capture_end = run.status()["capture_end_ms"]
+        run.advance(capture_end)
+        st = run.status()
+        assert st["phase"] == "settle", f"esperaba settle, fase={st.get('phase')}"
 
-        for obs in obs_aptas:
-            symbol = obs["symbol"]
-            decision_ms = int(obs["decision_ms"])
-            step_ms = INTERVAL_MS["1m"]
-            # Velas 1m desde decision_ms hasta decision_ms + horizonte.
-            rows, _ = rest.klines(
-                symbol, "1m",
-                decision_ms - step_ms,
-                decision_ms + cfg.horizon_ms + step_ms,
-                limit=int(cfg.horizon_ms // step_ms) + 2,
-            )
-            candles = [
-                PaperCandle(
-                    open_time_ms=int(r[0]), open=float(r[1]),
-                    high=float(r[2]), low=float(r[3]),
-                    close=float(r[4]) if r[4] is not None else None,
-                    close_time_ms=int(r[6]) if r[6] is not None else None,
-                )
-                for r in rows
-            ]
-            trade_result = adapter.procesar_observacion(obs, candles)
-            adapter.persistir(trade_result)
+        ahora_final = e0 + 3_600_000 + tr.MINUTE * 2
+        assert ahora_final < st["settle_end_ms"], (
+            f"ahora_final={ahora_final} sobrepasa settle_end={st['settle_end_ms']}")
+        run.advance(ahora_final)
 
-        adapter.close()
-
-        # Verificar resultados persistidos.
-        deadline = time.monotonic() + 10
+        # Esperar a que el CLI escriba los resultados operativos (el piloto
+        # los resuelve durante el settle al leer la trayectoria).
+        deadline = time.monotonic() + 30
         ops_ok = False
         rows_op: List[Dict[str, Any]] = []
         while time.monotonic() < deadline:
@@ -297,10 +269,12 @@ def test_cli_productivo_integrado() -> None:
             if len(ops) >= len(obs_aptas):
                 ops_ok = True
                 break
+            if run.proc.poll() is not None:
+                break
             time.sleep(0.02)
         if not ops_ok:
             raise AssertionError(
-                f"no hay resultados operativos tras replay: "
+                f"no hay resultados operativos del CLI: "
                 f"filas={rows_op!r}, esperadas>={len(obs_aptas)}")
 
         # Vinculacion con observaciones fuente.
@@ -330,12 +304,13 @@ def test_cli_productivo_integrado() -> None:
                 assert op["direction"] == dir_esp, (op, obs_src)
         assert any(d == "LONG" for d in dirs.values()), dirs
 
-        # Solicitudes recibidas por los proveedores.
+        # Solicitudes recibidas por los proveedores (el CLI hizo las peticiones
+        # de klines para resolver operaciones, no un adaptador externo).
         assert run.http.ticker_calls >= 1, run.http.ticker_calls
         assert run.http.klines_calls >= 1, run.http.klines_calls
         assert run.ws.connections >= 1, run.ws.connections
 
-        # Regenerar resumen desde lo persistido.
+        # Regenerar resumen desde lo persistido (el CLI ya escribio todo).
         resumen = _resumen_desde_persistido(op_path)
         assert resumen["operaciones"] >= 1, resumen
         assert resumen["salidas_ejecutadas_simuladas"] >= 1, resumen

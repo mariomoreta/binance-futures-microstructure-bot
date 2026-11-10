@@ -200,15 +200,27 @@ class MarketHttp:
             symbol = params.get("symbol", [""])[0].upper()
             start = int(params.get("startTime", [0])[0])
             end = int(params.get("endTime", [0])[0])
+            now_ms = int(self.clock_ms_fn()) if self.clock_ms_fn else None
             open_time = ceil_ms(start, MINUTE)
             rows = []
             t = open_time
             while t <= end:
                 price = kline_price(symbol, t, self.universe)
                 close_time = t + MINUTE - 1
+                # Una vela cuya apertura ocurre despues del reloj no se conoce.
+                if now_ms is not None and t > now_ms:
+                    break
+                # Si el cierre de la vela aun no ocurrio respecto al reloj,
+                # reportamos close=None (vela abierta provisional) para no
+                # presentar como definitivo un high/low/close que no se sabe.
+                close_price = f"{price:.8f}"
+                close_ts = close_time
+                if now_ms is not None and close_time > now_ms:
+                    close_price = None
+                    close_ts = None
                 rows.append([t, f"{price:.8f}", f"{price * 1.001:.8f}",
-                             f"{price * 0.999:.8f}", f"{price:.8f}", "100",
-                             close_time, "100000", "10", "50", "50000", "0"])
+                             f"{price * 0.999:.8f}", close_price, "100",
+                             close_ts, "100000", "10", "50", "50000", "0"])
                 t += MINUTE
             _send_json(handler, rows)
             return

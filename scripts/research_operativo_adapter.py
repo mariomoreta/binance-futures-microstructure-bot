@@ -35,8 +35,8 @@ from microstructure_probe.backtest_offline import (  # noqa: E402
 )
 from microstructure_probe.paper_lab_engine import (  # noqa: E402
     ENGINE_VERSION_PAPER, PaperCandle, PaperSessionConfig,
-    RULE_CAUSAL_V1, _run_backtest_on_prefix, _to_bt_candles,
-    create_session, derivar_direccion_desde_movimiento,
+    RULE_CAUSAL_V1, _next_reveal_index, _run_backtest_on_prefix,
+    _to_bt_candles, create_session, derivar_direccion_desde_movimiento,
     evaluate_session, step_forward,
 )
 
@@ -169,12 +169,36 @@ class OperativoAdapter:
             "operaciones": 0,
             "posiciones_abiertas_final": 0,
         }
+        # Capacidad compartida: posiciones abiertas (observation_id -> {entry_ms, exit_ms}).
+        # max_concurrent=1 significa una posicion abierta a la vez en todo el experimento.
+        self.open_positions: Dict[str, Dict[str, Optional[int]]] = {}
 
     def close(self) -> None:
         try:
             self._fh.close()
         except Exception:
             pass
+
+    # -- capacidad compartida (max_concurrent=1) -----------------------------
+
+    def _capacidad_disponible_en(self, entry_ms: int) -> bool:
+        """Devuelve True si no hay ninguna posicion abierta que cubra entry_ms.
+
+        Una posicion cubre entry_ms si su entrada ya ocurrio (entry_ms_pos <= entry_ms)
+        y aun no ha salido (exit_ms es None o exit_ms_pos > entry_ms).
+        """
+        for pos in self.open_positions.values():
+            pos_entry = pos["entry_ms"]
+            pos_exit = pos["exit_ms"]
+            if pos_entry <= entry_ms and (pos_exit is None or pos_exit > entry_ms):
+                return False
+        return True
+
+    def _registrar_posicion(self, observation_id: str, entry_ms: int, exit_ms: Optional[int]) -> None:
+        self.open_positions[observation_id] = {"entry_ms": entry_ms, "exit_ms": exit_ms}
+
+    def _liberar_posicion(self, observation_id: str) -> None:
+        self.open_positions.pop(observation_id, None)
 
     # -- escritura JSONL -----------------------------------------------------
 
@@ -268,6 +292,33 @@ class OperativoAdapter:
         else:
             stop_px = entry_px_ref * (1.0 + stop_pct)
 
+        # Calcular entry_ms: open de la primera vela despues de decision_ms.
+        velas_ordenadas = sorted(velas_1m, key=lambda c: c.open_time_ms)
+        entry_ms_calc = None
+        for c in velas_ordenadas:
+            if c.open_time_ms > decision_ms:
+                entry_ms_calc = c.open_time_ms
+                break
+
+        # Capacidad compartida (max_concurrent=1): si ya hay una posicion
+        # abierta que cubra el entry_ms, rechazar por capacidad.
+        if entry_ms_calc is not None and not self._capacidad_disponible_en(entry_ms_calc):
+            self.estado["rechazadas_capacidad"] += 1
+            return OperativoTradeResult(
+                observation_id=traza["observation_id"],
+                symbol=symbol, role=role, direction=direccion,
+                decision="RECHAZADA_CAPACIDAD", decision_ms=decision_ms,
+                entry_px=entry_px_ref, entry_ms=entry_ms_calc,
+                exit_px=None, exit_ms=None,
+                exit_reason=None, exit_executed=False,
+                open_at_end=False, qty=0.0,
+                gross_pnl=0.0, fees=0.0, spread_slip=0.0,
+                funding=None, net_pnl=None,
+                funding_estado="rechazada_por_capacidad",
+                config_hash=self._config_hash(),
+                engine_version=ENGINE_VERSION_PAPER,
+            )
+
         config = PaperSessionConfig(
             symbol=symbol, interval="1m", direction=direccion,
             notional_usdt=self.cfg.notional_usdt,
@@ -312,7 +363,24 @@ class OperativoAdapter:
             )
 
         # --- Fill en open de vela siguiente a la senal (causal) ----------
-        state = step_forward(state)
+        # Revelar velas sucesivas hasta que se abra la posicion o se agoten
+        # los datos. Cada paso revela el open de la siguiente vela; el fill
+        # ocurre en el primer open revelado tras la senal (open_time > T).
+        pasos_fill = 0
+        while state.status == "en_espera" and not state.position.open:
+            reveal_idx = _next_reveal_index(state)
+            if reveal_idx is None:
+                break
+            prev_cursor = state.cursor
+            state = step_forward(state)
+            pasos_fill += 1
+            if pasos_fill > 10_000:
+                raise AssertionError(
+                    f"Demasiados pasos de fill para {symbol} @ {decision_ms}")
+            if state.cursor == prev_cursor:
+                # No hubo avance: no hay mas velas para revelar.
+                break
+
         if not state.position.open:
             self.estado["abstenciones"] += 1
             return OperativoTradeResult(
@@ -330,6 +398,10 @@ class OperativoAdapter:
                 engine_version=ENGINE_VERSION_PAPER,
             )
 
+        # Registrar posicion abierta para capacidad compartida.
+        self._registrar_posicion(
+            observacion["observation_id"], state.position.entry_ms, None)
+
         # --- Gestion y salida (stop / horizonte / agotamiento) -----------
         pasos = 0
         while state.status == "abierta":
@@ -342,6 +414,8 @@ class OperativoAdapter:
         self.estado["operaciones"] += 1
         if r.open_at_end:
             self.estado["posiciones_abiertas_final"] += 1
+        # Liberar posicion (ya cerro o esta abierta sin salida futura conocida).
+        self._liberar_posicion(observacion["observation_id"])
 
         # Funding: si hay calendario real para este simbolo, recalcular con
         # run_backtest para contabilizar settlements; si no hay calendario,

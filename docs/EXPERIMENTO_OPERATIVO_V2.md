@@ -153,75 +153,101 @@ Ejecutar las 3 ventanas del protocolo con la regla candidata congelada, bajo el 
 
 **Referencias en estado y cola:** `docs/TASK_QUEUE.md` y `docs/CURRENT_STATE.md` se actualizan brevemente con referencia a este protocolo v2 (diseño de alcance, no ejecutado, pendiente de autorización).
 
-## 8. Estado de este bloque (demostración local, 2026-11-07)
+## 8. Estado de este bloque (camino productivo cerrado localmente, 2026-11-09)
 
-Este bloque se completó localmente sobre `research/universe-liquidez-v1` (base
-`f8b25debf64b5eaa04910d65b64948ba0414df6c`), reutilizando `paper_lab_engine`
-y `backtest_offline` sin Binance, sin dashboard, sin nuevos servicios ni motores
-paralelos. Pruebas focalizadas en `tests/test_operativo_local_v2.py` (junto con
-las regresiones de `paper_lab_engine`, `experimento_operativo_local` y
-`backtest_offline`: **73 passed**).
+Este bloque se cerró localmente sobre `research/universe-liquidez-v1` (base
+`510485a4d01a83430d56f2838404b8e08390963d`), reutilizando `paper_lab_engine`,
+`backtest_offline`, `research_pilot` y `research_operativo_adapter` sin Binance,
+sin nuevas capturas públicas, sin órdenes reales, sin nuevos servicios ni
+motores paralelos. Se reprodujeron y corrigieron los cinco defectos del
+encargo sobre la base revisada, y se acreditó el recorrido productivo local
+del experimento operativo v2 mediante el CLI real (`scripts/research_pilot.py`)
+como subproceso con proveedores HTTP/WS loopback, almacenamiento aislado y
+reloj controlado.
 
-Se añadio el **recorrido conectado ejecutado**: dato de movimiento en T ->
-`derivar_direccion_desde_movimiento()` -> direccion/configuracion (la
-direccion de `PaperSessionConfig` procede de la funcion, no de una constante
-de fixture) -> `evaluate_session` (senal) -> `step_forward` (fill en open de
-vela siguiente) -> gestion/salida -> resultado. Se verificó para movimiento
-positivo (LONG), negativo (SHORT), candidato y comparador bajo la misma regla,
-dato ausente (abstencion `dato_ausente`) y sin señal (abstencion `sin_senal`).
+Pruebas: `tests/test_operativo_cli_integrado.py` (3 passed, incluida la
+aceptación integrada del CLI) + `tests/test_research_pilot.py` (28 passed)
++ regresiones de `paper_lab_engine`, `experimento_operativo_local`,
+`backtest_offline`, `backtest_funding` y `operativo_local_v2` (**114 passed**).
 
-Se añadio `validar_ohlc()` en el constructor de fixtures `mk_candle()` para
-detectar rangos inválidos (`low <= min(open, close) <= max(open, close) <=
-high`) antes de ejecutar el motor; las fixtures con rangos imposibles se
-corrigieron conservando el propósito de cada escenario.
+### Defectos reproducidos y corregidos
 
-### Qué queda acreditado por esta prueba local
+A. **Proveedor cronológico (loopback):** `MarketHttp` ya consulta el reloj
+   compartido en cada petición (`clock_ms_fn`), respeta `startTime`,
+   `endTime` y `limit`, no devuelve aperturas posteriores al reloj, no presenta
+   como definitivos el high/low/close de una vela aún abierta (close=None para
+   velas provisionales), y distingue apertura conocida de OHLC final. Se
+   demostró que un `endTime` futuro no permite obtener datos antes de tiempo.
 
-- Dirección común desde información de mercado en T: `derivar_direccion_desde_movimiento(move_24h_pct)`
-  (campo `move_24h_pct`, unidades %, instante T, fórmula `>0 LONG / <0 SHORT /
-  ==0 sin señal / None dato ausente`), misma función para candidatos y
-  comparadores; el rol no determina dirección.
-- Recorrido integrado reproducible con datos locales:
-  información de mercado → dirección común → configuración/señal → motor →
-  entrada → gestión/salida → resultado.
-- Entrada causal LONG y SHORT: fill en open de vela siguiente, nunca open
-  pasado de la vela que confirmó la señal.
-- Salida ejecutada por horizonte: 60 min alcanzados (`exit_executed=true`,
-  precio, tiempo, motivo `horizon`).
-- Agotamiento de datos: `open_at_end=true`, `exit_executed=false`, sin salida
-  ni realizado inventados (no es salida por horizonte).
-- Stop intravela: toque con precio según el modelo existente (LONG y SHORT).
-- Gap auténtico: ninguna vela anterior activa el stop; la apertura posterior
-  cruza y sale al precio disponible tras el salto, no al stop nominal.
-- Abstención: dato ausente o condición no satisfecha, con motivo explícito.
-- Concurrencia `max_concurrent=1`: señales simultáneas, prioridad determinista
-  `(event_time_ms, symbol)`, una operación admitida, señales rechazadas por
-  capacidad (`skipped_overlap`), sin usar retornos posteriores para elegir.
-- Contabilidad independiente: LONG y SHORT recalculados a mano (cantidad,
-  P&L bruto, comisiones, spread/slippage, funding, neto); `stop_fraction =
-  stop_distance_pct / 100`; con entrada 100, notional 1000, distancia 0,5 %:
-  stop 99,5 LONG / 100,5 SHORT y riesgo nominal 5 antes de costes y gaps.
-  Funding desconocido = None (UNKNOWN), nunca cero.
+B. **Pendientes resueltos prematuramente:** `_resolver_operativos_pendientes`
+   ya no marca `resuelta=True` por recibir cualquier lista no vacía. Solo se
+   marca terminal cuando hay salida ejecutada (stop/horizonte) o agotamiento
+   de datos tras el horizonte (`open_at_end` y `now >= decision_ms +
+   horizon_ms`). Las velas provisionales se usan para gestionar pero no se
+   confunden con velas cerradas.
 
-### Qué NO acredita esta prueba local
+C. **Prueba integrada que no sustituye al producto:** `test_cli_productivo_integrado`
+   lanza `research_pilot.py` como subproceso real y todo lo produce el CLI bajo
+   su presupuesto. No detiene el piloto ni crea un adaptador externo ni un
+   `HistoryClient` con `attempt_gate=None`.
+
+D. **Concurrencia compartida:** `max_concurrent=1` se aplica en el adaptador
+   mediante `_capacidad_disponible_en` antes de admitir cada entrada; se
+   registran rechazos por capacidad (`rechazadas_capacidad`) separados de
+   abstenciones por señal o datos. El rol candidate/comparator no determina
+   prioridad, dirección ni reglas.
+
+E. **Funding vía CLI:** `main()` carga calendarios de funding validados por
+   símbolo desde `--funding-calendars` (archivo sintético identificado como tal
+   en pruebas; no se abre adquisición pública). Se acredita: calendario con
+   cobertura y evento en exposición → funding contabilizado; calendario con
+   cobertura y sin evento aplicable → cero conocido; calendario ausente o sin
+   cobertura suficiente → UNKNOWN.
+
+### Recorrido productivo acreditado por el CLI real
+
+- Observación apta persistida en T (decision_ms, move_24h_pct, rol, configuración
+  y motivo de señal/abstención), sin resultado futuro.
+- Trabajo operativo pendiente registrado sin consultar trayectoria futura.
+- Resolución posterior del CLI usando el mismo `HistoryClient` y puerta de
+  presupuesto; se distingue resultado terminal conocido de trayectoria
+  insuficiente.
+- Cada resultado terminal persistido una sola vez; los pendientes no resueltos
+  se conservan con causa real al parar/agotar settle/bloqueo presupuestario.
+- Dos señales solapadas no producen dos posiciones admitidas (max_concurrent=1
+  compartido); prioridad determinista con información disponible al decidir.
+- Funding entra por la configuración real del CLI (calendario con evento en
+  exposición → contabilizado; sin evento → cero; ausente → UNKNOWN).
+- Presupuesto reservado antes del transporte: intento bloqueado no aumenta el
+  contador del proveedor.
+- Una parada conserva pendientes y libera solo los recursos propios.
+
+### Presupuesto efectivo (--budget-only, 1 ventana)
+
+Calculado con `python scripts/research_pilot.py --budget-only` (sin red):
+
+| Concepto | Por ventana | Techo | Estado |
+|---|---|---|---|
+| HTTP intentos | ≤984 | ≤2000 | Dentro |
+| HTTP peso | ≤1452 | ≤5000 | Dentro |
+| HTTP reintentos | ≤50 | ≤50 | Dentro |
+| WS conexiones simultáneas | 2 (pico) | — | /public + /market |
+| WS aperturas acumuladas | ≤46 | — | inicial + rotación + reconexión |
+| Almacenamiento | ≤2.9 MB | ≤128 MB | Dentro |
+
+Pesos de `ASSUMED_WEIGHTS` (tabla interna, no cabeceras Binance reales). No
+se aumentaron cupos silenciosamente.
+
+### Qué NO acredita este bloque
 
 - Rentabilidad ni expectativa neta favorable (ni autoriza ejecución).
-- Las tres ventanas de captura pública ni su presupuesto (requieren autorización
-  separada).
-- Cobertura de futuros con vencimiento (pendiente; este experimento usa solo
-  perpetuos USD-M, cobertura declarada).
+- Las tres ventanas de captura pública ni su presupuesto público (requieren
+  autorización separada de adquisición).
+- Cobertura de futuros con vencimiento (pendiente; solo perpetuos USD-M).
 
-### Datos que necesitaría una futura captura
-
-- Velas 1m con `open`/`close` conocidos causalmente (para rellenar fills al open
-  de vela siguiente y rangos intra-vela de stop), no solo precio posterior por
-  horizonte fijo.
-- Calendario de funding por símbolo (para que funding deje de ser UNKNOWN).
-- Autorización separada de presupuesto para ejecutar el protocolo v2 en 3
-  ventanas (6 h 30 min total).
-
-Mientras tanto, el experimento queda en **diseño, no listo para ejecutar**;
-el bloqueo material de la §7 persiste.
+El experimento queda en **diseño verificado localmente, no listo para ejecutar
+contra Binance**; requiere autorización separada de presupuesto y ventana
+pública antes de cualquier adquisición.
 
 ## 9. Camino productivo para recoger los datos y reproducir la regla
 

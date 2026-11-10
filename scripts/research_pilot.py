@@ -180,6 +180,8 @@ OUTCOME_PENDIENTE = "pendiente"
 # del piloto se registra como patologia, nunca se recorta en silencio.
 FUTURE_EVENT_TOLERANCE_MS = 1_000
 
+_INTERVALO_RESOLVER_MS = 60_000  # minimo entre consultas de trayectoria (evita consultas en cada tick)
+
 # Hosts considerados loopback para el modo local.
 LOOPBACK_HOSTS = {"127.0.0.1", "localhost", "::1"}
 
@@ -1001,6 +1003,8 @@ class ResearchPilot:
         self.ws_reconnects_total = 0
         self.started_ms = self.clock.now_ms()
         self.ended_ms: Optional[int] = None
+        self._last_resolve_ms: Optional[int] = None
+        self._last_resolve_due_ms: Optional[int] = None
         self.capture_end_ms = self.started_ms + int(cfg.duration_seconds * 1000)
         self.settle_end_ms = self.capture_end_ms + int(cfg.settle_seconds * 1000)
         # Instante de primera suscripcion de cada simbolo (calentamiento).
@@ -1710,6 +1714,16 @@ class ResearchPilot:
 
         Devuelve el numero de operaciones resueltas en esta llamada.
         """
+        # Planificacion de consultas: evitar consultar en cada tick para
+        # trabajos que todavia no pueden madurar. Solo se consulta cuando haya
+        # transcurrido un intervalo minimo desde la ultima resolucion.
+        if (
+            self._last_resolve_ms is not None
+            and now - self._last_resolve_ms < _INTERVALO_RESOLVER_MS
+        ):
+            return 0
+        self._last_resolve_ms = now
+
         resueltas = 0
         for oid in list(self.operativo_pendientes.keys()):
             item = self.operativo_pendientes[oid]
@@ -1726,7 +1740,7 @@ class ResearchPilot:
             try:
                 rows, _ = self.rest.klines(
                     symbol, self.cfg.price_interval, start_ms, end_ms,
-                    limit=int(self.cfg.horizon_ms // 60_000) + 2,
+                    limit=int(self.operativo.cfg.horizon_ms // 60_000) + 2,
                 )
             except RateLimitExceeded:
                 # Presupuesto agotado: no se puede obtener mas trayectoria.
@@ -1735,21 +1749,41 @@ class ResearchPilot:
                 continue
             if not rows:
                 continue
-            candles = [
-                PaperCandle(
-                    open_time_ms=int(r[0]), open=float(r[1]),
+            # Todas las velas devueltas por el proveedor, incluidas las
+            # provisionales (close=None o close_time > now). El proveedor
+            # identifica las provisionales con close=None; el consumidor nunca
+            # trata un close ausente como vela cerrada. Las velas cuya apertura
+            # es posterior al reloj se excluyen (no se conocen).
+            velas_conocidas = []
+            for r in rows:
+                open_ms = int(r[0])
+                close_ms = int(r[6]) if r[6] is not None else None
+                if open_ms > now:
+                    continue
+                velas_conocidas.append(PaperCandle(
+                    open_time_ms=open_ms, open=float(r[1]),
                     high=float(r[2]), low=float(r[3]),
                     close=float(r[4]) if r[4] is not None else None,
-                    close_time_ms=int(r[6]) if r[6] is not None else None,
-                )
-                for r in rows
-            ]
+                    close_time_ms=close_ms,
+                ))
+            if not velas_conocidas:
+                continue
             cal = self.operativo.funding_calendars.get(symbol)
             tr = self.operativo.procesar_observacion(
-                obs, candles, funding_calendar=cal)
-            self.operativo.persistir(tr)
-            item["resuelta"] = True
-            resueltas += 1
+                obs, velas_conocidas, funding_calendar=cal)
+            # Solo marcar como resuelta si el resultado es terminal:
+            # - salida ejecutada (stop o horizonte alcanzado), o
+            # - datos agotados despues del horizonte (open_at_end y ahora >= horizonte).
+            r = tr  # OperativoTradeResult
+            terminal = (
+                r.exit_executed
+                or (r.open_at_end
+                    and now >= decision_ms + int(self.operativo.cfg.horizon_ms))
+            )
+            if terminal:
+                self.operativo.persistir(tr)
+                item["resuelta"] = True
+                resueltas += 1
         return resueltas
 
     def _persistir_resultado_operativo(
@@ -1824,6 +1858,13 @@ class ResearchPilot:
         return price
 
     async def resolve_due(self, now: int) -> int:
+        # Planificacion de consultas: evitar consultas de klines en cada tick.
+        if (
+            self._last_resolve_due_ms is not None
+            and now - self._last_resolve_due_ms < _INTERVALO_RESOLVER_MS
+        ):
+            return 0
+        self._last_resolve_due_ms = now
         if not self.pending:
             return 0
         step = INTERVAL_MS[self.cfg.price_interval]
@@ -2350,6 +2391,9 @@ def build_parser() -> argparse.ArgumentParser:
                    help="parada explicita del operador (solo --clock manual)")
     p.add_argument("--budget-only", action="store_true",
                    help="calcula y escribe el presupuesto sin red")
+    p.add_argument("--funding-calendars", default=None,
+                   help="ruta a JSON con calendarios de funding por simbolo "
+                        "(clave = simbolo, valor = calendario)")
     return p
 
 
@@ -2468,7 +2512,32 @@ def main(argv: Optional[List[str]] = None) -> int:
         return 0
     try:
         clock = build_clock(cfg.clock_mode, cfg.clock_file)
-        pilot = ResearchPilot(cfg, clock=clock)
+        # Cargar calendarios de funding si se especifican (archivo sintético
+        # identificado como tal en pruebas; no se abre adquisición pública).
+        funding_calendars: Dict[str, FundingCalendar] = {}
+        if args.funding_calendars:
+            fc_path = Path(args.funding_calendars)
+            if fc_path.exists():
+                fc_data = json.loads(fc_path.read_text(encoding="utf-8"))
+                for symbol, fc_dict in fc_data.items():
+                    settlements = tuple(
+                        FundingSettlement(
+                            settlement_ms=int(s["settlement_ms"]),
+                            rate_bps=float(s["rate_bps"]),
+                        )
+                        for s in fc_dict.get("settlements", [])
+                    )
+                    funding_calendars[symbol] = FundingCalendar(
+                        version=fc_dict.get("version", "synthetic/v1"),
+                        source=fc_dict.get("source", "synthetic-fixture"),
+                        interval_ms=fc_dict.get("interval_ms"),
+                        settlements=settlements,
+                        symbol=symbol,
+                    )
+        pilot = ResearchPilot(
+            cfg, clock=clock,
+            funding_calendars=funding_calendars,
+        )
         previous = _install_stop_handlers(pilot)
         try:
             summary = asyncio.run(pilot.run())

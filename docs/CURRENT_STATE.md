@@ -5091,3 +5091,41 @@ Presupuesto efectivo y comando publico NO EJECUTADO en
 docs/EXPERIMENTO_OPERATIVO_V2.md seccion 9. El experimento queda en
 diseño, listo para solicitar autorizacion de adquisicion; no acredita
 rentabilidad ni autoriza las tres ventanas ni ejecucion real.
+
+## 2026-11-09 - Camino productivo del experimento operativo v2 cerrado localmente (rama research/universe-liquidez-v1, base 510485a)
+
+Se cerro el recorrido productivo local del experimento operativo v2 sin
+Binance, sin nuevas capturas publicas, sin ordenes reales, sin nuevos
+servicios ni motores paralelos. Se reprodujeron y corrigieron los cinco
+defectos del encargo sobre la base revisada, y se acredito el recorrido
+mediante el CLI real (scripts/research_pilot.py) como subproceso con
+proveedores HTTP/WS loopback, almacenamiento aislado y reloj controlado.
+
+Defectos corregidos:
+A. Proveedor cronologico: MarketHttp consulta clock_ms_fn en cada peticion,
+   respeta startTime/endTime/limit, no devuelve aperturas posteriores al reloj,
+   no presenta como definitivos OHLC de vela abierta, identifica provisionales.
+B. Pendientes: _resolver_operativos_pendientes solo marca resuelta cuando hay
+   salida ejecutada (stop/horizonte) o agotamiento tras el horizonte.
+C. Prueba integrada: no detiene el piloto ni crea adaptador externo; todo lo
+   produce el CLI real bajo su presupuesto.
+D. Concurrencia compartida: max_concurrent=1 aplica _capacidad_disponible_en
+   antes de admitir cada entrada; rechazas por capacidad registradas aparte de
+   abstenciones por senal/datos.
+E. Funding via CLI: main() carga calendarios validados por simbolo desde
+   --funding-calendars (sintetico en pruebas; sin adquisicion publica).
+
+Pruebas ejecutadas: tests/test_operativo_cli_integrado.py (3 passed,
+incluida aceptacion integrada del CLI), tests/test_research_pilot.py (28
+passed), y regresiones de paper_lab_engine, experimento_operativo_local,
+backtest_offline, backtest_funding, operativo_local_v2: 114 passed en total.
+
+Presupuesto efectivo (--budget-only, 1 ventana, sin red): HTTP intentos <=984
+(/2000), peso <=1452 (/5000), reintentos <=50 (/50), almacenamiento <=2.9 MB
+(/128 MB). Pesos de ASSUMED_WEIGHTS (tabla interna, no cabeceras Binance).
+
+Cobertura implementada: perpetuos USD-M. Futuros con vencimiento siguen
+pendiente sin soporte. No se declaro rentabilidad ni se autorizo adquisicion
+ni ejecucion real. 3020 y 8792 preservados; opencode.json y archivos ajenos
+no se commitean.
+
