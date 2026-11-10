@@ -5129,3 +5129,48 @@ pendiente sin soporte. No se declaro rentabilidad ni se autorizo adquisicion
 ni ejecucion real. 3020 y 8792 preservados; opencode.json y archivos ajenos
 no se commitean.
 
+
+## 2026-11-09 - Rectificacion de tres defectos materiales (rama research/universe-liquidez-v1, base b9d17fb)
+
+Se corrigieron tres defectos materiales reproducidos sobre la base revisada,
+sin reiniciar el diseno, sin ampliar infraestructura y sin Binance.
+
+1. Concurrencia compartida real: _capacidad_disponible_en(entry_ms,
+   exclude_oid=oid) aplica max_concurrent=1 al conjunto del experimento.
+   Una posicion open_at_end o con salida desconocida no libera capacidad
+   ficticamente. El adaptador conserva _results por observation_id para que
+   reprocesar la misma observacion no la bloquee contra si misma, no duplique
+   admisiones ni duplique resultados. Aceptacion verificada: A) dos senales
+   solapadas -> una admitida y otra rechazada por capacidad; B) senal posterior
+   a liberacion acreditada -> admitida; C) repetir procesamiento -> mismos
+   resultados sin duplicados; D) cambiar solo el rol no cambia prioridad ni
+   regla.
+
+2. Funding mediante el CLI: main() importa FundingSettlement y carga calendarios
+   validados por simbolo desde --funding-calendars. Verificado lanzando
+   research_pilot.py como subproceso real con calendario sintético:
+   evento aplicable dentro de exposicion -> funding contabilizado y cantidad
+   comprobable; cobertura sin evento aplicable -> cero conocido; calendario
+   ausente -> UNKNOWN, nunca cero.
+
+3. Presupuesto coherente con la planificacion real: compute_budget ahora
+   incluye klines_resolver_operativo (1 consulta por observacion apta).
+   _resolver_operativos_pendientes y resolve_due rastrean la ultima consulta
+   por operacion/pending y no reconsultan dentro del mismo intervalo
+   (60 s), evitando consultas repetidas en cada tick. Los límites siguen
+   reservandose antes del transporte (RunBudget).
+
+Pruebas: tests/test_operativo_cli_integrado.py (3 passed, incluida aceptacion
+integrada del CLI con --funding-calendars), tests/test_research_pilot.py
+(28 passed, incluido test_budget_cuenta_dos_aperturas_por_rotacion actualizado),
+y regresiones: 114 passed en total.
+
+Presupuesto efectivo (--budget-only, 1 ventana, sin red): HTTP intentos
+<=1224 (/2000), peso <=1692 (/5000), reintentos <=50 (/50), almacenamiento
+<=3.0 MB (/128 MB). Pesos de ASSUMED_WEIGHTS. No se aumentaron cupos.
+
+Cobertura implementada: perpetuos USD-M. Futuros con vencimiento siguen
+pendiente sin soporte. No se declara rentabilidad ni se autoriza adquisicion
+ni ejecucion real. 3020 y 8792 preservados; opencode.json y archivos ajenos
+no se commitean.
+

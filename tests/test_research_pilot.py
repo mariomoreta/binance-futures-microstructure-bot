@@ -36,6 +36,7 @@ import tempfile
 import threading
 import time
 import unittest
+from typing import Optional
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from urllib.parse import parse_qs, urlsplit
@@ -457,7 +458,8 @@ class PilotRun:
 
     def __init__(self, tmp: Path, *, universe, duration_s, settle_s,
                  selection_s, max_symbols, rotation=False,
-                 cycle_s=60, horizons=HORIZONS, max_http_attempts=2000) -> None:
+                 cycle_s=60, horizons=HORIZONS, max_http_attempts=2000,
+                 funding_calendars_path: Optional[str] = None) -> None:
         self.tmp = Path(tmp)
         self.universe = list(universe)
         self.out_dir = self.tmp / "out"
@@ -521,6 +523,8 @@ class PilotRun:
             "--decision-gate-file", str(self.gate_path),
             "--stop-file", str(self.stop_path),
         ]
+        if funding_calendars_path:
+            cmd.extend(["--funding-calendars", funding_calendars_path])
         self.proc = subprocess.Popen(
             cmd, cwd=str(ROOT), stdout=subprocess.PIPE,
             stderr=subprocess.PIPE, text=True)
@@ -1010,10 +1014,10 @@ class TestCLISeparacionLocalPublico(unittest.TestCase):
             cycle_seconds=300, selection_seconds=300, max_symbols=20)
         budget = rp.compute_budget(cfg)
         rest = budget["rest"]
-        self.assertEqual(rest["intentos_base"], 984)
-        self.assertEqual(rest["peso_base"], 1_452)
-        self.assertEqual(rest["intentos_base_mas_reintentos"], 1_034)
-        self.assertEqual(rest["peso_base_mas_reintentos_max"], 3_452)
+        self.assertEqual(rest["intentos_base"], 1224)
+        self.assertEqual(rest["peso_base"], 1_692)
+        self.assertEqual(rest["intentos_base_mas_reintentos"], 1_274)
+        self.assertEqual(rest["peso_base_mas_reintentos_max"], 3_692)
         ws = budget["ws"]
         self.assertEqual(ws["rotaciones_previstas"], 11)
         self.assertEqual(ws["aperturas_iniciales"], 2)
@@ -1024,8 +1028,8 @@ class TestCLISeparacionLocalPublico(unittest.TestCase):
         self.assertEqual(ws["streams_pico_por_conexion"], 20)
         self.assertEqual(ws["streams_pico_total"], 40)
         storage = budget["almacenamiento"]
-        self.assertEqual(storage["total_bytes_previstos"], 2_915_072)
-        self.assertEqual(storage["margen_bytes"], 131_302_656)
+        self.assertEqual(storage["total_bytes_previstos"], 3_035_072)
+        self.assertEqual(storage["margen_bytes"], 131_182_656)
 
 
 # ---------------------------------------------------------------------------

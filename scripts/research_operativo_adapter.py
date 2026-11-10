@@ -171,7 +171,15 @@ class OperativoAdapter:
         }
         # Capacidad compartida: posiciones abiertas (observation_id -> {entry_ms, exit_ms}).
         # max_concurrent=1 significa una posicion abierta a la vez en todo el experimento.
+        # Una posicion solo se libera cuando se conoce su salida real (stop o
+        # horizonte). Una posicion open_at_end (sin salida conocida) NO libera
+        # capacidad ficticiamente.
         self.open_positions: Dict[str, Dict[str, Optional[int]]] = {}
+        # Resultados ya producidos por observation_id, para evitar reprocesar
+        # la misma observacion (no bloquea contra si misma, no duplica admisiones
+        # ni resultados). open_at_end se mantiene para poder reprocesar cuando
+        # lleguen mas velas.
+        self._results: Dict[str, OperativoTradeResult] = {}
 
     def close(self) -> None:
         try:
@@ -181,13 +189,18 @@ class OperativoAdapter:
 
     # -- capacidad compartida (max_concurrent=1) -----------------------------
 
-    def _capacidad_disponible_en(self, entry_ms: int) -> bool:
+    def _capacidad_disponible_en(self, entry_ms: int,
+                                 exclude_oid: Optional[str] = None) -> bool:
         """Devuelve True si no hay ninguna posicion abierta que cubra entry_ms.
 
         Una posicion cubre entry_ms si su entrada ya ocurrio (entry_ms_pos <= entry_ms)
         y aun no ha salido (exit_ms es None o exit_ms_pos > entry_ms).
+        ``exclude_oid`` permite reprocesar la misma observacion sin bloquearla
+        contra si misma.
         """
-        for pos in self.open_positions.values():
+        for pos_oid, pos in self.open_positions.items():
+            if pos_oid == exclude_oid:
+                continue
             pos_entry = pos["entry_ms"]
             pos_exit = pos["exit_ms"]
             if pos_entry <= entry_ms and (pos_exit is None or pos_exit > entry_ms):
@@ -246,10 +259,21 @@ class OperativoAdapter:
         # del adaptador; nunca se inventa.
         cal = funding_calendar or self.funding_calendars.get(symbol)
 
+        # Reprocesamiento de observacion ya vista: si ya hay resultado previo
+        # y ya tiene salida ejecutada, retornar sin efectos duplicados.
+        oid = observacion["observation_id"]
+        if oid in self._results:
+            prev = self._results[oid]
+            if prev.exit_executed:
+                return prev
+            # Si el previo es open_at_end (sin salida conocida), se sigue
+            # procesando con las nuevas velas para ver si ahora se conoce la
+            # salida. No se retorna el previo directamente.
+
         # --- Abstencion por dato ausente o sin senal ---------------------
         if direccion is None:
             self.estado["abstenciones"] += 1
-            return OperativoTradeResult(
+            tr = OperativoTradeResult(
                 observation_id=traza["observation_id"],
                 symbol=symbol, role=role, direction=None,
                 decision="SIN_ENTRADA", decision_ms=decision_ms,
@@ -263,6 +287,8 @@ class OperativoAdapter:
                 config_hash=self._config_hash(),
                 engine_version=ENGINE_VERSION_PAPER,
             )
+            self._results[oid] = tr
+            return tr
 
         # --- Entrada: referencia de senal y configuracion versionada -----
         # entry_px = close de vela 1m plenamente conocida en T (precio
@@ -270,7 +296,7 @@ class OperativoAdapter:
         vela_conocida = _vela_plenamente_conocida_en(velas_1m, decision_ms)
         if vela_conocida is None:
             self.estado["abstenciones"] += 1
-            return OperativoTradeResult(
+            tr = OperativoTradeResult(
                 observation_id=traza["observation_id"],
                 symbol=symbol, role=role, direction=direccion,
                 decision="SIN_ENTRADA", decision_ms=decision_ms,
@@ -284,6 +310,8 @@ class OperativoAdapter:
                 config_hash=self._config_hash(),
                 engine_version=ENGINE_VERSION_PAPER,
             )
+            self._results[oid] = tr
+            return tr
 
         entry_px_ref = vela_conocida.close
         stop_pct = self.cfg.stop_distance_pct / 100.0
@@ -301,10 +329,12 @@ class OperativoAdapter:
                 break
 
         # Capacidad compartida (max_concurrent=1): si ya hay una posicion
-        # abierta que cubra el entry_ms, rechazar por capacidad.
-        if entry_ms_calc is not None and not self._capacidad_disponible_en(entry_ms_calc):
+        # abierta que cubra el entry_ms, rechazar por capacidad. Se excluye la
+        # propia observacion para permitir reprocesamiento sin auto-bloqueo.
+        if entry_ms_calc is not None and not self._capacidad_disponible_en(
+                entry_ms_calc, exclude_oid=oid):
             self.estado["rechazadas_capacidad"] += 1
-            return OperativoTradeResult(
+            tr = OperativoTradeResult(
                 observation_id=traza["observation_id"],
                 symbol=symbol, role=role, direction=direccion,
                 decision="RECHAZADA_CAPACIDAD", decision_ms=decision_ms,
@@ -318,6 +348,8 @@ class OperativoAdapter:
                 config_hash=self._config_hash(),
                 engine_version=ENGINE_VERSION_PAPER,
             )
+            self._results[oid] = tr
+            return tr
 
         config = PaperSessionConfig(
             symbol=symbol, interval="1m", direction=direccion,
@@ -345,7 +377,7 @@ class OperativoAdapter:
         # sin fill posible), no hay operacion.
         if state.status != "en_espera":
             self.estado["abstenciones"] += 1
-            return OperativoTradeResult(
+            tr = OperativoTradeResult(
                 observation_id=traza["observation_id"],
                 symbol=symbol, role=role, direction=direccion,
                 decision=state.config.decision or "SIN_ENTRADA",
@@ -361,6 +393,8 @@ class OperativoAdapter:
                 config_hash=self._config_hash(),
                 engine_version=ENGINE_VERSION_PAPER,
             )
+            self._results[oid] = tr
+            return tr
 
         # --- Fill en open de vela siguiente a la senal (causal) ----------
         # Revelar velas sucesivas hasta que se abra la posicion o se agoten
@@ -383,7 +417,7 @@ class OperativoAdapter:
 
         if not state.position.open:
             self.estado["abstenciones"] += 1
-            return OperativoTradeResult(
+            tr = OperativoTradeResult(
                 observation_id=traza["observation_id"],
                 symbol=symbol, role=role, direction=direccion,
                 decision="ENTRADA_SIMULADA", decision_ms=decision_ms,
@@ -397,6 +431,8 @@ class OperativoAdapter:
                 config_hash=self._config_hash(),
                 engine_version=ENGINE_VERSION_PAPER,
             )
+            self._results[oid] = tr
+            return tr
 
         # Registrar posicion abierta para capacidad compartida.
         self._registrar_posicion(
@@ -411,12 +447,12 @@ class OperativoAdapter:
                 raise AssertionError(f"Demasiados pasos para {symbol} @ {decision_ms}")
 
         r = state.result
-        self.estado["operaciones"] += 1
+        # No duplicar el contador si es una actualización de una observacion
+        # ya vista (reprocesamiento con mas velas para resolver open_at_end).
+        if oid not in self._results:
+            self.estado["operaciones"] += 1
         if r.open_at_end:
             self.estado["posiciones_abiertas_final"] += 1
-        # Liberar posicion (ya cerro o esta abierta sin salida futura conocida).
-        self._liberar_posicion(observacion["observation_id"])
-
         # Funding: si hay calendario real para este simbolo, recalcular con
         # run_backtest para contabilizar settlements; si no hay calendario,
         # funding = UNKNOWN (None, nunca cero). paper_lab_engine ya fuerza
@@ -436,7 +472,15 @@ class OperativoAdapter:
                 # (incluye funding real contabilizado).
                 r = _replace_result(r, funding=funding, net_pnl=bt.get("net_pnl"))
 
-        return OperativoTradeResult(
+        # Solo liberar capacidad cuando se conoce la salida real (stop o
+        # horizonte alcanzado). Una posicion open_at_end (sin salida conocida)
+        # NO libera capacidad ficticiamente; se mantiene hasta que lleguen mas
+        # velas y se pueda resolver en una llamada posterior.
+        if r.exit_executed:
+            self._liberar_posicion(observacion["observation_id"])
+
+        # Guardar resultado final para evitar reprocesamiento duplicado.
+        tr = OperativoTradeResult(
             observation_id=traza["observation_id"],
             symbol=symbol, role=role, direction=direccion,
             decision="ENTRADA_EJECUTADA", decision_ms=decision_ms,
@@ -451,6 +495,8 @@ class OperativoAdapter:
             config_hash=self._config_hash(),
             engine_version=ENGINE_VERSION_PAPER,
         )
+        self._results[oid] = tr
+        return tr
 
     def persistir(self, tr: OperativoTradeResult) -> None:
         row = {

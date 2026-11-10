@@ -135,7 +135,7 @@ from research_operativo_adapter import (  # noqa: E402
     _resultado_con_funding, _replace_result,
     _vela_plenamente_conocida_en,
 )
-from microstructure_probe.backtest_offline import FundingCalendar  # noqa: E402
+from microstructure_probe.backtest_offline import FundingCalendar, FundingSettlement  # noqa: E402
 from microstructure_probe.paper_lab_engine import (  # noqa: E402
     ENGINE_VERSION_PAPER, PaperCandle, PaperSessionConfig,
     RULE_CAUSAL_V1, create_session, evaluate_session, step_forward,
@@ -729,10 +729,13 @@ def compute_budget(cfg: PilotConfig) -> Dict[str, Any]:
 
     observations_max = cycles * symbols
     # Una llamada klines por observacion apta (adaptador: entrada/gestion/salida)
-    # más una por horizonte (resolve_due de resultados).
+    # más una por horizonte (resolve_due de resultados) y una por observacion
+    # durante el resolver de operaciones pendientes (politica acotada: una
+    # consulta por observacion por intervalo de planificacion, no en cada tick).
     klines_entrada = observations_max
     klines_requests = observations_max * n_horizons
-    klines_total = klines_entrada + klines_requests
+    klines_resolver = observations_max
+    klines_total = klines_entrada + klines_requests + klines_resolver
 
     weight_catalog = selections * WEIGHT_EXCHANGE_INFO
     weight_tickers = selections * WEIGHT_TICKER_24H
@@ -817,6 +820,14 @@ def compute_budget(cfg: PilotConfig) -> Dict[str, Any]:
                     "peso_total": klines_requests * WEIGHT_KLINES,
                     "nota": "1 por observacion y horizonte (resolve_due de "
                             "resultados; interval 1m, limit=1)"},
+                "/fapi/v1/klines_resolver_operativo": {
+                    "llamadas": klines_resolver, "peso_unitario": WEIGHT_KLINES,
+                    "peso_total": klines_resolver * WEIGHT_KLINES,
+                    "nota": "1 por observacion apta durante el resolver de "
+                            "operaciones pendientes (politica acotada: una "
+                            "consulta por observacion por intervalo de "
+                            "planificacion, no en cada tick; interval 1m, "
+                            "limit=1)"},
             },
             "intentos_base": selections * 2 + klines_total,
             "reintentos_tope": cfg.max_http_retries,
@@ -831,10 +842,12 @@ def compute_budget(cfg: PilotConfig) -> Dict[str, Any]:
             "intentos_techo_efectivo": cfg.max_http_attempts,
             "peso_techo_efectivo": cfg.max_http_weight,
             "nota_consultas_repetidas": (
-                "La base cuenta klines de entrada (adaptador) y de resultado "
-                "(resolve_due). Si falta la vela, resolve_due reintenta cada "
-                "tick; esos intentos y sus reintentos solo estan acotados "
-                "por max_http_attempts/max_http_weight."
+                "La base cuenta klines de entrada (adaptador), de resultado "
+                "(resolve_due) y del resolver de operaciones pendientes. Cada "
+                "operacion pendiente se consulta como máximo una vez por "
+                "intervalo de planificacion (60 s), no en cada tick. Los "
+                "reintentos y posibles repeticiones acotadas solo estan "
+                "acotados por max_http_attempts/max_http_weight."
             ),
         },
         "ws": {
@@ -1005,6 +1018,11 @@ class ResearchPilot:
         self.ended_ms: Optional[int] = None
         self._last_resolve_ms: Optional[int] = None
         self._last_resolve_due_ms: Optional[int] = None
+        # Última consulta por observation_id (evita reconsultar la misma
+        # operación dentro del mismo intervalo de planificación).
+        self._last_resolve_by_obs: Dict[str, int] = {}
+        # Claves de pending ya consultadas en el intervalo actual de resolve_due.
+        self._resolve_due_done_this_interval: set = set()
         self.capture_end_ms = self.started_ms + int(cfg.duration_seconds * 1000)
         self.settle_end_ms = self.capture_end_ms + int(cfg.settle_seconds * 1000)
         # Instante de primera suscripcion de cada simbolo (calentamiento).
@@ -1715,20 +1733,19 @@ class ResearchPilot:
         Devuelve el numero de operaciones resueltas en esta llamada.
         """
         # Planificacion de consultas: evitar consultar en cada tick para
-        # trabajos que todavia no pueden madurar. Solo se consulta cuando haya
-        # transcurrido un intervalo minimo desde la ultima resolucion.
-        if (
-            self._last_resolve_ms is not None
-            and now - self._last_resolve_ms < _INTERVALO_RESOLVER_MS
-        ):
-            return 0
-        self._last_resolve_ms = now
-
+        # trabajos que todavia no pueden madurar. Cada operacion pendiente se
+        # consulta como maximo una vez por intervalo de planificacion.
         resueltas = 0
         for oid in list(self.operativo_pendientes.keys()):
             item = self.operativo_pendientes[oid]
             if item["resuelta"]:
                 continue
+            # Solo consultar esta operacion si ha transcurrido el intervalo
+            # minimo desde su ultima consulta.
+            last = self._last_resolve_by_obs.get(oid)
+            if last is not None and now - last < _INTERVALO_RESOLVER_MS:
+                continue
+            self._last_resolve_by_obs[oid] = now
             symbol = item["symbol"]
             obs = item["observacion"]
             decision_ms = int(obs["decision_ms"])
@@ -1783,6 +1800,7 @@ class ResearchPilot:
             if terminal:
                 self.operativo.persistir(tr)
                 item["resuelta"] = True
+                self._last_resolve_by_obs.pop(oid, None)
                 resueltas += 1
         return resueltas
 
@@ -1865,6 +1883,8 @@ class ResearchPilot:
         ):
             return 0
         self._last_resolve_due_ms = now
+        # Nueva ventana de planificacion: limpiar claves ya consultadas.
+        self._resolve_due_done_this_interval.clear()
         if not self.pending:
             return 0
         step = INTERVAL_MS[self.cfg.price_interval]
@@ -1875,6 +1895,10 @@ class ResearchPilot:
             if not self._storage_ok():
                 self.stop_reason = "presupuesto_bytes"
                 break
+            # No reconsultar un pending ya atendido en este intervalo.
+            if key in self._resolve_due_done_this_interval:
+                continue
+            self._resolve_due_done_this_interval.add(key)
             item = self.pending[key]
             target = int(item["target_ms"])
             price_ts = ceil_ms(target, step)

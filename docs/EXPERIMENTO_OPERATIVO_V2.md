@@ -159,11 +159,11 @@ Este bloque se cerró localmente sobre `research/universe-liquidez-v1` (base
 `510485a4d01a83430d56f2838404b8e08390963d`), reutilizando `paper_lab_engine`,
 `backtest_offline`, `research_pilot` y `research_operativo_adapter` sin Binance,
 sin nuevas capturas públicas, sin órdenes reales, sin nuevos servicios ni
-motores paralelos. Se reprodujeron y corrigieron los cinco defectos del
-encargo sobre la base revisada, y se acreditó el recorrido productivo local
-del experimento operativo v2 mediante el CLI real (`scripts/research_pilot.py`)
-como subproceso con proveedores HTTP/WS loopback, almacenamiento aislado y
-reloj controlado.
+motores paralelos. Se reprodujeron y corrigieron los ocho defectos del encargo sobre la base
+revisada (cinco del bloque previo más tres materiales en esta revisión), y se
+acreditó el recorrido productivo local del experimento operativo v2 mediante el
+CLI real (`scripts/research_pilot.py`) como subproceso con proveedores HTTP/WS
+loopback, almacenamiento aislado y reloj controlado.
 
 Pruebas: `tests/test_operativo_cli_integrado.py` (3 passed, incluida la
 aceptación integrada del CLI) + `tests/test_research_pilot.py` (28 passed)
@@ -191,18 +191,37 @@ C. **Prueba integrada que no sustituye al producto:** `test_cli_productivo_integ
    su presupuesto. No detiene el piloto ni crea un adaptador externo ni un
    `HistoryClient` con `attempt_gate=None`.
 
-D. **Concurrencia compartida:** `max_concurrent=1` se aplica en el adaptador
-   mediante `_capacidad_disponible_en` antes de admitir cada entrada; se
-   registran rechazos por capacidad (`rechazadas_capacidad`) separados de
-   abstenciones por señal o datos. El rol candidate/comparator no determina
-   prioridad, dirección ni reglas.
+D. **Concurrencia compartida (reparación):** `max_concurrent=1` se aplica al
+   conjunto del experimento mediante `_capacidad_disponible_en(entry_ms,
+   exclude_oid=oid)` antes de admitir cada entrada. Una posición `open_at_end`
+   o con salida desconocida NO libera capacidad ficticiamente: solo se libera
+   cuando se conoce la salida real (`exit_executed`). El adaptador conserva
+   `_results` por `observation_id` para que reprocesar la misma observación no
+   la bloquee contra sí misma, no duplique admisiones ni duplique resultados.
+   Los rechazos por capacidad (`rechazadas_capacidad`) se registran separados
+   de abstenciones por señal o datos y de trabajo pendiente. La prioridad es
+   determinista por tiempo de señal y símbolo; el rol candidate/comparator no
+   determina prioridad, dirección ni reglas.
 
-E. **Funding vía CLI:** `main()` carga calendarios de funding validados por
-   símbolo desde `--funding-calendars` (archivo sintético identificado como tal
-   en pruebas; no se abre adquisición pública). Se acredita: calendario con
-   cobertura y evento en exposición → funding contabilizado; calendario con
-   cobertura y sin evento aplicable → cero conocido; calendario ausente o sin
-   cobertura suficiente → UNKNOWN.
+E. **Funding vía CLI (reparación):** `main()` importa `FundingSettlement` y
+   carga calendarios de funding validados por símbolo desde
+   `--funding-calendars` (archivo sintético identificado como tal en pruebas;
+   no se abre adquisición pública). Se acredita desde el proceso real:
+   calendario con cobertura y evento en exposición → funding contabilizado y
+   cantidad comprobable; calendario con cobertura y sin evento aplicable →
+   cero conocido; calendario ausente o sin cobertura suficiente → UNKNOWN,
+   nunca cero inventado. Archivo inválido o inexistente → comportamiento
+   explícito, sin fallback silencioso a calendario vacío.
+
+F. **Presupuesto coherente con la frecuencia real:** `compute_budget` ahora
+   incluye las consultas del resolver de operaciones pendientes
+   (`klines_resolver_operativo`, 1 por observación apta) junto con las de
+   entrada (adaptador) y resultado (resolve_due). `_resolver_operativos_pendientes`
+   y `resolve_due` rastrean la última consulta por operación/pending y no
+   reconsultan dentro del mismo intervalo de planificación (60 s), evitando
+   consultas repetidas en cada tick. Los límites siguen reservándose antes del
+   transporte mediante `RunBudget`; un bloqueo no aumenta las llamadas
+   recibidas por el proveedor ni convierte pendientes en resultados ficticios.
 
 ### Recorrido productivo acreditado por el CLI real
 
@@ -228,12 +247,12 @@ Calculado con `python scripts/research_pilot.py --budget-only` (sin red):
 
 | Concepto | Por ventana | Techo | Estado |
 |---|---|---|---|
-| HTTP intentos | ≤984 | ≤2000 | Dentro |
-| HTTP peso | ≤1452 | ≤5000 | Dentro |
+| HTTP intentos | ≤1 224 | ≤2000 | Dentro |
+| HTTP peso | ≤1 692 | ≤5000 | Dentro |
 | HTTP reintentos | ≤50 | ≤50 | Dentro |
 | WS conexiones simultáneas | 2 (pico) | — | /public + /market |
 | WS aperturas acumuladas | ≤46 | — | inicial + rotación + reconexión |
-| Almacenamiento | ≤2.9 MB | ≤128 MB | Dentro |
+| Almacenamiento | ≤3.0 MB | ≤128 MB | Dentro |
 
 Pesos de `ASSUMED_WEIGHTS` (tabla interna, no cabeceras Binance reales). No
 se aumentaron cupos silenciosamente.
@@ -349,8 +368,9 @@ settle, `cycle_seconds=300`, `selection_seconds=300`, `max_symbols=20`,
 | ticker 24h (REST) | 12 intentos / peso 480 | 36 / 1 440 | Movimiento 24h por selección |
 | klines entrada (REST) | 240 intentos / peso 240 | 720 / 720 | 1 por observación apta (adaptador) |
 | klines resultado (REST) | 720 intentos / peso 720 | 2 160 / 2 160 | 1 por observación × 3 horizontes |
-| HTTP intentos totales | ≤984 | ≤2 952 | Techo efectivo 2 000/ventana |
-| HTTP peso total | ≤1 452 | ≤4 356 | Dentro del techo 5 000/ventana |
+| klines resolver operativo (REST) | 240 intentos / peso 240 | 720 / 720 | 1 por observación apta, política acotada (una por intervalo) |
+| HTTP intentos totales | ≤1 224 | ≤3 672 | Techo efectivo 2 000/ventana |
+| HTTP peso total | ≤1 692 | ≤5 076 | Dentro del techo 5 000/ventana |
 | HTTP reintentos | ≤50 | ≤150 | Dentro del presupuesto |
 | WS conexiones simultáneas | 2 | 2 (pico) | /public (depth) + /market (aggTrade) |
 | WS aperturas acumuladas | ≤24 | ≤72 | Inicial + rotaciones + reconexiones |
@@ -363,7 +383,7 @@ settle, `cycle_seconds=300`, `selection_seconds=300`, `max_symbols=20`,
 
 **Peso HTTP observado vs configurado:** los pesos son de `ASSUMED_WEIGHTS`
 (tabla interna, no cabeceras Binance). El consumo real se reconstruye desde
-el ledger de `HistoryClient`. El peso total (1 452/ventana) está dentro del
+el ledger de `HistoryClient`. El peso total (1 692/ventana) está dentro del
 techo de 5 000/ventana, por lo que no se requiere aumento de cupos.
 
 **Justificación del uso mínimo de REST/WS:** klines 1m por REST es el mínimo

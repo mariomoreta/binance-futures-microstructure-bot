@@ -165,6 +165,7 @@ def test_cli_productivo_integrado() -> None:
         cycle_s=300,       # corregido: 300s, no 60s
         horizons=tr.HORIZONS,
         max_http_attempts=2000,
+        funding_calendars_path="/tmp/fund_test/calendario_cli.json",
     )
 
     try:
@@ -315,11 +316,28 @@ def test_cli_productivo_integrado() -> None:
         assert resumen["operaciones"] >= 1, resumen
         assert resumen["salidas_ejecutadas_simuladas"] >= 1, resumen
         assert resumen["funding_desconocido"] >= 1, resumen  # sin calendario
+        # Funding via CLI: calendario con evento en exposición -> contabilizado.
+        assert resumen["funding_contabilizado"] >= 1, resumen
+
+        # Verificar que el símbolo con calendario (AAAUSDT, primero alfabéticamente)
+        # tiene funding contabilizado en resultado_operativo.jsonl.
+        rows_op = _leer_jsonl(op_path)
+        aaa_ops = [r for r in rows_op
+                   if r.get("kind") == "resultado_operativo"
+                   and r.get("symbol") == "AAAUSDT"]
+        assert len(aaa_ops) >= 1, f"AAAUSDT sin filas operativas: {rows_op!r}"
+        aaa_funded = [r for r in aaa_ops if r.get("funding") is not None]
+        assert len(aaa_funded) >= 1, (
+            f"AAAUSDT sin funding contabilizado: {aaa_ops!r}")
+        for r in aaa_funded:
+            assert r["funding_estado"] == "settlement-calendar", r
+            assert isinstance(r["funding"], (int, float)), r
 
         print(f"  [CLI integrado] operaciones={resumen['operaciones']} "
               f"direcciones={resumen['por_direccion']} "
               f"salidas={resumen['salidas_ejecutadas_simuladas']} "
               f"funding_desconocido={resumen['funding_desconocido']} "
+              f"funding_contabilizado={resumen['funding_contabilizado']} "
               f"http_klines={run.http.klines_calls} ws_conns={run.ws.connections}")
     finally:
         run.shutdown()
