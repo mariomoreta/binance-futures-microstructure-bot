@@ -136,7 +136,13 @@ def _regenerar_resumen(path: Path) -> Dict[str, Any]:
 
 def test_ambos_roles_reciben_dato_de_movimiento() -> None:
     """Candidato y comparador reciben move_24h_pct y derivan direccion
-    mediante la misma funcion; el rol no determina direccion."""
+    mediante la misma funcion; el rol no determina direccion.
+
+    Con max_concurrent=1 compartido, las dos señales (misma entrada y misma
+    salida) NO pueden ocupar la misma capacidad: la primera por prioridad
+    determinista (decision_ms, symbol) se admite y la segunda se rechaza por
+    capacidad. El rechazo es por capacidad compartida, no por el rol.
+    """
     cfg = OperativoConfig()
     adapter = OperativoAdapter(
         store_path=Path(tempfile.mkdtemp()) / "op.jsonl", cfg=cfg,
@@ -161,21 +167,29 @@ def test_ambos_roles_reciben_dato_de_movimiento() -> None:
     tr_cand = adapter.procesar_observacion(obs_cand, velas)
     tr_comp = adapter.procesar_observacion(obs_comp, velas)
 
+    # Misma regla y misma direccion para ambos roles.
     assert tr_cand.direction == "LONG", tr_cand
     assert tr_comp.direction == "LONG", tr_comp  # mismo dato -> misma direccion
+    # Prioridad determinista por (decision_ms, symbol): CANDUSDT < COMPUSDT.
     assert tr_cand.decision == "ENTRADA_EJECUTADA", tr_cand
-    assert tr_comp.decision == "ENTRADA_EJECUTADA", tr_comp
+    assert tr_comp.decision == "RECHAZADA_CAPACIDAD", tr_comp
+    assert tr_comp.exit_executed is False, tr_comp
+    # Mismo fill (open de vela siguiente) para ambos roles: la senal es la
+    # misma; lo que cambia es la ocupacion compartida, no la regla.
     assert abs(tr_cand.entry_px - 102.0) < 1e-9, tr_cand
     assert abs(tr_comp.entry_px - 102.0) < 1e-9, tr_comp
-    # Mismo fill (open de vela siguiente) para ambos roles.
     assert tr_cand.entry_ms == tr_comp.entry_ms == 120_000
-    # Salida por stop reconstruible.
+    # Salida por stop reconstruible en la operacion admitida.
     assert tr_cand.exit_reason == "stop", tr_cand
     assert tr_cand.exit_executed is True, tr_cand
     assert abs(tr_cand.exit_px - 101.49) < 1e-9, tr_cand
     # funding desconocido (sin calendario)
     assert tr_cand.funding is None, tr_cand
     assert tr_cand.funding_estado.startswith("ninguno"), tr_cand
+    # El intervalo historico de ocupacion se conserva tras la salida.
+    assert adapter.intervalos_ocupados() == [
+        ("CAND|119000", 120_000, 180_000)], adapter.intervalos_ocupados()
+    assert adapter.posiciones_abiertas() == {}, adapter.posiciones_abiertas()
 
     adapter.persistir(tr_cand)
     adapter.persistir(tr_comp)
@@ -189,7 +203,48 @@ def test_ambos_roles_reciben_dato_de_movimiento() -> None:
     assert all(r["config_hash"] for r in ops)
     assert all(r["engine_version"] for r in ops)
     print(f"  [ambos roles] candidato={tr_cand.direction} comparador={tr_comp.direction} "
-          f"fill={tr_cand.entry_px}@{tr_cand.entry_ms} salida={tr_cand.exit_reason}")
+          f"fill={tr_cand.entry_px}@{tr_cand.entry_ms} salida={tr_cand.exit_reason} "
+          f"rechazo_capacidad={tr_comp.decision}")
+
+
+def test_prioridad_no_depende_del_rol() -> None:
+    """El rol candidate/comparator no altera prioridad ni direccion.
+
+    El lote se procesa con la prioridad determinista del adaptador
+    (decision_ms, symbol, observation_id). Se variations de orden de llegada
+    y de rol: en todos los casos se admite el simbolo con menor clave y se
+    rechaza el otro por capacidad.
+    """
+    velas = _velas_con_entrada_y_salida_stop()
+
+    def _obs(symbol, role):
+        return {
+            "observation_id": f"{symbol}|119000", "symbol": symbol,
+            "role": role, "decision_ms": 119_000,
+            "seleccion": {"move_24h_pct": +2.4}, "side": "UP",
+        }
+
+    casos = [
+        [("AAAUSDT", "candidate"), ("BBBUSDT", "comparator")],
+        [("BBBUSDT", "comparator"), ("AAAUSDT", "candidate")],
+        [("AAAUSDT", "comparator"), ("BBBUSDT", "candidate")],
+        [("BBBUSDT", "candidate"), ("AAAUSDT", "comparator")],
+    ]
+    for orden in casos:
+        adapter = OperativoAdapter(
+            store_path=Path(tempfile.mkdtemp()) / "op.jsonl",
+            cfg=OperativoConfig(),
+        )
+        observaciones = [_obs(symbol, role) for symbol, role in orden]
+        velas_por_obs = {o["observation_id"]: velas for o in observaciones}
+        resultados = adapter.procesar_observaciones(
+            observaciones, velas_por_obs)
+        adapter.close()
+        por_symbol = {tr.symbol: tr for tr in resultados}
+        assert por_symbol["AAAUSDT"].decision == "ENTRADA_EJECUTADA", orden
+        assert por_symbol["BBBUSDT"].decision == "RECHAZADA_CAPACIDAD", orden
+        assert all(tr.direction == "LONG" for tr in resultados), orden
+    print("  [prioridad] el rol no altera la admission (AAAUSDT siempre)")
 
 
 def test_movimiento_negativo_short() -> None:
@@ -346,23 +401,33 @@ def test_resumen_regenerable_desde_persistido() -> None:
 
     # Velas para LONG: V1 close=102.0, stop 101.49 no vulnerado (low=101.55 > 101.49)
     velas_long = _velas_con_entrada_y_salida_stop()
-    # Velas para SHORT: V1 close=98.0, stop 98.49 no vulnerado (high=98.4 < 98.49)
+    # Velas para SHORT (decision en T=179000): el stop no esta vulnerado en T
+    # (high=98.4 < stop 98.49) y el fill ocurre en el open de 180000, con la
+    # salida por stop en el cierre de esa vela.
     velas_short = [
         mk_candle(0, 100.0, 101.0, 99.0, 100.0, 59_999),          # V0 contexto
         mk_candle(60_000, 98.3, 98.4, 97.0, 98.0, 119_000),        # V1 senal SHORT
-        mk_candle(120_000, 98.0, 100.0, 97.0, 99.0, 179_000),      # V2 fill + rango
-        mk_candle(180_000, 98.0, 100.0, 97.0, 98.0, 239_000),      # V3 revela close de V2
+        mk_candle(120_000, 98.0, 98.4, 97.0, 98.0, 179_000),      # V2 conocida en T
+        mk_candle(180_000, 98.0, 100.0, 97.0, 98.0, 239_000),      # V3 fill + stop
+        mk_candle(240_000, 98.0, 98.4, 97.0, 98.0, 299_000),      # V4 revela V3
     ]
-    for i, (mov, velas) in enumerate([(+2.4, velas_long), (-1.8, velas_short)]):
+    # La segunda observacion entra DESPUES de la salida de la primera
+    # ([120000, 180000) frente a [180000, 240000)): con max_concurrent=1 las
+    # dos operaciones son admitidas (no se solapan).
+    for i, (mov, velas, decision_ms) in enumerate([
+        (+2.4, velas_long, 119_000),
+        (-1.8, velas_short, 179_000),
+    ]):
         obs = {
-            "observation_id": f"RESUM|{i}|119000",
+            "observation_id": f"RESUM|{i}|{decision_ms}",
             "symbol": f"RESUMUSDT{i}",
             "role": "candidate" if i == 0 else "comparator",
-            "decision_ms": 119_000,
+            "decision_ms": decision_ms,
             "seleccion": {"move_24h_pct": mov},
             "side": "UP" if mov > 0 else "DOWN",
         }
         tr = adapter.procesar_observacion(obs, velas)
+        assert tr.decision == "ENTRADA_EJECUTADA", tr
         adapter.persistir(tr)
     adapter.close()
 

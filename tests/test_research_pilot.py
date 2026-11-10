@@ -151,6 +151,12 @@ class MarketHttp:
         self.clock_ms_fn = clock_ms_fn
         self.ticker_calls = 0
         self.klines_calls = 0
+        self.exchange_info_calls = 0
+        # Klines se clasifican por el limite pedido: la consulta de
+        # TRAYECTORIA operativa pide la ventana del horizonte (limit>1) y la
+        # consulta de precio por horizonte pide una sola vela (limit=1).
+        self.klines_calls_trajectory = 0
+        self.klines_calls_precio = 0
         self._lock = threading.Lock()
 
     def ticker_rows(self):
@@ -185,6 +191,8 @@ class MarketHttp:
         params = parse_qs(parsed.query)
 
         if path == "/fapi/v1/exchangeInfo":
+            with self._lock:
+                self.exchange_info_calls += 1
             symbols = [{"symbol": s, "status": "TRADING",
                         "contractType": "PERPETUAL", "quoteAsset": "USDT"}
                        for s in self.universe]
@@ -198,6 +206,11 @@ class MarketHttp:
         if path == "/fapi/v1/klines":
             with self._lock:
                 self.klines_calls += 1
+                limit = int(params.get("limit", ["0"])[0] or 0)
+                if limit > 1:
+                    self.klines_calls_trajectory += 1
+                else:
+                    self.klines_calls_precio += 1
             symbol = params.get("symbol", [""])[0].upper()
             start = int(params.get("startTime", [0])[0])
             end = int(params.get("endTime", [0])[0])
@@ -1014,10 +1027,29 @@ class TestCLISeparacionLocalPublico(unittest.TestCase):
             cycle_seconds=300, selection_seconds=300, max_symbols=20)
         budget = rp.compute_budget(cfg)
         rest = budget["rest"]
-        self.assertEqual(rest["intentos_base"], 1224)
-        self.assertEqual(rest["peso_base"], 1_692)
-        self.assertEqual(rest["intentos_base_mas_reintentos"], 1_274)
-        self.assertEqual(rest["peso_base_mas_reintentos_max"], 3_692)
+        # Estimacion BASE: preparacion (24) + trayectoria operativa (240) +
+        # resultados por horizonte (720). Una consulta de trayectoria por
+        # observacion apta (no dos: la serie cubre entrada, gestion y salida).
+        self.assertEqual(rest["intentos_base"], 984)
+        self.assertEqual(rest["peso_base"], 1_452)
+        self.assertEqual(rest["intentos_base_mas_reintentos"], 1_034)
+        self.assertEqual(rest["peso_base_mas_reintentos_max"], 3_452)
+        # Reservas: peticiones repetidas (1 por observacion) y reintentos por
+        # fallo (50), contabilizados aparte de la estimacion base.
+        reservas = rest["reservas"]
+        self.assertEqual(
+            reservas["peticiones_repetidas_por_observacion"]["llamadas"], 240)
+        self.assertEqual(
+            reservas["peticiones_repetidas_por_observacion"][
+                "max_por_observacion"], 1)
+        self.assertEqual(reservas["reintentos_por_fallo"]["llamadas"], 50)
+        self.assertEqual(rest["intentos_base_mas_reservas"], 1_274)
+        self.assertEqual(rest["peso_base_mas_reservas_max"], 3_692)
+        # La estimacion base NO se presenta como maximo garantizado: el
+        # limite efectivo son los topes configurados.
+        self.assertEqual(rest["intentos_techo_efectivo"], 2_000)
+        self.assertEqual(rest["peso_techo_efectivo"], 5_000)
+        self.assertTrue(rest["cabe_en_limites"])
         ws = budget["ws"]
         self.assertEqual(ws["rotaciones_previstas"], 11)
         self.assertEqual(ws["aperturas_iniciales"], 2)
@@ -1028,8 +1060,8 @@ class TestCLISeparacionLocalPublico(unittest.TestCase):
         self.assertEqual(ws["streams_pico_por_conexion"], 20)
         self.assertEqual(ws["streams_pico_total"], 40)
         storage = budget["almacenamiento"]
-        self.assertEqual(storage["total_bytes_previstos"], 3_035_072)
-        self.assertEqual(storage["margen_bytes"], 131_182_656)
+        self.assertEqual(storage["total_bytes_previstos"], 2_915_072)
+        self.assertEqual(storage["margen_bytes"], 131_302_656)
 
 
 # ---------------------------------------------------------------------------

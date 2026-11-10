@@ -169,17 +169,27 @@ class OperativoAdapter:
             "operaciones": 0,
             "posiciones_abiertas_final": 0,
         }
-        # Capacidad compartida: posiciones abiertas (observation_id -> {entry_ms, exit_ms}).
-        # max_concurrent=1 significa una posicion abierta a la vez en todo el experimento.
-        # Una posicion solo se libera cuando se conoce su salida real (stop o
-        # horizonte). Una posicion open_at_end (sin salida conocida) NO libera
-        # capacidad ficticiamente.
-        self.open_positions: Dict[str, Dict[str, Optional[int]]] = {}
-        # Resultados ya producidos por observation_id, para evitar reprocesar
-        # la misma observacion (no bloquea contra si misma, no duplica admisiones
-        # ni resultados). open_at_end se mantiene para poder reprocesar cuando
-        # lleguen mas velas.
+        # Capacidad compartida (max_concurrent=1) sobre el conjunto del
+        # experimento. Cada operacion admitida ocupa el intervalo
+        # [entry_ms, exit_ms) (mismo criterio de backtest_offline: s <= t < e).
+        # El intervalo se CONSERVA aunque la salida ya sea conocida: la
+        # exposicion existio y puede solaparse con una entrada posterior.
+        # exit_ms=None significa salida DESCONOCIDA: la ocupacion sigue
+        # abierta (nunca se libera de forma inventada).
+        self.intervalos_ocupacion: Dict[str, Dict[str, Optional[int]]] = {}
+        # Resultados ya producidos por observation_id, para no reprocesar una
+        # observacion terminal (no se bloquea contra si misma, no se duplican
+        # admisiones ni resultados) y para que una senal rechazada por
+        # capacidad no vuelva a admitirse.
         self._results: Dict[str, OperativoTradeResult] = {}
+        # Categorias ya contabilizadas por observation_id (idempotencia del
+        # resumen al reprocesar una observacion).
+        self._categorias: Dict[str, str] = {}
+        # Observaciones que pasaron la puerta de capacidad (idempotente).
+        self._admitidas: set = set()
+        # Detalle de cobertura del funding por observation_id (evidencia de
+        # que el importe acreditado es completo o de que es UNKNOWN).
+        self._funding_cuenta: Dict[str, Dict[str, Any]] = {}
 
     def close(self) -> None:
         try:
@@ -191,27 +201,98 @@ class OperativoAdapter:
 
     def _capacidad_disponible_en(self, entry_ms: int,
                                  exclude_oid: Optional[str] = None) -> bool:
-        """Devuelve True si no hay ninguna posicion abierta que cubra entry_ms.
+        """Devuelve True si ningun intervalo ocupado cubre ``entry_ms``.
 
-        Una posicion cubre entry_ms si su entrada ya ocurrio (entry_ms_pos <= entry_ms)
-        y aun no ha salido (exit_ms es None o exit_ms_pos > entry_ms).
+        Regla reutilizada de los motores existentes (``backtest_offline``):
+        un intervalo [s, e) ocupa el instante t si ``s <= t < e``. Se
+        consideran TODOS los intervalos conocidos, incluidos los ya cerrados
+        (la exposicion existio) y los de salida desconocida (``e`` es None:
+        ocupacion abierta, sin liberacion inventada).
+
         ``exclude_oid`` permite reprocesar la misma observacion sin bloquearla
         contra si misma.
         """
-        for pos_oid, pos in self.open_positions.items():
+        for pos_oid, pos in self.intervalos_ocupacion.items():
             if pos_oid == exclude_oid:
                 continue
             pos_entry = pos["entry_ms"]
             pos_exit = pos["exit_ms"]
-            if pos_entry <= entry_ms and (pos_exit is None or pos_exit > entry_ms):
+            if pos_entry is None:
+                continue
+            if pos_entry <= entry_ms and (pos_exit is None or entry_ms < pos_exit):
                 return False
         return True
 
-    def _registrar_posicion(self, observation_id: str, entry_ms: int, exit_ms: Optional[int]) -> None:
-        self.open_positions[observation_id] = {"entry_ms": entry_ms, "exit_ms": exit_ms}
+    def _registrar_posicion(self, observation_id: str, entry_ms: int,
+                             exit_ms: Optional[int] = None) -> None:
+        """Registra/actualiza el intervalo de ocupacion de una observacion."""
+        self.intervalos_ocupacion[observation_id] = {
+            "entry_ms": entry_ms, "exit_ms": exit_ms}
 
-    def _liberar_posicion(self, observation_id: str) -> None:
-        self.open_positions.pop(observation_id, None)
+    def _actualizar_salida(self, observation_id: str, exit_ms: int) -> None:
+        """Acredita la salida real: cierra el intervalo SIN borrarlo.
+
+        Conocer la salida permite admitir entradas posteriores; no borra la
+        exposicion que existio antes de la salida.
+        """
+        pos = self.intervalos_ocupacion.get(observation_id)
+        if pos is None:
+            return
+        if pos["exit_ms"] is None:
+            pos["exit_ms"] = exit_ms
+
+    def posiciones_abiertas(self) -> Dict[str, Dict[str, Optional[int]]]:
+        """Posiciones con exposicion abierta (salida todavia desconocida)."""
+        return {oid: dict(pos) for oid, pos in self.intervalos_ocupacion.items()
+                if pos["exit_ms"] is None}
+
+    def intervalos_ocupados(self) -> List[Tuple[str, int, Optional[int]]]:
+        """Historial de ocupacion: (observation_id, entry_ms, exit_ms)."""
+        return [(oid, int(pos["entry_ms"]), pos["exit_ms"])
+                for oid, pos in sorted(self.intervalos_ocupacion.items())
+                if pos["entry_ms"] is not None]
+
+    # -- contabilidad idempotente -------------------------------------------
+
+    def _contar(self, observation_id: str, categoria: str) -> None:
+        """Contabiliza una categoria principal por observacion (sin duplicar).
+
+        Las categorias principales son mutuas: una observacion cuenta como
+        operacion, abstincion, descarte o rechazo por capacidad, nunca en
+        dos de ellas a la vez.
+        """
+        anterior = self._categorias.get(observation_id)
+        if anterior == categoria:
+            return
+        if anterior is not None:
+            self.estado[anterior] = max(0, self.estado.get(anterior, 0) - 1)
+        self.estado[categoria] = self.estado.get(categoria, 0) + 1
+        self._categorias[observation_id] = categoria
+
+    def _marcar_admitida(self, observation_id: str) -> None:
+        """Marca la observacion como admitida por la puerta de capacidad."""
+        if observation_id in self._admitidas:
+            return
+        self._admitidas.add(observation_id)
+        self.estado["admitidas"] = self.estado.get("admitidas", 0) + 1
+
+    @staticmethod
+    def _es_terminal(tr: "OperativoTradeResult") -> bool:
+        """True si el resultado ya no puede cambiar con mas velas.
+
+        Terminal: salida ejecutada, rechazo por capacidad, abstencion por
+        senal/datos y descarte. Reprocesable: posicion abierta (salida
+        desconocida) o senal todavia sin fill (pueden llegar mas velas).
+        """
+        if tr.exit_executed:
+            return True
+        if tr.decision in ("RECHAZADA_CAPACIDAD", "SIN_ENTRADA", "DESCARTADO"):
+            return True
+        if tr.decision == "ENTRADA_SIMULADA" and tr.entry_ms is None:
+            return False
+        if tr.open_at_end and not tr.exit_executed:
+            return False
+        return True
 
     # -- escritura JSONL -----------------------------------------------------
 
@@ -259,20 +340,20 @@ class OperativoAdapter:
         # del adaptador; nunca se inventa.
         cal = funding_calendar or self.funding_calendars.get(symbol)
 
-        # Reprocesamiento de observacion ya vista: si ya hay resultado previo
-        # y ya tiene salida ejecutada, retornar sin efectos duplicados.
+        # Resultado previo de la misma observacion. Un resultado TERMINAL se
+        # devuelve tal cual: no se duplican efectos ni contadores, una senal
+        # rechazada por capacidad no vuelve a admitirse y una operacion ya
+        # cerrada no se reejecuta. Solo se reprocesa lo que aun puede
+        # cambiar: una posicion abierta (salida desconocida) o una senal sin
+        # fill todavia (pueden llegar mas velas).
         oid = observacion["observation_id"]
-        if oid in self._results:
-            prev = self._results[oid]
-            if prev.exit_executed:
-                return prev
-            # Si el previo es open_at_end (sin salida conocida), se sigue
-            # procesando con las nuevas velas para ver si ahora se conoce la
-            # salida. No se retorna el previo directamente.
+        prev = self._results.get(oid)
+        if prev is not None and self._es_terminal(prev):
+            return prev
 
         # --- Abstencion por dato ausente o sin senal ---------------------
         if direccion is None:
-            self.estado["abstenciones"] += 1
+            self._contar(oid, "abstenciones")
             tr = OperativoTradeResult(
                 observation_id=traza["observation_id"],
                 symbol=symbol, role=role, direction=None,
@@ -295,7 +376,7 @@ class OperativoAdapter:
         # conocido en T). stop_px segun regla congelada.
         vela_conocida = _vela_plenamente_conocida_en(velas_1m, decision_ms)
         if vela_conocida is None:
-            self.estado["abstenciones"] += 1
+            self._contar(oid, "abstenciones")
             tr = OperativoTradeResult(
                 observation_id=traza["observation_id"],
                 symbol=symbol, role=role, direction=direccion,
@@ -328,12 +409,14 @@ class OperativoAdapter:
                 entry_ms_calc = c.open_time_ms
                 break
 
-        # Capacidad compartida (max_concurrent=1): si ya hay una posicion
-        # abierta que cubra el entry_ms, rechazar por capacidad. Se excluye la
-        # propia observacion para permitir reprocesamiento sin auto-bloqueo.
+        # Capacidad compartida (max_concurrent=1): si algun intervalo ocupado
+        # (abierto o historico) cubre el entry_ms, rechazar por capacidad. Se
+        # excluye la propia observacion para permitir reprocesamiento sin
+        # auto-bloqueo. Un rechazo es TERMINAL: la senal no puede re-admitirse
+        # mas adelante.
         if entry_ms_calc is not None and not self._capacidad_disponible_en(
                 entry_ms_calc, exclude_oid=oid):
-            self.estado["rechazadas_capacidad"] += 1
+            self._contar(oid, "rechazadas_capacidad")
             tr = OperativoTradeResult(
                 observation_id=traza["observation_id"],
                 symbol=symbol, role=role, direction=direccion,
@@ -350,6 +433,10 @@ class OperativoAdapter:
             )
             self._results[oid] = tr
             return tr
+
+        # La senal pasa la puerta de capacidad: queda admitida para intentar
+        # la entrada (mas abajo aun puede abstenerse o descartarse).
+        self._marcar_admitida(oid)
 
         config = PaperSessionConfig(
             symbol=symbol, interval="1m", direction=direccion,
@@ -376,7 +463,8 @@ class OperativoAdapter:
         # Si el motor no admitio entrada (SIN_ENTRADA / DESCARTADO / en_espera
         # sin fill posible), no hay operacion.
         if state.status != "en_espera":
-            self.estado["abstenciones"] += 1
+            self._contar(oid, "descartes" if (state.config.decision or "")
+                         == "DESCARTADO" else "abstenciones")
             tr = OperativoTradeResult(
                 observation_id=traza["observation_id"],
                 symbol=symbol, role=role, direction=direccion,
@@ -416,7 +504,7 @@ class OperativoAdapter:
                 break
 
         if not state.position.open:
-            self.estado["abstenciones"] += 1
+            self._contar(oid, "abstenciones")
             tr = OperativoTradeResult(
                 observation_id=traza["observation_id"],
                 symbol=symbol, role=role, direction=direccion,
@@ -434,10 +522,11 @@ class OperativoAdapter:
             self._results[oid] = tr
             return tr
 
-        # Registrar posicion abierta para capacidad compartida.
+        # Registrar el intervalo de ocupacion de la posicion admitida. La
+        # salida todavia no se conoce: la ocupacion queda ABIERTA (nunca se
+        # libera de forma inventada) y se actualiza al acreditarse la salida.
         self._registrar_posicion(
             observacion["observation_id"], state.position.entry_ms, None)
-
         # --- Gestion y salida (stop / horizonte / agotamiento) -----------
         pasos = 0
         while state.status == "abierta":
@@ -447,12 +536,13 @@ class OperativoAdapter:
                 raise AssertionError(f"Demasiados pasos para {symbol} @ {decision_ms}")
 
         r = state.result
-        # No duplicar el contador si es una actualización de una observacion
-        # ya vista (reprocesamiento con mas velas para resolver open_at_end).
-        if oid not in self._results:
-            self.estado["operaciones"] += 1
+        # Contadores idempotentes: una operacion no se cuenta dos veces si la
+        # observacion se reprocesa con mas velas.
+        self._contar(oid, "operaciones")
+        # Posicion con salida desconocida: sigue abierta y ocupa capacidad.
         if r.open_at_end:
-            self.estado["posiciones_abiertas_final"] += 1
+            self.estado["posiciones_abiertas_final"] = len(
+                self.posiciones_abiertas())
         # Funding: si hay calendario real para este simbolo, recalcular con
         # run_backtest para contabilizar settlements; si no hay calendario,
         # funding = UNKNOWN (None, nunca cero). paper_lab_engine ya fuerza
@@ -466,18 +556,30 @@ class OperativoAdapter:
                 cal, self.cfg,
             )
             if bt is not None:
-                funding = bt.get("funding")
-                funding_estado = bt.get("funding_model", "settlement-calendar")
-                # Sobrescribir net_pnl con el calculado por run_backtest
-                # (incluye funding real contabilizado).
-                r = _replace_result(r, funding=funding, net_pnl=bt.get("net_pnl"))
+                self._funding_cuenta[oid] = _detalle_funding(bt, cal)
+                if _funding_acreditable(bt, cal):
+                    funding = bt.get("funding")
+                    funding_estado = bt.get(
+                        "funding_model", "settlement-calendar")
+                    # Sobrescribir net_pnl con el calculado por run_backtest
+                    # (incluye funding real contabilizado).
+                    r = _replace_result(
+                        r, funding=funding, net_pnl=bt.get("net_pnl"))
+                else:
+                    # Cobertura insuficiente: el importe parcial NO se
+                    # acredita. Funding = UNKNOWN y el neto se publica
+                    # condicionado (sin funding), nunca como cero.
+                    funding = None
+                    funding_estado = (
+                        "settlement-calendar incompleto (UNKNOWN, no cero)")
 
-        # Solo liberar capacidad cuando se conoce la salida real (stop o
-        # horizonte alcanzado). Una posicion open_at_end (sin salida conocida)
-        # NO libera capacidad ficticiamente; se mantiene hasta que lleguen mas
-        # velas y se pueda resolver en una llamada posterior.
-        if r.exit_executed:
-            self._liberar_posicion(observacion["observation_id"])
+        # Salida real acreditada: cierra el intervalo de ocupacion SIN
+        # borrarlo (la exposicion existio y puede solaparse con una entrada
+        # posterior). Una posicion open_at_end (sin salida conocida) mantiene
+        # la ocupacion abierta.
+        if r.exit_executed and r.exit_ms is not None:
+            self._actualizar_salida(observacion["observation_id"], int(r.exit_ms))
+        self.estado["posiciones_abiertas_final"] = len(self.posiciones_abiertas())
 
         # Guardar resultado final para evitar reprocesamiento duplicado.
         tr = OperativoTradeResult(
@@ -497,6 +599,34 @@ class OperativoAdapter:
         )
         self._results[oid] = tr
         return tr
+
+    def procesar_observaciones(
+        self,
+        observaciones: List[Dict[str, Any]],
+        velas_por_observacion: Dict[str, List[PaperCandle]],
+        funding_calendar: Optional[FundingCalendar] = None,
+    ) -> List[OperativoTradeResult]:
+        """Procesa un lote con prioridad determinista.
+
+        Orden: (decision_ms, symbol, observation_id). El rol
+        candidate/comparator NO participa del orden ni de la direccion, y no
+        se consulta ningun resultado posterior (ni beneficios ni desenlaces)
+        para decidir a quien se admite.
+        """
+        ordenadas = sorted(
+            observaciones,
+            key=lambda o: (int(o["decision_ms"]),
+                           str(o["symbol"]).upper(),
+                           str(o["observation_id"])))
+        resultados: List[OperativoTradeResult] = []
+        for obs in ordenadas:
+            oid = str(obs["observation_id"])
+            velas = velas_por_observacion.get(oid, [])
+            cal = funding_calendar or self.funding_calendars.get(
+                str(obs["symbol"]).upper())
+            resultados.append(
+                self.procesar_observacion(obs, velas, funding_calendar=cal))
+        return resultados
 
     def persistir(self, tr: OperativoTradeResult) -> None:
         row = {
@@ -526,6 +656,9 @@ class OperativoAdapter:
             "procedencia": "adapter_operativo_v1",
             "ts_utc": datetime.now(timezone.utc).isoformat(),
         }
+        detalle = self._funding_cuenta.get(tr.observation_id)
+        if detalle:
+            row.update(detalle)
         self._escribir(row)
 
     def _config_hash(self) -> str:
@@ -533,7 +666,15 @@ class OperativoAdapter:
         return hashlib.sha256(payload.encode("utf-8")).hexdigest()[:16]
 
     def resumen(self) -> Dict[str, Any]:
-        return dict(self.estado)
+        out = dict(self.estado)
+        # Ocupacion viva: posiciones abiertas (salida desconocida) frente al
+        # historial completo de intervalos [entry_ms, exit_ms).
+        out["posiciones_abiertas"] = sorted(self.posiciones_abiertas())
+        out["intervalos_ocupacion"] = [
+            {"observation_id": oid, "entry_ms": entry_ms, "exit_ms": exit_ms}
+            for oid, entry_ms, exit_ms in self.intervalos_ocupados()
+        ]
+        return out
 
 
 # --- Helpers puros ---------------------------------------------------------
@@ -561,6 +702,42 @@ def _candles_de_klines(
             low=float(l), close=float(c), close_time_ms=int(close_ms),
         ))
     return out
+
+
+def _funding_acreditable(bt: Dict[str, Any], cal: Optional[FundingCalendar]) -> bool:
+    """True si el importe de funding puede acreditarse como completo.
+
+    No se acredita un importe parcial: si algun settlement de la exposicion
+    quedo sin mark utilizable, si hay huecos interiores sobre la exposicion o
+    si el calendario no declara cadencia nominal (integridad interior
+    UNKNOWN), el funding queda UNKNOWN (nunca cero ni parcial).
+    """
+    if cal is None or bt is None:
+        return False
+    if cal.interval_ms is None:
+        return False
+    if int(bt.get("funding_unknown") or 0) > 0:
+        return False
+    if int(bt.get("funding_gap_ms") or 0) > 0:
+        return False
+    return True
+
+
+def _detalle_funding(bt: Dict[str, Any], cal: FundingCalendar) -> Dict[str, Any]:
+    """Detalle de cobertura del funding para la fila persistida."""
+    return {
+        "funding_cuenta_completa": bool(bt.get("funding_accounting_complete")),
+        "funding_sin_cubrir_ms": int(bt.get("funding_uncovered_ms") or 0),
+        "funding_huecos_ms": int(bt.get("funding_gap_ms") or 0),
+        "funding_settlements_desconocidos": int(bt.get("funding_unknown") or 0),
+        "funding_calendario": {
+            "version": cal.version,
+            "source": cal.source,
+            "symbol": cal.symbol,
+            "interval_ms": cal.interval_ms,
+            "hash": cal.calendar_hash(),
+        },
+    }
 
 
 def _replace_result(

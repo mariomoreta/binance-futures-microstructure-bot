@@ -1,4 +1,4 @@
-# Estado vigente — dirección operativa, 2026-11-06
+# Estado vigente — dirección operativa, 2026-11-10
 
 **Objetivo:** bot autónomo para futuros Binance (perpetuos y con vencimiento) de movimientos extremos
 alcistas y bajistas: universo → autoselección → investigación → decisión
@@ -21,6 +21,48 @@ presupuesto. Este cambio documental no aprueba esos elementos ni reinicia diseñ
 No ejecutar otra captura para completar 60m (ya resuelto), no ampliar UI,
 Paper Lab, supervisión, conectores o IA. Reutilizar los motores y controles.
 Siguiente trabajo autorizado: bloque al inicio de [TASK_QUEUE](TASK_QUEUE.md).
+
+**Cierre de defectos materiales del replay operativo (2026-11-10):** sobre la
+base `b551ced` se reprodujeron tres defectos que el bloque anterior declaraba
+corregidos: (1) el replay perdía los intervalos de ocupación al cerrar una
+operación y admitía exposures solapadas (dos señales con la misma ventana
+producían dos `ENTRADA_EJECUTADA` con `rechazadas_capacidad=0`); (2) el
+presupuesto publicado no contaba las consultas repetidas del resolver (1 180
+llamadas reales del resolver frente a 40 consultas publicadas); (3) la
+aceptación integrada de funding dependía de un fichero externo
+(`/tmp/fund_test/calendario_cli.json`) y fallaba sin él. Estado actual: los
+tres están corregidos y aceptados por
+`tests/test_operativo_capacidad_presupuesto.py` (6 passed: capacidad A-E y
+presupuesto observado vs plan con el CLI real, proveedores loopback y reloj
+controlado, avanzando por los intervalos de planificación) y por
+`tests/test_operativo_cli_integrado.py` (3 passed), que ahora genera su propio
+calendario de funding sintético en su propio directorio temporal, lo pasa por
+`--funding-calendars` y verifica el importe con un cálculo independiente. El
+conjunto focalizado queda en 129 passed (operativo CLI, adapter, capacidad y
+presupuesto, research pilot, operativo local v2, paper lab engine, experimento
+operativo local, backtest offline y backtest funding). La suite completa
+(`python run_tests.py`) conserva 4 fallos preexistentes en
+`tests/test_market_stream_window.py`, ajenos a este trabajo y reproducidos
+también con los cambios apartados.
+
+**Consecuencias metodológicas (configuración congelada):** el intervalo de
+ocupación semiabierto `[entry_ms, exit_ms)` es la autoridad de capacidad
+compartida (`max_concurrent=1`); una salida desconocida mantiene la ocupación
+abierta; la prioridad es determinista por
+`(decision_ms, symbol, observation_id)` y el rol candidate/comparator no
+participa. El presupuesto separa estimación base (preparación + 1 trayectoria
+por observación apta + 1 precio por observación y horizonte), reservas
+(peticiones repetidas ≤1 por observación + 50 reintentos por fallo) y techos
+efectivos (2 000 intentos / 5 000 peso / 50 reintentos / 128 MB). Con la
+configuración congelada: base 984 intentos / 1 452 peso; base + reservas
+1 274 / 3 692; almacenamiento previsto 2 915 072 B. La estimación base no es
+un máximo garantizado. El funding solo se acredita con calendario, cadencia
+nominal y settlements liquidados con marca utilizable y sin hueco interior
+sobre la exposición; en otro caso queda UNKNOWN (nunca cero ni parcial) y cada
+fila persistida publica su detalle de cobertura. Sin capturas públicas, sin
+Binance, sin órdenes reales y sin servicios nuevos: no se reabre la captura
+`public-pilot-1h-20261106a` ni cambian la regla, los parámetros o los topes
+congelados.
 
 **Lectura de la historia:** los bloques inferiores son antecedentes fechados.
 Sus antiguos CURRENT_PHASE/NEXT_TASKS, restricciones de ventanas y afirmaciones

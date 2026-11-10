@@ -166,9 +166,25 @@ CLI real (`scripts/research_pilot.py`) como subproceso con proveedores HTTP/WS
 loopback, almacenamiento aislado y reloj controlado.
 
 Pruebas: `tests/test_operativo_cli_integrado.py` (3 passed, incluida la
-aceptación integrada del CLI) + `tests/test_research_pilot.py` (28 passed)
+aceptación integrada del CLI) + `tests/test_operativo_capacidad_presupuesto.py`
+(6 passed: capacidad A-E y presupuesto observado vs plan) +
+`tests/test_research_pilot.py` (28 passed)
 + regresiones de `paper_lab_engine`, `experimento_operativo_local`,
-`backtest_offline`, `backtest_funding` y `operativo_local_v2` (**114 passed**).
+`backtest_offline`, `backtest_funding` y `operativo_local_v2` (**129 passed**
+en el conjunto focalizado).
+
+**Rectificación 2026-11-10 (base `b551ced3ab08e7dfc377f2a136e2fd434e6ab023`):**
+las afirmaciones de D, E y F de este bloque se reprodujeron como defecto
+material sobre esa base: el replay perdía los intervalos de ocupación al
+cerrar una operación y admitía exposures solapadas; el presupuesto publicado
+no contaba las consultas repetidas del resolver (1 180 llamadas del resolver
+frente a 40 consultas publicadas); y la prueba integrada de funding dependía
+de un fichero externo (`/tmp/fund_test/calendario_cli.json`) que, al
+apartarlo, hacía fallar la aceptación. D, E y F quedan por tanto
+**rectificados** con el comportamiento descrito abajo, y la aceptación
+propia queda en `tests/test_operativo_capacidad_presupuesto.py` (6 passed) más
+la prueba integrada con calendario propio. El cierre de 2026-11-09 se
+conserva en el historial de este bloque y en el historial del repositorio.
 
 ### Defectos reproducidos y corregidos
 
@@ -191,37 +207,54 @@ C. **Prueba integrada que no sustituye al producto:** `test_cli_productivo_integ
    su presupuesto. No detiene el piloto ni crea un adaptador externo ni un
    `HistoryClient` con `attempt_gate=None`.
 
-D. **Concurrencia compartida (reparación):** `max_concurrent=1` se aplica al
-   conjunto del experimento mediante `_capacidad_disponible_en(entry_ms,
-   exclude_oid=oid)` antes de admitir cada entrada. Una posición `open_at_end`
-   o con salida desconocida NO libera capacidad ficticiamente: solo se libera
-   cuando se conoce la salida real (`exit_executed`). El adaptador conserva
-   `_results` por `observation_id` para que reprocesar la misma observación no
-   la bloquee contra sí misma, no duplique admisiones ni duplique resultados.
-   Los rechazos por capacidad (`rechazadas_capacidad`) se registran separados
-   de abstenciones por señal o datos y de trabajo pendiente. La prioridad es
-   determinista por tiempo de señal y símbolo; el rol candidate/comparator no
-   determina prioridad, dirección ni reglas.
+D. **Concurrencia compartida (rectificado 2026-11-10):** la puerta de
+   capacidad ya no borra la exposición al salir. El adaptador conserva el
+   historial de ocupación `intervalos_ocupacion` por `observation_id` con el
+   intervalo semiabierto `[entry_ms, exit_ms)` (mismo criterio que
+   `backtest_offline`: `s <= t < e`), de modo que una entrada posterior no
+   puede solaparse con una exposición que existió, y una salida desconocida
+   (`open_at_end`, sin salida acreditada) mantiene la ocupación abierta: no se
+   libera capacidad de forma inventada. La prioridad es determinista por
+   `(decision_ms, symbol, observation_id)`; el rol candidate/comparator no
+   participa del orden, de la dirección ni de las reglas, y no se consulta
+   ningún desenlace posterior para admitir. Los resultados terminales se
+   cachean por `observation_id` (`_es_terminal`): reprocesar una observación no
+   la bloquea contra sí misma, no duplica admisiones, operaciones ni
+   resultados, y los contadores son idempotentes (`_contar`, `_marcar_admitida`).
+   El rechazo por capacidad es terminal: una señal rechazada no vuelve a
+   admitirse más adelante.
 
-E. **Funding vía CLI (reparación):** `main()` importa `FundingSettlement` y
-   carga calendarios de funding validados por símbolo desde
-   `--funding-calendars` (archivo sintético identificado como tal en pruebas;
-   no se abre adquisición pública). Se acredita desde el proceso real:
-   calendario con cobertura y evento en exposición → funding contabilizado y
-   cantidad comprobable; calendario con cobertura y sin evento aplicable →
-   cero conocido; calendario ausente o sin cobertura suficiente → UNKNOWN,
-   nunca cero inventado. Archivo inválido o inexistente → comportamiento
-   explícito, sin fallback silencioso a calendario vacío.
+E. **Funding vía CLI (rectificado 2026-11-10):** `main()` carga calendarios de
+   funding por símbolo desde `--funding-calendars` (fichero sintético
+   identificado como tal en pruebas; no se abre adquisición pública) y falla
+   de forma explícita (código 2) si el fichero no existe o no es válido: no hay
+   paso silencioso a un calendario vacío. Solo se acredita el importe si el
+   calendario declara cadencia nominal y todos los settlements de la
+   exposición se liquidaron con marca utilizable y sin hueco interior sobre la
+   exposición; en otro caso (sin calendario, sin cadencia, settlement
+   desconocido o hueco interior) el funding queda UNKNOWN, nunca cero ni
+   parcial. Cada fila persistida publica el detalle de cobertura
+   (`funding_cuenta_completa`, `funding_sin_cubrir_ms`, `funding_huecos_ms`,
+   `funding_settlements_desconocidos`, símbolo, versión y hash del
+   calendario). La prueba integrada genera su propio calendario sintético en
+   su directorio temporal y lo pasa por `--funding-calendars`: no depende de
+   ningún fichero externo y verifica el importe con un cálculo independiente
+   (`qty × marca causal del settlement × rate_bps/10000`).
 
-F. **Presupuesto coherente con la frecuencia real:** `compute_budget` ahora
-   incluye las consultas del resolver de operaciones pendientes
-   (`klines_resolver_operativo`, 1 por observación apta) junto con las de
-   entrada (adaptador) y resultado (resolve_due). `_resolver_operativos_pendientes`
-   y `resolve_due` rastrean la última consulta por operación/pending y no
-   reconsultan dentro del mismo intervalo de planificación (60 s), evitando
-   consultas repetidas en cada tick. Los límites siguen reservándose antes del
-   transporte mediante `RunBudget`; un bloqueo no aumenta las llamadas
-   recibidas por el proveedor ni convierte pendientes en resultados ficticios.
+F. **Presupuesto coherente con la frecuencia real (rectificado 2026-11-10):**
+   `compute_budget` separa tres cosas: la estimación base (preparación + UNA
+   consulta de trayectoria por observación apta + un precio por observación y
+   horizonte), las reservas (peticiones repetidas, ≤1 por observación, y
+   reintentos por fallo, ≤50) y los techos efectivos (2 000 intentos /
+   5 000 peso / 50 reintentos / 128 MB). La política del resolver ya no
+   sondea: consulta la trayectoria de una observación solo cuando puede estar
+   disponible (`now >= decision_ms + horizon_ms + step_ms`) y como máximo
+   `MAX_CONSULTAS_TRAYECTORIA_POR_OBS = 2` veces (1 planificada + 1 repetida).
+   Una petición repetida no es un reintento por fallo: se cuentan y reservan
+   por separado. La estimación base no es un máximo garantizado y no se
+   presenta como tal; el límite efectivo es el techo configurado. La reserva
+   ocurre antes del transporte (`RunBudget`) y un bloqueo conserva el
+   pendiente con su motivo real, sin inventar resultados ni devolver cupos.
 
 ### Recorrido productivo acreditado por el CLI real
 
@@ -247,15 +280,20 @@ Calculado con `python scripts/research_pilot.py --budget-only` (sin red):
 
 | Concepto | Por ventana | Techo | Estado |
 |---|---|---|---|
-| HTTP intentos | ≤1 224 | ≤2000 | Dentro |
-| HTTP peso | ≤1 692 | ≤5000 | Dentro |
+| HTTP intentos (estimación base) | ≤984 | ≤2000 | Dentro |
+| HTTP intentos (base + reservas) | ≤1 274 | ≤2000 | Dentro |
+| HTTP peso (estimación base) | ≤1 452 | ≤5000 | Dentro |
+| HTTP peso (base + reservas) | ≤3 692 | ≤5000 | Dentro |
 | HTTP reintentos | ≤50 | ≤50 | Dentro |
 | WS conexiones simultáneas | 2 (pico) | — | /public + /market |
 | WS aperturas acumuladas | ≤46 | — | inicial + rotación + reconexión |
-| Almacenamiento | ≤3.0 MB | ≤128 MB | Dentro |
+| Almacenamiento | ≤2 915 072 B (≈2,8 MB) | ≤128 MB | Dentro |
 
-Pesos de `ASSUMED_WEIGHTS` (tabla interna, no cabeceras Binance reales). No
-se aumentaron cupos silenciosamente.
+La estimación base (984 intentos / 1 452 peso) y las reservas (290 intentos /
+2 240 peso: 240 peticiones repetidas + 50 reintentos por fallo) se publican
+separadas; el techo efectivo sigue siendo 2 000 intentos / 5 000 peso por
+ventana. Pesos de `ASSUMED_WEIGHTS` (tabla interna, no cabeceras Binance
+reales). No se aumentaron cupos silenciosamente.
 
 ### Qué NO acredita este bloque
 
@@ -366,11 +404,14 @@ settle, `cycle_seconds=300`, `selection_seconds=300`, `max_symbols=20`,
 |---|---|---|---|
 | exchangeInfo (REST) | 12 intentos / peso 12 | 36 / 36 | 1 por ciclo de selección (12 ciclos) |
 | ticker 24h (REST) | 12 intentos / peso 480 | 36 / 1 440 | Movimiento 24h por selección |
-| klines entrada (REST) | 240 intentos / peso 240 | 720 / 720 | 1 por observación apta (adaptador) |
+| klines trayectoria operativa (REST) | 240 intentos / peso 240 | 720 / 720 | 1 por observación apta; la serie 1m cubre entrada, gestión y salida. Se consulta cuando la trayectoria del horizonte puede estar disponible (decisión + horizonte + un paso), no en cada tick |
 | klines resultado (REST) | 720 intentos / peso 720 | 2 160 / 2 160 | 1 por observación × 3 horizontes |
-| klines resolver operativo (REST) | 240 intentos / peso 240 | 720 / 720 | 1 por observación apta, política acotada (una por intervalo) |
-| HTTP intentos totales | ≤1 224 | ≤3 672 | Techo efectivo 2 000/ventana |
-| HTTP peso total | ≤1 692 | ≤5 076 | Dentro del techo 5 000/ventana |
+| HTTP intentos (estimación base) | ≤984 | ≤2 952 | 24 preparación + 240 trayectoria + 720 resultados |
+| HTTP peso (estimación base) | ≤1 452 | ≤4 356 | Dentro del techo 5 000/ventana |
+| Reserva peticiones repetidas | ≤240 / peso ≤240 | ≤720 / ≤720 | ≤1 por observación (1 planificada + 1 repetida); distinto del reintento por fallo |
+| Reserva reintentos por fallo | ≤50 / peso ≤2 000 | ≤150 / ≤6 000 | `max_http_retries` por ventana |
+| HTTP intentos (base + reservas) | ≤1 274 | ≤3 822 | Techo efectivo 2 000/ventana |
+| HTTP peso (base + reservas) | ≤3 692 | ≤11 076 | Techo efectivo 5 000/ventana |
 | HTTP reintentos | ≤50 | ≤150 | Dentro del presupuesto |
 | WS conexiones simultáneas | 2 | 2 (pico) | /public (depth) + /market (aggTrade) |
 | WS aperturas acumuladas | ≤24 | ≤72 | Inicial + rotaciones + reconexiones |
@@ -383,17 +424,19 @@ settle, `cycle_seconds=300`, `selection_seconds=300`, `max_symbols=20`,
 
 **Peso HTTP observado vs configurado:** los pesos son de `ASSUMED_WEIGHTS`
 (tabla interna, no cabeceras Binance). El consumo real se reconstruye desde
-el ledger de `HistoryClient`. El peso total (1 692/ventana) está dentro del
-techo de 5 000/ventana, por lo que no se requiere aumento de cupos.
+el ledger de `HistoryClient`. La estimación base (1 452/ventana) y la base con
+reservas (3 692/ventana) están dentro del techo de 5 000/ventana, por lo que
+no se requiere aumento de cupos. La estimación base no es un máximo
+garantizado: el límite efectivo es el techo configurado (2 000 intentos /
+5 000 peso / 50 reintentos / 128 MB).
 
-**Justificación del uso mínimo de REST/WS:** klines 1m por REST es el mínimo
-necesario para reconstruir fills al open de vela siguiente, stops y gaps.
-No se captura flujo/libro adicional más allá de lo que ya adquiere el piloto,
-ni datos sin necesidad operativa concreta.
-
-**Peso HTTP observado vs configurado:** los pesos son de `ASSUMED_WEIGHTS`
-(tabla interna, no cabeceras Binance). El consumo real se reconstruye desde
-el ledger de `HistoryClient`.
+**Contraste con lo observado:** la aceptación
+`tests/test_operativo_capacidad_presupuesto.py` ejecuta el CLI real con
+proveedores loopback y reloj controlado, avanza por los intervalos de
+planificación (no salta al final del horizonte) y compara las llamadas
+recibidas por el proveedor, el consumo de la puerta de presupuesto y el plan
+publicado: coinciden (ticker 1 + catálogo 1 + trayectoria 5 + precios 15 = 22
+intentos en la corrida de aceptación, con el mismo peso en la puerta).
 
 **Justificación del uso mínimo de REST/WS:** klines 1m por REST es el mínimo
 necesario para reconstruir fills al open de vela siguiente, stops y gaps.

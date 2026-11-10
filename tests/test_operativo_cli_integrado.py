@@ -23,6 +23,7 @@ from __future__ import annotations
 
 import json
 import os
+import shutil
 import subprocess
 import sys
 import tempfile
@@ -41,7 +42,7 @@ for _p in (str(ROOT), str(ROOT / "src"), str(ROOT / "scripts")):
 import tests.test_research_pilot as tr  # noqa: E402
 from tests.test_research_pilot import (  # noqa: E402
     ClockFile, MarketHttp, PilotRun, WsProvider, T0, MINUTE,
-    base_price, find_free_port, HORIZONS,
+    base_price, find_free_port, kline_price, HORIZONS,
 )
 from microstructure_probe.backtest_offline import (  # noqa: E402
     FundingCalendar, FundingSettlement,
@@ -154,6 +155,33 @@ def test_cli_productivo_integrado() -> None:
     - Parada conserva pendientes con causa real.
     """
     tmp = Path(tempfile.mkdtemp(prefix="cli-integro-"))
+    ok = False
+
+    # Calendario de funding SINTETICO propio de esta prueba: se genera en su
+    # directorio temporal y se pasa por --funding-calendars. No depende de
+    # ningun fichero externo (por ejemplo /tmp/fund_test).
+    e0 = tr.T0 + tr.MINUTE
+    settlement_ms = e0 + 1_800_000        # dentro de la exposicion
+    rate_bps = 1.0
+    fund_dir = tmp / "funding"
+    fund_dir.mkdir(parents=True, exist_ok=True)
+    cal_path = fund_dir / "calendario_cli.json"
+    cal_path.write_text(json.dumps({
+        "AAAUSDT": {
+            "version": "synthetic/v1",
+            "source": "synthetic-fixture",
+            "interval_ms": 8 * 3600 * 1000,
+            # Cadencia de 8 h que cubre toda la exposicion: solo el
+            # settlement central cae dentro de la ventana de la operacion.
+            "settlements": [
+                {"settlement_ms": settlement_ms - 8 * 3600 * 1000,
+                 "rate_bps": rate_bps},
+                {"settlement_ms": settlement_ms, "rate_bps": rate_bps},
+                {"settlement_ms": settlement_ms + 8 * 3600 * 1000,
+                 "rate_bps": rate_bps},
+            ],
+        }
+    }), encoding="utf-8")
 
     run = tr.PilotRun(
         tmp,
@@ -165,7 +193,7 @@ def test_cli_productivo_integrado() -> None:
         cycle_s=300,       # corregido: 300s, no 60s
         horizons=tr.HORIZONS,
         max_http_attempts=2000,
-        funding_calendars_path="/tmp/fund_test/calendario_cli.json",
+        funding_calendars_path=str(cal_path),
     )
 
     try:
@@ -173,7 +201,6 @@ def test_cli_productivo_integrado() -> None:
 
         # Corte de decision: publicar libro + ventana completa de flujo
         # (60s) para que las observaciones sean aptas.
-        e0 = tr.T0 + tr.MINUTE
         seed = list(range(e0 - 62_000, e0 + 1, 1_000))
 
         # 1. Avanzar a e0 - 1000 (un segundo antes del corte)
@@ -319,6 +346,25 @@ def test_cli_productivo_integrado() -> None:
         # Funding via CLI: calendario con evento en exposición -> contabilizado.
         assert resumen["funding_contabilizado"] >= 1, resumen
 
+        # Capacidad compartida (max_concurrent=1): una sola operacion
+        # admitida (prioridad determinista por simbolo) y el resto rechazadas
+        # por capacidad. Sin duplicados de observation_id.
+        assert len({op["observation_id"] for op in ops}) == len(ops), ops
+        admitidas = [op for op in ops if op["decision"] == "ENTRADA_EJECUTADA"]
+        rechazadas = [op for op in ops
+                      if op["decision"] == "RECHAZADA_CAPACIDAD"]
+        assert len(admitidas) == 1, ops
+        assert len(rechazadas) == len(obs_aptas) - 1, ops
+        admitida = admitidas[0]
+        assert admitida["symbol"] == "AAAUSDT", admitida
+
+        # Exposicion causal: entrada en el open posterior a la decision y
+        # salida por horizonte (instante de conocimiento de la ultima vela).
+        assert admitida["entry_ms"] == e0 + tr.MINUTE, admitida
+        assert admitida["exit_ms"] == e0 + 3_600_000 + tr.MINUTE, admitida
+        assert admitida["exit_reason"] == "horizon", admitida
+        assert admitida["exit_executed"] is True, admitida
+
         # Verificar que el símbolo con calendario (AAAUSDT, primero alfabéticamente)
         # tiene funding contabilizado en resultado_operativo.jsonl.
         rows_op = _leer_jsonl(op_path)
@@ -333,25 +379,61 @@ def test_cli_productivo_integrado() -> None:
             assert r["funding_estado"] == "settlement-calendar", r
             assert isinstance(r["funding"], (int, float)), r
 
+        # Importe de funding calculado de forma INDEPENDIENTE del motor:
+        # qty (notional / precio de fill) x marca causal del settlement x
+        # rate_bps/10000. La marca es el open de la vela 1m del settlement.
+        fill_px = kline_price(admitida["symbol"], admitida["entry_ms"])
+        assert abs(admitida["entry_px"] - fill_px) < 1e-8, admitida
+        qty = 1000.0 / fill_px
+        marca = kline_price(admitida["symbol"], settlement_ms)
+        esperado = qty * marca * rate_bps / 10_000.0
+        assert abs(admitida["funding"] - esperado) < 1e-9, (
+            admitida["funding"], esperado)
+        assert admitida["net_pnl"] is not None, admitida
+        # El calendario cubre toda la exposicion: no hay tiempo sin cubrir.
+        assert admitida.get("funding_cuenta_completa") is True, admitida
+        assert admitida.get("funding_sin_cubrir_ms") == 0, admitida
+
+        # Sin calendario propio (simbolos sin calendario) el funding queda
+        # UNKNOWN, nunca cero.
+        for r in rechazadas:
+            assert r["funding"] is None, r
+            assert r["funding_estado"] == "rechazada_por_capacidad", r
+
         print(f"  [CLI integrado] operaciones={resumen['operaciones']} "
               f"direcciones={resumen['por_direccion']} "
               f"salidas={resumen['salidas_ejecutadas_simuladas']} "
               f"funding_desconocido={resumen['funding_desconocido']} "
               f"funding_contabilizado={resumen['funding_contabilizado']} "
               f"http_klines={run.http.klines_calls} ws_conns={run.ws.connections}")
+        ok = True
     finally:
         run.shutdown()
+        # Solo se limpian los recursos propios de esta prueba.
+        if ok:
+            shutil.rmtree(tmp, ignore_errors=True)
 
 
 
 def test_funding_a_traves_del_adaptador() -> None:
-    """Funding por calendario conocido vs ausente, a traves del adaptador."""
+    """Funding por calendario conocido vs ausente, a traves del adaptador.
+
+    Escenarios (todos con calendario sintetico propio de la prueba):
+    - sin calendario -> UNKNOWN;
+    - calendario con settlement dentro de la exposicion -> importe
+      acreditado, verificado con un calculo independiente;
+    - calendario sin settlement en la exposicion -> cero acreditado;
+    - calendario sin cadencia nominal (interval_ms=None) -> UNKNOWN;
+    - calendario con hueco interior sobre la exposicion -> UNKNOWN.
+    """
     from scripts.research_operativo_adapter import (  # noqa: E402
         OperativoAdapter, OperativoConfig,
     )
     from microstructure_probe.paper_lab_engine import (  # noqa: E402
         PaperCandle,
     )
+
+    tmp = Path(tempfile.mkdtemp(prefix="funding-adaptador-"))
 
     # Velas: V1 senal close=102.0 (LONG, stop 101.49), V2 fill open=102.0,
     # V3 revela close de V2 (low=101.0 <= stop).
@@ -369,14 +451,20 @@ def test_funding_a_traves_del_adaptador() -> None:
         "side": "UP",
     }
 
+    def _procesar(nombre: str, calendario=None):
+        adapter = OperativoAdapter(
+            store_path=tmp / f"{nombre}.jsonl",
+            cfg=OperativoConfig(),
+            funding_calendars=({"FUNDUSDT": calendario} if calendario
+                               else {}),
+        )
+        tr = adapter.procesar_observacion(obs, velas)
+        adapter.persistir(tr)
+        adapter.close()
+        return tr
+
     # 1) Calendario ausente -> funding UNKNOWN.
-    adapter_sin = OperativoAdapter(
-        store_path=Path(tempfile.mkdtemp()) / "op.jsonl",
-        cfg=OperativoConfig(),
-    )
-    tr_sin = adapter_sin.procesar_observacion(obs, velas)
-    adapter_sin.persistir(tr_sin)
-    adapter_sin.close()
+    tr_sin = _procesar("sin_calendario")
     assert tr_sin.funding is None, tr_sin
     assert tr_sin.funding_estado.startswith("ninguno"), tr_sin
 
@@ -387,14 +475,7 @@ def test_funding_a_traves_del_adaptador() -> None:
         interval_ms=8 * 3600 * 1000, symbol="FUNDUSDT",
         settlements=(FundingSettlement(settlement_ms=120_000, rate_bps=1.0),),
     )
-    adapter_con = OperativoAdapter(
-        store_path=Path(tempfile.mkdtemp()) / "op.jsonl",
-        cfg=OperativoConfig(),
-        funding_calendars={"FUNDUSDT": cal},
-    )
-    tr_con = adapter_con.procesar_observacion(obs, velas)
-    adapter_con.persistir(tr_con)
-    adapter_con.close()
+    tr_con = _procesar("con_evento", cal)
     assert tr_con.funding_estado == "settlement-calendar", tr_con
     # Importe esperado calculado independientemente: held_qty * mark * rate / 10000
     qty = 1000.0 / 102.0
@@ -408,20 +489,41 @@ def test_funding_a_traves_del_adaptador() -> None:
         interval_ms=8 * 3600 * 1000, symbol="FUNDUSDT",
         settlements=(),
     )
-    adapter_vac = OperativoAdapter(
-        store_path=Path(tempfile.mkdtemp()) / "op.jsonl",
-        cfg=OperativoConfig(),
-        funding_calendars={"FUNDUSDT": cal_vacio},
-    )
-    tr_vac = adapter_vac.procesar_observacion(obs, velas)
-    adapter_vac.persistir(tr_vac)
-    adapter_vac.close()
+    tr_vac = _procesar("sin_evento", cal_vacio)
     assert tr_vac.funding == 0.0, tr_vac
     assert tr_vac.funding_estado == "settlement-calendar", tr_vac
 
+    # 4) Calendario sin cadencia nominal -> la integridad interior es
+    #    UNKNOWN: el importe NO se acredita.
+    cal_sin_cadencia = FundingCalendar(
+        version="synthetic/v1", source="synthetic-fixture",
+        interval_ms=None, symbol="FUNDUSDT",
+        settlements=(FundingSettlement(settlement_ms=120_000, rate_bps=1.0),),
+    )
+    tr_nc = _procesar("sin_cadencia", cal_sin_cadencia)
+    assert tr_nc.funding is None, tr_nc
+    assert "UNKNOWN" in tr_nc.funding_estado, tr_nc
+
+    # 5) Hueco interior del calendario sobre la exposicion -> UNKNOWN.
+    cal_con_hueco = FundingCalendar(
+        version="synthetic/v1", source="synthetic-fixture",
+        interval_ms=8 * 3600 * 1000, symbol="FUNDUSDT",
+        settlements=(
+            FundingSettlement(settlement_ms=120_000, rate_bps=1.0),
+            FundingSettlement(
+                settlement_ms=120_000 + 3 * 8 * 3600 * 1000, rate_bps=1.0),
+        ),
+    )
+    tr_gap = _procesar("con_hueco", cal_con_hueco)
+    assert tr_gap.funding is None, tr_gap
+    assert "UNKNOWN" in tr_gap.funding_estado, tr_gap
+
+    shutil.rmtree(tmp, ignore_errors=True)
     print(f"  [funding] ausente={tr_sin.funding_estado} "
           f"con_evento={tr_con.funding} (esperado {esperado}) "
-          f"sin_evento={tr_vac.funding}")
+          f"sin_evento={tr_vac.funding} "
+          f"sin_cadencia={tr_nc.funding_estado} "
+          f"con_hueco={tr_gap.funding_estado}")
 
 
 # ---------------------------------------------------------------------------

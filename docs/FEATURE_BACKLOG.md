@@ -1,3 +1,55 @@
+## F-OPERATIVO-REPLAY-CIERRE-20261110 — Cierre de capacidad, presupuesto y funding del replay operativo v2
+
+**1. Title:** Cerrar tres defectos materiales del replay operativo v2 sobre la
+base `b551ced`: perdida de intervalos de ocupacion (exposiciones solapadas
+admitidas), presupuesto publicado que no contaba las consultas repetidas del
+resolver, y prueba integrada de funding dependiente de un fichero externo.
+
+**2. Approval status:** AUTORIZADO dentro del bloque vigente del experimento
+operativo: son arreglos materiales que desbloquean la comprobacion economica
+del replay. No autoriza capturas publicas, paper deployments ni ejecucion
+real; la regla, los parametros, los topes y la cobertura congelados no
+cambian.
+
+**3. Implementation status:** IMPLEMENTADO. El adaptador conserva el historial
+de ocupacion por observacion con intervalo semiabierto `[entry_ms, exit_ms)`,
+mantiene abierta la ocupacion mientras la salida no este acreditada, cachea
+resultados terminales, idempotiza contadores y ordena la admision por
+`(decision_ms, symbol, observation_id)` sin intervencion del rol. El resolver
+del piloto consulta la trayectoria solo cuando puede estar disponible y como
+maximo dos veces por observacion; `compute_budget` separa estimacion base,
+reservas y techos efectivos. El funding se acredita solo con cobertura
+suficiente y publica su detalle por fila. Sin servicios nuevos, sin
+dependencias y sin cambios de configuracion congelada.
+
+**4. Evaluation status:** NO EVALUADO economicamente. El replay sigue siendo
+una comprobacion mecanica: no acredita direccion rentable, expectativa neta ni
+promocion de fase. La cobertura sigue limitada a perpetuos USD-M; los futuros
+con vencimiento permanecen pendientes.
+
+**5. Evidence:** `tests/test_operativo_capacidad_presupuesto.py` (6 passed:
+capacidad A-E y presupuesto observado vs plan con el CLI real, proveedores
+loopback y reloj controlado) y `tests/test_operativo_cli_integrado.py` (3
+passed, con calendario de funding sintetico propio y verificacion del importe
+por calculo independiente); conjunto focalizado 129 passed. Defectos
+reproducidos sobre `b551ced` antes de corregir: ocupacion solapada admitida
+(`rechazadas_capacidad=0`), 1180 llamadas del resolver frente a 40
+publicadas, y la aceptacion de funding caida sin `/tmp/fund_test`.
+
+**6. Verdict:** defectos materiales cerrados y documentados; las afirmaciones
+D, E y F de `EXPERIMENTO_OPERATIVO_V2.md` quedan rectificadas conservando el
+cierre de 2026-11-09 como historia. Sin capturas publicas, sin Binance, sin
+ordenes reales, sin servicios nuevos y sin cambio de regla, parametros o
+topes. La suite completa conserva 4 fallos preexistentes en
+`tests/test_market_stream_window.py`, ajenos a este trabajo.
+
+**7. Next step:** revisar el cierre del protocolo operativo v2 (regla,
+comparadores, cobertura por tipo de contrato, metrica y criterio de
+continuar/reformular/detener) sin reiniciar el diseno ni abrir capturas; la
+adquisicion publica sigue necesitando autorizacion separada.
+
+---
+
 ## F-GARCH-01 — GARCH como opcion futura de volatilidad y riesgo (2026-11-09)
 
 **1. Title:** Evaluar si GARCH mejora la estimacion de volatilidad y, despues,

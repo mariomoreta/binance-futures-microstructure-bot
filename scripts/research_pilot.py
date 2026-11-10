@@ -131,8 +131,7 @@ from microstructure_probe.universe import SymbolUniverse  # noqa: E402
 
 import research_selector  # noqa: E402
 from research_operativo_adapter import (  # noqa: E402
-    OperativoAdapter, OperativoConfig,
-    _resultado_con_funding, _replace_result,
+    OperativoAdapter, OperativoConfig, OperativoTradeResult,
     _vela_plenamente_conocida_en,
 )
 from microstructure_probe.backtest_offline import FundingCalendar, FundingSettlement  # noqa: E402
@@ -181,6 +180,16 @@ OUTCOME_PENDIENTE = "pendiente"
 FUTURE_EVENT_TOLERANCE_MS = 1_000
 
 _INTERVALO_RESOLVER_MS = 60_000  # minimo entre consultas de trayectoria (evita consultas en cada tick)
+
+# Politica de consultas de trayectoria operativa (replay del experimento).
+# - Una observacion se consulta cuando la trayectoria NECESARIA puede ya
+#   estar disponible: decision_ms + horizon_ms + un paso (la serie 1m debe
+#   sobrepasar el cierre del horizonte para que el motor cierre la exposicion
+#   en el horizonte y no en open_at_end).
+# - MAX_CONSULTAS_TRAYECTORIA_POR_OBS acota las PETICIONES REPETIDAS por
+#   observacion (1 planificada + 1 repetida). Los REINTENTOS POR FALLO los
+#   cuenta el cliente HTTP (max_http_retries) y se reservan aparte.
+MAX_CONSULTAS_TRAYECTORIA_POR_OBS = 2
 
 # Hosts considerados loopback para el modo local.
 LOOPBACK_HOSTS = {"127.0.0.1", "localhost", "::1"}
@@ -728,14 +737,19 @@ def compute_budget(cfg: PilotConfig) -> Dict[str, Any]:
     n_horizons = len(cfg.horizons)
 
     observations_max = cycles * symbols
-    # Una llamada klines por observacion apta (adaptador: entrada/gestion/salida)
-    # más una por horizonte (resolve_due de resultados) y una por observacion
-    # durante el resolver de operaciones pendientes (politica acotada: una
-    # consulta por observacion por intervalo de planificacion, no en cada tick).
-    klines_entrada = observations_max
+    # Consultas de TRAYECTORIA operativa: UNA por observacion apta. La misma
+    # serie 1m cubre entrada, gestion y salida (no hay una consulta de
+    # entrada separada en la politica ejecutada). Se programa cuando la
+    # trayectoria del horizonte puede estar disponible, no en cada tick.
+    # MAX_CONSULTAS_TRAYECTORIA_POR_OBS acota las peticiones repetidas: la
+    # reserva adicional se contabiliza aparte de la estimacion base.
+    klines_trayectoria = observations_max
+    klines_trayectoria_reserva = observations_max * max(
+        0, MAX_CONSULTAS_TRAYECTORIA_POR_OBS - 1)
+    # Una llamada klines por observacion y horizonte (resolve_due de
+    # resultados), una vez por objetivo y no en cada tick.
     klines_requests = observations_max * n_horizons
-    klines_resolver = observations_max
-    klines_total = klines_entrada + klines_requests + klines_resolver
+    klines_total = klines_trayectoria + klines_requests
 
     weight_catalog = selections * WEIGHT_EXCHANGE_INFO
     weight_tickers = selections * WEIGHT_TICKER_24H
@@ -810,24 +824,54 @@ def compute_budget(cfg: PilotConfig) -> Dict[str, Any]:
                 "/fapi/v1/ticker/24hr": {
                     "llamadas": selections, "peso_unitario": WEIGHT_TICKER_24H,
                     "peso_total": weight_tickers},
-                "/fapi/v1/klines_entrada_adaptador": {
-                    "llamadas": klines_entrada, "peso_unitario": WEIGHT_KLINES,
-                    "peso_total": klines_entrada * WEIGHT_KLINES,
-                    "nota": "1 por observacion apta (adaptador: entrada, "
-                            "gestion y salida simuladas; interval 1m, limit=1)"},
+                "/fapi/v1/klines_trayectoria_operativa": {
+                    "llamadas": klines_trayectoria, "peso_unitario": WEIGHT_KLINES,
+                    "peso_total": klines_trayectoria * WEIGHT_KLINES,
+                    "nota": "1 por observacion apta (la serie 1m cubre "
+                            "entrada, gestion y salida; interval 1m). Se "
+                            "consulta cuando la trayectoria del horizonte "
+                            "puede estar disponible (decision + horizonte + "
+                            "un paso), no en cada tick"},
                 "/fapi/v1/klines_resultado_resolve": {
                     "llamadas": klines_requests, "peso_unitario": WEIGHT_KLINES,
                     "peso_total": klines_requests * WEIGHT_KLINES,
                     "nota": "1 por observacion y horizonte (resolve_due de "
                             "resultados; interval 1m, limit=1)"},
-                "/fapi/v1/klines_resolver_operativo": {
-                    "llamadas": klines_resolver, "peso_unitario": WEIGHT_KLINES,
-                    "peso_total": klines_resolver * WEIGHT_KLINES,
-                    "nota": "1 por observacion apta durante el resolver de "
-                            "operaciones pendientes (politica acotada: una "
-                            "consulta por observacion por intervalo de "
-                            "planificacion, no en cada tick; interval 1m, "
-                            "limit=1)"},
+            },
+            "estimacion_base": {
+                "preparacion": {
+                    "llamadas": selections * 2,
+                    "peso": weight_catalog + weight_tickers,
+                    "nota": "catalogo + tickers por seleccion"},
+                "consultas_operativas": {
+                    "llamadas": klines_trayectoria,
+                    "peso": klines_trayectoria * WEIGHT_KLINES,
+                    "nota": "trayectoria completa por observacion apta"},
+                "resultados_por_horizonte": {
+                    "llamadas": klines_requests,
+                    "peso": klines_requests * WEIGHT_KLINES,
+                    "nota": "1 precio posterior por observacion y horizonte"},
+                "intentos": selections * 2 + klines_total,
+                "peso": weight_total,
+            },
+            "reservas": {
+                "peticiones_repetidas_por_observacion": {
+                    "max_por_observacion": max(
+                        0, MAX_CONSULTAS_TRAYECTORIA_POR_OBS - 1),
+                    "llamadas": klines_trayectoria_reserva,
+                    "peso": klines_trayectoria_reserva * WEIGHT_KLINES,
+                    "nota": "peticion REPETIDA (misma observacion consultada "
+                            "en otro intervalo) cuando la trayectoria no fue "
+                            "utilizable; distinta del reintento por fallo"},
+                "reintentos_por_fallo": {
+                    "max_por_ventana": cfg.max_http_retries,
+                    "llamadas": cfg.max_http_retries,
+                    "peso_max": cfg.max_http_retries * WEIGHT_TICKER_24H,
+                    "nota": "reintento del cliente HTTP ante fallo; se cuenta "
+                            "aparte de las peticiones repetidas"},
+                "intentos": (klines_trayectoria_reserva + cfg.max_http_retries),
+                "peso": (klines_trayectoria_reserva * WEIGHT_KLINES
+                         + cfg.max_http_retries * WEIGHT_TICKER_24H),
             },
             "intentos_base": selections * 2 + klines_total,
             "reintentos_tope": cfg.max_http_retries,
@@ -841,13 +885,27 @@ def compute_budget(cfg: PilotConfig) -> Dict[str, Any]:
             "peso_total_estimado": weight_total,
             "intentos_techo_efectivo": cfg.max_http_attempts,
             "peso_techo_efectivo": cfg.max_http_weight,
+            "intentos_base_mas_reservas": (
+                selections * 2 + klines_total + klines_trayectoria_reserva
+                + cfg.max_http_retries),
+            "peso_base_mas_reservas_max": (
+                weight_total + klines_trayectoria_reserva * WEIGHT_KLINES
+                + cfg.max_http_retries * WEIGHT_TICKER_24H),
+            "cabe_en_limites": (
+                (selections * 2 + klines_total + klines_trayectoria_reserva
+                 + cfg.max_http_retries) <= cfg.max_http_attempts
+                and (weight_total + klines_trayectoria_reserva * WEIGHT_KLINES
+                     + cfg.max_http_retries * WEIGHT_TICKER_24H)
+                <= cfg.max_http_weight),
             "nota_consultas_repetidas": (
-                "La base cuenta klines de entrada (adaptador), de resultado "
-                "(resolve_due) y del resolver de operaciones pendientes. Cada "
-                "operacion pendiente se consulta como máximo una vez por "
-                "intervalo de planificacion (60 s), no en cada tick. Los "
-                "reintentos y posibles repeticiones acotadas solo estan "
-                "acotados por max_http_attempts/max_http_weight."
+                "La estimacion base cuenta UNA consulta de trayectoria por "
+                "observacion apta (la politica las programa cuando la "
+                "trayectoria del horizonte puede estar disponible), mas las "
+                "consultas de resultados por horizonte y la preparacion. Las "
+                "peticiones repetidas y los reintentos por fallo son "
+                "reservas aparte: la estimacion base NO es un maximo "
+                "garantizado, el limite efectivo es max_http_attempts/"
+                "max_http_weight (2000/5000 en la configuracion congelada)."
             ),
         },
         "ws": {
@@ -1667,49 +1725,14 @@ class ResearchPilot:
                 break
         return written
 
-    def _procesar_operativo(self, symbol: str, obs: Dict[str, Any]) -> None:
-        """Simula y persiste la operacion del experimento para una
-        observacion apta.
-
-        Obtiene velas 1m mediante el mismo cliente REST del piloto (klines,
-        puerta de presupuesto incluida) y las entrega al OperativoAdapter,
-        que reutiliza paper_lab_engine para entrada, gestion y salida
-        simuladas. El resultado se vincula al observation_id de origen y se
-        persiste para regenerarlo despues por replay.
-        """
-        decision_ms = int(obs["decision_ms"])
-        step_ms = INTERVAL_MS[self.cfg.price_interval]
-        # end_ms cubre hasta el horizonte mas un paso para que el reloj
-        # alcance el cierre de horizonte.
-        end_ms = decision_ms + int(self.operativo.cfg.horizon_ms) + step_ms
-        # Incluir la vela que se cierra en T (close_time <= decision_ms) para
-        # usar su close como referencia de senal (entry_px).
-        start_ms = decision_ms - step_ms
-        rows, _ = self.rest.klines(
-            symbol, self.cfg.price_interval, start_ms, end_ms,
-            limit=int(self.operativo.cfg.horizon_ms // 60_000) + 2,
-        )
-        candles = [
-            PaperCandle(
-                open_time_ms=int(r[0]), open=float(r[1]),
-                high=float(r[2]), low=float(r[3]), close=float(r[4]),
-                close_time_ms=int(r[6]),
-            )
-            for r in rows
-        ]
-        cal = self.operativo.funding_calendars.get(symbol)
-        tr = self.operativo.procesar_observacion(
-            obs, candles, funding_calendar=cal)
-        self.operativo.persistir(tr)
-
     def _registrar_operativo_pendiente(
         self, symbol: str, obs: Dict[str, Any],
     ) -> None:
         """Registra trabajo operativo pendiente para una observacion apta.
 
         Conserva la observacion completa y el dato de movimiento. No simula
-        todavia: se resuelve cuando haya trayectoria suficiente (ver
-        _resolver_operativos_pendientes).
+        todavia: se resuelve cuando la trayectoria del horizonte pueda estar
+        disponible (ver _resolver_operativos_pendientes).
         """
         self.operativo_pendientes[obs["observation_id"]] = {
             "observation_id": obs["observation_id"],
@@ -1717,142 +1740,185 @@ class ResearchPilot:
             "role": str(obs.get("role", "comparator")),
             "observacion": obs,
             "resuelta": False,
+            "consultas": 0,
+            "motivo": None,
         }
 
-    def _resolver_operativos_pendientes(self, now: int) -> int:
-        """Resuelve operaciones pendientes cuando hay trayectoria suficiente.
+    def _consultar_trayectoria_operativa(
+        self, symbol: str, obs: Dict[str, Any], now: int,
+    ) -> Tuple[Optional[Any], str]:
+        """Consulta la trayectoria 1m de una observacion y la procesa.
 
-        Obtiene velas 1m desde el HistoryClient (respeta el reloj del
-        proveedor) hasta el instante actual. Para cada operacion pendiente:
-        - Si hay vela de entrada (open de vela siguiente a decision_ms),
-          simula entrada y gestion hasta el reloj actual.
-        - Si hay suficiente trayectoria para conocer el desenlace (stop,
-          horizonte o agotamiento), persiste el resultado final.
-        - Si no hay suficiente trayectoria, deja la operacion pendiente.
+        UNA consulta cubre entrada, gestion y salida: la serie devuelta va
+        desde la vela que cierra en T hasta el reloj actual mas un paso, con
+        el limite de la ventana del horizonte. Devuelve (resultado, motivo);
+        un motivo no vacio significa que no hubo trayectoria utilizable (no
+        se inventa ningun resultado).
+        """
+        decision_ms = int(obs["decision_ms"])
+        step_ms = INTERVAL_MS[self.cfg.price_interval]
+        start_ms = decision_ms - step_ms
+        end_ms = now + step_ms
+        rows, _ = self.rest.klines(
+            symbol, self.cfg.price_interval, start_ms, end_ms,
+            limit=int(self.operativo.cfg.horizon_ms // 60_000) + 2,
+        )
+        if not rows:
+            return None, "sin_trayectoria_en_la_consulta"
+        # Todas las velas devueltas por el proveedor, incluidas las
+        # provisionales (close=None o close_time > now). El proveedor
+        # identifica las provisionales con close=None; el consumidor nunca
+        # trata un close ausente como vela cerrada. Las velas cuya apertura
+        # es posterior al reloj se excluyen (no se conocen).
+        velas_conocidas = []
+        for r in rows:
+            open_ms = int(r[0])
+            close_ms = int(r[6]) if r[6] is not None else None
+            if open_ms > now:
+                continue
+            velas_conocidas.append(PaperCandle(
+                open_time_ms=open_ms, open=float(r[1]),
+                high=float(r[2]), low=float(r[3]),
+                close=float(r[4]) if r[4] is not None else None,
+                close_time_ms=close_ms,
+            ))
+        if not velas_conocidas:
+            return None, "sin_velas_conocidas_en_el_reloj"
+        cal = self.operativo.funding_calendars.get(symbol)
+        tr = self.operativo.procesar_observacion(
+            obs, velas_conocidas, funding_calendar=cal)
+        return tr, ""
+
+    def _resolver_operativos_pendientes(self, now: int) -> int:
+        """Resuelve operaciones pendientes cuando la trayectoria puede estar
+        disponible.
+
+        Politica de replay (no hay sondeo por tick):
+        - Una observacion se consulta cuando la trayectoria NECESARIA puede ya
+          estar disponible: ``now >= decision_ms + horizon_ms + step_ms``.
+          Antes de ese instante la consulta seria inutil (la serie 1m no
+          llega al cierre del horizonte) y el motor no podria cerrar la
+          exposicion en el horizonte.
+        - Cada observacion admite como maximo
+          ``MAX_CONSULTAS_TRAYECTORIA_POR_OBS`` consultas: una planificada y
+          una REPETIDA (peticion repetida, no reintento por fallo). Los
+          reintentos por fallo los cuenta el cliente HTTP y se reservan
+          aparte en el presupuesto.
+        - Orden determinista por (decision_ms, symbol, observation_id): el rol
+          candidate/comparator no participa y no se mira ningun desenlace
+          posterior para decidir.
+        - Un bloqueo de presupuesto conserva el pendiente CON SU MOTIVO: no
+          inventa resultados ni devuelve cupos.
 
         Devuelve el numero de operaciones resueltas en esta llamada.
         """
-        # Planificacion de consultas: evitar consultar en cada tick para
-        # trabajos que todavia no pueden madurar. Cada operacion pendiente se
-        # consulta como maximo una vez por intervalo de planificacion.
         resueltas = 0
-        for oid in list(self.operativo_pendientes.keys()):
-            item = self.operativo_pendientes[oid]
+        step_ms = INTERVAL_MS[self.cfg.price_interval]
+        horizonte_ms = int(self.operativo.cfg.horizon_ms)
+        # Prioridad determinista por tiempo y simbolo (el rol no participa).
+        pendientes = sorted(
+            self.operativo_pendientes.items(),
+            key=lambda kv: (int(kv[1]["observacion"]["decision_ms"]),
+                            str(kv[1]["symbol"]).upper(), kv[0]))
+        for oid, item in pendientes:
             if item["resuelta"]:
                 continue
-            # Solo consultar esta operacion si ha transcurrido el intervalo
-            # minimo desde su ultima consulta.
+            if self._terminal_stop():
+                break
+            decision_ms = int(item["observacion"]["decision_ms"])
+            # La trayectoria del horizonte solo puede estar disponible cuando
+            # el reloj alcanza el cierre del horizonte mas un paso (para que
+            # la serie lo sobrepase y el motor cierre en el horizonte).
+            if now < decision_ms + horizonte_ms + step_ms:
+                continue
+            consultas = int(item.get("consultas", 0))
+            if consultas >= MAX_CONSULTAS_TRAYECTORIA_POR_OBS:
+                item["motivo"] = item.get("motivo") or (
+                    "consultas_maximas_agotadas_sin_trayectoria")
+                continue
+            # No repetir la misma observacion dentro de un intervalo de
+            # planificacion (60 s).
             last = self._last_resolve_by_obs.get(oid)
             if last is not None and now - last < _INTERVALO_RESOLVER_MS:
                 continue
-            self._last_resolve_by_obs[oid] = now
             symbol = item["symbol"]
             obs = item["observacion"]
-            decision_ms = int(obs["decision_ms"])
-            step_ms = INTERVAL_MS[self.cfg.price_interval]
-            # Velas desde decision_ms hasta el reloj actual (más un paso para
-            # cubrir el cierre de la vela actual).
-            end_ms = now + step_ms
-            start_ms = decision_ms - step_ms
             try:
-                rows, _ = self.rest.klines(
-                    symbol, self.cfg.price_interval, start_ms, end_ms,
-                    limit=int(self.operativo.cfg.horizon_ms // 60_000) + 2,
-                )
-            except RateLimitExceeded:
-                # Presupuesto agotado: no se puede obtener mas trayectoria.
+                tr, motivo = self._consultar_trayectoria_operativa(
+                    symbol, obs, now)
+            except RateLimitExceeded as exc:
+                # Presupuesto agotado: no se envia nada mas. El pendiente se
+                # conserva con su motivo real y la corrida se detiene (no se
+                # inventan resultados ni se devuelven cupos).
+                self.stop_reason = f"presupuesto_agotado: {exc}"
+                item["motivo"] = f"presupuesto_agotado: {exc}"
+                break
+            except Exception as exc:
+                item["consultas"] = consultas + 1
+                item["motivo"] = (
+                    f"error_consulta_trayectoria: {type(exc).__name__}")
+                self._last_resolve_by_obs[oid] = now
                 continue
-            except Exception:
+            self._last_resolve_by_obs[oid] = now
+            item["consultas"] = consultas + 1
+            if tr is None:
+                item["motivo"] = motivo or "sin_trayectoria"
                 continue
-            if not rows:
-                continue
-            # Todas las velas devueltas por el proveedor, incluidas las
-            # provisionales (close=None o close_time > now). El proveedor
-            # identifica las provisionales con close=None; el consumidor nunca
-            # trata un close ausente como vela cerrada. Las velas cuya apertura
-            # es posterior al reloj se excluyen (no se conocen).
-            velas_conocidas = []
-            for r in rows:
-                open_ms = int(r[0])
-                close_ms = int(r[6]) if r[6] is not None else None
-                if open_ms > now:
-                    continue
-                velas_conocidas.append(PaperCandle(
-                    open_time_ms=open_ms, open=float(r[1]),
-                    high=float(r[2]), low=float(r[3]),
-                    close=float(r[4]) if r[4] is not None else None,
-                    close_time_ms=close_ms,
-                ))
-            if not velas_conocidas:
-                continue
-            cal = self.operativo.funding_calendars.get(symbol)
-            tr = self.operativo.procesar_observacion(
-                obs, velas_conocidas, funding_calendar=cal)
-            # Solo marcar como resuelta si el resultado es terminal:
-            # - salida ejecutada (stop o horizonte alcanzado), o
-            # - datos agotados despues del horizonte (open_at_end y ahora >= horizonte).
+            # Resultado terminal: la consulta se hizo cuando la trayectoria
+            # del horizonte ya podia estar disponible, de modo que el
+            # desenlace (salida ejecutada, agotamiento o abstencion) es
+            # definitivo para esta observacion.
             r = tr  # OperativoTradeResult
             terminal = (
                 r.exit_executed
-                or (r.open_at_end
-                    and now >= decision_ms + int(self.operativo.cfg.horizon_ms))
+                or r.decision in ("SIN_ENTRADA", "RECHAZADA_CAPACIDAD",
+                                  "DESCARTADO")
+                or r.open_at_end
+                or r.decision == "ENTRADA_SIMULADA"
             )
             if terminal:
                 self.operativo.persistir(tr)
                 item["resuelta"] = True
+                item["resultado"] = tr
+                item["motivo"] = None
                 self._last_resolve_by_obs.pop(oid, None)
                 resueltas += 1
+            else:
+                item["motivo"] = "trayectoria_insuficiente"
         return resueltas
 
-    def _persistir_resultado_operativo(
-        self, item: Dict[str, Any], state: PaperSessionState,
-        resuelta: bool,
-    ) -> None:
-        """Persiste el resultado de una operacion operativa una sola vez."""
-        if item["resuelta"]:
-            return
-        r = state.result
-        cal = self.operativo.funding_calendars.get(item["symbol"])
-        funding = r.funding
-        funding_estado = "ninguno (UNKNOWN, no cero)"
-        if cal is not None:
-            bt = _resultado_con_funding(
-                item["symbol"], item["direction"],
-                state.candles, item["decision_ms"],
-                r.entry_px, r.entry_ms, r.exit_px, r.exit_ms,
-                cal, self.operativo.cfg,
+    def finalize_operativos_pendientes(self, now: int) -> None:
+        """Conserva los pendientes operativos con su motivo real.
+
+        No se inventa ningun resultado: una operacion sin trayectoria
+        suficiente queda PENDIENTE con el motivo real (consultas agotadas,
+        presupuesto agotado o ventana de settle agotada).
+        """
+        causa = self._pending_cause()
+        for oid, item in sorted(self.operativo_pendientes.items()):
+            if item["resuelta"]:
+                continue
+            motivo = item.get("motivo") or causa
+            obs = item["observacion"]
+            tr = OperativoTradeResult(
+                observation_id=oid,
+                symbol=str(item["symbol"]),
+                role=str(item.get("role", "comparator")),
+                direction=None,
+                decision="PENDIENTE",
+                decision_ms=int(obs["decision_ms"]),
+                entry_px=None, entry_ms=None,
+                exit_px=None, exit_ms=None,
+                exit_reason=None, exit_executed=False,
+                open_at_end=False, qty=0.0,
+                gross_pnl=0.0, fees=0.0, spread_slip=0.0,
+                funding=None, net_pnl=None,
+                funding_estado=f"pendiente: {motivo}",
+                config_hash=self.operativo._config_hash(),
+                engine_version=ENGINE_VERSION_PAPER,
             )
-            if bt is not None:
-                funding = bt.get("funding")
-                funding_estado = bt.get(
-                    "funding_model", "settlement-calendar")
-                r = _replace_result(r, funding=funding,
-                                    net_pnl=bt.get("net_pnl"))
-        from scripts.research_operativo_adapter import (
-            OperativoTradeResult,
-        )
-        tr = OperativoTradeResult(
-            observation_id=item["observation_id"],
-            symbol=item["symbol"], role=item["role"],
-            direction=item["direction"],
-            decision="ENTRADA_EJECUTADA" if r.exit_executed
-            else ("SIN_ENTRADA" if state.status != "abierta"
-                  else "ENTRADA_SIMULADA"),
-            decision_ms=item["decision_ms"],
-            entry_px=r.entry_px, entry_ms=r.entry_ms,
-            exit_px=r.exit_px, exit_ms=r.exit_ms,
-            exit_reason=r.exit_reason, exit_executed=r.exit_executed,
-            open_at_end=r.open_at_end, qty=r.qty,
-            gross_pnl=r.gross_pnl, fees=r.fees,
-            spread_slip=r.spread_slip, funding=funding,
-            net_pnl=r.net_pnl,
-            funding_estado=funding_estado,
-            config_hash=self.operativo._config_hash(),
-            engine_version=ENGINE_VERSION_PAPER,
-        )
-        self.operativo.persistir(tr)
-        item["resuelta"] = True
-        item["resultado"] = tr
+            self.operativo.persistir(tr)
+            item["motivo"] = motivo
 
     # -- resultados --------------------------------------------------------
 
@@ -2255,6 +2321,10 @@ class ResearchPilot:
                 self._write_status()
                 await asyncio.sleep(tick_s)
             self.finalize_pending(self.clock.now_ms())
+            # Los pendientes operativos que no se resolvieron se conservan
+            # PENDIENTES con su motivo real (no se inventan resultados ni se
+            # devuelven cupos de presupuesto).
+            self.finalize_operativos_pendientes(self.clock.now_ms())
         finally:
             await self._stop_feeds()
             try:
@@ -2288,6 +2358,10 @@ class ResearchPilot:
                 "weight_spent": self.rest.stats.weight_spent,
             },
             "presupuesto_http": self.budget.status(),
+            # Politica presupuestada de esta corrida (estimacion base, reservas
+            # y limite efectivo). Permite contrastar el plan con las llamadas
+            # realmente observadas sin recalcular nada a mano.
+            "presupuesto_plan": compute_budget(self.cfg),
             "ws_connections_total": self.ws_total_connections + sum(
                 f.connections for f in self.feeds.values()),
             "ws_messages_total": self.ws_messages_total + sum(
@@ -2536,28 +2610,42 @@ def main(argv: Optional[List[str]] = None) -> int:
         return 0
     try:
         clock = build_clock(cfg.clock_mode, cfg.clock_file)
-        # Cargar calendarios de funding si se especifican (archivo sintético
-        # identificado como tal en pruebas; no se abre adquisición pública).
+        # Cargar calendarios de funding si se especifican (archivo sintetico
+        # identificado como tal en pruebas; no se abre adquisicion publica).
+        # Si se pide un fichero que no existe o no es valido, el error es
+        # explicito: no hay paso silencioso a un calendario vacio.
         funding_calendars: Dict[str, FundingCalendar] = {}
         if args.funding_calendars:
             fc_path = Path(args.funding_calendars)
-            if fc_path.exists():
+            if not fc_path.exists():
+                raise FileNotFoundError(
+                    f"--funding-calendars no existe: {fc_path}")
+            try:
                 fc_data = json.loads(fc_path.read_text(encoding="utf-8"))
-                for symbol, fc_dict in fc_data.items():
-                    settlements = tuple(
-                        FundingSettlement(
-                            settlement_ms=int(s["settlement_ms"]),
-                            rate_bps=float(s["rate_bps"]),
-                        )
-                        for s in fc_dict.get("settlements", [])
+            except (OSError, ValueError) as exc:
+                raise ValueError(
+                    f"--funding-calendars ilegible: {fc_path}: {exc}") from exc
+            if not isinstance(fc_data, dict):
+                raise ValueError(
+                    "--funding-calendars debe ser un objeto {simbolo: calendario}")
+            for symbol, fc_dict in fc_data.items():
+                if not isinstance(fc_dict, dict):
+                    raise ValueError(
+                        f"calendario de funding invalido para {symbol}")
+                settlements = tuple(
+                    FundingSettlement(
+                        settlement_ms=int(s["settlement_ms"]),
+                        rate_bps=float(s["rate_bps"]),
                     )
-                    funding_calendars[symbol] = FundingCalendar(
-                        version=fc_dict.get("version", "synthetic/v1"),
-                        source=fc_dict.get("source", "synthetic-fixture"),
-                        interval_ms=fc_dict.get("interval_ms"),
-                        settlements=settlements,
-                        symbol=symbol,
-                    )
+                    for s in fc_dict.get("settlements", [])
+                )
+                funding_calendars[symbol] = FundingCalendar(
+                    version=fc_dict.get("version", "synthetic/v1"),
+                    source=fc_dict.get("source", "synthetic-fixture"),
+                    interval_ms=fc_dict.get("interval_ms"),
+                    settlements=settlements,
+                    symbol=symbol,
+                )
         pilot = ResearchPilot(
             cfg, clock=clock,
             funding_calendars=funding_calendars,
