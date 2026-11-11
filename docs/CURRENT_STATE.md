@@ -1,5 +1,69 @@
 # Estado vigente — dirección operativa, 2026-11-10
 
+## Cobertura histórica de funding, opción B implementada (2026-11-10, LOCAL, NO-GO PÚBLICO)
+
+Sobre la base revisada `30299c00180263abd159e68e02d22286f0c6976f` se
+implementó localmente la opción B de
+[EXPERIMENTO_OPERATIVO_V2](EXPERIMENTO_OPERATIVO_V2.md) §10.5, sin abrir
+Binance ni ejecutar una ventana:
+
+- `FundingCoverage` y el contrato versionado `funding-coverage/v1` son
+  aditivos a `FundingCalendar`. Los estados son `complete`, `incomplete` y
+  `unknown`; `coverage=None` conserva la semántica legacy.
+- Una cobertura `complete` exige intervalo `[start, end)`, símbolo, venue y
+  fuente, adquisición y disponibilidad, método y evidencia, petición y
+  respuesta, hashes, paginación no truncada, `row_count` y digest coherentes
+  con las filas cargadas, settlements dentro del intervalo solicitado,
+  referencia de artefacto inmutable y un máximo de retraso de publicación
+  verificable ya transcurrido. Una reclamación inválida se degrada a
+  `unknown` y el motor no la acredita.
+- La contabilidad por posición usa `[entry_ms, exit_ms)`. Cobertura completa sin
+  pagos acredita cero conocido; un pago aplicable se contabiliza; cobertura
+  parcial, ambigua o desconocida deja el total `UNKNOWN`. Un importe parcial
+  observado no sustituye el total desconocido.
+- `repr`, `calendar_hash()` y `config_hash()` de los calendarios legacy se
+  conservan. El hash publicado `2e34e9d48595d5db` no cambia y los resultados
+  históricos no se reclasifican. Los hashes nuevos comprometen cobertura y
+  configuración.
+- El adaptador publica funding conocido o `UNKNOWN`, estado efectivo e
+  integridad, intervalo, procedencia, hash, errores y motivo por posición. Una
+  reclamación inválida se persiste como `unknown`. El neto es `COMPLETO` solo
+  con funding acreditado y salida ejecutada, o
+  `CONDICIONADO_SIN_FUNDING_COMPLETO`; una posición `open_at_end` conserva su
+  marca pero mantiene el P&L realizado en `UNKNOWN`.
+- La ruta Binance persiste parámetros, estado HTTP, tamaño y número de
+  elementos de respuesta, hashes, símbolo, truncamiento y publication delay
+  desconocido. HTTP 200 o una respuesta vacía no acreditan ausencia de
+  liquidaciones. Si la respuesta no deja registro del instante de
+  adquisición, el contrato conserva ese campo como ausente y la cobertura
+  queda `unknown`; nunca se inventa una marca temporal.
+
+**Pruebas.** `tests/test_backtest_funding_coverage.py`: 28 passed. Conjunto
+focalizado ampliado de cobertura, funding, piloto, CLI, loaders, adaptador,
+capacidad, historia y replay: 214 passed + 4 subtests passed. Suite canónica
+`python run_tests.py`: 1 650 tests, 4 fallos y 2 skipped. Los cuatro fallos son
+los preexistentes de
+`tests/test_market_stream_window.py`, ajenos a este cambio y ya reproducidos
+sobre la base revisada.
+
+**Presupuesto y límites.** La opción B no cambia el número de consultas
+necesarias, por lo que no se recalculó `--budget-only`; se conservan el
+presupuesto, las reservas y los topes publicados. Permanecen congelados
+captura 3600 s, settle 4200 s, ciclos 300 s, 12 candidatos, 8 comparadores,
+frescura 5000 ms, notional 1000 USDT, horizonte 60 min y `max_concurrent=1`.
+No se abrió Binance, no se amplió ningún presupuesto, no se ejecutó una
+ventana y no se enviaron órdenes, cuentas, claves ni servicios.
+
+**P0 vigente.** La documentación pública de Binance consultada no ofrece una
+prueba general de completitud ni un máximo verificable de retraso de
+publicación. Para habilitar la ruta Binance real se necesita evidencia
+oficial y trazable que cubra el intervalo, vincule símbolo, parámetros,
+respuesta y hashes, pruebe ausencia de settlements y fije el retraso máximo
+para ese símbolo e intervalo. Sin ella, Binance queda `unknown` o
+`incomplete`, la primera ventana sigue en **NO-GO** y no se autoriza su
+ejecución. La cobertura sigue limitada a perpetuos USD-M; futuros con
+vencimiento pendientes y GARCH diferido. No hay rentabilidad acreditada.
+
 ## Preparación de la primera ventana operativa v2 (2026-11-10, NO EJECUTADA, NO-GO)
 
 Sobre la base revisada `6d321a27e333d8e416f429f525d766b4cfac7aef` quedó

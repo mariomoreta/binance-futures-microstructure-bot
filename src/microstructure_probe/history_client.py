@@ -145,10 +145,12 @@ class HistoryClient:
             upstream_entry: Dict[str, Any] = {
                 "execution_id": self.execution_id,
                 "endpoint": url,
+                "params": dict(params),
                 "symbol": params.get("symbol"),
                 "interval": params.get("interval"),
                 "range": f"{params.get('startTime', '')}-{params.get('endTime', '')}",
                 "page": params.get("limit"),
+                "limit": params.get("limit"),
                 "retry": attempts_5xx + retries_429_request,
                 "result": "pending",
                 "duration_ms": None,
@@ -159,6 +161,9 @@ class HistoryClient:
                 "configured_weight": weight,
                 "observed_headers": {},
                 "response_sha256": None,
+                "response_bytes": None,
+                "response_item_count": None,
+                "http_status": None,
             }
             self.upstream_requests.append(upstream_entry)
             # Reserva de presupuesto ANTES del transporte: si la puerta
@@ -184,6 +189,10 @@ class HistoryClient:
                     upstream_entry["result"] = "ok"
                     upstream_entry["duration_ms"] = int((time.monotonic() - t0) * 1000)
                     upstream_entry["completed_at_ms"] = int(time.time() * 1000)
+                    upstream_entry["http_status"] = getattr(resp, "status", 200)
+                    upstream_entry["response_bytes"] = len(raw.encode("utf-8"))
+                    upstream_entry["response_item_count"] = (
+                        len(payload) if isinstance(payload, list) else None)
                     upstream_entry["response_sha256"] = hashlib.sha256(
                         raw.encode("utf-8")).hexdigest()
                     upstream_entry["observed_headers"] = {
@@ -194,6 +203,7 @@ class HistoryClient:
                     self.stats.failures += 1
                     started = t0 if t0 is not None else time.monotonic()
                     upstream_entry["result"] = f"http_{exc.code}"
+                    upstream_entry["http_status"] = int(exc.code)
                     upstream_entry["duration_ms"] = int((time.monotonic() - started) * 1000)
                     upstream_entry["completed_at_ms"] = int(time.time() * 1000)
                     if exc.headers:

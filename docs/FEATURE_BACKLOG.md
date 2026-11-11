@@ -1,3 +1,60 @@
+## F-OPERATIVO-FUNDING-COVERAGE-B-20261110 — Cobertura historica explicita de funding
+
+**1. Title:** Implementar la opcion B de
+[EXPERIMENTO_OPERATIVO_V2](EXPERIMENTO_OPERATIVO_V2.md) §10.5 mediante un
+contrato versionado de cobertura historica que permita acreditar el intervalo
+consultado sin exigir un settlement posterior a la salida.
+
+**2. Approval status:** AUTORIZADO solo para la opcion B y su aceptacion local.
+Quedan excluidas A y C. No autoriza ventanas publicas, nuevas capturas,
+paper deployment, cuentas, claves, ordenes, ejecucion real, ampliacion de
+presupuestos, servicios nuevos ni cambios de la configuracion congelada.
+
+**3. Implementation status:** IMPLEMENTADO. `FundingCoverage` y
+`funding-coverage/v1` son aditivos a `FundingCalendar`, con estados
+`complete`, `incomplete` y `unknown`. El contrato valida intervalo
+semiabierto, instrumento, venue y fuente, adquisicion y disponibilidad, metodo
+y evidencia, peticion y respuesta, hashes, paginacion no truncada, simbolo,
+`row_count`, digest de settlements, artefacto inmutable y retraso de
+publicacion ya transcurrido. Una reclamacion `complete` invalida degrada a
+`unknown` con su motivo. La contabilidad por posicion conserva
+`[entry_ms, exit_ms)`: cobertura completa sin pagos acredita cero conocido,
+pago aplicable se contabiliza y cobertura parcial, ambigua o desconocida deja
+el total `UNKNOWN`. El adaptador publica estado efectivo, intervalo,
+procedencia, integridad, motivo y neto completo o condicionado; una posicion
+`open_at_end` conserva su marca pero mantiene el P&L realizado en `UNKNOWN`.
+Calendarios legacy sin cobertura conservan `repr`, `calendar_hash()`,
+`config_hash()` y resultados historicos.
+
+**4. Evaluation status:** VERIFICADO localmente como mecanismo de cobertura y
+contabilidad. NO EVALUADO economicamente. No hay rentabilidad, direccion ni
+expectativa neta acreditadas. La ruta Binance real sigue en `unknown` o
+`incomplete` porque no existe prueba oficial y trazable de ausencia de
+settlements y de retraso maximo de publicacion.
+
+**5. Evidence:** `tests/test_backtest_funding_coverage.py` (28 passed) cubre
+A-F: cero conocido, pago conocido, parcial `UNKNOWN`, evidencia invalida,
+truncamiento, contradicciones, limite de publicacion, legacy, limites,
+equivalencia, hashes, loaders, adaptador y persistencia. Conjunto focalizado
+ampliado: 214 passed + 4 subtests passed. Suite canonica `python run_tests.py`:
+1 650 tests, 4 fallos y 2 skipped; los cuatro fallos son preexistentes de
+`tests/test_market_stream_window.py` y ajenos a este cambio. El hash publicado
+`2e34e9d48595d5db` permanece igual. No se abrio Binance ni endpoint publico.
+
+**6. Verdict:** contrato y contabilidad B cerrados sin rebajar
+`funding_accounting_complete`, sin convertir `UNKNOWN` en cero y sin
+reclasificar historicos. La primera ventana publica permanece NO-GO por el P0
+de evidencia Binance. El numero de consultas necesarias no cambia, asi que no
+se recalculo `--budget-only` y se conservan presupuesto, reservas y topes.
+
+**7. Next step:** obtener evidencia oficial y trazable de venue para el
+simbolo e intervalo consultados que cubra ausencia de settlements y retraso
+maximo de publicacion. Validarla contra `funding-coverage/v1`; solo despues
+revalidar el gate y solicitar autorizacion para una sola ventana. No abrir
+Binance, ejecutar ventanas ni implementar A o C.
+
+---
+
 ## F-OPERATIVO-V2-VENTANA1-PREP-20261110 — Preparacion local de la primera ventana
 
 **1. Title:** Preparar localmente la primera ventana del experimento operativo

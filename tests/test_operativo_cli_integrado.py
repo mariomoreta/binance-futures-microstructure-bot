@@ -45,7 +45,7 @@ from tests.test_research_pilot import (  # noqa: E402
     base_price, find_free_port, kline_price, HORIZONS,
 )
 from microstructure_probe.backtest_offline import (  # noqa: E402
-    FundingCalendar, FundingSettlement,
+    FundingCalendar, FundingSettlement, funding_settlements_sha256,
 )
 from microstructure_probe.history_client import (  # noqa: E402
     HistoryClient, INTERVAL_MS,
@@ -166,6 +166,13 @@ def test_cli_productivo_integrado() -> None:
     fund_dir = tmp / "funding"
     fund_dir.mkdir(parents=True, exist_ok=True)
     cal_path = fund_dir / "calendario_cli.json"
+    settlements = [
+        FundingSettlement(settlement_ms - 8 * 3600 * 1000, rate_bps),
+        FundingSettlement(settlement_ms, rate_bps),
+        FundingSettlement(settlement_ms + 8 * 3600 * 1000, rate_bps),
+    ]
+    coverage_start = settlement_ms - 8 * 3600 * 1000
+    coverage_end = settlement_ms + 8 * 3600 * 1000 + 1
     cal_path.write_text(json.dumps({
         "AAAUSDT": {
             "version": "synthetic/v1",
@@ -174,12 +181,77 @@ def test_cli_productivo_integrado() -> None:
             # Cadencia de 8 h que cubre toda la exposicion: solo el
             # settlement central cae dentro de la ventana de la operacion.
             "settlements": [
-                {"settlement_ms": settlement_ms - 8 * 3600 * 1000,
-                 "rate_bps": rate_bps},
-                {"settlement_ms": settlement_ms, "rate_bps": rate_bps},
-                {"settlement_ms": settlement_ms + 8 * 3600 * 1000,
-                 "rate_bps": rate_bps},
+                {"settlement_ms": item.settlement_ms,
+                 "rate_bps": item.rate_bps}
+                for item in settlements
             ],
+            "coverage": {
+                "version": "funding-coverage/v1",
+                "status": "complete",
+                "symbol": "AAAUSDT",
+                "venue": "synthetic",
+                "source": "synthetic-fixture",
+                "interval_start_ms": coverage_start,
+                "interval_end_ms": coverage_end,
+                "acquired_at_ms": coverage_end,
+                "available_at_ms": coverage_end,
+                "method": "synthetic-fixture",
+                "evidence": {
+                    "kind": "synthetic-fixture",
+                    "reference": "synthetic-fixture://cli-coverage/v1",
+                    "statement": "complete synthetic coverage for the CLI test",
+                    "sha256": "a" * 64,
+                    "artifact_uri": "synthetic-fixture://cli-coverage/v1",
+                    "artifact_sha256": "a" * 64,
+                    "symbol": "AAAUSDT",
+                    "venue": "synthetic",
+                    "interval_start_ms": coverage_start,
+                    "interval_end_ms": coverage_end,
+                    "valid_from_ms": coverage_start,
+                    "valid_until_ms": coverage_end,
+                },
+                "request": {
+                    "endpoint": "synthetic://funding-history",
+                    "params": {
+                        "symbol": "AAAUSDT",
+                        "startTime": coverage_start,
+                        "endTime": coverage_end - 1,
+                        "limit": 1000,
+                    },
+                    "http_status": 200,
+                    "sent_at_ms": coverage_end,
+                    "completed_at_ms": coverage_end,
+                },
+                "response": {
+                    "sha256": "b" * 64,
+                    "row_count": len(settlements),
+                    "symbols": ["AAAUSDT"],
+                    "pagination": {
+                        "pages": 1,
+                        "complete": True,
+                        "truncated": False,
+                    },
+                    "settlement_sha256": funding_settlements_sha256(
+                        tuple(settlements)),
+                    "first_settlement_ms": settlements[0].settlement_ms,
+                    "last_settlement_ms": settlements[-1].settlement_ms,
+                },
+                "publication_delay_ms": 0,
+                "publication_delay_evidence": {
+                    "kind": "synthetic-fixture",
+                    "reference": "synthetic-fixture://publication-delay/v1",
+                    "statement": "synthetic rows are available at acquisition",
+                    "sha256": "c" * 64,
+                    "artifact_uri": "synthetic-fixture://publication-delay/v1",
+                    "artifact_sha256": "c" * 64,
+                    "symbol": "AAAUSDT",
+                    "venue": "synthetic",
+                    "interval_start_ms": coverage_start,
+                    "interval_end_ms": coverage_end,
+                    "available_at_ms": coverage_end,
+                },
+                "reason": "",
+            },
         }
     }), encoding="utf-8")
 
@@ -395,6 +467,11 @@ def test_cli_productivo_integrado() -> None:
         assert admitida.get("funding_sin_cubrir_ms") == 0, admitida
         assert admitida.get("funding_huecos_ms") == 0, admitida
         assert admitida.get("funding_settlements_desconocidos") == 0, admitida
+        assert admitida.get("funding_cobertura_estado") == "complete", admitida
+        assert admitida.get("funding_cobertura_inicio_ms") == coverage_start, admitida
+        assert admitida.get("funding_cobertura_fin_ms") == coverage_end, admitida
+        assert admitida.get("funding_cobertura_hash"), admitida
+        assert admitida.get("funding_cobertura", {}).get("request"), admitida
         assert admitida.get("neto_estado") == "COMPLETO", admitida
 
         # Sin calendario propio (simbolos sin calendario) el funding queda

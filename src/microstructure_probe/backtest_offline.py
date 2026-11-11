@@ -110,11 +110,411 @@ from __future__ import annotations
 
 import hashlib
 import json
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from typing import Any, Dict, List, Optional, Tuple
 
 ENGINE_VERSION = "backtest-offline/v4.2"
 FUNDING_INTERVAL_MS = 8 * 3600 * 1000
+FUNDING_COVERAGE_VERSION = "funding-coverage/v1"
+FUNDING_COVERAGE_STATUSES = ("complete", "incomplete", "unknown")
+
+
+def _is_sha256(value: Any) -> bool:
+    if not isinstance(value, str) or len(value) != 64:
+        return False
+    return all(char in "0123456789abcdef" for char in value.lower())
+
+
+def _is_artifact_reference(value: Any, evidence_kind: Any) -> bool:
+    if not isinstance(value, str) or "://" not in value:
+        return False
+    scheme, target = value.split("://", 1)
+    scheme = scheme.lower()
+    target = target.strip()
+    if not target:
+        return False
+    if scheme == "synthetic-fixture":
+        return evidence_kind == "synthetic-fixture"
+    if scheme == "sha256":
+        return evidence_kind == "venue-absence-proof" and _is_sha256(target)
+    if scheme == "ipfs":
+        return evidence_kind == "venue-absence-proof"
+    return False
+
+
+def funding_settlements_sha256(
+    settlements: Tuple["FundingSettlement", ...],
+) -> str:
+    """Digest canonico de filas de settlements; conserva duplicados."""
+    payload = json.dumps(sorted(
+        ({
+            "settlement_ms": item.settlement_ms,
+            "rate_bps": item.rate_bps,
+            "mark_price": item.mark_price,
+            "rate_type": item.rate_type,
+            "funding_rate": item.funding_rate,
+        } for item in settlements),
+        key=lambda item: item["settlement_ms"]),
+        sort_keys=True, default=str, separators=(",", ":"))
+    return hashlib.sha256(payload.encode("utf-8")).hexdigest()
+
+
+@dataclass(frozen=True, repr=False)
+class FundingCoverage:
+    """Cobertura historica explicita de un intervalo de funding.
+
+    ``interval_start_ms`` y ``interval_end_ms`` delimitan un intervalo
+    semiabierto ``[start, end)``. ``complete`` solo significa que una prueba
+    externa acredita que la respuesta contiene TODOS los settlements del
+    intervalo. Un HTTP 200, una respuesta vacia o una cadencia nominal no
+    constituyen esa prueba.
+
+    ``incomplete`` y ``unknown`` conservan la evidencia observada, pero nunca
+    acreditan ausencia de liquidaciones ni habilitan un importe total.
+    """
+
+    version: str
+    status: str
+    symbol: str
+    venue: str
+    source: str
+    interval_start_ms: int
+    interval_end_ms: int
+    acquired_at_ms: Optional[int]
+    available_at_ms: Optional[int]
+    method: str
+    evidence: Dict[str, Any]
+    request: Dict[str, Any]
+    response: Dict[str, Any]
+    publication_delay_ms: Optional[int] = None
+    publication_delay_evidence: Dict[str, Any] = None  # type: ignore[assignment]
+    reason: str = ""
+
+    def __post_init__(self) -> None:
+        if self.version != FUNDING_COVERAGE_VERSION:
+            raise ValueError(
+                "funding coverage version must be %s" %
+                FUNDING_COVERAGE_VERSION)
+        if self.status not in FUNDING_COVERAGE_STATUSES:
+            raise ValueError(
+                "invalid funding coverage status: %r" % (self.status,))
+        if not isinstance(self.interval_start_ms, int) or \
+                not isinstance(self.interval_end_ms, int) or \
+                isinstance(self.interval_start_ms, bool) or \
+                isinstance(self.interval_end_ms, bool):
+            raise ValueError("funding coverage interval bounds must be integers")
+        if self.interval_start_ms >= self.interval_end_ms:
+            raise ValueError(
+                "funding coverage interval must satisfy start < end")
+        if not isinstance(self.evidence, dict) or \
+                not isinstance(self.request, dict) or \
+                not isinstance(self.response, dict):
+            raise ValueError("funding coverage evidence/request/response must be objects")
+        if self.publication_delay_evidence is None:
+            object.__setattr__(self, "publication_delay_evidence", {})
+
+    def __repr__(self) -> str:
+        payload = json.dumps(
+            self._payload(), sort_keys=True, default=str,
+            separators=(",", ":"))
+        return "FundingCoverage(%s)" % payload
+
+    def _payload(self) -> Dict[str, Any]:
+        return {
+            "version": self.version,
+            "status": self.status,
+            "symbol": self.symbol,
+            "venue": self.venue,
+            "source": self.source,
+            "interval_start_ms": self.interval_start_ms,
+            "interval_end_ms": self.interval_end_ms,
+            "interval_semantics": "[start,end)",
+            "acquired_at_ms": self.acquired_at_ms,
+            "available_at_ms": self.available_at_ms,
+            "method": self.method,
+            "evidence": self.evidence,
+            "request": self.request,
+            "response": self.response,
+            "publication_delay_ms": self.publication_delay_ms,
+            "publication_delay_evidence": self.publication_delay_evidence,
+            "reason": self.reason,
+        }
+
+    def to_dict(self) -> Dict[str, Any]:
+        payload = self._payload()
+        payload["coverage_hash"] = self.coverage_hash()
+        return payload
+
+    def coverage_hash(self) -> str:
+        payload = json.dumps(
+            self._payload(), sort_keys=True, default=str,
+            separators=(",", ":"))
+        return hashlib.sha256(payload.encode("utf-8")).hexdigest()[:16]
+
+    def validate(self) -> List[str]:
+        """Errores semanticos que impiden tratar la cobertura como completa."""
+        errors: List[str] = []
+        if not self.symbol or self.symbol != self.symbol.upper():
+            errors.append("coverage symbol must be a non-empty uppercase string")
+        if not self.venue:
+            errors.append("coverage venue is missing")
+        if not self.source:
+            errors.append("coverage source is missing")
+        if not self.method:
+            errors.append("coverage method is missing")
+        if (not isinstance(self.acquired_at_ms, int)
+                or isinstance(self.acquired_at_ms, bool)
+                or not isinstance(self.available_at_ms, int)
+                or isinstance(self.available_at_ms, bool)):
+            errors.append("coverage acquisition/availability times must be integers")
+        elif self.acquired_at_ms < 0 or self.available_at_ms < 0:
+            errors.append("coverage acquisition/availability times must be non-negative")
+        if self.status != "complete" and not self.reason:
+            errors.append("non-complete coverage requires an explicit reason")
+
+        evidence = self.evidence or {}
+        evidence_required = ("kind", "reference", "statement", "sha256")
+        for field in evidence_required:
+            if not evidence.get(field):
+                errors.append("coverage evidence.%s is missing" % field)
+        if evidence.get("sha256") and not _is_sha256(evidence.get("sha256")):
+            errors.append("coverage evidence.sha256 is invalid")
+
+        request = self.request or {}
+        params = request.get("params") or {}
+        if not request.get("endpoint"):
+            errors.append("coverage request.endpoint is missing")
+        if not isinstance(params, dict):
+            errors.append("coverage request.params must be an object")
+            params = {}
+        if params.get("symbol") != self.symbol:
+            errors.append("coverage request symbol differs from coverage symbol")
+        if not isinstance(request.get("http_status"), int) or \
+                isinstance(request.get("http_status"), bool):
+            errors.append("coverage request.http_status must be an integer")
+        for field in ("startTime", "endTime", "limit"):
+            if not isinstance(params.get(field), int) or \
+                    isinstance(params.get(field), bool):
+                errors.append("coverage request.params.%s must be an integer" % field)
+        if isinstance(params.get("limit"), int) and \
+                not 1 <= params.get("limit") <= 1500:
+            errors.append("coverage request limit must be within 1..1500")
+
+        response = self.response or {}
+        if not _is_sha256(response.get("sha256")):
+            errors.append("coverage response.sha256 is invalid")
+        if not isinstance(response.get("row_count"), int) or \
+                isinstance(response.get("row_count"), bool) or \
+                response.get("row_count", -1) < 0:
+            errors.append("coverage response.row_count must be a non-negative integer")
+        symbols = response.get("symbols")
+        if not isinstance(symbols, list) or \
+                any(not isinstance(item, str) for item in symbols):
+            errors.append("coverage response.symbols must be a string list")
+            symbols = []
+        pagination = response.get("pagination") or {}
+        if not isinstance(pagination, dict):
+            errors.append("coverage response.pagination must be an object")
+            pagination = {}
+        if not isinstance(pagination.get("complete"), bool):
+            errors.append("coverage response.pagination.complete must be boolean")
+        if not isinstance(pagination.get("truncated"), bool):
+            errors.append("coverage response.pagination.truncated must be boolean")
+        if not isinstance(pagination.get("pages"), int) or \
+                isinstance(pagination.get("pages"), bool) or \
+                pagination.get("pages", 0) < 1:
+            errors.append("coverage response.pagination.pages must be >= 1")
+        if not _is_sha256(response.get("settlement_sha256")):
+            errors.append("coverage response.settlement_sha256 is invalid")
+
+        if self.publication_delay_ms is not None:
+            if not isinstance(self.publication_delay_ms, int) or \
+                    isinstance(self.publication_delay_ms, bool) or \
+                    self.publication_delay_ms < 0:
+                errors.append("coverage publication_delay_ms must be non-negative")
+            proof = self.publication_delay_evidence or {}
+            for field in ("kind", "reference", "statement", "sha256"):
+                if not proof.get(field):
+                    errors.append(
+                        "coverage publication_delay_evidence.%s is missing" % field)
+            if proof.get("sha256") and not _is_sha256(proof.get("sha256")):
+                errors.append("coverage publication_delay_evidence.sha256 is invalid")
+
+        if self.status == "complete":
+            if "cadence" in self.method.lower() or \
+                    "extrapolat" in self.method.lower():
+                errors.append("cadence extrapolation cannot certify complete coverage")
+            evidence_kind = evidence.get("kind")
+            if evidence_kind not in (
+                    "synthetic-fixture", "venue-absence-proof"):
+                errors.append(
+                    "complete coverage requires synthetic or venue absence proof")
+            else:
+                synthetic_source = "synthetic" in self.source.lower()
+                if evidence_kind == "synthetic-fixture":
+                    if self.venue != "synthetic" or not synthetic_source:
+                        errors.append(
+                            "synthetic evidence cannot certify a non-synthetic venue")
+                elif self.venue == "synthetic" or synthetic_source:
+                    errors.append(
+                        "venue absence evidence cannot certify a synthetic venue")
+            for field, expected in (
+                    ("symbol", self.symbol),
+                    ("venue", self.venue),
+                    ("interval_start_ms", self.interval_start_ms),
+                    ("interval_end_ms", self.interval_end_ms)):
+                if evidence.get(field) != expected:
+                    errors.append(
+                        "coverage evidence %s differs from coverage contract" % field)
+            if not _is_artifact_reference(
+                    evidence.get("artifact_uri"), evidence_kind):
+                errors.append("coverage evidence artifact reference is not immutable")
+            if not _is_sha256(evidence.get("artifact_sha256")):
+                errors.append("coverage evidence artifact_sha256 is invalid")
+            elif evidence.get("artifact_sha256") != evidence.get("sha256"):
+                errors.append("coverage evidence artifact hash differs from evidence hash")
+            if request.get("http_status") != 200:
+                errors.append("complete coverage requires HTTP status 200")
+            sent_at = request.get("sent_at_ms")
+            completed_at = request.get("completed_at_ms")
+            if not isinstance(sent_at, int) or isinstance(sent_at, bool):
+                errors.append("coverage request.sent_at_ms must be an integer")
+            if not isinstance(completed_at, int) or isinstance(completed_at, bool):
+                errors.append("coverage request.completed_at_ms must be an integer")
+            if (isinstance(sent_at, int) and isinstance(completed_at, int)
+                    and sent_at > completed_at):
+                errors.append("coverage request completed before it was sent")
+            if (isinstance(completed_at, int)
+                    and isinstance(self.acquired_at_ms, int)
+                    and completed_at > self.acquired_at_ms):
+                errors.append("coverage acquired before its request completed")
+            if (isinstance(self.acquired_at_ms, int)
+                    and isinstance(self.available_at_ms, int)
+                    and self.available_at_ms < self.acquired_at_ms):
+                errors.append("coverage available before it was acquired")
+            if (isinstance(params.get("startTime"), int)
+                    and params.get("startTime") > self.interval_start_ms):
+                errors.append("coverage interval starts before requested startTime")
+            if (isinstance(params.get("endTime"), int)
+                    and params.get("endTime") < self.interval_end_ms - 1):
+                errors.append("coverage interval ends after requested endTime")
+            row_count = response.get("row_count")
+            if row_count > 0 and symbols != [self.symbol]:
+                errors.append("coverage response symbol differs from requested symbol")
+            if row_count == 0 and symbols:
+                errors.append("coverage response symbols contradict row_count")
+            if (isinstance(row_count, int)
+                    and isinstance(params.get("limit"), int)
+                    and row_count > params.get("limit")):
+                errors.append("coverage response row_count exceeds request limit")
+            if (isinstance(row_count, int)
+                    and isinstance(params.get("limit"), int)
+                    and row_count >= params.get("limit")):
+                errors.append(
+                    "coverage response reached the request limit without proven closure")
+            if pagination.get("complete") is not True:
+                errors.append("complete coverage requires pagination.complete=true")
+            if pagination.get("truncated") is not False:
+                errors.append("complete coverage requires pagination.truncated=false")
+            if self.publication_delay_ms is None:
+                errors.append(
+                    "complete coverage requires a proven publication delay bound")
+            proof = self.publication_delay_evidence or {}
+            proof_kind = proof.get("kind")
+            if proof_kind != evidence_kind:
+                errors.append(
+                    "publication delay evidence kind differs from coverage evidence")
+            for field, expected in (
+                    ("symbol", self.symbol),
+                    ("venue", self.venue),
+                    ("interval_start_ms", self.interval_start_ms),
+                    ("interval_end_ms", self.interval_end_ms),
+                    ("available_at_ms", self.available_at_ms)):
+                if proof.get(field) != expected:
+                    errors.append(
+                        "publication delay evidence %s differs from coverage contract" % field)
+            if not _is_artifact_reference(
+                    proof.get("artifact_uri"), proof_kind):
+                errors.append(
+                    "publication delay artifact reference is not immutable")
+            if not _is_sha256(proof.get("artifact_sha256")):
+                errors.append("publication delay artifact_sha256 is invalid")
+            elif proof.get("artifact_sha256") != proof.get("sha256"):
+                errors.append(
+                    "publication delay artifact hash differs from evidence hash")
+            if (isinstance(self.publication_delay_ms, int)
+                    and isinstance(self.available_at_ms, int)
+                    and self.available_at_ms < (
+                        self.interval_end_ms - 1 + self.publication_delay_ms)):
+                errors.append(
+                    "coverage was available before its publication delay elapsed")
+            valid_from = evidence.get("valid_from_ms")
+            valid_until = evidence.get("valid_until_ms")
+            if not isinstance(valid_from, int) or \
+                    not isinstance(valid_until, int) or \
+                    isinstance(valid_from, bool) or \
+                    isinstance(valid_until, bool):
+                errors.append("coverage evidence validity bounds must be integers")
+            else:
+                if valid_from > self.interval_start_ms:
+                    errors.append("coverage evidence starts after coverage interval")
+                if valid_until < self.interval_end_ms:
+                    errors.append("coverage evidence ends before coverage interval")
+        return errors
+
+    def effective_status(self) -> str:
+        return "unknown" if self.validate() else self.status
+
+    @classmethod
+    def from_dict(cls, data: Dict[str, Any]) -> "FundingCoverage":
+        """Carga un contrato y degrada a UNKNOWN una prueba invalida."""
+        if not isinstance(data, dict):
+            raise ValueError("funding coverage must be an object")
+
+        def _timestamp(value: Any) -> Optional[int]:
+            """Instante ausente o ilegible queda ``None``: nunca inventado."""
+            if value is None or isinstance(value, bool):
+                return None
+            try:
+                return int(value)
+            except (TypeError, ValueError):
+                return None
+
+        try:
+            coverage = cls(
+                version=str(data.get("version", "")),
+                status=str(data.get("status", "")),
+                symbol=str(data.get("symbol", "")),
+                venue=str(data.get("venue", "")),
+                source=str(data.get("source", "")),
+                interval_start_ms=int(data.get("interval_start_ms")),
+                interval_end_ms=int(data.get("interval_end_ms")),
+                acquired_at_ms=_timestamp(data.get("acquired_at_ms")),
+                available_at_ms=_timestamp(data.get("available_at_ms")),
+                method=str(data.get("method", "")),
+                evidence=dict(data.get("evidence") or {}),
+                request=dict(data.get("request") or {}),
+                response=dict(data.get("response") or {}),
+                publication_delay_ms=(
+                    data.get("publication_delay_ms")
+                    if data.get("publication_delay_ms") is not None else None),
+                publication_delay_evidence=dict(
+                    data.get("publication_delay_evidence") or {}),
+                reason=str(data.get("reason", "")),
+            )
+        except (TypeError, ValueError) as exc:
+            raise ValueError("invalid funding coverage object: %s" % exc) from exc
+        declared_hash = data.get("coverage_hash")
+        errors = coverage.validate()
+        if declared_hash and declared_hash != coverage.coverage_hash():
+            errors.append("coverage_hash does not match the coverage payload")
+        if errors:
+            return replace(
+                coverage,
+                status="unknown",
+                reason="invalid coverage evidence: %s" % "; ".join(errors),
+            )
+        return coverage
 
 
 def _settlement_repr(settlement: "FundingSettlement") -> str:
@@ -169,6 +569,7 @@ class FundingCalendar:
     interval_ms: Optional[int] = None
     settlements: Tuple[FundingSettlement, ...] = ()
     symbol: Optional[str] = None
+    coverage: Optional[FundingCoverage] = None
 
     def __repr__(self) -> str:
         """Stable text form used by ``BacktestConfig.config_hash``.
@@ -179,19 +580,24 @@ class FundingCalendar:
         must keep reproducing the same ``config_hash``. A settlement without
         provenance therefore renders exactly like the previous dataclass
         repr. A settlement that carries venue provenance adds those fields,
-        and ``calendar_hash()`` commits them in every case.
+        and ``calendar_hash()`` commits them in every case. Explicit coverage
+        is appended only when present, leaving every legacy representation
+        byte-for-byte unchanged.
         """
         items = ", ".join(
             _settlement_repr(item) for item in self.settlements)
         if len(self.settlements) == 1:
             items += ","
-        return (
+        legacy = (
             "FundingCalendar(version=%r, source=%r, interval_ms=%r, "
             "settlements=(%s), symbol=%r)"
             % (self.version, self.source, self.interval_ms, items, self.symbol))
+        if self.coverage is None:
+            return legacy
+        return "%s, coverage=%r)" % (legacy[:-1], self.coverage)
 
     def calendar_hash(self) -> str:
-        payload = json.dumps({
+        payload_data = {
             "version": self.version, "source": self.source,
             "interval_ms": self.interval_ms, "symbol": self.symbol,
             "settlements": sorted(
@@ -203,8 +609,99 @@ class FundingCalendar:
                     "funding_rate": s.funding_rate,
                 } for s in self.settlements),
                 key=lambda item: item["settlement_ms"]),
-        }, sort_keys=True, default=str)
+        }
+        if self.coverage is not None:
+            payload_data["coverage"] = self.coverage.to_dict()
+        payload = json.dumps(payload_data, sort_keys=True, default=str)
         return hashlib.sha256(payload.encode("utf-8")).hexdigest()[:16]
+
+    @classmethod
+    def from_dict(cls, data: Dict[str, Any]) -> "FundingCalendar":
+        """Carga un calendario versionado, con o sin cobertura explicita."""
+        if not isinstance(data, dict):
+            raise ValueError("funding calendar must be an object")
+        settlements = tuple(
+            FundingSettlement(
+                settlement_ms=int(item["settlement_ms"]),
+                rate_bps=float(item["rate_bps"]),
+                mark_price=(float(item["mark_price"])
+                            if item.get("mark_price") is not None else None),
+                rate_type=(str(item["rate_type"])
+                           if item.get("rate_type") is not None else None),
+                funding_rate=(float(item["funding_rate"])
+                              if item.get("funding_rate") is not None else None),
+            )
+            for item in data.get("settlements", [])
+        )
+        coverage_data = data.get("coverage")
+        coverage = (FundingCoverage.from_dict(coverage_data)
+                    if coverage_data is not None else None)
+        symbol = data.get("symbol")
+        return cls(
+            version=str(data.get("version", "external/v1")),
+            source=str(data.get("source", "external")),
+            interval_ms=(int(data["interval_ms"])
+                         if data.get("interval_ms") is not None else None),
+            settlements=settlements,
+            symbol=None if symbol is None else str(symbol),
+            coverage=coverage,
+        )
+
+    def effective_coverage(self) -> Optional[FundingCoverage]:
+        """Cobertura effective: degrada a UNKNOWN cualquier claim inválido."""
+        if self.coverage is None:
+            return None
+        errors = self.coverage_errors()
+        if not errors:
+            return self.coverage
+        return replace(
+            self.coverage,
+            status="unknown",
+            reason="invalid coverage evidence: %s" % "; ".join(errors),
+        )
+
+    def coverage_errors(self) -> List[str]:
+        """Contradicciones entre el contrato de cobertura y el calendario."""
+        if self.coverage is None:
+            return []
+        errors = list(self.coverage.validate())
+        if self.symbol is None:
+            errors.append("calendar symbol is required with explicit coverage")
+        elif self.coverage.symbol != self.symbol:
+            errors.append("coverage symbol differs from calendar symbol")
+        if self.coverage.source != self.source:
+            errors.append("coverage source differs from calendar source")
+        ordered, _ = self.normalized()
+        expected_digest = funding_settlements_sha256(self.settlements)
+        response = self.coverage.response or {}
+        response_digest = response.get("settlement_sha256")
+        if response_digest != expected_digest:
+            errors.append("coverage response does not match calendar settlements")
+        if ordered:
+            if response.get("first_settlement_ms") is not None and \
+                    response.get("first_settlement_ms") != ordered[0].settlement_ms:
+                errors.append("coverage first settlement contradicts calendar")
+            if response.get("last_settlement_ms") is not None and \
+                    response.get("last_settlement_ms") != ordered[-1].settlement_ms:
+                errors.append("coverage last settlement contradicts calendar")
+        if self.coverage.status == "complete":
+            row_count = response.get("row_count")
+            if row_count != len(self.settlements):
+                errors.append(
+                    "coverage response row_count differs from loaded settlements")
+            params = (self.coverage.request or {}).get("params") or {}
+            start_time = params.get("startTime")
+            end_time = params.get("endTime")
+            if isinstance(start_time, int) and isinstance(end_time, int):
+                outside = [
+                    item.settlement_ms for item in self.settlements
+                    if item.settlement_ms < start_time
+                    or item.settlement_ms > end_time
+                ]
+                if outside:
+                    errors.append(
+                        "coverage settlements fall outside the requested interval")
+        return errors
 
     def normalized(self) -> Tuple[Tuple[FundingSettlement, ...], int]:
         """Deduped settlements + exact-duplicate count.
@@ -250,6 +747,26 @@ class FundingCalendar:
                 if b.settlement_ms - a.settlement_ms > 1.5 * nominal:
                     gaps.append({"from_ms": a.settlement_ms,
                                  "to_ms": b.settlement_ms})
+        if self.coverage is not None:
+            errors = self.coverage_errors()
+            status = ("unknown" if errors
+                      else self.coverage.effective_status())
+            complete = status == "complete"
+            basis = ("explicit-coverage:%s (%s)" % (
+                status, self.coverage.method))
+            return {
+                "complete": complete,
+                "completeness_basis": basis,
+                "gaps": gaps,
+                "coverage_status": status,
+                "coverage_interval": {
+                    "start_ms": self.coverage.interval_start_ms,
+                    "end_ms": self.coverage.interval_end_ms,
+                    "semantics": "[start,end)",
+                },
+                "coverage_errors": errors,
+            }
+        if self.interval_ms:
             complete = bool(ordered) and not gaps
             basis = ("nominal-cadence-no-gaps" if complete
                      else ("empty-calendar" if not ordered
@@ -495,6 +1012,68 @@ def _funding_for_trade(side: str,
                            "data_step_ms": data_step,
                            "mark_freshness": freshness,
                            "amount": amount})
+    if cal.coverage is not None:
+        coverage = cal.coverage
+        coverage_errors = cal.coverage_errors()
+        coverage_status = ("unknown" if coverage_errors
+                           else coverage.effective_status())
+        holding_ms = max(0, exit_ms - entry_ms)
+        coverage_overlap = _overlap_ms(
+            entry_ms, exit_ms,
+            [(coverage.interval_start_ms, coverage.interval_end_ms)])
+        uncovered = max(0, holding_ms - coverage_overlap)
+        # A complete explicit proof supersedes nominal-cadence gap
+        # heuristics. Until that proof is valid, the legacy gap diagnostic
+        # remains visible but never substitutes for the missing coverage.
+        gap_ms = (0 if coverage_status == "complete"
+                  else _overlap_ms(entry_ms, exit_ms, gap_spans))
+        reasons = []
+        if coverage_status != "complete":
+            reasons.append("explicit coverage status %s" % coverage_status)
+        if coverage_errors:
+            reasons.append("coverage evidence invalid: %s" %
+                           "; ".join(coverage_errors))
+        if unknown:
+            reasons.append("%d unknown-excluded settlement(s)" % unknown)
+        if gap_ms:
+            reasons.append("interior-gap overlap %dms" % gap_ms)
+        if uncovered:
+            reasons.append("coverage missing %dms" % uncovered)
+        coverage_meta = {
+            "coverage_status": coverage_status,
+            "coverage_interval_start_ms": coverage.interval_start_ms,
+            "coverage_interval_end_ms": coverage.interval_end_ms,
+            "coverage_interval_semantics": "[start,end)",
+            "coverage_available_at_ms": coverage.available_at_ms,
+            "coverage_acquired_at_ms": coverage.acquired_at_ms,
+            "coverage_method": coverage.method,
+            "coverage_source": coverage.source,
+            "coverage_venue": coverage.venue,
+            "coverage_hash": coverage.coverage_hash(),
+            "coverage_reason": coverage.reason,
+            "coverage_errors": coverage_errors,
+            "coverage_overlap_ms": coverage_overlap,
+        }
+        for event in events:
+            event.update({
+                "funding_coverage_status": coverage_status,
+                "funding_coverage_start_ms": coverage.interval_start_ms,
+                "funding_coverage_end_ms": coverage.interval_end_ms,
+                "funding_coverage_hash": coverage.coverage_hash(),
+            })
+        meta = {
+            "calendar_complete": coverage_status == "complete",
+            "completeness_basis": assessment["completeness_basis"],
+            "calendar_gaps": assessment["gaps"],
+            "accounting_complete": not reasons,
+            "accounting_basis": (
+                "explicit complete coverage; fully settled, no uncovered holding"
+                if not reasons else "; ".join(reasons)),
+        }
+        meta.update(coverage_meta)
+        return total, events, uncovered, gap_ms, unknown, \
+            "settlement-calendar", meta
+
     # UNKNOWN coverage, never zero-invented: holding time outside the
     # calendar's listed span [first, last] is silent about cadence
     # continuity (truncated head/tail). Inter-settlement spans inside the
@@ -528,6 +1107,30 @@ def _funding_for_trade(side: str,
                                  "holding" if not reasons
                                  else "; ".join(reasons))}
     return total, events, uncovered, gap_ms, unknown, "settlement-calendar", meta
+
+
+def _funding_calendar_result(
+    calendar: FundingCalendar,
+    duplicates: int,
+    assessment: Dict[str, Any],
+) -> Dict[str, Any]:
+    result = {
+        "version": calendar.version,
+        "source": calendar.source,
+        "interval_ms": calendar.interval_ms,
+        "symbol": calendar.symbol,
+        "n_settlements": len(calendar.settlements),
+        "duplicates_deduped": duplicates,
+        "complete": assessment.get("complete"),
+        "completeness_basis": assessment.get("completeness_basis"),
+        "gaps": assessment.get("gaps", []),
+        "hash": calendar.calendar_hash(),
+    }
+    if calendar.coverage is not None:
+        result["coverage"] = calendar.coverage.to_dict()
+        result["coverage_status"] = assessment.get("coverage_status")
+        result["coverage_errors"] = assessment.get("coverage_errors", [])
+    return result
 
 
 def _check_supported(config: BacktestConfig) -> None:
@@ -789,7 +1392,7 @@ def run_backtest(events: List[StudyEvent], candles: List[Candle],
         costs_executed = friction - costs_exit_hypothetical
         realized_net = net if exit_executed else None
         admitted_positions.append(_pos)
-        trades.append({
+        trade = {
             "symbol": ev.symbol, "direction": ev.direction,
             "family": ev.family, "rules_version": ev.rules_version,
             "event_time_ms": ev.event_time_ms, "entry_ms": entry_ms,
@@ -819,7 +1422,22 @@ def run_backtest(events: List[StudyEvent], candles: List[Candle],
             "costs_exit_hypothetical": costs_exit_hypothetical,
             "realized_net": realized_net,
             "fills": n_fills, "cancelled_notional": cancelled_notional,
-        })
+        }
+        if funding_meta and "coverage_status" in funding_meta:
+            trade.update({
+                "funding_coverage_status": funding_meta.get("coverage_status"),
+                "funding_coverage_start_ms": funding_meta.get(
+                    "coverage_interval_start_ms"),
+                "funding_coverage_end_ms": funding_meta.get(
+                    "coverage_interval_end_ms"),
+                "funding_coverage_available_at_ms": funding_meta.get(
+                    "coverage_available_at_ms"),
+                "funding_coverage_hash": funding_meta.get("coverage_hash"),
+                "funding_coverage_reason": funding_meta.get("coverage_reason"),
+                "funding_coverage_errors": funding_meta.get(
+                    "coverage_errors", []),
+            })
+        trades.append(trade)
         # Capacity commitment starts at signal time (not at fill time), so
         # simultaneous events compete for the same slots deterministically.
         open_intervals.append((ev.event_time_ms, exit_ms))
@@ -889,18 +1507,10 @@ def run_backtest(events: List[StudyEvent], candles: List[Candle],
         "total_costs_executed": sum(t["costs_executed"] for t in trades),
         "total_exit_costs_hypothetical": sum(
             t["costs_exit_hypothetical"] for t in trades),
-        "funding_calendar": None if config.funding_calendar is None else {
-            "version": config.funding_calendar.version,
-            "source": config.funding_calendar.source,
-            "interval_ms": config.funding_calendar.interval_ms,
-            "symbol": config.funding_calendar.symbol,
-            "n_settlements": len(config.funding_calendar.settlements),
-            "duplicates_deduped": cal_duplicates,
-            "complete": cal_assessment.get("complete"),
-            "completeness_basis": cal_assessment.get("completeness_basis"),
-            "gaps": cal_assessment.get("gaps", []),
-            "hash": config.funding_calendar.calendar_hash(),
-        },
+        "funding_calendar": (
+            None if config.funding_calendar is None
+            else _funding_calendar_result(
+                config.funding_calendar, cal_duplicates, cal_assessment)),
         "funding_estimated_bps_context": config.funding_estimated_bps,
         "max_drawdown": max_dd,
         "mfe_mean": sum(t["mfe_pct"] for t in trades) / len(trades)

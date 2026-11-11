@@ -120,15 +120,10 @@ def _load_calendar(path: Path, symbol: str):
         return None
     rows = json.loads(path.read_text(encoding="utf-8"))
     if isinstance(rows, dict):
-        sym = rows.get("symbol") or symbol
-        return FundingCalendar(
-            version=str(rows.get("version", "external/v1")),
-            source=str(rows.get("source", "external")),
-            interval_ms=rows.get("interval_ms"),
-            symbol=None if sym is None else str(sym),
-            settlements=tuple(FundingSettlement(int(s["settlement_ms"]),
-                                                float(s["rate_bps"]))
-                              for s in rows.get("settlements", [])))
+        if not rows.get("symbol") and symbol:
+            rows = dict(rows)
+            rows["symbol"] = symbol
+        return FundingCalendar.from_dict(rows)
     cal_symbol = str(rows[0].get("symbol", symbol)) if rows else symbol
     return FundingCalendar(
         version="FUNDING-CAL-v1",

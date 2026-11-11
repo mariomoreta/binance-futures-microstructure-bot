@@ -589,8 +589,14 @@ class OperativoAdapter:
                     # acredita. Funding = UNKNOWN y el neto se publica
                     # condicionado (sin funding), nunca como cero.
                     funding = None
-                    funding_estado = (
-                        "settlement-calendar incompleto (UNKNOWN, no cero)")
+                    coverage_status = bt.get("funding_coverage_status")
+                    if coverage_status:
+                        funding_estado = (
+                            "settlement-calendar cobertura %s (UNKNOWN, no cero)"
+                            % coverage_status)
+                    else:
+                        funding_estado = (
+                            "settlement-calendar incompleto (UNKNOWN, no cero)")
 
         # Salida real acreditada: cierra el intervalo de ocupacion SIN
         # borrarlo (la exposicion existio y puede solaparse con una entrada
@@ -678,7 +684,14 @@ class OperativoAdapter:
         detalle = self._funding_cuenta.get(tr.observation_id)
         if detalle:
             row.update(detalle)
-        if tr.net_pnl is None:
+        if tr.exit_executed is not True or tr.exit_ms is None:
+            row["net_pnl_marca"] = tr.net_pnl
+            row["net_pnl"] = None
+            row["neto_estado"] = "UNKNOWN"
+            row["neto_motivo"] = (
+                "posicion abierta: la salida no esta ejecutada y el P&L no "
+                "es realizado")
+        elif tr.net_pnl is None:
             row["neto_estado"] = "UNKNOWN"
             row["neto_motivo"] = "sin resultado neto disponible"
         elif (tr.funding is not None and detalle
@@ -743,13 +756,19 @@ def _funding_acreditable(bt: Dict[str, Any], cal: Optional[FundingCalendar]) -> 
     comprueban tambien los diagnosticos de cobertura que lo hacen falso:
     exposicion sin cubrir, settlements desconocidos y huecos aplicables.
 
-    No se acredita un importe parcial. Sin calendario o sin cadencia nominal
-    la integridad interior es UNKNOWN y el funding queda Unknown, nunca cero
-    ni parcial.
+    Un calendario con cobertura explicita completa acredita su intervalo sin
+    necesitar cadencia nominal. Un calendario legacy conserva la exigencia
+    historica de cadencia. No se acredita un importe parcial: la cobertura
+    parcial, ambigua o desconocida deja el total en UNKNOWN, nunca cero.
     """
     if cal is None or bt is None:
         return False
-    if cal.interval_ms is None:
+    if cal.coverage is not None:
+        if bt.get("funding_coverage_status") != "complete":
+            return False
+        if bt.get("funding_coverage_errors"):
+            return False
+    elif cal.interval_ms is None:
         return False
     if bt.get("funding_accounting_complete") is not True:
         return False
@@ -767,8 +786,9 @@ def _detalle_funding(bt: Dict[str, Any], cal: FundingCalendar) -> Dict[str, Any]
     integridad = bt.get("funding_accounting_complete")
     if not isinstance(integridad, bool):
         integridad = None
-    return {
+    detail = {
         "funding_cuenta_completa": integridad,
+        "funding_cuenta_motivo": bt.get("funding_accounting_basis"),
         "funding_sin_cubrir_ms": int(bt.get("funding_uncovered_ms") or 0),
         "funding_huecos_ms": int(bt.get("funding_gap_ms") or 0),
         "funding_settlements_desconocidos": int(bt.get("funding_unknown") or 0),
@@ -780,6 +800,26 @@ def _detalle_funding(bt: Dict[str, Any], cal: FundingCalendar) -> Dict[str, Any]
             "hash": cal.calendar_hash(),
         },
     }
+    if cal.coverage is not None:
+        effective = cal.effective_coverage()
+        detail.update({
+            "funding_cobertura_estado": bt.get("funding_coverage_status"),
+            "funding_cobertura_inicio_ms": bt.get(
+                "funding_coverage_start_ms"),
+            "funding_cobertura_fin_ms": bt.get("funding_coverage_end_ms"),
+            "funding_cobertura_disponible_ms": bt.get(
+                "funding_coverage_available_at_ms"),
+            "funding_cobertura_hash": (
+                effective.coverage_hash() if effective is not None else None),
+            "funding_cobertura_hash_reclamado": cal.coverage.coverage_hash(),
+            "funding_cobertura_motivo": (
+                effective.reason if effective is not None else None),
+            "funding_cobertura_errores": bt.get(
+                "funding_coverage_errors", []),
+            "funding_cobertura": (
+                effective.to_dict() if effective is not None else None),
+        })
+    return detail
 
 
 def _replace_result(

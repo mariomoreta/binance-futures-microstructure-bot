@@ -122,6 +122,68 @@ class FundingCalendarBuilderTest(unittest.TestCase):
         self.assertEqual(cal["provenance"]["n_settlements"], 2)
         self.assertEqual(len(cal["provenance"]["response_sha256"]), 64)
 
+    def test_coverage_schema_is_explicit_and_not_overcredited(self) -> None:
+        tmp = Path(tempfile.mkdtemp(prefix="fundcal_coverage_"))
+        self.addCleanup(lambda: _rmtree(tmp))
+        raw = self._raw(tmp, [
+            {"symbol": "BTCUSDT", "fundingTime": 1000,
+             "fundingRate": "0.00010000"},
+        ])
+        out = tmp / "cal.json"
+        code = build_cal(["--raw", str(raw), "--symbol", "BTCUSDT",
+                          "--coverage-start-ms", "0",
+                          "--coverage-end-ms", "2000",
+                          "--acquired-ms", "3000",
+                          "--out", str(out)])
+        self.assertEqual(code, 0)
+        cal = json.loads(out.read_text(encoding="utf-8"))
+        coverage = cal["coverage"]
+        self.assertEqual(coverage["version"], "funding-coverage/v1")
+        self.assertEqual(coverage["status"], "unknown")
+        self.assertEqual(coverage["interval_start_ms"], 0)
+        self.assertEqual(coverage["interval_end_ms"], 2001)
+        self.assertEqual(coverage["request"]["params"]["startTime"], 0)
+        self.assertEqual(coverage["request"]["params"]["endTime"], 2000)
+        self.assertFalse(coverage["response"]["pagination"]["truncated"])
+        self.assertIsNone(coverage["publication_delay_ms"])
+
+    def test_truncated_response_is_incomplete(self) -> None:
+        tmp = Path(tempfile.mkdtemp(prefix="fundcal_truncated_"))
+        self.addCleanup(lambda: _rmtree(tmp))
+        raw = self._raw(tmp, [
+            {"symbol": "BTCUSDT", "fundingTime": 1000,
+             "fundingRate": "0.00010000"},
+        ])
+        out = tmp / "cal.json"
+        code = build_cal(["--raw", str(raw), "--symbol", "BTCUSDT",
+                          "--coverage-start-ms", "0",
+                          "--coverage-end-ms", "2000",
+                          "--limit", "1", "--acquired-ms", "3000",
+                          "--out", str(out)])
+        self.assertEqual(code, 0)
+        coverage = json.loads(
+            out.read_text(encoding="utf-8"))["coverage"]
+        self.assertEqual(coverage["status"], "incomplete")
+        self.assertTrue(coverage["response"]["pagination"]["truncated"])
+
+    def test_foreign_symbol_response_is_incomplete(self) -> None:
+        tmp = Path(tempfile.mkdtemp(prefix="fundcal_foreign_"))
+        self.addCleanup(lambda: _rmtree(tmp))
+        raw = self._raw(tmp, [
+            {"symbol": "ETHUSDT", "fundingTime": 1000,
+             "fundingRate": "0.00010000"},
+        ])
+        out = tmp / "cal.json"
+        code = build_cal(["--raw", str(raw), "--symbol", "BTCUSDT",
+                          "--coverage-start-ms", "0",
+                          "--coverage-end-ms", "2000",
+                          "--acquired-ms", "3000", "--out", str(out)])
+        self.assertEqual(code, 0)
+        coverage = json.loads(
+            out.read_text(encoding="utf-8"))["coverage"]
+        self.assertEqual(coverage["status"], "incomplete")
+        self.assertIn("different symbol", coverage["reason"])
+
     def test_quoted_estimate_never_substituted(self) -> None:
         # A quoted/next rate has no fundingTime settlement shape; rows
         # without one cannot enter the calendar (no fabrication).

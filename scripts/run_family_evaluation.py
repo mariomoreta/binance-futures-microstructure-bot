@@ -98,16 +98,7 @@ def _load_calendar(path: Path | None):
     if path is None:
         return None
     raw = json.loads(path.read_text(encoding="utf-8"))
-    sym = raw.get("symbol")
-    return FundingCalendar(
-        version=str(raw.get("version", "external/v1")),
-        source=str(raw.get("source", "external")),
-        interval_ms=raw.get("interval_ms"),
-        symbol=None if sym is None else str(sym),
-        settlements=tuple(
-            FundingSettlement(int(s["settlement_ms"]),
-                              float(s["rate_bps"]))
-            for s in raw.get("settlements", [])))
+    return FundingCalendar.from_dict(raw)
 
 
 def _demo(out_dir: Path):
@@ -199,6 +190,14 @@ def main(argv=None) -> int:
             "n_settlements": len(calendar.settlements)},
         "groups": {},
     }
+    if calendar is not None and calendar.coverage is not None:
+        effective = calendar.effective_coverage()
+        manifest["funding_calendar"]["coverage"] = (
+            effective.to_dict() if effective is not None else None)
+        manifest["funding_calendar"]["coverage_status"] = (
+            effective.status if effective is not None else "unknown")
+        manifest["funding_calendar"]["coverage_hash"] = (
+            effective.coverage_hash() if effective is not None else None)
     for group in GROUPS:
         family, version = GROUP_FAMILY.get(group,
                                            (args.family,

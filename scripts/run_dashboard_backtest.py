@@ -138,15 +138,7 @@ def _load_candles(path: Path):
 def _load_calendar(path: Path):
     rows = _load(path)
     if isinstance(rows, dict):
-        sym = rows.get("symbol")
-        return FundingCalendar(
-            version=str(rows.get("version", "external/v1")),
-            source=str(rows.get("source", "external")),
-            interval_ms=rows.get("interval_ms"),
-            symbol=None if sym is None else str(sym),
-            settlements=tuple(FundingSettlement(int(s["settlement_ms"]),
-                                                float(s["rate_bps"]))
-                              for s in rows.get("settlements", [])))
+        return FundingCalendar.from_dict(rows)
     cal_symbol = str(rows[0].get("symbol")) if rows else None
     return FundingCalendar(
         version="FUNDING-CAL-v1",

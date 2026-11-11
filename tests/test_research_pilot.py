@@ -1333,6 +1333,14 @@ class TestFundingRealComparadoresYEconomia(unittest.TestCase):
         self.assertEqual(calendar.symbol, "AAAUSDT")
         self.assertEqual(calendar.interval_ms, 8 * 3_600_000)
         self.assertEqual(len(calendar.settlements), 3)
+        self.assertIsNotNone(calendar.coverage)
+        self.assertEqual(calendar.coverage.status, "unknown")
+        self.assertEqual(calendar.coverage.symbol, "AAAUSDT")
+        self.assertEqual(
+            calendar.coverage.request["params"]["startTime"],
+            int(obs["decision_ms"]) - rp.FUNDING_HISTORY_LOOKBACK_MS)
+        self.assertEqual(
+            calendar.coverage.request["params"]["endTime"], now)
         self.assertEqual(self.http.funding_calls, 1)
 
         log_rows = read_rows(pilot.funding_log_path)
@@ -1346,6 +1354,13 @@ class TestFundingRealComparadoresYEconomia(unittest.TestCase):
         ledger = read_rows(pilot.out_dir / "http_requests.jsonl")
         self.assertEqual(len(ledger), 1)
         self.assertIn("/fapi/v1/fundingRate", ledger[0]["endpoint"])
+        self.assertEqual(ledger[0]["params"]["symbol"], "AAAUSDT")
+        self.assertEqual(
+            ledger[0]["params"]["startTime"],
+            int(obs["decision_ms"]) - rp.FUNDING_HISTORY_LOOKBACK_MS)
+        self.assertEqual(ledger[0]["params"]["endTime"], now)
+        self.assertEqual(ledger[0]["response_item_count"], 3)
+        self.assertEqual(ledger[0]["http_status"], 200)
         self.assertEqual(ledger[0]["configured_weight"], 1)
         self.assertEqual(ledger[0]["reserved_weight"], 1)
         self.assertIn(

@@ -136,7 +136,12 @@ from research_operativo_adapter import (  # noqa: E402
     OperativoAdapter, OperativoConfig, OperativoTradeResult,
     _vela_plenamente_conocida_en,
 )
-from microstructure_probe.backtest_offline import FundingCalendar, FundingSettlement  # noqa: E402
+from microstructure_probe.backtest_offline import (  # noqa: E402
+    FundingCalendar,
+    FundingCoverage,
+    FundingSettlement,
+    funding_settlements_sha256,
+)
 from microstructure_probe.paper_lab_engine import (  # noqa: E402
     ENGINE_VERSION_PAPER, PaperCandle, PaperSessionConfig,
     RULE_CAUSAL_V1, create_session, evaluate_session, step_forward,
@@ -661,6 +666,7 @@ def _infer_funding_interval_ms(
 
 def _funding_calendar_from_rows(
     symbol: str, rows: List[Dict[str, Any]],
+    coverage: Optional[FundingCoverage] = None,
 ) -> FundingCalendar:
     """Build the existing per-symbol FundingCalendar from realized rows."""
     settlements: List[FundingSettlement] = []
@@ -700,10 +706,117 @@ def _funding_calendar_from_rows(
         interval_ms=_infer_funding_interval_ms(symbol, rows),
         settlements=tuple(settlements),
         symbol=symbol.upper(),
+        coverage=coverage,
     )
     # normalized() falla cerrado ante el mismo timestamp con tasas distintas.
     calendar.normalized()
     return calendar
+
+
+def _binance_funding_coverage(
+    symbol: str,
+    rows: List[Dict[str, Any]],
+    start_ms: int,
+    end_ms: int,
+    request: Dict[str, Any],
+    limit: int,
+) -> FundingCoverage:
+    """Construye la procedencia de una consulta Binance sin sobreacreditarla.
+
+    La documentacion oficial de ``GET /fapi/v1/fundingRate`` no ofrece una
+    garantia general de completitud ni un maximo de retraso de publicacion.
+    Por eso una respuesta completa y no truncada conserva el estado UNKNOWN:
+    acredita las filas observadas, no la ausencia de filas no devueltas.
+    """
+    provisional = _funding_calendar_from_rows(symbol, rows)
+    ordered, _ = provisional.normalized()
+    response_sha = request.get("response_sha256")
+    if not isinstance(response_sha, str):
+        response_sha = None
+    row_symbols = sorted({str(row.get("symbol", "")).upper()
+                          for row in rows if row.get("symbol")})
+    truncated = len(rows) >= int(limit)
+    foreign = [item for item in row_symbols if item != symbol.upper()]
+    if truncated:
+        status = "incomplete"
+        reason = "response reached the requested limit and may be truncated"
+    elif foreign:
+        status = "incomplete"
+        reason = "response contains rows for a different symbol: %s" % foreign
+    else:
+        status = "unknown"
+        reason = (
+            "Binance documents neither a completeness guarantee for "
+            "fundingRate nor a maximum publication delay")
+    params = dict(request.get("params") or {})
+    params.setdefault("symbol", symbol.upper())
+    params.setdefault("startTime", int(start_ms))
+    params.setdefault("endTime", int(end_ms))
+    params.setdefault("limit", int(limit))
+    completed_value = request.get("completed_at_ms")
+    completed_at = (int(completed_value)
+                    if isinstance(completed_value, int)
+                    and not isinstance(completed_value, bool) else None)
+    status_value = request.get("http_status")
+    http_status = (int(status_value)
+                   if isinstance(status_value, int)
+                   and not isinstance(status_value, bool) else None)
+    coverage = FundingCoverage(
+        version="funding-coverage/v1",
+        status=status,
+        symbol=symbol.upper(),
+        venue="binance-usd-m",
+        source="exchange-funding-history (Binance USD-M fundingRate)",
+        interval_start_ms=int(start_ms),
+        interval_end_ms=int(end_ms) + 1,
+        acquired_at_ms=completed_at,
+        available_at_ms=completed_at,
+        method="binance-funding-rate-response",
+        evidence={
+            "kind": "venue-response",
+            "reference": "/fapi/v1/fundingRate",
+            "statement": (
+                "rows observed for the requested symbol and inclusive time "
+                "range; no completeness guarantee is claimed"),
+            "sha256": response_sha,
+            "valid_from_ms": int(start_ms),
+            "valid_until_ms": int(end_ms) + 1,
+        },
+        request={
+            "endpoint": "/fapi/v1/fundingRate",
+            "params": params,
+            "http_status": http_status,
+            "sent_at_ms": request.get("sent_at_ms"),
+            "completed_at_ms": request.get("completed_at_ms"),
+        },
+        response={
+            "sha256": response_sha,
+            "row_count": len(rows),
+            "symbols": row_symbols,
+            "pagination": {
+                "pages": 1,
+                "complete": not truncated,
+                "truncated": truncated,
+            },
+            "settlement_sha256": funding_settlements_sha256(
+                provisional.settlements),
+            "first_settlement_ms": (
+                ordered[0].settlement_ms if ordered else None),
+            "last_settlement_ms": (
+                ordered[-1].settlement_ms if ordered else None),
+        },
+        publication_delay_ms=None,
+        publication_delay_evidence={
+            "kind": "UNKNOWN",
+            "reference": "Binance USD-M market-data documentation",
+            "statement": (
+                "no official maximum publication delay is documented for "
+                "funding history"),
+            "sha256": response_sha,
+        },
+        reason=reason,
+    )
+    return coverage
 
 
 def build_summary(rows: List[Dict[str, Any]]) -> Dict[str, Any]:
@@ -2566,8 +2679,12 @@ class ResearchPilot:
                 symbol, start_ms=start_ms, end_ms=end_ms, limit=1000)
             request = (self.rest.upstream_requests[-1]
                        if self.rest.upstream_requests else {})
-            calendar = _funding_calendar_from_rows(symbol, rows)
+            coverage = _binance_funding_coverage(
+                symbol, rows, start_ms, end_ms, request, limit=1000)
+            calendar = _funding_calendar_from_rows(
+                symbol, rows, coverage=coverage)
             ordered, duplicates = calendar.normalized()
+            effective_coverage = calendar.effective_coverage()
             provenance = {
                 "endpoint": "/fapi/v1/fundingRate",
                 "acquired_utc": iso_utc(
@@ -2591,6 +2708,12 @@ class ResearchPilot:
                 "regular_delta_distribution_ms": (
                     _funding_delta_distribution(symbol, rows)),
                 "calendar_hash": calendar.calendar_hash(),
+                "coverage_status": (
+                    effective_coverage.status
+                    if effective_coverage is not None else None),
+                "coverage_hash": (
+                    effective_coverage.coverage_hash()
+                    if effective_coverage is not None else None),
                 "note": ("realized venue rows only; queried after T for "
                          "accounting, never for the decision"),
             }
@@ -2609,6 +2732,8 @@ class ResearchPilot:
                 ],
                 "provenance": provenance,
             }
+            if effective_coverage is not None:
+                calendar_payload["coverage"] = effective_coverage.to_dict()
             funding_dir = self.out_dir / "funding"
             funding_dir.mkdir(parents=True, exist_ok=True)
             safe_oid = "".join(ch if ch.isalnum() or ch in "-_" else "_"
@@ -3308,6 +3433,7 @@ class ResearchPilot:
                 "kind": "http_request",
                 "execution_id": request.get("execution_id"),
                 "endpoint": request.get("endpoint"),
+                "params": request.get("params") or {},
                 "symbol": request.get("symbol"),
                 "interval": request.get("interval"),
                 "range": request.get("range"),
@@ -3324,6 +3450,9 @@ class ResearchPilot:
                 "attempt_no": request.get("_attempt_no"),
                 "retry_reserved": request.get("_retry_reserved"),
                 "observed_headers": request.get("observed_headers") or {},
+                "http_status": request.get("http_status"),
+                "response_bytes": request.get("response_bytes"),
+                "response_item_count": request.get("response_item_count"),
                 "response_sha256": request.get("response_sha256"),
             })
         http_ledger_text = "".join(
@@ -3704,20 +3833,10 @@ def main(argv: Optional[List[str]] = None) -> int:
                 if not isinstance(fc_dict, dict):
                     raise ValueError(
                         f"calendario de funding invalido para {symbol}")
-                settlements = tuple(
-                    FundingSettlement(
-                        settlement_ms=int(s["settlement_ms"]),
-                        rate_bps=float(s["rate_bps"]),
-                    )
-                    for s in fc_dict.get("settlements", [])
-                )
-                funding_calendars[symbol] = FundingCalendar(
-                    version=fc_dict.get("version", "synthetic/v1"),
-                    source=fc_dict.get("source", "synthetic-fixture"),
-                    interval_ms=fc_dict.get("interval_ms"),
-                    settlements=settlements,
-                    symbol=symbol,
-                )
+                calendar_data = dict(fc_dict)
+                calendar_data["symbol"] = str(symbol).upper()
+                funding_calendars[str(symbol).upper()] = \
+                    FundingCalendar.from_dict(calendar_data)
         pilot = ResearchPilot(
             cfg, clock=clock,
             funding_calendars=funding_calendars,

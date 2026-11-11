@@ -1,42 +1,49 @@
 # Cola vigente — objetivo operativo, 2026-11-10
 
-`CURRENT_PHASE`: preparación de la primera ventana del experimento operativo
-v2 sobre perpetuos USD-M. La ventana pública no está autorizada ni ejecutada y
-la revisión independiente devuelve NO-GO hasta resolver el bloqueo P0 de
-cobertura de funding. No es declaración de promoción formal.
+`CURRENT_PHASE`: implementación local de la opción B de cobertura histórica de
+funding para la primera ventana del experimento operativo v2 sobre perpetuos
+USD-M. El contrato `funding-coverage/v1` está implementado y probado. La
+ventana pública no está autorizada ni ejecutada y sigue en NO-GO porque la
+ruta Binance real no dispone de evidencia trazable de ausencia de settlements
+y de retraso máximo de publicación. No es declaración de promoción formal.
 
 `CURRENT_OBJECTIVE`: evaluar si la autoselección del universo elegible, unida a
 una regla causal de dirección, entrada, stop-loss, gestión y salida, permite una
 expectativa neta favorable con riesgo controlado. Más movimiento por sí solo no
 satisface el objetivo. Dirección canónica: [PRODUCT_GOAL](PRODUCT_GOAL.md).
 
-`ACTIVE_TASK`: decisión humana pendiente sobre la cobertura de funding del
-cierre de exposición, con las tres opciones de
-[EXPERIMENTO_OPERATIVO_V2](EXPERIMENTO_OPERATIVO_V2.md) §10.5. La preparación
-técnica local está cerrada y reproducible (`--budget-only` con código 0, sin
-red, run_id reservado `exp-v2-ventana-1-20261110a`), pero la primera ventana
-**no es evaluable** para la pregunta económica con la configuración actual:
-la cobertura de funding por posición exige un settlement posterior al cierre y
-la consulta ocurre ~1 min después de la salida, de modo que con cadencia de 8 h
-las operaciones quedarían condicionadas y la comparación por rol insuficiente.
-No se debilita `funding_accounting_complete` ni se convierte `UNKNOWN` en cero.
+`ACTIVE_TASK`: cerrar el P0 de evidencia de venue para la cobertura Binance
+real sin rebajar el contrato `funding-coverage/v1`. La opción humana ya está
+decidida: solo B, con A y C excluidas. La implementación local acepta cero
+conocido, pago conocido, total `UNKNOWN` ante cobertura parcial o ambigua,
+evidencia inválida fail-closed y compatibilidad legacy. La validación estricta
+exige además venue y fuente coherentes, `row_count` y digest de settlements
+coherentes, paginación no truncada, referencia de artefacto inmutable y máximo
+de retraso de publicación ya transcurrido. La documentación pública de
+Binance consultada no ofrece prueba general de completitud ni máximo de
+retraso de publicación, por lo que la ruta real permanece `unknown` o
+`incomplete` y la primera ventana **no es evaluable** para la pregunta
+económica. No se debilita `funding_accounting_complete` ni se convierte
+`UNKNOWN` en cero.
 
 `NEXT_TASKS`:
-1. Obtener la decisión humana entre las opciones A (adquirir y retener un
-   settlement posterior), B (extender el contrato del calendario con límites
-   de cobertura y horario de venue probados) y C (modelar como cubiertos los
-   intervalos entre settlements regulares cuando el calendario de venue pruebe
-   que no había evento) del §10.5 del protocolo. Sin esa decisión, no abrir
-   conexión pública, no ejecutar la ventana ni las otras dos.
-2. Tras la decisión, implementar solo la opción elegida, recalcular el
-   presupuesto con `--budget-only` y volver a verificar el gate. Cualquier
-   cambio de duración, presupuesto o contrato de contabilidad queda registrado
-   en `docs/DECISIONS.md` antes de ejecutar.
-3. Solo después de esa verificación, solicitar autorización explícita para
-   **una sola** ventana; si se autoriza, ejecutar el comando exacto una vez,
-   conservar logs, exit code, ledger, funding y hashes, y reconstruir la
-   economía desde lo persistido. La insuficiencia no renueva automáticamente
-   duración, cupos ni ventanas.
+1. Obtener una prueba oficial y trazable de venue que cubra el intervalo
+   solicitado, vincule símbolo, parámetros, respuesta y hashes, pruebe la
+   ausencia de settlements y fije un máximo de retraso de publicación
+   verificable. Integrarla solo si satisface el contrato v1; si no, mantener
+   `unknown` o `incomplete`. No abrir Binance ni ejecutar la ventana durante
+   esta tarea.
+2. Si aparece evidencia válida, revalidar la aceptación A-F y las
+   regresiones afectadas. Recalcular `--budget-only` solo si cambia el número
+   de consultas necesarias; la implementación actual no lo cambia y por eso
+   conserva el presupuesto publicado. Cualquier cambio de duración, consulta,
+   presupuesto o contrato de contabilidad queda registrado en
+   `docs/DECISIONS.md` antes de ejecutar.
+3. Solo después de cerrar el P0 y verificar de nuevo el gate, solicitar
+   autorización explícita para **una sola** ventana. Si se autoriza, ejecutar
+   el comando exacto una vez, conservar logs, exit code, ledger, funding y
+   hashes, y reconstruir la economía desde lo persistido. La insuficiencia no
+   renueva automáticamente duración, cupos ni ventanas.
 
 
 `CLOSED`: análisis exploratorio v4 de `public-pilot-1h-20261106a`; los 168

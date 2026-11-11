@@ -1,6 +1,6 @@
 # Protocolo de experimento operativo v2 — research/universe-liquidez-v1
 
-**Estado:** diseño de alcance cerrado y demostrado localmente. No se ejecuta en producción. La preparación de la primera ventana está cerrada en técnica (§10) pero la revisión independiente devuelve **NO-GO** para esa ventana hasta que una persona resuelva el bloqueo P0 de cobertura de funding (§10.5). No hay órdenes reales, no hay conexión nueva a Binance, no hay infraestructura nueva, no hay cambios económicos productivos. Este documento actualiza y reemplaza el alcance de `docs/EXPERIMENTO_OPERATIVO_V1.md` (diseño de alcance v1); no se borra el v1, se conserva como referencia histórica.
+**Estado:** diseño de alcance cerrado y demostrado localmente. No se ejecuta en producción. La opción B de cobertura histórica de funding (§10.5) está autorizada e implementada localmente con el contrato `funding-coverage/v1`. La primera ventana sigue en **NO-GO** para la ruta Binance real: la documentación pública consultada no ofrece una prueba de ausencia de settlements ni un máximo verificable de retraso de publicación, por lo que esa ruta solo puede producir cobertura `unknown` o `incomplete`. No hay órdenes reales, no hay conexión nueva a Binance, no hay infraestructura nueva, no hay cambios económicos productivos. Este documento actualiza y reemplaza el alcance de `docs/EXPERIMENTO_OPERATIVO_V1.md` (diseño de alcance v1); no se borra el v1, se conserva como referencia histórica.
 
 **Base:** HEAD `6a10c30701cbbf695b422ba4a83206e1dd872132` (rama `research/universe-liquidez-v1`). Dataset de referencia para diagnóstico: `public-pilot-1h-20261106a` (una sola hora, 2026-11-06, 216 observaciones, 168 aptas, 504 resultados). Análisis v4 como punto de partida.
 
@@ -667,6 +667,12 @@ $code | Set-Content -LiteralPath (Join-Path $runDir 'budget-only.exit_code.txt')
 | Duración captura + settle | 3 600 + 4 200 s | 7 800 s | Ventana única |
 | Símbolos / candidatos / comparadores | 20 / 12 / 8 | 20 conjuntos | Dentro |
 
+La implementación de la opción B no cambia el número de consultas necesarias: la
+misma consulta histórica de funding se conserva y solo se amplía su
+procedencia y validación. Por esa razón no se recalcula `--budget-only`; el
+presupuesto, las reservas y los topes publicados siguen siendo el control
+efectivo de esta variante.
+
 La base incluye 24 llamadas de preparación, 240 trayectorias operativas, 720
 precios por horizonte y 240 consultas de funding real. Las reservas incluyen
 240 repeticiones de trayectoria, 240 repeticiones de funding y 50 reintentos
@@ -691,7 +697,7 @@ en runtime y bloquea antes del transporte.
 ### 10.3 Comando público propuesto (NO EJECUTADO, BLOQUEADO)
 
 Requiere autorización humana específica para **una sola ventana** y la
-decisión de metodología del §10.5. No autoriza las otras dos.
+evidencia de venue que sigue pendiente en el §10.5. No autoriza las otras dos.
 
 ```powershell
 $runDir = 'C:\Users\adonm\AppData\Local\Temp\opencode\binance-futures-operativo-v2\exp-v2-ventana-1-20261110a'
@@ -756,11 +762,14 @@ Cobertura: solo perpetuos USD-M. Los futuros con vencimiento siguen pendientes.
 GARCH continúa diferido. Esta preparación no autoriza órdenes, cuentas,
 claves, paper deployment ni ejecución real.
 
-### 10.5 Revisión independiente, veredicto NO-GO y decisión humana pendiente
+### 10.5 Revisión independiente, opción B autorizada e implementación local
 
-Una revisión independiente de la preparación (2026-11-10) Reprodujo cinco
+Una revisión independiente de la preparación (2026-11-10) reprodujo cinco
 defectos técnicos y un defecto económico/metodológico. Los defectos técnicos se
-cerraron en este bloque; el económico **no** se cierra sin decisión humana.
+cerraron en este bloque. La persona autorizó después la **opción B**; las
+opciones A y C quedan excluidas. El contrato de cobertura B está implementado y
+aceptado localmente, pero la ruta Binance real conserva un P0 de evidencia que
+impide cerrar la primera ventana pública.
 
 **Defectos técnicos cerrados (verificados con la suite):**
 
@@ -813,40 +822,98 @@ funding realmente liquidado se conservaría como dato, pero el neto completo
 seguiría `UNKNOWN`. **No se debilita `funding_accounting_complete` ni se
 convierte `UNKNOWN` en cero para forzar un resultado.**
 
-**Veredicto:** NO-GO para ejecutar la primera ventana con la configuración
-actual. La preparación técnica está cerrada y reproducible, pero la ventana no
-es evaluable para la pregunta económica sin resolver antes la cobertura de
-funding. No se ejecuta nada hasta que una persona elija una de estas tres
-opciones y se vuelva a validar el presupuesto:
+**Decisión humana registrada:** se autoriza y se implementa solo la **opción
+B**. No se implementan A ni C:
 
-- **Opción A, adquirir y retener un settlement posterior.** Consultar el
-  historial de funding de cada símbolo después del primer boundary que sigue
-  a su `exit_ms`, y alargar el settle hasta ese boundary. Es la opción que no
-  cambia la contabilidad por posición. Impacto: la duración de la ventana
-  cambia (el settle debe cubrir hasta el boundary posterior de la última
-  observación, del orden de 8 h adicionales) y el presupuesto debe recalcularse;
-  el número de consultas de funding por observación puede mantenerse en uno si
-  la consulta se difiere hasta después del cierre.
+- **Opción A, adquirir y retener un settlement posterior.** Excluida. No se
+  alarga el settle, no se fabrica un settlement posterior y no se infiere una
+  cadencia fija.
 - **Opción B, extender el contrato del calendario con límites de cobertura y
-  horario de venue probados.** Añadir al calendario un límite de cobertura
-  verificable (por ejemplo, "la venue no liquidó funding entre el último
-  settlement listado y este instante") y un horario de venue que lo pruebe,
-  de modo que la cola pueda acreditarse sin esperar al boundary. Impacto: nuevo
-  contrato de calendario, nueva evidencia de venue y pruebas nuevas; no
-  cambia la contabilidad por posición pero cambia el estándar de cobertura.
+  horario de venue probados.** Seleccionada. La cobertura puede acreditar la
+  cola sin settlement posterior únicamente cuando la evidencia del intervalo
+  consultado demuestra ausencia de eventos y un retraso de publicación
+  verificable.
 - **Opción C, modelar como cubiertos los intervalos entre settlements
-  regulares cuando el calendario de venue prueba que no había evento.**
-  Tratar el intervalo entre settlements regulares consecutivos como cubierto
-  cuando la cadencia y la ausencia de evento estén probadas, en lugar de
-  exigir un settlement posterior al cierre. Impacto: cambia el contrato de
-  contabilidad de funding y, por tanto, exige decisión metodológica explícita,
-  pruebas de equivalencia y nueva revisión.
+  regulares.** Excluida. No se interpola ni se modela la ausencia por cadencia.
 
-Las tres opciones son excluyentes en su implementación y ninguna se ejecuta
-sin autorización. La opción elegida puede alterar duración, presupuesto o
-contrato de contabilidad, pero ninguna altera la regla congelada de
-dirección, entrada, stop, horizonte, notional, costes, frescura, capacidad,
-tope de intentos, peso, reintentos o almacenamiento.
+**Contrato implementado `funding-coverage/v1`.** `FundingCoverage` es un
+campo aditivo de `FundingCalendar`; un calendario sin `coverage` conserva
+exactamente la semántica legacy. El contrato identifica instrumento y fuente,
+venue, intervalo inequívoco `[interval_start_ms, interval_end_ms)`, instants de
+adquisición y disponibilidad, método y evidencia, petición, respuesta,
+símbolos, hashes, paginación, digest de settlements y límite de retraso de
+publicación con su evidencia. Los estados son `complete`, `incomplete` y
+`unknown`.
+
+Una reclamación `complete` solo es válida si reúne todas estas pruebas:
+
+1. símbolo e intervalo temporal coherentes entre calendario, evidencia,
+   petición y respuesta;
+2. respuesta completa y no truncada, con paginación cerrada, símbolos
+   coherentes, `row_count` igual a las filas cargadas y ningún settlement
+   fuera del intervalo solicitado;
+3. digest de settlements coherente con las filas cargadas, incluidos
+   duplicados exactos;
+4. evidencia admitida de ausencia de eventos, vinculada a símbolo, venue,
+   intervalo y fuente, con referencia de artefacto inmutable y hash
+   coherente;
+5. máximo de retraso de publicación conocido, con evidencia del mismo tipo y
+   símbolos/intervalo/venue vinculados, y disponibilidad posterior a que
+   haya transcurrido ese retraso;
+6. hashes y procedencias presentes, consistentes y utilizables.
+
+`FundingCoverage.from_dict` degrada a `unknown` una reclamación `complete` que
+no supera esas validaciones. El motor nunca acredita evidencia inválida.
+
+**Contabilidad por posición.** La exposición sigue siendo el intervalo
+semiabierto `[entry_ms, exit_ms)`. Con cobertura `complete` sobre esa
+exposición y sin settlement aplicable, el funding conocido es cero. Con un
+pago aplicable se contabiliza su importe mediante la fórmula vigente de
+`backtest_offline`. Con cobertura parcial, ambigua o desconocida, el total de
+funding es `UNKNOWN`; un importe parcial observado no sustituye el total
+desconocido. El veredicto económico por posición de `backtest_offline` sigue
+siendo la autoridad.
+
+**Compatibilidad.** La cobertura no reescribe la representación legacy del
+calendario ni altera `repr`, `calendar_hash()` o `config_hash()` cuando
+`coverage=None`. El hash publicado `2e34e9d48595d5db` no cambia y los
+resultados históricos no se reclasifican. Los hashes nuevos sí comprometen la
+cobertura y su configuración.
+
+**Publicación operativa.** Cada fila persistida publica el funding conocido o
+`UNKNOWN`, el estado efectivo y la integridad de la cobertura, el intervalo,
+la procedencia, el hash, los errores y el motivo por posición. Una reclamación
+inválida se persiste degradada a `unknown`, sin conservar un estado `complete`
+contradictorio en el objeto anidado. El neto es `COMPLETO` solo con funding
+acreditado y salida ejecutada; en otro caso queda
+`CONDICIONADO_SIN_FUNDING_COMPLETO`. Una posición `open_at_end` mantiene su
+marca diagnóstica, pero su P&L realizado y su estado de neto permanecen
+`UNKNOWN`.
+
+**Ruta Binance real.** `research_pilot` conserva parámetros, estado HTTP, tamaño
+y número de elementos de la respuesta, hashes, símbolo, truncamiento y
+procedencia. La documentación pública de Binance consultada no ofrece una
+garantía general de completitud ni un máximo de retraso de publicación. En
+consecuencia, HTTP 200 o una respuesta vacía no acreditan ausencia de
+liquidaciones: la ruta Binance permanece `unknown` o `incomplete` según la
+respuesta y nunca declara `complete` por status o ausencia de filas.
+
+**Aceptación local A-F.** La nueva aceptación cubre: A, cero conocido con
+cobertura completa; B, pago conocido y fórmula vigente; C, cobertura parcial con
+total `UNKNOWN`; D, evidencia inválida, respuesta truncada, símbolo
+contradictorio, digest contradictorio y retraso de publicación ausente; E,
+calendario legacy y hash publicado; F, límites `[entry_ms, exit_ms)`,
+equivalencia, compromiso por hashes, loaders, persistencia del adaptador y
+recorrido CLI real con calendario sintético temporal. No se usó un adaptador
+externo ni se abrió una conexión pública.
+
+**P0 real que sigue abierto.** Para habilitar la ruta Binance se necesita una
+prueba oficial y trazable que: cubra el intervalo solicitado; vincule símbolo,
+parámetros, respuesta y hashes; pruebe la ausencia de settlements; y fije un
+máximo de retraso de publicación verificable para ese símbolo e intervalo.
+Sin esa prueba, la primera ventana pública sigue en **NO-GO** y sus netos no
+pueden declararse `COMPLETO`. Cerrar el P0 exige evidencia nueva y
+autorización separada; no autoriza abrir Binance por sí mismo.
 
 **Límites vigentes:** cobertura solo de perpetuos USD-M; futuros con
 vencimiento pendientes; GARCH diferido; la primera ventana, si se autoriza,
