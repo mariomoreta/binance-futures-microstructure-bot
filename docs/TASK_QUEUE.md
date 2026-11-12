@@ -1,59 +1,66 @@
 # Cola vigente — objetivo operativo, 2026-11-12
 
-`CURRENT_PHASE`: ejecución de **una única ventana pública** del experimento
+`CURRENT_PHASE`: cierre de la **ventana pública única** del experimento
 operativo v2 por la **vía A** (espera contable con liquidaciones observadas),
-precedida por el monitor de observabilidad ya integrado y verificado localmente
-en `/market-lab`. La **vía B** (`funding-coverage/v1`) se conserva sin cambios y
-sigue diferida. No es declaración de promoción formal.
+ejecutada el 2026-11-12 y declarada **INSUFICIENTE en la capa de datos**: el
+feed de trades (`/market`, `aggTrade`) no recibió ni un frame en toda la hora,
+las 232 observaciones se descartaron por `sin_flujo` y no hubo ninguna
+operación. El monitor de observabilidad de `/market-lab` funcionó y dejó
+evidencia de la corrida real. La **vía B** (`funding-coverage/v1`) se conserva
+sin cambios y sigue diferida. No es declaración de promoción formal.
 
 `CURRENT_OBJECTIVE`: evaluar si la autoselección del universo elegible, unida a
 una regla causal de dirección, entrada, stop-loss, gestión y salida, permite una
 expectativa neta favorable con riesgo controlado. Más movimiento por sí solo no
 satisface el objetivo. Dirección canónica: [PRODUCT_GOAL](PRODUCT_GOAL.md).
+**Sin datos de flujo no hay embudo y, por tanto, esta ventana no aporta
+evidencia sobre la hipótesis económica en ninguna dirección.**
 
-`ACTIVE_TASK`: ejecutar **una sola vez** la ventana pública por la vía A con la
-configuración congelada y cerrar con el análisis exploratorio de sus registros
-persistidos. El monitor mínimo ya está integrado y verificado: es un modo de
-vista de solo lectura dentro de `/market-lab` (`?vista=piloto&run=<run_id>`),
-lee los artefactos de la corrida desde una ruta acotada y no calcula decisiones,
-funding ni P&L. La salida de cada operación se decide por su regla durante el
-settle y se publica con la contabilidad de funding en `PENDIENTE`; después, una
-espera contable acotada (máximo 32 400 s, 3 consultas por símbolo como máximo)
-busca liquidaciones realmente observadas y completa la contabilidad sobre
-`[entry_ms, exit_ms)`. La cobertura la decide el veredicto canónico por
-posición de `backtest_offline`; si faltan liquidaciones, hay huecos, la
-cadencia es ambigua o vence el plazo, el total queda `UNKNOWN` con su motivo y
-la posición se cierra. No se fabrica ninguna liquidación, no se presupone una
-cadencia fija, no se borran metadatos `unknown` y no se reclasifican
-resultados históricos. La vía B (prueba de ausencia de liquidaciones y máximo
-de retraso de publicación verificables) sigue diferida: su P0 permanece
-abierto y no se amplía ningún validador para exigirla.
+`ACTIVE_TASK`: dejar resuelto el **bloqueo material de datos** que vació el
+embudo, sin tocar la regla, la ventana ni el presupuesto congelados. El
+bloqueo concreto: la conexión WS a `wss://fstream.binance.com/stream?...@aggTrade`
+se abre, no registra errores, no reconecta y **no recibe frames**, mientras la
+conexión paralela de profundidad (`depth20@100ms`) recibe cientos de miles.
+La causa raíz final sigue siendo **UNKNOWN** porque aislarla exigiría tráfico
+público adicional, que no se abrió durante ni después de la ventana
+autorizada. La vía A **no llegó a ejercitarse** en su parte esencial (espera
+contable, liquidaciones observadas, neto COMPLETO vs. CONDICIONADO): eso se
+debe decir sin adornos, y la vía B permanece diferida sin ampliar ningún
+validador.
 
 `NEXT_TASKS`:
-1. Revalidar `--budget-only` con el **comando efectivo** (incluidas las bases
-   públicas reales) y registrar el resultado y su SHA; publicar el SHA del
-   cambio del monitor antes de ejecutar.
-2. Comunicar antes de lanzar: URL exacta del monitor, `run_id` no ejecutado,
-   directorio de evidencia, duración máxima total (40 200 s) y comando efectivo.
-3. Ejecutar la ventana **una sola vez** con `--status-file` dentro del
-   directorio de la corrida, conservando stdout, stderr y exit code reales. No
-   relanzar, no crear otro `run_id`, no ampliar plazos ni cupos. Si aparece un
-   bloqueo material que exija cambiar regla, duración o presupuesto, detenerse
-   antes de abrir mercado y explicarlo.
-4. Cerrar desde lo persistido: embudo por rol, admitidas/abstenciones/rechazos
-   por capacidad, entradas y salidas simuladas, posiciones abiertas, resultados
-   completos frente a condicionados, pérdidas, costes, exposición y riesgo; y
-   comparación de roles solo si los datos son suficientes. Informe en tres
-   capas: funcionamiento técnico, calidad/suficiencia de datos y resultado
-   económico exploratorio. `INSUFICIENTE` es un resultado válido y no autoriza
-   otra ventana.
-5. Mantener la vía B disponible y sin tocar: si aparece evidencia oficial y
+1. **Diagnóstico offline y acotado del silencio del feed de trades.** Antes
+   de cualquier ventana nueva: (a) reproducir localmente la construcción de la
+   URL y la forma del stream en el cliente (sin red); (b) revisar si el
+   endpoint combinado y el nombre de stream usados son los que el venue
+   entrega para trades en USD-M; (c) comprobar si la conexión exige un
+   `SUBSCRIBE` explícito en lugar de la URL combinada. Todo ello con
+   pruebas locales y **tráfico público mínimo y autorizado**, nunca dentro de
+   una ventana. Bloqueo que desbloquea: que una ventana futura pueda producir
+   observaciones aptas y, con ellas, ejercitar la vía A de verdad.
+2. **Corrección del envoltorio de supervisión**: persistir el exit code real
+   (`Start-Process` + `WaitForExit()` + `Refresh()`, o captura directa del
+   código de salida del proceso) en la próxima ejecución, porque la ventana del
+   2026-11-12 dejó `exit_code.txt` vacío. Solo affects al registro de
+   evidencia, no al piloto.
+3. **Ninguna ventana nueva sin autorización humana explícita y nueva.**
+   `INSUFICIENTE` no renueva duración, cupos, `run_id` ni ventanas. Si se
+   autoriza otra, será con la configuración congelada, un `run_id` nuevo no
+   ejecutado y el mismo protocolo de monitor.
+4. **Cerrar y documentar lo que ya se sabe** (hecho en esta iteración):
+   informe de tres capas en
+   [INFORRE-CIERRE](evidence/exp-v2-ventana-1-20261112a/INFORRE-CIERRE.md),
+   evidencia compacta con hashes, y actualización de `DECISIONS`,
+   `CURRENT_STATE`, `FEATURE_BACKLOG` y `DASHBOARD_V2_PROGRESS`.
+5. **Mantener la vía B disponible y sin tocar**: si aparece evidencia oficial y
    trazable de venue (ausencia de liquidaciones y retraso máximo de
    publicación), validarla contra `funding-coverage/v1` y revalidar las
    regresiones afectadas. Recalcular `--budget-only` solo si cambia el número
    de consultas necesarias.
-6. Registrar en `docs/DECISIONS.md` cualquier cambio de duración, consulta,
-   presupuesto o contrato de contabilidad antes de ejecutarlo.
+6. **Registrar en `docs/DECISIONS.md`** cualquier cambio de duración,
+   consulta, presupuesto o contrato de contabilidad **antes** de ejecutarlo.
+7. **No reabrir** el análisis de `public-pilot-1h-20261106a` salvo que aparezca
+   un defecto que cambie la decisión económica.
 
 
 `CLOSED`: análisis exploratorio v4 de `public-pilot-1h-20261106a`; los 168

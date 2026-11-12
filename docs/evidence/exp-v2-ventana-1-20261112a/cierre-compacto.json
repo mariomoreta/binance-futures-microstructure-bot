@@ -1,0 +1,348 @@
+{
+ "run_id": "exp-v2-ventana-1-20261112a",
+ "generado": "cierre post-ventana, reconstruido desde los registros persistidos",
+ "estado_final": {
+  "phase": "fin",
+  "stop_reason": "duracion",
+  "espera_contable_cierre": null,
+  "now_ms": 1794478296302,
+  "presupuesto_runtime": {
+   "attempts": 24,
+   "blocked": false,
+   "funding_rate_attempts_5m": 0,
+   "funding_rate_shared_limit_5m": 500,
+   "max_attempts": 2000,
+   "max_retries": 50,
+   "max_weight": 5000,
+   "reason": null,
+   "retries": 0,
+   "weight": 492
+  },
+  "almacenamiento_runtime": {
+   "accounted_bytes": 53100224,
+   "max_bytes": 134217728,
+   "reserved_bytes": 50331648,
+   "used_bytes": 2768576
+  }
+ },
+ "capa_1_funcionamiento_tecnico": {
+  "fase_final": "fin",
+  "ciclos": 12,
+  "observaciones_registradas": 232,
+  "filas_operativas_publicadas": 0,
+  "operaciones_unicas": 0,
+  "publicaciones_por_operacion_max": 0,
+  "consultas_funding_registradas": 0,
+  "peticiones_http_ledger": 24,
+  "peticiones_http_con_error": 0,
+  "reintentos_ledger": 0,
+  "peso_ledger": 720,
+  "feeds": {
+   "market": {
+    "connected_now": false,
+    "connections": 1,
+    "messages": 0
+   },
+   "public": {
+    "connected_now": false,
+    "connections": 1,
+    "messages": 149742
+   }
+  },
+  "salud_finanzas": {
+   "git_head": "4b83498def6ae303795d50b2d8fe5276159312e5",
+   "config_hash": null,
+   "engine_version": null,
+   "archivos": {
+    "estado.json": {
+     "bytes": 8622,
+     "sha256": "116dce8b2e1aeaa814b317cdd38249e2792973608c4c1909ba8aa8738c9e0a49"
+    },
+    "funding_adquisicion.jsonl": {
+     "bytes": 0,
+     "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "http_requests.jsonl": {
+     "bytes": 15712,
+     "sha256": "a18f1efd1b0b4e8f2f032567bd18009e75300a534242612f39f8eb202c0317c7"
+    },
+    "observaciones.jsonl": {
+     "bytes": 2768576,
+     "sha256": "80a7909569eebe864637b45c2202b3421d18ff361c0291b41c2097a660a911a7"
+    },
+    "research.db": {
+     "bytes": 430080,
+     "sha256": "23c6c5d513ce037b5b8f21cd6efb067df902357fbc62c65f512d9dd2e2e14f5e"
+    },
+    "resultado_operativo.jsonl": {
+     "bytes": 0,
+     "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "resumen.json": {
+     "bytes": 23894,
+     "sha256": "fe8193203021431aec8793f06fcd28b31a9ae115d997dd611a06a2626208ef32"
+    }
+   }
+  }
+ },
+ "capa_2_calidad_y_suficiencia": {
+  "observaciones_por_simbolo": {
+   "AGTUSDT": 12,
+   "ARIAUSDT": 12,
+   "ERAUSDT": 12,
+   "HUSDT": 12,
+   "INITUSDT": 12,
+   "JCTUSDT": 12,
+   "KGENUSDT": 12,
+   "ONUSDT": 12,
+   "1000PEPEUSDT": 11,
+   "ACEUSDT": 11,
+   "ENAUSDT": 10,
+   "FARTCOINUSDT": 10,
+   "GMXUSDT": 10,
+   "BATUSDT": 10,
+   "BERAUSDT": 10,
+   "BTCDOMUSDT": 10,
+   "IDOLUSDT": 9,
+   "AKEUSDT": 7,
+   "TRUTHUSDT": 6,
+   "MAGMAUSDT": 5,
+   "TRUSTUSDT": 5,
+   "HANAUSDT": 5,
+   "BTWUSDT": 3,
+   "B2USDT": 3,
+   "BASEDUSDT": 2
+  },
+  "observaciones_por_rol": {
+   "candidate": 140,
+   "comparator": 92
+  },
+  "aptas_para_evaluacion": 0,
+  "descartadas": 232,
+  "motivos_de_descarte": {
+   "sin_flujo": 232,
+   "dato_obsoleto_libro": 3
+  },
+  "decisiones": {},
+  "abstenciones": 0,
+  "rechazos_por_capacidad": 0,
+  "descartes_de_regla": 0,
+  "netos_por_estado": {},
+  "contabilidad_por_estado": {},
+  "suficiencia_para_comparar_por_rol": {},
+  "resumen_espera_contable": {
+   "cierre": null,
+   "consultas_por_simbolo": {},
+   "consultas_totales": 0,
+   "duracion_total_efectiva_s": 3605.431,
+   "fin_ms": null,
+   "inicio_ms": null,
+   "metodo": "observed-settlements",
+   "pendientes_finales": 0,
+   "plazo_max_ms": 32400000,
+   "posiciones_acreditadas": 0,
+   "posiciones_unknown": 0
+  },
+  "presupuesto_resumen": {
+   "attempts": 24,
+   "blocked": false,
+   "funding_rate_attempts_5m": 0,
+   "funding_rate_shared_limit_5m": 500,
+   "max_attempts": 2000,
+   "max_retries": 50,
+   "max_weight": 5000,
+   "reason": null,
+   "retries": 0,
+   "weight": 492
+  }
+ },
+ "capa_3_resultado_economico_exploratorio": {
+  "advertencia": "Simulacion. No acredita ejecuciones reales ni rentabilidad generalizable.",
+  "entradas_simuladas": 0,
+  "salidas_ejecutadas": 0,
+  "posiciones_abiertas_al_final": 0,
+  "economia_por_rol": {},
+  "exposicion": {
+   "max_concurrentes_observadas": 0,
+   "max_concurrentes_configurado": 1,
+   "tiempo_en_mercado_ms": 0,
+   "stop_distancia_pct_observada": []
+  },
+  "resultados_operacion_a_operacion": []
+ },
+ "economia_operativa_v2_del_piloto": {
+  "comparacion_candidate_comparator": {
+   "ciclos_con_ambos_roles_aptos": 0,
+   "ciclos_con_operaciones_completas_ambos_roles": 0,
+   "ciclos_total": 12,
+   "cobertura_ciclos_ambos_roles": 0.0,
+   "diferencia_paired_media_usdt": null,
+   "diferencias_paired_por_ciclo": [],
+   "estado": "INSUFICIENTE",
+   "motivos": [
+    "sin_operaciones_completas_candidate",
+    "sin_operaciones_completas_comparator",
+    "cobertura_de_ciclos_ambos_roles_bajo_50pct"
+   ],
+   "operaciones_completas_candidate": 0,
+   "operaciones_completas_comparator": 0
+  },
+  "decisiones": {
+   "abstenciones": 0,
+   "operaciones_ejecutadas_simuladas": 0,
+   "por_decision": {},
+   "rechazos_capacidad": 0,
+   "senales_con_direccion": 0
+  },
+  "definiciones": {
+   "comparacion": "solo si ambos roles tienen operaciones COMPLETO y >=50% de ciclos con ambos roles aptos",
+   "drawdown": "max(peak_equity - equity) sobre net_pnl de salidas cerradas ordenadas por exit_ms; no mark-to-market",
+   "exposicion": "suma(exit_ms - entry_ms) de operaciones cerradas",
+   "neto_por_operacion": "net_pnl de operaciones cerradas divided by n; USDT; solo se publica neto COMPLETO o CONDICIONADO por separado"
+  },
+  "diagnosticos": {
+   "duplicados_operativos_descartados": 0,
+   "filas_operativas_leidas": 0,
+   "filas_operativas_sin_observation_id": 0,
+   "filas_operativas_unicas": 0
+  },
+  "embudo_por_rol": {
+   "candidate": {
+    "aptas": 0,
+    "descartadas": 140,
+    "observadas": 140,
+    "seleccionadas": 144
+   },
+   "comparator": {
+    "aptas": 0,
+    "descartadas": 92,
+    "observadas": 92,
+    "seleccionadas": 96
+   }
+  },
+  "fuente": [
+   "observaciones.jsonl",
+   "resultado_operativo.jsonl"
+  ],
+  "ganancias_perdidas": {
+   "breakeven_neto_completo": 0,
+   "breakeven_neto_conditionado": 0,
+   "ganadoras_neto_completo": 0,
+   "ganadoras_neto_conditionado": 0,
+   "perdedoras_neto_completo": 0,
+   "perdedoras_neto_conditionado": 0
+  },
+  "posiciones": {
+   "cerradas": 0,
+   "exposicion_realizada_ms": 0,
+   "todavia_abiertas": 0
+  },
+  "resultado_usdt": {
+   "bruto_operaciones_cerradas": null,
+   "comisiones_operaciones_cerradas": null,
+   "drawdown_realizado_neto_completo_usdt": null,
+   "drawdown_realizado_neto_conditionado_usdt": null,
+   "funding_completamente_acreditado": null,
+   "neto_completo": {
+    "max_usdt": null,
+    "media_usdt": null,
+    "mediana_usdt": null,
+    "min_usdt": null,
+    "n": 0,
+    "suma_usdt": null
+   },
+   "neto_conditionado_sin_funding_completo": {
+    "max_usdt": null,
+    "media_usdt": null,
+    "mediana_usdt": null,
+    "min_usdt": null,
+    "n": 0,
+    "suma_usdt": null
+   },
+   "spread_slippage_operaciones_cerradas": null
+  }
+ },
+ "manifiesto": {
+  "config": {
+   "activar_publico": true,
+   "capture_protocol_version": 3,
+   "clock_file": null,
+   "clock_mode": "system",
+   "cycle_seconds": 300.0,
+   "decision_delay_seconds": 5.0,
+   "decision_gate_file": null,
+   "duration_seconds": 3600.0,
+   "funding_method": "observed-settlements",
+   "funding_source": "exchange",
+   "funding_wait_max_queries": 3,
+   "funding_wait_seconds": 32400.0,
+   "horizons": "5m=300000,15m=900000,60m=3600000",
+   "max_bytes": 134217728,
+   "max_candidates": 12,
+   "max_comparators": 8,
+   "max_data_age_ms": 5000,
+   "max_http_attempts": 2000,
+   "max_http_retries": 50,
+   "max_http_weight": 5000,
+   "max_messages": 5000000,
+   "max_observations": 20000,
+   "max_symbols": 20,
+   "max_ws_reconnects": 20,
+   "min_quote_volume_usdt": 1000000.0,
+   "mode": "public",
+   "out_dir": "C:\\proyectos\\binance-futures-data\\exp-v2-ventana-1-20261112a",
+   "pilot_version": "research-pilot-v2",
+   "policy_version": "research-selector-v2",
+   "price_delay_ms": 2000,
+   "price_interval": "1m",
+   "price_tolerance_ms": 90000,
+   "protocol_version": "prospective-protocol-v1",
+   "rest_base": "https://fapi.binance.com",
+   "run_id": "exp-v2-ventana-1-20261112a",
+   "selection_seconds": 300.0,
+   "settle_seconds": 4200.0,
+   "status_file": "C:\\proyectos\\binance-futures-data\\exp-v2-ventana-1-20261112a\\estado.json",
+   "stop_file": null,
+   "tick_ms": 500,
+   "ws_market_base": "wss://fstream.binance.com",
+   "ws_public_base": "wss://fstream.binance.com"
+  },
+  "dataset_location": "C:\\proyectos\\binance-futures-data\\exp-v2-ventana-1-20261112a",
+  "files": {
+   "estado.json": {
+    "bytes": 8622,
+    "sha256": "116dce8b2e1aeaa814b317cdd38249e2792973608c4c1909ba8aa8738c9e0a49"
+   },
+   "funding_adquisicion.jsonl": {
+    "bytes": 0,
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+   },
+   "http_requests.jsonl": {
+    "bytes": 15712,
+    "sha256": "a18f1efd1b0b4e8f2f032567bd18009e75300a534242612f39f8eb202c0317c7"
+   },
+   "observaciones.jsonl": {
+    "bytes": 2768576,
+    "sha256": "80a7909569eebe864637b45c2202b3421d18ff361c0291b41c2097a660a911a7"
+   },
+   "research.db": {
+    "bytes": 430080,
+    "sha256": "23c6c5d513ce037b5b8f21cd6efb067df902357fbc62c65f512d9dd2e2e14f5e"
+   },
+   "resultado_operativo.jsonl": {
+    "bytes": 0,
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+   },
+   "resumen.json": {
+    "bytes": 23894,
+    "sha256": "fe8193203021431aec8793f06fcd28b31a9ae115d997dd611a06a2626208ef32"
+   }
+  },
+  "git_head": "4b83498def6ae303795d50b2d8fe5276159312e5",
+  "nota": "dataset fuera de Git; se publican manifiesto, hashes y muestra pequena",
+  "pilot_version": "research-pilot-v2",
+  "policy_version": "research-selector-v2",
+  "protocol_version": "prospective-protocol-v1",
+  "run_id": "exp-v2-ventana-1-20261112a"
+ }
+}

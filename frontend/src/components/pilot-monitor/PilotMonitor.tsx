@@ -215,6 +215,8 @@ export function PilotMonitor({ runId }: { runId: string }) {
   const phase = data.phase;
   const esperaActiva = phase === "espera_contable";
   const feedsCerrados = data.health.feeds_closed === true;
+  const contabilidadActiva =
+    esperaActiva || (data.accounting.pending_contabilidad ?? 0) > 0;
 
   return (
     <section className={s.root} data-testid="pilot-monitor">
@@ -259,7 +261,10 @@ export function PilotMonitor({ runId }: { runId: string }) {
       {esperaActiva || feedsCerrados ? (
         <p className={s.notice} data-testid="pilot-feeds-closed">
           <strong>Feeds cerrados.</strong> La captura terminó: no hay nuevas selecciones ni
-          entradas y el mercado no está LIVE. Solo continúa la contabilidad de funding.
+          entradas y el mercado no está LIVE.{" "}
+          {contabilidadActiva
+            ? "Solo continúa la contabilidad de funding."
+            : "No hay posiciones pendientes de liquidar."}
         </p>
       ) : null}
 

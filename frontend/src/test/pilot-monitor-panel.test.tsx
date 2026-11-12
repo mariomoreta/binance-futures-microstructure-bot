@@ -184,6 +184,26 @@ describe("PilotMonitor — identidad y progreso", () => {
     expect(notice).toHaveTextContent("Solo continúa la contabilidad de funding");
     expect(notice).toHaveTextContent("no está LIVE");
   });
+
+  it("no afirma que la contabilidad continúa si no hay posiciones pendientes", async () => {
+    const finalSinPosiciones: PilotMonitorPayload = {
+      ...BASE,
+      phase: "finalizada",
+      phase_raw: "fin",
+      accounting: {
+        ...BASE.accounting,
+        pending_operativos: 0,
+        pending_contabilidad: 0,
+        cierre: "trabajo_resuelto",
+      },
+    };
+    vi.stubGlobal("fetch", vi.fn(async () => responder(finalSinPosiciones)));
+    render(<PilotMonitor runId="exp-v2-ventana-1-20261112a" />);
+    const notice = await screen.findByTestId("pilot-feeds-closed");
+    expect(notice).toHaveTextContent("Feeds cerrados");
+    expect(notice).toHaveTextContent("No hay posiciones pendientes de liquidar");
+    expect(notice).not.toHaveTextContent("Solo continúa la contabilidad de funding");
+  });
 });
 
 describe("PilotMonitor — operaciones", () => {

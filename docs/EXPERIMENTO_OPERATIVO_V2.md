@@ -1222,3 +1222,43 @@ publican manifiesto, hashes, evidencia compacta y documentación.
 - Una ejecución simulada no acredita ejecuciones reales ni rentabilidad
   generalizable. La cobertura sigue limitada a PERPETUAL/TRADING/USDT; los
   futuros con vencimiento y GARCH quedan fuera de alcance.
+
+### 10.8 Resultado de la ventana única del 2026-11-12 (ejecutada, INSUFICIENTE)
+
+La ventana única autorizada por la vía A se ejecutó **una sola vez** el
+2026-11-12 y quedó **INSUFICIENTE en la capa de datos**. Informe completo en
+tres capas:
+[INFORRE-CIERRE](evidence/exp-v2-ventana-1-20261112a/INFORRE-CIERRE.md).
+
+- **Identidad:** `run_id exp-v2-ventana-1-20261112a`; SHA de ejecución
+  `4b83498def6ae303795d50b2d8fe5276159312e5` (local == remoto); directorio
+  `C:\proyectos\binance-futures-data\exp-v2-ventana-1-20261112a` (fuera de
+  Git); monitor en
+  `http://127.0.0.1:3020/market-lab?vista=piloto&run=exp-v2-ventana-1-20261112a`.
+- **Presupuesto:** `--budget-only` con el comando efectivo → `cabe_en_limites:
+  true` (13/13). Real: 24 peticiones HTTP, 0 fallos, 0 reintentos, peso
+  reservado 492/5000, 53 100 224 B de 134 217 728 B.
+- **Funcionamiento técnico:** terminación por la ruta de éxito del CLI
+  (`phase=fin`, `stop_reason=duracion`, stderr vacío) tras 3605.431 s. El
+  `settle` y la `espera_contable` no se abrieron porque su disparador es la
+  existencia de trabajo pendiente y no hubo observaciones aptas. El exit code
+  numérico no quedó persistido por un defecto del envoltorio de supervisión;
+  se documenta la ruta de terminación, no un código observado.
+- **Calidad y suficiencia:** 232 observaciones, **0 aptas**, 232 descartadas
+  (`sin_flujo` 232, `dato_obsoleto_libro` 3); cobertura de flujo 0/232;
+  `research_flow_10s/1m` con 0 filas frente a 1200 filas de libro. Causa raíz
+  aislada: el feed `/market` (`aggTrade`) abierto una hora con `messages=0`,
+  `errors=0`, `last_error=null` y sin reconexiones, en paralelo a `/public`
+  con 467 764 frames. Causa raíz final **UNKNOWN**: aislarla exigiría tráfico
+  público adicional, que no se abrió.
+- **Resultado económico exploratorio:** **vacío, no en cero**. 0 entradas, 0
+  salidas, 0 posiciones abiertas, 0 operaciones COMPLETO/CONDICIONADO/UNKNOWN,
+  comparación de roles `INSUFICIENTE`. La vía A **no llegó a ejercitarse** en
+  su parte esencial (espera contable, liquidaciones observadas, neto
+  completo vs. condicionado).
+- **Consecuencias:** `INSUFICIENTE` es un resultado válido y **no autoriza otra
+  ventana**. No se relanzó, no se creó otro `run_id`, no se ampliaron plazos ni
+  cupos y no se modificó código ni configuración durante la captura. El
+  bloqueo que queda abierto es de datos (ausencia de flujo), y su resolución
+  es condición previa para que una ventana futura pueda producir embudo; ver
+  `docs/TASK_QUEUE.md`.

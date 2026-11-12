@@ -1,0 +1,63 @@
+{
+ "run_id": "exp-v2-ventana-1-20261112a",
+ "medido_utc": "2026-11-12T10:11:36.302000+00:00",
+ "duracion_efectiva_s": 3605.431,
+ "fase_final": "fin",
+ "stop_reason": "duracion",
+ "hecho_1_stream_market_sin_frames": {
+  "conexiones": 1,
+  "mensajes": 0,
+  "errores": 0,
+  "last_error": null,
+  "desconexiones": 1,
+  "reconexiones": 0,
+  "interpretacion": "El contador se incrementa por cada frame recibido (research_pilot.py:1242). Con 0 mensajes, 0 errores y ninguna reconexion, la conexion /market (aggTrade) no recibio ningun frame en toda la hora."
+ },
+ "hecho_2_stream_public_si_recibio": {
+  "mensajes_finales_del_feed": 149742,
+  "mensajes_totales_acumulados": 467764,
+  "conexiones_totales": 16
+ },
+ "hecho_3_cero_flujo_persistido": {
+  "research_flow_10s_filas": 0,
+  "research_flow_1m_filas": 0,
+  "research_book_1m_filas": 1200,
+  "drops": 0,
+  "errores": 0
+ },
+ "hecho_4_consecuencia_en_el_embudo": {
+  "observaciones": 232,
+  "aptas_para_evaluacion": 0,
+  "descartadas": 232,
+  "motivos": {
+   "dato_obsoleto_libro": 3,
+   "sin_flujo": 232
+  },
+  "cobertura_libro_presente": "232/232",
+  "cobertura_flujo_presente": "0/232",
+  "comparacion_candidate_comparator": "INSUFICIENTE"
+ },
+ "hecho_5_presupuesto_real": {
+  "peticiones": 24,
+  "fallos": 0,
+  "reintentos": 0,
+  "peso_reservado": 492,
+  "peso_configurado": 720,
+  "intentos_max": 2000,
+  "peso_max": 5000,
+  "almacenamiento": {
+   "accounted_bytes": 53100224,
+   "max_bytes": 134217728,
+   "reserved_bytes": 50331648,
+   "used_bytes": 2768576
+  }
+ },
+ "url_reconstruida_local_sin_conectar": "wss://fstream.binance.com/stream?streams=<simbolo>@aggTrade/... (20 simbolos por generacion de feed; forma correcta segun el endpoint combinado de Binance)",
+ "causa_raiz": "UNKNOWN. No se abrio ninguna conexion publica adicional para aislar si el silencio es del venue o del cliente; el trafico de la ventana no se contamina.",
+ "acciones": [
+  "Ninguna modificacion de codigo, configuracion o duracion durante la captura.",
+  "No se relanzo la corrida ni se creo otro run_id.",
+  "No se abrio trafico publico adicional para diagnosticar."
+ ],
+ "consecuencia": "Ventana INSUFICIENTE en la capa de calidad de datos: 0 observaciones aptas, 0 operaciones y, por tanto, 0 resultado economico exploratorio. No hay nada que evaluar en la capa economica."
+}

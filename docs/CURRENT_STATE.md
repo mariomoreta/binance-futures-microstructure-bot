@@ -1,4 +1,54 @@
-# Estado vigente — dirección operativa, 2026-11-11
+# Estado vigente — dirección operativa, 2026-11-12
+
+## Ventana única ejecutada: INSUFICIENTE en la capa de datos (2026-11-12)
+
+La ventana pública única autorizada se ejecutó **una sola vez** el 2026-11-12:
+`run_id exp-v2-ventana-1-20261112a`, SHA de ejecución
+`4b83498def6ae303795d50b2d8fe5276159312e5`, 3605.431 s de duración efectiva
+(solo la fase de captura), directorio de evidencia
+`C:\proyectos\binance-futures-data\exp-v2-ventana-1-20261112a` (fuera de Git).
+Informe completo en tres capas:
+[INFORME-CIERRE](evidence/exp-v2-ventana-1-20261112a/INFORRE-CIERRE.md).
+
+**1) Funcionamiento técnico.** Terminó por la ruta de éxito del CLI
+(`phase=fin`, `stop_reason=duracion`, stderr vacío, manifiesto y hashes
+escritos). 12 ciclos de selección, 232 observaciones, 24 peticiones HTTP sin
+fallos ni reintentos (peso reservado 492/5000), 467 764 mensajes WS,
+53 100 224 B contabilizados de 128 MB. El settle y la espera contable no se
+abrieron porque su disparador es la existencia de trabajo pendiente y no hubo
+observaciones aptas. **Limitación declarada:** el exit code numérico no quedó
+persistido por un defecto del envoltorio de supervisión
+(`Start-Process -PassThru` sin `Refresh()`); la evidencia es la ruta de
+terminación (resumen de éxito en stdout, stderr vacío, artefactos completos),
+no un código observado.
+
+**2) Calidad y suficiencia.** **INSUFICIENTE.** Las 232 observaciones se
+descartaron: `sin_flujo` 232 y `dato_obsoleto_libro` 3. La cobertura de flujo
+fue **0/232** y `research_flow_10s/1m` tiene **0 filas**, mientras el libro sí
+se capturó (`research_book_1m` 1200 filas; frescura mediana 567 ms). Causa
+raíz aislada: el feed `/market` (`aggTrade`) estuvo abierto toda la hora con
+`messages=0`, `errors=0`, `last_error=null` y sin reconexiones (el contador se
+incrementa por frame recibido, antes del handler), mientras `/public` recibía
+467 764 frames en paralelo. La URL reconstruida localmente es la forma
+correcta del endpoint combinado. **Causa raíz final: UNKNOWN** — aislar si el
+silencio es del venue o del cliente exigiría tráfico público adicional, que
+no se abrió. Detalle: `diagnostico-flujo.json`.
+
+**3) Resultado económico exploratorio.** **No hay resultado económico que
+evaluar**: 0 entradas, 0 salidas, 0 posiciones abiertas, 0 operaciones con
+neto COMPLETO/CONDICIONADO/UNKNOWN, 0 maximas concurrencias y 0 ms en
+mercado. Los agregados se presentan como *sin datos*, no como cero. La
+comparación candidate vs comparator queda `INSUFICIENTE` (cobertura 0.0) y no
+se fuerza. Un embudo vacío **no es evidencia contra la hipótesis**: es un
+resultado no informativo.
+
+**Consecuencias.** La vía A **no llegó a ejercitarse** en su parte esencial
+(espera contable, liquidaciones observadas, neto completo vs. condicionado):
+la insuficiencia es de datos, no de la contabilidad de funding. `INSUFICIENTE`
+es un resultado válido y **no autoriza otra ventana**; cualquier ventana
+posterior requiere autorización humana nueva. No se relanzó, no se creó otro
+`run_id`, no se ampliaron plazos ni cupos y no se modificó código ni
+configuración durante la captura.
 
 ## Monitor del piloto operativo: visible, verificado y listo para la ventana (2026-11-12, LOCAL)
 
@@ -44,10 +94,12 @@ fondos reales, otras ventanas ni relanzamientos. Detalle en
   fuera de `127.0.0.1:3020` y cero procesos nuevos al abrir y recargar.
   Evidencia en `docs/evidence/monitor-piloto-20261112/`.
 
-**Lo que no existe todavía.** La ventana pública **no se ha ejecutado**: falta
-revalidar `--budget-only` con el comando efectivo, publicar el SHA del cambio
-del monitor y lanzar la única corrida con `--status-file`, conservando stdout,
-stderr y exit code. El dashboard propio está disponible en
+**Lo que no existe todavía.** La ventana pública se ejecutó el 2026-11-12 y
+quedó **INSUFICIENTE en la capa de datos** (ver el bloque de arriba y
+[INFORME-CIERRE](evidence/exp-v2-ventana-1-20261112a/INFORRE-CIERRE.md)):
+ninguna observación resultó apta por ausencia total de flujo, porque el feed
+`/market` (`aggTrade`) no recibió ni un frame en toda la hora. El dashboard
+propio está disponible en
 `http://127.0.0.1:3020/market-lab?vista=piloto&run=<run_id>` (proceso `next
 start` propio, PID y BUILD_ID verificados). El servicio ajeno de 8792 no se
 toca ni se arranca: antes y después no hay listener.

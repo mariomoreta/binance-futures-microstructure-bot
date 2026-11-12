@@ -291,5 +291,19 @@ ESTADO DEL OBJETIVO VIVO: estos accesos NO implementan streaming. Mercado consul
   generalizable; cobertura solo PERPETUAL/TRADING/USDT; futuros con
   vencimiento y GARCH siguen fuera de alcance. El panel observa: no inicia,
   reinicia ni detiene corridas.
-- Ending SHA / commit / remote: pendiente de checkpoint (se completa en el
-  commit de cierre de este slice).
+- Ending SHA / commit / remote: `4b83498def6ae303795d50b2d8fe5276159312e5`
+  (`Monitor de solo lectura del piloto operativo en /market-lab`), local ==
+  remoto en `research/universe-liquidez-v1`.
+- Verificacion posterior contra la corrida publica real
+  `exp-v2-ventana-1-20261112a` (2026-11-12, build `wb_4SUPhODUEJgUSAmDP8`,
+  BUILD_ID presente en el HTML servido, PID y proceso `next start` propios):
+  el monitor mostro la fuente «Binance publico - experimento simulado», la
+  fase de Captura a Finalizada, los contadores de presupuesto coincidentes
+  con el ledger HTTP real (24/2000 intentos, 492/5000 peso) y el detalle del
+  embudo (12 ciclos, 0 aptas, 232 descartadas). Se detecto y corrigio una
+  imprecision de copy del aviso de feeds cerrados, que afirmaba
+  incondicionalmente que «solo continua la contabilidad de funding» aun sin
+  posiciones pendientes: ahora es condicional y hay test de regresion
+  (`frontend/src/test/pilot-monitor-panel.test.tsx`). El panel sigue sin
+  calcular nada. Evidencia:
+  `docs/evidence/exp-v2-ventana-1-20261112a/`.
