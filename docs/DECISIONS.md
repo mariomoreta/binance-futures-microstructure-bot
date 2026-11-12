@@ -5065,3 +5065,19 @@ docs/EXPERIMENTO_OPERATIVO_V2.md seccion 9.
   actual; futuros con vencimiento continúan pendientes. Ningún gate avanza.
 - Fuente canónica: docs/PRODUCT_GOAL.md, aclaración fechada 2026-11-12.
   Seguimiento: F-PATRONES-EXTREMOS-CONTEXTO-20261112 en FEATURE_BACKLOG.
+
+## 2026-11-12 - Anticipación y datos por contrato (aclaración documental)
+
+- Se incorpora explícitamente la detección ANTES de una expansión fuerte,
+  además del estudio de continuación/reversión/rebote tras extremos. Son vías
+  distintas, con cohortes y resultados separados; el extremo posterior no
+  puede utilizarse como requisito retrospectivo para afirmar anticipación.
+- La ficha por contrato contempla catálogo/actualizaciones, precio/volumen,
+  libro, operaciones agregadas, velas, OI, funding, marca/índice/prima y
+  liquidaciones publicadas. Se distinguen datos, variables derivadas y reglas
+  validadas; estas fuentes no se denominan todas on-chain.
+- La propuesta visual contempla dos modos de una misma ficha: Anticipación y
+  Movimiento desarrollado. La imagen con +24,8% ilustra solo el segundo.
+- PRODUCT_GOAL y F-PATRONES-EXTREMOS-CONTEXTO-20261112 quedan precisados.
+  No se cambian ACTIVE_TASK, regla, presupuesto, código o autorizaciones.
+  No hay predicción, rentabilidad ni nuevo gate acreditados.

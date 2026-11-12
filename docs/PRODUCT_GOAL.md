@@ -7,9 +7,49 @@ estrategia nueva. Se investiga si existe expectativa neta favorable: todavía
 no hay una estrategia rentable ni entradas casi perfectas acreditadas. Esta
 aclaración no sustituye el experimento operativo v2 ni cambia su tarea activa.
 
+### Dos momentos distintos: anticipación y movimiento desarrollado
+
+Aclaración del usuario 2026-11-12: el producto también debe investigar si puede
+detectar condiciones ANTES de una expansión alcista o bajista fuerte, no solo
+operar contratos que ya aparecen entre los grandes ganadores/perdedores.
+Se separan dos vías y sus resultados: **anticipación** (señal emitida antes del
+evento definido) y **movimiento desarrollado** (continuación, reversión o rebote
+después de un extremo conocido). Ninguna exige acertar casi el 100%.
+
+La anticipación no puede usar como requisito de selección que el contrato ya
+haya realizado la explosión que pretende anticipar. Requiere exploración amplia
+y seguimiento previo acotado o historia verificable; no implica conectar todo
+el universo a máxima resolución. El evento objetivo, ventana futura y criterios
+se fijarán antes de evaluar; el movimiento posterior solo sirve como resultado,
+nunca como dato disponible al decidir. Se incluyen alertas falsas, eventos no
+detectados, antelación real, cobertura y costes; no solo los aciertos.
+
+### Datos por contrato y variables derivadas
+
+La ficha futura debe poder presentar, si existe cobertura, **catálogo y
+actualizaciones del contrato; variación de precio y volumen; libro de órdenes;
+operaciones agregadas; velas; interés abierto; funding; precio de marca, índice
+y prima; y liquidaciones públicas**. Son datos del exchange y de derivados,
+no todos on-chain. El contexto on-chain es complementario y se identifica aparte.
+
+Distinguir dato observado, variable calculada e interpretación: precio/cantidad
+son datos; cambio de volumen respecto de su historia o delta/relación
+flujo-profundidad son variables; una regla de entrada exige validación adicional.
+Que todas las categorías se puedan inspeccionar no obliga a incorporarlas todas
+a una señal ni demuestra que aporten ventaja. La ficha debe conservar unidades,
+ventanas, procedencia, identidad y disponibilidad efectiva por cada fuente; dato
+no disponible es UNKNOWN, no cero ni un dato tomado de otro contrato.
+
+La ilustración de MINAUSDT con cambio de +24,8% representa la vía posterior al
+movimiento. El diseño objetivo añade dos modos de la misma ficha:
+**Anticipación** / **Movimiento desarrollado**, sin otra pantalla o motor
+paralelos. Es propuesta, no implementación. El piloto v2 continúa como
+experimento acotado de su hipótesis actual; no se cambia para acomodar esta
+ampliación durante el bloque activo.
+
 ### Hipótesis que debe poder evaluar el producto
 
-Tras detectar en T un contrato con un movimiento extremo ya observado, estudiar
+En la vía posterior, tras detectar en T un movimiento extremo ya observado, estudiar
 qué condiciones disponibles en T distinguen: continuación alcista, agotamiento
 y reversión tras una subida, continuación bajista, y rebote tras una caída.
 Los ejemplos humanos de movimientos del 10%, 20%, 30% o 50% describen el interés

@@ -101,8 +101,8 @@ permanece diferida sin ampliar ningún validador.
 
 ### Dirección futura registrada — sin cambio de ACTIVE_TASK (2026-11-12)
 
-El estudio de patrones de continuación, reversión y rebote con fuentes
-exchange/derivados/on-chain, y la ficha unificada del contrato, quedan como
+El estudio de anticipación previa a expansiones y de continuación, reversión
+y rebote tras extremos, con fuentes exchange/derivados/on-chain, y la ficha unificada del contrato, quedan como
 objetivo documental y propuesta visual en [PRODUCT_GOAL](PRODUCT_GOAL.md) y
 F-PATRONES-EXTREMOS-CONTEXTO-20261112 de FEATURE_BACKLOG. No es una tarea
 inmediata de conectores o UI, ni modifica la regla del experimento v2.

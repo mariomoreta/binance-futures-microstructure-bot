@@ -8,6 +8,12 @@ del exchange, derivados y contexto on-chain disponible al decidir. No hay
 rentabilidad ni probabilidades de entrada acreditadas. El piloto v2 conserva
 su hipótesis y configuración; la skill incorporada es documental.
 
+Aclaración adicional: el objetivo incluye **anticipación antes de la expansión**
+y evaluación del **movimiento desarrollado**, con resultados separados. La
+ficha prevista reúne datos del exchange/derivados por contrato y contexto
+on-chain aparte; no hay anticipación ni patrones predictivos acreditados.
+El diseño conceptual añade esos dos modos; no cambia el bloque activo.
+
 La ficha unificada del contrato es una **propuesta visual, NO IMPLEMENTADA**:
 reutilizar selección, gráfico, libro/flujo, decisión/riesgo y monitor; añadir
 solo fuentes y patrones que superen una evaluación independiente. No presenta

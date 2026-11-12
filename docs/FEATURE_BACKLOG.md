@@ -3852,9 +3852,9 @@ esearch/universe-liquidity-v1. Documento docs/RESEARCH_UNIVERSE_LIQUIDITY_V1.md 
 
 ## F-PATRONES-EXTREMOS-CONTEXTO-20261112 — Patrones y ficha del contrato
 
-**1. Title:** Investigar condiciones repetibles de continuación, reversión y
-rebote tras extremos; presentación unificada del contrato con evidencia,
-decisión y riesgo, reutilizando el sistema existente.
+**1. Title:** Investigar anticipación antes de expansiones y condiciones de
+continuación, reversión y rebote tras extremos; ficha unificada del contrato
+con datos, evidencia, decisión y riesgo, reutilizando el sistema existente.
 
 **2. Approval status:** AUTORIZADO para aclaración documental e ilustración
 conceptual por el usuario el 2026-11-12. Adquisición on-chain, cambios de regla,
@@ -3863,6 +3863,10 @@ implementación de UI y ejecución operativa NO autorizados por este bloque.
 **3. Implementation status:** DOCUMENTADO en PRODUCT_GOAL; integración de
 fuentes y patrones NO IMPLEMENTADA. La ficha visual es PROPUESTA, no build.
 La skill documental existente no se convierte en un cliente ni en una señal.
+La aclaración del usuario añade dos modos propuestos (Anticipación / Movimiento
+desarrollado) y el conjunto de datos exchange/derivados por contrato descrito
+en PRODUCT_GOAL; no se requiere un extremo ya realizado para investigar su
+anticipación. Ninguno de esos modos nuevos está implementado o validado.
 
 **4. Evaluation status:** NO EVALUADO económicamente. No hay probabilidad de
 entrada, causalidad ni rentabilidad acreditadas para esos patrones. El
