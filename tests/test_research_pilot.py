@@ -506,8 +506,15 @@ def start_ws_server(provider: WsProvider, port: int):
     provider.set_loop(loop)
     thread = threading.Thread(target=loop.run_forever, daemon=True)
     thread.start()
+    cerrado = {"ok": False}
 
     def stop() -> None:
+        # Idempotente: una segunda llamada no debe crear una corrutina sin
+        # ejecutar (el loop ya esta detenido).
+        if cerrado["ok"]:
+            return
+        cerrado["ok"] = True
+
         async def _close() -> None:
             server.close()
             await server.wait_closed()

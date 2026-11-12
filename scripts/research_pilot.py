@@ -1214,20 +1214,21 @@ WS_HOST_PUBLICO = "fstream.binance.com"
 WS_STREAM_PATH = "/stream"
 
 
-def _segmentos_base(base: str) -> List[str]:
-    ruta = urlsplit(str(base)).path
-    return [s for s in ruta.split("/") if s]
-
-
 def normalizar_base_ws(base: str, categoria: str, *, contexto: str) -> str:
     """Valida la base WS y devuelve la base de la categoria esperada.
 
-    Falla cerrado (ValueError) antes de abrir cualquier socket si:
-      - la base no usa ws/wss o no tiene host,
-      - la base ya incluye '/stream' (lo anade el constructor: no se duplica),
-      - la base declara una categoria distinta de la esperada (categoria
-        cruzada: el feed de libro no puede hablar con la base de '/market'),
-      - la base declara una categoria inexistente o una ruta no compatible.
+    Contrato EXACTO (falla cerrado con ValueError antes de abrir sockets):
+      - raiz sin ruta ("wss://host" o "wss://host/"): se anade la categoria
+        del feed,
+      - ruta exacta "/public" o "/market" (barra final opcional): se conserva
+        solo si corresponde al feed; la categoria contraria es categoria
+        cruzada,
+      - se rechazan prefijos o segmentos adicionales ("/otra/market"), rutas
+        en mayusculas ("/MARKET"), '/stream' preincluido, query, fragmento y
+        credenciales en la base.
+
+    La categoria es intrinseca al feed (libro -> /public, flujo -> /market):
+    el operador no puede cambiarla por accidente.
     """
     if categoria not in WS_CATEGORIAS:
         raise ValueError(
@@ -1238,26 +1239,41 @@ def normalizar_base_ws(base: str, categoria: str, *, contexto: str) -> str:
     if partes.scheme not in ("ws", "wss"):
         raise ValueError(
             f"{contexto}: base WS invalida {texto!r}: se espera ws:// o wss://")
-    if not partes.netloc:
+    if partes.username or partes.password or "@" in partes.netloc:
+        raise ValueError(
+            f"{contexto}: la base WS no puede llevar credenciales: {texto!r}")
+    if partes.query:
+        raise ValueError(
+            f"{contexto}: la base WS no puede llevar query: {texto!r}")
+    if partes.fragment:
+        raise ValueError(
+            f"{contexto}: la base WS no puede llevar fragmento: {texto!r}")
+    if not partes.hostname:
         raise ValueError(f"{contexto}: base WS sin host: {texto!r}")
-    segmentos = _segmentos_base(texto)
-    bajos = [s.lower() for s in segmentos]
-    if WS_STREAM_PATH.strip("/") in bajos:
+    ruta = partes.path
+    # Raiz del host: se anade la categoria del feed.
+    if ruta in ("", "/"):
+        return f"{partes.scheme}://{partes.netloc}/{categoria}"
+    # Ruta exacta de categoria (barra final opcional), en minusculas.
+    for cat in WS_CATEGORIAS:
+        if ruta in (f"/{cat}", f"/{cat}/"):
+            if cat != categoria:
+                raise ValueError(
+                    f"{contexto}: categoria cruzada: la base {texto!r} es "
+                    f"'{cat}' y esta conexion es '{categoria}'")
+            return f"{partes.scheme}://{partes.netloc}/{cat}"
+    # Diagnostico especifico para los rechazos ya conocidos.
+    if ruta.rstrip("/") == WS_STREAM_PATH.strip("/"):
         raise ValueError(
             f"{contexto}: la base ya incluye '/stream' ({texto!r}); el "
             "constructor lo anade: no lo dupliques")
-    if not segmentos:
-        return f"{texto.rstrip('/')}/{categoria}"
-    ultimo = bajos[-1]
-    if ultimo in WS_CATEGORIAS:
-        if ultimo != categoria:
-            raise ValueError(
-                f"{contexto}: categoria cruzada: la base {texto!r} es "
-                f"'{ultimo}' y esta conexion es '{categoria}'")
-        return texto.rstrip("/")
+    if ruta.rstrip("/").lower() in WS_CATEGORIAS:
+        raise ValueError(
+            f"{contexto}: la ruta de la base debe ser exacta y en minusculas "
+            f"('/public' o '/market'): {texto!r}")
     raise ValueError(
         f"{contexto}: base WS no compatible {texto!r}: se espera la raiz del "
-        f"host o una base de categoria {WS_CATEGORIAS}")
+        f"host o una ruta exacta '/public' o '/market', sin prefijos")
 
 
 def build_stream_url(base: str, streams: List[str], categoria: str) -> str:
@@ -4265,10 +4281,16 @@ def config_from_args(args: argparse.Namespace) -> PilotConfig:
             raise ValueError(
                 "modo publico requiere --activar-publico (activacion adicional)"
             )
-        # Base publica incompatible: host distinto del venue USD-M documentado.
+        # Base publica incompatible: se exige wss y el host USD-M documentado.
         for nombre, valor in (("ws-public-base", args.ws_public_base),
                               ("ws-market-base", args.ws_market_base)):
-            host = (urlsplit(str(valor)).hostname or "").lower()
+            partes = urlsplit(str(valor))
+            if partes.scheme != "wss":
+                raise ValueError(
+                    f"base publica incompatible en --{nombre}: {valor!r}; "
+                    f"se exige wss:// (host {WS_HOST_PUBLICO}, categorias "
+                    f"{WS_CATEGORIAS})")
+            host = (partes.hostname or "").lower()
             if host != WS_HOST_PUBLICO:
                 raise ValueError(
                     f"base publica incompatible en --{nombre}: {valor!r}; el "

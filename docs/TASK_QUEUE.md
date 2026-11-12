@@ -35,27 +35,50 @@ permanece diferida sin ampliar ningún validador.
 
 `NEXT_TASKS`:
 1. **Comprobación pública de recepción válida en `/market/stream` — NO
-   EJECUTADA, requiere autorización humana explícita.** Antes de plantear
-   cualquier ventana larga: abrir **una sola** conexión de trades con
-   `wss://fstream.binance.com/market/stream?streams=<symbol>@aggTrade` (símbolo
-   en minúsculas, nombre `aggTrade` intacto, suscripción por URL en modo
-   `stream`; **sin** mensajes `SUBSCRIBE`) y comprobar recepción válida
-   durante **≤ 60 s** (2 conexiones como máximo: una de control en `/public`
-   con `depth20@100ms` y una de trades en `/market`; sin peticiones REST, sin
-   presupuesto de ventana, sin dataset y sin operaciones). Criterio de
-   aceptación: `frames recibidos > 0` **y** `eventos de flujo aceptados > 0`
-   en el feed de trades, con el feed de libro recibiendo frames en paralelo;
-   si el feed de trades no recibe frames, la vía A sigue bloqueada y **no**
-   procede ninguna ventana. Es una comprobación de recepción, no una captura
-   de experimento: no genera operaciones, no usa presupuesto de la ventana y
-   no habilita por sí sola un nuevo `run_id`.
+   EJECUTADA, requiere autorización humana explícita.** El comando está
+   **preparado y verificado en loopback** (`scripts/diagnostico_ws_recepcion.py`
+   sobre el transporte productivo `StreamFeed` y los motores `BookEngine` /
+   `FlowEngine`); en este bloque no se abrió ningún socket público:
+
+   ```powershell
+   python scripts/run_pilot_window.py `
+     --out-dir C:\proyectos\binance-futures-data\diag-ws-recepcion-20261112a `
+     -- python scripts/diagnostico_ws_recepcion.py `
+        --diagnostico-id diag-ws-recepcion-20261112a `
+        --simbolo BTCUSDT `
+        --duracion-seconds 60 `
+        --out-dir C:\proyectos\binance-futures-data\diag-ws-recepcion-20261112a `
+        --ws-public-base wss://fstream.binance.com/public `
+        --ws-market-base wss://fstream.binance.com/market `
+        --autorizar-publico `
+        --max-messages 200000 `
+        --max-bytes 1048576
+   ```
+
+   Características: un símbolo explícito (`BTCUSDT`, sin consultar el mercado
+   para elegirlo), **una** conexión `/market/stream` con `aggTrade` y **una**
+   `/public/stream` con `depth20@100ms`, duración global ≤ 60 s, dos aperturas
+   iniciales y **cero reconexiones automáticas**, cero REST, cero órdenes, cero
+   dataset de investigación (solo `diagnostico.json` compacto junto a los logs
+   y el `exit_code.txt` del lanzador). Criterios: **PASS** = trades con eventos
+   válidos *y* procesados por `FlowEngine`, libro con eventos válidos *y*
+   procesados por `BookEngine`, 2 conexiones, 0 reconexiones, 0 errores;
+   **INSUFICIENTE** = sin errores ni reconexiones pero sin recepción válida;
+   **FAIL** = error de conexión, reconexión o límite excedido. Un frame de
+   control (ACK/ping) no acredita flujo agresor. Si el veredicto no es PASS,
+   la vía A sigue bloqueada y **no** procede ninguna ventana.
 2. **Envoltorio de salida: corregido y verificado en local (2026-11-12).**
    `scripts/run_pilot_window.py` espera la finalización real del proceso, lee
    el código numérico con `Popen.wait()` y persiste `stdout.log`,
    `stderr.log`, `exit_code.txt` y `launcher.json`; verificado con salidas 0 y
-   no cero. Queda pendiente **usarlo en la próxima ejecución autorizada**; el
-   exit code histórico de `exp-v2-ventana-1-20261112a` sigue **UNKNOWN** y no
-   se rellena retrospectivamente.
+   no cero. Además (2026-11-12, segundo bloque) **propaga el directorio**: en
+   modo predeterminado el piloto recibe el mismo `--out-dir` que el lanzador
+   (logs y artefactos en el mismo sitio; directorios contradictorios → error
+   explícito) y en modo comando explícito (tras `--`) no se inyecta ninguna
+   opción de `research_pilot.py`. Queda pendiente **usarlo en la próxima
+   ejecución autorizada**; el exit code histórico de
+   `exp-v2-ventana-1-20261112a` sigue **UNKNOWN** y no se rellena
+   retrospectivamente.
 3. **Ninguna ventana nueva sin autorización humana explícita y nueva.**
    `INSUFICIENTE` no renueva duración, cupos, `run_id` ni ventanas. Si se
    autoriza otra, será con la configuración congelada, un `run_id` nuevo no

@@ -1,5 +1,53 @@
 # Estado vigente — dirección operativa, 2026-11-12
 
+## Dos defectos corregidos y comprobación pública preparada (2026-11-12, LOCAL)
+
+**1. Directorio del lanzador (corregido).** `scripts/run_pilot_window.py`
+consumía `--out-dir` para los logs pero no lo reenviaba al piloto, que acababa
+usando su directorio por defecto. Ahora, en modo predeterminado el piloto
+recibe el **mismo** `--out-dir` (logs y artefactos en el mismo sitio); un
+`--out-dir` del hijo con otro valor es un error explícito por directorios
+contradictorios, y el mismo directorio repetido se propaga una sola vez. En
+modo comando explícito (tras `--`) los argumentos del hijo se respetan tal
+cual: no se le inyecta ninguna opción de `research_pilot.py`. La captura del
+código real con `Popen.wait()` no cambia.
+
+**2. Validación exacta de bases WS (corregida).** `normalizar_base_ws()`
+aceptaba rutas con prefijos (`wss://fstream.binance.com/otra/market`) y en
+mayúsculas (`wss://fstream.binance.com/MARKET`), y las conservaba en la URL
+efectiva. Contrato vigente: raíz sin ruta → se añade la categoría del feed;
+ruta **exacta** `/public` o `/market` (barra final opcional) → se conserva
+solo si corresponde al feed; se rechazan prefijos o segmentos adicionales,
+mayúsculas, categorías cruzadas, `/stream` preincluido, query, fragmento y
+credenciales. En modo público se exige `wss` y el host `fstream.binance.com`.
+El modo local (`ws` + loopback), `aggTrade` y la suscripción por URL en modo
+`stream` se conservan. La validación ocurre antes de abrir conexiones.
+
+**3. Comprobación pública de recepción: PREPARADA, NO EJECUTADA.**
+`scripts/diagnostico_ws_recepcion.py` reutiliza el transporte productivo
+(`StreamFeed`, `build_stream_url`) y los motores (`BookEngine`, `FlowEngine`),
+distingue conexión / frames de datos / frames de control / eventos válidos /
+eventos procesados, y no genera dataset de investigación (solo
+`diagnostico.json` compacto). Comando exacto, criterios PASS / INSUFICIENTE /
+FAIL y códigos de salida (0 / 10 / 11) en `docs/TASK_QUEUE.md` (NEXT_TASKS 1).
+En este bloque **no se abrió ningún socket público**; la verificación fue solo
+en loopback.
+
+**Verificación local (sin mercado público):** `tests/test_pilot_ws_rutas.py`
+34 passed (URLs exactas, rechazo de las bases inválidas —prefijos,
+mayúsculas, cruzadas, `/stream`, query, fragmento, credenciales—, `wss`
+exigido en modo público, recepción y procesamiento por ambos motores en
+loopback, cierre de sockets); `tests/test_pilot_launcher_exit_code.py`
+10 passed (códigos 0 y no cero, `main()` propaga el directorio, modo comando
+sin inyección, directorios contradictorios rechazados);
+`tests/test_diagnostico_ws_recepcion.py` 6 passed (PASS/INSUFICIENTE en
+loopback, autorización exigida contra el venue público, uso inválido,
+evidencia compacta, cierre de sockets, comando completo lanzador +
+diagnóstico). Regresiones directamente afectadas del piloto, el CLI y la
+recepción loopback: **111 passed**. El exit code histórico de
+`exp-v2-ventana-1-20261112a` sigue **UNKNOWN** y la causa raíz histórica no se
+reclasifica como demostrada.
+
 ## Rectificación de las rutas WS del piloto y del envoltorio de salida (2026-11-12, LOCAL)
 
 **Lo que se rectify:** la afirmación publicada de que la URL

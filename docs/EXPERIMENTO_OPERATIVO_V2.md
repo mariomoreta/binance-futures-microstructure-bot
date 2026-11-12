@@ -1344,7 +1344,9 @@ python scripts/run_pilot_window.py `
 El envoltorio `scripts/run_pilot_window.py` espera la finalización real del
 proceso, **lee** el código de salida (`Popen.wait()`) y persiste `stdout.log`,
 `stderr.log`, `exit_code.txt` y `launcher.json`. El código **nunca** se
-infiere de `phase=fin`, del stdout ni de un stderr vacío.
+infiere de `phase=fin`, del stdout ni de un stderr vacío. En modo predeterminado
+**propaga el directorio**: el piloto recibe el mismo `--out-dir` que el lanzador
+(§10.10.1), de modo que logs y artefactos comparten directorio.
 
 **10.9.4 Verificación local (sin mercado público).** `--budget-only` con el
 comando corregido: `cabe_en_limites: true` (13/13), con los mismos números
@@ -1356,5 +1358,40 @@ altera el presupuesto. Pruebas del contrato de rutas (A–F) y del envoltorio
 
 **10.9.5 Lo que sigue sin comprobarse.** Que `/market/stream?streams=…@aggTrade`
 reciba frames contra el venue real: requiere una comprobación pública
-autorizada, que **no se ha ejecutado** (propuesta en `docs/TASK_QUEUE.md`).
+autorizada, que **no se ha ejecutado** (comando preparado en §10.10).
 La vía A sigue sin ejercitarse. El exit code histórico permanece **UNKNOWN**.
+
+### 10.10 Dos defectos corregidos y comprobación pública preparada (2026-11-12)
+
+**10.10.1 Directorio del lanzador (corregido).** El envoltorio consumía
+`--out-dir` para los logs pero no lo reenviaba al piloto, que acababa usando su
+directorio por defecto. Ahora: en modo predeterminado el piloto recibe el
+mismo `--out-dir` (logs y artefactos en el mismo sitio; un `--out-dir` del
+hijo distinto → error explícito por directorios contradictorios; el mismo
+directorio repetido no es ambiguo y se propaga una sola vez); en modo comando
+explícito (tras `--`) los argumentos del hijo se respetan tal cual y **no** se
+le inyecta ninguna opción de `research_pilot.py`. La captura del código real
+con `Popen.wait()` no cambia.
+
+**10.10.2 Validación exacta de bases WS (corregida).**
+`normalizar_base_ws()` aceptaba rutas con prefijos (`…/otra/market`) y en
+mayúsculas (`…/MARKET`), y las conservaba en la URL efectiva pese a declarar
+validación estricta. Contrato vigente: raíz sin ruta → se añade la categoría
+del feed; ruta **exacta** `/public` o `/market` (barra final opcional) → se
+conserva solo si corresponde al feed; se rechazan prefijos o segmentos
+adicionales, mayúsculas, categorías cruzadas, `/stream` preincluido, query,
+fragmento y credenciales. En modo público se exige `wss` y el host
+`fstream.binance.com`. El modo local (`ws` + loopback), el nombre `aggTrade`
+y la suscripción por URL en modo `stream` se conservan. La validación ocurre
+antes de abrir conexiones, con los helpers existentes.
+
+**10.10.3 Comprobación pública de recepción — PREPARADA, NO EJECUTADA.**
+`scripts/diagnostico_ws_recepcion.py` reutiliza el transporte productivo
+(`StreamFeed`, `build_stream_url`) y los motores (`BookEngine`, `FlowEngine`),
+y distingue la escalera de evidencia: conexión, frames de datos, frames de
+control, eventos válidos y eventos procesados. Sin REST, sin órdenes, sin
+dataset de investigación (solo `diagnostico.json` compacto). Comando exacto en
+`docs/TASK_QUEUE.md` (NEXT_TASKS 1). Criterios **PASS / INSUFICIENTE / FAIL**
+y códigos de salida (0 / 10 / 11) están en el propio script. En este bloque
+**no se abrió ningún socket público**; la verificación fue solo en loopback
+(`tests/test_diagnostico_ws_recepcion.py`).

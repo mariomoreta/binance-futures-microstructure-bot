@@ -93,6 +93,14 @@ def test_simbolo_no_lowercase_se_rechaza() -> None:
 # ---------------------------------------------------------------------------
 
 
+def _cli(args):
+    env = dict(os.environ)
+    env["PYTHONPATH"] = f"{ROOT / 'src'};{ROOT / 'scripts'};{ROOT}"
+    return subprocess.run(
+        [sys.executable, str(ROOT / "scripts" / "research_pilot.py"), *args],
+        cwd=str(ROOT), capture_output=True, text=True, timeout=180, env=env)
+
+
 def test_categoria_cruzada_se_rechaza() -> None:
     with pytest.raises(ValueError) as exc:
         rp.normalizar_base_ws("wss://fstream.binance.com/market",
@@ -124,12 +132,87 @@ def test_stream_y_ruta_no_compatible_se_rechazan() -> None:
                                "privada", contexto="prueba")
 
 
-def _cli(args):
-    env = dict(os.environ)
-    env["PYTHONPATH"] = f"{ROOT / 'src'};{ROOT / 'scripts'};{ROOT}"
-    return subprocess.run(
-        [sys.executable, str(ROOT / "scripts" / "research_pilot.py"), *args],
-        cwd=str(ROOT), capture_output=True, text=True, timeout=180, env=env)
+# ---------------------------------------------------------------------------
+# B (estricto). Validacion exacta de la base: solo raiz o ruta exacta
+# ---------------------------------------------------------------------------
+
+BASES_VALIDAS = [
+    # (base, categoria, base canonica esperada)
+    ("wss://fstream.binance.com", rp.WS_CATEGORIA_LIBRO,
+     "wss://fstream.binance.com/public"),
+    ("wss://fstream.binance.com/", rp.WS_CATEGORIA_LIBRO,
+     "wss://fstream.binance.com/public"),
+    ("wss://fstream.binance.com/public", rp.WS_CATEGORIA_LIBRO,
+     "wss://fstream.binance.com/public"),
+    ("wss://fstream.binance.com/public/", rp.WS_CATEGORIA_LIBRO,
+     "wss://fstream.binance.com/public"),
+    ("wss://fstream.binance.com", rp.WS_CATEGORIA_FLUJO,
+     "wss://fstream.binance.com/market"),
+    ("wss://fstream.binance.com/market", rp.WS_CATEGORIA_FLUJO,
+     "wss://fstream.binance.com/market"),
+    ("wss://fstream.binance.com/market/", rp.WS_CATEGORIA_FLUJO,
+     "wss://fstream.binance.com/market"),
+    ("ws://127.0.0.1:62000", rp.WS_CATEGORIA_LIBRO,
+     "ws://127.0.0.1:62000/public"),
+    ("ws://127.0.0.1:62000/market", rp.WS_CATEGORIA_FLUJO,
+     "ws://127.0.0.1:62000/market"),
+]
+
+
+@pytest.mark.parametrize("base,categoria,esperada", BASES_VALIDAS)
+def test_bases_validas_exactas(base, categoria, esperada) -> None:
+    assert rp.normalizar_base_ws(base, categoria, contexto="prueba") == esperada
+
+
+BASES_INVALIDAS = [
+    "wss://fstream.binance.com/otra/market",     # prefijo adicional
+    "wss://fstream.binance.com/public/market",   # prefijo adicional
+    "wss://fstream.binance.com/MARKET",          # mayusculas
+    "wss://fstream.binance.com/Market",
+    "wss://fstream.binance.com/PUBLIC",
+    "wss://fstream.binance.com//public",         # barra duplicada
+    "wss://fstream.binance.com/public/extra",    # sufijo
+    "wss://fstream.binance.com/public/stream",   # /stream preincluido
+    "wss://fstream.binance.com/stream",
+    "wss://fstream.binance.com/public?streams=x",  # query
+    "wss://fstream.binance.com/public#frag",       # fragmento
+    "wss://user:pass@fstream.binance.com/public",  # credenciales
+    "wss://fstream.binance.com/otra",
+]
+
+
+@pytest.mark.parametrize("base", BASES_INVALIDAS)
+def test_bases_invalidas_se_rechazan(base) -> None:
+    with pytest.raises(ValueError):
+        rp.normalizar_base_ws(base, rp.WS_CATEGORIA_LIBRO, contexto="prueba")
+    with pytest.raises(ValueError):
+        rp.normalizar_base_ws(base, rp.WS_CATEGORIA_FLUJO, contexto="prueba")
+
+
+def test_url_construida_no_puede_contener_ruta_incompatible() -> None:
+    """La URL efectiva nunca hereda prefijos ni mayusculas de la base."""
+    with pytest.raises(ValueError):
+        rp.build_stream_url("wss://fstream.binance.com/otra/market",
+                            ["btcusdt@aggTrade"], rp.WS_CATEGORIA_FLUJO)
+    with pytest.raises(ValueError):
+        rp.build_stream_url("wss://fstream.binance.com/MARKET",
+                            ["btcusdt@aggTrade"], rp.WS_CATEGORIA_FLUJO)
+    url = rp.build_stream_url("wss://fstream.binance.com/MARKET".lower(),
+                              ["btcusdt@aggTrade"], rp.WS_CATEGORIA_FLUJO)
+    assert url == ("wss://fstream.binance.com/market/stream"
+                   "?streams=btcusdt@aggTrade")
+
+
+def test_cli_rechaza_ws_en_modo_publico(tmp_path: Path) -> None:
+    """Modo publico: se exige wss (no ws) y el host autorizado."""
+    proc = _cli([
+        "--mode", "public", "--activar-publico",
+        "--run-id", "ws-rutas", "--out-dir", str(tmp_path / "out"),
+        "--ws-public-base", "ws://fstream.binance.com/public",
+        "--ws-market-base", "wss://fstream.binance.com/market",
+    ])
+    assert proc.returncode != 0
+    assert "base publica incompatible" in proc.stderr
 
 
 def test_cli_rechaza_base_publica_incorrecta(tmp_path: Path) -> None:
