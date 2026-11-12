@@ -1,5 +1,21 @@
 # Estado vigente — dirección operativa, 2026-11-12
 
+## Patrones de extremos y ficha unificada — aclaración documental (2026-11-12)
+
+Se precisó en [PRODUCT_GOAL](PRODUCT_GOAL.md#aclaración-de-investigación-y-dashboard--decisión-del-usuario-2026-11-12)
+el objetivo futuro de contrastar continuación, reversión y rebote con datos
+del exchange, derivados y contexto on-chain disponible al decidir. No hay
+rentabilidad ni probabilidades de entrada acreditadas. El piloto v2 conserva
+su hipótesis y configuración; la skill incorporada es documental.
+
+La ficha unificada del contrato es una **propuesta visual, NO IMPLEMENTADA**:
+reutilizar selección, gráfico, libro/flujo, decisión/riesgo y monitor; añadir
+solo fuentes y patrones que superen una evaluación independiente. No presenta
+simulaciones reconstruidas como órdenes en vivo. UI y adquisición on-chain
+siguen diferidas. Esta entrega no cambia ACTIVE_TASK, presupuesto, código,
+datos ni autorizaciones; no avanzó ningún gate. Ver entrada
+F-PATRONES-EXTREMOS-CONTEXTO-20261112 en FEATURE_BACKLOG.
+
 ## Dos defectos corregidos y comprobación pública preparada (2026-11-12, LOCAL)
 
 **1. Directorio del lanzador (corregido).** `scripts/run_pilot_window.py`

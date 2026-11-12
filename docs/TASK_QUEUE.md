@@ -99,6 +99,17 @@ permanece diferida sin ampliar ningún validador.
    un defecto que cambie la decisión económica.
 
 
+### Dirección futura registrada — sin cambio de ACTIVE_TASK (2026-11-12)
+
+El estudio de patrones de continuación, reversión y rebote con fuentes
+exchange/derivados/on-chain, y la ficha unificada del contrato, quedan como
+objetivo documental y propuesta visual en [PRODUCT_GOAL](PRODUCT_GOAL.md) y
+F-PATRONES-EXTREMOS-CONTEXTO-20261112 de FEATURE_BACKLOG. No es una tarea
+inmediata de conectores o UI, ni modifica la regla del experimento v2.
+Primero se completa el bloque de recepción y la evaluación ya definidos;
+cualquier adquisición o implementación posterior requiere alcance y límites
+propios. No se promete una estrategia rentable ni acierto casi perfecto.
+
 `CLOSED`: análisis exploratorio v4 de `public-pilot-1h-20261106a`; los 168
 resultados de 60m existen, no es necesario repetir para completarlos. Los
 límites de cobertura, costes, precios e identidad siguen explícitos; ver

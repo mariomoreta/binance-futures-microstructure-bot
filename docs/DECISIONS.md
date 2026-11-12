@@ -5041,3 +5041,27 @@ docs/EXPERIMENTO_OPERATIVO_V2.md seccion 9.
 - Decision del diagnostico: `scripts/diagnostico_ws_recepcion.py` reutiliza el transporte productivo (`StreamFeed`, `build_stream_url`) y los motores (`BookEngine`, `FlowEngine`) sin refactorizar el camino productivo del piloto: toma su manejador tal cual y comprueba en el arranque que sigue usando solo el estado que suministra (si el piloto cambiara, falla antes de conectar). Distingue conexion, frames de datos, frames de control, eventos validos y eventos procesados; un frame de control (ACK/ping) no acredita flujo agresor. No genera dataset de investigacion (solo `diagnostico.json` compacto), no hace REST, no envia ordenes y exige `--autorizar-publico` si las bases apuntan al venue publico.
 - Decision de la comprobacion preparada: un simbolo explicito (`BTCUSDT`), una conexion `/market/stream` con `aggTrade` y una `/public/stream` con `depth20@100ms`, duracion global <= 60 s, dos aperturas iniciales, cero reconexiones automaticas, topes de mensajes y de almacenamiento. Veredicto PASS / INSUFICIENTE / FAIL con codigos de salida 0 / 10 / 11. **NO EJECUTADA**: requiere autorizacion humana explicita posterior, y un veredicto distinto de PASS mantiene bloqueada la via A sin habilitar ninguna ventana larga.
 - Decision de verificacion: pruebas focalizadas de rutas y lanzador (34 + 10 passed), del diagnostico en loopback (6 passed) y regresiones directamente afectadas del piloto, el CLI y la recepcion loopback (111 passed). Se hizo idempotente el cierre del proveedor loopback (doble cierre dejaba una corrutina sin ejecutar: aviso, no fallo). Sin mercado publico, sin red de mercado y sin dataset nuevo.
+
+## 2026-11-12 - Patrones de extremos, contexto on-chain y ficha unificada (documentación)
+
+- Se aclara el objetivo: investigar, tras un movimiento extremo conocido en T,
+  qué condiciones distinguen continuación, agotamiento/reversión y rebote;
+  seleccionar no equivale a entrar. Se busca expectativa neta con riesgo, no
+  acierto cercano al 100% ni explicaciones retrospectivas de ganadores.
+- Se distinguen microestructura del exchange, datos de derivados, on-chain y
+  contexto externo. Las fuentes adicionales deben probar identidad, unidades,
+  cobertura y disponibilidad efectiva; timestamp de bloque no equivale a
+  conocimiento en T y liquidez DEX no equivale a profundidad de futuros.
+- Se conservan comparadores y faltantes. Una variable nueva debe demostrar
+  valor adicional frente a la misma regla sin ella, en datos independientes,
+  con costes y riesgo; si no lo aporta se descarta.
+- La autorización de este bloque es documentación e ilustración conceptual.
+  La ficha unificada reutilizará Dashboard V2; patrones on-chain, probabilidades
+  calibradas y unificación de identidad siguen propuestos, no implementados.
+  No se presenta el replay del piloto como ejecución en vivo.
+- El experimento v2 y ACTIVE_TASK se conservan. No se cambian umbrales,
+  dirección, presupuestos, funding, código, datasets o autorizaciones. No se
+  abren conexiones ni se borran componentes. Perpetuos USD-M es la cobertura
+  actual; futuros con vencimiento continúan pendientes. Ningún gate avanza.
+- Fuente canónica: docs/PRODUCT_GOAL.md, aclaración fechada 2026-11-12.
+  Seguimiento: F-PATRONES-EXTREMOS-CONTEXTO-20261112 en FEATURE_BACKLOG.

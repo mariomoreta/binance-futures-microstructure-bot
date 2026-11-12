@@ -1,5 +1,102 @@
 # PRODUCT_GOAL
 
+## Aclaración de investigación y dashboard — decisión del usuario 2026-11-12
+
+**Estado:** dirección documental y propuesta visual; no implementación de una
+estrategia nueva. Se investiga si existe expectativa neta favorable: todavía
+no hay una estrategia rentable ni entradas casi perfectas acreditadas. Esta
+aclaración no sustituye el experimento operativo v2 ni cambia su tarea activa.
+
+### Hipótesis que debe poder evaluar el producto
+
+Tras detectar en T un contrato con un movimiento extremo ya observado, estudiar
+qué condiciones disponibles en T distinguen: continuación alcista, agotamiento
+y reversión tras una subida, continuación bajista, y rebote tras una caída.
+Los ejemplos humanos de movimientos del 10%, 20%, 30% o 50% describen el interés
+del usuario; no fijan umbrales operativos ni autorizan cambiar el selector.
+Seleccionar un gran movimiento no equivale a autorizar una entrada.
+
+El objetivo es encontrar asociaciones repetibles con utilidad predictiva fuera
+de la muestra de diseño, convertirlas en reglas de LONG/SHORT/abstención y
+evaluar entrada, stop, gestión y salida con costes y riesgo. Una asociación no
+prueba causalidad; más datos no garantizan acierto ni rentabilidad. El criterio
+final sigue siendo expectativa neta y riesgo, no un porcentaje de acierto
+cercano al 100%.
+
+### Fuentes distintas y disponibilidad
+
+- **Exchange:** libro, spread, operaciones y flujo agresor de Binance.
+- **Derivados:** interés abierto, funding, marca/índice, prima y liquidaciones
+  publicadas, con sus límites de cobertura.
+- **On-chain:** actividad de tokens, wallets, swaps y liquidez de pools cuando
+  la fuente los cubra. La liquidez DEX no sustituye al libro de futuros.
+- **Contexto externo:** anuncios y narrativas/social; no es on-chain puro.
+
+Para incorporar una variable futura se debe acreditar identidad (venue,
+contrato, tipo, cadena/dirección cuando corresponda), unidades, ventana,
+instante del evento, recepción y disponibilidad efectiva antes de decidir.
+Un timestamp de bloque no demuestra que el bot conociera el dato en T.
+Valores ausentes o sin trazabilidad siguen UNKNOWN; la regla debe declarar
+previamente si esa ausencia impide decidir o solo limita la interpretación.
+No se sustituye información ausente con información posterior.
+
+La captura iniciada al seleccionar no acredita historia previa del movimiento.
+Se necesita historia verificable o seguimiento prospectivo previo acotado,
+con presupuesto y autorización propios. Se conservan comparadores, descartes,
+no entradas y denominadores; observaciones repetidas del mismo episodio no son
+pruebas independientes. No se usa el ganador final ni el maxGain posterior
+como variable de entrada conocida en T.
+
+### Diferencia con el experimento actual
+
+El piloto operativo v2 utiliza los motores existentes y una hipótesis de
+continuación (dirección derivada del signo del movimiento de 24 h y regla
+causal); no elige todavía entre estos cuatro patrones mediante datos on-chain.
+La referencia documental de Binance Skills Hub no añade adquisición ni señales.
+El mínimo de selección de research-selector-v2 (0.02 puntos porcentuales más
+ranking y filtros) no acredita por sí solo una definición de movimiento extremo.
+Se registra esta diferencia sin cambiar parámetros o resultados congelados.
+
+Se mantiene el objetivo de perpetuos y futuros con vencimiento. La cobertura
+implementada y acreditada continúa limitada a perpetuos USD-M; la propuesta
+visual no declara soporte de vencimientos ni ejecución real.
+
+### Propuesta de presentación, reutilizando Dashboard V2
+
+| Área | Contenido objetivo | Base reutilizable / faltante |
+| --- | --- | --- |
+| Universo y selección | Contratos elegibles, movimiento, motivo y referencia de selección | Movers y selección del piloto; unir por identidad/corrida |
+| Ficha del contrato | Gráfico y contexto del mismo contrato y tiempo | Explorador; evitar paneles independientes de BTC/MINA como si fueran el seleccionado |
+| Evidencia y patrón | Exchange, derivados y contexto on-chain con edad/cobertura; hipótesis y condiciones cumplidas/faltantes | Libro/flujo existentes; on-chain y patrones validados pendientes |
+| Decisión y riesgo | LONG/SHORT/esperar, motivo, capacidad, entrada/stop/salida y límites | Backend/motores existentes; sin cálculo de decisiones en el navegador |
+| Operaciones y resultados | Simulación o ejecución inequívocas; costes, funding, netos completos/condicionados y pendientes | Monitor del piloto y replay; no presentar reconstrucción posterior como orden en vivo |
+| Diagnóstico | Fuente, frescura, errores, ledger y almacenamiento | Mantener visibles alertas; detalles técnicos desplegables |
+
+Una única ficha debe compartir instrumento, run_id/observation_id cuando
+existan y referencia temporal; poner paneles en la misma página no establece
+ese vínculo. Las probabilidades solo se mostrarán tras evaluación y calibración
+adecuadas; mientras tanto: «Sin estimación validada». Las áreas futuras se
+etiquetarán PROPUESTA / NO IMPLEMENTADO; la ilustración es conceptual con datos
+ilustrativos y no es evidencia de un build ni de rentabilidad.
+
+No se borra código, motores, fixtures o evidencia histórica. Se propone apartar
+de la vista principal las demostraciones y controles de ingeniería, separar el
+archivo histórico y reducir duplicación. La expansión de UI sigue diferida:
+esta decisión autoriza documentación e ilustración, no implementación.
+
+### Orden para avanzar sin desviar el bloque activo
+
+1. Cerrar la recepción de flujo dentro de la tarea y autorizaciones vigentes.
+2. Evaluar el experimento v2 congelado; no añadir variables durante la corrida.
+3. Definir después una pregunta acotada de patrones y unas pocas variables
+   adicionales, con presupuesto, comparadores y criterio de descarte.
+4. Comparar la misma regla con y sin esas variables en períodos independientes,
+   incluyendo pérdidas, ejecución, costes y riesgo; descartar lo que no aporte.
+5. Conectar al dashboard únicamente datos y decisiones persistidos y acreditados.
+
+No se autorizan aquí nuevas conexiones, capturas, órdenes, cuentas, claves,
+presupuestos, cambios de estrategia ni capas de IA. No se avanza ningún gate.
+
 ## Dirección operativa vigente — decisión del usuario 2026-11-06
 
 **Objetivo final:** desarrollar un bot para operar contratos de futuros de Binance,

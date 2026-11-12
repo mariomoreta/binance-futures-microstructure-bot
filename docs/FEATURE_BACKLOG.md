@@ -3849,3 +3849,36 @@ esearch/universe-liquidity-v1. Documento docs/RESEARCH_UNIVERSE_LIQUIDITY_V1.md 
 **6. Verdict:** los dos defectos estan corregidos y probados contra el contrato, con el proveedor loopback endurecido para que ninguna prueba pueda pasar por una via ajena al contrato. La recepcion real en `/market/stream` sigue **UNKNOWN**: no se ha abierto ningun socket publico en este bloque y la comprobacion preparada **NO se ha ejecutado**. El exit code historico de `exp-v2-ventana-1-20261112a` sigue **UNKNOWN** y la causa raiz historica no se reclasifica como demostrada.
 
 **7. Next step:** ejecutar la comprobacion publica preparada **solo con autorizacion humana explicita posterior** (NEXT_TASKS 1): si el veredicto es PASS, la via A deja de estar bloqueada por datos y se puede plantear (con autorizacion nueva) una ventana larga; si es INSUFICIENTE o FAIL, la via A sigue bloqueada y no procede ninguna ventana. La via A (espera contable, liquidaciones observadas, neto COMPLETO vs. CONDICIONADO) sigue sin ejercitarse.
+
+## F-PATRONES-EXTREMOS-CONTEXTO-20261112 — Patrones y ficha del contrato
+
+**1. Title:** Investigar condiciones repetibles de continuación, reversión y
+rebote tras extremos; presentación unificada del contrato con evidencia,
+decisión y riesgo, reutilizando el sistema existente.
+
+**2. Approval status:** AUTORIZADO para aclaración documental e ilustración
+conceptual por el usuario el 2026-11-12. Adquisición on-chain, cambios de regla,
+implementación de UI y ejecución operativa NO autorizados por este bloque.
+
+**3. Implementation status:** DOCUMENTADO en PRODUCT_GOAL; integración de
+fuentes y patrones NO IMPLEMENTADA. La ficha visual es PROPUESTA, no build.
+La skill documental existente no se convierte en un cliente ni en una señal.
+
+**4. Evaluation status:** NO EVALUADO económicamente. No hay probabilidad de
+entrada, causalidad ni rentabilidad acreditadas para esos patrones. El
+experimento v2 conserva su regla y sus resultados/limitaciones.
+
+**5. Evidence:** Decisión del usuario y revisión del código publicado en
+90ff425: market-lab/page.tsx monta explorador, flujo BTC y sesión MINA por
+separado; PilotMonitor observa artefactos; el adaptador usa H1-continuacion.
+Alcance y criterios en PRODUCT_GOAL; decisión fechada en DECISIONS.
+La ilustración entregada en conversación es conceptual, no evidencia de QA.
+
+**6. Verdict:** Dirección de investigación registrada; no promoción. Datos
+adicionales solo si aportan valor frente a una base comparable y fuera de
+muestra, con disponibilidad, costes y riesgo. UNKNOWN nunca se convierte en
+cero ni se promete acierto casi perfecto.
+
+**7. Next step:** Completar el bloque activo de recepción/evaluación sin
+alterarlo. Después definir un estudio acotado y revisable con unas pocas
+variables; no iniciar capturas ni desarrollo de UI por esta anotación.
