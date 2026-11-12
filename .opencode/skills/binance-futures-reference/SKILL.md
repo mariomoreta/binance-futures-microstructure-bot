@@ -172,6 +172,16 @@ tráfico:
 Ambas pueden ser públicas. No mezcles streams entre rutas y no deduzcas la
 categoría correcta solo por el prefijo `@`.
 
+El aviso oficial de migración establece que las URLs legacy
+`wss://fstream.binance.com/ws` y `wss://fstream.binance.com/stream` se
+retiraron el 2026-04-23. Según el aviso vigente, una conexión no migrada
+solo recibe datos de `/public` y los canales bajo `/market` o `/private` dejan
+de empujar datos. Por tanto,
+`wss://fstream.binance.com/stream?streams=<symbol>@aggTrade` no es
+equivalente a `wss://fstream.binance.com/market/stream?streams=<symbol>@aggTrade`.
+Al diagnosticar, compara la ruta base real construida, no la etiqueta interna
+del feed.
+
 La documentación actual ofrece URL raw, URL combined y solicitud `SUBSCRIBE`.
 Para diagnosticar, contrasta la forma exacta usada por el proyecto con la
 documentación. No asumas que una forma o otra causará por sí sola el silencio.
