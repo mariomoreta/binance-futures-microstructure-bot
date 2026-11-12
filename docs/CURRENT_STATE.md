@@ -1,5 +1,48 @@
 # Estado vigente — dirección operativa, 2026-11-12
 
+## Integración selectiva de Binance Skills Hub para referencia documental (2026-11-12, LOCAL)
+
+Se incorporó la skill de proyecto
+`.opencode/skills/binance-futures-reference/SKILL.md`. Permite a OpenCode
+identificar producto, tipo de contrato, endpoint o stream, parámetros y
+requisitos; consultar la documentación oficial vigente; y contrastarla con
+código, pruebas y evidencia del bot. La skill separa explícitamente capacidad
+oficial, implementación local, prueba local y observación, y mantiene `UNKNOWN`
+cuando falta evidencia. En WS distingue conexión abierta de frames recibidos,
+eventos aceptados y cobertura efectiva, además de separar las rutas Market de
+las Public.
+
+**Origen y licencia.** Se revisó `binance/binance-skills-hub` en el commit
+`7d1b1f78d525f9e653b96819f91a549302fda1da` (la skill upstream declara versión
+`2.1.0`; el Hub no tiene tag ni release para ese commit). Se copiaron sin
+modificar solo `futures-usds.md`, `futures-usds-streams.md`, `auth.md` y el
+aviso `LICENSE.md` MIT. El `SKILL.md` upstream se revisó, pero no se incorporó
+su instalador remoto de `binance-cli`, sus perfiles ni el flujo de credenciales.
+No se instaló el catálogo completo.
+
+**Validación local.** OpenCode v2.0.32 descubrió y cargó la skill; las cuatro
+rutas relativas se resolvieron. Los hashes blob de las tres referencias y la
+licencia coinciden con el commit upstream. Una consulta documental sobre
+aggTrade y profundidad distinguió la capacidad oficial de la evidencia local,
+no abrió REST ni WebSocket de mercado y dejó `UNKNOWN` lo no acreditado. No se
+ejecutaron suites generales del bot por un cambio exclusivamente documental.
+
+**Límites.** Esta integración no autoriza consultas públicas, capturas,
+ventanas, claves, perfiles privados, cuentas, órdenes, transferencias,
+apalancamiento, instalación de `binance-cli`, dependencias globales, scripts
+remotos ni cambios de selección, señales, stops, costes, funding o presupuestos.
+Todo acceso futuro debe usar los controles existentes (`HistoryClient`,
+`RunBudget`, ledger y registro) y requiere su autorización propia. Las
+instrucciones de una skill no son por sí mismas una barrera técnica.
+
+**Actualización.** La copia no se actualiza sola. Para revisarla hay que
+obtener el HEAD del Hub con `git ls-remote`, clonar en un directorio temporal
+sin ejecutar sus scripts, revisar `SKILL.md`, licencia y las tres referencias
+seleccionadas, volver a consultar la documentación oficial vigente y
+actualizar la procedencia, las copias y esta documentación. La cobertura
+implementada sigue limitada a perpetuos USD-M; los futuros con vencimiento
+continúan sin soporte acreditado.
+
 ## Ventana única ejecutada: INSUFICIENTE en la capa de datos (2026-11-12)
 
 La ventana pública única autorizada se ejecutó **una sola vez** el 2026-11-12:

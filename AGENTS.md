@@ -105,6 +105,12 @@ Dashboard V2 reference set (planned architecture; not an implemented frontend):
 `docs/DASHBOARD_V2_MIGRATION_PLAN.md`. Use the project-local
 `.agents/skills/dashboard-v2/SKILL.md` for Dashboard V2 work.
 
+For official Binance USD-M Futures references, use
+`.opencode/skills/binance-futures-reference/SKILL.md`. It is documentary only:
+it does not authorize market access, private accounts, orders, installations or
+strategy changes. Keep official capability, project implementation, local tests
+and observed evidence separate, and retain `UNKNOWN` when evidence is missing.
+
 ## Autonomous Loop Boundaries
 
 - `LOOP PHASE <n>` may only continue through tasks already authorized inside that phase.
