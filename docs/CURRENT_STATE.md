@@ -1,5 +1,57 @@
 # Estado vigente — dirección operativa, 2026-11-11
 
+## Monitor del piloto operativo: visible, verificado y listo para la ventana (2026-11-12, LOCAL)
+
+Decisión humana de 2026-11-11/12: se autoriza la integración mínima de un
+monitor de **solo lectura** del piloto real dentro del dashboard existente,
+la verificación local **sin mercado público** y, si esas comprobaciones pasan,
+la ejecución supervisada de **una sola** ventana pública por la vía A con la
+configuración congelada, seguida de cierre y análisis exploratorio. No se
+autorizan órdenes reales, cuentas privadas, claves, cambios de apalancamiento,
+fondos reales, otras ventanas ni relanzamientos. Detalle en
+[DECISIONS](DECISIONS.md) 2026-11-12 y en
+[DASHBOARD_V2_DECISIONS](DASHBOARD_V2_DECISIONS.md) 2026-11-12.
+
+**Qué existe ahora (fáctico).**
+
+- El dashboard de 3020 **es** la app Next.js de `frontend/`. El monitor es un
+  modo de vista dentro de `/market-lab`: `?vista=piloto&run=<run_id>`. No hay
+  dashboard, motor, gestor de corridas, servicio ni puerto nuevos, ni
+  indicadores o gráficos añadidos.
+- El backend lee los artefactos de la corrida desde una ruta **acotada**
+  (`PILOT_MONITOR_ROOT`, por defecto `C:\proyectos\binance-futures-data`); el
+  cliente envía solo un `run_id` validado y nunca una ruta. `POST` no está
+  permitido: el monitor observa, nunca modifica.
+- Exposición aditiva del estado ya existente: el snapshot atómico publica
+  `run_id`, `mode`, `activar_publico`, contadores de presupuesto y
+  almacenamiento, y plazos máximos; la fila operativa publica `stop_px`. No
+  cambia ninguna decisión ni ningún cálculo económico.
+- Lo que el monitor muestra: identidad y fuente real, fase (captura,
+  resolución, espera contable, finalizada o interrumpida), inicio, última
+  actualización y plazos, tokens con rol, ciclos, observaciones aptas y
+  descartadas con sus motivos, salud y frescura de libro y flujo, presupuesto
+  consumido y límites, operaciones (identificador, símbolo, rol, dirección,
+  decisión, entrada simulada, stop, salida y motivo), contabilidad de funding
+  (`PENDIENTE`/`ACREDITADA`/`UNKNOWN` con motivo), consultas de funding y
+  plazo restante. Los tiempos del evento simulado se separan de los tiempos de
+  publicación y de lectura; los campos ausentes se presentan como ausentes.
+- **Aceptación local superada** con navegador real sobre el build de
+  producción servido en 3020 y una corrida real del piloto en modo local
+  (proveedores loopback, reloj controlado): Captura → Resolución → Espera
+  contable → Finalizada **sin recargar**; una única operación cuya contabilidad
+  pasa de pendiente/UNKNOWN a ACREDITADA sin contar una operación nueva; feeds
+  cerrados con aviso explícito de que el mercado no está LIVE; cero peticiones
+  fuera de `127.0.0.1:3020` y cero procesos nuevos al abrir y recargar.
+  Evidencia en `docs/evidence/monitor-piloto-20261112/`.
+
+**Lo que no existe todavía.** La ventana pública **no se ha ejecutado**: falta
+revalidar `--budget-only` con el comando efectivo, publicar el SHA del cambio
+del monitor y lanzar la única corrida con `--status-file`, conservando stdout,
+stderr y exit code. El dashboard propio está disponible en
+`http://127.0.0.1:3020/market-lab?vista=piloto&run=<run_id>` (proceso `next
+start` propio, PID y BUILD_ID verificados). El servicio ajeno de 8792 no se
+toca ni se arranca: antes y después no hay listener.
+
 ## Vía A de la primera ventana: espera contable con liquidaciones observadas (2026-11-11, LOCAL, NO-GO PÚBLICO)
 
 Decisión humana de 2026-11-11: para la primera ventana se retoma la **opción A**

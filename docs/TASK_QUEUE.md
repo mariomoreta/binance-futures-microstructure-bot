@@ -1,23 +1,25 @@
-# Cola vigente — objetivo operativo, 2026-11-11
+# Cola vigente — objetivo operativo, 2026-11-12
 
-`CURRENT_PHASE`: implementación local de la **vía A** (espera contable con
-liquidaciones observadas) para la primera ventana del experimento operativo v2
-sobre perpetuos USD-M, y **diferimiento explícito de la vía B**
-(`funding-coverage/v1`), que se conserva sin cambios. La vía A está
-implementada y probada localmente; la ventana pública no está autorizada ni
-ejecutada y sigue en NO-GO hasta que una persona la autorice. No es declaración
-de promoción formal.
+`CURRENT_PHASE`: ejecución de **una única ventana pública** del experimento
+operativo v2 por la **vía A** (espera contable con liquidaciones observadas),
+precedida por el monitor de observabilidad ya integrado y verificado localmente
+en `/market-lab`. La **vía B** (`funding-coverage/v1`) se conserva sin cambios y
+sigue diferida. No es declaración de promoción formal.
 
 `CURRENT_OBJECTIVE`: evaluar si la autoselección del universo elegible, unida a
 una regla causal de dirección, entrada, stop-loss, gestión y salida, permite una
 expectativa neta favorable con riesgo controlado. Más movimiento por sí solo no
 satisface el objetivo. Dirección canónica: [PRODUCT_GOAL](PRODUCT_GOAL.md).
 
-`ACTIVE_TASK`: dejar la vía A lista para su primera ventana y mantenerla
-honesta. La salida de cada operación se decide por su regla durante el settle y
-se publica con la contabilidad de funding en `PENDIENTE`; después, una espera
-contable acotada (máximo 32 400 s, 3 consultas por símbolo como máximo) busca
-liquidaciones realmente observadas y completa la contabilidad sobre
+`ACTIVE_TASK`: ejecutar **una sola vez** la ventana pública por la vía A con la
+configuración congelada y cerrar con el análisis exploratorio de sus registros
+persistidos. El monitor mínimo ya está integrado y verificado: es un modo de
+vista de solo lectura dentro de `/market-lab` (`?vista=piloto&run=<run_id>`),
+lee los artefactos de la corrida desde una ruta acotada y no calcula decisiones,
+funding ni P&L. La salida de cada operación se decide por su regla durante el
+settle y se publica con la contabilidad de funding en `PENDIENTE`; después, una
+espera contable acotada (máximo 32 400 s, 3 consultas por símbolo como máximo)
+busca liquidaciones realmente observadas y completa la contabilidad sobre
 `[entry_ms, exit_ms)`. La cobertura la decide el veredicto canónico por
 posición de `backtest_offline`; si faltan liquidaciones, hay huecos, la
 cadencia es ambigua o vence el plazo, el total queda `UNKNOWN` con su motivo y
@@ -28,21 +30,29 @@ de retraso de publicación verificables) sigue diferida: su P0 permanece
 abierto y no se amplía ningún validador para exigirla.
 
 `NEXT_TASKS`:
-1. No ejecutar la ventana sin autorización humana explícita. El comando exacto
-   propuesto (`run_id exp-v2-ventana-1-20261111a`) y el presupuesto efectivo
-   están en [EXPERIMENTO_OPERATIVO_V2](EXPERIMENTO_OPERATIVO_V2.md) §10.6 y
-   **no se han ejecutado**; `--budget-only` sí, con `cabe_en_limites: true`.
-2. Si se autoriza una sola ventana: ejecutarla una vez con la configuración
-   congelada (captura 3600 s, settle 4200 s, espera 32 400 s, 3 consultas por
-   símbolo, topes intactos), conservar logs, exit code, ledger, funding y
-   hashes, y reconstruir la economía desde lo persistido. La insuficiencia no
-   renueva duración, cupos ni ventanas.
-3. Mantener la vía B disponible y sin tocar: si aparece evidencia oficial y
+1. Revalidar `--budget-only` con el **comando efectivo** (incluidas las bases
+   públicas reales) y registrar el resultado y su SHA; publicar el SHA del
+   cambio del monitor antes de ejecutar.
+2. Comunicar antes de lanzar: URL exacta del monitor, `run_id` no ejecutado,
+   directorio de evidencia, duración máxima total (40 200 s) y comando efectivo.
+3. Ejecutar la ventana **una sola vez** con `--status-file` dentro del
+   directorio de la corrida, conservando stdout, stderr y exit code reales. No
+   relanzar, no crear otro `run_id`, no ampliar plazos ni cupos. Si aparece un
+   bloqueo material que exija cambiar regla, duración o presupuesto, detenerse
+   antes de abrir mercado y explicarlo.
+4. Cerrar desde lo persistido: embudo por rol, admitidas/abstenciones/rechazos
+   por capacidad, entradas y salidas simuladas, posiciones abiertas, resultados
+   completos frente a condicionados, pérdidas, costes, exposición y riesgo; y
+   comparación de roles solo si los datos son suficientes. Informe en tres
+   capas: funcionamiento técnico, calidad/suficiencia de datos y resultado
+   económico exploratorio. `INSUFICIENTE` es un resultado válido y no autoriza
+   otra ventana.
+5. Mantener la vía B disponible y sin tocar: si aparece evidencia oficial y
    trazable de venue (ausencia de liquidaciones y retraso máximo de
    publicación), validarla contra `funding-coverage/v1` y revalidar las
    regresiones afectadas. Recalcular `--budget-only` solo si cambia el número
    de consultas necesarias.
-4. Registrar en `docs/DECISIONS.md` cualquier cambio de duración, consulta,
+6. Registrar en `docs/DECISIONS.md` cualquier cambio de duración, consulta,
    presupuesto o contrato de contabilidad antes de ejecutarlo.
 
 

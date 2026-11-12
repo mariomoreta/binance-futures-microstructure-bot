@@ -112,6 +112,9 @@ class OperativoTradeResult:
     decision_ms: int
     entry_px: Optional[float]
     entry_ms: Optional[int]
+    # Precio de stop de la regla congelada (ya calculado por el motor). Se
+    # persiste para observabilidad; no interviene en ninguna decision.
+    stop_px: Optional[float]
     exit_px: Optional[float]
     exit_ms: Optional[int]
     exit_reason: Optional[str]
@@ -378,6 +381,7 @@ class OperativoAdapter:
                 symbol=symbol, role=role, direction=None,
                 decision="SIN_ENTRADA", decision_ms=decision_ms,
                 entry_px=None, entry_ms=None,
+                stop_px=None,
                 exit_px=None, exit_ms=None,
                 exit_reason=None, exit_executed=False,
                 open_at_end=False, qty=0.0,
@@ -401,6 +405,7 @@ class OperativoAdapter:
                 symbol=symbol, role=role, direction=direccion,
                 decision="SIN_ENTRADA", decision_ms=decision_ms,
                 entry_px=None, entry_ms=None,
+                stop_px=None,
                 exit_px=None, exit_ms=None,
                 exit_reason=None, exit_executed=False,
                 open_at_end=False, qty=0.0,
@@ -441,6 +446,7 @@ class OperativoAdapter:
                 symbol=symbol, role=role, direction=direccion,
                 decision="RECHAZADA_CAPACIDAD", decision_ms=decision_ms,
                 entry_px=entry_px_ref, entry_ms=entry_ms_calc,
+                stop_px=stop_px,
                 exit_px=None, exit_ms=None,
                 exit_reason=None, exit_executed=False,
                 open_at_end=False, qty=0.0,
@@ -490,6 +496,7 @@ class OperativoAdapter:
                 decision=state.config.decision or "SIN_ENTRADA",
                 decision_ms=decision_ms,
                 entry_px=entry_px_ref, entry_ms=None,
+                stop_px=state.config.stop_px,
                 exit_px=None, exit_ms=None,
                 exit_reason=None, exit_executed=False,
                 open_at_end=False, qty=0.0,
@@ -529,6 +536,7 @@ class OperativoAdapter:
                 symbol=symbol, role=role, direction=direccion,
                 decision="ENTRADA_SIMULADA", decision_ms=decision_ms,
                 entry_px=entry_px_ref, entry_ms=None,
+                stop_px=state.config.stop_px,
                 exit_px=None, exit_ms=None,
                 exit_reason=None, exit_executed=False,
                 open_at_end=False, qty=0.0,
@@ -583,6 +591,7 @@ class OperativoAdapter:
             symbol=symbol, role=role, direction=direccion,
             decision="ENTRADA_EJECUTADA", decision_ms=decision_ms,
             entry_px=r.entry_px, entry_ms=r.entry_ms,
+            stop_px=state.config.stop_px,
             exit_px=r.exit_px, exit_ms=r.exit_ms,
             exit_reason=r.exit_reason, exit_executed=r.exit_executed,
             open_at_end=r.open_at_end, qty=r.qty,
@@ -806,6 +815,7 @@ class OperativoAdapter:
             "decision_ms": tr.decision_ms,
             "entry_px": tr.entry_px,
             "entry_ms": tr.entry_ms,
+            "stop_px": tr.stop_px,
             "exit_px": tr.exit_px,
             "exit_ms": tr.exit_ms,
             "exit_reason": tr.exit_reason,

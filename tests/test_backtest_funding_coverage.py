@@ -596,6 +596,7 @@ class AdapterCoverageTest(unittest.TestCase):
             decision_ms=119_000,
             entry_px=100.0,
             entry_ms=120_000,
+            stop_px=99.5,
             exit_px=101.0,
             exit_ms=None,
             exit_reason="open_at_end",

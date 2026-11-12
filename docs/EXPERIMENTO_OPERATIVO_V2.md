@@ -1,6 +1,6 @@
 # Protocolo de experimento operativo v2 — research/universe-liquidez-v1
 
-**Estado:** diseño de alcance cerrado y demostrado localmente. No se ejecuta en producción. Desde la decisión humana de 2026-11-11, la **vía A** (espera contable con liquidaciones observadas, §10.6) es el método preparado para la primera ventana; la **opción B** de cobertura histórica de funding (§10.5) se conserva implementada y queda **diferida**. La primera ventana sigue en **NO-GO** por falta de autorización humana explícita: no se ha ejecutado ninguna ventana y no se ha abierto Binance ni ningún endpoint público de mercado. No hay órdenes reales, no hay conexión nueva a Binance, no hay infraestructura nueva, no hay cambios económicos productivos. Este documento actualiza y reemplaza el alcance de `docs/EXPERIMENTO_OPERATIVO_V1.md` (diseño de alcance v1); no se borra el v1, se conserva como referencia histórica.
+**Estado:** diseño de alcance cerrado y demostrado localmente. Desde la decisión humana de 2026-11-11, la **vía A** (espera contable con liquidaciones observadas, §10.6) es el método preparado para la primera ventana; la **opción B** de cobertura histórica de funding (§10.5) se conserva implementada y queda **diferida**. Actualización 2026-11-12: la ventana única quedó **autorizada por decisión humana explícita** (2026-11-11/12) y el monitor de observabilidad de solo lectura está integrado y verificado localmente (§10.7); la ventana **aún no se ha ejecutado** y no se ha abierto Binance ni ningún endpoint público de mercado. No hay órdenes reales, no hay conexión nueva a Binance, no hay infraestructura nueva, no hay cambios económicos productivos. Este documento actualiza y reemplaza el alcance de `docs/EXPERIMENTO_OPERATIVO_V1.md` (diseño de alcance v1); no se borra el v1, se conserva como referencia histórica.
 
 **Base:** HEAD `6a10c30701cbbf695b422ba4a83206e1dd872132` (rama `research/universe-liquidez-v1`). Dataset de referencia para diagnóstico: `public-pilot-1h-20261106a` (una sola hora, 2026-11-06, 216 observaciones, 168 aptas, 504 resultados). Análisis v4 como punto de partida.
 
@@ -1118,3 +1118,107 @@ Sigue sin cobertura de futuros con vencimiento (solo perpetuos USD-M), GARCH
 continúa diferido, y la apertura de la ventana requiere autorización humana
 explícita y posterior. No se ha ejecutado ninguna ventana pública ni se ha
 tocado ningún dataset, base de datos o servicio existente.
+
+### 10.7 Ventana única autorizada: monitor de observación y comando efectivo (2026-11-12)
+
+La autorización humana de 2026-11-11/12 cubre tres cosas y solo tres: (1) la
+integración mínima de un monitor de observabilidad del piloto real en el
+dashboard existente, (2) su verificación local **sin mercado público** y (3) si
+esas comprobaciones pasan, la ejecución **supervisada de una única ventana**
+pública por la vía A con la configuración congelada, su cierre y el análisis
+exploratorio de sus registros persistidos. No autoriza órdenes reales, cuentas
+privadas, claves, cambios de apalancamiento, fondos reales, otras ventanas ni
+relanzamientos.
+
+#### 10.7.1 Monitor de observación (solo lectura, dentro de `/market-lab`)
+
+El monitor no es una aplicación nueva: es un modo de vista del dashboard
+Next.js que ya sirve el puerto 3020,
+`http://127.0.0.1:3020/market-lab?vista=piloto&run=<run_id>`. En ese modo no
+se montan los componentes que abren streams o descargas ajenas al ledger, y el
+panel no inicia, reinicia ni detiene la corrida: el lanzamiento es solo por
+CLI. El backend lee los artefactos ya persistidos de la corrida (snapshot
+atómico de `--status-file`, `observaciones.jsonl`, `resultado_operativo.jsonl`,
+`resumen.json`, `manifiesto.json`) desde una ruta acotada: el cliente envía
+solo un `run_id` validado, nunca una ruta. No hay peticiones públicas
+adicionales y el navegador no calcula decisiones, funding ni P&L.
+
+Para que el estado exista, el piloto expone lo que ya tenía: el snapshot
+atómico publica `run_id`, `mode`, `activar_publico`, los contadores
+autoritativos de presupuesto (`RunBudget.status()`) y almacenamiento
+(`RunStorageBudget.status()`), `duracion_maxima_total_ms` y
+`espera_contable_plazo_max_ms`; la fila operativa publica `stop_px`, que la
+regla congelada ya calculaba. Son exposición pura: no cambian decisiones,
+cálculos económicos, hashes de configuración ni resultados históricos.
+
+Aceptación local superada con navegador real y build de producción en 3020
+(corrida real del piloto en modo local, proveedores loopback y reloj
+controlado): Captura → Resolución → Espera contable → Finalizada observadas
+**sin recargar**; una sola operación con actualizaciones contables 0→1→2
+(UNKNOWN/PENDIENTE → ACREDITADA), tiempos históricos de entrada y salida
+conservados, feeds cerrados con aviso explícito de que el mercado no está
+LIVE, contadores de presupuesto autoritativos y cero peticiones fuera de
+`127.0.0.1:3020` ni procesos nuevos al abrir y recargar la vista. Evidencia:
+`docs/evidence/monitor-piloto-20261112/`.
+
+#### 10.7.2 Comando efectivo de la única ventana
+
+El comando de §10.6.6 se conserva como registro histórico del diseño. El
+comando **efectivo** de la ventana autorizada añade las bases públicas
+reales, porque el CLI **no** cambia de base por sí solo en modo público (los
+defaults siguen siendo `127.0.0.1`), y fija el destino durable fuera de Git:
+
+```powershell
+$runId = 'exp-v2-ventana-1-20261112a'
+$runDir = "C:\proyectos\binance-futures-data\$runId"
+New-Item -ItemType Directory -Force -Path $runDir | Out-Null
+python scripts/research_pilot.py `
+  --mode public --activar-publico `
+  --run-id $runId `
+  --out-dir $runDir `
+  --status-file (Join-Path $runDir 'estado.json') `
+  --duration-seconds 3600 --settle-seconds 4200 `
+  --cycle-seconds 300 --selection-seconds 300 --decision-delay-seconds 5 `
+  --max-symbols 20 --max-candidates 12 --max-comparators 8 `
+  --min-quote-volume 1000000 `
+  --horizons '5m=300000,15m=900000,60m=3600000' `
+  --price-interval 1m --price-tolerance-ms 90000 --price-delay-ms 2000 `
+  --max-data-age-ms 5000 --max-observations 20000 `
+  --max-bytes 134217728 --max-messages 5000000 `
+  --max-http-attempts 2000 --max-http-retries 50 --max-http-weight 5000 `
+  --max-ws-reconnects 20 --tick-ms 500 `
+  --funding-source exchange `
+  --funding-method observed-settlements `
+  --funding-wait-seconds 32400 `
+  --funding-wait-max-queries 3 `
+  --rest-base https://fapi.binance.com `
+  --ws-public-base wss://fstream.binance.com `
+  --ws-market-base wss://fstream.binance.com
+```
+
+La configuración, los topes y la vía **no cambian** respecto de §10.6: solo se
+declaran las bases públicas que el modo público exige y la ruta durable de la
+evidencia. `--budget-only` con este comando efectivo se revalida antes de
+lanzar y su salida se conserva junto al SHA real de ejecución. El dataset, los
+logs y los derivados voluminosos quedan fuera de Git; al cierre solo se
+publican manifiesto, hashes, evidencia compacta y documentación.
+
+#### 10.7.3 Reglas de ejecución y cierre
+
+- Una sola corrida, un solo `run_id` y un solo presupuesto acumulado: captura,
+  resolución y espera contable comparten cupos; la espera no devuelve cupos ni
+  crea otra corrida.
+- Antes de abrir mercado se comunican la URL exacta del monitor, el `run_id`,
+  el directorio de evidencia, la duración máxima total (40 200 s) y el comando
+  efectivo. La stdout, la stderr y el exit code reales se persisten.
+- Si aparece un bloqueo material que exija cambiar regla, duración máxima o
+  presupuesto, se detiene la corrida antes de abrir mercado y se explica.
+- Si la corrida falla, se registra la causa y se conserva lo obtenido: no se
+  relanza, no se crea otro `run_id` y no se amplían plazos ni cupos.
+- El cierre se reconstruye **desde los registros persistidos** y se informa en
+  tres capas: (1) funcionamiento técnico, (2) calidad y suficiencia de los
+  datos, (3) resultado económico exploratorio. `INSUFICIENTE` es un resultado
+  válido y no autoriza otra ventana.
+- Una ejecución simulada no acredita ejecuciones reales ni rentabilidad
+  generalizable. La cobertura sigue limitada a PERPETUAL/TRADING/USDT; los
+  futuros con vencimiento y GARCH quedan fuera de alcance.

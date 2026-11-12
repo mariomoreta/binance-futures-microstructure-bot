@@ -241,3 +241,55 @@ La navegación incorpora `Mercado / Gráficos` -> `/market-lab` en Terminal, `Pa
 Verificado: navigation.test.tsx 4/4, tsc --noEmit y eslint de los dos archivos exit 0; next build exit 0 (13 advertencias de tracing preexistente en rutas no modificadas). BUILD_ID `3ThnqxocDEmcursE2ZYpu`, servidor propio PID 32104 (sustituye solo PID 16164 tras revalidar PID+creation time+comando y ausencia de monitor/Python). HTTP /overview, /market-lab, /paper-lab-live y /paper-lab 200; enlaces exactos y BUILD_ID comprobados en HTML servido. El cambio de navegación es de bajo impacto; backend y DB no cambiaron, no se repite su suite. Inspección visual/clics de navegador NO realizada: no hay herramienta de navegador disponible para esta sesión; verificación por pruebas de componente y HTML servido, sin PASS visual.
 
 ESTADO DEL OBJETIVO VIVO: estos accesos NO implementan streaming. Mercado consulta histórico REST bajo demanda; Paper Lab usa fixtures; Replay reproduce histórico. El usuario reitera el objetivo de buscar contratos Futures elegibles y verlos actualizarse en vivo. Pendiente: adaptar feed existente, gestión compartida de suscripciones, vela provisional/cerrada, reconexión y reparación de huecos, frescura visible e indicadores backend compartidos; pruebas controladas y ventana acotada. No suscribir todo el universo a máxima resolución por pestaña ni confundir catálogo completo con seguimiento permanente. Abrir gráfico nunca abre una operación. Contrato rector: [ACUERDOS_GRAFICO_BINANCE_V1](ACUERDOS_GRAFICO_BINANCE_V1.md). Sin adquisición, monitor, paper prospectivo, órdenes, pagos, móvil ni gates en este cambio.
+
+## DASH-V2-MONITOR-PILOTO — 2026-11-12 (monitor de solo lectura del piloto operativo)
+
+- Starting SHA: `ea984c235eb5234d508bf46f52d794321cfc6ab4`.
+- Alcance: slice de observabilidad mínima para la ventana única del experimento
+  operativo v2 (vía A). NO amplía el dashboard: reutiliza `/market-lab` como
+  modo de vista (`?vista=piloto&run=<run_id>`) sobre el dashboard Next.js que ya
+  sirve el puerto 3020. Sin dashboard, motor, gestor de corridas, servicio ni
+  puerto nuevos; sin indicadores, gráficos ni controles de ejecución.
+- Contratos nuevos (solo lectura): `frontend/src/lib/pilot-monitor.ts` (lector
+  acotado), `frontend/src/app/api/v1/pilot-monitor/route.ts` (BFF),
+  `frontend/src/components/pilot-monitor/` (panel), modo de vista en
+  `frontend/src/app/market-lab/page.tsx`. El cliente envía **solo** un `run_id`
+  validado; la lectura queda acotada a `PILOT_MONITOR_ROOT` (por defecto
+  `C:/proyectos/binance-futures-data`) y se rechaza cualquier ruta arbitraria.
+- Exposición de estado ya existente (sin cambiar decisiones ni cálculos):
+  `scripts/research_pilot.py` publica en el snapshot atómico `run_id`, `mode`,
+  `activar_publico`, `presupuesto` (`RunBudget.status()`), `almacenamiento`
+  (`RunStorageBudget.status()`), `duracion_maxima_total_ms` y
+  `espera_contable_plazo_max_ms`; `scripts/research_operativo_adapter.py`
+  publica `stop_px` (ya calculado por la regla congelada) en la fila operativa.
+- Lectura incremental: los JSONL se consumen por offset; una actualización
+  contable de la misma `observation_id` actualiza su fila sin contar una
+  operación nueva. Si el fichero se reescribe, el estado derivado se
+  reconstruye (carrera nueva en el mismo directorio).
+- Pruebas: `frontend/src/test/pilot-monitor.test.ts` (9) y
+  `frontend/src/test/pilot-monitor-panel.test.tsx` (6) en verde;
+  `tsc --noEmit` y eslint limpios; suite completa del frontend 650 passed /
+  1 skipped; `tests/test_pilot_monitor_observabilidad.py` (2 passed) y
+  regresiones Python afectadas 33 passed.
+- Aceptación local (navegador real, sin mercado público): corrida real del
+  piloto en modo local con proveedores loopback y reloj controlado, servida por
+  el build de producción en 3020. Secuencia observada **sin recargar**:
+  Captura -> Resolución -> Espera contable -> Finalizada; una única operación
+  con `upd` 0->1->2 (PENDIENTE/UNKNOWN -> ACREDITADA), tiempos de entrada y
+  salida históricos conservados, feeds cerrados con aviso explícito de que el
+  mercado no está LIVE, contadores de presupuesto autoritativos y
+  `corte=trabajo_resuelto`. Cero peticiones fuera de `127.0.0.1:3020` y cero
+  procesos nuevos al abrir y recargar la vista (solo el renderer del navegador
+  de prueba).
+- Capturas: `docs/evidence/monitor-piloto-20261112/` (fase captura, fase
+  resolución, fase espera contable, fase finalizada, informe de aceptación con
+  línea temporal y capturas por fase).
+- Runtime: dashboard propio en `127.0.0.1:3020` (`next start`, PID y BUILD_ID
+  verificados). El servicio ajeno de 8792 no se tocó ni se arrancó (no había
+  listener antes ni después).
+- Límites: la simulación no acredita ejecuciones reales ni rentabilidad
+  generalizable; cobertura solo PERPETUAL/TRADING/USDT; futuros con
+  vencimiento y GARCH siguen fuera de alcance. El panel observa: no inicia,
+  reinicia ni detiene corridas.
+- Ending SHA / commit / remote: pendiente de checkpoint (se completa en el
+  commit de cierre de este slice).

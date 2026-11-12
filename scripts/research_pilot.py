@@ -3385,6 +3385,7 @@ class ResearchPilot:
                 decision="PENDIENTE",
                 decision_ms=int(obs["decision_ms"]),
                 entry_px=None, entry_ms=None,
+                stop_px=None,
                 exit_px=None, exit_ms=None,
                 exit_reason=None, exit_executed=False,
                 open_at_end=False, qty=0.0,
@@ -3606,6 +3607,9 @@ class ResearchPilot:
         now = self.clock.now_ms()
         status = {
             "phase": self._phase,
+            "run_id": self.cfg.run_id,
+            "mode": self.cfg.mode,
+            "activar_publico": self.cfg.activar_publico,
             "now_ms": now,
             "started_ms": self.started_ms,
             "capture_end_ms": self.capture_end_ms,
@@ -3633,6 +3637,16 @@ class ResearchPilot:
             "outcomes_written": self.outcomes_written,
             "pending": len(self.pending),
             "stop_reason": self.stop_reason,
+            # Contadores autoritativos de presupuesto: los mismos objetos que
+            # gobiernan la puerta en runtime. Solo exposicion; no altera la
+            # reserva, el consumo ni ninguna decision.
+            "presupuesto": self.budget.status(),
+            "almacenamiento": self.storage_budget.status(),
+            "duracion_maxima_total_ms": int(
+                (self.cfg.duration_seconds + self.cfg.settle_seconds
+                 + self.cfg.funding_wait_seconds) * 1000),
+            "espera_contable_plazo_max_ms": int(
+                self.cfg.funding_wait_seconds * 1000),
             "espera_contable_inicio_ms": self.espera_contable_inicio_ms,
             "espera_contable_fin_ms": self.espera_contable_fin_ms,
             "espera_contable_cierre": self.espera_contable_cierre,

@@ -97,3 +97,38 @@ ext start :3000 used for render/screenshot checks only, then stopped; screenshot
 - Rank panels use the current filtered dataset and state that scope explicitly.
 - Bound the table to 8 rendered rows per page and confine narrow-screen overflow to its wrapper.
 - Compose the dashboard directly in `app/movers/page.tsx`; no route templates (the staged root CSS-hack suppressor and children-ignoring movers override were removed during recovery). Shell banner replaced by a compact demo strip in AppShell (small shared correction, Overview otherwise untouched).
+
+## 2026-11-12 — DASH-V2-MONITOR-PILOTO slice decisions
+
+- El monitor del piloto **no es una página nueva**: es un modo de vista dentro de
+  `/market-lab` (`?vista=piloto&run=<run_id>`). En ese modo no se montan
+  `ContractExplorer`, `MarketFlowPanel`, `MarketLabView` ni `EngineeringSession`,
+  de modo que abrir o recargar la vista no abre streams, no consulta el flujo y
+  no dispara descargas ajenas al ledger del piloto.
+- El BFF (`/api/v1/pilot-monitor`) es un **lector local de artefactos**, no un
+  proxy: no hace fetch, no lanza procesos y no calcula decisiones, funding ni
+  P&L. El navegador recibe campos ya calculados y solo los presenta.
+- La ruta de lectura queda **acotada por `run_id`**: el cliente nunca envía una
+  ruta. El `run_id` se valida con una expresión regular y se resuelve dentro de
+  `PILOT_MONITOR_ROOT`; cualquier intento de traversal o ruta absoluta se
+  rechaza con `INVALID_RUN_ID`. `POST` devuelve `METHOD_NOT_ALLOWED`: el
+  monitor observa, nunca modifica la corrida.
+- El panel **no calcula**: no deriva stop, no recalcula netos y no convierte
+  ausencias en ceros. Un campo ausente se publica como `null` y se presenta
+  como `—`; el neto condicionado se distingue del neto completo y el P&L de
+  una posición `open_at_end` se presenta como no realizado.
+- Se separan los tiempos: `decision_ms`/`entry_ms`/`exit_ms` son tiempos del
+  evento simulado; `ts_utc` es el instante de publicación de la fila; el
+  monitor añade su propio `read_at`. Una entrada reconstruida no se presenta
+  como orden enviada.
+- La actualización contable de una `observation_id` **actualiza su fila** y no
+  cuenta una operación nueva; el lector consume los JSONL por offset y
+  reconstruye el estado si el fichero se reescribe (carrera nueva en el mismo
+  directorio).
+- Exposición mínima y aditiva en el piloto: `run_id`, `mode`, `activar_publico`,
+  `presupuesto`, `almacenamiento` y plazos en el snapshot atómico, y `stop_px`
+  en la fila operativa. Son contadores y valores **ya existentes**; no cambia
+  ninguna decisión, ningún cálculo económico ni ningún hash de configuración.
+- En espera contable el panel muestra un aviso explícito: feeds cerrados, sin
+  nuevas selecciones ni entradas, mercado no LIVE y solo la contabilidad
+  continúa. Durante la captura y la resolución, ese aviso no aparece.
