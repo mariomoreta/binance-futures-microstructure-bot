@@ -1196,6 +1196,15 @@ python scripts/research_pilot.py `
   --ws-market-base wss://fstream.binance.com
 ```
 
+> ⚠ **RECTIFICADO (2026-11-12, §10.9).** Las dos últimas líneas de este
+> comando son **incorrectas** y fueron el error de configuración de la ventana
+> ejecutada: la base correcta lleva la categoría (`/public` para el feed de
+> libro y `/market` para el de flujo). Con la raíz sin categoría el piloto se
+> suscribió a la **URL antigua**, retirada por el venue el 2026-04-23. El
+> comando corregido y su evidencia están en §10.9. Este bloque se conserva tal
+> cual porque es el registro del comando realmente ejecutado; no se reescribe
+> como si hubiera sido correcto.
+
 La configuración, los topes y la vía **no cambian** respecto de §10.6: solo se
 declaran las bases públicas que el modo público exige y la ruta durable de la
 evidencia. `--budget-only` con este comando efectivo se revalida antes de
@@ -1262,3 +1271,90 @@ tres capas:
   bloqueo que queda abierto es de datos (ausencia de flujo), y su resolución
   es condición previa para que una ventana futura pueda producir embudo; ver
   `docs/TASK_QUEUE.md`.
+
+> ⚠ **RECTIFICADO (2026-11-12, §10.9).** El diagnóstico de esta sección
+> queda ampliado: la configuración ejecutada **no usaba las URLs vigentes**
+> (raíz antigua en lugar de `/public` y `/market`), lo que constituye una
+> incompatibilidad verificable con la arquitectura documentada. El exit code
+> histórico sigue **UNKNOWN**. Detalle:
+> [RECTIFICACION-20261112](evidence/exp-v2-ventana-1-20261112a/RECTIFICACION-20261112.md).
+
+### 10.9 Rectificación de las rutas WS y del envoltorio de salida (2026-11-12)
+
+**10.9.1 Qué se corrigió.** La configuración persistida de la ventana
+(`ws_public_base = ws_market_base = wss://fstream.binance.com`) era
+incompatible con la arquitectura vigente: `build_stream_url()` añadía
+`/stream?streams=…` a la base, de modo que **ambas** conexiones usaron la
+**URL antigua**, retirada por el venue el 2026-04-23 (cinco meses antes de la
+ventana). Documentación oficial consultada el 2026-11-12: aviso de rutas
+(<https://www.binance.com/en/support/announcement/detail/ebf9b0aa9eca4ff3804eef6fb09ba32a>)
+y registro de cambios
+(<https://developers.binance.com/docs/derivatives/usds-margined-futures/websocket-market-streams/Important-WebSocket-Change-Notice>):
+`/public` sirve libro de alta frecuencia (`depth`, `bookTicker`), `/market`
+sirve datos de mercado (`aggTrade`, `markPrice`, `kline`, `ticker`), las URLs
+antiguas se retiran el 2026-04-23 y las suscripciones combinadas deben usar el
+modo `stream` (`?streams=`).
+
+Precedente del propio repo: la captura pública `public-pilot-1h-20261106a`
+usó `/public` y `/market` y recibió **55 265** mensajes de `aggTrade` y 6 391
+filas de flujo, con 168 observaciones aptas de 216. La ventana del 2026-11-12
+usó la raíz antigua y recibió **0** mensajes de `aggTrade` y 0 filas de flujo.
+La relación con el silencio es una **hipótesis fuerte** (documentada y
+coherente con ambas observaciones), **no una causalidad pública demostrada**:
+no se abrió ningún socket para comparar ambas formas de URL y no se atribuye
+el fallo al venue. Evidencia completa:
+[RECTIFICACION-20261112](evidence/exp-v2-ventana-1-20261112a/RECTIFICACION-20261112.md).
+
+**10.9.2 Comandos ejecutados antes frente a los corregidos.**
+
+| | Ejecutado (2026-11-12) | Corregido |
+|---|---|---|
+| Libro | `wss://fstream.binance.com/stream?streams=…@depth20@100ms` (URL antigua) | `wss://fstream.binance.com/public/stream?streams=…@depth20@100ms` |
+| Flujo | `wss://fstream.binance.com/stream?streams=…@aggTrade` (URL antigua) | `wss://fstream.binance.com/market/stream?streams=…@aggTrade` |
+| Base CLI | `--ws-public-base wss://fstream.binance.com` / `--ws-market-base wss://fstream.binance.com` | `--ws-public-base wss://fstream.binance.com/public` / `--ws-market-base wss://fstream.binance.com/market` |
+
+**10.9.3 Comando efectivo corregido** (idéntico salvo las dos bases; topes,
+vía, presupuesto y duración **no cambian**):
+
+```powershell
+python scripts/run_pilot_window.py `
+  --out-dir C:\proyectos\binance-futures-data\<run_id> `
+  --mode public --activar-publico `
+  --run-id <run_id> `
+  --status-file C:\proyectos\binance-futures-data\<run_id>\estado.json `
+  --duration-seconds 3600 --settle-seconds 4200 `
+  --cycle-seconds 300 --selection-seconds 300 --decision-delay-seconds 5 `
+  --max-symbols 20 --max-candidates 12 --max-comparators 8 `
+  --min-quote-volume 1000000 `
+  --horizons '5m=300000,15m=900000,60m=3600000' `
+  --price-interval 1m --price-tolerance-ms 90000 --price-delay-ms 2000 `
+  --max-data-age-ms 5000 --max-observations 20000 `
+  --max-bytes 134217728 --max-messages 5000000 `
+  --max-http-attempts 2000 --max-http-retries 50 --max-http-weight 5000 `
+  --max-ws-reconnects 20 --tick-ms 500 `
+  --funding-source exchange `
+  --funding-method observed-settlements `
+  --funding-wait-seconds 32400 `
+  --funding-wait-max-queries 3 `
+  --rest-base https://fapi.binance.com `
+  --ws-public-base wss://fstream.binance.com/public `
+  --ws-market-base wss://fstream.binance.com/market
+```
+
+El envoltorio `scripts/run_pilot_window.py` espera la finalización real del
+proceso, **lee** el código de salida (`Popen.wait()`) y persiste `stdout.log`,
+`stderr.log`, `exit_code.txt` y `launcher.json`. El código **nunca** se
+infiere de `phase=fin`, del stdout ni de un stderr vacío.
+
+**10.9.4 Verificación local (sin mercado público).** `--budget-only` con el
+comando corregido: `cabe_en_limites: true` (13/13), con los mismos números
+que la ventana ejecutada (1334/2000 intentos con reservas, 3752/5000 peso,
+110/500 funding 5 min, 52 043 648 B reservados): la corrección de rutas no
+altera el presupuesto. Pruebas del contrato de rutas (A–F) y del envoltorio
+(salidas 0 y no cero): `tests/test_pilot_ws_rutas.py`,
+`tests/test_pilot_launcher_exit_code.py`.
+
+**10.9.5 Lo que sigue sin comprobarse.** Que `/market/stream?streams=…@aggTrade`
+reciba frames contra el venue real: requiere una comprobación pública
+autorizada, que **no se ha ejecutado** (propuesta en `docs/TASK_QUEUE.md`).
+La vía A sigue sin ejercitarse. El exit code histórico permanece **UNKNOWN**.

@@ -18,31 +18,44 @@ evidencia sobre la hipótesis económica en ninguna dirección.**
 
 `ACTIVE_TASK`: dejar resuelto el **bloqueo material de datos** que vació el
 embudo, sin tocar la regla, la ventana ni el presupuesto congelados. El
-bloqueo concreto: la conexión WS a `wss://fstream.binance.com/stream?...@aggTrade`
-se abre, no registra errores, no reconecta y **no recibe frames**, mientras la
-conexión paralela de profundidad (`depth20@100ms`) recibe cientos de miles.
-La causa raíz final sigue siendo **UNKNOWN** porque aislarla exigiría tráfico
-público adicional, que no se abrió durante ni después de la ventana
-autorizada. La vía A **no llegó a ejercitarse** en su parte esencial (espera
-contable, liquidaciones observadas, neto COMPLETO vs. CONDICIONADO): eso se
-debe decir sin adornos, y la vía B permanece diferida sin ampliar ningún
-validador.
+bloqueo concreto: la conexión WS de trades (`aggTrade`) se abrió, no registró
+errores, no reconectó y **no recibió frames**, mientras la conexión paralela
+de profundidad (`depth20@100ms`) recibió cientos de miles. El **diagnóstico
+publicado fue rectificado el 2026-11-12**: la configuración ejecutada usó la
+raíz sin categoría (`wss://fstream.binance.com/stream?...`), es decir la
+**URL antigua**, retirada por el venue el 2026-04-23; la forma vigente es
+`/public/stream` para libro y `/market/stream` para flujo. La
+incompatibilidad es **verificable**; su relación con el silencio es una
+**hipótesis fuerte** (documentada y coherente con la captura anterior del
+repo), no una causalidad pública demostrada, y no se atribuye el fallo a
+Binance. La causa raíz final sigue siendo **UNKNOWN**. La vía A **no llegó a
+ejercitarse** en su parte esencial (espera contable, liquidaciones observadas,
+neto COMPLETO vs. CONDICIONADO): eso se debe decir sin adornos, y la vía B
+permanece diferida sin ampliar ningún validador.
 
 `NEXT_TASKS`:
-1. **Diagnóstico offline y acotado del silencio del feed de trades.** Antes
-   de cualquier ventana nueva: (a) reproducir localmente la construcción de la
-   URL y la forma del stream en el cliente (sin red); (b) revisar si el
-   endpoint combinado y el nombre de stream usados son los que el venue
-   entrega para trades en USD-M; (c) comprobar si la conexión exige un
-   `SUBSCRIBE` explícito en lugar de la URL combinada. Todo ello con
-   pruebas locales y **tráfico público mínimo y autorizado**, nunca dentro de
-   una ventana. Bloqueo que desbloquea: que una ventana futura pueda producir
-   observaciones aptas y, con ellas, ejercitar la vía A de verdad.
-2. **Corrección del envoltorio de supervisión**: persistir el exit code real
-   (`Start-Process` + `WaitForExit()` + `Refresh()`, o captura directa del
-   código de salida del proceso) en la próxima ejecución, porque la ventana del
-   2026-11-12 dejó `exit_code.txt` vacío. Solo affects al registro de
-   evidencia, no al piloto.
+1. **Comprobación pública de recepción válida en `/market/stream` — NO
+   EJECUTADA, requiere autorización humana explícita.** Antes de plantear
+   cualquier ventana larga: abrir **una sola** conexión de trades con
+   `wss://fstream.binance.com/market/stream?streams=<symbol>@aggTrade` (símbolo
+   en minúsculas, nombre `aggTrade` intacto, suscripción por URL en modo
+   `stream`; **sin** mensajes `SUBSCRIBE`) y comprobar recepción válida
+   durante **≤ 60 s** (2 conexiones como máximo: una de control en `/public`
+   con `depth20@100ms` y una de trades en `/market`; sin peticiones REST, sin
+   presupuesto de ventana, sin dataset y sin operaciones). Criterio de
+   aceptación: `frames recibidos > 0` **y** `eventos de flujo aceptados > 0`
+   en el feed de trades, con el feed de libro recibiendo frames en paralelo;
+   si el feed de trades no recibe frames, la vía A sigue bloqueada y **no**
+   procede ninguna ventana. Es una comprobación de recepción, no una captura
+   de experimento: no genera operaciones, no usa presupuesto de la ventana y
+   no habilita por sí sola un nuevo `run_id`.
+2. **Envoltorio de salida: corregido y verificado en local (2026-11-12).**
+   `scripts/run_pilot_window.py` espera la finalización real del proceso, lee
+   el código numérico con `Popen.wait()` y persiste `stdout.log`,
+   `stderr.log`, `exit_code.txt` y `launcher.json`; verificado con salidas 0 y
+   no cero. Queda pendiente **usarlo en la próxima ejecución autorizada**; el
+   exit code histórico de `exp-v2-ventana-1-20261112a` sigue **UNKNOWN** y no
+   se rellena retrospectivamente.
 3. **Ninguna ventana nueva sin autorización humana explícita y nueva.**
    `INSUFICIENTE` no renueva duración, cupos, `run_id` ni ventanas. Si se
    autoriza otra, será con la configuración congelada, un `run_id` nuevo no

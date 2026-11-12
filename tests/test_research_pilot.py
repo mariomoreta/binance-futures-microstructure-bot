@@ -29,6 +29,7 @@ import asyncio
 import hashlib
 import json
 import os
+import re
 import socket
 import subprocess
 import sys
@@ -300,7 +301,22 @@ class WsProvider:
     No hay avance por reloj ni temporizadores: ``publish`` envia un burst
     (libro y/o flujo) y devuelve cuantos frames se escribieron. La confirmacion
     de procesamiento la da el status-file del piloto, no el proveedor.
+
+    Contrato de rutas (arquitectura vigente de Binance USD-M Futures): el
+    proveedor SOLO atiende dos rutas y cada una sirve su categoria:
+      - ``/public/stream`` -> streams de libro (``<simbolo>@depth20@100ms``),
+      - ``/market/stream`` -> streams de trades (``<simbolo>@aggTrade``).
+    Cualquier otra ruta, o un stream de la categoria equivocada, se rechaza
+    con cierre de politica (1008) y NO se emite dato: el proveedor no puede
+    hacer pasar una prueba que no corresponde al contrato.
     """
+
+    CATEGORIA_POR_PATH = {
+        "/public/stream": "public",
+        "/market/stream": "market",
+    }
+    STREAM_LIBRO = re.compile(r"^[a-z0-9]+@depth\d+@\d+ms$")
+    STREAM_FLUJO = re.compile(r"^[a-z0-9]+@aggTrade$")
 
     def __init__(self, universe) -> None:
         self.universe = list(universe)
@@ -313,20 +329,60 @@ class WsProvider:
         self.connections = 0
         self.depth_sent = 0
         self.trades_sent = 0
+        # Contadores separados por categoria (evidencia de trafico real).
+        self.connections_by_category = {"public": 0, "market": 0}
+        self.frames_by_category = {"public": 0, "market": 0}
+        self.rejected_paths = []
+        self.rejected_streams = []
 
     def set_loop(self, loop) -> None:
         self._loop = loop
 
+    @property
+    def open_connections(self) -> int:
+        """Conexiones vivas ahora (las aceptadas y aun no cerradas)."""
+        with self._lock:
+            return len(self._conns)
+
+    @classmethod
+    def streams_de_categoria(cls, categoria: str, streams):
+        """Streams aceptados para una categoria; el resto se rechaza."""
+        if categoria == "public":
+            patron = cls.STREAM_LIBRO
+        elif categoria == "market":
+            patron = cls.STREAM_FLUJO
+        else:
+            return []
+        return [s for s in streams if patron.match(s)]
+
     async def __call__(self, websocket) -> None:
         request = getattr(websocket, "request", None)
         path = getattr(request, "path", "") if request is not None else ""
+        ruta = urlsplit(path).path.rstrip("/")
         streams = [s for s in parse_qs(
             urlsplit(path).query).get("streams", [""])[0].split("/") if s]
+        categoria = self.CATEGORIA_POR_PATH.get(ruta)
+        if categoria is None:
+            with self._lock:
+                self.rejected_paths.append(ruta)
+            await websocket.close(code=1008, reason="ruta WS no soportada")
+            return
+        aceptados = self.streams_de_categoria(categoria, streams)
+        rechazados = [s for s in streams if s not in aceptados]
+        with self._lock:
+            self.rejected_streams.extend((categoria, s) for s in rechazados)
+        if not aceptados:
+            # Una conexion que pide solo streams de otra categoria no se sirve.
+            with self._lock:
+                self.rejected_paths.append(ruta)
+            await websocket.close(code=1008, reason="streams de otra categoria")
+            return
         with self._lock:
             self._next_id += 1
             cid = self._next_id
-            self._conns[cid] = (websocket, streams)
+            self._conns[cid] = (websocket, aceptados, categoria)
             self.connections += 1
+            self.connections_by_category[categoria] += 1
         try:
             async for _ in websocket:
                 pass
@@ -346,27 +402,58 @@ class WsProvider:
             self._loop)
         return future.result(timeout=timeout)
 
+    def publish_control(self, payload: str, *, categoria: str = "market",
+                        timeout: float = 15.0):
+        """Envia un frame de control (ACK/ping) a una categoria.
+
+        Un frame de control NO es flujo agresor: el piloto puede contar el
+        frame recibido, pero ningun evento de flujo debe aparecer.
+        """
+        if self._loop is None:
+            raise RuntimeError("loop del proveedor WS no inicializado")
+        future = asyncio.run_coroutine_threadsafe(
+            self._publish_control(payload, categoria), self._loop)
+        return future.result(timeout=timeout)
+
+    async def _publish_control(self, payload: str, categoria: str):
+        with self._lock:
+            conns = [c for c in self._conns.values() if c[2] == categoria]
+        enviados = 0
+        for websocket, _streams, _categoria in conns:
+            try:
+                await websocket.send(payload)
+                enviados += 1
+            except Exception:
+                continue
+        return enviados
+
     async def _publish(self, instant_ms: int, depth_symbols, trade_events):
         depth_set = set(depth_symbols)
         sent = {"depth": {}, "trades": {}, "connections": 0}
         with self._lock:
             conns = list(self._conns.values())
         sent["connections"] = len(conns)
-        for websocket, streams in conns:
+        for websocket, streams, categoria in conns:
             for stream in streams:
                 symbol = stream.split("@")[0].upper()
                 kind = stream.split("@", 1)[1] if "@" in stream else ""
                 try:
-                    if kind.startswith("depth20") and symbol in depth_set:
+                    if (categoria == "public" and kind.startswith("depth20")
+                            and symbol in depth_set):
                         await self._send_depth(websocket, symbol, instant_ms)
                         sent["depth"][symbol] = sent["depth"].get(symbol, 0) + 1
                         self.depth_sent += 1
-                    elif kind == "aggTrade" and trade_events.get(symbol):
+                        with self._lock:
+                            self.frames_by_category["public"] += 1
+                    elif (categoria == "market" and kind == "aggTrade"
+                            and trade_events.get(symbol)):
                         for event_ms in trade_events[symbol]:
                             await self._send_trade(websocket, symbol, event_ms)
                             sent["trades"][symbol] = (
                                 sent["trades"].get(symbol, 0) + 1)
                             self.trades_sent += 1
+                            with self._lock:
+                                self.frames_by_category["market"] += 1
                 except Exception:
                     # Una conexion cerrándose no invalida el resto del burst.
                     continue

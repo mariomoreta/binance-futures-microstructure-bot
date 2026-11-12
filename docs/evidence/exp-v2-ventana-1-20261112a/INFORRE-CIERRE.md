@@ -94,6 +94,19 @@ El feed `/market` (`aggTrade`) **no recibió ni un solo frame** en toda la hora:
 - La URL reconstruida localmente (sin abrir conexión) es
   `wss://fstream.binance.com/stream?streams=<símbolo>@aggTrade/...` (20
   símbolos por generación), la forma correcta del endpoint combinado.
+
+> ⚠ **RECTIFICADO (2026-11-12, posterior a la publicación de este informe).**
+> La frase «la forma correcta del endpoint combinado» **era incorrecta**:
+> `wss://fstream.binance.com/stream?streams=…` es la **URL antigua**, retirada
+> por el venue el 2026-04-23. La forma vigente separa por categoría:
+> `wss://fstream.binance.com/public/stream?streams=…@depth20@100ms` (libro) y
+> `wss://fstream.binance.com/market/stream?streams=…@aggTrade` (flujo). La
+> configuración ejecutada usó la raíz sin categoría en ambos feeds, lo que es
+> una **incompatibilidad verificable** con la arquitectura documentada; su
+> relación con el silencio es una **hipótesis fuerte** (documentada y
+> coherente con la evidencia), no una causalidad pública demostrada, y no se
+> atribuye el fallo al venue. Texto íntegro, evidencia y alcance:
+> [RECTIFICACION-20261112.md](RECTIFICACION-20261112.md).
 - La forma de la URL no es el problema; el problema es que no llegó ningún
   frame de ese stream.
 

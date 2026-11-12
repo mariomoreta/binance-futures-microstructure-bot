@@ -1201,10 +1201,84 @@ def build_operational_economic_summary(
 # Transporte WS (fino, con reconexion; sin supervisor)
 # ---------------------------------------------------------------------------
 
-def build_stream_url(base: str, streams: List[str]) -> str:
-    base = str(base).rstrip("/")
-    joined = "/".join(streams)
-    return f"{base}/stream?streams={joined}"
+# Categorias de trafico WS (Binance USD-M Futures). Aviso oficial de rutas
+# (2026-03-06): '/public' sirve el libro de alta frecuencia (depth/bookTicker)
+# y '/market' los datos de mercado (aggTrade, markPrice, kline...). Las URLs
+# antiguas (wss://fstream.binance.com/stream) se retiraron el 2026-04-23.
+# El mecanismo de suscripcion es por URL en modo stream (?streams=), el
+# documentado para suscripciones combinadas: no se mezclan mensajes SUBSCRIBE.
+WS_CATEGORIA_LIBRO = "public"
+WS_CATEGORIA_FLUJO = "market"
+WS_CATEGORIAS = (WS_CATEGORIA_LIBRO, WS_CATEGORIA_FLUJO)
+WS_HOST_PUBLICO = "fstream.binance.com"
+WS_STREAM_PATH = "/stream"
+
+
+def _segmentos_base(base: str) -> List[str]:
+    ruta = urlsplit(str(base)).path
+    return [s for s in ruta.split("/") if s]
+
+
+def normalizar_base_ws(base: str, categoria: str, *, contexto: str) -> str:
+    """Valida la base WS y devuelve la base de la categoria esperada.
+
+    Falla cerrado (ValueError) antes de abrir cualquier socket si:
+      - la base no usa ws/wss o no tiene host,
+      - la base ya incluye '/stream' (lo anade el constructor: no se duplica),
+      - la base declara una categoria distinta de la esperada (categoria
+        cruzada: el feed de libro no puede hablar con la base de '/market'),
+      - la base declara una categoria inexistente o una ruta no compatible.
+    """
+    if categoria not in WS_CATEGORIAS:
+        raise ValueError(
+            f"{contexto}: categoria WS desconocida {categoria!r}; "
+            f"categorias validas {WS_CATEGORIAS}")
+    texto = str(base).strip()
+    partes = urlsplit(texto)
+    if partes.scheme not in ("ws", "wss"):
+        raise ValueError(
+            f"{contexto}: base WS invalida {texto!r}: se espera ws:// o wss://")
+    if not partes.netloc:
+        raise ValueError(f"{contexto}: base WS sin host: {texto!r}")
+    segmentos = _segmentos_base(texto)
+    bajos = [s.lower() for s in segmentos]
+    if WS_STREAM_PATH.strip("/") in bajos:
+        raise ValueError(
+            f"{contexto}: la base ya incluye '/stream' ({texto!r}); el "
+            "constructor lo anade: no lo dupliques")
+    if not segmentos:
+        return f"{texto.rstrip('/')}/{categoria}"
+    ultimo = bajos[-1]
+    if ultimo in WS_CATEGORIAS:
+        if ultimo != categoria:
+            raise ValueError(
+                f"{contexto}: categoria cruzada: la base {texto!r} es "
+                f"'{ultimo}' y esta conexion es '{categoria}'")
+        return texto.rstrip("/")
+    raise ValueError(
+        f"{contexto}: base WS no compatible {texto!r}: se espera la raiz del "
+        f"host o una base de categoria {WS_CATEGORIAS}")
+
+
+def build_stream_url(base: str, streams: List[str], categoria: str) -> str:
+    """URL de stream combinado en la categoria de trafico correcta.
+
+    Mecanismo: suscripcion por URL (modo stream, ``?streams=``), el documentado
+    para suscripciones combinadas. No se anaden mensajes SUBSCRIBE.
+    """
+    base_norm = normalizar_base_ws(base, categoria, contexto="build_stream_url")
+    limpio: List[str] = []
+    for stream in streams:
+        s = str(stream).strip()
+        if not s:
+            continue
+        simbolo = s.split("@", 1)[0]
+        if simbolo != simbolo.lower():
+            raise ValueError(
+                f"stream WS con simbolo no lowercase: {s!r} (se exige minuscula)")
+        limpio.append(s)
+    joined = "/".join(limpio)
+    return f"{base_norm}{WS_STREAM_PATH}?streams={joined}"
 
 
 class StreamFeed:
@@ -1764,6 +1838,16 @@ def compute_budget(cfg: PilotConfig) -> Dict[str, Any]:
         "ws": {
             "conexiones_simultaneas": ws_connections,
             "endpoints": [cfg.ws_public_base, cfg.ws_market_base],
+            "categorias": {
+                "public": WS_CATEGORIA_LIBRO,
+                "market": WS_CATEGORIA_FLUJO,
+            },
+            "plantilla_url": {
+                "public": (f"{cfg.ws_public_base}{WS_STREAM_PATH}"
+                           "?streams=<simbolo>@depth20@100ms/..."),
+                "market": (f"{cfg.ws_market_base}{WS_STREAM_PATH}"
+                           "?streams=<simbolo>@aggTrade/..."),
+            },
             "streams_pico_por_conexion": symbols,
             "streams_pico_total": symbols * 2,
             "limite_streams_por_conexion": 1024,
@@ -2220,9 +2304,11 @@ class ResearchPilot:
             return
         self.feeds = {
             "public": StreamFeed("public", build_stream_url(
-                self.cfg.ws_public_base, public), self.handle_message),
+                self.cfg.ws_public_base, public, WS_CATEGORIA_LIBRO),
+                self.handle_message),
             "market": StreamFeed("market", build_stream_url(
-                self.cfg.ws_market_base, market), self.handle_message),
+                self.cfg.ws_market_base, market, WS_CATEGORIA_FLUJO),
+                self.handle_message),
         }
         for feed in self.feeds.values():
             self.feed_tasks.append(asyncio.create_task(
@@ -4102,6 +4188,8 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("--activar-publico", action="store_true",
                    help="habilita modo publico (endpoints Binance)")
     p.add_argument("--rest-base", default="http://127.0.0.1")
+    # Default loopback: el modo local no necesita mas. El modo publico exige
+    # bases explicitas del venue (validacion por host y categoria).
     p.add_argument("--ws-public-base", default="ws://127.0.0.1")
     p.add_argument("--ws-market-base", default="ws://127.0.0.1")
     p.add_argument("--duration-seconds", type=float, default=14_400.0)
@@ -4177,6 +4265,22 @@ def config_from_args(args: argparse.Namespace) -> PilotConfig:
             raise ValueError(
                 "modo publico requiere --activar-publico (activacion adicional)"
             )
+        # Base publica incompatible: host distinto del venue USD-M documentado.
+        for nombre, valor in (("ws-public-base", args.ws_public_base),
+                              ("ws-market-base", args.ws_market_base)):
+            host = (urlsplit(str(valor)).hostname or "").lower()
+            if host != WS_HOST_PUBLICO:
+                raise ValueError(
+                    f"base publica incompatible en --{nombre}: {valor!r}; el "
+                    f"host debe ser {WS_HOST_PUBLICO} (categorias "
+                    f"{WS_CATEGORIAS})")
+
+    # Categoria de trafico por conexion: se valida ANTES de conectar (base
+    # cruzada, '/stream' duplicado o ruta no compatible -> error explicito).
+    normalizar_base_ws(args.ws_public_base, WS_CATEGORIA_LIBRO,
+                       contexto="--ws-public-base")
+    normalizar_base_ws(args.ws_market_base, WS_CATEGORIA_FLUJO,
+                       contexto="--ws-market-base")
 
     if (args.funding_source == "exchange"
             and args.funding_calendars):
@@ -4229,8 +4333,12 @@ def config_from_args(args: argparse.Namespace) -> PilotConfig:
         mode=args.mode,
         activar_publico=args.activar_publico,
         rest_base=args.rest_base,
-        ws_public_base=args.ws_public_base,
-        ws_market_base=args.ws_market_base,
+        ws_public_base=normalizar_base_ws(
+            args.ws_public_base, WS_CATEGORIA_LIBRO,
+            contexto="--ws-public-base"),
+        ws_market_base=normalizar_base_ws(
+            args.ws_market_base, WS_CATEGORIA_FLUJO,
+            contexto="--ws-market-base"),
         duration_seconds=args.duration_seconds,
         settle_seconds=args.settle_seconds,
         cycle_seconds=args.cycle_seconds,

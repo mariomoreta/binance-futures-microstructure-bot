@@ -1,5 +1,62 @@
 # Estado vigente — dirección operativa, 2026-11-12
 
+## Rectificación de las rutas WS del piloto y del envoltorio de salida (2026-11-12, LOCAL)
+
+**Lo que se rectify:** la afirmación publicada de que la URL
+`wss://fstream.binance.com/stream?streams=…` era «la forma correcta del
+endpoint combinado». **Era incorrecta**: es la **URL antigua**, retirada por
+el venue el **2026-04-23**. La forma vigente separa por categoría:
+`wss://fstream.binance.com/public/stream?streams=…@depth20@100ms` (libro) y
+`wss://fstream.binance.com/market/stream?streams=…@aggTrade` (flujo).
+
+**Evidencia (documental, sin abrir sockets ni endpoints de mercado).**
+Anuncio oficial de rutas del 2026-03-06 y registro de cambios de la API
+(consultados el 2026-11-12): tres bases dedicadas `/public`, `/market`,
+`/private`; `depth`/`bookTicker` en Public; `aggTrade`/`markPrice`/`kline` en
+Market; URLs antiguas retiradas el 2026-04-23; suscripciones combinadas en
+modo `stream` (`?streams=`). Precedente del propio repo: la captura pública
+`public-pilot-1h-20261106a` usó `/public` y `/market` y recibió **55 265**
+mensajes de `aggTrade` y 6 391 filas de flujo (168 observaciones aptas de
+216); la ventana `exp-v2-ventana-1-20261112a` usó la raíz antigua y recibió
+**0** mensajes de `aggTrade` y 0 filas de flujo. Detalle:
+[RECTIFICACION-20261112](evidence/exp-v2-ventana-1-20261112a/RECTIFICACION-20261112.md).
+
+**Límite de la afirmación.** Existe una **incompatibilidad verificable**
+entre la configuración ejecutada y la arquitectura documentada; su relación
+con el silencio es una **hipótesis fuerte** (documentada y coherente con las
+dos observaciones), **no una causalidad pública demostrada**: no se compararon
+ambas formas de URL contra el venue y **no se atribuye el fallo a Binance**.
+El **exit code histórico sigue `UNKNOWN`** (no se rellena retrospectivamente).
+
+**Corregido y probado localmente.**
+- `scripts/research_pilot.py`: `build_stream_url(base, streams, categoria)`
+  construye la URL con la categoría del feed (libro → `/public`, flujo →
+  `/market`), símbolos en minúsculas y `aggTrade` intacto;
+  `normalizar_base_ws()` valida **antes de conectar** y falla explícito ante
+  categoría cruzada, `/stream` duplicado o ruta no compatible; en modo
+  público se exige host `fstream.binance.com` (base incompatible → error
+  explícito); el snapshot publica `categorias` y `plantilla_url` efectivas.
+- `tests/test_research_pilot.py`: el proveedor loopback existente distingue
+  `/public/stream` de `/market/stream`, rechaza rutas inexistentes y streams
+  de categoría cruzada (cierre 1008, sin emitir dato) y lleva contadores
+  separados por categoría.
+- `scripts/run_pilot_window.py` (nuevo): envoltorio que espera la
+  finalización real, **lee** el código de salida (`Popen.wait()`) y persiste
+  `stdout.log`, `stderr.log`, `exit_code.txt` y `launcher.json`. El código
+  nunca se infiere de `phase=fin`, del stdout ni de un stderr vacío.
+- Pruebas: `tests/test_pilot_ws_rutas.py` (contrato A–F) y
+  `tests/test_pilot_launcher_exit_code.py` (salidas 0 y no cero), más las
+  regresiones afectadas del piloto, la vía A, el CLI integrado y el monitor:
+  **77 passed**. `--budget-only` con el comando corregido: `cabe_en_limites:
+  true` (13/13) con los mismos números que la ventana ejecutada (la
+  corrección de rutas no altera el presupuesto).
+
+**Sin comprobar contra mercado real.** Que `/market/stream` reciba frames hoy
+en este entorno requiere una comprobación pública **autorizada**, que **no se
+ha ejecutado** (propuesta en `docs/TASK_QUEUE.md`). La vía A (espera
+contable, liquidaciones observadas, neto COMPLETO vs. CONDICIONADO) **sigue
+sin ejercitarse**.
+
 ## Integración selectiva de Binance Skills Hub para referencia documental (2026-11-12, LOCAL)
 
 Se incorporó la skill de proyecto
@@ -72,10 +129,13 @@ se capturó (`research_book_1m` 1200 filas; frescura mediana 567 ms). Causa
 raíz aislada: el feed `/market` (`aggTrade`) estuvo abierto toda la hora con
 `messages=0`, `errors=0`, `last_error=null` y sin reconexiones (el contador se
 incrementa por frame recibido, antes del handler), mientras `/public` recibía
-467 764 frames en paralelo. La URL reconstruida localmente es la forma
-correcta del endpoint combinado. **Causa raíz final: UNKNOWN** — aislar si el
-silencio es del venue o del cliente exigiría tráfico público adicional, que
-no se abrió. Detalle: `diagnostico-flujo.json`.
+467 764 frames en paralelo. La URL reconstruida localmente era la **URL
+antigua** (`wss://fstream.binance.com/stream?streams=…`): la configuración
+ejecutada no usaba las rutas por categoría, incompatibilidad verificable con
+la arquitectura documentada (ver rectificación arriba). **Causa raíz final:
+UNKNOWN** — aislar si el silencio es del venue o del cliente exigiría tráfico
+público adicional, que no se abrió. Detalle: `diagnostico-flujo.json` y
+[RECTIFICACION-20261112](evidence/exp-v2-ventana-1-20261112a/RECTIFICACION-20261112.md).
 
 **3) Resultado económico exploratorio.** **No hay resultado económico que
 evaluar**: 0 entradas, 0 salidas, 0 posiciones abiertas, 0 operaciones con

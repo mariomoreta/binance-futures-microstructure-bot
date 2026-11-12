@@ -1,4 +1,5 @@
 {
+  "_nota_rectificacion_20261112": "INFORRE-CIERRE.md recibio despues un puntero visible de rectificacion (el texto historico no se reescribio): su hash actual y el de la nueva RECTIFICACION-20261112.md estan en hashes-RECTIFICACION-20261112.json. El hash de INFORRE-CIERRE.md que figura a continuacion es el historico pre-rectificacion y sigue siendo verificable contra el commit 0c10a03. Los demas hashes no cambian.",
  "02-monitor-ventana-final.png": "293323aeeb16dfef3c055b4939205c1505e9bb1ef902dc334802f3f9a2a71d2e",
  "cierre-compacto.json": "b2c0cbd20ab9e1114ea71a0df7f7f3ebf1357a39145f0575b2324a50af045c78",
  "diagnostico-flujo.json": "b17f64cb17bd4354ee327f110f4b654b0c7d4744162ba3cf113e06d35cf61395",

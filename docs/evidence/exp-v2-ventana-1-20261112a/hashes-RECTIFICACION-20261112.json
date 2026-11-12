@@ -1,0 +1,8 @@
+{
+  "_nota": "Hashes de la rectificacion del 2026-11-12. Los siete archivos historicos restantes (02-monitor-ventana-final.png, cierre-compacto.json, diagnostico-flujo.json, estado-final.json, http_requests.jsonl, manifiesto.json, resumen.json) NO cambian: sus hashes de hashes.json siguen siendo validos.",
+  "RECTIFICACION-20261112.md": "7fddac46a3cd36d88bc9b3594b464e353963c6cd3805c87d5da409294e82fbcd",
+  "INFORRE-CIERRE.md": "d6c0f1a0760a2e9feac5d8f3965827d0d5b4898461d50949b0e368e9e80513ad",
+  "INFORRE-CIERRE.md__historico_pre_rectificacion": "9a72137644ece358cffe9fc5377636dc10e991aa0c977c0c3b4bdcdcb995571c",
+  "_trazabilidad": "El hash historico (pre-rectificacion) del informe se conserva y es verificable byte a byte contra el commit 0c10a035af6d0681e9cbe46a76bf12c61f02e81b: git cat-file blob 0c10a03:docs/evidence/exp-v2-ventana-1-20261112a/INFORRE-CIERRE.md. El hash actual corresponde al informe con el puntero de rectificacion visible; el texto original no se reescribio.",
+  "_alcance": "La rectificacion no modifica la configuracion ejecutada, el dataset original ni el exit code historico (UNKNOWN)."
+}
