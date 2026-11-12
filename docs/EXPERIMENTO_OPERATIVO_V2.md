@@ -1,6 +1,6 @@
 # Protocolo de experimento operativo v2 — research/universe-liquidez-v1
 
-**Estado:** diseño de alcance cerrado y demostrado localmente. No se ejecuta en producción. La opción B de cobertura histórica de funding (§10.5) está autorizada e implementada localmente con el contrato `funding-coverage/v1`. La primera ventana sigue en **NO-GO** para la ruta Binance real: la documentación pública consultada no ofrece una prueba de ausencia de settlements ni un máximo verificable de retraso de publicación, por lo que esa ruta solo puede producir cobertura `unknown` o `incomplete`. No hay órdenes reales, no hay conexión nueva a Binance, no hay infraestructura nueva, no hay cambios económicos productivos. Este documento actualiza y reemplaza el alcance de `docs/EXPERIMENTO_OPERATIVO_V1.md` (diseño de alcance v1); no se borra el v1, se conserva como referencia histórica.
+**Estado:** diseño de alcance cerrado y demostrado localmente. No se ejecuta en producción. Desde la decisión humana de 2026-11-11, la **vía A** (espera contable con liquidaciones observadas, §10.6) es el método preparado para la primera ventana; la **opción B** de cobertura histórica de funding (§10.5) se conserva implementada y queda **diferida**. La primera ventana sigue en **NO-GO** por falta de autorización humana explícita: no se ha ejecutado ninguna ventana y no se ha abierto Binance ni ningún endpoint público de mercado. No hay órdenes reales, no hay conexión nueva a Binance, no hay infraestructura nueva, no hay cambios económicos productivos. Este documento actualiza y reemplaza el alcance de `docs/EXPERIMENTO_OPERATIVO_V1.md` (diseño de alcance v1); no se borra el v1, se conserva como referencia histórica.
 
 **Base:** HEAD `6a10c30701cbbf695b422ba4a83206e1dd872132` (rama `research/universe-liquidez-v1`). Dataset de referencia para diagnóstico: `public-pilot-1h-20261106a` (una sola hora, 2026-11-06, 216 observaciones, 168 aptas, 504 resultados). Análisis v4 como punto de partida.
 
@@ -822,8 +822,8 @@ funding realmente liquidado se conservaría como dato, pero el neto completo
 seguiría `UNKNOWN`. **No se debilita `funding_accounting_complete` ni se
 convierte `UNKNOWN` en cero para forzar un resultado.**
 
-**Decisión humana registrada:** se autoriza y se implementa solo la **opción
-B**. No se implementan A ni C:
+**Decisión humana registrada (2026-11-10):** se autoriza y se implementa solo la
+**opción B**. No se implementan A ni C:
 
 - **Opción A, adquirir y retener un settlement posterior.** Excluida. No se
   alarga el settle, no se fabrica un settlement posterior y no se infiere una
@@ -835,6 +835,12 @@ B**. No se implementan A ni C:
   verificable.
 - **Opción C, modelar como cubiertos los intervalos entre settlements
   regulares.** Excluida. No se interpola ni se modela la ausencia por cadencia.
+
+> **Actualización posterior (2026-11-11):** la decisión humana cambió y la
+> **opción A** vuelve a ser el método de la primera ventana, con una espera
+> contable acotada y liquidaciones realmente observadas. **B se conserva y queda
+> diferida**, sin cambios en su contrato ni en sus validaciones. El detalle
+> está en §10.6; lo anterior se conserva como registro histórico.
 
 **Contrato implementado `funding-coverage/v1`.** `FundingCoverage` es un
 campo aditivo de `FundingCalendar`; un calendario sin `coverage` conserva
@@ -919,3 +925,196 @@ autorización separada; no autoriza abrir Binance por sí mismo.
 vencimiento pendientes; GARCH diferido; la primera ventana, si se autoriza,
 solo demuestra viabilidad y evidencia exploratoria, no rentabilidad
 generalizable. La insuficiencia no renueva cupos ni ventanas.
+
+### 10.6 Vía A de la primera ventana: espera contable con liquidaciones observadas (decisión humana 2026-11-11)
+
+**Decisión registrada (2026-11-11).** Se retoma la **opción A** para la primera
+ventana: el funding se resuelve **después**, con liquidaciones realmente
+observadas. `funding-coverage/v1` (opción B) **se conserva y queda diferido**: no
+se amplía ningún validador para exigir una garantía de publicación que no se ha
+encontrado. La elección de vía es **explícita** (`--funding-method`); no hay
+fallback silencioso, no se borran metadatos `unknown` y no se reclasifican
+resultados históricos. Este bloque autoriza **preparación, implementación
+mínima y pruebas locales**: no autoriza Binance, adquisición pública, órdenes
+reales ni la ejecución de ventanas.
+
+#### 10.6.1 Separación de captura, operación y espera contable
+
+Se mantiene sin cambios la captura de 3600 s, la selección y decisión cada
+300 s, el máximo de 12 candidatos y 8 comparadores (unión máxima 20), la
+frescura de 5000 ms, el flujo de 60 s, el stop del 0,5 %, el notional de 1000
+USDT, el horizonte operativo de 60 min, `max_concurrent=1` compartido y las
+mismas reglas y costes para ambos roles.
+
+Al terminar la captura **los feeds se cierran**. Los precios posteriores y las
+operaciones siguen resolviéndose según sus horizontes originales: la espera de
+funding **no** abre nuevas selecciones, entradas ni posiciones y no altera la
+exposición. La contabilidad se evalúa siempre sobre `[entry_ms, exit_ms)`: una
+liquidación posterior a `exit_ms` puede aportar **evidencia de cobertura**, pero
+**no es un coste** de esa posición.
+
+La vía A añade una tercera fase, **espera contable**, después del settle:
+
+- durante la espera solo se consulta el histórico de funding y se publica la
+  contabilidad resultante; no hay decisiones ni operaciones nuevas;
+- termina antes si no queda trabajo, al vencer el plazo máximo (sin prórroga),
+  o ante parada del operador o presupuesto agotado.
+
+#### 10.6.2 Adquisición diferida y acotada
+
+Se reutilizan el cliente, la puerta de presupuesto, el ledger y los pendientes
+existentes: no hay segundo servicio, supervisor ni motor, ni otro camino de
+acceso a la venue.
+
+- **No se compra funding durante la resolución de la trayectoria.** La salida se
+  decide y se persiste con su regla, con la contabilidad de funding en estado
+  `PENDIENTE`.
+- **Una consulta diferida por símbolo con posición cerrada**, no por
+  observación. La ventana cubre desde antes de la entrada (con el lookback
+  histórico de 48 h) hasta el instante actual.
+- **La planificación usa la cadencia observada de ese símbolo**, no una
+  cadencia supuesta: el siguiente instante previsto es `última liquidación
+  observada + cadencia observada + 30 min de margen de publicación`. Si la
+  cadencia todavía no se puede inferir, se reintenta con un intervalo fijo de
+  30 min. No se sondea en cada tick.
+- **La evidencia anterior y posterior es la que decide.** El calendario se
+  construye con las liquidaciones realmente devueltas por la venue; el
+  veredicto canónico por posición de `backtest_offline` evalúa la cobertura
+  sobre el intervalo real de la posición. Si hay huecos, cadencia ambigua o
+  cobertura insuficiente, el total queda `UNKNOWN` con su motivo.
+- **Límites:** espera máxima **32 400 s (9 h)** y **3 consultas por símbolo**
+  como máximo. Ninguna cifra se amplía por CLI: superar cualquiera de los dos
+  topes es un error de configuración.
+
+La contabilidad usa la función canónica de `backtest_offline` sobre el intervalo
+real `[entry_ms, exit_ms)` de la posición, sin recalcular la operación y sin
+duplicar la lógica económica. El importe acreditado es el que la venue liquidó
+dentro de la exposición; un importe parcial no sustituye a un total desconocido.
+
+#### 10.6.3 Una sola corrida y un solo presupuesto
+
+El mismo `run_id` y el mismo consumo acumulado cubren captura, resolución de
+precios y espera contable. La espera no devuelve cupos ni crea otra corrida.
+`--budget-only` se recalculó incluyendo preparación y captura, trayectorias
+operativas, resultados por horizonte, consultas diferidas de funding, peticiones
+repetidas y reintentos por fallo (separados), y almacenamiento y artefactos. Los
+topes existentes se conservan: 2000 intentos HTTP, peso 5000, 50 reintentos,
+128 MB y el control compartido de funding por ventana temporal.
+
+Presupuesto efectivo de la primera ventana (`--budget-only`, calculado localmente
+sin red, **no ejecutado**):
+
+| Concepto | Valor |
+|---|---|
+| Duración de captura | 3600 s |
+| Settle | 4200 s |
+| Espera contable máxima | 32 400 s (9 h) |
+| Duración máxima total | 40 200 s (11 h 10 min) |
+| Intentos base | 1004 |
+| Intentos con reservas (repetidas + reintentos) | 1334 / 2000 |
+| Peso base | 1472 |
+| Peso con reservas | 3752 / 5000 |
+| Consultas de funding (base + repetidas) | 20 + 40 = 60 |
+| Funding concentration 5 min (peor caso) | 110 / 500 |
+| Almacenamiento previsto / reservado | 4 696 872 B / 52 043 648 B / 134 217 728 B |
+| Gate `--budget-only` | `cabe_en_limites: true`, salida 0 |
+
+Desglose de endpoints: `exchangeInfo` 12, `ticker/24hr` 12, klines de
+trayectoria 240, klines de resultado por horizonte 720 y `fundingRate` 20
+(una por símbolo con posición abierta). La concentración de funding se calcula
+de forma conservadora con todas las consultas de la ventana a la vez; en
+ejecución real se reparten por símbolo y por boundary observado.
+
+#### 10.6.4 Condiciones de cierre e insuficiencia
+
+| Situación | Resultado publicado |
+|---|---|
+| Cobertura acreditable (liquidación posterior observada, sin huecos) | `ACREDITADA`, funding acreditado, `neto_estado=COMPLETO` |
+| Falta solo la liquidación posterior a la salida | `PENDIENTE` con el diagnóstico (`funding_sin_cubrir_ms`), sin acreditar importe |
+| Hueco interior observado, cadencia ambigua o marca inservible | `UNKNOWN` con el motivo; nunca cero |
+| Vencimiento del plazo de espera | `UNKNOWN`, motivo `plazo_maximo_de_espera_agotado` |
+| Consultas de funding agotadas | `UNKNOWN`, motivo `consultas_de_funding_agotadas` |
+| Parada del operador o presupuesto agotado | `PENDIENTE` con la causa real (no se confunde "interrumpido" con "evidencia insuficiente") |
+| Posición abierta (`open_at_end`) | `UNKNOWN` en el P&L realizado, con marca diagnóstica aparte |
+
+Ninguna vía prorroga el plazo, devuelve cupos ni convierte `UNKNOWN` en cero.
+
+#### 10.6.5 Aceptación local (CLI real, proveedores loopback, reloj controlado)
+
+`tests/test_operativo_funding_espera_contable.py` (5 pruebas) ejecuta el CLI
+real como subproceso, con proveedores HTTP/WS loopback, reloj controlado y
+almacenamiento temporal aislado. La venue simulada publica cada liquidación
+solo cuando ya ha ocurrido, de modo que una liquidación futura no puede
+inventarse.
+
+- **A.** La captura termina y los feeds se cierran (`connected_now=false`).
+- **B.** La operación sale por su regla (`exit_reason=horizon`) con el funding
+  todavía pendiente: la fila se publica con `contabilidad_funding_estado=PENDIENTE`
+  y `funding=null`.
+- **C.** La liquidación posterior todavía no publicada no se inventa: la fila
+  diagnostica `funding_sin_cubrir_ms>0` sin acreditar ningún importe.
+- **D.** Al aparecer la evidencia, el mismo recorrido completa la contabilidad:
+  la fila final queda `ACREDITADA` con `neto_estado=COMPLETO`.
+- **E.** Un pago posterior a la salida no se cobra: solo se contabiliza la
+  liquidación dentro de `[entry_ms, exit_ms)`; la liquidación posterior figura en
+  el calendario observado y no en los eventos cobrados.
+- **F.** Cobertura insuficiente o vencimiento de espera → `UNKNOWN` con motivo.
+- **G.** Parada del operador → el pendiente se conserva con su causa y el
+  cierre auditable se escribe desde lo persistido.
+- **H.** Proveedor, gate y planificación presupuestaria coherentes: las
+  consultas diferidas quedan en el ledger HTTP con parámetros, estado y hash de
+  respuesta; el plan `--budget-only` de la vía A cabe en los topes.
+
+No se completó el trabajo por fuera del CLI con otro adaptador o cliente: el
+recorrido usa el mismo cliente, la misma puerta de presupuesto y el mismo
+ledger que la corrida real.
+
+#### 10.6.6 Comando exacto propuesto (NO EJECUTADO)
+
+```bash
+python scripts/research_pilot.py \
+  --mode public --activar-publico \
+  --run-id exp-v2-ventana-1-20261111a \
+  --out-dir data/experiments/exp-v2-ventana-1-20261111a \
+  --duration-seconds 3600 --settle-seconds 4200 \
+  --cycle-seconds 300 --selection-seconds 300 --decision-delay-seconds 5 \
+  --max-symbols 20 --max-candidates 12 --max-comparators 8 \
+  --min-quote-volume 1000000 \
+  --horizons 5m=300000,15m=900000,60m=3600000 \
+  --price-interval 1m --price-tolerance-ms 90000 --price-delay-ms 2000 \
+  --max-data-age-ms 5000 --max-observations 20000 \
+  --max-bytes 134217728 --max-messages 5000000 \
+  --max-http-attempts 2000 --max-http-retries 50 --max-http-weight 5000 \
+  --max-ws-reconnects 20 --tick-ms 500 \
+  --funding-source exchange \
+  --funding-method observed-settlements \
+  --funding-wait-seconds 32400 \
+  --funding-wait-max-queries 3
+```
+
+`--budget-only` con esa misma configuración devuelve `cabe_en_limites: true`
+(salida 0) y es el único comando que se ha ejecutado: **la ventana no se ha
+ejecutado** y no se ha abierto Binance ni ningún endpoint público de mercado.
+
+#### 10.6.7 Qué podrá concluir la primera ventana y qué seguirá `UNKNOWN`
+
+Si la evidencia llega dentro del plazo, la primera ventana podrá concluir, por
+posición y por rol: entrada, salida y motivo; cobertura del funding observada;
+importe liquidado dentro de `[entry_ms, exit_ms)`; neto completo o
+condicionado; y la comparación candidate/comparator con el criterio de ciclo
+congelado, publicada solo con operaciones completas en ambos roles. Es
+evidencia exploratoria de viabilidad, **no** rentabilidad generalizable.
+
+Seguirá `UNKNOWN` aunque la ventana se ejecute: la ausencia de una liquidación
+que la venue no publique dentro del plazo; los huecos o la cadencia ambigua del
+histórico de un símbolo; el P&L realizado de las posiciones abiertas; y todo lo
+que dependa del **P0 de B** (prueba de ausencia de liquidaciones y máximo de
+retrasy de publicación verificables), que sigue abierto y cuya evidencia no
+puede inventarse.
+
+#### 10.6.8 Límites de este bloque
+
+Sigue sin cobertura de futuros con vencimiento (solo perpetuos USD-M), GARCH
+continúa diferido, y la apertura de la ventana requiere autorización humana
+explícita y posterior. No se ha ejecutado ninguna ventana pública ni se ha
+tocado ningún dataset, base de datos o servicio existente.

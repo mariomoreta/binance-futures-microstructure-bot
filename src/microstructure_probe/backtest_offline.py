@@ -1109,6 +1109,56 @@ def _funding_for_trade(side: str,
     return total, events, uncovered, gap_ms, unknown, "settlement-calendar", meta
 
 
+def funding_accounting_for_position(
+    side: str,
+    fill_ledger: List[Tuple[int, float, float]],
+    entry_ms: int,
+    exit_ms: int,
+    config: BacktestConfig,
+    symbol: str,
+    series: List[Candle],
+) -> Dict[str, Any]:
+    """Contabilidad canonica de funding de una posicion YA resuelta.
+
+    Reutiliza la MISMA funcion que usa ``run_backtest`` (no duplica la
+    logica economica) pero sobre el intervalo real de la posicion: la
+    entrada y la salida acreditadas por el motor que la resolvio. No
+    recalcula la operacion, no decide entradas y no altera la exposicion.
+
+    El intervalo es [entry_ms, exit_ms): una liquidacion posterior a
+    exit_ms puede aportar evidencia de cobertura, pero no constituye un
+    coste de la posicion. El veredicto por posicion (cobertura, huecos,
+    marcas desconocidas) es el mismo que devuelve ``run_backtest``.
+    """
+    funding, events, uncovered, gap, unknown, model, meta = _funding_for_trade(
+        side, fill_ledger, entry_ms, exit_ms, config, symbol, series)
+    meta = meta or {}
+    out: Dict[str, Any] = {
+        "funding": funding,
+        "funding_events": events,
+        "funding_uncovered_ms": uncovered,
+        "funding_gap_ms": gap,
+        "funding_unknown": unknown,
+        "funding_model": model,
+        "funding_accounting_complete": meta.get("accounting_complete"),
+        "funding_accounting_basis": meta.get("accounting_basis"),
+        "funding_calendar_complete": meta.get("calendar_complete"),
+        "funding_completeness_basis": meta.get("completeness_basis"),
+        "funding_calendar_gaps": meta.get("calendar_gaps"),
+        "funding_interval_start_ms": int(entry_ms),
+        "funding_interval_end_ms": int(exit_ms),
+        "funding_interval_semantics": "[entry_ms,exit_ms)",
+    }
+    for key in ("coverage_status", "coverage_interval_start_ms",
+                "coverage_interval_end_ms", "coverage_available_at_ms",
+                "coverage_acquired_at_ms", "coverage_method", "coverage_source",
+                "coverage_venue", "coverage_hash", "coverage_reason",
+                "coverage_errors", "coverage_overlap_ms"):
+        if key in meta:
+            out["funding_" + key] = meta[key]
+    return out
+
+
 def _funding_calendar_result(
     calendar: FundingCalendar,
     duplicates: int,

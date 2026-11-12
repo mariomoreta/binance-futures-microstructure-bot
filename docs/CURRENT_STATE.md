@@ -1,4 +1,60 @@
-# Estado vigente — dirección operativa, 2026-11-10
+# Estado vigente — dirección operativa, 2026-11-11
+
+## Vía A de la primera ventana: espera contable con liquidaciones observadas (2026-11-11, LOCAL, NO-GO PÚBLICO)
+
+Decisión humana de 2026-11-11: para la primera ventana se retoma la **opción A**
+—el funding se resuelve después, con liquidaciones realmente observadas— y la
+opción B (`funding-coverage/v1`) **se conserva y queda diferida**, sin ampliar
+ningún validador. La elección es explícita (`--funding-method`), sin fallback
+silencioso y sin reclasificar resultados históricos. Detalle del protocolo en
+[EXPERIMENTO_OPERATIVO_V2](EXPERIMENTO_OPERATIVO_V2.md) §10.6.
+
+Implementado localmente sobre `865709cced6bd2a0e0d7d3e90667e902958bfdaf`, sin
+abrir Binance ni ejecutar ninguna ventana:
+
+- **Separación de fases.** Captura 3600 s con feeds cerrados al terminar;
+  settle 4200 s con las operaciones resueltas por sus horizontes originales;
+  y una tercera fase, **espera contable**, que no abre selección, entrada ni
+  posición y solo busca evidencia de liquidaciones.
+- **Adquisición diferida y acotada.** Una consulta de funding por **símbolo con
+  posición cerrada** (no por observación), reutilizando el mismo cliente, la
+  misma puerta de presupuesto y el mismo ledger. La siguiente consulta se
+  programa con la **cadencia observada** de ese símbolo más 30 min de margen
+  de publicación; si la cadencia no se puede inferir, se reintenta a 30 min. No
+  se sondea en cada tick. Límites: espera máxima **32 400 s (9 h)** y **3
+  consultas por símbolo**; superar cualquiera es un error de configuración.
+- **Contabilidad por posición.** Se evalúa sobre el intervalo real
+  `[entry_ms, exit_ms)` de la posición con la función canónica de
+  `backtest_offline`, sin recalcular la operación y sin duplicar lógica
+  económica. Una liquidación posterior a `exit_ms` aporta cobertura pero no se
+  cobra. Un importe parcial no sustituye a un total desconocido.
+- **Estados publicados por posición.** `PENDIENTE` (con el diagnóstico
+  `funding_sin_cubrir_ms` mientras falta la liquidación posterior), `ACREDITADA`
+  (con funding acreditado y `neto_estado=COMPLETO`) y `UNKNOWN` (hueco
+  interior, cadencia ambigua, marca inservible, consultas agotadas o
+  vencimiento del plazo, siempre con su motivo). Una parada del operador o un
+  presupuesto agotado conservan el pendiente con su causa real, que no se
+  confunde con "evidencia insuficiente". Una posición abierta mantiene el P&L
+  realizado en `UNKNOWN`.
+- **Presupuesto recalculado** (`--budget-only`, local, sin red, salida 0):
+  intentos base 1004 y con reservas 1334/2000; peso base 1472 y con reservas
+  3752/5000; consultas de funding 20 base + 40 reservadas; concentración 5 min
+  110/500; almacenamiento previsto 4 696 872 B y reservado 52 043 648 B sobre
+  128 MB. Duración de captura 3600 s, settle 4200 s, espera contable máxima
+  32 400 s, duración máxima total 40 200 s.
+
+**Pruebas.** `tests/test_operativo_funding_espera_contable.py`: 5 passed
+(aceptación local A–H con el CLI real, proveedores loopback, reloj controlado y
+almacenamiento temporal). Regresiones afectadas (piloto, CLI integrado,
+adaptador, capacidad/presupuesto, cobertura de funding, calendario offline):
+100 passed.
+
+**Límites.** No se abrió Binance, no se ejecutó ninguna ventana, no se
+ampliaron presupuestos ni topes, no se enviaron órdenes, cuentas, claves ni
+servicios y no se tocaron datasets, bases de datos ni servicios existentes. La
+apertura de la ventana requiere autorización humana explícita y posterior.
+Los futuros con vencimiento siguen sin cobertura (solo perpetuos USD-M) y
+GARCH sigue diferido.
 
 ## Cobertura histórica de funding, opción B implementada (2026-11-10, LOCAL, NO-GO PÚBLICO)
 

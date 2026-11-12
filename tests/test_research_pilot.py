@@ -148,11 +148,17 @@ class MarketHttp:
         rotation: bool = False,
         clock_ms_fn=None,
         moves=None,
+        funding_rows_fn=None,
     ) -> None:
         self.universe = list(universe)
         self.rotation = rotation
         self.clock_ms_fn = clock_ms_fn
         self.moves = dict(moves or {})
+        # Proveedor de funding programable: recibe (symbol, startTime,
+        # endTime, now_ms) y devuelve las filas YA PUBLICADAS por la venue.
+        # Sin esta funcion se conserva el comportamiento historico (tres
+        # liquidaciones fijas alrededor de T0).
+        self.funding_rows_fn = funding_rows_fn
         self.ticker_calls = 0
         self.klines_calls = 0
         self.exchange_info_calls = 0
@@ -214,6 +220,13 @@ class MarketHttp:
             with self._lock:
                 self.funding_calls += 1
             symbol = params.get("symbol", [""])[0].upper()
+            start = int(params.get("startTime", ["0"])[0])
+            end = int(params.get("endTime", ["0"])[0])
+            now_ms = int(self.clock_ms_fn()) if self.clock_ms_fn else None
+            if self.funding_rows_fn is not None:
+                rows = self.funding_rows_fn(symbol, start, end, now_ms)
+                _send_json(handler, rows)
+                return
             rows = [
                 {"symbol": symbol, "fundingTime": T0 - 16 * 3_600_000,
                  "fundingRate": "0.0001", "markPrice": str(base_price(symbol))},
@@ -494,7 +507,12 @@ class PilotRun:
     def __init__(self, tmp: Path, *, universe, duration_s, settle_s,
                  selection_s, max_symbols, rotation=False,
                  cycle_s=60, horizons=HORIZONS, max_http_attempts=2000,
-                 funding_calendars_path: Optional[str] = None) -> None:
+                 funding_calendars_path: Optional[str] = None,
+                 funding_source: Optional[str] = None,
+                 funding_method: Optional[str] = None,
+                 funding_wait_seconds: Optional[float] = None,
+                 funding_wait_max_queries: Optional[int] = None,
+                 funding_rows_fn=None) -> None:
         self.tmp = Path(tmp)
         self.universe = list(universe)
         self.out_dir = self.tmp / "out"
@@ -512,7 +530,8 @@ class PilotRun:
                 return int(self.clock.path.read_text(encoding="utf-8").strip())
 
         self.http = MarketHttp(
-            self.universe, rotation=rotation, clock_ms_fn=_clock_ms)
+            self.universe, rotation=rotation, clock_ms_fn=_clock_ms,
+            funding_rows_fn=funding_rows_fn)
         self.http_port = find_free_port()
         self.httpd = ThreadingHTTPServer(
             ("127.0.0.1", self.http_port), self.http.make_handler())
@@ -560,6 +579,15 @@ class PilotRun:
         ]
         if funding_calendars_path:
             cmd.extend(["--funding-calendars", funding_calendars_path])
+        if funding_source:
+            cmd.extend(["--funding-source", funding_source])
+        if funding_method:
+            cmd.extend(["--funding-method", funding_method])
+        if funding_wait_seconds is not None:
+            cmd.extend(["--funding-wait-seconds", str(funding_wait_seconds)])
+        if funding_wait_max_queries is not None:
+            cmd.extend(["--funding-wait-max-queries",
+                        str(funding_wait_max_queries)])
         self.proc = subprocess.Popen(
             cmd, cwd=str(ROOT), stdout=subprocess.PIPE,
             stderr=subprocess.PIPE, text=True)

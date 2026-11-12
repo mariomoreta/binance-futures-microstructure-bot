@@ -199,6 +199,25 @@ MAX_HTTP_LEDGER_QUOTA_BYTES = 16 * 1024 * 1024
 MAX_CONSULTAS_FUNDING_POR_OBS = 2
 FUNDING_HISTORY_LOOKBACK_MS = 48 * 60 * 60 * 1000
 
+# --- Metodo de funding: A observado / B contrato de cobertura ---------------
+# A (observed-settlements): la contabilidad se completa con liquidaciones
+# REALMENTE observadas, despues de una espera maxima acotada. No exige
+# garantia de publicacion: exige ver la liquidacion. B (coverage-contract):
+# funding-coverage/v1 con prueba de ausencia de venue; se conserva y queda
+# diferido. La eleccion es explicita, nunca un fallback silencioso.
+FUNDING_METHOD_OBSERVED = "observed-settlements"
+FUNDING_METHOD_COVERAGE = "coverage-contract"
+FUNDING_METHODS = (FUNDING_METHOD_OBSERVED, FUNDING_METHOD_COVERAGE)
+
+# Espera contable (metodo A): plazo maximo y consultas acotadas.
+# El plazo cubre UN intervalo maximo de funding (8 h en USD-M) mas un margen
+# de publicacion; no presupone la cadencia de ningun simbolo: cada simbolo
+# se planifica con la cadencia OBSERVADA en su propio historico.
+FUNDING_ESPERA_MAX_SEGUNDOS = 32_400.0          # 9 h
+FUNDING_ESPERA_GRACE_MS = 1_800_000              # 30 min tras el boundary
+FUNDING_ESPERA_RECHECK_MS = 1_800_000            # 30 min entre reintentos
+MAX_CONSULTAS_FUNDING_ESPERA_POR_SIMBOLO = 3
+
 # /fapi/v1/fundingRate comparte un limite oficial de 500 peticiones cada
 # 5 minutos con /fapi/v1/fundingInfo. Es un limite del endpoint, distinto del
 # presupuesto general por peso de la ventana.
@@ -1305,6 +1324,17 @@ class PilotConfig:
     # por el mismo cliente, puerta y presupuesto. Un calendario externo solo
     # se usa en pruebas/local y no se mezcla con esta fuente.
     funding_source: str = "none"
+    # Metodo de contabilidad de funding. "coverage-contract" (B): contrato
+    # funding-coverage/v1, la cobertura se acredita con el veredicto de una
+    # cobertura explicita. "observed-settlements" (A): la cobertura se
+    # acredita con liquidaciones realmente observadas despues de una espera
+    # maxima acotada; el contrato B no se modifica ni se degrada.
+    funding_method: str = FUNDING_METHOD_COVERAGE
+    # Espera contable (metodo A): plazo maximo en segundos y consultas
+    # diferidas maximas por simbolo. 0 desactiva la espera (solo valido con
+    # el metodo B o con funding_source="none").
+    funding_wait_seconds: float = 0.0
+    funding_wait_max_queries: int = MAX_CONSULTAS_FUNDING_ESPERA_POR_SIMBOLO
     # Protocolo de captura: 1 = evaluacion inmediata tras suscripcion;
     # 2 = calentamiento acotado antes de la primera evaluacion de un
     # simbolo (seleccionar -> suscribir -> acumular ventana -> evaluar);
@@ -1350,6 +1380,9 @@ class PilotConfig:
             "decision_gate_file": self.decision_gate_file,
             "stop_file": self.stop_file,
             "funding_source": self.funding_source,
+            "funding_method": self.funding_method,
+            "funding_wait_seconds": self.funding_wait_seconds,
+            "funding_wait_max_queries": self.funding_wait_max_queries,
             "capture_protocol_version": self.capture_protocol_version,
             "policy_version": POLICY_VERSION,
             "pilot_version": PILOT_VERSION,
@@ -1370,7 +1403,9 @@ def compute_budget(cfg: PilotConfig) -> Dict[str, Any]:
     """
     duration = max(0.0, float(cfg.duration_seconds))
     settle = max(0.0, float(cfg.settle_seconds))
-    total_s = duration + settle
+    espera = (max(0.0, float(cfg.funding_wait_seconds))
+              if cfg.funding_method == FUNDING_METHOD_OBSERVED else 0.0)
+    total_s = duration + settle + espera
     cycles = int(math.ceil(duration / max(cfg.cycle_seconds, 1e-9))) if duration else 0
     selections = int(math.ceil(duration / max(cfg.selection_seconds, 1e-9))) if duration else 0
     symbols = int(cfg.max_symbols)
@@ -1391,13 +1426,28 @@ def compute_budget(cfg: PilotConfig) -> Dict[str, Any]:
     klines_requests = observations_max * n_horizons
     klines_total = klines_trayectoria + klines_requests
 
-    # Funding real: una consulta por observacion operativa apta. El simbolo
-    # se conoce en ese momento, de modo que no se presupone una seleccion
-    # futura. Una llamada repetida por observacion queda reservada aparte.
+    # Funding real. Metodo B (coverage-contract): una consulta por observacion
+    # operativa apta, porque el simbolo se conoce en ese momento y no se
+    # presupone una seleccion futura. Metodo A (observed-settlements): una
+    # consulta DIFERIDA por simbolo con posicion abierta, porque el símbolo ya
+    # esta observado y la consulta se programa cuando tiene sentido esperar
+    # nueva evidencia (boundary posterior a la salida). Ninguno de los dos
+    # presupone la cadencia de funding.
     funding_enabled = cfg.funding_source == "exchange"
-    funding_calls = observations_max if funding_enabled else 0
-    funding_calls_reserve = (observations_max * max(
-        0, MAX_CONSULTAS_FUNDING_POR_OBS - 1) if funding_enabled else 0)
+    metodo_observado = (
+        funding_enabled and cfg.funding_method == FUNDING_METHOD_OBSERVED)
+    if metodo_observado:
+        funding_calls = symbols
+        funding_calls_reserve = symbols * max(
+            0, int(cfg.funding_wait_max_queries) - 1)
+        funding_log_rows = funding_calls + funding_calls_reserve
+        funding_calendar_files = symbols
+    else:
+        funding_calls = observations_max if funding_enabled else 0
+        funding_calls_reserve = (observations_max * max(
+            0, MAX_CONSULTAS_FUNDING_POR_OBS - 1) if funding_enabled else 0)
+        funding_log_rows = funding_calls
+        funding_calendar_files = funding_calls
 
     weight_catalog = selections * WEIGHT_EXCHANGE_INFO
     weight_tickers = selections * WEIGHT_TICKER_24H
@@ -1420,8 +1470,8 @@ def compute_budget(cfg: PilotConfig) -> Dict[str, Any]:
     storage_jsonl = (observations_max * bytes_obs
                      + klines_total * bytes_outcome
                      + observations_max * bytes_operativo
-                     + funding_calls * bytes_funding_log)
-    storage_funding_files = funding_calls * bytes_funding_calendar
+                     + funding_log_rows * bytes_funding_log)
+    storage_funding_files = funding_calendar_files * bytes_funding_calendar
     storage_http_ledger = ((selections * 2 + klines_total + funding_calls
                             + klines_trayectoria_reserva
                             + funding_calls_reserve + cfg.max_http_retries)
@@ -1456,6 +1506,13 @@ def compute_budget(cfg: PilotConfig) -> Dict[str, Any]:
     funding_concentrated_raw = (
         symbols * max(0, MAX_CONSULTAS_FUNDING_POR_OBS - 1)
         + symbols + cfg.max_http_retries) if funding_enabled else 0
+    if metodo_observado:
+        # Las consultas diferidas se reparten por simbolo y por boundary
+        # observado; el peor caso concentrado se calcula de forma
+        # conservadora con todas las consultas de la ventana a la vez.
+        funding_concentrated_raw = (
+            symbols * max(0, int(cfg.funding_wait_max_queries) - 1)
+            + symbols + cfg.max_http_retries)
     if cfg.max_bytes:
         runtime_sqlite_quota = min(
             MAX_SQLITE_QUOTA_BYTES, cfg.max_bytes // 4)
@@ -1512,7 +1569,10 @@ def compute_budget(cfg: PilotConfig) -> Dict[str, Any]:
         "supuestos": {
             "duracion_captura_s": duration,
             "periodo_settle_s": settle,
+            "espera_contable_max_s": espera,
+            "duracion_maxima_total_s": total_s,
             "total_s": total_s,
+            "funding_metodo": cfg.funding_method,
             "ciclos_decision": cycles,
             "selecciones": selections,
             "simbolos_simultaneos_max": symbols,
@@ -1570,11 +1630,16 @@ def compute_budget(cfg: PilotConfig) -> Dict[str, Any]:
                     "llamadas": funding_calls,
                     "peso_unitario": WEIGHT_FUNDING_RATE,
                     "peso_total": weight_funding,
-                    "nota": ("1 por observacion operativa apta cuando "
-                             "--funding-source exchange; consulta el historico "
-                             "realizado del simbolo efectivamente investigado, "
-                             "despues de T y solo para contabilidad. Limite "
-                             "compartido del endpoint: 500/5 min")},
+                    "nota": (
+                        "1 por simbolo con posicion abierta cuando "
+                        "--funding-method observed-settlements (A): la "
+                        "consulta es diferida y se programa con la cadencia "
+                        "OBSERVADA de ese simbolo; 1 por observacion "
+                        "operativa apta con --funding-method coverage-contract "
+                        "(B). En ambos casos consulta el historico realizado "
+                        "del simbolo efectivamente investigado, despues de T y "
+                        "solo para contabilidad. Limite compartido del "
+                        "endpoint: 500/5 min")},
             },
             "estimacion_base": {
                 "preparacion": {
@@ -1607,12 +1672,17 @@ def compute_budget(cfg: PilotConfig) -> Dict[str, Any]:
                             "en otro intervalo) cuando la trayectoria no fue "
                             "utilizable; distinta del reintento por fallo"},
                 "peticiones_repetidas_funding_por_observacion": {
-                    "max_por_observacion": max(
-                        0, MAX_CONSULTAS_FUNDING_POR_OBS - 1),
+                    "max_por_unidad": (
+                        max(0, int(cfg.funding_wait_max_queries) - 1)
+                        if metodo_observado
+                        else max(0, MAX_CONSULTAS_FUNDING_POR_OBS - 1)),
+                    "unidad": "simbolo" if metodo_observado else "observacion",
                     "llamadas": funding_calls_reserve,
                     "peso": funding_calls_reserve * WEIGHT_FUNDING_RATE,
-                    "nota": "peticion repetida del historico real de funding; "
-                            "distinta del reintento por fallo"},
+                    "nota": ("peticion repetida del historico real de funding "
+                             "(metodo A: una por simbolo con posicion abierta; "
+                             "metodo B: una por observacion operativa apta); "
+                             "distinta del reintento por fallo")},
                 "reintentos_por_fallo": {
                     "max_por_ventana": cfg.max_http_retries,
                     "llamadas": cfg.max_http_retries,
@@ -1667,6 +1737,7 @@ def compute_budget(cfg: PilotConfig) -> Dict[str, Any]:
         },
         "funding": {
             "fuente": cfg.funding_source,
+            "metodo": cfg.funding_method,
             "consultas_base_ventana": funding_calls,
             "consultas_repetidas_reserva": funding_calls_reserve,
             "reintentos_por_fallo_compartidos": cfg.max_http_retries,
@@ -1675,11 +1746,20 @@ def compute_budget(cfg: PilotConfig) -> Dict[str, Any]:
                                             + cfg.max_http_retries),
             "limite_compartido_endpoint_5m": FUNDING_RATE_SHARED_LIMIT_5M,
             "maximo_concentrado_5m_planificado": funding_concentrated_raw,
-            "nota": ("El limite de 500/5 min pertenece al endpoint. El maximo "
-                     "concentrado se calcula conservadoramente con una tanda "
-                     "de 20 observaciones, sus repetidas y los 50 reintentos. "
-                     "Las tasas se consultan despues de T y no pueden "
-                     "decidir la entrada."),
+            "espera_contable_max_s": espera,
+            "consultas_maximas_por_simbolo": (
+                int(cfg.funding_wait_max_queries) if metodo_observado else 0),
+            "nota": (
+                "Metodo A (observed-settlements): una consulta diferida por "
+                "simbolo con posicion abierta, programada con la cadencia "
+                "OBSERVADA de ese simbolo mas un margen de publicacion; las "
+                "repetidas quedan reservadas aparte y el plazo maximo de la "
+                "espera no se prorroga nunca. Metodo B (coverage-contract): "
+                "una consulta por observacion operativa apta con el contrato "
+                "funding-coverage/v1. El limite de 500/5 min pertenece al "
+                "endpoint; el maximo concentrado se calcula de forma "
+                "conservadora. Las tasas se consultan despues de T y no "
+                "pueden decidir la entrada."),
         },
         "ws": {
             "conexiones_simultaneas": ws_connections,
@@ -1928,6 +2008,27 @@ class ResearchPilot:
         self.last_cut_reason: Optional[str] = None
         self.warmup_deferrals = 0
         self._deferral_active = False
+        # --- Espera contable (metodo A: liquidaciones observadas) ----------
+        # Simbolo -> observation_ids con la contabilidad de funding todavia
+        # abierta. No abre seleccion, entrada ni posicion: solo completa la
+        # contabilidad de operaciones ya resueltas.
+        self.funding_espera_pendientes: Dict[str, List[str]] = {}
+        self.funding_espera_consultas: Dict[str, int] = {}
+        self.funding_espera_plan_ms: Dict[str, int] = {}
+        self.funding_espera_regulares: Dict[str, int] = {}
+        self.funding_espera_calendario: Dict[str, Optional[FundingCalendar]] = {}
+        self.espera_contable_inicio_ms: Optional[int] = None
+        self.espera_contable_fin_ms: Optional[int] = None
+        self.espera_contable_cierre: Optional[str] = None
+        self.espera_contable_posiciones_creditadas = 0
+        self.espera_contable_posiciones_unknown = 0
+
+    # -- metodo de funding ---------------------------------------------------
+
+    def _metodo_funding_observado(self) -> bool:
+        """True si la contabilidad se completa con liquidaciones observadas."""
+        return (self.cfg.funding_source == "exchange"
+                and self.cfg.funding_method == FUNDING_METHOD_OBSERVED)
 
     # -- almacenamiento total ----------------------------------------------
 
@@ -2654,37 +2755,35 @@ class ResearchPilot:
         self.funding_log_bytes += encoded
         return True
 
-    def _ensure_funding_calendar(
-        self, symbol: str, obs: Dict[str, Any], now: int,
+    def _adquirir_funding_venue(
+        self, symbol: str, start_ms: int, end_ms: int, now: int, *,
+        coverage_builder: Optional[Any], archivo: str,
+        log_base: Dict[str, Any],
     ) -> Optional[FundingCalendar]:
-        """Acquire realized funding history for a symbol actually investigated.
+        """Consulta y persiste el historico REALIZADO de funding de un simbolo.
 
-        The query happens only after the operational trajectory is due, uses
-        the same HistoryClient and RunBudget, and is never visible to the
-        decision at T. Missing or conflicting venue rows fail closed to an
-        explicit UNKNOWN funding state.
+        Reutiliza el MISMO cliente, la MISMA puerta de presupuesto y el MISMO
+        ledger que el resto de la corrida: no hay segundo camino de acceso a
+        la venue. El constructor de cobertura es opcional: el metodo B aporta
+        el contrato funding-coverage/v1 y el metodo A persiste el calendario
+        OBSERVADO sin reclamar ese contrato.
+
+        La respuesta se conserva con sus parametros, tiempos, hashes y
+        procedencia. Un fallo no inventa liquidaciones: se registra como
+        ERROR con su motivo y el funding queda UNKNOWN.
         """
-        if self.cfg.funding_source != "exchange":
-            return self.operativo.funding_calendars.get(symbol.upper())
-
-        oid = str(obs["observation_id"])
-        count = int(self.funding_queries_by_oid.get(oid, 0))
-        if count >= MAX_CONSULTAS_FUNDING_POR_OBS:
-            return self.funding_calendars_by_oid.get(oid)
-        self.funding_queries_by_oid[oid] = count + 1
-        start_ms = int(obs["decision_ms"]) - FUNDING_HISTORY_LOOKBACK_MS
-        end_ms = int(now)
         try:
             rows, headers = self.rest.funding_rate(
                 symbol, start_ms=start_ms, end_ms=end_ms, limit=1000)
             request = (self.rest.upstream_requests[-1]
                        if self.rest.upstream_requests else {})
-            coverage = _binance_funding_coverage(
-                symbol, rows, start_ms, end_ms, request, limit=1000)
+            coverage = (coverage_builder(rows, request)
+                        if coverage_builder is not None else None)
             calendar = _funding_calendar_from_rows(
                 symbol, rows, coverage=coverage)
             ordered, duplicates = calendar.normalized()
             effective_coverage = calendar.effective_coverage()
+            regulares = len(_funding_regular_times(symbol, rows))
             provenance = {
                 "endpoint": "/fapi/v1/fundingRate",
                 "acquired_utc": iso_utc(
@@ -2699,6 +2798,7 @@ class ResearchPilot:
                 "n_raw": len(rows),
                 "n_settlements": len(ordered),
                 "n_duplicates": duplicates,
+                "n_regular_settlements": regulares,
                 "coverage_ms": ([ordered[0].settlement_ms,
                                  ordered[-1].settlement_ms]
                                 if ordered else [None, None]),
@@ -2736,22 +2836,18 @@ class ResearchPilot:
                 calendar_payload["coverage"] = effective_coverage.to_dict()
             funding_dir = self.out_dir / "funding"
             funding_dir.mkdir(parents=True, exist_ok=True)
-            safe_oid = "".join(ch if ch.isalnum() or ch in "-_" else "_"
-                               for ch in oid)
-            calendar_path = funding_dir / f"{symbol.upper()}--{safe_oid}.json"
+            calendar_path = funding_dir / archivo
             calendar_text = (json.dumps(
                 calendar_payload, ensure_ascii=False, indent=2,
                 sort_keys=True) + "\n")
-            log_row = {
+            log_row = dict(log_base)
+            log_row.update({
                 "kind": "funding_adquisicion",
-                "observation_id": oid,
                 "symbol": symbol.upper(),
-                "decision_ms": int(obs["decision_ms"]),
-                "consulta_numero": count + 1,
                 "estado": "OK",
                 "calendar": calendar_payload,
                 "calendar_file": str(calendar_path),
-            }
+            })
             calendar_bytes = len(calendar_text.encode("utf-8"))
             calendar_key = f"file:{calendar_path}"
             old_calendar_bytes = self._file_bytes(calendar_path)
@@ -2775,34 +2871,77 @@ class ResearchPilot:
                 self.storage_budget.commit(
                     calendar_key, -calendar_bytes)
                 return None
-            self.funding_calendars_by_oid[oid] = calendar
             return calendar
         except RateLimitExceeded:
             raise
         except Exception as exc:
-            self._write_funding_log({
+            error_row = dict(log_base)
+            error_row.update({
                 "kind": "funding_adquisicion",
-                "observation_id": oid,
                 "symbol": symbol.upper(),
-                "decision_ms": int(obs["decision_ms"]),
-                "consulta_numero": count + 1,
                 "estado": "ERROR",
                 "error": f"{type(exc).__name__}: {exc}",
                 "query_start_ms": start_ms,
                 "query_end_ms": end_ms,
                 "funding_resultado": "UNKNOWN",
             })
+            self._write_funding_log(error_row)
             return None
+
+    def _ensure_funding_calendar(
+        self, symbol: str, obs: Dict[str, Any], now: int,
+    ) -> Optional[FundingCalendar]:
+        """Acquire realized funding history for a symbol actually investigated.
+
+        The query happens only after the operational trajectory is due, uses
+        the same HistoryClient and RunBudget, and is never visible to the
+        decision at T. Missing or conflicting venue rows fail closed to an
+        explicit UNKNOWN funding state.
+
+        Esta es la via B (contrato de cobertura): la cobertura se construye y
+        se publica con el contrato funding-coverage/v1. El metodo A no la usa.
+        """
+        if self.cfg.funding_source != "exchange":
+            return self.operativo.funding_calendars.get(symbol.upper())
+
+        oid = str(obs["observation_id"])
+        count = int(self.funding_queries_by_oid.get(oid, 0))
+        if count >= MAX_CONSULTAS_FUNDING_POR_OBS:
+            return self.funding_calendars_by_oid.get(oid)
+        self.funding_queries_by_oid[oid] = count + 1
+        start_ms = int(obs["decision_ms"]) - FUNDING_HISTORY_LOOKBACK_MS
+        end_ms = int(now)
+        safe_oid = "".join(ch if ch.isalnum() or ch in "-_" else "_"
+                           for ch in oid)
+        log_base = {
+            "observation_id": oid,
+            "decision_ms": int(obs["decision_ms"]),
+            "consulta_numero": count + 1,
+            "scope": "observacion",
+            "funding_metodo": self.cfg.funding_method,
+        }
+
+        def _cobertura(rows: List[Dict[str, Any]],
+                       request: Dict[str, Any]) -> FundingCoverage:
+            return _binance_funding_coverage(
+                symbol, rows, start_ms, end_ms, request, limit=1000)
+
+        calendar = self._adquirir_funding_venue(
+            symbol, start_ms, end_ms, now, coverage_builder=_cobertura,
+            archivo=f"{symbol.upper()}--{safe_oid}.json", log_base=log_base)
+        if calendar is not None:
+            self.funding_calendars_by_oid[oid] = calendar
+        return calendar
 
     def _consultar_trayectoria_operativa(
         self, symbol: str, obs: Dict[str, Any], now: int,
-    ) -> Tuple[Optional[Any], str]:
+    ) -> Tuple[Optional[Any], str, List[Any]]:
         """Consulta la trayectoria 1m de una observacion y la procesa.
 
         UNA consulta cubre entrada, gestion y salida: la serie devuelta va
         desde la vela que cierra en T hasta el reloj actual mas un paso, con
-        el limite de la ventana del horizonte. Devuelve (resultado, motivo);
-        un motivo no vacio significa que no hubo trayectoria utilizable (no
+        el limite de la ventana del horizonte. Devuelve (resultado, motivo,
+        velas); un motivo no vacio significa que no hubo trayectoria utilizable (no
         se inventa ningun resultado).
         """
         decision_ms = int(obs["decision_ms"])
@@ -2833,11 +2972,277 @@ class ResearchPilot:
                 close_time_ms=close_ms,
             ))
         if not velas_conocidas:
-            return None, "sin_velas_conocidas_en_el_reloj"
-        cal = self._ensure_funding_calendar(symbol, obs, now)
+            return None, "sin_velas_conocidas_en_el_reloj", []
+        # Metodo A: la salida se resuelve YA, pero el funding se contabiliza
+        # DESPUES, cuando exista evidencia observada de la liquidacion
+        # posterior a la salida. No se compra funding durante la resolucion.
+        cal = (None if self._metodo_funding_observado()
+               else self._ensure_funding_calendar(symbol, obs, now))
         tr = self.operativo.procesar_observacion(
             obs, velas_conocidas, funding_calendar=cal)
-        return tr, ""
+        return tr, "", velas_conocidas
+
+    # -- espera contable (metodo A: liquidaciones observadas) ----------------
+
+    def _consultar_funding_diferido(
+        self, symbol: str, oids: List[str], now: int,
+    ) -> Optional[FundingCalendar]:
+        """Consulta diferida del historico OBSERVADO de funding de un simbolo.
+
+        La ventana cubre desde antes de la entrada (mas el lookback) hasta el
+        instante actual. El objetivo es OBSERVAR la liquidacion posterior a
+        la salida: no se presupone ninguna liquidacion, no se fabrica ninguna
+        y `UNKNOWN` nunca se convierte en cero.
+
+        No usa el contrato de cobertura B: el calendario se construye con
+        las liquidaciones realmente devueltas por la venue.
+        """
+        entradas: List[int] = []
+        salidas: List[int] = []
+        for oid in oids:
+            item = self.operativo_pendientes.get(oid) or {}
+            tr = item.get("resultado")
+            if tr is None or tr.entry_ms is None or tr.exit_ms is None:
+                continue
+            entradas.append(int(tr.entry_ms))
+            salidas.append(int(tr.exit_ms))
+        if not entradas:
+            return None
+        start_ms = min(entradas) - FUNDING_HISTORY_LOOKBACK_MS
+        end_ms = int(now)
+        n = int(self.funding_espera_consultas.get(symbol, 0)) + 1
+        log_base = {
+            "scope": "simbolo",
+            "observaciones": list(oids),
+            "consulta_numero": n,
+            "funding_metodo": self.cfg.funding_method,
+            "query_start_ms": start_ms,
+            "query_end_ms": end_ms,
+            "target_exit_ms": max(salidas),
+        }
+        calendar = self._adquirir_funding_venue(
+            symbol, start_ms, end_ms, now, coverage_builder=None,
+            archivo=f"{symbol.upper()}--espera-contable.json",
+            log_base=log_base)
+        if calendar is not None:
+            self.funding_espera_calendario[symbol] = calendar
+            self.funding_espera_regulares[symbol] = len([
+                item for item in calendar.settlements
+                if (item.rate_type or "regular").lower() == "regular"])
+        return calendar
+
+    def _planificar_consulta_funding(
+        self, symbol: str, calendar: FundingCalendar, now: int,
+    ) -> None:
+        """Programa la siguiente consulta de funding de un simbolo.
+
+        El instante previsto se calcula con la cadencia OBSERVADA en el
+        historico de ESE simbolo mas un margen de publicacion. Si la cadencia
+        todavia no se puede inferir, se reintenta con un intervalo fijo y
+        acotado. Nunca se presupone una cadencia ajena al simbolo.
+        """
+        ordered, _ = calendar.normalized()
+        cadence = calendar.interval_ms
+        if cadence and ordered:
+            previsto = (int(ordered[-1].settlement_ms) + int(cadence)
+                        + FUNDING_ESPERA_GRACE_MS)
+        else:
+            previsto = now + FUNDING_ESPERA_RECHECK_MS
+        # Nunca se sondea en bucle: como minimo un intervalo de reintento.
+        self.funding_espera_plan_ms[symbol] = max(
+            int(previsto), now + FUNDING_ESPERA_RECHECK_MS)
+
+    def _pendientes_contabilidad(self) -> int:
+        """Posiciones con la contabilidad de funding todavia abierta."""
+        return sum(len(v) for v in self.funding_espera_pendientes.values())
+
+    def _podar_pendientes_funding(self) -> None:
+        """Elimina los simbolos sin posiciones pendientes."""
+        for symbol in list(self.funding_espera_pendientes):
+            if not self.funding_espera_pendientes.get(symbol):
+                self.funding_espera_pendientes.pop(symbol, None)
+
+    def _cerrar_funding_posicion(
+        self, oid: str, estado: str, motivo: str,
+        resultado: Optional[Any] = None,
+    ) -> bool:
+        """Publica el cierre de la contabilidad de funding de una posicion."""
+        item = self.operativo_pendientes.get(oid) or {}
+        tr = resultado if resultado is not None else item.get("resultado")
+        if tr is None:
+            return True
+        if not self._storage_ok():
+            self.stop_reason = "presupuesto_bytes"
+            return False
+        if not self.operativo.persistir(
+                tr, contabilidad={"estado": estado, "motivo": motivo}):
+            self.stop_reason = "presupuesto_bytes"
+            return False
+        return True
+
+    def _aplicar_contabilidad_funding(
+        self, symbol: str, calendar: FundingCalendar, now: int,
+    ) -> None:
+        """Aplica el calendario observado a las posiciones pendientes.
+
+        El veredicto canonico por posicion decide: si la cobertura es
+        acreditable, la posicion se publica con su funding; si falta solo la
+        liquidacion posterior a la salida, se sigue esperando; si el defecto
+        es definitivo (hueco interior, cadencia ambigua, marca inservible),
+        la posicion se cierra como UNKNOWN con su motivo.
+        """
+        for oid in list(self.funding_espera_pendientes.get(symbol) or []):
+            item = self.operativo_pendientes.get(oid)
+            if item is None:
+                self.funding_espera_pendientes[symbol].remove(oid)
+                continue
+            tr = item.get("resultado")
+            velas = item.get("velas")
+            if tr is None or velas is None:
+                continue
+            veredicto = self.operativo.reevaluar_funding(tr, velas, calendar)
+            if veredicto["creditable"]:
+                if not self._cerrar_funding_posicion(
+                        oid, "ACREDITADA",
+                        "liquidaciones observadas; cobertura completa",
+                        veredicto["resultado"]):
+                    return
+                self.funding_espera_pendientes[symbol].remove(oid)
+                self.espera_contable_posiciones_creditadas += 1
+                continue
+            if veredicto["puede_mejorar"]:
+                # Cadencia ambigua con suficiente historia: no mejora nunca.
+                if (veredicto["motivo"] == "cadencia_no_inferida"
+                        and int(self.funding_espera_regulares.get(
+                            symbol, 0)) >= 3):
+                    if not self._cerrar_funding_posicion(
+                            oid, "UNKNOWN", "cadencia_ambigua"):
+                        return
+                    self.funding_espera_pendientes[symbol].remove(oid)
+                    self.espera_contable_posiciones_unknown += 1
+                    continue
+                # La cobertura todavia puede mejorar: se publica el
+                # diagnostico actual (p. ej. la cola sin liquidacion
+                # posterior) SIN acreditar ningun importe. La liquidacion
+                # todavia no publicada no se inventa.
+                if not self._cerrar_funding_posicion(
+                        oid, "PENDIENTE",
+                        "espera_contable: %s" % veredicto["motivo"],
+                        veredicto["resultado"]):
+                    return
+                continue
+            if not self._cerrar_funding_posicion(
+                    oid, "UNKNOWN", str(veredicto["motivo"])):
+                return
+            self.funding_espera_pendientes[symbol].remove(oid)
+            self.espera_contable_posiciones_unknown += 1
+        self._podar_pendientes_funding()
+
+    def _resolver_funding_espera(self, now: int) -> int:
+        """Ejecuta las consultas de funding diferidas que tocan.
+
+        No sondea en cada tick: cada simbolo tiene su propio instante
+        previsto. Cada consulta consume el MISMO presupuesto de la corrida y
+        queda registrada en el MISMO ledger.
+        """
+        consultas = 0
+        for symbol in sorted(self.funding_espera_pendientes):
+            oids = list(self.funding_espera_pendientes.get(symbol) or [])
+            if not oids:
+                continue
+            if self._terminal_stop():
+                break
+            plan_ms = self.funding_espera_plan_ms.get(symbol)
+            if plan_ms is not None and now < plan_ms:
+                continue
+            n = int(self.funding_espera_consultas.get(symbol, 0))
+            if n >= int(self.cfg.funding_wait_max_queries):
+                for oid in oids:
+                    if not self._cerrar_funding_posicion(
+                            oid, "UNKNOWN", "consultas_de_funding_agotadas"):
+                        return consultas
+                    self.funding_espera_pendientes[symbol].remove(oid)
+                    self.espera_contable_posiciones_unknown += 1
+                self._podar_pendientes_funding()
+                continue
+            try:
+                calendar = self._consultar_funding_diferido(symbol, oids, now)
+            except RateLimitExceeded as exc:
+                self.stop_reason = f"presupuesto_agotado: {exc}"
+                break
+            self.funding_espera_consultas[symbol] = n + 1
+            consultas += 1
+            if calendar is None:
+                self.funding_espera_plan_ms[symbol] = (
+                    now + FUNDING_ESPERA_RECHECK_MS)
+                continue
+            self._planificar_consulta_funding(symbol, calendar, now)
+            self._aplicar_contabilidad_funding(symbol, calendar, now)
+        return consultas
+
+    def _cerrar_espera_contable(self, now: int) -> None:
+        """Cierra la contabilidad que sigue pendiente con su motivo real.
+
+        Una parada del operador o un presupuesto agotado conservan el
+        pendiente (no se convierte en UNKNOWN de evidencia: no se ha
+        terminado de buscar). El vencimiento del plazo o una cobertura
+        insuficiente cierran como UNKNOWN con su motivo.
+        """
+        if self._pendientes_contabilidad() == 0:
+            return
+        parada = (self.stop_reason and self.stop_reason != "duracion")
+        if parada:
+            estado = "PENDIENTE"
+            motivo = str(self.stop_reason)
+        else:
+            estado = "UNKNOWN"
+            motivo = str(self.espera_contable_cierre
+                         or "vencimiento_de_la_espera_contable")
+        for symbol in sorted(self.funding_espera_pendientes):
+            for oid in list(self.funding_espera_pendientes.get(symbol) or []):
+                if not self._cerrar_funding_posicion(oid, estado, motivo):
+                    return
+                self.funding_espera_pendientes[symbol].remove(oid)
+                if estado == "UNKNOWN":
+                    self.espera_contable_posiciones_unknown += 1
+        self._podar_pendientes_funding()
+
+    async def _espera_contable(self) -> None:
+        """Fase de espera contable (metodo A).
+
+        No abre seleccion, entrada ni posicion: la exposicion y las salidas
+        ya estan resueltas por sus horizontes originales. La unica actividad
+        nueva es la consulta diferida de liquidaciones observadas y la
+        publicacion de la contabilidad resultante.
+
+        Termina antes si no queda trabajo, al vencer el plazo maximo (sin
+        prorroga), o ante parada del operador o presupuesto agotado.
+        """
+        now = self.clock.now_ms()
+        self._phase = "espera_contable"
+        self.espera_contable_inicio_ms = now
+        self.espera_contable_fin_ms = now + int(
+            float(self.cfg.funding_wait_seconds) * 1000)
+        tick_s = max(0.01, self.cfg.tick_ms / 1000.0)
+        while True:
+            now = self.clock.now_ms()
+            if now >= self.espera_contable_fin_ms:
+                self.espera_contable_cierre = "plazo_maximo_de_espera_agotado"
+                break
+            if self._terminal_stop():
+                self.espera_contable_cierre = str(self.stop_reason)
+                break
+            if self._stop_file_requested():
+                self.request_stop("parada_operador")
+                self.espera_contable_cierre = "parada_operador"
+                break
+            self._resolver_funding_espera(now)
+            self._write_status()
+            if self._pendientes_contabilidad() == 0:
+                self.espera_contable_cierre = "trabajo_resuelto"
+                break
+            await asyncio.sleep(tick_s)
+        self._cerrar_espera_contable(self.clock.now_ms())
 
     def _resolver_operativos_pendientes(self, now: int) -> int:
         """Resuelve operaciones pendientes cuando la trayectoria puede estar
@@ -2894,7 +3299,7 @@ class ResearchPilot:
             symbol = item["symbol"]
             obs = item["observacion"]
             try:
-                tr, motivo = self._consultar_trayectoria_operativa(
+                tr, motivo, velas = self._consultar_trayectoria_operativa(
                     symbol, obs, now)
             except RateLimitExceeded as exc:
                 # Presupuesto agotado: no se envia nada mas. El pendiente se
@@ -2930,12 +3335,29 @@ class ResearchPilot:
                 if not self._storage_ok():
                     self.stop_reason = "presupuesto_bytes"
                     break
-                if not self.operativo.persistir(tr):
+                # Metodo A: la salida ya esta decidida pero la contabilidad de
+                # funding sigue pendiente. Se publica con su estado PENDIENTE
+                # y se completa mas tarde, con evidencia observada.
+                contabilidad = None
+                if (self._metodo_funding_observado()
+                        and r.decision == "ENTRADA_EJECUTADA"
+                        and r.exit_executed and r.exit_ms is not None
+                        and r.entry_ms is not None):
+                    contabilidad = {
+                        "estado": "PENDIENTE",
+                        "motivo": "espera_contable: liquidacion posterior a la "
+                                  "salida todavia no observada",
+                    }
+                if not self.operativo.persistir(tr, contabilidad=contabilidad):
                     self.stop_reason = "presupuesto_bytes"
                     break
                 item["resuelta"] = True
                 item["resultado"] = tr
                 item["motivo"] = None
+                if contabilidad is not None:
+                    item["velas"] = velas
+                    self.funding_espera_pendientes.setdefault(
+                        str(symbol).upper(), []).append(oid)
                 self._last_resolve_by_obs.pop(oid, None)
                 resueltas += 1
             else:
@@ -3211,6 +3633,12 @@ class ResearchPilot:
             "outcomes_written": self.outcomes_written,
             "pending": len(self.pending),
             "stop_reason": self.stop_reason,
+            "espera_contable_inicio_ms": self.espera_contable_inicio_ms,
+            "espera_contable_fin_ms": self.espera_contable_fin_ms,
+            "espera_contable_cierre": self.espera_contable_cierre,
+            "espera_contable_pendientes": sum(
+                len(v) for v in self.funding_espera_pendientes.values()),
+            "funding_consultas_espera": dict(self.funding_espera_consultas),
             "gate_decision_ms": self._gate_decision_ms(),
             "book_events": dict(self.book_events),
             "flow_events": dict(self.flow_events),
@@ -3381,6 +3809,13 @@ class ResearchPilot:
                 await self.resolve_due(now)
                 self._write_status()
                 await asyncio.sleep(tick_s)
+            # Espera contable (metodo A): la captura y el settle ya han
+            # resuelto las operaciones por sus horizontes originales. aqui
+            # solo se busca evidencia OBSERVADA de las liquidaciones para
+            # completar la contabilidad; no hay seleccion, entrada ni
+            # posicion nuevas, y el plazo no se prorroga.
+            if self._metodo_funding_observado() and self.funding_espera_pendientes:
+                await self._espera_contable()
             self.finalize_pending(self.clock.now_ms())
             # Los pendientes operativos que no se resolvieron se conservan
             # PENDIENTES con su motivo real (no se inventan resultados ni se
@@ -3523,6 +3958,25 @@ class ResearchPilot:
             "ws": {name: feed.status() for name, feed in self.feeds.items()},
             "economia_operativa_v2": build_operational_economic_summary(
                 rows, operational_rows),
+            "espera_contable": {
+                "metodo": self.cfg.funding_method,
+                "plazo_max_ms": int(
+                    float(self.cfg.funding_wait_seconds) * 1000),
+                "inicio_ms": self.espera_contable_inicio_ms,
+                "fin_ms": self.espera_contable_fin_ms,
+                "cierre": self.espera_contable_cierre,
+                "consultas_por_simbolo": dict(self.funding_espera_consultas),
+                "consultas_totales": sum(
+                    self.funding_espera_consultas.values()),
+                "posiciones_acreditadas": (
+                    self.espera_contable_posiciones_creditadas),
+                "posiciones_unknown": self.espera_contable_posiciones_unknown,
+                "pendientes_finales": sum(
+                    len(v) for v in self.funding_espera_pendientes.values()),
+                "duracion_total_efectiva_s": (
+                    round((self.ended_ms - self.started_ms) / 1000.0, 3)
+                    if self.ended_ms is not None else None),
+            },
             "almacenamiento": {
                 "observaciones_jsonl_bytes": self._file_bytes(self.obs_path),
                 "observaciones_jsonl_rows": self.store.rows_written,
@@ -3676,6 +4130,17 @@ def build_parser() -> argparse.ArgumentParser:
                    help="none=sin funding automatico; exchange=historial "
                         "realizado por simbolo mediante el cliente HTTP y la "
                         "puerta de presupuesto")
+    p.add_argument("--funding-method", choices=FUNDING_METHODS,
+                   default=FUNDING_METHOD_COVERAGE,
+                   help="coverage-contract=contrato funding-coverage/v1 (B, "
+                        "diferido); observed-settlements=contabilidad con "
+                        "liquidaciones observadas tras espera acotada (A)")
+    p.add_argument("--funding-wait-seconds", type=float, default=0.0,
+                   help="espera contable maxima del metodo A (0 = sin espera)")
+    p.add_argument("--funding-wait-max-queries", type=int,
+                   default=MAX_CONSULTAS_FUNDING_ESPERA_POR_SIMBOLO,
+                   help="consultas diferidas de funding maximas por simbolo "
+                        "durante la espera contable")
     return p
 
 
@@ -3704,6 +4169,35 @@ def config_from_args(args: argparse.Namespace) -> PilotConfig:
         raise ValueError(
             "--funding-source exchange y --funding-calendars son fuentes "
             "excluyentes; no se mezclan calendarios externos con la fuente real")
+
+    # Metodo de funding: la eleccion es explicita y falla cerrada.
+    if args.funding_method not in FUNDING_METHODS:
+        raise ValueError(
+            "--funding-method debe ser %s" % (" o ".join(FUNDING_METHODS),))
+    if args.funding_method == FUNDING_METHOD_OBSERVED:
+        if args.funding_source != "exchange":
+            raise ValueError(
+                "--funding-method %s requiere --funding-source exchange: la "
+                "contabilidad con liquidaciones observadas necesita la fuente "
+                "real" % FUNDING_METHOD_OBSERVED)
+        if float(args.funding_wait_seconds) <= 0.0:
+            raise ValueError(
+                "--funding-method %s requiere --funding-wait-seconds > 0: sin "
+                "espera contable no hay liquidacion posterior que observar"
+                % FUNDING_METHOD_OBSERVED)
+        if float(args.funding_wait_seconds) > FUNDING_ESPERA_MAX_SEGUNDOS:
+            raise ValueError(
+                "--funding-wait-seconds no puede superar el plazo maximo del "
+                "protocolo (%s s)" % FUNDING_ESPERA_MAX_SEGUNDOS)
+        if int(args.funding_wait_max_queries) < 1:
+            raise ValueError(
+                "--funding-wait-max-queries debe ser >= 1")
+        if int(args.funding_wait_max_queries) > \
+                MAX_CONSULTAS_FUNDING_ESPERA_POR_SIMBOLO:
+            raise ValueError(
+                "--funding-wait-max-queries no puede superar el tope del "
+                "protocolo (%d por simbolo)"
+                % MAX_CONSULTAS_FUNDING_ESPERA_POR_SIMBOLO)
 
     # Instrumentacion de sincronizacion: solo con reloj manual (pruebas).
     # --status-file es puramente observativo: no controla decisiones, por lo que
@@ -3751,6 +4245,9 @@ def config_from_args(args: argparse.Namespace) -> PilotConfig:
         decision_gate_file=args.decision_gate_file,
         stop_file=args.stop_file,
         funding_source=args.funding_source,
+        funding_method=args.funding_method,
+        funding_wait_seconds=float(args.funding_wait_seconds),
+        funding_wait_max_queries=int(args.funding_wait_max_queries),
     )
 
 

@@ -24,14 +24,14 @@ import math
 import os
 import sqlite3
 import time
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
 
 from microstructure_probe.backtest_offline import (  # noqa: E402
     BacktestConfig, Candle, FundingCalendar, FundingSettlement,
-    StudyEvent, run_backtest,
+    StudyEvent, funding_accounting_for_position, run_backtest,
 )
 from microstructure_probe.paper_lab_engine import (  # noqa: E402
     ENGINE_VERSION_PAPER, PaperCandle, PaperSessionConfig,
@@ -566,37 +566,8 @@ class OperativoAdapter:
         # run_backtest para contabilizar settlements; si no hay calendario,
         # funding = UNKNOWN (None, nunca cero). paper_lab_engine ya fuerza
         # funding=None cuando no hay calendario real.
-        funding = r.funding
-        funding_estado = "ninguno (UNKNOWN, no cero)"
-        if cal is not None:
-            bt = _resultado_con_funding(
-                symbol, direccion, velas_1m, decision_ms,
-                r.entry_px, r.entry_ms, r.exit_px, r.exit_ms,
-                cal, self.cfg,
-            )
-            if bt is not None:
-                self._funding_cuenta[oid] = _detalle_funding(bt, cal)
-                if _funding_acreditable(bt, cal):
-                    funding = bt.get("funding")
-                    funding_estado = bt.get(
-                        "funding_model", "settlement-calendar")
-                    # Sobrescribir net_pnl con el calculado por run_backtest
-                    # (incluye funding real contabilizado).
-                    r = _replace_result(
-                        r, funding=funding, net_pnl=bt.get("net_pnl"))
-                else:
-                    # Cobertura insuficiente: el importe parcial NO se
-                    # acredita. Funding = UNKNOWN y el neto se publica
-                    # condicionado (sin funding), nunca como cero.
-                    funding = None
-                    coverage_status = bt.get("funding_coverage_status")
-                    if coverage_status:
-                        funding_estado = (
-                            "settlement-calendar cobertura %s (UNKNOWN, no cero)"
-                            % coverage_status)
-                    else:
-                        funding_estado = (
-                            "settlement-calendar incompleto (UNKNOWN, no cero)")
+        r, funding, funding_estado, _detalle, _bt = self._aplicar_funding(
+            oid, symbol, direccion, decision_ms, velas_1m, r, cal)
 
         # Salida real acreditada: cierra el intervalo de ocupacion SIN
         # borrarlo (la exposicion existio y puede solaparse con una entrada
@@ -653,7 +624,178 @@ class OperativoAdapter:
                 self.procesar_observacion(obs, velas, funding_calendar=cal))
         return resultados
 
-    def persistir(self, tr: OperativoTradeResult) -> bool:
+    # -- funding observado (metodo A) ---------------------------------------
+
+    def _aplicar_funding(
+        self, oid: str, symbol: str, direccion: Optional[str],
+        decision_ms: int, velas_1m: List[PaperCandle], r: Any,
+        cal: Optional[FundingCalendar],
+    ) -> Tuple[Any, Optional[float], str, Optional[Dict[str, Any]],
+                 Optional[Dict[str, Any]]]:
+        """Aplica un calendario de funding a un resultado de operacion.
+
+        Devuelve (resultado, funding, funding_estado, detalle, bt). El
+        veredicto de ``run_backtest`` es la autoridad: si la cobertura no es
+        acreditable el importe NO se acredita (funding=None) y el neto
+        conserva el valor sin funding; nunca se convierte en cero.
+        """
+        funding = r.funding
+        funding_estado = "ninguno (UNKNOWN, no cero)"
+        detalle: Optional[Dict[str, Any]] = None
+        bt: Optional[Dict[str, Any]] = None
+        if cal is None:
+            return r, funding, funding_estado, detalle, bt
+        bt = _resultado_con_funding(
+            symbol, direccion, velas_1m, decision_ms,
+            r.entry_px, r.entry_ms, r.exit_px, r.exit_ms,
+            cal, self.cfg,
+        )
+        if bt is None:
+            return r, funding, funding_estado, detalle, bt
+        detalle = _detalle_funding(bt, cal)
+        self._funding_cuenta[oid] = detalle
+        if _funding_acreditable(bt, cal):
+            funding = bt.get("funding")
+            funding_estado = bt.get("funding_model", "settlement-calendar")
+            # Sobrescribir net_pnl con el calculado por run_backtest (incluye
+            # funding real contabilizado).
+            r = _replace_result(r, funding=funding, net_pnl=bt.get("net_pnl"))
+        else:
+            # Cobertura insuficiente: el importe parcial NO se acredita.
+            # Funding = UNKNOWN y el neto se publica condicionado (sin
+            # funding), nunca como cero.
+            funding = None
+            coverage_status = bt.get("funding_coverage_status")
+            if coverage_status:
+                funding_estado = (
+                    "settlement-calendar cobertura %s (UNKNOWN, no cero)"
+                    % coverage_status)
+            else:
+                funding_estado = (
+                    "settlement-calendar incompleto (UNKNOWN, no cero)")
+        return r, funding, funding_estado, detalle, bt
+
+    def _contabilidad_funding_posicion(
+        self, tr: OperativoTradeResult, velas_1m: List[PaperCandle],
+        cal: Optional[FundingCalendar],
+    ) -> Optional[Dict[str, Any]]:
+        """Contabilidad canonica de funding sobre el intervalo REAL del trade.
+
+        El intervalo es [entry_ms, exit_ms) de la operacion ya resuelta por
+        el motor operativo: la liquidacion posterior a exit_ms puede aportar
+        evidencia de cobertura, pero NO es un coste de la posicion.
+
+        Se reutiliza la funcion canonica de ``backtest_offline`` (no se
+        duplica la logica economica) y NO se recalcula la operacion.
+        """
+        if cal is None or tr.entry_ms is None or tr.exit_ms is None:
+            return None
+        if not tr.qty or not tr.entry_px:
+            return None
+        try:
+            bt_candles = _to_bt_candles(velas_1m, tr.symbol)
+        except Exception:
+            return None
+        cfg = BacktestConfig(
+            family="H1", rules_version="H1-v1",
+            exit_horizon_ms=self.cfg.horizon_ms,
+            stop_distance_pct=self.cfg.stop_distance_pct,
+            notional_usdt=self.cfg.notional_usdt,
+            fee_bps=self.cfg.fee_bps, spread_bps=self.cfg.spread_bps,
+            slippage_bps=self.cfg.slippage_bps,
+            cost_scale=1.0, max_concurrent=self.cfg.max_concurrent,
+            funding_calendar=cal,
+            funding_estimated_bps=self.cfg.funding_estimated_bps,
+        )
+        # Unico relleno de la posicion: el motor operativo entra en el open
+        # de la vela siguiente a la senal y mantiene esa exposicion.
+        fill_ledger = [(int(tr.entry_ms),
+                        float(tr.qty) * float(tr.entry_px),
+                        float(tr.qty))]
+        side = "LONG" if str(tr.direction or "").upper() == "LONG" else "SHORT"
+        try:
+            return funding_accounting_for_position(
+                side, fill_ledger, int(tr.entry_ms), int(tr.exit_ms),
+                cfg, tr.symbol, bt_candles)
+        except Exception:
+            return None
+
+    def reevaluar_funding(
+        self, tr: OperativoTradeResult, velas_1m: List[PaperCandle],
+        cal: Optional[FundingCalendar],
+    ) -> Dict[str, Any]:
+        """Recalcula SOLO el funding de una posicion ya resuelta.
+
+        No reejecuta la entrada, la gestion ni la salida: reutiliza la
+        exposicion ya acreditada (entry_ms, exit_ms, qty) y aplica el
+        calendario OBSERVADO. El veredicto canonico por posicion decide si
+        el importe puede acreditarse; si no, se publica el diagnostico y el
+        total queda UNKNOWN (nunca cero, nunca un importe parcial).
+
+        Devuelve un veredicto con la posicion recalculada, el detalle de
+        cobertura, el veredicto canonico y si la cobertura todavia puede
+        mejorar con evidencia posterior.
+        """
+        veredicto: Dict[str, Any] = {
+            "resultado": tr, "detalle": None, "bt": None,
+            "creditable": False, "puede_mejorar": True,
+            "motivo": "sin_calendario",
+        }
+        if cal is None:
+            veredicto["motivo"] = "sin_calendario"
+            return veredicto
+        if tr.exit_executed is not True or tr.exit_ms is None \
+                or tr.entry_ms is None:
+            veredicto["motivo"] = "posicion_no_cerrada"
+            return veredicto
+        bt = self._contabilidad_funding_posicion(tr, velas_1m, cal)
+        if bt is None:
+            veredicto["motivo"] = "sin_veredicto_de_contabilidad"
+            return veredicto
+        veredicto["bt"] = bt
+        detalle = _detalle_funding(bt, cal)
+        self._funding_cuenta[tr.observation_id] = detalle
+        veredicto["detalle"] = detalle
+        if _funding_acreditable(bt, cal):
+            funding = bt.get("funding")
+            # El funding es un coste adicional sobre el neto ya acreditado
+            # por el motor operativo (que no lo incluia).
+            net_pnl = (tr.net_pnl - funding
+                       if tr.net_pnl is not None and funding is not None
+                       else tr.net_pnl)
+            veredicto["resultado"] = replace(
+                tr, funding=funding, net_pnl=net_pnl,
+                funding_estado=bt.get("funding_model", "settlement-calendar"))
+            veredicto["creditable"] = True
+            veredicto["puede_mejorar"] = False
+            veredicto["motivo"] = "cobertura_credenciable"
+            return veredicto
+        # Cobertura todavia no acreditable: distinguir lo que puede mejorar
+        # con evidencia posterior de lo que ya es definitivo.
+        uncovered = int(bt.get("funding_uncovered_ms") or 0)
+        gap = int(bt.get("funding_gap_ms") or 0)
+        unknown = int(bt.get("funding_unknown") or 0)
+        if cal.interval_ms is None:
+            veredicto["puede_mejorar"] = True
+            veredicto["motivo"] = "cadencia_no_inferida"
+        elif uncovered > 0 and gap == 0 and unknown == 0:
+            veredicto["puede_mejorar"] = True
+            veredicto["motivo"] = "falta_la_liquidacion_posterior_a_la_salida"
+        elif gap > 0:
+            veredicto["motivo"] = "hueco_interior_observado"
+        elif unknown > 0:
+            veredicto["motivo"] = "liquidacion_sin_marca_usable"
+        else:
+            veredicto["motivo"] = "cobertura_insuficiente"
+        # Cobertura no acreditable: el importe NO se acredita (ni total ni
+        # parcial) y el neto conserva el valor sin funding.
+        veredicto["resultado"] = replace(
+            tr, funding=None,
+            funding_estado="settlement-calendar incompleto (UNKNOWN, no cero)")
+        return veredicto
+
+    def persistir(self, tr: OperativoTradeResult,
+                  contabilidad: Optional[Dict[str, str]] = None) -> bool:
         row = {
             "kind": "resultado_operativo",
             "observation_id": tr.observation_id,
@@ -684,6 +826,9 @@ class OperativoAdapter:
         detalle = self._funding_cuenta.get(tr.observation_id)
         if detalle:
             row.update(detalle)
+        if contabilidad:
+            row["contabilidad_funding_estado"] = contabilidad.get("estado")
+            row["contabilidad_funding_motivo"] = contabilidad.get("motivo")
         if tr.exit_executed is not True or tr.exit_ms is None:
             row["net_pnl_marca"] = tr.net_pnl
             row["net_pnl"] = None
@@ -700,8 +845,14 @@ class OperativoAdapter:
             row["neto_motivo"] = "funding acreditado y cobertura completa"
         else:
             row["neto_estado"] = "CONDICIONADO_SIN_FUNDING_COMPLETO"
-            row["neto_motivo"] = (
-                "resultado numerico sin funding completo; no es neto completo")
+            if contabilidad and contabilidad.get("motivo"):
+                row["neto_motivo"] = (
+                    "funding no acreditado: %s; el neto no es completo"
+                    % contabilidad["motivo"])
+            else:
+                row["neto_motivo"] = (
+                    "resultado numerico sin funding completo; no es neto "
+                    "completo")
         return self._escribir(row)
 
     def _config_hash(self) -> str:
@@ -792,6 +943,22 @@ def _detalle_funding(bt: Dict[str, Any], cal: FundingCalendar) -> Dict[str, Any]
         "funding_sin_cubrir_ms": int(bt.get("funding_uncovered_ms") or 0),
         "funding_huecos_ms": int(bt.get("funding_gap_ms") or 0),
         "funding_settlements_desconocidos": int(bt.get("funding_unknown") or 0),
+        # Evidencia de la contabilidad: que liquidaciones se aplicaron y
+        # cuales quedaron excluidas por marca inservible. Solo se publica lo
+        # que cae dentro de [entry_ms, exit_ms).
+        "funding_liquidaciones": [
+            {
+                "settlement_ms": ev.get("settlement_ms"),
+                "basis": ev.get("basis"),
+                "rate_bps": ev.get("rate_bps"),
+                "amount": ev.get("amount"),
+                "held_qty": ev.get("held_qty"),
+                "settlement_mark_px": ev.get("settlement_mark_px"),
+                "mark_source": ev.get("mark_source"),
+                "reason": ev.get("reason"),
+            }
+            for ev in (bt.get("funding_events") or [])
+        ],
         "funding_calendario": {
             "version": cal.version,
             "source": cal.source,

@@ -1,3 +1,73 @@
+## F-OPERATIVO-FUNDING-ESPERA-A-20261111 — Espera contable con liquidaciones observadas (via A)
+
+**1. Title:** Implementar la via A de
+[EXPERIMENTO_OPERATIVO_V2](EXPERIMENTO_OPERATIVO_V2.md) §10.6: una fase de
+espera contable acotada que completa la contabilidad de funding con
+liquidaciones realmente observadas, sin exigir garantia de publicacion y sin
+ampliar la exposicion ni el settle mas alla de sus horizontes originales.
+
+**2. Approval status:** AUTORIZADO para preparacion, implementacion minima y
+pruebas locales. La decision humana de 2026-11-11 fija la via A como metodo de
+la primera ventana y difiere la via B, que se conserva sin cambios. NO
+autoriza Binance, adquisicion publica, ordenes reales, ejecucion de ventanas,
+ampliacion de presupuestos, servicios nuevos ni cambios de la configuracion
+congelada.
+
+**3. Implementation status:** IMPLEMENTADO. `--funding-method
+observed-settlements` explicita la via y falla cerrada sin fuente real o sin
+espera, y no admite plazos ni consultas por encima de los topes del protocolo
+(32 400 s y 3 consultas por simbolo). La corrida separa captura, settle y
+espera contable: los feeds se cierran al terminar la captura, la salida de cada
+operacion se decide por su regla y se publica con la contabilidad en
+`PENDIENTE`, y la espera solo consulta liquidaciones observadas y publica el
+resultado, sin abrir seleccion, entrada ni posicion. La adquisicion es una
+consulta diferida por simbolo con posicion cerrada, programada con la cadencia
+OBSERVADA de ese simbolo mas un margen de 30 min, reutilizando cliente, puerta
+de presupuesto y ledger. La contabilidad usa la funcion canonica de
+`backtest_offline` sobre el intervalo real `[entry_ms, exit_ms)` de la posicion
+(nueva funcion publica `funding_accounting_for_position`), sin recalcular la
+operacion. Cada posicion publica `contabilidad_funding_estado` en `PENDIENTE`,
+`ACREDITADA` o `UNKNOWN` con su motivo y su diagnostico; el neto es `COMPLETO`
+solo con funding acreditado y salida ejecutada. La via B conserva su ruta
+previa sin cambios de comportamiento y los calendarios legacy conservan sus
+hashes.
+
+**4. Evaluation status:** VERIFICADO localmente con aceptacion A-H mediante el
+CLI real. NO EVALUADO economicamente: no hay rentabilidad, direccion ni
+expectativa neta acreditadas, y la ventana publica no se ha ejecutado. El P0
+de la via B (prueba oficial de ausencia de liquidaciones y retraso maximo de
+publicacion) sigue abierto y diferido.
+
+**5. Evidence:** `tests/test_operativo_funding_espera_contable.py` (5 passed):
+A, la captura termina y los feeds se cierran; B, la operacion sale por su regla
+con el funding pendiente; C, la liquidacion posterior todavia no publicada no
+se inventa; D, la evidencia suficiente completa la contabilidad en la misma
+corrida; E, un pago posterior a la salida no se cobra; F, cobertura
+insuficiente o vencimiento de espera queda `UNKNOWN` con motivo; G, la parada
+del operador conserva el pendiente con su causa y limpia; H, proveedor, gate y
+planificacion presupuestaria coherentes. Regresiones afectadas: 100 passed.
+Presupuesto `--budget-only` local (no ejecutado, sin red): 1004/1334 intentos,
+1472/3752 peso, 60 consultas de funding, 110/500 concentracion 5 min,
+4 696 872 B previstos de almacenamiento, `cabe_en_limites: true`, salida 0.
+Detalle en `docs/DECISIONS.md` (2026-11-11) y `docs/CURRENT_STATE.md`.
+
+**6. Verdict:** la via A esta implementada y probada localmente con una unica
+corrida, un unico presupuesto y un plazo acotado que no se prorroga. La
+contabilidad sigue siendo la autoridad canonica por posicion, `UNKNOWN` nunca
+se convierte en cero y no se fabrican liquidaciones. La ventana publica sigue
+en NO-GO por falta de autorizacion humana explicita, no por un defecto de
+codigo.
+
+**7. Next step:** solicitar autorizacion humana explicita para **una sola**
+ventana con el comando exacto y el presupuesto publicados en §10.6, ejecutarla
+una vez, conservar logs, exit code, ledger, funding y hashes y reconstruir la
+economia desde lo persistido. Mantener la via B disponible y sin tocar: si
+aparece evidencia oficial de venue, validarla contra `funding-coverage/v1` y
+revalidar las regresiones afectadas. No abrir Binance por iniciativa propia,
+no abrir ventanas adicionales y no tocar GARCH ni los futuros con vencimiento.
+
+---
+
 ## F-OPERATIVO-FUNDING-COVERAGE-B-20261110 — Cobertura historica explicita de funding
 
 **1. Title:** Implementar la opcion B de
