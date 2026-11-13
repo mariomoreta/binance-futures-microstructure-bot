@@ -21,7 +21,7 @@ locales): convierte el máximo de 40 500 s en un control efectivo del proceso.
 | Monitor | `http://127.0.0.1:3020/market-lab?vista=piloto&run=exp-v2-ventana-2-20261112a` |
 | SHA de código del presupuesto | `cd788277a46f9d3ef05d8257517442368b48218b` (árbol con el que se calculó el presupuesto original; **este bloque sí cambia código**, solo el lanzador) |
 | Presupuesto revalidado | 2026-11-12, con la **forma final** del comando (incluidas `--work-timeout-seconds 40200 --shutdown-grace-seconds 300` del lanzador), `--budget-only` y **sin red**: salida real **0**, `stderr` vacío, gate **13/13**, mismas cifras; artefactos y hashes en este mismo directorio |
-| SHA de ejecución | el commit que publique esta propuesta; se confirmará en el momento de solicitar autorización (el manifiesto de la corrida registra `git_head`) |
+| SHA de ejecución | **código** en `289963df20d2bd37c2be0db7da66cbd4c1e49217` (commit publicado con el control temporal del lanzador; commits posteriores solo de documentación no alteran el árbol de código). El manifiesto de la corrida registra `git_head` |
 | Reutilización | **ninguna**: no se reutiliza `exp-v2-ventana-1-20261112a` ni ningún otro `run_id`; este presupuesto **no** es una renovación del anterior |
 
 El monitor es de **solo lectura** y resuelve el `run_id` dentro de

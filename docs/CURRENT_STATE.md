@@ -54,6 +54,9 @@ curso puede terminar; una adquisición nueva no).
 - **Lo que NO cambia:** no se ha abierto mercado en este bloque; no hay órdenes,
   claves ni cuentas; no se ejecutó la ventana; los 300 s siguen siendo
   **margen propuesto sin autorización**.
+- **Publicado:** commit `289963df20d2bd37c2be0db7da66cbd4c1e49217` en
+  `research/universe-liquidez-v1` (push normal; local == remoto). Es el **SHA
+  de código** con el que se ejecutaría la ventana.
 
 ## Ventana operativa única propuesta — PREPARADA, NO EJECUTADA (2026-11-12)
 
