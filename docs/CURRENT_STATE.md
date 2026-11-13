@@ -65,6 +65,9 @@ reproducidos contra el código publicado (`d53d8ad`) y **corregidos**:
 - **Evidencia:** [RESUMEN](evidence/lanzador-control-temporal/DEFECTOS/RESUMEN.md)
   (reproducción determinista ANTES/DESPUES + ejecución real en Windows +
   hashes).
+- **Publicado:** commit `b0fdb52f07e4fdf3f4c2b7c3aa8253b12d9b096e` en
+  `research/universe-liquidez-v1` (push normal; local == remoto verificado con
+  `git ls-remote`). Es el **SHA de código** vigente para la futura ventana.
 - **Lo que NO cambia:** no se ha abierto mercado en este bloque; no se
   ejecutó ni el diagnóstico público ni la ventana operativa; no cambian
   estrategia, selección, funding, contabilidad, exposición, presupuestos
@@ -128,7 +131,12 @@ curso puede terminar; una adquisición nueva no).
   **margen propuesto sin autorización**.
 - **Publicado:** commit `289963df20d2bd37c2be0db7da66cbd4c1e49217` en
   `research/universe-liquidez-v1` (push normal; local == remoto). Es el **SHA
-  de código** con el que se ejecutaría la ventana.
+  de código** con el que se ejecutaría la ventana. **Actualizado el
+  2026-11-13:** el SHA de código vigente es
+  `b0fdb52f07e4fdf3f4c2b7c3aa8253b12d9b096e` (corrección de los dos defectos
+  materiales del lanzador); entre `d53d8ad` y `b0fdb52` **solo cambió
+  `scripts/run_pilot_window.py`**, no `scripts/research_pilot.py`, por lo que
+  el presupuesto revalidado sigue vigente.
 
 ## Ventana operativa única propuesta — PREPARADA, NO EJECUTADA (2026-11-12)
 

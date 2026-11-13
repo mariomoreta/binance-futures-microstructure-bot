@@ -21,7 +21,7 @@ locales): convierte el máximo de 40 500 s en un control efectivo del proceso.
 | Monitor | `http://127.0.0.1:3020/market-lab?vista=piloto&run=exp-v2-ventana-2-20261112a` |
 | SHA de código del presupuesto | `cd788277a46f9d3ef05d8257517442368b48218b` (árbol con el que se calculó el presupuesto original; **este bloque sí cambia código**, solo el lanzador) |
 | Presupuesto revalidado | 2026-11-12, con la **forma final** del comando (incluidas `--work-timeout-seconds 40200 --shutdown-grace-seconds 300` del lanzador), `--budget-only` y **sin red**: salida real **0**, `stderr` vacío, gate **13/13**, mismas cifras; artefactos y hashes en este mismo directorio |
-| SHA de ejecución | **código** en `289963df20d2bd37c2be0db7da66cbd4c1e49217` (commit publicado con el control temporal del lanzador; commits posteriores solo de documentación no alteran el árbol de código). El manifiesto de la corrida registra `git_head` |
+| SHA de ejecución | **código** en `b0fdb52f07e4fdf3f4c2b7c3aa8253b12d9b096e` (commit publicado con la corrección de los dos defectos materiales del lanzador: plazo global y cierre basado en evidencia). Entre `d53d8ad` y `b0fdb52` **solo cambió `scripts/run_pilot_window.py`** (el lanzador): `scripts/research_pilot.py` —el código que determina el presupuesto, la selección y la contabilidad— **no cambió** (`git diff --name-only d53d8ad b0fdb52`), por lo que la revalidación de presupuesto del 2026-11-12 sigue vigente sin cambios de cifras. El manifiesto de la corrida registra `git_head` |
 | Reutilización | **ninguna**: no se reutiliza `exp-v2-ventana-1-20261112a` ni ningún otro `run_id`; este presupuesto **no** es una renovación del anterior |
 
 El monitor es de **solo lectura** y resuelve el `run_id` dentro de
