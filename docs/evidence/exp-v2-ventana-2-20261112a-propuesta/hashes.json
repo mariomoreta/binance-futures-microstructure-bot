@@ -1,0 +1,8 @@
+{
+  "_nota": "Hashes SHA-256 de la evidencia compacta de la PROPUESTA (no ejecutada) de la ventana exp-v2-ventana-2-20261112a. El presupuesto se calculo con --budget-only (sin red) en el arbol cd788277a46f9d3ef05d8257517442368b48218b. Los originales se conservan en C:\\proyectos\\binance-futures-data\\_presupuesto\\exp-v2-ventana-2-20261112a (fuera de Git).",
+  "presupuesto.json": "d8a2b5ae4be87f3c69e56865bfaa2357b9814692f37b3f854ca34e588071158d",
+  "launcher.json": "c4f925c69fc947103cd4fd2e543cd0e82625f1f8ae8e0d3334e7a96c74b333c2",
+  "stdout.log": "57c92fd354c6412e63142ddb22b989d217cfbe4ea2831a1bd037919e2f6f42a8",
+  "stderr.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "exit_code.txt": "13bf7b3039c63bf5a50491fa3cfd8eb4e699d1ba1436315aef9cbe5711530354"
+}

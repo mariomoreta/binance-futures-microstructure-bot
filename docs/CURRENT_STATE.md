@@ -1,11 +1,51 @@
 # Estado vigente — dirección operativa, 2026-11-12
 
-## Diagnóstico WS de recepción ejecutado — PASS (2026-11-12, PÚBLICO, autorización acotada)
+## Ventana operativa única propuesta — PREPARADA, NO EJECUTADA (2026-11-12)
+
+Propuesta concreta para **una sola** ventana por la **vía A**
+(`observed-settlements`), con la configuración congelada del protocolo y las
+rutas WS corregidas (`/public` libro, `/market` flujo). **No se ha abierto
+mercado en este bloque**: solo se ejecutó `--budget-only` (sin red). Detalle:
+[PROPUESTA](evidence/exp-v2-ventana-2-20261112a-propuesta/PROPUESTA.md).
+
+- **Identidad reservada:** `run_id exp-v2-ventana-2-20261112a` (nuevo, nunca
+  ejecutado; verificado que no existe ni en el área de datos ni en el
+  repositorio) y directorio
+  `C:\proyectos\binance-futures-data\exp-v2-ventana-2-20261112a` (fuera de
+  Git; **aún no creado**, se crea al ejecutar). No es una renovación de la
+  ventana anterior: es una corrida distinta, con presupuesto propio.
+- **Presupuesto (`--budget-only`, sin mercado):** `cabe_en_limites: true`
+  (13/13). Intentos 1 334 con reservas de 2 000; peso 3 752 con reservas de
+  5 000; almacenamiento previsto 4 696 872 B y reservado máximo 52 043 648 B
+  de 134 217 728 B; funding 110 intentos reservados con máximo concentrado
+  110/500 por 5 min; WS con **2 conexiones simultáneas**, 2 aperturas
+  iniciales, 11 rotaciones previstas (22 aperturas) y **46 aperturas
+  acumuladas** como máximo. 12 selecciones, 12 ciclos de decisión, 20
+  símbolos simultáneos (12 candidatos + 8 comparadores). Los pesos son
+  **estimaciones de la política, no consumo medido por Binance**.
+- **Contrato temporal:** captura 3 600 s → resolución de resultados (settle)
+  ≤ 4 200 s → espera contable ≤ 32 400 s → cierre y persistencia final con
+  **margen propuesto de 300 s** (no autorizado). Total máximo propuesto
+  **40 500 s (11 h 15 min)**; el máximo propio del CLI es 40 200 s.
+- **Monitor:** `http://127.0.0.1:3020/market-lab?vista=piloto&run=exp-v2-ventana-2-20261112a`.
+- **Estado:** **espera autorización humana explícita**. El diagnóstico de
+  recepción acreditó el transporte, pero **no habilita** esta ventana: sigue
+  sin evaluación económica y no autoriza capturas nuevas por sí solo.
+
+## Diagnóstico WS de recepción ejecutado — PASS limitado; plazo global NO CUMPLE (2026-11-12, PÚBLICO, autorización acotada)
+
+> **Rectificado el 2026-11-12:** ver
+> [RECTIFICACION](evidence/diag-ws-recepcion-20261112a/RECTIFICACION-20261112.md).
+> Se retira la afirmación de cumplimiento global sin reservas. Los artefactos
+> originales y sus hashes se conservan intactos, incluido el `PASS` emitido por
+> el script (que queda como antecedente).
 
 Ejecutado **una sola vez** el diagnóstico preparado (`diag-ws-recepcion-20261112a`,
 SHA de ejecución `37b779c456c5aed234171bbb0fe3421b979bb150`), con la
 autorización humana acotada al alcance de recepción. Evidencia compacta:
-[INFORRE](evidence/diag-ws-recepcion-20261112a/INFORRE.md).
+[INFORRE](evidence/diag-ws-recepcion-20261112a/INFORRE.md) (antecedente) y
+[RECTIFICACION](evidence/diag-ws-recepcion-20261112a/RECTIFICACION-20261112.md)
+(veredicto vigente).
 
 **Resultado del diagnóstico actual (lo único que este bloque mide):** el
 transporte productivo **recibió y procesó datos reales** en las rutas vigentes.
@@ -15,13 +55,18 @@ Feed de libro `/public` (`depth20@100ms`): 1 conexión, 0 reconexiones, 0 errore
 **552 frames de datos, 552 eventos válidos, 552 procesados por `BookEngine`**.
 Cero frames de control (un ACK no acreditó flujo). Código de salida observado
 **0**, leído de `Popen.wait()` (`exit_code.txt` y `launcher.json.returncode`),
-no inferido. Límites respetados (1 325 frames ≪ 200 000; 2 360 B ≪ 1 MB) y
-recursos propios cerrados (proceso terminado, `connected_now: false`, sin
-proceso propio vivo). **Veredicto: PASS**, contrastado con los artefactos y no
-solo con la salida del script. Duración: observación 60 s configurados;
-proceso total 65.034 s (diagnóstico) / 65.557 s (lanzador): el exceso de ~5 s
-corresponde al cierre de sockets (`close_timeout=5`), no a ampliar la
-observación; no hubo reintento ni relanzamiento.
+no inferido. Mensajes, almacenamiento, conexiones y errores: **dentro de los
+límites observados** (1 325 frames ≪ 200 000; 2 360 B ≪ 1 MB; 2 conexiones;
+0 errores; `stderr.log` vacío). Recursos propios cerrados (proceso terminado,
+`connected_now: false`, sin proceso propio vivo).
+
+**Veredicto rectificado:** **PASS en recepción y procesamiento** (contrastado
+con los artefactos, no solo con la salida del script), pero el **plazo global
+de 60 s NO CUMPLE**: diagnóstico **65.034 s**, lanzador **65.557 s**. La
+configuración de 60 s **no es una medición independiente** de la duración
+efectiva de observación. El cierre de sockets es **compatible** con el exceso
+(`close_timeout=5`), pero **no lo convierte en cumplimiento**: el artefacto no
+separa observación de cierre. Sin reintento ni relanzamiento.
 
 **Lo que cambia:** el bloqueo material de datos que vació el embudo de
 `exp-v2-ventana-1-20261112a` **está resuelto para el transporte**: con la ruta

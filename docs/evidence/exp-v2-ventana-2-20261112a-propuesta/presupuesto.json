@@ -1,0 +1,239 @@
+{
+  "almacenamiento": {
+    "auxiliares_bytes_previstos": 131072,
+    "funding_calendar_bytes_previstos": 80000,
+    "http_ledger_bytes_previstos": 933800,
+    "jsonl_bytes_previstos": 1632000,
+    "margen_bytes": 129520856,
+    "margen_porcentaje": 96.5,
+    "margen_reservado_bytes": 82174080,
+    "nota": "El tope incluye JSONL de datos, ledger HTTP, calendarios de funding, SQLite y sus auxiliares. Cada JSONL reserva sus bytes exactos antes de escribir; SQLite y el ledger tienen cuotas fisicas reservadas para evitar carreras. Los indices finales y el estado de progreso no forman parte del tope de datos de la ventana.",
+    "reserva_http_ledger_bytes": 16777216,
+    "reserva_sqlite_bytes": 33554432,
+    "sqlite_bytes_previstos": 1920000,
+    "tope_configurado_bytes": 134217728,
+    "total_bytes_previstos": 4696872,
+    "total_reservado_con_jsonl_bytes": 52043648
+  },
+  "funding": {
+    "consultas_base_ventana": 20,
+    "consultas_maximas_por_simbolo": 3,
+    "consultas_repetidas_reserva": 40,
+    "espera_contable_max_s": 32400.0,
+    "fuente": "exchange",
+    "intentos_totales_reservados": 110,
+    "limite_compartido_endpoint_5m": 500,
+    "maximo_concentrado_5m_planificado": 110,
+    "metodo": "observed-settlements",
+    "nota": "Metodo A (observed-settlements): una consulta diferida por simbolo con posicion abierta, programada con la cadencia OBSERVADA de ese simbolo mas un margen de publicacion; las repetidas quedan reservadas aparte y el plazo maximo de la espera no se prorroga nunca. Metodo B (coverage-contract): una consulta por observacion operativa apta con el contrato funding-coverage/v1. El limite de 500/5 min pertenece al endpoint; el maximo concentrado se calcula de forma conservadora. Las tasas se consultan despues de T y no pueden decidir la entrada.",
+    "reintentos_por_fallo_compartidos": 50
+  },
+  "gate": {
+    "almacenamiento_previsto_bytes": 4696872,
+    "almacenamiento_reservado_max_bytes": 52043648,
+    "cabe_en_limites": true,
+    "comprobaciones": {
+      "almacenamiento_dentro_del_techo": true,
+      "almacenamiento_no_amplia_protocolo": true,
+      "almacenamiento_reservado_dentro_del_techo": true,
+      "cupo_simbolos_coherente": true,
+      "funding_rate_5m_dentro_del_limite": true,
+      "intentos_no_amplian_protocolo": true,
+      "intentos_plan_dentro_del_techo": true,
+      "mensajes_no_amplian_protocolo": true,
+      "peso_no_amplia_protocolo": true,
+      "peso_plan_dentro_del_techo": true,
+      "reconexiones_no_amplian_protocolo": true,
+      "reintentos_no_amplian_protocolo": true,
+      "streams_por_conexion_dentro_del_limite": true
+    },
+    "funding_maximo_concentrado_5m": 110,
+    "intentos_plan_con_reservas": 1334,
+    "peso_plan_con_reservas": 3752
+  },
+  "interrupcion_y_limpieza": {
+    "condiciones": [
+      "duracion de captura agotada",
+      "max_observaciones alcanzado",
+      "tope de bytes (almacenamiento total) alcanzado",
+      "max_mensajes WS alcanzado",
+      "reconexiones WS acumuladas agotadas",
+      "presupuesto HTTP agotado (intentos/peso/reintentos)",
+      "senal externa (SIGINT/SIGTERM)"
+    ],
+    "limpieza": [
+      "cancelar feeds WS y cerrar conexiones",
+      "drenar ResearchRecorder (buckets abiertos como PARTIAL)",
+      "escribir resultados pendientes como PENDING con motivo",
+      "escribir manifiesto y resumen desde lo persistido"
+    ]
+  },
+  "limites_efectivos": {
+    "funding_rate_shared_limit_5m": 500,
+    "funding_rate_shared_window_ms": 300000,
+    "max_bytes_almacenamiento": 134217728,
+    "max_http_attempts": 2000,
+    "max_http_retries": 50,
+    "max_http_weight": 5000,
+    "max_messages": 5000000,
+    "max_ws_reconnects": 20
+  },
+  "mode": "public",
+  "no_incluye": [
+    "adquisicion de order book historico",
+    "backfill de huecos",
+    "ordenes, claves o endpoints privados",
+    "llamadas /time (no realizadas por el programa)"
+  ],
+  "rest": {
+    "cabe_en_limites": true,
+    "endpoints": {
+      "/fapi/v1/exchangeInfo": {
+        "llamadas": 12,
+        "peso_total": 12,
+        "peso_unitario": 1
+      },
+      "/fapi/v1/fundingRate": {
+        "llamadas": 20,
+        "nota": "1 por simbolo con posicion abierta cuando --funding-method observed-settlements (A): la consulta es diferida y se programa con la cadencia OBSERVADA de ese simbolo; 1 por observacion operativa apta con --funding-method coverage-contract (B). En ambos casos consulta el historico realizado del simbolo efectivamente investigado, despues de T y solo para contabilidad. Limite compartido del endpoint: 500/5 min",
+        "peso_total": 20,
+        "peso_unitario": 1
+      },
+      "/fapi/v1/klines_resultado_resolve": {
+        "llamadas": 720,
+        "nota": "1 por observacion y horizonte (resolve_due de resultados; interval 1m, limit=1)",
+        "peso_total": 720,
+        "peso_unitario": 1
+      },
+      "/fapi/v1/klines_trayectoria_operativa": {
+        "llamadas": 240,
+        "nota": "1 por observacion apta (la serie 1m cubre entrada, gestion y salida; interval 1m). Se consulta cuando la trayectoria del horizonte puede estar disponible (decision + horizonte + un paso), no en cada tick",
+        "peso_total": 240,
+        "peso_unitario": 1
+      },
+      "/fapi/v1/ticker/24hr": {
+        "llamadas": 12,
+        "peso_total": 480,
+        "peso_unitario": 40
+      }
+    },
+    "estimacion_base": {
+      "consultas_operativas": {
+        "llamadas": 240,
+        "nota": "trayectoria completa por observacion apta",
+        "peso": 240
+      },
+      "funding_real": {
+        "llamadas": 20,
+        "nota": "historial realizado por simbolo observado; 0 si funding_source=none",
+        "peso": 20
+      },
+      "intentos": 1004,
+      "peso": 1472,
+      "preparacion": {
+        "llamadas": 24,
+        "nota": "catalogo + tickers por seleccion",
+        "peso": 492
+      },
+      "resultados_por_horizonte": {
+        "llamadas": 720,
+        "nota": "1 precio posterior por observacion y horizonte",
+        "peso": 720
+      }
+    },
+    "intentos_base": 1004,
+    "intentos_base_mas_reintentos": 1054,
+    "intentos_base_mas_reservas": 1334,
+    "intentos_techo_efectivo": 2000,
+    "nota_consultas_repetidas": "La estimacion base cuenta UNA consulta de trayectoria por observacion apta (la politica las programa cuando la trayectoria del horizonte puede estar disponible), mas las consultas de resultados por horizonte y la preparacion. Las peticiones repetidas y los reintentos por fallo son reservas aparte: la estimacion base NO es un maximo garantizado, el limite efectivo es max_http_attempts/max_http_weight (2000/5000 en la configuracion congelada).",
+    "peso_base": 1472,
+    "peso_base_mas_reintentos_max": 3472,
+    "peso_base_mas_reservas_max": 3752,
+    "peso_reserva_reintentos_max": 2000,
+    "peso_techo_efectivo": 5000,
+    "peso_total_estimado": 1472,
+    "reintentos_tope": 50,
+    "reservas": {
+      "intentos": 330,
+      "peso": 2280,
+      "peticiones_repetidas_funding_por_observacion": {
+        "llamadas": 40,
+        "max_por_unidad": 2,
+        "nota": "peticion repetida del historico real de funding (metodo A: una por simbolo con posicion abierta; metodo B: una por observacion operativa apta); distinta del reintento por fallo",
+        "peso": 40,
+        "unidad": "simbolo"
+      },
+      "peticiones_repetidas_por_observacion": {
+        "llamadas": 240,
+        "max_por_observacion": 1,
+        "nota": "peticion REPETIDA (misma observacion consultada en otro intervalo) cuando la trayectoria no fue utilizable; distinta del reintento por fallo",
+        "peso": 240
+      },
+      "reintentos_por_fallo": {
+        "llamadas": 50,
+        "max_por_ventana": 50,
+        "nota": "reintento del cliente HTTP ante fallo; se cuenta aparte de las peticiones repetidas",
+        "peso_max": 2000
+      }
+    }
+  },
+  "simbolos": {
+    "incluye_pendientes": true,
+    "nota": "los resultados pendientes no abren WS; solo consumen consultas de klines sujetas al presupuesto HTTP",
+    "simultaneos_max": 20
+  },
+  "supuestos": {
+    "ciclos_decision": 12,
+    "duracion_captura_s": 3600.0,
+    "duracion_maxima_total_s": 40200.0,
+    "espera_contable_max_s": 32400.0,
+    "funding_metodo": "observed-settlements",
+    "funding_source": "exchange",
+    "horizontes": [
+      "5m",
+      "15m",
+      "60m"
+    ],
+    "nota": "No se presupuestan llamadas /time (el programa no las realiza). Los reintentos se reservan con max_http_retries (50), no con un 5 % fijo; el limite efectivo es max_http_attempts/max_http_weight.",
+    "periodo_settle_s": 4200.0,
+    "pesos_oficiales": {
+      "exchangeInfo": 1,
+      "fundingRate": 1,
+      "klines_limit_1_100": 1,
+      "ticker_24hr_sin_symbol": 40
+    },
+    "pool_referencia": "REQUEST_WEIGHT de exchangeInfo.rateLimits y cabecera X-MBX-USED-WEIGHT-1M; 2400/min por IP, UM y CM comparten pool (referencia, no garantia de disponibilidad)",
+    "selecciones": 12,
+    "simbolos_simultaneos_max": 20,
+    "total_s": 40200.0
+  },
+  "version": "research-pilot-v2",
+  "ws": {
+    "aperturas_iniciales": 2,
+    "aperturas_por_rotacion_max": 22,
+    "aperturas_totales_max": 46,
+    "categorias": {
+      "market": "market",
+      "public": "public"
+    },
+    "conexiones_simultaneas": 2,
+    "endpoints": [
+      "wss://fstream.binance.com/public",
+      "wss://fstream.binance.com/market"
+    ],
+    "limite_mensajes_entrantes_por_s": 10,
+    "limite_streams_por_conexion": 1024,
+    "mensajes_datos_tope": 5000000,
+    "nota": "depth20@100ms pertenece a /public; aggTrade a /market: son dos conexiones distintas (docs oficiales, aviso de rutas). Cada rotacion reabre ambos feeds: 2 aperturas por cambio. max_ws_reconnects cuenta reaperturas tras una desconexion o fallo (incluye cierres normales del servidor); no cuenta la apertura inicial ni las rotaciones deliberadas, y se comprueba por tick. max_messages cuenta solo mensajes de datos; los ping/pong de control no se contabilizan.",
+    "plantilla_url": {
+      "market": "wss://fstream.binance.com/market/stream?streams=<simbolo>@aggTrade/...",
+      "public": "wss://fstream.binance.com/public/stream?streams=<simbolo>@depth20@100ms/..."
+    },
+    "reaperturas_tras_desconexion_tope": 20,
+    "rotaciones_previstas": 11,
+    "sobregiro_reaperturas_por_tick_max": 2,
+    "streams_pico_por_conexion": 20,
+    "streams_pico_total": 40,
+    "vida_maxima_conexion_s": 86400
+  }
+}

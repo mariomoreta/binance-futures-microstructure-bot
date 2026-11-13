@@ -1,5 +1,13 @@
 # Diagnóstico WS de recepción — `diag-ws-recepcion-20261112a`
 
+> ⚠ **RECTIFICADO (2026-11-12).** Este informe es el **antecedente** de la
+> corrida y se conserva sin reescribir. Su afirmación de cumplimiento global
+> del plazo de 60 s **queda retirada**: el plazo global **NO CUMPLE**
+> (65.034 s el diagnóstico, 65.557 s el lanzador) y la configuración de 60 s no
+> es una medición independiente de la duración efectiva de observación. El
+> `PASS` emitido por el script se conserva como antecedente. Rectificación
+> completa: [RECTIFICACION-20261112.md](RECTIFICACION-20261112.md).
+
 **Fecha:** 2026-11-12 · **Alcance:** autorización humana acotada a **una sola**
 ejecución pública de recepción. **SHA de ejecución:** `37b779c456c5aed234171bbb0fe3421b979bb150`
 (local == remoto en el momento de ejecutar; incluye el código de `90ff425`).

@@ -5135,3 +5135,93 @@ docs/EXPERIMENTO_OPERATIVO_V2.md seccion 9.
   hashes), `docs/EXPERIMENTO_OPERATIVO_V2.md` §10.11, `docs/CURRENT_STATE.md`,
   `docs/FEATURE_BACKLOG.md` (entradas `diagnostico/ws-recepcion-20261112a` y
   `piloto/lanzador-directorio-y-validacion-estricta`) y `docs/TASK_QUEUE.md`.
+
+## 2026-11-12 - Rectificacion del veredicto temporal y preparacion de una ventana unica (no ejecutada)
+
+- Autorizacion del bloque: rectificar el veredicto temporal del diagnostico
+  (documental), cerrar el diagnostico y **preparar sin ejecutar** una sola
+  ventana nueva. **No se abre Binance en este bloque**: la unica ejecucion es
+  `--budget-only` (calculo puro, sin red). NO autorizados: ventana operativa,
+  ordenes, cuentas, claves, cambios de estrategia, dashboard, datasets, DBs,
+  `opencode.json` ni archivos ajenos; tampoco on-chain, indicadores nuevos,
+  GARCH, patrones nuevos ni futuros con vencimiento.
+- Decision de rectificacion: se **retira** de las conclusiones vigentes la
+  afirmacion de cumplimiento global sin reservas del diagnostico
+  `diag-ws-recepcion-20261112a`. Veredicto vigente: recepcion y procesamiento
+  **PASS** (773 eventos de flujo y 552 de libro, validos y procesados por
+  `FlowEngine` y `BookEngine`); mensajes, almacenamiento, conexiones y errores
+  dentro de los limites observados; codigo de salida **0 acreditado**;
+  **plazo global de 60 s NO CUMPLE** (65.034 s el diagnostico, 65.557 s el
+  lanzador); la configuracion de 60 s **no es una medicion independiente** de
+  la duracion efectiva de observacion; el cierre de sockets es **compatible**
+  con el exceso pero **no lo convierte en cumplimiento**; economia **NO
+  EVALUADA**; causa raiz y exit code historicos **UNKNOWN**. No se repite el
+  diagnostico, no se abre la URL antigua y **no se toca ningun artefacto ni
+  hash**: el `PASS` emitido por el script se conserva como antecedente.
+- Decision de identificidad de la ventana propuesta: `run_id`
+  `exp-v2-ventana-2-20261112a` (nuevo; verificado que no existe ni en el area
+  de datos ni en el repositorio) y directorio
+  `C:\proyectos\binance-futures-data\exp-v2-ventana-2-20261112a` (fuera de
+  Git, **no creado todavia**). **No** se reutiliza ninguna corrida anterior ni
+  se presenta este presupuesto como renovacion del anterior: es una corrida
+  distinta con presupuesto propio.
+- Decision de contrato temporal: se separan cuatro fases con su plazo y su
+  momento de medida: captura (3 600 s, `--duration-seconds`), resolucion de
+  resultados (settle <= 4 200 s, `--settle-seconds`, solo si hay trabajo
+  pendiente), espera contable (<= 32 400 s, `--funding-wait-seconds`, consultas
+  diferidas por simbolo con posicion abierta, nunca prorrogada) y cierre y
+  persistencia final (fuera de los plazos del CLI). Para el cierre se propone
+  un margen **numerico de 300 s**, justificado por el teardown de sockets
+  observado (~5 s) y el volcado de manifiesto y resumen con hashes; **no se
+  declara autorizado** y no amplia captura, exposicion ni consultas. Total
+  maximo del CLI 40 200 s; **total maximo propuesto 40 500 s (11 h 15 min)**.
+  Si al cumplirse el maximo del CLI el proceso siguiera vivo, es un incidente
+  material a registrar, no una autorizacion para continuar.
+- Decision de configuracion: se mantiene **congelada** la del protocolo
+  (captura 3 600 s, settle 4 200 s, espera contable 32 400 s, funding real
+  `observed-settlements` con sus limites vigentes, seleccion y decision cada
+  300 s, 12 candidatos y 8 comparadores con maximo conjunto 20, frescura
+  5 000 ms, stop 0,5 %, notional 1 000 USDT, horizonte 60 min, capacidad global
+  1 y los mismos techos HTTP, peso, reintentos, WS y almacenamiento) y se usan
+  las **rutas corregidas** `/public` y `/market`. No se optimiza la
+  estrategia, no se tocan tolerancias y no se construye otro supervisor ni
+  otra plataforma de planificacion: se reutilizan CLI, motores, monitor y
+  contabilidad existentes.
+- Decision de presupuesto: `--budget-only` con los parametros exactos
+  propuestos y sin red: `cabe_en_limites: true` (13/13), codigo de salida real
+  0. Intentos 1 004 base / 1 334 con reservas de 2 000; peso 1 472 base /
+  3 752 con reservas de 5 000; almacenamiento previsto 4 696 872 B y
+  reservado maximo 52 043 648 B de 134 217 728 B; funding 110 intentos
+  reservados con maximo concentrado 110/500 por 5 min; WS con 2 conexiones
+  simultaneas, 2 aperturas iniciales, 11 rotaciones (22 aperturas) y 46
+  aperturas acumuladas como maximo, pico de 40 streams. **Los pesos son
+  estimaciones de la politica, no consumo medido por Binance**; el peso real
+  se contrasta al cierre con el ledger HTTP y las cabeceras observadas. El
+  presupuesto se calcula en un directorio propio (`_presupuesto`) para no
+  crear ni contaminar el directorio de la corrida reservada.
+- Decision de evaluacion previa (fijada antes de ejecutar): cadena completa
+  seleccion -> datos aptos -> senal o abstinencia -> entrada simulada ->
+  gestion y salida; identidad y causalidad verificables desde los registros;
+  capacidad global respetada con los rechazos contados; costes y funding
+  conocidos o `UNKNOWN` (nunca cero por defecto); netos `COMPLETO` separados
+  de `CONDICIONADO_SIN_FUNDING_COMPLETO`; denominadores por rol y por decision
+  (seleccionados, observados, aptos, descartes, `SIN_ENTRADA`,
+  `RECHAZADA_CAPACIDAD`) y cobertura por ciclo; resultado economico
+  reconstruible desde lo persistido. **Cero operaciones o cobertura
+  insuficiente son resultados validos**: no se fuerzan entradas y la ausencia
+  de operaciones no se presenta como P&L cero. El monitor presenta artefactos y
+  las operaciones reconstruidas son simulaciones, no ordenes en vivo.
+- Decision de bloqueos declarados: sigue faltando autorizacion humana para
+  ejecutar la ventana (y su margen de cierre); la causa raiz y el exit code
+  historicos siguen `UNKNOWN`; la economia sigue sin evaluarse; no hay
+  garantia de datos aptos (el precedente `public-pilot-1h-20261106a` dio 168
+  aptas de 216; la ventana anterior, 0 por la URL antigua); la espera contable
+  puede terminar en `UNKNOWN`; la recepcion esta acreditada para 60 s, no para
+  1 h con 11 rotaciones; la cobertura sigue limitada a
+  PERPETUAL/TRADING/USDT. La via B (`funding-coverage/v1`) permanece diferida y
+  sin tocar.
+- Evidencia: `docs/evidence/exp-v2-ventana-2-20261112a-propuesta/`
+  (PROPUESTA, presupuesto y hashes), `docs/evidence/diag-ws-recepcion-20261112a/RECTIFICACION-20261112.md`,
+  `docs/EXPERIMENTO_OPERATIVO_V2.md` §10.12, `docs/CURRENT_STATE.md`,
+  `docs/FEATURE_BACKLOG.md` (entradas `diagnostico/ws-recepcion-20261112a` y
+  `experimento/ventana-2-via-a-propuesta-20261112`) y `docs/TASK_QUEUE.md`.

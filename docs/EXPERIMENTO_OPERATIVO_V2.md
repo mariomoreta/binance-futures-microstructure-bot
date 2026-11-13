@@ -1419,15 +1419,26 @@ total.
 **Límites y cierre.** 1 325 frames ≪ 200 000 (`limite_mensajes_alcanzado:
 false`); 2 360 B ≪ 1 MB; sin REST, sin órdenes y sin dataset de investigación
 (el directorio de corrida, 3.41 KB, solo contiene los cinco artefactos).
-Observación de 60 s (máximo configurado); duración total del proceso 65.034 s
-(diagnóstico) / 65.557 s (lanzador): el exceso de ~5 s corresponde al **cierre
-de sockets** (`close_timeout=5` del `StreamFeed`), no a ampliar la ventana; no
-hubo reintento ni relanzamiento. Código de salida observado **0**, leído de
-`Popen.wait()` (`exit_code.txt` y `launcher.json.returncode`), `stderr.log`
-vacío; proceso terminado, `connected_now: false` y sin proceso propio vivo.
+Código de salida observado **0**, leído de `Popen.wait()` (`exit_code.txt` y
+`launcher.json.returncode`), `stderr.log` vacío; proceso terminado,
+`connected_now: false` y sin proceso propio vivo.
 
-**Veredicto: PASS**, contrastado con los artefactos y no solo con la salida
-del script.
+> ⚠ **RECTIFICADO (2026-11-12, §10.12.1).** El plazo global de 60 s **NO
+> CUMPLE**: el proceso duró **65.034 s** (diagnóstico) y **65.557 s**
+> (lanzador). La configuración de 60 s **no es una medición independiente** de
+> la duración efectiva de observación; el cierre de sockets es **compatible**
+> con el exceso pero **no lo convierte en cumplimiento** (el artefacto no
+> separa observación de cierre). El veredicto vigente es **PASS limitado a
+> recepción y procesamiento, con el plazo global NO CUMPLE**. La afirmación
+> previa de cumplimiento global sin reservas queda **retirada**. Los
+> artefactos y sus hashes se conservan intactos, incluido el `PASS` emitido
+> por el script. Rectificación:
+> [RECTIFICACION-20261112](../evidence/diag-ws-recepcion-20261112a/RECTIFICACION-20261112.md).
+
+**Veredicto:** **PASS en recepción y procesamiento** (773 eventos de flujo y
+552 de libro válidos y procesados), contrastado con los artefactos y no solo
+con la salida del script; **NO CUMPLE** el plazo global de 60 s; **NO EVALUADA**
+la economía.
 
 **Lo que cambia y lo que no.** El bloqueo material de datos que vació el
 embudo de `exp-v2-ventana-1-20261112a` **queda resuelto para el transporte**:
@@ -1442,3 +1453,77 @@ horizontes ni estabilidad prolongada. Este diagnóstico **no habilita** ninguna
 ventana operativa: esa requiere autorización humana nueva y explícita. La vía A
 (espera contable, liquidaciones observadas, neto COMPLETO vs. CONDICIONADO)
 sigue sin ejercitarse.
+
+### 10.12 Rectificación del veredicto temporal y propuesta de una ventana única (2026-11-12)
+
+#### 10.12.1 Rectificación del veredicto del diagnóstico (documental)
+
+Se retira de las conclusiones vigentes la afirmación de **cumplimiento global
+sin reservas** del diagnóstico de recepción. Veredicto vigente, punto por
+punto: recepción y procesamiento **PASS** (773 eventos de flujo y 552 de libro,
+válidos y procesados por sus motores); mensajes, almacenamiento, conexiones y
+errores **dentro de los límites observados**; código de salida **0 acreditado**;
+**plazo global de 60 s NO CUMPLE** (65.034 s el diagnóstico, 65.557 s el
+lanzador); la configuración de 60 s **no es una medición independiente** de la
+duración efectiva de observación; el cierre de sockets es **compatible** con el
+exceso pero **no lo convierte en cumplimiento**; economía **NO EVALUADA**;
+causa raíz y exit code históricos **UNKNOWN**.
+
+No se repite el diagnóstico, no se abre la URL antigua y **no se toca ningún
+artefacto ni hash**: el `PASS` emitido por el script se conserva como
+antecedente. Detalle:
+[RECTIFICACION-20261112](../evidence/diag-ws-recepcion-20261112a/RECTIFICACION-20261112.md).
+
+#### 10.12.2 Propuesta de UNA ventana por la vía A — PREPARADA, NO EJECUTADA
+
+Detalle completo en
+[PROPUESTA](../evidence/exp-v2-ventana-2-20261112a-propuesta/PROPUESTA.md).
+En este bloque **no se abrió mercado**: solo `--budget-only` (sin red).
+
+- **Identidad reservada:** `run_id exp-v2-ventana-2-20261112a` (nuevo, nunca
+  ejecutado) y directorio
+  `C:\proyectos\binance-futures-data\exp-v2-ventana-2-20261112a` (fuera de
+  Git, **no creado todavía**). No reutiliza ninguna corrida anterior ni
+  presenta su presupuesto como renovación.
+- **Configuración congelada:** captura 3 600 s, settle 4 200 s, espera
+  contable ≤ 32 400 s con funding real `observed-settlements` (≤ 3 consultas
+  por símbolo), selección y decisión cada 300 s, 12 candidatos + 8
+  comparadores (máximo conjunto 20), frescura 5 000 ms, stop 0,5 %, notional
+  1 000 USDT, horizonte 60 min, capacidad global 1 y los mismos techos HTTP,
+  peso, reintentos, WS y almacenamiento. Rutas WS corregidas `/public` y
+  `/market`.
+- **Contrato temporal:** captura (3 600 s) → resolución de resultados (settle,
+  ≤ 4 200 s) → espera contable (≤ 32 400 s) → cierre y persistencia final
+  (margen **propuesto de 300 s**, no autorizado). Máximo del CLI 40 200 s;
+  **total máximo propuesto 40 500 s (11 h 15 min)**. El margen no amplía
+  captura, exposición ni consultas; si al cumplirse el máximo del CLI el
+  proceso siguiera vivo, es un incidente material a registrar.
+- **Presupuesto (`--budget-only`, sin mercado):** `cabe_en_limites: true`
+  (13/13); intentos 1 004 base / **1 334 con reservas** de 2 000; peso 1 472
+  base / **3 752 con reservas** de 5 000; almacenamiento previsto 4 696 872 B
+  y **reservado máximo 52 043 648 B** de 134 217 728 B; funding **110
+  intentos reservados** con máximo concentrado 110/500 por 5 min; WS con **2
+  conexiones simultáneas**, 2 aperturas iniciales, 11 rotaciones (22
+  aperturas) y **46 aperturas acumuladas** como máximo, pico de 40 streams.
+  Los pesos son **estimaciones de la política, no consumo medido por
+  Binance**.
+- **Monitor:** `http://127.0.0.1:3020/market-lab?vista=piloto&run=exp-v2-ventana-2-20261112a`.
+- **Qué deberá evaluar (fijado antes de ejecutar):** cadena completa selección
+  → datos aptos → señal/abstención → entrada simulada → gestión/salida;
+  identidad y causalidad verificables; capacidad global respetada; costes y
+  funding conocidos o `UNKNOWN`; netos `COMPLETO` separados de
+  `CONDICIONADO_SIN_FUNDING_COMPLETO`; denominadores por rol y por decisión
+  (descartes y rechazos por capacidad incluidos); resultado económico
+  reconstruible desde lo persistido. **Cero operaciones o cobertura
+  insuficiente son resultados válidos**: la ausencia de operaciones no se
+  presenta como P&L cero. El monitor presenta artefactos; las operaciones
+  reconstruidas son simulaciones, no órdenes en vivo.
+- **Bloqueos que quedan:** falta autorización humana explícita (incluido el
+  margen de cierre); causa raíz y exit code históricos `UNKNOWN`; economía
+  aún sin evaluar; sin garantía de datos aptos (el precedente
+  `public-pilot-1h-20261106a` dio 168 aptas de 216; la ventana anterior, 0 por
+  la URL antigua); la espera contable puede terminar en `UNKNOWN`; la
+  recepción está acreditada para 60 s, no para 1 h con 11 rotaciones; la
+  cobertura sigue limitada a PERPETUAL/TRADING/USDT. On-chain, indicadores
+  nuevos, GARCH, patrones nuevos, futuros con vencimiento y cambios de
+  dashboard quedan **fuera de esta ventana**.

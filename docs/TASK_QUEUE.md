@@ -34,28 +34,55 @@ neto COMPLETO vs. CONDICIONADO): eso se debe decir sin adornos, y la vía B
 permanece diferida sin ampliar ningún validador.
 
 `NEXT_TASKS`:
-1. **Comprobación pública de recepción: EJECUTADA (2026-11-12, PASS).** Se
+1. **Ventana operativa única por la vía A: PROPUESTA y PREPARADA, NO
+   EJECUTADA (2026-11-12).** `run_id exp-v2-ventana-2-20261112a` (nuevo, nunca
+   ejecutado) y directorio
+   `C:\proyectos\binance-futures-data\exp-v2-ventana-2-20261112a` (fuera de
+   Git, **no creado todavía**), con la configuración congelada y las rutas
+   WS corregidas `/public` y `/market`. Presupuesto calculado con
+   `--budget-only` **sin mercado**: `cabe_en_limites: true` (13/13), intentos
+   1 334/2 000 con reservas, peso 3 752/5 000, almacenamiento reservado
+   máximo 52 043 648 B de 134 217 728 B, funding 110 intentos reservados con
+   máximo concentrado 110/500 por 5 min, **2 conexiones simultáneas** y 46
+   aperturas acumuladas como máximo. Contrato temporal: captura 3 600 s →
+   settle ≤ 4 200 s → espera contable ≤ 32 400 s → cierre con margen
+   **propuesto de 300 s** (no autorizado); total máximo propuesto **40 500 s
+   (11 h 15 min)**. Monitor:
+   `http://127.0.0.1:3020/market-lab?vista=piloto&run=exp-v2-ventana-2-20261112a`.
+   Detalle: [PROPUESTA](evidence/exp-v2-ventana-2-20261112a-propuesta/PROPUESTA.md).
+   **Requiere autorización humana explícita, también para el margen de
+   cierre**; no se ejecuta por iniciativa propia.
+2. **Diagnóstico WS de recepción: EJECUTADO y RECTIFICADO (2026-11-12).** Se
    ejecutó **una sola vez** el diagnóstico preparado con la autorización
    acotada al alcance de recepción (`diag-ws-recepcion-20261112a`, SHA de
-   ejecución `37b779c456c5aed234171bbb0fe3421b979bb150`). Resultado: trades
-   `/market` con **773 frames de datos, 773 eventos válidos y 773 procesados
-   por `FlowEngine`**; libro `/public` con **552 / 552 / 552 procesados por
-   `BookEngine`**; 2 conexiones, 0 reconexiones, 0 errores, 0 frames de
-   control; código de salida observado **0** (`Popen.wait()`); límites
-   respetados y recursos propios cerrados. Evidencia compacta:
-   [INFORRE](evidence/diag-ws-recepcion-20261112a/INFORRE.md). El bloqueo
-   material de datos **queda resuelto para el transporte**: con la ruta por
-   categoría correcta hay flujo real. **La causa raíz histórica sigue
-   `UNKNOWN`** (no se abrió la URL antigua contra el venue) y el exit code
-   histórico sigue **`UNKNOWN`**.
-2. **Ninguna ventana operativa sin autorización humana explícita y nueva.**
-   Este diagnóstico **no habilita** ninguna ventana: no evalúa rentabilidad,
-   estabilidad prolongada, cobertura de universo ni capacidad de operar, y no
-   generó señales, decisiones, operaciones, órdenes ni cuentas. Si se autoriza
-   una ventana, será con la configuración congelada, un `run_id` nuevo no
-   ejecutado, el mismo protocolo de monitor y el envoltorio de salida ya
-   corregido (que persiste el código real en el mismo directorio).
-3. **Envoltorio de salida: corregido y verificado en local (2026-11-12).**
+   ejecución `37b779c456c5aed234171bbb0fe3421b979bb150`). Resultado:
+   trades `/market` con **773 frames de datos, 773 eventos válidos y 773
+   procesados por `FlowEngine`**; libro `/public` con **552 / 552 / 552
+   procesados por `BookEngine`**; 2 conexiones, 0 reconexiones, 0 errores, 0
+   frames de control; código de salida observado **0** (`Popen.wait()`);
+   mensajes, almacenamiento, conexiones y errores dentro de los límites
+   observados; recursos propios cerrados. **Veredicto vigente (rectificado):
+   PASS en recepción y procesamiento, pero el plazo global de 60 s NO
+   CUMPLE** (65.034 s el diagnóstico, 65.557 s el lanzador); la configuración
+   de 60 s no es una medición independiente de la duración efectiva de
+   observación y el cierre de sockets, compatible con el exceso, no lo
+   convierte en cumplimiento. **Economía NO EVALUADA**; la **causa raíz
+   histórica** y el **exit code histórico** siguen **`UNKNOWN`**. Artefactos
+   y hashes intactos, incluido el `PASS` del script.
+   [INFORRE](evidence/diag-ws-recepcion-20261112a/INFORRE.md) (antecedente) ·
+   [RECTIFICACION](evidence/diag-ws-recepcion-20261112a/RECTIFICACION-20261112.md).
+   El bloqueo material de datos **queda resuelto para el transporte**: con la
+   ruta por categoría correcta hay flujo real. El diagnóstico **no habilita**
+   ninguna ventana por sí solo.
+3. **Ninguna ventana operativa sin autorización humana explícita y nueva.**
+   Ni el diagnóstico de recepción (PASS limitado) ni esta propuesta habilitan
+   una ventana por sí solas: no evalúan rentabilidad, estabilidad prolongada,
+   cobertura de universo ni capacidad de operar, y no generaron señales,
+   decisiones, operaciones, órdenes ni cuentas. Si se autoriza, será con la
+   configuración congelada, el `run_id` nuevo reservado, el mismo protocolo de
+   monitor y el envoltorio de salida ya corregido (que persiste el código real
+   en el mismo directorio), y **también con el margen de cierre aprobado**.
+4. **Envoltorio de salida: corregido y verificado en local (2026-11-12).**
    `scripts/run_pilot_window.py` espera la finalización real del proceso, lee
    el código numérico con `Popen.wait()` y persiste `stdout.log`,
    `stderr.log`, `exit_code.txt` y `launcher.json`; verificado con salidas 0 y
@@ -68,19 +95,19 @@ permanece diferida sin ampliar ningún validador.
    mismo directorio (`exit_code.txt` = 0). El exit code histórico de
    `exp-v2-ventana-1-20261112a` sigue **UNKNOWN** y no se rellena
    retrospectivamente.
-4. **Cerrar y documentar lo que ya se sabe** (hecho en esta iteración):
+5. **Cerrar y documentar lo que ya se sabe** (hecho en esta iteración):
    informe de tres capas en
    [INFORRE-CIERRE](evidence/exp-v2-ventana-1-20261112a/INFORRE-CIERRE.md),
    evidencia compacta con hashes, y actualización de `DECISIONS`,
    `CURRENT_STATE`, `FEATURE_BACKLOG` y `DASHBOARD_V2_PROGRESS`.
-5. **Mantener la vía B disponible y sin tocar**: si aparece evidencia oficial y
+6. **Mantener la vía B disponible y sin tocar**: si aparece evidencia oficial y
    trazable de venue (ausencia de liquidaciones y retraso máximo de
    publicación), validarla contra `funding-coverage/v1` y revalidar las
    regresiones afectadas. Recalcular `--budget-only` solo si cambia el número
    de consultas necesarias.
-6. **Registrar en `docs/DECISIONS.md`** cualquier cambio de duración,
+7. **Registrar en `docs/DECISIONS.md`** cualquier cambio de duración,
    consulta, presupuesto o contrato de contabilidad **antes** de ejecutarlo.
-7. **No reabrir** el análisis de `public-pilot-1h-20261106a` salvo que aparezca
+8. **No reabrir** el análisis de `public-pilot-1h-20261106a` salvo que aparezca
    un defecto que cambie la decisión económica.
 
 
