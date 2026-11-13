@@ -5225,3 +5225,84 @@ docs/EXPERIMENTO_OPERATIVO_V2.md seccion 9.
   `docs/EXPERIMENTO_OPERATIVO_V2.md` §10.12, `docs/CURRENT_STATE.md`,
   `docs/FEATURE_BACKLOG.md` (entradas `diagnostico/ws-recepcion-20261112a` y
   `experimento/ventana-2-via-a-propuesta-20261112`) y `docs/TASK_QUEUE.md`.
+
+
+## 2026-11-12 - Control temporal efectivo del lanzador (implementacion local, sin mercado)
+
+- Autorizacion del bloque: **solo implementacion local** del control temporal
+  de la ventana operativa, reutilizando `scripts/run_pilot_window.py`. NO se
+  autoriza Binance, otra captura ni la ventana operativa; los 300 s siguen
+  siendo margen **propuesto** sin autorizacion de ejecucion.
+- Defecto reproducido (local, sin red): el lanzador esperaba con `proc.wait()`
+  **sin timeout**, de modo que el maximo de 40 500 s **no existia como
+  control**; solo la duracion propia del hijo acotaba la espera. Con un hijo
+  local trivial que ignora la parada, el lanzador espero exactamente lo que el
+  hijo decidio durar, sin ninguna via de acotarlo ni campo de causa de
+  terminacion. Evidencia: `docs/evidence/lanzador-control-temporal/ANTES/`.
+- Decision de interfaz: dos opciones **propias del lanzador**, que **no
+  llegan al parser del piloto**: `--work-timeout-seconds` (plazo de trabajo)
+  y `--shutdown-grace-seconds` (margen exclusivo de parada, cierre y
+  persistencia). Total maximo = suma de ambos (40 200 + 300 = 40 500 s para la
+  ventana propuesta). Sin `--work-timeout-seconds` el uso actual queda
+  intacto. Tras `--` los argumentos siguen siendo del hijo y se respetan tal
+  cual; se conserva la propagacion de `--out-dir` y el rechazo de directorios
+  contradictorios.
+- Decision de mecanismo temporal: reloj **monotonico** y deadlines
+  **absolutos**; enviar la senal o esperar otra vez **no reinicia** el
+  presupuesto temporal. Al vencer el plazo de trabajo se **solicita la parada
+  limpia** por el mecanismo existente del piloto; dentro del margen se reserva
+  un tranche final para la terminacion forzada y para persistir la evidencia,
+  de modo que el proceso **no se mata en el ultimo instante** del maximo
+  total. Si el hijo no termina, se fuerza la terminacion **solo de recursos
+  propios** (en Windows, `taskkill /F /T /PID` sobre el arbol propio del
+  hijo); **no** se usan busquedas globales para terminar procesos.
+- Decision de alcance del margen: el margen es **exclusivo de parada, cierre y
+  persistencia**. No autoriza selecciones, entradas, consultas ni ampliacion
+  de exposicion. Se distingue una peticion **ya en curso** (que puede
+  terminar) de una **adquisicion nueva** (que no se arranca). Ajuste minimo en
+  el piloto: `run_cycle` no abre una seleccion ni lanza una adquisicion
+  nueva cuando la parada ya esta solicitada. No se cambia estrategia,
+  contabilidad ni presupuestos.
+- Decision de mecanismo real en Windows (plataforma del proyecto): el hijo se
+  lanza con `CREATE_NEW_PROCESS_GROUP` y la parada limpia se entrega con
+  `CTRL_BREAK_EVENT` (-> SIGBREAK, que el piloto ya registraba como parada
+  limpia). `terminate()` en Windows es `TerminateProcess` (mata sin dar
+  oportunidad de persistir) y **no** se usa como parada limpia. Se constato
+  que un hijo bloqueado en un `sleep` largo puede no atender la senal hasta el
+  siguiente retorno al interprete: por eso el margen existe y por eso la
+  terminacion forzada esta acotada. No se aceptan pruebas de Linux como
+  aceptacion de Windows.
+- Decision de codigos y resultados: `exit_code.txt` conserva el **codigo real
+  del hijo** (no observado -> `UNKNOWN`, nunca inventado) y los campos
+  historicos de `launcher.json` se mantienen. El veredicto del lanzador se
+  publica **por separado** en `estado_lanzador.json` y en campos nuevos de
+  `launcher.json` (`resultado_lanzador`, `causa_terminacion`,
+  `cumplimiento_normal`, `codigo_lanzador`, `codigo_hijo_observado`,
+  `parada_solicitada`, `terminacion_forzada`, `limpieza`, limites y tiempos).
+  Plazo de trabajo vencido con parada limpia -> lanzador **124**; con
+  terminacion forzada -> **125**. Un hijo que imprime "completo" o devuelve
+  0 tras vencer el plazo **no** es cumplimiento normal. Distinciones al
+  cerrar: cierre normal, timeout de trabajo, cierre forzado y exceso del
+  maximo total (`exceso_maximo_total_s`). Seguir vivo durante el margen no
+  es, por si mismo, un incumplimiento; superar el maximo total si lo es y se
+  registra como incidente material.
+- Decision de evidencia: `docs/evidence/lanzador-control-temporal/` (ANTES y
+  DESPUES, con hashes) y `tests/test_pilot_launcher_temporal.py` (casos A-H:
+  fin normal 0, fin normal no cero, plazo vencido con parada limpia efectiva,
+  hijo que ignora la parada y exige terminacion forzada, hijo que devuelve 0
+  tras el timeout, proceso ajeno conservado, argumentos y directorios en
+  ambos modos, evidencia persistida sin procesos propios residuales; mas el
+  lado del piloto: la parada impide iniciar trabajo nuevo y los pendientes se
+  conservan con su causa). 14 passed; regresiones directamente afectadas:
+  lanzador/rutas/diagnostico 50 passed, `test_research_pilot.py` 45 passed,
+  operativo/CLI 9 passed. Cero pruebas publicas de mercado.
+- Decision de presupuesto: el presupuesto de la ventana propuesta se
+  **revalido** con la forma final del comando (ya con las dos opciones del
+  lanzador), `--budget-only` y **sin red**: salida real 0, `stderr` vacio,
+  gate 13/13 y cifras identicas. Las opciones del lanzador no cambian ningun
+  presupuesto del piloto.
+- Decision de alcance: este bloque **no abre mercado**, **no ejecuta la
+  ventana**, no toca ordenes, claves, cuentas, datasets, DBs, dashboard ni el
+  servicio 8792, y no crea otro supervisor, servicio ni planificador. La
+  ventana `exp-v2-ventana-2-20261112a` queda **preparada para solicitar
+  autorizacion**; `run_id` y directorio siguen sin usarse.

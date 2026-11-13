@@ -47,7 +47,15 @@ permanece diferida sin ampliar ningún validador.
    aperturas acumuladas como máximo. Contrato temporal: captura 3 600 s →
    settle ≤ 4 200 s → espera contable ≤ 32 400 s → cierre con margen
    **propuesto de 300 s** (no autorizado); total máximo propuesto **40 500 s
-   (11 h 15 min)**. Monitor:
+   (11 h 15 min)**. **Control temporal ya efectivo** (2026-11-12):
+   `scripts/run_pilot_window.py` admite `--work-timeout-seconds 40200` y
+   `--shutdown-grace-seconds 300` (opciones del lanzador, no del piloto), con
+   reloj monotónico y deadlines absolutos; al vencer el plazo de trabajo pide
+   la parada limpia, reserva un tranche final dentro del margen para la
+   terminación forzada y la persistencia, y devuelve **124** (parada limpia) o
+   **125** (forzada) sin declarar cumplimiento normal aunque el hijo devuelva
+   0. Evidencia: [ANTES/DESPUES](evidence/lanzador-control-temporal/) · pruebas:
+   `tests/test_pilot_launcher_temporal.py` (14 passed). Monitor:
    `http://127.0.0.1:3020/market-lab?vista=piloto&run=exp-v2-ventana-2-20261112a`.
    Detalle: [PROPUESTA](evidence/exp-v2-ventana-2-20261112a-propuesta/PROPUESTA.md).
    **Requiere autorización humana explícita, también para el margen de

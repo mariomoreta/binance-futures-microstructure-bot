@@ -1,0 +1,67 @@
+{
+  "_nota": "Comportamiento del lanzador DESPUES de implementar el contrato temporal (scripts/run_pilot_window.py). Casos locales triviales: sin red, sin mercado, sin cuentas. Windows. Las duraciones son de segundos (no las de produccion) y el mecanismo de parada es el real de la plataforma.",
+  "contrato": {
+    "opciones_del_lanzador": [
+      "--work-timeout-seconds",
+      "--shutdown-grace-seconds"
+    ],
+    "reloj": "monotonico",
+    "deadlines": "absolutos: una senal o una espera adicional NO reinician el presupuesto temporal",
+    "total_maximo": "work-timeout + shutdown-grace",
+    "reserva": "dentro del margen se reserva un tranche para la terminacion forzada y para persistir la evidencia; el proceso no se mata en el ultimo instante del maximo total",
+    "margen": "exclusivo de parada, cierre y persistencia: no autoriza selecciones, entradas, consultas ni ampliacion de exposicion",
+    "mecanismo_windows": "CTRL_BREAK_EVENT al grupo propio del hijo (CREATE_NEW_PROCESS_GROUP). El piloto registra SIGBREAK como parada limpia (SIGINT/SIGTERM/SIGBREAK) y persiste lo pendiente con su causa. terminate() en Windows es TerminateProcess (mata sin persistir) y NO se usa como parada limpia. Para la terminacion forzada: taskkill /F /T /PID sobre el arbol PROPIO del hijo (nunca busquedas globales).",
+    "codigos_del_lanzador": {
+      "0": "finalizacion normal (sin contrato temporal, o el hijo termino dentro del plazo)",
+      "codigo_del_hijo": "sin contrato temporal, el lanzador devuelve el codigo real del hijo (compatibilidad)",
+      "124": "plazo de trabajo vencido con parada limpia",
+      "125": "plazo de trabajo vencido con terminacion forzada"
+    },
+    "codigo_del_hijo": "exit_code.txt conserva el codigo real del proceso (UNKNOWN si no se pudo observar). El veredicto del lanzador se publica por separado en estado_lanzador.json y en los campos nuevos de launcher.json. En Windows, TerminateProcess deja codigo 1: por eso el codigo del lanzador y la causa se publican aparte."
+  },
+  "casos_observados": [
+    {
+      "caso": "normal",
+      "hijo": "sale con 0 por su cuenta",
+      "codigo_lanzador": 0,
+      "codigo_hijo_observado": 0,
+      "resultado": "normal",
+      "causa_terminacion": "terminacion_natural",
+      "cumplimiento_normal": true,
+      "terminacion_forzada": false,
+      "mecanismo_parada": null,
+      "duracion_observada_s": 0.047
+    },
+    {
+      "caso": "limpio",
+      "hijo": "atiende la parada y sale con 0",
+      "codigo_lanzador": 124,
+      "codigo_hijo_observado": 0,
+      "resultado": "timeout_trabajo_parada_limpia",
+      "causa_terminacion": "plazo_trabajo_vencido",
+      "cumplimiento_normal": false,
+      "terminacion_forzada": false,
+      "mecanismo_parada": "ctrl_break_event",
+      "duracion_observada_s": 1.061,
+      "lectura": "El hijo que devuelve 0 tras el plazo NO es cumplimiento normal: el lanzador devuelve 124 y lo declara explicitamente."
+    },
+    {
+      "caso": "forzado",
+      "hijo": "ignora SIGINT, SIGTERM y SIGBREAK",
+      "codigo_lanzador": 125,
+      "codigo_hijo_observado": 1,
+      "resultado": "timeout_trabajo_terminacion_forzada",
+      "causa_terminacion": "plazo_trabajo_vencido",
+      "cumplimiento_normal": false,
+      "terminacion_forzada": true,
+      "mecanismo_parada": "ctrl_break_event+taskkill_arbol_propio",
+      "duracion_observada_s": 3.197,
+      "lectura": "El proceso se mata antes del maximo total (5 s en este caso) y el codigo 1 que deja TerminateProcess se distingue del cumplimiento normal por el veredicto del lanzador."
+    }
+  ],
+  "artefactos": {
+    "normal": ["launcher.json", "estado_lanzador.json", "stdout.log", "stderr.log", "exit_code.txt"],
+    "limpio": ["launcher.json", "estado_lanzador.json", "stdout.log", "stderr.log", "exit_code.txt"],
+    "forzado": ["launcher.json", "estado_lanzador.json", "stdout.log", "stderr.log", "exit_code.txt"]
+  }
+}

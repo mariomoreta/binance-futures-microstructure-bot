@@ -1,5 +1,60 @@
 # Estado vigente — dirección operativa, 2026-11-12
 
+## Control temporal del lanzador — IMPLEMENTADO y probado en Windows (2026-11-12)
+
+El máximo temporal propuesto (40 500 s) **dejó de ser un enunciado**: ahora es
+un control efectivo del proceso. `scripts/run_pilot_window.py` admite dos
+opciones **propias del lanzador** (no llegan al parser del piloto):
+
+| Opción | Significado | Valor de la ventana propuesta |
+|---|---|---|
+| `--work-timeout-seconds` | plazo de **trabajo** del hijo | **40 200** |
+| `--shutdown-grace-seconds` | margen **exclusivo** de parada, cierre y persistencia | **300** |
+
+Total máximo efectivo: **40 200 + 300 = 40 500 s**. Reloj **monotónico** y
+deadlines **absolutos**: enviar la señal o esperar otra vez **no reinicia** el
+presupuesto temporal. Al vencer el plazo de trabajo se pide la parada limpia
+por el mecanismo existente del piloto; dentro del margen se reserva un tranche
+final (5 s con margen de 300 s) para la terminación forzada y la persistencia,
+de modo que el proceso **no se mata en el último instante** del máximo total.
+El margen **no autoriza** selecciones, entradas, consultas ni ampliación de
+exposición: tras la parada no se inicia trabajo nuevo (una petición ya en
+curso puede terminar; una adquisición nueva no).
+
+- **Mecanismo real de parada en Windows (acreditado aquí):** el hijo se lanza
+  con `CREATE_NEW_PROCESS_GROUP` y la parada limpia se entrega con
+  `CTRL_BREAK_EVENT` (→ SIGBREAK, que el piloto ya registraba como parada
+  limpia). `terminate()` en Windows es `TerminateProcess` (mata sin persistir)
+  y no se usa como parada limpia. Para forzar: `taskkill /F /T /PID` sobre el
+  árbol **propio** del hijo, nunca búsquedas globales.
+- **Códigos sin ambigüedad:** `exit_code.txt` conserva el código real del
+  hijo (desconocido → `UNKNOWN`, nunca inventado). El veredicto del lanzador
+  se publica **por separado** en `estado_lanzador.json` y en los campos nuevos
+  de `launcher.json`: `resultado_lanzador`, `causa_terminacion`,
+  `cumplimiento_normal`, `codigo_lanzador`, `codigo_hijo_observado`,
+  `parada_solicitada`, `terminacion_forzada`, `limpieza`, límites y tiempos.
+  Plazo vencido con parada limpia → lanzador **124**; con terminación forzada
+  → **125**. Un hijo que devuelve **0** tras el plazo **no** es cumplimiento
+  normal. Seguir vivo durante el margen de cierre **no** es, por sí mismo, un
+  incumplimiento; superarlo sí, y se registra como `exceso_maximo_total_s`.
+- **Defecto previo reproducido:** el lanzador usaba `proc.wait()` **sin
+  timeout**, sin ninguna vía de acotar la espera; el máximo de 40 500 s no
+  existía como control. Evidencia: [ANTES/DESPUES](evidence/lanzador-control-temporal/).
+- **Pruebas locales (sin red, sin mercado):** `tests/test_pilot_launcher_temporal.py`
+  — casos A–H (normal 0, normal no cero, parada limpia, terminación forzada,
+  hijo que devuelve 0 tras el timeout, proceso ajeno conservado, argumentos y
+  directorios en ambos modos, evidencia persistida sin procesos propios
+  residuales) más el lado del piloto (la parada impide iniciar trabajo nuevo y
+  conserva los pendientes **con su causa**). **14 passed**; regresiones
+  directamente afectadas: lanzador 50 passed, `test_research_pilot.py` 45
+  passed, operativo/CLI 9 passed.
+- **Presupuesto revalidado** con la forma final del comando (ya con las dos
+  opciones del lanzador), `--budget-only` **sin red**: salida real **0**,
+  `stderr` vacío, gate **13/13**, cifras idénticas.
+- **Lo que NO cambia:** no se ha abierto mercado en este bloque; no hay órdenes,
+  claves ni cuentas; no se ejecutó la ventana; los 300 s siguen siendo
+  **margen propuesto sin autorización**.
+
 ## Ventana operativa única propuesta — PREPARADA, NO EJECUTADA (2026-11-12)
 
 Propuesta concreta para **una sola** ventana por la **vía A**

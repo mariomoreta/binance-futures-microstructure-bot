@@ -5,7 +5,9 @@
 
 En este bloque **no se ha abierto mercado**: solo se ejecutó `--budget-only`
 (cálculo puro, sin red). No hay órdenes, claves, cuentas privadas, dataset de
-investigación nuevo ni cambios de código.
+investigación nuevo ni cambios de estrategia. El único cambio de código es el
+**control temporal del lanzador** (implementación local, probada con procesos
+locales): convierte el máximo de 40 500 s en un control efectivo del proceso.
 
 ---
 
@@ -17,7 +19,8 @@ investigación nuevo ni cambios de código.
 | Directorio de la corrida | `C:\proyectos\binance-futures-data\exp-v2-ventana-2-20261112a` (fuera de Git; **no creado todavía**) |
 | Directorio del presupuesto (esta propuesta) | `C:\proyectos\binance-futures-data\_presupuesto\exp-v2-ventana-2-20261112a` (fuera de Git) |
 | Monitor | `http://127.0.0.1:3020/market-lab?vista=piloto&run=exp-v2-ventana-2-20261112a` |
-| SHA de código del presupuesto | `cd788277a46f9d3ef05d8257517442368b48218b` (este bloque **no cambia código**: el presupuesto se calculó con ese árbol) |
+| SHA de código del presupuesto | `cd788277a46f9d3ef05d8257517442368b48218b` (árbol con el que se calculó el presupuesto original; **este bloque sí cambia código**, solo el lanzador) |
+| Presupuesto revalidado | 2026-11-12, con la **forma final** del comando (incluidas `--work-timeout-seconds 40200 --shutdown-grace-seconds 300` del lanzador), `--budget-only` y **sin red**: salida real **0**, `stderr` vacío, gate **13/13**, mismas cifras; artefactos y hashes en este mismo directorio |
 | SHA de ejecución | el commit que publique esta propuesta; se confirmará en el momento de solicitar autorización (el manifiesto de la corrida registra `git_head`) |
 | Reutilización | **ninguna**: no se reutiliza `exp-v2-ventana-1-20261112a` ni ningún otro `run_id`; este presupuesto **no** es una renovación del anterior |
 
@@ -72,11 +75,94 @@ material a registrar**, no una autorización para seguir.
 contable solo se abren si hay trabajo pendiente (en la ventana anterior
 terminaron en 3 605 s porque no hubo observaciones aptas).
 
+### 3.1 Control temporal efectivo (implementado y probado en Windows)
+
+El máximo de 40 500 s dejó de ser un enunciado: `scripts/run_pilot_window.py`
+lo hace cumplir con dos opciones **propias del lanzador** (nunca llegan al
+parser del piloto):
+
+| Opción | Significado | Valor de la ventana |
+|---|---|---|
+| `--work-timeout-seconds` | plazo de **trabajo** del hijo (captura + settle + espera contable + cierre propio del piloto) | **40 200** |
+| `--shutdown-grace-seconds` | margen **exclusivo** de parada, cierre y persistencia | **300** |
+
+Total máximo efectivo: **40 200 + 300 = 40 500 s**.
+
+**Cómo se cumple (reloj monotónico, deadlines absolutos):**
+
+- Al vencer el plazo de trabajo se **solicita la parada limpia** por el
+  mecanismo existente del piloto (SIGINT/SIGTERM/SIGBREAK) y el hijo dispone
+  del margen para cerrar y persistir. Enviar la señal **no reinicia** el
+  presupuesto temporal.
+- Dentro del margen se **reserva un tranche final** (5 s con margen de 300 s)
+  para la terminación forzada y para escribir la evidencia: el proceso **no se
+  mata en el último instante** del máximo total.
+- Si el hijo no termina dentro del margen, se fuerza la terminación
+  **solo de recursos propios**: en Windows, `taskkill /F /T /PID` sobre el
+  árbol del hijo (nunca búsquedas globales).
+- El margen **no autoriza** selecciones, entradas, consultas ni ampliación de
+  exposición. Tras la parada, el piloto no inicia trabajo nuevo: una petición
+  **ya en curso** puede terminar; una **adquisición nueva** no se arranca.
+
+**Mecanismo real de parada en Windows (acreditado en esta plataforma):** el
+hijo se lanza con `CREATE_NEW_PROCESS_GROUP` y la parada limpia se entrega con
+`CTRL_BREAK_EVENT` (→ SIGBREAK en el hijo, que el piloto ya registraba como
+parada limpia). `terminate()` en Windows es `TerminateProcess` (mata sin dar
+oportunidad de persistir) y **no** se usa como parada limpia. Se comprobó
+también que un hijo bloqueado en un `sleep` largo puede no atender la señal
+hasta el siguiente retorno al intérprete: por eso el margen existe y por eso
+la terminación forzada está acotada.
+
+**Resultados y códigos (sin ambigüedad):**
+
+| Situación | Código del **hijo** (`exit_code.txt`) | Código del **lanzador** | `resultado_lanzador` | `cumplimiento_normal` |
+|---|---|---|---|---|
+| Fin dentro del plazo | real (p. ej. 0) | el del hijo | `normal` | `true` |
+| Plazo de trabajo vencido, parada limpia efectiva | real (p. ej. 0) | **124** | `timeout_trabajo_parada_limpia` | `false` |
+| Plazo de trabajo vencido, terminación forzada | real (en Windows, `TerminateProcess` deja 1) | **125** | `timeout_trabajo_terminacion_forzada` | `false` |
+| Código no observado | `UNKNOWN` (nunca se inventa) | 124/125 según el caso | idem | `false` |
+
+El código histórico del hijo **conserva su significado** en `exit_code.txt` y
+en los campos existentes de `launcher.json`; el veredicto del lanzador se
+publica **por separado** en `estado_lanzador.json` y en los campos nuevos de
+`launcher.json` (`resultado_lanzador`, `causa_terminacion`,
+`cumplimiento_normal`, `codigo_lanzador`, `codigo_hijo_observado`,
+`parada_solicitada`, `terminacion_forzada`, `limpieza`, límites y tiempos).
+
+**Distinciones que deben leerse al cerrar una corrida:**
+
+- **Cierre normal:** el proceso terminó por su cuenta dentro del plazo.
+- **Timeout de trabajo:** se agotó el plazo de trabajo (40 200 s) y el lanzador
+  pidió la parada. El resultado no es cumplimiento normal aunque el código del
+  hijo sea 0.
+- **Cierre forzado:** además del timeout, el hijo no terminó dentro del
+  margen y hubo que forzarlo (`terminacion_forzada: true`).
+- **Exceso del máximo total:** si la duración observada superase 40 500 s, se
+  registra como `exceso_maximo_total_s` (> 0) y es un **incidente material**,
+  no una autorización para seguir.
+
+**Seguir vivo durante el margen de cierre no es, por sí mismo, un
+incumplimiento**: es precisamente el tiempo reservado para cerrar y
+persistir. Lo que sí es incumplimiento es haber **superado el máximo total** o
+haber declarado cumplimiento normal tras vencer el plazo de trabajo.
+
+**Evidencia:** `docs/evidence/lanzador-control-temporal/` (defecto reproducido
+antes del cambio en `ANTES/`, comportamiento después en `DESPUES/`) y pruebas
+locales en `tests/test_pilot_launcher_temporal.py` (casos A–H, sin red).
+
 ## 4. Presupuesto (`--budget-only`, sin mercado)
 
 Calculado con el comando literal de §5 y el árbol `cd788277`: artefacto
 `presupuesto.json` (10 381 B) y hashes en `hashes.json`, en este mismo
 directorio.
+
+**Revalidado el 2026-11-12** con la **forma final** del comando (ya con las
+opciones del lanzador `--work-timeout-seconds 40200 --shutdown-grace-seconds
+300`) y `--budget-only`, **sin red**: salida real **0**, `stderr` vacío, gate
+**13/13**, **cifras idénticas** (las opciones del lanzador no cambian ningún
+presupuesto del piloto). Los artefactos publicados en este directorio
+(`presupuesto.json`, `launcher.json`, `stdout.log`, `stderr.log`,
+`exit_code.txt`) y sus hashes corresponden a esa revalidación.
 
 | Magnitud | Estimación base | Con reservas | Techo efectivo |
 |---|---|---|---|
@@ -117,6 +203,8 @@ el `--out-dir` y el `--status-file` de la corrida**:
 ```powershell
 python scripts/run_pilot_window.py `
   --out-dir C:\proyectos\binance-futures-data\exp-v2-ventana-2-20261112a `
+  --work-timeout-seconds 40200 `
+  --shutdown-grace-seconds 300 `
   --mode public --activar-publico `
   --run-id exp-v2-ventana-2-20261112a `
   --status-file C:\proyectos\binance-futures-data\exp-v2-ventana-2-20261112a\estado.json `
@@ -144,12 +232,35 @@ Diferencias con el comando de presupuesto realmente ejecutado: solo
 contaminar el directorio de la corrida) y el flag `--budget-only`. El comando
 efectivo del presupuesto está en `launcher.json`.
 
+**Las opciones `--work-timeout-seconds` y `--shutdown-grace-seconds` son del
+lanzador y no llegan al parser del piloto** (verificado en la revalidación:
+el `comando` que el lanzador registra para el hijo no las contiene). El
+lanzador las aplica con reloj monotónico y deadlines absolutos (§3.1): el
+máximo total de la corrida es **40 500 s**, de los cuales 40 200 s son trabajo
+y 300 s son margen exclusivo de cierre.
+
+**Interpretación del resultado al cerrar:** leer `exit_code.txt` (código real
+del hijo) y, por separado, `estado_lanzador.json` (veredicto del lanzador:
+`resultado`, `causa_terminacion`, `cumplimiento_normal`, `codigo_lanzador`,
+`parada_solicitada`, `terminacion_forzada`, `exceso_maximo_total_s`). Un
+código 0 del hijo **no** significa cumplimiento normal si el plazo de trabajo
+se agotó: en ese caso el lanzador devuelve **124** o **125** y lo declara.
+
 ## 6. Criterios de parada y tratamiento de pendientes
 
 **Paradas (todas cierran la corrida y se registran):** duración de captura
 agotada; `max_observations` alcanzado; tope de bytes alcanzado; `max_messages`
 WS alcanzado; reconexiones WS acumuladas agotadas; presupuesto HTTP agotado
-(intentos/peso/reintentos); señal externa (SIGINT/SIGTERM).
+(intentos/peso/reintentos); señal externa (SIGINT/SIGTERM); **vencimiento del
+plazo de trabajo del lanzador** (40 200 s) con parada limpia o terminación
+forzada; **exceso del máximo total** (40 500 s), que se registra como
+incidente material.
+
+**Margen de cierre:** al vencer el plazo de trabajo el lanzador pide la parada
+limpia y concede 300 s (reservando los últimos 5 s para la terminación
+forzada y la persistencia). El margen no reinicia plazos ni autoriza trabajo
+nuevo; el piloto, al recibir la parada, conserva los pendientes **con su
+causa** (`senal_externa`).
 
 **Limpieza:** cancelar los feeds WS y cerrar las conexiones; drenar el
 `ResearchRecorder` (los buckets abiertos quedan como `PARTIAL`); escribir los
@@ -201,7 +312,9 @@ reales ni rentabilidad generalizable.
 ## 8. Bloqueos reales que quedan
 
 1. **Falta autorización humana explícita** para ejecutar esta ventana (y para
-   el margen de cierre propuesto).
+   el margen de cierre propuesto). El control temporal del lanzador ya está
+   implementado y probado en Windows (§3.1): **no es** un bloqueo técnico
+   pendiente; lo pendiente es la decisión de ejecutar.
 2. La **causa raíz histórica** de la ventana anterior sigue `UNKNOWN` (no se
    abre la URL antigua) y su **exit code histórico** sigue `UNKNOWN`.
 3. **La economía sigue sin evaluarse** en ninguna corrida: el diagnóstico

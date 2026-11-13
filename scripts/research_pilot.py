@@ -2335,7 +2335,14 @@ class ResearchPilot:
 
     def run_cycle(self) -> Dict[str, Any]:
         now = self.clock.now_ms()
+        # Parada solicitada: no se abre una seleccion nueva ni se lanza una
+        # adquisicion nueva. Una peticion ya en curso puede terminar; lo que
+        # se impide es EMPEZAR trabajo nuevo (seleccion, entrada o consulta).
+        if self._terminal_stop():
+            return {}
         exchange_info, _ = self.rest.exchange_info()
+        if self._terminal_stop():
+            return {}
         tickers, _ = self.rest.get("/fapi/v1/ticker/24hr", {},
                                    WEIGHT_TICKER_24H)
         if not isinstance(tickers, list):

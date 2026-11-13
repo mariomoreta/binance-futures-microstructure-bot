@@ -1,0 +1,32 @@
+{
+  "_nota": "Demostracion LOCAL del defecto previo del lanzador (scripts/run_pilot_window.py) antes de implementar el control temporal. Sin red, sin mercado, sin cuentas. El hijo es un script trivial que ignora SIGINT y SIGTERM y solo termina por su cuenta.",
+  "defecto": "El lanzador espera con proc.wait() SIN timeout: el proceso completo no tiene limite externo. El maximo temporal propuesto para la ventana (40 200 s de trabajo + 300 s de margen = 40 500 s) no existia como control efectivo: solo la duracion propia del hijo acotaba la espera.",
+  "codigo_antes": {
+    "fichero": "scripts/run_pilot_window.py",
+    "espera": "proc.wait() (sin timeout) -> bloquea hasta que el hijo termina por su cuenta",
+    "opciones_de_plazo_disponibles": [],
+    "campos_de_causa_de_terminacion": []
+  },
+  "demostracion": {
+    "hijo": "hijo_ignora_parada.py (ignora SIGINT y SIGTERM; duerme 6 s y termina solo)",
+    "duracion_propia_del_hijo_s": 6.0,
+    "duracion_observada_del_lanzador_s": 6.058,
+    "duracion_de_pared_s": 6.192,
+    "codigo_de_salida_del_hijo": 0,
+    "lectura": "El lanzador espero exactamente lo que el hijo decidio durar: no existia ninguna via para acotar la espera, ni un plazo de trabajo, ni un margen de cierre, ni una causa de terminacion, ni un resultado de timeout distinguible del cumplimiento normal.",
+    "artefactos": [
+      "launcher.json",
+      "stdout.log",
+      "stderr.log",
+      "exit_code.txt",
+      "hijo_ignora_parada.py"
+    ]
+  },
+  "hashes_sha256": {
+    "launcher.json": "e1a17cdfe7e20c3a55341b78ec2ac92e1675b5e8e8dcb9372c77c9753db2d330",
+    "stdout.log": "f08b7c1d67b08bd23ea71dfb69dbcd770c326b00305fd67e52d4736fc47b489f",
+    "stderr.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "exit_code.txt": "13bf7b3039c63bf5a50491fa3cfd8eb4e699d1ba1436315aef9cbe5711530354",
+    "hijo_ignora_parada.py": "c82795097e0d70d9020b76395dd5a9c33d09c6cf5c6e803560d5077bf8345298"
+  }
+}

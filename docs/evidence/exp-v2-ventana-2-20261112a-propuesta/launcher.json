@@ -76,8 +76,45 @@
  "fuente_del_codigo": "Popen.wait() (codigo real del proceso)",
  "stdout": "C:\\proyectos\\binance-futures-data\\_presupuesto\\exp-v2-ventana-2-20261112a\\stdout.log",
  "stderr": "C:\\proyectos\\binance-futures-data\\_presupuesto\\exp-v2-ventana-2-20261112a\\stderr.log",
- "inicio_iso_utc": "2026-11-13T00:23:31",
- "fin_iso_utc": "2026-11-13T00:23:32",
- "duracion_s": 1.074,
- "interrumpido": false
+ "inicio_iso_utc": "2026-11-13T01:25:43",
+ "fin_iso_utc": "2026-11-13T01:25:43",
+ "duracion_s": 0.501,
+ "interrumpido": false,
+ "resultado_lanzador": "normal",
+ "causa_terminacion": "terminacion_natural",
+ "cumplimiento_normal": true,
+ "codigo_lanzador": 0,
+ "codigo_hijo_observado": 0,
+ "codigo_hijo_estado": "observado",
+ "parada_solicitada": false,
+ "mecanismo_parada": null,
+ "terminacion_forzada": false,
+ "limites_temporal": {
+  "work_timeout_seconds": 40200.0,
+  "shutdown_grace_seconds": 300.0,
+  "total_max_seconds": 40500.0,
+  "reserva_persistencia_seconds": 5.0,
+  "tolerancia_fin_seconds": 0.5,
+  "sondeo_seconds": 0.2,
+  "reloj": "monotonico",
+  "deadlines": "absolutos (no se reinician al esperar o senalar)"
+ },
+ "tiempos_monotonos": {
+  "inicio_monotono_s": 132590.176,
+  "fin_monotono_s": 132590.677,
+  "duracion_monotona_s": 0.501,
+  "work_deadline_relativo_s": 40200.0,
+  "forced_deadline_relativo_s": 40495.0,
+  "exceso_maximo_total_s": 0.0
+ },
+ "limpieza": {
+  "proceso_hijo_terminado": true,
+  "codigo_hijo_observado": 0,
+  "codigo_hijo_estado": "observado",
+  "parada_solicitada": false,
+  "mecanismo_parada": null,
+  "terminacion_forzada": false,
+  "alimentaciones_cerradas": true,
+  "alcance": "propio: el hijo y el arbol de descendientes del grupo propio; nunca busquedas globales"
+ }
 }

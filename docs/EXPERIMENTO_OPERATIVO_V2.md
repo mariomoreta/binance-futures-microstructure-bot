@@ -1497,7 +1497,8 @@ En este bloque **no se abrió mercado**: solo `--budget-only` (sin red).
   (margen **propuesto de 300 s**, no autorizado). Máximo del CLI 40 200 s;
   **total máximo propuesto 40 500 s (11 h 15 min)**. El margen no amplía
   captura, exposición ni consultas; si al cumplirse el máximo del CLI el
-  proceso siguiera vivo, es un incidente material a registrar.
+  proceso siguiera vivo, es un incidente material a registrar. Este máximo
+  **dejó de ser solo declarativo el 2026-11-12**: ver §10.13.
 - **Presupuesto (`--budget-only`, sin mercado):** `cabe_en_limites: true`
   (13/13); intentos 1 004 base / **1 334 con reservas** de 2 000; peso 1 472
   base / **3 752 con reservas** de 5 000; almacenamiento previsto 4 696 872 B
@@ -1527,3 +1528,79 @@ En este bloque **no se abrió mercado**: solo `--budget-only` (sin red).
   cobertura sigue limitada a PERPETUAL/TRADING/USDT. On-chain, indicadores
   nuevos, GARCH, patrones nuevos, futuros con vencimiento y cambios de
   dashboard quedan **fuera de esta ventana**.
+
+### 10.13 Control temporal efectivo del lanzador (2026-11-12, local, sin mercado)
+
+El defecto era real: `scripts/run_pilot_window.py` esperaba con `proc.wait()`
+**sin timeout**, de modo que el máximo de 40 500 s **no existía como control**
+—solo la duración propia del hijo acotaba la espera. Defecto reproducido con
+un hijo local trivial que ignora la parada (esperó exactamente lo que el hijo
+decidió durar, sin ninguna vía de acotarla): evidencia en
+[ANTES](../evidence/lanzador-control-temporal/ANTES/).
+
+**Implementación** (se reutiliza el lanzador; no se crea otro supervisor,
+servicio ni planificador): dos opciones **propias del lanzador**, que **no
+llegan al parser del piloto**:
+
+| Opción | Significado | Valor de la ventana |
+|---|---|---|
+| `--work-timeout-seconds` | plazo de **trabajo** del hijo | **40 200** |
+| `--shutdown-grace-seconds` | margen **exclusivo** de parada, cierre y persistencia | **300** |
+
+Total máximo efectivo **40 500 s**. Reloj **monotónico** y deadlines
+**absolutos**: enviar la señal o esperar otra vez **no reinicia** el
+presupuesto temporal. Al vencer el plazo de trabajo se **solicita la parada
+limpia** por el mecanismo existente del piloto; dentro del margen se reserva
+un tranche final (5 s con margen de 300 s) para la **terminación forzada** y
+la **persistencia**, de modo que el proceso **no se mata en el último
+instante** del máximo total. Si el hijo no termina, se fuerza la terminación
+**solo de recursos propios** (`taskkill /F /T /PID` sobre el árbol propio del
+hijo en Windows; nunca búsquedas globales). El margen **no autoriza**
+selecciones, entradas, consultas ni ampliación de exposición: tras la parada
+el piloto no inicia trabajo nuevo (una petición **ya en curso** puede
+terminar; una **adquisición nueva** no se arranca) y conserva los pendientes
+**con su causa** (`senal_externa`).
+
+**Windows (plataforma real del proyecto):** el hijo se lanza con
+`CREATE_NEW_PROCESS_GROUP` y la parada limpia se entrega con
+`CTRL_BREAK_EVENT` (→ SIGBREAK, que el piloto ya registraba como parada
+limpia). `terminate()` en Windows es `TerminateProcess` (mata sin dar
+oportunidad de persistir) y **no** se usa como parada limpia. Se comprobó
+también que un hijo bloqueado en un `sleep` largo puede no atender la señal
+hasta el siguiente retorno al intérprete: por eso el margen existe y por eso
+la terminación forzada está acotada.
+
+**Códigos y resultados (sin ambigüedad):** `exit_code.txt` conserva el
+**código real del hijo** (no observado → `UNKNOWN`, nunca inventado). El
+veredicto del lanzador se publica **por separado** en `estado_lanzador.json`
+y en los campos nuevos de `launcher.json` (`resultado_lanzador`,
+`causa_terminacion`, `cumplimiento_normal`, `codigo_lanzador`,
+`codigo_hijo_observado`, `parada_solicitada`, `terminacion_forzada`,
+`limpieza`, límites y tiempos). Plazo vencido con parada limpia → lanzador
+**124**; con terminación forzada → **125**. Un hijo que devuelve **0** tras
+el plazo **no** es cumplimiento normal. Distinciones al cerrar: **cierre
+normal** (terminó por su cuenta dentro del plazo) · **timeout de trabajo** (se
+agotaron los 40 200 s) · **cierre forzado** (`terminacion_forzada: true`) ·
+**exceso del máximo total** (`exceso_maximo_total_s` > 0, incidente material).
+Seguir vivo durante el margen de cierre **no** es, por sí mismo, un
+incumplimiento.
+
+**Pruebas locales (sin red, sin mercado):** `tests/test_pilot_launcher_temporal.py`
+— A normal 0 · B normal no cero · C plazo vencido con parada limpia efectiva ·
+D hijo que ignora la parada y exige terminación forzada · E hijo que devuelve
+0 tras el timeout (el incumplimiento no desaparece) · F proceso ajeno conservado
+· G argumentos y directorios compatibles en ambos modos (las opciones del
+lanzador no llegan al piloto; tras `--` los argumentos son del hijo) · H
+evidencia persistida y ausencia de procesos propios residuales; más el lado
+del piloto (la parada impide iniciar trabajo nuevo y conserva los pendientes
+con su causa). **14 passed**. Regresiones directamente afectadas: lanzador y
+rutas WS 50 passed, `test_research_pilot.py` 45 passed, operativo/CLI 9 passed.
+Cero pruebas públicas de mercado.
+
+**Presupuesto revalidado** con la forma final del comando (ya con las dos
+opciones del lanzador), `--budget-only` **sin red**: salida real **0**,
+`stderr` vacío, gate **13/13**, cifras idénticas.
+
+**Lo que este bloque NO hace:** no abre mercado, no ejecuta la ventana, no
+toca órdenes, claves, cuentas, datasets, DBs, dashboard ni el servicio 8792.
+Los 300 s siguen siendo **margen propuesto sin autorización**.

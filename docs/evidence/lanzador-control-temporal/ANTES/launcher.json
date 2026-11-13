@@ -1,0 +1,15 @@
+{
+ "comando": [
+  "python",
+  "C:\\Users\\adonm\\AppData\\Local\\Temp\\opencode\\demo_lanzador_antes\\hijo_ignora_parada.py"
+ ],
+ "returncode": 0,
+ "exit_code": 0,
+ "fuente_del_codigo": "Popen.wait() (codigo real del proceso)",
+ "stdout": "C:\\Users\\adonm\\AppData\\Local\\Temp\\opencode\\demo_lanzador_antes\\corrida\\stdout.log",
+ "stderr": "C:\\Users\\adonm\\AppData\\Local\\Temp\\opencode\\demo_lanzador_antes\\corrida\\stderr.log",
+ "inicio_iso_utc": "2026-11-13T00:59:18",
+ "fin_iso_utc": "2026-11-13T00:59:24",
+ "duracion_s": 6.058,
+ "interrumpido": false
+}

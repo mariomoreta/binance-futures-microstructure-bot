@@ -1,0 +1,52 @@
+{
+ "comando": [
+  "python",
+  "C:\\Users\\adonm\\AppData\\Local\\Temp\\opencode\\evidencia_despues\\ignora.py"
+ ],
+ "returncode": 1,
+ "exit_code": 1,
+ "fuente_del_codigo": "Popen.wait() (codigo real del proceso)",
+ "stdout": "docs\\evidence\\lanzador-control-temporal\\DESPUES\\forzado\\stdout.log",
+ "stderr": "docs\\evidence\\lanzador-control-temporal\\DESPUES\\forzado\\stderr.log",
+ "inicio_iso_utc": "2026-11-13T01:23:08",
+ "fin_iso_utc": "2026-11-13T01:23:11",
+ "duracion_s": 3.197,
+ "interrumpido": false,
+ "resultado_lanzador": "timeout_trabajo_terminacion_forzada",
+ "causa_terminacion": "plazo_trabajo_vencido",
+ "cumplimiento_normal": false,
+ "codigo_lanzador": 125,
+ "codigo_hijo_observado": 1,
+ "codigo_hijo_estado": "observado",
+ "parada_solicitada": true,
+ "mecanismo_parada": "ctrl_break_event+taskkill_arbol_propio",
+ "terminacion_forzada": true,
+ "limites_temporal": {
+  "work_timeout_seconds": 1.0,
+  "shutdown_grace_seconds": 4.0,
+  "total_max_seconds": 5.0,
+  "reserva_persistencia_seconds": 2.0,
+  "tolerancia_fin_seconds": 0.5,
+  "sondeo_seconds": 0.2,
+  "reloj": "monotonico",
+  "deadlines": "absolutos (no se reinician al esperar o senalar)"
+ },
+ "tiempos_monotonos": {
+  "inicio_monotono_s": 132435.657,
+  "fin_monotono_s": 132438.854,
+  "duracion_monotona_s": 3.197,
+  "work_deadline_relativo_s": 1.0,
+  "forced_deadline_relativo_s": 3.0,
+  "exceso_maximo_total_s": 0.0
+ },
+ "limpieza": {
+  "proceso_hijo_terminado": true,
+  "codigo_hijo_observado": 1,
+  "codigo_hijo_estado": "observado",
+  "parada_solicitada": true,
+  "mecanismo_parada": "ctrl_break_event+taskkill_arbol_propio",
+  "terminacion_forzada": true,
+  "alimentaciones_cerradas": true,
+  "alcance": "propio: el hijo y el arbol de descendientes del grupo propio; nunca busquedas globales"
+ }
+}

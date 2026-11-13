@@ -1,0 +1,21 @@
+{
+  "_nota": "Hashes SHA-256 de la evidencia DESPUES del control temporal (casos locales, Windows, duraciones de segundos).",
+  "hashes": {
+    "demostracion.json": "88c5e55717ed4e08a7feec7265812a13c8a59d5f211fc2b47ef747d5f68bd6f9",
+    "forzado/estado_lanzador.json": "5f400e1ce60819cbb6bc1eb17f733951b6f1316ec90e98b3483cb6b92043ff3e",
+    "forzado/exit_code.txt": "f1b2f662800122bed0ff255693df89c4487fbdcf453d3524a42d4ec20c3d9c04",
+    "forzado/launcher.json": "5541213e1c6f8f4c205acae1043e37a553662c6a0e9972f57b6970c08991e451",
+    "forzado/stderr.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "forzado/stdout.log": "3d036b4c2babc18b7fb49d692d546320803d003475e907e32979d9976f7d390f",
+    "limpio/estado_lanzador.json": "71456ffc9e506fb3ccc4f06d9989c611f7e3df5941492348c81fb1a8e38addb9",
+    "limpio/exit_code.txt": "13bf7b3039c63bf5a50491fa3cfd8eb4e699d1ba1436315aef9cbe5711530354",
+    "limpio/launcher.json": "8829ae3d810b3d57b0c0906cf1d4d03ee977610c81e9973128ae2966de60c0d0",
+    "limpio/stderr.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "limpio/stdout.log": "3e850c467e6332323e51ee012ffa3726a08526c6ba6c43502798209586183d56",
+    "normal/estado_lanzador.json": "174b47521f0423e0df3b339f57f0033f464514e239fd5e5104b3b2e4004ed2ac",
+    "normal/exit_code.txt": "13bf7b3039c63bf5a50491fa3cfd8eb4e699d1ba1436315aef9cbe5711530354",
+    "normal/launcher.json": "98f62e7bc28085cd6e72820dfc36b48c23c8abffefb9aae8fd084f8b0a0a2ef7",
+    "normal/stderr.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "normal/stdout.log": "27599022c008382df645b0aa538b1b4f82dc11f4b2651f7716769157ee3c5420"
+  }
+}
