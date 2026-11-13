@@ -5081,3 +5081,57 @@ docs/EXPERIMENTO_OPERATIVO_V2.md seccion 9.
 - PRODUCT_GOAL y F-PATRONES-EXTREMOS-CONTEXTO-20261112 quedan precisados.
   No se cambian ACTIVE_TASK, regla, presupuesto, código o autorizaciones.
   No hay predicción, rentabilidad ni nuevo gate acreditados.
+
+## 2026-11-12 - Diagnóstico WS de recepción ejecutado una vez (PASS, público acotado)
+
+- Autorización: bloque humano acotado del 2026-11-12 que autoriza **una sola**
+  ejecución del diagnóstico preparado (`diag-ws-recepcion-20261112a`), sin
+  confirmación adicional y sin ampliar el alcance. No autoriza ventanas
+  operativas, cuentas, claves, órdenes, cambios de estrategia, dashboard,
+  datasets ni nuevas fuentes.
+- Estado previo verificado: no existía ejecución previa con ese identificador
+  (ni directorio `diag*` en el área de datos ni evidencia en el repo), el remoto
+  contenía dos commits documentales concurrentes (`e4a74ff`, `37b779c`) que
+  solo tocaban documentación; se preservaron con avance rápido de la misma rama
+  (`37b779c`), sin reset, clean, force push ni integración de otras ramas, y
+  sin tocar la modificación ajena de `opencode.json`.
+- Decisión de ejecución: símbolo explícito `BTCUSDT` (sin consultar el
+  mercado), una conexión `/market/stream` con `aggTrade` y una
+  `/public/stream` con `depth20@100ms`, duración máxima de 60 s, dos aperturas
+  iniciales, cero reconexiones, cero REST, cero órdenes y solo evidencia
+  compacta (`diagnostico.json`, `stdout.log`, `stderr.log`, `exit_code.txt`,
+  `launcher.json`). Se ejecutó **una única vez**, sin reintento ni relanzamiento.
+- Resultado (diagnóstico actual): trades `/market` con 773 frames de datos,
+  773 eventos válidos y **773 procesados por `FlowEngine`**; libro `/public`
+  con 552 / 552 y **552 procesados por `BookEngine`**; 2 conexiones, 0
+  reconexiones, 0 errores, 0 frames de control (un ACK no acredita flujo).
+  Veredicto **PASS** contrastado con los artefactos, no solo con la salida del
+  script.
+- Límites y cierre: 1 325 frames de 200 000 y 2 360 B de 1 048 576 B; sin
+  dataset de investigación (el directorio de corrida, 3.41 KB, solo contiene los
+  cinco artefactos); código de salida observado **0** leído de `Popen.wait()`
+  (`exit_code.txt` y `launcher.json.returncode`), `stderr.log` vacío, proceso
+  terminado y sockets cerrados (`connected_now: false`, sin proceso propio
+  vivo). La observación se cortó a los 60 s configurados y el proceso total duró
+  65.034 s (diagnóstico) / 65.557 s (lanzador): el exceso de ~5 s se declara
+  como cierre de sockets (`close_timeout=5`), sin convertirlo retroactivamente
+  en cumplimiento estricto de la duración.
+- Decisión de interpretación (tres capas, sin fusionar): el **bloqueo material
+  de datos** que vació el embudo de `exp-v2-ventana-1-20261112a` **queda
+  resuelto para el transporte** (con la ruta por categoría vigente hay flujo
+  real); la **causa raíz histórica sigue `UNKNOWN`** (no se abrió la URL
+  antigua contra el venue, así que no se demuestra ni se atribuye el fallo a
+  Binance); el **exit code histórico** sigue **`UNKNOWN`** y su `exit_code.txt`
+  no se rellena; y el **resultado económico no se evalúa** (no hubo señales,
+  decisiones, operaciones, órdenes ni cuentas; 60 s de un símbolo no acreditan
+  cobertura de universo, ciclos, horizontes ni estabilidad prolongada).
+- Decisión de alcance posterior: este diagnóstico **no habilita** ninguna
+  ventana operativa (hace falta autorización humana nueva y explícita, con
+  configuración congelada y `run_id` nuevo), no se añaden fuentes on-chain, no
+  se cambia la estrategia y la vía B (`funding-coverage/v1`) sigue diferida y sin
+  tocar. La vía A (espera contable, liquidaciones observadas, neto COMPLETO vs.
+  CONDICIONADO) continúa sin ejercitarse.
+- Evidencia: `docs/evidence/diag-ws-recepcion-20261112a/` (INFORRE, artefactos y
+  hashes), `docs/EXPERIMENTO_OPERATIVO_V2.md` §10.11, `docs/CURRENT_STATE.md`,
+  `docs/FEATURE_BACKLOG.md` (entradas `diagnostico/ws-recepcion-20261112a` y
+  `piloto/lanzador-directorio-y-validacion-estricta`) y `docs/TASK_QUEUE.md`.

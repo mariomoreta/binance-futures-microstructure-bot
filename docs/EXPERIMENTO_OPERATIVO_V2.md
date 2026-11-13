@@ -1395,3 +1395,50 @@ dataset de investigación (solo `diagnostico.json` compacto). Comando exacto en
 y códigos de salida (0 / 10 / 11) están en el propio script. En este bloque
 **no se abrió ningún socket público**; la verificación fue solo en loopback
 (`tests/test_diagnostico_ws_recepcion.py`).
+
+### 10.11 Comprobación pública de recepción ejecutada — PASS (2026-11-12)
+
+Ejecutada **una sola vez** con autorización humana acotada al alcance de
+recepción (`diag-ws-recepcion-20261112a`, SHA de ejecución
+`37b779c456c5aed234171bbb0fe3421b979bb150`, local == remoto). Comando efectivo
+y evidencia completa en
+[INFORRE](../evidence/diag-ws-recepcion-20261112a/INFORRE.md); artefactos
+publicados en `docs/evidence/diag-ws-recepcion-20261112a/`.
+
+**URLs efectivas.** Flujo: `wss://fstream.binance.com/market/stream?streams=btcusdt@aggTrade`;
+libro: `wss://fstream.binance.com/public/stream?streams=btcusdt@depth20@100ms`.
+Suscripción por URL en modo `stream`, símbolo en minúsculas, `aggTrade` intacto.
+
+**Resultado por feed.** Trades `/market`: 1 conexión, 0 reconexiones, 0 errores,
+**773 frames de datos, 773 eventos válidos, 773 procesados por `FlowEngine`**.
+Libro `/public`: 1 conexión, 0 reconexiones, 0 errores, **552 frames de datos,
+552 eventos válidos, 552 procesados por `BookEngine`**. Cero frames de control
+(un ACK no acreditó flujo) y cero frames inválidos. Dos aperturas iniciales en
+total.
+
+**Límites y cierre.** 1 325 frames ≪ 200 000 (`limite_mensajes_alcanzado:
+false`); 2 360 B ≪ 1 MB; sin REST, sin órdenes y sin dataset de investigación
+(el directorio de corrida, 3.41 KB, solo contiene los cinco artefactos).
+Observación de 60 s (máximo configurado); duración total del proceso 65.034 s
+(diagnóstico) / 65.557 s (lanzador): el exceso de ~5 s corresponde al **cierre
+de sockets** (`close_timeout=5` del `StreamFeed`), no a ampliar la ventana; no
+hubo reintento ni relanzamiento. Código de salida observado **0**, leído de
+`Popen.wait()` (`exit_code.txt` y `launcher.json.returncode`), `stderr.log`
+vacío; proceso terminado, `connected_now: false` y sin proceso propio vivo.
+
+**Veredicto: PASS**, contrastado con los artefactos y no solo con la salida
+del script.
+
+**Lo que cambia y lo que no.** El bloqueo material de datos que vació el
+embudo de `exp-v2-ventana-1-20261112a` **queda resuelto para el transporte**:
+con la ruta por categoría vigente hay flujo real. En cambio: (a) la **causa
+raíz histórica sigue `UNKNOWN`** — no se abrió la URL antigua contra el
+venue, así que su relación con el silencio anterior es un indicio adicional y
+no una prueba; (b) el **exit code histórico** de esa ventana sigue **UNKNOWN**
+(su `exit_code.txt` continúa con 0 bytes, sin rellenar); (c) el **resultado
+económico no se evalúa**: no hubo señales, decisiones, operaciones, órdenes ni
+cuentas, y 60 s de un símbolo no acreditan cobertura de universo, ciclos,
+horizontes ni estabilidad prolongada. Este diagnóstico **no habilita** ninguna
+ventana operativa: esa requiere autorización humana nueva y explícita. La vía A
+(espera contable, liquidaciones observadas, neto COMPLETO vs. CONDICIONADO)
+sigue sin ejercitarse.

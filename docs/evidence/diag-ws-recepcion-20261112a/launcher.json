@@ -1,0 +1,32 @@
+{
+ "comando": [
+  "python",
+  "scripts/diagnostico_ws_recepcion.py",
+  "--diagnostico-id",
+  "diag-ws-recepcion-20261112a",
+  "--simbolo",
+  "BTCUSDT",
+  "--duracion-seconds",
+  "60",
+  "--out-dir",
+  "C:\\proyectos\\binance-futures-data\\diag-ws-recepcion-20261112a",
+  "--ws-public-base",
+  "wss://fstream.binance.com/public",
+  "--ws-market-base",
+  "wss://fstream.binance.com/market",
+  "--autorizar-publico",
+  "--max-messages",
+  "200000",
+  "--max-bytes",
+  "1048576"
+ ],
+ "returncode": 0,
+ "exit_code": 0,
+ "fuente_del_codigo": "Popen.wait() (codigo real del proceso)",
+ "stdout": "C:\\proyectos\\binance-futures-data\\diag-ws-recepcion-20261112a\\stdout.log",
+ "stderr": "C:\\proyectos\\binance-futures-data\\diag-ws-recepcion-20261112a\\stderr.log",
+ "inicio_iso_utc": "2026-11-12T23:50:16",
+ "fin_iso_utc": "2026-11-12T23:51:22",
+ "duracion_s": 65.557,
+ "interrumpido": false
+}

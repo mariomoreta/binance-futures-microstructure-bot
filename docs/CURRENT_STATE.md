@@ -1,5 +1,44 @@
 # Estado vigente — dirección operativa, 2026-11-12
 
+## Diagnóstico WS de recepción ejecutado — PASS (2026-11-12, PÚBLICO, autorización acotada)
+
+Ejecutado **una sola vez** el diagnóstico preparado (`diag-ws-recepcion-20261112a`,
+SHA de ejecución `37b779c456c5aed234171bbb0fe3421b979bb150`), con la
+autorización humana acotada al alcance de recepción. Evidencia compacta:
+[INFORRE](evidence/diag-ws-recepcion-20261112a/INFORRE.md).
+
+**Resultado del diagnóstico actual (lo único que este bloque mide):** el
+transporte productivo **recibió y procesó datos reales** en las rutas vigentes.
+Feed de trades `/market` (`aggTrade`): 1 conexión, 0 reconexiones, 0 errores,
+**773 frames de datos, 773 eventos válidos, 773 procesados por `FlowEngine`**.
+Feed de libro `/public` (`depth20@100ms`): 1 conexión, 0 reconexiones, 0 errores,
+**552 frames de datos, 552 eventos válidos, 552 procesados por `BookEngine`**.
+Cero frames de control (un ACK no acreditó flujo). Código de salida observado
+**0**, leído de `Popen.wait()` (`exit_code.txt` y `launcher.json.returncode`),
+no inferido. Límites respetados (1 325 frames ≪ 200 000; 2 360 B ≪ 1 MB) y
+recursos propios cerrados (proceso terminado, `connected_now: false`, sin
+proceso propio vivo). **Veredicto: PASS**, contrastado con los artefactos y no
+solo con la salida del script. Duración: observación 60 s configurados;
+proceso total 65.034 s (diagnóstico) / 65.557 s (lanzador): el exceso de ~5 s
+corresponde al cierre de sockets (`close_timeout=5`), no a ampliar la
+observación; no hubo reintento ni relanzamiento.
+
+**Lo que cambia:** el bloqueo material de datos que vació el embudo de
+`exp-v2-ventana-1-20261112a` **está resuelto para el transporte**: con la ruta
+por categoría correcta hay flujo real. Una ventana operativa **sigue
+requiriendo autorización humana nueva**; este diagnóstico no la habilita.
+
+**Lo que NO cambia (separado por diseño):**
+- **Causa histórica:** sigue **UNKNOWN**. No se abrió la URL antigua contra el
+  venue, así que la causa raíz del silencio anterior **no queda demostrada**
+  (la coherencia con la hipótesis documentada es un indicio adicional, no una
+  prueba).
+- **Exit code histórico** de `exp-v2-ventana-1-20261112a`: sigue **UNKNOWN**
+  (su `exit_code.txt` continúa con 0 bytes; no se rellena).
+- **Resultado económico:** este diagnóstico **no lo evalúa**. No hubo
+  señales, decisiones, operaciones, órdenes ni cuentas; 60 s y un símbolo no
+  acreditan cobertura de universo, ciclos, horizontes ni estabilidad.
+
 ## Patrones de extremos y ficha unificada — aclaración documental (2026-11-12)
 
 Se precisó en [PRODUCT_GOAL](PRODUCT_GOAL.md#aclaración-de-investigación-y-dashboard--decisión-del-usuario-2026-11-12)

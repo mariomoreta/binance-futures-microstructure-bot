@@ -1,0 +1,8 @@
+{
+  "_nota": "Hashes SHA-256 de la evidencia compacta publicada del diagnostico diag-ws-recepcion-20261112a (ejecucion publica unica, SHA de ejecucion 37b779c456c5aed234171bbb0fe3421b979bb150). Los originales se conservan en C:\\proyectos\\binance-futures-data\\diag-ws-recepcion-20261112a (fuera de Git).",
+  "diagnostico.json": "89cf9bc3b838fcfb9d6dd4f2c5a1521bb7dfe294f517cc530d2add3f1048a756",
+  "exit_code.txt": "13bf7b3039c63bf5a50491fa3cfd8eb4e699d1ba1436315aef9cbe5711530354",
+  "launcher.json": "945f65ff7ce262e73c75681abd54d663c2ba6a5f88c1483a2fe7258d7ccfe5ba",
+  "stderr.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "stdout.log": "6e71be2c82c5d1c8f196f1695b50b3f4fc32668a4019ff75aab0b0f5202fc55c"
+}

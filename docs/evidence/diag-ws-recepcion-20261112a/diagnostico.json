@@ -1,0 +1,86 @@
+{
+ "diagnostico_id": "diag-ws-recepcion-20261112a",
+ "simbolo": "BTCUSDT",
+ "simbolo_fuente": "indicado explicitamente; no se consulto el mercado",
+ "autorizado_publico": true,
+ "modo": "publico",
+ "rest": "ninguna peticion REST",
+ "ordenes": "ninguna",
+ "dataset_investigacion": "no se genera",
+ "urls": {
+  "public": "wss://fstream.binance.com/public/stream?streams=btcusdt@depth20@100ms",
+  "market": "wss://fstream.binance.com/market/stream?streams=btcusdt@aggTrade"
+ },
+ "limites": {
+  "duracion_s": 60.0,
+  "duracion_max_s": 60.0,
+  "max_messages": 200000,
+  "max_bytes": 1048576,
+  "aperturas_iniciales": 2,
+  "reconexiones_automaticas": 0
+ },
+ "resultado": {
+  "inicio_iso_utc": "2026-11-12T23:50:16",
+  "fin_iso_utc": "2026-11-12T23:51:21",
+  "duracion_s": 65.034,
+  "limite_mensajes_alcanzado": false,
+  "feeds": {
+   "market": {
+    "name": "market",
+    "connections": 1,
+    "disconnects": 1,
+    "reconnects": 0,
+    "errors": 0,
+    "messages": 773,
+    "last_error": null,
+    "connected_now": false,
+    "url_shape": "wss://fstream.binance.com/market/stream"
+   },
+   "public": {
+    "name": "public",
+    "connections": 1,
+    "disconnects": 1,
+    "reconnects": 0,
+    "errors": 0,
+    "messages": 552,
+    "last_error": null,
+    "connected_now": false,
+    "url_shape": "wss://fstream.binance.com/public/stream"
+   }
+  },
+  "evidencia": {
+   "market": {
+    "frames_total": 773,
+    "frames_datos": 773,
+    "frames_control": 0,
+    "frames_datos_fuera_de_simbolo": 0,
+    "eventos_validos": 773,
+    "frames_invalidos": 0
+   },
+   "public": {
+    "frames_total": 552,
+    "frames_datos": 552,
+    "frames_control": 0,
+    "frames_datos_fuera_de_simbolo": 0,
+    "eventos_validos": 552,
+    "frames_invalidos": 0
+   }
+  },
+  "eventos_procesados": {
+   "book_events": {
+    "BTCUSDT": 552
+   },
+   "flow_events": {
+    "BTCUSDT": 773
+   }
+  }
+ },
+ "veredicto": "PASS",
+ "motivos": [],
+ "criterio": {
+  "PASS": "trades: eventos validos > 0 y flow_events > 0; libro: eventos validos > 0 y book_events > 0; 2 conexiones, 0 reconexiones, 0 errores",
+  "INSUFICIENTE": "sin errores ni reconexiones pero sin recepcion valida",
+  "FAIL": "error de conexion, reconexion o limite excedido",
+  "nota": "un frame de control (ACK/ping) no acredita flujo agresor"
+ }
+}

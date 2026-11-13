@@ -34,40 +34,28 @@ neto COMPLETO vs. CONDICIONADO): eso se debe decir sin adornos, y la vía B
 permanece diferida sin ampliar ningún validador.
 
 `NEXT_TASKS`:
-1. **Comprobación pública de recepción válida en `/market/stream` — NO
-   EJECUTADA, requiere autorización humana explícita.** El comando está
-   **preparado y verificado en loopback** (`scripts/diagnostico_ws_recepcion.py`
-   sobre el transporte productivo `StreamFeed` y los motores `BookEngine` /
-   `FlowEngine`); en este bloque no se abrió ningún socket público:
-
-   ```powershell
-   python scripts/run_pilot_window.py `
-     --out-dir C:\proyectos\binance-futures-data\diag-ws-recepcion-20261112a `
-     -- python scripts/diagnostico_ws_recepcion.py `
-        --diagnostico-id diag-ws-recepcion-20261112a `
-        --simbolo BTCUSDT `
-        --duracion-seconds 60 `
-        --out-dir C:\proyectos\binance-futures-data\diag-ws-recepcion-20261112a `
-        --ws-public-base wss://fstream.binance.com/public `
-        --ws-market-base wss://fstream.binance.com/market `
-        --autorizar-publico `
-        --max-messages 200000 `
-        --max-bytes 1048576
-   ```
-
-   Características: un símbolo explícito (`BTCUSDT`, sin consultar el mercado
-   para elegirlo), **una** conexión `/market/stream` con `aggTrade` y **una**
-   `/public/stream` con `depth20@100ms`, duración global ≤ 60 s, dos aperturas
-   iniciales y **cero reconexiones automáticas**, cero REST, cero órdenes, cero
-   dataset de investigación (solo `diagnostico.json` compacto junto a los logs
-   y el `exit_code.txt` del lanzador). Criterios: **PASS** = trades con eventos
-   válidos *y* procesados por `FlowEngine`, libro con eventos válidos *y*
-   procesados por `BookEngine`, 2 conexiones, 0 reconexiones, 0 errores;
-   **INSUFICIENTE** = sin errores ni reconexiones pero sin recepción válida;
-   **FAIL** = error de conexión, reconexión o límite excedido. Un frame de
-   control (ACK/ping) no acredita flujo agresor. Si el veredicto no es PASS,
-   la vía A sigue bloqueada y **no** procede ninguna ventana.
-2. **Envoltorio de salida: corregido y verificado en local (2026-11-12).**
+1. **Comprobación pública de recepción: EJECUTADA (2026-11-12, PASS).** Se
+   ejecutó **una sola vez** el diagnóstico preparado con la autorización
+   acotada al alcance de recepción (`diag-ws-recepcion-20261112a`, SHA de
+   ejecución `37b779c456c5aed234171bbb0fe3421b979bb150`). Resultado: trades
+   `/market` con **773 frames de datos, 773 eventos válidos y 773 procesados
+   por `FlowEngine`**; libro `/public` con **552 / 552 / 552 procesados por
+   `BookEngine`**; 2 conexiones, 0 reconexiones, 0 errores, 0 frames de
+   control; código de salida observado **0** (`Popen.wait()`); límites
+   respetados y recursos propios cerrados. Evidencia compacta:
+   [INFORRE](evidence/diag-ws-recepcion-20261112a/INFORRE.md). El bloqueo
+   material de datos **queda resuelto para el transporte**: con la ruta por
+   categoría correcta hay flujo real. **La causa raíz histórica sigue
+   `UNKNOWN`** (no se abrió la URL antigua contra el venue) y el exit code
+   histórico sigue **`UNKNOWN`**.
+2. **Ninguna ventana operativa sin autorización humana explícita y nueva.**
+   Este diagnóstico **no habilita** ninguna ventana: no evalúa rentabilidad,
+   estabilidad prolongada, cobertura de universo ni capacidad de operar, y no
+   generó señales, decisiones, operaciones, órdenes ni cuentas. Si se autoriza
+   una ventana, será con la configuración congelada, un `run_id` nuevo no
+   ejecutado, el mismo protocolo de monitor y el envoltorio de salida ya
+   corregido (que persiste el código real en el mismo directorio).
+3. **Envoltorio de salida: corregido y verificado en local (2026-11-12).**
    `scripts/run_pilot_window.py` espera la finalización real del proceso, lee
    el código numérico con `Popen.wait()` y persiste `stdout.log`,
    `stderr.log`, `exit_code.txt` y `launcher.json`; verificado con salidas 0 y
@@ -75,14 +63,11 @@ permanece diferida sin ampliar ningún validador.
    modo predeterminado el piloto recibe el mismo `--out-dir` que el lanzador
    (logs y artefactos en el mismo sitio; directorios contradictorios → error
    explícito) y en modo comando explícito (tras `--`) no se inyecta ninguna
-   opción de `research_pilot.py`. Queda pendiente **usarlo en la próxima
-   ejecución autorizada**; el exit code histórico de
+   opción de `research_pilot.py`. **Ya usado en la ejecución autorizada** del
+   diagnóstico de recepción: el código de salida real quedó persistido en el
+   mismo directorio (`exit_code.txt` = 0). El exit code histórico de
    `exp-v2-ventana-1-20261112a` sigue **UNKNOWN** y no se rellena
    retrospectivamente.
-3. **Ninguna ventana nueva sin autorización humana explícita y nueva.**
-   `INSUFICIENTE` no renueva duración, cupos, `run_id` ni ventanas. Si se
-   autoriza otra, será con la configuración congelada, un `run_id` nuevo no
-   ejecutado y el mismo protocolo de monitor.
 4. **Cerrar y documentar lo que ya se sabe** (hecho en esta iteración):
    informe de tres capas en
    [INFORRE-CIERRE](evidence/exp-v2-ventana-1-20261112a/INFORRE-CIERRE.md),
