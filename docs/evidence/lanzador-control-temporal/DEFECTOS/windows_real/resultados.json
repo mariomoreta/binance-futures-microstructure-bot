@@ -1,0 +1,175 @@
+{
+  "casos": [
+    {
+      "caso": "normal",
+      "codigo_lanzador_observado": 0,
+      "stderr_del_lanzador": "",
+      "duracion_real_de_pared_s": 0.181,
+      "resultado": "normal",
+      "causa_terminacion": "terminacion_natural",
+      "cumplimiento_normal": true,
+      "cierre": {
+        "parada_solicitada": false,
+        "parada_mecanismo": null,
+        "terminacion_forzada_solicitada": false,
+        "terminacion_forzada_mecanismo": null,
+        "terminacion_hijo_observada": true,
+        "codigo_salida_observado": 0,
+        "codigo_salida_estado": "observado",
+        "alimentaciones_lanzador_cerradas": true,
+        "recursos_hijo": "UNKNOWN",
+        "recursos_hijo_nota": "el lanzador generico no puede certificar los sockets ni el teardown del hijo: no se afirma su cierre",
+        "tiempo_concedido_taskkill_s": null,
+        "excedio_la_concesion": false,
+        "evidencia_piloto": {
+          "artefactos_observados": [],
+          "nota": "estado del piloto como evidencia diferenciada: el lanzador lo lista pero no lo interpreta ni lo certifica"
+        },
+        "alcance": "propio: el hijo y el arbol de descendientes del grupo propio; nunca busquedas globales"
+      },
+      "tiempos": {
+        "inicio_monotono_s": 168664.105,
+        "fin_hijo_monotono_s": 168664.153,
+        "duracion_hasta_fin_del_hijo_s": 0.048,
+        "work_deadline_relativo_s": null,
+        "deadline_limpieza_relativo_s": null,
+        "deadline_forzada_relativo_s": null,
+        "fin_monotono_s": 168664.156,
+        "duracion_total_s": 0.051,
+        "duracion_persistencia_s": 0.003,
+        "exceso_maximo_total_s": 0.0,
+        "incumplimiento_plazo_global": false
+      },
+      "cierre_definitivo": {
+        "resultado": "normal",
+        "causa_terminacion": "terminacion_natural",
+        "cumplimiento_normal": true,
+        "codigo_lanzador": 0,
+        "codigo_hijo_observado": 0,
+        "codigo_hijo_estado": "observado",
+        "terminacion_hijo_observada": true,
+        "recursos_hijo": "UNKNOWN",
+        "duracion_total_s": 0.056,
+        "duracion_persistencia_s": 0.003,
+        "exceso_maximo_total_s": 0.0,
+        "incumplimiento_plazo_global": false,
+        "fin_iso_utc": "2026-11-13T11:26:56",
+        "nota": "medicion definitiva: incluye la persistencia de todos los artefactos; solo queda fuera la escritura atomica de este archivo"
+      }
+    },
+    {
+      "caso": "limpio",
+      "codigo_lanzador_observado": 124,
+      "stderr_del_lanzador": "",
+      "duracion_real_de_pared_s": 1.199,
+      "resultado": "timeout_trabajo_parada_limpia",
+      "causa_terminacion": "plazo_trabajo_vencido",
+      "cumplimiento_normal": false,
+      "cierre": {
+        "parada_solicitada": true,
+        "parada_mecanismo": "ctrl_break_event",
+        "terminacion_forzada_solicitada": false,
+        "terminacion_forzada_mecanismo": null,
+        "terminacion_hijo_observada": true,
+        "codigo_salida_observado": 0,
+        "codigo_salida_estado": "observado",
+        "alimentaciones_lanzador_cerradas": true,
+        "recursos_hijo": "UNKNOWN",
+        "recursos_hijo_nota": "el lanzador generico no puede certificar los sockets ni el teardown del hijo: no se afirma su cierre",
+        "tiempo_concedido_taskkill_s": null,
+        "excedio_la_concesion": false,
+        "evidencia_piloto": {
+          "artefactos_observados": [],
+          "nota": "estado del piloto como evidencia diferenciada: el lanzador lo lista pero no lo interpreta ni lo certifica"
+        },
+        "alcance": "propio: el hijo y el arbol de descendientes del grupo propio; nunca busquedas globales"
+      },
+      "tiempos": {
+        "inicio_monotono_s": 168664.301,
+        "fin_hijo_monotono_s": 168665.366,
+        "duracion_hasta_fin_del_hijo_s": 1.066,
+        "work_deadline_relativo_s": 1.0,
+        "deadline_limpieza_relativo_s": 7.0,
+        "deadline_forzada_relativo_s": 5.0,
+        "fin_monotono_s": 168665.37,
+        "duracion_total_s": 1.07,
+        "duracion_persistencia_s": 0.003,
+        "exceso_maximo_total_s": 0.0,
+        "incumplimiento_plazo_global": false
+      },
+      "cierre_definitivo": {
+        "resultado": "timeout_trabajo_parada_limpia",
+        "causa_terminacion": "plazo_trabajo_vencido",
+        "cumplimiento_normal": false,
+        "codigo_lanzador": 124,
+        "codigo_hijo_observado": 0,
+        "codigo_hijo_estado": "observado",
+        "terminacion_hijo_observada": true,
+        "recursos_hijo": "UNKNOWN",
+        "duracion_total_s": 1.074,
+        "duracion_persistencia_s": 0.003,
+        "exceso_maximo_total_s": 0.0,
+        "incumplimiento_plazo_global": false,
+        "fin_iso_utc": "2026-11-13T11:26:57",
+        "nota": "medicion definitiva: incluye la persistencia de todos los artefactos; solo queda fuera la escritura atomica de este archivo"
+      }
+    },
+    {
+      "caso": "forzado",
+      "codigo_lanzador_observado": 125,
+      "stderr_del_lanzador": "",
+      "duracion_real_de_pared_s": 2.842,
+      "resultado": "timeout_trabajo_terminacion_forzada",
+      "causa_terminacion": "plazo_trabajo_vencido",
+      "cumplimiento_normal": false,
+      "cierre": {
+        "parada_solicitada": true,
+        "parada_mecanismo": "ctrl_break_event",
+        "terminacion_forzada_solicitada": true,
+        "terminacion_forzada_mecanismo": "taskkill_arbol_propio",
+        "terminacion_hijo_observada": true,
+        "codigo_salida_observado": 1,
+        "codigo_salida_estado": "observado",
+        "alimentaciones_lanzador_cerradas": true,
+        "recursos_hijo": "UNKNOWN",
+        "recursos_hijo_nota": "el lanzador generico no puede certificar los sockets ni el teardown del hijo: no se afirma su cierre",
+        "tiempo_concedido_taskkill_s": 1.496349699998973,
+        "excedio_la_concesion": false,
+        "evidencia_piloto": {
+          "artefactos_observados": [],
+          "nota": "estado del piloto como evidencia diferenciada: el lanzador lo lista pero no lo interpreta ni lo certifica"
+        },
+        "alcance": "propio: el hijo y el arbol de descendientes del grupo propio; nunca busquedas globales"
+      },
+      "tiempos": {
+        "inicio_monotono_s": 168665.522,
+        "fin_hijo_monotono_s": 168668.231,
+        "duracion_hasta_fin_del_hijo_s": 2.709,
+        "work_deadline_relativo_s": 1.0,
+        "deadline_limpieza_relativo_s": 4.0,
+        "deadline_forzada_relativo_s": 2.5,
+        "fin_monotono_s": 168668.237,
+        "duracion_total_s": 2.715,
+        "duracion_persistencia_s": 0.005,
+        "exceso_maximo_total_s": 0.0,
+        "incumplimiento_plazo_global": false
+      },
+      "cierre_definitivo": {
+        "resultado": "timeout_trabajo_terminacion_forzada",
+        "causa_terminacion": "plazo_trabajo_vencido",
+        "cumplimiento_normal": false,
+        "codigo_lanzador": 125,
+        "codigo_hijo_observado": 1,
+        "codigo_hijo_estado": "observado",
+        "terminacion_hijo_observada": true,
+        "recursos_hijo": "UNKNOWN",
+        "duracion_total_s": 2.717,
+        "duracion_persistencia_s": 0.005,
+        "exceso_maximo_total_s": 0.0,
+        "incumplimiento_plazo_global": false,
+        "fin_iso_utc": "2026-11-13T11:27:00",
+        "nota": "medicion definitiva: incluye la persistencia de todos los artefactos; solo queda fuera la escritura atomica de este archivo"
+      }
+    }
+  ]
+}

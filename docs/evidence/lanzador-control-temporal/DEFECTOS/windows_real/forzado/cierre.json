@@ -1,0 +1,16 @@
+{
+ "resultado": "timeout_trabajo_terminacion_forzada",
+ "causa_terminacion": "plazo_trabajo_vencido",
+ "cumplimiento_normal": false,
+ "codigo_lanzador": 125,
+ "codigo_hijo_observado": 1,
+ "codigo_hijo_estado": "observado",
+ "terminacion_hijo_observada": true,
+ "recursos_hijo": "UNKNOWN",
+ "duracion_total_s": 2.717,
+ "duracion_persistencia_s": 0.005,
+ "exceso_maximo_total_s": 0.0,
+ "incumplimiento_plazo_global": false,
+ "fin_iso_utc": "2026-11-13T11:27:00",
+ "nota": "medicion definitiva: incluye la persistencia de todos los artefactos; solo queda fuera la escritura atomica de este archivo"
+}

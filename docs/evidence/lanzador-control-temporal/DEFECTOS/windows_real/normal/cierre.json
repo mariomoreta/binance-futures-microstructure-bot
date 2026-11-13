@@ -1,0 +1,16 @@
+{
+ "resultado": "normal",
+ "causa_terminacion": "terminacion_natural",
+ "cumplimiento_normal": true,
+ "codigo_lanzador": 0,
+ "codigo_hijo_observado": 0,
+ "codigo_hijo_estado": "observado",
+ "terminacion_hijo_observada": true,
+ "recursos_hijo": "UNKNOWN",
+ "duracion_total_s": 0.056,
+ "duracion_persistencia_s": 0.003,
+ "exceso_maximo_total_s": 0.0,
+ "incumplimiento_plazo_global": false,
+ "fin_iso_utc": "2026-11-13T11:26:56",
+ "nota": "medicion definitiva: incluye la persistencia de todos los artefactos; solo queda fuera la escritura atomica de este archivo"
+}

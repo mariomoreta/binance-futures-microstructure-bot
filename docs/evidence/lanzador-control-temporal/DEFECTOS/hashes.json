@@ -1,0 +1,29 @@
+{
+  "_nota": "Hashes SHA-256 de la evidencia de los dos defectos materiales del lanzador (plazo global y cierre con evidencia), 2026-11-13. Incluye la simulacion determinista ANTES (contra el lanzador publicado d53d8ad) y DESPUES (corregido) y la ejecucion real en Windows con casos cortos.",
+  "hashes": {
+    "ejecucion_real_windows.py": "3f679a410e797415569601f321a7462a9e5820eb4c0897a0c8efda9232efdfd5",
+    "reproduccion_ANTES.json": "d3239558f111f76c79373a99dbfcb23d1ee7554fe09403203d0961702081c125",
+    "reproduccion_defectos.py": "608f922b4717ab9d15f67755099ce8337a5d303a89ee7b37f1ed29f0d4aae08d",
+    "reproduccion_DESPUES.json": "771bff2fe8b3e04f69b1f79187f2c7840811db3d8452479e14ce2530ded2109d",
+    "RESUMEN.md": "1c697a206a4a2cd71d2b37d10430fee7bb78b839145a090310dab575590196fb",
+    "windows_real/forzado/cierre.json": "4d6327d0ed515d027a5365b0c0231b10eb011fd99b10f7cf2192d5af4b2e20a3",
+    "windows_real/forzado/estado_lanzador.json": "59868778335bd7ef4108a0bd0e58ac4c613e1988a21313f7ca848dbf14518220",
+    "windows_real/forzado/exit_code.txt": "f1b2f662800122bed0ff255693df89c4487fbdcf453d3524a42d4ec20c3d9c04",
+    "windows_real/forzado/launcher.json": "bcab1ae87b057d9f93f857bf6f2b085fe0bb4dcba8901bc07503f20aec895181",
+    "windows_real/forzado/stderr.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "windows_real/forzado/stdout.log": "823a7c1a5cf24e335a84ccbd4e7b45792457faca11180dc27917f216113bc512",
+    "windows_real/limpio/cierre.json": "79de6fa68d1588382939998bd0fa6f2e2518bdceee13db58f296234ef40a033c",
+    "windows_real/limpio/estado_lanzador.json": "145b8b65c06521bd652c497bbaa07237cb32e4fb0a575634567b0c029100af65",
+    "windows_real/limpio/exit_code.txt": "13bf7b3039c63bf5a50491fa3cfd8eb4e699d1ba1436315aef9cbe5711530354",
+    "windows_real/limpio/launcher.json": "d97b638f6fec64e48b1c65d9c5a80403914eab861254578300eca5278b636e11",
+    "windows_real/limpio/stderr.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "windows_real/limpio/stdout.log": "3e850c467e6332323e51ee012ffa3726a08526c6ba6c43502798209586183d56",
+    "windows_real/normal/cierre.json": "36ad298f07d4be678f98a43ae48fe8818510f7bee6e7ad834f31b0b76e77e64e",
+    "windows_real/normal/estado_lanzador.json": "a56733d5a1253a3dc1f6b07365879801c01407ca53f9f38b2cec899c0788a37e",
+    "windows_real/normal/exit_code.txt": "13bf7b3039c63bf5a50491fa3cfd8eb4e699d1ba1436315aef9cbe5711530354",
+    "windows_real/normal/launcher.json": "b4d326a7f40bbf8f060da2f651b5073b1e10a696ad44bf530d7066caff5d8327",
+    "windows_real/normal/stderr.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "windows_real/normal/stdout.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "windows_real/resultados.json": "6df29a21e538d60ee09e04d2478d11c22c0b88e05732e849603aa49f94dc8ecb"
+  }
+}

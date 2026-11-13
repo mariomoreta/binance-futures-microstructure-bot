@@ -1,4 +1,75 @@
-# Estado vigente — dirección operativa, 2026-11-12
+# Estado vigente — dirección operativa, 2026-11-13
+
+## Dos defectos materiales del lanzador — CORREGIDOS y probados en Windows (2026-11-13)
+
+El control temporal del 2026-11-12 tenía **dos defectos materiales**, ambos
+reproducidos contra el código publicado (`d53d8ad`) y **corregidos**:
+
+1. **Las esperas de terminación podían superar el plazo global.**
+   `_terminar_forzado()` concedía **30 s fijos** a `taskkill` y después
+   **10 s fijos** al reap del hijo: con trabajo 1 s y margen 4 s (plazo global
+   5 s), la ruta podía acumular **45 s** (3 s hasta el deadline de forzada +
+   30 + 10 + reserva de persistencia). **Corrección:** un único reloj
+   monotónico y un único deadline global; **toda** espera y llamada de
+   terminación se acota al **restante** de ese deadline. Ya no hay esperas
+   fijas que se sumen al plazo. El margen se reparte explícitamente: reserva
+   de persistencia (25 % del margen, máximo 5 s) + reserva de reap (máximo
+   2 s) + resto para parada limpia y terminación forzada.
+2. **El lanzador acreditaba recursos cerrados sin evidencia.**
+   Con el código del hijo **no observado** (`exit_code.txt: UNKNOWN`), el
+   estado publicaba `proceso_hijo_terminado: true` (solo se había *intentado*
+   matar) y `alimentaciones_cerradas: true` (incondicional), sin poder
+   certificar los sockets del hijo. **Corrección:** se separa lo **solicitado**
+   (`parada_solicitada`, `terminacion_forzada_solicitada`) de lo **observado**
+   (`terminacion_hijo_observada`, `codigo_salida_observado` /
+   `codigo_salida_estado`); `recursos_hijo` queda **UNKNOWN** (el lanzador
+   genérico no puede certificar el teardown del hijo) y el estado del piloto
+   se conserva como **evidencia diferenciada** (`evidencia_piloto`, solo se
+   lista, no se interpreta).
+
+| Medida (caso de referencia: trabajo 1 s, margen 4 s, total 5 s) | Antes (publicado) | Después (corregido) |
+|---|---|---|
+| Límite duro de limpieza | no existía | 4,0 s |
+| Tiempo concedido a `taskkill` | **30 s fijo** | 1,5 s (el restante) |
+| Tiempo concedido al reap | **10 s fijo** | 0 s (el restante) |
+| Acumulado con persistencia | **45 s** (> 5 s) | **5,0 s** (= plazo global) |
+| Cierre con código no observado | `proceso_hijo_terminado: true` (falso) | `terminacion_hijo_observada: false`, `recursos_hijo: UNKNOWN` |
+
+- **Duración medida con persistencia:** `duracion_total_s` se mide **después**
+  de escribir `exit_code.txt` y `launcher.json`; `cierre.json` publica la
+  medición definitiva (tras el veredicto). Si la persistencia lleva el reloj
+  más allá del plazo global, el exceso se **publica**
+  (`exceso_maximo_total_s > 0`, `incumplimiento_plazo_global: true`) y el
+  lanzador devuelve **126** (`plazo_global_excedido`): no se oculta con
+  tolerancias ni reiniciando el reloj.
+- **Alcance real del control:** acota el tiempo que el lanzador **espera y
+  concede**; **no** es una garantía del sistema operativo. Si una llamada
+  ignora su propio timeout, el exceso se **mide** y se publica
+  (`excedio_la_concesion: true`) como incumplimiento.
+- **Se conservan** la parada limpia de Windows (`CREATE_NEW_PROCESS_GROUP` +
+  `CTRL_BREAK_EVENT`) y la terminación forzada **solo sobre el árbol propio**
+  (`taskkill /F /T /PID` sobre el PID del hijo; nunca búsquedas globales).
+- **Pruebas locales (sin red, sin mercado):**
+  `tests/test_pilot_launcher_temporal.py` — **19 passed** (14 previos + 5
+  nuevos: `taskkill` que agota su espera, hijo cuya salida no puede
+  confirmarse, persistencia que consume parte de la reserva, exceso temporal
+  registrado honestamente y ninguna espera por encima del restante); se
+  conservan fin normal, salida no cero, parada limpia, terminación forzada y
+  proceso ajeno preservado. Regresiones directamente afectadas: lanzador 50,
+  `test_research_pilot.py` 45, operativo/CLI 9 → **123 passed** en el
+  conjunto afectado.
+- **Ejecución real en Windows (casos cortos):** normal → 0 (0,056 s, sin
+  exceso); plazo + parada limpia → **124** (1,074 s); plazo + terminación
+  forzada → **125** (2,717 s); en los tres, `exceso_maximo_total_s: 0,0` y
+  `recursos_hijo: UNKNOWN`.
+- **Evidencia:** [RESUMEN](evidence/lanzador-control-temporal/DEFECTOS/RESUMEN.md)
+  (reproducción determinista ANTES/DESPUES + ejecución real en Windows +
+  hashes).
+- **Lo que NO cambia:** no se ha abierto mercado en este bloque; no se
+  ejecutó ni el diagnóstico público ni la ventana operativa; no cambian
+  estrategia, selección, funding, contabilidad, exposición, presupuestos
+  económicos ni la duración propuesta (40 200 s + 300 s); no se tocan
+  `opencode.json`, archivos ajenos, datasets, DBs, 3020 ni 8792.
 
 ## Control temporal del lanzador — IMPLEMENTADO y probado en Windows (2026-11-12)
 
@@ -29,14 +100,15 @@ curso puede terminar; una adquisición nueva no).
   árbol **propio** del hijo, nunca búsquedas globales.
 - **Códigos sin ambigüedad:** `exit_code.txt` conserva el código real del
   hijo (desconocido → `UNKNOWN`, nunca inventado). El veredicto del lanzador
-  se publica **por separado** en `estado_lanzador.json` y en los campos nuevos
-  de `launcher.json`: `resultado_lanzador`, `causa_terminacion`,
+  se publica **por separado** en `estado_lanzador.json`, `cierre.json` y en
+  los campos de `launcher.json`: `resultado_lanzador`, `causa_terminacion`,
   `cumplimiento_normal`, `codigo_lanzador`, `codigo_hijo_observado`,
-  `parada_solicitada`, `terminacion_forzada`, `limpieza`, límites y tiempos.
-  Plazo vencido con parada limpia → lanzador **124**; con terminación forzada
-  → **125**. Un hijo que devuelve **0** tras el plazo **no** es cumplimiento
-  normal. Seguir vivo durante el margen de cierre **no** es, por sí mismo, un
-  incumplimiento; superarlo sí, y se registra como `exceso_maximo_total_s`.
+  `parada_solicitada`, `terminacion_forzada_solicitada`, `cierre`, límites y
+  tiempos. Plazo vencido con parada limpia → lanzador **124**; con
+  terminación forzada → **125**; exceso del plazo global → **126**. Un hijo
+  que devuelve **0** tras el plazo **no** es cumplimiento normal. Seguir vivo
+  durante el margen de cierre **no** es, por sí mismo, un incumplimiento;
+  superarlo sí, y se registra como `exceso_maximo_total_s`.
 - **Defecto previo reproducido:** el lanzador usaba `proc.wait()` **sin
   timeout**, sin ninguna vía de acotar la espera; el máximo de 40 500 s no
   existía como control. Evidencia: [ANTES/DESPUES](evidence/lanzador-control-temporal/).

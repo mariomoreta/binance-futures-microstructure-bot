@@ -121,13 +121,29 @@ la terminación forzada está acotada.
 | Plazo de trabajo vencido, parada limpia efectiva | real (p. ej. 0) | **124** | `timeout_trabajo_parada_limpia` | `false` |
 | Plazo de trabajo vencido, terminación forzada | real (en Windows, `TerminateProcess` deja 1) | **125** | `timeout_trabajo_terminacion_forzada` | `false` |
 | Código no observado | `UNKNOWN` (nunca se inventa) | 124/125 según el caso | idem | `false` |
+| Exceso del plazo global (40 500 s) | el observado | **126** | `plazo_global_excedido` | `false` |
 
 El código histórico del hijo **conserva su significado** en `exit_code.txt` y
 en los campos existentes de `launcher.json`; el veredicto del lanzador se
-publica **por separado** en `estado_lanzador.json` y en los campos nuevos de
+publica **por separado** en `estado_lanzador.json`, en `cierre.json`
+(registro definitivo del fin de la corrida) y en los campos de
 `launcher.json` (`resultado_lanzador`, `causa_terminacion`,
 `cumplimiento_normal`, `codigo_lanzador`, `codigo_hijo_observado`,
-`parada_solicitada`, `terminacion_forzada`, `limpieza`, límites y tiempos).
+`parada_solicitada`, `terminacion_forzada_solicitada`, `cierre`, límites y
+tiempos).
+
+**Cierre basado en evidencia (corregido el 2026-11-13):** el bloque `cierre`
+separa lo **solicitado** de lo **observado**:
+
+| Campo | Significado |
+|---|---|
+| `parada_solicitada`, `parada_mecanismo` | se envió la señal (no prueba terminación) |
+| `terminacion_forzada_solicitada`, `terminacion_forzada_mecanismo` | se pidió la terminación forzada (no prueba terminación) |
+| `terminacion_hijo_observada` | `true` solo si se observó la salida del hijo (`Popen.wait()`) |
+| `codigo_salida_observado`, `codigo_salida_estado` | el código real, o `UNKNOWN` si no se pudo observar |
+| `alimentaciones_lanzador_cerradas` |Tuberias propias del lanzador (acreditado por su propio cierre) |
+| `recursos_hijo` | **UNKNOWN**: el lanzador genérico no puede certificar los sockets del hijo |
+| `evidencia_piloto` | estado del piloto como evidencia diferenciada: se lista, no se interpreta |
 
 **Distinciones que deben leerse al cerrar una corrida:**
 
@@ -136,10 +152,13 @@ publica **por separado** en `estado_lanzador.json` y en los campos nuevos de
   pidió la parada. El resultado no es cumplimiento normal aunque el código del
   hijo sea 0.
 - **Cierre forzado:** además del timeout, el hijo no terminó dentro del
-  margen y hubo que forzarlo (`terminacion_forzada: true`).
-- **Exceso del máximo total:** si la duración observada superase 40 500 s, se
-  registra como `exceso_maximo_total_s` (> 0) y es un **incidente material**,
-  no una autorización para seguir.
+  margen y hubo que forzarlo (`terminacion_forzada_solicitada: true`). Solo
+  si además se observó su salida se afirma `terminacion_hijo_observada: true`.
+- **Exceso del máximo total:** si la duración observada (incluida la
+  persistencia del lanzador) superase 40 500 s, se registra como
+  `exceso_maximo_total_s` (> 0) y `incumplimiento_plazo_global: true`, el
+  veredicto pasa a `plazo_global_excedido` y el lanzador devuelve **126**: es
+  un **incidente material**, no una autorización para seguir.
 
 **Seguir vivo durante el margen de cierre no es, por sí mismo, un
 incumplimiento**: es precisamente el tiempo reservado para cerrar y
@@ -147,8 +166,10 @@ persistir. Lo que sí es incumplimiento es haber **superado el máximo total** o
 haber declarado cumplimiento normal tras vencer el plazo de trabajo.
 
 **Evidencia:** `docs/evidence/lanzador-control-temporal/` (defecto reproducido
-antes del cambio en `ANTES/`, comportamiento después en `DESPUES/`) y pruebas
-locales en `tests/test_pilot_launcher_temporal.py` (casos A–H, sin red).
+antes del cambio en `ANTES/`, comportamiento después en `DESPUES/`, y los dos
+defectos materiales del 2026-11-13 en `DEFECTOS/`) y pruebas locales en
+`tests/test_pilot_launcher_temporal.py` (casos A–H más los cinco nuevos de
+plazo global y cierre con evidencia; sin red).
 
 ## 4. Presupuesto (`--budget-only`, sin mercado)
 
@@ -240,11 +261,18 @@ máximo total de la corrida es **40 500 s**, de los cuales 40 200 s son trabajo
 y 300 s son margen exclusivo de cierre.
 
 **Interpretación del resultado al cerrar:** leer `exit_code.txt` (código real
-del hijo) y, por separado, `estado_lanzador.json` (veredicto del lanzador:
-`resultado`, `causa_terminacion`, `cumplimiento_normal`, `codigo_lanzador`,
-`parada_solicitada`, `terminacion_forzada`, `exceso_maximo_total_s`). Un
-código 0 del hijo **no** significa cumplimiento normal si el plazo de trabajo
-se agotó: en ese caso el lanzador devuelve **124** o **125** y lo declara.
+del hijo) y, por separado, `estado_lanzador.json` y `cierre.json` (veredicto
+del lanzador: `resultado`, `causa_terminacion`, `cumplimiento_normal`,
+`codigo_lanzador`, `cierre.parada_solicitada`,
+`cierre.terminacion_forzada_solicitada`,
+`cierre.terminacion_hijo_observada`, `cierre.codigo_salida_estado`,
+`cierre.recursos_hijo`, `tiempos.exceso_maximo_total_s`,
+`tiempos.incumplimiento_plazo_global`). Un código 0 del hijo **no** significa
+cumplimiento normal si el plazo de trabajo se agotó: en ese caso el lanzador
+devuelve **124** o **125** y lo declara. Si la corrida superase el máximo
+total, el lanzador devuelve **126** (`plazo_global_excedido`) y el exceso
+queda publicado; `cierre.json` es el registro definitivo del fin de la
+corrida (su duración incluye la persistencia del lanzador).
 
 ## 6. Criterios de parada y tratamiento de pendientes
 

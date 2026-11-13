@@ -1,0 +1,53 @@
+{
+ "resultado": "timeout_trabajo_parada_limpia",
+ "causa_terminacion": "plazo_trabajo_vencido",
+ "cumplimiento_normal": false,
+ "codigo_lanzador": 124,
+ "limites": {
+  "work_timeout_seconds": 1.0,
+  "shutdown_grace_seconds": 8.0,
+  "total_max_seconds": 9.0,
+  "reserva_persistencia_seconds": 2.0,
+  "reserva_reap_seconds": 2.0,
+  "tolerancia_fin_seconds": 0.5,
+  "sondeo_seconds": 0.2,
+  "reloj": "monotonico",
+  "deadlines": "absolutos (no se reinician al esperar o senalar); toda espera se acota al restante del MISMO deadline",
+  "alcance_del_control": "acota el tiempo que el lanzador espera y concede; no es una garantia del sistema operativo: si una llamada ignora su timeout, el exceso se mide y se publica"
+ },
+ "tiempos": {
+  "inicio_monotono_s": 168664.301,
+  "fin_hijo_monotono_s": 168665.366,
+  "duracion_hasta_fin_del_hijo_s": 1.066,
+  "work_deadline_relativo_s": 1.0,
+  "deadline_limpieza_relativo_s": 7.0,
+  "deadline_forzada_relativo_s": 5.0,
+  "fin_monotono_s": 168665.37,
+  "duracion_total_s": 1.07,
+  "duracion_persistencia_s": 0.003,
+  "exceso_maximo_total_s": 0.0,
+  "incumplimiento_plazo_global": false
+ },
+ "cierre": {
+  "parada_solicitada": true,
+  "parada_mecanismo": "ctrl_break_event",
+  "terminacion_forzada_solicitada": false,
+  "terminacion_forzada_mecanismo": null,
+  "terminacion_hijo_observada": true,
+  "codigo_salida_observado": 0,
+  "codigo_salida_estado": "observado",
+  "alimentaciones_lanzador_cerradas": true,
+  "recursos_hijo": "UNKNOWN",
+  "recursos_hijo_nota": "el lanzador generico no puede certificar los sockets ni el teardown del hijo: no se afirma su cierre",
+  "tiempo_concedido_taskkill_s": null,
+  "excedio_la_concesion": false,
+  "evidencia_piloto": {
+   "artefactos_observados": [],
+   "nota": "estado del piloto como evidencia diferenciada: el lanzador lo lista pero no lo interpreta ni lo certifica"
+  },
+  "alcance": "propio: el hijo y el arbol de descendientes del grupo propio; nunca busquedas globales"
+ },
+ "veredicto_definitivo": "cierre.json",
+ "nota": "El codigo del lanzador y el codigo del hijo son cosas distintas: un hijo que devuelve 0 tras vencer el plazo NO es cumplimiento normal y el lanzador no lo declara.",
+ "nota_medicion": "duracion_total_s se mide despues de escribir exit_code.txt y launcher.json (incluye la persistencia); la escritura atomica de este veredicto es la unica operacion posterior no incluida; cierre.json publica la medicion definitiva"
+}

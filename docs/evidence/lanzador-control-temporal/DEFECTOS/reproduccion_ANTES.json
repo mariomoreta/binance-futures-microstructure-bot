@@ -1,0 +1,50 @@
+{
+  "lanzador_bajo_prueba": "C:\\Users\\adonm\\AppData\\Local\\Temp\\opencode\\run_pilot_window_publicado.py",
+  "parametros": {
+    "trabajo_s": 1.0,
+    "margen_s": 4.0,
+    "total_max_s": 5.0
+  },
+  "defecto_a_esperas": {
+    "deadline_terminacion_forzada_relativo_s": 3.0,
+    "limite_duro_de_limpieza_relativo_s": null,
+    "tiempo_concedido_a_taskkill_s": 30,
+    "tiempo_concedido_al_reap_del_hijo_s": 10.0,
+    "reserva_de_persistencia_s": 2.0,
+    "restante_hasta_el_plazo_global_s": 2.0,
+    "acumulado_hasta_la_persistencia_s": 43.0,
+    "acumulado_con_persistencia_s": 45.0,
+    "excede_el_plazo_global": true,
+    "elapsed_real_de_la_simulacion_s": 3.034
+  },
+  "defecto_b_cierre": {
+    "esquema": "limpieza",
+    "codigo_hijo_estado": "UNKNOWN",
+    "proceso_hijo_terminado": true,
+    "terminacion_hijo_observada": null,
+    "alimentaciones_cerradas": true,
+    "recursos_hijo": null,
+    "exit_code_txt": "UNKNOWN",
+    "codigo_hijo_observado": null,
+    "incoherencia_terminacion": true,
+    "afirmacion_incondicional_de_cierre": true
+  },
+  "estado_publicado": {
+    "resultado": "timeout_trabajo_terminacion_forzada",
+    "causa_terminacion": "plazo_trabajo_vencido",
+    "cumplimiento_normal": false,
+    "codigo_lanzador": 125,
+    "bloque_de_cierre": {
+      "proceso_hijo_terminado": true,
+      "codigo_hijo_observado": null,
+      "codigo_hijo_estado": "UNKNOWN",
+      "parada_solicitada": true,
+      "mecanismo_parada": "ctrl_break_event+kill_proceso",
+      "terminacion_forzada": true,
+      "alimentaciones_cerradas": true,
+      "alcance": "propio: el hijo y el arbol de descendientes del grupo propio; nunca busquedas globales"
+    }
+  },
+  "codigo_lanzador_observado": 125,
+  "nota": "Simulacion determinista con dobles de Popen/run/os.kill: registra el tiempo CONCEDIDO a cada espera sin esperar de verdad. No es una ejecucion real en Windows."
+}

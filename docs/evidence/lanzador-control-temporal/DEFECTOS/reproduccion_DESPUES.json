@@ -1,0 +1,59 @@
+{
+  "lanzador_bajo_prueba": "scripts\\run_pilot_window.py",
+  "parametros": {
+    "trabajo_s": 1.0,
+    "margen_s": 4.0,
+    "total_max_s": 5.0
+  },
+  "defecto_a_esperas": {
+    "deadline_terminacion_forzada_relativo_s": 2.5,
+    "limite_duro_de_limpieza_relativo_s": 4.0,
+    "tiempo_concedido_a_taskkill_s": 1.4999952999933157,
+    "tiempo_concedido_al_reap_del_hijo_s": 1.499969999975292,
+    "reserva_de_persistencia_s": 1.0,
+    "restante_hasta_el_plazo_global_s": 2.5,
+    "acumulado_hasta_la_persistencia_s": 4.0,
+    "acumulado_con_persistencia_s": 5.0,
+    "excede_el_plazo_global": false,
+    "elapsed_real_de_la_simulacion_s": 2.518
+  },
+  "defecto_b_cierre": {
+    "esquema": "cierre",
+    "codigo_hijo_estado": "UNKNOWN",
+    "proceso_hijo_terminado": null,
+    "terminacion_hijo_observada": false,
+    "alimentaciones_cerradas": true,
+    "recursos_hijo": "UNKNOWN",
+    "exit_code_txt": "UNKNOWN",
+    "codigo_hijo_observado": null,
+    "incoherencia_terminacion": false,
+    "afirmacion_incondicional_de_cierre": false
+  },
+  "estado_publicado": {
+    "resultado": "timeout_trabajo_terminacion_forzada",
+    "causa_terminacion": "plazo_trabajo_vencido",
+    "cumplimiento_normal": false,
+    "codigo_lanzador": 125,
+    "bloque_de_cierre": {
+      "parada_solicitada": true,
+      "parada_mecanismo": "ctrl_break_event",
+      "terminacion_forzada_solicitada": true,
+      "terminacion_forzada_mecanismo": "kill_proceso (taskkill agoto la espera)",
+      "terminacion_hijo_observada": false,
+      "codigo_salida_observado": null,
+      "codigo_salida_estado": "UNKNOWN",
+      "alimentaciones_lanzador_cerradas": true,
+      "recursos_hijo": "UNKNOWN",
+      "recursos_hijo_nota": "el lanzador generico no puede certificar los sockets ni el teardown del hijo: no se afirma su cierre",
+      "tiempo_concedido_taskkill_s": 1.4999952999933157,
+      "excedio_la_concesion": false,
+      "evidencia_piloto": {
+        "artefactos_observados": [],
+        "nota": "estado del piloto como evidencia diferenciada: el lanzador lo lista pero no lo interpreta ni lo certifica"
+      },
+      "alcance": "propio: el hijo y el arbol de descendientes del grupo propio; nunca busquedas globales"
+    }
+  },
+  "codigo_lanzador_observado": 125,
+  "nota": "Simulacion determinista con dobles de Popen/run/os.kill: registra el tiempo CONCEDIDO a cada espera sin esperar de verdad. No es una ejecucion real en Windows."
+}

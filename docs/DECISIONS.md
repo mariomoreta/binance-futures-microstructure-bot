@@ -5306,3 +5306,104 @@ docs/EXPERIMENTO_OPERATIVO_V2.md seccion 9.
   servicio 8792, y no crea otro supervisor, servicio ni planificador. La
   ventana `exp-v2-ventana-2-20261112a` queda **preparada para solicitar
   autorizacion**; `run_id` y directorio siguen sin usarse.
+## 2026-11-13 - Correccion de dos defectos materiales del lanzador: plazo global y cierre basado en evidencia (base d53d8ad)
+
+CONTEXTO: la autorizacion humana del 2026-11-13 se limita a "correcciones y
+pruebas locales" de `scripts/run_pilot_window.py` y no abre Binance, ni el
+diagnostico publico, ni la ventana operativa. La auditoria del control
+temporal del 2026-11-12 (publicado en `d53d8ad`) encontro dos defectos
+materiales, reproducidos contra ese codigo publicado antes de tocar nada.
+
+DEFECTO 1 - las esperas de terminacion pueden superar el plazo global.
+`_terminar_forzado()` concedia **30 s fijos** a `taskkill /F /T /PID` y
+`_esperar_hijo()` concedia **10 s fijos** al reap del hijo; ademas la ruta de
+interrupcion del operador esperaba **30 s fijos**. Ninguna de esas esperas se
+descontaba del plazo global. Caso de referencia (trabajo 1 s, margen 4 s,
+total 5 s, `taskkill` que no responde, hijo que no confirma su salida): la
+ruta podia acumular **43 s** de esperas (3 s hasta el deadline de terminacion
+forzada + 30 + 10) y **45 s** contando la reserva de persistencia, frente a
+un plazo global de 5 s.
+
+DEFECTO 2 - el lanzador acredita recursos cerrados sin evidencia. Con el
+codigo del hijo **no observado** (`exit_code.txt: UNKNOWN`), el estado
+publicado seguia declarando `proceso_hijo_terminado: true` (solo se habia
+*intentado* matar) y `alimentaciones_cerradas: true` de forma incondicional,
+sin que el lanzador pudiera certificar los sockets del hijo.
+
+DECISIONES:
+
+- Decision de plazo: se mantiene **un solo** reloj monotonico y **un solo**
+  deadline global. Toda espera y toda llamada de terminacion se acota al
+  **restante** de ese deadline; desaparecen las esperas fijas (30 s de
+  `taskkill`, 10 s de reap, 30 s de interrupcion). El margen de cierre se
+  reparte de forma explicita: reserva de **persistencia** (25 % del margen,
+  maximo 5 s) + reserva de **reap** (maximo 2 s, para que el hijo confirme su
+  salida tras la terminacion forzada) + resto para parada limpia y
+  terminacion forzada. Se anade un **limite duro de limpieza**
+  (`deadline_limpieza`): pasado ese instante el lanzador deja de esperar y
+  publica el exceso. El criterio se aplica a las rutas de parada **y** de
+  error (interrupcion del operador, excepcion del lanzador, fallo de
+  lanzamiento). En el caso de referencia, `taskkill` recibe **1,5 s** (el
+  restante), el reap **0 s** y el acumulado con persistencia queda en **5,0 s**
+  = el plazo global (antes 45 s). No se crea otro supervisor, servicio ni
+  planificador, y no se debilitan los plazos productivos.
+- Decision de cierre: el bloque `limpieza` se sustituye por un bloque
+  `cierre` que separa lo **solicitado** de lo **observado**:
+  `parada_solicitada`/`parada_mecanismo` y
+  `terminacion_forzada_solicitada`/`terminacion_forzada_mecanismo` son
+  solicitudes (no prueban terminacion); `terminacion_hijo_observada` es
+  `true` **solo** si `Popen.wait()` devolvio el codigo; `codigo_salida_observado`
+  y `codigo_salida_estado` (`observado` | `UNKNOWN`) conservan el codigo real
+  sin inventarlo. El lanzador acredita solo lo **propio**
+  (`alimentaciones_lanzador_cerradas`) y deja `recursos_hijo: UNKNOWN`, porque
+  el lanzador generico no puede certificar los sockets ni el teardown del
+  hijo; el estado del piloto se conserva como **evidencia diferenciada**
+  (`evidencia_piloto`: se lista, no se interpreta ni se certifica). Se
+  elimina la afirmacion `proceso_hijo_terminado` porque era falsa por
+  construccion.
+- Decision de medicion: la duracion publicada **incluye la persistencia** del
+  lanzador. `duracion_total_s` se mide despues de escribir `exit_code.txt` y
+  `launcher.json`; `cierre.json` (nuevo) publica la medicion definitiva tras
+  el veredicto y es el registro autoritativo del fin de la corrida. Si la
+  persistencia lleva el reloj mas alla del plazo global, el exceso se
+  **publica** (`exceso_maximo_total_s > 0`, `incumplimiento_plazo_global:
+  true`) y el lanzador devuelve **126** (`plazo_global_excedido`): no se oculta
+  con tolerancias ni reiniciando el reloj.
+- Decision de codigos: se mantiene la separacion entre el codigo del hijo
+  (`exit_code.txt`, `UNKNOWN` si no se observa) y el veredicto del lanzador
+  (124 parada limpia, 125 terminacion forzada, 126 exceso del plazo global).
+  Un hijo que devuelve 0 tras vencer el plazo **no** es cumplimiento normal.
+- Decision de alcance real del control: el control acota el tiempo que el
+  lanzador **espera y concede**; **no** es una garantia del sistema
+  operativo. Si una llamada del sistema ignora su propio timeout, el exceso
+  se **mide** y se publica (`excedio_la_concesion: true`) como
+  incumplimiento. No se aceptan pruebas de Linux como aceptacion de Windows y
+  las simulaciones deterministas no se presentan como acreditacion de
+  Windows.
+- Decision de mecanismos: se conservan la parada limpia de Windows
+  (`CREATE_NEW_PROCESS_GROUP` + `CTRL_BREAK_EVENT`) y la terminacion forzada
+  **solo sobre el arbol propio** (`taskkill /F /T /PID` sobre el PID del
+  hijo; nunca busquedas globales).
+- Decision de evidencia: `docs/evidence/lanzador-control-temporal/DEFECTOS/`
+  (RESUMEN con tabla antes/despues, `reproduccion_defectos.py` parametrizable
+  por lanzador, `reproduccion_ANTES.json` contra `d53d8ad`,
+  `reproduccion_DESPUES.json`, `ejecucion_real_windows.py` + `windows_real/`
+  con los tres casos y sus artefactos, `hashes.json` SHA-256 de 24 ficheros) y
+  `tests/test_pilot_launcher_temporal.py` (casos A-H previos + 5 nuevos:
+  `taskkill` que agota su espera, hijo cuya salida no puede confirmarse,
+  persistencia que consume parte de la reserva, exceso temporal registrado
+  honestamente y ninguna espera por encima del restante; se conservan fin
+  normal, salida no cero, parada limpia, terminacion forzada y proceso ajeno
+  preservado). 19 passed; regresiones directamente afectadas: lanzador/rutas/
+  diagnostico 50 passed, `test_research_pilot.py` 45 passed, operativo/CLI 9
+  passed (123 passed en el conjunto afectado). Ejecucion real en Windows con
+  casos cortos: normal -> 0 (0,056 s, sin exceso), plazo + parada limpia ->
+  124 (1,074 s), plazo + terminacion forzada -> 125 (2,717 s); en los tres,
+  `exceso_maximo_total_s: 0,0`, terminacion del hijo observada y
+  `recursos_hijo: UNKNOWN`. Cero pruebas publicas de mercado.
+- Decision de alcance: este bloque **no abre mercado**, **no ejecuta la
+  ventana**, no toca ordenes, claves, cuentas, datasets, DBs, dashboard ni el
+  servicio 8792, y no cambia estrategia, seleccion, funding, contabilidad,
+  exposicion, presupuestos economicos ni la duracion propuesta (40 200 s +
+  300 s). La ventana `exp-v2-ventana-2-20261112a` sigue **propuesta** y sin
+  ejecutar; `run_id` y directorio siguen sin usarse.

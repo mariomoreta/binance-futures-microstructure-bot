@@ -54,8 +54,17 @@ permanece diferida sin ampliar ningún validador.
    la parada limpia, reserva un tranche final dentro del margen para la
    terminación forzada y la persistencia, y devuelve **124** (parada limpia) o
    **125** (forzada) sin declarar cumplimiento normal aunque el hijo devuelva
-   0. Evidencia: [ANTES/DESPUES](evidence/lanzador-control-temporal/) · pruebas:
-   `tests/test_pilot_launcher_temporal.py` (14 passed). Monitor:
+   0. **Dos defectos materiales corregidos el 2026-11-13:** (a) las esperas de
+   terminación ya no pueden superar el plazo global (todo se acota al
+   restante del mismo deadline; `taskkill` pasó de 30 s fijos a "el
+   restante"); (b) el cierre se publica **basado en evidencia**
+   (`terminacion_hijo_observada`, `codigo_salida_estado`, `recursos_hijo:
+   UNKNOWN`), sin afirmar cierres del hijo que no se han observado, y la
+   duración publicada **incluye la persistencia** (exceso →
+   `incumplimiento_plazo_global`, código **126**).
+   Evidencia: [ANTES/DESPUES](evidence/lanzador-control-temporal/) ·
+   [DEFECTOS](evidence/lanzador-control-temporal/DEFECTOS/RESUMEN.md) ·
+   pruebas: `tests/test_pilot_launcher_temporal.py` (19 passed). Monitor:
    `http://127.0.0.1:3020/market-lab?vista=piloto&run=exp-v2-ventana-2-20261112a`.
    Detalle: [PROPUESTA](evidence/exp-v2-ventana-2-20261112a-propuesta/PROPUESTA.md).
    **Requiere autorización humana explícita, también para el margen de

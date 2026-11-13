@@ -1604,3 +1604,94 @@ opciones del lanzador), `--budget-only` **sin red**: salida real **0**,
 **Lo que este bloque NO hace:** no abre mercado, no ejecuta la ventana, no
 toca órdenes, claves, cuentas, datasets, DBs, dashboard ni el servicio 8792.
 Los 300 s siguen siendo **margen propuesto sin autorización**.
+
+### 10.14 Dos defectos materiales del lanzador corregidos (2026-11-13, local, sin mercado)
+
+El control temporal de §10.13 era efectivo en lo esencial, pero tenía **dos
+defectos materiales**, reproducidos contra el código publicado (`d53d8ad`) y
+corregidos en este bloque. Detalle y evidencia:
+[RESUMEN](../evidence/lanzador-control-temporal/DEFECTOS/RESUMEN.md).
+
+#### 10.14.1 Las esperas de terminación podían superar el plazo global
+
+`_terminar_forzado()` concedía **30 s fijos** a `taskkill` y después
+`_esperar_hijo()` concedía **10 s fijos** al reap del hijo; además, la ruta de
+interrupción del operador esperaba **30 s** fijos. Ninguna de esas esperas se
+descontaba del plazo global. Caso de referencia (trabajo 1 s, margen 4 s,
+total 5 s, `taskkill` que no responde, hijo que no confirma su salida): la
+ruta podía acumular **45 s** (3 s hasta el deadline de forzada + 30 + 10 +
+reserva de persistencia) frente a un plazo global de 5 s.
+
+**Corrección mínima:** un único reloj monotónico y un único deadline global.
+**Toda** espera y llamada de terminación se acota al **restante** de ese
+deadline; no queda ninguna espera fija. El margen de cierre se reparte de
+forma explícita: reserva de **persistencia** (25 % del margen, máximo 5 s),
+reserva de **reap** (máximo 2 s, para que el hijo confirme su salida tras la
+terminación forzada) y el resto para la parada limpia y la terminación
+forzada. Se añade un **límite duro de limpieza** (`deadline_limpieza`): pasado
+ese instante el lanzador deja de esperar y publica el exceso.
+
+Resultado en el mismo caso de referencia: `taskkill` recibe **1,5 s** (el
+restante), el reap **0 s** y el acumulado con persistencia queda en **5,0 s**
+= el plazo global (antes: 45 s).
+
+#### 10.14.2 El lanzador acreditaba recursos cerrados sin evidencia
+
+Con el código del hijo **no observado** (`exit_code.txt: UNKNOWN`), el estado
+publicado seguía declarando `proceso_hijo_terminado: true` —porque solo se
+había *intentado* matar— y `alimentaciones_cerradas: true` de forma
+incondicional, sin que el lanzador pudiera certificar los sockets del hijo.
+
+**Corrección mínima:** el bloque `limpieza` se sustituye por un bloque
+`cierre` que separa explícitamente:
+
+| Campo | Significado |
+|---|---|
+| `parada_solicitada` / `parada_mecanismo` | lo **solicitado** (se envió la señal) |
+| `terminacion_forzada_solicitada` / `terminacion_forzada_mecanismo` | lo **solicitado** (se pidió la terminación forzada) |
+| `terminacion_hijo_observada` | lo **observado**: solo `true` si `Popen.wait()` devolvió el código |
+| `codigo_salida_observado` / `codigo_salida_estado` | el código real, o `UNKNOWN` si no se pudo observar |
+| `alimentaciones_lanzador_cerradas` | lo **propio** del lanzador (sus tuberías), acreditado por el propio cierre |
+| `recursos_hijo` | **UNKNOWN**: el lanzador genérico no puede certificar los sockets ni el teardown del hijo |
+| `evidencia_piloto` | estado del piloto como **evidencia diferenciada**: se lista, no se interpreta ni se certifica |
+
+#### 10.14.3 Duración medida, exceso honesto y alcance real del control
+
+La duración publicada **incluye la persistencia**: `duracion_total_s` se mide
+después de escribir `exit_code.txt` y `launcher.json`, y `cierre.json`
+publica la medición definitiva (después del veredicto). Si la persistencia
+lleva el reloj más allá del plazo global, el exceso se **publica**
+(`exceso_maximo_total_s > 0`, `incumplimiento_plazo_global: true`) y el
+lanzador devuelve **126** (`plazo_global_excedido`): no se oculta con
+tolerancias ni reiniciando el reloj.
+
+**Alcance real del control:** acota el tiempo que el lanzador **espera y
+concede**; **no** es una garantía del sistema operativo. Si una llamada del
+sistema ignora su propio timeout, el exceso se **mide** y se publica
+(`excedio_la_concesion: true`) como incumplimiento. Se conservan la parada
+limpia de Windows (`CREATE_NEW_PROCESS_GROUP` + `CTRL_BREAK_EVENT`) y la
+terminación forzada **solo sobre el árbol propio** (`taskkill /F /T /PID`
+sobre el PID del hijo; nunca búsquedas globales).
+
+**Pruebas (Windows, sin red, sin mercado):**
+`tests/test_pilot_launcher_temporal.py` → **19 passed** (14 previos + 5
+nuevos: `taskkill` que agota su espera, hijo cuya salida no puede confirmarse,
+persistencia que consume parte de la reserva, exceso temporal registrado
+honestamente y ninguna espera por encima del restante); se conservan fin
+normal, salida no cero, parada limpia, terminación forzada y proceso ajeno
+preservado. Regresiones directamente afectadas: lanzador 50,
+`test_research_pilot.py` 45, operativo/CLI 9 → **123 passed** en el conjunto
+afectado. Cero pruebas públicas de mercado.
+
+**Ejecución real en Windows (casos cortos):** normal → 0 (0,056 s, sin
+exceso); plazo + parada limpia → **124** (1,074 s); plazo + terminación
+forzada → **125** (2,717 s); en los tres, `exceso_maximo_total_s: 0,0`,
+`recursos_hijo: UNKNOWN` y terminación del hijo **observada** (taskkill la
+confirma en Windows).
+
+**Lo que este bloque NO hace:** no abre Binance, no ejecuta el diagnóstico
+público ni la ventana operativa; no cambia estrategia, selección, funding,
+contabilidad, exposición, presupuestos económicos ni la duración propuesta
+(40 200 s + 300 s); no toca `opencode.json`, archivos ajenos, datasets, DBs,
+el dashboard de 3020 ni el servicio 8792; no añade servicios, gestores,
+dependencias ni nuevas capas de infraestructura.

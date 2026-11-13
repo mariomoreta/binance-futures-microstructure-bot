@@ -6,11 +6,13 @@ espera su finalizacion real y persiste en el directorio de la corrida:
 
   - ``stdout.log`` / ``stderr.log``: salida del proceso hijo,
   - ``exit_code.txt``: codigo numerico real, leido del proceso terminado,
-  - ``launcher.json``: comando, returncode, inicio, fin, duracion y,
-    cuando aplica, el contrato temporal y su veredicto,
+  - ``launcher.json``: comando, returncode, inicio, duracion hasta su propia
+    escritura y, cuando aplica, el contrato temporal y su veredicto,
   - ``estado_lanzador.json``: veredicto del LANZADOR, separado del codigo del
-    hijo (causa de terminacion, parada solicitada, terminacion forzada,
-    limites y tiempos).
+    hijo (causa de terminacion, parada solicitada, terminacion forzada
+    solicitada, cierre basado en evidencia, limites y tiempos),
+  - ``cierre.json``: medicion definitiva del fin de la corrida (incluye la
+    persistencia) y exceso sobre el plazo global, si lo hay.
 
 Regla: el codigo de salida NUNCA se infiere de ``phase=fin``, de un stdout
 con ``"estado": "completo"`` ni de un stderr vacio. Se lee de
@@ -42,6 +44,22 @@ indefinida y codigo del hijo. Los plazos se calculan con reloj MONOTONICO y
 deadline ABSOLUTO: enviar una senal o esperar otra vez no reinicia el
 presupuesto temporal.
 
+Alcance real del control (lo que el codigo puede y no puede demostrar):
+  - TODA espera y TODA llamada de terminacion se acotan al tiempo restante
+    del MISMO deadline absoluto. No hay esperas fijas que se sumen al plazo
+    global.
+  - El plazo global acota el TIEMPO que el lanzador espera y concede; no es
+    una garantia del sistema operativo: una llamada del sistema que ignore
+    su propio timeout puede prolongar la operacion mas alla del deadline. En
+    ese caso el exceso se MIDE y se publica como incumplimiento, no se
+    oculta ni se compensa reiniciando el reloj.
+  - El cierre se publica segun EVIDENCIA: se distingue la parada
+    solicitada, la terminacion forzada solicitada, la terminacion del hijo
+    observada y el codigo de salida observado. No se marca al hijo como
+    terminado solo porque se intento matarlo, y el lanzador no certifica los
+    sockets del hijo: su estado de cierre es ``UNKNOWN`` y el estado del
+    piloto se conserva como evidencia separada.
+
 Uso:
     python scripts/run_pilot_window.py --out-dir <dir> [args del piloto...]
     python scripts/run_pilot_window.py --out-dir <dir> -- <comando> [args...]
@@ -58,7 +76,7 @@ import subprocess
 import sys
 import time
 from pathlib import Path
-from typing import Dict, List, Optional, Sequence, Tuple
+from typing import Any, Dict, List, Optional, Sequence, Tuple
 
 ROOT = Path(__file__).resolve().parent.parent
 PILOTO = ROOT / "scripts" / "research_pilot.py"
@@ -68,14 +86,36 @@ PILOTO = ROOT / "scripts" / "research_pilot.py"
 # cumplimiento normal.
 CODIGO_TIMEOUT_PARADA_LIMPIA = 124
 CODIGO_TIMEOUT_TERMINACION_FORZADA = 125
+CODIGO_EXCESO_PLAZO_GLOBAL = 126
 
 # Granularidad de sondeo del hijo y tolerancias asociadas.
 INTERVALO_ESPERA_S = 0.2
 TOLERANCIA_FIN_S = 0.5
-# Dentro del margen de cierre se reserva tiempo para la terminacion forzada y
-# para persistir la evidencia: el proceso no se mata en el ultimo instante.
+# Reparto explicito del margen de cierre (--shutdown-grace-seconds):
+#   - reserva de persistencia: tiempo que el lanzador se reserva a si mismo
+#     para escribir la evidencia final;
+#   - reserva de reap: tiempo que se deja al hijo para que confirme su
+#     salida despues de la terminacion forzada;
+#   - el resto: ventana de la parada limpia y de la terminacion forzada.
+# Ninguna espera se concede fuera del plazo global: todas se acotan al
+# restante del MISMO deadline absoluto.
 RESERVA_PERSISTENCIA_MAX_S = 5.0
-ESPERA_REAPER_S = 10.0
+RESERVA_PERSISTENCIA_FRACCION = 0.25
+RESERVA_REAP_MAX_S = 2.0
+# Sin contrato temporal no hay plazo global; la espera de la interrupcion
+# del operador queda acotada por este valor.
+ESPERA_INTERRUPCION_MAX_S = 30.0
+
+# Artefactos del piloto que el lanzador se limita a LISTAR como evidencia
+# separada: no los interpreta ni certifica su contenido.
+ARTEFACTOS_PILOTO = (
+    "estado.json",
+    "manifiesto.json",
+    "resumen.json",
+    "observaciones.jsonl",
+    "resultado_operativo.jsonl",
+    "funding_adquisicion.jsonl",
+)
 
 OPCIONES_LANZADOR = (
     "--out-dir",
@@ -89,6 +129,24 @@ def _escribir_atomico(destino: Path, texto: str) -> None:
     tmp = destino.with_name(destino.name + ".tmp")
     tmp.write_text(texto, encoding="utf-8")
     os.replace(tmp, destino)
+
+
+def _artefactos_piloto(out_dir: Path) -> List[Dict[str, Any]]:
+    """Lista los artefactos del piloto presentes, SIN interpretarlos.
+
+    Es evidencia diferenciada: el lanzador no certifica el cierre de los
+    sockets del hijo ni el contenido de estos ficheros.
+    """
+    encontrados: List[Dict[str, Any]] = []
+    for nombre in ARTEFACTOS_PILOTO:
+        ruta = out_dir / nombre
+        if ruta.is_file():
+            try:
+                tamano: Optional[int] = ruta.stat().st_size
+            except OSError:
+                tamano = None
+            encontrados.append({"nombre": nombre, "bytes": tamano})
+    return encontrados
 
 
 def construir_comando(args_extra: Sequence[str],
@@ -252,78 +310,181 @@ def _solicitar_parada_limpia(proc: subprocess.Popen) -> Tuple[bool, str]:
             return False, f"sigterm_no_entregable: {exc}"
 
 
-def _terminar_forzado(proc: subprocess.Popen) -> str:
+def _terminar_forzado(proc: subprocess.Popen,
+                      deadline: Optional[float] = None,
+                      ) -> Tuple[str, Optional[float], bool]:
     """Terminacion forzada del hijo y de sus descendientes propios.
 
     Windows: ``taskkill /F /T /PID`` sobre el PID del hijo (arbol propio, no
     una busqueda global). POSIX: SIGKILL al grupo propio. Si la via principal
     falla, se recurre a ``Popen.kill()`` sobre el propio hijo.
+
+    ``deadline`` es el instante ABSOLUTO (reloj monotonico) hasta el que se
+    permite esta operacion: el tiempo concedido a la llamada externa se
+    descuenta del restante, nunca es un valor fijo. Si la llamada externa
+    ignora su propio timeout, el exceso se detecta midiendo el tiempo real y
+    se publica como incumplimiento (no se oculta ni se reinicia el reloj).
+
+    Devuelve ``(metodo, timeout_concedido_s, excedio_la_concesion)``.
     """
+    restante = (None if deadline is None
+                else max(0.0, deadline - time.monotonic()))
     if os.name == "nt":
+        cmd = ["taskkill", "/F", "/T", "/PID", str(proc.pid)]
+        inicio = time.monotonic()
         try:
-            res = subprocess.run(
-                ["taskkill", "/F", "/T", "/PID", str(proc.pid)],
-                capture_output=True, text=True, errors="replace", timeout=30)
+            if restante is not None and restante <= 0.0:
+                raise subprocess.TimeoutExpired(cmd, restante)
+            res = subprocess.run(cmd, capture_output=True, text=True,
+                                 errors="replace", timeout=restante)
+            elapsed = time.monotonic() - inicio
+            excedio = (restante is not None
+                       and elapsed > restante + TOLERANCIA_FIN_S)
             if res.returncode == 0:
-                return "taskkill_arbol_propio"
+                return "taskkill_arbol_propio", restante, excedio
             proc.kill()
-            return f"kill_proceso (taskkill rc={res.returncode})"
+            return (f"kill_proceso (taskkill rc={res.returncode})", restante,
+                    excedio)
+        except subprocess.TimeoutExpired:
+            elapsed = time.monotonic() - inicio
+            excedio = (restante is not None
+                       and elapsed > restante + TOLERANCIA_FIN_S)
+            proc.kill()
+            return "kill_proceso (taskkill agoto la espera)", restante, excedio
         except (OSError, subprocess.SubprocessError):
             proc.kill()
-            return "kill_proceso"
+            return "kill_proceso", restante, False
     try:
         os.killpg(os.getpgid(proc.pid), signal.SIGKILL)
-        return "sigkill_grupo"
+        return "sigkill_grupo", restante, False
     except (OSError, ProcessLookupError):
         proc.kill()
-        return "kill_proceso"
+        return "kill_proceso", restante, False
+
+
+def _estado_hijo_vacio() -> Dict[str, Any]:
+    """Estado de terminacion del hijo, inicialmente sin evidencia."""
+    return {
+        "codigo": None,
+        "parada_solicitada": False,
+        "parada_mecanismo": None,
+        "terminacion_forzada_solicitada": False,
+        "terminacion_forzada_mecanismo": None,
+        "tiempo_concedido_taskkill_s": None,
+        "excedio_la_concesion": False,
+        "fin_hijo_monotono_s": None,
+    }
 
 
 def _esperar_hijo(proc: subprocess.Popen,
                   work_deadline: Optional[float],
-                  forced_deadline: Optional[float],
-                  ) -> Tuple[Optional[int], bool, bool, Optional[str]]:
+                  deadline_forzada: Optional[float],
+                  deadline_limpieza: Optional[float],
+                  ) -> Dict[str, Any]:
     """Espera al hijo con deadlines ABSOLUTOS (reloj monotonico).
 
-    Devuelve ``(codigo, parada_solicitada, terminacion_forzada, mecanismo)``.
-    El codigo es ``None`` si no se pudo observar (UNKNOWN): nunca se inventa.
+    - ``work_deadline``: al vencerlo se solicita la parada limpia.
+    - ``deadline_forzada``: al vencerlo se solicita la terminacion forzada.
+    - ``deadline_limpieza``: limite duro de TODA operacion sobre el hijo
+      (taskkill + confirmacion de salida). Pasado ese instante no se espera
+      mas: se persiste la evidencia y se publica el exceso si lo hay.
+
+    Ninguna espera se concede con un valor fijo: todas se acotan al
+    restante del deadline aplicable. El codigo del hijo es ``None`` si no se
+    pudo observar (``UNKNOWN``): nunca se inventa.
     """
-    parada_solicitada = False
-    terminacion_forzada = False
-    mecanismo: Optional[str] = None
+    estado = _estado_hijo_vacio()
     while True:
         proximo: Optional[float] = None
-        if work_deadline is not None and not parada_solicitada:
+        if work_deadline is not None and not estado["parada_solicitada"]:
             proximo = work_deadline
-        elif forced_deadline is not None:
-            proximo = forced_deadline
+        elif (deadline_forzada is not None
+                and not estado["terminacion_forzada_solicitada"]):
+            proximo = deadline_forzada
+        elif deadline_limpieza is not None:
+            proximo = deadline_limpieza
         espera = INTERVALO_ESPERA_S
         if proximo is not None:
             espera = max(0.01, min(espera, proximo - time.monotonic()))
         try:
             codigo = proc.wait(timeout=espera)
-            return codigo, parada_solicitada, terminacion_forzada, mecanismo
+            estado["codigo"] = codigo
+            estado["fin_hijo_monotono_s"] = time.monotonic()
+            return estado
         except subprocess.TimeoutExpired:
             pass
         now = time.monotonic()
-        if work_deadline is not None and not parada_solicitada \
-                and now >= work_deadline:
-            entregada, mecanismo = _solicitar_parada_limpia(proc)
-            parada_solicitada = True
-            # Si la parada limpia no se puede entregar (p. ej. proceso sin
-            # consola compartida), el margen sigue siendo la unica ventana de
-            # cierre y la terminacion forzada se aplica al final.
+        if (work_deadline is not None and not estado["parada_solicitada"]
+                and now >= work_deadline):
+            _entregada, mecanismo = _solicitar_parada_limpia(proc)
+            estado["parada_solicitada"] = True
+            estado["parada_mecanismo"] = mecanismo
             continue
-        if parada_solicitada and forced_deadline is not None \
-                and now >= forced_deadline:
-            metodo = _terminar_forzado(proc)
-            mecanismo = f"{mecanismo}+{metodo}" if mecanismo else metodo
-            terminacion_forzada = True
+        if (estado["parada_solicitada"]
+                and deadline_forzada is not None
+                and not estado["terminacion_forzada_solicitada"]
+                and now >= deadline_forzada):
+            metodo, concedido, excedio = _terminar_forzado(proc, deadline_limpieza)
+            estado["terminacion_forzada_solicitada"] = True
+            estado["terminacion_forzada_mecanismo"] = metodo
+            estado["tiempo_concedido_taskkill_s"] = concedido
+            estado["excedio_la_concesion"] = excedio
+            # La confirmacion de salida usa lo que quede hasta el limite duro.
+            restante = (None if deadline_limpieza is None
+                        else max(0.0, deadline_limpieza - time.monotonic()))
             try:
-                codigo = proc.wait(timeout=ESPERA_REAPER_S)
+                estado["codigo"] = proc.wait(timeout=restante)
             except subprocess.TimeoutExpired:
-                codigo = None
-            return codigo, parada_solicitada, terminacion_forzada, mecanismo
+                estado["codigo"] = None
+            estado["fin_hijo_monotono_s"] = time.monotonic()
+            return estado
+        if (deadline_limpieza is not None and estado["parada_solicitada"]
+                and now >= deadline_limpieza):
+            # Limite duro alcanzado sin confirmacion de salida: no se espera mas.
+            estado["fin_hijo_monotono_s"] = time.monotonic()
+            return estado
+
+
+def _cerrar_hijo_por_excepcion(proc: subprocess.Popen, grupo_propio: bool,
+                                deadline: Optional[float], causa: str,
+                                ) -> Dict[str, Any]:
+    """Cierre de emergencia: interrupcion del operador o error del lanzador.
+
+    Pide la parada limpia (si hay grupo propio), espera hasta ``deadline`` y,
+    si el hijo no confirma su salida, solicita la terminacion forzada y vuelve
+    a esperar **dentro del mismo deadline**. Sin plazo global (uso sin
+    timeout) el limite es ``ESPERA_INTERRUPCION_MAX_S``.
+    """
+    estado = _estado_hijo_vacio()
+    limite = (deadline if deadline is not None
+              else time.monotonic() + ESPERA_INTERRUPCION_MAX_S)
+    if grupo_propio:
+        entregada, mecanismo = _solicitar_parada_limpia(proc)
+        estado["parada_solicitada"] = True
+        estado["parada_mecanismo"] = f"{causa}:{mecanismo}"
+        if not entregada:
+            proc.terminate()
+    else:
+        proc.terminate()
+        estado["parada_solicitada"] = True
+        estado["parada_mecanismo"] = f"{causa}:terminate"
+    try:
+        estado["codigo"] = proc.wait(timeout=max(0.0, limite - time.monotonic()))
+        estado["fin_hijo_monotono_s"] = time.monotonic()
+        return estado
+    except subprocess.TimeoutExpired:
+        pass
+    metodo, concedido, excedio = _terminar_forzado(proc, limite)
+    estado["terminacion_forzada_solicitada"] = True
+    estado["terminacion_forzada_mecanismo"] = metodo
+    estado["tiempo_concedido_taskkill_s"] = concedido
+    estado["excedio_la_concesion"] = excedio
+    try:
+        estado["codigo"] = proc.wait(timeout=max(0.0, limite - time.monotonic()))
+    except subprocess.TimeoutExpired:
+        estado["codigo"] = None
+    estado["fin_hijo_monotono_s"] = time.monotonic()
+    return estado
 
 
 def ejecutar(comando: Sequence[str], out_dir: Path,
@@ -335,7 +496,13 @@ def ejecutar(comando: Sequence[str], out_dir: Path,
     Devuelve el codigo de salida del LANZADOR. Sin contrato temporal es el
     codigo real del hijo (compatibilidad). Con contrato temporal viciado es
     un codigo propio e inequivoco del lanzador (124 parada limpia, 125
-    terminacion forzada), aunque el hijo haya devuelto 0.
+    terminacion forzada, 126 exceso del plazo global), aunque el hijo haya
+    devuelto 0.
+
+    Plazos: un solo reloj monotonico y un solo deadline global. Todas las
+    esperas y llamadas de terminacion se acotan al restante de ese deadline;
+    no hay esperas fijas que se sumen al plazo. El tiempo total publicado
+    incluye la persistencia del lanzador.
     """
     out_dir = Path(out_dir)
     out_dir.mkdir(parents=True, exist_ok=True)
@@ -344,6 +511,7 @@ def ejecutar(comando: Sequence[str], out_dir: Path,
     exit_path = out_dir / "exit_code.txt"
     meta_path = out_dir / "launcher.json"
     estado_path = out_dir / "estado_lanzador.json"
+    cierre_path = out_dir / "cierre.json"
 
     inicio_wall = time.time()
     inicio_iso = time.strftime("%Y-%m-%dT%H:%M:%S", time.gmtime(inicio_wall))
@@ -353,70 +521,87 @@ def ejecutar(comando: Sequence[str], out_dir: Path,
                     else float(work_timeout_seconds))
     grace = max(0.0, float(shutdown_grace_seconds))
     work_deadline = (t0 + work_timeout) if work_timeout is not None else None
-    total_deadline = (work_deadline + grace) if work_deadline is not None else None
-    # Dentro del margen: el proceso se mata antes del maximo total y queda
-    # un tranche para el cierre y la persistencia de la evidencia.
-    reserva = min(RESERVA_PERSISTENCIA_MAX_S, grace / 2.0) if grace > 0 else 0.0
-    forced_deadline = (total_deadline - reserva) if total_deadline is not None else None
+    deadline_global = (work_deadline + grace) if work_deadline is not None else None
+    # Reparto explicito del margen de cierre:
+    #   - reserva de persistencia: para que el lanzador escriba su evidencia;
+    #   - reserva de reap: para que el hijo confirme su salida tras la
+    #     terminacion forzada;
+    #   - el resto: parada limpia y terminacion forzada.
+    if deadline_global is not None:
+        reserva_persistencia = min(RESERVA_PERSISTENCIA_MAX_S,
+                                   grace * RESERVA_PERSISTENCIA_FRACCION)
+        disponible = max(0.0, grace - reserva_persistencia)
+        reserva_reap = min(RESERVA_REAP_MAX_S, disponible / 2.0)
+        deadline_limpieza = deadline_global - reserva_persistencia
+        deadline_forzada = deadline_limpieza - reserva_reap
+    else:
+        reserva_persistencia = 0.0
+        reserva_reap = 0.0
+        deadline_limpieza = None
+        deadline_forzada = None
 
     interrumpido = False
-    codigo_hijo: Optional[int] = None
-    parada_solicitada = False
-    terminacion_forzada = False
-    mecanismo: Optional[str] = None
+    error_lanzador: Optional[str] = None
+    alimentaciones_cerradas = False
+    estado_hijo = _estado_hijo_vacio()
 
     with open(stdout_path, "wb") as fout, open(stderr_path, "wb") as ferr:
         grupo_propio = work_timeout is not None
-        proc = _crear_proceso(comando, cwd, fout, ferr,
-                               grupo_propio=grupo_propio)
+        proc: Optional[subprocess.Popen] = None
         try:
-            (codigo_hijo, parada_solicitada, terminacion_forzada,
-             mecanismo) = _esperar_hijo(proc, work_deadline, forced_deadline)
-        except KeyboardInterrupt:
-            interrumpido = True
-            if grupo_propio:
-                # Con grupo propio se pide la parada limpia: el hijo puede
-                # persistir lo pendiente antes de morir.
-                entregada, mecanismo_int = _solicitar_parada_limpia(proc)
-                mecanismo = f"interrupcion_operador:{mecanismo_int}"
-                if not entregada:
-                    proc.terminate()
-            else:
-                proc.terminate()
             try:
-                codigo_hijo = proc.wait(timeout=30)
-            except subprocess.TimeoutExpired:
-                proc.kill()
-                codigo_hijo = proc.wait()
+                proc = _crear_proceso(comando, cwd, fout, ferr,
+                                       grupo_propio=grupo_propio)
+            except Exception as exc:  # noqa: BLE001
+                error_lanzador = f"lanzamiento: {type(exc).__name__}: {exc}"
+            if proc is not None:
+                try:
+                    estado_hijo = _esperar_hijo(
+                        proc, work_deadline, deadline_forzada, deadline_limpieza)
+                except KeyboardInterrupt:
+                    interrumpido = True
+                    estado_hijo = _cerrar_hijo_por_excepcion(
+                        proc, grupo_propio, deadline_limpieza,
+                        "interrupcion_operador")
+                except Exception as exc:  # noqa: BLE001
+                    error_lanzador = f"espera: {type(exc).__name__}: {exc}"
+                    estado_hijo = _cerrar_hijo_por_excepcion(
+                        proc, grupo_propio, deadline_limpieza, "error_lanzador")
         finally:
             try:
                 fout.flush()
                 ferr.flush()
+                fout.close()
+                ferr.close()
+                alimentaciones_cerradas = True
             except (OSError, ValueError):
-                pass
+                alimentaciones_cerradas = False
 
-    fin_wall = time.time()
-    fin_monotono = time.monotonic()
-    duracion = fin_monotono - t0
-
+    codigo_hijo = estado_hijo["codigo"]
     codigo_hijo_observado = codigo_hijo is not None
-    # El deadline es ABSOLUTO (monotonico): se compara contra el instante de
-    # fin observado, no contra una duracion relativa. Si hubo que pedir la
-    # parada, el plazo de trabajo se alcanzo: el hijo no termino por su cuenta
-    # y su codigo (incluso 0) NO es cumplimiento normal. La tolerancia solo
-    # cubre el borde en que el hijo termino solo dentro de la granularidad de
-    # sondeo.
-    excedio_plazo = bool(
-        (work_deadline is not None and parada_solicitada)
+    fin_hijo = estado_hijo["fin_hijo_monotono_s"] or time.monotonic()
+    # --- Clasificacion del resultado, segun la EVIDENCIA observada --------
+    # El deadline es ABSOLUTO (monotonico) y se compara contra el instante en
+    # que se observo el fin del hijo. Si hubo que pedir la parada, el plazo de
+    # trabajo se alcanzo: el hijo no termino por su cuenta y su codigo
+    # (incluso 0) NO es cumplimiento normal. La tolerancia solo cubre el
+    # borde en que el hijo termino solo dentro de la granularidad de sondeo.
+    excedio_plazo_trabajo = bool(
+        (work_deadline is not None and estado_hijo["parada_solicitada"])
         or (work_deadline is not None
-            and fin_monotono > work_deadline + TOLERANCIA_FIN_S))
-    if interrumpido:
+            and fin_hijo > work_deadline + TOLERANCIA_FIN_S))
+    if error_lanzador:
+        resultado = "error_lanzador"
+        causa = error_lanzador
+        codigo_lanzador = 2
+        cumplimiento_normal = False
+    elif interrumpido:
         resultado = "interrupcion_operador"
         causa = "interrupcion_operador"
         codigo_lanzador = (int(codigo_hijo) if codigo_hijo is not None else 2)
         cumplimiento_normal = False
-    elif excedio_plazo:
-        if terminacion_forzada:
+    elif excedio_plazo_trabajo:
+        if estado_hijo["terminacion_forzada_solicitada"]:
             resultado = "timeout_trabajo_terminacion_forzada"
             codigo_lanzador = CODIGO_TIMEOUT_TERMINACION_FORZADA
         else:
@@ -430,61 +615,76 @@ def ejecutar(comando: Sequence[str], out_dir: Path,
         codigo_lanzador = (int(codigo_hijo) if codigo_hijo is not None else 2)
         cumplimiento_normal = True
 
-    # El codigo historico del hijo conserva su significado: es el codigo real
-    # del proceso. Si no se pudo observar, queda UNKNOWN (no se inventa).
-    _escribir_atomico(exit_path,
-                      f"{codigo_hijo}\n" if codigo_hijo_observado else "UNKNOWN\n")
-
-    exceso_total = 0.0
-    if total_deadline is not None:
-        exceso_total = max(0.0, duracion - (total_deadline - t0))
+    # --- Cierre basado en evidencia ----------------------------------------
+    # Se distinguen: parada SOLICITADA, terminacion forzada SOLICITADA,
+    # terminacion del hijo OBSERVADA y codigo de salida OBSERVADO. No se
+    # marca al hijo como terminado solo porque se intento matarlo, y el
+    # lanzador no certifica los sockets del hijo.
+    cierre = {
+        "parada_solicitada": bool(estado_hijo["parada_solicitada"]),
+        "parada_mecanismo": estado_hijo["parada_mecanismo"],
+        "terminacion_forzada_solicitada": bool(
+            estado_hijo["terminacion_forzada_solicitada"]),
+        "terminacion_forzada_mecanismo": estado_hijo[
+            "terminacion_forzada_mecanismo"],
+        "terminacion_hijo_observada": bool(codigo_hijo_observado),
+        "codigo_salida_observado": (int(codigo_hijo)
+                                    if codigo_hijo_observado else None),
+        "codigo_salida_estado": ("observado" if codigo_hijo_observado
+                                 else "UNKNOWN"),
+        "alimentaciones_lanzador_cerradas": bool(alimentaciones_cerradas),
+        "recursos_hijo": "UNKNOWN",
+        "recursos_hijo_nota": ("el lanzador generico no puede certificar los "
+                               "sockets ni el teardown del hijo: no se afirma "
+                               "su cierre"),
+        "tiempo_concedido_taskkill_s": estado_hijo["tiempo_concedido_taskkill_s"],
+        "excedio_la_concesion": bool(estado_hijo["excedio_la_concesion"]),
+        "evidencia_piloto": {
+            "artefactos_observados": _artefactos_piloto(out_dir),
+            "nota": ("estado del piloto como evidencia diferenciada: el "
+                     "lanzador lo lista pero no lo interpreta ni lo certifica"),
+        },
+        "alcance": ("propio: el hijo y el arbol de descendientes del grupo "
+                    "propio; nunca busquedas globales"),
+    }
 
     limites = {
         "work_timeout_seconds": work_timeout,
         "shutdown_grace_seconds": grace,
         "total_max_seconds": (work_timeout + grace
                                if work_timeout is not None else None),
-        "reserva_persistencia_seconds": reserva,
+        "reserva_persistencia_seconds": round(reserva_persistencia, 3),
+        "reserva_reap_seconds": round(reserva_reap, 3),
         "tolerancia_fin_seconds": TOLERANCIA_FIN_S,
         "sondeo_seconds": INTERVALO_ESPERA_S,
         "reloj": "monotonico",
-        "deadlines": "absolutos (no se reinician al esperar o senalar)",
-    }
-    tiempos = {
-        "inicio_monotono_s": round(t0, 3),
-        "fin_monotono_s": round(fin_monotono, 3),
-        "duracion_monotona_s": round(duracion, 3),
-        "work_deadline_relativo_s": work_timeout,
-        "forced_deadline_relativo_s": (
-            round(forced_deadline - t0, 3) if forced_deadline is not None
-            else None),
-        "exceso_maximo_total_s": round(exceso_total, 3),
-    }
-    limpieza = {
-        "proceso_hijo_terminado": codigo_hijo_observado or terminacion_forzada,
-        "codigo_hijo_observado": (int(codigo_hijo) if codigo_hijo_observado
-                                  else None),
-        "codigo_hijo_estado": "observado" if codigo_hijo_observado else "UNKNOWN",
-        "parada_solicitada": parada_solicitada,
-        "mecanismo_parada": mecanismo,
-        "terminacion_forzada": terminacion_forzada,
-        "alimentaciones_cerradas": True,
-        "alcance": ("propio: el hijo y el arbol de descendientes del grupo "
-                    "propio; nunca busquedas globales"),
-    }
-    veredicto = {
-        "resultado": resultado,
-        "causa_terminacion": causa,
-        "cumplimiento_normal": cumplimiento_normal,
-        "codigo_lanzador": codigo_lanzador,
-        "limites": limites,
-        "tiempos": tiempos,
-        "limpieza": limpieza,
-        "nota": ("El codigo del lanzador y el codigo del hijo son cosas "
-                 "distintas: un hijo que devuelve 0 tras vencer el plazo NO "
-                 "es cumplimiento normal y el lanzador no lo declara."),
+        "deadlines": ("absolutos (no se reinician al esperar o senalar); "
+                      "toda espera se acota al restante del MISMO deadline"),
+        "alcance_del_control": ("acota el tiempo que el lanzador espera y "
+                                "concede; no es una garantia del sistema "
+                                "operativo: si una llamada ignora su timeout, "
+                                "el exceso se mide y se publica"),
     }
 
+    # --- Persistencia de la evidencia -------------------------------------
+    # El codigo historico del hijo conserva su significado: es el codigo real
+    # del proceso. Si no se pudo observar, queda UNKNOWN (no se inventa).
+    inicio_persistencia = time.monotonic()
+    _escribir_atomico(exit_path,
+                      f"{codigo_hijo}\n" if codigo_hijo_observado else "UNKNOWN\n")
+
+    tiempos_pre = {
+        "inicio_monotono_s": round(t0, 3),
+        "fin_hijo_monotono_s": round(fin_hijo, 3),
+        "duracion_hasta_fin_del_hijo_s": round(fin_hijo - t0, 3),
+        "work_deadline_relativo_s": work_timeout,
+        "deadline_limpieza_relativo_s": (
+            round(deadline_limpieza - t0, 3)
+            if deadline_limpieza is not None else None),
+        "deadline_forzada_relativo_s": (
+            round(deadline_forzada - t0, 3)
+            if deadline_forzada is not None else None),
+    }
     meta = {
         # Campos historicos (compatibilidad): el codigo real del hijo.
         "comando": list(comando),
@@ -494,10 +694,14 @@ def ejecutar(comando: Sequence[str], out_dir: Path,
         "stdout": str(stdout_path),
         "stderr": str(stderr_path),
         "inicio_iso_utc": inicio_iso,
-        "fin_iso_utc": time.strftime("%Y-%m-%dT%H:%M:%S", time.gmtime(fin_wall)),
-        "duracion_s": round(fin_wall - inicio_wall, 3),
+        "fin_iso_utc": time.strftime("%Y-%m-%dT%H:%M:%S",
+                                     time.gmtime(time.time())),
+        "duracion_s": round(time.time() - inicio_wall, 3),
+        "duracion_s_semantica": ("duración hasta la escritura de launcher.json; "
+                                 "la duración TOTAL con persistencia está en "
+                                 "estado_lanzador.json y cierre.json"),
         "interrumpido": interrumpido,
-        # Contrato temporal (nuevo): veredicto del lanzador, separado.
+        # Contrato temporal: veredicto del lanzador, separado.
         "resultado_lanzador": resultado,
         "causa_terminacion": causa,
         "cumplimiento_normal": cumplimiento_normal,
@@ -505,16 +709,103 @@ def ejecutar(comando: Sequence[str], out_dir: Path,
         "codigo_hijo_observado": (int(codigo_hijo) if codigo_hijo_observado
                                   else None),
         "codigo_hijo_estado": "observado" if codigo_hijo_observado else "UNKNOWN",
-        "parada_solicitada": parada_solicitada,
-        "mecanismo_parada": mecanismo,
-        "terminacion_forzada": terminacion_forzada,
+        "parada_solicitada": bool(estado_hijo["parada_solicitada"]),
+        "mecanismo_parada": estado_hijo["parada_mecanismo"],
+        "terminacion_forzada_solicitada": bool(
+            estado_hijo["terminacion_forzada_solicitada"]),
+        "mecanismo_terminacion_forzada": estado_hijo[
+            "terminacion_forzada_mecanismo"],
         "limites_temporal": limites,
-        "tiempos_monotonos": tiempos,
-        "limpieza": limpieza,
+        "tiempos_monotonos": tiempos_pre,
+        "cierre": cierre,
+        "veredicto_definitivo": "cierre.json",
     }
     _escribir_atomico(meta_path, json.dumps(meta, ensure_ascii=False, indent=1))
+
+    # --- Medicion final: INCLUYE la persistencia --------------------------
+    # Se mide DESPUES de escribir la evidencia principal: la duracion
+    # publicada no es una medicion tomada antes de escribir los artefactos.
+    fin_persistencia = time.monotonic()
+    duracion_total = fin_persistencia - t0
+    duracion_persistencia = fin_persistencia - inicio_persistencia
+    exceso_total = 0.0
+    if deadline_global is not None:
+        exceso_total = max(0.0, duracion_total - (deadline_global - t0))
+    incumplio_plazo_global = exceso_total > 0.0
+    if incumplio_plazo_global and resultado == "normal":
+        resultado = "plazo_global_excedido"
+        causa = "exceso_del_plazo_global"
+        codigo_lanzador = CODIGO_EXCESO_PLAZO_GLOBAL
+        cumplimiento_normal = False
+
+    tiempos = dict(tiempos_pre)
+    tiempos.update({
+        "fin_monotono_s": round(fin_persistencia, 3),
+        "duracion_total_s": round(duracion_total, 3),
+        "duracion_persistencia_s": round(duracion_persistencia, 3),
+        "exceso_maximo_total_s": round(exceso_total, 3),
+        "incumplimiento_plazo_global": incumplio_plazo_global,
+    })
+    veredicto = {
+        "resultado": resultado,
+        "causa_terminacion": causa,
+        "cumplimiento_normal": cumplimiento_normal,
+        "codigo_lanzador": codigo_lanzador,
+        "limites": limites,
+        "tiempos": tiempos,
+        "cierre": cierre,
+        "veredicto_definitivo": "cierre.json",
+        "nota": ("El codigo del lanzador y el codigo del hijo son cosas "
+                 "distintas: un hijo que devuelve 0 tras vencer el plazo NO "
+                 "es cumplimiento normal y el lanzador no lo declara."),
+        "nota_medicion": ("duracion_total_s se mide despues de escribir "
+                          "exit_code.txt y launcher.json (incluye la "
+                          "persistencia); la escritura atomica de este "
+                          "veredicto es la unica operacion posterior no "
+                          "incluida; cierre.json publica la medicion "
+                          "definitiva"),
+    }
     _escribir_atomico(estado_path,
                       json.dumps(veredicto, ensure_ascii=False, indent=1))
+
+    # --- Medicion definitiva ------------------------------------------------
+    # Se vuelve a medir DESPUES de escribir el veredicto: si la persistencia
+    # ha llevado el reloj mas alla del plazo global, el exceso se detecta
+    # aqui, se corrige el veredicto y se devuelve ese codigo.cierre.json
+    # publica la medicion definitiva (incluye la persistencia de todos los
+    # artefactos); lo unico excluido es su propia escritura atomica.
+    fin_definitivo = time.monotonic()
+    duracion_definitiva = fin_definitivo - t0
+    exceso_definitivo = 0.0
+    if deadline_global is not None:
+        exceso_definitivo = max(
+            0.0, duracion_definitiva - (deadline_global - t0))
+    if exceso_definitivo > 0.0 and resultado == "normal":
+        resultado = "plazo_global_excedido"
+        causa = "exceso_del_plazo_global"
+        codigo_lanzador = CODIGO_EXCESO_PLAZO_GLOBAL
+        cumplimiento_normal = False
+    _escribir_atomico(cierre_path, json.dumps({
+        "resultado": resultado,
+        "causa_terminacion": causa,
+        "cumplimiento_normal": cumplimiento_normal,
+        "codigo_lanzador": codigo_lanzador,
+        "codigo_hijo_observado": (int(codigo_hijo)
+                                  if codigo_hijo_observado else None),
+        "codigo_hijo_estado": ("observado" if codigo_hijo_observado
+                               else "UNKNOWN"),
+        "terminacion_hijo_observada": bool(codigo_hijo_observado),
+        "recursos_hijo": "UNKNOWN",
+        "duracion_total_s": round(duracion_definitiva, 3),
+        "duracion_persistencia_s": round(duracion_persistencia, 3),
+        "exceso_maximo_total_s": round(exceso_definitivo, 3),
+        "incumplimiento_plazo_global": exceso_definitivo > 0.0,
+        "fin_iso_utc": time.strftime("%Y-%m-%dT%H:%M:%S",
+                                     time.gmtime(time.time())),
+        "nota": ("medicion definitiva: incluye la persistencia de todos los "
+                 "artefactos; solo queda fuera la escritura atomica de este "
+                 "archivo"),
+    }, ensure_ascii=False, indent=1))
     print(json.dumps(meta, ensure_ascii=False), flush=True)
     return int(codigo_lanzador)
 
@@ -539,10 +830,16 @@ Opciones propias del lanzador (NUNCA llegan al parser del piloto):
                               terminacion forzada y para escribir la evidencia.
 
 Total maximo = --work-timeout-seconds + --shutdown-grace-seconds.
+Dentro del margen se reservan dos tramos: la reserva de persistencia (para
+escribir la evidencia) y la reserva de reap (para que el hijo confirme su
+salida tras la terminacion forzada). TODA espera y llamada de terminacion se
+acota al restante del MISMO deadline: no hay esperas fijas que se sumen al
+plazo global.
 Codigos del lanzador: 0 = finalizacion normal; el codigo del hijo cuando no
 hay contrato temporal; 124 = plazo de trabajo vencido con parada limpia;
-125 = plazo de trabajo vencido con terminacion forzada. El codigo del hijo
-conserva su significado en exit_code.txt y en launcher.json.
+125 = plazo de trabajo vencido con terminacion forzada; 126 = exceso del plazo
+global. El codigo del hijo conserva su significado en exit_code.txt y en
+launcher.json, y el veredicto del lanzador se publica por separado.
 """
 
 
