@@ -1788,3 +1788,117 @@ on-chain, GARCH, futuros con vencimiento ni infraestructura, no reconstruye el
 frontend ni añade pantallas o servicios, y no toca `opencode.json`, archivos
 ajenos, DBs canónicas ni el servicio 8792. El bloque **termina con el cierre
 de esta única ventana**, aunque el resultado sea INSUFICIENTE.
+
+### 10.16 Corrección del borde de la consulta y etiquetado honesto (2026-11-14, local, sin mercado)
+
+**Autorización humana del 2026-11-14:** «AUTORIZACIÓN — CORRECCIÓN LOCAL Y
+EVALUACIÓN OFFLINE, SIN MERCADO». Cubre corregir el borde temporal de la
+consulta operativa, corregir la etiqueta económica de las abstenciones, ejecutar
+pruebas locales y comprobar/aprovechar el dataset existente mediante análisis
+offline. **No** autoriza Binance, consultas públicas, capturas, órdenes,
+relanzamientos ni ventanas nuevas. `exp-v2-ventana-2-20261112a` **no** se
+reutiliza ni se relanza. Evidencia:
+[INFORME](../evidence/exp-v2-borde-consulta-20261114/INFORME.md).
+
+#### 10.16.1 Qué se corrigió (implementación, no metodología)
+
+| | Antes (publicado) | Después (corregido) |
+|---|---|---|
+| Inicio de la trayectoria 1 m | `decision_ms - step_ms` | `floor(decision_ms/step)*step - step` (`inicio_trayectoria_operativa`) |
+| Tope de filas | `horizon_ms // 60 000 + 2` = **62** | `ceil(horizon_ms/step)//step + 3` = **63** |
+| Extremo final | `now + step_ms` (**sin tocar**) | `now + step_ms` (**sin tocar**) |
+
+El inicio corregido es un **límite inferior** que siempre incluye la vela 1 m
+plenamente cerrada en T (abre en `floor((T+1)/step)*step - step`). El tope
+pasa a 63 porque el motor solo acredita el cierre por horizonte cuando la
+serie **pasa** del horizonte (`data_past_horizon`); con 62 filas y el inicio
+corregido la serie acababa exactamente en la vela del horizonte y el cierre
+por horizonte se convertía en `open_at_end` (marca, no salida ejecutada). El
+inicio **no** se resuelve truncando la salida.
+
+Se preservan: `decision_ms` real, selección y dirección, la referencia de
+señal (close de la última vela cerrada en T), el fill causal en la apertura
+posterior a T, stop, horizonte, notional, capacidad compartida y prioridad,
+costes y contabilidad de funding. `_vela_plenamente_conocida_en`
+(`close_time_ms <= decision_ms`) **no** cambia: el cierre futuro de la vela
+que contiene T sigue descartado. La regla **no** se cambia para producir
+entradas.
+
+#### 10.16.2 Aceptación local por el recorrido productivo real
+
+CLI real como subproceso + proveedores HTTP/WS **loopback** (que respetan
+`openTime >= startTime` y el tope `limit`) + reloj manual + almacenamiento
+temporal. Recorrido: selección → observación → consulta de trayectoria →
+adaptador → motor → persistencia. **9 passed** en
+`tests/test_pilot_operativo_consulta_temporal.py`; instantes de decisión
+probados: exacto en el minuto, +1 ms, los desfases publicados 12 527 y
+19 298, 59 998, 59 999 y el cambio de minuto.
+
+Observado (mismo arnés, código publicado frente a código corregido):
+**5/7** casos sin la vela de referencia y 2 entradas **antes**; **0/7** sin
+vela de referencia, **7 entradas y 7 salidas ejecutadas** después. Se
+comprueba además que el fill es posterior a T, que la referencia cierra en
+`≤ T`, que el `stop_px` se deriva de ese mismo close, que la serie llega
+hasta la primera vela que abre tras el horizonte, que los datos realmente
+ausentes producen abstención explícita, que la capacidad compartida sigue
+siendo 1 posición y que persistencia y resumen son coherentes. Regresiones
+directamente afectadas: **57 + 50 passed**; suite completa 1 918 passed, 2
+skipped y 12 fallos **preexistentes y ajenos** (idénticos con el código
+publicado).
+
+#### 10.16.3 Etiquetado honesto de las abstenciones
+
+`neto_motivo` distingue ahora cuatro estados reales: abstención sin posición;
+rechazo por capacidad sin posición; posición realmente abierta sin salida
+(fill acreditado, salida no ejecutada); y operación cerrada con funding
+incompleto (`CONDICIONADO_SIN_FUNDING_COMPLETO`). Es un cambio de etiqueta,
+no de contabilidad: `UNKNOWN` sigue siendo `UNKNOWN` y no se convierte
+desconocimiento en cero.
+
+#### 10.16.4 Presupuesto recalculado (sin red, ruta de preparación separada)
+
+`--budget-only` con la forma final del comando publicado, en
+`…\opencode\presupuesto-borde-v1`: gate **13/13** con
+`cabe_en_limites: true`, peso estimado **1 472**, intentos base + reservas
+**1 334**, almacenamiento reservado **82 174 080 B** y **0 claves distintas**
+frente al presupuesto publicado. **No se aumenta ningún cupo.**
+
+#### 10.16.5 REEvaluación offline del dataset existente: qué permite y qué no
+
+Es una **reevaluación posterior a corregir un defecto de implementación**, no
+una validación prospectiva independiente. El original se abre **solo en
+lectura** y sus hashes se verifican antes y después (**intacto**).
+
+- **A nivel de consulta (exacto):** se reconstruyen las **179** consultas de
+  trayectoria del ledger; el `startTime` registrado coincide con
+  `decision_ms - 60 000` en **179/179**; con el borde publicado la vela
+  cerrada en T quedaba dentro de la serie en **0/179** y con el borde
+  corregido en **179/179**; la serie corregida pasa del horizonte en
+  **179/179**.
+- **A nivel económico:** **no** se puede reevaluar. Los cuerpos de las
+  respuestas `klines` no se persistieron (el ledger conserva solo
+  `response_sha256` y `response_item_count`: un hash no sustituye las velas);
+  la serie 1 m capturada (`research_flow_1m`, 1 253 filas) es de **aggTrade**,
+  no la serie `klines` del venue, y no cubre el horizonte de ninguna
+  observación (captura 60 min frente a un horizonte de 60 min por decisión):
+  **0/179** trayectorias completas, 11 277 velas necesarias, 5 006
+  disponibles, **6 271 faltantes (55,6 %)**; y el funding no tiene ninguna
+  liquidación (0 B y 0 peticiones `fundingRate`). Neto COMPLETO `n = 0`,
+  CONDICIONADO `n = 0` (ambos `null`), UNKNOWN 179; comparación
+  candidato/comparador **`INSUFICIENTE`**.
+
+La ventana `exp-v2-ventana-2-20261112a` sigue siendo **INSUFICIENTE**: la
+corrección elimina la causa artificial de las abstenciones, pero **no** aporta
+evidencia sobre la hipótesis económica. Una evaluación económica exige una
+**ventana nueva con autorización propia**, que este bloque **no** abre ni
+propone automáticamente.
+
+#### 10.16.6 Lo que este bloque NO hace
+
+No abre mercado, no hace capturas, no relanza ni reutiliza
+`exp-v2-ventana-2-20261112a`, no inventa `run_id`, no amplía duración,
+exposición, consultas ni cupos, no cambia estrategia, selección, funding,
+contabilidad ni presupuestos económicos, no añade indicadores, on-chain,
+GARCH, futuros con vencimiento ni infraestructura, no crea otra versión
+paralela del experimento y no toca `opencode.json`, archivos ajenos, DBs
+canónicas, el dashboard 3020 ni el servicio 8792.

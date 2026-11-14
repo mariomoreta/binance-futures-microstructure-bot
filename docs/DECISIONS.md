@@ -5500,3 +5500,134 @@ DECISIONES:
   `piloto/ventana-2-20261112a-ejecutada-20261114` y reconciliacion de
   `lanzador/defectos-plazo-cierre-20261113`) y la PROPUESTA (marcada como
   ejecutada).
+
+
+## 2026-11-14 - Correccion del borde temporal de la consulta operativa y
+etiquetado honesto de las abstenciones (implementacion local, sin mercado)
+
+CONTEXTO: la ventana `exp-v2-ventana-2-20261112a` (ejecutada y cerrada el
+2026-11-14) termino con 179 abstenciones y 0 operaciones. La causa raiz
+diagnosticada con el ledger HTTP persistido fue determinista: el piloto pedia
+la trayectoria 1 m operativa con `klines(startTime = decision_ms - 60 000)` y
+el venue filtra `openTime >= startTime`, de modo que la vela 1 m **plenamente
+cerrada en T** (abre en `floor((T+1)/60000)*60000 - 60000`) quedaba excluida
+siempre que `decision_ms` no estuviera alineado al minuto. En esa ventana
+0/179 decisiones lo estaban (desfases 12 527, 19 298, 12 938, 12 941, 13 428,
+13 576, 13 832, 13 889, 13 934, 14 409, 14 902 y 15 396 ms), luego las 179
+filas fueron abstenciones por falta artificial del precio de referencia.
+
+AUTORIZACION HUMANA (2026-11-14): "AUTORIZACION - CORRECCION LOCAL Y
+EVALUACION OFFLINE, SIN MERCADO". Cubre corregir el borde temporal de la
+consulta operativa, corregir la etiqueta economica de las abstenciones,
+ejecutar pruebas locales y comprobar/aprovechar el dataset existente mediante
+analisis offline. NO autoriza Binance, consultas publicas, capturas, ordenes,
+relanzamientos ni ventanas nuevas. `exp-v2-ventana-2-20261112a` no se
+reutiliza ni se relanza.
+
+DECISION (a) - CORRECCION DE IMPLEMENTACION del borde de la consulta. En
+`scripts/research_pilot.py::_consultar_trayectoria_operativa` el inicio de la
+consulta pasa a `inicio_trayectoria_operativa(decision_ms, step_ms) =
+floor(decision_ms/step)*step - step`, un limite inferior que siempre incluye
+la vela cerrada en T (en el caso `T mod step == step - 1` incluye una vela
+antes, lo cual es inocuo porque el adaptador elige la ultima vela cerrada en
+T). El tope de filas pasa de `horizon_ms // 60_000 + 2` (62) a
+`ceil(horizon_ms/step)//step + 3` (63), porque el motor solo acredita el
+cierre por horizonte cuando la serie **pasa** del horizonte
+(`backtest_offline`: `data_past_horizon = series[-1].open_time_ms >
+horizon_end`); con 62 filas y el inicio corregido la serie acababa
+exactamente en la vela del horizonte y el cierre por horizonte se
+convertia en `open_at_end` (una marca, no una salida ejecutada). El extremo
+final (`now + step_ms`) NO se toca: el inicio no se resuelve truncando la
+salida.
+
+DECISION (b) - CLASIFICACION. Es una **correccion de implementacion**, no un
+cambio de metodologia: no cambia la regla economica ni sus parametros. Se
+preservan `decision_ms` real (sin redondear ni retrotraer), la seleccion y la
+direccion, la referencia de senal (close de la ultima vela 1 m cerrada en T),
+el fill causal en la apertura posterior a T, el stop, el horizonte, el
+notional, la capacidad compartida y la prioridad, los costes y la
+contabilidad de funding. No se usa el cierre futuro de la vela que contiene T:
+`_vela_plenamente_conocida_en` (`close_time_ms <= decision_ms`) se conserva
+sin cambios y es la que descarta esa vela. La regla no se cambia para
+producir entradas: si la referencia no existe, la abstention sigue siendo
+explicita.
+
+DECISION (c) - ETIQUETADO HONESTO. `neto_motivo` deja de aplicar el texto
+generico "posicion abierta" a toda fila sin salida acreditada y distingue
+cuatro estados reales: abstention sin posicion; rechazo por capacidad sin
+posicion; posicion realmente abierta sin salida (fill acreditado y salida no
+ejecutada); y operacion cerrada con funding incompleto
+(`CONDICIONADO_SIN_FUNDING_COMPLETO`). Es un cambio de etiqueta, no de
+contabilidad: `UNKNOWN` sigue siendo `UNKNOWN`, no se convierte
+desconocimiento en cero y una operacion cerrada sin funding acreditado no
+pasa a `COMPLETO`.
+
+DECISION (d) - PRESUPUESTO. El cambio de rango y de tope obliga a recalcular
+`--budget-only` **sin red** y en una **ruta de preparacion separada**
+(`C:\Users\adonm\AppData\Local\Temp\opencode\presupuesto-borde-v1`). El
+presupuesto recalculado es **identico** al publicado: gate 13/13 con
+`cabe_en_limites: true`, peso estimado 1 472, intentos base + reservas 1 334,
+almacenamiento reservado 82 174 080 B y **0 claves distintas** en la
+comparacion exhaustiva. No se aumenta ningun cupo: el numero de consultas no
+cambia (1 por observacion apta), el peso por consulta es el del modelo de
+politica (independiente del `limit` en el rango aplicado) y el cuerpo de la
+trayectoria no se persiste (solo su SHA-256).
+
+DECISION (e) - REEVALUACION OFFLINE DEL DATASET EXISTENTE. Es una
+reevaluacion **posterior a corregir un defecto de implementacion**, NO una
+validacion prospectiva independiente. El dataset original
+(`C:\proyectos\binance-futures-data\exp-v2-ventana-2-20261112a`) se abre
+**solo en lectura** y se verifican sus hashes antes y despues (intacto). Se
+publica en `docs/evidence/exp-v2-borde-consulta-20261114/` y los derivados
+viven en un directorio separado
+(`...-exp-v2-ventana-2-20261112a-reevaluacion-offline`), con `source_run_id`,
+SHA original, SHA de los derivados y configuracion.
+
+DECISION (f) - LO QUE EL DATASET PERMITE Y LO QUE NO. A nivel de consulta la
+reevaluacion es exacta: se reconstruyen las **179** consultas de trayectoria
+del ledger y el `startTime` registrado coincide con `decision_ms - 60 000` en
+**179/179**; con el borde publicado la vela cerrada en T quedaba dentro de la
+serie en **0/179** y con el borde corregido en **179/179**, y la serie
+corregida pasa del horizonte en **179/179**. Economicamente **no** se puede
+reevaluar: los cuerpos de las respuestas `klines` no se persistieron (el
+ledger conserva solo `response_sha256` y `response_item_count`: un hash no
+sustituye las velas), la serie 1 m capturada (`research_flow_1m`, 1 253 filas)
+es de **aggTrade** y no la serie `klines` del venue, y no cubre el horizonte
+de ninguna observacion (la captura duro 60 min y el horizonte es de 60 min
+por decision): **0/179** trayectorias completas, 11 277 velas necesarias,
+5 006 disponibles, **6 271 faltantes (55,6 %)**; y el funding no tiene ninguna
+liquidacion (`funding_adquisicion.jsonl` con 0 B, 0 peticiones `fundingRate`).
+Neto COMPLETO `n = 0`, CONDICIONADO `n = 0` (ambos `null`) y UNKNOWN 179;
+comparacion candidato/comparador `INSUFICIENTE`. No se rellena ningun hueco,
+no se sustituye la serie del venue por la de aggTrade para producir un P&L y
+no se abre red.
+
+DECISION (g) - ALCANCE. El bloque termina con la correccion aceptada y la
+reevaluacion offline cerrada. No se abre otra captura, no se propone
+automaticamente otra ventana, no se relanza ni se reutiliza
+`exp-v2-ventana-2-20261112a`, no se inventan `run_id` ni plazos nuevos, y no
+se anaden indicadores, on-chain, GARCH, futuros con vencimiento, infraestructura
+ni una version paralela del experimento. No se tocan `opencode.json`, los
+ficheros ajenos, las DBs canonicas, el dashboard 3020 ni el servicio 8792. La
+correccion no esta validada contra el venue: la evidencia es local en
+loopback mas la reconstruccion determinista sobre el ledger real. La
+cobertura de contrato sigue limitada a PERPETUAL/TRADING/USDT y los futuros
+con vencimiento siguen sin cobertura. La ventana
+`exp-v2-ventana-2-20261112a` sigue siendo INSUFICIENTE: la correccion elimina
+la causa artificial de las abstenciones, pero no aporta ninguna evidencia
+sobre la hipotesis economica.
+
+DECISION (h) - EVIDENCIA. `docs/evidence/exp-v2-borde-consulta-20261114/`
+(`INFORME.md` con las tres capas, `antes_despues.json`,
+`aceptacion_local.json` + `aceptacion_pytest.txt`,
+`reconstruccion_consulta.jsonl` con 179 filas,
+`inventario_cobertura.jsonl` con 179 filas, `neteo_conclusion.json`,
+`resumen.json`, `config_reevaluacion.json`, `presupuesto_borde.json`,
+`presupuesto_comparacion.json`, `manifiesto.json` y `hashes.json`); pruebas en
+`tests/test_pilot_operativo_consulta_temporal.py` (9 passed: CLI real,
+proveedores HTTP/WS loopback, reloj manual y almacenamiento temporal);
+regresiones directamente afectadas 57 + 50 passed; suite completa 1 918
+passed, 2 skipped y 12 fallos **preexistentes y ajenos** (identicos con el
+codigo publicado). Documentacion actualizada: `CURRENT_STATE.md`,
+`TASK_QUEUE.md`, `EXPERIMENTO_OPERATIVO_V2.md` 10.16, `FEATURE_BACKLOG.md`
+(nueva entrada `piloto/borde-consulta-corregido-20261114`) y este registro.

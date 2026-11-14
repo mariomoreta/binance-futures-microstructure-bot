@@ -1,0 +1,22 @@
+{
+  "codigo": {
+    "sha256_research_pilot": "c1fd15ec3a3868728479b9e0ed0aa8ee558b6017c16ee64ebb2ebc61cbd0b647"
+  },
+  "configuracion_regla": {
+    "fill": "apertura posterior a T",
+    "horizonte_ms": 3600000,
+    "paso_ms": 60000,
+    "precio_referencia": "close de la ultima vela 1m cerrada en T"
+  },
+  "correccion": {
+    "borde_corregido": "start_ms = floor(decision_ms/step)*step - step",
+    "borde_publicado": "start_ms = decision_ms - step_ms",
+    "limit_corregido": 63,
+    "limit_publicado": 62,
+    "motivo_del_limit": "la serie debe pasar del horizonte para que el motor acredite el cierre por horizonte y no una marca open_at_end"
+  },
+  "generado_utc": "2026-11-14T15:01:05.159102+00:00",
+  "modo": "offline-reevaluacion-post-correccion",
+  "no_es_validacion_prospectiva": true,
+  "source_run_id": "exp-v2-ventana-2-20261112a"
+}

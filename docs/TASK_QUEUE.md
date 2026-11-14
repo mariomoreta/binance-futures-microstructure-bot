@@ -1,53 +1,86 @@
-# Cola vigente — objetivo operativo, 2026-11-14
+# Cola vigente — corrección local del borde de la consulta, 2026-11-14
 
-`CURRENT_PHASE`: cierre de la **ventana pública única** del experimento
-operativo v2 por la **vía A** (`observed-settlements`), **ejecutada una sola vez
-el 2026-11-14** (`run_id exp-v2-ventana-2-20261112a`, `git_head ab97b02…`) y
-**cerrada dentro de plazo**: transporte y cobertura **resueltos** (22
-conexiones WS, 845 161 mensajes, 0 reconexiones, 0 errores; **179** de 219
-observaciones aptas; 537/537 resultados resueltos, 0 pendientes) y **cero
-operaciones**: las **179 decisiones fueron abstenciones** por un defecto
-determinista del **borde de la consulta** del precio de referencia de entrada
-(`klines` con `startTime = decision_ms − 60 000` excluye la vela 1 m cerrada en
-T cuando `decision_ms` no está alineado al minuto: **0/179** lo estaban). El
-resultado económico es **INSUFICIENTE** (no nulo: `n = 0`, `null`). La **vía B**
-(`funding-coverage/v1`) se conserva sin cambios y sigue diferida. No es
-declaración de promoción formal.
+`CURRENT_PHASE`: cierre del bloque de **corrección local y evaluación
+offline, sin mercado**, autorizado el 2026-11-14: el defecto del **borde de la
+consulta** del precio de referencia de entrada que vació la capa de ejecución
+de la ventana `exp-v2-ventana-2-20261112a` **queda corregido y aceptado
+localmente** por el **recorrido productivo real** (CLI + proveedores HTTP/WS
+loopback + reloj manual), y el dataset existente **queda reevaluado offline**
+hasta donde permite: a nivel de consulta (**179/179**) pero **no**
+económicamente. La ventana anterior **sigue cerrada** y **no se reutiliza ni
+se relanza**. La **vía B** (`funding-coverage/v1`) se conserva sin cambios y
+sigue diferida. No es declaración de promoción formal.
 
 `CURRENT_OBJECTIVE`: evaluar si la autoselección del universo elegible, unida a
 una regla causal de dirección, entrada, stop-loss, gestión y salida, permite una
 expectativa neta favorable con riesgo controlado. Más movimiento por sí solo no
 satisface el objetivo. Dirección canónica: [PRODUCT_GOAL](PRODUCT_GOAL.md).
-**El embudo de datos ya no es el bloqueo**: lo es la disponibilidad del precio
-de referencia en el instante de la decisión, que impidió que la regla llegara
-a la fase de entrada en las 179 observaciones. Esta ventana **no aporta
-evidencia sobre la hipótesis económica en ninguna dirección**.
+**El embudo de datos ya no es el bloqueo, y la causa artificial de las 179
+abstenciones tampoco**: el defecto determinista del borde de la consulta está
+corregido y verificado. Lo que sigue bloqueando la evidencia económica es que
+**ninguna ventana ejecutada ha llegado a producir operaciones evaluables**: la
+ventana cerrada no contiene los datos necesarios (las velas klines del venue no
+se persistieron y su serie 1 m capturada es de aggTrade y no cubre el horizonte
+de ninguna observación) y hace falta **una ventana nueva con autorización
+propia**. Esta corrección **no aporta evidencia sobre la hipótesis económica en
+ninguna dirección**.
 
-`ACTIVE_TASK`: dejar resuelto el **defecto del borde de la consulta** que
-vació la capa de ejecución (sin tocar la regla, la ventana ni el presupuesto
-congelados), y después reejecutar **una sola** ventana con autorización humana
-nueva y explícita. El defecto es **verificable** en el ledger HTTP persistido
-de la corrida: el piloto pide la trayectoria 1 m con
-`klines(startTime = decision_ms − 60 000)` y Binance filtra
-`openTime >= startTime`; la última vela 1 m **plenamente cerrada en T** abre en
-`floor(T/60000)*60000 − 60 000`, **anterior** a ese `startTime` cuando
-`decision_ms` no está alineado al minuto. **Ninguna** de las 179 decisiones lo
-estaba (el segundo del minuto fue 12, 13, 14, 15 o 19 porque la decisión se
-toma en el corte + 5 s), de modo que la vela de referencia quedaba excluida en
-los 179 casos y la primera vela devuelta **cerraba después de T**: sin precio
-conocido en T, la regla solo podía abstenerse. Código implicado:
-`scripts/research_pilot.py::_consultar_trayectoria_operativa` y
-`scripts/research_operativo_adapter.py::_vela_plenamente_conocida_en`. **No es**
-una ausencia de datos de mercado, ni un límite de presupuesto, ni la capacidad
-compartida, ni una restricción del selector. **Corregirlo es un cambio de
-metodología**: requiere autorización humana explícita, un `run_id` nuevo y una
-ventana nueva; no se puede "arreglar" dentro de la ventana ya cerrada ni
-relanzarla. Se conserva además pendiente el **defecto secundario de
-etiquetado** (`neto_motivo` genérico de "posición abierta" en filas de
-abstención con `qty = 0`).
+`ACTIVE_TASK`: **ninguno**. El bloque de corrección local y evaluación offline
+está **cerrado**: corrección implementada y aceptada, etiquetado corregido,
+presupuesto recalculado sin red e idéntico al publicado, reevaluación offline
+publicada con sus faltantes exactos y el dataset original verificado **intacto**
+por hash antes y después. **No** hay tarea activa: abrir una ventana nueva
+exige autorización humana explícita, un `run_id` nuevo y su propia ejecución;
+este bloque **no** la abre ni la propone automáticamente.
 
 `NEXT_TASKS`:
-1. **Ventana operativa única por la vía A: EJECUTADA y CERRADA (2026-11-14).**
+1. **Corrección del borde de la consulta + etiquetado honesto: HECHO y
+   CERRADO (2026-11-14).** `scripts/research_pilot.py`:
+   `inicio_trayectoria_operativa(decision_ms, step_ms) =
+   floor(decision_ms/step)*step - step` (límite inferior que siempre incluye
+   la vela 1 m cerrada en T) y tope de filas 62 → **63** (la serie debe pasar
+   del horizonte para acreditar el cierre por horizonte y no una marca
+   `open_at_end`); el extremo final `now + step_ms` **no** se toca.
+   `scripts/research_operativo_adapter.py`: `neto_motivo` distingue abstención
+   sin posición, rechazo por capacidad sin posición, posición realmente
+   abierta sin salida y operación cerrada con funding incompleto
+   (`UNKNOWN` sigue siendo `UNKNOWN`). **Clasificación: corrección de
+   implementación**, no de metodología: no cambian `decision_ms`, selección,
+   dirección, referencia, fill causal, stop, horizonte, notional, capacidad,
+   prioridad, costes ni contabilidad de funding. **Aceptación local:** 9 passed
+   en `tests/test_pilot_operativo_consulta_temporal.py` (CLI real, loopback,
+   reloj manual), con los 7 instantes exigidos (exacto en el minuto, +1 ms,
+   12 527, 19 298, 59 998, 59 999 y cambio de minuto); antes/después observado:
+   5/7 sin vela de referencia y 2 entradas → **0/7 y 7 entradas con 7 salidas
+   ejecutadas**; regresiones afectadas 57 + 50 passed; suite completa 1 918
+   passed, 2 skipped y 12 fallos **preexistentes y ajenos** (idénticos con el
+   código publicado). **Presupuesto** recalculado con `--budget-only` **sin
+   red** en ruta de preparación separada: gate 13/13, **0 claves distintas**
+   frente al publicado, **sin aumentar cupos**. **Reevaluación offline**
+   (posterior a la corrección, no validación prospectiva): a nivel de consulta
+   **179/179** (el `startTime` registrado coincide con `decision_ms - 60 000`
+   en 179/179; la vela cerrada en T quedaba dentro en **0/179** y queda en
+   **179/179** con el borde corregido; la serie corregida pasa del horizonte en
+   179/179); a nivel económico **no** se puede reevaluar (cuerpos `klines` no
+   persistidos; serie capturada de aggTrade; **0/179** trayectorias
+   completas; 6 271 velas faltantes de 11 277; 0 liquidaciones de funding) →
+   neto COMPLETO `n = 0`, CONDICIONADO `n = 0` (ambos `null`), UNKNOWN 179,
+   comparación **`INSUFICIENTE`**. Evidencia:
+   [INFORME](evidence/exp-v2-borde-consulta-20261114/INFORME.md) ·
+   `antes_despues.json`, `aceptacion_local.json`,
+   `reconstruccion_consulta.jsonl`, `inventario_cobertura.jsonl`,
+   `neteo_conclusion.json`, `presupuesto_comparacion.json`, `manifiesto.json`,
+   `hashes.json`. Dataset original **intacto** (hashes antes/después).
+2. **Ventana operativa nueva con el borde corregido — requiere autorización
+   humana explícita (PENDIENTE; no propuesta automáticamente por este
+   bloque).** Condiciones ya resueltas que la nueva ventana hereda: borde de
+   la consulta corregido y aceptado localmente, tope de 63 filas que cubre el
+   horizonte, presupuesto recalculado **sin cambios**, etiquetado honesto y
+   `run_id` nuevo obligatorio. Lo que **no** se puede hacer sin autorización:
+   abrir mercado, capturar, resolver contra el venue y cerrar una ventana.
+   `exp-v2-ventana-2-20261112a` **no** se reutiliza ni se relanza, y no se
+   amplían duración, exposición, consultas ni cupos.
+3. **Ventana operativa única por la vía A: EJECUTADA y CERRADA (2026-11-14).**
    `run_id exp-v2-ventana-2-20261112a` (ejecutado **una sola vez**, no
    reutilizado) sobre el directorio
    `C:\proyectos\binance-futures-data\exp-v2-ventana-2-20261112a` (fuera de
@@ -78,26 +111,6 @@ abstención con `qty = 0`).
    `muestra_resultado_operativo.jsonl`, `hashes.json`. Monitor (solo lectura):
    `http://127.0.0.1:3020/market-lab?vista=piloto&run=exp-v2-ventana-2-20261112a`.
    Antecedente: [PROPUESTA](evidence/exp-v2-ventana-2-20261112a-propuesta/PROPUESTA.md).
-2. **Corregir el borde de la consulta del precio de referencia — requiere
-   autorización humana explícita (PENDIENTE).** Alcance mínimo: que la
-   trayectoria 1 m incluya la vela **plenamente cerrada en T** (alinear el
-   borde `startTime` al minuto, o aceptar también la vela cuyo `close_time_ms
-   <= decision_ms` aunque su `openTime` sea anterior), con **pruebas locales**
-   que cubran el caso `decision_ms` desalineado al minuto y el caso alineado,
-   **sin** abrir mercado. Debe preservar la regla causal: el precio de
-   referencia sigue siendo el close de la última vela 1 m **conocida en T**,
-   nunca un `bucket_end` ni un precio retrotrado; y el `decision_ms` sigue
-   siendo el instante real de evaluación. **Antes de ejecutar** hay que
-   registrar en `docs/DECISIONS.md` el cambio de contrato de la consulta
-   (número de velas, pesos y presupuesto REST reservado) y recalcular el
-   `--budget-only` **en una ruta de preparación separada**, sin mercado.
-   **No se puede reutilizar** `exp-v2-ventana-2-20261112a` ni relanzarlo.
-3. **Corregir el defecto secundario de etiquetado** (`neto_motivo` genérico
-   de "posición abierta" en filas de abstención con `qty = 0`,
-   `entry_px = null` y `open_at_end = false`): el `neto_estado = UNKNOWN` es
-   correcto, pero el texto debe describir la ausencia real de posición. Es
-   un cambio de **etiqueta**, no de contabilidad: **no** convierte un
-   `UNKNOWN` en cero ni un condicionado en completo.
 4. **Diagnóstico WS de recepción: EJECUTADO y RECTIFICADO (2026-11-12).** Se
    ejecutó **una sola vez** el diagnóstico preparado con la autorización
    acotada al alcance de recepción (`diag-ws-recepcion-20261112a`, SHA de

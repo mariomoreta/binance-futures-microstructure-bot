@@ -1,0 +1,21 @@
+{
+  "claves_distintas": 0,
+  "codigo_salida_observado": 0,
+  "comando": "scripts/run_pilot_window.py ... --budget-only (misma forma final que la propuesta, sin red, en ruta de preparacion separada)",
+  "diferencias": {},
+  "gate": {
+    "comprobaciones_nuevo": 13,
+    "comprobaciones_publicado": 13,
+    "nuevo": true,
+    "publicado": true
+  },
+  "intentos_base_mas_reservas": {
+    "nuevo": 1334,
+    "publicado": 1334
+  },
+  "lectura": "el cambio del rango (inicio alineado al paso) y del tope de filas (62 -> 63) NO altera el presupuesto: mismas consultas, mismo peso reservado, mismo almacenamiento reservado",
+  "peso_total_estimado": {
+    "nuevo": 1472,
+    "publicado": 1472
+  }
+}

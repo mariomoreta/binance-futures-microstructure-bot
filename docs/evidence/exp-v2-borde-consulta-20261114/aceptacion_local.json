@@ -1,0 +1,71 @@
+{
+  "codigo_salida_observado": 0,
+  "comando": "python -m pytest tests/test_pilot_operativo_consulta_temporal.py -v",
+  "duracion_s": 16.47,
+  "fichero": "tests/test_pilot_operativo_consulta_temporal.py",
+  "instancias_de_decision_probadas": [
+    "exacto_en_el_minuto (T mod 60000 = 0)",
+    "un_ms_despues (T mod 60000 = 1)",
+    "desfase_publicado_12527 (T mod 60000 = 12527)",
+    "desfase_publicado_19298 (T mod 60000 = 19298)",
+    "cerca_del_cierre_59998 (T mod 60000 = 59998)",
+    "cerca_del_cierre_59999 (T mod 60000 = 59999)",
+    "cambio_de_minuto_mas_1ms (T mod 60000 = 1 del minuto siguiente)"
+  ],
+  "modo": "CLI real como subproceso + proveedores HTTP/WS loopback + reloj manual + almacenamiento temporal; sin mercado",
+  "pruebas": [
+    {
+      "fichero": "tests/test_pilot_operativo_consulta_temporal.py",
+      "prueba": "test_borde_publicado_excluye_la_vela_de_referencia",
+      "resultado": "PASSED"
+    },
+    {
+      "fichero": "tests/test_pilot_operativo_consulta_temporal.py",
+      "prueba": "test_borde_corregido_no_altera_la_extremidad_final",
+      "resultado": "PASSED"
+    },
+    {
+      "fichero": "tests/test_pilot_operativo_consulta_temporal.py",
+      "prueba": "test_proveedor_loopback_respeta_el_filtrado_por_apertura",
+      "resultado": "PASSED"
+    },
+    {
+      "fichero": "tests/test_pilot_operativo_consulta_temporal.py",
+      "prueba": "test_aceptacion_decisiones_no_alineadas_recuperan_la_referencia",
+      "resultado": "PASSED"
+    },
+    {
+      "fichero": "tests/test_pilot_operativo_consulta_temporal.py",
+      "prueba": "test_recorrido_long_y_short_con_datos_sinteticos",
+      "resultado": "PASSED"
+    },
+    {
+      "fichero": "tests/test_pilot_operativo_consulta_temporal.py",
+      "prueba": "test_capacidad_compartida_limitada_a_una_posicion",
+      "resultado": "PASSED"
+    },
+    {
+      "fichero": "tests/test_pilot_operativo_consulta_temporal.py",
+      "prueba": "test_datos_realmente_ausentes_producen_abstencion_explicita",
+      "resultado": "PASSED"
+    },
+    {
+      "fichero": "tests/test_pilot_operativo_consulta_temporal.py",
+      "prueba": "test_etiqueta_economica_distingue_los_cuatro_estados",
+      "resultado": "PASSED"
+    },
+    {
+      "fichero": "tests/test_pilot_operativo_consulta_temporal.py",
+      "prueba": "test_persistencia_y_resumen_coherentes",
+      "resultado": "PASSED"
+    }
+  ],
+  "recorrido": "seleccion -> observacion -> consulta de trayectoria -> adaptador -> motor -> persistencia",
+  "regresiones_directamente_afectadas": {
+    "suite completa": "1918 passed, 2 skipped, 12 failed: los 12 fallos son preexistentes y ajenos (identicos con el codigo publicado) en test_engineering_live_window_local, test_market_stream_window, test_public_run_deadline y test_session_new_public_market",
+    "tests/test_operativo_adapter_local.py + test_operativo_capacidad_presupuesto.py + test_operativo_cli_integrado.py + test_pilot_monitor_observabilidad.py + test_backtest_funding_coverage.py": "50 passed",
+    "tests/test_research_pilot.py + test_experimento_operativo_local.py + test_recorrido_productivo.py + test_aceptacion_coordinacion_recepcion.py": "57 passed"
+  },
+  "resultado_global": "9 passed",
+  "salida_conservada": "aceptacion_pytest.txt"
+}

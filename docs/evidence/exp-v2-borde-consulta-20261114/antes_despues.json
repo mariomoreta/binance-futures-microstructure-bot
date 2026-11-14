@@ -1,0 +1,271 @@
+{
+  "casos": 7,
+  "casos_detalle": [
+    {
+      "ANTES": {
+        "consulta": {
+          "limit": 62,
+          "n_rows": 62,
+          "primera_fila_open_ms": 1735689600000,
+          "startTime": 1735689600000
+        },
+        "decision": "ENTRADA_EJECUTADA",
+        "entry_ms": 1735689720000,
+        "entry_px": 1000.2,
+        "exit_executed": false,
+        "funding_estado": "ninguno (UNKNOWN, no cero)",
+        "neto_estado": "UNKNOWN"
+      },
+      "DESPUES": {
+        "consulta": {
+          "limit": 63,
+          "n_rows": 63,
+          "primera_fila_open_ms": 1735689600000,
+          "startTime": 1735689600000,
+          "ultima_fila_open_ms": 1735693320000
+        },
+        "decision": "ENTRADA_EJECUTADA",
+        "entry_ms": 1735689720000,
+        "entry_px": 1000.2,
+        "exit_executed": true,
+        "exit_reason": "horizon",
+        "funding_estado": "ninguno (UNKNOWN, no cero)",
+        "neto_estado": "CONDICIONADO_SIN_FUNDING_COMPLETO",
+        "neto_motivo": "operacion cerrada con funding incompleto: resultado numerico sin funding completo; no es neto completo"
+      },
+      "decision_ms": 1735689660000,
+      "desfase_del_minuto": 0,
+      "etiqueta": "exacto_en_el_minuto"
+    },
+    {
+      "ANTES": {
+        "consulta": {
+          "limit": 62,
+          "n_rows": 62,
+          "primera_fila_open_ms": 1735689660000,
+          "startTime": 1735689600001
+        },
+        "decision": "SIN_ENTRADA",
+        "entry_ms": null,
+        "entry_px": null,
+        "exit_executed": false,
+        "funding_estado": "sin vela 1m plenamente conocida en T",
+        "neto_estado": "UNKNOWN"
+      },
+      "DESPUES": {
+        "consulta": {
+          "limit": 63,
+          "n_rows": 63,
+          "primera_fila_open_ms": 1735689600000,
+          "startTime": 1735689600000,
+          "ultima_fila_open_ms": 1735693320000
+        },
+        "decision": "ENTRADA_EJECUTADA",
+        "entry_ms": 1735689720000,
+        "entry_px": 1000.2,
+        "exit_executed": true,
+        "exit_reason": "horizon",
+        "funding_estado": "ninguno (UNKNOWN, no cero)",
+        "neto_estado": "CONDICIONADO_SIN_FUNDING_COMPLETO",
+        "neto_motivo": "operacion cerrada con funding incompleto: resultado numerico sin funding completo; no es neto completo"
+      },
+      "decision_ms": 1735689660001,
+      "desfase_del_minuto": 1,
+      "etiqueta": "desfase_1"
+    },
+    {
+      "ANTES": {
+        "consulta": {
+          "limit": 62,
+          "n_rows": 62,
+          "primera_fila_open_ms": 1735689660000,
+          "startTime": 1735689612527
+        },
+        "decision": "SIN_ENTRADA",
+        "entry_ms": null,
+        "entry_px": null,
+        "exit_executed": false,
+        "funding_estado": "sin vela 1m plenamente conocida en T",
+        "neto_estado": "UNKNOWN"
+      },
+      "DESPUES": {
+        "consulta": {
+          "limit": 63,
+          "n_rows": 63,
+          "primera_fila_open_ms": 1735689600000,
+          "startTime": 1735689600000,
+          "ultima_fila_open_ms": 1735693320000
+        },
+        "decision": "ENTRADA_EJECUTADA",
+        "entry_ms": 1735689720000,
+        "entry_px": 1000.2,
+        "exit_executed": true,
+        "exit_reason": "horizon",
+        "funding_estado": "ninguno (UNKNOWN, no cero)",
+        "neto_estado": "CONDICIONADO_SIN_FUNDING_COMPLETO",
+        "neto_motivo": "operacion cerrada con funding incompleto: resultado numerico sin funding completo; no es neto completo"
+      },
+      "decision_ms": 1735689672527,
+      "desfase_del_minuto": 12527,
+      "etiqueta": "desfase_12527"
+    },
+    {
+      "ANTES": {
+        "consulta": {
+          "limit": 62,
+          "n_rows": 62,
+          "primera_fila_open_ms": 1735689660000,
+          "startTime": 1735689619298
+        },
+        "decision": "SIN_ENTRADA",
+        "entry_ms": null,
+        "entry_px": null,
+        "exit_executed": false,
+        "funding_estado": "sin vela 1m plenamente conocida en T",
+        "neto_estado": "UNKNOWN"
+      },
+      "DESPUES": {
+        "consulta": {
+          "limit": 63,
+          "n_rows": 63,
+          "primera_fila_open_ms": 1735689600000,
+          "startTime": 1735689600000,
+          "ultima_fila_open_ms": 1735693320000
+        },
+        "decision": "ENTRADA_EJECUTADA",
+        "entry_ms": 1735689720000,
+        "entry_px": 1000.2,
+        "exit_executed": true,
+        "exit_reason": "horizon",
+        "funding_estado": "ninguno (UNKNOWN, no cero)",
+        "neto_estado": "CONDICIONADO_SIN_FUNDING_COMPLETO",
+        "neto_motivo": "operacion cerrada con funding incompleto: resultado numerico sin funding completo; no es neto completo"
+      },
+      "decision_ms": 1735689679298,
+      "desfase_del_minuto": 19298,
+      "etiqueta": "desfase_19298"
+    },
+    {
+      "ANTES": {
+        "consulta": {
+          "limit": 62,
+          "n_rows": 62,
+          "primera_fila_open_ms": 1735689660000,
+          "startTime": 1735689659998
+        },
+        "decision": "SIN_ENTRADA",
+        "entry_ms": null,
+        "entry_px": null,
+        "exit_executed": false,
+        "funding_estado": "sin vela 1m plenamente conocida en T",
+        "neto_estado": "UNKNOWN"
+      },
+      "DESPUES": {
+        "consulta": {
+          "limit": 63,
+          "n_rows": 63,
+          "primera_fila_open_ms": 1735689600000,
+          "startTime": 1735689600000,
+          "ultima_fila_open_ms": 1735693320000
+        },
+        "decision": "ENTRADA_EJECUTADA",
+        "entry_ms": 1735689720000,
+        "entry_px": 1000.2,
+        "exit_executed": true,
+        "exit_reason": "horizon",
+        "funding_estado": "ninguno (UNKNOWN, no cero)",
+        "neto_estado": "CONDICIONADO_SIN_FUNDING_COMPLETO",
+        "neto_motivo": "operacion cerrada con funding incompleto: resultado numerico sin funding completo; no es neto completo"
+      },
+      "decision_ms": 1735689719998,
+      "desfase_del_minuto": 59998,
+      "etiqueta": "desfase_59998"
+    },
+    {
+      "ANTES": {
+        "consulta": {
+          "limit": 62,
+          "n_rows": 62,
+          "primera_fila_open_ms": 1735689660000,
+          "startTime": 1735689659999
+        },
+        "decision": "ENTRADA_EJECUTADA",
+        "entry_ms": 1735689720000,
+        "entry_px": 1000.2,
+        "exit_executed": true,
+        "funding_estado": "ninguno (UNKNOWN, no cero)",
+        "neto_estado": "CONDICIONADO_SIN_FUNDING_COMPLETO"
+      },
+      "DESPUES": {
+        "consulta": {
+          "limit": 63,
+          "n_rows": 63,
+          "primera_fila_open_ms": 1735689600000,
+          "startTime": 1735689600000,
+          "ultima_fila_open_ms": 1735693320000
+        },
+        "decision": "ENTRADA_EJECUTADA",
+        "entry_ms": 1735689720000,
+        "entry_px": 1000.2,
+        "exit_executed": true,
+        "exit_reason": "horizon",
+        "funding_estado": "ninguno (UNKNOWN, no cero)",
+        "neto_estado": "CONDICIONADO_SIN_FUNDING_COMPLETO",
+        "neto_motivo": "operacion cerrada con funding incompleto: resultado numerico sin funding completo; no es neto completo"
+      },
+      "decision_ms": 1735689719999,
+      "desfase_del_minuto": 59999,
+      "etiqueta": "desfase_59999"
+    },
+    {
+      "ANTES": {
+        "consulta": {
+          "limit": 62,
+          "n_rows": 62,
+          "primera_fila_open_ms": 1735689720000,
+          "startTime": 1735689660001
+        },
+        "decision": "SIN_ENTRADA",
+        "entry_ms": null,
+        "entry_px": null,
+        "exit_executed": false,
+        "funding_estado": "sin vela 1m plenamente conocida en T",
+        "neto_estado": "UNKNOWN"
+      },
+      "DESPUES": {
+        "consulta": {
+          "limit": 63,
+          "n_rows": 63,
+          "primera_fila_open_ms": 1735689660000,
+          "startTime": 1735689660000,
+          "ultima_fila_open_ms": 1735693380000
+        },
+        "decision": "ENTRADA_EJECUTADA",
+        "entry_ms": 1735689780000,
+        "entry_px": 1000.3,
+        "exit_executed": true,
+        "exit_reason": "horizon",
+        "funding_estado": "ninguno (UNKNOWN, no cero)",
+        "neto_estado": "CONDICIONADO_SIN_FUNDING_COMPLETO",
+        "neto_motivo": "operacion cerrada con funding incompleto: resultado numerico sin funding completo; no es neto completo"
+      },
+      "decision_ms": 1735689720001,
+      "desfase_del_minuto": 1,
+      "etiqueta": "desfase_60001"
+    }
+  ],
+  "fuente": {
+    "antes": "codigo publicado (scripts/research_pilot.py sin la correccion), recorrido productivo real en loopback",
+    "despues": "codigo corregido, mismo recorrido y mismos instantes",
+    "sha256_research_pilot_antes": "1ab64f76c683cd02d517a4cdbdbe5f820ca8ff00f5f38ab11c706a99ec48579e",
+    "sha256_research_pilot_despues": "c1fd15ec3a3868728479b9e0ed0aa8ee558b6017c16ee64ebb2ebc61cbd0b647"
+  },
+  "resumen": {
+    "ANTES_entradas": 2,
+    "ANTES_salidas_ejecutadas": 1,
+    "ANTES_sin_vela_de_referencia": "5/7",
+    "DESPUES_entradas": 7,
+    "DESPUES_salidas_ejecutadas": 7,
+    "DESPUES_sin_vela_de_referencia": "0/7"
+  }
+}

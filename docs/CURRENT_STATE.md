@@ -1,4 +1,123 @@
-# Estado vigente — dirección operativa, 2026-11-14
+# Estado vigente — corrección local del borde de la consulta, 2026-11-14
+
+## Corrección del borde de la consulta operativa — CORREGIDA y aceptada localmente (2026-11-14)
+
+**Autorización humana del 2026-11-14:** «AUTORIZACIÓN — CORRECCIÓN LOCAL Y
+EVALUACIÓN OFFLINE, SIN MERCADO» — cubre corregir el borde temporal de la
+consulta operativa, corregir la etiqueta económica de las abstenciones, ejecutar
+pruebas locales y comprobar/aprovechar el dataset existente mediante análisis
+offline. **No** autoriza Binance, consultas públicas, capturas, órdenes,
+relanzamientos ni ventanas nuevas. `exp-v2-ventana-2-20261112a` **no** se
+reutiliza ni se relanza.
+
+**Veredicto:** el defecto que produjo las **179 abstenciones** de la ventana
+`exp-v2-ventana-2-20261112a` **queda corregido** (corrección de
+**implementación**, no de metodología) y **aceptado por el recorrido
+productivo real** en loopback. El dataset existente **no permite reevaluar la
+ventana económicamente**: permite probar la corrección a nivel de consulta
+(**179/179**) y cuantificar los faltantes, pero **no** hay P&L recalculable.
+
+| | |
+|---|---|
+| Base publicada | `3e4ad0fa15bec9c7f3c2c187fed014b2a4d5d5ec` (`research/universe-liquidez-v1`, local == remoto) |
+| Cambio | `scripts/research_pilot.py` (borde de la consulta) + `scripts/research_operativo_adapter.py` (etiquetado) + `tests/test_pilot_operativo_consulta_temporal.py` (nuevo) |
+| Inicio de la trayectoria 1 m | `decision_ms - step_ms` → **`floor(decision_ms/step)*step - step`** |
+| Tope de filas | 62 → **63** (la serie debe pasar del horizonte para acreditar el cierre por horizonte) |
+| Extremo final | `now + step_ms` (**sin tocar**) |
+| `decision_ms` | **sin cambios**: sigue siendo el instante real de evaluación |
+| Evidencia | [INFORME](evidence/exp-v2-borde-consulta-20261114/INFORME.md) |
+
+### Qué cambia y qué no
+
+Se **preservan** la selección, la dirección, la referencia de señal (close de la
+última vela 1 m **plenamente cerrada en T**), el fill causal en la apertura
+posterior a T, el stop, el horizonte, el notional, la capacidad compartida y la
+prioridad, los costes y la contabilidad de funding. `_vela_plenamente_conocida_en`
+(`close_time_ms <= decision_ms`) **no** cambia: el cierre futuro de la vela que
+contiene a T sigue descartado. La regla **no** se altera para producir
+entradas: si la referencia no existe, la abstención sigue siendo explícita.
+
+El tope pasa a 63 porque el motor solo acredita el cierre por horizonte cuando
+la serie **pasa** del horizonte; con 62 filas y el inicio corregido la serie
+acababa en la vela del horizonte y el cierre por horizonte se convertía en
+`open_at_end` (marca, no salida ejecutada). **El inicio no se resuelve
+truncando la salida.**
+
+### Aceptación local (recorrido productivo real, sin mercado)
+
+CLI real como subproceso + proveedores HTTP/WS **loopback** (que respetan
+`openTime >= startTime` y el tope `limit`) + reloj manual + almacenamiento
+temporal. Recorrido: selección → observación → consulta de trayectoria →
+adaptador → motor → persistencia.
+
+`python -m pytest tests/test_pilot_operativo_consulta_temporal.py -v` →
+**9 passed** (código de salida observado 0). Instantes de decisión probados:
+exacto en el minuto, +1 ms, los desfases publicados **12 527** y **19 298**,
+59 998, 59 999 y el cambio de minuto.
+
+Observado con el mismo arnés (código publicado → código corregido):
+**5/7** casos sin la vela de referencia y 2 entradas **antes** → **0/7** sin
+vela de referencia, **7 entradas y 7 salidas ejecutadas** después. Se comprueba
+que el fill es posterior a T, que la referencia cierra en `≤ T`, que el stop
+se deriva de ese close, que la serie llega hasta la primera vela que abre tras
+el horizonte, que los datos realmente ausentes dan abstención explícita, que la
+capacidad compartida sigue siendo 1 posición y que persistencia y resumen son
+coherentes. Regresiones directamente afectadas: **57 + 50 passed**; suite
+completa 1 918 passed, 2 skipped y 12 fallos **preexistentes y ajenos**
+(idénticos con el código publicado).
+
+### Etiquetado honesto
+
+`neto_motivo` distingue cuatro estados reales: abstención sin posición;
+rechazo por capacidad sin posición; posición realmente abierta sin salida
+(fill acreditado, salida no ejecutada); y operación cerrada con funding
+incompleto (`CONDICIONADO_SIN_FUNDING_COMPLETO`). Es un cambio de etiqueta,
+no de contabilidad: `UNKNOWN` sigue siendo `UNKNOWN`.
+
+### Presupuesto (sin red, ruta de preparación separada)
+
+`--budget-only` con la forma final del comando publicado: gate **13/13**
+(`cabe_en_limites: true`), peso estimado **1 472**, intentos base + reservas
+**1 334**, almacenamiento reservado **82 174 080 B** y **0 claves distintas**
+frente al presupuesto publicado. **No se aumenta ningún cupo.**
+
+### REEvaluación offline del dataset existente: qué permite y qué no
+
+Reevaluación **posterior a corregir un defecto de implementación**, **no** una
+validación prospectiva independiente. El original se abre **solo en lectura** y
+sus hashes se verifican antes y después (**intacto**).
+
+- **A nivel de consulta (exacto):** se reconstruyen las **179** consultas de
+  trayectoria del ledger; el `startTime` registrado coincide con
+  `decision_ms - 60 000` en **179/179**; con el borde publicado la vela cerrada
+  en T quedaba dentro de la serie en **0/179** y con el borde corregido en
+  **179/179**; la serie corregida pasa del horizonte en **179/179**.
+- **A nivel económico:** **no** se puede reevaluar. Los cuerpos de las
+  respuestas `klines` no se persistieron (el ledger conserva solo
+  `response_sha256` y `response_item_count`: un hash no sustituye las velas);
+  la serie 1 m capturada (`research_flow_1m`, 1 253 filas) es de **aggTrade**,
+  no la serie `klines` del venue, y no cubre el horizonte de ninguna
+  observación: **0/179** trayectorias completas, 11 277 velas necesarias, 5 006
+  disponibles, **6 271 faltantes (55,6 %)**; y el funding no tiene ninguna
+  liquidación (0 B, 0 peticiones `fundingRate`). Neto COMPLETO `n = 0`,
+  CONDICIONADO `n = 0` (ambos `null`), UNKNOWN 179; comparación
+  candidato/comparador **`INSUFICIENTE`**.
+
+La ventana `exp-v2-ventana-2-20261112a` **sigue siendo INSUFICIENTE**: la
+corrección elimina la causa artificial de las abstenciones, pero **no** aporta
+evidencia sobre la hipótesis económica. Una evaluación económica exige una
+**ventana nueva con autorización propia**, que este bloque **no** abre ni
+propone automáticamente.
+
+### Lo que esta corrección NO acredita
+
+No acredita rentabilidad, edge ni ejecutabilidad; no acredita la comparación
+candidato/comparador; no ejercita funding contra el venue (en la aceptación
+local no hay calendario real, luego las operaciones cerradas quedan
+`CONDICIONADO_SIN_FUNDING_COMPLETO`); no cubre futuros con vencimiento (el
+selector sigue limitado a PERPETUAL/TRADING/USDT); y no está validada contra
+el venue (la evidencia es local en loopback más la reconstrucción determinista
+sobre el ledger real).
 
 ## Ventana `exp-v2-ventana-2-20261112a` — EJECUTADA y cerrada (2026-11-14)
 
@@ -94,6 +213,10 @@ Código implicado: `scripts/research_pilot.py::_consultar_trayectoria_operativa`
 `scripts/research_operativo_adapter.py::_vela_plenamente_conocida_en`
 (exige `close_time_ms <= decision_ms`).
 
+> **Resuelto el 2026-11-14:** ambas piezas se corrigieron y se aceptaron
+> localmente (ver el bloque de cabecera de este documento). El detalle del
+> diagnóstico que sigue se conserva como historia de la ventana.
+
 Es un **defecto determinista del borde de la consulta**, no una ausencia de
 datos de mercado, ni un límite de presupuesto, ni la capacidad compartida, ni
 una restricción del selector: la recepción WS, la cobertura y el presupuesto
@@ -106,6 +229,14 @@ esta ejecutada..."`, texto genérico que describe una posición abierta **inexis
 **La corrección del borde de la consulta es un cambio de metodología** que
 requiere autorización humana explícita y una ventana nueva: este bloque
 termina con el cierre de esta única ventana y **no relanza**.
+
+> **Actualizado el 2026-11-14 (bloque posterior, "Corrección del borde de la
+> consulta operativa"):** la autorización humana llegó y la corrección **se
+> ejecutó**; al implementarla se verificó que **no** era un cambio de
+> metodología sino una **corrección de implementación** (la regla no cambia:
+> se recupera un dato que la regla ya exigía y se restaura la cobertura final
+> que el tope de filas recortaba). Este bloque se conserva como registro
+> histórico del diagnóstico; el estado vigente está en el bloque de cabecera.
 
 ### Lo que esta ventana NO acredita
 

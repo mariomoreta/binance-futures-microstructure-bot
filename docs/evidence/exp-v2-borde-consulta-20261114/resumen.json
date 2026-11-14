@@ -1,0 +1,37 @@
+{
+  "borde_corregido_pasa_del_horizonte": 179,
+  "conclusion": "El dataset NO permite reevaluar economicamente la ventana: las velas klines del venue no se persistieron y la serie capturada (aggTrade) no cubre el horizonte de ninguna observacion. Si permite verificar la correccion a nivel de consulta (179/179) y quantify los faltantes.",
+  "consultas_de_trayectoria": 179,
+  "desfase_del_minuto": {
+    "12527": 12,
+    "12938": 14,
+    "12941": 13,
+    "13428": 16,
+    "13576": 17,
+    "13832": 14,
+    "13889": 16,
+    "13934": 15,
+    "14409": 12,
+    "14902": 15,
+    "15396": 15,
+    "19298": 20
+  },
+  "funding_bytes": 0,
+  "funding_peticiones": 0,
+  "neto_completo_n": 0,
+  "neto_conditionado_n": 0,
+  "neto_desconocido_n": 179,
+  "observaciones_aptas": 179,
+  "reconstruidas": 179,
+  "referencia_disponible_en_captura": 179,
+  "referencia_incluida_borde_corregido": 179,
+  "referencia_incluida_borde_publicado": 0,
+  "response_item_count_registrado": {
+    "62": 179
+  },
+  "source_run_id": "exp-v2-ventana-2-20261112a",
+  "trayectorias_completas_en_captura": 0,
+  "velas_disponibles_en_captura": 5006,
+  "velas_faltantes": 6271,
+  "velas_necesarias": 11277
+}

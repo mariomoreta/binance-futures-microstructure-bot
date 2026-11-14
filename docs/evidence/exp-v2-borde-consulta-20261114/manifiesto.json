@@ -1,0 +1,108 @@
+{
+  "correccion": "exp-v2-borde-consulta-20261114",
+  "dataset_original_fuera_de_git": {
+    "hashes": {
+      "cierre.json": {
+        "bytes": 581,
+        "sha256": "7084fd4d20145d3cba22777c586205993666a96a1e922115ab01e3ca9badef42"
+      },
+      "estado.json": {
+        "bytes": 10856,
+        "sha256": "85115d36f2353ab71195938068f7599df3e104cc97b9eb536753f2911db12a33"
+      },
+      "estado_lanzador.json": {
+        "bytes": 2919,
+        "sha256": "b6cecc44a4d42001da4b010f6f78c926844ef16a230177b1d08c8a4f0db699e5"
+      },
+      "exit_code.txt": {
+        "bytes": 3,
+        "sha256": "13bf7b3039c63bf5a50491fa3cfd8eb4e699d1ba1436315aef9cbe5711530354"
+      },
+      "funding_adquisicion.jsonl": {
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "http_requests.jsonl": {
+        "bytes": 632139,
+        "sha256": "a4baf04777f988a59e909d4ab9e8594c380b064b295595d0520ceae0a168428f"
+      },
+      "launcher.json": {
+        "bytes": 4668,
+        "sha256": "a8666ba7b8ae5088b45e8bcac411c48f0cd21889bf613f8bd9d3a7cfb7ed4e80"
+      },
+      "manifiesto.json": {
+        "bytes": 2960,
+        "sha256": "f4d83e106bb58257f7432eef3d8d33c9e49af8bcf7ab9e367f01e325afd35385"
+      },
+      "observaciones.jsonl": {
+        "bytes": 3154325,
+        "sha256": "a5a2684687c9ae70e3d0feb98bd2d2289dcd65cab636d7aa52e20287ed2e6bfd"
+      },
+      "research.db": {
+        "bytes": 2252800,
+        "sha256": "4885370c1628216dff7414194fe8b68770e51e1982710bb8cf5f4393d98a4760"
+      },
+      "research.db-shm": {
+        "bytes": 32768,
+        "sha256": "fd4c9fda9cd3f9ae7c962b0ddf37232294d55580e1aa165aa06129b8549389eb"
+      },
+      "research.db-wal": {
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "resultado_operativo.jsonl": {
+        "bytes": 144596,
+        "sha256": "5fbc964f2b48948b0736431e84ebdeefb06f6c4e5cc7afb6ba84420b74bbc73a"
+      },
+      "resumen.json": {
+        "bytes": 198374,
+        "sha256": "2b95b1078605a8720365a63799d83f77d16ba642733a2b5e1a1c1df39b4a2e8b"
+      },
+      "stderr.log": {
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "stdout.log": {
+        "bytes": 240,
+        "sha256": "1ab01e2934097cbd83cbe26f3ce5d079c3b1da01a6b62fdf835d668018c4e2b9"
+      }
+    },
+    "nota": "SOLO LECTURA: hashes verificados antes y despues de la reevaluacion, identicos (original intacto)",
+    "ruta": "C:\\proyectos\\binance-futures-data\\exp-v2-ventana-2-20261112a"
+  },
+  "derivados_reevaluacion_fuera_de_git": {
+    "hashes": {
+      "config_reevaluacion.json": {
+        "bytes": 846,
+        "sha256": "187b8bb502dbed37a68e1313195051ae99e2debea9e2eaf9ea60ac357bb107b4"
+      },
+      "hashes_derivados.json": {
+        "bytes": 3155,
+        "sha256": "20669383a57b574a9d6cf5a8ea2de5316b9931d6588901af8157e9a0012711f5"
+      },
+      "inventario_cobertura.jsonl": {
+        "bytes": 96258,
+        "sha256": "652abbb11bc56cc5e44eb07de40fea0eb14f2c6d4cc71a3a9ddc0513959aad49"
+      },
+      "neteo_conclusion.json": {
+        "bytes": 608,
+        "sha256": "8a747c72cc14da19fa8503152c73b9a2776dab775ed55d43f3f5570d4aa1ccfc"
+      },
+      "reconstruccion_consulta.jsonl": {
+        "bytes": 146787,
+        "sha256": "9acbc88af59989802ae3671ce88396d9f2227d93948b0868e75d2518dc2f6fb9"
+      },
+      "resumen.json": {
+        "bytes": 1171,
+        "sha256": "dcb5d09ed30c9e798e05940c89e64e6bbcef674a70739cc541b9d495456cb4ee"
+      }
+    },
+    "ruta": "C:\\proyectos\\binance-futures-data\\exp-v2-ventana-2-20261112a-reevaluacion-offline"
+  },
+  "generado_utc": "2026-11-14T15:16:08.950011+00:00",
+  "presupuesto_recalculado_fuera_de_git": {
+    "nota": "ruta de preparacion separada; el artefacto tambien se publica aqui (presupuesto_borde.json)",
+    "ruta": "C:\\Users\\adonm\\AppData\\Local\\Temp\\opencode\\presupuesto-borde-v1"
+  },
+  "source_run_id": "exp-v2-ventana-2-20261112a"
+}

@@ -1,0 +1,20 @@
+{
+  "comparacion_candidate_comparator": {
+    "estado": "INSUFICIENTE",
+    "motivo": "0 operaciones evaluables con datos completos"
+  },
+  "completos": {
+    "n": 0,
+    "nota": "ninguna operacion con funding acreditado",
+    "suma_usdt": null
+  },
+  "condicionados": {
+    "n": 0,
+    "nota": "ninguna operacion con trayectoria completa evaluable en el dataset",
+    "suma_usdt": null
+  },
+  "desconocidos": {
+    "motivo": "no hay velas klines del venue persistidas y la serie capturada (aggTrade) no cubre el horizonte de ninguna observacion; el funding no tiene ninguna liquidacion",
+    "n": 179
+  }
+}

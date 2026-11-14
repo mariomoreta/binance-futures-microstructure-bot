@@ -262,6 +262,39 @@ def ceil_ms(value_ms: int, step_ms: int) -> int:
     return -(-int(value_ms) // int(step_ms)) * int(step_ms)
 
 
+def floor_ms(value_ms: int, step_ms: int) -> int:
+    """Ultimo multiplo de ``step_ms`` <= ``value_ms`` (alineacion a la baja)."""
+    if step_ms <= 0:
+        raise ValueError("step_ms must be positive")
+    return (int(value_ms) // int(step_ms)) * int(step_ms)
+
+
+def inicio_trayectoria_operativa(decision_ms: int, step_ms: int) -> int:
+    """Apertura inicial de la serie 1m para la trayectoria operativa.
+
+    La regla exige el close de la ULTIMA vela 1m plenamente cerrada en T
+    (``close_time_ms = open_time_ms + step_ms - 1 <= T``). Esa vela abre en
+    ``floor((T+1)/step)*step - step``.
+
+    El proveedor filtra ``openTime >= startTime``, asi que el inicio de la
+    consulta debe ser un limite inferior que la INCLUYA siempre. Se usa
+    ``floor(T/step)*step - step``, que es igual a esa apertura salvo en el
+    ultimo milisegundo del minuto (``T mod step == step-1``), donde queda una
+    vela antes: incluirla de mas es inocuo (el adaptador elige la ultima vela
+    cerrada en T) y mantiene el rango alineado al paso.
+
+    Con ``decision_ms - step_ms`` la vela de referencia quedaba EXCLUIDA
+    siempre que T no estuve alineado al minuto, y la serie empezaba en la
+    vela que CONTIENE a T, cuyo cierre es posterior a T y por tanto no puede
+    ser la referencia.
+
+    Se conserva ``decision_ms`` real: no se redondea ni se retrotrae el
+    instante de la decision. La correccion solo alinea el BORDE de la
+    consulta para recuperar un dato que la regla ya exigia.
+    """
+    return floor_ms(decision_ms, step_ms) - step_ms
+
+
 def iso_utc(ms: int) -> str:
     return datetime.fromtimestamp(int(ms) / 1000, tz=timezone.utc).isoformat()
 
@@ -3055,11 +3088,23 @@ class ResearchPilot:
         """
         decision_ms = int(obs["decision_ms"])
         step_ms = INTERVAL_MS[self.cfg.price_interval]
-        start_ms = decision_ms - step_ms
+        # BORDE DE CONSULTA: se incluye la ultima vela 1m plenamente cerrada
+        # en T (abre en floor(T/step)*step - step). El extremo final no se
+        # toca: la serie sigue cubriendo entrada, gestion y horizonte.
+        start_ms = inicio_trayectoria_operativa(decision_ms, step_ms)
         end_ms = now + step_ms
         rows, _ = self.rest.klines(
             symbol, self.cfg.price_interval, start_ms, end_ms,
-            limit=int(self.operativo.cfg.horizon_ms // 60_000) + 2,
+            # Filas necesarias: desde la vela cerrada en T (abre en
+            # floor(T/step)*step - step) hasta la PRIMERA vela que abre
+            # DESPUES del horizonte (floor(T+horizonte)/step + step). Esa
+            # ultima vela es imprescindible: la regla solo acredita el
+            # cierre por horizonte cuando la serie pasa del horizonte; si
+            # acaba dentro, el motor marca "open_at_end" (marca, no salida
+            # ejecutada). Con horizonte multiplo del paso son
+            # horizon/step + 3 velas (63 con 1m y 60 min).
+            limit=ceil_ms(int(self.operativo.cfg.horizon_ms), step_ms)
+            // step_ms + 3,
         )
         if not rows:
             return None, "sin_trayectoria_en_la_consulta"

@@ -3930,6 +3930,8 @@ esearch/universe-liquidity-v1. Documento docs/RESEARCH_UNIVERSE_LIQUIDITY_V1.md 
 
 **7. Next step:** la ventana queda **cerrada**: no relanzar, no reutilizar `exp-v2-ventana-2-20261112a`, no inventar otro `run_id` automaticamente, no ampliar duracion, exposicion, consultas ni cupos. Siguiente paso propuesto, **pendiente de autorizacion humana explicita**: corregir el borde de la consulta para que la trayectoria 1 m incluya la vela **plenamente cerrada en T** (sin romper la regla causal: `decision_ms` sigue siendo el instante real de evaluacion y el precio de referencia sigue siendo el close de la ultima vela conocida en T, nunca `bucket_end` ni un precio retrotrado), con pruebas locales para el caso desalineado y alineado al minuto, registrar el cambio de contrato en `docs/DECISIONS.md` y recalcular `--budget-only` **en una ruta de preparacion separada**; corregir ademas el `neto_motivo` generico de las abstenciones (cambio de etiqueta, no de contabilidad). Despues, una ventana **nueva** con `run_id` nuevo y autorizacion propia. Mantener la via B (`funding-coverage/v1`) sin tocar y diferida; no reabrir `public-pilot-1h-20261106a` salvo defecto que cambie la decision economica.
 
+> **Reconciliacion 2026-11-14:** la correccion del borde de la consulta **se ejecuto, se acepto localmente y se cerro** (ver `piloto/borde-consulta-corregido-20261114`). Al implementarla se verifico que **no** era un cambio de metodologia sino una **correccion de implementacion**, y se detecto ademas que el tope de filas (62) recortaba el final de la serie, con lo que el cierre por horizonte no se acreditaba. El dataset existente **no** permite reevaluar la ventana economicamente (faltan las velas `klines` del venue, la serie capturada es de aggTrade y no cubre el horizonte, y no hay funding). La ventana sigue **cerrada** y **no se reutiliza ni se relanza**.
+
 ## F-PATRONES-EXTREMOS-CONTEXTO-20261112 — Patrones y ficha del contrato
 
 **1. Title:** Investigar anticipación antes de expansiones y condiciones de
@@ -3966,3 +3968,139 @@ cero ni se promete acierto casi perfecto.
 **7. Next step:** Completar el bloque activo de recepción/evaluación sin
 alterarlo. Después definir un estudio acotado y revisable con unas pocas
 variables; no iniciar capturas ni desarrollo de UI por esta anotación.
+
+
+## piloto/borde-consulta-corregido-20261114 (2026-11-14, base `3e4ad0f`)
+
+**1. Title:** Corregir el **defecto determinista del borde de la consulta
+operativa** que produjo las 179 abstenciones de la ventana
+`exp-v2-ventana-2-20261112a` (la vela 1 m plenamente cerrada en T quedaba
+excluida de la trayectoria cuando `decision_ms` no estaba alineado al minuto),
+corregir la **etiqueta economica** de las abstenciones (una fila con `qty = 0`
+no puede describirse como "posicion abierta") y **reevaluar offline** el
+dataset ya capturado para determinar cuanto puede evaluarse con el material
+existente. Correccion, pruebas locales y analisis offline **sin mercado**.
+
+**2. Approval status:** AUTORIZADO por el bloque humano del 2026-11-14:
+"AUTORIZACION - CORRECCION LOCAL Y EVALUACION OFFLINE, SIN MERCADO". Cubre
+corregir el borde temporal de la consulta operativa, corregir la etiqueta
+economica de las abstenciones, ejecutar pruebas locales y comprobar/aprovechar
+el dataset existente mediante analisis offline. NO autoriza Binance,
+consultas publicas, capturas, ordenes, relanzamientos ni ventanas nuevas;
+`exp-v2-ventana-2-20261112a` no se reutiliza ni se relanza.
+
+**3. Implementation status:** IMPLEMENTADO (minimo, sin protocolo ni motor
+paralelo). (a) `scripts/research_pilot.py`: nueva funcion pura
+`inicio_trayectoria_operativa(decision_ms, step_ms) =
+floor(decision_ms/step)*step - step` (con `floor_ms`), usada en
+`_consultar_trayectoria_operativa`; el tope de filas pasa de
+`horizon_ms // 60_000 + 2` (62) a `ceil(horizon_ms/step)//step + 3` (63) y el
+extremo final (`now + step_ms`) **no** se toca. (b)
+`scripts/research_operativo_adapter.py`: nuevo helper puro
+`_motivo_sin_neto(tr)` que clasifica el estado real de cada fila sin neto
+acreditado (abstencion sin posicion; rechazo por capacidad sin posicion;
+senal admitida sin fill; descarte sin posicion; posicion realmente abierta),
+mas la etiqueta explicita "operacion cerrada con funding incompleto" para el
+neto `CONDICIONADO_SIN_FUNDING_COMPLETO`. (c) Nuevo fichero de aceptacion
+`tests/test_pilot_operativo_consulta_temporal.py` con proveedores HTTP/WS
+loopback propios que respetan `openTime >= startTime` y el tope `limit`.
+**Clasificacion: correccion de implementacion**, no cambio de metodologia:
+no cambian `decision_ms` (ni se redondea ni se retrotrae), la seleccion, la
+direccion, la referencia de senal (close de la ultima vela 1 m cerrada en T),
+el fill causal en la apertura posterior a T, el stop, el horizonte, el notional,
+la capacidad compartida y la prioridad, los costes ni la contabilidad de
+funding; `_vela_plenamente_conocida_en` (`close_time_ms <= decision_ms`) no
+cambia y sigue descartando el cierre futuro de la vela que contiene a T. Sin
+indicadores, on-chain, GARCH, futuros con vencimiento, infraestructura ni
+dependencias nuevas; `opencode.json`, ficheros ajenos, DBs canonicas, dashboard
+3020 y servicio 8792 intactos.
+
+**4. Evaluation status:** ACREDITADO EN LOCAL, SIN MERCADO. (a) **Defecto
+reproducido por el recorrido productivo real** (CLI real como subproceso,
+proveedores HTTP/WS loopback que respetan el filtrado por apertura y el tope
+de filas, reloj manual y almacenamiento temporal; no se llama al adaptador con
+velas preparadas por el test): contra el codigo publicado, 5/7 instantes de
+decision terminan en `SIN_ENTRADA` con `funding_estado = "sin vela 1m
+plenamente conocida en T"` (incluidos los desfases reales publicados 12 527 y
+19 298) y solo 2 entradas; con la correccion, 0/7 abstenciones por falta de
+referencia, 7 entradas y 7 salidas ejecutadas, fill posterior a T, `stop_px`
+derivado del close de la vela cerrada en T y serie hasta la primera vela que
+abre tras el horizonte (63 filas). (b) **Instantes probados**: exacto en el
+minuto, +1 ms, 12 527, 19 298, 59 998, 59 999 y cambio de minuto; mas LONG y
+SHORT, capacidad compartida (1 posicion), datos realmente ausentes (abstencion
+explicita), los cuatro estados de `neto_motivo` y coherencia
+persistencia/resumen. **9 passed** en
+`tests/test_pilot_operativo_consulta_temporal.py` (codigo de salida observado
+0). (c) **Regresiones directamente afectadas**: 57 passed (piloto, motor
+operativo local, recorrido productivo, aceptacion de coordinacion) + 50 passed
+(adaptador, capacidad/presupuesto, CLI integrado, monitor, funding coverage);
+suite completa 1 918 passed, 2 skipped y 12 fallos **preexistentes y ajenos**
+(identicos con el codigo publicado: `test_engineering_live_window_local`,
+`test_market_stream_window`, `test_public_run_deadline`,
+`test_session_new_public_market`). (d) **Presupuesto** recalculado con
+`--budget-only` **sin red** en ruta de preparacion separada: gate **13/13**
+(`cabe_en_limites: true`), peso estimado **1 472**, intentos base + reservas
+**1 334**, almacenamiento reservado **82 174 080 B** y **0 claves distintas**
+frente al presupuesto publicado: **no se aumenta ningun cupo**. (e)
+**Reevaluacion offline del dataset** (posterior a la correccion, NO validacion
+prospectiva): reconstruccion exacta de las **179** consultas de trayectoria del
+ledger (`startTime` registrado == `decision_ms - 60 000` en **179/179**; con el
+borde publicado la vela cerrada en T quedaba dentro en **0/179** y con el borde
+corregido en **179/179**; la serie corregida pasa del horizonte en **179/179**);
+pero **no** se puede reevaluar economicamente: los cuerpos de las respuestas
+`klines` no se persistieron (el ledger conserva solo `response_sha256` y
+`response_item_count`), la serie 1 m capturada (`research_flow_1m`, 1 253
+filas) es de **aggTrade** y no cubre el horizonte de ninguna observacion
+(**0/179** trayectorias completas; 11 277 velas necesarias, 5 006 disponibles,
+**6 271 faltantes = 55,6 %**) y no hay ninguna liquidacion de funding (0 B, 0
+peticiones). Neto **COMPLETO `n = 0`**, **CONDICIONADO `n = 0`** (ambos
+`null`), UNKNOWN 179; comparacion candidato/comparador **`INSUFICIENTE`**.
+
+**5. Evidence:** `docs/evidence/exp-v2-borde-consulta-20261114/` (`INFORME.md`
+con las tres capas y el antes/despues, `antes_despues.json`,
+`aceptacion_local.json` + `aceptacion_pytest.txt`,
+`reconstruccion_consulta.jsonl` con 179 filas,
+`inventario_cobertura.jsonl` con 179 filas, `neteo_conclusion.json`,
+`resumen.json`, `config_reevaluacion.json`, `presupuesto_borde.json`,
+`presupuesto_comparacion.json`, `manifiesto.json`, `hashes.json`); dataset
+original **intacto** (hashes verificados antes y despues) en
+`C:\proyectos\binance-futures-data\exp-v2-ventana-2-20261112a`; derivados de
+la reevaluacion en
+`C:\proyectos\binance-futures-data\exp-v2-ventana-2-20261112a-reevaluacion-offline`;
+`tests/test_pilot_operativo_consulta_temporal.py`;
+`scripts/research_pilot.py`; `scripts/research_operativo_adapter.py`;
+`docs/EXPERIMENTO_OPERATIVO_V2.md` 10.16; `docs/CURRENT_STATE.md`;
+`docs/TASK_QUEUE.md`; `docs/DECISIONS.md` 2026-11-14.
+
+**6. Verdict:** el defecto que vacio la capa de ejecucion **queda cerrado como
+correccion de implementacion**, no como cambio de metodologia: la regla no se
+toca y lo que se recupera es un dato que la regla ya exigia. La aceptacion
+local demuestra, por el recorrido productivo real, que el problema no era de
+cobertura, presupuesto, capacidad ni selector, y que el tope de filas tambien
+recortaba el final de la serie (el cierre por horizonte solo se acredita si la
+serie pasa del horizonte): corregir solo el inicio habria convertido el cierre
+por horizonte en una marca `open_at_end`, asi que el limite pasa a 63 **sin
+truncar la salida**. El etiquetado ahora describe el estado real de cada fila
+y `UNKNOWN` sigue siendo `UNKNOWN`. El dataset existente **no** permite
+reevaluar la ventana economicamente: su limit es estructural (no se
+persistieron las velas del venue, la serie capturada es de otra fuente y no
+cubre el horizonte, y no hay funding). La ventana
+`exp-v2-ventana-2-20261112a` **sigue siendo INSUFICIENTE** y la correccion
+**no aporta ninguna evidencia sobre la hipotesis economica**.
+
+**7. Next step:** **no hay tarea activa** en este bloque. Una ventana nueva
+con el borde corregido **exige autorizacion humana explicita**, `run_id` nuevo
+y su propia ejecucion; este bloque **no** la abre ni la propone
+automaticamente. Mantener la via B (`funding-coverage/v1`) sin tocar y
+diferida; no reabrir `public-pilot-1h-20261106a` salvo defecto que cambie la
+decision economica; no reutilizar ni relanzar `exp-v2-ventana-2-20261112a`.
+
+### Cierre (siete campos, obligatorios)
+
+- `DECISIONS_REVIEWED` — AGENTS, WORKFLOW, CURRENT_STATE, TASK_QUEUE, DECISIONS (entradas del lanzador temporal, del cierre de la ventana y la nueva del 2026-11-14), `docs/EXPERIMENTO_OPERATIVO_V2.md` (10.13-10.16), `docs/FEATURE_BACKLOG.md` (entradas `lanzador/defectos-plazo-cierre-20261113` y `piloto/ventana-2-20261112a-ejecutada-20261114`), `docs/PAPER_TRADING.md`, `docs/RISK_RULES.md` y la PROPUESTA de la ventana 2.
+- `NEW_DECISIONS_RECORDED` — DECISIONS 2026-11-14 "Correccion del borde temporal de la consulta operativa y etiquetado honesto de las abstenciones": (a) correccion del inicio y del tope de filas con el extremo final intacto; (b) clasificacion como correccion de implementacion y que NO se cambia la regla; (c) etiquetado honesto de los cuatro estados; (d) presupuesto recalculado sin red e identico; (e) reevaluacion offline declarada como posterior a la correccion y no validacion prospectiva; (f) que el dataset no permite reevaluacion economica; (g) alcance y limites; (h) evidencia.
+- `FEATURES_IMPLEMENTED` — `inicio_trayectoria_operativa` + `floor_ms` y su uso en `_consultar_trayectoria_operativa`; tope de filas 63 derivado del paso y del horizonte; `_motivo_sin_neto` y la etiqueta de operacion cerrada con funding incompleto; `tests/test_pilot_operativo_consulta_temporal.py` con proveedores loopback fieles.
+- `FEATURES_VERIFIED` — reproduccion del defecto por el recorrido real contra el codigo publicado (5/7 abstenciones) y superacion tras la correccion (0/7, 7 entradas y 7 salidas); 7 instantes de decision exigidos; LONG y SHORT; fill posterior a T; stop derivado del close conocido en T; serie hasta la vela posterior al horizonte; abstentions explicita por datos ausentes; capacidad compartida; coherencia de persistencia y resumen; los cuatro estados de `neto_motivo`; 9 passed + 57 + 50 regresiones; suite completa con 12 fallos preexistentes y ajenos identificados; `--budget-only` sin red con 0 claves distintas frente al publicado.
+- `DEFERRED_FEATURES` — ventana operativa nueva (requiere autorizacion humana explicita y `run_id` nuevo); via B (`funding-coverage/v1`); persistencia de los cuerpos de las respuestas `klines` en el recorder (no se anade en este bloque); cobertura de futuros con vencimiento; mobile/Flutter; inspeccion visual por modelo.
+- `BACKLOG_UPDATED` — yes: esta entrada + reconciliacion del `Next step` de `piloto/ventana-2-20261112a-ejecutada-20261114` + `CURRENT_STATE`, `TASK_QUEUE`, `DECISIONS` y `EXPERIMENTO_OPERATIVO_V2` (10.16).
+- `DOCUMENTATION_CONFLICTS` — la entrada de la ventana ejecutada describia la correccion del borde como "cambio de metodologia" y la deaba pendiente: al implementarla se verifico que es una **correccion de implementacion** (la regla no cambia). Se conserva el texto historico y se anade la reconciliacion explicita; `CURRENT_STATE` mantiene el bloque de la ventana con una nota de actualizacion. El tope de filas de 62 a 63 es un dato nuevo (el published recortaba el final de la serie) y no existia documentado antes.

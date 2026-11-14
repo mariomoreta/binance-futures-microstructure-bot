@@ -843,9 +843,7 @@ class OperativoAdapter:
             row["net_pnl_marca"] = tr.net_pnl
             row["net_pnl"] = None
             row["neto_estado"] = "UNKNOWN"
-            row["neto_motivo"] = (
-                "posicion abierta: la salida no esta ejecutada y el P&L no "
-                "es realizado")
+            row["neto_motivo"] = _motivo_sin_neto(tr)
         elif tr.net_pnl is None:
             row["neto_estado"] = "UNKNOWN"
             row["neto_motivo"] = "sin resultado neto disponible"
@@ -857,12 +855,12 @@ class OperativoAdapter:
             row["neto_estado"] = "CONDICIONADO_SIN_FUNDING_COMPLETO"
             if contabilidad and contabilidad.get("motivo"):
                 row["neto_motivo"] = (
-                    "funding no acreditado: %s; el neto no es completo"
-                    % contabilidad["motivo"])
+                    "operacion cerrada con funding incompleto: %s; el neto no "
+                    "es completo" % contabilidad["motivo"])
             else:
                 row["neto_motivo"] = (
-                    "resultado numerico sin funding completo; no es neto "
-                    "completo")
+                    "operacion cerrada con funding incompleto: resultado "
+                    "numerico sin funding completo; no es neto completo")
         return self._escribir(row)
 
     def _config_hash(self) -> str:
@@ -882,6 +880,39 @@ class OperativoAdapter:
 
 
 # --- Helpers puros ---------------------------------------------------------
+
+def _motivo_sin_neto(tr: OperativoTradeResult) -> str:
+    """Motivo honesto para una fila SIN neto acreditado.
+
+    Distingue cuatro estados reales y nunca describe como "posicion abierta"
+    una fila que no abrio posicion:
+
+    1. Posicion realmente abierta (fill acreditado, salida no ejecutada).
+    2. Abstencion sin posicion (no hubo entrada: no se ejecuto ningun fill).
+    3. Rechazo por capacidad sin posicion (no se admitio la entrada).
+    4. Senal admitida sin fill (no se pudo ejecutar la entrada).
+
+    La posicion existe solo si el fill se acreditó (entry_ms y qty). Un
+    ``UNKNOWN`` sigue siendo ``UNKNOWN``: el motivo no convierte el
+    desconocimiento en cero ni promete una posicion inexistente.
+    """
+    decision = str(tr.decision or "").upper()
+    posicion_real = (tr.entry_ms is not None
+                      and (tr.qty or 0.0) > 0.0)
+    if posicion_real:
+        return ("posicion abierta: la salida no esta ejecutada y el P&L no "
+                "es realizado")
+    if decision == "RECHAZADA_CAPACIDAD":
+        return ("rechazo por capacidad sin posicion: no se abrio ninguna "
+                "entrada")
+    if decision == "ENTRADA_SIMULADA":
+        return ("senal admitida sin fill: no se abrio posicion (no hubo "
+                "apertura posterior a T)")
+    if decision == "DESCARTADO":
+        return ("descarte del motor sin posicion: no se abrio ninguna entrada")
+    return ("abstencion sin posicion: no se ejecuto ninguna entrada (motivo: "
+            "%s)" % (tr.funding_estado or "sin_dato_de_referencia_en_T"))
+
 
 def _vela_plenamente_conocida_en(
     velas: List[PaperCandle], at_ms: int,

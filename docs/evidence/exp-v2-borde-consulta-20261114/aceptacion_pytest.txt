@@ -1,0 +1,19 @@
+============================= test session starts =============================
+platform win32 -- Python 3.14.3, pytest-9.1.1, pluggy-1.6.0 -- C:\Python314\python.exe
+cachedir: .pytest_cache
+rootdir: C:\proyectos\binance-futures-microstructure-bot
+configfile: pyproject.toml
+plugins: anyio-4.14.1, langsmith-0.10.2
+collecting ... collected 9 items
+
+tests/test_pilot_operativo_consulta_temporal.py::test_borde_publicado_excluye_la_vela_de_referencia PASSED [ 11%]
+tests/test_pilot_operativo_consulta_temporal.py::test_borde_corregido_no_altera_la_extremidad_final PASSED [ 22%]
+tests/test_pilot_operativo_consulta_temporal.py::test_proveedor_loopback_respeta_el_filtrado_por_apertura PASSED [ 33%]
+tests/test_pilot_operativo_consulta_temporal.py::test_aceptacion_decisiones_no_alineadas_recuperan_la_referencia PASSED [ 44%]
+tests/test_pilot_operativo_consulta_temporal.py::test_recorrido_long_y_short_con_datos_sinteticos PASSED [ 55%]
+tests/test_pilot_operativo_consulta_temporal.py::test_capacidad_compartida_limitada_a_una_posicion PASSED [ 66%]
+tests/test_pilot_operativo_consulta_temporal.py::test_datos_realmente_ausentes_producen_abstencion_explicita PASSED [ 77%]
+tests/test_pilot_operativo_consulta_temporal.py::test_etiqueta_economica_distingue_los_cuatro_estados PASSED [ 88%]
+tests/test_pilot_operativo_consulta_temporal.py::test_persistencia_y_resumen_coherentes PASSED [100%]
+
+============================= 9 passed in 16.47s ==============================
