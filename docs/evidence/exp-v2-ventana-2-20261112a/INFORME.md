@@ -36,7 +36,7 @@ vivo. En esta ventana, además, **no hubo ninguna operación** (§3).
 
 | Fase | Mecanismo | Observado | Techo autorizado |
 |---|---|---|---|
-| 1. Captura | `--duration-seconds 3600`, 12 ciclos de 300 s | **3 600 s**, 12/12 ciclos, 0 ciclos saltados, 34 rotaciones de salida | 3 600 s |
+| 1. Captura | `--duration-seconds 3600`, 12 ciclos de 300 s | **3 600 s**, 12/12 ciclos, 0 ciclos saltados, 20 símbolos/ciclo (12 candidatos + 8 comparadores) | 3 600 s |
 | 2. Resolución (settle) | `--settle-seconds 4200` | **4 200 s**, 537/537 resultados resueltos, 0 pendientes | ≤ 4 200 s |
 | 3. Espera contable | `--funding-wait-seconds 32400` | **NO se abrió** (`inicio_ms: null`, `fin_ms: null`): no había posición abierta que liquidar; 0 consultas de funding | ≤ 32 400 s |
 | 4. Cierre y persistencia | margen exclusivo del lanzador | feeds cerrados, `ResearchRecorder` en `STOPPED`, manifiesto y resumen escritos | 300 s |
