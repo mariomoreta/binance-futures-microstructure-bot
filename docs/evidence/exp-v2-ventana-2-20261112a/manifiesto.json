@@ -1,0 +1,83 @@
+{
+  "config": {
+    "activar_publico": true,
+    "capture_protocol_version": 3,
+    "clock_file": null,
+    "clock_mode": "system",
+    "cycle_seconds": 300.0,
+    "decision_delay_seconds": 5.0,
+    "decision_gate_file": null,
+    "duration_seconds": 3600.0,
+    "funding_method": "observed-settlements",
+    "funding_source": "exchange",
+    "funding_wait_max_queries": 3,
+    "funding_wait_seconds": 32400.0,
+    "horizons": "5m=300000,15m=900000,60m=3600000",
+    "max_bytes": 134217728,
+    "max_candidates": 12,
+    "max_comparators": 8,
+    "max_data_age_ms": 5000,
+    "max_http_attempts": 2000,
+    "max_http_retries": 50,
+    "max_http_weight": 5000,
+    "max_messages": 5000000,
+    "max_observations": 20000,
+    "max_symbols": 20,
+    "max_ws_reconnects": 20,
+    "min_quote_volume_usdt": 1000000.0,
+    "mode": "public",
+    "out_dir": "C:\\proyectos\\binance-futures-data\\exp-v2-ventana-2-20261112a",
+    "pilot_version": "research-pilot-v2",
+    "policy_version": "research-selector-v2",
+    "price_delay_ms": 2000,
+    "price_interval": "1m",
+    "price_tolerance_ms": 90000,
+    "protocol_version": "prospective-protocol-v1",
+    "rest_base": "https://fapi.binance.com",
+    "run_id": "exp-v2-ventana-2-20261112a",
+    "selection_seconds": 300.0,
+    "settle_seconds": 4200.0,
+    "status_file": "C:\\proyectos\\binance-futures-data\\exp-v2-ventana-2-20261112a\\estado.json",
+    "stop_file": null,
+    "tick_ms": 500,
+    "ws_market_base": "wss://fstream.binance.com/market",
+    "ws_public_base": "wss://fstream.binance.com/public"
+  },
+  "dataset_location": "C:\\proyectos\\binance-futures-data\\exp-v2-ventana-2-20261112a",
+  "files": {
+    "estado.json": {
+      "bytes": 10856,
+      "sha256": "85115d36f2353ab71195938068f7599df3e104cc97b9eb536753f2911db12a33"
+    },
+    "funding_adquisicion.jsonl": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "http_requests.jsonl": {
+      "bytes": 632139,
+      "sha256": "a4baf04777f988a59e909d4ab9e8594c380b064b295595d0520ceae0a168428f"
+    },
+    "observaciones.jsonl": {
+      "bytes": 3154325,
+      "sha256": "a5a2684687c9ae70e3d0feb98bd2d2289dcd65cab636d7aa52e20287ed2e6bfd"
+    },
+    "research.db": {
+      "bytes": 2252800,
+      "sha256": "4885370c1628216dff7414194fe8b68770e51e1982710bb8cf5f4393d98a4760"
+    },
+    "resultado_operativo.jsonl": {
+      "bytes": 144596,
+      "sha256": "5fbc964f2b48948b0736431e84ebdeefb06f6c4e5cc7afb6ba84420b74bbc73a"
+    },
+    "resumen.json": {
+      "bytes": 198374,
+      "sha256": "2b95b1078605a8720365a63799d83f77d16ba642733a2b5e1a1c1df39b4a2e8b"
+    }
+  },
+  "git_head": "ab97b02203cb5ac49c04bf2c9a8472f181b74a49",
+  "nota": "dataset fuera de Git; se publican manifiesto, hashes y muestra pequena",
+  "pilot_version": "research-pilot-v2",
+  "policy_version": "research-selector-v2",
+  "protocol_version": "prospective-protocol-v1",
+  "run_id": "exp-v2-ventana-2-20261112a"
+}

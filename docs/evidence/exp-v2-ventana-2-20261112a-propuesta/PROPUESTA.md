@@ -1,13 +1,27 @@
 # Propuesta de UNA ventana operativa (vía A) — `exp-v2-ventana-2-20261112a`
 
-**Fecha:** 2026-11-12 · **Estado:** **PREPARADA, NO EJECUTADA** · **Vía:** A
+**Fecha:** 2026-11-12 · **Estado:** **EJECUTADA y CERRADA el 2026-11-14**
+(estado original de esta propuesta: *PREPARADA, NO EJECUTADA*) · **Vía:** A
 (`observed-settlements`) · **Cobertura:** PERPETUAL/TRADING/USDT
 
-En este bloque **no se ha abierto mercado**: solo se ejecutó `--budget-only`
-(cálculo puro, sin red). No hay órdenes, claves, cuentas privadas, dataset de
-investigación nuevo ni cambios de estrategia. El único cambio de código es el
-**control temporal del lanzador** (implementación local, probada con procesos
-locales): convierte el máximo de 40 500 s en un control efectivo del proceso.
+> **Registro de ejecución (2026-11-14).** Esta propuesta se ejecutó **una sola
+> vez** con el comando literal de §5 y las dos opciones temporales autorizadas
+> (`--work-timeout-seconds 40200 --shutdown-grace-seconds 300`), desde
+> `git_head ab97b02203cb5ac49c04bf2c9a8472f181b74a49`. Cierre **dentro de
+> plazo**: código del hijo **0** (observado) y veredicto del lanzador
+> **normal**, `cumplimiento_normal: true`, `exceso_maximo_total_s: 0,0`;
+> duración total **7 803,176 s** de un máximo de 40 500 s. Resultado económico
+> **INSUFICIENTE**: 179 abstenciones, 0 entradas, 0 P&L, por un defecto
+> determinista del borde de la consulta del precio de referencia. Informe:
+> [INFORME](../exp-v2-ventana-2-20261112a/INFORME.md). El `run_id` **no se
+> reutiliza** y la ventana **no se relanza**.
+
+En el bloque de preparación **no se abrió mercado**: solo se ejecutó
+`--budget-only` (cálculo puro, sin red). No hay órdenes, claves, cuentas
+privadas, dataset de investigación nuevo ni cambios de estrategia. El único
+cambio de código es el **control temporal del lanzador** (implementación local,
+probada con procesos locales): convierte el máximo de 40 500 s en un control
+efectivo del proceso.
 
 ---
 

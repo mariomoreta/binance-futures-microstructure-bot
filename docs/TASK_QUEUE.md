@@ -1,75 +1,104 @@
-# Cola vigente — objetivo operativo, 2026-11-12
+# Cola vigente — objetivo operativo, 2026-11-14
 
 `CURRENT_PHASE`: cierre de la **ventana pública única** del experimento
-operativo v2 por la **vía A** (espera contable con liquidaciones observadas),
-ejecutada el 2026-11-12 y declarada **INSUFICIENTE en la capa de datos**: el
-feed de trades (`/market`, `aggTrade`) no recibió ni un frame en toda la hora,
-las 232 observaciones se descartaron por `sin_flujo` y no hubo ninguna
-operación. El monitor de observabilidad de `/market-lab` funcionó y dejó
-evidencia de la corrida real. La **vía B** (`funding-coverage/v1`) se conserva
-sin cambios y sigue diferida. No es declaración de promoción formal.
+operativo v2 por la **vía A** (`observed-settlements`), **ejecutada una sola vez
+el 2026-11-14** (`run_id exp-v2-ventana-2-20261112a`, `git_head ab97b02…`) y
+**cerrada dentro de plazo**: transporte y cobertura **resueltos** (22
+conexiones WS, 845 161 mensajes, 0 reconexiones, 0 errores; **179** de 219
+observaciones aptas; 537/537 resultados resueltos, 0 pendientes) y **cero
+operaciones**: las **179 decisiones fueron abstenciones** por un defecto
+determinista del **borde de la consulta** del precio de referencia de entrada
+(`klines` con `startTime = decision_ms − 60 000` excluye la vela 1 m cerrada en
+T cuando `decision_ms` no está alineado al minuto: **0/179** lo estaban). El
+resultado económico es **INSUFICIENTE** (no nulo: `n = 0`, `null`). La **vía B**
+(`funding-coverage/v1`) se conserva sin cambios y sigue diferida. No es
+declaración de promoción formal.
 
 `CURRENT_OBJECTIVE`: evaluar si la autoselección del universo elegible, unida a
 una regla causal de dirección, entrada, stop-loss, gestión y salida, permite una
 expectativa neta favorable con riesgo controlado. Más movimiento por sí solo no
 satisface el objetivo. Dirección canónica: [PRODUCT_GOAL](PRODUCT_GOAL.md).
-**Sin datos de flujo no hay embudo y, por tanto, esta ventana no aporta
-evidencia sobre la hipótesis económica en ninguna dirección.**
+**El embudo de datos ya no es el bloqueo**: lo es la disponibilidad del precio
+de referencia en el instante de la decisión, que impidió que la regla llegara
+a la fase de entrada en las 179 observaciones. Esta ventana **no aporta
+evidencia sobre la hipótesis económica en ninguna dirección**.
 
-`ACTIVE_TASK`: dejar resuelto el **bloqueo material de datos** que vació el
-embudo, sin tocar la regla, la ventana ni el presupuesto congelados. El
-bloqueo concreto: la conexión WS de trades (`aggTrade`) se abrió, no registró
-errores, no reconectó y **no recibió frames**, mientras la conexión paralela
-de profundidad (`depth20@100ms`) recibió cientos de miles. El **diagnóstico
-publicado fue rectificado el 2026-11-12**: la configuración ejecutada usó la
-raíz sin categoría (`wss://fstream.binance.com/stream?...`), es decir la
-**URL antigua**, retirada por el venue el 2026-04-23; la forma vigente es
-`/public/stream` para libro y `/market/stream` para flujo. La
-incompatibilidad es **verificable**; su relación con el silencio es una
-**hipótesis fuerte** (documentada y coherente con la captura anterior del
-repo), no una causalidad pública demostrada, y no se atribuye el fallo a
-Binance. La causa raíz final sigue siendo **UNKNOWN**. La vía A **no llegó a
-ejercitarse** en su parte esencial (espera contable, liquidaciones observadas,
-neto COMPLETO vs. CONDICIONADO): eso se debe decir sin adornos, y la vía B
-permanece diferida sin ampliar ningún validador.
+`ACTIVE_TASK`: dejar resuelto el **defecto del borde de la consulta** que
+vació la capa de ejecución (sin tocar la regla, la ventana ni el presupuesto
+congelados), y después reejecutar **una sola** ventana con autorización humana
+nueva y explícita. El defecto es **verificable** en el ledger HTTP persistido
+de la corrida: el piloto pide la trayectoria 1 m con
+`klines(startTime = decision_ms − 60 000)` y Binance filtra
+`openTime >= startTime`; la última vela 1 m **plenamente cerrada en T** abre en
+`floor(T/60000)*60000 − 60 000`, **anterior** a ese `startTime` cuando
+`decision_ms` no está alineado al minuto. **Ninguna** de las 179 decisiones lo
+estaba (el segundo del minuto fue 12, 13, 14, 15 o 19 porque la decisión se
+toma en el corte + 5 s), de modo que la vela de referencia quedaba excluida en
+los 179 casos y la primera vela devuelta **cerraba después de T**: sin precio
+conocido en T, la regla solo podía abstenerse. Código implicado:
+`scripts/research_pilot.py::_consultar_trayectoria_operativa` y
+`scripts/research_operativo_adapter.py::_vela_plenamente_conocida_en`. **No es**
+una ausencia de datos de mercado, ni un límite de presupuesto, ni la capacidad
+compartida, ni una restricción del selector. **Corregirlo es un cambio de
+metodología**: requiere autorización humana explícita, un `run_id` nuevo y una
+ventana nueva; no se puede "arreglar" dentro de la ventana ya cerrada ni
+relanzarla. Se conserva además pendiente el **defecto secundario de
+etiquetado** (`neto_motivo` genérico de "posición abierta" en filas de
+abstención con `qty = 0`).
 
 `NEXT_TASKS`:
-1. **Ventana operativa única por la vía A: PROPUESTA y PREPARADA, NO
-   EJECUTADA (2026-11-12).** `run_id exp-v2-ventana-2-20261112a` (nuevo, nunca
-   ejecutado) y directorio
+1. **Ventana operativa única por la vía A: EJECUTADA y CERRADA (2026-11-14).**
+   `run_id exp-v2-ventana-2-20261112a` (ejecutado **una sola vez**, no
+   reutilizado) sobre el directorio
    `C:\proyectos\binance-futures-data\exp-v2-ventana-2-20261112a` (fuera de
-   Git, **no creado todavía**), con la configuración congelada y las rutas
-   WS corregidas `/public` y `/market`. Presupuesto calculado con
-   `--budget-only` **sin mercado**: `cabe_en_limites: true` (13/13), intentos
-   1 334/2 000 con reservas, peso 3 752/5 000, almacenamiento reservado
-   máximo 52 043 648 B de 134 217 728 B, funding 110 intentos reservados con
-   máximo concentrado 110/500 por 5 min, **2 conexiones simultáneas** y 46
-   aperturas acumuladas como máximo. Contrato temporal: captura 3 600 s →
-   settle ≤ 4 200 s → espera contable ≤ 32 400 s → cierre con margen
-   **propuesto de 300 s** (no autorizado); total máximo propuesto **40 500 s
-   (11 h 15 min)**. **Control temporal ya efectivo** (2026-11-12):
-   `scripts/run_pilot_window.py` admite `--work-timeout-seconds 40200` y
-   `--shutdown-grace-seconds 300` (opciones del lanzador, no del piloto), con
-   reloj monotónico y deadlines absolutos; al vencer el plazo de trabajo pide
-   la parada limpia, reserva un tranche final dentro del margen para la
-   terminación forzada y la persistencia, y devuelve **124** (parada limpia) o
-   **125** (forzada) sin declarar cumplimiento normal aunque el hijo devuelva
-   0. **Dos defectos materiales corregidos el 2026-11-13:** (a) las esperas de
-   terminación ya no pueden superar el plazo global (todo se acota al
-   restante del mismo deadline; `taskkill` pasó de 30 s fijos a "el
-   restante"); (b) el cierre se publica **basado en evidencia**
-   (`terminacion_hijo_observada`, `codigo_salida_estado`, `recursos_hijo:
-   UNKNOWN`), sin afirmar cierres del hijo que no se han observado, y la
-   duración publicada **incluye la persistencia** (exceso →
-   `incumplimiento_plazo_global`, código **126**).
-   Evidencia: [ANTES/DESPUES](evidence/lanzador-control-temporal/) ·
-   [DEFECTOS](evidence/lanzador-control-temporal/DEFECTOS/RESUMEN.md) ·
-   pruebas: `tests/test_pilot_launcher_temporal.py` (19 passed). Monitor:
+   Git), con la configuración congelada y las rutas WS por categoría
+   `/public` y `/market`. **Cierre acreditado y dentro de plazo:** código del
+   hijo `exit_code.txt` = **0** (observado); veredicto del lanzador
+   `cierre.json` = **normal**, `cumplimiento_normal: true`,
+   `codigo_lanzador: 0`, `exceso_maximo_total_s: 0,0`,
+   `incumplimiento_plazo_global: false`, `terminacion_hijo_observada: true`,
+   `recursos_hijo: UNKNOWN`; duración total **7 803,176 s** de un máximo de
+   **40 500 s** (19,3 %). Fases: captura 3 600 s (**12/12 ciclos**) → settle
+   **4 200 s** (537/537 resultados, 0 pendientes) → **espera contable NO
+   abierta** (0 consultas: no había posición abierta) → cierre. Consumos:
+   740 intentos HTTP (0 reintentos) con peso reservado 1 208/5 000; 22
+   conexiones WS de un techo de 46, 845 161 mensajes, 0 reconexiones, 0
+   errores; 6 183 860 B de almacenamiento de 134 217 728 B. **Economía
+   INSUFICIENTE:** 179 señales (LONG 88 / SHORT 91), **179 abstenciones**, 0
+   entradas, 0 rechazos de capacidad, 0 salidas, 0 posiciones abiertas; neto
+   COMPLETO `n = 0` y CONDICIONADO `n = 0`, ambos `null`; comparación
+   candidato/comparador **`INSUFICIENTE`** (0 ciclos con operaciones completas
+   en ambos roles, con cobertura de datos 12/12). **Causa raíz diagnosticada**
+   (borde de la consulta `klines`; 0/179 decisiones alineadas al minuto) y
+   **NO corregida**: corregirla es un cambio de metodología que exige
+   autorización humana y una ventana nueva. Evidencia:
+   [INFORME](evidence/exp-v2-ventana-2-20261112a/INFORME.md) (tres capas +
+   causa raíz) · `manifiesto.json`, `resumen.json`, `exit_code.txt`,
+   `estado_lanzador.json`, `cierre.json`, `causa_raiz_verificacion.json`,
+   `muestra_resultado_operativo.jsonl`, `hashes.json`. Monitor (solo lectura):
    `http://127.0.0.1:3020/market-lab?vista=piloto&run=exp-v2-ventana-2-20261112a`.
-   Detalle: [PROPUESTA](evidence/exp-v2-ventana-2-20261112a-propuesta/PROPUESTA.md).
-   **Requiere autorización humana explícita, también para el margen de
-   cierre**; no se ejecuta por iniciativa propia.
-2. **Diagnóstico WS de recepción: EJECUTADO y RECTIFICADO (2026-11-12).** Se
+   Antecedente: [PROPUESTA](evidence/exp-v2-ventana-2-20261112a-propuesta/PROPUESTA.md).
+2. **Corregir el borde de la consulta del precio de referencia — requiere
+   autorización humana explícita (PENDIENTE).** Alcance mínimo: que la
+   trayectoria 1 m incluya la vela **plenamente cerrada en T** (alinear el
+   borde `startTime` al minuto, o aceptar también la vela cuyo `close_time_ms
+   <= decision_ms` aunque su `openTime` sea anterior), con **pruebas locales**
+   que cubran el caso `decision_ms` desalineado al minuto y el caso alineado,
+   **sin** abrir mercado. Debe preservar la regla causal: el precio de
+   referencia sigue siendo el close de la última vela 1 m **conocida en T**,
+   nunca un `bucket_end` ni un precio retrotrado; y el `decision_ms` sigue
+   siendo el instante real de evaluación. **Antes de ejecutar** hay que
+   registrar en `docs/DECISIONS.md` el cambio de contrato de la consulta
+   (número de velas, pesos y presupuesto REST reservado) y recalcular el
+   `--budget-only` **en una ruta de preparación separada**, sin mercado.
+   **No se puede reutilizar** `exp-v2-ventana-2-20261112a` ni relanzarlo.
+3. **Corregir el defecto secundario de etiquetado** (`neto_motivo` genérico
+   de "posición abierta" en filas de abstención con `qty = 0`,
+   `entry_px = null` y `open_at_end = false`): el `neto_estado = UNKNOWN` es
+   correcto, pero el texto debe describir la ausencia real de posición. Es
+   un cambio de **etiqueta**, no de contabilidad: **no** convierte un
+   `UNKNOWN` en cero ni un condicionado en completo.
+4. **Diagnóstico WS de recepción: EJECUTADO y RECTIFICADO (2026-11-12).** Se
    ejecutó **una sola vez** el diagnóstico preparado con la autorización
    acotada al alcance de recepción (`diag-ws-recepcion-20261112a`, SHA de
    ejecución `37b779c456c5aed234171bbb0fe3421b979bb150`). Resultado:
@@ -91,15 +120,20 @@ permanece diferida sin ampliar ningún validador.
    El bloqueo material de datos **queda resuelto para el transporte**: con la
    ruta por categoría correcta hay flujo real. El diagnóstico **no habilita**
    ninguna ventana por sí solo.
-3. **Ninguna ventana operativa sin autorización humana explícita y nueva.**
-   Ni el diagnóstico de recepción (PASS limitado) ni esta propuesta habilitan
-   una ventana por sí solas: no evalúan rentabilidad, estabilidad prolongada,
-   cobertura de universo ni capacidad de operar, y no generaron señales,
-   decisiones, operaciones, órdenes ni cuentas. Si se autoriza, será con la
-   configuración congelada, el `run_id` nuevo reservado, el mismo protocolo de
-   monitor y el envoltorio de salida ya corregido (que persiste el código real
-   en el mismo directorio), y **también con el margen de cierre aprobado**.
-4. **Envoltorio de salida: corregido y verificado en local (2026-11-12).**
+5. **Ninguna ventana operativa sin autorización humana explícita y nueva.**
+   La ventana `exp-v2-ventana-2-20261112a` **ya se ejecutó una sola vez** bajo
+   la autorización del 2026-11-14 y está **cerrada**: **no se relanza, no se
+   reutiliza su `run_id` y no se amplía su presupuesto**. El diagnóstico de
+   recepción (PASS limitado) y esta ventana **INSUFICIENTE** no habilitan
+   ninguna otra por sí solos: no evalúan rentabilidad, estabilidad
+   prolongada, cobertura de universo ni capacidad de operar, y no generaron
+   operaciones, órdenes ni cuentas. Una ventana posterior (con el defecto del
+   borde de la consulta corregido) exige autorización humana explícita y
+   nueva, con la configuración congelada, un `run_id` **nuevo**, el mismo
+   protocolo de monitor y el envoltorio de salida ya corregido (que persiste
+   el código real en el mismo directorio), y **también con el margen de
+   cierre aprobado**.
+6. **Envoltorio de salida: corregido y verificado en local (2026-11-12).**
    `scripts/run_pilot_window.py` espera la finalización real del proceso, lee
    el código numérico con `Popen.wait()` y persiste `stdout.log`,
    `stderr.log`, `exit_code.txt` y `launcher.json`; verificado con salidas 0 y
@@ -109,23 +143,27 @@ permanece diferida sin ampliar ningún validador.
    explícito) y en modo comando explícito (tras `--`) no se inyecta ninguna
    opción de `research_pilot.py`. **Ya usado en la ejecución autorizada** del
    diagnóstico de recepción: el código de salida real quedó persistido en el
-   mismo directorio (`exit_code.txt` = 0). El exit code histórico de
+   mismo directorio (`exit_code.txt` = 0). **También usado y verificado en la
+   ventana `exp-v2-ventana-2-20261112a` (2026-11-14):** el código real del
+   hijo (`0`) y el veredicto del lanzador (`normal`, `cumplimiento_normal:
+   true`, exceso 0,0) quedaron persistidos **por separado** en el mismo
+   directorio. El exit code histórico de
    `exp-v2-ventana-1-20261112a` sigue **UNKNOWN** y no se rellena
    retrospectivamente.
-5. **Cerrar y documentar lo que ya se sabe** (hecho en esta iteración):
+7. **Cerrar y documentar lo que ya se sabe** (hecho en esta iteración):
    informe de tres capas en
    [INFORRE-CIERRE](evidence/exp-v2-ventana-1-20261112a/INFORRE-CIERRE.md),
    evidencia compacta con hashes, y actualización de `DECISIONS`,
    `CURRENT_STATE`, `FEATURE_BACKLOG` y `DASHBOARD_V2_PROGRESS`.
-6. **Mantener la vía B disponible y sin tocar**: si aparece evidencia oficial y
+8. **Mantener la vía B disponible y sin tocar**: si aparece evidencia oficial y
    trazable de venue (ausencia de liquidaciones y retraso máximo de
    publicación), validarla contra `funding-coverage/v1` y revalidar las
    regresiones afectadas. Recalcular `--budget-only` solo si cambia el número
    de consultas necesarias.
-7. **Registrar en `docs/DECISIONS.md`** cualquier cambio de duración,
+9. **Registrar en `docs/DECISIONS.md`** cualquier cambio de duración,
    consulta, presupuesto o contrato de contabilidad **antes** de ejecutarlo.
-8. **No reabrir** el análisis de `public-pilot-1h-20261106a` salvo que aparezca
-   un defecto que cambie la decisión económica.
+10. **No reabrir** el análisis de `public-pilot-1h-20261106a` salvo que aparezca
+    un defecto que cambie la decisión económica.
 
 
 ### Dirección futura registrada — sin cambio de ACTIVE_TASK (2026-11-12)

@@ -5407,3 +5407,96 @@ DECISIONES:
   exposicion, presupuestos economicos ni la duracion propuesta (40 200 s +
   300 s). La ventana `exp-v2-ventana-2-20261112a` sigue **propuesta** y sin
   ejecutar; `run_id` y directorio siguen sin usarse.
+
+## 2026-11-14 — Ventana `exp-v2-ventana-2-20261112a`: ejecucion unica autorizada, cierre dentro de plazo y resultado INSUFICIENTE por defecto del borde de la consulta
+
+- Decision de ejecucion: se ejecuta **una sola vez** la ventana operativa v2
+  por la via A (`observed-settlements`) con `run_id exp-v2-ventana-2-20261112a`,
+  el comando literal de la propuesta publicada (configuracion y presupuesto
+  congelados) y las dos opciones temporales autorizadas
+  (`--work-timeout-seconds 40200 --shutdown-grace-seconds 300`), desde
+  `git_head ab97b02203cb5ac49c04bf2c9a8472f181b74a49` y el codigo del
+  lanzador `b0fdb52f07e4fdf3f4c2b7c3aa8253b12d9b096e`. Verificacion previa
+  acotada superada (identidad de rama y HEAD local == remoto, arbol ejecutable
+  sin cambios, unica modificacion local ajena `opencode.json` no tocada ni
+  incluida, ninguna ejecucion activa, directorio de corrida inexistente,
+  presupuesto revalidado con hashes 5/5 y gate 13/13 con
+  `cabe_en_limites: true`). El bloque **no autoriza** ordenes reales, cuentas,
+  claves privadas, fondos, nuevas ventanas ni relanzamientos.
+- Decision de observacion: la corrida se observa **solo** a traves del monitor
+  existente de 3020 en modo **solo lectura**; no se reconstruye el frontend, no
+  se anaden pantallas ni servicios y no se relanza el piloto para corregir la
+  visualizacion. Las operaciones que aparecen en el monitor son simulaciones
+  reconstruidas, **no** ordenes ejecutadas en vivo.
+- Decision de cierre: el cierre se lee **por separado** en `exit_code.txt`
+  (codigo real del **hijo**: **0**, observado), `estado_lanzador.json` y
+  `cierre.json` (veredicto **definitivo** del lanzador: **normal**,
+  `cumplimiento_normal: true`, `codigo_lanzador: 0`,
+  `exceso_maximo_total_s: 0,0`, `incumplimiento_plazo_global: false`,
+  `terminacion_hijo_observada: true`, `codigo_salida_estado: observado`,
+  `recursos_hijo: UNKNOWN`). Duracion total **7 803,176 s** de un maximo
+  autorizado de **40 500 s** (19,3 %). Un codigo 0 del hijo **no** se presenta
+  como cumplimiento normal por inercia: aqui coincide con el veredicto del
+  lanzador porque no hubo timeout ni exceso. Los sockets del hijo siguen
+  **UNKNOWN** y el estado del piloto se conserva como evidencia
+  **diferenciada**, sin certificarlos.
+- Decision de fases: captura 3 600 s (**12/12 ciclos**, 0 saltados) -> settle
+  **4 200 s** (**537/537** resultados resueltos, 0 pendientes, 0 no evaluables)
+  -> **espera contable NO abierta** (`inicio_ms: null`; no habia posicion
+  abierta, 0 consultas de funding) -> cierre con feeds cerrados y
+  `ResearchRecorder` en `STOPPED`. Ninguna fase se amplifyo y no se cambio
+  ningun parametro durante la corrida.
+- Decision de lectura del resultado: la calidad de datos queda **acreditada**
+  (240 seleccionadas -> 219 observadas -> **179 aptas, 81,7 %**; cobertura de
+  ciclos con ambos roles aptos **12/12**; `candidate` 131/144 aptas frente a
+  `comparator` 48/96) y el resultado economico queda **INSUFICIENTE**:
+  **179 senales** (LONG 88 / SHORT 91), **179 abstenciones**, **0 entradas**,
+  0 rechazos por capacidad, 0 salidas, 0 posiciones abiertas; neto COMPLETO
+  `n = 0` y CONDICIONADO `n = 0`, todos los campos `null`. **La ausencia de
+  operaciones NO se convierte en P&L cero.** La comparacion
+  candidato/comparador queda `INSUFICIENTE` por `sin_operaciones_completas_*`
+  y **no se atribuye ninguna diferencia al selector**.
+- Decision de diagnostico (causa raiz): el piloto pide la trayectoria 1 m con
+  `klines(startTime = decision_ms - 60 000)` y Binance filtra
+  `openTime >= startTime`; la ultima vela 1 m **plenamente cerrada en T** abre
+  en `floor(T/60000)*60000 - 60 000`, **anterior** a ese `startTime` cuando
+  `decision_ms` no esta alineada al minuto. **Ninguna** de las 179 decisiones lo
+  estaba (0/179; el segundo del minuto fue 12, 13, 14, 15 o 19 porque la
+  decision se toma en el corte + 5 s), luego en los 179 casos la vela de
+  referencia quedaba **excluida** y la primera vela devuelta **cerraba
+  despues de T**: no existia precio de referencia conocido en el instante de la
+  decision y la regla solo podia abstenerse. Verificacion con el ledger HTTP
+  persistido (179 consultas de trayectoria `limit=62`, una por observacion; 537
+  de precio `limit=1`), sin re-ejecutar nada. Codigo implicado:
+  `scripts/research_pilot.py::_consultar_trayectoria_operativa` y
+  `scripts/research_operativo_adapter.py::_vela_plenamente_conocida_en`. Se
+  registra ademas el **defecto secundario de etiquetado**: las filas de
+  abstencion (`qty = 0`, `entry_px = null`, `open_at_end = false`) llevan un
+  `neto_motivo` generico de "posicion abierta" que describe una posicion
+  **inexistente** (el `neto_estado = UNKNOWN` si es correcto).
+- Decision de alcance (lo que NO se hace en este bloque): **no se corrige** el
+  borde de la consulta. Corregirlo es un **cambio de metodologia** que exige
+  autorizacion humana explicita, un `run_id` nuevo y una ventana nueva; exige
+  ademas registrar antes el cambio de contrato de la consulta en DECISIONS y
+  recalcular `--budget-only` **en una ruta de preparacion separada**, sin
+  mercado. **No se relanza ni se reutiliza** `exp-v2-ventana-2-20261112a`, no
+  se inventa otro `run_id`, no se amplian duracion, exposicion, consultas ni
+  cupos, y no se cambia estrategia, seleccion, funding, contabilidad ni
+  presupuestos economicos. No se anaden indicadores, on-chain, GARCH, futuros
+  con vencimiento ni infraestructura; no se tocan `opencode.json`, archivos
+  ajenos, DBs canonicas ni el servicio 8792. El bloque **termina con el cierre
+  de esta unica ventana**, aunque el resultado sea INSUFICIENTE.
+- Decision de evidencia: la evidencia compacta se publica en
+  `docs/evidence/exp-v2-ventana-2-20261112a/` (`INFORME.md` con las tres
+  conclusiones y la causa raiz, `manifiesto.json` con el SHA-256 de cada
+  artefacto del dataset, `resumen.json` con `economia_operativa_v2`,
+  `exit_code.txt` + `estado_lanzador.json` + `cierre.json` por separado,
+  `causa_raiz_verificacion.json`, `muestra_resultado_operativo.jsonl` con 25
+  filas y `hashes.json`); el dataset voluminoso queda **fuera de Git** en
+  `C:\proyectos\binance-futures-data\exp-v2-ventana-2-20261112a` con sus
+  hashes referenciados. Documentacion actualizada: `CURRENT_STATE.md`,
+  `TASK_QUEUE.md`, `EXPERIMENTO_OPERATIVO_V2.md` §10.15,
+  `FEATURE_BACKLOG.md` (nueva entrada
+  `piloto/ventana-2-20261112a-ejecutada-20261114` y reconciliacion de
+  `lanzador/defectos-plazo-cierre-20261113`) y la PROPUESTA (marcada como
+  ejecutada).

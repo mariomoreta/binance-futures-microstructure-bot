@@ -1695,3 +1695,96 @@ contabilidad, exposición, presupuestos económicos ni la duración propuesta
 (40 200 s + 300 s); no toca `opencode.json`, archivos ajenos, datasets, DBs,
 el dashboard de 3020 ni el servicio 8792; no añade servicios, gestores,
 dependencias ni nuevas capas de infraestructura.
+
+### 10.15 Ventana `exp-v2-ventana-2-20261112a` — EJECUTADA y cerrada (2026-11-14)
+
+**Autorización humana del 2026-11-14:** «UNA SOLA VENTANA DEL EXPERIMENTO
+OPERATIVO V2» — cubre adquisición pública, simulación operativa, resolución de
+resultados, espera contable y cierre. **No** autoriza órdenes reales, cuentas,
+claves privadas, fondos, nuevas ventanas ni relanzamientos.
+
+Se ejecutó **una sola vez** el comando literal de
+[PROPUESTA](../evidence/exp-v2-ventana-2-20261112a-propuesta/PROPUESTA.md) §5
+(con `--work-timeout-seconds 40200 --shutdown-grace-seconds 300`, sin
+`--budget-only`), desde `git_head ab97b02203cb5ac49c04bf2c9a8472f181b74a49`
+(código del lanzador `b0fdb52…`), con el monitor de 3020 en **solo lectura**.
+Detalle y evidencia:
+[INFORME](../evidence/exp-v2-ventana-2-20261112a/INFORME.md).
+
+#### 10.15.1 Cierre: dentro de plazo y acreditado por separado
+
+| Artefacto | Contenido |
+|---|---|
+| `exit_code.txt` | **0** — código real del proceso **hijo** (`Popen.wait()`) |
+| `estado_lanzador.json` | `resultado: normal`, `causa_terminacion: terminacion_natural`, `cumplimiento_normal: true`, `codigo_lanzador: 0`, `terminacion_hijo_observada: true`, `codigo_salida_estado: observado`, `recursos_hijo: UNKNOWN`, `exceso_maximo_total_s: 0,0`, `incumplimiento_plazo_global: false` |
+| `cierre.json` (definitivo) | igual, con `duracion_total_s: 7803,176` y `fin_iso_utc: 2026-11-14T04:35:09` |
+
+Duración total **7 803,176 s** (2 h 10 min) frente al máximo autorizado de
+**40 500 s** → 19,3 %. Sin parada solicitada ni terminación forzada. El
+**código 0 del hijo coincide** con el veredicto del lanzador, pero **no se
+presenta como cumplimiento normal por inercia**: aquí `cumplimiento_normal` es
+`true` porque no hubo timeout y no hubo exceso. Los sockets del hijo siguen
+**UNKNOWN**; el estado del piloto (`feeds_closed: true`) se conserva como
+**evidencia diferenciada**.
+
+Fases observadas: captura **3 600 s** (12/12 ciclos, 0 saltados) → settle
+**4 200 s** (537/537 resultados resueltos, 0 pendientes, 0 no evaluables) →
+**espera contable NO abierta** (`inicio_ms: null`; no había posición abierta,
+0 consultas de funding) → cierre y persistencia.
+
+#### 10.15.2 Cobertura: el bloqueo de datos queda resuelto
+
+| Rol | Seleccionadas | Observadas | Sin observación | Aptas | Descartadas |
+|---|---|---|---|---|---|
+| `candidate` | 144 | 138 | 6 | 131 | 7 |
+| `comparator` | 96 | 81 | 15 | 48 | 33 |
+| **Total** | **240** | **219** | **21** | **179 (81,7 %)** | **40** |
+
+Cobertura de ciclos con ambos roles aptos: **12/12** (`1,0`). Motivos de
+descarte: `dato_obsoleto_flujo` 29, `flujo_ventana_incompleta` 13,
+`dato_obsoleto_libro` 1. Consumo: 740 intentos HTTP (0 reintentos) con peso
+reservado 1 208/5 000; 22 conexiones WS de un techo de 46, 845 161 mensajes,
+0 reconexiones, 0 errores; 6 183 860 B de almacenamiento de 134 217 728 B;
+`ResearchRecorder` con 9 384 escrituras, 0 drops y 0 errores.
+
+#### 10.15.3 Resultado económico: INSUFICIENTE por un defecto del borde de la consulta
+
+179 señales con dirección (LONG 88 · SHORT 91) → **179 abstenciones
+(`SIN_ENTRADA`)** → **0 entradas**, 0 rechazos de capacidad, 0 salidas, 0
+posiciones abiertas. Neto **COMPLETO** `n = 0` y **CONDICIONADO** `n = 0`, todos
+los campos `null` (**no** se convierte la ausencia en cero). La comparación
+candidato/comparador queda **`INSUFICIENTE`** con motivo
+`sin_operaciones_completas_*`: con cobertura de datos 12/12, lo que faltó fue
+la **capa de ejecución**.
+
+**Causa raíz (diagnosticada con el ledger HTTP persistido, sin re-ejecutar
+nada):** el piloto pide la trayectoria 1 m con
+`klines(startTime = decision_ms − 60 000)` y Binance filtra
+`openTime >= startTime`. La última vela 1 m **plenamente cerrada en T** abre en
+`floor(T/60000)*60000 − 60 000`, **anterior** a ese `startTime` cuando
+`decision_ms` no está alineado al minuto. **Ninguna** de las 179 decisiones lo
+estaba (0/179; el segundo del minuto fue 12, 13, 14, 15 o 19 porque la
+decisión se toma en el corte + 5 s): la vela de referencia quedaba excluida en
+los 179 casos y la primera vela devuelta **cerraba después de T**. Sin precio
+de referencia conocido en T, la regla solo podía abstenerse. Código:
+`scripts/research_pilot.py::_consultar_trayectoria_operativa` y
+`scripts/research_operativo_adapter.py::_vela_plenamente_conocida_en`.
+
+No es una ausencia de datos de mercado, ni un límite de presupuesto, ni la
+capacidad compartida, ni una restricción del selector. **Defecto secundario de
+etiquetado:** las abstenciones (`qty = 0`, `entry_px = null`,
+`open_at_end = false`) llevan `neto_motivo` de "posición abierta", texto
+genérico que describe una posición **inexistente** (el `neto_estado = UNKNOWN`
+sí es correcto).
+
+#### 10.15.4 Lo que este bloque NO hace
+
+No corrige el defecto del borde de la consulta (es un **cambio de
+metodología**: exige autorización humana explícita, un `run_id` nuevo y una
+ventana nueva), no relanza ni reutiliza `exp-v2-ventana-2-20261112a`, no
+amplía duración, exposición, consultas ni cupos, no toca estrategia, selección,
+funding, contabilidad ni presupuestos económicos, no añade indicadores,
+on-chain, GARCH, futuros con vencimiento ni infraestructura, no reconstruye el
+frontend ni añade pantallas o servicios, y no toca `opencode.json`, archivos
+ajenos, DBs canónicas ni el servicio 8792. El bloque **termina con el cierre
+de esta única ventana**, aunque el resultado sea INSUFICIENTE.

@@ -1,0 +1,46 @@
+{
+  "hipotesis": "El precio de referencia de entrada (close de la vela 1m plenamente conocida en T) nunca estuvo disponible porque la consulta de trayectoria pide klines con startTime = decision_ms - 60000 y Binance filtra openTime >= startTime.",
+  "mecanismo": "Si decision_ms NO esta alineada al minuto, la ultima vela 1m cerrada en T abre en floor(T/60000)*60000 - 60000, que es ANTERIOR a startTime y por tanto queda EXCLUIDA. La primera vela devuelta abre en el siguiente minuto y cierra DESPUES de T: no hay vela plenamente conocida en T.",
+  "codigo_responsable": [
+    "scripts/research_pilot.py::_consultar_trayectoria_operativa (start_ms = decision_ms - step_ms)",
+    "scripts/research_operativo_adapter.py::_vela_plenamente_conocida_en (exige close_time_ms <= decision_ms)"
+  ],
+  "evidencia": {
+    "decisiones_totales": 179,
+    "decisiones_alineadas_al_minuto": 0,
+    "restos_decision_ms_mod_60000": {
+      "12527": 12,
+      "12938": 14,
+      "12941": 13,
+      "13428": 16,
+      "13576": 17,
+      "13832": 14,
+      "13889": 16,
+      "13934": 15,
+      "14409": 12,
+      "14902": 15,
+      "15396": 15,
+      "19298": 20
+    },
+    "decisiones_con_vela_de_referencia_excluida": 179,
+    "consultas_klines_trayectoria_limit_62": 179,
+    "consultas_klines_precio_horizonte_limit_1": 537,
+    "ejemplo_reproducible": {
+      "symbol": "2ZUSDT",
+      "observation_id": "2ZUSDT|1794623179298",
+      "decision_ms": 1794623179298,
+      "startTime_pedido": 1794623119298,
+      "open_vela_de_referencia": 1794623100000,
+      "close_vela_de_referencia": 1794623159999,
+      "primera_vela_devuelta_open": 1794623160000,
+      "primera_vela_devuelta_close": 1794623219999,
+      "vela_de_referencia_excluida_por_startTime": true,
+      "primera_vela_cierra_despues_de_T": true,
+      "http_status": 200,
+      "response_item_count": 62
+    }
+  },
+  "consecuencia_observada": "179/179 abstenciones SIN_ENTRADA con funding_estado='sin vela 1m plenamente conocida en T'; 0 entradas simuladas.",
+  "alcance_del_diagnostico": "Lectura del codigo + ledger HTTP persistido de la corrida. NO se re-ejecuto la ventana, NO se modifico el codigo y NO se abrio mercado adicional.",
+  "que_no_se_hace": "Este bloque termina con el cierre de la ventana EJECUTADA. La correccion del borde de la consulta es un cambio de metodologia que requiere autorizacion humana explicita y una nueva ventana; no se aplica aqui."
+}

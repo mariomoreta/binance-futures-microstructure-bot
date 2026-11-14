@@ -1,4 +1,129 @@
-# Estado vigente — dirección operativa, 2026-11-13
+# Estado vigente — dirección operativa, 2026-11-14
+
+## Ventana `exp-v2-ventana-2-20261112a` — EJECUTADA y cerrada (2026-11-14)
+
+**Autorización humana del 2026-11-14:** «UNA SOLA VENTANA DEL EXPERIMENTO
+OPERATIVO V2» — cubre adquisición pública, simulación operativa, resolución de
+resultados, espera contable y cierre. **No** autoriza órdenes reales, cuentas,
+claves privadas, fondos, nuevas ventanas ni relanzamientos.
+
+**Veredicto:** la ventana **terminó dentro de plazo y con cierre acreditado**,
+con cobertura de datos **buena** y **cero operaciones**. Las **179 decisiones
+fueron abstenciones** por una única causa determinista: *el precio de
+referencia de entrada nunca estuvo disponible*. El resultado económico es
+**INSUFICIENTE** (no nulo): no hay P&L que reportar.
+
+| | |
+|---|---|
+| `run_id` | `exp-v2-ventana-2-20261112a` (ejecución **única**; no reutilizado) |
+| `git_head` | `ab97b02203cb5ac49c04bf2c9a8472f181b74a49` (local == remoto) |
+| Código del lanzador | `b0fdb52f07e4fdf3f4c2b7c3aa8253b12d9b096e` |
+| Dataset (fuera de Git) | `C:\proyectos\binance-futures-data\exp-v2-ventana-2-20261112a` |
+| Monitor (solo lectura) | `http://127.0.0.1:3020/market-lab?vista=piloto&run=exp-v2-ventana-2-20261112a` |
+| Duración | **7 803,176 s** (2 h 10 min) frente al máximo autorizado de **40 500 s** → 19,3 % |
+| Código del **hijo** (`exit_code.txt`) | **0** (observado) |
+| Veredicto del **lanzador** (`cierre.json`) | **normal**, `cumplimiento_normal: true`, `codigo_lanzador: 0`, `exceso_maximo_total_s: 0,0`, `incumplimiento_plazo_global: false` |
+
+### Fases, plazos y consumos (todo observado; nada ampliado)
+
+| Fase | Observado | Techo autorizado |
+|---|---|---|
+| Captura | **3 600 s**, **12/12 ciclos**, 0 ciclos saltados, 10 rotaciones del conjunto | 3 600 s |
+| Resolución (settle) | **4 200 s**, **537/537** resultados resueltos, **0 pendientes**, 0 no evaluables | ≤ 4 200 s |
+| Espera contable | **NO se abrió** (`inicio_ms: null`): no había posición abierta; **0 consultas** de funding | ≤ 32 400 s |
+| Cierre y persistencia | feeds cerrados, `ResearchRecorder` en `STOPPED`, manifiesto y resumen escritos | 300 s |
+
+| Recurso | Consumido | Techo | Uso |
+|---|---|---|---|
+| Intentos HTTP | **740** (0 reintentos, 740 × HTTP 200) | 2 000 | 37,0 % |
+| Peso REST reservado | **1 208** (configurado 7 880); observado `x-mbx-used-weight-1m` máx **67** | 5 000 | 24,2 % |
+| Endpoints REST | 12 `exchangeInfo` + 12 `ticker/24hr` + 716 `klines` (179 de trayectoria `limit=62` + 537 de precio `limit=1`); 309,6 s | — | — |
+| Conexiones WS | **22** (2 iniciales + 10 rotaciones × 2 feeds) | 46 | 47,8 % |
+| Mensajes WS | **845 161**, 0 reconexiones, 0 errores | 5 000 000 | 16,9 % |
+| Almacenamiento | **6 183 860 B** | 134 217 728 B | 4,6 % |
+| Consultas `fundingRate` | **0** | 500 / 5 min | 0 % |
+| Capacidad | 0 posiciones abiertas | 1 posición simultánea | — |
+
+`ResearchRecorder`: 9 384 escrituras · 1 200 filas `book_1m` · 6 931 `flow_10s`
+· 1 253 `flow_1m` · **0 drops** · **0 errores** · estado final `STOPPED`.
+Dedupe flujo/libro: 0/0.
+
+### Calidad: embudo por rol y por ciclo
+
+| Rol | Seleccionadas | Observadas | **Sin observación** | Aptas | Descartadas | % aptas / observadas |
+|---|---|---|---|---|---|---|
+| `candidate` | **144** | 138 | **6** | **131** | 7 | 94,9 % |
+| `comparator` | **96** | 81 | **15** | **48** | 33 | 59,3 % |
+| **Total** | **240** | **219** | **21** | **179** | **40** | **81,7 %** |
+
+12 ciclos × 20 símbolos (12 candidatos + 8 comparadores). Aptas por ciclo
+(candidatos/comparadores): 12/8, 10/2, 11/3, 10/3, 11/5, 11/6, 12/2, 11/5,
+11/4, 10/2, 10/5, 12/3 → **179**. Motivos de descarte: `dato_obsoleto_flujo` 29,
+`flujo_ventana_incompleta` 13, `dato_obsoleto_libro` 1. Cobertura:
+`ciclos_con_ambos_roles_aptos = 12/12` (`1,0`); **ciclos con operaciones
+completas en ambos roles: 0** → comparación **`INSUFICIENTE`**.
+
+### Económica exploratoria
+
+**179 señales** con dirección (LONG 88 · SHORT 91) → **179 abstenciones
+(`SIN_ENTRADA`, 100 %)** → **0 entradas simuladas**, **0 rechazos por
+capacidad**, **0 salidas**, **0 posiciones abiertas**. Neto **COMPLETO**
+`n = 0` (todos los campos `null`), neto **CONDICIONADO** `n = 0` (`null`),
+neto **UNKNOWN** 179. **La ausencia de operaciones no se presenta como P&L
+cero.** Stop, gestión, salida, costes y funding **no se ejercitaron** y quedan
+sin evidencia.
+
+### Causa raíz de las 179 abstenciones (diagnosticada, NO corregida)
+
+El piloto pide la trayectoria 1 m con `klines(startTime = decision_ms − 60 000)`
+y Binance filtra `openTime >= startTime`. La última vela 1 m **plenamente
+cerrada en T** abre en `floor(T/60000)*60000 − 60 000`, **anterior** a ese
+`startTime` cuando `decision_ms` no está alineado al minuto. **Ninguna** de las
+179 decisiones lo estaba (0/179 alineadas; el segundo del minuto fue 12, 13,
+14, 15 o 19 porque la decisión se toma en el corte + 5 s): la vela de
+referencia quedaba **excluida** en los 179 casos y la primera vela devuelta
+**cerraba después de T**. Sin precio de referencia conocido en el instante de
+la decisión, la regla **no podía entrar**. Verificación en el ledger HTTP
+persistido (179 consultas de trayectoria `limit=62`, una por observación; 537
+consultas de precio `limit=1`); ejemplo: `2ZUSDT`, `decision_ms=1794623179298`
+→ `startTime=1794623119298` → la vela de referencia abre `1794623100000`
+(excluida) y la primera devuelta cierra `1794623219999` **> T**.
+
+Código implicado: `scripts/research_pilot.py::_consultar_trayectoria_operativa`
+(`start_ms = decision_ms - step_ms`) y
+`scripts/research_operativo_adapter.py::_vela_plenamente_conocida_en`
+(exige `close_time_ms <= decision_ms`).
+
+Es un **defecto determinista del borde de la consulta**, no una ausencia de
+datos de mercado, ni un límite de presupuesto, ni la capacidad compartida, ni
+una restricción del selector: la recepción WS, la cobertura y el presupuesto
+estaban en condiciones de sostener la ventana. **Defecto secundario de
+etiquetado:** las filas de abstención (`qty = 0`, `entry_px = null`,
+`open_at_end = false`) llevan `neto_motivo = "posicion abierta: la salida no
+esta ejecutada..."`, texto genérico que describe una posición abierta **inexistente**
+(el `neto_estado = UNKNOWN` sí es correcto).
+
+**La corrección del borde de la consulta es un cambio de metodología** que
+requiere autorización humana explícita y una ventana nueva: este bloque
+termina con el cierre de esta única ventana y **no relanza**.
+
+### Lo que esta ventana NO acredita
+
+No acredita rentabilidad, edge ni ejecutabilidad; no acredita la comparación
+candidato/comparador (`INSUFICIENTE` por falta de operaciones completas, no por
+falta de cobertura de datos); no ejercita stop, gestión, salida, costes ni
+funding; no cubre futuros con vencimiento (el selector sigue limitado a
+PERPETUAL/TRADING/USDT); no hay P&L cero (`n = 0`, `null`).
+
+### Evidencia publicada
+
+[INFORME](evidence/exp-v2-ventana-2-20261112a/INFORME.md) (tres capas:
+técnica, calidad, económica exploratoria + causa raíz) ·
+`manifiesto.json` (hashes de cada artefacto del dataset) · `resumen.json`
+(incluye `economia_operativa_v2`) · `exit_code.txt`, `estado_lanzador.json` y
+`cierre.json` **por separado** · `causa_raiz_verificacion.json` ·
+`muestra_resultado_operativo.jsonl` (25 filas) · `hashes.json`. El dataset
+voluminoso queda **fuera de Git** con sus hashes referenciados.
 
 ## Dos defectos materiales del lanzador — CORREGIDOS y probados en Windows (2026-11-13)
 
