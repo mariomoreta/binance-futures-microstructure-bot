@@ -2124,3 +2124,38 @@ aporta evidencia económica. La ventana `exp-v2-ventana-3-20261115a` sigue
 equivalencia acreditada significa que el resultado es reconstruible desde la
 evidencia persistida, no que el proveedor tuviera razón ni que la regla sea
 rentable.
+
+#### 10.19 Cierre por incidente de la ventana ejecutada (2026-11-15)
+
+La ventana `exp-v2-ventana-3-20261115a` se ejecuto **una sola vez** bajo su
+autorizacion propia (SHA de codigo `bc635e7`; preflight completo con
+presupuesto revalidado sin red, gate 13/13, sin techos ampliados). La
+captura (3600 s, 12/12 ciclos, 20 simbolos, 218 observaciones con 182
+aptas) quedo **completa e integra**; a las 17:30:42Z, ~5 min despues del fin
+de la captura y durante el settle, el arbol de procesos fue **eliminado
+externamente** con correlacion ~2 s con un reinicio de componentes
+node/opencode (**mecanismo exacto UNKNOWN**). Settle truncado (351
+resultados: 5m 182, 15m 150, 60m 19), funding sin adquirir (fichero vacio,
+**UNKNOWN**), espera contable sin abrir, codigo de salida del hijo
+**UNKNOWN** y veredicto del lanzador **NO PRODUCIDO** (sin
+`cierre.json`/`exit_code.txt`; no fabricados).
+
+**Replay offline v2 sobre lo persistido** (solo lectura sobre el original,
+informe en derivados separados): **LIMITACION (3)**, codigo de salida 3
+observado; motivos `manifiesto_ausente` -> `config_operativa_ausente` (el
+lanzador murio antes de publicar `manifiesto.json`); denominador completo
+(182/182 limitadas, 0 coincidentes, 0 diferentes, 0 inventados). La
+limitacion es coherente con el incidente: sin configuracion congelada no
+hay reconstruccion acreditada y **no se usan valores por defecto**.
+
+**Resultado economico:** sin medicion. 19 filas operativas: 1 entrada
+simulada (0GUSDT SHORT, salida por stop ejecutada, neto
+`CONDICIONADO_SIN_FUNDING_COMPLETO`; la cuenta del motor es **sin funding**,
+no un resultado completo) y 18 rechazos por capacidad (neto UNKNOWN).
+Comparacion por rol: **INSUFICIENTE**. Este bloque no aporta evidencia sobre
+la hipotesis economica en ninguna direccion; el run_id queda consumido y
+cualquier ventana nueva exige autorizacion humana explicita y nueva.
+
+Evidencia: `evidence/exp-v2-ventana-3-20261115a-cierre-incidente/INFORME.md`
+(tres capas + incidente + replay); derivados con hashes en
+`C:\proyectos\binance-futures-data\exp-v2-ventana-3-20261115a-cierre-incidente`.

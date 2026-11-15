@@ -1,4 +1,27 @@
-# Cola vigente — preparación reproducible de UNA medición económica, 2026-11-15
+# Cola vigente — ventana 3 interrumpida por incidente y cerrada, 2026-11-15
+
+**Cierre por incidente (2026-11-15):** la ventana autorizada
+`exp-v2-ventana-3-20261115a` se ejecutó **una sola vez** (SHA
+`bc635e7`; preflight completo; presupuesto revalidado 13/13 sin techos
+ampliados). La **captura quedó completa e íntegra** (3600 s, 12/12 ciclos,
+218 observaciones con 182 aptas, 19 filas operativas: 1 entrada simulada
+`0GUSDT` SHORT con salida por stop y neto `CONDICIONADO_SIN_FUNDING_COMPLETO`,
+18 rechazos por capacidad), pero a las **17:30:42Z el árbol de procesos fue
+eliminado externamente** (correlación ~2 s con un reinicio de componentes
+node/opencode; causa final UNKNOWN) durante el settle: resolución truncada,
+funding sin adquirir (**UNKNOWN**), espera contable sin abrir y sin
+`cierre.json`/`exit_code.txt` (**UNKNOWN/NO PRODUCIDO**, no fabricados). El
+replay v2 sobre lo persistido dio **LIMITACION (3)** — sin `manifiesto.json`
+no hay configuración congelada ni integridad acreditada; 182/182 limitadas,
+denominador completo, 0 inventados. **No hay medición económica**; la
+comparación por rol es **INSUFICIENTE**. Decisión humana posterior: cerrar
+como **INTERRUMPIDA POR INCIDENTE**, replay sobre lo persistido y publicación;
+**no** autoriza relanzamientos ni un `run_id` nuevo. Evidencia:
+[INFORME](evidence/exp-v2-ventana-3-20261115a-cierre-incidente/INFORME.md) ·
+derivados separados en
+`C:\proyectos\binance-futures-data\exp-v2-ventana-3-20261115a-cierre-incidente`.
+El `run_id` `exp-v2-ventana-3-20261115a` **queda consumido** y no se reutiliza;
+`exp-v2-ventana-2-20261112a` sigue **INSUFICIENTE**.
 
 **Corrección posterior (2026-11-15, autorización humana acotada):** el
 veredicto del replay pasa a **regla estricta** —los tres falsos positivos
@@ -18,8 +41,9 @@ passed**; regresiones **75 + 46 + 32 + 42 OK** (unittest con
 [correccion-veredicto](evidence/exp-v2-preparacion-reproducible-20261115/correccion-veredicto/INFORME.md).
 El veredicto de la preparación queda corregido **por anexo** (§9 del
 INFORME histórico y §10.18 del protocolo), sin borrar la evidencia
-histórica. La ventana `exp-v2-ventana-3-20261115a` sigue **propuesta y sin
-ejecutar**.
+histórica. La ventana `exp-v2-ventana-3-20261115a` fue **ejecutada una sola
+vez bajo su autorización propia y quedó INTERRUMPIDA POR INCIDENTE** (ver el
+bloque de cabecera).
 
 **Verificación 2026-11-15 (preparación acotada, sin mercado):** se conservan
 la corrección temporal (`5362baf`) y su etiquetado, publicados dentro del
@@ -58,55 +82,26 @@ evaluables**: la ventana cerrada no contiene los datos necesarios y hace falta
 **una ventana nueva con autorización propia**. Esta preparación **no aporta
 evidencia sobre la hipótesis económica en ninguna dirección**.
 
-`ACTIVE_TASK`: **ninguno**. El bloque de preparación reproducible está
-**cerrado**: persistencia mínima implementada, reconstrucción offline
-aceptada localmente, presupuesto recalculado sin red y con los bytes de los
-cuerpos incluidos, propuesta revisable para **una** ventana futura y `run_id`
-nuevo verificado. **No** hay tarea activa: abrir una ventana nueva exige
-autorización humana explícita, un `run_id` nuevo y su propia ejecución; este
-bloque **no** la abre ni la ejecuta.
+`ACTIVE_TASK`: **ninguno**. La ventana `exp-v2-ventana-3-20261115a` quedó
+**ejecutada una sola vez, interrumpida por incidente y cerrada**: captura
+íntegra preservada, replay offline sobre lo persistido (**LIMITACION**, coherente
+con el incidente), informe en tres capas limitado a la evidencia, docs y
+backlog actualizados. **No** hay tarea activa: cualquier ventana nueva exige
+autorización humana explícita, un `run_id` **nuevo** y su propia ejecución;
+este cierre **no** la abre ni la propone automáticamente.
 
 `NEXT_TASKS`:
-1. **Preparación reproducible de UNA medición económica: HECHA y CERRADA
-   (2026-11-15).** `src/microstructure_probe/history_client.py` captura el
-   **cuerpo crudo** de la última respuesta exitosa (invalidado al iniciar cada
-   petición). `scripts/research_pilot.py` persiste cada respuesta de
-   trayectoria en `consultas_klines.jsonl` (run_id, símbolo, intervalo,
-   parámetros exactos, solicitud/adquisición, estado HTTP, cuerpo, hash,
-   tamaño, filas, corte causal `reloj_ms`, `decision_ms` y vínculo con la
-   observación) usando el `PilotStore` y la `RunStorageBudget` **existentes**:
-   si no cabe, se detiene con `presupuesto_bytes` **sin ampliar cupos**.
-   `scripts/research_operativo_replay.py` (**nuevo**) reconstruye offline con
-   el adaptador y los motores existentes y contrasta decisión, dirección,
-   cantidad, entrada, stop, salida, costes y estado del funding/neto.
-   **Baseline declarada por escrito** (dirección por signo del movimiento de
-   24 h; referencia actual del mismo cierre que compara la condición
-   direccional; libro y flujo como requisitos de calidad/contexto; **no**
-   acredita patrones, anticipación de explosiones ni reversión): es una
-   aclaración, **no** un cambio de estrategia. **Aceptación local:** 3 passed
-   en `tests/test_operativo_replay_offline.py` (CLI real, loopback, reloj
-   manual, almacenamiento temporal): LONG, SHORT y funding observado →
-   **EQUIVALENTE** (5/5, 0 diferencias); fichero de cuerpos ausente y cuerpo
-   corrupto → **LIMITACION** (código 3) con 0 operaciones inventadas.
-   Regresiones afectadas 75 (pytest) + 46 + 32 + 42 (unittest) **OK**; no se
-   repitieron pruebas generales ajenas (una primera ejecución de
-   `history`/`budget_scope` dio `FAILED (failures=4)` **no reproducible**: las
-   dos siguientes pasaron 46/46). **Presupuesto** recalculado con `--budget-only`
-   **sin red** en ruta de preparación separada: gate **13/13**, intentos
-   **1 334**, peso **3 752**, reintentos **50**, almacenamiento previsto
-   **9 016 872 B**, reservado **56 363 648 B**, margen **77 854 080 B**, con
-   **4 320 000 B** de cuerpos `klines` (480 × 9 000 B); **10 diferencias**
-   frente al publicado, **todas de almacenamiento**; **ningún cupo
-   ampliado**. **Propuesta** para UNA ventana futura: [PROPUESTA](evidence/exp-v2-ventana-3-20261115a-propuesta/PROPUESTA.md)
-   (`run_id` **nuevo** `exp-v2-ventana-3-20261115a` verificado **no
-   utilizado**; pregunta económica exacta, denominadores y comparación por
-   rol/ciclo, rechazos por capacidad en tabla propia, `COMPLETO` y
-   `CONDICIONADO` separados, criterios de insuficiencia, presupuesto
-   recalculado, comando completo aceptado por el parser, ubicación de datos y
-   monitor). Evidencia: [INFORME](evidence/exp-v2-preparacion-reproducible-20261115/INFORME.md) ·
-   `presupuesto_comparacion.json`, `presupuesto.json`, `replay_long.json`,
-   `replay_short.json`, `replay_funding.json`, `replay_datos_ausentes.json`,
-   `replay_datos_corruptos.json`, `aceptacion_replay.txt`, `hashes.json`.
+1. **Ventana `exp-v2-ventana-3-20261115a`: EJECUTADA una sola vez,
+   INTERRUMPIDA POR INCIDENTE y CERRADA (2026-11-15).** Captura completa e
+   íntegra; settle/funding/cierre truncados por terminación externa del
+   árbol (correlación con reinicio de opencode; mecanismo UNKNOWN). Replay v2
+   sobre lo persistido → **LIMITACION (3)** (`manifiesto_ausente` →
+   `config_operativa_ausente`; 182/182 limitadas, denominador completo).
+   Sin medición económica; comparación por rol **INSUFICIENTE**. Evidencia:
+   [INFORME](evidence/exp-v2-ventana-3-20261115a-cierre-incidente/INFORME.md);
+   derivados en
+   `C:\proyectos\binance-futures-data\exp-v2-ventana-3-20261115a-cierre-incidente`.
+   El `run_id` queda consumido. **Ningún relanzamiento sin autorización nueva.**
 2. **Ventana operativa nueva con trayectoria persistida — requiere
    autorización humana explícita (PENDIENTE; no ejecutada por este bloque).**
    Condiciones ya resueltas que la nueva ventana hereda: borde de la consulta
@@ -117,7 +112,11 @@ bloque **no** la abre ni la ejecuta.
    (`exp-v2-ventana-3-20261115a`). Lo que **no** se puede hacer sin
    autorización: abrir mercado, capturar, resolver contra el venue y cerrar
    una ventana. `exp-v2-ventana-2-20261112a` **no** se reutiliza ni se
-   relanza, y no se amplían duración, exposición, consultas ni cupos.
+   relanza, y no se amplían duración, exposición, consultas ni cupos. Lección
+   del incidente a considerar en la próxima autorización: el árbol del piloto
+   quedó atado al proceso anfitrión; supervisarlo desde un proceso
+   independiente del agente evitaría que un reinicio del anfitrión mate la
+   corrida (decisión pendiente de autorización; no implementada aquí).
  3. **Ventana operativa única por la vía A: EJECUTADA y CERRADA (2026-11-14).**
    `run_id exp-v2-ventana-2-20261112a` (ejecutado **una sola vez**, no
    reutilizado) sobre el directorio

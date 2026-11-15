@@ -1,3 +1,51 @@
+## Ventana 3 ejecutada e interrumpida por incidente `piloto/ventana-3-interrumpida-20261115` — 2026-11-15
+
+- `DECISIONS_REVIEWED` — AGENTS, WORKFLOW, PRODUCT_GOAL, CURRENT_STATE,
+  TASK_QUEUE, DECISIONS, EXPERIMENTO_OPERATIVO_V2 §10.18 y la PROPUESTA
+  vigente de la ventana (base publicada `bc635e7`).
+- `NEW_DECISIONS_RECORDED` — la ventana autorizada
+  `exp-v2-ventana-3-20261115a` se ejecutó **una sola vez** (preflight
+  completo, presupuesto revalidado sin red 13/13 sin techos ampliados); la
+  captura quedó **completa e íntegra**, pero el árbol de procesos fue
+  **eliminado externamente** durante el settle (correlación ~2 s con un
+  reinicio de componentes node/opencode; **causa final UNKNOWN**, sin
+  reinicio del sistema ni crash de python registrado, stderr vacío).
+  Registro del incidente con evidencia negativa y sin fabricar
+  `cierre.json`/`exit_code.txt`: código de salida del hijo **UNKNOWN**,
+  veredicto del lanzador **NO PRODUCIDO**. Replay v2 sobre lo persistido →
+  **LIMITACION (3)** (`manifiesto_ausente` → `config_operativa_ausente`;
+  182/182 limitadas, denominador completo, 0 inventados). Registro en
+  `DECISIONS.md` (2026-11-15, cierre por incidente).
+- `FEATURES_IMPLEMENTED` — ninguno (no se cambió código): replay v2
+  ejecutado tal cual estaba publicado, derivados separados del original
+  (`exp-v2-ventana-3-20261115a-cierre-incidente`), inventario SHA-256 de 12
+  ficheros del dataset original, informe de cierre en tres capas limitado a
+  la evidencia.
+- `FEATURES_VERIFIED` — integridad del dataset original verificada (JSONL
+  íntegros, sin escrituras partidas, hashes publicados); replay con código
+  de salida 3 observado; monitor verificado durante la captura (identidad y
+  frescura). **Ningún gate económico avanza**: 1 entrada simulada con stop
+  ejecutado y neto `CONDICIONADO_SIN_FUNDING_COMPLETO` (cuenta del motor
+  **sin funding**, no un resultado completo), 18 rechazos por capacidad,
+  funding **UNKNOWN**; comparación por rol **INSUFICIENTE**.
+- `DEFERRED_FEATURES` — cualquier ventana nueva (autorización humana
+  explícita con `run_id` nuevo); vía B (`funding-coverage/v1`); futuros con
+  vencimiento; indicadores, on-chain, GARCH, dashboard, conectores y capas
+  de IA; supervisión del piloto independiente del anfitrión (lección del
+  incidente, propuesta registrada sin implementar).
+- `BACKLOG_UPDATED` — entrada nueva de este cierre; las entradas
+  `piloto/replay-veredicto-estricto-20261115` y
+  `piloto/preparacion-reproducible-20261115` se conservan intactas. El
+  `run_id` `exp-v2-ventana-3-20261115a` queda **consumido** y no se
+  reutiliza.
+- `DOCUMENTATION_CONFLICTS` — la PROPUESTA de la ventana queda como
+  propuesta **ejecutada y cerrada por interrupción** (su cabecera decía
+  "PREPARADA, NO EJECUTADA"); CURRENT_STATE/TASK_QUEUE actualizados con el
+  bloque de cabecera y anotación del bloque histórico; el detalle completo
+  vive en
+  `evidence/exp-v2-ventana-3-20261115a-cierre-incidente/INFORME.md` y en los
+  derivados fuera de Git con hashes.
+
 ## Corrección del veredicto del replay `piloto/replay-veredicto-estricto-20261115` — 2026-11-15
 
 - `DECISIONS_REVIEWED` — AGENTS, WORKFLOW, PRODUCT_GOAL, CURRENT_STATE,

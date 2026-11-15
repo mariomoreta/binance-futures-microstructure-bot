@@ -1,0 +1,191 @@
+{
+  "run_id": "exp-v2-ventana-3-20261115a",
+  "resultado_global": "INTERRUMPIDA_POR_INCIDENTE",
+  "codigo_sha_ejecutado": "bc635e7d4a34c82f794ad7a9d76f78960f9d0794",
+  "rama": "research/universe-liquidez-v1",
+  "preflight": {
+    "head_remoto_iguales": true,
+    "commits_posteriores": 0,
+    "codigo_ejecutable_idéntico_al_presupuesto_validado": true,
+    "otro_piloto_activo": false,
+    "run_id_y_directorio_libres": true,
+    "revalidacion_budget_only_sin_red": {
+      "codigo": 0,
+      "gate": "13/13",
+      "ruta": "C:\\proyectos\\binance-futures-data\\_presupuesto\\exp-v2-ventana-3-20261115a-revalidacion-20261115",
+      "techos_ampliados": false
+    }
+  },
+  "lanzamiento": {
+    "instante_utc": "2026-11-15T16:25:43.500Z",
+    "comando": "literal de PROPUESTA §7 sin --budget-only, con --work-timeout-seconds 40200 y --shutdown-grace-seconds 300",
+    "monitor": {
+      "http": 200,
+      "identidad_correcta": true,
+      "datos_frescos": true
+    }
+  },
+  "fases": {
+    "captura": {
+      "estado": "COMPLETA",
+      "duracion_s": 3600,
+      "fin_utc": "2026-11-15T17:25:43.500Z",
+      "terminacion": "por duracion (prevista)",
+      "ciclos": 12
+    },
+    "settle_resolucion": {
+      "estado": "INTERRUMPIDA",
+      "resultados_escritos": 351,
+      "por_horizonte": {
+        "5m": 182,
+        "15m": 150,
+        "60m": 19
+      },
+      "nota": "settle_end previsto 18:35:43Z; el arbol murio ~5 min despues del fin de captura"
+    },
+    "adquisicion_funding": {
+      "estado": "NO_INICIADA",
+      "fichero_bytes": 0,
+      "funding": "UNKNOWN (nunca cero)"
+    },
+    "espera_contable": {
+      "estado": "NO_INICIADA",
+      "pendientes_al_corte": {
+        "operativos": 195,
+        "contabilidad": 1
+      }
+    },
+    "cierre_lanzador": {
+      "estado": "NO_PRODUCIDO",
+      "cierre_json": false,
+      "exit_code_txt": false,
+      "estado_lanzador_json": false,
+      "veredicto": "NO EXISTE (no se fabrica)"
+    }
+  },
+  "incidente": {
+    "ultima_escritura_hijo_utc": "2026-11-15T17:30:40Z (estado.json)",
+    "muerte_arbol_utc": "2026-11-15T17:30:42Z (aprox)",
+    "correlacion": "reinicio en bloque de procesos node (componentes de opencode) a las 13:30:42-13:30:50 locales (=17:30:42-17:30:50Z); correlacion de ~2 s con la ultima escritura",
+    "evidencia_negativa": [
+      "sin reinicio del sistema (LastBootUpTime 2026-11-11; sin eventos System 1074/6006/6008/41 en 3 h)",
+      "sin eventos Application 1000/1001/1002 (crash de python) en 3 h",
+      "stderr.log y lanzador_stderr.txt con 0 bytes (sin excepcion volcada)"
+    ],
+    "causa_final": "terminacion externa del arbol coincidente con el reinicio de componentes node/opencode; mecanismo exacto UNKNOWN",
+    "codigo_salida_observado": "UNKNOWN (no existe registro; no se fabrica)"
+  },
+  "capa_tecnica": {
+    "sha_ejecutado": "bc635e7d4a34c82f794ad7a9d76f78960f9d0794",
+    "recepcion": {
+      "simbolos": 20,
+      "feeds": [
+        "/market",
+        "/public"
+      ],
+      "frescura_durante_captura": "edades de libro 30-840 ms, flujo 160-4600 ms (observado al inicio)"
+    },
+    "consumos_al_corte": {
+      "intentos_http": 394,
+      "peso": 862,
+      "reintentos": 0,
+      "bloqueos": 0,
+      "techo_intentos": 2000,
+      "techo_peso": 5000,
+      "almacenamiento_contabilizado_b": 53587575,
+      "techo_almacenamiento_b": 134217728,
+      "mensajes_ws_finales": "UNKNOWN (el resumen del hijo no llego a escribirse)"
+    },
+    "persistencia": {
+      "ficheros": 12,
+      "escrituras_partidas": false,
+      "nota": "todas las lineas JSONL terminan con \\n y su ultima linea es JSON valido"
+    }
+  },
+  "capa_calidad": {
+    "ciclos": 12,
+    "ultima_seleccion": "12 candidatos (mov 24h -45,19% a +38,12%) + 8 comparadores (mov -13,75% a -0,55%)",
+    "observaciones_total": 218,
+    "aptas_observadas": 182,
+    "descartadas_fichero": 36,
+    "descartadas_motivo_en_fichero": null,
+    "motivos_panel_monitor": {
+      "dato_obsoleto_flujo": 23,
+      "flujo_ventana_incompleta": 20,
+      "dato_obsoleto_libro": 2
+    },
+    "motivos_panel_nota": "el panel del monitor declaro motivos por 45 eventos sobre 218 observaciones y 36 descartadas en el fichero; la diferencia no es reconciliable con la evidencia persistida y queda UNKNOWN",
+    "resultados_resueltos": 351,
+    "resultados_pendientes_al_corte": "UNKNOWN (settle interrumpido)"
+  },
+  "capa_economica": {
+    "filas_operativas": 19,
+    "entradas_simuladas": 1,
+    "rechazos_capacidad": 18,
+    "abstenciones": 0,
+    "posiciones_abiertas_al_final": 0,
+    "entrada_unica": {
+      "symbol": "0GUSDT",
+      "role": "candidate",
+      "direction": "SHORT",
+      "decision_ms": 1794760067214,
+      "entry_ms": 1794760080000,
+      "entry_px": 0.1307,
+      "exit_executed": true,
+      "exit_reason": "stop",
+      "exit_ms": 1794760200000,
+      "exit_px": 0.13135349999999998,
+      "stop_px": 0.13155449999999996,
+      "qty": 7651.109410864575,
+      "gross_pnl": -4.9999999999997975,
+      "fees": 1.0025,
+      "spread_slip": 0.6014999999999999,
+      "net_pnl_sin_funding": -6.603999999999798,
+      "funding": null,
+      "funding_estado": "ninguno (UNKNOWN, no cero)",
+      "neto_estado": "CONDICIONADO_SIN_FUNDING_COMPLETO",
+      "contabilidad_funding_estado": "PENDIENTE",
+      "observacion": "salida por stop acreditada en el registro del motor (paper-lab-engine/v1.2); el neto NO es COMPLETO: sin liquidaciones de funding observadas, net_pnl es una cifra sin funding, no un resultado completo"
+    },
+    "neto_completo_n": 0,
+    "neto_condicionado_n": 1,
+    "neto_unknown_n": 18,
+    "funding": "UNKNOWN (funding_adquisicion.jsonl vacio; fase no iniciada)",
+    "comparacion_roles": "INSUFICIENTE (un unico ciclo con entrada simulada; comparadores rechazados por capacidad compartida)"
+  },
+  "replay_offline": {
+    "script": "scripts/research_operativo_replay.py (v2, publicado)",
+    "origen": "C:\\proyectos\\binance-futures-data\\exp-v2-ventana-3-20261115a",
+    "salida": "C:\\proyectos\\binance-futures-data\\exp-v2-ventana-3-20261115a-cierre-incidente\\replay_informe.json",
+    "codigo_salida": 3,
+    "veredicto": "LIMITACION",
+    "motivos": [
+      {
+        "motivo": "manifiesto_ausente",
+        "detalle": "sin manifiesto no hay configuracion operativa congelada ni hashes de integridad"
+      },
+      {
+        "motivo": "config_operativa_ausente",
+        "detalle": "el manifiesto no publica operativo_config: sin la configuracion congelada no se puede reconstruir con el mismo contrato y NO se usan valores por defecto"
+      }
+    ],
+    "denominador": {
+      "observaciones_aptas": 182,
+      "comparadas": 182,
+      "limitadas": 182,
+      "coincidentes": 0,
+      "diferentes": 0,
+      "nota": "nada desaparece del denominador sin quedar limitado con motivo"
+    },
+    "procedencia_acreditada": false,
+    "config_operativa_acreditada": false,
+    "interpretacion": "la LIMITACION es coherente con el incidente: el lanzador murio antes de publicar manifiesto.json (presente en la ventana 2), por lo que la configuracion congelada y la acreditacion de integridad no existen; el replay v2 se niega a reconstruir sin ellos y no inventa nada"
+  },
+  "preservacion": {
+    "dataset_original": "C:\\proyectos\\binance-futures-data\\exp-v2-ventana-3-20261115a",
+    "intacto": true,
+    "derivados_separados": "C:\\proyectos\\binance-futures-data\\exp-v2-ventana-3-20261115a-cierre-incidente",
+    "nota": "el original se abrio solo en lectura; sin cierre.json ni exit_code.txt fabricados"
+  },
+  "generado_utc": "2026-11-15T18:24:48Z"
+}

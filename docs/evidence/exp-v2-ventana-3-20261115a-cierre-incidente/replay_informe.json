@@ -1,0 +1,965 @@
+{
+  "denominador": {
+    "consultas_acreditadas": 0,
+    "consultas_persistidas": 0,
+    "consultas_rechazadas": 0,
+    "nota": "el denominador NUNCA se reduce en silencio: toda observacion apta aparece como coincidente, diferente o limitada",
+    "observaciones_aptas": 182,
+    "observaciones_comparadas": 182,
+    "observaciones_limitadas": 182,
+    "observaciones_reconstruidas": 0
+  },
+  "economia": {
+    "neto_completo_ejecucion": 0,
+    "neto_completo_replay": 0,
+    "neto_conditionado_ejecucion": 0,
+    "neto_conditionado_replay": 0,
+    "neto_unknown_ejecucion": 0,
+    "neto_unknown_replay": 0,
+    "operaciones_ejecucion": 0,
+    "operaciones_replay": 0
+  },
+  "fuente_funding": "none",
+  "fuentes": {
+    "observaciones_aptas": 182
+  },
+  "limitaciones": [
+    {
+      "detalle": "sin manifiesto no hay configuracion operativa congelada ni hashes de integridad",
+      "motivo": "manifiesto_ausente"
+    },
+    {
+      "detalle": "el manifiesto no publica operativo_config: sin la configuracion congelada no se puede reconstruir con el mismo contrato y NO se usan valores por defecto",
+      "motivo": "config_operativa_ausente"
+    }
+  ],
+  "metodo_funding": "",
+  "observaciones": [
+    {
+      "estado": "limitada",
+      "motivo": "config_operativa_ausente",
+      "observation_id": "0GUSDT|1794760067214"
+    },
+    {
+      "estado": "limitada",
+      "motivo": "config_operativa_ausente",
+      "observation_id": "0GUSDT|1794761209541"
+    },
+    {
+      "estado": "limitada",
+      "motivo": "config_operativa_ausente",
+      "observation_id": "0GUSDT|1794761509641"
+    },
+    {
+      "estado": "limitada",
+      "motivo": "config_operativa_ausente",
+      "observation_id": "0GUSDT|1794761810039"
+    },
+    {
+      "estado": "limitada",
+      "motivo": "config_operativa_ausente",
+      "observation_id": "0GUSDT|1794762110172"
+    },
+    {
+      "estado": "limitada",
+      "motivo": "config_operativa_ausente",
+      "observation_id": "0GUSDT|1794762410536"
+    },
+    {
+      "estado": "limitada",
+      "motivo": "config_operativa_ausente",
+      "observation_id": "0GUSDT|1794762710750"
+    },
+    {
+      "estado": "limitada",
+      "motivo": "config_operativa_ausente",
+      "observation_id": "0GUSDT|1794763010777"
+    },
+    {
+      "estado": "limitada",
+      "motivo": "config_operativa_ausente",
+      "observation_id": "2ZUSDT|1794760067214"
+    },
+    {
+      "estado": "limitada",
+      "motivo": "config_operativa_ausente",
+      "observation_id": "2ZUSDT|1794761810039"
+    },
+    {
+      "estado": "limitada",
+      "motivo": "config_operativa_ausente",
+      "observation_id": "2ZUSDT|1794762410536"
+    },
+    {
+      "estado": "limitada",
+      "motivo": "config_operativa_ausente",
+      "observation_id": "2ZUSDT|1794763010777"
+    },
+    {
+      "estado": "limitada",
+      "motivo": "config_operativa_ausente",
+      "observation_id": "AGTUSDT|1794760067214"
+    },
+    {
+      "estado": "limitada",
+      "motivo": "config_operativa_ausente",
+      "observation_id": "AGTUSDT|1794760308959"
+    },
+    {
+      "estado": "limitada",
+      "motivo": "config_operativa_ausente",
+      "observation_id": "AGTUSDT|1794760609169"
+    },
+    {
+      "estado": "limitada",
+      "motivo": "config_operativa_ausente",
+      "observation_id": "AGTUSDT|1794760909427"
+    },
+    {
+      "estado": "limitada",
+      "motivo": "config_operativa_ausente",
+      "observation_id": "AGTUSDT|1794761209541"
+    },
+    {
+      "estado": "limitada",
+      "motivo": "config_operativa_ausente",
+      "observation_id": "AGTUSDT|1794761509641"
+    },
+    {
+      "estado": "limitada",
+      "motivo": "config_operativa_ausente",
+      "observation_id": "AGTUSDT|1794761810039"
+    },
+    {
+      "estado": "limitada",
+      "motivo": "config_operativa_ausente",
+      "observation_id": "AKEUSDT|1794760067214"
+    },
+    {
+      "estado": "limitada",
+      "motivo": "config_operativa_ausente",
+      "observation_id": "ARIAUSDT|1794760067214"
+    },
+    {
+      "estado": "limitada",
+      "motivo": "config_operativa_ausente",
+      "observation_id": "ARIAUSDT|1794760308959"
+    },
+    {
+      "estado": "limitada",
+      "motivo": "config_operativa_ausente",
+      "observation_id": "ARIAUSDT|1794760609169"
+    },
+    {
+      "estado": "limitada",
+      "motivo": "config_operativa_ausente",
+      "observation_id": "ARIAUSDT|1794760909427"
+    },
+    {
+      "estado": "limitada",
+      "motivo": "config_operativa_ausente",
+      "observation_id": "ARIAUSDT|1794761209541"
+    },
+    {
+      "estado": "limitada",
+      "motivo": "config_operativa_ausente",
+      "observation_id": "ARIAUSDT|1794761509641"
+    },
+    {
+      "estado": "limitada",
+      "motivo": "config_operativa_ausente",
+      "observation_id": "ARIAUSDT|1794761810039"
+    },
+    {
+      "estado": "limitada",
+      "motivo": "config_operativa_ausente",
+      "observation_id": "ARIAUSDT|1794762110172"
+    },
+    {
+      "estado": "limitada",
+      "motivo": "config_operativa_ausente",
+      "observation_id": "ARIAUSDT|1794762410536"
+    },
+    {
+      "estado": "limitada",
+      "motivo": "config_operativa_ausente",
+      "observation_id": "ARIAUSDT|1794762710750"
+    },
+    {
+      "estado": "limitada",
+      "motivo": "config_operativa_ausente",
+      "observation_id": "ARIAUSDT|1794763010777"
+    },
+    {
+      "estado": "limitada",
+      "motivo": "config_operativa_ausente",
+      "observation_id": "ARIAUSDT|1794763310932"
+    },
+    {
+      "estado": "limitada",
+      "motivo": "config_operativa_ausente",
+      "observation_id": "ASTERUSDT|1794760067214"
+    },
+    {
+      "estado": "limitada",
+      "motivo": "config_operativa_ausente",
+      "observation_id": "ASTERUSDT|1794760308959"
+    },
+    {
+      "estado": "limitada",
+      "motivo": "config_operativa_ausente",
+      "observation_id": "ASTERUSDT|1794760609169"
+    },
+    {
+      "estado": "limitada",
+      "motivo": "config_operativa_ausente",
+      "observation_id": "ASTERUSDT|1794760909427"
+    },
+    {
+      "estado": "limitada",
+      "motivo": "config_operativa_ausente",
+      "observation_id": "ASTERUSDT|1794761209541"
+    },
+    {
+      "estado": "limitada",
+      "motivo": "config_operativa_ausente",
+      "observation_id": "ASTERUSDT|1794761509641"
+    },
+    {
+      "estado": "limitada",
+      "motivo": "config_operativa_ausente",
+      "observation_id": "ASTERUSDT|1794761810039"
+    },
+    {
+      "estado": "limitada",
+      "motivo": "config_operativa_ausente",
+      "observation_id": "ASTERUSDT|1794762110172"
+    },
+    {
+      "estado": "limitada",
+      "motivo": "config_operativa_ausente",
+      "observation_id": "ASTERUSDT|1794763010777"
+    },
+    {
+      "estado": "limitada",
+      "motivo": "config_operativa_ausente",
+      "observation_id": "ASTERUSDT|1794763310932"
+    },
+    {
+      "estado": "limitada",
+      "motivo": "config_operativa_ausente",
+      "observation_id": "AVAUSDT|1794763010777"
+    },
+    {
+      "estado": "limitada",
+      "motivo": "config_operativa_ausente",
+      "observation_id": "AVAXUSDT|1794760909427"
+    },
+    {
+      "estado": "limitada",
+      "motivo": "config_operativa_ausente",
+      "observation_id": "AVAXUSDT|1794761209541"
+    },
+    {
+      "estado": "limitada",
+      "motivo": "config_operativa_ausente",
+      "observation_id": "AVAXUSDT|1794761509641"
+    },
+    {
+      "estado": "limitada",
+      "motivo": "config_operativa_ausente",
+      "observation_id": "AVAXUSDT|1794761810039"
+    },
+    {
+      "estado": "limitada",
+      "motivo": "config_operativa_ausente",
+      "observation_id": "BARDUSDT|1794762410536"
+    },
+    {
+      "estado": "limitada",
+      "motivo": "config_operativa_ausente",
+      "observation_id": "BARDUSDT|1794762710750"
+    },
+    {
+      "estado": "limitada",
+      "motivo": "config_operativa_ausente",
+      "observation_id": "BARDUSDT|1794763010777"
+    },
+    {
+      "estado": "limitada",
+      "motivo": "config_operativa_ausente",
+      "observation_id": "BARDUSDT|1794763310932"
+    },
+    {
+      "estado": "limitada",
+      "motivo": "config_operativa_ausente",
+      "observation_id": "BASEDUSDT|1794760909427"
+    },
+    {
+      "estado": "limitada",
+      "motivo": "config_operativa_ausente",
+      "observation_id": "BASEDUSDT|1794761509641"
+    },
+    {
+      "estado": "limitada",
+      "motivo": "config_operativa_ausente",
+      "observation_id": "BASEDUSDT|1794761810039"
+    },
+    {
+      "estado": "limitada",
+      "motivo": "config_operativa_ausente",
+      "observation_id": "BATUSDT|1794760067214"
+    },
+    {
+      "estado": "limitada",
+      "motivo": "config_operativa_ausente",
+      "observation_id": "BTWUSDT|1794760067214"
+    },
+    {
+      "estado": "limitada",
+      "motivo": "config_operativa_ausente",
+      "observation_id": "BTWUSDT|1794760308959"
+    },
+    {
+      "estado": "limitada",
+      "motivo": "config_operativa_ausente",
+      "observation_id": "BTWUSDT|1794760609169"
+    },
+    {
+      "estado": "limitada",
+      "motivo": "config_operativa_ausente",
+      "observation_id": "BTWUSDT|1794760909427"
+    },
+    {
+      "estado": "limitada",
+      "motivo": "config_operativa_ausente",
+      "observation_id": "BTWUSDT|1794761209541"
+    },
+    {
+      "estado": "limitada",
+      "motivo": "config_operativa_ausente",
+      "observation_id": "BTWUSDT|1794761509641"
+    },
+    {
+      "estado": "limitada",
+      "motivo": "config_operativa_ausente",
+      "observation_id": "BTWUSDT|1794761810039"
+    },
+    {
+      "estado": "limitada",
+      "motivo": "config_operativa_ausente",
+      "observation_id": "BTWUSDT|1794762110172"
+    },
+    {
+      "estado": "limitada",
+      "motivo": "config_operativa_ausente",
+      "observation_id": "BTWUSDT|1794762410536"
+    },
+    {
+      "estado": "limitada",
+      "motivo": "config_operativa_ausente",
+      "observation_id": "BTWUSDT|1794762710750"
+    },
+    {
+      "estado": "limitada",
+      "motivo": "config_operativa_ausente",
+      "observation_id": "BTWUSDT|1794763010777"
+    },
+    {
+      "estado": "limitada",
+      "motivo": "config_operativa_ausente",
+      "observation_id": "BTWUSDT|1794763310932"
+    },
+    {
+      "estado": "limitada",
+      "motivo": "config_operativa_ausente",
+      "observation_id": "CHIPUSDT|1794762410536"
+    },
+    {
+      "estado": "limitada",
+      "motivo": "config_operativa_ausente",
+      "observation_id": "CHIPUSDT|1794762710750"
+    },
+    {
+      "estado": "limitada",
+      "motivo": "config_operativa_ausente",
+      "observation_id": "CHIPUSDT|1794763010777"
+    },
+    {
+      "estado": "limitada",
+      "motivo": "config_operativa_ausente",
+      "observation_id": "CHRUSDT|1794761509641"
+    },
+    {
+      "estado": "limitada",
+      "motivo": "config_operativa_ausente",
+      "observation_id": "CHRUSDT|1794761810039"
+    },
+    {
+      "estado": "limitada",
+      "motivo": "config_operativa_ausente",
+      "observation_id": "CHZUSDT|1794760067214"
+    },
+    {
+      "estado": "limitada",
+      "motivo": "config_operativa_ausente",
+      "observation_id": "COWUSDT|1794762710750"
+    },
+    {
+      "estado": "limitada",
+      "motivo": "config_operativa_ausente",
+      "observation_id": "CRVUSDT|1794761209541"
+    },
+    {
+      "estado": "limitada",
+      "motivo": "config_operativa_ausente",
+      "observation_id": "CRVUSDT|1794761509641"
+    },
+    {
+      "estado": "limitada",
+      "motivo": "config_operativa_ausente",
+      "observation_id": "CRVUSDT|1794761810039"
+    },
+    {
+      "estado": "limitada",
+      "motivo": "config_operativa_ausente",
+      "observation_id": "CTKUSDT|1794760067214"
+    },
+    {
+      "estado": "limitada",
+      "motivo": "config_operativa_ausente",
+      "observation_id": "DODOXUSDT|1794762410536"
+    },
+    {
+      "estado": "limitada",
+      "motivo": "config_operativa_ausente",
+      "observation_id": "DODOXUSDT|1794762710750"
+    },
+    {
+      "estado": "limitada",
+      "motivo": "config_operativa_ausente",
+      "observation_id": "DODOXUSDT|1794763010777"
+    },
+    {
+      "estado": "limitada",
+      "motivo": "config_operativa_ausente",
+      "observation_id": "DODOXUSDT|1794763310932"
+    },
+    {
+      "estado": "limitada",
+      "motivo": "config_operativa_ausente",
+      "observation_id": "DOGEUSDT|1794760909427"
+    },
+    {
+      "estado": "limitada",
+      "motivo": "config_operativa_ausente",
+      "observation_id": "DOGEUSDT|1794761209541"
+    },
+    {
+      "estado": "limitada",
+      "motivo": "config_operativa_ausente",
+      "observation_id": "DOGEUSDT|1794761509641"
+    },
+    {
+      "estado": "limitada",
+      "motivo": "config_operativa_ausente",
+      "observation_id": "DOGEUSDT|1794761810039"
+    },
+    {
+      "estado": "limitada",
+      "motivo": "config_operativa_ausente",
+      "observation_id": "DOGSUSDT|1794760067214"
+    },
+    {
+      "estado": "limitada",
+      "motivo": "config_operativa_ausente",
+      "observation_id": "EVAAUSDT|1794760067214"
+    },
+    {
+      "estado": "limitada",
+      "motivo": "config_operativa_ausente",
+      "observation_id": "EVAAUSDT|1794760308959"
+    },
+    {
+      "estado": "limitada",
+      "motivo": "config_operativa_ausente",
+      "observation_id": "EVAAUSDT|1794760609169"
+    },
+    {
+      "estado": "limitada",
+      "motivo": "config_operativa_ausente",
+      "observation_id": "EVAAUSDT|1794760909427"
+    },
+    {
+      "estado": "limitada",
+      "motivo": "config_operativa_ausente",
+      "observation_id": "EVAAUSDT|1794761209541"
+    },
+    {
+      "estado": "limitada",
+      "motivo": "config_operativa_ausente",
+      "observation_id": "EVAAUSDT|1794761509641"
+    },
+    {
+      "estado": "limitada",
+      "motivo": "config_operativa_ausente",
+      "observation_id": "EVAAUSDT|1794761810039"
+    },
+    {
+      "estado": "limitada",
+      "motivo": "config_operativa_ausente",
+      "observation_id": "EVAAUSDT|1794762110172"
+    },
+    {
+      "estado": "limitada",
+      "motivo": "config_operativa_ausente",
+      "observation_id": "EVAAUSDT|1794762410536"
+    },
+    {
+      "estado": "limitada",
+      "motivo": "config_operativa_ausente",
+      "observation_id": "EVAAUSDT|1794762710750"
+    },
+    {
+      "estado": "limitada",
+      "motivo": "config_operativa_ausente",
+      "observation_id": "EVAAUSDT|1794763010777"
+    },
+    {
+      "estado": "limitada",
+      "motivo": "config_operativa_ausente",
+      "observation_id": "EVAAUSDT|1794763310932"
+    },
+    {
+      "estado": "limitada",
+      "motivo": "config_operativa_ausente",
+      "observation_id": "INITUSDT|1794760067214"
+    },
+    {
+      "estado": "limitada",
+      "motivo": "config_operativa_ausente",
+      "observation_id": "INITUSDT|1794760308959"
+    },
+    {
+      "estado": "limitada",
+      "motivo": "config_operativa_ausente",
+      "observation_id": "INITUSDT|1794760609169"
+    },
+    {
+      "estado": "limitada",
+      "motivo": "config_operativa_ausente",
+      "observation_id": "INITUSDT|1794760909427"
+    },
+    {
+      "estado": "limitada",
+      "motivo": "config_operativa_ausente",
+      "observation_id": "INITUSDT|1794761209541"
+    },
+    {
+      "estado": "limitada",
+      "motivo": "config_operativa_ausente",
+      "observation_id": "INITUSDT|1794761509641"
+    },
+    {
+      "estado": "limitada",
+      "motivo": "config_operativa_ausente",
+      "observation_id": "INITUSDT|1794761810039"
+    },
+    {
+      "estado": "limitada",
+      "motivo": "config_operativa_ausente",
+      "observation_id": "INITUSDT|1794762110172"
+    },
+    {
+      "estado": "limitada",
+      "motivo": "config_operativa_ausente",
+      "observation_id": "INITUSDT|1794762410536"
+    },
+    {
+      "estado": "limitada",
+      "motivo": "config_operativa_ausente",
+      "observation_id": "INITUSDT|1794762710750"
+    },
+    {
+      "estado": "limitada",
+      "motivo": "config_operativa_ausente",
+      "observation_id": "INITUSDT|1794763010777"
+    },
+    {
+      "estado": "limitada",
+      "motivo": "config_operativa_ausente",
+      "observation_id": "INITUSDT|1794763310932"
+    },
+    {
+      "estado": "limitada",
+      "motivo": "config_operativa_ausente",
+      "observation_id": "JCTUSDT|1794760067214"
+    },
+    {
+      "estado": "limitada",
+      "motivo": "config_operativa_ausente",
+      "observation_id": "JCTUSDT|1794760308959"
+    },
+    {
+      "estado": "limitada",
+      "motivo": "config_operativa_ausente",
+      "observation_id": "JCTUSDT|1794760609169"
+    },
+    {
+      "estado": "limitada",
+      "motivo": "config_operativa_ausente",
+      "observation_id": "JCTUSDT|1794760909427"
+    },
+    {
+      "estado": "limitada",
+      "motivo": "config_operativa_ausente",
+      "observation_id": "JCTUSDT|1794761209541"
+    },
+    {
+      "estado": "limitada",
+      "motivo": "config_operativa_ausente",
+      "observation_id": "JCTUSDT|1794761509641"
+    },
+    {
+      "estado": "limitada",
+      "motivo": "config_operativa_ausente",
+      "observation_id": "JCTUSDT|1794761810039"
+    },
+    {
+      "estado": "limitada",
+      "motivo": "config_operativa_ausente",
+      "observation_id": "JCTUSDT|1794762110172"
+    },
+    {
+      "estado": "limitada",
+      "motivo": "config_operativa_ausente",
+      "observation_id": "JCTUSDT|1794762410536"
+    },
+    {
+      "estado": "limitada",
+      "motivo": "config_operativa_ausente",
+      "observation_id": "JCTUSDT|1794762710750"
+    },
+    {
+      "estado": "limitada",
+      "motivo": "config_operativa_ausente",
+      "observation_id": "JCTUSDT|1794763010777"
+    },
+    {
+      "estado": "limitada",
+      "motivo": "config_operativa_ausente",
+      "observation_id": "JCTUSDT|1794763310932"
+    },
+    {
+      "estado": "limitada",
+      "motivo": "config_operativa_ausente",
+      "observation_id": "JELLYJELLYUSDT|1794761810039"
+    },
+    {
+      "estado": "limitada",
+      "motivo": "config_operativa_ausente",
+      "observation_id": "JELLYJELLYUSDT|1794762110172"
+    },
+    {
+      "estado": "limitada",
+      "motivo": "config_operativa_ausente",
+      "observation_id": "JELLYJELLYUSDT|1794762410536"
+    },
+    {
+      "estado": "limitada",
+      "motivo": "config_operativa_ausente",
+      "observation_id": "JELLYJELLYUSDT|1794762710750"
+    },
+    {
+      "estado": "limitada",
+      "motivo": "config_operativa_ausente",
+      "observation_id": "JELLYJELLYUSDT|1794763010777"
+    },
+    {
+      "estado": "limitada",
+      "motivo": "config_operativa_ausente",
+      "observation_id": "JELLYJELLYUSDT|1794763310932"
+    },
+    {
+      "estado": "limitada",
+      "motivo": "config_operativa_ausente",
+      "observation_id": "MAGMAUSDT|1794760067214"
+    },
+    {
+      "estado": "limitada",
+      "motivo": "config_operativa_ausente",
+      "observation_id": "MAGMAUSDT|1794760308959"
+    },
+    {
+      "estado": "limitada",
+      "motivo": "config_operativa_ausente",
+      "observation_id": "MAGMAUSDT|1794760609169"
+    },
+    {
+      "estado": "limitada",
+      "motivo": "config_operativa_ausente",
+      "observation_id": "MAGMAUSDT|1794760909427"
+    },
+    {
+      "estado": "limitada",
+      "motivo": "config_operativa_ausente",
+      "observation_id": "MAGMAUSDT|1794761209541"
+    },
+    {
+      "estado": "limitada",
+      "motivo": "config_operativa_ausente",
+      "observation_id": "MAGMAUSDT|1794761509641"
+    },
+    {
+      "estado": "limitada",
+      "motivo": "config_operativa_ausente",
+      "observation_id": "MAGMAUSDT|1794761810039"
+    },
+    {
+      "estado": "limitada",
+      "motivo": "config_operativa_ausente",
+      "observation_id": "MAGMAUSDT|1794762110172"
+    },
+    {
+      "estado": "limitada",
+      "motivo": "config_operativa_ausente",
+      "observation_id": "MAGMAUSDT|1794762410536"
+    },
+    {
+      "estado": "limitada",
+      "motivo": "config_operativa_ausente",
+      "observation_id": "MAGMAUSDT|1794762710750"
+    },
+    {
+      "estado": "limitada",
+      "motivo": "config_operativa_ausente",
+      "observation_id": "MAGMAUSDT|1794763010777"
+    },
+    {
+      "estado": "limitada",
+      "motivo": "config_operativa_ausente",
+      "observation_id": "MAGMAUSDT|1794763310932"
+    },
+    {
+      "estado": "limitada",
+      "motivo": "config_operativa_ausente",
+      "observation_id": "POLUSDT|1794760067214"
+    },
+    {
+      "estado": "limitada",
+      "motivo": "config_operativa_ausente",
+      "observation_id": "POLUSDT|1794760909427"
+    },
+    {
+      "estado": "limitada",
+      "motivo": "config_operativa_ausente",
+      "observation_id": "POLUSDT|1794761209541"
+    },
+    {
+      "estado": "limitada",
+      "motivo": "config_operativa_ausente",
+      "observation_id": "POLUSDT|1794762410536"
+    },
+    {
+      "estado": "limitada",
+      "motivo": "config_operativa_ausente",
+      "observation_id": "POLUSDT|1794762710750"
+    },
+    {
+      "estado": "limitada",
+      "motivo": "config_operativa_ausente",
+      "observation_id": "POLUSDT|1794763010777"
+    },
+    {
+      "estado": "limitada",
+      "motivo": "config_operativa_ausente",
+      "observation_id": "POLYXUSDT|1794761810039"
+    },
+    {
+      "estado": "limitada",
+      "motivo": "config_operativa_ausente",
+      "observation_id": "SLXUSDT|1794760067214"
+    },
+    {
+      "estado": "limitada",
+      "motivo": "config_operativa_ausente",
+      "observation_id": "SLXUSDT|1794760909427"
+    },
+    {
+      "estado": "limitada",
+      "motivo": "config_operativa_ausente",
+      "observation_id": "SLXUSDT|1794761209541"
+    },
+    {
+      "estado": "limitada",
+      "motivo": "config_operativa_ausente",
+      "observation_id": "SLXUSDT|1794762410536"
+    },
+    {
+      "estado": "limitada",
+      "motivo": "config_operativa_ausente",
+      "observation_id": "SLXUSDT|1794762710750"
+    },
+    {
+      "estado": "limitada",
+      "motivo": "config_operativa_ausente",
+      "observation_id": "SLXUSDT|1794763010777"
+    },
+    {
+      "estado": "limitada",
+      "motivo": "config_operativa_ausente",
+      "observation_id": "SNXUSDT|1794761810039"
+    },
+    {
+      "estado": "limitada",
+      "motivo": "config_operativa_ausente",
+      "observation_id": "SOPHUSDT|1794760067214"
+    },
+    {
+      "estado": "limitada",
+      "motivo": "config_operativa_ausente",
+      "observation_id": "SOPHUSDT|1794760308959"
+    },
+    {
+      "estado": "limitada",
+      "motivo": "config_operativa_ausente",
+      "observation_id": "SOPHUSDT|1794760609169"
+    },
+    {
+      "estado": "limitada",
+      "motivo": "config_operativa_ausente",
+      "observation_id": "SOPHUSDT|1794760909427"
+    },
+    {
+      "estado": "limitada",
+      "motivo": "config_operativa_ausente",
+      "observation_id": "SOPHUSDT|1794761209541"
+    },
+    {
+      "estado": "limitada",
+      "motivo": "config_operativa_ausente",
+      "observation_id": "SOPHUSDT|1794761509641"
+    },
+    {
+      "estado": "limitada",
+      "motivo": "config_operativa_ausente",
+      "observation_id": "SOPHUSDT|1794761810039"
+    },
+    {
+      "estado": "limitada",
+      "motivo": "config_operativa_ausente",
+      "observation_id": "SOPHUSDT|1794762110172"
+    },
+    {
+      "estado": "limitada",
+      "motivo": "config_operativa_ausente",
+      "observation_id": "SOPHUSDT|1794762410536"
+    },
+    {
+      "estado": "limitada",
+      "motivo": "config_operativa_ausente",
+      "observation_id": "SOPHUSDT|1794762710750"
+    },
+    {
+      "estado": "limitada",
+      "motivo": "config_operativa_ausente",
+      "observation_id": "SOPHUSDT|1794763010777"
+    },
+    {
+      "estado": "limitada",
+      "motivo": "config_operativa_ausente",
+      "observation_id": "SOPHUSDT|1794763310932"
+    },
+    {
+      "estado": "limitada",
+      "motivo": "config_operativa_ausente",
+      "observation_id": "TACUSDT|1794760067214"
+    },
+    {
+      "estado": "limitada",
+      "motivo": "config_operativa_ausente",
+      "observation_id": "TACUSDT|1794760308959"
+    },
+    {
+      "estado": "limitada",
+      "motivo": "config_operativa_ausente",
+      "observation_id": "TACUSDT|1794760609169"
+    },
+    {
+      "estado": "limitada",
+      "motivo": "config_operativa_ausente",
+      "observation_id": "TACUSDT|1794760909427"
+    },
+    {
+      "estado": "limitada",
+      "motivo": "config_operativa_ausente",
+      "observation_id": "VVVUSDT|1794761509641"
+    },
+    {
+      "estado": "limitada",
+      "motivo": "config_operativa_ausente",
+      "observation_id": "VVVUSDT|1794762410536"
+    },
+    {
+      "estado": "limitada",
+      "motivo": "config_operativa_ausente",
+      "observation_id": "VVVUSDT|1794762710750"
+    },
+    {
+      "estado": "limitada",
+      "motivo": "config_operativa_ausente",
+      "observation_id": "VVVUSDT|1794763010777"
+    },
+    {
+      "estado": "limitada",
+      "motivo": "config_operativa_ausente",
+      "observation_id": "VVVUSDT|1794763310932"
+    },
+    {
+      "estado": "limitada",
+      "motivo": "config_operativa_ausente",
+      "observation_id": "ZILUSDT|1794760909427"
+    },
+    {
+      "estado": "limitada",
+      "motivo": "config_operativa_ausente",
+      "observation_id": "ZILUSDT|1794761209541"
+    },
+    {
+      "estado": "limitada",
+      "motivo": "config_operativa_ausente",
+      "observation_id": "ZILUSDT|1794762110172"
+    },
+    {
+      "estado": "limitada",
+      "motivo": "config_operativa_ausente",
+      "observation_id": "ZILUSDT|1794762710750"
+    },
+    {
+      "estado": "limitada",
+      "motivo": "config_operativa_ausente",
+      "observation_id": "ZILUSDT|1794763010777"
+    },
+    {
+      "estado": "limitada",
+      "motivo": "config_operativa_ausente",
+      "observation_id": "ZILUSDT|1794763310932"
+    }
+  ],
+  "run_dir": "C:\\proyectos\\binance-futures-data\\exp-v2-ventana-3-20261115a",
+  "run_id": null,
+  "veredicto": {
+    "coincidentes": 0,
+    "config_operativa_acreditada": false,
+    "diferentes": 0,
+    "estado": "LIMITACION",
+    "limitaciones": 2,
+    "limitaciones_reconstructivas": 2,
+    "limitadas": 182,
+    "observaciones_comparadas": 182,
+    "procedencia_acreditada": false,
+    "reutiliza_adaptador_y_motores_existentes": true,
+    "sin_red": true
+  },
+  "version": "research-operativo-replay/v2"
+}

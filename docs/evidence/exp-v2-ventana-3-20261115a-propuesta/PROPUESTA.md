@@ -283,3 +283,19 @@ On-chain, indicadores nuevos, GARCH, patrones nuevos, futuros con vencimiento
 y cambios de dashboard quedan como líneas futuras documentadas
 ([PRODUCT_GOAL](../PRODUCT_GOAL.md), F-PATRONES-EXTREMOS-CONTEXTO-20261112).
 No forman parte de esta ventana ni de este bloque.
+
+
+---
+
+## ANEXO DE CIERRE (2026-11-15, posterior a la ejecucion)
+
+Esta propuesta fue **ejecutada una sola vez** el 2026-11-15 bajo su
+autorizacion propia. La corrida quedo **INTERRUMPIDA POR INCIDENTE** durante
+la fase settle: la captura (3600 s) quedo completa e integra, pero el arbol
+de procesos fue eliminado externamente antes del cierre (codigo de salida
+UNKNOWN, veredicto del lanzador NO PRODUCIDO, sin manifiesto.json). El
+replay offline v2 sobre lo persistido dio **LIMITACION (3)** y no hay
+medicion economica. Detalle completo:
+`evidence/exp-v2-ventana-3-20261115a-cierre-incidente/INFORME.md`. El
+run_id queda consumido; el texto original de la propuesta se conserva tal
+cual, incluida su cabecera historica "PREPARADA, NO EJECUTADA".

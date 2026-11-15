@@ -1,6 +1,44 @@
-# Estado vigente — preparación reproducible de UNA medición económica, 2026-11-15
+# Estado vigente — ventana 3 interrumpida por incidente y cerrada, 2026-11-15
 
-## Preparación reproducible de UNA medición económica — PREPARADA, NO EJECUTADA (2026-11-15)
+## Ventana `exp-v2-ventana-3-20261115a` — EJECUTADA PARCIALMENTE, INTERRUMPIDA POR INCIDENTE, cerrada (2026-11-15)
+
+**Autorización humana del 2026-11-15:** «AUTORIZACIÓN EXPLÍCITA — UNA VENTANA
+OPERATIVA REPRODUCIBLE» — cubría adquisición pública, simulación, persistencia,
+resolución, espera contable, replay offline y cierre de **esa única ejecución**.
+**No** autorizaba órdenes reales, cuentas, claves, ventanas adicionales ni
+relanzamientos. Tras la interrupción, la decisión humana posterior acotó el
+cierre: cerrar como **INTERRUMPIDA POR INCIDENTE**, replay offline v2 **solo
+sobre lo persistido** y publicación. **No** autoriza relanzamientos ni un
+`run_id` nuevo; `exp-v2-ventana-3-20261115a` **queda consumido**.
+
+**Incidente:** a las 17:30:42Z el árbol de procesos (envoltorio → lanzador →
+hijo) fue eliminado externamente ~5 min después del fin de la captura, con
+correlación de ~2 s con un reinicio en bloque de componentes node/opencode;
+**causa final UNKNOWN** en su mecanismo exacto. Sin reinicio del sistema, sin
+crash de python registrado, `stderr` vacío. **Código de salida del hijo:
+UNKNOWN; veredicto del lanzador: NO PRODUCIDO** (sin `cierre.json`/`exit_code.txt`,
+no fabricados). La captura (3600 s, 12/12 ciclos) quedó completa e íntegra;
+settle interrumpido, funding sin adquirir (UNKNOWN), espera contable sin abrir.
+
+**Veredicto:** sin medición económica. 218 observaciones (182 aptas), 19 filas
+operativas (**1 entrada simulada** `0GUSDT` SHORT con salida por stop ejecutada
+y neto `CONDICIONADO_SIN_FUNDING_COMPLETO` — la cifra del motor es una cuenta
+**sin funding**, no un resultado completo — y **18 rechazos por capacidad**).
+Replay v2 sobre lo persistido → **LIMITACION (3)**: sin `manifiesto.json` (el
+lanzador murió antes de publicarlo) no hay configuración congelada ni
+integridad acreditada; 182/182 observaciones limitadas, denominador completo,
+0 resultados inventados. Comparación por rol **INSUFICIENTE**.
+
+| | |
+|---|---|
+| SHA ejecutado | `bc635e7d4a34c82f794ad7a9d76f78960f9d0794` (local == remoto) |
+| Preflight | completo: presupuesto revalidado sin red (gate 13/13, sin techos ampliados), código ejecutable idéntico al validado |
+| Dataset original | `C:\proyectos\binance-futures-data\exp-v2-ventana-3-20261115a` (intacto, solo lectura; 12 ficheros con SHA-256) |
+| Derivados | `C:\proyectos\binance-futures-data\exp-v2-ventana-3-20261115a-cierre-incidente` |
+| Informe | [INFORME](evidence/exp-v2-ventana-3-20261115a-cierre-incidente/INFORME.md) (tres capas + incidente + replay) |
+| Lo que NO acredita | rentabilidad, edge, ejecutabilidad, comparación candidato/comparador, funding, ni calidad del selector; el incidente no aporta evidencia sobre la hipótesis en ninguna dirección |
+
+## Preparación reproducible de UNA medición económica — preparación cerrada (2026-11-15) *(el estado de esta preparación quedó superado por la ventana interrumpida arriba; el texto siguiente se conserva como historia)*
 
 **Autorización humana del 2026-11-15:** «PREPARACIÓN ACOTADA — UNA MEDICIÓN
 ECONÓMICA REPRODUCIBLE» — cubre **solo** preparación local, persistencia

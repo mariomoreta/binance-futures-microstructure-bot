@@ -1,0 +1,30 @@
+{
+  "lanzamiento_utc": "2026-11-15T16:25:43.500Z",
+  "capture_end_utc": "2026-11-15T17:25:43.500Z",
+  "settle_end_previsto_utc": "2026-11-15T18:35:43.500Z",
+  "ultima_escritura_hijo_utc": "2026-11-15T17:30:06Z",
+  "nota_ultima_escritura": "mtime de estado.json observado ~1957 s antes de la comprobacion de ~18:02:43Z",
+  "muerte_arbol_utc": "2026-11-15T17:30:42Z (aprox; primera ausencia de procesos)",
+  "evidencia_procesos": [
+    "Sin procesos python en el sistema tras el incidente (CIM Win32_Process).",
+    "Procesos node reiniciados en bloque a las 13:30:42-13:30:50 locales (=17:30:42-17:30:50Z), coincidiendo con la muerte del arbol.",
+    "Lote previo de node a las 13:12:41-47 locales NO interrumpio al hijo (siguio escribiendo hasta 17:30:06Z)."
+  ],
+  "evidencia_negativa": [
+    "Sin reinicio del sistema: LastBootUpTime 2026-11-11, sin eventos System 1074/6006/6008/41 en las ultimas 3 h.",
+    "Sin eventos Application 1000/1001/1002 (crash de python) en 3 h.",
+    "stderr.log y lanzador_stderr.txt con 0 bytes: sin excepcion volcada.",
+    "Sin cierre.json, exit_code.txt ni estado_lanzador.json en el run-dir: el lanzador no llego a cerrar."
+  ],
+  "atribucion_causa": "terminacion externa del arbol de procesos coincidente con el reinicio de componentes node/opencode; el mecanismo exacto de eliminacion queda UNKNOWN",
+  "codigo_salida_observado": "UNKNOWN (no existe registro de salida)",
+  "codigo_salida_nota": "no se fabrica cierre.json ni exit_code.txt retrospectivo",
+  "generado_utc": "2026-11-15T18:22:24Z",
+  "fases": {
+    "captura": "COMPLETA (3600 s, termino por duracion segun lo previsto)",
+    "settle_resolucion": "INTERRUMPIDA ~5 min despues del fin de captura",
+    "adquisicion_funding": "NO INICIADA (funding_adquisicion.jsonl vacio)",
+    "espera_contable": "NO INICIADA (195 operativos y 1 contabilidad pendientes al corte)",
+    "cierre_lanzador": "NO PRODUCIDO (sin veredicto del lanzador)"
+  }
+}

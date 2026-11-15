@@ -5824,3 +5824,59 @@ regla. `exp-v2-ventana-2-20261112a` sigue INSUFICIENTE y la ventana
 `exp-v2-ventana-3-20261115a` sigue propuesta y sin ejecutar (autorizacion
 humana posterior explícita). No se tocan `opencode.json`, ficheros ajenos,
 DBs canonicas, dashboard 3020 ni servicio 8792.
+
+2026-11-15 - CIERRE POR INCIDENTE DE LA VENTANA exp-v2-ventana-3-20261115a
+(EJECUTADA UNA VEZ, INTERRUMPIDA, SIN RELANZAMIENTO)
+
+AUTORIZACION. La ventana unica autorizada el 2026-11-15 se ejecuto una sola
+vez (SHA bc635e7d4a34c82f794ad7a9d76f78960f9d0794, local == remoto; preflight
+completo: presupuesto revalidado sin red, gate 13/13, sin techos ampliados;
+codigo ejecutable identico al validado). Tras la interrupcion, la decision
+humana posterior acoto el cierre: cerrar la ventana como INTERRUMPIDA POR
+INCIDENTE, ejecutar el replay offline v2 solo sobre lo persistido en
+derivados separados y publicar. No autoriza relanzamientos ni un run_id
+nuevo; exp-v2-ventana-3-20261115a queda consumido.
+
+INCIDENTE. A las 17:30:42Z el arbol de procesos (envoltorio -> lanzador ->
+hijo) fue eliminado externamente, unos 5 min despues del fin de la captura
+(17:25:43Z, completa e integra: 3600 s, 12/12 ciclos, 218 observaciones con
+182 aptas). La ultima escritura del hijo fue a las 17:30:40Z; el reinicio en
+bloque de procesos node (componentes de opencode) ocurrio a las
+17:30:42-17:30:50Z (correlacion ~2 s). Causa final: terminacion externa
+coincidente con ese reinicio; el mecanismo exacto queda UNKNOWN. Evidencia
+negativa: sin reinicio del sistema (LastBootUpTime 2026-11-11; sin eventos
+System 1074/6006/6008/41 en 3 h), sin eventos de crash de python
+(Application 1000/1001/1002 en 3 h), stderr.log y lanzador_stderr.txt con
+0 bytes. Codigo de salida del hijo: UNKNOWN. Veredicto del lanzador: NO
+PRODUCIDO (sin cierre.json, exit_code.txt ni estado_lanzador.json; no se
+fabrican retrospectivamente). Integridad del dataset original verificada:
+12 ficheros con SHA-256, JSONL integros (sin escrituras partidas).
+
+DECISION (a) - REPLAY SOBRE LO PERSISTIDO. El replay v2 publicado corre en
+solo lectura sobre el original y escribe el informe en derivados separados
+(exp-v2-ventana-3-20261115a-cierre-incidente). Resultado: LIMITACION (3),
+codigo de salida 3 observado. Motivos: manifiesto_ausente ->
+config_operativa_ausente (el lanzador murio antes de publicar manifiesto.json,
+presente en la ventana 2). Denominador completo: 182 aptas -> 182 comparadas
+-> 182 limitadas; 0 coincidentes, 0 diferentes; nada desaparece del
+denominador sin quedar limitado con motivo. La LIMITACION es el resultado
+correcto y coherente con el incidente; no es un fallo del replay y no se
+fuerza equivalencia.
+
+DECISION (b) - ETIQUETADO ECONOMICO HONESTO. 19 filas operativas: 1
+ENTRADA_EJECUTADA (0GUSDT SHORT, salida por stop ejecutada, cuenta del motor
+gross -5.00, fees 1.0025, spread/slip 0.6015, net -6.604 SIN liquidaciones de
+funding, neto_estado CONDICIONADO_SIN_FUNDING_COMPLETO, funding UNKNOWN
+nunca cero) y 18 RECHAZADA_CAPACIDAD (neto UNKNOWN). La cifra del motor es
+una cuenta intermedia sin funding, no un resultado completo: no se reporta
+P&L. Sin medicion economica; comparacion candidato/comparador INSUFICIENTE.
+
+DECISION (c) - LIMITES. Este cierre no acredita rentabilidad, edge,
+ejecutabilidad, la comparacion por rol, el funding ni la calidad del
+selector; el incidente no aporta evidencia sobre la hipotesis economica en
+ninguna direccion. exp-v2-ventana-2-20261112a sigue INSUFICIENTE. Leccion
+registrada (sin implementar, sujeto a autorizacion propia): el arbol del
+piloto quedo atado al proceso anfitrion del agente; una supervision
+independiente evitaria que un reinicio del anfitrion mate la corrida. No se
+tocan opencode.json, ficheros ajenos, datasets historicos, DBs canonicas,
+dashboard 3020 ni servicio 8792.
