@@ -1,5 +1,26 @@
 # Cola vigente — preparación reproducible de UNA medición económica, 2026-11-15
 
+**Corrección posterior (2026-11-15, autorización humana acotada):** el
+veredicto del replay pasa a **regla estricta** —los tres falsos positivos
+detectados en la revisión (timestamp desplazado, identidad de consultas sin
+acreditar, configuración operativa ausente) se reproducen contra el código
+publicado y se corrigen—. Comparación por tipo de campo (igualdad exacta en
+timestamps/identificadores/estados/booleanos; tolerancia absoluta `1e-9`
+solo para valores económicos), procedencia acreditada por consulta
+(run_id, observación, símbolo, intervalo, `decision_ms`, parámetros exactos
+y cruce completo con el ledger), integridad de los ficheros necesarios
+contra el manifiesto, configuración operativa obligatoria (nunca defaults)
+y denominador completo publicado. **Ya no existe
+`EQUIVALENTE_CON_LIMITACIONES`**: cualquier limitación → `LIMITACION` (3);
+diferencias con evidencia válida → `DIFERENCIAS` (4). Aceptación: **7
+passed**; regresiones **75 + 46 + 32 + 42 OK** (unittest con
+`PYTHONPATH=src` en shell nueva). Evidencia:
+[correccion-veredicto](evidence/exp-v2-preparacion-reproducible-20261115/correccion-veredicto/INFORME.md).
+El veredicto de la preparación queda corregido **por anexo** (§9 del
+INFORME histórico y §10.18 del protocolo), sin borrar la evidencia
+histórica. La ventana `exp-v2-ventana-3-20261115a` sigue **propuesta y sin
+ejecutar**.
+
 **Verificación 2026-11-15 (preparación acotada, sin mercado):** se conservan
 la corrección temporal (`5362baf`) y su etiquetado, publicados dentro del
 commit concurrente `11969f9` (integrado por *fast-forward*). Se **añade** la

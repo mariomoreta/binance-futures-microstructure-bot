@@ -17,6 +17,13 @@ Demuestra, sin mercado y con almacenamiento temporal:
    cantidad, entrada, stop, salida, costes y estado del funding/neto.
 6. Datos ausentes o archivos corruptos producen una limitacion explicita,
    nunca un resultado inventado; el funding desconocido sigue UNKNOWN.
+7. Regla estricta del veredicto: EQUIVALENTE (0) exige integridad
+   acreditada contra el manifiesto, procedencia acreditada de TODA consulta
+   (run_id, observacion, simbolo, intervalo, decision_ms, parametros y
+   ledger), configuracion operativa obligatoria y denominador completo.
+   Cualquier alteracion semantica (timestamps, run_id, simbolo, intervalo,
+   parametros, vinculo con el ledger) o evidencia insuficiente produce
+   LIMITACION (3) o DIFERENCIAS (4): nunca EQUIVALENTE ni codigo 0.
 """
 from __future__ import annotations
 
@@ -414,5 +421,355 @@ def test_replay_offline_datos_ausentes_o_corruptos() -> None:
         limitadas = [c for c in informe["observaciones"]
                      if c["estado"] == "limitada"]
         assert limitadas, informe
+    finally:
+        run.shutdown()
+
+
+# ---------------------------------------------------------------------------
+# Helpers de las pruebas negativas (copias independientes, sin proveedores)
+# ---------------------------------------------------------------------------
+
+def _copia_trabajo(out_dir: Path, nombre: str) -> Path:
+    """Copia independiente del dataset, con los proveedores ya detenidos."""
+    destino = Path(tempfile.mkdtemp(prefix="replay-negativa-")) / nombre
+    _TMP.append(destino.parent)
+    shutil.copytree(out_dir, destino)
+    return destino
+
+
+def _reescribir_jsonl(path: Path, filas: List[Dict[str, Any]]) -> None:
+    path.write_text(
+        "".join(json.dumps(f, ensure_ascii=False, sort_keys=True) + "\n"
+                for f in filas), encoding="utf-8", newline="\n")
+
+
+def _leer_jsonl_archivo(path: Path) -> List[Dict[str, Any]]:
+    return [json.loads(line) for line in
+            path.read_text(encoding="utf-8").splitlines() if line.strip()]
+
+
+def _actualizar_hash_manifiesto(run_dir: Path, nombre: str) -> None:
+    """Recalcula el hash publicado de un fichero (integridad 'ok').
+
+    Se usa para demostrar que cada comprobacion semantica detecta SU defecto
+    sin depender del fallo incidental de la integridad del fichero.
+    """
+    mp = run_dir / "manifiesto.json"
+    manifiesto = json.loads(mp.read_text(encoding="utf-8"))
+    entrada = manifiesto["files"][nombre]
+    h = hashlib.sha256((run_dir / nombre).read_bytes()).hexdigest()
+    entrada["sha256"] = h
+    mp.write_text(json.dumps(manifiesto, ensure_ascii=False, indent=2,
+                             sort_keys=True) + "\n",
+                  encoding="utf-8", newline="\n")
+
+
+def _consultas_y_ejecucion(out_dir: Path):
+    consultas_path = out_dir / "consultas_klines.jsonl"
+    consultas = [r for r in _leer_jsonl_archivo(consultas_path)
+                 if r.get("kind") == "consulta_klines_trayectoria"]
+    consultas.sort(key=lambda r: int(r.get("consulta_numero") or 0))
+    ops = [r for r in _leer_jsonl_archivo(
+        out_dir / "resultado_operativo.jsonl")
+        if r.get("kind") == "resultado_operativo"]
+    return consultas, ops
+
+
+def _verificar_veredicto(informe: Optional[Dict[str, Any]]) -> None:
+    """Ningun caso negativo puede convertirse en EQUIVALENTE con codigo 0."""
+    assert informe is not None
+    estado = informe["veredicto"]["estado"]
+    assert estado in ("EQUIVALENTE", "LIMITACION", "DIFERENCIAS"), informe
+    assert estado != "EQUIVALENTE_CON_LIMITACIONES", informe
+    if estado == "LIMITACION":
+        assert informe["veredicto"]["limitadas"] > 0 or \
+            informe["veredicto"]["limitaciones"] > 0, informe
+
+
+# ---------------------------------------------------------------------------
+# 4) Desplazamiento temporal: DIFERENCIAS si la integridad es integra,
+#    LIMITACION si la alteracion rompe la integridad acreditada
+# ---------------------------------------------------------------------------
+
+def test_replay_detecta_desplazamiento_temporal() -> None:
+    """Un entry_ms desplazado +1000 ms nunca vuelve a dar EQUIVALENTE/0."""
+    datos = _ejecutar_cli(MOVES_LONG)
+    run = datos["run"]
+    out_dir = datos["out_dir"]
+    try:
+        run.shutdown()
+
+        def desplazar(run_dir: Path) -> None:
+            path = run_dir / "resultado_operativo.jsonl"
+            filas = _leer_jsonl_archivo(path)
+            for f in filas:
+                if f.get("entry_ms") is not None:
+                    f["entry_ms"] = int(f["entry_ms"]) + 1000
+            _reescribir_jsonl(path, filas)
+
+        # (a) Integridad rota (hash del manifiesto ya no coincide):
+        #     LIMITACION, la alteracion rompe la integridad acreditada.
+        copia = _copia_trabajo(out_dir, "ts_integridad_rota")
+        desplazar(copia)
+        proc, informe = _replay(copia, copia.parent / "replay_ts_roto.json")
+        assert proc.returncode == 3, (proc.stdout, proc.stderr, informe)
+        _verificar_veredicto(informe)
+        assert informe["veredicto"]["estado"] == "LIMITACION", informe
+        motivos = {l["motivo"] for l in informe["limitaciones"]}
+        assert "integridad_fichero_rota" in motivos, informe
+        assert motivos & {"consulta_run_id_distinto",
+                          "consulta_simbolo_distinto"} == set(), informe
+
+        # (b) Integridad intacta (hash recalculado en la copia de prueba):
+        #     DIFERENCIAS: los archivos son integros y los valores difieren.
+        copia2 = _copia_trabajo(out_dir, "ts_integridad_ok")
+        desplazar(copia2)
+        _actualizar_hash_manifiesto(copia2, "resultado_operativo.jsonl")
+        proc, informe = _replay(copia2, copia2.parent / "replay_ts_ok.json")
+        assert proc.returncode == 4, (proc.stdout, proc.stderr, informe)
+        _verificar_veredicto(informe)
+        assert informe["veredicto"]["estado"] == "DIFERENCIAS", informe
+        assert informe["veredicto"]["diferentes"] > 0, informe
+        assert informe["veredicto"]["limitadas"] == 0, informe
+        desplazadas = [d for c in informe["observaciones"]
+                       for d in c.get("diferencias", [])
+                       if d["campo"] == "entry_ms"]
+        assert desplazadas, informe
+        for d in desplazadas:
+            assert d["ejecucion"] == d["replay"] + 1000, d
+    finally:
+        run.shutdown()
+
+
+# ---------------------------------------------------------------------------
+# 5) Identidad y procedencia de las consultas: cada comprobacion detecta SU
+#    defecto (los hashes del manifiesto se recalculan para no enmascararlo)
+# ---------------------------------------------------------------------------
+
+def test_replay_acredita_identidad_de_las_consultas() -> None:
+    """run_id, simbolo, intervalo, parametros y vinculo ledger se acreditan."""
+    datos = _ejecutar_cli(MOVES_LONG)
+    run = datos["run"]
+    out_dir = datos["out_dir"]
+    try:
+        run.shutdown()
+        observaciones = {r["observation_id"]: r for r in
+                         _leer_jsonl_archivo(out_dir / "observaciones.jsonl")
+                         if r.get("kind") == "observacion"}
+        # La ULTIMA consulta (orden por consulta_numero) corresponde a una
+        # observacion rechazada por capacidad: excluirla no altera el estado
+        # de capacidad de las demas, asi que cada defecto queda aislado.
+        consultas, _ = _consultas_y_ejecucion(out_dir)
+        assert len(consultas) >= 2, consultas
+        objetivo = consultas[-1]
+        oid = str(objetivo["observation_id"])
+        assert observaciones[oid]["symbol"] == objetivo["symbol"], objetivo
+        oid_admitido = str(consultas[0]["observation_id"])
+
+        def mutar_primera_consulta(transformacion) -> Path:
+            copia = _copia_trabajo(out_dir, "identidad")
+            path = copia / "consultas_klines.jsonl"
+            filas = _leer_jsonl_archivo(path)
+            for f in filas:
+                if f.get("kind") == "consulta_klines_trayectoria" and \
+                        str(f.get("observation_id")) == oid:
+                    transformacion(f)
+            _reescribir_jsonl(path, filas)
+            _actualizar_hash_manifiesto(copia, "consultas_klines.jsonl")
+            return copia
+
+        # (a) run_id distinto.
+        copia = mutar_primera_consulta(lambda f: f.update(run_id="otra-corrida"))
+        proc, informe = _replay(copia, copia.parent / "replay_runid.json")
+        assert proc.returncode == 3, (proc.stdout, proc.stderr, informe)
+        _verificar_veredicto(informe)
+        motivos = {l["motivo"] for l in informe["limitaciones"]}
+        assert "consulta_run_id_distinto" in motivos, informe
+        assert informe["veredicto"]["limitadas"] == 1, informe
+        assert informe["denominador"]["observaciones_reconstruidas"] == 4, informe
+        assert informe["denominador"]["observaciones_aptas"] == 5, informe
+
+        # (b) Simbolo distinto (el cuerpo y su hash se conservan).
+        copia = mutar_primera_consulta(lambda f: f.update(symbol="ZZZUSDT"))
+        proc, informe = _replay(copia, copia.parent / "replay_simbolo.json")
+        assert proc.returncode == 3, (proc.stdout, proc.stderr, informe)
+        _verificar_veredicto(informe)
+        motivos = {l["motivo"] for l in informe["limitaciones"]}
+        assert "consulta_simbolo_distinto" in motivos, informe
+
+        # (c) Intervalo distinto.
+        copia = mutar_primera_consulta(lambda f: f.update(interval="5m"))
+        proc, informe = _replay(copia, copia.parent / "replay_intervalo.json")
+        assert proc.returncode == 3, (proc.stdout, proc.stderr, informe)
+        _verificar_veredicto(informe)
+        motivos = {l["motivo"] for l in informe["limitaciones"]}
+        assert "consulta_intervalo_distinto" in motivos, informe
+
+        # (d) Parametros de la peticion distintos (startTime desplazado).
+        copia = mutar_primera_consulta(
+            lambda f: f["params"].update(
+                startTime=int(f["params"]["startTime"]) + 123))
+        proc, informe = _replay(copia, copia.parent / "replay_params.json")
+        assert proc.returncode == 3, (proc.stdout, proc.stderr, informe)
+        _verificar_veredicto(informe)
+        motivos = {l["motivo"] for l in informe["limitaciones"]}
+        assert "consulta_parametros_distintos" in motivos, informe
+
+        # (e) Vinculo con el ledger roto: se elimina la fila del ledger que
+        #     produjo esa respuesta (hash conservado en la consulta).
+        copia = _copia_trabajo(out_dir, "vinculo")
+        path = copia / "http_requests.jsonl"
+        filas = [r for r in _leer_jsonl_archivo(path)
+                 if r.get("response_sha256") != objetivo["cuerpo_sha256"]]
+        assert len(filas) < len(_leer_jsonl_archivo(path)), filas
+        _reescribir_jsonl(path, filas)
+        _actualizar_hash_manifiesto(copia, "http_requests.jsonl")
+        proc, informe = _replay(copia, copia.parent / "replay_vinculo.json")
+        assert proc.returncode == 3, (proc.stdout, proc.stderr, informe)
+        _verificar_veredicto(informe)
+        motivos = {l["motivo"] for l in informe["limitaciones"]}
+        assert "consulta_sin_vinculo_ledger" in motivos, informe
+        # La observacion sin vinculo NO se reconstruye; las demas si.
+        limitadas = [c for c in informe["observaciones"]
+                     if c["estado"] == "limitada"]
+        assert [c["observation_id"] for c in limitadas] == [oid], informe
+        assert informe["denominador"]["observaciones_reconstruidas"] == 4, informe
+        assert oid_admitido not in [c["observation_id"] for c in limitadas], informe
+    finally:
+        run.shutdown()
+
+
+# ---------------------------------------------------------------------------
+# 6) Configuracion operativa OBLIGATORIA: ausente, incompleta o invalida
+# ---------------------------------------------------------------------------
+
+def test_replay_exige_configuracion_operativa() -> None:
+    """Sin operativo_config acreditado NO se reconstruye (nunca defaults)."""
+    datos = _ejecutar_cli(MOVES_LONG)
+    run = datos["run"]
+    out_dir = datos["out_dir"]
+    try:
+        run.shutdown()
+
+        def manifiesto_de(run_dir: Path) -> Path:
+            return run_dir / "manifiesto.json"
+
+        # (a) operativo_config AUSENTE.
+        copia = _copia_trabajo(out_dir, "config_ausente")
+        m = json.loads(manifiesto_de(copia).read_text(encoding="utf-8"))
+        m.pop("operativo_config", None)
+        manifiesto_de(copia).write_text(
+            json.dumps(m, ensure_ascii=False, indent=2, sort_keys=True) + "\n",
+            encoding="utf-8", newline="\n")
+        proc, informe = _replay(copia, copia.parent / "replay_cfg_ausente.json")
+        assert proc.returncode == 3, (proc.stdout, proc.stderr, informe)
+        _verificar_veredicto(informe)
+        motivos = {l["motivo"] for l in informe["limitaciones"]}
+        assert "config_operativa_ausente" in motivos, informe
+        assert informe["economia"]["operaciones_replay"] == 0, informe
+        assert informe["denominador"]["observaciones_aptas"] == 5, informe
+        assert informe["denominador"]["observaciones_limitadas"] == 5, informe
+
+        # (b) operativo_config INCOMPLETO (falta un campo necesario).
+        copia = _copia_trabajo(out_dir, "config_incompleta")
+        m = json.loads(manifiesto_de(copia).read_text(encoding="utf-8"))
+        m["operativo_config"].pop("fee_bps", None)
+        manifiesto_de(copia).write_text(
+            json.dumps(m, ensure_ascii=False, indent=2, sort_keys=True) + "\n",
+            encoding="utf-8", newline="\n")
+        proc, informe = _replay(copia, copia.parent / "replay_cfg_incompleta.json")
+        assert proc.returncode == 3, (proc.stdout, proc.stderr, informe)
+        _verificar_veredicto(informe)
+        motivos = {l["motivo"] for l in informe["limitaciones"]}
+        assert "config_operativa_incompleta" in motivos, informe
+        assert any("fee_bps" in str(l.get("campos_faltantes"))
+                   for l in informe["limitaciones"]), informe
+        assert informe["economia"]["operaciones_replay"] == 0, informe
+
+        # (c) operativo_config INVALIDO (tipo incoherente).
+        copia = _copia_trabajo(out_dir, "config_invalida")
+        m = json.loads(manifiesto_de(copia).read_text(encoding="utf-8"))
+        m["operativo_config"]["notional_usdt"] = "1000"
+        manifiesto_de(copia).write_text(
+            json.dumps(m, ensure_ascii=False, indent=2, sort_keys=True) + "\n",
+            encoding="utf-8", newline="\n")
+        proc, informe = _replay(copia, copia.parent / "replay_cfg_invalida.json")
+        assert proc.returncode == 3, (proc.stdout, proc.stderr, informe)
+        _verificar_veredicto(informe)
+        motivos = {l["motivo"] for l in informe["limitaciones"]}
+        assert "config_operativa_invalida" in motivos, informe
+        assert informe["economia"]["operaciones_replay"] == 0, informe
+
+        # (d) Config VALIDA pero incoherente con el hash publicado en la
+        #     ejecucion (se altera fee_bps): config_hash_no_coincide.
+        copia = _copia_trabajo(out_dir, "config_hash")
+        m = json.loads(manifiesto_de(copia).read_text(encoding="utf-8"))
+        assert m["operativo_config"]["fee_bps"] != 0.0
+        m["operativo_config"]["fee_bps"] = \
+            m["operativo_config"]["fee_bps"] * 2
+        manifiesto_de(copia).write_text(
+            json.dumps(m, ensure_ascii=False, indent=2, sort_keys=True) + "\n",
+            encoding="utf-8", newline="\n")
+        proc, informe = _replay(copia, copia.parent / "replay_cfg_hash.json")
+        assert proc.returncode == 3, (proc.stdout, proc.stderr, informe)
+        _verificar_veredicto(informe)
+        motivos = {l["motivo"] for l in informe["limitaciones"]}
+        assert "config_hash_no_coincide" in motivos, informe
+    finally:
+        run.shutdown()
+
+
+# ---------------------------------------------------------------------------
+# 7) Evidencia indispensable: sin ledger o sin resultados NO hay codigo 0
+# ---------------------------------------------------------------------------
+
+def test_replay_exige_ledger_y_ficheros_indispensables() -> None:
+    """El ledger y el resultado de ejecucion son indispensables (antes code 0)."""
+    datos = _ejecutar_cli(MOVES_LONG)
+    run = datos["run"]
+    out_dir = datos["out_dir"]
+    try:
+        run.shutdown()
+
+        # (a) Ledger HTTP ausente: sin el no se acredita la procedencia de
+        #     ninguna consulta (antes: EQUIVALENTE_CON_LIMITACIONES, codigo 0).
+        copia = _copia_trabajo(out_dir, "ledger_ausente")
+        (copia / "http_requests.jsonl").unlink()
+        proc, informe = _replay(copia, copia.parent / "replay_ledger.json")
+        assert proc.returncode == 3, (proc.stdout, proc.stderr, informe)
+        _verificar_veredicto(informe)
+        motivos = {l["motivo"] for l in informe["limitaciones"]}
+        assert "ledger_ausente" in motivos, informe
+        assert "consulta_sin_vinculo_ledger" in motivos, informe
+        # Sin procedencia acreditada no se reconstruye NINGUNA observacion.
+        assert informe["economia"]["operaciones_replay"] == 0, informe
+        assert informe["veredicto"]["limitadas"] == 5, informe
+
+        # (b) Resultado de la ejecucion ausente: no hay con que comparar.
+        copia = _copia_trabajo(out_dir, "resultados_ausentes")
+        (copia / "resultado_operativo.jsonl").unlink()
+        proc, informe = _replay(copia, copia.parent / "replay_resultados.json")
+        assert proc.returncode == 3, (proc.stdout, proc.stderr, informe)
+        _verificar_veredicto(informe)
+        motivos = {l["motivo"] for l in informe["limitaciones"]}
+        assert "resultados_ausentes" in motivos, informe
+        limitadas = {c["motivo"] for c in informe["observaciones"]
+                     if c["estado"] == "limitada"}
+        assert "sin_resultado_en_la_ejecucion" in limitadas, informe
+
+        # (c) Integridad no publicada: un manifiesto sin hashes no acredita
+        #     la evidencia.
+        copia = _copia_trabajo(out_dir, "integridad_no_publicada")
+        mp = copia / "manifiesto.json"
+        m = json.loads(mp.read_text(encoding="utf-8"))
+        m["files"] = {}
+        mp.write_text(json.dumps(m, ensure_ascii=False, indent=2,
+                                 sort_keys=True) + "\n",
+                      encoding="utf-8", newline="\n")
+        proc, informe = _replay(copia, copia.parent / "replay_sin_hashes.json")
+        assert proc.returncode == 3, (proc.stdout, proc.stderr, informe)
+        _verificar_veredicto(informe)
+        motivos = {l["motivo"] for l in informe["limitaciones"]}
+        assert "integridad_no_publicada" in motivos, informe
     finally:
         run.shutdown()

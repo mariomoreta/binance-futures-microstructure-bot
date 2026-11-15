@@ -1,3 +1,51 @@
+## Corrección del veredicto del replay `piloto/replay-veredicto-estricto-20261115` — 2026-11-15
+
+- `DECISIONS_REVIEWED` — AGENTS, WORKFLOW, PRODUCT_GOAL, CURRENT_STATE,
+  TASK_QUEUE, DECISIONS y EXPERIMENTO_OPERATIVO_V2 §10.17 (base del bloque
+  corregido, publicada en `12024146`).
+- `NEW_DECISIONS_RECORDED` — el veredicto del replay pasa a **regla
+  estricta**: comparación **por tipo de campo** (timestamps, identificadores,
+  decisiones, estados y booleanos con igualdad exacta; `True` nunca es 1;
+  única tolerancia **absoluta** `1e-9` USDT para valores económicos),
+  **procedencia acreditada por consulta** (run_id, observación, símbolo,
+  intervalo, `decision_ms`, parámetros exactos y cruce completo con el
+  ledger HTTP), **integridad de los ficheros necesarios contra el
+  manifiesto**, **configuración operativa obligatoria** (ausente/incompleta/
+  inválida → no se reconstruye nada, nunca defaults) y **denominador
+  completo publicado**. Ya no existe `EQUIVALENTE_CON_LIMITACIONES`:
+  cualquier limitación → `LIMITACION` (3); diferencias con evidencia válida
+  → `DIFERENCIAS` (4). Registro en `DECISIONS.md` (2026-11-15).
+- `FEATURES_IMPLEMENTED` — `scripts/research_operativo_replay.py`
+  (comparación por tipo, `_cargar_consultas` con validación de identidad y
+  procedencia, `_verificar_integridad`, `_config_operativa_validada`,
+  informe con `denominador`); `tests/test_operativo_replay_offline.py`
+  (4 pruebas negativas nuevas separadas). Sin cambios en la persistencia,
+  los motores, la estrategia ni el presupuesto.
+- `FEATURES_VERIFIED` — aceptación **7 passed** (3 positivos conservados +
+  4 negativos); los tres defectos reproducidos antes de corregir contra el
+  código publicado (`12024146`) quedan detectados después: timestamp
+  desplazado → `LIMITACION` (integridad rota) / `DIFERENCIAS` (integridad
+  ok), identidad alterada → `LIMITACION` con motivos específicos,
+  configuración ausente → `LIMITACION`. Regresiones afectadas: **75**
+  (pytest) + **46 + 32 + 42** (unittest, con `PYTHONPATH=src` en shell
+  nueva) **OK**. Evidencia:
+  `evidence/exp-v2-preparacion-reproducible-20261115/correccion-veredicto/INFORME.md`.
+- `DEFERRED_FEATURES` — ejecución de la ventana propuesta
+  `exp-v2-ventana-3-20261115a` (autorización humana posterior explícita);
+  vía B (`funding-coverage/v1`); futuros con vencimiento; indicadores,
+  on-chain, GARCH, dashboard, conectores y capas de IA; reutilización o
+  relanzamiento de `exp-v2-ventana-2-20261112a`.
+- `BACKLOG_UPDATED` — entrada nueva de este cierre; la entrada
+  `piloto/preparacion-reproducible-20261115` se conserva intacta (su texto
+  describe el replay publicado en ese commit). **Ningún gate económico
+  avanza**: la ventana anterior sigue `INSUFICIENTE`.
+- `DOCUMENTATION_CONFLICTS` — el veredicto de preparación quedó **corregido
+  por anexo** (§9 del INFORME histórico y §10.18 del protocolo) sin borrar
+  la evidencia histórica; los informes de replay históricos
+  (`replay_long/short/funding.json`) reflejan el replay publicado en su
+  commit y se conservan tal cual; el manifiesto `hashes.json` de la
+  evidencia se regeneró tras el anexo.
+
 ## Preparación reproducible de UNA medición económica `piloto/preparacion-reproducible-20261115` — 2026-11-15
 
 - `DECISIONS_REVIEWED` — AGENTS, WORKFLOW, PRODUCT_GOAL, CURRENT_STATE,

@@ -212,3 +212,29 @@ datasets originales.
 | `presupuesto_comparacion.json` | comparación exhaustiva con el presupuesto publicado (10 diferencias, todas de almacenamiento) |
 | `presupuesto_launcher.json`, `presupuesto_estado_lanzador.json`, `presupuesto_cierre.json`, `presupuesto_exit_code.txt`, `presupuesto_stdout.txt`, `presupuesto_stderr.txt` | evidencia del lanzador en la ruta de preparación (`.txt` porque `.gitignore` excluye `*.log`) |
 | `hashes.json` | hash SHA-256 de cada artefacto de esta evidencia |
+
+
+---
+
+## 9. Corrección posterior del veredicto (2026-11-15, mismo día, autorización humana acotada)
+
+Tras publicar este informe se autorizó y ejecutó una **corrección local
+acotada** de `scripts/research_operativo_replay.py`: los tres defectos que
+permitían falsos positivos de equivalencia (tolerancia relativa aplicada a
+timestamps, identidad de las consultas sin acreditar y configuración operativa
+opcional con valores por defecto) fueron **reproducidos contra el código
+publicado de este commit y corregidos**. Los casos A, B y C descritos arriba
+(§4) ya **no** devuelven `EQUIVALENTE` con código 0; el desplazamiento
+temporal se detecta como **DIFERENCIAS (4)** o **LIMITACION (3)** según la
+integridad, y la regla del veredicto pasa a ser estricta (ya no existe
+`EQUIVALENTE_CON_LIMITACIONES`).
+
+Esta sección **corrige el veredicto de preparación sin borrar la evidencia
+histórica**: las secciones 1–8 y los artefactos listados en §8 corresponden
+al replay publicado en este commit y se conservan tal cual. La evidencia de
+la corrección (reproducción, tabla antes/después, comandos, positivos
+conservados, negativos detectados y límites reales) está en
+[correccion-veredicto/INFORME.md](correccion-veredicto/INFORME.md). La
+aceptación corregida es **7 passed** (3 positivos conservados + 4 pruebas
+negativas nuevas); las regresiones afectadas se repitieron íntegras
+(75 + 46 + 32 + 42 OK).

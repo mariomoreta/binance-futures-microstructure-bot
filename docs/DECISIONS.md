@@ -5747,3 +5747,80 @@ el servicio 8792. La cobertura de contrato sigue limitada a
 PERPETUAL/TRADING/USDT. La ventana `exp-v2-ventana-2-20261112a` sigue siendo
 INSUFICIENTE: esta preparacion no aporta evidencia economica; solo deja el
 camino reproducible para una ventana futura que aun no existe.
+
+
+## 2026-11-15 - Correccion del veredicto del replay (regla estricta)
+
+DECISION (a) - ALCANCE. Autorizacion humana del 2026-11-15 ("CORRECCION
+LOCAL ACOTADA - EVITAR FALSOS POSITIVOS DE EQUIVALENCIA"): corregir y probar
+localmente tres defectos de `scripts/research_operativo_replay.py`. No se
+autoriza Binance, consultas publicas, capturas, ordenes, relanzamientos ni
+ventanas nuevas. Base publicada: `12024146ddcecae0064c1be91cc740bbe0242613`.
+La persistencia, los motores, la estrategia y el presupuesto quedan intactos.
+
+DECISION (b) - COMPARACION POR TIPO DE CAMPO. Los timestamps en
+milisegundos (`decision_ms`, `entry_ms`, `exit_ms`), los identificadores,
+las decisiones, los estados y los textos se comparan con igualdad EXACTA;
+los booleanos con igualdad exacta y de tipo (`True` nunca equivale a 1). La
+unica tolerancia es ABSOLUTA (1e-9 USDT) y se aplica exclusivamente a los
+valores economicos decimales. La tolerancia relativa de la v1 (1e-9 x
+escala) quedaba eliminada: sobre un timestamp en ms absorbia desplazamientos
+de ~1,7 s. El desplazamiento temporal se detecta como DIFERENCIAS (4) cuando
+los archivos son integros y sus valores difieren, y como LIMITACION (3)
+cuando la alteracion rompe la integridad acreditada.
+
+DECISION (c) - PROCEDENCIA ACREDITADA POR CONSULTA. Antes de usar una
+consulta persistida se acredita su vinculo con la corrida del manifiesto
+(run_id), la observacion correspondiente (existente y apta), el simbolo y el
+intervalo, el `decision_ms`, los parametros exactos de la peticion y la
+respuesta del ledger HTTP (hash, endpoint, parametros, simbolo, intervalo,
+estado HTTP, instantes de solicitud/adquisicion, bytes y numero de filas).
+El hash del cuerpo por si solo no prueba que peticion lo produjo. Una
+consulta sin vinculo valido NO se usa: su observacion queda limitada y no se
+reconstruye; el denominador publicado no se reduce en silencio.
+
+DECISION (d) - INTEGRIDAD ACREDITADA. El sha256 real de cada fichero
+necesario (`observaciones.jsonl`, `resultado_operativo.jsonl`,
+`http_requests.jsonl`, `consultas_klines.jsonl`, `funding_adquisicion.jsonl`
+y `resumen.json`) se comprueba contra el publicado en el manifiesto. Fichero
+alterado -> `integridad_fichero_rota`; manifiesto sin hashes publicados ->
+`integridad_no_publicada`. Un fichero necesario ausente produce LIMITACION.
+
+DECISION (e) - CONFIGURACION OPERATIVA OBLIGATORIA. Sin `operativo_config`,
+con campos necesarios ausentes o con tipos/valores incoherentes NO se
+reconstruye nada (nunca valores por defecto silenciosos). Ademas el hash de
+la configuracion reconstruida se contrasta con el `config_hash` publicado en
+la ejecucion; una incoherencia es LIMITACION (`config_hash_no_coincide`).
+
+DECISION (f) - VEREDICTO ESTRICTO. Se elimina
+`EQUIVALENTE_CON_LIMITACIONES`. `EQUIVALENTE` (codigo 0) exige integridad
+acreditada, procedencia acreditada de todas las consultas, configuracion
+operativa verificada, denominador completo y resultados identicos.
+Cualquier limitacion -> LIMITACION (3). Diferencias con evidencia valida y
+acreditada -> DIFERENCIAS (4). El informe publica que pudo reconstruirse y
+que no (bloque `denominador`); los resultados de observaciones sin
+procedencia acreditada no se presentan como operaciones validas.
+
+DECISION (g) - EVIDENCIA. Los tres defectos se reproducen ANTES de corregir
+contra el codigo publicado (corrida loopback real del CLI, proveedores
+detenidos, copias independientes) y quedan detectados despues: timestamp
+desplazado -> LIMITACION (integridad rota) o DIFERENCIAS (integridad ok);
+run_id/simbolo/intervalo/parametros alterados -> LIMITACION con su motivo
+especifico (las pruebas recalculan el hash del manifiesto en la copia para
+demostrar que cada comprobacion detecta SU defecto); configuracion ausente/
+incompleta/invalida/incoherente -> LIMITACION. Aceptacion 7 passed
+(3 positivos conservados + 4 negativas nuevas); regresiones afectadas 75 +
+46 + 32 + 42 OK (unittest con `PYTHONPATH=src` en shell nueva, nuance
+documentada). Evidencia:
+`docs/evidence/exp-v2-preparacion-reproducible-20261115/correccion-veredicto/INFORME.md`.
+El veredicto de la preparacion se corrige por anexo (§9 del INFORME
+historico y §10.18 del protocolo) sin borrar la evidencia historica.
+
+DECISION (h) - LIMITES. La equivalencia acreditada significa que el
+resultado es reconstruible desde la evidencia persistida con integridad y
+procedencia verificadas; no acredita la veracidad del proveedor, la
+completitud del funding mas alla del metodo aplicado ni la calidad de la
+regla. `exp-v2-ventana-2-20261112a` sigue INSUFICIENTE y la ventana
+`exp-v2-ventana-3-20261115a` sigue propuesta y sin ejecutar (autorizacion
+humana posterior explícita). No se tocan `opencode.json`, ficheros ajenos,
+DBs canonicas, dashboard 3020 ni servicio 8792.

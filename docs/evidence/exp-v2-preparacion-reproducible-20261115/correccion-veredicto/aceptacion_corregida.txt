@@ -1,0 +1,4 @@
+.......                                                                  [100%]
+7 passed in 21.17s
+
+returncode=0

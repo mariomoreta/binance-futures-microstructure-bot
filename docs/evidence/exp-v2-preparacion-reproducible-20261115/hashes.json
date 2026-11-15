@@ -1,11 +1,60 @@
 {
+  "correccion_veredicto": {
+    "files": {
+      "INFORME.md": {
+        "bytes": 12230,
+        "sha256": "842e7d76048b864d7ae6312eb1db3c4a1fd7ecbf9d482739ed31c9334e94d40c"
+      },
+      "aceptacion_corregida.txt": {
+        "bytes": 113,
+        "sha256": "936b2b0acbe1737a9260579e3717d6f52ac0827fe612e5dfc5eb81914d0fbd45"
+      },
+      "contraste_antes_despues.py": {
+        "bytes": 2538,
+        "sha256": "54cf37e9d295c18cef5c333157a6511072732c0cf0d877be3fd1a838ea8b99ca"
+      },
+      "regresiones_pytest.txt": {
+        "bytes": 194,
+        "sha256": "38259db93adb13d24c31f18a36d10d1af00882d67d31cfae1a3d740a92b4c227"
+      },
+      "regresiones_unittest_engineering.txt": {
+        "bytes": 8200,
+        "sha256": "cc5c6e1bb1afdc67a72c87d3c4add9113c158da50da42290d806339d7d88682a"
+      },
+      "regresiones_unittest_history.txt": {
+        "bytes": 2353,
+        "sha256": "89fbb8d4b3b18ba6cea9b9fd230983d8661e06ec08fd18c8e79b388d4a266be8"
+      },
+      "regresiones_unittest_public.txt": {
+        "bytes": 262,
+        "sha256": "4e4d3b040893ad88df16698c5b1be724a4626e226319b366b1137b90def190d4"
+      },
+      "replay_publicado.py": {
+        "bytes": 26167,
+        "sha256": "5fcd454b18a59877057a0808e9dea288e965c82bbef79f773c8175fb15fc6c8c"
+      },
+      "reproducir_defectos.py": {
+        "bytes": 7346,
+        "sha256": "ea38b45d960515147ce34aad1c063f99684612a5eb936ea6a8f409accac074aa"
+      },
+      "resultados_corregido.json": {
+        "bytes": 1917,
+        "sha256": "1aa6b910dccb07361ef3354d75f48c8e9146d3302ee8ae07cd757116ad11c298"
+      },
+      "resultados_publicado.json": {
+        "bytes": 3007,
+        "sha256": "45dde8a0f4083bed0e237897cf99fbb71855117c32466add609e96c67bba6028"
+      }
+    },
+    "nota": "hashes del bloque de correccion del veredicto del replay (ver INFORME.md §9 y correccion-veredicto/INFORME.md); su hashes.json propio es la referencia primaria"
+  },
   "directorio_corrida_publica": "C:\\proyectos\\binance-futures-data\\exp-v2-ventana-3-20261115a",
   "directorio_corrida_publica_existe": false,
   "fecha": "2026-11-15",
   "files": {
     "INFORME.md": {
-      "bytes": 13511,
-      "sha256": "efa059b64bccd0ad6f89fba6b89a449a1c4bae20d0625656377633656a346dd7"
+      "bytes": 14934,
+      "sha256": "35e9a3207a93c4b440bcc0c0b61608a1ff050c2724ab1c724640e944c9f937c3"
     },
     "aceptacion_replay.txt": {
       "bytes": 99,

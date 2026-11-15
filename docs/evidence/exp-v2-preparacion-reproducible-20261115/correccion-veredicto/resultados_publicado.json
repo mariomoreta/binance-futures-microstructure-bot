@@ -1,0 +1,62 @@
+[
+  {
+    "caso": "control",
+    "run_dir": "C:\\Users\\adonm\\AppData\\Local\\Temp\\repro-defectos-4ctgftbl\\control",
+    "returncode": 0,
+    "estado": "EQUIVALENTE",
+    "coincidentes": 5,
+    "limitaciones": [],
+    "stdout": "{\"coincidentes\": 5, \"diferentes\": 0, \"estado\": \"EQUIVALENTE\", \"limitaciones\": 0, \"limitaciones_reconstructivas\": 0, \"limitadas\": 0, \"observaciones_comparadas\": 5, \"reutiliza_adaptador_y_motores_existentes\": true, \"sin_red\": true}",
+    "stderr": ""
+  },
+  {
+    "caso": "A",
+    "run_dir": "C:\\Users\\adonm\\AppData\\Local\\Temp\\repro-defectos-x2_bwe1k\\A",
+    "returncode": 0,
+    "estado": "EQUIVALENTE",
+    "coincidentes": 5,
+    "limitaciones": [],
+    "stdout": "{\"coincidentes\": 5, \"diferentes\": 0, \"estado\": \"EQUIVALENTE\", \"limitaciones\": 0, \"limitaciones_reconstructivas\": 0, \"limitadas\": 0, \"observaciones_comparadas\": 5, \"reutiliza_adaptador_y_motores_existentes\": true, \"sin_red\": true}",
+    "stderr": ""
+  },
+  {
+    "caso": "A-manif",
+    "run_dir": "C:\\Users\\adonm\\AppData\\Local\\Temp\\repro-defectos-9w5wv0c_\\A_manifiesto_ok",
+    "returncode": 0,
+    "estado": "EQUIVALENTE",
+    "coincidentes": 5,
+    "limitaciones": [],
+    "stdout": "{\"coincidentes\": 5, \"diferentes\": 0, \"estado\": \"EQUIVALENTE\", \"limitaciones\": 0, \"limitaciones_reconstructivas\": 0, \"limitadas\": 0, \"observaciones_comparadas\": 5, \"reutiliza_adaptador_y_motores_existentes\": true, \"sin_red\": true}",
+    "stderr": ""
+  },
+  {
+    "caso": "B",
+    "run_dir": "C:\\Users\\adonm\\AppData\\Local\\Temp\\repro-defectos-0ntldc05\\B",
+    "returncode": 0,
+    "estado": "EQUIVALENTE",
+    "coincidentes": 5,
+    "limitaciones": [],
+    "stdout": "{\"coincidentes\": 5, \"diferentes\": 0, \"estado\": \"EQUIVALENTE\", \"limitaciones\": 0, \"limitaciones_reconstructivas\": 0, \"limitadas\": 0, \"observaciones_comparadas\": 5, \"reutiliza_adaptador_y_motores_existentes\": true, \"sin_red\": true}",
+    "stderr": ""
+  },
+  {
+    "caso": "B-manif",
+    "run_dir": "C:\\Users\\adonm\\AppData\\Local\\Temp\\repro-defectos-u2c4tvsd\\B_manifiesto_ok",
+    "returncode": 0,
+    "estado": "EQUIVALENTE",
+    "coincidentes": 5,
+    "limitaciones": [],
+    "stdout": "{\"coincidentes\": 5, \"diferentes\": 0, \"estado\": \"EQUIVALENTE\", \"limitaciones\": 0, \"limitaciones_reconstructivas\": 0, \"limitadas\": 0, \"observaciones_comparadas\": 5, \"reutiliza_adaptador_y_motores_existentes\": true, \"sin_red\": true}",
+    "stderr": ""
+  },
+  {
+    "caso": "C",
+    "run_dir": "C:\\Users\\adonm\\AppData\\Local\\Temp\\repro-defectos-rhww2nq0\\C",
+    "returncode": 0,
+    "estado": "EQUIVALENTE",
+    "coincidentes": 5,
+    "limitaciones": [],
+    "stdout": "{\"coincidentes\": 5, \"diferentes\": 0, \"estado\": \"EQUIVALENTE\", \"limitaciones\": 0, \"limitaciones_reconstructivas\": 0, \"limitadas\": 0, \"observaciones_comparadas\": 5, \"reutiliza_adaptador_y_motores_existentes\": true, \"sin_red\": true}",
+    "stderr": ""
+  }
+]

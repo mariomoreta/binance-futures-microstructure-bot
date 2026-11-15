@@ -1,0 +1,60 @@
+comando: python -m unittest tests.test_engineering_clock_budget tests.test_engineering_clock_readiness (PYTHONPATH=src)
+
+C:\Python314\Lib\tempfile.py:484: ResourceWarning: Implicitly cleaning up <HTTPError 400: 'Bad Request'>
+  _warnings.warn(self.warn_message, ResourceWarning)
+......................C:\Python314\Lib\unittest\suite.py:107: ResourceWarning: unclosed file <_io.TextIOWrapper name='C:\\Users\\adonm\\AppData\\Local\\Temp\\orch-cli-real-mq623jlx\\evidence\\service-63425-stdout.log' mode='w' encoding='utf-8'>
+  for index, test in enumerate(self):
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+C:\Python314\Lib\unittest\suite.py:107: ResourceWarning: unclosed file <_io.TextIOWrapper name='C:\\Users\\adonm\\AppData\\Local\\Temp\\orch-cli-real-mq623jlx\\evidence\\service-63425-stderr.log' mode='w' encoding='utf-8'>
+  for index, test in enumerate(self):
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+.C:\Python314\Lib\unittest\suite.py:107: ResourceWarning: unclosed file <_io.TextIOWrapper name='C:\\Users\\adonm\\AppData\\Local\\Temp\\orch-cli-real-8pxnftft\\evidence\\service-63428-stdout.log' mode='w' encoding='utf-8'>
+  for index, test in enumerate(self):
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+C:\Python314\Lib\unittest\suite.py:107: ResourceWarning: unclosed file <_io.TextIOWrapper name='C:\\Users\\adonm\\AppData\\Local\\Temp\\orch-cli-real-8pxnftft\\evidence\\service-63428-stderr.log' mode='w' encoding='utf-8'>
+  for index, test in enumerate(self):
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+.C:\Python314\Lib\unittest\suite.py:107: ResourceWarning: unclosed file <_io.TextIOWrapper name='C:\\Users\\adonm\\AppData\\Local\\Temp\\orch-cli-real-7uef87_s\\evidence\\service-63431-stdout.log' mode='w' encoding='utf-8'>
+  for index, test in enumerate(self):
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+C:\Python314\Lib\unittest\suite.py:107: ResourceWarning: unclosed file <_io.TextIOWrapper name='C:\\Users\\adonm\\AppData\\Local\\Temp\\orch-cli-real-7uef87_s\\evidence\\service-63431-stderr.log' mode='w' encoding='utf-8'>
+  for index, test in enumerate(self):
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+.C:\Python314\Lib\unittest\suite.py:107: ResourceWarning: unclosed file <_io.TextIOWrapper name='C:\\Users\\adonm\\AppData\\Local\\Temp\\orch-cli-real-yhr4ksf0\\evidence\\service-63454-stdout.log' mode='w' encoding='utf-8'>
+  for index, test in enumerate(self):
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+C:\Python314\Lib\unittest\suite.py:107: ResourceWarning: unclosed file <_io.TextIOWrapper name='C:\\Users\\adonm\\AppData\\Local\\Temp\\orch-cli-real-yhr4ksf0\\evidence\\service-63454-stderr.log' mode='w' encoding='utf-8'>
+  for index, test in enumerate(self):
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+.C:\Python314\Lib\unittest\suite.py:84: ResourceWarning: unclosed file <_io.TextIOWrapper name='C:\\Users\\adonm\\AppData\\Local\\Temp\\orch-cli-real-h24bdkdx\\evidence\\service-63460-stdout.log' mode='w' encoding='utf-8'>
+  return self.run(*args, **kwds)
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+C:\Python314\Lib\unittest\suite.py:84: ResourceWarning: unclosed file <_io.TextIOWrapper name='C:\\Users\\adonm\\AppData\\Local\\Temp\\orch-cli-real-h24bdkdx\\evidence\\service-63460-stderr.log' mode='w' encoding='utf-8'>
+  return self.run(*args, **kwds)
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+..{"kind": "clock_sync_sample_error", "error": "UpstreamBudgetExceeded: proveedor local: fallo simulado"}
+{"kind": "clock_sync_sample_error", "error": "UpstreamBudgetExceeded: proveedor local: fallo simulado"}
+{"kind": "clock_sync_sample_error", "error": "UpstreamBudgetExceeded: proveedor local: fallo simulado"}
+{"kind": "clock_sync_sample_error", "error": "UpstreamBudgetExceeded: proveedor local: fallo simulado"}
+{"kind": "clock_sync_sample_error", "error": "UpstreamBudgetExceeded: proveedor local: fallo simulado"}
+{"kind": "clock_sync_failed", "clockOffsetMs": null, "serverTimeRttMs": null, "lastClockSyncTimestamp": null, "clockSyncSuccessful": 0, "clockSyncFailed": 1, "clockSamplesValid": 0, "clockSamplesFailed": 5}
+....
+----------------------------------------------------------------------
+Ran 32 tests in 115.617s
+
+OK
+[MISMA_CORRIDA_LIMITE_COMPARTIDO] referencia_temporal_ms=1794755883440 recepcion_ms=1794755883440 cierre_close_time_ms=None T_anterior_ms=None T_nuevo_ms=None evento_disparador=reserva_pre_env�o contador_evaluaciones=7 resultado=None (dos instancias de la misma corrida: l�mite compartido, no reseteado)
+[PRESUPUESTO_TIEMPO_AGOTADO] referencia_temporal_ms=1794755883557 recepcion_ms=1794755883557 cierre_close_time_ms=None T_anterior_ms=None T_nuevo_ms=None evento_disparador=fetch_time contador_evaluaciones=5 resultado=None (intentos contabilizados y bloqueados antes de enviar)
+[TOTAL_CORRIDA_AGOTADO] referencia_temporal_ms=1794755883644 recepcion_ms=1794755944644 cierre_close_time_ms=None T_anterior_ms=None T_nuevo_ms=None evento_disparador=reserva_pre_env�o contador_evaluaciones=7 resultado=None (total de corrida agotado, compartido y no reiniciado por ventana)
+[LOCAL_CERO_P�BLICO] referencia_temporal_ms=1789999999999 recepcion_ms=1789999999999 cierre_close_time_ms=None T_anterior_ms=None T_nuevo_ms=1789999999999 evento_disparador=create contador_evaluaciones=0 resultado=None (modo local: referencia local_sistema, cero p�blica)
+[NUEVA_CORRIDA_INDEPENDIENTE] referencia_temporal_ms=1794755884257 recepcion_ms=1794755884257 cierre_close_time_ms=None T_anterior_ms=None T_nuevo_ms=None evento_disparador=reserva_pre_env�o contador_evaluaciones=3 resultado=None (nueva run_id: contador independiente, evidencia previa intacta)
+[ORQUESTADOR_REINICIO_REUTILIZA] referencia_temporal_ms=1794755894313 recepcion_ms=1794755894313 cierre_close_time_ms=None T_anterior_ms=None T_nuevo_ms=None evento_disparador=eng-run-reinicio-orch-1 contador_evaluaciones=4 resultado=None (reinicio de orquestador reutiliza run_id y acumula consumo)
+[RUN_ID_ORQUESTADOR_REAL] referencia_temporal_ms=1794755904979 recepcion_ms=1794755904979 cierre_close_time_ms=None T_anterior_ms=None T_nuevo_ms=None evento_disparador=eng-run-orchestrator-1 contador_evaluaciones=2 resultado=None (orquestador pasa --run-id y klines usan mismo run_id en ledger)
+[P�BLICO_SIN_PRESUPUESTO] referencia_temporal_ms=1794755905544 recepcion_ms=1794755905544 cierre_close_time_ms=None T_anterior_ms=None T_nuevo_ms=None evento_disparador=main_clock_source_check contador_evaluaciones=0 resultado=None (modo p�blico rechazado: presupuesto de ventana insuficiente)
+[REFERENCIA_V�LIDA] referencia_temporal_ms=1790000120000 recepcion_ms=1790000120000 cierre_close_time_ms=None T_anterior_ms=None T_nuevo_ms=1789999999999 evento_disparador=create contador_evaluaciones=0 resultado=None (referencia v�lida: contexto admitido, T = T0 - 1)
+[REFERENCIA_EXPIRADA] referencia_temporal_ms=1790000000000 recepcion_ms=1790000000000 cierre_close_time_ms=None T_anterior_ms=None T_nuevo_ms=None evento_disparador=create contador_evaluaciones=0 resultado=None (referencia expirada: abstenci�n, sin crear sesi�n)
+[RUN_ID_CONSERVADO_AL_REINICIAR] referencia_temporal_ms=1794755906875 recepcion_ms=1794755906875 cierre_close_time_ms=None T_anterior_ms=None T_nuevo_ms=None evento_disparador=reserva_pre_env�o contador_evaluaciones=4 resultado=None (run_id estable: consumo conservado al reiniciar)
+[RUN_ID_CAMINO_REAL] referencia_temporal_ms=1794755906935 recepcion_ms=1794755906935 cierre_close_time_ms=None T_anterior_ms=None T_nuevo_ms=None evento_disparador=run_id_compartido contador_evaluaciones=5 resultado=None (servicio /time + arn�s klines, mismo run_id, SUM=5)
+[SIN_REFERENCIA] referencia_temporal_ms=1790000000000 recepcion_ms=1790000000000 cierre_close_time_ms=None T_anterior_ms=None T_nuevo_ms=None evento_disparador=create contador_evaluaciones=0 resultado=None (RELOJ_REFERENCIA_INCERTO: no admite contexto)
+
+returncode=0

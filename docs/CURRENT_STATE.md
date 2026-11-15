@@ -9,6 +9,19 @@ autoriza Binance, adquisición pública, capturas, órdenes, ventanas nuevas ni
 relanzamientos. `exp-v2-ventana-2-20261112a` **no** se reutiliza ni se
 relanza y **no** se creó el directorio de ninguna corrida pública.
 
+**Corrección posterior (2026-11-15, autorización humana acotada):** el
+replay publicado en este commit declaraba `EQUIVALENTE` (0) ante
+desplazamientos temporales, identidad de consultas alterada y
+configuración operativa ausente; los tres defectos se reproducieron
+contra el código publicado y se corrigieron: comparación por tipo de
+campo (igualdad exacta en timestamps/identificadores/estados/booleanos,
+tolerancia absoluta `1e-9` solo para valores económicos), procedencia
+acreditada por consulta, integridad contra el manifiesto, configuración
+operativa obligatoria, denominador completo y veredicto estricto (ya no
+existe `EQUIVALENTE_CON_LIMITACIONES`). Aceptación corregida: **7
+passed**; regresiones **75 + 46 + 32 + 42 OK**. Evidencia:
+[correccion-veredicto](evidence/exp-v2-preparacion-reproducible-20261115/correccion-veredicto/INFORME.md).
+
 **Veredicto:** el hueco que quedaba —que el dataset persistido no permite
 reconstruir el resultado económico offline— **queda cerrado con la
 persistencia mínima que faltaba** y con una reconstrucción offline
@@ -22,7 +35,7 @@ anterior sigue siendo **INSUFICIENTE**.
 | Cambio | `src/microstructure_probe/history_client.py` (cuerpo crudo de la última respuesta), `scripts/research_pilot.py` (persistencia `consultas_klines.jsonl` + contabilidad + manifiesto), `scripts/research_operativo_replay.py` (**nuevo**, reconstrucción offline), `tests/test_operativo_replay_offline.py` (**nuevo**), `tests/test_research_pilot.py` (arnés `moves` + expectativas de almacenamiento) |
 | Persistencia por respuesta | run_id, símbolo, intervalo, parámetros exactos, solicitud/adquisición, estado HTTP, **cuerpo recibido**, hash, tamaño, filas, corte causal (`reloj_ms`), `decision_ms` y vínculo con la observación |
 | Reconstrucción offline | `scripts/research_operativo_replay.py`: adaptador y motores existentes, sin red; contrasta decisión, dirección, cantidad, entrada, stop, salida, costes y estado del funding/neto |
-| Aceptación local | **3 passed** (`tests/test_operativo_replay_offline.py`): LONG, SHORT y funding observado → **EQUIVALENTE** (5/5, 0 diferencias); fichero ausente y cuerpo corrupto → **LIMITACION** (código 3), sin resultados inventados |
+| Aceptación local | **7 passed** tras la corrección del veredicto (3 positivos conservados —LONG, SHORT, funding observado— + 4 negativas nuevas): los tres defectos de falsos positivos quedan detectados; fichero ausente y cuerpo corrupto → **LIMITACION** (código 3), sin resultados inventados |
 | Regresiones afectadas | **75** (pytest) + **46 + 32 + 42** (unittest) **OK** (no se repitieron pruebas generales ajenas; una primera ejecución de `history`/`budget_scope` dio `FAILED (failures=4)` **no reproducible** — las dos siguientes pasaron 46/46) |
 | Presupuesto (sin red, ruta de preparación separada) | gate **13/13**, `cabe_en_limites: true`; intentos **1 334**, peso **3 752**, reintentos **50**; almacenamiento previsto **9 016 872 B**, reservado **56 363 648 B**, margen **77 854 080 B**; cuerpos `klines` **4 320 000 B**; **10 diferencias** frente al publicado, **todas de almacenamiento**; ningún cupo ampliado |
 | Propuesta | [PROPUESTA](evidence/exp-v2-ventana-3-20261115a-propuesta/PROPUESTA.md) — `run_id` **nuevo** `exp-v2-ventana-3-20261115a`, **verificado no utilizado**, comando completo, pregunta económica, denominadores por rol/ciclo, rechazos por capacidad, `COMPLETO` vs `CONDICIONADO`, criterios de insuficiencia, ubicación de datos y monitor |

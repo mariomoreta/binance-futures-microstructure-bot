@@ -2044,3 +2044,83 @@ indicadores, on-chain, GARCH, futuros con vencimiento, infraestructura ni
 servicios, no toca el dashboard 3020 ni el servicio 8792, no lee ni modifica
 `opencode.json` ni archivos ajenos, y no altera las DBs canónicas ni los
 datasets originales.
+
+
+### 10.18 Corrección del veredicto del replay: evitar falsos positivos de equivalencia (2026-11-15, local, sin mercado)
+
+**Autorización humana del 2026-11-15:** «CORRECCIÓN LOCAL ACOTADA — EVITAR
+FALSOS POSITIVOS DE EQUIVALENCIA». Cubre corregir y probar localmente tres
+defectos de `scripts/research_operativo_replay.py`. **No** autoriza Binance,
+consultas públicas, capturas, órdenes, relanzamientos ni ventanas nuevas.
+Evidencia:
+[INFORME](../evidence/exp-v2-preparacion-reproducible-20261115/correccion-veredicto/INFORME.md).
+
+#### 10.18.1 Defectos reproducidos antes de corregir (contra `12024146`)
+
+| # | Defecto | Veredicto falso observado |
+|---|---|---|
+| 1 | `entry_ms` del resultado de ejecución desplazado +1000 ms | `EQUIVALENTE` (0): la tolerancia relativa (`1e-9 × escala`) aplicada a **todos** los campos numéricos absorbía ~1735 ms sobre un timestamp en ms |
+| 2 | `run_id`, `symbol` y `params.startTime` de las consultas persistidos cambiados (cuerpo y hash intactos) | `EQUIVALENTE` (0): el vínculo con el ledger solo comprobaba la existencia del hash |
+| 3 | `operativo_config` eliminado del manifiesto | `EQUIVALENTE` (0): el replay reconstruía con valores por defecto en silencio |
+
+#### 10.18.2 Qué cambia (solo el replay; persistencia, motores, estrategia y presupuesto intactos)
+
+1. **Comparación por tipo de campo:** timestamps en ms, identificadores,
+   decisiones, estados y textos con igualdad **exacta**; booleanos con
+   igualdad de tipo (`True` nunca es 1); única tolerancia **absoluta**
+   (`1e-9` USDT) para valores económicos decimales.
+2. **Procedencia acreditada por consulta** antes de usarla: `run_id` del
+   manifiesto, observación correspondiente (existente y apta), símbolo,
+   intervalo, `decision_ms`, **parámetros exactos** y cruce completo con la
+   respuesta del ledger HTTP (hash, endpoint, parámetros, símbolo,
+   intervalo, estado HTTP, instantes, bytes y filas). El hash del cuerpo por
+   sí solo no prueba qué petición lo produjo.
+3. **Integridad acreditada:** sha256 real de cada fichero necesario contra
+   el publicado en el manifiesto (`integridad_fichero_rota`,
+   `integridad_no_publicada`).
+4. **Configuración operativa obligatoria:** ausente, incompleta o inválida
+   → **no se reconstruye nada** (nunca valores por defecto); además el hash
+   de la configuración reconstruida se contrasta con el `config_hash`
+   publicado en la ejecución.
+5. **Denominador completo publicado** (aptas / reconstruidas / limitadas;
+   consultas persistidas / acreditadas / rechazadas): ninguna observación
+   apta desaparece de la comparación sin quedar limitada con su motivo.
+6. **Veredicto estricto:** ya no existe `EQUIVALENTE_CON_LIMITACIONES`.
+   Cualquier limitación → **LIMITACION (3)**; diferencias con evidencia
+   válida y acreditada → **DIFERENCIAS (4)**; `EQUIVALENTE (0)` exige
+   integridad, procedencia y configuración acreditadas, denominador
+   completo y resultados idénticos.
+
+#### 10.18.3 Tabla antes/después (mismo dataset y mismas mutaciones)
+
+| Caso | Antes | Después |
+|---|---|---|
+| control (copia intacta) | `EQUIVALENTE` (0) | **`EQUIVALENTE` (0)** |
+| A — timestamp desplazado, integridad rota | `EQUIVALENTE` (0) | **`LIMITACION` (3)** — `integridad_fichero_rota` |
+| A-manif — timestamp desplazado, integridad ok | `EQUIVALENTE` (0) | **`DIFERENCIAS` (4)** — `entry_ms` detectado campo a campo |
+| B — run_id/symbol/startTime cambiados, integridad rota | `EQUIVALENTE` (0) | **`LIMITACION` (3)** — identidad + integridad |
+| B-manif — igual, integridad ok | `EQUIVALENTE` (0) | **`LIMITACION` (3)** — solo motivos de identidad: `consulta_run_id_distinto`, `consulta_simbolo_distinto`, `consulta_parametros_distintos`, `consulta_discrepancia_ledger` |
+| C — `operativo_config` ausente | `EQUIVALENTE` (0) | **`LIMITACION` (3)** — `config_operativa_ausente` |
+
+#### 10.18.4 Aceptación y regresiones
+
+`tests/test_operativo_replay_offline.py`: **7 passed** (3 positivos
+conservados —LONG, SHORT, funding observado, capacidad compartida, replay
+sin proveedores— y 4 pruebas negativas nuevas separadas: desplazamiento
+temporal, identidad de las consultas, configuración operativa obligatoria y
+evidencia indispensable). En las contradicciones semánticas las pruebas
+recalculan el hash del manifiesto en la copia de prueba, de modo que cada
+comprobación detecta **su** defecto sin que lo enmascare un fallo incidental
+de integridad. Regresiones afectadas repetidas: **75** (pytest) + **46 +
+32 + 42** (unittest, con `PYTHONPATH=src` en shell nueva; nota en el
+INFORME) **OK**.
+
+#### 10.18.5 Límites
+
+No cambia la persistencia, los motores, la estrategia ni el presupuesto.
+`exp-v2-ventana-2-20261112a` sigue **INSUFICIENTE**; esta corrección no
+aporta evidencia económica. La ventana `exp-v2-ventana-3-20261115a` sigue
+**propuesta y sin ejecutar** (autorización humana posterior explícita). La
+equivalencia acreditada significa que el resultado es reconstruible desde la
+evidencia persistida, no que el proveedor tuviera razón ni que la regla sea
+rentable.

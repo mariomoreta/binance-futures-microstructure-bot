@@ -1,0 +1,9 @@
+comando: python -m unittest tests.test_public_run_integration tests.test_market_explorer (PYTHONPATH=src)
+
+..........................................
+----------------------------------------------------------------------
+Ran 42 tests in 2.403s
+
+OK
+
+returncode=0

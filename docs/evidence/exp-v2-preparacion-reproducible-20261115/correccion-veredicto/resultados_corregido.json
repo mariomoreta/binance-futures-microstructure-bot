@@ -1,0 +1,77 @@
+[
+  {
+    "caso": "control",
+    "run_dir": "C:\\Users\\adonm\\AppData\\Local\\Temp\\repro-defectos-4ctgftbl\\control",
+    "returncode": 0,
+    "estado": "EQUIVALENTE",
+    "coincidentes": 5,
+    "diferentes": 0,
+    "limitadas": 0,
+    "motivos": []
+  },
+  {
+    "caso": "A",
+    "run_dir": "C:\\Users\\adonm\\AppData\\Local\\Temp\\repro-defectos-x2_bwe1k\\A",
+    "returncode": 3,
+    "estado": "LIMITACION",
+    "coincidentes": 0,
+    "diferentes": 5,
+    "limitadas": 0,
+    "motivos": [
+      "integridad_fichero_rota"
+    ]
+  },
+  {
+    "caso": "A-manif",
+    "run_dir": "C:\\Users\\adonm\\AppData\\Local\\Temp\\repro-defectos-9w5wv0c_\\A_manifiesto_ok",
+    "returncode": 4,
+    "estado": "DIFERENCIAS",
+    "coincidentes": 0,
+    "diferentes": 5,
+    "limitadas": 0,
+    "motivos": []
+  },
+  {
+    "caso": "B",
+    "run_dir": "C:\\Users\\adonm\\AppData\\Local\\Temp\\repro-defectos-0ntldc05\\B",
+    "returncode": 3,
+    "estado": "LIMITACION",
+    "coincidentes": 0,
+    "diferentes": 0,
+    "limitadas": 5,
+    "motivos": [
+      "consulta_discrepancia_ledger",
+      "consulta_parametros_distintos",
+      "consulta_run_id_distinto",
+      "consulta_simbolo_distinto",
+      "integridad_fichero_rota"
+    ]
+  },
+  {
+    "caso": "B-manif",
+    "run_dir": "C:\\Users\\adonm\\AppData\\Local\\Temp\\repro-defectos-u2c4tvsd\\B_manifiesto_ok",
+    "returncode": 3,
+    "estado": "LIMITACION",
+    "coincidentes": 0,
+    "diferentes": 0,
+    "limitadas": 5,
+    "motivos": [
+      "consulta_discrepancia_ledger",
+      "consulta_parametros_distintos",
+      "consulta_run_id_distinto",
+      "consulta_simbolo_distinto"
+    ]
+  },
+  {
+    "caso": "C",
+    "run_dir": "C:\\Users\\adonm\\AppData\\Local\\Temp\\repro-defectos-rhww2nq0\\C",
+    "returncode": 3,
+    "estado": "LIMITACION",
+    "coincidentes": 0,
+    "diferentes": 0,
+    "limitadas": 5,
+    "motivos": [
+      "config_operativa_ausente"
+    ]
+  }
+]
