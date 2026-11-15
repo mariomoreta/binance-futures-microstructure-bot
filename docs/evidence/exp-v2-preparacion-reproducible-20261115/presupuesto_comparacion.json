@@ -1,0 +1,88 @@
+{
+  "calculo": "--budget-only via scripts/run_pilot_window.py, sin red, ruta de preparacion separada",
+  "cifras_nuevas": {
+    "almacenamiento_previsto_bytes": 9016872,
+    "almacenamiento_reservado_max_bytes": 56363648,
+    "bytes_por_cuerpo_klines": 9000,
+    "consultas_klines_cuerpos_bytes_previstos": 4320000,
+    "intentos_plan_con_reservas": 1334,
+    "margen_reservado_bytes": 77854080,
+    "peso_plan_con_reservas": 3752,
+    "tope_bytes": 134217728
+  },
+  "claves_nuevas": 158,
+  "claves_publicadas": 156,
+  "diferencias": 10,
+  "diferencias_detalle": [
+    {
+      "clave": "almacenamiento.bytes_por_cuerpo_klines",
+      "nuevo": 9000,
+      "publicado": "<ausente>"
+    },
+    {
+      "clave": "almacenamiento.consultas_klines_cuerpos_bytes_previstos",
+      "nuevo": 4320000,
+      "publicado": "<ausente>"
+    },
+    {
+      "clave": "almacenamiento.margen_bytes",
+      "nuevo": 125200856,
+      "publicado": 129520856
+    },
+    {
+      "clave": "almacenamiento.margen_porcentaje",
+      "nuevo": 93.28,
+      "publicado": 96.5
+    },
+    {
+      "clave": "almacenamiento.margen_reservado_bytes",
+      "nuevo": 77854080,
+      "publicado": 82174080
+    },
+    {
+      "clave": "almacenamiento.nota",
+      "nuevo": "El tope incluye JSONL de datos, ledger HTTP, cuerpos de las consultas klines de trayectoria, calendarios de funding, SQLite y sus auxiliares. Cada JSONL reserva sus bytes exactos antes de escribir; SQLite y el ledger tienen cuotas fisicas reservadas para evitar carreras. Los indices finales y el estado de progreso no forman parte del tope de datos de la ventana.",
+      "publicado": "El tope incluye JSONL de datos, ledger HTTP, calendarios de funding, SQLite y sus auxiliares. Cada JSONL reserva sus bytes exactos antes de escribir; SQLite y el ledger tienen cuotas fisicas reservadas para evitar carreras. Los indices finales y el estado de progreso no forman parte del tope de datos de la ventana."
+    },
+    {
+      "clave": "almacenamiento.total_bytes_previstos",
+      "nuevo": 9016872,
+      "publicado": 4696872
+    },
+    {
+      "clave": "almacenamiento.total_reservado_con_jsonl_bytes",
+      "nuevo": 56363648,
+      "publicado": 52043648
+    },
+    {
+      "clave": "gate.almacenamiento_previsto_bytes",
+      "nuevo": 9016872,
+      "publicado": 4696872
+    },
+    {
+      "clave": "gate.almacenamiento_reservado_max_bytes",
+      "nuevo": 56363648,
+      "publicado": 52043648
+    }
+  ],
+  "fecha": "2026-11-15",
+  "gate": {
+    "cabe_en_limites": true,
+    "comprobaciones_total": 13,
+    "comprobaciones_true": 13
+  },
+  "nota": "Las 10 diferencias son todas del bloque de almacenamiento: se presupuestan ahora los cuerpos persistidos de las consultas klines (480 respuestas x 9 000 B = 4 320 000 B). No cambia ninguna consulta, peso, reintento, limite WS, duracion ni exposicion.",
+  "publicado_comparado": "exp-v2-ventana-2-20261112a (presupuesto.json del 2026-11-12)",
+  "run_id_propuesto": "exp-v2-ventana-3-20261115a",
+  "ruta_preparacion": "C:\\proyectos\\binance-futures-data\\_presupuesto\\exp-v2-ventana-3-20261115a-preparacion",
+  "sin_cambios_en": [
+    "rest.intentos_base",
+    "rest.intentos_base_mas_reservas",
+    "rest.peso_total_estimado",
+    "ws",
+    "funding",
+    "limites_efectivos",
+    "supuestos.duracion_maxima_total_s"
+  ],
+  "version": "presupuesto-comparacion/v1"
+}

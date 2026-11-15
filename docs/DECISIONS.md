@@ -5653,3 +5653,97 @@ ni se repitieron sus hashes fisicos; la comprobacion aqui es sobre derivados
 publicados. No se fabrica replay economico, no se consulta mercado, no se
 relanza la ventana ni se modifican motores, reglas o presupuesto.
 Evidencia: docs/evidence/exp-v2-borde-consulta-20261114/validacion_independiente_20261115.json.
+
+
+## 2026-11-15 - Preparacion reproducible de UNA medicion economica, sin mercado
+
+DECISION (a) - ALCANCE. Autorizacion humana del 2026-11-15: solo preparacion
+local, persistencia minima, pruebas loopback y actualizacion del
+presupuesto/propuesta. NO se autoriza Binance, adquisicion publica, capturas,
+ordenes, ventanas nuevas ni relanzamientos. La ventana
+`exp-v2-ventana-2-20261112a` no se reutiliza ni se relanza. Base publicada:
+`11969f95b9f2f9869e8ec3371c521f07586fe5e6`, que integra `5362baf` (correccion
+temporal y etiquetado ya publicados), conservada sin reimplementar. El
+directorio de la corrida publica no se crea y no se ejecuta.
+
+DECISION (b) - PERSISTENCIA MINIMA. Se persiste el cuerpo real recibido de
+cada consulta `klines` que resuelve una operacion (`consultas_klines.jsonl`)
+con: identidad de corrida, simbolo, intervalo, parametros exactos, instante de
+solicitud y de adquisicion, estado HTTP, cuerpo recibido, hash verificable,
+tamano, numero de filas, corte causal (`reloj_ms`), `decision_ms` y vinculo con
+la observacion que uso esos datos. Se reutilizan `HistoryClient`, `PilotStore`
+y `RunStorageBudget`: no hay cliente, motor, servicio ni base de datos
+nuevos, ni consultas anadidas para guardar datos. `HistoryClient` captura el
+cuerpo crudo de la ultima respuesta exitosa y lo invalida al iniciar cada
+peticion, de modo que un fallo nunca deja un cuerpo anterior utilizable. Si el
+cuerpo no cabe, la corrida se detiene con `presupuesto_bytes` y no se amplia
+ningun cupo; si el cuerpo no esta disponible, no se persiste fila. No se
+rellenan huecos ni se reconstruye OHLC desde retornos, libro o aggTrade. El
+cuerpo incluye velas posteriores a T (son la trayectoria que resuelve la
+operacion); la referencia de entrada sigue usando solo la vela plenamente
+cerrada en T (`close_time <= decision_ms`) y la reconstruccion aplica el mismo
+corte causal que la ejecucion.
+
+DECISION (c) - RECONSTRUCCION OFFLINE. `scripts/research_operativo_replay.py`
+reconstruye la corrida desde lo persistido reutilizando el adaptador y los
+motores existentes (`paper_lab_engine`, `backtest_offline`), sin red, y
+contrasta ejecucion y replay en decision, direccion, cantidad, entrada, stop,
+salida, costes y estado del funding/neto; los timestamps de publicacion pueden
+diferir y no se comparan. Un fichero ausente o corrupto produce una
+limitacion explicita (codigo 3), nunca un resultado inventado; el funding
+desconocido sigue UNKNOWN.
+
+DECISION (d) - BASELINE DE CONTINUACION (aclaracion, no cambio de estrategia).
+La regla evaluada es una baseline: direccion por el signo del movimiento de 24
+h; referencia actual procedente del mismo cierre que compara la condicion
+direccional; libro y flujo principalmente como requisitos de calidad y
+contexto. No acredita deteccion de patrones, anticipacion de explosiones ni
+reversion. No se cambia seleccion, direccion, senal, fill, stop, horizonte,
+notional, capacidad, prioridad, costes ni contabilidad de funding.
+
+DECISION (e) - PRESUPUESTO. Recalculado con `--budget-only` sin red y en ruta
+de preparacion separada (no es el directorio de la corrida): gate 13/13,
+`cabe_en_limites: true`, intentos con reservas 1 334, peso 3 752, reintentos
+50, almacenamiento previsto 9 016 872 B, reservado maximo 56 363 648 B, margen
+reservado 77 854 080 B, con 4 320 000 B de cuerpos `klines` (480 respuestas x
+9 000 B). Frente al presupuesto publicado hay 10 diferencias, todas del bloque
+de almacenamiento. No se aumenta ninguna consulta, peso, reintento, limite WS,
+duracion, exposicion ni cupo: 3 600 + 4 200 + 32 400 s de trabajo y 300 s de
+cierre.
+
+DECISION (f) - PROPUESTA. Se propone UNA ventana futura con `run_id` nuevo
+`exp-v2-ventana-3-20261115a` (verificado no utilizado en el area de datos, en
+el repositorio y en `docs/`), con pregunta economica exacta de la baseline,
+denominadores y comparacion por rol y ciclo, rechazos por capacidad en tabla
+propia (no son operaciones ni entran en el denominador de P&L), netos COMPLETO
+y CONDICIONADO separados con sus denominadores, criterios de insuficiencia,
+presupuesto recalculado, comando completo aceptado por el parser, ubicacion
+de datos y enlace del monitor existente. La propuesta de la ventana ya cerrada
+se conserva sin reescribir y apunta a la nueva. La ejecucion requiere
+autorizacion humana posterior y explicita.
+
+DECISION (g) - EVIDENCIA. `docs/evidence/exp-v2-preparacion-reproducible-20261115/`
+(`INFORME.md` con las tres capas, `aceptacion_replay.txt`, `replay_long.json`,
+`replay_short.json`, `replay_funding.json`, `replay_datos_ausentes.json`,
+`replay_datos_corruptos.json`, `presupuesto.json`,
+`presupuesto_comparacion.json` y los artefactos del lanzador, `hashes.json`).
+Pruebas nuevas: `tests/test_operativo_replay_offline.py` (3 passed: CLI real,
+proveedores HTTP/WS loopback, reloj manual y almacenamiento temporal);
+regresiones directamente afectadas 75 (pytest) + 46 + 32 + 42 (unittest) OK; no
+se repitieron pruebas generales ajenas. Una primera ejecucion de la suite
+history/budget_scope dio FAILED (failures=4) de forma no reproducible (las dos
+siguientes pasaron 46/46) y se deja constancia en el INFORME. Documentacion
+actualizada: `CURRENT_STATE.md`,
+`TASK_QUEUE.md`, `EXPERIMENTO_OPERATIVO_V2.md` 10.17, `FEATURE_BACKLOG.md` y
+este registro.
+
+DECISION (h) - LIMITES. No se abre mercado, no se hacen capturas, no se
+relanza ni se reutiliza `exp-v2-ventana-2-20261112a`, no se crea el directorio
+de una corrida publica, no se amplian duracion, exposicion, consultas ni
+cupos, no se cambian motores ni reglas, no se anaden indicadores, on-chain,
+GARCH, futuros con vencimiento, infraestructura ni servicios. No se tocan
+`opencode.json`, los ficheros ajenos, las DBs canonicas, el dashboard 3020 ni
+el servicio 8792. La cobertura de contrato sigue limitada a
+PERPETUAL/TRADING/USDT. La ventana `exp-v2-ventana-2-20261112a` sigue siendo
+INSUFICIENTE: esta preparacion no aporta evidencia economica; solo deja el
+camino reproducible para una ventana futura que aun no existe.

@@ -116,6 +116,13 @@ class HistoryClient:
         self._429_seen = 0
         self.execution_id = execution_id or f"exec-{int(time.monotonic() * 1000)}"
         self.upstream_requests: List[Dict[str, Any]] = []
+        # Cuerpo crudo de la ULTIMA respuesta exitosa. Permite persistir el
+        # cuerpo REAL recibido (con su hash) sin crear otro cliente ni repetir
+        # la peticion. Se invalida al iniciar cada peticion: un fallo nunca
+        # deja un cuerpo previo utilizable por error.
+        self.last_response_body: Optional[str] = None
+        self.last_response_sha256: Optional[str] = None
+        self.last_response_status: Optional[int] = None
 
     def _window_reset_if_needed(self) -> None:
         now = time.monotonic()
@@ -133,6 +140,11 @@ class HistoryClient:
 
     def get(self, path: str, params: Dict[str, Any], weight: int) -> Tuple[Any, Dict[str, str]]:
         """GET with limiter, retries, 429/418 handling. Returns (json, hdrs)."""
+        # El cuerpo capturado corresponde a ESTA peticion: se invalida antes
+        # de enviar nada (un fallo no puede dejar un cuerpo anterior).
+        self.last_response_body = None
+        self.last_response_sha256 = None
+        self.last_response_status = None
         query = urllib.parse.urlencode(params)
         url = self.base_url + path + ("?" + query if query else "")
         req = urllib.request.Request(
@@ -195,6 +207,11 @@ class HistoryClient:
                         len(payload) if isinstance(payload, list) else None)
                     upstream_entry["response_sha256"] = hashlib.sha256(
                         raw.encode("utf-8")).hexdigest()
+                    # Cuerpo crudo capturado para persistencia opcional: es el
+                    # MISMO texto que se hashea arriba (hash verificable).
+                    self.last_response_body = raw
+                    self.last_response_sha256 = upstream_entry["response_sha256"]
+                    self.last_response_status = upstream_entry["http_status"]
                     upstream_entry["observed_headers"] = {
                         key: value for key, value in hdrs.items()
                         if key.startswith("x-mbx-") or key == "retry-after"

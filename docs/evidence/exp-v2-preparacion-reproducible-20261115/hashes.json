@@ -1,0 +1,71 @@
+{
+  "directorio_corrida_publica": "C:\\proyectos\\binance-futures-data\\exp-v2-ventana-3-20261115a",
+  "directorio_corrida_publica_existe": false,
+  "fecha": "2026-11-15",
+  "files": {
+    "INFORME.md": {
+      "bytes": 13511,
+      "sha256": "efa059b64bccd0ad6f89fba6b89a449a1c4bae20d0625656377633656a346dd7"
+    },
+    "aceptacion_replay.txt": {
+      "bytes": 99,
+      "sha256": "0b99b8f50323e413420de58761428125eceb315d76e2a0690ec296323edcce85"
+    },
+    "presupuesto.json": {
+      "bytes": 10524,
+      "sha256": "7824cd037c86c518fce5aeda7b894a6a594ec53758466cbb8c43c789f9b38844"
+    },
+    "presupuesto_cierre.json": {
+      "bytes": 578,
+      "sha256": "8398d699ee9f6359fd50117f94f54f9cee3f05827b2f7060361b1246f53d57a5"
+    },
+    "presupuesto_comparacion.json": {
+      "bytes": 3353,
+      "sha256": "8abc500a9fde168e6f33d749ed43dd3f515385f2fa663b50bd4542078813c470"
+    },
+    "presupuesto_estado_lanzador.json": {
+      "bytes": 2466,
+      "sha256": "976855f7f5c31b318968ab5fb5a478710d738c1056cc85b7fa83764127b6b286"
+    },
+    "presupuesto_exit_code.txt": {
+      "bytes": 3,
+      "sha256": "13bf7b3039c63bf5a50491fa3cfd8eb4e699d1ba1436315aef9cbe5711530354"
+    },
+    "presupuesto_launcher.json": {
+      "bytes": 4339,
+      "sha256": "ad6a34a752ec3235237b641cbc1334f6a8ac6a999b96b2b5f404570a93aef572"
+    },
+    "presupuesto_stderr.txt": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "presupuesto_stdout.txt": {
+      "bytes": 940,
+      "sha256": "7ce7abd9b43f12679db2bf94d7d1185077ff732a24ad45d2b0309a85dd037cf7"
+    },
+    "replay_datos_ausentes.json": {
+      "bytes": 1889,
+      "sha256": "e6aab2109bf507871a646a26fea57df1850360b39a8368caa9d5e2665d31fba5"
+    },
+    "replay_datos_corruptos.json": {
+      "bytes": 3878,
+      "sha256": "95cb33df2e9c88633a7cda65904426ebb2830b32f7983673da5e37b601920b07"
+    },
+    "replay_funding.json": {
+      "bytes": 1636,
+      "sha256": "0dc6e1193732f98c505b1571b7b60a260266b9bf4a72e3e004671e67f0f56cbe"
+    },
+    "replay_long.json": {
+      "bytes": 1629,
+      "sha256": "9ac29ffc0c3077fad8b72f0425229f7a28a62890b713edf1d2543db9f2c9d317"
+    },
+    "replay_short.json": {
+      "bytes": 1629,
+      "sha256": "7e382d3d158b9acf1b88a2f62528e9325f55f7466d38a8cea3763d6ad18e291f"
+    }
+  },
+  "nota": "Evidencia de la preparacion reproducible: la corrida propuesta NO se ejecuto. Los artefactos del presupuesto proceden de la ruta de preparacion separada (sin red) y los informes de replay de las corridas loopback temporales.",
+  "run_id_propuesto": "exp-v2-ventana-3-20261115a",
+  "ruta_preparacion": "C:\\proyectos\\binance-futures-data\\_presupuesto\\exp-v2-ventana-3-20261115a-preparacion",
+  "version": "manifiesto-evidencia/v1"
+}

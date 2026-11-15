@@ -1,5 +1,12 @@
 # Propuesta de UNA ventana operativa (vía A) — `exp-v2-ventana-2-20261112a`
 
+> **Propuesta vigente para la ventana futura:** la propuesta preparada el
+> **2026-11-15** para **una** ventana nueva es
+> [PROPUESTA](../exp-v2-ventana-3-20261115a-propuesta/PROPUESTA.md)
+> (`run_id` **nuevo** `exp-v2-ventana-3-20261115a`, **no ejecutada**). Este
+> documento se conserva **sin reescribir**: es el registro de la propuesta de
+> la ventana que ya se ejecutó y cerró el 2026-11-14.
+
 **Fecha:** 2026-11-12 · **Estado:** **EJECUTADA y CERRADA el 2026-11-14**
 (estado original de esta propuesta: *PREPARADA, NO EJECUTADA*) · **Vía:** A
 (`observed-settlements`) · **Cobertura:** PERPETUAL/TRADING/USDT

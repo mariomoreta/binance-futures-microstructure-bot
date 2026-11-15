@@ -1,0 +1,64 @@
+{
+  "economia": {
+    "neto_completo_ejecucion": 0,
+    "neto_completo_replay": 0,
+    "neto_conditionado_ejecucion": 1,
+    "neto_conditionado_replay": 1,
+    "neto_unknown_ejecucion": 4,
+    "neto_unknown_replay": 4,
+    "operaciones_ejecucion": 1,
+    "operaciones_replay": 1
+  },
+  "fuente_funding": "none",
+  "fuentes": {
+    "consultas_klines": 5,
+    "funding_adquisiciones": 0,
+    "http_requests": 22,
+    "observaciones_aptas": 5,
+    "observaciones_con_consulta": 5,
+    "resultados_ejecucion": 5
+  },
+  "limitaciones": [],
+  "metodo_funding": "coverage-contract",
+  "observaciones": [
+    {
+      "diferencias": [],
+      "estado": "coincidente",
+      "observation_id": "AAAUSDT|1735689660000"
+    },
+    {
+      "diferencias": [],
+      "estado": "coincidente",
+      "observation_id": "BBBUSDT|1735689660000"
+    },
+    {
+      "diferencias": [],
+      "estado": "coincidente",
+      "observation_id": "CCCUSDT|1735689660000"
+    },
+    {
+      "diferencias": [],
+      "estado": "coincidente",
+      "observation_id": "DDDUSDT|1735689660000"
+    },
+    {
+      "diferencias": [],
+      "estado": "coincidente",
+      "observation_id": "EEEUSDT|1735689660000"
+    }
+  ],
+  "run_dir": "C:\\Users\\adonm\\AppData\\Local\\Temp\\replay-offline-pj8ylgkh\\out",
+  "run_id": "pilot-sync",
+  "veredicto": {
+    "coincidentes": 5,
+    "diferentes": 0,
+    "estado": "EQUIVALENTE",
+    "limitaciones": 0,
+    "limitaciones_reconstructivas": 0,
+    "limitadas": 0,
+    "observaciones_comparadas": 5,
+    "reutiliza_adaptador_y_motores_existentes": true,
+    "sin_red": true
+  },
+  "version": "research-operativo-replay/v1"
+}

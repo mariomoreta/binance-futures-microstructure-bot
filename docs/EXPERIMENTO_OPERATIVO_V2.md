@@ -1916,3 +1916,131 @@ contabilidad ni presupuestos económicos, no añade indicadores, on-chain,
 GARCH, futuros con vencimiento ni infraestructura, no crea otra versión
 paralela del experimento y no toca `opencode.json`, archivos ajenos, DBs
 canónicas, el dashboard 3020 ni el servicio 8792.
+
+### 10.17 Preparación reproducible de UNA medición económica (2026-11-15, local, sin mercado)
+
+**Autorización humana del 2026-11-15:** «PREPARACIÓN ACOTADA — UNA MEDICIÓN
+ECONÓMICA REPRODUCIBLE». Cubre **solo** preparación local, persistencia
+mínima, pruebas loopback y actualización del presupuesto/propuesta. **No**
+autoriza Binance, adquisición pública, capturas, órdenes, ventanas nuevas ni
+relanzamientos. `exp-v2-ventana-2-20261112a` **no** se reutiliza ni se
+relanza. Evidencia:
+[INFORME](../evidence/exp-v2-preparacion-reproducible-20261115/INFORME.md).
+
+#### 10.17.1 El hueco que se cierra
+
+La ventana cerrada no conserva lo necesario para reconstruir su resultado
+económico: el ledger HTTP solo guarda `response_sha256` y
+`response_item_count` (un hash no sustituye a las velas) y la serie 1 m
+capturada es de `aggTrade`, no la serie `klines` del venue. Este bloque añade
+**la persistencia mínima que faltaba** y deja preparada **una** ventana futura
+cuyo resultado se puede reconstruir **offline**, sin volver a consultar al
+proveedor.
+
+| | Antes (publicado) | Después (preparado) |
+|---|---|---|
+| Cuerpo de la consulta klines de trayectoria | no persistido (solo hash) | persistido íntegro en `consultas_klines.jsonl` |
+| Reconstrucción offline | imposible | `scripts/research_operativo_replay.py` (adaptador y motores existentes) |
+| Verificación cuerpo ↔ hash ↔ ledger | imposible | hash del cuerpo + fila del ledger + parámetros exactos |
+| Presupuesto | sin bytes de cuerpos | con los bytes de cuerpos y sus metadatos |
+
+**No cambia** la regla: ni selección, ni dirección, ni señal, ni fill, ni
+stop, ni horizonte, ni notional, ni capacidad, ni prioridad, ni costes ni
+contabilidad de funding.
+
+#### 10.17.2 Baseline de continuación (aclaración, no cambio de estrategia)
+
+- **Dirección** según el signo del movimiento de 24 h
+  (`derivar_direccion_desde_movimiento`); el rol no determina la dirección.
+- **Referencia actual** procedente **del mismo cierre** que compara la
+  condición direccional (cierre de la vela 1 m plenamente cerrada en T).
+- **Libro y flujo** actúan principalmente como **requisitos de calidad y
+  contexto** de la observación.
+- **No acredita** detección de patrones, anticipación de explosiones ni
+  reversión.
+
+#### 10.17.3 Persistencia mínima (sobre el camino productivo)
+
+`HistoryClient` captura el **cuerpo crudo** de la última respuesta exitosa
+(`last_response_body`, `last_response_sha256`, `last_response_status`),
+invalidado al iniciar cada petición para que un fallo nunca deje un cuerpo
+anterior. `ResearchPilot._persistir_consulta_klines` lo escribe en
+`consultas_klines.jsonl` con el `PilotStore` y la `RunStorageBudget`
+existentes. Por respuesta se conserva: identidad de corrida, símbolo,
+intervalo, **parámetros exactos**, instante de solicitud y de adquisición,
+estado HTTP, **cuerpo recibido**, hash verificable, tamaño, número de filas,
+corte causal (`reloj_ms`), `decision_ms` y el **vínculo con la observación**
+que usó esos datos.
+
+**Separación conceptual:** el cuerpo incluye velas posteriores a T (son la
+trayectoria que resuelve la operación); la referencia de entrada sigue
+usando solo la vela cerrada en T (`close_time <= decision_ms`) y la
+reconstrucción aplica el **mismo corte causal** que la ejecución. No se
+rellenan huecos ni se reconstruye OHLC desde retornos, libro o `aggTrade`.
+
+**Reserva:** la escritura reserva bytes **antes** de tocar disco; si no cabe,
+la corrida se detiene con `presupuesto_bytes` y **no** se amplía ningún tope.
+Si el cuerpo no está disponible, **no** se persiste una fila.
+
+#### 10.17.4 Reconstrucción offline (`scripts/research_operativo_replay.py`)
+
+Reutiliza `OperativoAdapter`, `paper_lab_engine` y `backtest_offline` sobre lo
+persistido. Sin red, sin cliente, motor, servicio ni base de datos nuevos.
+Contrasta ejecución ↔ replay en decisión, dirección, cantidad, entrada, stop,
+salida, costes y estado del funding/neto (los timestamps de publicación
+pueden diferir y no se comparan). El método A (funding observado) se
+reconstruye desde `funding_adquisicion.jsonl`.
+
+**Aceptación local (CLI real, loopback, reloj manual, almacenamiento
+temporal):** 3 passed en `tests/test_operativo_replay_offline.py`.
+
+| Escenario | Veredicto |
+|---|---|
+| LONG (1 admitida + 4 rechazos por capacidad) | **EQUIVALENTE** (5/5, 0 diferencias) |
+| SHORT (1 admitida + 4 rechazos por capacidad) | **EQUIVALENTE** (5/5, 0 diferencias) |
+| Funding observado (método A, `ACREDITADA`) | **EQUIVALENTE** (5/5, 0 diferencias) |
+| Fichero de cuerpos ausente | **LIMITACION** (código 3): 5 limitadas, 0 operaciones inventadas |
+| Cuerpo corrupto (hash incoherente) | **LIMITACION** (código 3): observación limitada y diferencia explicada |
+
+Regresiones directamente afectadas: **75** (pytest) + **46 + 32 + 42**
+(unittest) **OK**. No se repitieron pruebas generales ajenas. Una primera
+ejecución de la suite de `history`/`budget_scope` dio `FAILED (failures=4)` de
+forma no reproducible (las dos siguientes pasaron 46/46); queda constancia en
+el INFORME.
+
+#### 10.17.5 Presupuesto recalculado (sin red, ruta de preparación separada)
+
+`--budget-only` a través del lanzador, con la forma final del comando, en
+`…\_presupuesto\exp-v2-ventana-3-20261115a-preparacion` (**no** es el
+directorio de la corrida): código **0**, `stderr` vacío, gate **13/13**,
+`cabe_en_limites: true`. Intentos **1 334**, peso **3 752**, reintentos **50**,
+almacenamiento previsto **9 016 872 B**, reservado máx. **56 363 648 B**, margen
+reservado **77 854 080 B**, cuerpos `klines` **4 320 000 B** (480 respuestas ×
+9 000 B). Duración: 3 600 + 4 200 + 32 400 s = **40 200 s** de trabajo y
+**300 s** de cierre.
+
+**Diferencias frente al presupuesto publicado: 10, todas de almacenamiento**
+(los cuerpos persistidos). No cambia ninguna consulta, peso, reintento, límite
+WS, duración, exposición ni cupo.
+
+#### 10.17.6 Propuesta para UNA ventana futura (NO ejecutada)
+
+[PROPUESTA](../evidence/exp-v2-ventana-3-20261115a-propuesta/PROPUESTA.md):
+pregunta económica exacta de la baseline, denominadores y comparación por
+rol/ciclo, tratamiento de los rechazos por capacidad, netos `COMPLETO`
+separados de `CONDICIONADO`, criterios de insuficiencia, presupuesto
+recalculado, comando completo aceptado por el parser, `run_id` **nuevo**
+`exp-v2-ventana-3-20261115a` **verificado no utilizado**, ubicación de datos y
+enlace del monitor existente. **No** se crea el directorio de la corrida ni
+se ejecuta.
+
+#### 10.17.7 Lo que este bloque NO hace
+
+No abre mercado, no hace capturas, no relanza ni reutiliza
+`exp-v2-ventana-2-20261112a`, no crea el directorio de una corrida pública, no
+amplía duración, exposición, consultas ni cupos, no cambia estrategia,
+selección, funding, contabilidad ni presupuestos económicos, no añade
+indicadores, on-chain, GARCH, futuros con vencimiento, infraestructura ni
+servicios, no toca el dashboard 3020 ni el servicio 8792, no lee ni modifica
+`opencode.json` ni archivos ajenos, y no altera las DBs canónicas ni los
+datasets originales.

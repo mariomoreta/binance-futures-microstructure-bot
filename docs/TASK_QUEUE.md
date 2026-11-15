@@ -1,23 +1,28 @@
-# Cola vigente — corrección local del borde de la consulta, 2026-11-15
+# Cola vigente — preparación reproducible de UNA medición económica, 2026-11-15
 
-**Verificación 2026-11-15:** se conserva la implementación publicada en
-`5362baf` y se refuerza la prueba de ambas direcciones: cada una debe ejecutar
-fill y salida, no solo recibir una dirección. Aceptación canónica `unittest`
-9/9 y regresiones relacionadas 124/124 en Linux; sin mercado ni nueva ventana.
-Los derivados publicados son consistentes (179 consultas, 0 trayectorias
-completas); el dataset original de Windows no estuvo accesible para una
-segunda inspección física. El bloque permanece cerrado con esa limitación.
+**Verificación 2026-11-15 (preparación acotada, sin mercado):** se conservan
+la corrección temporal (`5362baf`) y su etiquetado, publicados dentro del
+commit concurrente `11969f9` (integrado por *fast-forward*). Se **añade** la
+persistencia mínima que faltaba —el cuerpo real de cada consulta `klines` que
+resuelve una operación— y una reconstrucción **offline** que reutiliza el
+adaptador y los motores existentes. Aceptación local: **3 passed**; LONG,
+SHORT y funding observado reconstruidos **EQUIVALENTES** (5/5, 0
+diferencias); fichero ausente y cuerpo corrupto → **LIMITACION** explícita,
+sin resultados inventados. Presupuesto recalculado **sin red** en ruta de
+preparación separada: gate **13/13**, **10 diferencias** frente al publicado
+—todas de almacenamiento—, ningún cupo ampliado. `run_id` nuevo
+`exp-v2-ventana-3-20261115a` verificado **no utilizado**; el directorio de la
+corrida **no** se crea y **no** se ejecuta.
 
-`CURRENT_PHASE`: cierre del bloque de **corrección local y evaluación
-offline, sin mercado**, autorizado el 2026-11-14: el defecto del **borde de la
-consulta** del precio de referencia de entrada que vació la capa de ejecución
-de la ventana `exp-v2-ventana-2-20261112a` **queda corregido y aceptado
-localmente** por el **recorrido productivo real** (CLI + proveedores HTTP/WS
-loopback + reloj manual), y el dataset existente **queda reevaluado offline**
-hasta donde permite: a nivel de consulta (**179/179**) pero **no**
-económicamente. La ventana anterior **sigue cerrada** y **no se reutiliza ni
-se relanza**. La **vía B** (`funding-coverage/v1`) se conserva sin cambios y
-sigue diferida. No es declaración de promoción formal.
+`CURRENT_PHASE`: cierre del bloque de **preparación reproducible de UNA
+medición económica, sin mercado**, autorizado el 2026-11-15: el camino
+productivo **conserva ahora la trayectoria completa** (cuerpos de las
+consultas `klines` con hash, parámetros, instantes y vínculo con la
+observación) y **admite reconstruir sus resultados offline sin volver a
+consultar al proveedor**. La ventana anterior `exp-v2-ventana-2-20261112a`
+**sigue cerrada** y **no** se reutiliza ni se relanza. La **vía B**
+(`funding-coverage/v1`) se conserva sin cambios y sigue diferida. No es
+declaración de promoción formal.
 
 `CURRENT_OBJECTIVE`: evaluar si la autoselección del universo elegible, unida a
 una regla causal de dirección, entrada, stop-loss, gestión y salida, permite una
@@ -25,70 +30,74 @@ expectativa neta favorable con riesgo controlado. Más movimiento por sí solo n
 satisface el objetivo. Dirección canónica: [PRODUCT_GOAL](PRODUCT_GOAL.md).
 **El embudo de datos ya no es el bloqueo, y la causa artificial de las 179
 abstenciones tampoco**: el defecto determinista del borde de la consulta está
-corregido y verificado. Lo que sigue bloqueando la evidencia económica es que
-**ninguna ventana ejecutada ha llegado a producir operaciones evaluables**: la
-ventana cerrada no contiene los datos necesarios (las velas klines del venue no
-se persistieron y su serie 1 m capturada es de aggTrade y no cubre el horizonte
-de ninguna observación) y hace falta **una ventana nueva con autorización
-propia**. Esta corrección **no aporta evidencia sobre la hipótesis económica en
-ninguna dirección**.
+corregido y verificado, y ahora la trayectoria queda **persistida** para que
+el resultado sea reconstruible offline. Lo que sigue bloqueando la evidencia
+económica es que **ninguna ventana ejecutada ha llegado a producir operaciones
+evaluables**: la ventana cerrada no contiene los datos necesarios y hace falta
+**una ventana nueva con autorización propia**. Esta preparación **no aporta
+evidencia sobre la hipótesis económica en ninguna dirección**.
 
-`ACTIVE_TASK`: **ninguno**. El bloque de corrección local y evaluación offline
-está **cerrado**: corrección implementada y aceptada, etiquetado corregido,
-presupuesto recalculado sin red e idéntico al publicado, reevaluación offline
-publicada con sus faltantes exactos y el dataset original verificado **intacto**
-por hash antes y después. **No** hay tarea activa: abrir una ventana nueva
-exige autorización humana explícita, un `run_id` nuevo y su propia ejecución;
-este bloque **no** la abre ni la propone automáticamente.
+`ACTIVE_TASK`: **ninguno**. El bloque de preparación reproducible está
+**cerrado**: persistencia mínima implementada, reconstrucción offline
+aceptada localmente, presupuesto recalculado sin red y con los bytes de los
+cuerpos incluidos, propuesta revisable para **una** ventana futura y `run_id`
+nuevo verificado. **No** hay tarea activa: abrir una ventana nueva exige
+autorización humana explícita, un `run_id` nuevo y su propia ejecución; este
+bloque **no** la abre ni la ejecuta.
 
 `NEXT_TASKS`:
-1. **Corrección del borde de la consulta + etiquetado honesto: HECHO y
-   CERRADO (2026-11-14).** `scripts/research_pilot.py`:
-   `inicio_trayectoria_operativa(decision_ms, step_ms) =
-   floor(decision_ms/step)*step - step` (límite inferior que siempre incluye
-   la vela 1 m cerrada en T) y tope de filas 62 → **63** (la serie debe pasar
-   del horizonte para acreditar el cierre por horizonte y no una marca
-   `open_at_end`); el extremo final `now + step_ms` **no** se toca.
-   `scripts/research_operativo_adapter.py`: `neto_motivo` distingue abstención
-   sin posición, rechazo por capacidad sin posición, posición realmente
-   abierta sin salida y operación cerrada con funding incompleto
-   (`UNKNOWN` sigue siendo `UNKNOWN`). **Clasificación: corrección de
-   implementación**, no de metodología: no cambian `decision_ms`, selección,
-   dirección, referencia, fill causal, stop, horizonte, notional, capacidad,
-   prioridad, costes ni contabilidad de funding. **Aceptación local:** 9 passed
-   en `tests/test_pilot_operativo_consulta_temporal.py` (CLI real, loopback,
-   reloj manual), con los 7 instantes exigidos (exacto en el minuto, +1 ms,
-   12 527, 19 298, 59 998, 59 999 y cambio de minuto); antes/después observado:
-   5/7 sin vela de referencia y 2 entradas → **0/7 y 7 entradas con 7 salidas
-   ejecutadas**; regresiones afectadas 57 + 50 passed; suite completa 1 918
-   passed, 2 skipped y 12 fallos **preexistentes y ajenos** (idénticos con el
-   código publicado). **Presupuesto** recalculado con `--budget-only` **sin
-   red** en ruta de preparación separada: gate 13/13, **0 claves distintas**
-   frente al publicado, **sin aumentar cupos**. **Reevaluación offline**
-   (posterior a la corrección, no validación prospectiva): a nivel de consulta
-   **179/179** (el `startTime` registrado coincide con `decision_ms - 60 000`
-   en 179/179; la vela cerrada en T quedaba dentro en **0/179** y queda en
-   **179/179** con el borde corregido; la serie corregida pasa del horizonte en
-   179/179); a nivel económico **no** se puede reevaluar (cuerpos `klines` no
-   persistidos; serie capturada de aggTrade; **0/179** trayectorias
-   completas; 6 271 velas faltantes de 11 277; 0 liquidaciones de funding) →
-   neto COMPLETO `n = 0`, CONDICIONADO `n = 0` (ambos `null`), UNKNOWN 179,
-   comparación **`INSUFICIENTE`**. Evidencia:
-   [INFORME](evidence/exp-v2-borde-consulta-20261114/INFORME.md) ·
-   `antes_despues.json`, `aceptacion_local.json`,
-   `reconstruccion_consulta.jsonl`, `inventario_cobertura.jsonl`,
-   `neteo_conclusion.json`, `presupuesto_comparacion.json`, `manifiesto.json`,
-   `hashes.json`. Dataset original **intacto** (hashes antes/después).
-2. **Ventana operativa nueva con el borde corregido — requiere autorización
-   humana explícita (PENDIENTE; no propuesta automáticamente por este
-   bloque).** Condiciones ya resueltas que la nueva ventana hereda: borde de
-   la consulta corregido y aceptado localmente, tope de 63 filas que cubre el
-   horizonte, presupuesto recalculado **sin cambios**, etiquetado honesto y
-   `run_id` nuevo obligatorio. Lo que **no** se puede hacer sin autorización:
-   abrir mercado, capturar, resolver contra el venue y cerrar una ventana.
-   `exp-v2-ventana-2-20261112a` **no** se reutiliza ni se relanza, y no se
-   amplían duración, exposición, consultas ni cupos.
-3. **Ventana operativa única por la vía A: EJECUTADA y CERRADA (2026-11-14).**
+1. **Preparación reproducible de UNA medición económica: HECHA y CERRADA
+   (2026-11-15).** `src/microstructure_probe/history_client.py` captura el
+   **cuerpo crudo** de la última respuesta exitosa (invalidado al iniciar cada
+   petición). `scripts/research_pilot.py` persiste cada respuesta de
+   trayectoria en `consultas_klines.jsonl` (run_id, símbolo, intervalo,
+   parámetros exactos, solicitud/adquisición, estado HTTP, cuerpo, hash,
+   tamaño, filas, corte causal `reloj_ms`, `decision_ms` y vínculo con la
+   observación) usando el `PilotStore` y la `RunStorageBudget` **existentes**:
+   si no cabe, se detiene con `presupuesto_bytes` **sin ampliar cupos**.
+   `scripts/research_operativo_replay.py` (**nuevo**) reconstruye offline con
+   el adaptador y los motores existentes y contrasta decisión, dirección,
+   cantidad, entrada, stop, salida, costes y estado del funding/neto.
+   **Baseline declarada por escrito** (dirección por signo del movimiento de
+   24 h; referencia actual del mismo cierre que compara la condición
+   direccional; libro y flujo como requisitos de calidad/contexto; **no**
+   acredita patrones, anticipación de explosiones ni reversión): es una
+   aclaración, **no** un cambio de estrategia. **Aceptación local:** 3 passed
+   en `tests/test_operativo_replay_offline.py` (CLI real, loopback, reloj
+   manual, almacenamiento temporal): LONG, SHORT y funding observado →
+   **EQUIVALENTE** (5/5, 0 diferencias); fichero de cuerpos ausente y cuerpo
+   corrupto → **LIMITACION** (código 3) con 0 operaciones inventadas.
+   Regresiones afectadas 75 (pytest) + 46 + 32 + 42 (unittest) **OK**; no se
+   repitieron pruebas generales ajenas (una primera ejecución de
+   `history`/`budget_scope` dio `FAILED (failures=4)` **no reproducible**: las
+   dos siguientes pasaron 46/46). **Presupuesto** recalculado con `--budget-only`
+   **sin red** en ruta de preparación separada: gate **13/13**, intentos
+   **1 334**, peso **3 752**, reintentos **50**, almacenamiento previsto
+   **9 016 872 B**, reservado **56 363 648 B**, margen **77 854 080 B**, con
+   **4 320 000 B** de cuerpos `klines` (480 × 9 000 B); **10 diferencias**
+   frente al publicado, **todas de almacenamiento**; **ningún cupo
+   ampliado**. **Propuesta** para UNA ventana futura: [PROPUESTA](evidence/exp-v2-ventana-3-20261115a-propuesta/PROPUESTA.md)
+   (`run_id` **nuevo** `exp-v2-ventana-3-20261115a` verificado **no
+   utilizado**; pregunta económica exacta, denominadores y comparación por
+   rol/ciclo, rechazos por capacidad en tabla propia, `COMPLETO` y
+   `CONDICIONADO` separados, criterios de insuficiencia, presupuesto
+   recalculado, comando completo aceptado por el parser, ubicación de datos y
+   monitor). Evidencia: [INFORME](evidence/exp-v2-preparacion-reproducible-20261115/INFORME.md) ·
+   `presupuesto_comparacion.json`, `presupuesto.json`, `replay_long.json`,
+   `replay_short.json`, `replay_funding.json`, `replay_datos_ausentes.json`,
+   `replay_datos_corruptos.json`, `aceptacion_replay.txt`, `hashes.json`.
+2. **Ventana operativa nueva con trayectoria persistida — requiere
+   autorización humana explícita (PENDIENTE; no ejecutada por este bloque).**
+   Condiciones ya resueltas que la nueva ventana hereda: borde de la consulta
+   corregido y aceptado localmente, tope de 63 filas, etiquetado honesto,
+   cuerpos de las consultas `klines` **persistidos** y reconstrucción offline
+   **acreditada** (LONG/SHORT/funding: EQUIVALENTE), presupuesto recalculado
+   **sin ampliar cupos**, propuesta revisable y `run_id` nuevo verificado
+   (`exp-v2-ventana-3-20261115a`). Lo que **no** se puede hacer sin
+   autorización: abrir mercado, capturar, resolver contra el venue y cerrar
+   una ventana. `exp-v2-ventana-2-20261112a` **no** se reutiliza ni se
+   relanza, y no se amplían duración, exposición, consultas ni cupos.
+ 3. **Ventana operativa única por la vía A: EJECUTADA y CERRADA (2026-11-14).**
    `run_id exp-v2-ventana-2-20261112a` (ejecutado **una sola vez**, no
    reutilizado) sobre el directorio
    `C:\proyectos\binance-futures-data\exp-v2-ventana-2-20261112a` (fuera de

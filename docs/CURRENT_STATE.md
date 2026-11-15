@@ -1,4 +1,53 @@
-# Estado vigente — corrección local del borde de la consulta, 2026-11-15
+# Estado vigente — preparación reproducible de UNA medición económica, 2026-11-15
+
+## Preparación reproducible de UNA medición económica — PREPARADA, NO EJECUTADA (2026-11-15)
+
+**Autorización humana del 2026-11-15:** «PREPARACIÓN ACOTADA — UNA MEDICIÓN
+ECONÓMICA REPRODUCIBLE» — cubre **solo** preparación local, persistencia
+mínima, pruebas loopback y actualización del presupuesto/propuesta. **No**
+autoriza Binance, adquisición pública, capturas, órdenes, ventanas nuevas ni
+relanzamientos. `exp-v2-ventana-2-20261112a` **no** se reutiliza ni se
+relanza y **no** se creó el directorio de ninguna corrida pública.
+
+**Veredicto:** el hueco que quedaba —que el dataset persistido no permite
+reconstruir el resultado económico offline— **queda cerrado con la
+persistencia mínima que faltaba** y con una reconstrucción offline
+acreditada localmente. La **medición económica sigue sin ejecutarse**: no hay
+rentabilidad, P&L ni comparación por rol que este bloque aporte. La ventana
+anterior sigue siendo **INSUFICIENTE**.
+
+| | |
+|---|---|
+| Base publicada | `11969f95b9f2f9869e8ec3371c521f07586fe5e6` (commit concurrente del usuario, integrado por *fast-forward*; contiene `5362baf`, la corrección temporal ya publicada, **conservada sin reimplementar**) |
+| Cambio | `src/microstructure_probe/history_client.py` (cuerpo crudo de la última respuesta), `scripts/research_pilot.py` (persistencia `consultas_klines.jsonl` + contabilidad + manifiesto), `scripts/research_operativo_replay.py` (**nuevo**, reconstrucción offline), `tests/test_operativo_replay_offline.py` (**nuevo**), `tests/test_research_pilot.py` (arnés `moves` + expectativas de almacenamiento) |
+| Persistencia por respuesta | run_id, símbolo, intervalo, parámetros exactos, solicitud/adquisición, estado HTTP, **cuerpo recibido**, hash, tamaño, filas, corte causal (`reloj_ms`), `decision_ms` y vínculo con la observación |
+| Reconstrucción offline | `scripts/research_operativo_replay.py`: adaptador y motores existentes, sin red; contrasta decisión, dirección, cantidad, entrada, stop, salida, costes y estado del funding/neto |
+| Aceptación local | **3 passed** (`tests/test_operativo_replay_offline.py`): LONG, SHORT y funding observado → **EQUIVALENTE** (5/5, 0 diferencias); fichero ausente y cuerpo corrupto → **LIMITACION** (código 3), sin resultados inventados |
+| Regresiones afectadas | **75** (pytest) + **46 + 32 + 42** (unittest) **OK** (no se repitieron pruebas generales ajenas; una primera ejecución de `history`/`budget_scope` dio `FAILED (failures=4)` **no reproducible** — las dos siguientes pasaron 46/46) |
+| Presupuesto (sin red, ruta de preparación separada) | gate **13/13**, `cabe_en_limites: true`; intentos **1 334**, peso **3 752**, reintentos **50**; almacenamiento previsto **9 016 872 B**, reservado **56 363 648 B**, margen **77 854 080 B**; cuerpos `klines` **4 320 000 B**; **10 diferencias** frente al publicado, **todas de almacenamiento**; ningún cupo ampliado |
+| Propuesta | [PROPUESTA](evidence/exp-v2-ventana-3-20261115a-propuesta/PROPUESTA.md) — `run_id` **nuevo** `exp-v2-ventana-3-20261115a`, **verificado no utilizado**, comando completo, pregunta económica, denominadores por rol/ciclo, rechazos por capacidad, `COMPLETO` vs `CONDICIONADO`, criterios de insuficiencia, ubicación de datos y monitor |
+| Evidencia | [INFORME](evidence/exp-v2-preparacion-reproducible-20261115/INFORME.md) |
+
+### Qué cambia y qué no
+
+**Cambia (persistencia y verificación, no la regla):** los cuerpos de las
+consultas `klines` que resuelven operaciones **se persisten** con su hash y su
+metadato; el presupuesto **incluye** esos bytes; el manifiesto publica la
+configuración operativa congelada.
+
+**No cambia:** selección, dirección, señal, fill causal, stop, horizonte,
+notional, capacidad compartida, prioridad determinista, costes y contabilidad
+de funding. La **baseline** queda declarada por escrito: dirección por el signo
+del movimiento de 24 h; referencia actual procedente del mismo cierre que
+compara la condición direccional; libro y flujo como requisitos de
+calidad/contexto; **no** acredita detección de patrones, anticipación de
+explosiones ni reversión.
+
+**Lo que sigue bloqueando la evidencia económica:** ninguna ventana ejecutada
+ha producido operaciones evaluables. La ventana cerrada no conserva los datos
+necesarios; esta preparación deja el camino listo, pero **no** abre ni propone
+automáticamente la ejecución: requiere autorización humana posterior, un
+`run_id` nuevo y su propia ejecución.
 
 ## Verificación independiente del cierre local — 2026-11-15
 

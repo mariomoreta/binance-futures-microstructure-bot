@@ -1,0 +1,143 @@
+{
+  "economia": {
+    "neto_completo_ejecucion": 0,
+    "neto_completo_replay": 0,
+    "neto_conditionado_ejecucion": 1,
+    "neto_conditionado_replay": 1,
+    "neto_unknown_ejecucion": 4,
+    "neto_unknown_replay": 3,
+    "operaciones_ejecucion": 1,
+    "operaciones_replay": 1
+  },
+  "fuente_funding": "none",
+  "fuentes": {
+    "consultas_klines": 4,
+    "funding_adquisiciones": 0,
+    "http_requests": 22,
+    "observaciones_aptas": 5,
+    "observaciones_con_consulta": 4,
+    "resultados_ejecucion": 5
+  },
+  "limitaciones": [
+    {
+      "cuerpo_sha256_calculado": "d12e1089d9b63978a70579ac93bedc3fbf9b0885a78382e6e796f0b39e50b4e4",
+      "cuerpo_sha256_declarado": "3c70a867ceda26fe6cc6b4a119149750d1efd6c139cf2530b5eb5d8bcf840550",
+      "detalle": "el hash del cuerpo persistido no coincide",
+      "motivo": "consulta_corrupta_hash",
+      "observation_id": "AAAUSDT|1735689660000"
+    }
+  ],
+  "metodo_funding": "coverage-contract",
+  "observaciones": [
+    {
+      "estado": "limitada",
+      "motivo": "sin_resultado_en_el_replay",
+      "observation_id": "AAAUSDT|1735689660000"
+    },
+    {
+      "diferencias": [
+        {
+          "campo": "decision",
+          "ejecucion": "RECHAZADA_CAPACIDAD",
+          "replay": "ENTRADA_EJECUTADA"
+        },
+        {
+          "campo": "entry_px",
+          "ejecucion": 1010.0,
+          "replay": 1010.202
+        },
+        {
+          "campo": "exit_px",
+          "ejecucion": null,
+          "replay": 1010.505
+        },
+        {
+          "campo": "exit_ms",
+          "ejecucion": null,
+          "replay": 1735693320000
+        },
+        {
+          "campo": "exit_reason",
+          "ejecucion": null,
+          "replay": "horizon"
+        },
+        {
+          "campo": "exit_executed",
+          "ejecucion": false,
+          "replay": true
+        },
+        {
+          "campo": "qty",
+          "ejecucion": 0.0,
+          "replay": 0.9899010296950511
+        },
+        {
+          "campo": "gross_pnl",
+          "ejecucion": 0.0,
+          "replay": 0.2999400119975978
+        },
+        {
+          "campo": "fees",
+          "ejecucion": 0.0,
+          "replay": 1.0001499700059988
+        },
+        {
+          "campo": "spread_slip",
+          "ejecucion": 0.0,
+          "replay": 0.6000899820035992
+        },
+        {
+          "campo": "net_pnl",
+          "ejecucion": null,
+          "replay": -1.300299940012
+        },
+        {
+          "campo": "funding_estado",
+          "ejecucion": "rechazada_por_capacidad",
+          "replay": "ninguno (UNKNOWN, no cero)"
+        },
+        {
+          "campo": "neto_estado",
+          "ejecucion": "UNKNOWN",
+          "replay": "CONDICIONADO_SIN_FUNDING_COMPLETO"
+        },
+        {
+          "campo": "neto_motivo",
+          "ejecucion": "rechazo por capacidad sin posicion: no se abrio ninguna entrada",
+          "replay": "operacion cerrada con funding incompleto: resultado numerico sin funding completo; no es neto completo"
+        }
+      ],
+      "estado": "diferente",
+      "observation_id": "BBBUSDT|1735689660000"
+    },
+    {
+      "diferencias": [],
+      "estado": "coincidente",
+      "observation_id": "CCCUSDT|1735689660000"
+    },
+    {
+      "diferencias": [],
+      "estado": "coincidente",
+      "observation_id": "DDDUSDT|1735689660000"
+    },
+    {
+      "diferencias": [],
+      "estado": "coincidente",
+      "observation_id": "EEEUSDT|1735689660000"
+    }
+  ],
+  "run_dir": "C:\\Users\\adonm\\AppData\\Local\\Temp\\replay-corrupto-rakyd9ux\\run",
+  "run_id": "pilot-sync",
+  "veredicto": {
+    "coincidentes": 3,
+    "diferentes": 1,
+    "estado": "LIMITACION",
+    "limitaciones": 1,
+    "limitaciones_reconstructivas": 1,
+    "limitadas": 1,
+    "observaciones_comparadas": 5,
+    "reutiliza_adaptador_y_motores_existentes": true,
+    "sin_red": true
+  },
+  "version": "research-operativo-replay/v1"
+}

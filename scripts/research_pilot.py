@@ -1588,12 +1588,20 @@ def compute_budget(cfg: PilotConfig) -> Dict[str, Any]:
     bytes_funding_calendar = 4_000
     bytes_http_request = 700
     bytes_bucket_row = 200
+    # Cuerpo persistido de cada consulta de trayectoria (klines 1m): 63 filas
+    # de 12 campos (~130 B por fila) mas los metadatos de la respuesta
+    # (~800 B). Estimacion conservative por respuesta: 9 000 B.
+    bytes_klines_body = 9_000
     bucket_rows = symbols * int(duration / 60.0) if duration else 0
     bucket_rows_10s = symbols * int(duration / 10.0) if duration else 0
     storage_jsonl = (observations_max * bytes_obs
                      + klines_total * bytes_outcome
                      + observations_max * bytes_operativo
                      + funding_log_rows * bytes_funding_log)
+    # Cuerpos de las consultas de trayectoria (base + peticiones repetidas):
+    # son los que permiten reconstruir la trayectoria offline.
+    storage_klines_bodies = (
+        (klines_trayectoria + klines_trayectoria_reserva) * bytes_klines_body)
     storage_funding_files = funding_calendar_files * bytes_funding_calendar
     storage_http_ledger = ((selections * 2 + klines_total + funding_calls
                             + klines_trayectoria_reserva
@@ -1602,7 +1610,8 @@ def compute_budget(cfg: PilotConfig) -> Dict[str, Any]:
     storage_db = (bucket_rows * 2 + bucket_rows_10s) * bytes_bucket_row
     storage_aux = 2 * 65_536  # WAL + SHM aproximado
     storage_total = (storage_jsonl + storage_funding_files
-                     + storage_http_ledger + storage_db + storage_aux)
+                     + storage_http_ledger + storage_db + storage_aux
+                     + storage_klines_bodies)
 
     # La primera seleccion abre los feeds; cada seleccion posterior puede
     # cambiar el set y reabrir AMBOS feeds (/public y /market).
@@ -1646,7 +1655,8 @@ def compute_budget(cfg: PilotConfig) -> Dict[str, Any]:
         runtime_ledger_quota = MAX_HTTP_LEDGER_QUOTA_BYTES
     storage_accounted_max = (
         storage_jsonl + storage_funding_files
-        + runtime_sqlite_quota + runtime_ledger_quota)
+        + runtime_sqlite_quota + runtime_ledger_quota
+        + storage_klines_bodies)
     gate_checks = {
         "intentos_plan_dentro_del_techo": (
             attempts_with_reserves <= cfg.max_http_attempts),
@@ -1930,6 +1940,8 @@ def compute_budget(cfg: PilotConfig) -> Dict[str, Any]:
             "jsonl_bytes_previstos": storage_jsonl,
             "funding_calendar_bytes_previstos": storage_funding_files,
             "http_ledger_bytes_previstos": storage_http_ledger,
+            "consultas_klines_cuerpos_bytes_previstos": storage_klines_bodies,
+            "bytes_por_cuerpo_klines": bytes_klines_body,
             "sqlite_bytes_previstos": storage_db,
             "auxiliares_bytes_previstos": storage_aux,
             "total_bytes_previstos": storage_total,
@@ -1946,8 +1958,9 @@ def compute_budget(cfg: PilotConfig) -> Dict[str, Any]:
                 round(100.0 * (cfg.max_bytes - storage_total) / cfg.max_bytes, 2)
                 if cfg.max_bytes else None),
             "nota": (
-                "El tope incluye JSONL de datos, ledger HTTP, calendarios de "
-                "funding, SQLite y sus auxiliares. Cada JSONL reserva sus "
+                "El tope incluye JSONL de datos, ledger HTTP, cuerpos de las "
+                "consultas klines de trayectoria, calendarios de funding, "
+                "SQLite y sus auxiliares. Cada JSONL reserva sus "
                 "bytes exactos antes de escribir; SQLite y el ledger tienen "
                 "cuotas fisicas reservadas para evitar carreras. Los indices "
                 "finales y el estado de progreso no forman parte del tope de "
@@ -2000,6 +2013,10 @@ class ResearchPilot:
         self.operativo_path = self.out_dir / "resultado_operativo.jsonl"
         self.funding_log_path = self.out_dir / "funding_adquisicion.jsonl"
         self.http_ledger_path = self.out_dir / "http_requests.jsonl"
+        # Cuerpos de las consultas klines que resuelven operaciones: permiten
+        # reconstruir la trayectoria offline sin volver a consultar al
+        # proveedor (el hash del ledger no sustituye a las velas).
+        self.klines_log_path = self.out_dir / "consultas_klines.jsonl"
         self.db_path = self.out_dir / "research.db"
         self.storage_budget = RunStorageBudget(cfg.max_bytes)
         existing_data_bytes = self._existing_counted_bytes()
@@ -2032,6 +2049,12 @@ class ResearchPilot:
         self.funding_log_fh = self.funding_log_path.open(
             "a", encoding="utf-8", newline="\n")
         self.funding_log_bytes = 0
+        self.klines_store = PilotStore(
+            self.klines_log_path, 0,
+            storage_budget=self.storage_budget,
+            storage_key=f"jsonl:{self.klines_log_path}",
+        )
+        self.klines_consultas_por_oid: Dict[str, int] = {}
         self.funding_queries_by_oid: Dict[str, int] = {}
         self.funding_calendars_by_oid: Dict[str, FundingCalendar] = {}
         self.history = HistoryStore(
@@ -2202,6 +2225,7 @@ class ResearchPilot:
             + self._file_bytes(self.operativo_path)
             + self._file_bytes(self.funding_log_path)
             + self._file_bytes(self.http_ledger_path)
+            + self._file_bytes(self.klines_log_path)
             + funding_bytes
             + self._sqlite_bytes()
         )
@@ -2209,9 +2233,10 @@ class ResearchPilot:
     def storage_bytes_total(self) -> int:
         """Bytes de datos persistidos, sin doble conteo.
 
-        Incluye los tres JSONL de datos, el ledger HTTP, los calendarios de
-        funding, SQLite y sus auxiliares. Los indices finales (``resumen.json``
-        y ``manifiesto.json``) no son datos de la ventana y se contabilizan
+        Incluye los tres JSONL de datos, el ledger HTTP, los cuerpos de las
+        consultas klines, los calendarios de funding, SQLite y sus
+        auxiliares. Los indices finales (``resumen.json`` y
+        ``manifiesto.json``) no son datos de la ventana y se contabilizan
         aparte del tope de captura.
         """
         http_ledger_path = self.out_dir / "http_requests.jsonl"
@@ -2220,6 +2245,7 @@ class ResearchPilot:
             + self._file_bytes(self.operativo.store_path)
             + self._file_bytes(self.funding_log_path)
             + self._file_bytes(http_ledger_path)
+            + self._file_bytes(self.klines_log_path)
             + self._funding_files_bytes()
             + self._sqlite_bytes()
         )
@@ -3075,6 +3101,66 @@ class ResearchPilot:
             self.funding_calendars_by_oid[oid] = calendar
         return calendar
 
+    def _persistir_consulta_klines(
+        self, symbol: str, obs: Dict[str, Any], now: int,
+        params: Dict[str, Any], request: Dict[str, Any],
+        cuerpo: Optional[str], filas: int,
+    ) -> bool:
+        """Persiste el cuerpo REAL recibido de una consulta de trayectoria.
+
+        Por respuesta conserva: identidad de corrida, simbolo, intervalo,
+        parametros exactos, instante de solicitud y de adquisicion, estado
+        HTTP, cuerpo recibido, hash verificable y el vinculo con la
+        observacion que uso esos datos.
+
+        No anade consultas: solo guarda lo que ya se recibio. Si el cuerpo no
+        esta disponible (p. ej. una respuesta no capturada) NO se persiste una
+        fila: se registra la ausencia, nunca una reconstruccion inventada.
+        """
+        if cuerpo is None:
+            self.stop_reason = self.stop_reason or "cuerpo_klines_no_capturado"
+            return False
+        cuerpo_bytes = len(cuerpo.encode("utf-8"))
+        sha = request.get("response_sha256")
+        if not sha:
+            sha = hashlib.sha256(cuerpo.encode("utf-8")).hexdigest()
+        oid = str(obs.get("observation_id"))
+        numero = int(self.klines_consultas_por_oid.get(oid, 0)) + 1
+        row = {
+            "kind": "consulta_klines_trayectoria",
+            "run_id": self.cfg.run_id,
+            "observation_id": obs.get("observation_id"),
+            "observaciones": [obs.get("observation_id")],
+            "symbol": str(symbol).upper(),
+            "interval": self.cfg.price_interval,
+            "endpoint": request.get("endpoint"),
+            "params": dict(params),
+            "consulta_numero": numero,
+            "solicitado_ms": request.get("sent_at_ms"),
+            "adquirido_ms": request.get("completed_at_ms"),
+            "http_status": request.get("http_status"),
+            "cuerpo_sha256": sha,
+            "cuerpo_bytes": cuerpo_bytes,
+            "filas": int(filas),
+            # Reloj usado para el corte causal: delimita que velas eran
+            # conocidas en el momento de la consulta.
+            "reloj_ms": int(now),
+            "decision_ms": int(obs.get("decision_ms")),
+            "nota": (
+                "el cuerpo incluye velas posteriores a T: son la TRAYECTORIA "
+                "que resuelve la operacion. La referencia de entrada usa solo "
+                "la vela plenamente cerrada en T (close_time <= decision_ms) "
+                "y el corte causal de la reconstruccion es reloj_ms"),
+            "cuerpo": cuerpo,
+        }
+        if not self.klines_store.write(row):
+            # No cabe: se detiene la persistencia con causa real y NO se
+            # amplian cupos (el mecanismo de reserva existente decide).
+            self.stop_reason = "presupuesto_bytes"
+            return False
+        self.klines_consultas_por_oid[oid] = numero
+        return True
+
     def _consultar_trayectoria_operativa(
         self, symbol: str, obs: Dict[str, Any], now: int,
     ) -> Tuple[Optional[Any], str, List[Any]]:
@@ -3093,6 +3179,15 @@ class ResearchPilot:
         # toca: la serie sigue cubriendo entrada, gestion y horizonte.
         start_ms = inicio_trayectoria_operativa(decision_ms, step_ms)
         end_ms = now + step_ms
+        limit = (ceil_ms(int(self.operativo.cfg.horizon_ms), step_ms)
+                 // step_ms + 3)
+        params = {
+            "symbol": str(symbol).upper(),
+            "interval": self.cfg.price_interval,
+            "startTime": int(start_ms),
+            "endTime": int(end_ms),
+            "limit": int(limit),
+        }
         rows, _ = self.rest.klines(
             symbol, self.cfg.price_interval, start_ms, end_ms,
             # Filas necesarias: desde la vela cerrada en T (abre en
@@ -3103,9 +3198,14 @@ class ResearchPilot:
             # acaba dentro, el motor marca "open_at_end" (marca, no salida
             # ejecutada). Con horizonte multiplo del paso son
             # horizon/step + 3 velas (63 con 1m y 60 min).
-            limit=ceil_ms(int(self.operativo.cfg.horizon_ms), step_ms)
-            // step_ms + 3,
+            limit=limit,
         )
+        request = (self.rest.upstream_requests[-1]
+                   if self.rest.upstream_requests else {})
+        if not self._persistir_consulta_klines(
+                symbol, obs, now, params, request,
+                self.rest.last_response_body, len(rows)):
+            return None, "persistencia_klines_no_disponible", []
         if not rows:
             return None, "sin_trayectoria_en_la_consulta"
         # Todas las velas devueltas por el proveedor, incluidas las
@@ -4002,6 +4102,10 @@ class ResearchPilot:
                 pass
             self.store.close()
             try:
+                self.klines_store.close()
+            except Exception:
+                pass
+            try:
                 self.operativo.close()
             except Exception:
                 pass
@@ -4154,6 +4258,9 @@ class ResearchPilot:
                     self.funding_log_path),
                 "funding_calendar_bytes": self._funding_files_bytes(),
                 "http_requests_jsonl_bytes": self._file_bytes(http_ledger_path),
+                "consultas_klines_jsonl_bytes": self._file_bytes(
+                    self.klines_log_path),
+                "consultas_klines_rows": self.klines_store.rows_written,
                 "sqlite_bytes": self._sqlite_bytes(),
                 "storage_bytes_total": self.storage_bytes_total(),
                 "storage_accounted_bytes": (
@@ -4187,6 +4294,9 @@ class ResearchPilot:
             "protocol_version": PROTOCOL_VERSION,
             "policy_version": POLICY_VERSION,
             "config": self.cfg.to_dict(),
+            # Configuracion operativa congelada: permite reconstruir el
+            # replay offline con el MISMO contrato (y verificar su hash).
+            "operativo_config": self.operativo.cfg.to_dict(),
             "files": {},
             "git_head": _git_head(),
             "dataset_location": str(self.out_dir),
@@ -4196,6 +4306,7 @@ class ResearchPilot:
         manifest_names = (
             "observaciones.jsonl", "resultado_operativo.jsonl",
             "funding_adquisicion.jsonl", "http_requests.jsonl",
+            "consultas_klines.jsonl",
             "presupuesto.json", "resumen.json", "estado.json",
             "diagnostico.json", "research.db", "research.db-wal",
             "research.db-shm",

@@ -606,7 +606,8 @@ class PilotRun:
                  funding_method: Optional[str] = None,
                  funding_wait_seconds: Optional[float] = None,
                  funding_wait_max_queries: Optional[int] = None,
-                 funding_rows_fn=None) -> None:
+                 funding_rows_fn=None,
+                 moves=None) -> None:
         self.tmp = Path(tmp)
         self.universe = list(universe)
         self.out_dir = self.tmp / "out"
@@ -625,7 +626,7 @@ class PilotRun:
 
         self.http = MarketHttp(
             self.universe, rotation=rotation, clock_ms_fn=_clock_ms,
-            funding_rows_fn=funding_rows_fn)
+            funding_rows_fn=funding_rows_fn, moves=moves)
         self.http_port = find_free_port()
         self.httpd = ThreadingHTTPServer(
             ("127.0.0.1", self.http_port), self.http.make_handler())
@@ -1321,8 +1322,13 @@ class TestCLISeparacionLocalPublico(unittest.TestCase):
         self.assertEqual(ws["streams_pico_por_conexion"], 20)
         self.assertEqual(ws["streams_pico_total"], 40)
         storage = budget["almacenamiento"]
-        self.assertEqual(storage["total_bytes_previstos"], 4_094_872)
-        self.assertEqual(storage["margen_bytes"], 130_122_856)
+        # Los cuerpos de las consultas klines de trayectoria se presupuestan
+        # aparte: 240 consultas base + 240 repetidas, 9 000 B por respuesta.
+        self.assertEqual(storage["bytes_por_cuerpo_klines"], 9_000)
+        self.assertEqual(
+            storage["consultas_klines_cuerpos_bytes_previstos"], 4_320_000)
+        self.assertEqual(storage["total_bytes_previstos"], 8_414_872)
+        self.assertEqual(storage["margen_bytes"], 125_802_856)
 
     def test_presupuesto_funding_real_no_amplia_cupos(self):
         tmp = Path(tempfile.mkdtemp(prefix="budget-funding-"))
@@ -1348,8 +1354,10 @@ class TestCLISeparacionLocalPublico(unittest.TestCase):
         self.assertEqual(
             rest["endpoints"]["/fapi/v1/fundingRate"]["llamadas"], 240)
         storage = budget["almacenamiento"]
-        self.assertEqual(storage["total_bytes_previstos"], 7_310_872)
-        self.assertEqual(storage["margen_bytes"], 126_906_856)
+        self.assertEqual(
+            storage["consultas_klines_cuerpos_bytes_previstos"], 4_320_000)
+        self.assertEqual(storage["total_bytes_previstos"], 11_630_872)
+        self.assertEqual(storage["margen_bytes"], 122_586_856)
         self.assertTrue(budget["gate"]["cabe_en_limites"])
         self.assertEqual(
             budget["gate"]["funding_maximo_concentrado_5m"], 90)

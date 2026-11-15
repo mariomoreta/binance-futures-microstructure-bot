@@ -1,3 +1,63 @@
+## Preparación reproducible de UNA medición económica `piloto/preparacion-reproducible-20261115` — 2026-11-15
+
+- `DECISIONS_REVIEWED` — AGENTS, WORKFLOW, PRODUCT_GOAL, CURRENT_STATE,
+  TASK_QUEUE, MASTER_PLAN, DECISIONS, EXPERIMENTO_OPERATIVO_V2 §10.16–§10.17,
+  PAPER_TRADING, RISK_RULES, SUCCESS_GATES y la propuesta vigente de la
+  ventana.
+- `NEW_DECISIONS_RECORDED` — la persistencia mínima del **cuerpo real** de
+  las consultas `klines` que resuelven operaciones y la reconstrucción offline
+  reutilizando adaptador y motores se consolidan como camino productivo; un
+  fichero ausente o corrupto produce **limitación explícita**, nunca un
+  resultado inventado, y el funding desconocido sigue `UNKNOWN`. Se declara
+  por escrito la **baseline de continuación** (dirección por el signo del
+  movimiento de 24 h; referencia actual procedente del mismo cierre que
+  compara la condición direccional; libro y flujo como requisitos de
+  calidad/contexto; **no** acredita detección de patrones, anticipación de
+  explosiones ni reversión): es una aclaración, **no** un cambio de estrategia.
+  Registro en `DECISIONS.md` (2026-11-15).
+- `FEATURES_IMPLEMENTED` — `src/microstructure_probe/history_client.py`
+  captura el cuerpo crudo de la última respuesta exitosa (invalidado al
+  iniciar cada petición); `scripts/research_pilot.py` persiste cada respuesta
+  de trayectoria en `consultas_klines.jsonl` (run_id, símbolo, intervalo,
+  parámetros exactos, solicitud/adquisición, estado HTTP, cuerpo, hash,
+  tamaño, filas, corte causal `reloj_ms`, `decision_ms` y vínculo con la
+  observación) con `PilotStore` y `RunStorageBudget` **existentes**, y
+  publica la configuración operativa congelada en el manifiesto;
+  `scripts/research_operativo_replay.py` (**nuevo**) reconstruye offline con
+  `OperativoAdapter`, `paper_lab_engine` y `backtest_offline`;
+  `tests/test_operativo_replay_offline.py` (**nuevo**);
+  `tests/test_research_pilot.py` gana el parámetro `moves` del arnés.
+  Sin cliente, motor, servicio ni base de datos nuevos, sin consultas añadidas
+  para guardar datos y sin ampliar ningún cupo.
+- `FEATURES_VERIFIED` — **3 passed** en la aceptación nueva (CLI real,
+  proveedores HTTP/WS loopback, reloj manual, almacenamiento temporal): LONG,
+  SHORT y funding observado reconstruidos **EQUIVALENTES** (5/5, 0
+  diferencias); fichero de cuerpos ausente y cuerpo corrupto →
+  **LIMITACION** (código 3) con 0 operaciones inventadas; regresiones
+  directamente afectadas **75** (pytest) + **46 + 32 + 42** (unittest) **OK**
+  (no se repitieron pruebas generales ajenas; una primera ejecución de
+  `history`/`budget_scope` dio `FAILED (failures=4)` **no reproducible** — las
+  dos siguientes pasaron 46/46); presupuesto recalculado **sin red** en ruta de
+  preparación separada: gate **13/13**, `cabe_en_limites: true`, **10
+  diferencias** frente al publicado, **todas de almacenamiento**. Evidencia:
+  `evidence/exp-v2-preparacion-reproducible-20261115/INFORME.md`.
+- `DEFERRED_FEATURES` — ejecución de la ventana nueva (requiere autorización
+  humana posterior, `run_id` propio y su propia ejecución: el `run_id`
+  `exp-v2-ventana-3-20261115a` queda **propuesto y verificado no utilizado**,
+  no creado); vía B (`funding-coverage/v1`); futuros con vencimiento (la
+  cobertura del selector sigue siendo PERPETUAL/TRADING/USDT); indicadores
+  nuevos, on-chain, GARCH, expansión de dashboard, conectores y capas de IA;
+  reutilización o relanzamiento de `exp-v2-ventana-2-20261112a`.
+- `BACKLOG_UPDATED` — entrada nueva de este cierre; la entrada del cierre del
+  borde (`piloto/borde-consulta-corregido-20261114`) se conserva intacta.
+  **Ningún gate económico avanza**: no hay rentabilidad, P&L ni comparación
+  por rol acreditados, y la ventana anterior sigue `INSUFICIENTE`.
+- `DOCUMENTATION_CONFLICTS` — ninguno detectado: la ventana cerrada sigue
+  declarada `INSUFICIENTE`; el presupuesto publicado se conserva como
+  referencia histórica y las 10 diferencias del nuevo presupuesto son
+  únicamente de almacenamiento; la propuesta de la ventana cerrada se
+  conserva **sin reescribir** y apunta a la propuesta vigente.
+
 ## Verificación del cierre `piloto/borde-consulta-corregido-20261114` — 2026-11-15
 
 - `DECISIONS_REVIEWED` — AGENTS, WORKFLOW, PRODUCT_GOAL, CURRENT_STATE,
