@@ -1,3 +1,29 @@
+## Verificación del cierre `piloto/borde-consulta-corregido-20261114` — 2026-11-15
+
+- `DECISIONS_REVIEWED` — AGENTS, WORKFLOW, PRODUCT_GOAL, CURRENT_STATE,
+  TASK_QUEUE, MASTER_PLAN, DECISIONS, EXPERIMENTO_OPERATIVO_V2 §10.16,
+  PAPER_TRADING, RISK_RULES y SUCCESS_GATES.
+- `NEW_DECISIONS_RECORDED` — aceptación LONG y SHORT exige fill y salida de
+  cada dirección en corridas loopback independientes; no cambia la regla.
+  Se distingue verificación de derivados publicados de acceso físico al
+  dataset original de Windows (no disponible en este entorno).
+- `FEATURES_IMPLEMENTED` — aceptación reforzada en el test existente y
+  `load_tests` para el runner unittest canónico; implementación productiva
+  de `5362baf` conservada, sin duplicación ni nuevas dependencias.
+- `FEATURES_VERIFIED` — Linux: 9 aceptaciones y 124 regresiones, código 0;
+  CLI antes/después: 5/7 sin referencia → 0/7, siete entradas y salidas;
+  presupuesto 13/13 idéntico; doce hashes publicados verificados. Evidencia:
+  `evidence/exp-v2-borde-consulta-20261114/validacion_independiente_20261115.json`.
+- `DEFERRED_FEATURES` — replay económico sin OHLC originales y sin
+  trayectorias completas; capturas no autorizadas; vía B, vencimientos y
+  ampliaciones de estrategia/dashboard sin cambios.
+- `BACKLOG_UPDATED` — este cierre complementa la entrada existente; ningún
+  gate económico avanza ni se abre otra ventana.
+- `DOCUMENTATION_CONFLICTS` — 82 174 080 B era margen restante, no reserva:
+  se corrige a 52 043 648 B reservados en el protocolo. La cola distingue el
+  diagnóstico histórico de la corrección de implementación ya publicada.
+  Los 6 271 faltantes son pares observación/vela, no velas únicas.
+
 ## F-OPERATIVO-FUNDING-ESPERA-A-20261111 — Espera contable con liquidaciones observadas (via A)
 
 **1. Title:** Implementar la via A de

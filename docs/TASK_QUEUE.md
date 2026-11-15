@@ -1,4 +1,12 @@
-# Cola vigente — corrección local del borde de la consulta, 2026-11-14
+# Cola vigente — corrección local del borde de la consulta, 2026-11-15
+
+**Verificación 2026-11-15:** se conserva la implementación publicada en
+`5362baf` y se refuerza la prueba de ambas direcciones: cada una debe ejecutar
+fill y salida, no solo recibir una dirección. Aceptación canónica `unittest`
+9/9 y regresiones relacionadas 124/124 en Linux; sin mercado ni nueva ventana.
+Los derivados publicados son consistentes (179 consultas, 0 trayectorias
+completas); el dataset original de Windows no estuvo accesible para una
+segunda inspección física. El bloque permanece cerrado con esa limitación.
 
 `CURRENT_PHASE`: cierre del bloque de **corrección local y evaluación
 offline, sin mercado**, autorizado el 2026-11-14: el defecto del **borde de la
@@ -103,8 +111,9 @@ este bloque **no** la abre ni la propone automáticamente.
    candidato/comparador **`INSUFICIENTE`** (0 ciclos con operaciones completas
    en ambos roles, con cobertura de datos 12/12). **Causa raíz diagnosticada**
    (borde de la consulta `klines`; 0/179 decisiones alineadas al minuto) y
-   **NO corregida**: corregirla es un cambio de metodología que exige
-   autorización humana y una ventana nueva. Evidencia:
+   **corregida posteriormente** por la autorización local del punto 1
+   (corrección de implementación, sin cambiar la regla). El diagnóstico del
+   cierre original se conserva como antecedente. Evidencia:
    [INFORME](evidence/exp-v2-ventana-2-20261112a/INFORME.md) (tres capas +
    causa raíz) · `manifiesto.json`, `resumen.json`, `exit_code.txt`,
    `estado_lanzador.json`, `cierre.json`, `causa_raiz_verificacion.json`,

@@ -31,6 +31,7 @@ import sys
 import tempfile
 import threading
 import time
+import unittest
 from http.server import ThreadingHTTPServer
 from pathlib import Path
 from urllib.parse import parse_qs, urlsplit
@@ -665,29 +666,41 @@ def test_aceptacion_decisiones_no_alineadas_recuperan_la_referencia():
 
 
 def test_recorrido_long_y_short_con_datos_sinteticos():
-    """LONG y SHORT recorren el camino completo con el mismo criterio."""
+    """Cada direccion acredita fill y salida, no solo direccion asignada.
+
+    AAAUSDT tiene prioridad temporal/alfabetica y ocupa la unica plaza.
+    Se invierte su movimiento en dos corridas locales independientes para
+    que SHORT tambien deba ejecutar: un rechazo por capacidad no acredita
+    el recorrido operativo de esa direccion.
+    """
     universo = ["AAAUSDT", "BBBUSDT"]
-    tmp = Path(tempfile.mkdtemp(prefix="borde-long-short-"))
     T = T0 + MINUTE + 12_527
-    try:
-        run, filas = _run_decision(
-            tmp, universo, {"AAAUSDT": 2.5, "BBBUSDT": -2.5}, T,
-            run_id="borde-long-short")
+    for direccion, movimiento in (("LONG", 2.5), ("SHORT", -2.5)):
+        tmp = Path(tempfile.mkdtemp(prefix="borde-%s-" % direccion.lower()))
         try:
-            por_simbolo = {f["symbol"]: f for f in filas}
-            assert por_simbolo["AAAUSDT"]["direction"] == "LONG", filas
-            assert por_simbolo["BBBUSDT"]["direction"] == "SHORT", filas
-            for simbolo in universo:
-                fila = por_simbolo[simbolo]
-                assert fila["funding_estado"] != UMBRAL_SIN_VELA, fila
-                if fila["decision"] == "ENTRADA_EJECUTADA":
-                    assert fila["entry_ms"] > T, fila
-                    # Mismo criterio para ambos roles: no hay reglas por rol.
-                    assert fila["role"] == "candidate", fila
+            run, filas = _run_decision(
+                tmp, universo,
+                {"AAAUSDT": movimiento, "BBBUSDT": -movimiento}, T,
+                run_id="borde-%s-ejecutada" % direccion.lower())
+            try:
+                por_simbolo = {f["symbol"]: f for f in filas}
+                admitida = por_simbolo["AAAUSDT"]
+                assert admitida["direction"] == direccion, filas
+                assert admitida["decision"] == "ENTRADA_EJECUTADA", filas
+                assert admitida["qty"] > 0, admitida
+                assert admitida["entry_ms"] == rp.floor_ms(T, STEP_MS) + STEP_MS
+                assert admitida["entry_ms"] > T, admitida
+                assert admitida["exit_executed"] is True, admitida
+                assert admitida["exit_ms"] >= admitida["entry_ms"], admitida
+                assert admitida["open_at_end"] is False, admitida
+                assert admitida["neto_estado"] == \
+                    "CONDICIONADO_SIN_FUNDING_COMPLETO", admitida
+                assert por_simbolo["BBBUSDT"]["decision"] == \
+                    "RECHAZADA_CAPACIDAD", filas
+            finally:
+                run.shutdown()
         finally:
-            run.shutdown()
-    finally:
-        shutil.rmtree(tmp, ignore_errors=True)
+            shutil.rmtree(tmp, ignore_errors=True)
 
 
 def test_capacidad_compartida_limitada_a_una_posicion():
@@ -889,3 +902,12 @@ def test_persistencia_y_resumen_coherentes():
             run.shutdown()
     finally:
         shutil.rmtree(tmp, ignore_errors=True)
+
+
+def load_tests(loader, suite, pattern):
+    """Incluye esta aceptacion en el runner unittest canonico del proyecto."""
+    return unittest.TestSuite(
+        unittest.FunctionTestCase(funcion)
+        for nombre, funcion in sorted(globals().items())
+        if nombre.startswith("test_") and callable(funcion)
+    )

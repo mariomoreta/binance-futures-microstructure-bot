@@ -5631,3 +5631,25 @@ passed, 2 skipped y 12 fallos **preexistentes y ajenos** (identicos con el
 codigo publicado). Documentacion actualizada: `CURRENT_STATE.md`,
 `TASK_QUEUE.md`, `EXPERIMENTO_OPERATIVO_V2.md` 10.16, `FEATURE_BACKLOG.md`
 (nueva entrada `piloto/borde-consulta-corregido-20261114`) y este registro.
+
+
+## 2026-11-15 — Verificacion independiente del borde operativo, sin mercado
+
+Se conserva la correccion productiva ya publicada en 5362baf, sin recrearla.
+La prueba LONG/SHORT anterior podia pasar acreditando solo direccion y un
+rechazo por capacidad; ahora cada direccion exige fill y salida en una
+corrida loopback independiente. Se incorpora load_tests al mismo fichero
+para incluir las nueve pruebas en el runner unittest canonico, sin nuevas
+dependencias. En Linux: 9 aceptaciones y 124 regresiones, salida 0. CLI
+contra 3e4ad0f: cinco de siete casos sin referencia y dos entradas; con el
+codigo corregido: ninguna referencia ausente, siete entradas y siete salidas.
+
+Presupuesto sin red identico: gate 13/13; reserva 52 043 648 B y margen
+82 174 080 B (la entrada anterior confundia el margen con la reserva).
+Se verifican doce hashes de evidencia publicada y la aritmetica de 179
+inventarios: 6 271 pares observacion/vela faltantes, no velas unicas.
+El dispositivo Windows esta desconectado: no se reabrieron los originales
+ni se repitieron sus hashes fisicos; la comprobacion aqui es sobre derivados
+publicados. No se fabrica replay economico, no se consulta mercado, no se
+relanza la ventana ni se modifican motores, reglas o presupuesto.
+Evidencia: docs/evidence/exp-v2-borde-consulta-20261114/validacion_independiente_20261115.json.

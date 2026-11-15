@@ -1860,8 +1860,22 @@ desconocimiento en cero.
 `--budget-only` con la forma final del comando publicado, en
 `…\opencode\presupuesto-borde-v1`: gate **13/13** con
 `cabe_en_limites: true`, peso estimado **1 472**, intentos base + reservas
-**1 334**, almacenamiento reservado **82 174 080 B** y **0 claves distintas**
+**1 334**, almacenamiento reservado **52 043 648 B**, margen restante
+**82 174 080 B** y **0 claves distintas**
 frente al presupuesto publicado. **No se aumenta ningún cupo.**
+
+Verificación independiente 2026-11-15: `--budget-only` reproduce el mismo
+objeto de presupuesto, gate 13/13 y código 0. El valor 82 174 080 es
+`margen_reservado_bytes`, no `total_reservado_con_jsonl_bytes`; la corrección
+de etiqueta no modifica reservas ni topes. Se exigen fill y salida en ambas
+direcciones en dos corridas loopback independientes. Aceptación canónica
+`python -m unittest tests.test_pilot_operativo_consulta_temporal -v`: 9/9;
+regresiones relacionadas: 124/124, en Linux. Evidencia y comandos en
+`evidence/exp-v2-borde-consulta-20261114/validacion_independiente_20261115.json`.
+Los 6 271 faltantes del inventario son pares observación/vela sumados sobre
+179 trayectorias, no un recuento de velas únicas. Los derivados publicados
+se verificaron sin acceder al dataset original de Windows: no se afirma una
+nueva comprobación de sus hashes físicos ni se recalcula P&L.
 
 #### 10.16.5 REEvaluación offline del dataset existente: qué permite y qué no
 

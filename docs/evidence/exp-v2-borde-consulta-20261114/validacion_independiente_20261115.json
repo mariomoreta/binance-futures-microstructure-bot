@@ -1,0 +1,726 @@
+{
+  "date": "2026-11-15",
+  "scope": "independent local verification; no market; no new capture; no economic-rule change",
+  "published_fix_base_sha": "5362baffe9c0a201a8d945bc22a8ea0a066020ae",
+  "defect_baseline_sha": "3e4ad0fa15bec9c7f3c2c187fed014b2a4d5d5ec",
+  "source_run_id": "exp-v2-ventana-2-20261112a",
+  "original_execution_sha": "ab97b02203cb5ac49c04bf2c9a8472f181b74a49",
+  "acceptance": {
+    "command": "python -m unittest tests.test_pilot_operativo_consulta_temporal -v",
+    "platform": "Linux-6.18.57-x86_64-with-glibc2.41",
+    "python": "3.12.14",
+    "tests": 9,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0,
+    "duration_s": 10.329,
+    "returncode": 0,
+    "long_short_traces": [
+      {
+        "run_id": "borde-long-ejecutada",
+        "rows": [
+          {
+            "config_hash": "d1423709f4d45207",
+            "decision": "ENTRADA_EJECUTADA",
+            "decision_ms": 1735689672527,
+            "direction": "LONG",
+            "engine_version": "paper-lab-engine/v1.2",
+            "entry_ms": 1735689720000,
+            "entry_px": 1000.2,
+            "exit_executed": true,
+            "exit_ms": 1735693320000,
+            "exit_px": 1000.5,
+            "exit_reason": "horizon",
+            "fees": 1.0001499700059986,
+            "funding": null,
+            "funding_estado": "ninguno (UNKNOWN, no cero)",
+            "gross_pnl": 0.299940011997555,
+            "kind": "resultado_operativo",
+            "net_pnl": -1.3002999400120427,
+            "neto_estado": "CONDICIONADO_SIN_FUNDING_COMPLETO",
+            "neto_motivo": "operacion cerrada con funding incompleto: resultado numerico sin funding completo; no es neto completo",
+            "observation_id": "AAAUSDT|1735689672527",
+            "open_at_end": false,
+            "procedencia": "adapter_operativo_v1",
+            "qty": 0.9998000399920015,
+            "role": "candidate",
+            "spread_slip": 0.6000899820035992,
+            "stop_px": 995.0,
+            "symbol": "AAAUSDT",
+            "ts_utc": "2026-11-15T05:50:23.646315+00:00"
+          },
+          {
+            "config_hash": "d1423709f4d45207",
+            "decision": "RECHAZADA_CAPACIDAD",
+            "decision_ms": 1735689672527,
+            "direction": "SHORT",
+            "engine_version": "paper-lab-engine/v1.2",
+            "entry_ms": 1735689720000,
+            "entry_px": 1010.0,
+            "exit_executed": false,
+            "exit_ms": null,
+            "exit_px": null,
+            "exit_reason": null,
+            "fees": 0.0,
+            "funding": null,
+            "funding_estado": "rechazada_por_capacidad",
+            "gross_pnl": 0.0,
+            "kind": "resultado_operativo",
+            "net_pnl": null,
+            "net_pnl_marca": null,
+            "neto_estado": "UNKNOWN",
+            "neto_motivo": "rechazo por capacidad sin posicion: no se abrio ninguna entrada",
+            "observation_id": "BBBUSDT|1735689672527",
+            "open_at_end": false,
+            "procedencia": "adapter_operativo_v1",
+            "qty": 0.0,
+            "role": "candidate",
+            "spread_slip": 0.0,
+            "stop_px": 1015.0499999999998,
+            "symbol": "BBBUSDT",
+            "ts_utc": "2026-11-15T05:50:23.647928+00:00"
+          }
+        ],
+        "queries": [
+          {
+            "symbol": "AAAUSDT",
+            "params": {
+              "startTime": 1735689600000,
+              "endTime": 1735693394527,
+              "limit": 63,
+              "interval": "1m"
+            },
+            "n_rows": 63,
+            "first_open_ms": 1735689600000,
+            "last_open_ms": 1735693320000
+          },
+          {
+            "symbol": "BBBUSDT",
+            "params": {
+              "startTime": 1735689600000,
+              "endTime": 1735693394527,
+              "limit": 63,
+              "interval": "1m"
+            },
+            "n_rows": 63,
+            "first_open_ms": 1735689600000,
+            "last_open_ms": 1735693320000
+          }
+        ]
+      },
+      {
+        "run_id": "borde-short-ejecutada",
+        "rows": [
+          {
+            "config_hash": "d1423709f4d45207",
+            "decision": "ENTRADA_EJECUTADA",
+            "decision_ms": 1735689672527,
+            "direction": "SHORT",
+            "engine_version": "paper-lab-engine/v1.2",
+            "entry_ms": 1735689720000,
+            "entry_px": 1000.2,
+            "exit_executed": true,
+            "exit_ms": 1735693320000,
+            "exit_px": 1000.5,
+            "exit_reason": "horizon",
+            "fees": 1.0001499700059986,
+            "funding": null,
+            "funding_estado": "ninguno (UNKNOWN, no cero)",
+            "gross_pnl": -0.299940011997555,
+            "kind": "resultado_operativo",
+            "net_pnl": -1.9001799640071528,
+            "neto_estado": "CONDICIONADO_SIN_FUNDING_COMPLETO",
+            "neto_motivo": "operacion cerrada con funding incompleto: resultado numerico sin funding completo; no es neto completo",
+            "observation_id": "AAAUSDT|1735689672527",
+            "open_at_end": false,
+            "procedencia": "adapter_operativo_v1",
+            "qty": 0.9998000399920015,
+            "role": "candidate",
+            "spread_slip": 0.6000899820035992,
+            "stop_px": 1004.9999999999999,
+            "symbol": "AAAUSDT",
+            "ts_utc": "2026-11-15T05:50:24.414717+00:00"
+          },
+          {
+            "config_hash": "d1423709f4d45207",
+            "decision": "RECHAZADA_CAPACIDAD",
+            "decision_ms": 1735689672527,
+            "direction": "LONG",
+            "engine_version": "paper-lab-engine/v1.2",
+            "entry_ms": 1735689720000,
+            "entry_px": 1010.0,
+            "exit_executed": false,
+            "exit_ms": null,
+            "exit_px": null,
+            "exit_reason": null,
+            "fees": 0.0,
+            "funding": null,
+            "funding_estado": "rechazada_por_capacidad",
+            "gross_pnl": 0.0,
+            "kind": "resultado_operativo",
+            "net_pnl": null,
+            "net_pnl_marca": null,
+            "neto_estado": "UNKNOWN",
+            "neto_motivo": "rechazo por capacidad sin posicion: no se abrio ninguna entrada",
+            "observation_id": "BBBUSDT|1735689672527",
+            "open_at_end": false,
+            "procedencia": "adapter_operativo_v1",
+            "qty": 0.0,
+            "role": "candidate",
+            "spread_slip": 0.0,
+            "stop_px": 1004.95,
+            "symbol": "BBBUSDT",
+            "ts_utc": "2026-11-15T05:50:24.416217+00:00"
+          }
+        ],
+        "queries": [
+          {
+            "symbol": "AAAUSDT",
+            "params": {
+              "startTime": 1735689600000,
+              "endTime": 1735693394527,
+              "limit": 63,
+              "interval": "1m"
+            },
+            "n_rows": 63,
+            "first_open_ms": 1735689600000,
+            "last_open_ms": 1735693320000
+          },
+          {
+            "symbol": "BBBUSDT",
+            "params": {
+              "startTime": 1735689600000,
+              "endTime": 1735693394527,
+              "limit": 63,
+              "interval": "1m"
+            },
+            "n_rows": 63,
+            "first_open_ms": 1735689600000,
+            "last_open_ms": 1735693320000
+          }
+        ]
+      }
+    ]
+  },
+  "regressions": {
+    "modules": [
+      "test_research_pilot",
+      "test_operativo_adapter_local",
+      "test_operativo_capacidad_presupuesto",
+      "test_experimento_operativo_local",
+      "test_pilot_monitor_observabilidad",
+      "test_backtest_funding_coverage",
+      "test_backtest_offline",
+      "test_backtest_funding"
+    ],
+    "tests": 124,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0,
+    "duration_s": 11.081,
+    "returncode": 0,
+    "runner": "stdlib unittest; plain no-argument test functions wrapped in FunctionTestCase; Linux",
+    "command": "PYTHONPATH=src:scripts python - <<'PYTEST_LOCAL'\nimport importlib, inspect, unittest\nnames=['test_research_pilot','test_operativo_adapter_local','test_operativo_capacidad_presupuesto','test_experimento_operativo_local','test_pilot_monitor_observabilidad','test_backtest_funding_coverage','test_backtest_offline','test_backtest_funding']\nsuite=unittest.TestSuite()\nfor name in names:\n    m=importlib.import_module('tests.'+name)\n    suite.addTests(unittest.TestLoader().loadTestsFromModule(m))\n    for n,f in sorted(vars(m).items()):\n        if n.startswith('test_') and inspect.isfunction(f) and f.__module__==m.__name__:\n            assert not inspect.signature(f).parameters, (name,n)\n            suite.addTest(unittest.FunctionTestCase(f))\nresult=unittest.TextTestRunner(verbosity=1).run(suite)\nraise SystemExit(0 if result.wasSuccessful() else 1)\nPYTEST_LOCAL"
+  },
+  "before_after_real_cli_loopback": {
+    "before": [
+      {
+        "case": "exacto_en_el_minuto",
+        "decision_ms": 1735689660000,
+        "decision": "ENTRADA_EJECUTADA",
+        "reason": "ninguno (UNKNOWN, no cero)",
+        "entry_ms": 1735689720000,
+        "exit_executed": false,
+        "exit_reason": null,
+        "open_at_end": true,
+        "request": {
+          "startTime": 1735689600000,
+          "endTime": 1735693382000,
+          "limit": 62,
+          "interval": "1m"
+        },
+        "first_open_ms": 1735689600000,
+        "last_open_ms": 1735693260000,
+        "rows": 62
+      },
+      {
+        "case": "un_ms_despues",
+        "decision_ms": 1735689660001,
+        "decision": "SIN_ENTRADA",
+        "reason": "sin vela 1m plenamente conocida en T",
+        "entry_ms": null,
+        "exit_executed": false,
+        "exit_reason": null,
+        "open_at_end": false,
+        "request": {
+          "startTime": 1735689600001,
+          "endTime": 1735693382001,
+          "limit": 62,
+          "interval": "1m"
+        },
+        "first_open_ms": 1735689660000,
+        "last_open_ms": 1735693320000,
+        "rows": 62
+      },
+      {
+        "case": "desfase_publicado_12527",
+        "decision_ms": 1735689672527,
+        "decision": "SIN_ENTRADA",
+        "reason": "sin vela 1m plenamente conocida en T",
+        "entry_ms": null,
+        "exit_executed": false,
+        "exit_reason": null,
+        "open_at_end": false,
+        "request": {
+          "startTime": 1735689612527,
+          "endTime": 1735693394527,
+          "limit": 62,
+          "interval": "1m"
+        },
+        "first_open_ms": 1735689660000,
+        "last_open_ms": 1735693320000,
+        "rows": 62
+      },
+      {
+        "case": "desfase_publicado_19298",
+        "decision_ms": 1735689679298,
+        "decision": "SIN_ENTRADA",
+        "reason": "sin vela 1m plenamente conocida en T",
+        "entry_ms": null,
+        "exit_executed": false,
+        "exit_reason": null,
+        "open_at_end": false,
+        "request": {
+          "startTime": 1735689619298,
+          "endTime": 1735693401298,
+          "limit": 62,
+          "interval": "1m"
+        },
+        "first_open_ms": 1735689660000,
+        "last_open_ms": 1735693320000,
+        "rows": 62
+      },
+      {
+        "case": "cerca_del_cierre_59998",
+        "decision_ms": 1735689719998,
+        "decision": "SIN_ENTRADA",
+        "reason": "sin vela 1m plenamente conocida en T",
+        "entry_ms": null,
+        "exit_executed": false,
+        "exit_reason": null,
+        "open_at_end": false,
+        "request": {
+          "startTime": 1735689659998,
+          "endTime": 1735693441998,
+          "limit": 62,
+          "interval": "1m"
+        },
+        "first_open_ms": 1735689660000,
+        "last_open_ms": 1735693320000,
+        "rows": 62
+      },
+      {
+        "case": "cerca_del_cierre_59999",
+        "decision_ms": 1735689719999,
+        "decision": "ENTRADA_EJECUTADA",
+        "reason": "ninguno (UNKNOWN, no cero)",
+        "entry_ms": 1735689720000,
+        "exit_executed": true,
+        "exit_reason": "horizon",
+        "open_at_end": false,
+        "request": {
+          "startTime": 1735689659999,
+          "endTime": 1735693441999,
+          "limit": 62,
+          "interval": "1m"
+        },
+        "first_open_ms": 1735689660000,
+        "last_open_ms": 1735693320000,
+        "rows": 62
+      },
+      {
+        "case": "cambio_de_minuto_mas_1ms",
+        "decision_ms": 1735689720001,
+        "decision": "SIN_ENTRADA",
+        "reason": "sin vela 1m plenamente conocida en T",
+        "entry_ms": null,
+        "exit_executed": false,
+        "exit_reason": null,
+        "open_at_end": false,
+        "request": {
+          "startTime": 1735689660001,
+          "endTime": 1735693442001,
+          "limit": 62,
+          "interval": "1m"
+        },
+        "first_open_ms": 1735689720000,
+        "last_open_ms": 1735693380000,
+        "rows": 62
+      }
+    ],
+    "after": [
+      {
+        "case": "exacto_en_el_minuto",
+        "decision_ms": 1735689660000,
+        "decision": "ENTRADA_EJECUTADA",
+        "reason": "ninguno (UNKNOWN, no cero)",
+        "entry_ms": 1735689720000,
+        "exit_executed": true,
+        "exit_reason": "horizon",
+        "open_at_end": false,
+        "request": {
+          "startTime": 1735689600000,
+          "endTime": 1735693382000,
+          "limit": 63,
+          "interval": "1m"
+        },
+        "first_open_ms": 1735689600000,
+        "last_open_ms": 1735693320000,
+        "rows": 63
+      },
+      {
+        "case": "un_ms_despues",
+        "decision_ms": 1735689660001,
+        "decision": "ENTRADA_EJECUTADA",
+        "reason": "ninguno (UNKNOWN, no cero)",
+        "entry_ms": 1735689720000,
+        "exit_executed": true,
+        "exit_reason": "horizon",
+        "open_at_end": false,
+        "request": {
+          "startTime": 1735689600000,
+          "endTime": 1735693382001,
+          "limit": 63,
+          "interval": "1m"
+        },
+        "first_open_ms": 1735689600000,
+        "last_open_ms": 1735693320000,
+        "rows": 63
+      },
+      {
+        "case": "desfase_publicado_12527",
+        "decision_ms": 1735689672527,
+        "decision": "ENTRADA_EJECUTADA",
+        "reason": "ninguno (UNKNOWN, no cero)",
+        "entry_ms": 1735689720000,
+        "exit_executed": true,
+        "exit_reason": "horizon",
+        "open_at_end": false,
+        "request": {
+          "startTime": 1735689600000,
+          "endTime": 1735693394527,
+          "limit": 63,
+          "interval": "1m"
+        },
+        "first_open_ms": 1735689600000,
+        "last_open_ms": 1735693320000,
+        "rows": 63
+      },
+      {
+        "case": "desfase_publicado_19298",
+        "decision_ms": 1735689679298,
+        "decision": "ENTRADA_EJECUTADA",
+        "reason": "ninguno (UNKNOWN, no cero)",
+        "entry_ms": 1735689720000,
+        "exit_executed": true,
+        "exit_reason": "horizon",
+        "open_at_end": false,
+        "request": {
+          "startTime": 1735689600000,
+          "endTime": 1735693401298,
+          "limit": 63,
+          "interval": "1m"
+        },
+        "first_open_ms": 1735689600000,
+        "last_open_ms": 1735693320000,
+        "rows": 63
+      },
+      {
+        "case": "cerca_del_cierre_59998",
+        "decision_ms": 1735689719998,
+        "decision": "ENTRADA_EJECUTADA",
+        "reason": "ninguno (UNKNOWN, no cero)",
+        "entry_ms": 1735689720000,
+        "exit_executed": true,
+        "exit_reason": "horizon",
+        "open_at_end": false,
+        "request": {
+          "startTime": 1735689600000,
+          "endTime": 1735693441998,
+          "limit": 63,
+          "interval": "1m"
+        },
+        "first_open_ms": 1735689600000,
+        "last_open_ms": 1735693320000,
+        "rows": 63
+      },
+      {
+        "case": "cerca_del_cierre_59999",
+        "decision_ms": 1735689719999,
+        "decision": "ENTRADA_EJECUTADA",
+        "reason": "ninguno (UNKNOWN, no cero)",
+        "entry_ms": 1735689720000,
+        "exit_executed": true,
+        "exit_reason": "horizon",
+        "open_at_end": false,
+        "request": {
+          "startTime": 1735689600000,
+          "endTime": 1735693441999,
+          "limit": 63,
+          "interval": "1m"
+        },
+        "first_open_ms": 1735689600000,
+        "last_open_ms": 1735693320000,
+        "rows": 63
+      },
+      {
+        "case": "cambio_de_minuto_mas_1ms",
+        "decision_ms": 1735689720001,
+        "decision": "ENTRADA_EJECUTADA",
+        "reason": "ninguno (UNKNOWN, no cero)",
+        "entry_ms": 1735689780000,
+        "exit_executed": true,
+        "exit_reason": "horizon",
+        "open_at_end": false,
+        "request": {
+          "startTime": 1735689660000,
+          "endTime": 1735693442001,
+          "limit": 63,
+          "interval": "1m"
+        },
+        "first_open_ms": 1735689660000,
+        "last_open_ms": 1735693380000,
+        "rows": 63
+      }
+    ],
+    "summary": {
+      "before": {
+        "instances": 7,
+        "no_reference": 5,
+        "entries": 2,
+        "executed_exits": 1
+      },
+      "after": {
+        "instances": 7,
+        "no_reference": 0,
+        "entries": 7,
+        "executed_exits": 7
+      }
+    },
+    "procedure": "Harness OperativeRun/_run_decision from the test module; ROOT set first to isolated worktree at 3e4ad0f and then to the corrected checkout; one AAAUSDT positive-movement observation per each of DESFAZES_EXIGIDOS. Only the actual CLI executable changes; provider, clock and selection inputs stay the same. Temporary providers/processes closed after every instance."
+  },
+  "budget": {
+    "returncode": 0,
+    "stderr_empty": true,
+    "budget_equal_to_published": true,
+    "gate": {
+      "almacenamiento_previsto_bytes": 4696872,
+      "almacenamiento_reservado_max_bytes": 52043648,
+      "cabe_en_limites": true,
+      "comprobaciones": {
+        "almacenamiento_dentro_del_techo": true,
+        "almacenamiento_no_amplia_protocolo": true,
+        "almacenamiento_reservado_dentro_del_techo": true,
+        "cupo_simbolos_coherente": true,
+        "funding_rate_5m_dentro_del_limite": true,
+        "intentos_no_amplian_protocolo": true,
+        "intentos_plan_dentro_del_techo": true,
+        "mensajes_no_amplian_protocolo": true,
+        "peso_no_amplia_protocolo": true,
+        "peso_plan_dentro_del_techo": true,
+        "reconexiones_no_amplian_protocolo": true,
+        "reintentos_no_amplian_protocolo": true,
+        "streams_por_conexion_dentro_del_limite": true
+      },
+      "funding_maximo_concentrado_5m": 110,
+      "intentos_plan_con_reservas": 1334,
+      "peso_plan_con_reservas": 3752
+    },
+    "storage": {
+      "auxiliares_bytes_previstos": 131072,
+      "funding_calendar_bytes_previstos": 80000,
+      "http_ledger_bytes_previstos": 933800,
+      "jsonl_bytes_previstos": 1632000,
+      "margen_bytes": 129520856,
+      "margen_porcentaje": 96.5,
+      "margen_reservado_bytes": 82174080,
+      "nota": "El tope incluye JSONL de datos, ledger HTTP, calendarios de funding, SQLite y sus auxiliares. Cada JSONL reserva sus bytes exactos antes de escribir; SQLite y el ledger tienen cuotas fisicas reservadas para evitar carreras. Los indices finales y el estado de progreso no forman parte del tope de datos de la ventana.",
+      "reserva_http_ledger_bytes": 16777216,
+      "reserva_sqlite_bytes": 33554432,
+      "sqlite_bytes_previstos": 1920000,
+      "tope_configurado_bytes": 134217728,
+      "total_bytes_previstos": 4696872,
+      "total_reservado_con_jsonl_bytes": 52043648
+    },
+    "command": [
+      "/opt/codex/runtimes/codex-primary-runtime/dependencies/python/bin/python",
+      "scripts/run_pilot_window.py",
+      "--out-dir",
+      "/tmp/borde-budget-20261115-6cdjka_y",
+      "--work-timeout-seconds",
+      "40200",
+      "--shutdown-grace-seconds",
+      "300",
+      "--mode",
+      "public",
+      "--activar-publico",
+      "--budget-only",
+      "--run-id",
+      "presupuesto-borde-20261115",
+      "--duration-seconds",
+      "3600.0",
+      "--settle-seconds",
+      "4200.0",
+      "--cycle-seconds",
+      "300.0",
+      "--selection-seconds",
+      "300.0",
+      "--decision-delay-seconds",
+      "5.0",
+      "--max-symbols",
+      "20",
+      "--max-candidates",
+      "12",
+      "--max-comparators",
+      "8",
+      "--horizons",
+      "5m=300000,15m=900000,60m=3600000",
+      "--price-interval",
+      "1m",
+      "--price-tolerance-ms",
+      "90000",
+      "--price-delay-ms",
+      "2000",
+      "--max-data-age-ms",
+      "5000",
+      "--max-observations",
+      "20000",
+      "--max-bytes",
+      "134217728",
+      "--max-messages",
+      "5000000",
+      "--max-http-attempts",
+      "2000",
+      "--max-http-retries",
+      "50",
+      "--max-http-weight",
+      "5000",
+      "--max-ws-reconnects",
+      "20",
+      "--tick-ms",
+      "500",
+      "--funding-source",
+      "exchange",
+      "--funding-method",
+      "observed-settlements",
+      "--funding-wait-seconds",
+      "32400.0",
+      "--funding-wait-max-queries",
+      "3",
+      "--rest-base",
+      "https://fapi.binance.com",
+      "--ws-public-base",
+      "wss://fstream.binance.com/public",
+      "--ws-market-base",
+      "wss://fstream.binance.com/market",
+      "--min-quote-volume",
+      "1000000.0"
+    ]
+  },
+  "published_evidence_hash_checks": [
+    {
+      "file": "INFORME.md",
+      "matches": true,
+      "sha256": "6f5d7f026dc562c89a4a7ae3d06faa30e1f35eef92cc2a0cbbfbf45cf4f9116f"
+    },
+    {
+      "file": "aceptacion_local.json",
+      "matches": true,
+      "sha256": "56215d59a08da922fbefe0930da769d9eb162fd491310a8deb1d9afc8de66be9"
+    },
+    {
+      "file": "aceptacion_pytest.txt",
+      "matches": true,
+      "sha256": "3f3a913aaa36a70e1c69c2fb56302e16364d2520b6660d610bda9e1d71735f7c"
+    },
+    {
+      "file": "antes_despues.json",
+      "matches": true,
+      "sha256": "d9c187d8de004f551ec9757bb88987210020a73e08873cb5f986f2c39c5108eb"
+    },
+    {
+      "file": "config_reevaluacion.json",
+      "matches": true,
+      "sha256": "187b8bb502dbed37a68e1313195051ae99e2debea9e2eaf9ea60ac357bb107b4"
+    },
+    {
+      "file": "inventario_cobertura.jsonl",
+      "matches": true,
+      "sha256": "652abbb11bc56cc5e44eb07de40fea0eb14f2c6d4cc71a3a9ddc0513959aad49"
+    },
+    {
+      "file": "manifiesto.json",
+      "matches": true,
+      "sha256": "2cb7182a9f9ce0e4b78c1ce43e296f8b7ee9e2fb899e8b67327b9393cbd14e3c"
+    },
+    {
+      "file": "neteo_conclusion.json",
+      "matches": true,
+      "sha256": "8a747c72cc14da19fa8503152c73b9a2776dab775ed55d43f3f5570d4aa1ccfc"
+    },
+    {
+      "file": "presupuesto_borde.json",
+      "matches": true,
+      "sha256": "d8a2b5ae4be87f3c69e56865bfaa2357b9814692f37b3f854ca34e588071158d"
+    },
+    {
+      "file": "presupuesto_comparacion.json",
+      "matches": true,
+      "sha256": "fdeeade1af255a224f6fb2cc2190891d3b5990d544796bf45ab8f86b688e8523"
+    },
+    {
+      "file": "reconstruccion_consulta.jsonl",
+      "matches": true,
+      "sha256": "9acbc88af59989802ae3671ce88396d9f2227d93948b0868e75d2518dc2f6fb9"
+    },
+    {
+      "file": "resumen.json",
+      "matches": true,
+      "sha256": "dcb5d09ed30c9e798e05940c89e64e6bbcef674a70739cc541b9d495456cb4ee"
+    }
+  ],
+  "published_inventory_arithmetic": {
+    "records": 179,
+    "complete_paths": 0,
+    "required_observation_candle_pairs": 11277,
+    "available_proxy_pairs": 5006,
+    "missing_proxy_pairs": 6271,
+    "query_records": 179,
+    "reference_included_corrected": 179,
+    "unit": "observation x candle; not unique candles"
+  },
+  "original_dataset_access": {
+    "available_in_this_environment": false,
+    "windows_device_connected": false,
+    "hashes_before_after_rechecked_here": false,
+    "note": "Original dataset was not opened or modified. Published inventories and their hashes were checked; their physical source counts cannot be independently remeasured here."
+  },
+  "economic_result": {
+    "replay_executed": false,
+    "reason": "Original klines bodies unavailable; published inventory has zero complete trajectories. Hashes and proxy returns are not OHLC. No funding acquisition in the source window.",
+    "net_complete_n": 0,
+    "net_conditioned_n": 0,
+    "no_new_market_authorization": true
+  },
+  "production_source_sha256": {
+    "scripts/research_pilot.py": "c1fd15ec3a3868728479b9e0ed0aa8ee558b6017c16ee64ebb2ebc61cbd0b647",
+    "scripts/research_operativo_adapter.py": "f35fd8046204184ca9a6fac34f637e2c0bf18f76c5a70e5904ba58371ae49558"
+  },
+  "test_source_sha256": "6b56235b80c5867d73ddc742d955a7a8f0f5cdbf5b1734a7dbc878cf8bc8a5f2",
+  "limitations": [
+    "Linux execution only; no independent Windows run.",
+    "No full-suite run; only directly related regressions.",
+    "Published .jsonl inventory files are JSON arrays of JSON strings; preserved byte for byte.",
+    "Earlier unittest run emitted non-failing ResourceWarning messages for test resources; no claim that generic launcher certifies child sockets."
+  ]
+}

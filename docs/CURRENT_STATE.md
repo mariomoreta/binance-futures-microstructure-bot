@@ -1,4 +1,21 @@
-# Estado vigente — corrección local del borde de la consulta, 2026-11-14
+# Estado vigente — corrección local del borde de la consulta, 2026-11-15
+
+## Verificación independiente del cierre local — 2026-11-15
+
+La corrección ya estaba publicada en `5362baf`; se conserva sin duplicarla.
+Se refuerza la aceptación para exigir **fill y salida tanto LONG como SHORT**
+en corridas loopback independientes (asignar dirección o rechazar por
+capacidad no acredita una operación SHORT). Las nueve pruebas también se
+integran en el runner `unittest` canónico, sin añadir dependencias.
+Validación en Linux: **9 aceptaciones + 124 regresiones**, salida 0;
+reproducción CLI contra `3e4ad0f`: 5/7 sin referencia y 2 entradas → 0/7,
+7 entradas y 7 salidas. No se afirma una nueva ejecución en Windows.
+Presupuesto sin red: 13/13, idéntico al publicado; **52 043 648 B reservados**,
+**82 174 080 B de margen**. La evidencia publicada conserva sus hashes.
+El dataset original de Windows no está accesible desde este entorno: se
+validaron los derivados publicados, no se repitió su inventario físico ni
+su verificación antes/después. Continúa sin P&L reevaluable y sin otra captura.
+Evidencia: `evidence/exp-v2-borde-consulta-20261114/validacion_independiente_20261115.json`.
 
 ## Corrección del borde de la consulta operativa — CORREGIDA y aceptada localmente (2026-11-14)
 
