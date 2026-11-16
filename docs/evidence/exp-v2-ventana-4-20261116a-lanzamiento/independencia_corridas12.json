@@ -1,0 +1,63 @@
+﻿{
+    "python_exe":  "C:\\Python314\\python.exe",
+    "host_shell":  {
+                       "pid":  9380,
+                       "parent_pid":  32188,
+                       "parent_name":  "powershell.exe",
+                       "hora_utc":  "2026-11-16T19:21:18Z"
+                   },
+    "corrida1":  {
+                     "wmi_create_rc":  null,
+                     "launcher_pid":  null,
+                     "launcher_padre_pid":  3908,
+                     "launcher_padre_nombre":  "WmiPrvSE.exe",
+                     "linaje_incluye_shell_agente":  false,
+                     "child_pid":  [
+                                       7444,
+                                       30472
+                                   ],
+                     "child_padre_pid":  [
+                                             3908,
+                                             7444
+                                         ],
+                     "child_padre_es_lanzador":  false,
+                     "latido_bytes_t0":  32,
+                     "latido_bytes_t5":  128,
+                     "latido_avanza":  true,
+                     "lanzador_termino":  false,
+                     "exit_code_txt":  "0",
+                     "dormilon_salida":  "0",
+                     "cierre_resultado":  "normal"
+                 },
+    "corrida2":  {
+                     "wmi_create_rc":  null,
+                     "launcher_pid":  null,
+                     "launcher_padre_pid":  3908,
+                     "launcher_padre_nombre":  "WmiPrvSE.exe",
+                     "child_pid":  [
+                                       29520,
+                                       2356
+                                   ],
+                     "child_padre_es_lanzador":  false,
+                     "lanzador_muerto_tras_kill":  false,
+                     "latido_antes_kill":  128,
+                     "latido_10s_post_kill":  320,
+                     "latido_16s_post_kill":  419,
+                     "hijo_sobrevive_al_anfitrion":  true,
+                     "hijo_parado_por_mecanismo_propio":  true,
+                     "dormilon_salida":  "0",
+                     "veredicto_lanzador":  "\u003cpresente: inesperado\u003e",
+                     "artefactos_corrida2":  [
+                                                 "cierre.json",
+                                                 "dormilon_salida.txt",
+                                                 "estado_lanzador.json",
+                                                 "exit_code.txt",
+                                                 "latido.txt",
+                                                 "launcher.json",
+                                                 "parar.txt",
+                                                 "stderr.log",
+                                                 "stdout.log"
+                                             ]
+                 },
+    "verificado_en_utc":  "2026-11-16T19:22:27Z"
+}

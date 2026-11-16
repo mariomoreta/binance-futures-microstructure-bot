@@ -1,6 +1,37 @@
-# Cola vigente — rectificación del cierre por incidente y recuperación parcial probada, 2026-11-16
+# Cola vigente — ventana 4 completa con cierre normal, 2026-11-16
 
-## Estado (2026-11-16): `ACTIVE_TASK: ninguno` — esperar instrucción del usuario
+## Estado (2026-11-16 tarde): `ACTIVE_TASK: ninguno` — esperar instrucción del usuario
+
+**Bloque 2026-11-16 tarde (autorización «UNA VENTANA PÚBLICA CON OPERACIONES
+SIMULADAS») — TERMINADO.** La ventana `exp-v2-ventana-4-20261116a` se ejecutó
+**una sola vez** (base `ce2af02`), con independencia del anfitrión acreditada
+antes de abrir mercado (lanzamiento por WMI, fuera del árbol del agente; prueba
+inocua con el lanzador real: muerte abrupta del anfitrión → hijo sobrevive y
+termina limpio). **Cierre NORMAL completo** (el primero del protocolo V2):
+captura 12/12, settle completo, espera contable `trabajo_resuelto`,
+`exit_code.txt` = 0, veredicto del lanzador `terminacion_natural`,
+manifiesto íntegro 10/10, consumos dentro de techos.
+
+Resultados: 196 obs / 161 aptas / 35 descartadas (7 solapadas, 0 sin motivo) /
+44 sin observación (10 warmup + 34 rotación); 161 señales con dirección, 0
+abstenciones, 159 rechazos por capacidad, 2 entradas simuladas (comparadoras:
+AAVEUSDT SHORT stop −6,604; 4USDT LONG horizonte −0,3194; suma CONDICIONADO
+−6,9234 con funding **UNKNOWN** `cadencia_ambigua`, no es cero, no es P&L); 0
+posiciones abiertas. Replay offline: **DIFERENCIAS** (159/161; 2 diferencias
+solo de etiqueta `neto_motivo`, sin diferencias numéricas; conservado sin
+ajustes). Comparación por rol **INSUFICIENTE**. Evidencia:
+`docs/evidence/exp-v2-ventana-4-20261116a-lanzamiento/` y
+`docs/evidence/exp-v2-ventana-4-20261116a-cierre/`.
+
+El `run_id` `exp-v2-ventana-4-20261116a` queda **consumido**. `ACTIVE_TASK:
+ninguno`; cualquier ventana nueva requiere autorización humana explícita con
+`run_id` nuevo. La lección del incidente de la ventana 3 (supervisión del
+piloto independiente del anfitrión) sigue **registrada SIN implementar**; los
+checkpoints mitigan la pérdida de evidencia, no la muerte de la corrida.
+
+---
+
+## Estado (2026-11-16): rectificación + recuperación parcial — TERMINADO y publicado
 
 **Bloque 2026-11-16 (autorización local «RECTIFICACIÓN DEL INCIDENTE Y
 RECUPERACIÓN PARCIAL») — TERMINADO y publicado.** Dos conclusiones separadas:

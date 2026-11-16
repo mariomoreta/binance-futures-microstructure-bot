@@ -1,0 +1,21 @@
+﻿{
+    "wmi_create_rc":  0,
+    "lanzador_pid":  21632,
+    "lanzador_vivo":  true,
+    "lanzador_padre_pid":  3908,
+    "lanzador_padre_nombre":  "WmiPrvSE.exe",
+    "shell_agente_pid":  4540,
+    "hijo_pid":  22096,
+    "hijo_padre_pid":  21632,
+    "hijo_padre_es_lanzador":  true,
+    "latido_antes_kill":  128,
+    "latido_avanza_antes_kill":  true,
+    "lanzador_muerto_tras_kill":  true,
+    "latido_10s_post_kill":  320,
+    "latido_16s_post_kill":  419,
+    "hijo_sobrevive_al_anfitrion":  true,
+    "hijo_parado_por_mecanismo_propio":  true,
+    "dormilon_salida":  "0",
+    "veredicto_lanzador":  "\u003causente: anfitrion murio antes del cierre\u003e",
+    "verificado_en_utc":  "2026-11-16T19:24:19Z"
+}

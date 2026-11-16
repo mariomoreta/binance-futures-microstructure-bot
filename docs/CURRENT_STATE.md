@@ -1,4 +1,50 @@
-# Estado vigente — ventana 3 interrumpida: cierre rectificado y recuperación parcial probada, 2026-11-16
+# Estado vigente — ventana 4 ejecutada COMPLETA con cierre normal (2026-11-16)
+
+## Bloque 2026-11-16 (tarde) — ventana `exp-v2-ventana-4-20261116a` ejecutada, cerrada NORMAL, replay DIFERENCIAS
+
+**Autorización humana del 2026-11-16 (tarde):** «UNA VENTANA PÚBLICA CON
+OPERACIONES SIMULADAS». Una sola corrida del protocolo V2 con independencia del
+anfitrión acreditada antes de abrir mercado; sin órdenes reales, cuentas,
+claves, capital, otras ventanas ni relanzamientos.
+
+**Resultado:** cierre **NORMAL completo** — el primero del protocolo V2. Hijo
+19:26:18.038Z → 21:36:21.292Z (7805,2 s): captura 3600 s (12/12 ciclos), settle
+4200 s, espera contable cerrada `trabajo_resuelto` (~3 s, 0 pendientes, 2
+consultas). `exit_code.txt` = 0; veredicto del lanzador por separado:
+`terminacion_natural`, `cumplimiento_normal: true`. Manifiesto verificado
+(10/10 ficheros bytes+SHA-256). Consumos dentro de todos los techos (WS
+979.570 mensajes, 1 reconexión, 0 errores; HTTP 671/2000; almacenamiento
+7,1 MB/134 MB).
+
+**Operativa:** 196 observaciones / 161 aptas / 35 descartadas (42 etiquetas,
+7 solapadas, 0 sin motivo) / 44 seleccionadas sin observación (10 warmup + 34
+no seguidas por rotación). 161 señales con dirección, 0 abstenciones, 159
+rechazos por capacidad, **2 entradas simuladas** (ambas comparadoras): AAVEUSDT
+SHORT stop (neto CONDICIONADO −6,604) y 4USDT LONG horizonte (neto
+CONDICIONADO −0,3194); suma CONDICIONADO −6,9234 **con funding UNKNOWN
+(cadencia_ambigua, no es cero acreditado; no es P&L)**. 0 posiciones abiertas.
+
+**Replay offline:** DIFERENCIAS — 161 comparadas, 159 coincidentes, 2
+diferentes, 0 limitaciones; las 2 diferencias son **solo de etiqueta**
+(`neto_motivo` ejecución `cadencia_ambigua` vs replay `trabajo_resuelto`),
+sin diferencias numéricas. Veredicto conservado sin ajustes. Comparación por
+rol: **INSUFICIENTE** (0 operaciones COMPLETO en ambos roles). Una sola
+ventana no acredita rentabilidad.
+
+**Independencia del anfitrión:** acreditada antes de abrir mercado con un
+proceso inocuo bajo el lanzador real lanzado por WMI (padre `WmiPrvSE`, fuera
+del árbol del agente): muerte abrupta del anfitrión → el hijo sobrevive y
+termina limpio por mecanismo propio. La corrida real se lanzó por el mismo
+mecanismo y no hubo incidente.
+
+| | |
+|---|---|
+| SHA base | `ce2af020c666956ba35a1e1d41d0007c85d581a7` (local == remoto al iniciar) |
+| Evidencia lanzamiento | `docs/evidence/exp-v2-ventana-4-20261116a-lanzamiento/` (LANZAMIENTO.md, presupuesto gate 13/13, prueba de independencia, hashes de scripts) |
+| Evidencia cierre | `docs/evidence/exp-v2-ventana-4-20261116a-cierre/` (CIERRE.md tres capas, cierre_datos.json, hashes_cierre.json) |
+| Dataset original | `C:\proyectos\binance-futures-data\exp-v2-ventana-4-20261116a` (manifiesto verificado, solo lectura) |
+| Derivados | `C:\proyectos\binance-futures-data\exp-v2-ventana-4-20261116a-replay-20261116\` (replay_operativo.json) |
+| Lo que NO acredita | rentabilidad, edge, comparación por rol (INSUFICIENTE), funding completo, calidad del selector; los umbrales siguen siendo hipótesis |
 
 ## Bloque 2026-11-16 — rectificación del cierre por incidente + recuperación parcial implementada y probada (local, sin mercado)
 

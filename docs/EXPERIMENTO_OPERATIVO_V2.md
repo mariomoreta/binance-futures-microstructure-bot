@@ -2262,3 +2262,64 @@ Estado tras el bloque: `ACTIVE_TASK: ninguno`; el run_id
 autorizacion humana explicita y nueva. La leccion del incidente (supervision
 del piloto independiente del anfitrion) sigue registrada SIN implementar: los
 checkpoints mitigan la PERDIDA de evidencia, no la muerte de la corrida.
+
+### 10.21 Ventana `exp-v2-ventana-4-20261116a` ejecutada con cierre normal (2026-11-16, autorizacion de ventana unica)
+
+Autorizacion humana del 2026-11-16: UNA ventana publica con operaciones
+simuladas del protocolo V2. Sin ordenes reales, cuentas, claves, capital,
+otras ventanas ni relanzamientos. Previo al lanzamiento se demostro con un
+proceso inocuo (mecanismo nativo WMI `Win32_Process.Create`, fuera del arbol
+del agente) que matar abruptamente al anfitrión de lanzamiento no termina la
+ejecucion independiente (latido a +10 s y +16 s, salida limpia codigo 0);
+evidencia en `docs/evidence/exp-v2-ventana-4-20261116a-lanzamiento/`.
+
+**Ejecucion:** una sola corrida (base `ce2af02`, SHA de scripts en la evidencia
+de lanzamiento), lanzada por WMI (lanzador PID 21376, padre `WmiPrvSE.exe`),
+sin depender de que OpenCode permanezca abierto. Inicio hijo 19:26:18.038Z;
+captura 3600 s (12/12 ciclos, 0 saltados), settle 4200 s, espera contable
+cerrada `trabajo_resuelto` (~3 s, 0 pendientes finales, 2 consultas, 1 por
+simbolo, plazo no agotado). Cierre NORMAL completo: `exit_code.txt` = 0 y
+veredicto del lanzador por separado (`terminacion_natural`,
+`cumplimiento_normal: true`, `codigo_lanzador` 0, sin exceso de plazo global).
+Manifiesto verificado (10/10 ficheros: bytes y SHA-256 correctos).
+Consumos dentro de todos los techos: WS 979.570 mensajes / 1 reconexion / 0
+errores; HTTP 671/2000 intentos, peso 1139/5000, `funding_rate_5m` 2/500;
+almacenamiento 7,1 MB contabilizados / techo 134 MB. Checkpoints escritos en
+los 3 puntos del protocolo (29.107 B); la recuperacion parcial no fue
+necesaria (cierre normal).
+
+**Resultados (observaciones y filas fuente):** 196 observaciones / 161 aptas /
+35 descartadas (42 etiquetas: `dato_obsoleto_flujo` 28,
+`flujo_ventana_incompleta` 13, `dato_obsoleto_libro` 1; 7 filas solapadas, 0
+sin motivo) / 44 seleccionadas sin observacion (10 con entrada en el mismo
+ciclo = warmup; 34 no seguidas por rotacion). 161 senales con direccion, 0
+abstenciones, 159 rechazos por capacidad, 2 entradas simuladas ejecutadas
+(ambas comparadoras, capacidad global 1):
+- AAVEUSDT SHORT, stop 107.6556 (+0,5 %), salida stop @ 107.7159: bruto -5,0000,
+  fees 1,0025, spread/slip 0,6015, neto CONDICIONADO -6,604.
+- 4USDT LONG, stop 0.00852715 (-0,5 %), salida horizon @ 0.008594: bruto +1,2816,
+  fees 1,0006, spread/slip 0,6004, neto CONDICIONADO -0,3194.
+Suma CONDICIONADO agregado -6,9234; **0 operaciones con funding completo**
+(`funding_completamente_acreditado: null`); funding UNKNOWN, nunca cero, en
+ambas (`cadencia_ambigua`: `interval_ms: null`, 0 settlements dentro de la
+ventana de AAVEUSDT, 1 settlement de 4USDT sin cubrir 3.479.998 ms). Los netos
+CONDICIONADO no son P&L. 0 posiciones abiertas al final.
+
+**Replay offline:** `research_operativo_replay.py` sin red = DIFERENCIAS (161
+comparadas, 159 coincidentes, 2 diferentes, 0 limitaciones); las 2 diferencias
+son solo de la etiqueta `neto_motivo` (ejecucion `cadencia_ambigua` vs replay
+`trabajo_resuelto`), sin diferencias numericas. Veredicto conservado sin
+ajustes; configuracion operativa y procedencia acreditadas. Economia del
+replay idéntica a la ejecucion.
+
+**Calidad:** seleccionadas 240 (candidate 144 / comparator 96), observadas 196,
+aptas 161, descartadas 35, sin observacion 44. Comparacion por rol
+INSUFICIENTE (0 operaciones COMPLETO en ambos roles). Una sola ventana no
+acredita rentabilidad generalizable ni permite comparar candidatos vs
+comparadores; el denominador no lo permite.
+
+Estado tras el bloque: `ACTIVE_TASK: ninguno`; el `run_id`
+`exp-v2-ventana-4-20261116a` queda consumido y no se reutiliza. La leccion del
+incidente de la ventana 3 (supervision del piloto independiente del anfitrion)
+sigue registrada SIN implementar: los checkpoints mitigan la perdida de
+evidencia, no la muerte de la corrida.

@@ -5958,3 +5958,44 @@ no estaba disparada la revalidacion `--budget-only`; techos intactos. No se
 tocan estrategia, seleccion, entrada, stop, horizonte, capacidad, costes,
 funding, duracion, consultas, `opencode.json`, ficheros ajenos, datasets
 historicos, DBs canonicas, dashboard 3020 ni servicio 8792.
+
+## 2026-11-16 (tarde) — Ventana 4 `exp-v2-ventana-4-20261116a`: cierre NORMAL del protocolo V2 y decisiones de lanzamiento independiente
+
+Autorización humana explícita: UNA ventana pública con operaciones simuladas,
+sin órdenes reales ni cuentas; relanzamientos y ventanas adicionales prohibidos.
+Decisiones registradas:
+
+1. **Independencia del anfitrión acreditada antes de abrir mercado** con el
+   lanzador real (`scripts/run_pilot_window.py`) y un hijo inocuo, lanzado por
+   WMI `Win32_Process.Create` (nativo, fuera del árbol del agente). Evidencia:
+   linaje observado `WmiPrvSE -> lanzador -> hijo` sin la shell del agente, y
+   muerte abrupta del anfitrión (`Stop-Process -Force`) con el hijo
+   sobreviviendo (latido a +10 s y +16 s) y terminando limpio (código 0) por su
+   mecanismo propio. Límite declarado: no se cerró OpenCode (prohibido), por lo
+   que la independencia del agente se acredita por linaje observado, no por
+   demostración directa.
+2. **La corrida real se lanzó por el mismo mecanismo** (WMI, PID 21376, padre
+   WmiPrvSE; hijo 18480). El agente solo monitorea `estado.json`; el cierre no
+   dependió de la sesión del agente.
+3. **Cierre NORMAL completo** (el primero del V2): `exit_code.txt` = 0 y
+   veredicto del lanzador leídos por separado (`terminacion_natural`,
+   `cumplimiento_normal: true`); la espera contable cerró `trabajo_resuelto`
+   en ~3 s (0 pendientes, 2 consultas, 1 por símbolo) y el plazo no se agotó.
+4. **Funding UNKNOWN, nunca cero:** las 2 operaciones ejecutadas quedan con
+   `interval_ms: null` (`cadencia_ambigua`) porque el endpoint de historia
+   `/fapi/v1/fundingRate` no acredita el intervalo vigente del símbolo; los
+   netos se publican solo como CONDICIONADO y se declara que **no son P&L**.
+5. **Replay DIFERENCIAS conservado sin ajustes:** 2 de 161 diferencias, ambas
+   solo en la etiqueta `neto_motivo` (ejecución `cadencia_ambigua` vs replay
+   `trabajo_resuelto`); sin diferencias numéricas. No se modifican pruebas para
+   obtener EQUIVALENTE.
+6. **El `run_id` queda consumido** y no se reutiliza; ninguna ventana nueva se
+   abre sin autorización humana explícita. La lección del incidente de la
+   ventana 3 (supervisión del piloto independiente del anfitrión) sigue
+   registrada SIN implementar.
+
+Evidencia: `docs/evidence/exp-v2-ventana-4-20261116a-lanzamiento/` y
+`docs/evidence/exp-v2-ventana-4-20261116a-cierre/` (CIERRE.md, cierre_datos.json,
+hashes_cierre.json); dataset `C:\proyectos\binance-futures-data\exp-v2-ventana-4-20261116a`
+(manifiesto verificado 10/10); derivados separados en
+`exp-v2-ventana-4-20261116a-replay-20261116\`.

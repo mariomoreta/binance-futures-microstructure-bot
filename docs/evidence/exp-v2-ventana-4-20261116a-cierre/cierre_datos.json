@@ -1,0 +1,827 @@
+{
+ "cierre": {
+  "causa_terminacion": "terminacion_natural",
+  "codigo_lanzador": 0,
+  "cumplimiento_normal": true,
+  "exceso_maximo_total_s": 0.0,
+  "exit_code_hijo": "0",
+  "incumplimiento_plazo_global": false,
+  "resultado_lanzador": "normal",
+  "stderr_vacio": true
+ },
+ "comparacion_roles": {
+  "ciclos_con_ambos_roles_aptos": 11,
+  "ciclos_con_operaciones_completas_ambos_roles": 0,
+  "ciclos_total": 12,
+  "cobertura_ciclos_ambos_roles": 0.9166666666666666,
+  "diferencia_paired_media_usdt": null,
+  "diferencias_paired_por_ciclo": [],
+  "estado": "INSUFICIENTE",
+  "motivos": [
+   "sin_operaciones_completas_candidate",
+   "sin_operaciones_completas_comparator"
+  ],
+  "operaciones_completas_candidate": 0,
+  "operaciones_completas_comparator": 0
+ },
+ "config": {
+  "activar_publico": true,
+  "capture_protocol_version": 3,
+  "clock_file": null,
+  "clock_mode": "system",
+  "cycle_seconds": 300.0,
+  "decision_delay_seconds": 5.0,
+  "decision_gate_file": null,
+  "duration_seconds": 3600.0,
+  "funding_method": "observed-settlements",
+  "funding_source": "exchange",
+  "funding_wait_max_queries": 3,
+  "funding_wait_seconds": 32400.0,
+  "horizons": "5m=300000,15m=900000,60m=3600000",
+  "max_bytes": 134217728,
+  "max_candidates": 12,
+  "max_comparators": 8,
+  "max_data_age_ms": 5000,
+  "max_http_attempts": 2000,
+  "max_http_retries": 50,
+  "max_http_weight": 5000,
+  "max_messages": 5000000,
+  "max_observations": 20000,
+  "max_symbols": 20,
+  "max_ws_reconnects": 20,
+  "min_quote_volume_usdt": 1000000.0,
+  "mode": "public",
+  "out_dir": "C:\\proyectos\\binance-futures-data\\exp-v2-ventana-4-20261116a",
+  "pilot_version": "research-pilot-v2",
+  "policy_version": "research-selector-v2",
+  "price_delay_ms": 2000,
+  "price_interval": "1m",
+  "price_tolerance_ms": 90000,
+  "protocol_version": "prospective-protocol-v1",
+  "rest_base": "https://fapi.binance.com",
+  "run_id": "exp-v2-ventana-4-20261116a",
+  "selection_seconds": 300.0,
+  "settle_seconds": 4200.0,
+  "status_file": "C:\\proyectos\\binance-futures-data\\exp-v2-ventana-4-20261116a\\estado.json",
+  "stop_file": null,
+  "tick_ms": 500,
+  "ws_market_base": "wss://fstream.binance.com/market",
+  "ws_public_base": "wss://fstream.binance.com/public"
+ },
+ "config_inicial_resumen": null,
+ "consumos": {
+  "almacenamiento": {
+   "consultas_klines_jsonl_bytes": 1720829,
+   "consultas_klines_rows": 161,
+   "funding_adquisicion_jsonl_bytes": 7253,
+   "funding_calendar_bytes": 7742,
+   "http_requests_jsonl_bytes": 572281,
+   "observaciones_jsonl_bytes": 3045751,
+   "observaciones_jsonl_rows": 691,
+   "research_db": "C:\\proyectos\\binance-futures-data\\exp-v2-ventana-4-20261116a\\research.db",
+   "resultado_operativo_jsonl_bytes": 135330,
+   "sqlite_bytes": 2179072,
+   "storage_accounted_bytes": 7097601,
+   "storage_budget": {
+    "accounted_bytes": 7097601,
+    "max_bytes": 134217728,
+    "reserved_bytes": 0,
+    "used_bytes": 7097601
+   },
+   "storage_bytes_total": 7668258,
+   "tope_bytes": 134217728
+  },
+  "presupuesto_http": {
+   "attempts": 671,
+   "blocked": false,
+   "funding_rate_attempts_5m": 2,
+   "funding_rate_shared_limit_5m": 500,
+   "max_attempts": 2000,
+   "max_retries": 50,
+   "max_weight": 5000,
+   "reason": null,
+   "retries": 0,
+   "weight": 1139
+  },
+  "ws": {
+   "market": {
+    "connected_now": false,
+    "connections": 1,
+    "disconnects": 1,
+    "errors": 0,
+    "last_error": null,
+    "messages": 28925,
+    "name": "market",
+    "reconnects": 0,
+    "url_shape": "wss://fstream.binance.com/market/stream"
+   },
+   "public": {
+    "connected_now": false,
+    "connections": 1,
+    "disconnects": 1,
+    "errors": 0,
+    "last_error": null,
+    "messages": 30156,
+    "name": "public",
+    "reconnects": 0,
+    "url_shape": "wss://fstream.binance.com/public/stream"
+   }
+  },
+  "ws_total": {
+   "conexiones": 25,
+   "mensajes": 979570,
+   "reconexiones": 1
+  }
+ },
+ "decisiones": {
+  "abstenciones": 0,
+  "operaciones_ejecutadas_simuladas": 2,
+  "por_decision": {
+   "ENTRADA_EJECUTADA": 2,
+   "RECHAZADA_CAPACIDAD": 159
+  },
+  "rechazos_capacidad": 159,
+  "senales_con_direccion": 161
+ },
+ "descartes": {
+  "etiquetas": {
+   "dato_obsoleto_flujo": 28,
+   "dato_obsoleto_libro": 1,
+   "flujo_ventana_incompleta": 13
+  },
+  "filas_unicas": 35,
+  "sin_motivo": 0,
+  "solapadas": 7
+ },
+ "diagnosticos": {
+  "duplicados_operativos_descartados": 2,
+  "filas_operativas_leidas": 163,
+  "filas_operativas_sin_observation_id": 0,
+  "filas_operativas_unicas": 161
+ },
+ "fases": {
+  "captura_s": 3600,
+  "duracion_total_s": 7805.234,
+  "ended_iso": "2026-11-16T21:36:21.292000+00:00",
+  "espera_contable": {
+   "cierre": "trabajo_resuelto",
+   "consultas_por_simbolo": {
+    "4USDT": 1,
+    "AAVEUSDT": 1
+   },
+   "consultas_totales": 2,
+   "duracion_total_efectiva_s": 7803.254,
+   "fin_ms": 1794897378162,
+   "inicio_ms": 1794864978162,
+   "metodo": "observed-settlements",
+   "pendientes_finales": 0,
+   "plazo_max_ms": 32400000,
+   "posiciones_acreditadas": 0,
+   "posiciones_unknown": 2
+  },
+  "hijo_pid": 18480,
+  "lanzador_lanzado_utc": "2026-11-16T19:26:19Z",
+  "lanzador_padre": "WmiPrvSE.exe (arbol ajeno al agente, via WMI)",
+  "lanzador_pid": 21376,
+  "settle_s": 4200,
+  "started_ms": 1794857178038
+ },
+ "funnel_global": {
+  "candidate": {
+   "aptas": 130,
+   "descartadas": 5,
+   "observadas": 135,
+   "seleccionadas": 144
+  },
+  "comparator": {
+   "aptas": 31,
+   "descartadas": 30,
+   "observadas": 61,
+   "seleccionadas": 96
+  },
+  "sin_observacion": {
+   "candidate": 9,
+   "comparator": 35,
+   "total": 44
+  }
+ },
+ "funnel_por_ciclo": [
+  {
+   "aptas": 12,
+   "ciclo": 0,
+   "desc": 0,
+   "obs": 12,
+   "rol": "candidate",
+   "sel": 12
+  },
+  {
+   "aptas": 6,
+   "ciclo": 0,
+   "desc": 2,
+   "obs": 6,
+   "rol": "comparator",
+   "sel": 8
+  },
+  {
+   "aptas": 11,
+   "ciclo": 1,
+   "desc": 1,
+   "obs": 11,
+   "rol": "candidate",
+   "sel": 12
+  },
+  {
+   "aptas": 3,
+   "ciclo": 1,
+   "desc": 5,
+   "obs": 3,
+   "rol": "comparator",
+   "sel": 8
+  },
+  {
+   "aptas": 10,
+   "ciclo": 2,
+   "desc": 2,
+   "obs": 10,
+   "rol": "candidate",
+   "sel": 12
+  },
+  {
+   "aptas": 2,
+   "ciclo": 2,
+   "desc": 6,
+   "obs": 2,
+   "rol": "comparator",
+   "sel": 8
+  },
+  {
+   "aptas": 11,
+   "ciclo": 3,
+   "desc": 0,
+   "obs": 11,
+   "rol": "candidate",
+   "sel": 11
+  },
+  {
+   "aptas": 1,
+   "ciclo": 3,
+   "desc": 2,
+   "obs": 1,
+   "rol": "comparator",
+   "sel": 3
+  },
+  {
+   "aptas": 12,
+   "ciclo": 4,
+   "desc": 0,
+   "obs": 12,
+   "rol": "candidate",
+   "sel": 12
+  },
+  {
+   "aptas": 2,
+   "ciclo": 4,
+   "desc": 0,
+   "obs": 2,
+   "rol": "comparator",
+   "sel": 2
+  },
+  {
+   "aptas": 11,
+   "ciclo": 5,
+   "desc": 0,
+   "obs": 11,
+   "rol": "candidate",
+   "sel": 11
+  },
+  {
+   "aptas": 5,
+   "ciclo": 5,
+   "desc": 3,
+   "obs": 5,
+   "rol": "comparator",
+   "sel": 8
+  },
+  {
+   "aptas": 10,
+   "ciclo": 6,
+   "desc": 2,
+   "obs": 10,
+   "rol": "candidate",
+   "sel": 12
+  },
+  {
+   "aptas": 1,
+   "ciclo": 6,
+   "desc": 0,
+   "obs": 1,
+   "rol": "comparator",
+   "sel": 1
+  },
+  {
+   "aptas": 11,
+   "ciclo": 7,
+   "desc": 0,
+   "obs": 11,
+   "rol": "candidate",
+   "sel": 11
+  },
+  {
+   "aptas": 1,
+   "ciclo": 7,
+   "desc": 0,
+   "obs": 1,
+   "rol": "comparator",
+   "sel": 1
+  },
+  {
+   "aptas": 10,
+   "ciclo": 8,
+   "desc": 0,
+   "obs": 10,
+   "rol": "candidate",
+   "sel": 10
+  },
+  {
+   "aptas": 3,
+   "ciclo": 8,
+   "desc": 4,
+   "obs": 3,
+   "rol": "comparator",
+   "sel": 7
+  },
+  {
+   "aptas": 10,
+   "ciclo": 9,
+   "desc": 0,
+   "obs": 10,
+   "rol": "candidate",
+   "sel": 10
+  },
+  {
+   "aptas": 3,
+   "ciclo": 9,
+   "desc": 3,
+   "obs": 3,
+   "rol": "comparator",
+   "sel": 6
+  },
+  {
+   "aptas": 11,
+   "ciclo": 10,
+   "desc": 0,
+   "obs": 11,
+   "rol": "candidate",
+   "sel": 11
+  },
+  {
+   "aptas": 4,
+   "ciclo": 10,
+   "desc": 4,
+   "obs": 4,
+   "rol": "comparator",
+   "sel": 8
+  },
+  {
+   "aptas": 11,
+   "ciclo": 11,
+   "desc": 0,
+   "obs": 11,
+   "rol": "candidate",
+   "sel": 11
+  },
+  {
+   "aptas": 0,
+   "ciclo": 11,
+   "desc": 1,
+   "obs": 0,
+   "rol": "comparator",
+   "sel": 1
+  }
+ ],
+ "ganancias_perdidas": {
+  "breakeven_neto_completo": 0,
+  "breakeven_neto_conditionado": 0,
+  "ganadoras_neto_completo": 0,
+  "ganadoras_neto_conditionado": 0,
+  "perdedoras_neto_completo": 0,
+  "perdedoras_neto_conditionado": 2
+ },
+ "git_head": "ce2af020c666956ba35a1e1d41d0007c85d581a7",
+ "manifiesto_verificado": "10 ficheros: bytes y SHA-256 correctos",
+ "operaciones": [
+  {
+   "bruto": -4.999999999999848,
+   "contabilidad_funding_estado": "UNKNOWN",
+   "contabilidad_funding_motivo": "cadencia_ambigua",
+   "decision_ms": 1794857301800,
+   "direccion": "SHORT",
+   "entrada_ms": 1794857340000,
+   "entrada_px": 107.18000000000002,
+   "fees": 1.0025,
+   "funding_estado": "ninguno (UNKNOWN, no cero)",
+   "funding_huecos_ms": 0,
+   "funding_liquidaciones": [],
+   "funding_settlements_desconocidos": 0,
+   "funding_sin_cubrir_ms": 1620000,
+   "motivo_salida": "stop",
+   "neto": -6.603999999999848,
+   "neto_estado": "CONDICIONADO_SIN_FUNDING_COMPLETO",
+   "neto_motivo": "operacion cerrada con funding incompleto: cadencia_ambigua; el neto no es completo",
+   "observation_id": "AAVEUSDT|1794857301800",
+   "qty": 9.330098899048329,
+   "rol": "comparator",
+   "salida_ms": 1794858960000,
+   "salida_px": 107.7159,
+   "spread_slip": 0.6014999999999999,
+   "stop_px": 107.65559999999999,
+   "symbol": "AAVEUSDT"
+  },
+  {
+   "bruto": 1.2816031690549758,
+   "contabilidad_funding_estado": "UNKNOWN",
+   "contabilidad_funding_motivo": "cadencia_ambigua",
+   "decision_ms": 1794859045223,
+   "direccion": "LONG",
+   "entrada_ms": 1794859080000,
+   "entrada_px": 0.008583,
+   "fees": 1.0006408015845274,
+   "funding_estado": "ninguno (UNKNOWN, no cero)",
+   "funding_huecos_ms": 0,
+   "funding_liquidaciones": [
+    {
+     "amount": 0.21139333566352092,
+     "basis": "settled",
+     "held_qty": 116509.3790050099,
+     "mark_source": "candle-open",
+     "rate_bps": 2.11,
+     "reason": null,
+     "settlement_mark_px": 0.008599,
+     "settlement_ms": 1794859200002
+    }
+   ],
+   "funding_settlements_desconocidos": 0,
+   "funding_sin_cubrir_ms": 3479998,
+   "motivo_salida": "horizon",
+   "neto": -0.31942211348026817,
+   "neto_estado": "CONDICIONADO_SIN_FUNDING_COMPLETO",
+   "neto_motivo": "operacion cerrada con funding incompleto: cadencia_ambigua; el neto no es completo",
+   "observation_id": "4USDT|1794859045223",
+   "qty": 116509.3790050099,
+   "rol": "comparator",
+   "salida_ms": 1794862680000,
+   "salida_px": 0.008594,
+   "spread_slip": 0.6003844809507165,
+   "stop_px": 0.008527149999999999,
+   "symbol": "4USDT"
+  }
+ ],
+ "operativo_config": {
+  "fee_bps": 5.0,
+  "funding_calendar": null,
+  "funding_estimated_bps": null,
+  "funding_note": "ninguno (UNKNOWN sin calendario real por simbolo)",
+  "horizon_ms": 3600000,
+  "max_candidates": 12,
+  "max_comparators": 8,
+  "max_concurrent": 1,
+  "max_symbols": 20,
+  "notional_usdt": 1000.0,
+  "rule_version": "RULE-CAUSAL-V1",
+  "slippage_bps": 2.0,
+  "spread_bps": 1.0,
+  "stop_distance_pct": 0.5,
+  "version": "research-operativo-v1"
+ },
+ "pilot_version": "research-pilot-v2",
+ "posiciones": {
+  "cerradas": 2,
+  "exposicion_realizada_ms": 5220000,
+  "todavia_abiertas": 0
+ },
+ "protocol_version": "prospective-protocol-v1",
+ "replay": {
+  "economia": {
+   "neto_completo_ejecucion": 0,
+   "neto_completo_replay": 0,
+   "neto_conditionado_ejecucion": 2,
+   "neto_conditionado_replay": 2,
+   "neto_unknown_ejecucion": 159,
+   "neto_unknown_replay": 159,
+   "operaciones_ejecucion": 2,
+   "operaciones_replay": 2
+  },
+  "fichero": "replay_operativo.json (dir derivado separado)",
+  "fuente_funding": "exchange",
+  "metodo_funding": "observed-settlements",
+  "nota_diferencias": "2 diferencias, ambas solo en neto_motivo: ejecucion 'cadencia_ambigua' vs replay 'trabajo_resuelto'; ambas declaran funding incompleto y el neto CONDICIONADO es identico; sin diferencias numericas. Veredicto DIFERENCIAS conservado sin ajustes.",
+  "veredicto": {
+   "coincidentes": 159,
+   "config_operativa_acreditada": true,
+   "diferentes": 2,
+   "estado": "DIFERENCIAS",
+   "limitaciones": 0,
+   "limitaciones_reconstructivas": 0,
+   "limitadas": 0,
+   "observaciones_comparadas": 161,
+   "procedencia_acreditada": true,
+   "reutiliza_adaptador_y_motores_existentes": true,
+   "sin_red": true
+  }
+ },
+ "resultado_usdt": {
+  "bruto_operaciones_cerradas": -3.7183968309448723,
+  "comisiones_operaciones_cerradas": 2.0031408015845273,
+  "drawdown_realizado_neto_completo_usdt": null,
+  "drawdown_realizado_neto_conditionado_usdt": 6.923422113480116,
+  "funding_completamente_acreditado": null,
+  "neto_completo": {
+   "max_usdt": null,
+   "media_usdt": null,
+   "mediana_usdt": null,
+   "min_usdt": null,
+   "n": 0,
+   "suma_usdt": null
+  },
+  "neto_conditionado_sin_funding_completo": {
+   "max_usdt": -0.31942211348026817,
+   "media_usdt": -3.461711056740058,
+   "mediana_usdt": -3.461711056740058,
+   "min_usdt": -6.603999999999848,
+   "n": 2,
+   "suma_usdt": -6.923422113480116
+  },
+  "spread_slippage_operaciones_cerradas": 1.2018844809507163
+ },
+ "run_id": "exp-v2-ventana-4-20261116a",
+ "sin_observacion_detalle": [
+  {
+   "ciclo": 3,
+   "entrada_mismo_ciclo": false,
+   "rol": "candidate",
+   "symbol": "SOPHUSDT"
+  },
+  {
+   "ciclo": 3,
+   "entrada_mismo_ciclo": true,
+   "rol": "comparator",
+   "symbol": "BARDUSDT"
+  },
+  {
+   "ciclo": 3,
+   "entrada_mismo_ciclo": true,
+   "rol": "comparator",
+   "symbol": "FOGOUSDT"
+  },
+  {
+   "ciclo": 3,
+   "entrada_mismo_ciclo": true,
+   "rol": "comparator",
+   "symbol": "ENSUSDT"
+  },
+  {
+   "ciclo": 3,
+   "entrada_mismo_ciclo": true,
+   "rol": "comparator",
+   "symbol": "DYDXUSDT"
+  },
+  {
+   "ciclo": 3,
+   "entrada_mismo_ciclo": true,
+   "rol": "comparator",
+   "symbol": "BNBUSDT"
+  },
+  {
+   "ciclo": 4,
+   "entrada_mismo_ciclo": false,
+   "rol": "comparator",
+   "symbol": "BANKUSDT"
+  },
+  {
+   "ciclo": 4,
+   "entrada_mismo_ciclo": true,
+   "rol": "comparator",
+   "symbol": "4USDT"
+  },
+  {
+   "ciclo": 4,
+   "entrada_mismo_ciclo": false,
+   "rol": "comparator",
+   "symbol": "FLOWUSDT"
+  },
+  {
+   "ciclo": 4,
+   "entrada_mismo_ciclo": false,
+   "rol": "comparator",
+   "symbol": "ENSOUSDT"
+  },
+  {
+   "ciclo": 4,
+   "entrada_mismo_ciclo": false,
+   "rol": "comparator",
+   "symbol": "DUSKUSDT"
+  },
+  {
+   "ciclo": 4,
+   "entrada_mismo_ciclo": false,
+   "rol": "comparator",
+   "symbol": "BMTUSDT"
+  },
+  {
+   "ciclo": 5,
+   "entrada_mismo_ciclo": false,
+   "rol": "candidate",
+   "symbol": "AGTUSDT"
+  },
+  {
+   "ciclo": 6,
+   "entrada_mismo_ciclo": true,
+   "rol": "comparator",
+   "symbol": "SUIUSDT"
+  },
+  {
+   "ciclo": 6,
+   "entrada_mismo_ciclo": false,
+   "rol": "comparator",
+   "symbol": "BARDUSDT"
+  },
+  {
+   "ciclo": 6,
+   "entrada_mismo_ciclo": true,
+   "rol": "comparator",
+   "symbol": "XNYUSDT"
+  },
+  {
+   "ciclo": 6,
+   "entrada_mismo_ciclo": false,
+   "rol": "comparator",
+   "symbol": "FOLKSUSDT"
+  },
+  {
+   "ciclo": 6,
+   "entrada_mismo_ciclo": false,
+   "rol": "comparator",
+   "symbol": "ERAUSDT"
+  },
+  {
+   "ciclo": 6,
+   "entrada_mismo_ciclo": false,
+   "rol": "comparator",
+   "symbol": "DYMUSDT"
+  },
+  {
+   "ciclo": 6,
+   "entrada_mismo_ciclo": false,
+   "rol": "comparator",
+   "symbol": "BNBUSDT"
+  },
+  {
+   "ciclo": 7,
+   "entrada_mismo_ciclo": false,
+   "rol": "candidate",
+   "symbol": "ARIAUSDT"
+  },
+  {
+   "ciclo": 7,
+   "entrada_mismo_ciclo": false,
+   "rol": "comparator",
+   "symbol": "STRKUSDT"
+  },
+  {
+   "ciclo": 7,
+   "entrada_mismo_ciclo": false,
+   "rol": "comparator",
+   "symbol": "BANKUSDT"
+  },
+  {
+   "ciclo": 7,
+   "entrada_mismo_ciclo": false,
+   "rol": "comparator",
+   "symbol": "XLMUSDT"
+  },
+  {
+   "ciclo": 7,
+   "entrada_mismo_ciclo": false,
+   "rol": "comparator",
+   "symbol": "FLOWUSDT"
+  },
+  {
+   "ciclo": 7,
+   "entrada_mismo_ciclo": false,
+   "rol": "comparator",
+   "symbol": "ENSOUSDT"
+  },
+  {
+   "ciclo": 7,
+   "entrada_mismo_ciclo": false,
+   "rol": "comparator",
+   "symbol": "DUSKUSDT"
+  },
+  {
+   "ciclo": 7,
+   "entrada_mismo_ciclo": false,
+   "rol": "comparator",
+   "symbol": "BMTUSDT"
+  },
+  {
+   "ciclo": 8,
+   "entrada_mismo_ciclo": true,
+   "rol": "candidate",
+   "symbol": "TLMUSDT"
+  },
+  {
+   "ciclo": 8,
+   "entrada_mismo_ciclo": false,
+   "rol": "candidate",
+   "symbol": "AGTUSDT"
+  },
+  {
+   "ciclo": 8,
+   "entrada_mismo_ciclo": true,
+   "rol": "comparator",
+   "symbol": "XMRUSDT"
+  },
+  {
+   "ciclo": 9,
+   "entrada_mismo_ciclo": false,
+   "rol": "candidate",
+   "symbol": "ARIAUSDT"
+  },
+  {
+   "ciclo": 9,
+   "entrada_mismo_ciclo": false,
+   "rol": "candidate",
+   "symbol": "ZILUSDT"
+  },
+  {
+   "ciclo": 9,
+   "entrada_mismo_ciclo": false,
+   "rol": "comparator",
+   "symbol": "STOUSDT"
+  },
+  {
+   "ciclo": 9,
+   "entrada_mismo_ciclo": false,
+   "rol": "comparator",
+   "symbol": "XAUTUSDT"
+  },
+  {
+   "ciclo": 10,
+   "entrada_mismo_ciclo": false,
+   "rol": "candidate",
+   "symbol": "AGTUSDT"
+  },
+  {
+   "ciclo": 11,
+   "entrada_mismo_ciclo": false,
+   "rol": "candidate",
+   "symbol": "ARIAUSDT"
+  },
+  {
+   "ciclo": 11,
+   "entrada_mismo_ciclo": false,
+   "rol": "comparator",
+   "symbol": "STRKUSDT"
+  },
+  {
+   "ciclo": 11,
+   "entrada_mismo_ciclo": false,
+   "rol": "comparator",
+   "symbol": "BARDUSDT"
+  },
+  {
+   "ciclo": 11,
+   "entrada_mismo_ciclo": false,
+   "rol": "comparator",
+   "symbol": "XLMUSDT"
+  },
+  {
+   "ciclo": 11,
+   "entrada_mismo_ciclo": false,
+   "rol": "comparator",
+   "symbol": "FOGOUSDT"
+  },
+  {
+   "ciclo": 11,
+   "entrada_mismo_ciclo": false,
+   "rol": "comparator",
+   "symbol": "ENSUSDT"
+  },
+  {
+   "ciclo": 11,
+   "entrada_mismo_ciclo": false,
+   "rol": "comparator",
+   "symbol": "DYDXUSDT"
+  },
+  {
+   "ciclo": 11,
+   "entrada_mismo_ciclo": false,
+   "rol": "comparator",
+   "symbol": "BNBUSDT"
+  }
+ ],
+ "sin_observacion_notas": [
+  "10 de 44: seleccionadas el mismo ciclo de su entrada al seguimiento (warmup, sin datos suficientes aun)",
+  "34 de 44: seleccionadas a nivel universo pero no seguidas en la decision (rotacion; la observacion exige streams activos del simbolo)"
+ ]
+}
