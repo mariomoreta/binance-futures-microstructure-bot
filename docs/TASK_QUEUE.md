@@ -1,4 +1,35 @@
-# Cola vigente — ventana 4 completa con cierre normal, 2026-11-16
+# Cola vigente — analisis offline ventana 4 completado, 2026-11-16
+
+## Estado (2026-11-16 noche): `ACTIVE_TASK: ninguno` — esperar instruccion del usuario
+
+**Bloque 2026-11-16 noche (autorizacion «ANALISIS OFFLINE DE LA VENTANA 4») — TERMINADO.**
+Rectificacion documental y analisis de los datos existentes exclusivamente
+offline sobre `exp-v2-ventana-4-20261116a` (base `7b658e6`, sin mercado).
+Dataset verificado contra manifiesto 10/10 antes y despues; no modificado.
+
+Resultados del analisis contrafactual individual (161 escenarios, capacidad 1
+aislada, reutilizando `OperativoAdapter` + `paper_lab_engine`):
+- 124 entradas simulables, 37 descartes, 0 abstenciones, 0 sin salida.
+- Neto CONDICIONADO agregado n=124: suma −63,42, media −0,51, mediana −6,60,
+  ganadoras 22 / perdedoras 102. Bruto: suma +135,19, media +1,09.
+- Funding: UNKNOWN para todas (n=124), neto COMPLETO n=0.
+- Control de coherencia: 2/2 operaciones historicas conservan valores
+  exactamente (0 diferencias numericas).
+- Capacidad oculto 122 senales que entraban aisladas: 22 positivas, 100
+  negativas. Las 2 admitidas (AAVE −6,604; 4USDT −0,3194) fueron perdedoras.
+- Comparacion candidato/comparador: INSUFICIENTE.
+Evidencia: `docs/evidence/exp-v2-ventana-4-20261116a-analisis-contrafactual/`;
+derivados fuera de Git en
+`C:\proyectos\binance-futures-data\exp-v2-ventana-4-20261116a-analisis-contrafactual-20261116\`;
+`tests/test_analisis_contrafactual_ventana4.py` 7 passed;
+`test_operativo_replay_offline.py` 7 passed.
+
+El `run_id` `exp-v2-ventana-4-20261116a` queda **consumido**. `ACTIVE_TASK:
+ninguno`; cualquier ventana nueva requiere autorizacion humana explicita con
+`run_id` nuevo. La leccion del incidente de la ventana 3 sigue registrada
+SIN implementar.
+
+---
 
 ## Estado (2026-11-16 tarde): `ACTIVE_TASK: ninguno` — esperar instrucción del usuario
 

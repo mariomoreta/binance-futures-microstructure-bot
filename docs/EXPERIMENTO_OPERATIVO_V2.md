@@ -2323,3 +2323,74 @@ Estado tras el bloque: `ACTIVE_TASK: ninguno`; el `run_id`
 incidente de la ventana 3 (supervision del piloto independiente del anfitrion)
 sigue registrada SIN implementar: los checkpoints mitigan la perdida de
 evidencia, no la muerte de la corrida.
+
+### 10.22 Analisis offline de la ventana 4: rectificacion documental y evaluacion contrafactual individual (2026-11-16, sin mercado)
+
+Autorizacion humana del 2026-11-16 (noche): «ANALISIS OFFLINE DE LA VENTANA 4».
+Rectificacion documental y analisis de los datos existentes exclusivamente
+offline; sin Binance, consultas publicas, capturas, ordenes, relanzamientos,
+cambios de estrategia ni aumento de capacidad productiva. Dataset fuente
+`C:\proyectos\binance-futures-data\exp-v2-ventana-4-20261116a` verificado
+contra su manifiesto (10/10) antes y despues; no modificado.
+
+**Rectificacion documental (vigente):**
+- Las 2 operaciones se contrastaron fila a fila con `observaciones.jsonl`,
+  `consultas_klines.jsonl` (cuerpo OHLC original de la venue) y
+  `resultado_operativo.jsonl`. Los valores publicados son correctos: AAVE SHORT
+  entrada 107,180, stop **107,6556** (ref_close 107,120 x 1,005, causal en T),
+  salida stop 107,7159, neto CONDICIONADO −6,604; 4USDT LONG entrada 0,008583,
+  stop **0,00852715** (ref_close 0,008570 x 0,995), salida horizon 0,008594,
+  neto CONDICIONADO −0,3194. Los precios 107,7159 y 0,008540085 citados como
+  stop se basan en el fill y son incorrectos como stop del motor: el stop se
+  fija en T desde el precio de referencia causal (ref_close), nunca desde el
+  fill de entrada. Motor sin modificar.
+- Capacidad: replay compartido reproduce 2 entradas (AAVE [19:29,19:56),
+  4USDT [19:58,20:58)) y 159 rechazos por capacidad. Admision por tiempo y
+  desempate por simbolo, no por calidad de senal.
+
+**Evaluacion contrafactual individual (161 escenarios, capacidad 1 aislada):**
+Reutiliza `OperativoAdapter` + `paper_lab_engine` sobre los cuerpos originales
+de `consultas_klines.jsonl`; no se rellenaron velas ni calendarios. Financiacion
+desconocida para todas (metodo `observed-settlements`, `cal=None` en resolucion
+→ `funding UNKNOWN`, nunca cero → todos los netos CONDICIONADO).
+- 124 entradas simulables, 37 descartes (stop vulnerado en T), 0 abstenciones,
+  0 posiciones sin salida acreditada. Salidas: 96 stop, 28 horizon.
+- Neto CONDICIONADO agregado n=124: suma −63,42, media −0,51, mediana −6,60,
+  ganadoras 22 / perdedoras 102. Bruto (antes de costes): suma +135,19, media
+  +1,09, ganadoras 25 / perdedoras 99. Los costes convierten la esperanza en
+  negativa.
+- Funding: UNKNOWN para todas (n=124), neto COMPLETO n=0.
+- Control de coherencia: 2/2 operaciones historicas conservan valores
+  exactamente (0 diferencias numericas).
+- Capacidad oculto 122 senales que entraban aisladas: 22 positivas, 100
+  negativas (ambas). Las 2 admitidas fueron perdedoras → la capacidad fue un
+  filtro temporal/cola, no de calidad.
+- Concentracion: 25 simbolos unicos, 19 repetidos (hasta 12 veces) → dependencia
+  temporal, escenarios no independientes. No es cartera ejecutable.
+
+**Respuestas al encargo:**
+A. Antes de costes: esperanza +1,09 (mediana −5,0). Despues de costes conocidos:
+  esperanza −0,51 (mediana −6,60, stop completo).
+B. Candidatos vs comparadores: solo diferencia descriptiva (candidate −0,12 vs
+  comparator −1,69); cobertura desigual (130 vs 31), sin funding, 1 hora →
+  INSUFICIENTE.
+C. La capacidad oculto oportunidades de AMBOS signos (22 positivas, 100
+  negativas).
+D. Concluye: esperanza neta negativa en la muestra, costes materiales, capacidad
+  bloqueo señales de ambos signos, 2 entradas ejecutadas perdedoras no
+  representativas. No concluye: rentabilidad, edge, ventaja candidato/comparador,
+  generalizacion (una sola hora).
+
+Etiqueta de los derivados: "evaluacion contrafactual individual, posterior a
+la captura; no validacion prospectiva independiente".
+
+Evidencia: `docs/evidence/exp-v2-ventana-4-20261116a-analisis-contrafactual/`
+(`RECTIFICACION-ANALISIS.md`); derivados fuera de Git en
+`C:\proyectos\binance-futures-data\exp-v2-ventana-4-20261116a-analisis-contrafactual-20261116\`;
+`tests/test_analisis_contrafactual_ventana4.py` 7 passed; regresiones
+`test_operativo_replay_offline.py` 7 passed.
+
+Estado tras el bloque: `ACTIVE_TASK: ninguno`; el `run_id`
+`exp-v2-ventana-4-20261116a` queda consumido y no se reutiliza. La leccion del
+incidente de la ventana 3 sigue registrada SIN implementar.
+

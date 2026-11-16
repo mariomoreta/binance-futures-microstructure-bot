@@ -1,5 +1,54 @@
 # Estado vigente — ventana 4 ejecutada COMPLETA con cierre normal (2026-11-16)
 
+## Bloque 2026-11-16 (noche) — analisis offline de la ventana 4 (sin mercado)
+
+**Autorizacion humana del 2026-11-16 (noche):** «ANALISIS OFFLINE DE LA VENTANA 4».
+Rectificacion documental y analisis de los datos existentes exclusivamente
+offline; sin Binance, consultas publicas, capturas, ordenes, relanzamientos,
+cambios de estrategia ni aumento de capacidad. Dataset fuente
+`C:\proyectos\binance-futures-data\exp-v2-ventana-4-20261116a` verificado
+contra su manifiesto (10/10, bytes y SHA-256) antes y despues; no modificado.
+
+**Rectificacion documental (vigente):**
+- Las 2 operaciones se contrastaron fila a fila con `observaciones.jsonl`,
+  `consultas_klines.jsonl` (cuerpo OHLC original) y `resultado_operativo.jsonl`.
+  Los valores de `cierre.md` son correctos: AAVE SHORT entrada 107,180, stop
+  **107,6556** (ref_close 107,120 x 1,005, causal en T), salida stop 107,7159,
+  neto CONDICIONADO −6,604; 4USDT LONG entrada 0,008583, stop **0,00852715**
+  (ref_close 0,008570 x 0,995), salida horizon 0,008594, neto CONDICIONADO
+  −0,3194. Los precios 107,7159 y 0,008540085 citados como stop se basan en el
+  fill y son incorrectos como stop del motor: el stop es causal (ref_close), no
+  el fill. Motor sin modificar.
+- Capacidad: replay compartido reproduce 2 entradas (AAVE [19:29,19:56),
+  4USDT [19:58,20:58)) y 159 rechazos por capacidad. Admision por tiempo y
+  desempate por simbolo, no por calidad de senal.
+
+**Analisis contrafactual individual (161 escenarios, capacidad 1 aislada):**
+- 124 entradas simulables, 37 descartes (stop vulnerado en T), 0 abstenciones,
+  0 sin salida acreditada. Neto CONDICIONADO agregado n=124: suma −63,42,
+  media −0,51, mediana −6,60, ganadoras 22 / perdedoras 102. Bruto: suma +135,
+  media +1,09. Funding: UNKNOWN para todas (n=124), neto COMPLETO n=0.
+- Control de coherencia: 2/2 operaciones historicas conservan valores
+  exactamente (0 diferencias numericas).
+- Capacidad oculto 122 senales que entraban aisladas: 22 positivas, 100
+  negativas (ambas). Las 2 admitidas fueron perdedoras.
+- Comparacion candidato/comparador: INSUFICIENTE (cobertura desigual, sin
+  funding, 1 hora).
+
+**Evidencia:** `docs/evidence/exp-v2-ventana-4-20261116a-analisis-contrafactual/`
+(`RECTIFICACION-ANALISIS.md`); derivados fuera de Git en
+`C:\proyectos\binance-futures-data\exp-v2-ventana-4-20261116a-analisis-contrafactual-20261116\`;
+`tests/test_analisis_contrafactual_ventana4.py` 7 passed; regresiones
+`test_operativo_replay_offline.py` 7 passed.
+
+| | |
+|---|---|
+| SHA base | `7b658e6b466a0ce24d018488d118dc33d08697f8` (local == remoto) |
+| SHA de ejecucion del analisis | commit `7b658e6` (ventana 4) + script `scripts/analisis_contrafactual_ventana4.py` |
+| Evidencia analisis | `docs/evidence/exp-v2-ventana-4-20261116a-analisis-contrafactual/RECTIFICACION-ANALISIS.md` |
+| Dataset original | intacto, solo lectura, 10/10 ficheros verificados contra manifiesto |
+| Lo que NO acredita | rentabilidad, edge, ventaja candidato/comparador (INSUFICIENTE), funding completo |
+
 ## Bloque 2026-11-16 (tarde) — ventana `exp-v2-ventana-4-20261116a` ejecutada, cerrada NORMAL, replay DIFERENCIAS
 
 **Autorización humana del 2026-11-16 (tarde):** «UNA VENTANA PÚBLICA CON
