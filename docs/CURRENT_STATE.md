@@ -12,13 +12,22 @@ contra su manifiesto (10/10, bytes y SHA-256) antes y despues; no modificado.
 **Rectificacion documental (vigente):**
 - Las 2 operaciones se contrastaron fila a fila con `observaciones.jsonl`,
   `consultas_klines.jsonl` (cuerpo OHLC original) y `resultado_operativo.jsonl`.
-  Los valores de `cierre.md` son correctos: AAVE SHORT entrada 107,180, stop
-  **107,6556** (ref_close 107,120 x 1,005, causal en T), salida stop 107,7159,
-  neto CONDICIONADO −6,604; 4USDT LONG entrada 0,008583, stop **0,00852715**
-  (ref_close 0,008570 x 0,995), salida horizon 0,008594, neto CONDICIONADO
-  −0,3194. Los precios 107,7159 y 0,008540085 citados como stop se basan en el
-  fill y son incorrectos como stop del motor: el stop es causal (ref_close), no
-  el fill. Motor sin modificar.
+  Los valores de `cierre.md` son correctos: AAVE SHORT entrada 107,180,
+  salida stop 107,7159 (19:56:00Z), neto CONDICIONADO −6,604; 4USDT LONG
+  entrada 0,008583, salida horizon 0,008594 (20:58:00Z), neto CONDICIONADO
+  −0,3194.
+- **Stop: referencia de senal vs stop de posicion (corregido).** El motor
+  distingue dos niveles. El `stop_px` persistido (107.6556 para AAVE;
+  0,00852715 para 4USDT) es el stop de **REFERENCIA** desde `ref_close`
+  (close de la ultima vela 1m plenamente conocida en T), usado solo para la
+  senal en T y la admision de riesgo. El stop **EFECTIVO aplicado durante la
+  posicion** se calcula en `backtest_offline._stop_px(avg)` desde el **fill**:
+  AAVE fill 107,18 × 1,005 = **107,7159** (gobierna la salida por stop a
+  107,7159); 4USDT fill 0,008583 × 0,995 = **0,008540085** (salio por horizon,
+  no se toco). El campo `stop_px` persistido NO representa necesariamente el
+  nivel aplicado durante la posicion. Motor sin modificar.
+- Horarios: AAVE 19:29:00 → 19:56:00 = **27 minutos** (1.620 s); 4USDT
+  19:58:00 → 20:58:00 = 60 minutos.
 - Capacidad: replay compartido reproduce 2 entradas (AAVE [19:29,19:56),
   4USDT [19:58,20:58)) y 159 rechazos por capacidad. Admision por tiempo y
   desempate por simbolo, no por calidad de senal.
@@ -37,16 +46,18 @@ contra su manifiesto (10/10, bytes y SHA-256) antes y despues; no modificado.
 
 **Evidencia:** `docs/evidence/exp-v2-ventana-4-20261116a-analisis-contrafactual/`
 (`RECTIFICACION-ANALISIS.md`); derivados fuera de Git en
-`C:\proyectos\binance-futures-data\exp-v2-ventana-4-20261116a-analisis-contrafactual-20261116\`;
-`tests/test_analisis_contrafactual_ventana4.py` 7 passed; regresiones
+`C:\proyectos\binance-futures-data\exp-v2-ventana-4-20261116a-analisis-contrafactual-20261116-v2\`
+(regenerados desde fuentes verificadas, resultados anteriores NO reutilizados);
+`tests/test_analisis_contrafactual_ventana4.py` 11 passed; regresiones
 `test_operativo_replay_offline.py` 7 passed.
 
 | | |
 |---|---|
 | SHA base | `7b658e6b466a0ce24d018488d118dc33d08697f8` (local == remoto) |
-| SHA de ejecucion del analisis | commit `7b658e6` (ventana 4) + script `scripts/analisis_contrafactual_ventana4.py` |
+| SHA de ejecucion del analisis | commit `26fdf86` (ventana 4) + script `scripts/analisis_contrafactual_ventana4.py` (corregido) |
+| SHA del analisis corregido | commit `26fdf86456cf525d31693efd2c746ff86cb725c6` (local == remoto) |
 | Evidencia analisis | `docs/evidence/exp-v2-ventana-4-20261116a-analisis-contrafactual/RECTIFICACION-ANALISIS.md` |
-| Dataset original | intacto, solo lectura, 10/10 ficheros verificados contra manifiesto |
+| Dataset original | intacto, solo lectura, 10/10 ficheros verificados contra manifiesto antes y despues |
 | Lo que NO acredita | rentabilidad, edge, ventaja candidato/comparador (INSUFICIENTE), funding completo |
 
 ## Bloque 2026-11-16 (tarde) — ventana `exp-v2-ventana-4-20261116a` ejecutada, cerrada NORMAL, replay DIFERENCIAS

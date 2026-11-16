@@ -4378,7 +4378,7 @@ decision economica; no reutilizar ni relanzar `exp-v2-ventana-2-20261112a`.
 - `DOCUMENTATION_CONFLICTS` â€” ninguna nueva; todos los documentos reflejan el estado real de la ejecuciÃ³n (cierre normal, replay DIFERENCIAS, funding UNKNOWN).
 
 
-## piloto/analisis-contrafactual-ventana4-20261116 (2026-11-16, base `7b658e6`)
+## piloto/analisis-contrafactual-ventana4-20261116 (2026-11-16, base `7b658e6`, corregido 2026-11-16)
 
 **1. Title:** Rectificacion documental y evaluacion contrafactual individual de
 la ventana 4 `exp-v2-ventana-4-20261116a`, exclusivamente offline y sin mercado.
@@ -4391,17 +4391,23 @@ verificado contra manifiesto 10/10 antes y despues; no modificado.
 
 **3. Implementation status:** IMPLEMENTADO (analisis offline, codigo minimo
 indispensable reutilizando motores existentes). `scripts/analisis_contrafactual_ventana4.py`
-(nuevo): replay historico compartido (reproduce 2 entradas / 159 rechazos por
-capacidad) y evaluacion contrafactual de las 161 observaciones aptas con
-capacidad 1 aislada, sobre cuerpos originales de `consultas_klines.jsonl`;
-sin rellenar velas ni calendarios. `tests/test_analisis_contrafactual_ventana4.py`
-(nuevo): 7 pruebas (denominador 161, aislamiento, coherencia numerica 2/2,
-causalidad del stop desde ref_close, contabilidad neto = bruto - fees -
-spread_slip, funding UNKNOWN sin neto completo). Sin cambios a
-`research_pilot.py`, `research_operativo_adapter.py`, `paper_lab_engine.py`
-ni `backtest_offline.py`.
+(corregido: carga y valida `config_inicial.json` con su hash, sin
+`OperativoConfig()` por defecto; CLI `--run-dir`/`--out-dir`; derivados en
+directorio nuevo sin reutilizar resultados anteriores). Replay historico
+compartido (reproduce 2 entradas / 159 rechazos por capacidad) y evaluacion
+contrafactual de las 161 observaciones aptas con capacidad 1 aislada, sobre
+cuerpos originales de `consultas_klines.jsonl`; sin rellenar velas ni
+calendarios. Distincion stop de REFERENCIA (desde ref_close, `stop_px`
+persistido, solo senal en T) vs stop EFECTIVO aplicado (desde el fill, gobierna
+la salida); motor sin modificar. `tests/test_analisis_contrafactual_ventana4.py`
+(nuevo): 11 pruebas (denominador 161, aislamiento, coherencia numerica 2/2,
+causalidad del stop efectivo desde fill con pruebas LONG y SHORT sinteticas,
+contabilidad neto = bruto - fees - spread_slip, funding UNKNOWN sin neto
+completo, config ausente/alterada -> rechazo, fuente ausente -> limitacion).
+Sin cambios a `research_pilot.py`, `research_operativo_adapter.py`,
+`paper_lab_engine.py` ni `backtest_offline.py`.
 
-**4. Evaluation status:** 7 passed (nuevo); `test_operativo_replay_offline.py`
+**4. Evaluation status:** 11 passed (nuevo); `test_operativo_replay_offline.py`
 7 passed (regresion, sin impacto). Resultado: 124 entradas simulables, 37
 descartes, 0 abstenciones; neto CONDICIONADO agregado n=124: suma −63,42,
 media −0,51, mediana −6,60, ganadoras 22 / perdedoras 102; bruto media +1,09.
@@ -4412,7 +4418,7 @@ INSUFICIENTE. Unica hora; no acredita rentabilidad.
 
 **5. Evidence:** `docs/evidence/exp-v2-ventana-4-20261116a-analisis-contrafactual/RECTIFICACION-ANALISIS.md`;
 derivados fuera de Git en
-`C:\proyectos\binance-futures-data\exp-v2-ventana-4-20261116a-analisis-contrafactual-20261116\`;
+`C:\proyectos\binance-futures-data\exp-v2-ventana-4-20261116a-analisis-contrafactual-20261116-v2\`;
 SHA base `7b658e6b466a0ce24d018488d118dc33d08697f8`.
 
 **6. Verdict:** La regla sencilla produce esperanza neta negativa tras costes
@@ -4424,3 +4430,5 @@ de rentabilidad ni de ventaja candidato/comparador.
 **7. Next step:** el `run_id` `exp-v2-ventana-4-20261116a` queda consumido;
 cualquier ventana nueva requiere autorizacion humana explicita con `run_id`
 nuevo. No se abre otra ventana ni ronda de auditorias en este bloque.
+
+--- total lineas ---

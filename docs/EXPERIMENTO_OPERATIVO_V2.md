@@ -2295,10 +2295,14 @@ sin motivo) / 44 seleccionadas sin observacion (10 con entrada en el mismo
 ciclo = warmup; 34 no seguidas por rotacion). 161 senales con direccion, 0
 abstenciones, 159 rechazos por capacidad, 2 entradas simuladas ejecutadas
 (ambas comparadoras, capacidad global 1):
-- AAVEUSDT SHORT, stop 107.6556 (+0,5 %), salida stop @ 107.7159: bruto -5,0000,
-  fees 1,0025, spread/slip 0,6015, neto CONDICIONADO -6,604.
-- 4USDT LONG, stop 0.00852715 (-0,5 %), salida horizon @ 0.008594: bruto +1,2816,
-  fees 1,0006, spread/slip 0,6004, neto CONDICIONADO -0,3194.
+- AAVEUSDT SHORT, stop de REFERENCIA 107.6556 (ref_close 107.120 × 1,005, señal en T),
+  stop EFECTIVO aplicado desde el fill 107.7159 (= 107.180 × 1,005), salida stop
+  @ 107.7159: bruto -5,0000, fees 1,0025, spread/slip 0,6015, neto CONDICIONADO
+  -6,604. (Exposición 19:29:00 → 19:56:00 = 27 min / 1.620 s.)
+- 4USDT LONG, stop de REFERENCIA 0.00852715 (ref_close 0.008570 × 0,995, señal en T),
+  stop EFECTIVO aplicado desde el fill 0.008540085 (= 0.008583 × 0,995), salida
+  horizon @ 0.008594 (stop no tocado): bruto +1,2816, fees 1,0006, spread/slip
+  0,6004, neto CONDICIONADO -0,3194. (Exposición 19:58:00 → 20:58:00 = 60 min / 3.600 s.)
 Suma CONDICIONADO agregado -6,9234; **0 operaciones con funding completo**
 (`funding_completamente_acreditado: null`); funding UNKNOWN, nunca cero, en
 ambas (`cadencia_ambigua`: `interval_ms: null`, 0 settlements dentro de la
@@ -2337,13 +2341,21 @@ contra su manifiesto (10/10) antes y despues; no modificado.
 - Las 2 operaciones se contrastaron fila a fila con `observaciones.jsonl`,
   `consultas_klines.jsonl` (cuerpo OHLC original de la venue) y
   `resultado_operativo.jsonl`. Los valores publicados son correctos: AAVE SHORT
-  entrada 107,180, stop **107,6556** (ref_close 107,120 x 1,005, causal en T),
-  salida stop 107,7159, neto CONDICIONADO −6,604; 4USDT LONG entrada 0,008583,
-  stop **0,00852715** (ref_close 0,008570 x 0,995), salida horizon 0,008594,
-  neto CONDICIONADO −0,3194. Los precios 107,7159 y 0,008540085 citados como
-  stop se basan en el fill y son incorrectos como stop del motor: el stop se
-  fija en T desde el precio de referencia causal (ref_close), nunca desde el
-  fill de entrada. Motor sin modificar.
+  entrada 107,180, salida stop 107,7159 (19:56:00Z), neto CONDICIONADO
+  −6,604; 4USDT LONG entrada 0,008583, salida horizon 0,008594 (20:58:00Z),
+  neto CONDICIONADO −0,3194.
+- **Stop: referencia de senal vs stop de posicion (corregido).** El `stop_px`
+  persistido (107.6556 para AAVE; 0,00852715 para 4USDT) es el stop de
+  REFERENCIA desde `ref_close` (close de la ultima vela 1m plenamente conocida
+  en T), usado solo para la senal en T y la admision de riesgo. El stop
+  EFECTIVO aplicado durante la posicion se calcula en
+  `backtest_offline._stop_px(avg)` desde el **fill**: AAVE fill 107,18 × 1,005
+  = **107,7159** (gobierna la salida por stop a 107,7159); 4USDT fill
+  0,008583 × 0,995 = **0,008540085** (salio por horizon, no se toco). El campo
+  `stop_px` persistido NO representa necesariamente el nivel aplicado durante
+  la posicion. Motor sin modificar.
+- Horarios: AAVE 19:29:00 → 19:56:00 = **27 minutos** (1.620 s); 4USDT
+  19:58:00 → 20:58:00 = 60 minutos.
 - Capacidad: replay compartido reproduce 2 entradas (AAVE [19:29,19:56),
   4USDT [19:58,20:58)) y 159 rechazos por capacidad. Admision por tiempo y
   desempate por simbolo, no por calidad de senal.
@@ -2386,8 +2398,8 @@ la captura; no validacion prospectiva independiente".
 
 Evidencia: `docs/evidence/exp-v2-ventana-4-20261116a-analisis-contrafactual/`
 (`RECTIFICACION-ANALISIS.md`); derivados fuera de Git en
-`C:\proyectos\binance-futures-data\exp-v2-ventana-4-20261116a-analisis-contrafactual-20261116\`;
-`tests/test_analisis_contrafactual_ventana4.py` 7 passed; regresiones
+`C:\proyectos\binance-futures-data\exp-v2-ventana-4-20261116a-analisis-contrafactual-20261116-v2\`;
+`tests/test_analisis_contrafactual_ventana4.py` 11 passed; regresiones
 `test_operativo_replay_offline.py` 7 passed.
 
 Estado tras el bloque: `ACTIVE_TASK: ninguno`; el `run_id`

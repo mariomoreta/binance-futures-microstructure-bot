@@ -1,4 +1,4 @@
-# Cola vigente — analisis offline ventana 4 completado, 2026-11-16
+# Cola vigente — analisis offline ventana 4 corregido y cerrado, 2026-11-16
 
 ## Estado (2026-11-16 noche): `ACTIVE_TASK: ninguno` — esperar instruccion del usuario
 
@@ -7,8 +7,14 @@ Rectificacion documental y analisis de los datos existentes exclusivamente
 offline sobre `exp-v2-ventana-4-20261116a` (base `7b658e6`, sin mercado).
 Dataset verificado contra manifiesto 10/10 antes y despues; no modificado.
 
-Resultados del analisis contrafactual individual (161 escenarios, capacidad 1
-aislada, reutilizando `OperativoAdapter` + `paper_lab_engine`):
+**Rectificacion del stop (corregida):** el `stop_px` persistido es el stop de
+REFERENCIA desde ref_close (AAVE 107.6556; 4USDT 0,00852715), usado solo para
+la senal en T. El stop EFECTIVO aplicado durante la posicion se calcula desde
+el fill (AAVE 107.7159; 4USDT 0,008540085) y gobierna la salida por stop.
+Motor sin modificar. Horarios: AAVE 27 min (1.620 s), 4USDT 60 min.
+
+**Resultado del analisis contrafactual individual (161 escenarios, capacidad 1
+aislada, reutilizando `OperativoAdapter` + `paper_lab_engine`):**
 - 124 entradas simulables, 37 descartes, 0 abstenciones, 0 sin salida.
 - Neto CONDICIONADO agregado n=124: suma −63,42, media −0,51, mediana −6,60,
   ganadoras 22 / perdedoras 102. Bruto: suma +135,19, media +1,09.
@@ -20,14 +26,16 @@ aislada, reutilizando `OperativoAdapter` + `paper_lab_engine`):
 - Comparacion candidato/comparador: INSUFICIENTE.
 Evidencia: `docs/evidence/exp-v2-ventana-4-20261116a-analisis-contrafactual/`;
 derivados fuera de Git en
-`C:\proyectos\binance-futures-data\exp-v2-ventana-4-20261116a-analisis-contrafactual-20261116\`;
-`tests/test_analisis_contrafactual_ventana4.py` 7 passed;
+`C:\proyectos\binance-futures-data\exp-v2-ventana-4-20261116a-analisis-contrafactual-20261116-v2\`;
+`tests/test_analisis_contrafactual_ventana4.py` 11 passed;
 `test_operativo_replay_offline.py` 7 passed.
 
 El `run_id` `exp-v2-ventana-4-20261116a` queda **consumido**. `ACTIVE_TASK:
 ninguno`; cualquier ventana nueva requiere autorizacion humana explicita con
 `run_id` nuevo. La leccion del incidente de la ventana 3 sigue registrada
 SIN implementar.
+
+---
 
 ---
 
