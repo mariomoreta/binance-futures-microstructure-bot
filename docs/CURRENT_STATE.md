@@ -1,4 +1,78 @@
-# Estado vigente — ventana 3 interrumpida por incidente y cerrada, 2026-11-15
+# Estado vigente — ventana 3 interrumpida: cierre rectificado y recuperación parcial probada, 2026-11-16
+
+## Bloque 2026-11-16 — rectificación del cierre por incidente + recuperación parcial implementada y probada (local, sin mercado)
+
+**Autorización humana del 2026-11-16:** «AUTORIZACIÓN LOCAL — RECTIFICACIÓN DEL
+INCIDENTE Y RECUPERACIÓN PARCIAL». Solo offline: rectificar el cierre de la
+ventana 3 desde las filas fuente y probar localmente la recuperación tras una
+interrupción (configuración inicial atómica + checkpoints en puntos existentes
++ replay de alcance acreditado). **No** autoriza Binance, consultas públicas,
+capturas, órdenes, relanzamientos ni ventanas nuevas; la ventana 3 sigue
+INTERRUMPIDA y su `run_id` **consumido**.
+
+**Conclusión A — rectificación del incidente histórico (vigente):**
+[RECTIFICACION-20261116](evidence/exp-v2-ventana-3-20261115a-cierre-incidente/RECTIFICACION-20261116.md)
+corrige, con fuentes y fórmulas (`rectificacion_datos.json`, dataset 12/12
+verificado antes y después): horas correctas de la entrada (decisión
+16:27:47.214Z, fill 16:28:00Z, salida por stop 16:30:00Z — la narrativa anterior
+decía 17:07/17:08/17:36 por una conversión UTC errónea); distinción stop de
+referencia (0,1315545) vs stop efectivo tras el fill (0,1313535 = `exit_px`
+exacto, sin modificar el motor); recálculo independiente exacto de bruto
+(−5,0000), fees (1,0025), spread/slip (0,6015) y neto **condicionado** (−6,604,
+funding UNKNOWN, no es P&L); última actividad acreditada 17:30:40Z (mtime del
+inventario, la estimación 17:30:06Z se retira), ventana de muerte
+(17:30:40Z, ≈18:04Z], mecanismo de terminación **UNKNOWN** y correlación de ~2 s
+publicada como hipótesis compatible, **no causalidad**; 195 resultados forward
+pendientes (182×3−351; **no** son operaciones); 19 filas operativas = 19
+`observation_id` únicos, 0 duplicados (1 posición real, 18 rechazos sin
+posición); descartes reconciliados (36 únicas, 45 etiquetas, 9 solapadas,
+0 sin motivo — no era una inconsistencia). Los antecedentes y sus hashes se
+conservan intactos.
+
+**Conclusión B — recuperación parcial (implementada y probada localmente):**
+- Piloto (`scripts/research_pilot.py`): `config_inicial.json` se persiste de
+  forma **atómica antes de la primera adquisición** (run_id, configuración
+  efectiva, versiones, hashes internos, `git_head`, `operativo_config_hash`
+  igual al de las filas); `checkpoints.jsonl` en puntos existentes del recorrido
+  (transición captura→settle, lote operativo ya persistido, transición a espera
+  contable) con estado INICIADA/PARCIAL, alcance acreditado **por prefijo**
+  (bytes + SHA-256 de esos bytes), trabajo pendiente y nota de que **no es un
+  cierre normal**; el checkpoint conserva la instantánea del ledger HTTP (misma
+  serialización y cuota del cierre, sin doble conteo ni techos ampliados).
+- Replay (`scripts/research_operativo_replay.py`): modo de recuperación parcial
+  **sin defaults** — si no hay manifiesto pero sí `config_inicial.json` +
+  `checkpoints.jsonl` válidos, acredita la configuración desde la primera y el
+  alcance por prefijo verificado; lo posterior al último checkpoint se **cuenta**
+  (contable, no acreditado) y se limita con `registro_posterior_al_ultimo_checkpoint`;
+  prefijo roto → `integridad_checkpoint_rota`; sin esas fuentes → los mismos
+  motivos de siempre (`manifiesto_ausente` + `config_operativa_ausente`);
+  veredicto global de una corrida parcial: **LIMITACION (3)** con
+  `corrida_parcial_sin_cierre_normal` y denominador completo (acreditado +
+  posterior + pendiente declarado).
+- Aceptación local (`tests/test_recuperacion_parcial_offline.py`, 7 pruebas:
+  CLI real, loopback, reloj manual, almacenamiento temporal): configuración
+  persistida antes de adquirir; checkpoint coherente; interrupción abrupta
+  (kill) tras persistir el lote sin cierre normal; recuperación limitada al
+  alcance acreditado (5/5 coincidentes dentro del corte); registro posterior
+  contado y no usado; corrupción dentro del prefijo rompe la acreditación y
+  fuera del corte solo se cuenta; sin config ni checkpoints → LIMITACION sin
+  defaults; `config_inicial` corrupta no se acepta.
+- Regresiones: `test_research_pilot.py` 45/45, `test_operativo_replay_offline.py`
+  7/7. El replay del dataset **real** de la ventana 3 produce veredicto, motivos
+  y denominador **idénticos** a los publicados (su estado no cambia; no hay
+  `config_inicial` ni checkpoints en él).
+- Presupuesto: no cambia la estimación de almacenamiento (los ficheros nuevos
+  son metadatos como `manifiesto.json`/`resumen.json`, contabilizados aparte
+  del tope de captura; la instantánea del ledger usa la cuota ya reservada), por
+  lo que la revalidación `--budget-only` no estaba disparada; techos intactos.
+
+| | |
+|---|---|
+| SHA base | `e2550830477725522c4f9bd8b9accdde8bcd3b13` (local == remoto al iniciar) |
+| Evidencia A | `docs/evidence/exp-v2-ventana-3-20261115a-cierre-incidente/` (RECTIFICACION-20261116.md, rectificacion_datos.json, hashes.json actualizado conservando los antecedentes) |
+| Evidencia B | `tests/test_recuperacion_parcial_offline.py` (7 pruebas) + cambios en `scripts/research_pilot.py` y `scripts/research_operativo_replay.py` |
+| Dataset original | intacto, solo lectura, 12/12 ficheros por SHA-256 re-verificados antes y después del bloque |
+| Lo que NO acredita | rentabilidad, edge, funding, comparación por rol, ni la calidad del selector; la recuperación parcial es preparación técnica, no resultado económico |
 
 ## Ventana `exp-v2-ventana-3-20261115a` — EJECUTADA PARCIALMENTE, INTERRUMPIDA POR INCIDENTE, cerrada (2026-11-15)
 

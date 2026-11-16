@@ -650,6 +650,47 @@ def _atomic_write(path: Path, text: str) -> None:
     os.replace(tmp, path)
 
 
+def _sha256_prefijo(path: Path) -> Tuple[int, int, str]:
+    """Lee un fichero append-only y devuelve (bytes, lineas completas, hash).
+
+    El hash acredita EXACTAMENTE los bytes leidos: mientras el fichero siga
+    creciendo ese hash no es un hash de fichero completo, es un hash de
+    prefijo. La linea incompleta del final (sin ``\\n``) NO cuenta como
+    completa.
+    """
+    datos = Path(path).read_bytes()
+    lineas = datos.count(b"\n")
+    return len(datos), lineas, hashlib.sha256(datos).hexdigest()
+
+
+def _jsonl_atomic(path: Path, entradas: List[Dict[str, Any]]) -> None:
+    """Reescritura atomica de un JSONL de metadatos (checkpoints)."""
+    _atomic_write(path, "".join(
+        json.dumps(e, ensure_ascii=False, sort_keys=True) + "\n"
+        for e in entradas))
+
+
+def _leer_jsonl_tolerante(path: Path) -> Tuple[List[Dict[str, Any]], int]:
+    """Lee un JSONL tolerando lineas ilegibles (para conteo contable).
+
+    Devuelve (filas legibles, ilegibles). Para conteo, no para acreditacion.
+    """
+    filas: List[Dict[str, Any]] = []
+    ilegibles = 0
+    for line in Path(path).read_text(encoding="utf-8", errors="replace").splitlines():
+        line = line.strip()
+        if not line:
+            continue
+        try:
+            fila = json.loads(line)
+        except ValueError:
+            ilegibles += 1
+            continue
+        if isinstance(fila, dict):
+            filas.append(fila)
+    return filas, ilegibles
+
+
 def _stats(values: List[float]) -> Dict[str, Any]:
     if not values:
         return {"n": 0, "min": None, "max": None, "mean": None}
@@ -1996,6 +2037,17 @@ def compute_budget(cfg: PilotConfig) -> Dict[str, Any]:
 # ---------------------------------------------------------------------------
 # Piloto
 # ---------------------------------------------------------------------------
+
+# Ficheros de registros que los checkpoints acreditan por prefijo (los que
+# consume la reconstruccion offline). Son los mismos que acredita el
+# manifiesto del cierre normal, de modo que checkpoint y cierre usan el
+# mismo contrato de evidencia.
+CHECKPOINT_FICHEROS = (
+    "observaciones.jsonl", "resultado_operativo.jsonl",
+    "consultas_klines.jsonl", "http_requests.jsonl",
+    "funding_adquisicion.jsonl",
+)
+
 
 class ResearchPilot:
     def __init__(
@@ -3474,6 +3526,9 @@ class ResearchPilot:
         """
         now = self.clock.now_ms()
         self._phase = "espera_contable"
+        # Checkpoint de transicion de fase: settle terminado, contabilidad
+        # diferida por acreditar.
+        self._escribir_checkpoint("transicion_settle_espera_contable")
         self.espera_contable_inicio_ms = now
         self.espera_contable_fin_ms = now + int(
             float(self.cfg.funding_wait_seconds) * 1000)
@@ -3616,6 +3671,10 @@ class ResearchPilot:
                 resueltas += 1
             else:
                 item["motivo"] = "trayectoria_insuficiente"
+        if resueltas:
+            # Checkpoint tras un lote operativo ya persistido: los resultados
+            # recien escritos quedan acreditados sin esperar al cierre.
+            self._escribir_checkpoint("lote_operativo_persistido")
         return resueltas
 
     def finalize_operativos_pendientes(self, now: int) -> None:
@@ -3932,7 +3991,114 @@ class ResearchPilot:
 
     # -- bucle ---------------------------------------------------------
 
+    # -- config inicial y checkpoints parciales ------------------------------
+
+    def _persistir_config_inicial(self) -> None:
+        """Conserva de forma ATOMICA la configuracion efectiva ANTES de la
+        primera adquisicion.
+
+        Leccion del incidente de 2026-11-15 (ventana exp-v2-ventana-3): la
+        configuracion congelada no puede existir solo en el cierre normal,
+        porque una interrupcion la deja inaccesible y bloquea toda
+        reconstruccion. Este fichero complementa al manifiesto del cierre
+        normal (misma estructura de config y hashes); no lo sustituye.
+        """
+        config = self.cfg.to_dict()
+        operativo_config = self.operativo.cfg.to_dict()
+        datos = {
+            "kind": "config_inicial",
+            "run_id": self.cfg.run_id,
+            "escrito_ms": self.started_ms,
+            "escrito_iso": iso_utc(self.started_ms),
+            "pilot_version": PILOT_VERSION,
+            "protocol_version": PROTOCOL_VERSION,
+            "policy_version": POLICY_VERSION,
+            "git_head": _git_head(),
+            "config": config,
+            "config_sha256": hashlib.sha256(json.dumps(
+                config, sort_keys=True, default=str).encode("utf-8")
+            ).hexdigest(),
+            "operativo_config": operativo_config,
+            "operativo_config_sha256": hashlib.sha256(json.dumps(
+                operativo_config, sort_keys=True, default=str).encode(
+                    "utf-8")).hexdigest(),
+            # Mismo hash corto que publican las filas operativas (config_hash).
+            "operativo_config_hash": self.operativo._config_hash(),
+            "nota": ("persistido antes de la primera adquisicion; el cierre "
+                     "normal publica ademas el manifiesto con los hashes de "
+                     "los ficheros"),
+        }
+        _atomic_write(
+            self.out_dir / "config_inicial.json",
+            json.dumps(datos, ensure_ascii=False, indent=2, sort_keys=True)
+            + "\n")
+
+    def _escribir_checkpoint(self, punto: str) -> None:
+        """Conserva un checkpoint parcial en un punto existente del recorrido
+        (transicion de fase o lote operativo ya persistido).
+
+        - Declara el estado INICIADA/PARCIAL, el instante y alcance del
+          corte, el trabajo pendiente y las fases terminadas.
+        - Cada fichero cubierto se acredita por PREFIJO exacto (bytes
+          cubiertos y hash de esos bytes): mientras el contenido siga
+          cambiando el hash NO se publica como definitivo.
+        - Un checkpoint NO es un cierre normal: no inventa exit code, no
+          certifica recursos y no declara terminada una corrida
+          interrumpida.
+        """
+        path = self.out_dir / "checkpoints.jsonl"
+        previas: List[Dict[str, Any]] = []
+        if path.exists():
+            previas, _ = _leer_jsonl_tolerante(path)
+        orden = ("captura", "settle", "espera_contable")
+        idx = orden.index(self._phase) if self._phase in orden else len(orden)
+        fases_terminadas = list(orden[:idx])
+        # El ledger HTTP del cierre solo existe al final: para que la
+        # procedencia de las consultas se pueda acreditar tras una
+        # interrupcion, el checkpoint conserva su contenido hasta el corte.
+        self._persistir_ledger_http_snapshot()
+        alcance: List[Dict[str, Any]] = []
+        for nombre in CHECKPOINT_FICHEROS:
+            fichero = self.out_dir / nombre
+            if not fichero.exists():
+                continue
+            bytes_n, lineas, sha = _sha256_prefijo(fichero)
+            alcance.append({
+                "fichero": nombre,
+                "bytes_cubiertos": bytes_n,
+                "lineas_cubiertas": lineas,
+                "sha256_prefijo": sha,
+                "completa": False,
+                "nota": ("acredita SOLO los primeros bytes_cubiertos bytes; "
+                         "lo escrito despues no esta acreditado por este "
+                         "checkpoint"),
+            })
+        ahora = self.clock.now_ms()
+        entrada = {
+            "kind": "checkpoint",
+            "run_id": self.cfg.run_id,
+            "punto": punto,
+            "estado": "INICIADA" if not fases_terminadas else "PARCIAL",
+            "fase": self._phase,
+            "fases_terminadas": fases_terminadas,
+            "instante_ms": ahora,
+            "instante_iso": iso_utc(ahora),
+            "stop_reason": self.stop_reason,
+            "trabajo_pendiente": {
+                "observaciones": len(self.pending),
+                "operativos": len(self.operativo_pendientes),
+                "contabilidad": self._pendientes_contabilidad(),
+            },
+            "alcance": alcance,
+            "nota": ("checkpoint parcial; NO es un cierre normal: no inventa "
+                     "exit code, no certifica recursos y no declara "
+                     "terminada la corrida"),
+        }
+        previas.append(entrada)
+        _jsonl_atomic(path, previas)
+
     async def run(self) -> Dict[str, Any]:
+        self._persistir_config_inicial()
         self.recorder.start()
         next_selection = self.started_ms
         next_decision = self.started_ms + int(
@@ -4066,6 +4232,9 @@ class ResearchPilot:
             # Settle: presupuesto, plazo y cancelacion siguen vigentes.
             await self._stop_feeds()
             self._phase = "settle"
+            # Checkpoint de transicion de fase: acredita los registros
+            # persistidos hasta el fin de la captura.
+            self._escribir_checkpoint("transicion_captura_settle")
             while (self.clock.now_ms() < self.settle_end_ms
                    and (self.pending or self.operativo_pendientes)
                    and not self._terminal_stop()):
@@ -4128,12 +4297,8 @@ class ResearchPilot:
 
     # -- salidas -------------------------------------------------------
 
-    def _write_outputs(self, skipped_selections: int) -> Dict[str, Any]:
-        rows = read_jsonl(self.obs_path)
-        operational_path = self.out_dir / "resultado_operativo.jsonl"
-        operational_rows = (read_jsonl(operational_path)
-                            if operational_path.exists() else [])
-        http_ledger_path = self.out_dir / "http_requests.jsonl"
+    def _filas_ledger_http(self) -> List[Dict[str, Any]]:
+        """Filas del ledger HTTP en el formato del cierre (reutilizado)."""
         http_ledger = []
         for request in self.rest.upstream_requests:
             http_ledger.append({
@@ -4162,6 +4327,39 @@ class ResearchPilot:
                 "response_item_count": request.get("response_item_count"),
                 "response_sha256": request.get("response_sha256"),
             })
+        return http_ledger
+
+    def _persistir_ledger_http_snapshot(self) -> bool:
+        """Conserva el contenido ACTUAL del ledger HTTP en su fichero.
+
+        En el cierre normal ``_write_outputs`` publica el ledger completo;
+        en una corrida interrumpida los checkpoints necesitan su contenido
+        hasta el corte para que la procedencia de las consultas se pueda
+        acreditar. Misma serializacion, misma cuota reservada: sin doble
+        conteo (el cierre comitea el crecimiento restante).
+        """
+        texto = "".join(
+            json.dumps(row, ensure_ascii=False, sort_keys=True) + "\n"
+            for row in self._filas_ledger_http())
+        nuevos = len(texto.encode("utf-8"))
+        viejos = self._file_bytes(self.http_ledger_path)
+        if max(0, nuevos - viejos) > self.http_ledger_quota_bytes:
+            self.stop_reason = "presupuesto_bytes"
+            return False
+        try:
+            _atomic_write(self.http_ledger_path, texto)
+        except OSError:
+            self.stop_reason = "presupuesto_bytes"
+            return False
+        return True
+
+    def _write_outputs(self, skipped_selections: int) -> Dict[str, Any]:
+        rows = read_jsonl(self.obs_path)
+        operational_path = self.out_dir / "resultado_operativo.jsonl"
+        operational_rows = (read_jsonl(operational_path)
+                            if operational_path.exists() else [])
+        http_ledger_path = self.out_dir / "http_requests.jsonl"
+        http_ledger = self._filas_ledger_http()
         http_ledger_text = "".join(
             json.dumps(row, ensure_ascii=False, sort_keys=True) + "\n"
             for row in http_ledger)

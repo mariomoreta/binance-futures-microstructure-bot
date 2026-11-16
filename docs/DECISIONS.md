@@ -5880,3 +5880,81 @@ piloto quedo atado al proceso anfitrion del agente; una supervision
 independiente evitaria que un reinicio del anfitrion mate la corrida. No se
 tocan opencode.json, ficheros ajenos, datasets historicos, DBs canonicas,
 dashboard 3020 ni servicio 8792.
+
+
+## 2026-11-16 - Rectificacion del cierre por incidente (ventana 3) y recuperacion parcial probada localmente
+
+Contexto: autorizacion humana local del 2026-11-16 («RECTIFICACION DEL
+INCIDENTE Y RECUPERACION PARCIAL») sobre la base publicada `e255083`. Solo
+offline: sin Binance, sin consultas publicas, sin capturas, sin ordenes, sin
+relanzamientos ni ventanas nuevas. La ventana `exp-v2-ventana-3-20261115a`
+sigue INTERRUMPIDA y su run_id CONSUMIDO; no se fabrican `cierre.json`,
+`exit_code.txt` ni manifiesto retrospectivo. Dos conclusiones separadas.
+
+DECISION (a) - RECTIFICACION DEL CIERRE HISTORICO POR LAS FILAS FUENTE
+(vigente; antecedentes y hashes conservados intactos; rectificacion publicada
+aparte como veredicto actual). (1) Horas correctas de la entrada `0GUSDT`
+desde `decision_ms`/`entry_ms`/`exit_ms`: decision 2026-11-15T16:27:47.214Z,
+fill 16:28:00Z, salida por stop 16:30:00Z; la narrativa anterior decia
+17:07:47Z/17:08:00Z/17:36:40Z por una conversion UTC erronea (los ms de
+`resumen.json` eran correctos). (2) El `stop_px` de la fila (0,1315545) es el
+stop de REFERENCIA previo al fill; el stop EFECTIVO tras el fill SHORT
+@ 0,1307 con distancia 0,5 % es 0,1313535 = `exit_px` exacto; el motor NO se
+modifica para hacer coincidir una etiqueta. (3) Recalculo independiente
+exacto de bruto (-5,0000), fees (1,0025), spread/slip (0,6015) y neto
+CONDICIONADO (-6,604; funding ausente = UNKNOWN, nunca cero; no es neto
+completo ni P&L). (4) Incidente reconciliado con incertidumbre publicada:
+ultima actividad acreditada 17:30:40Z (mtime del inventario con SHA-256; la
+estimacion indirecta 17:30:06Z se RETIRA), primera ausencia de procesos
+~18:04Z, ventana de muerte (17:30:40Z, ~18:04Z], instante exacto UNKNOWN,
+reinicio de node 17:30:42-17:30:50Z observado sin causalidad acreditada, la
+correlacion de ~2 s se publica como hipotesis compatible y NO como causa,
+mecanismo de terminacion UNKNOWN (la ausencia de stderr/crash no demuestra
+por si sola una eliminacion externa; sin atribucion a opencode sin prueba
+suficiente). (5) Pendientes: 195 resultados forward pendientes (182x3-351;
+NO son operaciones); 19 filas operativas = 19 observation_id unicos, 0
+duplicados (1 posicion real; 18 rechazos sin posicion); 1 contabilidad de
+funding PENDIENTE. (6) Descartes reconciliados por el campo `motivos`
+(plural): 36 unicas, 45 etiquetas (23+20+2), 9 solapadas, 0 sin motivo:
+coherente, no una inconsistencia; coincide con el panel del monitor.
+
+DECISION (b) - RECUPERACION PARCIAL IMPLEMENTADA (configuracion inicial
+atomica + checkpoints en puntos existentes + replay de alcance acreditado,
+sin defaults ni schedulers nuevos). (1) El piloto persiste
+`config_inicial.json` de forma atomica ANTES de la primera adquisicion (run_id,
+configuracion efectiva del piloto y del adaptador, versiones, hashes internos,
+git_head, `operativo_config_hash` identico al de las filas); (2) publica
+`checkpoints.jsonl` en transiciones de fase y tras un lote operativo ya
+persistido, con estado INICIADA/PARCIAL, alcance acreditado POR PREFIJO (bytes
+cubiertos + SHA-256 de esos bytes; el hash no se publica como definitivo
+mientras el contenido sigue creciendo), fases terminadas y trabajo pendiente;
+un checkpoint NO es un cierre normal (no inventa exit code, no certifica
+recursos, no declara terminada la corrida); (3) el checkpoint conserva la
+instantanea del ledger HTTP con la misma serializacion y cuota del cierre (sin
+doble conteo ni techos ampliados); (4) el replay acredita la configuracion
+desde `config_inicial` con el mismo validador del manifiesto y el alcance por
+prefijo verificado; lo posterior al ultimo checkpoint se CUENTA (contable) y
+queda limitado (`registro_posterior_al_ultimo_checkpoint`); un prefijo roto
+pierde la acreditacion (`integridad_checkpoint_rota`); sin esas fuentes los
+motivos son los de siempre (`manifiesto_ausente` +
+`config_operativa_ausente`) y no se reconstruye nada con defaults; el
+veredicto de una corrida parcial mantiene LIMITACION (3) global
+(`corrida_parcial_sin_cierre_normal`) con denominador completo (acreditado +
+posterior + pendiente declarado). El dataset REAL de la ventana 3 produce
+veredicto, motivos y denominador IDENTICOS a los publicados: su estado
+original no cambia por esta implementacion.
+
+DECISION (c) - ALCANCE Y LIMITES. La aceptacion local (7 pruebas nuevas con
+CLI real, loopback, reloj controlado, almacenamiento temporal e interrupcion
+abrupta sin cierre normal) y las regresiones directas (piloto 45, replay 7)
+acreditan PREPARACION TECNICA, no rentabilidad: este bloque no acredita
+rentabilidad, edge, ejecutabilidad, comparacion por rol, funding ni calidad
+del selector. La leccion del incidente (supervision del piloto independiente
+del anfitrion) sigue registrada SIN implementar: los checkpoints mitigan la
+PERDIDA de evidencia, no la muerte de la corrida. La estimacion de
+almacenamiento no cambia (los ficheros nuevos son metadatos contabilizados
+aparte del tope de captura, como `manifiesto.json`/`resumen.json`), por lo que
+no estaba disparada la revalidacion `--budget-only`; techos intactos. No se
+tocan estrategia, seleccion, entrada, stop, horizonte, capacidad, costes,
+funding, duracion, consultas, `opencode.json`, ficheros ajenos, datasets
+historicos, DBs canonicas, dashboard 3020 ni servicio 8792.

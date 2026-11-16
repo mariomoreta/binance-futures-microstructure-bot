@@ -1,3 +1,67 @@
+## Rectificación y recuperación parcial `piloto/rectificacion-y-recuperacion-20261116` — 2026-11-16
+
+- `DECISIONS_REVIEWED` — AGENTS, WORKFLOW, PRODUCT_GOAL, CURRENT_STATE,
+  TASK_QUEUE, DECISIONS, EXPERIMENTO_OPERATIVO_V2 §10.19, la RECTIFICACIÓN y
+  el INFORME del cierre por incidente (base publicada `e255083`).
+- `NEW_DECISIONS_RECORDED` — autorización local del 2026-11-16 ejecutada con
+  **dos conclusiones separadas**: (A) rectificación del cierre por incidente
+  desde las filas fuente (horas correctas 16:27:47.214Z/16:28:00Z/16:30:00Z;
+  stop de referencia 0,1315545 vs stop efectivo 0,1313535 = `exit_px`, motor
+  sin tocar; recálculo independiente exacto bruto −5,0000 / fees 1,0025 /
+  spread 0,6015 / neto condicionado −6,604 con funding UNKNOWN; incidente
+  reconciliado con última actividad acreditada 17:30:40Z, estimación 17:30:06Z
+  retirada, ventana de muerte (17:30:40Z, ≈18:04Z], mecanismo UNKNOWN y
+  correlación ~2 s como hipótesis compatible sin causalidad; 195 resultados
+  forward pendientes no tratados como operaciones; 19 filas = 19 únicos; 36
+  descartes únicas con 45 etiquetas y 9 solapadas, coherente) y (B)
+  recuperación parcial implementada (`config_inicial.json` atómica antes de
+  adquirir, `checkpoints.jsonl` por prefijo verificado con instantánea del
+  ledger HTTP, replay parcial sin defaults con LIMITACION (3) global y
+  denominador completo). Registro en `DECISIONS.md` (2026-11-16).
+- `FEATURES_IMPLEMENTED` — `scripts/research_pilot.py`
+  (`_persistir_config_inicial`, `_escribir_checkpoint`,
+  `_persistir_ledger_http_snapshot`, `_filas_ledger_http` reutilizado por el
+  cierre, checkpoints en transición captura→settle, lote operativo persistido
+  y transición a espera contable); `scripts/research_operativo_replay.py`
+  (`leer_jsonl_recortado`, `_contar_posterior`, `_posterior_por_oid`,
+  `_cargar_config_inicial`, `_cargar_checkpoint`, modo de recuperación parcial
+  con alcance acreditado, motivos nuevos en `MOTIVOS_RECONSTRUCTIVOS`,
+  `recuperacion` en el informe); `tests/test_recuperacion_parcial_offline.py`
+  (7 pruebas). Sin cambios en estrategia, selección, entrada, stop, horizonte,
+  capacidad, costes, funding, duración ni consultas; sin schedulers ni
+  sondeos nuevos.
+- `FEATURES_VERIFIED` — aceptación local **7 passed** (CLI real, loopback,
+  reloj manual, almacenamiento temporal): configuración persistida antes de
+  adquirir; checkpoint coherente; kill abrupto tras persistir el lote sin
+  cierre normal; recuperación limitada al alcance acreditado (5/5
+  coincidentes, veredicto LIMITACION); registro posterior contado y no usado
+  (`registro_posterior_al_ultimo_checkpoint`); corrupción dentro del prefijo
+  rompe la acreditación (`integridad_checkpoint_rota`) y fuera del corte solo
+  se cuenta (`lineas_ilegibles_posteriores`); sin config ni checkpoints →
+  LIMITACION sin defaults; `config_inicial` corrupta no se acepta.
+  Regresiones directas: `test_research_pilot.py` **45 passed**,
+  `test_operativo_replay_offline.py` **7 passed**; replay del dataset REAL de
+  la ventana 3 con veredicto, motivos y denominador **idénticos** a los
+  publicados. **Ningún gate económico avanza.**
+- `DEFERRED_FEATURES` — cualquier ventana nueva (autorización humana
+  explícita con `run_id` nuevo); supervisión del piloto independiente del
+  anfitrión (lección del incidente: los checkpoints mitigan la pérdida de
+  evidencia, no la muerte de la corrida); vía B (`funding-coverage/v1`);
+  futuros con vencimiento; indicadores, on-chain, GARCH, dashboard,
+  conectores y capas de IA.
+- `BACKLOG_UPDATED` — esta entrada nueva; `piloto/ventana-3-interrumpida-20261115`
+  se conserva intacta (sus errores de narrativa quedan corregidos POR
+  RECTIFICACIÓN, no reescritura). El `run_id`
+  `exp-v2-ventana-3-20261115a` sigue **consumido** y no se reutiliza.
+- `DOCUMENTATION_CONFLICTS` — el INFORME del cierre decía 17:07:47Z /
+  17:08:00Z / 17:36:40Z (conversión UTC errónea) y trataba la terminación
+  externa como casi-causa: la rectificación lo corrige identificadamente
+  conservando el antecedente; `evidencia_incidente.json` llevaba la última
+  escritura como 17:30:06Z (estimación indirecta), retirada frente al mtime
+  acreditado 17:30:40Z. CURRENT_STATE/TASK_QUEUE actualizados con el bloque de
+  cabecera del 2026-11-16; EXPERIMENTO_OPERATIVO_V2 §10.20 anexado; DECISIONS
+  2026-11-16 anexada (NUL preexistente preservado).
+
 ## Ventana 3 ejecutada e interrumpida por incidente `piloto/ventana-3-interrumpida-20261115` — 2026-11-15
 
 - `DECISIONS_REVIEWED` — AGENTS, WORKFLOW, PRODUCT_GOAL, CURRENT_STATE,

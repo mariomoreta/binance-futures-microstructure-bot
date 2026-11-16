@@ -159,6 +159,31 @@ MOTIVOS_RECONSTRUCTIVOS = frozenset({
     "resultado_sin_observacion_apta",
 })
 
+# --- Recuperacion parcial (leccion del incidente de 2026-11-15) --------------
+#
+# Cuando una corrida se interrumpe no hay manifiesto: el cierre normal no se
+# ejecuto. La unica acreditacion disponible es la que el piloto publico
+# ANTES de la interrupcion: ``config_inicial.json`` (configuracion efectiva
+# persistida de forma atomica antes de la primera adquisicion) y
+# ``checkpoints.jsonl`` (cortes parciales con alcance acreditado por
+# prefijo). El replay los usa SIN defaults y SIN reconstruir configuracion
+# historica ausente: si falta cualquiera de las dos fuentes, la limitacion
+# se mantiene explicita y el veredicto sigue siendo LIMITACION.
+
+CONFIG_INICIAL_FICHERO = "config_inicial.json"
+CHECKPOINTS_FICHERO = "checkpoints.jsonl"
+
+MOTIVOS_RECONSTRUCTIVOS = frozenset(set(MOTIVOS_RECONSTRUCTIVOS) | {
+    "config_inicial_corrupto",
+    "config_inicial_hash_roto",
+    "checkpoints_ausentes",
+    "checkpoints_ilegibles",
+    "checkpoint_inutil",
+    "integridad_checkpoint_rota",
+    "registro_posterior_al_ultimo_checkpoint",
+    "corrida_parcial_sin_cierre_normal",
+})
+
 
 class ArchivoCorrupto(Exception):
     """El fichero existe pero no se puede interpretar."""
@@ -200,6 +225,233 @@ def _sha256_archivo(path: Path) -> str:
         for chunk in iter(lambda: fh.read(1 << 20), b""):
             h.update(chunk)
     return h.hexdigest()
+
+
+def leer_jsonl_recortado(path: Path, bytes_max: int) -> List[Dict[str, Any]]:
+    """Lee SOLO los primeros ``bytes_max`` bytes y devuelve las lineas JSON
+    COMPLETAS dentro de ese prefijo (solo lectura).
+
+    Una linea ilegible DENTRO del prefijo produce ArchivoCorrupto
+    (limitacion explicita). La linea incompleta del corte (el registro que
+    seguia escribiendose al hacer el checkpoint) queda fuera: no esta
+    acreditada y no se usa.
+    """
+    datos = Path(path).read_bytes()[:max(0, int(bytes_max))]
+    if not datos.endswith(b"\n"):
+        datos = datos[:datos.rfind(b"\n") + 1]
+    texto = datos.decode("utf-8", errors="replace")
+    rows: List[Dict[str, Any]] = []
+    for n, line in enumerate(texto.splitlines(), 1):
+        line = line.strip()
+        if not line:
+            continue
+        try:
+            fila = json.loads(line)
+        except ValueError as exc:
+            raise ArchivoCorrupto(f"{path.name}:{n}: {exc}") from exc
+        if isinstance(fila, dict):
+            rows.append(fila)
+    return rows
+
+
+def _contar_posterior(path: Path, bytes_corte: int) -> Dict[str, int]:
+    """Conteo CONTABLE del material EXISTENTE despues del corte.
+
+    Solo lectura y tolerante: si algo despues del corte esta corrupto se
+    cuenta como ilegible, nunca se usa ni se acreditado. Devuelve
+    ``lineas_posteriores`` (lineas completas que empiezan en o tras el
+    corte), ``ilegibles_posteriores`` e ``ilegibles_en_el_corte``.
+    """
+    datos = Path(path).read_bytes()
+    posteriores = 0
+    ilegibles_posteriores = 0
+    ilegibles_en_el_corte = 0
+    observaciones_posteriores = 0
+    observaciones_aptas_posteriores = 0
+    resultados_posteriores = 0
+    offset = 0
+    for parte in datos.split(b"\n"):
+        inicio = offset
+        offset += len(parte) + 1
+        if not parte.strip():
+            continue
+        try:
+            fila = json.loads(parte.decode("utf-8", errors="replace"))
+            legible = isinstance(fila, dict)
+        except ValueError:
+            legible = False
+        if inicio >= bytes_corte:
+            if legible:
+                posteriores += 1
+                kind = fila.get("kind")
+                if kind == "observacion":
+                    observaciones_posteriores += 1
+                    if fila.get("apto_para_evaluacion"):
+                        observaciones_aptas_posteriores += 1
+                elif kind == "resultado":
+                    resultados_posteriores += 1
+            else:
+                ilegibles_posteriores += 1
+        elif not legible:
+            ilegibles_en_el_corte += 1
+    return {
+        "lineas_posteriores": posteriores,
+        "ilegibles_posteriores": ilegibles_posteriores,
+        "ilegibles_en_el_corte": ilegibles_en_el_corte,
+        "observaciones_posteriores": observaciones_posteriores,
+        "observaciones_aptas_posteriores": observaciones_aptas_posteriores,
+        "resultados_posteriores": resultados_posteriores,
+    }
+
+
+def _posterior_por_oid(path: Path, bytes_corte: int,
+                       kinds: Tuple[str, ...]) -> Dict[str, Dict[str, Any]]:
+    """Material contable posterior al corte, por observation_id.
+
+    Solo lectura tolerante; NO acredita nada. Devuelve {oid: fila} de las
+    filas posteriores cuyo kind esta en ``kinds``.
+    """
+    datos = Path(path).read_bytes()
+    out: Dict[str, Dict[str, Any]] = {}
+    offset = 0
+    for parte in datos.split(b"\n"):
+        inicio = offset
+        offset += len(parte) + 1
+        if not parte.strip() or inicio < bytes_corte:
+            continue
+        try:
+            fila = json.loads(parte.decode("utf-8", errors="replace"))
+        except ValueError:
+            continue
+        if (isinstance(fila, dict) and fila.get("observation_id")
+                and fila.get("kind") in kinds):
+            out[str(fila["observation_id"])] = fila
+    return out
+
+
+def _cargar_config_inicial(
+    run_dir: Path,
+) -> Tuple[Optional[Dict[str, Any]], List[Dict[str, Any]]]:
+    """Carga y valida ``config_inicial.json`` (solo lectura, sin defaults).
+
+    Valida la estructura y los hashes internos de ``config`` y
+    ``operativo_config``; la validacion de campos de la configuracion
+    operativa se hace despues con el mismo validador del manifiesto. Si el
+    fichero no integra, devuelve None y la limitacion correspondiente: no
+    se reconstruye configuracion alguna con valores por defecto.
+    """
+    limitaciones: List[Dict[str, Any]] = []
+    try:
+        datos = leer_json(run_dir / CONFIG_INICIAL_FICHERO)
+    except ArchivoCorrupto as exc:
+        limitaciones.append({"motivo": "config_inicial_corrupto",
+                             "detalle": str(exc)})
+        return None, limitaciones
+    if (datos.get("kind") != "config_inicial"
+            or not isinstance(datos.get("config"), dict)
+            or not isinstance(datos.get("operativo_config"), dict)):
+        limitaciones.append({
+            "motivo": "config_inicial_corrupto",
+            "detalle": ("config_inicial.json no tiene la estructura "
+                        "esperada (kind/config/operativo_config)"),
+        })
+        return None, limitaciones
+    for campo_hash, campo in (("config_sha256", "config"),
+                              ("operativo_config_sha256",
+                               "operativo_config")):
+        declarado = datos.get(campo_hash)
+        if not declarado:
+            continue
+        real = hashlib.sha256(json.dumps(
+            datos[campo], sort_keys=True, default=str).encode("utf-8")
+        ).hexdigest()
+        if real != declarado:
+            limitaciones.append({
+                "motivo": "config_inicial_hash_roto",
+                "detalle": (f"el hash interno de {campo} no coincide: la "
+                            "configuracion persistida no esta integra"),
+                "campo": campo,
+                "declarado": declarado,
+                "real": real,
+            })
+    if limitaciones:
+        return None, limitaciones
+    return datos, limitaciones
+
+
+def _cargar_checkpoint(
+    run_dir: Path,
+) -> Tuple[Dict[str, Dict[str, Any]], Optional[Dict[str, Any]],
+           List[Dict[str, Any]]]:
+    """Carga ``checkpoints.jsonl`` y valida el ULTIMO checkpoint coherente.
+
+    Coherente = cada fichero del alcance existe, tiene al menos los bytes
+    acreditados y el hash del prefijo coincide con los bytes actuales. Un
+    prefijo roto NO acredita ese fichero (limitacion explicita). Devuelve
+    (alcance validado, ultimo checkpoint, limitaciones).
+    """
+    limitaciones: List[Dict[str, Any]] = []
+    path = run_dir / CHECKPOINTS_FICHERO
+    if not path.exists():
+        limitaciones.append({
+            "motivo": "checkpoints_ausentes",
+            "detalle": ("sin checkpoints no hay alcance acreditado para la "
+                        "recuperacion parcial"),
+        })
+        return {}, None, limitaciones
+    try:
+        entradas = [e for e in leer_jsonl(path)
+                    if e.get("kind") == "checkpoint"]
+    except ArchivoCorrupto as exc:
+        limitaciones.append({"motivo": "checkpoints_ilegibles",
+                             "detalle": str(exc)})
+        return {}, None, limitaciones
+    if not entradas:
+        limitaciones.append({
+            "motivo": "checkpoint_inutil",
+            "detalle": "no hay ninguna entrada checkpoint utilizable",
+        })
+        return {}, None, limitaciones
+    ultimo = entradas[-1]
+    alcance: Dict[str, Dict[str, Any]] = {}
+    declarados = 0
+    for entrada in ultimo.get("alcance") or []:
+        nombre = str(entrada.get("fichero") or "")
+        bytes_n = entrada.get("bytes_cubiertos")
+        sha = entrada.get("sha256_prefijo")
+        if not nombre or not isinstance(bytes_n, int) or not sha:
+            limitaciones.append({
+                "motivo": "checkpoint_inutil",
+                "detalle": f"alcance invalido para {nombre or '?'}",
+            })
+            continue
+        declarados += 1
+        fichero = run_dir / nombre
+        if not fichero.exists() or fichero.stat().st_size < bytes_n:
+            limitaciones.append({
+                "motivo": "integridad_checkpoint_rota",
+                "detalle": (f"{nombre}: el fichero tiene menos bytes que "
+                            "los que el checkpoint acreditaba"),
+                "fichero": nombre,
+            })
+            continue
+        real = hashlib.sha256(fichero.read_bytes()[:bytes_n]).hexdigest()
+        if real != sha:
+            limitaciones.append({
+                "motivo": "integridad_checkpoint_rota",
+                "detalle": (f"{nombre}: los bytes del prefijo acreditado no "
+                            "coinciden con el hash del checkpoint"),
+                "fichero": nombre,
+            })
+            continue
+        alcance[nombre] = dict(entrada, prefijo_verificado=True)
+    if declarados and not alcance:
+        limitaciones.append({
+            "motivo": "checkpoint_inutil",
+            "detalle": ("ningun fichero del alcance del ultimo checkpoint "
+                        "se pudo validar"),
+        })
+    return alcance, ultimo, limitaciones
 
 
 # ---------------------------------------------------------------------------
@@ -472,9 +724,13 @@ def _cargar_consultas(
     obs_todas: Dict[str, Dict[str, Any]],
     run_id_manifestado: Optional[str],
     price_interval: Optional[str],
+    bytes_max: Optional[int] = None,
 ) -> Tuple[Dict[str, List[Dict[str, Any]]], List[Dict[str, Any]],
            Dict[str, List[str]], int]:
     """Lee los cuerpos persistidos y ACREDITA su procedencia antes de usarlos.
+
+    Con ``bytes_max`` (recuperacion parcial) solo se consideran las lineas
+    completas dentro del prefijo acreditado por el checkpoint.
 
     Para cada consulta comprueba: cuerpo y hash; identidad de corrida
     (run_id del manifiesto); observacion correspondiente (existente y apta);
@@ -498,7 +754,8 @@ def _cargar_consultas(
         })
         return por_oid, limitaciones, rechazos, 0
     try:
-        filas = leer_jsonl(path)
+        filas = (leer_jsonl_recortado(path, bytes_max)
+                 if bytes_max is not None else leer_jsonl(path))
     except ArchivoCorrupto as exc:
         limitaciones.append({"motivo": "consultas_klines_corruptas",
                              "detalle": str(exc)})
@@ -650,6 +907,113 @@ def _replay(run_dir: Path) -> Dict[str, Any]:
             "detalle": "sin manifiesto no hay configuracion operativa "
                        "congelada ni hashes de integridad",
         })
+    # -- recuperacion parcial (solo si NO hay manifiesto) ---------------------
+    # Corrida interrumpida sin cierre normal: la unica acreditacion posible
+    # es la publicada ANTES de la interrupcion (config_inicial +
+    # checkpoints). No hay defaults ni reconstruccion de configuracion
+    # historica ausente; si falta alguna fuente, la limitacion se mantiene
+    # explicita y el veredicto es LIMITACION.
+    alcance_checkpoint: Dict[str, Dict[str, Any]] = {}
+    ultimo_checkpoint: Optional[Dict[str, Any]] = None
+    recuperacion: Optional[Dict[str, Any]] = None
+    if not manifest_ok:
+        if (run_dir / CONFIG_INICIAL_FICHERO).exists():
+            datos_ci, lim_ci = _cargar_config_inicial(run_dir)
+            limitaciones.extend(lim_ci)
+            if datos_ci is not None:
+                alcance_checkpoint, ultimo_checkpoint, lim_ck = \
+                    _cargar_checkpoint(run_dir)
+                limitaciones.extend(lim_ck)
+                if ultimo_checkpoint is not None:
+                    manifest = datos_ci
+                    for limite in limitaciones:
+                        if limite.get("motivo") == "manifiesto_ausente":
+                            limite["detalle"] = (
+                                "corrida interrumpida sin cierre normal: "
+                                "sin manifiesto; la configuracion se "
+                                "acredita via config_inicial.json y el "
+                                "alcance via checkpoints.jsonl "
+                                "(recuperacion parcial)")
+                    limitaciones.append({
+                        "motivo": "corrida_parcial_sin_cierre_normal",
+                        "detalle": ("el ultimo checkpoint declara la corrida "
+                                    "%s (fase %s): un checkpoint NO es un "
+                                    "cierre normal, no certifica exit code "
+                                    "ni recursos" % (
+                                        ultimo_checkpoint.get("estado"),
+                                        ultimo_checkpoint.get("fase"))),
+                    })
+                    recuperacion = {
+                        "activa": True,
+                        "modo": "parcial_offline",
+                        "config_inicial": {
+                            "escrito_iso": datos_ci.get("escrito_iso"),
+                            "config_sha256": datos_ci.get("config_sha256"),
+                            "operativo_config_hash":
+                                datos_ci.get("operativo_config_hash"),
+                        },
+                        "ultimo_checkpoint": {
+                            "punto": ultimo_checkpoint.get("punto"),
+                            "instante_iso":
+                                ultimo_checkpoint.get("instante_iso"),
+                            "estado": ultimo_checkpoint.get("estado"),
+                            "fase": ultimo_checkpoint.get("fase"),
+                            "fases_terminadas":
+                                ultimo_checkpoint.get("fases_terminadas"),
+                            "trabajo_pendiente":
+                                ultimo_checkpoint.get("trabajo_pendiente"),
+                        },
+                    }
+    posterior_oids: Dict[str, str] = {}
+    posterior_conteos: Dict[str, Dict[str, int]] = {}
+
+    def _corte(nombre: str) -> Optional[int]:
+        """Bytes acreditados por el checkpoint para un fichero.
+
+        None en modo normal (lectura completa). En recuperacion, un fichero
+        sin cobertura en el ultimo checkpoint devuelve 0: NINGUN byte suyo
+        esta acreditado (lo existente posterior se cuenta, no se usa).
+        """
+        if not recuperacion:
+            return None
+        entrada = alcance_checkpoint.get(nombre)
+        return int(entrada["bytes_cubiertos"]) if entrada else 0
+
+    def _leer_con_alcance(nombre: str, path: Path, kinds: Tuple[str, ...],
+                          ) -> Tuple[List[Dict[str, Any]], bool]:
+        """Lee un registro respetando el alcance acreditado (solo lectura).
+
+        Devuelve (filas usables, existe). En recuperacion el material
+        posterior al corte se CUENTA (contable, no acreditado) y los oids
+        de observaciones aptas/resultados posteriores se registran para el
+        denominador y la comparacion; nunca se usan para reconstruir.
+        """
+        if not path.exists():
+            return [], False
+        corte = _corte(nombre)
+        if corte is None:
+            return leer_jsonl(path), True
+        posterior_conteos[nombre] = _contar_posterior(path, corte)
+        posterior = _posterior_por_oid(path, corte, kinds)
+        if kinds == ("observacion",):
+            # Solo observaciones APTAS entran al denominador comparable.
+            posterior = {oid: fila for oid, fila in posterior.items()
+                         if fila.get("apto_para_evaluacion")}
+        for oid in posterior:
+            posterior_oids.setdefault(
+                oid, "registro_posterior_al_ultimo_checkpoint")
+        if corte <= 0:
+            limitaciones.append({
+                "motivo": "registro_posterior_al_ultimo_checkpoint",
+                "detalle": (f"{nombre} tiene contenido pero el ultimo "
+                            "checkpoint no lo acredita: no se usa"),
+                "fichero": nombre,
+                "lineas_posteriores":
+                    posterior_conteos[nombre]["lineas_posteriores"],
+            })
+            return [], True
+        return leer_jsonl_recortado(path, corte), True
+
     config_piloto = manifest.get("config") or {}
     run_id_manifestado = (manifest.get("run_id")
                           or config_piloto.get("run_id"))
@@ -668,7 +1032,8 @@ def _replay(run_dir: Path) -> Dict[str, Any]:
     observaciones: List[Dict[str, Any]] = []
     if obs_path.exists():
         try:
-            filas = leer_jsonl(obs_path)
+            filas, _ = _leer_con_alcance(
+                "observaciones.jsonl", obs_path, ("observacion",))
         except ArchivoCorrupto as exc:
             limitaciones.append({"motivo": "observaciones_corruptas",
                                  "detalle": str(exc)})
@@ -706,14 +1071,16 @@ def _replay(run_dir: Path) -> Dict[str, Any]:
             ejecucion={}, replay={}, consultas_acreditadas=0,
             consultas_persistidas=0, config_acreditada=False,
             procedencia_acreditada=False,
-            aptas=len(obs_aptas), reconstruidas=0)
+            aptas=len(obs_aptas), reconstruidas=0,
+            recuperacion=recuperacion)
 
     # -- ledger HTTP (vinculo y hash) ---------------------------------------
     ledger: List[Dict[str, Any]] = []
     ledger_path = run_dir / "http_requests.jsonl"
     if ledger_path.exists():
         try:
-            ledger = leer_jsonl(ledger_path)
+            ledger, _ = _leer_con_alcance(
+                "http_requests.jsonl", ledger_path, ())
         except ArchivoCorrupto as exc:
             limitaciones.append({"motivo": "ledger_corrupto",
                                  "detalle": str(exc)})
@@ -731,7 +1098,9 @@ def _replay(run_dir: Path) -> Dict[str, Any]:
     op_path = run_dir / "resultado_operativo.jsonl"
     if op_path.exists():
         try:
-            filas_op = leer_jsonl(op_path)
+            filas_op, _ = _leer_con_alcance(
+                "resultado_operativo.jsonl", op_path,
+                ("resultado_operativo",))
         except ArchivoCorrupto as exc:
             limitaciones.append({"motivo": "resultados_corruptos",
                                  "detalle": str(exc)})
@@ -771,11 +1140,23 @@ def _replay(run_dir: Path) -> Dict[str, Any]:
         })
 
     # -- consultas klines (cuerpos, con procedencia acreditada) ---------------
+    corte_consultas = _corte("consultas_klines.jsonl")
+    if (recuperacion and corte_consultas == 0
+            and (run_dir / "consultas_klines.jsonl").exists()):
+        limitaciones.append({
+            "motivo": "registro_posterior_al_ultimo_checkpoint",
+            "detalle": ("consultas_klines.jsonl tiene contenido pero el "
+                        "ultimo checkpoint no lo acredita: no se usa"),
+            "fichero": "consultas_klines.jsonl",
+            "lineas_posteriores": _contar_posterior(
+                run_dir / "consultas_klines.jsonl", 0)["lineas_posteriores"],
+        })
     consultas, lim_consultas, rechazos, consultas_persistidas = \
         _cargar_consultas(
             run_dir / "consultas_klines.jsonl", ledger, obs_aptas,
             observaciones_todas, run_id_manifestado,
-            config_piloto.get("price_interval"))
+            config_piloto.get("price_interval"),
+            bytes_max=corte_consultas)
     limitaciones.extend(lim_consultas)
     consultas_acreditadas = sum(len(v) for v in consultas.values())
     fuentes["consultas_klines"] = consultas_acreditadas
@@ -788,7 +1169,9 @@ def _replay(run_dir: Path) -> Dict[str, Any]:
     funding_path = run_dir / "funding_adquisicion.jsonl"
     if funding_path.exists():
         try:
-            funding_log = leer_jsonl(funding_path)
+            funding_log, _ = _leer_con_alcance(
+                "funding_adquisicion.jsonl", funding_path,
+                ("funding_adquisicion",))
         except ArchivoCorrupto as exc:
             limitaciones.append({"motivo": "funding_log_corrupto",
                                  "detalle": str(exc)})
@@ -966,9 +1349,14 @@ def _replay(run_dir: Path) -> Dict[str, Any]:
         fila_ej = ejecucion.get(oid)
         fila_rp = replay.get(oid)
         if fila_ej is None:
+            # En recuperacion: si la fila existe PERO es posterior al ultimo
+            # checkpoint, ese es el motivo honesto (no un resultado ausente).
+            motivo_ausencia = "sin_resultado_en_la_ejecucion"
+            if recuperacion and oid in posterior_oids:
+                motivo_ausencia = posterior_oids[oid]
             comparacion.append({
                 "observation_id": oid, "estado": "limitada",
-                "motivo": "sin_resultado_en_la_ejecucion",
+                "motivo": motivo_ausencia,
             })
             continue
         if fila_rp is None:
@@ -1017,6 +1405,48 @@ def _replay(run_dir: Path) -> Dict[str, Any]:
             1 for r in replay.values() if r.get("neto_estado") == "UNKNOWN"),
     }
 
+    # -- recuperacion parcial: alcance validado y denominador completo --------
+    if recuperacion:
+        conteo_obs = posterior_conteos.get("observaciones.jsonl") or {}
+        conteo_op = posterior_conteos.get(
+            "resultado_operativo.jsonl") or {}
+        ya_en_comparacion = {c["observation_id"] for c in comparacion}
+        for oid in sorted(posterior_oids):
+            if oid in ya_en_comparacion:
+                continue
+            comparacion.append({
+                "observation_id": oid, "estado": "limitada",
+                "motivo": posterior_oids[oid],
+                "nota": ("existe despues del ultimo checkpoint; no esta "
+                         "acreditado y no se reconstruye"),
+            })
+        recuperacion["alcance_validado"] = [
+            {k: v for k, v in e.items() if k != "nota"}
+            for e in alcance_checkpoint.values()]
+        recuperacion["denominador"] = {
+            "observaciones_acreditadas_por_checkpoint": len(obs_aptas),
+            "observaciones_posteriores_no_acreditadas":
+                conteo_obs.get("observaciones_aptas_posteriores", 0),
+            "resultados_posteriores_no_acreditados":
+                conteo_op.get("lineas_posteriores", 0),
+            "resultados_forward_posteriores_no_acreditados":
+                conteo_obs.get("resultados_posteriores", 0),
+            "lineas_ilegibles_posteriores": sum(
+                c.get("ilegibles_posteriores", 0)
+                for c in posterior_conteos.values()),
+            "lineas_ilegibles_en_el_corte": sum(
+                c.get("ilegibles_en_el_corte", 0)
+                for c in posterior_conteos.values()),
+            "lineas_posteriores_por_fichero": {
+                nombre: conteo.get("lineas_posteriores", 0)
+                for nombre, conteo in sorted(posterior_conteos.items())},
+            "pendientes_declarados_por_el_checkpoint":
+                (ultimo_checkpoint or {}).get("trabajo_pendiente"),
+            "nota": ("el denominador completo no se reduce: lo acreditado "
+                     "por el checkpoint, lo posterior no acreditado y lo "
+                     "pendiente declarado se reportan por separado"),
+        }
+
     if limitaciones or n_lim:
         # Evidencia indispensable ausente, corrupta o contradictoria, o
         # observaciones sin procedencia acreditada: NO se declara
@@ -1037,7 +1467,8 @@ def _replay(run_dir: Path) -> Dict[str, Any]:
         consultas_persistidas=consultas_persistidas,
         config_acreditada=config_acreditada,
         procedencia_acreditada=(not lim_consultas and bool(ledger)),
-        aptas=len(obs_aptas), reconstruidas=len(replay))
+        aptas=len(obs_aptas), reconstruidas=len(replay),
+        recuperacion=recuperacion)
 
 
 def _informe(
@@ -1059,6 +1490,7 @@ def _informe(
     procedencia_acreditada: bool,
     aptas: int,
     reconstruidas: int,
+    recuperacion: Optional[Dict[str, Any]] = None,
 ) -> Dict[str, Any]:
     """Estructura del informe (unico formato de salida)."""
     n_coinc = sum(1 for c in comparacion if c["estado"] == "coincidente")
@@ -1066,6 +1498,31 @@ def _informe(
     n_lim = sum(1 for c in comparacion if c["estado"] == "limitada")
     reconstructivas = [l for l in limitaciones
                        if l.get("motivo") in MOTIVOS_RECONSTRUCTIVOS]
+    denominador = {
+        "observaciones_aptas": aptas,
+        "observaciones_reconstruidas": reconstruidas,
+        "observaciones_limitadas": n_lim,
+        "observaciones_comparadas": len(comparacion),
+        "consultas_persistidas": consultas_persistidas,
+        "consultas_acreditadas": consultas_acreditadas,
+        "consultas_rechazadas": max(
+            0, consultas_persistidas - consultas_acreditadas),
+        "nota": ("el denominador NUNCA se reduce en silencio: toda "
+                 "observacion apta aparece como coincidente, diferente "
+                 "o limitada"),
+    }
+    if recuperacion:
+        for clave in ("observaciones_acreditadas_por_checkpoint",
+                      "observaciones_posteriores_no_acreditadas",
+                      "resultados_posteriores_no_acreditados",
+                      "resultados_forward_posteriores_no_acreditados",
+                      "lineas_ilegibles_posteriores",
+                      "lineas_ilegibles_en_el_corte",
+                      "lineas_posteriores_por_fichero",
+                      "pendientes_declarados_por_el_checkpoint"):
+            valor = (recuperacion.get("denominador") or {}).get(clave)
+            if valor is not None:
+                denominador[clave] = valor
     return {
         "version": REPLAY_VERSION,
         "run_id": manifest.get("run_id") or config_piloto.get("run_id"),
@@ -1085,19 +1542,8 @@ def _informe(
             "sin_red": True,
             "reutiliza_adaptador_y_motores_existentes": True,
         },
-        "denominador": {
-            "observaciones_aptas": aptas,
-            "observaciones_reconstruidas": reconstruidas,
-            "observaciones_limitadas": n_lim,
-            "observaciones_comparadas": len(comparacion),
-            "consultas_persistidas": consultas_persistidas,
-            "consultas_acreditadas": consultas_acreditadas,
-            "consultas_rechazadas": max(
-                0, consultas_persistidas - consultas_acreditadas),
-            "nota": ("el denominador NUNCA se reduce en silencio: toda "
-                     "observacion apta aparece como coincidente, diferente "
-                     "o limitada"),
-        },
+        "denominador": denominador,
+        "recuperacion": recuperacion,
         "fuentes": fuentes,
         "limitaciones": limitaciones,
         "economia": {

@@ -1,4 +1,48 @@
-# Cola vigente — ventana 3 interrumpida por incidente y cerrada, 2026-11-15
+# Cola vigente — rectificación del cierre por incidente y recuperación parcial probada, 2026-11-16
+
+## Estado (2026-11-16): `ACTIVE_TASK: ninguno` — esperar instrucción del usuario
+
+**Bloque 2026-11-16 (autorización local «RECTIFICACIÓN DEL INCIDENTE Y
+RECUPERACIÓN PARCIAL») — TERMINADO y publicado.** Dos conclusiones separadas:
+
+- **A. Rectificación del incidente histórico:** horas correctas de la entrada
+  (decisión 16:27:47.214Z, fill 16:28:00Z, salida por stop 16:30:00Z), stop de
+  referencia (0,1315545) vs stop efectivo tras el fill (0,1313535 = `exit_px`),
+  recálculo independiente exacto (bruto −5,0000, fees 1,0025, spread/slip
+  0,6015, neto **condicionado** −6,604 con funding UNKNOWN), incidente
+  reconciliado (última actividad acreditada 17:30:40Z, estimación 17:30:06Z
+  retirada, ventana de muerte (17:30:40Z, ≈18:04Z], mecanismo UNKNOWN,
+  correlación de ~2 s = hipótesis compatible, no causalidad), 195 resultados
+  forward pendientes (no operaciones), 19 filas operativas = 19 únicos,
+  descartes reconciliados (36 únicas / 45 etiquetas / 9 solapadas / 0 sin
+  motivo). Evidencia:
+  [RECTIFICACION-20261116](evidence/exp-v2-ventana-3-20261115a-cierre-incidente/RECTIFICACION-20261116.md)
+  + `rectificacion_datos.json` (dataset 12/12 verificado antes y después;
+  antecedentes y hashes conservados intactos).
+- **B. Recuperación parcial (implementada + aceptación local):**
+  `config_inicial.json` atómica antes de la primera adquisición;
+  `checkpoints.jsonl` en transiciones de fase y lote operativo persistido, con
+  alcance acreditado por prefijo (bytes + SHA-256) y instantánea del ledger
+  HTTP con la cuota existente; replay en modo parcial **sin defaults** que
+  reconstruye solo el alcance acreditado, cuenta lo posterior
+  (`registro_posterior_al_ultimo_checkpoint`), rompe acreditación si el prefijo
+  no integra (`integridad_checkpoint_rota`) y mantiene **LIMITACION (3)** global
+  (`corrida_parcial_sin_cierre_normal`) con denominador completo. Aceptación:
+  `tests/test_recuperacion_parcial_offline.py` **7 passed** (CLI real, loopback,
+  reloj manual, kill abrupto sin cierre normal); regresiones
+  `test_research_pilot.py` **45 passed** y `test_operativo_replay_offline.py`
+  **7 passed**; el replay del dataset real de la ventana 3 produce veredicto,
+  motivos y denominador **idénticos** (su estado no cambia).
+
+El `run_id` `exp-v2-ventana-3-20261115a` **sigue consumido**; `ACTIVE_TASK:
+ninguno`. Cualquier ventana nueva requiere autorización humana explícita con
+`run_id` nuevo. La lección del incidente (supervisión del piloto independiente
+del anfitrión) sigue **registrada SIN implementar** — este bloque no la aborda
+y el punto de checkpoints no la sustituye.
+
+---
+
+# Historial — ventana 3 interrumpida por incidente y cerrada, 2026-11-15
 
 **Cierre por incidente (2026-11-15):** la ventana autorizada
 `exp-v2-ventana-3-20261115a` se ejecutó **una sola vez** (SHA

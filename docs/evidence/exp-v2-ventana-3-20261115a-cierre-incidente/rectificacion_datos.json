@@ -1,0 +1,176 @@
+{
+  "run_id": "exp-v2-ventana-3-20261115a",
+  "generado_utc": "2026-11-16T04:27:13Z",
+  "origen": "C:\\proyectos\\binance-futures-data\\exp-v2-ventana-3-20261115a",
+  "hash_origen_verificado": true,
+  "horas_y_stop": {
+    "fuentes": [
+      "resultado_operativo.jsonl (decision_ms/entry_ms/exit_ms)",
+      "campo decision_iso de la propia fila"
+    ],
+    "decision_ms": 1794760067214,
+    "decision_utc": "2026-11-15T16:27:47.214Z",
+    "entry_ms": 1794760080000,
+    "entry_utc": "2026-11-15T16:28:00.000Z",
+    "exit_ms": 1794760200000,
+    "exit_utc": "2026-11-15T16:30:00.000Z",
+    "duracion_en_posicion_s": 120.0,
+    "errores_publicados_corregidos": {
+      "INFORME.md (anterior)": {
+        "decision_decia": "17:07:47Z",
+        "correcto": "2026-11-15T16:27:47.214Z",
+        "entrada_decia": "17:08:00Z",
+        "entrada_correcta": "2026-11-15T16:28:00.000Z",
+        "salida_decia": "17:36:40Z",
+        "salida_correcta": "2026-11-15T16:30:00.000Z",
+        "causa": "conversion UTC erronea del ms epoch en la narrativa (los ms en resumen.json eran correctos)"
+      }
+    }
+  },
+  "stop": {
+    "fuentes": [
+      "resultado_operativo.jsonl (stop_px, entry_px, exit_px)",
+      "src/microstructure_probe/backtest_offline.py (distancia 0,5 % de la configuracion congelada)"
+    ],
+    "stop_de_referencia": 0.13155449999999996,
+    "nota_referencia": "stop derivado del close de referencia previo al fill; conservado tal cual en la fila",
+    "stop_efectivo_tras_fill": 0.13135349999999998,
+    "formula": "entry_px * (1 + 0.005) para SHORT",
+    "exit_px": 0.13135349999999998,
+    "coincidencia": true,
+    "interpretacion": "exit_reason=stop se activo en el stop EFECTIVO tras el fill; el stop de referencia (0,1315545) era la senal previa al fill y no cambio la ejecucion; el motor NO se modifica"
+  },
+  "cuentas": {
+    "fuentes": [
+      "resultado_operativo.jsonl (qty, entry_px, exit_px, fees, spread_slip, gross_pnl, net_pnl)",
+      "backtest_offline.py: fee_bps=5.0, drag 3 bps por lado"
+    ],
+    "formulas": {
+      "valor_entrada": "qty * entry_px",
+      "valor_salida": "qty * exit_px",
+      "bruto_SHORT": "valor_entrada - valor_salida",
+      "fees": "(valor_entrada + valor_salida) * 5/10000",
+      "spread_slip": "(valor_entrada + valor_salida) * 3/10000",
+      "neto_condicionado": "bruto - fees - spread_slip"
+    },
+    "valor_entrada": 1000.0,
+    "valor_salida": 1004.9999999999998,
+    "bruto_recalculado": -4.999999999999773,
+    "bruto_publicado": -4.9999999999997975,
+    "bruto_coincide": true,
+    "fees_recalculado": 1.0024999999999997,
+    "fees_publicado": 1.0025,
+    "fees_coincide": true,
+    "spread_slip_recalculado": 0.6014999999999999,
+    "spread_slip_publicado": 0.6014999999999999,
+    "spread_slip_coincide": true,
+    "neto_condicionado_recalculado": -6.603999999999772,
+    "neto_publicado": -6.603999999999798,
+    "neto_coincide": true,
+    "funding": null,
+    "funding_estado": "UNKNOWN (funding_adquisicion.jsonl vacio; la fase nunca inicio)",
+    "veredicto": "el -6,604 es el resultado CONDICIONADO sin funding; NO es un neto completo y no se presenta como P&L"
+  },
+  "incidente": {
+    "fuentes": [
+      "inventario_completo.json (mtime UTC + SHA-256 por fichero, verificado contra el original)",
+      "evidencia_incidente.json y resumen.json (antecedentes, se conservan)"
+    ],
+    "ultima_actividad_observada": {
+      "valor_acreditado": "2026-11-15T17:30:40Z",
+      "fichero": "estado.json",
+      "nota": "mtime del sistema de ficheros, respaldado por el SHA-256 del inventario"
+    },
+    "estimacion_retirada": {
+      "valor": "2026-11-15T17:30:06Z",
+      "publicado_en": "evidencia_incidente.json",
+      "causa_del_error": "estimacion indirecta (~1957 s antes de una comprobacion) usada como si fuera mtime; el mtime acreditado es 17:30:40Z",
+      "estado": "RETIRADA (la estimacion no sustituye al mtime)"
+    },
+    "primera_ausencia_de_procesos": {
+      "instante": "~18:04Z (consulta CIM Win32_Process de la sesion)",
+      "nota": "la primera consulta en la que el arbol ya no existia; el instante exacto de muerte queda en la ventana (17:30:40Z, ~18:04Z]"
+    },
+    "ventana_de_muerte": "(2026-11-15T17:30:40Z, ~2026-11-15T18:04Z]",
+    "reinicio_componentes_node": {
+      "observado": "procesos node con StartTime 17:30:42-17:30:50Z (consultados ~18:05Z)",
+      "nota": "un lote node previo (17:12Z) NO interrumpio al hijo"
+    },
+    "correlacion_2s": {
+      "estado": "HIPOTESIS COMPATIBLE, NO CAUSALIDAD",
+      "detalle": "la correlacion exacta de ~2 s entre el mtime (17:30:40Z) y el arranque de node (17:30:42Z) se publica como coincidencia observada, sin atribucion causal a opencode"
+    },
+    "mecanismo_de_terminacion": {
+      "estado": "UNKNOWN",
+      "acreditado": [
+        "el arbol de procesos no existe tras el incidente",
+        "sin cierre normal (sin cierre.json/exit_code.txt)",
+        "sin excepcion registrada (stderr 0 B, sin eventos de crash)"
+      ],
+      "no_acreditado": [
+        "eliminacion externa como hecho",
+        "causalidad de opencode/node",
+        "instante exacto de muerte"
+      ]
+    },
+    "rectificacion_de_marco": "la ausencia de stderr y de eventos de crash NO demuestra por si sola una eliminacion externa: solo descarta un crash volcado; quedan compatibles la eliminacion externa y otras causas; causa final UNKNOWN"
+  },
+  "pendientes": {
+    "fuentes": [
+      "observaciones.jsonl (kind=resultado y kind=observacion estado=observada)",
+      "resultado_operativo.jsonl"
+    ],
+    "resultados_forward": {
+      "formula": "aptas * 3_horizontes - resueltos",
+      "aptas": 182,
+      "requeridos": 546,
+      "resueltos": 351,
+      "resueltos_por_horizonte": {
+        "5m": 182,
+        "15m": 150,
+        "60m": 19
+      },
+      "pendientes": 195,
+      "nota": "los 195 pendientes son RESULTADOS FORWARD (resolucion de trayectorias por horizonte), NO operaciones ni posiciones"
+    },
+    "trabajos_operativos": {
+      "filas": 19,
+      "observation_id_unicos": 19,
+      "duplicados": 0,
+      "estados": {
+        "ENTRADA_EJECUTADA|CONDICIONADO_SIN_FUNDING_COMPLETO": 1,
+        "RECHAZADA_CAPACIDAD|UNKNOWN": 18
+      },
+      "nota": "19 filas = 19 decisiones operativas unicas; una sola corresponde a una posicion real abierta y cerrada (la entrada); las 18 rechazos por capacidad no abrieron posicion; NO se convierten filas en posiciones"
+    },
+    "contabilidad": {
+      "entradas_con_contabilidad_pendiente": 1,
+      "motivo": "espera_contable: liquidacion posterior a la salida todavia no observada",
+      "nota": "la contabilidad de funding quedo PENDIENTE (fase no iniciada); funding UNKNOWN"
+    }
+  },
+  "descartes": {
+    "fuentes": [
+      "observaciones.jsonl campo motivos (plural) de las filas kind=observacion estado=descartada",
+      "panel del monitor (~18:02Z, antecedente)"
+    ],
+    "observaciones_descartadas_unicas": 36,
+    "etiquetas_por_motivo": {
+      "dato_obsoleto_flujo": 23,
+      "flujo_ventana_incompleta": 20,
+      "dato_obsoleto_libro": 2
+    },
+    "total_etiquetas": 45,
+    "observaciones_con_motivos_solapados": 9,
+    "filas_realmente_sin_motivo": 0,
+    "filas_sin_motivo_ids": [],
+    "reconciliacion": "45 etiquetas sobre 36 observaciones unicas es coherente: 9 observaciones llevan 2 motivos solapados (27+9x2=45); NO es una inconsistencia",
+    "panel_monitor": {
+      "dato_obsoleto_flujo": 23,
+      "flujo_ventana_incompleta": 20,
+      "dato_obsoleto_libro": 2
+    },
+    "coincide_con_panel": true,
+    "unknown_pendientes": "ninguno (todas las 36 filas llevan motivo acreditado)"
+  }
+}

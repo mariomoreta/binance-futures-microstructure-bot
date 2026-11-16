@@ -1,8 +1,13 @@
 {
-  "origen": "C:\\proyectos\\binance-futures-data\\exp-v2-ventana-3-20261115a-cierre-incidente",
+  "directorio_origen": "C:\\proyectos\\binance-futures-data\\exp-v2-ventana-3-20261115a-cierre-incidente",
+  "nota": "las entradas de los antecedentes (resumen.json, evidencia_incidente.json, replay_informe.json) se conservan intactas; los ficheros nuevos de la rectificacion se anaden sin reescribir los anteriores",
+  "generado_utc": "2026-11-16T04:28:03Z",
   "ficheros": {
     "resumen.json": "5f4f859e757b60188a042ba42a0fc49b8cb69135fd02d99b5234d1f43df8fc32",
     "evidencia_incidente.json": "4db2395e0e39f88d5850cd1e84554318ec9737fe17249f6575c73d73a66c5671",
-    "replay_informe.json": "783b68f510fdd2859aa289e5b12e0ab0b4ed9edccf85937848fe647cd6501b06"
+    "replay_informe.json": "783b68f510fdd2859aa289e5b12e0ab0b4ed9edccf85937848fe647cd6501b06",
+    "RECTIFICACION-20261116.md": "b9d3a5e55a55a56c63a41e65cfc471eb0ea2f002d4ada699b4ec538423e12267",
+    "rectificacion_datos.json": "3d0182400e587cb3d945650628afb4ba089176322e382ab24a77dcf5fa704179",
+    "hashes.json": null
   }
 }
