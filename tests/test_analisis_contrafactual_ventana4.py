@@ -307,3 +307,82 @@ def test_no_neto_completo_acreditado(tmp_path):
     assert res["resultado_usdt_contrafactual"]["neto_completo"]["n"] == 0
     assert res["resultado_usdt_contrafactual"]["funding_completo_n"] == 0
     assert res["resultado_usdt_contrafactual"]["funding_desconocido_n"] == 124
+
+
+# -------------------------------------------------------------- hash obligatorio
+
+def _run_dir_con_config_alterada(tmp_path, modificar):
+    """Copia el run real a temp y aplica `modificar` a config_inicial.json."""
+    destino = tmp_path / "run"
+    shutil.copytree(DATA, destino)
+    cfg_path = destino / "config_inicial.json"
+    with io.open(cfg_path, encoding="utf-8") as f:
+        datos = json.load(f)
+    modificar(datos)
+    with io.open(cfg_path, "w", encoding="utf-8", newline="\n") as f:
+        json.dump(datos, f, ensure_ascii=False, indent=2, sort_keys=True)
+    return destino
+
+
+def test_config_hash_valido_reconstruye(tmp_path):
+    """Hash valido (run real) -> reconstruye sin rechazar."""
+    out_dir = tmp_path / "out"
+    r = _ejecutar_script(DATA, out_dir)
+    assert r.returncode == 0, r.stderr[-2000:]
+    res = _leer_resumen(out_dir)
+    ca = res["config_acreditada"]
+    assert ca["operativo_config_sha256"] == (
+        "d1423709f4d45207cea601f1aad11742c70f7dfdee44ee69a75701fba60be8ed")
+    assert res["denominador"]["reconstruidas"] == 161
+
+
+def _modificar_quitar_hash(datos):
+    datos.pop("operativo_config_sha256", None)
+
+
+def test_config_hash_ausente_rechaza(tmp_path):
+    """Hash ausente -> rechazo antes de reconstruir."""
+    out_dir = tmp_path / "out"
+    r = _ejecutar_script(_run_dir_con_config_alterada(tmp_path, _modificar_quitar_hash), out_dir)
+    assert r.returncode == 3, r.stderr[-2000:]
+    assert "ausente o vacio" in r.stderr
+    assert not (out_dir / "resumen_ejecutivo.json").exists()
+
+
+def _modificar_hash_vacio(datos):
+    datos["operativo_config_sha256"] = ""
+
+
+def test_config_hash_vacio_rechaza(tmp_path):
+    """Hash vacio -> rechazo antes de reconstruir."""
+    out_dir = tmp_path / "out"
+    r = _ejecutar_script(_run_dir_con_config_alterada(tmp_path, _modificar_hash_vacio), out_dir)
+    assert r.returncode == 3, r.stderr[-2000:]
+    assert "ausente o vacio" in r.stderr
+    assert not (out_dir / "resumen_ejecutivo.json").exists()
+
+
+def _modificar_hash_invalido(datos):
+    datos["operativo_config_sha256"] = "no-es-un-sha256-valido"
+
+
+def test_config_hash_invalido_rechaza(tmp_path):
+    """Hash mal formado -> rechazo antes de reconstruir (se trata como discordante)."""
+    out_dir = tmp_path / "out"
+    r = _ejecutar_script(_run_dir_con_config_alterada(tmp_path, _modificar_hash_invalido), out_dir)
+    assert r.returncode == 3, r.stderr[-2000:]
+    assert "hash" in r.stderr.lower()
+    assert not (out_dir / "resumen_ejecutivo.json").exists()
+
+
+def _modificar_hash_discordante(datos):
+    datos["operativo_config_sha256"] = "0" * 64
+
+
+def test_config_hash_discordante_rechaza(tmp_path):
+    """Hash discordante con el calculado -> rechazo antes de reconstruir."""
+    out_dir = tmp_path / "out"
+    r = _ejecutar_script(_run_dir_con_config_alterada(tmp_path, _modificar_hash_discordante), out_dir)
+    assert r.returncode == 3, r.stderr[-2000:]
+    assert "no coincide" in r.stderr
+    assert not (out_dir / "resumen_ejecutivo.json").exists()

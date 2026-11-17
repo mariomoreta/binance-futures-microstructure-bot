@@ -103,11 +103,28 @@ def stop_efectivo_desde_fill(entry_px, direccion, stop_distance_pct):
     return None
 
 
+def _verificar_hash_declarado(declarado, valor, campo):
+    """Valida que el hash declarado coincida con el recalculado.
+
+    El hash es OBLIGATORIO: ausente, vacio o mal formado -> rechazo.
+    Discordante -> rechazo. Nunca se reconstruye sin hash verificado.
+    """
+    if not declarado or not isinstance(declarado, str) or not declarado.strip():
+        raise ValueError(
+            f"configuracion invalida: {campo} ausente o vacio "
+            "(hash obligatorio no presente)")
+    hash_calculado = sha256_json(valor)
+    if hash_calculado != declarado:
+        raise ValueError(
+            f"configuracion invalida: hash de {campo} no coincide "
+            f"(declarado {declarado}, calculado {hash_calculado})")
+
+
 def cargar_config_operativa(run_dir):
     """Carga y valida la configuracion persistida (config_inicial.json).
 
-    Nunca usa OperativoConfig() por defecto. Valida el hash de
-    operativo_config contra operativo_config_sha256.
+    Nunca usa OperativoConfig() por defecto. Valida los hashes de
+    config y operativo_config contra sus campos sha256, ambos OBLIGATORIOS.
     Devuelve (OperativoConfig, info_config) o lanza ValueError.
     """
     cfg_path = run_dir / "config_inicial.json"
@@ -116,16 +133,18 @@ def cargar_config_operativa(run_dir):
             "configuracion ausente: config_inicial.json no existe en el run-dir")
     with io.open(cfg_path, encoding="utf-8") as f:
         datos = json.load(f)
+    if not isinstance(datos, dict):
+        raise ValueError("configuracion invalida: config_inicial.json no es un objeto")
+    config = datos.get("config")
     operativo_config = datos.get("operativo_config")
+    if not isinstance(config, dict):
+        raise ValueError("configuracion invalida: config ausente")
     if not isinstance(operativo_config, dict):
         raise ValueError("configuracion invalida: operativo_config ausente")
-    hash_declarado = datos.get("operativo_config_sha256")
-    if hash_declarado:
-        hash_calculado = sha256_json(operativo_config)
-        if hash_calculado != hash_declarado:
-            raise ValueError(
-                "configuracion invalida: hash de operativo_config no coincide "
-                f"(declarado {hash_declarado}, calculado {hash_calculado})")
+    # Hashes OBLIGATORIOS: ausente, vacio o discordante -> rechazo.
+    _verificar_hash_declarado(datos.get("config_sha256"), config, "config")
+    _verificar_hash_declarado(datos.get("operativo_config_sha256"),
+                              operativo_config, "operativo_config")
     faltantes = [k for k in CONFIG_FIELDS if k not in operativo_config]
     if faltantes:
         raise ValueError(
@@ -135,7 +154,7 @@ def cargar_config_operativa(run_dir):
     cfg = OperativoConfig(**valores)
     info = {
         "config_sha256": datos.get("config_sha256"),
-        "operativo_config_sha256": hash_declarado,
+        "operativo_config_sha256": datos.get("operativo_config_sha256"),
         "operativo_config_hash": datos.get("operativo_config_hash"),
         "git_head": datos.get("git_head"),
         "run_id": datos.get("run_id"),

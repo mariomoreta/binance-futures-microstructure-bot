@@ -1,3 +1,52 @@
+# Cola vigente — contraste flujo/profundidad cerrado, 2026-11-16
+
+## Estado (2026-11-16 madrugada): `ACTIVE_TASK: ninguno` — esperar instruccion del usuario
+
+**Bloque 2026-11-16 madrugada (autorizacion «INVESTIGACION OFFLINE DE LA SENAL»)
+— TERMINADO.** Contraste exploratorio flujo/profundidad vs continuacion/reversion
+sobre `exp-v2-ventana-4-20261116a` (base `7b658e6`, sin mercado). Dataset
+verificado contra manifiesto 10/10 antes y despues; no modificado.
+
+**Correccion del hash:** `operativo_config_sha256` y `config_sha256` ahora son
+OBLIGATORIOS en `scripts/analisis_contrafactual_ventana4.py`: ausente, vacio,
+mal formado o distinto del calculado -> rechazo explicito antes de reconstruir.
+Se adicionaron 5 pruebas focalizadas (hash valido, ausente, vacio, invalido,
+discordante).
+
+**Contraste principal (definiciones fijadas antes de los agregados):**
+ratio = (buy_notional - sell_notional) / (bid_notional_top20 +
+ask_notional_top20); ratio_alienado = signo(move_24h_pct) * ratio; horizonte 60
+min causal; precio inicial = ref_close en T; precio final = close conocida en
+T + 60 min; retorno alineado = signo(move_24h_pct) * retorno. Usa las 161
+observaciones aptas (no solo las 124 operaciones contrafactuales).
+
+**Resultado:** regla sencilla (signo 24h) = 65.8% de continuación (106/161).
+Flujo a favor del movimiento previo = 61.6% de continuación (45/73). Flujo
+contrario = 69.3% de continuación (61/88). El flujo a favor NO distingue mejor
+continuación que la regla sencilla; el flujo contrario muestra ligeramente más
+continuación. Desgloses por rol (candidate 69.2%, comparator 51.6%),
+direccion (LONG 67.8%, SHORT 63.5%) y ciclo (muy variable, 0%-100%,
+dependencia temporal). 25 símbolos únicos, 19 repetidos hasta 12 veces
+(escenarios no independientes).
+
+**Decision:** resultado débil, contradictorio o concentrado. No se incorpora el
+ratio a la estrategia productiva. No se optimizan umbrales ni se cambian
+entradas, stops ni capacidad.
+
+**Evidencia:** `docs/evidence/exp-v2-ventana-4-20261116a-analisis-contrafactual/CONTRASTE-FLUJO-PROFUNDIDAD.md`;
+derivados fuera de Git en
+`C:\proyectos\binance-futures-data\exp-v2-ventana-4-20261116a-contraste-flujo-profundidad-20261116-v2\`;
+`tests/test_contraste_flujo_profundidad.py` 6 passed; regresiones
+`test_analisis_contrafactual_ventana4.py` 16 passed,
+`test_operativo_replay_offline.py` 7 passed.
+
+El `run_id` `exp-v2-ventana-4-20261116a` queda **consumido**. `ACTIVE_TASK:
+ninguno`; cualquier ventana nueva requiere autorizacion humana explicita con
+`run_id` nuevo. La leccion del incidente de la ventana 3 sigue registrada
+SIN implementar.
+
+---
+
 # Cola vigente — analisis offline ventana 4 corregido y cerrado, 2026-11-16
 
 ## Estado (2026-11-16 noche): `ACTIVE_TASK: ninguno` — esperar instruccion del usuario

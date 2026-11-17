@@ -4431,4 +4431,49 @@ de rentabilidad ni de ventaja candidato/comparador.
 cualquier ventana nueva requiere autorizacion humana explicita con `run_id`
 nuevo. No se abre otra ventana ni ronda de auditorias en este bloque.
 
+
+## piloto/contraste-flujo-profundidad-ventana4-20261116 (2026-11-16, base `7b658e6`, corregido 2026-11-16)
+
+**1. Title:** Contraste exploratorio flujo/profundidad vs continuacion/reversion de
+la ventana 4 `exp-v2-ventana-4-20261116a`, exclusivamente offline y sin mercado.
+
+**2. Approval status:** AUTORIZADO por el bloque humano del 2026-11-16
+madrugada ("INVESTIGACION OFFLINE DE LA SENAL, SIN MERCADO"). Contrastes
+exploratorios sobre datos existentes; sin Binance, consultas publicas, capturas,
+ordenes, relanzamientos, ventanas nuevas ni cambios en la estrategia productiva.
+Dataset fuente verificado contra manifiesto 10/10 antes y despues; no modificado.
+
+**3. Implementation status:** IMPLEMENTADO (analisis offline, codigo minimo
+indispensable reutilizando motores existentes). `scripts/contraste_flujo_profundidad.py`
+(nuevo): contraste principal con CLI `--run-dir`/`--out-dir` (sin rutas fijas en
+codigo), sobre cuerpos originales de `consultas_klines.jsonl` y
+`observaciones.jsonl`; sin rellenar velas ni calendarios.
+`scripts/desgloses_contraste.py` (nuevo): desgloses por rol, direccion, ciclo,
+concentracion de simbolos y mapa de campos. `tests/test_contraste_flujo_profundidad.py`
+(nuevo): 6 pruebas (denominador 161, grupos suman 161 sin ceros artificiales,
+ratio denominador finito > 0, horizonte 60 min resoluble, regla sencilla
+106/161, descartes de stop no desaparecen). Sin cambios a motores ni reglas
+economicas.
+
+**4. Evaluation status:** 6 passed (nuevo); `test_analisis_contrafactual_ventana4.py`
+16 passed; `test_operativo_replay_offline.py` 7 passed (regresion, sin impacto).
+Resultado: regla sencilla 65.8% de continuación; flujo a favor 61.6%; flujo
+contrario 69.3%. El flujo a favor NO distingue mejor continuación; resultado
+débil, contradictorio o concentrado. No se incorpora el ratio a la estrategia
+productiva.
+
+**5. Evidence:** `docs/evidence/exp-v2-ventana-4-20261116a-analisis-contrafactual/CONTRASTE-FLUJO-PROFUNDIDAD.md`;
+derivados fuera de Git en
+`C:\proyectos\binance-futures-data\exp-v2-ventana-4-20261116a-contraste-flujo-profundidad-20261116-v2\`;
+SHA base `7b658e6b466a0ce24d018488d118dc33d08697f8`.
+
+**6. Verdict:** La relación flujo/profundidad no distingue continuación de
+reversión mejor que asumir continuación por el signo del movimiento de 24
+horas en esta muestra de una hora (alta variación por ciclo y símbolo,
+dependencia temporal). No se incorpora el ratio a la estrategia productiva.
+
+**7. Next step:** el `run_id` `exp-v2-ventana-4-20261116a` queda consumido;
+cualquier ventana nueva requiere autorizacion humana explicita con `run_id`
+nuevo. No se abre otra ventana ni ronda de auditorias en este bloque.
+
 --- total lineas ---
