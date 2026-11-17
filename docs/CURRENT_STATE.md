@@ -242,6 +242,26 @@ regresiones `test_analisis_contrafactual_ventana4.py` (16 passed),
 |---|---|
 | SHA base | `4a7df47e89dbd1015ad89a6f1889ebf48d156c59` (local == remoto) |
 | SHA de ejecucion del analisis | commit `b7a1e08` (detector SECUENCIA-PRESION-V1) |
+| SHA de cierre de persistencia y cobertura | SHA de este bloque (commit selectivo pendiente) |
 | Evidencia detector | `docs/evidence/exp-v2-ventana-4-20261116a-secuencia-presion-v1/SECUENCIA-PRESION-V1.md` |
 | Dataset original | intacto, solo lectura, 10/10 ficheros verificados contra manifiesto antes y despues |
 | Lo que NO acredita | rentabilidad, edge, mejora predictiva del detector, utilidad operativa (una hora de captura, dependencia temporal, simbolos repetidos) |
+
+## Blque 2026-11-16 (cierre de persistencia y cobertura SECUENCIA-PRESION-V1)
+
+**Autorizacion:** completar el cierre del detector SECUENCIA-PRESION-V1 (persistencia, extractor real de research.db, tabla de cobertura con etapas separadas). Autorizado exclusivamente: completar los puntos pendientes y sus pruebas locales. NO autorizado: Binance, consultas publicas, capturas, ordenes, relanzamientos, cambios del patron, estrategia productiva, infraestructura ni otra auditoria general.
+
+**Extractor real de research.db:** `scripts/extraer_cobertura_research_db.py` (CLI --db/--salida, SQLite modo=ro, cero red, cero modificacion a la base). Publica consultas exactas y mapeo de columnas (buy_notional/sell_notional en flujo; bid20_mean/ask20_mean en libro como profundidad contraria; price_close como precio_base). Aceptacion: ejecutado sobre SQLite temporal representativo (3 intervalos contiguos, 1 sin contraparte, 1 hueco, 1 ventana parcial, disponibilidad desconocida, precio ausente) y sobre research.db en modo solo lectura; hashes de originales verificados antes y despues (no modificados). Si el resultado final es cero ternas evaluables, es valido cuando la cadena de exclusiones lo demuestra.
+
+**Tabla de cobertura con etapas separadas:**
+Poblacion A (observaciones del piloto): totales=196, aptas=161, descartadas=35, simbolos=43.
+Poblacion B (agregados temporales): flujo=1265 filas, libro=1197 filas, flujo_10s=6633 filas; claves unicas flujo=1265, libro=1197; parejas libro/flujo=1190; ventanas temporalmente completas: flujo=1265, libro=1197; disponibilidad acreditada=flujo 1265/libro 1197, desconocida=0; integridad acreditada: flujo data_quality OK=1188 (77 no-OK), libro degraded=0/crossed=0 (1014 OK, 183 no-OK); cobertura de precio: disponible=1265, ausente=0. Ternas contiguas: 1107 (todas ventanas flujo) → 1032 (solo parejas) → 501 (con integridad OK) → 501 (con precio). Resultado final: 0 ternas evaluables cuando la cadena de exclusiones lo demuestra (exclusiones trazables por requisito con campos y ejemplos verificables).
+
+**Pruebas de aceptacion:** `tests/test_secuencia_presion_v1.py` — 18 passed (incluye DATOS_INSUFICIENTES persistido para salida vacia sin terna contigua, SIN_PATRON vs DATOS_INSUFICIENTEN distinguidos, CLI real, idempotencia, conflictos de identidad, dos simbolos no mezclan historias, ternas sucesivas).
+
+| | |
+|---|---|
+| SHA de cierre | Pendiente (commit selectivo + push normal + verifica SHA remoto) |
+| Evidencia extractor | scripts/extraer_cobertura_research_db.py + tests/test_secuencia_presion_v1.py |
+| Tabla de cobertura | scripts/extraer_cobertura_research_db.py + consulta directa a research.db (modo ro) |
+| opencode.json | Conservado, no tocado, no commitado |

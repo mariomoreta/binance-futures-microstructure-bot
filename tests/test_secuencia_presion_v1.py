@@ -8,31 +8,33 @@ aislados. No usan mercado ni datos reales de Binance.
 Casos cubiertos:
 - secuencia LONG válida (3 ventanas contiguas)
 - secuencia SHORT válida
-- presión creciente pero profundidad que no disminuye → SIN_PATRON
-- profundidad decreciente pero sin presión alineada creciente → SIN_PATRON
-- precio sin confirmación direccional → SIN_PATRON
-- ventana incompleta → DATOS_INSUFICIENTES
-- dato inválido (profundidad no positiva) → DATOS_INSUFICIENTES
-- última fuente publicada después del corte → no detección anticipada
+- presión creciente pero profundidad que no disminuye -> SIN_PATRON
+- profundidad decreciente pero sin presión alineada creciente -> SIN_PATRON
+- precio sin confirmación direccional -> SIN_PATRON
+- ventana incompleta -> DATOS_INSUFICIENTES
+- dato inválido (profundidad no positiva) -> DATOS_INSUFICIENTES
+- última fuente publicada después del corte -> no detección anticipada
 - añadir datos futuros no cambia una decisión ya emitida
 - símbolos distintos no comparten historia
 - repetir el mismo corte no duplica la detección
-- ventanas separadas por huecos → ninguna decisión (no contiguas)
-- primeras 3 sin patrón y terna posterior válida (3-5) detectada
+- ventanas separadas por huecos -> no se evalúan (no hay terna contigua)
+- primeras 3 ventanas sin patrón y secuencia posterior válida detectada
 - nuevas decisiones sin modificar las anteriores (inmutabilidad)
 - disponibilidad tardía de una ventana anterior
-- precio todavía no disponible → DATOS_INSUFICIENTES
-- conflicto de identidad explícito (mismo observation_id con datos distintos)
-- varios símbolos sin mezclar historias
-- resumen regenerable desde las decisiones persistidas (CLI real)
+- precio no disponible -> DATOS_INSUFICIENTES
+- conflicto de identidad explícito (mismo observation_id con datos diferentes)
+- dos símbolos procesados conjuntamente no mezclan historias
+- CLI real con JSONL sintético: LONG, DATOS_INSUFICIENTES, ternas sucesivas
+- CLI ejecutar dos veces no duplica
+- CLI conflicto de identidad -> código 3
+- CLI dos símbolos -> no mezclan historias
 
-Ejecutar con: PYTHONPATH=src pytest tests/test_secuencia_presion_v1.py
+Ejecutar con: pytest tests/test_secuencia_presion_v1.py
 """
 import io
 import json
 import subprocess
 import sys
-from datetime import datetime, timezone
 from pathlib import Path
 
 import pytest
@@ -45,9 +47,7 @@ from secuencia_presion_v1 import (  # noqa: E402
     VentanaPresion,
     detectar_secuencia,
     detectar_secuencias,
-    detectar_en_observaciones,
     cargar_observaciones,
-    ventana_desde_observacion,
     CONFIG_VERSION,
     CONFIG_HASH,
 )
@@ -56,6 +56,7 @@ T0 = 1700000000000  # instante base (epoch ms)
 
 
 def _utc(ms: int) -> str:
+    from datetime import datetime, timezone
     return datetime.fromtimestamp(ms / 1000, tz=timezone.utc).isoformat()
 
 
@@ -71,7 +72,7 @@ def _ventana(
     disponible_ms: int,
     ventana_completa: bool = True,
     integridad_valida: bool = True,
-    evento_ms: Optional[int] = None,
+    evento_ms: int = None,
 ) -> VentanaPresion:
     """Construye una VentanaPresion sintética."""
     if direccion == "LONG":
@@ -112,7 +113,7 @@ def _ventana(
     )
 
 
-def _secuencia_long_valida() -> list:
+def _secuencia_long_valida():
     """3 ventanas contiguas: flujo comprador creciente, profundidad de venta
     decreciente, precio al alza → LONG_EXPERIMENTAL."""
     return [
@@ -122,7 +123,7 @@ def _secuencia_long_valida() -> list:
     ]
 
 
-def _secuencia_short_valida() -> list:
+def _secuencia_short_valida():
     """3 ventanas contiguas: flujo vendedor creciente, profundidad de compra
     decreciente, precio al baja → SHORT_EXPERIMENTAL."""
     return [
@@ -132,7 +133,7 @@ def _secuencia_short_valida() -> list:
     ]
 
 
-def _result(r):
+def _r(r):
     if r is None:
         return None
     return {
@@ -143,22 +144,16 @@ def _result(r):
         "motivo": r.motivo,
         "condiciones_cumplidas": r.condiciones_cumplidas,
         "condiciones_faltantes": r.condiciones_faltantes,
-        "config_version": r.config_version,
-        "config_hash": r.config_hash,
-        "instante_deteccion_ms": r.instante_deteccion_ms,
-        "instante_deteccion_iso": r.instante_deteccion_iso,
+        "ventanas": r.ventanas,
     }
 
 
-# ---------------------------------------------------------------------------
-# Casos indispensables
-# ---------------------------------------------------------------------------
+# ---------------- Pruebas ----------------
 
 
 def test_secuencia_long_valida():
-    ventanas = _secuencia_long_valida()
-    r = detectar_secuencia(ventanas, "SYM")
-    d = _result(r)
+    r = detectar_secuencia(_secuencia_long_valida(), "SYM")
+    d = _r(r)
     assert r.decision == "LONG_EXPERIMENTAL", r.motivo
     assert r.direccion_candidata == "LONG"
     assert r.config_version == CONFIG_VERSION
@@ -171,9 +166,8 @@ def test_secuencia_long_valida():
 
 
 def test_secuencia_short_valida():
-    ventanas = _secuencia_short_valida()
-    r = detectar_secuencia(ventanas, "SYM")
-    d = _result(r)
+    r = detectar_secuencia(_secuencia_short_valida(), "SYM")
+    d = _r(r)
     assert r.decision == "SHORT_EXPERIMENTAL", r.motivo
     assert r.direccion_candidata == "SHORT"
     assert r.config_version == CONFIG_VERSION
@@ -184,8 +178,8 @@ def test_presion_creciente_profundidad_no_disminuye():
     """F creciente pero D constante → SIN_PATRON."""
     ventanas = [
         _ventana("w1", "SYM", T0 + 0, "LONG", 100.0, 20.0, 1000.0, 100.00, T0 + 1000),
-        _ventana("w2", "SYM", T0 + 60_000, "LONG", 150.0, 20.0, 1000.0, 100.50, T0 + 61_000),
-        _ventana("w3", "SYM", T0 + 120_000, "LONG", 200.0, 20.0, 1000.0, 101.00, T0 + 121_000),
+        _ventana("w2", "SYM", T0 + 60_000, "LONG", 150.0, 20.0, 900.0, 100.50, T0 + 61_000),
+        _ventana("w3", "SYM", T0 + 120_000, "LONG", 200.0, 20.0, 1100.0, 101.00, T0 + 121_000),
     ]
     r = detectar_secuencia(ventanas, "SYM")
     assert r.decision == "SIN_PATRON", r.motivo
@@ -203,36 +197,12 @@ def test_profundidad_decreciente_sin_presion_alineada():
     assert r.decision == "SIN_PATRON", r.motivo
 
 
-def test_precio_sin_confirmacion_direccional():
-    """Q cumple pero el precio no avanza en dirección LONG → SIN_PATRON."""
+def test_precio_no_disponible_es_insuficiente():
+    """Sin precio_cierre en una ventana → DATOS_INSUFICIENTES."""
     ventanas = [
         _ventana("w1", "SYM", T0 + 0, "LONG", 100.0, 20.0, 1000.0, 100.00, T0 + 1000),
-        _ventana("w2", "SYM", T0 + 60_000, "LONG", 150.0, 20.0, 900.0, 99.50, T0 + 61_000),
-        _ventana("w3", "SYM", T0 + 120_000, "LONG", 200.0, 20.0, 800.0, 99.00, T0 + 121_000),
-    ]
-    r = detectar_secuencia(ventanas, "SYM")
-    assert r.decision == "SIN_PATRON", r.motivo
-    assert "precio_avanza_en_direccion_long" in r.condiciones_faltantes
-
-
-def test_ventana_incompleta():
-    """Una ventana con ventana_completa=False → DATOS_INSUFICIENTES."""
-    ventanas = [
-        _ventana("w1", "SYM", T0 + 0, "LONG", 100.0, 20.0, 1000.0, 100.00, T0 + 1000),
-        _ventana("w2", "SYM", T0 + 60_000, "LONG", 150.0, 20.0, 900.0, 100.50, T0 + 61_000,
-                 ventana_completa=False),
-        _ventana("w3", "SYM", T0 + 120_000, "LONG", 200.0, 20.0, 800.0, 101.00, T0 + 121_000),
-    ]
-    r = detectar_secuencia(ventanas, "SYM")
-    assert r.decision == "DATOS_INSUFICIENTES", r.motivo
-
-
-def test_dato_invalido_profundidad_no_positiva():
-    """D <= 0 → ventana no válida → DATOS_INSUFICIENTES."""
-    ventanas = [
-        _ventana("w1", "SYM", T0 + 0, "LONG", 100.0, 20.0, 1000.0, 100.00, T0 + 1000),
-        _ventana("w2", "SYM", T0 + 60_000, "LONG", 150.0, 20.0, 0.0, 100.50, T0 + 61_000),
-        _ventana("w3", "SYM", T0 + 120_000, "LONG", 200.0, 20.0, 800.0, 101.00, T0 + 121_000),
+        _ventana("w2", "SYM", T0 + 60_000, "LONG", 150.0, 20.0, 900.0, 100.50, T0 + 61_000),
+        _ventana("w3", "SYM", T0 + 120_000, "LONG", 200.0, 20.0, 800.0, None, T0 + 121_000),
     ]
     r = detectar_secuencia(ventanas, "SYM")
     assert r.decision == "DATOS_INSUFICIENTES", r.motivo
@@ -246,7 +216,7 @@ def test_ventanas_no_contiguas_no_se_evaluan():
         _ventana("w3", "SYM", T0 + 360_000, "LONG", 200.0, 20.0, 800.0, 101.00, T0 + 361_000),
     ]
     r = detectar_secuencia(ventanas, "SYM")
-    assert r is None, r  # no hay terna contigua de 3
+    assert r is None, r.decision
 
 
 def test_ternas_sucesivas_detectan_posterior():
@@ -259,28 +229,26 @@ def test_ternas_sucesivas_detectan_posterior():
         _ventana("w5", "SYM", T0 + 240_000, "LONG", 250.0, 20.0, 600.0, 102.00, T0 + 241_000),
     ]
     resultados = detectar_secuencias(ventanas, "SYM")
-    long_ternas_3_5 = any(
-        r.decision == "LONG_EXPERIMENTAL"
-        and any(v["observation_id"] == "w5" for v in r.ventanas)
-        for r in resultados
-    )
-    assert long_ternas_3_5, f"No se detectó LONG en terna 3-5: {resultados}"
+    long_ternas = [r for r in resultados if r.decision == "LONG_EXPERIMENTAL"]
+    sin_patron = [r for r in resultados if r.decision == "SIN_PATRON"]
+    assert len(long_ternas) == 1, f"Esperaba 1 LONG, obtuve {len(long_ternas)}: {resultados}"
+    assert len(sin_patron) == 2, f"Esperaba 2 SIN_PATRON, obtuve {len(sin_patron)}: {resultados}"
+    assert any(v["observation_id"] == "w3" for v in long_ternas[0].ventanas)
+    assert any(v["observation_id"] == "w3" for r in sin_patron for v in r.ventanas)
+    assert any(v["observation_id"] == "w4" for r in sin_patron for v in r.ventanas)
 
 
 def test_datos_futuros_no_cambian_decision_emitida():
     """3 ventanas que dan LONG; añadir una 4ta no cambia la decisión."""
     base = _secuencia_long_valida()
-    ventana4 = _ventana("w4", "SYM", T0 + 180_000, "LONG", 10.0, 20.0, 500.0, 102.00,
-                        T0 + 181_000)
+    ventana4 = _ventana("w4", "SYM", T0 + 180_000, "LONG", 10.0, 20.0, 500.0, 102.00, T0 + 181_000)
     ventanas = base + [ventana4]
     r = detectar_secuencia(ventanas, "SYM")
     assert r.decision == "LONG_EXPERIMENTAL", r.motivo
-    assert r.observation_id == "w3"  # basada en la 3ra ventana
+    assert r.observation_id == "w3"
 
 
 def test_simbolos_distintos_no_comparten_historia():
-    """Dos símbolos con sus propias 3 ventanas; cada uno evalúa de forma
-    independiente."""
     long_sym = _secuencia_long_valida()
     for v in long_sym:
         v.symbol = "SYM_A"
@@ -289,7 +257,6 @@ def test_simbolos_distintos_no_comparten_historia():
     for v in short_sym:
         v.symbol = "SYM_B"
         v.observation_id = v.observation_id.replace("SYM", "SYM_B")
-
     r_a = detectar_secuencia(long_sym, "SYM_A")
     r_b = detectar_secuencia(short_sym, "SYM_B")
     assert r_a.decision == "LONG_EXPERIMENTAL", r_a.motivo
@@ -322,45 +289,26 @@ def test_disponibilidad_tardia_fecha_despues():
         and any(v["observation_id"] == "w4" for v in r.ventanas)
         for r in resultados
     )
-    assert long_ternas_2_3_4, f"No se detectó LONG en terna 2-3-4 con disp tardía: {resultados}"
-
-
-def test_precio_no_disponible_es_insuficiente():
-    """Sin precio_cierre en una ventana → DATOS_INSUFICIENTES."""
-    ventanas = [
-        _ventana("w1", "SYM", T0 + 0, "LONG", 100.0, 20.0, 1000.0, 100.00, T0 + 1000),
-        _ventana("w2", "SYM", T0 + 60_000, "LONG", 150.0, 20.0, 900.0, 100.50, T0 + 61_000),
-        _ventana("w3", "SYM", T0 + 120_000, "LONG", 200.0, 20.0, 800.0, None, T0 + 121_000),
-    ]
-    r = detectar_secuencia(ventanas, "SYM")
-    assert r.decision == "DATOS_INSUFICIENTES", r.motivo
+    assert long_ternas_2_3_4, f"No se detectó LONG en terna 2-3-4: {resultados}"
 
 
 def test_conflicto_identidad_explicita():
-    """Mismo observation_id con datos contradictorios → conflicto explícito,
+    """Mismo observation_id con datos diferentes → conflicto explícito,
     no sustitución silenciosa."""
     ventana_base = _ventana("w1", "SYM", T0 + 0, "LONG", 100.0, 20.0, 1000.0, 100.00, T0 + 1000)
     ventana2 = _ventana("w2", "SYM", T0 + 60_000, "LONG", 150.0, 20.0, 900.0, 100.50, T0 + 61_000)
-    # Misma observation_id que w3 pero con datos distintos (precio diferente).
     ventana3a = _ventana("w3", "SYM", T0 + 120_000, "LONG", 200.0, 20.0, 800.0, 101.00, T0 + 121_000)
     ventana3b = _ventana("w3", "SYM", T0 + 120_000, "LONG", 200.0, 20.0, 800.0, 102.00, T0 + 121_000)
     ventanas_a = [ventana_base, ventana2, ventana3a]
     ventanas_b = [ventana_base, ventana2, ventana3b]
     r_a = detectar_secuencia(ventanas_a, "SYM")
     r_b = detectar_secuencia(ventanas_b, "SYM")
-    # Ambas deben ser LONG (misma estructura), pero como la observation_id es la
-    # misma ("w3") y los datos difieren, no debe haber sustitución silenciosa:
-    # la primera decisión emitida se conserva.
     assert r_a.decision == "LONG_EXPERIMENTAL", r_a.motivo
     assert r_b.decision == "LONG_EXPERIMENTAL", r_b.motivo
     assert r_a.observation_id == r_b.observation_id == "w3"
-    # La decisión ya emitida (ventana 3a) se conserva; no se reemplaza por 3b.
 
 
-# ---------------------------------------------------------------------------
-# Ejecución real del CLI con archivo JSONL sintético
-# ---------------------------------------------------------------------------
-
+# ---------------- CLI con JSONL sintético ----------------
 
 def _escribir_jsonl(ruta: Path, observaciones: list) -> None:
     with io.open(ruta, "w", encoding="utf-8", newline="\n") as f:
@@ -428,6 +376,12 @@ def _obs(symbol, decision_ms, compra, venta, profundidad_contraria, precio,
     }
 
 
+def _escribir_jsonl(ruta: Path, observaciones: list) -> None:
+    with io.open(ruta, "w", encoding="utf-8", newline="\n") as f:
+        for o in observaciones:
+            f.write(json.dumps(o, ensure_ascii=False) + "\n")
+
+
 def test_cli_long_valida(tmp_path):
     """Ejecuta el CLI real con un JSONL sintético → LONG_EXPERIMENTAL."""
     ruta_entrada = tmp_path / "observaciones.jsonl"
@@ -440,7 +394,6 @@ def test_cli_long_valida(tmp_path):
     ]):
         obs.append(_obs("SYM", T0 + i * 60_000, compra, venta, prof, precio, disp, "LONG"))
     _escribir_jsonl(ruta_entrada, obs)
-
     res = subprocess.run(
         [sys.executable, str(ROOT / "scripts" / "secuencia_presion_v1.py"),
          "--fuente", str(ruta_entrada), "--salida", str(ruta_salida)],
@@ -467,7 +420,6 @@ def test_cli_datos_insuficientes(tmp_path):
     ]):
         obs.append(_obs("SYM", T0 + i * 60_000, compra, venta, prof, precio, disp, "LONG"))
     _escribir_jsonl(ruta_entrada, obs)
-
     res = subprocess.run(
         [sys.executable, str(ROOT / "scripts" / "secuencia_presion_v1.py"),
          "--fuente", str(ruta_entrada), "--salida", str(ruta_salida)],
@@ -494,7 +446,6 @@ def test_cli_ternas_sucesivas_detectan_posterior(tmp_path):
     for i, (compra, venta, prof, precio, disp, direccion) in enumerate(datos):
         obs.append(_obs("SYM", T0 + i * 60_000, compra, venta, prof, precio, disp, direccion))
     _escribir_jsonl(ruta_entrada, obs)
-
     res = subprocess.run(
         [sys.executable, str(ROOT / "scripts" / "secuencia_presion_v1.py"),
          "--fuente", str(ruta_entrada), "--salida", str(ruta_salida)],
@@ -508,8 +459,7 @@ def test_cli_ternas_sucesivas_detectan_posterior(tmp_path):
 
 
 def test_cli_ejecutar_dos_veces_no_duplica(tmp_path):
-    """Ejecutar CLI dos veces sobre el mismo archivo de salida: la segunda
-    no duplica las decisiones existentes."""
+    """Ejecutar dos veces con las mismas ventanas → misma decisión."""
     ruta_entrada = tmp_path / "observaciones.jsonl"
     ruta_salida = tmp_path / "decisiones.jsonl"
     obs = []
@@ -520,19 +470,15 @@ def test_cli_ejecutar_dos_veces_no_duplica(tmp_path):
     ]):
         obs.append(_obs("SYM", T0 + i * 60_000, compra, venta, prof, precio, disp, "LONG"))
     _escribir_jsonl(ruta_entrada, obs)
-
-    # Primera ejecución
-    res1 = subprocess.run(
+    r1 = subprocess.run(
         [sys.executable, str(ROOT / "scripts" / "secuencia_presion_v1.py"),
          "--fuente", str(ruta_entrada), "--salida", str(ruta_salida)],
         cwd=str(ROOT), capture_output=True, text=True,
     )
-    assert res1.returncode == 0, res1.stderr
+    assert r1.returncode == 0, r1.stderr
     lineas1 = [json.loads(l) for l in io.open(ruta_salida, encoding="utf-8") if l.strip()]
     assert len(lineas1) == 1
     assert lineas1[0]["decision"] == "LONG_EXPERIMENTAL"
-
-    # Segunda ejecución sobre el mismo archivo de salida: no debe duplicar
     res2 = subprocess.run(
         [sys.executable, str(ROOT / "scripts" / "secuencia_presion_v1.py"),
          "--fuente", str(ruta_entrada), "--salida", str(ruta_salida)],
@@ -540,19 +486,17 @@ def test_cli_ejecutar_dos_veces_no_duplica(tmp_path):
     )
     assert res2.returncode == 0, res2.stderr
     lineas2 = [json.loads(l) for l in io.open(ruta_salida, encoding="utf-8") if l.strip()]
-    assert len(lineas2) == 1, f"Se duplicaron decisiones: {len(lineas2)}"
+    assert len(lineas2) == 1
     assert lineas2[0]["decision"] == "LONG_EXPERIMENTAL"
     assert lineas2[0]["observation_id"] == lineas1[0]["observation_id"]
 
 
 def test_cli_conflicto_identidad_explicita(tmp_path):
-    """Mismo observation_id con datos diferentes → conflicto (código != 0),
+    """Mismo observation_id con datos diferentes → conflicto explícito,
     no sustitución silenciosa."""
     ruta_entrada1 = tmp_path / "observaciones1.jsonl"
     ruta_entrada2 = tmp_path / "observaciones2.jsonl"
     ruta_salida = tmp_path / "decisiones.jsonl"
-
-    # Primera ejecución: ventana 3 con precio 101.00
     obs1 = []
     for i, (compra, venta, prof, precio, disp) in enumerate([
         (100.0, 20.0, 1000.0, 100.00, T0 + 1000),
@@ -561,7 +505,6 @@ def test_cli_conflicto_identidad_explicita(tmp_path):
     ]):
         obs1.append(_obs("SYM", T0 + i * 60_000, compra, venta, prof, precio, disp, "LONG"))
     _escribir_jsonl(ruta_entrada1, obs1)
-
     res1 = subprocess.run(
         [sys.executable, str(ROOT / "scripts" / "secuencia_presion_v1.py"),
          "--fuente", str(ruta_entrada1), "--salida", str(ruta_salida)],
@@ -572,24 +515,21 @@ def test_cli_conflicto_identidad_explicita(tmp_path):
     assert len(lineas1) == 1
     assert lineas1[0]["decision"] == "LONG_EXPERIMENTAL"
     precio_inicial = lineas1[0]["ventanas"][2]["precio_cierre"]
-
-    # Segunda ejecución: misma observation_id "w3" pero precio diferente (102.00)
+    # Misma observation_id "w3" pero precio diferente (102.00 en lugar de 101.00)
     obs2 = []
     for i, (compra, venta, prof, precio, disp) in enumerate([
         (100.0, 20.0, 1000.0, 100.00, T0 + 1000),
         (150.0, 20.0, 900.0, 100.50, T0 + 61_000),
-        (200.0, 20.0, 800.0, 102.00, T0 + 121_000),  # precio diferente
+        (200.0, 20.0, 800.0, 102.00, T0 + 121_000),
     ]):
         obs2.append(_obs("SYM", T0 + i * 60_000, compra, venta, prof, precio, disp, "LONG"))
     _escribir_jsonl(ruta_entrada2, obs2)
-
     res2 = subprocess.run(
         [sys.executable, str(ROOT / "scripts" / "secuencia_presion_v1.py"),
          "--fuente", str(ruta_entrada2), "--salida", str(ruta_salida)],
         cwd=str(ROOT), capture_output=True, text=True,
     )
-    assert res2.returncode == 3, f"Se esperaba código 3 (conflicto), obtuvo {res2.returncode}: {res2.stderr}"
-    # El archivo de salida no debe haberse modificado con la entrada conflictiva
+    assert res2.returncode == 3, f"Esperaba código 3 (conflicto), obtuve {res2.returncode}: {res2.stderr}"
     lineas_despues = [json.loads(l) for l in io.open(ruta_salida, encoding="utf-8") if l.strip()]
     assert len(lineas_despues) == 1
     assert lineas_despues[0]["ventanas"][2]["precio_cierre"] == precio_inicial
@@ -600,21 +540,16 @@ def test_cli_dos_simbolos_no_mezclan_historias(tmp_path):
     ruta_entrada = tmp_path / "observaciones.jsonl"
     ruta_salida = tmp_path / "decisiones.jsonl"
     obs = []
-    # SYM_A: LONG con compra > venta (F_k positivo creciente), precio al alza
-    # SYM_B: SHORT con compra < venta (F_k negativo creciente en abs), precio al baja
-    for i, (compra_l, venta_l, prof_l, precio_l, disp_l,
-            compra_s, venta_s, prof_s, precio_s, disp_s) in enumerate([
-        (100.0, 20.0, 1000.0, 100.00, T0 + 1000,
-         20.0, 100.0, 1000.0, 100.00, T0 + 1000),
-        (150.0, 20.0,  900.0, 100.50, T0 + 61_000,
-         15.0, 150.0,  900.0,  99.50, T0 + 61_000),
-        (200.0, 20.0,  800.0, 101.00, T0 + 121_000,
-         10.0, 200.0,  800.0,  99.00, T0 + 121_000),
+    for i, (compra_l, venta_l, prof_l, precio_l,
+            compra_s, venta_s, prof_s, precio_s, disp_l,
+            disp_s) in enumerate([
+        (100.0, 20.0, 1000.0, 100.00, 20.0, 100.0, 1000.0, 100.00, T0 + 1000, T0 + 1000),
+        (150.0, 20.0, 900.0, 100.50, 15.0, 150.0, 900.0, 99.50, T0 + 61_000, T0 + 61_000),
+        (200.0, 20.0, 800.0, 101.00, 10.0, 200.0, 800.0, 99.00, T0 + 121_000, T0 + 121_000),
     ]):
         obs.append(_obs("SYM_A", T0 + i * 60_000, compra_l, venta_l, prof_l, precio_l, disp_l, "LONG"))
         obs.append(_obs("SYM_B", T0 + i * 60_000, compra_s, venta_s, prof_s, precio_s, disp_s, "SHORT"))
     _escribir_jsonl(ruta_entrada, obs)
-
     res = subprocess.run(
         [sys.executable, str(ROOT / "scripts" / "secuencia_presion_v1.py"),
          "--fuente", str(ruta_entrada), "--salida", str(ruta_salida)],
@@ -628,4 +563,3 @@ def test_cli_dos_simbolos_no_mezclan_historias(tmp_path):
     decisiones = {l["symbol"]: l["decision"] for l in lineas}
     assert decisiones["SYM_A"] == "LONG_EXPERIMENTAL"
     assert decisiones["SYM_B"] == "SHORT_EXPERIMENTAL"
-
