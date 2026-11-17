@@ -22,17 +22,28 @@ Resultado posterior (horizonte principal 60 min, causal):
 - precio_inicial = ref_close: close de la ultima vela 1m plenamente conocida
   en T (close_time_ms <= decision_ms).
 - precio_final = close de la vela mas reciente con close_time_ms <= T + 60 min.
-  Si no existe, la observacion se excluye con motivo (horizonte no resoluble).
+  Si no existe una vela valida (desfase < 60 000 ms respecto del objetivo),
+  la observacion se conserva en el denominador como limitada, con motivo.
+  NO se convierte su retorno en cero.
 - retorno = (precio_final - precio_inicial) / precio_inicial
 - retorno_alineado = signo(move_24h_pct) * retorno
 - continuacion: retorno_alineado > 0
 - reversión: retorno_alineado < 0
 - neutral: retorno_alineado == 0 exactamente
 
+Acreditacion del horizonte (correccion):
+- Para cada objetivo (T y T + 60 min) se selecciona la ultima vela 1m
+  plenamente cerrada conocida en/antes del objetivo.
+- Exige desfase = objetivo - close_time_ms: no negativo y menor de 60 000 ms.
+- Exige que la vela corresponda a la cuadrícula del minuto:
+  open_time_ms multiplo de 60 000 y close_time_ms == open_time_ms + 59 999.
+- No se usa una vela antigua como sustituto silencioso del precio al horizonte,
+  ni cierres posteriores a cada objetivo.
+- Se declara el horizonte efectivo (close_final - close_inicial) y cualquier
+  discrepancia respecto de 60 min.
+
 Usa TODAS las 161 observaciones aptas con datos suficientes, no solo las
-124 operaciones contrafactuales admitidas. Los 37 descartes por la regla de
-stop no desaparecen: se evalúan si tienen datos de flujo/profundidad y precio
-final.
+124 operaciones contrafactuales admitidas.
 
 Uso:
     python scripts/contraste_flujo_profundidad.py
@@ -60,6 +71,8 @@ sys.path.insert(0, str(ROOT / "scripts"))
 from microstructure_probe.paper_lab_engine import PaperCandle
 
 HORIZON_MS = 60 * 60 * 1000  # 60 minutos
+STEP_MS = 60 * 1000  # 1 minuto
+MAX_DESFASE_MS = 60_000  # menor de un minuto respecto del objetivo
 T0 = 1794857178038  # started_ms de config_inicial de la ventana 4
 
 
@@ -79,28 +92,6 @@ def velas_de_klines(cuerpo_json):
             close_time_ms=int(r[6]) if r[6] is not None else None,
         ))
     return out
-
-
-def ref_close_desde_klines(cuerpo_json, decision_ms):
-    """Close de la ultima vela 1m plenamente conocida en T (close_time <= T)."""
-    mejor = None
-    for r in json.loads(cuerpo_json):
-        ct = int(r[6]) if r[6] is not None else None
-        if ct is not None and ct <= decision_ms:
-            if mejor is None or ct > mejor[0]:
-                mejor = (ct, float(r[4]))
-    return mejor[1] if mejor else None
-
-
-def precio_en_ms_desde_klines(cuerpo_json, limite_ms):
-    """Close de la vela mas reciente con close_time_ms <= limite_ms."""
-    mejor = None
-    for r in json.loads(cuerpo_json):
-        ct = int(r[6]) if r[6] is not None else None
-        if ct is not None and ct <= limite_ms:
-            if mejor is None or ct > mejor[0]:
-                mejor = (ct, float(r[4]))
-    return mejor[1] if mejor else None
 
 
 def signo(x):
@@ -130,6 +121,59 @@ def stats(vals):
 
 def proporcionar(n, total):
     return round(n / total, 6) if total else None
+
+
+def seleccionar_vela_cerrada(cuerpo_json, objetivo_ms):
+    """
+    Selecciona la ultima vela 1m plenamente cerrada conocida en/antes de
+    objetivo_ms.
+
+    Devuelve dict con:
+      - open_time_ms, close_time_ms, precio_close: de la vela elegida (None si no hay valida)
+      - desfase_ms: objetivo_ms - close_time_ms (None si no hay valida)
+      - valido: bool
+      - motivo: str si no valido, None si valida
+
+    Reglas de validez:
+      - close_time_ms <= objetivo_ms (no se usan cierres futuros).
+      - 0 <= desfase_ms < MAX_DESFASE_MS (la vela cierra dentro del mismo
+        minuto que el objetivo; nunca una vela antigua como sustituto silencioso).
+      - Grid del minuto: open_time_ms multiplo de 60 000 y
+        close_time_ms == open_time_ms + 59 999.
+    """
+    cuerpo = json.loads(cuerpo_json)
+    mejor = None
+    for r in cuerpo:
+        ot = int(r[0])
+        ct = int(r[6]) if r[6] is not None else None
+        if ct is None or ct > objetivo_ms:
+            continue
+        # Grid del minuto: apertura alineada y cierre un minuto menos un ms.
+        grid_ok = (ot % STEP_MS == 0) and (ct == ot + STEP_MS - 1)
+        if not grid_ok:
+            continue
+        desfase = objetivo_ms - ct
+        if desfase < 0 or desfase >= MAX_DESFASE_MS:
+            continue
+        if mejor is None or ct > mejor["close_time_ms"]:
+            mejor = {
+                "open_time_ms": ot,
+                "close_time_ms": ct,
+                "precio_close": float(r[4]),
+                "desfase_ms": desfase,
+                "valido": True,
+                "motivo": None,
+            }
+    if mejor is None:
+        return {
+            "valido": False,
+            "motivo": "sin_vela_cerrada_en_objetivo",
+            "open_time_ms": None,
+            "close_time_ms": None,
+            "precio_close": None,
+            "desfase_ms": None,
+        }
+    return mejor
 
 
 def analizar(run_dir: Path, out_dir: Path) -> dict:
@@ -200,6 +244,14 @@ def analizar(run_dir: Path, out_dir: Path) -> dict:
             "cobertura": o.get("cobertura"),
             "reconstruido": False,
             "motivo_exclusion": None,
+            # Trazabilidad del horizonte
+            "objetivo_inicial_ms": int(o["decision_ms"]),
+            "objetivo_final_ms": int(o["decision_ms"]) + HORIZON_MS,
+            "inicial_open_ms": None, "inicial_close_ms": None,
+            "inicial_desfase_ms": None, "inicial_valido": False,
+            "final_open_ms": None, "final_close_ms": None,
+            "final_desfase_ms": None, "final_valido": False,
+            "horizonte_efectivo_ms": None, "horizonte_discrepante": False,
         }
         flujo = o.get("flujo") or {}
         libro = o.get("libro") or {}
@@ -247,17 +299,46 @@ def analizar(run_dir: Path, out_dir: Path) -> dict:
 
         cuerpo = klines[oid]["cuerpo"]
         T = int(o["decision_ms"])
-        precio_inicial = ref_close_desde_klines(cuerpo, T)
-        precio_final = precio_en_ms_desde_klines(cuerpo, T + HORIZON_MS)
-        fila["precio_inicial_ref_close"] = precio_inicial
-        fila["precio_final_60m"] = precio_final
-        fila["horizonte_ms"] = HORIZON_MS
-        if precio_inicial is None or precio_final is None:
+
+        inicial = seleccionar_vela_cerrada(cuerpo, T)
+        final = seleccionar_vela_cerrada(cuerpo, T + HORIZON_MS)
+
+        fila["inicial_open_ms"] = inicial["open_time_ms"]
+        fila["inicial_close_ms"] = inicial["close_time_ms"]
+        fila["inicial_desfase_ms"] = inicial["desfase_ms"]
+        fila["inicial_valido"] = inicial["valido"]
+        fila["final_open_ms"] = final["open_time_ms"]
+        fila["final_close_ms"] = final["close_time_ms"]
+        fila["final_desfase_ms"] = final["desfase_ms"]
+        fila["final_valido"] = final["valido"]
+
+        if not inicial["valido"]:
+            fila["motivo_exclusion"] = "precio_inicial_no_valido"
+            exclusiones["horizonte_no_resoluble"] += 1
+            filas.append(fila)
+            grupos["insuficiente"] += 1
+            continue
+        if not final["valido"]:
             fila["motivo_exclusion"] = "horizonte_no_resoluble"
             exclusiones["horizonte_no_resoluble"] += 1
             filas.append(fila)
             grupos["insuficiente"] += 1
             continue
+
+        horizonte_efectivo = final["close_time_ms"] - inicial["close_time_ms"]
+        fila["horizonte_efectivo_ms"] = horizonte_efectivo
+        fila["horizonte_discrepante"] = abs(horizonte_efectivo - HORIZON_MS) >= STEP_MS
+        if fila["horizonte_discrepante"]:
+            fila["motivo_exclusion"] = "horizonte_efectivo_discrepante"
+            exclusiones["horizonte_no_resoluble"] += 1
+            filas.append(fila)
+            grupos["insuficiente"] += 1
+            continue
+
+        precio_inicial = inicial["precio_close"]
+        precio_final = final["precio_close"]
+        fila["precio_inicial_ref_close"] = precio_inicial
+        fila["precio_final_60m"] = precio_final
 
         retorno = (precio_final - precio_inicial) / precio_inicial
         retorno_alineado = signo(move) * retorno
@@ -327,7 +408,8 @@ def analizar(run_dir: Path, out_dir: Path) -> dict:
                    "protocolo prerregistrado"),
         "metodo": ("ratio=(buy_notional-sell_notional)/(bid_notional_top20+ask_notional_top20), "
                    "ratio_alienado=signo(move_24h_pct)*ratio; retorno a 60 min causal; "
-                   "datos fuente sin modificar"),
+                   "datos fuente sin modificar; horizonte acreditado por velas cerradas "
+                   "con desfase < 60 000 ms respecto de cada objetivo"),
         "definiciones": {
             "ratio": "(buy_notional - sell_notional) / (bid_notional_top20 + ask_notional_top20)",
             "ratio_alineado": "signo(move_24h_pct) * ratio",
@@ -338,6 +420,7 @@ def analizar(run_dir: Path, out_dir: Path) -> dict:
             "continuacion": "retorno_alineado > 0",
             "reversion": "retorno_alineado < 0",
             "neutral": "retorno_alineado == 0",
+            "desfase_maximo_ms": MAX_DESFASE_MS,
         },
         "denominador": {
             "observaciones_aptas": len(observaciones),

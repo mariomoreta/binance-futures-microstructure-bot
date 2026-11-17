@@ -2452,3 +2452,52 @@ Estado tras el bloque: `ACTIVE_TASK: ninguno`; el `run_id`
 `exp-v2-ventana-4-20261116a` queda consumido y no se reutiliza. La leccion del
 incidente de la ventana 3 sigue registrada SIN implementar.
 
+### 10.24 Contraste flujo/profundidad vs continuacion/reversion de la ventana 4 (2026-11-16, sin mercado)
+
+Autorizacion humana del 2026-11-16 (madrugada): «INVESTIGACION OFFLINE DE LA
+SENAL, SIN MERCADO» y «CIERRE OFFLINE DEL CONTRASTE Y DISEÑO DE LA SIGUIENTE
+PRUEBA». Contrastes exploratorios sobre datos existentes; sin Binance,
+consultas publicas, capturas, ordenes, relanzamientos, ventanas nuevas ni
+cambios en la estrategia productiva. Dataset fuente verificado contra su
+manifiesto (10/10) antes y despues; no modificado.
+
+**Rectificacion del alcance (vigente):** el contraste prueba la **alineacion
+del flujo neto con el movimiento previo** (ratio_alienado =
+signo(move_24h_pct) x (buy_notional - sell_notional) /
+(bid_notional_top20 + ask_notional_top20), denominador > 0). No prueba si una
+profundidad pequena frente a un flujo grande anticipa movimientos mayores
+(intensidad); esa es una pregunta futura distinta (hipótesis A, no ejecutada).
+Con mismo flujo y movimiento, variar la profundidad cambia el valor absoluto
+del ratio pero no su signo, por tanto no cambia de grupo.
+
+**Correccion del horizonte de precios:** cada observacion conserva
+decision_ms, objetivo T + 60 min, open/close de ambas velas, precios inicial
+y final, desfase de cada cierre y horizonte efectivo. Seleccion: ultima vela
+1m plenamente cerrada en/antes de cada objetivo; desfase no negativo y < 60
+000 ms; grid del minuto; no se usan cierres futuros ni velas antiguas como
+sustituto silencioso. Resultado en las 161 aptas: desfases inicial y final
+21 801-27 191 ms (todos < 60 000 ms); horizonte efectivo 3 600 000 ms (exacto)
+en todas, 0 discrepantes; grid verificado. Todas las 161 siguen validas;
+ninguna se convierte en cero ni se elimina del denominador.
+
+**Resultado del contraste (161 escenarios, capacidad 1 aislada):**
+- Regla sencilla (signo 24h): 65.8% de continuacion (106/161).
+- Flujo a favor del movimiento previo: 61.6% de continuacion (45/73).
+- Flujo contrario: 69.3% de continuacion (61/88).
+El flujo a favor NO distingue mejor continuacion que la regla sencilla; el
+flujo contrario muestra ligeramente mas continuacion. Resultado debil,
+contradictorio o concentrado. No se incorpora el ratio a la estrategia
+productiva.
+
+**Evidencia:** `docs/evidence/exp-v2-ventana-4-20261116a-analisis-contrafactual/CONTRASTE-FLUJO-PROFUNDIDAD.md`;
+derivados fuera de Git en
+`C:\proyectos\binance-futures-data\exp-v2-ventana-4-20261116a-contraste-flujo-profundidad-20261116-v3\`
+(regenerados desde fuentes verificadas, resultados anteriores NO reutilizados);
+`tests/test_contraste_flujo_profundidad.py` 13 passed; regresiones
+`test_analisis_contrafactual_ventana4.py` 16 passed,
+`test_operativo_replay_offline.py` 7 passed.
+
+Estado tras el bloque: `ACTIVE_TASK: ninguno`; el `run_id`
+`exp-v2-ventana-4-20261116a` queda consumido y no se reutiliza. La leccion del
+incidente de la ventana 3 sigue registrada SIN implementar.
+

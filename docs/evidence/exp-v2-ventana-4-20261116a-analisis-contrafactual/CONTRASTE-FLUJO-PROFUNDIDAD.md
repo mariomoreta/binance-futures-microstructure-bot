@@ -1,77 +1,81 @@
 # CONTRASTE FLUJO/PROFUNDIDAD vs CONTINUACION/REVERSION — `exp-v2-ventana-4-20261116a`
 
-Contexto: bloque de investigacion offline autorizado el 2026-11-16
-("INVESTIGACION OFFLINE DE LA SENAL, SIN MERCADO"). Sin Binance, consultas
-publicas, capturas, ordenes, relanzamientos, ventanas nuevas ni cambios en la
-estrategia productiva. Dataset fuente verificado contra manifiesto (10/10)
-antes y despues; no modificado.
+Contexto: bloque de investigación offline autorizado el 2026-11-16
+("INVESTIGACIÓN OFFLINE DE LA SEÑAL, SIN MERCADO", seguido de
+"CIERRE OFFLINE DEL CONTRASTE Y DISEÑO DE LA SIGUIENTE PRUEBA"). Sin Binance,
+consultas públicas, capturas, órdenes, relanzamientos, ventanas nuevas ni
+cambios en la estrategia productiva. Dataset fuente verificado contra
+manifiesto (10/10) antes y después; no modificado.
 
 Este bloque es EXPLORATORIO. Los resultados de esta captura ya fueron
-examinados en el bloque anterior: no se presenta como prueba independiente ni
-como protocolo prerregistrado.
+examinados: no se presenta como prueba independiente ni como protocolo
+prerregistrado.
 
-## 1. Definiciones (fijadas antes de generar agregados)
+## 1. Qué se probó realmente (rectificación de alcance)
 
-- ratio = (buy_notional - sell_notional) / (bid_notional_top20 + ask_notional_top20)
-  con flujo de 60 segundos y profundidad top20 efectivamente registrada.
-- ratio_alineado = signo(move_24h_pct) * ratio
-  (flujo a favor del movimiento previo si > 0, contrario si < 0).
-- Se exige: buy_notional y sell_notional validos, denominador finito y
-  estrictamente positivo, move_24h_pct valido y distinto de cero.
-- Cero o datos insuficientes: grupo separado, nunca convertido en cero.
+El contraste separó las observaciones mediante:
 
-Resultado posterior (horizonte principal 60 min, causal, precios desde cuerpos
-persistidos de consultas_klines.jsonl):
-- precio_inicial = ref_close: close de la ultima vela 1m plenamente conocida
-  en T (close_time_ms <= decision_ms).
-- precio_final = close de la vela mas reciente con close_time_ms <= T + 60 min.
-- retorno = (precio_final - precio_inicial) / precio_inicial
-- retorno_alineado = signo(move_24h_pct) * retorno
-- continuacion: retorno_alineado > 0
-- reversión: retorno_alineado < 0
-- neutral: retorno_alineado == 0 exactamente
+ratio_alineado = signo(move_24h_pct) ×
+                 (buy_notional − sell_notional) /
+                 (bid_notional_top20 + ask_notional_top20)
 
-Usa TODAS las 161 observaciones aptas con datos suficientes (no solo las 124
-operaciones contrafactuales). Los 37 descartes por la regla de stop no
-desaparecen: se evalúan si tienen datos de flujo/profundidad y precio final.
+con denominador estrictamente positivo. Como la magnitud del denominador no
+cambia el signo, comparar ratio_alineado > 0 frente a < 0 prueba **solo**
+la alineación del flujo neto con el movimiento previo (dirección).
 
-## 2. Configuracion acreditada (sin defaults)
+**No prueba** si una profundidad pequeña frente a un flujo grande anticipa
+movimientos mayores (intensidad). Esa es una pregunta distinta, dejada como
+hipótesis futura (ver §4). Por tanto:
 
-El analizador carga `config_inicial.json` (persistido atomicamente antes de la
-primera adquisicion) y **no usa `OperativoConfig()` por defecto**. Valida los
-hashes `config_sha256` y `operativo_config_sha256` (ambos OBLIGATORIOS:
-ausente, vacio o discordante -> rechazo antes de reconstruir).
+- No se concluye que la hipótesis "flujo/profundidad" fue refutada.
+- No se concluye que el ratio no tenga valor predictivo de magnitud.
+- Solo se constata que, en esta captura de una hora, la alineación de dirección
+  del flujo neto con el movimiento de 24 horas no distingue continuación de
+  reversión mejor que asumir continuación por el signo del movimiento previo.
 
-Configuracion de la corrida:
-- `operativo_config_sha256`: d1423709f4d45207cea601f1aad11742c70f7dfdee44ee69a75701fba60be8ed
-- `config_hash` (corto): d1423709f4d45207
-- `git_head`: ce2af020c666956ba35a1e1d41d0007c85d581a7
-- `run_id`: exp-v2-ventana-4-20261116a
-- `escrito_iso`: 2026-11-16T19:26:18.038000+00:00
-- fee_bps 5.0, spread_bps 1.0, slippage_bps 2.0, stop_distance_pct 0.5,
-  horizon_ms 3600000, notional_usdt 1000, max_concurrent 1,
-  rule_version RULE-CAUSAL-V1.
+## 2. Comprobación de profundidad (propiedad del ratio)
 
-Funding: UNKNOWN donde falte cobertura (nunca cero). No se supone calendario.
+Con el mismo flujo y el mismo movimiento previo, variar la profundidad
+positiva (denominador) cambia el **valor absoluto** del ratio, pero no su
+signo; por tanto, no cambia el grupo (flujo a favor / flujo contrario).
+Esto se verifica aritméticamente: ratio = Δnotional / profundidad, con
+profundidad > 0, el signo depende solo de Δnotional. El contraste no
+necesita variar la profundidad para cambiar de grupo; el grupo está dado por
+la dirección del flujo neto respecto al movimiento previo.
 
-## 3. Mapa campo -> fuente -> unidad -> disponibilidad
+## 3. Acreditación del horizonte de precios (corregido)
 
-| Campo | Fuente | Unidad | Disponibilidad |
-| --- | --- | --- | --- |
-| move_24h_pct | observaciones.seleccion | puntos porcentuales | siempre (en aptas) |
-| buy_notional | observaciones.flujo | USDT (compras agresoras, 60s) | siempre (en aptas) |
-| sell_notional | observaciones.flujo | USDT (ventas agresoras, 60s) | siempre (en aptas) |
-| bid_notional_top20 | observaciones.libro | USDT (pujas top20) | siempre (en aptas) |
-| ask_notional_top20 | observaciones.libro | USDT (ofertas top20) | siempre (en aptas) |
-| decision_ms | observaciones | ms epoch UTC (reloj piloto) | siempre |
-| ref_close (precio inicial) | consultas_klines (close <= T) | precio | siempre |
-| precio_final 60m | consultas_klines (close <= T+60m) | precio | siempre (161/161 resoluble) |
-| window_ms flujo | observaciones.flujo.window_ms | ms (60000 = 60s) | siempre |
-| disponibilidad | observaciones.disponibilidad | ms | siempre |
-| cobertura | observaciones.cobertura | booleano | siempre |
+Cada observación conserva trazabilidad completa del horizonte:
 
-Todos los datos son del exchange publico (WS/REST USD-M), no on-chain. No se
-inventaron campos, cobertura ni disponibilidad temporal.
+- decision_ms real (reloj del piloto).
+- objetivo T + 60 min.
+- open_time y close_time de la vela inicial (última vela 1m plenamente
+  cerrada conocida en T) y de la vela final (última vela 1m plenamente
+  cerrada conocida en T + 60 min).
+- precios inicial y final; desfase de cada cierre respecto de su objetivo;
+- horizonte efectivo entre ambos cierres.
+
+Reglas de selección (aplicadas a las 161 observaciones aptas):
+- Última vela 1m plenamente cerrada conocida en/antes de cada objetivo.
+- No se usan cierres posteriores a cada objetivo.
+- No se usa una vela antigua como sustituto silencioso del precio al
+  horizonte: exige desfase = objetivo − close_time_ms no negativo y menor
+  de 60 000 ms.
+- Grid del minuto: open_time_ms múltiplo de 60 000 y
+  close_time_ms == open_time_ms + 59 999.
+- Se declara el horizonte efectivo y cualquier discrepancia.
+
+Resultado de la acreditación en las 161 observaciones aptas:
+- 161/161 con precio inicial y final válidos.
+- Desfase inicial: 21 801–27 191 ms (todos < 60 000 ms).
+- Desfase final: 21 801–27 191 ms (todos < 60 000 ms).
+- Horizonte efectivo: 3 600 000 ms (exactamente 60 min) en todas;
+  0 discrepantes.
+- open_time de ambas velas múltiplo de 60 000; close = open + 59 999.
+
+Por tanto, todas las 161 observaciones siguen siendo válidas; ninguna se
+convierte en cero ni se elimina del denominador. Los resultados numéricos son
+idénticos a la versión anterior del contraste (ver §7).
 
 ## 4. Resultado del contraste principal
 
@@ -81,26 +85,25 @@ exclusiones).
 | Grupo (ratio_alienado) | n | % sobre evaluadas | continuación | reversión | neutral | retorno alineado media |
 | --- | --- | --- | --- | --- | --- | --- |
 | flujo a favor (>0) | 73 | 45.3% | 45 (61.6%) | 28 (38.4%) | 0 | +0.0269 |
-| flujo contrario (<0) | 88 | 54.7% | 61 (69.3%) | 27 (30.7%) | 0 | +0.0106 (agregado grupo) |
+| flujo contrario (<0) | 88 | 54.7% | 61 (69.3%) | 27 (30.7%) | 0 | +0.0121 (agregado del grupo) |
 
-Nota: el retorno alineado medio del grupo "flujo contrario" agregado (incluye
-continuación y reversión) es +0.0106; el de "flujo a favor" es +0.0121.
-Dentro de cada grupo, las operaciones de continuación tienen retorno positivo
-y las de reversión, negativo (por construcción del signo alineado).
+Nota: dentro de cada grupo, las operaciones de continuación tienen retorno
+alineado positivo y las de reversión, negativo (por construcción del signo
+alineado).
 
-### Regla sencilla de referencia (direccion = signo(move_24h_pct), sin flujo)
-- n = 161, aciertos (retorno alineado > 0) = 106, proporcion = 65.8%.
+### Regla sencilla de referencia (dirección = signo(move_24h_pct), sin flujo)
+- n = 161, aciertos (retorno alineado > 0) = 106, proporción = 65.8%.
 
-### Comparacion
+### Comparación
 - Regla sencilla: 65.8% de continuación.
 - Flujo a favor del movimiento previo: 61.6% de continuación.
 - Flujo contrario al movimiento previo: 69.3% de continuación.
 
 El flujo a favor **NO** distingue mejor continuación que la regla sencilla
-(61.6% < 65.8%). De forma contraintuitiva, el grupo de flujo contrario muestra
-ligeramente MAS continuación (69.3%) que el de flujo a favor y que la regla
-sencilla. El retorno alineado medio es similar entre grupos (+0.0269 vs
-+0.0299 en las operaciones de continuation).
+(61.6% < 65.8%). De forma contraintuitiva, el grupo de flujo contrario
+muestra ligeramente MÁS continuación (69.3%) que el de flujo a favor y que
+la regla sencilla. El retorno alineado medio es similar entre los grupos de
+continuación (+0.0269 vs +0.0299).
 
 ## 5. Desgloses
 
@@ -110,92 +113,134 @@ sencilla. El retorno alineado medio es similar entre grupos (+0.0269 vs
 | candidate | 130 | 90 | 40 | 69.2% | +0.0149 |
 | comparator | 31 | 16 | 15 | 51.6% | +0.0011 |
 
-### Por direccion (signo de move_24h_pct)
-| Direccion | n | continuación | reversión | % continuación | retorno medio alineado |
+### Por dirección (signo de move_24h_pct)
+| Dirección | n | continuación | reversión | % continuación | retorno medio alineado |
 | --- | --- | --- | --- | --- | --- |
 | LONG | 87 | 59 | 28 | 67.8% | +0.0221 |
 | SHORT | 74 | 47 | 27 | 63.5% | +0.0006 |
 
 ### Por ciclo (muy variable, dependencia temporal)
-El porcentaje de continuación dentro de cada grupo fluctua de 0% a 100%
-según el ciclo (ej. ciclo00: flujo a favor 25%, flujo contrario 64%;
-ciclo02: flujo a favor 100%, flujo contrario 57%; ciclo06: flujo contrario
+El porcentaje de continuación dentro de cada grupo fluctúa de 0% a 100%
+según el ciclo (ej. ciclo 00: flujo a favor 25%, flujo contrario 64%;
+ciclo 02: flujo a favor 100%, flujo contrario 57%; ciclo 06: flujo contrario
 100%). No hay patrón estable.
 
-### Concentracion de simbolos
-- 25 simbolos unicos, 19 repetidos (>=2 apariciones, hasta 12 veces).
-- Los mismos símbolos aparecen en varios ciclos => dependencia temporal,
+### Concentración de símbolos
+- 25 símbolos únicos, 19 repetidos (≥2 apariciones, hasta 12 veces).
+- Los mismos símbolos aparecen en varios ciclos → dependencia temporal,
   los escenarios NO son ensayos independientes.
-- Ejemplos de repeticion con continuaión desigual: AIOTUSDT 12/12 (100%),
+- Ejemplos de repetición con continuación desigual: AIOTUSDT 12/12 (100%),
   BULLAUSDT 0/12 (0%), CROSSUSDT 12/12 (100%), BANKUSDT 0/4 (0%).
 
 ## 6. Sensibilidad al mayor resultado
 
 El mayor retorno alineado es +0.1486 (grupo flujo contrario, continuación,
 ciclo 08). Este resultado extremo se conserva en el resultado principal
-(n=161, incluida su contribucion). El bruto agregado de todos los demas
-escenarios ya es positivo gracias a varias ganancias por horizonte; no hay
-un único resultado que domine de forma indebida, pero la variacion por ciclo
-y simbolo es alta. No se elimina ni se ajusta ningun resultado.
+(n=161, incluida su contribución). No se elimina ni se ajusta ningún
+resultado para volver positiva la captura.
 
-## 7. Decision final
+## 7. Comparación anterior/corregido (acreditación del horizonte)
 
-**Resultado debil, contradictorio o concentrado.**
+Se compararon los derivados anteriores (`...-v2\`) con los corregidos
+(`...-v3\`) por observation_id:
 
-Evidencia que determina la conclusion:
-- El flujo a favor del movimiento previo NO produce mas continuation que el
-  flujo contrario (61.6% vs 69.3%). La hipotesis exploratoria
-  ("el primer grupo presenta mas continuacion que el segundo") NO se confirma.
+| Dimensión | Resultado |
+| --- | --- |
+| Identificadores, estados, timestamps | Igualdad exacta en las 161 filas |
+| Importes económicos | Tolerancia absoluta 1e-6; **0 diferencias numéricas** |
+| Desfases / horizonte | v2 no los acreditaba; v3 los declara (todos < 60 000 ms, horizonte = 3 600 000 ms) |
+| Denominador total | 161 (v1) = 161 (v2) |
+| Observaciones válidas | 161 (v1) = 161 (v2) |
+| Observaciones limitadas | 0 (v1) = 0 (v2) |
+| Grupos y conteos | idénticos (73/88/0) |
+| Cambios de clasificación | ninguno |
+
+Las 161 observaciones siguen siendo válidas; los resultados se conservan.
+No se cambiaron cortes, horizonte ni definición. No se invirtió el filtro
+porque el grupo contrario mostró más continuación.
+
+## 8. Decisión final
+
+**Resultado débil, contradictorio o concentrado.**
+
+Evidencia que determina la conclusión:
+- El flujo a favor del movimiento previo **no** produce más continuación que
+  el flujo contrario (61.6% vs 69.3%). La hipótesis exploratoria de que el
+  flujo a favor predice mejor continuación **no se confirma**.
 - La regla sencilla (signo 24h, sin flujo) obtiene 65.8%, superior al grupo
-  de flujo a favor (61.6%). El ratio flujo/profundidad no aporta informacion
-  predictiva superior en esta muestra.
-- Alta variacion por ciclo y simbolo (dependencia temporal, escenarios
-  solapados, simbolos repetidos hasta 12 veces). No se pueden tratar las
+  de flujo a favor (61.6%). El ratio flujo/profundidad no aporta información
+  predictiva de dirección superior en esta muestra.
+- Alta variación por ciclo y símbolo (dependencia temporal, escenarios
+  solapados, símbolos repetidos hasta 12 veces). No se pueden tratar las
   observaciones como ensayos independientes.
-- No hay neutrales (todos los retornos alineados son != 0), lo que limita la
-  interpretacion de "neutral".
+- No hay neutrales (todos los retornos alineados son ≠ 0).
 
 No se puede concluir que el ratio flujo/profundidad distinga continuación de
 reversión mejor que asumir continuación por el signo del movimiento de 24
-horas. **No se incorpora el ratio a la estrategia productiva.** No se
-optimizan umbrales, no se invierten senales, no se cambian entradas, stops ni
-capacidad.
-
-Asociacion vs causalidad: incluso la ligera diferencia descriptiva entre
-grupos no implica causalidad, y una mejora descriptiva no es predictividad.
-El retorno no es P&L; el analisis economico anterior sigue condicionado por
+horas. Asociación ≠ causalidad; mejora descriptiva ≠ predictividad; retorno
+≠ P&L. El análisis económico del bloque anterior sigue condicionado por
 costes simulados y funding UNKNOWN.
 
-## 8. Artefactos
+## 9. Hipótesis futura (no ejecutada en este bloque)
 
-- Fuente (solo lectura, intacta): `C:\proyectos\binance-futures-data\exp-v2-ventana-4-20261116a\` (manifiesto 10/10 verificado antes y despues).
-- Derivados (fuera de Git, directorio nuevo, resultados NO reutilizados de bloques previos):
-  `C:\proyectos\binance-futures-data\exp-v2-ventana-4-20261116a-contraste-flujo-profundidad-20261116-v2\`
+**Pregunta principal seleccionada: A (intensidad y tamaño del flujo neto
+respecto a la profundidad).**
+
+Justificación: la dirección (pregunta B) ya se probó en este bloque y resultó
+débil/contradictoria. La intensidad —si un flujo neto grande relativo a la
+profundidad disponible se asocia con un movimiento posterior **mayor**
+(independiente de dirección)— es más informativa para la operativa, porque
+permite dimensionar posición o decidir operar/no operar, no solo elegir
+dirección.
+
+- **Hipótesis falsable:** Cuanto mayor sea el valor absoluto del ratio
+  (buy_notional − sell_notional) / (bid_notional_top20 + ask_notional_top20)
+  observado en T, mayor será el valor absoluto del retorno posterior alineado
+  en el horizonte de 60 min.
+- **Variable en T:** ratio flujo/profundidad (adimensional), y su valor
+  absoluto.
+- **Resultado posterior:** |retorno| en 60 min (causal, desde klines
+  persistidos).
+- **Horizonte:** 60 minutos, con la misma acreditación de precios de este
+  bloque (desfase < 60 000 ms, grid del minuto).
+- **Referencia de comparación:** regresión de |retorno| sobre |ratio|;
+  comparar contra la media de |retorno| sin condicionar al ratio.
+- **Controles de dependencia:** agrupar por símbolo y ciclo; no tratar
+  observaciones como independientes; reportar concentración de símbolos.
+- **Criterio:** continuar si la asociación es clara y robusta a símbolos;
+  descartar si no hay asociación; declarar insuficiencia si los datos no
+  alcanzan (ej. horizonte no resuelto para muchas observaciones).
+- **Datos independientes necesarios:** esta captura ya fue examinada y **no**
+  puede convertirse en validación independiente; se requeriría una captura
+  nueva con su propia autorización.
+
+**No se calculan nuevos agregados de magnitud ni se exploran umbrales sobre
+esta captura.** Esta hora ya fue examinada y no puede convertirse en
+validación independiente.
+
+## 10. Artefactos
+
+- Fuente (solo lectura, intacta): `C:\proyectos\binance-futures-data\exp-v2-ventana-4-20261116a\` (manifiesto 10/10 verificado antes y después).
+- Derivados (fuera de Git, directorio nuevo, resultados anteriores NO
+  reutilizados como prueba):
+  `C:\proyectos\binance-futures-data\exp-v2-ventana-4-20261116a-contraste-flujo-profundidad-20261116-v3\`
   (`contraste_flujo_profundidad.json`, `contraste_filas.jsonl`).
-- Ejecucion: SHA base `509b5bacf8a099fc553e201f18674985a2889866`;
+- Ejecución: SHA base `6a1e2683aa482738e777e802d9565e0b08d6f8a6`;
   script `scripts/contraste_flujo_profundidad.py` (CLI `--run-dir`/`--out-dir`,
-  sin rutas fijas en codigo);
-  `scripts/desgloses_contraste.py` (desgloses por rol, direccion, ciclo,
-  concentracion, mapa de campos);
-  `tests/test_contraste_flujo_profundidad.py` (6 passed: denominador 161,
-  grupos suman 161, ratio denominador finito > 0, horizonte 60m resoluble,
-  regla sencilla 106/161, descartes de stop no desaparecen).
+  sin rutas fijas en código);
+  `scripts/desgloses_contraste.py` (desgloses por rol, dirección, ciclo,
+  concentración, mapa de campos);
+  `tests/test_contraste_flujo_profundidad.py` (13 passed: denominador 161,
+  grupos suman 161, ratio denominador finito > 0, horizonte 60 min resuelto,
+  regla sencilla 106/161, descartes de stop no desaparecen, selección de
+  precios: trayectoria completa, vela posterior no usada, falta final,
+  truncada, objetivo alineado, grid no alineado).
 - Regresiones: `test_analisis_contrafactual_ventana4.py` 16 passed,
   `test_operativo_replay_offline.py` 7 passed.
 
-## 9. Comparacion anterior/corregido (hash de configuracion)
-
-El bloque anterior (`26fdf86`) ya validaba `operativo_config_sha256` pero solo
-cuando estaba presente (`if hash_declarado:`). Este bloque lo hace OBLIGATORIO:
-ausente, vacio o mal formado -> rechazo explícito antes de reconstruir
-resultados economicos, y se valida tambien `config_sha256`. Se añadieron 5
-pruebas focalizadas (hash valido, ausente, vacio, invalido, discordante).
-Los resultados numericos del contraste son independientes de esta correccion
-(el hash del run real es valido y coincide).
-
-## 10. Lo que NO acredita
+## 11. Lo que NO acredita
 
 Rentabilidad, edge, mejora predictiva del ratio flujo/profundidad, ventaja de
-candidato sobre comparador, generalizacion (una sola hora de captura,
-dependencia temporal, simbolos repetidos). El analisis economico del bloque
+candidato sobre comparador, generalización (una sola hora de captura,
+dependencia temporal, símbolos repetidos). El análisis económico del bloque
 anterior sigue condicionado por costes simulados y funding UNKNOWN.
