@@ -6109,3 +6109,48 @@ regresiones `test_analisis_contrafactual_ventana4.py` (16 passed),
 `test_operativo_replay_offline.py` (7 passed).
 
 Estado tras el bloque: `ACTIVE_TASK: ninguno`; el `run_id` `exp-v2-ventana-4-20261116a` queda consumido y no se reutiliza. La leccion del incidente de la ventana 3 sigue registrada SIN implementar.
+
+
+## 2026-11-16 (madrugada/tarde) — Detector experimental SECUENCIA-PRESION-V1 de la ventana 4 `exp-v2-ventana-4-20261116a`: cierre offline de persistencia y cobertura
+
+Autorizacion humana explicita: «PRIMER DETECTOR EXPERIMENTAL DE SECUENCIAS, LOCAL Y SIN MERCADO» y «CIERRE OFFLINE DEL CONTRASTE Y DISEÑO DE LA SIGUIENTE PRUEBA». Sin Binance, consultas publicas, capturas, ordenes, relanzamientos, ventanas nuevas ni cambios en la estrategia productiva. Dataset fuente verificado contra manifiesto (10/10) antes y despues; no modificado.
+
+Decisiones registradas:
+
+1. **Detector implementado:** `scripts/secuencia_presion_v1.py` (SECUENCIA-PRESION-V1, EXPERIMENTAL, sin validacion economica). Reconoce una secuencia temporal de presion agresora creciente, reduccion de liquidez contraria y avance del precio sobre tres ventanas consecutivas y completas de un minuto **realmente contiguas**. CLI con `--fuente`/`--salida`, trabaja sin red.
+
+**Independencia y persistencia:** El CLI lee el archivo de salida existente si esta presente y no duplica decisiones ya persistidas (misma observation_id). Si una observation_id existente tiene datos contradictorios (misma observation_id pero ventanas o decision diferente), el CLI termina con codigo 3 y mensaje de conflicto, sin modificar el registro previo. Ejecutar el CLI dos veces sobre el mismo archivo de salida produce el mismo conjunto de decisiones (idempotencia).
+
+2. **Resultado del detector sobre la ventana 4:** Ningun simbolo tiene 3 ventanas validas consecutivas en `exp-v2-ventana-4-20261116a` (de 196 observaciones aptas, solo 20 cumplen todos los campos requeridos; 163 fallan por `huecos_detectados_en_feed` / `libro_huecos` en la integridad, 13 por `flujo_ventana_completa` != true). 0 simbolos con >=3 ventanas validas, 0 secuencias evaluables. El detector no puede ejecutarse sobre esta captura: limitacion de cobertura, no error del detector.
+
+**Configuracion congelada:** version `SECUENCIA-PRESION-V1`, ventana 60s, 3 ventanas, profundidad top-20, lado contrario, requiere ventana completa, requiere integridad valida, requiere ventanas contiguas, condiciones: Q positivo creciente, profundidad contraria decreciente, precio avanza en direccion. SHA-256 de la configuracion registrado en el modulo.
+
+**Pruebas de aceptacion:** `tests/test_secuencia_presion_v1.py` — 21 passed: secuencia LONG valida, secuencia SHORT valida, presion creciente sin profundidad decreciente -> SIN_PATRON, profundidad decreciente sin presion alineada -> SIN_PATRON, precio sin confirmacion -> SIN_PATRON, ventana incompleta -> DATOS_INSUFICIENTES, dato invalido (profundidad no positiva) -> DATOS_INSUFICIENTES, ultima fuente despues del corte -> no deteccion anticipada, aniadir datos futuros no cambia decision, simbolos distintos no comparten historia, repetir mismo corte no duplica, disponibilidad tardia de ventana anterior, precio no disponible -> DATOS_INSUFICIENTES, conflicto de identidad explicita, CLI real con JSONL sintetico (LONG y DATOS_INSUFICIENTES), CLI ejecucion dos veces no duplica, conflicto de identidad por CLI, dos simbolos no mezclan historias, CLI ternas sucesivas detectan posterior.
+
+**Cobertura real (ventana 4, solo lectura):**
+- Observaciones aptas totales (observaciones.jsonl): 196
+- Observaciones aptas (apto_para_evaluacion=True): 161
+- Simbolos unicos en observaciones aptas: 34
+- research_flow_1m: 1265 filas; research_book_1m: 1197 filas; research_flow_10s: 6633 filas
+- Intervalos (symbol, bucket_start) en flujo: 1265; en libro: 1197; emparejados: 1190
+- Simbolos con ventanas validas (flujo+libro+precio+integridad OK): 0
+- Ventanas validas totales: 0
+- Simbolos con >=3 ventanas validas: 0; Ternas contiguas de 3 ventanas validas: 0
+- Campos que faltan: flujo_ventana_completa (13 observaciones), integridad del feed/libro (163 observaciones)
+
+**Listado minimo para futura adquisicion:** por simbolo y ventana de 1 min: buy_notional, sell_notional (flujo aggTrade), bid_notional_top20, ask_notional_top20 (libro depth20@100ms), precio_base (libro_mid), ventana_completa, integridad (sin huecos/invalidos/cruce), disponibilidad.max_ms, decision_ms, symbol, observation_id. Historia previa: >=3 ventanas consecutivas por simbolo, cada una completa y sin huecos. No reconstruir ventanas de 30s desde agregados de 1 min.
+
+**Hipotesis futura (no ejecutada):** pregunta A (intensidad y tamano del flujo neto respecto a la profundidad): si un |ratio| mayor se asocia con un |retorno posterior| mayor en 60 min. Variable en T: |ratio|; resultado posterior: |retorno| en 60 min; horizonte 60 min con la misma acreditacion de precios; referencia: regresion de |retorno| sobre |ratio| vs media sin condicionar; controles de dependencia por simbolo y ciclo; criterio para continuar/descartar/insuficiencia; datos independientes necesarios (captura nueva con autorizacion propia). No se calculan nuevos agregados de magnitud sobre esta captura.
+
+**Evidencia:** `docs/evidence/exp-v2-ventana-4-20261116a-secuencia-presion-v1/SECUENCIA-PRESION-V1.md`;
+derivados fuera de Git en
+`C:\proyectosinance-futures-data\exp-v2-ventana-4-20261116a-secuencia-presion-v1\`;
+SHA base: `4a7df47e89dbd1015ad89a6f1889ebf48d156c59`;
+script `scripts/secuencia_presion_v1.py` (CLI `--fuente`/`--salida`, sin rutas fijas en codigo);
+pruebas `tests/test_secuencia_presion_v1.py` (21 passed);
+regresiones `test_analisis_contrafactual_ventana4.py` (16 passed),
+`test_operativo_replay_offline.py` (7 passed).
+
+**Lo que NO acredita:** rentabilidad, edge, mejora predictiva del ratio flujo/profundidad, ventaja candidato/comparador, utilidad operativa (una hora de captura, dependencia temporal, simbolos repetidos). El detector no se conecta al camino productivo.
+
+Estado tras el bloque: `ACTIVE_TASK: ninguno`; el `run_id` `exp-v2-ventana-4-20261116a` queda consumido y no se reutiliza. La leccion del incidente de la ventana 3 sigue registrada SIN implementar.

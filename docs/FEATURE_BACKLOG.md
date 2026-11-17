@@ -62,7 +62,25 @@
   cabecera del 2026-11-16; EXPERIMENTO_OPERATIVO_V2 §10.20 anexado; DECISIONS
   2026-11-16 anexada (NUL preexistente preservado).
 
-## Ventana 3 ejecutada e interrumpida por incidente `piloto/ventana-3-interrumpida-20261115` — 2026-11-15
+## Ventana 3 ejecutada e interrumpida por incidente `piloto/ven## piloto/secuencia-presion-v1-persistencia-cobertura-20261116 (2026-11-16, base `4a7df47`)
+
+**1. Title:** Cierre de persistencia y cobertura del detector experimental SECUENCIA-PRESION-V1 (local, sin mercado).
+
+**2. Approval status:** AUTORIZADO por el bloque humano del 2026-11-16 («CIERRE OFFLINE DEL CONTRASTE Y DISEÑO DE LA SIGUIENTE PRUEBA»). Contrastes exploratorios sobre datos existentes; sin Binance, consultas publicas, capturas, ordenes, relanzamientos, ventanas nuevas ni cambios en la estrategia productiva. Dataset fuente verificado contra manifiesto 10/10 antes y despues; no modificado.
+
+**3. Implementation status:** IMPLEMENTADO (analisis offline, codigo minimo indispensable reutilizando motores existentes). `scripts/secuencia_presion_v1.py` (corregido): CLI `--fuente`/`--salida`, trabaja sin red, lee el archivo de salida existente si esta presente y no duplica decisiones ya persistidas (misma observation_id); detecta conflictos de identidad (misma observation_id con ventanas o decision diferentes) y termina con codigo 3 sin modificar el registro previo. `tests/test_secuencia_presion_v1.py` (nuevo): 21 pruebas (denominador 161, grupos suman 161 sin ceros artificiales, ratio denominador finito > 0, horizonte 60 min resoluble, regla sencilla 106/161, descartes de stop no desaparecen, seleccion de precios: trayectoria completa, vela posterior no usada, falta final, truncada, objetivo alineado, grid no alineado; persistencia: ejecucion dos veces no duplica, conflicto de identidad por CLI; dos simbolos no mezclan historias; CLI real con JSONL sintetico: LONG y DATOS_INSUFICIENTES). Sin cambios a motores ni reglas economicas.
+
+**4. Evaluation status:** 21 passed (nuevo); `test_analisis_contrafactual_ventana4.py` 16 passed; `test_operativo_replay_offline.py` 7 passed (regresion, sin impacto). Resultado: regla sencilla 65.8% de continuacion; flujo a favor 61.6%; flujo contrario 69.3%. El flujo a favor NO distingue mejor continuacion; resultado debil, contradictorio o concentrado. No se incorpora el ratio a la estrategia productiva.
+
+**5. Evidence:** `docs/evidence/exp-v2-ventana-4-20261116a-secuencia-presion-v1/SECUENCIA-PRESION-V1.md`;
+derivados fuera de Git en
+`C:\proyectosinance-futures-data\exp-v2-ventana-4-20261116a-secuencia-presion-v1\`;
+SHA base `4a7df47e89dbd1015ad89a6f1889ebf48d156c59`.
+
+**6. Verdict:** La relacion flujo/profundidad no distingue continuacion de reversion mejor que asumir continuacion por el signo del movimiento de 24 horas en esta captura de una hora (alta variacion por ciclo y simbolo, dependencia temporal). Hipotesis futura definida (intensidad, pregunta A), no ejecutada.
+
+**7. Next step:** el `run_id` `exp-v2-ventana-4-20261116a` queda consumido; cualquier ventana nueva requiere autorizacion humana explicita con `run_id` nuevo. No se abre otra ventana ni ronda de auditorias en este bloque.
+tana-3-interrumpida-20261115` — 2026-11-15
 
 - `DECISIONS_REVIEWED` — AGENTS, WORKFLOW, PRODUCT_GOAL, CURRENT_STATE,
   TASK_QUEUE, DECISIONS, EXPERIMENTO_OPERATIVO_V2 §10.18 y la PROPUESTA

@@ -506,3 +506,126 @@ def test_cli_ternas_sucesivas_detectan_posterior(tmp_path):
                and any(v["observation_id"] == "SYM|1700000240000" for v in l["ventanas"])
                for l in lineas), lineas
 
+
+def test_cli_ejecutar_dos_veces_no_duplica(tmp_path):
+    """Ejecutar CLI dos veces sobre el mismo archivo de salida: la segunda
+    no duplica las decisiones existentes."""
+    ruta_entrada = tmp_path / "observaciones.jsonl"
+    ruta_salida = tmp_path / "decisiones.jsonl"
+    obs = []
+    for i, (compra, venta, prof, precio, disp) in enumerate([
+        (100.0, 20.0, 1000.0, 100.00, T0 + 1000),
+        (150.0, 20.0, 900.0, 100.50, T0 + 61_000),
+        (200.0, 20.0, 800.0, 101.00, T0 + 121_000),
+    ]):
+        obs.append(_obs("SYM", T0 + i * 60_000, compra, venta, prof, precio, disp, "LONG"))
+    _escribir_jsonl(ruta_entrada, obs)
+
+    # Primera ejecución
+    res1 = subprocess.run(
+        [sys.executable, str(ROOT / "scripts" / "secuencia_presion_v1.py"),
+         "--fuente", str(ruta_entrada), "--salida", str(ruta_salida)],
+        cwd=str(ROOT), capture_output=True, text=True,
+    )
+    assert res1.returncode == 0, res1.stderr
+    lineas1 = [json.loads(l) for l in io.open(ruta_salida, encoding="utf-8") if l.strip()]
+    assert len(lineas1) == 1
+    assert lineas1[0]["decision"] == "LONG_EXPERIMENTAL"
+
+    # Segunda ejecución sobre el mismo archivo de salida: no debe duplicar
+    res2 = subprocess.run(
+        [sys.executable, str(ROOT / "scripts" / "secuencia_presion_v1.py"),
+         "--fuente", str(ruta_entrada), "--salida", str(ruta_salida)],
+        cwd=str(ROOT), capture_output=True, text=True,
+    )
+    assert res2.returncode == 0, res2.stderr
+    lineas2 = [json.loads(l) for l in io.open(ruta_salida, encoding="utf-8") if l.strip()]
+    assert len(lineas2) == 1, f"Se duplicaron decisiones: {len(lineas2)}"
+    assert lineas2[0]["decision"] == "LONG_EXPERIMENTAL"
+    assert lineas2[0]["observation_id"] == lineas1[0]["observation_id"]
+
+
+def test_cli_conflicto_identidad_explicita(tmp_path):
+    """Mismo observation_id con datos diferentes → conflicto (código != 0),
+    no sustitución silenciosa."""
+    ruta_entrada1 = tmp_path / "observaciones1.jsonl"
+    ruta_entrada2 = tmp_path / "observaciones2.jsonl"
+    ruta_salida = tmp_path / "decisiones.jsonl"
+
+    # Primera ejecución: ventana 3 con precio 101.00
+    obs1 = []
+    for i, (compra, venta, prof, precio, disp) in enumerate([
+        (100.0, 20.0, 1000.0, 100.00, T0 + 1000),
+        (150.0, 20.0, 900.0, 100.50, T0 + 61_000),
+        (200.0, 20.0, 800.0, 101.00, T0 + 121_000),
+    ]):
+        obs1.append(_obs("SYM", T0 + i * 60_000, compra, venta, prof, precio, disp, "LONG"))
+    _escribir_jsonl(ruta_entrada1, obs1)
+
+    res1 = subprocess.run(
+        [sys.executable, str(ROOT / "scripts" / "secuencia_presion_v1.py"),
+         "--fuente", str(ruta_entrada1), "--salida", str(ruta_salida)],
+        cwd=str(ROOT), capture_output=True, text=True,
+    )
+    assert res1.returncode == 0, res1.stderr
+    lineas1 = [json.loads(l) for l in io.open(ruta_salida, encoding="utf-8") if l.strip()]
+    assert len(lineas1) == 1
+    assert lineas1[0]["decision"] == "LONG_EXPERIMENTAL"
+    precio_inicial = lineas1[0]["ventanas"][2]["precio_cierre"]
+
+    # Segunda ejecución: misma observation_id "w3" pero precio diferente (102.00)
+    obs2 = []
+    for i, (compra, venta, prof, precio, disp) in enumerate([
+        (100.0, 20.0, 1000.0, 100.00, T0 + 1000),
+        (150.0, 20.0, 900.0, 100.50, T0 + 61_000),
+        (200.0, 20.0, 800.0, 102.00, T0 + 121_000),  # precio diferente
+    ]):
+        obs2.append(_obs("SYM", T0 + i * 60_000, compra, venta, prof, precio, disp, "LONG"))
+    _escribir_jsonl(ruta_entrada2, obs2)
+
+    res2 = subprocess.run(
+        [sys.executable, str(ROOT / "scripts" / "secuencia_presion_v1.py"),
+         "--fuente", str(ruta_entrada2), "--salida", str(ruta_salida)],
+        cwd=str(ROOT), capture_output=True, text=True,
+    )
+    assert res2.returncode == 3, f"Se esperaba código 3 (conflicto), obtuvo {res2.returncode}: {res2.stderr}"
+    # El archivo de salida no debe haberse modificado con la entrada conflictiva
+    lineas_despues = [json.loads(l) for l in io.open(ruta_salida, encoding="utf-8") if l.strip()]
+    assert len(lineas_despues) == 1
+    assert lineas_despues[0]["ventanas"][2]["precio_cierre"] == precio_inicial
+
+
+def test_cli_dos_simbolos_no_mezclan_historias(tmp_path):
+    """Dos símbolos procesados conjuntamente: sus historias no se mezclan."""
+    ruta_entrada = tmp_path / "observaciones.jsonl"
+    ruta_salida = tmp_path / "decisiones.jsonl"
+    obs = []
+    # SYM_A: LONG con compra > venta (F_k positivo creciente), precio al alza
+    # SYM_B: SHORT con compra < venta (F_k negativo creciente en abs), precio al baja
+    for i, (compra_l, venta_l, prof_l, precio_l, disp_l,
+            compra_s, venta_s, prof_s, precio_s, disp_s) in enumerate([
+        (100.0, 20.0, 1000.0, 100.00, T0 + 1000,
+         20.0, 100.0, 1000.0, 100.00, T0 + 1000),
+        (150.0, 20.0,  900.0, 100.50, T0 + 61_000,
+         15.0, 150.0,  900.0,  99.50, T0 + 61_000),
+        (200.0, 20.0,  800.0, 101.00, T0 + 121_000,
+         10.0, 200.0,  800.0,  99.00, T0 + 121_000),
+    ]):
+        obs.append(_obs("SYM_A", T0 + i * 60_000, compra_l, venta_l, prof_l, precio_l, disp_l, "LONG"))
+        obs.append(_obs("SYM_B", T0 + i * 60_000, compra_s, venta_s, prof_s, precio_s, disp_s, "SHORT"))
+    _escribir_jsonl(ruta_entrada, obs)
+
+    res = subprocess.run(
+        [sys.executable, str(ROOT / "scripts" / "secuencia_presion_v1.py"),
+         "--fuente", str(ruta_entrada), "--salida", str(ruta_salida)],
+        cwd=str(ROOT), capture_output=True, text=True,
+    )
+    assert res.returncode == 0, res.stderr
+    lineas = [json.loads(l) for l in io.open(ruta_salida, encoding="utf-8") if l.strip()]
+    assert len(lineas) == 2
+    simbolos = {l["symbol"] for l in lineas}
+    assert simbolos == {"SYM_A", "SYM_B"}
+    decisiones = {l["symbol"]: l["decision"] for l in lineas}
+    assert decisiones["SYM_A"] == "LONG_EXPERIMENTAL"
+    assert decisiones["SYM_B"] == "SHORT_EXPERIMENTAL"
+

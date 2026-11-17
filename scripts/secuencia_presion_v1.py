@@ -786,6 +786,59 @@ def _resultado_a_dict(r: ResultadoSecuencia) -> Dict[str, Any]:
     }
 
 
+def _cargar_resultados_existentes(ruta_salida: Path) -> Dict[str, Dict[str, Any]]:
+    """Carga decisiones previamente persistidas desde el JSONL de salida.
+
+    Devuelve un diccionario keyed por observation_id. Si el archivo no existe
+    o está vacío, devuelve un diccionario vacío.
+    """
+    existentes: Dict[str, Dict[str, Any]] = {}
+    if not ruta_salida.exists():
+        return existentes
+    with io.open(ruta_salida, encoding="utf-8") as f:
+        for linea in f:
+            linea = linea.strip()
+            if not linea:
+                continue
+            try:
+                fila = json.loads(linea)
+            except json.JSONDecodeError:
+                # Archivo corrupto: no se trunca silenciosamente.
+                raise ValueError(
+                    f"archivo de salida corrupto: {ruta_salida} (línea no parseable)"
+                )
+            oid = fila.get("observation_id")
+            if oid is not None:
+                existentes[str(oid)] = fila
+    return existentes
+
+
+def _conflicto_existente(
+    existente: Dict[str, Any], nuevo: ResultadoSecuencia
+) -> Optional[str]:
+    """Comprueba si una decisión existente conflicts con la nueva.
+
+    Devuelve None si son compatibles (misma decisión y mismos datos esenciales),
+    o un mensaje de conflicto si difieren en algo esencial.
+    """
+    if existente.get("decision") != nuevo.decision:
+        return (
+            f"observation_id {nuevo.observation_id}: decisión previa "
+            f"{existente.get('decision')} != nueva {nuevo.decision}"
+        )
+    if existente.get("config_hash") != nuevo.config_hash:
+        return (
+            f"observation_id {nuevo.observation_id}: config_hash previo "
+            f"{existente.get('config_hash')} != nuevo {nuevo.config_hash}"
+        )
+    if existente.get("ventanas") != nuevo.ventanas:
+        return (
+            f"observation_id {nuevo.observation_id}: ventanas previas "
+            f"difieren de las nuevas"
+        )
+    return None
+
+
 def main(argv: Optional[List[str]] = None) -> int:
     parser = __import__("argparse").ArgumentParser(
         description="Detector experimental SECUENCIA-PRESION-V1 (local, sin mercado)."
@@ -808,21 +861,58 @@ def main(argv: Optional[List[str]] = None) -> int:
         return 3
 
     observaciones = cargar_observaciones(ruta_fuente)
-    resultados = detectar_en_observaciones(observaciones)
+    resultados_nuevos = detectar_en_observaciones(observaciones)
 
     ruta_salida = Path(args.salida)
     ruta_salida.parent.mkdir(parents=True, exist_ok=True)
-    with io.open(ruta_salida, "w", encoding="utf-8", newline="\n") as f:
-        for r in resultados:
+
+    # Cargar decisiones preexistentes (si las hay) para evitar duplicados
+    # y detectar conflictos de identidad.
+    existentes = _cargar_resultados_existentes(ruta_salida)
+
+    nuevas: List[ResultadoSecuencia] = []
+    conflictos: List[str] = []
+    duplicadas_omitidas = 0
+
+    for resultado in resultados_nuevos:
+        oid = resultado.observation_id
+        if oid in existentes:
+            conflicto = _conflicto_existente(existentes[oid], resultado)
+            if conflicto is not None:
+                conflictos.append(conflicto)
+            else:
+                duplicadas_omitidas += 1
+        else:
+            nuevas.append(resultado)
+
+    if conflictos:
+        print(
+            json.dumps(
+                {
+                    "error": "conflicto de identidad en datos de salida",
+                    "conflictos": conflictos,
+                },
+                ensure_ascii=False,
+            ),
+            file=sys.stderr,
+        )
+        return 3
+
+    # Escribir únicamente las decisiones nuevas, sin modificar las existentes.
+    with io.open(ruta_salida, "a", encoding="utf-8", newline="\n") as f:
+        for r in nuevas:
             f.write(json.dumps(_resultado_a_dict(r), ensure_ascii=False, sort_keys=True) + "\n")
 
     resumen = {
         "estado": "ok",
-        "symboles_procesados": len(set(r.symbol for r in resultados)),
-        "detecciones_long": sum(1 for r in resultados if r.decision == "LONG_EXPERIMENTAL"),
-        "detecciones_short": sum(1 for r in resultados if r.decision == "SHORT_EXPERIMENTAL"),
-        "sin_patron": sum(1 for r in resultados if r.decision == "SIN_PATRON"),
-        "datos_insuficientes": sum(1 for r in resultados if r.decision == "DATOS_INSUFICIENTES"),
+        "symboles_procesados": len(set(r.symbol for r in resultados_nuevos)),
+        "detecciones_long": sum(1 for r in resultados_nuevos if r.decision == "LONG_EXPERIMENTAL"),
+        "detecciones_short": sum(1 for r in resultados_nuevos if r.decision == "SHORT_EXPERIMENTAL"),
+        "sin_patron": sum(1 for r in resultados_nuevos if r.decision == "SIN_PATRON"),
+        "datos_insuficientes": sum(1 for r in resultados_nuevos if r.decision == "DATOS_INSUFICIENTES"),
+        "nuevas": len(nuevas),
+        "duplicadas_omitidas": duplicadas_omitidas,
+        "conflictos": len(conflictos),
         "salida": str(ruta_salida),
     }
     print(json.dumps(resumen, ensure_ascii=False))
