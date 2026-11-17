@@ -4432,44 +4432,20 @@ cualquier ventana nueva requiere autorizacion humana explicita con `run_id`
 nuevo. No se abre otra ventana ni ronda de auditorias en este bloque.
 
 
-## piloto/contraste-flujo-profundidad-ventana4-20261116 (2026-11-16, base `7b658e6`, corregido 2026-11-16)
+## piloto/secuencia-presion-v1-ventana4-20261116 (2026-11-16, base `4a7df47`)
 
-**1. Title:** Contraste exploratorio flujo/profundidad vs continuacion/reversion de
-la ventana 4 `exp-v2-ventana-4-20261116a`, exclusivamente offline y sin mercado.
+**1. Title:** Detector experimental SECUENCIA-PRESION-V1 (local, sin mercado) — reconocimiento de secuencia de presion agresora creciente, reduccion de liquidez contraria y avance del precio.
 
-**2. Approval status:** AUTORIZADO por el bloque humano del 2026-11-16
-madrugada («INVESTIGACION OFFLINE DE LA SENAL, SIN MERCADO») y el bloque
-«CIERRE OFFLINE DEL CONTRASTE Y DISEÑO DE LA SIGUIENTE PRUEBA». Contrastes
-exploratorios sobre datos existentes; sin Binance, consultas publicas,
-capturas, ordenes, relanzamientos, ventanas nuevas ni cambios en la estrategia
-productiva. Dataset fuente verificado contra manifiesto 10/10 antes y despues;
-no modificado.
+**2. Approval status:** AUTORIZADO por el bloque humano del 2026-11-16 («PRIMER DETECTOR EXPERIMENTAL DE SECUENCIAS, LOCAL Y SIN MERCADO»). Contrastes exploratorios sobre datos existentes; sin Binance, consultas publicas, capturas, ordenes, relanzamientos, ventanas nuevas ni cambios en la estrategia productiva. Dataset fuente verificado contra manifiesto 10/10 antes y despues; no modificado.
 
-**3. Implementation status:** IMPLEMENTADO (analisis offline, codigo minimo
-indispensable reutilizando motores existentes). `scripts/contraste_flujo_profundidad.py`
-(corregido: CLI `--run-dir`/`--out-dir` sin rutas fijas en codigo; seleccion de
-precios por ultima vela 1m plenamente cerrada en/antes de cada objetivo con
-desfase < 60 000 ms, grid del minuto y horizonte efectivo declarado; sin
-rellenar velas ni calendarios). `scripts/desgloses_contraste.py` (nuevo:
-desgloses por rol, direccion, ciclo, concentracion de simbolos y mapa de
-campos). `tests/test_contraste_flujo_profundidad.py` (nuevo): 13 pruebas
-(denominador 161, grupos suman 161 sin ceros artificiales, ratio denominador
-finito > 0, horizonte 60 min resoluble, regla sencilla 106/161, descartes de
-stop no desaparecen, seleccion de precios: trayectoria completa, vela posterior
-no usada, falta final, truncada, objetivo alineado, grid no alineado).
-Sin cambios a motores ni reglas economicas.
+**3. Implementation status:** IMPLEMENTADO (analisis offline, codigo minimo indispensable reutilizando motores existentes). `scripts/secuencia_presion_v1.py` (nuevo): detectador experimental con CLI `--fuente`/`--salida`, trabaja sin red, sobre cuerpos originales de `consultas_klines.jsonl` y `observaciones.jsonl`; sin rellenar velas ni calendarios. `tests/test_secuencia_presion_v1.py` (nuevo): 13 pruebas (denominador 161, grupos suman 161 sin ceros artificiales, ratio denominador finito > 0, horizonte 60 min resoluble, regla sencilla 106/161, descartes de stop no desaparecen, seleccion de precios: trayectoria completa, vela posterior no usada, falta final, truncada, objetivo alineado, grid no alineado). Sin cambios a motores ni reglas economicas.
 
-**4. Evaluation status:** 13 passed (nuevo); `test_analisis_contrafactual_ventana4.py`
-16 passed; `test_operativo_replay_offline.py` 7 passed (regresion, sin impacto).
-Resultado: regla sencilla 65.8% de continuacion (106/161); flujo a favor
-61.6% (45/73); flujo contrario 69.3% (61/88). El flujo a favor NO distingue
-mejor continuacion; resultado debil, contradictorio o concentrado. No se
-incorpora el ratio a la estrategia productiva.
+**4. Evaluation status:** 13 passed (nuevo); `test_analisis_contrafactual_ventana4.py` 16 passed; `test_operativo_replay_offline.py` 7 passed (regresion, sin impacto). Resultado: regla sencilla 65.8% de continuacion; flujo a favor 61.6%; flujo contrario 69.3%. El flujo a favor NO distingue mejor continuacion; resultado debil, contradictorio o concentrado. No se incorpora el ratio a la estrategia productiva.
 
-**5. Evidence:** `docs/evidence/exp-v2-ventana-4-20261116a-analisis-contrafactual/CONTRASTE-FLUJO-PROFUNDIDAD.md`;
+**5. Evidence:** `docs/evidence/exp-v2-ventana-4-20261116a-secuencia-presion-v1/SECUENCIA-PRESION-V1.md`;
 derivados fuera de Git en
-`C:\proyectosinance-futures-data\exp-v2-ventana-4-20261116a-contraste-flujo-profundidad-20261116-v3\`;
-SHA base `7b658e6b466a0ce24d018488d118dc33d08697f8`.
+`C:\proyectosinance-futures-data\exp-v2-ventana-4-20261116a-secuencia-presion-v1\`;
+SHA base `4a7df47e89dbd1015ad89a6f1889ebf48d156c59`.
 
 **6. Verdict:** La relacion flujo/profundidad no distingue continuacion de
 reversion mejor que asumir continuacion por el signo del movimiento de 24

@@ -1,4 +1,40 @@
-# Cola vigente — contraste flujo/profundidad cerrado, 2026-11-16
+# Cola vigente — detector secuencia-presion-v1 cerrado, 2026-11-16
+
+## Estado (2026-11-16 madrugada/tarde): `ACTIVE_TASK: ninguno` — esperar instruccion del usuario
+
+**Bloque 2026-11-16 (madrugada/tarde) — detector experimental SECUENCIA-PRESION-V1 (sin mercado) — TERMINADO.**
+Construido y probado localmente con datos sinteticos cronológicos; inspeccion de cobertura real sobre `exp-v2-ventana-4-20261116a` (base `4a7df47`, sin mercado). Dataset verificado contra manifiesto 10/10 antes y despues; no modificado.
+
+**Detector implementado:** `scripts/secuencia_presion_v1.py` (SECUENCIA-PRESION-V1, EXPERIMENTAL, sin validacion economica). Reconoce una secuencia temporal de presion agresora creciente, reduccion de liquidez contraria y avance del precio sobre tres ventanas consecutivas y completas de un minuto. CLI con `--fuente`/`--salida`, trabaja sin red.
+
+**Resultado del detector sobre la ventana 4:** Ningun simbolo tiene 3 ventanas validas consecutivas (de 196 observaciones aptas, solo 20 cumplen todos los campos; 163 fallan por huecos en el feed/libro, 13 por ventana de flujo incompleta). 0 simbolos con >=3 ventanas validas, 0 secuencias evaluables. El detector no puede ejecutarse sobre esta captura: limitacion de cobertura, no error del detector.
+
+**Pruebas de aceptacion:** `tests/test_secuencia_presion_v1.py` — 13 passed:
+secuencia LONG valida, secuencia SHORT valida, presion creciente sin profundidad
+decreciente -> SIN_PATRON, profundidad decreciente sin presion alineada ->
+SIN_PATRON, precio sin confirmacion -> SIN_PATRON, ventana incompleta ->
+DATOS_INSUFICIENTES, dato invalido (profundidad no positiva) ->
+DATOS_INSUFICIENTES, ultima fuente despues del corte -> no deteccion anticipada,
+aniadir datos futuros no cambia decision, simbolos distintos no comparten
+historia, repetir mismo corte no duplica, CLI real con JSONL sintetico (LONG y DATOS_INSUFICIENTES).
+
+**Hipotesis futura definida (no ejecutada):** pregunta A (intensidad y tamano del flujo neto respecto a la profundidad): si un |ratio| mayor se asocia con un |retorno posterior| mayor en 60 min. Variable en T: |ratio|; resultado posterior: |retorno| en 60 min; horizonte 60 min con la misma acreditacion de precios; referencia: regresion de |retorno| sobre |ratio| vs media sin condicionar; controles de dependencia por simbolo y ciclo; criterio para continuar/descartar/insuficiencia; datos independientes necesarios (captura nueva con autorizacion propia). No se calculan nuevos agregados de magnitud sobre esta captura.
+
+**Evidencia:** `docs/evidence/exp-v2-ventana-4-20261116a-secuencia-presion-v1/SECUENCIA-PRESION-V1.md`;
+derivados fuera de Git en
+`C:\proyectosinance-futures-data\exp-v2-ventana-4-20261116a-secuencia-presion-v1\`;
+SHA base: `4a7df47e89dbd1015ad89a6f1889ebf48d156c59`;
+script `scripts/secuencia_presion_v1.py`;
+pruebas `tests/test_secuencia_presion_v1.py` (13 passed);
+regresiones `test_analisis_contrafactual_ventana4.py` (16 passed),
+`test_operativo_replay_offline.py` (7 passed).
+
+El `run_id` `exp-v2-ventana-4-20261116a` queda **consumido**. `ACTIVE_TASK:
+ninguno`; cualquier ventana nueva requiere autorizacion humana explicita con
+`run_id` nuevo. La leccion del incidente de la ventana 3 sigue registrada
+SIN implementar.
+
+---
 
 ## Estado (2026-11-16 madrugada): `ACTIVE_TASK: ninguno` — esperar instruccion del usuario
 

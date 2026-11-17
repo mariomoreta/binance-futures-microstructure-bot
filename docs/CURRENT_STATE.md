@@ -97,3 +97,89 @@ mecanismo y no hubo incidente.
 | Dataset original | `C:\proyectos\binance-futures-data\exp-v2-ventana-4-20261116a` (manifiesto verificado, solo lectura) |
 | Derivados | `C:\proyectos\binance-futures-data\exp-v2-ventana-4-20261116a-replay-20261116\` (replay_operativo.json) |
 | Lo que NO acredita | rentabilidad, edge, comparacion por rol (INSUFICIENTE), funding completo, calidad del selector; los umbrales siguen siendo hipotesis |
+
+
+
+## Bloque 2026-11-16 (madrugada/tarde) — detector experimental SECUENCIA-PRESION-V1 (sin mercado)
+
+**Autorizacion humana del 2026-11-16:** «PRIMER DETECTOR EXPERIMENTAL DE SECUENCIAS,
+LOCAL Y SIN MERCADO». Contrastes exploratorios sobre datos existentes; sin Binance,
+consultas publicas, capturas, ordenes, relanzamientos, cambios en la estrategia
+productiva, dashboard, servicios, supervisores ni dependencias nuevas. Dataset
+fuente verificado contra manifiesto (10/10) antes y despues; no modificado.
+
+**Detector implementado:** `scripts/secuencia_presion_v1.py` (SECUENCIA-PRESION-V1,
+EXPERIMENTAL, sin validacion economica). Reconoce una secuencia temporal de
+presion agresora creciente, reduccion de liquidez contraria y avance del precio
+sobre tres ventanas consecutivas y completas de un minuto. CLI con `--fuente` y
+`--salida`, trabaja sin red, no crea motor de trading ni servicio.
+
+**Resultado del detector sobre la ventana 4:** Ningun simbolo tiene 3 ventanas
+validas consecutivas en `exp-v2-ventana-4-20261116a` (de 196 observaciones aptas,
+solo 20 cumplen todos los campos requeridos; 163 fallan por
+`huecos_detectados_en_feed` / `libro_huecos` en la integridad, 13 por
+`flujo_ventana_completa` != true). Por lo tanto, el detector no puede ejecutarse
+sobre esta captura: 0 simbolos con >=3 ventanas validas, 0 secuencias
+evaluables. Los datos de la ventana 4 no tienen cobertura suficiente para este
+detector. Esto es una limitacion de cobertura, no un error del detector.
+
+**Configuracion congelada:** version `SECUENCIA-PRESION-V1`, ventana 60s, 3
+ventanas, profundidad top-20, lado contrario, requiere ventana completa,
+requiere integridad valida, condiciones: Q positivo creciente, profundidad
+contraria decreciente, precio avanza en direccion. SHA-256 de la configuracion
+registrado en el modulo.
+
+**Pruebas de aceptacion:** `tests/test_secuencia_presion_v1.py` — 13 passed:
+secuencia LONG valida, secuencia SHORT valida, presion creciente sin profundidad
+decreciente -> SIN_PATRON, profundidad decreciente sin presion alineada ->
+SIN_PATRON, precio sin confirmacion -> SIN_PATRON, ventana incompleta ->
+DATOS_INSUFICIENTES, dato invalido (profundidad no positiva) ->
+DATOS_INSUFICIENTES, ultima fuente despues del corte -> no deteccion anticipada,
+aniadir datos futuros no cambia decision, simbolos distintos no comparten
+historia, repetir mismo corte no duplica, CLI real con JSONL sintetico.
+
+**Cobertura real (ventana 4, solo lectura):**
+- Observaciones aptas: 196; simbolos unicos: 34
+- Simbolos con >=3 ventanas validas: 0; con exactamente 3: 0
+- Secuencias de 3 consecutivas posibles: 0
+- Simbolos con 1-2 validas: 20; con 0 validas: 14
+- Campos que faltan: flujo_ventana_completa (13), integridad del feed/libro
+  (163 por huecos_detectados_en_feed y libro_huecos)
+
+**Listado minimo para futura adquisicion:** por simbolo y ventana de 1 min:
+buy_notional, sell_notional (flujo aggTrade), bid_notional_top20,
+ask_notional_top20 (libro depth20@100ms), precio_base (libro_mid),
+ventana_completa, integridad (sin huecos/invalidos/cruce),
+disponibilidad.max_ms, decision_ms, symbol, observation_id. Historia previa:
+>=3 ventanas consecutivas por simbolo, cada una completa y sin huecos. No
+reconstruir ventanas de 30s desde agregados de 1 min.
+
+**Hipotesis futura (no ejecutada):** pregunta A (intensidad): si un |ratio|
+mayor se asocia con un |retorno posterior| mayor en 60 min. Variable en T:
+|ratio|; resultado posterior: |retorno| en 60 min; horizonte 60 min con la
+misma acreditacion de precios; referencia: regresion de |retorno| sobre |ratio|;
+controles de dependencia por simbolo y ciclo; datos independientes necesarios
+(captura nueva con autorizacion propia).
+
+**Evidencia:**
+`docs/evidence/exp-v2-ventana-4-20261116a-secuencia-presion-v1/SECUENCIA-PRESION-V1.md`;
+derivados fuera de Git en
+`C:\proyectosinance-futures-data\exp-v2-ventana-4-20261116a-secuencia-presion-v1\`;
+SHA base: `4a7df47e89dbd1015ad89a6f1889ebf48d156c59`;
+script `scripts/secuencia_presion_v1.py`;
+pruebas `tests/test_secuencia_presion_v1.py` (13 passed);
+regresiones `test_analisis_contrafactual_ventana4.py` (16 passed),
+`test_operativo_replay_offline.py` (7 passed).
+
+**Lo que NO acredita:** rentabilidad, edge, mejora predictiva del ratio
+flujo/profundidad, ventaja candidato/comparador, utilidad operativa (una hora de
+captura, dependencia temporal, simbolos repetidos). El detector no se conecta
+al camino productivo.
+
+| | |
+|---|---|
+| SHA base | `4a7df47e89dbd1015ad89a6f1889ebf48d156c59` (local == remoto) |
+| SHA de ejecucion del analisis | commit `4a7df47` (detector SECUENCIA-PRESION-V1) |
+| Evidencia detector | `docs/evidence/exp-v2-ventana-4-20261116a-secuencia-presion-v1/SECUENCIA-PRESION-V1.md` |
+| Dataset original | intacto, solo lectura, 10/10 ficheros verificados contra manifiesto antes y despues |
+| Lo que NO acredita | rentabilidad, edge, mejora predictiva del detector, utilidad operativa (una hora de captura, dependencia temporal, simbolos repetidos) |

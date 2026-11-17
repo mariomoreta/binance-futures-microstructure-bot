@@ -5999,3 +5999,89 @@ Evidencia: `docs/evidence/exp-v2-ventana-4-20261116a-lanzamiento/` y
 hashes_cierre.json); dataset `C:\proyectos\binance-futures-data\exp-v2-ventana-4-20261116a`
 (manifiesto verificado 10/10); derivados separados en
 `exp-v2-ventana-4-20261116a-replay-20261116\`.
+
+
+## 2026-11-16 (madrugada) — Contraste flujo/profundidad vs continuacion/reversion de la ventana 4 `exp-v2-ventana-4-20261116a`: cierre offline y diseno de la siguiente prueba
+
+Autorizacion humana explícita: «INVESTIGACION OFFLINE DE LA SENAL, SIN MERCADO»
+y «CIERRE OFFLINE DEL CONTRASTE Y DISEÑO DE LA SIGUIENTE PRUEBA». Sin Binance,
+consultas publicas, capturas, ordenes, relanzamientos, ventanas nuevas ni
+cambios en la estrategia productiva. Dataset fuente verificado contra manifiesto
+(10/10) antes y despues; no modificado.
+
+Decisiones registradas:
+
+1. **Alcance del contraste (rectificado):** el contraste prueba la **alineacion
+   del flujo neto con el movimiento previo** (ratio_alienado =
+   signo(move_24h_pct) x (buy_notional - sell_notional) /
+   (bid_notional_top20 + ask_notional_top20), denominador > 0). No prueba si
+   una profundidad pequena frente a un flujo grande anticipa movimientos
+   mayores (intensidad); esa es una pregunta futura distinta (hipótesis A, no
+   ejecutada).
+
+2. **Horizonte de precios acreditado:** cada observacion conserva decision_ms,
+   objetivo T + 60 min, open/close de ambas velas, precios inicial y final,
+   desfase de cada cierre y horizonte efectivo. Seleccion: ultima vela 1m
+   plenamente cerrada en/antes de cada objetivo; desfase no negativo y < 60
+   000 ms; grid del minuto; no se usan cierres futuros ni velas antiguas como
+   sustituto silencioso. Resultado en las 161 aptas: desfases inicial y final
+   21 801-27 191 ms (todos < 60 000 ms); horizonte efectivo 3 600 000 ms
+   (exacto) en todas, 0 discrepantes; grid verificado. Todas las 161 siguen
+   validas; ninguna se convierte en cero ni se elimina del denominador.
+
+3. **Resultado del contraste (161 escenarios, capacidad 1 aislada):**
+   regla sencilla (signo 24h) = 65.8% de continuacion (106/161); flujo a favor
+   del movimiento previo = 61.6% (45/73); flujo contrario = 69.3% (61/88).
+   El flujo a favor NO distingue mejor continuacion que la regla sencilla;
+   resultado debil, contradictorio o concentrado. No se incorpora el ratio a
+   la estrategia productiva.
+
+4. **Hipotesis futura definida (no ejecutada):** pregunta A (intensidad y
+   tamano del flujo neto respecto a la profundidad): si un |ratio|
+   mayor se asocia con un |retorno posterior| mayor en 60 min. Variable en T:
+   |ratio|; resultado posterior: |retorno| en 60 min; horizonte 60 min con la
+   misma acreditacion de precios; referencia: regresion de |retorno| sobre
+   |ratio| vs media sin condicionar; controles de dependencia por simbolo y
+   ciclo; criterio para continuar/descartar/insuficiencia; datos independientes
+   necesarios (captura nueva con autorizacion propia). No se calculan nuevos
+   agregados de magnitud sobre esta captura.
+
+Evidencia: `docs/evidence/exp-v2-ventana-4-20261116a-analisis-contrafactual/CONTRASTE-FLUJO-PROFUNDIDAD.md`;
+derivados fuera de Git en
+`C:\proyectosinance-futures-data\exp-v2-ventana-4-20261116a-contraste-flujo-profundidad-20261116-v3\`;
+script `scripts/contraste_flujo_profundidad.py` (CLI `--run-dir`/`--out-dir`,
+sin rutas fijas en codigo);
+`tests/test_contraste_flujo_profundidad.py` (13 passed);
+regresiones `test_analisis_contrafactual_ventana4.py` (16 passed),
+`test_operativo_replay_offline.py` (7 passed).
+
+Estado tras el bloque: `ACTIVE_TASK: ninguno`; el `run_id`
+`exp-v2-ventana-4-20261116a` queda consumido y no se reutiliza. La leccion del
+incidente de la ventana 3 sigue registrada SIN implementar.
+
+
+## 2026-11-16 (madrugada/tarde) — Detector experimental SECUENCIA-PRESION-V1 de la ventana 4 `exp-v2-ventana-4-20261116a`: cierre offline y diseno de la siguiente prueba
+
+Autorizacion humana explicita: «PRIMER DETECTOR EXPERIMENTAL DE SECUENCIAS, LOCAL Y SIN MERCADO». Sin Binance, consultas publicas, capturas, ordenes, relanzamientos, ventanas nuevas ni cambios en la estrategia productiva. Dataset fuente verificado contra manifiesto 10/10 antes y despues; no modificado.
+
+Decisiones registradas:
+
+1. **Detector implementado:** `scripts/secuencia_presion_v1.py` (SECUENCIA-PRESION-V1, EXPERIMENTAL, sin validacion economica). Reconoce una secuencia temporal de presion agresora creciente, reduccion de liquidez contraria y avance del precio sobre tres ventanas consecutivas y completas de un minuto. CLI con `--fuente`/`--salida`, trabaja sin red.
+
+2. **Resultado del detector sobre la ventana 4:** Ningun simbolo tiene 3 ventanas validas consecutivas en `exp-v2-ventana-4-20261116a` (de 196 observaciones aptas, solo 20 cumplen todos los campos requeridos; 163 fallan por `huecos_detectados_en_feed` / `libro_huecos` en la integridad, 13 por `flujo_ventana_completa` != true). 0 simbolos con >=3 ventanas validas, 0 secuencias evaluables. Los datos de la ventana 4 no tienen cobertura suficiente para este detector. Esto es una limitacion de cobertura, no un error del detector.
+
+3. **Configuracion congelada y verificada:** version `SECUENCIA-PRESION-V1`, ventana 60s, 3 ventanas, profundidad top-20, lado contrario, requiere ventana completa, requiere integridad valida, condiciones: Q positivo creciente, profundidad contraria decreciente, precio avanza en direccion. SHA-256 de la configuracion registrado en el modulo.
+
+4. **Hipotesis futura definida (no ejecutada):** pregunta A (intensidad y tamano del flujo neto respecto a la profundidad): si un |ratio| mayor se asocia con un |retorno posterior| mayor en 60 min. Variable en T: |ratio|; resultado posterior: |retorno| en 60 min; horizonte 60 min con la misma acreditacion de precios; referencia: regresion de |retorno| sobre |ratio| vs media sin condicionar; controles de dependencia por simbolo y ciclo; criterio para continuar/descartar/insuficiencia; datos independientes necesarios (captura nueva con autorizacion propia). No se calculan nuevos agregados de magnitud sobre esta captura.
+
+Evidencia: `docs/evidence/exp-v2-ventana-4-20261116a-secuencia-presion-v1/SECUENCIA-PRESION-V1.md`;
+derivados fuera de Git en
+`C:\proyectosinance-futures-data\exp-v2-ventana-4-20261116a-secuencia-presion-v1\`;
+script `scripts/secuencia_presion_v1.py` (CLI `--fuente`/`--salida`, sin rutas fijas en codigo);
+`tests/test_secuencia_presion_v1.py` (13 passed);
+regresiones `test_analisis_contrafactual_ventana4.py` (16 passed),
+`test_operativo_replay_offline.py` (7 passed).
+
+Estado tras el bloque: `ACTIVE_TASK: ninguno`; el `run_id`
+`exp-v2-ventana-4-20261116a` queda consumido y no se reutiliza. La leccion del
+incidente de la ventana 3 sigue registrada SIN implementar.
