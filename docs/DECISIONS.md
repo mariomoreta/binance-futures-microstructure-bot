@@ -6085,3 +6085,27 @@ regresiones `test_analisis_contrafactual_ventana4.py` (16 passed),
 Estado tras el bloque: `ACTIVE_TASK: ninguno`; el `run_id`
 `exp-v2-ventana-4-20261116a` queda consumido y no se reutiliza. La leccion del
 incidente de la ventana 3 sigue registrada SIN implementar.
+
+## 2026-11-16 (madrugada/tarde) — Detector experimental SECUENCIA-PRESION-V1 de la ventana 4 `exp-v2-ventana-4-20261116a`: cierre offline y diseno de la siguiente prueba
+
+Autorizacion humana explicita: «PRIMER DETECTOR EXPERIMENTAL DE SECUENCIAS, LOCAL Y SIN MERCADO» y «CIERRE OFFLINE DEL CONTRASTE Y DISÑO DE LA SIGUIENTE PRUEBA». Sin Binance, consultas publicas, capturas, ordenes, relanzamientos, ventanas nuevas ni cambios en la estrategia productiva. Dataset fuente verificado contra manifiesto (10/10) antes y despues; no modificado.
+
+Decisiones registradas:
+
+1. **Detector implementado:** `scripts/secuencia_presion_v1.py` (SECUENCIA-PRESION-V1, EXPERIMENTAL, sin validacion economica). Reconoce una secuencia temporal de presion agresora creciente, reduccion de liquidez contraria y avance del precio sobre tres ventanas consecutivas y completas de un minuto. CLI con `--fuente`/`--salida`, trabaja sin red.
+
+2. **Resultado del detector sobre la ventana 4:** Ningun simbolo tiene 3 ventanas validas consecutivas en `exp-v2-ventana-4-20261116a` (de 196 observaciones aptas, solo 20 cumplen todos los campos requeridos; 163 fallan por `huecos_detectados_en_feed` / `libro_huecos` en la integridad, 13 por `flujo_ventana_completa` != true). 0 simbolos con >=3 ventanas validas, 0 secuencias evaluables. Los datos de la ventana 4 no tienen cobertura suficiente para este detector. Esto es una limitacion de cobertura, no un error del detector.
+
+3. **Configuracion congelada y verificada:** version `SECUENCIA-PRESION-V1`, ventana 60s, 3 ventanas, profundidad top-20, lado contrario, requiere ventana completa, requiere integridad valida, requiere ventanas contiguas, condiciones: Q positivo creciente, profundidad contraria decreciente, precio avanza en direccion. SHA-256 de la configuracion registrado en el modulo.
+
+4. **Hipotesis futura definida (no ejecutada):** pregunta A (intensidad y tamano del flujo neto respecto a la profundidad): si un |ratio| mayor se asocia con un |retorno posterior| mayor en 60 min. Variable en T: |ratio|; resultado posterior: |retorno| en 60 min; horizonte 60 min con la misma acreditacion de precios; referencia: regresion de |retorno| sobre |ratio| vs media sin condicionar; controles de dependencia por simbolo y ciclo; criterio para continuar/descartar/insuficiencia; datos independientes necesarios (captura nueva con autorizacion propia). No se calculan nuevos agregados de magnitud sobre esta captura.
+
+Evidencia: `docs/evidence/exp-v2-ventana-4-20261116a-secuencia-presion-v1/SECUENCIA-PRESION-V1.md`;
+derivados fuera de Git en
+`C:\proyectos\binance-futures-data\exp-v2-ventana-4-20261116a-secuencia-presion-v1\`;
+script `scripts/secuencia_presion_v1.py` (CLI `--fuente`/`--salida`, sin rutas fijas en codigo);
+`tests/test_secuencia_presion_v1.py` (18 passed);
+regresiones `test_analisis_contrafactual_ventana4.py` (16 passed),
+`test_operativo_replay_offline.py` (7 passed).
+
+Estado tras el bloque: `ACTIVE_TASK: ninguno`; el `run_id` `exp-v2-ventana-4-20261116a` queda consumido y no se reutiliza. La leccion del incidente de la ventana 3 sigue registrada SIN implementar.

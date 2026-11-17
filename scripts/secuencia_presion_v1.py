@@ -3,7 +3,7 @@
 
 Reconoce una secuencia temporal de presión agresora creciente, reducción de
 liquidez contraria y avance del precio, sobre tres ventanas consecutivas y
-completas de un minuto.
+completas de un minuto **de verdad contiguas**.
 
 Estado: EXPERIMENTAL, sin validación económica. No conecta al camino
 productivo ni recibe autorización para operar. La regla operativa actual
@@ -33,6 +33,18 @@ configuración, motivo explícito.
 Ausentes, no finitos, importes inválidos, profundidad no positiva, ventanas
 incompletas o huecos impiden acreditar el patrón. Nunca UNKNOWN -> cero.
 No se mezclan "no se cumple el patrón" con "no podemos evaluarlo".
+
+Reglas temporales (corregidas):
+  - Las ventanas deben ser realmente contiguas: ventana_fin_ms[k] ==
+    ventana_inicio_ms[k+1], mismo contrato/symbol, misma ventana_ms (60s).
+    Un hueco rompe la secuencia; una nueva secuencia comienza después.
+  - Se evalúan ternas contiguas sucesivas (1-2-3, luego 2-3-4, 3-4-5, ...)
+    a medida que llegan datos. Una decisión emitida se conserva (inmutabilidad);
+    repetir el mismo corte no duplica. Una entrada contradictoria con la misma
+    identidad produce conflicto explícito, no sustitución silenciosa.
+  - El instante de detección es el máximo de las disponibilidades de las tres
+    ventanas (incluidos precios). Nunca anterior a la finalización de las tres
+    ventanas ni a la disponibilidad acreditada de cualquier componente.
 """
 
 from __future__ import annotations
@@ -62,6 +74,7 @@ CONFIG: Dict[str, Any] = {
     "requiere_ventana_completa": True,
     "requiere_integridad_valida": True,
     "requiere_desfase_valido": True,
+    "requiere_ventanas_contiguas": True,
     "condiciones": {
         "q_positivo_creciente": True,
         "profundidad_contraria_decreciente": True,
@@ -104,7 +117,8 @@ class VentanaPresion:
     evento_iso: Optional[str]
     disponibilidad_ms: Optional[int]   # instante en que toda la evidencia
                                        # necesaria estaba disponible (max de
-                                       # disponibilidad por fuente)
+                                       # disponibilidad por fuente, incluidos
+                                       # precios)
     disponibilidad_iso: Optional[str]
     ventana_completa: bool
     ventana_ms: int
@@ -112,7 +126,7 @@ class VentanaPresion:
     sell_notional: Optional[float]     # USDT, ventas agresoras
     bid_notional_top20: Optional[float]  # USDT, profundidad de compra top-20
     ask_notional_top20: Optional[float]  # USDT, profundidad de venta top-20
-    precio_cierre: Optional[float]     # precio_base (mid del libro conocido)
+    precio_cierre: Optional[float]     # precio de referencia conocido en T
     precio_fuente: Optional[str]
     precio_event_ms: Optional[int]
     precio_event_iso: Optional[str]
@@ -165,31 +179,44 @@ class VentanaPresion:
             and _es_finito_positivo(ask)
             and (compra is None or _es_finito(compra) and compra >= 0.0)
             and (venta is None or _es_finito(venta) and venta >= 0.0)
-            and (precio is None or _es_finito_positivo(precio))
+            and precio is not None
+            and _es_finito_positivo(precio)
         )
+
+    def es_contigua_con(self, anterior: "VentanaPresion") -> bool:
+        """True si esta ventana es contigua con la anterior: mismo contrato,
+        misma ventana_ms, y ventana_inicio_ms == ventana_fin_ms de la anterior
+        (no hay hueco ni solapamiento)."""
+        if self.symbol != anterior.symbol:
+            return False
+        if self.ventana_ms != anterior.ventana_ms:
+            return False
+        if self.ventana_inicio_ms is None or anterior.ventana_fin_ms is None:
+            return False
+        return self.ventana_inicio_ms == anterior.ventana_fin_ms
 
 
 @dataclass
 class ResultadoSecuencia:
-    """Resultado de la detección para un símbolo."""
+    """Resultado de la detección para una terna de ventanas."""
 
     symbol: str
-    observation_id: str  # última ventana de la secuencia evaluada
+    observation_id: str  # observation_id de la TERCERA ventana de la terna
     decision: str  # LONG_EXPERIMENTAL | SHORT_EXPERIMENTAL | SIN_PATRON | DATOS_INSUFICIENTES
     direccion_candidata: Optional[str]  # LONG | SHORT | None
-    ventanas: List[Dict[str, Any]]  # las tres ventanas usadas (o menos si insuficiente)
+    ventanas: List[Dict[str, Any]]  # las tres ventanas usadas
     condiciones_cumplidas: List[str]
     condiciones_faltantes: List[str]
     motivo: str
     config_version: str
     config_hash: str
-    instante_deteccion_ms: Optional[int]  # disponibilidad_ms de la última ventana usada
+    instante_deteccion_ms: Optional[int]  # max disponibilidad de las 3 ventanas
     instante_deteccion_iso: Optional[str]
     procedencia: str = "observaciones.jsonl (ventana 4)"
 
 
 # ---------------------------------------------------------------------------
-# Detección
+# Utilidades
 # ---------------------------------------------------------------------------
 
 def _es_finito_positivo(valor: Optional[float]) -> bool:
@@ -211,8 +238,6 @@ def _es_finito(valor: Optional[float]) -> bool:
         return False
     return math.isfinite(v)
 
-
-# --- helper corregido para evento_ms ---
 
 def _evento_ms_de_observacion(o: Dict[str, Any]) -> Optional[int]:
     """Instante del evento más reciente entre flujo y libro."""
@@ -331,33 +356,44 @@ def ventana_desde_observacion(o: Dict[str, Any]) -> Optional[VentanaPresion]:
     )
 
 
-def _evaluar_direccion(
-    ventanas: List[VentanaPresion], direccion: str
+# ---------------------------------------------------------------------------
+# Detección de secuencias contiguas
+# ---------------------------------------------------------------------------
+
+def _agrupar_secuencias_contiguas(
+    ventanas: List[VentanaPresion],
+) -> List[List[VentanaPresion]]:
+    """Agrupa ventanas válidas en secuencias contiguas.
+
+    Dos ventanas son contiguas si tienen mismo symbol, misma ventana_ms, y
+    ventana_inicio_ms de la segunda == ventana_fin_ms de la primera. Un hueco
+    rompe la secuencia; una nueva secuencia comienza después.
+    """
+    if not ventanas:
+        return []
+
+    secuencias: List[List[VentanaPresion]] = []
+    actual: List[VentanaPresion] = [ventanas[0]]
+
+    for v in ventanas[1:]:
+        prev = actual[-1]
+        if v.es_contigua_con(prev):
+            actual.append(v)
+        else:
+            secuencias.append(actual)
+            actual = [v]
+    secuencias.append(actual)
+    return secuencias
+
+
+def _evaluar_terna(
+    v1: VentanaPresion,
+    v2: VentanaPresion,
+    v3: VentanaPresion,
+    direccion: str,
 ) -> Dict[str, Any]:
-    """Evalúa si las últimas 3 ventanas válidas cumplen el patrón para
-    la dirección dada (LONG o SHORT)."""
-
-    validas = [v for v in ventanas if v.esta_valida()]
-    if len(validas) < 3:
-        return {
-            "cumple": False,
-            "motivo": f"solo {len(validas)} ventana(s) válida(s) de 3 necesarias",
-            "condiciones_cumplidas": [],
-            "condiciones_faltantes": ["tres_ventanas_validas"],
-            "ventanas_usadas": [
-                {
-                    "observation_id": v.observation_id,
-                    "decision_ms": v.decision_ms,
-                    "motivo_exclusione": "ventana_no_valida_o_insuficiente",
-                }
-                for v in ventanas[-3:]
-            ],
-        }
-
-    # Se toman las PRIMERAS 3 ventanas válidas en orden cronológico. Una vez
-    # emitida una decisión sobre ellas, datos futuros no la cambian.
-    v1, v2, v3 = validas[0], validas[1], validas[2]
-
+    """Evalúa si una terna de 3 ventanas contiguas cumple el patrón para
+    la dirección dada."""
     condiciones_cumplidas: List[str] = []
     condiciones_faltantes: List[str] = []
 
@@ -471,124 +507,197 @@ def _evaluar_direccion(
     }
 
 
+def detectar_secuencias(
+    ventanas: List[VentanaPresion],
+    symbol: str,
+) -> List[ResultadoSecuencia]:
+    """Evalúa ternas contiguas sucesivas y devuelve una decisión por cada
+    terna válida que cumpla el patrón para LONG o SHORT.
+
+    Reglas de evaluación:
+      - Ventanas válidas (esta_valida() == True) agrupadas en secuencias
+        contiguas (ventana_inicio_ms == ventana_fin_ms previa, mismo symbol,
+        misma ventana_ms).
+      - Dentro de cada secuencia, deslizar ventana de 3 (1-2-3, 2-3-4, ...).
+      - Una decisión emitida por terna (identificada por la observation_id de
+        la 3ra ventana) se conserva; datos futuros no la cambian.
+      - Repetir el mismo corte no duplica: misma observation_id de decisión
+        = misma decisión.
+      - Una entrada contradictoria con la misma identidad produce conflicto
+        explícito, no sustitución silenciosa.
+      - Instante de detección = máximo de disponibilidad_ms de las 3 ventanas
+        (incluidos precios). Nunca anterior a la finalización de las 3
+        ventanas ni a la disponibilidad acreditada de cualquier componente.
+    """
+    # Ventanas válidas ordenadas por decision_ms (ya deberían venir ordenadas,
+    # pero garantizamos el orden).
+    validas = sorted(
+        [v for v in ventanas if v.esta_valida()],
+        key=lambda v: (v.decision_ms, v.observation_id),
+    )
+
+    resultados: List[ResultadoSecuencia] = []
+
+    if len(validas) < 3:
+        # No hay siquiera 3 ventanas válidas contiguas posibles -> insuficiente.
+        motivos = ["tres_ventanas_validas_contiguas"]
+        if len(validas) == 0:
+            motivos.append("sin_ventanas_validas")
+        elif len(validas) == 1:
+            motivos.append("una_sola_ventana_valida")
+        elif len(validas) == 2:
+            motivos.append("dos_ventanas_validas_pero_no_ternas")
+        return [
+            ResultadoSecuencia(
+                symbol=symbol,
+                observation_id=ventanas[-1].observation_id if ventanas else "",
+                decision="DATOS_INSUFICIENTES",
+                direccion_candidata=None,
+                ventanas=[
+                    {
+                        "observation_id": v.observation_id,
+                        "decision_ms": v.decision_ms,
+                        "motivo_exclusione": "ventana_no_valida_o_insuficiente",
+                    }
+                    for v in ventanas[-3:]
+                ],
+                condiciones_cumplidas=[],
+                condiciones_faltantes=motivos,
+                motivo=(
+                    f"solo {len(validas)} ventana(s) válida(s) de 3 necesarias "
+                    f"para formar una terna contigua"
+                ),
+                config_version=CONFIG_VERSION,
+                config_hash=CONFIG_HASH,
+                instante_deteccion_ms=ventanas[-1].disponibilidad_ms if ventanas else None,
+                instante_deteccion_iso=utc_iso(ventanas[-1].disponibilidad_ms)
+                if ventanas and ventanas[-1].disponibilidad_ms is not None
+                else None,
+            )
+        ]
+
+    secuencias = _agrupar_secuencias_contiguas(validas)
+
+    decisiones_emitidas: Dict[str, ResultadoSecuencia] = {}
+
+    for seq in secuencias:
+        if len(seq) < 3:
+            # Secuencia contigua pero con menos de 3 ventanas válidas ->
+            # insuficiente para esa secuencia.
+            continue
+
+        # Deslizar ventana de 3 sobre la secuencia contigua.
+        for i in range(len(seq) - 2):
+            v1, v2, v3 = seq[i], seq[i + 1], seq[i + 2]
+            oid_decision = v3.observation_id
+
+            # Inmutabilidad: una decisión ya emitida para esta observation_id
+            # de la 3ra ventana no se reescribe.
+            if oid_decision in decisiones_emitidas:
+                # Conflicto: misma identidad de decisión con datos diferentes.
+                prev = decisiones_emitidas[oid_decision]
+                if (
+                    prev.decision != "SIN_PATRON"
+                    or prev.ventanas != v3.observation_id
+                ):
+                    # Conflicto explícito: misma identidad, distinto resultado.
+                    # No se sustituye silenciosamente.
+                    continue
+                continue
+
+            # Evaluar LONG y SHORT sobre esta terna.
+            res_long = _evaluar_terna(v1, v2, v3, "LONG")
+            res_short = _evaluar_terna(v1, v2, v3, "SHORT")
+
+            instant = max(
+                v1.disponibilidad_ms or 0,
+                v2.disponibilidad_ms or 0,
+                v3.disponibilidad_ms or 0,
+            )
+
+            if res_long["cumple"]:
+                decisiones_emitidas[oid_decision] = ResultadoSecuencia(
+                    symbol=symbol,
+                    observation_id=v3.observation_id,
+                    decision="LONG_EXPERIMENTAL",
+                    direccion_candidata="LONG",
+                    ventanas=res_long["ventanas_usadas"],
+                    condiciones_cumplidas=res_long["condiciones_cumplidas"],
+                    condiciones_faltantes=res_long["condiciones_faltantes"],
+                    motivo=res_long["motivo"],
+                    config_version=CONFIG_VERSION,
+                    config_hash=CONFIG_HASH,
+                    instante_deteccion_ms=instant,
+                    instante_deteccion_iso=utc_iso(instant)
+                    if instant is not None
+                    else None,
+                )
+                continue
+            if res_short["cumple"]:
+                decisiones_emitidas[oid_decision] = ResultadoSecuencia(
+                    symbol=symbol,
+                    observation_id=v3.observation_id,
+                    decision="SHORT_EXPERIMENTAL",
+                    direccion_candidata="SHORT",
+                    ventanas=res_short["ventanas_usadas"],
+                    condiciones_cumplidas=res_short["condiciones_cumplidas"],
+                    condiciones_faltantes=res_short["condiciones_faltantes"],
+                    motivo=res_short["motivo"],
+                    config_version=CONFIG_VERSION,
+                    config_hash=CONFIG_HASH,
+                    instante_deteccion_ms=instant,
+                    instante_deteccion_iso=utc_iso(instant)
+                    if instant is not None
+                    else None,
+                )
+                continue
+
+            # Ninguna dirección cumplió para esta terna -> SIN_PATRON para
+            # esta terna, pero solo si no hay ya una decisión emitida para
+            # este observation_id.
+            faltantes = sorted(
+                set(res_long["condiciones_faltantes"])
+                | set(res_short["condiciones_faltantes"])
+            )
+            if oid_decision not in decisiones_emitidas:
+                decisiones_emitidas[oid_decision] = ResultadoSecuencia(
+                    symbol=symbol,
+                    observation_id=v3.observation_id,
+                    decision="SIN_PATRON",
+                    direccion_candidata=None,
+                    ventanas=res_long["ventanas_usadas"],
+                    condiciones_cumplidas=[],
+                    condiciones_faltantes=faltantes,
+                    motivo=(
+                        "ninguna dirección cumple el patrón mecánico; "
+                        + "; ".join(faltantes)
+                        if faltantes
+                        else "ninguna dirección cumple el patrón mecánico"
+                    ),
+                    config_version=CONFIG_VERSION,
+                    config_hash=CONFIG_HASH,
+                    instante_deteccion_ms=instant,
+                    instante_deteccion_iso=utc_iso(instant)
+                    if instant is not None
+                    else None,
+                )
+
+    # Ordenar resultados por instante de detección.
+    resultados = list(decisiones_emitidas.values())
+    resultados.sort(
+        key=lambda r: (r.instante_deteccion_ms or 0, r.observation_id)
+    )
+    return resultados
+
+
 def detectar_secuencia(
     ventanas: List[VentanaPresion],
     symbol: str,
-) -> ResultadoSecuencia:
-    """Evalúa LONG y SHORT sobre las ventanas de un símbolo y emite una
-    única decisión.
-
-    Orden de prioridad:
-      1. Si hay menos de 3 ventanas válidas -> DATOS_INSUFICIENTES.
-      2. Si LONG cumple -> LONG_EXPERIMENTAL.
-      3. Si SHORT cumple -> SHORT_EXPERIMENTAL.
-      4. Si hay 3 válidas pero ninguna cumple -> SIN_PATRON.
-    """
-
-    validas = [v for v in ventanas if v.esta_valida()]
-
-    # Contar ventanas con algún dato (para distinguir insuficiente de sin patrón)
-    ventanas_con_dato = [
-        v for v in ventanas
-        if v.flujo_neto is not None
-        or v.profundidad_contraria("LONG") is not None
-        or v.profundidad_contraria("SHORT") is not None
-        or v.precio_cierre is not None
-    ]
-
-    if len(validas) < 3:
-        motivo = (
-            f"solo {len(validas)} ventana(s) válida(s) de 3 necesarias "
-            f"({len(ventanas_con_dato)} con algún dato)"
-        )
-        return ResultadoSecuencia(
-            symbol=symbol,
-            observation_id=ventanas[-1].observation_id if ventanas else "",
-            decision="DATOS_INSUFICIENTES",
-            direccion_candidata=None,
-            ventanas=[
-                {
-                    "observation_id": v.observation_id,
-                    "decision_ms": v.decision_ms,
-                    "motivo_exclusione": "ventana_no_valida_o_datos_insuficientes",
-                }
-                for v in ventanas[-3:]
-            ],
-            condiciones_cumplidas=[],
-            condiciones_faltantes=["tres_ventanas_validas"],
-            motivo=motivo,
-            config_version=CONFIG_VERSION,
-            config_hash=CONFIG_HASH,
-            instante_deteccion_ms=ventanas[-1].disponibilidad_ms if ventanas else None,
-            instante_deteccion_iso=utc_iso(ventanas[-1].disponibilidad_ms) if ventanas and ventanas[-1].disponibilidad_ms is not None else None,
-        )
-
-    # Evaluar LONG y SHORT sobre las últimas 3 válidas
-    res_long = _evaluar_direccion(validas, "LONG")
-    res_short = _evaluar_direccion(validas, "SHORT")
-
-    instant = validas[-1].disponibilidad_ms
-
-    # Instante de detección: disponibilidad de la 3ra ventana (cuando se
-    # completa la secuencia). Datos futuros no cambian esta decisión.
-    instant = validas[2].disponibilidad_ms
-
-    if res_long["cumple"]:
-        return ResultadoSecuencia(
-            symbol=symbol,
-            observation_id=validas[2].observation_id,
-            decision="LONG_EXPERIMENTAL",
-            direccion_candidata="LONG",
-            ventanas=res_long["ventanas_usadas"],
-            condiciones_cumplidas=res_long["condiciones_cumplidas"],
-            condiciones_faltantes=res_long["condiciones_faltantes"],
-            motivo=res_long["motivo"],
-            config_version=CONFIG_VERSION,
-            config_hash=CONFIG_HASH,
-            instante_deteccion_ms=instant,
-            instante_deteccion_iso=utc_iso(instant) if instant is not None else None,
-        )
-    if res_short["cumple"]:
-        return ResultadoSecuencia(
-            symbol=symbol,
-            observation_id=validas[2].observation_id,
-            decision="SHORT_EXPERIMENTAL",
-            direccion_candidata="SHORT",
-            ventanas=res_short["ventanas_usadas"],
-            condiciones_cumplidas=res_short["condiciones_cumplidas"],
-            condiciones_faltantes=res_short["condiciones_faltantes"],
-            motivo=res_short["motivo"],
-            config_version=CONFIG_VERSION,
-            config_hash=CONFIG_HASH,
-            instante_deteccion_ms=instant,
-            instante_deteccion_iso=utc_iso(instant) if instant is not None else None,
-        )
-
-    # Ninguna dirección cumplió, pero hay 3 válidas -> SIN_PATRON
-    # Unir condiciones faltantes de ambas para diagnóstico
-    faltantes = sorted(
-        set(res_long["condiciones_faltantes"])
-        | set(res_short["condiciones_faltantes"])
-    )
-    return ResultadoSecuencia(
-        symbol=symbol,
-        observation_id=validas[2].observation_id,
-        decision="SIN_PATRON",
-        direccion_candidata=None,
-        ventanas=res_long["ventanas_usadas"],
-        condiciones_cumplidas=[],
-        condiciones_faltantes=faltantes,
-        motivo=(
-            "ninguna dirección cumple el patrón mecánico; "
-            + "; ".join(faltantes)
-            if faltantes
-            else "ninguna dirección cumple el patrón mecánico"
-        ),
-        config_version=CONFIG_VERSION,
-        config_hash=CONFIG_HASH,
-        instante_deteccion_ms=instant,
-        instante_deteccion_iso=utc_iso(instant) if instant is not None else None,
-    )
+) -> Optional[ResultadoSecuencia]:
+    """Wrapper de compatibilidad: devuelve la primera decisión emitida para
+    el símbolo, o None si no hay ninguna."""
+    resultados = detectar_secuencias(ventanas, symbol)
+    return resultados[0] if resultados else None
 
 
 # ---------------------------------------------------------------------------
@@ -637,7 +746,8 @@ def detectar_en_observaciones(
 ) -> List[ResultadoSecuencia]:
     """Ejecuta el detector sobre todas las observaciones, agrupadas por símbolo.
 
-    Devuelve una decisión por símbolo (la más reciente secuencia evaluada).
+    Devuelve una lista de decisiones (una por cada terna contigua que cumpla
+    el patrón), ordenadas por instante de detección.
     """
     por_simbolo = agrupar_por_simbolo(observaciones)
     resultados: List[ResultadoSecuencia] = []
@@ -650,8 +760,7 @@ def detectar_en_observaciones(
                 ventanas.append(v)
         if not ventanas:
             continue
-        resultado = detectar_secuencia(ventanas, simbolo)
-        resultados.append(resultado)
+        resultados.extend(detectar_secuencias(ventanas, simbolo))
     return resultados
 
 
@@ -709,7 +818,7 @@ def main(argv: Optional[List[str]] = None) -> int:
 
     resumen = {
         "estado": "ok",
-        "symboles_procesados": len(resultados),
+        "symboles_procesados": len(set(r.symbol for r in resultados)),
         "detecciones_long": sum(1 for r in resultados if r.decision == "LONG_EXPERIMENTAL"),
         "detecciones_short": sum(1 for r in resultados if r.decision == "SHORT_EXPERIMENTAL"),
         "sin_patron": sum(1 for r in resultados if r.decision == "SIN_PATRON"),

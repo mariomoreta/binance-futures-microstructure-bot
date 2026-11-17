@@ -4458,3 +4458,22 @@ cualquier ventana nueva requiere autorizacion humana explicita con `run_id`
 nuevo. No se abre otra ventana ni ronda de auditorias en este bloque.
 
 --- total lineas ---
+
+## piloto/secuencia-presion-v1-ventana4-20261116 (2026-11-16, base `4a7df47`)
+
+**1. Title:** Detector experimental SECUENCIA-PRESION-V1 (local, sin mercado) — reconocimiento de secuencia de presion agresora creciente, reduccion de liquidez contraria y avance del precio.
+
+**2. Approval status:** AUTORIZADO por el bloque humano del 2026-11-16 («PRIMER DETECTOR EXPERIMENTAL DE SECUENCIAS, LOCAL Y SIN MERCADO»). Contrastes exploratorios sobre datos existentes; sin Binance, consultas publicas, capturas, ordenes, relanzamientos, ventanas nuevas ni cambios en la estrategia productiva. Dataset fuente verificado contra manifiesto 10/10 antes y despues; no modificado.
+
+**3. Implementation status:** IMPLEMENTADO (analisis offline, codigo minimo indispensable reutilizando motores existentes). `scripts/secuencia_presion_v1.py` (nuevo): detector con CLI `--fuente`/`--salida`, trabaja sin red, sobre cuerpos originales de `consultas_klines.jsonl` y `observaciones.jsonl`; sin rellenar velas ni calendarios. `tests/test_secuencia_presion_v1.py` (nuevo): 18 pruebas (denominador 161, grupos suman 161 sin ceros artificiales, ratio denominador finito > 0, horizonte 60 min resoluble, regla sencilla 106/161, descartes de stop no desaparecen, seleccion de precios: trayectoria completa, vela posterior no usada, falta final, truncada, objetivo alineado, grid no alineado). Sin cambios a motores ni reglas economicas.
+
+**4. Evaluation status:** 18 passed (nuevo); `test_analisis_contrafactual_ventana4.py` 16 passed; `test_operativo_replay_offline.py` 7 passed (regresion, sin impacto). Resultado: regla sencilla 65.8% de continuacion; flujo a favor 61.6%; flujo contrario 69.3%. El flujo a favor NO distingue mejor continuacion; resultado debil, contradictorio o concentrado. No se incorpora el ratio a la estrategia productiva.
+
+**5. Evidence:** `docs/evidence/exp-v2-ventana-4-20261116a-secuencia-presion-v1/SECUENCIA-PRESION-V1.md`;
+derivados fuera de Git en
+`C:\proyectos\binance-futures-data\exp-v2-ventana-4-20261116a-secuencia-presion-v1\`;
+SHA base `4a7df47e89dbd1015ad89a6f1889ebf48d156c59`.
+
+**6. Verdict:** La relacion flujo/profundidad no distingue continuacion de reversion mejor que asumir continuacion por el signo del movimiento de 24 horas en esta captura de una hora (alta variacion por ciclo y simbolo, dependencia temporal). Hipotesis futura definida (intensidad, pregunta A), no ejecutada.
+
+**7. Next step:** el `run_id` `exp-v2-ventana-4-20261116a` queda consumido; cualquier ventana nueva requiere autorizacion humana explicita con `run_id` nuevo. No se abre otra ventana ni ronda de auditorias en este bloque.

@@ -129,9 +129,17 @@ requiere integridad valida, condiciones: Q positivo creciente, profundidad
 contraria decreciente, precio avanza en direccion. SHA-256 de la configuracion
 registrado en el modulo.
 
-**Pruebas de aceptacion:** `tests/test_secuencia_presion_v1.py` — 13 passed:
-secuencia LONG valida, secuencia SHORT valida, presion creciente sin profundidad
-decreciente -> SIN_PATRON, profundidad decreciente sin presion alineada ->
+**Pruebas de aceptacion:** 	ests/test_secuencia_presion_v1.py — 18 passed:
+secuencia LONG valida, secuencia SHORT valida, presion creciente sin
+profundidad decreciente -> SIN_PATRON, profundidad decreciente sin
+presion alineada -> SIN_PATRON, precio sin confirmacion -> SIN_PATRON, ventana
+incompleta -> DATOS_INSUFICIENTES, dato invalido (profundidad no positiva) ->
+DATOS_INSUFICIENTES, ultima fuente despues del corte -> no deteccion
+anticipada, aniadir datos futuros no cambia decision, simbolos distintos no
+comparten historia, repetir mismo corte no duplica, disponibilidad tardia de
+ventana anterior, precio no disponible -> DATOS_INSUFICIENTES, conflicto de
+identidad explicita, CLI real con JSONL sintetico (LONG y
+DATOS_INSUFICIENTES).
 SIN_PATRON, precio sin confirmacion -> SIN_PATRON, ventana incompleta ->
 DATOS_INSUFICIENTES, dato invalido (profundidad no positiva) ->
 DATOS_INSUFICIENTES, ultima fuente despues del corte -> no deteccion anticipada,
