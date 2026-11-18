@@ -42,8 +42,9 @@ C JSON de cobertura real y hashes de los originales).
 hipotesis de magnitud a **60 minutos** diferida. No se ejecuta ni se propone
 otra captura.
 
-**Pendiente autorizado por el usuario:** commit selectivo, push normal y
-verificacion del SHA remoto.
+**Publicado:** commit selectivo `11c7af7bc04c99faf20de85300590121dfbc9742`
+("Corrige caso sin terna y extractor de cobertura") y push normal a
+`origin/research/universe-liquidez-v1`, con SHA remoto verificado.
 
 ## Estado (2026-11-16 madrugada/tarde): `ACTIVE_TASK: ninguno` — esperar instruccion del usuario
 

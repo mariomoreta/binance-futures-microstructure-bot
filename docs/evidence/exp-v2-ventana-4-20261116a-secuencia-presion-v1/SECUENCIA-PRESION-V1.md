@@ -362,9 +362,9 @@ reales.
 - SHA base del detector: `4a7df47e89dbd1015ad89a6f1889ebf48d156c59`
 - SHA base de las correcciones: `619d357443ace0aa7c0b939f07b6a1457265adfd`
 - SHA del análisis original: commit `4a7df47` (detector SECUENCIA-PRESION-V1)
-- SHA del bloque de correcciones: ver el commit de
-  `research/universe-liquidez-v1` con mensaje
-  "Corrige caso sin terna y extractor de cobertura (SECUENCIA-PRESION-V1)"
+- SHA del bloque de correcciones: `11c7af7bc04c99faf20de85300590121dfbc9742`
+  (`research/universe-liquidez-v1`, mensaje "Corrige caso sin terna y
+  extractor de cobertura (SECUENCIA-PRESION-V1)")
 
 ## 9. Lo que NO se hizo
 
