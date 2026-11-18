@@ -59,8 +59,7 @@ verificacion independiente 31/31); derivados fuera de Git en
 Fuentes intactas: `research.db` `6ad6f716...a7f1`, `consultas_klines.jsonl`
 `4ee61463...a61874`, `C-cobertura-real.json` `39652bf0...f4bd`.
 
-**Publicado:** pendiente en este bloque (commit selectivo, push normal y SHA
-remoto verificado al cerrar).
+**Publicado:** commit selectivo 549440e4ddba51045cab0bae28e5c138b0565de (script, pruebas y evidencia) y documentacion 422b1566787036aaa5e81961b2997eb372a0785c; push normal a origin/research/universe-liquidez-v1 con SHA remoto verificado.
 
 **Siguiente:** no se ejecuta ni se propone otra captura ni otra variante del
 patron. Una prueba con potencia exigiria autorizacion humana explicita con

@@ -6390,3 +6390,5 @@ humana explicita y criterio de potencia fijado antes de mirar resultados.
 derivados fuera de Git en
 `C:\proyectos\binance-futures-data\exp-v2-ventana-4-20261116a-diagnostico-cuatro-casos-v1\`.
 Pruebas: 23 nuevas + 69 de regresion = 92 passed, exit 0.
+
+**Publicado.** Commit selectivo 549440e4ddba51045cab0bae28e5c138b0565de (script, pruebas y evidencia) y documentacion 422b1566787036aaa5e81961b2997eb372a0785c; push normal a origin/research/universe-liquidez-v1 con SHA remoto verificado.
