@@ -1,0 +1,32 @@
+# B. Pruebas
+
+Conjunto focalizado: 23 pruebas nuevas de
+`tests/test_diagnostico_cuatro_casos_ventana4.py` mas 69 de regresion
+directamente afectadas (comparacion de anclas, replay del patron, detector,
+cobertura, contrafactual y replay operativo offline). Sin red, sin Binance y
+sin datos reales en las pruebas nuevas: ventanas, filas y velas sinteticas.
+
+```
+........................................................................ [ 78%]
+....................                                                     [100%]
+92 passed in 39.44s
+```
+
+exit code = 0
+
+Cobertura de lo exigido:
+
+1. un dato tardio desplaza la entrada un minuto; con `as_of` muy posterior la
+   desplaza dos; si el corte original ya era posterior, no la desplaza;
+2. minuto ausente, incompleto (`PARTIAL_OK`), sin `as_of` posterior al cierre o
+   incoherente -> no resoluble con motivo, sin inventar precios;
+3. la reversion tardia comparte entrada y salida con la continuacion tardia y
+   **no** reutiliza la entrada original (se comprueba que no devuelve el +500
+   bps que habria dado la entrada antigua);
+4. extension previa `NO_RESOLUBLE` con menos de 6 ternas previas o con
+   referencia cero; las ternas previas no se solapan; la mediana se calcula
+   sobre los movimientos absolutos y el avance se alinea por direccion;
+5. los denominadores de control solo cuentan pares con original y tardia
+   resolubles; el minimo de 30 pares gobierna la conclusion formal;
+6. la verificacion contra lo publicado aborta si cambia un retorno, falta un
+   caso o sobra una terna.

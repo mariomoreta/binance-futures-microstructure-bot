@@ -1,0 +1,2628 @@
+{
+ "casos": {
+  "detalle": [
+   {
+    "cierre_nominal_ms": 1794857400000,
+    "cut_iso": "2026-11-16T19:30:01.355000+00:00",
+    "cut_ms": 1794857401355,
+    "decision": "SHORT_EXPERIMENTAL",
+    "delta_continuacion_bps": 22.5163,
+    "demora_corte_ms": 1355,
+    "direccion": "SHORT",
+    "espera": {
+     "as_of_iso": "2026-11-16T19:31:00.149000+00:00",
+     "as_of_ms": 1794857460149,
+     "buy_notional": 199109.2261070001,
+     "cambio_porcentual_vs_tercera_ventana": -86.8984,
+     "clasificacion": "continuacion_confirmada",
+     "cut_tardio_iso": "2026-11-16T19:31:00.149000+00:00",
+     "cut_tardio_ms": 1794857460149,
+     "data_quality": "OK",
+     "demora_disponibilidad_ms": 149,
+     "desplazamiento_ms": 60000,
+     "entrada_original_ms": 1794857460000,
+     "entrada_tardia_ms": 1794857520000,
+     "espera_fin_iso": "2026-11-16T19:31:00+00:00",
+     "espera_fin_ms": 1794857460000,
+     "espera_inicio_iso": "2026-11-16T19:30:00+00:00",
+     "espera_inicio_ms": 1794857400000,
+     "estado": "resoluble",
+     "flujo_alineado": 6298.338614999986,
+     "flujo_alineado_tercera_ventana": 48073.2029,
+     "flujo_alineado_total_terna": 68288.5309,
+     "flujo_disponible_antes_del_cierre": false,
+     "flujo_neto": -6298.338614999986,
+     "last_event_ms": 1794857459995,
+     "motivo": null,
+     "ratio_fuerza_vs_tercera_ventana": 0.131,
+     "salida_tardia_ms": 1794857820000,
+     "sell_notional": 205407.5647220001
+    },
+    "extension_previa": {
+     "avance_bruto_bps": 115.7521,
+     "estado": "no_resoluble",
+     "minimo_ternas_previas": 6,
+     "motivo": "historia_insuficiente",
+     "referencia_bps": null,
+     "ternas_previas_no_solapadas": 0
+    },
+    "original": {
+     "adverso_bps": -228.8858,
+     "entrada_ms": 1794857460000,
+     "estado": "resoluble",
+     "favorable_bps": 69.326,
+     "motivo": null,
+     "precio_entrada": 0.018175,
+     "precio_salida": 0.018355,
+     "retorno_bps": -99.0371,
+     "salida_ms": 1794857760000,
+     "trayectoria_completa": true
+    },
+    "senal": {
+     "avance_bruto_bps": 115.7521,
+     "cierres": [
+      0.018315,
+      0.018231,
+      0.018103
+     ],
+     "flujo_alineado_tercera_ventana": 48073.2029,
+     "flujo_alineado_total_terna": 68288.5309,
+     "huecos": {
+      "hueco_previo_ms": null,
+      "ventana_previa_contigua": true,
+      "ventanas_contiguas": true
+     },
+     "profundidad_contraria_decreciente": true,
+     "q": [
+      0.264,
+      2.2105,
+      6.2483
+     ],
+     "q_crecimiento": 23.6678,
+     "ventanas": [
+      {
+       "book_as_of_ms": 1794857281342,
+       "buy_notional": 161953.9507,
+       "contigua_anterior": true,
+       "demora_disponibilidad_ms": 1342,
+       "disponibilidad_iso": "2026-11-16T19:28:01.342000+00:00",
+       "disponibilidad_ms": 1794857281342,
+       "fin_iso": "2026-11-16T19:28:00+00:00",
+       "fin_ms": 1794857280000,
+       "flow_as_of_ms": 1794857281287,
+       "flow_data_quality": "OK",
+       "flujo_alineado": 2289.7513,
+       "flujo_neto": -2289.7513,
+       "inicio_iso": "2026-11-16T19:27:00+00:00",
+       "inicio_ms": 1794857220000,
+       "integridad_valida": true,
+       "last_event_ms": 1794857279989,
+       "libro_cruzado": 0,
+       "libro_degradado": 0,
+       "libro_huecos_profundidad": 0,
+       "precio_cierre": 0.018315,
+       "profundidad_contraria": 8672.5498,
+       "profundidad_propia": 7803.0144,
+       "q": 0.264,
+       "sell_notional": 164243.702,
+       "variacion_cierre_bps": 36.1664,
+       "ventana": "BLESSUSDT|1794857220000"
+      },
+      {
+       "book_as_of_ms": 1794857341386,
+       "buy_notional": 80302.3934,
+       "contigua_anterior": true,
+       "demora_disponibilidad_ms": 1483,
+       "disponibilidad_iso": "2026-11-16T19:29:01.483000+00:00",
+       "disponibilidad_ms": 1794857341483,
+       "fin_iso": "2026-11-16T19:29:00+00:00",
+       "fin_ms": 1794857340000,
+       "flow_as_of_ms": 1794857341483,
+       "flow_data_quality": "OK",
+       "flujo_alineado": 17925.5767,
+       "flujo_neto": -17925.5767,
+       "inicio_iso": "2026-11-16T19:28:00+00:00",
+       "inicio_ms": 1794857280000,
+       "integridad_valida": true,
+       "last_event_ms": 1794857339624,
+       "libro_cruzado": 0,
+       "libro_degradado": 0,
+       "libro_huecos_profundidad": 0,
+       "precio_cierre": 0.018231,
+       "profundidad_contraria": 8109.1893,
+       "profundidad_propia": 7468.7473,
+       "q": 2.2105,
+       "sell_notional": 98227.9701,
+       "variacion_cierre_bps": -45.864,
+       "ventana": "BLESSUSDT|1794857280000"
+      },
+      {
+       "book_as_of_ms": 1794857401355,
+       "buy_notional": 157664.2391,
+       "contigua_anterior": true,
+       "demora_disponibilidad_ms": 1355,
+       "disponibilidad_iso": "2026-11-16T19:30:01.355000+00:00",
+       "disponibilidad_ms": 1794857401355,
+       "fin_iso": "2026-11-16T19:30:00+00:00",
+       "fin_ms": 1794857400000,
+       "flow_as_of_ms": 1794857401222,
+       "flow_data_quality": "OK",
+       "flujo_alineado": 48073.2029,
+       "flujo_neto": -48073.2029,
+       "inicio_iso": "2026-11-16T19:29:00+00:00",
+       "inicio_ms": 1794857340000,
+       "integridad_valida": true,
+       "last_event_ms": 1794857399918,
+       "libro_cruzado": 0,
+       "libro_degradado": 0,
+       "libro_huecos_profundidad": 0,
+       "precio_cierre": 0.018103,
+       "profundidad_contraria": 7693.7785,
+       "profundidad_propia": 7227.3052,
+       "q": 6.2483,
+       "sell_notional": 205737.442,
+       "variacion_cierre_bps": -70.2101,
+       "ventana": "BLESSUSDT|1794857340000"
+      }
+     ]
+    },
+    "symbol": "BLESSUSDT",
+    "tardia": {
+     "adverso_continuacion_bps": -234.51692815854574,
+     "continuacion_bps": -76.5208,
+     "demora_total_tardia_ms": 59851,
+     "entrada_ms": 1794857520000,
+     "estado": "resoluble",
+     "favorable_continuacion_bps": 63.85906963941701,
+     "misma_entrada_continuacion_y_reversion": true,
+     "motivo": null,
+     "precio_entrada": 0.018165,
+     "precio_salida": 0.018304,
+     "reutiliza_entrada_original": false,
+     "reversion_bps": 76.5208,
+     "salida_ms": 1794857820000,
+     "trayectoria_completa": true
+    },
+    "terna": "BLESSUSDT|1794857340000",
+    "tramo_sin_flujo_persistido": {
+     "desde_ms": 1794857460000,
+     "hasta_ms": 1794857820000,
+     "minutos": [],
+     "minutos_iso": []
+    },
+    "trayectoria_original": [
+     {
+      "close": 0.018168,
+      "conflictiva": false,
+      "final": true,
+      "high": 0.018303,
+      "low": 0.018137,
+      "open": 0.018175,
+      "open_time": 1794857460000,
+      "open_time_iso": "2026-11-16T19:31:00+00:00",
+      "presente": true,
+      "rol": "minuto_0"
+     },
+     {
+      "close": 0.018155,
+      "conflictiva": false,
+      "final": true,
+      "high": 0.018188,
+      "low": 0.018049,
+      "open": 0.018165,
+      "open_time": 1794857520000,
+      "open_time_iso": "2026-11-16T19:32:00+00:00",
+      "presente": true,
+      "rol": "minuto_1"
+     },
+     {
+      "close": 0.018476,
+      "conflictiva": false,
+      "final": true,
+      "high": 0.018591,
+      "low": 0.018157,
+      "open": 0.018157,
+      "open_time": 1794857580000,
+      "open_time_iso": "2026-11-16T19:33:00+00:00",
+      "presente": true,
+      "rol": "minuto_2"
+     },
+     {
+      "close": 0.018453,
+      "conflictiva": false,
+      "final": true,
+      "high": 0.018561,
+      "low": 0.018383,
+      "open": 0.018467,
+      "open_time": 1794857640000,
+      "open_time_iso": "2026-11-16T19:34:00+00:00",
+      "presente": true,
+      "rol": "minuto_3"
+     },
+     {
+      "close": 0.01836,
+      "conflictiva": false,
+      "final": true,
+      "high": 0.018476,
+      "low": 0.01835,
+      "open": 0.018459,
+      "open_time": 1794857700000,
+      "open_time_iso": "2026-11-16T19:35:00+00:00",
+      "presente": true,
+      "rol": "minuto_4"
+     },
+     {
+      "close": 0.018303,
+      "conflictiva": false,
+      "final": true,
+      "high": 0.018408,
+      "low": 0.01821,
+      "open": 0.018355,
+      "open_time": 1794857760000,
+      "open_time_iso": "2026-11-16T19:36:00+00:00",
+      "presente": true,
+      "rol": "salida"
+     }
+    ]
+   },
+   {
+    "cierre_nominal_ms": 1794858960000,
+    "cut_iso": "2026-11-16T19:56:04.530000+00:00",
+    "cut_ms": 1794858964530,
+    "decision": "LONG_EXPERIMENTAL",
+    "delta_continuacion_bps": null,
+    "demora_corte_ms": 4530,
+    "direccion": "LONG",
+    "espera": {
+     "as_of_iso": "2026-11-16T19:56:40.346000+00:00",
+     "as_of_ms": 1794859000346,
+     "buy_notional": 1513.7327149999999,
+     "cambio_porcentual_vs_tercera_ventana": null,
+     "cut_tardio_ms": null,
+     "data_quality": "PARTIAL_OK",
+     "desplazamiento_ms": null,
+     "entrada_tardia_ms": null,
+     "espera_fin_iso": "2026-11-16T19:57:00+00:00",
+     "espera_fin_ms": 1794859020000,
+     "espera_inicio_iso": "2026-11-16T19:56:00+00:00",
+     "espera_inicio_ms": 1794858960000,
+     "estado": "no_resoluble",
+     "flujo_alineado_tercera_ventana": 1937.2903,
+     "flujo_alineado_total_terna": 3042.2179,
+     "flujo_disponible_antes_del_cierre": true,
+     "motivo": "flujo_espera_incompleto",
+     "ratio_fuerza_vs_tercera_ventana": null,
+     "salida_tardia_ms": null,
+     "sell_notional": 806.5436769999999
+    },
+    "extension_previa": {
+     "avance_bruto_bps": 20.6186,
+     "estado": "no_resoluble",
+     "minimo_ternas_previas": 6,
+     "motivo": "historia_insuficiente",
+     "referencia_bps": 13.1991,
+     "ternas_previas_no_solapadas": 4
+    },
+    "original": {
+     "adverso_bps": -5.8824,
+     "entrada_ms": 1794859020000,
+     "estado": "resoluble",
+     "favorable_bps": 50.0,
+     "motivo": null,
+     "precio_entrada": 0.034,
+     "precio_salida": 0.03415,
+     "retorno_bps": 44.1176,
+     "salida_ms": 1794859320000,
+     "trayectoria_completa": true
+    },
+    "senal": {
+     "avance_bruto_bps": 20.6186,
+     "cierres": [
+      0.03395,
+      0.03397,
+      0.03402
+     ],
+     "flujo_alineado_tercera_ventana": 1937.2903,
+     "flujo_alineado_total_terna": 3042.2179,
+     "huecos": {
+      "hueco_previo_ms": null,
+      "ventana_previa_contigua": true,
+      "ventanas_contiguas": true
+     },
+     "profundidad_contraria_decreciente": true,
+     "q": [
+      0.0014,
+      0.0023,
+      0.0065
+     ],
+     "q_crecimiento": 4.6429,
+     "ventanas": [
+      {
+       "book_as_of_ms": 1794858840200,
+       "buy_notional": 1694.6403,
+       "contigua_anterior": true,
+       "demora_disponibilidad_ms": 1422,
+       "disponibilidad_iso": "2026-11-16T19:54:01.422000+00:00",
+       "disponibilidad_ms": 1794858841422,
+       "fin_iso": "2026-11-16T19:54:00+00:00",
+       "fin_ms": 1794858840000,
+       "flow_as_of_ms": 1794858841422,
+       "flow_data_quality": "OK",
+       "flujo_alineado": 423.1172,
+       "flujo_neto": 423.1172,
+       "inicio_iso": "2026-11-16T19:53:00+00:00",
+       "inicio_ms": 1794858780000,
+       "integridad_valida": true,
+       "last_event_ms": 1794858838231,
+       "libro_cruzado": 0,
+       "libro_degradado": 0,
+       "libro_huecos_profundidad": 0,
+       "precio_cierre": 0.03395,
+       "profundidad_contraria": 298762.2216,
+       "profundidad_propia": 346587.6113,
+       "q": 0.0014,
+       "sell_notional": 1271.5231,
+       "variacion_cierre_bps": -14.7059,
+       "ventana": "STRKUSDT|1794858780000"
+      },
+      {
+       "book_as_of_ms": 1794858900357,
+       "buy_notional": 1924.9115,
+       "contigua_anterior": true,
+       "demora_disponibilidad_ms": 13547,
+       "disponibilidad_iso": "2026-11-16T19:55:13.547000+00:00",
+       "disponibilidad_ms": 1794858913547,
+       "fin_iso": "2026-11-16T19:55:00+00:00",
+       "fin_ms": 1794858900000,
+       "flow_as_of_ms": 1794858913547,
+       "flow_data_quality": "OK",
+       "flujo_alineado": 681.8104,
+       "flujo_neto": 681.8104,
+       "inicio_iso": "2026-11-16T19:54:00+00:00",
+       "inicio_ms": 1794858840000,
+       "integridad_valida": true,
+       "last_event_ms": 1794858898929,
+       "libro_cruzado": 0,
+       "libro_degradado": 0,
+       "libro_huecos_profundidad": 0,
+       "precio_cierre": 0.03397,
+       "profundidad_contraria": 297828.7672,
+       "profundidad_propia": 342694.7872,
+       "q": 0.0023,
+       "sell_notional": 1243.1011,
+       "variacion_cierre_bps": 5.891,
+       "ventana": "STRKUSDT|1794858840000"
+      },
+      {
+       "book_as_of_ms": 1794858960198,
+       "buy_notional": 2526.7659,
+       "contigua_anterior": true,
+       "demora_disponibilidad_ms": 4530,
+       "disponibilidad_iso": "2026-11-16T19:56:04.530000+00:00",
+       "disponibilidad_ms": 1794858964530,
+       "fin_iso": "2026-11-16T19:56:00+00:00",
+       "fin_ms": 1794858960000,
+       "flow_as_of_ms": 1794858964530,
+       "flow_data_quality": "OK",
+       "flujo_alineado": 1937.2903,
+       "flujo_neto": 1937.2903,
+       "inicio_iso": "2026-11-16T19:55:00+00:00",
+       "inicio_ms": 1794858900000,
+       "integridad_valida": true,
+       "last_event_ms": 1794858959442,
+       "libro_cruzado": 0,
+       "libro_degradado": 0,
+       "libro_huecos_profundidad": 0,
+       "precio_cierre": 0.03402,
+       "profundidad_contraria": 295794.8387,
+       "profundidad_propia": 341749.5494,
+       "q": 0.0065,
+       "sell_notional": 589.4755,
+       "variacion_cierre_bps": 14.7189,
+       "ventana": "STRKUSDT|1794858900000"
+      }
+     ]
+    },
+    "symbol": "STRKUSDT",
+    "tardia": {
+     "continuacion_bps": null,
+     "entrada_ms": null,
+     "estado": "no_resoluble",
+     "motivo": "flujo_espera_incompleto",
+     "reutiliza_entrada_original": null,
+     "reversion_bps": null,
+     "salida_ms": null
+    },
+    "terna": "STRKUSDT|1794858900000",
+    "tramo_sin_flujo_persistido": {
+     "desde_ms": 1794859020000,
+     "hasta_ms": 1794859320000,
+     "minutos": [
+      1794859020000,
+      1794859080000,
+      1794859140000,
+      1794859200000
+     ],
+     "minutos_iso": [
+      "2026-11-16T19:57:00+00:00",
+      "2026-11-16T19:58:00+00:00",
+      "2026-11-16T19:59:00+00:00",
+      "2026-11-16T20:00:00+00:00"
+     ]
+    },
+    "trayectoria_original": [
+     {
+      "close": 0.03402,
+      "conflictiva": false,
+      "final": true,
+      "high": 0.03404,
+      "low": 0.03398,
+      "open": 0.034,
+      "open_time": 1794859020000,
+      "open_time_iso": "2026-11-16T19:57:00+00:00",
+      "presente": true,
+      "rol": "minuto_0"
+     },
+     {
+      "close": 0.03404,
+      "conflictiva": false,
+      "final": true,
+      "high": 0.03405,
+      "low": 0.034,
+      "open": 0.03401,
+      "open_time": 1794859080000,
+      "open_time_iso": "2026-11-16T19:58:00+00:00",
+      "presente": true,
+      "rol": "minuto_1"
+     },
+     {
+      "close": 0.03406,
+      "conflictiva": false,
+      "final": true,
+      "high": 0.03407,
+      "low": 0.03403,
+      "open": 0.03404,
+      "open_time": 1794859140000,
+      "open_time_iso": "2026-11-16T19:59:00+00:00",
+      "presente": true,
+      "rol": "minuto_2"
+     },
+     {
+      "close": 0.03414,
+      "conflictiva": false,
+      "final": true,
+      "high": 0.03415,
+      "low": 0.03404,
+      "open": 0.03405,
+      "open_time": 1794859200000,
+      "open_time_iso": "2026-11-16T20:00:00+00:00",
+      "presente": true,
+      "rol": "minuto_3"
+     },
+     {
+      "close": 0.03415,
+      "conflictiva": false,
+      "final": true,
+      "high": 0.03417,
+      "low": 0.0341,
+      "open": 0.03413,
+      "open_time": 1794859260000,
+      "open_time_iso": "2026-11-16T20:01:00+00:00",
+      "presente": true,
+      "rol": "minuto_4"
+     },
+     {
+      "close": 0.03412,
+      "conflictiva": false,
+      "final": true,
+      "high": 0.03417,
+      "low": 0.03412,
+      "open": 0.03415,
+      "open_time": 1794859320000,
+      "open_time_iso": "2026-11-16T20:02:00+00:00",
+      "presente": true,
+      "rol": "salida"
+     }
+    ]
+   },
+   {
+    "cierre_nominal_ms": 1794859560000,
+    "cut_iso": "2026-11-16T20:06:00.464000+00:00",
+    "cut_ms": 1794859560464,
+    "decision": "SHORT_EXPERIMENTAL",
+    "delta_continuacion_bps": -10.7718,
+    "demora_corte_ms": 464,
+    "direccion": "SHORT",
+    "espera": {
+     "as_of_iso": "2026-11-16T20:07:04.997000+00:00",
+     "as_of_ms": 1794859624997,
+     "buy_notional": 272746.1374130004,
+     "cambio_porcentual_vs_tercera_ventana": -92.9873,
+     "clasificacion": "continuacion_confirmada",
+     "cut_tardio_iso": "2026-11-16T20:07:04.997000+00:00",
+     "cut_tardio_ms": 1794859624997,
+     "data_quality": "OK",
+     "demora_disponibilidad_ms": 4997,
+     "desplazamiento_ms": 60000,
+     "entrada_original_ms": 1794859620000,
+     "entrada_tardia_ms": 1794859680000,
+     "espera_fin_iso": "2026-11-16T20:07:00+00:00",
+     "espera_fin_ms": 1794859620000,
+     "espera_inicio_iso": "2026-11-16T20:06:00+00:00",
+     "espera_inicio_ms": 1794859560000,
+     "estado": "resoluble",
+     "flujo_alineado": 11001.575002999161,
+     "flujo_alineado_tercera_ventana": 156881.8014,
+     "flujo_alineado_total_terna": 169058.7155,
+     "flujo_disponible_antes_del_cierre": false,
+     "flujo_neto": -11001.575002999161,
+     "last_event_ms": 1794859618540,
+     "motivo": null,
+     "ratio_fuerza_vs_tercera_ventana": 0.0701,
+     "salida_tardia_ms": 1794859980000,
+     "sell_notional": 283747.71241599956
+    },
+    "extension_previa": {
+     "avance_bruto_bps": 326.2365,
+     "estado": "resoluble",
+     "extension_normalizada": 5.3458,
+     "minimo_ternas_previas": 6,
+     "motivo": null,
+     "referencia_bps": 61.0272,
+     "ternas_previas_no_solapadas": 6
+    },
+    "original": {
+     "adverso_bps": -323.3902,
+     "entrada_ms": 1794859620000,
+     "estado": "resoluble",
+     "favorable_bps": 73.0052,
+     "motivo": null,
+     "precio_entrada": 0.017533,
+     "precio_salida": 0.017782,
+     "retorno_bps": -142.0179,
+     "salida_ms": 1794859920000,
+     "trayectoria_completa": true
+    },
+    "senal": {
+     "avance_bruto_bps": 326.2365,
+     "cierres": [
+      0.018177,
+      0.018169,
+      0.017584
+     ],
+     "flujo_alineado_tercera_ventana": 156881.8014,
+     "flujo_alineado_total_terna": 169058.7155,
+     "huecos": {
+      "hueco_previo_ms": null,
+      "ventana_previa_contigua": true,
+      "ventanas_contiguas": true
+     },
+     "profundidad_contraria_decreciente": true,
+     "q": [
+      0.1089,
+      1.3597,
+      20.5877
+     ],
+     "q_crecimiento": 189.0514,
+     "ventanas": [
+      {
+       "book_as_of_ms": 1794859440339,
+       "buy_notional": 127827.5206,
+       "contigua_anterior": true,
+       "demora_disponibilidad_ms": 524,
+       "disponibilidad_iso": "2026-11-16T20:04:00.524000+00:00",
+       "disponibilidad_ms": 1794859440524,
+       "fin_iso": "2026-11-16T20:04:00+00:00",
+       "fin_ms": 1794859440000,
+       "flow_as_of_ms": 1794859440524,
+       "flow_data_quality": "OK",
+       "flujo_alineado": 949.9308,
+       "flujo_neto": -949.9308,
+       "inicio_iso": "2026-11-16T20:03:00+00:00",
+       "inicio_ms": 1794859380000,
+       "integridad_valida": true,
+       "last_event_ms": 1794859439969,
+       "libro_cruzado": 0,
+       "libro_degradado": 0,
+       "libro_huecos_profundidad": 0,
+       "precio_cierre": 0.018177,
+       "profundidad_contraria": 8725.2337,
+       "profundidad_propia": 6049.8523,
+       "q": 0.1089,
+       "sell_notional": 128777.4514,
+       "variacion_cierre_bps": 15.4278,
+       "ventana": "BLESSUSDT|1794859380000"
+      },
+      {
+       "book_as_of_ms": 1794859500426,
+       "buy_notional": 94866.553,
+       "contigua_anterior": true,
+       "demora_disponibilidad_ms": 426,
+       "disponibilidad_iso": "2026-11-16T20:05:00.426000+00:00",
+       "disponibilidad_ms": 1794859500426,
+       "fin_iso": "2026-11-16T20:05:00+00:00",
+       "fin_ms": 1794859500000,
+       "flow_as_of_ms": 1794859500329,
+       "flow_data_quality": "OK",
+       "flujo_alineado": 11226.9833,
+       "flujo_neto": -11226.9833,
+       "inicio_iso": "2026-11-16T20:04:00+00:00",
+       "inicio_ms": 1794859440000,
+       "integridad_valida": true,
+       "last_event_ms": 1794859499878,
+       "libro_cruzado": 0,
+       "libro_degradado": 0,
+       "libro_huecos_profundidad": 0,
+       "precio_cierre": 0.018169,
+       "profundidad_contraria": 8257.0809,
+       "profundidad_propia": 7510.3146,
+       "q": 1.3597,
+       "sell_notional": 106093.5363,
+       "variacion_cierre_bps": -4.4012,
+       "ventana": "BLESSUSDT|1794859440000"
+      },
+      {
+       "book_as_of_ms": 1794859560176,
+       "buy_notional": 551697.551,
+       "contigua_anterior": true,
+       "demora_disponibilidad_ms": 464,
+       "disponibilidad_iso": "2026-11-16T20:06:00.464000+00:00",
+       "disponibilidad_ms": 1794859560464,
+       "fin_iso": "2026-11-16T20:06:00+00:00",
+       "fin_ms": 1794859560000,
+       "flow_as_of_ms": 1794859560464,
+       "flow_data_quality": "OK",
+       "flujo_alineado": 156881.8014,
+       "flujo_neto": -156881.8014,
+       "inicio_iso": "2026-11-16T20:05:00+00:00",
+       "inicio_ms": 1794859500000,
+       "integridad_valida": true,
+       "last_event_ms": 1794859559978,
+       "libro_cruzado": 0,
+       "libro_degradado": 0,
+       "libro_huecos_profundidad": 0,
+       "precio_cierre": 0.017584,
+       "profundidad_contraria": 7620.176,
+       "profundidad_propia": 7387.8295,
+       "q": 20.5877,
+       "sell_notional": 708579.3524,
+       "variacion_cierre_bps": -321.977,
+       "ventana": "BLESSUSDT|1794859500000"
+      }
+     ]
+    },
+    "symbol": "BLESSUSDT",
+    "tardia": {
+     "adverso_continuacion_bps": -357.6537911301858,
+     "continuacion_bps": -152.7897,
+     "demora_total_tardia_ms": 55003,
+     "entrada_ms": 1794859680000,
+     "estado": "resoluble",
+     "favorable_continuacion_bps": 28.612303290416197,
+     "misma_entrada_continuacion_y_reversion": true,
+     "motivo": null,
+     "precio_entrada": 0.017475,
+     "precio_salida": 0.017742,
+     "reutiliza_entrada_original": false,
+     "reversion_bps": 152.7897,
+     "salida_ms": 1794859980000,
+     "trayectoria_completa": true
+    },
+    "terna": "BLESSUSDT|1794859500000",
+    "tramo_sin_flujo_persistido": {
+     "desde_ms": 1794859620000,
+     "hasta_ms": 1794859980000,
+     "minutos": [],
+     "minutos_iso": []
+    },
+    "trayectoria_original": [
+     {
+      "close": 0.017481,
+      "conflictiva": false,
+      "final": true,
+      "high": 0.017554,
+      "low": 0.017405,
+      "open": 0.017533,
+      "open_time": 1794859620000,
+      "open_time_iso": "2026-11-16T20:07:00+00:00",
+      "presente": true,
+      "rol": "minuto_0"
+     },
+     {
+      "close": 0.01758,
+      "conflictiva": false,
+      "final": true,
+      "high": 0.01769,
+      "low": 0.017425,
+      "open": 0.017475,
+      "open_time": 1794859680000,
+      "open_time_iso": "2026-11-16T20:08:00+00:00",
+      "presente": true,
+      "rol": "minuto_1"
+     },
+     {
+      "close": 0.017719,
+      "conflictiva": false,
+      "final": true,
+      "high": 0.017781,
+      "low": 0.017558,
+      "open": 0.017574,
+      "open_time": 1794859740000,
+      "open_time_iso": "2026-11-16T20:09:00+00:00",
+      "presente": true,
+      "rol": "minuto_2"
+     },
+     {
+      "close": 0.017965,
+      "conflictiva": false,
+      "final": true,
+      "high": 0.0181,
+      "low": 0.017703,
+      "open": 0.017723,
+      "open_time": 1794859800000,
+      "open_time_iso": "2026-11-16T20:10:00+00:00",
+      "presente": true,
+      "rol": "minuto_3"
+     },
+     {
+      "close": 0.017776,
+      "conflictiva": false,
+      "final": true,
+      "high": 0.018024,
+      "low": 0.017702,
+      "open": 0.017965,
+      "open_time": 1794859860000,
+      "open_time_iso": "2026-11-16T20:11:00+00:00",
+      "presente": true,
+      "rol": "minuto_4"
+     },
+     {
+      "close": 0.017747,
+      "conflictiva": false,
+      "final": true,
+      "high": 0.017889,
+      "low": 0.017664,
+      "open": 0.017782,
+      "open_time": 1794859920000,
+      "open_time_iso": "2026-11-16T20:12:00+00:00",
+      "presente": true,
+      "rol": "salida"
+     }
+    ]
+   },
+   {
+    "cierre_nominal_ms": 1794860100000,
+    "cut_iso": "2026-11-16T20:15:00.502000+00:00",
+    "cut_ms": 1794860100502,
+    "decision": "LONG_EXPERIMENTAL",
+    "delta_continuacion_bps": 89.2356,
+    "demora_corte_ms": 502,
+    "direccion": "LONG",
+    "espera": {
+     "as_of_iso": "2026-11-16T20:16:00.272000+00:00",
+     "as_of_ms": 1794860160272,
+     "buy_notional": 24653.97805999999,
+     "cambio_porcentual_vs_tercera_ventana": -124.7828,
+     "clasificacion": "candidato_a_reversion",
+     "cut_tardio_iso": "2026-11-16T20:16:00.272000+00:00",
+     "cut_tardio_ms": 1794860160272,
+     "data_quality": "OK",
+     "demora_disponibilidad_ms": 272,
+     "desplazamiento_ms": 60000,
+     "entrada_original_ms": 1794860160000,
+     "entrada_tardia_ms": 1794860220000,
+     "espera_fin_iso": "2026-11-16T20:16:00+00:00",
+     "espera_fin_ms": 1794860160000,
+     "espera_inicio_iso": "2026-11-16T20:15:00+00:00",
+     "espera_inicio_ms": 1794860100000,
+     "estado": "resoluble",
+     "flujo_alineado": -7787.624539999953,
+     "flujo_alineado_tercera_ventana": 31423.5017,
+     "flujo_alineado_total_terna": 36563.0225,
+     "flujo_disponible_antes_del_cierre": false,
+     "flujo_neto": -7787.624539999953,
+     "last_event_ms": 1794860159975,
+     "motivo": null,
+     "ratio_fuerza_vs_tercera_ventana": -0.2478,
+     "salida_tardia_ms": 1794860520000,
+     "sell_notional": 32441.602599999944
+    },
+    "extension_previa": {
+     "avance_bruto_bps": 117.0264,
+     "estado": "no_resoluble",
+     "minimo_ternas_previas": 6,
+     "motivo": "historia_insuficiente",
+     "referencia_bps": 166.8762,
+     "ternas_previas_no_solapadas": 4
+    },
+    "original": {
+     "adverso_bps": -186.0576,
+     "entrada_ms": 1794860160000,
+     "estado": "resoluble",
+     "favorable_bps": 37.1163,
+     "motivo": null,
+     "precio_entrada": 0.21015,
+     "precio_salida": 0.20686,
+     "retorno_bps": -156.5548,
+     "salida_ms": 1794860460000,
+     "trayectoria_completa": true
+    },
+    "senal": {
+     "avance_bruto_bps": 117.0264,
+     "cierres": [
+      0.2085,
+      0.20915,
+      0.21094
+     ],
+     "flujo_alineado_tercera_ventana": 31423.5017,
+     "flujo_alineado_total_terna": 36563.0225,
+     "huecos": {
+      "hueco_previo_ms": 360000,
+      "ventana_previa_contigua": false,
+      "ventanas_contiguas": true
+     },
+     "profundidad_contraria_decreciente": true,
+     "q": [
+      0.6417,
+      1.1161,
+      12.1113
+     ],
+     "q_crecimiento": 18.8738,
+     "ventanas": [
+      {
+       "book_as_of_ms": 1794859980387,
+       "buy_notional": 8278.1566,
+       "contigua_anterior": false,
+       "demora_disponibilidad_ms": 793,
+       "disponibilidad_iso": "2026-11-16T20:13:00.793000+00:00",
+       "disponibilidad_ms": 1794859980793,
+       "fin_iso": "2026-11-16T20:13:00+00:00",
+       "fin_ms": 1794859980000,
+       "flow_as_of_ms": 1794859980793,
+       "flow_data_quality": "OK",
+       "flujo_alineado": 2001.2484,
+       "flujo_neto": 2001.2484,
+       "inicio_iso": "2026-11-16T20:12:00+00:00",
+       "inicio_ms": 1794859920000,
+       "integridad_valida": true,
+       "last_event_ms": 1794859979309,
+       "libro_cruzado": 0,
+       "libro_degradado": 0,
+       "libro_huecos_profundidad": 0,
+       "precio_cierre": 0.2085,
+       "profundidad_contraria": 3118.7238,
+       "profundidad_propia": 3743.608,
+       "q": 0.6417,
+       "sell_notional": 6276.9082,
+       "variacion_cierre_bps": null,
+       "ventana": "ARIAUSDT|1794859920000"
+      },
+      {
+       "book_as_of_ms": 1794860040209,
+       "buy_notional": 10603.9635,
+       "contigua_anterior": true,
+       "demora_disponibilidad_ms": 662,
+       "disponibilidad_iso": "2026-11-16T20:14:00.662000+00:00",
+       "disponibilidad_ms": 1794860040662,
+       "fin_iso": "2026-11-16T20:14:00+00:00",
+       "fin_ms": 1794860040000,
+       "flow_as_of_ms": 1794860040662,
+       "flow_data_quality": "OK",
+       "flujo_alineado": 3138.2724,
+       "flujo_neto": 3138.2724,
+       "inicio_iso": "2026-11-16T20:13:00+00:00",
+       "inicio_ms": 1794859980000,
+       "integridad_valida": true,
+       "last_event_ms": 1794860039377,
+       "libro_cruzado": 0,
+       "libro_degradado": 0,
+       "libro_huecos_profundidad": 0,
+       "precio_cierre": 0.20915,
+       "profundidad_contraria": 2811.7371,
+       "profundidad_propia": 3876.4139,
+       "q": 1.1161,
+       "sell_notional": 7465.6911,
+       "variacion_cierre_bps": 31.1751,
+       "ventana": "ARIAUSDT|1794859980000"
+      },
+      {
+       "book_as_of_ms": 1794860100355,
+       "buy_notional": 50491.2187,
+       "contigua_anterior": true,
+       "demora_disponibilidad_ms": 502,
+       "disponibilidad_iso": "2026-11-16T20:15:00.502000+00:00",
+       "disponibilidad_ms": 1794860100502,
+       "fin_iso": "2026-11-16T20:15:00+00:00",
+       "fin_ms": 1794860100000,
+       "flow_as_of_ms": 1794860100502,
+       "flow_data_quality": "OK",
+       "flujo_alineado": 31423.5017,
+       "flujo_neto": 31423.5017,
+       "inicio_iso": "2026-11-16T20:14:00+00:00",
+       "inicio_ms": 1794860040000,
+       "integridad_valida": true,
+       "last_event_ms": 1794860099916,
+       "libro_cruzado": 0,
+       "libro_degradado": 0,
+       "libro_huecos_profundidad": 0,
+       "precio_cierre": 0.21094,
+       "profundidad_contraria": 2594.5607,
+       "profundidad_propia": 3977.953,
+       "q": 12.1113,
+       "sell_notional": 19067.717,
+       "variacion_cierre_bps": 85.5845,
+       "ventana": "ARIAUSDT|1794860040000"
+      }
+     ]
+    },
+    "symbol": "ARIAUSDT",
+    "tardia": {
+     "adverso_continuacion_bps": -153.25853425638525,
+     "continuacion_bps": -67.3192,
+     "demora_total_tardia_ms": 59728,
+     "entrada_ms": 1794860220000,
+     "estado": "resoluble",
+     "favorable_continuacion_bps": 26.25925041776167,
+     "misma_entrada_continuacion_y_reversion": true,
+     "motivo": null,
+     "precio_entrada": 0.20945,
+     "precio_salida": 0.20804,
+     "reutiliza_entrada_original": false,
+     "reversion_bps": 67.3192,
+     "salida_ms": 1794860520000,
+     "trayectoria_completa": true
+    },
+    "terna": "ARIAUSDT|1794860040000",
+    "tramo_sin_flujo_persistido": {
+     "desde_ms": 1794860160000,
+     "hasta_ms": 1794860520000,
+     "minutos": [
+      1794860280000,
+      1794860340000,
+      1794860400000,
+      1794860460000
+     ],
+     "minutos_iso": [
+      "2026-11-16T20:18:00+00:00",
+      "2026-11-16T20:19:00+00:00",
+      "2026-11-16T20:20:00+00:00",
+      "2026-11-16T20:21:00+00:00"
+     ]
+    },
+    "trayectoria_original": [
+     {
+      "close": 0.20953,
+      "conflictiva": false,
+      "final": true,
+      "high": 0.21093,
+      "low": 0.20945,
+      "open": 0.21015,
+      "open_time": 1794860160000,
+      "open_time_iso": "2026-11-16T20:16:00+00:00",
+      "presente": true,
+      "rol": "minuto_0"
+     },
+     {
+      "close": 0.20969,
+      "conflictiva": false,
+      "final": true,
+      "high": 0.20993,
+      "low": 0.20925,
+      "open": 0.20945,
+      "open_time": 1794860220000,
+      "open_time_iso": "2026-11-16T20:17:00+00:00",
+      "presente": true,
+      "rol": "minuto_1"
+     },
+     {
+      "close": 0.20949,
+      "conflictiva": false,
+      "final": true,
+      "high": 0.21,
+      "low": 0.2087,
+      "open": 0.20969,
+      "open_time": 1794860280000,
+      "open_time_iso": "2026-11-16T20:18:00+00:00",
+      "presente": true,
+      "rol": "minuto_2"
+     },
+     {
+      "close": 0.2096,
+      "conflictiva": false,
+      "final": true,
+      "high": 0.20983,
+      "low": 0.20894,
+      "open": 0.20951,
+      "open_time": 1794860340000,
+      "open_time_iso": "2026-11-16T20:19:00+00:00",
+      "presente": true,
+      "rol": "minuto_3"
+     },
+     {
+      "close": 0.20692,
+      "conflictiva": false,
+      "final": true,
+      "high": 0.20967,
+      "low": 0.20624,
+      "open": 0.20965,
+      "open_time": 1794860400000,
+      "open_time_iso": "2026-11-16T20:20:00+00:00",
+      "presente": true,
+      "rol": "minuto_4"
+     },
+     {
+      "close": 0.20802,
+      "conflictiva": false,
+      "final": true,
+      "high": 0.20838,
+      "low": 0.20686,
+      "open": 0.20686,
+      "open_time": 1794860460000,
+      "open_time_iso": "2026-11-16T20:21:00+00:00",
+      "presente": true,
+      "rol": "salida"
+     }
+    ]
+   }
+  ],
+  "verificacion_publicado": {
+   "coinciden": 4,
+   "detalle": [
+    {
+     "coincide": true,
+     "retorno_publicado_bps": -99.0371,
+     "retorno_recalculado_bps": -99.0371,
+     "terna": "BLESSUSDT|1794857340000"
+    },
+    {
+     "coincide": true,
+     "retorno_publicado_bps": 44.1176,
+     "retorno_recalculado_bps": 44.1176,
+     "terna": "STRKUSDT|1794858900000"
+    },
+    {
+     "coincide": true,
+     "retorno_publicado_bps": -142.0179,
+     "retorno_recalculado_bps": -142.0179,
+     "terna": "BLESSUSDT|1794859500000"
+    },
+    {
+     "coincide": true,
+     "retorno_publicado_bps": -156.5548,
+     "retorno_recalculado_bps": -156.5548,
+     "terna": "ARIAUSDT|1794860040000"
+    }
+   ]
+  }
+ },
+ "cobertura_de_velas": {
+  "consultas": 161,
+  "consultas_rechazadas": [],
+  "duplicadas_contradictorias": 4,
+  "duplicadas_identicas": 7642,
+  "ejemplos_contradiccion": [
+   {
+    "nueva": {
+     "close": 0.008605,
+     "high": 0.008605,
+     "low": 0.008592,
+     "open": 0.008592
+    },
+    "open_time": 1794862680000,
+    "previa": {
+     "close": 0.008594,
+     "high": 0.008594,
+     "low": 0.008594,
+     "open": 0.008594
+    },
+    "symbol": "4USDT"
+   },
+   {
+    "nueva": {
+     "close": 0.008605,
+     "high": 0.008605,
+     "low": 0.008592,
+     "open": 0.008592
+    },
+    "open_time": 1794862680000,
+    "previa": {
+     "close": 0.008594,
+     "high": 0.008594,
+     "low": 0.008594,
+     "open": 0.008594
+    },
+    "symbol": "4USDT"
+   },
+   {
+    "nueva": {
+     "close": 0.008605,
+     "high": 0.008605,
+     "low": 0.008592,
+     "open": 0.008592
+    },
+    "open_time": 1794862680000,
+    "previa": {
+     "close": 0.008594,
+     "high": 0.008594,
+     "low": 0.008594,
+     "open": 0.008594
+    },
+    "symbol": "4USDT"
+   },
+   {
+    "nueva": {
+     "close": 0.008605,
+     "high": 0.008605,
+     "low": 0.008592,
+     "open": 0.008592
+    },
+    "open_time": 1794862680000,
+    "previa": {
+     "close": 0.008594,
+     "high": 0.008594,
+     "low": 0.008594,
+     "open": 0.008594
+    },
+    "symbol": "4USDT"
+   }
+  ],
+  "filas_leidas": 10143,
+  "provisional_actualizada": 0,
+  "provisional_ignorada": 0,
+  "provisional_reemplazada_por_final": 135,
+  "run_id_distinto": 0,
+  "simbolos": [
+   "4USDT",
+   "AAVEUSDT",
+   "AGTUSDT",
+   "AIOTUSDT",
+   "ARIAUSDT",
+   "BANKUSDT",
+   "BLESSUSDT",
+   "BMTUSDT",
+   "BTWUSDT",
+   "BULLAUSDT",
+   "CROSSUSDT",
+   "ENJUSDT",
+   "EVAAUSDT",
+   "FLOCKUSDT",
+   "FLOWUSDT",
+   "HUMAUSDT",
+   "ONUSDT",
+   "PLAYUSDT",
+   "SOPHUSDT",
+   "SPACEUSDT",
+   "STOUSDT",
+   "STRKUSDT",
+   "XAUTUSDT",
+   "XLMUSDT",
+   "ZILUSDT"
+  ],
+  "velas_contradictorias": 4,
+  "velas_provisionales_finales": 26,
+  "velas_unicas": 2362
+ },
+ "conclusion_estadistica": {
+  "conclusion": "esperar un minuto muestra mejora media y mediana en esta muestra",
+  "evidencia": [
+   "delta medio 11.5388 bps; delta mediano 4.1847 bps",
+   "LONG: n=52, delta medio 8.2868 bps, delta mediano 4.5222 bps",
+   "SHORT: n=54, delta medio 14.6704 bps, delta mediano 2.909 bps"
+  ],
+  "minimo_pares_resolubles": 30,
+  "motivo": "la continuacion medida desde el corte tardio supera a la continuacion original en media y mediana",
+  "pares_comparables": 106,
+  "regla": "con 30 o mas pares, mejora solo si la media y la mediana del delta (tardia - original, misma direccion) son positivas"
+ },
+ "controles": {
+  "cruce_cobertura": {
+   "original_no_y_tardia_no": 26,
+   "original_no_y_tardia_ok": 2,
+   "original_ok_y_tardia_no": 9,
+   "original_ok_y_tardia_ok": 106
+  },
+  "extension_previa": {
+   "detalle_evaluables": [
+    {
+     "avance_bruto_bps": 95.2969,
+     "direccion": "SHORT",
+     "extension_normalizada": 2.4232,
+     "referencia_bps": 39.3262,
+     "retorno_original_bps": -47.1349,
+     "symbol": "EVAAUSDT",
+     "terna": "EVAAUSDT|1794859440000",
+     "ternas_previas_no_solapadas": 6
+    },
+    {
+     "avance_bruto_bps": 66.5247,
+     "direccion": "SHORT",
+     "extension_normalizada": 1.5214,
+     "referencia_bps": 43.7248,
+     "retorno_original_bps": 16.0686,
+     "symbol": "BTWUSDT",
+     "terna": "BTWUSDT|1794859440000",
+     "ternas_previas_no_solapadas": 6
+    },
+    {
+     "avance_bruto_bps": 37.6294,
+     "direccion": "LONG",
+     "extension_normalizada": 0.5788,
+     "referencia_bps": 65.0128,
+     "retorno_original_bps": 18.7266,
+     "symbol": "ONUSDT",
+     "terna": "ONUSDT|1794859500000",
+     "ternas_previas_no_solapadas": 6
+    },
+    {
+     "avance_bruto_bps": 326.2365,
+     "direccion": "SHORT",
+     "extension_normalizada": 5.3458,
+     "referencia_bps": 61.0272,
+     "retorno_original_bps": -142.0179,
+     "symbol": "BLESSUSDT",
+     "terna": "BLESSUSDT|1794859500000",
+     "ternas_previas_no_solapadas": 6
+    },
+    {
+     "avance_bruto_bps": 168.2746,
+     "direccion": "LONG",
+     "extension_normalizada": 8.5962,
+     "referencia_bps": 19.5756,
+     "retorno_original_bps": 113.3333,
+     "symbol": "HUMAUSDT",
+     "terna": "HUMAUSDT|1794859500000",
+     "ternas_previas_no_solapadas": 6
+    },
+    {
+     "avance_bruto_bps": 77.6915,
+     "direccion": "SHORT",
+     "extension_normalizada": 1.4007,
+     "referencia_bps": 55.4656,
+     "retorno_original_bps": -194.6607,
+     "symbol": "BULLAUSDT",
+     "terna": "BULLAUSDT|1794859500000",
+     "ternas_previas_no_solapadas": 6
+    },
+    {
+     "avance_bruto_bps": 70.5882,
+     "direccion": "SHORT",
+     "extension_normalizada": 1.598,
+     "referencia_bps": 44.1738,
+     "retorno_original_bps": -4.7059,
+     "symbol": "SPACEUSDT",
+     "terna": "SPACEUSDT|1794859500000",
+     "ternas_previas_no_solapadas": 6
+    },
+    {
+     "avance_bruto_bps": 79.077,
+     "direccion": "SHORT",
+     "extension_normalizada": 1.1384,
+     "referencia_bps": 69.4609,
+     "retorno_original_bps": -311.8883,
+     "symbol": "AIOTUSDT",
+     "terna": "AIOTUSDT|1794859560000",
+     "ternas_previas_no_solapadas": 6
+    },
+    {
+     "avance_bruto_bps": 223.0695,
+     "direccion": "LONG",
+     "extension_normalizada": 3.0125,
+     "referencia_bps": 74.0491,
+     "retorno_original_bps": -152.4013,
+     "symbol": "BLESSUSDT",
+     "terna": "BLESSUSDT|1794859800000",
+     "ternas_previas_no_solapadas": 7
+    },
+    {
+     "avance_bruto_bps": 38.801,
+     "direccion": "LONG",
+     "extension_normalizada": 1.0247,
+     "referencia_bps": 37.8672,
+     "retorno_original_bps": 9.1678,
+     "symbol": "EVAAUSDT",
+     "terna": "EVAAUSDT|1794859800000",
+     "ternas_previas_no_solapadas": 7
+    },
+    {
+     "avance_bruto_bps": 36.612,
+     "direccion": "LONG",
+     "extension_normalizada": 1.5851,
+     "referencia_bps": 23.098,
+     "retorno_original_bps": -60.8477,
+     "symbol": "CROSSUSDT",
+     "terna": "CROSSUSDT|1794859800000",
+     "ternas_previas_no_solapadas": 7
+    },
+    {
+     "avance_bruto_bps": 199.7665,
+     "direccion": "LONG",
+     "extension_normalizada": 2.548,
+     "referencia_bps": 78.4016,
+     "retorno_original_bps": -146.3104,
+     "symbol": "AIOTUSDT",
+     "terna": "AIOTUSDT|1794859800000",
+     "ternas_previas_no_solapadas": 7
+    },
+    {
+     "avance_bruto_bps": 20.2634,
+     "direccion": "SHORT",
+     "extension_normalizada": 0.6653,
+     "referencia_bps": 30.4575,
+     "retorno_original_bps": 81.4664,
+     "symbol": "SOPHUSDT",
+     "terna": "SOPHUSDT|1794859800000",
+     "ternas_previas_no_solapadas": 6
+    },
+    {
+     "avance_bruto_bps": 80.6452,
+     "direccion": "LONG",
+     "extension_normalizada": 2.0047,
+     "referencia_bps": 40.2272,
+     "retorno_original_bps": -66.0533,
+     "symbol": "SPACEUSDT",
+     "terna": "SPACEUSDT|1794859860000",
+     "ternas_previas_no_solapadas": 7
+    },
+    {
+     "avance_bruto_bps": 151.5957,
+     "direccion": "SHORT",
+     "extension_normalizada": 3.8616,
+     "referencia_bps": 39.2567,
+     "retorno_original_bps": 64.7773,
+     "symbol": "BTWUSDT",
+     "terna": "BTWUSDT|1794859860000",
+     "ternas_previas_no_solapadas": 7
+    },
+    {
+     "avance_bruto_bps": 97.7858,
+     "direccion": "SHORT",
+     "extension_normalizada": 1.6023,
+     "referencia_bps": 61.0272,
+     "retorno_original_bps": -80.5208,
+     "symbol": "BLESSUSDT",
+     "terna": "BLESSUSDT|1794860100000",
+     "ternas_previas_no_solapadas": 8
+    },
+    {
+     "avance_bruto_bps": 172.8521,
+     "direccion": "SHORT",
+     "extension_normalizada": 2.1952,
+     "referencia_bps": 78.7393,
+     "retorno_original_bps": 2.5823,
+     "symbol": "AIOTUSDT",
+     "terna": "AIOTUSDT|1794860100000",
+     "ternas_previas_no_solapadas": 8
+    },
+    {
+     "avance_bruto_bps": 23.8112,
+     "direccion": "SHORT",
+     "extension_normalizada": 0.7807,
+     "referencia_bps": 30.5004,
+     "retorno_original_bps": -1.4074,
+     "symbol": "CROSSUSDT",
+     "terna": "CROSSUSDT|1794860100000",
+     "ternas_previas_no_solapadas": 8
+    },
+    {
+     "avance_bruto_bps": 37.2093,
+     "direccion": "SHORT",
+     "extension_normalizada": 0.7349,
+     "referencia_bps": 50.6346,
+     "retorno_original_bps": 37.2093,
+     "symbol": "ONUSDT",
+     "terna": "ONUSDT|1794860100000",
+     "ternas_previas_no_solapadas": 8
+    },
+    {
+     "avance_bruto_bps": 24.9128,
+     "direccion": "SHORT",
+     "extension_normalizada": 2.5087,
+     "referencia_bps": 9.9305,
+     "retorno_original_bps": -4.995,
+     "symbol": "BMTUSDT",
+     "terna": "BMTUSDT|1794860100000",
+     "ternas_previas_no_solapadas": 6
+    },
+    {
+     "avance_bruto_bps": 148.1888,
+     "direccion": "LONG",
+     "extension_normalizada": 2.6717,
+     "referencia_bps": 55.4656,
+     "retorno_original_bps": 147.4604,
+     "symbol": "BULLAUSDT",
+     "terna": "BULLAUSDT|1794860160000",
+     "ternas_previas_no_solapadas": 8
+    },
+    {
+     "avance_bruto_bps": 96.6753,
+     "direccion": "SHORT",
+     "extension_normalizada": 2.1395,
+     "referencia_bps": 45.1852,
+     "retorno_original_bps": -223.2249,
+     "symbol": "SPACEUSDT",
+     "terna": "SPACEUSDT|1794860160000",
+     "ternas_previas_no_solapadas": 8
+    },
+    {
+     "avance_bruto_bps": 51.0204,
+     "direccion": "SHORT",
+     "extension_normalizada": 1.2577,
+     "referencia_bps": 40.568,
+     "retorno_original_bps": -92.1187,
+     "symbol": "SOPHUSDT",
+     "terna": "SOPHUSDT|1794860160000",
+     "ternas_previas_no_solapadas": 7
+    },
+    {
+     "avance_bruto_bps": 84.2921,
+     "direccion": "LONG",
+     "extension_normalizada": 1.1383,
+     "referencia_bps": 74.0491,
+     "retorno_original_bps": 130.2969,
+     "symbol": "BLESSUSDT",
+     "terna": "BLESSUSDT|1794860400000",
+     "ternas_previas_no_solapadas": 9
+    },
+    {
+     "avance_bruto_bps": 68.5133,
+     "direccion": "SHORT",
+     "extension_normalizada": 2.1409,
+     "referencia_bps": 32.0023,
+     "retorno_original_bps": 85.9987,
+     "symbol": "EVAAUSDT",
+     "terna": "EVAAUSDT|1794860400000",
+     "ternas_previas_no_solapadas": 9
+    },
+    {
+     "avance_bruto_bps": 84.8385,
+     "direccion": "SHORT",
+     "extension_normalizada": 2.1611,
+     "referencia_bps": 39.2567,
+     "retorno_original_bps": -43.956,
+     "symbol": "BTWUSDT",
+     "terna": "BTWUSDT|1794860400000",
+     "ternas_previas_no_solapadas": 9
+    },
+    {
+     "avance_bruto_bps": 141.2429,
+     "direccion": "LONG",
+     "extension_normalizada": 2.8168,
+     "referencia_bps": 50.1433,
+     "retorno_original_bps": -51.2701,
+     "symbol": "SPACEUSDT",
+     "terna": "SPACEUSDT|1794860400000",
+     "ternas_previas_no_solapadas": 9
+    },
+    {
+     "avance_bruto_bps": 164.3322,
+     "direccion": "LONG",
+     "extension_normalizada": 7.7435,
+     "referencia_bps": 21.2219,
+     "retorno_original_bps": 247.1277,
+     "symbol": "HUMAUSDT",
+     "terna": "HUMAUSDT|1794860400000",
+     "ternas_previas_no_solapadas": 9
+    },
+    {
+     "avance_bruto_bps": 9.2507,
+     "direccion": "LONG",
+     "extension_normalizada": 0.6944,
+     "referencia_bps": 13.3222,
+     "retorno_original_bps": -13.8616,
+     "symbol": "4USDT",
+     "terna": "4USDT|1794860400000",
+     "ternas_previas_no_solapadas": 6
+    },
+    {
+     "avance_bruto_bps": 43.7243,
+     "direccion": "SHORT",
+     "extension_normalizada": 0.5529,
+     "referencia_bps": 79.077,
+     "retorno_original_bps": -111.4134,
+     "symbol": "AIOTUSDT",
+     "terna": "AIOTUSDT|1794860460000",
+     "ternas_previas_no_solapadas": 9
+    },
+    {
+     "avance_bruto_bps": 14.9626,
+     "direccion": "SHORT",
+     "extension_normalizada": 1.5052,
+     "referencia_bps": 9.9404,
+     "retorno_original_bps": -0.0,
+     "symbol": "BMTUSDT",
+     "terna": "BMTUSDT|1794860460000",
+     "ternas_previas_no_solapadas": 7
+    },
+    {
+     "avance_bruto_bps": 20.9699,
+     "direccion": "SHORT",
+     "extension_normalizada": 1.5987,
+     "referencia_bps": 13.1165,
+     "retorno_original_bps": null,
+     "symbol": "ENSOUSDT",
+     "terna": "ENSOUSDT|1794860460000",
+     "ternas_previas_no_solapadas": 6
+    },
+    {
+     "avance_bruto_bps": 8.8365,
+     "direccion": "LONG",
+     "extension_normalizada": 1.0049,
+     "referencia_bps": 8.7938,
+     "retorno_original_bps": 5.8841,
+     "symbol": "STRKUSDT",
+     "terna": "STRKUSDT|1794860640000",
+     "ternas_previas_no_solapadas": 8
+    },
+    {
+     "avance_bruto_bps": 43.713,
+     "direccion": "LONG",
+     "extension_normalizada": 0.5552,
+     "referencia_bps": 78.7393,
+     "retorno_original_bps": 12.8899,
+     "symbol": "AIOTUSDT",
+     "terna": "AIOTUSDT|1794860700000",
+     "ternas_previas_no_solapadas": 10
+    },
+    {
+     "avance_bruto_bps": 74.384,
+     "direccion": "SHORT",
+     "extension_normalizada": 1.6462,
+     "referencia_bps": 45.1852,
+     "retorno_original_bps": -49.1918,
+     "symbol": "SPACEUSDT",
+     "terna": "SPACEUSDT|1794860700000",
+     "ternas_previas_no_solapadas": 10
+    }
+   ],
+   "evaluables": 35,
+   "max_normalizada": 8.5962,
+   "mediana_avance_bruto_bps": 36.4204,
+   "mediana_normalizada": 1.5987,
+   "min_normalizada": 0.5529,
+   "no_resolubles_por_motivo": {
+    "historia_insuficiente": 108
+   }
+  },
+  "original_143_recalculado": {
+   "aciertos": 57,
+   "adverso_mediano_bps": -54.1834,
+   "adverso_medio_bps": -84.7079,
+   "adverso_sobre": 115,
+   "episodios": 143,
+   "fallos": 55,
+   "ic95_media_bps": [
+    -29.3471,
+    10.8317
+   ],
+   "motivos_no_resoluble": {
+    "sin_velas_para_simbolo": 23,
+    "vela_entrada_ausente": 5
+   },
+   "neutrales": 3,
+   "no_resolubles": 28,
+   "resolubles": 115,
+   "resolubles_con_entrada_provisional": 0,
+   "resolubles_con_salida_provisional": 0,
+   "resolubles_con_trayectoria_completa": 115,
+   "retorno_mediano_bps": -0.0,
+   "retorno_medio_bps": -8.2611,
+   "simbolo_dominante": {
+    "cuota": 0.087,
+    "episodios": 10,
+    "symbol": "SPACEUSDT"
+   },
+   "simbolos": {
+    "4USDT": 7,
+    "AAVEUSDT": 2,
+    "AGTUSDT": 2,
+    "AIOTUSDT": 8,
+    "ARIAUSDT": 5,
+    "BANKUSDT": 4,
+    "BLESSUSDT": 8,
+    "BMTUSDT": 6,
+    "BTWUSDT": 7,
+    "BULLAUSDT": 7,
+    "CROSSUSDT": 7,
+    "ENJUSDT": 1,
+    "EVAAUSDT": 8,
+    "FLOCKUSDT": 1,
+    "FLOWUSDT": 1,
+    "HUMAUSDT": 6,
+    "ONUSDT": 6,
+    "PLAYUSDT": 1,
+    "SOPHUSDT": 4,
+    "SPACEUSDT": 10,
+    "STOUSDT": 2,
+    "STRKUSDT": 5,
+    "XAUTUSDT": 2,
+    "XLMUSDT": 4,
+    "ZILUSDT": 1
+   },
+   "tasa_acierto": 0.4957
+  },
+  "por_direccion": {
+   "LONG": {
+    "anclas": 71,
+    "clasificacion": {
+     "candidato_a_reversion": 36,
+     "continuacion_confirmada": 28
+    },
+    "delta_cero": 0,
+    "delta_media_bps": 8.2868,
+    "delta_mediana_bps": 4.5222,
+    "delta_negativo": 21,
+    "delta_positivo": 31,
+    "desplazamiento_entrada": {
+     "60000": 64
+    },
+    "espera_resolubles": 64,
+    "no_resolubles_espera": {
+     "flujo_espera_incompleto": 7
+    },
+    "no_resolubles_tardia": {
+     "flujo_espera_incompleto": 7,
+     "sin_velas_para_simbolo": 11,
+     "vela_entrada_ausente": 1
+    },
+    "oportunidades_perdidas": {
+     "empeora_media_bps": -33.1264,
+     "n_empeoran_siendo_positivas": 16
+    },
+    "original_media_bps": 12.1989,
+    "original_mediana_bps": 9.1377,
+    "original_resolubles": 58,
+    "pares_comparables": 52,
+    "perdidas_evitadas": {
+     "de_esas_terminan_no_negativas": 7,
+     "mejora_media_bps": 30.8221,
+     "n_mejoran_siendo_negativas": 18
+    },
+    "reversion": {
+     "continuacion_media_bps": 28.8828,
+     "continuacion_mediana_bps": 18.2503,
+     "continuacion_positiva": 20,
+     "n": 29,
+     "reversion_media_bps": -28.8828,
+     "reversion_mediana_bps": -18.2503,
+     "reversion_positiva": 9
+    },
+    "tardia_media_bps": 20.4857,
+    "tardia_mediana_bps": 8.3796,
+    "tardia_resolubles": 52
+   },
+   "SHORT": {
+    "anclas": 72,
+    "clasificacion": {
+     "candidato_a_reversion": 36,
+     "continuacion_confirmada": 30
+    },
+    "delta_cero": 1,
+    "delta_media_bps": 14.6704,
+    "delta_mediana_bps": 2.909,
+    "delta_negativo": 22,
+    "delta_positivo": 31,
+    "desplazamiento_entrada": {
+     "60000": 66
+    },
+    "espera_resolubles": 66,
+    "no_resolubles_espera": {
+     "flujo_espera_incompleto": 6
+    },
+    "no_resolubles_tardia": {
+     "flujo_espera_incompleto": 6,
+     "sin_velas_para_simbolo": 8,
+     "vela_entrada_ausente": 2
+    },
+    "oportunidades_perdidas": {
+     "empeora_media_bps": -64.1078,
+     "n_empeoran_siendo_positivas": 13
+    },
+    "original_media_bps": -24.6924,
+    "original_mediana_bps": -1.2528,
+    "original_resolubles": 57,
+    "pares_comparables": 54,
+    "perdidas_evitadas": {
+     "de_esas_terminan_no_negativas": 9,
+     "mejora_media_bps": 67.5191,
+     "n_mejoran_siendo_negativas": 19
+    },
+    "reversion": {
+     "continuacion_media_bps": -15.0742,
+     "continuacion_mediana_bps": 5.2057,
+     "continuacion_positiva": 19,
+     "n": 34,
+     "reversion_media_bps": 15.0742,
+     "reversion_mediana_bps": -5.2057,
+     "reversion_positiva": 14
+    },
+    "tardia_media_bps": -10.022,
+    "tardia_mediana_bps": 4.974,
+    "tardia_resolubles": 56
+   }
+  },
+  "por_grupo": {
+   "anclas_con_patron": {
+    "anclas": 4,
+    "clasificacion": {
+     "candidato_a_reversion": 1,
+     "continuacion_confirmada": 2
+    },
+    "delta_cero": 0,
+    "delta_media_bps": 33.66,
+    "delta_mediana_bps": 22.5163,
+    "delta_negativo": 1,
+    "delta_positivo": 2,
+    "desplazamiento_entrada": {
+     "60000": 3
+    },
+    "espera_resolubles": 3,
+    "no_resolubles_espera": {
+     "flujo_espera_incompleto": 1
+    },
+    "no_resolubles_tardia": {
+     "flujo_espera_incompleto": 1
+    },
+    "oportunidades_perdidas": {
+     "empeora_media_bps": null,
+     "n_empeoran_siendo_positivas": 0
+    },
+    "original_media_bps": -132.5366,
+    "original_mediana_bps": -142.0179,
+    "original_resolubles": 4,
+    "pares_comparables": 3,
+    "perdidas_evitadas": {
+     "de_esas_terminan_no_negativas": 0,
+     "mejora_media_bps": 55.876,
+     "n_mejoran_siendo_negativas": 2
+    },
+    "reversion": {
+     "continuacion_media_bps": -67.3192,
+     "continuacion_mediana_bps": -67.3192,
+     "continuacion_positiva": 0,
+     "n": 1,
+     "reversion_media_bps": 67.3192,
+     "reversion_mediana_bps": 67.3192,
+     "reversion_positiva": 1
+    },
+    "tardia_media_bps": -98.8766,
+    "tardia_mediana_bps": -76.5208,
+    "tardia_resolubles": 3
+   },
+   "anclas_sin_patron": {
+    "anclas": 139,
+    "clasificacion": {
+     "candidato_a_reversion": 71,
+     "continuacion_confirmada": 56
+    },
+    "delta_cero": 1,
+    "delta_media_bps": 10.8945,
+    "delta_mediana_bps": 3.9525,
+    "delta_negativo": 42,
+    "delta_positivo": 60,
+    "desplazamiento_entrada": {
+     "60000": 127
+    },
+    "espera_resolubles": 127,
+    "no_resolubles_espera": {
+     "flujo_espera_incompleto": 12
+    },
+    "no_resolubles_tardia": {
+     "flujo_espera_incompleto": 12,
+     "sin_velas_para_simbolo": 19,
+     "vela_entrada_ausente": 3
+    },
+    "oportunidades_perdidas": {
+     "empeora_media_bps": -47.0146,
+     "n_empeoran_siendo_positivas": 29
+    },
+    "original_media_bps": -2.9266,
+    "original_mediana_bps": 3.5882,
+    "original_resolubles": 111,
+    "pares_comparables": 103,
+    "perdidas_evitadas": {
+     "de_esas_terminan_no_negativas": 16,
+     "mejora_media_bps": 49.3116,
+     "n_mejoran_siendo_negativas": 35
+    },
+    "reversion": {
+     "continuacion_media_bps": 6.329,
+     "continuacion_mediana_bps": 11.6306,
+     "continuacion_positiva": 39,
+     "n": 62,
+     "reversion_media_bps": -6.329,
+     "reversion_mediana_bps": -11.6306,
+     "reversion_positiva": 22
+    },
+    "tardia_media_bps": 7.9679,
+    "tardia_mediana_bps": 5.102,
+    "tardia_resolubles": 105
+   },
+   "todas_las_anclas": {
+    "anclas": 143,
+    "clasificacion": {
+     "candidato_a_reversion": 72,
+     "continuacion_confirmada": 58
+    },
+    "delta_cero": 1,
+    "delta_media_bps": 11.5388,
+    "delta_mediana_bps": 4.1847,
+    "delta_negativo": 43,
+    "delta_positivo": 62,
+    "desplazamiento_entrada": {
+     "60000": 130
+    },
+    "espera_resolubles": 130,
+    "no_resolubles_espera": {
+     "flujo_espera_incompleto": 13
+    },
+    "no_resolubles_tardia": {
+     "flujo_espera_incompleto": 13,
+     "sin_velas_para_simbolo": 19,
+     "vela_entrada_ausente": 3
+    },
+    "oportunidades_perdidas": {
+     "empeora_media_bps": -47.0146,
+     "n_empeoran_siendo_positivas": 29
+    },
+    "original_media_bps": -6.5948,
+    "original_mediana_bps": 1.2912,
+    "original_resolubles": 115,
+    "pares_comparables": 106,
+    "perdidas_evitadas": {
+     "de_esas_terminan_no_negativas": 16,
+     "mejora_media_bps": 49.6665,
+     "n_mejoran_siendo_negativas": 37
+    },
+    "reversion": {
+     "continuacion_media_bps": 5.16,
+     "continuacion_mediana_bps": 11.562,
+     "continuacion_positiva": 39,
+     "n": 63,
+     "reversion_media_bps": -5.16,
+     "reversion_mediana_bps": -11.562,
+     "reversion_positiva": 23
+    },
+    "tardia_media_bps": 4.944,
+    "tardia_mediana_bps": 4.9863,
+    "tardia_resolubles": 108
+   }
+  },
+  "por_simbolo": {
+   "4USDT": {
+    "anclas": 7,
+    "clasificacion": {
+     "candidato_a_reversion": 4,
+     "continuacion_confirmada": 3
+    },
+    "delta_media_bps": 2.6122,
+    "original_media_bps": 8.1722,
+    "pares_comparables": 7,
+    "tardia_media_bps": 10.7844
+   },
+   "AAVEUSDT": {
+    "anclas": 2,
+    "clasificacion": {
+     "continuacion_confirmada": 2
+    },
+    "delta_media_bps": 1.866,
+    "original_media_bps": -2.7987,
+    "pares_comparables": 2,
+    "tardia_media_bps": -0.9326
+   },
+   "AGTUSDT": {
+    "anclas": 4,
+    "clasificacion": {
+     "candidato_a_reversion": 3
+    },
+    "delta_media_bps": -32.7282,
+    "original_media_bps": -20.4415,
+    "pares_comparables": 1,
+    "tardia_media_bps": -53.1697
+   },
+   "AIOTUSDT": {
+    "anclas": 8,
+    "clasificacion": {
+     "candidato_a_reversion": 4,
+     "continuacion_confirmada": 3
+    },
+    "delta_media_bps": 27.5577,
+    "original_media_bps": -93.2385,
+    "pares_comparables": 7,
+    "tardia_media_bps": -65.6808
+   },
+   "ARIAUSDT": {
+    "anclas": 6,
+    "clasificacion": {
+     "candidato_a_reversion": 3,
+     "continuacion_confirmada": 1
+    },
+    "delta_media_bps": 127.2556,
+    "original_media_bps": -229.8342,
+    "pares_comparables": 3,
+    "tardia_media_bps": -102.5787
+   },
+   "BANKUSDT": {
+    "anclas": 4,
+    "clasificacion": {
+     "candidato_a_reversion": 2,
+     "continuacion_confirmada": 1
+    },
+    "delta_media_bps": 3.5074,
+    "original_media_bps": 17.3333,
+    "pares_comparables": 3,
+    "tardia_media_bps": 20.8407
+   },
+   "BARDUSDT": {
+    "anclas": 2,
+    "clasificacion": {
+     "candidato_a_reversion": 1,
+     "continuacion_confirmada": 1
+    },
+    "delta_media_bps": null,
+    "original_media_bps": null,
+    "pares_comparables": 0,
+    "tardia_media_bps": null
+   },
+   "BASEDUSDT": {
+    "anclas": 1,
+    "clasificacion": {
+     "continuacion_confirmada": 1
+    },
+    "delta_media_bps": null,
+    "original_media_bps": null,
+    "pares_comparables": 0,
+    "tardia_media_bps": null
+   },
+   "BLESSUSDT": {
+    "anclas": 8,
+    "clasificacion": {
+     "candidato_a_reversion": 4,
+     "continuacion_confirmada": 4
+    },
+    "delta_media_bps": 39.084,
+    "original_media_bps": -39.2598,
+    "pares_comparables": 8,
+    "tardia_media_bps": -0.1757
+   },
+   "BMTUSDT": {
+    "anclas": 6,
+    "clasificacion": {
+     "candidato_a_reversion": 3,
+     "continuacion_confirmada": 2
+    },
+    "delta_media_bps": -0.9978,
+    "original_media_bps": 5.9913,
+    "pares_comparables": 5,
+    "tardia_media_bps": 4.9935
+   },
+   "BNBUSDT": {
+    "anclas": 3,
+    "clasificacion": {
+     "candidato_a_reversion": 1
+    },
+    "delta_media_bps": null,
+    "original_media_bps": null,
+    "pares_comparables": 0,
+    "tardia_media_bps": null
+   },
+   "BOMEUSDT": {
+    "anclas": 1,
+    "clasificacion": {
+     "continuacion_confirmada": 1
+    },
+    "delta_media_bps": null,
+    "original_media_bps": null,
+    "pares_comparables": 0,
+    "tardia_media_bps": null
+   },
+   "BTWUSDT": {
+    "anclas": 7,
+    "clasificacion": {
+     "candidato_a_reversion": 5,
+     "continuacion_confirmada": 2
+    },
+    "delta_media_bps": 30.0885,
+    "original_media_bps": 11.2459,
+    "pares_comparables": 7,
+    "tardia_media_bps": 41.3343
+   },
+   "BULLAUSDT": {
+    "anclas": 7,
+    "clasificacion": {
+     "candidato_a_reversion": 5,
+     "continuacion_confirmada": 2
+    },
+    "delta_media_bps": 3.4951,
+    "original_media_bps": 40.4555,
+    "pares_comparables": 7,
+    "tardia_media_bps": 43.9506
+   },
+   "CROSSUSDT": {
+    "anclas": 7,
+    "clasificacion": {
+     "candidato_a_reversion": 3,
+     "continuacion_confirmada": 4
+    },
+    "delta_media_bps": 7.1424,
+    "original_media_bps": -1.4696,
+    "pares_comparables": 7,
+    "tardia_media_bps": 5.6727
+   },
+   "DUSKUSDT": {
+    "anclas": 4,
+    "clasificacion": {
+     "candidato_a_reversion": 1,
+     "continuacion_confirmada": 3
+    },
+    "delta_media_bps": null,
+    "original_media_bps": null,
+    "pares_comparables": 0,
+    "tardia_media_bps": null
+   },
+   "ENJUSDT": {
+    "anclas": 1,
+    "clasificacion": {
+     "candidato_a_reversion": 1
+    },
+    "delta_media_bps": 0.0,
+    "original_media_bps": 0.0,
+    "pares_comparables": 1,
+    "tardia_media_bps": 0.0
+   },
+   "ENSOUSDT": {
+    "anclas": 6,
+    "clasificacion": {
+     "candidato_a_reversion": 1,
+     "continuacion_confirmada": 4
+    },
+    "delta_media_bps": null,
+    "original_media_bps": null,
+    "pares_comparables": 0,
+    "tardia_media_bps": null
+   },
+   "ERAUSDT": {
+    "anclas": 1,
+    "clasificacion": {
+     "candidato_a_reversion": 1
+    },
+    "delta_media_bps": null,
+    "original_media_bps": null,
+    "pares_comparables": 0,
+    "tardia_media_bps": null
+   },
+   "EVAAUSDT": {
+    "anclas": 8,
+    "clasificacion": {
+     "candidato_a_reversion": 5,
+     "continuacion_confirmada": 3
+    },
+    "delta_media_bps": -26.9941,
+    "original_media_bps": 17.3777,
+    "pares_comparables": 8,
+    "tardia_media_bps": -9.6164
+   },
+   "FLOCKUSDT": {
+    "anclas": 1,
+    "clasificacion": {
+     "candidato_a_reversion": 1
+    },
+    "delta_media_bps": 15.9939,
+    "original_media_bps": -12.7959,
+    "pares_comparables": 1,
+    "tardia_media_bps": 3.198
+   },
+   "FLOWUSDT": {
+    "anclas": 2,
+    "clasificacion": {
+     "candidato_a_reversion": 1,
+     "continuacion_confirmada": 1
+    },
+    "delta_media_bps": 0.0153,
+    "original_media_bps": 6.1652,
+    "pares_comparables": 1,
+    "tardia_media_bps": 6.1805
+   },
+   "FOGOUSDT": {
+    "anclas": 2,
+    "clasificacion": {
+     "continuacion_confirmada": 1
+    },
+    "delta_media_bps": null,
+    "original_media_bps": null,
+    "pares_comparables": 0,
+    "tardia_media_bps": null
+   },
+   "HUMAUSDT": {
+    "anclas": 6,
+    "clasificacion": {
+     "candidato_a_reversion": 5,
+     "continuacion_confirmada": 1
+    },
+    "delta_media_bps": 48.4145,
+    "original_media_bps": 68.1315,
+    "pares_comparables": 6,
+    "tardia_media_bps": 116.546
+   },
+   "ONUSDT": {
+    "anclas": 6,
+    "clasificacion": {
+     "candidato_a_reversion": 5,
+     "continuacion_confirmada": 1
+    },
+    "delta_media_bps": 4.4901,
+    "original_media_bps": -19.9316,
+    "pares_comparables": 6,
+    "tardia_media_bps": -15.4415
+   },
+   "PLAYUSDT": {
+    "anclas": 1,
+    "clasificacion": {
+     "continuacion_confirmada": 1
+    },
+    "delta_media_bps": -113.5845,
+    "original_media_bps": 151.8987,
+    "pares_comparables": 1,
+    "tardia_media_bps": 38.3142
+   },
+   "RAREUSDT": {
+    "anclas": 1,
+    "clasificacion": {
+     "continuacion_confirmada": 1
+    },
+    "delta_media_bps": null,
+    "original_media_bps": null,
+    "pares_comparables": 0,
+    "tardia_media_bps": null
+   },
+   "SOPHUSDT": {
+    "anclas": 4,
+    "clasificacion": {
+     "candidato_a_reversion": 2,
+     "continuacion_confirmada": 2
+    },
+    "delta_media_bps": -12.521,
+    "original_media_bps": 27.6603,
+    "pares_comparables": 4,
+    "tardia_media_bps": 15.1393
+   },
+   "SPACEUSDT": {
+    "anclas": 10,
+    "clasificacion": {
+     "candidato_a_reversion": 4,
+     "continuacion_confirmada": 5
+    },
+    "delta_media_bps": 11.4206,
+    "original_media_bps": -28.6454,
+    "pares_comparables": 9,
+    "tardia_media_bps": -17.2247
+   },
+   "STOUSDT": {
+    "anclas": 2,
+    "clasificacion": {
+     "continuacion_confirmada": 2
+    },
+    "delta_media_bps": -4.2599,
+    "original_media_bps": 14.89,
+    "pares_comparables": 2,
+    "tardia_media_bps": 10.6302
+   },
+   "STRKUSDT": {
+    "anclas": 6,
+    "clasificacion": {
+     "candidato_a_reversion": 2,
+     "continuacion_confirmada": 3
+    },
+    "delta_media_bps": -1.4986,
+    "original_media_bps": 3.6749,
+    "pares_comparables": 4,
+    "tardia_media_bps": 2.1763
+   },
+   "SUIUSDT": {
+    "anclas": 1,
+    "clasificacion": {
+     "candidato_a_reversion": 1
+    },
+    "delta_media_bps": null,
+    "original_media_bps": null,
+    "pares_comparables": 0,
+    "tardia_media_bps": null
+   },
+   "XAUTUSDT": {
+    "anclas": 2,
+    "clasificacion": {
+     "candidato_a_reversion": 1,
+     "continuacion_confirmada": 1
+    },
+    "delta_media_bps": 1.0384,
+    "original_media_bps": 1.0667,
+    "pares_comparables": 2,
+    "tardia_media_bps": 2.1051
+   },
+   "XLMUSDT": {
+    "anclas": 4,
+    "clasificacion": {
+     "candidato_a_reversion": 2,
+     "continuacion_confirmada": 1
+    },
+    "delta_media_bps": -10.2013,
+    "original_media_bps": 27.6493,
+    "pares_comparables": 3,
+    "tardia_media_bps": 17.448
+   },
+   "XMRUSDT": {
+    "anclas": 1,
+    "clasificacion": {
+     "candidato_a_reversion": 1
+    },
+    "delta_media_bps": null,
+    "original_media_bps": null,
+    "pares_comparables": 0,
+    "tardia_media_bps": null
+   },
+   "ZILUSDT": {
+    "anclas": 1,
+    "clasificacion": {
+     "continuacion_confirmada": 1
+    },
+    "delta_media_bps": 42.3056,
+    "original_media_bps": -63.4249,
+    "pares_comparables": 1,
+    "tardia_media_bps": -21.1193
+   }
+  },
+  "todas": {
+   "anclas": 143,
+   "clasificacion": {
+    "candidato_a_reversion": 72,
+    "continuacion_confirmada": 58
+   },
+   "delta_cero": 1,
+   "delta_media_bps": 11.5388,
+   "delta_mediana_bps": 4.1847,
+   "delta_negativo": 43,
+   "delta_positivo": 62,
+   "desplazamiento_entrada": {
+    "60000": 130
+   },
+   "espera_resolubles": 130,
+   "no_resolubles_espera": {
+    "flujo_espera_incompleto": 13
+   },
+   "no_resolubles_tardia": {
+    "flujo_espera_incompleto": 13,
+    "sin_velas_para_simbolo": 19,
+    "vela_entrada_ausente": 3
+   },
+   "oportunidades_perdidas": {
+    "empeora_media_bps": -47.0146,
+    "n_empeoran_siendo_positivas": 29
+   },
+   "original_media_bps": -6.5948,
+   "original_mediana_bps": 1.2912,
+   "original_resolubles": 115,
+   "pares_comparables": 106,
+   "perdidas_evitadas": {
+    "de_esas_terminan_no_negativas": 16,
+    "mejora_media_bps": 49.6665,
+    "n_mejoran_siendo_negativas": 37
+   },
+   "reversion": {
+    "continuacion_media_bps": 5.16,
+    "continuacion_mediana_bps": 11.562,
+    "continuacion_positiva": 39,
+    "n": 63,
+    "reversion_media_bps": -5.16,
+    "reversion_mediana_bps": -11.562,
+    "reversion_positiva": 23
+   },
+   "tardia_media_bps": 4.944,
+   "tardia_mediana_bps": 4.9863,
+   "tardia_resolubles": 108
+  }
+ },
+ "derivados_fuera_de_git": {
+  "archivos_sha256": {
+   "anclas_diagnostico.jsonl": "b0e01c8f550fcf491010ee20f8e6e671ea2e6a3cd808347eb76e943ec497750a",
+   "anclas_no_resolubles.jsonl": "3e68283486513a81bcd71e45135cec87553ccdcab3d7858419a9a6a530b91fb1",
+   "casos_detalle.jsonl": "ee1d79780a9b4281dbecae1b6ef0a8c0d00dc788b0111a15ceb7da7f56178f72",
+   "casos_trayectorias.jsonl": "e727eb6c39a84def6735c8d32a084afa26ad3ad23e596d5133c15aa03ce30af0",
+   "casos_ventanas.jsonl": "a8b0617be0f9e4e52491c5e7561d81f68e92c79253f59a76f328307e0bd58218"
+  },
+  "directorio": "C:\\proyectos\\binance-futures-data\\exp-v2-ventana-4-20261116a-diagnostico-cuatro-casos-v1"
+ },
+ "diagnostico_cuatro_casos": {
+  "casos": 4,
+  "confirmados_con_menos_fuerza": [
+   {
+    "avance_bruto_bps": 115.7521,
+    "clasificacion_espera": "continuacion_confirmada",
+    "continuacion_tardia_bps": -76.5208,
+    "delta_continuacion_bps": 22.5163,
+    "direccion": "SHORT",
+    "extension_estado": "no_resoluble",
+    "extension_motivo": "historia_insuficiente",
+    "extension_normalizada": null,
+    "motivo_espera": null,
+    "ratio_fuerza_vs_tercera_ventana": 0.131,
+    "retorno_original_bps": -99.0371,
+    "reversion_tardia_bps": 76.5208,
+    "symbol": "BLESSUSDT",
+    "terna": "BLESSUSDT|1794857340000",
+    "ternas_previas_no_solapadas": 0
+   },
+   {
+    "avance_bruto_bps": 326.2365,
+    "clasificacion_espera": "continuacion_confirmada",
+    "continuacion_tardia_bps": -152.7897,
+    "delta_continuacion_bps": -10.7718,
+    "direccion": "SHORT",
+    "extension_estado": "resoluble",
+    "extension_motivo": null,
+    "extension_normalizada": 5.3458,
+    "motivo_espera": null,
+    "ratio_fuerza_vs_tercera_ventana": 0.0701,
+    "retorno_original_bps": -142.0179,
+    "reversion_tardia_bps": 152.7897,
+    "symbol": "BLESSUSDT",
+    "terna": "BLESSUSDT|1794859500000",
+    "ternas_previas_no_solapadas": 6
+   }
+  ],
+  "detalle": [
+   {
+    "avance_bruto_bps": 115.7521,
+    "clasificacion_espera": "continuacion_confirmada",
+    "continuacion_tardia_bps": -76.5208,
+    "delta_continuacion_bps": 22.5163,
+    "direccion": "SHORT",
+    "extension_estado": "no_resoluble",
+    "extension_motivo": "historia_insuficiente",
+    "extension_normalizada": null,
+    "motivo_espera": null,
+    "ratio_fuerza_vs_tercera_ventana": 0.131,
+    "retorno_original_bps": -99.0371,
+    "reversion_tardia_bps": 76.5208,
+    "symbol": "BLESSUSDT",
+    "terna": "BLESSUSDT|1794857340000",
+    "ternas_previas_no_solapadas": 0
+   },
+   {
+    "avance_bruto_bps": 20.6186,
+    "clasificacion_espera": null,
+    "continuacion_tardia_bps": null,
+    "delta_continuacion_bps": null,
+    "direccion": "LONG",
+    "extension_estado": "no_resoluble",
+    "extension_motivo": "historia_insuficiente",
+    "extension_normalizada": null,
+    "motivo_espera": "flujo_espera_incompleto",
+    "ratio_fuerza_vs_tercera_ventana": null,
+    "retorno_original_bps": 44.1176,
+    "reversion_tardia_bps": null,
+    "symbol": "STRKUSDT",
+    "terna": "STRKUSDT|1794858900000",
+    "ternas_previas_no_solapadas": 4
+   },
+   {
+    "avance_bruto_bps": 326.2365,
+    "clasificacion_espera": "continuacion_confirmada",
+    "continuacion_tardia_bps": -152.7897,
+    "delta_continuacion_bps": -10.7718,
+    "direccion": "SHORT",
+    "extension_estado": "resoluble",
+    "extension_motivo": null,
+    "extension_normalizada": 5.3458,
+    "motivo_espera": null,
+    "ratio_fuerza_vs_tercera_ventana": 0.0701,
+    "retorno_original_bps": -142.0179,
+    "reversion_tardia_bps": 152.7897,
+    "symbol": "BLESSUSDT",
+    "terna": "BLESSUSDT|1794859500000",
+    "ternas_previas_no_solapadas": 6
+   },
+   {
+    "avance_bruto_bps": 117.0264,
+    "clasificacion_espera": "candidato_a_reversion",
+    "continuacion_tardia_bps": -67.3192,
+    "delta_continuacion_bps": 89.2356,
+    "direccion": "LONG",
+    "extension_estado": "no_resoluble",
+    "extension_motivo": "historia_insuficiente",
+    "extension_normalizada": null,
+    "motivo_espera": null,
+    "ratio_fuerza_vs_tercera_ventana": -0.2478,
+    "retorno_original_bps": -156.5548,
+    "reversion_tardia_bps": 67.3192,
+    "symbol": "ARIAUSDT",
+    "terna": "ARIAUSDT|1794860040000",
+    "ternas_previas_no_solapadas": 4
+   }
+  ],
+  "espera_no_resoluble": 1,
+  "extension_evaluable": 1,
+  "extension_insuficiente": [
+   {
+    "avance_bruto_bps": 115.7521,
+    "clasificacion_espera": "continuacion_confirmada",
+    "continuacion_tardia_bps": -76.5208,
+    "delta_continuacion_bps": 22.5163,
+    "direccion": "SHORT",
+    "extension_estado": "no_resoluble",
+    "extension_motivo": "historia_insuficiente",
+    "extension_normalizada": null,
+    "motivo_espera": null,
+    "ratio_fuerza_vs_tercera_ventana": 0.131,
+    "retorno_original_bps": -99.0371,
+    "reversion_tardia_bps": 76.5208,
+    "symbol": "BLESSUSDT",
+    "terna": "BLESSUSDT|1794857340000",
+    "ternas_previas_no_solapadas": 0
+   },
+   {
+    "avance_bruto_bps": 20.6186,
+    "clasificacion_espera": null,
+    "continuacion_tardia_bps": null,
+    "delta_continuacion_bps": null,
+    "direccion": "LONG",
+    "extension_estado": "no_resoluble",
+    "extension_motivo": "historia_insuficiente",
+    "extension_normalizada": null,
+    "motivo_espera": "flujo_espera_incompleto",
+    "ratio_fuerza_vs_tercera_ventana": null,
+    "retorno_original_bps": 44.1176,
+    "reversion_tardia_bps": null,
+    "symbol": "STRKUSDT",
+    "terna": "STRKUSDT|1794858900000",
+    "ternas_previas_no_solapadas": 4
+   },
+   {
+    "avance_bruto_bps": 117.0264,
+    "clasificacion_espera": "candidato_a_reversion",
+    "continuacion_tardia_bps": -67.3192,
+    "delta_continuacion_bps": 89.2356,
+    "direccion": "LONG",
+    "extension_estado": "no_resoluble",
+    "extension_motivo": "historia_insuficiente",
+    "extension_normalizada": null,
+    "motivo_espera": null,
+    "ratio_fuerza_vs_tercera_ventana": -0.2478,
+    "retorno_original_bps": -156.5548,
+    "reversion_tardia_bps": 67.3192,
+    "symbol": "ARIAUSDT",
+    "terna": "ARIAUSDT|1794860040000",
+    "ternas_previas_no_solapadas": 4
+   }
+  ],
+  "extension_no_resoluble": 3,
+  "hechos": {
+   "espera": "3 casos con continuacion tardia comparable",
+   "extension": "contrastable en 1 de 4 casos; minimo fijado 6 ternas previas no solapadas",
+   "presion": "continuacion 2, reversion 1, sin confirmacion 0, no resoluble 1"
+  },
+  "presion_continuacion": 2,
+  "presion_reversion": 1,
+  "presion_sin_confirmacion": 0
+ },
+ "limitaciones": [
+  "captura ya usada en el desarrollo del detector: hallazgo exploratorio, no prueba independiente",
+  "los cuatro casos formulan hipotesis; no validan una regla",
+  "el minuto de espera se mide con el flujo agregado del minuto completo; no es una senal en vivo",
+  "entrada y salida son aperturas de velas: no son fills ni incluyen latencia",
+  "la reversion tardia comparte entrada y salida con la continuacion: solo cambia el signo",
+  "cobertura de velas limitada a los simbolos consultados durante la captura",
+  "flujo intermedio ausente en la captura no se rellena ni se atribuye a una causa",
+  "funding UNKNOWN; el coste de 16 bps es solo sensibilidad documentada",
+  "retorno bruto de referencia, no P&L"
+ ],
+ "origen": {
+  "cobertura": "docs\\evidence\\secuencia-presion-v1-correcciones-20261117\\C-cobertura-real.json",
+  "db": "C:\\proyectos\\binance-futures-data\\exp-v2-ventana-4-20261116a\\research.db",
+  "db_sha256_declarada_en_cobertura": "6ad6f716889a71ceffc5ffc36ed89d904544d3a75facfe1da7c4385b9ad6a7f1",
+  "derivados_anclas": "C:\\proyectos\\binance-futures-data\\exp-v2-ventana-4-20261116a-anclas-comunes-v1",
+  "fuentes_intactas": true,
+  "hashes_antes": {
+   "cobertura_json": "39652bf00d594245943ec7114c0e6933fce2e49a8caf2812915cc478f9eaf4bd",
+   "consultas_klines.jsonl": "4ee61463934e58dd86ec15736738965644b2511b675d92c9f75f48c30ca61874",
+   "episodios_patron_originales.jsonl": "19b5967102abe01807a6c097d6f94c0b726e0987897c2513f7a4983ac40c7f0f",
+   "episodios_referencia_universo_igual.jsonl": "dd31588992f48e3cd09d27370d22f1deb155957ecc6997aef0f2301e0095a6e7",
+   "research.db": "6ad6f716889a71ceffc5ffc36ed89d904544d3a75facfe1da7c4385b9ad6a7f1"
+  },
+  "hashes_despues": {
+   "cobertura_json": "39652bf00d594245943ec7114c0e6933fce2e49a8caf2812915cc478f9eaf4bd",
+   "consultas_klines.jsonl": "4ee61463934e58dd86ec15736738965644b2511b675d92c9f75f48c30ca61874",
+   "episodios_patron_originales.jsonl": "19b5967102abe01807a6c097d6f94c0b726e0987897c2513f7a4983ac40c7f0f",
+   "episodios_referencia_universo_igual.jsonl": "dd31588992f48e3cd09d27370d22f1deb155957ecc6997aef0f2301e0095a6e7",
+   "research.db": "6ad6f716889a71ceffc5ffc36ed89d904544d3a75facfe1da7c4385b9ad6a7f1"
+  },
+  "klines": "C:\\proyectos\\binance-futures-data\\exp-v2-ventana-4-20261116a\\consultas_klines.jsonl"
+ },
+ "pregunta": "que distinguia a STRKUSDT LONG de ARIAUSDT LONG y de los dos BLESSUSDT SHORT; si esperar la confirmacion de un minuto habria ayudado frente a continuar inmediatamente",
+ "reglas_fijadas": {
+  "clasificacion": {
+   "cero": "sin_confirmacion",
+   "negativo": "candidato_a_reversion",
+   "positivo": "continuacion_confirmada"
+  },
+  "coste_sensibilidad_bps": 16.0,
+  "entrada": "apertura del primer minuto estrictamente posterior al corte",
+  "espera": "primer minuto exacto posterior a la terna (inicio = cierre nominal de la tercera ventana); corte tardio = max(corte original, fin del minuto, as_of_ms del flujo)",
+  "extension_previa": "avance alineado entre el primer y tercer cierre; referencia = mediana de movimientos absolutos de ternas previas no solapadas del mismo contrato",
+  "flujo_alineado": "s * (compras - ventas), s=+1 LONG, -1 SHORT",
+  "funding": "UNKNOWN",
+  "minimo_pares_conclusion": 30,
+  "minimo_ternas_previas": 6,
+  "no_resoluble": "fila ausente, data_quality distinto de OK o as_of anterior al cierre del minuto",
+  "reversion": "mismo corte tardio y mismos precios que la continuacion",
+  "salida": "apertura exactamente 5 minutos despues de la entrada"
+ },
+ "run_id": "exp-v2-ventana-4-20261116a",
+ "universo": {
+  "agrupacion": {
+   "alertas_patron_asignadas": 4,
+   "alertas_tardias": 0,
+   "anclas_con_patron": 4,
+   "anclas_sin_patron": 139,
+   "repetidas_agrupadas": 68
+  },
+  "alertas_solo_precio": 211,
+  "anclas_con_patron": 4,
+  "anclas_sin_patron": 139,
+  "conservado": true,
+  "cortes_verificados_identicos": 501,
+  "episodios_ancla": 143,
+  "filas_crudas": {
+   "filas_flujo": 1265,
+   "filas_libro": 1197,
+   "flujo_otro_run_id": 0,
+   "libro_otro_run_id": 0
+  },
+  "hasta_entrada_detector": {
+   "simbolos": 43,
+   "ternas": 501,
+   "ventanas": 1005
+  },
+  "publicado": {
+   "simbolos": 43,
+   "ternas": 501,
+   "ventanas": 1005
+  },
+  "ternas_evaluadas": 501,
+  "ventanas_validas_detector": 1005,
+  "verificacion_publicada": {
+   "anclas": {
+    "coinciden": 143
+   },
+   "casos": {
+    "coinciden": 4,
+    "detalle": [
+     {
+      "coincide": true,
+      "retorno_publicado_bps": -99.0371,
+      "retorno_recalculado_bps": -99.0371,
+      "terna": "BLESSUSDT|1794857340000"
+     },
+     {
+      "coincide": true,
+      "retorno_publicado_bps": 44.1176,
+      "retorno_recalculado_bps": 44.1176,
+      "terna": "STRKUSDT|1794858900000"
+     },
+     {
+      "coincide": true,
+      "retorno_publicado_bps": -142.0179,
+      "retorno_recalculado_bps": -142.0179,
+      "terna": "BLESSUSDT|1794859500000"
+     },
+     {
+      "coincide": true,
+      "retorno_publicado_bps": -156.5548,
+      "retorno_recalculado_bps": -156.5548,
+      "terna": "ARIAUSDT|1794860040000"
+     }
+    ]
+   }
+  }
+ },
+ "version_anclas": "anclas-comunes-ventana4-v1",
+ "version_diagnostico": "diagnostico-cuatro-casos-v1"
+}

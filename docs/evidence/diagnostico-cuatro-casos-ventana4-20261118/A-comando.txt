@@ -1,0 +1,60 @@
+# A. Comando, ejecucion y determinismo
+
+Fecha: 2026-11-18. Rama: `research/universe-liquidez-v1`. HEAD al ejecutar: `d6513e28bb499f8e39921df431f80a28d0e36a08`.
+Python 3.14.3; pytest 9.1.1.
+
+## Comando (ejecucion 1)
+
+```bat
+python scripts\diagnostico_cuatro_casos_ventana4.py ^
+  --db "C:\proyectos\binance-futures-data\exp-v2-ventana-4-20261116a\research.db" ^
+  --cobertura "docs\evidence\secuencia-presion-v1-correcciones-20261117\C-cobertura-real.json" ^
+  --klines "C:\proyectos\binance-futures-data\exp-v2-ventana-4-20261116a\consultas_klines.jsonl" ^
+  --derivados-anclas "C:\proyectos\binance-futures-data\exp-v2-ventana-4-20261116a-anclas-comunes-v1" ^
+  --salida "C:\proyectos\binance-futures-data\exp-v2-ventana-4-20261116a-diagnostico-cuatro-casos-v1" ^
+  --resumen "docs\evidence\diagnostico-cuatro-casos-ventana4-20261118\C-resumen.json"
+```
+
+## Salida de la ejecucion 1
+
+```json
+{"estado": "ok", "casos": 4, "verificacion_casos": 4, "anclas": 143, "verificacion_anclas": 143, "pares_comparables": 106, "clasificacion": {"candidato_a_reversion": 72, "continuacion_confirmada": 58}, "delta_media_bps": 11.5388, "delta_mediana_bps": 4.1847, "conclusion": "esperar un minuto muestra mejora media y mediana en esta muestra", "resumen": "docs\\evidence\\diagnostico-cuatro-casos-ventana4-20261118\\C-resumen.json"}
+```
+
+exit code = 0
+
+## Salida de la ejecucion 2 (directorios temporales)
+
+```json
+{"estado": "ok", "casos": 4, "verificacion_casos": 4, "anclas": 143, "verificacion_anclas": 143, "pares_comparables": 106, "clasificacion": {"candidato_a_reversion": 72, "continuacion_confirmada": 58}, "delta_media_bps": 11.5388, "delta_mediana_bps": 4.1847, "conclusion": "esperar un minuto muestra mejora media y mediana en esta muestra", "resumen": "C:\\Users\\adonm\\AppData\\Local\\Temp\\opencode\\diag-v4\\C-resumen-2.json"}
+```
+
+exit code = 0
+
+## Determinismo
+
+- Resumen identico salvo la ruta de salida: **SI**.
+- SHA256 de los cinco derivados identico entre ejecuciones: **SI**.
+- SHA256 real de los cinco derivados igual al registrado: **SI**.
+
+## SHA256 de los derivados (fuera de Git)
+
+Directorio: `C:\proyectos\binance-futures-data\exp-v2-ventana-4-20261116a-diagnostico-cuatro-casos-v1`
+
+```
+b0e01c8f550fcf491010ee20f8e6e671ea2e6a3cd808347eb76e943ec497750a  anclas_diagnostico.jsonl  278357 bytes
+3e68283486513a81bcd71e45135cec87553ccdcab3d7858419a9a6a530b91fb1  anclas_no_resolubles.jsonl  62502 bytes
+ee1d79780a9b4281dbecae1b6ef0a8c0d00dc788b0111a15ceb7da7f56178f72  casos_detalle.jsonl  25786 bytes
+e727eb6c39a84def6735c8d32a084afa26ad3ad23e596d5133c15aa03ce30af0  casos_trayectorias.jsonl  7139 bytes
+a8b0617be0f9e4e52491c5e7561d81f68e92c79253f59a76f328307e0bd58218  casos_ventanas.jsonl  10623 bytes
+```
+
+## Fuentes (sin cambios antes/despues)
+
+```
+39652bf00d594245943ec7114c0e6933fce2e49a8caf2812915cc478f9eaf4bd  cobertura_json
+4ee61463934e58dd86ec15736738965644b2511b675d92c9f75f48c30ca61874  consultas_klines.jsonl
+19b5967102abe01807a6c097d6f94c0b726e0987897c2513f7a4983ac40c7f0f  episodios_patron_originales.jsonl
+dd31588992f48e3cd09d27370d22f1deb155957ecc6997aef0f2301e0095a6e7  episodios_referencia_universo_igual.jsonl
+6ad6f716889a71ceffc5ffc36ed89d904544d3a75facfe1da7c4385b9ad6a7f1  research.db
+```

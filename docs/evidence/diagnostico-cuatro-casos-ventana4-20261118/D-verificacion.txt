@@ -1,0 +1,33 @@
+OK     fuentes con el SHA256 registrado
+OK     fuentes intactas durante el diagnostico
+OK     143 anclas en el derivado  n=143
+OK     pares comparables  106 vs 106
+OK     delta medio  11.5388 vs 11.5388
+OK     delta mediano  4.1847 vs 4.1847
+OK     clasificacion del flujo  {'candidato_a_reversion': 72, 'continuacion_confirmada': 58}
+OK     subconjunto de reversion: n  63 vs 63
+OK     subconjunto de reversion: continuacion media
+OK     subconjunto de reversion: reversion = -continuacion
+OK     extension previa evaluable  35 vs 35
+OK     extension previa: minimo 6 ternas previas
+OK     extension previa: historia insuficiente por debajo del minimo
+OK     cuatro casos en el derivado  n=4
+OK     BLESSUSDT SHORT retorno original  -99.0371 vs -99.0371
+OK     BLESSUSDT SHORT continuacion tardia  -76.5208 vs -76.5208
+OK     BLESSUSDT SHORT reversion tardia  76.5208 vs 76.5208
+OK     BLESSUSDT SHORT reversion no reutiliza entrada original
+OK     STRKUSDT LONG retorno original  44.1176 vs 44.1176
+OK     STRKUSDT LONG espera no resoluble sin inventar precios  flujo_espera_incompleto
+OK     BLESSUSDT SHORT retorno original  -142.0179 vs -142.0179
+OK     BLESSUSDT SHORT continuacion tardia  -152.7897 vs -152.7897
+OK     BLESSUSDT SHORT reversion tardia  152.7897 vs 152.7897
+OK     BLESSUSDT SHORT reversion no reutiliza entrada original
+OK     ARIAUSDT LONG retorno original  -156.5548 vs -156.5548
+OK     ARIAUSDT LONG continuacion tardia  -67.3192 vs -67.3192
+OK     ARIAUSDT LONG reversion tardia  67.3192 vs 67.3192
+OK     ARIAUSDT LONG reversion no reutiliza entrada original
+OK     espera desplaza la entrada en todos los casos usables  108 vs 108
+OK     ninguna entrada tardia reutiliza la original
+OK     los cuatro casos coinciden con el derivado publicado
+
+VERIFICACION OK: todas las comprobaciones
