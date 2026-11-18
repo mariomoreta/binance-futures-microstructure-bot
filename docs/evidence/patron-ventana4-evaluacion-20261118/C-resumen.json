@@ -1,0 +1,1021 @@
+{
+ "cadena_publicada": {
+  "parejas_iniciales": 1190,
+  "ternas_finales": 501,
+  "ternas_sobre_parejas": 1032,
+  "ternas_tras_integridad": 501
+ },
+ "cobertura_de_velas": {
+  "consultas": 161,
+  "consultas_rechazadas": [],
+  "duplicadas_contradictorias": 4,
+  "duplicadas_identicas": 7642,
+  "ejemplos_contradiccion": [
+   {
+    "nueva": {
+     "close": 0.008605,
+     "high": 0.008605,
+     "low": 0.008592,
+     "open": 0.008592
+    },
+    "open_time": 1794862680000,
+    "previa": {
+     "close": 0.008594,
+     "high": 0.008594,
+     "low": 0.008594,
+     "open": 0.008594
+    },
+    "symbol": "4USDT"
+   },
+   {
+    "nueva": {
+     "close": 0.008605,
+     "high": 0.008605,
+     "low": 0.008592,
+     "open": 0.008592
+    },
+    "open_time": 1794862680000,
+    "previa": {
+     "close": 0.008594,
+     "high": 0.008594,
+     "low": 0.008594,
+     "open": 0.008594
+    },
+    "symbol": "4USDT"
+   },
+   {
+    "nueva": {
+     "close": 0.008605,
+     "high": 0.008605,
+     "low": 0.008592,
+     "open": 0.008592
+    },
+    "open_time": 1794862680000,
+    "previa": {
+     "close": 0.008594,
+     "high": 0.008594,
+     "low": 0.008594,
+     "open": 0.008594
+    },
+    "symbol": "4USDT"
+   },
+   {
+    "nueva": {
+     "close": 0.008605,
+     "high": 0.008605,
+     "low": 0.008592,
+     "open": 0.008592
+    },
+    "open_time": 1794862680000,
+    "previa": {
+     "close": 0.008594,
+     "high": 0.008594,
+     "low": 0.008594,
+     "open": 0.008594
+    },
+    "symbol": "4USDT"
+   }
+  ],
+  "episodios_patron_sin_velas": 0,
+  "filas_leidas": 10143,
+  "provisional_actualizada": 0,
+  "provisional_ignorada": 0,
+  "provisional_reemplazada_por_final": 135,
+  "run_id_distinto": 0,
+  "simbolos": [
+   "4USDT",
+   "AAVEUSDT",
+   "AGTUSDT",
+   "AIOTUSDT",
+   "ARIAUSDT",
+   "BANKUSDT",
+   "BLESSUSDT",
+   "BMTUSDT",
+   "BTWUSDT",
+   "BULLAUSDT",
+   "CROSSUSDT",
+   "ENJUSDT",
+   "EVAAUSDT",
+   "FLOCKUSDT",
+   "FLOWUSDT",
+   "HUMAUSDT",
+   "ONUSDT",
+   "PLAYUSDT",
+   "SOPHUSDT",
+   "SPACEUSDT",
+   "STOUSDT",
+   "STRKUSDT",
+   "XAUTUSDT",
+   "XLMUSDT",
+   "ZILUSDT"
+  ],
+  "simbolos_con_ternas_sin_velas": {
+   "BARDUSDT": 8,
+   "BASEDUSDT": 3,
+   "BNBUSDT": 8,
+   "BOMEUSDT": 3,
+   "DRIFTUSDT": 3,
+   "DUSKUSDT": 16,
+   "DYDXUSDT": 4,
+   "DYMUSDT": 5,
+   "ENSOUSDT": 15,
+   "ENSUSDT": 4,
+   "ERAUSDT": 6,
+   "FOGOUSDT": 5,
+   "FOLKSUSDT": 3,
+   "RAREUSDT": 1,
+   "SUIUSDT": 3,
+   "TLMUSDT": 3,
+   "XMRUSDT": 3,
+   "XNYUSDT": 2
+  },
+  "velas_contradictorias": 4,
+  "velas_provisionales_finales": 26,
+  "velas_unicas": 2362
+ },
+ "conclusion": {
+  "conclusion": "datos insuficientes",
+  "evidencia": [],
+  "motivo": "episodios resolubles: patrón=4, referencia=189, solo precio sin patrón=186; mínimo fijado=30"
+ },
+ "configuracion_detector": {
+  "condiciones_congeladas": true,
+  "hash": "b6b2b327b140f1d4041d3a585d77c837efe62fa944f8f88ec2215b95a0c253a4",
+  "version": "SECUENCIA-PRESION-V1"
+ },
+ "derivados_fuera_de_git": {
+  "archivos_sha256": {
+   "alertas_patron.jsonl": "ec02054193d20f6688b9fa46c8afdc76652aa945795a8464966bb885ed63054e",
+   "alertas_referencia.jsonl": "11afe2b7487b4f56d3cdb118eabb90b44167806c401910cd7e9bb1aef2517629",
+   "episodios_patron.jsonl": "efac8f561eb3490875da143d0d44acb8e524a695040b7838121f8691b2b496c2",
+   "episodios_referencia.jsonl": "b79b2d7bb185a6a197cfb78a357453beb88e01c15f2cfffba78226bc33f4f4ab",
+   "ternas_patron.jsonl": "da29490e682ac2d8ee0c4d795108da6dbee71032de3f91e1a48e8ea19c1a6a4a"
+  },
+  "directorio": "C:\\proyectos\\binance-futures-data\\exp-v2-ventana-4-20261116a-patron-v1"
+ },
+ "detector": {
+  "alertas_brutas": 4,
+  "alertas_por_direccion": {
+   "LONG": 2,
+   "SHORT": 2
+  },
+  "demora_corte_ms": {
+   "max": 53545,
+   "mediana": 715,
+   "min": 163
+  },
+  "episodios": 4,
+  "episodios_por_direccion": {
+   "LONG": 2,
+   "SHORT": 2
+  },
+  "funnel_por_direccion": {
+   "LONG": {
+    "cumple": 2,
+    "faltantes": {
+     "precio_avanza_en_direccion_long": 397,
+     "profundidad_contraria_decreciente": 396,
+     "q_creciente": 55,
+     "q_positivo_finito": 440
+    },
+    "precio_avanza": 104,
+    "precio_y_q": 5,
+    "precio_y_q_y_profundidad": 2,
+    "profundidad_decreciente": 105,
+    "q_positivo_creciente": 6,
+    "ternas": 501
+   },
+   "SHORT": {
+    "cumple": 2,
+    "faltantes": {
+     "precio_avanza_en_direccion_short": 394,
+     "profundidad_contraria_decreciente": 387,
+     "q_creciente": 65,
+     "q_positivo_finito": 419
+    },
+    "precio_avanza": 107,
+    "precio_y_q": 11,
+    "precio_y_q_y_profundidad": 2,
+    "profundidad_decreciente": 114,
+    "q_positivo_creciente": 17,
+    "ternas": 501
+   }
+  },
+  "por_decision": {
+   "LONG_EXPERIMENTAL": 2,
+   "SHORT_EXPERIMENTAL": 2,
+   "SIN_PATRON": 497
+  },
+  "repetidas_agrupadas": 0,
+  "ternas_evaluadas": 501
+ },
+ "grupos": {
+  "patron": {
+   "alertas_brutas": 4,
+   "alertas_por_direccion": {
+    "LONG": 2,
+    "SHORT": 2
+   },
+   "global": {
+    "aciertos": 1,
+    "adverso_mediano_bps": -207.4717,
+    "adverso_medio_bps": -186.054,
+    "adverso_sobre": 4,
+    "episodios": 4,
+    "fallos": 3,
+    "ic95_media_bps": [
+     -149.2864,
+     -2.4162
+    ],
+    "motivos_no_resoluble": {},
+    "neutrales": 0,
+    "no_resolubles": 0,
+    "por_hora_utc": {
+     "19": {
+      "episodios": 2,
+      "retorno_medio_bps": -27.4597
+     },
+     "20": {
+      "episodios": 2,
+      "retorno_medio_bps": -149.2864
+     }
+    },
+    "resolubles": 4,
+    "resolubles_con_entrada_provisional": 0,
+    "resolubles_con_salida_provisional": 0,
+    "resolubles_con_trayectoria_completa": 4,
+    "retorno_mediano_bps": -120.5275,
+    "retorno_medio_bps": -88.3731,
+    "simbolo_dominante": {
+     "cuota": 0.5,
+     "episodios": 2,
+     "symbol": "BLESSUSDT"
+    },
+    "simbolos": {
+     "ARIAUSDT": 1,
+     "BLESSUSDT": 2,
+     "STRKUSDT": 1
+    },
+    "tasa_acierto": 0.25
+   },
+   "grupo": "patron",
+   "por_direccion": {
+    "LONG": {
+     "aciertos": 1,
+     "adverso_mediano_bps": -95.97,
+     "adverso_medio_bps": -95.97,
+     "adverso_sobre": 2,
+     "episodios": 2,
+     "fallos": 1,
+     "ic95_media_bps": [
+      -156.5548,
+      44.1176
+     ],
+     "motivos_no_resoluble": {},
+     "neutrales": 0,
+     "no_resolubles": 0,
+     "por_hora_utc": {
+      "19": {
+       "episodios": 1,
+       "retorno_medio_bps": 44.1176
+      },
+      "20": {
+       "episodios": 1,
+       "retorno_medio_bps": -156.5548
+      }
+     },
+     "resolubles": 2,
+     "resolubles_con_entrada_provisional": 0,
+     "resolubles_con_salida_provisional": 0,
+     "resolubles_con_trayectoria_completa": 2,
+     "retorno_mediano_bps": -56.2186,
+     "retorno_medio_bps": -56.2186,
+     "simbolo_dominante": {
+      "cuota": 0.5,
+      "episodios": 1,
+      "symbol": "STRKUSDT"
+     },
+     "simbolos": {
+      "ARIAUSDT": 1,
+      "STRKUSDT": 1
+     },
+     "tasa_acierto": 0.5
+    },
+    "SHORT": {
+     "aciertos": 0,
+     "adverso_mediano_bps": -276.138,
+     "adverso_medio_bps": -276.138,
+     "adverso_sobre": 2,
+     "episodios": 2,
+     "fallos": 2,
+     "ic95_media_bps": [
+      -142.0179,
+      -99.0371
+     ],
+     "motivos_no_resoluble": {},
+     "neutrales": 0,
+     "no_resolubles": 0,
+     "por_hora_utc": {
+      "19": {
+       "episodios": 1,
+       "retorno_medio_bps": -99.0371
+      },
+      "20": {
+       "episodios": 1,
+       "retorno_medio_bps": -142.0179
+      }
+     },
+     "resolubles": 2,
+     "resolubles_con_entrada_provisional": 0,
+     "resolubles_con_salida_provisional": 0,
+     "resolubles_con_trayectoria_completa": 2,
+     "retorno_mediano_bps": -120.5275,
+     "retorno_medio_bps": -120.5275,
+     "simbolo_dominante": {
+      "cuota": 1.0,
+      "episodios": 2,
+      "symbol": "BLESSUSDT"
+     },
+     "simbolos": {
+      "BLESSUSDT": 2
+     },
+     "tasa_acierto": 0.0
+    }
+   },
+   "sensibilidad_coste_documentado": {
+    "coste_ida_vuelta_bps": 16.0,
+    "neto_mediano_bps": -136.5275,
+    "neto_medio_bps": -104.3731,
+    "supuestos": "fee_bps 5.0 por lado + spread_bps 1.0 + slippage_bps 2.0 por lado; funding UNKNOWN"
+   },
+   "ternas_evaluadas": 501
+  },
+  "referencia_solo_precio": {
+   "alertas_brutas": 473,
+   "alertas_por_direccion": {
+    "LONG": 236,
+    "SHORT": 237
+   },
+   "global": {
+    "aciertos": 92,
+    "adverso_mediano_bps": -55.5213,
+    "adverso_medio_bps": -81.2367,
+    "adverso_sobre": 189,
+    "episodios": 237,
+    "fallos": 94,
+    "ic95_media_bps": [
+     -20.397,
+     8.9063
+    ],
+    "motivos_no_resoluble": {
+     "sin_velas_para_simbolo": 34,
+     "vela_entrada_ausente": 14
+    },
+    "neutrales": 3,
+    "no_resolubles": 48,
+    "por_hora_utc": {
+     "19": {
+      "episodios": 101,
+      "retorno_medio_bps": 6.2031
+     },
+     "20": {
+      "episodios": 88,
+      "retorno_medio_bps": -17.5355
+     }
+    },
+    "resolubles": 189,
+    "resolubles_con_entrada_provisional": 0,
+    "resolubles_con_salida_provisional": 0,
+    "resolubles_con_trayectoria_completa": 189,
+    "retorno_mediano_bps": -0.0,
+    "retorno_medio_bps": -4.8498,
+    "simbolo_dominante": {
+     "cuota": 0.0794,
+     "episodios": 15,
+     "symbol": "SPACEUSDT"
+    },
+    "simbolos": {
+     "4USDT": 10,
+     "AAVEUSDT": 4,
+     "AGTUSDT": 2,
+     "AIOTUSDT": 12,
+     "ARIAUSDT": 5,
+     "BANKUSDT": 5,
+     "BLESSUSDT": 12,
+     "BMTUSDT": 8,
+     "BTWUSDT": 12,
+     "BULLAUSDT": 13,
+     "CROSSUSDT": 13,
+     "ENJUSDT": 1,
+     "EVAAUSDT": 12,
+     "FLOCKUSDT": 1,
+     "FLOWUSDT": 5,
+     "HUMAUSDT": 14,
+     "ONUSDT": 12,
+     "PLAYUSDT": 1,
+     "SOPHUSDT": 9,
+     "SPACEUSDT": 15,
+     "STOUSDT": 2,
+     "STRKUSDT": 6,
+     "XAUTUSDT": 3,
+     "XLMUSDT": 7,
+     "ZILUSDT": 5
+    },
+    "tasa_acierto": 0.4868
+   },
+   "grupo": "referencia_solo_precio",
+   "por_direccion": {
+    "LONG": {
+     "aciertos": 49,
+     "adverso_mediano_bps": -53.1255,
+     "adverso_medio_bps": -71.5461,
+     "adverso_sobre": 92,
+     "episodios": 117,
+     "fallos": 43,
+     "ic95_media_bps": [
+      -10.5981,
+      30.4787
+     ],
+     "motivos_no_resoluble": {
+      "sin_velas_para_simbolo": 18,
+      "vela_entrada_ausente": 7
+     },
+     "neutrales": 0,
+     "no_resolubles": 25,
+     "por_hora_utc": {
+      "19": {
+       "episodios": 50,
+       "retorno_medio_bps": 20.3525
+      },
+      "20": {
+       "episodios": 42,
+       "retorno_medio_bps": -0.6066
+      }
+     },
+     "resolubles": 92,
+     "resolubles_con_entrada_provisional": 0,
+     "resolubles_con_salida_provisional": 0,
+     "resolubles_con_trayectoria_completa": 92,
+     "retorno_mediano_bps": 8.1252,
+     "retorno_medio_bps": 10.7842,
+     "simbolo_dominante": {
+      "cuota": 0.087,
+      "episodios": 8,
+      "symbol": "SPACEUSDT"
+     },
+     "simbolos": {
+      "4USDT": 6,
+      "AAVEUSDT": 2,
+      "AGTUSDT": 1,
+      "AIOTUSDT": 4,
+      "ARIAUSDT": 3,
+      "BANKUSDT": 3,
+      "BLESSUSDT": 6,
+      "BMTUSDT": 3,
+      "BTWUSDT": 4,
+      "BULLAUSDT": 8,
+      "CROSSUSDT": 8,
+      "EVAAUSDT": 5,
+      "FLOCKUSDT": 1,
+      "FLOWUSDT": 2,
+      "HUMAUSDT": 7,
+      "ONUSDT": 5,
+      "SOPHUSDT": 3,
+      "SPACEUSDT": 8,
+      "STOUSDT": 1,
+      "STRKUSDT": 3,
+      "XAUTUSDT": 1,
+      "XLMUSDT": 4,
+      "ZILUSDT": 4
+     },
+     "tasa_acierto": 0.5326
+    },
+    "SHORT": {
+     "aciertos": 43,
+     "adverso_mediano_bps": -63.8298,
+     "adverso_medio_bps": -90.4279,
+     "adverso_sobre": 97,
+     "episodios": 120,
+     "fallos": 51,
+     "ic95_media_bps": [
+      -40.8785,
+      -1.5066
+     ],
+     "motivos_no_resoluble": {
+      "sin_velas_para_simbolo": 16,
+      "vela_entrada_ausente": 7
+     },
+     "neutrales": 3,
+     "no_resolubles": 23,
+     "por_hora_utc": {
+      "19": {
+       "episodios": 51,
+       "retorno_medio_bps": -7.669
+      },
+      "20": {
+       "episodios": 46,
+       "retorno_medio_bps": -32.9922
+      }
+     },
+     "resolubles": 97,
+     "resolubles_con_entrada_provisional": 0,
+     "resolubles_con_salida_provisional": 0,
+     "resolubles_con_trayectoria_completa": 97,
+     "retorno_mediano_bps": -2.9446,
+     "retorno_medio_bps": -19.678,
+     "simbolo_dominante": {
+      "cuota": 0.0825,
+      "episodios": 8,
+      "symbol": "BTWUSDT"
+     },
+     "simbolos": {
+      "4USDT": 4,
+      "AAVEUSDT": 2,
+      "AGTUSDT": 1,
+      "AIOTUSDT": 8,
+      "ARIAUSDT": 2,
+      "BANKUSDT": 2,
+      "BLESSUSDT": 6,
+      "BMTUSDT": 5,
+      "BTWUSDT": 8,
+      "BULLAUSDT": 5,
+      "CROSSUSDT": 5,
+      "ENJUSDT": 1,
+      "EVAAUSDT": 7,
+      "FLOWUSDT": 3,
+      "HUMAUSDT": 7,
+      "ONUSDT": 7,
+      "PLAYUSDT": 1,
+      "SOPHUSDT": 6,
+      "SPACEUSDT": 7,
+      "STOUSDT": 1,
+      "STRKUSDT": 3,
+      "XAUTUSDT": 2,
+      "XLMUSDT": 3,
+      "ZILUSDT": 1
+     },
+     "tasa_acierto": 0.4433
+    }
+   },
+   "sensibilidad_coste_documentado": {
+    "coste_ida_vuelta_bps": 16.0,
+    "neto_mediano_bps": -16.0,
+    "neto_medio_bps": -20.8498,
+    "supuestos": "fee_bps 5.0 por lado + spread_bps 1.0 + slippage_bps 2.0 por lado; funding UNKNOWN"
+   },
+   "ternas_evaluadas": 1107
+  },
+  "referencia_solo_precio_sin_patron": {
+   "alertas_brutas": 467,
+   "alertas_por_direccion": {
+    "LONG": 235,
+    "SHORT": 232
+   },
+   "global": {
+    "aciertos": 92,
+    "adverso_mediano_bps": -54.2396,
+    "adverso_medio_bps": -78.5775,
+    "adverso_sobre": 186,
+    "episodios": 234,
+    "fallos": 91,
+    "ic95_media_bps": [
+     -17.0204,
+     11.4643
+    ],
+    "motivos_no_resoluble": {
+     "sin_velas_para_simbolo": 34,
+     "vela_entrada_ausente": 14
+    },
+    "neutrales": 3,
+    "no_resolubles": 48,
+    "por_hora_utc": {
+     "19": {
+      "episodios": 100,
+      "retorno_medio_bps": 7.2555
+     },
+     "20": {
+      "episodios": 86,
+      "retorno_medio_bps": -14.4715
+     }
+    },
+    "resolubles": 186,
+    "resolubles_con_entrada_provisional": 0,
+    "resolubles_con_salida_provisional": 0,
+    "resolubles_con_trayectoria_completa": 186,
+    "retorno_mediano_bps": -0.0,
+    "retorno_medio_bps": -2.7903,
+    "simbolo_dominante": {
+     "cuota": 0.0806,
+     "episodios": 15,
+     "symbol": "SPACEUSDT"
+    },
+    "simbolos": {
+     "4USDT": 10,
+     "AAVEUSDT": 4,
+     "AGTUSDT": 2,
+     "AIOTUSDT": 12,
+     "ARIAUSDT": 4,
+     "BANKUSDT": 5,
+     "BLESSUSDT": 10,
+     "BMTUSDT": 8,
+     "BTWUSDT": 12,
+     "BULLAUSDT": 13,
+     "CROSSUSDT": 13,
+     "ENJUSDT": 1,
+     "EVAAUSDT": 12,
+     "FLOCKUSDT": 1,
+     "FLOWUSDT": 5,
+     "HUMAUSDT": 14,
+     "ONUSDT": 12,
+     "PLAYUSDT": 1,
+     "SOPHUSDT": 9,
+     "SPACEUSDT": 15,
+     "STOUSDT": 2,
+     "STRKUSDT": 6,
+     "XAUTUSDT": 3,
+     "XLMUSDT": 7,
+     "ZILUSDT": 5
+    },
+    "tasa_acierto": 0.4946
+   },
+   "grupo": "referencia_solo_precio_sin_patron",
+   "por_direccion": {
+    "LONG": {
+     "aciertos": 49,
+     "adverso_mediano_bps": -52.8885,
+     "adverso_medio_bps": -70.2877,
+     "adverso_sobre": 91,
+     "episodios": 116,
+     "fallos": 42,
+     "ic95_media_bps": [
+      -8.0556,
+      33.1903
+     ],
+     "motivos_no_resoluble": {
+      "sin_velas_para_simbolo": 18,
+      "vela_entrada_ausente": 7
+     },
+     "neutrales": 0,
+     "no_resolubles": 25,
+     "por_hora_utc": {
+      "19": {
+       "episodios": 50,
+       "retorno_medio_bps": 20.3525
+      },
+      "20": {
+       "episodios": 41,
+       "retorno_medio_bps": 3.197
+      }
+     },
+     "resolubles": 91,
+     "resolubles_con_entrada_provisional": 0,
+     "resolubles_con_salida_provisional": 0,
+     "resolubles_con_trayectoria_completa": 91,
+     "retorno_mediano_bps": 9.1075,
+     "retorno_medio_bps": 12.6231,
+     "simbolo_dominante": {
+      "cuota": 0.0879,
+      "episodios": 8,
+      "symbol": "SPACEUSDT"
+     },
+     "simbolos": {
+      "4USDT": 6,
+      "AAVEUSDT": 2,
+      "AGTUSDT": 1,
+      "AIOTUSDT": 4,
+      "ARIAUSDT": 2,
+      "BANKUSDT": 3,
+      "BLESSUSDT": 6,
+      "BMTUSDT": 3,
+      "BTWUSDT": 4,
+      "BULLAUSDT": 8,
+      "CROSSUSDT": 8,
+      "EVAAUSDT": 5,
+      "FLOCKUSDT": 1,
+      "FLOWUSDT": 2,
+      "HUMAUSDT": 7,
+      "ONUSDT": 5,
+      "SOPHUSDT": 3,
+      "SPACEUSDT": 8,
+      "STOUSDT": 1,
+      "STRKUSDT": 3,
+      "XAUTUSDT": 1,
+      "XLMUSDT": 4,
+      "ZILUSDT": 4
+     },
+     "tasa_acierto": 0.5385
+    },
+    "SHORT": {
+     "aciertos": 43,
+     "adverso_mediano_bps": -61.4493,
+     "adverso_medio_bps": -86.5182,
+     "adverso_sobre": 95,
+     "episodios": 118,
+     "fallos": 49,
+     "ic95_media_bps": [
+      -38.48,
+      2.0785
+     ],
+     "motivos_no_resoluble": {
+      "sin_velas_para_simbolo": 16,
+      "vela_entrada_ausente": 7
+     },
+     "neutrales": 3,
+     "no_resolubles": 23,
+     "por_hora_utc": {
+      "19": {
+       "episodios": 50,
+       "retorno_medio_bps": -5.8416
+      },
+      "20": {
+       "episodios": 45,
+       "retorno_medio_bps": -30.5695
+      }
+     },
+     "resolubles": 95,
+     "resolubles_con_entrada_provisional": 0,
+     "resolubles_con_salida_provisional": 0,
+     "resolubles_con_trayectoria_completa": 95,
+     "retorno_mediano_bps": -2.9283,
+     "retorno_medio_bps": -17.5548,
+     "simbolo_dominante": {
+      "cuota": 0.0842,
+      "episodios": 8,
+      "symbol": "BTWUSDT"
+     },
+     "simbolos": {
+      "4USDT": 4,
+      "AAVEUSDT": 2,
+      "AGTUSDT": 1,
+      "AIOTUSDT": 8,
+      "ARIAUSDT": 2,
+      "BANKUSDT": 2,
+      "BLESSUSDT": 4,
+      "BMTUSDT": 5,
+      "BTWUSDT": 8,
+      "BULLAUSDT": 5,
+      "CROSSUSDT": 5,
+      "ENJUSDT": 1,
+      "EVAAUSDT": 7,
+      "FLOWUSDT": 3,
+      "HUMAUSDT": 7,
+      "ONUSDT": 7,
+      "PLAYUSDT": 1,
+      "SOPHUSDT": 6,
+      "SPACEUSDT": 7,
+      "STOUSDT": 1,
+      "STRKUSDT": 3,
+      "XAUTUSDT": 2,
+      "XLMUSDT": 3,
+      "ZILUSDT": 1
+     },
+     "tasa_acierto": 0.4526
+    }
+   },
+   "sensibilidad_coste_documentado": {
+    "coste_ida_vuelta_bps": 16.0,
+    "neto_mediano_bps": -16.0,
+    "neto_medio_bps": -18.7903,
+    "supuestos": "fee_bps 5.0 por lado + spread_bps 1.0 + slippage_bps 2.0 por lado; funding UNKNOWN"
+   },
+   "ternas_evaluadas": null
+  },
+  "referencia_tambien_patron": {
+   "alertas_brutas": 6,
+   "alertas_por_direccion": {
+    "LONG": 1,
+    "SHORT": 5
+   },
+   "global": {
+    "aciertos": 0,
+    "adverso_mediano_bps": -228.8858,
+    "adverso_medio_bps": -246.1112,
+    "adverso_sobre": 3,
+    "episodios": 3,
+    "fallos": 3,
+    "ic95_media_bps": [
+     -156.5548,
+     -99.0371
+    ],
+    "motivos_no_resoluble": {},
+    "neutrales": 0,
+    "no_resolubles": 0,
+    "por_hora_utc": {
+     "19": {
+      "episodios": 1,
+      "retorno_medio_bps": -99.0371
+     },
+     "20": {
+      "episodios": 2,
+      "retorno_medio_bps": -149.2864
+     }
+    },
+    "resolubles": 3,
+    "resolubles_con_entrada_provisional": 0,
+    "resolubles_con_salida_provisional": 0,
+    "resolubles_con_trayectoria_completa": 3,
+    "retorno_mediano_bps": -142.0179,
+    "retorno_medio_bps": -132.5366,
+    "simbolo_dominante": {
+     "cuota": 0.6667,
+     "episodios": 2,
+     "symbol": "BLESSUSDT"
+    },
+    "simbolos": {
+     "ARIAUSDT": 1,
+     "BLESSUSDT": 2
+    },
+    "tasa_acierto": 0.0
+   },
+   "grupo": "referencia_tambien_patron",
+   "por_direccion": {
+    "LONG": {
+     "aciertos": 0,
+     "adverso_mediano_bps": -186.0576,
+     "adverso_medio_bps": -186.0576,
+     "adverso_sobre": 1,
+     "episodios": 1,
+     "fallos": 1,
+     "ic95_media_bps": null,
+     "motivos_no_resoluble": {},
+     "neutrales": 0,
+     "no_resolubles": 0,
+     "por_hora_utc": {
+      "20": {
+       "episodios": 1,
+       "retorno_medio_bps": -156.5548
+      }
+     },
+     "resolubles": 1,
+     "resolubles_con_entrada_provisional": 0,
+     "resolubles_con_salida_provisional": 0,
+     "resolubles_con_trayectoria_completa": 1,
+     "retorno_mediano_bps": -156.5548,
+     "retorno_medio_bps": -156.5548,
+     "simbolo_dominante": {
+      "cuota": 1.0,
+      "episodios": 1,
+      "symbol": "ARIAUSDT"
+     },
+     "simbolos": {
+      "ARIAUSDT": 1
+     },
+     "tasa_acierto": 0.0
+    },
+    "SHORT": {
+     "aciertos": 0,
+     "adverso_mediano_bps": -276.138,
+     "adverso_medio_bps": -276.138,
+     "adverso_sobre": 2,
+     "episodios": 2,
+     "fallos": 2,
+     "ic95_media_bps": [
+      -142.0179,
+      -99.0371
+     ],
+     "motivos_no_resoluble": {},
+     "neutrales": 0,
+     "no_resolubles": 0,
+     "por_hora_utc": {
+      "19": {
+       "episodios": 1,
+       "retorno_medio_bps": -99.0371
+      },
+      "20": {
+       "episodios": 1,
+       "retorno_medio_bps": -142.0179
+      }
+     },
+     "resolubles": 2,
+     "resolubles_con_entrada_provisional": 0,
+     "resolubles_con_salida_provisional": 0,
+     "resolubles_con_trayectoria_completa": 2,
+     "retorno_mediano_bps": -120.5275,
+     "retorno_medio_bps": -120.5275,
+     "simbolo_dominante": {
+      "cuota": 1.0,
+      "episodios": 2,
+      "symbol": "BLESSUSDT"
+     },
+     "simbolos": {
+      "BLESSUSDT": 2
+     },
+     "tasa_acierto": 0.0
+    }
+   },
+   "sensibilidad_coste_documentado": {
+    "coste_ida_vuelta_bps": 16.0,
+    "neto_mediano_bps": -158.0179,
+    "neto_medio_bps": -148.5366,
+    "supuestos": "fee_bps 5.0 por lado + spread_bps 1.0 + slippage_bps 2.0 por lado; funding UNKNOWN"
+   },
+   "ternas_evaluadas": null
+  }
+ },
+ "limitaciones": [
+  "captura ya usada en el desarrollo del detector: hallazgo exploratorio, no prueba independiente",
+  "corte reconstruido: la captura no ejecutó el detector en vivo",
+  "entrada = apertura de la vela siguiente al corte; no es un fill ejecutado ni incluye latencia",
+  "salida = apertura a 5 minutos; no hay stop ni salida intravela",
+  "funding UNKNOWN; costes aplicados solo como sensibilidad documentada",
+  "episodios de distintos símbolos pueden solaparse en el tiempo: no son independientes",
+  "cobertura de velas limitada a los símbolos consultados durante la captura"
+ ],
+ "origen": {
+  "cobertura": "docs\\evidence\\secuencia-presion-v1-correcciones-20261117\\C-cobertura-real.json",
+  "db": "C:\\proyectos\\binance-futures-data\\exp-v2-ventana-4-20261116a\\research.db",
+  "db_sha256_declarada_en_cobertura": "6ad6f716889a71ceffc5ffc36ed89d904544d3a75facfe1da7c4385b9ad6a7f1",
+  "hashes_sha256": {
+   "cobertura_json": "39652bf00d594245943ec7114c0e6933fce2e49a8caf2812915cc478f9eaf4bd",
+   "consultas_klines.jsonl": "4ee61463934e58dd86ec15736738965644b2511b675d92c9f75f48c30ca61874",
+   "research.db": "6ad6f716889a71ceffc5ffc36ed89d904544d3a75facfe1da7c4385b9ad6a7f1"
+  },
+  "klines": "C:\\proyectos\\binance-futures-data\\exp-v2-ventana-4-20261116a\\consultas_klines.jsonl"
+ },
+ "referencia": {
+  "alertas_brutas": 473,
+  "alertas_por_direccion": {
+   "LONG": 236,
+   "SHORT": 237
+  },
+  "alertas_tambien_patron": 4,
+  "episodios": 237,
+  "episodios_por_direccion": {
+   "LONG": 117,
+   "SHORT": 120
+  },
+  "episodios_solo_precio_sin_patron": 234,
+  "episodios_tambien_patron": 3,
+  "repetidas_agrupadas": 236,
+  "ternas_solo_precio": 1107,
+  "ventanas_por_simbolo": {
+   "4USDT": 40,
+   "AAVEUSDT": 21,
+   "AGTUSDT": 33,
+   "AIOTUSDT": 61,
+   "ARIAUSDT": 33,
+   "BANKUSDT": 43,
+   "BARDUSDT": 17,
+   "BASEDUSDT": 6,
+   "BLESSUSDT": 61,
+   "BMTUSDT": 44,
+   "BNBUSDT": 17,
+   "BOMEUSDT": 6,
+   "BTWUSDT": 61,
+   "BULLAUSDT": 61,
+   "CROSSUSDT": 61,
+   "DRIFTUSDT": 6,
+   "DUSKUSDT": 39,
+   "DYDXUSDT": 10,
+   "DYMUSDT": 11,
+   "ENJUSDT": 6,
+   "ENSOUSDT": 38,
+   "ENSUSDT": 10,
+   "ERAUSDT": 12,
+   "EVAAUSDT": 61,
+   "FLOCKUSDT": 6,
+   "FLOWUSDT": 38,
+   "FOGOUSDT": 11,
+   "FOLKSUSDT": 11,
+   "HUMAUSDT": 61,
+   "ONUSDT": 61,
+   "PLAYUSDT": 6,
+   "RAREUSDT": 6,
+   "SOPHUSDT": 57,
+   "SPACEUSDT": 61,
+   "STOUSDT": 17,
+   "STRKUSDT": 43,
+   "SUIUSDT": 6,
+   "TLMUSDT": 6,
+   "XAUTUSDT": 17,
+   "XLMUSDT": 37,
+   "XMRUSDT": 6,
+   "XNYUSDT": 5,
+   "ZILUSDT": 52
+  }
+ },
+ "run_id": "exp-v2-ventana-4-20261116a",
+ "universo": {
+  "conservado": true,
+  "data_quality_flujo": {
+   "OK": 1005
+  },
+  "flujo_as_of_anterior_al_cierre": 0,
+  "hasta_entrada_detector": {
+   "simbolos": 43,
+   "ternas": 501,
+   "ventanas": 1005
+  },
+  "motivos_invalidez": {},
+  "procedencia": {
+   "aggTrade/depth20": 1005
+  },
+  "publicado": {
+   "simbolos": 43,
+   "ternas": 501,
+   "ventanas": 1005
+  },
+  "ventanas_validas_para_el_detector": 1005
+ },
+ "version_evaluacion": "patron-ventana4-v1"
+}

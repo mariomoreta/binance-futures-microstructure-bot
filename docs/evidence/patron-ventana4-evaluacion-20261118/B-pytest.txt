@@ -1,0 +1,37 @@
+B — PRUEBAS DE LA EVALUACION Y REGRESIONES FOCALIZADAS
+================================================================
+
+Fecha: 2026-11-18
+Python: el del entorno del proyecto (python -m pytest)
+PYTHONIOENCODING=utf-8
+
+1. SUITE NUEVA: tests/test_replay_patron_ventana4.py
+----------------------------------------------------------------
+$ python -m pytest tests\test_replay_patron_ventana4.py -q
+
+......                                                                   [100%]
+6 passed in 0.54s
+
+exit code: 0
+
+Cubre los cuatro requisitos exigidos:
+  - entrada real extractor -> detector (VentanaPresion desde cobertura + DB);
+  - fuente tardia que retrasa el corte;
+  - agrupacion de repeticiones sin duplicar episodios;
+  - precio posterior ausente que permanece no resoluble.
+Ademas: el universo no se fuerza si la cobertura y la DB discrepan, y la
+conversion no disfraza agregados de fila piloto.
+
+2. REGRESIONES FOCALIZADAS (CONJUNTO)
+----------------------------------------------------------------
+$ python -m pytest tests\test_replay_patron_ventana4.py ^
+    tests\test_secuencia_presion_v1.py ^
+    tests\test_extraer_cobertura_research_db.py ^
+    tests\test_analisis_contrafactual_ventana4.py ^
+    tests\test_operativo_replay_offline.py -q
+
+............................................................             [100%]
+60 passed in 39.33s
+
+exit code: 0
+duracion : 41 815 ms

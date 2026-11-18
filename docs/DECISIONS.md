@@ -6229,3 +6229,48 @@ nueva requiere autorizacion humana explicita con `run_id` nuevo.
 SQLite temporal, exit 0; C: JSON de cobertura real, exit 0, hashes de los
 originales intactos, SHA256 `39652bf0...`). Pruebas: detector 24 passed,
 extractor 7 passed, regresiones 16 + 7 passed.
+
+## 2026-11-18 - Evaluacion exploratoria del patron SECUENCIA-PRESION-V1 sobre las 501 ternas (sin mercado)
+
+**Contexto.** Continuacion del bloque humano del 2026-11-17 sobre la base
+publicada `87d83dcff64a884c569bb5cc6348d81d2db07d36` (rama
+`research/universe-liquidez-v1`). Alcance: solo lectura de
+`exp-v2-ventana-4-20261116a`; sin Binance, consultas publicas, capturas nuevas,
+ordenes, cableado productivo, cambios de patron/umbral, dashboard ni
+infraestructura. La auditoria de cobertura no se reabre.
+
+**Decisiones registradas.**
+1. La entrada del detector se construye como `VentanaPresion` desde la cobertura
+   publicada + filas verificadas de `research.db`; cualquier discrepancia aborta.
+   No se fabrican filas piloto ni se reconstruyen intervalos desde
+   `decision_ms`.
+2. Corte causal = max(cierre nominal, disponibilidad de flujo, disponibilidad de
+   libro); entrada = apertura del primer minuto estrictamente posterior; salida =
+   apertura a 5 minutos exactos; vela exacta obligatoria, sin saltar huecos.
+   `aggTrade` nunca se usa como precio ejecutable; MAE solo con trayectoria
+   completa.
+3. Alertas brutas y episodios se cuentan por separado; episodio = primera alerta
+   por contrato+dir, agrupando repeticiones de la misma direccion dentro de los
+   5 minutos siguientes por orden de disponibilidad, sin seleccion retrospectiva.
+4. Referencia de solo precio: misma secuencia de tres cierres sin flujo ni
+   profundidad, mismos cortes, agrupacion, precios y horizonte; se parte en
+   episodios que tambien cumplen el patron y episodios que no.
+5. Regla de conclusion predeclarada: minimo 30 episodios resolubles; con menos,
+   o si el signo se invierte al excluir el simbolo dominante, la conclusion es
+   "datos insuficientes". Coste documentado 16 bps de ida y vuelta (fee 5 por
+   lado + spread 1 + slippage 2 por lado); funding UNKNOWN. Sin cambios
+   posteriores de umbral, horizonte, agrupacion ni universo.
+
+**Resultado.** Universo conservado 1005/501/43, 0 discrepancias. Patron:
+501 -> 4 alertas -> 4 episodios -> 4 resolubles (1/3/0, media -88.37 bps, mediana
+-120.53 bps, IC95 [-149.29, -2.42]). Referencia: 1107 ternas contiguas -> 473
+alertas -> 237 episodios -> 189 resolubles (92/94/3, media -4.85 bps, mediana
+-0.00, IC95 [-20.40, +8.91]); subconjunto sin patron 186 resolubles, media
+-2.79 bps. Conclusion formal: **datos insuficientes**. No se declara rentabilidad
+ni edge.
+
+**Evidencia.** `docs/evidence/patron-ventana4-evaluacion-20261118/` (README,
+comando con hashes, pytest, resumen JSON y verificacion independiente); derivados
+fuera de Git en
+`C:\proyectos\binance-futures-data\exp-v2-ventana-4-20261116a-patron-v1\`.
+Pruebas: 6 nuevas + 60 focalizadas, exit 0. Publicado: PENDIENTE_SHA.

@@ -1,0 +1,61 @@
+A — REPLAY OFFLINE DEL PATRON SOBRE LA VENTANA 4 (CLI REAL)
+================================================================
+
+Fecha de ejecucion : 2026-11-18
+Datos de origen    : captura exp-v2-ventana-4-20261116a (2026-11-16)
+Rama               : research/universe-liquidez-v1
+Base publicada     : 87d83dcff64a884c569bb5cc6348d81d2db07d36
+Modo               : solo lectura sobre la captura; escritura unicamente en
+                     docs/evidence/ y en el directorio de derivados fuera de Git.
+
+1. COMANDO EJECUTADO
+----------------------------------------------------------------
+$env:PYTHONIOENCODING='utf-8'
+python scripts\replay_patron_ventana4.py `
+  --db "C:\proyectos\binance-futures-data\exp-v2-ventana-4-20261116a\research.db" `
+  --cobertura "docs\evidence\secuencia-presion-v1-correcciones-20261117\C-cobertura-real.json" `
+  --klines "C:\proyectos\binance-futures-data\exp-v2-ventana-4-20261116a\consultas_klines.jsonl" `
+  --salida "C:\proyectos\binance-futures-data\exp-v2-ventana-4-20261116a-patron-v1" `
+  --resumen "docs\evidence\patron-ventana4-evaluacion-20261118\C-resumen.json"
+
+2. SALIDA
+----------------------------------------------------------------
+exit code : 0
+duracion  : 735 ms
+stdout    :
+
+{"estado": "ok", "universo": {"ventanas": 1005, "ternas": 501, "simbolos": 43},
+ "alertas_patron": 4, "episodios_patron": 4, "alertas_referencia": 473,
+ "episodios_referencia": 237, "conclusion": "datos insuficientes",
+ "resumen": "docs\\evidence\\patron-ventana4-evaluacion-20261118\\C-resumen.json"}
+
+3. HASHES DE ENTRADA (ANTES Y DESPUES DE LA EJECUCION: IDENTICOS)
+----------------------------------------------------------------
+6AD6F716889A71CEFFC5FFC36ED89D904544D3A75FACFE1DA7C4385B9AD6A7F1  research.db
+FD4C9FDA9CD3F9AE7C962B0DDF37232294D55580E1AA165AA06129B8549389EB  research.db-shm
+E3B0C44298FC1C149AFBF4C8996FB92427AE41E4649B934CA495991B7852B855  research.db-wal (vacio)
+4EE61463934E58DD86EC15736738965644B2511B675D92C9F75F48C30CA61874  consultas_klines.jsonl
+
+El hash de research.db coincide con el declarado en la cobertura publicada
+(db_sha256 6ad6f716…a7f1). El replay no modifica la captura: los cuatro hashes
+son iguales antes y despues.
+
+4. REPRODUCIBILIDAD (SEGUNDA CORRIDA)
+----------------------------------------------------------------
+Segunda ejecucion del mismo comando con --resumen a un fichero temporal:
+
+  hash_publicado 098A61FF818A86E5ABA453E6637DD4DCA7710E0D78533989CFC453D5160A6C14
+  hash_repetido  098A61FF818A86E5ABA453E6637DD4DCA7710E0D78533989CFC453D5160A6C14
+  identicos      True
+
+5. HASHES DE LOS DERIVADOS (FUERA DE GIT)
+----------------------------------------------------------------
+EC02054193D20F6688B9FA46C8AFDC76652AA945795A8464966BB885ED63054E  alertas_patron.jsonl
+11AFE2B7487B4F56D3CDB118EABB90B44167806C401910CD7E9BB1AEF2517629  alertas_referencia.jsonl
+EFAC8F561EB3490875DA143D0D44ACB8E524A695040B7838121F8691B2B496C2  episodios_patron.jsonl
+B79B2D7BB185A6A197CFB78A357453BEB88E01C15F2CFFFBA78226BC33F4F4AB  episodios_referencia.jsonl
+DA29490E682AC2D8EE0C4D795108DA6DBEE71032DE3F91E1A48E8EA19C1A6A4  ternas_patron.jsonl
+
+Directorio: C:\proyectos\binance-futures-data\exp-v2-ventana-4-20261116a-patron-v1
+Los hashes de la segunda corrida coinciden con los registrados dentro de
+C-resumen.json (derivados_fuera_de_git.archivos_sha256).

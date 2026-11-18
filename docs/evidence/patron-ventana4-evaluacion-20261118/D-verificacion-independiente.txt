@@ -1,0 +1,128 @@
+D — VERIFICACION INDEPENDIENTE (SIN IMPORTAR EL MODULO DE REPLAY)
+================================================================
+
+Comprueba con aritmetica propia, leyendo la captura en solo lectura:
+  1) que las 4 ternas alertadas cumplen las condiciones congeladas
+     (0 < Q1 < Q2 < Q3, D1 > D2 > D3 > 0, cierres monotonos en la direccion);
+  2) que entrada/salida son la apertura de las velas en los minutos exactos
+     (primer minuto tras el corte y +5 min), exigiendo instantaneas coherentes;
+  3) que el retorno alineado recalculado coincide con el publicado.
+
+Fecha: 2026-11-18
+
+1. SCRIPT (ejecutado tal cual, sin importar scripts/replay_patron_ventana4.py)
+----------------------------------------------------------------
+# -*- coding: utf-8 -*-
+import io
+import json
+import sqlite3
+
+DB = r"C:\proyectos\binance-futures-data\exp-v2-ventana-4-20261116a\research.db"
+KL = r"C:\proyectos\binance-futures-data\exp-v2-ventana-4-20261116a\consultas_klines.jsonl"
+EP = r"C:\proyectos\binance-futures-data\exp-v2-ventana-4-20261116a-patron-v1\episodios_patron.jsonl"
+MIN = 60_000
+
+con = sqlite3.connect("file:%s?mode=ro" % DB.replace("\\", "/"), uri=True)
+con.row_factory = sqlite3.Row
+
+crudo = {}
+for linea in io.open(KL, encoding="utf-8"):
+    d = json.loads(linea)
+    for fila in json.loads(d["cuerpo"]):
+        crudo.setdefault((d["symbol"], int(fila[0])), []).append(
+            tuple(float(x) for x in fila[1:5])
+        )
+
+ok = True
+for linea in io.open(EP, encoding="utf-8"):
+    e = json.loads(linea)
+    sym, dirn = e["symbol"], e["direccion"]
+    tercera = int(e["terna"].split("|")[1])
+    print("== %s %s  terna=%s  corte=%s" % (sym, dirn, e["terna"], e["cut_iso"]))
+    qs, ds, ps = [], [], []
+    for inicio in (tercera - 2 * MIN, tercera - MIN, tercera):
+        f = con.execute(
+            "select buy_notional,sell_notional,price_close from research_flow_1m "
+            "where symbol=? and bucket_start=?", (sym, inicio)).fetchone()
+        b = con.execute(
+            "select bid20_mean,ask20_mean from research_book_1m "
+            "where symbol=? and bucket_start=?", (sym, inicio)).fetchone()
+        F = f["buy_notional"] - f["sell_notional"]
+        D = b["ask20_mean"] if dirn == "LONG" else b["bid20_mean"]
+        q = (1 if dirn == "LONG" else -1) * F / D
+        qs.append(q); ds.append(D); ps.append(f["price_close"])
+        print("   ventana %d  F=%+.4f  D=%.4f  Q=%+.6f  cierre=%.8g"
+              % (inicio, F, D, q, f["price_close"]))
+    cond = (0 < qs[0] < qs[1] < qs[2] and ds[0] > ds[1] > ds[2] > 0
+            and (ps[0] < ps[1] < ps[2] if dirn == "LONG" else ps[0] > ps[1] > ps[2]))
+    print("   patron_congelado=%s" % cond)
+    ok = ok and cond
+
+    cut = e["cut_ms"]
+    entrada = (cut // MIN + 1) * MIN
+    salida = entrada + 5 * MIN
+    el = crudo.get((sym, entrada), [])
+    sl = crudo.get((sym, salida), [])
+    print("   corte=%d  entrada_esperada=%d  salida_esperada=%d" % (cut, entrada, salida))
+    print("   velas crudas entrada=%s" % (el,))
+    print("   velas crudas salida =%s" % (sl,))
+    if not el or not sl or len(set(el)) != 1 or len(set(sl)) != 1:
+        print("   RESULTADO: no verificable (vela ausente o instantaneas contradictorias)")
+        ok = False
+        continue
+    print("   instantaneas: entrada=%d identicas=%s  salida=%d identicas=%s"
+          % (len(el), len(set(el)) == 1, len(sl), len(set(sl)) == 1))
+    pe, ps_ = el[0][0], sl[0][0]
+    signo = 1 if dirn == "LONG" else -1
+    ret = signo * (ps_ / pe - 1) * 1e4
+    print("   entrada=%.10g salida=%.10g retorno_recalculado=%.4f  publicado=%.4f  coincide=%s"
+          % (pe, ps_, ret, e["retorno_bps"], abs(ret - e["retorno_bps"]) < 1e-6))
+    ok = ok and abs(ret - e["retorno_bps"]) < 1e-6
+
+print()
+print("VERIFICACION_INDEPENDIENTE_OK=%s" % ok)
+
+2. SALIDA (exit 0)
+----------------------------------------------------------------
+== BLESSUSDT SHORT  terna=BLESSUSDT|1794857340000  corte=2026-11-16T19:30:01.355000+00:00
+   ventana 1794857220000  F=-2289.7513  D=8672.5498  Q=+0.264023  cierre=0.018315
+   ventana 1794857280000  F=-17925.5767  D=8109.1893  Q=+2.210526  cierre=0.018231
+   ventana 1794857340000  F=-48073.2029  D=7693.7785  Q=+6.248322  cierre=0.018103
+   patron_congelado=True
+   corte=1794857401355  entrada_esperada=1794857460000  salida_esperada=1794857760000
+   instantaneas: entrada=2 identicas=True  salida=3 identicas=True
+   entrada=0.018175 salida=0.018355 retorno_recalculado=-99.0371  publicado=-99.0371  coincide=True
+== STRKUSDT LONG  terna=STRKUSDT|1794858900000  corte=2026-11-16T19:56:04.530000+00:00
+   ventana 1794858780000  F=+423.1172  D=298762.2216  Q=+0.001416  cierre=0.03395
+   ventana 1794858840000  F=+681.8104  D=297828.7672  Q=+0.002289  cierre=0.03397
+   ventana 1794858900000  F=+1937.2903  D=295794.8387  Q=+0.006549  cierre=0.03402
+   patron_congelado=True
+   corte=1794858964530  entrada_esperada=1794859020000  salida_esperada=1794859320000
+   instantaneas: entrada=2 identicas=True  salida=2 identicas=True
+   entrada=0.034 salida=0.03415 retorno_recalculado=44.1176  publicado=44.1176  coincide=True
+== BLESSUSDT SHORT  terna=BLESSUSDT|1794859500000  corte=2026-11-16T20:06:00.464000+00:00
+   ventana 1794859380000  F=-949.9308  D=8725.2337  Q=+0.108872  cierre=0.018177
+   ventana 1794859440000  F=-11226.9833  D=8257.0809  Q=+1.359679  cierre=0.018169
+   ventana 1794859500000  F=-156881.8014  D=7620.1760  Q=+20.587687  cierre=0.017584
+   patron_congelado=True
+   corte=1794859560464  entrada_esperada=1794859620000  salida_esperada=1794859920000
+   instantaneas: entrada=9 identicas=True  salida=10 identicas=True
+   entrada=0.017533 salida=0.017782 retorno_recalculado=-142.0179  publicado=-142.0179  coincide=True
+== ARIAUSDT LONG  terna=ARIAUSDT|1794860040000  corte=2026-11-16T20:15:00.502000+00:00
+   ventana 1794859920000  F=+2001.2484  D=3118.7238  Q=+0.641688  cierre=0.2085
+   ventana 1794859980000  F=+3138.2724  D=2811.7371  Q=+1.116133  cierre=0.20915
+   ventana 1794860040000  F=+31423.5017  D=2594.5607  Q=+12.111300  cierre=0.21094
+   patron_congelado=True
+   corte=1794860100502  entrada_esperada=1794860160000  salida_esperada=1794860460000
+   instantaneas: entrada=2 identicas=True  salida=2 identicas=True
+   entrada=0.21015 salida=0.20686 retorno_recalculado=-156.5548  publicado=-156.5548  coincide=True
+
+VERIFICACION_INDEPENDIENTE_OK=True
+
+3. NOTA SOBRE LAS INSTANTANEAS
+----------------------------------------------------------------
+Cada vela aparece en varias consultas del JSONL (p. ej. 9 instantaneas para
+la entrada de BLESSUSDT 20:06). La verificacion exige que todas sean identicas,
+no que exista una sola. Esa comprobacion pasa en las 8 velas usadas.
+La unica vela con instantaneas contradictorias en toda la captura
+(4USDT @1794862680000) no interviene en ningun episodio.

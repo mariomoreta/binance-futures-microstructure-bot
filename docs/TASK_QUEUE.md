@@ -1,5 +1,64 @@
 # Cola vigente — detector secuencia-presion-v1 cerrado, 2026-11-16
 
+## Bloque 2026-11-18 — evaluacion offline del patron sobre las 501 ternas — TERMINADO
+
+`ACTIVE_TASK: ninguno` — esperar instruccion del usuario.
+
+**Base:** `87d83dcff64a884c569bb5cc6348d81d2db07d36`, rama
+`research/universe-liquidez-v1`. Solo lectura de la captura
+`exp-v2-ventana-4-20261116a`; sin Binance, consultas publicas, capturas nuevas,
+ordenes, cableado productivo, cambios de patron/umbral, dashboard ni
+infraestructura. La auditoria de cobertura no se reabre. `opencode.json` local
+no se toca.
+
+**Hecho:** (1) `scripts/replay_patron_ventana4.py` adapta cobertura publicada +
+filas verificadas de `research.db` a `VentanaPresion` del detector congelado, sin
+fabricar filas piloto ni usar `decision_ms` para reconstruir intervalos; aborta
+ante cualquier discrepancia publicada/DB. (2) Replay causal con corte =
+max(cierre nominal, disponibilidad de flujo, disponibilidad de libro), entrada =
+apertura del primer minuto estrictamente posterior, salida = apertura a 5
+minutos exactos; sin saltar huecos; sin usar `aggTrade` como precio ejecutable.
+(3) Alertas brutas y episodios separados, agrupando repeticiones de la misma
+direccion en los 5 minutos siguientes por orden de disponibilidad. (4)
+Referencia de solo precio con la misma secuencia de tres cierres, mismos cortes,
+agrupacion, precios y horizonte, partida en episodios que tambien cumplen el
+patron y episodios que no. (5) Diagnostico de embudo con `_evaluar_terna` real,
+solo informativo.
+
+**Resultado verificable:** universo conservado 1005 ventanas / 501 ternas / 43
+simbolos (0 discrepancias, 0 ternas con `as_of` anterior al cierre). Patron:
+**501 -> 4 alertas -> 4 episodios -> 4 resolubles**, 1 acierto / 3 fallos, media
+-88.37 bps, mediana -120.53 bps, IC95 [-149.29, -2.42]. Referencia: **1107
+ternas contiguas -> 473 alertas -> 237 episodios -> 189 resolubles** (48 no
+resolubles), 92/94/3, media -4.85 bps, mediana -0.00 bps, IC95 [-20.40, +8.91];
+referencia sin patron: 186 resolubles, media -2.79 bps. Embudo: la condicion
+limitante es Q (`q_positivo_finito` descarta 440 ternas LONG y 419 SHORT).
+Neto con 16 bps documentados: patron -104.37 / -136.53; funding UNKNOWN.
+Concentracion: BLESSUSDT 2/4 episodios del patron; en la referencia el maximo es
+SPACEUSDT 15/189.
+
+**Conclusion formal:** regla predeclarada (minimo 30 episodios resolubles) ->
+**datos insuficientes**. No se puede afirmar mejora ni ausencia de mejora con 4
+episodios; el punto observado es peor que la referencia pero sin potencia y con
+dependencia de un simbolo.
+
+**Pruebas:** `tests/test_replay_patron_ventana4.py` 6 passed; regresiones
+`test_secuencia_presion_v1.py` 24, `test_extraer_cobertura_research_db.py` 7,
+`test_analisis_contrafactual_ventana4.py` 16, `test_operativo_replay_offline.py`
+7; conjunto focalizado 60 passed, exit 0.
+
+**Evidencias:** `docs/evidence/patron-ventana4-evaluacion-20261118/` (README,
+A comando/exit 0/hashes, B pytest, C resumen JSON, D verificacion independiente);
+derivados fuera de Git en
+`C:\proyectos\binance-futures-data\exp-v2-ventana-4-20261116a-patron-v1\`.
+
+**Publicado:** `PENDIENTE_SHA`
+
+**Siguiente:** no se ejecuta ni se propone otra captura. Una prueba independiente
+exigiria autorizacion humana explicita con `run_id` nuevo y cobertura de velas
+planificada para todo el universo; la pregunta economica sigue abierta y sin
+potencia en esta muestra.
+
 ## Bloque 2026-11-17 — correcciones SECUENCIA-PRESION-V1 + extractor de cobertura — TERMINADO
 
 `ACTIVE_TASK: ninguno` — esperar instruccion del usuario.

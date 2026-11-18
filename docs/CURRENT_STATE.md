@@ -1,5 +1,70 @@
 # Estado vigente — ventana 4 ejecutada COMPLETA con cierre normal (2026-11-16)
 
+## Bloque 2026-11-18 — evaluacion exploratoria del patron sobre las 501 ternas (sin mercado)
+
+**Autorizacion humana (continuacion del bloque 2026-11-17, ejecutada el
+2026-11-18):** replay offline de `SECUENCIA-PRESION-V1` sobre las 501 ternas
+acreditadas de `exp-v2-ventana-4-20261116a` y publicacion de una evaluacion
+causal exploratoria. Solo lectura de la captura; sin Binance, consultas
+publicas, capturas nuevas, ordenes, cableado productivo, cambios de
+patron/umbral ni reapertura de la auditoria de cobertura. Dataset intacto
+(`research.db` SHA256 `6ad6f716...a7f1` antes y despues, WAL vacio;
+`consultas_klines.jsonl` `4ee61463...a61874`).
+
+**Hecho:** `scripts/replay_patron_ventana4.py` construye la entrada del detector
+como `VentanaPresion` desde la cobertura publicada y las filas verificadas de
+`research.db`; aborta ante cualquier discrepancia y no fabrica filas piloto ni
+reconstruye intervalos desde `decision_ms`. Corte causal =
+max(cierre nominal, disponibilidad de flujo, disponibilidad de libro); entrada =
+apertura del primer minuto estrictamente posterior; salida = apertura a 5
+minutos exactos, sin saltar huecos; el cierre de `aggTrade` nunca se usa como
+precio ejecutable. Alertas brutas y episodios se cuentan por separado;
+episodio = primera alerta por contrato+dir, agrupando repeticiones de la misma
+direccion dentro de los 5 minutos siguientes en orden de disponibilidad.
+
+**Resultado verificable:** universo conservado hasta el detector 1005 ventanas /
+501 ternas / 43 simbolos, 0 discrepancias, 0 ternas con `as_of` anterior al
+cierre. Cadena del patron: **501 -> 4 alertas (2 LONG, 2 SHORT) -> 4 episodios
+-> 4 resolubles**. Referencia de solo precio (misma secuencia de tres cierres,
+sin flujo ni profundidad): **1107 ternas contiguas -> 473 alertas -> 237
+episodios -> 189 resolubles** (48 no resolubles: 34 por 18 simbolos sin velas,
+14 por vela de entrada ausente). Patron: 1 acierto / 3 fallos, media -88.37 bps,
+mediana -120.53 bps, IC95 [-149.29, -2.42], adverso medio -186.05; BLESSUSDT
+aporta 2/4. Referencia: 92/94/3, media -4.85 bps, mediana -0.00, IC95 [-20.40,
++8.91]; subconjunto de referencia sin patron: 186 resolubles, media -2.79 bps.
+Neto con 16 bps de coste documentado: patron -104.37 medio / -136.53 mediano;
+funding UNKNOWN.
+
+**Conclusion formal (regla predeclarada, minimo 30 episodios resolubles):
+datos insuficientes.** Con 4 episodios no se puede afirmar mejora ni ausencia
+de mejora; el estimador puntual observado es peor que la referencia, pero la
+muestra no tiene potencia y depende de un solo simbolo. No se declara
+rentabilidad: el resultado primario es retorno bruto de referencia.
+
+**Pruebas:** `tests/test_replay_patron_ventana4.py` 6 passed (entrada real
+extractor->detector, fuente tardia que retrasa el corte, agrupacion sin
+duplicar episodios, precio posterior ausente no resoluble, universo no forzado,
+fidelidad de la conversion). Regresiones: `test_secuencia_presion_v1.py` 24,
+`test_extraer_cobertura_research_db.py` 7,
+`test_analisis_contrafactual_ventana4.py` 16,
+`test_operativo_replay_offline.py` 7; conjunto focalizado 60 passed, exit 0.
+
+**Evidencias:** `docs/evidence/patron-ventana4-evaluacion-20261118/` (README con
+tablas y conclusion; A comando con exit 0 y hashes antes/despues; B pytest;
+C resumen JSON; D verificacion independiente que recalcula las 4 ternas y sus 8
+velas sin importar el modulo). Derivados voluminosos fuera de Git en
+`C:\proyectos\binance-futures-data\exp-v2-ventana-4-20261116a-patron-v1\`
+(5 JSONL, hashes en C). Reproducibilidad: segunda corrida con resumen
+byte-identico (`098a61ff...0a6c14`).
+
+**Publicado:** `PENDIENTE_SHA`
+
+| | |
+|---|---|
+| SHA base | `87d83dcff64a884c569bb5cc6348d81d2db07d36` (local == remoto) |
+| Dataset original | intacto, solo lectura, hash verificado antes y despues |
+| Lo que NO acredita | que el patron mejore la seleccion, edge, rentabilidad ni generalizacion (una hora, un `run_id`, dependencia de BLESSUSDT) |
+
 ## Bloque 2026-11-16 (madrugada) — contraste flujo/profundidad vs continuacion/reversion (sin mercado)
 
 **Autorizacion humana del 2026-11-16 (madrugada):** «INVESTIGACION OFFLINE DE LA

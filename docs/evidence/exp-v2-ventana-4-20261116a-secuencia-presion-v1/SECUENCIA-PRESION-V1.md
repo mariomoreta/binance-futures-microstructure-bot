@@ -373,3 +373,15 @@ dashboard ni dependencias nuevas. No se conectó a Binance. No se hicieron
 capturas. No se cambiaron entradas, stops, notional ni capacidad del
 experimento vigente. No se calculó rentabilidad ni se exploraron umbrales
 sobre esta captura.
+
+## 10. Evaluación posterior (2026-11-18)
+
+La sección 9 describe el alcance de aquel bloque. Con autorización humana
+posterior se ejecutó un replay offline sobre las 501 ternas acreditadas
+(`scripts/replay_patron_ventana4.py`), sin cambiar el patrón, el umbral, el
+horizonte ni el universo: `501 -> 4 alertas -> 4 episodios -> 4 resolubles`,
+media −88.37 bps, mediana −120.53 bps; referencia de solo precio
+`1107 -> 473 -> 237 -> 189`, media −4.85 bps. Conclusión formal por regla
+predeclarada: **datos insuficientes** (4 episodios < 30). Evidencia:
+`docs/evidence/patron-ventana4-evaluacion-20261118/`. No se declara
+rentabilidad ni se propone otra captura.
