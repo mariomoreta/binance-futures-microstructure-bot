@@ -10,6 +10,14 @@ Este detector es EXPERIMENTAL, sin validación económica. No conecta al camino
 productivo ni recibe autorización para operar. La regla operativa actual
 permanece congelada como referencia.
 
+> **Rectificación 2026-11-17 (base `619d357`).** Este documento declaraba que un
+> corte con ventanas válidas separadas por huecos dejaba el archivo sin decisión
+> (`r is None`) y que la ventana 4 tenía "0 ternas evaluables". Ambas
+> afirmaciones se corrigen sin borrar el antecedente: ahora el corte persiste
+> `DATOS_INSUFICIENTES` y la cobertura de los agregados de un minuto devuelve
+> **501 ternas acreditadas** (sección 5.2). Evidencia reproducible en
+> `docs/evidence/secuencia-presion-v1-correcciones-20261117/`.
+
 ## 1. Qué reconoce exactamente el detector
 
 El detector SECUENCIA-PRESION-V1 reconoce una secuencia temporal de tres
@@ -43,16 +51,19 @@ Primera definición mecánica:
 | --- | --- |
 | `LONG_EXPERIMENTAL` | Secuencia cumple el patrón para LONG |
 | `SHORT_EXPERIMENTAL` | Secuencia cumple el patrón para SHORT |
-| `SIN_PATRON` | Hay 3+ ventanas válidas contiguas pero ninguna dirección cumple el patrón |
-| `DATOS_INSUFICIENTES` | Menos de 3 ventanas válidas contiguas (datos faltantes) |
+| `SIN_PATRON` | Hay una terna de 3 ventanas válidas **contiguas** que no cumple el patrón |
+| `DATOS_INSUFICIENTES` | El corte no alcanza una terna contigua (menos de 3 ventanas válidas, huecos o solapamientos); **se persiste** una fila con símbolo, corte, ventanas examinadas y motivo |
 
-Cada salida incluye: condiciones cumplidas/faltantes, las tres ventanas usadas,
-F_k, D_k, Q_k, precios, timestamps, procedencia, versión y hash de
-configuración, motivo explícito.
+Cada salida incluye: condiciones cumplidas/faltantes, las ventanas usadas (o las
+examinadas, con su motivo de exclusión), F_k, D_k, Q_k, precios, timestamps,
+procedencia, versión y hash de configuración, motivo explícito. Las filas
+`DATOS_INSUFICIENTES` identifican el corte (`<symbol>|corte:<corte_ms>`) y las
+ternas se identifican por la `observation_id` de su tercera ventana.
 
 Ausentes, no finitos, importes inválidos, profundidad no positiva, ventanas
 incompletas o huecos impiden acreditar el patrón. Nunca UNKNOWN → cero.
-No se mezclan "no se cumple el patrón" con "no podemos evaluarlo".
+No se mezclan "no se cumple el patrón" con "no podemos evaluarlo", y un corte
+sin terna nunca deja el archivo sin decisión.
 
 ### Reglas temporales (acreditadas en esta corrección)
 
@@ -87,8 +98,9 @@ python scripts/secuencia_presion_v1.py --fuente <observaciones.jsonl> --salida <
 
 - `--fuente`: ruta al JSONL de observaciones (formato del piloto,
   `kind: observacion`)
-- `--salida`: ruta al JSONL de salida con una decisión por terna contigua
-  válida
+- `--salida`: ruta al JSONL de salida con una fila por terna contigua
+  evaluada (LONG/SHORT/SIN_PATRON) y una fila `DATOS_INSUFICIENTES` por corte
+  sin terna contigua
 - Trabaja sin red, genera decisiones reconstruibles desde lo persistido
 - No crea motor de trading, framework de aprendizaje ni servicio
 
@@ -149,7 +161,10 @@ Comprobaciones:
 
 ## 4. Pruebas, resultados y códigos observados
 
-Archivo: `tests/test_secuencia_presion_v1.py` — **18 pruebas pasando**:
+Archivo: `tests/test_secuencia_presion_v1.py` — **24 pruebas pasando**
+(rectificado el 2026-11-17; la versión publicada declaraba 18 y exigía
+`r is None` para ventanas no contiguas, que era el defecto corregido en el
+bloque de correcciones).
 
 | Prueba | Resultado |
 | --- | --- |
@@ -160,7 +175,9 @@ Archivo: `tests/test_secuencia_presion_v1.py` — **18 pruebas pasando**:
 | precio sin confirmación direccional | PASSED → SIN_PATRON |
 | ventana incompleta | PASSED → DATOS_INSUFICIENTES |
 | dato inválido (profundidad no positiva) | PASSED → DATOS_INSUFICIENTES |
-| ventanas no contiguas (huecos) | PASSED → ninguna decisión (None) |
+| ventanas no contiguas (huecos) | PASSED → DATOS_INSUFICIENTES persistido (antes: None) |
+| ventanas solapadas | PASSED → DATOS_INSUFICIENTES con solapamiento diagnosticado |
+| terna contigua válida que no cumple el patrón | PASSED → SIN_PATRON (no DATOS_INSUFICIENTES) |
 | ternas sucesivas detectan posterior | PASSED → LONG en terna 3-5 |
 | datos futuros no cambian decisión emitida | PASSED → decisión conservada |
 | símbolos distintos no comparten historia | PASSED → LONG y SHORT independientes |
@@ -171,22 +188,39 @@ Archivo: `tests/test_secuencia_presion_v1.py` — **18 pruebas pasando**:
 | CLI real con JSONL sintético → LONG | PASSED → exit_code 0 |
 | CLI real con 2 ventanas → DATOS_INSUFICIENTES | PASSED → exit_code 0 |
 | CLI real con ternas sucesivas | PASSED → detecta terna posterior |
+| CLI real con huecos → persiste DATOS_INSUFICIENTES | PASSED → archivo con 1 fila (antes: 0 bytes) |
+| CLI real repetir el mismo corte | PASSED → sin fila nueva ni cambio de bytes |
+| CLI real con un corte nuevo posterior | PASSED → añade fila sin alterar la anterior |
 
 Todas las pruebas ejecutan el código productivo del detector (no fórmulas
-aisladas). Códigos de salida observados: 0 (éxito).
+aisladas). Códigos de salida observados: 0 (éxito), 3 (conflicto de identidad).
+
+La evidencia de la corrección (comandos, códigos de salida y hashes) está en
+`docs/evidence/secuencia-presion-v1-correcciones-20261117/`.
 
 ## 5. Cobertura real y faltantes exactos
 
 Se inspeccionó el dataset de la ventana 4
 (`C:\proyectos\binance-futures-data\exp-v2-ventana-4-20261116a`) en modo solo
-lectura, sobre las 196 observaciones aptas, incluyendo las tablas de
-`research.db` (SQLite), no solo `observaciones.jsonl`.
+lectura. Hay **dos poblaciones distintas** y no se suman:
 
-### Conteo exacto
+- **Población A — observaciones del piloto** (`observaciones.jsonl`): 196
+  observaciones de decisión. Miden si el piloto pudo observar el minuto, no si
+  existe una terna.
+- **Población B — agregados de un minuto** (`research_flow_1m`,
+  `research_book_1m`): filas por `(symbol, bucket_start)` que, emparejadas y
+  acreditadas, forman las ternas evaluables.
+
+La sección 5.1 conserva la medición publicada de la población A. La sección 5.2
+es la medición rectificada de la población B (2026-11-17).
+
+### 5.1 Población A — observaciones del piloto
 
 | Métrica | Valor |
 | --- | --- |
-| Observaciones aptas totales | 196 |
+| Observaciones totales | 196 |
+| Observaciones aptas (`apto_para_evaluacion=True`) | 161 |
+| Observaciones descartadas | 35 |
 | Símbolos únicos | 34 |
 | Observaciones con flujo (buy/sell notional) | 196 / 196 |
 | Observaciones con libro (bid/ask top-20) | 196 / 196 |
@@ -194,26 +228,52 @@ lectura, sobre las 196 observaciones aptas, incluyendo las tablas de
 | Observaciones con ventana de flujo completa | 183 / 196 |
 | Observaciones con integridad válida | 33 / 196 |
 | Observaciones que cumplen TODOS los requisitos | **20 / 196** |
-| Símbolos con ≥3 ventanas válidas | **0** |
-| Símbolos con exactamente 3 válidas | **0** |
-| Ternas contiguas de 3 ventanas válidas | **0** |
+| Motivos de descarte (solapables) | `dato_obsoleto_flujo` 28, `flujo_ventana_incompleta` 13, `dato_obsoleto_libro` 1 |
 
-### Faltantes y motivos
+### 5.2 Población B — agregados de un minuto (rectificado 2026-11-17)
 
-| Campo | Observaciones que faltan | Motivo |
-| --- | --- | --- |
-| `integridad_ok` (huecos en feed/libro) | 163 | `huecos_detectados_en_feed` y `libro_huecos` presentes (datos de streaming con gaps) |
-| `flujo_ventana_completa` | 13 | Ventana de flujo no completa (datos incompletos del minuto) |
+Requisito que limita al resto: **integridad por intervalo**.
 
-### Conclusión de cobertura
+| Etapa | Valor |
+| --- | --- |
+| Parejas iniciales `(symbol, bucket_start)` en ambas tablas | 1190 |
+| Claves de flujo sin contraparte de libro | 75 |
+| Claves de libro sin contraparte de flujo | 7 |
+| Ternas sobre ventanas de flujo (referencia, sin contraparte) | 1107 |
+| Ternas sobre parejas | 1032 |
+| Ventanas acreditadas tras completitud | 1190 (0 excluidas) |
+| Ventanas acreditadas tras integridad por intervalo | 1005 (185 excluidas) |
+| Ventanas acreditadas tras valores válidos | 1005 (0 excluidas) |
+| Ventanas acreditadas tras precio | 1005 (0 excluidas) |
+| Ventanas acreditadas tras disponibilidad | 1005 (0 excluidas) |
+| **Ternas acreditadas finales** | **501** |
+| **Símbolos con al menos una terna** | **43** |
 
-**No hay ningún símbolo con 3 ventanas válidas consecutivas** en la ventana 4.
-El detector SECUENCIA-PRESION-V1 **no puede ejecutarse sobre esta captura**
-porque no hay datos suficientes para formar ni una sola secuencia de 3
-ventanas válidas contiguas. Esto es una limitación de cobertura, no un error
-del detector.
+Motivos de exclusión de las 185 ventanas (solapables):
 
-### Listado mínimo de campos, resolución e historia previa para futura adquisición
+- 183 con `libro_degradado` y `libro_huecos_profundidad` (los mismos 183
+  intervalos; dos motivos cada uno),
+- 2 con `flujo_data_quality_no_ok` (`PARTIAL_OK`).
+
+Los 29 intervalos con un lado en cero **registrado** son admisibles y no se
+excluyen. El precio acreditado es `price_close` de `research_flow_1m`, cierre
+del agregado de operaciones `aggTrade`; no es `libro_mid` ni precio ejecutable.
+La disponibilidad acreditada es el máximo de `as_of_ms` de flujo y libro con
+ambos presentes; no es `bucket_end` ni el instante efectivo de detección.
+
+### 5.3 Por qué se rectifica la conclusión publicada
+
+La publicación del 2026-11-16 declaró "0 ternas evaluables" y "0 símbolos con
+≥3 ventanas válidas". Esa conclusión mezclaba la población A (20/196
+observaciones con todos los campos del streaming) con la población B, y
+contradecía su propia cadena `1107 → 1032 → 501 → 501`: no existía ningún
+requisito posterior a precio que eliminara esas 501 ternas. La regeneración con
+el extractor corregido reproduce la cadena exacta y devuelve **501 ternas
+acreditadas** sobre 1005 ventanas. Terna acreditada no es patrón detectado ni
+rentabilidad: este documento no ejecuta el detector sobre esas ternas ni calcula
+retornos.
+
+### 5.4 Listado mínimo de campos, resolución e historia previa para futura adquisición
 
 Para ejecutar el detector en una captura futura se requiere, por símbolo y
 ventana de 1 minuto:
@@ -224,7 +284,7 @@ ventana de 1 minuto:
 | `sell_notional` | flujo (aggTrade) | USDT | 1 min | Ventas agresoras en la ventana |
 | `bid_notional_top20` | libro (depth20@100ms) | USDT | 1 min | Profundidad de compra top-20 |
 | `ask_notional_top20` | libro (depth20@100ms) | USDT | 1 min | Profundidad de venta top-20 |
-| `precio_base` (mid del libro) | libro | precio | 1 min | Precio de cierre conocido en la ventana |
+| `precio_base` | ver definición | precio | 1 min | **Observación del piloto:** mid del libro. **Agregado `research_flow_1m`:** `price_close`, cierre del agregado `aggTrade`. No son intercambiables ni es un precio ejecutable |
 | `ventana_completa` | flujo | booleano | 1 min | La ventana de 1 min está completa |
 | `integridad` (sin huecos, sin invalidos, sin cruce) | flujo/libro | booleano | 1 min | Integridad del streaming |
 | `disponibilidad.max_ms` | disponibilidad | ms | 1 min | Instante en que toda la evidencia estaba disponible |
@@ -246,7 +306,10 @@ Se deja una ficha breve para la prueba independiente posterior:
 
 - **Observación de un minuto:** cada ventana representa 1 minuto de datos de
   flujo agresor y profundidad top-20, capturada en un ciclo de decisión.
-- **Horizonte principal propuesto:** 60 minutos (investigación de corto plazo).
+- **Horizonte principal propuesto (rectificado 2026-11-17):** **5 minutos**
+  para la futura evaluación del detector. La hipótesis de magnitud a **60
+  minutos** queda **diferida**: no se evalúa en este bloque, no se usa para
+  aceptar ni descartar el detector y no se declara como horizonte vigente.
 - **Precio y momento de entrada causal:** `precio_base` (libro_mid) en
   `decision_ms`, el instante real de evaluación del piloto. No se usa
   `bucket_end` ni precios retrotrados.
@@ -262,10 +325,11 @@ Se deja una ficha breve para la prueba independiente posterior:
   esta fase (no hay entradas, posiciones ni P&L). El detector solo emite
   detecciones mecánicas.
 - **Criterio económico para continuar, descartar o declarar insuficiencia:**
-  si una captura futura tiene ≥3 ventanas válidas por símbolo con patrones
-  detectables, proceder a validación económica con horizonte de 60 min. Si no
-  hay cobertura suficiente (como en esta captura), declarar insuficiencia y no
-  operar.
+  si una captura futura acredita ≥3 ventanas contiguas por símbolo con patrones
+  detectables, proceder a la evaluación del detector con horizonte de 5 min. La
+  magnitud a 60 min queda diferida a un bloque posterior con autorización
+  propia. Si no hay cobertura suficiente (como en la población A de esta
+  captura), declarar insuficiencia y no operar.
 
 **Distingue reconocimiento mecánico de utilidad predictiva y operativa:** el
 detector reconoce un patrón mecánico (presión creciente, profundidad
@@ -284,14 +348,23 @@ reales.
 ## 8. Artefactos
 
 - Código: `scripts/secuencia_presion_v1.py`
-- Pruebas: `tests/test_secuencia_presion_v1.py` (18 passed)
+- Pruebas: `tests/test_secuencia_presion_v1.py` (24 passed)
+- Extractor de cobertura: `scripts/extraer_cobertura_research_db.py`
+- Pruebas del extractor: `tests/test_extraer_cobertura_research_db.py`
+  (7 passed)
 - Regresiones: `test_analisis_contrafactual_ventana4.py` (16 passed),
   `test_operativo_replay_offline.py` (7 passed)
-- Evidencia de cobertura: este documento (sección 5) — basado en
+- Evidencia de cobertura: sección 5 de este documento (poblaciones A y B) y
+  `docs/evidence/secuencia-presion-v1-correcciones-20261117/` (evidencias A, B
+  y C con comandos, códigos de salida, hashes y JSON regenerado) — basado en
   `observaciones.jsonl` y `research.db` de la ventana 4, leído en modo solo
   lectura
-- SHA base: `4a7df47e89dbd1015ad89a6f1889ebf48d156c59`
-- SHA del análisis: commit `4a7df47` (detector SECUENCIA-PRESION-V1)
+- SHA base del detector: `4a7df47e89dbd1015ad89a6f1889ebf48d156c59`
+- SHA base de las correcciones: `619d357443ace0aa7c0b939f07b6a1457265adfd`
+- SHA del análisis original: commit `4a7df47` (detector SECUENCIA-PRESION-V1)
+- SHA del bloque de correcciones: ver el commit de
+  `research/universe-liquidez-v1` con mensaje
+  "Corrige caso sin terna y extractor de cobertura (SECUENCIA-PRESION-V1)"
 
 ## 9. Lo que NO se hizo
 

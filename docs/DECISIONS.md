@@ -6154,3 +6154,78 @@ regresiones `test_analisis_contrafactual_ventana4.py` (16 passed),
 **Lo que NO acredita:** rentabilidad, edge, mejora predictiva del ratio flujo/profundidad, ventaja candidato/comparador, utilidad operativa (una hora de captura, dependencia temporal, simbolos repetidos). El detector no se conecta al camino productivo.
 
 Estado tras el bloque: `ACTIVE_TASK: ninguno`; el `run_id` `exp-v2-ventana-4-20261116a` queda consumido y no se reutiliza. La leccion del incidente de la ventana 3 sigue registrada SIN implementar.
+
+---
+
+## 2026-11-17 — Correcciones SECUENCIA-PRESION-V1 y acreditacion de cobertura (sin mercado)
+
+**Contexto.** Base publicada `619d357443ace0aa7c0b939f07b6a1457265adfd`, rama
+`research/universe-liquidez-v1`. Defectos verificados: el CLI del detector
+dejaba el archivo sin decision cuando el corte tenia tres ventanas
+individualmente validas del mismo simbolo separadas por huecos; el extractor de
+`research.db` calculaba motivos de exclusion que luego se perdian, tomaba
+prestado `as_of_ms` de la otra fuente, contaba simbolos con ventanas como
+`simbolos_con_ternas` y no distinguia la procedencia del precio.
+
+**Decision 1 — un corte sin terna se persiste, no se omite.** Un corte que no
+alcanza una terna contigua (menos de 3 ventanas validas, huecos o
+solapamientos) produce **una** fila `DATOS_INSUFICIENTES` con `symbol`,
+`corte_ms`, ventanas examinadas (con `ventana_valida` y `motivos_exclusion`),
+`ventanas_examinadas`, `motivo`, `motivo_codigo` y diagnostico de contiguidad.
+Identidad: `<symbol>|corte:<corte_ms>`, distinta de la identidad de una terna
+(`observation_id` de su tercera ventana), para que un corte insuficiente no
+bloquee una terna posterior. Repetir el mismo corte no añade fila ni altera las
+anteriores. `SIN_PATRON` queda reservado a una terna contigua valida que no
+cumple el patron. No cambian las condiciones del patron, la deteccion deslizante
+ni el rechazo de conflictos de identidad (codigo 3).
+
+**Decision 2 — el extractor solo acredita lo que verifica.** Una pareja exige
+`(symbol, bucket_start)` en ambas tablas, ambos limites enteros, `bucket_end`
+coincidente, procedencia declarada (`aggTrade` flujo, `depth20` libro) y mismo
+`run_id` no vacio. Una clave duplicada se excluye y se cuenta; la fila
+contradictoria no sustituye a la anterior en silencio. Se aplican por separado
+completitud, integridad por intervalo, valores validos, precio y disponibilidad,
+devolviendo motivos solapables (con ejemplo de contrato e intervalo) y
+exclusiones unicas. Un cero **registrado** (`buy_notional = 0`) es admisible;
+`NULL` (ausente) no es cero. `as_of_ms` se exige en **cada** fuente: si falta
+uno, la disponibilidad conjunta es `UNKNOWN` y la ventana no se acredita; si
+ambos estan, se usa el maximo, que no es `bucket_end` ni el instante efectivo de
+deteccion. `price_close` se identifica como cierre del agregado de operaciones
+`aggTrade`, no como `libro_mid` ni precio ejecutable. `simbolos_con_ternas`
+cuenta solo simbolos con al menos una terna acreditada.
+
+**Decision 3 — la cobertura se lee en dos poblaciones separadas.** Poblacion A:
+observaciones del piloto (196 totales, 161 aptas, 35 descartadas, 34 simbolos;
+motivos de descarte solapables `dato_obsoleto_flujo` 28,
+`flujo_ventana_incompleta` 13, `dato_obsoleto_libro` 1). Poblacion B: agregados
+de un minuto. La cadena regenerada reproduce `1107 → 1032 → 501 → 501` y
+termina en **501 ternas acreditadas** sobre 1005 ventanas y 43 simbolos. El
+requisito que limita al resto es la **integridad por intervalo** (185 ventanas:
+183 `libro_degradado` + `libro_huecos_profundidad`; 2 `flujo_data_quality_no_ok`
+/`PARTIAL_OK`). Completitud, valores, precio y disponibilidad excluyen 0
+ventanas en esta captura.
+
+**Rectificacion de antecedente.** El cierre del 2026-11-16 declaro "0 ternas
+evaluables" y "precio_close como precio_base". Esa cifra contradecia su propia
+cadena `1107 → 1032 → 501 → 501` y mezclaba la poblacion A con la B; el texto
+anterior se conserva como antecedente y se marca como rectificado en
+`docs/CURRENT_STATE.md` y en el documento del detector.
+
+**Horizonte.** La evaluacion futura del detector se propone a **5 minutos**. La
+hipotesis de magnitud a **60 minutos** queda diferida a un bloque con
+autorizacion propia; no se evalua aqui ni se usa para aceptar o descartar el
+detector.
+
+**Limites.** Cobertura acreditada no equivale a patron detectado ni a
+rentabilidad. Este bloque no ejecuta el detector sobre las 501 ternas reales ni
+calcula retornos. No autoriza Binance, capturas nuevas, ordenes, cambios de
+estrategia, dashboard ni infraestructura. El selector y estas tablas siguen
+siendo PERPETUAL/TRADING/USDT (sin futuros con vencimiento). Cualquier captura
+nueva requiere autorizacion humana explicita con `run_id` nuevo.
+
+**Evidencia.** `docs/evidence/secuencia-presion-v1-correcciones-20261117/`
+(A: CLI base `619d357` con 0 bytes y 0 lineas vs CLI corregido con 1 fila
+`DATOS_INSUFICIENTES`, repeticion idempotente; B: 7 pruebas del extractor contra
+SQLite temporal, exit 0; C: JSON de cobertura real, exit 0, hashes de los
+originales intactos, SHA256 `39652bf0...`). Pruebas: detector 24 passed,
+extractor 7 passed, regresiones 16 + 7 passed.

@@ -1,5 +1,50 @@
 # Cola vigente — detector secuencia-presion-v1 cerrado, 2026-11-16
 
+## Bloque 2026-11-17 — correcciones SECUENCIA-PRESION-V1 + extractor de cobertura — TERMINADO
+
+`ACTIVE_TASK: ninguno` — esperar instruccion del usuario.
+
+**Base:** `619d357443ace0aa7c0b939f07b6a1457265adfd`, rama
+`research/universe-liquidez-v1`. Solo correcciones locales; sin Binance, sin
+capturas, sin ordenes, sin cambios de estrategia, sin dashboard ni
+infraestructura. Dataset de la ventana 4 leido en modo solo lectura (hashes
+intactos antes/despues).
+
+**Hecho:** (1) el detector persiste `DATOS_INSUFICIENTES` en un corte sin terna
+contigua (simbolo, corte, ventanas examinadas, motivo, diagnostico de
+huecos/solapamientos) y reserva `SIN_PATRON` a ternas contiguas validas; mismo
+corte repetido no duplica ni altera filas anteriores; (2) el extractor acredita
+pareja, limites, procedencia, `run_id`, claves duplicadas, completitud,
+integridad, valores, precio y disponibilidad por fuente, y devuelve motivos de
+exclusion con ejemplos; (3) pruebas recuperadas (ventana incompleta, profundidad
+no positiva, precio sin confirmacion) + caso de solapamiento + CLI con huecos e
+idempotencia + suite del extractor con SQLite temporal; (4) cobertura real
+regenerada.
+
+**Resultado verificable:** 1190 parejas → 1032 ternas sobre parejas → **501
+ternas acreditadas** (1005 ventanas, 43 simbolos). Requisito que limita al
+resto: **integridad por intervalo** (185 ventanas: 183 `libro_degradado` +
+`libro_huecos_profundidad`, 2 `flujo_data_quality_no_ok`). Precio acreditado:
+`price_close` = cierre del agregado `aggTrade`; disponibilidad = maximo de
+`as_of_ms` con ambas fuentes presentes. Cobertura acreditada no es patron
+detectado ni rentabilidad.
+
+**Pruebas:** `tests/test_secuencia_presion_v1.py` 24 passed;
+`tests/test_extraer_cobertura_research_db.py` 7 passed; regresiones
+`test_analisis_contrafactual_ventana4.py` 16 y
+`test_operativo_replay_offline.py` 7, exit 0.
+
+**Evidencias:** `docs/evidence/secuencia-presion-v1-correcciones-20261117/`
+(A CLI base vs corregido con codigos de salida y hashes; B pytest del extractor;
+C JSON de cobertura real y hashes de los originales).
+
+**Horizonte:** evaluacion futura del detector propuesta a **5 minutos**;
+hipotesis de magnitud a **60 minutos** diferida. No se ejecuta ni se propone
+otra captura.
+
+**Pendiente autorizado por el usuario:** commit selectivo, push normal y
+verificacion del SHA remoto.
+
 ## Estado (2026-11-16 madrugada/tarde): `ACTIVE_TASK: ninguno` — esperar instruccion del usuario
 
 **Bloque 2026-11-16 (madrugada/tarde) — detector experimental SECUENCIA-PRESION-V1 (sin mercado) — TERMINADO.**

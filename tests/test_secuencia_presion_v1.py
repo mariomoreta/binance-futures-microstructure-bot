@@ -17,7 +17,8 @@ Casos cubiertos:
 - añadir datos futuros no cambia una decisión ya emitida
 - símbolos distintos no comparten historia
 - repetir el mismo corte no duplica la detección
-- ventanas separadas por huecos -> no se evalúan (no hay terna contigua)
+- ventanas separadas por huecos -> DATOS_INSUFICIENTES persistido (no archivo vacío)
+- ventanas solapadas -> DATOS_INSUFICIENTES persistido
 - primeras 3 ventanas sin patrón y secuencia posterior válida detectada
 - nuevas decisiones sin modificar las anteriores (inmutabilidad)
 - disponibilidad tardía de una ventana anterior
@@ -28,6 +29,8 @@ Casos cubiertos:
 - CLI ejecutar dos veces no duplica
 - CLI conflicto de identidad -> código 3
 - CLI dos símbolos -> no mezclan historias
+- CLI 3 ventanas con huecos -> persiste DATOS_INSUFICIENTES y repetir el corte no
+  añade fila ni altera el registro previo
 
 Ejecutar con: pytest tests/test_secuencia_presion_v1.py
 """
@@ -206,17 +209,107 @@ def test_precio_no_disponible_es_insuficiente():
     ]
     r = detectar_secuencia(ventanas, "SYM")
     assert r.decision == "DATOS_INSUFICIENTES", r.motivo
+    assert r.motivo_codigo == "ventanas_validas_insuficientes"
+    assert any(
+        "precio_ausente" in v["motivos_exclusion"] for v in r.ventanas
+    ), r.ventanas
 
 
-def test_ventanas_no_contiguas_no_se_evaluan():
-    """Tres ventanas separadas por huecos (no contiguas) → ninguna decisión."""
+def test_precio_sin_confirmacion_direccional():
+    """Q y D cumplen pero el precio no avanza en dirección LONG → SIN_PATRON."""
+    ventanas = [
+        _ventana("w1", "SYM", T0 + 0, "LONG", 100.0, 20.0, 1000.0, 100.00, T0 + 1000),
+        _ventana("w2", "SYM", T0 + 60_000, "LONG", 150.0, 20.0, 900.0, 99.50, T0 + 61_000),
+        _ventana("w3", "SYM", T0 + 120_000, "LONG", 200.0, 20.0, 800.0, 99.00, T0 + 121_000),
+    ]
+    r = detectar_secuencia(ventanas, "SYM")
+    assert r.decision == "SIN_PATRON", r.motivo
+    assert r.motivo_codigo is None
+    assert "precio_avanza_en_direccion_long" in r.condiciones_faltantes
+
+
+def test_ventana_incompleta():
+    """Una ventana con ventana_completa=False → DATOS_INSUFICIENTES."""
+    ventanas = [
+        _ventana("w1", "SYM", T0 + 0, "LONG", 100.0, 20.0, 1000.0, 100.00, T0 + 1000),
+        _ventana("w2", "SYM", T0 + 60_000, "LONG", 150.0, 20.0, 900.0, 100.50, T0 + 61_000,
+                 ventana_completa=False),
+        _ventana("w3", "SYM", T0 + 120_000, "LONG", 200.0, 20.0, 800.0, 101.00, T0 + 121_000),
+    ]
+    r = detectar_secuencia(ventanas, "SYM")
+    assert r.decision == "DATOS_INSUFICIENTES", r.motivo
+    assert any(
+        "ventana_incompleta" in v["motivos_exclusion"] for v in r.ventanas
+    ), r.ventanas
+
+
+def test_dato_invalido_profundidad_no_positiva():
+    """D <= 0 en una ventana → DATOS_INSUFICIENTES (no SIN_PATRON)."""
+    ventanas = [
+        _ventana("w1", "SYM", T0 + 0, "LONG", 100.0, 20.0, 1000.0, 100.00, T0 + 1000),
+        _ventana("w2", "SYM", T0 + 60_000, "LONG", 150.0, 20.0, 0.0, 100.50, T0 + 61_000),
+        _ventana("w3", "SYM", T0 + 120_000, "LONG", 200.0, 20.0, 800.0, 101.00, T0 + 121_000),
+    ]
+    r = detectar_secuencia(ventanas, "SYM")
+    assert r.decision == "DATOS_INSUFICIENTES", r.motivo
+    assert any(
+        "bid_no_positivo" in v["motivos_exclusion"]
+        or "ask_no_positivo" in v["motivos_exclusion"]
+        for v in r.ventanas
+    ), r.ventanas
+
+
+def test_ventanas_no_contiguas_persisten_datos_insuficientes():
+    """Tres ventanas válidas separadas por huecos → DATOS_INSUFICIENTES con
+    símbolo, corte, ventanas examinadas y motivo (nunca archivo sin decisión).
+    No es SIN_PATRON: no hay terna contigua que evaluar."""
     ventanas = [
         _ventana("w1", "SYM", T0 + 0, "LONG", 100.0, 20.0, 1000.0, 100.00, T0 + 1000),
         _ventana("w2", "SYM", T0 + 180_000, "LONG", 150.0, 20.0, 900.0, 100.50, T0 + 181_000),
         _ventana("w3", "SYM", T0 + 360_000, "LONG", 200.0, 20.0, 800.0, 101.00, T0 + 361_000),
     ]
-    r = detectar_secuencia(ventanas, "SYM")
-    assert r is None, r.decision
+    resultados = detectar_secuencias(ventanas, "SYM")
+    assert len(resultados) == 1, resultados
+    r = resultados[0]
+    assert r.decision == "DATOS_INSUFICIENTES", r.motivo
+    assert r.decision != "SIN_PATRON"
+    assert r.symbol == "SYM"
+    assert r.corte_ms == T0 + 360_000
+    assert r.observation_id == f"SYM|corte:{T0 + 360_000}"
+    assert r.ventanas_examinadas == 3
+    assert r.motivo_codigo == "sin_terna_contigua"
+    assert "terna_contigua" in r.condiciones_faltantes
+    assert "huecos_entre_ventanas" in r.condiciones_faltantes
+    assert r.diagnostico["huecos"] == 2
+    assert r.diagnostico["solapamientos"] == 0
+    assert len(r.ventanas) == 3
+    assert all(v["ventana_valida"] is True for v in r.ventanas)
+    assert all(v["motivos_exclusion"] == [] for v in r.ventanas)
+    assert r.instante_deteccion_ms == T0 + 361_000
+    # Repetir el mismo corte produce la misma fila (idempotencia).
+    otra = detectar_secuencias(ventanas, "SYM")[0]
+    assert otra.observation_id == r.observation_id
+    assert otra.ventanas == r.ventanas
+    assert otra.decision == r.decision
+
+
+def test_solapamiento_no_forma_terna():
+    """Ventanas individualmente válidas que se solapan (30 s) no forman terna
+    contigua: se persiste DATOS_INSUFICIENTES y se nombra el solapamiento."""
+    ventanas = [
+        _ventana("w1", "SYM", T0 + 0, "LONG", 100.0, 20.0, 1000.0, 100.00, T0 + 1000),
+        _ventana("w2", "SYM", T0 + 30_000, "LONG", 150.0, 20.0, 900.0, 100.50, T0 + 31_000),
+        _ventana("w3", "SYM", T0 + 60_000, "LONG", 200.0, 20.0, 800.0, 101.00, T0 + 61_000),
+    ]
+    resultados = detectar_secuencias(ventanas, "SYM")
+    assert len(resultados) == 1, resultados
+    r = resultados[0]
+    assert r.decision == "DATOS_INSUFICIENTES", r.motivo
+    assert r.motivo_codigo == "sin_terna_contigua"
+    assert r.diagnostico["solapamientos"] == 2
+    assert r.diagnostico["huecos"] == 0
+    assert "solapamiento_entre_ventanas" in r.condiciones_faltantes
+    assert all(v["ventana_valida"] is True for v in r.ventanas)
 
 
 def test_ternas_sucesivas_detectan_posterior():
@@ -429,6 +522,111 @@ def test_cli_datos_insuficientes(tmp_path):
     lineas = [json.loads(l) for l in io.open(ruta_salida, encoding="utf-8") if l.strip()]
     assert len(lineas) == 1
     assert lineas[0]["decision"] == "DATOS_INSUFICIENTES"
+    assert lineas[0]["motivo_codigo"] == "ventanas_validas_insuficientes"
+    assert lineas[0]["ventanas_examinadas"] == 2
+
+
+def test_cli_terna_valida_sin_patron_persiste_sin_patron(tmp_path):
+    """Terna contigua válida que no cumple el patrón → SIN_PATRON (no
+    DATOS_INSUFICIENTES)."""
+    ruta_entrada = tmp_path / "observaciones.jsonl"
+    ruta_salida = tmp_path / "decisiones.jsonl"
+    obs = []
+    for i, (compra, venta, prof, precio, disp) in enumerate([
+        (100.0, 20.0, 1000.0, 100.00, T0 + 1000),
+        (150.0, 20.0, 900.0, 100.50, T0 + 61_000),
+        (200.0, 20.0, 1100.0, 101.00, T0 + 121_000),  # D no decrece
+    ]):
+        obs.append(_obs("SYM", T0 + i * 60_000, compra, venta, prof, precio, disp, "LONG"))
+    _escribir_jsonl(ruta_entrada, obs)
+    res = subprocess.run(
+        [sys.executable, str(ROOT / "scripts" / "secuencia_presion_v1.py"),
+         "--fuente", str(ruta_entrada), "--salida", str(ruta_salida)],
+        cwd=str(ROOT), capture_output=True, text=True,
+    )
+    assert res.returncode == 0, res.stderr
+    lineas = [json.loads(l) for l in io.open(ruta_salida, encoding="utf-8") if l.strip()]
+    assert len(lineas) == 1
+    assert lineas[0]["decision"] == "SIN_PATRON"
+    assert lineas[0]["motivo_codigo"] is None
+    assert "profundidad_contraria_decreciente" in lineas[0]["condiciones_faltantes"]
+
+
+def test_cli_huecos_persiste_datos_insuficientes_y_no_duplica(tmp_path):
+    """CLI real: 3 ventanas válidas separadas por huecos → persiste
+    DATOS_INSUFICIENTES con símbolo, corte, ventanas examinadas y motivo.
+    Repetir el mismo corte no añade fila ni altera el registro previo."""
+    import hashlib
+
+    ruta_entrada = tmp_path / "observaciones.jsonl"
+    ruta_salida = tmp_path / "decisiones.jsonl"
+    datos = [
+        (T0 + 0, 100.0, 20.0, 1000.0, 100.00),
+        (T0 + 180_000, 150.0, 20.0, 900.0, 100.50),
+        (T0 + 360_000, 200.0, 20.0, 800.0, 101.00),
+    ]
+    obs = [
+        _obs("GAPUSDT", corte, compra, venta, prof, precio, corte + 1000, "LONG")
+        for corte, compra, venta, prof, precio in datos
+    ]
+    _escribir_jsonl(ruta_entrada, obs)
+
+    comando = [
+        sys.executable, str(ROOT / "scripts" / "secuencia_presion_v1.py"),
+        "--fuente", str(ruta_entrada), "--salida", str(ruta_salida),
+    ]
+    res1 = subprocess.run(comando, cwd=str(ROOT), capture_output=True, text=True)
+    assert res1.returncode == 0, res1.stderr
+    assert ruta_salida.exists(), "el CLI no persistió ninguna decisión"
+
+    crudo1 = ruta_salida.read_bytes()
+    assert crudo1.strip(), "archivo de salida vacío: no se acreditó el corte"
+    lineas1 = [json.loads(l) for l in crudo1.decode("utf-8").splitlines() if l.strip()]
+    assert len(lineas1) == 1, lineas1
+    fila = lineas1[0]
+    assert fila["decision"] == "DATOS_INSUFICIENTES"
+    assert fila["decision"] != "SIN_PATRON"
+    assert fila["symbol"] == "GAPUSDT"
+    assert fila["corte_ms"] == T0 + 360_000
+    assert fila["observation_id"] == f"GAPUSDT|corte:{T0 + 360_000}"
+    assert fila["ventanas_examinadas"] == 3
+    assert fila["motivo_codigo"] == "sin_terna_contigua"
+    assert fila["motivo"]
+    assert fila["condiciones_faltantes"] == [
+        "terna_contigua", "huecos_entre_ventanas",
+    ], fila["condiciones_faltantes"]
+    assert fila["diagnostico"]["huecos"] == 2
+    assert [v["observation_id"] for v in fila["ventanas"]] == [
+        f"GAPUSDT|{corte}" for corte, _, _, _, _ in datos
+    ]
+
+    hash1 = hashlib.sha256(crudo1).hexdigest()
+
+    # Repetir el mismo corte: ni fila nueva ni cambio de bytes.
+    res2 = subprocess.run(comando, cwd=str(ROOT), capture_output=True, text=True)
+    assert res2.returncode == 0, res2.stderr
+    crudo2 = ruta_salida.read_bytes()
+    assert hashlib.sha256(crudo2).hexdigest() == hash1
+    resumen2 = json.loads(res2.stdout.strip().splitlines()[-1])
+    assert resumen2["nuevas"] == 0
+    assert resumen2["duplicadas_omitidas"] == 1
+    assert resumen2["datos_insuficientes"] == 1
+
+    # Un corte nuevo (ventana posterior también separada) añade una fila nueva
+    # sin reescribir la anterior.
+    obs.append(_obs("GAPUSDT", T0 + 540_000, 250.0, 20.0, 500.0, 104.0,
+                    T0 + 541_000, "LONG"))
+    _escribir_jsonl(ruta_entrada, obs)
+    res3 = subprocess.run(comando, cwd=str(ROOT), capture_output=True, text=True)
+    assert res3.returncode == 0, res3.stderr
+    crudo3 = ruta_salida.read_bytes()
+    assert crudo3.startswith(crudo1), "se alteró el registro previo"
+    lineas3 = [json.loads(l) for l in crudo3.decode("utf-8").splitlines() if l.strip()]
+    assert len(lineas3) == 2
+    assert lineas3[0] == fila
+    assert lineas3[1]["corte_ms"] == T0 + 540_000
+    assert lineas3[1]["decision"] == "DATOS_INSUFICIENTES"
+    assert res3.returncode == 0
 
 
 def test_cli_ternas_sucesivas_detectan_posterior(tmp_path):

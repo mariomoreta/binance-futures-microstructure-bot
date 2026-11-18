@@ -249,6 +249,12 @@ regresiones `test_analisis_contrafactual_ventana4.py` (16 passed),
 
 ## Blque 2026-11-16 (cierre de persistencia y cobertura SECUENCIA-PRESION-V1)
 
+> **RECTIFICADO el 2026-11-17** (ver bloque final de este documento). El cierre
+> de esta seccion declaraba "0 ternas evaluables" y "precio_close como
+> precio_base"; la regeneracion con el extractor corregido devuelve 501 ternas
+> acreditadas y distingue `price_close` (cierre del agregado aggTrade) de
+> `libro_mid`. Se conserva el texto original como antecedente.
+
 **Autorizacion:** completar el cierre del detector SECUENCIA-PRESION-V1 (persistencia, extractor real de research.db, tabla de cobertura con etapas separadas). Autorizado exclusivamente: completar los puntos pendientes y sus pruebas locales. NO autorizado: Binance, consultas publicas, capturas, ordenes, relanzamientos, cambios del patron, estrategia productiva, infraestructura ni otra auditoria general.
 
 **Extractor real de research.db:** `scripts/extraer_cobertura_research_db.py` (CLI --db/--salida, SQLite modo=ro, cero red, cero modificacion a la base). Publica consultas exactas y mapeo de columnas (buy_notional/sell_notional en flujo; bid20_mean/ask20_mean en libro como profundidad contraria; price_close como precio_base). Aceptacion: ejecutado sobre SQLite temporal representativo (3 intervalos contiguos, 1 sin contraparte, 1 hueco, 1 ventana parcial, disponibilidad desconocida, precio ausente) y sobre research.db en modo solo lectura; hashes de originales verificados antes y despues (no modificados). Si el resultado final es cero ternas evaluables, es valido cuando la cadena de exclusiones lo demuestra.
@@ -265,3 +271,81 @@ Poblacion B (agregados temporales): flujo=1265 filas, libro=1197 filas, flujo_10
 | Evidencia extractor | scripts/extraer_cobertura_research_db.py + tests/test_secuencia_presion_v1.py |
 | Tabla de cobertura | scripts/extraer_cobertura_research_db.py + consulta directa a research.db (modo ro) |
 | opencode.json | Conservado, no tocado, no commitado |
+
+## Bloque 2026-11-17 — correcciones SECUENCIA-PRESION-V1 y extractor de cobertura (sin mercado)
+
+**Autorizacion:** completar las correcciones locales de `SECUENCIA-PRESION-V1` y
+del extractor existente, sobre la base publicada
+`619d357443ace0aa7c0b939f07b6a1457265adfd`, rama
+`research/universe-liquidez-v1`. Sin acceso a Binance, capturas nuevas, ordenes,
+cambios de estrategia, dashboard ni infraestructura. Dataset de la ventana 4
+leido en modo solo lectura; hashes de `research.db`, `research.db-shm` y
+`research.db-wal` identicos antes y despues.
+
+**Defecto corregido en el detector:** el CLI dejaba el archivo de salida vacio
+cuando el corte tenia tres ventanas individualmente validas del mismo simbolo
+separadas por huecos (`test_ventanas_no_contiguas_no_se_evaluan` exigia
+`r is None`). Ahora persiste **una** fila `DATOS_INSUFICIENTES` con `symbol`,
+`corte_ms`, `ventanas` examinadas (con `ventana_valida` y `motivos_exclusion`),
+`ventanas_examinadas`, `motivo`, `motivo_codigo` y `diagnostico` de huecos y
+solapamientos. Identidad de la fila: `<symbol>|corte:<corte_ms>`, distinta de la
+identidad de una terna. Repetir el mismo corte no añade fila ni altera las
+anteriores. `SIN_PATRON` queda reservado a una terna contigua valida que no
+cumple el patron. Deteccion deslizante, rechazo de conflictos (codigo 3) y
+condiciones del patron sin cambios.
+
+**Defecto corregido en el extractor:** calculaba motivos de exclusion que luego
+se perdian, tomaba prestado `as_of_ms` de la otra fuente cuando faltaba uno,
+contaba simbolos con ventanas como `simbolos_con_ternas` y no distinguia la
+procedencia del precio. Ahora empareja por contrato e intervalo, valida ambos
+limites, procedencia (`aggTrade`/`depth20`), `run_id` y claves duplicadas (la
+clave duplicada se excluye y se cuenta, sin sustitucion silenciosa); exige
+`as_of_ms` valido en **cada** fuente (si falta uno, disponibilidad conjunta
+`UNKNOWN`; si ambos estan, maximo) y aplica por separado completitud, integridad
+por intervalo, valores validos, precio y disponibilidad, devolviendo motivos
+solapables con ejemplos (contrato e intervalo) y exclusiones unicas. Un cero
+registrado (`buy_notional = 0`) es admisible; `NULL` no es cero.
+`price_close` se identifica como cierre del agregado `aggTrade`, no como
+`libro_mid` ni precio ejecutable.
+
+**Cobertura regenerada (poblacion B, agregados de un minuto):** 1190 parejas
+iniciales → 1107 ternas sobre flujo (referencia sin contraparte) → 1032 sobre
+parejas → **501 tras integridad** → 501 tras precio → 501 tras disponibilidad.
+Ventanas acreditadas: 1005. Simbolos con al menos una terna: 43. Requisito que
+limita al resto: **integridad por intervalo** (185 ventanas excluidas: 183 con
+`libro_degradado` y `libro_huecos_profundidad`, 2 con
+`flujo_data_quality_no_ok`/`PARTIAL_OK`). Completitud, valores, precio y
+disponibilidad excluyen 0 ventanas en esta captura. Sin contraparte: 75 claves
+de flujo y 7 de libro. Los 29 intervalos con un lado en cero registrado son
+admisibles.
+
+**Poblacion A (observaciones del piloto, acreditada por separado):** 196
+totales, 161 aptas, 35 descartadas, 34 simbolos (motivos de descarte
+solapables: `dato_obsoleto_flujo` 28, `flujo_ventana_incompleta` 13,
+`dato_obsoleto_libro` 1). No se suma con la poblacion B.
+
+**Evidencias:** (A) `A-cli-caso-sin-terna.txt`: base `619d357` exit 0 con 0
+bytes y 0 lineas; CLI corregido exit 0 con 1 fila `DATOS_INSUFICIENTES`
+(`sin_terna_contigua`, 2 huecos); repeticion exit 0 con `nuevas=0`,
+`duplicadas_omitidas=1` y SHA256 identico. (B) `B-pytest-extractor.txt`:
+`pytest tests/test_extraer_cobertura_research_db.py -v` exit 0, 7 passed, con
+expectativas independientes y deteccion de timestamp prestado y de simbolo sin
+terna. (C) `C-cobertura-real.json` + `C-comando-y-hashes.txt`: CLI real sobre
+`research.db` en modo `ro`, exit 0, hashes intactos, JSON SHA256
+`39652bf00d594245943ec7114c0e6933fce2e49a8caf2812915cc478f9eaf4bd`. Todo en
+`docs/evidence/secuencia-presion-v1-correcciones-20261117/`.
+
+**Pruebas:** `tests/test_secuencia_presion_v1.py` 24 passed;
+`tests/test_extraer_cobertura_research_db.py` 7 passed; regresiones
+`test_analisis_contrafactual_ventana4.py` (16) y
+`test_operativo_replay_offline.py` (7) exit 0.
+
+**Horizonte:** la evaluacion futura del detector se propone a **5 minutos**; la
+hipotesis de magnitud a **60 minutos** queda diferida a un bloque con
+autorizacion propia. No se ejecuto ni se propone otra captura en este bloque.
+
+**Que NO acredita:** que el patron se detecte sobre las 501 ternas, rentabilidad,
+mejora predictiva, ni cobertura para futuros con vencimiento (el selector y
+estas tablas siguen siendo PERPETUAL/TRADING/USDT). Cobertura acreditada no
+equivale a patron detectado ni a rentabilidad.
+

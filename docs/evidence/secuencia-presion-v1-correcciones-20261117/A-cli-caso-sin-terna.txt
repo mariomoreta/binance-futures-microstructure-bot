@@ -1,0 +1,58 @@
+Evidencia A - CLI real SECUENCIA-PRESION-V1: caso sin terna contigua
+Fecha de ejecucion: 2026-11-17
+Fuente sintetica: tres ventanas individualmente validas del mismo
+simbolo (GAPUSDT), decision_ms separadas por 180 s, sin red ni mercado.
+
+
+==============================================================================
+A.1 BASE PUBLICADA 619d357 (reproduccion del fallo)
+==============================================================================
+COMANDO: C:\Python314\python.exe C:\Users\adonm\AppData\Local\Temp\ev-a-giexnrh3\secuencia_base.py --fuente C:\Users\adonm\AppData\Local\Temp\ev-a-giexnrh3\observaciones.jsonl --salida C:\Users\adonm\AppData\Local\Temp\ev-a-giexnrh3\decisiones_base.jsonl
+EXIT CODE: 0
+STDOUT:
+{"estado": "ok", "symboles_procesados": 0, "detecciones_long": 0, "detecciones_short": 0, "sin_patron": 0, "datos_insuficientes": 0, "nuevas": 0, "duplicadas_omitidas": 0, "conflictos": 0, "salida": "C:\\Users\\adonm\\AppData\\Local\\Temp\\ev-a-giexnrh3\\decisiones_base.jsonl"}
+STDERR:
+(vacio)
+ARCHIVO DE SALIDA: decisiones_base.jsonl
+BYTES: 0
+SHA256: e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
+LINEAS: 0
+
+==============================================================================
+A.2 CLI CORREGIDO (mismo JSONL, mismo corte)
+==============================================================================
+COMANDO: C:\Python314\python.exe C:\proyectos\binance-futures-microstructure-bot\scripts\secuencia_presion_v1.py --fuente C:\Users\adonm\AppData\Local\Temp\ev-a-giexnrh3\observaciones.jsonl --salida C:\Users\adonm\AppData\Local\Temp\ev-a-giexnrh3\decisiones.jsonl
+EXIT CODE: 0
+STDOUT:
+{"estado": "ok", "symboles_procesados": 1, "detecciones_long": 0, "detecciones_short": 0, "sin_patron": 0, "datos_insuficientes": 1, "motivos_codigo": {"sin_terna_contigua": 1}, "nuevas": 1, "duplicadas_omitidas": 0, "conflictos": 0, "salida": "C:\\Users\\adonm\\AppData\\Local\\Temp\\ev-a-giexnrh3\\decisiones.jsonl"}
+STDERR:
+(vacio)
+ARCHIVO DE SALIDA: decisiones.jsonl
+BYTES: 2187
+SHA256: 95679060090dfa610cfae179d665aae95708024f885cf2c7970b54711c860619
+LINEAS: 1
+FILA: {"condiciones_cumplidas": [], "condiciones_faltantes": ["terna_contigua", "huecos_entre_ventanas"], "config_hash": "b6b2b327b140f1d4041d3a585d77c837efe62fa944f8f88ec2215b95a0c253a4", "config_version": "SECUENCIA-PRESION-V1", "corte_ms": 1700000360000, "decision": "DATOS_INSUFICIENTES", "diagnostico": {"ejemplos": [{"tipo": "hueco", "ventana_fin_ms": 1700000000000, "ventana_inicio_ms": 1700000120000, "ventana_previa": "GAPUSDT|1700000000000", "ventana_siguiente": "GAPUSDT|1700000180000"}, {"tipo": "hueco", "ventana_fin_ms": 1700000180000, "ventana_inicio_ms": 1700000300000, "ventana_previa": "GAPUSDT|1700000180000", "ventana_siguiente": "GAPUSDT|1700000360000"}], "huecos": 2, "otras": 0, "pares_no_contiguos": 2, "solapamientos": 0}, "direccion_candidata": null, "instante_deteccion_iso": "2023-11-14T22:19:21+00:00", "instante_deteccion_ms": 1700000361000, "motivo": "3 ventana(s) válida(s) examinada(s) sin terna contigua de 3: 2 hueco(s), 0 solapamiento(s), 0 par(es) con identidad/ventana distinta", "motivo_codigo": "sin_terna_contigua", "observation_id": "GAPUSDT|corte:1700000360000", "procedencia": "observaciones.jsonl (ventana 4)", "symbol": "GAPUSDT", "ventanas": [{"decision_iso": null, "decision_ms": 1700000000000, "disponibilidad_ms": 1700000001000, "integridad_valida": true, "motivos_exclusion": [], "observation_id": "GAPUSDT|1700000000000", "symbol": "GAPUSDT", "ventana_completa": true, "ventana_fin_ms": 1700000000000, "ventana_inicio_ms": 1699999940000, "ventana_valida": true}, {"decision_iso": null, "decision_ms": 1700000180000, "disponibilidad_ms": 1700000181000, "integridad_valida": true, "motivos_exclusion": [], "observation_id": "GAPUSDT|1700000180000", "symbol": "GAPUSDT", "ventana_completa": true, "ventana_fin_ms": 1700000180000, "ventana_inicio_ms": 1700000120000, "ventana_valida": true}, {"decision_iso": null, "decision_ms": 1700000360000, "disponibilidad_ms": 1700000361000, "integridad_valida": true, "motivos_exclusion": [], "observation_id": "GAPUSDT|1700000360000", "symbol": "GAPUSDT", "ventana_completa": true, "ventana_fin_ms": 1700000360000, "ventana_inicio_ms": 1700000300000, "ventana_valida": true}], "ventanas_examinadas": 3}
+
+==============================================================================
+A.3 REPETICION DEL MISMO CORTE (idempotencia)
+==============================================================================
+COMANDO: C:\Python314\python.exe C:\proyectos\binance-futures-microstructure-bot\scripts\secuencia_presion_v1.py --fuente C:\Users\adonm\AppData\Local\Temp\ev-a-giexnrh3\observaciones.jsonl --salida C:\Users\adonm\AppData\Local\Temp\ev-a-giexnrh3\decisiones.jsonl
+EXIT CODE: 0
+STDOUT:
+{"estado": "ok", "symboles_procesados": 1, "detecciones_long": 0, "detecciones_short": 0, "sin_patron": 0, "datos_insuficientes": 1, "motivos_codigo": {"sin_terna_contigua": 1}, "nuevas": 0, "duplicadas_omitidas": 1, "conflictos": 0, "salida": "C:\\Users\\adonm\\AppData\\Local\\Temp\\ev-a-giexnrh3\\decisiones.jsonl"}
+STDERR:
+(vacio)
+ARCHIVO DE SALIDA: decisiones.jsonl
+BYTES: 2187
+SHA256: 95679060090dfa610cfae179d665aae95708024f885cf2c7970b54711c860619
+LINEAS: 1
+FILA: {"condiciones_cumplidas": [], "condiciones_faltantes": ["terna_contigua", "huecos_entre_ventanas"], "config_hash": "b6b2b327b140f1d4041d3a585d77c837efe62fa944f8f88ec2215b95a0c253a4", "config_version": "SECUENCIA-PRESION-V1", "corte_ms": 1700000360000, "decision": "DATOS_INSUFICIENTES", "diagnostico": {"ejemplos": [{"tipo": "hueco", "ventana_fin_ms": 1700000000000, "ventana_inicio_ms": 1700000120000, "ventana_previa": "GAPUSDT|1700000000000", "ventana_siguiente": "GAPUSDT|1700000180000"}, {"tipo": "hueco", "ventana_fin_ms": 1700000180000, "ventana_inicio_ms": 1700000300000, "ventana_previa": "GAPUSDT|1700000180000", "ventana_siguiente": "GAPUSDT|1700000360000"}], "huecos": 2, "otras": 0, "pares_no_contiguos": 2, "solapamientos": 0}, "direccion_candidata": null, "instante_deteccion_iso": "2023-11-14T22:19:21+00:00", "instante_deteccion_ms": 1700000361000, "motivo": "3 ventana(s) válida(s) examinada(s) sin terna contigua de 3: 2 hueco(s), 0 solapamiento(s), 0 par(es) con identidad/ventana distinta", "motivo_codigo": "sin_terna_contigua", "observation_id": "GAPUSDT|corte:1700000360000", "procedencia": "observaciones.jsonl (ventana 4)", "symbol": "GAPUSDT", "ventanas": [{"decision_iso": null, "decision_ms": 1700000000000, "disponibilidad_ms": 1700000001000, "integridad_valida": true, "motivos_exclusion": [], "observation_id": "GAPUSDT|1700000000000", "symbol": "GAPUSDT", "ventana_completa": true, "ventana_fin_ms": 1700000000000, "ventana_inicio_ms": 1699999940000, "ventana_valida": true}, {"decision_iso": null, "decision_ms": 1700000180000, "disponibilidad_ms": 1700000181000, "integridad_valida": true, "motivos_exclusion": [], "observation_id": "GAPUSDT|1700000180000", "symbol": "GAPUSDT", "ventana_completa": true, "ventana_fin_ms": 1700000180000, "ventana_inicio_ms": 1700000120000, "ventana_valida": true}, {"decision_iso": null, "decision_ms": 1700000360000, "disponibilidad_ms": 1700000361000, "integridad_valida": true, "motivos_exclusion": [], "observation_id": "GAPUSDT|1700000360000", "symbol": "GAPUSDT", "ventana_completa": true, "ventana_fin_ms": 1700000360000, "ventana_inicio_ms": 1700000300000, "ventana_valida": true}], "ventanas_examinadas": 3}
+
+==============================================================================
+A.4 COMPARACION DE IDEMPOTENCIA
+==============================================================================
+SHA256 tras A.2: 95679060090dfa610cfae179d665aae95708024f885cf2c7970b54711c860619
+SHA256 tras A.3: 95679060090dfa610cfae179d665aae95708024f885cf2c7970b54711c860619
+IDENTICO (sin fila nueva ni cambio de bytes): True
+
+RESUMEN: base exit=0 (archivo sin decision), corregido exit=0 (DATOS_INSUFICIENTES persistido), repeticion exit=0 (sin duplicar).

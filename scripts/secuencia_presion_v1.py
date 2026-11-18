@@ -45,6 +45,17 @@ Reglas temporales (corregidas):
   - El instante de detección es el máximo de las disponibilidades de las tres
     ventanas (incluidos precios). Nunca anterior a la finalización de las tres
     ventanas ni a la disponibilidad acreditada de cualquier componente.
+
+Cortes sin terna (corregido):
+  - Si el corte no alcanza una terna contigua (menos de 3 ventanas válidas, o
+    ventanas válidas separadas por huecos/solapamientos), el CLI persiste UNA
+    fila DATOS_INSUFICIENTES con símbolo, corte, ventanas examinadas y motivo.
+    NO se escribe un archivo vacío: no poder evaluar no es lo mismo que no
+    ejecutar. La identidad de esa fila es `<symbol>|corte:<corte_ms>`, distinta
+    de la identidad de una terna (`observation_id` de su tercera ventana), de
+    modo que un corte insuficiente nunca colisiona con una terna posterior.
+  - SIN_PATRON queda reservado a una terna contigua y válida que no cumple las
+    condiciones del patrón.
 """
 
 from __future__ import annotations
@@ -201,10 +212,11 @@ class ResultadoSecuencia:
     """Resultado de la detección para una terna de ventanas."""
 
     symbol: str
-    observation_id: str  # observation_id de la TERCERA ventana de la terna
+    observation_id: str  # observation_id de la TERCERA ventana de la terna, o
+                         # `<symbol>|corte:<corte_ms>` si no hubo terna
     decision: str  # LONG_EXPERIMENTAL | SHORT_EXPERIMENTAL | SIN_PATRON | DATOS_INSUFICIENTES
     direccion_candidata: Optional[str]  # LONG | SHORT | None
-    ventanas: List[Dict[str, Any]]  # las tres ventanas usadas
+    ventanas: List[Dict[str, Any]]  # las tres ventanas usadas o las examinadas
     condiciones_cumplidas: List[str]
     condiciones_faltantes: List[str]
     motivo: str
@@ -213,6 +225,10 @@ class ResultadoSecuencia:
     instante_deteccion_ms: Optional[int]  # max disponibilidad de las 3 ventanas
     instante_deteccion_iso: Optional[str]
     procedencia: str = "observaciones.jsonl (ventana 4)"
+    corte_ms: Optional[int] = None  # decision_ms de la última ventana examinada
+    motivo_codigo: Optional[str] = None  # código estable del motivo
+    ventanas_examinadas: Optional[int] = None  # nº de ventanas examinadas
+    diagnostico: Optional[Dict[str, Any]] = None  # contigüidad observada (sin terna)
 
 
 # ---------------------------------------------------------------------------
@@ -359,6 +375,148 @@ def ventana_desde_observacion(o: Dict[str, Any]) -> Optional[VentanaPresion]:
 # ---------------------------------------------------------------------------
 # Detección de secuencias contiguas
 # ---------------------------------------------------------------------------
+
+MOTIVO_CODIGO_INSUFICIENTE = "ventanas_validas_insuficientes"
+MOTIVO_CODIGO_SIN_TERNA = "sin_terna_contigua"
+
+
+def _motivos_ventana_no_valida(v: VentanaPresion) -> List[str]:
+    """Motivos concretos por los que una ventana no es evaluable."""
+    motivos: List[str] = []
+    if v.ventana_completa is not True:
+        motivos.append("ventana_incompleta")
+    if v.ventana_ms != 60_000:
+        motivos.append("ventana_ms_distinta_de_60000")
+    if v.integridad_valida is not True:
+        motivos.append("integridad_invalida")
+    if v.disponibilidad_ms is None:
+        motivos.append("disponibilidad_ausente")
+    if v.evento_ms is None:
+        motivos.append("evento_ausente")
+    if not _es_finito_positivo(v.bid_notional_top20):
+        motivos.append("bid_no_positivo")
+    if not _es_finito_positivo(v.ask_notional_top20):
+        motivos.append("ask_no_positivo")
+    if v.buy_notional is not None and not _es_finito(v.buy_notional):
+        motivos.append("buy_notional_no_finito")
+    if v.sell_notional is not None and not _es_finito(v.sell_notional):
+        motivos.append("sell_notional_no_finito")
+    if v.precio_cierre is None:
+        motivos.append("precio_ausente")
+    elif not _es_finito_positivo(v.precio_cierre):
+        motivos.append("precio_no_positivo")
+    return motivos
+
+
+def _diagnostico_contiguidad(validas: List[VentanaPresion]) -> Dict[str, Any]:
+    """Cuenta pares adyacentes de ventanas válidas que no son contiguos y
+    clasifica el defecto (hueco, solapamiento o identidad/ventana distinta)."""
+    huecos = 0
+    solapamientos = 0
+    otras = 0
+    ejemplos: List[Dict[str, Any]] = []
+    for prev, act in zip(validas, validas[1:]):
+        if act.es_contigua_con(prev):
+            continue
+        if prev.ventana_fin_ms is None or act.ventana_inicio_ms is None:
+            tipo = "limite_desconocido"
+        else:
+            delta = int(act.ventana_inicio_ms) - int(prev.ventana_fin_ms)
+            if delta > 0:
+                tipo = "hueco"
+            elif delta < 0:
+                tipo = "solapamiento"
+            else:
+                tipo = "identidad_o_ventana_distinta"
+        if tipo == "hueco":
+            huecos += 1
+        elif tipo == "solapamiento":
+            solapamientos += 1
+        else:
+            otras += 1
+        if len(ejemplos) < 5:
+            ejemplos.append(
+                {
+                    "ventana_previa": prev.observation_id,
+                    "ventana_fin_ms": prev.ventana_fin_ms,
+                    "ventana_siguiente": act.observation_id,
+                    "ventana_inicio_ms": act.ventana_inicio_ms,
+                    "tipo": tipo,
+                }
+            )
+    return {
+        "pares_no_contiguos": huecos + solapamientos + otras,
+        "huecos": huecos,
+        "solapamientos": solapamientos,
+        "otras": otras,
+        "ejemplos": ejemplos,
+    }
+
+
+def _ventanas_examinadas(
+    ventanas: List[VentanaPresion],
+) -> List[Dict[str, Any]]:
+    """Detalle acreditable de las ventanas examinadas en un corte."""
+    detalle: List[Dict[str, Any]] = []
+    for v in ventanas:
+        motivos = _motivos_ventana_no_valida(v)
+        detalle.append(
+            {
+                "observation_id": v.observation_id,
+                "symbol": v.symbol,
+                "decision_ms": v.decision_ms,
+                "decision_iso": v.decision_iso,
+                "ventana_inicio_ms": v.ventana_inicio_ms,
+                "ventana_fin_ms": v.ventana_fin_ms,
+                "ventana_completa": v.ventana_completa,
+                "integridad_valida": v.integridad_valida,
+                "disponibilidad_ms": v.disponibilidad_ms,
+                "ventana_valida": v.esta_valida(),
+                "motivos_exclusion": motivos,
+            }
+        )
+    return detalle
+
+
+def _resultado_insuficiente(
+    symbol: str,
+    ventanas: List[VentanaPresion],
+    motivo_codigo: str,
+    motivo: str,
+    condiciones_faltantes: List[str],
+    diagnostico: Optional[Dict[str, Any]] = None,
+) -> ResultadoSecuencia:
+    """Construye la fila DATOS_INSUFICIENTES de un corte sin terna contigua.
+
+    Identidad: `<symbol>|corte:<corte_ms>`. Repetir el mismo corte produce la
+    misma identidad y el CLI no añade otra fila.
+    """
+    corte_ms = max((v.decision_ms for v in ventanas), default=None)
+    disponibilidades = [
+        v.disponibilidad_ms for v in ventanas if v.disponibilidad_ms is not None
+    ]
+    instante = max(disponibilidades) if disponibilidades else None
+    return ResultadoSecuencia(
+        symbol=symbol,
+        observation_id=(
+            f"{symbol}|corte:{corte_ms}" if corte_ms is not None else f"{symbol}|corte:desconocido"
+        ),
+        decision="DATOS_INSUFICIENTES",
+        direccion_candidata=None,
+        ventanas=_ventanas_examinadas(ventanas),
+        condiciones_cumplidas=[],
+        condiciones_faltantes=condiciones_faltantes,
+        motivo=motivo,
+        config_version=CONFIG_VERSION,
+        config_hash=CONFIG_HASH,
+        instante_deteccion_ms=instante,
+        instante_deteccion_iso=utc_iso(instante) if instante is not None else None,
+        corte_ms=corte_ms,
+        motivo_codigo=motivo_codigo,
+        ventanas_examinadas=len(ventanas),
+        diagnostico=diagnostico,
+    )
+
 
 def _agrupar_secuencias_contiguas(
     ventanas: List[VentanaPresion],
@@ -538,41 +696,28 @@ def detectar_secuencias(
 
     resultados: List[ResultadoSecuencia] = []
 
+    if not ventanas:
+        return resultados
+
     if len(validas) < 3:
-        # No hay siquiera 3 ventanas válidas contiguas posibles -> insuficiente.
-        motivos = ["tres_ventanas_validas_contiguas"]
+        # No hay siquiera 3 ventanas válidas -> insuficiente, pero se persiste.
+        faltantes = ["tres_ventanas_validas"]
         if len(validas) == 0:
-            motivos.append("sin_ventanas_validas")
+            faltantes.append("sin_ventanas_validas")
         elif len(validas) == 1:
-            motivos.append("una_sola_ventana_valida")
-        elif len(validas) == 2:
-            motivos.append("dos_ventanas_validas_pero_no_ternas")
+            faltantes.append("una_sola_ventana_valida")
+        else:
+            faltantes.append("dos_ventanas_validas_sin_terna")
         return [
-            ResultadoSecuencia(
+            _resultado_insuficiente(
                 symbol=symbol,
-                observation_id=ventanas[-1].observation_id if ventanas else "",
-                decision="DATOS_INSUFICIENTES",
-                direccion_candidata=None,
-                ventanas=[
-                    {
-                        "observation_id": v.observation_id,
-                        "decision_ms": v.decision_ms,
-                        "motivo_exclusione": "ventana_no_valida_o_insuficiente",
-                    }
-                    for v in ventanas[-3:]
-                ],
-                condiciones_cumplidas=[],
-                condiciones_faltantes=motivos,
+                ventanas=ventanas,
+                motivo_codigo=MOTIVO_CODIGO_INSUFICIENTE,
                 motivo=(
                     f"solo {len(validas)} ventana(s) válida(s) de 3 necesarias "
-                    f"para formar una terna contigua"
+                    f"para formar una terna contigua en el corte"
                 ),
-                config_version=CONFIG_VERSION,
-                config_hash=CONFIG_HASH,
-                instante_deteccion_ms=ventanas[-1].disponibilidad_ms if ventanas else None,
-                instante_deteccion_iso=utc_iso(ventanas[-1].disponibilidad_ms)
-                if ventanas and ventanas[-1].disponibilidad_ms is not None
-                else None,
+                condiciones_faltantes=faltantes,
             )
         ]
 
@@ -591,18 +736,9 @@ def detectar_secuencias(
             v1, v2, v3 = seq[i], seq[i + 1], seq[i + 2]
             oid_decision = v3.observation_id
 
-            # Inmutabilidad: una decisión ya emitida para esta observation_id
-            # de la 3ra ventana no se reescribe.
+            # Inmutabilidad: una terna ya emitida para esta observation_id no se
+            # reescribe en el mismo corte.
             if oid_decision in decisiones_emitidas:
-                # Conflicto: misma identidad de decisión con datos diferentes.
-                prev = decisiones_emitidas[oid_decision]
-                if (
-                    prev.decision != "SIN_PATRON"
-                    or prev.ventanas != v3.observation_id
-                ):
-                    # Conflicto explícito: misma identidad, distinto resultado.
-                    # No se sustituye silenciosamente.
-                    continue
                 continue
 
             # Evaluar LONG y SHORT sobre esta terna.
@@ -681,6 +817,34 @@ def detectar_secuencias(
                     if instant is not None
                     else None,
                 )
+
+    # Sin terna contigua: el corte se persiste como DATOS_INSUFICIENTES con
+    # símbolo, corte, ventanas examinadas y motivo. SIN_PATRON queda reservado a
+    # ternas válidas que no cumplen el patrón.
+    if not decisiones_emitidas:
+        diag = _diagnostico_contiguidad(validas)
+        faltantes = ["terna_contigua"]
+        if diag["huecos"]:
+            faltantes.append("huecos_entre_ventanas")
+        if diag["solapamientos"]:
+            faltantes.append("solapamiento_entre_ventanas")
+        if diag["otras"]:
+            faltantes.append("identidad_o_ventana_distinta")
+        return [
+            _resultado_insuficiente(
+                symbol=symbol,
+                ventanas=ventanas,
+                motivo_codigo=MOTIVO_CODIGO_SIN_TERNA,
+                motivo=(
+                    f"{len(validas)} ventana(s) válida(s) examinada(s) sin terna "
+                    f"contigua de 3: {diag['huecos']} hueco(s), "
+                    f"{diag['solapamientos']} solapamiento(s), "
+                    f"{diag['otras']} par(es) con identidad/ventana distinta"
+                ),
+                condiciones_faltantes=faltantes,
+                diagnostico=diag,
+            )
+        ]
 
     # Ordenar resultados por instante de detección.
     resultados = list(decisiones_emitidas.values())
@@ -783,6 +947,10 @@ def _resultado_a_dict(r: ResultadoSecuencia) -> Dict[str, Any]:
         "instante_deteccion_ms": r.instante_deteccion_ms,
         "instante_deteccion_iso": r.instante_deteccion_iso,
         "procedencia": r.procedencia,
+        "corte_ms": r.corte_ms,
+        "motivo_codigo": r.motivo_codigo,
+        "ventanas_examinadas": r.ventanas_examinadas,
+        "diagnostico": r.diagnostico,
     }
 
 
@@ -910,6 +1078,14 @@ def main(argv: Optional[List[str]] = None) -> int:
         "detecciones_short": sum(1 for r in resultados_nuevos if r.decision == "SHORT_EXPERIMENTAL"),
         "sin_patron": sum(1 for r in resultados_nuevos if r.decision == "SIN_PATRON"),
         "datos_insuficientes": sum(1 for r in resultados_nuevos if r.decision == "DATOS_INSUFICIENTES"),
+        "motivos_codigo": {
+            codigo: sum(
+                1 for r in resultados_nuevos if r.motivo_codigo == codigo
+            )
+            for codigo in sorted(
+                {r.motivo_codigo for r in resultados_nuevos if r.motivo_codigo}
+            )
+        },
         "nuevas": len(nuevas),
         "duplicadas_omitidas": duplicadas_omitidas,
         "conflictos": len(conflictos),

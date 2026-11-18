@@ -1,0 +1,153 @@
+Evidencia C - cobertura real regenerada (research.db, solo lectura)
+Fecha de ejecucion: 2026-11-17
+
+Dataset: C:\proyectos\binance-futures-data\exp-v2-ventana-4-20261116a
+Modo: SQLite file:...?mode=ro, sin red, sin escritura.
+
+==============================================================================
+COMANDO
+==============================================================================
+C:\Python314\python.exe C:\proyectos\binance-futures-microstructure-bot\scripts\extraer_cobertura_research_db.py --db C:\proyectos\binance-futures-data\exp-v2-ventana-4-20261116a\research.db --salida C:\proyectos\binance-futures-microstructure-bot\docs\evidence\secuencia-presion-v1-correcciones-20261117\C-cobertura-real.json --observaciones C:\proyectos\binance-futures-data\exp-v2-ventana-4-20261116a\observaciones.jsonl
+EXIT CODE: 0
+STDOUT:
+{"estado": "ok", "salida": "C:\\proyectos\\binance-futures-microstructure-bot\\docs\\evidence\\secuencia-presion-v1-correcciones-20261117\\C-cobertura-real.json", "resumen": {"simbolos_con_datos": 43, "parejas_iniciales": 1190, "ventanas_acreditadas": 1005, "ternas_acreditadas": 501, "simbolos_con_ternas": 43}, "db_sha256": "6ad6f716889a71ceffc5ffc36ed89d904544d3a75facfe1da7c4385b9ad6a7f1"}
+STDERR:
+(vacio)
+
+==============================================================================
+HASHES DE LOS ORIGINALES (antes / despues)
+==============================================================================
+research.db antes:   6ad6f716889a71ceffc5ffc36ed89d904544d3a75facfe1da7c4385b9ad6a7f1
+research.db despues: 6ad6f716889a71ceffc5ffc36ed89d904544d3a75facfe1da7c4385b9ad6a7f1
+research.db intacto: True
+research.db-shm antes:   fd4c9fda9cd3f9ae7c962b0ddf37232294d55580e1aa165aa06129b8549389eb
+research.db-shm despues: fd4c9fda9cd3f9ae7c962b0ddf37232294d55580e1aa165aa06129b8549389eb
+research.db-shm intacto: True
+research.db-wal antes:   e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
+research.db-wal despues: e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
+research.db-wal intacto: True
+JSON regenerado SHA256: 39652bf00d594245943ec7114c0e6933fce2e49a8caf2812915cc478f9eaf4bd
+JSON regenerado bytes: 1147573
+
+==============================================================================
+CADENA REGENERADA (parejas -> ternas por requisito)
+==============================================================================
+parejas_iniciales: entrada=1190 excluidas=0 supervivientes=1190 ternas_tras_requisito=1032 acreditado=False
+completitud: entrada=1190 excluidas=0 supervivientes=1190 ternas_tras_requisito=1032 acreditado=True
+integridad_por_intervalo: entrada=1190 excluidas=185 supervivientes=1005 ternas_tras_requisito=501 acreditado=True
+valores_validos: entrada=1005 excluidas=0 supervivientes=1005 ternas_tras_requisito=501 acreditado=True
+precio: entrada=1005 excluidas=0 supervivientes=1005 ternas_tras_requisito=501 acreditado=True
+disponibilidad_acreditada: entrada=1005 excluidas=0 supervivientes=1005 ternas_tras_requisito=501 acreditado=True
+
+==============================================================================
+EXCLUSIONES Y MOTIVOS
+==============================================================================
+{
+ "claves_duplicadas": 0,
+ "claves_flujo_sin_contraparte": 75,
+ "claves_libro_sin_contraparte": 7,
+ "parejas_no_acreditadas": 0,
+ "ventanas_excluidas_por_requisito": {
+  "completitud": 0,
+  "disponibilidad_acreditada": 0,
+  "integridad_por_intervalo": 185,
+  "precio": 0,
+  "valores_validos": 0
+ },
+ "ventanas_excluidas_total": 185
+}
+completitud: excluidas=0 motivos_solapables={}
+integridad_por_intervalo: excluidas=185 motivos_solapables={"flujo_data_quality_no_ok": 2, "libro_degradado": 183, "libro_huecos_profundidad": 183}
+valores_validos: excluidas=0 motivos_solapables={}
+precio: excluidas=0 motivos_solapables={}
+disponibilidad_acreditada: excluidas=0 motivos_solapables={}
+
+==============================================================================
+POBLACION A (observaciones del piloto)
+==============================================================================
+{
+ "acreditado": true,
+ "aptas": 161,
+ "descartadas": 35,
+ "estados": {
+  "descartada": 35,
+  "observada": 161
+ },
+ "fuente": "C:\\proyectos\\binance-futures-data\\exp-v2-ventana-4-20261116a\\observaciones.jsonl",
+ "motivos_descarte_solapables": {
+  "dato_obsoleto_flujo": 28,
+  "dato_obsoleto_libro": 1,
+  "flujo_ventana_incompleta": 13
+ },
+ "nota": "observaciones.jsonl del piloto: no son agregados de un minuto y no se mezclan con la poblacion B",
+ "simbolos": 34,
+ "total": 196
+}
+
+==============================================================================
+TERNAS ACREDITADAS
+==============================================================================
+{
+ "definicion": "terna acreditada = 3 ventanas acreditadas contiguas; no implica patron detectado ni rentabilidad",
+ "secuencias_contiguas": 262,
+ "simbolos_con_ternas": 43,
+ "ternas": 501,
+ "ternas_por_simbolo": {
+  "4USDT": 16,
+  "AAVEUSDT": 7,
+  "AGTUSDT": 15,
+  "AIOTUSDT": 23,
+  "ARIAUSDT": 15,
+  "BANKUSDT": 15,
+  "BARDUSDT": 8,
+  "BASEDUSDT": 3,
+  "BLESSUSDT": 23,
+  "BMTUSDT": 18,
+  "BNBUSDT": 8,
+  "BOMEUSDT": 3,
+  "BTWUSDT": 23,
+  "BULLAUSDT": 23,
+  "CROSSUSDT": 23,
+  "DRIFTUSDT": 3,
+  "DUSKUSDT": 16,
+  "DYDXUSDT": 4,
+  "DYMUSDT": 5,
+  "ENJUSDT": 3,
+  "ENSOUSDT": 15,
+  "ENSUSDT": 4,
+  "ERAUSDT": 6,
+  "EVAAUSDT": 23,
+  "FLOCKUSDT": 3,
+  "FLOWUSDT": 15,
+  "FOGOUSDT": 5,
+  "FOLKSUSDT": 3,
+  "HUMAUSDT": 23,
+  "ONUSDT": 23,
+  "PLAYUSDT": 3,
+  "RAREUSDT": 1,
+  "SOPHUSDT": 22,
+  "SPACEUSDT": 23,
+  "STOUSDT": 8,
+  "STRKUSDT": 17,
+  "SUIUSDT": 3,
+  "TLMUSDT": 3,
+  "XAUTUSDT": 8,
+  "XLMUSDT": 14,
+  "XMRUSDT": 3,
+  "XNYUSDT": 2,
+  "ZILUSDT": 20
+ }
+}
+
+==============================================================================
+RESUMEN
+==============================================================================
+{
+ "parejas_iniciales": 1190,
+ "simbolos_con_datos": 43,
+ "simbolos_con_ternas": 43,
+ "ternas_acreditadas": 501,
+ "ventanas_acreditadas": 1005
+}
+
+Cobertura acreditada no equivale a patron detectado ni a rentabilidad.

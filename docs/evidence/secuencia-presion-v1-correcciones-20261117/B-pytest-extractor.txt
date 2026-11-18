@@ -1,0 +1,47 @@
+Evidencia B - extractor de cobertura: CLI real contra SQLite temporal
+Fecha de ejecucion: 2026-11-17
+
+La SQLite temporal se construye dentro de la prueba (pytest tmp_path) con
+expectativas calculadas de forma independiente: terna valida, hueco, falta
+de contraparte, ventana parcial, precio ausente, un lado sin operaciones,
+as_of_ms ausente en flujo y en libro por separado, clave duplicada,
+corrida distinta y simbolo sin ternas.
+
+==============================================================================
+COMANDO
+==============================================================================
+C:\Python314\python.exe -m pytest tests/test_extraer_cobertura_research_db.py -v
+EXIT CODE: 0
+
+==============================================================================
+STDOUT
+==============================================================================
+============================= test session starts =============================
+platform win32 -- Python 3.14.3, pytest-9.1.1, pluggy-1.6.0 -- C:\Python314\python.exe
+cachedir: .pytest_cache
+rootdir: C:\proyectos\binance-futures-microstructure-bot
+configfile: pyproject.toml
+plugins: anyio-4.14.1, langsmith-0.10.2
+collecting ... collected 7 items
+
+tests/test_extraer_cobertura_research_db.py::test_cli_acredita_solo_lo_que_cuenta PASSED [ 14%]
+tests/test_extraer_cobertura_research_db.py::test_cli_no_toma_prestado_as_of_de_la_otra_fuente PASSED [ 28%]
+tests/test_extraer_cobertura_research_db.py::test_cli_disponibilidad_es_el_maximo_y_no_el_cierre_nominal PASSED [ 42%]
+tests/test_extraer_cobertura_research_db.py::test_cli_precio_es_cierre_de_aggTrade_no_libro_mid PASSED [ 57%]
+tests/test_extraer_cobertura_research_db.py::test_cli_cero_registrado_es_admisible_ausente_no PASSED [ 71%]
+tests/test_extraer_cobertura_research_db.py::test_cli_poblacion_piloto_separa_y_no_inventa PASSED [ 85%]
+tests/test_extraer_cobertura_research_db.py::test_cli_error_si_la_db_no_existe PASSED [100%]
+
+============================== 7 passed in 2.05s ==============================
+STDERR:
+(vacio)
+
+==============================================================================
+REGRESIONES DIRECTAS
+==============================================================================
+C:\Python314\python.exe -m pytest tests/test_secuencia_presion_v1.py tests/test_analisis_contrafactual_ventana4.py tests/test_operativo_replay_offline.py -q
+EXIT CODE: 0
+...............................................                          [100%]
+47 passed in 35.90s
+STDERR:
+(vacio)
