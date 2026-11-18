@@ -52,7 +52,10 @@ A comando/exit 0/hashes, B pytest, C resumen JSON, D verificacion independiente)
 derivados fuera de Git en
 `C:\proyectos\binance-futures-data\exp-v2-ventana-4-20261116a-patron-v1\`.
 
-**Publicado:** `PENDIENTE_SHA`
+**Publicado:** commit selectivo `4e68909d0f5d8510a793d79b458bafcc6f980b33`
+("Evalua el patron sobre las 501 ternas de la ventana 4 (offline)") y commit de
+documentacion con este SHA; push normal a
+`origin/research/universe-liquidez-v1`, con SHA remoto verificado.
 
 **Siguiente:** no se ejecuta ni se propone otra captura. Una prueba independiente
 exigiria autorizacion humana explicita con `run_id` nuevo y cobertura de velas

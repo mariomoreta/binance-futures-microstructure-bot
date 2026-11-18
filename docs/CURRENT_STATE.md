@@ -57,7 +57,10 @@ velas sin importar el modulo). Derivados voluminosos fuera de Git en
 (5 JSONL, hashes en C). Reproducibilidad: segunda corrida con resumen
 byte-identico (`098a61ff...0a6c14`).
 
-**Publicado:** `PENDIENTE_SHA`
+**Publicado:** commit selectivo `4e68909d0f5d8510a793d79b458bafcc6f980b33`
+("Evalua el patron sobre las 501 ternas de la ventana 4 (offline)"), seguido de
+un commit de documentacion con este SHA; push normal a
+`origin/research/universe-liquidez-v1`.
 
 | | |
 |---|---|

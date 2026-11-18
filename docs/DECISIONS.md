@@ -6273,4 +6273,6 @@ ni edge.
 comando con hashes, pytest, resumen JSON y verificacion independiente); derivados
 fuera de Git en
 `C:\proyectos\binance-futures-data\exp-v2-ventana-4-20261116a-patron-v1\`.
-Pruebas: 6 nuevas + 60 focalizadas, exit 0. Publicado: PENDIENTE_SHA.
+Pruebas: 6 nuevas + 60 focalizadas, exit 0. Publicado: commit selectivo
+`4e68909d0f5d8510a793d79b458bafcc6f980b33` y commit de documentacion con
+este SHA.
