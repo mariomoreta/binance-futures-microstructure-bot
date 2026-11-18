@@ -1,5 +1,72 @@
 # Cola vigente — detector secuencia-presion-v1 cerrado, 2026-11-16
 
+## Bloque 2026-11-18 — diagnostico de los cuatro casos del patron — TERMINADO
+
+`ACTIVE_TASK: ninguno` — esperar instruccion del usuario.
+
+**Base:** `d6513e28bb499f8e39921df431f80a28d0e36a08`, rama
+`research/universe-liquidez-v1`. Solo lectura de `exp-v2-ventana-4-20261116a` y
+de los derivados publicados en `...-anclas-comunes-v1`; sin Binance, consultas
+publicas, capturas nuevas, ordenes, cableado productivo, cambios del
+patron/umbral/horizonte/agrupacion, dashboard ni infraestructura. La auditoria
+de cobertura no se reabre. `opencode.json` local y archivos ajenos no se tocan.
+
+**Hecho:** (1) `scripts/diagnostico_cuatro_casos_ventana4.py` (version
+`diagnostico-cuatro-casos-v1`) reconstruye 501 ternas, 211 alertas de solo
+precio y 143 anclas desde la db y la cobertura, sin leer los JSONL, y verifica
+las 4 anclas con patron y las 143 anclas contra los derivados publicados (4/4,
+143/143; 501/501 cortes). (2) Espera = primer minuto exacto posterior a la
+terna; corte tardio = `max(corte, fin_c + 60 s, as_of del flujo)`; entrada =
+apertura del primer minuto estrictamente posterior; salida = apertura a 5
+minutos exactos; sin relleno. (3) Flujo alineado por direccion (positivo =
+continuacion confirmada, negativo = candidato a reversion, cero = sin
+confirmacion); minuto ausente, `PARTIAL_OK` o `as_of` anterior al cierre = no
+resoluble con motivo. (4) Continuacion y reversion tardias desde el mismo corte
+y los mismos precios; nunca la entrada original. (5) Extension previa =
+avance alineado entre el primer y el tercer cierre, normalizado por la mediana
+de movimientos absolutos de ternas previas no solapadas del mismo contrato,
+con minimo 6 fijado antes de calcular; historia insuficiente o referencia cero
+= `NO_RESOLUBLE`.
+
+**Resultado verificable:** 130/143 anclas con minuto de espera usable (13
+`flujo_espera_incompleto`, incluido STRK; 0 ausentes) y 108 con resultado tardio
+resoluble; el desplazamiento de entrada es +60 s en los 130. Clasificacion:
+58 continuacion, 72 reversion, 0 sin confirmacion. Pares (106): original -6.59
+bps (+1.29), tardia +4.94 (+4.99), delta +11.54 (+4.18), 62/43/1; LONG
++8.29/+4.52, SHORT +14.67/+2.91; 37 perdidas mejoran (16 a >= 0, +49.67 de
+media), 29 oportunidades empeoran (-47.01). Reversion (63): continuacion +5.16
+(+11.56, 39/63), reversion -5.16 (-11.56, 23/63). Extension: 35/143 evaluables
+(mediana 1.60, rango 0.55-8.60), 108 sin historia. Cuatro casos: STRK no
+resoluble; BLESSUSDT 19:30 +22.52; BLESSUSDT 20:06 -10.77; ARIAUSDT +89.24 y
+reversion +67.32; solo BLESSUSDT 20:06 con extension contrastable (5.35x,
+-142.02 bps).
+
+**Conclusion formal:** regla predeclarada (minimo 30 pares) -> "esperar un
+minuto muestra mejora media y mediana **en esta muestra**"; no es una
+recomendacion. **Diagnostico:** ni la extension previa (3 de 4 sin resolver) ni
+la perdida de presion (los dos confirmados perdieron con 87-93 % menos flujo)
+explican la diferencia; el ganador fue la terna menos extrema sobre el libro mas
+profundo. Hipotesis acotada; sin autorizacion para invertir el patron, crear
+variante operativa ni abrir otra captura.
+
+**Pruebas:** `tests/test_diagnostico_cuatro_casos_ventana4.py` 23 passed;
+regresiones focalizadas 69; conjunto 92 passed, exit 0.
+
+**Evidencias:** `docs/evidence/diagnostico-cuatro-casos-ventana4-20261118/`
+(README, A comando/exit 0/determinismo/hashes, B pytest, C resumen JSON, D
+verificacion independiente 31/31); derivados fuera de Git en
+`C:\proyectos\binance-futures-data\exp-v2-ventana-4-20261116a-diagnostico-cuatro-casos-v1\`.
+Fuentes intactas: `research.db` `6ad6f716...a7f1`, `consultas_klines.jsonl`
+`4ee61463...a61874`, `C-cobertura-real.json` `39652bf0...f4bd`.
+
+**Publicado:** pendiente en este bloque (commit selectivo, push normal y SHA
+remoto verificado al cerrar).
+
+**Siguiente:** no se ejecuta ni se propone otra captura ni otra variante del
+patron. Una prueba con potencia exigiria autorizacion humana explicita con
+`run_id` nuevo, historia previa por contrato, flujo completo del minuto de
+espera y criterio de potencia fijado antes de mirar resultados.
+
 ## Bloque 2026-11-18 — comparacion en condiciones iguales: filtro vs solo precio — TERMINADO
 
 `ACTIVE_TASK: ninguno` — esperar instruccion del usuario.

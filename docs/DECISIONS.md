@@ -6335,3 +6335,58 @@ verificacion independiente); derivados fuera de Git en
 Pruebas: 9 nuevas + 69 focalizadas, exit 0. Publicado: commit selectivo
 `191e37db891348256f882edae768fe387be9eb53` (script, pruebas y evidencia) y
 commit de documentacion posterior.
+
+## 2026-11-18 — Diagnostico de los cuatro casos del patron (ventana 4)
+
+**Contexto.** Autorizacion humana posterior al bloque de anclas comunes, sobre
+la base `d6513e28bb499f8e39921df431f80a28d0e36a08`. Solo lectura de la captura
+y de sus derivados publicados; sin Binance, capturas nuevas, ordenes ni cambios
+de patron/umbral/horizonte/estrategia.
+
+**Reglas fijadas antes de calcular** (no se ajustaron despues de ver
+resultados):
+- Espera = primer minuto exacto posterior a la terna: `[fin_c, fin_c + 60 s)`,
+  con `fin_c` = cierre nominal de la tercera ventana.
+- Corte tardio = `max(corte original, fin_c + 60 s, as_of_ms del flujo)`.
+  Entrada = apertura del primer minuto estrictamente posterior; salida =
+  apertura a 5 minutos exactos. Sin saltar huecos ni rellenar.
+- Flujo alineado = `s * (compras - ventas)`, `s=+1` LONG, `-1` SHORT. Positivo
+  = continuacion confirmada; negativo = candidato experimental a reversion;
+  cero = sin confirmacion. Fila ausente, `data_quality != OK` o `as_of` anterior
+  al cierre del minuto = no resoluble con motivo.
+- Reversion tardia desde el mismo corte y los mismos precios que la continuacion
+  tardia; nunca reutiliza la entrada original.
+- Extension previa = avance alineado entre el primer y el tercer cierre,
+  contrastado con la mediana de `|c3/c1 - 1|` de ternas previas NO solapadas del
+  mismo contrato, empaquetadas desde el final en pasos de 3, estrictamente
+  anteriores al inicio de la terna. Minimo 6 ternas previas y minimo 30 pares
+  resolubles para la conclusion formal. Historia insuficiente o referencia cero
+  = `NO_RESOLUBLE`.
+- La ventana historica es la propia captura: no se usa historia externa ni se
+  amplia la captura para esta pregunta.
+
+**Resultado.** 130/143 anclas con minuto de espera usable (13 incompletos,
+incluido STRK), 108 con resultado tardio resoluble y 106 pares comparables. En
+la misma direccion, esperar un minuto mejora +11.54 bps de media y +4.18 de
+mediana (62 mejoran, 43 empeoran, 1 igual; LONG +8.29/+4.52, SHORT
++14.67/+2.91). Revertir por flujo contrario no se sostiene: en los 63
+candidatos, la continuacion desde el corte tardio rinde +5.16 de media (+11.56
+de mediana, 39/63) y la reversion -5.16 (-11.56, 23/63). Extension previa:
+35/143 evaluables. Cuatro casos: STRK no resoluble; BLESSUSDT 19:30 +22.52;
+BLESSUSDT 20:06 -10.77; ARIAUSDT +89.24 (y reversion +67.32, el unico caso con
+cambio de signo); solo BLESSUSDT 20:06 con extension contrastable (5.35x,
+-142.02 bps).
+
+**Decision.** No se crea regla, filtro ni variante operativa. El patron no se
+invierte, no se reajustan umbrales ni horizonte y no se abre otra captura. La
+mejora agregada de esperar es un contrafactual dentro de la muestra (anclas
+elegidas ex post, sin prueba independiente) y no se presenta como edge. Queda
+una hipotesis acotada (ternas menos extremas sobre libros profundos; cambio de
+signo del flujo como posible agotamiento) que exigiria `run_id` nuevo, historia
+previa por contrato y flujo completo del minuto de espera, con autorizacion
+humana explicita y criterio de potencia fijado antes de mirar resultados.
+
+**Evidencia.** `docs/evidence/diagnostico-cuatro-casos-ventana4-20261118/`;
+derivados fuera de Git en
+`C:\proyectos\binance-futures-data\exp-v2-ventana-4-20261116a-diagnostico-cuatro-casos-v1\`.
+Pruebas: 23 nuevas + 69 de regresion = 92 passed, exit 0.

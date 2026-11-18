@@ -400,3 +400,21 @@ coinciden aquí con un ancla común y no hay alertas tardías que reclasificar. 
 referencia publicada de 1 107 ternas se conserva como contexto secundario, sin
 sobrescribirla. Evidencia:
 `docs/evidence/anclas-comunes-ventana4-20261118/`.
+
+## 12. Diagnóstico de los cuatro casos (2026-11-18)
+
+Bloque posterior, sin mercado y con las reglas fijadas antes de calcular:
+espera = primer minuto exacto tras la terna; corte tardío =
+`max(corte, fin_c + 60 s, as_of del flujo)`; entrada en la apertura del minuto
+siguiente; salida 5 minutos después. Resultado: 130/143 anclas con minuto de
+espera usable (13 incompletos, incluido STRK) y 106 pares comparables; esperar
+un minuto en la misma dirección mejora +11.54 bps de media (+4.18 de mediana),
+pero revertir por flujo contrario no se sostiene (63 candidatos: continuación
++5.16 de media, reversión −5.16). En los cuatro casos, el ganador (STRKUSDT
+LONG) no es resoluble en la espera; de los tres evaluables, dos mejoran
+(+22.52 y +89.24 bps) y uno empeora (−10.77); solo ARIAUSDT cambia de signo y
+es el único donde revertir habría ganado. La extensión previa solo es
+contrastable en BLESSUSDT 20:06 (5.35× su mediana previa, −142.02 bps); los
+otros tres quedan `NO_RESOLUBLE` por historia insuficiente. Diagnóstico, no
+regla: no autoriza invertir el patrón ni abrir otra captura. Evidencia:
+`docs/evidence/diagnostico-cuatro-casos-ventana4-20261118/`.

@@ -1,5 +1,87 @@
 # Estado vigente — ventana 4 ejecutada COMPLETA con cierre normal (2026-11-16)
 
+## Bloque 2026-11-18 — diagnostico de los cuatro casos del patron (sin mercado)
+
+**Autorizacion humana (2026-11-18, continuacion):** sobre la base publicada
+`d6513e28bb499f8e39921df431f80a28d0e36a08`, diagnosticar los cuatro casos del
+patron de la ventana 4 (STRKUSDT LONG +44.12 bps; ARIAUSDT LONG -156.55;
+BLESSUSDT SHORT -99.04 y -142.02) y contrastarlos con las 143 anclas comunes ya
+publicadas. Solo lectura de la captura y de sus derivados; sin Binance, sin
+capturas nuevas, sin ordenes, sin cambios de patron/umbral/horizonte/agrupacion
+ni reapertura de la auditoria de cobertura. `opencode.json` y archivos ajenos no
+se tocan.
+
+**Hecho:** `scripts/diagnostico_cuatro_casos_ventana4.py` (version
+`diagnostico-cuatro-casos-v1`) reconstruye las 501 ternas, las 211 alertas de
+solo precio y las 143 anclas desde la db y la cobertura (no lee los JSONL), y
+verifica las 4 anclas con patron y las 143 anclas contra los derivados
+publicados (4/4 y 143/143 identicos; 501/501 cortes). Reglas fijadas antes de
+calcular: espera = primer minuto exacto posterior a la terna; corte tardio =
+`max(corte, fin_c + 60 s, as_of del flujo)`; entrada = apertura del primer
+minuto estrictamente posterior; salida = apertura a 5 minutos exactos; flujo
+alineado por direccion; minuto ausente/incompleto/sin disponibilidad = no
+resoluble; reversion medida desde el mismo corte tardio y los mismos precios;
+extension previa normalizada por la mediana de ternas previas no solapadas del
+mismo contrato, con minimo de 6 fijado antes de calcular.
+
+**Resultado verificable:** 130/143 anclas con minuto de espera usable (13
+`flujo_espera_incompleto`, incluido STRK; 0 ausentes) y 108 con resultado tardio
+resoluble. Los cuatro cortes caen dentro del minuto siguiente al cierre
+nominal, asi que esperar desplaza la entrada exactamente +60 s en los 130 casos
+usables. Clasificacion del flujo (130): 58 continuacion, 72 reversion, 0 sin
+confirmacion. Pares original+tardia (106): original -6.59 bps de media (+1.29
+mediana), tardia +4.94 (+4.99), delta +11.54 (+4.18); 62 mejoran, 43 empeoran, 1
+igual; LONG 52 -> +8.29/+4.52; SHORT 54 -> +14.67/+2.91. Perdidas evitadas: 37
+negativas mejoran (16 terminan >= 0; +49.67 bps de mejora media); oportunidades
+perdidas: 29 positivas empeoran (-47.01 bps). Candidatos a reversion (63):
+continuacion +5.16 de media (+11.56 mediana, 39/63 positivos) y reversion -5.16
+(-11.56, 23/63). Extension previa: 35/143 evaluables (mediana normalizada 1.60,
+rango 0.55-8.60); 108 `historia_insuficiente`.
+
+**Los cuatro casos:** STRKUSDT (ganador) no es resoluble en la espera
+(`PARTIAL_OK`, `as_of` 19.65 s antes del cierre del minuto y sin filas de flujo
+19:57-20:00); BLESSUSDT 19:30 confirma con 13.1 % del flujo de su tercera
+ventana y pierde 76.52 bps (mejora +22.52); BLESSUSDT 20:06 confirma con 7.0 %
+y pierde 152.79 (empeora -10.77); ARIAUSDT cambia de signo (-24.8 %) y es el
+unico caso donde revertir habria ganado (+67.32 frente a -67.32). Extension
+previa: solo BLESSUSDT 20:06 es contrastable (5.35x su mediana previa, perdio
+142.02); los otros tres quedan `NO_RESOLUBLE` (0, 4 y 4 ternas previas).
+
+**Conclusion:** ninguna de las dos hipotesis queda sostenida. El ganador fue la
+terna menos extrema (20.62 bps, Q x4.6) sobre el libro mas profundo, sin
+diferencia de presion en la senal; la perdida de presion no separa (los dos
+confirmados perdieron con 87-93 % menos flujo) y la extension previa no es
+evaluable en 3 de 4. Esperar un minuto mejora la media y la mediana en esta
+muestra (regla de 30 pares), pero revertir por flujo contrario no se sostiene en
+los controles. Hipotesis acotada, no regla; sin autorizacion para invertir el
+patron, crear variante operativa ni abrir otra captura.
+
+**Pruebas:** `tests/test_diagnostico_cuatro_casos_ventana4.py` 23 passed
+(desplazamiento de entrada por dato tardio a 1 y 2 minutos, minuto
+ausente/incompleto/sin disponibilidad, clasificacion del flujo, reversion sin
+reutilizar la entrada original, extension `NO_RESOLUBLE` sin historia o con
+referencia cero, no solapamiento, denominadores de control y verificacion
+contra lo publicado). Regresiones focalizadas: `test_comparar_anclas_ventana4.py`
+9, `test_replay_patron_ventana4.py` 6, `test_secuencia_presion_v1.py` 24,
+`test_extraer_cobertura_research_db.py` 7,
+`test_analisis_contrafactual_ventana4.py` 16,
+`test_operativo_replay_offline.py` 7; conjunto 92 passed, exit 0.
+
+**Evidencias:** `docs/evidence/diagnostico-cuatro-casos-ventana4-20261118/`
+(README, A comando/exit 0/determinismo/hashes, B pytest, C resumen JSON, D
+verificacion independiente 31/31); derivados fuera de Git en
+`C:\proyectos\binance-futures-data\exp-v2-ventana-4-20261116a-diagnostico-cuatro-casos-v1\`.
+Fuentes intactas: `research.db` `6ad6f716...a7f1`, `consultas_klines.jsonl`
+`4ee61463...a61874`, `C-cobertura-real.json` `39652bf0...f4bd`.
+
+**Publicado:** pendiente en este bloque (commit selectivo, push normal y SHA
+remoto verificado al cerrar).
+
+**Siguiente:** no se ejecuta ni se propone otra captura, variante del patron ni
+inversion automatica. Cualquier prueba nueva exige autorizacion humana
+explicita con `run_id` nuevo y criterio de potencia fijado antes de mirar
+resultados.
+
 ## Bloque 2026-11-18 — comparacion en condiciones iguales: filtro vs solo precio (sin mercado)
 
 **Autorizacion humana (2026-11-18, continuacion del bloque anterior):** sobre la
