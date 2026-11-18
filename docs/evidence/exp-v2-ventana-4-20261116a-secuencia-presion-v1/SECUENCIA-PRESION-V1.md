@@ -385,3 +385,18 @@ media −88.37 bps, mediana −120.53 bps; referencia de solo precio
 predeclarada: **datos insuficientes** (4 episodios < 30). Evidencia:
 `docs/evidence/patron-ventana4-evaluacion-20261118/`. No se declara
 rentabilidad ni se propone otra captura.
+
+## 11. Comparación en condiciones iguales (2026-11-18)
+
+Una autorización humana posterior repitió la comparación restringida a las
+mismas 501 ternas acreditadas y al mismo corte causal en ambos métodos,
+incluida la disponibilidad del libro. Resultado: `501 -> 211 alertas de solo
+precio -> 143 episodios -> 4 anclas con patrón / 139 sin patrón`, con 4 y 111
+resultados resolubles. Las 4 anclas con patrón rinden −88.37 bps de media
+(mediana −120.53) frente a −5.37 (+2.58) de las anclas sin patrón; el filtro
+retiene el 2.80 % de los episodios y descarta 139. Regla predeclarada (mínimo 30
+resolubles por grupo): **datos insuficientes**. Los 4 episodios del patrón
+coinciden aquí con un ancla común y no hay alertas tardías que reclasificar. La
+referencia publicada de 1 107 ternas se conserva como contexto secundario, sin
+sobrescribirla. Evidencia:
+`docs/evidence/anclas-comunes-ventana4-20261118/`.

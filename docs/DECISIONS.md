@@ -6276,3 +6276,61 @@ fuera de Git en
 Pruebas: 6 nuevas + 60 focalizadas, exit 0. Publicado: commit selectivo
 `4e68909d0f5d8510a793d79b458bafcc6f980b33` y commit de documentacion con
 este SHA.
+
+## 2026-11-18 - Comparacion en condiciones iguales: filtro de flujo/profundidad vs solo precio (sin mercado)
+
+**Contexto.** Continuacion del bloque humano del 2026-11-18 sobre la base
+publicada `c83a1943830d9ad205be41bb1766407e7225cba8` (rama
+`research/universe-liquidez-v1`). Alcance: solo lectura de
+`exp-v2-ventana-4-20261116a`; sin Binance, consultas publicas, capturas nuevas,
+ordenes, cableado productivo, cambios de patron/umbral/horizonte/agrupacion ni
+reapertura de la auditoria de cobertura. No autoriza otra captura ni otra
+variante del patron.
+
+**Decisiones registradas.**
+1. Universo igualado: la referencia de solo precio se evalua **solo** sobre las
+   501 ternas acreditadas, iterando las filas publicadas por el detector y
+   abortando si el corte recalculado difiere; no evalua antes del corte ni
+   incorpora ternas ajenas.
+2. Reloj igualado: mismo corte
+   `max(cierre nominal, disponibilidad de las tres ventanas)` en ambos metodos.
+   La referencia de 1107 ternas del bloque anterior usaba ternas de filas de
+   flujo y no incorporaba la disponibilidad del libro; por eso no es un
+   comparador valido y se conserva solo como contexto secundario.
+3. Referencia = tres cierres estrictamente monotonos, sin flujo ni profundidad.
+   El patron conserva sus condiciones congeladas.
+4. Ancla congelada = primera alerta por contrato+dir; su clasificacion
+   (con/sin patron) se decide en ese instante. Una alerta del patron posterior
+   se registra aparte, con su propio corte y resultado: no reclasifica el ancla
+   ni hereda el retorno de la entrada anterior.
+5. Se conservan por separado los 4 episodios del patron y se informa si
+   coinciden con un ancla comun (4/4 en esta muestra; 0 absorbidas, 0 tardias).
+6. Medicion identica en ambos metodos: entrada = apertura del primer minuto
+   estrictamente posterior al corte; salida = apertura a 5 minutos exactos;
+   vela exacta obligatoria; faltante o contradiccion = no resoluble con motivo.
+   Retorno bruto, no P&L; coste documentado 16 bps solo como sensibilidad;
+   funding UNKNOWN.
+7. Regla de conclusion predeclarada sin cambios: minimo 30 episodios resolubles
+   por grupo; con menos, o si el signo se invierte al excluir el simbolo
+   dominante, la conclusion es "datos insuficientes".
+8. En el resumen, `alertas_en_el_grupo` incluye repeticiones agrupadas; la
+   comparacion economica se hace por anclas/episodios, no por alertas brutas.
+
+**Resultado.** 501 ternas -> 211 alertas de solo precio (104 LONG, 107 SHORT)
+-> 143 episodios (71/72) -> 4 anclas con patron / 139 sin patron -> 4 / 111
+resolubles; 28 no resolubles (23 `sin_velas_para_simbolo`, 5
+`vela_entrada_ausente`), todos sin patron. Con patron: 1/3/0, media -88.37 bps,
+mediana -120.53, IC95 [-149.29, -2.42]; BLESSUSDT 2/4. Sin patron: 56/52/3,
+media -5.37, mediana +2.58, IC95 [-25.71, +13.62]. Referencia completa:
+57/55/3, media -8.26, mediana 0.00, IC95 [-29.35, +10.83]. El filtro retiene
+4/143 = 2.80 % de los episodios y descarta 139. Neto con 16 bps: con patron
+-104.37 / -136.53; sin patron -21.37 / -13.42. Conclusion formal: **datos
+insuficientes** (4 < 30). No se declara edge, mejora ni rentabilidad.
+
+**Evidencia.** `docs/evidence/anclas-comunes-ventana4-20261118/` (README, A
+comando con hashes y reproducibilidad, B pytest, C resumen JSON
+`67c77c72d23bf6cbc089bd052bcc8b42d516255d3efc3bb43c271a68d12e3853`, D
+verificacion independiente); derivados fuera de Git en
+`C:\proyectos\binance-futures-data\exp-v2-ventana-4-20261116a-anclas-comunes-v1\`.
+Pruebas: 9 nuevas + 69 focalizadas, exit 0. Publicado: commit selectivo de este
+bloque (script, pruebas y evidencia) y commit de documentacion con su SHA.

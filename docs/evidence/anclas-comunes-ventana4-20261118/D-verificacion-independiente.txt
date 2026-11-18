@@ -1,0 +1,44 @@
+﻿Verificacion independiente de la comparacion en condiciones iguales
+Bloque: anclas-comunes-ventana4-20261118  (2026-11-18)
+Script: %TEMP%\verificar_anclas.py (no importa scripts/comparar_anclas_ventana4.py)
+Relee: derivados de esta corrida, resumenes y consultas_klines.jsonl original.
+Retorno verificado: signo * (open_salida / open_entrada - 1) * 1e4 (denominador = precio de entrada).
+
+== 1. Universo y alertas ==
+alertas de solo precio leidas del JSONL: 211
+ternas evaluadas (resumen): 501
+cortes verificados identicos (resumen): 501
+alertas con corte anterior al cierre nominal o demora incoherente: 0
+direcciones: {'LONG': 104, 'SHORT': 107}
+
+== 2. Episodios recalculados con la regla de 5 minutos ==
+episodios recalculados: 143
+  LONG: 71  SHORT: 72
+anclas con patron: 4  sin patron: 139
+cortes por direccion: {'LONG': 71, 'SHORT': 72}
+coincide con el resumen: True
+
+== 3. Los 4 episodios originales del patron estan entre las anclas ==
+  BLESSUSDT  SHORT terna=BLESSUSDT|1794857340000 cut=1794857401355 ancla_comun=True cut_igual=True
+  STRKUSDT   LONG  terna=STRKUSDT|1794858900000 cut=1794858964530 ancla_comun=True cut_igual=True
+  BLESSUSDT  SHORT terna=BLESSUSDT|1794859500000 cut=1794859560464 ancla_comun=True cut_igual=True
+  ARIAUSDT   LONG  terna=ARIAUSDT|1794860040000 cut=1794860100502 ancla_comun=True cut_igual=True
+alertas del patron que son tardias en esta muestra: 0
+
+== 4. Retornos recalculados desde consultas_klines.jsonl ==
+consultas de velas 1m con http_status 200: 161
+  BLESSUSDT  SHORT entrada=1794857460000 open=0.018175 salida=1794857760000 open=0.018355 bps=-99.0371 publicado=-99.0371 replica=-99.0371
+  STRKUSDT   LONG  entrada=1794859020000 open=0.034 salida=1794859320000 open=0.03415 bps=44.1176 publicado=44.1176 replica=44.1176
+  BLESSUSDT  SHORT entrada=1794859620000 open=0.017533 salida=1794859920000 open=0.017782 bps=-142.0179 publicado=-142.0179 replica=-142.0179
+  ARIAUSDT   LONG  entrada=1794860160000 open=0.21015 salida=1794860460000 open=0.20686 bps=-156.5548 publicado=-156.5548 replica=-156.5548
+
+== 5. Estadisticos del grupo con patron ==
+n: 4 media: -88.373 mediana: -120.5275
+resumen: -88.3731 -120.5275
+
+== 6. Coherencia del embudo publicado ==
+{"ternas": 501, "alertas_solo_precio": 211, "episodios": 143, "anclas_con_patron": 4, "anclas_sin_patron": 139, "resolubles_con_patron": 4, "resolubles_sin_patron": 111}
+ternas - no monotonas = 211 == alertas: 211
+OK: verificacion independiente completa
+
+exit_code=0

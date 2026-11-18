@@ -1,0 +1,943 @@
+{
+ "alertas_patron_tardias": {
+  "aciertos": 0,
+  "alertas": 0,
+  "fallos": 0,
+  "grupo": "alertas_patron_tardias",
+  "motivos_no_resoluble": {},
+  "neutrales": 0,
+  "no_resolubles": 0,
+  "resolubles": 0,
+  "retorno_mediano_bps": null,
+  "retorno_medio_bps": null,
+  "simbolos": {}
+ },
+ "cadena": {
+  "anclas_con_patron": {
+   "aciertos": 1,
+   "alertas_en_el_grupo": 5,
+   "anclas": 4,
+   "episodios": 4,
+   "fallos": 3,
+   "media_bps": -88.3731,
+   "mediana_bps": -120.5275,
+   "neutrales": 0,
+   "no_resolubles": 0,
+   "resolubles": 4,
+   "ternas": null
+  },
+  "anclas_sin_patron": {
+   "aciertos": 56,
+   "alertas_en_el_grupo": 206,
+   "anclas": 139,
+   "episodios": 139,
+   "fallos": 52,
+   "media_bps": -5.3742,
+   "mediana_bps": 2.5823,
+   "neutrales": 3,
+   "no_resolubles": 28,
+   "resolubles": 111,
+   "ternas": null
+  },
+  "referencia_universo_igual": {
+   "aciertos": 57,
+   "alertas_en_el_grupo": 211,
+   "anclas": 143,
+   "episodios": 143,
+   "fallos": 55,
+   "media_bps": -8.2611,
+   "mediana_bps": -0.0,
+   "neutrales": 3,
+   "no_resolubles": 28,
+   "resolubles": 115,
+   "ternas": 501
+  }
+ },
+ "cobertura_de_velas": {
+  "consultas": 161,
+  "consultas_rechazadas": [],
+  "duplicadas_contradictorias": 4,
+  "duplicadas_identicas": 7642,
+  "ejemplos_contradiccion": [
+   {
+    "nueva": {
+     "close": 0.008605,
+     "high": 0.008605,
+     "low": 0.008592,
+     "open": 0.008592
+    },
+    "open_time": 1794862680000,
+    "previa": {
+     "close": 0.008594,
+     "high": 0.008594,
+     "low": 0.008594,
+     "open": 0.008594
+    },
+    "symbol": "4USDT"
+   },
+   {
+    "nueva": {
+     "close": 0.008605,
+     "high": 0.008605,
+     "low": 0.008592,
+     "open": 0.008592
+    },
+    "open_time": 1794862680000,
+    "previa": {
+     "close": 0.008594,
+     "high": 0.008594,
+     "low": 0.008594,
+     "open": 0.008594
+    },
+    "symbol": "4USDT"
+   },
+   {
+    "nueva": {
+     "close": 0.008605,
+     "high": 0.008605,
+     "low": 0.008592,
+     "open": 0.008592
+    },
+    "open_time": 1794862680000,
+    "previa": {
+     "close": 0.008594,
+     "high": 0.008594,
+     "low": 0.008594,
+     "open": 0.008594
+    },
+    "symbol": "4USDT"
+   },
+   {
+    "nueva": {
+     "close": 0.008605,
+     "high": 0.008605,
+     "low": 0.008592,
+     "open": 0.008592
+    },
+    "open_time": 1794862680000,
+    "previa": {
+     "close": 0.008594,
+     "high": 0.008594,
+     "low": 0.008594,
+     "open": 0.008594
+    },
+    "symbol": "4USDT"
+   }
+  ],
+  "filas_leidas": 10143,
+  "provisional_actualizada": 0,
+  "provisional_ignorada": 0,
+  "provisional_reemplazada_por_final": 135,
+  "run_id_distinto": 0,
+  "simbolos": [
+   "4USDT",
+   "AAVEUSDT",
+   "AGTUSDT",
+   "AIOTUSDT",
+   "ARIAUSDT",
+   "BANKUSDT",
+   "BLESSUSDT",
+   "BMTUSDT",
+   "BTWUSDT",
+   "BULLAUSDT",
+   "CROSSUSDT",
+   "ENJUSDT",
+   "EVAAUSDT",
+   "FLOCKUSDT",
+   "FLOWUSDT",
+   "HUMAUSDT",
+   "ONUSDT",
+   "PLAYUSDT",
+   "SOPHUSDT",
+   "SPACEUSDT",
+   "STOUSDT",
+   "STRKUSDT",
+   "XAUTUSDT",
+   "XLMUSDT",
+   "ZILUSDT"
+  ],
+  "velas_contradictorias": 4,
+  "velas_provisionales_finales": 26,
+  "velas_unicas": 2362
+ },
+ "conclusion": {
+  "conclusion": "datos insuficientes",
+  "episodios_resolubles_con_patron": 4,
+  "episodios_resolubles_sin_patron": 111,
+  "evidencia": [],
+  "minimo_episodios_resolubles": 30,
+  "motivo": "anclas resolubles con patron=4, sin patron=111; minimo fijado=30",
+  "reduccion_oportunidades": {
+   "alertas_solo_precio": 211,
+   "anclas_con_patron": 4,
+   "anclas_sin_patron": 139,
+   "episodios": 143,
+   "episodios_descartados_por_el_filtro": 139,
+   "tasa_alerta_por_terna": 0.4212,
+   "tasa_episodio_por_alerta": 0.6777,
+   "tasa_retencion_del_filtro": 0.028,
+   "ternas": 501
+  }
+ },
+ "contexto_publicado": {
+  "alertas": 473,
+  "coincide_version_publicada": true,
+  "episodios": 237,
+  "etiqueta": "contexto secundario publicado previamente; no se sobrescribe",
+  "fuente": "docs\\evidence\\patron-ventana4-evaluacion-20261118\\C-resumen.json",
+  "media_bps": -4.8498,
+  "mediana_bps": -0.0,
+  "resolubles": 189,
+  "sha256": "098a61ff818a86e5aba453e6637dd4dca7710e0d78533989cfc453d5160a6c14",
+  "ternas_solo_precio": 1107,
+  "universo_acreditado": {
+   "simbolos": 43,
+   "ternas": 501,
+   "ventanas": 1005
+  },
+  "version": "patron-ventana4-v1"
+ },
+ "derivados_fuera_de_git": {
+  "archivos_sha256": {
+   "alertas_patron_tardias.jsonl": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+   "alertas_referencia_universo_igual.jsonl": "5ad846172cdc1f0e13d17c409634eaaf42c28e84604e4ee141c7ea162755403e",
+   "anclas_con_patron.jsonl": "4d3c768f5f84554d2a2e5d28a5e7270c733e67193d48db9a3a4c2ad6852301dd",
+   "anclas_sin_patron.jsonl": "7aa4895f044e0e16d2cccc0796ab70e34c8a7daee3e338db9c37b47cacc1a9c9",
+   "episodios_patron_originales.jsonl": "19b5967102abe01807a6c097d6f94c0b726e0987897c2513f7a4983ac40c7f0f",
+   "episodios_referencia_universo_igual.jsonl": "dd31588992f48e3cd09d27370d22f1deb155957ecc6997aef0f2301e0095a6e7"
+  },
+  "directorio": "C:\\proyectos\\binance-futures-data\\exp-v2-ventana-4-20261116a-anclas-comunes-v1"
+ },
+ "embudo": {
+  "alertas_patron_ancla": 4,
+  "alertas_patron_tardias": 0,
+  "alertas_solo_precio": 211,
+  "alertas_solo_precio_por_direccion": {
+   "LONG": 104,
+   "SHORT": 107
+  },
+  "anclas_con_patron": 4,
+  "anclas_sin_patron": 139,
+  "episodios": 143,
+  "episodios_por_direccion": {
+   "LONG": 71,
+   "SHORT": 72
+  },
+  "patron_alertas": 4,
+  "patron_episodios": 4,
+  "reduccion": {
+   "alertas_solo_precio": 211,
+   "anclas_con_patron": 4,
+   "anclas_sin_patron": 139,
+   "episodios": 143,
+   "episodios_descartados_por_el_filtro": 139,
+   "tasa_alerta_por_terna": 0.4212,
+   "tasa_episodio_por_alerta": 0.6777,
+   "tasa_retencion_del_filtro": 0.028,
+   "ternas": 501
+  },
+  "resolubles_con_patron": 4,
+  "resolubles_sin_patron": 111,
+  "ternas": 501
+ },
+ "episodios_patron_originales": {
+  "absorbidas_por_ancla_anterior": 0,
+  "alertas": 4,
+  "coinciden_con_ancla_comun": 4,
+  "detalle": [
+   {
+    "coincide_con_ancla_comun": true,
+    "cut_iso": "2026-11-16T19:30:01.355000+00:00",
+    "cut_ms": 1794857401355,
+    "demora_corte_ms": 1355,
+    "direccion": "SHORT",
+    "episodio_absorbente": {
+     "cut_iso": "2026-11-16T19:30:01.355000+00:00",
+     "cut_ms": 1794857401355,
+     "terna": "BLESSUSDT|1794857340000"
+    },
+    "estado": "resoluble",
+    "motivo": null,
+    "motivo_coincidencia": "ancla_comun",
+    "retorno_bps": -99.0371,
+    "symbol": "BLESSUSDT",
+    "terna": "BLESSUSDT|1794857340000"
+   },
+   {
+    "coincide_con_ancla_comun": true,
+    "cut_iso": "2026-11-16T19:56:04.530000+00:00",
+    "cut_ms": 1794858964530,
+    "demora_corte_ms": 4530,
+    "direccion": "LONG",
+    "episodio_absorbente": {
+     "cut_iso": "2026-11-16T19:56:04.530000+00:00",
+     "cut_ms": 1794858964530,
+     "terna": "STRKUSDT|1794858900000"
+    },
+    "estado": "resoluble",
+    "motivo": null,
+    "motivo_coincidencia": "ancla_comun",
+    "retorno_bps": 44.1176,
+    "symbol": "STRKUSDT",
+    "terna": "STRKUSDT|1794858900000"
+   },
+   {
+    "coincide_con_ancla_comun": true,
+    "cut_iso": "2026-11-16T20:06:00.464000+00:00",
+    "cut_ms": 1794859560464,
+    "demora_corte_ms": 464,
+    "direccion": "SHORT",
+    "episodio_absorbente": {
+     "cut_iso": "2026-11-16T20:06:00.464000+00:00",
+     "cut_ms": 1794859560464,
+     "terna": "BLESSUSDT|1794859500000"
+    },
+    "estado": "resoluble",
+    "motivo": null,
+    "motivo_coincidencia": "ancla_comun",
+    "retorno_bps": -142.0179,
+    "symbol": "BLESSUSDT",
+    "terna": "BLESSUSDT|1794859500000"
+   },
+   {
+    "coincide_con_ancla_comun": true,
+    "cut_iso": "2026-11-16T20:15:00.502000+00:00",
+    "cut_ms": 1794860100502,
+    "demora_corte_ms": 502,
+    "direccion": "LONG",
+    "episodio_absorbente": {
+     "cut_iso": "2026-11-16T20:15:00.502000+00:00",
+     "cut_ms": 1794860100502,
+     "terna": "ARIAUSDT|1794860040000"
+    },
+    "estado": "resoluble",
+    "motivo": null,
+    "motivo_coincidencia": "ancla_comun",
+    "retorno_bps": -156.5548,
+    "symbol": "ARIAUSDT",
+    "terna": "ARIAUSDT|1794860040000"
+   }
+  ],
+  "episodios": 4
+ },
+ "grupos": {
+  "anclas_con_patron": {
+   "alertas_brutas": 5,
+   "alertas_por_direccion": {
+    "LONG": 2,
+    "SHORT": 3
+   },
+   "global": {
+    "aciertos": 1,
+    "adverso_mediano_bps": -207.4717,
+    "adverso_medio_bps": -186.054,
+    "adverso_sobre": 4,
+    "episodios": 4,
+    "fallos": 3,
+    "ic95_media_bps": [
+     -149.2864,
+     -2.4162
+    ],
+    "motivos_no_resoluble": {},
+    "neutrales": 0,
+    "no_resolubles": 0,
+    "por_hora_utc": {
+     "19": {
+      "episodios": 2,
+      "retorno_medio_bps": -27.4597
+     },
+     "20": {
+      "episodios": 2,
+      "retorno_medio_bps": -149.2864
+     }
+    },
+    "resolubles": 4,
+    "resolubles_con_entrada_provisional": 0,
+    "resolubles_con_salida_provisional": 0,
+    "resolubles_con_trayectoria_completa": 4,
+    "retorno_mediano_bps": -120.5275,
+    "retorno_medio_bps": -88.3731,
+    "simbolo_dominante": {
+     "cuota": 0.5,
+     "episodios": 2,
+     "symbol": "BLESSUSDT"
+    },
+    "simbolos": {
+     "ARIAUSDT": 1,
+     "BLESSUSDT": 2,
+     "STRKUSDT": 1
+    },
+    "tasa_acierto": 0.25
+   },
+   "grupo": "anclas_con_patron",
+   "por_direccion": {
+    "LONG": {
+     "aciertos": 1,
+     "adverso_mediano_bps": -95.97,
+     "adverso_medio_bps": -95.97,
+     "adverso_sobre": 2,
+     "episodios": 2,
+     "fallos": 1,
+     "ic95_media_bps": [
+      -156.5548,
+      44.1176
+     ],
+     "motivos_no_resoluble": {},
+     "neutrales": 0,
+     "no_resolubles": 0,
+     "por_hora_utc": {
+      "19": {
+       "episodios": 1,
+       "retorno_medio_bps": 44.1176
+      },
+      "20": {
+       "episodios": 1,
+       "retorno_medio_bps": -156.5548
+      }
+     },
+     "resolubles": 2,
+     "resolubles_con_entrada_provisional": 0,
+     "resolubles_con_salida_provisional": 0,
+     "resolubles_con_trayectoria_completa": 2,
+     "retorno_mediano_bps": -56.2186,
+     "retorno_medio_bps": -56.2186,
+     "simbolo_dominante": {
+      "cuota": 0.5,
+      "episodios": 1,
+      "symbol": "STRKUSDT"
+     },
+     "simbolos": {
+      "ARIAUSDT": 1,
+      "STRKUSDT": 1
+     },
+     "tasa_acierto": 0.5
+    },
+    "SHORT": {
+     "aciertos": 0,
+     "adverso_mediano_bps": -276.138,
+     "adverso_medio_bps": -276.138,
+     "adverso_sobre": 2,
+     "episodios": 2,
+     "fallos": 2,
+     "ic95_media_bps": [
+      -142.0179,
+      -99.0371
+     ],
+     "motivos_no_resoluble": {},
+     "neutrales": 0,
+     "no_resolubles": 0,
+     "por_hora_utc": {
+      "19": {
+       "episodios": 1,
+       "retorno_medio_bps": -99.0371
+      },
+      "20": {
+       "episodios": 1,
+       "retorno_medio_bps": -142.0179
+      }
+     },
+     "resolubles": 2,
+     "resolubles_con_entrada_provisional": 0,
+     "resolubles_con_salida_provisional": 0,
+     "resolubles_con_trayectoria_completa": 2,
+     "retorno_mediano_bps": -120.5275,
+     "retorno_medio_bps": -120.5275,
+     "simbolo_dominante": {
+      "cuota": 1.0,
+      "episodios": 2,
+      "symbol": "BLESSUSDT"
+     },
+     "simbolos": {
+      "BLESSUSDT": 2
+     },
+     "tasa_acierto": 0.0
+    }
+   },
+   "sensibilidad_coste_documentado": {
+    "coste_ida_vuelta_bps": 16.0,
+    "neto_mediano_bps": -136.5275,
+    "neto_medio_bps": -104.3731,
+    "supuestos": "fee_bps 5.0 por lado + spread_bps 1.0 + slippage_bps 2.0 por lado; funding UNKNOWN"
+   },
+   "ternas_evaluadas": null
+  },
+  "anclas_sin_patron": {
+   "alertas_brutas": 206,
+   "alertas_por_direccion": {
+    "LONG": 102,
+    "SHORT": 104
+   },
+   "global": {
+    "aciertos": 56,
+    "adverso_mediano_bps": -52.8885,
+    "adverso_medio_bps": -81.0558,
+    "adverso_sobre": 111,
+    "episodios": 139,
+    "fallos": 52,
+    "ic95_media_bps": [
+     -25.7128,
+     13.615
+    ],
+    "motivos_no_resoluble": {
+     "sin_velas_para_simbolo": 23,
+     "vela_entrada_ausente": 5
+    },
+    "neutrales": 3,
+    "no_resolubles": 28,
+    "por_hora_utc": {
+     "19": {
+      "episodios": 54,
+      "retorno_medio_bps": -5.824
+     },
+     "20": {
+      "episodios": 57,
+      "retorno_medio_bps": -4.948
+     }
+    },
+    "resolubles": 111,
+    "resolubles_con_entrada_provisional": 0,
+    "resolubles_con_salida_provisional": 0,
+    "resolubles_con_trayectoria_completa": 111,
+    "retorno_mediano_bps": 2.5823,
+    "retorno_medio_bps": -5.3742,
+    "simbolo_dominante": {
+     "cuota": 0.0901,
+     "episodios": 10,
+     "symbol": "SPACEUSDT"
+    },
+    "simbolos": {
+     "4USDT": 7,
+     "AAVEUSDT": 2,
+     "AGTUSDT": 2,
+     "AIOTUSDT": 8,
+     "ARIAUSDT": 4,
+     "BANKUSDT": 4,
+     "BLESSUSDT": 6,
+     "BMTUSDT": 6,
+     "BTWUSDT": 7,
+     "BULLAUSDT": 7,
+     "CROSSUSDT": 7,
+     "ENJUSDT": 1,
+     "EVAAUSDT": 8,
+     "FLOCKUSDT": 1,
+     "FLOWUSDT": 1,
+     "HUMAUSDT": 6,
+     "ONUSDT": 6,
+     "PLAYUSDT": 1,
+     "SOPHUSDT": 4,
+     "SPACEUSDT": 10,
+     "STOUSDT": 2,
+     "STRKUSDT": 4,
+     "XAUTUSDT": 2,
+     "XLMUSDT": 4,
+     "ZILUSDT": 1
+    },
+    "tasa_acierto": 0.5045
+   },
+   "grupo": "anclas_sin_patron",
+   "por_direccion": {
+    "LONG": {
+     "aciertos": 31,
+     "adverso_mediano_bps": -53.7667,
+     "adverso_medio_bps": -76.3232,
+     "adverso_sobre": 56,
+     "episodios": 69,
+     "fallos": 25,
+     "ic95_media_bps": [
+      -18.0535,
+      33.366
+     ],
+     "motivos_no_resoluble": {
+      "sin_velas_para_simbolo": 12,
+      "vela_entrada_ausente": 1
+     },
+     "neutrales": 0,
+     "no_resolubles": 13,
+     "por_hora_utc": {
+      "19": {
+       "episodios": 32,
+       "retorno_medio_bps": 5.655
+      },
+      "20": {
+       "episodios": 24,
+       "retorno_medio_bps": 11.512
+      }
+     },
+     "resolubles": 56,
+     "resolubles_con_entrada_provisional": 0,
+     "resolubles_con_salida_provisional": 0,
+     "resolubles_con_trayectoria_completa": 56,
+     "retorno_mediano_bps": 9.1376,
+     "retorno_medio_bps": 8.1651,
+     "simbolo_dominante": {
+      "cuota": 0.1071,
+      "episodios": 6,
+      "symbol": "SPACEUSDT"
+     },
+     "simbolos": {
+      "4USDT": 5,
+      "AAVEUSDT": 1,
+      "AGTUSDT": 1,
+      "AIOTUSDT": 3,
+      "ARIAUSDT": 2,
+      "BANKUSDT": 2,
+      "BLESSUSDT": 2,
+      "BMTUSDT": 2,
+      "BTWUSDT": 1,
+      "BULLAUSDT": 3,
+      "CROSSUSDT": 5,
+      "EVAAUSDT": 4,
+      "FLOCKUSDT": 1,
+      "HUMAUSDT": 5,
+      "ONUSDT": 4,
+      "SOPHUSDT": 2,
+      "SPACEUSDT": 6,
+      "STOUSDT": 1,
+      "STRKUSDT": 1,
+      "XAUTUSDT": 1,
+      "XLMUSDT": 3,
+      "ZILUSDT": 1
+     },
+     "tasa_acierto": 0.5536
+    },
+    "SHORT": {
+     "aciertos": 25,
+     "adverso_mediano_bps": -42.7738,
+     "adverso_medio_bps": -85.8744,
+     "adverso_sobre": 55,
+     "episodios": 70,
+     "fallos": 27,
+     "ic95_media_bps": [
+      -53.258,
+      8.8593
+     ],
+     "motivos_no_resoluble": {
+      "sin_velas_para_simbolo": 11,
+      "vela_entrada_ausente": 4
+     },
+     "neutrales": 3,
+     "no_resolubles": 15,
+     "por_hora_utc": {
+      "19": {
+       "episodios": 22,
+       "retorno_medio_bps": -22.5207
+      },
+      "20": {
+       "episodios": 33,
+       "retorno_medio_bps": -16.9189
+      }
+     },
+     "resolubles": 55,
+     "resolubles_con_entrada_provisional": 0,
+     "resolubles_con_salida_provisional": 0,
+     "resolubles_con_trayectoria_completa": 55,
+     "retorno_mediano_bps": -0.0,
+     "retorno_medio_bps": -19.1596,
+     "simbolo_dominante": {
+      "cuota": 0.1091,
+      "episodios": 6,
+      "symbol": "BTWUSDT"
+     },
+     "simbolos": {
+      "4USDT": 2,
+      "AAVEUSDT": 1,
+      "AGTUSDT": 1,
+      "AIOTUSDT": 5,
+      "ARIAUSDT": 2,
+      "BANKUSDT": 2,
+      "BLESSUSDT": 4,
+      "BMTUSDT": 4,
+      "BTWUSDT": 6,
+      "BULLAUSDT": 4,
+      "CROSSUSDT": 2,
+      "ENJUSDT": 1,
+      "EVAAUSDT": 4,
+      "FLOWUSDT": 1,
+      "HUMAUSDT": 1,
+      "ONUSDT": 2,
+      "PLAYUSDT": 1,
+      "SOPHUSDT": 2,
+      "SPACEUSDT": 4,
+      "STOUSDT": 1,
+      "STRKUSDT": 3,
+      "XAUTUSDT": 1,
+      "XLMUSDT": 1
+     },
+     "tasa_acierto": 0.4545
+    }
+   },
+   "sensibilidad_coste_documentado": {
+    "coste_ida_vuelta_bps": 16.0,
+    "neto_mediano_bps": -13.4177,
+    "neto_medio_bps": -21.3742,
+    "supuestos": "fee_bps 5.0 por lado + spread_bps 1.0 + slippage_bps 2.0 por lado; funding UNKNOWN"
+   },
+   "ternas_evaluadas": null
+  },
+  "referencia_universo_igual": {
+   "alertas_brutas": 211,
+   "alertas_por_direccion": {
+    "LONG": 104,
+    "SHORT": 107
+   },
+   "global": {
+    "aciertos": 57,
+    "adverso_mediano_bps": -54.1834,
+    "adverso_medio_bps": -84.7079,
+    "adverso_sobre": 115,
+    "episodios": 143,
+    "fallos": 55,
+    "ic95_media_bps": [
+     -29.3471,
+     10.8317
+    ],
+    "motivos_no_resoluble": {
+     "sin_velas_para_simbolo": 23,
+     "vela_entrada_ausente": 5
+    },
+    "neutrales": 3,
+    "no_resolubles": 28,
+    "por_hora_utc": {
+     "19": {
+      "episodios": 56,
+      "retorno_medio_bps": -6.5967
+     },
+     "20": {
+      "episodios": 59,
+      "retorno_medio_bps": -9.8408
+     }
+    },
+    "resolubles": 115,
+    "resolubles_con_entrada_provisional": 0,
+    "resolubles_con_salida_provisional": 0,
+    "resolubles_con_trayectoria_completa": 115,
+    "retorno_mediano_bps": -0.0,
+    "retorno_medio_bps": -8.2611,
+    "simbolo_dominante": {
+     "cuota": 0.087,
+     "episodios": 10,
+     "symbol": "SPACEUSDT"
+    },
+    "simbolos": {
+     "4USDT": 7,
+     "AAVEUSDT": 2,
+     "AGTUSDT": 2,
+     "AIOTUSDT": 8,
+     "ARIAUSDT": 5,
+     "BANKUSDT": 4,
+     "BLESSUSDT": 8,
+     "BMTUSDT": 6,
+     "BTWUSDT": 7,
+     "BULLAUSDT": 7,
+     "CROSSUSDT": 7,
+     "ENJUSDT": 1,
+     "EVAAUSDT": 8,
+     "FLOCKUSDT": 1,
+     "FLOWUSDT": 1,
+     "HUMAUSDT": 6,
+     "ONUSDT": 6,
+     "PLAYUSDT": 1,
+     "SOPHUSDT": 4,
+     "SPACEUSDT": 10,
+     "STOUSDT": 2,
+     "STRKUSDT": 5,
+     "XAUTUSDT": 2,
+     "XLMUSDT": 4,
+     "ZILUSDT": 1
+    },
+    "tasa_acierto": 0.4957
+   },
+   "grupo": "referencia_universo_igual",
+   "por_direccion": {
+    "LONG": {
+     "aciertos": 32,
+     "adverso_mediano_bps": -53.7667,
+     "adverso_medio_bps": -77.0007,
+     "adverso_sobre": 58,
+     "episodios": 71,
+     "fallos": 26,
+     "ic95_media_bps": [
+      -22.7321,
+      32.2615
+     ],
+     "motivos_no_resoluble": {
+      "sin_velas_para_simbolo": 12,
+      "vela_entrada_ausente": 1
+     },
+     "neutrales": 0,
+     "no_resolubles": 13,
+     "por_hora_utc": {
+      "19": {
+       "episodios": 33,
+       "retorno_medio_bps": 6.8205
+      },
+      "20": {
+       "episodios": 25,
+       "retorno_medio_bps": 4.7893
+      }
+     },
+     "resolubles": 58,
+     "resolubles_con_entrada_provisional": 0,
+     "resolubles_con_salida_provisional": 0,
+     "resolubles_con_trayectoria_completa": 58,
+     "retorno_mediano_bps": 9.1376,
+     "retorno_medio_bps": 5.945,
+     "simbolo_dominante": {
+      "cuota": 0.1034,
+      "episodios": 6,
+      "symbol": "SPACEUSDT"
+     },
+     "simbolos": {
+      "4USDT": 5,
+      "AAVEUSDT": 1,
+      "AGTUSDT": 1,
+      "AIOTUSDT": 3,
+      "ARIAUSDT": 3,
+      "BANKUSDT": 2,
+      "BLESSUSDT": 2,
+      "BMTUSDT": 2,
+      "BTWUSDT": 1,
+      "BULLAUSDT": 3,
+      "CROSSUSDT": 5,
+      "EVAAUSDT": 4,
+      "FLOCKUSDT": 1,
+      "HUMAUSDT": 5,
+      "ONUSDT": 4,
+      "SOPHUSDT": 2,
+      "SPACEUSDT": 6,
+      "STOUSDT": 1,
+      "STRKUSDT": 2,
+      "XAUTUSDT": 1,
+      "XLMUSDT": 3,
+      "ZILUSDT": 1
+     },
+     "tasa_acierto": 0.5517
+    },
+    "SHORT": {
+     "aciertos": 25,
+     "adverso_mediano_bps": -54.1834,
+     "adverso_medio_bps": -92.5503,
+     "adverso_sobre": 57,
+     "episodios": 72,
+     "fallos": 29,
+     "ic95_media_bps": [
+      -53.7802,
+      5.4002
+     ],
+     "motivos_no_resoluble": {
+      "sin_velas_para_simbolo": 11,
+      "vela_entrada_ausente": 4
+     },
+     "neutrales": 3,
+     "no_resolubles": 15,
+     "por_hora_utc": {
+      "19": {
+       "episodios": 23,
+       "retorno_medio_bps": -25.8475
+      },
+      "20": {
+       "episodios": 34,
+       "retorno_medio_bps": -20.5982
+      }
+     },
+     "resolubles": 57,
+     "resolubles_con_entrada_provisional": 0,
+     "resolubles_con_salida_provisional": 0,
+     "resolubles_con_trayectoria_completa": 57,
+     "retorno_mediano_bps": -1.0982,
+     "retorno_medio_bps": -22.7164,
+     "simbolo_dominante": {
+      "cuota": 0.1053,
+      "episodios": 6,
+      "symbol": "BTWUSDT"
+     },
+     "simbolos": {
+      "4USDT": 2,
+      "AAVEUSDT": 1,
+      "AGTUSDT": 1,
+      "AIOTUSDT": 5,
+      "ARIAUSDT": 2,
+      "BANKUSDT": 2,
+      "BLESSUSDT": 6,
+      "BMTUSDT": 4,
+      "BTWUSDT": 6,
+      "BULLAUSDT": 4,
+      "CROSSUSDT": 2,
+      "ENJUSDT": 1,
+      "EVAAUSDT": 4,
+      "FLOWUSDT": 1,
+      "HUMAUSDT": 1,
+      "ONUSDT": 2,
+      "PLAYUSDT": 1,
+      "SOPHUSDT": 2,
+      "SPACEUSDT": 4,
+      "STOUSDT": 1,
+      "STRKUSDT": 3,
+      "XAUTUSDT": 1,
+      "XLMUSDT": 1
+     },
+     "tasa_acierto": 0.4386
+    }
+   },
+   "sensibilidad_coste_documentado": {
+    "coste_ida_vuelta_bps": 16.0,
+    "neto_mediano_bps": -16.0,
+    "neto_medio_bps": -24.2611,
+    "supuestos": "fee_bps 5.0 por lado + spread_bps 1.0 + slippage_bps 2.0 por lado; funding UNKNOWN"
+   },
+   "ternas_evaluadas": 501
+  }
+ },
+ "limitaciones": [
+  "captura ya usada en el desarrollo del detector: hallazgo exploratorio, no prueba independiente",
+  "corte reconstruido: la captura no ejecuto el detector en vivo",
+  "entrada = apertura de la vela siguiente al corte; no es un fill ni incluye latencia",
+  "salida = apertura a 5 minutos; sin stop ni salida intravela",
+  "funding UNKNOWN; costes solo como sensibilidad documentada",
+  "anclas de distintos simbolos pueden solaparse en el tiempo: no son independientes",
+  "una alerta del patron posterior al ancla no reclasifica el episodio ni hereda su entrada",
+  "cobertura de velas limitada a los simbolos consultados durante la captura"
+ ],
+ "origen": {
+  "cobertura": "docs\\evidence\\secuencia-presion-v1-correcciones-20261117\\C-cobertura-real.json",
+  "db": "C:\\proyectos\\binance-futures-data\\exp-v2-ventana-4-20261116a\\research.db",
+  "db_sha256_declarada_en_cobertura": "6ad6f716889a71ceffc5ffc36ed89d904544d3a75facfe1da7c4385b9ad6a7f1",
+  "fuentes_intactas": true,
+  "hashes_antes": {
+   "cobertura_json": "39652bf00d594245943ec7114c0e6933fce2e49a8caf2812915cc478f9eaf4bd",
+   "consultas_klines.jsonl": "4ee61463934e58dd86ec15736738965644b2511b675d92c9f75f48c30ca61874",
+   "research.db": "6ad6f716889a71ceffc5ffc36ed89d904544d3a75facfe1da7c4385b9ad6a7f1"
+  },
+  "hashes_despues": {
+   "cobertura_json": "39652bf00d594245943ec7114c0e6933fce2e49a8caf2812915cc478f9eaf4bd",
+   "consultas_klines.jsonl": "4ee61463934e58dd86ec15736738965644b2511b675d92c9f75f48c30ca61874",
+   "research.db": "6ad6f716889a71ceffc5ffc36ed89d904544d3a75facfe1da7c4385b9ad6a7f1"
+  },
+  "klines": "C:\\proyectos\\binance-futures-data\\exp-v2-ventana-4-20261116a\\consultas_klines.jsonl"
+ },
+ "pregunta": "que episodios retiene el filtro de flujo y profundidad frente a la regla de solo precio, sobre las mismas 501 ternas y con el mismo corte causal, y que paso despues",
+ "referencia_publicada": "patron-ventana4-v1",
+ "run_id": "exp-v2-ventana-4-20261116a",
+ "universo_igual": {
+  "alertas_con_patron_en_el_mismo_instante": 4,
+  "conservado": true,
+  "cortes_verificados_identicos": 501,
+  "hasta_entrada_detector": {
+   "simbolos": 43,
+   "ternas": 501,
+   "ventanas": 1005
+  },
+  "procedencia": {
+   "aggTrade/depth20": 1005
+  },
+  "publicado": {
+   "simbolos": 43,
+   "ternas": 501,
+   "ventanas": 1005
+  },
+  "ternas_evaluadas_por_ambos_metodos": 501,
+  "ternas_no_monotonas": 290,
+  "ventanas_validas_detector": 1005
+ },
+ "version_comparacion": "anclas-comunes-ventana4-v1"
+}

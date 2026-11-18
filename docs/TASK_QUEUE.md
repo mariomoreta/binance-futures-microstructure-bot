@@ -1,5 +1,68 @@
 # Cola vigente — detector secuencia-presion-v1 cerrado, 2026-11-16
 
+## Bloque 2026-11-18 — comparacion en condiciones iguales: filtro vs solo precio — TERMINADO
+
+`ACTIVE_TASK: ninguno` — esperar instruccion del usuario.
+
+**Base:** `c83a1943830d9ad205be41bb1766407e7225cba8`, rama
+`research/universe-liquidez-v1`. Solo lectura de la captura
+`exp-v2-ventana-4-20261116a`; sin Binance, consultas publicas, capturas nuevas,
+ordenes, cableado productivo, cambios del patron/umbral/horizonte/agrupacion,
+dashboard ni infraestructura. La auditoria de cobertura no se reabre.
+`opencode.json` local y archivos ajenos no se tocan.
+
+**Hecho:** (1) `scripts/comparar_anclas_ventana4.py` reutiliza el replay
+publicado y se restringe a las 501 ternas acreditadas: itera las filas del
+detector, recalcula el corte `max(cierre nominal, disponibilidad de las tres
+ventanas)` y aborta si difiere (501/501 verificados). (2) La referencia de solo
+precio exige solo tres cierres estrictamente monotonos, con el mismo corte, sin
+evaluar antes ni incorporar ternas ajenas. (3) Episodios con la agrupacion de 5
+minutos; el ancla es la primera alerta y su clasificacion se congela; una alerta
+del patron posterior se registra aparte, con su propio corte, sin reclasificar
+el ancla ni heredar el retorno anterior. (4) Medicion identica: entrada =
+apertura del primer minuto estrictamente posterior; salida = apertura a 5
+minutos exactos; vela exacta obligatoria; faltante o contradiccion = no
+resoluble con motivo; retorno bruto, no P&L.
+
+**Resultado verificable:** **501 ternas -> 211 alertas de solo precio (104 LONG,
+107 SHORT) -> 143 episodios (71/72) -> 4 anclas con patron / 139 sin patron ->
+4 / 111 resolubles**. No resolubles: 28 (23 `sin_velas_para_simbolo`, 5
+`vela_entrada_ausente`), todos sin patron. Con patron: 1/3/0, media -88.37 bps,
+mediana -120.53, IC95 [-149.29, -2.42]; BLESSUSDT 2/4 (50 %). Sin patron:
+56/52/3, media -5.37 bps, mediana +2.58, IC95 [-25.71, +13.62]. Referencia
+completa: 57/55/3, media -8.26, mediana 0.00, IC95 [-29.35, +10.83]. El filtro
+retiene 4/143 = 2.80 % de los episodios y descarta 139. Los 4 episodios del
+patron coinciden con un ancla comun (0 absorbidas, 0 tardias); en la evaluacion
+de 1107 ternas STRKUSDT LONG quedaba absorbida por un ancla anterior. Ese
+resultado de 1107 se conserva como contexto secundario (473/237/189, media
+-4.85) sin sobrescribirlo. Neto con 16 bps: con patron -104.37 / -136.53; sin
+patron -21.37 / -13.42; funding UNKNOWN.
+
+**Conclusion formal:** regla predeclarada (minimo 30 episodios resolubles por
+grupo) -> **datos insuficientes**. Con 4 episodios no se puede afirmar mejora
+ni ausencia de mejora; el punto observado es peor y la mitad depende de un solo
+simbolo.
+
+**Pruebas:** `tests/test_comparar_anclas_ventana4.py` 9 passed; regresiones
+`test_replay_patron_ventana4.py` 6, `test_secuencia_presion_v1.py` 24,
+`test_extraer_cobertura_research_db.py` 7,
+`test_analisis_contrafactual_ventana4.py` 16,
+`test_operativo_replay_offline.py` 7; conjunto focalizado 69 passed, exit 0.
+
+**Evidencias:** `docs/evidence/anclas-comunes-ventana4-20261118/` (README, A
+comando/exit 0/hashes/reproducibilidad, B pytest, C resumen JSON
+`67c77c72...3853`, D verificacion independiente); derivados fuera de Git en
+`C:\proyectos\binance-futures-data\exp-v2-ventana-4-20261116a-anclas-comunes-v1\`.
+
+**Publicado:** commit selectivo de este bloque (script, pruebas y evidencia) y
+commit de documentacion con su SHA; push normal a
+`origin/research/universe-liquidez-v1`, con SHA remoto verificado.
+
+**Siguiente:** no se ejecuta ni se propone otra captura ni otra variante del
+patron. Una prueba con potencia exigiria autorizacion humana explicita con
+`run_id` nuevo, cobertura de velas planificada para todo el universo y criterio
+de potencia fijado antes de mirar resultados.
+
 ## Bloque 2026-11-18 — evaluacion offline del patron sobre las 501 ternas — TERMINADO
 
 `ACTIVE_TASK: ninguno` — esperar instruccion del usuario.

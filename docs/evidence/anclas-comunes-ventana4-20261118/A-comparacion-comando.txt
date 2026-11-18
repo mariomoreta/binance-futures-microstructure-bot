@@ -1,0 +1,49 @@
+﻿Comparacion en condiciones iguales - comando, salida y trazabilidad
+Bloque: anclas-comunes-ventana4-20261118  (2026-11-18)
+Rama: research/universe-liquidez-v1
+
+== Comando ==
+python scripts/comparar_anclas_ventana4.py `
+  --db C:\proyectos\binance-futures-data\exp-v2-ventana-4-20261116a\research.db `
+  --cobertura docs\evidence\secuencia-presion-v1-correcciones-20261117\C-cobertura-real.json `
+  --klines C:\proyectos\binance-futures-data\exp-v2-ventana-4-20261116a\consultas_klines.jsonl `
+  --salida C:\proyectos\binance-futures-data\exp-v2-ventana-4-20261116a-anclas-comunes-v1 `
+  --resumen docs\evidence\anclas-comunes-ventana4-20261118\C-resumen.json `
+  --contexto docs\evidence\patron-ventana4-evaluacion-20261118\C-resumen.json
+
+== Salida (stdout) ==
+{"estado": "ok", "ternas": 501, "alertas_solo_precio": 211, "episodios": 143, "anclas_con_patron": 4, "anclas_sin_patron": 139, "resolubles_con_patron": 4, "resolubles_sin_patron": 111, "conclusion": "datos insuficientes", "resumen": "docs\\evidence\\anclas-comunes-ventana4-20261118\\C-resumen.json"}
+
+exit_code=0
+exit_code_repeticion=0
+
+== Hashes de las fuentes ANTES ==
+6AD6F716889A71CEFFC5FFC36ED89D904544D3A75FACFE1DA7C4385B9AD6A7F1  research.db
+E3B0C44298FC1C149AFBF4C8996FB92427AE41E4649B934CA495991B7852B855  research.db-wal (vacio)
+4EE61463934E58DD86EC15736738965644B2511B675D92C9F75F48C30CA61874  consultas_klines.jsonl
+39652BF00D594245943EC7114C0E6933FCE2E49A8CAF2812915CC478F9EAF4BD  C-cobertura-real.json
+
+== Hashes de las fuentes DESPUES ==
+4EE61463934E58DD86EC15736738965644B2511B675D92C9F75F48C30CA61874  consultas_klines.jsonl
+6AD6F716889A71CEFFC5FFC36ED89D904544D3A75FACFE1DA7C4385B9AD6A7F1  research.db
+39652BF00D594245943EC7114C0E6933FCE2E49A8CAF2812915CC478F9EAF4BD  C-cobertura-real.json
+fuentes_intactas=true (el propio programa aborta si cambian durante la corrida)
+
+== Resumen compacto ==
+67c77c72d23bf6cbc089bd052bcc8b42d516255d3efc3bb43c271a68d12e3853  C-resumen.json
+
+== Reproducibilidad (segunda corrida en otro directorio de salida) ==
+run1_sha256=67c77c72d23bf6cbc089bd052bcc8b42d516255d3efc3bb43c271a68d12e3853
+run2_sha256=207b0f6f375aaf9de9bb00deb8fec99b485c1c952e51c7c5a02617367a94ce4a
+unica_diferencia_detectada: campo derivados_fuera_de_git.directorio (ruta de salida)
+comparacion_normalizada_ignorando_ese_campo: identica
+derivados_identicos_entre_ambas_corridas: True
+
+== Derivados voluminosos (fuera de Git) ==
+directorio: C:\proyectos\binance-futures-data\exp-v2-ventana-4-20261116a-anclas-comunes-v1
+e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855  alertas_patron_tardias.jsonl
+5ad846172cdc1f0e13d17c409634eaaf42c28e84604e4ee141c7ea162755403e  alertas_referencia_universo_igual.jsonl
+4d3c768f5f84554d2a2e5d28a5e7270c733e67193d48db9a3a4c2ad6852301dd  anclas_con_patron.jsonl
+7aa4895f044e0e16d2cccc0796ab70e34c8a7daee3e338db9c37b47cacc1a9c9  anclas_sin_patron.jsonl
+19b5967102abe01807a6c097d6f94c0b726e0987897c2513f7a4983ac40c7f0f  episodios_patron_originales.jsonl
+dd31588992f48e3cd09d27370d22f1deb155957ecc6997aef0f2301e0095a6e7  episodios_referencia_universo_igual.jsonl

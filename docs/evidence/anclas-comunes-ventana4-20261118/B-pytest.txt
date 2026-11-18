@@ -1,0 +1,11 @@
+﻿Pruebas focalizadas de la comparacion en condiciones iguales
+Bloque: anclas-comunes-ventana4-20261118  (2026-11-18)
+
+Comando:
+python -m pytest tests/test_comparar_anclas_ventana4.py tests/test_replay_patron_ventana4.py tests/test_secuencia_presion_v1.py tests/test_extraer_cobertura_research_db.py tests/test_analisis_contrafactual_ventana4.py tests/test_operativo_replay_offline.py -q
+
+Salida:
+.....................................................................    [100%]
+69 passed in 38.49s
+
+exit_code=0
