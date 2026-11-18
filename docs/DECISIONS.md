@@ -6332,5 +6332,6 @@ comando con hashes y reproducibilidad, B pytest, C resumen JSON
 `67c77c72d23bf6cbc089bd052bcc8b42d516255d3efc3bb43c271a68d12e3853`, D
 verificacion independiente); derivados fuera de Git en
 `C:\proyectos\binance-futures-data\exp-v2-ventana-4-20261116a-anclas-comunes-v1\`.
-Pruebas: 9 nuevas + 69 focalizadas, exit 0. Publicado: commit selectivo de este
-bloque (script, pruebas y evidencia) y commit de documentacion con su SHA.
+Pruebas: 9 nuevas + 69 focalizadas, exit 0. Publicado: commit selectivo
+`191e37db891348256f882edae768fe387be9eb53` (script, pruebas y evidencia) y
+commit de documentacion posterior.

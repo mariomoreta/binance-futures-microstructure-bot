@@ -65,9 +65,10 @@ independiente que recalcula 211 -> 143 -> 4/139, las anclas comunes y los 4
 retornos desde el JSONL original). Derivados voluminosos fuera de Git en
 `C:\proyectos\binance-futures-data\exp-v2-ventana-4-20261116a-anclas-comunes-v1\`.
 
-**Publicado:** commit selectivo de este bloque (script, pruebas y evidencia) y
-commit de documentacion con su SHA; push normal a
-`origin/research/universe-liquidez-v1`.
+**Publicado:** commit selectivo
+`191e37db891348256f882edae768fe387be9eb53` (script, pruebas y evidencia) y
+commit de documentacion posterior; push normal a
+`origin/research/universe-liquidez-v1`, con SHA remoto verificado.
 
 | | |
 |---|---|
